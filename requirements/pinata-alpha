@@ -1,0 +1,18 @@
+For pinata-alpha we need to replace the functions we use in the initial boot2docker version:
+
+minimal kernel that will boot in under 3s (to be cut down further)
+boot2docker uses aufs and so patched kernel, probably use overlayfs and upstream instead
+docker
+dhcp, ntp
+getty for login, possibly ssh
+shell for logins
+base dependencies - may all be eg busybox
+
+external build with binaries for pinata to use in build: vmlinuz and initrd (do not need iso/fs image initially)
+CI, autobuild (via docker hub ideally).
+
+pinata needs to add to standard build:
+init scripts to create fs if not there etc
+9puds Go binary to forward domain sockets
+
+not required: self update: treated as immutable, updated with a new pinata update
