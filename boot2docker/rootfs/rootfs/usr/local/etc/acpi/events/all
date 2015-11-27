@@ -1,0 +1,2 @@
+event=button/power*
+action=/sbin/poweroff

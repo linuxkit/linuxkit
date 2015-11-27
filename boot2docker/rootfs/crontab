@@ -1,0 +1,2 @@
+# restart ntpd to combat laptop sleep + VM pause
+0 * * * * killall ntpd > /dev/null 2>&1; /etc/rc.d/ntpd

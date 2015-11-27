@@ -1,0 +1,4 @@
+#!/bin/sh
+
+: ${CROND_LOGLEVEL:=8}
+crond -f -d "$CROND_LOGLEVEL" > /var/lib/boot2docker/log/crond.log 2>&1 &

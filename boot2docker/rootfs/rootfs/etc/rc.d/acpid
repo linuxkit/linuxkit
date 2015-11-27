@@ -1,0 +1,2 @@
+# Launch ACPId (shutdown)
+/usr/local/etc/init.d/acpid start

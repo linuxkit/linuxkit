@@ -1,0 +1,18 @@
+#!/bin/sh
+
+: ${NTP_SERVER:=pool.ntp.org}
+if [ -n "$NTP_SERVER" ]; then
+	# Wait on the network
+	count=10
+	while ! ping -c 1 $NTP_SERVER > /dev/null 2>&1; do
+		sleep 1
+		count=$(( count - 1 ))
+		if [ $count -lt 1 ]; then
+			break
+		fi
+	done
+	
+	ntpd -d -n -p $NTP_SERVER > /var/lib/boot2docker/log/ntpd.log 2>&1 &
+else
+	echo 'NTP_SERVER not set; skipping starting ntpd' > /var/lib/boot2docker/log/ntpd.log
+fi

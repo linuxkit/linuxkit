@@ -1,0 +1,30 @@
+#!/bin/sh
+set -e
+
+BOOT2DOCKER_CERTS_DIR=/var/lib/boot2docker/certs
+CERTS_DIR=/etc/ssl/certs
+CAFILE=${CERTS_DIR}/ca-certificates.crt
+
+for cert_file in "${BOOT2DOCKER_CERTS_DIR}"/*.pem; do
+	cert=`basename $cert_file`
+	echo "installing $cert"
+
+	SRC_CERT_FILE=${BOOT2DOCKER_CERTS_DIR}/${cert}
+	CERT_FILE=${CERTS_DIR}/${cert}
+	HASH_FILE=${CERTS_DIR}/$(openssl x509 -noout -hash -in "${SRC_CERT_FILE}" 2>/dev/null)
+
+	[ ! -L "${CERT_FILE}" ] && ln -fs "${SRC_CERT_FILE}" "${CERT_FILE}"
+
+	for idx in $(seq 0 9); do
+		if [ -L "${HASH_FILE}.${idx}" ]; then
+			if [ "$(readlink "${HASH_FILE}.${idx}")" = "${SRC_CERT_FILE}" ]; then
+				break
+			fi
+		else
+			ln -fs "${SRC_CERT_FILE}" "${HASH_FILE}.${idx}"
+			break
+		fi
+	done
+
+	cat "${SRC_CERT_FILE}" >> "${CAFILE}"
+done

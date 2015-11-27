@@ -1,0 +1,32 @@
+#!/bin/sh
+
+usage()
+{
+  echo 'Usage: shutdown [-rh] time
+                -r:      reboot after shutdown.
+                -h:      halt after shutdown.
+                ** the "time" argument is mandatory! (try "now") **' >&2
+  exit 1
+}
+
+case $1 in
+  -r) CMD="/bin/busybox reboot"
+    ;;
+  -h) CMD="/bin/busybox poweroff"
+    ;;
+  *) usage
+    ;;
+esac
+
+shift
+
+case $1 in
+  now|+0) DELAY=""
+    ;;
+  +[0-9]*) DELAY=$(($1 * 60))
+    ;;
+  *) usage
+    ;;
+esac
+
+${CMD}${DELAY:+ -d $DELAY}

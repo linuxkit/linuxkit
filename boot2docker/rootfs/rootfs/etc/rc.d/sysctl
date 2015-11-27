@@ -1,0 +1,2 @@
+# Read sysctl.conf
+sysctl -p /etc/sysctl.conf

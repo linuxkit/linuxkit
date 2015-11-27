@@ -1,0 +1,141 @@
+#!/bin/sh
+# docker daemon start script
+[ $(id -u) = 0 ] || { echo 'must be root' ; exit 1; }
+
+# https://github.com/docker/docker/issues/11382
+export DOCKER_RAMDISK=true
+
+#import settings from profile (e.g. HTTP_PROXY, HTTPS_PROXY)
+test -f '/var/lib/boot2docker/profile' && . '/var/lib/boot2docker/profile'
+
+: ${DOCKER_HOST:='-H tcp://0.0.0.0:2375'}
+: ${DOCKER_TLS:=no}
+: ${DOCKER_STORAGE:=auto}
+: ${DOCKER_DIR:=/var/lib/docker}
+: ${DOCKER_ULIMITS:=1048576}
+: ${DOCKER_LOGFILE:=/var/lib/boot2docker/docker.log}
+
+: ${CERTDIR:=/var/lib/boot2docker/tls/}
+: ${CERT_INTERFACES:='eth0 eth1'}
+: ${CACERT:="${CERTDIR}ca.pem"}
+: ${CAKEY:="${CERTDIR}cakey.pem"}
+: ${SERVERCERT:="${CERTDIR}server.pem"}
+: ${SERVERKEY:="${CERTDIR}serverkey.pem"}
+: ${CERT:="${CERTDIR}cert.pem"}
+: ${KEY:="${CERTDIR}key.pem"}
+: ${ORG:=Boot2Docker}
+: ${SERVERORG:="${ORG}"}
+: ${CAORG:="${ORG}CA"} # Append 'CA'; see <http://rt.openssl.org/Ticket/History.html?use r=guest&pass=guest&id=3979>
+
+# Add /usr/local/sbin to the path.
+export PATH=${PATH}:/usr/local/sbin
+
+start() {
+    # Not enabling Docker daemon TLS by default.
+    if [ "$DOCKER_TLS" != "no" ]; then
+        CERTHOSTNAMES="$(hostname -s),$(hostname -i)"
+        for interface in ${CERT_INTERFACES}; do
+          IPS=$(ip addr show ${interface} |sed -nEe 's/^[ \t]*inet[ \t]*([0-9.]+)\/.*$/\1/p')
+          for ip in $IPS; do
+            CERTHOSTNAMES="$CERTHOSTNAMES,$ip"
+          done
+        done
+        echo "Need TLS certs for $CERTHOSTNAMES"
+        echo "-------------------"
+
+        mkdir -p "$CERTDIR"
+        chmod 700 "$CERTDIR"
+        if [ ! -f "$CACERT" ] || [ ! -f "$CAKEY" ]; then
+            echo "Generating CA cert"
+            /usr/local/bin/generate_cert --cert="$CACERT" --key="$CAKEY" --org="$CAORG"
+            rm "$SERVERCERT" "$SERVERKEY" "$CERT" "$KEY" "$CERTDIR/hostnames"
+        fi
+
+        CERTSEXISTFOR=$(cat "$CERTDIR/hostnames" 2>/dev/null)
+        if [ "$CERTHOSTNAMES" != "$CERTSEXISTFOR" ]; then
+            echo "Generate server cert"
+            echo /usr/local/bin/generate_cert --host="$CERTHOSTNAMES" --ca="$CACERT" --ca-key="$CAKEY" --cert="$SERVERCERT" --key="$SERVERKEY" --org="$SERVERORG"
+            /usr/local/bin/generate_cert --host="$CERTHOSTNAMES" --ca="$CACERT" --ca-key="$CAKEY" --cert="$SERVERCERT" --key="$SERVERKEY" --org="$SERVERORG"
+            echo "$CERTHOSTNAMES" > "$CERTDIR/hostnames"
+        fi
+
+        if [ ! -f "$CERT" ] || [ ! -f "$KEY" ]; then
+            echo "Generating client cert"
+            /usr/local/bin/generate_cert --ca="$CACERT" --ca-key="$CAKEY" --cert="$CERT" --key="$KEY" --org="$ORG"
+        fi
+
+        if [ "$DOCKER_TLS" == "auto" ]; then
+            DOCKER_HOST='-H tcp://0.0.0.0:2376'
+            EXTRA_ARGS="$EXTRA_ARGS --tlsverify --tlscacert=$CACERT --tlscert=$SERVERCERT --tlskey=$SERVERKEY"
+        elif [ "$DOCKER_TLS" != "no" ]; then
+            EXTRA_ARGS="$EXTRA_ARGS $DOCKER_TLS --tlscacert=$CACERT --tlscert=$SERVERCERT --tlskey=$SERVERKEY"
+        fi
+
+        # now make the client certificates available to the docker user
+        USERCFG="/home/docker/.docker"
+        mkdir -p "$USERCFG"
+        chmod 700 "$USERCFG"
+        cp "$CACERT" "$USERCFG"
+        cp "$CERT" "$USERCFG"
+        cp "$KEY" "$USERCFG"
+        chown -R docker:staff "$USERCFG"
+    fi
+
+    mkdir -p "$DOCKER_DIR"
+
+    if [ "$DOCKER_STORAGE" = 'auto' ]; then
+        # if /var/lib/docker is on BTRFS, let's use the native btrfs driver
+        # (AUFS on top of BTRFS does very bad things)
+        DOCKER_DEVICE="$(/bin/df -P "$DOCKER_DIR" | /usr/bin/awk 'END { print $1 }')"
+        DOCKER_FSTYPE="$(/sbin/blkid -o export "$DOCKER_DEVICE" | /bin/grep TYPE= | /usr/bin/cut -d= -f2)"
+        if [ "$DOCKER_FSTYPE" = 'btrfs' ]; then
+            DOCKER_STORAGE="$DOCKER_FSTYPE"
+        fi
+    fi
+    if [ "$DOCKER_STORAGE" != 'auto' ]; then
+        # in the general case, let's trust Docker to "do the right thing"
+        EXTRA_ARGS="$EXTRA_ARGS -s $DOCKER_STORAGE"
+    fi
+
+    # Increasing the number of open files and processes by docker
+    ulimit -n $DOCKER_ULIMITS
+    ulimit -p $DOCKER_ULIMITS
+
+    echo "------------------------" >> "$DOCKER_LOGFILE"
+    echo "/usr/local/bin/docker daemon -D -g \"$DOCKER_DIR\" -H unix:// $DOCKER_HOST $EXTRA_ARGS >> \"$DOCKER_LOGFILE\"" >> "$DOCKER_LOGFILE"
+    /usr/local/bin/docker daemon -D -g "$DOCKER_DIR" -H unix:// $DOCKER_HOST $EXTRA_ARGS >> "$DOCKER_LOGFILE" 2>&1 &
+}
+
+stop() {
+    kill $(cat /var/run/docker.pid)
+}
+
+restart() {
+    if check; then
+        stop && sleep 1 && start
+    else
+        start
+    fi
+}
+
+check() {
+    [ -f /var/run/docker.pid ] && ps -A -o pid | grep "^\s*$(cat /var/run/docker.pid)$" > /dev/null 2>&1
+}
+
+status() {
+    if check; then
+        echo 'Docker daemon is running'
+        exit 0
+    else
+        echo 'Docker daemon is not running'
+        exit 1
+    fi
+}
+
+case $1 in
+    start) start;;
+    stop) stop;;
+    restart) restart;;
+    status) status;;
+    *) echo "Usage $0 {start|stop|restart|status}"; exit 1
+esac

@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Configure sshd and acknowledge for persistence in /var/lib/boot2docker of the keys/config
+# Move /usr/local/etc/ssh to /var/lib/boot2docker/ssh if it doesn't exist
+if [ ! -d /var/lib/boot2docker/ssh ]; then
+    mv /usr/local/etc/ssh /var/lib/boot2docker/
+else # if it exists, remove the ramdisk's ssh config, so that the hard drive's is properly linked
+    rm -rf /usr/local/etc/ssh
+fi
+ln -s /var/lib/boot2docker/ssh /usr/local/etc/ssh
+
+if [ ! -f /usr/local/etc/ssh/ssh_config ]; then
+    mv /usr/local/etc/ssh/ssh_config.example /usr/local/etc/ssh/ssh_config
+fi
+if [ ! -f /usr/local/etc/ssh/sshd_config ]; then
+    mv /usr/local/etc/ssh/sshd_config.example /usr/local/etc/ssh/sshd_config
+fi
+
+if ! grep -q "^UseDNS no" /usr/local/etc/ssh/sshd_config; then
+    # speed up login
+    echo "UseDNS no" >> /usr/local/etc/ssh/sshd_config
+fi
+
+/usr/local/etc/init.d/openssh start

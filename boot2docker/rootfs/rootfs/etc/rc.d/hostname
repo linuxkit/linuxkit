@@ -1,0 +1,7 @@
+#!/bin/sh
+
+if [ ! -e /var/lib/boot2docker/etc/hostname ]; then
+    cp /usr/local/etc/hostname /var/lib/boot2docker/etc/hostname
+fi
+HOSTNAME=`cat /var/lib/boot2docker/etc/hostname`
+/usr/bin/sethostname $HOSTNAME

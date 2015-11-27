@@ -1,0 +1,21 @@
+At boot prompt enter mc followed by one or more space seperated options:
+
+ Color            640x480     800x600      1024x768     1280x1024
+   256    8 bit     769         771           773          775
+ 32000   15 bit     784         787           790          793
+ 65000   16 bit     785         788           791          794
+ 16.7M   24 bit     786         789           792          795
+
+ vga=7xx                    7xx from table above
+ xsetup                     Prompt user for Xvesa setup
+ lang=en                    C only unless getlocale.tcz is installed
+ kmap=us                    US only unless kmaps.tcz is installed
+ text                       Textmode
+ superuser                  Textmode as user root
+ noicons                    Do not display icons
+ noicons=ondemand           Do not display ondemand icons
+ noswap                     Do not use swap partition
+ nodhcp                     Skip the dhcp request at boot
+ noutc                      BIOS is using localtime
+ pause                      Pause at completion of boot messages
+ 

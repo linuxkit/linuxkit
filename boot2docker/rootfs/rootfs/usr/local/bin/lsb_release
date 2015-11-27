@@ -1,0 +1,8 @@
+#!/bin/sh
+# just to make open-vm-tools happy, nad fake output
+# of lsb_release -sd
+. /etc/os-release
+echo $PRETTY_NAME
+
+exit 0
+

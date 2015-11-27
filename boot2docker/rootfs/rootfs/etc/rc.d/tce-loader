@@ -1,0 +1,2 @@
+#!/bin/sh
+find /usr/local/tce.installed/ -type f -exec sh -c {} \;
