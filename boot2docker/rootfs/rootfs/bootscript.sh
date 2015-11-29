@@ -54,7 +54,7 @@ mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 socket /Socke
 /sbin/9pudc -path /Socket -sock /var/run/docker.sock -detach &
 
 mkdir -p /Mac
-mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 plan9 /Mac
+mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000.u plan9 /Mac
 mkdir -p /Irmin
 #mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 irmin /Irmin
 
