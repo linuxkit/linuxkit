@@ -1,0 +1,21 @@
+# /etc/inittab
+
+::sysinit:/sbin/rc sysinit
+::wait:/sbin/rc default
+
+# Set up a couple of getty's
+#tty1::respawn:/sbin/getty 38400 tty1
+#tty2::respawn:/sbin/getty 38400 tty2
+#tty3::respawn:/sbin/getty 38400 tty3
+#tty4::respawn:/sbin/getty 38400 tty4
+#tty5::respawn:/sbin/getty 38400 tty5
+#tty6::respawn:/sbin/getty 38400 tty6
+
+# Put a getty on the serial port
+ttyS0::respawn:/sbin/getty -L ttyS0 115200 vt100
+
+# Stuff to do for the 3-finger salute
+::ctrlaltdel:/sbin/reboot
+
+# Stuff to do before rebooting
+::shutdown:/sbin/rc shutdown
