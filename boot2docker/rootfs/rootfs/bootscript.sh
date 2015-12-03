@@ -25,7 +25,7 @@ test -f "/var/lib/boot2docker/profile" && . "/var/lib/boot2docker/profile"
 /etc/rc.d/hostname
 
 # sync the clock
-/etc/rc.d/ntpd &
+#/etc/rc.d/ntpd &
 
 # start cron
 /etc/rc.d/crond
