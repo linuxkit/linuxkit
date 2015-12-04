@@ -3,7 +3,7 @@ DOCKER?=docker
 .PHONY: build
 build: VERSION
 	$(DOCKER) build -t boot2docker:test .
-	$(DOCKER) run  boot2docker:test tar -C /tmp/iso/boot -c . | tar -xv
+	$(DOCKER) run -i boot2docker:test tar -C /tmp/iso/boot -c . | tar -xv
 
 .PHONY: VERSION
 VERSION:
