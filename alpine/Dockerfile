@@ -10,6 +10,7 @@ COPY etc /etc/
 
 RUN \
   setup-timezone -z UTC && \
+  rc-update add networking && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]
