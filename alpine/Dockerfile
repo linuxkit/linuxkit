@@ -8,6 +8,8 @@ RUN apk update && apk upgrade && apk add e2fsprogs docker
 
 COPY etc /etc/
 
-RUN ln -s /bin/busybox /init
+RUN \
+  setup-timezone -z UTC && \
+  ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]
