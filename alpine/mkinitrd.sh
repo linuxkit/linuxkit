@@ -42,6 +42,11 @@ mknod -m 600 sdb6 b 8 22
 
 mkdir pty
 
-cd /tmp
+# these three files are bind mounted in by docker so they are not what we want
+cd /tmp/etc
+mv hosts- hosts
+mv resolv.conf- resolv.conf
+mv hostname- hostname
 
+cd /tmp
 find . | cpio -H newc -o > /export/initrd.img
