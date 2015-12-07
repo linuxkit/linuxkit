@@ -1,8 +1,8 @@
 all:	initrd.img
 
 ETCFILES=etc/issue etc/motd etc/inittab etc/network/interfaces
-ETCFILES+=etc/init.d/docker
 ETCFILES+=etc/hostname- etc/resolv.conf- etc/hosts-
+ETCFILES+=etc/init.d/chronyd
 
 initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	rm -f initrd.img
