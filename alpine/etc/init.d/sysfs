@@ -1,0 +1,151 @@
+#!/sbin/openrc-run
+# Copyright (c) 2007-2009 Roy Marples <roy@marples.name>
+# Released under the 2-clause BSD license.
+
+description="Mount the sys filesystem."
+
+sysfs_opts=nodev,noexec,nosuid
+
+depend()
+{
+	keyword -lxc -prefix -systemd-nspawn -vserver
+}
+
+mount_sys()
+{
+	grep -Eq "[[:space:]]+sysfs$" /proc/filesystems || return 1
+	mountinfo -q /sys && return 0
+
+	if [ ! -d /sys ]; then
+		if ! mkdir -m 0755 /sys; then
+			ewarn "Could not create /sys!"
+			return 1
+		fi
+	fi
+
+	ebegin "Mounting /sys"
+	if ! fstabinfo --mount /sys; then
+		mount -n -t sysfs -o ${sysfs_opts} sysfs /sys
+	fi
+	eend $?
+}
+
+mount_misc()
+{
+	# Setup Kernel Support for securityfs
+	if [ -d /sys/kernel/security ] && \
+		! mountinfo -q /sys/kernel/security; then
+		if grep -qs securityfs /proc/filesystems; then
+			ebegin "Mounting security filesystem"
+			mount -n -t securityfs -o ${sysfs_opts} \
+				securityfs /sys/kernel/security
+			eend $?
+		fi
+	fi
+
+	# Setup Kernel Support for debugfs
+	if [ -d /sys/kernel/debug ] && ! mountinfo -q /sys/kernel/debug; then
+		if grep -qs debugfs /proc/filesystems; then
+			ebegin "Mounting debug filesystem"
+			mount -n -t debugfs -o ${sysfs_opts} debugfs /sys/kernel/debug
+			eend $?
+		fi
+	fi
+
+	# Setup Kernel Support for configfs
+	if [ -d /sys/kernel/config ] && ! mountinfo -q /sys/kernel/config; then
+		if grep -qs configfs /proc/filesystems; then
+			ebegin "Mounting config filesystem"
+			mount -n -t configfs -o  ${sysfs_opts} configfs /sys/kernel/config
+			eend $?
+		fi
+	fi
+
+	# set up kernel support for cgroups
+	if [ -d /sys/fs/cgroup ] && ! mountinfo -q /sys/fs/cgroup; then
+		if grep -qs cgroup /proc/filesystems; then
+			ebegin "Mounting cgroup filesystem"
+			local opts="${sysfs_opts},mode=755,size=${rc_cgroupsize:-10m}"
+			mount -n -t tmpfs -o ${opts} cgroup_root /sys/fs/cgroup
+			eend $?
+		fi
+	fi
+
+	# set up kernel support for fusectl
+	if [ -d /sys/fs/fuse/connections ] \
+		&& ! mountinfo -q /sys/fs/fuse/connections; then
+		if grep -qs fusectl /proc/filesystems; then
+			ebegin "Mounting fuse control filesystem"
+			mount -n -t fusectl -o ${sysfs_opts} \
+				fusectl /sys/fs/fuse/connections
+			eend $?
+		fi
+	fi
+
+	# Setup Kernel Support for SELinux
+	if [ -d /sys/fs/selinux ] && ! mountinfo -q /sys/fs/selinux; then
+		if grep -qs selinuxfs /proc/filesystems; then
+			ebegin "Mounting SELinux filesystem"
+			mount -t selinuxfs selinuxfs /sys/fs/selinux
+			eend $?
+		fi
+	fi
+
+	# setup up kernel support for efivarfs
+	# slightly complicated, as if it's build as a module but NOT yet loaded,
+	# it will NOT appear in /proc/filesystems yet
+	if [ -d /sys/firmware/efi/efivars ] \
+		&& ! mountinfo -q /sys/firmware/efi/efivars; then
+		modprobe -q efivarfs
+		if grep -qs efivarfs /proc/filesystems; then
+			ebegin "Mounting efivarfs filesystem"
+			mount -n -t efivarfs -o ${sysfs_opts} \
+				efivarfs /sys/firmware/efi/efivars
+			eend $?
+		fi
+	fi
+}
+
+mount_cgroups()
+{
+	mountinfo -q /sys/fs/cgroup || return 0
+
+	if ! mountinfo -q /sys/fs/cgroup/openrc; then
+		local agent="/lib/rc/sh/cgroup-release-agent.sh"
+		mkdir /sys/fs/cgroup/openrc
+		mount -n -t cgroup \
+			-o none,${sysfs_opts},name=openrc,release_agent="$agent" \
+			openrc /sys/fs/cgroup/openrc
+		printf 1 > /sys/fs/cgroup/openrc/notify_on_release
+	fi
+
+	yesno ${rc_controller_cgroups:-YES} && [ -e /proc/cgroups ] || return 0
+	while read name hier groups enabled rest; do
+		case "${enabled}" in
+			1)	mountinfo -q /sys/fs/cgroup/${name} && continue
+				mkdir /sys/fs/cgroup/${name}
+				mount -n -t cgroup -o ${sysfs_opts},${name} \
+					${name} /sys/fs/cgroup/${name}
+				;;
+		esac
+	done < /proc/cgroups
+}
+
+restorecon_sys()
+{
+	if [ -x /sbin/restorecon ]; then
+		ebegin "Restoring SELinux contexts in /sys"
+		restorecon -F /sys/devices/system/cpu/online >/dev/null 2>&1
+		restorecon -rF /sys/fs/cgroup >/dev/null 2>&1
+		eend $?
+	fi
+}
+
+start()
+{
+	mount_sys
+	mount_misc
+	mount_cgroups
+	restorecon_sys
+	return 0
+}
