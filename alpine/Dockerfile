@@ -32,6 +32,7 @@ RUN \
   rc-update add root && \
   rc-update add localmount && \
   rc-update add klogd && \
+  rc-update add docker && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]

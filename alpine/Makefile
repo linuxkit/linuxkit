@@ -1,6 +1,8 @@
 all:	initrd.img
 
-ETCFILES=etc/motd etc/inittab etc/network/interfaces etc/hostname- etc/resolv.conf- etc/hosts-
+ETCFILES=etc/motd etc/inittab etc/network/interfaces
+#ETCFILES+=etc/init.d/sysfs etc/init.d/cgroupfs-mount
+ETCFILES+=etc/hostname- etc/resolv.conf- etc/hosts-
 
 initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	rm -f initrd.img
