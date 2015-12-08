@@ -7,7 +7,7 @@ ETCFILES+=etc/init.d/chronyd
 initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	rm -f initrd.img
 	docker build -t moby:test .
-	docker run -i -v $(PWD):/export moby:test /export/mkinitrd.sh
+	docker run -i moby:test /bin/mkinitrd.sh > $@
 
 clean:
 	rm -f initrd.img

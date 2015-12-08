@@ -48,5 +48,7 @@ mv hosts- hosts
 mv resolv.conf- resolv.conf
 mv hostname- hostname
 
+rm /tmp/bin/mkinitrd.sh
+
 cd /tmp
-find . | cpio -H newc -o > /export/initrd.img
+find . | cpio -H newc -o
