@@ -8,6 +8,8 @@ RUN apk update && apk upgrade && apk add e2fsprogs docker chrony
 
 COPY etc /etc/
 
+COPY mkinitrd.sh /bin/
+
 RUN \
   setup-timezone -z UTC && \
   rc-update add swap boot && \
