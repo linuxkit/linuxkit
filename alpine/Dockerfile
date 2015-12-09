@@ -37,4 +37,8 @@ RUN \
   rc-update add docker default && \
   ln -s /bin/busybox /init
 
+# docker mac specific, and should be moved anyway
+RUN mkdir /Mac /Socket
+COPY packages/9pudc/9pudc packages/mdnstool/mdnstool /sbin/
+
 CMD ["/bin/sh"]
