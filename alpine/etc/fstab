@@ -1,0 +1,2 @@
+socket	/Socket	9p	trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000	0	0
+plan9	/Mac	9p	trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000	0	0
