@@ -1,0 +1,32 @@
+#!/sbin/openrc-run
+
+description="9p socket proxy client"
+
+depend()
+{
+	need 9pinit
+}
+
+start()
+{
+	ebegin "Starting docker socket passthrough"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudc.pid
+
+	start-stop-daemon --start --quiet \
+		--exec /sbin/9pudc \
+		--pidfile "${PIDFILE}" \
+		-- -path /Socket -sock /var/run/docker.sock -detach
+	eend $? "Failed to start 9pudc"
+}
+
+stop()
+{
+	ebegin "Stopping docker socket passthrough"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudc.pid
+
+	start-stop-daemon --stop --quiet \
+		--pidfile "${PIDFILE}"
+	eend $? "Failed to stop 9pudc"
+}

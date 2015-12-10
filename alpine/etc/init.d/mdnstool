@@ -1,0 +1,33 @@
+#!/sbin/openrc-run
+
+description="mDNS server"
+
+depend()
+{
+        need 9pinit net
+	after firewall
+}
+
+start()
+{
+	ebegin "Starting mDNS serevr"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
+
+	start-stop-daemon --start --quiet \
+		--exec /sbin/mdnstool \
+		--pidfile "${PIDFILE}" \
+		-- if eth0 -detach
+	eend $? "Failed to start mDNS server"
+}
+
+stop()
+{
+	ebegin "Stopping mDNS server"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
+
+	start-stop-daemon --stop --quiet \
+		--pidfile "${PIDFILE}"
+	eend $? "Failed to stop mDNS server"
+}
