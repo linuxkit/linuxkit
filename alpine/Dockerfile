@@ -38,6 +38,7 @@ RUN \
   rc-update add 9pinit default && \
   rc-update add 9pudc default && \
   rc-update add mdnstool default && \
+  rc-update add automount boot && \
   ln -s /bin/busybox /init
 
 # docker mac specific, should be packages
