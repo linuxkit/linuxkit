@@ -35,10 +35,12 @@ RUN \
   rc-update add localmount && \
   rc-update add klogd && \
   rc-update add docker default && \
+  rc-update add 9pinit default && \
+  rc-update add 9pudc default && \
+  rc-update add mdnstool default && \
   ln -s /bin/busybox /init
 
-# docker mac specific, and should be moved anyway
-RUN mkdir /Mac /Socket
+# docker mac specific, should be packages
 COPY packages/9pudc/9pudc packages/mdnstool/mdnstool /sbin/
 
 CMD ["/bin/sh"]

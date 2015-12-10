@@ -2,7 +2,7 @@ all:	initrd.img
 
 ETCFILES=etc/issue etc/motd etc/inittab etc/network/interfaces
 ETCFILES+=etc/hostname- etc/resolv.conf- etc/hosts-
-ETCFILES+=etc/init.d/chronyd
+ETCFILES+=etc/init.d/chronyd etc/init.d/9pinit etc/init.d/9pudc etc/init.d/mdnstool
 
 initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	rm -f initrd.img

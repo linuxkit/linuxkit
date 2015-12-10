@@ -1,0 +1,11 @@
+#!/sbin/openrc-run
+
+start()
+{
+	ebegin "Mounting 9p sockets"
+	mkdir -p /Socket
+	mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 socket /Socket
+	mkdir -p /Mac
+	mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000.u plan9 /Mac
+	eend 0
+}
