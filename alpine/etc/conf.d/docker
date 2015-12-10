@@ -1,0 +1,3 @@
+# /etc/conf.d/docker
+
+export DOCKER_RAMDISK="true"

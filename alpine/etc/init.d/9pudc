@@ -13,11 +13,12 @@ start()
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudc.pid
 
-	start-stop-daemon --start --quiet \
-		--exec /sbin/9pudc \
-		--pidfile "${PIDFILE}" \
-		-- -path /Socket -sock /var/run/docker.sock -detach
-	eend $? "Failed to start 9pudc"
+#	start-stop-daemon --start --quiet \
+#		--exec /sbin/9pudc \
+#		--pidfile "${PIDFILE}" \
+#		-- -path /Socket -sock /var/run/docker.sock
+#	eend $? "Failed to start 9pudc"
+	/sbin/9pudc -path /Socket -sock /var/run/docker.sock -detach &
 }
 
 stop()
