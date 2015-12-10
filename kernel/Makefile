@@ -5,4 +5,4 @@ vmlinuz64:
 	docker run mobykernel:test cat /linux/arch/x86_64/boot/bzImage > vmlinuz64
 
 clean:
-	rm vmlinuz64
+	rm -f vmlinuz64
