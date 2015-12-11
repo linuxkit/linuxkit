@@ -55,8 +55,7 @@ start() {
 	start-stop-daemon --start --quiet \
 		--exec /usr/sbin/chronyd \
 		--pidfile "${PIDFILE}" \
-		-- -f "${CFGFILE}" ${ARGS}
-	eend $? "Failed to start chronyd"
+		-- -f "${CFGFILE}" ${ARGS} &
 }
 
 stop() {
