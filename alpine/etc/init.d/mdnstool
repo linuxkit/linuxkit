@@ -10,7 +10,7 @@ depend()
 
 start()
 {
-	ebegin "Starting mDNS serevr"
+	ebegin "Starting mDNS server"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
 
