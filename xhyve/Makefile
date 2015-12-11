@@ -53,6 +53,7 @@ XHYVE_SRC := \
 	src/pci_virtio_net_tap.c \
 	src/pci_virtio_net_vmnet.c \
 	src/pci_virtio_rnd.c \
+	src/pci_virtio_9p.c \
 	src/pm.c \
 	src/post.c \
 	src/rtc.c \
