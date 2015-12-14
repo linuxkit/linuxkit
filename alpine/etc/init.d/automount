@@ -13,9 +13,13 @@ start()
 	# XXX this may change on other ports
 	DEV="sda"
 	DRIVE="/dev/${DEV}"
+	SWAP="${DRIVE}1"
+	DATA="${DRIVE}2"
 
 	if fdisk -l ${DRIVE} | grep -q "doesn't contain a valid partition table"
 	then
 		ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
+	else
+		mount ${DATA} /var && swapon ${SWAP} || ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
 	fi
 }
