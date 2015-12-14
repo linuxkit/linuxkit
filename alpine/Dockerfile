@@ -4,7 +4,9 @@ MAINTAINER Justin Cormack <justin.cormack@unikernel.com>
 
 COPY repositories /etc/apk/
 
-RUN apk update && apk upgrade && apk add e2fsprogs docker chrony hdparm
+RUN apk update && apk upgrade && apk add \
+  e2fsprogs docker chrony \
+  sfdisk lvm2 syslinux
 
 COPY etc /etc/
 
