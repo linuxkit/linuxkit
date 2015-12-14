@@ -8,57 +8,14 @@ depend()
 
 start()
 {
-	ebegin "Mounting host block device"
+	ebegin "Configuring host block device"
 
 	# XXX this may change on other ports
 	DEV="sda"
-	MAJOR="8"
 	DRIVE="/dev/${DEV}"
-	DATA="${DRIVE}1"
-	SWAP="${DRIVE}2"
-	MOUNTPOINT="/mnt/${DEV}"
-	PARTPROBE="hdparm -z ${DRIVE}"
 
-	mkdir -p ${MOUNTPOINT}
-	umount ${DATA} || true
-	umount -f /var/lib/docker || true
-	rm -rf /var/lib/docker
-
-	if fdisk -l ${DRIVE} | grep -q ${DATA}
+	if fdisk -l ${DRIVE} | grep -q "doesn't contain a valid partition table"
 	then
-		# drive partitioned, try mounting
-		umount -f ${MOUNTPOINT} || true
-		mount ${DATA} ${MOUNTPOINT}
-		if [ $? -eq 0 ]
-		then
-			mkdir -p ${MOUNTPOINT}/var/lib/docker
-			ln -s ${MOUNTPOINT}/var/lib/docker /var/lib/docker
-			rm -f /tmp
-			mkdir -p ${MOUNTPOINT}/tmp
-			ln -s ${MOUNTPOINT}/tmp /tmp
-			swapon ${SWAP} || mkswap ${SWAP} && swapon ${SWAP}
-			exit 0
-		fi		
+		ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
 	fi
-	# ok that did not work out, let us (re)format
-	swapoff ${SWAP} || true
-	dd if=/dev/zero of=${DRIVE} bs=512 count=1
-	${PARTPROBE}
-	(echo n; echo p; echo 2; echo ; echo +1000M ; echo w) | fdisk ${DRIVE}
-	(echo t; echo 82; echo w) | fdisk ${DRIVE}
-	(echo n; echo p; echo 1; echo ; echo ; echo w) | fdisk ${DRIVE}
-	${PARTPROBE}
-	# XXX have to sleep as the device nodes disappear otherwise
-	sleep 1
-	mknod -m 600 ${DATA} b ${MAJOR} 1 || true
-	mknod -m 600 ${SWAP} b ${MAJOR} 2 || true
-	mkfs.ext4 -q -F ${DATA}
-	mount ${DATA} ${MOUNTPOINT}
-	mkdir -p ${MOUNTPOINT}/var/lib/docker
-	ln -s ${MOUNTPOINT}/var/lib/docker /var/lib/docker
-	rm -f /tmp
-	mkdir -p ${MOUNTPOINT}/tmp
-	ln -s ${MOUNTPOINT}/tmp /tmp
-	mkswap ${SWAP}
-	swapon ${SWAP}
 }
