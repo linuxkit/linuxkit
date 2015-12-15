@@ -107,7 +107,7 @@ $(TARGET): $(TARGET).sym
 	$(VERBOSE) $(ENV) $(STRIP) $(TARGET).sym -o $@
 
 disk.img:
-	dd if=/dev/zero of=disk.img bs=4096 count=100k
+	dd if=/dev/zero of=disk.img bs=4096 count=1000k
 
 run: $(TARGET) disk.img
 	./xhyverun.sh || true
