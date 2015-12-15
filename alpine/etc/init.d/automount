@@ -10,8 +10,7 @@ start()
 {
 	ebegin "Configuring host block device"
 
-	# XXX this may change on other ports
-	DEV="sda"
+	DEV="$(ls /dev/[xv]da | head -1 | sed s@/dev/@@)"
 	DRIVE="/dev/${DEV}"
 	SWAP="${DRIVE}1"
 	DATA="${DRIVE}2"
