@@ -114,3 +114,4 @@ run: $(TARGET) disk.img
 
 clean:
 	@rm -rf build
+	@rm -f disk.img
