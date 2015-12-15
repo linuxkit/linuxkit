@@ -14,7 +14,7 @@ else
 NET="-s 2:0,virtio-net"
 fi
 #IMG_CD="-s 3,ahci-cd,/somepath/somefile.iso"
-#IMG_HDD="-s 4,virtio-blk,/somepath/somefile.img"
+IMG_HDD="-s 4,virtio-blk,disk.img"
 PCI_DEV="-s 0:0,hostbridge -s 31,lpc"
 RND="-s 5,virtio-rnd"
 LPC_DEV="-l com1,stdio"
