@@ -17,8 +17,8 @@ start()
 	then
 		ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
 	else
-		SWAP=$(fdisk -l ${DRIVE} | grep 'Linux swap' | awk '{print $1}')
-		DATA=$(fdisk -l ${DRIVE} | grep 'Linux$' | awk '{print $1}')
+		SWAP=$(fdisk -l ${DRIVE} | grep 'Linux swap' | head -1 | awk '{print $1}')
+		DATA=$(fdisk -l ${DRIVE} | grep 'Linux$' | head -1 | awk '{print $1}')
 		mount ${DATA} /var && swapon ${SWAP} || ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
 	fi
 }
