@@ -6,7 +6,7 @@ COPY repositories /etc/apk/
 
 RUN \
   addgroup -g 50 docker && \
-  adduser -G docker -u 1001 -S -g "Docker" docker && \
+  adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
   apk update && apk upgrade && \
   apk add \
   e2fsprogs docker chrony \
