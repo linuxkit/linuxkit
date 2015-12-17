@@ -8,14 +8,18 @@ ETCFILES+=etc/init.d/automount
 ETCFILES+=etc/conf.d/docker
 ETCFILES+=etc/securetty
 
-initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
+kernel/aufs-utils.tar:
+	$(MAKE) -C kernel aufs-utils.tar
+
+initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES) kernel/aufs-utils.tar
 	rm -f initrd.img
 	$(MAKE) -C packages/9pudc
 	$(MAKE) -C packages/mdnstool
-	docker build -t moby:test .
-	docker run moby:test /bin/mkinitrd.sh > $@
+	docker build -t moby:build .
+	docker run moby:build /bin/mkinitrd.sh > $@
 
 clean:
 	rm -f initrd.img
 	$(MAKE) -C packages/9pudc clean
 	$(MAKE) -C packages/mdnstool clean
+	$(MAKE) -C kernel clean
