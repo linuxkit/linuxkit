@@ -6,6 +6,7 @@ ETCFILES+=etc/init.d/chronyd
 ETCFILES+=etc/init.d/9pinit etc/init.d/9pudc etc/init.d/mdnstool
 ETCFILES+=etc/init.d/automount
 ETCFILES+=etc/conf.d/docker
+ETCFILES+=etc/securetty
 
 initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	rm -f initrd.img
