@@ -14,6 +14,8 @@ RUN \
 
 COPY etc /etc/
 
+ADD kernel/aufs-utils.tar /
+
 COPY mkinitrd.sh /bin/
 
 RUN \

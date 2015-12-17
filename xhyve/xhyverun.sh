@@ -1,6 +1,6 @@
 #!/bin/sh
 
-KERNEL="../kernel/vmlinuz64"
+KERNEL="../alpine/kernel/vmlinuz64"
 INITRD="../alpine/initrd.img"
 CMDLINE="earlyprintk=serial console=ttyS0"
 
