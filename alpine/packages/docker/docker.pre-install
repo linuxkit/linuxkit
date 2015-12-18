@@ -1,6 +1,0 @@
-#!/bin/sh
-
-if ! getent group docker >/dev/null; then
-	addgroup -S docker
-fi
-exit 0
