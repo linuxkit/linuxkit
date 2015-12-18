@@ -3,9 +3,8 @@ all:	initrd.img
 ETCFILES=etc/issue etc/motd etc/inittab etc/network/interfaces
 ETCFILES+=etc/hostname- etc/resolv.conf- etc/hosts-
 ETCFILES+=etc/init.d/chronyd
-ETCFILES+=etc/init.d/9pinit etc/init.d/9pudc etc/init.d/mdnstool
+ETCFILES+=etc/init.d/9pinit
 ETCFILES+=etc/init.d/automount
-ETCFILES+=etc/conf.d/docker
 ETCFILES+=etc/securetty
 
 kernel/aufs-utils.tar:

@@ -17,8 +17,13 @@ COPY etc /etc/
 
 ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
-COPY packages/9pudc/9pudc packages/mdnstool/mdnstool /sbin/
+
+COPY packages/9pudc/9pudc /sbin/
+COPY packages/9pudc/etc /etc/
+COPY packages/mdnstool/mdnstool /sbin/
+COPY packages/mdnstool/etc /etc/
 COPY packages/docker/docker /usr/bin/
+COPY packages/docker/etc /etc/
 
 RUN \
   setup-timezone -z UTC && \
