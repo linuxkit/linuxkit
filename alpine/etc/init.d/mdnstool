@@ -14,14 +14,15 @@ start()
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
 
-	HOSTNAME=$(hostname -s).local.
+	export HOSTNAME=$(hostname -s).local.
 
-#	start-stop-daemon --start --quiet \
-#		--exec /sbin/mdnstool \
-#		--pidfile "${PIDFILE}" \
-#		-- if eth0 -hostname ${HOSTNAME}
-#	eend $? "Failed to start mDNS server"
-	/sbin/mdnstool if eth0 -hostname ${HOSTNAME} -detach &
+	start-stop-daemon --start --quiet \
+		--background \
+		--exec /sbin/mdnstool \
+		--make-pidfile --pidfile ${PIDFILE} \
+		-- if eth0 -hostname ${HOSTNAME}
+
+	eend $? "Failed to start mDNS server"
 }
 
 stop()
@@ -30,7 +31,7 @@ stop()
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
 
-	start-stop-daemon --stop --quiet \
-		--pidfile "${PIDFILE}"
+	start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
+
 	eend $? "Failed to stop mDNS server"
 }
