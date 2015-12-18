@@ -1,3 +1,5 @@
 # /etc/conf.d/docker
 
 export DOCKER_RAMDISK="true"
+export DOCKER_BINARY="/usr/bin/docker"
+export DOCKER_OPTS="-s aufs"

@@ -9,14 +9,16 @@ RUN \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
   apk update && apk upgrade && \
   apk add \
-  e2fsprogs docker chrony \
+  e2fsprogs chrony \
+  git xz iptables \
   sfdisk lvm2 syslinux
 
 COPY etc /etc/
 
 ADD kernel/aufs-utils.tar /
-
 COPY mkinitrd.sh /bin/
+COPY packages/9pudc/9pudc packages/mdnstool/mdnstool /sbin/
+COPY packages/docker/docker /usr/bin/
 
 RUN \
   setup-timezone -z UTC && \
@@ -48,8 +50,5 @@ RUN \
   rc-update add mdnstool default && \
   rc-update add automount boot && \
   ln -s /bin/busybox /init
-
-# docker mac specific, should be packages
-COPY packages/9pudc/9pudc packages/mdnstool/mdnstool /sbin/
 
 CMD ["/bin/sh"]
