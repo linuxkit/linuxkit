@@ -22,5 +22,9 @@ start_pre() {
 
         ulimit -n 1048576
 
+	# temporary for alpha 4
+	rm -rf /var/lib/docker/overlay
+	rm -f /var/lib/docker/repositories-overlay
+
         return 0
 }
