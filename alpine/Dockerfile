@@ -24,6 +24,8 @@ COPY packages/mdnstool/mdnstool /sbin/
 COPY packages/mdnstool/etc /etc/
 COPY packages/docker/docker /usr/bin/
 COPY packages/docker/etc /etc/
+COPY packages/diagnostics/diagnostics /usr/bin/
+COPY packages/diagnostics/etc /etc/
 
 RUN \
   setup-timezone -z UTC && \
@@ -54,6 +56,7 @@ RUN \
   rc-update add 9pudc default && \
   rc-update add mdnstool default && \
   rc-update add automount boot && \
+  rc-update add diagnostics default && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]

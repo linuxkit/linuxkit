@@ -1,0 +1,13 @@
+#!/sbin/openrc-run
+
+depend()
+{
+	after docker
+}
+
+start()
+{
+	ebegin "Checking system state"
+
+	/usr/bin/diagnostics
+}
