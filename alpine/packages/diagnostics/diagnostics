@@ -1,0 +1,19 @@
+#!/bin/sh
+
+printf '\n'
+DEV=$(ls /dev | grep '[sxv]da$')
+[ $? -eq 0 ] && printf "✓ Drive found: $DEV\n" || printf "✗ No drive found\n"
+DEV=$(mount | grep '/dev/[sxv]da. on /var type')
+[ $? -eq 0 ] && printf "✓ Drive mounted: $DEV\n" || printf "✗ No drive mounted\n"
+INET=$(ifconfig eth0 2> /dev/null | grep 'inet addr')
+[ $? -eq 0 ] && printf "✓ Network connected: $INET\n" || printf "✗ No network connection\n"
+UDC=$(ps -eo args | grep '^/sbin/9pudc')
+[ $? -eq 0 ] && printf "✓ Process 9pudc running: $UDC\n" || printf "✗ No 9pudc process\n"
+MDNS=$(ps -eo args | grep '^/sbin/mdnstool')
+[ $? -eq 0 ] && printf "✓ Process mdnstool running: $MDNS\n" || printf "✗ No mdnstool process\n"
+DOCKER=$(ps -eo args | grep '^/usr/bin/docker')
+[ $? -eq 0 ] && printf "✓ Process docker running: $DOCKER\n" || printf "✗ No docker process\n"
+DOCKERPS=$(docker ps 2>&1)
+[ $? -eq 0 ] && printf "✓ Docker daemon working\n" || printf "✗ Docker ps failed: $DOCKERPS\n"
+
+exit 0
