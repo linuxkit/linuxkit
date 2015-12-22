@@ -19,3 +19,4 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES) kernel/aufs-utils.ta
 clean:
 	rm -f initrd.img
 	$(MAKE) -C packages clean
+	$(MAKE) -C kernel clean
