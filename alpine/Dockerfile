@@ -7,11 +7,13 @@ COPY repositories /etc/apk/
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
+  passwd -d root && \
   apk update && apk upgrade && \
   apk add \
   e2fsprogs chrony \
   git xz iptables \
-  sfdisk lvm2 syslinux
+  sfdisk lvm2 syslinux \
+  openrc busybox-initscripts
 
 COPY etc /etc/
 
