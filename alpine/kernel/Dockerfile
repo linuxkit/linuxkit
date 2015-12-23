@@ -20,7 +20,8 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   pkg-config \
   git \
   ncurses-dev \
-  p7zip-full
+  p7zip-full \
+  lzop
 
 ADD https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz .
 
@@ -54,7 +55,7 @@ COPY kernel_config /linux/.config
 
 RUN jobs=$(nproc); \
     cd /linux && \
-    make -j ${jobs} oldconfig && \
+    make oldconfig && \
     make -j ${jobs} bzImage && \
     make INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
 
