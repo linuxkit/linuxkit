@@ -6,3 +6,9 @@ command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 DOCKER_LOGFILE="${DOCKER_LOGFILE:-/var/log/${RC_SVCNAME}.log}"
 start_stop_daemon_args="--background \
         --stderr \"${DOCKER_LOGFILE}\" --stdout \"${DOCKER_LOGFILE}\""
+
+depend()
+{
+        after 9pudc
+        before chronyd
+}

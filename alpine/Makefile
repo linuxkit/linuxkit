@@ -2,7 +2,6 @@ all:	initrd.img
 
 ETCFILES=etc/issue etc/motd etc/inittab etc/network/interfaces
 ETCFILES+=etc/hostname- etc/resolv.conf- etc/hosts-
-ETCFILES+=etc/init.d/chronyd
 ETCFILES+=etc/init.d/9pinit
 ETCFILES+=etc/init.d/automount
 ETCFILES+=etc/securetty
