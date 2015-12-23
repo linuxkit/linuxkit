@@ -30,7 +30,6 @@ COPY packages/automount/etc /etc/
 COPY packages/9pinit/etc /etc/
 
 RUN \
-  setup-timezone -z UTC && \
   rc-update add swap boot && \
   rc-update add sysctl boot && \
   rc-update add bootmisc boot && \
