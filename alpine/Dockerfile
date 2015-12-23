@@ -27,6 +27,7 @@ COPY packages/docker/etc /etc/
 COPY packages/diagnostics/diagnostics /usr/bin/
 COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
+COPY packages/9pinit/etc /etc/
 
 RUN \
   setup-timezone -z UTC && \
