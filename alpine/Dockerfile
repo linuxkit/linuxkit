@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM alpine@sha256:1447312eb48c7a3ce738036f09211f6f426fcfd364733c39e48409cffb901de3
 
 MAINTAINER Justin Cormack <justin.cormack@unikernel.com>
 
