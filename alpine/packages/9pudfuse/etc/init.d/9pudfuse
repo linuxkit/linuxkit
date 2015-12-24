@@ -1,0 +1,33 @@
+#!/sbin/openrc-run
+
+description="9p socket fuse proxy server"
+
+depend()
+{
+	need 9pinit
+}
+
+start()
+{
+	ebegin "Starting FUSE socket passthrough"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudfuse.pid
+
+#	start-stop-daemon --start --quiet \
+#		--exec /sbin/9pudfuse \
+#		--pidfile "${PIDFILE}" \
+#		-- -path /Transfuse
+#	eend $? "Failed to start 9pudfuse"
+	OCAMLRUNPARAM=b /sbin/9pudfuse &
+}
+
+stop()
+{
+	ebegin "Stopping FUSE socket passthrough"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudfuse.pid
+
+	start-stop-daemon --stop --quiet \
+		--pidfile "${PIDFILE}"
+	eend $? "Failed to stop 9pudfuse"
+}
