@@ -13,7 +13,8 @@ RUN \
   e2fsprogs chrony \
   git xz iptables \
   sfdisk lvm2 syslinux \
-  openrc busybox-initscripts
+  openrc busybox-initscripts \
+  alpine-conf
 
 COPY etc /etc/
 
