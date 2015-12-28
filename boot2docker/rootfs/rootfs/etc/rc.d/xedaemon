@@ -1,8 +1,0 @@
-#!/bin/sh
-
-# Tips: xentools will not start up if we're not on a Xen platform. 
-# 1. /etc/init.d/xe-linux-distribution will start /usr/sbin/xe-daemon.
-# 2. Then /usr/sbin/xe-daemon will quit if the VM is not run on a Xen platform.
-if [ -x /etc/init.d/xe-linux-distribution ]; then
-	/etc/init.d/xe-linux-distribution start
-fi
