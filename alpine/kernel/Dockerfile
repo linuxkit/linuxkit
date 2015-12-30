@@ -1,4 +1,4 @@
-FROM debian:jessie
+FROM debian:unstable
 
 ENV KERNEL_VERSION 4.1.12
 
@@ -21,7 +21,8 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   git \
   ncurses-dev \
   p7zip-full \
-  lzop
+  lzop \
+  gcc-arm-linux-gnueabihf
 
 ADD https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz .
 
@@ -71,4 +72,3 @@ RUN git clone https://github.com/Distrotech/aufs-util.git && \
     DESTDIR=/tmp/aufs-utils make install && \
     rm -rf /tmp/aufs-utils/usr/lib /tmp/aufs-utils/usr/share && \
     cd /tmp/aufs-utils && tar cf /aufs-utils.tar .
-
