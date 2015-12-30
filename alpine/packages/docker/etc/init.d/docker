@@ -1,5 +1,8 @@
 #!/sbin/openrc-run
 
+export DOCKER_RAMDISK="true"
+
+DOCKER_OPTS="${DOCKER_OPTS:--s aufs}"
 command="${DOCKER_BINARY:-/usr/bin/docker}"
 pidfile="${DOCKER_PIDFILE:-/run/${RC_SVCNAME}.pid}"
 command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
