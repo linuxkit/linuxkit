@@ -6,5 +6,10 @@ RUN mkdir -p /go/src/9pudc
 WORKDIR /go/src/9pudc
 
 COPY . /go/src/9pudc/
-RUN go get
-RUN go install
+
+ARG GOARCH
+ARG GOOS
+
+RUN go get && go install
+
+RUN [ -f /go/bin/*/9pudc ] && mv /go/bin/*/9pudc /go/bin/ || true
