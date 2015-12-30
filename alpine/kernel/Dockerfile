@@ -1,6 +1,7 @@
 FROM debian:unstable
 
-ENV KERNEL_VERSION 4.1.12
+ARG KERNEL_VERSION=4.1.12
+ARG ARCH=x86_64
 
 RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   unzip \
@@ -52,16 +53,20 @@ RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
         patch -p1 < "$patch"; \
     done
 
-COPY kernel_config /linux/.config
+COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
+COPY kernel_config.arm /linux/arch/arm/configs/versatile_defconfig
 
 RUN jobs=$(nproc); \
     cd /linux && \
-    make oldconfig && \
-    make -j ${jobs} bzImage && \
-    make INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
+    make ARCH=$ARCH defconfig && \
+    make ARCH=$ARCH oldconfig && \
+    make ARCH=$ARCH -j ${jobs} && \
+    make ARCH=$ARCH INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
 
 # Build aufs tools, do this here as they need kernel headers and to match aufs
-# Fortunately they are build statically linked
+# Fortunately they are built statically linked
+
+# XXX not cross compiled yet!
 
 ENV AUFS_TOOLS_COMMIT 5e0c348bd8b1898beb1e043b026bcb0e0c7b0d54
 
