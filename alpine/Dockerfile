@@ -33,7 +33,6 @@ COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
 COPY packages/9pinit/etc /etc/
 COPY packages/ntp15m/etc /etc/
-COPY packages/qemu-user-static/qemu-* /usr/bin/
 COPY packages/qemu-user-static/etc /etc/
 
 RUN \
