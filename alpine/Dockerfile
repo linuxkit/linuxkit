@@ -33,6 +33,8 @@ COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
 COPY packages/9pinit/etc /etc/
 COPY packages/ntp15m/etc /etc/
+COPY packages/qemu-user-static/qemu-* /usr/bin/
+COPY packages/qemu-user-static/etc /etc/
 
 RUN \
   rc-update add swap boot && \
@@ -63,6 +65,7 @@ RUN \
   rc-update add mdnstool default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
+  rc-update add qemu-user-static sysinit && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]
