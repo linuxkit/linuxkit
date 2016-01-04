@@ -4,6 +4,9 @@ export DOCKER_RAMDISK="true"
 
 DOCKER_OPTS="${DOCKER_OPTS:--s aufs}"
 command="${DOCKER_BINARY:-/usr/bin/docker}"
+
+[ ! -f ${DOCKER_BINARY} ] && [ "${DOCKER_BINARY}" = "/usr/bin/docker-x" ] && get-docker-x
+
 pidfile="${DOCKER_PIDFILE:-/run/${RC_SVCNAME}.pid}"
 command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 DOCKER_LOGFILE="${DOCKER_LOGFILE:-/var/log/${RC_SVCNAME}.log}"
