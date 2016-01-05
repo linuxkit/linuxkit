@@ -14,7 +14,8 @@ RUN \
   git xz iptables \
   sfdisk lvm2 syslinux \
   openrc busybox-initscripts \
-  alpine-conf
+  alpine-conf \
+  strace
 
 COPY etc /etc/
 
