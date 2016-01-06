@@ -1,4 +1,4 @@
-FROM justincormack/alpine-pkgsrc-ocaml:latest
+FROM ocaml/opam:alpine-3.3_ocaml-4.02.3
 
 ENV \
   OPAMYES=true \
@@ -8,10 +8,6 @@ ENV \
   OCAML_TOPLEVEL_PATH="/root/.opam/4.02.3/lib/toplevel" \
   PATH=/root/.opam/4.02.3/bin:$PATH
 
-RUN mkdir -p /ocaml/src/9pudfuse
-WORKDIR /ocaml/src/9pudfuse
-
-COPY . /ocaml/src/9pudfuse
-RUN opam install result stringext fd-send-recv
-RUN ocamlbuild -tag debug -use-ocamlfind -package stringext,fd-send-recv,result fuse_socket_9p.native
-
+COPY . .
+RUN opam depext -i result stringext fd-send-recv
+RUN opam config exec -- ocamlbuild -tag debug -use-ocamlfind -package stringext,fd-send-recv,result fuse_socket_9p.native
