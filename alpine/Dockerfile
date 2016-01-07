@@ -36,7 +36,7 @@ COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
 COPY packages/9pinit/etc /etc/
 COPY packages/ntp15m/etc /etc/
-COPY packages/binfmt-misc/etc /etc/
+COPY packages/binfmt_misc/etc /etc/
 
 RUN \
   rc-update add swap boot && \
