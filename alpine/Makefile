@@ -10,7 +10,7 @@ kernel/aufs-utils.tar:
 initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES) kernel/aufs-utils.tar
 	rm -f initrd.img
 	$(MAKE) -C packages
-	docker build -t initrd:build .
+	docker build -t mobyinitrd:build .
 	docker run mobyinitrd:build /bin/mkinitrd.sh > $@
 
 clean:
