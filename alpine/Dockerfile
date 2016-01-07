@@ -68,7 +68,7 @@ RUN \
   rc-update add mdnstool default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
-  rc-update add qemu-user-static sysinit && \
+  rc-update add binfmt_misc sysinit && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]
