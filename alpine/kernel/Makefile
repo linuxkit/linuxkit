@@ -9,3 +9,4 @@ aufs-utils.tar: vmlinuz64
 
 clean:
 	rm -f vmlinuz64 aufs-utils.tar
+	docker images -q mobykernel:build | xargs docker rmi -f

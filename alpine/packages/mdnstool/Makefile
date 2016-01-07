@@ -1,9 +1,10 @@
 all: mdnstool
 
 mdnstool: Dockerfile mdnstool.go mdnsmon/mdnsmon.go
-	docker build -t mdnstool:test .
-	docker run mdnstool:test cat /go/bin/mdnstool > mdnstool
+	docker build -t mdnstool:build .
+	docker run mdnstool:build cat /go/bin/mdnstool > mdnstool
 	chmod 755 mdnstool
 
 clean:
 	rm -f mdnstool
+	docker images -q mdnstool:build | xargs docker rmi -f
