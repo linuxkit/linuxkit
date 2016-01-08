@@ -1,9 +1,9 @@
-FROM debian:unstable
+FROM alpine:3.3
 
 COPY alpine/initrd.img .
 COPY alpine/kernel/vmlinuz64 .
 
-RUN apt-get update && apt-get -y install qemu
+RUN apk update && apk add qemu-system-x86_64
 
 RUN gzip -9 initrd.img
 
