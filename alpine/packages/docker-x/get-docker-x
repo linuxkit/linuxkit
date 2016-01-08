@@ -1,6 +1,0 @@
-#!/bin/sh
-
-OS=$(uname -s)
-ARCH=$(uname -m)
-
-curl -L https://experimental.docker.com/builds/${OS}/${ARCH}/docker-latest > /usr/bin/docker-x && chmod +x /usr/bin/docker-x

@@ -1,0 +1,12 @@
+#!/bin/sh
+
+OS=$(uname -s)
+ARCH=$(uname -m)
+
+curl -L https://experimental.docker.com/builds/${OS}/${ARCH}/docker-latest > /tmp/docker-x || (printf "failed to download docker-x" && exit 1)
+
+chmod +x /tmp/docker-x
+
+mv /tmp/docker-x /usr/bin/docker-x
+
+exec /usr/bin/docker-x $*
