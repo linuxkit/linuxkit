@@ -7,4 +7,4 @@ RUN apk update && apk add qemu-system-x86_64
 
 RUN gzip -9 initrd.img
 
-ENTRYPOINT [ "qemu-system-x86_64", "-kernel", "vmlinuz64", "-initrd", "initrd.img.gz", "-append", "earlyprintk=serial console=ttyS0", "-vnc", "none", "-nographic" ]
+ENTRYPOINT [ "qemu-system-x86_64", "-serial", "stdio", "-kernel", "vmlinuz64", "-initrd", "initrd.img.gz", "-m", "256", "-append", "earlyprintk=serial console=ttyS0", "-vnc", "none" ]
