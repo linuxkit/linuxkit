@@ -5,7 +5,7 @@ ARCH=x86_64
 OS=Linux
 
 docker:
-	curl https://get.docker.com/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION} > docker
+	curl -L -o docker https://get.docker.com/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}
 	chmod +x docker
 
 clean:
