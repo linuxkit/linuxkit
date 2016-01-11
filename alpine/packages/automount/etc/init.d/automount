@@ -11,6 +11,9 @@ start()
 	ebegin "Configuring host block device"
 
 	DEV="$(ls /dev/[sxv]da | head -1 | sed s@/dev/@@)"
+
+	[ -z ${DEV} ] && exit 1
+
 	DRIVE="/dev/${DEV}"
 
 	if fdisk -l ${DRIVE} | grep -q "doesn't contain a valid partition table"
