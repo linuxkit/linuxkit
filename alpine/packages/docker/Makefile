@@ -1,10 +1,11 @@
 all: docker
 
 DOCKER_VERSION=1.9.1
+ARCH=x86_64
+OS=Linux
 
 docker:
-	docker run docker:$(DOCKER_VERSION) cat /usr/local/bin/docker > docker
-
+	curl https://get.docker.com/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION} > docker
 	chmod +x docker
 
 clean:
