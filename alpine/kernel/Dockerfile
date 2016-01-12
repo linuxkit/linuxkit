@@ -1,6 +1,6 @@
 FROM debian:unstable
 
-ARG KERNEL_VERSION=4.1.12
+ARG KERNEL_VERSION=4.1.15
 ARG ARCH=x86_64
 
 RUN apt-get update && apt-get -y upgrade && apt-get -y install \
@@ -31,8 +31,8 @@ RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-
 
 # http://aufs.sourceforge.net/
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.1
-ENV AUFS_COMMIT     4912d6da07e3e24d7a8484e0e8a4c1315adbc8fd
+ENV AUFS_BRANCH     aufs4.1.13+
+ENV AUFS_COMMIT     0e5c702a803ebfd9a38e5037e830da07c44c0af6
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and patch kernel
