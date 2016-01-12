@@ -1,7 +1,5 @@
 FROM alpine:3.3
 
-MAINTAINER Justin Cormack <justin.cormack@unikernel.com>
-
 COPY repositories /etc/apk/
 
 RUN \
