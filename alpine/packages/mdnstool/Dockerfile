@@ -5,6 +5,11 @@ RUN apk update && apk upgrade && apk add git
 RUN mkdir -p /go/src/mdnstool
 WORKDIR /go/src/mdnstool
 
+ARG GOARCH
+ARG GOOS
+
 COPY . /go/src/mdnstool/
-RUN go get
-RUN go install
+
+RUN go get && go install
+
+RUN [ -f /go/bin/*/mdnstool ] && mv /go/bin/*/mdnstool /go/bin/ || true

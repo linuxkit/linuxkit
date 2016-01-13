@@ -1,7 +1,7 @@
 all: mdnstool
 
 mdnstool: Dockerfile mdnstool.go mdnsmon/mdnsmon.go
-	docker build -t mdnstool:build .
+	docker build --build-arg GOOS=$(OS) --build-arg GOARCH=$(ARCH) -t mdnstool:build .
 	docker run mdnstool:build cat /go/bin/mdnstool > mdnstool
 	chmod 755 mdnstool
 

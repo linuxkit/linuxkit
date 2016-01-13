@@ -1,1 +1,2 @@
-initrd.img
+*.img
+Dockerfile.armhf
