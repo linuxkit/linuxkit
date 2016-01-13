@@ -7,4 +7,4 @@ RUN apk update && apk add qemu-system-arm
 
 RUN gzip -9 initrd-arm.img
 
-ENTRYPOINT [ "qemu-system-arm", "-cpu", "cortexa15", "-M", "cubieboard", "-no-reboot", "-serial", "stdio", "-kernel", "zImage", "-initrd", "initrd-arm.img.gz", "-m", "256", "-append", "console=ttyAMA0", "-vnc", "none" ]
+ENTRYPOINT [ "qemu-system-arm", "-cpu", "arm1176", "-M", "versatilepb", "-no-reboot", "-serial", "stdio", "-kernel", "zImage", "-initrd", "initrd-arm.img.gz", "-m", "256", "-append", "console=ttyAMA0", "-vnc", "none" ]
