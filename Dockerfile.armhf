@@ -1,10 +1,10 @@
-FROM alpine:3.3
+FROM ubuntu:15.10
 
 COPY alpine/initrd-arm.img .
 COPY alpine/kernel/zImage .
 
-RUN apk update && apk add qemu-system-arm
+RUN apt-get update && apt-get install -y qemu-system-arm
 
 RUN gzip -9 initrd-arm.img
 
-ENTRYPOINT [ "qemu-system-arm", "-cpu", "arm1176", "-M", "versatilepb", "-no-reboot", "-serial", "stdio", "-kernel", "zImage", "-initrd", "initrd-arm.img.gz", "-m", "256", "-append", "console=ttyAMA0", "-vnc", "none" ]
+ENTRYPOINT [ "qemu-system-arm", "-machine", "vexpress-a9", "-cpu", "cortex-a9", "-no-reboot", "-serial", "stdio", "-kernel", "zImage", "-initrd", "initrd-arm.img.gz", "-m", "256", "-append", "console=ttyAMA0", "-vnc", "none" ]

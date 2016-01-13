@@ -1,2 +1,3 @@
 *.img
 Dockerfile.armhf
+etc/inittab
