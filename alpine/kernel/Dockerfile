@@ -26,6 +26,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   gcc-arm-linux-gnueabihf
 
 ADD https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz .
+ADD https://d-i.debian.org/daily-images/armhf/daily/device-tree/vexpress-v2p-ca15-tc1.dtb /dtb
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
