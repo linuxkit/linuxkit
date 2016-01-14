@@ -3,11 +3,26 @@
 start()
 {
 	ebegin "Mounting 9p sockets"
-	mkdir -p /Socket
-	mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 socket /Socket
-	mkdir -p /Mac
-	mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000.u plan9 /Mac
-        mkdir -p /Transfuse
-        mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 fuse /Transfuse
+
+	for virtio in $(find /sys/bus/virtio/drivers/9pnet_virtio -name 'virtio*')	
+	do
+		TAG=$(cat $virtio/mount_tag)
+		case $TAG in
+		"socket")
+			mkdir -p /Socket
+			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 socket /Socket
+			;;
+		"plan9")
+			mkdir -p /Mac
+			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000.u plan9 /Mac
+			;;
+		"fuse")
+			mkdir -p /Transfuse
+			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 fuse /Transfuse
+			;;
+		esac
+
+	done
+
         eend 0
 }
