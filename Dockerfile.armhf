@@ -1,10 +1,8 @@
-FROM ubuntu:15.10
+FROM justincormack/alpine-qemu
 
 COPY alpine/initrd-arm.img .
 COPY alpine/kernel/zImage .
 COPY alpine/kernel/dtb .
-
-RUN apt-get update && apt-get install -y qemu-system-arm
 
 RUN gzip -9 initrd-arm.img
 
