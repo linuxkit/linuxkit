@@ -9,9 +9,11 @@ qemu: all
 	docker build -t mobyqemu:build .
 	docker run -it mobyqemu:build
 
-qemu-arm: Dockerfile.armhf
+arm:
 	$(MAKE) -C alpine/kernel arm
 	$(MAKE) -C alpine arm
+
+qemu-arm: Dockerfile.armhf arm
 	docker build -f Dockerfile.armhf -t mobyarmqemu:build .
 	docker run -it mobyarmqemu:build
 
