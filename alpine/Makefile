@@ -1,6 +1,6 @@
 all:	initrd.img
 
-ETCFILES=etc/issue etc/motd etc/inittab etc/network/interfaces
+ETCFILES=etc/issue etc/motd etc/network/interfaces
 ETCFILES+=etc/hostname- etc/resolv.conf- etc/hosts-
 ETCFILES+=etc/securetty
 
