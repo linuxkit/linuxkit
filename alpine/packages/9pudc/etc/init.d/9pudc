@@ -9,6 +9,9 @@ depend()
 
 start()
 {
+
+	[ -d /Socket ] || exit 0
+
 	ebegin "Starting docker socket passthrough"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudc.pid
@@ -24,6 +27,8 @@ start()
 
 stop()
 {
+	[ -d /Socket ] || exit 0
+
 	ebegin "Stopping docker socket passthrough"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudc.pid

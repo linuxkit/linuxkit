@@ -9,6 +9,8 @@ depend()
 
 start()
 {
+	[ -d /Transfuse ] || exit 0
+
 	ebegin "Starting FUSE socket passthrough"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudfuse.pid
@@ -23,6 +25,8 @@ start()
 
 stop()
 {
+	[ -d /Transfuse ] || exit 0
+
 	ebegin "Stopping FUSE socket passthrough"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudfuse.pid
