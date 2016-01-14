@@ -15,7 +15,8 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 arm:	initrd-arm.img
 
 Dockerfile.armhf: Dockerfile
-	cat Dockerfile | sed 's@FROM alpine@FROM justincormack/armhf-alpine@' | sed 's/syslinux//' > $@
+	cat Dockerfile | sed 's@FROM alpine@FROM justincormack/armhf-alpine@' | sed 's/syslinux//' \
+		| grep -v 'rc-update add binfmt_misc sysinit' > $@
 
 initrd-arm.img: Dockerfile.armhf
 	rm -f initrd-arm.img
