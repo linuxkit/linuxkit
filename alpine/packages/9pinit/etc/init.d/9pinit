@@ -20,6 +20,9 @@ start()
 			mkdir -p /Transfuse
 			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 fuse /Transfuse
 			;;
+		"db")
+			mkdir -p /Database
+			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /Database
 		esac
 
 	done
