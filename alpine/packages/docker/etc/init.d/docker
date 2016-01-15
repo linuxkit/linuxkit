@@ -11,7 +11,7 @@ command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 if cat /proc/cmdline | grep -q 'com.docker.groupDir'
 then
 	GROUPDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.groupDir="//' -e 's/".*//')"
-	[ -d ${GROUPDIR} ] && DOCKER_LOGFILE="${GROUPDIR}/${RC_SVCNAME}.log}"
+	[ -d "${GROUPDIR}" ] && DOCKER_LOGFILE="${GROUPDIR}/${RC_SVCNAME}.log"
 fi
 
 DOCKER_LOGFILE="${DOCKER_LOGFILE:-/var/log/${RC_SVCNAME}.log}"
