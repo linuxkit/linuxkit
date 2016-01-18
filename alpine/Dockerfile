@@ -37,6 +37,7 @@ COPY packages/9pinit/etc /etc/
 COPY packages/ntp15m/etc /etc/
 COPY packages/binfmt_misc/etc /etc/
 COPY packages/dnsfix/etc /etc/
+COPY packages/hostname/etc /etc/
 
 RUN \
   rc-update add swap boot && \
@@ -62,7 +63,7 @@ RUN \
   rc-update add localmount && \
   rc-update add klogd && \
   rc-update add docker default && \
-  rc-update add 9pinit default && \
+  rc-update add 9pinit boot && \
   rc-update add 9pudc default && \
   rc-update add 9pudfuse default && \
   rc-update add mdnstool default && \
