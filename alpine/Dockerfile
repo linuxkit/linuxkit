@@ -13,6 +13,7 @@ RUN \
   sfdisk lvm2 syslinux \
   openrc busybox-initscripts \
   alpine-conf \
+  bind-tools \
   strace fuse
 
 COPY etc /etc/
