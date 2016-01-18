@@ -1,4 +1,4 @@
-FROM debian:unstable
+FROM ubuntu:15.10
 
 ARG KERNEL_VERSION=4.1.15
 ARG ARCH=x86_64
