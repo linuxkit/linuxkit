@@ -46,7 +46,6 @@ mkdir pty
 cd /tmp/etc
 mv hosts- hosts
 mv resolv.conf- resolv.conf
-mv hostname- hostname
 
 rm /tmp/bin/mkinitrd.sh
 
