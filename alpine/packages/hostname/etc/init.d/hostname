@@ -1,0 +1,21 @@
+#!/sbin/openrc-run
+
+description="Sets the hostname of the machine."
+
+depend() {
+	after 9pinit
+	keyword -prefix -lxc
+}
+
+start() {
+	opts="docker"
+	if cat /proc/cmdline | grep -q 'com.docker.database'
+	then
+		DATABASE="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
+		HOSTFILE="/Database/branch/master/ro/${DATABASE}/hostname"
+		[ -s ${HOSTFILE} ] && opts="-F ${HOSTFILE}"
+	fi
+	ebegin "Setting hostname"
+	hostname $opts
+	eend $?
+}
