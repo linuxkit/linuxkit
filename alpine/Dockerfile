@@ -36,6 +36,7 @@ COPY packages/automount/etc /etc/
 COPY packages/9pinit/etc /etc/
 COPY packages/ntp15m/etc /etc/
 COPY packages/binfmt_misc/etc /etc/
+COPY packages/dnsfix/etc /etc/
 
 RUN \
   rc-update add swap boot && \
@@ -68,6 +69,7 @@ RUN \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc sysinit && \
+  rc-update add dnsfix boot && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]

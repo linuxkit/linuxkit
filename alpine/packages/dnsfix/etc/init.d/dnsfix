@@ -1,0 +1,18 @@
+#!/sbin/openrc-run
+
+# A few users have reported not being able to access the nameserver on OSX
+# If a lookup fails, fall back to Google public nameserver
+
+depend()
+{
+	after networking
+}
+
+start()
+{
+	ebegin "Testing DNS resolution"
+
+	dig www.docker.com 2>&1 > /dev/null || printf "nameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf
+
+	eend $? "DNS fix failed"
+}
