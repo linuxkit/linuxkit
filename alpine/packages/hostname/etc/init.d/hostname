@@ -3,8 +3,7 @@
 description="Sets the hostname of the machine."
 
 depend() {
-	after 9pinit
-	keyword -prefix -lxc
+	need 9pinit
 }
 
 start() {
