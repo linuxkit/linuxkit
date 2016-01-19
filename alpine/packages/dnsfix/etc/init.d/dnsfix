@@ -12,7 +12,8 @@ start()
 {
 	ebegin "Testing DNS resolution"
 
-	dig localhost 2>&1 > /dev/null || printf "nameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf
+	ifconfig eth0 2>1 >/dev/null && \
+		(dig localhost 2>&1 > /dev/null || printf "nameserver 8.8.8.8\nnameserver 8.8.4.4\n" > /etc/resolv.conf)
 
 	eend $? "DNS fix failed"
 }
