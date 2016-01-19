@@ -6,7 +6,7 @@ xhyve: all
 	$(MAKE) -C xhyve run
 
 qemu: all
-	docker build -t mobyqemu:build .
+	docker build -f Dockerfile.qemu -t mobyqemu:build .
 	docker run -it mobyqemu:build
 
 arm:
@@ -14,7 +14,7 @@ arm:
 	$(MAKE) -C alpine arm
 
 qemu-arm: Dockerfile.armhf arm
-	docker build -f Dockerfile.armhf -t mobyarmqemu:build .
+	docker build -f Dockerfile.qemu.armhf -t mobyarmqemu:build .
 	docker run -it mobyarmqemu:build
 
 clean:
