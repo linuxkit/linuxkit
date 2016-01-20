@@ -20,7 +20,8 @@ start()
 #		--pidfile "${PIDFILE}" \
 #		-- -path /Transfuse
 #	eend $? "Failed to start 9pudfuse"
-	OCAMLRUNPARAM=b /sbin/9pudfuse &
+        mkdir -p /Mac
+        OCAMLRUNPARAM=b /sbin/9pudfuse &
 }
 
 stop()
