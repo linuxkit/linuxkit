@@ -27,8 +27,8 @@ fi
 if cat /proc/cmdline | grep -q 'com.docker.database'
 then
 	DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
-	CONFIGFILE="/Database/branch/master/ro/${DATABASE}/etc/docker/daemon.json"
-	[ -s ${CONFIGFILE} ] && DOCKER_OPTS="${DOCKER_OPTS} -config-file ${CONFIG_FILE}"
+	CONFIG_FILE="/Database/branch/master/ro/${DATABASE}/etc/docker/daemon.json"
+	[ -s ${CONFIG_FILE} ] && DOCKER_OPTS="${DOCKER_OPTS} --config-file ${CONFIG_FILE}"
 fi
 
 command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
