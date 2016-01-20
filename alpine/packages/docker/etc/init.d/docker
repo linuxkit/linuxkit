@@ -9,7 +9,7 @@ export DOCKER_RAMDISK="true"
 if cat /proc/filesystems | grep -q '\taufs$'
 then
 	DOCKER_OPTS="${DOCKER_OPTS:- -s aufs}"
-else if cat /proc/filesystems | grep -q '\toverlay$'
+elif cat /proc/filesystems | grep -q '\toverlay$'
 then
 	DOCKER_OPTS="${DOCKER_OPTS:- -s overlay}"
 fi
