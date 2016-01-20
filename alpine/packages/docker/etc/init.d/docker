@@ -2,17 +2,25 @@
 
 export DOCKER_RAMDISK="true"
 
-DOCKER_OPTS="${DOCKER_OPTS:--s aufs}"
+DOCKER_OPTS="${DOCKER_OPTS:- -s aufs}"
 command="${DOCKER_BINARY:-/usr/bin/docker}"
 
 pidfile="${DOCKER_PIDFILE:-/run/${RC_SVCNAME}.pid}"
-command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 
 if cat /proc/cmdline | grep -q 'com.docker.groupDir'
 then
 	GROUPDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.groupDir="//' -e 's/".*//')"
 	[ -d "${GROUPDIR}" ] && DOCKER_LOGFILE="${GROUPDIR}/${RC_SVCNAME}.log"
 fi
+
+if cat /proc/cmdline | grep -q 'com.docker.database'
+then
+	DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
+	CONFIGFILE="/Database/branch/master/ro/${DATABASE}/etc/docker/daemon.json"
+	[ -s ${CONFIGFILE} ] && DOCKER_OPTS="${DOCKER_OPTS} -config-file ${CONFIG_FILE}"
+fi
+
+command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 
 DOCKER_LOGFILE="${DOCKER_LOGFILE:-/var/log/${RC_SVCNAME}.log}"
 start_stop_daemon_args="--background \
