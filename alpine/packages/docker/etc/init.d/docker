@@ -16,12 +16,12 @@ fi
 
 command="${DOCKER_BINARY:-/usr/bin/docker}"
 
-pidfile="${DOCKER_PIDFILE:-/run/${RC_SVCNAME}.pid}"
+pidfile="/run/docker.pid"
 
 if cat /proc/cmdline | grep -q 'com.docker.groupDir'
 then
 	GROUPDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.groupDir="//' -e 's/".*//')"
-	[ -d "${GROUPDIR}" ] && DOCKER_LOGFILE="${GROUPDIR}/${RC_SVCNAME}.log"
+	[ -d "${GROUPDIR}" ] && DOCKER_LOGFILE="${GROUPDIR}/docker.log"
 fi
 
 if cat /proc/cmdline | grep -q 'com.docker.database'
