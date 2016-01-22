@@ -1,0 +1,24 @@
+FROM ubuntu:15.10
+
+RUN apt-get update && apt-get -y upgrade && apt-get -y install \
+  genisoimage \
+  xorriso \
+  syslinux \
+  syslinux-utils \
+  isolinux
+
+RUN mkdir -p /tmp/iso/isolinux && \
+    cp /usr/lib/ISOLINUX/isolinux.bin /tmp/iso/isolinux && \
+    cp usr/lib/syslinux/modules/bios/ldlinux.c32 /tmp/iso/isolinux
+
+COPY initrd.img /tmp/iso
+COPY kernel/vmlinuz64 /tmp/iso
+COPY isolinux.cfg /tmp/iso/isolinux
+
+RUN cd /tmp/iso && \
+    genisoimage -o ../output.iso -l -J -R \
+                -c isolinux/boot.cat  \
+                -b isolinux/isolinux.bin \
+                   -no-emul-boot -boot-load-size 4 -boot-info-table \
+                -V MobyLinux . && \
+    isohybrid ../output.iso

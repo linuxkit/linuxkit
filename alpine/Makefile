@@ -12,6 +12,10 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	docker build -t mobyinitrd:build .
 	docker run mobyinitrd:build /bin/mkinitrd.sh > $@
 
+mobylinux.iso: initrd.img Dockerfile.iso isolinux.cfg
+	docker build -f Dockerfile.iso -t mobyiso:build .
+	docker run mobyiso:build cat /tmp/output.iso > $@
+
 arm:	initrd-arm.img
 
 Dockerfile.armhf: Dockerfile
@@ -28,6 +32,8 @@ initrd-arm.img: Dockerfile.armhf
 
 clean:
 	rm -f initrd.img initrd-arm.img Dockerfile.armhf etc/inittab
+	rm -f mobylinux.iso
 	$(MAKE) -C packages clean
 	$(MAKE) -C kernel clean
 	docker images -q mobyinitrd:build | xargs docker rmi -f
+	docker images -q mobyiso:build | xargs docker rmi -f
