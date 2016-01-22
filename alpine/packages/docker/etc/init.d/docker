@@ -14,6 +14,9 @@ then
 	DOCKER_OPTS="${DOCKER_OPTS:- -s overlay}"
 fi
 
+# temporary fix until -rc2
+DOCKER_OPTS="-s overlay"
+
 command="${DOCKER_BINARY:-/usr/bin/docker}"
 
 pidfile="/run/docker.pid"
