@@ -73,7 +73,7 @@ RUN \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc sysinit && \
   rc-update add dnsfix boot && \
-  rc-update add hupper && \
+  rc-update add hupper default && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]
