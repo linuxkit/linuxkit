@@ -1,0 +1,39 @@
+#!/sbin/openrc-run
+
+description="docker config update manager"
+
+depend()
+{
+	need 9pinit docker
+}
+
+start()
+{
+
+	[ -d /Database ] || exit 0
+
+	ebegin "Starting docker config update manager"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/hupper.pid
+
+	start-stop-daemon --start --quiet \
+		--background \
+		--exec /bin/hupper \
+		--make-pidfile --pidfile ${PIDFILE} \
+		--
+
+	eend $? "Failed to start hupper"
+}
+
+stop()
+{
+	[ -d /Databse ] || exit 0
+
+	ebegin "Stopping docker config update manager"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/hupper.pid
+
+	start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
+
+	eend $? "Failed to stop hupper"
+}
