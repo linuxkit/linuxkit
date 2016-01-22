@@ -1,0 +1,8 @@
+FROM justincormack/alpine-kexec
+
+ADD alpine/initrd.img .
+ADD alpine/kernel/vmlinuz64 .
+
+ADD remora/do-kexec.sh /usr/local/bin
+
+ENTRYPOINT ["/usr/local/bin/do-kexec.sh"]
