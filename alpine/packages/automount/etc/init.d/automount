@@ -23,5 +23,7 @@ start()
 		SWAP=$(fdisk -l ${DRIVE} | grep 'Linux swap' | head -1 | awk '{print $1}')
 		DATA=$(fdisk -l ${DRIVE} | grep 'Linux$' | head -1 | awk '{print $1}')
 		mount ${DATA} /var && swapon ${SWAP} || ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
+		# boot2docker compat, has /var and /tmp on partition
+		[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
 	fi
 }
