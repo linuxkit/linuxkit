@@ -38,11 +38,11 @@ let finally f at_end =
 let copy description dst src =
   let sz = 1 lsl 16 in
   let buf = Bytes.create sz in
-  let pnum = ref 0 in
+  (*let pnum = ref 0 in*)
   let rec loop () =
     let n = Unix.read src buf 0 sz in
     (if n = 0 then raise ReadClosed);
-
+(*
     let fd = Unix.(
       openfile ("/tmp/"^description^"_"^(string_of_int !pnum))
         [O_WRONLY; O_CREAT] 0o600) in
@@ -50,8 +50,15 @@ let copy description dst src =
     assert (k = n);
     Unix.close fd;
     incr pnum;
-    
-    let written = Unix.write dst buf 0 n in
+*)
+    let written = try
+        Unix.write dst buf 0 n
+      with
+      | Unix.Unix_error (Unix.EINVAL, "write", _) ->
+        failwith ("copy write for "^description^" failed with EINVAL")
+      | Unix.Unix_error (Unix.ENOENT, "write", _) ->
+        failwith ("copy write for "^description^" failed with ENOENT")
+    in
     (if n <> written
      then Log.error "copy of %s read %d but wrote %d" description n written);
     loop ()
