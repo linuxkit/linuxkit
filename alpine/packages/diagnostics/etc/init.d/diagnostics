@@ -2,7 +2,7 @@
 
 depend()
 {
-	after docker mdnstool 9pudc
+	after docker mdnstool 9pudc hupper
 }
 
 start()
