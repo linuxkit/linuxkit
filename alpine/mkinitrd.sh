@@ -43,9 +43,24 @@ mknod -m 600 sdb6 b 8 22
 mkdir pty
 
 # these three files are bind mounted in by docker so they are not what we want
-cd /tmp/etc
-mv hosts- hosts
-mv resolv.conf- resolv.conf
+
+cat << EOF > /tmp/etc/hosts
+127.0.0.1	localhost
+::1	localhost ip6-localhost ip6-loopback
+fe00::0	ip6-localnet
+ff00::0	ip6-mcastprefix
+ff02::1	ip6-allnodes
+ff02::2	ip6-allrouters
+EOF
+
+cat << EOF > /tmp/etc/resolv.conf
+nameserver 8.8.8.8
+nameserver 8.8.4.4
+nameserver 2001:4860:4860::8888
+nameserver 2001:4860:4860::8844
+EOF
+
+printf 'docker' > /tmp/etc/hostname
 
 rm /tmp/bin/mkinitrd.sh
 
