@@ -30,17 +30,22 @@ func main() {
 	// 43 bytes is the record size of the watch
 	buf := make([]byte, 43)
 	for {
-		_, err := watch.Read(buf)
+		n, err := watch.Read(buf)
 		if err != nil {
 			log.Fatalln("Error reading watch file", err)
 		}
+		if n == 0 {
+			continue
+		}
 		bytes, err := ioutil.ReadFile(pidfile)
 		if err != nil {
-			pidstring := string(bytes[:])
-			pid, err := strconv.Atoi(pidstring)
-			if err != nil {
-				syscall.Kill(pid, syscall.SIGHUP)
-			}
+			continue
 		}
+		pidstring := string(bytes[:])
+		pid, err := strconv.Atoi(pidstring)
+		if err != nil {
+			continue
+		}
+		syscall.Kill(pid, syscall.SIGHUP)
 	}
 }
