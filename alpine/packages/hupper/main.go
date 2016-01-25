@@ -35,8 +35,8 @@ func main() {
 			log.Fatalln("Error reading watch file", err)
 		}
 		bytes, err := ioutil.ReadFile(pidfile)
-		pidstring := string(bytes[:])
 		if err != nil {
+			pidstring := string(bytes[:])
 			pid, err := strconv.Atoi(pidstring)
 			if err != nil {
 				syscall.Kill(pid, syscall.SIGHUP)
