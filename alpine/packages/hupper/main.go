@@ -27,7 +27,8 @@ func main() {
 	if err != nil {
 		log.Fatalln("Failed to open file", path, err)
 	}
-	buf := make([]byte, 512)
+	// 43 bytes is the record size of the watch
+	buf := make([]byte, 43)
 	for {
 		_, err := watch.Read(buf)
 		if err != nil {
