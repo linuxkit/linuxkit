@@ -41,6 +41,13 @@ COPY packages/database/etc /etc/
 COPY packages/hupper/hupper /bin/
 COPY packages/hupper/etc /etc/
 COPY packages/hostlog/etc /etc/
+COPY packages/hvtools/hv_fcopy_daemon /sbin/
+COPY packages/hvtools/hv_kvp_daemon /sbin/
+COPY packages/hvtools/hv_vss_daemon /sbin/
+COPY packages/hvtools/etc /etc/
+COPY packages/hvtools/hv_get_dhcp_info /sbin/
+COPY packages/hvtools/hv_get_dns_info /sbin/
+COPY packages/hvtools/hv_set_ifconfig /sbin/
 
 RUN \
   rc-update add swap boot && \
@@ -77,6 +84,9 @@ RUN \
   rc-update add database boot && \
   rc-update add hupper default && \
   rc-update add hostlog default && \
+  rc-update add hv_fcopy_daemon default && \
+  rc-update add hv_kvp_daemon default && \
+  rc-update add hv_vss_daemon default && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]
