@@ -2,21 +2,6 @@
 
 export DOCKER_RAMDISK="true"
 
-# choose a graph driver based on what is available and a preference
-# if the user has not set any opts
-# we do not yet provide easy access to /etc/conf.d/docker but may do
-# otherwise let Docker choose
-if cat /proc/filesystems | grep -q '\taufs$'
-then
-	DOCKER_OPTS="${DOCKER_OPTS:- -s aufs}"
-elif cat /proc/filesystems | grep -q '\toverlay$'
-then
-	DOCKER_OPTS="${DOCKER_OPTS:- -s overlay}"
-fi
-
-# temporary fix until -rc2
-DOCKER_OPTS="-s overlay"
-
 command="${DOCKER_BINARY:-/usr/bin/docker}"
 
 pidfile="/run/docker.pid"
