@@ -4,6 +4,7 @@ all:
 	$(MAKE) -C mdnstool
 	$(MAKE) -C docker
 	$(MAKE) -C hupper
+	$(MAKE) -C hvtools
 
 arm:
 	$(MAKE) -C 9pudc ARCH=arm
@@ -18,3 +19,4 @@ clean:
 	$(MAKE) -C mdnstool clean
 	$(MAKE) -C docker clean
 	$(MAKE) -C hupper clean
+	$(MAKE) -C hvtools clean

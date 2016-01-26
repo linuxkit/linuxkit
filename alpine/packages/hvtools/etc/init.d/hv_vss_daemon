@@ -1,0 +1,32 @@
+#!/sbin/openrc-run
+
+HV_DAEMON=hv_vss_daemon
+
+start()
+{
+        [ ! -d /sys/bus/vmbus ] && exit 0
+
+        ebegin "Starting Hyper-V Daemon: ${HV_DAEMON}"
+
+        [ -n "${PIDFILE}" ] || PIDFILE=/var/run/${HV_DAEMON}.pid
+
+        start-stop-daemon --start --quiet \
+                --background \
+                --exec /sbin/${HV_DAEMON} \
+                --make-pidfile --pidfile ${PIDFILE} \
+                --
+        eend 0
+}
+
+stop()
+{
+        [ ! -d /sys/bus/vmbus ] && exit 0
+
+        ebegin "Stopping Hyper-V Daemon: ${HV_DAEMON}"
+
+        [ -n "${PIDFILE}" ] || PIDFILE=/var/run/${HV_DAEMON}.pid
+
+        start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
+
+        eend $? "Failed to stop ${HV_DAEMON}"
+}
