@@ -10,18 +10,24 @@ import (
 )
 
 var (
-	path    string
-	pidfile string
+	path       string
+	huppidfile string
+	pidfile    string
 )
 
 func init() {
 	flag.StringVar(&path, "path", "/Database/branch/master/watch/com.docker.driver.amd64-linux.node/etc.node/docker.node/daemon.json.node/tree.live", "path of the file to watch")
-	flag.StringVar(&pidfile, "pidfile", "/run/docker.pid", "pidfile for process to signal")
+	flag.StringVar(&huppidfile, "huppidfile", "/run/docker.pid", "pidfile for process to signal")
+	flag.StringVar(&pidfile, "pidfile", "/run/hupper.pid", "my pidfile")
 }
 
 func main() {
 	log.SetFlags(0)
 	flag.Parse()
+
+	pid := os.Getpid()
+	pidbytes := []byte(strconv.Itoa(pid))
+	_ = ioutil.WriteFile(pidfile, pidbytes, 0644)
 
 	watch, err := os.Open(path)
 	if err != nil {
@@ -37,7 +43,7 @@ func main() {
 		if n == 0 {
 			continue
 		}
-		bytes, err := ioutil.ReadFile(pidfile)
+		bytes, err := ioutil.ReadFile(huppidfile)
 		if err != nil {
 			continue
 		}
