@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
 	"strconv"
 	"syscall"
 )
@@ -43,15 +44,24 @@ func main() {
 		if n == 0 {
 			continue
 		}
-		bytes, err := ioutil.ReadFile(huppidfile)
-		if err != nil {
-			continue
+		// a few changes eg debug do not require a daemon restart
+		// however at present we cannot check changes, and most do
+		restart := true
+		if restart {
+			cmd := exec.Command("service", "docker", "restart")
+			// not much we can do if it does not restart
+			_ = cmd.Run()
+		} else {
+			bytes, err := ioutil.ReadFile(huppidfile)
+			if err != nil {
+				continue
+			}
+			pidstring := string(bytes[:])
+			pid, err := strconv.Atoi(pidstring)
+			if err != nil {
+				continue
+			}
+			syscall.Kill(pid, syscall.SIGHUP)
 		}
-		pidstring := string(bytes[:])
-		pid, err := strconv.Atoi(pidstring)
-		if err != nil {
-			continue
-		}
-		syscall.Kill(pid, syscall.SIGHUP)
 	}
 }
