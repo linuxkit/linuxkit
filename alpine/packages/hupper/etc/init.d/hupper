@@ -4,7 +4,8 @@ description="docker config update manager"
 
 depend()
 {
-	need 9pinit docker
+	need 9pinit
+	after docker
 }
 
 start()
