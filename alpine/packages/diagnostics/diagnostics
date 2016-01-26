@@ -11,7 +11,7 @@ UDC=$(ps -eo args | grep '^/sbin/9pudc')
 [ $? -eq 0 ] && printf "✓ Process 9pudc running: $UDC\n" || printf "✗ No 9pudc process\n"
 if [ -d /Transfuse ]
 then
-	FUSE=$(ps -eo args | grep '^/sbin/9pudfuse']
+	FUSE=$(ps -eo args | grep '^/sbin/9pudfuse')
 	[ $? -eq 0 ] && printf "✓ Process 9pudfuse running\n" || printf "✗ No 9pudfuse process\n"
 fi
 MDNS=$(ps -eo args | grep '^/sbin/mdnstool')
