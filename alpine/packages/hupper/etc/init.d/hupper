@@ -14,7 +14,7 @@ start()
 
 	ebegin "Starting docker config update manager"
 
-	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/hupper.pid
+	[ -n "${PIDFILE}" ] || PIDFILE=/run/hupper.pid
 
 	start-stop-daemon --start --quiet \
 		--background \
@@ -31,7 +31,7 @@ stop()
 
 	ebegin "Stopping docker config update manager"
 
-	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/hupper.pid
+	[ -n "${PIDFILE}" ] || PIDFILE=/run/hupper.pid
 
 	start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
 
