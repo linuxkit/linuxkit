@@ -6,12 +6,6 @@ command="${DOCKER_BINARY:-/usr/bin/docker}"
 
 pidfile="/run/docker.pid"
 
-if cat /proc/cmdline | grep -q 'com.docker.groupDir'
-then
-	GROUPDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.groupDir="//' -e 's/".*//')"
-	[ -d "${GROUPDIR}" ] && DOCKER_LOGFILE="${GROUPDIR}/docker.log"
-fi
-
 if cat /proc/cmdline | grep -q 'com.docker.database'
 then
 	DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
@@ -21,7 +15,8 @@ fi
 
 command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 
-DOCKER_LOGFILE="${DOCKER_LOGFILE:-/var/log/${RC_SVCNAME}.log}"
+DOCKER_LOGFILE="/var/log/docker.log}"
+
 start_stop_daemon_args="--background \
         --stderr \"${DOCKER_LOGFILE}\" --stdout \"${DOCKER_LOGFILE}\""
 
