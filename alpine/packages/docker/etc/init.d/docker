@@ -27,6 +27,6 @@ start_stop_daemon_args="--background \
 
 depend()
 {
-        after 9pudc
+        after 9pudc 9pudfuse
         before chronyd
 }
