@@ -36,6 +36,11 @@ func main() {
 	}
 	// 43 bytes is the record size of the watch
 	buf := make([]byte, 43)
+	// initial state
+	_, err := watch.Read(buf)
+	if err != nil {
+		log.Fatalln("Error reading watch file", err)
+	}
 	for {
 		n, err := watch.Read(buf)
 		if err != nil {
