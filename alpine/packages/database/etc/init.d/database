@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+
+description="Configuring settings from database."
+
+depend() {
+        need 9pinit
+	before hostname sysctl
+}
+
+start() {
+	cat /proc/cmdline | grep -q 'com.docker.database' || exit 0
+
+	ebegin "Configuring settings from database"
+
+	DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
+	HOSTFILE="/Database/branch/master/ro/${DATABASE}/etc/hostname"
+	[ -s ${HOSTFILE} ] && cp ${HOSTFILE} /etc/hostname
+	SYSCTL="/Database/branch/master/ro/${DATABASE}/etc/sysctl.conf"
+	[ -s ${SYSCTL} ] && cp ${SYSCTL} /etc/sysctl.conf
+
+        eend 0
+}
