@@ -37,7 +37,7 @@ COPY packages/9pinit/etc /etc/
 COPY packages/ntp15m/etc /etc/
 COPY packages/binfmt_misc/etc /etc/
 COPY packages/dnsfix/etc /etc/
-COPY packages/hostname/etc /etc/
+COPY packages/database/etc /etc/
 COPY packages/hupper/hupper /bin/
 COPY packages/hupper/etc /etc/
 
@@ -73,6 +73,7 @@ RUN \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc sysinit && \
   rc-update add dnsfix boot && \
+  rc-update add database boot && \
   rc-update add hupper default && \
   ln -s /bin/busybox /init
 
