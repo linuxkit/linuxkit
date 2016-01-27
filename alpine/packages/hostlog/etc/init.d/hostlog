@@ -1,0 +1,19 @@
+#!/sbin/openrc-run
+
+depends()
+{
+	before acpid docker syslog chronyd
+	after 9pinit 9pudfuse
+}
+
+start()
+{
+	cat /proc/cmdline | grep -q 'com.docker.groupDir' || exit 0
+
+	ebegin "Redirecting logs to host"
+
+	GROUPDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.groupDir="//' -e 's/".*//')"
+
+	mount --bind "${GROUPDIR}" /var/log
+ 
+	eend $? "Failed to redirect logs to host"

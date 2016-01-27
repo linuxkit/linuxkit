@@ -40,6 +40,7 @@ COPY packages/dnsfix/etc /etc/
 COPY packages/database/etc /etc/
 COPY packages/hupper/hupper /bin/
 COPY packages/hupper/etc /etc/
+COPY packages/hostlog/etc /etc/
 
 RUN \
   rc-update add swap boot && \
@@ -75,6 +76,7 @@ RUN \
   rc-update add dnsfix boot && \
   rc-update add database boot && \
   rc-update add hupper default && \
+  rc-update add hostlog default && \
   ln -s /bin/busybox /init
 
 CMD ["/bin/sh"]
