@@ -26,4 +26,8 @@ start()
 		# boot2docker compat, has /var and /tmp on partition
 		[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
 	fi
+
+	mount | grep -q '/dev/[sxv]da. on /var type'
+
+	eend $? "Failed to mount block device"
 }
