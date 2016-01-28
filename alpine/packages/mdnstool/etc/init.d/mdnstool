@@ -20,7 +20,7 @@ start()
 		--background \
 		--exec /sbin/mdnstool \
 		--make-pidfile --pidfile ${PIDFILE} \
-		-- if eth0 -hostname ${HOSTNAME}
+		-- -if eth0 -hostname ${HOSTNAME}
 
 	eend $? "Failed to start mDNS server"
 }
