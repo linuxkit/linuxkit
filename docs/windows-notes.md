@@ -43,17 +43,17 @@ Copy the iso image to your Windows host/VM.
 
 ## Create a switch
 
-We need to create a VM Switch to attach the MobyLinux Networking to.  This is a one off operation.  Check your main Ethernet interface with either `ipconfig` or `Get-NetAdapter` (in powershell).  On my system it is called 'Ethernet0'. Then create a switch like this (in elevated powershell):
+We need to create a VM Switch to attach the MobyLinux Networking to.  This is a one off operation.  Check your main Ethernet interface with either `ipconfig` or `Get-NetAdapter` (in powershell).  On my system it is called 'Ethernet0'. Could also be called "Wi-Fi" Then create a switch with the same name (in elevated powershell):
 
 ```
-New-VMSwitch -Name "VirtualSwitch" -AllowManagementOS $True  -NetAdapterName Ethernet0
+New-VMSwitch -Name "VirtualSwitch" -AllowManagementOS $True  -NetAdapterName *Replace-with-adapter-name-from-Get-NetAdapter*
 ```
 TODO: Figure out how to configure a NAT switch
 
 
 ## Booting MobyLinux from ISO
 
-In the MobyLinux repository there is a Powershell script called `MobyLinux.ps1` which allows you to create, start, stop and destroy a MobyLinux VM.  Copy it over to your Windows machine.
+In the moby repository under the scripts directory, there is a Powershell script called `MobyLinux.ps1` which allows you to create, start, stop and destroy a MobyLinux VM.  Copy it over to your Windows machine.
 
 This must be executed from an elevated Powershell (ie Run as Administrator).
 
