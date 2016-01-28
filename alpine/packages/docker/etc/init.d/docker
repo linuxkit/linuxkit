@@ -11,7 +11,12 @@ then
 	DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
 	CONFIG_FILE="/Database/branch/master/ro/${DATABASE}/etc/docker/daemon.json"
 	[ -s ${CONFIG_FILE} ] && DOCKER_OPTS="${DOCKER_OPTS} --config-file ${CONFIG_FILE}"
+else
+        # If there is no database and we run on Hyper-V start daemon
+        # with networking for now. This will change in the future!
+        [ -d /sys/bus/vmbus ] && DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375"
 fi
+
 
 command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 
