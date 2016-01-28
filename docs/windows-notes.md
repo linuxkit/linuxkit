@@ -5,7 +5,7 @@ I use Windows 10 Pro in a Vmware Fusion VM. Make sure it's a 64bit VM.
 In Vmware Fusion VM settings make sure the `Processor -> Advanced Options -> Enable hypervisor applications in virtual machine` is selected. This enables nested virtualisation. If you install on bare hardware make sure the virtualisation technology is enabled in the BIOS.
 
 When creating the user, make sure that te username does **not** contain
-any spaces. This will save you a world of pain!  On Windows 10, also select custom settings during the install and disable all the spying/calling home features introduced.
+any spaces. This will save you a world of pain!  On Windows 10, also select custom settings during the install and disable all the spying/calling home features introduced. Also, since I'm running Windows in a VM on an already password protected system, I disable password for my user, using `c:\Windows\System32\netplwiz.exe`. Just untick the password checkbox.
 
 
 Install software:
