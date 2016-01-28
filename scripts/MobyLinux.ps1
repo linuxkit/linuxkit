@@ -183,8 +183,9 @@ function
 Stop-MobyLinuxVM
 {
     Write-Output "Stopping $VmName"
-    # Using -Force for now until the host integration services are installed in the VM
-    Stop-VM -VMName $VmName -Force
+    # You can use -Force to basically pull the plug on the VM
+    # The below requires the Hyper-V tools to be installed in the VM
+    Stop-VM -VMName $VmName
 }
 
 # Main entry point
