@@ -81,6 +81,28 @@ and all the files can be removed with:
 .\MobyLinux.ps1 -destroy
 ```
 
+## Running Docker
+
+You need a Windows docker client matching the version running on
+MobyLinux. I build mine from source in a Linux container using `make
+cross`.
+
+
+When starting the MobyLinux VM on Hyper-V, the docker daemon is
+currently started to listen on TCP socket 2375 inside the VM.
+
+**The IP address of the VM may changes on every start**
+
+To determine the IP address, you ca either type:
+```
+Get-VMNetworkAdapter MobyLinuxVM
+```
+and then set `DOCKER_HOST` accordingly, or you can execute the PS
+snippet printed out by MovyLinux.ps1:
+```
+$vmIP=(Get-VMNetworkAdapter MobyLinuxVM).IPAddresses[0]
+$env:DOCKER_HOST = "tcp://" + $vmIP + ":2375"
+```
 
 ## Getting a serial console
 
