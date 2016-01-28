@@ -177,6 +177,10 @@ Start-MobyLinuxVM
 {
     Write-Output "Starting $VmName"
     Start-VM -VMName $VmName
+
+    Write-Output 'Connect to Docker by executing:'
+    Write-Output '$vmIP=(Get-VMNetworkAdapter MobyLinuxVM).IPAddresses[0]'
+    Write-Output '$env:DOCKER_HOST = "tcp://" + $vmIP + ":2375"'
 }
 
 function
