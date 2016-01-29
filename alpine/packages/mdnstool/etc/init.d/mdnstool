@@ -10,7 +10,9 @@ depend()
 
 start()
 {
-	ebegin "Starting mDNS server"
+        [ -d /sys/bus/vmbus ] && exit 0
+
+        ebegin "Starting mDNS server"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
 
@@ -27,7 +29,9 @@ start()
 
 stop()
 {
-	ebegin "Stopping mDNS server"
+        [ -d /sys/bus/vmbus ] && exit 0
+
+        ebegin "Stopping mDNS server"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
 
