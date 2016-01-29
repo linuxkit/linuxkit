@@ -27,6 +27,8 @@ COPY packages/9pudfuse/9pudfuse /sbin/
 COPY packages/9pudfuse/etc /etc/
 COPY packages/mdnstool/mdnstool /sbin/
 COPY packages/mdnstool/etc /etc/
+COPY packages/llmnrd/llmnrd /sbin/
+COPY packages/llmnrd/etc /etc/
 COPY packages/docker/docker /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/docker-x/docker-x /usr/bin/
@@ -77,6 +79,7 @@ RUN \
   rc-update add 9pudc default && \
   rc-update add 9pudfuse default && \
   rc-update add mdnstool default && \
+  rc-update add llmnrd default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc sysinit && \
