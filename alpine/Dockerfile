@@ -32,7 +32,10 @@ COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
 COPY packages/mdnstool/mdnstool /sbin/
 COPY packages/mdnstool/etc /etc/
-COPY packages/docker/bin/* /usr/bin/
+COPY packages/llmnrd/llmnrd /sbin/
+COPY packages/llmnrd/etc /etc/
+COPY packages/docker/docker /usr/bin/
+COPY packages/docker/docker-* /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/diagnostics/diagnostics /usr/bin/
 COPY packages/diagnostics/diagnostics-server /usr/bin/
@@ -87,13 +90,13 @@ RUN \
   rc-update add proxy default && \
   rc-update add transfused default && \
   rc-update add mdnstool default && \
+  rc-update add llmnrd default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc sysinit && \
   rc-update add dnsfix boot && \
   rc-update add hostsettings boot && \
   rc-update add hupper default && \
-  rc-update add hv_fcopy_daemon default && \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
   rc-update add vsudd default
