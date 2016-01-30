@@ -17,3 +17,4 @@ start()
 	mount --bind "${GROUPDIR}" /var/log
  
 	eend $? "Failed to redirect logs to host"
+}
