@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -38,16 +39,13 @@ func main() {
 	buf := make([]byte, 43)
 	// initial state
 	_, err = watch.Read(buf)
-	if err != nil {
+	if err != nil && err != io.EOF {
 		log.Fatalln("Error reading watch file", err)
 	}
 	for {
-		n, err := watch.Read(buf)
-		if err != nil {
+		_, err := watch.Read(buf)
+		if err != nil && err != io.EOF {
 			log.Fatalln("Error reading watch file", err)
-		}
-		if n == 0 {
-			continue
 		}
 		// a few changes eg debug do not require a daemon restart
 		// however at present we cannot check changes, and most do
