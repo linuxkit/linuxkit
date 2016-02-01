@@ -47,6 +47,9 @@ func main() {
 		if err != nil && err != io.EOF {
 			log.Fatalln("Error reading watch file", err)
 		}
+		if err == io.EOF {
+			continue
+		}
 		// a few changes eg debug do not require a daemon restart
 		// however at present we cannot check changes, and most do
 		restart := true
