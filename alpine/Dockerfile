@@ -16,7 +16,8 @@ RUN \
   alpine-conf \
   bind-tools \
   openssh-client \
-  strace fuse
+  strace fuse \
+  cifs-utils
 
 COPY etc /etc/
 
