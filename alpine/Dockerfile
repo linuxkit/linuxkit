@@ -16,7 +16,8 @@ RUN \
   bind-tools \
   openssh-client \
   strace fuse \
-  util-linux
+  util-linux \
+  cifs-utils
 
 COPY etc /etc/
 RUN mkdir -p /etc/docker
