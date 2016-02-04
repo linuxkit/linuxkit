@@ -20,7 +20,7 @@ fi
 
 command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 
-DOCKER_LOGFILE="/var/log/docker.log}"
+DOCKER_LOGFILE="/var/log/docker.log"
 
 start_stop_daemon_args="--background \
         --stderr \"${DOCKER_LOGFILE}\" --stdout \"${DOCKER_LOGFILE}\""
