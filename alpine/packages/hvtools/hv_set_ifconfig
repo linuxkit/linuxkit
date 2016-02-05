@@ -65,7 +65,7 @@ outf=/etc/network/interfaces
 . $1
 
 # Down the interface
-ifdown $DEVICE
+ifdown -f $DEVICE
 
 # create a new interfaces file
 echo "auto lo" > $outf
