@@ -14,6 +14,9 @@ start()
 
         ebegin "Starting Hyper-V Daemon: ${HV_DAEMON}"
 
+        # Delete the existing store
+        rm -rf /var/lib/hyperv
+
         [ -n "${PIDFILE}" ] || PIDFILE=/var/run/${HV_DAEMON}.pid
 
         start-stop-daemon --start --quiet \
