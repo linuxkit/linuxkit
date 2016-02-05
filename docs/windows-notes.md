@@ -59,7 +59,7 @@ This must be executed from an elevated Powershell (ie Run as Administrator).
 
 Some Windows installation may not allow execution of arbitrary Powershell scripts.  Check with `Get-ExecutionPolicy`. It is likely set to 'Restricted', which prevents you from running scripts. Change the policy:
 ```
-Set-ExecutionPolicy -ExecutionPolicy Unrestricted
+Set-ExecutionPolicy -ExecutionPolicy Unrestricted -force
 ```
 
 Now, you can create and start a new MobyLinux VM
