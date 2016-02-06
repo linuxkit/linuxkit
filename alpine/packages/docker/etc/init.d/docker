@@ -14,7 +14,7 @@ then
 else
         # If there is no database and we run on Hyper-V start daemon
         # with networking for now. This will change in the future!
-        [ -d /sys/bus/vmbus ] && DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375"
+        [ -d /sys/bus/vmbus ] && DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock"
 fi
 
 
