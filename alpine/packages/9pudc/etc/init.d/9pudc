@@ -15,11 +15,13 @@ start()
 	ebegin "Starting docker socket passthrough"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/9pudc.pid
+	[ -n "${LOGFILE}" ] || LOGFILE=/var/log/9pudc.log
 
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/9pudc \
 		--make-pidfile --pidfile ${PIDFILE} \
+		--stderr \"${LOGFILE}\" --stdout \"${LOGFILE}\""
 		-- -path /Socket -sock /var/run/docker.sock
 
 	eend $? "Failed to start 9pudc"
