@@ -48,6 +48,9 @@ COPY packages/hvtools/etc /etc/
 COPY packages/hvtools/hv_get_dhcp_info /sbin/
 COPY packages/hvtools/hv_get_dns_info /sbin/
 COPY packages/hvtools/hv_set_ifconfig /sbin/
+COPY packages/userns/etc /etc/
+COPY packages/userns/groupadd /usr/sbin
+COPY packages/userns/useradd /usr/sbin
 
 RUN \
   rc-update add swap boot && \
