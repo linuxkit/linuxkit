@@ -7,7 +7,7 @@ xhyve: all
 
 qemu: all
 	docker build -f Dockerfile.qemu -t mobyqemu:build .
-	docker run -it mobyqemu:build
+	docker run --rm mobyqemu:build
 
 arm:
 	$(MAKE) -C alpine/kernel arm
@@ -15,7 +15,7 @@ arm:
 
 qemu-arm: Dockerfile.armhf arm
 	docker build -f Dockerfile.qemu.armhf -t mobyarmqemu:build .
-	docker run -it mobyarmqemu:build
+	docker run --rm mobyarmqemu:build
 
 .PHONY: remora clean
 remora: Dockerfile.remora remora/do-kexec.sh

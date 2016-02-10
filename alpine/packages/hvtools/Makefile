@@ -2,9 +2,9 @@ all: hvtools
 
 hvtools: Dockerfile src/*
 	docker build -t hvtools:build .
-	docker run hvtools:build cat /hvtools/hv_fcopy_daemon > hv_fcopy_daemon
-	docker run hvtools:build cat /hvtools/hv_kvp_daemon > hv_kvp_daemon
-	docker run hvtools:build cat /hvtools/hv_vss_daemon > hv_vss_daemon
+	docker run --rm hvtools:build cat /hvtools/hv_fcopy_daemon > hv_fcopy_daemon
+	docker run --rm hvtools:build cat /hvtools/hv_kvp_daemon > hv_kvp_daemon
+	docker run --rm hvtools:build cat /hvtools/hv_vss_daemon > hv_vss_daemon
 	chmod 755 hv_fcopy_daemon hv_kvp_daemon hv_vss_daemon
 
 clean:
