@@ -1,0 +1,32 @@
+#!/sbin/openrc-run
+
+description="fuse proxy server"
+
+depend()
+{
+	need 9pinit
+}
+
+start()
+{
+	[ -d /Transfuse ] || exit 0
+
+	ebegin "Starting FUSE socket passthrough"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/transfused.pid
+
+        /sbin/transfused &
+}
+
+stop()
+{
+	[ -d /Transfuse ] || exit 0
+
+	ebegin "Stopping FUSE socket passthrough"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/transfused.pid
+
+	start-stop-daemon --stop --quiet \
+		--pidfile "${PIDFILE}"
+	eend $? "Failed to stop transfused"
+}
