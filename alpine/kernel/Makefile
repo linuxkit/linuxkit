@@ -2,16 +2,16 @@ all:	vmlinuz64
 
 vmlinuz64: kernel_config Dockerfile
 	docker build -t mobykernel:build .
-	docker run mobykernel:build cat /linux/arch/x86_64/boot/bzImage > $@
-	docker run mobykernel:build cat /aufs-utils.tar > aufs-utils.tar
+	docker run --rm mobykernel:build cat /linux/arch/x86_64/boot/bzImage > $@
+	docker run --rm mobykernel:build cat /aufs-utils.tar > aufs-utils.tar
 
 arm: zImage
 
 zImage: kernel_config.arm Dockerfile
 	docker build --build-arg ARCH=arm -t mobyarmkernel:build .
-	docker run mobyarmkernel:build cat /linux/arch/arm/boot/zImage > $@
-	docker run mobyarmkernel:build cat /dtb > dtb
-	docker run mobyarmkernel:build cat /aufs-utils.tar > aufs-utils.tar
+	docker run --rm mobyarmkernel:build cat /linux/arch/arm/boot/zImage > $@
+	docker run --rm mobyarmkernel:build cat /dtb > dtb
+	docker run --rm mobyarmkernel:build cat /aufs-utils.tar > aufs-utils.tar
 
 clean:
 	rm -f zImage vmlinuz64 aufs-utils.tar
