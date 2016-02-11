@@ -178,13 +178,13 @@ int recv_fd(int sock) {
   struct iovec vec;
   struct cmsghdr *cmsg;
 
-  msg.msg_name=NULL;
-  msg.msg_namelen=0;
-  vec.iov_base=&iochar;
-  vec.iov_len=1;
-  msg.msg_iov=&vec;
+  msg.msg_name = NULL;
+  msg.msg_namelen = 0;
+  vec.iov_base = &iochar;
+  vec.iov_len = 1;
+  msg.msg_iov = &vec;
 
-  msg.msg_iovlen=1;
+  msg.msg_iovlen = 1;
 
   msg.msg_control = buf;
   msg.msg_controllen = sizeof(buf);
