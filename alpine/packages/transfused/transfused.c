@@ -19,9 +19,6 @@ int debug = 0;
 
 int save_trace;
 
-// execvpe is in unistd.h on Linux.
-int execvpe(const char *path, char *const argv[], char *const envp[]);
-
 typedef struct {
   char * socket9p_root;
 } parameters;
@@ -39,7 +36,7 @@ typedef struct {
   int to;
 } copy_thread_state;
 
-char * fusermount = "fusermount";
+char * fusermount = "/bin/fusermount";
 
 void die(int exit_code, const char * perror_arg, const char * fmt, ...) {
   va_list argp;
@@ -237,7 +234,7 @@ int get_fuse_sock(char *const optv[]) {
   // fork and exec fusermount
   fusermount_pid = fork();
   if (!fusermount_pid) // child
-    if (execvpe(fusermount, argv, envp))
+    if (execve(fusermount, argv, envp))
       die(1, "Failed to execute fusermount", "");
 
   // parent
