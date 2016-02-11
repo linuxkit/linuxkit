@@ -118,11 +118,22 @@ void copy(copy_thread_state * copy_state) {
       int trace_fd;
       char * trace_path;
 
-      // TODO: check for errors
-      asprintf(&trace_path, "/tmp/transfused.%ld.%s.%llu",
-               connection, tag, message_id(buf));
+      if (asprintf(&trace_path, "/tmp/transfused.%ld.%s.%llu",
+                   connection, tag, message_id(buf)) == -1)
+        die(1, "", "Couldn't allocate trace packet path");
+
       trace_fd = open(trace_path, O_WRONLY | O_CREAT, 0600);
-      write(trace_fd, buf, read_count);
+      if (read_fd == -1)
+        die(1, "couldn't open trace packet path", "For %s, ", descr);
+
+      write_count = write(trace_fd, buf, read_count);
+      if (write_count == -1)
+        die(1, "", "copy %s trace: error writing %s: ", descr, trace_path);
+
+      if (write_count != read_count)
+        die(1, NULL, "copy %s trace: read %d but only write %d\n",
+            descr, read_count, write_count);
+
       close(trace_fd);
       free(trace_path);
     }
