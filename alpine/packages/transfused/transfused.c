@@ -51,7 +51,7 @@ void * must_malloc(char *const descr, size_t size) {
   void * ptr;
 
   ptr = malloc(size);
-  if (size != 0 && ptr == NULL) die(1,descr,"");
+  if (size != 0 && ptr == NULL) die(1, descr, "");
 
   return ptr;
 }
@@ -65,14 +65,14 @@ char ** read_opts(connection_state * connection, char * buf) {
 
   if (asprintf(&read_path, "%s/connections/%ld/read",
                connection->params->socket9p_root, connection->id) == -1)
-    die(1,"Couldn't allocate read path","");
+    die(1, "Couldn't allocate read path", "");
 
   read_fd = open(read_path, O_RDONLY);
   if (read_fd == -1)
-    die(1,"couldn't open read path", "For connection %ld, ", connection->id);
+    die(1, "couldn't open read path", "For connection %ld, ", connection->id);
 
   read_count = read(read_fd, buf, COPY_BUFSZ - 1);
-  if (read_count == -1) die(1,"read_opts error reading", "");
+  if (read_count == -1) die(1, "read_opts error reading", "");
 
   buf[read_count] = 0x0;
 
@@ -191,7 +191,7 @@ int recv_fd(int sock) {
 
   ret = recvmsg(sock, &msg, 0);
 
-  if (ret == -1) die(1,"recvmsg","");
+  if (ret == -1) die(1, "recvmsg", "");
 
   if (ret > 0 && msg.msg_controllen > 0) {
     cmsg = CMSG_FIRSTHDR(&msg);
@@ -216,7 +216,7 @@ int get_fuse_sock(char *const optv[]) {
   // prepare argv from optv
   for (optc = 0; optv[optc] != NULL; optc++) {}
 
-  argv = (char **) must_malloc("fusermount argv",(optc + 2) * sizeof(char *));
+  argv = (char **) must_malloc("fusermount argv", (optc + 2) * sizeof(char *));
 
   argv[0] = fusermount;
   memcpy(&argv[1], optv, (optc + 1) * sizeof(char *));
