@@ -141,8 +141,7 @@ void copy(copy_thread_state * copy_state) {
 void * copy_clean_from(copy_thread_state * copy_state) {
   copy(copy_state);
 
-  if (close(copy_state->from))
-    die(1, "couldn't close read fd", "For %s, ", copy_state->descr);
+  close(copy_state->from);
 
   free(copy_state->descr);
   free(copy_state);
@@ -157,8 +156,7 @@ void * copy_clean_from_thread(void * copy_state) {
 void * copy_clean_to(copy_thread_state * copy_state) {
   copy(copy_state);
 
-  if (close(copy_state->to))
-    die(1, "couldn't close write fd", "For %s, ", copy_state->descr);
+  close(copy_state->to);
 
   free(copy_state->descr);
   free(copy_state);
@@ -240,8 +238,7 @@ int get_fuse_sock(char *const optv[]) {
   free(envp[0]);
 
   // close the end of the socket that we gave away
-  if (close(fuse_socks[0]))
-    die(1, "Couldn't close unneeded fusermount socket", "");
+  close(fuse_socks[0]);
 
   // wait for fusermount to return
   waitpid(fusermount_pid, &status, 0);
@@ -258,8 +255,7 @@ int get_fuse_sock(char *const optv[]) {
     die(1, NULL, "Couldn't receive fd over FUSE socket\n");
 
   // close the read end of the socket
-  if (close(fuse_socks[1]))
-    die(1, "Couldn't close fusermount read socket", "");
+  close(fuse_socks[1]);
 
   return fd;
 }
