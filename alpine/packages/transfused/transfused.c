@@ -17,8 +17,6 @@
 
 int debug = 0;
 
-int save_trace;
-
 typedef struct {
   char * socket9p_root;
 } parameters;
@@ -116,7 +114,7 @@ void copy(copy_thread_state * copy_state) {
     read_count = read(from, buf, COPY_BUFSZ);
     if (read_count == -1) die(1, "", "copy %s: error reading: ", descr);
 
-    if (save_trace) {
+    if (debug) {
       int trace_fd;
       char * trace_path;
 
@@ -343,14 +341,12 @@ void * handle_connection_thread(void * connection) {
   return handle_connection((connection_state *) connection);
 }
 
-void toggle_save_trace(int sig) {
-  save_trace = !save_trace;
+void toggle_debug(int sig) {
+  debug = !debug;
 }
 
-void setup_save_trace() {
-  save_trace = 0;
-  
-  if (SIG_ERR == signal(SIGHUP, toggle_save_trace))
+void setup_debug() {
+  if (SIG_ERR == signal(SIGHUP, toggle_debug))
     die(1, "Couldn't set SIGHUP behavior", "");
 
   if (siginterrupt(SIGHUP, 1))
@@ -377,7 +373,7 @@ int main(int argc, char * argv[]) {
   if (asprintf(&events_path, "%s/events", params.socket9p_root) == -1)
     die(1, "", "Couldn't allocate events path: ");
 
-  setup_save_trace();
+  setup_debug();
 
   events = open(events_path, O_RDONLY | O_CLOEXEC);
   if (events != -1) {
