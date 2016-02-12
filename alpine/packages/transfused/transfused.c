@@ -413,7 +413,8 @@ void parse_parameters(int argc, char * argv[], parameters * params) {
   if (errflg) die(2, NULL, usage);
 
   if (params->pidfile != NULL && access(params->pidfile, W_OK))
-    die(2, "", "-p %s path to pidfile must be writable: ", params->pidfile);
+    if (errno != ENOENT)
+      die(2, "", "-p %s path to pidfile must be writable: ", params->pidfile);
 
   if (params->fusermount == NULL)
     params->fusermount = default_fusermount;
