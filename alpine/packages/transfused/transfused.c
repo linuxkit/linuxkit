@@ -440,7 +440,7 @@ void write_pidfile(char * pidfile) {
 
   pid_s_len = strlen(pid_s);
 
-  fd = open(pidfile, O_WRONLY | O_CREAT, 0644);
+  fd = open(pidfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
   if (fd == -1)
     die(1, "", "Couldn't open pidfile path %s: ", pidfile);
 
