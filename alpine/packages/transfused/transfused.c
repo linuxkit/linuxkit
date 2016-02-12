@@ -16,7 +16,7 @@
 #define COPY_BUFSZ 65536
 
 #define DEFAULT_FUSERMOUNT "/bin/fusermount"
-#define DEFAULT_SOCKET9P_ROOT "/Transfused"
+#define DEFAULT_SOCKET9P_ROOT "/Transfuse"
 
 char * default_fusermount = DEFAULT_FUSERMOUNT;
 char * default_socket9p_root = DEFAULT_SOCKET9P_ROOT;
