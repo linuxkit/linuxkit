@@ -15,7 +15,7 @@ start()
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/transfused.pid
 
-        /sbin/transfused &
+        /sbin/transfused -p "${PIDFILE}" &
 }
 
 stop()
