@@ -120,10 +120,10 @@ void copy(copy_thread_state * copy_state) {
 
       if (asprintf(&trace_path, "/tmp/transfused.%ld.%s.%llu",
                    connection, tag, message_id(buf)) == -1)
-        die(1, "", "Couldn't allocate trace packet path");
+        die(1, "Couldn't allocate trace packet path", "");
 
       trace_fd = open(trace_path, O_WRONLY | O_CREAT, 0600);
-      if (read_fd == -1)
+      if (trace_fd == -1)
         die(1, "couldn't open trace packet path", "For %s, ", descr);
 
       write_count = write(trace_fd, buf, read_count);
@@ -234,7 +234,7 @@ int get_fuse_sock(char *const optv[]) {
 
   // prepare to exec the suid binary fusermount
   if (asprintf(&envp[0], "_FUSE_COMMFD=%d", fuse_socks[0]) == -1)
-    die(1, "", "Couldn't allocate fusermount envp");
+    die(1, "Couldn't allocate fusermount envp", "");
 
   envp[1] = 0x0;
 
@@ -279,7 +279,7 @@ void start_reader(connection_state * connection, int fuse) {
 
   if (asprintf(&read_path, "%s/connections/%ld/read",
                connection->params->socket9p_root, connection->id) == -1)
-    die(1, "", "Couldn't allocate read path: ");
+    die(1, "Couldn't allocate read path", "");
 
   read_fd = open(read_path, O_RDONLY);
   if (read_fd == -1)
@@ -309,7 +309,7 @@ void do_write(connection_state * connection, int fuse) {
 
   if (asprintf(&write_path, "%s/connections/%ld/write",
                connection->params->socket9p_root, connection->id) == -1)
-    die(1, "", "Couldn't allocate write path: ");
+    die(1, "Couldn't allocate write path", "");
 
   write_fd = open(write_path, O_WRONLY);
   if (write_fd == -1)
@@ -387,12 +387,12 @@ int main(int argc, char * argv[]) {
     while (1) {
       read_count = read(events, buf, ID_LEN - 1);
       if (read_count == -1) {
-        die(1, "Error reading events path", "");
+        die(1, "", "Error reading events path %s: ", events_path);
       } else if (read_count == 0) {
         // TODO: this is probably the 9p server's fault due to
         //       not dropping the read 0 to force short read if
         //       the real read is flushed
-        fprintf(stderr, "read 0 from event stream\n");
+        fprintf(stderr, "read 0 from event stream %s\n", events_path);
         continue;
       }
 
