@@ -90,6 +90,8 @@ func handleOne(id int) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
+	defer conn.Close()
+
 	if err != nil {
 		// If the forwarding program has broken then close and continue
 		log.Println("Failed to connect to Unix domain socket after 10s", sock, err)
