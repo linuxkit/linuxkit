@@ -15,10 +15,23 @@
 
 #define COPY_BUFSZ 65536
 
+#define DEFAULT_FUSERMOUNT "/bin/fusermount"
+#define DEFAULT_SOCKET9P_ROOT "/Transfused"
+
+char * default_fusermount = DEFAULT_FUSERMOUNT;
+char * default_socket9p_root = DEFAULT_SOCKET9P_ROOT;
+char * usage =
+  "usage: transfused [-p pidfile] [-9 socket9p_root] [-f fusermount]\n"
+  " -p pidfile\tthe path at which to write the pid of the process\n"
+  " -9 " DEFAULT_SOCKET9P_ROOT "\tthe root of the 9p socket file system\n"
+  " -f " DEFAULT_FUSERMOUNT "\tthe fusermount executable to use\n";
+
 int debug = 0;
 
 typedef struct {
   char * socket9p_root;
+  char * fusermount;
+  char * pidfile;
 } parameters;
 
 typedef struct {
@@ -33,8 +46,6 @@ typedef struct {
   int from;
   int to;
 } copy_thread_state;
-
-char * fusermount = "/bin/fusermount";
 
 void die(int exit_code, const char * perror_arg, const char * fmt, ...) {
   va_list argp;
@@ -211,7 +222,7 @@ int recv_fd(int sock) {
 }
 
 // optv must be null-terminated
-int get_fuse_sock(char *const optv[]) {
+int get_fuse_sock(char * fusermount, char *const optv[]) {
   int optc;
   char ** argv;
   char * envp[2];
@@ -333,7 +344,7 @@ void * handle_connection(connection_state * connection) {
   buf = (char *) must_malloc("read_opts packet malloc", COPY_BUFSZ);
 
   optv = read_opts(connection, buf);
-  fuse = get_fuse_sock(optv);
+  fuse = get_fuse_sock(connection->params->fusermount, optv);
   free(optv);
   free(buf);
 
@@ -360,30 +371,99 @@ void setup_debug() {
     die(1, "Couldn't set siginterrupt for SIGHUP", "");
 }
 
-#define ID_LEN 512
+void parse_parameters(int argc, char * argv[], parameters * params) {
+  int c;
+  int errflg = 0;
 
-int main(int argc, char * argv[]) {
-  int events, read_count;
-  char buf[ID_LEN];
-  long conn_id;
-  pthread_t child;
-  parameters params;
-  connection_state * conn;
-  char * events_path;
+  params->pidfile = NULL;
+  params->socket9p_root = NULL;
+  params->fusermount = NULL;
 
-  if (argc < 2) {
-    params.socket9p_root = "/Transfuse";
-  } else {
-    params.socket9p_root = argv[1];
+  while ((c = getopt(argc, argv, ":p:9:f:")) != -1) {
+    switch(c) {
+
+    case 'p':
+      params->pidfile = optarg;
+      break;
+
+    case '9':
+      params->socket9p_root = optarg;
+      break;
+
+    case 'f':
+      params->fusermount = optarg;
+      break;
+
+    case ':':
+      fprintf(stderr, "Option -%c requires a path argument\n", optopt);
+      errflg++;
+      break;
+
+    case '?':
+      fprintf(stderr, "Unrecognized option: '-%c'\n", optopt);
+      errflg++;
+      break;
+
+    default:
+      fprintf(stderr, "Internal error parsing -%c\n", c);
+      errflg++;
+    }
   }
 
-  if (asprintf(&events_path, "%s/events", params.socket9p_root) == -1)
-    die(1, "", "Couldn't allocate events path: ");
+  if (errflg) die(2, NULL, usage);
 
-  setup_debug();
+  if (params->pidfile != NULL && access(params->pidfile, W_OK))
+    die(2, "", "-p %s path to pidfile must be writable: ", params->pidfile);
 
-  events = open(events_path, O_RDONLY | O_CLOEXEC);
-  if (events != -1) {
+  if (params->fusermount == NULL)
+    params->fusermount = default_fusermount;
+  if (access(params->fusermount, X_OK))
+    die(2, "", "-f %s path to fusermount must be executable: ",
+        params->fusermount);
+
+  if (params->socket9p_root == NULL)
+    params->socket9p_root = default_socket9p_root;
+  if (access(params->socket9p_root, X_OK))
+    die(2, "", "-9 %s path to socket 9p root directory must be executable: ",
+        params->socket9p_root);
+}
+
+void write_pidfile(char * pidfile) {
+  int fd;
+  pid_t pid = getpid();
+  char * pid_s;
+  int pid_s_len, write_count;
+
+  if (asprintf(&pid_s, "%lld", (long long) pid) == -1)
+    die(1, "Couldn't allocate pidfile string", "");
+
+  pid_s_len = strlen(pid_s);
+
+  fd = open(pidfile, O_WRONLY | O_CREAT, 0644);
+  if (fd == -1)
+    die(1, "", "Couldn't open pidfile path %s: ", pidfile);
+
+  write_count = write(fd, pid_s, pid_s_len);
+  if (write_count == -1)
+    die(1, "", "Error writing pidfile %s: ", pidfile);
+
+  if (write_count != pid_s_len)
+    die(1, NULL, "Error writing %s to pidfile %s: only wrote %d bytes\n",
+        pid_s, pidfile, write_count);
+
+  close(fd);
+  free(pid_s);
+}
+
+#define ID_LEN 512
+
+void process_events(char * events_path, int events, parameters * params) {
+    char buf[ID_LEN];
+    int read_count;
+    long conn_id;
+    pthread_t child;
+    connection_state * conn;
+
     while (1) {
       read_count = read(events, buf, ID_LEN - 1);
       if (read_count == -1) {
@@ -407,7 +487,7 @@ int main(int argc, char * argv[]) {
       conn = (connection_state *) must_malloc("connection state",
                                               sizeof(connection_state));
       conn->id = conn_id;
-      conn->params = &params;
+      conn->params = params;
 
       if ((errno = pthread_create(&child, NULL,
                                   handle_connection_thread, conn)))
@@ -418,7 +498,23 @@ int main(int argc, char * argv[]) {
 
       if (debug) fprintf(stderr, "thread spawned\n");
     }
-  }
+}
+
+int main(int argc, char * argv[]) {
+  int events;
+  parameters params;
+  char * events_path;
+
+  parse_parameters(argc, argv, &params);
+  setup_debug();
+
+  if (params.pidfile != NULL) write_pidfile(params.pidfile);
+
+  if (asprintf(&events_path, "%s/events", params.socket9p_root) == -1)
+    die(1, "Couldn't allocate events path", "");
+
+  events = open(events_path, O_RDONLY | O_CLOEXEC);
+  if (events != -1) process_events(events_path, events, &params);
 
   fprintf(stderr, "Failed to open events path %s: ", events_path);
   perror("");
