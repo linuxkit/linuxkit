@@ -33,7 +33,7 @@ RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-
 # http://aufs.sourceforge.net/
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
 ENV AUFS_BRANCH     aufs4.1.13+
-ENV AUFS_COMMIT     0e5c702a803ebfd9a38e5037e830da07c44c0af6
+ENV AUFS_COMMIT     1aa8a143457147473edc97035a7f4b89f9d234ae
 # we use AUFS_COMMIT to get stronger repeatability guarantees
 
 # Download AUFS and patch kernel
