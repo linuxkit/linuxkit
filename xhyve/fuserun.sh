@@ -17,7 +17,7 @@ fi
 #IMG_HDD="-s 4,virtio-blk,/somepath/somefile.img"
 PCI_DEV="-s 0:0,hostbridge -s 31,lpc"
 RND="-s 5,virtio-rnd"
-FS="-s 6,virtio-9p,path=9pudfuse.sock,tag=fuse"
+FS="-s 6,virtio-9p,path=transfused.sock,tag=fuse"
 LPC_DEV="-l com1,stdio"
 ACPI="-A"
 CLOCK="-u"
