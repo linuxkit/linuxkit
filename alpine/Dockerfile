@@ -23,8 +23,8 @@ COPY mkinitrd.sh /bin/
 
 COPY packages/9pudc/9pudc /sbin/
 COPY packages/9pudc/etc /etc/
-COPY packages/9pudfuse/9pudfuse /sbin/
-COPY packages/9pudfuse/etc /etc/
+COPY packages/transfused/transfused /sbin/
+COPY packages/transfused/etc /etc/
 COPY packages/mdnstool/mdnstool /sbin/
 COPY packages/mdnstool/etc /etc/
 COPY packages/docker/docker /usr/bin/
@@ -78,7 +78,7 @@ RUN \
   rc-update add docker default && \
   rc-update add 9pinit boot && \
   rc-update add 9pudc default && \
-  rc-update add 9pudfuse default && \
+  rc-update add transfused default && \
   rc-update add mdnstool default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \

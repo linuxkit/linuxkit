@@ -3,7 +3,7 @@
 depends()
 {
 	before acpid docker syslog chronyd
-	after 9pinit 9pudfuse
+	after 9pinit transfused
 }
 
 start()
