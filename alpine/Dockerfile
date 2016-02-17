@@ -35,8 +35,7 @@ COPY packages/mdnstool/mdnstool /sbin/
 COPY packages/mdnstool/etc /etc/
 COPY packages/llmnrd/llmnrd /sbin/
 COPY packages/llmnrd/etc /etc/
-COPY packages/docker/docker /usr/bin/
-COPY packages/docker/docker-* /usr/bin/
+COPY packages/docker/bin/* /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/diagnostics/diagnostics /usr/bin/
 COPY packages/diagnostics/diagnostics-server /usr/bin/
@@ -49,7 +48,6 @@ COPY packages/dnsfix/etc /etc/
 COPY packages/hostsettings/etc /etc/
 COPY packages/hupper/hupper /bin/
 COPY packages/hupper/etc /etc/
-COPY packages/hvtools/hv_fcopy_daemon /sbin/
 COPY packages/hvtools/hv_kvp_daemon /sbin/
 COPY packages/hvtools/hv_vss_daemon /sbin/
 COPY packages/hvtools/etc /etc/
