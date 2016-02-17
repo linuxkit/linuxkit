@@ -14,6 +14,7 @@ RUN \
   openrc busybox-initscripts \
   alpine-conf \
   bind-tools \
+  openssh-client \
   strace fuse
 
 COPY etc /etc/
