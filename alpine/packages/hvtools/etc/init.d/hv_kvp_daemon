@@ -2,6 +2,12 @@
 
 HV_DAEMON=hv_kvp_daemon
 
+depend()
+{
+        after dev
+        needs networking
+}
+
 start()
 {
         [ ! -d /sys/bus/vmbus ] && exit 0
