@@ -12,6 +12,7 @@ arm:
 	$(MAKE) -C mdnstool ARCH=arm
 	$(MAKE) -C docker ARCH=arm
 	$(MAKE) -C hupper ARCH=arm
+	$(MAKE) -C hvtools ARCH=arm
 
 clean:
 	$(MAKE) -C 9pudc clean
