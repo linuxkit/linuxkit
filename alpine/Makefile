@@ -8,8 +8,7 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	$(MAKE) -C packages
 	$(MAKE) -C kernel
 	cp inittab.x86_64 etc/inittab
-	docker build -t mobyinitrd:build .
-	docker run --rm mobyinitrd:build /bin/mkinitrd.sh > $@
+	docker-compose run --rm -T moby /bin/mkinitrd.sh > $@
 
 mobylinux.iso: initrd.img Dockerfile.iso isolinux.cfg
 	docker build -f Dockerfile.iso -t mobyiso:build .
@@ -34,5 +33,5 @@ clean:
 	rm -f mobylinux.iso
 	$(MAKE) -C packages clean
 	$(MAKE) -C kernel clean
-	docker images -q mobyinitrd:build | xargs docker rmi -f
+	docker images -q mobyinitrdarm:build | xargs docker rmi -f
 	docker images -q mobyiso:build | xargs docker rmi -f
