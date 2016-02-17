@@ -17,13 +17,17 @@ start()
 			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000.u,msize=32768 plan9 /Mac
 			for d in Users Volumes tmp private
 			do
-				[ -d /Mac/$d ] && mkdir /$d && mount --bind /Mac/$d /$d
+				[ -d /Mac/$d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
 			done
 			;;
 		"fuse")
 			mkdir -p /Transfuse
 			mkdir -p /Mac
 			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000,msize=32768 fuse /Transfuse
+			for d in Users Volumes tmp private
+			do
+				[ -d /Mac/$d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
+			done
 			;;
 		"db")
 			mkdir -p /Database
