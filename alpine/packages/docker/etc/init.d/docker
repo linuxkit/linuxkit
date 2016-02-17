@@ -14,7 +14,7 @@ if cat /proc/cmdline | grep -q 'com.docker.driverDir'
 then
 	DRIVER="$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
 	INET=$(ifconfig eth0 2> /dev/null | grep 'inet addr' | cut -f 2 -d ":" | cut -f 1 -d " ")
-	echo $INET > "/Mac/$DRIVER/ip"
+	[ -d "/Mac/$DRIVER" ] && echo $INET > "/Mac/$DRIVER/ip"
 fi
 
 if cat /proc/cmdline | grep -q 'com.docker.database'
@@ -24,6 +24,10 @@ then
 	[ -s ${CONFIG_FILE} ] && DOCKER_OPTS="${DOCKER_OPTS} --config-file ${CONFIG_FILE}"
 fi
 
+for d in Users Volumes tmp private
+do
+	[ -d /Mac/$d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
+done
 
 command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
 
