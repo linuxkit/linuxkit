@@ -2,6 +2,11 @@
 
 HV_DAEMON=hv_vss_daemon
 
+depend()
+{
+        after dev
+}
+
 start()
 {
         [ ! -d /sys/bus/vmbus ] && exit 0

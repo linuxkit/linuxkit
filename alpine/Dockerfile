@@ -47,7 +47,6 @@ COPY packages/dnsfix/etc /etc/
 COPY packages/database/etc /etc/
 COPY packages/hupper/hupper /bin/
 COPY packages/hupper/etc /etc/
-COPY packages/hvtools/hv_fcopy_daemon /sbin/
 COPY packages/hvtools/hv_kvp_daemon /sbin/
 COPY packages/hvtools/hv_vss_daemon /sbin/
 COPY packages/hvtools/etc /etc/
@@ -92,9 +91,8 @@ RUN \
   rc-update add dnsfix boot && \
   rc-update add database boot && \
   rc-update add hupper default && \
-  rc-update add hv_fcopy_daemon default && \
-  rc-update add hv_kvp_daemon default && \
-  rc-update add hv_vss_daemon default
+  rc-update add hv_kvp_daemon boot && \
+  rc-update add hv_vss_daemon boot
 
 COPY init /
 
