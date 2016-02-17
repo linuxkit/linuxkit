@@ -14,7 +14,7 @@ start()
 
 	GROUPDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.groupDir="//' -e 's/".*//')"
 
-	mount --bind "${GROUPDIR}" /var/log
+	mount --bind "${GROUPDIR}/log" /var/log
  
 	eend $? "Failed to redirect logs to host"
 }
