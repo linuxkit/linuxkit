@@ -13,7 +13,7 @@ arm:
 	$(MAKE) -C alpine/kernel arm
 	$(MAKE) -C alpine arm
 
-qemu-arm: Dockerfile.armhf arm
+qemu-arm: Dockerfile.qemu.armhf arm
 	docker build -f Dockerfile.qemu.armhf -t mobyarmqemu:build .
 	docker run --rm mobyarmqemu:build
 
