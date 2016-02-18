@@ -8,13 +8,13 @@ depends()
 
 start()
 {
-	cat /proc/cmdline | grep -q 'com.docker.groupDir' || exit 0
+	cat /proc/cmdline | grep -q 'com.docker.driverDir' || exit 0
 
 	ebegin "Redirecting logs to host"
 
-	GROUPDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.groupDir="//' -e 's/".*//')"
+	DRIVERDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
 
-	mount --bind "${GROUPDIR}/log" /var/log
+	mount --bind "${DRIVERDIR}/log" /var/log
  
 	eend $? "Failed to redirect logs to host"
 }

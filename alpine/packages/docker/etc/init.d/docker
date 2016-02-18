@@ -10,9 +10,9 @@ pidfile="/run/docker.pid"
 # future change this to use a hypervisor socket.
 DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock"
 
-if cat /proc/cmdline | grep -q 'com.docker.groupDir'
+if cat /proc/cmdline | grep -q 'com.docker.driverDir'
 then
-	DRIVER="$(cat /proc/cmdline | sed -e 's/.*com.docker.groupDir="//' -e 's/".*//')"
+	DRIVER="$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
 	INET=$(ifconfig eth0 2> /dev/null | grep 'inet addr' | cut -f 2 -d ":" | cut -f 1 -d " ")
 	[ -d "/Mac/$DRIVER" ] && echo $INET > "/Mac/$DRIVER/ip"
 fi
