@@ -1,2 +1,16 @@
-moby:
-  build: .
+version: '2'
+services:
+  moby:
+    build:
+      context: .
+    network_mode: bridge
+  arm:
+    build:
+      context: .
+      dockerfile: Dockerfile.armhf
+    network_mode: bridge
+  iso:
+    build:
+      context: .
+      dockerfile: Dockerfile.iso
+    network_mode: bridge

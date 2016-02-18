@@ -11,27 +11,25 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	docker-compose run --rm -T moby /bin/mkinitrd.sh > $@
 
 mobylinux.iso: initrd.img Dockerfile.iso isolinux.cfg
-	docker build -f Dockerfile.iso -t mobyiso:build .
-	docker run --rm mobyiso:build cat /tmp/output.iso > $@
+	docker-compose run --rm -T iso cat /tmp/output.iso > $@
 
 arm:	initrd-arm.img
 
 Dockerfile.armhf: Dockerfile
-	cat Dockerfile | sed 's@FROM alpine@FROM justincormack/armhf-alpine@' | sed 's/syslinux//' \
-		| grep -v 'rc-update add binfmt_misc sysinit' > $@
+	cat Dockerfile | \
+	  sed 's@FROM alpine@FROM justincormack/armhf-alpine@' | \
+	  sed 's/syslinux//' | \
+	  grep -v 'rc-update add binfmt_misc sysinit' > $@
 
 initrd-arm.img: Dockerfile.armhf
 	rm -f initrd-arm.img
 	$(MAKE) -C packages arm
 	$(MAKE) -C kernel arm
 	cp inittab.armhf etc/inittab
-	docker build -f Dockerfile.armhf -t mobyinitrdarm:build .
-	docker run --rm mobyinitrdarm:build /bin/mkinitrd.sh > $@
+	docker-compose run --rm -T arm /bin/mkinitrd.sh > $@
 
 clean:
 	rm -f initrd.img initrd-arm.img Dockerfile.armhf etc/inittab
 	rm -f mobylinux.iso
 	$(MAKE) -C packages clean
 	$(MAKE) -C kernel clean
-	docker images -q mobyinitrdarm:build | xargs docker rmi -f
-	docker images -q mobyiso:build | xargs docker rmi -f
