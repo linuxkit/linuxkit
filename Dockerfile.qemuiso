@@ -1,0 +1,5 @@
+FROM justincormack/alpine-qemu
+
+COPY alpine/mobylinux.iso .
+
+ENTRYPOINT [ "qemu-system-x86_64", "-serial", "stdio", "-cdrom", "./mobylinux.iso", "-m", "1G", "-vnc", "none" ]
