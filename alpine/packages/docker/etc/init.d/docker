@@ -45,6 +45,7 @@ depend()
 stop()
 {
 	# stop docker
+	einfo "Stopping docker"
 	start-stop-daemon --stop --quiet --pidfile ${pidfile}
 
 	# taken from localmount stop script
