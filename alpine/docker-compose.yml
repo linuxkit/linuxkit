@@ -16,3 +16,5 @@ services:
       context: .
       dockerfile: Dockerfile.iso
     network_mode: bridge
+    volumes:
+     - .:/mnt
