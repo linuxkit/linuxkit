@@ -65,4 +65,4 @@ printf 'docker' > /tmp/etc/hostname
 rm /tmp/bin/mkinitrd.sh
 
 cd /tmp
-find . | cpio -H newc -o
+find . | cpio -H newc -o > /mnt/initrd.img

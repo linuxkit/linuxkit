@@ -4,6 +4,8 @@ services:
     build:
       context: .
     network_mode: bridge
+    volumes:
+     - .:/mnt
   arm:
     build:
       context: .
