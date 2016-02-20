@@ -174,7 +174,7 @@ stop()
         eoutdent
 
 	# now terminate with extreme prejudice
-	halt -f
+	poweroff -f
 
         return 0
 }
