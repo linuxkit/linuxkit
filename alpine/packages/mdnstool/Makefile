@@ -7,4 +7,4 @@ mdnstool: Dockerfile mdnstool.go mdnsmon/mdnsmon.go
 
 clean:
 	rm -f mdnstool
-	docker images -q mdnstool:build | xargs docker rmi -f
+	docker images -q mdnstool:build | xargs -r docker rmi -f
