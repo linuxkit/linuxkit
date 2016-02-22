@@ -1,6 +1,6 @@
 all: docker
 
-DOCKER_VERSION=1.10.1
+DOCKER_VERSION=1.10.2
 ARCH?=x86_64
 OS?=Linux
 
