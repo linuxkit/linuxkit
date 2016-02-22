@@ -7,4 +7,4 @@ hupper: Dockerfile main.go
 
 clean:
 	rm -f hupper
-	docker images -q hupper:build | xargs docker rmi -f
+	docker images -q hupper:build | xargs -r docker rmi -f
