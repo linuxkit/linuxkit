@@ -15,7 +15,13 @@ start()
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/transfused.pid
 
-        /sbin/transfused -p "${PIDFILE}" &
+	start-stop-daemon --start --quiet \
+		--background \
+		--exec /sbin/transfused \
+		--pidfile ${PIDFILE} \
+		-- -p "${PIDFILE}"
+
+	eend $? "Failed to start transfused"
 }
 
 stop()
@@ -28,5 +34,6 @@ stop()
 
 	start-stop-daemon --stop --quiet \
 		--pidfile "${PIDFILE}"
+
 	eend $? "Failed to stop transfused"
 }
