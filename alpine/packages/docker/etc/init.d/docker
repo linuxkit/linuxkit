@@ -14,7 +14,20 @@ if cat /proc/cmdline | grep -q 'com.docker.driverDir'
 then
 	DRIVER="$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
 	INET=$(ifconfig eth0 2> /dev/null | grep 'inet addr' | cut -f 2 -d ":" | cut -f 1 -d " ")
-	[ -d "/Mac/$DRIVER" ] && echo $INET > "/Mac/$DRIVER/ip"
+	if [ -d "/Mac/$DRIVER" ]; then
+		echo $INET > "/Mac/$DRIVER/ip"
+		echo "Written /Mac/$DRIVER/ip = $INET"
+	else
+		echo "No /Mac/$DRIVER: not writing IP address to host"
+		echo "mount"
+		mount
+		echo "ls /Mac"
+		ls /Mac
+		echo "ls /Mac/$(dirname $DRIVER)"
+		ls /Mac/$(dirname $DRIVER)
+	fi
+else
+	echo "No com.docker.driverDir: not writing IP address to host"
 fi
 
 if cat /proc/cmdline | grep -q 'com.docker.database'
