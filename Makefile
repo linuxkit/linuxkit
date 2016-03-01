@@ -29,5 +29,5 @@ remora: Dockerfile.remora remora/do-kexec.sh
 clean:
 	$(MAKE) -C alpine clean
 	$(MAKE) -C xhyve clean
-	docker images -q mobyqemu:build | xargs docker rmi -f
-	docker images -q justincormack/remora | xargs docker rmi -f
+	docker images -q mobyqemu:build | xargs -r docker rmi -f
+	docker images -q justincormack/remora | xargs -r docker rmi -f

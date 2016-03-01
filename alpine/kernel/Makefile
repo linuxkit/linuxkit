@@ -15,5 +15,5 @@ zImage: kernel_config.arm Dockerfile
 
 clean:
 	rm -f zImage vmlinuz64 aufs-utils.tar
-	docker images -q mobykernel:build | xargs docker rmi -f
-	docker images -q mobyarmkernel:build | xargs docker rmi -f
+	docker images -q mobykernel:build | xargs -r docker rmi -f
+	docker images -q mobyarmkernel:build | xargs -r docker rmi -f
