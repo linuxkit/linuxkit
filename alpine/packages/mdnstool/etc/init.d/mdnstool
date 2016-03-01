@@ -16,6 +16,7 @@ start()
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
 
+	hostname -F /etc/hostname
 	export HOSTNAME=$(hostname -s).local.
 
 	start-stop-daemon --start --quiet \
