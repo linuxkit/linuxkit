@@ -7,4 +7,4 @@ all: 9pudc
 
 clean:
 	rm -f 9pudc
-	docker images -q 9pudc:build | xargs docker rmi -f
+	docker images -q 9pudc:build | xargs -r docker rmi -f
