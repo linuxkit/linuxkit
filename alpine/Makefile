@@ -12,6 +12,7 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	docker-compose run --rm -T moby /bin/mkinitrd.sh
 
 mobylinux.iso: initrd.img Dockerfile.iso isolinux.cfg
+	docker-compose build iso
 	docker-compose run --rm -T iso cp /tmp/output.iso /mnt/mobylinux.iso
 
 arm:	initrd-arm.img
