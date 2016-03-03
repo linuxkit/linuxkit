@@ -8,6 +8,7 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	$(MAKE) -C packages
 	$(MAKE) -C kernel
 	cp inittab.x86_64 etc/inittab
+	docker-compose build moby
 	docker-compose run --rm -T moby /bin/mkinitrd.sh
 
 mobylinux.iso: initrd.img Dockerfile.iso isolinux.cfg
@@ -28,6 +29,7 @@ initrd-arm.img: Dockerfile.armhf
 	$(MAKE) -C packages arm
 	$(MAKE) -C kernel arm
 	cp inittab.armhf etc/inittab
+	docker-compose build arm
 	docker-compose run --rm -T arm /bin/mkinitrd.sh > $@
 
 clean:
