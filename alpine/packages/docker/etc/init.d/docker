@@ -1,44 +1,53 @@
 #!/sbin/openrc-run
 
-export DOCKER_RAMDISK="true"
-
-command="${DOCKER_BINARY:-/usr/bin/docker}"
-
-pidfile="/run/docker.pid"
-
-# Start with networking on both Mac and Hyper-V, but in
-# future change this to use a hypervisor socket.
-DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock"
-
-if cat /proc/cmdline | grep -q 'com.docker.database'
-then
-	DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
-	CONFIG_FILE="/Database/branch/master/ro/${DATABASE}/etc/docker/daemon.json"
-	[ -s ${CONFIG_FILE} ] && DOCKER_OPTS="${DOCKER_OPTS} --config-file ${CONFIG_FILE}"
-fi
-
-for d in Users Volumes tmp private
-do
-	[ -d /Mac/$d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
-done
-
-command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
-
-DOCKER_LOGFILE="/var/log/docker.log"
-
-start_stop_daemon_args="--background \
-        --stderr \"${DOCKER_LOGFILE}\" --stdout \"${DOCKER_LOGFILE}\""
-
 depend()
 {
-        after 9pudc transfused
-        before chronyd
+	after 9pudc transfused
+	before chronyd
+}
+
+start()
+{
+	export DOCKER_RAMDISK="true"
+
+	command="${DOCKER_BINARY:-/usr/bin/docker}"
+
+	# Start with networking on both Mac and Hyper-V, but in
+	# future change this to use a hypervisor socket.
+	DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock"
+
+	if cat /proc/cmdline | grep -q 'com.docker.database'
+	then
+		DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
+		CONFIG_FILE="/Database/branch/master/ro/${DATABASE}/etc/docker/daemon.json"
+		[ -s ${CONFIG_FILE} ] && DOCKER_OPTS="${DOCKER_OPTS} --config-file ${CONFIG_FILE}"
+	fi
+
+	for d in Users Volumes tmp private
+	do
+		[ -d /Mac/$d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
+	done
+
+	command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
+
+	DOCKER_LOGFILE="/var/log/docker.log"
+
+	pidfile="/run/docker.pid"
+
+	start-stop-daemon --start --quiet \
+		--background \
+		--exec ${command} \
+		--pidfile ${pidfile} \
+		--stderr "${DOCKER_LOGFILE}" \
+		--stdout "${DOCKER_LOGFILE}" \
+		-- ${command_args}
 }
 
 stop()
 {
 	# stop docker
 	einfo "Stopping docker"
+	pidfile="/run/docker.pid"
 	start-stop-daemon --stop --quiet --pidfile ${pidfile}
 
 	# taken from localmount stop script
