@@ -4,7 +4,7 @@ set -e
 
 rm -rf /tmp/*
 
-for f in $(ls | grep -vE 'dev|sys|proc|tmp|export')
+for f in $(ls | grep -vE 'dev|sys|proc|tmp|export|mnt')
 do
   cp -a $f /tmp
 done
