@@ -9,7 +9,7 @@ do
   cp -a $f /tmp
 done
 
-mkdir -m 555 /tmp/dev /tmp/proc /tmp/sys
+mkdir -m 555 /tmp/dev /tmp/proc /tmp/sys /tmp/mnt
 mkdir -m 1777 /tmp/tmp
 
 cd /tmp/dev
