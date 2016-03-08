@@ -1,4 +1,4 @@
-all:	initrd.img.gz
+all:	initrd.img.gz mobylinux-efi.iso
 
 ETCFILES=etc/issue etc/motd etc/network/interfaces
 ETCFILES+=etc/securetty
@@ -14,9 +14,15 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 initrd.img.gz: initrd.img
 	cat initrd.img | gzip -9 > initrd.img.gz
 
-mobylinux.iso: initrd.img Dockerfile.iso isolinux.cfg
-	docker-compose build iso
-	docker-compose run --rm -T iso cp /tmp/output.iso /mnt/mobylinux.iso
+mobylinux-efi.iso: initrd.img.gz Dockerfile.efi
+	docker-compose build efi
+	docker-compose run --rm -T efi \
+		cp /tmp/efi/mobylinux.efi /tmp/efi/mobylinux-efi.iso /mnt
+
+mobylinux-bios.iso: initrd.img Dockerfile.bios isolinux.cfg
+	docker-compose build bios
+	docker-compose run --rm -T bios \
+		cp /tmp/mobylinux-bios.iso /mnt
 
 arm:	initrd-arm.img
 
@@ -37,6 +43,6 @@ initrd-arm.img: Dockerfile.armhf
 
 clean:
 	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf etc/inittab
-	rm -f mobylinux.iso
+	rm -f mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
 	$(MAKE) -C packages clean
 	$(MAKE) -C kernel clean
