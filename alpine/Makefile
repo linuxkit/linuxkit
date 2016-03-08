@@ -18,6 +18,11 @@ mobylinux.iso: initrd.img Dockerfile.iso isolinux.cfg
 	docker-compose build iso
 	docker-compose run --rm -T iso cp /tmp/output.iso /mnt/mobylinux.iso
 
+mobylinuxefi.iso mobylinux.efi:
+mobylinux.efi: initrd.img Dockerfile.efi
+	docker-compose build efi
+	docker-compose run --rm -T efi cp /tmp/efi/mobylinux.efi /tmp/efi/mobylinuxefi.iso /mnt
+
 arm:	initrd-arm.img
 
 Dockerfile.armhf: Dockerfile
@@ -38,6 +43,6 @@ initrd-arm.img: Dockerfile.armhf
 
 clean:
 	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf etc/inittab
-	rm -f mobylinux.iso
+	rm -f mobylinux.iso mobylinuxefi.iso mobylinux-boot.vhdx mobylinux.efi
 	$(MAKE) -C packages clean
 	$(MAKE) -C kernel clean
