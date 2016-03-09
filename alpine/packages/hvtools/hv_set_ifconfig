@@ -58,9 +58,6 @@
 # Stash away a copy of the config we got
 cp $1 /etc/network/hv_config
 
-# This is where we write the configuration
-outf=/etc/network/interfaces
-
 # Source it
 . $1
 
@@ -68,6 +65,7 @@ outf=/etc/network/interfaces
 ifdown -f $DEVICE
 
 # create a new interfaces file
+outf=/etc/network/interfaces
 echo "auto lo" > $outf
 echo "iface lo inet loopback" >> $outf
 echo "" >> $outf
@@ -80,10 +78,16 @@ else
     echo "    address $IPADDR0" >> $outf
     echo "    netmask $NETMASK0" >> $outf
     echo "    gateway $GATEWAY" >> $outf
-    echo "    nameserver $DNS1 $DNS2 $DNS3" >> $outf
 fi
 
 echo "    hwaddress ether $HWADDR" >> $outf
+
+# create a new resolve.conf file
+outf=/etc/resolv.conf
+[ -n "$DNS1" ] && echo "nameserver $DNS1" > $outf
+[ -n "$DNS2" ] && echo "nameserver $DNS2" >> $outf
+[ -n "$DNS3" ] && echo "nameserver $DNS3" >> $outf
+[ -n "$DNS4" ] && echo "nameserver $DNS4" >> $outf
 
 # Up the interface
 ifup $DEVICE
