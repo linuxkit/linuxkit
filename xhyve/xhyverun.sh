@@ -1,7 +1,7 @@
 #!/bin/sh
 
 KERNEL="../alpine/kernel/vmlinuz64"
-INITRD="../alpine/initrd.img"
+INITRD="../alpine/initrd.img.gz"
 CMDLINE="earlyprintk=serial console=ttyS0"
 
 MEM="-m 1G"
