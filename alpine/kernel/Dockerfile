@@ -1,6 +1,6 @@
 FROM debian:unstable
 
-ARG KERNEL_VERSION=4.1.18
+ARG KERNEL_VERSION=4.1.19
 ARG ARCH=x86_64
 
 RUN apt-get update && apt-get -y upgrade && apt-get -y install \
