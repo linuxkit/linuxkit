@@ -1,4 +1,4 @@
-all:	initrd.img
+all:	initrd.img.gz
 
 ETCFILES=etc/issue etc/motd etc/network/interfaces
 ETCFILES+=etc/securetty
@@ -10,6 +10,9 @@ initrd.img: Dockerfile mkinitrd.sh repositories $(ETCFILES)
 	cp inittab.x86_64 etc/inittab
 	docker-compose build moby
 	docker-compose run --rm -T moby /bin/mkinitrd.sh
+
+initrd.img.gz: initrd.img
+	cat initrd.img | gzip -9 > initrd.img.gz
 
 mobylinux.iso: initrd.img Dockerfile.iso isolinux.cfg
 	docker-compose build iso
@@ -34,7 +37,7 @@ initrd-arm.img: Dockerfile.armhf
 	docker-compose run --rm -T arm /bin/mkinitrd.sh > $@
 
 clean:
-	rm -f initrd.img initrd-arm.img Dockerfile.armhf etc/inittab
+	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf etc/inittab
 	rm -f mobylinux.iso
 	$(MAKE) -C packages clean
 	$(MAKE) -C kernel clean
