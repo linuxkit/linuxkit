@@ -12,6 +12,8 @@ start()
 
 	command="${DOCKER_BINARY:-/usr/bin/docker}"
 
+	pidfile="/run/docker.pid"
+
 	# Start with networking on both Mac and Hyper-V, but in
 	# future change this to use a hypervisor socket.
 	DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock"
@@ -28,11 +30,7 @@ start()
 		[ -d /Mac/$d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
 	done
 
-	command_args="daemon -p \"${pidfile}\" ${DOCKER_OPTS}"
-
 	DOCKER_LOGFILE="/var/log/docker.log"
-
-	pidfile="/run/docker.pid"
 
 	start-stop-daemon --start --quiet \
 		--background \
@@ -40,7 +38,7 @@ start()
 		--pidfile ${pidfile} \
 		--stderr "${DOCKER_LOGFILE}" \
 		--stdout "${DOCKER_LOGFILE}" \
-		-- ${command_args}
+		-- daemon --pidfile=${pidfile} ${DOCKER_OPTS}
 }
 
 stop()
@@ -51,6 +49,7 @@ stop()
 	start-stop-daemon --stop --quiet --pidfile ${pidfile}
 
 	# taken from localmount stop script
+	# XXX fix more cleanly see #35
 
         yesno $RC_GOINGDOWN || return 0
         # We never unmount / or /dev or $RC_SVCDIR
