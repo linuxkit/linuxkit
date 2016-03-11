@@ -10,7 +10,6 @@ arm: zImage
 zImage: kernel_config.arm Dockerfile
 	docker build --build-arg ARCH=arm -t mobyarmkernel:build .
 	docker run --rm mobyarmkernel:build cat /linux/arch/arm/boot/zImage > $@
-	docker run --rm mobyarmkernel:build cat /dtb > dtb
 	docker run --rm mobyarmkernel:build cat /aufs-utils.tar > aufs-utils.tar
 
 clean:
