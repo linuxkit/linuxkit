@@ -6,4 +6,4 @@ COPY alpine/kernel/dtb dtb
 
 RUN gzip -9 initrd-arm.img
 
-ENTRYPOINT [ "qemu-system-arm", "-machine", "vexpress-a15", "-cpu", "cortex-a15", "-no-reboot", "-netdev", "user,id=eth0", "-device", "virtio-net-device,netdev=eth0", "-serial", "stdio", "-kernel", "zImage", "-initrd", "initrd-arm.img.gz", "-dtb", "dtb/vexpress-v2p-ca15-tc1.dtb", "-m", "256", "-append", "console=ttyAMA0,38400n8", "-vnc", "none" ]
+ENTRYPOINT [ "qemu-system-arm", "-machine", "vexpress-a15", "-cpu", "cortex-a15", "-no-reboot", "-netdev", "user,id=eth0", "-device", "virtio-net-device,netdev=eth0", "-serial", "stdio", "-kernel", "zImage", "-initrd", "initrd-arm.img.gz", "-dtb", "dtb/vexpress-v2p-ca15-tc1.dtb", "-m", "1024", "-append", "console=ttyAMA0,38400n8", "-vnc", "none" ]
