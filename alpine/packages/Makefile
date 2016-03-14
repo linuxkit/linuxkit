@@ -1,10 +1,10 @@
 all:
-	$(MAKE) -C 9pudc
-	$(MAKE) -C transfused
-	$(MAKE) -C mdnstool
-	$(MAKE) -C docker
-	$(MAKE) -C hupper
-	$(MAKE) -C hvtools
+	$(MAKE) -C 9pudc OS=linux
+	$(MAKE) -C transfused OS=linux
+	$(MAKE) -C mdnstool OS=linux
+	$(MAKE) -C docker OS=linux
+	$(MAKE) -C hupper OS=linux
+	$(MAKE) -C hvtools OS=linux
 
 arm:
 	$(MAKE) -C 9pudc ARCH=arm
