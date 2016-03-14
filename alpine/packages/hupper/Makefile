@@ -1,7 +1,7 @@
 all: hupper
 
 hupper: Dockerfile main.go
-	docker build --build-arg GOOS=$(OS) --build-arg GOARCH=$(ARCH) -t hupper:build .
+	docker build --build-arg GOOS=linux --build-arg GOARCH=amd64 -t hupper:build .
 	docker run --rm hupper:build cat /go/bin/hupper > hupper
 	chmod 755 hupper
 
