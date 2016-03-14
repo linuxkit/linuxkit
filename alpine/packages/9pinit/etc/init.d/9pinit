@@ -14,12 +14,12 @@ start()
 			;;
 		"plan9")
 			mkdir -p /Mac
-			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000.u,msize=32768 plan9 /Mac
+			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000.u,msize=262144 plan9 /Mac
 			;;
 		"fuse")
 			mkdir -p /Transfuse
 			mkdir -p /Mac
-			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000,msize=32768 fuse /Transfuse
+			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000,msize=262144 fuse /Transfuse
 			;;
 		"db")
 			mkdir -p /Database
