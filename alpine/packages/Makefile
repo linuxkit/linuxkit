@@ -2,16 +2,16 @@ all:
 	$(MAKE) -C 9pudc OS=linux
 	$(MAKE) -C transfused OS=linux
 	$(MAKE) -C mdnstool OS=linux
-	$(MAKE) -C docker OS=linux
 	$(MAKE) -C hupper OS=linux
 	$(MAKE) -C hvtools OS=linux
+	$(MAKE) -C docker OS=Linux
 
 arm:
 	$(MAKE) -C 9pudc OS=linux ARCH=arm
 	$(MAKE) -C transfused OS=linux ARCH=arm
 	$(MAKE) -C mdnstool OS=linux ARCH=arm
-	$(MAKE) -C docker OS=linux ARCH=arm
 	$(MAKE) -C hupper OS=linux ARCH=arm
+	$(MAKE) -C docker OS=Linux ARCH=arm
 
 clean:
 	$(MAKE) -C 9pudc clean
