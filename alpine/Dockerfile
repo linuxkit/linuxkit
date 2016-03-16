@@ -52,6 +52,7 @@ COPY packages/hvtools/hv_set_ifconfig /sbin/
 COPY packages/userns/etc /etc/
 COPY packages/userns/groupadd /usr/sbin
 COPY packages/userns/useradd /usr/sbin
+COPY packages/nc-vsock/nc-vsock /usr/bin
 
 RUN \
   rc-update add swap boot && \
