@@ -4,7 +4,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
-#include <syslog.h>
 
 #include <stdio.h>
 #include <unistd.h>
@@ -60,26 +59,17 @@ typedef struct {
 } copy_thread_state;
 
 #include <sys/syscall.h>
-#ifdef SYS_gettid
+
 pid_t gettid() {
   return syscall(SYS_gettid);
 }
-#else
-#error "SYS_gettid not defined"
-#endif
 
 void die(int exit_code, const char * perror_arg, const char * fmt, ...) {
   va_list argp;
-  int in_errno = errno;
   va_start(argp, fmt);
-  vsyslog(LOG_CRIT, fmt, argp);
+  vfprintf(stderr, fmt, argp);
   va_end(argp);
-  if (perror_arg != NULL) {
-    if (*perror_arg != 0)
-      syslog(LOG_CRIT, "%s: %s", perror_arg, strerror(in_errno));
-    else
-      syslog(LOG_CRIT, "%s", strerror(in_errno));
-  }
+  if (perror_arg != NULL) perror(perror_arg);
   exit(exit_code);
 }
 
@@ -297,7 +287,7 @@ int get_fuse_sock(char * fusermount, char *const optv[]) {
   if (WEXITSTATUS(status))
     die(1, NULL, "fusermount exited with code %d\n", WEXITSTATUS(status));
 
-  if (debug) syslog(LOG_DEBUG, "about to recv_fd from fusermount");
+  if (debug) fprintf(stderr, "about to recv_fd from fusermount\n");
 
   fd = recv_fd(fuse_socks[1]);
   if (fd == -1)
@@ -454,7 +444,7 @@ void perform_syscall(uint8_t syscall, char path[]) {
     die(1, NULL, "Unknown event syscall %" PRIu8, syscall);
   }
 
-  if (r != 0) syslog(LOG_INFO, "Event %s error: %s", name, strerror(errno));
+  if (r != 0) fprintf(stderr, "Event %s error: %s", name, strerror(errno));
 }
 
 void * event_thread(void * connection_ptr) {
@@ -486,19 +476,19 @@ void * event_thread(void * connection_ptr) {
 
     event_len = (int) ntohs(*((uint16_t *) buf));
 
-    if (debug) syslog(LOG_DEBUG, "read %d bytes from connection %ld",
-                      read_count, connection->id);
+    if (debug) fprintf(stderr, "read %d bytes from connection %ld\n",
+                       read_count, connection->id);
 
     if (read_count != event_len) {
-      syslog(LOG_ERR, "event thread: only read %d of %d",
-             read_count, event_len);
+      fprintf(stderr, "event thread: only read %d of %d\n",
+              read_count, event_len);
 
       msg = must_malloc("event hex", read_count * 2 + 1);
       for (int i = 0; i < read_count; i++) {
         sprintf(((char *) msg) + (i * 2),"%02x",(int) (((char *) buf)[i]));
       }
       ((char *) msg)[read_count * 2] = 0;
-      syslog(LOG_ERR, "message: %s", (char *) msg);
+      fprintf(stderr, "message: %s\n", (char *) msg);
       free(msg);
 
       continue;
@@ -571,7 +561,10 @@ void parse_parameters(int argc, char * argv[], parameters * params) {
     }
   }
 
-  if (errflg) die(2, NULL, usage);
+  if (errflg) {
+    fprintf(stderr, "%s", usage);
+    exit(2);
+  }
 
   if (params->pidfile != NULL && access(params->pidfile, W_OK))
     if (errno != ENOENT)
@@ -636,7 +629,7 @@ void process_events(char * events_path, int events, parameters * params) {
         // TODO: this is probably the 9p server's fault due to
         //       not dropping the read 0 to force short read if
         //       the real read is flushed
-        syslog(LOG_WARNING, "read 0 from event stream %s", events_path);
+        fprintf(stderr, "read 0 from event stream %s\n", events_path);
         continue;
       }
 
@@ -650,7 +643,7 @@ void process_events(char * events_path, int events, parameters * params) {
       conn_id = strtol(buf + 1, NULL, 10);
       if (errno) die(1, "failed", "Connection id of string '%s'", buf);
 
-      if (debug) syslog(LOG_DEBUG, "handle connection %ld", conn_id);
+      if (debug) fprintf(stderr, "handle connection %ld\n", conn_id);
 
       conn = (connection_state *) must_malloc("connection state",
                                               sizeof(connection_state));
@@ -679,7 +672,7 @@ void process_events(char * events_path, int events, parameters * params) {
         die(1, "", "Couldn't detach thread for %s connection '%ld': ",
             connection_type, conn_id);
 
-      if (debug) syslog(LOG_DEBUG, "thread spawned");
+      if (debug) fprintf(stderr, "thread spawned\n");
     }
 }
 
@@ -687,8 +680,6 @@ int main(int argc, char * argv[]) {
   int events;
   parameters params;
   char * events_path;
-
-  openlog(argv[0], LOG_CONS, LOG_DAEMON);
 
   parse_parameters(argc, argv, &params);
   setup_debug();
@@ -701,8 +692,8 @@ int main(int argc, char * argv[]) {
   events = open(events_path, O_RDONLY | O_CLOEXEC);
   if (events != -1) process_events(events_path, events, &params);
 
-  syslog(LOG_CRIT, "Failed to open events path %s: %s",
-         events_path, strerror(errno));
+  fprintf(stderr, "Failed to open events path %s: %s\n",
+          events_path, strerror(errno));
   free(events_path);
   return 1;
 }
