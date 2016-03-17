@@ -28,11 +28,5 @@ start()
 
 	done
 
-	if cat /proc/cmdline | grep -q 'com.docker.driverDir'
-	then
-		DRIVERDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
-		mount --bind "${DRIVERDIR}/log" /var/log
-	fi 
-
         eend 0
 }
