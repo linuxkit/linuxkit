@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
+#include <syslog.h>
 
 #include <stdio.h>
 #include <unistd.h>
@@ -13,10 +14,21 @@
 #include <pthread.h>
 #include <signal.h>
 
+#include <netinet/in.h>
+#include <inttypes.h>
+#include <sys/stat.h>
+
 #define COPY_BUFSZ 65536
 
 #define DEFAULT_FUSERMOUNT "/bin/fusermount"
 #define DEFAULT_SOCKET9P_ROOT "/Transfuse"
+
+#define RMDIR_SYSCALL    0
+#define UNLINK_SYSCALL   1
+#define MKDIR_SYSCALL    2
+#define SYMLINK_SYSCALL  3
+#define TRUNCATE_SYSCALL 4
+// these could be turned into an enum probably but... C standard nausea
 
 char * default_fusermount = DEFAULT_FUSERMOUNT;
 char * default_socket9p_root = DEFAULT_SOCKET9P_ROOT;
@@ -47,12 +59,27 @@ typedef struct {
   int to;
 } copy_thread_state;
 
+#include <sys/syscall.h>
+#ifdef SYS_gettid
+pid_t gettid() {
+  return syscall(SYS_gettid);
+}
+#else
+#error "SYS_gettid not defined"
+#endif
+
 void die(int exit_code, const char * perror_arg, const char * fmt, ...) {
   va_list argp;
+  int in_errno = errno;
   va_start(argp, fmt);
-  vfprintf(stderr, fmt, argp);
+  vsyslog(LOG_CRIT, fmt, argp);
   va_end(argp);
-  if (perror_arg != NULL) perror(perror_arg);
+  if (perror_arg != NULL) {
+    if (*perror_arg != 0)
+      syslog(LOG_CRIT, "%s: %s", perror_arg, strerror(in_errno));
+    else
+      syslog(LOG_CRIT, "%s", strerror(in_errno));
+  }
   exit(exit_code);
 }
 
@@ -142,7 +169,7 @@ void copy(copy_thread_state * copy_state) {
         die(1, "", "copy %s trace: error writing %s: ", descr, trace_path);
 
       if (write_count != read_count)
-        die(1, NULL, "copy %s trace: read %d but only write %d\n",
+        die(1, NULL, "copy %s trace: read %d but only wrote %d\n",
             descr, read_count, write_count);
 
       close(trace_fd);
@@ -153,7 +180,7 @@ void copy(copy_thread_state * copy_state) {
     if (write_count == -1) die(1, "", "copy %s: error writing: ", descr);
 
     if (write_count != read_count)
-      die(1, NULL, "copy %s: read %d by only wrote %d\n",
+      die(1, NULL, "copy %s: read %d but only wrote %d\n",
           descr, read_count, write_count);
   }
 
@@ -270,7 +297,7 @@ int get_fuse_sock(char * fusermount, char *const optv[]) {
   if (WEXITSTATUS(status))
     die(1, NULL, "fusermount exited with code %d\n", WEXITSTATUS(status));
 
-  if (debug) fprintf(stderr, "about to recv_fd from fusermount\n");
+  if (debug) syslog(LOG_DEBUG, "about to recv_fd from fusermount");
 
   fd = recv_fd(fuse_socks[1]);
   if (fd == -1)
@@ -336,7 +363,7 @@ void do_write(connection_state * connection, int fuse) {
   copy_clean_to(copy_state);
 }
 
-void * handle_connection(connection_state * connection) {
+void * mount_connection(connection_state * connection) {
   char ** optv;
   int fuse;
   char * buf;
@@ -355,8 +382,142 @@ void * handle_connection(connection_state * connection) {
   return NULL;
 }
 
-void * handle_connection_thread(void * connection) {
-  return handle_connection((connection_state *) connection);
+void * mount_thread(void * connection) {
+  return mount_connection((connection_state *) connection);
+}
+
+void write_pid(connection_state * connection) {
+  int write_fd;
+  char * write_path;
+  pid_t pid = gettid();
+  char * pid_s;
+  int pid_s_len, write_count;
+
+  if (asprintf(&write_path, "%s/connections/%ld/write",
+               connection->params->socket9p_root, connection->id) == -1)
+    die(1, "Couldn't allocate write path", "");
+
+  write_fd = open(write_path, O_WRONLY);
+  if (write_fd == -1)
+    die(1, "couldn't open write path", "For connection %ld, ", connection->id);
+
+  if (asprintf(&pid_s, "%lld", (long long) pid) == -1)
+    die(1, "Couldn't allocate pid string", "");
+
+  pid_s_len = strlen(pid_s);
+
+  write_count = write(write_fd, pid_s, pid_s_len);
+  if (write_count == -1)
+    die(1, "Error writing pid", "");
+
+  if (write_count != pid_s_len)
+    die(1, NULL, "Error writing pid %s to socket: only wrote %d bytes\n",
+        pid_s, write_count);
+
+  close(write_fd);
+  free(pid_s);
+  free(write_path);
+}
+
+void perform_syscall(uint8_t syscall, char path[]) {
+  char * name;
+  int r = 0;
+
+  switch (syscall) {
+
+  case RMDIR_SYSCALL:
+    name = "rmdir";
+    r = rmdir(path);
+    break;
+
+  case UNLINK_SYSCALL:
+    name = "unlink";
+    r = unlink(path);
+    break;
+
+  case MKDIR_SYSCALL:
+    name = "mkdir";
+    r = mkdir(path, 00000);
+    break;
+
+  case SYMLINK_SYSCALL:
+    name = "symlink";
+    r = symlink(".",path);
+    break;
+
+  case TRUNCATE_SYSCALL:
+    name = "truncate";
+    r = truncate(path, 0);
+    break;
+
+  default:
+    die(1, NULL, "Unknown event syscall %" PRIu8, syscall);
+  }
+
+  if (r != 0) syslog(LOG_INFO, "Event %s error: %s", name, strerror(errno));
+}
+
+void * event_thread(void * connection_ptr) {
+  char * read_path;
+  int read_fd;
+  int read_count, event_len, path_len;
+  void * buf;
+  connection_state * connection = connection_ptr;
+
+  char * path;
+  uint8_t syscall;
+  void * msg;
+
+  write_pid(connection);
+
+  if (asprintf(&read_path, "%s/connections/%ld/read",
+               connection->params->socket9p_root, connection->id) == -1)
+    die(1, "Couldn't allocate read path", "");
+
+  read_fd = open(read_path, O_RDONLY);
+  if (read_fd == -1)
+    die(1, "couldn't open read path", "For connection %ld, ", connection->id);
+
+  buf = must_malloc("incoming event buffer", COPY_BUFSZ);
+
+  while(1) {
+    read_count = read(read_fd, buf, COPY_BUFSZ);
+    if (read_count == -1) die(1, "event thread: error reading", "");
+
+    event_len = (int) ntohs(*((uint16_t *) buf));
+
+    if (debug) syslog(LOG_DEBUG, "read %d bytes from connection %ld",
+                      read_count, connection->id);
+
+    if (read_count != event_len) {
+      syslog(LOG_ERR, "event thread: only read %d of %d",
+             read_count, event_len);
+
+      msg = must_malloc("event hex", read_count * 2 + 1);
+      for (int i = 0; i < read_count; i++) {
+        sprintf(((char *) msg) + (i * 2),"%02x",(int) (((char *) buf)[i]));
+      }
+      ((char *) msg)[read_count * 2] = 0;
+      syslog(LOG_ERR, "message: %s", (char *) msg);
+      free(msg);
+
+      continue;
+    }
+
+    path_len  = (int) ntohs(*(((uint16_t *) buf) + 1));
+    // TODO: could check the path length isn't a lie here
+    path = (char *) (((uint8_t *) buf) + 4);
+    // TODO: could check the path is NUL terminated here
+    syscall = *(((uint8_t *) buf) + 4 + path_len);
+
+    // TODO: should this be in another thread?
+    perform_syscall(syscall, path);
+  }
+
+  close(read_fd);
+  free(buf);
+  free(read_path);
+  return NULL;
 }
 
 void toggle_debug(int sig) {
@@ -464,6 +625,8 @@ void process_events(char * events_path, int events, parameters * params) {
     long conn_id;
     pthread_t child;
     connection_state * conn;
+    char * connection_type;
+    void * (*connection_handler_thread)(void *);
 
     while (1) {
       read_count = read(events, buf, ID_LEN - 1);
@@ -473,31 +636,50 @@ void process_events(char * events_path, int events, parameters * params) {
         // TODO: this is probably the 9p server's fault due to
         //       not dropping the read 0 to force short read if
         //       the real read is flushed
-        fprintf(stderr, "read 0 from event stream %s\n", events_path);
+        syslog(LOG_WARNING, "read 0 from event stream %s", events_path);
         continue;
       }
 
       buf[read_count] = 0x0;
 
+      if (read_count < 2) {
+        die(1, NULL, "Event connection id isn't long enough");
+      }
+
       errno = 0;
-      conn_id = strtol(buf, NULL, 10);
+      conn_id = strtol(buf + 1, NULL, 10);
       if (errno) die(1, "failed", "Connection id of string '%s'", buf);
 
-      if (debug) fprintf(stderr, "handle connection %ld\n", conn_id);
+      if (debug) syslog(LOG_DEBUG, "handle connection %ld", conn_id);
 
       conn = (connection_state *) must_malloc("connection state",
                                               sizeof(connection_state));
       conn->id = conn_id;
       conn->params = params;
 
+      switch (buf[0]) {
+      case 'm':
+        connection_type = "mount";
+        connection_handler_thread = mount_thread;
+        break;
+      case 'e':
+        connection_type = "event";
+        connection_handler_thread = event_thread;
+        break;
+      default:
+        die(1, NULL, "Unknown connection type '%c'", buf[0]);
+      }
+
       if ((errno = pthread_create(&child, NULL,
-                                  handle_connection_thread, conn)))
-        die(1, "", "Couldn't create thread for connection '%ld': ", conn_id);
+                                  connection_handler_thread, conn)))
+        die(1, "", "Couldn't create thread for %s connection '%ld': ",
+            connection_type, conn_id);
 
       if ((errno = pthread_detach(child)))
-        die(1, "", "Couldn't detach thread for connection '%ld': ", conn_id);
+        die(1, "", "Couldn't detach thread for %s connection '%ld': ",
+            connection_type, conn_id);
 
-      if (debug) fprintf(stderr, "thread spawned\n");
+      if (debug) syslog(LOG_DEBUG, "thread spawned");
     }
 }
 
@@ -505,6 +687,8 @@ int main(int argc, char * argv[]) {
   int events;
   parameters params;
   char * events_path;
+
+  openlog(argv[0], LOG_CONS, LOG_DAEMON);
 
   parse_parameters(argc, argv, &params);
   setup_debug();
@@ -517,8 +701,8 @@ int main(int argc, char * argv[]) {
   events = open(events_path, O_RDONLY | O_CLOEXEC);
   if (events != -1) process_events(events_path, events, &params);
 
-  fprintf(stderr, "Failed to open events path %s: ", events_path);
-  perror("");
+  syslog(LOG_CRIT, "Failed to open events path %s: %s",
+         events_path, strerror(errno));
   free(events_path);
   return 1;
 }
