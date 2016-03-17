@@ -14,7 +14,7 @@ start()
 	ebegin "Starting FUSE socket passthrough"
 
 	PIDFILE=/var/run/transfused.pid
-	LOGFILE=/vatr/log/transfused.log
+	LOGFILE=/var/log/transfused.log
 
 	start-stop-daemon --start --quiet \
 		--background \
