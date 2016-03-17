@@ -8,6 +8,8 @@ depend()
 
 start()
 {
+	ebegin "Starting Docker"
+
 	export DOCKER_RAMDISK="true"
 
 	command="${DOCKER_BINARY:-/usr/bin/docker}"
@@ -39,6 +41,8 @@ start()
 		--stderr "${DOCKER_LOGFILE}" \
 		--stdout "${DOCKER_LOGFILE}" \
 		-- daemon --pidfile=${pidfile} ${DOCKER_OPTS}
+
+	eend $? "Failed to start docker"
 }
 
 stop()
