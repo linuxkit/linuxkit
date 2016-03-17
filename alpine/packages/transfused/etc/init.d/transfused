@@ -13,12 +13,15 @@ start()
 
 	ebegin "Starting FUSE socket passthrough"
 
-	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/transfused.pid
+	PIDFILE=/var/run/transfused.pid
+	LOGFILE=/vatr/log/transfused.log
 
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/transfused \
 		--pidfile ${PIDFILE} \
+		--stderr "${LOGFILE}" \
+		--stdout "${LOGFILE}" \
 		-- -p "${PIDFILE}"
 
 	eend $? "Failed to start transfused"
@@ -30,7 +33,7 @@ stop()
 
 	ebegin "Stopping FUSE socket passthrough"
 
-	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/transfused.pid
+	PIDFILE=/var/run/transfused.pid
 
 	start-stop-daemon --stop --quiet \
 		--pidfile "${PIDFILE}"
