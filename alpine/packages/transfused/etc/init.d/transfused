@@ -13,16 +13,28 @@ start()
 
 	ebegin "Starting FUSE socket passthrough"
 
-	PIDFILE=/var/run/transfused.pid
-	LOGFILE=/var/log/transfused.log
+        if cat /proc/cmdline | grep -q 'com.docker.driverDir'
+        then
+                DRIVERDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
+                RUNTIME_LOGFILE=${DRIVERDIR}/log/transfused.log
+        else
+                ID=$(LC_CTYPE=C tr -dc A-Za-z0-9 < /dev/urandom | head -c 8)
+                RUNTIME_LOGFILE="/Mac/private/tmp/transfused_${ID}.log"
+        fi
+
+        PIDFILE=/var/run/transfused.pid
+        STARTUP_LOGFILE=/var/transfused_start.log
+        MOUNT_TRIGGER=/Mac
 
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/transfused \
 		--pidfile ${PIDFILE} \
-		--stderr "${LOGFILE}" \
-		--stdout "${LOGFILE}" \
-		-- -p "${PIDFILE}"
+		-- \
+                -p "${PIDFILE}" \
+                -l "${STARTUP_LOGFILE}" \
+                -m "${MOUNT_TRIGGER}" \
+                -t "${RUNTIME_LOGFILE}"
 
 	eend $? "Failed to start transfused"
 }
