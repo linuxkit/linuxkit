@@ -25,8 +25,9 @@ start()
 		mount --bind "${DRIVERDIR}/log" /var/log
 		for f in /var/tmp/log/*
 		do
-			cat $f >> /var/log/$(basename $f)
+			[ -f $f ] && cat $f >> /var/log/$(basename $f)
 		done
+		rm -rf /var/tmp/log
 	fi
 
 	export DOCKER_RAMDISK="true"
