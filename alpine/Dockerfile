@@ -22,6 +22,7 @@ COPY etc /etc/
 
 ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
+COPY kernel/kernel-source-info /etc/
 
 COPY packages/9pudc/9pudc /sbin/
 COPY packages/9pudc/etc /etc/

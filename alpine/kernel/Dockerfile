@@ -3,6 +3,8 @@ FROM ubuntu:15.10
 ARG KERNEL_VERSION=4.1.19
 ARG ARCH=x86_64
 
+ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
+
 RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   unzip \
   xz-utils \
@@ -25,7 +27,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   lzop \
   gcc-arm-linux-gnueabihf
 
-ADD https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz .
+ADD ${KERNEL_SOURCE} .
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
@@ -68,12 +70,15 @@ RUN jobs=$(nproc); \
 
 # XXX not cross compiled yet!
 
+ENV AUFS_TOOLS_REPO https://github.com/Distrotech/aufs-util.git
 ENV AUFS_TOOLS_COMMIT 5e0c348bd8b1898beb1e043b026bcb0e0c7b0d54
 
-RUN git clone https://github.com/Distrotech/aufs-util.git && \
+RUN git clone ${AUFS_TOOLS_REPO} && \
     cd /aufs-util && \
     git checkout "$AUFS_TOOLS_COMMIT" && \
     CPPFLAGS="-I/tmp/kernel-headers/include" CLFAGS=$CPPFLAGS LDFLAGS=$CPPFLAGS make && \
     DESTDIR=/tmp/aufs-utils make install && \
     rm -rf /tmp/aufs-utils/usr/lib /tmp/aufs-utils/usr/share && \
     cd /tmp/aufs-utils && tar cf /aufs-utils.tar .
+
+RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\nAUFS_REPO=${AUFS_REPO}\nAUFS_BRANCH=${AUFS_BRANCH}\nAUFS_COMMIT=${AUFS_COMMIT}\nAUFS_TOOLS_REPO=${AUFS_TOOLS_REPO}\nAUFS_TOOLS_COMMIT=${AUFS_TOOLS_COMMIT}\n" > /kernel-source-info
