@@ -10,6 +10,8 @@ void log_time_locked(connection_t * connection, const char * fmt, ...);
 
 void log_time(connection_t * connection, const char * fmt, ...);
 
+void thread_log_time(connection_t * connection, const char * fmt, ...);
+
 void log_continue_locked(connection_t * connection, const char * fmt, ...);
 
 void log_continue(connection_t * connection, const char * fmt, ...);
