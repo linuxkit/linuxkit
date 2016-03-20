@@ -419,7 +419,7 @@ void * mount_connection(connection_t * conn) {
     log_time_locked(conn, "Log mount trigger fired on %s, logging to %s\n",
                     conn->params->mount_trigger, conn->params->trigger_log);
     conn->params->trigger_fd = open(conn->params->trigger_log,
-                                    O_WRONLY | O_CREAT, 0600);
+                                    O_WRONLY | O_APPEND | O_CREAT, 0600);
     if (conn->params->trigger_fd == -1)
       die(1, "", "Couldn't open trigger log %s: ", conn->params->trigger_log);
     unlock("trigger mount fd_lock", &conn->params->fd_lock);
