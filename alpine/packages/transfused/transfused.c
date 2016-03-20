@@ -511,7 +511,9 @@ void perform_syscall(connection_t * conn, uint8_t syscall, char path[]) {
     die(1, NULL, "Unknown event syscall %" PRIu8, syscall);
   }
 
-  if (r != 0) log_time(conn, "Event %s error: %s\n", name, strerror(errno));
+  if (r != 0)
+    thread_log_time(conn, "Event %s %s error: %s\n",
+                    name, path, strerror(errno));
 }
 
 void * event_thread(void * connection_ptr) {
@@ -524,6 +526,10 @@ void * event_thread(void * connection_ptr) {
   char * path;
   uint8_t syscall;
   void * msg;
+
+  // This thread registers with the mounted file system as being an
+  // fsnotify event actuator. Other mounted file system interactions
+  // (such as self-logging) SHOULD NOT occur on this thread.
 
   write_pid(connection);
 
@@ -543,19 +549,20 @@ void * event_thread(void * connection_ptr) {
 
     event_len = (int) ntohs(*((uint16_t *) buf));
 
-    if (debug) log_time(connection, "read %d bytes from connection %ld\n",
-                        read_count, connection->id);
+    if (debug)
+      thread_log_time(connection, "read %d bytes from connection %ld\n",
+                      read_count, connection->id);
 
     if (read_count != event_len) {
-      log_time(connection, "event thread: only read %d of %d\n",
-               read_count, event_len);
+      thread_log_time(connection, "event thread: only read %d of %d\n",
+                      read_count, event_len);
 
       msg = must_malloc("event hex", read_count * 2 + 1);
       for (int i = 0; i < read_count; i++) {
         sprintf(((char *) msg) + (i * 2),"%02x",(int) (((char *) buf)[i]));
       }
       ((char *) msg)[read_count * 2] = 0;
-      log_time(connection, "message: %s\n", (char *) msg);
+      thread_log_time(connection, "message: %s\n", (char *) msg);
       free(msg);
 
       continue;
@@ -730,7 +737,6 @@ void process_events(char * events_path, int events, parameters * params) {
     long conn_id;
     pthread_t child;
     connection_t * conn;
-    char * connection_type;
     void * (*connection_handler_thread)(void *);
 
     while (1) {
@@ -766,11 +772,11 @@ void process_events(char * events_path, int events, parameters * params) {
 
       switch (buf[0]) {
       case 'm':
-        connection_type = "mount";
+        conn->type_descr = "mount";
         connection_handler_thread = mount_thread;
         break;
       case 'e':
-        connection_type = "event";
+        conn->type_descr = "event";
         connection_handler_thread = event_thread;
         break;
       default:
@@ -780,11 +786,11 @@ void process_events(char * events_path, int events, parameters * params) {
       if ((errno = pthread_create(&child, NULL,
                                   connection_handler_thread, conn)))
         die(1, "", "Couldn't create thread for %s connection '%ld': ",
-            connection_type, conn_id);
+            conn->type_descr, conn_id);
 
       if ((errno = pthread_detach(child)))
         die(1, "", "Couldn't detach thread for %s connection '%ld': ",
-            connection_type, conn_id);
+            conn->type_descr, conn_id);
 
       if (debug) log_time(conn, "thread spawned\n");
     }

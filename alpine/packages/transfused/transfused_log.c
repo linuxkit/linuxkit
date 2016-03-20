@@ -94,6 +94,50 @@ void log_time(connection_t * connection, const char * fmt, ...) {
   va_end(args);
 }
 
+typedef struct {
+  connection_t * connection;
+  char * msg;
+} log_thread_state;
+
+void * log_time_thread(void * log_state_ptr) {
+  log_thread_state * log_state = log_state_ptr;
+
+  log_time(log_state->connection, log_state->msg);
+
+  free(log_state->msg);
+  free(log_state);
+
+  return NULL;
+}
+
+void thread_log_time(connection_t * conn, const char * fmt, ...) {
+  pthread_t logger;
+  va_list args;
+  log_thread_state * log_state;
+
+  log_state = must_malloc("thread_log_time log_state",
+                          sizeof(log_thread_state));
+  log_state->connection = conn;
+
+  va_start(args, fmt);
+  if (vasprintf(&log_state->msg, fmt, args) == -1)
+    die(1, "Couldn't allocate thread_log_time message", "");
+  va_end(args);
+
+  // TODO: We currently spawn a new thread for every message. This is
+  // far from ideal but fine for now as we anticipate thread-sensitive
+  // log demand to be low.
+
+  if ((errno = pthread_create(&logger, NULL, log_time_thread, log_state)))
+    die(1, "", "Couldn't create log thread for %s connection '%ld': ",
+        conn->type_descr, conn->id);
+
+  if ((errno = pthread_detach(logger)))
+    die(1, "", "Couldn't detach thread for %s connection '%ld': ",
+        conn->type_descr, conn->id);
+
+}
+
 void log_continue_locked(connection_t * connection, const char * fmt, ...) {
   va_list args;
 
