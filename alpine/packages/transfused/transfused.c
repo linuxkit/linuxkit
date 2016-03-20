@@ -23,6 +23,11 @@
 #include "transfused_log.h"
 
 #define COPY_BUFSZ 65536
+// The Linux 9p driver/xhyve virtio-9p device have bugs in the
+// zero-copy code path which is triggered by I/O of more than 1024
+// bytes. For an unknown reason, these defects are unusually prominent
+// in the event channel use pattern.
+#define EVENT_BUFSZ 1024
 
 #define DEFAULT_FUSERMOUNT "/bin/fusermount"
 #define DEFAULT_SOCKET9P_ROOT "/Transfuse"
@@ -47,6 +52,8 @@ char * usage =
   " -t triggerlog\tthe file to use after the trigger\n";
 
 int debug = 0;
+
+pthread_attr_t detached;
 
 typedef struct {
   char * descr;
@@ -338,13 +345,9 @@ void start_reader(connection_t * connection, int fuse) {
   copy_state->tag = "read";
   copy_state->from = read_fd;
   copy_state->to = fuse;
-  if ((errno = pthread_create(&child, NULL,
+  if ((errno = pthread_create(&child, &detached,
                               copy_clean_from_thread, copy_state)))
     die(1, "", "couldn't create read copy thread for connection %ld: ",
-        connection->id);
-
-  if ((errno = pthread_detach(child)))
-    die(1, "", "couldn't detach read copy thread for connection %ld: ",
         connection->id);
 }
 
@@ -369,13 +372,9 @@ void start_writer(connection_t * connection, int fuse) {
   copy_state->tag = "write";
   copy_state->from = fuse;
   copy_state->to = write_fd;
-  if ((errno = pthread_create(&child, NULL,
+  if ((errno = pthread_create(&child, &detached,
                               copy_clean_to_thread, copy_state)))
     die(1, "", "Couldn't create write copy thread for connection %ld: ",
-        connection->id);
-
-  if ((errno = pthread_detach(child)))
-    die(1, "", "couldn't detach write copy thread for connection %ld: ",
         connection->id);
 }
 
@@ -414,7 +413,7 @@ void * mount_connection(connection_t * conn) {
     log_time_locked(conn, "Log mount trigger fired on %s, logging to %s\n",
                     conn->params->mount_trigger, conn->params->trigger_log);
     conn->params->trigger_fd = open(conn->params->trigger_log,
-                                    O_WRONLY | O_CREAT, 0600);
+                                    O_WRONLY | O_APPEND | O_CREAT, 0600);
     if (conn->params->trigger_fd == -1)
       die(1, "", "Couldn't open trigger log %s: ", conn->params->trigger_log);
     unlock("trigger mount fd_lock", &conn->params->fd_lock);
@@ -506,7 +505,9 @@ void perform_syscall(connection_t * conn, uint8_t syscall, char path[]) {
     die(1, NULL, "Unknown event syscall %" PRIu8, syscall);
   }
 
-  if (r != 0) log_time(conn, "Event %s error: %s\n", name, strerror(errno));
+  if (r != 0)
+    thread_log_time(conn, "Event %s %s error: %s\n",
+                    name, path, strerror(errno));
 }
 
 void * event_thread(void * connection_ptr) {
@@ -520,6 +521,10 @@ void * event_thread(void * connection_ptr) {
   uint8_t syscall;
   void * msg;
 
+  // This thread registers with the mounted file system as being an
+  // fsnotify event actuator. Other mounted file system interactions
+  // (such as self-logging) SHOULD NOT occur on this thread.
+
   write_pid(connection);
 
   if (asprintf(&read_path, "%s/connections/%ld/read",
@@ -530,27 +535,28 @@ void * event_thread(void * connection_ptr) {
   if (read_fd == -1)
     die(1, "couldn't open read path", "For connection %ld, ", connection->id);
 
-  buf = must_malloc("incoming event buffer", COPY_BUFSZ);
+  buf = must_malloc("incoming event buffer", EVENT_BUFSZ);
 
   while(1) {
-    read_count = read(read_fd, buf, COPY_BUFSZ);
+    read_count = read(read_fd, buf, EVENT_BUFSZ);
     if (read_count == -1) die(1, "event thread: error reading", "");
 
     event_len = (int) ntohs(*((uint16_t *) buf));
 
-    if (debug) log_time(connection, "read %d bytes from connection %ld\n",
-                        read_count, connection->id);
+    if (debug)
+      thread_log_time(connection, "read %d bytes from connection %ld\n",
+                      read_count, connection->id);
 
     if (read_count != event_len) {
-      log_time(connection, "event thread: only read %d of %d\n",
-               read_count, event_len);
+      thread_log_time(connection, "event thread: only read %d of %d\n",
+                      read_count, event_len);
 
       msg = must_malloc("event hex", read_count * 2 + 1);
       for (int i = 0; i < read_count; i++) {
         sprintf(((char *) msg) + (i * 2),"%02x",(int) (((char *) buf)[i]));
       }
       ((char *) msg)[read_count * 2] = 0;
-      log_time(connection, "message: %s\n", (char *) msg);
+      thread_log_time(connection, "message: %s\n", (char *) msg);
       free(msg);
 
       continue;
@@ -725,7 +731,6 @@ void process_events(char * events_path, int events, parameters * params) {
     long conn_id;
     pthread_t child;
     connection_t * conn;
-    char * connection_type;
     void * (*connection_handler_thread)(void *);
 
     while (1) {
@@ -761,25 +766,21 @@ void process_events(char * events_path, int events, parameters * params) {
 
       switch (buf[0]) {
       case 'm':
-        connection_type = "mount";
+        conn->type_descr = "mount";
         connection_handler_thread = mount_thread;
         break;
       case 'e':
-        connection_type = "event";
+        conn->type_descr = "event";
         connection_handler_thread = event_thread;
         break;
       default:
         die(1, NULL, "Unknown connection type '%c'", buf[0]);
       }
 
-      if ((errno = pthread_create(&child, NULL,
+      if ((errno = pthread_create(&child, &detached,
                                   connection_handler_thread, conn)))
         die(1, "", "Couldn't create thread for %s connection '%ld': ",
-            connection_type, conn_id);
-
-      if ((errno = pthread_detach(child)))
-        die(1, "", "Couldn't detach thread for %s connection '%ld': ",
-            connection_type, conn_id);
+            conn->type_descr, conn_id);
 
       if (debug) log_time(conn, "thread spawned\n");
     }
@@ -800,6 +801,10 @@ int main(int argc, char * argv[]) {
 
   parse_parameters(argc, argv, &params);
   setup_debug();
+
+  if ((errno = pthread_attr_setdetachstate(&detached,
+                                           PTHREAD_CREATE_DETACHED)))
+    die(1, "Couldn't set pthread detach state", "");
 
   if (params.pidfile != NULL) write_pidfile(params.pidfile);
 
