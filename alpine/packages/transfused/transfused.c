@@ -37,6 +37,7 @@
 #define MKDIR_SYSCALL    2
 #define SYMLINK_SYSCALL  3
 #define TRUNCATE_SYSCALL 4
+#define CHMOD_SYSCALL    5
 // these could be turned into an enum probably but... C standard nausea
 
 char * default_fusermount = DEFAULT_FUSERMOUNT;
@@ -499,6 +500,11 @@ void perform_syscall(connection_t * conn, uint8_t syscall, char path[]) {
   case TRUNCATE_SYSCALL:
     name = "truncate";
     r = truncate(path, 0);
+    break;
+
+  case CHMOD_SYSCALL:
+    name = "chmod";
+    r = chmod(path, 0700);
     break;
 
   default:
