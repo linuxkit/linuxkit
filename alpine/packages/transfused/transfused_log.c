@@ -128,14 +128,9 @@ void thread_log_time(connection_t * conn, const char * fmt, ...) {
   // far from ideal but fine for now as we anticipate thread-sensitive
   // log demand to be low.
 
-  if ((errno = pthread_create(&logger, NULL, log_time_thread, log_state)))
+  if ((errno = pthread_create(&logger, &detached, log_time_thread, log_state)))
     die(1, "", "Couldn't create log thread for %s connection '%ld': ",
         conn->type_descr, conn->id);
-
-  if ((errno = pthread_detach(logger)))
-    die(1, "", "Couldn't detach thread for %s connection '%ld': ",
-        conn->type_descr, conn->id);
-
 }
 
 void log_continue_locked(connection_t * connection, const char * fmt, ...) {

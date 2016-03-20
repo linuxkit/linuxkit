@@ -18,6 +18,8 @@ typedef struct {
   char * type_descr;
 } connection_t;
 
+pthread_attr_t detached;
+
 void * must_malloc(char *const descr, size_t size);
 
 void lock(char *const descr, pthread_mutex_t * mutex);

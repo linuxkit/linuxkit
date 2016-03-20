@@ -53,6 +53,8 @@ char * usage =
 
 int debug = 0;
 
+pthread_attr_t detached;
+
 typedef struct {
   char * descr;
   long connection;
@@ -343,13 +345,9 @@ void start_reader(connection_t * connection, int fuse) {
   copy_state->tag = "read";
   copy_state->from = read_fd;
   copy_state->to = fuse;
-  if ((errno = pthread_create(&child, NULL,
+  if ((errno = pthread_create(&child, &detached,
                               copy_clean_from_thread, copy_state)))
     die(1, "", "couldn't create read copy thread for connection %ld: ",
-        connection->id);
-
-  if ((errno = pthread_detach(child)))
-    die(1, "", "couldn't detach read copy thread for connection %ld: ",
         connection->id);
 }
 
@@ -374,13 +372,9 @@ void start_writer(connection_t * connection, int fuse) {
   copy_state->tag = "write";
   copy_state->from = fuse;
   copy_state->to = write_fd;
-  if ((errno = pthread_create(&child, NULL,
+  if ((errno = pthread_create(&child, &detached,
                               copy_clean_to_thread, copy_state)))
     die(1, "", "Couldn't create write copy thread for connection %ld: ",
-        connection->id);
-
-  if ((errno = pthread_detach(child)))
-    die(1, "", "couldn't detach write copy thread for connection %ld: ",
         connection->id);
 }
 
@@ -783,13 +777,9 @@ void process_events(char * events_path, int events, parameters * params) {
         die(1, NULL, "Unknown connection type '%c'", buf[0]);
       }
 
-      if ((errno = pthread_create(&child, NULL,
+      if ((errno = pthread_create(&child, &detached,
                                   connection_handler_thread, conn)))
         die(1, "", "Couldn't create thread for %s connection '%ld': ",
-            conn->type_descr, conn_id);
-
-      if ((errno = pthread_detach(child)))
-        die(1, "", "Couldn't detach thread for %s connection '%ld': ",
             conn->type_descr, conn_id);
 
       if (debug) log_time(conn, "thread spawned\n");
@@ -811,6 +801,10 @@ int main(int argc, char * argv[]) {
 
   parse_parameters(argc, argv, &params);
   setup_debug();
+
+  if ((errno = pthread_attr_setdetachstate(&detached,
+                                           PTHREAD_CREATE_DETACHED)))
+    die(1, "Couldn't set pthread detach state", "");
 
   if (params.pidfile != NULL) write_pidfile(params.pidfile);
 
