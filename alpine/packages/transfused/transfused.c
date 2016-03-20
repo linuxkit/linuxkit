@@ -23,6 +23,11 @@
 #include "transfused_log.h"
 
 #define COPY_BUFSZ 65536
+// The Linux 9p driver/xhyve virtio-9p device have bugs in the
+// zero-copy code path which is triggered by I/O of more than 1024
+// bytes. For an unknown reason, these defects are unusually prominent
+// in the event channel use pattern.
+#define EVENT_BUFSZ 1024
 
 #define DEFAULT_FUSERMOUNT "/bin/fusermount"
 #define DEFAULT_SOCKET9P_ROOT "/Transfuse"
@@ -530,10 +535,10 @@ void * event_thread(void * connection_ptr) {
   if (read_fd == -1)
     die(1, "couldn't open read path", "For connection %ld, ", connection->id);
 
-  buf = must_malloc("incoming event buffer", COPY_BUFSZ);
+  buf = must_malloc("incoming event buffer", EVENT_BUFSZ);
 
   while(1) {
-    read_count = read(read_fd, buf, COPY_BUFSZ);
+    read_count = read(read_fd, buf, EVENT_BUFSZ);
     if (read_count == -1) die(1, "event thread: error reading", "");
 
     event_len = (int) ntohs(*((uint16_t *) buf));
