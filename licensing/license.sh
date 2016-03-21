@@ -12,16 +12,22 @@ rm -rf /output/*
 
 mkdir -p /output/kernel
 cd /output/kernel
+cp /proc/config.gz .
 wget ${KERNEL_SOURCE=} || ( printf "Failed to download kernel source\n" && exit 1 )
 
-# XXX download aufs
+git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /output/kernel/aufs
+cd /output/kernel/aufs
+git checkout -q "$AUFS_COMMIT"
+# to make it easier to check in the output of this script if necessary
+rm -rf .git
 
-# APORTS=https://github.com/alpinelinux/aports.git
-# git clone ${APORTS}
+git clone ${AUFS_TOOLS_REPO} /output/aufs-util
+cd /output/aufs-util
+git checkout "$AUFS_TOOLS_COMMIT"
+rm -rf .git
 
-mkdir -p /output
-
-cd /output
+cd /aports
+git pull
 
 gpl.lua | while read l
 do
