@@ -57,6 +57,17 @@ RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
 COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.arm /linux/arch/arm/configs/versatile_defconfig
 
+# Apply local patches
+COPY patches /patches
+RUN cd /linux && \
+    mkdir /etc/kernel-patches && \
+    set -e && for patch in /patches/*.patch; do \
+        echo "Applying $patch"; \
+        cp "$patch" /etc/kernel-patches; \
+        patch -p1 < "$patch"; \
+    done && \
+    cd /etc/kernel-patches && tar cf /kernel-patches.tar .
+
 RUN jobs=$(nproc); \
     cd /linux && \
     make ARCH=$ARCH defconfig && \

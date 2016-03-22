@@ -22,6 +22,7 @@ COPY etc /etc/
 ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
 COPY kernel/kernel-source-info /etc/
+ADD kernel/kernel-patches.tar /etc/kernel-patches
 
 COPY packages/proxy/proxy /sbin/
 COPY packages/transfused/transfused /sbin/

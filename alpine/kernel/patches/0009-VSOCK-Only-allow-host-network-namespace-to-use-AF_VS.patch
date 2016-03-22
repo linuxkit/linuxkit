@@ -1,0 +1,30 @@
+From 366c9c42afb9bd54f92f72518470c09e46f12e88 Mon Sep 17 00:00:00 2001
+From: Ian Campbell <ian.campbell@docker.com>
+Date: Mon, 4 Apr 2016 14:50:10 +0100
+Subject: [PATCH 9/9] VSOCK: Only allow host network namespace to use AF_VSOCK.
+
+The VSOCK addressing schema does not really lend itself to simply creating an
+alternative end point address within a namespace.
+
+Signed-off-by: Ian Campbell <ian.campbell@docker.com>
+---
+ net/vmw_vsock/af_vsock.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/net/vmw_vsock/af_vsock.c b/net/vmw_vsock/af_vsock.c
+index 1e5f5ed..cdb3dd3 100644
+--- a/net/vmw_vsock/af_vsock.c
++++ b/net/vmw_vsock/af_vsock.c
+@@ -1840,6 +1840,9 @@ static const struct proto_ops vsock_stream_ops = {
+ static int vsock_create(struct net *net, struct socket *sock,
+ 			int protocol, int kern)
+ {
++	if (!net_eq(net, &init_net))
++		return -EAFNOSUPPORT;
++
+ 	if (!sock)
+ 		return -EINVAL;
+ 
+-- 
+2.8.0.rc3
+
