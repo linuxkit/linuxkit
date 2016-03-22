@@ -1,5 +1,5 @@
 #!/bin/sh
-
+set -x
 cat /hostetc/issue | grep -q Moby || ( printf "You must run this script with -v /etc:/hostetc -v /lib:/lib\n" && exit 1 )
 
 apk info | grep -q fuse || ( printf "You must run this script with -v /etc:/etc -v /lib:/lib\n" && exit 1 )
@@ -29,7 +29,7 @@ rm -rf .git
 cd /aports
 git pull
 
-gpl.lua | while read l
+packages.lua | while read l
 do
   echo $l
   APORT_PACKAGE=$(echo $l | sed 's/ .*//')
@@ -42,17 +42,20 @@ do
     export srcdir=/output
     cd main/${APORT_ORIGIN}
     . ./APKBUILD
-    mkdir -p "$srcdir"/$pkgname-$pkgver
-    for f in $source
-    do
-      if [ -f $f ]
-      then
-        cp -a $f "$srcdir"/$pkgname-$pkgver/
-      else
-        ( cd "$srcdir"/$pkgname-$pkgver && \
-        wget $f || ( printf "Cannot retrieve $f\n" && exit )
-        )
-      fi
-    done
+    if [ ! -d "$srcdir"/$pkgname-$pkgver ]
+    then
+      mkdir -p "$srcdir"/$pkgname-$pkgver
+      for f in $source
+      do
+        if [ -f $f ]
+        then
+          cp -a $f "$srcdir"/$pkgname-$pkgver/
+        else
+          cd "$srcdir"/$pkgname-$pkgver && \
+          wget $f || ( printf "Cannot retrieve $f\n" && exit ) && \
+          cd -
+        fi
+      done
+    fi
   )
 done

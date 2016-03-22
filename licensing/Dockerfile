@@ -4,6 +4,6 @@ RUN apk update && apk add lua git
 
 RUN git clone https://github.com/alpinelinux/aports.git
 
-ADD license.sh gpl.lua /usr/bin/
+ADD license.sh packages.lua /usr/bin/
 
 CMD license.sh
