@@ -1,5 +1,5 @@
 #!/bin/sh
-set -x
+
 cat /hostetc/issue | grep -q Moby || ( printf "You must run this script with -v /etc:/hostetc -v /lib:/lib\n" && exit 1 )
 
 apk info | grep -q fuse || ( printf "You must run this script with -v /etc:/etc -v /lib:/lib\n" && exit 1 )
