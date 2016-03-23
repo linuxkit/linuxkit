@@ -10,6 +10,6 @@ COPY . /go/src/hupper/
 ARG GOARCH
 ARG GOOS
 
-RUN go get && go install
+RUN go install
 
 RUN [ -f /go/bin/*/hupper ] && mv /go/bin/*/hupper /go/bin/ || true
