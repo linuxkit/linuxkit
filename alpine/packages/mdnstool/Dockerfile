@@ -10,6 +10,6 @@ ARG GOOS
 
 COPY . /go/src/mdnstool/
 
-RUN go get && go install
+RUN go install
 
 RUN [ -f /go/bin/*/mdnstool ] && mv /go/bin/*/mdnstool /go/bin/ || true

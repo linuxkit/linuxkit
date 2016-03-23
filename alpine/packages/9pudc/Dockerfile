@@ -10,6 +10,6 @@ COPY . /go/src/9pudc/
 ARG GOARCH
 ARG GOOS
 
-RUN go get && go install
+RUN go install
 
 RUN [ -f /go/bin/*/9pudc ] && mv /go/bin/*/9pudc /go/bin/ || true
