@@ -1,7 +1,5 @@
 FROM golang:alpine
 
-RUN apk update && apk upgrade && apk add git
-
 RUN mkdir -p /go/src/hupper
 WORKDIR /go/src/hupper
 
