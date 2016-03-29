@@ -7,7 +7,7 @@ DEPS=$(HDR) $(SRC)
 
 all: Dockerfile $(DEPS)
 	docker build -t transfused:build .
-	docker run transfused:build cat transfused > transfused
+	docker run --rm transfused:build cat transfused > transfused
 	chmod 755 transfused
 
 transfused: $(DEPS)
