@@ -30,8 +30,6 @@ start()
 		rm -rf /var/tmp/log
 	fi
 
-	export DOCKER_RAMDISK="true"
-
 	command="${DOCKER_BINARY:-/usr/bin/docker}"
 
 	pidfile="/run/docker.pid"

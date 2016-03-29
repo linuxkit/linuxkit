@@ -1,0 +1,7 @@
+#!/bin/sh
+
+/bin/mount -t tmpfs tmpfs /mnt
+
+/bin/cp -a / /mnt 2>/dev/null
+
+exec /sbin/switch_root /mnt /sbin/init

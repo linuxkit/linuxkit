@@ -90,7 +90,8 @@ RUN \
   rc-update add hupper default && \
   rc-update add hv_fcopy_daemon default && \
   rc-update add hv_kvp_daemon default && \
-  rc-update add hv_vss_daemon default && \
-  ln -s /bin/busybox /init
+  rc-update add hv_vss_daemon default
+
+COPY init /
 
 CMD ["/bin/sh"]
