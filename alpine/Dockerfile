@@ -34,6 +34,8 @@ COPY packages/docker/docker /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/docker-x/docker-x /usr/bin/
 COPY packages/diagnostics/diagnostics /usr/bin/
+COPY packages/diagnostics/diagnostics-server /usr/bin/
+COPY packages/diagnostics/diagnostics-download /usr/bin/
 COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
 COPY packages/9pinit/etc /etc/

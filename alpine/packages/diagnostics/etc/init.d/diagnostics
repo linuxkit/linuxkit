@@ -10,4 +10,5 @@ start()
 	ebegin "Checking system state"
 
 	/usr/bin/diagnostics
+	/usr/bin/diagnostics-server &
 }
