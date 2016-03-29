@@ -753,6 +753,7 @@ void process_events(char * events_path, int events, parameters * params) {
         //       not dropping the read 0 to force short read if
         //       the real read is flushed
         log_time(conn, "read 0 from event stream %s\n", events_path);
+        free(conn);
         continue;
       }
 
