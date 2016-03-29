@@ -212,6 +212,8 @@ static int xfer_data(int in_fd, int out_fd)
 	ssize_t nbytes;
 	ssize_t remaining;
 
+	if (out_fd == STDIN_FILENO) out_fd = STDOUT_FILENO;
+
 	nbytes = read(in_fd, buf, sizeof(buf));
 	if (nbytes <= 0) {
 		return -1;
