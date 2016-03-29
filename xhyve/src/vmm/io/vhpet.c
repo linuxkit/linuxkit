@@ -291,7 +291,7 @@ vhpet_handler(void *a)
 	callout_deactivate(callout);
 
 	if (!vhpet_counter_enabled(vhpet))
-		xhyve_abort("vhpet(%p) callout with counter disabled\n", vhpet);
+		xhyve_abort("vhpet(%p) callout with counter disabled\n", (void *)vhpet);
 
 	counter = vhpet_counter(vhpet, &now);
 	vhpet_start_timer(vhpet, n, counter, now);

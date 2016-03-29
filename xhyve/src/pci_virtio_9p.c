@@ -212,7 +212,7 @@ pci_vt9p_notify(void *vsc, struct vqueue_info *vq)
 		}
 		if (wiov == NULL && (flags[i] & VRING_DESC_F_WRITE)) {
 			wiov = &iov[i];
-			DPRINTF(("vt9p wiov is %p\r\n", wiov));
+			DPRINTF(("vt9p wiov is %p\r\n", (void *)wiov));
 		}
 	}
 	/* do this properly */
