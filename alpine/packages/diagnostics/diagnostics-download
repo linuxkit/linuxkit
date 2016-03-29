@@ -1,0 +1,20 @@
+#!/bin/sh
+
+# Gather diagnostic data and write a .tar file to stdout
+
+TEMP=$(mktemp -d diagnoseXXXXXXX)
+trap 'rm -rf "$TEMP"' EXIT
+cd $TEMP
+
+# gather diagnostic data
+ps uax > "ps -aux"
+netstat -an > "netstat -an"
+iptables -L > "iptables -L"
+dmesg > dmesg
+timeout -t 2 docker ps > "docker ps"
+/usr/bin/diagnostics > "diagnostics"
+dig docker.com > "dig docker.com"
+wget -O - http://www.docker.com/ &> "wget docker.com"
+
+# send everything to the client
+tar -c .
