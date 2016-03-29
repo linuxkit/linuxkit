@@ -207,7 +207,7 @@ static void set_nonblock(int fd, bool enable)
 
 static int xfer_data(int in_fd, int out_fd)
 {
-	char buf[4096];
+	char buf[256*1024];
 	char *send_ptr = buf;
 	ssize_t nbytes;
 	ssize_t remaining;
