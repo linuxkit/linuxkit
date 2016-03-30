@@ -4,9 +4,12 @@
 
 TEMP=$(mktemp -d diagnoseXXXXXXX)
 trap 'rm -rf "$TEMP"' EXIT
-cd $TEMP
+mkdir $TEMP/moby
+cd $TEMP/moby
 
 # gather diagnostic data
+date > "date"
+uname -a > "uname -a"
 ps uax > "ps -aux"
 netstat -an > "netstat -an"
 iptables -L > "iptables -L"
@@ -27,4 +30,5 @@ dig docker.com > "dig docker.com"
 wget -O - http://www.docker.com/ &> "wget docker.com"
 
 # send everything to the client
+cd ..
 tar -c .
