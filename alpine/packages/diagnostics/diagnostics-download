@@ -11,12 +11,15 @@ ps uax > "ps -aux"
 netstat -an > "netstat -an"
 iptables -L > "iptables -L"
 ifconfig -a > "ifconfig -a"
+route -n > "route -n"
 brctl show > "brctl show"
 dmesg > dmesg
 timeout -t 2 docker ps > "docker ps"
 mount > "mount"
 df > "df"
 /usr/bin/diagnostics > "diagnostics"
+ping -w 5 8.8.8.8 &> "ping -w 5 8.8.8.8"
+cp /etc/resolv.conf .
 dig docker.com > "dig docker.com"
 wget -O - http://www.docker.com/ &> "wget docker.com"
 
