@@ -18,6 +18,7 @@ route -n > "route -n"
 brctl show > "brctl show"
 dmesg > dmesg
 timeout -t 2 docker ps > "docker ps"
+tail /var/log/docker.log > "docker.log"
 mount > "mount"
 df > "df"
 ls -l /var &> "ls -l var"
