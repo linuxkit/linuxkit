@@ -6,7 +6,7 @@ mdnstool: Dockerfile mdnstool.go mdnsmon/mdnsmon.go
 	chmod 755 mdnstool
 
 vendor:
-	docker run -v $(PWD):/go/src -it justincormack/gvt sh -c 'cd /go/src; gvt fetch github.com/hashicorp/mdns'
+	docker run -v $(PWD):/go/src -it justincormack/gvt fetch github.com/hashicorp/mdns
 
 clean:
 	rm -f mdnstool
