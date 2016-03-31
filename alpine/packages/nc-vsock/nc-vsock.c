@@ -215,8 +215,11 @@ static int xfer_data(int in_fd, int out_fd)
 	if (out_fd == STDIN_FILENO) out_fd = STDOUT_FILENO;
 
 	nbytes = read(in_fd, buf, sizeof(buf));
-	if (nbytes <= 0) {
+	if (nbytes < 0) {
 		return -1;
+	}
+	if (nbytes == 0) {
+		return 0;
 	}
 
 	remaining = nbytes;
@@ -252,21 +255,25 @@ static int xfer_data(int in_fd, int out_fd)
 		send_ptr += nbytes;
 		remaining -= nbytes;
 	}
-	return 0;
+	return 1;
 }
 
 static void main_loop(int fds[2])
 {
 	fd_set rfds;
 	int nfds = fds[fds[0] > fds[1] ? 0 : 1] + 1;
+	bool rfd0 = true, rfd1 = true; /* Which fd's are readable */
 
 	set_nonblock(fds[0], true);
 	set_nonblock(fds[1], true);
 
 	for (;;) {
+		if (!rfd0 && !rfd1)
+			return;
+
 		FD_ZERO(&rfds);
-		FD_SET(fds[0], &rfds);
-		FD_SET(fds[1], &rfds);
+		if (rfd0) FD_SET(fds[0], &rfds);
+		if (rfd1) FD_SET(fds[1], &rfds);
 
 		if (select(nfds, &rfds, NULL, NULL, NULL) < 0) {
 			if (errno == EINTR) {
@@ -277,15 +284,19 @@ static void main_loop(int fds[2])
 			}
 		}
 
-		if (FD_ISSET(fds[0], &rfds)) {
-			if (xfer_data(fds[0], fds[1]) < 0) {
-				return;
+		if (rfd0 && FD_ISSET(fds[0], &rfds)) {
+			switch (xfer_data(fds[0], fds[1])) {
+			case -1: return;
+			case 0: rfd0 = false; break;
+			case 1: break;
 			}
 		}
 
-		if (FD_ISSET(fds[1], &rfds)) {
-			if (xfer_data(fds[1], fds[0]) < 0) {
-				return;
+		if (rfd1 && FD_ISSET(fds[1], &rfds)) {
+			switch (xfer_data(fds[1], fds[0])) {
+			case -1: return;
+			case 0: rfd1 = false; break;
+			case 1: break;
 			}
 		}
 	}
