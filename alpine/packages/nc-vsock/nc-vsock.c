@@ -219,7 +219,12 @@ static int xfer_data(int in_fd, int out_fd)
 		return -1;
 	}
 	if (nbytes == 0) {
-		return 0;
+		int rc;
+		if (out_fd == STDOUT_FILENO) return 0;
+		rc = shutdown(out_fd, SHUT_WR);
+		if (rc == 0) return 0;
+		perror("shutdown");
+		return -1;
 	}
 
 	remaining = nbytes;
