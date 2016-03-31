@@ -22,5 +22,7 @@ DOCKER=$(ps -eo args | grep '^/usr/bin/docker')
 [ $? -eq 0 ] && printf "✓ Process docker running: $DOCKER\n" || printf "✗ No docker process\n"
 DOCKERPS=$(docker ps 2>&1)
 [ $? -eq 0 ] && printf "✓ Docker daemon working\n" || printf "✗ Docker ps failed: $DOCKERPS\n"
+DIAGNOSTICS=$(ps -eo args | grep '/usr/bin/diagnostics-server$')
+[ $? -eq 0 ] && printf "✓ Diagnostics server running: $DIAGNOSTICS\n" || printf "✗ No diagnostics server\n"
 
 exit 0
