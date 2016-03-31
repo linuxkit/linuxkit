@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Allow clients (e.g. pinata diagnose) to download diagnostic data
+
+while /bin/true; do
+	nc -l -p 62374 -e /usr/bin/diagnostics-download 2>> /var/log/diagnostics-server.log
+done
