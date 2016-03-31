@@ -11,6 +11,10 @@
 #include <netdb.h>
 #include "include/uapi/linux/vm_sockets.h"
 
+#define MODE_READ 1 /* From the vsock */
+#define MODE_WRITE 2 /* To the vsock */
+#define MODE_RDWR (MODE_READ|MODE_WRITE)
+
 static int parse_cid(const char *cid_str)
 {
 	char *end = NULL;
@@ -181,7 +185,7 @@ static int get_fds(int argc, char **argv, int fds[2])
 		}
 		return 0;
 	} else {
-		fprintf(stderr, "usage: %s [-l <port> [-t <dst> <dstport>] | <cid> <port>]\n", argv[0]);
+		fprintf(stderr, "usage: %s [-r|-w] [-l <port> [-t <dst> <dstport>] | <cid> <port>]\n", argv[0]);
 		return -1;
 	}
 }
@@ -263,11 +267,12 @@ static int xfer_data(int in_fd, int out_fd)
 	return 1;
 }
 
-static void main_loop(int fds[2])
+static void main_loop(int fds[2], int mode)
 {
 	fd_set rfds;
 	int nfds = fds[fds[0] > fds[1] ? 0 : 1] + 1;
-	bool rfd0 = true, rfd1 = true; /* Which fd's are readable */
+	/* Which fd's are readable */
+	bool rfd0 = !!(mode&MODE_WRITE), rfd1 = !!(mode&MODE_READ);
 
 	set_nonblock(fds[0], true);
 	set_nonblock(fds[1], true);
@@ -309,12 +314,23 @@ static void main_loop(int fds[2])
 
 int main(int argc, char **argv)
 {
+	int mode = MODE_RDWR;
 	int fds[2];
+
+	if (argc >= 2) {
+		if (!strcmp(argv[1], "-r")) {
+			mode = MODE_READ;
+			argv++; argc--;
+		} else if (!strcmp(argv[1], "-w")) {
+			mode = MODE_WRITE;
+			argv++; argc--;
+		}
+	}
 
 	if (get_fds(argc, argv, fds) < 0) {
 		return EXIT_FAILURE;
 	}
 
-	main_loop(fds);
+	main_loop(fds, mode);
 	return EXIT_SUCCESS;
 }
