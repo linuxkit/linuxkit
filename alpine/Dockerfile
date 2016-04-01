@@ -54,6 +54,8 @@ COPY packages/userns/etc /etc/
 COPY packages/userns/groupadd /usr/sbin
 COPY packages/userns/useradd /usr/sbin
 COPY packages/nc-vsock/nc-vsock /usr/bin
+COPY packages/vsudd/vsudd /sbin
+COPY packages/vsudd/etc /etc
 
 RUN \
   rc-update add swap boot && \
@@ -90,7 +92,8 @@ RUN \
   rc-update add hupper default && \
   rc-update add hv_fcopy_daemon default && \
   rc-update add hv_kvp_daemon default && \
-  rc-update add hv_vss_daemon default
+  rc-update add hv_vss_daemon default && \
+  rc-update add vsudd default
 
 COPY init /
 
