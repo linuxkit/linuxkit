@@ -6,6 +6,7 @@ all:
 	$(MAKE) -C hvtools OS=linux
 	$(MAKE) -C docker OS=Linux
 	$(MAKE) -C nc-vsock OS=linux
+	$(MAKE) -C vsudd OS=linux
 
 arm:
 	$(MAKE) -C proxy OS=linux ARCH=arm
@@ -14,6 +15,7 @@ arm:
 	$(MAKE) -C hupper OS=linux ARCH=arm
 	$(MAKE) -C docker OS=Linux ARCH=arm
 	$(MAKE) -C nc-vsock OS=linux ARCH=arm
+	$(MAKE) -C vsudd OS=linux ARCH=arm
 
 clean:
 	$(MAKE) -C proxy clean
@@ -23,3 +25,4 @@ clean:
 	$(MAKE) -C hupper clean
 	$(MAKE) -C hvtools clean
 	$(MAKE) -C nc-vsock clean
+	$(MAKE) -C vsudd clean

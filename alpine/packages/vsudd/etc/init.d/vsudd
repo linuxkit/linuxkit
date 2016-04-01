@@ -1,0 +1,31 @@
+#!/sbin/openrc-run
+
+description="vsock socket proxy client"
+
+start()
+{
+	ebegin "Starting docker socket vsock passthrough"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/vsudd.pid
+	[ -n "${LOGFILE}" ] || LOGFILE=/var/log/vsudd.log
+
+	start-stop-daemon --start --quiet \
+		--background \
+		--exec /sbin/vsudd \
+		--make-pidfile --pidfile ${PIDFILE} \
+		--stderr "${LOGFILE}" --stdout "${LOGFILE}" \
+		-- -port 2376 -sock /var/run/docker.sock
+
+	eend $? "Failed to start vsudd"
+}
+
+stop()
+{
+	ebegin "Stopping docker socket passthrough"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/vsudd.pid
+
+	start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
+
+	eend $? "Failed to stop vsudd"
+}
