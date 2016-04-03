@@ -1,14 +1,19 @@
-all: docker
-
 DOCKER_VERSION=1.11.0-rc3
 ARCH?=x86_64
 OS?=Linux
 
-DOCKER_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
-docker:
+all: bin
+
+bin: docker.git
+	(cd docker.git && git fetch origin --tags && git checkout v${DOCKER_VERSION})
+	BIND_DIR=$(shell pwd) make -C docker.git binary
 	mkdir -p bin
-	if [ "${ARCH}" != "arm" ] ; then curl -f -L -o docker.tgz https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && tar xzf docker.tgz && mv docker/* bin && rm -rf docker/ docker.tgz; else cp docker-arm bin/docker; fi
-	chmod +x bin/*
+	cp docker.git/bundles/${DOCKER_VERSION}/binary/* bin/
+	rm -f bin/*.md5
+	rm -f bin/*.sha256
+
+docker.git:
+	git clone git://github.com/docker/docker.git docker.git
 
 clean:
 	rm -rf bin
