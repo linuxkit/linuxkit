@@ -12,14 +12,10 @@ import (
 	"pkg/proxy"
 )
 
-// From docker/libnetwork/portmapper/proxy.go
-
-// execProxy is the reexec function that is registered to start the userland proxies
-func execProxy() {
+// proxyForever signals the parent success/failure and runs the proxy forever
+func proxyForever(p proxy.Proxy, err error) {
 	f := os.NewFile(3, "signal-parent")
-	host, container := parseHostContainerAddrs()
 
-	p, err := proxy.NewProxy(host, container)
 	if err != nil {
 		fmt.Fprintf(f, "1\n%s", err)
 		f.Close()
@@ -32,6 +28,8 @@ func execProxy() {
 	// Run will block until the proxy stops
 	p.Run()
 }
+
+// From docker/libnetwork/portmapper/proxy.go:
 
 // parseHostContainerAddrs parses the flags passed on reexec to create the TCP or UDP
 // net.Addrs to map the host and container ports
