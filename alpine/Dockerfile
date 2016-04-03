@@ -30,8 +30,7 @@ COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
 COPY packages/mdnstool/mdnstool /sbin/
 COPY packages/mdnstool/etc /etc/
-COPY packages/docker/docker /usr/bin/
-COPY packages/docker/docker-* /usr/bin/
+COPY packages/docker/bin/* /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/docker-x/docker-x /usr/bin/
 COPY packages/diagnostics/diagnostics /usr/bin/
