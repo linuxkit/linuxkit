@@ -12,22 +12,20 @@ import (
 	"pkg/proxy"
 )
 
-// proxyForever signals the parent success/failure and runs the proxy forever
-func proxyForever(p proxy.Proxy, err error) error {
+// sendError signals the error to the parent and quits the process.
+func sendError(err error) {
 	f := os.NewFile(3, "signal-parent")
 
-	if err != nil {
-		fmt.Fprintf(f, "1\n%s", err)
-		f.Close()
-		return err
-	}
-	go handleStopSignals(p)
+	fmt.Fprintf(f, "1\n%s", err)
+	f.Close()
+	os.Exit(1)
+}
+
+// sendOK signals the parent that the forward is running.
+func sendOK() {
+	f := os.NewFile(3, "signal-parent")
 	fmt.Fprint(f, "0\n")
 	f.Close()
-
-	// Run will block until the proxy stops
-	p.Run()
-	return nil
 }
 
 // From docker/libnetwork/portmapper/proxy.go:
