@@ -1,11 +1,18 @@
 package main
 
 import (
+	"log"
+	"os"
 	"pkg/proxy"
 )
 
 func main() {
 	host, container := parseHostContainerAddrs()
 
-	proxyForever(proxy.NewProxy(host, container))
+	err := proxyForever(proxy.NewProxy(host, container))
+
+	if err != nil {
+		os.Exit(0)
+	}
+	os.Exit(1)
 }
