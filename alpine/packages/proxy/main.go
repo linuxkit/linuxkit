@@ -1,5 +1,11 @@
 package main
 
+import (
+	"pkg/proxy"
+)
+
 func main() {
-	execProxy()
+	host, container := parseHostContainerAddrs()
+
+	proxyForever(proxy.NewProxy(host, container))
 }
