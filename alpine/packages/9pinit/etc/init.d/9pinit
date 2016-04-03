@@ -24,6 +24,10 @@ start()
 		"db")
 			mkdir -p /Database
 			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /Database
+			;;
+		"port")
+			mkdir -p /port
+			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /port
 		esac
 
 	done
