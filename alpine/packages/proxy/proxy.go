@@ -32,7 +32,7 @@ func sendOK() {
 
 // parseHostContainerAddrs parses the flags passed on reexec to create the TCP or UDP
 // net.Addrs to map the host and container ports
-func parseHostContainerAddrs() (host net.Addr, container net.Addr) {
+func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr) {
 	var (
 		proto         = flag.String("proto", "tcp", "proxy protocol")
 		hostIP        = flag.String("host-ip", "", "host ip")
@@ -46,15 +46,17 @@ func parseHostContainerAddrs() (host net.Addr, container net.Addr) {
 	switch *proto {
 	case "tcp":
 		host = &net.TCPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
+		port = *hostPort
 		container = &net.TCPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	case "udp":
 		host = &net.UDPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
+		port = *hostPort
 		container = &net.UDPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	default:
 		log.Fatalf("unsupported protocol %s", *proto)
 	}
 
-	return host, container
+	return host, port, container
 }
 
 func handleStopSignals(p proxy.Proxy) {
