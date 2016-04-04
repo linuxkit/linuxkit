@@ -50,6 +50,11 @@ start()
 		[ -d /Mac/$d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
 	done
 
+	# same default ulimit as boot2docker; if you want more can set at docker run time
+	DOCKER_ULIMITS=1048576
+	ulimit -n $DOCKER_ULIMITS
+	ulimit -p $DOCKER_ULIMITS
+
 	DOCKER_LOGFILE="/var/log/docker.log"
 
 	start-stop-daemon --start --quiet \
