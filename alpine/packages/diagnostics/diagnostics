@@ -7,8 +7,6 @@ DEV=$(mount | grep '/dev/[sxv]da. on /var type')
 [ $? -eq 0 ] && printf "✓ Drive mounted: $DEV\n" || printf "✗ No drive mounted\n"
 INET=$(ifconfig eth0 2> /dev/null | grep 'inet addr')
 [ $? -eq 0 ] && printf "✓ Network connected: $INET\n" || printf "✗ No network connection\n"
-UDC=$(ps -eo args | grep '^/sbin/9pudc')
-[ $? -eq 0 ] && printf "✓ Process 9pudc running: $UDC\n" || printf "✗ No 9pudc process\n"
 if [ -d /Transfuse ]
 then
 	FUSE=$(ps -eo args | grep '^/sbin/transfused')

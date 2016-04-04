@@ -2,7 +2,7 @@
 
 depend()
 {
-	after 9pudc transfused
+	after transfused
 	before chronyd
 }
 
