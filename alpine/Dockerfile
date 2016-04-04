@@ -23,8 +23,6 @@ ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
 COPY kernel/kernel-source-info /etc/
 
-COPY packages/9pudc/9pudc /sbin/
-COPY packages/9pudc/etc /etc/
 COPY packages/proxy/proxy /sbin/
 COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
@@ -80,7 +78,6 @@ RUN \
   rc-update add klogd && \
   rc-update add docker default && \
   rc-update add 9pinit boot && \
-  rc-update add 9pudc default && \
   rc-update add transfused default && \
   rc-update add mdnstool default && \
   rc-update add automount boot && \
