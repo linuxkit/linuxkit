@@ -1,0 +1,207 @@
+commit dfb1652b51a083ef3285977b4c42ec113480c67b
+Author: David Scott <dave@recoil.org>
+Date:   Sun Apr 3 10:39:34 2016 +0100
+
+    Add a command-line argument --userland-proxy-bin=""
+    
+    We will use to prototype a "ports plugin" mechanism which will
+    ultimately be able to expose container ports on other machines,
+    via other protocols e.g.
+    
+    - as a channel multiplexed within an ssh connection
+    - as a TCP port exposed on a host running a VM running docker
+    
+    The new --userland-proxy-bin argument is only inspected if
+    --userland-proxy=true.
+    
+    If --userland-proxy-bin="" (the default) then the existing built-in
+    docker-proxy will be used.
+    
+    If --userland-proxy-bin<>"" then the named program will be run instead.
+    
+    Signed-off-by: David Scott <dave.scott@docker.com>
+
+diff --git a/daemon/config_unix.go b/daemon/config_unix.go
+index 5394949..ce10498 100644
+--- a/daemon/config_unix.go
++++ b/daemon/config_unix.go
+@@ -42,6 +42,7 @@ type bridgeConfig struct {
+ 	EnableIPForward             bool   `json:"ip-forward,omitempty"`
+ 	EnableIPMasq                bool   `json:"ip-mask,omitempty"`
+ 	EnableUserlandProxy         bool   `json:"userland-proxy,omitempty"`
++	UserlandProxyBin            string `json:"userland-proxy-bin,omitempty"`
+ 	DefaultIP                   net.IP `json:"ip,omitempty"`
+ 	Iface                       string `json:"bridge,omitempty"`
+ 	IP                          string `json:"bip,omitempty"`
+@@ -78,6 +79,7 @@ func (config *Config) InstallFlags(cmd *flag.FlagSet, usageFn func(string) strin
+ 	cmd.BoolVar(&config.bridgeConfig.InterContainerCommunication, []string{"#icc", "-icc"}, true, usageFn("Enable inter-container communication"))
+ 	cmd.Var(opts.NewIPOpt(&config.bridgeConfig.DefaultIP, "0.0.0.0"), []string{"#ip", "-ip"}, usageFn("Default IP when binding container ports"))
+ 	cmd.BoolVar(&config.bridgeConfig.EnableUserlandProxy, []string{"-userland-proxy"}, true, usageFn("Use userland proxy for loopback traffic"))
++	cmd.StringVar(&config.bridgeConfig.UserlandProxyBin, []string{"-userland-proxy-bin"}, "", usageFn("Use specific userland proxy binary if in userland proxy mode"))
+ 	cmd.BoolVar(&config.EnableCors, []string{"#api-enable-cors", "#-api-enable-cors"}, false, usageFn("Enable CORS headers in the remote API, this is deprecated by --api-cors-header"))
+ 	cmd.StringVar(&config.CorsHeaders, []string{"-api-cors-header"}, "", usageFn("Set CORS headers in the remote API"))
+ 	cmd.StringVar(&config.CgroupParent, []string{"-cgroup-parent"}, "", usageFn("Set parent cgroup for all containers"))
+diff --git a/daemon/daemon_unix.go b/daemon/daemon_unix.go
+index a152fd0..2ed48e1 100644
+--- a/daemon/daemon_unix.go
++++ b/daemon/daemon_unix.go
+@@ -651,7 +651,8 @@ func driverOptions(config *Config) []nwconfig.Option {
+ 	bridgeConfig := options.Generic{
+ 		"EnableIPForwarding":  config.bridgeConfig.EnableIPForward,
+ 		"EnableIPTables":      config.bridgeConfig.EnableIPTables,
+-		"EnableUserlandProxy": config.bridgeConfig.EnableUserlandProxy}
++		"EnableUserlandProxy": config.bridgeConfig.EnableUserlandProxy,
++		"UserlandProxyBin":    config.bridgeConfig.UserlandProxyBin}
+ 	bridgeOption := options.Generic{netlabel.GenericData: bridgeConfig}
+ 
+ 	dOptions := []nwconfig.Option{}
+diff --git a/docs/reference/commandline/daemon.md b/docs/reference/commandline/daemon.md
+index 5ca0024..61cd369 100644
+--- a/docs/reference/commandline/daemon.md
++++ b/docs/reference/commandline/daemon.md
+@@ -67,6 +67,7 @@ weight = -1
+       --tlsverify                            Use TLS and verify the remote
+       --userns-remap="default"               Enable user namespace remapping
+       --userland-proxy=true                  Use userland proxy for loopback traffic
++      --userland-proxy-bin=""                Use this userland proxy binary, if userland-proxy is set
+ 
+ Options with [] may be specified multiple times.
+ 
+diff --git a/vendor/src/github.com/docker/libnetwork/drivers/bridge/bridge.go b/vendor/src/github.com/docker/libnetwork/drivers/bridge/bridge.go
+index 00e16e1..16ad81d 100644
+--- a/vendor/src/github.com/docker/libnetwork/drivers/bridge/bridge.go
++++ b/vendor/src/github.com/docker/libnetwork/drivers/bridge/bridge.go
+@@ -50,6 +50,7 @@ type configuration struct {
+ 	EnableIPForwarding  bool
+ 	EnableIPTables      bool
+ 	EnableUserlandProxy bool
++	UserlandProxyBin    string
+ }
+ 
+ // networkConfiguration for network specific configuration
+@@ -1211,7 +1212,7 @@ func (d *driver) ProgramExternalConnectivity(nid, eid string, options map[string
+ 	}
+ 
+ 	// Program any required port mapping and store them in the endpoint
+-	endpoint.portMapping, err = network.allocatePorts(endpoint, network.config.DefaultBindingIP, d.config.EnableUserlandProxy)
++	endpoint.portMapping, err = network.allocatePorts(endpoint, network.config.DefaultBindingIP, d.config.EnableUserlandProxy, d.config.UserlandProxyBin)
+ 	if err != nil {
+ 		return err
+ 	}
+diff --git a/vendor/src/github.com/docker/libnetwork/drivers/bridge/port_mapping.go b/vendor/src/github.com/docker/libnetwork/drivers/bridge/port_mapping.go
+index 965cc9a..1824f46 100644
+--- a/vendor/src/github.com/docker/libnetwork/drivers/bridge/port_mapping.go
++++ b/vendor/src/github.com/docker/libnetwork/drivers/bridge/port_mapping.go
+@@ -14,7 +14,7 @@ var (
+ 	defaultBindingIP = net.IPv4(0, 0, 0, 0)
+ )
+ 
+-func (n *bridgeNetwork) allocatePorts(ep *bridgeEndpoint, reqDefBindIP net.IP, ulPxyEnabled bool) ([]types.PortBinding, error) {
++func (n *bridgeNetwork) allocatePorts(ep *bridgeEndpoint, reqDefBindIP net.IP, ulPxyEnabled bool, pxyBin string) ([]types.PortBinding, error) {
+ 	if ep.extConnConfig == nil || ep.extConnConfig.PortBindings == nil {
+ 		return nil, nil
+ 	}
+@@ -24,14 +24,14 @@ func (n *bridgeNetwork) allocatePorts(ep *bridgeEndpoint, reqDefBindIP net.IP, u
+ 		defHostIP = reqDefBindIP
+ 	}
+ 
+-	return n.allocatePortsInternal(ep.extConnConfig.PortBindings, ep.addr.IP, defHostIP, ulPxyEnabled)
++	return n.allocatePortsInternal(ep.extConnConfig.PortBindings, ep.addr.IP, defHostIP, ulPxyEnabled, pxyBin)
+ }
+ 
+-func (n *bridgeNetwork) allocatePortsInternal(bindings []types.PortBinding, containerIP, defHostIP net.IP, ulPxyEnabled bool) ([]types.PortBinding, error) {
++func (n *bridgeNetwork) allocatePortsInternal(bindings []types.PortBinding, containerIP, defHostIP net.IP, ulPxyEnabled bool, pxyBin string) ([]types.PortBinding, error) {
+ 	bs := make([]types.PortBinding, 0, len(bindings))
+ 	for _, c := range bindings {
+ 		b := c.GetCopy()
+-		if err := n.allocatePort(&b, containerIP, defHostIP, ulPxyEnabled); err != nil {
++		if err := n.allocatePort(&b, containerIP, defHostIP, ulPxyEnabled, pxyBin); err != nil {
+ 			// On allocation failure, release previously allocated ports. On cleanup error, just log a warning message
+ 			if cuErr := n.releasePortsInternal(bs); cuErr != nil {
+ 				logrus.Warnf("Upon allocation failure for %v, failed to clear previously allocated port bindings: %v", b, cuErr)
+@@ -43,7 +43,7 @@ func (n *bridgeNetwork) allocatePortsInternal(bindings []types.PortBinding, cont
+ 	return bs, nil
+ }
+ 
+-func (n *bridgeNetwork) allocatePort(bnd *types.PortBinding, containerIP, defHostIP net.IP, ulPxyEnabled bool) error {
++func (n *bridgeNetwork) allocatePort(bnd *types.PortBinding, containerIP, defHostIP net.IP, ulPxyEnabled bool, pxyBin string) error {
+ 	var (
+ 		host net.Addr
+ 		err  error
+@@ -70,7 +70,7 @@ func (n *bridgeNetwork) allocatePort(bnd *types.PortBinding, containerIP, defHos
+ 
+ 	// Try up to maxAllocatePortAttempts times to get a port that's not already allocated.
+ 	for i := 0; i < maxAllocatePortAttempts; i++ {
+-		if host, err = n.portMapper.MapRange(container, bnd.HostIP, int(bnd.HostPort), int(bnd.HostPortEnd), ulPxyEnabled); err == nil {
++		if host, err = n.portMapper.MapRange(container, bnd.HostIP, int(bnd.HostPort), int(bnd.HostPortEnd), ulPxyEnabled, pxyBin); err == nil {
+ 			break
+ 		}
+ 		// There is no point in immediately retrying to map an explicitly chosen port.
+diff --git a/vendor/src/github.com/docker/libnetwork/portmapper/mapper.go b/vendor/src/github.com/docker/libnetwork/portmapper/mapper.go
+index d125fa8..e30b88c 100644
+--- a/vendor/src/github.com/docker/libnetwork/portmapper/mapper.go
++++ b/vendor/src/github.com/docker/libnetwork/portmapper/mapper.go
+@@ -61,12 +61,12 @@ func (pm *PortMapper) SetIptablesChain(c *iptables.ChainInfo, bridgeName string)
+ }
+ 
+ // Map maps the specified container transport address to the host's network address and transport port
+-func (pm *PortMapper) Map(container net.Addr, hostIP net.IP, hostPort int, useProxy bool) (host net.Addr, err error) {
+-	return pm.MapRange(container, hostIP, hostPort, hostPort, useProxy)
++func (pm *PortMapper) Map(container net.Addr, hostIP net.IP, hostPort int, useProxy bool, proxyBin string) (host net.Addr, err error) {
++	return pm.MapRange(container, hostIP, hostPort, hostPort, useProxy, proxyBin)
+ }
+ 
+ // MapRange maps the specified container transport address to the host's network address and transport port range
+-func (pm *PortMapper) MapRange(container net.Addr, hostIP net.IP, hostPortStart, hostPortEnd int, useProxy bool) (host net.Addr, err error) {
++func (pm *PortMapper) MapRange(container net.Addr, hostIP net.IP, hostPortStart, hostPortEnd int, useProxy bool, proxyBin string) (host net.Addr, err error) {
+ 	pm.lock.Lock()
+ 	defer pm.lock.Unlock()
+ 
+@@ -90,7 +90,7 @@ func (pm *PortMapper) MapRange(container net.Addr, hostIP net.IP, hostPortStart,
+ 		}
+ 
+ 		if useProxy {
+-			m.userlandProxy = newProxy(proto, hostIP, allocatedHostPort, container.(*net.TCPAddr).IP, container.(*net.TCPAddr).Port)
++			m.userlandProxy = newProxy(proxyBin, proto, hostIP, allocatedHostPort, container.(*net.TCPAddr).IP, container.(*net.TCPAddr).Port)
+ 		} else {
+ 			m.userlandProxy = newDummyProxy(proto, hostIP, allocatedHostPort)
+ 		}
+@@ -107,7 +107,7 @@ func (pm *PortMapper) MapRange(container net.Addr, hostIP net.IP, hostPortStart,
+ 		}
+ 
+ 		if useProxy {
+-			m.userlandProxy = newProxy(proto, hostIP, allocatedHostPort, container.(*net.UDPAddr).IP, container.(*net.UDPAddr).Port)
++			m.userlandProxy = newProxy(proxyBin, proto, hostIP, allocatedHostPort, container.(*net.UDPAddr).IP, container.(*net.UDPAddr).Port)
+ 		} else {
+ 			m.userlandProxy = newDummyProxy(proto, hostIP, allocatedHostPort)
+ 		}
+diff --git a/vendor/src/github.com/docker/libnetwork/portmapper/proxy.go b/vendor/src/github.com/docker/libnetwork/portmapper/proxy.go
+index ddde274..57bfeb1 100644
+--- a/vendor/src/github.com/docker/libnetwork/portmapper/proxy.go
++++ b/vendor/src/github.com/docker/libnetwork/portmapper/proxy.go
+@@ -92,9 +92,14 @@ func handleStopSignals(p proxy.Proxy) {
+ 	}
+ }
+ 
+-func newProxyCommand(proto string, hostIP net.IP, hostPort int, containerIP net.IP, containerPort int) userlandProxy {
++func newProxyCommand(userlandProxyBin string, proto string, hostIP net.IP, hostPort int, containerIP net.IP, containerPort int) userlandProxy {
++	path := userlandProxyBin
++	if userlandProxyBin == "" {
++		userlandProxyBin = userlandProxyCommandName
++		path = reexec.Self()
++	}
+ 	args := []string{
+-		userlandProxyCommandName,
++		userlandProxyBin,
+ 		"-proto", proto,
+ 		"-host-ip", hostIP.String(),
+ 		"-host-port", strconv.Itoa(hostPort),
+@@ -104,7 +109,7 @@ func newProxyCommand(proto string, hostIP net.IP, hostPort int, containerIP net.
+ 
+ 	return &proxyCommand{
+ 		cmd: &exec.Cmd{
+-			Path: reexec.Self(),
++			Path: path,
+ 			Args: args,
+ 			SysProcAttr: &syscall.SysProcAttr{
+ 				Pdeathsig: syscall.SIGTERM, // send a sigterm to the proxy if the daemon process dies

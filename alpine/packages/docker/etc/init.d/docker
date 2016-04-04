@@ -41,8 +41,14 @@ start()
 	if cat /proc/cmdline | grep -q 'com.docker.database'
 	then
 		DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
-		CONFIG_FILE="/Database/branch/master/ro/${DATABASE}/etc/docker/daemon.json"
+		MASTER_RO="/Database/branch/master/ro"
+		CONFIG_FILE="${MASTER_RO}/${DATABASE}/etc/docker/daemon.json"
 		[ -s ${CONFIG_FILE} ] && DOCKER_OPTS="${DOCKER_OPTS} --config-file ${CONFIG_FILE}"
+		NETWORK_MODE="$(cat ${MASTER_RO}/${DATABASE}/network | tr -d '[[:space:]]')"
+		NATIVE_PORT_FORWARDING="$(cat ${MASTER_RO}/${DATABASE}/native/port-forwarding | tr -d '[[:space:]]')"
+		if [ "${NETWORK_MODE}" = "slirp" -o "${NATIVE_PORT_FORWARDING}" = "true" ]; then
+			DOCKER_OPTS="${DOCKER_OPTS} --userland-proxy-bin /sbin/proxy"
+		fi
 	fi
 
 	for d in Users Volumes tmp private

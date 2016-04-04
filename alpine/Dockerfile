@@ -26,6 +26,7 @@ COPY kernel/kernel-source-info /etc/
 
 COPY packages/9pudc/9pudc /sbin/
 COPY packages/9pudc/etc /etc/
+COPY packages/proxy/proxy /sbin/
 COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
 COPY packages/mdnstool/mdnstool /sbin/
