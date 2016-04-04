@@ -1,5 +1,4 @@
-# FROM alpine:3.3
-FROM alpine@sha256:1849e75e25b5a005781b32e7ce0ec2892c85ef3d40d76861a6d3c721f1acc353
+FROM alpine:3.3
 
 COPY repositories /etc/apk/
 
