@@ -1,6 +1,6 @@
 FROM ubuntu:15.10
 
-ARG KERNEL_VERSION=4.1.20
+ARG KERNEL_VERSION=4.4.6
 ARG ARCH=x86_64
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
@@ -31,11 +31,10 @@ ADD ${KERNEL_SOURCE} .
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
-# http://aufs.sourceforge.net/
+# this is aufs4.4 20160328
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.1.13+
-ENV AUFS_COMMIT     9b0fe5a0ac42f9dca6ecf3261178ce101a270948
-# we use AUFS_COMMIT to get stronger repeatability guarantees
+ENV AUFS_BRANCH     aufs4.4
+ENV AUFS_COMMIT     96236731c07a66db3ab1dcfe93aaa14f3074be14
 
 # Download AUFS and patch kernel
 RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
@@ -70,8 +69,9 @@ RUN jobs=$(nproc); \
 
 # XXX not cross compiled yet!
 
+# aufs-util 20151116
 ENV AUFS_TOOLS_REPO https://github.com/Distrotech/aufs-util.git
-ENV AUFS_TOOLS_COMMIT 5e0c348bd8b1898beb1e043b026bcb0e0c7b0d54
+ENV AUFS_TOOLS_COMMIT b5e7e204036da5e815ddec15a847a03c232771b4
 
 RUN git clone ${AUFS_TOOLS_REPO} && \
     cd /aufs-util && \
