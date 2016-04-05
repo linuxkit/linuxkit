@@ -34,21 +34,24 @@ do
     if [ ! -d "$srcdir"/$pkgname-$pkgver ]
     then
       mkdir -p "$srcdir"/$pkgname-$pkgver
-      while read f
+      while read ff
       do
-	if [ -n "$(echo $f | tr -d '[[:space:]]')" ]
-	  then
-            f=$(echo $f | sed 's/^.*:://')
-	    printf "looking for source for: $f\n"
-            if [ -f "$f" ]
-            then
-              cp -a $f "$srcdir"/$pkgname-$pkgver/
-            else
-              cd "$srcdir"/$pkgname-$pkgver && \
-              wget $f || fail "Cannot retrieve $f"  && \
-              cd -
-            fi
-	fi
+	for f in $ff
+	do
+	  if [ -n "$(echo $f | tr -d '[[:space:]]')" ]
+	    then
+              f=$(echo $f | sed 's/^.*:://')
+	      printf "looking for source for: $f\n"
+              if [ -f "$f" ]
+              then
+                cp -a $f "$srcdir"/$pkgname-$pkgver/
+              else
+                cd "$srcdir"/$pkgname-$pkgver && \
+                wget $f || fail "Cannot retrieve $f"  && \
+                cd -
+              fi
+	  fi
+        done
       done <<< "$source"
     fi
   )
