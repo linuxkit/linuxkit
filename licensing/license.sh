@@ -1,8 +1,7 @@
 #!/bin/bash
 
 fail() {
-  printf $1
-  printf "\n"
+  printf "\e[31m$1 \e[0m\n"
   exit 1
 }
 
@@ -41,7 +40,7 @@ do
 	  then
             f=$(echo $f | sed 's/^.*:://')
 	    printf "looking for source for: $f\n"
-            if [ -f $f ]
+            if [ -f "$f" ]
             then
               cp -a $f "$srcdir"/$pkgname-$pkgver/
             else
@@ -71,4 +70,4 @@ cd /output/aufs-util
 git checkout "$AUFS_TOOLS_COMMIT"
 rm -rf .git
 
-printf "All source code now in output/ directory\n'
+printf "All source code now in output/ directory\n"
