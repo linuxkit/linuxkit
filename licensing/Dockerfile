@@ -1,6 +1,6 @@
 FROM alpine:3.3
 
-RUN apk update && apk add lua git
+RUN apk update && apk add lua git bash
 
 RUN git clone https://github.com/alpinelinux/aports.git
 
