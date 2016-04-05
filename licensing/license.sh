@@ -1,4 +1,10 @@
-#!/bin/sh
+#!/bin/bash
+
+fail() {
+  printf $1
+  printf "\n"
+  exit 1
+}
 
 cat /hostetc/issue | grep -q Moby || ( printf "You must run this script with -v /etc:/hostetc -v /lib:/lib\n" && exit 1 )
 
@@ -9,22 +15,6 @@ apk info | grep -q fuse || ( printf "You must run this script with -v /etc:/etc 
 . /hostetc/kernel-source-info
 
 rm -rf /output/*
-
-mkdir -p /output/kernel
-cd /output/kernel
-cp /proc/config.gz .
-wget ${KERNEL_SOURCE=} || ( printf "Failed to download kernel source\n" && exit 1 )
-
-git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /output/kernel/aufs
-cd /output/kernel/aufs
-git checkout -q "$AUFS_COMMIT"
-# to make it easier to check in the output of this script if necessary
-rm -rf .git
-
-git clone ${AUFS_TOOLS_REPO} /output/aufs-util
-cd /output/aufs-util
-git checkout "$AUFS_TOOLS_COMMIT"
-rm -rf .git
 
 cd /aports
 git pull
@@ -45,17 +35,40 @@ do
     if [ ! -d "$srcdir"/$pkgname-$pkgver ]
     then
       mkdir -p "$srcdir"/$pkgname-$pkgver
-      for f in $source
+      while read f
       do
-        if [ -f $f ]
-        then
-          cp -a $f "$srcdir"/$pkgname-$pkgver/
-        else
-          cd "$srcdir"/$pkgname-$pkgver && \
-          wget $f || ( printf "Cannot retrieve $f\n" && exit ) && \
-          cd -
-        fi
-      done
+	if [ -n "$(echo $f | tr -d '[[:space:]]')" ]
+	  then
+            f=$(echo $f | sed 's/^.*:://')
+	    printf "looking for source for: $f\n"
+            if [ -f $f ]
+            then
+              cp -a $f "$srcdir"/$pkgname-$pkgver/
+            else
+              cd "$srcdir"/$pkgname-$pkgver && \
+              wget $f || fail "Cannot retrieve $f"  && \
+              cd -
+            fi
+	fi
+      done <<< "$source"
     fi
   )
 done
+
+mkdir -p /output/kernel
+cd /output/kernel
+cp /proc/config.gz .
+wget ${KERNEL_SOURCE=} || ( printf "Failed to download kernel source\n" && exit 1 )
+
+git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /output/kernel/aufs
+cd /output/kernel/aufs
+git checkout -q "$AUFS_COMMIT"
+# to make it easier to check in the output of this script if necessary
+rm -rf .git
+
+git clone ${AUFS_TOOLS_REPO} /output/aufs-util
+cd /output/aufs-util
+git checkout "$AUFS_TOOLS_COMMIT"
+rm -rf .git
+
+printf "All source code now in output/ directory\n'
