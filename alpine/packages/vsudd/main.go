@@ -46,7 +46,7 @@ func init() {
 }
 
 func main() {
-	log.SetFlags(0)
+	log.SetFlags(log.LstdFlags)
 	flag.Parse()
 
 	if detach {
@@ -84,7 +84,6 @@ func main() {
 		log.Fatalln("Failed to listen to VSOCK", err)
 	}
 
-	log.Printf("Starting at %s", time.Now().Format(time.RFC822))
 	log.Printf("Listening on fd %d", accept_fd)
 
 	connid := 0
