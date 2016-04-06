@@ -1,0 +1,72 @@
+From 4a2d55757c137c2e574500227cb2efe77a26ee3a Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Wed, 27 Jan 2016 22:29:42 -0800
+Subject: [PATCH 20/25] Drivers: hv: vmbus: add a per-channel rescind callback
+
+This will be used by the coming hv_sock driver.
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 499e8401a515d04daa986b995da710d2b9737764)
+---
+ drivers/hv/channel_mgmt.c | 11 +++++++++++
+ include/linux/hyperv.h    |  9 +++++++++
+ 2 files changed, 20 insertions(+)
+
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index 4d61f41..421e3dd 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -603,6 +603,10 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+ 	spin_unlock_irqrestore(&channel->lock, flags);
+ 
+ 	if (channel->device_obj) {
++		if (channel->chn_rescind_callback) {
++			channel->chn_rescind_callback(channel);
++			return;
++		}
+ 		/*
+ 		 * We will have to unregister this device from the
+ 		 * driver core.
+@@ -972,3 +976,10 @@ bool vmbus_are_subchannels_present(struct vmbus_channel *primary)
+ 	return ret;
+ }
+ EXPORT_SYMBOL_GPL(vmbus_are_subchannels_present);
++
++void vmbus_set_chn_rescind_callback(struct vmbus_channel *channel,
++		void (*chn_rescind_cb)(struct vmbus_channel *))
++{
++	channel->chn_rescind_callback = chn_rescind_cb;
++}
++EXPORT_SYMBOL_GPL(vmbus_set_chn_rescind_callback);
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index 9ee79af..09e9ec1 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -742,6 +742,12 @@ struct vmbus_channel {
+ 	void (*sc_creation_callback)(struct vmbus_channel *new_sc);
+ 
+ 	/*
++	 * Channel rescind callback. Some channels (the hvsock ones), need to
++	 * register a callback which is invoked in vmbus_onoffer_rescind().
++	 */
++	void (*chn_rescind_callback)(struct vmbus_channel *channel);
++
++	/*
+ 	 * The spinlock to protect the structure. It is being used to protect
+ 	 * test-and-set access to various attributes of the structure as well
+ 	 * as all sc_list operations.
+@@ -827,6 +833,9 @@ int vmbus_request_offers(void);
+ void vmbus_set_sc_create_callback(struct vmbus_channel *primary_channel,
+ 			void (*sc_cr_cb)(struct vmbus_channel *new_sc));
+ 
++void vmbus_set_chn_rescind_callback(struct vmbus_channel *channel,
++		void (*chn_rescind_cb)(struct vmbus_channel *));
++
+ /*
+  * Retrieve the (sub) channel on which to send an outgoing request.
+  * When a primary channel has multiple sub-channels, we choose a
+-- 
+2.8.0.rc3
+

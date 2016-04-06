@@ -1,7 +1,7 @@
 From a3f136168f164f66de1de277a08b76f54b289d5a Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 11:10:21 +0800
-Subject: [PATCH 4/9] VSOCK: transport-specific vsock_transport functions
+Subject: [PATCH 04/25] VSOCK: transport-specific vsock_transport functions
 
 struct vsock_transport contains function pointers called by AF_VSOCK
 core code.  The transport may want its own transport-specific function
