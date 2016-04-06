@@ -5,7 +5,7 @@ services:
       context: .
     network_mode: bridge
     volumes:
-     - .:/mnt
+      - .:/mnt
   arm:
     build:
       context: .
@@ -17,4 +17,12 @@ services:
       dockerfile: Dockerfile.iso
     network_mode: bridge
     volumes:
-     - .:/mnt
+      - .:/mnt
+  efi:
+    privileged: true
+    build:
+      context: .
+      dockerfile: Dockerfile.efi
+    network_mode: bridge
+    volumes:
+      - .:/mnt

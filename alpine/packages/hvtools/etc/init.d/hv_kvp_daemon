@@ -2,11 +2,20 @@
 
 HV_DAEMON=hv_kvp_daemon
 
+depend()
+{
+        after dev
+        needs networking
+}
+
 start()
 {
         [ ! -d /sys/bus/vmbus ] && exit 0
 
         ebegin "Starting Hyper-V Daemon: ${HV_DAEMON}"
+
+        # Delete the existing store
+        rm -rf /var/lib/hyperv
 
         [ -n "${PIDFILE}" ] || PIDFILE=/var/run/${HV_DAEMON}.pid
 
