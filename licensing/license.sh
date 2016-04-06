@@ -1,6 +1,15 @@
 #!/bin/bash
 
-fail() {
+fetch () {
+  wget $1
+  [ $? == 0 ] && exit 0
+  # try at archive if original source fails
+  BASE=$(basename $1)
+  # distfiles are split as v3.3, not v3.3.3
+  # edge is not available but should always be upstream
+  ALPINE=$(cat /hostetc/alpine-release | sed 's/^\([0-9][0-9]*\.[0-9][0-9]*\).*$/\1/')
+  wget http://distfiles.alpinelinux.org/distfiles/v${ALPINE}/$BASE
+  [ $? == 0 ] && exit 0
   printf "\e[31m$1 \e[0m\n"
   exit 1
 }
@@ -46,9 +55,8 @@ do
               then
                 cp -a $f "$srcdir"/$pkgname-$pkgver/
               else
-                cd "$srcdir"/$pkgname-$pkgver && \
-                wget $f || fail "Cannot retrieve $f"  && \
-                cd -
+                ( cd "$srcdir"/$pkgname-$pkgver && \
+                fetch $f )
               fi
 	  fi
         done
