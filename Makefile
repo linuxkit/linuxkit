@@ -22,9 +22,7 @@ qemu-arm: Dockerfile.qemu.armhf arm
 	docker build -f Dockerfile.qemu.armhf -t mobyarmqemu:build .
 	docker run --rm mobyarmqemu:build
 
-.PHONY: remora clean
-remora: Dockerfile.remora remora/do-kexec.sh
-	docker build -f Dockerfile.remora -t justincormack/remora .
+.PHONY: clean
 
 clean:
 	$(MAKE) -C alpine clean
