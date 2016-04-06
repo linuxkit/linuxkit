@@ -69,6 +69,7 @@ mkdir -p /output/kernel
 cd /output/kernel
 cp /proc/config.gz .
 wget ${KERNEL_SOURCE=} || ( printf "Failed to download kernel source\n" && exit 1 )
+cp -r /hostetc/kernel-patches /output/kernel/patches
 
 git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /output/kernel/aufs
 cd /output/kernel/aufs

@@ -22,6 +22,7 @@ COPY etc /etc/
 ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
 COPY kernel/kernel-source-info /etc/
+ADD kernel/kernel-patches.tar /etc/kernel-patches
 
 COPY packages/proxy/proxy /sbin/
 COPY packages/transfused/transfused /sbin/
@@ -52,6 +53,9 @@ COPY packages/hvtools/hv_set_ifconfig /sbin/
 COPY packages/userns/etc /etc/
 COPY packages/userns/groupadd /usr/sbin
 COPY packages/userns/useradd /usr/sbin
+COPY packages/nc-vsock/nc-vsock /usr/bin
+COPY packages/vsudd/vsudd /sbin
+COPY packages/vsudd/etc /etc
 
 RUN \
   rc-update add swap boot && \
@@ -88,7 +92,8 @@ RUN \
   rc-update add hupper default && \
   rc-update add hv_fcopy_daemon default && \
   rc-update add hv_kvp_daemon default && \
-  rc-update add hv_vss_daemon default
+  rc-update add hv_vss_daemon default && \
+  rc-update add vsudd default
 
 COPY init /
 

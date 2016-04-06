@@ -1,0 +1,20 @@
+From https://github.com/stefanha/linux vsock-extras
+f442d29db40a1999d139dccf110f3b590a0ed5b8:nc-vsock.c
+
+including include/uapi/linux/vm_sockets.h, patched with:
+
+--- /home/ijc/x	2016-03-17 09:31:23.288944691 +0000
++++ alpine/packages/nc-vsock/include/uapi/linux/vm_sockets.h	2016-03-17 09:30:07.916069307 +0000
+@@ -16,7 +16,12 @@
+ #ifndef _UAPI_VM_SOCKETS_H
+ #define _UAPI_VM_SOCKETS_H
+ 
++#ifdef __KERNEL__
+ #include <linux/socket.h>
++#else
++#define __kernel_sa_family_t sa_family_t
++#include <sys/socket.h>
++#endif
+ 
+ /* Option name for STREAM socket buffer size.  Use as the option name in
+  * setsockopt(3) or getsockopt(3) to set or get an unsigned long long that
