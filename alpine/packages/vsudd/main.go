@@ -99,7 +99,7 @@ func main() {
 }
 
 func handleOne(connid int, fd int) {
-	vsock := os.NewFile(uintptr(fd), "vsock connection")
+	vsock := os.NewFile(uintptr(fd), fmt.Sprintf("vsock:%d", fd))
 	log.Println(connid, "Accepted connection on fd", fd)
 
 	defer syscall.Close(fd)
