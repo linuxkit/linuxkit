@@ -1,0 +1,108 @@
+From 4293a00ac211e20980a0739498a73aae4d8546bf Mon Sep 17 00:00:00 2001
+From: Asias He <asias@redhat.com>
+Date: Thu, 13 Jun 2013 18:30:19 +0800
+Subject: [PATCH 8/9] VSOCK: Add Makefile and Kconfig
+
+Enable virtio-vsock and vhost-vsock.
+
+Signed-off-by: Asias He <asias@redhat.com>
+Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
+---
+v4:
+ * Make checkpatch.pl happy with longer option description
+ * Clarify dependency on virtio rather than QEMU as suggested by Alex
+   Bennee
+v3:
+ * Don't put vhost vsock driver into staging
+ * Add missing Kconfig dependencies (Arnd Bergmann <arnd@arndb.de>)
+
+(cherry picked from commit 4c9d2a6be1c69ec22f8ee90bb4a5cc21d3848077)
+---
+ drivers/vhost/Kconfig  | 15 +++++++++++++++
+ drivers/vhost/Makefile |  4 ++++
+ net/vmw_vsock/Kconfig  | 19 +++++++++++++++++++
+ net/vmw_vsock/Makefile |  2 ++
+ 4 files changed, 40 insertions(+)
+
+diff --git a/drivers/vhost/Kconfig b/drivers/vhost/Kconfig
+index 533eaf0..d7aae9e 100644
+--- a/drivers/vhost/Kconfig
++++ b/drivers/vhost/Kconfig
+@@ -21,6 +21,21 @@ config VHOST_SCSI
+ 	Say M here to enable the vhost_scsi TCM fabric module
+ 	for use with virtio-scsi guests
+ 
++config VHOST_VSOCK
++	tristate "vhost virtio-vsock driver"
++	depends on VSOCKETS && EVENTFD
++	select VIRTIO_VSOCKETS_COMMON
++	select VHOST
++	select VHOST_RING
++	default n
++	---help---
++	This kernel module can be loaded in the host kernel to provide AF_VSOCK
++	sockets for communicating with guests.  The guests must have the
++	virtio_transport.ko driver loaded to use the virtio-vsock device.
++
++	To compile this driver as a module, choose M here: the module will be called
++	vhost_vsock.
++
+ config VHOST_RING
+ 	tristate
+ 	---help---
+diff --git a/drivers/vhost/Makefile b/drivers/vhost/Makefile
+index e0441c3..6b012b9 100644
+--- a/drivers/vhost/Makefile
++++ b/drivers/vhost/Makefile
+@@ -4,5 +4,9 @@ vhost_net-y := net.o
+ obj-$(CONFIG_VHOST_SCSI) += vhost_scsi.o
+ vhost_scsi-y := scsi.o
+ 
++obj-$(CONFIG_VHOST_VSOCK) += vhost_vsock.o
++vhost_vsock-y := vsock.o
++
+ obj-$(CONFIG_VHOST_RING) += vringh.o
++
+ obj-$(CONFIG_VHOST)	+= vhost.o
+diff --git a/net/vmw_vsock/Kconfig b/net/vmw_vsock/Kconfig
+index 14810ab..f27e74b 100644
+--- a/net/vmw_vsock/Kconfig
++++ b/net/vmw_vsock/Kconfig
+@@ -26,3 +26,22 @@ config VMWARE_VMCI_VSOCKETS
+ 
+ 	  To compile this driver as a module, choose M here: the module
+ 	  will be called vmw_vsock_vmci_transport. If unsure, say N.
++
++config VIRTIO_VSOCKETS
++	tristate "virtio transport for Virtual Sockets"
++	depends on VSOCKETS && VIRTIO
++	select VIRTIO_VSOCKETS_COMMON
++	help
++	  This module implements a virtio transport for Virtual Sockets.
++
++	  Enable this transport if your Virtual Machine host supports Virtual
++	  Sockets over virtio.
++
++	  To compile this driver as a module, choose M here: the module
++	  will be called virtio_vsock_transport. If unsure, say N.
++
++config VIRTIO_VSOCKETS_COMMON
++       tristate
++       ---help---
++         This option is selected by any driver which needs to access
++         the virtio_vsock.
+diff --git a/net/vmw_vsock/Makefile b/net/vmw_vsock/Makefile
+index 2ce52d7..cf4c294 100644
+--- a/net/vmw_vsock/Makefile
++++ b/net/vmw_vsock/Makefile
+@@ -1,5 +1,7 @@
+ obj-$(CONFIG_VSOCKETS) += vsock.o
+ obj-$(CONFIG_VMWARE_VMCI_VSOCKETS) += vmw_vsock_vmci_transport.o
++obj-$(CONFIG_VIRTIO_VSOCKETS) += virtio_transport.o
++obj-$(CONFIG_VIRTIO_VSOCKETS_COMMON) += virtio_transport_common.o
+ 
+ vsock-y += af_vsock.o vsock_addr.o
+ 
+-- 
+2.8.0.rc3
+
