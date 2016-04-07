@@ -25,6 +25,7 @@ COPY kernel/kernel-source-info /etc/
 ADD kernel/kernel-patches.tar /etc/kernel-patches
 
 COPY packages/proxy/proxy /sbin/
+COPY packages/proxy/etc /etc/
 COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
 COPY packages/mdnstool/mdnstool /sbin/
@@ -81,6 +82,7 @@ RUN \
   rc-update add localmount && \
   rc-update add klogd && \
   rc-update add docker default && \
+  rc-update add proxy default && \
   rc-update add 9pinit boot && \
   rc-update add transfused default && \
   rc-update add mdnstool default && \
