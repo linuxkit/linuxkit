@@ -106,7 +106,12 @@ func handleOne(connid int, fd int, cid, port uint) {
 	vsock := os.NewFile(uintptr(fd), fmt.Sprintf("vsock:%d", fd))
 	log.Printf("%d Accepted connection on fd %d from %08x.%08x", connid, fd, cid, port)
 
-	defer syscall.Close(fd)
+	defer func() {
+		log.Println(connid, "Closing vsock", fd)
+		if err := syscall.Close(fd) ; err != nil {
+			log.Println(connid, "Error closing", fd ":", err)
+		}
+	}()
 
 	var docker *net.UnixConn
 	var err error
@@ -119,13 +124,18 @@ func handleOne(connid int, fd int, cid, port uint) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	defer docker.Close()
-
 	if err != nil {
 		// If the forwarding program has broken then close and continue
 		log.Println(connid, "Failed to connect to Unix domain socket after 10s", sock, err)
 		return
 	}
+	defer func() {
+		log.Println(connid, "Closing docker", docker)
+		if err := docker.Close() ; err != nil {
+			log.Println(connid, "Error closing", docker, ":", err)
+		}
+	}()
+	log.Println(connid, "Connected to docker", docker)
 
 	w := make(chan int64)
 	go func() {
