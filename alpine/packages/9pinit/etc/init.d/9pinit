@@ -8,11 +8,6 @@ start()
 	do
 		TAG=$(cat $virtio/mount_tag)
 		case $TAG in
-		"fuse")
-			mkdir -p /Transfuse
-			mkdir -p /Mac
-			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000,msize=32768 fuse /Transfuse
-			;;
 		"db")
 			mkdir -p /Database
 			mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /Database
