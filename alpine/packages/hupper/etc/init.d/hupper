@@ -17,13 +17,16 @@ start()
 
 	PIDFILE=/run/hupper.pid
 	DOCKERPIDFILE=/run/docker.pid
+	WATCH=$(mobyconfig watch /etc/daemon.json)
+
+	[ -z "${WATCH}" && exit 1
 
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /bin/hupper \
 		--make-pidfile --pidfile ${PIDFILE} \
 		-- -pidfile ${PIDFILE} -huppidfile ${DOCKERPIDFILE} \
-		   -path /Database/branch/master/watch/com.docker.driver.amd64-linux.node/etc.node/docker.node/daemon.json.node/tree.live
+		   -path ${WATCH}
 
 	eend $? "Failed to start hupper"
 }
