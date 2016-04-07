@@ -2,7 +2,7 @@
 
 if [ $# -ne 2 ]
 then
-  printf "usage: $0 [get|exists] key\n"
+  printf "usage: $0 [get|exists|watch] key\n"
   exit 0
 fi
 
@@ -33,22 +33,40 @@ fi
 DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
 BASE="/Database/branch/master/ro/${DATABASE}"
 
+KEY=$(echo $2 | sed 's@^/@@')
+
 if [ $1 == "exists" ]
 then
-  [ -f ${BASE}/$2 ] && exit 0 || exit 1
+  [ -f ${BASE}/${KEY} ] && exit 0 || exit 1
 fi
 
 if [ $1 == "get" ]
 then
-  if [ -f ${BASE}/$2 ]
+  if [ -f ${BASE}/${KEY} ]
   then
-    cat ${BASE}/$2
+    cat ${BASE}/${KEY}
     exit 0
   else
-    printf "No such key: $2\n" 1>&2
+    printf "No such key: ${KEY}\n" 1>&2
     exit 1
   fi
 fi
 
-printf "usage: $0 [get|exists] key\n"
+# might be nicer if watch returned a file descriptor not a path
+# /Database/branch/master/watch/com.docker.driver.amd64-linux.node/etc.node/docker.node/daemon.json.node/tree.live
+if [ $1 == "watch" ]
+then
+  WATCHBASE="/Database/branch/master/watch/${DATABASE}.node"
+  WATCH="${WATCHBASE}/$(echo ${KEY} | sed 's@/@.node/@g').node/tree.live"
+  if [ -f ${WATCH} ]
+  then
+    printf ${WATCH}
+    exit 0
+  else
+    printf "No such watch: ${WATCH}\n" 2>&1
+    exit 1
+  fi
+fi
+
+printf "usage: $0 [get|exists|watch] key\n"
 exit 1
