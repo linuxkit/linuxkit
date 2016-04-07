@@ -10,9 +10,6 @@ depend()
 
 start()
 {
-
-	[ -d /Database ] || exit 0
-
 	ebegin "Starting docker config update manager"
 
 	PIDFILE=/run/hupper.pid
@@ -33,8 +30,6 @@ start()
 
 stop()
 {
-	[ -d /Database ] || exit 0
-
 	ebegin "Stopping docker config update manager"
 
 	PIDFILE=/run/hupper.pid
