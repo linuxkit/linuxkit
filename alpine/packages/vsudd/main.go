@@ -22,8 +22,8 @@ int bind_sockaddr_vm(int fd, const struct sockaddr_vm *sa_vm) {
 int connect_sockaddr_vm(int fd, const struct sockaddr_vm *sa_vm) {
     return connect(fd, (const struct sockaddr*)sa_vm, sizeof(*sa_vm));
 }
-int accept_vm(int fd) {
-    return accept(fd, 0, 0);
+int accept_vm(int fd, struct sockaddr_vm *sa_vm, socklen_t *sa_vm_len) {
+    return accept4(fd, (struct sockaddr *)sa_vm, sa_vm_len, 0);
 }
 */
 import "C"
@@ -89,18 +89,22 @@ func main() {
 	connid := 0
 
 	for {
+		var accept_sa C.struct_sockaddr_vm
+		var accept_sa_len C.socklen_t
+
 		connid++
-		fd, err := C.accept_vm(C.int(accept_fd))
+		accept_sa_len = C.sizeof_struct_sockaddr_vm
+		fd, err := C.accept_vm(C.int(accept_fd), &accept_sa, &accept_sa_len)
 		if err != nil {
 			log.Fatalln("Error accepting connection", err)
 		}
-		go handleOne(connid, int(fd))
+		go handleOne(connid, int(fd), uint(accept_sa.svm_cid), uint(accept_sa.svm_port))
 	}
 }
 
-func handleOne(connid int, fd int) {
+func handleOne(connid int, fd int, cid, port uint) {
 	vsock := os.NewFile(uintptr(fd), fmt.Sprintf("vsock:%d", fd))
-	log.Println(connid, "Accepted connection on fd", fd)
+	log.Printf("%d Accepted connection on fd %d from %08x.%08x", connid, fd, cid, port)
 
 	defer syscall.Close(fd)
 
