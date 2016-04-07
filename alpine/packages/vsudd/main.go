@@ -73,7 +73,7 @@ func main() {
 	sa := C.struct_sockaddr_vm{}
 	sa.svm_family = AF_VSOCK
 	sa.svm_port = C.uint(port)
-	sa.svm_cid = 3
+	sa.svm_cid = VSOCK_CID_ANY
 
 	if ret := C.bind_sockaddr_vm(C.int(accept_fd), &sa); ret != 0 {
 		log.Fatal(fmt.Sprintf("failed bind vsock connection to %08x.%08x, returned %d", sa.svm_cid, sa.svm_port, ret))
