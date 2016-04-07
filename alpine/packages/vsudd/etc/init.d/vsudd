@@ -2,6 +2,11 @@
 
 description="vsock socket proxy client"
 
+depend()
+{
+	before docker
+}
+
 start()
 {
 	ebegin "Starting docker socket vsock passthrough"
