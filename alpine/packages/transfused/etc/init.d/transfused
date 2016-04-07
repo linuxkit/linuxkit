@@ -2,11 +2,6 @@
 
 description="fuse proxy server"
 
-depend()
-{
-	need 9pinit
-}
-
 start()
 {
 	ebegin "Starting FUSE socket passthrough"

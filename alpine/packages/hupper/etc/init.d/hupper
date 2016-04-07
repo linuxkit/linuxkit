@@ -4,7 +4,6 @@ description="docker config update manager"
 
 depend()
 {
-	need 9pinit
 	after docker
 }
 
@@ -16,7 +15,7 @@ start()
 	DOCKERPIDFILE=/run/docker.pid
 	WATCH=$(mobyconfig watch /etc/daemon.json)
 
-	[ -z "${WATCH}" && exit 1
+	[ -z "${WATCH}" ] && exit 1
 
 	start-stop-daemon --start --quiet \
 		--background \
