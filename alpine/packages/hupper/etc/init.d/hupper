@@ -15,24 +15,26 @@ start()
 
 	ebegin "Starting docker config update manager"
 
-	[ -n "${PIDFILE}" ] || PIDFILE=/run/hupper.pid
+	PIDFILE=/run/hupper.pid
+	DOCKERPIDFILE=/run/docker.pid
 
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /bin/hupper \
 		--make-pidfile --pidfile ${PIDFILE} \
-		--
+		-- -pidfile ${PIDFILE} -huppidfile ${DOCKERPIDFILE} \
+		   -path /Database/branch/master/watch/com.docker.driver.amd64-linux.node/etc.node/docker.node/daemon.json.node/tree.live
 
 	eend $? "Failed to start hupper"
 }
 
 stop()
 {
-	[ -d /Databse ] || exit 0
+	[ -d /Database ] || exit 0
 
 	ebegin "Stopping docker config update manager"
 
-	[ -n "${PIDFILE}" ] || PIDFILE=/run/hupper.pid
+	PIDFILE=/run/hupper.pid
 
 	start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
 
