@@ -9,9 +9,11 @@ depend()
 
 start()
 {
-	[ -d /Transfuse ] || exit 0
-
 	ebegin "Starting FUSE socket passthrough"
+
+	mkdir -p /Transfuse
+	mkdir -p /Mac
+	mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000,msize=32768 fuse /Transfuse
 
         if cat /proc/cmdline | grep -q 'com.docker.driverDir'
         then
