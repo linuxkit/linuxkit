@@ -107,9 +107,9 @@ func handleOne(connid int, fd int, cid, port uint) {
 	log.Printf("%d Accepted connection on fd %d from %08x.%08x", connid, fd, cid, port)
 
 	defer func() {
-		log.Println(connid, "Closing vsock", fd)
-		if err := syscall.Close(fd) ; err != nil {
-			log.Println(connid, "Error closing", fd ":", err)
+		log.Println(connid, "Closing vsock", vsock)
+		if err := vsock.Close() ; err != nil {
+			log.Println(connid, "Error closing", vsock, ":", err)
 		}
 	}()
 
