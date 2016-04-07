@@ -18,6 +18,7 @@ RUN \
   strace fuse
 
 COPY etc /etc/
+RUN mkdir -p /etc/docker
 
 ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
@@ -57,6 +58,7 @@ COPY packages/userns/useradd /usr/sbin
 COPY packages/nc-vsock/nc-vsock /usr/bin
 COPY packages/vsudd/vsudd /sbin
 COPY packages/vsudd/etc /etc
+iCOPY packages/mobyconfig/mobyconfig /usr/bin
 
 RUN \
   rc-update add swap boot && \
