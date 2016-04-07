@@ -1,0 +1,54 @@
+#!/bin/sh
+
+if [ $# -ne 2 ]
+then
+  printf "usage: $0 [get|exists] key\n"
+  exit 0
+fi
+
+if [ $1 == "set" ]
+then
+  printf "Configuration is immutable\n" 1>&2
+  exit 1
+fi
+
+if ! cat /proc/cmdline | grep -q 'com.docker.database'
+then
+  printf "Could not find database configuration information\n" 1>&2
+  exit 1
+fi
+
+if [ ! -d /Database ]
+then
+  mkdir -p /Database
+  mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /Database
+  if [ $? -ne 1 ]
+  then
+    rm -rf /Database
+    printf "Could not mount configuration database\n" 1>&2
+    exit 1
+  fi
+fi
+
+DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
+BASE="/Database/branch/master/ro/${DATABASE}"
+
+if [ $1 == "exists" ]
+then
+  [ -f ${BASE}/$2 ] && exit 0 || exit 1
+fi
+
+if [ $1 == "get" ]
+then
+  if [ -f ${BASE}/$2 ]
+  then
+    cat ${BASE}/$2
+    exit 0
+  else
+    printf "No such key: $2\n" 1>&2
+    exit 1
+  fi
+fi
+
+printf "usage: $0 [get|exists] key\n"
+exit 1
