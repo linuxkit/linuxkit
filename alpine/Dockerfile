@@ -42,7 +42,7 @@ COPY packages/9pinit/etc /etc/
 COPY packages/ntp15m/etc /etc/
 COPY packages/binfmt_misc/etc /etc/
 COPY packages/dnsfix/etc /etc/
-COPY packages/database/etc /etc/
+COPY packages/hostsettings/etc /etc/
 COPY packages/hupper/hupper /bin/
 COPY packages/hupper/etc /etc/
 COPY packages/hvtools/hv_fcopy_daemon /sbin/
@@ -58,7 +58,7 @@ COPY packages/userns/useradd /usr/sbin
 COPY packages/nc-vsock/nc-vsock /usr/bin
 COPY packages/vsudd/vsudd /sbin
 COPY packages/vsudd/etc /etc
-iCOPY packages/mobyconfig/mobyconfig /usr/bin
+COPY packages/mobyconfig/mobyconfig /usr/bin
 
 RUN \
   rc-update add swap boot && \
@@ -92,7 +92,7 @@ RUN \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc sysinit && \
   rc-update add dnsfix boot && \
-  rc-update add database boot && \
+  rc-update add hostsettings boot && \
   rc-update add hupper default && \
   rc-update add hv_fcopy_daemon default && \
   rc-update add hv_kvp_daemon default && \
