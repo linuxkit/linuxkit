@@ -4,7 +4,7 @@ description="mDNS server"
 
 depend()
 {
-        need 9pinit net
+        need net
 	after firewall
 }
 
@@ -14,7 +14,7 @@ start()
 
         ebegin "Starting mDNS server"
 
-	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
+	PIDFILE=/var/run/mdnstool.pid
 
 	hostname -F /etc/hostname
 	export HOSTNAME=$(hostname -s).local.
@@ -34,7 +34,7 @@ stop()
 
         ebegin "Stopping mDNS server"
 
-	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/mdnstool.pid
+	PIDFILE=/var/run/mdnstool.pid
 
 	start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
 

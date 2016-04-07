@@ -38,7 +38,6 @@ COPY packages/diagnostics/diagnostics-server /usr/bin/
 COPY packages/diagnostics/diagnostics-download /usr/bin/
 COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
-COPY packages/9pinit/etc /etc/
 COPY packages/ntp15m/etc /etc/
 COPY packages/binfmt_misc/etc /etc/
 COPY packages/dnsfix/etc /etc/
@@ -85,7 +84,6 @@ RUN \
   rc-update add klogd && \
   rc-update add docker default && \
   rc-update add proxy default && \
-  rc-update add 9pinit boot && \
   rc-update add transfused default && \
   rc-update add mdnstool default && \
   rc-update add automount boot && \
