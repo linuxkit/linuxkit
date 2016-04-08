@@ -22,7 +22,7 @@ if [ ! -d /Database ]
 then
   mkdir -p /Database
   mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /Database
-  if [ $? -ne 1 ]
+  if [ $? -ne 0 ]
   then
     rm -rf /Database
     printf "Could not mount configuration database\n" 1>&2
