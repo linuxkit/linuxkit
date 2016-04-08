@@ -22,8 +22,8 @@ int bind_sockaddr_vm(int fd, const struct sockaddr_vm *sa_vm) {
 int connect_sockaddr_vm(int fd, const struct sockaddr_vm *sa_vm) {
     return connect(fd, (const struct sockaddr*)sa_vm, sizeof(*sa_vm));
 }
-int accept_vm(int fd) {
-    return accept(fd, 0, 0);
+int accept_vm(int fd, struct sockaddr_vm *sa_vm, socklen_t *sa_vm_len) {
+    return accept4(fd, (struct sockaddr *)sa_vm, sa_vm_len, 0);
 }
 */
 import "C"
@@ -73,7 +73,7 @@ func main() {
 	sa := C.struct_sockaddr_vm{}
 	sa.svm_family = AF_VSOCK
 	sa.svm_port = C.uint(port)
-	sa.svm_cid = 3
+	sa.svm_cid = VSOCK_CID_ANY
 
 	if ret := C.bind_sockaddr_vm(C.int(accept_fd), &sa); ret != 0 {
 		log.Fatal(fmt.Sprintf("failed bind vsock connection to %08x.%08x, returned %d", sa.svm_cid, sa.svm_port, ret))
@@ -89,20 +89,29 @@ func main() {
 	connid := 0
 
 	for {
+		var accept_sa C.struct_sockaddr_vm
+		var accept_sa_len C.socklen_t
+
 		connid++
-		fd, err := C.accept_vm(C.int(accept_fd))
+		accept_sa_len = C.sizeof_struct_sockaddr_vm
+		fd, err := C.accept_vm(C.int(accept_fd), &accept_sa, &accept_sa_len)
 		if err != nil {
 			log.Fatalln("Error accepting connection", err)
 		}
-		go handleOne(connid, int(fd))
+		go handleOne(connid, int(fd), uint(accept_sa.svm_cid), uint(accept_sa.svm_port))
 	}
 }
 
-func handleOne(connid int, fd int) {
-	vsock := os.NewFile(uintptr(fd), "vsock connection")
-	log.Println(connid, "Accepted connection on fd", fd)
+func handleOne(connid int, fd int, cid, port uint) {
+	vsock := os.NewFile(uintptr(fd), fmt.Sprintf("vsock:%d", fd))
+	log.Printf("%d Accepted connection on fd %d from %08x.%08x", connid, fd, cid, port)
 
-	defer syscall.Close(fd)
+	defer func() {
+		log.Println(connid, "Closing vsock", vsock)
+		if err := vsock.Close() ; err != nil {
+			log.Println(connid, "Error closing", vsock, ":", err)
+		}
+	}()
 
 	var docker *net.UnixConn
 	var err error
@@ -115,13 +124,18 @@ func handleOne(connid int, fd int) {
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
-	defer docker.Close()
-
 	if err != nil {
 		// If the forwarding program has broken then close and continue
 		log.Println(connid, "Failed to connect to Unix domain socket after 10s", sock, err)
 		return
 	}
+	defer func() {
+		log.Println(connid, "Closing docker", docker)
+		if err := docker.Close() ; err != nil {
+			log.Println(connid, "Error closing", docker, ":", err)
+		}
+	}()
+	log.Println(connid, "Connected to docker", docker)
 
 	w := make(chan int64)
 	go func() {
