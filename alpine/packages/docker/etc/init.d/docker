@@ -44,8 +44,8 @@ start()
 		MASTER_RO="/Database/branch/master/ro"
 		CONFIG_FILE="${MASTER_RO}/${DATABASE}/etc/docker/daemon.json"
 		[ -s ${CONFIG_FILE} ] && DOCKER_OPTS="${DOCKER_OPTS} --config-file ${CONFIG_FILE}"
-		NETWORK_MODE="$(cat ${MASTER_RO}/${DATABASE}/network | tr -d '[[:space:]]')"
-		NATIVE_PORT_FORWARDING="$(cat ${MASTER_RO}/${DATABASE}/native/port-forwarding | tr -d '[[:space:]]')"
+		NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
+		NATIVE_PORT_FORWARDING="$(mobyconfig native/port-forwarding | tr -d '[[:space:]]')"
 		if [ "${NETWORK_MODE}" = "slirp" -o "${NATIVE_PORT_FORWARDING}" = "true" ]; then
 			DOCKER_OPTS="${DOCKER_OPTS} --userland-proxy-bin /sbin/proxy"
 		fi
