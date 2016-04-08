@@ -37,7 +37,7 @@ KEY=$(echo $2 | sed 's@^/@@')
 
 if [ $1 == "exists" ]
 then
-  [ -f ${BASE}/${KEY} ] && exit 0 || exit 1
+  [ -e ${BASE}/${KEY} ] && exit 0 || exit 1
 fi
 
 if [ $1 == "dir" ]
