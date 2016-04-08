@@ -59,7 +59,7 @@ fi
 
 if [ $1 == "path" ]
 then
-  if [ -f ${BASE}/${KEY} ]
+  if [ -e ${BASE}/${KEY} ]
   then
     printf ${BASE}/${KEY}
     exit 0
