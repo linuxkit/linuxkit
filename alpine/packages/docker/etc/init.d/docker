@@ -38,9 +38,9 @@ start()
 	# future change this to use a hypervisor socket.
 	DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock"
 
-	if mobyconfig exists etc/docker/daemon.json
+	if mobyconfig exists etc/docker
 	then
-		DOCKER_OPTS="${DOCKER_OPTS} --config-file $(mobyconfig path etc/docker/daemon.json)"
+		cp -a $(mobyconfig path etc/docker)/* /etc/docker/
 	fi
 	if mobyconfig exists network
 	then
