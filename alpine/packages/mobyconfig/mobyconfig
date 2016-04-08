@@ -73,7 +73,7 @@ if [ $1 == "find" ]
 then
   if [ -e ${BASE}/${KEY} ]
   then
-    find ${BASE}/${KEY} -type f
+    find ${BASE}/${KEY} -type f | sed "s@^${BASE}@@g"
     exit 0
   else
     printf "No such key: ${KEY}\n" 1>&2
