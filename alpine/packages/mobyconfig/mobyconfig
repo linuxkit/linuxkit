@@ -2,7 +2,7 @@
 
 if [ $# -ne 2 ]
 then
-  printf "usage: $0 [get|exists|watch|path] key\n"
+  printf "usage: $0 [get|exists|watch|path|dir] key\n"
   exit 0
 fi
 
@@ -38,6 +38,11 @@ KEY=$(echo $2 | sed 's@^/@@')
 if [ $1 == "exists" ]
 then
   [ -f ${BASE}/${KEY} ] && exit 0 || exit 1
+fi
+
+if [ $1 == "dir" ]
+then
+  [ -d ${BASE}/${KEY} ] && exit 0 || exit 1
 fi
 
 if [ $1 == "get" ]
@@ -80,5 +85,5 @@ then
   fi
 fi
 
-printf "usage: $0 [get|exists|watch|path] key\n"
+printf "usage: $0 [get|exists|watch|path|dir] key\n"
 exit 1
