@@ -40,7 +40,11 @@ start()
 
 	if mobyconfig exists etc/docker
 	then
-		cp -a $(mobyconfig find etc/docker) /etc/docker/
+		for f in $(mobyconfig find etc/docker)
+		do
+			mkdir -p $(dirname $f)
+			mobyconfig get $f > $f
+		done
 	fi
 	if mobyconfig exists network
 	then
