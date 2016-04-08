@@ -40,7 +40,7 @@ start()
 
 	if mobyconfig exists etc/docker
 	then
-		cp -a $(mobyconfig path etc/docker)/* /etc/docker/
+		cp -a $(mobyconfig find etc/docker) /etc/docker/
 	fi
 	if mobyconfig exists network
 	then
@@ -49,6 +49,10 @@ start()
 		if [ "${NETWORK_MODE}" = "slirp" -o "${NATIVE_PORT_FORWARDING}" = "true" ]; then
 			DOCKER_OPTS="${DOCKER_OPTS} --userland-proxy-bin /sbin/proxy"
 		fi
+	fi
+	if mobyconfig exists insecure-registry
+	then
+		DOCKER_OPTS="${DOCKER_OPTS} --insecure-registry $(mobyconfig get insecure-registry)"
 	fi
 
 	for d in Users Volumes tmp private
