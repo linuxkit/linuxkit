@@ -13,7 +13,7 @@ start()
 
 	PIDFILE=/run/hupper.pid
 	DOCKERPIDFILE=/run/docker.pid
-	WATCH=$(mobyconfig watch /etc/daemon.json)
+	WATCH=$(mobyconfig watch /etc/docker/daemon.json)
 
 	[ -z "${WATCH}" ] && exit 1
 
