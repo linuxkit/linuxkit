@@ -63,9 +63,8 @@ func exposePort(host net.Addr, port int) error {
 		log.Printf("Failed to read from /port/%s/ctl: %#v\n", name, err)
 		return err
 	}
-	// TODO: consider whether close/clunk of ctl would be a better tear down
-	// signal
-	ctl.Close()
+	// We deliberately keep the control file open since 9P clunk
+	// will trigger a shutdown on the host side.
 
 	response := string(results[0:count])
 	if strings.HasPrefix(response, "ERROR ") {
