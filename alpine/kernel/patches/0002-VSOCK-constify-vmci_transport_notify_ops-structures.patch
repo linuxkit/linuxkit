@@ -1,4 +1,4 @@
-From ba1dc9346ba14b24f22ea04db21011f2874c3a67 Mon Sep 17 00:00:00 2001
+From 0260029492a1503e871236767ed86e2fc3862cc2 Mon Sep 17 00:00:00 2001
 From: Julia Lawall <julia.lawall@lip6.fr>
 Date: Sat, 21 Nov 2015 18:39:17 +0100
 Subject: [PATCH 2/9] VSOCK: constify vmci_transport_notify_ops structures
