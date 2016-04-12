@@ -1,4 +1,4 @@
-From 99f109b560a95f17f7d034a48c8479c37a685c5a Mon Sep 17 00:00:00 2001
+From a3f136168f164f66de1de277a08b76f54b289d5a Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 11:10:21 +0800
 Subject: [PATCH 4/9] VSOCK: transport-specific vsock_transport functions
@@ -34,10 +34,10 @@ index e9eb2d6..23f5525 100644
  
  void vsock_release_pending(struct sock *pending);
 diff --git a/net/vmw_vsock/af_vsock.c b/net/vmw_vsock/af_vsock.c
-index bbe65dc..1e5f5ed 100644
+index 3dce53e..112fa8b 100644
 --- a/net/vmw_vsock/af_vsock.c
 +++ b/net/vmw_vsock/af_vsock.c
-@@ -1987,6 +1987,15 @@ void vsock_core_exit(void)
+@@ -2006,6 +2006,15 @@ void vsock_core_exit(void)
  }
  EXPORT_SYMBOL_GPL(vsock_core_exit);
  
