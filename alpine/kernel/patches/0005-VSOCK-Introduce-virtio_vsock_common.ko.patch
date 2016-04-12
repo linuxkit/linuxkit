@@ -1,4 +1,4 @@
-From ec05812c3fd57234fa8f7d211924b3c254988c89 Mon Sep 17 00:00:00 2001
+From 4018aa8a812fd6f1a64e3d227550bf5752127314 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:27:00 +0800
 Subject: [PATCH 5/9] VSOCK: Introduce virtio_vsock_common.ko
