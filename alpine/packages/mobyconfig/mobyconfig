@@ -38,8 +38,10 @@ KEY=$(echo $2 | sed 's@^/@@')
 if [ $1 == "exists" ]
 then
   [ -d ${BASE}/${KEY} ] && exit 0
-  [ -f ${BASE}/${KEY} -a ! -z "$(cat ${BASE}/${KEY})" ] && exit 0
-  exit 1
+  [ -f ${BASE}/${KEY} ] || exit 1
+  VALUE="$(cat ${BASE}/${KEY} | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  [ -z "${VALUE}" ] && exit 1
+  exit 0
 fi
 
 if [ $1 == "dir" ]
