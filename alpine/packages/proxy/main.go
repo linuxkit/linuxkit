@@ -91,21 +91,44 @@ var myAddress string
 // point of view. For now this is an IP address but it soon should be a vsock
 // port.
 func getMyAddress() (string, error) {
-	if myAddress != "" {
-		return myAddress, nil
+	ipv4 := make([]string, 0)
+	ipv6 := make([]string, 0)
+	for index := 1; ; index++ {
+		intf, err := net.InterfaceByIndex(index)
+		if err != nil {
+			break
+		}
+		if len(intf.Name) < 3 || intf.Name[0:3] != "eth" {
+			continue
+		}
+		addrs, err := intf.Addrs()
+		if err != nil {
+			log.Printf("Cannot get addresses for %s: %v", intf.Name, err)
+			continue
+		}
+		for _, addr := range addrs {
+			ipAddr, _, err := net.ParseCIDR(addr.String())
+			if err != nil {
+				continue
+			}
+			if ipAddr.IsGlobalUnicast() {
+				if ipAddr.To4() != nil {
+					ip := ipAddr.String()
+					ipv4 = append(ipv4, ip)
+				} else {
+					ip6 := ipAddr.String()
+					ipv6 = append(ipv6, ip6)
+				}
+			}
+		}
 	}
-	d, err := os.Open("/port/docker")
-	if err != nil {
-		return "", err
+	// vmnet and hostnet only have IPv4 enabled currently
+	if len(ipv4) == 0 {
+		log.Println("Unable to find any external IPv4 addresses")
+		return "", errors.New("No external IPv4 addresses")
 	}
-	defer d.Close()
-	bytes := make([]byte, 100)
-	count, err := d.Read(bytes)
-	if err != nil {
-		return "", err
+	if len(ipv4) > 1 {
+		log.Println("Multiple external IPv4 addresses detected, will choose the first")
 	}
-	s := string(bytes)[0:count]
-	bits := strings.Split(s, ":")
-	myAddress = bits[2]
-	return myAddress, nil
+	return ipv4[0], nil
 }
