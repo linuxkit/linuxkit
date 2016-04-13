@@ -13,7 +13,7 @@ bin: docker.git
 	rm -f bin/*.sha256
 
 docker.git:
-	git clone git://github.com/justincormack/docker.git docker.git
+	git clone git://github.com/djs55/docker.git docker.git
 
 clean:
 	rm -rf bin
