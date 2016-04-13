@@ -1,4 +1,4 @@
-DOCKER_VERSION=1.11.0-rc5
+DOCKER_VERSION=1.11.0
 ARCH?=x86_64
 OS?=Linux
 
@@ -13,7 +13,7 @@ bin: docker.git
 	rm -f bin/*.sha256
 
 docker.git:
-	git clone git://github.com/justincormack/docker.git docker.git
+	git clone git://github.com/djs55/docker.git docker.git
 
 clean:
 	rm -rf bin
