@@ -1,12 +1,15 @@
 #include <pthread.h>
+#include <sys/socket.h>
 
 typedef struct {
-  char * socket9p_root;
+  char * server;
+  char * socket;
   char * fusermount;
   char * pidfile;
   char * logfile;
   char * mount_trigger;
   char * trigger_log;
+  int sock;
   pthread_mutex_t fd_lock;
   int logfile_fd;
   int trigger_fd;
@@ -14,8 +17,11 @@ typedef struct {
 
 typedef struct {
   parameters * params;
-  long id;
   char * type_descr;
+  char * mount_point;
+  struct sockaddr sa_client;
+  socklen_t socklen_client;
+  int sock;
 } connection_t;
 
 pthread_attr_t detached;

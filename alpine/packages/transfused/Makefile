@@ -1,7 +1,7 @@
 .PHONY: all
 
-HDR=transfused.h transfused_log.h
-SRC=transfused.c transfused_log.c
+HDR=transfused.h transfused_log.h transfused_vsock.h
+SRC=transfused.c transfused_log.c transfused_vsock.c
 DEPS=$(HDR) $(SRC)
 
 

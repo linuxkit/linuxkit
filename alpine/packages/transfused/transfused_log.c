@@ -129,8 +129,8 @@ void thread_log_time(connection_t * conn, const char * fmt, ...) {
   // log demand to be low.
 
   if ((errno = pthread_create(&logger, &detached, log_time_thread, log_state)))
-    die(1, "", "Couldn't create log thread for %s connection '%ld': ",
-        conn->type_descr, conn->id);
+    die(1, "", "Couldn't create log thread for %s connection %s: ",
+        conn->type_descr, conn->mount_point);
 }
 
 void log_continue_locked(connection_t * connection, const char * fmt, ...) {
