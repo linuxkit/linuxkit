@@ -1,3 +1,5 @@
+#include <stdarg.h>
+
 #include "transfused.h"
 
 void die(int exit_code, const char * perror_arg, const char * fmt, ...);
