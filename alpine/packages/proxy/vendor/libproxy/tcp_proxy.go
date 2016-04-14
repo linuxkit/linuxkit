@@ -19,22 +19,18 @@ type Conn interface {
 // TCPProxy is a proxy for TCP connections. It implements the Proxy interface to
 // handle TCP traffic forwarding between the frontend and backend addresses.
 type TCPProxy struct {
-	listener     *net.TCPListener
-	frontendAddr *net.TCPAddr
+	listener     net.Listener
+	frontendAddr net.Addr
 	backendAddr  *net.TCPAddr
 }
 
 // NewTCPProxy creates a new TCPProxy.
-func NewTCPProxy(frontendAddr, backendAddr *net.TCPAddr) (*TCPProxy, error) {
-	listener, err := net.ListenTCP("tcp", frontendAddr)
-	if err != nil {
-		return nil, err
-	}
+func NewTCPProxy(listener net.Listener, backendAddr *net.TCPAddr) (*TCPProxy, error) {
 	// If the port in frontendAddr was 0 then ListenTCP will have a picked
 	// a port to listen on, hence the call to Addr to get that actual port:
 	return &TCPProxy{
 		listener:     listener,
-		frontendAddr: listener.Addr().(*net.TCPAddr),
+		frontendAddr: listener.Addr(),
 		backendAddr:  backendAddr,
 	}, nil
 }
