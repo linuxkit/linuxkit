@@ -8,7 +8,6 @@ import (
 	"os"
 	"libproxy"
 	"strings"
-	"vsock"
 )
 
 func main() {
@@ -41,7 +40,7 @@ func exposePort(host net.Addr, port int) error {
 		log.Printf("Failed to open /port/%s/ctl: %#v\n", name, err)
 		return err
 	}
-	_, err = ctl.WriteString(fmt.Sprintf("%s:%d:%d", name, vsock.VSOCK_CID_SELF, vSockPortOffset + port))
+	_, err = ctl.WriteString(fmt.Sprintf("%s:%08x", name, port))
 	if err != nil {
 		log.Printf("Failed to open /port/%s/ctl: %#v\n", name, err)
 		return err
