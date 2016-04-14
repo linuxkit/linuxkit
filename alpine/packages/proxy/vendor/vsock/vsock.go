@@ -26,8 +26,8 @@ int accept_vm(int fd, struct sockaddr_vm *sa_vm, socklen_t *sa_vm_len) {
 import "C"
 
 const (
-	AF_VSOCK            = 40
-	VSOCK_CID_ANY       = 4294967295 /* 2^32-1 */
+	AF_VSOCK      = 40
+	VSOCK_CID_ANY = 4294967295 /* 2^32-1 */
 )
 
 // Listen returns a net.Listener which can accept connections on the given
@@ -54,6 +54,13 @@ func Listen(port uint) (net.Listener, error) {
 	return &vsockListener{accept_fd, port}, nil
 }
 
+// Conn is a vsock connection which support half-close.
+type Conn interface {
+	net.Conn
+	CloseRead() error
+	CloseWrite() error
+}
+
 type vsockListener struct {
 	accept_fd int
 	port      uint
@@ -68,34 +75,64 @@ func (v *vsockListener) Accept() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	}
-	vsock := os.NewFile(uintptr(fd), fmt.Sprintf("vsock:%d", fd))
-	conn, err := net.FileConn(vsock)
-	if err != nil {
-		return nil, err
-	}
-	return conn, nil
+	return newVsockConn(uintptr(fd), v.port)
 }
 
 func (v *vsockListener) Close() error {
 	return syscall.Close(v.accept_fd)
 }
 
-type vsockAddr struct {
-	network string
-	addr    string
+type VsockAddr struct {
+	Port uint
 }
 
-func (a *vsockAddr) Network() string {
-	return a.network
+func (a VsockAddr) Network() string {
+	return "vsock"
 }
 
-func (a *vsockAddr) String() string {
-	return a.addr
+func (a VsockAddr) String() string {
+	return fmt.Sprintf("%08x", a.Port)
 }
 
 func (v *vsockListener) Addr() net.Addr {
-	return &vsockAddr{
-		network: "vsock",
-		addr:    fmt.Sprintf("%08x", v.port),
+	return VsockAddr{Port: v.port}
+}
+
+// a wrapper around FileConn which supports CloseRead and CloseWrite
+type vsockConn struct {
+	net.Conn
+	fd     uintptr
+	local  VsockAddr
+	remote VsockAddr
+}
+
+type VsockConn struct {
+	vsockConn
+}
+
+func newVsockConn(fd uintptr, localPort uint) (*VsockConn, error) {
+	vsock := os.NewFile(fd, fmt.Sprintf("vsock:%d", fd))
+	conn, err := net.FileConn(vsock)
+	if err != nil {
+		return nil, err
 	}
+	local := VsockAddr{Port: localPort}
+	remote := VsockAddr{Port: uint(0)} // FIXME
+	return &VsockConn{vsockConn{Conn: conn, fd: fd, local: local, remote: remote}}, nil
+}
+
+func (v *VsockConn) LocalAddr() net.Addr {
+	return v.local
+}
+
+func (v *VsockConn) RemoteAddr() net.Addr {
+	return v.remote
+}
+
+func (v *VsockConn) CloseRead() error {
+	return syscall.Shutdown(int(v.fd), syscall.SHUT_RD)
+}
+
+func (v *VsockConn) CloseWrite() error {
+	return syscall.Shutdown(int(v.fd), syscall.SHUT_WR)
 }
