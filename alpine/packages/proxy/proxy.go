@@ -10,7 +10,6 @@ import (
 	"syscall"
 
 	"libproxy"
-	"vsock"
 )
 
 // sendError signals the error to the parent and quits the process.
@@ -49,13 +48,12 @@ func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr) {
 
 	switch *proto {
 	case "tcp":
+		host = &net.TCPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
 		port = vSockPortOffset + *hostPort
-		host = &vsock.VsockAddr{Port: uint(port)}
-		port = *hostPort
 		container = &net.TCPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	case "udp":
 		host = &net.UDPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
-		port = *hostPort
+		port = vSockPortOffset + *hostPort
 		container = &net.UDPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	default:
 		log.Fatalf("unsupported protocol %s", *proto)
