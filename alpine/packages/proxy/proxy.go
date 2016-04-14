@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"pkg/proxy"
+	"libproxy"
 )
 
 // sendError signals the error to the parent and quits the process.
@@ -59,7 +59,7 @@ func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr) {
 	return host, port, container
 }
 
-func handleStopSignals(p proxy.Proxy) {
+func handleStopSignals(p libproxy.Proxy) {
 	s := make(chan os.Signal, 10)
 	signal.Notify(s, os.Interrupt, syscall.SIGTERM, syscall.SIGSTOP)
 
