@@ -1,0 +1,101 @@
+package vsock
+
+import (
+	"errors"
+	"fmt"
+	"net"
+	"os"
+	"syscall"
+)
+
+/* No way to teach net or syscall about vsock sockaddr, so go right to C */
+
+/*
+#include <sys/socket.h>
+#include "include/uapi/linux/vm_sockets.h"
+int bind_sockaddr_vm(int fd, const struct sockaddr_vm *sa_vm) {
+    return bind(fd, (const struct sockaddr*)sa_vm, sizeof(*sa_vm));
+}
+int connect_sockaddr_vm(int fd, const struct sockaddr_vm *sa_vm) {
+    return connect(fd, (const struct sockaddr*)sa_vm, sizeof(*sa_vm));
+}
+int accept_vm(int fd, struct sockaddr_vm *sa_vm, socklen_t *sa_vm_len) {
+    return accept4(fd, (struct sockaddr *)sa_vm, sa_vm_len, 0);
+}
+*/
+import "C"
+
+const (
+	AF_VSOCK            = 40
+	VSOCK_CID_ANY       = 4294967295 /* 2^32-1 */
+)
+
+// Listen returns a net.Listener which can accept connections on the given
+// vhan port.
+func Listen(port uint) (net.Listener, error) {
+	accept_fd, err := syscall.Socket(AF_VSOCK, syscall.SOCK_STREAM, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	sa := C.struct_sockaddr_vm{}
+	sa.svm_family = AF_VSOCK
+	sa.svm_port = C.uint(port)
+	sa.svm_cid = VSOCK_CID_ANY
+
+	if ret := C.bind_sockaddr_vm(C.int(accept_fd), &sa); ret != 0 {
+		return nil, errors.New(fmt.Sprintf("failed bind vsock connection to %08x.%08x, returned %d", sa.svm_cid, sa.svm_port, ret))
+	}
+
+	err = syscall.Listen(accept_fd, syscall.SOMAXCONN)
+	if err != nil {
+		return nil, err
+	}
+	return &vsockListener{accept_fd, port}, nil
+}
+
+type vsockListener struct {
+	accept_fd int
+	port      uint
+}
+
+func (v *vsockListener) Accept() (net.Conn, error) {
+	var accept_sa C.struct_sockaddr_vm
+	var accept_sa_len C.socklen_t
+
+	accept_sa_len = C.sizeof_struct_sockaddr_vm
+	fd, err := C.accept_vm(C.int(v.accept_fd), &accept_sa, &accept_sa_len)
+	if err != nil {
+		return nil, err
+	}
+	vsock := os.NewFile(uintptr(fd), fmt.Sprintf("vsock:%d", fd))
+	conn, err := net.FileConn(vsock)
+	if err != nil {
+		return nil, err
+	}
+	return conn, nil
+}
+
+func (v *vsockListener) Close() error {
+	return syscall.Close(v.accept_fd)
+}
+
+type vsockAddr struct {
+	network string
+	addr    string
+}
+
+func (a *vsockAddr) Network() string {
+	return a.network
+}
+
+func (a *vsockAddr) String() string {
+	return a.addr
+}
+
+func (v *vsockListener) Addr() net.Addr {
+	return &vsockAddr{
+		network: "vsock",
+		addr:    fmt.Sprintf("%08x", v.port),
+	}
+}
