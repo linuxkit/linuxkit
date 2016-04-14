@@ -20,13 +20,11 @@ func main() {
 	}
 	p, err := libproxy.NewProxy(host, container)
 	if err != nil {
-		unexposePort(host)
 		sendError(err)
 	}
 	go handleStopSignals(p)
 	sendOK()
 	p.Run()
-	unexposePort(host)
 	os.Exit(0)
 }
 
@@ -70,13 +68,4 @@ func exposePort(host net.Addr, port int) error {
 	}
 
 	return nil
-}
-
-func unexposePort(host net.Addr) {
-	name := host.String()
-	log.Printf("unexposePort %s\n", name)
-	err := os.Remove("/port/" + name)
-	if err != nil {
-		log.Printf("Failed to remove /port/%s: %#v\n", name, err)
-	}
 }
