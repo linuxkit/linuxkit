@@ -10,6 +10,7 @@ import (
 	"syscall"
 
 	"libproxy"
+	"vsock"
 )
 
 // sendError signals the error to the parent and quits the process.
@@ -28,6 +29,9 @@ func sendOK() {
 	f.Close()
 }
 
+// Map dynamic ports onto vsock ports over this offset
+var vSockPortOffset = 0x10000
+
 // From docker/libnetwork/portmapper/proxy.go:
 
 // parseHostContainerAddrs parses the flags passed on reexec to create the TCP or UDP
@@ -45,7 +49,8 @@ func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr) {
 
 	switch *proto {
 	case "tcp":
-		host = &net.TCPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
+		port = vSockPortOffset + *hostPort
+		host = &vsock.VsockAddr{Port: uint(port)}
 		port = *hostPort
 		container = &net.TCPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	case "udp":
