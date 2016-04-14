@@ -5,6 +5,7 @@ package libproxy
 import (
 	"fmt"
 	"net"
+	"vsock"
 )
 
 // Proxy defines the behavior of a proxy. It forwards traffic back and forth
@@ -33,6 +34,12 @@ func NewProxy(frontendAddr, backendAddr net.Addr) (Proxy, error) {
 		return NewUDPProxy(frontendAddr.(*net.UDPAddr), backendAddr.(*net.UDPAddr))
 	case *net.TCPAddr:
 		listener, err := net.Listen("tcp", frontendAddr.String())
+		if err != nil {
+			return nil, err
+		}
+		return NewTCPProxy(listener, backendAddr.(*net.TCPAddr))
+	case *vsock.VsockAddr:
+		listener, err := vsock.Listen(frontendAddr.(vsock.VsockAddr).Port)
 		if err != nil {
 			return nil, err
 		}
