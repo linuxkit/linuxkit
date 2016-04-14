@@ -15,7 +15,8 @@ RUN \
   alpine-conf \
   bind-tools \
   openssh-client \
-  strace fuse
+  strace fuse \
+  util-linux
 
 COPY etc /etc/
 RUN mkdir -p /etc/docker
