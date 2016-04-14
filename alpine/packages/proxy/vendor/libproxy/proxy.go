@@ -1,6 +1,6 @@
 // Package proxy provides a network Proxy interface and implementations for TCP
 // and UDP.
-package proxy
+package libproxy
 
 import (
 	"fmt"

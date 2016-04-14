@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
-	"pkg/proxy"
+	"libproxy"
 	"strings"
 )
 
@@ -17,7 +17,7 @@ func main() {
 	if err != nil {
 		sendError(err)
 	}
-	p, err := proxy.NewProxy(host, container)
+	p, err := libproxy.NewProxy(host, container)
 	if err != nil {
 		unexposePort(host)
 		sendError(err)
