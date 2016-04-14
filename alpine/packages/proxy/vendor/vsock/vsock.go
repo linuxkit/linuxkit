@@ -26,8 +26,9 @@ int accept_vm(int fd, struct sockaddr_vm *sa_vm, socklen_t *sa_vm_len) {
 import "C"
 
 const (
-	AF_VSOCK      = 40
-	VSOCK_CID_ANY = 4294967295 /* 2^32-1 */
+	AF_VSOCK       = 40
+	VSOCK_CID_ANY  = 4294967295 /* 2^32-1 */
+	VSOCK_CID_SELF = 3
 )
 
 // Listen returns a net.Listener which can accept connections on the given

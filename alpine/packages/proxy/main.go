@@ -8,6 +8,7 @@ import (
 	"os"
 	"libproxy"
 	"strings"
+	"vsock"
 )
 
 func main() {
@@ -42,12 +43,7 @@ func exposePort(host net.Addr, port int) error {
 		log.Printf("Failed to open /port/%s/ctl: %#v\n", name, err)
 		return err
 	}
-	me, err := getMyAddress()
-	if err != nil {
-		log.Printf("Failed to determine my local address: %#v\n", err)
-		return err
-	}
-	_, err = ctl.WriteString(fmt.Sprintf("%s:%s:%d", name, me, port))
+	_, err = ctl.WriteString(fmt.Sprintf("%s:%d:%d", name, vsock.VSOCK_CID_SELF, vSockPortOffset + port))
 	if err != nil {
 		log.Printf("Failed to open /port/%s/ctl: %#v\n", name, err)
 		return err
@@ -83,29 +79,4 @@ func unexposePort(host net.Addr) {
 	if err != nil {
 		log.Printf("Failed to remove /port/%s: %#v\n", name, err)
 	}
-}
-
-var myAddress string
-
-// getMyAddress returns a string representing my address from the host's
-// point of view. For now this is an IP address but it soon should be a vsock
-// port.
-func getMyAddress() (string, error) {
-	if myAddress != "" {
-		return myAddress, nil
-	}
-	d, err := os.Open("/port/docker")
-	if err != nil {
-		return "", err
-	}
-	defer d.Close()
-	bytes := make([]byte, 100)
-	count, err := d.Read(bytes)
-	if err != nil {
-		return "", err
-	}
-	s := string(bytes)[0:count]
-	bits := strings.Split(s, ":")
-	myAddress = bits[2]
-	return myAddress, nil
 }
