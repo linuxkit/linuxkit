@@ -35,6 +35,7 @@ COPY packages/mdnstool/mdnstool /sbin/
 COPY packages/mdnstool/etc /etc/
 COPY packages/llmnrd/llmnrd /sbin/
 COPY packages/llmnrd/etc /etc/
+COPY packages/llmnrd/llmnrd.tar.gz /usr/share/src/
 COPY packages/docker/bin/* /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/diagnostics/diagnostics /usr/bin/
@@ -54,6 +55,7 @@ COPY packages/hvtools/etc /etc/
 COPY packages/hvtools/hv_get_dhcp_info /sbin/
 COPY packages/hvtools/hv_get_dns_info /sbin/
 COPY packages/hvtools/hv_set_ifconfig /sbin/
+COPY packages/hvtools/hvtools.tar.gz /usr/share/src/
 COPY packages/chronyd/etc /etc/
 COPY packages/userns/etc /etc/
 COPY packages/userns/groupadd /usr/sbin
