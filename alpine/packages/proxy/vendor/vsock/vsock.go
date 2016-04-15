@@ -6,6 +6,7 @@ import (
 	"net"
 	"os"
 	"syscall"
+	"time"
 )
 
 /* No way to teach net or syscall about vsock sockaddr, so go right to C */
@@ -101,7 +102,7 @@ func (v *vsockListener) Addr() net.Addr {
 
 // a wrapper around FileConn which supports CloseRead and CloseWrite
 type vsockConn struct {
-	net.Conn
+	vsock  *os.File
 	fd     uintptr
 	local  VsockAddr
 	remote VsockAddr
@@ -113,13 +114,9 @@ type VsockConn struct {
 
 func newVsockConn(fd uintptr, localPort uint) (*VsockConn, error) {
 	vsock := os.NewFile(fd, fmt.Sprintf("vsock:%d", fd))
-	conn, err := net.FileConn(vsock)
-	if err != nil {
-		return nil, err
-	}
 	local := VsockAddr{Port: localPort}
 	remote := VsockAddr{Port: uint(0)} // FIXME
-	return &VsockConn{vsockConn{Conn: conn, fd: fd, local: local, remote: remote}}, nil
+	return &VsockConn{vsockConn{vsock: vsock, fd: fd, local: local, remote: remote}}, nil
 }
 
 func (v *VsockConn) LocalAddr() net.Addr {
@@ -136,4 +133,28 @@ func (v *VsockConn) CloseRead() error {
 
 func (v *VsockConn) CloseWrite() error {
 	return syscall.Shutdown(int(v.fd), syscall.SHUT_WR)
+}
+
+func (v *VsockConn) Close() error {
+	return v.vsock.Close()
+}
+
+func (v *VsockConn) Read(buf []byte) (int, error) {
+	return v.vsock.Read(buf)
+}
+
+func (v *VsockConn) Write(buf []byte) (int, error) {
+	return v.vsock.Write(buf)
+}
+
+func (v *VsockConn) SetDeadline(t time.Time) error {
+	return nil // FIXME
+}
+
+func (v *VsockConn) SetReadDeadline(t time.Time) error {
+	return nil // FIXME
+}
+
+func (v *VsockConn) SetWriteDeadline(t time.Time) error {
+	return nil // FIXME
 }

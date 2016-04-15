@@ -39,7 +39,7 @@ func NewProxy(frontendAddr, backendAddr net.Addr) (Proxy, error) {
 		}
 		return NewTCPProxy(listener, backendAddr.(*net.TCPAddr))
 	case *vsock.VsockAddr:
-		listener, err := vsock.Listen(frontendAddr.(vsock.VsockAddr).Port)
+		listener, err := vsock.Listen(frontendAddr.(*vsock.VsockAddr).Port)
 		if err != nil {
 			return nil, err
 		}
