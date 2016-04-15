@@ -6,7 +6,7 @@ license: packages.lua Dockerfile license.sh
 
 run: license
 	rm -rf output
-	docker run -it -v /etc:/hostetc -v /lib:/lib -v $(PWD)/output:/output license
+	docker run -it -v /etc:/hostetc -v /usr:/hostusr -v /lib:/lib -v $(PWD)/output:/output license
 
 clean:
 	rm -rf output

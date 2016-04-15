@@ -82,4 +82,7 @@ cd /output/aufs-util
 git checkout "$AUFS_TOOLS_COMMIT"
 rm -rf .git
 
+cp /hostusr/share/src/* /output
+cp /hostetc/init.d/chronyd /output
+
 printf "All source code now in output/ directory\n"

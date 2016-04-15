@@ -5,5 +5,5 @@ kernel and packages
 
 ```
 docker build -t license .
-docker run -it -v /etc:/hostetc -v /lib:/lib -v $PWD/output:/output license
+docker run -it -v /etc:/hostetc -v /usr/:/hostusr -v /lib:/lib -v $PWD/output:/output license
 ```
