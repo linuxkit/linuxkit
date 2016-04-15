@@ -81,6 +81,7 @@ func (v *vsockListener) Accept() (net.Conn, error) {
 }
 
 func (v *vsockListener) Close() error {
+	// Note this won't cause the Accept to unblock.
 	return syscall.Close(v.accept_fd)
 }
 
