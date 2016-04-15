@@ -6,7 +6,7 @@ import (
 	"log"
 	"net"
 	"os"
-	"libproxy"
+	"proxy/libproxy"
 	"strings"
 	"vsock"
 )
