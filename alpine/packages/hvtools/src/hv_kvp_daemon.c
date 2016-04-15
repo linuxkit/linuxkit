@@ -120,6 +120,12 @@ struct kvp_file_state {
 
 static struct kvp_file_state kvp_file_info[KVP_POOL_COUNT];
 
+
+static void kvp_process_ipconfig_file(char *cmd,
+				      char *config_buf, unsigned int len,
+				      int element_size, int offset);
+
+
 static void kvp_acquire_lock(int pool)
 {
 	struct flock fl = {F_WRLCK, SEEK_SET, 0, 0, 0};
@@ -351,6 +357,143 @@ static int kvp_key_delete(int pool, const __u8 *key, int key_size)
 	return 1;
 }
 
+/*
+ * CFIS/SMB mount a directory from the host.
+ *
+ * The format of the value is "<mountpoint>;<alias mountpoint>;<options>",
+ * where options are either "username=<username>,password=<password>"
+ * or "username=<username>,password=<password>,domain=<domain>".
+ *
+ * and example value is:
+ * "/c;/C;username=foo,password=bar"
+ */
+static int kvp_cifs_mount(const char *value)
+{
+	char val[1024];
+	char mntcmd[2048];
+	char *mntpoint;
+	char *bindpoint;
+	char *options;
+	char *t;
+
+	char gw[256];
+	char gwcmd[] = "ip route show | awk '/default/ {print $3 }'";
+
+	int i, count;
+
+	if (strlen(value) >= sizeof(val)) {
+		syslog(LOG_ERR, "mount: value is too long");
+		return -1;
+	}
+
+	/* Always mount from the gateway */
+	kvp_process_ipconfig_file(gwcmd, gw, sizeof(gw),
+				  INET_ADDRSTRLEN, 0);
+
+	/* The above adds a ';' at the end, whack it */
+	gw[strlen(gw) - 1] = '\0';
+
+	/*
+	 * Parse the value
+	 */
+
+	/* Make sure we have the right number of ';' */
+	for (i = 0, count = 0; value[i]; i++)
+		count += (value[i] == ';');
+	if (count != 2) {
+		syslog(LOG_ERR, "mount: Malformed value");
+		return -1;
+	}
+
+	(void)strncpy(val, value, sizeof(val));
+	mntpoint = val;
+	t = strchr(mntpoint, ';');
+	if ((unsigned int)(t - mntpoint) >= sizeof(mntpoint) - 1) {
+		syslog(LOG_ERR, "mount: Mount point too long");
+		return -1;
+	}
+	*t = '\0';
+
+	bindpoint = t + 1;
+	t = strchr(bindpoint, ';');
+	if ((unsigned int)(t - bindpoint) >= sizeof(bindpoint) - 1) {
+		syslog(LOG_ERR, "mount: Bind mount point too long");
+		return -1;
+	}
+	*t = '\0';
+
+	options = t + 1;
+
+	/*
+	 * Execute the mount
+	 */
+	syslog(LOG_INFO, "mount: cifs //%s%s to %s and %s",
+	       gw, mntpoint, mntpoint, bindpoint);
+
+	snprintf(mntcmd, sizeof(mntcmd),
+		 "mkdir -p %s && "
+		 "mkdir -p %s && "
+		 "mount.cifs //%s%s %s -o %s && "
+		 "mount --bind %s %s",
+		 mntpoint, bindpoint,
+		 gw, mntpoint, mntpoint, options,
+		 mntpoint, bindpoint);
+
+	if (system(mntcmd)) {
+		syslog(LOG_ERR, "mount: error: %d %s", errno, strerror(errno));
+		return 1;
+	}
+
+	return 0;
+}
+
+/*
+ * CFIS/SMB un-mount a directory from the host.
+ *
+ * Value has the format: "<mountpoint>;<bind mountpoint>".
+ * Example: "/c;/C"
+ */
+static int kvp_cifs_umount(const char *value)
+{
+	char val[1024];
+	char umntcmd[2048];
+	char *mntpoint;
+	char *bindpoint;
+
+	if (strlen(value) >= sizeof(val)) {
+		syslog(LOG_ERR, "umount: value is too long");
+		return -1;
+	}
+
+	(void)strncpy(val, value, sizeof(val));
+
+	bindpoint = strchr(val, ';');
+	if (!bindpoint) {
+		syslog(LOG_ERR, "umount: Malformed value. %s", value);
+		return -1;
+	}
+
+	mntpoint = val;
+	*bindpoint = '\0';
+	bindpoint++;
+
+	syslog(LOG_INFO, "umount: %s and %s", mntpoint, bindpoint);
+
+	snprintf(umntcmd, sizeof(umntcmd),
+		 "umount %s && "
+		 "umount %s && "
+		 "rmdir %s && "
+		 "rmdir %s",
+		 mntpoint, bindpoint, mntpoint, bindpoint);
+
+	if (system(umntcmd)) {
+		syslog(LOG_ERR, "umount: error: %d %s", errno, strerror(errno));
+		return 1;
+	}
+	return 0;
+}
+
+
 static int kvp_key_add_or_modify(int pool, const __u8 *key, int key_size,
 				 const __u8 *value, int value_size)
 {
@@ -362,6 +505,15 @@ static int kvp_key_add_or_modify(int pool, const __u8 *key, int key_size,
 	if ((key_size > HV_KVP_EXCHANGE_MAX_KEY_SIZE) ||
 		(value_size > HV_KVP_EXCHANGE_MAX_VALUE_SIZE))
 		return 1;
+
+	/* Check for special keys. These are not stored in the store */
+	if (strncmp((char *)key, "cifsmount", key_size) == 0)
+		return kvp_cifs_mount((const char *)value);
+	else if (strncmp((char *)key, "cifsumount", key_size) == 0)
+		return kvp_cifs_umount((const char *)value);
+
+
+	syslog(LOG_INFO, "KVP Add or Mod key=%s val=%s", key, value);
 
 	/*
 	 * First update the in-memory state.
@@ -394,9 +546,10 @@ static int kvp_key_add_or_modify(int pool, const __u8 *key, int key_size,
 
 		if (record == NULL)
 			return 1;
-		kvp_file_info[pool].num_blocks++;
 
+		kvp_file_info[pool].num_blocks++;
 	}
+
 	memcpy(record[i].value, value, value_size);
 	memcpy(record[i].key, key, key_size);
 	kvp_file_info[pool].records = record;
