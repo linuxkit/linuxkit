@@ -35,7 +35,6 @@ COPY packages/docker/bin/* /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/diagnostics/diagnostics /usr/bin/
 COPY packages/diagnostics/diagnostics-server /usr/bin/
-COPY packages/diagnostics/diagnostics-download /usr/bin/
 COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
 COPY packages/ntp15m/etc /etc/
