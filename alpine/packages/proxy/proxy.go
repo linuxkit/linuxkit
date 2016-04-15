@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"libproxy"
+	"proxy/libproxy"
 )
 
 // sendError signals the error to the parent and quits the process.
