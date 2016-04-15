@@ -5,7 +5,7 @@ HV_DAEMON=hv_kvp_daemon
 depend()
 {
         after dev
-        needs networking
+        need networking
 }
 
 start()
