@@ -4,4 +4,4 @@
 
 /bin/cp -a / /mnt 2>/dev/null
 
-exec /sbin/switch_root /mnt /sbin/init
+exec /bin/busybox switch_root /mnt /sbin/init
