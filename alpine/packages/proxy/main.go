@@ -8,7 +8,7 @@ import (
 	"os"
 	"proxy/libproxy"
 	"strings"
-	"vsock"
+	"github.com/djs55/vsock"
 )
 
 func main() {
