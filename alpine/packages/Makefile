@@ -7,6 +7,7 @@ all:
 	$(MAKE) -C docker OS=Linux
 	$(MAKE) -C nc-vsock OS=linux
 	$(MAKE) -C vsudd OS=linux
+	$(MAKE) -C llmnrd OS=linux
 
 arm:
 	$(MAKE) -C proxy OS=linux ARCH=arm
@@ -26,3 +27,4 @@ clean:
 	$(MAKE) -C hvtools clean
 	$(MAKE) -C nc-vsock clean
 	$(MAKE) -C vsudd clean
+	$(MAKE) -C llmnrd clean

@@ -16,7 +16,8 @@ RUN \
   bind-tools \
   openssh-client \
   strace fuse \
-  util-linux
+  util-linux \
+  cifs-utils
 
 COPY etc /etc/
 RUN mkdir -p /etc/docker
@@ -32,6 +33,9 @@ COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
 COPY packages/mdnstool/mdnstool /sbin/
 COPY packages/mdnstool/etc /etc/
+COPY packages/llmnrd/llmnrd /sbin/
+COPY packages/llmnrd/etc /etc/
+COPY packages/llmnrd/llmnrd.tar.gz /usr/share/src/
 COPY packages/docker/bin/* /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/diagnostics/diagnostics /usr/bin/
@@ -45,13 +49,14 @@ COPY packages/dnsfix/etc /etc/
 COPY packages/hostsettings/etc /etc/
 COPY packages/hupper/hupper /bin/
 COPY packages/hupper/etc /etc/
-COPY packages/hvtools/hv_fcopy_daemon /sbin/
 COPY packages/hvtools/hv_kvp_daemon /sbin/
 COPY packages/hvtools/hv_vss_daemon /sbin/
 COPY packages/hvtools/etc /etc/
 COPY packages/hvtools/hv_get_dhcp_info /sbin/
 COPY packages/hvtools/hv_get_dns_info /sbin/
 COPY packages/hvtools/hv_set_ifconfig /sbin/
+COPY packages/hvtools/hvtools.tar.gz /usr/share/src/
+COPY packages/chronyd/etc /etc/
 COPY packages/userns/etc /etc/
 COPY packages/userns/groupadd /usr/sbin
 COPY packages/userns/useradd /usr/sbin
@@ -87,13 +92,13 @@ RUN \
   rc-update add proxy default && \
   rc-update add transfused default && \
   rc-update add mdnstool default && \
+  rc-update add llmnrd default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc sysinit && \
   rc-update add dnsfix boot && \
   rc-update add hostsettings boot && \
   rc-update add hupper default && \
-  rc-update add hv_fcopy_daemon default && \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
   rc-update add vsudd default

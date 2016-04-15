@@ -1,3 +1,4 @@
-hv_fcopy_daemon
-hv_kvp_daemon
-hv_vss_daemon
+/hv_fcopy_daemon
+/hv_kvp_daemon
+/hv_vss_daemon
+/hvtools.tar.gz

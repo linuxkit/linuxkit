@@ -1,0 +1,41 @@
+#!/sbin/openrc-run
+
+description="LLMNR Daemon"
+
+depend()
+{
+        need net
+	after firewall
+}
+
+start()
+{
+        [ ! -d /sys/bus/vmbus ] && exit 0
+
+        ebegin "Starting LLMNR Daemon"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/llmnrd.pid
+
+	export HOSTNAME=$(hostname -s)
+
+	start-stop-daemon --start --quiet \
+		--background \
+		--exec /sbin/llmnrd \
+		--make-pidfile --pidfile ${PIDFILE} \
+		-- -H ${HOSTNAME} -p 5355 -6
+
+	eend $? "Failed to start LLMNR Dameon"
+}
+
+stop()
+{
+        [ ! -d /sys/bus/vmbus ] && exit 0
+
+        ebegin "Stopping LLMNR Daemon"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/llmnrd.pid
+
+	start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
+
+	eend $? "Failed to stop LLMNR Daemon"
+}
