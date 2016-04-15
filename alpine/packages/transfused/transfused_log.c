@@ -11,6 +11,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <math.h>
+#include <inttypes.h>
 
 #include "transfused.h"
 
@@ -34,75 +35,141 @@ void log_timestamp(int fd) {
   dprintf(fd, "%s.%03d ", timestamp, msec);
 }
 
-void die(int exit_code, const char * perror_arg, const char * fmt, ...) {
-  va_list argp;
-  int in_errno = errno;
-  va_start(argp, fmt);
-  vsyslog(LOG_CRIT, fmt, argp);
-  va_end(argp);
-  if (perror_arg != NULL) {
-    if (*perror_arg != 0)
-      syslog(LOG_CRIT, "%s: %s", perror_arg, strerror(in_errno));
-    else
-      syslog(LOG_CRIT, "%s", strerror(in_errno));
+void die
+(int exit_code, parameters * params, const char * parg, const char * fmt, ...);
+
+void vlog_sock_locked(int fd, const char * fmt, va_list args) {
+  uint16_t log_err_type = 1;
+  int rc, len;
+  va_list targs;
+  char * fill;
+
+  va_copy(targs, args);
+  len = vsnprintf(NULL, 0, fmt, targs);
+  if (len < 0) die(1, NULL, NULL, "Couldn't log due to vsnprintf failure");
+  va_end(targs);
+
+  rc = len + 4 + 2; // 4 for length itself and 2 for message type
+  write_exactly("vlog_sock_locked", fd, (uint32_t *) &rc, sizeof(uint32_t));
+  write_exactly("vlog_sock_locked", fd, &log_err_type, sizeof(uint16_t));
+
+  va_copy(targs, args);
+  rc = vdprintf(fd, fmt, targs);
+  if (rc < 0) die(1, NULL, "Couldn't send log message with vdprintf", "");
+  va_end(targs);
+
+  if (rc < len) { // we didn't write the whole message :-(
+    rc = len - rc;
+    fill = (char *) calloc(rc, 1);
+    if (fill == NULL) die(1, NULL, "vlog_sock_locked fill", "");
+    write_exactly("vlog_sock_locked fill", fd, fill, rc);
   }
-  exit(exit_code);
 }
 
-void vlog_locked(connection_t * conn, const char * fmt, va_list args) {
-  int fd = conn->params->trigger_fd;
-  if (fd != 0) {
-    vdprintf(fd, fmt, args);
-  } else {
-    vsyslog(LOG_INFO, fmt, args);
-    fd = conn->params->logfile_fd;
-    if (fd != 0) {
-      vdprintf(fd, fmt, args);
-    }
-  }  
-}
-
-void vlog_time_locked(connection_t * conn, const char * fmt, va_list args) {
-  int fd = conn->params->trigger_fd;
-  if (fd != 0) log_timestamp(fd);
-  else {
-    fd = conn->params->logfile_fd;
-    if (fd != 0) log_timestamp(fd);
-  }
-  vlog_locked(conn, fmt, args);
-}
-
-void log_time_locked(connection_t * connection, const char * fmt, ...) {
+void log_sock_locked(int fd, const char * fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
 
-  vlog_time_locked(connection, fmt, args);
+  vlog_sock_locked(fd, fmt, args);
 
   va_end(args);
 }
 
-void log_time(connection_t * connection, const char * fmt, ...) {
+void die
+(int exit_code, parameters * params, const char * parg, const char * fmt, ...)
+{
+  va_list argp, targs;
+  int in_errno = errno;
+  int fd = 0;
+
+  if (params != NULL) {
+    fd = params->ctl_sock;
+    lock("die ctl_lock", &params->ctl_lock);
+  }
+
+  va_start(argp, fmt);
+  va_copy(targs, argp);
+  vsyslog(LOG_CRIT, fmt, targs);
+  va_end(targs);
+
+  if (fd != 0) vlog_sock_locked(fd, fmt, argp);
+  va_end(argp);
+
+  if (parg != NULL) {
+    if (*parg != 0) {
+      syslog(LOG_CRIT, "%s: %s", parg, strerror(in_errno));
+      if (fd != 0) log_sock_locked(fd, "%s: %s", parg, strerror(in_errno));
+    } else {
+      syslog(LOG_CRIT, "%s", strerror(in_errno));
+      if (fd != 0) log_sock_locked(fd, "%s", strerror(in_errno));
+    }
+  }
+
+  exit(exit_code);
+  // Nobody else should die before we terminate everything
+  unlock("die ctl_lock", &params->ctl_lock);
+}
+
+void vlog_locked(parameters * params, const char * fmt, va_list args) {
+  int rc;
+  int fd = params->ctl_sock;
+  va_list targs;
+
+  if (fd != 0) vlog_sock_locked(fd, fmt, args);
+  else {
+    va_copy(targs, args);
+    vsyslog(LOG_INFO, fmt, targs);
+    va_end(targs);
+
+    fd = params->logfile_fd;
+    if (fd != 0) {
+      va_copy(targs, args);
+      rc = vdprintf(fd, fmt, targs);
+      if (rc < 0) die(1, NULL, "Couldn't write log message with vdprintf", "");
+      va_end(targs);
+    }
+  }
+}
+
+void vlog_time_locked(parameters * params, const char * fmt, va_list args) {
+  int fd = params->logfile_fd;
+
+  if (fd != 0 && params->ctl_sock == 0) log_timestamp(fd);
+  vlog_locked(params, fmt, args);
+}
+
+void log_time_locked(parameters * params, const char * fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
 
-  lock("log_time fd_lock", &connection->params->fd_lock);
-  vlog_time_locked(connection, fmt, args);
-  unlock("log_time fd_lock", &connection->params->fd_lock);
+  vlog_time_locked(params, fmt, args);
+
+  va_end(args);
+}
+
+void log_time(parameters * params, const char * fmt, ...) {
+  va_list args;
+
+  va_start(args, fmt);
+
+  lock("log_time ctl_lock", &params->ctl_lock);
+  vlog_time_locked(params, fmt, args);
+  unlock("log_time ctl_lock", &params->ctl_lock);
 
   va_end(args);
 }
 
 typedef struct {
-  connection_t * connection;
+  parameters * params;
   char * msg;
 } log_thread_state;
 
 void * log_time_thread(void * log_state_ptr) {
   log_thread_state * log_state = log_state_ptr;
 
-  log_time(log_state->connection, log_state->msg);
+  log_time(log_state->params, log_state->msg);
 
   free(log_state->msg);
   free(log_state);
@@ -117,11 +184,11 @@ void thread_log_time(connection_t * conn, const char * fmt, ...) {
 
   log_state = must_malloc("thread_log_time log_state",
                           sizeof(log_thread_state));
-  log_state->connection = conn;
+  log_state->params = conn->params;
 
   va_start(args, fmt);
   if (vasprintf(&log_state->msg, fmt, args) == -1)
-    die(1, "Couldn't allocate thread_log_time message", "");
+    die(1, conn->params, "Couldn't allocate thread_log_time message", "");
   va_end(args);
 
   // TODO: We currently spawn a new thread for every message. This is
@@ -129,28 +196,29 @@ void thread_log_time(connection_t * conn, const char * fmt, ...) {
   // log demand to be low.
 
   if ((errno = pthread_create(&logger, &detached, log_time_thread, log_state)))
-    die(1, "", "Couldn't create log thread for %s connection %s: ",
+    die(1, conn->params, "",
+        "Couldn't create log thread for %s connection %s: ",
         conn->type_descr, conn->mount_point);
 }
 
-void log_continue_locked(connection_t * connection, const char * fmt, ...) {
+void log_continue_locked(parameters * params, const char * fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
 
-  vlog_locked(connection, fmt, args);
+  vlog_locked(params, fmt, args);
 
   va_end(args);
 }
 
-void log_continue(connection_t * connection, const char * fmt, ...) {
+void log_continue(parameters * params, const char * fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
 
-  lock("log_continue fd_lock", &connection->params->fd_lock);
-  vlog_locked(connection, fmt, args);
-  unlock("log_continue fd_lock", &connection->params->fd_lock);
+  lock("log_continue ctl_lock", &params->ctl_lock);
+  vlog_locked(params, fmt, args);
+  unlock("log_continue ctl_lock", &params->ctl_lock);
 
   va_end(args);
 }
