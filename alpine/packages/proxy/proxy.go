@@ -67,6 +67,8 @@ func handleStopSignals(p libproxy.Proxy) {
 	signal.Notify(s, os.Interrupt, syscall.SIGTERM, syscall.SIGSTOP)
 
 	for range s {
-		p.Close()
+		os.Exit(0)
+		// The vsock proxy cannot be shutdown the same way as the TCP one:
+		//p.Close()
 	}
 }
