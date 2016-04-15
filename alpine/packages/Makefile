@@ -1,5 +1,6 @@
 all:
 	$(MAKE) -C proxy OS=linux
+	$(MAKE) -C diagnostics OS=linux
 	$(MAKE) -C transfused OS=linux
 	$(MAKE) -C mdnstool OS=linux
 	$(MAKE) -C hupper OS=linux
@@ -11,6 +12,7 @@ all:
 
 arm:
 	$(MAKE) -C proxy OS=linux ARCH=arm
+	$(MAKE) -C diagnostics OS=linux ARCH=arm
 	$(MAKE) -C transfused OS=linux ARCH=arm
 	$(MAKE) -C mdnstool OS=linux ARCH=arm
 	$(MAKE) -C hupper OS=linux ARCH=arm
@@ -20,6 +22,7 @@ arm:
 
 clean:
 	$(MAKE) -C proxy clean
+	$(MAKE) -C diagnostics clean
 	$(MAKE) -C transfused clean
 	$(MAKE) -C mdnstool clean
 	$(MAKE) -C docker clean
