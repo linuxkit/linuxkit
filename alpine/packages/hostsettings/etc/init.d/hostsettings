@@ -10,7 +10,7 @@ start() {
 	ebegin "Configuring host settings from database"
 
 	mobyconfig exists etc/hostname && echo $(mobyconfig get etc/hostname) > /etc/hostname
-	mobyconfig exists etc/sysctl.conf && echo $(mobyconfig get etc/sysctl.conf) > /etc/sysctl.conf
+	mobyconfig exists etc/sysctl.conf && mobyconfig get etc/sysctl.conf > /etc/sysctl.conf
 
         eend 0
 }
