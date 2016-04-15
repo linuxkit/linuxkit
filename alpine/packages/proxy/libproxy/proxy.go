@@ -5,7 +5,7 @@ package libproxy
 import (
 	"fmt"
 	"net"
-	"vsock"
+	"github.com/djs55/vsock"
 )
 
 // Proxy defines the behavior of a proxy. It forwards traffic back and forth

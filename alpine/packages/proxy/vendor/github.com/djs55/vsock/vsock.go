@@ -13,7 +13,17 @@ import (
 
 /*
 #include <sys/socket.h>
-#include "include/uapi/linux/vm_sockets.h"
+
+struct sockaddr_vm {
+	sa_family_t svm_family;
+	unsigned short svm_reserved1;
+	unsigned int svm_port;
+	unsigned int svm_cid;
+	unsigned char svm_zero[sizeof(struct sockaddr) -
+		sizeof(sa_family_t) - sizeof(unsigned short) -
+		sizeof(unsigned int) - sizeof(unsigned int)];
+};
+
 int bind_sockaddr_vm(int fd, const struct sockaddr_vm *sa_vm) {
     return bind(fd, (const struct sockaddr*)sa_vm, sizeof(*sa_vm));
 }
