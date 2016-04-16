@@ -1,0 +1,137 @@
+<?xml version='1.0'?> <!--*-nxml-*-->
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.2//EN"
+        "http://www.oasis-open.org/docbook/xml/4.2/docbookx.dtd">
+
+<!--
+  Copyright 2013 Kay Sievers
+
+  gummiboot is free software; you can redistribute it and/or modify it
+  under the terms of the GNU Lesser General Public License as published by
+  the Free Software Foundation; either version 2.1 of the License, or
+  (at your option) any later version.
+
+  systemd is distributed in the hope that it will be useful, but
+  WITHOUT ANY WARRANTY; without even the implied warranty of
+  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+  Lesser General Public License for more details.
+
+  You should have received a copy of the GNU Lesser General Public License
+  along with systemd; If not, see <http://www.gnu.org/licenses/>.
+-->
+
+<refentry id="gummiboot">
+        <refentryinfo>
+                <title>gummiboot</title>
+                <productname>gummiboot</productname>
+
+                <authorgroup>
+                        <author>
+                                <contrib>Developer</contrib>
+                                <firstname>Kay</firstname>
+                                <surname>Sievers</surname>
+                                <email>kay@vrfy.org</email>
+                        </author>
+                </authorgroup>
+        </refentryinfo>
+
+        <refmeta>
+                <refentrytitle>gummiboot</refentrytitle>
+                <manvolnum>8</manvolnum>
+        </refmeta>
+
+        <refnamediv>
+                <refname>gummiboot</refname>
+                <refpurpose>Setup and manage Gummiboot Boot Manager</refpurpose>
+        </refnamediv>
+
+        <refsynopsisdiv>
+                <cmdsynopsis>
+                        <command>gummiboot <arg choice="opt" rep="repeat">OPTIONS</arg>status</command>
+                </cmdsynopsis>
+                <cmdsynopsis>
+                        <command>gummiboot <arg choice="opt" rep="repeat">OPTIONS</arg>update</command>
+                </cmdsynopsis>
+                <cmdsynopsis>
+                        <command>gummiboot <arg choice="opt" rep="repeat">OPTIONS</arg>install</command>
+                </cmdsynopsis>
+                <cmdsynopsis>
+                        <command>gummiboot <arg choice="opt" rep="repeat">OPTIONS</arg>remove</command>
+                </cmdsynopsis>
+        </refsynopsisdiv>
+
+        <refsect1>
+                <title>Description</title>
+
+                <para><command>gummiboot</command> checks, updates,
+                installs or removes the boot loader from the current
+                system.</para>
+
+                <para><command>gummiboot status</command> checks and prints the
+                currently installed versions of the boot loader binaries and the
+                all current EFI boot variables.</para>
+
+                <para><command>gummiboot update</command> updates all installed
+                versions of gummiboot, if the current version is newer than the
+                version installed in the EFI system partition. This also includes
+                the EFI default/fallback loader at /EFI/Boot/boot*.efi. An
+                gummiboot entry in the EFI boot variables is created, if there
+                is no current entry. A created entry will be added to the end of
+                the boot order list.</para>
+
+                <para><command>gummiboot install</command> installs gummiboot into
+                the EFI system partition. A copy of gummiboot will be stored as
+                the EFI default/fallback loader at /EFI/Boot/boot*.efi. An gummiboot
+                entry in the EFI boot variables is created and added to the top
+                of the boot order list.</para>
+
+                <para><command>gummiboot remove</command> removes all installed
+                versions of gummiboot from the EFI system partition, and removes
+                gummiboot from the EFI boot variables.</para>
+
+                <para>If no command is passed <command>status</command> is
+                implied.</para>
+        </refsect1>
+
+        <refsect1>
+                <title>Options</title>
+                <para>The following options are understood:</para>
+
+                <variablelist>
+                        <varlistentry>
+                                <term><option>-h</option></term>
+                                <term><option>--help</option></term>
+
+                                <listitem><para>Prints a short help
+                                text and exits.</para></listitem>
+                        </varlistentry>
+
+                        <varlistentry>
+                                <term><option>--path</option></term>
+                                <listitem><para>Path to the EFI system
+                                partition. The default is /boot.</para></listitem>
+                        </varlistentry>
+
+                        <varlistentry>
+                                <term><option>--no-variables</option></term>
+                                <listitem><para>Do not touch the EFI boot
+                                variables.</para></listitem>
+                        </varlistentry>
+                </variablelist>
+        </refsect1>
+
+        <refsect1>
+                <title>Exit status</title>
+                <para>On success 0 is returned, a non-zero failure
+                code otherwise.</para>
+        </refsect1>
+
+        <refsect1>
+                <title>See Also</title>
+                <para>
+                        <ulink url="http://freedesktop.org/wiki/Software/gummiboot">Gummiboot wiki</ulink>
+                        <ulink url="http://www.freedesktop.org/wiki/Specifications/BootLoaderSpec">Boot loader specification</ulink>
+                        <ulink url="http://www.freedesktop.org/wiki/Software/systemd/BootLoaderInterface">Systemd boot loader interface</ulink>
+                        <citerefentry><refentrytitle>bootctl</refentrytitle><manvolnum>1</manvolnum></citerefentry>
+                </para>
+        </refsect1>
+</refentry>
