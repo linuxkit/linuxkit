@@ -12,7 +12,7 @@ long parse_cid(const char * address) {
   long cid = strtol(address, &end, 10);
   if (address == end || *end != ':') {
     *end = 0;
-    die(2, NULL, "Invalid vsock cid: %s", address);
+    die(2, NULL, NULL, "Invalid vsock cid: %s", address);
   }
   return cid;
 }
@@ -22,7 +22,7 @@ long parse_port(const char * port_str) {
   long port = strtol(port_str, &end, 10);
   if (port_str == end || *end != '\0') {
     *end = 0;
-    die(2, NULL, "Invalid vsock port: %s", port_str);
+    die(2, NULL, NULL, "Invalid vsock port: %s", port_str);
   }
   return port;
 }
@@ -35,7 +35,7 @@ int find_colon(const char * address) {
     else colon++;
 
   if (address[colon] == '\0')
-    die(2, NULL, "Missing port in vsock address %s", address);
+    die(2, NULL, NULL, "Missing port in vsock address %s", address);
 
   return colon;
 }
@@ -62,10 +62,10 @@ int bind_vsock(const char * address) {
 
   sock_fd = socket(AF_VSOCK, SOCK_STREAM, 0);
   if (sock_fd < 0)
-    die(1, "socket(AF_VSOCK)", "");
+    die(1, NULL, "socket(AF_VSOCK)", "");
 
   if (bind(sock_fd, (struct sockaddr *) &sa_listen, sizeof(sa_listen)))
-    die(1, "bind(AF_VSOCK)", "");
+    die(1, NULL, "bind(AF_VSOCK)", "");
 
   return sock_fd;
 }
@@ -90,10 +90,10 @@ int connect_vsock(const char * address) {
 
   sock_fd = socket(AF_VSOCK, SOCK_STREAM, 0);
   if (sock_fd < 0)
-    die(1, "socket(AF_VSOCK)", "");
+    die(1, NULL, "socket(AF_VSOCK)", "");
 
   if (connect(sock_fd, (struct sockaddr *) &sa_connect, sizeof(sa_connect)))
-    die(1, "connect(AF_VSOCK)", "");
+    die(1, NULL, "connect(AF_VSOCK)", "");
 
   return sock_fd;
 }

@@ -27,9 +27,7 @@ start()
 		--pidfile ${PIDFILE} \
 		-- \
                 -p "${PIDFILE}" \
-                -l "${STARTUP_LOGFILE}" \
-                -m "${MOUNT_TRIGGER}" \
-                -t "${RUNTIME_LOGFILE}"
+                -l "${STARTUP_LOGFILE}"
 
 	eend $? "Failed to start transfused"
 }
