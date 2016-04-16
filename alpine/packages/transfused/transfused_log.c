@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <pthread.h>
+#include <unistd.h>
 
 #include <syslog.h>
 
@@ -106,6 +107,7 @@ void die
     }
   }
 
+  if (fd != 0) close(fd); // flush
   exit(exit_code);
   // Nobody else should die before we terminate everything
   unlock("die ctl_lock", &params->ctl_lock);
