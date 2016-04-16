@@ -10,6 +10,7 @@ import (
 	"path"
 	"strings"
 	"time"
+	"github.com/djs55/vsock"
 )
 
 func run(timeout time.Duration, w *tar.Writer, command string, args ...string) {
@@ -107,6 +108,12 @@ func main() {
 		log.Printf("Failed to bind to TCP port 62374: %#v", err)
 	} else {
 		listeners = append(listeners, ip)
+	}
+	vsock, err := vsock.Listen(uint(62374))
+	if err != nil {
+		log.Printf("Failed to bind to vsock port 62374: %#v", err)
+	} else {
+		listeners = append(listeners, vsock)
 	}
 
 	for _, l := range listeners {
