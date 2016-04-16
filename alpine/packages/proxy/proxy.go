@@ -9,7 +9,7 @@ import (
 	"os/signal"
 	"syscall"
 
-	"pkg/proxy"
+	"proxy/libproxy"
 )
 
 // sendError signals the error to the parent and quits the process.
@@ -27,6 +27,9 @@ func sendOK() {
 	fmt.Fprint(f, "0\n")
 	f.Close()
 }
+
+// Map dynamic ports onto vsock ports over this offset
+var vSockPortOffset = 0x10000
 
 // From docker/libnetwork/portmapper/proxy.go:
 
@@ -46,11 +49,11 @@ func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr) {
 	switch *proto {
 	case "tcp":
 		host = &net.TCPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
-		port = *hostPort
+		port = vSockPortOffset + *hostPort
 		container = &net.TCPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	case "udp":
 		host = &net.UDPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
-		port = *hostPort
+		port = vSockPortOffset + *hostPort
 		container = &net.UDPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	default:
 		log.Fatalf("unsupported protocol %s", *proto)
@@ -59,11 +62,13 @@ func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr) {
 	return host, port, container
 }
 
-func handleStopSignals(p proxy.Proxy) {
+func handleStopSignals(p libproxy.Proxy) {
 	s := make(chan os.Signal, 10)
 	signal.Notify(s, os.Interrupt, syscall.SIGTERM, syscall.SIGSTOP)
 
 	for range s {
-		p.Close()
+		os.Exit(0)
+		// The vsock proxy cannot be shutdown the same way as the TCP one:
+		//p.Close()
 	}
 }

@@ -1,0 +1,13 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/djs55/vsock",
+			"repository": "ssh://github.com/djs55/vsock",
+			"vcs": "git",
+			"revision": "7ea787de194e9a251ea746cf37f464c1e6cb822a",
+			"branch": "master",
+			"notests": true
+		}
+	]
+}

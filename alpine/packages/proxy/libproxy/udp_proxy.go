@@ -1,4 +1,4 @@
-package proxy
+package libproxy
 
 import (
 	"encoding/binary"
