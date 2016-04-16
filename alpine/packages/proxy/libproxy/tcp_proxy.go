@@ -1,4 +1,4 @@
-package proxy
+package libproxy
 
 import (
 	"io"
@@ -8,30 +8,34 @@ import (
 	"github.com/Sirupsen/logrus"
 )
 
+type Conn interface {
+	io.Reader
+	io.Writer
+	io.Closer
+	CloseRead() error
+	CloseWrite() error
+}
+
 // TCPProxy is a proxy for TCP connections. It implements the Proxy interface to
 // handle TCP traffic forwarding between the frontend and backend addresses.
 type TCPProxy struct {
-	listener     *net.TCPListener
-	frontendAddr *net.TCPAddr
+	listener     net.Listener
+	frontendAddr net.Addr
 	backendAddr  *net.TCPAddr
 }
 
 // NewTCPProxy creates a new TCPProxy.
-func NewTCPProxy(frontendAddr, backendAddr *net.TCPAddr) (*TCPProxy, error) {
-	listener, err := net.ListenTCP("tcp", frontendAddr)
-	if err != nil {
-		return nil, err
-	}
+func NewTCPProxy(listener net.Listener, backendAddr *net.TCPAddr) (*TCPProxy, error) {
 	// If the port in frontendAddr was 0 then ListenTCP will have a picked
 	// a port to listen on, hence the call to Addr to get that actual port:
 	return &TCPProxy{
 		listener:     listener,
-		frontendAddr: listener.Addr().(*net.TCPAddr),
+		frontendAddr: listener.Addr(),
 		backendAddr:  backendAddr,
 	}, nil
 }
 
-func (proxy *TCPProxy) clientLoop(client *net.TCPConn, quit chan bool) {
+func (proxy *TCPProxy) clientLoop(client Conn, quit chan bool) {
 	backend, err := net.DialTCP("tcp", nil, proxy.backendAddr)
 	if err != nil {
 		logrus.Printf("Can't forward traffic to backend tcp/%v: %s\n", proxy.backendAddr, err)
@@ -40,7 +44,7 @@ func (proxy *TCPProxy) clientLoop(client *net.TCPConn, quit chan bool) {
 	}
 
 	event := make(chan int64)
-	var broker = func(to, from *net.TCPConn) {
+	var broker = func(to, from Conn) {
 		written, err := io.Copy(to, from)
 		if err != nil {
 			// If the socket we are writing to is shutdown with
@@ -85,7 +89,7 @@ func (proxy *TCPProxy) Run() {
 			logrus.Printf("Stopping proxy on tcp/%v for tcp/%v (%s)", proxy.frontendAddr, proxy.backendAddr, err)
 			return
 		}
-		go proxy.clientLoop(client.(*net.TCPConn), quit)
+		go proxy.clientLoop(client.(Conn), quit)
 	}
 }
 

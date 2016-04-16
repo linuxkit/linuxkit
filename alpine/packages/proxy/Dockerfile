@@ -1,18 +1,15 @@
 FROM golang:alpine
 
+RUN apk update && apk add alpine-sdk
+
 RUN mkdir -p /go/src/proxy
 WORKDIR /go/src/proxy
 
-COPY * /go/src/proxy/
-
-RUN mkdir -p /go/src/pkg/proxy
-COPY pkg/* /go/src/pkg/proxy/
-RUN mkdir -p /go/src/vendor/github.com/Sirupsen/logrus
-COPY vendor/github.com/Sirupsen/logrus/* /go/src/vendor/github.com/Sirupsen/logrus/
+COPY ./ /go/src/proxy/
 
 ARG GOARCH
 ARG GOOS
 
-RUN go install
+RUN go install --ldflags '-extldflags "-fno-PIC"'
 
 RUN [ -f /go/bin/*/proxy ] && mv /go/bin/*/proxy /go/bin/ || true
