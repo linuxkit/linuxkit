@@ -1,3 +1,4 @@
+# Create a legacy BIOS bootable ISO
 FROM ubuntu:15.10
 
 RUN apt-get update && apt-get -y upgrade && apt-get -y install \
@@ -16,9 +17,9 @@ COPY kernel/vmlinuz64 /tmp/iso
 COPY isolinux.cfg /tmp/iso/isolinux
 
 RUN cd /tmp/iso && \
-    genisoimage -o ../output.iso -l -J -R \
+    genisoimage -o ../mobylinux-bios.iso -l -J -R \
                 -c isolinux/boot.cat  \
                 -b isolinux/isolinux.bin \
                    -no-emul-boot -boot-load-size 4 -boot-info-table \
                 -V MobyLinux . && \
-    isohybrid ../output.iso
+    isohybrid ../mobylinux-bios.iso
