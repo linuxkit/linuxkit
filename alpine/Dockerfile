@@ -63,6 +63,7 @@ COPY packages/nc-vsock/nc-vsock /usr/bin
 COPY packages/vsudd/vsudd /sbin
 COPY packages/vsudd/etc /etc
 COPY packages/mobyconfig/mobyconfig /usr/bin
+COPY packages/gummiboot/gummiboot.tar.gz /usr/share/src/
 
 RUN \
   rc-update add swap boot && \
