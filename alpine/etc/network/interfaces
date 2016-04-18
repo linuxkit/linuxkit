@@ -8,3 +8,4 @@ iface eth0 inet dhcp
 auto eth1
 iface eth1 inet dhcp
     udhcpc_opts -T 1 -A 3
+    metric 199
