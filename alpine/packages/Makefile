@@ -12,14 +12,15 @@ all:
 	$(MAKE) -C gummiboot OS=linux
 
 arm:
-	$(MAKE) -C proxy OS=linux ARCH=arm
-	$(MAKE) -C diagnostics OS=linux ARCH=arm
 	$(MAKE) -C transfused OS=linux ARCH=arm
 	$(MAKE) -C mdnstool OS=linux ARCH=arm
 	$(MAKE) -C hupper OS=linux ARCH=arm
 	$(MAKE) -C docker OS=Linux ARCH=arm
-	$(MAKE) -C nc-vsock OS=linux ARCH=arm
-	$(MAKE) -C vsudd OS=linux ARCH=arm
+	# Not cross building at present (C code)
+	# $(MAKE) -C diagnostics OS=linux ARCH=arm
+	# $(MAKE) -C proxy OS=linux ARCH=arm
+	# $(MAKE) -C nc-vsock OS=linux ARCH=arm
+	# $(MAKE) -C vsudd OS=linux ARCH=arm
 
 clean:
 	$(MAKE) -C proxy clean
