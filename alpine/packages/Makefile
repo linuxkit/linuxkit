@@ -15,7 +15,7 @@ arm:
 	$(MAKE) -C transfused OS=linux ARCH=arm
 	$(MAKE) -C mdnstool OS=linux ARCH=arm
 	$(MAKE) -C hupper OS=linux ARCH=arm
-	$(MAKE) -C docker OS=Linux ARCH=arm
+	$(MAKE) -C docker arm OS=Linux ARCH=arm
 	# Not cross building at present (C code)
 	# $(MAKE) -C diagnostics OS=linux ARCH=arm
 	# $(MAKE) -C proxy OS=linux ARCH=arm

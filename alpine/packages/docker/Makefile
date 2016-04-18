@@ -15,5 +15,10 @@ bin: docker.git
 docker.git:
 	git clone git://github.com/djs55/docker.git docker.git
 
+arm:
+	mkdir -p bin
+	rm -f bin/docker*
+	cp docker-arm bin/docker
+
 clean:
 	rm -rf bin
