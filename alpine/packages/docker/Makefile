@@ -11,6 +11,7 @@ bin: docker.git
 	cp docker.git/bundles/${DOCKER_VERSION}/binary/* bin/
 	rm -f bin/*.md5
 	rm -f bin/*.sha256
+	rm -f bin/docker-${DOCKER_VERSION}
 
 docker.git:
 	git clone git://github.com/djs55/docker.git docker.git
