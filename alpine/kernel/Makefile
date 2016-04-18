@@ -13,8 +13,8 @@ zImage: kernel_config.arm Dockerfile
 	docker build --build-arg ARCH=arm -t mobyarmkernel:build .
 	docker run --rm mobyarmkernel:build cat /linux/arch/arm/boot/zImage > $@
 	docker run --rm mobyarmkernel:build cat /aufs-utils.tar > aufs-utils.tar
-	docker run --rm mobykernel:build cat /kernel-source-info > kernel-source-info
-	docker run --rm mobykernel:build cat /kernel-patches.tar > kernel-patches.tar
+	docker run --rm mobyarmkernel:build cat /kernel-source-info > kernel-source-info
+	docker run --rm mobyarmkernel:build cat /kernel-patches.tar > kernel-patches.tar
 
 clean:
 	rm -f zImage vmlinuz64 aufs-utils.tar kernel-source-info kernel-patches.tar
