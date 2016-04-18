@@ -28,6 +28,7 @@ arm:	initrd-arm.img
 
 Dockerfile.armhf: Dockerfile
 	cat Dockerfile | \
+	  sed 's@FROM alpine@FROM justincormack/armhf-alpine@' 
 	  sed '/hv_/d' | \
 	  sed '/hvtools/d' | \
 	  sed 's/syslinux//' | \
