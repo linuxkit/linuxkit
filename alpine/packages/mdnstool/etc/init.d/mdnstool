@@ -17,16 +17,11 @@ start()
 	hostname -F /etc/hostname
 	export HOSTNAME=$(hostname -s).local.
 
-	INTF=eth0
-	if [ "$(mobyconfig get network)" = "hybrid" ]; then
-		INTF=eth1
-	fi
-
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/mdnstool \
 		--make-pidfile --pidfile ${PIDFILE} \
-		-- -if ${INTF} -hostname ${HOSTNAME}
+		-- -if eth0 -hostname ${HOSTNAME}
 
 	eend $? "Failed to start mDNS server"
 }
