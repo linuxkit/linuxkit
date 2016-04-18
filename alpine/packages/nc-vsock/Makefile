@@ -8,7 +8,7 @@ all: Dockerfile $(DEPS)
 	chmod 755 nc-vsock
 
 nc-vsock: $(DEPS)
-	gcc -Wall -Werror -o nc-vsock nc-vsock.c
+	gcc -Wall -Werror -o nc-vsock nc-vsock.c -luuid
 
 clean:
 	rm -f nc-vsock
