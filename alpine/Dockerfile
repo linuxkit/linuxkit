@@ -101,7 +101,8 @@ RUN \
   rc-update add hupper default && \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
-  rc-update add vsudd default
+  rc-update add vsudd default && \
+  true
 
 COPY init /
 

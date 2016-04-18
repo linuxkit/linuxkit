@@ -28,10 +28,16 @@ arm:	initrd-arm.img
 
 Dockerfile.armhf: Dockerfile
 	cat Dockerfile | \
-	  sed 's@FROM alpine@FROM justincormack/armhf-alpine@' 
+	  sed 's@FROM alpine@FROM justincormack/armhf-alpine@' | \
 	  sed '/hv_/d' | \
 	  sed '/hvtools/d' | \
 	  sed 's/syslinux//' | \
+	  sed '/proxy/d' | \
+	  sed '/llmnrd/d' | \
+	  sed '/diagnostics/d' | \
+	  sed '/nc-vsock/d' | \
+	  sed '/vsudd/d' | \
+	  sed '/gummiboot/d' | \
 	  grep -v 'rc-update add binfmt_misc sysinit' > $@
 
 initrd-arm.img: Dockerfile.armhf
