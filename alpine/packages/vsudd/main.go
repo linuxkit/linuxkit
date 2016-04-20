@@ -7,6 +7,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"strconv"
 	"syscall"
 	"time"
 )
@@ -29,18 +30,18 @@ int accept_vm(int fd, struct sockaddr_vm *sa_vm, socklen_t *sa_vm_len) {
 import "C"
 
 const (
-	AF_VSOCK            = 40
-	VSOCK_CID_ANY       = 4294967295 /* 2^32-1 */
+	AF_VSOCK      = 40
+	VSOCK_CID_ANY = 4294967295 /* 2^32-1 */
 )
 
 var (
-	port   uint
-	sock   string
-	detach bool
+	portstr string
+	sock    string
+	detach  bool
 )
 
 func init() {
-	flag.UintVar(&port, "port", 2376, "vsock port to forward")
+	flag.StringVar(&portstr, "port", "2376", "vsock port to forward")
 	flag.StringVar(&sock, "sock", "/var/run/docker.sock", "path of the local Unix domain socket to forward to")
 	flag.BoolVar(&detach, "detach", false, "detach from terminal")
 }
@@ -65,6 +66,14 @@ func main() {
 		syscall.Dup2(int(fd), int(os.Stderr.Fd()))
 	}
 
+	port, err := strconv.ParseUint(portstr, 10, 32)
+	if err != nil {
+		log.Fatalln("Can't convert %s to a uint.", portstr, err)
+	}
+	vsockListen(uint(port))
+}
+
+func vsockListen(port uint) {
 	accept_fd, err := syscall.Socket(AF_VSOCK, syscall.SOCK_STREAM, 0)
 	if err != nil {
 		log.Fatal(err)
@@ -76,7 +85,8 @@ func main() {
 	sa.svm_cid = VSOCK_CID_ANY
 
 	if ret := C.bind_sockaddr_vm(C.int(accept_fd), &sa); ret != 0 {
-		log.Fatal(fmt.Sprintf("failed bind vsock connection to %08x.%08x, returned %d", sa.svm_cid, sa.svm_port, ret))
+		log.Fatal(fmt.Sprintf("failed bind vsock connection to %08x.%08x, returned %d",
+			sa.svm_cid, sa.svm_port, ret))
 	}
 
 	err = syscall.Listen(accept_fd, syscall.SOMAXCONN)
@@ -98,17 +108,18 @@ func main() {
 		if err != nil {
 			log.Fatalln("Error accepting connection", err)
 		}
-		go handleOne(connid, int(fd), uint(accept_sa.svm_cid), uint(accept_sa.svm_port))
+		log.Printf("%d Accepted connection on fd %d from %08x.%08x",
+			connid, fd, uint(accept_sa.svm_cid), uint(accept_sa.svm_port))
+		go handleOne(connid, int(fd))
 	}
 }
 
-func handleOne(connid int, fd int, cid, port uint) {
+func handleOne(connid int, fd int) {
 	vsock := os.NewFile(uintptr(fd), fmt.Sprintf("vsock:%d", fd))
-	log.Printf("%d Accepted connection on fd %d from %08x.%08x", connid, fd, cid, port)
 
 	defer func() {
 		log.Println(connid, "Closing vsock", vsock)
-		if err := vsock.Close() ; err != nil {
+		if err := vsock.Close(); err != nil {
 			log.Println(connid, "Error closing", vsock, ":", err)
 		}
 	}()
@@ -131,7 +142,7 @@ func handleOne(connid int, fd int, cid, port uint) {
 	}
 	defer func() {
 		log.Println(connid, "Closing docker", docker)
-		if err := docker.Close() ; err != nil {
+		if err := docker.Close(); err != nil {
 			log.Println(connid, "Error closing", docker, ":", err)
 		}
 	}()
