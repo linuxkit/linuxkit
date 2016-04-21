@@ -18,6 +18,12 @@ const (
 	UDPBufSize = 65507
 )
 
+type udpListener interface {
+  ReadFromUDP(b []byte) (int, *net.UDPAddr, error)
+	WriteToUDP(b []byte, addr *net.UDPAddr) (int, error)
+	Close() error
+}
+
 // A net.Addr where the IP is split into two fields so you can use it as a key
 // in a map:
 type connTrackKey struct {
@@ -47,22 +53,19 @@ type connTrackMap map[connTrackKey]*net.UDPConn
 // interface to handle UDP traffic forwarding between the frontend and backend
 // addresses.
 type UDPProxy struct {
-	listener       *net.UDPConn
-	frontendAddr   *net.UDPAddr
+	listener       udpListener
+	frontendAddr   net.Addr
 	backendAddr    *net.UDPAddr
 	connTrackTable connTrackMap
 	connTrackLock  sync.Mutex
 }
 
 // NewUDPProxy creates a new UDPProxy.
-func NewUDPProxy(frontendAddr, backendAddr *net.UDPAddr) (*UDPProxy, error) {
-	listener, err := net.ListenUDP("udp", frontendAddr)
-	if err != nil {
-		return nil, err
-	}
+func NewUDPProxy(frontendAddr net.Addr, listener udpListener, backendAddr *net.UDPAddr) (*UDPProxy, error) {
+
 	return &UDPProxy{
 		listener:       listener,
-		frontendAddr:   listener.LocalAddr().(*net.UDPAddr),
+		frontendAddr:   frontendAddr,
 		backendAddr:    backendAddr,
 		connTrackTable: make(connTrackMap),
 	}, nil
@@ -112,7 +115,7 @@ func (proxy *UDPProxy) Run() {
 			// ECONNREFUSED like Read do (see comment in
 			// UDPProxy.replyLoop)
 			if !isClosedError(err) {
-				logrus.Printf("Stopping proxy on udp/%v for udp/%v (%s)", proxy.frontendAddr, proxy.backendAddr, err)
+				logrus.Printf("Stopping proxy on %v for udp/%v (%s)", proxy.frontendAddr, proxy.backendAddr, err)
 			}
 			break
 		}

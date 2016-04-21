@@ -31,7 +31,11 @@ type Proxy interface {
 func NewProxy(frontendAddr, backendAddr net.Addr) (Proxy, error) {
 	switch frontendAddr.(type) {
 	case *net.UDPAddr:
-		return NewUDPProxy(frontendAddr.(*net.UDPAddr), backendAddr.(*net.UDPAddr))
+		listener, err := net.ListenUDP("udp", frontendAddr.(*net.UDPAddr))
+		if err != nil {
+			return nil, err
+		}
+		return NewUDPProxy(frontendAddr, listener, backendAddr.(*net.UDPAddr))
 	case *net.TCPAddr:
 		listener, err := net.Listen("tcp", frontendAddr.String())
 		if err != nil {
