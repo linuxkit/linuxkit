@@ -59,7 +59,7 @@ COPY packages/chronyd/etc /etc/
 COPY packages/userns/etc /etc/
 COPY packages/userns/groupadd /usr/sbin
 COPY packages/userns/useradd /usr/sbin
-COPY packages/nc-vsock/nc-vsock /usr/bin
+#COPY packages/nc-vsock/nc-vsock /usr/bin
 COPY packages/vsudd/vsudd /sbin
 COPY packages/vsudd/etc /etc
 COPY packages/mobyconfig/mobyconfig /usr/bin
