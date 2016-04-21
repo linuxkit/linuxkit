@@ -28,22 +28,16 @@ type Proxy interface {
 
 
 // NewProxy creates a Proxy according to the specified frontendAddr and backendAddr.
-func NewProxy(frontendAddr, backendAddr net.Addr) (Proxy, error) {
-	switch frontendAddr.(type) {
+func NewProxy(frontendAddr *vsock.VsockAddr, backendAddr net.Addr) (Proxy, error) {
+	switch backendAddr.(type) {
 	case *net.UDPAddr:
-		listener, err := net.ListenUDP("udp", frontendAddr.(*net.UDPAddr))
+		listener, err := vsock.Listen(frontendAddr.Port)
 		if err != nil {
 			return nil, err
 		}
-		return NewUDPProxy(frontendAddr, listener, backendAddr.(*net.UDPAddr))
+		return NewUDPProxy(frontendAddr, NewUDPListener(listener), backendAddr.(*net.UDPAddr))
 	case *net.TCPAddr:
-		listener, err := net.Listen("tcp", frontendAddr.String())
-		if err != nil {
-			return nil, err
-		}
-		return NewTCPProxy(listener, backendAddr.(*net.TCPAddr))
-	case *vsock.VsockAddr:
-		listener, err := vsock.Listen(frontendAddr.(*vsock.VsockAddr).Port)
+		listener, err := vsock.Listen(frontendAddr.Port)
 		if err != nil {
 			return nil, err
 		}
