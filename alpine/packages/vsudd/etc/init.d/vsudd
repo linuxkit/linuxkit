@@ -11,6 +11,12 @@ start()
 {
 	ebegin "Starting docker socket vsock passthrough"
 
+	if [ -d /sys/bus/vmbus ]; then
+		PORT=23a432c2-537a-4291-bcb5-d62504644739
+	else
+		PORT=2376
+	fi
+
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/vsudd.pid
 	[ -n "${LOGFILE}" ] || LOGFILE=/var/log/vsudd.log
 
@@ -19,7 +25,7 @@ start()
 		--exec /sbin/vsudd \
 		--make-pidfile --pidfile ${PIDFILE} \
 		--stderr "${LOGFILE}" --stdout "${LOGFILE}" \
-		-- -port 2376 -sock /var/run/docker.sock
+		-- -port "${PORT}" -sock /var/run/docker.sock
 
 	eend $? "Failed to start vsudd"
 }
