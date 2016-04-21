@@ -18,12 +18,6 @@ const (
 	UDPBufSize = 65507
 )
 
-type udpListener interface {
-  ReadFromUDP(b []byte) (int, *net.UDPAddr, error)
-	WriteToUDP(b []byte, addr *net.UDPAddr) (int, error)
-	Close() error
-}
-
 // A net.Addr where the IP is split into two fields so you can use it as a key
 // in a map:
 type connTrackKey struct {
