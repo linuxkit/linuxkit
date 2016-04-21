@@ -31,6 +31,7 @@
 #define DEFAULT_SOCKET "v:_:1525"
 #define DEFAULT_SERVER "v:2:1524"
 
+#define PING             128
 #define RMDIR_SYSCALL    0
 #define UNLINK_SYSCALL   1
 #define MKDIR_SYSCALL    2
@@ -508,6 +509,11 @@ void perform_syscall(connection_t * conn, uint8_t syscall, char path[]) {
   int r = 0;
 
   switch (syscall) {
+
+  case PING:
+    log_time(conn->params, "PONG");
+    r = 0;
+    break;
 
   case RMDIR_SYSCALL:
     name = "rmdir";
