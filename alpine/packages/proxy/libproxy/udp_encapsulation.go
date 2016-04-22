@@ -11,7 +11,7 @@ import (
 )
 
 type udpListener interface {
-  ReadFromUDP(b []byte) (int, *net.UDPAddr, error)
+	ReadFromUDP(b []byte) (int, *net.UDPAddr, error)
 	WriteToUDP(b []byte, addr *net.UDPAddr) (int, error)
 	Close() error
 }
@@ -76,15 +76,15 @@ func (u *udpEncapsulator) Close() error {
 }
 
 func NewUDPListener(listener net.Listener) udpListener {
-	var m sync.Mutex;
-	var r sync.Mutex;
-	var w sync.Mutex;
+	var m sync.Mutex
+	var r sync.Mutex
+	var w sync.Mutex
 	return &udpEncapsulator{
-		conn: nil,
+		conn:     nil,
 		listener: listener,
-		m: &m,
-		r: &r,
-		w: &w,
+		m:        &m,
+		r:        &r,
+		w:        &w,
 	}
 }
 

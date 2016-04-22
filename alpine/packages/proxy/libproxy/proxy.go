@@ -4,8 +4,8 @@ package libproxy
 
 import (
 	"fmt"
-	"net"
 	"github.com/djs55/vsock"
+	"net"
 )
 
 // Proxy defines the behavior of a proxy. It forwards traffic back and forth
@@ -24,8 +24,6 @@ type Proxy interface {
 	// BackendAddr returns the proxied address.
 	BackendAddr() net.Addr
 }
-
-
 
 // NewProxy creates a Proxy according to the specified frontendAddr and backendAddr.
 func NewProxy(frontendAddr *vsock.VsockAddr, backendAddr net.Addr) (Proxy, error) {
