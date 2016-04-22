@@ -4,8 +4,8 @@ package libproxy
 
 import (
 	"fmt"
-	"net"
 	"github.com/djs55/vsock"
+	"net"
 )
 
 // Proxy defines the behavior of a proxy. It forwards traffic back and forth
@@ -25,21 +25,17 @@ type Proxy interface {
 	BackendAddr() net.Addr
 }
 
-
-
 // NewProxy creates a Proxy according to the specified frontendAddr and backendAddr.
-func NewProxy(frontendAddr, backendAddr net.Addr) (Proxy, error) {
-	switch frontendAddr.(type) {
+func NewProxy(frontendAddr *vsock.VsockAddr, backendAddr net.Addr) (Proxy, error) {
+	switch backendAddr.(type) {
 	case *net.UDPAddr:
-		return NewUDPProxy(frontendAddr.(*net.UDPAddr), backendAddr.(*net.UDPAddr))
-	case *net.TCPAddr:
-		listener, err := net.Listen("tcp", frontendAddr.String())
+		listener, err := vsock.Listen(frontendAddr.Port)
 		if err != nil {
 			return nil, err
 		}
-		return NewTCPProxy(listener, backendAddr.(*net.TCPAddr))
-	case *vsock.VsockAddr:
-		listener, err := vsock.Listen(frontendAddr.(*vsock.VsockAddr).Port)
+		return NewUDPProxy(frontendAddr, NewUDPListener(listener), backendAddr.(*net.UDPAddr))
+	case *net.TCPAddr:
+		listener, err := vsock.Listen(frontendAddr.Port)
 		if err != nil {
 			return nil, err
 		}
