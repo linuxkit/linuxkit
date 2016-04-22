@@ -28,8 +28,11 @@ func sendOK() {
 	f.Close()
 }
 
-// Map dynamic ports onto vsock ports over this offset
-var vSockPortOffset = 0x10000
+// Map dynamic TCP ports onto vsock ports over this offset
+var vSockTCPPortOffset = 0x10000
+
+// Map dynamic UDP ports onto vsock ports over this offset
+var vSockUDPPortOffset = 0x20000
 
 // From docker/libnetwork/portmapper/proxy.go:
 
@@ -49,11 +52,11 @@ func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr) {
 	switch *proto {
 	case "tcp":
 		host = &net.TCPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
-		port = vSockPortOffset + *hostPort
+		port = vSockTCPPortOffset + *hostPort
 		container = &net.TCPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	case "udp":
 		host = &net.UDPAddr{IP: net.ParseIP(*hostIP), Port: *hostPort}
-		port = vSockPortOffset + *hostPort
+		port = vSockUDPPortOffset + *hostPort
 		container = &net.UDPAddr{IP: net.ParseIP(*containerIP), Port: *containerPort}
 	default:
 		log.Fatalf("unsupported protocol %s", *proto)
