@@ -14,17 +14,17 @@ import (
 func main() {
 	host, port, container := parseHostContainerAddrs()
 
+	p, err := libproxy.NewProxy(&vsock.VsockAddr{Port: uint(port)}, container)
+	if err != nil {
+		sendError(err)
+	}
 	ctl, err := exposePort(host, port)
 	if err != nil {
 		sendError(err)
 	}
 
-	p, err := libproxy.NewProxy(&vsock.VsockAddr{Port: uint(port)}, container)
-	if err != nil {
-		sendError(err)
-	}
-
 	go handleStopSignals(p)
+	// TODO: avoid this line if we are running in a TTY
 	sendOK()
 	p.Run()
 	ctl.Close() // ensure ctl remains alive and un-GCed until here
@@ -32,7 +32,7 @@ func main() {
 }
 
 func exposePort(host net.Addr, port int) (*os.File, error) {
-	name := host.String()
+	name := host.Network() + ":" + host.String()
 	log.Printf("exposePort %s\n", name)
 	err := os.Mkdir("/port/"+name, 0)
 	if err != nil {
