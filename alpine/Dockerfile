@@ -89,7 +89,6 @@ RUN \
   rc-update add mount-ro shutdown && \
   rc-update add dmesg sysinit && \
   rc-update add devfs sysinit && \
-  rc-update add mdev sysinit && \
   rc-update add hwdrivers sysinit && \
   rc-update add sysfs && \
   rc-update add fsck && \
