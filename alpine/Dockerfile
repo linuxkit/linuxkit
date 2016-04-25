@@ -8,16 +8,24 @@ RUN \
   passwd -d root && \
   apk update && apk upgrade && \
   apk add \
-  e2fsprogs chrony \
-  git xz iptables \
-  sfdisk lvm2 syslinux \
-  openrc busybox-initscripts \
+  e2fsprogs \
+  chrony \
+  git \
+  xz \
+  iptables \
+  sfdisk \
+  lvm2 \
+  syslinux \
+  openrc \
+  busybox-initscripts \
   alpine-conf \
   bind-tools \
   openssh-client \
-  strace fuse \
+  strace \
+  fuse \
   util-linux \
-  cifs-utils
+  cifs-utils \
+  && rm -rf /var/cache/apk/*
 
 COPY etc /etc/
 RUN mkdir -p /etc/docker
