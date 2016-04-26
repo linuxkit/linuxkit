@@ -39,8 +39,6 @@ COPY packages/proxy/proxy /sbin/
 COPY packages/proxy/etc /etc/
 COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
-COPY packages/mdnstool/mdnstool /sbin/
-COPY packages/mdnstool/etc /etc/
 COPY packages/llmnrd/llmnrd /sbin/
 COPY packages/llmnrd/etc /etc/
 COPY packages/llmnrd/llmnrd.tar.gz /usr/share/src/
@@ -98,7 +96,6 @@ RUN \
   rc-update add docker default && \
   rc-update add proxy default && \
   rc-update add transfused default && \
-  rc-update add mdnstool default && \
   rc-update add llmnrd default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \

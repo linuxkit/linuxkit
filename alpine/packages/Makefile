@@ -2,7 +2,6 @@ all:
 	$(MAKE) -C proxy OS=linux
 	$(MAKE) -C diagnostics OS=linux
 	$(MAKE) -C transfused OS=linux
-	$(MAKE) -C mdnstool OS=linux
 	$(MAKE) -C hupper OS=linux
 	$(MAKE) -C hvtools OS=linux
 	$(MAKE) -C docker OS=Linux
@@ -13,7 +12,6 @@ all:
 
 arm:
 	$(MAKE) -C transfused OS=linux ARCH=arm
-	$(MAKE) -C mdnstool OS=linux ARCH=arm
 	$(MAKE) -C hupper OS=linux ARCH=arm
 	$(MAKE) -C docker arm OS=Linux ARCH=arm
 	# Not cross building at present (C code)
@@ -26,7 +24,6 @@ clean:
 	$(MAKE) -C proxy clean
 	$(MAKE) -C diagnostics clean
 	$(MAKE) -C transfused clean
-	$(MAKE) -C mdnstool clean
 	$(MAKE) -C docker clean
 	$(MAKE) -C hupper clean
 	$(MAKE) -C hvtools clean
