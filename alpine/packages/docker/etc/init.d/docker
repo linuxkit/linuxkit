@@ -61,10 +61,6 @@ start()
 			DOCKER_OPTS="${DOCKER_OPTS} --userland-proxy-bin /sbin/proxy"
 		fi
 	fi
-	if mobyconfig exists insecure-registry
-	then
-		DOCKER_OPTS="${DOCKER_OPTS} --insecure-registry $(mobyconfig get insecure-registry)"
-	fi
 
 	for d in Users Volumes tmp private
 	do
