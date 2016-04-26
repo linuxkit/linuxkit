@@ -70,6 +70,7 @@ COPY packages/vsudd/vsudd /sbin
 COPY packages/vsudd/etc /etc
 COPY packages/mobyconfig/mobyconfig /usr/bin
 COPY packages/gummiboot/gummiboot.tar.gz /usr/share/src/
+COPY packages/oom/etc /etc
 
 RUN \
   rc-update add swap boot && \
@@ -106,6 +107,7 @@ RUN \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
   rc-update add vsudd default && \
+  rc-update add oom default && \
   true
 
 COPY init /
