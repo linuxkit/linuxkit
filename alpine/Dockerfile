@@ -25,6 +25,7 @@ RUN \
   fuse \
   util-linux \
   cifs-utils \
+  e2fsprogs-extra \
   && rm -rf /var/cache/apk/*
 
 COPY etc /etc/
