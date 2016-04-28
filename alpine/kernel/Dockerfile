@@ -25,9 +25,10 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   ncurses-dev \
   p7zip-full \
   lzop \
+  wget \
   gcc-arm-linux-gnueabihf
 
-ADD ${KERNEL_SOURCE} .
+RUN wget ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
