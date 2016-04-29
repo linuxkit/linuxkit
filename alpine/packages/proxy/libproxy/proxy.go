@@ -25,8 +25,8 @@ type Proxy interface {
 	BackendAddr() net.Addr
 }
 
-// NewProxy creates a Proxy according to the specified frontendAddr and backendAddr.
-func NewProxy(frontendAddr *vsock.VsockAddr, backendAddr net.Addr) (Proxy, error) {
+// NewVsockProxy creates a Proxy listening on Vsock
+func NewVsockProxy(frontendAddr *vsock.VsockAddr, backendAddr net.Addr) (Proxy, error) {
 	switch backendAddr.(type) {
 	case *net.UDPAddr:
 		listener, err := vsock.Listen(frontendAddr.Port)
@@ -43,4 +43,30 @@ func NewProxy(frontendAddr *vsock.VsockAddr, backendAddr net.Addr) (Proxy, error
 	default:
 		panic(fmt.Errorf("Unsupported protocol"))
 	}
+}
+
+// NewIPProxy creates a Proxy according to the specified frontendAddr and backendAddr.
+func NewIPProxy(frontendAddr, backendAddr net.Addr) (Proxy, error) {
+        switch frontendAddr.(type) {
+        case *net.UDPAddr:
+                listener, err := net.ListenUDP("udp", frontendAddr.(*net.UDPAddr))
+                if err != nil {
+                        return nil, err
+                }
+                return NewUDPProxy(frontendAddr, listener, backendAddr.(*net.UDPAddr))
+        case *net.TCPAddr:
+                listener, err := net.Listen("tcp", frontendAddr.String())
+                if err != nil {
+                        return nil, err
+                }
+                return NewTCPProxy(listener, backendAddr.(*net.TCPAddr))
+        case *vsock.VsockAddr:
+                listener, err := vsock.Listen(frontendAddr.(*vsock.VsockAddr).Port)
+                if err != nil {
+                        return nil, err
+                }
+                return NewTCPProxy(listener, backendAddr.(*net.TCPAddr))
+        default:
+                panic(fmt.Errorf("Unsupported protocol"))
+        }
 }
