@@ -14,19 +14,25 @@ import (
 func main() {
 	host, port, container := parseHostContainerAddrs()
 
-	p, err := libproxy.NewProxy(&vsock.VsockAddr{Port: uint(port)}, container)
+	vsockP, err := libproxy.NewVsockProxy(&vsock.VsockAddr{Port: uint(port)}, container)
 	if err != nil {
 		sendError(err)
 	}
+	ipP, err := libproxy.NewIPProxy(host, container)
+	if err != nil {
+		sendError(err)
+	}
+
 	ctl, err := exposePort(host, port)
 	if err != nil {
 		sendError(err)
 	}
 
-	go handleStopSignals(p)
+	go handleStopSignals(ipP)
 	// TODO: avoid this line if we are running in a TTY
 	sendOK()
-	p.Run()
+	go ipP.Run()
+	vsockP.Run()
 	ctl.Close() // ensure ctl remains alive and un-GCed until here
 	os.Exit(0)
 }
