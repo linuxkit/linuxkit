@@ -1,7 +1,7 @@
 From 613d19efd48c06602018c0e7c6b4bf8d191105cd Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:50 -0800
-Subject: [PATCH 13/25] Drivers: hv: vmbus: release relid on error in
+Subject: [PATCH 13/26] Drivers: hv: vmbus: release relid on error in
  vmbus_process_offer()
 
 We want to simplify vmbus_onoffer_rescind() by not invoking
