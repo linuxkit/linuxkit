@@ -1,7 +1,7 @@
 From 6a585c01a353551a69af45bf31606f13115480d1 Mon Sep 17 00:00:00 2001
 From: Claudio Imbrenda <imbrenda@linux.vnet.ibm.com>
 Date: Tue, 22 Mar 2016 17:05:52 +0100
-Subject: [PATCH 03/25] AF_VSOCK: Shrink the area influenced by prepare_to_wait
+Subject: [PATCH 03/26] AF_VSOCK: Shrink the area influenced by prepare_to_wait
 
 When a thread is prepared for waiting by calling prepare_to_wait, sleeping
 is not allowed until either the wait has taken place or finish_wait has
