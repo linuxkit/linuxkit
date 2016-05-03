@@ -1,7 +1,7 @@
 From b9a136e91171bea99a140195ccb4bbea2a65551d Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:51 -0800
-Subject: [PATCH 14/25] Drivers: hv: vmbus: channge
+Subject: [PATCH 14/26] Drivers: hv: vmbus: channge
  vmbus_connection.channel_lock to mutex
 
 spinlock is unnecessary here.

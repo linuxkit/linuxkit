@@ -1,7 +1,7 @@
 From 1f7906c43fe139e15c19f35a4493a7ca61a6463f Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:47 -0800
-Subject: [PATCH 10/25] Drivers: hv: vmbus: serialize process_chn_event() and
+Subject: [PATCH 10/26] Drivers: hv: vmbus: serialize process_chn_event() and
  vmbus_close_internal()
 
 process_chn_event(), running in the tasklet, can race with

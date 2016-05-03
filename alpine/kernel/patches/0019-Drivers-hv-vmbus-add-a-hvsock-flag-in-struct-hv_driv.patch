@@ -1,7 +1,7 @@
 From fb6b14a429dae008b7fee772a1e27cb09db459b7 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:41 -0800
-Subject: [PATCH 19/25] Drivers: hv: vmbus: add a hvsock flag in struct
+Subject: [PATCH 19/26] Drivers: hv: vmbus: add a hvsock flag in struct
  hv_driver
 
 Only the coming hv_sock driver has a "true" value for this flag.

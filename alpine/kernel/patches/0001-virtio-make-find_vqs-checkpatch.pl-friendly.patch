@@ -1,7 +1,7 @@
 From d8f7730e3211cdb16cd9d26143121aeb05f22509 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 16:53:43 +0800
-Subject: [PATCH 01/25] virtio: make find_vqs() checkpatch.pl-friendly
+Subject: [PATCH 01/26] virtio: make find_vqs() checkpatch.pl-friendly
 
 checkpatch.pl wants arrays of strings declared as follows:
 
