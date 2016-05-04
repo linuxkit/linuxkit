@@ -22,4 +22,4 @@ arm:
 	cp docker-arm bin/docker
 
 clean:
-	rm -rf bin
+	rm -rf bin docker.git
