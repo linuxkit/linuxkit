@@ -16,7 +16,8 @@ start()
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/llmnrd.pid
 
-	export HOSTNAME=$(hostname -s)
+	# always serve as 'docker'
+	export HOSTNAME=docker
 
 	start-stop-daemon --start --quiet \
 		--background \
