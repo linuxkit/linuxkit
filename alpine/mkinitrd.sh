@@ -84,7 +84,7 @@ nameserver 2001:4860:4860::8888
 nameserver 2001:4860:4860::8844
 EOF
 
-printf 'docker' > /tmp/etc/hostname
+printf 'moby' > /tmp/etc/hostname
 
 rm /tmp/bin/mkinitrd.sh
 
