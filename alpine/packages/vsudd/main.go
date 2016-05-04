@@ -200,7 +200,6 @@ func handleOne(connid int, fd int) {
 	vsock := os.NewFile(uintptr(fd), fmt.Sprintf("vsock:%d", fd))
 
 	defer func() {
-		log.Println(connid, "Closing vsock", vsock)
 		if err := vsock.Close(); err != nil {
 			log.Println(connid, "Error closing", vsock, ":", err)
 		}
@@ -223,12 +222,10 @@ func handleOne(connid int, fd int) {
 		return
 	}
 	defer func() {
-		log.Println(connid, "Closing docker", docker)
 		if err := docker.Close(); err != nil {
 			log.Println(connid, "Error closing", docker, ":", err)
 		}
 	}()
-	log.Println(connid, "Connected to docker", docker)
 
 	w := make(chan int64)
 	go func() {
@@ -236,7 +233,6 @@ func handleOne(connid int, fd int) {
 		if err != nil {
 			log.Println(connid, "error copying from docker to vsock:", err)
 		}
-		log.Println(connid, "copying from docker to vsock: ", n, "bytes done")
 
 		err = docker.CloseRead()
 		if err != nil {
@@ -253,7 +249,6 @@ func handleOne(connid int, fd int) {
 	if err != nil {
 		log.Println(connid, "error copying from vsock to docker:", err)
 	}
-	log.Println(connid, "copying from vsock to docker: ", n, "bytes done")
 	totalRead := n
 
 	err = docker.CloseWrite()
