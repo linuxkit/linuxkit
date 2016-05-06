@@ -10,7 +10,7 @@ start()
 {
 	ebegin "Configuring host block device"
 
-	DEV="$(ls /dev/[sxv]da | head -1 | sed s@/dev/@@)"
+	DEV="$(lsblk -r | grep ' disk $' | awk '{print $1}' | head -1 )"
 
 	[ -z ${DEV} ] && exit 1
 
@@ -35,7 +35,7 @@ start()
 		[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
 	fi
 
-	mount | grep -q '/dev/[sxv]da. on /var type'
+	mount | grep -q "${DEV}. on /var type"
 
 	eend $? "Failed to mount block device"
 }
