@@ -1,19 +1,19 @@
-From 40d8c4e56035f5c46d888b7f73cd3c99a6750c17 Mon Sep 17 00:00:00 2001
+From a0ae608df96d0059ffa2e0561ff0a53aa298adca Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
-Date: Tue, 3 May 2016 16:11:03 +0100
+Date: Wed, 4 May 2016 14:21:53 +0100
 Subject: [PATCH 26/26] VSOCK: do not disconnect socket when peer has shutdown
  SEND only
 
 The peer may be expecting a reply having sent a request and then done a
-shutdown(SHUT_WR), so tearing down the whole socket at this point seems wrong
-and breaks for me with a client which does a SHUT_WR.
+shutdown(SHUT_WR), so tearing down the whole socket at this point seems
+wrong and breaks for me with a client which does a SHUT_WR.
 
-Looking at other socket family's stream_recvmsg callbacks doing a shutdown here
-does not seem to be the norm and removing it does not seem to have had any
-adverse effects that I can see.
+Looking at other socket family's stream_recvmsg callbacks doing a shutdown
+here does not seem to be the norm and removing it does not seem to have
+had any adverse effects that I can see.
 
-I'm using Stefan's RFC virtio transport patches, I'm unsure of the impact on
-the vmci transport.
+I'm using Stefan's RFC virtio transport patches, I'm unsure of the impact
+on the vmci transport.
 
 Signed-off-by: Ian Campbell <ian.campbell@docker.com>
 Cc: "David S. Miller" <davem@davemloft.net>
@@ -24,6 +24,8 @@ Cc: Dmitry Torokhov <dtor@vmware.com>
 Cc: Jorgen Hansen <jhansen@vmware.com>
 Cc: Adit Ranadive <aditr@vmware.com>
 Cc: netdev@vger.kernel.org
+Signed-off-by: David S. Miller <davem@davemloft.net>
+(cherry picked from commit dedc58e067d8c379a15a8a183c5db318201295bb)
 ---
  net/vmw_vsock/af_vsock.c | 21 +--------------------
  1 file changed, 1 insertion(+), 20 deletions(-)
