@@ -1598,7 +1598,7 @@ CONFIG_SLHC=y
 # Enable WiMAX (Networking options) to see the WiMAX drivers
 #
 # CONFIG_WAN is not set
-# CONFIG_XEN_NETDEV_FRONTEND is not set
+CONFIG_XEN_NETDEV_FRONTEND=y
 # CONFIG_VMXNET3 is not set
 # CONFIG_FUJITSU_ES is not set
 CONFIG_HYPERV_NET=y
