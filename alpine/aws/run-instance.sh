@@ -21,6 +21,15 @@ INSTANCE_ID=$(aws ec2 run-instances --image-id ${AMI_ID} --instance-type t2.nano
 
 aws ec2 create-tags --resources ${INSTANCE_ID} --tags Key=Name,Value=moby-boot-from-ami
 
+echo "Running instance ${INSTANCE_ID}"
 echo ${INSTANCE_ID} >./aws/instance_id.out
 
-watch -n5 aws ec2 describe-instances --instance-ids ${INSTANCE_ID}
+echo "Waiting for instance boot log to become available"
+
+INSTANCE_BOOT_LOG="null"
+while [[ ${INSTANCE_BOOT_LOG} == "null" ]]; do
+    INSTANCE_BOOT_LOG=$(aws ec2 get-console-output --instance-id ${INSTANCE_ID} | jq -r .Output)
+    sleep 5
+done
+
+aws ec2 get-console-output --instance-id ${INSTANCE_ID} | jq -r .Output
