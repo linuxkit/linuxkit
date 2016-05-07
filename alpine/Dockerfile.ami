@@ -1,0 +1,14 @@
+FROM alpine
+
+RUN apk add --update \
+    python \
+    py-pip \
+    bash \
+    curl \
+    e2fsprogs \
+    jq \
+    syslinux
+RUN pip install -U awscli
+COPY aws/bake-ami.sh .
+
+ENTRYPOINT ["./bake-ami.sh"]
