@@ -26,3 +26,13 @@ services:
       context: .
       dockerfile: Dockerfile.armhf
     network_mode: bridge
+  ami:
+    privileged: true
+    build:
+      context: .
+      dockerfile: Dockerfile.ami
+    network_mode: bridge
+    volumes:
+      - .:/mnt
+      - $HOME/.aws:/root/.aws:ro
+      - /dev:/dev

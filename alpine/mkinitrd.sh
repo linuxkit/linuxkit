@@ -26,7 +26,10 @@ mknod -m 666 zero c 1 5
 mknod -m 666 tty c 5 0
 mknod -m 600 console c 5 1
 
+mknod -m 600 tty0 c 4 11
+mknod -m 600 tty1 c 4 12
 mknod -m 600 ttyS0 c 4 64
+mknod -m 600 hvc0 c 229 2
 mknod -m 600 fuse c 10 229
 
 # we are using sata emulation at present
@@ -44,6 +47,8 @@ mknod -m 600 sdb3 b 8 19
 mknod -m 600 sdb4 b 8 20
 mknod -m 600 sdb5 b 8 21
 mknod -m 600 sdb6 b 8 22
+mknod -m 600 xvdf b 8 23
+mknod -m 600 xvdf1 b 8 24
 
 # mount points in /dev
 mkdir pts mqueue shm
