@@ -3,6 +3,7 @@
 depend()
 {
 	after transfused
+	before chronyd
 }
 
 start()
