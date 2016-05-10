@@ -1,0 +1,35 @@
+#!/sbin/openrc-run
+
+NAME=sntpc
+DAEMON=/usr/sbin/$NAME
+
+depend() {
+	need net
+	after firewall
+}
+
+start() {
+	# Windows has pvclock, not needed
+	[ -d /sys/bus/vmbus ] && exit 0
+
+	local msg opts
+	if [ "$SNTPC_INTERVAL" = "0" ]; then
+		msg="Setting time from NTP source"
+	else
+		msg="Starting ${NAME}"
+		opts="-d"
+	fi
+	ebegin "$msg"
+		start-stop-daemon --start --quiet --name sntpc \
+			--exec ${DAEMON} -- \
+			-i ${SNTPC_INTERVAL} $opts ${SNTPC_HOST}
+	eend $?
+}
+
+stop() {
+	[ -d /sys/bus/vmbus ] && exit 0
+	ebegin "Stopping ${NAME}"
+		start-stop-daemon --stop --quiet \
+			--exec ${DAEMON} 
+	eend $?
+}
