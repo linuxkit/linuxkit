@@ -9,7 +9,7 @@ RUN \
   apk update && apk upgrade && \
   apk add \
   e2fsprogs \
-  sntpc \
+  chrony \
   git \
   xz \
   iptables \
@@ -62,7 +62,7 @@ COPY packages/hvtools/hv_get_dhcp_info /sbin/
 COPY packages/hvtools/hv_get_dns_info /sbin/
 COPY packages/hvtools/hv_set_ifconfig /sbin/
 COPY packages/hvtools/hvtools.tar.gz /usr/share/src/
-COPY packages/sntpc/etc /etc/
+COPY packages/chronyd/etc /etc/
 COPY packages/userns/etc /etc/
 COPY packages/userns/groupadd /usr/sbin
 COPY packages/userns/useradd /usr/sbin
@@ -82,7 +82,7 @@ RUN \
   rc-update add syslog boot && \
   rc-update add networking boot && \
   rc-update add acpid default && \
-  rc-update add sntpc default && \
+  rc-update add chronyd default && \
   rc-update add cron default && \
   rc-update add savecache shutdown && \
   rc-update add killprocs shutdown && \
