@@ -14,8 +14,6 @@ RUN \
   xz \
   iptables \
   sfdisk \
-  lvm2 \
-  syslinux \
   openrc \
   busybox-initscripts \
   alpine-conf \
