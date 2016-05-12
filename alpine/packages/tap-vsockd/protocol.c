@@ -7,9 +7,6 @@
 #include <stdio.h>
 
 #include "protocol.h"
-#include "commit.h"
-
-#include "utils.h"
 
 /* Version 0 of the protocol used this */
 char expected_hello_old[5] = { 'V', 'M', 'N', 'E', 'T' };
@@ -23,11 +20,11 @@ int really_read(int fd, uint8_t *buffer, size_t total){
   while (remaining > 0){
     n = read(fd, buffer, remaining);
     if (n == 0){
-      aslLog(ASL_LEVEL_NOTICE, "EOF reading packet from Unix domain socket: closing");
+      fprintf(stderr, "EOF reading from socket: closing\n");
       goto err;
     }
     if (n < 0){
-      aslLog(ASL_LEVEL_NOTICE, "failure reading packet from Unix domain socket, closing: %s", strerror (errno));
+      perror("Failure reading from socket: closing");
       goto err;
     }
     remaining -= (size_t)n;
@@ -46,11 +43,11 @@ int really_write(int fd, uint8_t *buffer, size_t total){
   while (remaining > 0){
     n = write(fd, buffer, remaining);
     if (n == 0){
-      aslLog(ASL_LEVEL_INFO, "EOF writing to Unix domain socket");
+      fprintf(stderr, "EOF writing to socket: closing\n");
       goto err;
     }
     if (n < 0){
-      aslLog(ASL_LEVEL_NOTICE, "failure writing packet from Unix domain socket, closing: %s", strerror (errno));
+      perror("Failure writing to socket: closing\n");
       goto err;
     }
     remaining -= (size_t) n;
@@ -63,42 +60,12 @@ err:
   return -1;
 }
 
-int really_writev(int fd, struct iovec *iov, int iovcnt){
-	ssize_t n = 0;
-	int pos = 0;
-
-	while (pos < iovcnt) {
-		iov[pos].iov_base = (char *)iov[pos].iov_base + n;
-		iov[pos].iov_len -= (size_t)n;
-
-		n = writev(fd, iov + pos, iovcnt - pos);
-
-		if (n == 0){
-			aslLog(ASL_LEVEL_INFO, "EOF writing to Unix domain socket");
-			goto err;
-		}
-		if (n < 0){
-			aslLog(ASL_LEVEL_NOTICE, "failure writing packet from Unix domain socket, closing: %s", strerror (errno));
-			goto err;
-		}
-
-		// advance pos, reduce n
-		for (; pos < iovcnt && (size_t)n >= iov[pos].iov_len; pos++) {
-			n -= iov[pos].iov_len;
-		}
-	}
-  return 0;
-err:
-  shutdown(fd, SHUT_WR);
-  return -1;
-}
-
 struct init_message *create_init_message(){
   struct init_message *m = (struct init_message*) malloc(sizeof(struct init_message));
   bzero(m, sizeof(struct init_message));
   memcpy(&m->hello[0], &expected_hello[0], sizeof(m->hello));
   m->version = CURRENT_VERSION;
-  memcpy(&m->commit[0], &commit[0], sizeof(m->commit));
+  memset(&m->commit[0], 0, sizeof(m->commit));
   return m;
 }
 
@@ -109,7 +76,7 @@ char *print_init_message(struct init_message *m) {
   char *buffer = (char*) malloc(80);
   int n = snprintf(buffer, 80, "version %d, commit %s", m->version, tmp);
   if (n < 0) {
-    aslLog(ASL_LEVEL_ERR, "Failed to format init_message: %s", strerror (errno));
+    perror("Failed to format init_message");
     exit(1);
   }
   return buffer;
@@ -118,7 +85,7 @@ char *print_init_message(struct init_message *m) {
 int read_init_message(int fd, struct init_message *ci) {
   bzero(ci, sizeof(struct init_message));
   if (really_read(fd, (uint8_t*) &ci->hello[0], sizeof(ci->hello)) == -1){
-    aslLog(ASL_LEVEL_CRIT, "Failed to read hello from client");
+    fprintf(stderr, "Failed to read hello from client\n");
     return -1;
   }
   if (memcmp(&ci->hello[0], &expected_hello_old[0], sizeof(expected_hello_old)) == 0) {
@@ -126,15 +93,15 @@ int read_init_message(int fd, struct init_message *ci) {
       return 0;
   }
   if (memcmp(&ci->hello[0], &expected_hello[0], sizeof(expected_hello)) != 0) {
-    aslLog(ASL_LEVEL_ERR, "Failed to read header magic from client");
+    fprintf(stderr, "Failed to read header magic from client\n");
     return -1;
   }
   if (really_read(fd, (uint8_t*) &ci->version, sizeof(ci->version)) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to read header version from client");
+    fprintf(stderr, "Failed to read header version from client\n");
     return -1;
   }
   if (really_read(fd, (uint8_t*) &ci->commit[0], sizeof(ci->commit)) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to read header hash from client");
+    fprintf(stderr, "Failed to read header hash from client\n");
     return -1;
   }
   return 0;
@@ -142,16 +109,16 @@ int read_init_message(int fd, struct init_message *ci) {
 
 int write_init_message(int fd, struct init_message *ci) {
   if (really_write(fd, (uint8_t*) &ci->hello[0], sizeof(ci->hello)) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to write hello to client");
+    fprintf(stderr, "Failed to write hello to client\n");
     return -1;
   }
   if (ci->version > 0) {
     if (really_write(fd, (uint8_t*) &ci->version, sizeof(ci->version)) == -1){
-      aslLog(ASL_LEVEL_ERR, "Failed to write version to client");
+      fprintf(stderr, "Failed to write version to client\n");
       return -1;
     }
     if (really_write(fd, (uint8_t*) &ci->commit[0], sizeof(ci->commit)) == -1){
-      aslLog(ASL_LEVEL_ERR, "Failed to write hash to client");
+      fprintf(stderr, "Failed to write header hash to client\n");
       return -1;
     }
   }
@@ -161,7 +128,7 @@ int write_init_message(int fd, struct init_message *ci) {
 int read_vif_info(int fd, struct vif_info *vif) {
   uint8_t buffer[10];
   if (really_read(fd, &buffer[0], sizeof(buffer)) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to read vif info from client");
+    fprintf(stderr, "Failed to read vif info from client\n");
     return -1;
   }
   vif->mtu = (size_t) (buffer[0] | (buffer[1] << 8));
@@ -179,38 +146,16 @@ int write_vif_info(int fd, struct vif_info *vif) {
   buffer[3] = (uint8_t) ((vif->max_packet_size >> 8) & 0xff);
   memcpy(&buffer[0] + 4, &(vif->mac)[0], 6);
   if (really_write(fd, &buffer[0], sizeof(buffer)) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to write vif info to client");
+    fprintf(stderr, "Failed to write vif into to client\n");
     return -1;
   }
-  return 0;
-}
-
-int read_command(int fd, enum command *c) {
-  uint8_t command;
-  if (really_read(fd, (uint8_t*) &command, sizeof(command)) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to read command from client");
-    return -1;
-  }
-  if ((command != ethernet) && (command != uninstall) && (command != install_symlinks) && (command != uninstall_symlinks) && (command != uninstall_sockets) && (command != bind_ipv4)) {
-    aslLog(ASL_LEVEL_CRIT, "Client sent unknown command: %d", command);
-    return -1;
-  }
-  *c = command;
   return 0;
 }
 
 int write_command(int fd, enum command *c) {
   uint8_t command = *c;
   if (really_write(fd, (uint8_t*) &command, sizeof(command)) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to write command to client");
-    return -1;
-  }
-  return 0;
-}
-
-int read_ethernet_args(int fd, struct ethernet_args *args){
-  if (really_read(fd, (uint8_t*) &args->uuid_string[0], 36) == -1){
-    aslLog(ASL_LEVEL_CRIT, "Failed to read ethernet args from client");
+    fprintf(stderr, "Failed to write command to client\n");
     return -1;
   }
   return 0;
@@ -218,44 +163,7 @@ int read_ethernet_args(int fd, struct ethernet_args *args){
 
 int write_ethernet_args(int fd, struct ethernet_args *args){
   if (really_write(fd, (uint8_t*) &args->uuid_string[0], 36) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to write ethernet args to client");
-    return -1;
-  }
-  return 0;
-}
-
-int read_bind_ipv4(int fd, struct bind_ipv4 *ip) {
-  if (really_read(fd, (uint8_t*) &ip->ipv4, 4) == -1){
-    aslLog(ASL_LEVEL_CRIT, "Failed to read IPv4 address from client");
-    return -1;
-  }
-  if (really_read(fd, (uint8_t*) &ip->port, 2) == -1){
-    aslLog(ASL_LEVEL_CRIT, "Failed to read port from client");
-    return -1;
-  }
-  if (really_read(fd, (uint8_t*) &ip->stream, 1) == -1){
-    aslLog(ASL_LEVEL_CRIT, "Failed to read stream from client");
-    return -1;
-  }
-  if ((ip->stream != 0) && (ip->stream != 1)) {
-    aslLog(ASL_LEVEL_CRIT, "Failed to parse stream value: %d", ip->stream);
-    return -1;
-  }
-
-  return 0;
-}
-
-int write_bind_ipv4(int fd, struct bind_ipv4 *ip) {
-  if (really_write(fd, (uint8_t*) &ip->ipv4, 4) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to write IPv4 to server");
-    return -1;
-  }
-  if (really_write(fd, (uint8_t*) &ip->port, 2) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to write port to server");
-    return -1;
-  }
-  if (really_write(fd, (uint8_t*) &ip->stream, 1) == -1){
-    aslLog(ASL_LEVEL_ERR, "Failed to write stream to server");
+    fprintf(stderr, "Failed to write ethernet args to client\n");
     return -1;
   }
   return 0;
