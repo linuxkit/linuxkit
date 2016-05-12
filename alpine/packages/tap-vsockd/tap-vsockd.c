@@ -6,9 +6,51 @@
 #include <string.h>
 #include <getopt.h>
 
+#include <stdlib.h>
+#include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <err.h>
+#include <arpa/inet.h>
+#include <sys/ioctl.h>
+#include <net/if.h>
+#include <linux/if_tun.h>
+
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <ifaddrs.h>
+
+
 #include "compat.h"
 
 int verbose_flag = 0;
+
+int alloc_tap(char *dev) {
+  int fd;
+  struct ifreq ifr;
+  const char *clonedev = "/dev/net/tun";
+  if ((fd = open(clonedev, O_RDWR)) == -1) {
+    perror("Failed to open /dev/net/tun");
+    exit(1);
+  }
+  memset(&ifr, 0, sizeof(ifr));
+  ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
+  strncpy(ifr.ifr_name, dev, IFNAMSIZ);
+  if (ioctl(fd, TUNSETIFF, (void*) &ifr) < 0) {
+    perror("TUNSETIFF failed");
+    exit(1);
+  }
+  int persist = 1;
+  if (ioctl(fd, TUNSETPERSIST, persist) < 0) {
+    perror("TUNSETPERSIST failed");
+    exit(1);
+  }
+  fprintf(stderr, "successfully created TAP device %s\n", dev);
+  return fd;
+}
+
 
 #define SVR_BUF_LEN (3 * 4096)
 #define MAX_BUF_LEN (2 * 1024 * 1024)
