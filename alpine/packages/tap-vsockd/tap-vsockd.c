@@ -96,12 +96,6 @@ void sockerr(const char *msg)
     fprintf(stderr, "%s Error: %d. %s", msg, errno, strerror(errno));
 }
 
-/* Argument passed to Client send thread */
-struct client_args {
-    SOCKET fd;
-    int tosend;
-};
-
 void negotiate(SOCKET fd, struct vif_info *vif)
 {
     /* Negotiate with com.docker.slirp */
@@ -135,47 +129,102 @@ err:
     exit(1);
 }
 
+
+/* Argument passed to proxy threads */
+struct connection {
+    SOCKET fd; /* Hyper-V socket with vmnet protocol */
+    int tapfd; /* TAP device with ethernet frames */
+    struct vif_info vif; /* Contains VIF MAC, MTU etc, received from server */
+};
+
+static void* vmnet_to_tap(void *arg)
+{
+  int length, n;
+  struct connection *connection = (struct connection*) arg;
+  uint8_t header[2];
+  uint8_t buffer[2048];
+
+  for (;;) {
+    if (really_read(connection->fd, &header[0], 2) == -1){
+      fprintf(stderr, "Failed to read a packet header from host\n");
+      exit(1);
+    }
+    length = (header[0] & 0xff) | ((header[1] & 0xff) << 8);
+    if (length > sizeof(buffer)) {
+      fprintf(stderr, "Received an over-large packet: %d > %ld\n", length, sizeof(buffer));
+      exit(1);
+    }
+    if (really_read(connection->fd, &buffer[0], length) == -1){
+      fprintf(stderr, "Failed to read packet contents from host\n");
+      exit(1);
+    }
+    n = write(connection->tapfd, &buffer[0], length);
+    if (n != length) {
+      fprintf(stderr, "Failed to write %d bytes to tap device (wrote %d)\n", length, n);
+      exit(1);
+    }
+  }
+}
+
+static void* tap_to_vmnet(void *arg)
+{
+  int length;
+  struct connection *connection = (struct connection*) arg;
+  uint8_t header[2];
+  uint8_t buffer[2048];
+
+  for (;;) {
+    length = read(connection->tapfd, &buffer[0], sizeof(buffer));
+    if (length == -1) {
+      if (errno == ENXIO) {
+        fprintf(stderr, "tap device has gone down\n");
+        exit(0);
+      }
+      fprintf(stderr, "ignoring error %d\n", errno);
+      /* This is what mirage-net-unix does. Is it a good idea really? */
+      continue;
+    }
+    header[0] = (length >> 0) & 0xff;
+    header[1] = (length >> 8) & 0xff;
+    if (really_write(connection->fd, &header[0], 2) == -1){
+      fprintf(stderr, "Failed to write packet header\n");
+      exit(1);
+    }
+    if (really_write(connection->fd, &buffer[0], length) == -1) {
+      fprintf(stderr, "Failed to write packet body\n");
+      exit(1);
+    }
+  }
+}
+
 /* Handle a connection. Handshake with the com.docker.slirp process and start
  * exchanging ethernet frames between the socket and the tap device.
  */
 static void handle(SOCKET fd, int tapfd)
 {
-    char recvbuf[SVR_BUF_LEN];
-    int recvbuflen = SVR_BUF_LEN;
-    int received;
-    int sent;
-    int res;
+    struct connection connection;
+    pthread_t v2t, t2v;
 
-    struct vif_info vif;
-    negotiate(fd, &vif);
+    connection.fd = fd;
+    connection.tapfd = tapfd;
+    negotiate(fd, &connection.vif);
 
-    for (;;) {
-        received = recv(fd, recvbuf, recvbuflen, 0);
-        if (received == 0) {
-            printf("Peer closed\n");
-            break;
-        } else if (received == SOCKET_ERROR) {
-            sockerr("recv()");
-            return;
-        }
-
-        /* No error, echo */
-        printf("RX: %d Bytes\n", received);
-
-        sent = 0;
-        while (sent < received) {
-            res = send(fd, recvbuf + sent, received - sent, 0);
-            if (sent == SOCKET_ERROR) {
-                sockerr("send()");
-                return;
-            }
-            printf("TX: %d Bytes\n", res);
-            sent += res;
-        }
+    if (pthread_create(&v2t, NULL, vmnet_to_tap, &connection) != 0){
+      fprintf(stderr, "Failed to create the vmnet_to_tap thread\n");
+      exit(1);
     }
-
-    /* Dummy read to wait till other end closes */
-    recv(fd, recvbuf, recvbuflen, 0);
+    if (pthread_create(&t2v, NULL, tap_to_vmnet, &connection) != 0){
+      fprintf(stderr, "Failed to create the tap_to_vmnet thread\n");
+      exit(1);
+    }
+    if (pthread_join(v2t, NULL) != 0){
+      fprintf(stderr, "Failed to join the vmnet_to_tap thread\n");
+      exit(1);
+    }
+    if (pthread_join(t2v, NULL) != 0){
+      fprintf(stderr, "Failed to join the tap_to_vmnet thread\n");
+      exit(1);
+    }
 }
 
 
