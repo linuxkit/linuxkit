@@ -24,6 +24,7 @@
 
 
 #include "compat.h"
+#include "protocol.h"
 
 int verbose_flag = 0;
 
@@ -101,16 +102,52 @@ struct client_args {
     int tosend;
 };
 
-/* Handle a connection. Echo back anything sent to us and when the
- * connection is closed send a bye message.
+void negotiate(SOCKET fd, struct vif_info *vif)
+{
+    /* Negotiate with com.docker.slirp */
+    struct init_message *me = create_init_message();
+    if (write_init_message(fd, me) == -1) {
+      goto err;
+    }
+    struct init_message you;
+    if (read_init_message(fd, &you) == -1) {
+      goto err;
+    }
+    char *txt = print_init_message(&you);
+    fprintf(stderr, "Server reports %s\n", txt);
+    free(txt);
+    enum command command = ethernet;
+    if (write_command(fd, &command) == -1) {
+      goto err;
+    }
+    struct ethernet_args args;
+    /* We don't need a uuid */
+    memset(&args.uuid_string[0], 0, sizeof(args.uuid_string));
+    if (write_ethernet_args(fd, &args) == -1) {
+      goto err;
+    }
+    if (read_vif_info(fd, vif) == -1) {
+      goto err;
+    }
+    return;
+err:
+    fprintf(stderr, "Failed to negotiate with com.docker.slirp\n");
+    exit(1);
+}
+
+/* Handle a connection. Handshake with the com.docker.slirp process and start
+ * exchanging ethernet frames between the socket and the tap device.
  */
-static void handle(SOCKET fd)
+static void handle(SOCKET fd, int tapfd)
 {
     char recvbuf[SVR_BUF_LEN];
     int recvbuflen = SVR_BUF_LEN;
     int received;
     int sent;
     int res;
+
+    struct vif_info vif;
+    negotiate(fd, &vif);
 
     for (;;) {
         received = recv(fd, recvbuf, recvbuflen, 0);
@@ -145,7 +182,7 @@ static void handle(SOCKET fd)
 /* Server:
  * accept() in an endless loop, handle a connection at a time
  */
-static int server(GUID serviceid)
+static int server(GUID serviceid, int tapfd)
 {
     SOCKET lsock = INVALID_SOCKET;
     SOCKET csock = INVALID_SOCKET;
@@ -189,7 +226,7 @@ static int server(GUID serviceid)
         printf("Connect from: "GUID_FMT":"GUID_FMT"\n",
                GUID_ARGS(sac.VmId), GUID_ARGS(sac.ServiceId));
 
-        handle(csock);
+        handle(csock, tapfd);
         closesocket(csock);
     }
 }
@@ -204,7 +241,7 @@ void usage(char *name)
 int __cdecl main(int argc, char **argv)
 {
     int res = 0;
-    GUID target = HV_GUID_PARENT;
+    GUID sid;
     int c;
     char *serviceid = NULL;
     char *tap = "tap0";
@@ -243,7 +280,15 @@ int __cdecl main(int argc, char **argv)
     fprintf(stderr, "serviceid=%s\n", serviceid);
     /* 3049197C-9A4E-4FBF-9367-97F792F16994 */
     fprintf(stderr, "tap=%s\n", tap);
-    server(target);
-    
-    return res;
+    res = parseguid(serviceid, &sid);
+    if (res) {
+      fprintf(stderr, "Failed to parse serviceid as GUID: %s\n", serviceid);
+      usage(argv[0]);
+      exit(1);
+    }
+    int tapfd = alloc_tap(tap);
+
+    server(sid, tapfd);
+
+    return 0;
 }
