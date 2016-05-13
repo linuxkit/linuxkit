@@ -17,6 +17,7 @@
 #include <sys/ioctl.h>
 #include <net/if.h>
 #include <linux/if_tun.h>
+#include <net/if_arp.h>
 
 #include <sys/types.h>
 #include <sys/socket.h>
@@ -28,7 +29,7 @@
 
 int verbose_flag = 0;
 
-int alloc_tap(char *dev) {
+int alloc_tap(const char *dev) {
   int fd;
   struct ifreq ifr;
   const char *clonedev = "/dev/net/tun";
@@ -52,6 +53,22 @@ int alloc_tap(char *dev) {
   return fd;
 }
 
+void set_macaddr(const char *dev, uint8_t *mac) {
+  int fd;
+  struct ifreq ifq;
+
+  fd = socket(PF_INET, SOCK_DGRAM, 0);
+  strcpy(ifq.ifr_name, dev);
+  memcpy(&ifq.ifr_hwaddr.sa_data[0], mac, 6);
+  ifq.ifr_hwaddr.sa_family = ARPHRD_ETHER;
+
+  if (ioctl(fd, SIOCSIFHWADDR, &ifq) == -1) {
+    perror("SIOCSIFHWADDR failed");
+    exit(1);
+  }
+
+  close(fd);
+}
 
 #define SVR_BUF_LEN (3 * 4096)
 #define MAX_BUF_LEN (2 * 1024 * 1024)
@@ -200,14 +217,21 @@ static void* tap_to_vmnet(void *arg)
 /* Handle a connection. Handshake with the com.docker.slirp process and start
  * exchanging ethernet frames between the socket and the tap device.
  */
-static void handle(SOCKET fd, int tapfd)
+static void handle(SOCKET fd, const char *tap)
 {
     struct connection connection;
     pthread_t v2t, t2v;
 
     connection.fd = fd;
-    connection.tapfd = tapfd;
     negotiate(fd, &connection.vif);
+    fprintf(stderr, "VMNET VIF has MAC %02x:%02x:%02x:%02x:%02x:%02x\n",
+      connection.vif.mac[0], connection.vif.mac[1], connection.vif.mac[2],
+      connection.vif.mac[3], connection.vif.mac[4], connection.vif.mac[5]
+    );
+
+    int tapfd = alloc_tap(tap);
+    set_macaddr(tap, &connection.vif.mac[0]);
+    connection.tapfd = tapfd;
 
     if (pthread_create(&v2t, NULL, vmnet_to_tap, &connection) != 0){
       fprintf(stderr, "Failed to create the vmnet_to_tap thread\n");
@@ -231,7 +255,7 @@ static void handle(SOCKET fd, int tapfd)
 /* Server:
  * accept() in an endless loop, handle a connection at a time
  */
-static int server(GUID serviceid, int tapfd)
+static int server(GUID serviceid, const char *tap)
 {
     SOCKET lsock = INVALID_SOCKET;
     SOCKET csock = INVALID_SOCKET;
@@ -275,7 +299,7 @@ static int server(GUID serviceid, int tapfd)
         printf("Connect from: "GUID_FMT":"GUID_FMT"\n",
                GUID_ARGS(sac.VmId), GUID_ARGS(sac.ServiceId));
 
-        handle(csock, tapfd);
+        handle(csock, tap);
         closesocket(csock);
     }
 }
@@ -292,8 +316,9 @@ int __cdecl main(int argc, char **argv)
     int res = 0;
     GUID sid;
     int c;
-    char *serviceid = NULL;
-    char *tap = "tap0";
+    /* Defaults to a testing GUID */
+    char *serviceid = "3049197C-9A4E-4FBF-9367-97F792F16994";
+    char *tap = "eth1";
 
     opterr = 0;
     while (1) {
@@ -327,7 +352,6 @@ int __cdecl main(int argc, char **argv)
       }
     }
     fprintf(stderr, "serviceid=%s\n", serviceid);
-    /* 3049197C-9A4E-4FBF-9367-97F792F16994 */
     fprintf(stderr, "tap=%s\n", tap);
     res = parseguid(serviceid, &sid);
     if (res) {
@@ -335,9 +359,8 @@ int __cdecl main(int argc, char **argv)
       usage(argv[0]);
       exit(1);
     }
-    int tapfd = alloc_tap(tap);
 
-    server(sid, tapfd);
+    server(sid, tap);
 
     return 0;
 }
