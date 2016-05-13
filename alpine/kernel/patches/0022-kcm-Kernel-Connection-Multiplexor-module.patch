@@ -1,7 +1,7 @@
-From f483aa8ef1890f82d6a362d296c21786c5ee9f30 Mon Sep 17 00:00:00 2001
+From d2dabcfdbf46a4c78f87d1a6b56822a3ed10499a Mon Sep 17 00:00:00 2001
 From: Tom Herbert <tom@herbertland.com>
 Date: Mon, 7 Mar 2016 14:11:06 -0800
-Subject: [PATCH 22/26] kcm: Kernel Connection Multiplexor module
+Subject: [PATCH 22/27] kcm: Kernel Connection Multiplexor module
 
 This module implements the Kernel Connection Multiplexor.
 
@@ -18,13 +18,13 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
 ---
  include/linux/socket.h   |    6 +-
  include/net/kcm.h        |  125 +++
- include/uapi/linux/kcm.h |   40 +
+ include/uapi/linux/kcm.h |   39 +
  net/Kconfig              |    1 +
  net/Makefile             |    1 +
- net/kcm/Kconfig          |   10 +
+ net/kcm/Kconfig          |    9 +
  net/kcm/Makefile         |    3 +
- net/kcm/kcmsock.c        | 2016 ++++++++++++++++++++++++++++++++++++++++++++++
- 8 files changed, 2201 insertions(+), 1 deletion(-)
+ net/kcm/kcmsock.c        | 2015 ++++++++++++++++++++++++++++++++++++++++++++++
+ 8 files changed, 2198 insertions(+), 1 deletion(-)
  create mode 100644 include/net/kcm.h
  create mode 100644 include/uapi/linux/kcm.h
  create mode 100644 net/kcm/Kconfig
@@ -195,10 +195,10 @@ index 0000000..1bcae39
 +#endif /* __NET_KCM_H_ */
 diff --git a/include/uapi/linux/kcm.h b/include/uapi/linux/kcm.h
 new file mode 100644
-index 0000000..a5a53094
+index 0000000..d72350f
 --- /dev/null
 +++ b/include/uapi/linux/kcm.h
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,39 @@
 +/*
 + * Kernel Connection Multiplexor
 + *
@@ -238,7 +238,6 @@ index 0000000..a5a53094
 +#define KCM_RECV_DISABLE	1
 +
 +#endif
-+
 diff --git a/net/Kconfig b/net/Kconfig
 index 127da94..b8439e6 100644
 --- a/net/Kconfig
@@ -265,10 +264,10 @@ index a5d0409..81d1411 100644
  obj-$(CONFIG_DECNET)		+= decnet/
 diff --git a/net/kcm/Kconfig b/net/kcm/Kconfig
 new file mode 100644
-index 0000000..5db94d9
+index 0000000..4f28332
 --- /dev/null
 +++ b/net/kcm/Kconfig
-@@ -0,0 +1,10 @@
+@@ -0,0 +1,9 @@
 +
 +config AF_KCM
 +	tristate "KCM sockets"
@@ -278,7 +277,6 @@ index 0000000..5db94d9
 +	  KCM (Kernel Connection Multiplexor) sockets provide a method
 +	  for multiplexing messages of a message based application
 +	  protocol over kernel connectons (e.g. TCP connections).
-+
 diff --git a/net/kcm/Makefile b/net/kcm/Makefile
 new file mode 100644
 index 0000000..cb525f7
@@ -290,10 +288,10 @@ index 0000000..cb525f7
 +kcm-y := kcmsock.o
 diff --git a/net/kcm/kcmsock.c b/net/kcm/kcmsock.c
 new file mode 100644
-index 0000000..30ef69a
+index 0000000..649d246
 --- /dev/null
 +++ b/net/kcm/kcmsock.c
-@@ -0,0 +1,2016 @@
+@@ -0,0 +1,2015 @@
 +#include <linux/bpf.h>
 +#include <linux/errno.h>
 +#include <linux/errqueue.h>
@@ -2309,7 +2307,6 @@ index 0000000..30ef69a
 +
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS_NETPROTO(PF_KCM);
-+
 -- 
-2.8.0.rc3
+2.8.2
 

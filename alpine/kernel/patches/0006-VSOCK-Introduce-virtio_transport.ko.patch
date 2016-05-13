@@ -1,7 +1,7 @@
-From ccaac837ceb4a9582bb57f71e0cac791f7336b19 Mon Sep 17 00:00:00 2001
+From bfa67b1c19a075f4fbb89fd393e9c368ad156416 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:28:48 +0800
-Subject: [PATCH 06/26] VSOCK: Introduce virtio_transport.ko
+Subject: [PATCH 06/27] VSOCK: Introduce virtio_transport.ko
 
 VM sockets virtio transport implementation.  This driver runs in the
 guest.
@@ -9,32 +9,16 @@ guest.
 Signed-off-by: Asias He <asias@redhat.com>
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
 ---
-v5:
- * Add transport reset event handling
- * Drop ctrl virtqueue
-v4:
- * Add MAINTAINERS file entry
- * Drop short/long rx packets
- * checkpatch.pl cleanups
- * Clarify locking in struct virtio_vsock
- * Narrow local variable scopes as suggested by Alex Bennee
- * Call wake_up() after decrementing total_tx_buf to avoid deadlock
-v2:
- * Fix total_tx_buf accounting
- * Add virtio_transport global mutex to prevent races
-
-(cherry picked from commit 1b5c3d05a4c0c1dc87d29d3bee701cf1c84cd5d3)
----
  MAINTAINERS                      |   1 +
  net/vmw_vsock/virtio_transport.c | 584 +++++++++++++++++++++++++++++++++++++++
  2 files changed, 585 insertions(+)
  create mode 100644 net/vmw_vsock/virtio_transport.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index fab150d..403c4cc 100644
+index aa88662..889d0d7 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -11404,6 +11404,7 @@ S:	Maintained
+@@ -11391,6 +11391,7 @@ S:	Maintained
  F:	include/linux/virtio_vsock.h
  F:	include/uapi/linux/virtio_vsock.h
  F:	net/vmw_vsock/virtio_transport_common.c
@@ -633,5 +617,5 @@ index 0000000..45472e0
 +MODULE_DESCRIPTION("virtio transport for vsock");
 +MODULE_DEVICE_TABLE(virtio, id_table);
 -- 
-2.8.0.rc3
+2.8.2
 
