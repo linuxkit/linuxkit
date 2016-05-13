@@ -1,49 +1,13 @@
-From 4018aa8a812fd6f1a64e3d227550bf5752127314 Mon Sep 17 00:00:00 2001
+From 397a1c318aa57643a35b048ae9e9df10fb7c46cf Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:27:00 +0800
-Subject: [PATCH 05/26] VSOCK: Introduce virtio_vsock_common.ko
+Subject: [PATCH 05/27] VSOCK: Introduce virtio_vsock_common.ko
 
 This module contains the common code and header files for the following
 virtio_transporto and vhost_vsock kernel modules.
 
 Signed-off-by: Asias He <asias@redhat.com>
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
----
-v5:
- * Add event virtqueue, struct virtio_vsock_event, and transport reset
-   event
- * Reorder virtqueue indices: rx, tx, event
- * Drop unused virtqueue_pairs config field
- * Drop unused ctrl virtqueue
- * Switch to a free virtio device ID, the previous one was reserved
-v4:
- * Add MAINTAINERS file entry
- * checkpatch.pl cleanups
- * linux_vsock.h: drop wrong copy-pasted license header
- * Move tx sock refcounting to virtio_transport_alloc/free_pkt() to fix
-   leaks in error paths
- * Add send_pkt_no_sock() to send RST packets with no listen socket
- * Rename per-socket state from virtio_transport to virtio_vsock_sock
- * Move send_pkt_ops to new virtio_transport struct
- * Drop dumppkt function, packet capture will be added in the future
- * Drop empty virtio_transport_dec_tx_pkt()
- * Allow guest->host connections again
- * Use trace events instead of pr_debug()
-v3:
- * Remove unnecessary 3-way handshake, just do REQUEST/RESPONSE instead
-   of REQUEST/RESPONSE/ACK
- * Remove SOCK_DGRAM support and focus on SOCK_STREAM first
- * Only allow host->guest connections (same security model as latest
-   VMware)
-v2:
- * Fix peer_buf_alloc inheritance on child socket
- * Notify other side of SOCK_STREAM disconnect (fixes shutdown
-   semantics)
- * Avoid recursive mutex_lock(tx_lock) for write_space (fixes deadlock)
- * Define VIRTIO_VSOCK_TYPE_STREAM/DGRAM hardware interface constants
- * Define VIRTIO_VSOCK_SHUTDOWN_RCV/SEND hardware interface constants
-
-(cherry picked from commit 83ac0f5ff6c9faf03050a4c77b3d7a96afe53402)
 ---
  MAINTAINERS                                        |  10 +
  include/linux/virtio_vsock.h                       | 167 ++++
@@ -58,10 +22,10 @@ v2:
  create mode 100644 net/vmw_vsock/virtio_transport_common.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 65bf152..fab150d 100644
+index 4c3e1d2..aa88662 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -11395,6 +11395,16 @@ S:	Maintained
+@@ -11382,6 +11382,16 @@ S:	Maintained
  F:	drivers/media/v4l2-core/videobuf2-*
  F:	include/media/videobuf2-*
  
@@ -1357,5 +1321,5 @@ index 0000000..5b9e202
 +MODULE_AUTHOR("Asias He");
 +MODULE_DESCRIPTION("common code for virtio vsock");
 -- 
-2.8.0.rc3
+2.8.2
 
