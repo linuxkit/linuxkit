@@ -1,7 +1,7 @@
-From 8507cfd5b7af092d5cc5e99ff9852b3bc46c48c0 Mon Sep 17 00:00:00 2001
+From ff94799688f8090c70cdca2158a8c0ca7a9f676c Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:39 -0800
-Subject: [PATCH 17/26] Drivers: hv: vmbus: vmbus_sendpacket_ctl: hvsock: avoid
+Subject: [PATCH 17/27] Drivers: hv: vmbus: vmbus_sendpacket_ctl: hvsock: avoid
  unnecessary signaling
 
 When the hvsock channel's outbound ringbuffer is full (i.e.,
@@ -41,5 +41,5 @@ index 2889d97..a7f9e3e 100644
  
  	return ret;
 -- 
-2.8.0.rc3
+2.8.2
 

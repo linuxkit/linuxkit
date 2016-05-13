@@ -1,7 +1,7 @@
-From 65ca3b4d64bbe02b726a91e837605c6d082fb9b9 Mon Sep 17 00:00:00 2001
+From 20eefd65c0ddcc93c8de196ee4d21b3dacc24c37 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
-Date: Mon, 21 Mar 2016 02:52:49 -0700
-Subject: [PATCH 24/26] hv_sock: introduce Hyper-V Sockets
+Date: Wed, 11 May 2016 10:52:37 -0700
+Subject: [PATCH 25/27] hv_sock: introduce Hyper-V Sockets
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
 mechanism between the host and the guest. It's somewhat like TCP over
@@ -21,29 +21,30 @@ Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Cc: "K. Y. Srinivasan" <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Vitaly Kuznetsov <vkuznets@redhat.com>
-Origin: https://patchwork.ozlabs.org/patch/600008
+Cc: Cathy Avery <cavery@redhat.com>
+Origin: http://patchwork.ozlabs.org/patch/621190/
 ---
  MAINTAINERS                 |    2 +
- include/linux/hyperv.h      |   16 +
- include/linux/socket.h      |    5 +-
- include/net/af_hvsock.h     |   51 ++
- include/uapi/linux/hyperv.h |   16 +
+ include/linux/hyperv.h      |   14 +
+ include/linux/socket.h      |    4 +-
+ include/net/af_hvsock.h     |   78 +++
+ include/uapi/linux/hyperv.h |   25 +
  net/Kconfig                 |    1 +
  net/Makefile                |    1 +
  net/hv_sock/Kconfig         |   10 +
  net/hv_sock/Makefile        |    3 +
- net/hv_sock/af_hvsock.c     | 1480 +++++++++++++++++++++++++++++++++++++++++++
- 10 files changed, 1583 insertions(+), 2 deletions(-)
+ net/hv_sock/af_hvsock.c     | 1484 +++++++++++++++++++++++++++++++++++++++++++
+ 10 files changed, 1621 insertions(+), 1 deletion(-)
  create mode 100644 include/net/af_hvsock.h
  create mode 100644 net/hv_sock/Kconfig
  create mode 100644 net/hv_sock/Makefile
  create mode 100644 net/hv_sock/af_hvsock.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 530bce8..3af3740 100644
+index 9a70d2d..1021706 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -5136,7 +5136,9 @@ F:	drivers/input/serio/hyperv-keyboard.c
+@@ -5123,7 +5123,9 @@ F:	drivers/input/serio/hyperv-keyboard.c
  F:	drivers/net/hyperv/
  F:	drivers/scsi/storvsc_drv.c
  F:	drivers/video/fbdev/hyperv_fb.c
@@ -54,17 +55,17 @@ index 530bce8..3af3740 100644
  F:	Documentation/ABI/stable/sysfs-bus-vmbus
  
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index af7ee0a..b78205e 100644
+index af7ee0a..9864a30 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1314,4 +1314,20 @@ extern __u32 vmbus_proto_version;
+@@ -1314,4 +1314,18 @@ extern __u32 vmbus_proto_version;
  
  int vmbus_send_tl_connect_request(const uuid_le *shv_guest_servie_id,
  				  const uuid_le *shv_host_servie_id);
 +struct vmpipe_proto_header {
 +	u32 pkt_type;
 +	u32 data_size;
-+} __packed;
++};
 +
 +#define HVSOCK_HEADER_LEN	(sizeof(struct vmpacket_descriptor) + \
 +				 sizeof(struct vmpipe_proto_header))
@@ -75,38 +76,36 @@ index af7ee0a..b78205e 100644
 +#define HVSOCK_PKT_LEN(payload_len)	(HVSOCK_HEADER_LEN + \
 +					ALIGN((payload_len), 8) + \
 +					PREV_INDICES_LEN)
-+#define HVSOCK_MIN_PKT_LEN	HVSOCK_PKT_LEN(1)
-+
  #endif /* _HYPERV_H */
 diff --git a/include/linux/socket.h b/include/linux/socket.h
-index 4e1ea53..2a28c5f 100644
+index dbd81e7..6634c47 100644
 --- a/include/linux/socket.h
 +++ b/include/linux/socket.h
-@@ -201,8 +201,8 @@ struct ucred {
- #define AF_NFC		39	/* NFC sockets			*/
+@@ -202,8 +202,9 @@ struct ucred {
  #define AF_VSOCK	40	/* vSockets			*/
  #define AF_KCM		41	/* Kernel Connection Multiplexor*/
--
--#define AF_MAX		42	/* For now.. */
-+#define AF_HYPERV	42	/* Hyper-V Sockets		*/
-+#define AF_MAX		43	/* For now.. */
+ #define AF_QIPCRTR	42	/* Qualcomm IPC Router          */
++#define AF_HYPERV	43	/* Hyper-V Sockets              */
+ 
+-#define AF_MAX		43	/* For now.. */
++#define AF_MAX		44	/* For now.. */
  
  /* Protocol families, same as address families. */
  #define PF_UNSPEC	AF_UNSPEC
-@@ -249,6 +249,7 @@ struct ucred {
- #define PF_NFC		AF_NFC
+@@ -251,6 +252,7 @@ struct ucred {
  #define PF_VSOCK	AF_VSOCK
  #define PF_KCM		AF_KCM
+ #define PF_QIPCRTR	AF_QIPCRTR
 +#define PF_HYPERV	AF_HYPERV
  #define PF_MAX		AF_MAX
  
  /* Maximum queue length specifiable by listen.  */
 diff --git a/include/net/af_hvsock.h b/include/net/af_hvsock.h
 new file mode 100644
-index 0000000..a5aa28d
+index 0000000..e002397
 --- /dev/null
 +++ b/include/net/af_hvsock.h
-@@ -0,0 +1,51 @@
+@@ -0,0 +1,78 @@
 +#ifndef __AF_HVSOCK_H__
 +#define __AF_HVSOCK_H__
 +
@@ -114,14 +113,50 @@ index 0000000..a5aa28d
 +#include <linux/hyperv.h>
 +#include <net/sock.h>
 +
-+#define VMBUS_RINGBUFFER_SIZE_HVSOCK_RECV (5 * PAGE_SIZE)
-+#define VMBUS_RINGBUFFER_SIZE_HVSOCK_SEND (5 * PAGE_SIZE)
++/* Note: 3-page is the minimal recv ringbuffer size:
++ *
++ * the 1st page is used as the shared read/write index etc, rather than data:
++ * see hv_ringbuffer_init();
++ *
++ * the payload length in the vmbus pipe message received from the host can
++ * be 4096 bytes, and considing the header of HVSOCK_HEADER_LEN bytes, we
++ * need at least 2 extra pages for ringbuffer data.
++ */
++#define HVSOCK_RCV_BUF_SZ    PAGE_SIZE
++#define VMBUS_RINGBUFFER_SIZE_HVSOCK_RCV (3 * PAGE_SIZE)
 +
-+#define HVSOCK_RCV_BUF_SZ	VMBUS_RINGBUFFER_SIZE_HVSOCK_RECV
-+#define HVSOCK_SND_BUF_SZ	PAGE_SIZE
++/* As to send, here let's make sure the hvsock_send_buf struct can be held in 1
++ * page, and since we want to use 2 pages for the send ringbuffer size (this is
++ * the minimal size because the 1st page of the two is used as the shared
++ * read/write index etc, rather than data), we only have 1 page for ringbuffer
++ * data, this means: the max payload length for hvsock data is
++ * PAGE_SIZE - HVSOCK_PKT_LEN(0). Finally, let's reduce the length by 8-bytes
++ * because the ringbuffer can't be 100% full: see hv_ringbuffer_write().
++ */
++#define HVSOCK_SND_BUF_SZ    (PAGE_SIZE - HVSOCK_PKT_LEN(0) - 8)
++#define VMBUS_RINGBUFFER_SIZE_HVSOCK_SND (2 * PAGE_SIZE)
 +
-+#define sk_to_hvsock(__sk)    ((struct hvsock_sock *)(__sk))
-+#define hvsock_to_sk(__hvsk)   ((struct sock *)(__hvsk))
++/* We only send data when the available space is "big enough". This artificial
++ * value must be less than HVSOCK_SND_BUF_SZ.
++ *
++ */
++#define HVSOCK_SND_THRESHOLD (PAGE_SIZE / 2)
++
++#define sk_to_hvsock(__sk)   ((struct hvsock_sock *)(__sk))
++#define hvsock_to_sk(__hvsk) ((struct sock *)(__hvsk))
++
++struct hvsock_send_buf {
++	struct vmpipe_proto_header hdr;
++	u8 buf[HVSOCK_SND_BUF_SZ];
++};
++
++struct hvsock_recv_buf {
++	struct vmpipe_proto_header hdr;
++	u8 buf[HVSOCK_RCV_BUF_SZ];
++
++	unsigned int data_len;
++	unsigned int data_offset;
++};
 +
 +struct hvsock_sock {
 +	/* sk must be the first member. */
@@ -144,22 +179,13 @@ index 0000000..a5aa28d
 +
 +	struct vmbus_channel *channel;
 +
-+	struct {
-+		struct vmpipe_proto_header hdr;
-+		char buf[HVSOCK_SND_BUF_SZ];
-+	} __packed send;
-+
-+	struct {
-+		struct vmpipe_proto_header hdr;
-+		char buf[HVSOCK_RCV_BUF_SZ];
-+		unsigned int data_len;
-+		unsigned int data_offset;
-+	} __packed recv;
++	struct hvsock_send_buf *send;
++	struct hvsock_recv_buf *recv;
 +};
 +
 +#endif /* __AF_HVSOCK_H__ */
 diff --git a/include/uapi/linux/hyperv.h b/include/uapi/linux/hyperv.h
-index e4c0a35..18ca18a 100644
+index e4c0a35..9a698c1 100644
 --- a/include/uapi/linux/hyperv.h
 +++ b/include/uapi/linux/hyperv.h
 @@ -26,6 +26,7 @@
@@ -170,16 +196,25 @@ index e4c0a35..18ca18a 100644
  
  /*
   * Framework version for util services.
-@@ -395,4 +396,19 @@ struct hv_kvp_ip_msg {
+@@ -395,4 +396,28 @@ struct hv_kvp_ip_msg {
  	struct hv_kvp_ipaddr_value      kvp_ip_val;
  } __attribute__((packed));
  
-+/* This is the Hyper-V socket's address format. */
++/*
++ * This is the address fromat of Hyper-V Sockets.
++ * Note: here we just borrow the kernel's built-in type uuid_le. When
++ * an application calls bind() or connect(), the 2 members of struct
++ * sockaddr_hv must be of GUID.
++ * The GUID format differs from the UUID format only in the byte order of
++ * the first 3 fields. Refer to:
++ * https://en.wikipedia.org/wiki/Globally_unique_identifier
++ */
++#define guid_t uuid_le
 +struct sockaddr_hv {
 +	__kernel_sa_family_t	shv_family;  /* Address family		*/
 +	__le16		reserved;	     /* Must be Zero		*/
-+	uuid_le		shv_vm_id;	     /* Not used. Must be Zero. */
-+	uuid_le		shv_service_id;	     /* Service ID		*/
++	guid_t		shv_vm_id;	     /* VM ID			*/
++	guid_t		shv_service_id;	     /* Service ID		*/
 +};
 +
 +#define SHV_VMID_GUEST	NULL_UUID_LE
@@ -191,7 +226,7 @@ index e4c0a35..18ca18a 100644
 +
  #endif /* _UAPI_HYPERV_H */
 diff --git a/net/Kconfig b/net/Kconfig
-index b8439e6..ebc8f20 100644
+index 1c9fda1..9eeccb7 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
 @@ -228,6 +228,7 @@ source "net/dns_resolver/Kconfig"
@@ -203,7 +238,7 @@ index b8439e6..ebc8f20 100644
  source "net/mpls/Kconfig"
  source "net/hsr/Kconfig"
 diff --git a/net/Makefile b/net/Makefile
-index 81d1411..d115c31 100644
+index bdd1455..ec175dd 100644
 --- a/net/Makefile
 +++ b/net/Makefile
 @@ -70,6 +70,7 @@ obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
@@ -241,12 +276,13 @@ index 0000000..716c012
 +hv_sock-y += af_hvsock.o
 diff --git a/net/hv_sock/af_hvsock.c b/net/hv_sock/af_hvsock.c
 new file mode 100644
-index 0000000..e5639eb
+index 0000000..013d684
 --- /dev/null
 +++ b/net/hv_sock/af_hvsock.c
-@@ -0,0 +1,1480 @@
+@@ -0,0 +1,1484 @@
 +/*
-+ * Hyper-V Socket driver
++ * Hyper-V Sockets -- a socket-based communication channel between the
++ * Hyper-V host and the virtual machines running on it.
 + *
 + * Copyright(c) 2016, Microsoft Corporation. All rights reserved.
 + *
@@ -298,70 +334,28 @@ index 0000000..e5639eb
 +	return !uuid_le_cmp(u1, u2);
 +}
 +
-+/* NOTE: hvsock_mutex must be held when the below helper functions, whose
-+ * names begin with __ hvsock, are invoked.
-+ */
-+static void __hvsock_insert_bound(struct list_head *list,
-+				  struct hvsock_sock *hvsk)
-+{
-+	sock_hold(&hvsk->sk);
-+	list_add(&hvsk->bound_list, list);
-+}
-+
-+static void __hvsock_insert_connected(struct list_head *list,
-+				      struct hvsock_sock *hvsk)
-+{
-+	sock_hold(&hvsk->sk);
-+	list_add(&hvsk->connected_list, list);
-+}
-+
-+static void __hvsock_remove_bound(struct hvsock_sock *hvsk)
-+{
-+	list_del_init(&hvsk->bound_list);
-+	sock_put(&hvsk->sk);
-+}
-+
-+static void __hvsock_remove_connected(struct hvsock_sock *hvsk)
-+{
-+	list_del_init(&hvsk->connected_list);
-+	sock_put(&hvsk->sk);
-+}
-+
-+static struct sock *__hvsock_find_bound_socket(const struct sockaddr_hv *addr)
++static struct sock *hvsock_find_bound_socket(const struct sockaddr_hv *addr)
 +{
 +	struct hvsock_sock *hvsk;
 +
-+	list_for_each_entry(hvsk, &hvsock_bound_list, bound_list)
++	list_for_each_entry(hvsk, &hvsock_bound_list, bound_list) {
 +		if (uuid_equals(addr->shv_service_id,
 +				hvsk->local_addr.shv_service_id))
 +			return hvsock_to_sk(hvsk);
++	}
 +	return NULL;
 +}
 +
-+static struct sock *__hvsock_find_connected_socket_by_channel(
++static struct sock *hvsock_find_connected_socket_by_channel(
 +	const struct vmbus_channel *channel)
 +{
 +	struct hvsock_sock *hvsk;
 +
-+	list_for_each_entry(hvsk, &hvsock_connected_list, connected_list)
++	list_for_each_entry(hvsk, &hvsock_connected_list, connected_list) {
 +		if (hvsk->channel == channel)
 +			return hvsock_to_sk(hvsk);
++	}
 +	return NULL;
-+}
-+
-+static bool __hvsock_in_bound_list(struct hvsock_sock *hvsk)
-+{
-+	return !list_empty(&hvsk->bound_list);
-+}
-+
-+static bool __hvsock_in_connected_list(struct hvsock_sock *hvsk)
-+{
-+	return !list_empty(&hvsk->connected_list);
-+}
-+
-+static void hvsock_insert_connected(struct hvsock_sock *hvsk)
-+{
-+	__hvsock_insert_connected(&hvsock_connected_list, hvsk);
 +}
 +
 +static
@@ -442,9 +436,6 @@ index 0000000..e5639eb
 +	if (addr->reserved != 0)
 +		return -EINVAL;
 +
-+	if (!uuid_equals(addr->shv_vm_id, NULL_UUID_LE))
-+		return -EINVAL;
-+
 +	return 0;
 +}
 +
@@ -476,17 +467,18 @@ index 0000000..e5639eb
 +	if (uuid_equals(addr->shv_service_id, SHV_SERVICE_ID_ANY)) {
 +		do {
 +			uuid_le_gen(&hv_addr.shv_service_id);
-+		} while (__hvsock_find_bound_socket(&hv_addr));
++		} while (hvsock_find_bound_socket(&hv_addr));
 +	} else {
-+		if (__hvsock_find_bound_socket(&hv_addr)) {
++		if (hvsock_find_bound_socket(&hv_addr)) {
 +			ret = -EADDRINUSE;
 +			goto out;
 +		}
 +	}
 +
 +	hvsock_addr_init(&hvsk->local_addr, hv_addr.shv_service_id);
-+	__hvsock_insert_bound(&hvsock_bound_list, hvsk);
 +
++	sock_hold(&hvsk->sk);
++	list_add(&hvsk->bound_list, &hvsock_bound_list);
 +out:
 +	mutex_unlock(&hvsock_mutex);
 +
@@ -531,6 +523,9 @@ index 0000000..e5639eb
 +	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
 +	struct vmbus_channel *channel = hvsk->channel;
 +
++	kfree(hvsk->send);
++	kfree(hvsk->recv);
++
 +	if (!channel)
 +		return;
 +
@@ -545,11 +540,17 @@ index 0000000..e5639eb
 +	hvsk = sk_to_hvsock(sk);
 +
 +	mutex_lock(&hvsock_mutex);
-+	if (__hvsock_in_bound_list(hvsk))
-+		__hvsock_remove_bound(hvsk);
 +
-+	if (__hvsock_in_connected_list(hvsk))
-+		__hvsock_remove_connected(hvsk);
++	if (!list_empty(&hvsk->bound_list)) {
++		list_del_init(&hvsk->bound_list);
++		sock_put(&hvsk->sk);
++	}
++
++	if (!list_empty(&hvsk->connected_list)) {
++		list_del_init(&hvsk->connected_list);
++		sock_put(&hvsk->sk);
++	}
++
 +	mutex_unlock(&hvsock_mutex);
 +
 +	lock_sock(sk);
@@ -583,12 +584,20 @@ index 0000000..e5639eb
 +static struct sock *__hvsock_create(struct net *net, struct socket *sock,
 +				    gfp_t priority, unsigned short type)
 +{
++	struct hvsock_send_buf *send = NULL;
++	struct hvsock_recv_buf *recv = NULL;
++
 +	struct hvsock_sock *hvsk;
 +	struct sock *sk;
 +
++	send = kmalloc(sizeof(struct hvsock_send_buf), GFP_KERNEL);
++	recv = kmalloc(sizeof(struct hvsock_recv_buf), GFP_KERNEL);
++	if (!send || !recv)
++		goto err;
++
 +	sk = sk_alloc(net, AF_HYPERV, priority, &hvsock_proto, 0);
 +	if (!sk)
-+		return NULL;
++		goto err;
 +
 +	sock_init_data(sock, sk);
 +
@@ -599,9 +608,6 @@ index 0000000..e5639eb
 +	if (!sock)
 +		sk->sk_type = type;
 +
-+	hvsk = sk_to_hvsock(sk);
-+	hvsock_addr_init(&hvsk->local_addr, SHV_SERVICE_ID_ANY);
-+	hvsock_addr_init(&hvsk->remote_addr, SHV_SERVICE_ID_ANY);
 +
 +	sk->sk_destruct = hvsock_sk_destruct;
 +
@@ -611,6 +617,14 @@ index 0000000..e5639eb
 +	sk->sk_state = 0;
 +	sock_reset_flag(sk, SOCK_DONE);
 +
++	hvsk = sk_to_hvsock(sk);
++
++	hvsk->send = send;
++	hvsk->recv = recv;
++
++	hvsock_addr_init(&hvsk->local_addr, SHV_SERVICE_ID_ANY);
++	hvsock_addr_init(&hvsk->remote_addr, SHV_SERVICE_ID_ANY);
++
 +	INIT_LIST_HEAD(&hvsk->bound_list);
 +	INIT_LIST_HEAD(&hvsk->connected_list);
 +
@@ -619,10 +633,14 @@ index 0000000..e5639eb
 +
 +	hvsk->peer_shutdown = 0;
 +
-+	hvsk->recv.data_len = 0;
-+	hvsk->recv.data_offset = 0;
++	hvsk->recv->data_len = 0;
++	hvsk->recv->data_offset = 0;
 +
 +	return sk;
++err:
++	kfree(send);
++	kfree(recv);
++	return NULL;
 +}
 +
 +static int hvsock_bind(struct socket *sock, struct sockaddr *addr,
@@ -635,6 +653,9 @@ index 0000000..e5639eb
 +	sk = sock->sk;
 +
 +	if (hvsock_addr_cast(addr, addr_len, &hv_addr) != 0)
++		return -EINVAL;
++
++	if (!uuid_equals(hv_addr->shv_vm_id, NULL_UUID_LE))
 +		return -EINVAL;
 +
 +	lock_sock(sk);
@@ -721,19 +742,35 @@ index 0000000..e5639eb
 +		hv_get_ringbuffer_availbytes(&channel->inbound,
 +					     &avl_read_bytes,
 +					     &dummy);
-+		*can_read = avl_read_bytes >= HVSOCK_MIN_PKT_LEN;
++		/* 0-size payload meaans FIN */
++		*can_read = avl_read_bytes >= HVSOCK_PKT_LEN(0);
 +	}
 +
-+	/* We write into the ringbuffer only when we're able to write a
-+	 * a payload of 4096 bytes (the actual written payload's length may be
-+	 * less than 4096).
-+	 */
 +	if (can_write) {
 +		hv_get_ringbuffer_availbytes(&channel->outbound,
 +					     &dummy,
 +					     &avl_write_bytes);
-+		*can_write = avl_write_bytes > HVSOCK_PKT_LEN(PAGE_SIZE);
++
++		*can_write = avl_write_bytes >
++			     HVSOCK_PKT_LEN(HVSOCK_SND_THRESHOLD);
 +	}
++}
++
++static size_t get_ringbuffer_writable_bytes(struct vmbus_channel *channel)
++{
++	u32 avl_write_bytes, dummy;
++	size_t ret;
++
++	hv_get_ringbuffer_availbytes(&channel->outbound,
++				     &dummy,
++				     &avl_write_bytes);
++
++	if (avl_write_bytes < HVSOCK_PKT_LEN(1))
++		return 0;
++
++	/* The ringbuffer can't be 100% full */
++	ret = avl_write_bytes - HVSOCK_PKT_LEN(1);
++	return round_down(ret, 8);
 +}
 +
 +static unsigned int hvsock_poll(struct file *file, struct socket *sock,
@@ -785,7 +822,7 @@ index 0000000..e5639eb
 +		/* If there is something in the queue then we can read */
 +		get_ringbuffer_rw_status(channel, &can_read, &can_write);
 +
-+		if (!can_read && hvsk->recv.data_len > 0)
++		if (!can_read && hvsk->recv->data_len > 0)
 +			can_read = true;
 +
 +		if (!(sk->sk_shutdown & RCV_SHUTDOWN) && can_read)
@@ -855,7 +892,7 @@ index 0000000..e5639eb
 +
 +	mutex_lock(&hvsock_mutex);
 +
-+	sk = __hvsock_find_connected_socket_by_channel(channel);
++	sk = hvsock_find_connected_socket_by_channel(channel);
 +
 +	/* The guest has already closed the connection? */
 +	if (!sk)
@@ -878,6 +915,7 @@ index 0000000..e5639eb
 +	struct hvsock_sock *hvsk, *new_hvsk;
 +	struct sockaddr_hv hv_addr;
 +	struct sock *sk, *new_sk;
++	unsigned char conn_from_host;
 +
 +	uuid_le *instance, *service_id;
 +	int ret;
@@ -885,83 +923,75 @@ index 0000000..e5639eb
 +	instance = &channel->offermsg.offer.if_instance;
 +	service_id = &channel->offermsg.offer.if_type;
 +
-+	hvsock_addr_init(&hv_addr, *instance);
++	/* The first byte != 0 means the host initiated the connection. */
++	conn_from_host = channel->offermsg.offer.u.pipe.user_def[0];
 +
 +	mutex_lock(&hvsock_mutex);
 +
-+	sk = __hvsock_find_bound_socket(&hv_addr);
++	hvsock_addr_init(&hv_addr, conn_from_host ? *service_id : *instance);
++	sk = hvsock_find_bound_socket(&hv_addr);
 +
-+	if (sk) {
-+		/* It is from the guest client's connect() */
-+		if (sk->sk_state != SS_CONNECTING) {
-+			ret = -ENXIO;
-+			goto out;
-+		}
-+
-+		hvsk = sk_to_hvsock(sk);
-+		hvsk->channel = channel;
-+		set_channel_read_state(channel, false);
-+		vmbus_set_chn_rescind_callback(channel,
-+					       hvsock_close_connection);
-+		ret = vmbus_open(channel, VMBUS_RINGBUFFER_SIZE_HVSOCK_SEND,
-+				 VMBUS_RINGBUFFER_SIZE_HVSOCK_RECV, NULL, 0,
-+				 hvsock_on_channel_cb, sk);
-+		if (ret != 0) {
-+			hvsk->channel = NULL;
-+			goto out;
-+		}
-+
-+		set_channel_pending_send_size(channel,
-+					      HVSOCK_PKT_LEN(PAGE_SIZE));
-+		sk->sk_state = SS_CONNECTED;
-+		sk->sk_socket->state = SS_CONNECTED;
-+		hvsock_insert_connected(hvsk);
-+		sk->sk_state_change(sk);
-+		goto out;
-+	}
-+
-+	/* Now we suppose it is from a host client's connect() */
-+	hvsock_addr_init(&hv_addr, *service_id);
-+	sk = __hvsock_find_bound_socket(&hv_addr);
-+
-+	/* No guest server listening? Well, let's ignore the offer */
-+	if (!sk || sk->sk_state != SS_LISTEN) {
++	if (!sk || (conn_from_host && sk->sk_state != SS_LISTEN) ||
++	   (!conn_from_host && sk->sk_state != SS_CONNECTING)) {
 +		ret = -ENXIO;
 +		goto out;
 +	}
 +
-+	if (sk->sk_ack_backlog >= sk->sk_max_ack_backlog) {
-+		ret = -EMFILE;
-+		goto out;
-+	}
++	if (conn_from_host) {
++		if (sk->sk_ack_backlog >= sk->sk_max_ack_backlog) {
++			ret = -EMFILE;
++			goto out;
++		}
 +
-+	new_sk = __hvsock_create(sock_net(sk), NULL, GFP_KERNEL, sk->sk_type);
-+	if (!new_sk) {
-+		ret = -ENOMEM;
-+		goto out;
++		new_sk = __hvsock_create(sock_net(sk), NULL, GFP_KERNEL,
++					 sk->sk_type);
++		if (!new_sk) {
++			ret = -ENOMEM;
++			goto out;
++		}
++		new_sk->sk_state = SS_CONNECTING;
++		new_hvsk = sk_to_hvsock(new_sk);
++		new_hvsk->channel = channel;
++		hvsock_addr_init(&new_hvsk->local_addr, *service_id);
++		hvsock_addr_init(&new_hvsk->remote_addr, *instance);
++	} else {
++		hvsk = sk_to_hvsock(sk);
++		hvsk->channel = channel;
 +	}
-+
-+	new_hvsk = sk_to_hvsock(new_sk);
-+	new_sk->sk_state = SS_CONNECTING;
-+	hvsock_addr_init(&new_hvsk->local_addr, *service_id);
-+	hvsock_addr_init(&new_hvsk->remote_addr, *instance);
 +
 +	set_channel_read_state(channel, false);
-+	new_hvsk->channel = channel;
 +	vmbus_set_chn_rescind_callback(channel, hvsock_close_connection);
-+	ret = vmbus_open(channel, VMBUS_RINGBUFFER_SIZE_HVSOCK_SEND,
-+			 VMBUS_RINGBUFFER_SIZE_HVSOCK_RECV, NULL, 0,
-+			 hvsock_on_channel_cb, new_sk);
++	ret = vmbus_open(channel, VMBUS_RINGBUFFER_SIZE_HVSOCK_SND,
++			 VMBUS_RINGBUFFER_SIZE_HVSOCK_RCV, NULL, 0,
++			 hvsock_on_channel_cb, conn_from_host ? new_sk : sk);
 +	if (ret != 0) {
-+		new_hvsk->channel = NULL;
-+		sock_put(new_sk);
++		if (conn_from_host) {
++			new_hvsk->channel = NULL;
++			sock_put(new_sk);
++		} else {
++			hvsk->channel = NULL;
++		}
 +		goto out;
 +	}
-+	set_channel_pending_send_size(channel, HVSOCK_PKT_LEN(PAGE_SIZE));
 +
-+	new_sk->sk_state = SS_CONNECTED;
-+	hvsock_insert_connected(new_hvsk);
-+	hvsock_enqueue_accept(sk, new_sk);
++	set_channel_pending_send_size(channel,
++				      HVSOCK_PKT_LEN(HVSOCK_SND_THRESHOLD));
++
++	if (conn_from_host) {
++		new_sk->sk_state = SS_CONNECTED;
++
++		sock_hold(&new_hvsk->sk);
++		list_add(&new_hvsk->connected_list, &hvsock_connected_list);
++
++		hvsock_enqueue_accept(sk, new_sk);
++	} else {
++		sk->sk_state = SS_CONNECTED;
++		sk->sk_socket->state = SS_CONNECTED;
++
++		sock_hold(&hvsk->sk);
++		list_add(&hvsk->connected_list, &hvsock_connected_list);
++	}
++
 +	sk->sk_state_change(sk);
 +out:
 +	mutex_unlock(&hvsock_mutex);
@@ -988,16 +1018,69 @@ index 0000000..e5639eb
 +	sock_put(sk);
 +}
 +
++static int hvsock_connect_wait(struct socket *sock,
++			       int flags, int current_ret)
++{
++	struct sock *sk = sock->sk;
++	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
++
++	int ret = current_ret;
++
++	long timeout = 30 * HZ;
++	DEFINE_WAIT(wait);
++
++	prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
++
++	while (sk->sk_state != SS_CONNECTED && sk->sk_err == 0) {
++		if (flags & O_NONBLOCK) {
++			/* If we're not going to block, we schedule a timeout
++			 * function to generate a timeout on the connection
++			 * attempt, in case the peer doesn't respond in a
++			 * timely manner. We hold on to the socket until the
++			 * timeout fires.
++			 */
++			sock_hold(sk);
++			INIT_DELAYED_WORK(&hvsk->dwork,
++					  hvsock_connect_timeout);
++			schedule_delayed_work(&hvsk->dwork, timeout);
++
++			/* Skip ahead to preserve error code set above. */
++			goto out_wait;
++		}
++
++		release_sock(sk);
++		timeout = schedule_timeout(timeout);
++		lock_sock(sk);
++
++		if (signal_pending(current)) {
++			ret = sock_intr_errno(timeout);
++			goto out_wait_error;
++		} else if (timeout == 0) {
++			ret = -ETIMEDOUT;
++			goto out_wait_error;
++		}
++
++		prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
++	}
++
++	ret = sk->sk_err ? -sk->sk_err : 0;
++
++out_wait_error:
++	if (ret < 0) {
++		sk->sk_state = SS_UNCONNECTED;
++		sock->state = SS_UNCONNECTED;
++	}
++out_wait:
++	finish_wait(sk_sleep(sk), &wait);
++	return ret;
++}
++
 +static int hvsock_connect(struct socket *sock, struct sockaddr *addr,
 +			  int addr_len, int flags)
 +{
 +	struct sockaddr_hv *remote_addr;
 +	struct hvsock_sock *hvsk;
 +	struct sock *sk;
-+
-+	DEFINE_WAIT(wait);
-+	long timeout;
-+
 +	int ret = 0;
 +
 +	sk = sock->sk;
@@ -1051,84 +1134,22 @@ index 0000000..e5639eb
 +		ret = -EINPROGRESS;
 +	}
 +
-+	/* The receive path will handle all communication until we are able to
-+	 * enter the connected state.  Here we wait for the connection to be
-+	 * completed or a notification of an error.
-+	 */
-+	timeout = 30 * HZ;
-+	prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
-+
-+	while (sk->sk_state != SS_CONNECTED && sk->sk_err == 0) {
-+		if (flags & O_NONBLOCK) {
-+			/* If we're not going to block, we schedule a timeout
-+			 * function to generate a timeout on the connection
-+			 * attempt, in case the peer doesn't respond in a
-+			 * timely manner. We hold on to the socket until the
-+			 * timeout fires.
-+			 */
-+			sock_hold(sk);
-+			INIT_DELAYED_WORK(&hvsk->dwork,
-+					  hvsock_connect_timeout);
-+			schedule_delayed_work(&hvsk->dwork, timeout);
-+
-+			/* Skip ahead to preserve error code set above. */
-+			goto out_wait;
-+		}
-+
-+		release_sock(sk);
-+		timeout = schedule_timeout(timeout);
-+		lock_sock(sk);
-+
-+		if (signal_pending(current)) {
-+			ret = sock_intr_errno(timeout);
-+			goto out_wait_error;
-+		} else if (timeout == 0) {
-+			ret = -ETIMEDOUT;
-+			goto out_wait_error;
-+		}
-+
-+		prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
-+	}
-+
-+	ret = sk->sk_err ? -sk->sk_err : 0;
-+
-+out_wait_error:
-+	if (ret < 0) {
-+		sk->sk_state = SS_UNCONNECTED;
-+		sock->state = SS_UNCONNECTED;
-+	}
-+out_wait:
-+	finish_wait(sk_sleep(sk), &wait);
++	ret = hvsock_connect_wait(sock, flags, ret);
 +out:
 +	release_sock(sk);
 +	return ret;
 +}
 +
-+static
-+int hvsock_accept(struct socket *sock, struct socket *newsock, int flags)
++static int hvsock_accept_wait(struct sock *listener,
++			      struct socket *newsock, int flags)
 +{
 +	struct hvsock_sock *hvconnected;
 +	struct sock *connected;
-+	struct sock *listener;
 +
 +	DEFINE_WAIT(wait);
 +	long timeout;
 +
 +	int ret = 0;
-+
-+	listener = sock->sk;
-+
-+	lock_sock(listener);
-+
-+	if (sock->type != SOCK_STREAM) {
-+		ret = -EOPNOTSUPP;
-+		goto out;
-+	}
-+
-+	if (listener->sk_state != SS_LISTEN) {
-+		ret = -EINVAL;
-+		goto out;
-+	}
 +
 +	/* Wait for children sockets to appear; these are the new sockets
 +	 * created upon connection establishment.
@@ -1160,27 +1181,43 @@ index 0000000..e5639eb
 +		lock_sock(connected);
 +		hvconnected = sk_to_hvsock(connected);
 +
-+		/* If the listener socket has received an error, then we should
-+		 * reject this socket and return.  Note that we simply mark the
-+		 * socket rejected, drop our reference, and let the cleanup
-+		 * function handle the cleanup; the fact that we found it in
-+		 * the listener's accept queue guarantees that the cleanup
-+		 * function hasn't run yet.
-+		 */
 +		if (ret) {
 +			release_sock(connected);
 +			sock_put(connected);
-+			goto out_wait;
++		} else {
++			newsock->state = SS_CONNECTED;
++			sock_graft(connected, newsock);
++			release_sock(connected);
++			sock_put(connected);
 +		}
-+
-+		newsock->state = SS_CONNECTED;
-+		sock_graft(connected, newsock);
-+		release_sock(connected);
-+		sock_put(connected);
 +	}
 +
 +out_wait:
 +	finish_wait(sk_sleep(listener), &wait);
++	return ret;
++}
++
++static
++int hvsock_accept(struct socket *sock, struct socket *newsock, int flags)
++{
++	struct sock *listener;
++	int ret;
++
++	listener = sock->sk;
++
++	lock_sock(listener);
++
++	if (sock->type != SOCK_STREAM) {
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++
++	if (listener->sk_state != SS_LISTEN) {
++		ret = -EINVAL;
++		goto out;
++	}
++
++	ret = hvsock_accept_wait(listener, newsock, flags);
 +out:
 +	release_sock(listener);
 +	return ret;
@@ -1227,93 +1264,37 @@ index 0000000..e5639eb
 +	return ret;
 +}
 +
-+static int hvsock_setsockopt(struct socket *sock,
-+			     int level,
-+			     int optname,
-+			     char __user *optval, unsigned int optlen)
-+{
-+	return -ENOPROTOOPT;
-+}
-+
-+static int hvsock_getsockopt(struct socket *sock,
-+			     int level,
-+			     int optname,
-+			     char __user *optval, int __user *optlen)
-+{
-+	return -ENOPROTOOPT;
-+}
-+
 +static int hvsock_send_data(struct vmbus_channel *channel,
 +			    struct hvsock_sock *hvsk,
 +			    size_t to_write)
 +{
-+	hvsk->send.hdr.pkt_type = 1;
-+	hvsk->send.hdr.data_size = to_write;
-+	return vmbus_sendpacket(channel, &hvsk->send.hdr,
-+				sizeof(hvsk->send.hdr) + to_write,
++	hvsk->send->hdr.pkt_type = 1;
++	hvsk->send->hdr.data_size = to_write;
++	return vmbus_sendpacket(channel, &hvsk->send->hdr,
++				sizeof(hvsk->send->hdr) + to_write,
 +				0, VM_PKT_DATA_INBAND, 0);
 +}
 +
-+static int hvsock_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
++static
++int hvsock_sendmsg_wait(struct sock *sk, struct msghdr *msg, size_t len)
 +{
-+	struct vmbus_channel *channel;
-+	struct hvsock_sock *hvsk;
-+	struct sock *sk;
++	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
++	struct vmbus_channel *channel = hvsk->channel;
 +
 +	size_t total_to_write = len;
 +	size_t total_written = 0;
-+
 +	bool can_write;
-+	long timeout;
++
 +	int ret = 0;
 +
 +	DEFINE_WAIT(wait);
-+
-+	if (len == 0)
-+		return -EINVAL;
-+
-+	if (msg->msg_flags & ~MSG_DONTWAIT) {
-+		pr_err("hvsock_sendmsg: unsupported flags=0x%x\n",
-+		       msg->msg_flags);
-+		return -EOPNOTSUPP;
-+	}
-+
-+	sk = sock->sk;
-+	hvsk = sk_to_hvsock(sk);
-+	channel = hvsk->channel;
-+
-+	lock_sock(sk);
-+
-+	/* Callers should not provide a destination with stream sockets. */
-+	if (msg->msg_namelen) {
-+		ret = -EOPNOTSUPP;
-+		goto out;
-+	}
-+
-+	/* Send data only if both sides are not shutdown in the direction. */
-+	if (sk->sk_shutdown & SEND_SHUTDOWN ||
-+	    hvsk->peer_shutdown & RCV_SHUTDOWN) {
-+		ret = -EPIPE;
-+		goto out;
-+	}
-+
-+	if (sk->sk_state != SS_CONNECTED ||
-+	    !hvsock_addr_bound(&hvsk->local_addr)) {
-+		ret = -ENOTCONN;
-+		goto out;
-+	}
-+
-+	if (!hvsock_addr_bound(&hvsk->remote_addr)) {
-+		ret = -EDESTADDRREQ;
-+		goto out;
-+	}
++	long timeout;
 +
 +	timeout = sock_sndtimeo(sk, msg->msg_flags & MSG_DONTWAIT);
-+
 +	prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
 +
 +	while (total_to_write > 0) {
-+		size_t to_write;
++		size_t to_write, max_writable;
 +
 +		while (1) {
 +			get_ringbuffer_rw_status(channel, NULL, &can_write);
@@ -1364,9 +1345,16 @@ index 0000000..e5639eb
 +		 * check how many bytes we actually wrote.
 +		 */
 +		do {
++			max_writable = get_ringbuffer_writable_bytes(channel);
++			if (max_writable == 0)
++				goto out_wait;
++
 +			to_write = min_t(size_t, HVSOCK_SND_BUF_SZ,
 +					 total_to_write);
-+			ret = memcpy_from_msg(hvsk->send.buf, msg, to_write);
++			if (to_write > max_writable)
++				to_write = max_writable;
++
++			ret = memcpy_from_msg(hvsk->send->buf, msg, to_write);
 +			if (ret != 0)
 +				goto out_wait;
 +
@@ -1378,11 +1366,60 @@ index 0000000..e5639eb
 +			total_to_write -= to_write;
 +		} while (total_to_write > 0);
 +	}
++
 +out_wait:
 +	if (total_written > 0)
 +		ret = total_written;
 +
 +	finish_wait(sk_sleep(sk), &wait);
++	return ret;
++}
++
++static int hvsock_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
++{
++	struct hvsock_sock *hvsk;
++	struct sock *sk;
++	int ret;
++
++	if (len == 0)
++		return -EINVAL;
++
++	if (msg->msg_flags & ~MSG_DONTWAIT) {
++		pr_err("%s: unsupported flags=0x%x\n", __func__,
++		       msg->msg_flags);
++		return -EOPNOTSUPP;
++	}
++
++	sk = sock->sk;
++	hvsk = sk_to_hvsock(sk);
++
++	lock_sock(sk);
++
++	/* Callers should not provide a destination with stream sockets. */
++	if (msg->msg_namelen) {
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++
++	/* Send data only if both sides are not shutdown in the direction. */
++	if (sk->sk_shutdown & SEND_SHUTDOWN ||
++	    hvsk->peer_shutdown & RCV_SHUTDOWN) {
++		ret = -EPIPE;
++		goto out;
++	}
++
++	if (sk->sk_state != SS_CONNECTED ||
++	    !hvsock_addr_bound(&hvsk->local_addr)) {
++		ret = -ENOTCONN;
++		goto out;
++	}
++
++	if (!hvsock_addr_bound(&hvsk->remote_addr)) {
++		ret = -EDESTADDRREQ;
++		goto out;
++	}
++
++	ret = hvsock_sendmsg_wait(sk, msg, len);
 +out:
 +	release_sock(sk);
 +
@@ -1403,85 +1440,38 @@ index 0000000..e5639eb
 +	u64 dummy_req_id;
 +	int ret;
 +
-+	ret = vmbus_recvpacket(channel, &hvsk->recv.hdr,
-+			       sizeof(hvsk->recv.hdr) + sizeof(hvsk->recv.buf),
++	ret = vmbus_recvpacket(channel, &hvsk->recv->hdr,
++			       sizeof(hvsk->recv->hdr) +
++			       sizeof(hvsk->recv->buf),
 +			       &buffer_actual_len, &dummy_req_id);
-+	if (ret != 0 || buffer_actual_len <= sizeof(hvsk->recv.hdr))
++	if (ret != 0 || buffer_actual_len <= sizeof(hvsk->recv->hdr))
 +		*payload_len = 0;
 +	else
-+		*payload_len = hvsk->recv.hdr.data_size;
++		*payload_len = hvsk->recv->hdr.data_size;
 +
 +	return ret;
 +}
 +
-+static int hvsock_recvmsg(struct socket *sock, struct msghdr *msg,
-+			  size_t len, int flags)
++static int hvsock_recvmsg_wait(struct sock *sk, struct msghdr *msg,
++			       size_t len, int flags)
 +{
-+	struct vmbus_channel *channel;
-+	struct hvsock_sock *hvsk;
-+	struct sock *sk;
++	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
++	struct vmbus_channel *channel = hvsk->channel;
 +
-+	size_t total_to_read = len;
-+	size_t copied;
-+
++	size_t to_read, total_to_read = len;
++	size_t copied = 0;
 +	bool can_read;
-+	long timeout;
 +
 +	int ret = 0;
 +
 +	DEFINE_WAIT(wait);
-+
-+	sk = sock->sk;
-+	hvsk = sk_to_hvsock(sk);
-+	channel = hvsk->channel;
-+
-+	lock_sock(sk);
-+
-+	if (sk->sk_state != SS_CONNECTED) {
-+		/* Recvmsg is supposed to return 0 if a peer performs an
-+		 * orderly shutdown. Differentiate between that case and when a
-+		 * peer has not connected or a local shutdown occurred with the
-+		 * SOCK_DONE flag.
-+		 */
-+		if (sock_flag(sk, SOCK_DONE))
-+			ret = 0;
-+		else
-+			ret = -ENOTCONN;
-+
-+		goto out;
-+	}
-+
-+	/* We ignore msg->addr_name/len. */
-+	if (flags & ~MSG_DONTWAIT) {
-+		pr_err("hvsock_recvmsg: unsupported flags=0x%x\n", flags);
-+		ret = -EOPNOTSUPP;
-+		goto out;
-+	}
-+
-+	/* We don't check peer_shutdown flag here since peer may actually shut
-+	 * down, but there can be data in the queue that a local socket can
-+	 * receive.
-+	 */
-+	if (sk->sk_shutdown & RCV_SHUTDOWN) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	/* It is valid on Linux to pass in a zero-length receive buffer.  This
-+	 * is not an error.  We may as well bail out now.
-+	 */
-+	if (!len) {
-+		ret = 0;
-+		goto out;
-+	}
++	long timeout;
 +
 +	timeout = sock_rcvtimeo(sk, flags & MSG_DONTWAIT);
-+	copied = 0;
-+
 +	prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
 +
 +	while (1) {
-+		bool need_refill = hvsk->recv.data_len == 0;
++		bool need_refill = hvsk->recv->data_len == 0;
 +
 +		if (need_refill)
 +			get_ringbuffer_rw_status(channel, &can_read, NULL);
@@ -1494,43 +1484,42 @@ index 0000000..e5639eb
 +			if (need_refill) {
 +				ret = hvsock_recv_data(channel, hvsk,
 +						       &payload_len);
-+				if (ret != 0 || payload_len == 0 ||
++				if (ret != 0 ||
 +				    payload_len > HVSOCK_RCV_BUF_SZ) {
 +					ret = -EIO;
 +					goto out_wait;
 +				}
 +
-+				hvsk->recv.data_len = payload_len;
-+				hvsk->recv.data_offset = 0;
++				if (payload_len == 0) {
++					ret = copied;
++					goto out_wait;
++				}
++
++				hvsk->recv->data_len = payload_len;
++				hvsk->recv->data_offset = 0;
 +			}
 +
-+			if (hvsk->recv.data_len <= total_to_read) {
-+				ret = memcpy_to_msg(msg, hvsk->recv.buf +
-+						    hvsk->recv.data_offset,
-+						    hvsk->recv.data_len);
-+				if (ret != 0)
-+					break;
++			to_read = min_t(size_t, total_to_read,
++					hvsk->recv->data_len);
 +
-+				copied += hvsk->recv.data_len;
-+				total_to_read -= hvsk->recv.data_len;
-+				hvsk->recv.data_len = 0;
-+				hvsk->recv.data_offset = 0;
-+
-+				if (total_to_read == 0)
-+					break;
-+			} else {
-+				ret = memcpy_to_msg(msg, hvsk->recv.buf +
-+						    hvsk->recv.data_offset,
-+						    total_to_read);
-+				if (ret != 0)
-+					break;
-+
-+				copied += total_to_read;
-+				hvsk->recv.data_len -= total_to_read;
-+				hvsk->recv.data_offset += total_to_read;
-+				total_to_read = 0;
++			ret = memcpy_to_msg(msg, hvsk->recv->buf +
++					    hvsk->recv->data_offset,
++					    to_read);
++			if (ret != 0)
 +				break;
-+			}
++
++			copied += to_read;
++			total_to_read -= to_read;
++
++			hvsk->recv->data_len -= to_read;
++
++			if (hvsk->recv->data_len == 0)
++				hvsk->recv->data_offset = 0;
++			else
++				hvsk->recv->data_offset += to_read;
++
++			if (total_to_read == 0)
++				break;
 +		} else {
 +			if (sk->sk_err || (sk->sk_shutdown & RCV_SHUTDOWN) ||
 +			    (hvsk->peer_shutdown & SEND_SHUTDOWN))
@@ -1575,7 +1564,7 @@ index 0000000..e5639eb
 +		 * state.
 +		 */
 +		if ((hvsk->peer_shutdown & SEND_SHUTDOWN) &&
-+		    hvsk->recv.data_len == 0) {
++		    hvsk->recv->data_len == 0) {
 +			get_ringbuffer_rw_status(channel, &can_read, NULL);
 +			if (!can_read) {
 +				sk->sk_state = SS_UNCONNECTED;
@@ -1586,6 +1575,56 @@ index 0000000..e5639eb
 +	}
 +out_wait:
 +	finish_wait(sk_sleep(sk), &wait);
++	return ret;
++}
++
++static int hvsock_recvmsg(struct socket *sock, struct msghdr *msg,
++			  size_t len, int flags)
++{
++	struct sock *sk = sock->sk;
++	int ret;
++
++	lock_sock(sk);
++
++	if (sk->sk_state != SS_CONNECTED) {
++		/* Recvmsg is supposed to return 0 if a peer performs an
++		 * orderly shutdown. Differentiate between that case and when a
++		 * peer has not connected or a local shutdown occurred with the
++		 * SOCK_DONE flag.
++		 */
++		if (sock_flag(sk, SOCK_DONE))
++			ret = 0;
++		else
++			ret = -ENOTCONN;
++
++		goto out;
++	}
++
++	/* We ignore msg->addr_name/len. */
++	if (flags & ~MSG_DONTWAIT) {
++		pr_err("%s: unsupported flags=0x%x\n", __func__, flags);
++		ret = -EOPNOTSUPP;
++		goto out;
++	}
++
++	/* We don't check peer_shutdown flag here since peer may actually shut
++	 * down, but there can be data in the queue that a local socket can
++	 * receive.
++	 */
++	if (sk->sk_shutdown & RCV_SHUTDOWN) {
++		ret = 0;
++		goto out;
++	}
++
++	/* It is valid on Linux to pass in a zero-length receive buffer.  This
++	 * is not an error.  We may as well bail out now.
++	 */
++	if (!len) {
++		ret = 0;
++		goto out;
++	}
++
++	ret = hvsock_recvmsg_wait(sk, msg, len, flags);
 +out:
 +	release_sock(sk);
 +	return ret;
@@ -1604,8 +1643,8 @@ index 0000000..e5639eb
 +	.ioctl = sock_no_ioctl,
 +	.listen = hvsock_listen,
 +	.shutdown = hvsock_shutdown,
-+	.setsockopt = hvsock_setsockopt,
-+	.getsockopt = hvsock_getsockopt,
++	.setsockopt = sock_no_setsockopt,
++	.getsockopt = sock_no_getsockopt,
 +	.sendmsg = hvsock_sendmsg,
 +	.recvmsg = hvsock_recvmsg,
 +	.mmap = sock_no_mmap,
@@ -1680,7 +1719,7 @@ index 0000000..e5639eb
 +{
 +	int ret;
 +
-+	/* Hyper-V socket requires at least VMBus 4.0 */
++	/* Hyper-V Sockets requires at least VMBus 4.0 */
 +	if ((vmbus_proto_version >> 16) < 4) {
 +		pr_err("failed to load: VMBus 4 or later is required\n");
 +		return -ENODEV;
@@ -1726,5 +1765,5 @@ index 0000000..e5639eb
 +MODULE_DESCRIPTION("Hyper-V Sockets");
 +MODULE_LICENSE("Dual BSD/GPL");
 -- 
-2.8.0.rc3
+2.8.2
 

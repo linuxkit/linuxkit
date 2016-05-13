@@ -1,7 +1,7 @@
-From 00375a20748490730b2f004bfe44e83abecec5f1 Mon Sep 17 00:00:00 2001
+From 3aeadb59ed3d6216976648b3aee9b1db2c64c752 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:48 -0800
-Subject: [PATCH 11/26] Drivers: hv: vmbus: do sanity check of channel state in
+Subject: [PATCH 11/27] Drivers: hv: vmbus: do sanity check of channel state in
  vmbus_close_internal()
 
 This fixes an incorrect assumption of channel state in the function.
@@ -38,5 +38,5 @@ index 6a90c69..b3c14ca 100644
  	channel->sc_creation_callback = NULL;
  	/* Stop callback and cancel the timer asap */
 -- 
-2.8.0.rc3
+2.8.2
 
