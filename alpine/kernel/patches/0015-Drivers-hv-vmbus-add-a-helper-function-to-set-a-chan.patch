@@ -1,7 +1,7 @@
-From 37e0f1616a680b0b209c3555812c0691dacd74e0 Mon Sep 17 00:00:00 2001
+From fa129d6856d2fb887a124bb17ac88f18e3fb639f Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:37 -0800
-Subject: [PATCH 15/26] Drivers: hv: vmbus: add a helper function to set a
+Subject: [PATCH 15/27] Drivers: hv: vmbus: add a helper function to set a
  channel's pending send size
 
 This will be used by the coming net/hvsock driver.
@@ -32,5 +32,5 @@ index ae6a711..fda6310 100644
  
  int vmbus_request_offers(void);
 -- 
-2.8.0.rc3
+2.8.2
 

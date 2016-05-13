@@ -1,7 +1,7 @@
-From d8f7730e3211cdb16cd9d26143121aeb05f22509 Mon Sep 17 00:00:00 2001
+From 4eb420ca189539397da818a6f0dab9f187693681 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 16:53:43 +0800
-Subject: [PATCH 01/26] virtio: make find_vqs() checkpatch.pl-friendly
+Subject: [PATCH 01/27] virtio: make find_vqs() checkpatch.pl-friendly
 
 checkpatch.pl wants arrays of strings declared as follows:
 
@@ -189,10 +189,10 @@ index b976d96..2cc2522 100644
  
  /* Setup the affinity for a virtqueue:
 diff --git a/drivers/virtio/virtio_pci_modern.c b/drivers/virtio/virtio_pci_modern.c
-index 8e5cf19..c0c11fa 100644
+index 4469202..631021c 100644
 --- a/drivers/virtio/virtio_pci_modern.c
 +++ b/drivers/virtio/virtio_pci_modern.c
-@@ -418,7 +418,7 @@ err_new_queue:
+@@ -423,7 +423,7 @@ err_new_queue:
  static int vp_modern_find_vqs(struct virtio_device *vdev, unsigned nvqs,
  			      struct virtqueue *vqs[],
  			      vq_callback_t *callbacks[],
@@ -215,5 +215,5 @@ index e5ce8ab..6e6cb0c 100644
  	u64 (*get_features)(struct virtio_device *vdev);
  	int (*finalize_features)(struct virtio_device *vdev);
 -- 
-2.8.0.rc3
+2.8.2
 

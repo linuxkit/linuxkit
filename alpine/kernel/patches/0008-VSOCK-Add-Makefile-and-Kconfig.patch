@@ -1,22 +1,12 @@
-From e8c8f5299fd202db5d56a10f1dc0a4e464e9a211 Mon Sep 17 00:00:00 2001
+From f0c236fefc57085cb6de93b4af6a97f794d86944 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:30:19 +0800
-Subject: [PATCH 08/26] VSOCK: Add Makefile and Kconfig
+Subject: [PATCH 08/27] VSOCK: Add Makefile and Kconfig
 
 Enable virtio-vsock and vhost-vsock.
 
 Signed-off-by: Asias He <asias@redhat.com>
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
----
-v4:
- * Make checkpatch.pl happy with longer option description
- * Clarify dependency on virtio rather than QEMU as suggested by Alex
-   Bennee
-v3:
- * Don't put vhost vsock driver into staging
- * Add missing Kconfig dependencies (Arnd Bergmann <arnd@arndb.de>)
-
-(cherry picked from commit 4c9d2a6be1c69ec22f8ee90bb4a5cc21d3848077)
 ---
  drivers/vhost/Kconfig  | 15 +++++++++++++++
  drivers/vhost/Makefile |  4 ++++
@@ -104,5 +94,5 @@ index 2ce52d7..cf4c294 100644
  vsock-y += af_vsock.o vsock_addr.o
  
 -- 
-2.8.0.rc3
+2.8.2
 

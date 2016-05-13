@@ -1,40 +1,13 @@
-From f52efbc874c742a671939ea6408c59545025007d Mon Sep 17 00:00:00 2001
+From a40b8961e92a5cfea634685e0e3aff9227a0fdd5 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:29:21 +0800
-Subject: [PATCH 07/26] VSOCK: Introduce vhost_vsock.ko
+Subject: [PATCH 07/27] VSOCK: Introduce vhost_vsock.ko
 
 VM sockets vhost transport implementation.  This driver runs on the
 host.
 
 Signed-off-by: Asias He <asias@redhat.com>
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
----
-v5:
- * Only take rx/tx virtqueues, userspace handles the other virtqueues
- * Explicitly skip instances without a CID when transferring packets
- * Add VHOST_VSOCK_START ioctl to being vhost virtqueue processing
- * Reset established connections when device is closed
-v4:
- * Add MAINTAINERS file entry
- * virtqueue used len is now sizeof(pkt->hdr) + pkt->len instead of just
-   pkt->len
- * checkpatch.pl cleanups
- * Clarify struct vhost_vsock locking
- * Add comments about optimization that disables virtqueue notify
- * Drop unused vhost_vsock_handle_ctl_kick()
- * Call wake_up() after decrementing total_tx_buf to prevent deadlock
-v3:
- * Remove unneeded variable used to store return value
-   (Fengguang Wu <fengguang.wu@intel.com> and Julia Lawall
-   <julia.lawall@lip6.fr>)
-v2:
- * Add missing total_tx_buf decrement
- * Support flexible rx/tx descriptor layout
- * Refuse to assign reserved CIDs
- * Refuse guest CID if already in use
- * Only accept correctly addressed packets
-
-(cherry picked from commit 40d1901b66f0250e91094df07955edf57cf2f41e)
 ---
  MAINTAINERS           |   2 +
  drivers/vhost/vsock.c | 694 ++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -44,10 +17,10 @@ v2:
  create mode 100644 drivers/vhost/vsock.h
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 403c4cc..530bce8 100644
+index 889d0d7..9a70d2d 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -11405,6 +11405,8 @@ F:	include/linux/virtio_vsock.h
+@@ -11392,6 +11392,8 @@ F:	include/linux/virtio_vsock.h
  F:	include/uapi/linux/virtio_vsock.h
  F:	net/vmw_vsock/virtio_transport_common.c
  F:	net/vmw_vsock/virtio_transport.c
@@ -768,5 +741,5 @@ index 0000000..173f9fc
 +#define VHOST_VSOCK_START		_IO(VHOST_VIRTIO, 0x61)
 +#endif
 -- 
-2.8.0.rc3
+2.8.2
 
