@@ -304,11 +304,41 @@ static void server(GUID serviceid, const char *tap)
     }
 }
 
+void write_pidfile(const char *pidfile) {
+  pid_t pid = getpid();
+  char * pid_s;
+  FILE *file;
+  int len;
+
+  if (asprintf(&pid_s, "%lld", (long long) pid) == -1) {
+    syslog(LOG_CRIT, "Failed to allocate pidfile string");
+    exit(1);
+  }
+  len = strlen(pid_s);
+  file = fopen(pidfile, "w");
+  if (file == NULL) {
+    syslog(LOG_CRIT, "Failed to open pidfile %s", pidfile);
+    exit(1);
+  }
+
+  if (fwrite(pid_s, 1, len, file) != len) {
+    syslog(LOG_CRIT, "Failed to write pid to pidfile");
+    exit(1);
+  }
+  fclose(file);
+  free(pid_s);
+}
+
 void usage(char *name)
 {
-    printf("%s: --debug | --service id <id>  | --tap <tap>\n", name);
-    printf("<id>: Hyper-V socket serviceId to bind\n");
-    printf("<tap>: tap device to connect to\n");
+    printf("%s: [--debug] [--tap <name>] [--serviceid <guid>] [--pid <file>]\n", name);
+    printf("\t[--listen | --connect]\n\n");
+    printf("--debug: log to stderr as well as syslog\n");
+    printf("--tap <name>: create a tap device with the given name (defaults to eth1)\n");
+    printf("--serviceid <guid>: use <guid> as the well-known service GUID\n");
+    printf("--pid <file>: write a pid to the given file\n");
+    printf("--listen: listen forever for incoming AF_HVSOCK connections\n");
+    printf("--connect: connect to the parent partition\n");
 }
 
 int __cdecl main(int argc, char **argv)
@@ -319,6 +349,7 @@ int __cdecl main(int argc, char **argv)
     /* Defaults to a testing GUID */
     char *serviceid = "3049197C-9A4E-4FBF-9367-97F792F16994";
     char *tap = "eth1";
+    char *pidfile = NULL;
 
     opterr = 0;
     while (1) {
@@ -327,12 +358,13 @@ int __cdecl main(int argc, char **argv)
         {"debug",     no_argument,       &debug_flag, 1},
         {"serviceid", required_argument, NULL, 's'},
         {"tap",       required_argument, NULL, 't'},
+        {"pidfile",   required_argument, NULL, 'p'},
 
         {0, 0, 0, 0}
       };
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "ds:t:", long_options, &option_index);
+      c = getopt_long (argc, argv, "ds:t:p:", long_options, &option_index);
       if (c == -1) break;
 
       switch (c) {
@@ -344,6 +376,9 @@ int __cdecl main(int argc, char **argv)
           break;
         case 't':
           tap = optarg;
+          break;
+        case 'p':
+          pidfile = optarg;
           break;
         case 0:
           break;
@@ -364,6 +399,9 @@ int __cdecl main(int argc, char **argv)
       syslog(LOG_CRIT, "Failed to parse serviceid as GUID: %s", serviceid);
       usage(argv[0]);
       exit(1);
+    }
+    if (pidfile) {
+      write_pidfile(pidfile);
     }
 
     server(sid, tap);
