@@ -27,9 +27,11 @@
 #include "compat.h"
 #include "protocol.h"
 
-int debug_flag = 0;
+int daemon_flag = 0;
 int listen_flag = 0;
 int connect_flag = 0;
+
+char *default_sid = "30D48B34-7D27-4B0B-AAAF-BBBED334DD59";
 
 int alloc_tap(const char *dev) {
   int fd;
@@ -219,7 +221,7 @@ static void* tap_to_vmnet(void *arg)
 /* Handle a connection. Handshake with the com.docker.slirp process and start
  * exchanging ethernet frames between the socket and the tap device.
  */
-static void handle(SOCKET fd, const char *tap)
+static void handle(SOCKET fd, char *tap, int tapfd)
 {
     struct connection connection;
     pthread_t v2t, t2v;
@@ -231,7 +233,6 @@ static void handle(SOCKET fd, const char *tap)
       connection.vif.mac[3], connection.vif.mac[4], connection.vif.mac[5]
     );
 
-    int tapfd = alloc_tap(tap);
     set_macaddr(tap, &connection.vif.mac[0]);
     connection.tapfd = tapfd;
 
@@ -311,30 +312,21 @@ static int connect_socket(GUID serviceid) {
   return sock;
 }
 
-
-/* Server:
- * accept() in an endless loop, handle a connection at a time
- */
-static void accept_forever(SOCKET lsock, const char *tap)
-{
+static int accept_socket(SOCKET lsock) {
   SOCKET csock = INVALID_SOCKET;
   SOCKADDR_HV sac;
   socklen_t socklen = sizeof(sac);
 
-    while(1) {
-        csock = accept(lsock, (struct sockaddr *)&sac, &socklen);
-        if (csock == INVALID_SOCKET) {
-            sockerr("accept()");
-            closesocket(lsock);
-            exit(1);
-        }
+  csock = accept(lsock, (struct sockaddr *)&sac, &socklen);
+  if (csock == INVALID_SOCKET) {
+    sockerr("accept()");
+    closesocket(lsock);
+    exit(1);
+  }
 
-        printf("Connect from: "GUID_FMT":"GUID_FMT"\n",
-               GUID_ARGS(sac.VmId), GUID_ARGS(sac.ServiceId));
-
-        handle(csock, tap);
-        closesocket(csock);
-    }
+  printf("Connect from: "GUID_FMT":"GUID_FMT"\n",
+    GUID_ARGS(sac.VmId), GUID_ARGS(sac.ServiceId));
+  return csock;
 }
 
 void write_pidfile(const char *pidfile) {
@@ -362,16 +354,44 @@ void write_pidfile(const char *pidfile) {
   free(pid_s);
 }
 
+void daemonize(const char *pidfile){
+  pid_t pid = fork ();
+  if (pid == -1) {
+    syslog(LOG_CRIT, "Failed to fork()");
+    exit(1);
+  }
+  else if (pid != 0)
+    exit(0);
+  if (setsid () == -1) {
+    syslog(LOG_CRIT, "Failed to setsid()");
+    exit(1);
+  }
+  if (chdir ("/") == -1) {
+    syslog(LOG_CRIT, "Failed to chdir()");
+    exit(1);
+  }
+  int null = open("/dev/null", O_RDWR);
+  dup2(null, STDIN_FILENO);
+  dup2(null, STDOUT_FILENO);
+  dup2(null, STDERR_FILENO);
+  close(null);
+  if (pidfile) write_pidfile(pidfile);
+}
+
 void usage(char *name)
 {
-    printf("%s: [--debug] [--tap <name>] [--serviceid <guid>] [--pid <file>]\n", name);
+    printf("%s usage:\n", name);
+    printf("\t[--daemon] [--tap <name>] [--serviceid <guid>] [--pid <file>]\n");
     printf("\t[--listen | --connect]\n\n");
-    printf("--debug: log to stderr as well as syslog\n");
-    printf("--tap <name>: create a tap device with the given name (defaults to eth1)\n");
-    printf("--serviceid <guid>: use <guid> as the well-known service GUID\n");
-    printf("--pid <file>: write a pid to the given file\n");
-    printf("--listen: listen forever for incoming AF_HVSOCK connections\n");
-    printf("--connect: connect to the parent partition\n");
+    printf("where\n");
+    printf("\t--daemonize: run as a background daemon\n");
+    printf("\t--tap <name>: create a tap device with the given name\n");
+    printf("\t  (defaults to eth1)\n");
+    printf("\t--serviceid <guid>: use <guid> as the well-known service GUID\n");
+    printf("\t  (defaults to %s)\n", default_sid);
+    printf("\t--pid <file>: write a pid to the given file\n");
+    printf("\t--listen: listen forever for incoming AF_HVSOCK connections\n");
+    printf("\t--connect: connect to the parent partition\n");
 }
 
 int __cdecl main(int argc, char **argv)
@@ -380,7 +400,7 @@ int __cdecl main(int argc, char **argv)
     GUID sid;
     int c;
     /* Defaults to a testing GUID */
-    char *serviceid = "3049197C-9A4E-4FBF-9367-97F792F16994";
+    char *serviceid = default_sid;
     char *tap = "eth1";
     char *pidfile = NULL;
 
@@ -388,7 +408,7 @@ int __cdecl main(int argc, char **argv)
     while (1) {
       static struct option long_options[] = {
         /* These options set a flag. */
-        {"debug",     no_argument,       &debug_flag, 1},
+        {"daemon",    no_argument,       &daemon_flag, 1},
         {"serviceid", required_argument, NULL, 's'},
         {"tap",       required_argument, NULL, 't'},
         {"pidfile",   required_argument, NULL, 'p'},
@@ -403,7 +423,7 @@ int __cdecl main(int argc, char **argv)
 
       switch (c) {
         case 'd':
-          debug_flag = 1;
+          daemon_flag = 1;
           break;
         case 's':
           serviceid = optarg;
@@ -425,8 +445,12 @@ int __cdecl main(int argc, char **argv)
       fprintf(stderr, "Please supply either the --listen or --connect flag, but not both.\n");
       exit(1);
     }
+    if (daemon_flag && !pidfile){
+      fprintf(stderr, "For daemon mode, please supply a --pidfile argument.\n");
+      exit(1);
+    }
     int log_flags = LOG_CONS | LOG_NDELAY;
-    if (debug_flag) {
+    if (!daemon_flag) {
       log_flags |= LOG_PERROR;
     }
     openlog(argv[0], log_flags, LOG_DAEMON);
@@ -438,14 +462,19 @@ int __cdecl main(int argc, char **argv)
       exit(1);
     }
 
+    SOCKET sock = INVALID_SOCKET;
     if (listen_flag) {
       syslog(LOG_INFO, "starting in listening mode with serviceid=%s and tap=%s", serviceid, tap);
-      int socket = create_listening_socket(sid);
-      accept_forever(socket, tap);
-      exit(0);
+      SOCKET lsocket = create_listening_socket(sid);
+      sock = accept_socket(lsocket);
+    } else {
+      syslog(LOG_INFO, "starting in connect mode with serviceid=%s and tap=%s", serviceid, tap);
+      sock = connect_socket(sid);
     }
-    syslog(LOG_INFO, "starting in connect mode with serviceid=%s and tap=%s", serviceid, tap);
-    int socket = connect_socket(sid);
-    handle(socket, tap);
-    return 0;
+    /* Bring up the tap device before we daemonize */
+    int tapfd = alloc_tap(tap);
+    if (daemon_flag) daemonize(pidfile);
+
+    handle(sock, tap, tapfd);
+    exit(0);
 }
