@@ -28,6 +28,8 @@
 #include "protocol.h"
 
 int debug_flag = 0;
+int listen_flag = 0;
+int connect_flag = 0;
 
 int alloc_tap(const char *dev) {
   int fd;
@@ -251,42 +253,73 @@ static void handle(SOCKET fd, const char *tap)
     }
 }
 
+static int create_listening_socket(GUID serviceid) {
+  SOCKET lsock = INVALID_SOCKET;
+  SOCKADDR_HV sa;
+  int res;
+
+  lsock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
+  if (lsock == INVALID_SOCKET) {
+      sockerr("socket()");
+      exit(1);
+  }
+
+  sa.Family = AF_HYPERV;
+  sa.Reserved = 0;
+  sa.VmId = HV_GUID_WILDCARD;
+  sa.ServiceId = serviceid;
+
+  res = bind(lsock, (const struct sockaddr *)&sa, sizeof(sa));
+  if (res == SOCKET_ERROR) {
+      sockerr("bind()");
+      closesocket(lsock);
+      exit(1);
+  }
+
+  res = listen(lsock, SOMAXCONN);
+  if (res == SOCKET_ERROR) {
+      sockerr("listen()");
+      closesocket(lsock);
+      exit(1);
+  }
+  return lsock;
+}
+
+static int connect_socket(GUID serviceid) {
+  SOCKET sock = INVALID_SOCKET;
+  SOCKADDR_HV sa;
+  int res;
+
+  sock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
+  if (sock == INVALID_SOCKET) {
+      sockerr("socket()");
+      exit(1);
+  }
+
+  sa.Family = AF_HYPERV;
+  sa.Reserved = 0;
+  sa.VmId = HV_GUID_PARENT;
+  sa.ServiceId = serviceid;
+
+  res = connect(sock, (const struct sockaddr *)&sa, sizeof(sa));
+  if (res == SOCKET_ERROR) {
+      sockerr("connect()");
+      closesocket(sock);
+      exit(1);
+  }
+
+  return sock;
+}
+
 
 /* Server:
  * accept() in an endless loop, handle a connection at a time
  */
-static void server(GUID serviceid, const char *tap)
+static void accept_forever(SOCKET lsock, const char *tap)
 {
-    SOCKET lsock = INVALID_SOCKET;
-    SOCKET csock = INVALID_SOCKET;
-    SOCKADDR_HV sa, sac;
-    socklen_t socklen = sizeof(sac);
-    int res;
-
-    lsock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
-    if (lsock == INVALID_SOCKET) {
-        sockerr("socket()");
-        exit(1);
-    }
-
-    sa.Family = AF_HYPERV;
-    sa.Reserved = 0;
-    sa.VmId = HV_GUID_WILDCARD;
-    sa.ServiceId = serviceid;
-
-    res = bind(lsock, (const struct sockaddr *)&sa, sizeof(sa));
-    if (res == SOCKET_ERROR) {
-        sockerr("bind()");
-        closesocket(lsock);
-        exit(1);
-    }
-
-    res = listen(lsock, SOMAXCONN);
-    if (res == SOCKET_ERROR) {
-        sockerr("listen()");
-        closesocket(lsock);
-        exit(1);
-    }
+  SOCKET csock = INVALID_SOCKET;
+  SOCKADDR_HV sac;
+  socklen_t socklen = sizeof(sac);
 
     while(1) {
         csock = accept(lsock, (struct sockaddr *)&sac, &socklen);
@@ -359,7 +392,8 @@ int __cdecl main(int argc, char **argv)
         {"serviceid", required_argument, NULL, 's'},
         {"tap",       required_argument, NULL, 't'},
         {"pidfile",   required_argument, NULL, 'p'},
-
+        {"listen",    no_argument,       &listen_flag, 1},
+        {"connect",   no_argument,       &connect_flag, 1},
         {0, 0, 0, 0}
       };
       int option_index = 0;
@@ -387,24 +421,31 @@ int __cdecl main(int argc, char **argv)
           exit (1);
       }
     }
+    if ((listen_flag && connect_flag) || !(listen_flag || connect_flag)){
+      fprintf(stderr, "Please supply either the --listen or --connect flag, but not both.\n");
+      exit(1);
+    }
     int log_flags = LOG_CONS | LOG_NDELAY;
     if (debug_flag) {
       log_flags |= LOG_PERROR;
     }
     openlog(argv[0], log_flags, LOG_DAEMON);
 
-    syslog(LOG_INFO, "starting with serviceid=%s and tap=%s", serviceid, tap);
     res = parseguid(serviceid, &sid);
     if (res) {
       syslog(LOG_CRIT, "Failed to parse serviceid as GUID: %s", serviceid);
       usage(argv[0]);
       exit(1);
     }
-    if (pidfile) {
-      write_pidfile(pidfile);
+
+    if (listen_flag) {
+      syslog(LOG_INFO, "starting in listening mode with serviceid=%s and tap=%s", serviceid, tap);
+      int socket = create_listening_socket(sid);
+      accept_forever(socket, tap);
+      exit(0);
     }
-
-    server(sid, tap);
-
+    syslog(LOG_INFO, "starting in connect mode with serviceid=%s and tap=%s", serviceid, tap);
+    int socket = connect_socket(sid);
+    handle(socket, tap);
     return 0;
 }
