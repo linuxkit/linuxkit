@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <syslog.h>
 
 #include "protocol.h"
 
@@ -20,11 +21,11 @@ int really_read(int fd, uint8_t *buffer, size_t total){
   while (remaining > 0){
     n = read(fd, buffer, remaining);
     if (n == 0){
-      fprintf(stderr, "EOF reading from socket: closing\n");
+      syslog(LOG_CRIT, "EOF reading from socket: closing\n");
       goto err;
     }
     if (n < 0){
-      perror("Failure reading from socket: closing");
+      syslog(LOG_CRIT, "Failure reading from socket: closing: %s", strerror(errno));
       goto err;
     }
     remaining -= (size_t)n;
@@ -43,11 +44,11 @@ int really_write(int fd, uint8_t *buffer, size_t total){
   while (remaining > 0){
     n = write(fd, buffer, remaining);
     if (n == 0){
-      fprintf(stderr, "EOF writing to socket: closing\n");
+      syslog(LOG_CRIT, "EOF writing to socket: closing");
       goto err;
     }
     if (n < 0){
-      perror("Failure writing to socket: closing\n");
+      syslog(LOG_CRIT, "Failure writing to socket: closing: %s", strerror(errno));
       goto err;
     }
     remaining -= (size_t) n;
@@ -85,7 +86,7 @@ char *print_init_message(struct init_message *m) {
 int read_init_message(int fd, struct init_message *ci) {
   bzero(ci, sizeof(struct init_message));
   if (really_read(fd, (uint8_t*) &ci->hello[0], sizeof(ci->hello)) == -1){
-    fprintf(stderr, "Failed to read hello from client\n");
+    syslog(LOG_CRIT, "Failed to read hello from client");
     return -1;
   }
   if (memcmp(&ci->hello[0], &expected_hello_old[0], sizeof(expected_hello_old)) == 0) {
@@ -93,15 +94,15 @@ int read_init_message(int fd, struct init_message *ci) {
       return 0;
   }
   if (memcmp(&ci->hello[0], &expected_hello[0], sizeof(expected_hello)) != 0) {
-    fprintf(stderr, "Failed to read header magic from client\n");
+    syslog(LOG_CRIT, "Failed to read header magic from client");
     return -1;
   }
   if (really_read(fd, (uint8_t*) &ci->version, sizeof(ci->version)) == -1){
-    fprintf(stderr, "Failed to read header version from client\n");
+    syslog(LOG_CRIT, "Failed to read header version from client");
     return -1;
   }
   if (really_read(fd, (uint8_t*) &ci->commit[0], sizeof(ci->commit)) == -1){
-    fprintf(stderr, "Failed to read header hash from client\n");
+    syslog(LOG_CRIT, "Failed to read header hash from client");
     return -1;
   }
   return 0;
@@ -109,16 +110,16 @@ int read_init_message(int fd, struct init_message *ci) {
 
 int write_init_message(int fd, struct init_message *ci) {
   if (really_write(fd, (uint8_t*) &ci->hello[0], sizeof(ci->hello)) == -1){
-    fprintf(stderr, "Failed to write hello to client\n");
+    syslog(LOG_CRIT, "Failed to write hello to client");
     return -1;
   }
   if (ci->version > 0) {
     if (really_write(fd, (uint8_t*) &ci->version, sizeof(ci->version)) == -1){
-      fprintf(stderr, "Failed to write version to client\n");
+      syslog(LOG_CRIT, "Failed to write version to client");
       return -1;
     }
     if (really_write(fd, (uint8_t*) &ci->commit[0], sizeof(ci->commit)) == -1){
-      fprintf(stderr, "Failed to write header hash to client\n");
+      syslog(LOG_CRIT, "Failed to write header hash to client");
       return -1;
     }
   }
@@ -128,7 +129,7 @@ int write_init_message(int fd, struct init_message *ci) {
 int read_vif_info(int fd, struct vif_info *vif) {
   uint8_t buffer[10];
   if (really_read(fd, &buffer[0], sizeof(buffer)) == -1){
-    fprintf(stderr, "Failed to read vif info from client\n");
+    syslog(LOG_CRIT, "Failed to read vif info from client");
     return -1;
   }
   vif->mtu = (size_t) (buffer[0] | (buffer[1] << 8));
@@ -146,7 +147,7 @@ int write_vif_info(int fd, struct vif_info *vif) {
   buffer[3] = (uint8_t) ((vif->max_packet_size >> 8) & 0xff);
   memcpy(&buffer[0] + 4, &(vif->mac)[0], 6);
   if (really_write(fd, &buffer[0], sizeof(buffer)) == -1){
-    fprintf(stderr, "Failed to write vif into to client\n");
+    syslog(LOG_CRIT, "Failed to write vif into to client");
     return -1;
   }
   return 0;
@@ -155,7 +156,7 @@ int write_vif_info(int fd, struct vif_info *vif) {
 int write_command(int fd, enum command *c) {
   uint8_t command = *c;
   if (really_write(fd, (uint8_t*) &command, sizeof(command)) == -1){
-    fprintf(stderr, "Failed to write command to client\n");
+    syslog(LOG_CRIT, "Failed to write command to client");
     return -1;
   }
   return 0;
@@ -163,7 +164,7 @@ int write_command(int fd, enum command *c) {
 
 int write_ethernet_args(int fd, struct ethernet_args *args){
   if (really_write(fd, (uint8_t*) &args->uuid_string[0], 36) == -1){
-    fprintf(stderr, "Failed to write ethernet args to client\n");
+    syslog(LOG_CRIT, "Failed to write ethernet args to client");
     return -1;
   }
   return 0;

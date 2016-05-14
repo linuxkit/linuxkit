@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-
+#include <syslog.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -27,7 +27,7 @@
 #include "compat.h"
 #include "protocol.h"
 
-int verbose_flag = 0;
+int debug_flag = 0;
 
 int alloc_tap(const char *dev) {
   int fd;
@@ -49,7 +49,7 @@ int alloc_tap(const char *dev) {
     perror("TUNSETPERSIST failed");
     exit(1);
   }
-  fprintf(stderr, "successfully created TAP device %s\n", dev);
+  syslog(LOG_INFO, "successfully created TAP device %s", dev);
   return fd;
 }
 
@@ -110,7 +110,7 @@ int parseguid(const char *s, GUID *g)
 /* Slightly different error handling between Windows and Linux */
 void sockerr(const char *msg)
 {
-    fprintf(stderr, "%s Error: %d. %s", msg, errno, strerror(errno));
+    syslog(LOG_CRIT, "%s Error: %d. %s", msg, errno, strerror(errno));
 }
 
 void negotiate(SOCKET fd, struct vif_info *vif)
@@ -125,7 +125,7 @@ void negotiate(SOCKET fd, struct vif_info *vif)
       goto err;
     }
     char *txt = print_init_message(&you);
-    fprintf(stderr, "Server reports %s\n", txt);
+    syslog(LOG_INFO, "Server reports %s", txt);
     free(txt);
     enum command command = ethernet;
     if (write_command(fd, &command) == -1) {
@@ -142,7 +142,7 @@ void negotiate(SOCKET fd, struct vif_info *vif)
     }
     return;
 err:
-    fprintf(stderr, "Failed to negotiate with com.docker.slirp\n");
+    syslog(LOG_CRIT, "Failed to negotiate with com.docker.slirp");
     exit(1);
 }
 
@@ -163,21 +163,21 @@ static void* vmnet_to_tap(void *arg)
 
   for (;;) {
     if (really_read(connection->fd, &header[0], 2) == -1){
-      fprintf(stderr, "Failed to read a packet header from host\n");
+      syslog(LOG_CRIT, "Failed to read a packet header from host");
       exit(1);
     }
     length = (header[0] & 0xff) | ((header[1] & 0xff) << 8);
     if (length > sizeof(buffer)) {
-      fprintf(stderr, "Received an over-large packet: %d > %ld\n", length, sizeof(buffer));
+      syslog(LOG_CRIT, "Received an over-large packet: %d > %ld", length, sizeof(buffer));
       exit(1);
     }
     if (really_read(connection->fd, &buffer[0], length) == -1){
-      fprintf(stderr, "Failed to read packet contents from host\n");
+      syslog(LOG_CRIT, "Failed to read packet contents from host");
       exit(1);
     }
     n = write(connection->tapfd, &buffer[0], length);
     if (n != length) {
-      fprintf(stderr, "Failed to write %d bytes to tap device (wrote %d)\n", length, n);
+      syslog(LOG_CRIT, "Failed to write %d bytes to tap device (wrote %d)", length, n);
       exit(1);
     }
   }
@@ -194,21 +194,21 @@ static void* tap_to_vmnet(void *arg)
     length = read(connection->tapfd, &buffer[0], sizeof(buffer));
     if (length == -1) {
       if (errno == ENXIO) {
-        fprintf(stderr, "tap device has gone down\n");
+        syslog(LOG_CRIT, "tap device has gone down");
         exit(0);
       }
-      fprintf(stderr, "ignoring error %d\n", errno);
+      syslog(LOG_WARNING, "ignoring error %d", errno);
       /* This is what mirage-net-unix does. Is it a good idea really? */
       continue;
     }
     header[0] = (length >> 0) & 0xff;
     header[1] = (length >> 8) & 0xff;
     if (really_write(connection->fd, &header[0], 2) == -1){
-      fprintf(stderr, "Failed to write packet header\n");
+      syslog(LOG_CRIT, "Failed to write packet header");
       exit(1);
     }
     if (really_write(connection->fd, &buffer[0], length) == -1) {
-      fprintf(stderr, "Failed to write packet body\n");
+      syslog(LOG_CRIT, "Failed to write packet body");
       exit(1);
     }
   }
@@ -224,7 +224,7 @@ static void handle(SOCKET fd, const char *tap)
 
     connection.fd = fd;
     negotiate(fd, &connection.vif);
-    fprintf(stderr, "VMNET VIF has MAC %02x:%02x:%02x:%02x:%02x:%02x\n",
+    syslog(LOG_INFO, "VMNET VIF has MAC %02x:%02x:%02x:%02x:%02x:%02x",
       connection.vif.mac[0], connection.vif.mac[1], connection.vif.mac[2],
       connection.vif.mac[3], connection.vif.mac[4], connection.vif.mac[5]
     );
@@ -234,19 +234,19 @@ static void handle(SOCKET fd, const char *tap)
     connection.tapfd = tapfd;
 
     if (pthread_create(&v2t, NULL, vmnet_to_tap, &connection) != 0){
-      fprintf(stderr, "Failed to create the vmnet_to_tap thread\n");
+      syslog(LOG_CRIT, "Failed to create the vmnet_to_tap thread");
       exit(1);
     }
     if (pthread_create(&t2v, NULL, tap_to_vmnet, &connection) != 0){
-      fprintf(stderr, "Failed to create the tap_to_vmnet thread\n");
+      syslog(LOG_CRIT, "Failed to create the tap_to_vmnet thread");
       exit(1);
     }
     if (pthread_join(v2t, NULL) != 0){
-      fprintf(stderr, "Failed to join the vmnet_to_tap thread\n");
+      syslog(LOG_CRIT, "Failed to join the vmnet_to_tap thread");
       exit(1);
     }
     if (pthread_join(t2v, NULL) != 0){
-      fprintf(stderr, "Failed to join the tap_to_vmnet thread\n");
+      syslog(LOG_CRIT, "Failed to join the tap_to_vmnet thread");
       exit(1);
     }
 }
@@ -306,7 +306,7 @@ static int server(GUID serviceid, const char *tap)
 
 void usage(char *name)
 {
-    printf("%s: --verbose | --service id <id>  | --tap <tap>\n", name);
+    printf("%s: --debug | --service id <id>  | --tap <tap>\n", name);
     printf("<id>: Hyper-V socket serviceId to bind\n");
     printf("<tap>: tap device to connect to\n");
 }
@@ -324,19 +324,20 @@ int __cdecl main(int argc, char **argv)
     while (1) {
       static struct option long_options[] = {
         /* These options set a flag. */
-        {"verbose",   no_argument,       &verbose_flag, 1},
+        {"debug",     no_argument,       &debug_flag, 1},
         {"serviceid", required_argument, NULL, 's'},
         {"tap",       required_argument, NULL, 't'},
+
         {0, 0, 0, 0}
       };
       int option_index = 0;
 
-      c = getopt_long (argc, argv, "vs:t:", long_options, &option_index);
+      c = getopt_long (argc, argv, "ds:t:", long_options, &option_index);
       if (c == -1) break;
 
       switch (c) {
-        case 'v':
-          verbose_flag = 1;
+        case 'd':
+          debug_flag = 1;
           break;
         case 's':
           serviceid = optarg;
@@ -351,11 +352,16 @@ int __cdecl main(int argc, char **argv)
           exit (1);
       }
     }
-    fprintf(stderr, "serviceid=%s\n", serviceid);
-    fprintf(stderr, "tap=%s\n", tap);
+    int log_flags = LOG_CONS | LOG_NDELAY;
+    if (debug_flag) {
+      log_flags |= LOG_PERROR;
+    }
+    openlog(argv[0], log_flags, LOG_DAEMON);
+
+    syslog(LOG_INFO, "starting with serviceid=%s and tap=%s", serviceid, tap);
     res = parseguid(serviceid, &sid);
     if (res) {
-      fprintf(stderr, "Failed to parse serviceid as GUID: %s\n", serviceid);
+      syslog(LOG_CRIT, "Failed to parse serviceid as GUID: %s", serviceid);
       usage(argv[0]);
       exit(1);
     }
