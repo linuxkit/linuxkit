@@ -255,7 +255,7 @@ static void handle(SOCKET fd, const char *tap)
 /* Server:
  * accept() in an endless loop, handle a connection at a time
  */
-static int server(GUID serviceid, const char *tap)
+static void server(GUID serviceid, const char *tap)
 {
     SOCKET lsock = INVALID_SOCKET;
     SOCKET csock = INVALID_SOCKET;
@@ -266,7 +266,7 @@ static int server(GUID serviceid, const char *tap)
     lsock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
     if (lsock == INVALID_SOCKET) {
         sockerr("socket()");
-        return 1;
+        exit(1);
     }
 
     sa.Family = AF_HYPERV;
@@ -278,14 +278,14 @@ static int server(GUID serviceid, const char *tap)
     if (res == SOCKET_ERROR) {
         sockerr("bind()");
         closesocket(lsock);
-        return 1;
+        exit(1);
     }
 
     res = listen(lsock, SOMAXCONN);
     if (res == SOCKET_ERROR) {
         sockerr("listen()");
         closesocket(lsock);
-        return 1;
+        exit(1);
     }
 
     while(1) {
@@ -293,7 +293,7 @@ static int server(GUID serviceid, const char *tap)
         if (csock == INVALID_SOCKET) {
             sockerr("accept()");
             closesocket(lsock);
-            return 1;
+            exit(1);
         }
 
         printf("Connect from: "GUID_FMT":"GUID_FMT"\n",
