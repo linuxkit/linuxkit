@@ -1,0 +1,29 @@
+From 89a360504f1683d1be642506a14c9f59ea2c9771 Mon Sep 17 00:00:00 2001
+From: Rolf Neugebauer <rolf.neugebauer@gmail.com>
+Date: Sun, 15 May 2016 10:56:16 +0100
+Subject: [PATCH 28/28] hv_sock: Don't touch the socket state when the other
+ end closes
+
+This cause a NULL pointer de-reference when the client closes the connection
+before accept() is called by the server.
+
+Signed-off-by: Rolf Neugebauer <rolf.neugebauer@gmail.com>
+---
+ net/hv_sock/af_hvsock.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/net/hv_sock/af_hvsock.c b/net/hv_sock/af_hvsock.c
+index 013d684..0b7ab8a 100644
+--- a/net/hv_sock/af_hvsock.c
++++ b/net/hv_sock/af_hvsock.c
+@@ -616,7 +616,6 @@ static void hvsock_close_connection(struct vmbus_channel *channel)
+ 	if (!sk)
+ 		goto out;
+ 
+-	sk->sk_socket->state = SS_UNCONNECTED;
+ 	sk->sk_state = SS_UNCONNECTED;
+ 	sock_set_flag(sk, SOCK_DONE);
+ 
+-- 
+2.8.2
+
