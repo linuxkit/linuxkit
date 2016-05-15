@@ -1,7 +1,7 @@
-From 3aeadb59ed3d6216976648b3aee9b1db2c64c752 Mon Sep 17 00:00:00 2001
+From db7c4decfd08e194c3fe7647ebc0903c5fee33b7 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:48 -0800
-Subject: [PATCH 11/27] Drivers: hv: vmbus: do sanity check of channel state in
+Subject: [PATCH 11/28] Drivers: hv: vmbus: do sanity check of channel state in
  vmbus_close_internal()
 
 This fixes an incorrect assumption of channel state in the function.

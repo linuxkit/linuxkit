@@ -1,7 +1,7 @@
-From 20eefd65c0ddcc93c8de196ee4d21b3dacc24c37 Mon Sep 17 00:00:00 2001
+From f94eeafa1082af0972a429ca973da5230e21c5c9 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 11 May 2016 10:52:37 -0700
-Subject: [PATCH 25/27] hv_sock: introduce Hyper-V Sockets
+Subject: [PATCH 25/28] hv_sock: introduce Hyper-V Sockets
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
 mechanism between the host and the guest. It's somewhat like TCP over
