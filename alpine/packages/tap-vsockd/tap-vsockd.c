@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <err.h>
+#include <pthread.h>
 #include <arpa/inet.h>
 #include <sys/ioctl.h>
 #include <net/if.h>
@@ -24,7 +25,7 @@
 #include <ifaddrs.h>
 
 
-#include "compat.h"
+#include "hvsock.h"
 #include "protocol.h"
 
 int daemon_flag = 0;
@@ -33,25 +34,28 @@ int connect_flag = 0;
 
 char *default_sid = "30D48B34-7D27-4B0B-AAAF-BBBED334DD59";
 
+void fatal(const char *msg)
+{
+    syslog(LOG_CRIT, "%s Error: %d. %s", msg, errno, strerror(errno));
+    exit(1);
+}
+
 int alloc_tap(const char *dev) {
   int fd;
   struct ifreq ifr;
   const char *clonedev = "/dev/net/tun";
   if ((fd = open(clonedev, O_RDWR)) == -1) {
-    perror("Failed to open /dev/net/tun");
-    exit(1);
+    fatal("Failed to open /dev/net/tun");
   }
   memset(&ifr, 0, sizeof(ifr));
   ifr.ifr_flags = IFF_TAP | IFF_NO_PI;
   strncpy(ifr.ifr_name, dev, IFNAMSIZ);
   if (ioctl(fd, TUNSETIFF, (void*) &ifr) < 0) {
-    perror("TUNSETIFF failed");
-    exit(1);
+    fatal("TUNSETIFF failed");
   }
   int persist = 1;
   if (ioctl(fd, TUNSETPERSIST, persist) < 0) {
-    perror("TUNSETPERSIST failed");
-    exit(1);
+    fatal("TUNSETPERSIST failed");
   }
   syslog(LOG_INFO, "successfully created TAP device %s", dev);
   return fd;
@@ -67,57 +71,14 @@ void set_macaddr(const char *dev, uint8_t *mac) {
   ifq.ifr_hwaddr.sa_family = ARPHRD_ETHER;
 
   if (ioctl(fd, SIOCSIFHWADDR, &ifq) == -1) {
-    perror("SIOCSIFHWADDR failed");
-    exit(1);
+    fatal("SIOCSIFHWADDR failed");
   }
 
   close(fd);
 }
 
-#define SVR_BUF_LEN (3 * 4096)
-#define MAX_BUF_LEN (2 * 1024 * 1024)
 
-
-/* Helper macros for parsing/printing GUIDs */
-#define GUID_FMT "%08x-%04hx-%04hx-%02x%02x-%02x%02x%02x%02x%02x%02x"
-#define GUID_ARGS(_g)                                               \
-    (_g).Data1, (_g).Data2, (_g).Data3,                             \
-    (_g).Data4[0], (_g).Data4[1], (_g).Data4[2], (_g).Data4[3],     \
-    (_g).Data4[4], (_g).Data4[5], (_g).Data4[6], (_g).Data4[7]
-#define GUID_SARGS(_g)                                              \
-    &(_g).Data1, &(_g).Data2, &(_g).Data3,                          \
-    &(_g).Data4[0], &(_g).Data4[1], &(_g).Data4[2], &(_g).Data4[3], \
-    &(_g).Data4[4], &(_g).Data4[5], &(_g).Data4[6], &(_g).Data4[7]
-
-
-int parseguid(const char *s, GUID *g)
-{
-    int res;
-    int p0, p1, p2, p3, p4, p5, p6, p7;
-
-    res = sscanf(s, GUID_FMT,
-                 &g->Data1, &g->Data2, &g->Data3,
-                 &p0, &p1, &p2, &p3, &p4, &p5, &p6, &p7);
-    if (res != 11)
-        return 1;
-    g->Data4[0] = p0;
-    g->Data4[1] = p1;
-    g->Data4[2] = p2;
-    g->Data4[3] = p3;
-    g->Data4[4] = p4;
-    g->Data4[5] = p5;
-    g->Data4[6] = p6;
-    g->Data4[7] = p7;
-    return 0;
-}
-
-/* Slightly different error handling between Windows and Linux */
-void sockerr(const char *msg)
-{
-    syslog(LOG_CRIT, "%s Error: %d. %s", msg, errno, strerror(errno));
-}
-
-void negotiate(SOCKET fd, struct vif_info *vif)
+void negotiate(int fd, struct vif_info *vif)
 {
     /* Negotiate with com.docker.slirp */
     struct init_message *me = create_init_message();
@@ -146,14 +107,13 @@ void negotiate(SOCKET fd, struct vif_info *vif)
     }
     return;
 err:
-    syslog(LOG_CRIT, "Failed to negotiate with com.docker.slirp");
-    exit(1);
+    fatal("Failed to negotiate with com.docker.slirp");
 }
 
 
 /* Argument passed to proxy threads */
 struct connection {
-    SOCKET fd; /* Hyper-V socket with vmnet protocol */
+    int fd; /* Hyper-V socket with vmnet protocol */
     int tapfd; /* TAP device with ethernet frames */
     struct vif_info vif; /* Contains VIF MAC, MTU etc, received from server */
 };
@@ -167,8 +127,7 @@ static void* vmnet_to_tap(void *arg)
 
   for (;;) {
     if (really_read(connection->fd, &header[0], 2) == -1){
-      syslog(LOG_CRIT, "Failed to read a packet header from host");
-      exit(1);
+      fatal("Failed to read a packet header from host");
     }
     length = (header[0] & 0xff) | ((header[1] & 0xff) << 8);
     if (length > sizeof(buffer)) {
@@ -198,8 +157,7 @@ static void* tap_to_vmnet(void *arg)
     length = read(connection->tapfd, &buffer[0], sizeof(buffer));
     if (length == -1) {
       if (errno == ENXIO) {
-        syslog(LOG_CRIT, "tap device has gone down");
-        exit(0);
+        fatal("tap device has gone down");
       }
       syslog(LOG_WARNING, "ignoring error %d", errno);
       /* This is what mirage-net-unix does. Is it a good idea really? */
@@ -208,20 +166,19 @@ static void* tap_to_vmnet(void *arg)
     header[0] = (length >> 0) & 0xff;
     header[1] = (length >> 8) & 0xff;
     if (really_write(connection->fd, &header[0], 2) == -1){
-      syslog(LOG_CRIT, "Failed to write packet header");
-      exit(1);
+      fatal("Failed to write packet header");
     }
     if (really_write(connection->fd, &buffer[0], length) == -1) {
-      syslog(LOG_CRIT, "Failed to write packet body");
-      exit(1);
+      fatal("Failed to write packet body");
     }
   }
+  return NULL;
 }
 
 /* Handle a connection. Handshake with the com.docker.slirp process and start
  * exchanging ethernet frames between the socket and the tap device.
  */
-static void handle(SOCKET fd, char *tap, int tapfd)
+static void handle(int fd, char *tap, int tapfd)
 {
     struct connection connection;
     pthread_t v2t, t2v;
@@ -237,32 +194,27 @@ static void handle(SOCKET fd, char *tap, int tapfd)
     connection.tapfd = tapfd;
 
     if (pthread_create(&v2t, NULL, vmnet_to_tap, &connection) != 0){
-      syslog(LOG_CRIT, "Failed to create the vmnet_to_tap thread");
-      exit(1);
+      fatal("Failed to create the vmnet_to_tap thread");
     }
     if (pthread_create(&t2v, NULL, tap_to_vmnet, &connection) != 0){
-      syslog(LOG_CRIT, "Failed to create the tap_to_vmnet thread");
-      exit(1);
+      fatal("Failed to create the tap_to_vmnet thread");
     }
     if (pthread_join(v2t, NULL) != 0){
-      syslog(LOG_CRIT, "Failed to join the vmnet_to_tap thread");
-      exit(1);
+      fatal("Failed to join the vmnet_to_tap thread");
     }
     if (pthread_join(t2v, NULL) != 0){
-      syslog(LOG_CRIT, "Failed to join the tap_to_vmnet thread");
-      exit(1);
+      fatal("Failed to join the tap_to_vmnet thread");
     }
 }
 
 static int create_listening_socket(GUID serviceid) {
-  SOCKET lsock = INVALID_SOCKET;
+  int lsock = -1;
   SOCKADDR_HV sa;
   int res;
 
   lsock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
-  if (lsock == INVALID_SOCKET) {
-      sockerr("socket()");
-      exit(1);
+  if (lsock == -1) {
+      fatal("socket()");
   }
 
   sa.Family = AF_HYPERV;
@@ -271,30 +223,25 @@ static int create_listening_socket(GUID serviceid) {
   sa.ServiceId = serviceid;
 
   res = bind(lsock, (const struct sockaddr *)&sa, sizeof(sa));
-  if (res == SOCKET_ERROR) {
-      sockerr("bind()");
-      closesocket(lsock);
-      exit(1);
+  if (res == -1) {
+      fatal("bind()");
   }
 
   res = listen(lsock, SOMAXCONN);
-  if (res == SOCKET_ERROR) {
-      sockerr("listen()");
-      closesocket(lsock);
-      exit(1);
+  if (res == -1) {
+      fatal("listen()");
   }
   return lsock;
 }
 
 static int connect_socket(GUID serviceid) {
-  SOCKET sock = INVALID_SOCKET;
+  int sock = -1;
   SOCKADDR_HV sa;
   int res;
 
   sock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
-  if (sock == INVALID_SOCKET) {
-      sockerr("socket()");
-      exit(1);
+  if (sock == -1) {
+      fatal("socket()");
   }
 
   sa.Family = AF_HYPERV;
@@ -303,28 +250,24 @@ static int connect_socket(GUID serviceid) {
   sa.ServiceId = serviceid;
 
   res = connect(sock, (const struct sockaddr *)&sa, sizeof(sa));
-  if (res == SOCKET_ERROR) {
-      sockerr("connect()");
-      closesocket(sock);
-      exit(1);
+  if (res == -1) {
+      fatal("connect()");
   }
 
   return sock;
 }
 
-static int accept_socket(SOCKET lsock) {
-  SOCKET csock = INVALID_SOCKET;
+static int accept_socket(int lsock) {
+  int csock = -1;
   SOCKADDR_HV sac;
   socklen_t socklen = sizeof(sac);
 
   csock = accept(lsock, (struct sockaddr *)&sac, &socklen);
-  if (csock == INVALID_SOCKET) {
-    sockerr("accept()");
-    closesocket(lsock);
-    exit(1);
+  if (csock == -1) {
+    fatal("accept()");
   }
 
-  printf("Connect from: "GUID_FMT":"GUID_FMT"\n",
+  syslog(LOG_INFO, "Connect from: "GUID_FMT":"GUID_FMT"\n",
     GUID_ARGS(sac.VmId), GUID_ARGS(sac.ServiceId));
   return csock;
 }
@@ -336,8 +279,7 @@ void write_pidfile(const char *pidfile) {
   int len;
 
   if (asprintf(&pid_s, "%lld", (long long) pid) == -1) {
-    syslog(LOG_CRIT, "Failed to allocate pidfile string");
-    exit(1);
+    fatal("Failed to allocate pidfile string");
   }
   len = strlen(pid_s);
   file = fopen(pidfile, "w");
@@ -347,8 +289,7 @@ void write_pidfile(const char *pidfile) {
   }
 
   if (fwrite(pid_s, 1, len, file) != len) {
-    syslog(LOG_CRIT, "Failed to write pid to pidfile");
-    exit(1);
+    fatal("Failed to write pid to pidfile");
   }
   fclose(file);
   free(pid_s);
@@ -357,18 +298,15 @@ void write_pidfile(const char *pidfile) {
 void daemonize(const char *pidfile){
   pid_t pid = fork ();
   if (pid == -1) {
-    syslog(LOG_CRIT, "Failed to fork()");
-    exit(1);
+    fatal("Failed to fork()");
   }
   else if (pid != 0)
     exit(0);
   if (setsid () == -1) {
-    syslog(LOG_CRIT, "Failed to setsid()");
-    exit(1);
+    fatal("Failed to setsid()");
   }
   if (chdir ("/") == -1) {
-    syslog(LOG_CRIT, "Failed to chdir()");
-    exit(1);
+    fatal("Failed to chdir()");
   }
   int null = open("/dev/null", O_RDWR);
   dup2(null, STDIN_FILENO);
@@ -394,7 +332,7 @@ void usage(char *name)
     printf("\t--connect: connect to the parent partition\n");
 }
 
-int __cdecl main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int res = 0;
     GUID sid;
@@ -462,10 +400,10 @@ int __cdecl main(int argc, char **argv)
       exit(1);
     }
 
-    SOCKET sock = INVALID_SOCKET;
+    int sock = -1;
     if (listen_flag) {
       syslog(LOG_INFO, "starting in listening mode with serviceid=%s and tap=%s", serviceid, tap);
-      SOCKET lsocket = create_listening_socket(sid);
+      int lsocket = create_listening_socket(sid);
       sock = accept_socket(lsocket);
     } else {
       syslog(LOG_INFO, "starting in connect mode with serviceid=%s and tap=%s", serviceid, tap);
