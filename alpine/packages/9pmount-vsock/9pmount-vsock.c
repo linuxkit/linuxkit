@@ -16,10 +16,14 @@
 
 #include "compat.h"
 
-int listen_flag = 0;
-int connect_flag = 0;
+#define NONE 0
+#define LISTEN 1
+#define CONNECT 2
+
+int mode = NONE;
 
 char *default_sid = "C378280D-DA14-42C8-A24E-0DE92A1028E2";
+char *mount = "/bin/mount";
 
 /* Helper macros for parsing/printing GUIDs */
 #define GUID_FMT "%08x-%04hx-%04hx-%02x%02x-%02x%02x%02x%02x%02x%02x"
@@ -61,6 +65,20 @@ void sockerr(const char *msg)
 
 static void handle(SOCKET fd)
 {
+  char *options = NULL;
+  if (asprintf(&options, "trans=fd,dfltuid=1001,dfltgid=50,version=9p2000,rfdno=%d,wfdno=%d", fd, fd) < 0){
+    syslog(LOG_CRIT, "asprintf(): %s", strerror(errno));
+    exit(1);
+  }
+  char *argv[] = {
+    mount,
+    "-t", "9p", "-o", options,
+    "db", "/Database",
+    NULL
+  };
+  execv(mount, argv);
+  syslog(LOG_CRIT, "failed to execute %s: %s", mount, strerror(errno));
+  exit(1);
 }
 
 static int create_listening_socket(GUID serviceid) {
@@ -141,7 +159,7 @@ static int accept_socket(SOCKET lsock) {
 void usage(char *name)
 {
     printf("%s usage:\n", name);
-    printf("\t[--serviceid <guid>] [--listen | --connect]\n\n");
+    printf("\t[--serviceid <guid>] <listen | connect>\n");
     printf("where\n");
     printf("\t--serviceid <guid>: use <guid> as the well-known service GUID\n");
     printf("\t  (defaults to %s)\n", default_sid);
@@ -162,8 +180,6 @@ int __cdecl main(int argc, char **argv)
       static struct option long_options[] = {
         /* These options set a flag. */
         {"serviceid", required_argument, NULL, 's'},
-        {"listen",    no_argument,       &listen_flag, 1},
-        {"connect",   no_argument,       &connect_flag, 1},
         {0, 0, 0, 0}
       };
       int option_index = 0;
@@ -183,14 +199,20 @@ int __cdecl main(int argc, char **argv)
           exit (1);
       }
     }
-    if ((listen_flag && connect_flag) || !(listen_flag || connect_flag)){
-      fprintf(stderr, "Please supply either the --listen or --connect flag, but not both.\n");
+    if (optind < argc) {
+      if (strcmp(argv[optind], "listen") == 0) {
+        mode = LISTEN;
+      } else if (strcmp(argv[optind], "connect") == 0) {
+        mode = CONNECT;
+      }
+      optind++;
+    }
+    if (mode == NONE) {
+      fprintf(stderr, "Please supply either listen or connect\n");
+      usage(argv[0]);
       exit(1);
     }
-
-    int log_flags = LOG_CONS | LOG_NDELAY | LOG_PERROR;
-
-    openlog(argv[0], log_flags, LOG_DAEMON);
+    openlog(argv[0], LOG_CONS | LOG_NDELAY | LOG_PERROR, LOG_DAEMON);
 
     res = parseguid(serviceid, &sid);
     if (res) {
@@ -200,7 +222,7 @@ int __cdecl main(int argc, char **argv)
     }
 
     SOCKET sock = INVALID_SOCKET;
-    if (listen_flag) {
+    if (mode == LISTEN) {
       syslog(LOG_INFO, "starting in listening mode with serviceid=%s", serviceid);
       SOCKET lsocket = create_listening_socket(sid);
       sock = accept_socket(lsocket);
