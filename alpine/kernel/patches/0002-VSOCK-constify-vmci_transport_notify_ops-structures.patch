@@ -1,7 +1,7 @@
-From 55b1d9c5700491a520e9f62db00813153949038e Mon Sep 17 00:00:00 2001
+From 4b274b13e7dfe4ac54072f324738c487a36b78b8 Mon Sep 17 00:00:00 2001
 From: Julia Lawall <julia.lawall@lip6.fr>
 Date: Sat, 21 Nov 2015 18:39:17 +0100
-Subject: [PATCH 02/27] VSOCK: constify vmci_transport_notify_ops structures
+Subject: [PATCH 02/28] VSOCK: constify vmci_transport_notify_ops structures
 
 The vmci_transport_notify_ops structures are never modified, so declare
 them as const.

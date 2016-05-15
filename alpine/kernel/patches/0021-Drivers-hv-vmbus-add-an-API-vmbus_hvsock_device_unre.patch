@@ -1,7 +1,7 @@
-From 8cdace7efd0cba254c7183e302d97e2018d61840 Mon Sep 17 00:00:00 2001
+From 080b343d4e73684e9c261350703a48771eeda231 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:43 -0800
-Subject: [PATCH 21/27] Drivers: hv: vmbus: add an API
+Subject: [PATCH 21/28] Drivers: hv: vmbus: add an API
  vmbus_hvsock_device_unregister()
 
 The hvsock driver needs this API to release all the resources related
