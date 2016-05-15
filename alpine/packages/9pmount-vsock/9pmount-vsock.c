@@ -14,7 +14,7 @@
 #include <fcntl.h>
 #include <err.h>
 
-#include "compat.h"
+#include "hvsock.h"
 
 #define NONE 0
 #define LISTEN 1
@@ -25,50 +25,17 @@ int mode = NONE;
 char *default_sid = "C378280D-DA14-42C8-A24E-0DE92A1028E2";
 char *mount = "/bin/mount";
 
-/* Helper macros for parsing/printing GUIDs */
-#define GUID_FMT "%08x-%04hx-%04hx-%02x%02x-%02x%02x%02x%02x%02x%02x"
-#define GUID_ARGS(_g)                                               \
-    (_g).Data1, (_g).Data2, (_g).Data3,                             \
-    (_g).Data4[0], (_g).Data4[1], (_g).Data4[2], (_g).Data4[3],     \
-    (_g).Data4[4], (_g).Data4[5], (_g).Data4[6], (_g).Data4[7]
-#define GUID_SARGS(_g)                                              \
-    &(_g).Data1, &(_g).Data2, &(_g).Data3,                          \
-    &(_g).Data4[0], &(_g).Data4[1], &(_g).Data4[2], &(_g).Data4[3], \
-    &(_g).Data4[4], &(_g).Data4[5], &(_g).Data4[6], &(_g).Data4[7]
-
-
-int parseguid(const char *s, GUID *g)
-{
-    int res;
-    int p0, p1, p2, p3, p4, p5, p6, p7;
-
-    res = sscanf(s, GUID_FMT,
-                 &g->Data1, &g->Data2, &g->Data3,
-                 &p0, &p1, &p2, &p3, &p4, &p5, &p6, &p7);
-    if (res != 11)
-        return 1;
-    g->Data4[0] = p0;
-    g->Data4[1] = p1;
-    g->Data4[2] = p2;
-    g->Data4[3] = p3;
-    g->Data4[4] = p4;
-    g->Data4[5] = p5;
-    g->Data4[6] = p6;
-    g->Data4[7] = p7;
-    return 0;
-}
-
-void sockerr(const char *msg)
+void fatal(const char *msg)
 {
     syslog(LOG_CRIT, "%s Error: %d. %s", msg, errno, strerror(errno));
+    exit(1);
 }
 
-static void handle(SOCKET fd)
+static void handle(int fd)
 {
   char *options = NULL;
   if (asprintf(&options, "trans=fd,dfltuid=1001,dfltgid=50,version=9p2000,rfdno=%d,wfdno=%d", fd, fd) < 0){
-    syslog(LOG_CRIT, "asprintf(): %s", strerror(errno));
-    exit(1);
+    fatal("asprintf()");
   }
   char *argv[] = {
     mount,
@@ -77,19 +44,17 @@ static void handle(SOCKET fd)
     NULL
   };
   execv(mount, argv);
-  syslog(LOG_CRIT, "failed to execute %s: %s", mount, strerror(errno));
-  exit(1);
+  fatal("execv()");
 }
 
 static int create_listening_socket(GUID serviceid) {
-  SOCKET lsock = INVALID_SOCKET;
+  int lsock = -1;
   SOCKADDR_HV sa;
   int res;
 
   lsock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
-  if (lsock == INVALID_SOCKET) {
-      sockerr("socket()");
-      exit(1);
+  if (lsock == -1) {
+    fatal("socket()");
   }
 
   sa.Family = AF_HYPERV;
@@ -98,30 +63,25 @@ static int create_listening_socket(GUID serviceid) {
   sa.ServiceId = serviceid;
 
   res = bind(lsock, (const struct sockaddr *)&sa, sizeof(sa));
-  if (res == SOCKET_ERROR) {
-      sockerr("bind()");
-      closesocket(lsock);
-      exit(1);
+  if (res == -1) {
+    fatal("bind()");
   }
 
   res = listen(lsock, 1);
-  if (res == SOCKET_ERROR) {
-      sockerr("listen()");
-      closesocket(lsock);
-      exit(1);
+  if (res == -1) {
+    fatal("listen()");
   }
   return lsock;
 }
 
 static int connect_socket(GUID serviceid) {
-  SOCKET sock = INVALID_SOCKET;
+  int sock = -1;
   SOCKADDR_HV sa;
   int res;
 
   sock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
-  if (sock == INVALID_SOCKET) {
-      sockerr("socket()");
-      exit(1);
+  if (sock == -1) {
+    fatal("socket()");
   }
 
   sa.Family = AF_HYPERV;
@@ -130,28 +90,24 @@ static int connect_socket(GUID serviceid) {
   sa.ServiceId = serviceid;
 
   res = connect(sock, (const struct sockaddr *)&sa, sizeof(sa));
-  if (res == SOCKET_ERROR) {
-      sockerr("connect()");
-      closesocket(sock);
-      exit(1);
+  if (res == -1) {
+    fatal("connect()");
   }
 
   return sock;
 }
 
-static int accept_socket(SOCKET lsock) {
-  SOCKET csock = INVALID_SOCKET;
+static int accept_socket(int lsock) {
+  int csock = -1;
   SOCKADDR_HV sac;
   socklen_t socklen = sizeof(sac);
 
   csock = accept(lsock, (struct sockaddr *)&sac, &socklen);
-  if (csock == INVALID_SOCKET) {
-    sockerr("accept()");
-    closesocket(lsock);
-    exit(1);
+  if (csock == -1) {
+    fatal("accept()");
   }
 
-  printf("Connect from: "GUID_FMT":"GUID_FMT"\n",
+  syslog(LOG_INFO, "Connect from: "GUID_FMT":"GUID_FMT"\n",
     GUID_ARGS(sac.VmId), GUID_ARGS(sac.ServiceId));
   return csock;
 }
@@ -167,7 +123,7 @@ void usage(char *name)
     printf("\t--connect: connect to the parent partition\n");
 }
 
-int __cdecl main(int argc, char **argv)
+int main(int argc, char **argv)
 {
     int res = 0;
     GUID sid;
@@ -221,10 +177,10 @@ int __cdecl main(int argc, char **argv)
       exit(1);
     }
 
-    SOCKET sock = INVALID_SOCKET;
+    int sock = -1;
     if (mode == LISTEN) {
       syslog(LOG_INFO, "starting in listening mode with serviceid=%s", serviceid);
-      SOCKET lsocket = create_listening_socket(sid);
+      int lsocket = create_listening_socket(sid);
       sock = accept_socket(lsocket);
       close(lsocket);
     } else {
