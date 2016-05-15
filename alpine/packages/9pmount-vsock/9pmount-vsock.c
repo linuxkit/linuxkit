@@ -104,7 +104,7 @@ static int create_listening_socket(GUID serviceid) {
       exit(1);
   }
 
-  res = listen(lsock, SOMAXCONN);
+  res = listen(lsock, 1);
   if (res == SOCKET_ERROR) {
       sockerr("listen()");
       closesocket(lsock);
@@ -226,6 +226,7 @@ int __cdecl main(int argc, char **argv)
       syslog(LOG_INFO, "starting in listening mode with serviceid=%s", serviceid);
       SOCKET lsocket = create_listening_socket(sid);
       sock = accept_socket(lsocket);
+      close(lsocket);
     } else {
       syslog(LOG_INFO, "starting in connect mode with serviceid=%s", serviceid);
       sock = connect_socket(sid);
