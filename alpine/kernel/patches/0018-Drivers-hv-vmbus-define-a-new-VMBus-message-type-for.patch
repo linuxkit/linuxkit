@@ -1,7 +1,7 @@
-From 7e8defd74db9d20fc2c1b98946f5f1e5ad96e33c Mon Sep 17 00:00:00 2001
+From e45db7437ea70ce0999f7fee9459dc509403d22c Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:40 -0800
-Subject: [PATCH 18/28] Drivers: hv: vmbus: define a new VMBus message type for
+Subject: [PATCH 18/27] Drivers: hv: vmbus: define a new VMBus message type for
  hvsock
 
 A function to send the type of message is also added.
