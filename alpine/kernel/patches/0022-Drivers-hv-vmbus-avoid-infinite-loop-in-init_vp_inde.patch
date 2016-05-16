@@ -1,0 +1,49 @@
+From 38a40857bb22894545830b22fb593241f2fabf4d Mon Sep 17 00:00:00 2001
+From: Vitaly Kuznetsov <vkuznets@redhat.com>
+Date: Wed, 27 Jan 2016 22:29:34 -0800
+Subject: [PATCH 22/40] Drivers: hv: vmbus: avoid infinite loop in
+ init_vp_index()
+
+When we pick a CPU to use for a new subchannel we try find a non-used one
+on the appropriate NUMA node, we keep track of them with the
+primary->alloced_cpus_in_node mask. Under normal circumstances we don't run
+out of available CPUs but it is possible when we we don't initialize some
+cpus in Linux, e.g. when we boot with 'nr_cpus=' limitation.
+
+Avoid the infinite loop in init_vp_index() by checking that we still have
+non-used CPUs in the alloced_cpus_in_node mask and resetting it in case
+we don't.
+
+Signed-off-by: Vitaly Kuznetsov <vkuznets@redhat.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 79fd8e706637a5c7c41f9498fe0fbfb437abfdc8)
+---
+ drivers/hv/channel_mgmt.c | 11 +++++++++++
+ 1 file changed, 11 insertions(+)
+
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index 107d72f..af1d82e 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -549,6 +549,17 @@ static void init_vp_index(struct vmbus_channel *channel, u16 dev_type)
+ 		    cpumask_of_node(primary->numa_node));
+ 
+ 	cur_cpu = -1;
++
++	/*
++	 * Normally Hyper-V host doesn't create more subchannels than there
++	 * are VCPUs on the node but it is possible when not all present VCPUs
++	 * on the node are initialized by guest. Clear the alloced_cpus_in_node
++	 * to start over.
++	 */
++	if (cpumask_equal(&primary->alloced_cpus_in_node,
++			  cpumask_of_node(primary->numa_node)))
++		cpumask_clear(&primary->alloced_cpus_in_node);
++
+ 	while (true) {
+ 		cur_cpu = cpumask_next(cur_cpu, &available_mask);
+ 		if (cur_cpu >= nr_cpu_ids) {
+-- 
+2.8.2
+
