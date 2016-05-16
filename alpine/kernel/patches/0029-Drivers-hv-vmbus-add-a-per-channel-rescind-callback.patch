@@ -1,7 +1,7 @@
-From 14935b1d81d62a8aee055d8b762a745338e445b2 Mon Sep 17 00:00:00 2001
+From 91bc38269cbba8c6ffc4db837f22267f72cfcd35 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:42 -0800
-Subject: [PATCH 20/28] Drivers: hv: vmbus: add a per-channel rescind callback
+Subject: [PATCH 29/40] Drivers: hv: vmbus: add a per-channel rescind callback
 
 This will be used by the coming hv_sock driver.
 
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 20 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 4d61f41..421e3dd 100644
+index 60ca25b..76864c9 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -603,6 +603,10 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -741,6 +741,10 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  	spin_unlock_irqrestore(&channel->lock, flags);
  
  	if (channel->device_obj) {
@@ -29,7 +29,7 @@ index 4d61f41..421e3dd 100644
  		/*
  		 * We will have to unregister this device from the
  		 * driver core.
-@@ -972,3 +976,10 @@ bool vmbus_are_subchannels_present(struct vmbus_channel *primary)
+@@ -1110,3 +1114,10 @@ bool vmbus_are_subchannels_present(struct vmbus_channel *primary)
  	return ret;
  }
  EXPORT_SYMBOL_GPL(vmbus_are_subchannels_present);
@@ -41,10 +41,10 @@ index 4d61f41..421e3dd 100644
 +}
 +EXPORT_SYMBOL_GPL(vmbus_set_chn_rescind_callback);
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 9ee79af..09e9ec1 100644
+index 05966e2..ad04017 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -742,6 +742,12 @@ struct vmbus_channel {
+@@ -768,6 +768,12 @@ struct vmbus_channel {
  	void (*sc_creation_callback)(struct vmbus_channel *new_sc);
  
  	/*
@@ -57,7 +57,7 @@ index 9ee79af..09e9ec1 100644
  	 * The spinlock to protect the structure. It is being used to protect
  	 * test-and-set access to various attributes of the structure as well
  	 * as all sc_list operations.
-@@ -827,6 +833,9 @@ int vmbus_request_offers(void);
+@@ -853,6 +859,9 @@ int vmbus_request_offers(void);
  void vmbus_set_sc_create_callback(struct vmbus_channel *primary_channel,
  			void (*sc_cr_cb)(struct vmbus_channel *new_sc));
  

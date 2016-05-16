@@ -1,7 +1,7 @@
 From fd467c3335938b8eca0489008c390ad16a01aee7 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:29:21 +0800
-Subject: [PATCH 07/28] VSOCK: Introduce vhost_vsock.ko
+Subject: [PATCH 07/40] VSOCK: Introduce vhost_vsock.ko
 
 VM sockets vhost transport implementation.  This driver runs on the
 host.

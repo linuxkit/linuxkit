@@ -1,7 +1,7 @@
-From 6d6ad94bf42ceff0785f28382ba2c4a2cc6725d3 Mon Sep 17 00:00:00 2001
+From 0eba2b0c75b7dddedeedd6c827d71d0f23ae00ac Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
 Date: Wed, 4 May 2016 14:21:53 +0100
-Subject: [PATCH 27/28] VSOCK: do not disconnect socket when peer has shutdown
+Subject: [PATCH 39/40] VSOCK: do not disconnect socket when peer has shutdown
  SEND only
 
 The peer may be expecting a reply having sent a request and then done a
