@@ -1,7 +1,7 @@
-From f94eeafa1082af0972a429ca973da5230e21c5c9 Mon Sep 17 00:00:00 2001
+From e146373438a898a6eac95edd2407e1335c841be0 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
-Date: Wed, 11 May 2016 10:52:37 -0700
-Subject: [PATCH 25/28] hv_sock: introduce Hyper-V Sockets
+Date: Sun, 15 May 2016 09:53:11 -0700
+Subject: [PATCH 25/27] hv_sock: introduce Hyper-V Sockets
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
 mechanism between the host and the guest. It's somewhat like TCP over
@@ -22,7 +22,6 @@ Cc: "K. Y. Srinivasan" <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Vitaly Kuznetsov <vkuznets@redhat.com>
 Cc: Cathy Avery <cavery@redhat.com>
-Origin: http://patchwork.ozlabs.org/patch/621190/
 ---
  MAINTAINERS                 |    2 +
  include/linux/hyperv.h      |   14 +
@@ -33,8 +32,8 @@ Origin: http://patchwork.ozlabs.org/patch/621190/
  net/Makefile                |    1 +
  net/hv_sock/Kconfig         |   10 +
  net/hv_sock/Makefile        |    3 +
- net/hv_sock/af_hvsock.c     | 1484 +++++++++++++++++++++++++++++++++++++++++++
- 10 files changed, 1621 insertions(+), 1 deletion(-)
+ net/hv_sock/af_hvsock.c     | 1520 +++++++++++++++++++++++++++++++++++++++++++
+ 10 files changed, 1657 insertions(+), 1 deletion(-)
  create mode 100644 include/net/af_hvsock.h
  create mode 100644 net/hv_sock/Kconfig
  create mode 100644 net/hv_sock/Makefile
@@ -102,7 +101,7 @@ index dbd81e7..6634c47 100644
  /* Maximum queue length specifiable by listen.  */
 diff --git a/include/net/af_hvsock.h b/include/net/af_hvsock.h
 new file mode 100644
-index 0000000..e002397
+index 0000000..7c8c41e
 --- /dev/null
 +++ b/include/net/af_hvsock.h
 @@ -0,0 +1,78 @@
@@ -113,7 +112,7 @@ index 0000000..e002397
 +#include <linux/hyperv.h>
 +#include <net/sock.h>
 +
-+/* Note: 3-page is the minimal recv ringbuffer size:
++/* Note: 3-page is the minimal recv ringbuffer size by default:
 + *
 + * the 1st page is used as the shared read/write index etc, rather than data:
 + * see hv_ringbuffer_init();
@@ -123,18 +122,18 @@ index 0000000..e002397
 + * need at least 2 extra pages for ringbuffer data.
 + */
 +#define HVSOCK_RCV_BUF_SZ    PAGE_SIZE
-+#define VMBUS_RINGBUFFER_SIZE_HVSOCK_RCV (3 * PAGE_SIZE)
++#define DEF_RINGBUFFER_PAGES_HVSOCK_RCV 3
 +
 +/* As to send, here let's make sure the hvsock_send_buf struct can be held in 1
 + * page, and since we want to use 2 pages for the send ringbuffer size (this is
-+ * the minimal size because the 1st page of the two is used as the shared
-+ * read/write index etc, rather than data), we only have 1 page for ringbuffer
-+ * data, this means: the max payload length for hvsock data is
-+ * PAGE_SIZE - HVSOCK_PKT_LEN(0). Finally, let's reduce the length by 8-bytes
++ * the minimal size by default, because the 1st page of the two is used as the
++ * shared read/write index etc, rather than data), we only have 1 page for
++ * ringbuffer data, this means: the max payload length for hvsock data is
++ * PAGE_SIZE - HVSOCK_PKT_LEN(0). And, let's reduce the length by 8-bytes
 + * because the ringbuffer can't be 100% full: see hv_ringbuffer_write().
 + */
 +#define HVSOCK_SND_BUF_SZ    (PAGE_SIZE - HVSOCK_PKT_LEN(0) - 8)
-+#define VMBUS_RINGBUFFER_SIZE_HVSOCK_SND (2 * PAGE_SIZE)
++#define DEF_RINGBUFFER_PAGES_HVSOCK_SND 2
 +
 +/* We only send data when the available space is "big enough". This artificial
 + * value must be less than HVSOCK_SND_BUF_SZ.
@@ -276,10 +275,10 @@ index 0000000..716c012
 +hv_sock-y += af_hvsock.o
 diff --git a/net/hv_sock/af_hvsock.c b/net/hv_sock/af_hvsock.c
 new file mode 100644
-index 0000000..013d684
+index 0000000..b91bd60
 --- /dev/null
 +++ b/net/hv_sock/af_hvsock.c
-@@ -0,0 +1,1484 @@
+@@ -0,0 +1,1520 @@
 +/*
 + * Hyper-V Sockets -- a socket-based communication channel between the
 + * Hyper-V host and the virtual machines running on it.
@@ -316,6 +315,21 @@ index 0000000..013d684
 +#include <linux/init.h>
 +#include <linux/module.h>
 +#include <net/af_hvsock.h>
++
++static uint send_ring_page = DEF_RINGBUFFER_PAGES_HVSOCK_SND;
++static uint recv_ring_page = DEF_RINGBUFFER_PAGES_HVSOCK_RCV;
++static uint max_socket_number = 1024;
++
++static atomic_t total_num_hvsock = ATOMIC_INIT(0);
++
++module_param(send_ring_page, uint, 0444);
++MODULE_PARM_DESC(send_ring_page, "Send ring buffer size (# of pages)");
++
++module_param(recv_ring_page, uint, 0444);
++MODULE_PARM_DESC(recv_ring_page, "Receive ring buffer size (# of pages)");
++
++module_param(max_socket_number, uint, 0644);
++MODULE_PARM_DESC(max_socket_number, "The max number of created sockets");
 +
 +static struct proto hvsock_proto = {
 +	.name = "HV_SOCK",
@@ -525,6 +539,7 @@ index 0000000..013d684
 +
 +	kfree(hvsk->send);
 +	kfree(hvsk->recv);
++	atomic_dec(&total_num_hvsock);
 +
 +	if (!channel)
 +		return;
@@ -581,43 +596,48 @@ index 0000000..013d684
 +	return 0;
 +}
 +
-+static struct sock *__hvsock_create(struct net *net, struct socket *sock,
-+				    gfp_t priority, unsigned short type)
++static int hvsock_create(struct net *net, struct socket *sock,
++			 gfp_t priority, unsigned short type,
++			 struct sock **sk)
 +{
 +	struct hvsock_send_buf *send = NULL;
 +	struct hvsock_recv_buf *recv = NULL;
-+
 +	struct hvsock_sock *hvsk;
-+	struct sock *sk;
++	int ret = -EMFILE;
++	int num_hvsock;
 +
-+	send = kmalloc(sizeof(struct hvsock_send_buf), GFP_KERNEL);
-+	recv = kmalloc(sizeof(struct hvsock_recv_buf), GFP_KERNEL);
++	num_hvsock = atomic_inc_return(&total_num_hvsock);
++	if (num_hvsock > max_socket_number)
++		goto err;
++
++	ret = -ENOMEM;
++	send = kmalloc(sizeof(*send), GFP_KERNEL);
++	recv = kmalloc(sizeof(*recv), GFP_KERNEL);
 +	if (!send || !recv)
 +		goto err;
 +
-+	sk = sk_alloc(net, AF_HYPERV, priority, &hvsock_proto, 0);
-+	if (!sk)
++	*sk = sk_alloc(net, AF_HYPERV, priority, &hvsock_proto, 0);
++	if (!*sk)
 +		goto err;
 +
-+	sock_init_data(sock, sk);
++	sock_init_data(sock, *sk);
 +
-+	/* sk->sk_type is normally set in sock_init_data, but only if sock is
-+	 * non-NULL. We make sure that our sockets always have a type by
++	/* (*sk)->sk_type is normally set in sock_init_data, but only if sock
++	 * is non-NULL. We make sure that our sockets always have a type by
 +	 * setting it here if needed.
 +	 */
 +	if (!sock)
-+		sk->sk_type = type;
++		(*sk)->sk_type = type;
 +
-+
-+	sk->sk_destruct = hvsock_sk_destruct;
++	(*sk)->sk_destruct = hvsock_sk_destruct;
 +
 +	/* Looks stream-based socket doesn't need this. */
-+	sk->sk_backlog_rcv = NULL;
++	(*sk)->sk_backlog_rcv = NULL;
 +
-+	sk->sk_state = 0;
-+	sock_reset_flag(sk, SOCK_DONE);
++	(*sk)->sk_state = 0;
++	sock_reset_flag(*sk, SOCK_DONE);
 +
-+	hvsk = sk_to_hvsock(sk);
++	hvsk = sk_to_hvsock(*sk);
 +
 +	hvsk->send = send;
 +	hvsk->recv = recv;
@@ -636,11 +656,13 @@ index 0000000..013d684
 +	hvsk->recv->data_len = 0;
 +	hvsk->recv->data_offset = 0;
 +
-+	return sk;
++	return 0;
 +err:
++	atomic_dec(&total_num_hvsock);
 +	kfree(send);
 +	kfree(recv);
-+	return NULL;
++	*sk = NULL;
++	return ret;
 +}
 +
 +static int hvsock_bind(struct socket *sock, struct sockaddr *addr,
@@ -699,40 +721,6 @@ index 0000000..013d684
 +	return ret;
 +}
 +
-+static int hvsock_shutdown(struct socket *sock, int mode)
-+{
-+	struct sock *sk;
-+
-+	if (mode < SHUT_RD || mode > SHUT_RDWR)
-+		return -EINVAL;
-+	/* This maps:
-+	 * SHUT_RD   (0) -> RCV_SHUTDOWN  (1)
-+	 * SHUT_WR   (1) -> SEND_SHUTDOWN (2)
-+	 * SHUT_RDWR (2) -> SHUTDOWN_MASK (3)
-+	 */
-+	++mode;
-+
-+	if (sock->state == SS_UNCONNECTED)
-+		return -ENOTCONN;
-+
-+	sock->state = SS_DISCONNECTING;
-+
-+	sk = sock->sk;
-+
-+	lock_sock(sk);
-+
-+	sk->sk_shutdown |= mode;
-+	sk->sk_state_change(sk);
-+
-+	/* TODO: how to send a FIN if we haven't done that? */
-+	if (mode & SEND_SHUTDOWN)
-+		;
-+
-+	release_sock(sk);
-+
-+	return 0;
-+}
-+
 +static void get_ringbuffer_rw_status(struct vmbus_channel *channel,
 +				     bool *can_read, bool *can_write)
 +{
@@ -742,7 +730,7 @@ index 0000000..013d684
 +		hv_get_ringbuffer_availbytes(&channel->inbound,
 +					     &avl_read_bytes,
 +					     &dummy);
-+		/* 0-size payload meaans FIN */
++		/* 0-size payload means FIN */
 +		*can_read = avl_read_bytes >= HVSOCK_PKT_LEN(0);
 +	}
 +
@@ -765,12 +753,84 @@ index 0000000..013d684
 +				     &dummy,
 +				     &avl_write_bytes);
 +
-+	if (avl_write_bytes < HVSOCK_PKT_LEN(1))
++	if (avl_write_bytes < HVSOCK_PKT_LEN(1) + HVSOCK_PKT_LEN(0))
 +		return 0;
 +
-+	/* The ringbuffer can't be 100% full */
-+	ret = avl_write_bytes - HVSOCK_PKT_LEN(1);
++	/* The ringbuffer mustn't be 100% full, and we should reserve a
++	 * zero-length-payload packet for the FIN: see hv_ringbuffer_write()
++	 * and hvsock_shutdown().
++	 */
++	ret = avl_write_bytes - HVSOCK_PKT_LEN(1) - HVSOCK_PKT_LEN(0);
++
 +	return round_down(ret, 8);
++}
++
++static int hvsock_send_data(struct vmbus_channel *channel,
++			    struct hvsock_sock *hvsk,
++			    size_t to_write)
++{
++	hvsk->send->hdr.pkt_type = 1;
++	hvsk->send->hdr.data_size = to_write;
++	return vmbus_sendpacket(channel, &hvsk->send->hdr,
++				sizeof(hvsk->send->hdr) + to_write,
++				0, VM_PKT_DATA_INBAND, 0);
++}
++
++static int hvsock_recv_data(struct vmbus_channel *channel,
++			    struct hvsock_sock *hvsk,
++			    size_t *payload_len)
++{
++	u32 buffer_actual_len;
++	u64 dummy_req_id;
++	int ret;
++
++	ret = vmbus_recvpacket(channel, &hvsk->recv->hdr,
++			       sizeof(hvsk->recv->hdr) +
++			       sizeof(hvsk->recv->buf),
++			       &buffer_actual_len, &dummy_req_id);
++	if (ret != 0 || buffer_actual_len <= sizeof(hvsk->recv->hdr))
++		*payload_len = 0;
++	else
++		*payload_len = hvsk->recv->hdr.data_size;
++
++	return ret;
++}
++
++static int hvsock_shutdown(struct socket *sock, int mode)
++{
++	struct hvsock_sock *hvsk;
++	struct sock *sk;
++
++	if (mode < SHUT_RD || mode > SHUT_RDWR)
++		return -EINVAL;
++	/* This maps:
++	 * SHUT_RD   (0) -> RCV_SHUTDOWN  (1)
++	 * SHUT_WR   (1) -> SEND_SHUTDOWN (2)
++	 * SHUT_RDWR (2) -> SHUTDOWN_MASK (3)
++	 */
++	++mode;
++
++	if (sock->state != SS_CONNECTED)
++		return -ENOTCONN;
++
++	sock->state = SS_DISCONNECTING;
++
++	sk = sock->sk;
++
++	lock_sock(sk);
++
++	sk->sk_shutdown |= mode;
++	sk->sk_state_change(sk);
++
++	if (mode & SEND_SHUTDOWN) {
++		hvsk = sk_to_hvsock(sk);
++		/* It can't fail: see get_ringbuffer_writable_bytes(). */
++		(void)hvsock_send_data(hvsk->channel, hvsk, 0);
++	}
++
++	release_sock(sk);
++
++	return 0;
 +}
 +
 +static unsigned int hvsock_poll(struct file *file, struct socket *sock,
@@ -898,7 +958,6 @@ index 0000000..013d684
 +	if (!sk)
 +		goto out;
 +
-+	sk->sk_socket->state = SS_UNCONNECTED;
 +	sk->sk_state = SS_UNCONNECTED;
 +	sock_set_flag(sk, SOCK_DONE);
 +
@@ -932,7 +991,7 @@ index 0000000..013d684
 +	sk = hvsock_find_bound_socket(&hv_addr);
 +
 +	if (!sk || (conn_from_host && sk->sk_state != SS_LISTEN) ||
-+	   (!conn_from_host && sk->sk_state != SS_CONNECTING)) {
++	    (!conn_from_host && sk->sk_state != SS_CONNECTING)) {
 +		ret = -ENXIO;
 +		goto out;
 +	}
@@ -943,12 +1002,11 @@ index 0000000..013d684
 +			goto out;
 +		}
 +
-+		new_sk = __hvsock_create(sock_net(sk), NULL, GFP_KERNEL,
-+					 sk->sk_type);
-+		if (!new_sk) {
-+			ret = -ENOMEM;
++		ret = hvsock_create(sock_net(sk), NULL, GFP_KERNEL,
++				    sk->sk_type, &new_sk);
++		if (ret != 0)
 +			goto out;
-+		}
++
 +		new_sk->sk_state = SS_CONNECTING;
 +		new_hvsk = sk_to_hvsock(new_sk);
 +		new_hvsk->channel = channel;
@@ -960,9 +1018,8 @@ index 0000000..013d684
 +	}
 +
 +	set_channel_read_state(channel, false);
-+	vmbus_set_chn_rescind_callback(channel, hvsock_close_connection);
-+	ret = vmbus_open(channel, VMBUS_RINGBUFFER_SIZE_HVSOCK_SND,
-+			 VMBUS_RINGBUFFER_SIZE_HVSOCK_RCV, NULL, 0,
++	ret = vmbus_open(channel, send_ring_page * PAGE_SIZE,
++			 recv_ring_page * PAGE_SIZE, NULL, 0,
 +			 hvsock_on_channel_cb, conn_from_host ? new_sk : sk);
 +	if (ret != 0) {
 +		if (conn_from_host) {
@@ -974,6 +1031,7 @@ index 0000000..013d684
 +		goto out;
 +	}
 +
++	vmbus_set_chn_rescind_callback(channel, hvsock_close_connection);
 +	set_channel_pending_send_size(channel,
 +				      HVSOCK_PKT_LEN(HVSOCK_SND_THRESHOLD));
 +
@@ -1264,17 +1322,6 @@ index 0000000..013d684
 +	return ret;
 +}
 +
-+static int hvsock_send_data(struct vmbus_channel *channel,
-+			    struct hvsock_sock *hvsk,
-+			    size_t to_write)
-+{
-+	hvsk->send->hdr.pkt_type = 1;
-+	hvsk->send->hdr.data_size = to_write;
-+	return vmbus_sendpacket(channel, &hvsk->send->hdr,
-+				sizeof(hvsk->send->hdr) + to_write,
-+				0, VM_PKT_DATA_INBAND, 0);
-+}
-+
 +static
 +int hvsock_sendmsg_wait(struct sock *sk, struct msghdr *msg, size_t len)
 +{
@@ -1428,26 +1475,6 @@ index 0000000..013d684
 +		WARN(1, "unexpected return value of 0\n");
 +		ret = -EIO;
 +	}
-+
-+	return ret;
-+}
-+
-+static int hvsock_recv_data(struct vmbus_channel *channel,
-+			    struct hvsock_sock *hvsk,
-+			    size_t *payload_len)
-+{
-+	u32 buffer_actual_len;
-+	u64 dummy_req_id;
-+	int ret;
-+
-+	ret = vmbus_recvpacket(channel, &hvsk->recv->hdr,
-+			       sizeof(hvsk->recv->hdr) +
-+			       sizeof(hvsk->recv->buf),
-+			       &buffer_actual_len, &dummy_req_id);
-+	if (ret != 0 || buffer_actual_len <= sizeof(hvsk->recv->hdr))
-+		*payload_len = 0;
-+	else
-+		*payload_len = hvsk->recv->hdr.data_size;
 +
 +	return ret;
 +}
@@ -1651,9 +1678,11 @@ index 0000000..013d684
 +	.sendpage = sock_no_sendpage,
 +};
 +
-+static int hvsock_create(struct net *net, struct socket *sock,
-+			 int protocol, int kern)
++static int hvsock_create_sock(struct net *net, struct socket *sock,
++			      int protocol, int kern)
 +{
++	struct sock *sk;
++
 +	if (!capable(CAP_SYS_ADMIN) && !capable(CAP_NET_ADMIN))
 +		return -EPERM;
 +
@@ -1670,12 +1699,12 @@ index 0000000..013d684
 +
 +	sock->state = SS_UNCONNECTED;
 +
-+	return __hvsock_create(net, sock, GFP_KERNEL, 0) ? 0 : -ENOMEM;
++	return hvsock_create(net, sock, GFP_KERNEL, 0, &sk);
 +}
 +
 +static const struct net_proto_family hvsock_family_ops = {
 +	.family = AF_HYPERV,
-+	.create = hvsock_create,
++	.create = hvsock_create_sock,
 +	.owner = THIS_MODULE,
 +};
 +
@@ -1718,6 +1747,12 @@ index 0000000..013d684
 +static int __init hvsock_init(void)
 +{
 +	int ret;
++
++	if (send_ring_page < DEF_RINGBUFFER_PAGES_HVSOCK_SND)
++		send_ring_page = DEF_RINGBUFFER_PAGES_HVSOCK_SND;
++
++	if (recv_ring_page < DEF_RINGBUFFER_PAGES_HVSOCK_RCV)
++		recv_ring_page = DEF_RINGBUFFER_PAGES_HVSOCK_RCV;
 +
 +	/* Hyper-V Sockets requires at least VMBus 4.0 */
 +	if ((vmbus_proto_version >> 16) < 4) {
