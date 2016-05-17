@@ -62,6 +62,13 @@ start()
 		fi
 	fi
 
+	if mobyconfig exists proxy
+	then
+		export http_proxy="$(mobyconfig get proxy/http)"
+		export https_proxy="$(mobyconfig get proxy/https)"
+		export no_proxy="$(mobyconfig get proxy/exclude)"
+	fi
+
 	for d in Users Volumes tmp private
 	do
 		[ -d /Mac/$d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
