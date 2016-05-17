@@ -1,6 +1,6 @@
 FROM golang:alpine
 
-RUN apk update && apk add alpine-sdk
+RUN apk update && apk add build-base
 
 RUN mkdir -p /go/src/vsudd
 WORKDIR /go/src/vsudd
