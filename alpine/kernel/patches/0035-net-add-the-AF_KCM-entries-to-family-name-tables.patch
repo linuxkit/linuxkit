@@ -1,7 +1,7 @@
-From 0f2c256a5c2d11572adb078202575c85472c23dd Mon Sep 17 00:00:00 2001
+From 1b288c812adaffa34be2dc691e559a2c1ba343fa Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Mar 2016 02:51:09 -0700
-Subject: [PATCH 23/28] net: add the AF_KCM entries to family name tables
+Subject: [PATCH 35/40] net: add the AF_KCM entries to family name tables
 
 This is for the recent kcm driver, which introduces AF_KCM(41) in
 b7ac4eb(kcm: Kernel Connection Multiplexor module).
