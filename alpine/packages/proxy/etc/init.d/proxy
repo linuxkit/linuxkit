@@ -7,10 +7,31 @@ depend()
 
 start()
 {
-	ebegin "Setting up proxy port mount"
+	ebegin "Setting up proxy port service"
 
 	mkdir -p /port
 	mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /port
 
-	eend $? "Failed to mount proxy port filesystem"
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/proxy-vsockd.pid
+	[ -n "${LOGFILE}" ] || LOGFILE=/var/log/proxy-vsockd.log
+
+	start-stop-daemon --start --quiet \
+		--background \
+		--exec /sbin/proxy-vsockd \
+		--make-pidfile --pidfile ${PIDFILE} \
+		--stderr "${LOGFILE}" --stdout "${LOGFILE}" \
+		-- -vsockPort 62373 -hvGuid 0B95756A-9985-48AD-9470-78E060895BE7
+
+	eend $? "Failed to start proxy port service"
+}
+
+stop()
+{
+	ebegin "Stopping proxy port service"
+
+	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/proxy-vsockd.pid
+
+	start-stop-daemon --stop --quiet --pidfile ${PIDFILE}
+
+	eend $? "Failed to stop proxy-vsockd"
 }
