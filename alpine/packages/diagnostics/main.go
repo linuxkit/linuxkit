@@ -10,7 +10,9 @@ import (
 	"path"
 	"strings"
 	"time"
-	"github.com/djs55/vsock"
+
+	"github.com/rneugeba/virtsock/go/vsock"
+	"github.com/rneugeba/virtsock/go/hvsock"
 )
 
 func run(timeout time.Duration, w *tar.Writer, command string, args ...string) {
@@ -114,6 +116,13 @@ func main() {
 		log.Printf("Failed to bind to vsock port 62374: %#v", err)
 	} else {
 		listeners = append(listeners, vsock)
+	}
+	svcid, _ := hvsock.GuidFromString("445BA2CB-E69B-4912-8B42-D7F494D007EA")
+	hvsock, err := hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
+	if err != nil {
+		log.Printf("Failed to bind to hvsock port: %#v", err)
+	} else {
+		listeners = append(listeners, hvsock)
 	}
 
 	for _, l := range listeners {
