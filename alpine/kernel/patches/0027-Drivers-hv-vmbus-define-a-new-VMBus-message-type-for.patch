@@ -1,7 +1,7 @@
-From 7e8defd74db9d20fc2c1b98946f5f1e5ad96e33c Mon Sep 17 00:00:00 2001
+From 75650dcb326987e017209a61107f341447a88de5 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:40 -0800
-Subject: [PATCH 18/28] Drivers: hv: vmbus: define a new VMBus message type for
+Subject: [PATCH 27/40] Drivers: hv: vmbus: define a new VMBus message type for
  hvsock
 
 A function to send the type of message is also added.
@@ -20,7 +20,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  3 files changed, 32 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index a7f9e3e..239b072 100644
+index 128dcf2..415f6c7 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
 @@ -219,6 +219,21 @@ error0:
@@ -46,10 +46,10 @@ index a7f9e3e..239b072 100644
   * create_gpadl_header - Creates a gpadl for the specified buffer
   */
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index bd4f084..4d61f41 100644
+index d6c6114..60ca25b 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -820,6 +820,10 @@ struct vmbus_channel_message_table_entry
+@@ -958,6 +958,10 @@ struct vmbus_channel_message_table_entry
  	{CHANNELMSG_VERSION_RESPONSE,		1, vmbus_onversion_response},
  	{CHANNELMSG_UNLOAD,			0, NULL},
  	{CHANNELMSG_UNLOAD_RESPONSE,		1, vmbus_unload_response},
@@ -61,7 +61,7 @@ index bd4f084..4d61f41 100644
  
  /*
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 9fb2130..3f485a4 100644
+index a4f105d..191bc5d 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -394,6 +394,10 @@ enum vmbus_channel_message_type {
@@ -89,7 +89,7 @@ index 9fb2130..3f485a4 100644
  struct vmbus_channel_version_response {
  	struct vmbus_channel_message_header header;
  	u8 version_supported;
-@@ -1276,4 +1287,6 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid);
+@@ -1295,4 +1306,6 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid);
  
  extern __u32 vmbus_proto_version;
  

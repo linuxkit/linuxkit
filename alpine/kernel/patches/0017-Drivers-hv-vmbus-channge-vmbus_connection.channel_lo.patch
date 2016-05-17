@@ -1,7 +1,7 @@
-From 2991041546570f369440c4837ae5ef0518e4d839 Mon Sep 17 00:00:00 2001
+From 9aa8a05fcf39739b23f8e2f502c3ffa370521cba Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:51 -0800
-Subject: [PATCH 14/28] Drivers: hv: vmbus: channge
+Subject: [PATCH 17/40] Drivers: hv: vmbus: channge
  vmbus_connection.channel_lock to mutex
 
 spinlock is unnecessary here.
@@ -18,7 +18,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  3 files changed, 10 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index df76a71..bd4f084 100644
+index 9c9da3a..d013171 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -206,9 +206,9 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)

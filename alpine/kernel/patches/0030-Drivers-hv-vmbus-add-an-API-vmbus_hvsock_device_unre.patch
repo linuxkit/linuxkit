@@ -1,7 +1,7 @@
-From 080b343d4e73684e9c261350703a48771eeda231 Mon Sep 17 00:00:00 2001
+From 5ffa6fad55eaaa00feecefe483a7eb3aba155ae9 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:43 -0800
-Subject: [PATCH 21/28] Drivers: hv: vmbus: add an API
+Subject: [PATCH 30/40] Drivers: hv: vmbus: add an API
  vmbus_hvsock_device_unregister()
 
 The hvsock driver needs this API to release all the resources related
@@ -18,10 +18,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  3 files changed, 32 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 421e3dd..0fe9665 100644
+index 76864c9..cf311be 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -195,6 +195,7 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
+@@ -310,6 +310,7 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
  	vmbus_release_relid(relid);
  
  	BUG_ON(!channel->rescind);
@@ -29,7 +29,7 @@ index 421e3dd..0fe9665 100644
  
  	if (channel->target_cpu != get_cpu()) {
  		put_cpu();
-@@ -206,9 +207,7 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
+@@ -321,9 +322,7 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
  	}
  
  	if (channel->primary_channel == NULL) {
@@ -39,15 +39,15 @@ index 421e3dd..0fe9665 100644
  
  		primary_channel = channel;
  	} else {
-@@ -251,6 +250,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
- 	struct vmbus_channel *channel;
+@@ -367,6 +366,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  	bool fnew = true;
  	unsigned long flags;
+ 	u16 dev_type;
 +	int ret;
  
  	/* Make sure this is a new offer */
  	mutex_lock(&vmbus_connection.channel_mutex);
-@@ -330,7 +330,11 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -449,7 +449,11 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  	 * binding which eventually invokes the device driver's AddDevice()
  	 * method.
  	 */
@@ -60,7 +60,7 @@ index 421e3dd..0fe9665 100644
  		pr_err("unable to add child device object (relid %d)\n",
  			newchannel->offermsg.child_relid);
  		kfree(newchannel->device_obj);
-@@ -587,6 +591,8 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -725,6 +729,8 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  	struct device *dev;
  
  	rescind = (struct vmbus_channel_rescind_offer *)hdr;
@@ -69,7 +69,7 @@ index 421e3dd..0fe9665 100644
  	channel = relid2channel(rescind->child_relid);
  
  	if (channel == NULL) {
-@@ -595,7 +601,7 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -733,7 +739,7 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  		 * vmbus_process_offer(), we have already invoked
  		 * vmbus_release_relid() on error.
  		 */
@@ -78,7 +78,7 @@ index 421e3dd..0fe9665 100644
  	}
  
  	spin_lock_irqsave(&channel->lock, flags);
-@@ -605,7 +611,7 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -743,7 +749,7 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  	if (channel->device_obj) {
  		if (channel->chn_rescind_callback) {
  			channel->chn_rescind_callback(channel);
@@ -87,7 +87,7 @@ index 421e3dd..0fe9665 100644
  		}
  		/*
  		 * We will have to unregister this device from the
-@@ -620,8 +626,25 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -758,8 +764,25 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  		hv_process_channel_removal(channel,
  			channel->offermsg.child_relid);
  	}
@@ -136,10 +136,10 @@ index 521f48e..09c08b5 100644
  	return found_channel;
  }
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 09e9ec1..af7ee0a 100644
+index ad04017..993318a 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1043,6 +1043,8 @@ int __must_check __vmbus_driver_register(struct hv_driver *hv_driver,
+@@ -1071,6 +1071,8 @@ int __must_check __vmbus_driver_register(struct hv_driver *hv_driver,
  					 const char *mod_name);
  void vmbus_driver_unregister(struct hv_driver *hv_driver);
  

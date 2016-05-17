@@ -1,7 +1,7 @@
-From 38bad476ce53b8b305d5629cfa5fe013c82f5a97 Mon Sep 17 00:00:00 2001
+From 73d794b62769667baebc92515da11aa2ef687bf3 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:37 -0800
-Subject: [PATCH 15/28] Drivers: hv: vmbus: add a helper function to set a
+Subject: [PATCH 24/40] Drivers: hv: vmbus: add a helper function to set a
  channel's pending send size
 
 This will be used by the coming net/hvsock driver.
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  1 file changed, 6 insertions(+)
 
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index ae6a711..fda6310 100644
+index 51c98fd..934542a 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -792,6 +792,12 @@ static inline void *get_per_channel_state(struct vmbus_channel *c)
+@@ -818,6 +818,12 @@ static inline void *get_per_channel_state(struct vmbus_channel *c)
  	return c->per_channel_state;
  }
  

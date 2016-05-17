@@ -1,0 +1,150 @@
+From 87cb6b00e44a0d496c623ea19801e2a9415a9759 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Mon, 16 May 2016 22:26:05 +0800
+Subject: [PATCH 40/40] Drivers: hv: vmbus: fix the race when querying &
+ updating the percpu list
+
+There is a rare race when we remove an entry from the global list
+hv_context.percpu_list[cpu] in hv_process_channel_removal() ->
+percpu_channel_deq() -> list_del(): at this time, if vmbus_on_event() ->
+process_chn_event() -> pcpu_relid2channel() is trying to query the list,
+we can get the general protection fault:
+
+general protection fault: 0000 [#1] SMP
+...
+RIP: 0010:[<ffffffff81461b6b>]  [<ffffffff81461b6b>] vmbus_on_event+0xc4/0x149
+
+Similarly, we also have the issue in the code path: vmbus_process_offer() ->
+percpu_channel_enq().
+
+We can resolve the issue by disabling the tasklet when updating the list.
+
+Reported-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Origin: https://github.com/dcui/linux/commit/cef5caca69a9104988a0e1c5185f919f7adbf1d2.patch
+---
+ drivers/hv/channel.c      |  3 +++
+ drivers/hv/channel_mgmt.c | 20 +++++++++-----------
+ include/linux/hyperv.h    |  3 +++
+ 3 files changed, 15 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index 57a1b65..f66fb3c 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -546,8 +546,11 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+ 		put_cpu();
+ 		smp_call_function_single(channel->target_cpu, reset_channel_cb,
+ 					 channel, true);
++		smp_call_function_single(channel->target_cpu,
++					 percpu_channel_deq, channel, true);
+ 	} else {
+ 		reset_channel_cb(channel);
++		percpu_channel_deq(channel);
+ 		put_cpu();
+ 	}
+ 
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index c892db5..ac48fe9 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -21,6 +21,7 @@
+ #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
+ 
+ #include <linux/kernel.h>
++#include <linux/interrupt.h>
+ #include <linux/sched.h>
+ #include <linux/wait.h>
+ #include <linux/mm.h>
+@@ -277,7 +278,7 @@ static void free_channel(struct vmbus_channel *channel)
+ 	kfree(channel);
+ }
+ 
+-static void percpu_channel_enq(void *arg)
++void percpu_channel_enq(void *arg)
+ {
+ 	struct vmbus_channel *channel = arg;
+ 	int cpu = smp_processor_id();
+@@ -285,7 +286,7 @@ static void percpu_channel_enq(void *arg)
+ 	list_add_tail(&channel->percpu_list, &hv_context.percpu_list[cpu]);
+ }
+ 
+-static void percpu_channel_deq(void *arg)
++void percpu_channel_deq(void *arg)
+ {
+ 	struct vmbus_channel *channel = arg;
+ 
+@@ -313,15 +314,6 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
+ 	BUG_ON(!channel->rescind);
+ 	BUG_ON(!mutex_is_locked(&vmbus_connection.channel_mutex));
+ 
+-	if (channel->target_cpu != get_cpu()) {
+-		put_cpu();
+-		smp_call_function_single(channel->target_cpu,
+-					 percpu_channel_deq, channel, true);
+-	} else {
+-		percpu_channel_deq(channel);
+-		put_cpu();
+-	}
+-
+ 	if (channel->primary_channel == NULL) {
+ 		list_del(&channel->listentry);
+ 
+@@ -363,6 +355,7 @@ void vmbus_free_channels(void)
+  */
+ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ {
++	struct tasklet_struct *tasklet;
+ 	struct vmbus_channel *channel;
+ 	bool fnew = true;
+ 	unsigned long flags;
+@@ -409,6 +402,8 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ 
+ 	init_vp_index(newchannel, dev_type);
+ 
++	tasklet = hv_context.event_dpc[newchannel->target_cpu];
++	tasklet_disable(tasklet);
+ 	if (newchannel->target_cpu != get_cpu()) {
+ 		put_cpu();
+ 		smp_call_function_single(newchannel->target_cpu,
+@@ -418,6 +413,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ 		percpu_channel_enq(newchannel);
+ 		put_cpu();
+ 	}
++	tasklet_enable(tasklet);
+ 
+ 	/*
+ 	 * This state is used to indicate a successful open
+@@ -469,6 +465,7 @@ err_deq_chan:
+ 	list_del(&newchannel->listentry);
+ 	mutex_unlock(&vmbus_connection.channel_mutex);
+ 
++	tasklet_disable(tasklet);
+ 	if (newchannel->target_cpu != get_cpu()) {
+ 		put_cpu();
+ 		smp_call_function_single(newchannel->target_cpu,
+@@ -477,6 +474,7 @@ err_deq_chan:
+ 		percpu_channel_deq(newchannel);
+ 		put_cpu();
+ 	}
++	tasklet_enable(tasklet);
+ 
+ err_free_chan:
+ 	free_channel(newchannel);
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index 187d4bd..a69364b 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -1339,6 +1339,9 @@ extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *,
+ 					struct icmsg_negotiate *, u8 *, int,
+ 					int);
+ 
++void percpu_channel_enq(void *arg);
++void percpu_channel_deq(void *arg);
++
+ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid);
+ 
+ /*
+-- 
+2.8.2
+
