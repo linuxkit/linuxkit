@@ -23,7 +23,7 @@ func onePort() {
 		sendError(err)
 	}
 
-	ctl, err := exposePort(host, port)
+	ctl, err := exposePort(host, container)
 	if err != nil {
 		sendError(err)
 	}
@@ -37,8 +37,8 @@ func onePort() {
 	os.Exit(0)
 }
 
-func exposePort(host net.Addr, port int) (*os.File, error) {
-	name := host.Network() + ":" + host.String()
+func exposePort(host net.Addr, container net.Addr) (*os.File, error) {
+	name := host.Network() + ":" + host.String() + ":" + container.Network() + ":" + container.String()
 	log.Printf("exposePort %s\n", name)
 	err := os.Mkdir("/port/"+name, 0)
 	if err != nil {
@@ -50,7 +50,7 @@ func exposePort(host net.Addr, port int) (*os.File, error) {
 		log.Printf("Failed to open /port/%s/ctl: %#v\n", name, err)
 		return nil, err
 	}
-	_, err = ctl.WriteString(fmt.Sprintf("%s:%08x", name, port))
+	_, err = ctl.WriteString(fmt.Sprintf("%s", name))
 	if err != nil {
 		log.Printf("Failed to open /port/%s/ctl: %#v\n", name, err)
 		return nil, err
