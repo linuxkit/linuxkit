@@ -14,17 +14,17 @@ start()
 	PIDFILE=/run/hupper.pid
 	DOCKERPIDFILE=/run/docker.pid
 	WATCH_CONFIG=$(mobyconfig watch /etc/docker/daemon.json)
-	WATCH_PROXY=$(mobyconfig watch proxy)
-
+	WATCH_PROXY=""
+	PROXY="$(mobyconfig watch proxy)"
+	[ -n "${PROXY}" ] && WATCH_PROXY="-path ${PROXY}"
 	[ -z "${WATCH_CONFIG}" ] && exit 1
-	[ -z "${WATCH_PROXY}" ] && exit 1
 
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /bin/hupper \
 		--make-pidfile --pidfile ${PIDFILE} \
 		-- -pidfile ${PIDFILE} -huppidfile ${DOCKERPIDFILE} \
-		   -path ${WATCH_CONFIG} -path ${WATCH_PROXY}
+		   -path ${WATCH_CONFIG} ${WATCH_PROXY}
 
 	eend $? "Failed to start hupper"
 }
