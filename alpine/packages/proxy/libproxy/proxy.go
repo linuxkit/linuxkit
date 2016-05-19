@@ -4,7 +4,7 @@ package libproxy
 
 import (
 	"fmt"
-	"github.com/djs55/vsock"
+	"github.com/rneugeba/virtsock/go/vsock"
 	"net"
 )
 

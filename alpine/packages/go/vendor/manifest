@@ -1,0 +1,14 @@
+{
+	"version": 0,
+	"dependencies": [
+		{
+			"importpath": "github.com/rneugeba/virtsock/go",
+			"repository": "https://github.com/rneugeba/virtsock",
+			"vcs": "git",
+			"revision": "359bc27daab86588bfc7a304e78c6758b098d8e5",
+			"branch": "master",
+			"path": "/go",
+			"notests": true
+		}
+	]
+}
