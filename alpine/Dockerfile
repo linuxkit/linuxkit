@@ -3,6 +3,11 @@ FROM alpine:3.4
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
+  chown -R docker /home/docker && \
+  chgrp -R docker /home/docker && \
+  chown -R docker /var/log && \
+  chgrp -R docker /var/log && \
+  passwd -u docker && \
   passwd -d root && \
   apk update && apk upgrade && \
   apk add \
@@ -75,6 +80,8 @@ COPY packages/9pmount-vsock/9pmount-vsock /sbin
 COPY packages/test/etc /etc
 COPY packages/test/mobytest /usr/bin
 COPY packages/sysctl/etc /etc
+COPY packages/azure/etc /etc
+COPY packages/aws/etc /etc
 
 RUN \
   rc-update add swap boot && \
@@ -111,6 +118,8 @@ RUN \
   rc-update add hv_vss_daemon default && \
   rc-update add oom default && \
   rc-update add test default && \
+  rc-update add aws default && \
+  rc-update add azure default && \
   true
 
 COPY init /

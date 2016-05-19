@@ -9,6 +9,10 @@ RUN apk add --update \
     jq \
     syslinux
 RUN pip install -U awscli
-COPY aws/bake-ami.sh .
+RUN mkdir -p /scripts
+WORKDIR /scripts
+COPY ./build-common.sh .
+COPY ./aws/common.sh .
+COPY ./aws/bake-ami.sh .
 
 ENTRYPOINT ["./bake-ami.sh"]

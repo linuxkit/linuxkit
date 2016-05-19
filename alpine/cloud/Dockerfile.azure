@@ -1,0 +1,19 @@
+FROM golang:alpine
+
+RUN apk add --update \
+    bash \
+    curl \
+    e2fsprogs \
+    syslinux \
+    multipath-tools \
+    git \
+    util-linux
+
+RUN go get -u github.com/Microsoft/azure-vhd-utils-for-go
+
+RUN mkdir /scripts
+WORKDIR /scripts
+COPY ./build-common.sh .
+COPY ./azure/bake-azure.sh .
+
+ENTRYPOINT ["./bake-azure.sh"]

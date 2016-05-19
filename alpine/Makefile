@@ -48,15 +48,24 @@ initrd-arm.img: Dockerfile.armhf
 	docker-compose build arm
 	docker-compose run --rm -T arm /bin/mkinitrd.sh > $@
 
-ami: initrd.img
+cloudcommon: initrd.img
 	$(MAKE) -C kernel
 	$(MAKE) -C packages
+
+azure: cloudcommon
+	docker-compose build azure
+	docker-compose run --rm -T azure makeraw
+	docker build -t raw2vhd -f cloud/Dockerfile.qemu-img cloud
+	docker run -v $(shell pwd):/mnt raw2vhd /mnt/mobylinux.img /mnt/mobylinux.vhd
+	docker-compose run --rm -T azure uploadvhd
+
+ami: cloudcommon
 	docker-compose build ami
 	docker-compose run --rm -T ami clean
 	docker-compose run --rm -T ami bake
 
 clean:
-	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf etc/inittab
+	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf etc/inittab mobylinux.vhd mobylinux.img
 	rm -f mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
 	$(MAKE) -C packages clean
 	$(MAKE) -C kernel clean

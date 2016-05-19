@@ -27,10 +27,21 @@ services:
       context: .
       dockerfile: Dockerfile.armhf
     network_mode: bridge
+  azure:
+    privileged: true
+    build:
+      context: cloud
+      dockerfile: Dockerfile.azure
+    network_mode: bridge
+    environment:
+      AZURE_STG_ACCOUNT_KEY: 
+    volumes:
+      - .:/mnt
+      - /dev:/dev
   ami:
     privileged: true
     build:
-      context: .
+      context: cloud
       dockerfile: Dockerfile.ami
     network_mode: bridge
     volumes:
