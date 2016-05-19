@@ -17,7 +17,10 @@ AMI_ID=$(cat ./aws/ami_id.out)
 
 echo "Running instance from ${AMI_ID}"
 
-INSTANCE_ID=$(aws ec2 run-instances --image-id ${AMI_ID} --instance-type t2.nano | jq -r .Instances[0].InstanceId)
+INSTANCE_ID=$(aws ec2 run-instances \
+    --image-id ${AMI_ID} \
+    --instance-type t2.nano \
+    --user-data file://./aws/bootstrap.sh | jq -r .Instances[0].InstanceId)
 
 aws ec2 create-tags --resources ${INSTANCE_ID} --tags Key=Name,Value=moby-boot-from-ami
 

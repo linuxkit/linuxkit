@@ -1,0 +1,63 @@
+#!/sbin/openrc-run
+
+description="Bootstrap procedure if running on Docker AWS edition"
+
+depend() {
+    after docker
+}
+
+start() {
+    ebegin "Checking if AWS and needs userdata"
+
+    INSTANCE_DATA_ENDPOINT=http://169.254.169.254/latest
+    METADATA="${INSTANCE_DATA_ENDPOINT}/meta-data"
+    USERDATA="${INSTANCE_DATA_ENDPOINT}/user-data"
+
+    USER_SSH_DIR=/home/docker/.ssh
+
+    # setup SSH keys
+    if [ ! -d ${USER_SSH_DIR} ]; then
+        mkdir -p ${USER_SSH_DIR}
+        chmod 700 ${USER_SSH_DIR}
+    fi
+
+    # Put instance SSH key in place.
+    #
+    # TODO(nathanleclaire/kencochrane): Drop this section if SSH is not used in
+    # final version
+    wget -q -O /tmp/my-key ${METADATA}/public-keys/0/openssh-key
+    if [ $? -eq 0 ]; then
+        cat /tmp/my-key >> ${USER_SSH_DIR}/authorized_keys
+        chmod 700 ${USER_SSH_DIR}/authorized_keys
+        rm /tmp/my-key
+    fi
+
+    export MOBY_AMI=$(wget -qO- ${METADATA}/ami-id)
+    MAC_ADDR=$(wget -qO- ${METADATA}/network/interfaces/macs)
+    export AWS_SUBNET_ID=$(wget -qO ${METADATA}/network/interfaces/macs/${MAC_ADDR}subnet-id)
+    export AWS_DEFAULT_REGION=$(wget -qO- ${METADATA}/placement/availability-zone) # Technically an availability zone
+    export AWS_SECURITY_GROUP=$(wget -qO ${METADATA}/security-groups)
+    export AWS_SECURITY_GROUP_ID=$AWS_SECURITY_GROUP_ID #TODO (Do we really need it?  Can libmachete look it up?)
+    export PUBLIC_HOSTNAME=$(wget -qO- ${METADATA}/public-hostname)
+    export MANAGER_PASSWORD=whitewhale # TODO: Can we interpolate this into CloudFormation instead.
+    export CLUSTER_NAME=demo-cluster
+
+    # Check our results in log
+    env
+
+    # Get user data file and use it to bootstrap Moby in the cloud
+    wget -q -O /tmp/user-data ${USERDATA}/
+
+    # For now we will have a shell script which executes on boot.
+    # TODO(nathanleclaire/kencochrane): Migrate this to mobyconfig, or similar.
+    #
+    # All of this definitely should not be executed when invoked in xhyve or
+    # Hyper-V either.
+    if [ $? -eq 0 ]; then
+        chmod 755 /tmp/user-data
+        /tmp/user-data
+        rm /tmp/user-data
+    fi
+
+    eend 0
+}
