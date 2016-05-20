@@ -5,8 +5,62 @@
 
 set -e
 
-INSTANCE_ID=$(cat ./aws/instance_id.out)
-aws ec2 terminate-instances --instance-id ${INSTANCE_ID} || true
+METADATA="http://169.254.169.254/latest/meta-data"
+MANAGER_SG="docker-swarm-ingress"
+
+function manager_sg_id () {
+    aws ec2 describe-security-groups \
+        --filter Name=group-name,Values=${MANAGER_SG} | jq -r .SecurityGroups[0].GroupId
+}
+
+function attach_security_group () {
+    MANAGER_SG_ID=$(manager_sg_id)
+    if [[ ${MANAGER_SG_ID} == "null" ]]; then
+        CUR_INSTANCE_MAC=$(wget -qO- ${METADATA}/network/interfaces/macs)
+        CUR_INSTANCE_VPC_CIDR=$(wget -qO- ${METADATA}/network/interfaces/macs/${CUR_INSTANCE_MAC}vpc-ipv4-cidr-block)
+        MANAGER_SG_ID=$(aws ec2 create-security-group \
+            --group-name ${MANAGER_SG} \
+            --description "Allow inbound access to Docker API and for remote join node connection" | jq -r .GroupId)
+
+        echo "Created security group ${MANAGER_SG_ID}"
+
+        # Hack to wait for SG to be created before adding rules
+        sleep 5
+
+        # For Docker API
+        aws ec2 authorize-security-group-ingress \
+            --group-id ${MANAGER_SG_ID} \
+            --protocol tcp \
+            --port 2375 \
+            --cidr ${CUR_INSTANCE_VPC_CIDR}
+
+        # For Swarm join node connection
+        aws ec2 authorize-security-group-ingress \
+            --group-id ${MANAGER_SG_ID} \
+            --protocol tcp \
+            --port 4242 \
+            --cidr ${CUR_INSTANCE_VPC_CIDR}
+    fi
+
+    aws ec2 modify-instance-attribute \
+        --instance-id "$1" \
+        --groups ${MANAGER_SG_ID}
+}
+
+function wait_for_instance_boot () {
+    echo "Waiting for instance boot log to become available"
+
+    INSTANCE_BOOT_LOG="null"
+    while [[ ${INSTANCE_BOOT_LOG} == "null" ]]; do
+        INSTANCE_BOOT_LOG=$(aws ec2 get-console-output --instance-id "$1" | jq -r .Output)
+        sleep 5
+    done
+
+    aws ec2 get-console-output --instance-id "$1" | jq -r .Output
+}
+
+OLD_INSTANCE_IDS=$(cat ./aws/instance_id.out | tr '\n' ' ')
+aws ec2 terminate-instances --instance-id ${OLD_INSTANCE_IDS} || true
 
 if [[ ! -f ./aws/ami_id.out ]]; then
     echo "AMI ID to launch instance from not found"
@@ -15,24 +69,48 @@ fi
 
 AMI_ID=$(cat ./aws/ami_id.out)
 
-echo "Running instance from ${AMI_ID}"
+echo "Using image ${AMI_ID}"
 
-INSTANCE_ID=$(aws ec2 run-instances \
+MANAGER_INSTANCE_ID=$(aws ec2 run-instances \
     --image-id ${AMI_ID} \
     --instance-type t2.nano \
-    --user-data file://./aws/bootstrap.sh | jq -r .Instances[0].InstanceId)
+    --user-data file://./aws/manager-user-data.sh | jq -r .Instances[0].InstanceId)
 
-aws ec2 create-tags --resources ${INSTANCE_ID} --tags Key=Name,Value=moby-boot-from-ami
+aws ec2 create-tags --resources ${MANAGER_INSTANCE_ID} --tags Key=Name,Value=docker-swarm-manager
 
-echo "Running instance ${INSTANCE_ID}"
-echo ${INSTANCE_ID} >./aws/instance_id.out
+echo "Running manager instance ${MANAGER_INSTANCE_ID}"
 
-echo "Waiting for instance boot log to become available"
+# Deliberately truncate file here.
+echo ${MANAGER_INSTANCE_ID} >./aws/instance_id.out
 
-INSTANCE_BOOT_LOG="null"
-while [[ ${INSTANCE_BOOT_LOG} == "null" ]]; do
-    INSTANCE_BOOT_LOG=$(aws ec2 get-console-output --instance-id ${INSTANCE_ID} | jq -r .Output)
-    sleep 5
-done
+attach_security_group ${MANAGER_INSTANCE_ID}
 
-aws ec2 get-console-output --instance-id ${INSTANCE_ID} | jq -r .Output
+# User can set this variable to indicate they want a whole swarm.
+if [[ ! -z "$JOIN_INSTANCES" ]]; then
+    MANAGER_IP=$(aws ec2 describe-instances \
+        --instance-id ${MANAGER_INSTANCE_ID} | jq -r .Reservations[0].Instances[0].NetworkInterfaces[0].PrivateIpAddresses[0].PrivateIpAddress)
+
+    TMP_JOINER_USERDATA=/tmp/joiner-user-data-${MANAGER_INSTANCE_ID}.sh
+
+    cat ./aws/joiner-user-data.sh | sed "s/{{MANAGER_IP}}/${MANAGER_IP}/" >${TMP_JOINER_USERDATA}
+
+    JOINER_INSTANCE_ID=$(aws ec2 run-instances \
+        --image-id ${AMI_ID} \
+        --instance-type t2.nano \
+        --count 1 \
+        --user-data file://${TMP_JOINER_USERDATA} | jq -r .Instances[0].InstanceId)
+
+    echo "Running joiner instance ${JOINER_INSTANCE_ID}"
+
+    # For debugging purposes only.  In "production" this SG should not be
+    # attached to these instances.
+    attach_security_group ${JOINER_INSTANCE_ID}
+
+    # Do not truncate file here.
+    echo ${JOINER_INSTANCE_ID} >>./aws/instance_id.out
+
+    # TODO: Get list of ids and do this for each if applicable.
+    aws ec2 create-tags --resources ${JOINER_INSTANCE_ID} --tags Key=Name,Value=docker-swarm-joiner
+fi
+
+wait_for_instance_boot ${MANAGER_INSTANCE_ID}
