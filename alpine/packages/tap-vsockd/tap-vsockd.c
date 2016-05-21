@@ -77,8 +77,8 @@ void set_macaddr(const char *dev, uint8_t *mac) {
   close(fd);
 }
 
-
-void negotiate(int fd, struct vif_info *vif)
+/* Negotiate a vmnet connection, returns 0 on success and 1 on error. */
+int negotiate(int fd, struct vif_info *vif)
 {
     /* Negotiate with com.docker.slirp */
     struct init_message *me = create_init_message();
@@ -105,9 +105,10 @@ void negotiate(int fd, struct vif_info *vif)
     if (read_vif_info(fd, vif) == -1) {
       goto err;
     }
-    return;
+    return 0;
 err:
-    fatal("Failed to negotiate with com.docker.slirp");
+    syslog(LOG_CRIT, "Failed to negotiate vmnet connection");
+    return 1;
 }
 
 
@@ -175,28 +176,16 @@ static void* tap_to_vmnet(void *arg)
   return NULL;
 }
 
-/* Handle a connection. Handshake with the com.docker.slirp process and start
- * exchanging ethernet frames between the socket and the tap device.
+/* Handle a connection by exchanging ethernet frames forever.
  */
-static void handle(int fd, char *tap, int tapfd)
+static void handle(struct connection *connection)
 {
-    struct connection connection;
     pthread_t v2t, t2v;
 
-    connection.fd = fd;
-    negotiate(fd, &connection.vif);
-    syslog(LOG_INFO, "VMNET VIF has MAC %02x:%02x:%02x:%02x:%02x:%02x",
-      connection.vif.mac[0], connection.vif.mac[1], connection.vif.mac[2],
-      connection.vif.mac[3], connection.vif.mac[4], connection.vif.mac[5]
-    );
-
-    set_macaddr(tap, &connection.vif.mac[0]);
-    connection.tapfd = tapfd;
-
-    if (pthread_create(&v2t, NULL, vmnet_to_tap, &connection) != 0){
+    if (pthread_create(&v2t, NULL, vmnet_to_tap, connection) != 0){
       fatal("Failed to create the vmnet_to_tap thread");
     }
-    if (pthread_create(&t2v, NULL, tap_to_vmnet, &connection) != 0){
+    if (pthread_create(&t2v, NULL, tap_to_vmnet, connection) != 0){
       fatal("Failed to create the tap_to_vmnet thread");
     }
     if (pthread_join(v2t, NULL) != 0){
@@ -400,19 +389,44 @@ int main(int argc, char **argv)
     }
     openlog(argv[0], log_flags, LOG_DAEMON);
 
-    int sock = -1;
-    if (listen_flag) {
-      syslog(LOG_INFO, "starting in listening mode with serviceid=%s and tap=%s", serviceid, tap);
-      int lsocket = create_listening_socket(sid);
-      sock = accept_socket(lsocket);
-    } else {
-      syslog(LOG_INFO, "starting in connect mode with serviceid=%s and tap=%s", serviceid, tap);
-      sock = connect_socket(sid);
-    }
-    /* Bring up the tap device before we daemonize */
     int tapfd = alloc_tap(tap);
-    if (daemon_flag) daemonize(pidfile);
 
-    handle(sock, tap, tapfd);
-    exit(0);
+    struct connection connection;
+    connection.tapfd = tapfd;
+
+    int sock = -1;
+
+    for (;;) {
+      if (sock != -1) {
+        close(sock);
+        sock = -1;
+      }
+      if (listen_flag) {
+        syslog(LOG_INFO, "starting in listening mode with serviceid=%s and tap=%s", serviceid, tap);
+        int lsocket = create_listening_socket(sid);
+        sock = accept_socket(lsocket);
+        close(lsocket);
+      } else {
+        syslog(LOG_INFO, "starting in connect mode with serviceid=%s and tap=%s", serviceid, tap);
+        sock = connect_socket(sid);
+      }
+
+      connection.fd = sock;
+      if (negotiate(sock, &connection.vif) != 0) {
+        sleep(1);
+        continue;
+      }
+      syslog(LOG_INFO, "VMNET VIF has MAC %02x:%02x:%02x:%02x:%02x:%02x",
+        connection.vif.mac[0], connection.vif.mac[1], connection.vif.mac[2],
+        connection.vif.mac[3], connection.vif.mac[4], connection.vif.mac[5]
+      );
+      set_macaddr(tap, &connection.vif.mac[0]);
+
+      /* Daemonize after we've made our first reliable connection */
+      if (daemon_flag) {
+        daemon_flag = 0;
+        daemonize(pidfile);
+      }
+      handle(&connection);
+    }
 }
