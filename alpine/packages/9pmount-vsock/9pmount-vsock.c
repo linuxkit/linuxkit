@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 #include <err.h>
+#include <sys/wait.h>
 
 #include "hvsock.h"
 
@@ -31,7 +32,7 @@ void fatal(const char *msg)
     exit(1);
 }
 
-static void handle(int fd, char *tag, char *path)
+static int handle(int fd, char *tag, char *path)
 {
   char *options = NULL;
   if (asprintf(&options, "trans=fd,dfltuid=1001,dfltgid=50,version=9p2000,rfdno=%d,wfdno=%d", fd, fd) < 0){
@@ -43,8 +44,17 @@ static void handle(int fd, char *tag, char *path)
     tag, path,
     NULL
   };
-  execv(mount, argv);
-  fatal("execv()");
+  pid_t pid = fork();
+  if (pid == 0) {
+    execv(mount, argv);
+    fatal("execv()");
+  }
+  int status;
+  if (waitpid(pid, &status, 0) == -1) {
+    syslog(LOG_CRIT, "waitpid failed: %d. %s", errno, strerror(errno));
+    exit(1);
+  }
+  return WEXITSTATUS(status);
 }
 
 static int create_listening_socket(GUID serviceid) {
@@ -195,17 +205,25 @@ int main(int argc, char **argv)
     }
 
     openlog(argv[0], LOG_CONS | LOG_NDELAY | LOG_PERROR, LOG_DAEMON);
-    int sock = -1;
-    if (mode == LISTEN) {
-      syslog(LOG_INFO, "starting in listening mode with serviceid=%s", serviceid);
-      int lsocket = create_listening_socket(sid);
-      sock = accept_socket(lsocket);
-      close(lsocket);
-    } else {
-      syslog(LOG_INFO, "starting in connect mode with serviceid=%s", serviceid);
-      sock = connect_socket(sid);
+    for (;;) {
+      int sock = -1;
+      if (mode == LISTEN) {
+        syslog(LOG_INFO, "starting in listening mode with serviceid=%s, tag=%s, path=%s", serviceid, tag, path);
+        int lsocket = create_listening_socket(sid);
+        sock = accept_socket(lsocket);
+        close(lsocket);
+      } else {
+        syslog(LOG_INFO, "starting in connect mode with serviceid=%s, tag=%s, path=%s", serviceid, tag, path);
+        sock = connect_socket(sid);
+      }
+      int r = handle(sock, tag, path);
+      close(sock);
+      if (r == 0) {
+        syslog(LOG_INFO, "mount successful for serviceid=%s tag=%s path=%s", serviceid, tag, path);
+        exit(0);
+      }
+      /* This can happen if the client times out the connection after we accept it */
+      syslog(LOG_CRIT, "mount failed with %d for serviceid=%s tag=%s path=%s", r, serviceid, tag, path);
+      sleep(1); /* retry */
     }
-
-    handle(sock, tag, path);
-    exit(0);
 }
