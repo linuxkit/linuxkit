@@ -9,6 +9,8 @@ INET=$(ifconfig eth0 2> /dev/null | grep 'inet addr')
 [ $? -eq 0 ] && printf "✓ Network connected: $INET\n" || printf "✗ No network connection\n"
 FUSE=$(ps -eo args | grep '^/sbin/transfused')
 [ $? -eq 0 ] && printf "✓ Process transfused running\n" || printf "✗ No transfused process\n"
+FUSE=$(ps -eo args | grep '^/sbin/tap-vsockd')
+[ $? -eq 0 ] && printf "✓ Process tap-vsockd running\n" || printf "✗ No tap-vsockd process\n"
 HUPPER=$(ps -eo args | grep '^/bin/hupper')
 [ $? -eq 0 ] && printf "✓ Process hupper running: $HUPPER\n" || printf "✗ No hupper process\n"
 DOCKER=$(ps -eo args | grep '^/usr/bin/docker')

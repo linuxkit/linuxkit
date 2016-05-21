@@ -40,6 +40,7 @@ COPY packages/proxy/proxy /sbin/
 COPY packages/proxy/etc /etc/
 COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
+COPY packages/tap-vsockd/tap-vsockd /sbin/
 COPY packages/llmnrd/llmnrd /sbin/
 COPY packages/llmnrd/etc /etc/
 COPY packages/llmnrd/llmnrd.tar.gz /usr/share/src/
