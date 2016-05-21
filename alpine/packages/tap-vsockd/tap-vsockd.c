@@ -387,18 +387,18 @@ int main(int argc, char **argv)
       fprintf(stderr, "For daemon mode, please supply a --pidfile argument.\n");
       exit(1);
     }
+    res = parseguid(serviceid, &sid);
+    if (res) {
+      fprintf(stderr, "Failed to parse serviceid as GUID: %s\n", serviceid);
+      usage(argv[0]);
+      exit(1);
+    }
+
     int log_flags = LOG_CONS | LOG_NDELAY;
     if (!daemon_flag) {
       log_flags |= LOG_PERROR;
     }
     openlog(argv[0], log_flags, LOG_DAEMON);
-
-    res = parseguid(serviceid, &sid);
-    if (res) {
-      syslog(LOG_CRIT, "Failed to parse serviceid as GUID: %s", serviceid);
-      usage(argv[0]);
-      exit(1);
-    }
 
     int sock = -1;
     if (listen_flag) {
