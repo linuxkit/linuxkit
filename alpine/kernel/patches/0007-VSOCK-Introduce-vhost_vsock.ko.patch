@@ -1,4 +1,4 @@
-From fd467c3335938b8eca0489008c390ad16a01aee7 Mon Sep 17 00:00:00 2001
+From 737df2ecc7b83e6e0d66acbc2f8eb9e7b1fdfc11 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:29:21 +0800
 Subject: [PATCH 07/40] VSOCK: Introduce vhost_vsock.ko
@@ -17,7 +17,7 @@ Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
  create mode 100644 drivers/vhost/vsock.h
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 889d0d7..9a70d2d 100644
+index 82d1123..12d49f5 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -11392,6 +11392,8 @@ F:	include/linux/virtio_vsock.h
