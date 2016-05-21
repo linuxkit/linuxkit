@@ -31,7 +31,7 @@ void fatal(const char *msg)
     exit(1);
 }
 
-static void handle(int fd)
+static void handle(int fd, char *tag, char *path)
 {
   char *options = NULL;
   if (asprintf(&options, "trans=fd,dfltuid=1001,dfltgid=50,version=9p2000,rfdno=%d,wfdno=%d", fd, fd) < 0){
@@ -40,7 +40,7 @@ static void handle(int fd)
   char *argv[] = {
     mount,
     "-t", "9p", "-o", options,
-    "db", "/Database",
+    tag, path,
     NULL
   };
   execv(mount, argv);
@@ -114,8 +114,9 @@ static int accept_socket(int lsock) {
 
 void usage(char *name)
 {
-    printf("%s usage:\n", name);
-    printf("\t[--serviceid <guid>] <listen | connect>\n");
+    printf("%s: mount a 9P filesystem from an hvsock connection\n", name);
+    printf("usage:\n");
+    printf("\t[--serviceid <guid>] <listen | connect> <tag> <path>\n");
     printf("where\n");
     printf("\t--serviceid <guid>: use <guid> as the well-known service GUID\n");
     printf("\t  (defaults to %s)\n", default_sid);
@@ -130,6 +131,8 @@ int main(int argc, char **argv)
     int c;
     /* Defaults to a testing GUID */
     char *serviceid = default_sid;
+    char *tag = NULL;
+    char *path = NULL;
 
     opterr = 0;
     while (1) {
@@ -168,15 +171,30 @@ int main(int argc, char **argv)
       usage(argv[0]);
       exit(1);
     }
-    openlog(argv[0], LOG_CONS | LOG_NDELAY | LOG_PERROR, LOG_DAEMON);
-
+    if (optind < argc) {
+      tag = argv[optind++];
+    }
+    if (optind < argc) {
+      path = argv[optind++];
+    }
+    if (!tag) {
+      fprintf(stderr, "Please supply a tag name\n");
+      usage(argv[0]);
+      exit(1);
+    }
+    if (!path) {
+      fprintf(stderr, "Please supply a path\n");
+      usage(argv[0]);
+      exit(1);
+    }
     res = parseguid(serviceid, &sid);
     if (res) {
-      syslog(LOG_CRIT, "Failed to parse serviceid as GUID: %s", serviceid);
+      fprintf(stderr, "Failed to parse serviceid as GUID: %s\n", serviceid);
       usage(argv[0]);
       exit(1);
     }
 
+    openlog(argv[0], LOG_CONS | LOG_NDELAY | LOG_PERROR, LOG_DAEMON);
     int sock = -1;
     if (mode == LISTEN) {
       syslog(LOG_INFO, "starting in listening mode with serviceid=%s", serviceid);
@@ -188,6 +206,6 @@ int main(int argc, char **argv)
       sock = connect_socket(sid);
     }
 
-    handle(sock);
+    handle(sock, tag, path);
     exit(0);
 }
