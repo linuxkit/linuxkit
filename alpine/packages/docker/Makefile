@@ -5,7 +5,6 @@ OS?=Linux
 all: bin
 
 bin: docker.git
-	(cd docker.git && git fetch origin --tags && git checkout 1.12-integration)
 	BIND_DIR=$(shell pwd) make -C docker.git binary
 	mkdir -p bin
 	cp docker.git/bundles/${DOCKER_VERSION}/binary-client/* bin/

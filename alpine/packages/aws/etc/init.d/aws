@@ -42,7 +42,6 @@ start() {
     if [ $? -eq 0 ]; then
         chmod 755 /tmp/user-data
         /tmp/user-data
-        rm /tmp/user-data
     fi
 
     eend 0

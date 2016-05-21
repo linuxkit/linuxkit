@@ -47,7 +47,7 @@ function attach_security_group () {
         --groups ${MANAGER_SG_ID}
 }
 
-function wait_for_instance_boot () {
+function poll_instance_log () {
     echo "Waiting for instance boot log to become available"
 
     INSTANCE_BOOT_LOG="null"
@@ -111,6 +111,12 @@ if [[ ! -z "$JOIN_INSTANCES" ]]; then
 
     # TODO: Get list of ids and do this for each if applicable.
     aws ec2 create-tags --resources ${JOINER_INSTANCE_ID} --tags Key=Name,Value=docker-swarm-joiner
+
+    echo "Waiting for joiner to be running..."
+    aws ec2 wait instance-running ${JOINER_INSTANCE_ID}
 fi
 
-wait_for_instance_boot ${MANAGER_INSTANCE_ID}
+echo "Waiting for manager to be running..."
+aws ec2 wait instance-running ${MANAGER_INSTANCE_ID}
+
+poll_instance_log ${MANAGER_INSTANCE_ID}
