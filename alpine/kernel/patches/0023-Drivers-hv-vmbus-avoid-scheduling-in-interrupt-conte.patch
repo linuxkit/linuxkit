@@ -1,4 +1,4 @@
-From 22945cbc393c06b0b55c553623b595fc1e6d2598 Mon Sep 17 00:00:00 2001
+From 2d6cab80cbbcc7b94e538a0a1d32a5584c166169 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Wed, 27 Jan 2016 22:29:35 -0800
 Subject: [PATCH 23/40] Drivers: hv: vmbus: avoid scheduling in interrupt
