@@ -1,4 +1,4 @@
-From 19cfdea4fa3fa9136c234ac695f628fce73b40c2 Mon Sep 17 00:00:00 2001
+From 699fe71d8522b674a38e066c204907a8d3b91b2d Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:28:48 +0800
 Subject: [PATCH 06/40] VSOCK: Introduce virtio_transport.ko
@@ -15,7 +15,7 @@ Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
  create mode 100644 net/vmw_vsock/virtio_transport.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index aa88662..889d0d7 100644
+index b93ba8b..82d1123 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -11391,6 +11391,7 @@ S:	Maintained
