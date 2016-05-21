@@ -113,10 +113,10 @@ if [[ ! -z "$JOIN_INSTANCES" ]]; then
     aws ec2 create-tags --resources ${JOINER_INSTANCE_ID} --tags Key=Name,Value=docker-swarm-joiner
 
     echo "Waiting for joiner to be running..."
-    aws ec2 wait instance-running ${JOINER_INSTANCE_ID}
+    aws ec2 wait instance-running --instace-ids ${JOINER_INSTANCE_ID}
 fi
 
 echo "Waiting for manager to be running..."
-aws ec2 wait instance-running ${MANAGER_INSTANCE_ID}
+aws ec2 wait instance-running --instance-ids ${MANAGER_INSTANCE_ID}
 
 poll_instance_log ${MANAGER_INSTANCE_ID}
