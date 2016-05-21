@@ -1,4 +1,4 @@
-From a27fee87d915bfb9edf720f9068c3aed6649aa0c Mon Sep 17 00:00:00 2001
+From 1e4aa76446e62fc0d54225b52eed755c39bf3041 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:27:00 +0800
 Subject: [PATCH 05/40] VSOCK: Introduce virtio_vsock_common.ko
@@ -22,7 +22,7 @@ Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
  create mode 100644 net/vmw_vsock/virtio_transport_common.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 4c3e1d2..aa88662 100644
+index ab65bbe..b93ba8b 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -11382,6 +11382,16 @@ S:	Maintained
