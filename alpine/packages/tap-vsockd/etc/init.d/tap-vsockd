@@ -1,0 +1,43 @@
+#!/sbin/openrc-run
+
+description="VPN proxy"
+
+depend()
+{
+	before networking
+}
+
+start()
+{
+        if mobyconfig exists network
+        then
+                NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
+                if [ "${NETWORK_MODE}" = "hybrid" ]; then
+
+			ebegin "Starting VPN proxy"
+
+			PIDFILE=/var/run/tap-vsockd.pid
+			start-stop-daemon --start --quiet \
+				--exec /sbin/tap-vsockd \
+				--pidfile ${PIDFILE} \
+				-- \
+				--daemon \
+				--pidfile "${PIDFILE}" \
+				--listen
+
+			eend $? "Failed to start VPN proxy"
+		fi
+	fi
+}
+
+stop()
+{
+	ebegin "Stopping VPN proxy"
+
+	PIDFILE=/var/run/tap-vsockd.pid
+
+	start-stop-daemon --stop --quiet \
+		--pidfile "${PIDFILE}"
+
+	eend $? "Failed to stop VPN proxy"
+}
