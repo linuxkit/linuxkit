@@ -35,10 +35,10 @@ func NewTCPProxy(listener net.Listener, backendAddr *net.TCPAddr) (*TCPProxy, er
 	}, nil
 }
 
-func (proxy *TCPProxy) clientLoop(client Conn, quit chan bool) {
-	backend, err := net.DialTCP("tcp", nil, proxy.backendAddr)
+func HandleTCPConnection(client Conn, backendAddr *net.TCPAddr, quit chan bool) {
+	backend, err := net.DialTCP("tcp", nil, backendAddr)
 	if err != nil {
-		logrus.Printf("Can't forward traffic to backend tcp/%v: %s\n", proxy.backendAddr, err)
+		logrus.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
 		client.Close()
 		return
 	}
@@ -89,7 +89,7 @@ func (proxy *TCPProxy) Run() {
 			logrus.Printf("Stopping proxy on tcp/%v for tcp/%v (%s)", proxy.frontendAddr, proxy.backendAddr, err)
 			return
 		}
-		go proxy.clientLoop(client.(Conn), quit)
+		go HandleTCPConnection(client.(Conn), proxy.backendAddr, quit)
 	}
 }
 
