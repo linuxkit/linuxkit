@@ -75,6 +75,19 @@ func (u *udpEncapsulator) Close() error {
 	return nil
 }
 
+func NewUDPConn(conn net.Conn) udpListener {
+	var m sync.Mutex
+	var r sync.Mutex
+	var w sync.Mutex
+	return &udpEncapsulator{
+		conn:     &conn,
+		listener: nil,
+		m:        &m,
+		r:        &r,
+		w:        &w,
+	}
+}
+
 func NewUDPListener(listener net.Listener) udpListener {
 	var m sync.Mutex
 	var r sync.Mutex
