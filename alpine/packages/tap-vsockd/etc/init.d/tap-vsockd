@@ -9,6 +9,10 @@ depend()
 
 start()
 {
+	if [ ! -d /sys/bus/vmbus ]; then
+		# skip if not on Hyper-V
+		exit 0
+	fi
         if mobyconfig exists network
         then
                 NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
@@ -32,6 +36,10 @@ start()
 
 stop()
 {
+	if [ ! -d /sys/bus/vmbus ]; then
+		# skip if not on Hyper-V
+		exit 0
+	fi
 	ebegin "Stopping VPN proxy"
 
 	PIDFILE=/var/run/tap-vsockd.pid
