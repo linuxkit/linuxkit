@@ -8,13 +8,20 @@
 set -e
 
 TAG_KEY=moby-bake
-INSTANCE_METADATA_API_ENDPOINT=http://169.254.169.254/latest/meta-data/
+INSTANCE_ENDPOINT=http://169.254.169.254/latest
+INSTANCE_METADATA_API_ENDPOINT=${INSTANCE_ENDPOINT}/meta-data/
+IMAGE_NAME="Moby Linux"
+IMAGE_DESCRIPTION="The best OS for running Docker"
 
 # TODO(nathanleclaire): This could be calculated dynamically to avoid conflicts.
 EBS_DEVICE=/dev/xvdb
 
 function arrowecho () {
     echo " --->" "$@"
+}
+
+function current_instance_region () {
+    curl -s ${INSTANCE_ENDPOINT}/dynamic/instance-identity/document | jq .region -r
 }
 
 function current_instance_az () {
@@ -144,8 +151,8 @@ function bake_image () {
 
     # Convert that snapshot into an AMI as the root device.
     IMAGE_ID=$(aws ec2 register-image \
-        --name "Moby Linux" \
-        --description "The best OS for running Docker" \
+        --name "${IMAGE_NAME}" \
+        --description "${IMAGE_DESCRIPTION}" \
         --architecture x86_64 \
         --root-device-name "${EBS_DEVICE}" \
         --virtualization-type "hvm" \
@@ -212,8 +219,15 @@ case "$1" in
         clean_tagged_resources
         ;;
     regions)
-        # TODO(nathanleclaire): Propogate created image (if existing) to every
-        # possible region / AZ
+        for REGION in us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1 ap-southeast-1 ap-northeast-1 ap-southeast-2 ap-northeast-2 sa-east-1; do
+            REGION_AMI_ID=$(aws ec2 copy-image \
+                --source-region $(current_instance_region) \
+                --source-image-id $(cat /mnt/aws/ami_id.out) \
+                --region "${REGION}" \
+                --name "${IMAGE_NAME}" \
+                --description "${IMAGE_DESCRIPTION}" | jq -r .ImageId)
+            echo ${REGION} ${REGION_AMI_ID}
+        done
         ;;
     *)
         arrowecho "Command $1 not found.  Usage: ./bake-ami.sh [bake|clean|regions]"
