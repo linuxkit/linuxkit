@@ -1,7 +1,7 @@
-From b28445573c0d9eb82556b22a8feef62681e9bfc7 Mon Sep 17 00:00:00 2001
+From c3244e29d0e58c3de56f23075ae22f9d47ba9d0f Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:45 -0800
-Subject: [PATCH 31/40] Drivers: hv: vmbus: Give control over how the ring
+Subject: [PATCH 31/41] Drivers: hv: vmbus: Give control over how the ring
  access is serialized
 
 On the channel send side, many of the VMBUS

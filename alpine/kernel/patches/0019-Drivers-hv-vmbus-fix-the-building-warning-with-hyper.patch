@@ -1,7 +1,7 @@
-From 6d6ffadf6e2a8a8cfd7afb259df4d928407b40c0 Mon Sep 17 00:00:00 2001
+From 9e1ad22e913564dac402f93eb2a1101d9e199758 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Dec 2015 12:21:22 -0800
-Subject: [PATCH 19/40] Drivers: hv: vmbus: fix the building warning with
+Subject: [PATCH 19/41] Drivers: hv: vmbus: fix the building warning with
  hyperv-keyboard
 
 With the recent change af3ff643ea91ba64dd8d0b1cbed54d44512f96cd
