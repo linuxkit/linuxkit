@@ -34,8 +34,10 @@ import (
 // (without data), `shutdownrd` and 'shutdownwr' are used to used to
 // signal a shutdown to the other end.
 
+// On Windows 10 build 10586 larger maxMsgSize values work, but on
+// newer builds it fails. It is unclear what the cause is...
 const (
-	maxMsgSize = 32 * 1024 // Maximum message size
+	maxMsgSize = 4 * 1024 // Maximum message size
 )
 
 // Hypper-V sockets use GUIDs for addresses and "ports"
