@@ -1,7 +1,7 @@
-From 0e5cc03371ae2817286d5b14a0554e4315503dbe Mon Sep 17 00:00:00 2001
+From 4607194c4f3d351c7967a03f6dd8a6590be10cab Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Fri, 25 Dec 2015 20:00:30 -0800
-Subject: [PATCH 21/40] Drivers: hv: vmbus: Add vendor and device atttributes
+Subject: [PATCH 21/41] Drivers: hv: vmbus: Add vendor and device atttributes
 
 Add vendor and device attributes to VMBUS devices. These will be used
 by Hyper-V tools as well user-level RDMA libraries that will use the

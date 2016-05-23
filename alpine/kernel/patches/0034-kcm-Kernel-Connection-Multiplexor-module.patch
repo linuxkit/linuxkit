@@ -1,7 +1,7 @@
-From 14657505a252117919d7689d808344f9010d1cca Mon Sep 17 00:00:00 2001
+From 92afb1396d3e35cf6b87248ded174db0c9699e1e Mon Sep 17 00:00:00 2001
 From: Tom Herbert <tom@herbertland.com>
 Date: Mon, 7 Mar 2016 14:11:06 -0800
-Subject: [PATCH 34/40] kcm: Kernel Connection Multiplexor module
+Subject: [PATCH 34/41] kcm: Kernel Connection Multiplexor module
 
 This module implements the Kernel Connection Multiplexor.
 
