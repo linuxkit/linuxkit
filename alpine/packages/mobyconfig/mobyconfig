@@ -12,16 +12,15 @@ then
   exit 1
 fi
 
-if ! cat /proc/cmdline | grep -q 'com.docker.database'
-then
-  printf "Could not find database configuration information\n" 1>&2
-  exit 1
-fi
-
 if [ ! -d /Database ]
 then
   mkdir -p /Database
-  mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /Database
+  if [ -d /sys/bus/vmbus ]; then
+    # Running on a Hyper-V hypervisor
+    /sbin/9pmount-vsock listen db /Database
+  else
+    mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /Database
+  fi
   if [ $? -ne 0 ]
   then
     rm -rf /Database
@@ -30,7 +29,7 @@ then
   fi
 fi
 
-DATABASE="$(cat /proc/cmdline | sed -e 's/.*com.docker.database="//' -e 's/".*//')"
+DATABASE="com.docker.driver.amd64-linux"
 BASE="/Database/branch/master/ro/${DATABASE}"
 
 KEY=$(echo $2 | sed 's@^/@@')
