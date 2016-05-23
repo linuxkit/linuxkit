@@ -377,7 +377,7 @@ static int kvp_cifs_mount(const char *value)
 	char *t;
 
 	char gw[256];
-	char gwcmd[] = "ip route show | awk '/default/ {print $3 }'";
+	char gwcmd[] = "ip route show | grep 'eth0' | awk '/default/ {print $3 }'";
 
 	int i, count;
 
