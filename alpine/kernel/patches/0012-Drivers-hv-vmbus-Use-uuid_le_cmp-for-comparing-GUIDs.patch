@@ -1,7 +1,7 @@
-From 256f7a915de76e35dd58b1d4c9397b6062c60d40 Mon Sep 17 00:00:00 2001
+From 3b6bcb030c01863b075ce19559e6134b77b09b8b Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:44 -0800
-Subject: [PATCH 12/40] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing
+Subject: [PATCH 12/41] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing
  GUIDs
 
 Use uuid_le_cmp() for comparing GUIDs.

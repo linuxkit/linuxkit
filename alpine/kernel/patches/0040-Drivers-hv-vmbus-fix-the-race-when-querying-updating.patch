@@ -1,7 +1,7 @@
-From b4a79d74e88c82a7b83de21df5281a124b3a921a Mon Sep 17 00:00:00 2001
+From 6b78cb6d1a476bc91ad5a7f9754db29c4e566bc2 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 21 May 2016 16:55:50 +0800
-Subject: [PATCH 40/40] Drivers: hv: vmbus: fix the race when querying &
+Subject: [PATCH 40/41] Drivers: hv: vmbus: fix the race when querying &
  updating the percpu list
 
 There is a rare race when we remove an entry from the global list
