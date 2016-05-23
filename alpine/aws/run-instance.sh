@@ -5,6 +5,7 @@
 
 set -e
 
+JOINERS_COUNT=${JOINERS_COUNT:-1}
 METADATA="http://169.254.169.254/latest/meta-data"
 MANAGER_SG="docker-swarm-ingress"
 
@@ -38,7 +39,7 @@ function attach_security_group () {
         aws ec2 authorize-security-group-ingress \
             --group-id ${MANAGER_SG_ID} \
             --protocol tcp \
-            --port 4242 \
+            --port 4500 \
             --cidr ${CUR_INSTANCE_VPC_CIDR}
     fi
 
@@ -94,29 +95,36 @@ if [[ ! -z "$JOIN_INSTANCES" ]]; then
 
     cat ./aws/joiner-user-data.sh | sed "s/{{MANAGER_IP}}/${MANAGER_IP}/" >${TMP_JOINER_USERDATA}
 
-    JOINER_INSTANCE_ID=$(aws ec2 run-instances \
+    JOINER_INSTANCE_IDS=$(aws ec2 run-instances \
         --image-id ${AMI_ID} \
         --instance-type t2.nano \
-        --count 1 \
-        --user-data file://${TMP_JOINER_USERDATA} | jq -r .Instances[0].InstanceId)
+        --count ${JOINERS_COUNT} \
+        --user-data file://${TMP_JOINER_USERDATA} | jq -r .Instances[].InstanceId)
 
-    echo "Running joiner instance ${JOINER_INSTANCE_ID}"
+    echo "Joining nodes:" ${JOINER_INSTANCE_IDS}
 
-    # For debugging purposes only.  In "production" this SG should not be
-    # attached to these instances.
-    attach_security_group ${JOINER_INSTANCE_ID}
+    NODE_NUMBER=0
 
-    # Do not truncate file here.
-    echo ${JOINER_INSTANCE_ID} >>./aws/instance_id.out
+    for ID in ${JOINER_INSTANCE_IDS}; do
+        echo "Tagging joiner instance #${NODE_NUMBER}: ${ID}"
 
-    # TODO: Get list of ids and do this for each if applicable.
-    aws ec2 create-tags --resources ${JOINER_INSTANCE_ID} --tags Key=Name,Value=docker-swarm-joiner
+        # For debugging purposes only.  In "production" this SG should not be
+        # attached to these instances.
+        attach_security_group ${ID}
 
-    echo "Waiting for joiner to be running..."
-    aws ec2 wait instance-running --instace-ids ${JOINER_INSTANCE_ID}
+        # Do not truncate file here.
+        echo ${ID} >>./aws/instance_id.out
+
+        # TODO: Get list of ids and do this for each if applicable.
+        aws ec2 create-tags --resources ${ID} --tags Key=Name,Value=docker-swarm-joiner-${NODE_NUMBER}
+
+        NODE_NUMBER=$((NODE_NUMBER+1))
+    done
+
+    exit
 fi
 
 echo "Waiting for manager to be running..."
-aws ec2 wait instance-running --instance-ids ${MANAGER_INSTANCE_ID}
+aws ec2 wait instance-running --instance-ids $(cat ./aws/instance_id.out | tr '\n' ' ')
 
 poll_instance_log ${MANAGER_INSTANCE_ID}
