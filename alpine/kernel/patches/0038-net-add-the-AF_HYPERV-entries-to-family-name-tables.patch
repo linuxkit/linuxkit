@@ -1,7 +1,7 @@
-From 5ae29368847275f23f58d9f8e858d011e213ee03 Mon Sep 17 00:00:00 2001
+From 5a28294f62717b7eca4d5a014ed43acef3d5667a Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Mar 2016 02:53:08 -0700
-Subject: [PATCH 38/40] net: add the AF_HYPERV entries to family name tables
+Subject: [PATCH 38/41] net: add the AF_HYPERV entries to family name tables
 
 This is for the hv_sock driver, which introduces AF_HYPERV(42).
 

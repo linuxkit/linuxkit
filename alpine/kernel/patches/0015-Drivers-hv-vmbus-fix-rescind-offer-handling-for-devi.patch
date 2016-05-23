@@ -1,7 +1,7 @@
-From 69bac0d6604e0c2bd3bbef8b13a17c877040e0ee Mon Sep 17 00:00:00 2001
+From fe74981d0e068abb7502fc52dffdea5e89f89fc2 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:49 -0800
-Subject: [PATCH 15/40] Drivers: hv: vmbus: fix rescind-offer handling for
+Subject: [PATCH 15/41] Drivers: hv: vmbus: fix rescind-offer handling for
  device without a driver
 
 In the path vmbus_onoffer_rescind() -> vmbus_device_unregister()  ->

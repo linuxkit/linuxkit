@@ -1,7 +1,7 @@
-From 384ccf1bbf62722d579d3cfec7b209e034a11d60 Mon Sep 17 00:00:00 2001
+From 02adc9f995f59194291bde782062a2aa38201ab9 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Tue, 15 Dec 2015 16:27:27 -0800
-Subject: [PATCH 20/40] Drivers: hv: vmbus: Treat Fibre Channel devices as
+Subject: [PATCH 20/41] Drivers: hv: vmbus: Treat Fibre Channel devices as
  performance critical
 
 For performance critical devices, we distribute the incoming
