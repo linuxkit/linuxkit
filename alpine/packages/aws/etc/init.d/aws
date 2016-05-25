@@ -3,7 +3,7 @@
 description="Bootstrap procedure if running on Docker AWS edition"
 
 depend() {
-    after docker
+    need docker
 }
 
 start() {
