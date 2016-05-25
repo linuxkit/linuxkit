@@ -74,7 +74,7 @@ echo "Using image ${AMI_ID}"
 
 MANAGER_INSTANCE_ID=$(aws ec2 run-instances \
     --image-id ${AMI_ID} \
-    --instance-type t2.nano \
+    --instance-type t2.micro \
     --user-data file://./aws/manager-user-data.sh | jq -r .Instances[0].InstanceId)
 
 aws ec2 create-tags --resources ${MANAGER_INSTANCE_ID} --tags Key=Name,Value=docker-swarm-manager
@@ -97,7 +97,7 @@ if [[ ! -z "$JOIN_INSTANCES" ]]; then
 
     JOINER_INSTANCE_IDS=$(aws ec2 run-instances \
         --image-id ${AMI_ID} \
-        --instance-type t2.nano \
+        --instance-type t2.micro \
         --count ${JOINERS_COUNT} \
         --user-data file://${TMP_JOINER_USERDATA} | jq -r .Instances[].InstanceId)
 
