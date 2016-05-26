@@ -10,8 +10,12 @@ start()
 	ebegin "Setting up proxy port service"
 
 	mkdir -p /port
-	mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /port
-
+	if [ -d /sys/bus/vmbus ]; then
+		# Running on a Hyper-V hypervisor
+		/sbin/9pmount-vsock --serviceid 0B95756A-9985-48AD-9470-78E060895BE7 listen port /port
+	else
+		mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /port
+	fi
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/proxy-vsockd.pid
 	[ -n "${LOGFILE}" ] || LOGFILE=/var/log/proxy-vsockd.log
 
