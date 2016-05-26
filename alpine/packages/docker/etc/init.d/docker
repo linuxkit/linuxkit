@@ -11,23 +11,10 @@ start()
 	ebegin "Starting Docker"
 
 	# shift logs onto host before docker starts
-	# try to keep initial log files, although there is a race
 	# busybox reopens its log files every second
 	if cat /proc/cmdline | grep -q 'com.docker.driverDir'
 	then
-		DRIVERDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
-		rm -rf /var/tmp/log
-		mkdir -p /var/tmp/log
-		for f in /var/log/*
-		do
-			cp -a $f /var/tmp/log/$(basename $f)
-		done
 		mount --bind "${DRIVERDIR}/log" /var/log
-		for f in /var/tmp/log/*
-		do
-			[ -f $f ] && cat $f >> /var/log/$(basename $f)
-		done
-		rm -rf /var/tmp/log
 	fi
 
 	command="${DOCKER_BINARY:-/usr/bin/docker}"
