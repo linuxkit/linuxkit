@@ -11,5 +11,12 @@ start() {
 
 	mobyconfig exists etc/sysctl.conf && mobyconfig get etc/sysctl.conf > /etc/sysctl.conf
 
+	# shift logs onto host before docker starts
+	# busybox reopens its log files every second
+	if cat /proc/cmdline | grep -q 'com.docker.driverDir'
+	then
+		mount --bind "${DRIVERDIR}/log" /var/log
+	fi
+
         eend 0
 }
