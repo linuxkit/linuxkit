@@ -119,7 +119,7 @@ function bake_image () {
     # initrd via syslinux in MBR.  That formatted drive can then be snapshotted
     # and turned into an AMI.
     VOLUME_ID=$(aws ec2 create-volume \
-        --size 1 \
+        --size 20 \
         --availability-zone $(current_instance_az) | jq -r .VolumeId)
 
     tag ${VOLUME_ID}
