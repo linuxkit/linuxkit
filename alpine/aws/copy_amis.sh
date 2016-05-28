@@ -48,7 +48,7 @@ for REGION in ${REGIONS[@]}; do
         --name "${IMAGE_NAME}" \
         --description "${IMAGE_DESCRIPTION}" | jq -r .ImageId)
 
-    echo ${REGION_AMI_ID} >>${AMIS_IDS_DEST}
+    echo "${REGION} ${REGION_AMI_ID}" >>${AMIS_IDS_DEST}
 
     cfprintf "    \"${REGION}\": {
         \"HVM64\": \"${REGION_AMI_ID}\",

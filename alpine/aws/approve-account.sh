@@ -15,9 +15,17 @@ USER_ID="$1"
 AMI_FILE="$2"
 
 while read REGION_AMI_ID; do
-    aws ec2 modify-image-attribute --image-id ${REGION_AMI_ID} --launch-permission "{
-        \"Add\": [{
-            \"UserId\": \"${USER_ID}\"
-        }]
-    }"
+    REGION=$(echo ${REGION_AMI_ID} | cut -d' ' -f 1)
+    IMAGE_ID=$(echo ${REGION_AMI_ID} | cut -d' ' -f 2)
+    arrowecho "Approving launch for ${IMAGE_ID} in ${REGION}"
+    aws ec2 modify-image-attribute \
+        --region ${REGION} \
+        --image-id ${IMAGE_ID} \
+        --launch-permission "{
+            \"Add\": [{
+                \"UserId\": \"${USER_ID}\"
+            }]
+        }"
 done <${AMI_FILE}
+
+arrowecho "Done approving account ${USER_ID}"
