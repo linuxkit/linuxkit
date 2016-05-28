@@ -11,7 +11,6 @@ set -e
 
 source ./aws/common.sh
 
-AMIS=($AMIS)
 USER_ID="$1"
 AMI_FILE="$2"
 
