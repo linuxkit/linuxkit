@@ -58,6 +58,8 @@ for REGION in ${REGIONS[@]}; do
     # Emit valid JSON.  No trailing comma on last element.
     if [[ ${REGION} != ${REGIONS[-1]} ]]; then
         cfecho ","
+    else
+        cfecho
     fi
 done
 
