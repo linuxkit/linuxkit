@@ -3,6 +3,7 @@
 description="Configuring settings from database."
 
 depend() {
+	need transfused
 	before sysctl net
 }
 
