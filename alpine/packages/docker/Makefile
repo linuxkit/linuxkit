@@ -14,7 +14,7 @@ bin: docker.git
 	rm -f bin/docker-${DOCKER_VERSION}
 
 docker.git:
-	git clone -b 1.12-integration git@github.com:nathanleclaire/docker-1.12-integration.git docker.git
+	git clone -b 1.12-integration git@github.com:docker/docker-1.12-integration.git docker.git
 
 arm:
 	mkdir -p bin
