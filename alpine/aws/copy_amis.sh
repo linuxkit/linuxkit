@@ -1,8 +1,12 @@
 #!/bin/bash
 
 # Usage: ./aws/copy_amis.sh 
-# Assumption: A finished Moby AMI ID has been deposited in ./aws/ami_id.out.
-# (This is the behavior of the ./aws/bake-ami.sh script)
+# Assumptions: 
+# - A finished Moby AMI ID has been deposited in ./aws/ami_id.out.  (This is
+#   the behavior of the ./aws/bake-ami.sh script)
+# - (recommended) IMAGE_NAME is set to a custom value (e.g., "Moby Linux"
+# - (recommended) IMAGE_DESCRIPTION is set to a custom value (e.g., "1.12-0-tp1")
+#
 # 
 # Outputs: 
 # - A file of newline delimited AMI IDs representing the AMI for each region.
@@ -47,6 +51,8 @@ for REGION in ${REGIONS[@]}; do
         --region "${REGION}" \
         --name "${IMAGE_NAME}" \
         --description "${IMAGE_DESCRIPTION}" | jq -r .ImageId)
+
+    echo "${REGION_AMI_ID}"
 
     echo "${REGION} ${REGION_AMI_ID}" >>${AMIS_IDS_DEST}
 

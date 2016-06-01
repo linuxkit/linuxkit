@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Usage: ./aws/approve-account [ACCOUNT_ID] [AMI_FILE]
+# Usage: ./aws/approve-account.sh [ACCOUNT_ID] [AMI_FILE]
 #
 # ACCOUNT_ID must be a valid AWS account ID
 #
