@@ -37,6 +37,7 @@ start() {
 	     echo "    address ${IP}"      >> /etc/network/interfaces
 	     echo "    netmask ${MASK}"    >> /etc/network/interfaces
 	     echo "    gateway ${GW}"      >> /etc/network/interfaces
+	     echo "    metric  200"        >> /etc/network/interfaces
 	fi
 
 	eend 0
