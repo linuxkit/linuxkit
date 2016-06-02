@@ -14,8 +14,6 @@ then
 	TAPVS=$(ps -eo args | grep '^/sbin/tap-vsockd')
 	[ $? -eq 0 ] && printf "✓ Process tap-vsockd running\n" || printf "✗ No tap-vsockd process\n"
 fi
-HUPPER=$(ps -eo args | grep '^/bin/hupper')
-[ $? -eq 0 ] && printf "✓ Process hupper running: $HUPPER\n" || printf "✗ No hupper process\n"
 DOCKER=$(ps -eo args | grep '^/usr/bin/docker')
 [ $? -eq 0 ] && printf "✓ Process docker running: $DOCKER\n" || printf "✗ No docker process\n"
 CONTAINERD=$(ps -eo args | grep '^docker-containerd')

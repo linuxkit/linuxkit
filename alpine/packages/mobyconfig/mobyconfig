@@ -2,7 +2,7 @@
 
 if [ $# -ne 2 ]
 then
-  printf "usage: $0 [get|exists|watch|path|dir|find] key\n"
+  printf "usage: $0 [get|exists|path|dir|find] key\n"
   exit 0
 fi
 
@@ -84,21 +84,5 @@ then
   fi
 fi
 
-# might be nicer if watch returned a file descriptor not a path
-# /Database/branch/master/watch/com.docker.driver.amd64-linux.node/etc.node/docker.node/daemon.json.node/tree.live
-if [ $1 == "watch" ]
-then
-  WATCHBASE="/Database/branch/master/watch/${DATABASE}.node"
-  WATCH="${WATCHBASE}/$(echo ${KEY} | sed 's@/@.node/@g').node/tree.live"
-  if [ -f ${WATCH} ]
-  then
-    printf ${WATCH}
-    exit 0
-  else
-    printf "No such watch: ${WATCH}\n" 2>&1
-    exit 1
-  fi
-fi
-
-printf "usage: $0 [get|exists|watch|path|dir|find] key\n"
+printf "usage: $0 [get|exists|path|dir|find] key\n"
 exit 1
