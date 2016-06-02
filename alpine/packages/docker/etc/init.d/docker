@@ -51,7 +51,7 @@ start()
 
 	for d in Users Volumes tmp private
 	do
-		[ -d /Mac/$d ] && [ ! -d $d] && mkdir -p /$d && mount --bind /Mac/$d /$d
+		[ -d /Mac/$d ] && [ ! -d $d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
 	done
 
 	# same default ulimit as boot2docker; if you want more can set at docker run time
