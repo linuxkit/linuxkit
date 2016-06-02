@@ -2,7 +2,7 @@
 
 depend()
 {
-	after docker hupper
+	after docker
 }
 
 start()
