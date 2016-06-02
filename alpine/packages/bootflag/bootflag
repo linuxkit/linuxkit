@@ -1,0 +1,24 @@
+#!/bin/sh
+
+# Script to print values of arbitrary kvpairs the kernel was passed as command
+# line parameters on boot.
+# 
+# e.g. if kernel booted with cloud_provider=azure, 'bootflag cloud_provider'
+# will return 'azure'.
+# 
+# If multiple flags have the same key, it will return only the first one found.
+
+if [ $# -ne 1 ]; then
+    echo "Usage: bootflag [key]"
+    exit 1
+fi
+
+awk -v flag=$1 '{
+    for(i = 1; i <= NF; i++) {
+        split($i, kvpair, "=");
+        if(kvpair[1] == flag) {
+            print kvpair[2];
+            break;
+        }
+    }
+}' /proc/cmdline
