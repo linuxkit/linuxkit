@@ -16,7 +16,7 @@ start()
 
 	# Start with networking on both Mac and Hyper-V, but in
 	# future change this to use a hypervisor socket.
-	DOCKER_OPTS="${DOCKER_OPTS} -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock"
+	DOCKER_OPTS="${DOCKER_OPTS} --debug -H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock"
 
 	# some config is always in /etc/docker cannot specify alternative eg certs
 	if mobyconfig exists etc/docker

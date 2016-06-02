@@ -7,30 +7,10 @@
 
 set -e
 
-TAG_KEY=moby-bake
-INSTANCE_METADATA_API_ENDPOINT=http://169.254.169.254/latest/meta-data/
+source /mnt/aws/common.sh
 
 # TODO(nathanleclaire): This could be calculated dynamically to avoid conflicts.
 EBS_DEVICE=/dev/xvdb
-
-function arrowecho () {
-    echo " --->" "$@"
-}
-
-function current_instance_az () {
-    curl -s ${INSTANCE_METADATA_API_ENDPOINT}/placement/availability-zone
-}
-
-function current_instance_id () {
-    curl -s ${INSTANCE_METADATA_API_ENDPOINT}/instance-id
-}
-
-# We tag resources created as part of the build to ensure that they can be
-# cleaned up later.
-function tag () {
-    arrowecho "Tagging $1"
-    aws ec2 create-tags --resources "$1" --tags Key=${TAG_KEY},Value= >/dev/null
-}
 
 function format_device () {
     arrowecho "Waiting for EBS device to appear in build container"
@@ -112,7 +92,7 @@ function bake_image () {
     # initrd via syslinux in MBR.  That formatted drive can then be snapshotted
     # and turned into an AMI.
     VOLUME_ID=$(aws ec2 create-volume \
-        --size 1 \
+        --size 20 \
         --availability-zone $(current_instance_az) | jq -r .VolumeId)
 
     tag ${VOLUME_ID}
@@ -144,8 +124,8 @@ function bake_image () {
 
     # Convert that snapshot into an AMI as the root device.
     IMAGE_ID=$(aws ec2 register-image \
-        --name "Moby Linux" \
-        --description "The best OS for running Docker" \
+        --name "${IMAGE_NAME}" \
+        --description "${IMAGE_DESCRIPTION}" \
         --architecture x86_64 \
         --root-device-name "${EBS_DEVICE}" \
         --virtualization-type "hvm" \
@@ -211,10 +191,6 @@ case "$1" in
     clean)
         clean_tagged_resources
         ;;
-    regions)
-        # TODO(nathanleclaire): Propogate created image (if existing) to every
-        # possible region / AZ
-        ;;
     *)
-        arrowecho "Command $1 not found.  Usage: ./bake-ami.sh [bake|clean|regions]"
+        echo "Command $1 not found.  Usage: ./bake-ami.sh [bake|clean]"
 esac
