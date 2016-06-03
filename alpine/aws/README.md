@@ -49,6 +49,6 @@ $ docker -H 172.31.2.176:2375 \
     run -ti \
     --privileged \
     -v /:/hostfs \
-    alpine:3.3 \
+    alpine:3.4 \
     chroot /hostfs
 ```
