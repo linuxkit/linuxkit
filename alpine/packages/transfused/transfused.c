@@ -4,10 +4,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <syslog.h>
+#include <libgen.h>
 
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <dirent.h>
 #include <sys/socket.h>
 #include <sys/wait.h>
 #include <pthread.h>
@@ -438,6 +440,82 @@ void start_writer(connection_t * connection, int fuse) {
         connection->mount_point);
 }
 
+char * alloc_dirname(connection_t * conn, char * path) {
+  size_t len = strlen(path) + 1;
+  char * input = must_malloc("alloc_dirname input", len);
+  char * output = must_malloc("alloc_dirname output", len);
+  char * dir;
+  strlcpy(input, path, len);
+
+  dir = dirname(input);
+  if (dir == NULL)
+    die(1, conn->params, "", "Couldn't get dirname of %s: ", path);
+  strcpy(output, dir);
+
+  free(input);
+  return output;
+}
+
+void mkdir_p(connection_t * conn, char * path) {
+  char * parent;
+
+  if (mkdir(path, 0700)) switch (errno) {
+    case ENOENT:
+      parent = alloc_dirname(conn, path);
+      mkdir_p(conn, parent);
+      free(parent);
+      if (mkdir(path, 0700))
+        die(1, conn->params, "", "Couldn't create directory %s: ", path);
+      break;
+    default:
+      die(1, conn->params, "", "Couldn't create directory %s: ", path);
+    }
+}
+
+int is_next_child_ok(connection_t * conn, DIR * dir) {
+  struct dirent * child;
+
+  errno = 0;
+  child = readdir(dir);
+  if (child == NULL) {
+    if (errno != 0)
+      die(1, conn->params, "", "Couldn't read mount point %s: ",
+          conn->mount_point);
+    else return 0;
+  } else
+    if (strcmp(".", child->d_name) != 0 && strcmp("..", child->d_name) != 0)
+      die(1, conn->params, NULL, "Couldn't mount on %s: %s exists",
+          conn->mount_point, child->d_name);
+  return 1;
+}
+
+// The leaf may exist but must be empty. Any proper path prefix may exist.
+void prepare_mount_point(connection_t * conn) {
+  DIR * dir;
+  char * mount_point = conn->mount_point;
+
+  dir = opendir(mount_point);
+  if (dir != NULL) {
+    if (is_next_child_ok(conn, dir))
+      if (is_next_child_ok(conn, dir)) {
+        if (is_next_child_ok(conn, dir))
+          die(1, conn->params, "", "Couldn't mount on %s: not empty",
+              mount_point);
+        else return;
+      }
+    if (closedir(dir))
+      die(1, conn->params, "", "Couldn't close mount point %s: ", mount_point);
+  } else {
+    switch (errno) {
+    case ENOENT: break;
+    default:
+      die(1, conn->params, "", "Couldn't open mount point %s: ", mount_point);
+    }
+  }
+
+  mkdir_p(conn, mount_point);
+}
+
 void * mount_connection(connection_t * conn) {
   int optc;
   char ** optv;
@@ -450,6 +528,8 @@ void * mount_connection(connection_t * conn) {
   buf = (char *) must_malloc("read_opts packet malloc", EVENT_BUFSZ);
 
   optv = read_opts(conn, buf);
+
+  prepare_mount_point(conn);
 
   for (optc = 0; optv[optc] != NULL; optc++) {}
 
