@@ -49,7 +49,7 @@ start()
 		export no_proxy="$(mobyconfig get proxy/exclude)"
 	fi
 
-	grep "osxfs /tmp" /etc/mtab -q || mount --bind /Mac/tmp /tmp
+	grep -q "osxfs /tmp" /etc/mtab || ( [ -d /Mac/tmp ] && mount --bind /Mac/tmp /tmp )
 
 	for d in Users Volumes private
 	do
