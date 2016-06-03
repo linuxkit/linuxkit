@@ -1,11 +1,11 @@
-DOCKER_VERSION=1.11.1
+DOCKER_VERSION=1.11.2
 ARCH?=x86_64
 OS?=Linux
 
 all: bin
 
 bin: docker.git
-	(cd docker.git && git fetch origin --tags && git checkout moby)
+	(cd docker.git && git fetch origin --tags && git checkout moby-$(DOCKER_VERSION))
 	BIND_DIR=$(shell pwd) make -C docker.git binary
 	mkdir -p bin
 	cp docker.git/bundles/${DOCKER_VERSION}/binary/* bin/
@@ -14,7 +14,7 @@ bin: docker.git
 	rm -f bin/docker-${DOCKER_VERSION}
 
 docker.git:
-	git clone git://github.com/djs55/docker.git docker.git
+	git clone git://github.com/justincormack/docker.git docker.git
 
 arm:
 	mkdir -p bin
