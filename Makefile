@@ -47,3 +47,8 @@ endif
 
 clean:
 	$(MAKE) -C alpine clean
+
+SCRIPTS=$(shell find . -type f ! -path "./*.git/*" ! -path "./xhyve/*" -exec file {} \; | grep 'POSIX\|openrc' | cut -d ":" -f 1)
+
+test:
+	@docker run -it --rm -v $(shell pwd):/src -w /src davetucker/shellcheck shellcheck -e SC1008 ${SCRIPTS}
