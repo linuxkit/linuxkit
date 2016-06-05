@@ -1,5 +1,6 @@
 #!/sbin/openrc-run
 
+# shellcheck disable=SC2034
 description="vsock socket proxy client"
 
 depend()

@@ -3,6 +3,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/net-misc/chrony/files/chronyd.rc,v 1.8 2007/03/22 14:32:09 tove Exp $
 
+# shellcheck disable=SC2034
 description="NTP daemon"
 
 depend() {
