@@ -54,25 +54,24 @@ start()
 
 	# some config is always in /etc/docker cannot specify alternative eg certs
 	mkdir -p /etc/docker
-	if mobyconfig exists etc/docker
-	then
+	if mobyconfig exists etc/docker; then
 		for f in $(mobyconfig find etc/docker)
 		do
-			mkdir -p $(dirname $f)
-			mobyconfig get $f > $f
+			mkdir -p "$(dirname "$f")"
+			# shellcheck disable=SC2094
+			mobyconfig get "$f" > "$f"
 		done
 	fi
-	if mobyconfig exists network
-	then
-		NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
-		NATIVE_PORT_FORWARDING="$(mobyconfig get native/port-forwarding | tr -d '[[:space:]]')"
+	
+	if mobyconfig exists network; then
+		NETWORK_MODE="$(mobyconfig get network | tr -d '[:space:]')"
+		NATIVE_PORT_FORWARDING="$(mobyconfig get native/port-forwarding | tr -d '[:space:]')"
 		if [ "${NETWORK_MODE}" = "slirp" -o "${NATIVE_PORT_FORWARDING}" = "true" ]; then
 			cp /usr/bin/slirp-proxy /usr/bin/docker-proxy
 		fi
 	fi
 
-	if mobyconfig exists proxy
-	then
+	if mobyconfig exists proxy; then
 		export http_proxy="$(mobyconfig get proxy/http)"
 		export https_proxy="$(mobyconfig get proxy/https)"
 		export no_proxy="$(mobyconfig get proxy/exclude)"
@@ -83,8 +82,7 @@ start()
 
 	# shift logs onto host before docker starts
 	# busybox reopens its log files every second
-	if cat /proc/cmdline | grep -q 'com.docker.driver'
-	then
+	if cat /proc/cmdline | grep -q 'com.docker.driver'; then
 		DRIVERDIR="/host_docker_app/$(cat /proc/cmdline | sed -e 's/.*com.docker.driver="//' -e 's/".*//')"
 		if ! grep -q "osxfs on /var/log" /proc/mounts ; then
 			mkdir -p /run/log
@@ -92,7 +90,7 @@ start()
 			mount --bind "${DRIVERDIR}/log" /var/log
 		fi
 	fi
-
+	
 	# set ulimits as high as possible
 	ulimit -n 1048576
 	ulimit -p unlimited
@@ -104,8 +102,8 @@ start()
 
 	start-stop-daemon --start --quiet \
 		--background \
-		--exec ${command} \
-		--pidfile ${pidfile} \
+		--exec "${command}" \
+		--pidfile "${pidfile}" \
 		--stderr "${DOCKER_LOGFILE}" \
 		--stdout "${DOCKER_LOGFILE}" \
 		-- --pidfile=${pidfile} ${DOCKER_OPTS}
@@ -120,7 +118,91 @@ stop()
 	# stop docker
 	einfo "Stopping docker"
 	pidfile="/run/docker.pid"
+<<<<<<< 99b00f21b246300beb448d15f4454a19d39cec3a
 	start-stop-daemon --stop --quiet --pidfile ${pidfile} --retry 15
+=======
+	start-stop-daemon --stop --quiet --pidfile ${pidfile}
 
-        return 0
+	# taken from localmount stop script
+	# XXX fix more cleanly see #35
+
+	yesno "$RC_GOINGDOWN" || return 0
+	# We never unmount / or /dev or $RC_SVCDIR
+
+	# Bug 381783
+	local rc_svcdir=$(printf '%s\n' "$RC_SVCDIR" | sed 's:/lib\(32\|64\)\?/:/lib(32|64)?/:g')
+
+	local x='' no_umounts_r="/|/dev|/dev/.*|${rc_svcdir}"
+	no_umounts_r="${no_umounts_r}|/bin|/sbin|/lib(32|64)?|/libexec"
+	# RC_NO_UMOUNTS is an env var that can be set by plugins
+	local IFS="$IFS:"
+	for x in $no_umounts $RC_NO_UMOUNTS; do
+					no_umounts_r="$no_umounts_r|$x"
+	done
+
+	if [ "$RC_UNAME" = Linux ]; then
+					no_umounts_r="$no_umounts_r|/proc|/proc/.*|/run|/sys|/sys/.*"
+					if [ -e "$rc_svcdir"/usr_premounted ]; then
+									no_umounts_r="$no_umounts_r|/usr"
+					fi
+	fi
+	no_umounts_r="^($no_umounts_r)$"
+
+	# Flush all pending disk writes now
+	sync
+
+	. "$RC_LIBEXECDIR"/sh/rc-mount.sh
+
+	if [ "$RC_UNAME" = Linux ] && [ -d /sys/fs/aufs ] ; then
+					#if / is aufs we remount it noxino during shutdown
+					if mountinfo -q -f '^aufs$' / ; then
+									mount -o remount,noxino,rw /
+									sync
+					fi
+
+					local aufs_branch aufs_mount_point aufs_si_id aufs_br_id branches
+					for aufs_si_dir in /sys/fs/aufs/si*; do
+									[ -d "${aufs_si_dir}" ] || continue
+									aufs_si_id="si=${aufs_si_dir#/sys/fs/aufs/si_}"
+									aufs_mount_point="$(mountinfo -o "${aufs_si_id}")"
+									branches="$aufs_si_dir/br[0-9] $aufs_si_dir/br[0-9][0-9] $aufs_si_dir/br[0-9][0-9][0-9]"
+									for x in $branches; do
+													[ -e "${x}" ] || continue
+													aufs_branch=$(sed 's/=.*//g' "$x")
+													eindent
+													if ! mount -o "remount,del:$aufs_branch" "$aufs_mount_point" > /dev/null 2>&1; then
+																	ewarn "Failed to remove branch $aufs_branch from aufs \
+																	$aufs_mount_point"
+													fi
+													eoutdent
+													sync
+									done
+					done
+	fi
+
+	# Umount loop devices
+	einfo "Unmounting loop devices"
+	eindent
+	do_unmount "umount -d" --skip-point-regex "$no_umounts_r" \
+					--node-regex "^/dev/loop"
+	eoutdent
+
+	# Now everything else, except network filesystems as the
+	# network should be down by this point.
+	einfo "Unmounting filesystems"
+	eindent
+	local fs=
+	for x in $net_fs_list $extra_net_fs_list; do
+					fs="$fs${fs:+|}$x"
+	done
+	[ -n "$fs" ] && fs="^($fs)$"
+	do_unmount umount --skip-point-regex "$no_umounts_r" \
+					"${fs:+--skip-fstype-regex}" "$fs" --nonetdev
+	eoutdent
+
+	# now terminate with extreme prejudice
+	poweroff -f
+>>>>>>> Fix docker init script
+
+  return 0
 }
