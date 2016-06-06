@@ -956,28 +956,28 @@ CONFIG_IP_VS_TAB_BITS=12
 #
 # IPVS transport protocol load balancing support
 #
-# CONFIG_IP_VS_PROTO_TCP is not set
-# CONFIG_IP_VS_PROTO_UDP is not set
-# CONFIG_IP_VS_PROTO_AH_ESP is not set
-# CONFIG_IP_VS_PROTO_ESP is not set
-# CONFIG_IP_VS_PROTO_AH is not set
-# CONFIG_IP_VS_PROTO_SCTP is not set
+CONFIG_IP_VS_PROTO_TCP=y
+CONFIG_IP_VS_PROTO_UDP=y
+CONFIG_IP_VS_PROTO_AH_ESP=y
+CONFIG_IP_VS_PROTO_ESP=y
+CONFIG_IP_VS_PROTO_AH=y
+CONFIG_IP_VS_PROTO_SCTP=y
 
 #
 # IPVS scheduler
 #
-# CONFIG_IP_VS_RR is not set
-# CONFIG_IP_VS_WRR is not set
-# CONFIG_IP_VS_LC is not set
-# CONFIG_IP_VS_WLC is not set
-# CONFIG_IP_VS_FO is not set
-# CONFIG_IP_VS_OVF is not set
-# CONFIG_IP_VS_LBLC is not set
-# CONFIG_IP_VS_LBLCR is not set
-# CONFIG_IP_VS_DH is not set
-# CONFIG_IP_VS_SH is not set
-# CONFIG_IP_VS_SED is not set
-# CONFIG_IP_VS_NQ is not set
+CONFIG_IP_VS_RR=y
+CONFIG_IP_VS_WRR=y
+CONFIG_IP_VS_LC=y
+CONFIG_IP_VS_WLC=y
+CONFIG_IP_VS_FO=y
+CONFIG_IP_VS_OVF=y
+CONFIG_IP_VS_LBLC=y
+CONFIG_IP_VS_LBLCR=y
+CONFIG_IP_VS_DH=y
+CONFIG_IP_VS_SH=y
+CONFIG_IP_VS_SED=y
+CONFIG_IP_VS_NQ=y
 
 #
 # IPVS SH scheduler
@@ -987,7 +987,7 @@ CONFIG_IP_VS_SH_TAB_BITS=8
 #
 # IPVS application helper
 #
-# CONFIG_IP_VS_NFCT is not set
+CONFIG_IP_VS_NFCT=y
 
 #
 # IP: Netfilter Configuration
