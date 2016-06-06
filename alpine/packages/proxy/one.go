@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"github.com/rneugeba/virtsock/go/vsock"
 	"log"
 	"net"
 	"os"
@@ -12,12 +11,8 @@ import (
 )
 
 func onePort() {
-	host, port, container := parseHostContainerAddrs()
+	host, _, container := parseHostContainerAddrs()
 
-	vsockP, err := libproxy.NewVsockProxy(&vsock.VsockAddr{Port: uint(port)}, container)
-	if err != nil {
-		sendError(err)
-	}
 	ipP, err := libproxy.NewIPProxy(host, container)
 	if err != nil {
 		sendError(err)
@@ -31,8 +26,7 @@ func onePort() {
 	go handleStopSignals(ipP)
 	// TODO: avoid this line if we are running in a TTY
 	sendOK()
-	go ipP.Run()
-	vsockP.Run()
+	ipP.Run()
 	ctl.Close() // ensure ctl remains alive and un-GCed until here
 	os.Exit(0)
 }
