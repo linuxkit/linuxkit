@@ -1,6 +1,6 @@
 FROM ubuntu:15.10
 
-ARG KERNEL_VERSION=4.4.11
+ARG KERNEL_VERSION=4.4.12
 ARG ARCH=x86_64
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
@@ -32,10 +32,10 @@ RUN wget ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
-# this is aufs4.4 20160516
+# this is aufs4.4 20160530
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
 ENV AUFS_BRANCH     aufs4.4
-ENV AUFS_COMMIT     e3d9563a39a10135f551da54eb171785b4a63a72
+ENV AUFS_COMMIT     9db361ef1d39326d985d9c55871a4f6348aff9d3
 
 # Download AUFS and patch kernel
 RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
