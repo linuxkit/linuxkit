@@ -39,8 +39,8 @@ void log_timestamp(int fd) {
 void die
 (int exit_code, parameters * params, const char * parg, const char * fmt, ...);
 
-void vlog_sock_locked(int fd, const char * fmt, va_list args) {
-  uint16_t log_err_type = 1;
+void vlog_sock_locked
+(int fd, uint16_t msg_type, const char * fmt, va_list args) {
   int rc, len;
   va_list targs;
   char * fill;
@@ -52,7 +52,7 @@ void vlog_sock_locked(int fd, const char * fmt, va_list args) {
 
   rc = len + 4 + 2; // 4 for length itself and 2 for message type
   write_exactly("vlog_sock_locked", fd, (uint32_t *) &rc, sizeof(uint32_t));
-  write_exactly("vlog_sock_locked", fd, &log_err_type, sizeof(uint16_t));
+  write_exactly("vlog_sock_locked", fd, &msg_type, sizeof(uint16_t));
 
   va_copy(targs, args);
   rc = vdprintf(fd, fmt, targs);
@@ -67,12 +67,12 @@ void vlog_sock_locked(int fd, const char * fmt, va_list args) {
   }
 }
 
-void log_sock_locked(int fd, const char * fmt, ...) {
+void log_sock_locked(int fd, uint16_t msg_type, const char * fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
 
-  vlog_sock_locked(fd, fmt, args);
+  vlog_sock_locked(fd, msg_type, fmt, args);
 
   va_end(args);
 }
@@ -94,16 +94,19 @@ void die
   vsyslog(LOG_CRIT, fmt, targs);
   va_end(targs);
 
-  if (fd != 0) vlog_sock_locked(fd, fmt, argp);
+  if (fd != 0) vlog_sock_locked(fd, TRANSFUSE_LOG_ERROR, fmt, argp);
   va_end(argp);
 
   if (parg != NULL) {
     if (*parg != 0) {
       syslog(LOG_CRIT, "%s: %s", parg, strerror(in_errno));
-      if (fd != 0) log_sock_locked(fd, "%s: %s", parg, strerror(in_errno));
+      if (fd != 0)
+        log_sock_locked(fd, TRANSFUSE_LOG_ERROR,
+                        "%s: %s", parg, strerror(in_errno));
     } else {
       syslog(LOG_CRIT, "%s", strerror(in_errno));
-      if (fd != 0) log_sock_locked(fd, "%s", strerror(in_errno));
+      if (fd != 0)
+        log_sock_locked(fd, TRANSFUSE_LOG_ERROR, "%s", strerror(in_errno));
     }
   }
 
@@ -113,20 +116,23 @@ void die
   unlock("die ctl_lock", &params->ctl_lock);
 }
 
-void vlog_locked(parameters * params, const char * fmt, va_list args) {
+void vlog_locked
+(parameters * params, uint16_t msg_type, const char * fmt, va_list args) {
   int rc;
   int fd = params->ctl_sock;
   va_list targs;
 
-  if (fd != 0) vlog_sock_locked(fd, fmt, args);
+  if (fd != 0) vlog_sock_locked(fd, msg_type, fmt, args);
   else {
     va_copy(targs, args);
+    // TODO: translate msg_type to syslog message type
     vsyslog(LOG_INFO, fmt, targs);
     va_end(targs);
 
     fd = params->logfile_fd;
     if (fd != 0) {
       va_copy(targs, args);
+      // TODO: include message type?
       rc = vdprintf(fd, fmt, targs);
       if (rc < 0) die(1, NULL, "Couldn't write log message with vdprintf", "");
       va_end(targs);
@@ -134,19 +140,21 @@ void vlog_locked(parameters * params, const char * fmt, va_list args) {
   }
 }
 
-void vlog_time_locked(parameters * params, const char * fmt, va_list args) {
+void vlog_time_locked
+(parameters * params, uint16_t msg_type, const char * fmt, va_list args) {
   int fd = params->logfile_fd;
 
   if (fd != 0 && params->ctl_sock == 0) log_timestamp(fd);
-  vlog_locked(params, fmt, args);
+  vlog_locked(params, msg_type, fmt, args);
 }
 
-void log_time_locked(parameters * params, const char * fmt, ...) {
+void log_time_locked
+(parameters * params, uint16_t msg_type, const char * fmt, ...) {
   va_list args;
 
   va_start(args, fmt);
 
-  vlog_time_locked(params, fmt, args);
+  vlog_time_locked(params, msg_type, fmt, args);
 
   va_end(args);
 }
@@ -157,7 +165,19 @@ void log_time(parameters * params, const char * fmt, ...) {
   va_start(args, fmt);
 
   lock("log_time ctl_lock", &params->ctl_lock);
-  vlog_time_locked(params, fmt, args);
+  vlog_time_locked(params, TRANSFUSE_LOG_ERROR, fmt, args);
+  unlock("log_time ctl_lock", &params->ctl_lock);
+
+  va_end(args);
+}
+
+void log_notice_time(parameters * params, const char * fmt, ...) {
+  va_list args;
+
+  va_start(args, fmt);
+
+  lock("log_time ctl_lock", &params->ctl_lock);
+  vlog_time_locked(params, TRANSFUSE_LOG_NOTICE, fmt, args);
   unlock("log_time ctl_lock", &params->ctl_lock);
 
   va_end(args);
@@ -208,7 +228,7 @@ void log_continue_locked(parameters * params, const char * fmt, ...) {
 
   va_start(args, fmt);
 
-  vlog_locked(params, fmt, args);
+  vlog_locked(params, TRANSFUSE_LOG_ERROR, fmt, args);
 
   va_end(args);
 }
@@ -219,7 +239,7 @@ void log_continue(parameters * params, const char * fmt, ...) {
   va_start(args, fmt);
 
   lock("log_continue ctl_lock", &params->ctl_lock);
-  vlog_locked(params, fmt, args);
+  vlog_locked(params, TRANSFUSE_LOG_ERROR, fmt, args);
   unlock("log_continue ctl_lock", &params->ctl_lock);
 
   va_end(args);
