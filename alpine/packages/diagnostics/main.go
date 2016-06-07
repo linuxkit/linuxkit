@@ -102,7 +102,9 @@ func capture(w *tar.Writer) {
 	run(t, w, "/bin/ls", "-l", "/var/lib/docker")
 	run(t, w, "/usr/bin/diagnostics")
 	run(t, w, "/bin/ping", "-w", "5", "8.8.8.8")
-	run(t, w, "/bin/cp", "/etc/resolv.conf", ".")
+	run(t, w, "/bin/cat", "/etc/network/interfaces")
+	run(t, w, "/bin/cat", "/etc/resolv.conf")
+	run(t, w, "/bin/cat", "/etc/sysctl.conf")
 	run(t, w, "/usr/bin/dig", "docker.com")
 	run(t, w, "/usr/bin/wget", "-O", "-", "http://www.docker.com/")
 
