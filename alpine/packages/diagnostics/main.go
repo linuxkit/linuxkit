@@ -6,8 +6,10 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -103,6 +105,15 @@ func capture(w *tar.Writer) {
 	run(t, w, "/bin/cp", "/etc/resolv.conf", ".")
 	run(t, w, "/usr/bin/dig", "docker.com")
 	run(t, w, "/usr/bin/wget", "-O", "-", "http://www.docker.com/")
+
+	// Dump the database
+	dbBase := "/Database/branch/master/ro"
+	filepath.Walk(dbBase, func(path string, f os.FileInfo, err error) error {
+		if f.Mode().IsRegular() {
+			run(t, w, "/bin/cat", path)
+		}
+		return nil
+	})
 }
 
 func main() {
