@@ -6,8 +6,10 @@ import (
 	"io"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"path"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -89,7 +91,10 @@ func capture(w *tar.Writer) {
 	run(t, w, "/usr/sbin/brctl", "show")
 	run(t, w, "/bin/dmesg")
 	run(t, w, "/usr/bin/docker", "ps")
-	run(t, w, "/usr/bin/tail", "/var/log/docker.log")
+	run(t, w, "/usr/bin/tail", "-100", "/var/log/docker.log")
+	run(t, w, "/usr/bin/tail", "-100", "/var/log/messages")
+	run(t, w, "/usr/bin/tail", "-100", "/var/log/proxy-vsockd.log")
+	run(t, w, "/usr/bin/tail", "-100", "/var/log/vsudd.log")
 	run(t, w, "/bin/mount")
 	run(t, w, "/bin/df")
 	run(t, w, "/bin/ls", "-l", "/var")
@@ -97,9 +102,20 @@ func capture(w *tar.Writer) {
 	run(t, w, "/bin/ls", "-l", "/var/lib/docker")
 	run(t, w, "/usr/bin/diagnostics")
 	run(t, w, "/bin/ping", "-w", "5", "8.8.8.8")
-	run(t, w, "/bin/cp", "/etc/resolv.conf", ".")
+	run(t, w, "/bin/cat", "/etc/network/interfaces")
+	run(t, w, "/bin/cat", "/etc/resolv.conf")
+	run(t, w, "/bin/cat", "/etc/sysctl.conf")
 	run(t, w, "/usr/bin/dig", "docker.com")
 	run(t, w, "/usr/bin/wget", "-O", "-", "http://www.docker.com/")
+
+	// Dump the database
+	dbBase := "/Database/branch/master/ro"
+	filepath.Walk(dbBase, func(path string, f os.FileInfo, err error) error {
+		if f.Mode().IsRegular() {
+			run(t, w, "/bin/cat", path)
+		}
+		return nil
+	})
 }
 
 func main() {
