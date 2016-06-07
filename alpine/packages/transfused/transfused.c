@@ -25,23 +25,6 @@
 #include "transfused_log.h"
 #include "transfused_vsock.h"
 
-#define IN_BUFSZ  ((1 << 20) + 16)
-#define OUT_BUFSZ ((1 << 20) + 64)
-#define EVENT_BUFSZ 4096
-
-#define DEFAULT_FUSERMOUNT "/bin/fusermount"
-#define DEFAULT_SOCKET "v:_:1525"
-#define DEFAULT_SERVER "v:2:1524"
-
-#define PING             128
-#define RMDIR_SYSCALL    0
-#define UNLINK_SYSCALL   1
-#define MKDIR_SYSCALL    2
-#define SYMLINK_SYSCALL  3
-#define TRUNCATE_SYSCALL 4
-#define CHMOD_SYSCALL    5
-// these could be turned into an enum probably but... C standard nausea
-
 char * default_fusermount = DEFAULT_FUSERMOUNT;
 char * default_socket = DEFAULT_SOCKET;
 char * default_server = DEFAULT_SERVER;
@@ -346,6 +329,7 @@ int recv_fd(parameters * params, int sock) {
 int get_fuse_sock(connection_t * conn, int optc, char *const optv[]) {
   char ** argv;
   char * envp[2];
+  char * mount_notice, * arg_acc;
   pid_t fusermount_pid;
   int fuse_socks[2];
   int status;
@@ -357,12 +341,24 @@ int get_fuse_sock(connection_t * conn, int optc, char *const optv[]) {
   argv[0] = conn->params->fusermount;
   memcpy(&argv[1], optv, (optc + 1) * sizeof(char *));
 
-  lock("get_fuse_sock ctl_lock", &conn->params->ctl_lock);
-  log_time_locked(conn->params, "mount ");
-  for (int i = 0; argv[i]; i++)
-    log_continue_locked(conn->params, "%s ",argv[i]);
-  log_continue_locked(conn->params, "\n");
-  unlock("get_fuse_sock ctl_lock", &conn->params->ctl_lock);
+  // report the mount command issued
+  if (asprintf(&arg_acc, "mount") == -1)
+    die(1, conn->params, "Couldn't allocate mount notice base string", "");
+
+  for (int i = 0; argv[i]; i++) {
+    if (asprintf(&mount_notice, "%s %s", arg_acc, argv[i]) == -1)
+      die(1, conn->params, "", "Couldn't allocate mount notice arg %d: ", i);
+    free(arg_acc);
+    arg_acc = mount_notice;
+  }
+
+  if (asprintf(&mount_notice, "%s\n", arg_acc) == -1)
+    die(1, conn->params, "Couldn't allocate mount notice", "");
+
+  log_notice_time(conn->params, mount_notice);
+
+  free(mount_notice);
+  free(arg_acc);
 
   // make the socket over which we'll be sent the FUSE socket fd
   if (socketpair(PF_UNIX, SOCK_STREAM, 0, fuse_socks))
@@ -460,6 +456,7 @@ void mkdir_p(connection_t * conn, char * path) {
   char * parent;
 
   if (mkdir(path, 0700)) switch (errno) {
+    case EEXIST: return;
     case ENOENT:
       parent = alloc_dirname(conn, path);
       mkdir_p(conn, parent);
@@ -472,48 +469,52 @@ void mkdir_p(connection_t * conn, char * path) {
     }
 }
 
-int is_next_child_ok(connection_t * conn, DIR * dir) {
+int is_next_child_ok(parameters * params, char * path, DIR * dir) {
   struct dirent * child;
 
   errno = 0;
   child = readdir(dir);
   if (child == NULL) {
     if (errno != 0)
-      die(1, conn->params, "", "Couldn't read mount point %s: ",
-          conn->mount_point);
+      die(1, params, "", "Couldn't read directory %s: ", path);
     else return 0;
-  } else
-    if (strcmp(".", child->d_name) != 0 && strcmp("..", child->d_name) != 0)
-      die(1, conn->params, NULL, "Couldn't mount on %s: %s exists",
-          conn->mount_point, child->d_name);
+  }
   return 1;
+}
+
+int is_path_missing_or_empty(parameters * params, char * path) {
+  DIR * dir;
+
+  dir = opendir(path);
+  if (dir != NULL) {
+    // allow for . and ..
+    if (is_next_child_ok(params, path, dir))
+      if (is_next_child_ok(params, path, dir)) {
+        if (is_next_child_ok(params, path, dir)) goto no;
+        else goto yes;
+      }
+    goto yes;
+  } else {
+    switch (errno) {
+    case ENOENT: goto yes;
+    case ENOTDIR: goto no;
+    default: goto no;
+    }
+  }
+  goto no;
+
+ no:  if (dir) closedir(dir); return 0;
+ yes: if (dir) closedir(dir); return 1;
 }
 
 // The leaf may exist but must be empty. Any proper path prefix may exist.
 void prepare_mount_point(connection_t * conn) {
-  DIR * dir;
   char * mount_point = conn->mount_point;
 
-  dir = opendir(mount_point);
-  if (dir != NULL) {
-    if (is_next_child_ok(conn, dir))
-      if (is_next_child_ok(conn, dir)) {
-        if (is_next_child_ok(conn, dir))
-          die(1, conn->params, "", "Couldn't mount on %s: not empty",
-              mount_point);
-        else return;
-      }
-    if (closedir(dir))
-      die(1, conn->params, "", "Couldn't close mount point %s: ", mount_point);
-  } else {
-    switch (errno) {
-    case ENOENT: break;
-    default:
-      die(1, conn->params, "", "Couldn't open mount point %s: ", mount_point);
-    }
-  }
-
-  mkdir_p(conn, mount_point);
+  if (is_path_missing_or_empty(conn->params, mount_point))
+    mkdir_p(conn, mount_point);
+  else die(1, conn->params, NULL,
+           "Couldn't mount on %s: not missing or empty", mount_point);
 }
 
 void * mount_connection(connection_t * conn) {
@@ -584,6 +585,12 @@ void write_pid(connection_t * connection) {
   free(pid_s);
 }
 
+void pong(parameters * params) {
+  char pong_msg[6] = { '\6', '\0', '\0', '\0', PONG_REPLY, '\0' };
+
+  write_exactly("pong reply", params->ctl_sock, pong_msg, 6);
+}
+
 void perform_syscall(connection_t * conn, uint8_t syscall, char path[]) {
   char * name;
   int r = 0;
@@ -591,7 +598,7 @@ void perform_syscall(connection_t * conn, uint8_t syscall, char path[]) {
   switch (syscall) {
 
   case PING:
-    log_time(conn->params, "PONG");
+    pong(conn->params);
     r = 0;
     break;
 
@@ -701,11 +708,42 @@ void write_pidfile(parameters * params) {
   free(pid_s);
 }
 
+// TODO: the message parsing here is rickety, do it properly
+void * determine_mount_suitability(parameters * params, char * req, int len) {
+  void * buf = (void *) req;
+  uint16_t id = *((uint16_t *) buf);
+  uint16_t slen;
+  char * reply;
+  int roff;
+
+  reply = (char *) must_malloc("determine_mount_suitability", len + 6);
+  *((uint16_t *)(reply + 4)) = MOUNT_SUITABILITY_REPLY;
+  *((uint16_t *)(reply + 6)) = id;
+  roff = 8;
+
+  buf = (void *) ((char *) buf + 2);
+  len -= 2;
+  while (len) {
+    slen = *((uint16_t *) buf) + 1;
+    if (is_path_missing_or_empty(params, ((char *) buf) + 2)) {
+      slen = strlcpy(reply + roff + 2, ((char *) buf) + 2, slen) + 1;
+      *((uint16_t *) ((void *) (reply + roff))) = slen - 1;
+      roff += 2 + slen;
+    }
+    buf = (void *) ((char *) buf + 2 + slen);
+    len -= 2 + slen;
+  }
+
+  *((uint32_t *) ((void *) reply)) = roff;
+  return (void *) reply;
+}
+
 void * init_thread(void * params_ptr) {
   parameters * params = params_ptr;
-  int write_count, read_count;
+  int write_count, read_count, len;
   char init_msg[6] = { '\6', '\0', '\0', '\0', '\0', '\0' };
-  void * buf;
+  void * buf, * response;
+  uint16_t msg_type;
 
   params->ctl_sock = connect_socket(params->server);
 
@@ -715,22 +753,40 @@ void * init_thread(void * params_ptr) {
   if (write_count != sizeof(init_msg))
     die(1, NULL, "init thread: incomplete write", "");
 
-  buf = must_malloc("incoming init buffer", EVENT_BUFSZ);
+  buf = must_malloc("incoming control message buffer", CTL_BUFSZ);
 
   // TODO: handle short read/socket conditions
-  read_count = read(params->ctl_sock, buf, EVENT_BUFSZ);
+  read_count = read(params->ctl_sock, buf, 6);
   if (read_count < 0) die(1, params, "init thread: error reading", "");
   // TODO: handle other messages
-  if (read_count != 6) die(1, params, "init thread: response not 6", "");
+  if (read_count != 6) die(1, params, NULL, "init thread: response not 6");
   for (int i = 0; i < sizeof(init_msg); i++)
     if (((char *)buf)[i] != init_msg[i])
-      die(1, params, "init thread: unexpected message", "");
+      die(1, params, NULL, "init thread: unexpected message");
 
   // we've gotten Continue so write the pidfile
   if (params->pidfile != NULL)
     write_pidfile(params);
 
-  // TODO: handle more messages
+  while (1) {
+    read_count = read_message("control", params, params->ctl_sock,
+                              buf, CTL_BUFSZ);
+    msg_type = *((uint16_t *) buf + 2);
+    switch (msg_type) {
+    case MOUNT_SUITABILITY_REQUEST:
+      response =
+        determine_mount_suitability(params, (char *) buf + 6, read_count - 6);
+      len = *((size_t *) response);
+      write_exactly("init thread: mount suitability response",
+                    params->ctl_sock, response, len);
+      free(response);
+      break;
+    default:
+      die(1, params, NULL, "init thread: unknown message %d", msg_type);
+    }
+  }
+
+  free(buf);
   return NULL;
 }
 
