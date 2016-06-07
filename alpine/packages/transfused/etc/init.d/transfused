@@ -29,6 +29,8 @@ start()
                 -p "${PIDFILE}" \
                 -l "${STARTUP_LOGFILE}"
 
+	ewaitfile 2 ${PIDFILE}
+
 	eend $? "Failed to start transfused"
 }
 
