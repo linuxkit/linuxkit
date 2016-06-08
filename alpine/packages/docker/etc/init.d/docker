@@ -25,12 +25,6 @@ start()
 			mkdir -p $(dirname $f)
 			mobyconfig get $f > $f
 		done
-		rm -f /etc/docker/daemon.json
-	fi
-	# leave in same place as we have a watch
-	if mobyconfig exists /etc/docker/daemon.json
-	then
-		DOCKER_OPTS="${DOCKER_OPTS} --config-file=$(mobyconfig path /etc/docker/daemon.json)"
 	fi
 	if mobyconfig exists network
 	then
