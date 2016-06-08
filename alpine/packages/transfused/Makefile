@@ -15,4 +15,4 @@ transfused: $(DEPS)
 
 clean:
 	rm -f transfused
-	docker images -q transfused:build | xargs docker rmi -f
+	docker images -q transfused:build | xargs docker rmi -f || true

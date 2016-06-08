@@ -21,4 +21,4 @@ tap-vsockd.o: tap-vsockd.c hvsock.h
 
 clean:
 	rm -f tap-vsockd
-	docker images -q tap-vsockd:build | xargs docker rmi -f
+	docker images -q tap-vsockd:build | xargs docker rmi -f || true

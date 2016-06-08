@@ -12,4 +12,4 @@ diagnostics-server: Dockerfile main.go vendor
 
 clean:
 	rm -rf diagnostics-server vendor
-	docker images -q diagnostics:build | xargs docker rmi -f
+	docker images -q diagnostics:build | xargs docker rmi -f || true
