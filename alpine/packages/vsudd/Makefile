@@ -12,4 +12,4 @@ vsudd: Dockerfile main.go vendor
 
 clean:
 	rm -rf vsudd vendor
-	docker images -q vsudd:build | xargs docker rmi -f
+	docker images -q vsudd:build | xargs docker rmi -f || true
