@@ -1,7 +1,5 @@
 FROM alpine:3.4
 
-COPY repositories /etc/apk/
-
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
@@ -86,7 +84,7 @@ RUN \
   rc-update add networking boot && \
   rc-update add acpid default && \
   rc-update add chronyd default && \
-  rc-update add cron default && \
+  rc-update add crond default && \
   rc-update add savecache shutdown && \
   rc-update add killprocs shutdown && \
   rc-update add mount-ro shutdown && \
