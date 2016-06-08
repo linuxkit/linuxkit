@@ -9,16 +9,16 @@ start()
 	mkdir -p /Mac
 	rm -rf /tmp/* /tmp/.*
 
-        PIDFILE=/var/run/transfused.pid
-        STARTUP_LOGFILE=/var/transfused_start.log
+	PIDFILE=/var/run/transfused.pid
+	STARTUP_LOGFILE=/var/transfused_start.log
 
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/transfused \
 		--pidfile ${PIDFILE} \
 		-- \
-                -p "${PIDFILE}" \
-                -l "${STARTUP_LOGFILE}"
+		-p "${PIDFILE}" \
+		-l "${STARTUP_LOGFILE}"
 
 	ewaitfile 2 ${PIDFILE}
 
