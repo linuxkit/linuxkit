@@ -18,4 +18,4 @@ hvsock.o: hvsock.c hvsock.h
 
 clean:
 	rm -f 9pmount-vsock
-	docker images -q 9pmount-vsock:build | xargs docker rmi -f
+	docker images -q 9pmount-vsock:build | xargs docker rmi -f || true

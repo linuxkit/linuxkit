@@ -27,5 +27,5 @@ qemu-arm: Dockerfile.qemu.armhf arm
 clean:
 	$(MAKE) -C alpine clean
 	$(MAKE) -C xhyve clean
-	docker images -q mobyqemu:build | xargs docker rmi -f
-	docker images -q justincormack/remora | xargs docker rmi -f
+	docker images -q mobyqemu:build | xargs docker rmi -f || true
+	docker images -q justincormack/remora | xargs docker rmi -f || true

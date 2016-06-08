@@ -8,4 +8,4 @@ linuxx64.efi.stub: Dockerfile gummiboot/*
 
 clean:
 	rm -f linuxx64.efi.stub gummiboot.tar.gz
-	docker images -q gummiboot:build | xargs docker rmi -f
+	docker images -q gummiboot:build | xargs docker rmi -f || true

@@ -12,4 +12,4 @@ proxy: Dockerfile main.go proxy.go vendor
 
 clean:
 	rm -rf proxy vendor
-	docker images -q proxy:build | xargs docker rmi -f
+	docker images -q proxy:build | xargs docker rmi -f || true
