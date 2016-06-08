@@ -7,6 +7,7 @@ start()
 	ebegin "Starting FUSE socket passthrough"
 
 	mkdir -p /Mac
+	rm -rf /tmp/* /tmp/.*
 
         PIDFILE=/var/run/transfused.pid
         STARTUP_LOGFILE=/var/transfused_start.log
