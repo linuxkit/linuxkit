@@ -12,4 +12,4 @@ nc-vsock: $(DEPS)
 
 clean:
 	rm -f nc-vsock
-	docker images -q nc-vsock:build | xargs docker rmi -f
+	docker images -q nc-vsock:build | xargs docker rmi -f || true

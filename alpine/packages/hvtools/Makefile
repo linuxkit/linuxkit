@@ -10,4 +10,4 @@ hvtools: Dockerfile src/*
 
 clean:
 	rm -f hv_fcopy_daemon hv_kvp_daemon hv_vss_daemon
-	docker images -q hvtools:build | xargs docker rmi -f
+	docker images -q hvtools:build | xargs docker rmi -f || true

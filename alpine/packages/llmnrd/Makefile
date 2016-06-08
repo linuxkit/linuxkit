@@ -8,4 +8,4 @@ llmnrd: Dockerfile src/*
 
 clean:
 	rm -f llmnrd llmnrd.tar.gz
-	docker images -q llmnrd:build | xargs docker rmi -f
+	docker images -q llmnrd:build | xargs docker rmi -f || true
