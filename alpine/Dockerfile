@@ -50,7 +50,6 @@ COPY packages/diagnostics/diagnostics /usr/bin/
 COPY packages/diagnostics/diagnostics-server /usr/bin/
 COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
-COPY packages/ntp15m/etc /etc/
 COPY packages/binfmt_misc/etc /etc/
 COPY packages/dnsfix/etc /etc/
 COPY packages/hostsettings/etc /etc/
@@ -84,7 +83,6 @@ RUN \
   rc-update add networking boot && \
   rc-update add acpid default && \
   rc-update add chronyd default && \
-  rc-update add crond default && \
   rc-update add savecache shutdown && \
   rc-update add killprocs shutdown && \
   rc-update add mount-ro shutdown && \
