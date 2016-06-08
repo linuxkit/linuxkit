@@ -1,0 +1,16 @@
+#!/bin/sh
+
+if [ "x$interface" != "xeth0" ] ; then exit 0 ; fi
+
+if cat /proc/cmdline | grep -q '\bntp=gateway\b' ; then
+    server=$(ip -4 route list type unicast dev eth0 exact 0/0 | awk '/^default/ { print $3 }')
+    server="$server trust"
+else
+    # TODO: consult $router
+    exit 0
+fi
+
+sed -i -e "s/^server [^ ]\+/server $server/g" /etc/chrony/chrony.conf
+
+logger -t udhcpc "Restarting chronyd with server $server"
+service -q chronyd conditionalrestart
