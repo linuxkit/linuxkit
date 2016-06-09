@@ -93,7 +93,7 @@ RUN \
   rc-update add fsck && \
   rc-update add root && \
   rc-update add localmount && \
-  rc-update add klogd && \
+  rc-update add klogd boot && \
   rc-update add docker default && \
   rc-update add proxy default && \
   rc-update add transfused default && \
