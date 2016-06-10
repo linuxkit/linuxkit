@@ -3,7 +3,6 @@
 description="Configuring settings from database."
 
 depend() {
-	need transfused
 	before sysctl net
 }
 
@@ -11,14 +10,6 @@ start() {
 	ebegin "Configuring host settings from database"
 
 	mobyconfig exists etc/sysctl.conf && mobyconfig get etc/sysctl.conf > /etc/sysctl.conf
-
-	# shift logs onto host before docker starts
-	# busybox reopens its log files every second
-	if cat /proc/cmdline | grep -q 'com.docker.driverDir'
-	then
-		DRIVERDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
-		mount --bind "${DRIVERDIR}/log" /var/log
-	fi
 
 	mobyconfig exists etc/resolv.conf && mobyconfig get etc/resolv.conf > /etc/resolv.conf
 
