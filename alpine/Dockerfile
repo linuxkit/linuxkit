@@ -80,6 +80,7 @@ RUN \
   rc-update add urandom boot && \
   rc-update add hostname boot && \
   rc-update add syslog boot && \
+  rc-update add hwclock boot && \
   rc-update add networking boot && \
   rc-update add acpid default && \
   rc-update add chronyd default && \
