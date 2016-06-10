@@ -1,5 +1,7 @@
 FROM alpine:3.4
 
+COPY repositories /etc/apk/
+
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \

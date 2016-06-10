@@ -1,8 +1,7 @@
 # /etc/inittab
 
-::sysinit:/sbin/openrc sysinit
-::sysinit:/sbin/openrc boot
-::wait:/sbin/openrc default
+::sysinit:/sbin/rc sysinit
+::wait:/sbin/rc default
 
 # Put a getty on the serial port
 ttyS0::respawn:/sbin/getty -L ttyS0 115200 vt100
