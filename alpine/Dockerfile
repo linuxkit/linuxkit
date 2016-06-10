@@ -94,14 +94,13 @@ RUN \
   rc-update add fsck && \
   rc-update add root && \
   rc-update add localmount && \
-  rc-update add klogd boot && \
   rc-update add docker default && \
   rc-update add proxy default && \
   rc-update add transfused default && \
   rc-update add llmnrd default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
-  rc-update add binfmt_misc sysinit && \
+  rc-update add binfmt_misc default && \
   rc-update add dnsfix boot && \
   rc-update add hostsettings boot && \
   rc-update add hv_kvp_daemon default && \
