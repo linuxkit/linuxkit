@@ -49,6 +49,14 @@ start()
 		[ -d /Mac/$d ] && [ ! -d $d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
 	done
 
+	# shift logs onto host before docker starts
+	# busybox reopens its log files every second
+	if cat /proc/cmdline | grep -q 'com.docker.driverDir'
+	then
+		DRIVERDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
+		grep -q "osxfs on /var/log" || mount --bind "${DRIVERDIR}/log" /var/log
+	fi
+
 	# same default ulimit as boot2docker; if you want more can set at docker run time
 	DOCKER_ULIMITS=1048576
 	ulimit -n $DOCKER_ULIMITS
