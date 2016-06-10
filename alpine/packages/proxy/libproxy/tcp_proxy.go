@@ -3,7 +3,6 @@ package libproxy
 import (
 	"io"
 	"net"
-	"syscall"
 
 	"github.com/Sirupsen/logrus"
 )
@@ -47,13 +46,16 @@ func HandleTCPConnection(client Conn, backendAddr *net.TCPAddr, quit chan bool) 
 	var broker = func(to, from Conn) {
 		written, err := io.Copy(to, from)
 		if err != nil {
-			// If the socket we are writing to is shutdown with
-			// SHUT_WR, forward it to the other end of the pipe:
-			if err, ok := err.(*net.OpError); ok && err.Err == syscall.EPIPE {
-				from.CloseWrite()
-			}
+			logrus.Println("error copying:", err)
 		}
-		to.CloseRead()
+		err = from.CloseRead()
+		if err != nil {
+			logrus.Println("error CloseRead from:", err)
+		}
+		err = to.CloseWrite()
+		if err != nil {
+			logrus.Println("error CloseWrite to:", err)
+		}
 		event <- written
 	}
 
