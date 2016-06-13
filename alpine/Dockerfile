@@ -24,6 +24,7 @@ RUN \
   util-linux \
   cifs-utils \
   e2fsprogs-extra \
+  openssl \
   && rm -rf /var/cache/apk/*
 
 COPY etc /etc/
