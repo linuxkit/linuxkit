@@ -2,7 +2,7 @@
 
 depend()
 {
-	need dev syslog
+	after dev
 	before docker
 }
 
