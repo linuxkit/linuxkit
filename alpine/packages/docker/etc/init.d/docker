@@ -54,7 +54,11 @@ start()
 	if cat /proc/cmdline | grep -q 'com.docker.driverDir'
 	then
 		DRIVERDIR="/Mac$(cat /proc/cmdline | sed -e 's/.*com.docker.driverDir="//' -e 's/".*//')"
-		grep -q "osxfs on /var/log" /proc/mounts || mount --bind "${DRIVERDIR}/log" /var/log
+		if ! grep -q "osxfs on /var/log" /proc/mounts ; then
+			mkdir /run/log
+			mount -o bind /var/log /run/log
+			mount --bind "${DRIVERDIR}/log" /var/log
+		fi
 	fi
 
 	# same default ulimit as boot2docker; if you want more can set at docker run time
