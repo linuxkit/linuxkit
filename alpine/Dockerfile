@@ -35,8 +35,8 @@ COPY mkinitrd.sh /bin/
 COPY kernel/kernel-source-info /etc/
 ADD kernel/kernel-patches.tar /etc/kernel-patches
 
-COPY packages/proxy/proxy /sbin/
-COPY packages/proxy/proxy /sbin/proxy-vsockd
+COPY packages/proxy/slirp-proxy /usr/bin/
+COPY packages/proxy/slirp-proxy /sbin/proxy-vsockd
 COPY packages/proxy/etc /etc/
 COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
