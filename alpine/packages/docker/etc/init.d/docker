@@ -9,7 +9,7 @@ start()
 {
 	ebegin "Starting Docker"
 
-	command="${DOCKER_BINARY:-/usr/bin/docker}"
+	command="${DOCKER_BINARY:-/usr/bin/dockerd}"
 
 	pidfile="/run/docker.pid"
 
@@ -31,7 +31,7 @@ start()
 		NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
 		NATIVE_PORT_FORWARDING="$(mobyconfig get native/port-forwarding | tr -d '[[:space:]]')"
 		if [ "${NETWORK_MODE}" = "slirp" -o "${NATIVE_PORT_FORWARDING}" = "true" ]; then
-			DOCKER_OPTS="${DOCKER_OPTS} --userland-proxy-path /sbin/proxy"
+			cp /usr/bin/slirp-proxy /usr/bin/docker-proxy
 		fi
 	fi
 
@@ -74,7 +74,7 @@ start()
 		--pidfile ${pidfile} \
 		--stderr "${DOCKER_LOGFILE}" \
 		--stdout "${DOCKER_LOGFILE}" \
-		-- daemon --pidfile=${pidfile} ${DOCKER_OPTS}
+		-- --pidfile=${pidfile} ${DOCKER_OPTS}
 
 	eend $? "Failed to start docker"
 }
