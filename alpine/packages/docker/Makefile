@@ -1,4 +1,4 @@
-DOCKER_VERSION=1.11.2
+DOCKER_VERSION=1.12-dev
 ARCH?=x86_64
 OS?=Linux
 
@@ -8,10 +8,10 @@ bin: docker.git
 	(cd docker.git && git fetch origin --tags && git checkout moby-$(DOCKER_VERSION))
 	BIND_DIR=$(shell pwd) make -C docker.git binary
 	mkdir -p bin
-	cp docker.git/bundles/${DOCKER_VERSION}/binary/* bin/
-	rm -f bin/*.md5
-	rm -f bin/*.sha256
-	rm -f bin/docker-${DOCKER_VERSION}
+	cp docker.git/bundles/latest/binary-daemon/{dockerd,docker-runc} bin/
+	cp docker.git/bundles/latest/binary-daemon/{docker-containerd,docker-containerd-shim,docker-containerd-ctr} bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-proxy bin/
+	cp docker.git/bundles/latest/binary-client/docker bin/
 
 docker.git:
 	git clone git://github.com/justincormack/docker.git docker.git
