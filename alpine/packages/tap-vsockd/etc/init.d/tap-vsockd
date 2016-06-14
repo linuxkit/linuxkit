@@ -21,11 +21,11 @@ start()
 			ebegin "Starting VPN proxy"
 
 			PIDFILE=/var/run/tap-vsockd.pid
-			start-stop-daemon --start --quiet \
+			start-stop-daemon --start \
 				--exec /sbin/tap-vsockd \
+				--background \
 				--pidfile ${PIDFILE} \
 				-- \
-				--daemon \
 				--pidfile "${PIDFILE}" \
 				--listen
 
