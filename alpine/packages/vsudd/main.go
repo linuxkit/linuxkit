@@ -62,7 +62,7 @@ func main() {
 		}
 		l, err = hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
 		if err != nil {
-			log.Fatalf("Failed to bind to hvsock port: %#v", err)
+			log.Fatalf("Failed to bind to hvsock port: %s", err)
 		}
 		log.Printf("Listening on ServiceId %s", svcid)
 		useHVsock = true
@@ -73,7 +73,7 @@ func main() {
 		}
 		l, err = vsock.Listen(uint(port))
 		if err != nil {
-			log.Fatalf("Failed to bind to vsock port %u: %#v", port, err)
+			log.Fatalf("Failed to bind to vsock port %u: %s", port, err)
 		}
 		log.Printf("Listening on port %u", port)
 		useHVsock = false
@@ -84,7 +84,7 @@ func main() {
 		connid++
 		conn, err := l.Accept()
 		if err != nil {
-			log.Printf("Error accepting connection: %#v", err)
+			log.Printf("Error accepting connection: %s", err)
 			return // no more listening
 		}
 		log.Printf("Connection %d from: %s\n", connid, conn.RemoteAddr())
