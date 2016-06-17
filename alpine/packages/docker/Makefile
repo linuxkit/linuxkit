@@ -9,8 +9,11 @@ bin: docker.git
 	(cd docker.git && git fetch origin --tags && git checkout moby-$(DOCKER_VERSION))
 	DOCKER_EXPERIMENTAL=$(EXPERIMENTAL) BIND_DIR=$(shell pwd) make -C docker.git binary
 	mkdir -p bin
-	cp docker.git/bundles/latest/binary-daemon/{dockerd,docker-runc} bin/
-	cp docker.git/bundles/latest/binary-daemon/{docker-containerd,docker-containerd-shim,docker-containerd-ctr} bin/
+	cp docker.git/bundles/latest/binary-daemon/dockerd bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-runc bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-containerd bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-containerd-shim bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-containerd-ctr bin/
 	cp docker.git/bundles/latest/binary-daemon/docker-proxy bin/
 	cp docker.git/bundles/latest/binary-client/docker bin/
 
