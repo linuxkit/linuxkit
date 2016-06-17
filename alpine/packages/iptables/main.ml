@@ -65,7 +65,8 @@ let delete ({ proto; dport; ip; port } as p) =
     let ic = open_in filename in
     let pid = int_of_string (input_line ic) in
     logf "Sending SIGTERM to %d" pid;
-    Unix.kill pid Sys.sigterm
+    Unix.kill pid Sys.sigterm;
+    Unix.unlink filename
   with e ->
     logf "delete: failed to remove proxy for %s: %s" filename (Printexc.to_string e);
     ()
