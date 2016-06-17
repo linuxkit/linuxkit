@@ -35,16 +35,26 @@ let pid_filename { proto; dport; ip; port } =
 let insert ({ proto; dport; ip; port } as p) =
   let filename = pid_filename p in
   logf "insert: creating a proxy for %s" filename;
-  let args = [ _proxy; "-proto"; proto; "-container-ip"; ip; "-container-port"; port; "-host-ip"; "0.0.0.0"; "-host-port"; dport; "-i" ] in
+  let args = [ _proxy; "-proto"; proto; "-container-ip"; ip; "-container-port"; port; "-host-ip"; "0.0.0.0"; "-host-port"; dport; "-i"; "-no-local-ip" ] in
   let pid = Unix.fork () in
-  if pid != 0 then begin
+  if pid == 0 then begin
+    logf "binary = %s args = %s" _proxy (String.concat "; " args);
+    (* Close the vast number of fds I've inherited from docker *)
+    for i = 0 to 1023 do
+      let fd : Unix.file_descr = Obj.magic i in
+      try Unix.close fd with Unix.Unix_error(Unix.EBADF, _, _) -> ()
+    done;
+    let null = Unix.openfile "/dev/null" [ Unix.O_RDWR ] 0 in
+    Unix.dup2 null Unix.stdin;
+    Unix.dup2 null Unix.stdout;
+    Unix.dup2 null Unix.stderr;
+    (try Unix.execv _proxy (Array.of_list args) with e -> logf "Failed with %s" (Printexc.to_string e));
+    exit 1
+  end else begin
     (* write pid to a file (not atomically) *)
     let oc = open_out filename in
     output_string oc (string_of_int pid);
-    close_out oc;
-    logf "binary = %s args = %s" _proxy (String.concat "; " args);
-    (try Unix.execv _proxy (Array.of_list args) with e -> logf "Failed with %s" (Printexc.to_string e));
-    exit 1
+    close_out oc
   end
 
 let delete ({ proto; dport; ip; port } as p) =
