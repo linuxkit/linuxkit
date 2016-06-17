@@ -60,6 +60,9 @@ start()
 
 	DOCKER_LOGFILE="/var/log/docker.log"
 
+	# Allow iptables to be overriden
+	export PATH=/usr/local/sbin:$PATH
+
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec ${command} \
