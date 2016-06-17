@@ -18,6 +18,7 @@ RUN \
   busybox-initscripts \
   alpine-conf \
   bind-tools \
+  openssh \
   openssh-client \
   strace \
   fuse \
@@ -108,6 +109,7 @@ RUN \
   rc-update add hv_vss_daemon default && \
   rc-update add vsudd default && \
   rc-update add oom default && \
+  rc-update add sshd default && \
   true
 
 # we do not need to restart syslog, as probably not running
