@@ -40,6 +40,7 @@ let insert ({ proto; dport; ip; port } as p) =
   if pid == 0 then begin
     logf "binary = %s args = %s" _proxy (String.concat "; " args);
     (* Close the vast number of fds I've inherited from docker *)
+    (* TODO(djs55): revisit, possibly by filing a docker/docker issue *)
     for i = 0 to 1023 do
       let fd : Unix.file_descr = Obj.magic i in
       try Unix.close fd with Unix.Unix_error(Unix.EBADF, _, _) -> ()
