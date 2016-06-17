@@ -80,8 +80,14 @@ let parse_ip_port ip_port = match Astring.String.cut ~sep:":" ip_port with
 
 let _ =
   ( try Unix.mkdir _pid_dir 0o0755 with Unix.Unix_error(Unix.EEXIST, _, _) -> () );
-  logf "intercepted arguments [%s]" (String.concat "; " (Array.to_list Sys.argv));
-  ( match Array.to_list Sys.argv with
+  let port_forwarding =
+    try
+      let ic = open_in "/Database/branch/master/ro/com.docker.driver.amd64-linux/native/port-forwarding" in
+      bool_of_string (String.trim (input_line ic))
+    with _ -> false in
+  logf "port_forwarding=%b intercepted arguments [%s]" port_forwarding (String.concat "; " (Array.to_list Sys.argv));
+  if port_forwarding then begin
+    match Array.to_list Sys.argv with
     | [ _; "--wait"; "-t"; "nat"; "-I"; "DOCKER-INGRESS"; "-p"; proto; "--dport"; dport; "-j"; "DNAT"; "--to-destination"; ip_port ] ->
       let ip, port = parse_ip_port ip_port in
       insert { proto; dport; ip; port }
@@ -90,5 +96,5 @@ let _ =
       delete { proto; dport; ip; port }
     | _ ->
       ()
-  );
+  end;
   Unix.execv _iptables Sys.argv
