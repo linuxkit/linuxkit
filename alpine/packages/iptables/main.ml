@@ -16,7 +16,7 @@ type port = {
   port:  string; (* container port *)
 }
 
-let log_fd = Unix.openfile "/var/run/log/service-port-opener.log" [ Unix.O_WRONLY; Unix.O_APPEND; Unix.O_CREAT ] 0o0644
+let log_fd = Unix.openfile "/var/log/service-port-opener.log" [ Unix.O_WRONLY; Unix.O_APPEND; Unix.O_CREAT ] 0o0644
 
 let logf fmt =
   Printf.ksprintf (fun s ->
