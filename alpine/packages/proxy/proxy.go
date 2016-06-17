@@ -12,8 +12,14 @@ import (
 	"proxy/libproxy"
 )
 
+var interactiveMode bool
+
+
 // sendError signals the error to the parent and quits the process.
 func sendError(err error) {
+	if interactiveMode {
+		log.Fatal("Failed to set up proxy", err)
+	}
 	f := os.NewFile(3, "signal-parent")
 
 	fmt.Fprintf(f, "1\n%s", err)
@@ -23,6 +29,10 @@ func sendError(err error) {
 
 // sendOK signals the parent that the forward is running.
 func sendOK() {
+	if interactiveMode {
+		log.Println("Proxy running")
+		return
+	}
 	f := os.NewFile(3, "signal-parent")
 	fmt.Fprint(f, "0\n")
 	f.Close()
@@ -45,9 +55,11 @@ func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr) {
 		hostPort      = flag.Int("host-port", -1, "host port")
 		containerIP   = flag.String("container-ip", "", "container ip")
 		containerPort = flag.Int("container-port", -1, "container port")
+		interactive   = flag.Bool("i", false, "print success/failure to stdout/stderr")
 	)
 
 	flag.Parse()
+	interactiveMode = *interactive
 
 	switch *proto {
 	case "tcp":
