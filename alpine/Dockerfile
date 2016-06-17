@@ -75,6 +75,7 @@ COPY packages/9pmount-vsock/9pmount-vsock /sbin
 COPY packages/test/etc /etc
 COPY packages/test/mobytest /usr/bin
 COPY packages/sysctl/etc /etc
+COPY packages/iptables/iptables /usr/local/sbin/iptables
 
 RUN \
   rc-update add swap boot && \
