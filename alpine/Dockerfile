@@ -73,6 +73,7 @@ COPY packages/bootflag/bootflag /usr/bin
 COPY packages/gummiboot/gummiboot.tar.gz /usr/share/src/
 COPY packages/oom/etc /etc
 COPY packages/9pmount-vsock/9pmount-vsock /sbin
+COPY packages/iptables/iptables /usr/local/sbin/iptables
 
 RUN \
   rc-update add swap boot && \

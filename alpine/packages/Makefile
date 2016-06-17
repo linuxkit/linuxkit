@@ -10,6 +10,7 @@ all:
 	$(MAKE) -C llmnrd OS=linux
 	$(MAKE) -C gummiboot OS=linux
 	$(MAKE) -C 9pmount-vsock OS=linux
+	$(MAKE) -C iptables OS=linux
 
 arm:
 	$(MAKE) -C transfused OS=linux ARCH=arm
@@ -33,3 +34,4 @@ clean:
 	$(MAKE) -C llmnrd clean
 	$(MAKE) -C gummiboot clean
 	$(MAKE) -C 9pmount-vsock clean
+	$(MAKE) -C iptables clean
