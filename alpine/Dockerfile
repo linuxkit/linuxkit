@@ -26,6 +26,7 @@ RUN \
   cifs-utils \
   e2fsprogs-extra \
   openssl \
+  docker \
   && rm -rf /var/cache/apk/*
 
 COPY etc /etc/
@@ -46,8 +47,13 @@ COPY packages/tap-vsockd/etc /etc/
 COPY packages/llmnrd/llmnrd /sbin/
 COPY packages/llmnrd/etc /etc/
 COPY packages/llmnrd/llmnrd.tar.gz /usr/share/src/
-COPY packages/docker/bin/* /usr/bin/
-COPY packages/docker/etc /etc/
+
+# Will break windows/mac most likely (this uses the stock alpine docker package, and then replaces the binaries)
+#COPY packages/docker/bin/* /usr/bin/
+#COPY packages/docker/etc /etc/
+ADD https://test.docker.com/builds/Linux/x86_64/docker-1.12.0-rc2.tgz /tmp/
+RUN cd /tmp; tar zxf docker-*.tgz && mv /tmp/docker/* /usr/bin/ && rm -f docker*.tgz ; rmdir docker
+
 COPY packages/diagnostics/diagnostics /usr/bin/
 COPY packages/diagnostics/diagnostics-server /usr/bin/
 COPY packages/diagnostics/etc /etc/
