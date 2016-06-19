@@ -7,12 +7,12 @@ xhyve: all
 
 qemu: all
 	docker build -f Dockerfile.qemu -t mobyqemu:build .
-	docker run --rm mobyqemu:build
+	docker run -it --rm mobyqemu:build
 
 qemu-iso: all
 	$(MAKE) -C alpine mobylinux.iso
 	docker build -f Dockerfile.qemuiso -t mobyqemuiso:build .
-	docker run --rm mobyqemuiso:build
+	docker run -it --rm mobyqemuiso:build
 
 arm:
 	$(MAKE) -C alpine/kernel arm
@@ -20,7 +20,7 @@ arm:
 
 qemu-arm: Dockerfile.qemu.armhf arm
 	docker build -f Dockerfile.qemu.armhf -t mobyarmqemu:build .
-	docker run --rm mobyarmqemu:build
+	docker run -it --rm mobyarmqemu:build
 
 .PHONY: clean
 
