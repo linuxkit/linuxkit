@@ -114,6 +114,9 @@ RUN \
 RUN \
   sed -i 's@/etc/init.d/syslog --quiet restart@@' /sbin/setup-disk
 
+# Prevent DNS setup on eth1 (private network) so eth0 is preferred
+RUN echo "NO_DNS=eth1" > /etc/udhcpc/udhcpc.conf
+
 COPY init /
 
 CMD ["/bin/sh"]
