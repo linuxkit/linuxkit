@@ -1655,7 +1655,7 @@ CONFIG_ETHERNET=y
 # CONFIG_NET_VENDOR_HP is not set
 CONFIG_NET_VENDOR_INTEL=y
 # CONFIG_E100 is not set
-# CONFIG_E1000 is not set
+CONFIG_E1000=y
 # CONFIG_E1000E is not set
 # CONFIG_IGB is not set
 # CONFIG_IGBVF is not set
