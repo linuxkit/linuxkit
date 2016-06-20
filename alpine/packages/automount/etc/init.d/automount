@@ -50,12 +50,14 @@ start()
 
 	eend $? "Failed to mount block device"
 
+        mkdir -p /var/lib/boot2docker/
+        ln -s /var/lib/boot2docker /etc/docker
         if [ -e "/userdata.tar" ]; then
-                mkdir -p /var/lib/boot2docker/
                 mv /userdata.tar /var/lib/boot2docker/
         fi
 
         if [ -e "/var/lib/boot2docker/userdata.tar" ]; then
-            tar xf /var/lib/boot2docker/userdata.tar -C /root/
+            tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/
+            chown -R docker.docker /home/docker
         fi
 }

@@ -4,6 +4,7 @@ RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
   passwd -d root && \
+  passwd -d docker && \
   apk update && apk upgrade && \
   apk add \
   e2fsprogs \
@@ -20,6 +21,7 @@ RUN \
   bind-tools \
   openssh \
   openssh-client \
+  sudo \
   strace \
   fuse \
   util-linux \
@@ -30,7 +32,7 @@ RUN \
   && rm -rf /var/cache/apk/*
 
 COPY etc /etc/
-RUN mkdir -p /etc/docker
+#RUN mkdir -p /etc/docker
 
 ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
@@ -117,6 +119,12 @@ RUN \
   rc-update add oom default && \
   rc-update add sshd default && \
   true
+
+# Allow docker user to sudo without prompt
+RUN echo "docker    ALL=NOPASSWD: ALL" > /etc/sudoers.d/docker
+
+# Prevent DNS setup on eth1 (private network) so eth0 is preferred
+RUN echo "NO_DNS=eth1" > /etc/udhcpc/udhcpc.conf
 
 # we do not need to restart syslog, as probably not running
 RUN \
