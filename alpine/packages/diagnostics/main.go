@@ -94,6 +94,7 @@ func capture(w *tar.Writer) {
 	run(t, w, "/usr/bin/tail", "-100", "/var/log/docker.log")
 	run(t, w, "/usr/bin/tail", "-100", "/var/log/messages")
 	run(t, w, "/usr/bin/tail", "-100", "/var/log/proxy-vsockd.log")
+	run(t, w, "/usr/bin/tail", "-100", "/var/log/service-port-opener.log")
 	run(t, w, "/usr/bin/tail", "-100", "/var/log/vsudd.log")
 	run(t, w, "/bin/mount")
 	run(t, w, "/bin/df")
@@ -107,7 +108,11 @@ func capture(w *tar.Writer) {
 	run(t, w, "/bin/cat", "/etc/resolv.conf")
 	run(t, w, "/bin/cat", "/etc/sysctl.conf")
 	run(t, w, "/usr/bin/dig", "docker.com")
+	run(t, w, "/usr/bin/dig", "@8.8.8.8", "docker.com")
 	run(t, w, "/usr/bin/wget", "-O", "-", "http://www.docker.com/")
+	run(t, w, "/usr/bin/wget", "-O", "-", "http://104.239.220.248/") // a www.docker.com address
+	run(t, w, "/usr/bin/wget", "-O", "-", "http://216.58.213.68/") // a www.google.com address
+	run(t, w, "/usr/bin/wget", "-O", "-", "http://91.198.174.192/") // a www.wikipedia.com address
 
 	// Dump the database
 	dbBase := "/Database/branch/master/ro"
