@@ -5,7 +5,7 @@
 			"importpath": "github.com/rneugeba/virtsock/go",
 			"repository": "https://github.com/rneugeba/virtsock",
 			"vcs": "git",
-			"revision": "74097e05a883e89c70e6a27b342672c7fe6c846b",
+			"revision": "650ef8224a0c06b4b20e9bee1600dbf677c8176d",
 			"branch": "master",
 			"path": "/go",
 			"notests": true

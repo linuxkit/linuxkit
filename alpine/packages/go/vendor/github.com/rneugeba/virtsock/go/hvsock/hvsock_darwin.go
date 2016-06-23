@@ -1,6 +1,7 @@
 // Dummy implementation to compile on Mac OSX
 
 package hvsock
+
 import (
 	"errors"
 	"time"
