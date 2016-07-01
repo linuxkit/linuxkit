@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"log"
+	"log/syslog"
 	"net"
 	"os"
 	"strconv"
@@ -66,15 +67,24 @@ func main() {
 	flag.Parse()
 
 	if detach {
-		logFile, err := os.Create("/var/log/vsudd.log")
+		syslog, err := syslog.New(syslog.LOG_INFO|syslog.LOG_DAEMON, "vsudd")
 		if err != nil {
-			log.Fatalln("Failed to open log file", err)
+			log.Fatalln("Failed to open syslog", err)
 		}
-		log.SetOutput(logFile)
+
 		null, err := os.OpenFile("/dev/null", os.O_RDWR, 0)
 		if err != nil {
 			log.Fatalln("Failed to open /dev/null", err)
 		}
+
+		/* Don't do this above since we aren't yet forwarding
+		/* syslog (if we've been asked to) so the above error
+		/* reporting wants to go via the default path
+		/* (stdio). */
+
+		log.SetOutput(syslog)
+		log.SetFlags(0)
+
 		fd := null.Fd()
 		syscall.Dup2(int(fd), int(os.Stdin.Fd()))
 		syscall.Dup2(int(fd), int(os.Stdout.Fd()))
