@@ -2,12 +2,14 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	"os"
 	"strconv"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
@@ -15,11 +17,18 @@ import (
 	"github.com/rneugeba/virtsock/go/vsock"
 )
 
+type forward struct {
+	vsock string
+	net   string // "unix" or "unixgram"
+	usock string
+}
+
+type forwards []forward
+
 var (
-	portstr   string
-	sock      string
-	detach    bool
-	useHVsock bool
+	inForwards forwards
+	detach     bool
+	useHVsock  bool
 )
 
 type vConn interface {
@@ -28,9 +37,25 @@ type vConn interface {
 	CloseWrite() error
 }
 
+func (f *forwards) String() string {
+	return "Forwards"
+}
+
+func (f *forwards) Set(value string) error {
+	s := strings.SplitN(value, ":", 3)
+	if len(s) != 3 {
+		return fmt.Errorf("Failed to parse: %s", value)
+	}
+	var newF forward
+	newF.vsock = s[0]
+	newF.net = s[1]
+	newF.usock = s[2]
+	*f = append(*f, newF)
+	return nil
+}
+
 func init() {
-	flag.StringVar(&portstr, "port", "2376", "vsock port to forward")
-	flag.StringVar(&sock, "sock", "/var/run/docker.sock", "path of the local Unix domain socket to forward to")
+	flag.Var(&inForwards, "inport", "incoming port to forward")
 	flag.BoolVar(&detach, "detach", false, "detach from terminal")
 }
 
@@ -54,46 +79,69 @@ func main() {
 		syscall.Dup2(int(fd), int(os.Stderr.Fd()))
 	}
 
-	var l net.Listener
-	if strings.Contains(portstr, "-") {
-		svcid, err := hvsock.GuidFromString(portstr)
-		if err != nil {
-			log.Fatalln("Failed to parse GUID", portstr, err)
-		}
-		l, err = hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
-		if err != nil {
-			log.Fatalf("Failed to bind to hvsock port: %s", err)
-		}
-		log.Printf("Listening on ServiceId %s", svcid)
-		useHVsock = true
-	} else {
-		port, err := strconv.ParseUint(portstr, 10, 32)
-		if err != nil {
-			log.Fatalln("Can't convert %s to a uint.", portstr, err)
-		}
-		l, err = vsock.Listen(uint(port))
-		if err != nil {
-			log.Fatalf("Failed to bind to vsock port %u: %s", port, err)
-		}
-		log.Printf("Listening on port %u", port)
-		useHVsock = false
-	}
+	var wg sync.WaitGroup
 
 	connid := 0
-	for {
-		connid++
-		conn, err := l.Accept()
-		if err != nil {
-			log.Printf("Error accepting connection: %s", err)
-			return // no more listening
-		}
-		log.Printf("Connection %d from: %s\n", connid, conn.RemoteAddr())
 
-		go handleOne(connid, conn.(vConn))
+	for _, inF := range inForwards {
+		var portstr = inF.vsock
+		var network = inF.net
+		var usock = inF.usock
+
+		var l net.Listener
+
+		if network != "unix" {
+			log.Fatalf("cannot forward incoming port to %s:%s", network, usock)
+		}
+
+		log.Printf("incoming port forward from %s to %s", portstr, usock)
+
+		if strings.Contains(portstr, "-") {
+			svcid, err := hvsock.GuidFromString(portstr)
+			if err != nil {
+				log.Fatalln("Failed to parse GUID", portstr, err)
+			}
+			l, err = hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
+			if err != nil {
+				log.Fatalf("Failed to bind to hvsock port: %s", err)
+			}
+			log.Printf("Listening on ServiceId %s", svcid)
+			useHVsock = true
+		} else {
+			port, err := strconv.ParseUint(portstr, 10, 32)
+			if err != nil {
+				log.Fatalln("Can't convert %s to a uint.", portstr, err)
+			}
+			l, err = vsock.Listen(uint(port))
+			if err != nil {
+				log.Fatalf("Failed to bind to vsock port %d: %s", port, err)
+			}
+			log.Printf("Listening on port %s", portstr)
+			useHVsock = false
+		}
+
+		wg.Add(1)
+
+		go func() {
+			defer wg.Done()
+			for {
+				connid++
+				conn, err := l.Accept()
+				if err != nil {
+					log.Printf("Error accepting connection: %s", err)
+					return // no more listening
+				}
+				log.Printf("Connection %d to: %s from: %s\n", connid, portstr, conn.RemoteAddr())
+
+				go handleOneIn(connid, conn.(vConn), usock)
+			}
+		}()
 	}
+
+	wg.Wait()
 }
 
-func handleOne(connid int, conn vConn) {
+func handleOneIn(connid int, conn vConn, sock string) {
 	defer func() {
 		if err := conn.Close(); err != nil {
 			// On windows we get an EINVAL when the other end already closed
