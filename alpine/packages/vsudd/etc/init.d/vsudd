@@ -20,7 +20,6 @@ start()
 	fi
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/vsudd.pid
-	[ -n "${LOGFILE}" ] || LOGFILE=/var/log/vsudd.log
 
 	if [ -n "$SYSLOG_PORT" ] ; then
 	   # Can be inlined below once Windows defines syslog port
@@ -31,9 +30,9 @@ start()
 		--background \
 		--exec /sbin/vsudd \
 		--make-pidfile --pidfile ${PIDFILE} \
-		--stderr "${LOGFILE}" --stdout "${LOGFILE}" \
 		-- -inport "${DOCKER_PORT}:unix:/var/run/docker.sock" \
-		   ${SYSLOG_OPT}
+		   ${SYSLOG_OPT} \
+		   -detach
 
 	eend $? "Failed to start vsudd"
 }
