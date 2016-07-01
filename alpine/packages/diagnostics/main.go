@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"io"
 	"log"
+	"log/syslog"
 	"net"
 	"os"
 	"os/exec"
@@ -125,6 +126,14 @@ func capture(w *tar.Writer) {
 }
 
 func main() {
+	syslog, err := syslog.New(syslog.LOG_INFO|syslog.LOG_DAEMON, "diagnostics")
+	if err != nil {
+		log.Fatalln("Failed to open syslog", err)
+	}
+
+	log.SetOutput(syslog)
+	log.SetFlags(0)
+
 	listeners := make([]net.Listener, 0)
 
 	ip, err := net.Listen("tcp", ":62374")
