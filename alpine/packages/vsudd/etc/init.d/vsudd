@@ -9,12 +9,12 @@ depend()
 
 start()
 {
-	ebegin "Starting docker socket vsock passthrough"
+	ebegin "Starting vsock proxy"
 
 	if [ -d /sys/bus/vmbus ]; then
-		PORT=23a432c2-537a-4291-bcb5-d62504644739
+		DOCKER_PORT=23a432c2-537a-4291-bcb5-d62504644739
 	else
-		PORT=2376
+		DOCKER_PORT=2376
 	fi
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/vsudd.pid
@@ -25,7 +25,7 @@ start()
 		--exec /sbin/vsudd \
 		--make-pidfile --pidfile ${PIDFILE} \
 		--stderr "${LOGFILE}" --stdout "${LOGFILE}" \
-		-- -port "${PORT}" -sock /var/run/docker.sock
+		-- -inport "${DOCKER_PORT}:unix:/var/run/docker.sock"
 
 	eend $? "Failed to start vsudd"
 }
