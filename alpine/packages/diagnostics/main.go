@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/rneugeba/virtsock/go/vsock"
 	"github.com/rneugeba/virtsock/go/hvsock"
+	"github.com/rneugeba/virtsock/go/vsock"
 )
 
 func run(timeout time.Duration, w *tar.Writer, command string, args ...string) {
@@ -111,8 +111,8 @@ func capture(w *tar.Writer) {
 	run(t, w, "/usr/bin/dig", "@8.8.8.8", "docker.com")
 	run(t, w, "/usr/bin/wget", "-O", "-", "http://www.docker.com/")
 	run(t, w, "/usr/bin/wget", "-O", "-", "http://104.239.220.248/") // a www.docker.com address
-	run(t, w, "/usr/bin/wget", "-O", "-", "http://216.58.213.68/") // a www.google.com address
-	run(t, w, "/usr/bin/wget", "-O", "-", "http://91.198.174.192/") // a www.wikipedia.com address
+	run(t, w, "/usr/bin/wget", "-O", "-", "http://216.58.213.68/")   // a www.google.com address
+	run(t, w, "/usr/bin/wget", "-O", "-", "http://91.198.174.192/")  // a www.wikipedia.com address
 
 	// Dump the database
 	dbBase := "/Database/branch/master/ro"
