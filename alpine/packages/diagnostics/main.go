@@ -22,11 +22,11 @@ func run(timeout time.Duration, w *tar.Writer, command string, args ...string) {
 	c := exec.Command(command, args...)
 	stdoutPipe, err := c.StdoutPipe()
 	if err != nil {
-		log.Fatalf("Failed to create stdout pipe: %#v", err)
+		log.Fatalf("Failed to create stdout pipe: %s", err)
 	}
 	stderrPipe, err := c.StderrPipe()
 	if err != nil {
-		log.Fatalf("Failed to create stderr pipe: %#v", err)
+		log.Fatalf("Failed to create stderr pipe: %s", err)
 	}
 	var stdoutBuffer bytes.Buffer
 	var stderrBuffer bytes.Buffer
@@ -129,20 +129,20 @@ func main() {
 
 	ip, err := net.Listen("tcp", ":62374")
 	if err != nil {
-		log.Printf("Failed to bind to TCP port 62374: %#v", err)
+		log.Printf("Failed to bind to TCP port 62374: %s", err)
 	} else {
 		listeners = append(listeners, ip)
 	}
 	vsock, err := vsock.Listen(uint(62374))
 	if err != nil {
-		log.Printf("Failed to bind to vsock port 62374: %#v", err)
+		log.Printf("Failed to bind to vsock port 62374: %s", err)
 	} else {
 		listeners = append(listeners, vsock)
 	}
 	svcid, _ := hvsock.GuidFromString("445BA2CB-E69B-4912-8B42-D7F494D007EA")
 	hvsock, err := hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
 	if err != nil {
-		log.Printf("Failed to bind to hvsock port: %#v", err)
+		log.Printf("Failed to bind to hvsock port: %s", err)
 	} else {
 		listeners = append(listeners, hvsock)
 	}
@@ -152,7 +152,7 @@ func main() {
 			for {
 				conn, err := l.Accept()
 				if err != nil {
-					log.Printf("Error accepting connection: %#v", err)
+					log.Printf("Error accepting connection: %s", err)
 					return // no more listening
 				}
 				go func(conn net.Conn) {
