@@ -80,6 +80,7 @@ RUN \
   rc-update add bootmisc boot && \
   rc-update add urandom boot && \
   rc-update add hostname boot && \
+  rc-update add vsudd boot && \
   rc-update add syslog boot && \
   rc-update add hwclock boot && \
   rc-update add networking boot && \
@@ -106,7 +107,6 @@ RUN \
   rc-update add hostsettings boot && \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
-  rc-update add vsudd default && \
   rc-update add oom default && \
   true
 
