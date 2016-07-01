@@ -4,7 +4,7 @@ description="vsock socket proxy client"
 
 depend()
 {
-	before docker
+	before logger docker
 }
 
 start()
@@ -13,19 +13,27 @@ start()
 
 	if [ -d /sys/bus/vmbus ]; then
 		DOCKER_PORT=23a432c2-537a-4291-bcb5-d62504644739
+		SYSLOG_PORT="" #TBD
 	else
 		DOCKER_PORT=2376
+		SYSLOG_PORT=514
 	fi
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/vsudd.pid
 	[ -n "${LOGFILE}" ] || LOGFILE=/var/log/vsudd.log
+
+	if [ -n "$SYSLOG_PORT" ] ; then
+	   # Can be inlined below once Windows defines syslog port
+	   SYSLOG_OPT="-syslog ${SYSLOG_PORT}:/var/run/syslog.vsock"
+	fi
 
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/vsudd \
 		--make-pidfile --pidfile ${PIDFILE} \
 		--stderr "${LOGFILE}" --stdout "${LOGFILE}" \
-		-- -inport "${DOCKER_PORT}:unix:/var/run/docker.sock"
+		-- -inport "${DOCKER_PORT}:unix:/var/run/docker.sock" \
+		   ${SYSLOG_OPT}
 
 	eend $? "Failed to start vsudd"
 }

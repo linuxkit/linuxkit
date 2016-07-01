@@ -29,6 +29,7 @@ var (
 	inForwards forwards
 	detach     bool
 	useHVsock  bool
+	syslogFwd  string
 )
 
 type vConn interface {
@@ -56,6 +57,7 @@ func (f *forwards) Set(value string) error {
 
 func init() {
 	flag.Var(&inForwards, "inport", "incoming port to forward")
+	flag.StringVar(&syslogFwd, "syslog", "", "enable syslog forwarding")
 	flag.BoolVar(&detach, "detach", false, "detach from terminal")
 }
 
@@ -80,6 +82,14 @@ func main() {
 	}
 
 	var wg sync.WaitGroup
+
+	if syslogFwd != "" {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			handleSyslogForward(syslogFwd)
+		}()
+	}
 
 	connid := 0
 
