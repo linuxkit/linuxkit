@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/rneugeba/virtsock/go/hvsock"
@@ -144,14 +145,18 @@ func main() {
 	}
 	vsock, err := vsock.Listen(uint(62374))
 	if err != nil {
-		log.Printf("Failed to bind to vsock port 62374: %s", err)
+		if errno, ok := err.(syscall.Errno); !ok || errno != syscall.EAFNOSUPPORT {
+			log.Printf("Failed to bind to vsock port 62374: %s", err)
+		}
 	} else {
 		listeners = append(listeners, vsock)
 	}
 	svcid, _ := hvsock.GuidFromString("445BA2CB-E69B-4912-8B42-D7F494D007EA")
 	hvsock, err := hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
 	if err != nil {
-		log.Printf("Failed to bind to hvsock port: %s", err)
+		if errno, ok := err.(syscall.Errno); !ok || errno != syscall.EAFNOSUPPORT {
+			log.Printf("Failed to bind to hvsock port: %s", err)
+		}
 	} else {
 		listeners = append(listeners, hvsock)
 	}
