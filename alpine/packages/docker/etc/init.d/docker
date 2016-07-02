@@ -42,13 +42,6 @@ start()
 		export no_proxy="$(mobyconfig get proxy/exclude)"
 	fi
 
-	grep -q "osxfs /tmp" /proc/mounts || ( [ -d /Mac/tmp ] && mount --bind /Mac/tmp /tmp )
-
-	for d in Users Volumes private
-	do
-		[ -d /Mac/$d ] && [ ! -d $d ] && mkdir -p /$d && mount --bind /Mac/$d /$d
-	done
-
 	# shift logs onto host before docker starts
 	# busybox reopens its log files every second
 	if cat /proc/cmdline | grep -q 'com.docker.driverDir'
