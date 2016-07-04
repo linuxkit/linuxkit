@@ -19,6 +19,7 @@ start()
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/proxy-vsockd.pid
 	[ -n "${LOGFILE}" ] || LOGFILE=/var/log/proxy-vsockd.log
 
+	ulimit -n 1048576
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/proxy-vsockd \
