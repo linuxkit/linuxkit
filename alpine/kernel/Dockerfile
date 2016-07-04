@@ -74,6 +74,8 @@ RUN jobs=$(nproc); \
     make ARCH=$ARCH defconfig && \
     make ARCH=$ARCH oldconfig && \
     make ARCH=$ARCH -j ${jobs} && \
+    make ARCH=$ARCH INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
+    ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar . ) && \
     make ARCH=$ARCH INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
 
 # Build aufs tools, do this here as they need kernel headers and to match aufs

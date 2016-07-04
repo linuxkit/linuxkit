@@ -6,6 +6,7 @@ vmlinuz64: kernel_config Dockerfile
 	docker run --rm mobykernel:build cat /aufs-utils.tar > aufs-utils.tar
 	docker run --rm mobykernel:build cat /kernel-source-info > kernel-source-info
 	docker run --rm mobykernel:build cat /kernel-patches.tar > kernel-patches.tar
+	docker run --rm mobykernel:build cat /kernel-modules.tar > kernel-modules.tar
 
 arm: zImage
 
@@ -15,6 +16,7 @@ zImage: kernel_config.arm Dockerfile
 	docker run --rm mobyarmkernel:build cat /aufs-utils.tar > aufs-utils.tar
 	docker run --rm mobyarmkernel:build cat /kernel-source-info > kernel-source-info
 	docker run --rm mobyarmkernel:build cat /kernel-patches.tar > kernel-patches.tar
+	docker run --rm mobyarmkernel:build cat /kernel-modules.tar > kernel-modules.tar
 
 clean:
 	rm -f zImage vmlinuz64 aufs-utils.tar kernel-source-info kernel-patches.tar
