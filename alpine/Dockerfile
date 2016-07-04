@@ -34,6 +34,7 @@ ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
 COPY kernel/kernel-source-info /etc/
 ADD kernel/kernel-patches.tar /etc/kernel-patches
+ADD kernel/kernel-modules.tar /
 
 COPY packages/proxy/slirp-proxy /usr/bin/
 COPY packages/proxy/slirp-proxy /sbin/proxy-vsockd
