@@ -54,10 +54,9 @@ start()
 		fi
 	fi
 
-	# same default ulimit as boot2docker; if you want more can set at docker run time
-	DOCKER_ULIMITS=1048576
-	ulimit -n $DOCKER_ULIMITS
-	ulimit -p $DOCKER_ULIMITS
+	# set ulimits as high as possible
+	ulimit -n $(sysctl fs.file-max)
+	ulimit -p unlimited
 
 	DOCKER_LOGFILE="/var/log/docker.log"
 
