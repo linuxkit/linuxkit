@@ -7,8 +7,8 @@
 package main
 
 import (
-	"encoding/binary"
 	"errors"
+	"fmt"
 	"log"
 	"net"
 	"os"
@@ -37,11 +37,12 @@ var (
 	lastMessage []byte
 )
 
-func checkedWrite(conn vConn, buf []byte) error {
+/* rfc5425 like scheme, see section 4.3 */
+func rfc5425Write(conn vConn, buf []byte) error {
 
-	var l uint32 = uint32(len(buf))
+	msglen := fmt.Sprintf("%d ", len(buf))
 
-	err := binary.Write(conn, binary.LittleEndian, l)
+	_, err := conn.Write([]byte(msglen))
 	/* XXX todo, check for serious vs retriable errors */
 	if err != nil {
 		console.Printf("Error in length write: %s", err)
@@ -98,7 +99,7 @@ func forwardSyslogDatagram(buf []byte, portstr string) error {
 
 			if lastMessage != nil {
 				console.Printf("Replaying last message: %s", lastMessage)
-				err := checkedWrite(conn, lastMessage)
+				err := rfc5425Write(conn, lastMessage)
 				if err != nil {
 					conn.Close()
 					continue
@@ -109,7 +110,7 @@ func forwardSyslogDatagram(buf []byte, portstr string) error {
 			currentConn = conn
 		}
 
-		err := checkedWrite(conn, buf)
+		err := rfc5425Write(conn, buf)
 		if err != nil {
 			currentConn.Close()
 			currentConn = nil
