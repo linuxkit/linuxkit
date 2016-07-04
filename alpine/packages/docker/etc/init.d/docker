@@ -55,7 +55,7 @@ start()
 	fi
 
 	# set ulimits as high as possible
-	ulimit -n $(sysctl fs.file-max)
+	ulimit -n $(cat /proc/sys/fs/file-max)
 	ulimit -p unlimited
 
 	DOCKER_LOGFILE="/var/log/docker.log"
