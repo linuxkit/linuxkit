@@ -1,4 +1,4 @@
-DOCKER_VERSION=1.12.0-rc2
+DOCKER_VERSION=1.12.0-rc3
 ARCH?=x86_64
 OS?=Linux
 EXPERIMENTAL?=1
@@ -18,7 +18,7 @@ bin: docker.git
 	cp docker.git/bundles/latest/binary-client/docker bin/
 
 docker.git:
-	git clone git://github.com/justincormack/docker.git docker.git
+	git clone git://github.com/djs55/docker.git docker.git
 
 arm:
 	mkdir -p bin
