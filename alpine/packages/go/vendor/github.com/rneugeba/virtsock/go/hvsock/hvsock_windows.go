@@ -240,7 +240,7 @@ func (v *hvsockConn) closeHandle() {
 func (s *hvsockConn) prepareIo() (*ioOperation, error) {
 	s.wg.Add(1)
 	if s.closing {
-		return nil, errSocketClosed
+		return nil, ErrSocketClosed
 	}
 	c := &ioOperation{}
 	c.ch = make(chan ioResult)
@@ -299,7 +299,7 @@ func (v *hvsockConn) asyncIo(c *ioOperation, deadline time.Time, bytes uint32, e
 	err = r.err
 	if err == syscall.ERROR_OPERATION_ABORTED {
 		if v.closing {
-			err = errSocketClosed
+			err = ErrSocketClosed
 		} else if timedout {
 			err = errTimeout
 		}
