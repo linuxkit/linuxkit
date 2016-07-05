@@ -1,0 +1,5 @@
+# Would prefer to check [ -S /var/run/syslog.vsock ] but it doesn't
+# always exist by the time we get here starts.
+if [ -e /var/run/vsudd.pid -a ! -d /sys/bus/vmbus ] ; then
+    SYSLOGD_OPTS="-R local:/var/run/syslog.vsock"
+fi
