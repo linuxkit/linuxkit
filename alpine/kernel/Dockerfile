@@ -26,6 +26,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   p7zip-full \
   lzop \
   wget \
+  vim \
   gcc-arm-linux-gnueabihf
 
 RUN wget ${KERNEL_SOURCE}
