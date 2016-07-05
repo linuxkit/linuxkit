@@ -3,10 +3,20 @@
 if [ "x$interface" != "xeth0" ] ; then exit 0 ; fi
 
 if cat /proc/cmdline | grep -q '\bntp=gateway\b' ; then
-    server=$(ip -4 route list type unicast dev eth0 exact 0/0 | awk '/^default/ { print $3 }')
-    server="$server trust"
-else
-    # TODO: consult $router
+    if [ -n "$router" ] ; then
+        logger -t udhcpc "ntp=gateway used, using \$router=$router as \$ntpsrv"
+        server="$router trust"
+    else
+        logger -t udhcpc "ntp=gateway used but \$router not provided"
+    fi
+elif [ -n "$ntpsrv" ] ; then
+    # Just take the first
+    set -- $ntpsrv
+    server="$1"
+fi
+
+if [ -z "$server" ] ; then
+    logger -t udhcpc "No NTP server via DHCP"
     exit 0
 fi
 
