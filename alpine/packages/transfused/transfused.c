@@ -482,7 +482,8 @@ int is_next_child_ok(parameters * params, char * path, DIR * dir) {
   return 1;
 }
 
-int is_path_missing_or_empty(parameters * params, char * path) {
+int is_path_mountable
+(parameters * params, int allow_empty, char * path) {
   DIR * dir;
 
   dir = opendir(path);
@@ -491,7 +492,8 @@ int is_path_missing_or_empty(parameters * params, char * path) {
     if (is_next_child_ok(params, path, dir))
       if (is_next_child_ok(params, path, dir)) {
         if (is_next_child_ok(params, path, dir)) goto no;
-        else goto yes;
+        else if (allow_empty) goto yes;
+        else goto no;
       }
     goto yes;
   } else {
@@ -511,7 +513,7 @@ int is_path_missing_or_empty(parameters * params, char * path) {
 void prepare_mount_point(connection_t * conn) {
   char * mount_point = conn->mount_point;
 
-  if (is_path_missing_or_empty(conn->params, mount_point))
+  if (is_path_mountable(conn->params, 1, mount_point))
     mkdir_p(conn, mount_point);
   else die(1, conn->params, NULL,
            "Couldn't mount on %s: not missing or empty", mount_point);
@@ -709,7 +711,8 @@ void write_pidfile(parameters * params) {
 }
 
 // TODO: the message parsing here is rickety, do it properly
-void * determine_mount_suitability(parameters * params, char * req, int len) {
+void * determine_mount_suitability(parameters * params,
+                                   int allow_empty, char * req, int len) {
   void * buf = (void *) req;
   uint16_t id = *((uint16_t *) buf);
   uint16_t slen;
@@ -725,7 +728,7 @@ void * determine_mount_suitability(parameters * params, char * req, int len) {
   len -= 2;
   while (len) {
     slen = *((uint16_t *) buf) + 1;
-    if (is_path_missing_or_empty(params, ((char *) buf) + 2)) {
+    if (is_path_mountable(params, allow_empty, ((char *) buf) + 2)) {
       slen = strlcpy(reply + roff + 2, ((char *) buf) + 2, slen) + 1;
       *((uint16_t *) ((void *) (reply + roff))) = slen - 1;
       roff += 2 + slen;
@@ -775,9 +778,19 @@ void * init_thread(void * params_ptr) {
     switch (msg_type) {
     case MOUNT_SUITABILITY_REQUEST:
       response =
-        determine_mount_suitability(params, (char *) buf + 6, read_count - 6);
+        determine_mount_suitability(params, 0,
+                                    (char *) buf + 6, read_count - 6);
       len = *((size_t *) response);
       write_exactly("init thread: mount suitability response",
+                    params->ctl_sock, response, len);
+      free(response);
+      break;
+    case EXPORT_SUITABILITY_REQUEST:
+      response =
+        determine_mount_suitability(params, 1,
+                                    (char *) buf + 6, read_count - 6);
+      len = *((size_t *) response);
+      write_exactly("init thread: export suitability response",
                     params->ctl_sock, response, len);
       free(response);
       break;
