@@ -173,13 +173,13 @@ func (v *hvsockListener) Addr() net.Addr {
  */
 
 var (
-	errSocketClosed        = errors.New("HvSocket has already been closed")
-	errSocketWriteClosed   = errors.New("HvSocket has been closed for write")
-	errSocketReadClosed    = errors.New("HvSocket has been closed for read")
-	errSocketMsgSize       = errors.New("HvSocket message was of wrong size")
-	errSocketMsgWrite      = errors.New("HvSocket writing message")
-	errSocketNotEnoughData = errors.New("HvSocket not enough data written")
-	errSocketUnImplemented = errors.New("Function not implemented")
+	ErrSocketClosed        = errors.New("HvSocket has already been closed")
+	ErrSocketWriteClosed   = errors.New("HvSocket has been closed for write")
+	ErrSocketReadClosed    = errors.New("HvSocket has been closed for read")
+	ErrSocketMsgSize       = errors.New("HvSocket message was of wrong size")
+	ErrSocketMsgWrite      = errors.New("HvSocket writing message")
+	ErrSocketNotEnoughData = errors.New("HvSocket not enough data written")
+	ErrSocketUnImplemented = errors.New("Function not implemented")
 )
 
 type HVsockConn struct {
@@ -227,7 +227,7 @@ func (v *HVsockConn) Close() error {
 
 func (v *HVsockConn) CloseRead() error {
 	if v.readClosed {
-		return errSocketReadClosed
+		return ErrSocketReadClosed
 	}
 
 	prDebug("TX: Shutdown Read\n")
@@ -244,7 +244,7 @@ func (v *HVsockConn) CloseRead() error {
 
 func (v *HVsockConn) CloseWrite() error {
 	if v.writeClosed {
-		return errSocketWriteClosed
+		return ErrSocketWriteClosed
 	}
 
 	prDebug("TX: Shutdown Write\n")
@@ -284,7 +284,7 @@ func (v *HVsockConn) Read(buf []byte) (int, error) {
 			}
 
 			if n != 4 {
-				return n, errSocketMsgSize
+				return n, ErrSocketMsgSize
 			}
 
 			msg := int(binary.LittleEndian.Uint32(b))
@@ -333,7 +333,7 @@ func (v *HVsockConn) Read(buf []byte) (int, error) {
 
 func (v *HVsockConn) Write(buf []byte) (int, error) {
 	if v.writeClosed {
-		return 0, errSocketWriteClosed
+		return 0, ErrSocketWriteClosed
 	}
 
 	var err error
@@ -344,7 +344,7 @@ func (v *HVsockConn) Write(buf []byte) (int, error) {
 
 	for toWrite > 0 {
 		if v.writeClosed {
-			return 0, errSocketWriteClosed
+			return 0, ErrSocketWriteClosed
 		}
 
 		// We write batches of MSG + data which need to be
@@ -371,7 +371,7 @@ func (v *HVsockConn) Write(buf []byte) (int, error) {
 		}
 		if n != thisBatch {
 			prDebug("Write Error 4\n")
-			err = errSocketNotEnoughData
+			err = ErrSocketNotEnoughData
 			goto ErrOut
 		}
 		toWrite -= n
@@ -402,7 +402,7 @@ func (v *HVsockConn) sendMsg(msg uint32) error {
 		return err
 	}
 	if n != len(b) {
-		return errSocketMsgWrite
+		return ErrSocketMsgWrite
 	}
 	return nil
 }

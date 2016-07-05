@@ -37,10 +37,32 @@ int accept_vm(int fd, struct sockaddr_vm *sa_vm, socklen_t *sa_vm_len) {
 import "C"
 
 const (
-	AF_VSOCK       = 40
-	VSOCK_CID_ANY  = 4294967295 /* 2^32-1 */
-	VSOCK_CID_SELF = 3
+	AF_VSOCK             = 40
+	VSOCK_CID_ANY        = 4294967295 /* 2^32-1 */
+	VSOCK_CID_HYPERVISOR = 0
+	VSOCK_CID_HOST       = 2
+	VSOCK_CID_SELF       = 3
 )
+
+func Dial(cid, port uint) (Conn, error) {
+	fd, err := syscall.Socket(AF_VSOCK, syscall.SOCK_STREAM, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	sa := C.struct_sockaddr_vm{}
+	sa.svm_family = AF_VSOCK
+	sa.svm_port = C.uint(port)
+	sa.svm_cid = C.uint(cid)
+
+	if ret, errno := C.connect_sockaddr_vm(C.int(fd), &sa); ret != 0 {
+		return nil, errors.New(fmt.Sprintf(
+			"failed bind connect to %08x.%08x, returned %d, errno %d: %s",
+			sa.svm_cid, sa.svm_port, ret, errno, errno))
+	}
+
+	return newVsockConn(uintptr(fd), port)
+}
 
 // Listen returns a net.Listener which can accept connections on the given
 // vhan port.
@@ -55,8 +77,10 @@ func Listen(port uint) (net.Listener, error) {
 	sa.svm_port = C.uint(port)
 	sa.svm_cid = VSOCK_CID_ANY
 
-	if ret := C.bind_sockaddr_vm(C.int(accept_fd), &sa); ret != 0 {
-		return nil, errors.New(fmt.Sprintf("failed bind vsock connection to %08x.%08x, returned %d", sa.svm_cid, sa.svm_port, ret))
+	if ret, errno := C.bind_sockaddr_vm(C.int(accept_fd), &sa); ret != 0 {
+		return nil, errors.New(fmt.Sprintf(
+			"failed bind vsock connection to %08x.%08x, returned %d, errno %d: %s",
+			sa.svm_cid, sa.svm_port, ret, errno, errno))
 	}
 
 	err = syscall.Listen(accept_fd, syscall.SOMAXCONN)
