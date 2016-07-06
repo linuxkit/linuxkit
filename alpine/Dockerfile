@@ -75,41 +75,79 @@ COPY packages/gummiboot/gummiboot.tar.gz /usr/share/src/
 COPY packages/oom/etc /etc
 COPY packages/9pmount-vsock/9pmount-vsock /sbin
 
-RUN \
-  rc-update add swap boot && \
-  rc-update add sysctl boot && \
-  rc-update add bootmisc boot && \
-  rc-update add urandom boot && \
-  rc-update add hostname boot && \
-  rc-update add vsudd boot && \
-  rc-update add syslog boot && \
-  rc-update add hwclock boot && \
-  rc-update add networking boot && \
-  rc-update add acpid default && \
-  rc-update add chronyd default && \
-  rc-update add savecache shutdown && \
-  rc-update add killprocs shutdown && \
-  rc-update add mount-ro shutdown && \
-  rc-update add dmesg sysinit && \
-  rc-update add devfs sysinit && \
-  rc-update add hwdrivers sysinit && \
-  rc-update add sysfs && \
-  rc-update add fsck && \
-  rc-update add root && \
-  rc-update add localmount && \
-  rc-update add docker default && \
-  rc-update add proxy default && \
-  rc-update add transfused default && \
-  rc-update add llmnrd default && \
-  rc-update add automount boot && \
-  rc-update add diagnostics default && \
-  rc-update add binfmt_misc default && \
-  rc-update add dnsfix boot && \
-  rc-update add hostsettings boot && \
-  rc-update add hv_kvp_daemon default && \
-  rc-update add hv_vss_daemon default && \
-  rc-update add oom default && \
-  true
+# Create different runlevels for various D4X platforms, each stacked on top of
+# default runlevel.
+RUN mkdir -p /etc/runlevels/windows && \
+    mkdir -p /etc/runlevels/mac && \
+    mkdir -p /etc/runlevels/localvirt && \
+    mkdir -p /etc/runlevels/azure && \
+    mkdir -p /etc/runlevels/aws
+
+# Set up shutdown, boot, sysvinit, and default services
+RUN rc-update add savecache shutdown && \
+    rc-update add killprocs shutdown && \
+    rc-update add mount-ro shutdown && \
+    rc-update add swap boot && \
+    rc-update add sysctl boot && \
+    rc-update add bootmisc boot && \
+    rc-update add urandom boot && \
+    rc-update add hostname boot && \
+    rc-update add syslog boot && \
+    rc-update add hwclock boot && \
+    rc-update add networking boot && \
+    rc-update add automount boot && \
+    rc-update add dnsfix boot && \
+    rc-update add hostsettings boot && \
+    rc-update add sysfs && \
+    rc-update add fsck && \
+    rc-update add root && \
+    rc-update add localmount && \
+    rc-update add dmesg sysinit && \
+    rc-update add devfs sysinit && \
+    rc-update add hwdrivers sysinit
+
+# Common ('default') services
+RUN rc-update add docker default && \
+    rc-update add diagnostics default && \
+    rc-update add acpid default && \
+    rc-update add oom default && \
+    rc-update add chronyd default
+
+# Services only for local virtualization editions
+RUN rc-update add proxy localvirt && \
+    rc-update add transfused localvirt && \
+    rc-update add binfmt_misc localvirt && \
+    rc-update add vsudd localvirt
+
+# Define runlevel inheritance.  A runlevel to boot into can be defined using
+# bootflag 'softlevel'.
+# e.g.:
+#
+# default
+# |-- aws
+# |-- azure
+# `-- localvirt
+#     |-- mac
+#     `-- windows
+RUN rc-update --stack add default localvirt && \
+    rc-update --stack add localvirt windows && \
+    rc-update --stack add localvirt mac && \
+    rc-update --stack add default aws && \
+    rc-update --stack add default azure
+
+# Services only for Docker for Mac
+# TODO?
+
+# Services only for Docker for Windows
+RUN rc-update add hv_kvp_daemon windows && \
+    rc-update add llmnrd windows && \
+    rc-update add hv_vss_daemon windows
+
+# Services only for Docker for Azure
+# RUN TODO
+
+# Services only for Docker for AWS
+# RUN TODO
 
 # we do not need to restart syslog, as probably not running
 RUN \
