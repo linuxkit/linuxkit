@@ -6,6 +6,9 @@ depend()
 	before docker
 }
 
+MAGIC="boot2docker, please format-me"
+
+
 start()
 {
 	ebegin "Configuring host block device"
@@ -15,9 +18,17 @@ start()
 	[ -z ${DEV} ] && exit 1
 
 	DRIVE="/dev/${DEV}"
+        # Test for our magic string
+        HEADER=`dd if=${DRIVE} bs=1 count=${#MAGIC} 2>/dev/null`
+
+        if [ "$HEADER" = "$MAGIC" ]; then
+                # save the preload userdata.tar file
+                dd if=${DRIVE} of=/userdata.tar bs=1 count=4096 2>/dev/null
+        fi
 
 	if fdisk -l ${DRIVE} | grep -q "doesn't contain a valid partition table"
 	then
+
 		ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
 		blockdev --rereadpt ${DRIVE} 2> /dev/null
 	else
@@ -38,4 +49,15 @@ start()
 	mount | grep -q "${DEV}. on /var type"
 
 	eend $? "Failed to mount block device"
+
+        mkdir -p /var/lib/boot2docker/
+        ln -s /var/lib/boot2docker /etc/docker
+        if [ -e "/userdata.tar" ]; then
+                mv /userdata.tar /var/lib/boot2docker/
+        fi
+
+        if [ -e "/var/lib/boot2docker/userdata.tar" ]; then
+            tar xf /var/lib/boot2docker/userdata.tar -C /home/docker/
+            chown -R docker.docker /home/docker
+        fi
 }

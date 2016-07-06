@@ -4,6 +4,7 @@ RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
   passwd -d root && \
+  passwd -d docker && \
   apk update && apk upgrade && \
   apk add \
   e2fsprogs \
@@ -18,17 +19,20 @@ RUN \
   busybox-initscripts \
   alpine-conf \
   bind-tools \
+  openssh \
   openssh-client \
+  sudo \
   strace \
   fuse \
   util-linux \
   cifs-utils \
   e2fsprogs-extra \
   openssl \
+  docker \
   && rm -rf /var/cache/apk/*
 
 COPY etc /etc/
-RUN mkdir -p /etc/docker
+#RUN mkdir -p /etc/docker
 
 ADD kernel/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
@@ -46,8 +50,13 @@ COPY packages/tap-vsockd/etc /etc/
 COPY packages/llmnrd/llmnrd /sbin/
 COPY packages/llmnrd/etc /etc/
 COPY packages/llmnrd/llmnrd.tar.gz /usr/share/src/
-COPY packages/docker/bin/* /usr/bin/
-COPY packages/docker/etc /etc/
+
+# Will break windows/mac most likely (this uses the stock alpine docker package, and then replaces the binaries)
+#COPY packages/docker/bin/* /usr/bin/
+#COPY packages/docker/etc /etc/
+ADD https://test.docker.com/builds/Linux/x86_64/docker-1.12.0-rc2.tgz /tmp/
+RUN cd /tmp; tar zxf docker-*.tgz && mv /tmp/docker/* /usr/bin/ && rm -f docker*.tgz ; rmdir docker
+
 COPY packages/diagnostics/diagnostics /usr/bin/
 COPY packages/diagnostics/diagnostics-server /usr/bin/
 COPY packages/diagnostics/etc /etc/
@@ -109,7 +118,14 @@ RUN \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
   rc-update add oom default && \
+  rc-update add sshd default && \
   true
+
+# Allow docker user to sudo without prompt
+RUN echo "docker    ALL=NOPASSWD: ALL" > /etc/sudoers.d/docker
+
+# Prevent DNS setup on eth1 (private network) so eth0 is preferred
+RUN echo "NO_DNS=eth1" > /etc/udhcpc/udhcpc.conf
 
 # we do not need to restart syslog, as probably not running
 RUN \
