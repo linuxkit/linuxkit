@@ -1,7 +1,7 @@
-From edffb28d3dc83885096529fbe0e7cd720d58be8e Mon Sep 17 00:00:00 2001
+From 3cbea7cc3428b64f63aec6447bd9b727876bf075 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:28:48 +0800
-Subject: [PATCH 06/41] VSOCK: Introduce virtio_transport.ko
+Subject: [PATCH 06/40] VSOCK: Introduce virtio_transport.ko
 
 VM sockets virtio transport implementation.  This driver runs in the
 guest.
@@ -617,5 +617,5 @@ index 0000000..45472e0
 +MODULE_DESCRIPTION("virtio transport for vsock");
 +MODULE_DEVICE_TABLE(virtio, id_table);
 -- 
-2.8.2
+2.9.0
 

@@ -1,7 +1,7 @@
-From ef5406e1c37f0f3a2cfaf4be867639d5d882c3bb Mon Sep 17 00:00:00 2001
+From 19a770426551eae942bdeeaf6ba22726d608dc32 Mon Sep 17 00:00:00 2001
 From: Courtney Cavin <courtney.cavin@sonymobile.com>
 Date: Wed, 27 Apr 2016 12:13:03 -0700
-Subject: [PATCH 36/41] net: Add Qualcomm IPC router
+Subject: [PATCH 36/40] net: Add Qualcomm IPC router
 
 Add an implementation of Qualcomm's IPC router protocol, used to
 communicate with service providing remote processors.
@@ -1303,5 +1303,5 @@ index 0000000..84ebce7
 +MODULE_DESCRIPTION("Qualcomm IPC-Router SMD interface driver");
 +MODULE_LICENSE("GPL v2");
 -- 
-2.8.2
+2.9.0
 

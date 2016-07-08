@@ -1,7 +1,7 @@
-From 6d9a53a79d1794f8863c6ed37c290c3bf04ef931 Mon Sep 17 00:00:00 2001
+From b1fac60b2921b7478859a021a438daeee40a1848 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:27:00 +0800
-Subject: [PATCH 05/41] VSOCK: Introduce virtio_vsock_common.ko
+Subject: [PATCH 05/40] VSOCK: Introduce virtio_vsock_common.ko
 
 This module contains the common code and header files for the following
 virtio_transporto and vhost_vsock kernel modules.
@@ -1321,5 +1321,5 @@ index 0000000..5b9e202
 +MODULE_AUTHOR("Asias He");
 +MODULE_DESCRIPTION("common code for virtio vsock");
 -- 
-2.8.2
+2.9.0
 
