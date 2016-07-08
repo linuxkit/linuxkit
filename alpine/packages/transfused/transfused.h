@@ -51,6 +51,7 @@ void write_exactly(char * descr, int fd, void * buf, size_t nbyte);
 // these could be turned into an enum probably but... C standard nausea
 
 #define MOUNT_SUITABILITY_REQUEST 1
+#define EXPORT_SUITABILITY_REQUEST 2
 
 #define TRANSFUSE_LOG_ERROR 1
 #define TRANSFUSE_LOG_NOTICE 2
