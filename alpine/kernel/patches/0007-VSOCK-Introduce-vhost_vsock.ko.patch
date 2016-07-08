@@ -1,7 +1,7 @@
-From 16f7572f518eafec12136aa081f4c35d6355f19b Mon Sep 17 00:00:00 2001
+From a77fb1fd7d746dbb4ad454b3abb2f4fe251418ac Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:29:21 +0800
-Subject: [PATCH 07/41] VSOCK: Introduce vhost_vsock.ko
+Subject: [PATCH 07/40] VSOCK: Introduce vhost_vsock.ko
 
 VM sockets vhost transport implementation.  This driver runs on the
 host.
@@ -741,5 +741,5 @@ index 0000000..173f9fc
 +#define VHOST_VSOCK_START		_IO(VHOST_VIRTIO, 0x61)
 +#endif
 -- 
-2.8.2
+2.9.0
 

@@ -1,7 +1,7 @@
-From bc5ebf61ea082b6f7562bd43d9f343cc7edc491d Mon Sep 17 00:00:00 2001
+From f7a03549f4cdd5fa352f6a0392d23f52efc5ecd4 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 13 Jun 2013 18:30:19 +0800
-Subject: [PATCH 08/41] VSOCK: Add Makefile and Kconfig
+Subject: [PATCH 08/40] VSOCK: Add Makefile and Kconfig
 
 Enable virtio-vsock and vhost-vsock.
 
@@ -94,5 +94,5 @@ index 2ce52d7..cf4c294 100644
  vsock-y += af_vsock.o vsock_addr.o
  
 -- 
-2.8.2
+2.9.0
 

@@ -1,7 +1,7 @@
-From acfa2b1d85d80d256f2e02bb03ee0107bd998c13 Mon Sep 17 00:00:00 2001
+From 566d140d305b58578a5bdac86b3730fdfd3c8c8b Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:43 -0800
-Subject: [PATCH 11/41] Drivers: hv: vmbus: Use uuid_le type consistently
+Subject: [PATCH 11/40] Drivers: hv: vmbus: Use uuid_le type consistently
 
 Consistently use uuid_le type in the Hyper-V driver code.
 
@@ -293,5 +293,5 @@ index 5b96206..8adca44 100644
  	strcpy(alias, "vmbus:");
  	strcat(alias, guid_name);
 -- 
-2.8.2
+2.9.0
 
