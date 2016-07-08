@@ -74,6 +74,8 @@ COPY packages/bootflag/bootflag /usr/bin
 COPY packages/gummiboot/gummiboot.tar.gz /usr/share/src/
 COPY packages/oom/etc /etc
 COPY packages/9pmount-vsock/9pmount-vsock /sbin
+COPY packages/test/etc /etc
+COPY packages/test/mobytest /usr/bin
 
 RUN \
   rc-update add swap boot && \
@@ -109,6 +111,7 @@ RUN \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
   rc-update add oom default && \
+  rc-update add test default && \
   true
 
 # we do not need to restart syslog, as probably not running
