@@ -1,7 +1,7 @@
-From 32a9ade9656d3ce93efd9e429eca714ccc90c53e Mon Sep 17 00:00:00 2001
+From a72c960b2aaa4f2f7f94f563cbbd28c33a8eabd1 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Wed, 27 Jan 2016 22:29:34 -0800
-Subject: [PATCH 22/41] Drivers: hv: vmbus: avoid infinite loop in
+Subject: [PATCH 22/40] Drivers: hv: vmbus: avoid infinite loop in
  init_vp_index()
 
 When we pick a CPU to use for a new subchannel we try find a non-used one
@@ -45,5 +45,5 @@ index 107d72f..af1d82e 100644
  		cur_cpu = cpumask_next(cur_cpu, &available_mask);
  		if (cur_cpu >= nr_cpu_ids) {
 -- 
-2.8.2
+2.9.0
 
