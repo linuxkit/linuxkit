@@ -1,7 +1,7 @@
-From 17665d95bdc4e922e45e5d7abca3de9b0b65e1f9 Mon Sep 17 00:00:00 2001
+From b91a596f3b7dc3cc9f9f37a190f6362ed2c5617d Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 11:10:21 +0800
-Subject: [PATCH 04/41] VSOCK: transport-specific vsock_transport functions
+Subject: [PATCH 04/40] VSOCK: transport-specific vsock_transport functions
 
 struct vsock_transport contains function pointers called by AF_VSOCK
 core code.  The transport may want its own transport-specific function
@@ -34,10 +34,10 @@ index e9eb2d6..23f5525 100644
  
  void vsock_release_pending(struct sock *pending);
 diff --git a/net/vmw_vsock/af_vsock.c b/net/vmw_vsock/af_vsock.c
-index 3dce53e..112fa8b 100644
+index b5f1221..15f9595 100644
 --- a/net/vmw_vsock/af_vsock.c
 +++ b/net/vmw_vsock/af_vsock.c
-@@ -2006,6 +2006,15 @@ void vsock_core_exit(void)
+@@ -1987,6 +1987,15 @@ void vsock_core_exit(void)
  }
  EXPORT_SYMBOL_GPL(vsock_core_exit);
  
@@ -54,5 +54,5 @@ index 3dce53e..112fa8b 100644
  MODULE_DESCRIPTION("VMware Virtual Socket Family");
  MODULE_VERSION("1.0.1.0-k");
 -- 
-2.8.2
+2.9.0
 

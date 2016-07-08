@@ -1,7 +1,7 @@
-From 02adc9f995f59194291bde782062a2aa38201ab9 Mon Sep 17 00:00:00 2001
+From e8d8f6bedfd812615dadf1c9ee02bcf8fe59bf79 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Tue, 15 Dec 2015 16:27:27 -0800
-Subject: [PATCH 20/41] Drivers: hv: vmbus: Treat Fibre Channel devices as
+Subject: [PATCH 20/40] Drivers: hv: vmbus: Treat Fibre Channel devices as
  performance critical
 
 For performance critical devices, we distribute the incoming
@@ -38,5 +38,5 @@ index d013171..1c1ad47 100644
  	{ HV_NIC_GUID, },
  	/* NetworkDirect Guest RDMA */
 -- 
-2.8.2
+2.9.0
 

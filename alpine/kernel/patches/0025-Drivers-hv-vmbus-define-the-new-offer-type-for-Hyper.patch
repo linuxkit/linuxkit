@@ -1,7 +1,7 @@
-From f8302883a3723113f63e2361968f303cdcbcf0f9 Mon Sep 17 00:00:00 2001
+From b0c86581b0be89a063c52f3d63d5583d46db649e Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:38 -0800
-Subject: [PATCH 25/41] Drivers: hv: vmbus: define the new offer type for
+Subject: [PATCH 25/40] Drivers: hv: vmbus: define the new offer type for
  Hyper-V socket (hvsock)
 
 A helper function is also added.
@@ -40,5 +40,5 @@ index 934542a..a4f105d 100644
  					    enum hv_signal_policy policy)
  {
 -- 
-2.8.2
+2.9.0
 

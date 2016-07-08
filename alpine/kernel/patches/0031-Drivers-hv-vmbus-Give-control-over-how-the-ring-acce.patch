@@ -1,7 +1,7 @@
-From c3244e29d0e58c3de56f23075ae22f9d47ba9d0f Mon Sep 17 00:00:00 2001
+From 75183a2e296a6daa71d0cd2ff261124a80256610 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:45 -0800
-Subject: [PATCH 31/41] Drivers: hv: vmbus: Give control over how the ring
+Subject: [PATCH 31/40] Drivers: hv: vmbus: Give control over how the ring
  access is serialized
 
 On the channel send side, many of the VMBUS
@@ -204,5 +204,5 @@ index 993318a..6c9695e 100644
  {
  	return !!(c->offermsg.offer.chn_flags &
 -- 
-2.8.2
+2.9.0
 

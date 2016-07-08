@@ -1,7 +1,7 @@
-From 076de0d8086f75b10632476ad8f128095adde73c Mon Sep 17 00:00:00 2001
+From 6fb5c9da4cb99e2ed0e031a7e29a0323ecd3d46f Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 16:53:43 +0800
-Subject: [PATCH 01/41] virtio: make find_vqs() checkpatch.pl-friendly
+Subject: [PATCH 01/40] virtio: make find_vqs() checkpatch.pl-friendly
 
 checkpatch.pl wants arrays of strings declared as follows:
 
@@ -215,5 +215,5 @@ index e5ce8ab..6e6cb0c 100644
  	u64 (*get_features)(struct virtio_device *vdev);
  	int (*finalize_features)(struct virtio_device *vdev);
 -- 
-2.8.2
+2.9.0
 

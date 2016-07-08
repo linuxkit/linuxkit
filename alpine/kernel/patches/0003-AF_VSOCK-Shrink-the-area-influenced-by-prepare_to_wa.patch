@@ -1,7 +1,7 @@
-From 9d5b17e645e9ccddfc2a6ab112ae69739da32ae6 Mon Sep 17 00:00:00 2001
+From 5fa2db5aea3896f3c09e76cd1f6b60233a09237b Mon Sep 17 00:00:00 2001
 From: Claudio Imbrenda <imbrenda@linux.vnet.ibm.com>
 Date: Tue, 22 Mar 2016 17:05:52 +0100
-Subject: [PATCH 03/41] AF_VSOCK: Shrink the area influenced by prepare_to_wait
+Subject: [PATCH 03/40] AF_VSOCK: Shrink the area influenced by prepare_to_wait
 
 When a thread is prepared for waiting by calling prepare_to_wait, sleeping
 is not allowed until either the wait has taken place or finish_wait has
@@ -18,7 +18,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  1 file changed, 85 insertions(+), 73 deletions(-)
 
 diff --git a/net/vmw_vsock/af_vsock.c b/net/vmw_vsock/af_vsock.c
-index 7fd1220..3dce53e 100644
+index 9b5bd6d..b5f1221 100644
 --- a/net/vmw_vsock/af_vsock.c
 +++ b/net/vmw_vsock/af_vsock.c
 @@ -1209,10 +1209,14 @@ static int vsock_stream_connect(struct socket *sock, struct sockaddr *addr,
@@ -322,9 +322,9 @@ index 7fd1220..3dce53e 100644
  		}
  	}
  
-@@ -1816,8 +1830,6 @@ vsock_stream_recvmsg(struct socket *sock, struct msghdr *msg, size_t len,
+@@ -1797,8 +1811,6 @@ vsock_stream_recvmsg(struct socket *sock, struct msghdr *msg, size_t len,
+	if (copied > 0)
  		err = copied;
- 	}
  
 -out_wait:
 -	finish_wait(sk_sleep(sk), &wait);
@@ -332,5 +332,5 @@ index 7fd1220..3dce53e 100644
  	release_sock(sk);
  	return err;
 -- 
-2.8.2
+2.9.0
 

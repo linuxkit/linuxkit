@@ -1,7 +1,7 @@
-From 0f2be5d95acaac8d4391c6f7918f77ada0885f48 Mon Sep 17 00:00:00 2001
+From 91e2c0fba0da49bc3b18c6e3ca5194b259325f29 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:43 -0800
-Subject: [PATCH 30/41] Drivers: hv: vmbus: add an API
+Subject: [PATCH 30/40] Drivers: hv: vmbus: add an API
  vmbus_hvsock_device_unregister()
 
 The hvsock driver needs this API to release all the resources related
@@ -149,5 +149,5 @@ index ad04017..993318a 100644
  			resource_size_t min, resource_size_t max,
  			resource_size_t size, resource_size_t align,
 -- 
-2.8.2
+2.9.0
 
