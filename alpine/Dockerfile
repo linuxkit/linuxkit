@@ -76,6 +76,7 @@ COPY packages/oom/etc /etc
 COPY packages/9pmount-vsock/9pmount-vsock /sbin
 COPY packages/test/etc /etc
 COPY packages/test/mobytest /usr/bin
+COPY packages/sysctl/etc /etc
 
 RUN \
   rc-update add swap boot && \
