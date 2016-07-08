@@ -6,7 +6,7 @@ start()
 {
 	ebegin "Starting FUSE socket passthrough"
 
-	mkdir -p /Mac
+	mkdir -p /host_docker_app
 	find /tmp -mindepth 1 -delete
 
 	PIDFILE=/var/run/transfused.pid
