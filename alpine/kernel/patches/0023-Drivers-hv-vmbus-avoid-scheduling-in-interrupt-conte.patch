@@ -1,7 +1,7 @@
-From ddf2482b26c0381ab579ed3c4769249ea0f5aacb Mon Sep 17 00:00:00 2001
+From 4a2cba4dc7b1292b70f07760f04b322bb37d4817 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Wed, 27 Jan 2016 22:29:35 -0800
-Subject: [PATCH 23/41] Drivers: hv: vmbus: avoid scheduling in interrupt
+Subject: [PATCH 23/40] Drivers: hv: vmbus: avoid scheduling in interrupt
  context in vmbus_initiate_unload()
 
 We have to call vmbus_initiate_unload() on crash to make kdump work but
@@ -95,5 +95,5 @@ index af1d82e..d6c6114 100644
  
  /*
 -- 
-2.8.2
+2.9.0
 
