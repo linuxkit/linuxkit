@@ -1,0 +1,25 @@
+#!/sbin/openrc-run
+
+depend()
+{
+	need docker
+}
+
+start()
+{
+	cat /proc/cmdline | grep -q 'mobytest' || exit 0
+
+	ebegin "Running tests"
+
+	if mobytest
+	then
+		printf "Moby test suite PASSED\n"
+	else
+		printf "Moby test suite FAILED\n"
+	fi
+
+	eend "Tests completed"
+
+	# now terminate with extreme prejudice
+	poweroff -f
+}
