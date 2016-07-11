@@ -64,8 +64,6 @@ COPY packages/hvtools/hv_set_ifconfig /sbin/
 COPY packages/hvtools/hvtools.tar.gz /usr/share/src/
 COPY packages/chronyd/etc /etc/
 COPY packages/userns/etc /etc/
-COPY packages/userns/groupadd /usr/sbin
-COPY packages/userns/useradd /usr/sbin
 #COPY packages/nc-vsock/nc-vsock /usr/bin
 COPY packages/vsudd/vsudd /sbin
 COPY packages/vsudd/etc /etc
@@ -115,10 +113,8 @@ RUN \
   rc-update add test default && \
   true
 
-# we do not need to restart syslog, as probably not running
-RUN \
-  sed -i 's@/etc/init.d/syslog --quiet restart@@' /sbin/setup-disk
-
 COPY init /
+
+RUN adduser -D -H -s /sbin/nologin dockremap
 
 CMD ["/bin/sh"]
