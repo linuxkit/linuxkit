@@ -115,10 +115,6 @@ RUN \
   rc-update add test default && \
   true
 
-# we do not need to restart syslog, as probably not running
-RUN \
-  sed -i 's@/etc/init.d/syslog --quiet restart@@' /sbin/setup-disk
-
 COPY init /
 
 CMD ["/bin/sh"]
