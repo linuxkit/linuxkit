@@ -48,6 +48,7 @@ void write_exactly(char * descr, int fd, void * buf, size_t nbyte);
 #define SYMLINK_SYSCALL  3
 #define TRUNCATE_SYSCALL 4
 #define CHMOD_SYSCALL    5
+#define MKNOD_REG_SYSCALL 6
 // these could be turned into an enum probably but... C standard nausea
 
 #define MOUNT_SUITABILITY_REQUEST 1
