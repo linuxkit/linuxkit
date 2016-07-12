@@ -2,7 +2,7 @@
 
 set -e
 
-if [ "x$1" = "xundo" ]
+if [ "$1" = "undo" ]
 then
 	cp /Applications/Docker.app/Contents/Resources/moby/initrd.img- /Applications/Docker.app/Contents/Resources/moby/initrd.img
 	cp /Applications/Docker.app/Contents/Resources/moby/vmlinuz64- /Applications/Docker.app/Contents/Resources/moby/vmlinuz64
