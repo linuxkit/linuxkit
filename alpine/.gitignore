@@ -1,5 +1,7 @@
 *.img
 *.img.gz
+/mobylinux.img
+/mobylinux.vhd
 /mobylinux-bios.iso
 /mobylinux-efi.iso
 /mobylinux-boot.vhdx
