@@ -624,6 +624,11 @@ void perform_syscall(connection_t * conn, uint8_t syscall, char path[]) {
     r = symlink(".",path);
     break;
 
+  case MKNOD_REG_SYSCALL:
+    name = "mknod";
+    r = mknod(path, 0600, 0);
+    break;
+
   case TRUNCATE_SYSCALL:
     name = "truncate";
     r = truncate(path, 0);
