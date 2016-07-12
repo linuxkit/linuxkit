@@ -10,8 +10,11 @@ DEV=$(mount | grep '/dev/[sxv]da. on /var type')
 [ $? -eq 0 ] && printf "✓ Drive mounted: $DEV\n" || printf "✗ No drive mounted\n"
 INET=$(ifconfig eth0 2> /dev/null | grep 'inet addr')
 [ $? -eq 0 ] && printf "✓ Network connected: $INET\n" || printf "✗ No network connection\n"
-FUSE=$(ps -eo args | grep '^/sbin/transfused')
-[ $? -eq 0 ] && printf "✓ Process transfused running\n" || printf "✗ No transfused process\n"
+if [ ! -d /sys/bus/vmbus ]
+then
+	FUSE=$(ps -eo args | grep '^/sbin/transfused')
+	[ $? -eq 0 ] && printf "✓ Process transfused running\n" || printf "✗ No transfused process\n"
+fi
 if [ -d /sys/bus/vmbus ]
 then
 	TAPVS=$(ps -eo args | grep '^/sbin/tap-vsockd')
