@@ -4,6 +4,7 @@ description="fuse proxy server"
 
 start()
 {
+	[ -d /sys/bus/vmbus ] && exit 0
 	ebegin "Starting FUSE socket passthrough"
 
 	mkdir -p /host_docker_app
@@ -27,6 +28,7 @@ start()
 
 stop()
 {
+	[ -d /sys/bus/vmbus ] && exit 0
 	ebegin "Stopping FUSE socket passthrough"
 
 	PIDFILE=/var/run/transfused.pid
