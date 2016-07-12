@@ -1,4 +1,4 @@
-From 44b637acc82d2a81162a51aacdcd2110a3adeab8 Mon Sep 17 00:00:00 2001
+From e3e9e646e4cd69f7dec7f5acc4a30cb1beb6e95a Mon Sep 17 00:00:00 2001
 From: Rolf Neugebauer <rolf.neugebauer@gmail.com>
 Date: Mon, 23 May 2016 18:55:45 +0100
 Subject: [PATCH 40/40] vmbus: Don't spam the logs with unknown GUIDs
@@ -18,12 +18,13 @@ index 0a54317..120ee22 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -147,7 +147,6 @@ static u16 hv_get_dev_type(const uuid_le *guid)
-		if (!uuid_le_cmp(*guid, vmbus_devs[i].guid))
-			return i;
-	}
+ 		if (!uuid_le_cmp(*guid, vmbus_devs[i].guid))
+ 			return i;
+ 	}
 -	pr_info("Unknown GUID: %pUl\n", guid);
-	return i;
+ 	return i;
  }
-
---
+ 
+-- 
 2.9.0
+

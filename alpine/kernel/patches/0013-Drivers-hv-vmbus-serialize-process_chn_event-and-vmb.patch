@@ -1,4 +1,4 @@
-From 7869027cfaa29640273828e7897d266e884d4515 Mon Sep 17 00:00:00 2001
+From 5111097f2add634ea6b2964841ad15d9149da96e Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:47 -0800
 Subject: [PATCH 13/40] Drivers: hv: vmbus: serialize process_chn_event() and
