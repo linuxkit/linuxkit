@@ -1,4 +1,4 @@
-From b91a596f3b7dc3cc9f9f37a190f6362ed2c5617d Mon Sep 17 00:00:00 2001
+From c2ec5f1e2aa8784acadbaf9f625d8ca516c81c6b Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 11:10:21 +0800
 Subject: [PATCH 04/40] VSOCK: transport-specific vsock_transport functions

@@ -1,4 +1,4 @@
-From a72c960b2aaa4f2f7f94f563cbbd28c33a8eabd1 Mon Sep 17 00:00:00 2001
+From 864ad2a0988143fecd3b3c9282777a6930b34d5e Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Wed, 27 Jan 2016 22:29:34 -0800
 Subject: [PATCH 22/40] Drivers: hv: vmbus: avoid infinite loop in

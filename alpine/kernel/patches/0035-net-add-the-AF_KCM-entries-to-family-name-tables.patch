@@ -1,4 +1,4 @@
-From ef50ff6678620d60f63adc48af658f0849f2e75b Mon Sep 17 00:00:00 2001
+From 1aaf078c41b6150c42a40ca165003c5b902ba541 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Mar 2016 02:51:09 -0700
 Subject: [PATCH 35/40] net: add the AF_KCM entries to family name tables
