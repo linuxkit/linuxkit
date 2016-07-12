@@ -11,11 +11,16 @@ import (
 )
 
 func onePort() {
-	host, _, container := parseHostContainerAddrs()
+	host, _, container, localIP := parseHostContainerAddrs()
 
-	ipP, err := libproxy.NewIPProxy(host, container)
-	if err != nil {
-		sendError(err)
+	var ipP libproxy.Proxy
+	var err error
+
+	if localIP {
+		ipP, err = libproxy.NewIPProxy(host, container)
+		if err != nil {
+			sendError(err)
+		}
 	}
 
 	ctl, err := exposePort(host, container)
@@ -23,10 +28,14 @@ func onePort() {
 		sendError(err)
 	}
 
-	go handleStopSignals(ipP)
+	go handleStopSignals()
 	// TODO: avoid this line if we are running in a TTY
 	sendOK()
-	ipP.Run()
+	if ipP != nil {
+		ipP.Run()
+        } else {
+		select{} // sleep forever
+        }
 	ctl.Close() // ensure ctl remains alive and un-GCed until here
 	os.Exit(0)
 }
