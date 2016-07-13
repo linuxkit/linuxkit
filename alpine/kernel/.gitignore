@@ -4,3 +4,5 @@ aufs-utils.tar
 kernel-patches.tar
 kernel-modules.tar
 kernel-source-info
+mobykernel-build
+mobyarmkernel-build
