@@ -30,7 +30,7 @@ services:
   ami:
     privileged: true
     build:
-      context: .
+      context: cloud
       dockerfile: Dockerfile.ami
     network_mode: bridge
     volumes:
