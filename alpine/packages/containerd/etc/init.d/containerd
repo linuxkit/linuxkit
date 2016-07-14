@@ -1,0 +1,17 @@
+#!/sbin/openrc-run
+
+depend()
+{
+	after docker
+}
+
+start()
+{
+	ebegin "Running system containerd"
+
+	# set ulimits as high as possible
+	ulimit -n 1048576
+	ulimit -p unlimited
+
+	/usr/bin/containerd &
+}

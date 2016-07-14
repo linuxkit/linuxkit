@@ -2,7 +2,7 @@
 
 depend()
 {
-	after docker
+	after docker containerd
 }
 
 start()
