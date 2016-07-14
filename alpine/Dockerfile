@@ -77,7 +77,8 @@ COPY packages/test/mobytest /usr/bin/
 COPY packages/sysctl/etc /etc/
 COPY packages/iptables/iptables /usr/local/sbin/
 COPY packages/containerd/etc /etc/
-COPY packages/aws/etc /etc
+COPY packages/aws/etc /etc/
+COPY packages/azure/etc /etc/
 
 RUN \
   rc-update add swap boot && \
@@ -116,6 +117,7 @@ RUN \
   rc-update add test default && \
   rc-update add containerd default && \
   rc-update add aws default && \
+  rc-update add azure default && \
   true
 
 COPY init /
