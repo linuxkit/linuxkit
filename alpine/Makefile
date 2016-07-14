@@ -48,9 +48,11 @@ initrd-arm.img: Dockerfile.armhf
 	docker-compose build arm
 	docker-compose run --rm -T arm /bin/mkinitrd.sh > $@
 
-ami: initrd.img
+common: initrd.img
 	$(MAKE) -C kernel
 	$(MAKE) -C packages
+
+ami: common
 	docker-compose build ami
 	docker-compose run --rm -T ami clean
 	docker-compose run --rm -T ami bake
