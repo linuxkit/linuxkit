@@ -76,6 +76,7 @@ COPY packages/test/etc /etc
 COPY packages/test/mobytest /usr/bin
 COPY packages/sysctl/etc /etc
 COPY packages/iptables/iptables /usr/local/sbin/iptables
+COPY packages/containerd/etc /etc/
 
 RUN \
   rc-update add swap boot && \
@@ -112,10 +113,17 @@ RUN \
   rc-update add hv_vss_daemon default && \
   rc-update add oom default && \
   rc-update add test default && \
+  rc-update add containerd default && \
   true
 
 COPY init /
 
 RUN adduser -D -H -s /sbin/nologin dockremap
+
+RUN cd /usr/bin && \
+  ln -s docker-runc runc && \
+  ln -s docker-containerd-shim containerd-shim && \
+  ln -s docker-containerd-ctr containerd-ctr && \
+  ln -s docker-containerd containerd
 
 CMD ["/bin/sh"]
