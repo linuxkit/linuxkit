@@ -43,7 +43,6 @@ initrd-arm.img: Dockerfile.armhf
 	rm -f initrd-arm.img
 	$(MAKE) -C packages arm
 	$(MAKE) -C kernel arm
-	cp inittab.armhf etc/inittab
 	docker-compose build arm
 	docker-compose run --rm -T arm /bin/mkinitrd.sh > $@
 
@@ -55,7 +54,7 @@ ami: initrd.img
 	docker-compose run --rm -T ami bake
 
 clean:
-	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf etc/inittab
+	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf
 	rm -f mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
 	$(MAKE) -C packages clean
 	$(MAKE) -C kernel clean
