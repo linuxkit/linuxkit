@@ -1,13 +1,12 @@
 all:	initrd.img.gz mobylinux-efi.iso
 
 ETCFILES=etc/issue etc/motd etc/network/interfaces
-ETCFILES+=etc/securetty
+ETCFILES+=etc/securetty etc/inittab
 
-initrd.img: Dockerfile mkinitrd.sh $(ETCFILES)
+initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	rm -f initrd.img
 	$(MAKE) -C packages
 	$(MAKE) -C kernel
-	cp inittab.x86_64 etc/inittab
 	docker-compose build moby
 	docker-compose run --rm -T moby /bin/mkinitrd.sh
 

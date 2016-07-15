@@ -4,14 +4,9 @@
 ::sysinit:/sbin/openrc boot
 ::wait:/sbin/openrc default
 
-# Put a getty on the serial port
-ttyS0::respawn:/sbin/getty -L ttyS0 115200 vt100
-
-# Put a getty on the console
-tty1::respawn:/sbin/getty 115200 tty1 linux
-
 # Stuff to do for the 3-finger salute
 ::ctrlaltdel:/sbin/reboot
 
 # Stuff to do before rebooting
 ::shutdown:/sbin/rc shutdown
+
