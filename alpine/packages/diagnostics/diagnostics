@@ -1,8 +1,5 @@
 #!/bin/sh
 
-# now start very soon after docker, let containerd start
-sleep 1
-
 printf '\n'
 DEV=$(ls /dev | grep '[sxv]da$')
 [ $? -eq 0 ] && printf "✓ Drive found: $DEV\n" || printf "✗ No drive found\n"
