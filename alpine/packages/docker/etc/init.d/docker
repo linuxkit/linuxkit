@@ -75,6 +75,8 @@ start()
 		--stdout "${DOCKER_LOGFILE}" \
 		-- --pidfile=${pidfile} ${DOCKER_OPTS}
 
+	ewaitfile 20 ${pidfile} /var/run/docker.sock /var/run/docker/libcontainerd/docker-containerd.sock
+
 	eend $? "Failed to start docker"
 }
 
