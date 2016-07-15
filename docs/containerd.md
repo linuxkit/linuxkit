@@ -11,7 +11,7 @@ NAME=nginx
 VERSION=latest
 
 docker pull ${NAME}:${VERSION}
-CONTAINER=$(docker create --net=host --security-opt apparmor=unconfined --oom-score-adj=-500 -v /var/log/nginx:/var/log/nginx -v /var/cache/nginx:/var/cache/nginx -v /var/run:/var/run ${NAME}:${VERSION})
+CONTAINER=$(docker create --net=host --security-opt apparmor=unconfined --cap-drop all --cap-add net_bind_service --oom-score-adj=-500 -v /var/log/nginx:/var/log/nginx -v /var/cache/nginx:/var/cache/nginx -v /var/run:/var/run ${NAME}:${VERSION})
 docker run -v ${PWD}:/conf -v /var/run/docker.sock:/var/run/docker.sock --rm jess/riddler -f -bundle /conf ${CONTAINER}
 rm -rf rootfs && mkdir rootfs
 docker export ${CONTAINER} | tar -C rootfs -xf -
