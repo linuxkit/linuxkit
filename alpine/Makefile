@@ -37,6 +37,8 @@ Dockerfile.armhf: Dockerfile
 	  sed '/nc-vsock/d' | \
 	  sed '/vsudd/d' | \
 	  sed '/gummiboot/d' | \
+	  grep -v 'tap-vsockd' | \
+	  grep -v '9pmount-vsock' | \
 	  grep -v 'rc-update add binfmt_misc sysinit' > $@
 
 initrd-arm.img: Dockerfile.armhf
