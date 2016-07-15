@@ -64,18 +64,18 @@ COPY packages/hvtools/hv_set_ifconfig /sbin/
 COPY packages/hvtools/hvtools.tar.gz /usr/share/src/
 COPY packages/chronyd/etc /etc/
 COPY packages/userns/etc /etc/
-#COPY packages/nc-vsock/nc-vsock /usr/bin
-COPY packages/vsudd/vsudd /sbin
-COPY packages/vsudd/etc /etc
-COPY packages/mobyconfig/mobyconfig /usr/bin
-COPY packages/bootflag/bootflag /usr/bin
+#COPY packages/nc-vsock/nc-vsock /usr/bin/
+COPY packages/vsudd/vsudd /sbin/
+COPY packages/vsudd/etc /etc/
+COPY packages/mobyconfig/mobyconfig /usr/bin/
+COPY packages/bootflag/bootflag /usr/bin/
 COPY packages/gummiboot/gummiboot.tar.gz /usr/share/src/
-COPY packages/oom/etc /etc
-COPY packages/9pmount-vsock/9pmount-vsock /sbin
-COPY packages/test/etc /etc
-COPY packages/test/mobytest /usr/bin
-COPY packages/sysctl/etc /etc
-COPY packages/iptables/iptables /usr/local/sbin/iptables
+COPY packages/oom/etc /etc/
+COPY packages/9pmount-vsock/9pmount-vsock /sbin/
+COPY packages/test/etc /etc/
+COPY packages/test/mobytest /usr/bin/
+COPY packages/sysctl/etc /etc/
+COPY packages/iptables/iptables /usr/local/sbin/
 COPY packages/containerd/etc /etc/
 
 RUN \
