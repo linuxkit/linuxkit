@@ -14,4 +14,8 @@ start()
 	ulimit -p unlimited
 
 	/usr/bin/containerd &
+
+	ewaitfile 5 /var/run/containerd/containerd.sock
+
+	eend $? "Failed to start system containerd"
 }
