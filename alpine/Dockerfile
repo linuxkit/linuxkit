@@ -68,7 +68,7 @@ COPY packages/userns/etc /etc/
 COPY packages/vsudd/vsudd /sbin/
 COPY packages/vsudd/etc /etc/
 COPY packages/mobyconfig/mobyconfig /usr/bin/
-COPY packages/bootflag/bootflag /usr/bin/
+COPY packages/mobyplatform/mobyplatform /usr/bin/
 COPY packages/gummiboot/gummiboot.tar.gz /usr/share/src/
 COPY packages/oom/etc /etc/
 COPY packages/9pmount-vsock/9pmount-vsock /sbin/
