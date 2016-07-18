@@ -2,11 +2,13 @@
 
 depend()
 {
-        before docker
+	before docker
 }
 
 start()
 {
+	[ "$(mobyplatform)" != "mac" ] && [ "$(mobyplatform)" != "windows" ] && exit 0
+
 	ebegin "Setting up proxy port service"
 
 	mkdir -p /port
@@ -32,6 +34,8 @@ start()
 
 stop()
 {
+	[ "$(mobyplatform)" != "mac" ] && [ "$(mobyplatform)" != "windows" ] && exit 0
+
 	ebegin "Stopping proxy port service"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/proxy-vsockd.pid
