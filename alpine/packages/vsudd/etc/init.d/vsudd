@@ -9,6 +9,8 @@ depend()
 
 start()
 {
+	[ "$(mobyplatform)" != "mac" ] && [ "$(mobyplatform)" != "windows" ] && exit 0
+
 	ebegin "Starting vsock proxy"
 
 	if [ -d /sys/bus/vmbus ]; then
@@ -39,6 +41,8 @@ start()
 
 stop()
 {
+	[ "$(mobyplatform)" != "mac" ] && [ "$(mobyplatform)" != "windows" ] && exit 0
+
 	ebegin "Stopping docker socket passthrough"
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/vsudd.pid

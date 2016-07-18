@@ -7,7 +7,7 @@ depend()
 
 start()
 {
-	cat /proc/cmdline | grep -q 'mobytest' || exit 0
+	[ "$(mobyplatform)" != "test" ] && exit 0
 
 	ebegin "Running tests"
 
