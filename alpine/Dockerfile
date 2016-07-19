@@ -53,7 +53,6 @@ COPY packages/diagnostics/diagnostics-server /usr/bin/
 COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
 COPY packages/binfmt_misc/etc /etc/
-COPY packages/dnsfix/etc /etc/
 COPY packages/hostsettings/etc /etc/
 COPY packages/hvtools/hv_kvp_daemon /sbin/
 COPY packages/hvtools/hv_vss_daemon /sbin/
@@ -108,7 +107,6 @@ RUN \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc default && \
-  rc-update add dnsfix boot && \
   rc-update add hostsettings boot && \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
