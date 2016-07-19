@@ -1,0 +1,16 @@
+FROM debian:jessie
+
+# Why bother with this whole song and dance?  qemu-img versions >=2.2.1 have a
+# "bug" which causes the generated VHD files to be improperly formatted for
+# running on Azure: https://bugs.launchpad.net/qemu/+bug/1490611
+# 
+# Since Alpine has only qemu-img >= 2.4.1 in its apk index, we cannot use
+# Alpine.
+RUN apt-get update && \
+    apt-get install -y qemu-utils
+
+# If version changes in distributed packages, this build is busted.  Sanity check.
+RUN qemu-img --version
+RUN qemu-img --version | awk '{ if ($3 != "2.1.2,") exit 1; }'
+
+ENTRYPOINT ["qemu-img", "convert", "-f", "raw", "-O", "vpc", "-o", "subformat=fixed"]
