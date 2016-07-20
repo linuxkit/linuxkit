@@ -1,7 +1,6 @@
 FROM golang:alpine
 
 RUN apk add --update \
-    bash \
     curl \
     e2fsprogs \
     syslinux \
