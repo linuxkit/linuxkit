@@ -9,37 +9,30 @@ depend()
 
 start()
 {
-	if [ ! -d /sys/bus/vmbus ]; then
-		# skip if not on Hyper-V
-		exit 0
-	fi
-        if mobyconfig exists network
-        then
-                NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
-                if [ "${NETWORK_MODE}" = "hybrid" ]; then
+	[ "$(mobyplatform)" != "windows" ] && exit 0
 
-			ebegin "Starting VPN proxy"
+	mobyconfig exists network || exit 0
+	NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
+	[ "${NETWORK_MODE}" = "hybrid" ] || exit 0
 
-			PIDFILE=/var/run/tap-vsockd.pid
-			start-stop-daemon --start \
-				--exec /sbin/tap-vsockd \
-				--background \
-				--pidfile ${PIDFILE} \
-				-- \
-				--pidfile "${PIDFILE}" \
-				--listen
+	ebegin "Starting VPN proxy"
 
-			eend $? "Failed to start VPN proxy"
-		fi
-	fi
+	PIDFILE=/var/run/tap-vsockd.pid
+	start-stop-daemon --start \
+		--exec /sbin/tap-vsockd \
+		--background \
+		--pidfile ${PIDFILE} \
+		-- \
+		--pidfile "${PIDFILE}" \
+		--listen
+
+	eend $? "Failed to start VPN proxy"
 }
 
 stop()
 {
-	if [ ! -d /sys/bus/vmbus ]; then
-		# skip if not on Hyper-V
-		exit 0
-	fi
+	[ "$(mobyplatform)" != "windows" ] && exit 0
+
 	ebegin "Stopping VPN proxy"
 
 	PIDFILE=/var/run/tap-vsockd.pid
