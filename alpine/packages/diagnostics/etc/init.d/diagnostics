@@ -19,12 +19,10 @@ start()
 			DIAGNOSTICS_SERVER_FLAGS="-http"
 		;;
 		"windows")
-			# TODO(Rolf/David): Are these correct?
-			DIAGNOSTICS_SERVER_FLAGS="-hvsock -rawtcp"
+			DIAGNOSTICS_SERVER_FLAGS="-hvsock"
 		;;
 		"mac")
-			# TODO(Justin/Anil): Are these correct?
-			DIAGNOSTICS_SERVER_FLAGS="-vsock -rawtcp"
+			DIAGNOSTICS_SERVER_FLAGS="-vsock"
 		;;
 	esac
 
