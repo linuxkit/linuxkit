@@ -9,6 +9,25 @@ start()
 {
 	ebegin "Checking system state"
 
-	/usr/bin/diagnostics-server &
+	DIAGNOSTICS_SERVER_FLAGS=""
+
+	case "$(mobyplatform)" in
+		"aws")
+			DIAGNOSTICS_SERVER_FLAGS="-http"
+		;;
+		"azure")
+			DIAGNOSTICS_SERVER_FLAGS="-http"
+		;;
+		"windows")
+			# TODO(Rolf/David): Are these correct?
+			DIAGNOSTICS_SERVER_FLAGS="-hvsock -rawtcp"
+		;;
+		"mac")
+			# TODO(Justin/Anil): Are these correct?
+			DIAGNOSTICS_SERVER_FLAGS="-vsock -rawtcp"
+		;;
+	esac
+
+	/usr/bin/diagnostics-server ${DIAGNOSTICS_SERVER_FLAGS} &
 	/usr/bin/diagnostics
 }
