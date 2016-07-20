@@ -46,7 +46,11 @@ setxtrarg() {
 }
 
 start() {
-	[ -d /sys/bus/vmbus ] && exit 0
+	[ "$(mobyplatform)" = "windows" ] && exit 0
+
+	[ "$(mobyplatform)" = "aws" ] && \
+		sed -i -e "s/^server [^ ]\+/server 0.amazon.pool.ntp.org/g" /etc/chrony/chrony.conf
+
 	checkconfig || return $?
 	setxtrarg
 
@@ -61,7 +65,8 @@ start() {
 }
 
 stop() {
-	[ -d /sys/bus/vmbus ] && exit 0
+	[ "$(mobyplatform)" = "windows" ] && exit 0
+
 	checkconfig || return $?
 
 	[ -n "${PIDFILE}" ] || PIDFILE=/var/run/chronyd.pid
