@@ -33,7 +33,6 @@ Dockerfile.armhf: Dockerfile
 	  sed '/hvtools/d' | \
 	  sed 's/syslinux//' | \
 	  sed '/proxy/d' | \
-	  sed '/llmnrd/d' | \
 	  sed '/diagnostics/d' | \
 	  sed '/nc-vsock/d' | \
 	  sed '/vsudd/d' | \
