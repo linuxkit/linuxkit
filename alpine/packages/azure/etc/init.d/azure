@@ -64,7 +64,7 @@ start()
 
 	source /var/lib/waagent/CustomData
 
-	if [ "${ROLE}" == "MANAGER" ]
+	if [ "${ROLE}" = "MANAGER" ]
 	then
 		docker swarm init \
 			--auto-accept manager \
