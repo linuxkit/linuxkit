@@ -13,7 +13,7 @@ start()
 
 	ebegin "Starting vsock proxy"
 
-	if [ -d /sys/bus/vmbus ]; then
+	if [ "$(mobyplatform)" = "windows" ]; then
 		DOCKER_PORT=23a432c2-537a-4291-bcb5-d62504644739
 		SYSLOG_PORT="" #TBD
 	else
