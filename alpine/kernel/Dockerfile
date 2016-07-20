@@ -52,6 +52,7 @@ RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
         /aufs/aufs*-mmap.patch \
         /aufs/aufs*-standalone.patch \
         /aufs/aufs*-loopback.patch \
+        /aufs/lockdep-debug.patch \
     ; do \
         patch -p1 < "$patch"; \
     done
