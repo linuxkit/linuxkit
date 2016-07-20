@@ -55,7 +55,7 @@ var (
 
 func init() {
 	for _, c := range localCmdCaptures {
-		localCmdCaptures = append(localCmdCaptures, c)
+		localCaptures = append(localCaptures, c)
 	}
 }
 
