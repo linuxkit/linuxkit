@@ -14,6 +14,9 @@ aufs-utils.tar kernel-source-info kernel-patches.tar kernel-modules.tar: mobyker
 vmlinuz64: aufs-utils.tar kernel-source-info kernel-patches.tar kernel-modules.tar mobykernel-build
 	docker run --rm mobykernel:build cat /linux/arch/x86_64/boot/bzImage > $@ || ! rm $@
 
+vmlinux: vmlinuz64
+	docker run --rm mobykernel:build cat /linux/vmlinux > $@ || ! rm $@
+
 arm: zImage
 
 zImage: mobyarmkernel-build aufs-utils.tar kernel-source-info kernel-patches.tar kernel-modules.tar
