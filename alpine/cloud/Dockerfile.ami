@@ -3,7 +3,6 @@ FROM alpine
 RUN apk add --update \
     python \
     py-pip \
-    bash \
     curl \
     e2fsprogs \
     jq \

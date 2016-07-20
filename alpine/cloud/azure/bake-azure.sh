@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Script to automate the creation of a VHD for Moby in Azure, and upload it to
 # an Azure storage account (needed in order to launch it on Azure, or upload it
@@ -22,7 +22,7 @@
 
 set -e
 
-declare -xr PROVIDER="azure"
+PROVIDER="azure"
 
 source "build-common.sh"
 

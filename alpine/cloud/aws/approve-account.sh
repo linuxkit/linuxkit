@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Usage: ./aws/approve-account.sh [ACCOUNT_ID] [AMI_FILE]
 #
