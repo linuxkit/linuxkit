@@ -1,4 +1,5 @@
 vmlinuz64
+vmlinux
 zImage
 aufs-utils.tar
 kernel-patches.tar
