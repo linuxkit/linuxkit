@@ -43,9 +43,6 @@ COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
 COPY packages/tap-vsockd/tap-vsockd /sbin/
 COPY packages/tap-vsockd/etc /etc/
-COPY packages/llmnrd/llmnrd /sbin/
-COPY packages/llmnrd/etc /etc/
-COPY packages/llmnrd/llmnrd.tar.gz /usr/share/src/
 COPY packages/docker/bin/* /usr/bin/
 COPY packages/docker/etc /etc/
 COPY packages/diagnostics/diagnostics /usr/bin/
@@ -98,7 +95,6 @@ RUN \
   rc-update add docker default && \
   rc-update add proxy default && \
   rc-update add transfused default && \
-  rc-update add llmnrd default && \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc default && \
