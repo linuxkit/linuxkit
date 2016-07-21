@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Usage: ./cloud/aws/copy-amis.sh 
 # Assumptions: 
