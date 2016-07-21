@@ -23,9 +23,9 @@ CONTAINERD=$(ps -eo args | grep '^docker-containerd')
 [ $? -eq 0 ] && printf "✓ Process containerd running: $CONTAINERD\n" || printf "✗ No containerd process\n"
 DOCKERPS=$(docker ps 2>&1)
 [ $? -eq 0 ] && printf "✓ Docker daemon working\n" || printf "✗ Docker ps failed: $DOCKERPS\n"
-DIAGNOSTICS=$(ps -eo args | grep '/usr/bin/diagnostics-server$')
+DIAGNOSTICS=$(ps -eo args | grep '/usr/bin/diagnostics-server')
 [ $? -eq 0 ] && printf "✓ Diagnostics server running: $DIAGNOSTICS\n" || printf "✗ No diagnostics server\n"
-CONTAINERD=$(ps -eo args | grep '/usr/bin/containerd$')
+CONTAINERD=$(ps -eo args | grep '/usr/bin/containerd')
 [ $? -eq 0 ] && printf "✓ System containerd server running: $DIAGNOSTICS\n" || printf "✗ No containerd server\n"
 CONTAINERPS=$(containerd-ctr containers 2>&1)
 [ $? -eq 0 ] && printf "✓ System containerd working\n" || printf "✗ containerd failed: $CONTAINERPS\n"
