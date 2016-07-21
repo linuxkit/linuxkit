@@ -12,7 +12,7 @@ then
 	FUSE=$(ps -eo args | grep '^/sbin/transfused')
 	[ $? -eq 0 ] && printf "✓ Process transfused running\n" || printf "✗ No transfused process\n"
 fi
-if [ [ "$(mobyplatform)" = "windows" ]  ]
+if [ "$(mobyplatform)" = "windows" ]
 then
 	TAPVS=$(ps -eo args | grep '^/sbin/tap-vsockd')
 	[ $? -eq 0 ] && printf "✓ Process tap-vsockd running\n" || printf "✗ No tap-vsockd process\n"
