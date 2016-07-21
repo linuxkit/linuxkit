@@ -1,19 +1,17 @@
 # Create a EFI Bootable ISO
-FROM ubuntu:15.10
+FROM alpine:3.4
 
-RUN apt-get update && apt-get -y upgrade && apt-get -y install \
-    binutils mtools dosfstools xorriso \
-    gdisk qemu
+RUN apk add --no-cache binutils mtools xorriso gummiboot
 
 RUN mkdir -p /tmp/efi
 
 COPY initrd.img.gz /tmp/efi
 COPY kernel/vmlinuz64 /tmp/efi
-COPY packages/gummiboot/linuxx64.efi.stub /tmp/efi
 
 # Create a EFI boot file with kernel and initrd. From:
 # https://github.com/haraldh/mkrescue-uefi/blob/master/mkrescue-uefi.sh
 RUN cd /tmp/efi && \
+    cp /usr/lib/gummiboot/linuxx64.efi.stub . && \
     echo "earlyprintk=serial console=ttyS0 mobyplatform=windows" > cmdline.txt && \
     objcopy \
         --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
@@ -27,7 +25,10 @@ RUN cd /tmp/efi && \
 RUN cd /tmp/efi && \
     mkdir -p iso && \
     dd if=/dev/zero of=iso/efi.raw bs=1024 count=70000 && \
-    mkfs.vfat iso/efi.raw && \
+    mkfs.vfat iso/efi.raw
+
+RUN cd /tmp/efi && \
+    echo "mtools_skip_check=1" >> /etc/mtools.conf && \
     mmd -i iso/efi.raw ::/EFI && \
     mmd -i iso/efi.raw ::/EFI/BOOT && \
     mcopy -i iso/efi.raw mobylinux.efi ::/EFI/BOOT/BOOTX64.EFI && \
