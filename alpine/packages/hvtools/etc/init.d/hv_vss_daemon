@@ -9,7 +9,7 @@ depend()
 
 start()
 {
-        [ ! -d /sys/bus/vmbus ] && exit 0
+        [ "$(mobyplatform)" != "windows" ] && exit 0
 
         ebegin "Starting Hyper-V Daemon: ${HV_DAEMON}"
 
@@ -25,7 +25,7 @@ start()
 
 stop()
 {
-        [ ! -d /sys/bus/vmbus ] && exit 0
+        [ "$(mobyplatform)" != "windows" ] && exit 0
 
         ebegin "Stopping Hyper-V Daemon: ${HV_DAEMON}"
 
