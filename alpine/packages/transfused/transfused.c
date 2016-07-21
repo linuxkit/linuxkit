@@ -467,7 +467,7 @@ void start_reader(connection_t * connection, int fuse) {
   if ((errno = pthread_create(&child, &detached,
                               copy_clean_into_fuse_thread, copy_state)))
     die(1, connection->params, "",
-        "couldn't create read copy thread for mount %s: ",
+        "Couldn't create read copy thread for mount %s: ",
         connection->mount_point);
 }
 
@@ -475,7 +475,7 @@ void start_writer(connection_t * connection, int fuse) {
   pthread_t child;
   copy_thread_state * copy_state;
 
-  copy_state = (copy_thread_state *) must_malloc("do_write copy_state",
+  copy_state = (copy_thread_state *) must_malloc("start_writer copy_state",
                                                  sizeof(copy_thread_state));
   copy_state->connection = connection;
   copy_state->from = fuse;
