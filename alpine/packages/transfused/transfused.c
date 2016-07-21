@@ -226,6 +226,43 @@ void copy_into_fuse(copy_thread_state * copy_state) {
   free(buf);
 }
 
+void copy_notify_fuse(copy_thread_state * copy_state) {
+  int from = copy_state->from;
+  int to = copy_state->to;
+  char * descr = copy_state->connection->mount_point;
+  int read_count, write_count;
+  uint32_t zero = 0, err;
+  void * buf;
+  parameters * params = copy_state->connection->params;
+
+  buf = must_malloc(descr, IN_BUFSZ);
+
+  while (1) {
+    read_count = read_message(descr, params, from, (char *) buf, IN_BUFSZ);
+    write_count = write(to, buf, read_count);
+    if (write_count < 0) {
+      err = errno;
+      write_count = write(from, &err, 4);
+      if (write_count < 0) {
+        log_time(params, "copy notify %s write error: %s", strerror(err));
+        die(1, params, "", "copy notify %s reply write error: ",
+            descr);
+      }
+      continue;
+    } else {
+      if (write(from, &zero, 4) < 0)
+        die(1, params, "", "copy notify %s reply write error: ",
+            descr);
+    }
+
+    if (write_count != read_count)
+      die(1, params, NULL, "copy notify %s: read %d but only wrote %d",
+          descr, read_count, write_count);
+  }
+
+  free(buf);
+}
+
 void write_exactly(char * descr, int fd, void * p, size_t nbyte) {
   int write_count;
   char * buf = p;
@@ -274,6 +311,20 @@ void * copy_clean_into_fuse(copy_thread_state * copy_state) {
 
 void * copy_clean_into_fuse_thread(void * copy_state) {
   return (copy_clean_into_fuse((copy_thread_state *) copy_state));
+}
+
+void * copy_clean_notify_fuse(copy_thread_state * copy_state) {
+  copy_notify_fuse(copy_state);
+
+  close(copy_state->from);
+
+  free(copy_state);
+
+  return NULL;
+}
+
+void * copy_clean_notify_fuse_thread(void * copy_state) {
+  return (copy_clean_notify_fuse((copy_thread_state *) copy_state));
 }
 
 void * copy_clean_outof_fuse(copy_thread_state * copy_state) {
@@ -436,6 +487,37 @@ void start_writer(connection_t * connection, int fuse) {
         connection->mount_point);
 }
 
+void negotiate_notify_channel(char * mount_point, int notify_sock) {
+  int len = strlen(mount_point);
+  char hdr[6];
+
+  *((uint32_t *) hdr) = 6 + len;
+  *((uint16_t *) (hdr + 4)) = TRANSFUSE_NOTIFY_CHANNEL;
+
+  write_exactly("negotiate_notify_channel hdr", notify_sock, hdr, 6);
+  write_exactly("negotiate_notify_channel mnt", notify_sock, mount_point, len);
+}
+
+void start_notify(connection_t * connection, int fuse) {
+  pthread_t child;
+  copy_thread_state * copy_state;
+
+  copy_state = (copy_thread_state *) must_malloc("start_notify copy_state",
+                                                 sizeof(copy_thread_state));
+  copy_state->connection = connection;
+  copy_state->from = connect_socket(connection->params->server);
+  copy_state->to = fuse;
+
+  negotiate_notify_channel(connection->mount_point, copy_state->from);
+
+  if ((errno = pthread_create(&child, &detached,
+                              copy_clean_notify_fuse_thread, copy_state)))
+    die(1, connection->params, "",
+        "Couldn't create notify copy thread for mount %s: ",
+        connection->mount_point);
+}
+
+
 char * alloc_dirname(connection_t * conn, char * path) {
   size_t len = strlen(path) + 1;
   char * input = must_malloc("alloc_dirname input", len);
@@ -545,6 +627,7 @@ void * mount_connection(connection_t * conn) {
 
   start_reader(conn, fuse);
   start_writer(conn, fuse);
+  start_notify(conn, fuse);
 
   lock("copy lock", &copy_lock);
   while (!should_halt)
