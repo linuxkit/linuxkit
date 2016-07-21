@@ -12,14 +12,9 @@ all:
 	$(MAKE) -C iptables OS=linux
 
 arm:
-	$(MAKE) -C transfused OS=linux ARCH=arm
 	$(MAKE) -C docker arm OS=Linux ARCH=arm
 	# Not cross building at present (C code)
-	# $(MAKE) -C tap-vsockd OS=linux ARCH=arm
 	# $(MAKE) -C diagnostics OS=linux ARCH=arm
-	# $(MAKE) -C proxy OS=linux ARCH=arm
-	# $(MAKE) -C nc-vsock OS=linux ARCH=arm
-	# $(MAKE) -C vsudd OS=linux ARCH=arm
 
 clean:
 	$(MAKE) -C proxy clean
