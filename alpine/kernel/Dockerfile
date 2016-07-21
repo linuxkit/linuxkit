@@ -92,7 +92,7 @@ ENV AUFS_TOOLS_COMMIT b5e7e204036da5e815ddec15a847a03c232771b4
 RUN git clone ${AUFS_TOOLS_REPO} && \
     cd /aufs-util && \
     git checkout "$AUFS_TOOLS_COMMIT" && \
-    CPPFLAGS="-I/tmp/kernel-headers/include" CLFAGS=$CPPFLAGS LDFLAGS=$CPPFLAGS make && \
+    CPPFLAGS="-I/tmp/kernel-headers/include" CFLAGS=$CPPFLAGS LDFLAGS=$CPPFLAGS make && \
     DESTDIR=/tmp/aufs-utils make install && \
     rm -rf /tmp/aufs-utils/usr/lib /tmp/aufs-utils/usr/share && \
     cd /tmp/aufs-utils && tar cf /aufs-utils.tar .
