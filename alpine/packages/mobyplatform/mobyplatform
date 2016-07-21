@@ -16,4 +16,6 @@ awk -v flag=$1 '{
 }' /proc/cmdline
 }
 
-kvpair mobyplatform
+PLATFORM=$(kvpair mobyplatform)
+
+[ -z ${PLATFORM} ] && printf unknown || printf ${PLATFORM}
