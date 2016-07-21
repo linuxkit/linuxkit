@@ -1,9 +1,9 @@
 #!/bin/sh
 
 printf '\n'
-DEV=$(ls /dev | grep '[sxv]da$')
+DEV="$(lsblk -r | grep ' disk $' | awk '{print $1}' | head -1 )"
 [ $? -eq 0 ] && printf "✓ Drive found: $DEV\n" || printf "✗ No drive found\n"
-DEV=$(mount | grep '/dev/[sxv]da. on /var type')
+DEV=$(mount | grep '/dev/.*da. on /var type')
 [ $? -eq 0 ] && printf "✓ Drive mounted: $DEV\n" || printf "✗ No drive mounted\n"
 INET=$(ifconfig eth0 2> /dev/null | grep 'inet addr')
 [ $? -eq 0 ] && printf "✓ Network connected: $INET\n" || printf "✗ No network connection\n"
