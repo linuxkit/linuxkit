@@ -1,7 +1,6 @@
 all:	initrd.img.gz mobylinux-efi.iso
 
 ETCFILES=etc/issue etc/motd etc/network/interfaces
-ETCFILES+=etc/inittab
 
 initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	rm -f initrd.img
