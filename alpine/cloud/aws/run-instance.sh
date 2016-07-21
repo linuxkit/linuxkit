@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Quick script to boot an instance from generated AMI.  Intended to be invoked
 # from "alpine" directory.
@@ -18,7 +18,7 @@ manager_sg_id()
 attach_security_group()
 {
 	MANAGER_SG_ID=$(manager_sg_id)
-	if [ ${MANAGER_SG_ID} == "null" ]
+	if [ ${MANAGER_SG_ID} = "null" ]
 	then
 		CUR_INSTANCE_MAC=$(wget -qO- ${METADATA}/network/interfaces/macs)
 		CUR_INSTANCE_VPC_CIDR=$(wget -qO- ${METADATA}/network/interfaces/macs/${CUR_INSTANCE_MAC}vpc-ipv4-cidr-block)
@@ -56,7 +56,7 @@ poll_instance_log()
 	echo "Waiting for instance boot log to become available"
 
 	INSTANCE_BOOT_LOG="null"
-	while [ ${INSTANCE_BOOT_LOG} == "null" ]
+	while [ ${INSTANCE_BOOT_LOG} = "null" ]
 	do
 		INSTANCE_BOOT_LOG=$(aws ec2 get-console-output --instance-id "$1" | jq -r .Output)
 		sleep 5

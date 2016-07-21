@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 set -e
 
@@ -26,7 +26,7 @@ format_on_device()
 	# TODO (nathanleclaire): Any more readable or more elegant solution to
 	# account for this minor (specify 1st partition as bootable) difference
 	# between cloud builds?
-	if [ "${PROVIDER}" == "aws" ]
+	if [ "${PROVIDER}" = "aws" ]
 	then
 		# This heredoc might be confusing at first glance, so here is a detailed
 		# summary of what each line does:
@@ -49,7 +49,7 @@ a
 1
 w
 EOF
-	elif [ ${PROVIDER} == "azure" ]
+	elif [ ${PROVIDER} = "azure" ]
 	then
 		fdisk "$1" << EOF
 n

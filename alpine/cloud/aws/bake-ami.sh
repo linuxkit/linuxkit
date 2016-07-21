@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Script to automate creation and snapshotting of a Moby AMI.  Currently, it's
 # intended to be invoked from an instance running in the same region as the
@@ -7,7 +7,7 @@
 
 set -e
 
-declare -xr PROVIDER="aws"
+PROVIDER="aws"
 
 source "./build-common.sh"
 source "${MOBY_SRC_ROOT}/cloud/aws/common.sh"
@@ -84,7 +84,7 @@ clean_tagged_resources()
 	fi
 
 	VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=tag-key,Values=$1" | jq -r .Volumes[0].VolumeId)
-	if [ ${VOLUME_ID} == "null" ]
+	if [ ${VOLUME_ID} = "null" ]
 	then
 		arrowecho "No volume found, skipping"
 	else
@@ -96,7 +96,7 @@ clean_tagged_resources()
 	fi
 
 	IMAGE_ID=$(aws ec2 describe-images --filters "Name=tag-key,Values=$1" | jq -r .Images[0].ImageId)
-	if [ ${IMAGE_ID} == "null" ]
+	if [ ${IMAGE_ID} = "null" ]
 	then
 		arrowecho "No image found, skipping"
 	else
@@ -110,7 +110,7 @@ clean_tagged_resources()
 	fi
 
 	SNAPSHOT_ID=$(aws ec2 describe-snapshots --filters "Name=tag-key,Values=$1" | jq -r .Snapshots[0].SnapshotId)
-	if [ ${SNAPSHOT_ID} == "null" ]
+	if [ ${SNAPSHOT_ID} = "null" ]
 	then
 		arrowecho "No snapshot found, skipping"
 	else
