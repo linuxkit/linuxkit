@@ -13,6 +13,8 @@ start() {
 
 	mobyconfig exists etc/resolv.conf && mobyconfig get etc/resolv.conf > /etc/resolv.conf
 
+	mobyconfig exists etc/hosts && mobyconfig get etc/hosts >> /etc/hosts
+
 	# handle static network config if configured
 	mobyconfig exists net/config && NETCONFIG=`mobyconfig get net/config`
 	if [ "${NETCONFIG}" = "static" ]; then
