@@ -57,7 +57,7 @@ RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
         patch -p1 < "$patch"; \
     done
 
-COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
+COPY kernel_config.x86_64 /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.arm /linux/arch/arm/configs/versatile_defconfig
 
 # Apply local patches

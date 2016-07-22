@@ -1,5 +1,7 @@
 FROM alpine:3.4
 
+ENV ARCH=x86_64
+
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
@@ -30,11 +32,11 @@ RUN \
 COPY etc /etc/
 RUN mkdir -p /etc/docker
 
-ADD kernel/aufs-utils.tar /
+ADD kernel/$ARCH/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
-COPY kernel/kernel-source-info /etc/
-ADD kernel/kernel-patches.tar /etc/kernel-patches
-ADD kernel/kernel-modules.tar /
+COPY kernel/$ARCH/kernel-source-info /etc/
+ADD kernel/$ARCH/kernel-patches.tar /etc/kernel-patches
+ADD kernel/$ARCH/kernel-modules.tar /
 
 COPY packages/proxy/slirp-proxy /usr/bin/
 COPY packages/proxy/slirp-proxy /sbin/proxy-vsockd

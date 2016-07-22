@@ -1,6 +1,8 @@
 # Create a legacy BIOS bootable ISO
 FROM ubuntu:15.10
 
+ENV ARCH=x86_64
+
 RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   genisoimage \
   xorriso \
@@ -13,7 +15,7 @@ RUN mkdir -p /tmp/iso/isolinux && \
     cp usr/lib/syslinux/modules/bios/ldlinux.c32 /tmp/iso/isolinux
 
 COPY initrd.img /tmp/iso
-COPY kernel/vmlinuz64 /tmp/iso
+COPY kernel/$ARCH/vmlinuz64 /tmp/iso
 COPY isolinux.cfg /tmp/iso/isolinux
 
 RUN cd /tmp/iso && \
