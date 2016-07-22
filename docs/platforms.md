@@ -38,3 +38,5 @@ ramdisk="/home/justin/images/moby/initrd.img.gz"
 extra="console=hvc0"
 on_reboot="restart"
 ```
+
+VMWare Fusion: Should work fine, IDE, SATA or SCSI disks will work, and the default network driver.
