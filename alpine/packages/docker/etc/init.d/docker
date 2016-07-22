@@ -82,8 +82,8 @@ start()
 
 	# shift logs onto host before docker starts
 	# busybox reopens its log files every second
-	if cat /proc/cmdline | grep -q 'com.docker.driver'; then
-		DRIVERDIR="/host_docker_app/$(cat /proc/cmdline | sed -e 's/.*com.docker.driver="//' -e 's/".*//')"
+	if grep -q 'com.docker.driver' /proc/cmdline ; then
+		DRIVERDIR="/host_docker_app/$(sed -e 's/.*com.docker.driver="//' -e 's/".*//' /proc/cmdline)"
 		if ! grep -q "osxfs on /var/log" /proc/mounts ; then
 			mkdir -p /run/log
 			mount -o bind /var/log /run/log
@@ -106,7 +106,7 @@ start()
 		--pidfile "${pidfile}" \
 		--stderr "${DOCKER_LOGFILE}" \
 		--stdout "${DOCKER_LOGFILE}" \
-		-- --pidfile=${pidfile} ${DOCKER_OPTS}
+		-- --pidfile="${pidfile}" "${DOCKER_OPTS}"
 
 	ewaitfile 20 ${pidfile} /var/run/docker.sock /var/run/docker/libcontainerd/docker-containerd.sock
 

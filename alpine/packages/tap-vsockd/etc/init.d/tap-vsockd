@@ -13,7 +13,7 @@ start()
 	[ "$(mobyplatform)" != "windows" ] && exit 0
 
 	mobyconfig exists network || exit 0
-	NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
+	NETWORK_MODE="$(mobyconfig get network | tr -d '[:space:]')"
 	[ "${NETWORK_MODE}" = "hybrid" ] || exit 0
 
 	ebegin "Starting VPN proxy"
