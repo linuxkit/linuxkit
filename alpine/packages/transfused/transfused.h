@@ -58,3 +58,4 @@ void write_exactly(char * descr, int fd, void * buf, size_t nbyte);
 #define TRANSFUSE_LOG_NOTICE 2
 #define PONG_REPLY 3
 #define MOUNT_SUITABILITY_REPLY 4
+#define TRANSFUSE_NOTIFY_CHANNEL 5
