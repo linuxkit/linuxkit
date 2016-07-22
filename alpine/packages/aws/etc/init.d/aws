@@ -1,5 +1,6 @@
 #!/sbin/openrc-run
 
+# shellcheck disable=SC2034
 description="Bootstrap procedure if running on Docker for AWS"
 
 depend()
@@ -47,7 +48,7 @@ start()
 	HOSTNAME=$(wget -qO- ${METADATA}/local-hostname)
 
 	# Set hostname based on what AWS tells us it should be.
-	echo ${HOSTNAME} >/etc/hostname
+	echo "${HOSTNAME}" >/etc/hostname
 	hostname -F /etc/hostname
 
 	# Needed for ELB integration.
