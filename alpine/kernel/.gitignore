@@ -1,9 +1,2 @@
-vmlinuz64
-vmlinux
-zImage
-aufs-utils.tar
-kernel-patches.tar
-kernel-modules.tar
-kernel-source-info
-mobykernel-build
-mobyarmkernel-build
+x86_64
+arm

@@ -1,7 +1,7 @@
 FROM justincormack/alpine-qemu
 
 COPY alpine/initrd-arm.img .
-COPY alpine/kernel/zImage .
+COPY alpine/kernel/arm/zImage .
 COPY alpine/kernel/dtb dtb
 
 RUN gzip -9 initrd-arm.img

@@ -1,28 +1,30 @@
-all:	vmlinuz64
+ARCH ?= x86_64
 
-mobykernel-build: Dockerfile kernel_config
-	docker build -t mobykernel:build .
+all:	$(ARCH)/vmlinuz64
+
+$(ARCH)/mobykernel-build: Dockerfile kernel_config.$(ARCH)
+	mkdir -p $(ARCH) && \
+	docker build --build-arg ARCH=$(ARCH) -t mobykernel-$(ARCH):build .
 	touch $@
 
-mobyarmkernel-build: Dockerfile kernel_config.arm
-	docker build --build-arg ARCH=arm -t mobyarmkernel:build .
-	touch $@
+$(ARCH)/aufs-utils.tar $(ARCH)/kernel-source-info $(ARCH)/kernel-patches.tar $(ARCH)/kernel-modules.tar: $(ARCH)/mobykernel-build
+	docker run --rm mobykernel-$(ARCH):build cat /$(notdir $@) > $@ || ! rm $@
 
-aufs-utils.tar kernel-source-info kernel-patches.tar kernel-modules.tar: mobykernel-build
-	docker run --rm mobykernel:build cat /$@ > $@ || ! rm $@
+$(ARCH)/bzImage $(ARCH)/zImage: $(ARCH)/aufs-utils.tar $(ARCH)/kernel-source-info $(ARCH)/kernel-patches.tar $(ARCH)/kernel-modules.tar $(ARCH)/mobykernel-build
+	docker run --rm mobykernel-$(ARCH):build cat /linux/arch/$(ARCH)/boot/$(notdir $@) > $@ || ! rm $@
 
-vmlinuz64: aufs-utils.tar kernel-source-info kernel-patches.tar kernel-modules.tar mobykernel-build
-	docker run --rm mobykernel:build cat /linux/arch/x86_64/boot/bzImage > $@ || ! rm $@
+$(ARCH)/vmlinux: $(ARCH)/bzImage
+	docker run --rm mobykernel-$(ARCH):build cat /linux/vmlinux > $@ || ! rm $@
 
-vmlinux: vmlinuz64
-	docker run --rm mobykernel:build cat /linux/vmlinux > $@ || ! rm $@
+$(ARCH)/vmlinuz64: $(ARCH)/bzImage
+	cp $< $@
 
-arm: zImage
+arm: arm/zImage
 
-zImage: mobyarmkernel-build aufs-utils.tar kernel-source-info kernel-patches.tar kernel-modules.tar
-	docker run --rm mobyarmkernel:build cat /linux/arch/arm/boot/zImage > $@
+clean-arch:
+	rm -rf $(ARCH)
+	docker images -q mobykernel-$(ARCH):build | xargs docker rmi -f || true
 
 clean:
-	rm -f zImage vmlinuz64 aufs-utils.tar kernel-source-info kernel-patches.tar mobykernel-build mobyarmkernel-build
-	docker images -q mobykernel:build | xargs docker rmi -f || true
-	docker images -q mobyarmkernel:build | xargs docker rmi -f || true
+	$(MAKE) clean-arch ARCH=arm
+	$(MAKE) clean-arch ARCH=x86_64
