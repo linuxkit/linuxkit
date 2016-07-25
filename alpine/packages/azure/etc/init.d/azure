@@ -62,7 +62,7 @@ start()
 		sleep 5
 	done
 
-	source /var/lib/waagent/CustomData
+	. /var/lib/waagent/CustomData
 
 	if [ "${ROLE}" = "MANAGER" ]
 	then

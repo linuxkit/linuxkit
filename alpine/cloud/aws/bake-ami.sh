@@ -9,8 +9,8 @@ set -e
 
 PROVIDER="aws"
 
-source "./build-common.sh"
-source "${MOBY_SRC_ROOT}/cloud/aws/common.sh"
+. "./build-common.sh"
+. "${MOBY_SRC_ROOT}/cloud/aws/common.sh"
 
 # TODO(nathanleclaire): This could be calculated dynamically to avoid conflicts.
 EBS_DEVICE=/dev/xvdb
