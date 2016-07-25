@@ -24,24 +24,7 @@ start()
 	do
 		einfo "Pulling Windows Azure Linux Agent container"
 
-		docker pull nathanleclaire/walinuxagent >/dev/null
-
-		einfo "Running Windows Azure Linux Agent container"
-
-		docker run -d \
-			--name waagent \
-			--privileged \
-			--restart unless-stopped \
-			--net host \
-			--ipc host \
-			--pid host \
-			-v /home:/home \
-			-v /etc:/etc \
-			-v /lib/modules:/lib/modules \
-			-v /lib/firmware:/lib/firmware \
-			-v /var/log:/var/log \
-			-v /var/lib/waagent:/var/lib/waagent \
-			nathanleclaire/walinuxagent
+		docker pull docker4x/agent-azure >/dev/null
 
 		if [ $? -eq 0 ]
 		then
@@ -56,6 +39,37 @@ start()
 		sleep 5
 	done
 
+	einfo "Running Windows Azure Linux Agent container"
+
+	docker run -d \
+		--privileged \
+		--name agent \
+		--ipc host \
+		--pid host \
+		--net host \
+		--restart unless-stopped \
+		-v /usr/bin/docker:/usr/local/bin/docker:ro \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v /var/log:/var/log \
+		-v /home:/home \
+		-v /etc:/etc \
+		-v /lib/modules:/lib/modules \
+		-v /lib/firmware:/lib/firmware \
+		-v /var/lib/waagent:/var/lib/waagent \
+		docker4x/agent-azure
+
+	# Wait for docker user to be added by agent.
+	while [ ! -d /home/docker ]
+	do
+		sleep 5
+	done
+
+	# TODO: Make this cleaner.
+	# User gets added by waagent.
+	# Need to unlock it to login via SSH.
+	passwd -u docker
+	checkpath --directory --mode 0700 /home/docker/.ssh
+
 	# Wait for custom data to arrive
 	while [ ! -f /var/lib/waagent/CustomData ]
 	do
@@ -64,42 +78,12 @@ start()
 
 	source /var/lib/waagent/CustomData
 
-	if [ "${ROLE}" = "MANAGER" ]
+	if [ "${ROLE}" != "WORKER" ]
 	then
+		# TODO: More restrictive policy.
 		docker swarm init \
 			--auto-accept manager \
 			--auto-accept worker
-
-		# TODO: Make this cleaner.
-		# User gets added by waagent.
-		# Need to unlock it to login via SSH.
-		passwd -u docker
-
-		checkpath --directory --mode 0700 /home/docker/.ssh
-
-		einfo "Pulling taco shell"
-
-		docker pull nathanleclaire/taco-shell >/dev/null
-
-		einfo "Running taco shell"
-
-		# Container for inbound shell access.
-		#
-		#  TODO: Move this into another service?
-		docker run -d \
-			--name taco-shell \
-			--net host \
-			--restart always \
-			-p 22:22 \
-			-v /usr/bin/docker:/usr/docker/bin/docker:ro \
-			-v /var/run/docker.sock:/var/run/docker.sock \
-			-v /home/docker/.ssh:/home/docker/.ssh:ro \
-			-v /etc/passwd:/etc/passwd:ro \
-			-v /etc/shadow:/etc/shadow:ro \
-			-v /var/log:/var/log:ro \
-			-v /etc/ssh/ssh_host_rsa_key:/etc/ssh/ssh_host_rsa_key:ro \
-			-v /etc/ssh/ssh_host_rsa_key.pub:/etc/ssh/ssh_host_rsa_key.pub:ro \
-			nathanleclaire/taco-shell
 	else
 		docker swarm join "${MANAGER_IP}:2377"
 	fi
@@ -110,7 +94,6 @@ start()
 stop()
 {
 	[ "$(mobyplatform)" != "azure" ] && exit 0
-	docker rm -f waagent || true
-	docker rm -f taco-shell || true
+	docker rm -f agent || true
 	passwd -l docker
 }
