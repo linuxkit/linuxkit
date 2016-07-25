@@ -16,7 +16,7 @@ if [ ! -d /Database ]
 then
   mkdir -p /Database
   BASE="/Database"
-  case "$(mobyconfig)" in
+  case "$(mobyplatform)" in
     windows)
       /sbin/9pmount-vsock listen db /Database
       [ $? -ne 0 ] && rm -rf /Database && printf "Could not mount configuration database\n" 1>&2 && exit 1
