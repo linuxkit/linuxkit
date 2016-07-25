@@ -7,7 +7,6 @@ all:
 	$(MAKE) -C docker OS=Linux
 	$(MAKE) -C nc-vsock OS=linux
 	$(MAKE) -C vsudd OS=linux
-	$(MAKE) -C llmnrd OS=linux
 	$(MAKE) -C gummiboot OS=linux
 	$(MAKE) -C 9pmount-vsock OS=linux
 	$(MAKE) -C iptables OS=linux
@@ -31,7 +30,6 @@ clean:
 	$(MAKE) -C hvtools clean
 	$(MAKE) -C nc-vsock clean
 	$(MAKE) -C vsudd clean
-	$(MAKE) -C llmnrd clean
 	$(MAKE) -C gummiboot clean
 	$(MAKE) -C 9pmount-vsock clean
 	$(MAKE) -C iptables clean
