@@ -14,8 +14,8 @@
 
 set -e
 
-source "cloud/build-common.sh"
-source "cloud/aws/common.sh"
+. "cloud/build-common.sh"
+. "cloud/aws/common.sh"
 
 SOURCE_AMI_ID=$(cat ./cloud/aws/ami_id.out)
 
@@ -47,9 +47,12 @@ fi
 
 cfecho '"AWSRegionArch2AMI": {'
 
-REGIONS=(us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1 ap-southeast-1 ap-northeast-1 ap-southeast-2 ap-northeast-2 sa-east-1)
+REGIONS="us-west-1 us-west-2 us-east-1 eu-west-1 eu-central-1 ap-southeast-1 ap-northeast-1 ap-southeast-2 ap-northeast-2 sa-east-1"
 
-for REGION in ${REGIONS[@]}
+# (last element of array to emit no comma for JSON)
+LAST_REGION="${REGIONS##* }"
+
+for REGION in ${REGIONS}
 do
 	REGION_AMI_ID=$(aws ec2 copy-image \
 		--source-region $(current_instance_region) \
@@ -67,11 +70,8 @@ do
 		\"HVMG2\": \"NOT_SUPPORTED\"
 	}"
 
-	# Emit valid JSON.  No trailing comma on last element.
-	#
-	# TODO: I'm pretty sure this negative index is a Bash-ism, and a Bash-ism
-	# from recent versions at that.
-	if [ ${REGION} != ${REGIONS[-1]} ]
+	# TODO: Not amazing way to determine last element.
+	if [ ${REGION} != "${LAST_REGION}" ]
 	then
 		cfecho ","
 	else
