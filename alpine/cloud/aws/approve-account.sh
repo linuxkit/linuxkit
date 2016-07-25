@@ -12,8 +12,8 @@
 
 set -e
 
-source "cloud/build-common.sh"
-source "cloud/aws/common.sh"
+. "cloud/build-common.sh"
+. "cloud/aws/common.sh"
 
 USER_ID="$1"
 
