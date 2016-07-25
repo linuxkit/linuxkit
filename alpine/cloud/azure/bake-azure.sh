@@ -24,7 +24,7 @@ set -e
 
 PROVIDER="azure"
 
-source "build-common.sh"
+. "build-common.sh"
 
 case "$1" in
 	makeraw)
