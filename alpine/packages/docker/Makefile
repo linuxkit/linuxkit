@@ -1,4 +1,4 @@
-DOCKER_VERSION=cherry-picks-1.12.0-rc4
+DOCKER_VERSION=cherry-picks-1.12.0-rc5
 ARCH?=x86_64
 OS?=Linux
 EXPERIMENTAL?=1
