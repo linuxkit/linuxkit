@@ -21,6 +21,13 @@ start()
 		DOCKER_OPTS="${DOCKER_OPTS} -H 0.0.0.0:2375"
 	fi
 
+	# On desktop editions, force swarm advertise address to be on eth0
+	# Currently we do not support multi node swarm on these editions
+	if [ -z $(bootflag cloud_provider) ]
+	then
+		DOCKER_OPTS="${DOCKER_OPTS} --swarm-default-advertise-addr=eth0"
+	fi
+
 	# some config is always in /etc/docker cannot specify alternative eg certs
 	if mobyconfig exists etc/docker
 	then
