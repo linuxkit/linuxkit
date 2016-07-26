@@ -1,19 +1,24 @@
-DOCKER_VERSION=1.12.0-rc4
+DOCKER_VERSION=cherry-picks-1.12.0-rc4
 ARCH?=x86_64
 OS?=Linux
 EXPERIMENTAL?=1
 
 all: bin
 
-#DOCKER_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
-DOCKER_HOST=experimental.docker.com
-
-bin:
+bin: docker.git
+	(cd docker.git && git fetch origin --tags && git checkout $(DOCKER_VERSION))
+	DOCKER_EXPERIMENTAL=$(EXPERIMENTAL) BIND_DIR=$(shell pwd) make -C docker.git binary
 	mkdir -p bin
-	curl -f -L -o docker.tgz https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz
-	tar xzf docker.tgz && mv docker/* bin
-	rm -rf docker/ docker.tgz
-	chmod +x bin/*
+	cp docker.git/bundles/latest/binary-daemon/dockerd bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-runc bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-containerd bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-containerd-shim bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-containerd-ctr bin/
+	cp docker.git/bundles/latest/binary-daemon/docker-proxy bin/
+	cp docker.git/bundles/latest/binary-client/docker bin/
+
+docker.git:
+	git clone git://github.com/tiborvass/docker.git docker.git
 
 arm:
 	mkdir -p bin
@@ -21,4 +26,4 @@ arm:
 	cp docker-arm bin/docker
 
 clean:
-	rm -rf bin docker/ docker.tgz
+	rm -rf bin docker.git
