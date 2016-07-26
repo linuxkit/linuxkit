@@ -5,3 +5,4 @@ set -e
 docker info
 docker ps
 docker run alpine true
+docker swarm init
