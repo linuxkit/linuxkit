@@ -1,12 +1,12 @@
-DOCKER_VERSION=1.12.0-rc4
+DOCKER_VERSION?=1.12.0-rc4
 ARCH?=x86_64
 OS?=Linux
-EXPERIMENTAL?=1
+DOCKER_EXPERIMENTAL?=1
 
 all: bin
 
-#DOCKER_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
-DOCKER_HOST=experimental.docker.com
+TEST_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
+DOCKER_HOST=$(shell [ "${DOCKER_EXPERIMENTAL}" -eq 1 ] && printf "experimental.docker.com" || printf "${TEST_HOST}")
 
 bin:
 	mkdir -p bin
