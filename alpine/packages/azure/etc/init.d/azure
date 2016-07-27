@@ -78,16 +78,6 @@ start()
 
 	. /var/lib/waagent/CustomData
 
-	if [ "${ROLE}" != "WORKER" ]
-	then
-		# TODO: More restrictive policy.
-		docker swarm init \
-			--auto-accept manager \
-			--auto-accept worker
-	else
-		docker swarm join "${MANAGER_IP}:2377"
-	fi
-
 	eend 0
 }
 
