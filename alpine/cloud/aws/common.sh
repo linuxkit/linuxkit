@@ -3,8 +3,8 @@
 set -e
 
 # When changing this value, ensure to change TAG_KEY_PREV to its old value.
-TAG_KEY="aws-1.12.0-rc3-beta-3-dev"
-TAG_KEY_PREV="aws-1.12.0-rc3-beta-2-dev"
+TAG_KEY="aws-1.12.0-beta-4"
+TAG_KEY_PREV="aws-1.12.0-rc3-beta-3-dev"
 
 INSTANCE_ENDPOINT="http://169.254.169.254/latest"
 INSTANCE_METADATA_API_ENDPOINT="${INSTANCE_ENDPOINT}/meta-data/"
