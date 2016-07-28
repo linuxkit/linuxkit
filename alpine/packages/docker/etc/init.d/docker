@@ -94,7 +94,7 @@ stop()
 	# stop docker
 	einfo "Stopping docker"
 	pidfile="/run/docker.pid"
-	start-stop-daemon --stop --quiet --pidfile ${pidfile}
+	start-stop-daemon --stop --quiet --pidfile ${pidfile} --retry 15
 
 	# taken from localmount stop script
 	# XXX fix more cleanly see #35
