@@ -1,6 +1,6 @@
 FROM ubuntu:15.10
 
-ARG KERNEL_VERSION=4.4.15
+ARG KERNEL_VERSION=4.4.16
 ARG ARCH=x86_64
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
