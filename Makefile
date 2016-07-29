@@ -24,7 +24,8 @@ qemu-arm: Dockerfile.qemu.armhf arm
 
 test: Dockerfile.test all
 	docker build -f Dockerfile.test -t mobytest:build .
-	docker run --rm mobytest:build 2>&1 | tee test.log &
+	touch test.log
+	docker run --rm mobytest:build 2>&1 | tee -a test.log &
 	tail -f test.log | grep -m 1 -q 'Moby test suite '
 	cat test.log | grep -q 'Moby test suite PASSED'
 
