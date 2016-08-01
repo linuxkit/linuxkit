@@ -22,8 +22,10 @@ start()
 		-l "${STARTUP_LOGFILE}"
 
 	ewaitfile 2 ${PIDFILE}
-
-	eend $? "Failed to start transfused"
+	RETVAL=$?
+	# Disable oomkiller for transfused
+	echo "-1000" > /proc/${PIDFILE}/oom_score_adj
+	eend $RETVAL "Failed to start transfused"
 }
 
 stop()
