@@ -1,0 +1,1 @@
+tmpfs	/run	tmpfs	defaults,nodev,relatime,size=10%,mode=755,shared 0 0
