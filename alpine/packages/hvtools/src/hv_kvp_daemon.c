@@ -360,12 +360,10 @@ static int kvp_key_delete(int pool, const __u8 *key, int key_size)
 /*
  * CFIS/SMB mount a directory from the host.
  *
- * The format of the value is "<mountpoint>;<alias mountpoint>;<options>",
- * where options are either "username=<username>,password=<password>"
- * or "username=<username>,password=<password>,domain=<domain>".
- *
- * and example value is:
- * "/c;/C;username=foo,password=bar"
+ * The format of the value is "<mountpoint>\n<alias
+ * mountpoint>\n<username>\n<password>\n<options>", where options are either
+ * "<other options>" or
+ * "domain=<domain>,<other options>".
  */
 static int kvp_cifs_mount(const char *value)
 {
@@ -373,13 +371,18 @@ static int kvp_cifs_mount(const char *value)
 	char mntcmd[2048];
 	char *mntpoint;
 	char *bindpoint;
+	char *username;
+	char *password;
 	char *options;
 	char *t;
 
 	char gw[256];
 	char gwcmd[] = "ip route show | grep 'eth0' | awk '/default/ {print $3 }'";
+	char credname[] = "/tmp/credXXXXXX";
+	int fd;
+	FILE *fp;
 
-	int i, count;
+	int ret, i, count;
 
 	if (strlen(value) >= sizeof(val)) {
 		syslog(LOG_ERR, "mount: value is too long");
@@ -393,21 +396,20 @@ static int kvp_cifs_mount(const char *value)
 	/* The above adds a ';' at the end, whack it */
 	gw[strlen(gw) - 1] = '\0';
 
-	/*
-	 * Parse the value
-	 */
 
-	/* Make sure we have the right number of ';' */
+	/* Parse the value */
+
+	/* Make sure we have the right number of '\n' */
 	for (i = 0, count = 0; value[i]; i++)
-		count += (value[i] == ';');
-	if (count != 2) {
-		syslog(LOG_ERR, "mount: Malformed value");
+		count += (value[i] == '\n');
+	if (count != 4) {
+		syslog(LOG_ERR, "mount: Malformed value. %d lines", count);
 		return -1;
 	}
 
 	(void)strncpy(val, value, sizeof(val));
 	mntpoint = val;
-	t = strchr(mntpoint, ';');
+	t = strchr(mntpoint, '\n');
 	if ((unsigned int)(t - mntpoint) >= sizeof(mntpoint) - 1) {
 		syslog(LOG_ERR, "mount: Mount point too long");
 		return -1;
@@ -415,43 +417,82 @@ static int kvp_cifs_mount(const char *value)
 	*t = '\0';
 
 	bindpoint = t + 1;
-	t = strchr(bindpoint, ';');
+	t = strchr(bindpoint, '\n');
 	if ((unsigned int)(t - bindpoint) >= sizeof(bindpoint) - 1) {
 		syslog(LOG_ERR, "mount: Bind mount point too long");
 		return -1;
 	}
 	*t = '\0';
 
+	/* No need to check for length here as we check above for the
+	 * right number of new-lines */
+	username = t + 1;
+	t = strchr(username, '\n');
+	*t = '\0';
+
+	password = t + 1;
+	t = strchr(password, '\n');
+	*t = '\0';
+
 	options = t + 1;
 
-	/*
-	 * Execute the mount
-	 */
+	/* Write credentials file */
+	fd = mkstemp(credname);
+	if (fd < 0) {
+		syslog(LOG_ERR, "mount: failed to create cred file. %d %s",
+		       errno, strerror(errno));
+		return -1;
+	}
+	fp = fdopen(fd, "w");
+	if (!fp) {
+		syslog(LOG_ERR, "mount: failed to open cred stream. %d %s",
+		       errno, strerror(errno));
+		ret = -1;
+		close(fd);
+		goto err_unlink;
+	}
+	ret = fprintf(fp, "username=%s\n", username);
+	if (ret < 0) {
+		syslog(LOG_ERR, "mount: failed to add username. %d %s",
+		       errno, strerror(errno));
+		fclose(fp);
+		goto err_unlink;
+	}
+	fprintf(fp, "password=%s\n", password);
+	if (ret < 0) {
+		syslog(LOG_ERR, "mount: failed to add password. %d %s",
+		       errno, strerror(errno));
+		fclose(fp);
+		goto err_unlink;
+	}
+	fclose(fp);
+
+	/* Execute the mount */
 	syslog(LOG_INFO, "mount: cifs //%s%s to %s and %s",
 	       gw, mntpoint, mntpoint, bindpoint);
 
 	snprintf(mntcmd, sizeof(mntcmd),
 		 "mkdir -p %s && "
 		 "mkdir -p %s && "
-		 "mount.cifs //%s%s %s -o %s && "
+		 "mount.cifs //%s%s %s -o %s,credentials=%s && "
 		 "mount --bind %s %s",
 		 mntpoint, bindpoint,
-		 gw, mntpoint, mntpoint, options,
+		 gw, mntpoint, mntpoint, options, credname,
 		 mntpoint, bindpoint);
 
-	if (system(mntcmd)) {
+	ret = system(mntcmd);
+	if (ret)
 		syslog(LOG_ERR, "mount: error: %d %s", errno, strerror(errno));
-		return 1;
-	}
 
-	return 0;
+err_unlink:
+	unlink(credname);
+	return ret;
 }
 
 /*
  * CFIS/SMB un-mount a directory from the host.
  *
- * Value has the format: "<mountpoint>;<bind mountpoint>".
- * Example: "/c;/C"
+ * Value has the format: "<mountpoint>\n<bind mountpoint>".
  */
 static int kvp_cifs_umount(const char *value)
 {
@@ -467,7 +508,7 @@ static int kvp_cifs_umount(const char *value)
 
 	(void)strncpy(val, value, sizeof(val));
 
-	bindpoint = strchr(val, ';');
+	bindpoint = strchr(val, '\n');
 	if (!bindpoint) {
 		syslog(LOG_ERR, "umount: Malformed value. %s", value);
 		return -1;
