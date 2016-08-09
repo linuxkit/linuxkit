@@ -3,7 +3,7 @@ iface lo inet loopback
 
 auto eth0
 iface eth0 inet dhcp
-    udhcpc_opts -T 1 -A 3
+    udhcpc_opts -T 3 -A 3 -t 20
 
 auto eth1
 iface eth1 inet dhcp
