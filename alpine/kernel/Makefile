@@ -1,10 +1,12 @@
 ARCH ?= x86_64
+DEBUG ?= 0
 
 all:	$(ARCH)/vmlinuz64
 
 $(ARCH)/mobykernel-build: Dockerfile kernel_config.$(ARCH)
 	mkdir -p $(ARCH) && \
-	docker build --build-arg ARCH=$(ARCH) -t mobykernel-$(ARCH):build .
+	docker build --build-arg ARCH=$(ARCH) --build-arg DEBUG=$(DEBUG) \
+		-t mobykernel-$(ARCH):build .
 	touch $@
 
 $(ARCH)/aufs-utils.tar $(ARCH)/kernel-source-info $(ARCH)/kernel-patches.tar $(ARCH)/kernel-modules.tar: $(ARCH)/mobykernel-build
