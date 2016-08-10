@@ -11,7 +11,7 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	docker-compose run --rm -T moby /bin/mkinitrd.sh
 
 initrd.img.gz: initrd.img
-	cat initrd.img | docker run -i justincormack/gzip -9 > initrd.img.gz
+	cat initrd.img | gzip -9 > initrd.img.gz
 
 mobylinux-efi.iso: initrd.img.gz Dockerfile.efi
 	docker-compose build efi
