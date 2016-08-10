@@ -2,6 +2,7 @@ FROM ubuntu:15.10
 
 ARG KERNEL_VERSION=4.4.17
 ARG ARCH=x86_64
+ARG DEBUG=0
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
@@ -59,6 +60,11 @@ RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
 
 COPY kernel_config.x86_64 /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.arm /linux/arch/arm/configs/versatile_defconfig
+COPY kernel_config.debug /linux/debug_config
+
+RUN if [ $DEBUG -ne "0" ]; then \
+    cat /linux/debug_config >> /linux/arch/x86/configs/x86_64_defconfig; \
+    fi
 
 # Apply local patches
 COPY patches /patches
