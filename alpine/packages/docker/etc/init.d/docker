@@ -13,6 +13,13 @@ start()
 
 	pidfile="/run/docker.pid"
 
+	# create cgroups mount for systemd containers
+	if [ ! -d /sys/fs/cgroup/systemd ]
+	then
+		mkdir -p /sys/fs/cgroup/systemd
+		mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
+	fi
+
 	# Only start with networking on cloud editions
 	DOCKER_OPTS="${DOCKER_OPTS} -H unix:///var/run/docker.sock"
 	if [ "$(mobyplatform)" = "aws" ] || [ "$(mobyplatform)" = "azure" ]
