@@ -64,6 +64,7 @@ COPY kernel_config.debug /linux/debug_config
 
 RUN if [ $DEBUG -ne "0" ]; then \
     cat /linux/debug_config >> /linux/arch/x86/configs/x86_64_defconfig; \
+    cat /linux/debug_config >> /linux/arch/arm/configs/versatile_defconfig; \
     fi
 
 # Apply local patches
