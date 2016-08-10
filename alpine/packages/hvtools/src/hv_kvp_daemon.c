@@ -397,9 +397,9 @@ static int kvp_cifs_mount(const char *value)
 	gw[strlen(gw) - 1] = '\0';
 
 
-	/* Parse the value */
-
-	/* Make sure we have the right number of '\n' */
+	/* Parse the value:
+	 * Make sure we have the right number of '\n'. Makes the code
+	 * below simpler: no check for strchr() return value required. */
 	for (i = 0, count = 0; value[i]; i++)
 		count += (value[i] == '\n');
 	if (count != 4) {
@@ -410,22 +410,12 @@ static int kvp_cifs_mount(const char *value)
 	(void)strncpy(val, value, sizeof(val));
 	mntpoint = val;
 	t = strchr(mntpoint, '\n');
-	if ((unsigned int)(t - mntpoint) >= sizeof(mntpoint) - 1) {
-		syslog(LOG_ERR, "mount: Mount point too long");
-		return -1;
-	}
 	*t = '\0';
 
 	bindpoint = t + 1;
 	t = strchr(bindpoint, '\n');
-	if ((unsigned int)(t - bindpoint) >= sizeof(bindpoint) - 1) {
-		syslog(LOG_ERR, "mount: Bind mount point too long");
-		return -1;
-	}
 	*t = '\0';
 
-	/* No need to check for length here as we check above for the
-	 * right number of new-lines */
 	username = t + 1;
 	t = strchr(username, '\n');
 	*t = '\0';
