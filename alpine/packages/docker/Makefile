@@ -1,4 +1,4 @@
-DOCKER_VERSION?=1.12.0
+DOCKER_VERSION?=1.12.1-rc1
 ARCH?=x86_64
 OS?=Linux
 DOCKER_EXPERIMENTAL?=1
@@ -10,7 +10,7 @@ DOCKER_HOST=$(shell [ "${DOCKER_EXPERIMENTAL}" -eq 1 ] && printf "experimental.d
 
 bin:
 	mkdir -p bin
-	curl -f -L -o docker.tgz https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz
+	curl -sSL -o docker.tgz https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz
 	tar xzf docker.tgz && mv docker/* bin
 	rm -rf docker/ docker.tgz
 	chmod +x bin/*
