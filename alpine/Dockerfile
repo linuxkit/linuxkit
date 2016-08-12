@@ -72,7 +72,6 @@ COPY packages/oom/etc /etc/
 COPY packages/9pmount-vsock/9pmount-vsock /sbin/
 COPY packages/test/etc /etc/
 COPY packages/test/mobytest /usr/bin/
-COPY packages/sysctl/etc /etc/
 COPY packages/iptables/iptables /usr/local/sbin/
 COPY packages/containerd/etc /etc/
 COPY packages/aws/etc /etc/
@@ -97,6 +96,7 @@ RUN \
   rc-update add devfs sysinit && \
   rc-update add hwdrivers sysinit && \
   rc-update add sysfs && \
+  rc-update add sysfsconf && \
   rc-update add fsck && \
   rc-update add root && \
   rc-update add localmount && \
