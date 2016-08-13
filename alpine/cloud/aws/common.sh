@@ -29,6 +29,8 @@ current_instance_id()
 # cleaned up later.
 tag()
 {
-    arrowecho "Tagging $1"
+    arrowecho "Tagging $1 with ${TAG_KEY}, $2, and $3"
     aws ec2 create-tags --resources "$1" --tags "Key=${TAG_KEY},Value=" >/dev/null
+    aws ec2 create-tags --resources "$1" --tags "Key=date,Value=$2" >/dev/null
+    aws ec2 create-tags --resources "$1" --tags "Key=channel,Value=$3" >/dev/null
 }
