@@ -1,34 +1,11 @@
-FROM alpine:3.4
+FROM justincormack/moby-alpine-base:0d79ff85d10a7d86067a3893e8a1f52ff3a073da
 
 ENV ARCH=x86_64
 
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
-  passwd -d root && \
-  apk update && apk upgrade && \
-  apk add \
-  e2fsprogs \
-  chrony \
-  git \
-  xz \
-  iptables \
-  sfdisk \
-  lvm2 \
-  syslinux \
-  openrc \
-  busybox-initscripts \
-  alpine-conf \
-  bind-tools \
-  openssh-client \
-  strace \
-  fuse \
-  util-linux \
-  cifs-utils \
-  e2fsprogs-extra \
-  openssl \
-  jq \
-  && rm -rf /var/cache/apk/*
+  passwd -d root
 
 COPY etc /etc/
 RUN mkdir -p /etc/docker
