@@ -70,6 +70,7 @@ case "$1" in
 		AZURE_STG_ACCOUNT_NAME=${AZURE_STG_ACCOUNT_NAME:-"dockereditions"}
 		CONTAINER_NAME=${CONTAINER_NAME:-"mobylinux"}
 		BLOBNAME=${BLOBNAME:-$(md5sum "${MOBY_SRC_ROOT}/mobylinux.vhd" | awk '{ print $1; }')-mobylinux.vhd}
+		BLOB_URL="https://${AZURE_STG_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/${BLOBNAME}"
 
 		azure-vhd-utils-for-go upload \
 			--localvhdpath "${MOBY_SRC_ROOT}/mobylinux.vhd" \
@@ -80,7 +81,8 @@ case "$1" in
 			--overwrite
 
 		arrowecho "VHD uploaded."
-		arrowecho "https://${AZURE_STG_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/${BLOBNAME}"
+		arrowecho "${BLOB_URL}"
+		echo "${BLOB_URL}" >vhd_blob_url.out
 		;;
 
 	*)
