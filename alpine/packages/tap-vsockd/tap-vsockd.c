@@ -22,6 +22,7 @@
 
 #include <sys/types.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <ifaddrs.h>
 
 
@@ -395,6 +396,13 @@ int main(int argc, char **argv)
     connection.tapfd = tapfd;
 
     int sock = -1;
+    int lsocket = -1;
+    if (listen_flag) {
+      syslog(LOG_INFO, "starting in listening mode with serviceid=%s and tap=%s", serviceid, tap);
+      lsocket = create_listening_socket(sid);
+    } else {
+      syslog(LOG_INFO, "starting in connect mode with serviceid=%s and tap=%s", serviceid, tap);
+    }
 
     for (;;) {
       if (sock != -1) {
@@ -402,12 +410,8 @@ int main(int argc, char **argv)
         sock = -1;
       }
       if (listen_flag) {
-        syslog(LOG_INFO, "starting in listening mode with serviceid=%s and tap=%s", serviceid, tap);
-        int lsocket = create_listening_socket(sid);
         sock = accept_socket(lsocket);
-        close(lsocket);
       } else {
-        syslog(LOG_INFO, "starting in connect mode with serviceid=%s and tap=%s", serviceid, tap);
         sock = connect_socket(sid);
       }
 
@@ -427,6 +431,15 @@ int main(int argc, char **argv)
         daemon_flag = 0;
         daemonize(pidfile);
       }
-      handle(&connection);
+      /* Run the multithreaded part in a subprocess. On error the process will
+         exit() which tears down all the threads */
+      pid_t child = fork();
+      if (child == 0) {
+        handle(&connection);
+        /* should never happen but just in case of a logic bug in handle */
+        exit(1);
+      }
+      int status;
+      while (waitpid(child, &status, 0) == -1) { }
     }
 }
