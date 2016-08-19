@@ -6,12 +6,21 @@ DOCKER_EXPERIMENTAL?=1
 all: bin
 
 TEST_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
-DOCKER_HOST=$(shell [ "${DOCKER_EXPERIMENTAL}" -eq 1 ] && printf "experimental.docker.com" || printf "${TEST_HOST}")
+DOCKER_HOST?=$(shell [ "${DOCKER_EXPERIMENTAL}" -eq 1 ] && printf "experimental.docker.com" || printf "${TEST_HOST}")
+
+# Note we do not copy docker-proxy in as we override with our own version
 
 bin:
 	mkdir -p bin
 	curl -sSL -o docker.tgz https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz
-	tar xzf docker.tgz && mv docker/* bin
+	tar xzf docker.tgz && \
+	mv docker/docker-containerd-ctr \
+	   docker/docker \
+	   docker/docker-containerd \
+	   docker/dockerd \
+	   docker/docker-runc \
+	   docker/docker-containerd-shim \
+	bin/
 	rm -rf docker/ docker.tgz
 	chmod +x bin/*
 
