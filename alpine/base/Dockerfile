@@ -18,7 +18,6 @@ RUN \
   openssh-client \
   strace \
   fuse \
-  util-linux \
   cifs-utils \
   e2fsprogs-extra \
   openssl \
