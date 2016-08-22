@@ -14,7 +14,7 @@ start()
 	pidfile="/run/docker.pid"
 
 	# mount /run shared eg for volume drivers
-	mount -o remount,bind,shared /run
+	mount --make-shared /run
 
 	# create cgroups mount for systemd containers
 	if [ ! -d /sys/fs/cgroup/systemd ]
