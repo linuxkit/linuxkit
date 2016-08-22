@@ -3,4 +3,6 @@ FROM justincormack/alpine-qemu
 COPY alpine/initrd.img.gz .
 COPY alpine/kernel/x86_64/vmlinuz64 .
 
-ENTRYPOINT [ "qemu-system-x86_64", "-serial", "stdio", "-kernel", "vmlinuz64", "-initrd", "initrd.img.gz", "-m", "1024", "-append", "earlyprintk=serial console=ttyS0 noapic mobyplatform=test", "-vnc", "none" ]
+RUN qemu-img create -f raw disk.img 100M
+
+ENTRYPOINT [ "qemu-system-x86_64", "-drive", "file=disk.img,format=raw", "-serial", "stdio", "-kernel", "vmlinuz64", "-initrd", "initrd.img.gz", "-m", "1024", "-append", "earlyprintk=serial console=ttyS0 noapic mobyplatform=test", "-vnc", "none" ]

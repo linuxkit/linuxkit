@@ -1,1 +1,2 @@
-tmpfs	/run	tmpfs	defaults,nodev,relatime,size=10%,mode=755,shared 0 0
+tmpfs	/run	tmpfs	defaults,nodev,relatime,size=10%,mode=755 0 0
+tmpfs	/run	tmpfs	remount,bind,shared 0 0
