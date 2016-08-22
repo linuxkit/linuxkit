@@ -10,7 +10,7 @@ start()
 {
 	ebegin "Configuring host block device"
 
-	DEV="$(lsblk -r | grep ' disk $' | awk '{print $1}' | head -1 )"
+	DEV="$(find /dev -maxdepth 1 -type b ! -name 'loop*' | grep -v '[0-9]$' | sed 's@.*/dev/@@' | head -1 )"
 
 	[ -z ${DEV} ] && exit 1
 
