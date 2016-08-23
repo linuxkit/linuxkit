@@ -1,6 +1,4 @@
-FROM golang:alpine
-
-RUN apk update && apk add build-base
+FROM mobylinux/alpine-build-go
 
 RUN mkdir -p /go/src/diagnostics
 WORKDIR /go/src/diagnostics

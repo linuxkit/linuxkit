@@ -1,6 +1,4 @@
-FROM ocaml/opam:alpine
-RUN sudo apk add m4
-RUN opam install ocamlfind astring -y
+FROM mobylinux/alpine-build-ocaml
 WORKDIR /app
 ADD . /app
 RUN sudo chown -R opam /app

@@ -29,6 +29,11 @@ test: Dockerfile.test all
 	tail -f test.log 2>/dev/null | grep -m 1 -q 'Moby test suite '
 	cat test.log | grep -q 'Moby test suite PASSED'
 
+pull:
+	docker pull mobylinux/alpine-build-c
+	docker pull mobylinux/alpine-build-go
+	docker pull mobylinux/alpine-build-ocaml
+
 .PHONY: clean
 
 clean:
