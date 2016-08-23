@@ -33,6 +33,7 @@ pull:
 	docker pull mobylinux/alpine-build-c
 	docker pull mobylinux/alpine-build-go
 	docker pull mobylinux/alpine-build-ocaml
+	docker pull mobylinux/kernel-build
 
 .PHONY: clean
 
