@@ -1,0 +1,10 @@
+#!/bin/sh
+override=$1
+
+mobyconfig watch $override | \
+while read line
+do
+  logger $override changed
+  echo $override changed: $line
+  mobyconfig exists $override && mobyconfig get $override > $override
+done

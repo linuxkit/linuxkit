@@ -11,7 +11,9 @@ start() {
 
 	mobyconfig exists etc/sysctl.conf && mobyconfig get etc/sysctl.conf > /etc/sysctl.conf
 	mobyconfig exists etc/sysfs.conf && mobyconfig get etc/sysfs.conf > /etc/sysfs.conf
+
 	mobyconfig exists etc/resolv.conf && mobyconfig get etc/resolv.conf > /etc/resolv.conf
+	start-stop-daemon --start --quiet --background --exec /usr/bin/hostsettings-watch -- etc/resolv.conf
 
 	mobyconfig exists etc/hosts && mobyconfig get etc/hosts >> /etc/hosts
 

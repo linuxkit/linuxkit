@@ -31,6 +31,7 @@ COPY packages/diagnostics/etc /etc/
 COPY packages/automount/etc /etc/
 COPY packages/binfmt_misc/etc /etc/
 COPY packages/hostsettings/etc /etc/
+COPY packages/hostsettings/usr /usr/
 COPY packages/hvtools/hv_kvp_daemon /sbin/
 COPY packages/hvtools/hv_vss_daemon /sbin/
 COPY packages/hvtools/etc /etc/
