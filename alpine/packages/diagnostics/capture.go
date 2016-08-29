@@ -3,7 +3,8 @@ package main
 import (
 	"archive/tar"
 	"bytes"
-	"io"
+	"context"
+	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -73,63 +74,63 @@ type CommandCapturer struct {
 }
 
 func (cc CommandCapturer) Capture(timeout time.Duration, w *tar.Writer) {
-	log.Printf("Running %s", cc.command)
-	c := exec.Command(cc.command, cc.args...)
-	stdoutPipe, err := c.StdoutPipe()
-	if err != nil {
-		log.Fatalf("Failed to create stdout pipe: %s", err)
-	}
-	stderrPipe, err := c.StderrPipe()
-	if err != nil {
-		log.Fatalf("Failed to create stderr pipe: %s", err)
-	}
-	var stdoutBuffer bytes.Buffer
-	var stderrBuffer bytes.Buffer
-	done := make(chan int)
-	go func() {
-		io.Copy(&stdoutBuffer, stdoutPipe)
-		done <- 0
-	}()
-	go func() {
-		io.Copy(&stderrBuffer, stderrPipe)
-		done <- 0
-	}()
-	var timer *time.Timer
-	timer = time.AfterFunc(timeout, func() {
-		timer.Stop()
-		if c.Process != nil {
-			c.Process.Kill()
-		}
-	})
-	_ = c.Run()
-	<-done
-	<-done
-	timer.Stop()
+	stdout := &bytes.Buffer{}
+	stderr := &bytes.Buffer{}
+	done := make(chan struct{})
 
 	name := strings.Join(append([]string{path.Base(cc.command)}, cc.args...), " ")
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	cmd := exec.CommandContext(ctx, cc.command, cc.args...)
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
+
+	go runCmd(cmd, done)
+
+	select {
+	case <-ctx.Done():
+		log.Println("ERROR:", ctx.Err())
+	case <-done:
+		tarWrite(w, stdout, name+".stdout")
+		tarWrite(w, stderr, name+".stderr")
+	}
+
+	cancel()
+}
+
+// TODO(nathanleclaire): Is the user of log.Fatalln in this function really the
+// right choice?  i.e., should the program really exit on failure here?
+func tarWrite(w *tar.Writer, buf *bytes.Buffer, headerName string) {
+	contents, err := ioutil.ReadAll(buf)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	log.Println("HEADER:", headerName)
+	log.Println("{")
+	contentLines := strings.Split(string(contents), "\n")
+	for _, line := range contentLines {
+		log.Println(line)
+	}
+	log.Println("}")
 
 	hdr := &tar.Header{
-		Name: name + ".stdout",
+		Name: headerName,
 		Mode: 0644,
-		Size: int64(stdoutBuffer.Len()),
+		Size: int64(len(contents)),
 	}
-	if err = w.WriteHeader(hdr); err != nil {
+	if err := w.WriteHeader(hdr); err != nil {
 		log.Fatalln(err)
 	}
-	if _, err = w.Write(stdoutBuffer.Bytes()); err != nil {
+	if _, err := w.Write(contents); err != nil {
 		log.Fatalln(err)
 	}
-	hdr = &tar.Header{
-		Name: name + ".stderr",
-		Mode: 0644,
-		Size: int64(stderrBuffer.Len()),
+}
+
+func runCmd(cmd *exec.Cmd, done chan<- struct{}) {
+	if err := cmd.Run(); err != nil {
+		log.Println("ERROR:", err)
 	}
-	if err = w.WriteHeader(hdr); err != nil {
-		log.Fatalln(err)
-	}
-	if _, err = w.Write(stderrBuffer.Bytes()); err != nil {
-		log.Fatalln(err)
-	}
+	done <- struct{}{}
 }
 
 type DatabaseCapturer struct {
