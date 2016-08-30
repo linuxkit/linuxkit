@@ -1,6 +1,4 @@
-FROM alpine:3.4
-
-RUN apk update && apk upgrade && apk add build-base util-linux-dev
+FROM mobylinux/alpine-build-c
 
 RUN mkdir -p /nc-vsock
 WORKDIR /nc-vsock
