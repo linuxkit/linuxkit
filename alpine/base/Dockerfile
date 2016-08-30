@@ -22,4 +22,5 @@ RUN \
   e2fsprogs-extra \
   openssl \
   jq \
+  sysklogd \
   && rm -rf /var/cache/apk/*
