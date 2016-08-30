@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-base:c31ad889c44f78974e8e04a5d489be3a07e77536
+FROM mobylinux/alpine-base:66f90ac774fa715af3904529eefbbf4f885ec59e
 
 ENV ARCH=x86_64
 
@@ -61,7 +61,7 @@ RUN \
   rc-update add urandom boot && \
   rc-update add hostname boot && \
   rc-update add vsudd boot && \
-  rc-update add syslog boot && \
+  rc-update add sysklogd boot && \
   rc-update add hwclock boot && \
   rc-update add networking boot && \
   rc-update add acpid default && \
