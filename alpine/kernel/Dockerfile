@@ -1,7 +1,6 @@
 FROM ubuntu:16.04
 
 ARG KERNEL_VERSION=4.4.19
-ARG ARCH=x86_64
 ARG DEBUG=0
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
@@ -27,8 +26,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   p7zip-full \
   lzop \
   wget \
-  vim \
-  gcc-arm-linux-gnueabihf
+  vim
 
 RUN wget ${KERNEL_SOURCE}
 
@@ -58,13 +56,11 @@ RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
         patch -p1 < "$patch"; \
     done
 
-COPY kernel_config.x86_64 /linux/arch/x86/configs/x86_64_defconfig
-COPY kernel_config.arm /linux/arch/arm/configs/versatile_defconfig
+COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
 
 RUN if [ $DEBUG -ne "0" ]; then \
     cat /linux/debug_config >> /linux/arch/x86/configs/x86_64_defconfig; \
-    cat /linux/debug_config >> /linux/arch/arm/configs/versatile_defconfig; \
     fi
 
 # Apply local patches
@@ -80,17 +76,15 @@ RUN cd /linux && \
 
 RUN jobs=$(nproc); \
     cd /linux && \
-    make ARCH=$ARCH defconfig && \
-    make ARCH=$ARCH oldconfig && \
-    make ARCH=$ARCH -j ${jobs} && \
-    make ARCH=$ARCH INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
+    make defconfig && \
+    make oldconfig && \
+    make -j ${jobs} && \
+    make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar . ) && \
-    make ARCH=$ARCH INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
+    make INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
 
 # Build aufs tools, do this here as they need kernel headers and to match aufs
 # Fortunately they are built statically linked
-
-# XXX not cross compiled yet!
 
 # aufs-util 20151116
 ENV AUFS_TOOLS_REPO https://github.com/Distrotech/aufs-util.git
