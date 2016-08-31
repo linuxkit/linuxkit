@@ -65,6 +65,9 @@ start()
 		export no_proxy="$(mobyconfig get proxy/exclude)"
 	fi
 
+	# Set Docker to debug debug if not specified in daemon.json
+	([ -f /etc/docker/daemon.json ] && cat /etc/docker/daemon.json | jq -e .debug > /dev/null) || DOCKER_OPTS="${DOCKER_OPTS} --debug"
+
 	# shift logs onto host before docker starts
 	# busybox reopens its log files every second
 	if cat /proc/cmdline | grep -q 'com.docker.driver'
