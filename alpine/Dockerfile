@@ -76,6 +76,7 @@ RUN \
   rc-update add sysfsconf && \
   rc-update add fsck && \
   rc-update add root && \
+  rc-update add crond && \
   rc-update add localmount && \
   rc-update add docker default && \
   rc-update add proxy default && \
