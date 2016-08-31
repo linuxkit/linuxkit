@@ -28,7 +28,7 @@ RUN apt-get update && apt-get -y upgrade && apt-get -y install \
   wget \
   vim
 
-RUN wget ${KERNEL_SOURCE}
+RUN curl -sSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
