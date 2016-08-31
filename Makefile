@@ -2,9 +2,6 @@ all:
 	$(MAKE) -C alpine/kernel
 	$(MAKE) -C alpine
 
-xhyve: all
-	$(MAKE) -C xhyve run
-
 qemu: all
 	docker build -f Dockerfile.qemu -t mobyqemu:build .
 	docker run -it --rm mobyqemu:build
@@ -33,6 +30,5 @@ test: Dockerfile.test all
 
 clean:
 	$(MAKE) -C alpine clean
-	$(MAKE) -C xhyve clean
 	docker images -q mobyqemu:build | xargs docker rmi -f || true
 	docker images -q mobytest:build | xargs docker rmi -f || true
