@@ -47,7 +47,6 @@ var (
 	}
 	localCmdCaptures = []CommandCapturer{
 		{"/usr/bin/tail", []string{"-100", "/var/log/proxy-vsockd.log"}},
-		{"/usr/bin/tail", []string{"-100", "/var/log/service-port-opener.log"}},
 		{"/usr/bin/tail", []string{"-100", "/var/log/vsudd.log"}},
 	}
 	localCaptures = []Capturer{NewDatabaseCapturer()}
