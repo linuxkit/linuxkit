@@ -16,17 +16,11 @@ type port = {
   port:  string; (* container port *)
 }
 
-let log_fd = Unix.openfile "/var/log/service-port-opener.log" [ Unix.O_WRONLY; Unix.O_APPEND; Unix.O_CREAT ] 0o0644
+let syslog = Syslog.openlog ~facility:`LOG_SECURITY "iptables-wrapper"
 
 let logf fmt =
   Printf.ksprintf (fun s ->
-    let s = s ^ "\n" in
-    let rec loop ofs remaining =
-      if remaining > 0 then begin
-        let n = Unix.write log_fd s ofs remaining in
-        loop (ofs + n) (remaining - n)
-      end in
-    loop 0 (String.length s)
+    Syslog.syslog syslog `LOG_INFO s
   ) fmt
 
 let pid_filename { proto; dport; ip; port } =
