@@ -7,10 +7,10 @@
 
 /* GUID handling  */
 typedef struct _GUID {
-    uint32_t Data1;
-    uint16_t Data2;
-    uint16_t Data3;
-    uint8_t  Data4[8];
+	uint32_t Data1;
+	uint16_t Data2;
+	uint16_t Data3;
+	uint8_t Data4[8];
 } GUID;
 
 #define DEFINE_GUID(name, l, w1, w2, b1, b2, b3, b4, b5, b6, b7, b8) \
@@ -33,12 +33,11 @@ extern int parseguid(const char *s, GUID *g);
 #define AF_HYPERV 43
 #define HV_PROTOCOL_RAW 1
 
-typedef struct _SOCKADDR_HV
-{
-    unsigned short Family;
-    unsigned short Reserved;
-    GUID VmId;
-    GUID ServiceId;
+typedef struct _SOCKADDR_HV {
+	unsigned short Family;
+	unsigned short Reserved;
+	GUID VmId;
+	GUID ServiceId;
 } SOCKADDR_HV;
 
 extern const GUID HV_GUID_ZERO;
