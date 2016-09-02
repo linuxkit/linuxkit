@@ -23,10 +23,5 @@ bin:
 	rm -rf docker/ docker.tgz
 	chmod +x bin/*
 
-arm:
-	mkdir -p bin
-	rm -f bin/docker*
-	cp docker-arm bin/docker
-
 clean:
 	rm -rf bin docker/ docker.tgz
