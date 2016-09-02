@@ -164,7 +164,7 @@ func (dc DatabaseCapturer) Capture(timeout time.Duration, w *tar.Writer) {
 // It is a passed a tar.Writer which the results of the capture will be written
 // to.
 func Capture(w *tar.Writer, captures []Capturer) {
-	t := 2 * time.Second
+	t := 10 * time.Second
 
 	for _, c := range captures {
 		c.Capture(t, w)
