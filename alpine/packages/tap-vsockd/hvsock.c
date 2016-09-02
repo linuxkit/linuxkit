@@ -4,23 +4,25 @@
 
 int parseguid(const char *s, GUID *g)
 {
-    int res;
-    int p0, p1, p2, p3, p4, p5, p6, p7;
+	int res;
+	int p0, p1, p2, p3, p4, p5, p6, p7;
 
-    res = sscanf(s, GUID_FMT,
-                 &g->Data1, &g->Data2, &g->Data3,
-                 &p0, &p1, &p2, &p3, &p4, &p5, &p6, &p7);
-    if (res != 11)
-        return 1;
-    g->Data4[0] = p0;
-    g->Data4[1] = p1;
-    g->Data4[2] = p2;
-    g->Data4[3] = p3;
-    g->Data4[4] = p4;
-    g->Data4[5] = p5;
-    g->Data4[6] = p6;
-    g->Data4[7] = p7;
-    return 0;
+	res = sscanf(s, GUID_FMT,
+		     &g->Data1, &g->Data2, &g->Data3,
+		     &p0, &p1, &p2, &p3, &p4, &p5, &p6, &p7);
+	if (res != 11)
+		return 1;
+
+	g->Data4[0] = p0;
+	g->Data4[1] = p1;
+	g->Data4[2] = p2;
+	g->Data4[3] = p3;
+	g->Data4[4] = p4;
+	g->Data4[5] = p5;
+	g->Data4[6] = p6;
+	g->Data4[7] = p7;
+
+	return 0;
 }
 
 DEFINE_GUID(HV_GUID_ZERO,
@@ -28,7 +30,7 @@ DEFINE_GUID(HV_GUID_ZERO,
 DEFINE_GUID(HV_GUID_BROADCAST,
     0xFFFFFFFF, 0xFFFF, 0xFFFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF);
 DEFINE_GUID(HV_GUID_WILDCARD,
-    0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
+0x00000000, 0x0000, 0x0000, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
 
 DEFINE_GUID(HV_GUID_CHILDREN,
     0x90db8b89, 0x0d35, 0x4f79, 0x8c, 0xe9, 0x49, 0xea, 0x0a, 0xc8, 0xb7, 0xcd);
