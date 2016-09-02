@@ -14,41 +14,49 @@ import (
 	"time"
 )
 
+const (
+	defaultCommandTimeout = 5 * time.Second
+
+	// Might eventually have some pretty long (~30s) traces in here, so 35
+	// seconds seems reasonable.
+	allCaptureTimeout = 35 * time.Second
+)
+
 var (
 	commonCmdCaptures = []CommandCapturer{
-		{"/bin/date", nil},
-		{"/bin/uname", []string{"-a"}},
-		{"/bin/ps", []string{"uax"}},
-		{"/bin/netstat", []string{"-tulpn"}},
-		{"/sbin/iptables-save", nil},
-		{"/sbin/ifconfig", nil},
-		{"/sbin/route", nil},
-		{"/usr/sbin/brctl", []string{"show"}},
-		{"/bin/dmesg", nil},
-		{"/usr/bin/docker", []string{"ps"}},
-		{"/usr/bin/tail", []string{"-20000", "/var/log/docker.log"}},
-		{"/usr/bin/tail", []string{"-20000", "/var/log/messages"}},
-		{"/bin/mount", nil},
-		{"/bin/df", []string{"-h"}},
-		{"/bin/ls", []string{"-l", "/var"}},
-		{"/bin/ls", []string{"-l", "/var/lib"}},
-		{"/bin/ls", []string{"-l", "/var/lib/docker"}},
-		{"/usr/bin/diagnostics", nil},
-		{"/bin/ping", []string{"-w", "5", "8.8.8.8"}},
-		{"/bin/cat", []string{"/etc/docker/daemon.json"}},
-		{"/bin/cat", []string{"/etc/network/interfaces"}},
-		{"/bin/cat", []string{"/etc/resolv.conf"}},
-		{"/bin/cat", []string{"/etc/sysctl.conf"}},
-		{"/usr/bin/dig", []string{"docker.com"}},
-		{"/usr/bin/dig", []string{"@8.8.8.8", "docker.com"}},
-		{"/usr/bin/wget", []string{"-O", "-", "http://www.docker.com/"}},
-		{"/usr/bin/wget", []string{"-O", "-", "http://104.239.220.248/"}}, // a www.docker.com address
-		{"/usr/bin/wget", []string{"-O", "-", "http://216.58.213.68/"}},   // a www.google.com address
-		{"/usr/bin/wget", []string{"-O", "-", "http://91.198.174.192/"}},  // a www.wikipedia.com address
+		{"/bin/date", nil, defaultCommandTimeout},
+		{"/bin/uname", []string{"-a"}, defaultCommandTimeout},
+		{"/bin/ps", []string{"uax"}, defaultCommandTimeout},
+		{"/bin/netstat", []string{"-tulpn"}, defaultCommandTimeout},
+		{"/sbin/iptables-save", nil, defaultCommandTimeout},
+		{"/sbin/ifconfig", nil, defaultCommandTimeout},
+		{"/sbin/route", nil, defaultCommandTimeout},
+		{"/usr/sbin/brctl", []string{"show"}, defaultCommandTimeout},
+		{"/bin/dmesg", nil, defaultCommandTimeout},
+		{"/usr/bin/docker", []string{"ps"}, defaultCommandTimeout},
+		{"/usr/bin/tail", []string{"-20000", "/var/log/docker.log"}, defaultCommandTimeout},
+		{"/usr/bin/tail", []string{"-20000", "/var/log/messages"}, defaultCommandTimeout},
+		{"/bin/mount", nil, defaultCommandTimeout},
+		{"/bin/df", []string{"-h"}, defaultCommandTimeout},
+		{"/bin/ls", []string{"-l", "/var"}, defaultCommandTimeout},
+		{"/bin/ls", []string{"-l", "/var/lib"}, defaultCommandTimeout},
+		{"/bin/ls", []string{"-l", "/var/lib/docker"}, defaultCommandTimeout},
+		{"/usr/bin/diagnostics", nil, defaultCommandTimeout},
+		{"/bin/ping", []string{"-w", "5", "8.8.8.8"}, 6 * time.Second},
+		{"/bin/cat", []string{"/etc/docker/daemon.json"}, defaultCommandTimeout},
+		{"/bin/cat", []string{"/etc/network/interfaces"}, defaultCommandTimeout},
+		{"/bin/cat", []string{"/etc/resolv.conf"}, defaultCommandTimeout},
+		{"/bin/cat", []string{"/etc/sysctl.conf"}, defaultCommandTimeout},
+		{"/usr/bin/dig", []string{"docker.com"}, defaultCommandTimeout},
+		{"/usr/bin/dig", []string{"@8.8.8.8", "docker.com"}, defaultCommandTimeout},
+		{"/usr/bin/wget", []string{"-O", "-", "http://www.docker.com/"}, defaultCommandTimeout},
+		{"/usr/bin/wget", []string{"-O", "-", "http://104.239.220.248/"}, defaultCommandTimeout}, // a www.docker.com address
+		{"/usr/bin/wget", []string{"-O", "-", "http://216.58.213.68/"}, defaultCommandTimeout},   // a www.google.com address
+		{"/usr/bin/wget", []string{"-O", "-", "http://91.198.174.192/"}, defaultCommandTimeout},  // a www.wikipedia.com address
 	}
 	localCmdCaptures = []CommandCapturer{
-		{"/usr/bin/tail", []string{"-100", "/var/log/proxy-vsockd.log"}},
-		{"/usr/bin/tail", []string{"-100", "/var/log/vsudd.log"}},
+		{"/usr/bin/tail", []string{"-100", "/var/log/proxy-vsockd.log"}, defaultCommandTimeout},
+		{"/usr/bin/tail", []string{"-100", "/var/log/vsudd.log"}, defaultCommandTimeout},
 	}
 	localCaptures = []Capturer{NewDatabaseCapturer()}
 )
@@ -65,21 +73,22 @@ func init() {
 // Capturer defines behavior for structs which will capture arbitrary
 // diagnostic information and write it to a tar archive with a timeout.
 type Capturer interface {
-	Capture(time.Duration, *tar.Writer)
+	Capture(context.Context, *tar.Writer)
 }
 
 type CommandCapturer struct {
 	command string
 	args    []string
+	timeout time.Duration
 }
 
-func (cc CommandCapturer) Capture(timeout time.Duration, w *tar.Writer) {
+func (cc CommandCapturer) Capture(parentCtx context.Context, w *tar.Writer) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
 	done := make(chan struct{})
 
 	name := strings.Join(append([]string{path.Base(cc.command)}, cc.args...), " ")
-	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	ctx, cancel := context.WithTimeout(parentCtx, cc.timeout)
 	cmd := exec.CommandContext(ctx, cc.command, cc.args...)
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
@@ -145,13 +154,13 @@ func NewDatabaseCapturer() DatabaseCapturer {
 	}
 }
 
-func (dc DatabaseCapturer) Capture(timeout time.Duration, w *tar.Writer) {
+func (dc DatabaseCapturer) Capture(parentCtx context.Context, w *tar.Writer) {
 	// Dump the database
 	dbBase := "/Database/branch/master/ro"
 	filepath.Walk(dbBase, func(path string, f os.FileInfo, err error) error {
 		if f.Mode().IsRegular() {
 			dc.CommandCapturer.args = []string{path}
-			dc.CommandCapturer.Capture(timeout, w)
+			dc.CommandCapturer.Capture(parentCtx, w)
 		}
 		return nil
 	})
@@ -165,9 +174,22 @@ func (dc DatabaseCapturer) Capture(timeout time.Duration, w *tar.Writer) {
 // It is a passed a tar.Writer which the results of the capture will be written
 // to.
 func Capture(w *tar.Writer, captures []Capturer) {
-	t := 2 * time.Second
+	allCaptureCtx, cancel := context.WithTimeout(context.Background(), allCaptureTimeout)
+	done := make(chan struct{})
 
-	for _, c := range captures {
-		c.Capture(t, w)
+	go func(captures []Capturer, ctx context.Context, done chan<- struct{}) {
+		for _, c := range captures {
+			c.Capture(ctx, w)
+		}
+		done <- struct{}{}
+	}(captures, allCaptureCtx, done)
+
+	select {
+	case <-allCaptureCtx.Done():
+		log.Println("Global command context", allCaptureCtx.Err())
+	case <-done:
+		log.Println("Captures all finished")
 	}
+
+	cancel()
 }
