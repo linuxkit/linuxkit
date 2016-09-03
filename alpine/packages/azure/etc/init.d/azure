@@ -8,18 +8,35 @@ depend()
 	need networking
 }
 
+initdns()
+{
+	while [ ! -f /var/lib/waagent/provisioned ]
+	do
+		sleep 5
+	done
+
+	# For use as a part of a sed expression to update hostname in
+	# /etc/network/interfaces
+	PATTERN='/iface eth0/a\
+    hostname'
+
+	# Hack: Drop 'hostname ${HOSTNAME}' into DHCP configuration file
+	#
+	# TODO(nathanleclaire): Indentation doesn't seem to work properly.  It
+	# still works but how to enable this with shell script?
+	sed -i "${PATTERN} $(hostname)" /etc/network/interfaces
+
+	# Freshly configured to advertise the Azure-set hostname, obtain a new
+	# DHCP lease.
+	kill -SIGUSR1 $(pidof udhcp)
+}
+
 start()
 {
 	[ "$(mobyplatform)" != "azure" ] && exit 0
 	ebegin "Running Azure-specific initialization"
 
-	einfo "Setting hostname"
-
-	# TODO: This is probably quite fragile (splitting the returned JSON by
-	# quotes instead of properly parsing).  Would bundling 'jq' in Moby be
-	# too much overhead?
-	hostname $(wget -qO- http://169.254.169.254/metadata/v1/instanceinfo | awk -F '"' '{ print $4; }')
-
+	# TODO(nathanleclaire): With recent DHCP fixes is this still needed?
 	for i in $(seq 1 20)
 	do
 		einfo "Pulling Windows Azure Linux Agent container"
@@ -77,6 +94,8 @@ start()
 	done
 
 	. /var/lib/waagent/CustomData
+
+	initdns
 
 	eend 0
 }
