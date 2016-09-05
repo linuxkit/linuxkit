@@ -66,8 +66,8 @@ static int handle(int fd, char *tag, char *path)
 
 static int create_listening_socket(GUID serviceid)
 {
-	int lsock = -1;
 	SOCKADDR_HV sa;
+	int lsock;
 	int res;
 
 	lsock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
@@ -92,8 +92,8 @@ static int create_listening_socket(GUID serviceid)
 
 static int connect_socket(GUID serviceid)
 {
-	int sock = -1;
 	SOCKADDR_HV sa;
+	int sock;
 	int res;
 
 	sock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
@@ -114,9 +114,9 @@ static int connect_socket(GUID serviceid)
 
 static int accept_socket(int lsock)
 {
-	int csock = -1;
 	SOCKADDR_HV sac;
 	socklen_t socklen = sizeof(sac);
+	int csock;
 
 	csock = accept(lsock, (struct sockaddr *)&sac, &socklen);
 	if (csock == -1)
@@ -217,7 +217,7 @@ int main(int argc, char **argv)
 	openlog(argv[0], LOG_CONS | LOG_NDELAY | LOG_PERROR, LOG_DAEMON);
 	for (;;) {
 		int lsocket;
-		int sock = -1;
+		int sock;
 		int r;
 
 		if (mode == LISTEN) {
