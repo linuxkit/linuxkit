@@ -67,6 +67,8 @@ void set_macaddr(const char *dev, uint8_t *mac)
 	int fd;
 
 	fd = socket(PF_INET, SOCK_DGRAM, 0);
+	if (fd == -1)
+		fatal("Could not get socket to set MAC address");
 	strcpy(ifq.ifr_name, dev);
 	memcpy(&ifq.ifr_hwaddr.sa_data[0], mac, 6);
 	ifq.ifr_hwaddr.sa_family = ARPHRD_ETHER;
@@ -80,12 +82,15 @@ void set_macaddr(const char *dev, uint8_t *mac)
 /* Negotiate a vmnet connection, returns 0 on success and 1 on error. */
 int negotiate(int fd, struct vif_info *vif)
 {
-	/* Negotiate with com.docker.slirp */
-	struct init_message *me = create_init_message();
 	enum command command = ethernet;
+	struct init_message *me;
 	struct ethernet_args args;
 	struct init_message you;
 	char *txt;
+
+	me = create_init_message();
+	if (!me)
+		goto err;
 
 	if (write_init_message(fd, me) == -1)
 		goto err;
@@ -94,6 +99,9 @@ int negotiate(int fd, struct vif_info *vif)
 		goto err;
 
 	txt = print_init_message(&you);
+	if (!txt)
+		goto err;
+
 	syslog(LOG_INFO, "Server reports %s", txt);
 	free(txt);
 
@@ -212,7 +220,7 @@ static void handle(struct connection *connection)
 static int create_listening_socket(GUID serviceid)
 {
 	SOCKADDR_HV sa;
-	int lsock = -1;
+	int lsock;
 	int res;
 
 	lsock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
@@ -238,7 +246,7 @@ static int create_listening_socket(GUID serviceid)
 static int connect_socket(GUID serviceid)
 {
 	SOCKADDR_HV sa;
-	int sock = -1;
+	int sock;
 	int res;
 
 	sock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
@@ -261,7 +269,7 @@ static int accept_socket(int lsock)
 {
 	SOCKADDR_HV sac;
 	socklen_t socklen = sizeof(sac);
-	int csock = -1;
+	int csock;
 
 	csock = accept(lsock, (struct sockaddr *)&sac, &socklen);
 	if (csock == -1)
@@ -315,6 +323,8 @@ void daemonize(const char *pidfile)
 		fatal("Failed to chdir()");
 
 	null = open("/dev/null", O_RDWR);
+	if (null == -1)
+		fatal("Failed to open /dev/null");
 	dup2(null, STDIN_FILENO);
 	dup2(null, STDOUT_FILENO);
 	dup2(null, STDERR_FILENO);
