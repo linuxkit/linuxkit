@@ -24,3 +24,5 @@ tag: hash
 
 clean:
 	rm -f hash
+
+.DELETE_ON_ERROR:
