@@ -74,8 +74,11 @@ err:
 
 struct init_message *create_init_message()
 {
-	struct init_message *m =
-		(struct init_message *)malloc(sizeof(struct init_message));
+	struct init_message *m;
+
+	m = malloc(sizeof(struct init_message));
+	if (!m)
+		return NULL;
 
 	bzero(m, sizeof(struct init_message));
 	memcpy(&m->hello[0], &expected_hello[0], sizeof(m->hello));
@@ -91,8 +94,12 @@ char *print_init_message(struct init_message *m)
 
 	memcpy(&tmp[0], &m->commit[0], 40);
 	tmp[40] = '\000';
-	char *buffer = (char *)malloc(80);
+	char *buffer;
 	int n;
+
+	buffer = malloc(80);
+	if (!buffer)
+		return NULL;
 
 	n = snprintf(buffer, 80, "version %d, commit %s", m->version, tmp);
 	if (n < 0) {
