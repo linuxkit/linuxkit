@@ -1,5 +1,5 @@
 FROM justincormack/alpine-qemu
 
-COPY alpine/mobylinux.iso .
+COPY alpine/mobylinux-bios.iso .
 
-ENTRYPOINT [ "qemu-system-x86_64", "-serial", "stdio", "-cdrom", "./mobylinux.iso", "-m", "1G", "-vnc", "none" ]
+ENTRYPOINT [ "qemu-system-x86_64", "-serial", "stdio", "-cdrom", "./mobylinux-bios.iso", "-m", "2048", "-vnc", "none" ]

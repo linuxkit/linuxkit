@@ -1,21 +1,16 @@
 # Create a legacy BIOS bootable ISO
-FROM ubuntu:16.04
+FROM alpine:3.4
 
-ENV ARCH=x86_64
-
-RUN apt-get update && apt-get -y upgrade && apt-get -y install \
-  genisoimage \
-  xorriso \
-  syslinux \
-  syslinux-utils \
-  isolinux
+RUN apk update && apk add \
+  cdrkit \
+  syslinux
 
 RUN mkdir -p /tmp/iso/isolinux && \
-    cp /usr/lib/ISOLINUX/isolinux.bin /tmp/iso/isolinux && \
-    cp usr/lib/syslinux/modules/bios/ldlinux.c32 /tmp/iso/isolinux
+    cp /usr/share/syslinux/isolinux.bin /tmp/iso/isolinux && \
+    cp /usr/share/syslinux/ldlinux.c32 /tmp/iso/isolinux
 
 COPY initrd.img /tmp/iso
-COPY kernel/$ARCH/vmlinuz64 /tmp/iso
+COPY kernel/x86_64/vmlinuz64 /tmp/iso
 COPY isolinux.cfg /tmp/iso/isolinux
 
 RUN cd /tmp/iso && \

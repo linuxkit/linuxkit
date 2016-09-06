@@ -8,7 +8,7 @@ qemu: all
 	docker run -it --rm mobyqemu:build
 
 qemu-iso: all
-	$(MAKE) -C alpine mobylinux.iso
+	$(MAKE) -C alpine mobylinux-bios.iso
 	docker build -f Dockerfile.qemuiso -t mobyqemuiso:build .
 	docker run -it --rm mobyqemuiso:build
 
