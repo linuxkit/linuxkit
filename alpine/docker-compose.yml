@@ -1,21 +1,5 @@
 version: '2'
 services:
-  efi:
-    cap_add:
-      - sys_admin
-    build:
-      context: .
-      dockerfile: Dockerfile.efi
-    network_mode: bridge
-    volumes:
-      - .:/mnt
-  bios:
-    build:
-      context: .
-      dockerfile: Dockerfile.bios
-    network_mode: bridge
-    volumes:
-      - .:/mnt
   arm:
     build:
       context: .

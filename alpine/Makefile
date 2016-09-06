@@ -14,14 +14,13 @@ initrd.img.gz: initrd.img
 	cat initrd.img | gzip -9 > initrd.img.gz
 
 mobylinux-efi.iso: initrd.img.gz Dockerfile.efi
-	docker-compose build efi
-	docker-compose run --rm -T efi \
-		cp /tmp/efi/mobylinux.efi /tmp/efi/mobylinux-efi.iso /mnt
+	docker build -t moby-efi:build -f Dockerfile.efi .
+	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > mobylinux.efi
+	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > $@
 
 mobylinux-bios.iso: initrd.img Dockerfile.bios isolinux.cfg
-	docker-compose build bios
-	docker-compose run --rm -T bios \
-		cp /tmp/mobylinux-bios.iso /mnt
+	docker build -t moby-bios:build -f Dockerfile.bios .
+	docker run --net=none --rm moby-bios:build cat /tmp/mobylinux-bios.iso > $@
 
 arm:	initrd-arm.img
 
@@ -66,8 +65,8 @@ azure: common
 clean:
 	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf mobylinux.vhd mobylinux.img
 	rm -f mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
-	docker images -q alpine_efi:latest | xargs docker rmi -f || true
-	docker images -q alpine_bios:latest | xargs docker rmi -f || true
+	docker images -q moby-efi:build | xargs docker rmi -f || true
+	docker images -q moby-bios:build | xargs docker rmi -f || true
 	docker images -q alpine_arm:latest | xargs docker rmi -f || true
 	docker images -q alpine_ami:latest | xargs docker rmi -f || true
 	docker images -q alpine_azure:latest | xargs docker rmi -f || true
