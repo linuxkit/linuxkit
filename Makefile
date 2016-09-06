@@ -3,7 +3,8 @@ all:
 	$(MAKE) -C alpine
 
 qemu: all
-	docker build -f Dockerfile.qemu -t mobyqemu:build .
+	tar cf - Dockerfile.qemu alpine/initrd.img.gz alpine/kernel/x86_64/vmlinuz64 | \
+	  docker build -f Dockerfile.qemu -t mobyqemu:build -
 	docker run -it --rm mobyqemu:build
 
 qemu-iso: all
@@ -20,7 +21,8 @@ qemu-arm: Dockerfile.qemu.armhf arm
 	docker run -it --rm mobyarmqemu:build
 
 test: Dockerfile.test all
-	docker build -f Dockerfile.test -t mobytest:build .
+	tar cf - Dockerfile.test alpine/initrd.img.gz alpine/kernel/x86_64/vmlinuz64 | \
+	  docker build -f Dockerfile.test -t mobytest:build -
 	touch test.log
 	docker run --rm mobytest:build 2>&1 | tee -a test.log &
 	tail -f test.log 2>/dev/null | grep -m 1 -q 'Moby test suite '
