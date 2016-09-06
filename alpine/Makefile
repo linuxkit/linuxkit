@@ -43,8 +43,8 @@ initrd-arm.img: Dockerfile.armhf
 	rm -f initrd-arm.img
 	$(MAKE) -C packages arm
 	$(MAKE) -C kernel arm
-	docker-compose build arm
-	docker-compose run --rm -T arm /bin/mkinitrd.sh > $@
+	docker build -t moby-arm:build -f Dockerfile.armhf .
+	docker run --net=none --rm moby-arm:build /bin/mkinitrd.sh > $@
 
 common: initrd.img
 	$(MAKE) -C kernel
@@ -67,7 +67,7 @@ clean:
 	rm -f mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
 	docker images -q moby-efi:build | xargs docker rmi -f || true
 	docker images -q moby-bios:build | xargs docker rmi -f || true
-	docker images -q alpine_arm:latest | xargs docker rmi -f || true
+	docker images -q moby-arm:build | xargs docker rmi -f || true
 	docker images -q alpine_ami:latest | xargs docker rmi -f || true
 	docker images -q alpine_azure:latest | xargs docker rmi -f || true
 	$(MAKE) -C packages clean
