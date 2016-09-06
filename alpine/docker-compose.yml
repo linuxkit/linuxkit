@@ -1,11 +1,5 @@
 version: '2'
 services:
-  moby:
-    build:
-      context: .
-    network_mode: bridge
-    volumes:
-      - .:/mnt
   efi:
     cap_add:
       - sys_admin

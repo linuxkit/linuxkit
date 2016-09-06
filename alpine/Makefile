@@ -7,8 +7,8 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	rm -f initrd.img
 	$(MAKE) -C packages
 	$(MAKE) -C kernel
-	docker-compose build moby
-	docker-compose run --rm -T moby /bin/mkinitrd.sh
+	docker build -t moby-initrd:build .
+	docker run --net=none --rm moby-initrd:build /bin/mkinitrd.sh > $@
 
 initrd.img.gz: initrd.img
 	cat initrd.img | gzip -9 > initrd.img.gz
@@ -66,7 +66,6 @@ azure: common
 clean:
 	rm -f initrd.img initrd.img.gz initrd-arm.img Dockerfile.armhf mobylinux.vhd mobylinux.img
 	rm -f mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
-	docker images -q alpine_moby:latest | xargs docker rmi -f || true
 	docker images -q alpine_efi:latest | xargs docker rmi -f || true
 	docker images -q alpine_bios:latest | xargs docker rmi -f || true
 	docker images -q alpine_arm:latest | xargs docker rmi -f || true
