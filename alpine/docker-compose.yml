@@ -1,10 +1,5 @@
 version: '2'
 services:
-  arm:
-    build:
-      context: .
-      dockerfile: Dockerfile.armhf
-    network_mode: bridge
   azure:
     privileged: true
     build:
