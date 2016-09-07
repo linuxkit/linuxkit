@@ -1,32 +1,5 @@
 version: '2'
 services:
-  moby:
-    build:
-      context: .
-    network_mode: bridge
-    volumes:
-      - .:/mnt
-  efi:
-    cap_add:
-      - sys_admin
-    build:
-      context: .
-      dockerfile: Dockerfile.efi
-    network_mode: bridge
-    volumes:
-      - .:/mnt
-  bios:
-    build:
-      context: .
-      dockerfile: Dockerfile.bios
-    network_mode: bridge
-    volumes:
-      - .:/mnt
-  arm:
-    build:
-      context: .
-      dockerfile: Dockerfile.armhf
-    network_mode: bridge
   azure:
     privileged: true
     build:
