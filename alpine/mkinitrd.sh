@@ -35,4 +35,4 @@ printf 'moby' > /tmp/etc/hostname
 rm /tmp/bin/mkinitrd.sh
 
 cd /tmp
-find . | cpio -H newc -o > /mnt/initrd.img
+find . | cpio -H newc -o
