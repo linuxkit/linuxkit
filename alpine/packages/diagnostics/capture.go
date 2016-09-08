@@ -150,6 +150,7 @@ func NewDatabaseCapturer() DatabaseCapturer {
 	return DatabaseCapturer{
 		&CommandCapturer{
 			command: "/bin/cat",
+			timeout: defaultCommandTimeout,
 		},
 	}
 }
