@@ -16,7 +16,7 @@ initrd.img.gz: initrd.img
 mobylinux-efi.iso: initrd.img.gz Dockerfile.efi
 	docker build -t moby-efi:build -f Dockerfile.efi .
 	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > mobylinux.efi
-	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > $@
+	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux-efi.iso > $@
 
 mobylinux-bios.iso: initrd.img Dockerfile.bios isolinux.cfg
 	docker build -t moby-bios:build -f Dockerfile.bios .
