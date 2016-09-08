@@ -6,13 +6,20 @@ RUN apk add --update \
     syslinux \
     multipath-tools \
     git \
+    tar \
     util-linux
 
 RUN go get -u github.com/Microsoft/azure-vhd-utils-for-go
 
+RUN mkdir /build
 RUN mkdir /scripts
 WORKDIR /scripts
-COPY ./build-common.sh .
-COPY ./azure/bake-azure.sh .
+COPY ./kernel/x86_64/vmlinuz64 /build
+COPY ./initrd.img /build
+COPY ./cloud/azure/syslinux.cfg /build/syslinux.cfg
+COPY ./cloud/build-common.sh .
+COPY ./cloud/azure/bake-azure.sh .
+COPY ./cloud/azure/azure.sh .
 
-ENTRYPOINT ["./bake-azure.sh"]
+VOLUME ["/tmp"]
+ENTRYPOINT ["./azure.sh"]

@@ -12,5 +12,7 @@ RUN apt-get update && \
 # If version changes in distributed packages, this build is busted.  Sanity check.
 RUN qemu-img --version
 RUN qemu-img --version | awk '{ if ($3 != "2.1.2,") exit 1; }'
+COPY ./cloud/azure/raw2vhd.sh /raw2vhd.sh
 
-ENTRYPOINT ["qemu-img", "convert", "-f", "raw", "-O", "vpc", "-o", "subformat=fixed"]
+VOLUME ["/tmp"]
+ENTRYPOINT ["/raw2vhd.sh"]
