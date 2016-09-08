@@ -8,6 +8,7 @@ import (
 	"os"
 	"proxy/libproxy"
 	"strings"
+	"syscall"
 )
 
 func onePort() {
@@ -17,7 +18,7 @@ func onePort() {
 	var err error
 
 	if localIP {
-		ipP, err = libproxy.NewIPProxy(host, container)
+		ipP, err = listenInVM(host, container)
 		if err != nil {
 			sendError(err)
 		}
@@ -38,6 +39,27 @@ func onePort() {
         }
 	ctl.Close() // ensure ctl remains alive and un-GCed until here
 	os.Exit(0)
+}
+
+// Best-effort attempt to listen on the address in the VM. This is for
+// backwards compatibility with software that expects to be able to listen on
+// 0.0.0.0 and then connect from within a container to the external port.
+// If the address doesn't exist in the VM (i.e. it exists only on the host)
+// then this is not a hard failure.
+func listenInVM(host net.Addr, container net.Addr) (libproxy.Proxy, error) {
+	ipP, err := libproxy.NewIPProxy(host, container)
+	if err == nil {
+		return ipP, nil
+	}
+	if opError, ok := err.(*net.OpError); ok {
+		if syscallError, ok := opError.Err.(*os.SyscallError); ok {
+			if syscallError.Err == syscall.EADDRNOTAVAIL {
+				log.Printf("Address %s doesn't exist in the VM: only binding on the host", host)
+				return nil, nil // Non-fatal error
+			}
+		}
+	}
+	return nil, err
 }
 
 func exposePort(host net.Addr, container net.Addr) (*os.File, error) {
