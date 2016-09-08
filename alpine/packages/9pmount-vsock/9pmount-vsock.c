@@ -35,7 +35,7 @@ void fatal(const char *msg)
 static int handle(int fd, char *tag, char *path)
 {
   char *options = NULL;
-  if (asprintf(&options, "trans=fd,dfltuid=1001,dfltgid=50,version=9p2000,rfdno=%d,wfdno=%d", fd, fd) < 0){
+  if (asprintf(&options, "trans=fd,dfltuid=1001,dfltgid=50,version=9p2000,msize=4096,rfdno=%d,wfdno=%d", fd, fd) < 0){
     fatal("asprintf()");
   }
   char *argv[] = {
