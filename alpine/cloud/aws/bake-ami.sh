@@ -10,9 +10,11 @@ set -e
 PROVIDER="aws"
 
 . "./build-common.sh"
-. "${MOBY_SRC_ROOT}/cloud/aws/common.sh"
+. "./common.sh"
 
-# TODO(nathanleclaire): This could be calculated dynamically to avoid conflicts.
+export AWS_DEFAULT_REGION=$(current_instance_region)
+
+# TODO(nathanleclaire): This device could be calculated dynamically to avoid conflicts.
 EBS_DEVICE=/dev/xvdb
 
 bake_image()
@@ -73,7 +75,7 @@ bake_image()
 	# Boom, now you (should) have a Moby AMI.
 	arrowecho "Created AMI: ${IMAGE_ID}"
 
-	echo "${IMAGE_ID}" >"${MOBY_SRC_ROOT}/cloud/aws/ami_id.out"
+	echo "${IMAGE_ID}" >"${MOBY_SRC_ROOT}/ami_id.out"
 }
 
 clean_volume_mount()
@@ -124,6 +126,12 @@ clean_tagged_resources()
 	fi
 }
 
+if [ -z "${AWS_ACCESS_KEY_ID}" ] || [ -z "${AWS_SECRET_ACCESS_KEY}" ]
+then
+	errecho "Must set AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY to authenticate with AWS."
+	exit 1
+fi
+
 case "$1" in
 	bake)
 		bake_image
@@ -138,5 +146,5 @@ case "$1" in
 		clean_volume_mount "${TAG_KEY}"
 		;;
 	*)
-		echo "Command $1 not found.  Usage: ./bake-ami.sh [bake|clean|clean-mount]"
+		errecho "Command $1 not found.  Usage: ./bake-ami.sh [bake|clean|clean-mount]"
 esac
