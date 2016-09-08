@@ -1,8 +1,9 @@
 #!/bin/sh
 
-set -e
+set -ex
 
 docker info
 docker ps
+docker pull alpine
 docker run alpine true
 docker swarm init
