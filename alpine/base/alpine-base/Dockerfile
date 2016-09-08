@@ -8,6 +8,7 @@ RUN \
   busybox-initscripts \
   chrony \
   cifs-utils \
+  dhcpcd \
   e2fsprogs \
   e2fsprogs-extra \
   fuse \

@@ -15,24 +15,6 @@ start() {
 
 	mobyconfig exists etc/hosts && mobyconfig get etc/hosts >> /etc/hosts
 
-	# handle static network config if configured
-	mobyconfig exists net/config && NETCONFIG=`mobyconfig get net/config`
-	if [ "${NETCONFIG}" = "static" ]; then
-	     # assume that the other configsDB entries exist
-	     IP=`mobyconfig get net/address`
-	     MASK=`mobyconfig get net/netmask`
-	     GW=`mobyconfig get net/gateway`
-
-	     cp /etc/network/interfaces.template /etc/network/interfaces
-	     echo                          >> /etc/network/interfaces
-	     echo "auto eth0"              >> /etc/network/interfaces
-	     echo "iface eth0 inet static" >> /etc/network/interfaces
-	     echo "    address ${IP}"      >> /etc/network/interfaces
-	     echo "    netmask ${MASK}"    >> /etc/network/interfaces
-	     echo "    gateway ${GW}"      >> /etc/network/interfaces
-	     echo "    metric  200"        >> /etc/network/interfaces
-	fi
-	
 	mobyconfig exists etc/ssl/certs/ca-certificates.crt && mobyconfig get etc/ssl/certs/ca-certificates.crt >> /etc/ssl/certs/ca-certificates.crt 
 
 	eend 0
