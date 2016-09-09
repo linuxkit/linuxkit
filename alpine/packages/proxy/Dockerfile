@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-build-go:f87b7d1c1cdec779ed602bfa5eaaeb94896d612c
+FROM mobylinux/alpine-build-go:30067067003d565887d7efe533eba03ed46038d2
 
 RUN mkdir -p /go/src/proxy
 WORKDIR /go/src/proxy
