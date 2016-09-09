@@ -5,10 +5,16 @@ ENV ARCH=x86_64
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
-  passwd -d root
+  passwd -d root && \
+  adduser -D -H -s /sbin/nologin dockremap && \
+  mkdir -p /etc/docker && \
+  cd /usr/bin && \
+  ln -s docker-runc runc && \
+  ln -s docker-containerd-shim containerd-shim && \
+  ln -s docker-containerd-ctr containerd-ctr && \
+  ln -s docker-containerd containerd
 
 COPY etc /etc/
-RUN mkdir -p /etc/docker
 
 ADD kernel/$ARCH/aufs-utils.tar /
 COPY mkinitrd.sh /bin/
@@ -95,13 +101,5 @@ RUN \
   true
 
 COPY init /
-
-RUN adduser -D -H -s /sbin/nologin dockremap
-
-RUN cd /usr/bin && \
-  ln -s docker-runc runc && \
-  ln -s docker-containerd-shim containerd-shim && \
-  ln -s docker-containerd-ctr containerd-ctr && \
-  ln -s docker-containerd containerd
 
 CMD ["/bin/sh"]
