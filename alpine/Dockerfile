@@ -11,7 +11,6 @@ COPY etc /etc/
 RUN mkdir -p /etc/docker
 
 ADD kernel/$ARCH/aufs-utils.tar /
-COPY mkinitrd.sh /bin/
 COPY kernel/$ARCH/kernel-source-info /etc/
 ADD kernel/$ARCH/kernel-patches.tar /etc/kernel-patches
 ADD kernel/$ARCH/kernel-modules.tar /
@@ -90,6 +89,7 @@ RUN \
   true
 
 COPY init /
+COPY mkinitrd.sh /
 
 RUN adduser -D -H -s /sbin/nologin dockremap
 

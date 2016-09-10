@@ -8,7 +8,7 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -j -C packages
 	$(MAKE) -C kernel
 	docker build -t moby-initrd:build .
-	docker run --net=none --rm moby-initrd:build /bin/mkinitrd.sh > $@
+	docker run --net=none --rm moby-initrd:build /mkinitrd.sh > $@
 
 initrd.img.gz: initrd.img
 	cat initrd.img | gzip -9 > initrd.img.gz
