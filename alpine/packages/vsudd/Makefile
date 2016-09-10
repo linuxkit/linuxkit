@@ -1,15 +1,15 @@
 all: vsudd
 
-.PHONY: vendor
-vendor:
-	mkdir -p ./vendor
-	cp -r ../vendor/* ./vendor/
+files:
+	ls Dockerfile *.go > files
+	printf -- '-C\n..\n' >> files
+	(cd .. && find vendor) >> files
 
-vsudd: Dockerfile main.go vendor
-	docker build --build-arg GOOS=$(OS) --build-arg GOARCH=$(ARCH) -t vsudd:build .
-	docker run --rm vsudd:build cat /go/bin/vsudd > vsudd
-	chmod 755 vsudd
+vsudd: Dockerfile $(wildcard *.go) ../vendor/manifest files
+	tar cf - -T files | docker build -t vsudd:build -
+	docker run --rm vsudd:build | tar xf -
 
 clean:
-	rm -rf vsudd vendor
-	docker images -q vsudd:build | xargs docker rmi -f || true
+	rm -rf vsudd files
+
+.DELETE_ON_ERROR:
