@@ -10,11 +10,6 @@ all:
 	$(MAKE) -C 9pmount-vsock OS=linux
 	$(MAKE) -C iptables OS=linux
 
-arm:
-	$(MAKE) -C docker arm OS=Linux ARCH=arm
-	# Not cross building at present (C code)
-	# $(MAKE) -C diagnostics OS=linux ARCH=arm
-
 clean:
 	$(MAKE) -C proxy clean
 	$(MAKE) -C diagnostics clean
