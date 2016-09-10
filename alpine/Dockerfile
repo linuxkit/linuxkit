@@ -16,8 +16,8 @@ COPY kernel/$ARCH/kernel-source-info /etc/
 ADD kernel/$ARCH/kernel-patches.tar /etc/kernel-patches
 ADD kernel/$ARCH/kernel-modules.tar /
 
-COPY packages/proxy/slirp-proxy /usr/bin/
-COPY packages/proxy/slirp-proxy /sbin/proxy-vsockd
+COPY packages/proxy/proxy /usr/bin/slirp-proxy
+COPY packages/proxy/proxy /sbin/proxy-vsockd
 COPY packages/proxy/etc /etc/
 COPY packages/transfused/transfused /sbin/
 COPY packages/transfused/etc /etc/
