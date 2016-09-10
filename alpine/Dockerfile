@@ -8,48 +8,8 @@ RUN \
   passwd -d root && \
   adduser -D -H -s /sbin/nologin dockremap
 
-COPY etc /etc/
-
-COPY kernel/usr /usr/
-COPY kernel/etc /etc/
-COPY kernel/sbin /sbin/
-COPY kernel/lib /lib/
-
-COPY init /
-COPY mkinitrd.sh /
-
-COPY packages/proxy/usr /usr/
-COPY packages/proxy/sbin /sbin/
-COPY packages/proxy/etc /etc/
-COPY packages/transfused/sbin /sbin/
-COPY packages/transfused/etc /etc/
-COPY packages/tap-vsockd/sbin /sbin/
-COPY packages/tap-vsockd/etc /etc/
-COPY packages/docker/usr /usr/
-COPY packages/docker/etc /etc/
-COPY packages/diagnostics/usr /usr/
-COPY packages/diagnostics/etc /etc/
-COPY packages/automount/etc /etc/
-COPY packages/binfmt_misc/etc /etc/
-COPY packages/hostsettings/etc /etc/
-COPY packages/hvtools/sbin /sbin/
-COPY packages/hvtools/etc /etc/
-COPY packages/hvtools/usr /usr/
-COPY packages/chronyd/etc /etc/
-COPY packages/userns/etc /etc/
-COPY packages/nc-vsock/usr /usr/
-COPY packages/vsudd/sbin /sbin/
-COPY packages/vsudd/etc /etc/
-COPY packages/mobyconfig/usr /usr/
-COPY packages/mobyplatform/usr /usr/
-COPY packages/oom/etc /etc/
-COPY packages/9pmount-vsock/sbin /sbin/
-COPY packages/test/etc /etc/
-COPY packages/test/usr /usr/
-COPY packages/iptables/usr /usr/
-COPY packages/containerd/etc /etc/
-COPY packages/aws/etc /etc/
-COPY packages/azure/etc /etc/
+COPY . .
+RUN rm Dockerfile
 
 RUN \
   rc-update add swap boot && \
