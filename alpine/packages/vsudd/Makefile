@@ -3,7 +3,7 @@ all: vsudd
 .PHONY: vendor
 vendor:
 	mkdir -p ./vendor
-	cp -r ../go/vendor/* ./vendor/
+	cp -r ../vendor/* ./vendor/
 
 vsudd: Dockerfile main.go vendor
 	docker build --build-arg GOOS=$(OS) --build-arg GOARCH=$(ARCH) -t vsudd:build .
