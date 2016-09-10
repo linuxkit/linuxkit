@@ -1,16 +1,13 @@
 all: vsudd
 
-files:
-	ls Dockerfile *.go > files
-	printf -- '-C\n..\n' >> files
-	(cd .. && find vendor) >> files
+DEPS=Dockerfile $(wildcard *.go)
 
-vsudd: Dockerfile $(wildcard *.go) ../vendor/manifest files
+vsudd: $(DEPS) ../vendor/manifest
 	mkdir -p sbin
-	tar cf - -T files | docker build -t vsudd:build -
+	tar cf - $(DEPS) -C .. $(shell cd .. && find vendor) | docker build -t vsudd:build -
 	docker run --rm --net=none vsudd:build | tar xf - -C sbin
 
 clean:
-	rm -rf sbin files
+	rm -rf sbin
 
 .DELETE_ON_ERROR:

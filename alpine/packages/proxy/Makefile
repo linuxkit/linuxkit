@@ -1,13 +1,9 @@
 all: usr/bin/slirp-proxy sbin/proxy-vsockd
 
-files:
-	ls Dockerfile *.go > files
-	find libproxy >> files
-	printf -- '-C\n..\n' >> files
-	(cd .. && find vendor) >> files
+DEPS=Dockerfile $(wildcard *.go libproxy/*.go)
 
-proxy: Dockerfile $(wildcard *.go libproxy/*.go) ../vendor/manifest files
-	tar cf - -T files | docker build -t proxy:build -
+proxy: $(DEPS) ../vendor/manifest
+	tar cf - $(DEPS) -C .. $(shell cd .. && find vendor) | docker build -t proxy:build -
 	docker run --rm --net=none proxy:build | tar xf -
 
 usr/bin/slirp-proxy: proxy
@@ -19,6 +15,6 @@ sbin/proxy-vsockd: proxy
 	cp proxy $@
 
 clean:
-	rm -rf proxy files sbin usr
+	rm -rf proxy sbin usr
 
 .DELETE_ON_ERROR:
