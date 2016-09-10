@@ -1,7 +1,7 @@
 all:
 	$(MAKE) -C proxy
 	$(MAKE) -C diagnostics
-	$(MAKE) -C transfused OS=linux
+	$(MAKE) -C transfused
 	$(MAKE) -C tap-vsockd
 	$(MAKE) -C hvtools
 	$(MAKE) -C docker

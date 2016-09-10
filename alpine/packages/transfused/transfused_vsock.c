@@ -3,7 +3,7 @@
 
 #include <sys/socket.h>
 
-#include "include/uapi/linux/vm_sockets.h"
+#include "vm_sockets.h"
 
 #include "transfused_log.h"
 
