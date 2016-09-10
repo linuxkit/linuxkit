@@ -1,5 +1,5 @@
 all:
-	$(MAKE) -C proxy OS=linux
+	$(MAKE) -C proxy
 	$(MAKE) -C diagnostics OS=linux
 	$(MAKE) -C transfused OS=linux
 	$(MAKE) -C tap-vsockd OS=linux

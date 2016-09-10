@@ -1,15 +1,16 @@
 all: proxy
 
-.PHONY: vendor
-vendor:
-	mkdir -p ./vendor
-	cp -r ../go/vendor/* ./vendor/
+files:
+	ls Dockerfile *.go > files
+	find libproxy >> files
+	printf -- '-C\n../go\n' >> files
+	(cd ../go && find vendor) >> files
 
-proxy: Dockerfile main.go proxy.go vendor
-	docker build --build-arg GOOS=$(OS) --build-arg GOARCH=$(ARCH) -t proxy:build .
-	docker run --rm proxy:build cat /go/bin/proxy > slirp-proxy
-	chmod 755 slirp-proxy
+proxy: Dockerfile $(wildcard *.go libproxy/*.go) ../go/vendor/manifest files
+	tar cf - -T files | docker build -t proxy:build -
+	docker run --rm proxy:build | tar xf -
 
 clean:
-	rm -rf slirp-proxy vendor
-	docker images -q proxy:build | xargs docker rmi -f || true
+	rm -rf proxy files
+
+.DELETE_ON_ERROR:
