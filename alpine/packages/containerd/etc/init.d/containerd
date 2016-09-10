@@ -13,6 +13,14 @@ start()
 	ulimit -n 1048576
 	ulimit -p unlimited
 
+	[ ! -e /usr/bin/containerd ] && \
+	( cd /usr/bin && \
+	  ln -s docker-runc runc && \
+	  ln -s docker-containerd-shim containerd-shim && \
+	  ln -s docker-containerd-ctr containerd-ctr && \
+	  ln -s docker-containerd containerd \
+	)
+
 	/usr/bin/containerd 1>&2 2>/var/log/containerd.log &
 
 	ewaitfile 5 /var/run/containerd/containerd.sock

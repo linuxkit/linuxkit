@@ -1,2 +1,5 @@
-x86_64
-arm
+x86_64/
+etc/
+lib/
+usr/
+sbin/
