@@ -7,7 +7,7 @@ files:
 
 diagnostics-server: Dockerfile $(wildcard *.go) ../vendor/manifest files
 	tar cf - -T files | docker build -t diagnostics-server:build -
-	docker run --rm diagnostics-server:build | tar xf -
+	docker run --rm --net=none diagnostics-server:build | tar xf -
 
 clean:
 	rm -rf diagnostics-server files
