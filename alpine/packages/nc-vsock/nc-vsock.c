@@ -10,7 +10,7 @@
 #include <sys/select.h>
 #include <netdb.h>
 #include <uuid/uuid.h>
-#include "include/uapi/linux/vm_sockets.h"
+#include "vm_sockets.h"
 
 #define MODE_READ 1 /* From the vsock */
 #define MODE_WRITE 2 /* To the vsock */
