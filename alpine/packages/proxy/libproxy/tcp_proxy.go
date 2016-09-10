@@ -2,9 +2,8 @@ package libproxy
 
 import (
 	"io"
+	"log"
 	"net"
-
-	"github.com/Sirupsen/logrus"
 )
 
 type Conn interface {
@@ -37,7 +36,7 @@ func NewTCPProxy(listener net.Listener, backendAddr *net.TCPAddr) (*TCPProxy, er
 func HandleTCPConnection(client Conn, backendAddr *net.TCPAddr, quit chan bool) {
 	backend, err := net.DialTCP("tcp", nil, backendAddr)
 	if err != nil {
-		logrus.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
+		log.Printf("Can't forward traffic to backend tcp/%v: %s\n", backendAddr, err)
 		client.Close()
 		return
 	}
@@ -46,15 +45,15 @@ func HandleTCPConnection(client Conn, backendAddr *net.TCPAddr, quit chan bool) 
 	var broker = func(to, from Conn) {
 		written, err := io.Copy(to, from)
 		if err != nil {
-			logrus.Println("error copying:", err)
+			log.Println("error copying:", err)
 		}
 		err = from.CloseRead()
 		if err != nil {
-			logrus.Println("error CloseRead from:", err)
+			log.Println("error CloseRead from:", err)
 		}
 		err = to.CloseWrite()
 		if err != nil {
-			logrus.Println("error CloseWrite to:", err)
+			log.Println("error CloseWrite to:", err)
 		}
 		event <- written
 	}
@@ -88,7 +87,7 @@ func (proxy *TCPProxy) Run() {
 	for {
 		client, err := proxy.listener.Accept()
 		if err != nil {
-			logrus.Printf("Stopping proxy on tcp/%v for tcp/%v (%s)", proxy.frontendAddr, proxy.backendAddr, err)
+			log.Printf("Stopping proxy on tcp/%v for tcp/%v (%s)", proxy.frontendAddr, proxy.backendAddr, err)
 			return
 		}
 		go HandleTCPConnection(client.(Conn), proxy.backendAddr, quit)
