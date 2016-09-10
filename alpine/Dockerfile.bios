@@ -9,7 +9,7 @@ RUN mkdir -p /tmp/iso/isolinux && \
     cp /usr/share/syslinux/isolinux.bin /tmp/iso/isolinux && \
     cp /usr/share/syslinux/ldlinux.c32 /tmp/iso/isolinux
 
-COPY initrd.img /tmp/iso
+COPY initrd.img.gz /tmp/iso
 COPY kernel/x86_64/vmlinuz64 /tmp/iso
 COPY isolinux.cfg /tmp/iso/isolinux
 

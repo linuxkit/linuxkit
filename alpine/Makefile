@@ -36,13 +36,13 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES) common
 initrd.img.gz: initrd.img
 	cat initrd.img | gzip -9 > initrd.img.gz
 
-mobylinux-efi.iso: initrd.img.gz Dockerfile.efi
-	docker build -t moby-efi:build -f Dockerfile.efi .
+mobylinux-efi.iso: Dockerfile.efi initrd.img.gz kernel/x86_64/vmlinuz64
+	tar cf - $^ | docker build -t moby-efi:build -f Dockerfile.efi -
 	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > mobylinux.efi
 	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux-efi.iso > $@
 
-mobylinux-bios.iso: initrd.img Dockerfile.bios isolinux.cfg
-	docker build -t moby-bios:build -f Dockerfile.bios .
+mobylinux-bios.iso: Dockerfile.bios initrd.img.gz kernel/x86_64/vmlinuz64 isolinux.cfg
+	tar cf - $^ | docker build -t moby-bios:build -f Dockerfile.bios -
 	docker run --net=none --rm moby-bios:build cat /tmp/mobylinux-bios.iso > $@
 
 common: initrd.img
