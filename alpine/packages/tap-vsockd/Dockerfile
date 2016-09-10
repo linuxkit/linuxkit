@@ -4,6 +4,6 @@ COPY . /tap-vsockd
 
 WORKDIR /tap-vsockd
 
-RUN gcc -Wall -Werror tap-vsockd.c hvsock.c protocol.c -lpthread -o tap-vsockd
+RUN cc -Wall -Werror tap-vsockd.c hvsock.c protocol.c -lpthread -o tap-vsockd
 
 CMD ["tar", "cf", "-", "tap-vsockd"]
