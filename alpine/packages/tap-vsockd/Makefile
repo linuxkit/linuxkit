@@ -1,8 +1,9 @@
 DEPS=Dockerfile $(wildcard *.c *.h)
 
-tap-vsockd: $(DEPS)
+sbin/tap-vsockd: $(DEPS)
+	mkdir -p sbin
 	tar cf - $(DEPS) | docker build -t tap-vsockd:build -
-	docker run --rm --net=none tap-vsockd:build | tar xf -
+	docker run --rm --net=none tap-vsockd:build | tar xf - -C sbin
 
 clean:
-	rm -f tap-vsockd
+	rm -rf sbin

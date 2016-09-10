@@ -1,13 +1,14 @@
-all: hv_fcopy_daemon hvtools.tar.gz
+all: sbin/hv_fcopy_daemon usr/share/src/hvtools.tar.gz
 
-hv_fcopy_daemon: Dockerfile src/*
+sbin/hv_fcopy_daemon: Dockerfile src/*
 	tar cf - Dockerfile src | docker build -t hvtools:build -
-	docker run --rm --net=none hvtools:build | tar xf -
+	docker run --rm --net=none hvtools:build | tar xf - -C sbin
 
-hvtools.tar.gz: src/*
-	tar czf hvtools.tar.gz src
+usr/share/src/hvtools.tar.gz: src/*
+	mkdir -p usr/share/src/
+	tar czf usr/share/src/hvtools.tar.gz src
 
 clean:
-	rm -f hv_fcopy_daemon hv_kvp_daemon hv_vss_daemon hvtools.tar.gz
+	rm -rf usr sbin/hv_fcopy_daemon sbin/hv_kvp_daemon sbin/hv_vss_daemon
 
 .DELETE_ON_ERROR:
