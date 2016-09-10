@@ -5,7 +5,7 @@ all:
 	$(MAKE) -C tap-vsockd
 	$(MAKE) -C hvtools
 	$(MAKE) -C docker
-	$(MAKE) -C nc-vsock OS=linux
+	$(MAKE) -C nc-vsock
 	$(MAKE) -C vsudd
 	$(MAKE) -C 9pmount-vsock
 	$(MAKE) -C iptables
