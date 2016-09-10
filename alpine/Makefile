@@ -5,7 +5,7 @@ ETCFILES+=etc/inittab etc/fstab
 
 initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	rm -f initrd.img
-	$(MAKE) -C packages
+	$(MAKE) -j -C packages
 	$(MAKE) -C kernel
 	docker build -t moby-initrd:build .
 	docker run --net=none --rm moby-initrd:build /bin/mkinitrd.sh > $@
