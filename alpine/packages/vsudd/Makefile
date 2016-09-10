@@ -7,7 +7,7 @@ files:
 
 vsudd: Dockerfile $(wildcard *.go) ../vendor/manifest files
 	tar cf - -T files | docker build -t vsudd:build -
-	docker run --rm vsudd:build | tar xf -
+	docker run --rm --net=none vsudd:build | tar xf -
 
 clean:
 	rm -rf vsudd files

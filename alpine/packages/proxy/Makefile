@@ -8,7 +8,7 @@ files:
 
 proxy: Dockerfile $(wildcard *.go libproxy/*.go) ../vendor/manifest files
 	tar cf - -T files | docker build -t proxy:build -
-	docker run --rm proxy:build | tar xf -
+	docker run --rm --net=none proxy:build | tar xf -
 
 clean:
 	rm -rf proxy files
