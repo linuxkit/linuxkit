@@ -3,16 +3,15 @@ ARCH?=x86_64
 OS?=Linux
 DOCKER_EXPERIMENTAL?=1
 
-all: bin
+all: bin/docker
 
 TEST_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
 DOCKER_HOST?=$(shell [ "${DOCKER_EXPERIMENTAL}" -eq 1 ] && printf "experimental.docker.com" || printf "${TEST_HOST}")
 DOCKER_BIN_URL?="https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz"
 
-bin:
+bin/docker:
 	mkdir -p bin
-	curl -sSL -o docker.tgz ${DOCKER_BIN_URL}
-	tar xzf docker.tgz && \
+	curl -sSL ${DOCKER_BIN_URL} | tar xzf - && \
 	mv docker/docker-containerd-ctr \
 	   docker/docker \
 	   docker/docker-containerd \
@@ -21,8 +20,8 @@ bin:
 	   docker/docker-runc \
 	   docker/docker-containerd-shim \
 	bin/
-	rm -rf docker/ docker.tgz
-	chmod +x bin/*
 
 clean:
-	rm -rf bin docker/ docker.tgz
+	rm -rf bin/ docker/
+
+.DELETE_ON_ERROR:
