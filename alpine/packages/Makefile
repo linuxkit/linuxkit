@@ -1,12 +1,12 @@
 all:
 	$(MAKE) -C proxy
-	$(MAKE) -C diagnostics OS=linux
+	$(MAKE) -C diagnostics
 	$(MAKE) -C transfused OS=linux
 	$(MAKE) -C tap-vsockd OS=linux
 	$(MAKE) -C hvtools OS=linux
 	$(MAKE) -C docker OS=Linux
 	$(MAKE) -C nc-vsock OS=linux
-	$(MAKE) -C vsudd OS=linux
+	$(MAKE) -C vsudd
 	$(MAKE) -C 9pmount-vsock OS=linux
 	$(MAKE) -C iptables OS=linux
 
