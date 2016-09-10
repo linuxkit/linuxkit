@@ -66,13 +66,10 @@ RUN if [ $DEBUG -ne "0" ]; then \
 # Apply local patches
 COPY patches /patches
 RUN cd /linux && \
-    mkdir /etc/kernel-patches && \
     set -e && for patch in /patches/*.patch; do \
         echo "Applying $patch"; \
-        cp "$patch" /etc/kernel-patches; \
         patch -p1 < "$patch"; \
-    done && \
-    cd /etc/kernel-patches && tar cf /kernel-patches.tar .
+    done
 
 RUN jobs=$(nproc); \
     cd /linux && \

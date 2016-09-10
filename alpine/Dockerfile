@@ -5,15 +5,18 @@ ENV ARCH=x86_64
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
-  passwd -d root
+  passwd -d root && \
+  adduser -D -H -s /sbin/nologin dockremap
 
 COPY etc /etc/
-RUN mkdir -p /etc/docker
 
-ADD kernel/$ARCH/aufs-utils.tar /
-COPY kernel/$ARCH/kernel-source-info /etc/
-ADD kernel/$ARCH/kernel-patches.tar /etc/kernel-patches
-ADD kernel/$ARCH/kernel-modules.tar /
+COPY kernel/usr /usr/
+COPY kernel/etc /etc/
+COPY kernel/sbin /sbin/
+COPY kernel/lib /lib/
+
+COPY init /
+COPY mkinitrd.sh /
 
 COPY packages/proxy/usr /usr/
 COPY packages/proxy/sbin /sbin/
@@ -87,16 +90,5 @@ RUN \
   rc-update add aws default && \
   rc-update add azure default && \
   true
-
-COPY init /
-COPY mkinitrd.sh /
-
-RUN adduser -D -H -s /sbin/nologin dockremap
-
-RUN cd /usr/bin && \
-  ln -s docker-runc runc && \
-  ln -s docker-containerd-shim containerd-shim && \
-  ln -s docker-containerd-ctr containerd-ctr && \
-  ln -s docker-containerd containerd
 
 CMD ["/bin/sh"]
