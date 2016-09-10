@@ -12,14 +12,6 @@ qemu-iso: all
 	docker build -f Dockerfile.qemuiso -t mobyqemuiso:build .
 	docker run -it --rm mobyqemuiso:build
 
-arm:
-	$(MAKE) -C alpine/kernel arm
-	$(MAKE) -C alpine arm
-
-qemu-arm: Dockerfile.qemu.armhf arm
-	docker build -f Dockerfile.qemu.armhf -t mobyarmqemu:build .
-	docker run -it --rm mobyarmqemu:build
-
 test: Dockerfile.test all
 	tar cf - Dockerfile.test alpine/initrd.img.gz alpine/kernel/x86_64/vmlinuz64 | \
 	  docker build -f Dockerfile.test -t mobytest:build -
