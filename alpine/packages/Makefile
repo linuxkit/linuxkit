@@ -7,7 +7,7 @@ all:
 	$(MAKE) -C docker
 	$(MAKE) -C nc-vsock OS=linux
 	$(MAKE) -C vsudd
-	$(MAKE) -C 9pmount-vsock OS=linux
+	$(MAKE) -C 9pmount-vsock
 	$(MAKE) -C iptables
 
 clean:
