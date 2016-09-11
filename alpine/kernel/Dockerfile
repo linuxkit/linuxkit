@@ -1,4 +1,4 @@
-FROM ubuntu:16.04
+FROM debian:jessie
 
 ARG KERNEL_VERSION=4.4.20
 ARG DEBUG=0
