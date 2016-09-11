@@ -1,8 +1,8 @@
 all:
 	$(MAKE) -C alpine
 
-alpine/initrd.img.gz:
-	$(MAKE) -C alpine initrd.img.gz
+alpine/initrd.img:
+	$(MAKE) -C alpine initrd.img
 
 alpine/kernel/x86_64/vmlinuz64:
 	$(MAKE) -C alpine/kernel x86_64/vmlinuz64
@@ -10,7 +10,7 @@ alpine/kernel/x86_64/vmlinuz64:
 alpine/mobylinux-bios.iso:
 	$(MAKE) -C alpine mobylinux-bios.iso
 
-qemu: Dockerfile.qemu alpine/initrd.img.gz alpine/kernel/x86_64/vmlinuz64
+qemu: Dockerfile.qemu alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	tar cf - $^ | docker build -f Dockerfile.qemu -t mobyqemu:build -
 	docker run -it --rm mobyqemu:build
 
@@ -18,7 +18,7 @@ qemu-iso: Dockerfile.qemuiso alpine/mobylinux-bios.iso
 	tar cf - $^ | docker build -f Dockerfile.qemuiso -t mobyqemuiso:build -
 	docker run -it --rm mobyqemuiso:build
 
-test: Dockerfile.test alpine/initrd.img.gz alpine/kernel/x86_64/vmlinuz64
+test: Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	$(MAKE) -C alpine
 	tar cf - $^ | docker build -f Dockerfile.test -t mobytest:build -
 	touch test.log
