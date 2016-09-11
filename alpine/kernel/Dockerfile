@@ -1,32 +1,9 @@
-FROM debian:jessie
+FROM mobylinux/debian-build-kernel@sha256:412d36481df6123efc9a5a51656e13164f8178d11d682c63de8de82d43abd0d2
 
 ARG KERNEL_VERSION=4.4.20
 ARG DEBUG=0
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
-
-RUN apt-get update && apt-get -y upgrade && apt-get -y install \
-  unzip \
-  xz-utils \
-  curl \
-  bc \
-  build-essential \
-  cpio \
-  gcc libc6 libc6-dev \
-  kmod \
-  squashfs-tools \
-  genisoimage \
-  xorriso \
-  syslinux \
-  isolinux \
-  automake \
-  pkg-config \
-  git \
-  ncurses-dev \
-  p7zip-full \
-  lzop \
-  wget \
-  vim
 
 RUN curl -sSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
@@ -37,11 +14,13 @@ ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
 ENV AUFS_BRANCH     aufs4.4
 ENV AUFS_COMMIT     8be74e42b108f9cbbb0d59a87468505a48ff2757
 
-# Download AUFS and patch kernel
+# Download AUFS
 RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
     cd /aufs && \
-    git checkout -q "$AUFS_COMMIT" && \
-    cd /linux && \
+    git checkout -q "$AUFS_COMMIT"
+
+# patch kernel with aufs
+RUN cd /linux && \
     cp -r /aufs/Documentation /linux && \
     cp -r /aufs/fs /linux && \
     cp -r /aufs/include/uapi/linux/aufs_type.h /linux/include/uapi/linux/ && \
