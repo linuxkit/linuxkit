@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-build-c:1b53976210ba819823eda5b1d0d3ea337772e97b
+FROM mobylinux/alpine-build-c:1ea690a7438cdd8a5965eaa034e0a0c521d9cb40
 
 COPY . /transfused
 
