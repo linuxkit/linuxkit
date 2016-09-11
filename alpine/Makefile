@@ -1,4 +1,4 @@
-all:	initrd.img mobylinux-efi.iso
+all:	initrd.img mobylinux-efi.iso mobylinux-bios.iso
 
 ETCFILES=etc/issue etc/motd etc/network/interfaces
 ETCFILES+=etc/inittab etc/fstab
