@@ -1,4 +1,4 @@
-all:	initrd.img.gz mobylinux-efi.iso
+all:	initrd.img mobylinux-efi.iso
 
 ETCFILES=etc/issue etc/motd etc/network/interfaces
 ETCFILES+=etc/inittab etc/fstab
@@ -33,15 +33,12 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES) common
 	  docker build -t moby-initrd:build -
 	docker run --net=none --rm moby-initrd:build > $@
 
-initrd.img.gz: initrd.img
-	cat initrd.img | gzip -9 > initrd.img.gz
-
-mobylinux-efi.iso: Dockerfile.efi initrd.img.gz kernel/x86_64/vmlinuz64
+mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 	tar cf - $^ | docker build -t moby-efi:build -f Dockerfile.efi -
 	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > mobylinux.efi
 	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux-efi.iso > $@
 
-mobylinux-bios.iso: Dockerfile.bios initrd.img.gz kernel/x86_64/vmlinuz64 isolinux.cfg
+mobylinux-bios.iso: Dockerfile.bios initrd.img kernel/x86_64/vmlinuz64 isolinux.cfg
 	tar cf - $^ | docker build -t moby-bios:build -f Dockerfile.bios -
 	docker run --net=none --rm moby-bios:build cat /tmp/mobylinux-bios.iso > $@
 
@@ -62,8 +59,7 @@ azure: common
 	docker-compose run --rm -T azure uploadvhd
 
 clean:
-	rm -f initrd.img initrd.img.gz mobylinux.vhd mobylinux.img
-	rm -f mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
+	rm -f initrd.img mobylinux.vhd mobylinux.img mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
 	docker images -q alpine_ami:latest | xargs docker rmi -f || true
 	docker images -q alpine_azure:latest | xargs docker rmi -f || true
 	$(MAKE) -C packages clean

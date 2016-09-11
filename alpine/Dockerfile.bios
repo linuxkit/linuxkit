@@ -3,7 +3,7 @@ FROM mobylinux/alpine-bios:626757290dbb54109514af22108645cae9ea40c3
 
 WORKDIR /tmp/iso
 
-COPY initrd.img.gz ./
+COPY initrd.img ./
 COPY kernel/x86_64/vmlinuz64 ./
 COPY isolinux.cfg ./isolinux/
 

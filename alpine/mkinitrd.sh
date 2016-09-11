@@ -35,4 +35,4 @@ printf 'moby' > /tmp/etc/hostname
 rm /tmp/mkinitrd.sh
 
 cd /tmp
-find . | cpio -H newc -o
+find . | cpio -H newc -o | gzip -9
