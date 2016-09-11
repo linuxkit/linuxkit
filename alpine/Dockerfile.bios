@@ -1,20 +1,16 @@
 # Create a legacy BIOS bootable ISO
-FROM alpine:3.4
+FROM mobylinux/alpine-bios:626757290dbb54109514af22108645cae9ea40c3
 
-RUN apk update && apk add \
-  cdrkit \
-  syslinux
+WORKDIR /tmp/iso
 
-RUN mkdir -p /tmp/iso/isolinux && \
-    cp /usr/share/syslinux/isolinux.bin /tmp/iso/isolinux && \
-    cp /usr/share/syslinux/ldlinux.c32 /tmp/iso/isolinux
+COPY initrd.img.gz ./
+COPY kernel/x86_64/vmlinuz64 ./
+COPY isolinux.cfg ./isolinux/
 
-COPY initrd.img.gz /tmp/iso
-COPY kernel/x86_64/vmlinuz64 /tmp/iso
-COPY isolinux.cfg /tmp/iso/isolinux
+RUN cp /usr/share/syslinux/isolinux.bin ./isolinux/ && \
+    cp /usr/share/syslinux/ldlinux.c32 ./isolinux/
 
-RUN cd /tmp/iso && \
-    genisoimage -o ../mobylinux-bios.iso -l -J -R \
+RUN genisoimage -o ../mobylinux-bios.iso -l -J -R \
                 -c isolinux/boot.cat  \
                 -b isolinux/isolinux.bin \
                    -no-emul-boot -boot-load-size 4 -boot-info-table \
