@@ -64,8 +64,6 @@ azure: common
 clean:
 	rm -f initrd.img initrd.img.gz mobylinux.vhd mobylinux.img
 	rm -f mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
-	docker images -q moby-efi:build | xargs docker rmi -f || true
-	docker images -q moby-bios:build | xargs docker rmi -f || true
 	docker images -q alpine_ami:latest | xargs docker rmi -f || true
 	docker images -q alpine_azure:latest | xargs docker rmi -f || true
 	$(MAKE) -C packages clean
