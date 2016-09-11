@@ -31,7 +31,7 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES) common
 	  -C packages/azure etc -C ../.. \
 	  | \
 	  docker build -t moby-initrd:build -
-	docker run --net=none --rm moby-initrd:build /mkinitrd.sh > $@
+	docker run --net=none --rm moby-initrd:build > $@
 
 initrd.img.gz: initrd.img
 	cat initrd.img | gzip -9 > initrd.img.gz
