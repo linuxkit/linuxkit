@@ -3,7 +3,7 @@ all: usr/bin/slirp-proxy sbin/proxy-vsockd
 DEPS=Dockerfile $(wildcard *.go libproxy/*.go)
 
 proxy: $(DEPS) ../vendor/manifest
-	tar cf - $(DEPS) -C .. $(shell cd .. && find vendor) | docker build -t proxy:build -
+	tar cf - $(DEPS) -C .. vendor | docker build -t proxy:build -
 	docker run --rm --net=none proxy:build | tar xf -
 
 usr/bin/slirp-proxy: proxy
