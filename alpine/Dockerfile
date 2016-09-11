@@ -51,4 +51,4 @@ RUN \
   rc-update add azure default && \
   true
 
-CMD ["/bin/sh"]
+CMD ["/mkinitrd.sh"]
