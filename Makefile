@@ -19,6 +19,7 @@ qemu-iso: Dockerfile.qemuiso alpine/mobylinux-bios.iso
 	docker run -it --rm mobyqemuiso:build
 
 test: Dockerfile.test alpine/initrd.img.gz alpine/kernel/x86_64/vmlinuz64
+	$(MAKE) -C alpine
 	tar cf - $^ | docker build -f Dockerfile.test -t mobytest:build -
 	touch test.log
 	docker run --rm mobytest:build 2>&1 | tee -a test.log &
