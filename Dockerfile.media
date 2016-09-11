@@ -1,0 +1,3 @@
+FROM scratch
+
+ADD alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-bios.iso alpine/mobylinux-efi.iso / 
