@@ -30,7 +30,7 @@ TAG=$(shell git rev-parse HEAD)
 STATUS=$(shell git status -s)
 media: Dockerfile.media alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-bios.iso alpine/mobylinux-efi.iso
 ifeq ($(STATUS),)
-	tar cf - $^ | docker build -f Dockerfile.media -t mobylinux/media:latest -
+	tar cf - $^ alpine/mobylinux.efi | docker build -f Dockerfile.media -t mobylinux/media:latest -
 	docker tag mobylinux/media:latest mobylinux/media:$(TAG)
 	docker push mobylinux/media:$(TAG)
 	docker push mobylinux/media:latest
