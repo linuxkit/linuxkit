@@ -1,4 +1,4 @@
-FROM mobylinux/debian-build-kernel@sha256:412d36481df6123efc9a5a51656e13164f8178d11d682c63de8de82d43abd0d2
+FROM mobylinux/debian-build-kernel:a009a11bf0ad
 
 ARG KERNEL_VERSION=4.4.20
 ARG DEBUG=0
