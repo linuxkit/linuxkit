@@ -44,7 +44,7 @@ endif
 	usr/bin/
 
 hub: cleanusr
-	docker run $(DOCKER_IMAGE) tar cf - -C /usr/local/bin $(DOCKER_BINARIES) | tar xf - -C usr/bin
+	docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin $(DOCKER_BINARIES) | tar xf - -C usr/bin
 
 clean:
 	rm -rf usr/ docker/
