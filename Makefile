@@ -42,5 +42,3 @@ endif
 
 clean:
 	$(MAKE) -C alpine clean
-	docker images -q mobyqemu:build | xargs docker rmi -f || true
-	docker images -q mobytest:build | xargs docker rmi -f || true
