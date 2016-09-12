@@ -7,10 +7,11 @@ all: bin
 
 TEST_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
 DOCKER_HOST?=$(shell [ "${DOCKER_EXPERIMENTAL}" -eq 1 ] && printf "experimental.docker.com" || printf "${TEST_HOST}")
+DOCKER_BIN_URL?="https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz"
 
 bin:
 	mkdir -p bin
-	curl -sSL -o docker.tgz https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz
+	curl -sSL -o docker.tgz ${DOCKER_BIN_URL}
 	tar xzf docker.tgz && \
 	mv docker/docker-containerd-ctr \
 	   docker/docker \
