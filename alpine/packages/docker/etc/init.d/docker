@@ -9,6 +9,18 @@ start()
 {
 	ebegin "Starting Docker"
 
+	# check if overriding Docker with a dev bundle
+	if mobyconfig exists bundle
+	then
+		bundle=$(mobyconfig get bundle)
+		[ -n "$bundle" -a -d "$bundle" -a -h "$bundle/binary-client/docker" ] && \
+		  # note we copy all the symlinks, in case layout changes
+		  cp -a $bundle/binary-client/* \
+		        $bundle/binary-daemon/* \
+		  /usr/bin
+		printf "Overriding Docker with provided bundle: $bundle\n"
+	fi
+
 	command="${DOCKER_BINARY:-/usr/bin/dockerd}"
 
 	pidfile="/run/docker.pid"
