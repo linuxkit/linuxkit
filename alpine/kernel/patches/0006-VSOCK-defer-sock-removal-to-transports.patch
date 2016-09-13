@@ -1,7 +1,7 @@
-From 30d9aa8b6b1c2fa720917ede2315223ca0c5d538 Mon Sep 17 00:00:00 2001
+From 54f528a28ab97e1306180adde7ba15c4158428db Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:31 +0100
-Subject: [PATCH 06/45] VSOCK: defer sock removal to transports
+Subject: [PATCH 06/46] VSOCK: defer sock removal to transports
 
 The virtio transport will implement graceful shutdown and the related
 SO_LINGER socket option.  This requires orphaning the sock but keeping
@@ -11,7 +11,8 @@ This patch adds the vsock_remove_sock() function and leaves it up to the
 transport when to remove the sock.
 
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
-(from RFC v6 <1469716595-13591-3-git-send-email-stefanha@redhat.com>)
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 6773b7dc39f165bd9d824b50ac52cbb3f87d53c8)
 ---
  include/net/af_vsock.h         |  1 +
  net/vmw_vsock/af_vsock.c       | 16 ++++++++++------

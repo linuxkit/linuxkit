@@ -1,7 +1,7 @@
-From 3c8c257cbb209af1d2a8a7bed7e4fb385e82b813 Mon Sep 17 00:00:00 2001
+From ec54f262b84f327f1c0ecabce6f0c9b5c75ff2df Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:32 +0100
-Subject: [PATCH 07/45] VSOCK: Introduce virtio_vsock_common.ko
+Subject: [PATCH 07/46] VSOCK: Introduce virtio_vsock_common.ko
 
 This module contains the common code and header files for the following
 virtio_transporto and vhost_vsock kernel modules.
@@ -9,7 +9,8 @@ virtio_transporto and vhost_vsock kernel modules.
 Signed-off-by: Asias He <asias@redhat.com>
 Signed-off-by: Claudio Imbrenda <imbrenda@linux.vnet.ibm.com>
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
-(from RFC v6 <1469716595-13591-4-git-send-email-stefanha@redhat.com>)
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 06a8fc78367d070720af960dcecec917d3ae5f3b)
 ---
  MAINTAINERS                                        |  10 +
  include/linux/virtio_vsock.h                       | 154 ++++
