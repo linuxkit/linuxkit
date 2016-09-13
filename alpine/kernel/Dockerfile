@@ -1,7 +1,6 @@
 FROM mobylinux/debian-build-kernel:a009a11bf0ad
 
 ARG KERNEL_VERSION=4.4.20
-ARG DEBUG=0
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
@@ -19,6 +18,16 @@ RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
     cd /aufs && \
     git checkout -q "$AUFS_COMMIT"
 
+# aufs-util 20151116
+ENV AUFS_TOOLS_REPO https://github.com/Distrotech/aufs-util.git
+ENV AUFS_TOOLS_COMMIT b5e7e204036da5e815ddec15a847a03c232771b4
+
+# Download aufs tools
+RUN git clone ${AUFS_TOOLS_REPO} && \
+    cd /aufs-util && \
+    git checkout "$AUFS_TOOLS_COMMIT" 
+
+#BUILD
 # patch kernel with aufs
 RUN cd /linux && \
     cp -r /aufs/Documentation /linux && \
@@ -37,6 +46,8 @@ RUN cd /linux && \
 
 COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
+
+ARG DEBUG=0
 
 RUN if [ $DEBUG -ne "0" ]; then \
     cat /linux/debug_config >> /linux/arch/x86/configs/x86_64_defconfig; \
@@ -61,14 +72,7 @@ RUN jobs=$(nproc); \
 
 # Build aufs tools, do this here as they need kernel headers and to match aufs
 # Fortunately they are built statically linked
-
-# aufs-util 20151116
-ENV AUFS_TOOLS_REPO https://github.com/Distrotech/aufs-util.git
-ENV AUFS_TOOLS_COMMIT b5e7e204036da5e815ddec15a847a03c232771b4
-
-RUN git clone ${AUFS_TOOLS_REPO} && \
-    cd /aufs-util && \
-    git checkout "$AUFS_TOOLS_COMMIT" && \
+RUN cd /aufs-util && \
     CPPFLAGS="-I/tmp/kernel-headers/include" CFLAGS=$CPPFLAGS LDFLAGS=$CPPFLAGS make && \
     DESTDIR=/tmp/aufs-utils make install && \
     rm -rf /tmp/aufs-utils/usr/lib /tmp/aufs-utils/usr/share && \
