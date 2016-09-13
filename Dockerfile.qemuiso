@@ -1,4 +1,4 @@
-FROM justincormack/alpine-qemu
+FROM mobylinux/alpine-qemu:1f3de121e9dea39a198413344a72049839bea91b
 
 COPY alpine/mobylinux-bios.iso .
 

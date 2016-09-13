@@ -1,13 +1,9 @@
-FROM mobylinux/alpine-build-go:30067067003d565887d7efe533eba03ed46038d2
-
-RUN mkdir -p /go/src/proxy
-WORKDIR /go/src/proxy
+FROM mobylinux/alpine-build-go:21b413791b4fed2e16126c77c6b860feaf889d70
 
 COPY ./ /go/src/proxy/
 
-ARG GOARCH
-ARG GOOS
+WORKDIR /go/src/proxy
 
 RUN go install --ldflags '-extldflags "-fno-PIC"'
 
-RUN [ -f /go/bin/*/proxy ] && mv /go/bin/*/proxy /go/bin/ || true
+CMD ["tar", "cf", "-", "-C", "/go/bin", "proxy"]

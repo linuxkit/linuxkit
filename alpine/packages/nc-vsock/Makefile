@@ -1,15 +1,9 @@
-.PHONY: all
+DEPS=Dockerfile $(wildcard *.c *.h)
 
-DEPS=nc-vsock.c
-
-all: Dockerfile $(DEPS)
-	docker build -t nc-vsock:build .
-	docker run --rm nc-vsock:build cat nc-vsock > nc-vsock
-	chmod 755 nc-vsock
-
-nc-vsock: $(DEPS)
-	gcc -Wall -Werror -o nc-vsock nc-vsock.c -luuid
+usr/bin/nc-vsock: $(DEPS)
+	mkdir -p usr/bin
+	tar cf - $(DEPS) | docker build -t nc-vsock:build -
+	docker run --rm --net=none nc-vsock:build | tar xf - -C usr/bin
 
 clean:
-	rm -f nc-vsock
-	docker images -q nc-vsock:build | xargs docker rmi -f || true
+	rm -rf usr
