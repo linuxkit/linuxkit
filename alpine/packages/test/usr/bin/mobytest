@@ -6,8 +6,8 @@ docker info
 docker ps
 docker pull alpine
 docker run alpine true
-docker run --name nginx -d -p 80:80 nginx:alpine
-wget -O - localhost
-docker kill nginx
-docker rm nginx
+docker run --name webserver -d -p 80:80 alpine httpd -f -h /etc
+wget -O - -q localhost/hostname
+docker kill webserver
+docker rm webserver
 docker swarm init
