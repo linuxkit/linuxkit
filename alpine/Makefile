@@ -3,7 +3,9 @@ all:	initrd.img mobylinux-efi.iso mobylinux-bios.iso
 ETCFILES=etc/issue etc/motd etc/network/interfaces
 ETCFILES+=etc/inittab etc/fstab
 
-initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES) common
+initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
+	$(MAKE) -C kernel
+	$(MAKE) -j -C packages
 	tar cf - \
 	  Dockerfile etc init mkinitrd.sh \
 	  -C kernel usr etc sbin lib -C .. \
@@ -42,19 +44,15 @@ mobylinux-bios.iso: Dockerfile.bios initrd.img kernel/x86_64/vmlinuz64 isolinux.
 	tar cf - $^ | docker build -t moby-bios:build -f Dockerfile.bios -
 	docker run --net=none --rm moby-bios:build cat /tmp/mobylinux-bios.iso > $@
 
-common: initrd.img
-	$(MAKE) -C kernel
-	$(MAKE) -j -C packages
-
-ami: common
+ami: initrd.img
 	docker-compose build ami
 	docker-compose run --rm -T ami clean
 	docker-compose run --rm -T ami bake
 
-ami-clean-mount: common
+ami-clean-mount:
 	docker-compose run --rm -T ami clean-mount
 
-azure: common
+azure: initrd.img
 	docker-compose build azure
 	docker-compose run --rm -T azure makeraw
 	docker build -t raw2vhd -f cloud/Dockerfile.raw2vhd cloud
