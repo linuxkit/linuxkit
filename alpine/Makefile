@@ -51,6 +51,9 @@ ami: common
 	docker-compose run --rm -T ami clean
 	docker-compose run --rm -T ami bake
 
+ami-clean-mount: common
+	docker-compose run --rm -T ami clean-mount
+
 azure: common
 	docker-compose build azure
 	docker-compose run --rm -T azure makeraw
