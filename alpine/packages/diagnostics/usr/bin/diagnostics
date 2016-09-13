@@ -22,7 +22,8 @@ DOCKER=$(ps -eo args | grep '^/usr/bin/dockerd')
 CONTAINERD=$(ps -eo args | grep '^docker-containerd')
 [ $? -eq 0 ] && printf "✓ Process containerd running: $CONTAINERD\n" || printf "✗ No containerd process\n"
 DOCKERPS=$(docker ps 2>&1)
-[ $? -eq 0 ] && printf "✓ Docker daemon working\n" || printf "✗ Docker ps failed: $DOCKERPS\n"
+DOCKERV=$(docker --version)
+[ $? -eq 0 ] && printf "✓ Docker daemon working: ${DOCKERV}\n" || printf "✗ Docker ps failed: $DOCKERPS\n"
 DIAGNOSTICS=$(ps -eo args | grep '^/usr/bin/diagnostics-server')
 [ $? -eq 0 ] && printf "✓ Diagnostics server running: $DIAGNOSTICS\n" || printf "✗ No diagnostics server\n"
 CONTAINERD=$(ps -eo args | grep '^/usr/bin/containerd')
