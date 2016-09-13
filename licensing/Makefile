@@ -7,6 +7,7 @@ license: packages.lua Dockerfile license.sh
 run: license
 	rm -rf output
 	docker run -it -v /etc:/hostetc -v /usr:/hostusr -v /lib:/lib -v $(PWD)/output:/output license
+	docker run -it --rm -v $(PWD):/licensing debian sh -c "cd /licensing/output && tar --numeric-owner -zcvf /licensing/License.tar.gz *"
 
 clean:
 	rm -rf output
