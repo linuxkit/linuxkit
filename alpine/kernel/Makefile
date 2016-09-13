@@ -8,21 +8,17 @@ $(ARCH)/mobykernel-build: Dockerfile kernel_config
 	docker build --build-arg DEBUG=$(DEBUG) -t mobykernel:build .
 	touch $@
 
-$(ARCH)/aufs-utils.tar $(ARCH)/kernel-source-info $(ARCH)/kernel-patches.tar $(ARCH)/kernel-modules.tar: $(ARCH)/mobykernel-build
-	docker run --rm mobykernel:build cat /$(notdir $@) > $@ || ! rm $@
-
-$(ARCH)/bzImage $(ARCH)/zImage: $(ARCH)/aufs-utils.tar $(ARCH)/kernel-source-info $(ARCH)/kernel-patches.tar $(ARCH)/kernel-modules.tar $(ARCH)/mobykernel-build
+$(ARCH)/bzImage: $(ARCH)/mobykernel-build
 	docker run --rm mobykernel:build cat /linux/arch/$(ARCH)/boot/$(notdir $@) > $@ || ! rm $@
-
-$(ARCH)/vmlinux: $(ARCH)/bzImage
-	docker run --rm mobykernel:build cat /linux/vmlinux > $@ || ! rm $@
+	docker run --rm --net=none mobykernel:build cat /kernel-modules.tar | tar xf -
+	docker run --rm mobykernel:build cat /aufs-utils.tar | tar xf -
+	docker run --rm mobykernel:build cat /kernel-source-info > etc/kernel-source-info
+	mkdir -p etc
+	cp -a patches etc/kernel-patches
 
 $(ARCH)/vmlinuz64: $(ARCH)/bzImage
 	cp $< $@
 
-clean-arch:
-	rm -rf $(ARCH)
-	docker images -q mobykernel:build | xargs docker rmi -f || true
-
 clean:
-	$(MAKE) clean-arch ARCH=x86_64
+	rm -rf $(ARCH) lib etc usr sbin
+	docker images -q mobykernel:build | xargs docker rmi -f || true

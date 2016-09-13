@@ -3,24 +3,26 @@ FROM alpine:3.4
 RUN \
   apk update && apk upgrade && \
   apk add \
-  e2fsprogs \
-  chrony \
-  git \
-  xz \
-  iptables \
-  sfdisk \
-  lvm2 \
-  syslinux \
-  openrc \
-  busybox-initscripts \
   alpine-conf \
   bind-tools \
-  openssh-client \
-  strace \
-  fuse \
+  busybox-initscripts \
+  chrony \
   cifs-utils \
+  e2fsprogs \
   e2fsprogs-extra \
-  openssl \
+  fuse \
+  git \
+  iptables \
   jq \
+  lvm2 \
+  make \
+  openrc \
+  openssh-client \
+  openssl \
+  sfdisk \
+  strace \
   sysklogd \
+  syslinux \
+  tar \
+  xz \
   && rm -rf /var/cache/apk/*

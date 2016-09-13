@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"encoding/binary"
 	"io"
+	"log"
 	"net"
 	"sync"
-
-	"github.com/Sirupsen/logrus"
 )
 
 type udpListener interface {
@@ -32,7 +31,7 @@ func (u *udpEncapsulator) getConn() (net.Conn, error) {
 	}
 	conn, err := u.listener.Accept()
 	if err != nil {
-		logrus.Printf("Failed to accept connection: %#v", err)
+		log.Printf("Failed to accept connection: %#v", err)
 		return nil, err
 	}
 	u.conn = &conn

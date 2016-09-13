@@ -41,6 +41,7 @@ start()
 	esac
 
 	# some config is always in /etc/docker cannot specify alternative eg certs
+	mkdir -p /etc/docker
 	if mobyconfig exists etc/docker
 	then
 		for f in $(mobyconfig find etc/docker)

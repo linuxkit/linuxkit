@@ -1,15 +1,13 @@
 all: vsudd
 
-.PHONY: vendor
-vendor:
-	mkdir -p ./vendor
-	cp -r ../go/vendor/* ./vendor/
+DEPS=Dockerfile $(wildcard *.go)
 
-vsudd: Dockerfile main.go vendor
-	docker build --build-arg GOOS=$(OS) --build-arg GOARCH=$(ARCH) -t vsudd:build .
-	docker run --rm vsudd:build cat /go/bin/vsudd > vsudd
-	chmod 755 vsudd
+vsudd: $(DEPS) ../vendor/manifest
+	mkdir -p sbin
+	tar cf - $(DEPS) -C .. vendor | docker build -t vsudd:build -
+	docker run --rm --net=none vsudd:build | tar xf - -C sbin
 
 clean:
-	rm -rf vsudd vendor
-	docker images -q vsudd:build | xargs docker rmi -f || true
+	rm -rf sbin
+
+.DELETE_ON_ERROR:

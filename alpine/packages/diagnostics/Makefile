@@ -1,15 +1,12 @@
-all: diagnostics-server
+all: usr/bin/diagnostics-server
 
-.PHONY: vendor
-vendor:
-	mkdir -p ./vendor
-	cp -r ../go/vendor/* ./vendor/
+DEPS=Dockerfile $(wildcard *.go)
 
-diagnostics-server: Dockerfile main.go vendor
-	docker build --build-arg GOOS=$(OS) --build-arg GOARCH=$(ARCH) -t diagnostics:build .
-	docker run --rm diagnostics:build cat /go/bin/diagnostics > diagnostics-server
-	chmod 755 diagnostics-server
+usr/bin/diagnostics-server: $(DEPS) ../vendor/manifest
+	tar cf - $(DEPS) -C .. vendor | docker build -t diagnostics-server:build -
+	docker run --rm --net=none diagnostics-server:build | tar xf - -C usr/bin
 
 clean:
-	rm -rf diagnostics-server vendor
-	docker images -q diagnostics:build | xargs docker rmi -f || true
+	rm -f usr/bin/diagnostics-server
+
+.DELETE_ON_ERROR:
