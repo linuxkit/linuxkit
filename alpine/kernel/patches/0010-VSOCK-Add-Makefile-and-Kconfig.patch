@@ -1,25 +1,26 @@
-From d8b94a29a8e7fee77250aaa1ab3b1f80ad6c8882 Mon Sep 17 00:00:00 2001
+From 5600cbdcb09f2a322c696e37570d031932a3baa4 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:35 +0100
-Subject: [PATCH 10/45] VSOCK: Add Makefile and Kconfig
+Subject: [PATCH 10/46] VSOCK: Add Makefile and Kconfig
 
 Enable virtio-vsock and vhost-vsock.
 
 Signed-off-by: Asias He <asias@redhat.com>
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
-(from RFC v6 <1469716595-13591-7-git-send-email-stefanha@redhat.com>)
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 304ba62fd4e670c1a5784585da0fac9f7309ef6c)
 ---
- drivers/vhost/Kconfig  | 15 +++++++++++++++
+ drivers/vhost/Kconfig  | 14 ++++++++++++++
  drivers/vhost/Makefile |  4 ++++
  net/vmw_vsock/Kconfig  | 20 ++++++++++++++++++++
  net/vmw_vsock/Makefile |  6 ++++++
- 4 files changed, 45 insertions(+)
+ 4 files changed, 44 insertions(+)
 
 diff --git a/drivers/vhost/Kconfig b/drivers/vhost/Kconfig
-index 533eaf0..d7aae9e 100644
+index 533eaf0..2b5f588 100644
 --- a/drivers/vhost/Kconfig
 +++ b/drivers/vhost/Kconfig
-@@ -21,6 +21,21 @@ config VHOST_SCSI
+@@ -21,6 +21,20 @@ config VHOST_SCSI
  	Say M here to enable the vhost_scsi TCM fabric module
  	for use with virtio-scsi guests
  
@@ -28,7 +29,6 @@ index 533eaf0..d7aae9e 100644
 +	depends on VSOCKETS && EVENTFD
 +	select VIRTIO_VSOCKETS_COMMON
 +	select VHOST
-+	select VHOST_RING
 +	default n
 +	---help---
 +	This kernel module can be loaded in the host kernel to provide AF_VSOCK

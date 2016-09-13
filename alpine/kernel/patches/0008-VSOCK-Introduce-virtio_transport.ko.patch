@@ -1,14 +1,15 @@
-From c6a12128d92b89b3d424e7cd3dd3c6cbfe4e1011 Mon Sep 17 00:00:00 2001
+From e21bdf5a9a62fbdabddca3cafc8aa2b02f2cc165 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:33 +0100
-Subject: [PATCH 08/45] VSOCK: Introduce virtio_transport.ko
+Subject: [PATCH 08/46] VSOCK: Introduce virtio_transport.ko
 
 VM sockets virtio transport implementation.  This driver runs in the
 guest.
 
 Signed-off-by: Asias He <asias@redhat.com>
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
-(from RFC v6 <1469716595-13591-5-git-send-email-stefanha@redhat.com>)
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 0ea9e1d3a9e3ef7d2a1462d3de6b95131dc7d872)
 ---
  MAINTAINERS                      |   1 +
  net/vmw_vsock/virtio_transport.c | 624 +++++++++++++++++++++++++++++++++++++++

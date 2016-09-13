@@ -1,14 +1,15 @@
-From 007cc7ab2d6af1c213b5d5e8fc0cd651bad8f486 Mon Sep 17 00:00:00 2001
+From 7cba4e91a9e1359345ccb7dbff243cedf5b5e6ea Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:34 +0100
-Subject: [PATCH 09/45] VSOCK: Introduce vhost_vsock.ko
+Subject: [PATCH 09/46] VSOCK: Introduce vhost_vsock.ko
 
 VM sockets vhost transport implementation.  This driver runs on the
 host.
 
 Signed-off-by: Asias He <asias@redhat.com>
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
-(from RFC v6 <1469716595-13591-6-git-send-email-stefanha@redhat.com>)
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 433fc58e6bf2c8bd97e57153ed28e64fd78207b8)
 ---
  MAINTAINERS                |   2 +
  drivers/vhost/vsock.c      | 722 +++++++++++++++++++++++++++++++++++++++++++++

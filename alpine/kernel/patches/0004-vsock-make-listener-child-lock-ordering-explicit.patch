@@ -1,7 +1,7 @@
 From c1bc13ebe28532f99cb6b8edaa57a6aa61adbe58 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 23 Jun 2016 16:28:58 +0100
-Subject: [PATCH 04/45] vsock: make listener child lock ordering explicit
+Subject: [PATCH 04/46] vsock: make listener child lock ordering explicit
 
 There are several places where the listener and pending or accept queue
 child sockets are accessed at the same time.  Lockdep is unhappy that

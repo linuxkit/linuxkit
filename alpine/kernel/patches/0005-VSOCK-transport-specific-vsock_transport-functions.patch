@@ -1,7 +1,7 @@
-From fdce29497e948f4a9f9417b4a908ec54feb1c9fa Mon Sep 17 00:00:00 2001
+From 3351d8e1a0e52529aea4b5c3ce0c2ef3ad43ee17 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:30 +0100
-Subject: [PATCH 05/45] VSOCK: transport-specific vsock_transport functions
+Subject: [PATCH 05/46] VSOCK: transport-specific vsock_transport functions
 
 struct vsock_transport contains function pointers called by AF_VSOCK
 core code.  The transport may want its own transport-specific function
@@ -13,7 +13,8 @@ access transport-specific function pointers.
 The virtio transport will use this.
 
 Signed-off-by: Stefan Hajnoczi <stefanha@redhat.com>
-(from RFC v6 <1469716595-13591-2-git-send-email-stefanha@redhat.com>)
+Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
+(cherry picked from commit 0b01aeb3d2fbf16787f0c9629f4ca52ae792f732)
 ---
  include/net/af_vsock.h   | 3 +++
  net/vmw_vsock/af_vsock.c | 9 +++++++++
