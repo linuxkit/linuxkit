@@ -22,7 +22,8 @@ setup_console() {
 	# skip consoles already in inittab
 	grep -q "^$tty:" "$inittab" && return
 
-	echo "$tty::respawn:/sbin/getty $line $speed $tty $term" >> "$inittab"
+	echo "$tty::once:cat /etc/issue" >> "$inittab"
+	echo "$tty::respawn:/sbin/getty -n -l /bin/sh $line $speed $tty $term" >> "$inittab"
 	if ! grep -q -w "$tty" "$securetty"; then
 		echo "$tty" >> "$securetty"
 	fi
