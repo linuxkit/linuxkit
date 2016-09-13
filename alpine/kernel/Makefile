@@ -3,7 +3,7 @@ DEBUG ?= 0
 all:	x86_64/vmlinuz64
 
 x86_64/vmlinuz64: Dockerfile kernel_config
-	mkdir -p $(ARCH) etc
+	mkdir -p x86_64 etc
 	docker build --build-arg DEBUG=$(DEBUG) -t mobykernel:build .
 	docker run --rm --net=none mobykernel:build cat /kernel-modules.tar | tar xf -
 	docker run --rm --net=none mobykernel:build cat /aufs-utils.tar | tar xf -
