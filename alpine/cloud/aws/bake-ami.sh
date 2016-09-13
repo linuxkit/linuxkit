@@ -15,7 +15,7 @@ PROVIDER="aws"
 # TODO(nathanleclaire): This could be calculated dynamically to avoid conflicts.
 EBS_DEVICE=/dev/xvdb
 
-bake_image() 
+bake_image()
 {
 	# Create a new EBS volume.  We will format this volume to boot into Moby
 	# initrd via syslinux in MBR.  That formatted drive can then be snapshotted
@@ -76,13 +76,8 @@ bake_image()
 	echo "${IMAGE_ID}" >"${MOBY_SRC_ROOT}/cloud/aws/ami_id.out"
 }
 
-clean_tagged_resources()
+clean_volume_mount()
 {
-	if [ -d "${MOBY_SRC_ROOT}/moby" ]
-	then
-		rm -rf "${MOBY_SRC_ROOT}/moby"
-	fi
-
 	VOLUME_ID=$(aws ec2 describe-volumes --filters "Name=tag-key,Values=$1" | jq -r .Volumes[0].VolumeId)
 	if [ ${VOLUME_ID} = "null" ]
 	then
@@ -94,6 +89,16 @@ clean_tagged_resources()
 		arrowecho "Deleting volume"
 		aws ec2 delete-volume --volume-id ${VOLUME_ID} >/dev/null
 	fi
+}
+
+clean_tagged_resources()
+{
+	if [ -d "${MOBY_SRC_ROOT}/moby" ]
+	then
+		rm -rf "${MOBY_SRC_ROOT}/moby"
+	fi
+
+	clean_volume_mount $1
 
 	IMAGE_ID=$(aws ec2 describe-images --filters "Name=tag-key,Values=$1" | jq -r .Images[0].ImageId)
 	if [ ${IMAGE_ID} = "null" ]
@@ -103,7 +108,7 @@ clean_tagged_resources()
 		arrowecho "Deregistering previously baked AMI"
 
 		# Sometimes describe-images does not return null even if the found
-		# image cannot be deregistered 
+		# image cannot be deregistered
 		#
 		# TODO(nathanleclaire): More elegant solution?
 		aws ec2 deregister-image --image-id ${IMAGE_ID} >/dev/null || errecho "WARN: Issue deregistering previously tagged image!"
@@ -129,6 +134,9 @@ case "$1" in
 		arrowecho "Cleaning resources from current build tag if applicable..."
 		clean_tagged_resources "${TAG_KEY}"
 		;;
+	clean-mount)
+		clean_volume_mount "${TAG_KEY}"
+		;;
 	*)
-		echo "Command $1 not found.  Usage: ./bake-ami.sh [bake|clean]"
+		echo "Command $1 not found.  Usage: ./bake-ami.sh [bake|clean|clean-mount]"
 esac
