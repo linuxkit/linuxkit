@@ -33,16 +33,16 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/azure etc -C ../.. \
 	  | \
 	  docker build -t moby-initrd:build -
-	docker run --net=none --rm moby-initrd:build > $@
+	docker run --net=none --log-driver=none --rm moby-initrd:build > $@
 
 mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 	tar cf - $^ | docker build -t moby-efi:build -f Dockerfile.efi -
-	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > mobylinux.efi
-	docker run --net=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux-efi.iso > $@
+	docker run --net=none --log-driver=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > mobylinux.efi
+	docker run --net=none --log-driver=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux-efi.iso > $@
 
 mobylinux-bios.iso: Dockerfile.bios initrd.img kernel/x86_64/vmlinuz64 isolinux.cfg
 	tar cf - $^ | docker build -t moby-bios:build -f Dockerfile.bios -
-	docker run --net=none --rm moby-bios:build cat /tmp/mobylinux-bios.iso > $@
+	docker run --net=none --log-driver=none --rm moby-bios:build cat /tmp/mobylinux-bios.iso > $@
 
 ami: initrd.img
 	docker-compose build ami
