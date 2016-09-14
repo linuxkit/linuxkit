@@ -1,0 +1,87 @@
+From 5c3a0d077f4c0ecd17117c04b0b6fef7e8acbdea Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Mon, 14 Dec 2015 16:01:47 -0800
+Subject: [PATCH 19/46] Drivers: hv: vmbus: serialize process_chn_event() and
+ vmbus_close_internal()
+
+process_chn_event(), running in the tasklet, can race with
+vmbus_close_internal() in the case of SMP guest, e.g., when the former is
+accessing channel->inbound.ring_buffer, the latter could be freeing the
+ring_buffer pages.
+
+To resolve the race, we can serialize them by disabling the tasklet when
+the latter is running here.
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 63d55b2aeb5e4faa170316fee73c3c47ea9268c7)
+---
+ drivers/hv/channel.c | 21 +++++++++++++++++++--
+ 1 file changed, 19 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index 9098f13..6a90c69 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -28,6 +28,7 @@
+ #include <linux/module.h>
+ #include <linux/hyperv.h>
+ #include <linux/uio.h>
++#include <linux/interrupt.h>
+ 
+ #include "hyperv_vmbus.h"
+ 
+@@ -496,8 +497,21 @@ static void reset_channel_cb(void *arg)
+ static int vmbus_close_internal(struct vmbus_channel *channel)
+ {
+ 	struct vmbus_channel_close_channel *msg;
++	struct tasklet_struct *tasklet;
+ 	int ret;
+ 
++	/*
++	 * process_chn_event(), running in the tasklet, can race
++	 * with vmbus_close_internal() in the case of SMP guest, e.g., when
++	 * the former is accessing channel->inbound.ring_buffer, the latter
++	 * could be freeing the ring_buffer pages.
++	 *
++	 * To resolve the race, we can serialize them by disabling the
++	 * tasklet when the latter is running here.
++	 */
++	tasklet = hv_context.event_dpc[channel->target_cpu];
++	tasklet_disable(tasklet);
++
+ 	channel->state = CHANNEL_OPEN_STATE;
+ 	channel->sc_creation_callback = NULL;
+ 	/* Stop callback and cancel the timer asap */
+@@ -525,7 +539,7 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+ 		 * If we failed to post the close msg,
+ 		 * it is perhaps better to leak memory.
+ 		 */
+-		return ret;
++		goto out;
+ 	}
+ 
+ 	/* Tear down the gpadl for the channel's ring buffer */
+@@ -538,7 +552,7 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+ 			 * If we failed to teardown gpadl,
+ 			 * it is perhaps better to leak memory.
+ 			 */
+-			return ret;
++			goto out;
+ 		}
+ 	}
+ 
+@@ -555,6 +569,9 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+ 	if (channel->rescind)
+ 		hv_process_channel_removal(channel,
+ 					   channel->offermsg.child_relid);
++out:
++	tasklet_enable(tasklet);
++
+ 	return ret;
+ }
+ 
+-- 
+2.9.3
+

@@ -1,0 +1,99 @@
+From f478bef9bcd76c17c338c7c96422f22dad0d02e3 Mon Sep 17 00:00:00 2001
+From: Vitaly Kuznetsov <vkuznets@redhat.com>
+Date: Wed, 27 Jan 2016 22:29:35 -0800
+Subject: [PATCH 29/46] Drivers: hv: vmbus: avoid scheduling in interrupt
+ context in vmbus_initiate_unload()
+
+We have to call vmbus_initiate_unload() on crash to make kdump work but
+the crash can also be happening in interrupt (e.g. Sysrq + c results in
+such) where we can't schedule or the following will happen:
+
+[  314.905786] bad: scheduling from the idle thread!
+
+Just skipping the wait (and even adding some random wait here) won't help:
+to make host-side magic working we're supposed to receive CHANNELMSG_UNLOAD
+(and actually confirm the fact that we received it) but we can't use
+interrupt-base path (vmbus_isr()-> vmbus_on_msg_dpc()). Implement a simple
+busy wait ignoring all the other messages and use it if we're in an
+interrupt context.
+
+Signed-off-by: Vitaly Kuznetsov <vkuznets@redhat.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 415719160de3fae3bb9cbc617664649919cd00d0)
+---
+ drivers/hv/channel_mgmt.c | 44 +++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 43 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index af1d82e..d6c6114 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -28,6 +28,7 @@
+ #include <linux/list.h>
+ #include <linux/module.h>
+ #include <linux/completion.h>
++#include <linux/delay.h>
+ #include <linux/hyperv.h>
+ 
+ #include "hyperv_vmbus.h"
+@@ -589,6 +590,40 @@ static void init_vp_index(struct vmbus_channel *channel, u16 dev_type)
+ 	channel->target_vp = hv_context.vp_index[cur_cpu];
+ }
+ 
++static void vmbus_wait_for_unload(void)
++{
++	int cpu = smp_processor_id();
++	void *page_addr = hv_context.synic_message_page[cpu];
++	struct hv_message *msg = (struct hv_message *)page_addr +
++				  VMBUS_MESSAGE_SINT;
++	struct vmbus_channel_message_header *hdr;
++	bool unloaded = false;
++
++	while (1) {
++		if (msg->header.message_type == HVMSG_NONE) {
++			mdelay(10);
++			continue;
++		}
++
++		hdr = (struct vmbus_channel_message_header *)msg->u.payload;
++		if (hdr->msgtype == CHANNELMSG_UNLOAD_RESPONSE)
++			unloaded = true;
++
++		msg->header.message_type = HVMSG_NONE;
++		/*
++		 * header.message_type needs to be written before we do
++		 * wrmsrl() below.
++		 */
++		mb();
++
++		if (msg->header.message_flags.msg_pending)
++			wrmsrl(HV_X64_MSR_EOM, 0);
++
++		if (unloaded)
++			break;
++	}
++}
++
+ /*
+  * vmbus_unload_response - Handler for the unload response.
+  */
+@@ -614,7 +649,14 @@ void vmbus_initiate_unload(void)
+ 	hdr.msgtype = CHANNELMSG_UNLOAD;
+ 	vmbus_post_msg(&hdr, sizeof(struct vmbus_channel_message_header));
+ 
+-	wait_for_completion(&vmbus_connection.unload_event);
++	/*
++	 * vmbus_initiate_unload() is also called on crash and the crash can be
++	 * happening in an interrupt context, where scheduling is impossible.
++	 */
++	if (!in_interrupt())
++		wait_for_completion(&vmbus_connection.unload_event);
++	else
++		vmbus_wait_for_unload();
+ }
+ 
+ /*
+-- 
+2.9.3
+

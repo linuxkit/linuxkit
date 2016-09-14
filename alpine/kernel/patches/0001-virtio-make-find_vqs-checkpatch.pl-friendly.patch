@@ -1,7 +1,7 @@
-From 4c251c111a65c8eef8e4dcf0b7326ef7761f6ab9 Mon Sep 17 00:00:00 2001
+From 0d67af6648f600656eb20cb2ca1d35cb0985e9bd Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 16:53:43 +0800
-Subject: [PATCH 01/40] virtio: make find_vqs() checkpatch.pl-friendly
+Subject: [PATCH 01/46] virtio: make find_vqs() checkpatch.pl-friendly
 
 checkpatch.pl wants arrays of strings declared as follows:
 
@@ -115,10 +115,10 @@ index 1b83159..bf2d130 100644
  	struct virtio_ccw_device *vcdev = to_vc_device(vdev);
  	unsigned long *indicatorp = NULL;
 diff --git a/drivers/virtio/virtio_balloon.c b/drivers/virtio/virtio_balloon.c
-index 7d3e5d0..0c3691f 100644
+index 56f7e25..66082c9 100644
 --- a/drivers/virtio/virtio_balloon.c
 +++ b/drivers/virtio/virtio_balloon.c
-@@ -388,7 +388,7 @@ static int init_vqs(struct virtio_balloon *vb)
+@@ -394,7 +394,7 @@ static int init_vqs(struct virtio_balloon *vb)
  {
  	struct virtqueue *vqs[3];
  	vq_callback_t *callbacks[] = { balloon_ack, balloon_ack, stats_request };
@@ -215,5 +215,5 @@ index e5ce8ab..6e6cb0c 100644
  	u64 (*get_features)(struct virtio_device *vdev);
  	int (*finalize_features)(struct virtio_device *vdev);
 -- 
-2.9.0
+2.9.3
 
