@@ -36,7 +36,7 @@ endif
 media: Dockerfile.media alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-bios.iso alpine/mobylinux-efi.iso
 ifeq ($(STATUS),)
 	tar cf - $^ alpine/mobylinux.efi | docker build -f Dockerfile.media -t mobylinux/media:$(MEDIA_PREFIX)latest -
-	docker tag mobylinux/media:$(EXP_PREFIX)latest mobylinux/media:$(MEDIA_PREFIX)$(TAG)
+	docker tag mobylinux/media:$(MEDIA_PREFIX)latest mobylinux/media:$(MEDIA_PREFIX)$(TAG)
 	docker push mobylinux/media:$(MEDIA_PREFIX)$(TAG)
 	docker push mobylinux/media:$(MEDIA_PREFIX)latest
 else
