@@ -8,10 +8,15 @@ RUN apk add --update \
     jq \
     syslinux
 RUN pip install -U awscli
-RUN mkdir -p /scripts
+RUN mkdir /build
+RUN mkdir /scripts
 WORKDIR /scripts
-COPY ./build-common.sh .
-COPY ./aws/common.sh .
-COPY ./aws/bake-ami.sh .
+COPY ./kernel/x86_64/vmlinuz64 /build
+COPY ./initrd.img /build
+COPY ./cloud/aws/syslinux.cfg /build/syslinux.cfg
+COPY ./cloud/build-common.sh .
+COPY ./cloud/aws/common.sh .
+COPY ./cloud/aws/aws.sh .
+COPY ./cloud/aws/bake-ami.sh .
 
-ENTRYPOINT ["./bake-ami.sh"]
+ENTRYPOINT ["./aws.sh"]

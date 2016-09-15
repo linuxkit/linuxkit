@@ -2,7 +2,7 @@
 
 set -e
 
-MOBY_SRC_ROOT=${MOBY_SRC_ROOT:-/mnt}
+MOBY_SRC_ROOT=${MOBY_SRC_ROOT:-/build}
 
 arrowecho()
 {
@@ -96,9 +96,9 @@ configure_syslinux_on_device_partition()
 	arrowecho "Copying image and kernel binary to partition"
 
 	# Get files needed to boot in place.
-	cp ${MOBY_SRC_ROOT}/cloud/${PROVIDER}/syslinux.cfg ${ROOT_PARTITION_MOUNT}
+	cp ${MOBY_SRC_ROOT}/syslinux.cfg ${ROOT_PARTITION_MOUNT}
 	cat ${ROOT_PARTITION_MOUNT}/syslinux.cfg
-	cp ${MOBY_SRC_ROOT}/kernel/x86_64/vmlinuz64 ${ROOT_PARTITION_MOUNT}
+	cp ${MOBY_SRC_ROOT}/vmlinuz64 ${ROOT_PARTITION_MOUNT}
 	cp ${MOBY_SRC_ROOT}/initrd.img ${ROOT_PARTITION_MOUNT}
 
 	# From http://www.syslinux.org/wiki/index.php?title=EXTLINUX:
