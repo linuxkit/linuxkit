@@ -37,12 +37,10 @@ start()
 		# far because it can't dial the DNS lookup properly.
 		# 
 		# TODO: Debug.
-
 		if [ "$i" -eq 20 ]; then
 			echo "Unable to run Windows Azure Linux Agent container"
 			exit 1
 		fi
-
 		sleep 5
 	done
 

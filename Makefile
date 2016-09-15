@@ -26,6 +26,7 @@ test: Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 lint
 	touch test.log
 	docker run --rm mobytest:build 2>&1 | tee -a test.log &
 	tail -f test.log 2>/dev/null | grep -m 1 -q 'Moby test suite '
+	cat test.log | grep -q 'Moby test suite PASSED'
 
 TAG=$(shell git rev-parse HEAD)
 STATUS=$(shell git status -s)

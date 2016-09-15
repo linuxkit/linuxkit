@@ -94,7 +94,7 @@ start()
 			mount --bind "${DRIVERDIR}/log" /var/log
 		fi
 	fi
-	
+
 	# set ulimits as high as possible
 	# shellcheck disable=SC2039
 	ulimit -n 1048576

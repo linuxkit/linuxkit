@@ -25,14 +25,14 @@ start() {
 	     GW=$(mobyconfig get net/gateway)
 
 	     cp /etc/network/interfaces.template /etc/network/interfaces
-	     cat << EOF >> /etc/network/interfaces
-auto eth0
-iface eth0 inet static
-address ${IP}
-netmask ${MASK}
-gateway ${GW}
-metric  200
-EOF
+	     {
+                 echo "auto eth0"
+                 echo "iface eth0 inet static"
+                 echo "    address ${IP}"
+                 echo "    netmask ${MASK}"
+                 echo "    gateway ${GW}"
+                 echo "    metric  200"
+             } >> /etc/network/interfaces
 	fi
 	
 	mobyconfig exists etc/ssl/certs/ca-certificates.crt && mobyconfig get etc/ssl/certs/ca-certificates.crt >> /etc/ssl/certs/ca-certificates.crt 
