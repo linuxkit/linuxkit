@@ -31,6 +31,7 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/containerd etc -C ../.. \
 	  -C packages/aws etc -C ../.. \
 	  -C packages/azure etc -C ../.. \
+	  -C packages/random etc sbin -C ../.. \
 	  | \
 	  docker build -t moby-initrd:build -
 	docker run --net=none --log-driver=none --rm moby-initrd:build > $@

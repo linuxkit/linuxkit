@@ -1,0 +1,10 @@
+#!/sbin/openrc-run
+
+start()
+{
+	ebegin "Adding to random seed"
+
+	/sbin/add-random
+
+	eend $? "Failed to add randomness"
+}
