@@ -54,4 +54,4 @@ SCRIPTS=$(shell find . -type f \
 	-exec file {} \; | grep 'POSIX\|openrc' | cut -d ":" -f 1)
 
 lint:
-	@docker run -it --rm -v $(shell pwd):/mnt nlknguyen/alpine-shellcheck:v0.4.4 -e SC1008 ${SCRIPTS}
+	@docker run -it --rm -v $(shell pwd):/mnt nlknguyen/alpine-shellcheck:v0.4.4 -e SC1008,SC1090,SC1091 ${SCRIPTS}

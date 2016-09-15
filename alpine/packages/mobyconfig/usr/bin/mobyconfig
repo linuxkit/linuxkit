@@ -2,11 +2,11 @@
 
 if [ $# -ne 2 ]
 then
-  printf "usage: $0 [get|exists|path|dir|find] key\n"
+  printf "usage: %s [get|exists|path|dir|find] key\n" "$0"
   exit 0
 fi
 
-if [ $1 == "set" ]
+if [ "$1" = "set" ]
 then
   printf "Configuration is immutable\n" 1>&2
   exit 1
@@ -38,57 +38,57 @@ case "$(mobyplatform)" in
     BASE="/Database"
 esac
 
-KEY=$(echo $2 | sed 's@^/@@')
+KEY="$(echo "$2" | sed 's@^/@@')"
 
-if [ $1 == "exists" ]
+if [ "$1" = "exists" ]
 then
-  [ -d ${BASE}/${KEY} ] && exit 0
-  [ -f ${BASE}/${KEY} ] || exit 1
-  VALUE="$(cat ${BASE}/${KEY} | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//')"
+  [ -d "${BASE}/${KEY}" ] && exit 0
+  [ -f "${BASE}/${KEY}" ] || exit 1
+  VALUE="$(sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' "${BASE}/${KEY}")"
   [ -z "${VALUE}" ] && exit 1
   exit 0
 fi
 
-if [ $1 == "dir" ]
+if [ "$1" = "dir" ]
 then
-  [ -d ${BASE}/${KEY} ] && exit 0 || exit 1
+  [ -d "${BASE}/${KEY}" ] && exit 0 || exit 1
 fi
 
-if [ $1 == "get" ]
+if [ "$1" = "get" ]
 then
-  if [ -f ${BASE}/${KEY} ]
+  if [ -f "${BASE}/${KEY}" ]
   then
-    cat ${BASE}/${KEY}
+    cat "${BASE}/${KEY}"
     exit 0
   else
-    printf "No such key: ${KEY}\n" 1>&2
+    printf "No such key: %s\n" "$KEY" 1>&2
     exit 1
   fi
 fi
 
-if [ $1 == "path" ]
+if [ "$1" = "path" ]
 then
-  if [ -e ${BASE}/${KEY} ]
+  if [ -e "${BASE}/${KEY}" ]
   then
-    printf ${BASE}/${KEY}
+    printf "%s/%s" "$BASE" "$KEY"
     exit 0
   else
-    printf "No such key: ${KEY}\n" 1>&2
+    printf "No such key: %s\n" "$KEY" 1>&2
     exit 1
   fi
 fi
 
-if [ $1 == "find" ]
+if [ "$1" = "find" ]
 then
-  if [ -e ${BASE}/${KEY} ]
+  if [ -e "${BASE}/${KEY}" ]
   then
-    find ${BASE}/${KEY} -type f | sed "s@^${BASE}@@g"
+    find "${BASE}/${KEY}" -type f | sed "s@^${BASE}@@g"
     exit 0
   else
-    printf "No such key: ${KEY}\n" 1>&2
+    printf "No such key: %s\n" "$KEY" 1>&2
     exit 1
   fi
 fi
 
-printf "usage: $0 [get|exists|path|dir|find] key\n"
+printf "usage: %s [get|exists|path|dir|find] key\n" "$0"
 exit 1

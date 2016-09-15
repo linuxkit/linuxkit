@@ -2,7 +2,7 @@
 
 if [ "x$interface" != "xeth0" ] ; then exit 0 ; fi
 
-if cat /proc/cmdline | grep -q '\bntp=gateway\b' ; then
+if grep -q '\bntp=gateway\b' /proc/cmdline ; then
     if [ -n "$router" ] ; then
         logger -t udhcpc "ntp=gateway used, using \$router=$router as \$ntpsrv"
         server="$router trust"
@@ -11,7 +11,7 @@ if cat /proc/cmdline | grep -q '\bntp=gateway\b' ; then
     fi
 elif [ -n "$ntpsrv" ] ; then
     # Just take the first
-    set -- $ntpsrv
+    set -- "$ntpsrv"
     server="$1"
 fi
 
