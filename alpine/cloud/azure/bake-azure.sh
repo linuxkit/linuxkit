@@ -28,7 +28,7 @@ PROVIDER="azure"
 
 case "$1" in
 	makeraw)
-		RAW_IMAGE="${MOBY_SRC_ROOT}/mobylinux.img"
+		RAW_IMAGE="/tmp/mobylinux.img"
 
 		if [ -f "${RAW_IMAGE}" ]
 		then
@@ -57,7 +57,8 @@ case "$1" in
 		kpartx -d "${LOOPBACK_DEVICE}"
 		losetup -d "${LOOPBACK_DEVICE}"
 
-		arrowecho "Finished making raw image file"
+		arrowecho "Cleanup done, outputting created image.  This might take a while..."
+		arrowecho "Finished outputting raw image file to ${RAW_IMAGE}" 
 		;;
 
 	uploadvhd)
@@ -69,11 +70,13 @@ case "$1" in
 
 		AZURE_STG_ACCOUNT_NAME=${AZURE_STG_ACCOUNT_NAME:-"dockereditions"}
 		CONTAINER_NAME=${CONTAINER_NAME:-"mobylinux"}
-		BLOBNAME=${BLOBNAME:-$(md5sum "${MOBY_SRC_ROOT}/mobylinux.vhd" | awk '{ print $1; }')-mobylinux.vhd}
+		BLOBNAME=${BLOBNAME:-$(md5sum "/tmp/mobylinux.vhd" | awk '{ print $1; }')-mobylinux.vhd}
 		BLOB_URL="https://${AZURE_STG_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/${BLOBNAME}"
 
+		arrowecho "Uploading VHD to ${BLOBURL}..."
+
 		azure-vhd-utils-for-go upload \
-			--localvhdpath "${MOBY_SRC_ROOT}/mobylinux.vhd" \
+			--localvhdpath "/tmp/mobylinux.vhd" \
 			--stgaccountname "${AZURE_STG_ACCOUNT_NAME}" \
 			--stgaccountkey "${AZURE_STG_ACCOUNT_KEY}" \
 			--containername "${CONTAINER_NAME}" \
