@@ -1,15 +1,15 @@
 #!/bin/sh
 
-if [ "x$interface" != "xeth0" ] ; then exit 0 ; fi
+if [ "x${interface:?}" != "xeth0" ] ; then exit 0 ; fi
 
 if grep -q '\bntp=gateway\b' /proc/cmdline ; then
-    if [ -n "$router" ] ; then
+    if [ -n "${router:?}" ] ; then
         logger -t udhcpc "ntp=gateway used, using \$router=$router as \$ntpsrv"
         server="$router trust"
     else
         logger -t udhcpc "ntp=gateway used but \$router not provided"
     fi
-elif [ -n "$ntpsrv" ] ; then
+elif [ -n "${ntpsrv:?}" ] ; then
     # Just take the first
     set -- "$ntpsrv"
     server="$1"
