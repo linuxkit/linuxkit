@@ -10,6 +10,7 @@ RUN \
   busybox-initscripts \
   chrony \
   cifs-utils \
+  curl \
   e2fsprogs \
   e2fsprogs-extra \
   fuse \
