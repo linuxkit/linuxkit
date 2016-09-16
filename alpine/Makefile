@@ -1,7 +1,6 @@
 all:	initrd.img mobylinux-efi.iso mobylinux-bios.iso
 
-ETCFILES=etc/issue etc/motd etc/network/interfaces
-ETCFILES+=etc/inittab etc/fstab
+ETCFILES=$(shell find etc)
 
 initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
