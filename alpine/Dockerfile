@@ -16,6 +16,7 @@ RUN \
   rc-update add sysctl boot && \
   rc-update add bootmisc boot && \
   rc-update add urandom boot && \
+  rc-update add random boot && \
   rc-update add hostname boot && \
   rc-update add vsudd boot && \
   rc-update add sysklogd boot && \
