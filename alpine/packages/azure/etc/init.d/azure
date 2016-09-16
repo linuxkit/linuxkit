@@ -5,7 +5,7 @@ description="Bootstrap procedure if running on Docker Azure edition"
 depend()
 {
 	need docker
-	need networking
+	need net
 }
 
 start()

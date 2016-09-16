@@ -1,9 +1,0 @@
-auto lo
-iface lo inet loopback
-
-auto eth1
-iface eth1 inet dhcp
-    udhcpc_opts -T 1 -A 3
-    metric 199
-    pre-up service tap-vsockd start
-    post-down service tap-vsockd stop
