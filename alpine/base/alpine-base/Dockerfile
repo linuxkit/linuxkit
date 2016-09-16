@@ -20,6 +20,7 @@ RUN \
   lvm2 \
   make \
   openrc \
+  openssh \
   openssh-client \
   openssl \
   rng-tools@edgecommunity \
