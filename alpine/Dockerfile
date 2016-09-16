@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-base:1b684f4d3178e95649fbc3ecbca28834048fd3eb
+FROM mobylinux/alpine-base:e9f02e5109222e03566777f7041aee192a976a56
 
 ENV ARCH=x86_64
 
@@ -29,6 +29,7 @@ RUN \
   rc-update add dmesg sysinit && \
   rc-update add devfs sysinit && \
   rc-update add hwdrivers sysinit && \
+  rc-update add rngd && \
   rc-update add sysfs && \
   rc-update add sysfsconf && \
   rc-update add fsck && \

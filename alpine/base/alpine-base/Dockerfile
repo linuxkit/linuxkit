@@ -4,7 +4,7 @@ COPY repositories /etc/apk/
 
 RUN \
   apk update && apk upgrade && \
-  apk add \
+  apk add --no-cache \
   alpine-conf \
   bind-tools \
   busybox-initscripts \
@@ -22,10 +22,11 @@ RUN \
   openrc \
   openssh-client \
   openssl \
+  rng-tools@edgecommunity \
   sfdisk \
   strace \
   sysklogd \
   syslinux \
   tar \
   xz \
-  && rm -rf /var/cache/apk/*
+  && true
