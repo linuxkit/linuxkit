@@ -7,14 +7,17 @@
 /* Client -> Server init_message */
 /* Server -> Client init_message */
 struct init_message {
-  char hello[5];
-  uint8_t _padding[3];
-  uint32_t version;
-  char commit[40]; /* git sha of the compiled commit */
+	char hello[5];
+	uint8_t _padding[3];
+	uint32_t version;
+	char commit[40]; /* git sha of the compiled commit */
 };
 
-/* This should be bumped whenever we add something (like a feature or a bugfix)
-   and we wish the UI to be able to detect when to trigger a reinstall. */
+/*
+ * This should be bumped whenever we add something (like a feature or a
+ * bugfix) and we wish the UI to be able to detect when to trigger a
+ * reinstall.
+ */
 #define CURRENT_VERSION 13
 
 extern struct init_message *create_init_message(void);
@@ -24,24 +27,24 @@ extern char *print_init_message(struct init_message *m);
 
 /* Client -> Server command */
 enum command {
-  ethernet = 1,
+	ethernet = 1,
 };
 
 extern int write_command(int fd, enum command *c);
 
 /* Client -> Server command arguments */
 struct ethernet_args {
-  char uuid_string[36];
+	char uuid_string[36];
 };
 
 extern int write_ethernet_args(int fd, struct ethernet_args *args);
 
 /* Server -> Client: details of a vif */
 struct vif_info {
-  uint8_t mac[6];
-  short _padding;
-  size_t max_packet_size;
-  size_t mtu;
+	uint8_t mac[6];
+	short _padding;
+	size_t max_packet_size;
+	size_t mtu;
 };
 
 extern int read_vif_info(int fd, struct vif_info *vif);
