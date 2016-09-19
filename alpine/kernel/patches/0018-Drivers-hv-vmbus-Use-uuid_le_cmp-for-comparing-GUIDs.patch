@@ -1,7 +1,7 @@
-From 9ae0af317c2a085434b46197a663165895decaf6 Mon Sep 17 00:00:00 2001
+From 01a403dce6afb34dd0430e12d93b7acd5f384439 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:44 -0800
-Subject: [PATCH 18/46] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing
+Subject: [PATCH 18/42] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing
  GUIDs
 
 Use uuid_le_cmp() for comparing GUIDs.
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 38470aa..dc4fb0b 100644
+index 339277b..9b4525c 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -408,8 +408,7 @@ static void init_vp_index(struct vmbus_channel *channel, const uuid_le *type_gui
+@@ -409,8 +409,7 @@ static void init_vp_index(struct vmbus_channel *channel, const uuid_le *type_gui
  	struct cpumask *alloced_mask;
  
  	for (i = IDE; i < MAX_PERF_CHN; i++) {
@@ -29,10 +29,10 @@ index 38470aa..dc4fb0b 100644
  			break;
  		}
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 9aadcc2..bf54455 100644
+index 6ce2bf8..7973aa5 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -534,7 +534,7 @@ static const uuid_le null_guid;
+@@ -535,7 +535,7 @@ static const uuid_le null_guid;
  
  static inline bool is_null_guid(const uuid_le *guid)
  {
@@ -41,7 +41,7 @@ index 9aadcc2..bf54455 100644
  		return false;
  	return true;
  }
-@@ -548,7 +548,7 @@ static const struct hv_vmbus_device_id *hv_vmbus_get_id(
+@@ -549,7 +549,7 @@ static const struct hv_vmbus_device_id *hv_vmbus_get_id(
  					const uuid_le *guid)
  {
  	for (; !is_null_guid(&id->guid); id++)
@@ -51,5 +51,5 @@ index 9aadcc2..bf54455 100644
  
  	return NULL;
 -- 
-2.9.3
+2.10.0
 

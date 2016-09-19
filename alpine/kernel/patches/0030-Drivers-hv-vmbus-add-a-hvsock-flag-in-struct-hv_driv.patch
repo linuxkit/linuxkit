@@ -1,7 +1,7 @@
-From 6a067b8e07452ec14629bea5bfe0951877c27451 Mon Sep 17 00:00:00 2001
+From 58a10705d630bdcb5ea08c894d28851c73e9bd4f Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:41 -0800
-Subject: [PATCH 34/46] Drivers: hv: vmbus: add a hvsock flag in struct
+Subject: [PATCH 30/42] Drivers: hv: vmbus: add a hvsock flag in struct
  hv_driver
 
 Only the coming hv_sock driver has a "true" value for this flag.
@@ -20,10 +20,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 18 insertions(+)
 
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 959b656..d46b4ff 100644
+index de7130c..03fc5d3 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -584,6 +584,10 @@ static int vmbus_match(struct device *device, struct device_driver *driver)
+@@ -585,6 +585,10 @@ static int vmbus_match(struct device *device, struct device_driver *driver)
  	struct hv_driver *drv = drv_to_hv_drv(driver);
  	struct hv_device *hv_dev = device_to_hv_device(device);
  
@@ -60,5 +60,5 @@ index 191bc5d..05966e2 100644
  	uuid_le dev_type;
  	const struct hv_vmbus_device_id *id_table;
 -- 
-2.9.3
+2.10.0
 

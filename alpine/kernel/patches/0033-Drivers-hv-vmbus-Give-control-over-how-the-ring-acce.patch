@@ -1,7 +1,7 @@
-From d5f89659d3c0c5e05c3a76c3cc1b84aa505bc06e Mon Sep 17 00:00:00 2001
+From b7e3c4ad47b7fd47a79a723ac0c1823b6782d1ff Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:45 -0800
-Subject: [PATCH 37/46] Drivers: hv: vmbus: Give control over how the ring
+Subject: [PATCH 33/42] Drivers: hv: vmbus: Give control over how the ring
  access is serialized
 
 On the channel send side, many of the VMBUS
@@ -111,10 +111,10 @@ index cf311be..b40f429 100644
  	spin_lock_init(&channel->lock);
  
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index d9937be..b925fa3 100644
+index 50b1de7..89bb559 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
-@@ -612,7 +612,7 @@ void hv_ringbuffer_cleanup(struct hv_ring_buffer_info *ring_info);
+@@ -617,7 +617,7 @@ void hv_ringbuffer_cleanup(struct hv_ring_buffer_info *ring_info);
  
  int hv_ringbuffer_write(struct hv_ring_buffer_info *ring_info,
  		    struct kvec *kv_list,
@@ -204,5 +204,5 @@ index 993318a..6c9695e 100644
  {
  	return !!(c->offermsg.offer.chn_flags &
 -- 
-2.9.3
+2.10.0
 

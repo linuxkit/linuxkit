@@ -1,7 +1,7 @@
-From b26f3791593f6645c4e0e11fd93db7e47390fab6 Mon Sep 17 00:00:00 2001
+From 12fbf6bcf859c7ce33766ae450dc291d0b857197 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:43 -0800
-Subject: [PATCH 17/46] Drivers: hv: vmbus: Use uuid_le type consistently
+Subject: [PATCH 17/42] Drivers: hv: vmbus: Use uuid_le type consistently
 
 Consistently use uuid_le type in the Hyper-V driver code.
 
@@ -17,10 +17,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  5 files changed, 40 insertions(+), 68 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index a77646b..38470aa 100644
+index a562318..339277b 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -408,7 +408,7 @@ static void init_vp_index(struct vmbus_channel *channel, const uuid_le *type_gui
+@@ -409,7 +409,7 @@ static void init_vp_index(struct vmbus_channel *channel, const uuid_le *type_gui
  	struct cpumask *alloced_mask;
  
  	for (i = IDE; i < MAX_PERF_CHN; i++) {
@@ -30,10 +30,10 @@ index a77646b..38470aa 100644
  			perf_chn = true;
  			break;
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 9b5440f..9aadcc2 100644
+index 509ed97..6ce2bf8 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -532,7 +532,7 @@ static int vmbus_uevent(struct device *device, struct kobj_uevent_env *env)
+@@ -533,7 +533,7 @@ static int vmbus_uevent(struct device *device, struct kobj_uevent_env *env)
  
  static const uuid_le null_guid;
  
@@ -42,7 +42,7 @@ index 9b5440f..9aadcc2 100644
  {
  	if (memcmp(guid, &null_guid, sizeof(uuid_le)))
  		return false;
-@@ -545,9 +545,9 @@ static inline bool is_null_guid(const __u8 *guid)
+@@ -546,9 +546,9 @@ static inline bool is_null_guid(const __u8 *guid)
   */
  static const struct hv_vmbus_device_id *hv_vmbus_get_id(
  					const struct hv_vmbus_device_id *id,
@@ -54,7 +54,7 @@ index 9b5440f..9aadcc2 100644
  		if (!memcmp(&id->guid, guid, sizeof(uuid_le)))
  			return id;
  
-@@ -564,7 +564,7 @@ static int vmbus_match(struct device *device, struct device_driver *driver)
+@@ -565,7 +565,7 @@ static int vmbus_match(struct device *device, struct device_driver *driver)
  	struct hv_driver *drv = drv_to_hv_drv(driver);
  	struct hv_device *hv_dev = device_to_hv_device(device);
  
@@ -63,7 +63,7 @@ index 9b5440f..9aadcc2 100644
  		return 1;
  
  	return 0;
-@@ -581,7 +581,7 @@ static int vmbus_probe(struct device *child_device)
+@@ -582,7 +582,7 @@ static int vmbus_probe(struct device *child_device)
  	struct hv_device *dev = device_to_hv_device(child_device);
  	const struct hv_vmbus_device_id *dev_id;
  
@@ -293,5 +293,5 @@ index 9f5cdd4..8e8c69b 100644
  	strcpy(alias, "vmbus:");
  	strcat(alias, guid_name);
 -- 
-2.9.3
+2.10.0
 

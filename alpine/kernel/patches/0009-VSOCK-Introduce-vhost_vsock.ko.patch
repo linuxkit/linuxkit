@@ -1,7 +1,7 @@
-From 7cba4e91a9e1359345ccb7dbff243cedf5b5e6ea Mon Sep 17 00:00:00 2001
+From a0af1060ea091348b94bd3780e5b92a3334e64b2 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:34 +0100
-Subject: [PATCH 09/46] VSOCK: Introduce vhost_vsock.ko
+Subject: [PATCH 09/42] VSOCK: Introduce vhost_vsock.ko
 
 VM sockets vhost transport implementation.  This driver runs on the
 host.
@@ -18,10 +18,10 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  create mode 100644 drivers/vhost/vsock.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index c7e4c9a..fa94182 100644
+index 82d1123..12d49f5 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -11405,6 +11405,8 @@ F:	include/linux/virtio_vsock.h
+@@ -11392,6 +11392,8 @@ F:	include/linux/virtio_vsock.h
  F:	include/uapi/linux/virtio_vsock.h
  F:	net/vmw_vsock/virtio_transport_common.c
  F:	net/vmw_vsock/virtio_transport.c
@@ -773,5 +773,5 @@ index ab373191..b306476 100644
 +
  #endif
 -- 
-2.9.3
+2.10.0
 
