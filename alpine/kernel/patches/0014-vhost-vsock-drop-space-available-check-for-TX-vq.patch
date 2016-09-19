@@ -1,7 +1,7 @@
-From 5377a4a3e61adb924efdb4ff47ca2213c63e5bc4 Mon Sep 17 00:00:00 2001
+From 5fcd2673fadd46b0d2d5f896281113cd67a2efa7 Mon Sep 17 00:00:00 2001
 From: Gerard Garcia <ggarcia@deic.uab.cat>
 Date: Wed, 10 Aug 2016 17:24:34 +0200
-Subject: [PATCH 14/46] vhost/vsock: drop space available check for TX vq
+Subject: [PATCH 14/42] vhost/vsock: drop space available check for TX vq
 
 Remove unnecessary use of enable/disable callback notifications
 and the incorrect more space available check.
@@ -57,5 +57,5 @@ index 699dfab..936d7ee 100644
  		}
  
 -- 
-2.9.3
+2.10.0
 

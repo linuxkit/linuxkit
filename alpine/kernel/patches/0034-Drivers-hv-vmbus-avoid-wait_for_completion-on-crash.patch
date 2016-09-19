@@ -1,7 +1,7 @@
-From f565fcc8decc0d57427b8506ea4b430de70440b1 Mon Sep 17 00:00:00 2001
+From af2dd29e3cf40c789045199893c232d57f0b7057 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:16 -0800
-Subject: [PATCH 38/46] Drivers: hv: vmbus: avoid wait_for_completion() on
+Subject: [PATCH 34/42] Drivers: hv: vmbus: avoid wait_for_completion() on
  crash
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -61,10 +61,10 @@ index 09c08b5..78b8be8 100644
  	if (vmbus_connection.work_queue) {
  		drain_workqueue(vmbus_connection.work_queue);
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index b925fa3..10efab0 100644
+index 89bb559..f424c2d 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
-@@ -751,7 +751,7 @@ void hv_vss_onchannelcallback(void *);
+@@ -756,7 +756,7 @@ void hv_vss_onchannelcallback(void *);
  int hv_fcopy_init(struct hv_util_service *);
  void hv_fcopy_deinit(void);
  void hv_fcopy_onchannelcallback(void *);
@@ -74,10 +74,10 @@ index b925fa3..10efab0 100644
  static inline void hv_poll_channel(struct vmbus_channel *channel,
  				   void (*cb)(void *))
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index d46b4ff..f5f57ee 100644
+index 03fc5d3..b0cc6fd 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -1266,7 +1266,7 @@ static void hv_kexec_handler(void)
+@@ -1276,7 +1276,7 @@ static void hv_kexec_handler(void)
  	int cpu;
  
  	hv_synic_clockevents_cleanup();
@@ -86,7 +86,7 @@ index d46b4ff..f5f57ee 100644
  	for_each_online_cpu(cpu)
  		smp_call_function_single(cpu, hv_synic_cleanup, NULL, 1);
  	hv_cleanup();
-@@ -1274,7 +1274,7 @@ static void hv_kexec_handler(void)
+@@ -1284,7 +1284,7 @@ static void hv_kexec_handler(void)
  
  static void hv_crash_handler(struct pt_regs *regs)
  {
@@ -96,5 +96,5 @@ index d46b4ff..f5f57ee 100644
  	 * In crash handler we can't schedule synic cleanup for all CPUs,
  	 * doing the cleanup for current CPU only. This should be sufficient
 -- 
-2.9.3
+2.10.0
 

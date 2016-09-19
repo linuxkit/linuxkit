@@ -1,7 +1,7 @@
-From 0b4365983ef397e8b43f9f77e591c4c9f83fca26 Mon Sep 17 00:00:00 2001
+From fa3647ae889af3cccaaee37ac0723fc1b74689e3 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:18 -0800
-Subject: [PATCH 39/46] Drivers: hv: vmbus: avoid unneeded compiler
+Subject: [PATCH 35/42] Drivers: hv: vmbus: avoid unneeded compiler
  optimizations in vmbus_wait_for_unload()
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -35,5 +35,5 @@ index f70e352..c892db5 100644
  			continue;
  		}
 -- 
-2.9.3
+2.10.0
 

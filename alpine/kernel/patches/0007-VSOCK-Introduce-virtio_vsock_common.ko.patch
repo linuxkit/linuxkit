@@ -1,7 +1,7 @@
-From ec54f262b84f327f1c0ecabce6f0c9b5c75ff2df Mon Sep 17 00:00:00 2001
+From fe9f8cb30a5c819adabb5b9b598f7776cbbdc4f0 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:32 +0100
-Subject: [PATCH 07/46] VSOCK: Introduce virtio_vsock_common.ko
+Subject: [PATCH 07/42] VSOCK: Introduce virtio_vsock_common.ko
 
 This module contains the common code and header files for the following
 virtio_transporto and vhost_vsock kernel modules.
@@ -27,10 +27,10 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  create mode 100644 net/vmw_vsock/virtio_transport_common.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 48bd523..3e60f59 100644
+index ab65bbe..b93ba8b 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -11395,6 +11395,16 @@ S:	Maintained
+@@ -11382,6 +11382,16 @@ S:	Maintained
  F:	drivers/media/v4l2-core/videobuf2-*
  F:	include/media/videobuf2-*
  
@@ -371,10 +371,10 @@ index 0000000..b7f1d62
 +/* This part must be outside protection */
 +#include <trace/define_trace.h>
 diff --git a/include/uapi/linux/Kbuild b/include/uapi/linux/Kbuild
-index 32152e7..c830e9f 100644
+index ebd10e6..6c51a4d 100644
 --- a/include/uapi/linux/Kbuild
 +++ b/include/uapi/linux/Kbuild
-@@ -448,6 +448,7 @@ header-y += virtio_ring.h
+@@ -447,6 +447,7 @@ header-y += virtio_ring.h
  header-y += virtio_rng.h
  header-y += virtio_scsi.h
  header-y += virtio_types.h
@@ -1492,5 +1492,5 @@ index 0000000..a53b3a1
 +MODULE_AUTHOR("Asias He");
 +MODULE_DESCRIPTION("common code for virtio vsock");
 -- 
-2.9.3
+2.10.0
 

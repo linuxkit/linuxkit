@@ -1,7 +1,7 @@
-From 54f528a28ab97e1306180adde7ba15c4158428db Mon Sep 17 00:00:00 2001
+From 816c87fe6ecfa46981c0ca332d21f1e0d8bfd8a0 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:31 +0100
-Subject: [PATCH 06/46] VSOCK: defer sock removal to transports
+Subject: [PATCH 06/42] VSOCK: defer sock removal to transports
 
 The virtio transport will implement graceful shutdown and the related
 SO_LINGER socket option.  This requires orphaning the sock but keeping
@@ -79,5 +79,5 @@ index 0a369bb..706991e 100644
  		vmci_datagram_destroy_handle(vmci_trans(vsk)->dg_handle);
  		vmci_trans(vsk)->dg_handle = VMCI_INVALID_HANDLE;
 -- 
-2.9.3
+2.10.0
 
