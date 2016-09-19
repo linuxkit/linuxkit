@@ -1,7 +1,7 @@
-From f3d84d9ee57ed72603ea8334302c2ed2971882b9 Mon Sep 17 00:00:00 2001
+From afde92b79d7bbdf25d3f583898cbee4773b07d41 Mon Sep 17 00:00:00 2001
 From: Tom Herbert <tom@herbertland.com>
 Date: Mon, 7 Mar 2016 14:11:06 -0800
-Subject: [PATCH 40/46] kcm: Kernel Connection Multiplexor module
+Subject: [PATCH 36/42] kcm: Kernel Connection Multiplexor module
 
 This module implements the Kernel Connection Multiplexor.
 
@@ -2308,5 +2308,5 @@ index 0000000..649d246
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS_NETPROTO(PF_KCM);
 -- 
-2.9.3
+2.10.0
 

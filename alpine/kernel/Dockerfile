@@ -1,6 +1,6 @@
 FROM mobylinux/debian-build-kernel:a009a11bf0ad
 
-ARG KERNEL_VERSION=4.4.20
+ARG KERNEL_VERSION=4.4.21
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
@@ -8,10 +8,10 @@ RUN curl -sSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
-# this is aufs4.4 20160905
+# this is aufs4.4 20160912
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
 ENV AUFS_BRANCH     aufs4.4
-ENV AUFS_COMMIT     8be74e42b108f9cbbb0d59a87468505a48ff2757
+ENV AUFS_COMMIT     7d174ae40b4c9c876ee51aa50fa4ee1f3747de23
 
 # Download AUFS
 RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \

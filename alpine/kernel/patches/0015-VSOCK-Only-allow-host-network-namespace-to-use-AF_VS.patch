@@ -1,7 +1,7 @@
-From fc2bc563ce2a5205b7504c39e8dbb0a5db2d63e9 Mon Sep 17 00:00:00 2001
+From 8719b508f509c06a7821d6f8e2fc1fcad84d6fbb Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
 Date: Mon, 4 Apr 2016 14:50:10 +0100
-Subject: [PATCH 15/46] VSOCK: Only allow host network namespace to use
+Subject: [PATCH 15/42] VSOCK: Only allow host network namespace to use
  AF_VSOCK.
 
 The VSOCK addressing schema does not really lend itself to simply creating an
@@ -27,5 +27,5 @@ index 17dbbe6..1bb1b01 100644
  		return -EINVAL;
  
 -- 
-2.9.3
+2.10.0
 
