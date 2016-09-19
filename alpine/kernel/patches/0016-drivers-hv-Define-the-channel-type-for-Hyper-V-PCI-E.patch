@@ -1,7 +1,7 @@
-From 7c37cbd1fd8bff6d8373cff4d7e1c33fcb2aa653 Mon Sep 17 00:00:00 2001
+From 84e1e7a4981f6ef926bb01481445def66e0982b2 Mon Sep 17 00:00:00 2001
 From: Jake Oshins <jakeo@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:41 -0800
-Subject: [PATCH 16/46] drivers:hv: Define the channel type for Hyper-V PCI
+Subject: [PATCH 16/42] drivers:hv: Define the channel type for Hyper-V PCI
  Express pass-through
 
 This defines the channel type for PCI front-ends in Hyper-V VMs.
@@ -16,10 +16,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 14 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 652afd1..a77646b 100644
+index 37238df..a562318 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -358,6 +358,7 @@ enum {
+@@ -359,6 +359,7 @@ enum {
  	SCSI,
  	NIC,
  	ND_NIC,
@@ -27,7 +27,7 @@ index 652afd1..a77646b 100644
  	MAX_PERF_CHN,
  };
  
-@@ -375,6 +376,8 @@ static const struct hv_vmbus_device_id hp_devs[] = {
+@@ -376,6 +377,8 @@ static const struct hv_vmbus_device_id hp_devs[] = {
  	{ HV_NIC_GUID, },
  	/* NetworkDirect Guest RDMA */
  	{ HV_ND_GUID, },
@@ -59,5 +59,5 @@ index ae6a711..10dda1e 100644
   */
  
 -- 
-2.9.3
+2.10.0
 

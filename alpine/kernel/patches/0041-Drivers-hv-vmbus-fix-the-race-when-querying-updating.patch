@@ -1,7 +1,7 @@
-From 56e767526878b2fc79b0dfaa2860ed2ae836a52e Mon Sep 17 00:00:00 2001
+From cd11346c60451032d97062e25ed025bf692dff91 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 21 May 2016 16:55:50 +0800
-Subject: [PATCH 45/46] Drivers: hv: vmbus: fix the race when querying &
+Subject: [PATCH 41/42] Drivers: hv: vmbus: fix the race when querying &
  updating the percpu list
 
 There is a rare race when we remove an entry from the global list
@@ -129,5 +129,5 @@ index c892db5..0a54317 100644
  err_free_chan:
  	free_channel(newchannel);
 -- 
-2.9.3
+2.10.0
 

@@ -1,7 +1,7 @@
-From 5600cbdcb09f2a322c696e37570d031932a3baa4 Mon Sep 17 00:00:00 2001
+From 30e1801c9e9683512a0cd169edf015923497dd70 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:35 +0100
-Subject: [PATCH 10/46] VSOCK: Add Makefile and Kconfig
+Subject: [PATCH 10/42] VSOCK: Add Makefile and Kconfig
 
 Enable virtio-vsock and vhost-vsock.
 
@@ -102,5 +102,5 @@ index 2ce52d7..bc27c70 100644
 +
 +vmw_vsock_virtio_transport_common-y += virtio_transport_common.o
 -- 
-2.9.3
+2.10.0
 

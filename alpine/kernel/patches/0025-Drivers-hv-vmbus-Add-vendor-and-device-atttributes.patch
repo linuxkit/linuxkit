@@ -1,7 +1,7 @@
-From 5131dc31aecd376785b71bb3bb16bf70573682b3 Mon Sep 17 00:00:00 2001
+From 69933a7f325a93afbb5ed819388b8b063d602066 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Fri, 25 Dec 2015 20:00:30 -0800
-Subject: [PATCH 27/46] Drivers: hv: vmbus: Add vendor and device atttributes
+Subject: [PATCH 25/42] Drivers: hv: vmbus: Add vendor and device atttributes
 
 Add vendor and device attributes to VMBUS devices. These will be used
 by Hyper-V tools as well user-level RDMA libraries that will use the
@@ -40,10 +40,10 @@ index 636e938..5d0125f 100644
 +Description:	The 16 bit vendor ID of the device
 +Users:		tools/hv/lsvmbus and user level RDMA libraries
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 1c1ad47..107d72f 100644
+index 763d0c1..d6c6114 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -32,8 +32,122 @@
+@@ -33,8 +33,122 @@
  
  #include "hyperv_vmbus.h"
  
@@ -168,7 +168,7 @@ index 1c1ad47..107d72f 100644
  
  /**
   * vmbus_prep_negotiate_resp() - Create default response for Hyper-V Negotiate message
-@@ -251,6 +365,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -252,6 +366,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  	struct vmbus_channel *channel;
  	bool fnew = true;
  	unsigned long flags;
@@ -176,7 +176,7 @@ index 1c1ad47..107d72f 100644
  
  	/* Make sure this is a new offer */
  	mutex_lock(&vmbus_connection.channel_mutex);
-@@ -288,7 +403,9 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -289,7 +404,9 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  			goto err_free_chan;
  	}
  
@@ -187,7 +187,7 @@ index 1c1ad47..107d72f 100644
  
  	if (newchannel->target_cpu != get_cpu()) {
  		put_cpu();
-@@ -325,6 +442,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -326,6 +443,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  	if (!newchannel->device_obj)
  		goto err_deq_chan;
  
@@ -195,7 +195,7 @@ index 1c1ad47..107d72f 100644
  	/*
  	 * Add the new device to the bus. This will kick off device-driver
  	 * binding which eventually invokes the device driver's AddDevice()
-@@ -358,37 +476,6 @@ err_free_chan:
+@@ -359,37 +477,6 @@ err_free_chan:
  	free_channel(newchannel);
  }
  
@@ -233,7 +233,7 @@ index 1c1ad47..107d72f 100644
  /*
   * We use this state to statically distribute the channel interrupt load.
   */
-@@ -405,22 +492,15 @@ static int next_numa_node_id;
+@@ -406,22 +493,15 @@ static int next_numa_node_id;
   * For pre-win8 hosts or non-performance critical channels we assign the
   * first CPU in the first NUMA node.
   */
@@ -259,10 +259,10 @@ index 1c1ad47..107d72f 100644
  	    (vmbus_proto_version == VERSION_WIN7) || (!perf_chn)) {
  		/*
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 8bf1f31..959b656 100644
+index 7973aa5..de7130c 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -479,6 +479,24 @@ static ssize_t channel_vp_mapping_show(struct device *dev,
+@@ -480,6 +480,24 @@ static ssize_t channel_vp_mapping_show(struct device *dev,
  }
  static DEVICE_ATTR_RO(channel_vp_mapping);
  
@@ -287,7 +287,7 @@ index 8bf1f31..959b656 100644
  /* Set up per device attributes in /sys/bus/vmbus/devices/<bus device> */
  static struct attribute *vmbus_attrs[] = {
  	&dev_attr_id.attr,
-@@ -504,6 +522,8 @@ static struct attribute *vmbus_attrs[] = {
+@@ -505,6 +523,8 @@ static struct attribute *vmbus_attrs[] = {
  	&dev_attr_in_read_bytes_avail.attr,
  	&dev_attr_in_write_bytes_avail.attr,
  	&dev_attr_channel_vp_mapping.attr,
@@ -296,7 +296,7 @@ index 8bf1f31..959b656 100644
  	NULL,
  };
  ATTRIBUTE_GROUPS(vmbus);
-@@ -960,6 +980,7 @@ struct hv_device *vmbus_device_create(const uuid_le *type,
+@@ -963,6 +983,7 @@ struct hv_device *vmbus_device_create(const uuid_le *type,
  	memcpy(&child_device_obj->dev_type, type, sizeof(uuid_le));
  	memcpy(&child_device_obj->dev_instance, instance,
  	       sizeof(uuid_le));
@@ -351,5 +351,5 @@ index 9e2de6a..51c98fd 100644
  	struct device device;
  
 -- 
-2.9.3
+2.10.0
 

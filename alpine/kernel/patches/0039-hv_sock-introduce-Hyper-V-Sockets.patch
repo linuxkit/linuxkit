@@ -1,7 +1,7 @@
-From 87e2463282f0dc46f866cce2efd5cb36eb964bdb Mon Sep 17 00:00:00 2001
+From 51293adacd73d7bc6baee18e87b0d17ad52a61d4 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sun, 15 May 2016 09:53:11 -0700
-Subject: [PATCH 43/46] hv_sock: introduce Hyper-V Sockets
+Subject: [PATCH 39/42] hv_sock: introduce Hyper-V Sockets
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
 mechanism between the host and the guest. It's somewhat like TCP over
@@ -41,10 +41,10 @@ Origin: https://patchwork.ozlabs.org/patch/622404/
  create mode 100644 net/hv_sock/af_hvsock.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index fa94182..ff17e76 100644
+index 12d49f5..fa87bdd 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -5136,7 +5136,9 @@ F:	drivers/input/serio/hyperv-keyboard.c
+@@ -5123,7 +5123,9 @@ F:	drivers/input/serio/hyperv-keyboard.c
  F:	drivers/net/hyperv/
  F:	drivers/scsi/storvsc_drv.c
  F:	drivers/video/fbdev/hyperv_fb.c
@@ -185,7 +185,7 @@ index 0000000..7c8c41e
 +
 +#endif /* __AF_HVSOCK_H__ */
 diff --git a/include/uapi/linux/hyperv.h b/include/uapi/linux/hyperv.h
-index e4c0a35..9a698c1 100644
+index e347b24..408b832 100644
 --- a/include/uapi/linux/hyperv.h
 +++ b/include/uapi/linux/hyperv.h
 @@ -26,6 +26,7 @@
@@ -196,7 +196,7 @@ index e4c0a35..9a698c1 100644
  
  /*
   * Framework version for util services.
-@@ -395,4 +396,28 @@ struct hv_kvp_ip_msg {
+@@ -396,4 +397,28 @@ struct hv_kvp_ip_msg {
  	struct hv_kvp_ipaddr_value      kvp_ip_val;
  } __attribute__((packed));
  
@@ -1801,5 +1801,5 @@ index 0000000..b91bd60
 +MODULE_DESCRIPTION("Hyper-V Sockets");
 +MODULE_LICENSE("Dual BSD/GPL");
 -- 
-2.9.3
+2.10.0
 

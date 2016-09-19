@@ -1,7 +1,7 @@
-From e21bdf5a9a62fbdabddca3cafc8aa2b02f2cc165 Mon Sep 17 00:00:00 2001
+From c384834d9495c7b2a36b0054d08ddf3240687bdc Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:33 +0100
-Subject: [PATCH 08/46] VSOCK: Introduce virtio_transport.ko
+Subject: [PATCH 08/42] VSOCK: Introduce virtio_transport.ko
 
 VM sockets virtio transport implementation.  This driver runs in the
 guest.
@@ -17,10 +17,10 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  create mode 100644 net/vmw_vsock/virtio_transport.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 3e60f59..c7e4c9a 100644
+index b93ba8b..82d1123 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -11404,6 +11404,7 @@ S:	Maintained
+@@ -11391,6 +11391,7 @@ S:	Maintained
  F:	include/linux/virtio_vsock.h
  F:	include/uapi/linux/virtio_vsock.h
  F:	net/vmw_vsock/virtio_transport_common.c
@@ -659,5 +659,5 @@ index 0000000..699dfab
 +MODULE_DESCRIPTION("virtio transport for vsock");
 +MODULE_DEVICE_TABLE(virtio, id_table);
 -- 
-2.9.3
+2.10.0
 
