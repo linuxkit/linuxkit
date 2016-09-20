@@ -16,6 +16,7 @@ RUN \
   e2fsprogs-extra \
   fuse \
   git \
+  hvtools@edgetesting \
   iptables \
   jq \
   lvm2 \
