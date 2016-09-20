@@ -16,6 +16,8 @@ export AWS_DEFAULT_REGION=$(current_instance_region)
 
 # TODO(nathanleclaire): This device could be calculated dynamically to avoid conflicts.
 EBS_DEVICE=/dev/xvdb
+CHANNEL=${CHANNEL:-editions}
+DAY=$(date +"%m_%d_%Y")
 
 bake_image()
 {
@@ -26,7 +28,7 @@ bake_image()
 		--size 20 \
 		--availability-zone $(current_instance_az) | jq -r .VolumeId)
 
-	tag ${VOLUME_ID}
+	tag ${VOLUME_ID} ${DAY} ${CHANNEL}
 
 	aws ec2 wait volume-available --volume-ids ${VOLUME_ID}
 
@@ -48,7 +50,7 @@ bake_image()
 		--volume-id ${VOLUME_ID} \
 		--description "Snapshot of Moby device for AMI baking" | jq -r .SnapshotId)
 
-	tag ${SNAPSHOT_ID}
+	tag ${SNAPSHOT_ID} ${DAY} ${CHANNEL}
 
 	arrowecho "Waiting for snapshot completion"
 
@@ -70,7 +72,7 @@ bake_image()
 			}
 		]" | jq -r .ImageId)
 
-	tag ${IMAGE_ID}
+	tag ${IMAGE_ID} ${DAY} ${CHANNEL}
 
 	# Boom, now you (should) have a Moby AMI.
 	arrowecho "Created AMI: ${IMAGE_ID}"
@@ -137,9 +139,9 @@ case "$1" in
 		bake_image
 		;;
 	clean)
-		arrowecho "Cleaning resources from previous build tag if applicable..."
+		arrowecho "Cleaning resources from previous build tag (${TAG_KEY_PREV}) if applicable..."
 		clean_tagged_resources "${TAG_KEY_PREV}"
-		arrowecho "Cleaning resources from current build tag if applicable..."
+		arrowecho "Cleaning resources from current build tag (${TAG_KEY}) if applicable..."
 		clean_tagged_resources "${TAG_KEY}"
 		;;
 	clean-mount)
