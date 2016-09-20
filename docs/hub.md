@@ -11,6 +11,14 @@ generally with tags based on the image contents.
 - `mobylinux/alpine-qemu` for Qemu eg for the tests
 - `mobylinux/debian-build-kernel` for the kernel builds while we cannot use Alpine
 
+The `Dockerfile`s for these are under `alpine/base`. To update, modify the `Dockerfile` if you wish
+to change the packages used, and `repositories` if needed, and run `make`. This will push the image
+to Docker Hub if it has changed, and update `packages` with a list of the current versions. If the
+image has changed, update the other Dockerfiles with this base image to use this new tag.
+
+For example, `alpine/base/alpine-base` is the image used to build the Moby image itself, which is
+used in `alpine/Dockerfile`. The uploaded tags can be seen at [Docker Hub](https://hub.docker.com/r/mobylinux/alpine-base/tags/).
+
 In addition
 - `mobylinux/media` contains build artifacts
 
