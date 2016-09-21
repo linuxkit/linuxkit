@@ -35,11 +35,10 @@ RUN \
   rc-update add fsck && \
   rc-update add root && \
   rc-update add crond && \
-  rc-update add localmount && \
+  rc-update add localmount boot && \
   rc-update add docker default && \
   rc-update add proxy default && \
   rc-update add transfused default && \
-  rc-update add automount boot && \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc default && \
   rc-update add hostsettings boot && \
