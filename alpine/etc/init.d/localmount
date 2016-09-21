@@ -25,24 +25,23 @@ format()
 
 	DEV="$(find /dev -maxdepth 1 -type b ! -name 'loop*' | grep -v '[0-9]$' | sed 's@.*/dev/@@' | head -1 )"
 
-	[ -z ${DEV} ] && exit 1
+	[ -z "${DEV}" ] && exit 1
 
 	DRIVE="/dev/${DEV}"
 
-	if fdisk -l ${DRIVE} | grep -q "doesn't contain a valid partition table"
+	if fdisk -l "${DRIVE}" | grep -q "doesn't contain a valid partition table"
 	then
-		ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
-		blockdev --rereadpt ${DRIVE} 2> /dev/null
+		ERASE_DISKS="${DRIVE}" setup-disk -m data "${DRIVE}"
+		blockdev --rereadpt "${DRIVE}" 2> /dev/null
 	else
-		SWAP=$(fdisk -l ${DRIVE} | grep 'Linux swap' | head -1 | awk '{print $1}')
-		DATA=$(fdisk -l ${DRIVE} | grep 'Linux$' | head -1 | awk '{print $1}')
+		SWAP=$(fdisk -l "${DRIVE}" | grep 'Linux swap' | head -1 | awk '{print $1}')
+		DATA=$(fdisk -l "${DRIVE}" | grep 'Linux$' | head -1 | awk '{print $1}')
 		if [ -z "$DATA" ]
 		then
-			ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
-			blockdev --rereadpt ${DRIVE} 2> /dev/null
+			ERASE_DISKS="${DRIVE}" setup-disk -m data "${DRIVE}"
+			blockdev --rereadpt "${DRIVE}" 2> /dev/null
 		else
-			mount ${DATA} /var && swapon ${SWAP} || ( ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}; blockdev --rereadpt ${DRIVE} 2> /dev/null )
-			resize2fs ${DATA} 2> /dev/null
+			(mount "${DATA}" /var && swapon "${SWAP}") || ( ERASE_DISKS="${DRIVE}" setup-disk -m data "${DRIVE}"; blockdev --rereadpt "${DRIVE}" 2> /dev/null )
 		fi
 		# boot2docker compat, has /var and /tmp on partition
 		[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
