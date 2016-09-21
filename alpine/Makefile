@@ -13,7 +13,6 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/tap-vsockd sbin etc -C ../.. \
 	  -C packages/docker usr etc -C ../.. \
 	  -C packages/diagnostics usr etc -C ../.. \
-	  -C packages/automount etc -C ../.. \
 	  -C packages/binfmt_misc etc -C ../.. \
 	  -C packages/hostsettings etc -C ../.. \
 	  -C packages/hvtools sbin etc usr -C ../.. \
