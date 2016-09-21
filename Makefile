@@ -20,7 +20,7 @@ qemu-iso: Dockerfile.qemuiso alpine/mobylinux-bios.iso
 	tar cf - $^ | docker build -f Dockerfile.qemuiso -t mobyqemuiso:build -
 	docker run -it --rm mobyqemuiso:build
 
-test: Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+test: lint Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	$(MAKE) -C alpine
 	tar cf - $^ | docker build -f Dockerfile.test -t mobytest:build -
 	touch test.log
@@ -47,3 +47,13 @@ endif
 
 clean:
 	$(MAKE) -C alpine clean
+
+SCRIPTS=$(shell find . -type f \
+	! -path "./*.git/*" \
+	! -path "./xhyve/*" \
+	! -path "./alpine/cloud/*" \
+	-exec file {} \; | grep 'POSIX\|openrc' | cut -d ":" -f 1)
+
+.PHONY: lint
+lint:
+	@docker run --rm -v $(shell pwd):/mnt nlknguyen/alpine-shellcheck:v0.4.4 -e SC1008,SC1090,SC1091 ${SCRIPTS}

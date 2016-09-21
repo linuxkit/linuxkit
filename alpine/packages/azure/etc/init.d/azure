@@ -1,5 +1,6 @@
 #!/sbin/openrc-run
 
+# shellcheck disable=SC2034
 description="Bootstrap procedure if running on Docker Azure edition"
 
 depend()
@@ -18,7 +19,7 @@ start()
 	# TODO: This is probably quite fragile (splitting the returned JSON by
 	# quotes instead of properly parsing).  Would bundling 'jq' in Moby be
 	# too much overhead?
-	hostname $(wget -qO- http://169.254.169.254/metadata/v1/instanceinfo | awk -F '"' '{ print $4; }')
+	hostname "$(wget -qO- http://169.254.169.254/metadata/v1/instanceinfo | awk -F '"' '{ print $4; }')"
 
 	for i in $(seq 1 20)
 	do
@@ -36,6 +37,10 @@ start()
 		# far because it can't dial the DNS lookup properly.
 		# 
 		# TODO: Debug.
+		if [ "$i" -eq 20 ]; then
+			echo "Unable to run Windows Azure Linux Agent container"
+			exit 1
+		fi
 		sleep 5
 	done
 

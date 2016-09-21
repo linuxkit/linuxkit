@@ -1,5 +1,6 @@
 #!/sbin/openrc-run
 
+# shellcheck disable=SC2034
 description="vsock socket proxy client"
 
 depend()
@@ -33,7 +34,7 @@ start()
 		--exec /sbin/vsudd \
 		--make-pidfile --pidfile ${PIDFILE} \
 		-- -inport "${DOCKER_PORT}:unix:/var/run/docker.sock" \
-		   ${SYSLOG_OPT} \
+		   "${SYSLOG_OPT}" \
 		   -detach
 
 	eend $? "Failed to start vsudd"

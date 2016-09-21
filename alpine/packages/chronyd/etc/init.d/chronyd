@@ -3,6 +3,7 @@
 # Distributed under the terms of the GNU General Public License v2
 # $Header: /var/cvsroot/gentoo-x86/net-misc/chrony/files/chronyd.rc,v 1.8 2007/03/22 14:32:09 tove Exp $
 
+# shellcheck disable=SC2034
 description="NTP daemon"
 
 depend() {
@@ -32,7 +33,7 @@ checkconfig() {
 		# Actually, I tried it, and chrony seems to ignore the pidfile
 		# option. I'm going to leave it here anyway, since you never
 		# know if it might be handy
-		PIDFILE=`awk '/^ *pidfile/{print $2}' "${CFGFILE}"`
+		PIDFILE=$(awk '/^ *pidfile/{print $2}' "${CFGFILE}")
 	fi
 	return 0
 }
@@ -60,7 +61,7 @@ start() {
 	start-stop-daemon --start --quiet \
 		--exec /usr/sbin/chronyd \
 		--pidfile "${PIDFILE}" \
-		-- -f "${CFGFILE}" ${ARGS}
+		-- -f "${CFGFILE}" "${ARGS}"
 	eend $? "Failed to start chronyd"
 }
 

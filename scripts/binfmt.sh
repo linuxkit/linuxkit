@@ -2,12 +2,12 @@
 
 for f in /proc/sys/fs/binfmt_misc/qemu*
 do
-	NAME=$(basename $f)
-	MAGIC=$(cat $f | grep '^magic' | sed 's/^magic //' | sed 's/\(..\)/\\x\1/g')
-	OFFSET=$(cat $f | grep '^offset' | sed 's/^offset //')
-	MASK=$(cat $f | grep '^mask' | sed 's/^mask //' | sed 's/\(..\)/\\x\1/g')
+	NAME="$(basename "$f")"
+	MAGIC="$(grep '^magic' "$f" | sed 's/^magic //' | sed 's/\(..\)/\\x\1/g')"
+	OFFSET="$(grep '^offset' "$f" | sed 's/^offset //')"
+	MASK="$(grep '^mask' "$f" | sed 's/^mask //' | sed 's/\(..\)/\\x\1/g')"
 	EXEC="/usr/bin/${NAME}-static"
-	FLAGS=$(cat $f | grep '^flags:' | sed 's/^flags: //')
+	FLAGS="$(grep '^flags:' "$f" | sed 's/^flags: //')"
 
-	printf "\techo \":${NAME}:M:${OFFSET}:${MAGIC}:${MASK}:${EXEC}:${FLAGS}\" > /proc/sys/fs/binfmt_misc/register\n"
+	printf "\techo \":%s:M:%s:%s:%s:%s:%s\" $NAME $OFFSET $MAGIC $MASK $EXEC $FLAGS > /proc/sys/fs/binfmt_misc/register\n"
 done

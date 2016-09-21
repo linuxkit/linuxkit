@@ -5,7 +5,7 @@
 # return the value matching the kvpair in the command line
 kvpair()
 {
-awk -v flag=$1 '{
+awk -v flag="$1" '{
     for(i = 1; i <= NF; i++) {
         split($i, kvpair, "=");
         if(kvpair[1] == flag) {
@@ -18,4 +18,4 @@ awk -v flag=$1 '{
 
 PLATFORM=$(kvpair mobyplatform)
 
-[ -z ${PLATFORM} ] && printf unknown || printf ${PLATFORM}
+[ -z "${PLATFORM}" ] && printf unknown || printf "%s" "${PLATFORM}"

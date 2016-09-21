@@ -1,5 +1,6 @@
 #!/sbin/openrc-run
 
+# shellcheck disable=SC2034
 description="oom killer settings"
 
 depend()
@@ -11,11 +12,11 @@ start()
 {
 	ebegin "Adjusting oom killer settings"
 
-	for f in $(find /run -name '*.pid')
-	do
-		PID=$(cat $f)
-		[ -f /proc/$PID/oom_score_adj ] && echo "-800" > /proc/$PID/oom_score_adj	
-	done
-
+  find /run -name '*.pid' > tmp
+	while IFS= read -r f; do
+		PID=$(cat "$f")
+		[ -f /proc/"$PID"/oom_score_adj ] && echo "-800" > /proc/"$PID"/oom_score_adj	
+	done < tmp
+  rm tmp
 	eend $? "Failed to adjust oom settings"
 }

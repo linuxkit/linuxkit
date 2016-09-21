@@ -4,9 +4,10 @@ set -e
 
 rm -rf /tmp/*
 
+# shellcheck disable=SC2010
 for f in $(ls | grep -vE 'dev|sys|proc|tmp|export|mnt')
 do
-  cp -a $f /tmp
+  cp -a "$f" /tmp
 done
 
 mkdir -m 555 /tmp/dev /tmp/proc /tmp/sys /tmp/mnt

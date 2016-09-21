@@ -13,12 +13,12 @@ start()
 	if mobyconfig exists bundle
 	then
 		bundle=$(mobyconfig get bundle)
-		[ -n "$bundle" -a -d "$bundle" -a -h "$bundle/binary-client/docker" ] && \
+		[ -n "$bundle" ] && [ -d "$bundle" ] && [ -h "$bundle/binary-client/docker" ] && \
 		  # note we copy all the symlinks, in case layout changes
-		  cp -a $bundle/binary-client/* \
-		        $bundle/binary-daemon/* \
+		  cp -a "$bundle"/binary-client/* \
+		        "$bundle"/binary-daemon/* \
 		  /usr/bin
-		printf "Overriding Docker with provided bundle: $bundle\n"
+		printf "Overriding Docker with provided bundle: %s\n" "$bundle"
 	fi
 
 	command="${DOCKER_BINARY:-/usr/bin/dockerd}"
@@ -54,38 +54,40 @@ start()
 
 	# some config is always in /etc/docker cannot specify alternative eg certs
 	mkdir -p /etc/docker
-	if mobyconfig exists etc/docker
-	then
+	if mobyconfig exists etc/docker; then
 		for f in $(mobyconfig find etc/docker)
 		do
-			mkdir -p $(dirname $f)
-			mobyconfig get $f > $f
+			mkdir -p "$(dirname "$f")"
+			# shellcheck disable=SC2094
+			mobyconfig get "$f" > "$f"
 		done
 	fi
-	if mobyconfig exists network
-	then
-		NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
-		NATIVE_PORT_FORWARDING="$(mobyconfig get native/port-forwarding | tr -d '[[:space:]]')"
-		if [ "${NETWORK_MODE}" = "slirp" -o "${NATIVE_PORT_FORWARDING}" = "true" ]; then
+	
+	if mobyconfig exists network; then
+		NETWORK_MODE="$(mobyconfig get network | tr -d '[:space:]')"
+		NATIVE_PORT_FORWARDING="$(mobyconfig get native/port-forwarding | tr -d '[:space:]')"
+		if [ "${NETWORK_MODE}" = "slirp" ] || [ "${NATIVE_PORT_FORWARDING}" = "true" ]; then
 			cp /usr/bin/slirp-proxy /usr/bin/docker-proxy
 		fi
 	fi
 
-	if mobyconfig exists proxy
-	then
-		export http_proxy="$(mobyconfig get proxy/http)"
-		export https_proxy="$(mobyconfig get proxy/https)"
-		export no_proxy="$(mobyconfig get proxy/exclude)"
+	if mobyconfig exists proxy; then
+		http_proxy="$(mobyconfig get proxy/http)"
+		export http_proxy
+		https_proxy="$(mobyconfig get proxy/https)"
+		export https_proxy
+		no_proxy="$(mobyconfig get proxy/exclude)"
+		export no_proxy
 	fi
 
 	# Set Docker to debug debug if not specified in daemon.json
+	# shellcheck disable=SC2002
 	([ -f /etc/docker/daemon.json ] && cat /etc/docker/daemon.json | jq -e .debug > /dev/null) || DOCKER_OPTS="${DOCKER_OPTS} --debug"
 
 	# shift logs onto host before docker starts
 	# busybox reopens its log files every second
-	if cat /proc/cmdline | grep -q 'com.docker.driver'
-	then
-		DRIVERDIR="/host_docker_app/$(cat /proc/cmdline | sed -e 's/.*com.docker.driver="//' -e 's/".*//')"
+	if grep -q 'com.docker.driver' /proc/cmdline ; then
+		DRIVERDIR="/host_docker_app/$(sed -e 's/.*com.docker.driver="//' -e 's/".*//' /proc/cmdline)"
 		if ! grep -q "osxfs on /var/log" /proc/mounts ; then
 			mkdir -p /run/log
 			mount -o bind /var/log /run/log
@@ -94,7 +96,9 @@ start()
 	fi
 
 	# set ulimits as high as possible
+	# shellcheck disable=SC2039
 	ulimit -n 1048576
+	# shellcheck disable=SC2039
 	ulimit -p unlimited
 
 	DOCKER_LOGFILE="/var/log/docker.log"
@@ -104,11 +108,11 @@ start()
 
 	start-stop-daemon --start --quiet \
 		--background \
-		--exec ${command} \
-		--pidfile ${pidfile} \
+		--exec "${command}" \
+		--pidfile "${pidfile}" \
 		--stderr "${DOCKER_LOGFILE}" \
 		--stdout "${DOCKER_LOGFILE}" \
-		-- --pidfile=${pidfile} ${DOCKER_OPTS}
+		-- --pidfile="${pidfile}" "${DOCKER_OPTS}"
 
 	ewaitfile 20 ${pidfile} /var/run/docker.sock /var/run/docker/libcontainerd/docker-containerd.sock
 
@@ -121,6 +125,5 @@ stop()
 	einfo "Stopping docker"
 	pidfile="/run/docker.pid"
 	start-stop-daemon --stop --quiet --pidfile ${pidfile} --retry 15
-
-        return 0
+	return 0
 }

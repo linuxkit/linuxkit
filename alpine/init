@@ -34,11 +34,11 @@ setup_console() {
 /bin/cp -a / /mnt 2>/dev/null
 
 /bin/mount -t proc -o noexec,nosuid,nodev proc /proc
-for opt in $(cat /proc/cmdline); do
+(while IFS= read -r opt; do
 	case "$opt" in
 	console=*)
-		setup_console ${opt#console=} /mnt/etc/inittab /mnt/etc/securetty;;
+		setup_console "${opt#console=}" /mnt/etc/inittab /mnt/etc/securetty;;
 	esac
-done
+done) < /proc/cmdline
 
 exec /bin/busybox switch_root /mnt /sbin/init

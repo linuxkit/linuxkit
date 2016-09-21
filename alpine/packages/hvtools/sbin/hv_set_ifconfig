@@ -56,28 +56,32 @@
 
 
 # Stash away a copy of the config we got
-cp $1 /etc/network/hv_config
+cp "$1" /etc/network/hv_config
 
 # Source it
-. $1
+. "$1"
 
 # Down the interface
-ifdown -f $DEVICE
+ifdown -f "$DEVICE"
 
 # create a new interfaces file
 outf=/etc/network/interfaces
-echo "auto lo" > $outf
-echo "iface lo inet loopback" >> $outf
-echo "" >> $outf
-echo "auto $DEVICE" >> $outf
+{
+    echo "auto lo"
+    echo "iface lo inet loopback"
+    echo ""
+    echo "auto $DEVICE"
+} >> $outf
 
 if [  "$BOOTPROTO" = "dhcp" ]; then
     echo "iface $DEVICE inet dhcp" >> $outf
 else
-    echo "iface $DEVICE inet static" >> $outf
-    echo "    address $IPADDR0" >> $outf
-    echo "    netmask $NETMASK0" >> $outf
-    echo "    gateway $GATEWAY" >> $outf
+    {
+        echo "iface $DEVICE inet static"
+        echo "    address $IPADDR0"
+        echo "    netmask $NETMASK0"
+        echo "    gateway $GATEWAY"
+    } >> $outf
 fi
 
 echo "    hwaddress ether $HWADDR" >> $outf
@@ -90,4 +94,4 @@ outf=/etc/resolv.conf
 [ -n "$DNS4" ] && echo "nameserver $DNS4" >> $outf
 
 # Up the interface
-ifup $DEVICE
+ifup "$DEVICE"
