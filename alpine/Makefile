@@ -60,6 +60,11 @@ ami: common
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
+		-e TAG_KEY \
+		-e TAG_KEY_PREV \
+		-e CHANNEL \
+		-e MOBY_SRC_ROOT \
+		-e DOCKER_BIN_URL \
 		moby-ami:build clean
 	docker run \
 		--rm \
@@ -67,6 +72,11 @@ ami: common
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
+		-e TAG_KEY \
+		-e TAG_KEY_PREV \
+		-e CHANNEL \
+		-e MOBY_SRC_ROOT \
+		-e DOCKER_BIN_URL \
 		moby-ami:build bake >./cloud/aws/ami_id.out
 
 ami-clean-mount:
@@ -76,6 +86,11 @@ ami-clean-mount:
 		-v /dev:/dev \
 		-e AWS_SECRET_ACCESS_KEY \
 		-e AWS_ACCESS_KEY_ID \
+		-e TAG_KEY \
+		-e TAG_KEY_PREV \
+		-e CHANNEL \
+		-e MOBY_SRC_ROOT \
+		-e DOCKER_BIN_URL \
 		moby-ami:build clean-mount
 
 # TODO(nathanleclaire): Migrate this to docker/editions repo.
