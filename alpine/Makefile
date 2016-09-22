@@ -39,9 +39,9 @@ mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 	docker run --net=none --log-driver=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > mobylinux.efi
 	docker run --net=none --log-driver=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux-efi.iso > $@
 
-mobylinux-bios.iso: Dockerfile.bios initrd.img kernel/x86_64/vmlinuz64 isolinux.cfg
-	tar cf - $^ | docker build -t moby-bios:build -f Dockerfile.bios -
-	docker run --net=none --log-driver=none --rm moby-bios:build cat /tmp/mobylinux-bios.iso > $@
+mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
+	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
+	  docker run --net=none --log-driver=none --rm -i mobylinux/alpine-bios:67236852ecf950af0486ac22b0963b404d16c348 >$@
 
 common: initrd.img
 	$(MAKE) -C kernel
