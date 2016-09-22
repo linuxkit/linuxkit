@@ -1,0 +1,19 @@
+#!/bin/sh
+
+# input is a tarball of vmlinuz64 and initrd.img on stdin
+# output is an iso on stdout
+
+cp /usr/share/syslinux/isolinux.bin ./isolinux/
+cp /usr/share/syslinux/ldlinux.c32 ./isolinux/
+
+tar xf -
+
+genisoimage -o ../mobylinux-bios.iso -l -J -R \
+                -c isolinux/boot.cat  \
+                -b isolinux/isolinux.bin \
+                   -no-emul-boot -boot-load-size 4 -boot-info-table \
+                -V MobyLinux .
+
+isohybrid ../mobylinux-bios.iso
+
+cat ../mobylinux-bios.iso
