@@ -62,6 +62,7 @@ start()
 			mobyconfig get $f > $f
 		done
 	fi
+
 	if mobyconfig exists network
 	then
 		NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
@@ -78,8 +79,18 @@ start()
 		export no_proxy="$(mobyconfig get proxy/exclude)"
 	fi
 
+	[ -f /etc/docker/daemon.json ] || printf '{}' > /etc/docker/daemon.json
+
 	# Set Docker to debug debug if not specified in daemon.json
-	([ -f /etc/docker/daemon.json ] && cat /etc/docker/daemon.json | jq -e .debug > /dev/null) || DOCKER_OPTS="${DOCKER_OPTS} --debug"
+	cat /etc/docker/daemon.json | jq -e .debug > /dev/null || DOCKER_OPTS="${DOCKER_OPTS} --debug"
+
+	# choose storage driver
+	if ! $(cat /etc/docker/daemon.json | jq -e '."storage-driver"' > /dev/null)
+	then
+		STORAGE_DRIVER="overlay2"
+		[ -d /var/lib/docker/aufs ] && STORAGE_DRIVER="aufs"
+		DOCKER_OPTS="${DOCKER_OPTS} --storage-driver ${STORAGE_DRIVER}"
+	fi
 
 	# shift logs onto host before docker starts
 	# busybox reopens its log files every second
