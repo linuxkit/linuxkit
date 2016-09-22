@@ -35,6 +35,7 @@ RUN \
   rc-update add fsck && \
   rc-update add root && \
   rc-update add crond && \
+  rc-update add local && \
   rc-update add localmount && \
   rc-update add docker default && \
   rc-update add proxy default && \
