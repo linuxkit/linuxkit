@@ -4,10 +4,3 @@ iface lo inet loopback
 auto eth0
 iface eth0 inet dhcp
     udhcpc_opts -T 3 -A 3 -t 20 -O search
-
-auto eth1
-iface eth1 inet dhcp
-    udhcpc_opts -T 1 -A 3
-    metric 199
-    pre-up service tap-vsockd start
-    post-down service tap-vsockd stop
