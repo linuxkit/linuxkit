@@ -16,7 +16,8 @@ push: hash
 		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
 		 docker push mobylinux/$(IMAGE):$(shell cat hash) && \
 		 docker push mobylinux/$(IMAGE):latest)
-	docker run $(IMAGE):build cat /lib/apk/db/installed | grep -E '^(P|V)' | awk  '/^P/{printf substr($$1, 3),$$0;next} /^V/{print " " substr($$1, 3);next}' > packages
+	docker run $(IMAGE):build cat /lib/apk/db/installed | grep -E '^(P|V)' | \
+	  awk  '/^P/{printf substr($$1, 3),$$0;next} /^V/{print " " substr($$1, 3);next}' | sort > packages
 	docker rmi -f $(IMAGE):build
 	rm -f hash
 
