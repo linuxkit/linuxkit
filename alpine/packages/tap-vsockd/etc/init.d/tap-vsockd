@@ -23,6 +23,7 @@ start()
 		--background \
 		--pidfile ${PIDFILE} \
 		-- \
+		--tap eth0 \
 		--pidfile "${PIDFILE}" \
 		--listen
 
