@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-base:0661b14ac943eacde2662a2c0e3be6dae297ce73
+FROM mobylinux/alpine-base:0f9607c16aaa5073e0cfd01c0cbbb718acbde8bf
 
 ENV ARCH=x86_64
 
@@ -22,6 +22,7 @@ RUN \
   rc-update add hwclock boot && \
   rc-update add tap-vsockd boot && \
   rc-update add networking boot && \
+  rc-update add dhcpcd boot && \
   rc-update add acpid default && \
   rc-update add chronyd default && \
   rc-update add savecache shutdown && \

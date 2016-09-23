@@ -1,6 +1,2 @@
 auto lo
 iface lo inet loopback
-
-auto eth0
-iface eth0 inet dhcp
-    udhcpc_opts -T 3 -A 3 -t 20 -O search

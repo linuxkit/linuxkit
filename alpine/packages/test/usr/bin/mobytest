@@ -2,6 +2,7 @@
 
 set -ex
 
+ifconfig
 docker info
 docker ps
 docker pull alpine
