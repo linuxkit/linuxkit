@@ -3,8 +3,6 @@ ARCH?=x86_64
 OS?=Linux
 DOCKER_EXPERIMENTAL?=1
 
-DOCKER_BINARIES?=docker dockerd docker-proxy docker-runc docker-containerd docker-containerd-ctr docker-containerd-shim
-
 all: usr/bin/docker
 
 TEST_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
@@ -42,9 +40,11 @@ endif
 	   docker/docker-runc \
 	   docker/docker-containerd-shim \
 	usr/bin/
+	([ -e docker/docker-init ] && mv docker/docker-init usr/bin/) || true
 
 hub: cleanusr
-	docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin $(DOCKER_BINARIES) | tar xf - -C usr/bin
+	docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin . | tar xf - -C usr/bin
+	rm -f usr/bin/docker-entrypoint.sh
 
 clean:
 	rm -rf usr/ docker/
