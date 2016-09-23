@@ -11,7 +11,6 @@ RUN \
   chrony \
   cifs-utils \
   curl \
-  dhcpcd \
   e2fsprogs \
   e2fsprogs-extra \
   fuse \
