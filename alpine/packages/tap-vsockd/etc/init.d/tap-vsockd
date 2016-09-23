@@ -4,7 +4,7 @@ description="VPN proxy"
 
 depend()
 {
-	before networking
+	before net
 }
 
 start()
