@@ -13,27 +13,24 @@ start() {
 	mobyconfig exists etc/sysfs.conf && mobyconfig get etc/sysfs.conf > /etc/sysfs.conf
 	mobyconfig exists etc/resolv.conf && mobyconfig get etc/resolv.conf > /etc/resolv.conf
 	mobyconfig exists random-seed && mobyconfig get random-seed > /dev/urandom
-
 	mobyconfig exists etc/hosts && mobyconfig get etc/hosts >> /etc/hosts
 
-	# handle static network config if configured
-	mobyconfig exists net/config && NETCONFIG=`mobyconfig get net/config`
-	if [ "${NETCONFIG}" = "static" ]; then
-	     # assume that the other configsDB entries exist
-	     IP=`mobyconfig get net/address`
-	     MASK=`mobyconfig get net/netmask`
-	     GW=`mobyconfig get net/gateway`
-
-	     cp /etc/network/interfaces.template /etc/network/interfaces
-	     echo                          >> /etc/network/interfaces
-	     echo "auto eth0"              >> /etc/network/interfaces
-	     echo "iface eth0 inet static" >> /etc/network/interfaces
-	     echo "    address ${IP}"      >> /etc/network/interfaces
-	     echo "    netmask ${MASK}"    >> /etc/network/interfaces
-	     echo "    gateway ${GW}"      >> /etc/network/interfaces
-	     echo "    metric  200"        >> /etc/network/interfaces
+        if [ "$(mobyplatform)" = "windows" ]; then
+            # We have two network interfaces. The Hyper-V interface
+            # comes up as eth0. Rename and configure it.
+            ip link set eth0 down
+            ip link set eth0 name hvint0 
+            
+            mobyconfig exists net/config && NETCONFIG=`mobyconfig get net/config`
+            if [ "${NETCONFIG}" = "static" ]; then
+                # assume that the other configsDB entries exist
+                IP=`mobyconfig get net/address`
+                MASK=`mobyconfig get net/netmask`
+                ip addr add ${IP}/${MASK} dev hvint0
+                ip link set hvint0 up
+	    fi
 	fi
-	
+
 	mobyconfig exists etc/ssl/certs/ca-certificates.crt && mobyconfig get etc/ssl/certs/ca-certificates.crt >> /etc/ssl/certs/ca-certificates.crt 
 
 	eend 0
