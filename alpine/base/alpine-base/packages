@@ -14,7 +14,6 @@ cifs-utils 6.5-r0
 cryptsetup-libs 1.7.1-r0
 curl 7.50.3-r0
 device-mapper 2.02.154-r0
-dhcpcd 6.10.3-r1
 e2fsprogs 1.43-r0
 e2fsprogs-extra 1.43-r0
 e2fsprogs-libs 1.43-r0
