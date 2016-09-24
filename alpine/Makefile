@@ -16,7 +16,6 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/automount etc -C ../.. \
 	  -C packages/binfmt_misc etc -C ../.. \
 	  -C packages/hostsettings etc -C ../.. \
-	  -C packages/hvtools sbin etc usr -C ../.. \
 	  -C packages/chronyd etc -C ../.. \
 	  -C packages/userns etc -C ../.. \
 	  -C packages/nc-vsock usr -C ../.. \
