@@ -21,6 +21,7 @@ e2fsprogs-libs 1.43-r0
 expat 2.1.1-r1
 fuse 2.9.6-r0
 git 2.8.3-r0
+hvtools 4.4.15-r0
 iptables 1.6.0-r0
 jq 1.5-r1
 keyutils-libs 1.5.9-r1
