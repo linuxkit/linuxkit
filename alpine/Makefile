@@ -6,7 +6,7 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
 	tar cf - \
-	  Dockerfile etc init mkinitrd.sh \
+	  Dockerfile etc usr init mkinitrd.sh \
 	  -C kernel usr etc sbin lib -C .. \
 	  -C packages/proxy usr sbin etc -C ../.. \
 	  -C packages/transfused sbin etc -C ../.. \
