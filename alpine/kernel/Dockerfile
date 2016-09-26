@@ -1,6 +1,6 @@
 FROM mobylinux/debian-build-kernel:a009a11bf0ad
 
-ARG KERNEL_VERSION=4.4.21
+ARG KERNEL_VERSION=4.4.22
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
