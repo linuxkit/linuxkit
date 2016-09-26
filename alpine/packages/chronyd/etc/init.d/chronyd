@@ -46,10 +46,20 @@ setxtrarg() {
 }
 
 start() {
-	[ "$(mobyplatform)" = "windows" ] && exit 0
-
-	[ "$(mobyplatform)" = "aws" ] && \
-		sed -i -e "s/^server [^ ]\+/server 0.amazon.pool.ntp.org/g" /etc/chrony/chrony.conf
+	case "$(mobyplatform)" in
+		"windows")
+			exit 0
+		;;
+		"mac")
+			sed -i '/server pool.ntp.org/d' /etc/chrony/chrony.conf
+		;;
+		"aws")
+			sed -i -e "s/^server [^ ]\+/server 0.amazon.pool.ntp.org/g" /etc/chrony/chrony.conf
+		;;
+		"azure")
+			# TODO needs an ntp solution
+		;;
+	esac
 
 	checkconfig || return $?
 	setxtrarg
