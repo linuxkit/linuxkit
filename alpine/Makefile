@@ -97,6 +97,7 @@ uploadvhd: azure
 	docker run \
 		-i \
 		-e AZURE_STG_ACCOUNT_KEY \
+		-e AZURE_STG_ACCOUNT_NAME \
 		-e CONTAINER_NAME \
 		--log-driver none \
 		--rm \
