@@ -29,7 +29,6 @@ RUN \
   sfdisk \
   strace \
   sysklogd \
-  syslinux \
   tar \
   xz \
   && true
