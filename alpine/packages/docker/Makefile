@@ -5,7 +5,13 @@ DOCKER_EXPERIMENTAL?=1
 
 all: usr/bin/docker
 
-TEST_HOST=$(shell if echo "$(DOCKER_VERSION)" | grep -q -- '-rc'; then echo "test.docker.com"; else echo "get.docker.com"; fi)
+RELEASE_CANDIDATE=$(findstring -rc,$(DOCKER_VERSION))
+ifeq ($(RELEASE_CANDIDATE),-rc)
+TEST_HOST=test.docker.com
+else
+TEST_HOST=get.docker.com
+endif
+
 ifeq ($(DOCKER_EXPERIMENTAL),1)
 DOCKER_HOST=experimental.docker.com
 DOCKER_IMAGE?=docker:$(DOCKER_VERSION)-experimental
@@ -16,7 +22,7 @@ endif
 
 .PHONY: download hub cleanusr
 
-ifeq ($(DOCKER_BIN_URL)$(FORCE_CURL),)
+ifeq ($(DOCKER_BIN_URL)$(FORCE_CURL)$(RELEASE_CANDIDATE),)
 usr/bin/docker: hub
 else
 usr/bin/docker: download
