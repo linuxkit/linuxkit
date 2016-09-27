@@ -1,5 +1,5 @@
 # Create a EFI Bootable ISO
-FROM mobylinux/alpine-efi:2f8c8e9ecc4bfefaf1b5ca56bac5506baba301f2
+FROM mobylinux/alpine-efi:9370daa1e923bff086ce6d295ac96ba07b5ae832
 
 WORKDIR /tmp/efi
 
