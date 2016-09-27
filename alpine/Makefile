@@ -40,7 +40,7 @@ mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 
 mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
-	  docker run --net=none --log-driver=none --rm -i mobylinux/alpine-bios:67236852ecf950af0486ac22b0963b404d16c348 >$@
+	  docker run --net=none --log-driver=none --rm -i mobylinux/alpine-bios:f33f2e5cbe78f13d39b92b44b2c827fe2231b5b2 >$@
 
 common: initrd.img
 	$(MAKE) -C kernel

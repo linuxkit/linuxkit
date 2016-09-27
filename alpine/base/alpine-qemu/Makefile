@@ -1,6 +1,6 @@
 .PHONY: tag push
 
-BASE=alpine:3.4
+BASE=alpine:edge
 IMAGE=alpine-qemu
 
 default: push

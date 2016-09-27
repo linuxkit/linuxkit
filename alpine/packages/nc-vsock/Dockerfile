@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-build-c:1ea690a7438cdd8a5965eaa034e0a0c521d9cb40
+FROM mobylinux/alpine-build-c:41e7634e137b022e6fef9d651166783966de6725
 
 COPY . /nc-vsock
 
