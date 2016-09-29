@@ -2,9 +2,9 @@ FROM alpine:3.4
 
 RUN \
   apk update && apk upgrade && \
-  apk add \
+  apk add --no-cache \
   binutils \
+  gummiboot \
   mtools \
   xorriso \
-  gummiboot \
-  && rm -rf /var/cache/apk/*
+  && true
