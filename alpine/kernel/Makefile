@@ -4,11 +4,12 @@ all:	x86_64/vmlinuz64
 
 x86_64/vmlinuz64: Dockerfile kernel_config
 	mkdir -p x86_64 etc
-	docker build --build-arg DEBUG=$(DEBUG) -t mobykernel:build .
-	docker run --rm --net=none --log-driver=none mobykernel:build cat /kernel-modules.tar | tar xf -
-	docker run --rm --net=none --log-driver=none mobykernel:build cat /aufs-utils.tar | tar xf -
-	docker run --rm --net=none --log-driver=none mobykernel:build cat /kernel-source-info > etc/kernel-source-info
-	docker run --rm --net=none --log-driver=none mobykernel:build cat /linux/arch/x86_64/boot/bzImage > $@
+	BUILD=$$( docker build --build-arg DEBUG=$(DEBUG) -q . ) && [ -n "$$BUILD" ] && \
+	docker run --rm --net=none --log-driver=none $$BUILD cat /kernel-modules.tar | tar xf - && \
+	docker run --rm --net=none --log-driver=none $$BUILD cat /aufs-utils.tar | tar xf - && \
+	docker run --rm --net=none --log-driver=none $$BUILD cat /kernel-source-info > etc/kernel-source-info && \
+	docker run --rm --net=none --log-driver=none $$BUILD cat /linux/arch/x86_64/boot/bzImage > $@ && \
+	docker rmi --no-prune $$BUILD
 	cp -a patches etc/kernel-patches
 
 clean:
