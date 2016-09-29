@@ -1,4 +1,4 @@
-FROM mobylinux/debian-build-kernel:a009a11bf0ad
+FROM mobylinux/alpine-build-c:50a89f207d5fc98ce750d694077c75a31ab7937d
 
 ARG KERNEL_VERSION=4.4.22
 
@@ -19,8 +19,8 @@ RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
     git checkout -q "$AUFS_COMMIT"
 
 # aufs-util 20151116
-ENV AUFS_TOOLS_REPO https://github.com/Distrotech/aufs-util.git
-ENV AUFS_TOOLS_COMMIT b5e7e204036da5e815ddec15a847a03c232771b4
+ENV AUFS_TOOLS_REPO https://github.com/ncopa/aufs-util.git
+ENV AUFS_TOOLS_COMMIT 3b7c5e262b53598a8204a915e485489c46d4e7a4
 
 # Download aufs tools
 RUN git clone ${AUFS_TOOLS_REPO} && \
@@ -61,11 +61,10 @@ RUN cd /linux && \
         patch -p1 < "$patch"; \
     done
 
-RUN jobs=$(nproc); \
-    cd /linux && \
+RUN cd /linux && \
     make defconfig && \
     make oldconfig && \
-    make -j ${jobs} && \
+    make KCFLAGS="-fno-pie" && \
     make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar . ) && \
     make INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
@@ -76,6 +75,6 @@ RUN cd /aufs-util && \
     CPPFLAGS="-I/tmp/kernel-headers/include" CFLAGS=$CPPFLAGS LDFLAGS=$CPPFLAGS make && \
     DESTDIR=/tmp/aufs-utils make install && \
     rm -rf /tmp/aufs-utils/usr/lib /tmp/aufs-utils/usr/share && \
-    cd /tmp/aufs-utils && tar cf /aufs-utils.tar .
+    cd /tmp/aufs-utils && rm libau* && tar cf /aufs-utils.tar .
 
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\nAUFS_REPO=${AUFS_REPO}\nAUFS_BRANCH=${AUFS_BRANCH}\nAUFS_COMMIT=${AUFS_COMMIT}\nAUFS_TOOLS_REPO=${AUFS_TOOLS_REPO}\nAUFS_TOOLS_COMMIT=${AUFS_TOOLS_COMMIT}\n" > /kernel-source-info

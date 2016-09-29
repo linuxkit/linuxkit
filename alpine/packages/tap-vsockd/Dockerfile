@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-build-c:1ea690a7438cdd8a5965eaa034e0a0c521d9cb40
+FROM mobylinux/alpine-build-c:50a89f207d5fc98ce750d694077c75a31ab7937d
 
 COPY . /tap-vsockd
 
