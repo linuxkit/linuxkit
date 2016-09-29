@@ -4,8 +4,9 @@ DEPS=Dockerfile $(wildcard *.go)
 
 vsudd: $(DEPS) ../vendor/manifest
 	mkdir -p sbin
-	tar cf - $(DEPS) -C .. vendor | docker build -t vsudd:build -
-	docker run --rm --net=none vsudd:build | tar xf - -C sbin
+	BUILD=$$( tar cf - $(DEPS) -C .. vendor | docker build -q - ) && [ -n "$$BUILD" ] && \
+	docker run --rm --net=none $$BUILD | tar xf - -C sbin && \
+	docker rmi --no-prune $$BUILD
 
 clean:
 	rm -rf sbin
