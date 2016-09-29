@@ -1,9 +1,11 @@
 FROM alpine:3.4
 
+COPY repositories /etc/apk/
+
 RUN \
   apk update && apk upgrade && \
-  apk add \
-  qemu-img \
-  qemu-system-arm \
-  qemu-system-x86_64 \
-  && rm -rf /var/cache/apk/*
+  apk add --no-cache \
+  qemu-img@edge \
+  qemu-system-arm@edge \
+  qemu-system-x86_64@edge \
+  && true

@@ -5,9 +5,9 @@ IMAGE=alpine-qemu
 
 default: push
 
-hash:
+hash: Dockerfile repositories
 	docker pull $(BASE)
-	tar cf - Dockerfile | docker build --no-cache -t $(IMAGE):build -
+	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sha1sum /lib/apk/db/installed | sed 's/ .*//' > hash
 
 push: hash
