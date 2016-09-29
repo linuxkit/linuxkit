@@ -22,9 +22,10 @@ qemu-iso: Dockerfile.qemuiso alpine/mobylinux-bios.iso
 
 test: Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	$(MAKE) -C alpine
-	tar cf - $^ | docker build -f Dockerfile.test -t mobytest:build -
-	touch test.log
-	docker run --rm mobytest:build 2>&1 | tee -a test.log
+	BUILD=$$( tar cf - $^ | docker build -f Dockerfile.test -q - ) && [ -n "$$BUILD" ] && \
+	touch test.log && \
+	docker run --rm $$BUILD 2>&1 | tee -a test.log && \
+	docker rmi --no-prune $$BUILD
 	@cat test.log | grep -q 'Moby test suite PASSED'
 
 TAG=$(shell git rev-parse HEAD)

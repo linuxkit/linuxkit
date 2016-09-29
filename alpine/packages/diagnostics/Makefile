@@ -3,8 +3,9 @@ all: usr/bin/diagnostics-server
 DEPS=Dockerfile $(wildcard *.go)
 
 usr/bin/diagnostics-server: $(DEPS) ../vendor/manifest
-	tar cf - $(DEPS) -C .. vendor | docker build -t diagnostics-server:build -
-	docker run --rm --net=none diagnostics-server:build | tar xf - -C usr/bin
+	BUILD=$$( tar cf - $(DEPS) -C .. vendor | docker build -q - ) && [ -n "$$BUILD" ] && \
+	docker run --rm --net=none $$BUILD | tar xf - -C usr/bin && \
+	docker rmi --no-prune $$BUILD
 
 clean:
 	rm -f usr/bin/diagnostics-server

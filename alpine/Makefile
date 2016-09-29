@@ -5,7 +5,7 @@ ETCFILES=$(shell find etc)
 initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
-	tar cf - \
+	BUILD=$$( tar cf - \
 	  Dockerfile etc usr init mkinitrd.sh \
 	  -C kernel usr etc sbin lib -C .. \
 	  -C packages/proxy usr sbin etc -C ../.. \
@@ -30,13 +30,15 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/aws etc -C ../.. \
 	  -C packages/azure etc -C ../.. \
 	  | \
-	  docker build -t moby-initrd:build -
-	docker run --net=none --log-driver=none --rm moby-initrd:build > $@
+	  docker build -q - ) && [ -n "$$BUILD" ] && \
+	docker run --net=none --log-driver=none --rm $$BUILD > $@ && \
+	docker rmi --no-prune $$BUILD
 
 mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
-	tar cf - $^ | docker build -t moby-efi:build -f Dockerfile.efi -
-	docker run --net=none --log-driver=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux.efi > mobylinux.efi
-	docker run --net=none --log-driver=none --rm --cap-add sys_admin moby-efi:build cat /tmp/efi/mobylinux-efi.iso > $@
+	BUILD=$$( tar cf - $^ | docker build -q -f Dockerfile.efi - ) && [ -n "$$BUILD" ] && \
+	docker run --net=none --log-driver=none --rm --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux.efi > mobylinux.efi && \
+	docker run --net=none --log-driver=none --rm --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux-efi.iso > $@ && \
+	docker rmi --no-prune $$BUILD
 
 mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \

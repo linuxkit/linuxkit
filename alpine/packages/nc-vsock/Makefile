@@ -2,8 +2,9 @@ DEPS=Dockerfile $(wildcard *.c *.h)
 
 usr/bin/nc-vsock: $(DEPS)
 	mkdir -p usr/bin
-	tar cf - $(DEPS) | docker build -t nc-vsock:build -
-	docker run --rm --net=none nc-vsock:build | tar xf - -C usr/bin
+	BUILD=$$( tar cf - $(DEPS) | docker build -q - ) && [ -n "$$BUILD" ] && \
+	docker run --rm --net=none $$BUILD | tar xf - -C usr/bin && \
+	docker rmi --no-prune $$BUILD
 
 clean:
 	rm -rf usr
