@@ -11,6 +11,7 @@ RUN \
   installkernel \
   kmod \
   linux-headers \
+  ncurses-dev \
   perl \
   sed \
   squashfs-tools \
