@@ -10,7 +10,24 @@ start()
 {
 	ebegin "Configuring host block device"
 
-	DEV="$(find /dev -maxdepth 1 -type b ! -name 'loop*' | grep -v '[0-9]$' | sed 's@.*/dev/@@' | head -1 )"
+	# We are being specific with Azure for now.  Otherwise the subshell
+	# below will reference /dev/sdb, which is Azure's "local resource disk"
+	# (see
+	# https://blogs.msdn.microsoft.com/mast/2013/12/06/understanding-the-temporary-drive-on-windows-azure-virtual-machines/).
+	#
+	# Since attempting to format swap on that disk will cause Azure VHD
+	# validation to fail, we default to using /dev/sda.  requirements
+	# including not allowing swap partitions.
+	#
+	# IMPORTANT: If this, or the root device (/dev/sda1) changes in the
+	# syslinux / bootloader config for Azure, they will need to be updated
+	# in parallel.
+	if [ "$(mobyplatform)" = "azure" ]
+	then
+		DEV="sda"
+	else
+		DEV="$(find /dev -maxdepth 1 -type b ! -name 'loop*' | grep -v '[0-9]$' | sed 's@.*/dev/@@' | head -1 )"
+	fi
 
 	[ -z "${DEV}" ] && exit 1
 
