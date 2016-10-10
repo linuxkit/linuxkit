@@ -12,10 +12,8 @@ hash:
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):latest && \
-		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
-		 docker push mobylinux/$(IMAGE):$(shell cat hash) && \
-		 docker push mobylinux/$(IMAGE):latest)
+		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
+		 docker push mobylinux/$(IMAGE):$(shell cat hash))
 	docker run $(IMAGE):build cat /lib/apk/db/installed | grep -E '^(P|V)' | \
 	  awk  '/^P/{printf substr($$1, 3),$$0;next} /^V/{print " " substr($$1, 3);next}' | sort > packages
 	docker rmi -f $(IMAGE):build
@@ -23,8 +21,7 @@ push: hash
 
 tag: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):latest && \
-		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash))
+		docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash)
 	docker rmi -f $(IMAGE):build
 	rm -f hash
 
