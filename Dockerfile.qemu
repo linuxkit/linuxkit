@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-qemu:1f3de121e9dea39a198413344a72049839bea91b
+FROM mobylinux/alpine-qemu:804b2c40d078287c40aeb9166e475e843544e597 
 
 COPY alpine/initrd.img .
 COPY alpine/kernel/x86_64/vmlinuz64 .
