@@ -1,4 +1,5 @@
-DOCKER_VERSION?=1.12.2-rc3
+DOCKER_VERSION?=1.12.2
+FORCE_CURL?=1
 ARCH?=x86_64
 OS?=Linux
 DOCKER_EXPERIMENTAL?=1
@@ -30,14 +31,15 @@ endif
 
 cleanusr:
 	mkdir -p usr/bin
-	rm -f usr/bin/*
+	rm -f usr/bin/* ok
 
 download: cleanusr
 ifdef DOCKER_BIN_URL
-	curl -sSL ${DOCKER_BIN_URL} | tar xzf -
+	(curl -sSL ${DOCKER_BIN_URL} && touch ok) | tar xzf -
 else
-	curl -sSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz | tar xzf -
+	(curl -sSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
 endif
+	rm ok
 	mv docker/docker-containerd-ctr \
 	   docker/docker \
 	   docker/docker-containerd \
@@ -49,10 +51,11 @@ endif
 	([ -e docker/docker-init ] && mv docker/docker-init usr/bin/) || true
 
 hub: cleanusr
-	docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin . | tar xf - -C usr/bin
+	(docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin . && touch ok) | tar xf - -C usr/bin
+	rm ok
 	rm -f usr/bin/docker-entrypoint.sh
 
 clean:
-	rm -rf usr/ docker/
+	rm -rf usr/ docker/ ok
 
 .DELETE_ON_ERROR:
