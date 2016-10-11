@@ -2,9 +2,10 @@ all: usr/local/sbin/iptables
 
 usr/local/sbin/iptables: Dockerfile main.ml
 	mkdir -p usr/local/sbin
-	BUILD=$$( docker build -q . ) && [ -n "$$BUILD" ] && \
-	docker run --rm $$BUILD | tar xf - -C usr/local/sbin && \
-	docker rmi --no-prune $$BUILD
+	BUILD=$$( docker build -q . ) && \
+	[ -n "$$BUILD" ] && \
+	echo "Built $$BUILD" && \
+	docker run --rm $$BUILD | tar xf - -C usr/local/sbin
 
 clean:
 	rm -rf usr
