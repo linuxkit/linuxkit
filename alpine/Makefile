@@ -30,15 +30,13 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/aws etc -C ../.. \
 	  -C packages/azure etc -C ../.. \
 	  | \
-	  docker build -q - ) && [ -n "$$BUILD" ] && \
-	docker run --net=none --log-driver=none --rm $$BUILD > $@ && \
-	docker rmi --no-prune $$BUILD
+	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
+	docker run --net=none --log-driver=none --rm $$BUILD > $@
 
 mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
-	BUILD=$$( tar cf - $^ | docker build -q -f Dockerfile.efi - ) && [ -n "$$BUILD" ] && \
+	BUILD=$$( tar cf - $^ | docker build -q -f Dockerfile.efi - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	docker run --net=none --log-driver=none --rm --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux.efi > mobylinux.efi && \
-	docker run --net=none --log-driver=none --rm --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux-efi.iso > $@ && \
-	docker rmi --no-prune $$BUILD
+	docker run --net=none --log-driver=none --rm --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux-efi.iso > $@
 
 mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
