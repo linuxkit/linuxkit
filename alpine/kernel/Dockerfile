@@ -64,7 +64,7 @@ RUN cd /linux && \
 RUN cd /linux && \
     make defconfig && \
     make oldconfig && \
-    make KCFLAGS="-fno-pie" && \
+    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
     make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar . ) && \
     make INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
