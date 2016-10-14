@@ -107,6 +107,8 @@ start()
 	# set ulimits as high as possible
 	ulimit -n 1048576
 	ulimit -p unlimited
+	# set locked memory higher for varnish
+	ulimit -l 82000
 
 	DOCKER_LOGFILE="/var/log/docker.log"
 
