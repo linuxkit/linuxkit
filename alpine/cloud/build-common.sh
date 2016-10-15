@@ -56,8 +56,18 @@ n
 p
 1
 
-
++150M
 a
+n
+p
+2
+
++150M
+n
+p
+3
+
+
 w
 EOF
 	else
@@ -71,18 +81,17 @@ EOF
 }
 
 # $1 - device
-# $2 - partition 1 on device
 configure_syslinux_on_device_partition()
 {
 	# Mount created root partition, format it as ext4, and copy over the needed
 	# files for boot (syslinux configuration, kernel binary, and initrd.img)
-	while [ ! -e "$2" ]
+	while [ ! -e "$1" ]
 	do
 		sleep 0.1
 	done
 
 	arrowecho "Making filesystem on partition"
-	mke2fs -t ext4 "$2"
+	mke2fs -t ext4 "$1"
 
 	arrowecho "Mounting partition filesystem"
 
@@ -91,12 +100,18 @@ configure_syslinux_on_device_partition()
 	then
 		mkdir -p ${ROOT_PARTITION_MOUNT}
 	fi
-	mount -t ext4 "$2" ${ROOT_PARTITION_MOUNT}
+	mount -t ext4 "$1" ${ROOT_PARTITION_MOUNT}
 
 	arrowecho "Copying image and kernel binary to partition"
 
 	# Get files needed to boot in place.
 	cp ${MOBY_SRC_ROOT}/syslinux.cfg ${ROOT_PARTITION_MOUNT}
+
+	# Increment number in moby src root to ensure beta partition boots to
+	# correct drive
+	sed -i 's#/dev/sda1#/dev/sda2#' ${MOBY_SRC_ROOT}/syslinux.cfg
+	sed -i 's#Ishmael#Ahab#' ${MOBY_SRC_ROOT}/syslinux.cfg
+
 	cat ${ROOT_PARTITION_MOUNT}/syslinux.cfg
 	cp ${MOBY_SRC_ROOT}/vmlinuz64 ${ROOT_PARTITION_MOUNT}
 	cp ${MOBY_SRC_ROOT}/initrd.img ${ROOT_PARTITION_MOUNT}
@@ -112,12 +127,5 @@ configure_syslinux_on_device_partition()
 	arrowecho "Installing syslinux to partition"
 	extlinux --install ${ROOT_PARTITION_MOUNT} 
 
-	# Format master boot record in partition table on target device.
-	arrowecho "Copying MBR to partition table in target device"
-	dd if=/usr/share/syslinux/mbr.bin of="$1" bs=440 count=1 
-
 	umount ${ROOT_PARTITION_MOUNT}
-
-	arrowecho "Checking device/partition sanity"
-	fdisk -l "$1"
 }

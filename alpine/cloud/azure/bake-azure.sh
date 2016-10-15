@@ -36,7 +36,7 @@ case "$1" in
 		fi
 
 		arrowecho "Writing empty image file"
-		dd if=/dev/zero of="${RAW_IMAGE}" count=0 bs=1 seek=30G
+		dd if=/dev/zero of="${RAW_IMAGE}" count=0 bs=1 seek=1G
 
 		arrowecho "Formatting image file for boot"
 		format_on_device "${RAW_IMAGE}"
@@ -47,11 +47,20 @@ case "$1" in
 		arrowecho "Loopback device is ${LOOPBACK_DEVICE}"
 
 		arrowecho "Mapping partition"
-		MAPPED_PARTITION="/dev/mapper/$(kpartx -av ${LOOPBACK_DEVICE} | cut -d' ' -f3)"
-		arrowecho "Partition mapped at ${MAPPED_PARTITION}"
+		for MAPPED_PARTITION in $(kpartx -av ${LOOPBACK_DEVICE} | cut -d' ' -f3)
+		do
+			DEV="/dev/mapper/${MAPPED_PARTITION}"
+			arrowecho "Partition mapped at ${DEV}"
+			arrowecho "Installing syslinux and dropping artifacts on partition..."
+			configure_syslinux_on_device_partition "${DEV}"
+		done
 
-		arrowecho "Installing syslinux and dropping artifacts on partition..."
-		configure_syslinux_on_device_partition "${LOOPBACK_DEVICE}" "${MAPPED_PARTITION}"
+		# Format master boot record in partition table on target device.
+		arrowecho "Copying MBR to partition table in target device"
+		dd if=/usr/share/syslinux/mbr.bin of="${LOOPBACK_DEVICE}" bs=440 count=1 
+
+		arrowecho "Checking device/partition sanity"
+		fdisk -l "${RAW_IMAGE}"
 
 		arrowecho "Cleaning up..."
 		kpartx -d "${LOOPBACK_DEVICE}"

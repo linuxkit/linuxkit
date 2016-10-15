@@ -117,26 +117,28 @@ azure: common vhdartifact
 	# -v /dev:/dev needed in addition to --privileged due to creation of
 	#  loopback device (mount namespace?)
 	docker run \
-		--rm \
+		-ti \
 		--privileged \
 		--log-driver none \
 		-v vhdartifact:/tmp \
 		-v /dev:/dev \
 		moby-azure:build \
 		makeraw
-	docker run \
-		--rm \
-		--log-driver none \
-		-v vhdartifact:/tmp \
-		moby-azure:raw2vhd
-	docker run \
-		--rm \
-		-i \
-		--log-driver none \
-		-v vhdartifact:/tmp \
-		moby-azure:build \
-		tarout \
-	| tar -xvf -
+	docker cp $(shell docker ps -lq):/tmp/mobylinux.img .
+	docker rm $(shell docker ps -lq)
+	#docker run \
+	#	--rm \
+	#	--log-driver none \
+	#	-v vhdartifact:/tmp \
+	#	moby-azure:raw2vhd
+	#docker run \
+	#	--rm \
+	#	-i \
+	#	--log-driver none \
+	#	-v vhdartifact:/tmp \
+	#	moby-azure:build \
+	#	tarout \
+	#| tar -xvf -
 
 vhdartifact:
 	# NB: Multiple 'docker volume create' with same name does not return
