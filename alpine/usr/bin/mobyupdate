@@ -1,0 +1,98 @@
+#!/bin/sh
+
+# mobyupdate script
+# Usage:
+#
+# (1) mobyupdate $remote_initrd $remote_kernel
+#
+# To update the passive partition to the specified initramfs and kernel.
+#
+# or:
+#
+# (2) mobyupdate rollback
+#
+# to switch to the other partition ("roll back" to the last booted
+# version).
+
+set -e
+
+# $1 - partitioned device
+# $2 - partition to toggle boot flag for
+toggle_partition_bootable()
+{
+	# The seemingly esoteric sed command in here just grabs the last
+	# character of the string.  From
+	# http://unix.stackexchange.com/questions/163481/a-command-to-print-only-last-3-characters-of-a-string
+	PARITION_NUM=$(echo "$2" | sed 's/.*\(.\)/\1/')
+	echo "$1" "${PARITION_NUM}"
+	set +e
+	fdisk "$1" << EOF
+a
+${PARITION_NUM}
+w
+EOF
+	set -e
+}
+
+# $1 - base device
+# $2 - partition 1
+# $3 - partition 2
+flip_boot()
+{
+	echo "Toggling boot partitions..."
+	toggle_partition_bootable "$1" "$2"
+	toggle_partition_bootable "$1" "$3"
+}
+
+# TODO: We should just download the disk contents directly in case we want to
+# change boot dir layout, etc., and 'dd' directly over the partition instead of
+# this risky mount manuever?
+#
+# TODO: Sign artifacts.  Only boot artifacts verified to come from Docker, Inc.
+# unless "debug/dev mode" is enabled.
+#
+# $1 - passive partition to update initramdisk and kernel on (e.g., /dev/sda1)
+# $2 - URL for new initrd.img
+# $3 - URL for new vmlinuz64
+update_partition()
+{
+	if [ ! -d /mnt/passive ]
+	then
+		mkdir -p /mnt/passive
+	fi
+	echo "Updating passive partition $1..."
+	mount -t ext4 "$1" /mnt/passive
+	echo "Getting new initrd.img from $2"
+	curl -s "$2" >/mnt/passive/initrd.img
+	echo "Getting new kernel from $3"
+	curl -s "$3" >/mnt/passive/vmlinuz64
+	umount "$1"
+}
+
+# Which partition are we booted as?
+#
+# e.g. /dev/sda2
+ACTIVE_PARTITION=$(kvpair root)
+echo "Active partition is ${ACTIVE_PARTITION}"
+
+# Chop off last character (partition number)
+ROOT_DEVICE=$(echo "${ACTIVE_PARTITION}" | sed 's/.$//')
+echo "Root device is ${ROOT_DEVICE}"
+
+# Determine if we are on partition 1 or 2 (substring check for "1")
+if [ "${ACTIVE_PARTITION#*1}" != "${ACTIVE_PARTITION}" ]
+then
+	PASSIVE_PARTITION=$(echo "${ACTIVE_PARTITION}" | sed 's/1/2/')
+else
+	PASSIVE_PARTITION=$(echo "${ACTIVE_PARTITION}" | sed 's/2/1/')
+fi
+
+echo "Passive partition is ${PASSIVE_PARTITION}"
+
+if [ "$1" != "rollback" ]
+then
+	update_partition "${PASSIVE_PARTITION}" "$1" "$2"
+fi
+
+flip_boot "${ROOT_DEVICE}" "${ACTIVE_PARTITION}" "${PASSIVE_PARTITION}"
+reboot

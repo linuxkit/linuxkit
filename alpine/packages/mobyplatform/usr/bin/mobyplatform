@@ -2,20 +2,6 @@
 
 # Returns the platform we are running on
 
-# return the value matching the kvpair in the command line
-kvpair()
-{
-awk -v flag=$1 '{
-    for(i = 1; i <= NF; i++) {
-        split($i, kvpair, "=");
-        if(kvpair[1] == flag) {
-            printf kvpair[2];
-            break;
-        }
-    }
-}' /proc/cmdline
-}
-
 PLATFORM=$(kvpair mobyplatform)
 
 [ -z ${PLATFORM} ] && printf unknown || printf ${PLATFORM}

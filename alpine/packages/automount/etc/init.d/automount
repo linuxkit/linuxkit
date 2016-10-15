@@ -39,7 +39,7 @@ start()
 		blockdev --rereadpt "${DRIVE}" 2> /dev/null
 	else
 		SWAP=$(fdisk -l "${DRIVE}" | grep 'Linux swap' | head -1 | awk '{print $1}')
-		DATA=$(fdisk -l "${DRIVE}" | grep 'Linux$' | head -1 | awk '{print $1}')
+		DATA=$(fdisk -l "${DRIVE}" | grep 'Linux$' | sort -r | head -1 | awk '{print $1}')
 		if [ -z "$DATA" ]
 		then
 			ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}

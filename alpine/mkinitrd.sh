@@ -9,6 +9,9 @@ do
   cp -a $f /tmp
 done
 
+cp /usr/bin/mobyupdate /tmp/usr/bin
+cp /usr/bin/kvpair /tmp/usr/bin
+
 mkdir -m 555 /tmp/dev /tmp/proc /tmp/sys /tmp/mnt
 mkdir -m 1777 /tmp/tmp
 
