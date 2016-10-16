@@ -1,0 +1,39 @@
+{
+  "ID": "terraform_demo",
+  "Properties": {
+    "Allocation": {
+      "Size": 3
+    },
+    "Instance": {
+      "Plugin": "instance-terraform",
+      "Properties": {
+        "type": "aws_instance",
+        "value": {
+          "ami": "${lookup(var.aws_amis, var.aws_region)}",
+          "instance_type": "t2.nano",
+          "key_name": "chungers-ssh",
+          "vpc_security_group_ids": ["${aws_security_group.default.id}"],
+          "subnet_id": "${aws_subnet.default.id}",
+          "tags": {
+            "Tier": "web",
+            "provisioner": "infrakit-terraform-demo"
+          },
+          "connection": {
+            "user": "ubuntu"
+          }
+        }
+      }
+    },
+    "Flavor": {
+      "Plugin": "flavor-vanilla",
+      "Properties": {
+        "Init": [
+          "sudo apt-get update -y",
+          "sudo apt-get install -y nginx",
+          "sudo service nginx start"
+        ]
+      }
+    }
+  }
+}
+

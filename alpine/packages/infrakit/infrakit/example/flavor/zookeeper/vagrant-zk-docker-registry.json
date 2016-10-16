@@ -1,0 +1,37 @@
+{
+  "ID": "zk",
+  "Properties": {
+    "Allocation": {
+      "LogicalIDs": ["192.168.1.200", "192.168.1.201", "192.168.1.202"]
+    },
+    "Instance" : {
+      "Plugin": "instance-vagrant",
+      "Properties": {
+        "Box": "williamyeh/ubuntu-trusty64-docker"
+      }
+    },
+    "Flavor" : {
+      "Plugin": "flavor-combo",
+      "Properties": {
+        "Flavors": [
+          {
+            "Plugin": "flavor-vanilla",
+            "Properties": {
+              "Init": [
+                "echo 'DOCKER_OPTS=\"$DOCKER_OPTS --registry-mirror=http://10.0.1.5:5000\"' >> /etc/default/docker",
+                "service docker restart"
+              ]
+            }
+          },
+          {
+            "Plugin": "flavor-zookeeper",
+            "Properties": {
+              "Type": "member",
+              "UseDocker": true
+            }
+          }
+        ]
+      }
+    }
+  }
+}

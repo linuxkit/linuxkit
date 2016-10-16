@@ -1,0 +1,32 @@
+{
+  "Driver": "aws",
+  "ClusterName": "bill-testing",
+  "Groups": {
+    "Managers": {
+      "Type": "manager",
+      "Size": 1,
+      "Config": {
+        "run_instances_input": {
+          "ImageId": "ami-f701cb97",
+          "KeyName": "bill-laptop",
+          "Placement": {
+            "AvailabilityZone": "us-west-2a"
+          }
+        }
+      }
+    },
+    "Workers": {
+      "Type": "worker",
+      "Size": 3,
+      "Config": {
+        "run_instances_input": {
+          "ImageId": "ami-f701cb97",
+          "KeyName": "bill-laptop",
+          "Placement": {
+            "AvailabilityZone": "us-west-2a"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,10 @@
+.DS_Store
+
+# Editor/IDE files
+*~
+.idea/
+*.iml
+coverage.txt
+
+# Binaries from builds
+build/

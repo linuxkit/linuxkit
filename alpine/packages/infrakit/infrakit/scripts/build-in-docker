@@ -1,0 +1,63 @@
+#!/usr/bin/env bash
+
+# Build a go binary in an alpine container, and extract the binary.
+# This is useful for a cross-compile step when preparing an alpine image that contains only the go binary.
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+LDFLAGS=${LDFLAGS:-}
+
+if [[ $# -ne 2 ]]
+then
+  echo "Usage: $0 <packages> <path to binary build>"
+  exit 1
+fi
+
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+
+# Switch to the repo root.
+cd "$HERE/.."
+
+PACKAGES="$1"
+OUT_PATH="$2"
+
+OUT_DIR=$(dirname "$OUT_PATH")
+if [[ ! -d "$OUT_DIR" ]]
+then
+  echo "Output directory $OUT_DIR does not exist."
+  echo "This path must be absolute or relative to the repository root."
+  exit 1
+fi
+if [[ -d "$OUT_PATH" ]]
+then
+  echo "The output path must be a file to be written."
+  echo "The path provided is a directory."
+  exit 1
+fi
+
+BIN_NAME=$(basename "$OUT_PATH")
+
+echo 'Building'
+container_id=$(docker run --detach \
+  -v "$PWD":/go/src/github.com/docker/infrakit \
+  -w /go/src/github.com/docker/infrakit \
+  golang:1.6-alpine \
+  go build -ldflags "$LDFLAGS" -o /build/$BIN_NAME $PACKAGES)
+
+exit_code=$(docker wait $container_id)
+if [[ "$exit_code" != "0" ]]
+then
+  echo "Build failed with code $exit_code"
+  docker logs $container_id
+  docker rm $container_id >/dev/null
+  exit 1
+fi
+
+echo 'Copying binary'
+docker cp $container_id:/build/$BIN_NAME "$OUT_PATH"
+
+docker rm $container_id >/dev/null
+
+echo 'Done'

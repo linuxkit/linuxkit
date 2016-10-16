@@ -1,0 +1,21 @@
+{
+  "ID": "zk",
+  "Properties": {
+    "Allocation": {
+      "LogicalIDs": ["192.168.1.200", "192.168.1.201", "192.168.1.202"]
+    },
+    "Instance" : {
+      "Plugin": "instance-vagrant",
+      "Properties": {
+        "Box": "williamyeh/ubuntu-trusty64-docker"
+      }
+    },
+    "Flavor" : {
+      "Plugin": "flavor-zookeeper",
+      "Properties": {
+        "Type": "member",
+        "UseDocker": true
+      }
+    }
+  }
+}
