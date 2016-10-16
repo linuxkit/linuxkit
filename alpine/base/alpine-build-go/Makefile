@@ -8,7 +8,7 @@ default: push
 hash:
 	docker pull $(BASE)
 	tar cf - Dockerfile | docker build --no-cache -t $(IMAGE):build -
-	docker run golang:alpine sh -c 'cat /usr/local/go/bin/go /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
+	docker run $(IMAGE):build sh -c 'cat /usr/local/go/bin/go /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
