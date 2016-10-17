@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-build-go:e3d97551827fd2ea70b8c484615e85986d4e77fc
+FROM mobylinux/alpine-build-go:e726e12b5eea95a4e7aa537e416139d52040c68b
 
 COPY ./ /go/src/proxy/
 
