@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-build-go:e726e12b5eea95a4e7aa537e416139d52040c68b
+FROM mobylinux/alpine-build-go:78d9a136c632c66f0767e11ce3c661989d706f21
 
 COPY ./ /go/src/vsudd/
 
