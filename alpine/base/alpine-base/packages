@@ -42,8 +42,8 @@ libverto 0.2.5-r0
 lvm2 2.02.154-r0
 lvm2-libs 2.02.154-r0
 make 4.1-r1
-musl 1.1.14-r12
-musl-utils 1.1.14-r12
+musl 1.1.14-r13
+musl-utils 1.1.14-r13
 openrc 0.21-r2
 openssh 7.2_p2-r3
 openssh-client 7.2_p2-r3
