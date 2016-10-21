@@ -1,6 +1,6 @@
 FROM mobylinux/alpine-build-c:7303e33e9dcd5276b8bb5269644a9bf3354008c8
 
-ARG KERNEL_VERSION=4.8.2
+ARG KERNEL_VERSION=4.8.3
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
