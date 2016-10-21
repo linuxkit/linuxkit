@@ -12,7 +12,6 @@ import (
 
 var interactiveMode bool
 
-
 // sendError signals the error to the parent and quits the process.
 func sendError(err error) {
 	if interactiveMode {
@@ -72,7 +71,7 @@ func parseHostContainerAddrs() (host net.Addr, port int, container net.Addr, loc
 	default:
 		log.Fatalf("unsupported protocol %s", *proto)
 	}
-	localIP = ! *noLocalIP
+	localIP = !*noLocalIP
 	return host, port, container, localIP
 }
 

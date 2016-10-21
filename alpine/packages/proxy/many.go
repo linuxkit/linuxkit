@@ -3,8 +3,8 @@ package main
 import (
 	"encoding/binary"
 	"flag"
-	"github.com/rneugeba/virtsock/go/vsock"
 	"github.com/rneugeba/virtsock/go/hvsock"
+	"github.com/rneugeba/virtsock/go/vsock"
 	"log"
 	"net"
 	"proxy/libproxy"
