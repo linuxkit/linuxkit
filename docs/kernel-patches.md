@@ -20,36 +20,70 @@ git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 Throughout we use the following variables:
 - `MOBYSRC`: Base directory of Moby Linux repository
 - `LINUXSRC`: Base directory of Linux stable kernel repository
-- `LINUXTAG`: Release tag to base the patches on
+- `CURTAG`: Release tag patches are currently based on
+- `NEWTAG`: New release tag to base the patches on
 e.g.:
 ```sh
 MOBYSRC=~/src/docker/moby
 LINUXSRC=~/src/docker/linux-stable
-LINUXTAG=v4.4.24
+
+CURTAG=v4.4.23
+NEWTAG=v4.4.24
 ```
 
+
 # Updating the patches to a new kernel version
+
+There are different ways to do this. You can either rebase or try to
+re-apply the patches.  rebase is the recommended way. Once you have
+the patches in a new branch you need to export them.
+
+## Rebase
+
+The simplest way is to create a new branch of the current tag, apply the patches and then rebase to the new tag:
+```sh
+cd $LINUXSRC
+git checkout -b ${NEWTAG}-moby ${CURTAG}
+git am ${MOBYSRC}/alpine/kernel/patches/*.patch
+git rebase ${NEWTAG}-moby ${NEWTAG}
+```
+
+The `git am` should not have any conflicts and if the rebase has conflicts resolve them, then `git add <files>` and `git rebase --continue`.
+
+If you already have a `${CURTAG}-moby` branch, you can also do a more complex rebase by creating a new branch from the current branch and then rebase:
+```sh
+cd $LINUXSRC
+git checkout ${CURTAG}-moby
+git branch ${NEWTAG}-moby ${CURTAG}-moby
+git rebase --onto ${NEWTAG} ${NEWTAG} ${NEWTAG}-moby
+```
+Again, resolve any conflicts as described above.
+
+
+## Re-apply patches
 
 Create a branch from a tag for the new patches, e.g.:
 ```sh
 cd $LINUXSRC
-git branch ${LINUXTAG}-moby ${LINUXTAG}
-git checkout ${LINUXTAG}-moby
+git checkout -b ${NEWTAG}-moby ${NEWTAG}
 ```
 
-Import all the existing patches:
+Import all the existing patches into the new branch:
 ```sh
 cd $LINUXSRC
-git am ${MOBYSRC}/alpine/kernel/patches/*.patch
+git am --reject ${MOBYSRC}/alpine/kernel/patches/*.patch
 ```
 
 If this causes merge conflicts resolve them as they arise and continue as instructed.
 
-Once finished, update the patches in Moby:
+
+## Export patches to moby
+
+Irrespective of using the rebase or re-apply method, you should now have a `${NEWTAG}-moby` branch. Form this export the patches to moby:
 ```sh
 cd $LINUXSRC
-rm $MOBYSRC/alpine/kernel/patches
-git format-patch -o $MOBYSRC/alpine/kernel/patches ${LINUXTAG}..HEAD
+rm $MOBYSRC/alpine/kernel/patches/*
+git format-patch -o $MOBYSRC/alpine/kernel/patches ${NEWTAG}..HEAD
 ```
 
 Create a PR for Moby.
