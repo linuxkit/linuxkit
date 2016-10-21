@@ -34,9 +34,9 @@ func onePort() {
 	sendOK()
 	if ipP != nil {
 		ipP.Run()
-        } else {
-		select{} // sleep forever
-        }
+	} else {
+		select {} // sleep forever
+	}
 	ctl.Close() // ensure ctl remains alive and un-GCed until here
 	os.Exit(0)
 }
