@@ -24,9 +24,9 @@ endif
 .PHONY: download hub cleanusr
 
 ifeq ($(DOCKER_BIN_URL)$(FORCE_CURL)$(RELEASE_CANDIDATE),)
-usr/bin/docker: hub
+usr/bin/docker: Makefile hub
 else
-usr/bin/docker: download
+usr/bin/docker: Makefile download
 endif
 
 cleanusr:
