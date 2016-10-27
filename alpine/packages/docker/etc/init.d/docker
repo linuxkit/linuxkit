@@ -87,7 +87,7 @@ start()
 	# choose storage driver
 	if ! $(cat /etc/docker/daemon.json | jq -e '."storage-driver"' > /dev/null)
 	then
-		STORAGE_DRIVER="overlay2"
+		STORAGE_DRIVER="aufs"
 		[ -d /var/lib/docker/aufs ] && STORAGE_DRIVER="aufs"
 		DOCKER_OPTS="${DOCKER_OPTS} --storage-driver ${STORAGE_DRIVER}"
 	fi
