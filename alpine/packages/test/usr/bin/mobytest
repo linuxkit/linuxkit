@@ -3,6 +3,7 @@
 set -ex
 
 ifconfig
+docker version
 docker info
 docker ps
 docker pull alpine
@@ -12,3 +13,4 @@ wget -O - -q localhost/hostname
 docker kill webserver
 docker rm webserver
 docker swarm init
+docker run mobylinux/check-config
