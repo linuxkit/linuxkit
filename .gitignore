@@ -1,2 +1,4 @@
 test.log
 *.swp
+/hyperkit.git
+/disk.img
