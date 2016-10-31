@@ -20,6 +20,13 @@ qemu-iso: Dockerfile.qemuiso alpine/mobylinux-bios.iso
 	tar cf - $^ | docker build -f Dockerfile.qemuiso -t mobyqemuiso:build -
 	docker run -it --rm mobyqemuiso:build
 
+hyperkit.git:
+	git clone https://github.com/docker/hyperkit.git hyperkit.git
+
+hyperkit: hyperkit.git hyperkit.sh alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+	cd hyperkit.git && make
+	sh hyperkit.sh
+
 test: Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	$(MAKE) -C alpine
 	BUILD=$$( tar cf - $^ | docker build -f Dockerfile.test -q - ) && \
@@ -46,3 +53,4 @@ endif
 
 clean:
 	$(MAKE) -C alpine clean
+	rm -rf hyperkit.git disk.img
