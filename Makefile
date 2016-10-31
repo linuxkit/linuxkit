@@ -23,9 +23,11 @@ qemu-iso: Dockerfile.qemuiso alpine/mobylinux-bios.iso
 hyperkit.git:
 	git clone https://github.com/docker/hyperkit.git hyperkit.git
 
-hyperkit: hyperkit.git hyperkit.sh alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+hyperkit.git/build/com.docker.hyperkit: hyperkit.git
 	cd hyperkit.git && make
-	sh hyperkit.sh
+
+hyperkit: hyperkit.sh hyperkit.git/build/com.docker.hyperkit alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+	sudo ./hyperkit.sh
 
 test: Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	$(MAKE) -C alpine
