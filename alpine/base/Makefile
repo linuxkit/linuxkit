@@ -1,4 +1,4 @@
-DIRS = alpine-base alpine-build-c alpine-build-go
+DIRS = $(shell find . -type d -depth 1)
 .PHONY: clean dirs $(DIRS)
 
 push: $(DIRS)
