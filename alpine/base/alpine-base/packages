@@ -39,6 +39,7 @@ libssh2 1.7.0-r0
 libssl1.0 1.0.2j-r0
 libuuid 2.28-r3
 libverto 0.2.5-r0
+logrotate 3.9.2-r0
 lvm2 2.02.154-r0
 lvm2-libs 2.02.154-r0
 make 4.1-r1

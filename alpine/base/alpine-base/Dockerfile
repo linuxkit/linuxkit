@@ -19,6 +19,7 @@ RUN \
   hvtools@edgetesting \
   iptables \
   jq \
+  logrotate \
   lvm2 \
   make \
   openrc \
