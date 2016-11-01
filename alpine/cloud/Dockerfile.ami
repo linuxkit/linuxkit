@@ -1,13 +1,5 @@
-FROM alpine
+FROM mobylinux/alpine-aws:9f937d52372fc1a8a75b57a305d81ca88c522f78
 
-RUN apk add --update \
-    python \
-    py-pip \
-    curl \
-    e2fsprogs \
-    jq \
-    syslinux
-RUN pip install -U awscli
 RUN mkdir /build
 RUN mkdir /scripts
 WORKDIR /scripts
