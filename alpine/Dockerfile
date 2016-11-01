@@ -32,6 +32,7 @@ RUN \
   rc-update add devfs sysinit && \
   rc-update add hwdrivers sysinit && \
   rc-update add rngd && \
+  rc-update add sshd && \
   rc-update add sysfs && \
   rc-update add sysfsconf && \
   rc-update add fsck && \
