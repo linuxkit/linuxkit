@@ -45,7 +45,7 @@ start()
 			ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
 			blockdev --rereadpt "${DRIVE}" 2> /dev/null
 		else
-			( mount "${DATA}" /var && ([ -z "${SWAP}" ] || swapon "${SWAP}") ) || \
+			( e2fsck -p "${DATA}" && mount "${DATA}" /var && ([ -z "${SWAP}" ] || swapon "${SWAP}") ) || \
 			  ( ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}; blockdev --rereadpt ${DRIVE} 2> /dev/null )
 		fi
 		# boot2docker compat, has /var and /tmp on partition
