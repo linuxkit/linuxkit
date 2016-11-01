@@ -35,9 +35,9 @@ cleanusr:
 
 download: cleanusr
 ifdef DOCKER_BIN_URL
-	(curl -sSL ${DOCKER_BIN_URL} && touch ok) | tar xzf -
+	(curl -fsSL ${DOCKER_BIN_URL} && touch ok) | tar xzf -
 else
-	(curl -sSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
+	(curl -fsSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
 endif
 	rm ok
 	mv docker/docker-containerd-ctr \
