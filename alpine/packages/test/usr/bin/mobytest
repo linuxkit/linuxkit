@@ -13,4 +13,4 @@ wget -O - -q localhost/hostname
 docker kill webserver
 docker rm webserver
 docker swarm init
-docker run mobylinux/check-config
+docker run mobylinux/check-config:9f02bb6a71b0a2b52d9c9ca796f72c076414c2a7
