@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 COPY repositories /etc/apk/
 
@@ -25,7 +25,7 @@ RUN \
   openssh \
   openssh-client \
   openssl \
-  rng-tools@edgecommunity \
+  rng-tools@community \
   sfdisk \
   strace \
   sysklogd \
