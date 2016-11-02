@@ -45,7 +45,8 @@ RUN \
   rc-update add automount boot && \
   rc-update add diagnostics default && \
   rc-update add binfmt_misc default && \
-  rc-update add hostsettings boot && \
+  rc-update add hostsettings default && \
+  rc-update add windowsnet boot && \
   rc-update add hv_kvp_daemon default && \
   rc-update add hv_vss_daemon default && \
   rc-update add oom default && \
