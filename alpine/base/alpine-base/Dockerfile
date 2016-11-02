@@ -18,6 +18,7 @@ RUN \
   git \
   hvtools@edgetesting \
   iptables \
+  ipvsadm@edgetesting \
   jq \
   lvm2 \
   make \
