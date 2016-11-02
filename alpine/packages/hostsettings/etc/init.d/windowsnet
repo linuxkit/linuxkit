@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+
+description="Configuring Windows network settings from database."
+
+depend() {
+	before sysctl net
+}
+
+start() {
+	[ "$(mobyplatform)" = "windows" ] || exit 0
+
+	ebegin "Configuring Windows network settings from database"
+
+	# We have two network interfaces. The Hyper-V interface
+	# comes up as eth0. Rename and configure it.
+	ip link set eth0 down
+	ip link set eth0 name hvint0 
+            
+	mobyconfig exists net/config && NETCONFIG=`mobyconfig get net/config`
+	if [ "${NETCONFIG}" = "static" ]; then
+		# assume that the other configsDB entries exist
+		IP=`mobyconfig get net/address`
+		MASK=`mobyconfig get net/netmask`
+		ip addr add ${IP}/${MASK} dev hvint0
+		ip link set hvint0 up
+	fi
+
+	eend 0
+}
