@@ -32,6 +32,22 @@ case "$(mobyplatform)" in
     DATABASE="com.docker.driver.amd64-linux"
     BASE="/Database/branch/master/ro/${DATABASE}"
   ;;
+  aws)
+    # add some keys from AWS meta-data
+    # we probably need an additional source for other items, as user data too small
+    BASE="/Database"
+    if [ ! -f $BASE/etc/hostname ]
+    then
+      mkdir -p "$BASE/etc"
+      ENDPOINT="http://169.254.169.254/latest/meta-data"
+      curl "${ENDPOINT}/local-hostname" 2> /dev/null > /Database/etc/hostname
+      # TODO should collect all keys
+      curl -f -I "${ENDPOINT}/public-keys/0/openssh-key" 2> /dev/null > /dev/null && \
+        curl "${ENDPOINT}/public-keys/0/openssh-key" 2> /dev/null > "$BASE/authorized_keys"
+      USERDATA="http://169.254.169.254/latest/user-data/"
+      curl "${USERDATA}" 2> /dev/null > /Database/userdata
+    fi
+  ;;
   *)
     # For other editions, currently all database keys will be reported as empty.
     # Later they will build a tree from other sources.

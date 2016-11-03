@@ -11,6 +11,12 @@ depend() {
 start() {
 	ebegin "Configuring host settings from database"
 
+	# only first part should be in /etc/hostname
+	mobyconfig exists etc/hostname && \
+	( HOSTNAME="$(mobyconfig get etc/hostname)" && \
+	  echo $HOSTNAME | sed 's/\..*//' >> /etc/hostname && \
+	  hostname $HOSTNAME )
+
 	mobyconfig exists etc/sysctl.conf && mobyconfig get etc/sysctl.conf > /etc/sysctl.conf
 	mobyconfig exists etc/sysfs.conf && mobyconfig get etc/sysfs.conf > /etc/sysfs.conf
 
