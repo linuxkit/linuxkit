@@ -68,8 +68,8 @@ case "$1" in
 			exit 1
 		fi
 
-		AZURE_STG_ACCOUNT_NAME=${AZURE_STG_ACCOUNT_NAME:-"dockereditions"}
-		CONTAINER_NAME=${CONTAINER_NAME:-"mobylinux"}
+		AZURE_STG_ACCOUNT_NAME=${AZURE_STG_ACCOUNT_NAME:-"mobyvhd"}
+		CONTAINER_NAME=${CONTAINER_NAME:-"vhd"}
 		BLOBNAME=${BLOBNAME:-$(md5sum "/tmp/mobylinux.vhd" | awk '{ print $1; }')-mobylinux.vhd}
 		BLOB_URL="https://${AZURE_STG_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/${BLOBNAME}"
 
