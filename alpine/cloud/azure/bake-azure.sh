@@ -35,8 +35,10 @@ case "$1" in
 			rm "${RAW_IMAGE}"
 		fi
 
+		VHD_SIZE=${VHD_SIZE:-"30G"}
+
 		arrowecho "Writing empty image file"
-		dd if=/dev/zero of="${RAW_IMAGE}" count=0 bs=1 seek=30G
+		dd if=/dev/zero of="${RAW_IMAGE}" count=0 bs=1 seek="${VHD_SIZE}"
 
 		arrowecho "Formatting image file for boot"
 		format_on_device "${RAW_IMAGE}"
@@ -70,7 +72,7 @@ case "$1" in
 
 		AZURE_STG_ACCOUNT_NAME=${AZURE_STG_ACCOUNT_NAME:-"mobyvhd"}
 		CONTAINER_NAME=${CONTAINER_NAME:-"vhd"}
-		BLOBNAME=${BLOBNAME:-$(md5sum "/tmp/mobylinux.vhd" | awk '{ print $1; }')-mobylinux.vhd}
+		BLOBNAME=${BLOBNAME:-$(head -c 200m "/tmp/mobylinux.vhd" | md5sum | awk '{ print $1; }')-mobylinux.vhd}
 		BLOB_URL="https://${AZURE_STG_ACCOUNT_NAME}.blob.core.windows.net/${CONTAINER_NAME}/${BLOBNAME}"
 
 		arrowecho "Uploading VHD to ${BLOBURL}..."
