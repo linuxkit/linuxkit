@@ -4,12 +4,12 @@ alpine-keys 1.1-r0
 apk-tools 2.6.7-r0
 bind-libs 9.10.4_p3-r0
 bind-tools 9.10.4_p3-r0
-busybox 1.24.2-r11
+busybox 1.24.2-r12
 busybox-initscripts 3.0-r3
 ca-certificates 20160104-r4
 chrony 2.3-r1
 cifs-utils 6.5-r0
-curl 7.50.3-r0
+curl 7.51.0-r0
 device-mapper 2.02.154-r0
 dhcpcd 6.10.3-r1
 e2fsprogs 1.43-r0
@@ -29,7 +29,7 @@ libc-utils 0.7-r0
 libcap 2.25-r0
 libcom_err 1.43-r0
 libcrypto1.0 1.0.2j-r0
-libcurl 7.50.3-r0
+libcurl 7.51.0-r0
 libfdisk 2.28-r3
 libgcc 5.3.0-r0
 libmnl 1.0.3-r1
@@ -42,8 +42,8 @@ libverto 0.2.5-r0
 lvm2 2.02.154-r0
 lvm2-libs 2.02.154-r0
 make 4.1-r1
-musl 1.1.14-r13
-musl-utils 1.1.14-r13
+musl 1.1.14-r14
+musl-utils 1.1.14-r14
 openrc 0.21-r2
 openssh 7.2_p2-r3
 openssh-client 7.2_p2-r3
