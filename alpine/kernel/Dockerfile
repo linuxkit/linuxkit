@@ -50,6 +50,7 @@ COPY kernel_config.debug /linux/debug_config
 ARG DEBUG=0
 
 RUN if [ $DEBUG -ne "0" ]; then \
+    sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' /linux/arch/x86/configs/x86_64_defconfig; \
     cat /linux/debug_config >> /linux/arch/x86/configs/x86_64_defconfig; \
     fi
 
