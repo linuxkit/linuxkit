@@ -53,7 +53,7 @@ sfdisk 2.28-r3
 strace 4.11-r2
 sysklogd 1.5.1-r0
 talloc 2.1.7-r0
-tar 1.29-r0
+tar 1.29-r1
 xz 5.2.2-r1
 xz-libs 5.2.2-r1
 zlib 1.2.8-r2
