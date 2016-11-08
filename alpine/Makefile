@@ -96,6 +96,7 @@ ami-clean-mount:
 uploadvhd: azure
 	docker run \
 		-i \
+		-e VHD_SIZE \
 		-e AZURE_STG_ACCOUNT_KEY \
 		-e AZURE_STG_ACCOUNT_NAME \
 		-e CONTAINER_NAME \
