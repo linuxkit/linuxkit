@@ -111,11 +111,9 @@ start()
 
 	start-stop-daemon --start --quiet \
 		--background \
-		--exec ${command} \
+		--startas /bin/sh \
 		--pidfile ${pidfile} \
-		--stderr "${DOCKER_LOGFILE}" \
-		--stdout "${DOCKER_LOGFILE}" \
-		-- --pidfile=${pidfile} ${DOCKER_OPTS}
+		-- -c "exec ${command} --pidfile=${pidfile} ${DOCKER_OPTS} 2>&1 | logger -p local0.info"
 
 	ewaitfile 20 ${pidfile} /var/run/docker.sock /var/run/docker/libcontainerd/docker-containerd.sock
 
