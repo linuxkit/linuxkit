@@ -6,7 +6,6 @@ RUN \
   apk update && apk upgrade && \
   apk add --no-cache \
   alpine-conf \
-  bind-tools \
   busybox-initscripts \
   chrony \
   cifs-utils \
