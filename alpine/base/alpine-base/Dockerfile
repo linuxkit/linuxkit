@@ -16,9 +16,9 @@ RUN \
   e2fsprogs-extra \
   fuse \
   git \
-  hvtools@edgetesting \
+  hvtools@nextmain \
   iptables \
-  ipvsadm@edgetesting \
+  ipvsadm@nextmain \
   jq \
   lvm2 \
   make \
