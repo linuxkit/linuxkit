@@ -19,7 +19,6 @@ RUN \
   iptables \
   ipvsadm@nextmain \
   jq \
-  lvm2 \
   make \
   openrc \
   openssh \
