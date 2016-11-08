@@ -6,7 +6,6 @@ RUN \
   apk update && apk upgrade && \
   apk add --no-cache \
   alpine-conf \
-  bind-tools \
   busybox-initscripts \
   chrony \
   cifs-utils \
@@ -16,9 +15,9 @@ RUN \
   e2fsprogs-extra \
   fuse \
   git \
-  hvtools@edgetesting \
+  hvtools@nextmain \
   iptables \
-  ipvsadm@edgetesting \
+  ipvsadm@nextmain \
   jq \
   lvm2 \
   make \
