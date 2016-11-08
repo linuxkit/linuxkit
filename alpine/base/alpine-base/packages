@@ -8,7 +8,6 @@ ca-certificates 20160104-r4
 chrony 2.3-r1
 cifs-utils 6.5-r0
 curl 7.51.0-r0
-device-mapper 2.02.154-r0
 dhcpcd 6.10.3-r1
 e2fsprogs 1.43-r0
 e2fsprogs-extra 1.43-r0
@@ -38,8 +37,6 @@ libssh2 1.7.0-r0
 libssl1.0 1.0.2j-r0
 libuuid 2.28-r3
 libverto 0.2.5-r0
-lvm2 2.02.154-r0
-lvm2-libs 2.02.154-r0
 make 4.1-r1
 musl 1.1.14-r14
 musl-utils 1.1.14-r14
