@@ -2,7 +2,8 @@
 
 depend()
 {
-	need dev
+	after dev
+	before docker
 }
 
 start()
