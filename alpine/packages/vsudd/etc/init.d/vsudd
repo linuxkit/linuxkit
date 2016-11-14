@@ -2,11 +2,6 @@
 
 description="vsock socket proxy client"
 
-depend()
-{
-	before logger docker
-}
-
 start()
 {
 	[ "$(mobyplatform)" != "mac" ] && [ "$(mobyplatform)" != "windows" ] && exit 0
@@ -31,10 +26,11 @@ start()
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/vsudd \
-		--make-pidfile --pidfile ${PIDFILE} \
 		-- -inport "${DOCKER_PORT}:unix:/var/run/docker.sock" \
 		   ${SYSLOG_OPT} \
-		   -detach
+		   -pidfile ${PIDFILE}
+
+	[ -n "${SYSLOG_OPT}" ] && ewaitfile 10 /var/run/syslog.vsock
 
 	eend $? "Failed to start vsudd"
 }
