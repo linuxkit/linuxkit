@@ -3,6 +3,7 @@
 set -ex
 
 ifconfig
+diagnostics
 docker version
 docker info
 docker ps
