@@ -20,7 +20,7 @@ start_daemon() {
 
 	ebegin "sysklogd -> start: ${daemon}"
 	start-stop-daemon --start --exec /usr/sbin/"${daemon}" \
-		--pidfile /var/run/"${daemon}".pid -- ${options}
+		--pidfile /run/"${daemon}".pid -- ${options}
 	retval=$?
 	eend ${retval} "Failed to start ${daemon}"
 
@@ -35,7 +35,7 @@ stop_daemon() {
 
 	ebegin "sysklogd -> stop: ${daemon}"
 	# syslogd can be stubborn some times (--retry 15)...
-	start-stop-daemon --stop --retry 15 --quiet --pidfile /var/run/"${daemon}".pid
+	start-stop-daemon --stop --retry 15 --quiet --pidfile /run/"${daemon}".pid
 	retval=$?
 	eend ${retval} "Failed to stop ${daemon}"
 
@@ -67,9 +67,9 @@ reload() {
 
 	ebegin "Reloading configuration"
 
-	start-stop-daemon --signal HUP --pidfile /var/run/syslogd.pid
+	start-stop-daemon --signal HUP --pidfile /run/syslogd.pid
 	ret=$((${ret} + $?))
-	start-stop-daemon --signal USR1 --pidfile /var/run/klogd.pid
+	start-stop-daemon --signal USR1 --pidfile /run/klogd.pid
 	ret=$((${ret} + $?))
 
 	eend ${ret}
