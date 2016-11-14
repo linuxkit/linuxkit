@@ -52,6 +52,10 @@ start()
 		[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
 	fi
 
+	# can remove when we run before bootmisc
+	[ -L /var/run ] || ln -s /run /var/run
+	[ -L /var/run ] || ln -s /run/lock /var/lock
+
 	mount | grep -q "${DEV}. on /var type"
 
 	eend $? "Failed to mount block device"
