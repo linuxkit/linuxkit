@@ -31,6 +31,7 @@ var (
 	detach     bool
 	useHVsock  bool
 	syslogFwd  string
+	pidfile    string
 )
 
 type vConn interface {
@@ -60,11 +61,24 @@ func init() {
 	flag.Var(&inForwards, "inport", "incoming port to forward")
 	flag.StringVar(&syslogFwd, "syslog", "", "enable syslog forwarding")
 	flag.BoolVar(&detach, "detach", false, "detach from terminal")
+	flag.StringVar(&pidfile, "pidfile", "", "pid file")
 }
 
 func main() {
 	log.SetFlags(log.LstdFlags)
 	flag.Parse()
+
+	if pidfile != "" {
+		file, err := os.OpenFile(pidfile, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+		if err != nil {
+			log.Fatalln("Failed to open pidfile", err)
+		}
+		_, err = fmt.Fprintf(file, "%d", os.Getpid())
+		file.Close()
+		if err != nil {
+			log.Fatalln("Failed to write pid", err)
+		}
+	}
 
 	if detach {
 		syslog, err := syslog.New(syslog.LOG_INFO|syslog.LOG_DAEMON, "vsudd")
