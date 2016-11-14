@@ -6,7 +6,7 @@
 extra_started_commands="reload"
 
 depend() {
-	need clock hostname localmount vsudd
+	need clock hostname localmount vsudd bootmisc
 	before net
 	provide logger
 }
