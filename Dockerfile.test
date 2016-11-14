@@ -3,6 +3,6 @@ FROM mobylinux/alpine-qemu:804b2c40d078287c40aeb9166e475e843544e597
 COPY alpine/initrd.img .
 COPY alpine/kernel/x86_64/vmlinuz64 .
 
-RUN qemu-img create -f raw disk.img 100M
+RUN qemu-img create -f raw disk.img 256M
 
 ENTRYPOINT [ "qemu-system-x86_64", "-drive", "file=disk.img,format=raw", "-device", "virtio-rng-pci", "-serial", "stdio", "-kernel", "vmlinuz64", "-initrd", "initrd.img", "-m", "1024", "-append", "earlyprintk=serial console=ttyS0 noapic mobyplatform=test", "-vnc", "none" ]
