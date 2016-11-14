@@ -22,8 +22,4 @@ else
 	cp alpine/kernel/x86_64/vmlinuz64 "$mobydir"/vmlinuz64
 fi
 
-killall com.docker.driver.amd64-linux
-
-sleep 20
-
-time docker ps
+docker run --privileged --pid=host justincormack/nsenter1 /sbin/reboot
