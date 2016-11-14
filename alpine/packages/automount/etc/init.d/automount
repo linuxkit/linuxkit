@@ -68,6 +68,10 @@ start()
 	# can remove when we run before bootmisc
 	[ -L /var/run ] || ln -s /run /var/run
 	[ -L /var/run ] || ln -s /run/lock /var/lock
+	[ -d /var/log ] || mkdir -m 755 /var/log
+	[ -d /var/empty ] || mkdir -m 755 /var/empty
+	[ -d /var/spool ] || mkdir -m 755 /var/spool
+	[ -d /var/tmp ] || mkdir -m 1777 /var/tmp
 
 	mount | grep -q "${DEV}. on /var type"
 
