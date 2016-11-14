@@ -49,6 +49,7 @@ endif
 	   docker/docker-containerd-shim \
 	usr/bin/
 	([ -e docker/docker-init ] && mv docker/docker-init usr/bin/) || true
+	([ -d docker/completion ] && rm -rf docker/completion) || true
 
 hub: cleanusr
 	(docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin . && touch ok) | tar xf - -C usr/bin
