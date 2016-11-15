@@ -2,6 +2,11 @@
 
 description="vsock socket proxy client"
 
+depend()
+{
+	need bootmisc
+}
+
 start()
 {
 	[ "$(mobyplatform)" != "mac" ] && [ "$(mobyplatform)" != "windows" ] && exit 0
