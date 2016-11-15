@@ -34,6 +34,7 @@ var (
 		{"/usr/sbin/brctl", []string{"show"}, defaultCommandTimeout},
 		{"/bin/dmesg", nil, defaultCommandTimeout},
 		{"/usr/bin/docker", []string{"ps"}, defaultCommandTimeout},
+		{"/usr/bin/docker", []string{"info"}, defaultCommandTimeout},
 		{"/usr/bin/tail", []string{"-20000", "/var/log/docker.log"}, defaultCommandTimeout},
 		{"/usr/bin/tail", []string{"-20000", "/var/log/messages"}, defaultCommandTimeout},
 		{"/bin/mount", nil, defaultCommandTimeout},
