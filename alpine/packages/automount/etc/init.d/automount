@@ -18,6 +18,19 @@ do_fsck()
 	return "${EXIT_CODE}"
 }
 
+do_fsck()
+{
+	/sbin/e2fsck -p "$1"
+	EXIT_CODE=$?
+	# exit code 1 is errors corrected
+	[ "${EXIT_CODE}" -eq 1 ] && EXIT_CODE=0
+	# exit code 2 or 3 means need to reboot
+	[ "${EXIT_CODE}" -eq 2 -o "${EXIT_CODE}" -eq 3 ] && /sbin/reboot
+	# exit code 4 or over is fatal
+	[ "${EXIT_CODE}" -ge 4 ] && printf "Filesystem unrecoverably corrupted, will reformat\n"
+	return "${EXIT_CODE}"
+}
+
 start()
 {
 	ebegin "Configuring host block device"
