@@ -47,12 +47,13 @@ var (
 		{"/bin/cat", []string{"/etc/network/interfaces"}, defaultCommandTimeout},
 		{"/bin/cat", []string{"/etc/resolv.conf"}, defaultCommandTimeout},
 		{"/bin/cat", []string{"/etc/sysctl.conf"}, defaultCommandTimeout},
-		{"/usr/bin/dig", []string{"docker.com"}, defaultCommandTimeout},
-		{"/usr/bin/dig", []string{"@8.8.8.8", "docker.com"}, defaultCommandTimeout},
-		{"/usr/bin/wget", []string{"-O", "-", "http://www.docker.com/"}, defaultCommandTimeout},
-		{"/usr/bin/wget", []string{"-O", "-", "http://104.239.220.248/"}, defaultCommandTimeout}, // a www.docker.com address
-		{"/usr/bin/wget", []string{"-O", "-", "http://216.58.213.68/"}, defaultCommandTimeout},   // a www.google.com address
-		{"/usr/bin/wget", []string{"-O", "-", "http://91.198.174.192/"}, defaultCommandTimeout},  // a www.wikipedia.com address
+		{"/bin/cat", []string{"/proc/cpuinfo"}, defaultCommandTimeout},
+		{"/usr/bin/nslookup", []string{"docker.com"}, defaultCommandTimeout},
+		{"/usr/bin/nslookup", []string{"docker.com", "8.8.8.8"}, defaultCommandTimeout},
+		{"/usr/bin/curl", []string{"http://www.docker.com/"}, defaultCommandTimeout},
+		{"/usr/bin/curl", []string{"http://104.239.220.248/"}, defaultCommandTimeout}, // a www.docker.com address
+		{"/usr/bin/curl", []string{"http://216.58.213.68/"}, defaultCommandTimeout},   // a www.google.com address
+		{"/usr/bin/curl", []string{"http://91.198.174.192/"}, defaultCommandTimeout},  // a www.wikipedia.com address
 	}
 	localCmdCaptures = []CommandCapturer{
 		{"/usr/bin/tail", []string{"-100", "/var/log/proxy-vsockd.log"}, defaultCommandTimeout},
