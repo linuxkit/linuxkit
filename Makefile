@@ -59,6 +59,7 @@ ifeq ($(STATUS),)
 	docker cp $$IMAGE:vmlinux alpine/kernel/x86_64/vmlinux && \
 	docker cp $$IMAGE:initrd.img alpine/initrd.img && \
 	docker cp $$IMAGE:mobylinux-efi.iso alpine/mobylinux-efi.iso && \
+	docker cp $$IMAGE:mobylinux.efi alpine/mobylinux.efi && \
 	docker rm $$IMAGE
 else
 	$(error "git not clean")
