@@ -51,6 +51,19 @@ else
 	$(error "git not clean")
 endif
 
+get:
+ifeq ($(STATUS),)
+	IMAGE=$$( docker create mobylinux/media:$(MEDIA_PREFIX)$(TAG) /dev/null ) && \
+	mkdir -p alpine/kernel/x86_64 && \
+	docker cp $$IMAGE:vmlinuz64 alpine/kernel/x86_64/vmlinuz64 && \
+	docker cp $$IMAGE:vmlinux alpine/kernel/x86_64/vmlinux && \
+	docker cp $$IMAGE:initrd.img alpine/initrd.img && \
+	docker cp $$IMAGE:mobylinux-efi.iso alpine/mobylinux-efi.iso && \
+	docker rm $$IMAGE
+else
+	$(error "git not clean")
+endif
+
 .PHONY: clean
 
 clean:
