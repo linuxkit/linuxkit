@@ -25,7 +25,8 @@ start()
 
 	if [ -n "$SYSLOG_PORT" ] ; then
 	   # Can be inlined below once Windows defines syslog port
-	   SYSLOG_OPT="-syslog ${SYSLOG_PORT}:/var/run/syslog.vsock"
+	   SYSLOG_SOCK=/var/run/syslog.vsock
+	   SYSLOG_OPT="-syslog ${SYSLOG_PORT}:${SYSLOG_SOCK}"
 	fi
 
 	start-stop-daemon --start --quiet \
@@ -35,7 +36,7 @@ start()
 		   ${SYSLOG_OPT} \
 		   -pidfile ${PIDFILE}
 
-	[ -n "${SYSLOG_OPT}" ] && ewaitfile 10 /var/run/syslog.vsock
+	ewaitfile 10 ${SYSLOG_SOCK} ${PIDFILE}
 
 	eend $? "Failed to start vsudd"
 }
