@@ -2308,7 +2308,7 @@ CONFIG_FB_DEFERRED_IO=y
 # CONFIG_FB_VGA16 is not set
 # CONFIG_FB_UVESA is not set
 CONFIG_FB_VESA=y
-CONFIG_FB_EFI=y
+# CONFIG_FB_EFI is not set
 # CONFIG_FB_N411 is not set
 # CONFIG_FB_HGA is not set
 # CONFIG_FB_OPENCORES is not set
