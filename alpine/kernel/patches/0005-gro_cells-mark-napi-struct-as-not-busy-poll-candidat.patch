@@ -1,0 +1,49 @@
+From 56b20d9d99f039745e3b9e9fe8c4243e90d13334 Mon Sep 17 00:00:00 2001
+From: Eric Dumazet <edumazet@google.com>
+Date: Mon, 14 Nov 2016 16:28:42 -0800
+Subject: [PATCH 5/5] gro_cells: mark napi struct as not busy poll candidates
+
+Rolf Neugebauer reported very long delays at netns dismantle.
+
+Eric W. Biederman was kind enough to look at this problem
+and noticed synchronize_net() occurring from netif_napi_del() that was
+added in linux-4.5
+
+Busy polling makes no sense for tunnels NAPI.
+If busy poll is used for sessions over tunnels, the poller will need to
+poll the physical device queue anyway.
+
+netif_tx_napi_add() could be used here, but function name is misleading,
+and renaming it is not stable material, so set NAPI_STATE_NO_BUSY_POLL
+bit directly.
+
+This will avoid inserting gro_cells napi structures in napi_hash[]
+and avoid the problematic synchronize_net() (per possible cpu) that
+Rolf reported.
+
+Fixes: 93d05d4a320c ("net: provide generic busy polling to all NAPI drivers")
+Signed-off-by: Eric Dumazet <edumazet@google.com>
+Reported-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
+Reported-by: Eric W. Biederman <ebiederm@xmission.com>
+Acked-by: Cong Wang <xiyou.wangcong@gmail.com>
+Origin: https://patchwork.ozlabs.org/patch/694780/
+---
+ include/net/gro_cells.h | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/include/net/gro_cells.h b/include/net/gro_cells.h
+index d15214d..2a1abbf 100644
+--- a/include/net/gro_cells.h
++++ b/include/net/gro_cells.h
+@@ -68,6 +68,9 @@ static inline int gro_cells_init(struct gro_cells *gcells, struct net_device *de
+		struct gro_cell *cell = per_cpu_ptr(gcells->cells, i);
+
+		__skb_queue_head_init(&cell->napi_skbs);
++
++		set_bit(NAPI_STATE_NO_BUSY_POLL, &cell->napi.state);
++
+		netif_napi_add(dev, &cell->napi, gro_cell_poll, 64);
+		napi_enable(&cell->napi);
+	}
+--
+2.10.1
