@@ -98,18 +98,6 @@ start()
 		DOCKER_OPTS="${DOCKER_OPTS} --storage-driver ${STORAGE_DRIVER}"
 	fi
 
-	# shift logs onto host before docker starts
-	# busybox reopens its log files every second
-	if cat /proc/cmdline | grep -q 'com.docker.driver'
-	then
-		DRIVERDIR="/host_docker_app/$(cat /proc/cmdline | sed -e 's/.*com.docker.driver="//' -e 's/".*//')"
-		if ! grep -q "osxfs on /var/log" /proc/mounts ; then
-			mkdir -p /run/log
-			mount -o bind /var/log /run/log
-			mount --bind "${DRIVERDIR}/log" /var/log
-		fi
-	fi
-
 	# set ulimits as high as possible
 	ulimit -n 1048576
 	ulimit -p unlimited
