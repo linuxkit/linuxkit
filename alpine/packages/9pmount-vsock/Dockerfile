@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-build-c:7303e33e9dcd5276b8bb5269644a9bf3354008c8
+FROM mobylinux/alpine-build-c:36aecb5cf4738737634140eec9abebe1f6559a39
 
 COPY . /9pmount-vsock
 
