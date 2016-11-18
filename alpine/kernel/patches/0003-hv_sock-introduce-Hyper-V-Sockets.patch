@@ -1,7 +1,7 @@
-From 51293adacd73d7bc6baee18e87b0d17ad52a61d4 Mon Sep 17 00:00:00 2001
+From ccd1d4920969d0dcba862dc98f9b4747a383bfe2 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
-Date: Sun, 15 May 2016 09:53:11 -0700
-Subject: [PATCH 39/42] hv_sock: introduce Hyper-V Sockets
+Date: Sat, 23 Jul 2016 01:35:51 +0000
+Subject: [PATCH 3/5] hv_sock: introduce Hyper-V Sockets
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
 mechanism between the host and the guest. It's somewhat like TCP over
@@ -22,29 +22,30 @@ Cc: "K. Y. Srinivasan" <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Vitaly Kuznetsov <vkuznets@redhat.com>
 Cc: Cathy Avery <cavery@redhat.com>
-Origin: https://patchwork.ozlabs.org/patch/622404/
+Cc: Olaf Hering <olaf@aepfle.de>
+Origin: https://patchwork.kernel.org/patch/9244467/
 ---
  MAINTAINERS                 |    2 +
- include/linux/hyperv.h      |   14 +
+ include/linux/hyperv.h      |   13 +
  include/linux/socket.h      |    4 +-
  include/net/af_hvsock.h     |   78 +++
- include/uapi/linux/hyperv.h |   25 +
+ include/uapi/linux/hyperv.h |   23 +
  net/Kconfig                 |    1 +
  net/Makefile                |    1 +
  net/hv_sock/Kconfig         |   10 +
  net/hv_sock/Makefile        |    3 +
- net/hv_sock/af_hvsock.c     | 1520 +++++++++++++++++++++++++++++++++++++++++++
- 10 files changed, 1657 insertions(+), 1 deletion(-)
+ net/hv_sock/af_hvsock.c     | 1507 +++++++++++++++++++++++++++++++++++++++++++
+ 10 files changed, 1641 insertions(+), 1 deletion(-)
  create mode 100644 include/net/af_hvsock.h
  create mode 100644 net/hv_sock/Kconfig
  create mode 100644 net/hv_sock/Makefile
  create mode 100644 net/hv_sock/af_hvsock.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 12d49f5..fa87bdd 100644
+index babaf82..6126545 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -5123,7 +5123,9 @@ F:	drivers/input/serio/hyperv-keyboard.c
+@@ -5667,7 +5667,9 @@ F:	drivers/pci/host/pci-hyperv.c
  F:	drivers/net/hyperv/
  F:	drivers/scsi/storvsc_drv.c
  F:	drivers/video/fbdev/hyperv_fb.c
@@ -53,15 +54,15 @@ index 12d49f5..fa87bdd 100644
 +F:	include/net/af_hvsock.h
  F:	tools/hv/
  F:	Documentation/ABI/stable/sysfs-bus-vmbus
- 
+
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 6c9695e..187d4bd 100644
+index b10954a..50f8976 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1349,4 +1349,18 @@ extern __u32 vmbus_proto_version;
- 
- int vmbus_send_tl_connect_request(const uuid_le *shv_guest_servie_id,
- 				  const uuid_le *shv_host_servie_id);
+@@ -1505,5 +1505,18 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
+		vmbus_set_event(channel);
+ }
+
 +struct vmpipe_proto_header {
 +	u32 pkt_type;
 +	u32 data_size;
@@ -72,13 +73,13 @@ index 6c9695e..187d4bd 100644
 +
 +/* See 'prev_indices' in hv_ringbuffer_read(), hv_ringbuffer_write() */
 +#define PREV_INDICES_LEN	(sizeof(u64))
-+
+
 +#define HVSOCK_PKT_LEN(payload_len)	(HVSOCK_HEADER_LEN + \
 +					ALIGN((payload_len), 8) + \
 +					PREV_INDICES_LEN)
  #endif /* _HYPERV_H */
 diff --git a/include/linux/socket.h b/include/linux/socket.h
-index dbd81e7..6634c47 100644
+index b5cc5a6..0b68b58 100644
 --- a/include/linux/socket.h
 +++ b/include/linux/socket.h
 @@ -202,8 +202,9 @@ struct ucred {
@@ -86,10 +87,10 @@ index dbd81e7..6634c47 100644
  #define AF_KCM		41	/* Kernel Connection Multiplexor*/
  #define AF_QIPCRTR	42	/* Qualcomm IPC Router          */
 +#define AF_HYPERV	43	/* Hyper-V Sockets              */
- 
+
 -#define AF_MAX		43	/* For now.. */
 +#define AF_MAX		44	/* For now.. */
- 
+
  /* Protocol families, same as address families. */
  #define PF_UNSPEC	AF_UNSPEC
 @@ -251,6 +252,7 @@ struct ucred {
@@ -98,11 +99,11 @@ index dbd81e7..6634c47 100644
  #define PF_QIPCRTR	AF_QIPCRTR
 +#define PF_HYPERV	AF_HYPERV
  #define PF_MAX		AF_MAX
- 
+
  /* Maximum queue length specifiable by listen.  */
 diff --git a/include/net/af_hvsock.h b/include/net/af_hvsock.h
 new file mode 100644
-index 0000000..7c8c41e
+index 0000000..e7a8a3a
 --- /dev/null
 +++ b/include/net/af_hvsock.h
 @@ -0,0 +1,78 @@
@@ -113,49 +114,39 @@ index 0000000..7c8c41e
 +#include <linux/hyperv.h>
 +#include <net/sock.h>
 +
-+/* Note: 3-page is the minimal recv ringbuffer size by default:
-+ *
-+ * the 1st page is used as the shared read/write index etc, rather than data:
-+ * see hv_ringbuffer_init();
-+ *
-+ * the payload length in the vmbus pipe message received from the host can
-+ * be 4096 bytes, and considing the header of HVSOCK_HEADER_LEN bytes, we
-+ * need at least 2 extra pages for ringbuffer data.
++/* The host side's design of the feature requires 5 exact 4KB pages for
++ * recv/send rings respectively -- this is suboptimal considering memory
++ * consumption, however unluckily we have to live with it, before the
++ * host comes up with a better design in the future.
 + */
-+#define HVSOCK_RCV_BUF_SZ    PAGE_SIZE
-+#define DEF_RINGBUFFER_PAGES_HVSOCK_RCV 3
++#define PAGE_SIZE_4K		4096
++#define RINGBUFFER_HVSOCK_RCV_SIZE (PAGE_SIZE_4K * 5)
++#define RINGBUFFER_HVSOCK_SND_SIZE (PAGE_SIZE_4K * 5)
 +
-+/* As to send, here let's make sure the hvsock_send_buf struct can be held in 1
-+ * page, and since we want to use 2 pages for the send ringbuffer size (this is
-+ * the minimal size by default, because the 1st page of the two is used as the
-+ * shared read/write index etc, rather than data), we only have 1 page for
-+ * ringbuffer data, this means: the max payload length for hvsock data is
-+ * PAGE_SIZE - HVSOCK_PKT_LEN(0). And, let's reduce the length by 8-bytes
-+ * because the ringbuffer can't be 100% full: see hv_ringbuffer_write().
++/* The MTU is 16KB per the host side's design.
++ * In future, the buffer can be elimiated when we switch to use the coming
++ * new VMBus ringbuffer "in-place consumption" APIs, by which we can
++ * directly copy data from VMBus ringbuffer into the userspace buffer.
 + */
-+#define HVSOCK_SND_BUF_SZ    (PAGE_SIZE - HVSOCK_PKT_LEN(0) - 8)
-+#define DEF_RINGBUFFER_PAGES_HVSOCK_SND 2
-+
-+/* We only send data when the available space is "big enough". This artificial
-+ * value must be less than HVSOCK_SND_BUF_SZ.
-+ *
-+ */
-+#define HVSOCK_SND_THRESHOLD (PAGE_SIZE / 2)
-+
-+#define sk_to_hvsock(__sk)   ((struct hvsock_sock *)(__sk))
-+#define hvsock_to_sk(__hvsk) ((struct sock *)(__hvsk))
-+
-+struct hvsock_send_buf {
-+	struct vmpipe_proto_header hdr;
-+	u8 buf[HVSOCK_SND_BUF_SZ];
-+};
-+
++#define HVSOCK_MTU_SIZE		(1024 * 16)
 +struct hvsock_recv_buf {
-+	struct vmpipe_proto_header hdr;
-+	u8 buf[HVSOCK_RCV_BUF_SZ];
-+
 +	unsigned int data_len;
 +	unsigned int data_offset;
++
++	struct vmpipe_proto_header hdr;
++	u8 buf[HVSOCK_MTU_SIZE];
++};
++
++/* In the VM, actually we can send up to HVSOCK_MTU_SIZE bytes of payload,
++ * but for now let's use a smaller size to minimize the dynamically-allocated
++ * buffer. Note: the buffer can be elimiated in future when we add new VMBus
++ * ringbuffer APIs that allow us to directly copy data from userspace buf to
++ * VMBus ringbuffer.
++ */
++#define HVSOCK_MAX_SND_SIZE_BY_VM (1024 * 4)
++struct hvsock_send_buf {
++	struct vmpipe_proto_header hdr;
++	u8 buf[HVSOCK_MAX_SND_SIZE_BY_VM];
 +};
 +
 +struct hvsock_sock {
@@ -183,25 +174,34 @@ index 0000000..7c8c41e
 +	struct hvsock_recv_buf *recv;
 +};
 +
++static inline struct hvsock_sock *sk_to_hvsock(struct sock *sk)
++{
++	return (struct hvsock_sock *)sk;
++}
++
++static inline struct sock *hvsock_to_sk(struct hvsock_sock *hvsk)
++{
++	return (struct sock *)hvsk;
++}
++
 +#endif /* __AF_HVSOCK_H__ */
 diff --git a/include/uapi/linux/hyperv.h b/include/uapi/linux/hyperv.h
-index e347b24..408b832 100644
+index e347b24..eb3e44b 100644
 --- a/include/uapi/linux/hyperv.h
 +++ b/include/uapi/linux/hyperv.h
 @@ -26,6 +26,7 @@
  #define _UAPI_HYPERV_H
- 
+
  #include <linux/uuid.h>
 +#include <linux/socket.h>
- 
+
  /*
   * Framework version for util services.
-@@ -396,4 +397,28 @@ struct hv_kvp_ip_msg {
- 	struct hv_kvp_ipaddr_value      kvp_ip_val;
+@@ -396,4 +397,26 @@ struct hv_kvp_ip_msg {
+	struct hv_kvp_ipaddr_value      kvp_ip_val;
  } __attribute__((packed));
- 
-+/*
-+ * This is the address fromat of Hyper-V Sockets.
+
++/* This is the address format of Hyper-V Sockets.
 + * Note: here we just borrow the kernel's built-in type uuid_le. When
 + * an application calls bind() or connect(), the 2 members of struct
 + * sockaddr_hv must be of GUID.
@@ -209,12 +209,11 @@ index e347b24..408b832 100644
 + * the first 3 fields. Refer to:
 + * https://en.wikipedia.org/wiki/Globally_unique_identifier
 + */
-+#define guid_t uuid_le
 +struct sockaddr_hv {
 +	__kernel_sa_family_t	shv_family;  /* Address family		*/
-+	__le16		reserved;	     /* Must be Zero		*/
-+	guid_t		shv_vm_id;	     /* VM ID			*/
-+	guid_t		shv_service_id;	     /* Service ID		*/
++	u16		reserved;	     /* Must be Zero		*/
++	uuid_le		shv_vm_guid;	     /* VM ID			*/
++	uuid_le		shv_service_guid;    /* Service ID		*/
 +};
 +
 +#define SHV_VMID_GUEST	NULL_UUID_LE
@@ -226,10 +225,10 @@ index e347b24..408b832 100644
 +
  #endif /* _UAPI_HYPERV_H */
 diff --git a/net/Kconfig b/net/Kconfig
-index 1c9fda1..9eeccb7 100644
+index c2cdbce..921e86f 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
-@@ -228,6 +228,7 @@ source "net/dns_resolver/Kconfig"
+@@ -231,6 +231,7 @@ source "net/dns_resolver/Kconfig"
  source "net/batman-adv/Kconfig"
  source "net/openvswitch/Kconfig"
  source "net/vmw_vsock/Kconfig"
@@ -238,7 +237,7 @@ index 1c9fda1..9eeccb7 100644
  source "net/mpls/Kconfig"
  source "net/hsr/Kconfig"
 diff --git a/net/Makefile b/net/Makefile
-index bdd1455..ec175dd 100644
+index 9bd20bb..b4d4e9a 100644
 --- a/net/Makefile
 +++ b/net/Makefile
 @@ -70,6 +70,7 @@ obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
@@ -251,7 +250,7 @@ index bdd1455..ec175dd 100644
  ifneq ($(CONFIG_NET_SWITCHDEV),)
 diff --git a/net/hv_sock/Kconfig b/net/hv_sock/Kconfig
 new file mode 100644
-index 0000000..1f41848
+index 0000000..ff84875
 --- /dev/null
 +++ b/net/hv_sock/Kconfig
 @@ -0,0 +1,10 @@
@@ -260,8 +259,8 @@ index 0000000..1f41848
 +	depends on HYPERV
 +	default m if HYPERV
 +	help
-+	  Hyper-V Sockets is somewhat like TCP over VMBus, allowing
-+	  communication between Linux guest and Hyper-V host without TCP/IP.
++	  Hyper-V Sockets is a socket interface for high speed
++	  communication between Linux guest and Hyper-V host over VMBus.
 +
 +	  To compile this driver as a module, choose M here: the module
 +	  will be called hv_sock.
@@ -276,15 +275,17 @@ index 0000000..716c012
 +hv_sock-y += af_hvsock.o
 diff --git a/net/hv_sock/af_hvsock.c b/net/hv_sock/af_hvsock.c
 new file mode 100644
-index 0000000..b91bd60
+index 0000000..331d375
 --- /dev/null
 +++ b/net/hv_sock/af_hvsock.c
-@@ -0,0 +1,1520 @@
+@@ -0,0 +1,1507 @@
 +/*
 + * Hyper-V Sockets -- a socket-based communication channel between the
 + * Hyper-V host and the virtual machines running on it.
 + *
-+ * Copyright(c) 2016, Microsoft Corporation. All rights reserved.
++ * Copyright (c) 2016 Microsoft Corporation.
++ *
++ * All rights reserved.
 + *
 + * Redistribution and use in source and binary forms, with or without
 + * modification, are permitted provided that the following conditions
@@ -298,6 +299,10 @@ index 0000000..b91bd60
 + * 3. The name of the author may not be used to endorse or promote
 + *    products derived from this software without specific prior written
 + *    permission.
++ *
++ * Alternatively, this software may be distributed under the terms of the
++ * GNU General Public License ("GPL") version 2 as published by the Free
++ * Software Foundation.
 + *
 + * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
 + * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -315,22 +320,8 @@ index 0000000..b91bd60
 +
 +#include <linux/init.h>
 +#include <linux/module.h>
++#include <linux/vmalloc.h>
 +#include <net/af_hvsock.h>
-+
-+static uint send_ring_page = DEF_RINGBUFFER_PAGES_HVSOCK_SND;
-+static uint recv_ring_page = DEF_RINGBUFFER_PAGES_HVSOCK_RCV;
-+static uint max_socket_number = 1024;
-+
-+static atomic_t total_num_hvsock = ATOMIC_INIT(0);
-+
-+module_param(send_ring_page, uint, 0444);
-+MODULE_PARM_DESC(send_ring_page, "Send ring buffer size (# of pages)");
-+
-+module_param(recv_ring_page, uint, 0444);
-+MODULE_PARM_DESC(recv_ring_page, "Receive ring buffer size (# of pages)");
-+
-+module_param(max_socket_number, uint, 0644);
-+MODULE_PARM_DESC(max_socket_number, "The max number of created sockets");
 +
 +static struct proto hvsock_proto = {
 +	.name = "HV_SOCK",
@@ -340,22 +331,22 @@ index 0000000..b91bd60
 +
 +#define SS_LISTEN 255
 +
++#define HVSOCK_CONNECT_TIMEOUT (30 * HZ)
++
++/* This is an artificial limit */
++#define HVSOCK_MAX_BACKLOG	128
++
 +static LIST_HEAD(hvsock_bound_list);
 +static LIST_HEAD(hvsock_connected_list);
 +static DEFINE_MUTEX(hvsock_mutex);
-+
-+static bool uuid_equals(uuid_le u1, uuid_le u2)
-+{
-+	return !uuid_le_cmp(u1, u2);
-+}
 +
 +static struct sock *hvsock_find_bound_socket(const struct sockaddr_hv *addr)
 +{
 +	struct hvsock_sock *hvsk;
 +
 +	list_for_each_entry(hvsk, &hvsock_bound_list, bound_list) {
-+		if (uuid_equals(addr->shv_service_id,
-+				hvsk->local_addr.shv_service_id))
++		if (!uuid_le_cmp(addr->shv_service_guid,
++				 hvsk->local_addr.shv_service_guid))
 +			return hvsock_to_sk(hvsk);
 +	}
 +	return NULL;
@@ -373,11 +364,11 @@ index 0000000..b91bd60
 +	return NULL;
 +}
 +
-+static
-+void hvsock_enqueue_accept(struct sock *listener, struct sock *connected)
++static void hvsock_enqueue_accept(struct sock *listener,
++				  struct sock *connected)
 +{
-+	struct hvsock_sock *hvlistener;
 +	struct hvsock_sock *hvconnected;
++	struct hvsock_sock *hvlistener;
 +
 +	hvlistener = sk_to_hvsock(listener);
 +	hvconnected = sk_to_hvsock(connected);
@@ -393,8 +384,8 @@ index 0000000..b91bd60
 +
 +static struct sock *hvsock_dequeue_accept(struct sock *listener)
 +{
-+	struct hvsock_sock *hvlistener;
 +	struct hvsock_sock *hvconnected;
++	struct hvsock_sock *hvlistener;
 +
 +	hvlistener = sk_to_hvsock(listener);
 +
@@ -437,7 +428,7 @@ index 0000000..b91bd60
 +{
 +	memset(addr, 0, sizeof(*addr));
 +	addr->shv_family = AF_HYPERV;
-+	addr->shv_service_id = service_id;
++	addr->shv_service_guid = service_id;
 +}
 +
 +static int hvsock_addr_validate(const struct sockaddr_hv *addr)
@@ -456,7 +447,7 @@ index 0000000..b91bd60
 +
 +static bool hvsock_addr_bound(const struct sockaddr_hv *addr)
 +{
-+	return !uuid_equals(addr->shv_service_id, SHV_SERVICE_ID_ANY);
++	return !!uuid_le_cmp(addr->shv_service_guid, SHV_SERVICE_ID_ANY);
 +}
 +
 +static int hvsock_addr_cast(const struct sockaddr *addr, size_t len,
@@ -475,13 +466,13 @@ index 0000000..b91bd60
 +	struct sockaddr_hv hv_addr;
 +	int ret = 0;
 +
-+	hvsock_addr_init(&hv_addr, addr->shv_service_id);
++	hvsock_addr_init(&hv_addr, addr->shv_service_guid);
 +
 +	mutex_lock(&hvsock_mutex);
 +
-+	if (uuid_equals(addr->shv_service_id, SHV_SERVICE_ID_ANY)) {
++	if (!uuid_le_cmp(addr->shv_service_guid, SHV_SERVICE_ID_ANY)) {
 +		do {
-+			uuid_le_gen(&hv_addr.shv_service_id);
++			uuid_le_gen(&hv_addr.shv_service_guid);
 +		} while (hvsock_find_bound_socket(&hv_addr));
 +	} else {
 +		if (hvsock_find_bound_socket(&hv_addr)) {
@@ -490,7 +481,7 @@ index 0000000..b91bd60
 +		}
 +	}
 +
-+	hvsock_addr_init(&hvsk->local_addr, hv_addr.shv_service_id);
++	hvsock_addr_init(&hvsk->local_addr, hv_addr.shv_service_guid);
 +
 +	sock_hold(&hvsk->sk);
 +	list_add(&hvsk->bound_list, &hvsock_bound_list);
@@ -535,13 +526,14 @@ index 0000000..b91bd60
 +
 +static void hvsock_sk_destruct(struct sock *sk)
 +{
-+	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
-+	struct vmbus_channel *channel = hvsk->channel;
++	struct vmbus_channel *channel;
++	struct hvsock_sock *hvsk;
 +
-+	kfree(hvsk->send);
-+	kfree(hvsk->recv);
-+	atomic_dec(&total_num_hvsock);
++	hvsk = sk_to_hvsock(sk);
++	vfree(hvsk->send);
++	vfree(hvsk->recv);
 +
++	channel = hvsk->channel;
 +	if (!channel)
 +		return;
 +
@@ -597,51 +589,37 @@ index 0000000..b91bd60
 +	return 0;
 +}
 +
-+static int hvsock_create(struct net *net, struct socket *sock,
-+			 gfp_t priority, unsigned short type,
-+			 struct sock **sk)
++static struct sock *hvsock_create(struct net *net, struct socket *sock,
++				  gfp_t priority, unsigned short type)
 +{
-+	struct hvsock_send_buf *send = NULL;
-+	struct hvsock_recv_buf *recv = NULL;
 +	struct hvsock_sock *hvsk;
-+	int ret = -EMFILE;
-+	int num_hvsock;
++	struct sock *sk;
 +
-+	num_hvsock = atomic_inc_return(&total_num_hvsock);
-+	if (num_hvsock > max_socket_number)
-+		goto err;
++	sk = sk_alloc(net, AF_HYPERV, priority, &hvsock_proto, 0);
++	if (!sk)
++		return NULL;
 +
-+	ret = -ENOMEM;
-+	send = kmalloc(sizeof(*send), GFP_KERNEL);
-+	recv = kmalloc(sizeof(*recv), GFP_KERNEL);
-+	if (!send || !recv)
-+		goto err;
++	sock_init_data(sock, sk);
 +
-+	*sk = sk_alloc(net, AF_HYPERV, priority, &hvsock_proto, 0);
-+	if (!*sk)
-+		goto err;
-+
-+	sock_init_data(sock, *sk);
-+
-+	/* (*sk)->sk_type is normally set in sock_init_data, but only if sock
++	/* sk->sk_type is normally set in sock_init_data, but only if sock
 +	 * is non-NULL. We make sure that our sockets always have a type by
 +	 * setting it here if needed.
 +	 */
 +	if (!sock)
-+		(*sk)->sk_type = type;
++		sk->sk_type = type;
 +
-+	(*sk)->sk_destruct = hvsock_sk_destruct;
++	sk->sk_destruct = hvsock_sk_destruct;
 +
 +	/* Looks stream-based socket doesn't need this. */
-+	(*sk)->sk_backlog_rcv = NULL;
++	sk->sk_backlog_rcv = NULL;
 +
-+	(*sk)->sk_state = 0;
-+	sock_reset_flag(*sk, SOCK_DONE);
++	sk->sk_state = 0;
++	sock_reset_flag(sk, SOCK_DONE);
 +
-+	hvsk = sk_to_hvsock(*sk);
++	hvsk = sk_to_hvsock(sk);
 +
-+	hvsk->send = send;
-+	hvsk->recv = recv;
++	hvsk->send = NULL;
++	hvsk->recv = NULL;
 +
 +	hvsock_addr_init(&hvsk->local_addr, SHV_SERVICE_ID_ANY);
 +	hvsock_addr_init(&hvsk->remote_addr, SHV_SERVICE_ID_ANY);
@@ -654,16 +632,7 @@ index 0000000..b91bd60
 +
 +	hvsk->peer_shutdown = 0;
 +
-+	hvsk->recv->data_len = 0;
-+	hvsk->recv->data_offset = 0;
-+
-+	return 0;
-+err:
-+	atomic_dec(&total_num_hvsock);
-+	kfree(send);
-+	kfree(recv);
-+	*sk = NULL;
-+	return ret;
++	return sk;
 +}
 +
 +static int hvsock_bind(struct socket *sock, struct sockaddr *addr,
@@ -678,7 +647,7 @@ index 0000000..b91bd60
 +	if (hvsock_addr_cast(addr, addr_len, &hv_addr) != 0)
 +		return -EINVAL;
 +
-+	if (!uuid_equals(hv_addr->shv_vm_id, NULL_UUID_LE))
++	if (uuid_le_cmp(hv_addr->shv_vm_guid, NULL_UUID_LE))
 +		return -EINVAL;
 +
 +	lock_sock(sk);
@@ -740,8 +709,8 @@ index 0000000..b91bd60
 +					     &dummy,
 +					     &avl_write_bytes);
 +
-+		*can_write = avl_write_bytes >
-+			     HVSOCK_PKT_LEN(HVSOCK_SND_THRESHOLD);
++		/* We only write if there is enough space */
++		*can_write = avl_write_bytes > HVSOCK_PKT_LEN(PAGE_SIZE_4K);
 +	}
 +}
 +
@@ -754,16 +723,27 @@ index 0000000..b91bd60
 +				     &dummy,
 +				     &avl_write_bytes);
 +
-+	if (avl_write_bytes < HVSOCK_PKT_LEN(1) + HVSOCK_PKT_LEN(0))
-+		return 0;
-+
 +	/* The ringbuffer mustn't be 100% full, and we should reserve a
 +	 * zero-length-payload packet for the FIN: see hv_ringbuffer_write()
 +	 * and hvsock_shutdown().
 +	 */
++	if (avl_write_bytes < HVSOCK_PKT_LEN(1) + HVSOCK_PKT_LEN(0))
++		return 0;
 +	ret = avl_write_bytes - HVSOCK_PKT_LEN(1) - HVSOCK_PKT_LEN(0);
 +
 +	return round_down(ret, 8);
++}
++
++static int hvsock_get_send_buf(struct hvsock_sock *hvsk)
++{
++	hvsk->send = vmalloc(sizeof(*hvsk->send));
++	return hvsk->send ? 0 : -ENOMEM;
++}
++
++static void hvsock_put_send_buf(struct hvsock_sock *hvsk)
++{
++	vfree(hvsk->send);
++	hvsk->send = NULL;
 +}
 +
 +static int hvsock_send_data(struct vmbus_channel *channel,
@@ -775,6 +755,18 @@ index 0000000..b91bd60
 +	return vmbus_sendpacket(channel, &hvsk->send->hdr,
 +				sizeof(hvsk->send->hdr) + to_write,
 +				0, VM_PKT_DATA_INBAND, 0);
++}
++
++static int hvsock_get_recv_buf(struct hvsock_sock *hvsk)
++{
++	hvsk->recv = vmalloc(sizeof(*hvsk->recv));
++	return hvsk->recv ? 0 : -ENOMEM;
++}
++
++static void hvsock_put_recv_buf(struct hvsock_sock *hvsk)
++{
++	vfree(hvsk->recv);
++	hvsk->recv = NULL;
 +}
 +
 +static int hvsock_recv_data(struct vmbus_channel *channel,
@@ -801,6 +793,7 @@ index 0000000..b91bd60
 +{
 +	struct hvsock_sock *hvsk;
 +	struct sock *sk;
++	int ret = 0;
 +
 +	if (mode < SHUT_RD || mode > SHUT_RDWR)
 +		return -EINVAL;
@@ -825,13 +818,21 @@ index 0000000..b91bd60
 +
 +	if (mode & SEND_SHUTDOWN) {
 +		hvsk = sk_to_hvsock(sk);
++
++		ret = hvsock_get_send_buf(hvsk);
++		if (ret < 0)
++			goto out;
++
 +		/* It can't fail: see get_ringbuffer_writable_bytes(). */
 +		(void)hvsock_send_data(hvsk->channel, hvsk, 0);
++
++		hvsock_put_send_buf(hvsk);
 +	}
 +
++out:
 +	release_sock(sk);
 +
-+	return 0;
++	return ret;
 +}
 +
 +static unsigned int hvsock_poll(struct file *file, struct socket *sock,
@@ -840,8 +841,8 @@ index 0000000..b91bd60
 +	struct vmbus_channel *channel;
 +	bool can_read, can_write;
 +	struct hvsock_sock *hvsk;
-+	struct sock *sk;
 +	unsigned int mask;
++	struct sock *sk;
 +
 +	sk = sock->sk;
 +	hvsk = sk_to_hvsock(sk);
@@ -883,13 +884,12 @@ index 0000000..b91bd60
 +		/* If there is something in the queue then we can read */
 +		get_ringbuffer_rw_status(channel, &can_read, &can_write);
 +
-+		if (!can_read && hvsk->recv->data_len > 0)
++		if (!can_read && hvsk->recv)
 +			can_read = true;
 +
 +		if (!(sk->sk_shutdown & RCV_SHUTDOWN) && can_read)
 +			mask |= POLLIN | POLLRDNORM;
 +	} else {
-+		can_read = false;
 +		can_write = false;
 +	}
 +
@@ -928,14 +928,13 @@ index 0000000..b91bd60
 +static void hvsock_on_channel_cb(void *ctx)
 +{
 +	struct sock *sk = (struct sock *)ctx;
-+	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
-+	struct vmbus_channel *channel = hvsk->channel;
++	struct vmbus_channel *channel;
++	struct hvsock_sock *hvsk;
 +	bool can_read, can_write;
 +
-+	if (!channel) {
-+		WARN_ONCE(1, "NULL channel! There is a programming bug.\n");
-+		return;
-+	}
++	hvsk = sk_to_hvsock(sk);
++	channel = hvsk->channel;
++	BUG_ON(!channel);
 +
 +	get_ringbuffer_rw_status(channel, &can_read, &can_write);
 +
@@ -972,12 +971,11 @@ index 0000000..b91bd60
 +
 +static int hvsock_open_connection(struct vmbus_channel *channel)
 +{
-+	struct hvsock_sock *hvsk, *new_hvsk;
-+	struct sockaddr_hv hv_addr;
-+	struct sock *sk, *new_sk;
-+	unsigned char conn_from_host;
-+
++	struct hvsock_sock *hvsk = NULL, *new_hvsk = NULL;
 +	uuid_le *instance, *service_id;
++	unsigned char conn_from_host;
++	struct sockaddr_hv hv_addr;
++	struct sock *sk, *new_sk = NULL;
 +	int ret;
 +
 +	instance = &channel->offermsg.offer.if_instance;
@@ -999,14 +997,16 @@ index 0000000..b91bd60
 +
 +	if (conn_from_host) {
 +		if (sk->sk_ack_backlog >= sk->sk_max_ack_backlog) {
-+			ret = -EMFILE;
++			ret = -ECONNREFUSED;
 +			goto out;
 +		}
 +
-+		ret = hvsock_create(sock_net(sk), NULL, GFP_KERNEL,
-+				    sk->sk_type, &new_sk);
-+		if (ret != 0)
++		new_sk = hvsock_create(sock_net(sk), NULL, GFP_KERNEL,
++				       sk->sk_type);
++		if (!new_sk) {
++			ret = -ENOMEM;
 +			goto out;
++		}
 +
 +		new_sk->sk_state = SS_CONNECTING;
 +		new_hvsk = sk_to_hvsock(new_sk);
@@ -1019,8 +1019,8 @@ index 0000000..b91bd60
 +	}
 +
 +	set_channel_read_state(channel, false);
-+	ret = vmbus_open(channel, send_ring_page * PAGE_SIZE,
-+			 recv_ring_page * PAGE_SIZE, NULL, 0,
++	ret = vmbus_open(channel, RINGBUFFER_HVSOCK_SND_SIZE,
++			 RINGBUFFER_HVSOCK_RCV_SIZE, NULL, 0,
 +			 hvsock_on_channel_cb, conn_from_host ? new_sk : sk);
 +	if (ret != 0) {
 +		if (conn_from_host) {
@@ -1033,8 +1033,10 @@ index 0000000..b91bd60
 +	}
 +
 +	vmbus_set_chn_rescind_callback(channel, hvsock_close_connection);
++
++	/* see get_ringbuffer_rw_status() */
 +	set_channel_pending_send_size(channel,
-+				      HVSOCK_PKT_LEN(HVSOCK_SND_THRESHOLD));
++				      HVSOCK_PKT_LEN(PAGE_SIZE_4K) + 1);
 +
 +	if (conn_from_host) {
 +		new_sk->sk_state = SS_CONNECTED;
@@ -1081,13 +1083,13 @@ index 0000000..b91bd60
 +			       int flags, int current_ret)
 +{
 +	struct sock *sk = sock->sk;
-+	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
-+
++	struct hvsock_sock *hvsk;
 +	int ret = current_ret;
-+
-+	long timeout = 30 * HZ;
 +	DEFINE_WAIT(wait);
++	long timeout;
 +
++	hvsk = sk_to_hvsock(sk);
++	timeout = HVSOCK_CONNECT_TIMEOUT;
 +	prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
 +
 +	while (sk->sk_state != SS_CONNECTED && sk->sk_err == 0) {
@@ -1181,8 +1183,8 @@ index 0000000..b91bd60
 +		sk->sk_state = SS_CONNECTING;
 +
 +		ret = vmbus_send_tl_connect_request(
-+					&hvsk->local_addr.shv_service_id,
-+					&hvsk->remote_addr.shv_service_id);
++					&hvsk->local_addr.shv_service_guid,
++					&hvsk->remote_addr.shv_service_guid);
 +		if (ret < 0)
 +			goto out;
 +
@@ -1240,15 +1242,12 @@ index 0000000..b91bd60
 +		lock_sock(connected);
 +		hvconnected = sk_to_hvsock(connected);
 +
-+		if (ret) {
-+			release_sock(connected);
-+			sock_put(connected);
-+		} else {
++		if (!ret) {
 +			newsock->state = SS_CONNECTED;
 +			sock_graft(connected, newsock);
-+			release_sock(connected);
-+			sock_put(connected);
 +		}
++		release_sock(connected);
++		sock_put(connected);
 +	}
 +
 +out_wait:
@@ -1256,8 +1255,8 @@ index 0000000..b91bd60
 +	return ret;
 +}
 +
-+static
-+int hvsock_accept(struct socket *sock, struct socket *newsock, int flags)
++static int hvsock_accept(struct socket *sock, struct socket *newsock,
++			 int flags)
 +{
 +	struct sock *listener;
 +	int ret;
@@ -1305,9 +1304,8 @@ index 0000000..b91bd60
 +		ret = -EINVAL;
 +		goto out;
 +	}
-+	/* This is an artificial limit */
-+	if (backlog > 128)
-+		backlog = 128;
++	if (backlog > HVSOCK_MAX_BACKLOG)
++		backlog = HVSOCK_MAX_BACKLOG;
 +
 +	hvsk = sk_to_hvsock(sk);
 +	if (!hvsock_addr_bound(&hvsk->local_addr)) {
@@ -1323,23 +1321,21 @@ index 0000000..b91bd60
 +	return ret;
 +}
 +
-+static
-+int hvsock_sendmsg_wait(struct sock *sk, struct msghdr *msg, size_t len)
++static int hvsock_sendmsg_wait(struct sock *sk, struct msghdr *msg,
++			       size_t len)
 +{
 +	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
-+	struct vmbus_channel *channel = hvsk->channel;
-+
++	struct vmbus_channel *channel;
 +	size_t total_to_write = len;
 +	size_t total_written = 0;
-+	bool can_write;
-+
-+	int ret = 0;
-+
 +	DEFINE_WAIT(wait);
++	bool can_write;
 +	long timeout;
++	int ret = -EIO;
 +
 +	timeout = sock_sndtimeo(sk, msg->msg_flags & MSG_DONTWAIT);
 +	prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
++	channel = hvsk->channel;
 +
 +	while (total_to_write > 0) {
 +		size_t to_write, max_writable;
@@ -1397,16 +1393,23 @@ index 0000000..b91bd60
 +			if (max_writable == 0)
 +				goto out_wait;
 +
-+			to_write = min_t(size_t, HVSOCK_SND_BUF_SZ,
++			to_write = min_t(size_t, sizeof(hvsk->send->buf),
 +					 total_to_write);
 +			if (to_write > max_writable)
 +				to_write = max_writable;
 +
-+			ret = memcpy_from_msg(hvsk->send->buf, msg, to_write);
-+			if (ret != 0)
++			ret = hvsock_get_send_buf(hvsk);
++			if (ret < 0)
 +				goto out_wait;
 +
++			ret = memcpy_from_msg(hvsk->send->buf, msg, to_write);
++			if (ret != 0) {
++				hvsock_put_send_buf(hvsk);
++				goto out_wait;
++			}
++
 +			ret = hvsock_send_data(channel, hvsk, to_write);
++			hvsock_put_send_buf(hvsk);
 +			if (ret != 0)
 +				goto out_wait;
 +
@@ -1423,7 +1426,8 @@ index 0000000..b91bd60
 +	return ret;
 +}
 +
-+static int hvsock_sendmsg(struct socket *sock, struct msghdr *msg, size_t len)
++static int hvsock_sendmsg(struct socket *sock, struct msghdr *msg,
++			  size_t len)
 +{
 +	struct hvsock_sock *hvsk;
 +	struct sock *sk;
@@ -1432,11 +1436,8 @@ index 0000000..b91bd60
 +	if (len == 0)
 +		return -EINVAL;
 +
-+	if (msg->msg_flags & ~MSG_DONTWAIT) {
-+		pr_err("%s: unsupported flags=0x%x\n", __func__,
-+		       msg->msg_flags);
++	if (msg->msg_flags & ~MSG_DONTWAIT)
 +		return -EOPNOTSUPP;
-+	}
 +
 +	sk = sock->sk;
 +	hvsk = sk_to_hvsock(sk);
@@ -1471,11 +1472,10 @@ index 0000000..b91bd60
 +out:
 +	release_sock(sk);
 +
-+	/* ret is a bigger-than-0 total_written or a negative err code. */
-+	if (ret == 0) {
-+		WARN(1, "unexpected return value of 0\n");
-+		ret = -EIO;
-+	}
++	/* ret should be a bigger-than-0 total_written or a negative err
++	 * code.
++	 */
++	BUG_ON(ret == 0);
 +
 +	return ret;
 +}
@@ -1484,43 +1484,56 @@ index 0000000..b91bd60
 +			       size_t len, int flags)
 +{
 +	struct hvsock_sock *hvsk = sk_to_hvsock(sk);
-+	struct vmbus_channel *channel = hvsk->channel;
-+
 +	size_t to_read, total_to_read = len;
++	struct vmbus_channel *channel;
++	DEFINE_WAIT(wait);
 +	size_t copied = 0;
 +	bool can_read;
-+
-+	int ret = 0;
-+
-+	DEFINE_WAIT(wait);
 +	long timeout;
++	int ret = 0;
 +
 +	timeout = sock_rcvtimeo(sk, flags & MSG_DONTWAIT);
 +	prepare_to_wait(sk_sleep(sk), &wait, TASK_INTERRUPTIBLE);
++	channel = hvsk->channel;
 +
 +	while (1) {
-+		bool need_refill = hvsk->recv->data_len == 0;
++		bool need_refill = !hvsk->recv;
 +
-+		if (need_refill)
-+			get_ringbuffer_rw_status(channel, &can_read, NULL);
-+		else
++		if (need_refill) {
++			if (hvsk->peer_shutdown & SEND_SHUTDOWN)
++				can_read = false;
++			else
++				get_ringbuffer_rw_status(channel, &can_read,
++							 NULL);
++		} else {
 +			can_read = true;
++		}
 +
 +		if (can_read) {
 +			size_t payload_len;
 +
 +			if (need_refill) {
++				ret = hvsock_get_recv_buf(hvsk);
++				if (ret < 0) {
++					if (copied > 0)
++						ret = copied;
++					goto out_wait;
++				}
++
 +				ret = hvsock_recv_data(channel, hvsk,
 +						       &payload_len);
 +				if (ret != 0 ||
-+				    payload_len > HVSOCK_RCV_BUF_SZ) {
++				    payload_len > sizeof(hvsk->recv->buf)) {
 +					ret = -EIO;
++					hvsock_put_recv_buf(hvsk);
 +					goto out_wait;
 +				}
 +
 +				if (payload_len == 0) {
 +					ret = copied;
-+					goto out_wait;
++					hvsock_put_recv_buf(hvsk);
++					hvsk->peer_shutdown |= SEND_SHUTDOWN;
++					break;
 +				}
 +
 +				hvsk->recv->data_len = payload_len;
@@ -1542,7 +1555,7 @@ index 0000000..b91bd60
 +			hvsk->recv->data_len -= to_read;
 +
 +			if (hvsk->recv->data_len == 0)
-+				hvsk->recv->data_offset = 0;
++				hvsock_put_recv_buf(hvsk);
 +			else
 +				hvsk->recv->data_offset += to_read;
 +
@@ -1584,23 +1597,8 @@ index 0000000..b91bd60
 +	else if (sk->sk_shutdown & RCV_SHUTDOWN)
 +		ret = 0;
 +
-+	if (copied > 0) {
++	if (copied > 0)
 +		ret = copied;
-+
-+		/* If the other side has shutdown for sending and there
-+		 * is nothing more to read, then we modify the socket
-+		 * state.
-+		 */
-+		if ((hvsk->peer_shutdown & SEND_SHUTDOWN) &&
-+		    hvsk->recv->data_len == 0) {
-+			get_ringbuffer_rw_status(channel, &can_read, NULL);
-+			if (!can_read) {
-+				sk->sk_state = SS_UNCONNECTED;
-+				sock_set_flag(sk, SOCK_DONE);
-+				sk->sk_state_change(sk);
-+			}
-+		}
-+	}
 +out_wait:
 +	finish_wait(sk_sleep(sk), &wait);
 +	return ret;
@@ -1630,7 +1628,6 @@ index 0000000..b91bd60
 +
 +	/* We ignore msg->addr_name/len. */
 +	if (flags & ~MSG_DONTWAIT) {
-+		pr_err("%s: unsupported flags=0x%x\n", __func__, flags);
 +		ret = -EOPNOTSUPP;
 +		goto out;
 +	}
@@ -1684,9 +1681,6 @@ index 0000000..b91bd60
 +{
 +	struct sock *sk;
 +
-+	if (!capable(CAP_SYS_ADMIN) && !capable(CAP_NET_ADMIN))
-+		return -EPERM;
-+
 +	if (protocol != 0 && protocol != SHV_PROTO_RAW)
 +		return -EPROTONOSUPPORT;
 +
@@ -1700,7 +1694,8 @@ index 0000000..b91bd60
 +
 +	sock->state = SS_UNCONNECTED;
 +
-+	return hvsock_create(net, sock, GFP_KERNEL, 0, &sk);
++	sk = hvsock_create(net, sock, GFP_KERNEL, 0);
++	return sk ? 0 : -ENOMEM;
 +}
 +
 +static const struct net_proto_family hvsock_family_ops = {
@@ -1749,17 +1744,8 @@ index 0000000..b91bd60
 +{
 +	int ret;
 +
-+	if (send_ring_page < DEF_RINGBUFFER_PAGES_HVSOCK_SND)
-+		send_ring_page = DEF_RINGBUFFER_PAGES_HVSOCK_SND;
-+
-+	if (recv_ring_page < DEF_RINGBUFFER_PAGES_HVSOCK_RCV)
-+		recv_ring_page = DEF_RINGBUFFER_PAGES_HVSOCK_RCV;
-+
-+	/* Hyper-V Sockets requires at least VMBus 4.0 */
-+	if ((vmbus_proto_version >> 16) < 4) {
-+		pr_err("failed to load: VMBus 4 or later is required\n");
++	if (vmbus_proto_version < VERSION_WIN10)
 +		return -ENODEV;
-+	}
 +
 +	ret = vmbus_driver_register(&hvsock_drv);
 +	if (ret) {
@@ -1800,6 +1786,5 @@ index 0000000..b91bd60
 +
 +MODULE_DESCRIPTION("Hyper-V Sockets");
 +MODULE_LICENSE("Dual BSD/GPL");
--- 
-2.10.0
-
+--
+2.10.1
