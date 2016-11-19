@@ -1,4 +1,4 @@
-FROM scratch
+FROM mobylinux/toybox-media:d476c196534464ca0dd93f8c765002c13d880a1a
 
 ADD \
   alpine/initrd.img \
