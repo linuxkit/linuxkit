@@ -18,7 +18,6 @@ RUN \
   iptables \
   jq \
   openrc \
-  openssh \
   openssh-client \
   rng-tools@community \
   sfdisk \
