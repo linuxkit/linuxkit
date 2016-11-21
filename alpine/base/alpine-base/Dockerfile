@@ -5,7 +5,6 @@ COPY repositories /etc/apk/
 RUN \
   apk update && apk upgrade && \
   apk add --no-cache \
-  alpine-conf \
   busybox-initscripts \
   chrony \
   cifs-utils \
