@@ -1,4 +1,4 @@
-From ccd1d4920969d0dcba862dc98f9b4747a383bfe2 Mon Sep 17 00:00:00 2001
+From f1b841ced482479a9ff9fb5dce29e47d563a1dba Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 23 Jul 2016 01:35:51 +0000
 Subject: [PATCH 3/5] hv_sock: introduce Hyper-V Sockets
@@ -30,12 +30,11 @@ Origin: https://patchwork.kernel.org/patch/9244467/
  include/linux/socket.h      |    4 +-
  include/net/af_hvsock.h     |   78 +++
  include/uapi/linux/hyperv.h |   23 +
- net/Kconfig                 |    1 +
  net/Makefile                |    1 +
  net/hv_sock/Kconfig         |   10 +
  net/hv_sock/Makefile        |    3 +
  net/hv_sock/af_hvsock.c     | 1507 +++++++++++++++++++++++++++++++++++++++++++
- 10 files changed, 1641 insertions(+), 1 deletion(-)
+ 9 files changed, 1640 insertions(+), 1 deletion(-)
  create mode 100644 include/net/af_hvsock.h
  create mode 100644 net/hv_sock/Kconfig
  create mode 100644 net/hv_sock/Makefile
@@ -54,15 +53,15 @@ index babaf82..6126545 100644
 +F:	include/net/af_hvsock.h
  F:	tools/hv/
  F:	Documentation/ABI/stable/sysfs-bus-vmbus
-
+ 
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
 index b10954a..50f8976 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1505,5 +1505,18 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
-		vmbus_set_event(channel);
+ 		vmbus_set_event(channel);
  }
-
+ 
 +struct vmpipe_proto_header {
 +	u32 pkt_type;
 +	u32 data_size;
@@ -73,7 +72,7 @@ index b10954a..50f8976 100644
 +
 +/* See 'prev_indices' in hv_ringbuffer_read(), hv_ringbuffer_write() */
 +#define PREV_INDICES_LEN	(sizeof(u64))
-
+ 
 +#define HVSOCK_PKT_LEN(payload_len)	(HVSOCK_HEADER_LEN + \
 +					ALIGN((payload_len), 8) + \
 +					PREV_INDICES_LEN)
@@ -87,10 +86,10 @@ index b5cc5a6..0b68b58 100644
  #define AF_KCM		41	/* Kernel Connection Multiplexor*/
  #define AF_QIPCRTR	42	/* Qualcomm IPC Router          */
 +#define AF_HYPERV	43	/* Hyper-V Sockets              */
-
+ 
 -#define AF_MAX		43	/* For now.. */
 +#define AF_MAX		44	/* For now.. */
-
+ 
  /* Protocol families, same as address families. */
  #define PF_UNSPEC	AF_UNSPEC
 @@ -251,6 +252,7 @@ struct ucred {
@@ -99,7 +98,7 @@ index b5cc5a6..0b68b58 100644
  #define PF_QIPCRTR	AF_QIPCRTR
 +#define PF_HYPERV	AF_HYPERV
  #define PF_MAX		AF_MAX
-
+ 
  /* Maximum queue length specifiable by listen.  */
 diff --git a/include/net/af_hvsock.h b/include/net/af_hvsock.h
 new file mode 100644
@@ -191,16 +190,16 @@ index e347b24..eb3e44b 100644
 +++ b/include/uapi/linux/hyperv.h
 @@ -26,6 +26,7 @@
  #define _UAPI_HYPERV_H
-
+ 
  #include <linux/uuid.h>
 +#include <linux/socket.h>
-
+ 
  /*
   * Framework version for util services.
 @@ -396,4 +397,26 @@ struct hv_kvp_ip_msg {
-	struct hv_kvp_ipaddr_value      kvp_ip_val;
+ 	struct hv_kvp_ipaddr_value      kvp_ip_val;
  } __attribute__((packed));
-
+ 
 +/* This is the address format of Hyper-V Sockets.
 + * Note: here we just borrow the kernel's built-in type uuid_le. When
 + * an application calls bind() or connect(), the 2 members of struct
@@ -224,18 +223,6 @@ index e347b24..eb3e44b 100644
 +#define SHV_PROTO_RAW		1
 +
  #endif /* _UAPI_HYPERV_H */
-diff --git a/net/Kconfig b/net/Kconfig
-index c2cdbce..921e86f 100644
---- a/net/Kconfig
-+++ b/net/Kconfig
-@@ -231,6 +231,7 @@ source "net/dns_resolver/Kconfig"
- source "net/batman-adv/Kconfig"
- source "net/openvswitch/Kconfig"
- source "net/vmw_vsock/Kconfig"
-+source "net/hv_sock/Kconfig"
- source "net/netlink/Kconfig"
- source "net/mpls/Kconfig"
- source "net/hsr/Kconfig"
 diff --git a/net/Makefile b/net/Makefile
 index 9bd20bb..b4d4e9a 100644
 --- a/net/Makefile
@@ -1786,5 +1773,6 @@ index 0000000..331d375
 +
 +MODULE_DESCRIPTION("Hyper-V Sockets");
 +MODULE_LICENSE("Dual BSD/GPL");
---
-2.10.1
+-- 
+2.10.2
+

@@ -1,4 +1,4 @@
-From 56b20d9d99f039745e3b9e9fe8c4243e90d13334 Mon Sep 17 00:00:00 2001
+From 3bcb5d6eddbc61f460aa17d6f2a226e0a0a0ed09 Mon Sep 17 00:00:00 2001
 From: Eric Dumazet <edumazet@google.com>
 Date: Mon, 14 Nov 2016 16:28:42 -0800
 Subject: [PATCH 5/5] gro_cells: mark napi struct as not busy poll candidates
@@ -36,14 +36,15 @@ index d15214d..2a1abbf 100644
 --- a/include/net/gro_cells.h
 +++ b/include/net/gro_cells.h
 @@ -68,6 +68,9 @@ static inline int gro_cells_init(struct gro_cells *gcells, struct net_device *de
-		struct gro_cell *cell = per_cpu_ptr(gcells->cells, i);
-
-		__skb_queue_head_init(&cell->napi_skbs);
+ 		struct gro_cell *cell = per_cpu_ptr(gcells->cells, i);
+ 
+ 		__skb_queue_head_init(&cell->napi_skbs);
 +
 +		set_bit(NAPI_STATE_NO_BUSY_POLL, &cell->napi.state);
 +
-		netif_napi_add(dev, &cell->napi, gro_cell_poll, 64);
-		napi_enable(&cell->napi);
-	}
---
-2.10.1
+ 		netif_napi_add(dev, &cell->napi, gro_cell_poll, 64);
+ 		napi_enable(&cell->napi);
+ 	}
+-- 
+2.10.2
+
