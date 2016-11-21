@@ -18,6 +18,41 @@ do_fsck()
 	return "${EXIT_CODE}"
 }
 
+do_mkfs()
+{
+	diskdev="$1"
+
+	# new disks does not have an DOS signature in sector 0
+	# this makes sfdisk complain. We can workaround this by letting
+	# fdisk create that DOS signature, by just do a "w", a write.
+	# http://bugs.alpinelinux.org/issues/show/145
+	echo "w" | fdisk $diskdev >/dev/null
+
+	# format one large partition, offset 1M
+	printf "1M,,83\n" | sfdisk --quiet $diskdev
+
+	# update status
+	blockdev --rereadpt $diskdev 2> /dev/null
+	mdev -s
+
+	mkfs.ext4 ${diskdev}1
+
+	mount ${diskdev}1 /var
+}
+
+do_swapfile()
+{
+	SWAP=/var/spool/swap
+	if [ "$(mobyplatform)" = "mac" ] || [ "$(mobyplatform)" = "windows" ] && [ ! -f $SWAP ]
+	then
+		mkdir -p "$(basnename $SWAP)"
+		dd if=/dev/zero of=$SWAP bs=1k count=4090876
+		chmod 600 $SWAP
+		mkswap $SWAP
+		swapon $SWAP
+	fi
+}
+
 start()
 {
 	ebegin "Configuring host block device"
@@ -47,22 +82,23 @@ start()
 
 	if fdisk -l "${DRIVE}" | grep -q "doesn't contain a valid partition table"
 	then
-		ERASE_DISKS="${DRIVE}" setup-disk -m data "${DRIVE}"
-		blockdev --rereadpt "${DRIVE}" 2> /dev/null
+		do_mkfs "${DRIVE}"
 	else
-		SWAP=$(fdisk -l "${DRIVE}" | grep 'Linux swap' | head -1 | awk '{print $1}')
 		DATA=$(fdisk -l "${DRIVE}" | grep 'Linux$' | head -1 | awk '{print $1}')
 		if [ -z "$DATA" ]
 		then
-			ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}
-			blockdev --rereadpt "${DRIVE}" 2> /dev/null
+			do_mkfs "${DRIVE}"
 		else
-			( do_fsck "${DATA}" && mount "${DATA}" /var && ([ -z "${SWAP}" ] || swapon "${SWAP}") ) || \
-			  ( ERASE_DISKS="${DRIVE}" setup-disk -m data ${DRIVE}; blockdev --rereadpt ${DRIVE} 2> /dev/null )
+			( do_fsck "${DATA}" && mount "${DATA}" /var ) || do_mkfs "${DRIVE}"
 		fi
-		# boot2docker compat, has /var and /tmp on partition
-		[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
 	fi
+
+	SWAP=$(fdisk -l "${DRIVE}" | grep 'Linux swap' | head -1 | awk '{print $1}')
+	[ -z "${SWAP}" ] && do_swapfile || swapon "${SWAP}"
+
+	# boot2docker compat, has /var and /tmp on partition
+	[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
+
 
 	# can remove when we run before bootmisc
 	[ -L /var/run ] || ln -s /run /var/run
