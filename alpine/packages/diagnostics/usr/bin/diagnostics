@@ -30,7 +30,7 @@ then
 	TAPVS=$(ps -eo args | grep '^/sbin/tap-vsockd')
 	[ $? -eq 0 ] && ok "Process tap-vsockd running\n" || fail "No tap-vsockd process\n"
 fi
-DOCKER=$(ps -eo args | grep '^/usr/bin/dockerd')
+DOCKER=$(ps -eo args | grep '^dockerd')
 [ $? -eq 0 ] && ok "Process dockerd running: $DOCKER\n" || fail "No dockerd process\n"
 CONTAINERD=$(ps -eo args | grep '^docker-containerd')
 [ $? -eq 0 ] && ok "Process containerd running: $CONTAINERD\n" || fail "No containerd process\n"
