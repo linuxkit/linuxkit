@@ -34,6 +34,8 @@ start()
 
 	einfo "Running Windows Azure Linux Agent container"
 
+	export DOCKER_FOR_IAAS_VERSION="azure-v1.13.0-rc2-beta12"
+
 	docker run -d \
 		--privileged \
 		--name agent \
@@ -52,7 +54,7 @@ start()
 		-v /lib/modules:/lib/modules \
 		-v /lib/firmware:/lib/firmware \
 		-v /var/lib/waagent:/var/lib/waagent \
-		docker4x/agent-azure
+		"docker4x/agent-azure:$DOCKER_FOR_IAAS_VERSION"
 
 	# Wait for docker user to be added by agent.
 	while [ ! -d /home/docker ]
@@ -74,8 +76,17 @@ start()
 		sleep 5
 	done
 
-	# Hack to fix swarm hostname issue.  See
-	# https://github.com/docker/docker/issues/27173
+	cat <<EOF >/etc/docker/daemon.json
+{
+	"log-driver": "syslog",
+	"log-opts": {
+		"syslog-address": "udp://localhost:514",
+		"tag": "{{.Name}}/{{.ID}}"
+	}
+}
+EOF
+
+	# Ensure correct hostname according to Azure and reload daemon config
 	service docker restart
 
 	. /var/lib/waagent/CustomData
