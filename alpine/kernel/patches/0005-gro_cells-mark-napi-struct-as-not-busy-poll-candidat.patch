@@ -1,4 +1,4 @@
-From 3bcb5d6eddbc61f460aa17d6f2a226e0a0a0ed09 Mon Sep 17 00:00:00 2001
+From f45dc8d3c7bab381eba3c94414bbc04eae208990 Mon Sep 17 00:00:00 2001
 From: Eric Dumazet <edumazet@google.com>
 Date: Mon, 14 Nov 2016 16:28:42 -0800
 Subject: [PATCH 5/5] gro_cells: mark napi struct as not busy poll candidates

@@ -1,4 +1,4 @@
-From f1b841ced482479a9ff9fb5dce29e47d563a1dba Mon Sep 17 00:00:00 2001
+From e7db86231b7078971c613aa81c9090079571cf24 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 23 Jul 2016 01:35:51 +0000
 Subject: [PATCH 3/5] hv_sock: introduce Hyper-V Sockets
@@ -30,11 +30,12 @@ Origin: https://patchwork.kernel.org/patch/9244467/
  include/linux/socket.h      |    4 +-
  include/net/af_hvsock.h     |   78 +++
  include/uapi/linux/hyperv.h |   23 +
+ net/Kconfig                 |    1 +
  net/Makefile                |    1 +
  net/hv_sock/Kconfig         |   10 +
  net/hv_sock/Makefile        |    3 +
  net/hv_sock/af_hvsock.c     | 1507 +++++++++++++++++++++++++++++++++++++++++++
- 9 files changed, 1640 insertions(+), 1 deletion(-)
+ 10 files changed, 1641 insertions(+), 1 deletion(-)
  create mode 100644 include/net/af_hvsock.h
  create mode 100644 net/hv_sock/Kconfig
  create mode 100644 net/hv_sock/Makefile
@@ -223,6 +224,18 @@ index e347b24..eb3e44b 100644
 +#define SHV_PROTO_RAW		1
 +
  #endif /* _UAPI_HYPERV_H */
+diff --git a/net/Kconfig b/net/Kconfig
+index c2cdbce..921e86f 100644
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -231,6 +231,7 @@ source "net/dns_resolver/Kconfig"
+ source "net/batman-adv/Kconfig"
+ source "net/openvswitch/Kconfig"
+ source "net/vmw_vsock/Kconfig"
++source "net/hv_sock/Kconfig"
+ source "net/netlink/Kconfig"
+ source "net/mpls/Kconfig"
+ source "net/hsr/Kconfig"
 diff --git a/net/Makefile b/net/Makefile
 index 9bd20bb..b4d4e9a 100644
 --- a/net/Makefile
