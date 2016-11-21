@@ -45,7 +45,7 @@ do_swapfile()
 	SWAP=/var/spool/swap
 	if [ "$(mobyplatform)" = "mac" ] || [ "$(mobyplatform)" = "windows" ] && [ ! -f $SWAP ]
 	then
-		mkdir -p "$(basnename $SWAP)"
+		mkdir -p "$(basename $SWAP)"
 		dd if=/dev/zero of=$SWAP bs=1k count=4090876
 		chmod 600 $SWAP
 		mkswap $SWAP
