@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 COPY repositories /etc/apk/
 
@@ -14,13 +14,13 @@ RUN \
   e2fsprogs-extra \
   fuse \
   git \
-  hvtools@nextmain \
+  hvtools \
   iptables \
   jq \
   openrc \
   openssh \
   openssh-client \
-  rng-tools@edgecommunity \
+  rng-tools@community \
   sfdisk \
   sysklogd \
   xz \
