@@ -12,7 +12,6 @@ import (
 	"strings"
 	"sync"
 	"syscall"
-	"time"
 
 	"github.com/rneugeba/virtsock/go/hvsock"
 	"github.com/rneugeba/virtsock/go/vsock"
@@ -189,17 +188,11 @@ func handleOneIn(connid int, conn vConn, sock string) {
 	var docker *net.UnixConn
 	var err error
 
-	// Cope with the server socket appearing up to 10s later
-	for i := 0; i < 200; i++ {
-		docker, err = net.DialUnix("unix", nil, &net.UnixAddr{sock, "unix"})
-		if err == nil {
-			break
-		}
-		time.Sleep(50 * time.Millisecond)
-	}
+	docker, err = net.DialUnix("unix", nil, &net.UnixAddr{sock, "unix"})
+
 	if err != nil {
 		// If the forwarding program has broken then close and continue
-		log.Println(connid, "Failed to connect to Unix domain socket after 10s", sock, err)
+		log.Println(connid, "Failed to connect to Unix domain socket", sock, err)
 		return
 	}
 	defer func() {
