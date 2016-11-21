@@ -16,17 +16,12 @@ RUN \
   git \
   hvtools@nextmain \
   iptables \
-  ipvsadm@nextmain \
   jq \
-  make \
   openrc \
   openssh \
   openssh-client \
-  openssl \
   rng-tools@edgecommunity \
   sfdisk \
-  strace \
   sysklogd \
-  tar \
   xz \
   && true
