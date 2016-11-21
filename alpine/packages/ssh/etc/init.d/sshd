@@ -1,0 +1,117 @@
+#!/sbin/openrc-run
+# Copyright 1999-2015 Gentoo Foundation
+# Distributed under the terms of the GNU General Public License v2
+# $Header: /var/cvsroot/gentoo-x86/net-misc/openssh/files/sshd.rc6.4,v 1.5 2015/05/04 02:56:25 vapier Exp $
+
+description="OpenBSD Secure Shell server"
+description_checkconfig="Verify configuration file"
+description_reload="Reload configuration"
+
+extra_commands="checkconfig"
+extra_started_commands="reload"
+
+: ${SSHD_CONFDIR:=/etc/ssh}
+: ${SSHD_CONFIG:=${SSHD_CONFDIR}/sshd_config}
+: ${SSHD_PIDFILE:=/run/${SVCNAME}.pid}
+: ${SSHD_BINARY:=/usr/sbin/sshd}
+
+depend() {
+	# after net to get AWS config, automount to persist keys
+	need net automount
+	use logger dns
+	if [ "${rc_need+set}" = "set" ] ; then
+		: # Do nothing, the user has explicitly set rc_need
+	else
+		local x warn_addr
+		for x in $(awk '/^ListenAddress/{ print $2 }' "$SSHD_CONFIG" 2>/dev/null) ; do
+			case "${x}" in
+				0.0.0.0|0.0.0.0:*) ;;
+				::|\[::\]*) ;;
+				*) warn_addr="${warn_addr} ${x}" ;;
+			esac
+		done
+		if [ -n "${warn_addr}" ] ; then
+			need net
+			ewarn "You are binding an interface in ListenAddress statement in your sshd_config!"
+			ewarn "You must add rc_need=\"net.FOO\" to your /etc/conf.d/sshd"
+			ewarn "where FOO is the interface(s) providing the following address(es):"
+			ewarn "${warn_addr}"
+		fi
+	fi
+}
+
+checkconfig() {
+	if [ ! -d /var/empty ] ; then
+		mkdir -p /var/empty || return 1
+	fi
+
+	if [ ! -e "${SSHD_CONFIG}" ] ; then
+		eerror "You need an ${SSHD_CONFIG} file to run sshd"
+		eerror "There is a sample file in /usr/share/doc/openssh"
+		return 1
+	fi
+
+	if ! yesno "${SSHD_DISABLE_KEYGEN}"; then
+		ssh-keygen -A || return 1
+		# move to /var/etc for persistence
+		( mkdir -p /var/etc/ssh && \
+		  cd /etc/ssh && \
+		  for f in ssh_host*; \
+		  do \
+			[ -f "$f" ] && mv "$f" /var/etc/ssh && ln -s "/var/etc/ssh/$f"; \
+		  done )
+	fi
+
+	[ "${SSHD_PIDFILE}" != "/run/sshd.pid" ] \
+		&& SSHD_OPTS="${SSHD_OPTS} -o PidFile=${SSHD_PIDFILE}"
+	[ "${SSHD_CONFIG}" != "/etc/ssh/sshd_config" ] \
+		&& SSHD_OPTS="${SSHD_OPTS} -f ${SSHD_CONFIG}"
+
+	"${SSHD_BINARY}" -t ${SSHD_OPTS} || return 1
+}
+
+start() {
+	mobyconfig exists authorized_keys || exit 0
+
+	mkdir -p /root/.ssh && chmod 700 /root/.ssh
+
+	mobyconfig get authorized_keys > /root/.ssh/authorized_keys
+
+	chmod 600 /root/.ssh/authorized_keys
+
+	checkconfig || return 1
+
+	ebegin "Starting ${SVCNAME}"
+	start-stop-daemon --start --exec "${SSHD_BINARY}" \
+	    --pidfile "${SSHD_PIDFILE}" \
+	    -- ${SSHD_OPTS}
+	eend $?
+}
+
+stop() {
+	if [ "${RC_CMD}" = "restart" ] ; then
+		checkconfig || return 1
+	fi
+
+	ebegin "Stopping ${SVCNAME}"
+	start-stop-daemon --stop --exec "${SSHD_BINARY}" \
+	    --pidfile "${SSHD_PIDFILE}" --quiet
+	eend $?
+
+	if [ "$RC_RUNLEVEL" = "shutdown" ]; then
+		_sshd_pids=$(pgrep "${SSHD_BINARY##*/}")
+		if [ -n "$_sshd_pids" ]; then
+			ebegin "Shutting down ssh connections"
+			kill -TERM $_sshd_pids >/dev/null 2>&1
+			eend 0
+		fi
+	fi
+}
+
+reload() {
+	checkconfig || return 1
+	ebegin "Reloading ${SVCNAME}"
+	start-stop-daemon --signal HUP \
+	    --exec "${SSHD_BINARY}" --pidfile "${SSHD_PIDFILE}"
+	eend $?
+}
