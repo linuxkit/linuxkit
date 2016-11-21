@@ -1,4 +1,4 @@
-From 888876dd84da7cdcb7c2ce7568efb2a2adbc9031 Mon Sep 17 00:00:00 2001
+From c05011868782b0fbad73702161492e953eacbcbf Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
 Date: Mon, 4 Apr 2016 14:50:10 +0100
 Subject: [PATCH 1/5] VSOCK: Only allow host network namespace to use AF_VSOCK.
@@ -17,13 +17,14 @@ index 8a398b3..0edc54c 100644
 +++ b/net/vmw_vsock/af_vsock.c
 @@ -1852,6 +1852,9 @@ static const struct proto_ops vsock_stream_ops = {
  static int vsock_create(struct net *net, struct socket *sock,
-			int protocol, int kern)
+ 			int protocol, int kern)
  {
 +	if (!net_eq(net, &init_net))
 +		return -EAFNOSUPPORT;
 +
-	if (!sock)
-		return -EINVAL;
+ 	if (!sock)
+ 		return -EINVAL;
+ 
+-- 
+2.10.2
 
---
-2.10.1
