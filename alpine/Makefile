@@ -18,6 +18,7 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/hostsettings etc -C ../.. \
 	  -C packages/chronyd etc -C ../.. \
 	  -C packages/userns etc -C ../.. \
+	  -C packages/ssh etc -C ../.. \
 	  -C packages/nc-vsock usr -C ../.. \
 	  -C packages/vsudd sbin etc -C ../.. \
 	  -C packages/mobyconfig usr -C ../.. \
