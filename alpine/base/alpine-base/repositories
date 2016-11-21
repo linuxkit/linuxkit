@@ -1,3 +1,2 @@
-http://dl-cdn.alpinelinux.org/alpine/v3.4/main
-@edgecommunity http://dl-cdn.alpinelinux.org/alpine/edge/community
-@nextmain http://dl-cdn.alpinelinux.org/alpine/v3.5/main
+http://dl-cdn.alpinelinux.org/alpine/v3.5/main
+@community http://dl-cdn.alpinelinux.org/alpine/v3.5/community
