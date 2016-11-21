@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-base:50f80b04bfad0d23e44c6d4227bb045f39b42fae
+FROM mobylinux/alpine-base:127878341b96b4e504957559fae24f7c38d8aa0b
 
 ENV ARCH=x86_64
 

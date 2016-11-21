@@ -39,9 +39,7 @@ musl 1.1.15-r5
 musl-utils 1.1.15-r5
 oniguruma 6.1.2-r0
 openrc 0.21.7-r2
-openssh 7.3_p1-r2
 openssh-client 7.3_p1-r2
-openssh-sftp-server 7.3_p1-r2
 pcre 8.39-r0
 rng-tools 5-r3
 scanelf 1.1.6-r0
