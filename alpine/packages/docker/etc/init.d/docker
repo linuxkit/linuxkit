@@ -14,14 +14,11 @@ start()
 	then
 		bundle=$(mobyconfig get bundle)
 		[ -n "$bundle" -a -d "$bundle" -a -h "$bundle/binary-client/docker" ] && \
-		  # note we copy all the symlinks, in case layout changes
-		  cp -a $bundle/binary-client/* \
-		        $bundle/binary-daemon/* \
-		  /usr/bin
-		printf "Overriding Docker with provided bundle: $bundle\n"
+			export PATH=$bundle/binary-client:$bundle/binary-daemon:$PATH && \
+			printf "Overriding Docker with provided bundle: $bundle\n"
 	fi
 
-	command="${DOCKER_BINARY:-/usr/bin/dockerd}"
+	command="${DOCKER_BINARY:-dockerd}"
 
 	pidfile="/run/docker.pid"
 
@@ -70,7 +67,7 @@ start()
 		NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
 		NATIVE_PORT_FORWARDING="$(mobyconfig get native/port-forwarding | tr -d '[[:space:]]')"
 		if [ "${NETWORK_MODE}" = "slirp" -o "${NATIVE_PORT_FORWARDING}" = "true" ]; then
-			cp /usr/bin/slirp-proxy /usr/bin/docker-proxy
+			DOCKER_OPTS="${DOCKER_OPTS} --userland-proxy-path /usr/bin/slirp-proxy"
 		fi
 	fi
 
@@ -84,11 +81,8 @@ start()
 	# Set Docker to debug debug if not specified in daemon.json
 	cat /etc/docker/daemon.json | jq -e 'has("debug")' > /dev/null || DOCKER_OPTS="${DOCKER_OPTS} --debug"
 
-	# Set experimental=true if not specified in daemon.json if dockerd supports it
-	if dockerd --help | grep -q experimental
-	then
-		cat /etc/docker/daemon.json | jq -e 'has("experimental")' > /dev/null || DOCKER_OPTS="${DOCKER_OPTS} --experimental"
-	fi
+	# Set experimental=true if not specified in daemon.json
+	cat /etc/docker/daemon.json | jq -e 'has("experimental")' > /dev/null || DOCKER_OPTS="${DOCKER_OPTS} --experimental"
 
 	# choose storage driver
 	if ! $(cat /etc/docker/daemon.json | jq -e '."storage-driver"' > /dev/null)
@@ -106,8 +100,12 @@ start()
 
 	DOCKER_LOGFILE="/var/log/docker.log"
 
-	# Allow iptables to be overriden
-	export PATH=/usr/local/sbin:$PATH
+	case "$(mobyplatform)" in
+	windows|mac)
+		# Allow iptables to be overriden
+		export PATH=/usr/local/sbin:$PATH
+		;;
+	esac
 
 	start-stop-daemon --start --quiet \
 		--background \
