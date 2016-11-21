@@ -5,7 +5,7 @@ COPY repositories /etc/apk/
 RUN \
   apk update && apk upgrade && \
   apk add --no-cache \
-  qemu-img@edge \
-  qemu-system-arm@edge \
-  qemu-system-x86_64@edge \
+  qemu-img \
+  qemu-system-arm \
+  qemu-system-x86_64 \
   && true
