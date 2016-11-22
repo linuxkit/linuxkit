@@ -18,6 +18,40 @@ do_fsck()
 	return "${EXIT_CODE}"
 }
 
+do_fsck_extend_mount()
+{
+	DRIVE="$1"
+	DATA="$2"
+
+	do_fsck "$DATA" || return 1
+
+	# only try to extend if there is a single partition and free space
+	PARTITIONS=$(sfdisk -J "$DRIVE" | jq '.partitiontable.partitions | length')
+
+	if [ "$PARTITIONS" -eq 1 ] && \
+		sfdisk -F "$DRIVE" | grep -q 'Unpartitioned space' &&
+		! sfdisk -F "$DRIVE" | grep -q '0 B, 0 bytes, 0 sectors'
+	then
+		SPACE=$(sfdisk -F "$DRIVE" | grep 'Unpartitioned space')
+		printf "Resizing disk partition: $SPACE\n"
+
+		START=$(sfdisk -J "$DRIVE" | jq -e '.partitiontable.partitions | map(select(.type=="83")) | .[0].start')
+
+		sfdisk -q --delete "$DRIVE" 2> /dev/null
+		echo "${START},,83;" | sfdisk -q "$DRIVE"
+
+		# update status
+		blockdev --rereadpt $diskdev 2> /dev/null
+		mdev -s
+
+		resize2fs "$DATA"
+
+		do_fsck "$DATA" || return 1
+	fi
+
+	mount "$DATA" /var
+}
+
 do_mkfs()
 {
 	diskdev="$1"
@@ -25,11 +59,11 @@ do_mkfs()
 	# new disks does not have an DOS signature in sector 0
 	# this makes sfdisk complain. We can workaround this by letting
 	# fdisk create that DOS signature, by just do a "w", a write.
-	# http://bugs.alpinelinux.org/issues/show/145
+	# http://bugs.alpinelinux.org/issues/145
 	echo "w" | fdisk $diskdev >/dev/null
 
-	# format one large partition, offset 1M
-	printf "1M,,83\n" | sfdisk --quiet $diskdev
+	# format one large partition
+	echo ";" | sfdisk --quiet $diskdev
 
 	# update status
 	blockdev --rereadpt $diskdev 2> /dev/null
@@ -45,8 +79,8 @@ do_swapfile()
 	SWAP=/var/spool/swap
 	if [ "$(mobyplatform)" = "mac" ] || [ "$(mobyplatform)" = "windows" ] && [ ! -f $SWAP ]
 	then
-		mkdir -p "$(basename $SWAP)"
-		dd if=/dev/zero of=$SWAP bs=1k count=4090876
+		mkdir -p "$(dirname $SWAP)"
+		dd if=/dev/zero of=$SWAP bs=1k count=1048576
 		chmod 600 $SWAP
 		mkswap $SWAP
 		swapon $SWAP
@@ -80,25 +114,26 @@ start()
 
 	DRIVE="/dev/${DEV}"
 
-	if fdisk -l "${DRIVE}" | grep -q "doesn't contain a valid partition table"
+	# see if it has a partition table already
+	if sfdisk -d "${DRIVE}" >/dev/null 2>/dev/null
 	then
-		do_mkfs "${DRIVE}"
-	else
-		DATA=$(fdisk -l "${DRIVE}" | grep 'Linux$' | head -1 | awk '{print $1}')
-		if [ -z "$DATA" ]
+		DATA=$(sfdisk -J "$DRIVE" | jq -e -r '.partitiontable.partitions | map(select(.type=="83")) | .[0].node')
+		if [ $? -eq 0 ]
 		then
-			do_mkfs "${DRIVE}"
+			do_fsck_extend_mount "$DRIVE" "$DATA" || do_mkfs "$DRIVE"
 		else
-			( do_fsck "${DATA}" && mount "${DATA}" /var ) || do_mkfs "${DRIVE}"
+			do_mkfs "$DRIVE"
 		fi
+	else
+		do_mkfs "$DRIVE"
 	fi
 
-	SWAP=$(fdisk -l "${DRIVE}" | grep 'Linux swap' | head -1 | awk '{print $1}')
-	[ -z "${SWAP}" ] && do_swapfile || swapon "${SWAP}"
+	# Use existing swap partition of present; we do not create one now
+	SWAP=$(fdisk -l "$DRIVE" | grep 'Linux swap' | head -1 | awk '{print $1}')
+	[ -z "$SWAP" ] && do_swapfile || swapon "$SWAP"
 
 	# boot2docker compat, has /var and /tmp on partition
 	[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
-
 
 	# can remove when we run before bootmisc
 	[ -L /var/run ] || ln -s /run /var/run
@@ -108,7 +143,7 @@ start()
 	[ -d /var/spool ] || mkdir -m 755 /var/spool
 	[ -d /var/tmp ] || mkdir -m 1777 /var/tmp
 
-	mount | grep -q "${DEV}. on /var type"
+	mount | grep -q ' on /var type '
 
 	eend $? "Failed to mount block device"
 }
