@@ -1,0 +1,4 @@
+#!/bin/sh
+
+# Windows always has TRIM support, clean out unused frequently
+[ "$(mobyplatform)" = "windows" ] && /sbin/fstrim /var
