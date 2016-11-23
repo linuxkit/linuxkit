@@ -3,7 +3,7 @@ alpine-keys 1.3-r0
 apk-tools 2.6.8-r1
 busybox 1.25.1-r0
 busybox-initscripts 3.0-r6
-ca-certificates 20160104-r6
+ca-certificates 20160104-r7
 chrony 2.4-r0
 cifs-utils 6.6-r0
 curl 7.51.0-r1
@@ -28,7 +28,6 @@ libcurl 7.51.0-r1
 libfdisk 2.28.2-r0
 libmnl 1.0.4-r0
 libnftnl-libs 1.0.6-r0
-libressl 2.4.4-r0
 libressl2.4-libcrypto 2.4.4-r0
 libressl2.4-libssl 2.4.4-r0
 libsmartcols 2.28.2-r0
