@@ -76,8 +76,11 @@ do_mkfs()
 
 do_swapfile()
 {
+	DRIVE=$1
+	SIZE=$(sfdisk -J "$DRIVE" | jq -e -r '.partitiontable.partitions | map(select(.type=="83")) | .[0].size')
 	SWAP=/var/spool/swap
-	if [ "$(mobyplatform)" = "mac" ] || [ "$(mobyplatform)" = "windows" ] && [ ! -f $SWAP ]
+	# Create swap on desktop platforms if disk size larger than 16GB
+	if [ "$(mobyplatform)" = "mac" -o "$(mobyplatform)" = "windows" ] && [ ! -f $SWAP ] && [ "$SIZE" -gt 33554432 ]
 	then
 		mkdir -p "$(dirname $SWAP)"
 		dd if=/dev/zero of=$SWAP bs=1k count=1048576
@@ -130,7 +133,7 @@ start()
 
 	# Use existing swap partition of present; we do not create one now
 	SWAP=$(fdisk -l "$DRIVE" | grep 'Linux swap' | head -1 | awk '{print $1}')
-	[ -z "$SWAP" ] && do_swapfile || swapon "$SWAP"
+	[ -z "$SWAP" ] && do_swapfile "$DRIVE" || swapon "$SWAP"
 
 	# boot2docker compat, has /var and /tmp on partition
 	[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
