@@ -6,7 +6,7 @@
 *)
 
 let _iptables = "/sbin/iptables"
-let _proxy = "/usr/bin/docker-proxy"
+let _proxy = "/usr/bin/slirp-proxy"
 let _pid_dir = "/var/run/service-port-opener"
 
 type port = {
