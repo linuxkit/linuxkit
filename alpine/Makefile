@@ -2,9 +2,18 @@ all:	initrd.img mobylinux-efi.iso mobylinux-bios.iso
 
 ETCFILES=$(shell find etc)
 
+TAG=$(shell git rev-parse HEAD)
+STATUS=$(shell git status -s)
+ifeq ($(STATUS),)
+DIRTY=
+else
+DIRTY=-dirty
+endif
+
 initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
+	printf $(TAG)$(DIRTY) > etc/moby-commit
 	BUILD=$$( tar cf - \
 	  Dockerfile etc usr init mkinitrd.sh \
 	  -C kernel usr etc sbin lib -C .. \
@@ -146,7 +155,7 @@ vhdartifact:
 	docker volume create --name vhdartifact || true
 
 clean:
-	rm -f initrd.img mobylinux.vhd mobylinux.img mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi
+	rm -f initrd.img mobylinux.vhd mobylinux.img mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi etc/moby-commit
 	docker images -q moby-azure:build | xargs docker rmi -f || true
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
