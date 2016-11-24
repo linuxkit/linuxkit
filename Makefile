@@ -1,5 +1,3 @@
-DOCKER_EXPERIMENTAL?=0
-
 all:
 	$(MAKE) -C alpine
 
@@ -40,9 +38,6 @@ test: Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 
 TAG=$(shell git rev-parse HEAD)
 STATUS=$(shell git status -s)
-ifeq ($(DOCKER_EXPERIMENTAL),1)
-MEDIA_PREFIX?=experimental-
-endif
 media: Dockerfile.media alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-efi.iso
 ifeq ($(STATUS),)
 	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux | docker build -f Dockerfile.media -t mobylinux/media:$(MEDIA_PREFIX)$(TAG) -
