@@ -2,24 +2,17 @@ DOCKER_VERSION?=1.13.0-rc2
 FORCE_CURL?=1
 ARCH?=x86_64
 OS?=Linux
-DOCKER_EXPERIMENTAL?=0
 
 all: usr/bin/docker
 
 RELEASE_CANDIDATE=$(findstring -rc,$(DOCKER_VERSION))
 ifeq ($(RELEASE_CANDIDATE),-rc)
-TEST_HOST=test.docker.com
+DOCKER_HOST=test.docker.com
 else
-TEST_HOST=get.docker.com
+DOCKER_HOST=get.docker.com
 endif
 
-ifeq ($(DOCKER_EXPERIMENTAL),1)
-DOCKER_HOST=experimental.docker.com
-DOCKER_IMAGE?=docker:$(DOCKER_VERSION)-experimental
-else
-DOCKER_HOST=$(TEST_HOST)
 DOCKER_IMAGE?=docker:$(DOCKER_VERSION)
-endif
 
 .PHONY: download hub cleanusr
 
