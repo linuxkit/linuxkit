@@ -21,6 +21,7 @@ RUN \
   openssh-client \
   rng-tools@community \
   sfdisk \
+  strace \
   sysklogd \
   xz \
   && true
