@@ -138,14 +138,18 @@ start()
 	[ -z "$SWAP" ] && do_swapfile "$DRIVE" || swapon "$SWAP"
 
 	# boot2docker compat, has /var and /tmp on partition
-	[ -d /var/var/lib/boot2docker/ ] && mount --bind /var/var /var
+	[ -d /var/var/lib/boot2docker/ ] && (mv /var/var/* /var && rm -rf /var/var)
 
-	# can remove when we run before bootmisc
+	# add in directories under /var that are lost in formatting
 	[ -L /var/run ] || ln -s /run /var/run
-	[ -L /var/run ] || ln -s /run/lock /var/lock
+	[ -L /var/lock ] || ln -s /run/lock /var/lock
 	[ -d /var/log ] || mkdir -m 755 /var/log
 	[ -d /var/empty ] || mkdir -m 755 /var/empty
 	[ -d /var/spool ] || mkdir -m 755 /var/spool
+	[ -d /var/cache ] || mkdir -m 755 /var/cache
+	[ -d /var/cache/apk ] || mkdir -m 755 /var/cache/apk
+	[ -d /var/cache/misc ] || mkdir -m 755 /var/cache/misc
+	[ -d /var/local ] || mkdir -m 755 /var/local
 	[ -d /var/tmp ] || mkdir -m 1777 /var/tmp
 
 	mount | grep -q ' on /var type '
