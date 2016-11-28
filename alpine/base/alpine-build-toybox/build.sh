@@ -2,7 +2,7 @@
 
 FILES=$@
 make $FILES > /dev/null
-[ $# -eq 1 ] && FILES=toybox
+[ $# -eq 0 ] && FILES=toybox
 # TODO symlinks if just use toybox
 mkdir -p /out/bin
 mv $FILES /out/bin
