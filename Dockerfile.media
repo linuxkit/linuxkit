@@ -1,4 +1,4 @@
-FROM mobylinux/toybox-media:d476c196534464ca0dd93f8c765002c13d880a1a
+FROM mobylinux/toybox-media:e22a41942621b5655bd952b7715d695eaed32647
 
 ADD \
   alpine/initrd.img \
