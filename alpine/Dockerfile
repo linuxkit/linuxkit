@@ -44,7 +44,7 @@ RUN \
   rc-update add transfused default && \
   rc-update add automount sysinit && \
   rc-update add diagnostics default && \
-  rc-update add binfmt_misc default && \
+  rc-update add binfmt default && \
   rc-update add hostsettings default && \
   rc-update add windowsnet boot && \
   rc-update add hv_kvp_daemon default && \
