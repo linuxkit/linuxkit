@@ -1,0 +1,41 @@
+#!/sbin/openrc-run
+# Copyright (c) 2007-2015 The OpenRC Authors.
+# See the Authors file at the top-level directory of this distribution and
+# https://github.com/OpenRC/openrc/blob/master/AUTHORS
+#
+# This file is part of OpenRC. It is subject to the license terms in
+# the LICENSE file found in the top-level directory of this
+# distribution and at https://github.com/OpenRC/openrc/blob/master/LICENSE
+# This file may not be copied, modified, propagated, or distributed
+# except according to the terms contained in the LICENSE file.
+
+depend()
+{
+	before bootmisc logger
+	keyword -prefix -systemd-nspawn -vserver
+}
+
+start()
+{
+	local quiet rc=0
+	yesno $rc_verbose || quiet=-q
+
+	ebegin "Configuring kernel parameters"
+	set --
+	# Do additional sysctl configuration for cloud editions
+	[ "$(mobyplatform)" != "mac" ] && [ "$(mobyplatform)" != "windows" ] && CLOUD=/etc/sysctl.d/cloud/*.conf
+	for i in /run/sysctl.d/*.conf \
+			/etc/sysctl.d/*.conf \
+			/usr/local/lib/sysctl.d/*.conf \
+			/usr/lib/sysctl.d/*.conf \
+			/lib/sysctl.d/*.conf \
+			/etc/sysctl.conf \
+			$CLOUD; do
+		if [ -e "$i" ]; then
+			sysctl ${quiet} -p "$i"
+			rc=$(( $rc + $? ))
+		fi
+	done
+
+	eend $rc "Unable to configure some kernel parameters"
+}
