@@ -5,6 +5,7 @@ COPY repositories /etc/apk/
 RUN \
   apk update && apk upgrade -a && \
   apk add --no-cache \
+  bash \
   busybox-initscripts \
   chrony \
   cifs-utils \
@@ -18,6 +19,7 @@ RUN \
   iptables \
   jq \
   openrc \
+  openssl \
   openssh-client \
   rng-tools@community \
   sfdisk \
