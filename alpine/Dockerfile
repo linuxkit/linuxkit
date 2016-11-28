@@ -33,6 +33,7 @@ RUN \
   rc-update add hwdrivers sysinit && \
   rc-update add rngd && \
   rc-update add sysfs && \
+  rc-update add procfs && \
   rc-update add sysfsconf && \
   rc-update add fsck && \
   rc-update add crond && \
