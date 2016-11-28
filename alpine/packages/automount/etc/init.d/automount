@@ -7,7 +7,7 @@ depend()
 
 do_fsck()
 {
-	/sbin/e2fsck -p "$1"
+	/sbin/e2fsck -p $*
 	EXIT_CODE=$?
 	# exit code 1 is errors corrected
 	[ "${EXIT_CODE}" -eq 1 ] && EXIT_CODE=0
@@ -44,6 +44,8 @@ do_fsck_extend_mount()
 		blockdev --rereadpt $diskdev 2> /dev/null
 		mdev -s
 
+		# resize2fs fails unless we use -f here
+		do_fsck -f "$DATA" || return 1
 		resize2fs "$DATA"
 
 		do_fsck "$DATA" || return 1
