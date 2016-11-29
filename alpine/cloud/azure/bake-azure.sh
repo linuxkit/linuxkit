@@ -77,7 +77,7 @@ case "$1" in
 
 		arrowecho "Uploading VHD to ${BLOBURL}..."
 
-		azure-vhd-utils-for-go upload \
+		azure-vhd-utils upload \
 			--localvhdpath "/tmp/mobylinux.vhd" \
 			--stgaccountname "${AZURE_STG_ACCOUNT_NAME}" \
 			--stgaccountkey "${AZURE_STG_ACCOUNT_KEY}" \
