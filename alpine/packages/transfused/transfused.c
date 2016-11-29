@@ -376,6 +376,125 @@ enum next { BLOCKED_READ, BLOCKED_WRITE };
   
 #define MAX(x,y) ((x) > (y)? (x) : (y))
 
+void copy_into_outof_fuse(copy_thread_state *copy_state)
+{
+	char *descr = copy_state->connection->mount_point;
+
+	/* For now we have two pairs of fds to manage */
+	struct copy_info {
+	  int from, into;
+	  enum next next;
+	  char *buf;
+	  ssize_t buflen;
+	  ssize_t readsize;
+	  ssize_t (*const read)(int fd, void *buf, size_t count,
+				struct read_write_env *env),
+	         (*const write)(int fd, void *buf, size_t count,
+				struct read_write_env *env);
+	  struct read_write_env env;
+	} infos[] = {
+	  { /* from fuse */
+	    .from = copy_state->from,
+	    .into = copy_state->to,
+	    .next = BLOCKED_READ,
+	    .buf = must_malloc(descr, OUT_BUFSZ),
+	    .buflen = 0,
+	    .read = &read_from_fuse,
+	    .write = &write_into_conn,
+	    .readsize = OUT_BUFSZ,
+	    .env = {
+	      .descr = copy_state->connection->mount_point,
+	      .params = copy_state->connection->params,
+	    },
+	  },
+	  { /*into fuse */
+	    .from = copy_state->to,
+	    .into = copy_state->from,
+	    .next = BLOCKED_READ,
+	    .buf = must_malloc(descr, IN_BUFSZ),
+	    .buflen = 0,
+	    .read = &read_from_conn,
+	    .write = &write_into_fuse,
+	    .readsize = IN_BUFSZ,
+	    .env = {
+	      .descr = copy_state->connection->mount_point,
+	      .params = copy_state->connection->params,
+	    },
+	  }
+	};
+
+	/* Initialize the fd sets */
+	fd_set readfds, writefds, next_readfds, next_writefds;
+	FD_ZERO(&readfds);
+	FD_ZERO(&writefds);
+
+	int nfds = 0;
+	for (int i = 0; i < sizeof infos / sizeof *infos; i++) {
+	  if (infos[i].next == BLOCKED_READ) {
+	    FD_SET(infos[0].from, &readfds);
+	    nfds = MAX(nfds, infos[0].from);
+	  }
+	  else {
+	    FD_SET(infos[0].into, &writefds);
+	    nfds = MAX(nfds, infos[0].into);
+	  }
+	}
+	nfds += 1;
+
+	/* Loop forever, selecting for readiness and copying */
+	for (;;) {
+	  if (select (nfds, &readfds, &writefds, NULL, NULL) < 0)
+	    die(1, NULL, "", "select");
+
+	  nfds = 0;
+	  FD_ZERO(&next_readfds);
+	  FD_ZERO(&next_writefds);
+
+	  for (int i = 0; i < sizeof infos / sizeof *infos; i++) {
+	    struct copy_info *p = &infos[i];
+	    if (p->next == BLOCKED_READ) {
+
+	      /* We were waiting for read-readiness.  Are we read-ready? */
+	      if (FD_ISSET(p->from, &readfds)) { /* We are! */
+		p->buflen = p->read(p->from, p->buf, p->readsize, &p->env);
+		/* Now we're ready to write */
+		p->next = BLOCKED_WRITE;
+		FD_SET(p->into, &next_writefds);
+		nfds = MAX(nfds, p->into);
+	      }
+	      else {
+		FD_SET(p->from, &next_readfds); /* We're not */
+		nfds = MAX(nfds, p->from);
+	      }
+	    }
+	    else {
+	      /* We were waiting for write-readiness.  Are we write-ready? */
+	      if (FD_ISSET(p->into, &writefds)) { /* We are! */
+		p->write(p->into, p->buf, p->buflen, &p->env);
+		/* Now we're ready to read */
+		p-> next = BLOCKED_READ;
+		FD_SET(p->from, &next_readfds);
+		nfds = MAX(nfds, p->from);
+	      }
+	      else {
+		FD_SET(p->into, &next_writefds); /* We're not */
+		nfds = MAX(nfds, p->into);
+	      }
+	    }
+	  }
+	  nfds += 1;
+	  /* Now set things up for the next select */
+	  memcpy(&readfds,  &next_readfds,  sizeof readfds);
+	  memcpy(&writefds, &next_writefds, sizeof writefds);
+	}
+
+	for (int i = 0; i < sizeof infos / sizeof *infos; i++) {
+	  free(infos[i].buf);
+	}
+
+}
+
+
 void *copy_clean_into_fuse(copy_thread_state *copy_state)
 {
 	copy_into_fuse(copy_state);
@@ -419,10 +538,28 @@ void *copy_clean_outof_fuse(copy_thread_state *copy_state)
 	return NULL;
 }
 
+void *copy_clean_into_outof_fuse(copy_thread_state *copy_state)
+{
+	copy_into_outof_fuse(copy_state);
+
+	close(copy_state->to);
+	close(copy_state->from);
+
+	free(copy_state);
+
+	return NULL;
+}
+
 void *copy_clean_outof_fuse_thread(void *copy_state)
 {
 	return copy_clean_outof_fuse((copy_thread_state *) copy_state);
 }
+
+void *copy_clean_into_outof_fuse_thread(void *copy_state)
+{
+	return copy_clean_into_outof_fuse((copy_thread_state *) copy_state);
+}
+
 
 int recv_fd(parameters *params, int sock)
 {
@@ -580,6 +717,27 @@ void start_writer(connection_t *connection, int fuse)
 	if (errno)
 		die(1, connection->params, "",
 		    "Couldn't create write copy thread for mount %s: ",
+		    connection->mount_point);
+}
+
+
+
+void start_reader_writer(connection_t *connection, int fuse)
+{
+	pthread_t child;
+	copy_thread_state *copy_state;
+
+	copy_state = (copy_thread_state *)
+		must_malloc("start_reader_writer copy_state",
+			    sizeof(copy_thread_state));
+	copy_state->connection = connection;
+	copy_state->from = fuse;
+	copy_state->to = connection->sock;
+	errno = pthread_create(&child, &detached,
+			       copy_clean_into_outof_fuse_thread, copy_state);
+	if (errno)
+		die(1, connection->params, "",
+		    "Couldn't create read/write copy thread for mount %s: ",
 		    connection->mount_point);
 }
 
@@ -753,8 +911,9 @@ void *mount_connection(connection_t *conn)
 	lock_init("copy_lock", &copy_lock, NULL);
 	cond_init("copy_halt", &copy_halt, NULL);
 
-	start_reader(conn, fuse);
-	start_writer(conn, fuse);
+	start_reader_writer(conn, fuse);
+	/* start_reader(conn, fuse); */
+	/* start_writer(conn, fuse); */
 	start_notify(conn, fuse);
 
 	lock("copy lock", &copy_lock);
