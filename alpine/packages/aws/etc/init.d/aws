@@ -60,8 +60,7 @@ start()
 	# TODO(nathanleclaire/kencochrane): Migrate this to mobyconfig, or similar.
 	if [ $? -eq 0 ]
 	then
-		chmod 755 /tmp/user-data
-		/tmp/user-data
+		sh /tmp/user-data
 	fi
 
 	eend 0
