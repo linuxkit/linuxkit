@@ -270,27 +270,6 @@ int read_message(char *descr, parameters *params, int fd,
 	return (int)len;
 }
 
-void copy_into_fuse(copy_thread_state *copy_state)
-{
-	int from = copy_state->from;
-	int to = copy_state->to;
-	struct read_write_env env = {
-	  .descr = copy_state->connection->mount_point,
-	  .params = copy_state->connection->params
-	};
-	int read_count;
-	void *buf;
-
-	buf = must_malloc(env.descr, IN_BUFSZ);
-
-	while (1) {
-	  read_count = read_from_conn(from, buf, IN_BUFSZ, &env);
-	  write_into_fuse(to, buf, read_count, &env);
-	}
-
-	free(buf);
-}
-
 void copy_notify_fuse(copy_thread_state *copy_state)
 {
 	int from = copy_state->from;
@@ -348,28 +327,6 @@ void write_exactly(char *descr, int fd, void *p, size_t nbyte)
 		nbyte -= write_count;
 		buf += write_count;
 	} while (nbyte != 0);
-}
-
-void copy_outof_fuse(copy_thread_state *copy_state)
-{
-	int from = copy_state->from;
-	int to = copy_state->to;
-	struct read_write_env env = {
-	  .descr = copy_state->connection->mount_point,
-	  .params = copy_state->connection->params
-	};
-	int read_count;
-	void *buf;
-
-	buf = must_malloc(env.descr, OUT_BUFSZ);
-
-	while (1) {
-	  /* /dev/fuse only returns complete reads */
-	  read_count = read_from_fuse(from, buf, OUT_BUFSZ, &env);
-	  write_into_conn(to, buf, read_count, &env);
-	}
-
-	free(buf);
 }
 
 enum next { BLOCKED_READ, BLOCKED_WRITE };
@@ -494,23 +451,6 @@ void copy_into_outof_fuse(copy_thread_state *copy_state)
 
 }
 
-
-void *copy_clean_into_fuse(copy_thread_state *copy_state)
-{
-	copy_into_fuse(copy_state);
-
-	close(copy_state->from);
-
-	free(copy_state);
-
-	return NULL;
-}
-
-void *copy_clean_into_fuse_thread(void *copy_state)
-{
-	return copy_clean_into_fuse((copy_thread_state *)copy_state);
-}
-
 void *copy_clean_notify_fuse(copy_thread_state *copy_state)
 {
 	copy_notify_fuse(copy_state);
@@ -527,17 +467,6 @@ void *copy_clean_notify_fuse_thread(void *copy_state)
 	return copy_clean_notify_fuse((copy_thread_state *) copy_state);
 }
 
-void *copy_clean_outof_fuse(copy_thread_state *copy_state)
-{
-	copy_outof_fuse(copy_state);
-
-	close(copy_state->to);
-
-	free(copy_state);
-
-	return NULL;
-}
-
 void *copy_clean_into_outof_fuse(copy_thread_state *copy_state)
 {
 	copy_into_outof_fuse(copy_state);
@@ -550,16 +479,10 @@ void *copy_clean_into_outof_fuse(copy_thread_state *copy_state)
 	return NULL;
 }
 
-void *copy_clean_outof_fuse_thread(void *copy_state)
-{
-	return copy_clean_outof_fuse((copy_thread_state *) copy_state);
-}
-
 void *copy_clean_into_outof_fuse_thread(void *copy_state)
 {
 	return copy_clean_into_outof_fuse((copy_thread_state *) copy_state);
 }
-
 
 int recv_fd(parameters *params, int sock)
 {
@@ -681,46 +604,6 @@ int get_fuse_sock(connection_t *conn, int optc, char *const optv[])
 
 	return fd;
 }
-
-void start_reader(connection_t *connection, int fuse)
-{
-	pthread_t child;
-	copy_thread_state *copy_state;
-
-	copy_state = (copy_thread_state *)
-		must_malloc("start_reader copy_state",
-			    sizeof(copy_thread_state));
-	copy_state->connection = connection;
-	copy_state->from = connection->sock;
-	copy_state->to = fuse;
-	errno = pthread_create(&child, &detached,
-			       copy_clean_into_fuse_thread, copy_state);
-	if (errno)
-		die(1, connection->params, "",
-		    "Couldn't create read copy thread for mount %s: ",
-		    connection->mount_point);
-}
-
-void start_writer(connection_t *connection, int fuse)
-{
-	pthread_t child;
-	copy_thread_state *copy_state;
-
-	copy_state = (copy_thread_state *)
-		must_malloc("start_writer copy_state",
-			    sizeof(copy_thread_state));
-	copy_state->connection = connection;
-	copy_state->from = fuse;
-	copy_state->to = connection->sock;
-	errno = pthread_create(&child, &detached,
-			       copy_clean_outof_fuse_thread, copy_state);
-	if (errno)
-		die(1, connection->params, "",
-		    "Couldn't create write copy thread for mount %s: ",
-		    connection->mount_point);
-}
-
-
 
 void start_reader_writer(connection_t *connection, int fuse)
 {
@@ -913,7 +796,6 @@ void *mount_connection(connection_t *conn)
 
 	start_reader_writer(conn, fuse);
 	/* start_reader(conn, fuse); */
-	/* start_writer(conn, fuse); */
 	start_notify(conn, fuse);
 
 	lock("copy lock", &copy_lock);
