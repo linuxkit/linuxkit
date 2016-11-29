@@ -1,15 +1,4 @@
-FROM golang:alpine
-
-RUN apk add --update \
-    curl \
-    e2fsprogs \
-    syslinux \
-    multipath-tools \
-    git \
-    tar \
-    util-linux
-
-RUN go get -u github.com/Microsoft/azure-vhd-utils
+FROM docker4x/azure-vhd-utils@sha256:2fd21df46e65d2f4007133e664a0a81611d8d23f7badedce56ca8d2f9ca39f94
 
 RUN mkdir /build
 RUN mkdir /scripts
