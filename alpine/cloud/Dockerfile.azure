@@ -9,7 +9,7 @@ RUN apk add --update \
     tar \
     util-linux
 
-RUN go get -u github.com/Microsoft/azure-vhd-utils-for-go
+RUN go get -u github.com/Microsoft/azure-vhd-utils
 
 RUN mkdir /build
 RUN mkdir /scripts
