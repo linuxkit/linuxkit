@@ -12,7 +12,6 @@ COPY . .
 RUN rm Dockerfile
 
 RUN \
-  rc-update add swap boot && \
   rc-update add sysctl boot && \
   rc-update add bootmisc boot && \
   rc-update add urandom boot && \
