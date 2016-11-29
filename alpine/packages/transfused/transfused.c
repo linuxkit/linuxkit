@@ -49,6 +49,54 @@ typedef struct {
 
 #include <sys/syscall.h>
 
+struct read_write_env {
+  char *descr;
+  parameters *params;
+};
+
+static ssize_t read_from_fuse(int fd, void *buf, size_t count,
+			      struct read_write_env *env)
+{
+  /* /dev/fuse only returns complete reads */
+  ssize_t read_count = read(fd, buf, count);
+  if (read_count < 0)
+    die(1, env->params, "", "copy: %s: error reading: ", env->descr);
+
+  return read_count;
+}
+
+static ssize_t write_into_fuse(int fd, void *buf, size_t count,
+			      struct read_write_env *env)
+{
+  ssize_t write_count = write(fd, buf, count);
+  if (write_count < 0)
+    die(1, env->params, NULL, "copy %s: error writing: ", env->descr);
+
+  /* /dev/fuse accepts only complete writes */
+  if (write_count != count)
+    die(1, env->params, NULL,
+	"copy %s: read %d but only wrote %d",
+	env->descr, count, write_count);
+
+  return write_count;
+}
+
+int read_message(char *descr, parameters *params, int fd,
+		 char *buf, size_t max_read);
+
+static ssize_t read_from_conn(int fd, void *buf, size_t count,
+			      struct read_write_env *env)
+{
+  return read_message(env->descr, env->params, fd, buf, count);
+}
+
+static ssize_t write_into_conn(int fd, void *buf, size_t count,
+			      struct read_write_env *env)
+{
+  write_exactly(env->descr, fd, buf, count);
+  return count;
+}
+
 pid_t gettid(void)
 {
 	return syscall(SYS_gettid);
@@ -226,26 +274,18 @@ void copy_into_fuse(copy_thread_state *copy_state)
 {
 	int from = copy_state->from;
 	int to = copy_state->to;
-	char *descr = copy_state->connection->mount_point;
-	int read_count, write_count;
+	struct read_write_env env = {
+	  .descr = copy_state->connection->mount_point,
+	  .params = copy_state->connection->params
+	};
+	int read_count;
 	void *buf;
-	parameters *params = copy_state->connection->params;
 
-	buf = must_malloc(descr, IN_BUFSZ);
+	buf = must_malloc(env.descr, IN_BUFSZ);
 
 	while (1) {
-		read_count = read_message(descr, params,
-					  from, (char *)buf, IN_BUFSZ);
-
-		write_count = write(to, buf, read_count);
-		if (write_count < 0)
-			die(1, params, "", "copy %s: error writing: ", descr);
-
-		/* /dev/fuse accepts only complete writes */
-		if (write_count != read_count)
-			die(1, params, NULL,
-			    "copy %s: read %d but only wrote %d",
-			    descr, read_count, write_count);
+	  read_count = read_from_conn(from, buf, IN_BUFSZ, &env);
+	  write_into_fuse(to, buf, read_count, &env);
 	}
 
 	free(buf);
@@ -314,24 +354,27 @@ void copy_outof_fuse(copy_thread_state *copy_state)
 {
 	int from = copy_state->from;
 	int to = copy_state->to;
-	char *descr = copy_state->connection->mount_point;
+	struct read_write_env env = {
+	  .descr = copy_state->connection->mount_point,
+	  .params = copy_state->connection->params
+	};
 	int read_count;
 	void *buf;
-	parameters *params = copy_state->connection->params;
 
-	buf = must_malloc(descr, OUT_BUFSZ);
+	buf = must_malloc(env.descr, OUT_BUFSZ);
 
 	while (1) {
-		/* /dev/fuse only returns complete reads */
-		read_count = read(from, buf, OUT_BUFSZ);
-		if (read_count < 0)
-			die(1, params, "", "copy %s: error reading: ", descr);
-
-		write_exactly(descr, to, (char *)buf, read_count);
+	  /* /dev/fuse only returns complete reads */
+	  read_count = read_from_fuse(from, buf, OUT_BUFSZ, &env);
+	  write_into_conn(to, buf, read_count, &env);
 	}
 
 	free(buf);
 }
+
+enum next { BLOCKED_READ, BLOCKED_WRITE };
+  
+#define MAX(x,y) ((x) > (y)? (x) : (y))
 
 void *copy_clean_into_fuse(copy_thread_state *copy_state)
 {
