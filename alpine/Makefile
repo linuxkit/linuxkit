@@ -13,6 +13,7 @@ endif
 initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
+	$(MAKE) -j -C containers
 	printf $(TAG)$(DIRTY) > etc/moby-commit
 	BUILD=$$( tar cf - \
 	  Dockerfile etc usr init mkinitrd.sh \
@@ -23,7 +24,6 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/docker usr etc -C ../.. \
 	  -C packages/diagnostics usr etc -C ../.. \
 	  -C packages/automount etc -C ../.. \
-	  -C packages/binfmt_misc etc -C ../.. \
 	  -C packages/hostsettings etc -C ../.. \
 	  -C packages/chronyd etc -C ../.. \
 	  -C packages/userns etc -C ../.. \
@@ -38,6 +38,7 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/containerd etc -C ../.. \
 	  -C packages/aws etc -C ../.. \
 	  -C packages/azure etc -C ../.. \
+	  containers/binfmt/rootfs containers/binfmt/config.json \
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	docker run --net=none --log-driver=none --rm $$BUILD > $@
@@ -53,7 +54,8 @@ mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 
 common: initrd.img
 	$(MAKE) -C kernel
-	$(MAKE) -C packages
+	$(MAKE) -j -C packages
+	$(MAKE) -j -C containers
 
 ami: common
 	tar cf - \
@@ -160,6 +162,7 @@ clean:
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
 	$(MAKE) -C packages clean
+	$(MAKE) -C containers clean
 	$(MAKE) -C kernel clean
 
 .DELETE_ON_ERROR:
