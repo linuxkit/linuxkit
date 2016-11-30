@@ -6,7 +6,7 @@ IMAGE=qemu-user-static
 default: push
 
 hash: Dockerfile
-	docker pull $(BASE)
+	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sh -c 'apt list --installed 2>/dev/null | sha1sum' | sed 's/ .*//' > hash
 
