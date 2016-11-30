@@ -6,7 +6,7 @@ IMAGE=alpine-aws
 default: push
 
 hash: Dockerfile
-	docker pull $(BASE)
+	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sh -c '(pip list && cat /lib/apk/db/installed) | sha1sum' | sed 's/ .*//' > hash
 

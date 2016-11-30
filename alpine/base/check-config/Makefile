@@ -6,7 +6,7 @@ IMAGE=check-config
 default: push
 
 hash:
-	docker pull $(BASE)
+	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - Dockerfile | docker build --no-cache -t $(IMAGE):build -
 	docker run --entrypoint=/bin/sh $(IMAGE):build -c 'cat /usr/bin/check-config.sh /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
 
