@@ -2,7 +2,7 @@
 
 depend()
 {
-	after docker
+	before docker
 }
 
 start()
@@ -13,17 +13,19 @@ start()
 	ulimit -n 1048576
 	ulimit -p unlimited
 
-	[ ! -e /usr/bin/containerd ] && \
-	( cd /usr/bin && \
-	  ln -s docker-runc runc && \
-	  ln -s docker-containerd-shim containerd-shim && \
-	  ln -s docker-containerd-ctr containerd-ctr && \
-	  ln -s docker-containerd containerd \
-	)
-
 	/usr/bin/containerd 1>&2 2>/var/log/containerd.log &
 
 	ewaitfile 5 /var/run/containerd/containerd.sock
 
 	eend $? "Failed to start system containerd"
+
+	ebegin "Running system containers"
+
+	for f in /containers/*
+	do
+		# note we attach, so will be synchronous for now
+		containerd-ctr containers start --no-pivot --attach "$(basename $f)" "$f"
+	done
+
+	eend $? "Failed to start system containers"
 }
