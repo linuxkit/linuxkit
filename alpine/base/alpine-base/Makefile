@@ -6,7 +6,7 @@ IMAGE=alpine-base
 default: push
 
 hash: Dockerfile repositories
-	docker pull $(BASE)
+	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sha1sum /lib/apk/db/installed | sed 's/ .*//' > hash
 

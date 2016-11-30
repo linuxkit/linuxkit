@@ -7,7 +7,7 @@ diagnostics
 docker version
 docker info
 docker ps
-docker pull alpine
+DOCKER_CONTENT_TRUST=-1 docker pull alpine
 docker run alpine true
 docker pull armhf/alpine
 docker run armhf/alpine uname -a

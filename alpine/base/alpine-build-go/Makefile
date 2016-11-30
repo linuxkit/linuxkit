@@ -6,7 +6,7 @@ IMAGE=alpine-build-go
 default: push
 
 hash:
-	docker pull $(BASE)
+	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - Dockerfile | docker build --no-cache -t $(IMAGE):build -
 	docker run $(IMAGE):build sh -c 'cat /usr/local/go/bin/go /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
 
