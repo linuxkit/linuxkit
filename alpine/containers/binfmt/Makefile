@@ -6,11 +6,9 @@ default: rootfs
 $(QEMU_BINARIES):
 	docker run --rm --net=none $(QEMU_IMAGE) tar cf - -C /usr/bin $@ | tar xf -
 
-DEPS=Dockerfile main.go 00_moby.conf $(QEMU_BINARIES)
-
-rootfs: $(DEPS) $(QEMU_BINARIES)
+rootfs: Dockerfile main.go 00_moby.conf $(QEMU_BINARIES)
 	mkdir -p $@
-	BUILD=$$( tar cf - $(DEPS) | docker build -q - ) && \
+	BUILD=$$( tar cf - $^ | docker build -q - ) && \
 	[ -n "$$BUILD" ] && \
 	echo "Built $$BUILD" && \
 	IMAGE=$$( docker run --rm --net=none $$BUILD | docker build -q - ) && \
