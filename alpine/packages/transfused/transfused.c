@@ -49,52 +49,121 @@ typedef struct {
 
 #include <sys/syscall.h>
 
-struct read_write_env {
-  char *descr;
-  parameters *params;
+struct copy_state {
+	int from, into;
+	enum { BLOCKED_READ, BLOCKED_WRITE } next;
+	char *buf;
+	ssize_t buflen;
+	ssize_t readsize;
+	ssize_t (*const read)(int fd, void *buf, size_t count,
+                              char *descr, parameters *params),
+		(*const write)(int fd, void *buf, size_t count,
+                               char *descr, parameters *params);
+	char *descr;
+	parameters *params;
 };
 
-static ssize_t read_from_fuse(int fd, void *buf, size_t count,
-			      struct read_write_env *env)
-{
-  /* /dev/fuse only returns complete reads */
-  ssize_t read_count = read(fd, buf, count);
-  if (read_count < 0)
-    die(1, env->params, "", "copy: %s: error reading: ", env->descr);
+#define MAX(x,y) ((x) > (y)? (x) : (y))
 
-  return read_count;
+static void init_copy_loop(fd_set *readfds,
+			   fd_set *writefds,
+			   int *nfds,
+			   void *state)
+{
+  struct copy_state *p = state;
+
+  if (p->next == BLOCKED_READ) {
+	  FD_SET(p->from, readfds);
+	  *nfds = MAX(*nfds, p->from);
+  }
+  else {
+	  FD_SET(p->into, writefds);
+	  *nfds = MAX(*nfds, p->into);
+  }
+}
+
+static void step_copy_loop(const fd_set *readfds,
+                           const fd_set *writefds,
+                           fd_set *next_readfds,
+                           fd_set *next_writefds,
+			   int *nfds,
+                           void *state)
+{
+  struct copy_state *p = state;
+  
+  if (p->next == BLOCKED_READ) {
+
+    /* We were waiting for read-readiness.  Are we read-ready? */
+    if (FD_ISSET(p->from, readfds)) { /* We are! */
+	    p->buflen = p->read(p->from, p->buf, p->readsize,
+				p->descr, p->params);
+	    /* Now we're ready to write */
+	    p->next = BLOCKED_WRITE;
+	    FD_SET(p->into, next_writefds);
+	    *nfds = MAX(*nfds, p->into);
+    }
+    else {
+	    FD_SET(p->from, next_readfds); /* We're not */
+	    *nfds = MAX(*nfds, p->from);
+    }
+  }
+  else {
+    /* We were waiting for write-readiness.  Are we write-ready? */
+    if (FD_ISSET(p->into, writefds)) { /* We are! */
+	    p->write(p->into, p->buf, p->buflen, p->descr, p->params);
+	    /* Now we're ready to read */
+	    p-> next = BLOCKED_READ;
+	    FD_SET(p->from, next_readfds);
+	    *nfds = MAX(*nfds, p->from);
+    }
+    else {
+	    FD_SET(p->into, next_writefds); /* We're not */
+	    *nfds = MAX(*nfds, p->into);
+    }
+  }
+}
+
+static ssize_t read_from_fuse(int fd, void *buf, size_t count,
+			      char *descr, parameters *params)
+{
+	/* /dev/fuse only returns complete reads */
+	ssize_t read_count = read(fd, buf, count);
+	if (read_count < 0)
+		die(1, params, "", "copy: %s: error reading: ", descr);
+
+	return read_count;
 }
 
 static ssize_t write_into_fuse(int fd, void *buf, size_t count,
-			      struct read_write_env *env)
+			      char *descr, parameters *params)
 {
-  ssize_t write_count = write(fd, buf, count);
-  if (write_count < 0)
-    die(1, env->params, NULL, "copy %s: error writing: ", env->descr);
+	ssize_t write_count = write(fd, buf, count);
+	if (write_count < 0)
+		die(1, params, NULL, "copy %s: error writing: ", descr);
+	
+	/* /dev/fuse accepts only complete writes */
+	if (write_count != count)
+		die(1, params, NULL,
+		    "copy %s: read %d but only wrote %d",
+		    descr, count, write_count);
 
-  /* /dev/fuse accepts only complete writes */
-  if (write_count != count)
-    die(1, env->params, NULL,
-	"copy %s: read %d but only wrote %d",
-	env->descr, count, write_count);
-
-  return write_count;
+	return write_count;
 }
 
 int read_message(char *descr, parameters *params, int fd,
 		 char *buf, size_t max_read);
 
 static ssize_t read_from_conn(int fd, void *buf, size_t count,
-			      struct read_write_env *env)
+			      char *descr, parameters *params)
 {
-  return read_message(env->descr, env->params, fd, buf, count);
+	return read_message(descr, params, fd, buf, count);
 }
 
 static ssize_t write_into_conn(int fd, void *buf, size_t count,
-			      struct read_write_env *env)
+			      char *descr, parameters *params)
 {
-  write_exactly(env->descr, fd, buf, count);
-  return count;
+	write_exactly(descr, fd, buf, count);
+	return count;
 }
 
 pid_t gettid(void)
@@ -329,55 +398,45 @@ void write_exactly(char *descr, int fd, void *p, size_t nbyte)
 	} while (nbyte != 0);
 }
 
-enum next { BLOCKED_READ, BLOCKED_WRITE };
-  
-#define MAX(x,y) ((x) > (y)? (x) : (y))
-
 void copy_into_outof_fuse(copy_thread_state *copy_state)
 {
 	char *descr = copy_state->connection->mount_point;
 
-	/* For now we have two pairs of fds to manage */
-	struct copy_info {
-	  int from, into;
-	  enum next next;
-	  char *buf;
-	  ssize_t buflen;
-	  ssize_t readsize;
-	  ssize_t (*const read)(int fd, void *buf, size_t count,
-				struct read_write_env *env),
-	         (*const write)(int fd, void *buf, size_t count,
-				struct read_write_env *env);
-	  struct read_write_env env;
-	} infos[] = {
-	  { /* from fuse */
-	    .from = copy_state->from,
-	    .into = copy_state->to,
-	    .next = BLOCKED_READ,
-	    .buf = must_malloc(descr, OUT_BUFSZ),
-	    .buflen = 0,
-	    .read = &read_from_fuse,
-	    .write = &write_into_conn,
-	    .readsize = OUT_BUFSZ,
-	    .env = {
-	      .descr = copy_state->connection->mount_point,
-	      .params = copy_state->connection->params,
-	    },
-	  },
-	  { /*into fuse */
-	    .from = copy_state->to,
-	    .into = copy_state->from,
-	    .next = BLOCKED_READ,
-	    .buf = must_malloc(descr, IN_BUFSZ),
-	    .buflen = 0,
-	    .read = &read_from_conn,
-	    .write = &write_into_fuse,
-	    .readsize = IN_BUFSZ,
-	    .env = {
-	      .descr = copy_state->connection->mount_point,
-	      .params = copy_state->connection->params,
-	    },
-	  }
+	struct stepper {
+		void (*init)(fd_set *, fd_set *, int *, void *);
+		void (*step)(const fd_set *, const fd_set *,
+			     fd_set *, fd_set *, int *, void *);
+		void *state;
+	}
+	steppers [] = {
+		{ .step = &step_copy_loop,
+		  .init = &init_copy_loop,
+		  .state = &(struct copy_state)
+		  { /* from fuse */
+			  .from = copy_state->from,
+			  .into = copy_state->to,
+			  .next = BLOCKED_READ,
+			  .buf = must_malloc(descr, OUT_BUFSZ),
+			  .buflen = 0,
+			  .readsize = OUT_BUFSZ,
+			  .read = &read_from_fuse,
+			  .write = &write_into_conn,
+                          .descr = copy_state->connection->mount_point,
+                          .params = copy_state->connection->params,},},
+		{ .step = &step_copy_loop,
+		  .init = &init_copy_loop,
+		  .state = &(struct copy_state)
+		  { /*into fuse */
+			  .from = copy_state->to,
+			  .into = copy_state->from,
+			  .next = BLOCKED_READ,
+			  .buf = must_malloc(descr, IN_BUFSZ),
+			  .buflen = 0,
+			  .read = &read_from_conn,
+			  .write = &write_into_fuse,
+			  .readsize = IN_BUFSZ,
+			  .descr = copy_state->connection->mount_point,
+			  .params = copy_state->connection->params}}
 	};
 
 	/* Initialize the fd sets */
@@ -386,69 +445,29 @@ void copy_into_outof_fuse(copy_thread_state *copy_state)
 	FD_ZERO(&writefds);
 
 	int nfds = 0;
-	for (int i = 0; i < sizeof infos / sizeof *infos; i++) {
-	  if (infos[i].next == BLOCKED_READ) {
-	    FD_SET(infos[0].from, &readfds);
-	    nfds = MAX(nfds, infos[0].from);
-	  }
-	  else {
-	    FD_SET(infos[0].into, &writefds);
-	    nfds = MAX(nfds, infos[0].into);
-	  }
+	for (int i = 0; i < sizeof steppers / sizeof *steppers; i++) {
+		steppers[i].init(&readfds, &writefds, &nfds, steppers[i].state);
 	}
 	nfds += 1;
 
 	/* Loop forever, selecting for readiness and copying */
 	for (;;) {
-	  if (select (nfds, &readfds, &writefds, NULL, NULL) < 0)
-	    die(1, NULL, "", "select");
+		if (select (nfds, &readfds, &writefds, NULL, NULL) < 0)
+			die(1, NULL, "", "select");
 
-	  nfds = 0;
-	  FD_ZERO(&next_readfds);
-	  FD_ZERO(&next_writefds);
+		nfds = 0;
+		FD_ZERO(&next_readfds);
+		FD_ZERO(&next_writefds);
 
-	  for (int i = 0; i < sizeof infos / sizeof *infos; i++) {
-	    struct copy_info *p = &infos[i];
-	    if (p->next == BLOCKED_READ) {
+		for (int i = 0; i < sizeof steppers / sizeof *steppers; i++) {
+			steppers[i].step(&readfds, &writefds, &next_readfds,
+					 &next_writefds, &nfds, steppers[i].state);
+		}
+		nfds += 1;
 
-	      /* We were waiting for read-readiness.  Are we read-ready? */
-	      if (FD_ISSET(p->from, &readfds)) { /* We are! */
-		p->buflen = p->read(p->from, p->buf, p->readsize, &p->env);
-		/* Now we're ready to write */
-		p->next = BLOCKED_WRITE;
-		FD_SET(p->into, &next_writefds);
-		nfds = MAX(nfds, p->into);
-	      }
-	      else {
-		FD_SET(p->from, &next_readfds); /* We're not */
-		nfds = MAX(nfds, p->from);
-	      }
-	    }
-	    else {
-	      /* We were waiting for write-readiness.  Are we write-ready? */
-	      if (FD_ISSET(p->into, &writefds)) { /* We are! */
-		p->write(p->into, p->buf, p->buflen, &p->env);
-		/* Now we're ready to read */
-		p-> next = BLOCKED_READ;
-		FD_SET(p->from, &next_readfds);
-		nfds = MAX(nfds, p->from);
-	      }
-	      else {
-		FD_SET(p->into, &next_writefds); /* We're not */
-		nfds = MAX(nfds, p->into);
-	      }
-	    }
-	  }
-	  nfds += 1;
-	  /* Now set things up for the next select */
-	  memcpy(&readfds,  &next_readfds,  sizeof readfds);
-	  memcpy(&writefds, &next_writefds, sizeof writefds);
+		memcpy(&readfds,  &next_readfds,  sizeof readfds);
+		memcpy(&writefds, &next_writefds, sizeof writefds);
 	}
-
-	for (int i = 0; i < sizeof infos / sizeof *infos; i++) {
-	  free(infos[i].buf);
-	}
-
 }
 
 void *copy_clean_notify_fuse(copy_thread_state *copy_state)
@@ -795,7 +814,6 @@ void *mount_connection(connection_t *conn)
 	cond_init("copy_halt", &copy_halt, NULL);
 
 	start_reader_writer(conn, fuse);
-	/* start_reader(conn, fuse); */
 	start_notify(conn, fuse);
 
 	lock("copy lock", &copy_lock);
