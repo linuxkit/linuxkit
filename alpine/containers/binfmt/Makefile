@@ -1,4 +1,5 @@
-QEMU_IMAGE=mobylinux/qemu-user-static:7a07de557d7f6ae3d72873c32bfb4c51c7687d03
+# Tag 7a07de557d7f6ae3d72873c32bfb4c51c7687d03
+QEMU_IMAGE=mobylinux/qemu-user-static@sha256:cbeba25809c7c3feebc9e20522145e33d8abe5956674afa52814fc57c6644497
 QEMU_BINARIES=qemu-arm-static qemu-aarch64-static qemu-ppc64le-static
 
 default: rootfs
