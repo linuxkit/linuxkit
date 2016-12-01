@@ -34,7 +34,8 @@ start()
 
 	einfo "Running Windows Azure Linux Agent container"
 
-	export DOCKER_FOR_IAAS_VERSION="azure-v1.13.0-rc2-beta12"
+	# Tag: azure-v1.13.0-rc2-beta12
+	export DOCKER_FOR_IAAS_VERSION_DIGEST="89801638f220c6ce485ce827a23f23be524db62fc2969c7e4cdd7d5d6de16d2e"
 
 	docker run -d \
 		--privileged \
@@ -54,7 +55,7 @@ start()
 		-v /lib/modules:/lib/modules \
 		-v /lib/firmware:/lib/firmware \
 		-v /var/lib/waagent:/var/lib/waagent \
-		"docker4x/agent-azure:$DOCKER_FOR_IAAS_VERSION"
+		"docker4x/agent-azure@sha256:$DOCKER_FOR_IAAS_VERSION_DIGEST
 
 	# Wait for docker user to be added by agent.
 	while [ ! -d /home/docker ]
