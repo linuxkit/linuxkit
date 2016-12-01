@@ -1,4 +1,5 @@
-FROM ocaml/opam:alpine
+# Tag: alpine
+FROM ocaml/opam@sha256:fe4f6783f319fd02829af4f5a154d8e7030c3907ef393a7b7f21552648f89db8
 RUN sudo apk add m4
 RUN opam install ocamlfind astring syslog -y
 WORKDIR /app
