@@ -45,7 +45,7 @@ endif
 	([ -d docker/completion ] && rm -rf docker/completion) || true
 
 hub: cleanusr
-	(docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin . && touch ok) | tar xf - -C usr/bin
+	(DOCKER_CONTENT_TRUST=1 docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin . && touch ok) | tar xf - -C usr/bin
 	rm ok
 	rm -f usr/bin/docker-entrypoint.sh
 
