@@ -10,6 +10,9 @@ else
 DIRTY=-dirty
 endif
 
+# Tag: e6cb3f313db7098a1cd21051e678b01931a037a0
+ALPINE_BIOS_DIGEST=b06567c9d00fd4d1193e58fa8242a85121482eb2fb20ac4442388b7eb9cdceb3
+
 initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
@@ -50,7 +53,7 @@ mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 
 mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
-	  docker run --net=none --log-driver=none --rm -i mobylinux/alpine-bios:e6cb3f313db7098a1cd21051e678b01931a037a0 >$@
+	  docker run --net=none --log-driver=none --rm -i mobylinux/alpine-bios@sha256:$(ALPINE_BIOS_DIGEST) >$@
 
 common: initrd.img
 	$(MAKE) -C kernel

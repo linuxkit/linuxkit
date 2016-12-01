@@ -1,4 +1,5 @@
-FROM mobylinux/toybox-media:e22a41942621b5655bd952b7715d695eaed32647
+# Tag: e22a41942621b5655bd952b7715d695eaed32647
+FROM mobylinux/toybox-media@sha256:b13ff14a256a77f8c993a6a08517596a8b0b8759391d77f28481fd6b440245ea
 
 ADD \
   alpine/initrd.img \
