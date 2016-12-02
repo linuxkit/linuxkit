@@ -32,6 +32,8 @@ start()
 	start-stop-daemon --start --quiet \
 		--background \
 		--exec /sbin/vsudd \
+		--stdout /dev/console \
+		--stderr /dev/console \
 		-- -inport "${DOCKER_PORT}:unix:/var/run/docker.sock" \
 		   ${SYSLOG_OPT} \
 		   -pidfile ${PIDFILE}
