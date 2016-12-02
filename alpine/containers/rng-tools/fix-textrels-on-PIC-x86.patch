@@ -1,0 +1,50 @@
+--- rng-tools/rdrand_asm.S
++++ rng-tools/rdrand_asm.S
+@@ -49,6 +49,7 @@
+ 	ret
+ ENDPROC(x86_rdrand_nlong)
+ 
++#define INIT_PIC()
+ #define SETPTR(var,ptr)	leaq var(%rip),ptr
+ #define PTR0	%rdi
+ #define PTR1	%rsi
+@@ -84,7 +85,16 @@
+ 	ret
+ ENDPROC(x86_rdrand_nlong)
+ 
++#if defined(__PIC__)
++#undef __i686 /* gcc builtin define gets in our way */
++#define INIT_PIC() \
++	call __i686.get_pc_thunk.bx ; \
++	addl $_GLOBAL_OFFSET_TABLE_, %ebx
++#define SETPTR(var,ptr)	leal (var)@GOTOFF(%ebx),ptr
++#else
++#define INIT_PIC()
+ #define SETPTR(var,ptr)	movl $(var),ptr
++#endif
+ #define PTR0	%eax
+ #define PTR1	%edx
+ #define PTR2	%ecx
+@@ -101,6 +111,7 @@
+ 	movl	8(%ebp), %eax
+ 	movl	12(%ebp), %edx
+ #endif
++	INIT_PIC()
+ 
+ 	SETPTR(aes_round_keys, PTR2)
+ 
+@@ -166,6 +177,17 @@
+ #endif
+ 	ret
+ ENDPROC(x86_aes_mangle)
++
++#if defined(__i386__) && defined(__PIC__)
++	.section .gnu.linkonce.t.__i686.get_pc_thunk.bx,"ax",@progbits
++.globl __i686.get_pc_thunk.bx
++	.hidden  __i686.get_pc_thunk.bx
++	.type    __i686.get_pc_thunk.bx,@function
++__i686.get_pc_thunk.bx:
++	movl (%esp), %ebx
++	ret
++#endif
++
