@@ -35,7 +35,7 @@ start()
 	einfo "Running Windows Azure Linux Agent container"
 
 	# Tag: azure-v1.13.0-rc2-beta12
-	export DOCKER_FOR_IAAS_VERSION_DIGEST="89801638f220c6ce485ce827a23f23be524db62fc2969c7e4cdd7d5d6de16d2e"
+	export DOCKER_FOR_IAAS_VERSION_DIGEST="90c58b579e7034b27f7b14e3790d9f3deb72899e1c873ae6cb7ce8492897d923"
 
 	docker run -d \
 		--privileged \
