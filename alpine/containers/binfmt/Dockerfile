@@ -1,5 +1,5 @@
-# Tag: 78d9a136c632c66f0767e11ce3c661989d706f21
-FROM mobylinux/alpine-build-go@sha256:d82b855d16994ae94f10fa45d0c31e99663aa3e8e4254ef5f31129b899de8ce0
+# Tag: 1ae7bf8ec49a6537a93fba0c90720c65fa1c6ece
+FROM mobylinux/alpine-build-go@sha256:5e9aed92363c25349c2845b9be4a5285e0f56376b8b3ce92c7361bb59e6eeb2d
 
 COPY *.go /go/src/binfmt/
 
