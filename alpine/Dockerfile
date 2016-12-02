@@ -1,5 +1,5 @@
-# Tag: 547930eb50022274934ee70b0fd9c73c75515216
-FROM mobylinux/alpine-base@sha256:e1ec2779ecbea58c78130aeb29500ad17ada4d34f5822c9436fc7a388ae95c06
+# Tag: be663b9af6f6ca464dbfec5aeea7ac94274fba34
+FROM mobylinux/alpine-base@sha256:3cd5f66d3ae6970905bea2a562358dd53b45483c47caba67acb7c0d049a0fb8a
 
 ENV ARCH=x86_64
 
@@ -36,7 +36,6 @@ RUN \
   rc-update add dmesg sysinit && \
   rc-update add devfs sysinit && \
   rc-update add hwdrivers sysinit && \
-  rc-update add rngd && \
   rc-update add sysfs && \
   rc-update add procfs && \
   rc-update add sysfsconf && \
