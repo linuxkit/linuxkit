@@ -3,9 +3,11 @@ RUN \
   apk update && apk upgrade && \
   apk add \
   alpine-sdk \
+  argp-standalone \
   automake \
   bash \
   bc \
+  cmake \
   curl \
   gmp-dev \
   installkernel \

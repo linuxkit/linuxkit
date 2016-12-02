@@ -19,7 +19,6 @@ RUN \
   jq \
   openrc \
   openssh-client \
-  rng-tools@community \
   sfdisk \
   strace \
   sysklogd \

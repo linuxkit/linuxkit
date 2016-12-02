@@ -41,7 +41,7 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/containerd etc -C ../.. \
 	  -C packages/aws etc -C ../.. \
 	  -C packages/azure etc -C ../.. \
-	  containers/binfmt/rootfs containers/binfmt/config.json \
+	  containers/*/rootfs containers/*/config.json \
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	docker run --net=none --log-driver=none --rm $$BUILD > $@

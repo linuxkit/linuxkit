@@ -21,11 +21,16 @@ start()
 
 	ebegin "Running system containers"
 
+	LOG=/var/log/system-containers.log
+	touch $LOG
+
 	for f in /containers/*
 	do
-		# note we attach, so will be synchronous for now
-		containerd-ctr containers start --no-pivot --attach "$(basename $f)" "$f"
+		containerd-ctr containers start --no-pivot --attach "$(basename $f)" "$f" 2>$LOG >$LOG &
+		printf " $(basename $f)"
 	done
+
+	printf "\n"
 
 	eend $? "Failed to start system containers"
 }
