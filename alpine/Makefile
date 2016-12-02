@@ -13,7 +13,7 @@ endif
 # Tag: e6cb3f313db7098a1cd21051e678b01931a037a0
 ALPINE_BIOS_DIGEST=b06567c9d00fd4d1193e58fa8242a85121482eb2fb20ac4442388b7eb9cdceb3
 
-initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
+moby-initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
 	$(MAKE) -j -C containers
@@ -41,10 +41,24 @@ initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/containerd etc -C ../.. \
 	  -C packages/aws etc -C ../.. \
 	  -C packages/azure etc -C ../.. \
-	  containers/*/rootfs containers/*/config.json \
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	docker run --read-only --net=none --log-driver=none --rm --tmpfs /tmp --tmpfs /initrd $$BUILD > $@
+
+container-initrd.img:
+	(find containers -type d -maxdepth 1 && \
+	 find containers/*/rootfs containers/*/config.json) | \
+		cpio -H newc -o | gzip -9 > $@
+	SIZE=$$(cat $@ | wc -c); \
+	SIZE4=$$(( $$SIZE / 4 * 4 )); \
+	DIFF=$$(( $$SIZE - $$SIZE4 )); \
+	[ $$DIFF -ne 0 ] && DIFF=$$(( 4 - $$DIFF )); \
+	dd if=/dev/zero bs=1 count=$$DIFF of=zeropad
+	cat zeropad >> $@
+	rm zeropad
+
+initrd.img: moby-initrd.img container-initrd.img
+	cat $^ > $@
 
 mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 	BUILD=$$( tar cf - $^ | docker build -q -f Dockerfile.efi - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
@@ -160,7 +174,7 @@ vhdartifact:
 	docker volume create --name vhdartifact || true
 
 clean:
-	rm -f initrd.img mobylinux.vhd mobylinux.img mobylinux-bios.iso mobylinux-efi.iso mobylinux.efi etc/moby-commit
+	rm -f *.img *.vhd *.iso mobylinux.efi zeropad etc/moby-commit
 	docker images -q moby-azure:build | xargs docker rmi -f || true
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
