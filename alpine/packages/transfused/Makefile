@@ -1,5 +1,7 @@
 DEPS=Dockerfile $(wildcard *.c *.h)
 
+all: sbin/transfused
+
 sbin/transfused: $(DEPS)
 	mkdir -p sbin
 	BUILD=$$( tar cf - $(DEPS) | docker build -q - ) && \
