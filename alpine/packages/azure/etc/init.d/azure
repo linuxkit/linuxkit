@@ -55,7 +55,7 @@ start()
 		-v /lib/modules:/lib/modules \
 		-v /lib/firmware:/lib/firmware \
 		-v /var/lib/waagent:/var/lib/waagent \
-		"docker4x/agent-azure@sha256:$DOCKER_FOR_IAAS_VERSION_DIGEST
+		"docker4x/agent-azure@sha256:$DOCKER_FOR_IAAS_VERSION_DIGEST"
 
 	# Wait for docker user to be added by agent.
 	while [ ! -d /home/docker ]
