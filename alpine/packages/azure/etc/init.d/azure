@@ -34,8 +34,8 @@ start()
 
 	einfo "Running Windows Azure Linux Agent container"
 
-	# Tag: azure-v1.13.0-rc2-beta12
-	export DOCKER_FOR_IAAS_VERSION_DIGEST="90c58b579e7034b27f7b14e3790d9f3deb72899e1c873ae6cb7ce8492897d923"
+	export DOCKER_FOR_IAAS_VERSION="azure-v1.13.0-rc2-beta12"
+	export DOCKER_FOR_IAAS_VERSION_DIGEST="66c8d6dd8451c12c761aea5ef1403489aff4cb014ec507deb1d41f408778e605"
 
 	docker run -d \
 		--privileged \
@@ -45,6 +45,7 @@ start()
 		--net host \
 		--uts host \
 		--restart unless-stopped \
+		-e DOCKER_FOR_IAAS_VERSION \
 		-v /usr/bin/docker:/usr/local/bin/docker:ro \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v /var/log:/var/log \
