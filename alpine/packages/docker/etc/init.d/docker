@@ -34,11 +34,6 @@ start()
 
 	# Only start with networking on cloud editions
 	DOCKER_OPTS="${DOCKER_OPTS} -H unix:///var/run/docker.sock"
-	if [ "$(mobyplatform)" = "aws" ] || [ "$(mobyplatform)" = "azure" ]
-	then
-		# TODO: Don't do this
-		DOCKER_OPTS="${DOCKER_OPTS} -H 0.0.0.0:2375"
-	fi
 
 	# On desktop editions, force swarm advertise address to be on eth0
 	# Currently we do not support multi node swarm on these editions
