@@ -2,7 +2,10 @@
 
 # Windows and Mac have TRIM support, clean out unused frequently
 case "$(mobyplatform)" in
-  "windows"|"mac")
+  "windows")
      /sbin/fstrim /var
+     ;;
+  "mac")
+     mobyconfig exists disk/trim && [ "$(mobyconfig get disk/trim)" = "true" ] && /sbin/fstrim /var
      ;;
 esac
