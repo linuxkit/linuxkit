@@ -43,6 +43,7 @@ moby-initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/azure etc -C ../.. \
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
+	echo $$BUILD > mobylinux.tag && \
 	docker run --read-only --net=none --log-driver=none --rm --tmpfs /tmp --tmpfs /initrd $$BUILD > $@
 
 container-initrd.img:
@@ -174,7 +175,7 @@ vhdartifact:
 	docker volume create --name vhdartifact || true
 
 clean:
-	rm -f *.img *.vhd *.iso mobylinux.efi zeropad etc/moby-commit
+	rm -f *.img *.vhd *.iso *.tag mobylinux.efi zeropad etc/moby-commit
 	docker images -q moby-azure:build | xargs docker rmi -f || true
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
