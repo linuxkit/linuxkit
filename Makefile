@@ -41,11 +41,13 @@ STATUS=$(shell git status -s)
 MOBYLINUX_TAG=alpine/mobylinux.tag
 media: Dockerfile.media alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-efi.iso
 ifeq ($(STATUS),)
-	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux | docker build -f Dockerfile.media -t mobylinux/media:$(MEDIA_PREFIX)$(TAG) -
+	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux alpine/kernel/x86_64/kernel-headers.tar | docker build -f Dockerfile.media -t mobylinux/media:$(MEDIA_PREFIX)$(TAG) -
 	docker push mobylinux/media:$(MEDIA_PREFIX)$(TAG)
 	[ -f $(MOBYLINUX_TAG) ]
 	docker tag $(shell cat $(MOBYLINUX_TAG)) mobylinux/mobylinux:$(MEDIA_PREFIX)$(TAG)
 	docker push mobylinux/mobylinux:$(MEDIA_PREFIX)$(TAG)
+	tar cf - Dockerfile.kernel alpine/kernel/x86_64/boot.tar | docker build -f Dockerfile.kernel -t mobylinux/kernel:$(MEDIA_PREFIX)$(TAG) -
+	docker push mobylinux/kernel:$(MEDIA_PREFIX)$(TAG)
 else
 	$(error "git not clean")
 endif
@@ -56,6 +58,7 @@ ifeq ($(STATUS),)
 	mkdir -p alpine/kernel/x86_64 && \
 	docker cp $$IMAGE:vmlinuz64 alpine/kernel/x86_64/vmlinuz64 && \
 	docker cp $$IMAGE:vmlinux alpine/kernel/x86_64/vmlinux && \
+	docker cp $$IMAGE:kernel-headers.tar alpine/kernel/x86_64/kernel-headers.tar && \
 	docker cp $$IMAGE:initrd.img alpine/initrd.img && \
 	docker cp $$IMAGE:mobylinux-efi.iso alpine/mobylinux-efi.iso && \
 	docker cp $$IMAGE:mobylinux.efi alpine/mobylinux.efi && \
