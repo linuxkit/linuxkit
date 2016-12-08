@@ -63,18 +63,19 @@ RUN cd /linux && \
         patch -p1 < "$patch"; \
     done
 
-RUN cd /linux && \
-    make defconfig && \
+WORKDIR /linux
+RUN make defconfig && \
     make oldconfig && \
-    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
-    make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
-    ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar . ) && \
-    make INSTALL_HDR_PATH=/tmp/kernel-headers headers_install
+    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie"
+RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
+    make INSTALL_HDR_PATH=/tmp headers_install && \
+    ( cd /tmp && tar cf /kernel-headers.tar include ) && \
+    ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar . )
 
 # Build aufs tools, do this here as they need kernel headers and to match aufs
 # Fortunately they are built statically linked
 RUN cd /aufs-util && \
-    CPPFLAGS="-I/tmp/kernel-headers/include" CFLAGS=$CPPFLAGS LDFLAGS=$CPPFLAGS make && \
+    CPPFLAGS="-I/tmp/include" CFLAGS=$CPPFLAGS LDFLAGS=$CPPFLAGS make && \
     DESTDIR=/tmp/aufs-utils make install && \
     rm -rf /tmp/aufs-utils/usr/lib /tmp/aufs-utils/usr/share && \
     cd /tmp/aufs-utils && rm libau* && tar cf /aufs-utils.tar .

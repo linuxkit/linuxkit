@@ -5,6 +5,7 @@ ADD \
   alpine/initrd.img \
   alpine/kernel/x86_64/vmlinuz64 \
   alpine/kernel/x86_64/vmlinux \
+  alpine/kernel/x86_64/kernel-headers.tar \
   alpine/mobylinux-efi.iso \
   alpine/mobylinux.efi \
   / 
