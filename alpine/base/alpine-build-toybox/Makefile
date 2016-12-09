@@ -6,7 +6,7 @@ default: push
 
 hash: Dockerfile build.sh
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --entrypoint sh $(IMAGE):build -c 'cat /Dockerfile /build.sh /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
+	docker run --rm --entrypoint sh $(IMAGE):build -c 'cat /Dockerfile /build.sh /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \

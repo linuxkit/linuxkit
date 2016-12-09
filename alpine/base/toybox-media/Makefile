@@ -7,9 +7,9 @@ IMAGE=toybox-media
 default: push
 
 hash: 
-	docker run $(BASE) ls tar sh find sha1sum | \
+	docker run --rm $(BASE) ls tar sh find sha1sum | \
 		docker build -q -t $(IMAGE):build -
-	docker run $(IMAGE):build tar cf - bin | docker run -i $(IMAGE):build sha1sum -b - > hash
+	docker run --rm $(IMAGE):build tar cf - bin | docker run -i $(IMAGE):build sha1sum -b - > hash
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
