@@ -10,6 +10,7 @@ RUN \
   cmake \
   curl \
   gmp-dev \
+  groff \
   installkernel \
   kmod \
   linux-headers \
