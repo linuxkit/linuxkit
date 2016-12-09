@@ -44,7 +44,7 @@ moby-initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	echo $$BUILD > mobylinux.tag && \
-	docker run --read-only --net=none --log-driver=none --rm --tmpfs /tmp --tmpfs /initrd $$BUILD > $@
+	docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp --tmpfs /initrd $$BUILD > $@
 
 container-initrd.img:
 	(find containers -type d -maxdepth 1 && \
@@ -63,12 +63,12 @@ initrd.img: moby-initrd.img container-initrd.img
 
 mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 	BUILD=$$( tar cf - $^ | docker build -q -f Dockerfile.efi - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
-	docker run --net=none --log-driver=none --rm --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux.efi > mobylinux.efi && \
-	docker run --net=none --log-driver=none --rm --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux-efi.iso > $@
+	docker run --rm --net=none --log-driver=none --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux.efi > mobylinux.efi && \
+	docker run --rm --net=none --log-driver=none --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux-efi.iso > $@
 
 mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
-	  docker run --net=none --log-driver=none --rm -i mobylinux/alpine-bios@sha256:$(ALPINE_BIOS_DIGEST) >$@
+	  docker run --rm --net=none --log-driver=none -i mobylinux/alpine-bios@sha256:$(ALPINE_BIOS_DIGEST) >$@
 
 common: initrd.img
 	$(MAKE) -C kernel
