@@ -22,4 +22,4 @@ else
 	cp alpine/kernel/x86_64/vmlinuz64 "$mobydir"/vmlinuz64
 fi
 
-docker run --privileged --pid=host justincormack/nsenter1 /sbin/reboot
+docker run --rm --privileged --pid=host justincormack/nsenter1 /sbin/reboot

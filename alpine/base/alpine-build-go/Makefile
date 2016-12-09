@@ -8,7 +8,7 @@ default: push
 hash:
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - Dockerfile | docker build --no-cache -t $(IMAGE):build -
-	docker run $(IMAGE):build sh -c 'cat /usr/local/go/bin/go /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
+	docker run --rm $(IMAGE):build sh -c 'cat /usr/local/go/bin/go /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
