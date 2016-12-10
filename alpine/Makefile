@@ -1,4 +1,4 @@
-all:	initrd.img mobylinux-efi.iso mobylinux-bios.iso
+all:	initrd.img initrd-test.img mobylinux-efi.iso mobylinux-bios.iso
 
 ETCFILES=$(shell find etc)
 
@@ -13,10 +13,9 @@ endif
 # Tag: e6cb3f313db7098a1cd21051e678b01931a037a0
 ALPINE_BIOS_DIGEST=b06567c9d00fd4d1193e58fa8242a85121482eb2fb20ac4442388b7eb9cdceb3
 
-moby-initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
+moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
-	$(MAKE) -j -C containers
 	printf $(TAG)$(DIRTY) > etc/moby-commit
 	BUILD=$$( tar cf - \
 	  Dockerfile etc usr init mkinitrd.sh \
@@ -36,7 +35,7 @@ moby-initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/mobyplatform usr -C ../.. \
 	  -C packages/oom etc -C ../.. \
 	  -C packages/9pmount-vsock sbin -C ../.. \
-	  -C packages/test etc usr -C ../.. \
+	  -C packages/test etc -C ../.. \
 	  -C packages/iptables usr -C ../.. \
 	  -C packages/containerd etc -C ../.. \
 	  -C packages/aws etc -C ../.. \
@@ -46,7 +45,8 @@ moby-initrd.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	echo $$BUILD > mobylinux.tag && \
 	docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp --tmpfs /initrd $$BUILD > $@
 
-container-initrd.img:
+container.img:
+	$(MAKE) -j -C containers
 	(find containers -type d -maxdepth 1 && \
 	 find containers/*/rootfs containers/*/config.json) | \
 		cpio -H newc -o | gzip -9 > $@
@@ -58,7 +58,23 @@ container-initrd.img:
 	cat zeropad >> $@
 	rm zeropad
 
-initrd.img: moby-initrd.img container-initrd.img
+test.img:
+	$(MAKE) -j -C test
+	(find test -maxdepth 0 && \
+	 find test/rootfs test/config.json) | \
+		cpio -H newc -o | gzip -9 > $@
+	SIZE=$$(cat $@ | wc -c); \
+	SIZE4=$$(( $$SIZE / 4 * 4 )); \
+	DIFF=$$(( $$SIZE - $$SIZE4 )); \
+	[ $$DIFF -ne 0 ] && DIFF=$$(( 4 - $$DIFF )); \
+	dd if=/dev/zero bs=1 count=$$DIFF of=zeropad
+	cat zeropad >> $@
+	rm zeropad
+
+initrd.img: moby.img container.img
+	cat $^ > $@
+
+initrd-test.img: initrd.img test.img
 	cat $^ > $@
 
 mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
@@ -181,6 +197,7 @@ clean:
 	docker volume rm vhdartifact || true
 	$(MAKE) -C packages clean
 	$(MAKE) -C containers clean
+	$(MAKE) -C test clean
 	$(MAKE) -C kernel clean
 
 .DELETE_ON_ERROR:

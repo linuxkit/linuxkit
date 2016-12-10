@@ -4,6 +4,9 @@ all:
 alpine/initrd.img:
 	$(MAKE) -C alpine initrd.img
 
+alpine/initrd-test.img:
+	$(MAKE) -C alpine
+
 alpine/kernel/x86_64/vmlinuz64:
 	$(MAKE) -C alpine/kernel x86_64/vmlinuz64
 
@@ -27,7 +30,7 @@ hyperkit.git/build/com.docker.hyperkit: hyperkit.git
 hyperkit: hyperkit.sh hyperkit.git/build/com.docker.hyperkit alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	sudo ./hyperkit.sh
 
-test: Dockerfile.test alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+test: Dockerfile.test alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
 	$(MAKE) -C alpine
 	BUILD=$$( tar cf - $^ | docker build -f Dockerfile.test -q - ) && \
 	[ -n "$$BUILD" ] && \
