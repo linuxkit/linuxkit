@@ -30,7 +30,5 @@ start()
 		printf " $(basename $f)"
 	done
 
-	printf "\n"
-
 	eend $? "Failed to start system containers"
 }
