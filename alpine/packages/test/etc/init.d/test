@@ -2,16 +2,16 @@
 
 depend()
 {
-	need docker
+	need docker containerd
 }
 
 start()
 {
-	[ "$(mobyplatform)" != "test" ] && exit 0
+	[ -d /test ] || exit 0
 
 	ebegin "Running tests"
 
-	if mobytest
+	if containerd-ctr containers start --no-pivot --attach test /test
 	then
 		printf "Moby test suite PASSED\n"
 	else

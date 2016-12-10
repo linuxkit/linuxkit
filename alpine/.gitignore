@@ -1,9 +1,7 @@
 *.img
 *.tag
-/mobylinux.img
-/mobylinux.vhd
-/mobylinux-bios.iso
-/mobylinux-efi.iso
+*.iso
+*.vhd
 /mobylinux-boot.vhdx
 /mobylinux.efi
 etc/moby-commit
