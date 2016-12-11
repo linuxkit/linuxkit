@@ -1,7 +1,7 @@
 # Tag: 36aecb5cf4738737634140eec9abebe1f6559a39
 FROM mobylinux/alpine-build-c@sha256:d66b9625abc831f28f8c584991a9cb6975e85d3bb3d3768474b592f1cf32a3a6
 
-ARG KERNEL_VERSION=4.8.12
+ARG KERNEL_VERSION=4.8.14
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
