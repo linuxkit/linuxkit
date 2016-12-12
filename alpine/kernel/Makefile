@@ -10,7 +10,6 @@ x86_64/vmlinuz64: Dockerfile kernel_config
 	docker run --rm --net=none --log-driver=none $$BUILD cat /kernel-source-info > etc/kernel-source-info && \
 	docker run --rm --net=none --log-driver=none $$BUILD cat /linux/vmlinux > x86_64/vmlinux && \
 	docker run --rm --net=none --log-driver=none $$BUILD cat /linux/arch/x86_64/boot/bzImage > $@ && \
-	docker run --rm --net=none --log-driver=none $$BUILD tar cf - /linux/arch/x86/boot > x86_64/boot.tar && \
 	docker run --rm --net=none --log-driver=none $$BUILD cat /kernel-headers.tar > x86_64/kernel-headers.tar && \
 	cp -a patches etc/kernel-patches
 

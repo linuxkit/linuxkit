@@ -49,7 +49,7 @@ ifeq ($(STATUS),)
 	[ -f $(MOBYLINUX_TAG) ]
 	docker tag $(shell cat $(MOBYLINUX_TAG)) mobylinux/mobylinux:$(MEDIA_PREFIX)$(TAG)
 	docker push mobylinux/mobylinux:$(MEDIA_PREFIX)$(TAG)
-	tar cf - Dockerfile.kernel alpine/kernel/x86_64/boot.tar | docker build -f Dockerfile.kernel -t mobylinux/kernel:$(MEDIA_PREFIX)$(TAG) -
+	tar cf - Dockerfile.kernel alpine/kernel/x86_64/vmlinuz64 | docker build -f Dockerfile.kernel -t mobylinux/kernel:$(MEDIA_PREFIX)$(TAG) -
 	docker push mobylinux/kernel:$(MEDIA_PREFIX)$(TAG)
 else
 	$(error "git not clean")
