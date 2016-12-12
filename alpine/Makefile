@@ -10,8 +10,8 @@ else
 DIRTY=-dirty
 endif
 
-# Tag: e6cb3f313db7098a1cd21051e678b01931a037a0
-ALPINE_BIOS_DIGEST=b06567c9d00fd4d1193e58fa8242a85121482eb2fb20ac4442388b7eb9cdceb3
+# Tag: 22b043cb43f6bc3bc4e1f1ecf9d64932f9325642
+BIOS_IMAGE=mobylinux/mkimage-iso-bios@sha256:7e28f7745fd62284142dce59a137c3331f7673efe8b3f19ee5c65e4cc27ff18c
 
 # Tag: 95d4fef1a9555b640b4f94a4a3968533714059fe
 PAD4_IMAGE=mobylinux/pad4@sha256:a26e02f16bdafa241a55e05fa09b9bb260e69a3a8c90418bb40b4ae936437d17
@@ -76,7 +76,7 @@ mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 
 mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
-	  docker run --rm --net=none --log-driver=none -i mobylinux/alpine-bios@sha256:$(ALPINE_BIOS_DIGEST) >$@
+	  docker run --rm --net=none --log-driver=none -i $(BIOS_IMAGE) >$@
 
 common: initrd.img
 	$(MAKE) -C kernel
