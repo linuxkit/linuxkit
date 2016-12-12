@@ -71,7 +71,9 @@ do_mkfs()
 	blockdev --rereadpt $diskdev 2> /dev/null
 	mdev -s
 
-	mkfs.ext4 ${diskdev}1
+	FSOPTS="-O resize_inode,has_journal,extent,huge_file,flex_bg,uninit_bg,64bit,dir_nlink,extra_isize"
+
+	mkfs.ext4 -q -F $FSOPTS ${diskdev}1
 
 	mount ${diskdev}1 /var
 }
