@@ -6,7 +6,6 @@ x86_64/vmlinuz64: Dockerfile kernel_config
 	mkdir -p x86_64 etc
 	BUILD=$$( docker build --build-arg DEBUG=$(DEBUG) -q . ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	docker run --rm --net=none --log-driver=none $$BUILD cat /kernel-modules.tar | tar xf - && \
-	docker run --rm --net=none --log-driver=none $$BUILD cat /aufs-utils.tar | tar xf - && \
 	docker run --rm --net=none --log-driver=none $$BUILD cat /kernel-source-info > etc/kernel-source-info && \
 	docker run --rm --net=none --log-driver=none $$BUILD cat /linux/vmlinux > x86_64/vmlinux && \
 	docker run --rm --net=none --log-driver=none $$BUILD cat /linux/arch/x86_64/boot/bzImage > $@ && \
