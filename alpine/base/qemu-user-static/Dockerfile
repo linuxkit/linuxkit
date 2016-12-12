@@ -1,3 +1,4 @@
 FROM debian:testing
 
-RUN apt-get update && apt-get -y upgrade && apt-get install -y qemu-user-static
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get -yq upgrade && apt-get install -yq qemu-user-static
