@@ -13,6 +13,9 @@ endif
 # Tag: e6cb3f313db7098a1cd21051e678b01931a037a0
 ALPINE_BIOS_DIGEST=b06567c9d00fd4d1193e58fa8242a85121482eb2fb20ac4442388b7eb9cdceb3
 
+# Tag: 95d4fef1a9555b640b4f94a4a3968533714059fe
+PAD4_IMAGE=mobylinux/pad4@sha256:a26e02f16bdafa241a55e05fa09b9bb260e69a3a8c90418bb40b4ae936437d17
+
 moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
@@ -43,33 +46,22 @@ moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	echo $$BUILD > mobylinux.tag && \
-	docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp --tmpfs /initrd $$BUILD > $@
+	docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp --tmpfs /initrd $$BUILD | \
+		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(PAD4_IMAGE) > $@
 
 container.img:
 	$(MAKE) -j -C containers
 	(find containers -type d -maxdepth 1 && \
 	 find containers/*/rootfs containers/*/config.json) | \
-		cpio -H newc -o | gzip -9 > $@
-	SIZE=$$(cat $@ | wc -c); \
-	SIZE4=$$(( $$SIZE / 4 * 4 )); \
-	DIFF=$$(( $$SIZE - $$SIZE4 )); \
-	[ $$DIFF -ne 0 ] && DIFF=$$(( 4 - $$DIFF )); \
-	dd if=/dev/zero bs=1 count=$$DIFF of=zeropad
-	cat zeropad >> $@
-	rm zeropad
+		cpio -H newc -o | gzip -9 | \
+		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(PAD4_IMAGE) > $@
 
 test.img:
 	$(MAKE) -j -C test
 	(find test -maxdepth 0 && \
 	 find test/rootfs test/config.json) | \
-		cpio -H newc -o | gzip -9 > $@
-	SIZE=$$(cat $@ | wc -c); \
-	SIZE4=$$(( $$SIZE / 4 * 4 )); \
-	DIFF=$$(( $$SIZE - $$SIZE4 )); \
-	[ $$DIFF -ne 0 ] && DIFF=$$(( 4 - $$DIFF )); \
-	dd if=/dev/zero bs=1 count=$$DIFF of=zeropad
-	cat zeropad >> $@
-	rm zeropad
+		cpio -H newc -o | gzip -9 | \
+		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(PAD4_IMAGE) > $@
 
 initrd.img: moby.img container.img
 	cat $^ > $@
@@ -191,7 +183,7 @@ vhdartifact:
 	docker volume create --name vhdartifact || true
 
 clean:
-	rm -f *.img *.vhd *.iso *.tag mobylinux.efi zeropad etc/moby-commit
+	rm -f *.img *.vhd *.iso *.tag mobylinux.efi etc/moby-commit
 	docker images -q moby-azure:build | xargs docker rmi -f || true
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
