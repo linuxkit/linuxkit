@@ -1,3 +1,4 @@
 FROM debian:stable
 
-RUN apt-get update && apt-get -y upgrade && apt-get install -y ca-certificates
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get -yq upgrade && apt-get install -yq ca-certificates
