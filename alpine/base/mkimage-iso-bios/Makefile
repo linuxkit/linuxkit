@@ -1,7 +1,7 @@
 .PHONY: tag push
 
 BASE=alpine:3.4
-IMAGE=alpine-bios
+IMAGE=mkimage-iso-bios
 
 default: push
 
