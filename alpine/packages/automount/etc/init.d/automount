@@ -83,8 +83,11 @@ do_swapfile()
 	DRIVE=$1
 	SIZE=$(sfdisk -J "$DRIVE" | jq -e -r '.partitiontable.partitions | map(select(.type=="83")) | .[0].size')
 	SWAP=/var/spool/swap
+	MOUNT=$(mount | grep 'on /var type')
 	# Create swap on desktop platforms if disk size larger than 16GB
-	if [ "$(mobyplatform)" = "mac" -o "$(mobyplatform)" = "windows" ] && [ ! -f $SWAP ] && [ "$SIZE" -gt 33554432 ]
+	if [ "$(mobyplatform)" = "mac" -o "$(mobyplatform)" = "windows" ] && \
+		[ ! -f $SWAP ] && [ "$SIZE" -gt 33554432 ] && \
+		[ -n "$MOUNT" ]
 	then
 		mkdir -p "$(dirname $SWAP)"
 		dd if=/dev/zero of=$SWAP bs=1k count=1048576
