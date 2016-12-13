@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+
+# input is a tarball of vmlinuz64 and initrd.img on stdin
+# output is a compressed tarball of a raw disk image on stdout
+
+mkdir -p files
+tar xf - -C files
+
+cp syslinux.cfg files
+
+tar cf files.tar -C files .
+
+virt-make-fs --size=1G --type=ext4 --partition files.tar disk.raw
+
+guestfish -a disk.raw -m /dev/sda1 <<EOF
+  upload /usr/lib/SYSLINUX/mbr.bin /mbr.bin
+  copy-file-to-device /mbr.bin /dev/sda size:440
+  rm /mbr.bin
+  extlinux /
+  part-set-bootable /dev/sda 1 true
+EOF
+
+tar cf - disk.raw | gzip -9

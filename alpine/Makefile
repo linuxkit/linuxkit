@@ -16,6 +16,9 @@ BIOS_IMAGE=mobylinux/mkimage-iso-bios@sha256:7e28f7745fd62284142dce59a137c3331f7
 # Tag: 95d4fef1a9555b640b4f94a4a3968533714059fe
 PAD4_IMAGE=mobylinux/pad4@sha256:a26e02f16bdafa241a55e05fa09b9bb260e69a3a8c90418bb40b4ae936437d17
 
+# Tag: df1b8ef666d66694e84f23772937ff45c46fa6c1
+GCE_IMAGE=mobylinux/mkimage-gce@sha256:b19ba24184ed5602df5b666ed475d5d7211fa67bee51d3e6380cf0380c63f65b
+
 moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
@@ -76,7 +79,13 @@ mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 
 mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
-	  docker run --rm --net=none --log-driver=none -i $(BIOS_IMAGE) >$@
+		docker run --rm --net=none --log-driver=none -i $(BIOS_IMAGE) >$@
+
+gce: gce.img.tar.gz
+
+gce.img.tar.gz: common
+	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
+		docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
 common: initrd.img
 	$(MAKE) -C kernel
