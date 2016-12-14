@@ -1,0 +1,7 @@
+# Tag: 804b2c40d078287c40aeb9166e475e843544e597
+FROM mobylinux/alpine-qemu@sha256:aaecc961a62b14ee0ecd3a4fe792af5232637f0a49f7d0f90b87acaeb6f3fa4a
+
+COPY alpine/gce.img.tar.gz .
+RUN zcat gce.img.tar.gz | tar xf -
+
+ENTRYPOINT [ "qemu-system-x86_64", "-serial", "stdio", "-drive", "file=disk.raw,format=raw", "-m", "2048", "-vnc", "none" ]

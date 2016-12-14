@@ -2,6 +2,7 @@
 *.tag
 *.iso
 *.vhd
+*.tar.gz
 /mobylinux-boot.vhdx
 /mobylinux.efi
 etc/moby-commit
