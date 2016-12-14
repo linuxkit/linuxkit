@@ -938,10 +938,9 @@ void *init_thread(void *params_ptr)
 	buf = must_malloc("incoming control message buffer", CTL_BUFSZ);
 
 	/* TODO: handle other messages */
-	read_exactly("init thread", params->ctl_sock, buf, 6);
-	for (int i = 0; i < sizeof(init_msg); i++)
-		if (((char *)buf)[i] != init_msg[i])
-			die(1, params, NULL, "init thread: unexpected message");
+	read_exactly("init thread", params->ctl_sock, buf, sizeof(init_msg));
+	if (memcmp(buf, init_msg, sizeof(init_msg)))
+		die(1, params, NULL, "init thread: unexpected message");
 
 	/* we've gotten Continue so write the pidfile */
 	if (params->pidfile != NULL)
