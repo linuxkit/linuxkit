@@ -744,23 +744,14 @@ void write_pid(connection_t *connection)
 {
 	pid_t pid = gettid();
 	char *pid_s;
-	int pid_s_len, write_count;
+	int pid_s_len;
 
 	if (asprintf(&pid_s, "%lld", (long long)pid) == -1)
 		die(1, connection->params, "Couldn't allocate pid string", "");
 
 	pid_s_len = strlen(pid_s);
 
-	/* TODO: check for socket write conditions e.g.EAGAIN */
-	write_count = write(connection->sock, pid_s, pid_s_len);
-	if (write_count < 0)
-		die(1, connection->params, "Error writing pid", "");
-
-	/* TODO: handle short writes */
-	if (write_count != pid_s_len)
-		die(1, connection->params, NULL,
-		    "Error writing pid %s to socket: only wrote %d bytes",
-		    pid_s, write_count);
+	write_exactly("pid", connection->sock, pid_s, pid_s_len);
 
 	free(pid_s);
 }
