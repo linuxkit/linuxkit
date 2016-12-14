@@ -937,13 +937,8 @@ void *init_thread(void *params_ptr)
 
 	buf = must_malloc("incoming control message buffer", CTL_BUFSZ);
 
-	/* TODO: handle short read / socket conditions */
-	read_count = read(params->ctl_sock, buf, 6);
-	if (read_count < 0)
-		die(1, params, "init thread: error reading", "");
 	/* TODO: handle other messages */
-	if (read_count != 6)
-		die(1, params, NULL, "init thread: response not 6");
+	read_exactly("init thread", params->ctl_sock, buf, 6);
 	for (int i = 0; i < sizeof(init_msg); i++)
 		if (((char *)buf)[i] != init_msg[i])
 			die(1, params, NULL, "init thread: unexpected message");
