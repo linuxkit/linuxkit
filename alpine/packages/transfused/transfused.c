@@ -303,10 +303,12 @@ void write_exactly(char *descr, int fd, void *p, size_t nbyte)
 	char *buf = p;
 
 	do {
-		/* TODO: socket write conditions e.g.EAGAIN */
 		write_count = write(fd, buf, nbyte);
-		if (write_count < 0)
+		if (write_count < 0) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
 			die(1, NULL, "", "%s: error writing: ", descr);
+		}
 		if (write_count == 0)
 			die(1, NULL, "", "%s: 0 write: ", descr);
 
