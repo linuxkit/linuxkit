@@ -184,21 +184,24 @@ uint64_t message_id(uint64_t *message)
 
 int read_message(char *descr, parameters *params, int fd,
 		 char *buf, size_t max_read){
-	int read_count;
+	ssize_t read_count;
+	size_t upto = 0;
 	size_t nbyte;
 	uint32_t len;
 
-	/* TODO: socket read conditions e.g.EAGAIN */
-	read_count = read(fd, buf, 4);
-	if (read_count != 4) {
-		if (read_count < 0)
+	do {
+		read_count = read(fd, buf + upto, sizeof(uint32_t) - upto);
+		if (read_count == -1) {
+			if (errno == EAGAIN || errno == EINTR)
+				continue;
 			die(1, params, "", "read %s: error reading: ", descr);
+		}
 		if (read_count == 0)
 			die(1, params, NULL,
 			    "read %s: EOF reading length", descr);
-		die(1, params, NULL,
-		    "read %s: short read length %d", descr, read_count);
-	}
+		upto += read_count;
+	} while (upto < sizeof(uint32_t));
+
 	len = *((uint32_t *) buf);
 	if (len > max_read)
 		die(1, params, NULL,
@@ -209,10 +212,12 @@ int read_message(char *descr, parameters *params, int fd,
 	buf += 4;
 
 	do {
-		/* TODO: socket read conditions e.g.EAGAIN */
 		read_count = read(fd, buf, nbyte);
-		if (read_count < 0)
+		if (read_count < 0) {
+			if (errno == EAGAIN || errno == EINTR)
+				continue;
 			die(1, params, "", "read %s: error reading: ", descr);
+		}
 		if (read_count == 0)
 			die(1, params, NULL, "read %s: EOF reading", descr);
 		nbyte -= read_count;
