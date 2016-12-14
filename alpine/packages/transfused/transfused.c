@@ -182,47 +182,46 @@ uint64_t message_id(uint64_t *message)
 	return message[1];
 }
 
-int read_message(char *descr, parameters *params, int fd,
-		 char *buf, size_t max_read){
+void read_exactly(char *descr, int fd, void *p, size_t nbyte)
+{
 	ssize_t read_count;
-	size_t upto = 0;
-	size_t nbyte;
-	uint32_t len;
+	char *buf = p;
 
-	do {
-		read_count = read(fd, buf + upto, sizeof(uint32_t) - upto);
-		if (read_count == -1) {
+	while (nbyte > 0) {
+		read_count = read(fd, buf, nbyte);
+		if (read_count < 0) {
 			if (errno == EAGAIN || errno == EINTR)
 				continue;
-			die(1, params, "", "read %s: error reading: ", descr);
+			die(1, NULL, "", "read %s: error reading: ", descr);
 		}
 		if (read_count == 0)
-			die(1, params, NULL,
-			    "read %s: EOF reading length", descr);
-		upto += read_count;
-	} while (upto < sizeof(uint32_t));
+			die(1, NULL, NULL, "read %s: EOF reading", descr);
+		nbyte -= read_count;
+		buf += read_count;
+	}
+}
 
+int read_message(char *descr, parameters *params, int fd,
+		 char *buf, size_t max_read)
+{
+	size_t nbyte = sizeof(uint32_t);
+	uint32_t len;
+
+	read_exactly(descr, fd, buf, nbyte);
 	len = *((uint32_t *) buf);
 	if (len > max_read)
 		die(1, params, NULL,
 		    "read %s: message size %d exceeds buffer capacity %d",
 		    len, max_read);
+	if (len < nbyte)
+		die(1, params, NULL,
+		    "read %s: message size is %d but must be at least %d",
+		    len, nbyte);
 
-	nbyte = (size_t)(len - 4);
-	buf += 4;
+	buf += nbyte;
+	nbyte = (size_t)(len - nbyte);
 
-	do {
-		read_count = read(fd, buf, nbyte);
-		if (read_count < 0) {
-			if (errno == EAGAIN || errno == EINTR)
-				continue;
-			die(1, params, "", "read %s: error reading: ", descr);
-		}
-		if (read_count == 0)
-			die(1, params, NULL, "read %s: EOF reading", descr);
-		nbyte -= read_count;
-		buf += read_count;
-	} while (nbyte != 0);
+	read_exactly(descr, fd, buf, nbyte);
 
 	return (int)len;
 }
@@ -302,7 +301,7 @@ void write_exactly(char *descr, int fd, void *p, size_t nbyte)
 	int write_count;
 	char *buf = p;
 
-	do {
+	while (nbyte > 0) {
 		write_count = write(fd, buf, nbyte);
 		if (write_count < 0) {
 			if (errno == EINTR || errno == EAGAIN)
@@ -314,7 +313,7 @@ void write_exactly(char *descr, int fd, void *p, size_t nbyte)
 
 		nbyte -= write_count;
 		buf += write_count;
-	} while (nbyte != 0);
+	}
 }
 
 void copy_outof_fuse(copy_thread_state *copy_state)
