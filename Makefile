@@ -21,6 +21,10 @@ qemu-iso: Dockerfile.qemuiso alpine/mobylinux-bios.iso
 	tar cf - $^ | docker build -f Dockerfile.qemuiso -t mobyqemuiso:build -
 	docker run -it --rm mobyqemuiso:build
 
+qemu-gce: Dockerfile.qemugce alpine/gce.img.tar.gz
+	tar cf - $^ | docker build -f Dockerfile.qemugce -t mobyqemugce:build -
+	docker run -it --rm mobyqemugce:build
+
 hyperkit.git:
 	git clone https://github.com/docker/hyperkit.git hyperkit.git
 
