@@ -927,19 +927,14 @@ void *determine_mount_suitability(parameters *params, int allow_empty,
 void *init_thread(void *params_ptr)
 {
 	parameters *params = params_ptr;
-	int write_count, read_count, len;
+	int read_count, len;
 	char init_msg[6] = {'\6', '\0', '\0', '\0', '\0', '\0'};
 	void *buf, *response;
 	uint16_t msg_type;
 
 	params->ctl_sock = connect_socket(params->server);
 
-	/* TODO: handle short write/socket conditions */
-	write_count = write(params->ctl_sock, init_msg, sizeof(init_msg));
-	if (write_count < 0)
-		die(1, NULL, "init thread: couldn't write init", "");
-	if (write_count != sizeof(init_msg))
-		die(1, NULL, "init thread: incomplete write", "");
+	write_exactly("init", params->ctl_sock, init_msg, sizeof(init_msg));
 
 	buf = must_malloc("incoming control message buffer", CTL_BUFSZ);
 
