@@ -1085,7 +1085,6 @@ void parse_parameters(int argc, char *argv[], parameters *params)
 
 void serve(parameters *params)
 {
-	ssize_t read_count;
 	char subproto_selector;
 	pthread_t child;
 	connection_t *conn;
@@ -1109,10 +1108,7 @@ void serve(parameters *params)
 		if (conn->sock < 0)
 			die(1, params, "accept", "");
 
-		/* TODO: check for socket read conditions e.g.EAGAIN */
-		read_count = read(conn->sock, &subproto_selector, 1);
-		if (read_count <= 0)
-			die(1, params, "read subprotocol selector", "");
+		read_exactly("subproto", conn->sock, &subproto_selector, 1);
 
 		switch (subproto_selector) {
 		case 'm':
