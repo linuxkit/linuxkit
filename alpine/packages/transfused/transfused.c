@@ -820,7 +820,7 @@ void perform_syscall(connection_t *conn, uint8_t syscall, char path[])
 				name, path, strerror(errno));
 }
 
-void * event_thread(void *connection_ptr)
+void *event_thread(void *connection_ptr)
 {
 	int read_count, path_len;
 	void *buf;
