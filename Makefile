@@ -1,6 +1,9 @@
 all:
 	$(MAKE) -C alpine
 
+aufs:
+	$(MAKE) AUFS=true all
+
 alpine/initrd.img:
 	$(MAKE) -C alpine initrd.img
 
@@ -46,15 +49,20 @@ test: Dockerfile.test alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
 TAG=$(shell git rev-parse HEAD)
 STATUS=$(shell git status -s)
 MOBYLINUX_TAG=alpine/mobylinux.tag
+ifdef AUFS
+AUFS_PREFIX=aufs-
+endif
+MEDIA_IMAGE=mobylinux/media:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
+KERNEL_IMAGE=mobylinux/kernel:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 media: Dockerfile.media alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-efi.iso
 ifeq ($(STATUS),)
-	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux alpine/kernel/x86_64/kernel-headers.tar | docker build -f Dockerfile.media -t mobylinux/media:$(MEDIA_PREFIX)$(TAG) -
-	docker push mobylinux/media:$(MEDIA_PREFIX)$(TAG)
+	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux alpine/kernel/x86_64/kernel-headers.tar | docker build -f Dockerfile.media -t $(MEDIA_IMAGE) -
+	docker push $(MEDIA_IMAGE)
 	[ -f $(MOBYLINUX_TAG) ]
-	docker tag $(shell cat $(MOBYLINUX_TAG)) mobylinux/mobylinux:$(MEDIA_PREFIX)$(TAG)
-	docker push mobylinux/mobylinux:$(MEDIA_PREFIX)$(TAG)
-	tar cf - Dockerfile.kernel alpine/kernel/x86_64/vmlinuz64 | docker build -f Dockerfile.kernel -t mobylinux/kernel:$(MEDIA_PREFIX)$(TAG) -
-	docker push mobylinux/kernel:$(MEDIA_PREFIX)$(TAG)
+	docker tag $(shell cat $(MOBYLINUX_TAG)) $(MEDIA_IMAGE)
+	docker push $(MEDIA_IMAGE)
+	tar cf - Dockerfile.kernel alpine/kernel/x86_64/vmlinuz64 | docker build -f Dockerfile.kernel -t $(KERNEL_IMAGE) -
+	docker push $(KERNEL_IMAGE)
 else
 	$(error "git not clean")
 endif
