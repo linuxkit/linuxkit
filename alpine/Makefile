@@ -87,6 +87,9 @@ gce.img.tar.gz: common
 	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
 		docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
+gce-upload:
+	docker run -it --rm --volumes-from gcloud-config google/cloud-sdk gsutil cp gce.img.tar.gz gs://docker4x-moby-images/
+
 common: initrd.img
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
