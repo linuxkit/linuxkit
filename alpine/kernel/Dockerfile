@@ -1,49 +1,13 @@
 # Tag: 36aecb5cf4738737634140eec9abebe1f6559a39
 FROM mobylinux/alpine-build-c@sha256:d66b9625abc831f28f8c584991a9cb6975e85d3bb3d3768474b592f1cf32a3a6
 
-ARG KERNEL_VERSION=4.8.14
+ARG KERNEL_VERSION=4.9
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
 RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
-
-# this is aufs4.8 20161010
-ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.8
-ENV AUFS_COMMIT     e9fd128dcb16167417683e199a5feb14f3c9eca8
-
-# Download AUFS
-RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
-    cd /aufs && \
-    git checkout -q "$AUFS_COMMIT"
-
-# aufs-util 20151116
-ENV AUFS_TOOLS_REPO https://github.com/ncopa/aufs-util.git
-ENV AUFS_TOOLS_COMMIT 3b7c5e262b53598a8204a915e485489c46d4e7a4
-
-# Download aufs tools
-RUN git clone ${AUFS_TOOLS_REPO} && \
-    cd /aufs-util && \
-    git checkout "$AUFS_TOOLS_COMMIT" 
-
-#BUILD
-# patch kernel with aufs
-RUN cd /linux && \
-    cp -r /aufs/Documentation /linux && \
-    cp -r /aufs/fs /linux && \
-    cp -r /aufs/include/uapi/linux/aufs_type.h /linux/include/uapi/linux/ && \
-    set -e && for patch in \
-        /aufs/aufs*-kbuild.patch \
-        /aufs/aufs*-base.patch \
-        /aufs/aufs*-mmap.patch \
-        /aufs/aufs*-standalone.patch \
-        /aufs/aufs*-loopback.patch \
-        /aufs/lockdep-debug.patch \
-    ; do \
-        patch -p1 < "$patch"; \
-    done
 
 COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
@@ -72,12 +36,4 @@ RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     ( cd /tmp && tar cf /kernel-headers.tar include ) && \
     ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar . )
 
-# Build aufs tools, do this here as they need kernel headers and to match aufs
-# Fortunately they are built statically linked
-RUN cd /aufs-util && \
-    CPPFLAGS="-I/tmp/include" CFLAGS=$CPPFLAGS LDFLAGS=$CPPFLAGS make && \
-    DESTDIR=/tmp/aufs-utils make install && \
-    rm -rf /tmp/aufs-utils/usr/lib /tmp/aufs-utils/usr/share && \
-    cd /tmp/aufs-utils && rm libau* && tar cf /aufs-utils.tar .
-
-RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\nAUFS_REPO=${AUFS_REPO}\nAUFS_BRANCH=${AUFS_BRANCH}\nAUFS_COMMIT=${AUFS_COMMIT}\nAUFS_TOOLS_REPO=${AUFS_TOOLS_REPO}\nAUFS_TOOLS_COMMIT=${AUFS_TOOLS_COMMIT}\n" > /kernel-source-info
+RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /kernel-source-info
