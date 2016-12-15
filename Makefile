@@ -42,6 +42,17 @@ else
 	$(error "git not clean")
 endif
 
+ci:
+	$(MAKE) clean
+	$(MAKE) all
+	$(MAKE) test
+	$(MAKE) media
+
+ci-pr:
+	$(MAKE) clean
+	$(MAKE) all
+	$(MAKE) test
+
 .PHONY: clean
 
 clean:
