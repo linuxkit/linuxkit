@@ -53,14 +53,15 @@ ifdef AUFS
 AUFS_PREFIX=aufs-
 endif
 MEDIA_IMAGE=mobylinux/media:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
+INITRD_IMAGE=mobylinux/mobylinux:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 KERNEL_IMAGE=mobylinux/kernel:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 media: Dockerfile.media alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-efi.iso
 ifeq ($(STATUS),)
 	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux alpine/kernel/x86_64/kernel-headers.tar | docker build -f Dockerfile.media -t $(MEDIA_IMAGE) -
 	docker push $(MEDIA_IMAGE)
 	[ -f $(MOBYLINUX_TAG) ]
-	docker tag $(shell cat $(MOBYLINUX_TAG)) $(MEDIA_IMAGE)
-	docker push $(MEDIA_IMAGE)
+	docker tag $(shell cat $(MOBYLINUX_TAG)) $(INITRD_IMAGE)
+	docker push $(INITRD_IMAGE)
 	tar cf - Dockerfile.kernel alpine/kernel/x86_64/vmlinuz64 | docker build -f Dockerfile.kernel -t $(KERNEL_IMAGE) -
 	docker push $(KERNEL_IMAGE)
 else
