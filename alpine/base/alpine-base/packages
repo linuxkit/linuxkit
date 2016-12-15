@@ -36,7 +36,7 @@ libuuid 2.28.2-r0
 libverto 0.2.5-r0
 musl 1.1.15-r5
 musl-utils 1.1.15-r5
-oniguruma 6.1.2-r0
+oniguruma 6.1.3-r0
 openrc 0.21.7-r3
 openssh-client 7.3_p1-r2
 pcre 8.39-r0
