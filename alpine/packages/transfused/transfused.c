@@ -182,42 +182,46 @@ uint64_t message_id(uint64_t *message)
 	return message[1];
 }
 
+void read_exactly(char *descr, int fd, void *p, size_t nbyte)
+{
+	ssize_t read_count;
+	char *buf = p;
+
+	while (nbyte > 0) {
+		read_count = read(fd, buf, nbyte);
+		if (read_count < 0) {
+			if (errno == EAGAIN || errno == EINTR)
+				continue;
+			die(1, NULL, "", "read %s: error reading: ", descr);
+		}
+		if (read_count == 0)
+			die(1, NULL, NULL, "read %s: EOF reading", descr);
+		nbyte -= read_count;
+		buf += read_count;
+	}
+}
+
 int read_message(char *descr, parameters *params, int fd,
-		 char *buf, size_t max_read){
-	int read_count;
-	size_t nbyte;
+		 char *buf, size_t max_read)
+{
+	size_t nbyte = sizeof(uint32_t);
 	uint32_t len;
 
-	/* TODO: socket read conditions e.g.EAGAIN */
-	read_count = read(fd, buf, 4);
-	if (read_count != 4) {
-		if (read_count < 0)
-			die(1, params, "", "read %s: error reading: ", descr);
-		if (read_count == 0)
-			die(1, params, NULL,
-			    "read %s: EOF reading length", descr);
-		die(1, params, NULL,
-		    "read %s: short read length %d", descr, read_count);
-	}
+	read_exactly(descr, fd, buf, nbyte);
 	len = *((uint32_t *) buf);
 	if (len > max_read)
 		die(1, params, NULL,
 		    "read %s: message size %d exceeds buffer capacity %d",
 		    len, max_read);
+	if (len < nbyte)
+		die(1, params, NULL,
+		    "read %s: message size is %d but must be at least %d",
+		    len, nbyte);
 
-	nbyte = (size_t)(len - 4);
-	buf += 4;
+	buf += nbyte;
+	nbyte = (size_t)(len - nbyte);
 
-	do {
-		/* TODO: socket read conditions e.g.EAGAIN */
-		read_count = read(fd, buf, nbyte);
-		if (read_count < 0)
-			die(1, params, "", "read %s: error reading: ", descr);
-		if (read_count == 0)
-			die(1, params, NULL, "read %s: EOF reading", descr);
-		nbyte -= read_count;
-		buf += read_count;
-	} while (nbyte != 0);
+	read_exactly(descr, fd, buf, nbyte);
 
 	return (int)len;
 }
@@ -297,17 +301,19 @@ void write_exactly(char *descr, int fd, void *p, size_t nbyte)
 	int write_count;
 	char *buf = p;
 
-	do {
-		/* TODO: socket write conditions e.g.EAGAIN */
+	while (nbyte > 0) {
 		write_count = write(fd, buf, nbyte);
-		if (write_count < 0)
+		if (write_count < 0) {
+			if (errno == EINTR || errno == EAGAIN)
+				continue;
 			die(1, NULL, "", "%s: error writing: ", descr);
+		}
 		if (write_count == 0)
 			die(1, NULL, "", "%s: 0 write: ", descr);
 
 		nbyte -= write_count;
 		buf += write_count;
-	} while (nbyte != 0);
+	}
 }
 
 void copy_outof_fuse(copy_thread_state *copy_state)
@@ -737,23 +743,14 @@ void write_pid(connection_t *connection)
 {
 	pid_t pid = gettid();
 	char *pid_s;
-	int pid_s_len, write_count;
+	int pid_s_len;
 
 	if (asprintf(&pid_s, "%lld", (long long)pid) == -1)
 		die(1, connection->params, "Couldn't allocate pid string", "");
 
 	pid_s_len = strlen(pid_s);
 
-	/* TODO: check for socket write conditions e.g.EAGAIN */
-	write_count = write(connection->sock, pid_s, pid_s_len);
-	if (write_count < 0)
-		die(1, connection->params, "Error writing pid", "");
-
-	/* TODO: handle short writes */
-	if (write_count != pid_s_len)
-		die(1, connection->params, NULL,
-		    "Error writing pid %s to socket: only wrote %d bytes",
-		    pid_s, write_count);
+	write_exactly("pid", connection->sock, pid_s, pid_s_len);
 
 	free(pid_s);
 }
@@ -822,7 +819,7 @@ void perform_syscall(connection_t *conn, uint8_t syscall, char path[])
 				name, path, strerror(errno));
 }
 
-void * event_thread(void *connection_ptr)
+void *event_thread(void *connection_ptr)
 {
 	int read_count, path_len;
 	void *buf;
@@ -929,32 +926,21 @@ void *determine_mount_suitability(parameters *params, int allow_empty,
 void *init_thread(void *params_ptr)
 {
 	parameters *params = params_ptr;
-	int write_count, read_count, len;
+	int read_count, len;
 	char init_msg[6] = {'\6', '\0', '\0', '\0', '\0', '\0'};
 	void *buf, *response;
 	uint16_t msg_type;
 
 	params->ctl_sock = connect_socket(params->server);
 
-	/* TODO: handle short write/socket conditions */
-	write_count = write(params->ctl_sock, init_msg, sizeof(init_msg));
-	if (write_count < 0)
-		die(1, NULL, "init thread: couldn't write init", "");
-	if (write_count != sizeof(init_msg))
-		die(1, NULL, "init thread: incomplete write", "");
+	write_exactly("init", params->ctl_sock, init_msg, sizeof(init_msg));
 
 	buf = must_malloc("incoming control message buffer", CTL_BUFSZ);
 
-	/* TODO: handle short read / socket conditions */
-	read_count = read(params->ctl_sock, buf, 6);
-	if (read_count < 0)
-		die(1, params, "init thread: error reading", "");
 	/* TODO: handle other messages */
-	if (read_count != 6)
-		die(1, params, NULL, "init thread: response not 6");
-	for (int i = 0; i < sizeof(init_msg); i++)
-		if (((char *)buf)[i] != init_msg[i])
-			die(1, params, NULL, "init thread: unexpected message");
+	read_exactly("init thread", params->ctl_sock, buf, sizeof(init_msg));
+	if (memcmp(buf, init_msg, sizeof(init_msg)))
+		die(1, params, NULL, "init thread: unexpected message");
 
 	/* we've gotten Continue so write the pidfile */
 	if (params->pidfile != NULL)
@@ -1098,7 +1084,6 @@ void parse_parameters(int argc, char *argv[], parameters *params)
 
 void serve(parameters *params)
 {
-	ssize_t read_count;
 	char subproto_selector;
 	pthread_t child;
 	connection_t *conn;
@@ -1122,10 +1107,7 @@ void serve(parameters *params)
 		if (conn->sock < 0)
 			die(1, params, "accept", "");
 
-		/* TODO: check for socket read conditions e.g.EAGAIN */
-		read_count = read(conn->sock, &subproto_selector, 1);
-		if (read_count <= 0)
-			die(1, params, "read subprotocol selector", "");
+		read_exactly("subproto", conn->sock, &subproto_selector, 1);
 
 		switch (subproto_selector) {
 		case 'm':
