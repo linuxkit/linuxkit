@@ -22,15 +22,12 @@ start()
 
 	ebegin "Configuring kernel parameters"
 	set --
-	# Do additional sysctl configuration for cloud editions
-	[ "$(mobyplatform)" != "mac" ] && [ "$(mobyplatform)" != "windows" ] && CLOUD=/etc/sysctl.d/cloud/*.conf
 	for i in /run/sysctl.d/*.conf \
 			/etc/sysctl.d/*.conf \
 			/usr/local/lib/sysctl.d/*.conf \
 			/usr/lib/sysctl.d/*.conf \
 			/lib/sysctl.d/*.conf \
-			/etc/sysctl.conf \
-			$CLOUD; do
+			/etc/sysctl.conf; do
 		if [ -e "$i" ]; then
 			sysctl ${quiet} -p "$i"
 			rc=$(( $rc + $? ))
