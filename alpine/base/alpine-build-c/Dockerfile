@@ -7,16 +7,24 @@ RUN \
   automake \
   bash \
   bc \
+  binutils-dev \
+  bison \
   cmake \
   curl \
+  flex \
   gmp-dev \
+  gtk+2.0-dev \
+  gtk+-dev \
   groff \
   installkernel \
   kmod \
+  libelf-dev \
   linux-headers \
   ncurses-dev \
-  perl \
+  perl-dev \
+  python-dev \
   sed \
+  slang-dev \
   squashfs-tools \
   syslinux \
   unzip \
