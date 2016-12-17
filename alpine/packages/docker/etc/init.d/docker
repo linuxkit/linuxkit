@@ -62,7 +62,11 @@ start()
 		NETWORK_MODE="$(mobyconfig get network | tr -d '[[:space:]]')"
 		NATIVE_PORT_FORWARDING="$(mobyconfig get native/port-forwarding | tr -d '[[:space:]]')"
 		if [ "${NETWORK_MODE}" = "slirp" -o "${NATIVE_PORT_FORWARDING}" = "true" ]; then
-			DOCKER_OPTS="${DOCKER_OPTS} --userland-proxy-path /usr/bin/slirp-proxy"
+			if dockerd --help | grep -q -- --userland-proxy-path; then
+				DOCKER_OPTS="${DOCKER_OPTS} --userland-proxy-path /usr/bin/slirp-proxy"
+			else
+				cp /usr/bin/slirp-proxy /usr/bin/docker-proxy
+			fi
 		fi
 	fi
 
