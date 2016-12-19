@@ -158,7 +158,7 @@ func handleSyslogForward(cfg string) {
 		/* Try and carry on... */
 	}
 
-	l, err := net.ListenUnixgram("unixgram", &net.UnixAddr{usock, "unixgram"})
+	l, err := net.ListenUnixgram("unixgram", &net.UnixAddr{Name: usock, Net: "unixgram"})
 	if err != nil {
 		console.Fatalf("Failed to listen to unixgram:%s: %s", usock, err)
 	}
