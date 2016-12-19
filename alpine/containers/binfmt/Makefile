@@ -7,6 +7,10 @@ default: rootfs
 $(QEMU_BINARIES):
 	docker run --rm --net=none $(QEMU_IMAGE) tar cf - -C /usr/bin $@ | tar xf -
 
+EXCLUDE=--exclude .dockerenv --exclude Dockerfile \
+	--exclude dev/console --exclude dev/pts --exclude dev/shm \
+	--exclude etc/hostname --exclude etc/hosts --exclude etc/mtab --exclude etc/resolv.conf
+
 rootfs: Dockerfile main.go 00_moby.conf $(QEMU_BINARIES)
 	mkdir -p $@
 	BUILD=$$( tar cf - $^ | docker build -q - ) && \
@@ -16,9 +20,8 @@ rootfs: Dockerfile main.go 00_moby.conf $(QEMU_BINARIES)
 	[ -n "$$IMAGE" ] && \
 	echo "Built $$IMAGE" && \
 	CONTAINER=$$( docker create $$IMAGE /dev/null ) && \
-	docker export $$CONTAINER | tar -xf - -C $@ && \
-	docker rm $$CONTAINER && \
-	( cd $@ && rm -rf .dockerenv Dockerfile dev/* etc/hostname etc/hosts etc/mtab etc/resolv.conf )
+	docker export $$CONTAINER | tar -xf - -C $@ $(EXCLUDE) && \
+	docker rm $$CONTAINER
 
 clean:
 	rm -rf rootfs $(QEMU_BINARIES)
