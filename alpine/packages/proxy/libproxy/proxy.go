@@ -1,11 +1,12 @@
-// Package proxy provides a network Proxy interface and implementations for TCP
+// Package libproxy provides a network Proxy interface and implementations for TCP
 // and UDP.
 package libproxy
 
 import (
 	"fmt"
-	"github.com/rneugeba/virtsock/go/vsock"
 	"net"
+
+	"github.com/rneugeba/virtsock/go/vsock"
 )
 
 // Proxy defines the behavior of a proxy. It forwards traffic back and forth

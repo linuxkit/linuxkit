@@ -1,8 +1,8 @@
 /*
- * Functions in this file are used to forward syslog messages to the
- * host and must be quite careful about their own logging. In general
- * error messages should go via the console log.Logger defined in this
- * file.
+* Functions in this file are used to forward syslog messages to the
+* host and must be quite careful about their own logging. In general
+* error messages should go via the console log.Logger defined in this
+* file.
  */
 package main
 
