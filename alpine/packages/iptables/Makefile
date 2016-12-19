@@ -9,4 +9,3 @@ usr/local/sbin/iptables: Dockerfile main.ml
 
 clean:
 	rm -rf usr
-	docker images -q iptables:build | xargs docker rmi -f || true
