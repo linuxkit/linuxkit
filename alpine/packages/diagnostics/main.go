@@ -16,6 +16,7 @@ func init() {
 	log.SetFlags(0)
 }
 
+// DiagnosticListener listens for starting diagnostics capture requests
 type DiagnosticListener interface {
 	// Listen(), a blocking method intended to be invoked in its own
 	// goroutine, will listen for a diagnostic information request and

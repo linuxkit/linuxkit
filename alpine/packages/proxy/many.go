@@ -3,18 +3,19 @@ package main
 import (
 	"encoding/binary"
 	"flag"
-	"github.com/rneugeba/virtsock/go/hvsock"
-	"github.com/rneugeba/virtsock/go/vsock"
 	"log"
 	"net"
 	"proxy/libproxy"
+
+	"github.com/rneugeba/virtsock/go/hvsock"
+	"github.com/rneugeba/virtsock/go/vsock"
 )
 
 // Listen on virtio-vsock and AF_HYPERV for multiplexed connections
 func manyPorts() {
 	var (
 		vsockPort = flag.Int("vsockPort", 62373, "virtio-vsock port")
-		hvGuid    = flag.String("hvGuid", "0B95756A-9985-48AD-9470-78E060895BE7", "Hyper-V service GUID")
+		hvGUID    = flag.String("hvGuid", "0B95756A-9985-48AD-9470-78E060895BE7", "Hyper-V service GUID")
 	)
 	flag.Parse()
 
@@ -26,10 +27,10 @@ func manyPorts() {
 	} else {
 		listeners = append(listeners, vsock)
 	}
-	svcid, _ := hvsock.GuidFromString(*hvGuid)
+	svcid, _ := hvsock.GuidFromString(*hvGUID)
 	hvsock, err := hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
 	if err != nil {
-		log.Printf("Failed to bind hvsock guid: %s: %#v", *hvGuid, err)
+		log.Printf("Failed to bind hvsock guid: %s: %#v", *hvGUID, err)
 	} else {
 		listeners = append(listeners, hvsock)
 	}
@@ -83,7 +84,9 @@ func manyPorts() {
 }
 
 const (
+	// TCP protocol const
 	TCP = 1
+	// UDP protocol const
 	UDP = 2
 )
 

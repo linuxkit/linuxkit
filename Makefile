@@ -37,6 +37,14 @@ hyperkit.git/build/com.docker.hyperkit: hyperkit.git
 hyperkit: hyperkit.sh hyperkit.git/build/com.docker.hyperkit alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	sudo ./hyperkit.sh
 
+lint:
+	# gofmt
+	@test -z "$$(gofmt -s -l .| grep -v .pb. | grep -v */vendor/ | tee /dev/stderr)"
+	# govet
+	@test -z "$$(go tool vet -printf=false . 2>&1 | grep -v */vendor/ | tee /dev/stderr)"
+	# golint
+	@test -z "$(shell find . -type f -name "*.go" -not -path "*/vendor/*" -not -name "*.pb.*" -exec golint {} \; | tee /dev/stderr)"
+
 test: Dockerfile.test alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
 	$(MAKE) -C alpine
 	BUILD=$$( tar cf - $^ | docker build -f Dockerfile.test -q - ) && \
@@ -93,7 +101,7 @@ ci:
 	$(MAKE) AUFS=1 test
 	$(MAKE) AUFS=1 media
 
-ci-pr:
+ci-pr: lint
 	$(MAKE) clean
 	$(MAKE) all
 	$(MAKE) test
