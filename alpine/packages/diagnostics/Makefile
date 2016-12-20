@@ -2,7 +2,10 @@ all: usr/bin/diagnostics-server
 
 DEPS=Dockerfile $(wildcard *.go)
 
-usr/bin/diagnostics-server: $(DEPS) ../vendor/manifest
+# Tag: 02a04b2dc262195773b29125daebca0eebd97845
+LINT_IMAGE=mobylinux/alpine-go-lint@sha256:3009197c25294d87a7e81a53493666de47ed2b55a5bd283eabad4b876ea64559
+
+usr/bin/diagnostics-server: $(DEPS) ../vendor/manifest lint
 	BUILD=$$( tar cf - $(DEPS) -C .. vendor | docker build -q - ) && \
 	[ -n "$$BUILD" ] && \
 	echo "Built $$BUILD" && \
@@ -10,5 +13,8 @@ usr/bin/diagnostics-server: $(DEPS) ../vendor/manifest
 
 clean:
 	rm -f usr/bin/diagnostics-server
+
+lint:
+	docker run --rm -v $(PWD):/src $(LINT_IMAGE)
 
 .DELETE_ON_ERROR:
