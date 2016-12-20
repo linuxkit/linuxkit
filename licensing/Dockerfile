@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:edge
 
 RUN apk update && apk add lua git bash
 
