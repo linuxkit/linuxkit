@@ -188,7 +188,7 @@ func handleOneIn(connid int, conn vConn, sock string) {
 	var docker *net.UnixConn
 	var err error
 
-	docker, err = net.DialUnix("unix", nil, &net.UnixAddr{sock, "unix"})
+	docker, err = net.DialUnix("unix", nil, &net.UnixAddr{Name: sock, Net: "unix"})
 
 	if err != nil {
 		// If the forwarding program has broken then close and continue

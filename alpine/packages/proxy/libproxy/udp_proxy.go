@@ -46,7 +46,7 @@ type connTrackMap map[connTrackKey]*net.UDPConn
 // interface to handle UDP traffic forwarding between the frontend and backend
 // addresses.
 type UDPProxy struct {
-	listener       udpListener
+	listener       UDPListener
 	frontendAddr   net.Addr
 	backendAddr    *net.UDPAddr
 	connTrackTable connTrackMap
@@ -54,7 +54,7 @@ type UDPProxy struct {
 }
 
 // NewUDPProxy creates a new UDPProxy.
-func NewUDPProxy(frontendAddr net.Addr, listener udpListener, backendAddr *net.UDPAddr) (*UDPProxy, error) {
+func NewUDPProxy(frontendAddr net.Addr, listener UDPListener, backendAddr *net.UDPAddr) (*UDPProxy, error) {
 
 	return &UDPProxy{
 		listener:       listener,

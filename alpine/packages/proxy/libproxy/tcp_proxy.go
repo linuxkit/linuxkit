@@ -6,6 +6,7 @@ import (
 	"net"
 )
 
+// Conn defines a network connection
 type Conn interface {
 	io.Reader
 	io.Writer
@@ -33,6 +34,7 @@ func NewTCPProxy(listener net.Listener, backendAddr *net.TCPAddr) (*TCPProxy, er
 	}, nil
 }
 
+// HandleTCPConnection forwards the TCP traffic to a specified backend address
 func HandleTCPConnection(client Conn, backendAddr *net.TCPAddr, quit chan bool) {
 	backend, err := net.DialTCP("tcp", nil, backendAddr)
 	if err != nil {

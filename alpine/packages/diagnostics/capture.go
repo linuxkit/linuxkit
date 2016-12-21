@@ -82,12 +82,15 @@ type Capturer interface {
 	Capture(context.Context, *tar.Writer)
 }
 
+// CommandCapturer describes commands with its arguments and timeout to
+// capture diagnostic information from
 type CommandCapturer struct {
 	command string
 	args    []string
 	timeout time.Duration
 }
 
+// Capture writes output from a CommandCapturer to a tar archive
 func (cc CommandCapturer) Capture(parentCtx context.Context, w *tar.Writer) {
 	stdout := &bytes.Buffer{}
 	stderr := &bytes.Buffer{}
@@ -148,10 +151,14 @@ func runCmd(cmd *exec.Cmd, done chan<- struct{}) {
 	done <- struct{}{}
 }
 
+// DatabaseCapturer defines behavior for capturing diagnostic
+// information from dumping a database
 type DatabaseCapturer struct {
 	*CommandCapturer
 }
 
+// NewDatabaseCapturer creates a new DatabaseCapturer that cats
+// the database's contents to a CommandCapturer
 func NewDatabaseCapturer() DatabaseCapturer {
 	return DatabaseCapturer{
 		&CommandCapturer{
@@ -161,6 +168,7 @@ func NewDatabaseCapturer() DatabaseCapturer {
 	}
 }
 
+// Capture writes output from a DatabaseCapturer to a tar archive
 func (dc DatabaseCapturer) Capture(parentCtx context.Context, w *tar.Writer) {
 	// Dump the database
 	dbBase := "/Database/branch/master/ro"
