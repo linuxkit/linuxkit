@@ -36,6 +36,7 @@ func init() {
 // for cloud editions.
 type HTTPDiagnosticListener struct{}
 
+// Listen starts the HTTPDiagnosticListener and sets up handlers for its endpoints
 func (h HTTPDiagnosticListener) Listen() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if _, err := os.Stat(dockerSock); os.IsNotExist(err) {
@@ -140,10 +141,8 @@ func (h HTTPDiagnosticListener) Listen() {
 				}
 				log.Println(string(body))
 				return
-			} else {
-				log.Println("No error sending S3 request")
 			}
-
+			log.Println("No error sending S3 request")
 			log.Println("Diagnostics request finished")
 		}()
 	})

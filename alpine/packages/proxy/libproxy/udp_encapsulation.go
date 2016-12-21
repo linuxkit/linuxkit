@@ -9,12 +9,14 @@ import (
 	"sync"
 )
 
-type udpListener interface {
+// UDPListener defines a listener interface to read, write and close a UDP connection
+type UDPListener interface {
 	ReadFromUDP(b []byte) (int, *net.UDPAddr, error)
 	WriteToUDP(b []byte, addr *net.UDPAddr) (int, error)
 	Close() error
 }
 
+// udpEncapsulator encapsulates a UDP connection and listener
 type udpEncapsulator struct {
 	conn     *net.Conn
 	listener net.Listener
@@ -38,6 +40,8 @@ func (u *udpEncapsulator) getConn() (net.Conn, error) {
 	return conn, nil
 }
 
+// ReadFromUDP reads the bytestream from a udpEncapsulator, returning the
+// number of bytes read and the unpacked UDPAddr struct
 func (u *udpEncapsulator) ReadFromUDP(b []byte) (int, *net.UDPAddr, error) {
 	conn, err := u.getConn()
 	if err != nil {
@@ -54,6 +58,8 @@ func (u *udpEncapsulator) ReadFromUDP(b []byte) (int, *net.UDPAddr, error) {
 	return length, &udpAddr, nil
 }
 
+// WriteToUDP writes a bytestream to a specified UDPAddr, returning the number
+// of bytes successfully written
 func (u *udpEncapsulator) WriteToUDP(b []byte, addr *net.UDPAddr) (int, error) {
 	conn, err := u.getConn()
 	if err != nil {
@@ -65,6 +71,7 @@ func (u *udpEncapsulator) WriteToUDP(b []byte, addr *net.UDPAddr) (int, error) {
 	return len(b), datagram.Marshal(conn)
 }
 
+// Close closes the connection in the udpEncapsulator
 func (u *udpEncapsulator) Close() error {
 	if u.conn != nil {
 		conn := *u.conn
@@ -74,7 +81,8 @@ func (u *udpEncapsulator) Close() error {
 	return nil
 }
 
-func NewUDPConn(conn net.Conn) udpListener {
+// NewUDPConn initializes a new UDP connection
+func NewUDPConn(conn net.Conn) UDPListener {
 	var m sync.Mutex
 	var r sync.Mutex
 	var w sync.Mutex
@@ -87,7 +95,8 @@ func NewUDPConn(conn net.Conn) udpListener {
 	}
 }
 
-func NewUDPListener(listener net.Listener) udpListener {
+// NewUDPListener initializes a new UDP listener
+func NewUDPListener(listener net.Listener) UDPListener {
 	var m sync.Mutex
 	var r sync.Mutex
 	var w sync.Mutex
@@ -107,6 +116,7 @@ type udpDatagram struct {
 	Zone    string
 }
 
+// Marshal marshals data from the udpDatagram to the provided connection
 func (u *udpDatagram) Marshal(conn net.Conn) error {
 	// marshal the variable length header to a temporary buffer
 	var header bytes.Buffer
@@ -154,6 +164,7 @@ func (u *udpDatagram) Marshal(conn net.Conn) error {
 	return nil
 }
 
+// Unmarshal unmarshals data from the connection to the udpDatagram
 func (u *udpDatagram) Unmarshal(conn net.Conn) (int, error) {
 	var length uint16
 	// frame length

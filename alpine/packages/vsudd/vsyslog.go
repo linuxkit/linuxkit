@@ -1,8 +1,8 @@
 /*
- * Functions in this file are used to forward syslog messages to the
- * host and must be quite careful about their own logging. In general
- * error messages should go via the console log.Logger defined in this
- * file.
+* Functions in this file are used to forward syslog messages to the
+* host and must be quite careful about their own logging. In general
+* error messages should go via the console log.Logger defined in this
+* file.
  */
 package main
 
@@ -158,7 +158,7 @@ func handleSyslogForward(cfg string) {
 		/* Try and carry on... */
 	}
 
-	l, err := net.ListenUnixgram("unixgram", &net.UnixAddr{usock, "unixgram"})
+	l, err := net.ListenUnixgram("unixgram", &net.UnixAddr{Name: usock, Net: "unixgram"})
 	if err != nil {
 		console.Fatalf("Failed to listen to unixgram:%s: %s", usock, err)
 	}
