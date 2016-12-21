@@ -2,7 +2,7 @@
 
 set -e
 
-cd /src
+cd $1
 
 >&2 echo "gofmt..."
 test -z $(gofmt -s -l .| grep -v .pb. | grep -v */vendor/ | tee /dev/stderr)
