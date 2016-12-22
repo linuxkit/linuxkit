@@ -24,3 +24,5 @@ RUN \
   sysklogd \
   xz \
   && true
+
+RUN rm -f /sbin/apk
