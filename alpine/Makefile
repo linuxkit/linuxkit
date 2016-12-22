@@ -49,6 +49,7 @@ moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/containerd etc -C ../.. \
 	  -C packages/aws etc -C ../.. \
 	  -C packages/azure etc -C ../.. \
+	  -C packages/gcp etc -C ../.. \
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	echo $$BUILD > mobylinux.tag && \
