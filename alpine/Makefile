@@ -19,8 +19,8 @@ PAD4_IMAGE=mobylinux/pad4@sha256:a26e02f16bdafa241a55e05fa09b9bb260e69a3a8c90418
 # Tag: 74b6ce93033430a58826d90b0b88513e0dcfcb5a
 TAR2INITRD_IMAGE=mobylinux/tar2initrd@sha256:42e242f5bf8dc7971c1f0e6e7b156008d930d5b3129136e72c4b867f2ff15e98
 
-# Tag: df1b8ef666d66694e84f23772937ff45c46fa6c1
-GCE_IMAGE=mobylinux/mkimage-gce@sha256:b19ba24184ed5602df5b666ed475d5d7211fa67bee51d3e6380cf0380c63f65b
+# Tag: 77bc577875fb3a80ac2d14b70d1daa885bbf199c
+GCE_IMAGE=mobylinux/mkimage-gce@sha256:f9abf2eae20984b7dd3c1afb700b2c9c41e39e6e7c688c78348a51d0780d74cc
 
 moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
