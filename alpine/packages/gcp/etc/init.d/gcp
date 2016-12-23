@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+
+description="Bootstrap procedure if running on Docker GCP edition"
+
+depend()
+{
+  need docker
+  need net
+}
+
+start()
+{
+  [ "$(mobyplatform)" != "gcp" ] && exit 0
+  ebegin "Running GCP-specific initialization"
+
+  ebegin "Run startup script"
+
+  temp_file=$(mktemp)
+  curl -s http://metadata.google.internal/computeMetadata/v1/instance/attributes/startup-script -H "Metadata-Flavor: Google" > ${temp_file}
+  [ -s "${temp_file}" ] && sh "${temp_file}"
+  rm -f "${temp_file}"
+
+  eend 0
+}
+
+stop()
+{
+  [ "$(mobyplatform)" != "gcp" ] && exit 0
+}
