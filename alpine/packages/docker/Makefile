@@ -14,6 +14,17 @@ endif
 
 DOCKER_IMAGE?=docker:$(DOCKER_VERSION)
 
+ifeq ($(DOCKER_VERSION),master)
+ifeq ($(OS),Linux)
+OS=linux
+endif
+ifeq ($(ARCH),x86_64)
+ARCH=amd64
+endif
+MASTER_VERSION:=$(shell curl -fsSL https://master.dockerproject.org/version)
+DOCKER_BIN_URL=https://master.dockerproject.org/$(OS)/$(ARCH)/docker-$(MASTER_VERSION).tgz
+endif
+
 .PHONY: download hub cleanusr
 
 ifeq ($(DOCKER_BIN_URL)$(FORCE_CURL)$(RELEASE_CANDIDATE),)
