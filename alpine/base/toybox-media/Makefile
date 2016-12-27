@@ -1,7 +1,7 @@
 .PHONY: tag push
 
-# Tag: 0b3fe26d29b08f0f74ce68bc6273bbc6cfedef34
-BASE=mobylinux/alpine-build-toybox@sha256:5300e0c76a236391131e068c0c40226d4979c9b396f60a1a97cfef4b554476e5
+# Tag: c544d1d4e0a5dd6af3e867c0fa19a628dc128e0c
+BASE=mobylinux/alpine-build-toybox@sha256:3ef02ab3d9edebd9676b0178d729503d32f92230ef53132c26221d25911431d1
 IMAGE=toybox-media
 
 default: push

@@ -1,6 +1,7 @@
-# Tag: 7b94dce736818ca5c9d5367be360b79714687ca5
-FROM mobylinux/alpine-build-c@sha256:9157aa25a781b5c47c563c0b9a5d564d41b32ceac9bf26d1e1249e8849d62c8b
+# Tag: b77cfc4ad0033d4366df830ed697afc7bab458a2
+FROM mobylinux/alpine-build-c@sha256:53739ea6042cb0ac39cf6e262012c1c4224206b2c9b719569fe7efa3a381348c
 
+COPY . /
 ENV TINI_VERSION=0.13.0
 ADD https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz tini-${TINI_VERSION}.tar.gz
 RUN zcat tini-${TINI_VERSION}.tar.gz | tar xvf -
