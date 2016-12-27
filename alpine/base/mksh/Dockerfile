@@ -1,5 +1,5 @@
-# Tag: 9e9c6b252d2e4ec03da23c8f48f54fce7ddee8d3
-FROM mobylinux/alpine-build-c@sha256:68737dcc6a1081f07aace1e82aefe90df399a25ae3a025664c4dbdccf76bbd97
+# Tag: b77cfc4ad0033d4366df830ed697afc7bab458a2
+FROM mobylinux/alpine-build-c@sha256:53739ea6042cb0ac39cf6e262012c1c4224206b2c9b719569fe7efa3a381348c
 
 COPY . /
 
