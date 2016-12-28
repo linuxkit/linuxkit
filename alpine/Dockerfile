@@ -57,7 +57,8 @@ RUN \
   rc-update add containerd default && \
   rc-update add aws default && \
   rc-update add azure default && \
-  rc-update add gcp default && \
+  rc-update add gcp-hostname default && \
+  rc-update add gcp-startup default && \
   true
 
 CMD ["/mkinitrd.sh"]
