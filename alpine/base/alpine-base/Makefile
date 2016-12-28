@@ -1,6 +1,6 @@
 .PHONY: tag push
 
-BASE=alpine:3.4
+BASE=alpine:3.5
 IMAGE=alpine-base
 
 default: push
