@@ -1,5 +1,5 @@
-# Tag: 804b2c40d078287c40aeb9166e475e843544e597
-FROM mobylinux/alpine-qemu@sha256:aaecc961a62b14ee0ecd3a4fe792af5232637f0a49f7d0f90b87acaeb6f3fa4a
+# Tag: 97cc67f5569c437175f2e54b3c3b9a96a8615a16
+FROM mobylinux/alpine-qemu@sha256:80e17a465b332d774fd91b53c0bcb18ed0ea8a77c17bf8d8451c57a8ab8b4e66
 
 COPY alpine/initrd-test.img initrd.img
 COPY alpine/kernel/x86_64/vmlinuz64 .
