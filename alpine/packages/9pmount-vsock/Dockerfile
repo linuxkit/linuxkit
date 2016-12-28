@@ -1,5 +1,5 @@
-# Tag: 3da0b0ea0da2724232603094e67c75b41adab551
-FROM mobylinux/alpine-build-c@sha256:0236d6599f6c8f7aa42829285e04202fbe99984df2818af0f5a453a59de8b090
+# Tag: b77cfc4ad0033d4366df830ed697afc7bab458a2
+FROM mobylinux/alpine-build-c@sha256:53739ea6042cb0ac39cf6e262012c1c4224206b2c9b719569fe7efa3a381348c
 
 COPY . /9pmount-vsock
 

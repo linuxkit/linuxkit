@@ -1,6 +1,6 @@
 # Create a EFI Bootable ISO
-# Tag: 41ce281ca20186b8f5cae3b0fd05260189d6a3d2
-FROM mobylinux/alpine-efi@sha256:15f82d91a6eb7ddd26bf6fe861787dd04073b4b5d3453a00d1052b0e4b972722
+# Tag: cb55eabd696f41c5e4983a7440a865685087f683
+FROM mobylinux/alpine-efi@sha256:3693e786f48858c1b104e64727ac487e3c851046755b241f8a4556afac97edd6
 
 WORKDIR /tmp/efi
 

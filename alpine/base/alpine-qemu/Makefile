@@ -1,11 +1,11 @@
 .PHONY: tag push
 
-BASE=alpine:3.4
+BASE=alpine:3.5
 IMAGE=alpine-qemu
 
 default: push
 
-hash: Dockerfile repositories
+hash: Dockerfile
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sha1sum /lib/apk/db/installed | sed 's/ .*//' > hash

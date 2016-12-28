@@ -1,4 +1,4 @@
-FROM alpine:3.4
+FROM alpine:3.5
 
 RUN \
   apk update && apk upgrade && \
@@ -6,9 +6,8 @@ RUN \
     curl \
     e2fsprogs \
     jq \
-    python \
-    py-pip \
+    python3 \
     syslinux \
   && true
 
-RUN pip install -U awscli
+RUN pip3 install -U awscli
