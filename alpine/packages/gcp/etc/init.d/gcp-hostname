@@ -1,0 +1,34 @@
+#!/sbin/openrc-run
+
+description="Set hostname on Docker GCP edition"
+
+depend()
+{
+  need net
+  before docker
+}
+
+metadata() {
+  curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/${1}
+}
+
+start()
+{
+  [ "$(mobyplatform)" != "gcp" ] && exit 0
+
+  ebegin "Set hostname based on what GCP tells us it should be"
+
+  IP=$(metadata instance/network-interfaces/0/ip)
+  HOSTNAME=$(metadata instance/hostname)
+  echo "${IP} ${HOSTNAME} ${HOSTNAME%%.*}  # Added by Google" >> /etc/hosts
+  echo "169.254.169.254 metadata.google.internal  # Added by Google" >> /etc/hosts
+  echo ${HOSTNAME%%.*} >/etc/hostname
+  hostname -F /etc/hostname
+
+  eend 0
+}
+
+stop()
+{
+  [ "$(mobyplatform)" != "gcp" ] && exit 0
+}
