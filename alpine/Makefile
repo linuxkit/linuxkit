@@ -88,7 +88,7 @@ gce.img.tar.gz: common
 		docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
 gce-upload:
-	docker run -it --rm --volumes-from gcloud-config google/cloud-sdk gsutil cp -a public-read gce.img.tar.gz gs://docker-for-gcp-images/
+	docker run -it --rm --volumes-from gcloud-config google/cloud-sdk gsutil cp -a public-read gce.img.tar.gz gs://docker-for-gcp-images/latest/gce.img.tar.gz
 
 common: initrd.img
 	$(MAKE) -C kernel
