@@ -28,6 +28,7 @@ cat unzipped_config | grep CONFIG_HARDENED_USERCOPY=y
 cat unzipped_config | grep CONFIG_SLAB_FREELIST_RANDOM=y
 cat unzipped_config | grep CONFIG_PANIC_ON_OOPS=y
 cat unzipped_config | grep CONFIG_DEBUG_SET_MODULE_RONX=y
+cat unzipped_config | grep CONFIG_UBSAN=y
 
 # Negative cases
 cat unzipped_config | grep 'CONFIG_ACPI_CUSTOM_METHOD is not set'
