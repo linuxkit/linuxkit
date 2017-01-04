@@ -1,7 +1,7 @@
-From e7db86231b7078971c613aa81c9090079571cf24 Mon Sep 17 00:00:00 2001
+From ed236f71c930c65452adeefd9c85ed9be6fe7318 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 23 Jul 2016 01:35:51 +0000
-Subject: [PATCH 3/5] hv_sock: introduce Hyper-V Sockets
+Subject: [PATCH 2/3] hv_sock: introduce Hyper-V Sockets
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
 mechanism between the host and the guest. It's somewhat like TCP over
@@ -42,10 +42,10 @@ Origin: https://patchwork.kernel.org/patch/9244467/
  create mode 100644 net/hv_sock/af_hvsock.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index babaf82..6126545 100644
+index 63cefa62324c..e64920219d88 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -5667,7 +5667,9 @@ F:	drivers/pci/host/pci-hyperv.c
+@@ -5853,7 +5853,9 @@ F:	drivers/pci/host/pci-hyperv.c
  F:	drivers/net/hyperv/
  F:	drivers/scsi/storvsc_drv.c
  F:	drivers/video/fbdev/hyperv_fb.c
@@ -56,10 +56,10 @@ index babaf82..6126545 100644
  F:	Documentation/ABI/stable/sysfs-bus-vmbus
  
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index b10954a..50f8976 100644
+index cd184bdca58f..468e15e29f5f 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1505,5 +1505,18 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
+@@ -1593,5 +1593,18 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
  		vmbus_set_event(channel);
  }
  
@@ -79,7 +79,7 @@ index b10954a..50f8976 100644
 +					PREV_INDICES_LEN)
  #endif /* _HYPERV_H */
 diff --git a/include/linux/socket.h b/include/linux/socket.h
-index b5cc5a6..0b68b58 100644
+index b5cc5a6d7011..0b68b587d6ee 100644
 --- a/include/linux/socket.h
 +++ b/include/linux/socket.h
 @@ -202,8 +202,9 @@ struct ucred {
@@ -103,7 +103,7 @@ index b5cc5a6..0b68b58 100644
  /* Maximum queue length specifiable by listen.  */
 diff --git a/include/net/af_hvsock.h b/include/net/af_hvsock.h
 new file mode 100644
-index 0000000..e7a8a3a
+index 000000000000..e7a8a3ae08e8
 --- /dev/null
 +++ b/include/net/af_hvsock.h
 @@ -0,0 +1,78 @@
@@ -186,7 +186,7 @@ index 0000000..e7a8a3a
 +
 +#endif /* __AF_HVSOCK_H__ */
 diff --git a/include/uapi/linux/hyperv.h b/include/uapi/linux/hyperv.h
-index e347b24..eb3e44b 100644
+index e347b24ef9fb..eb3e44b69a5d 100644
 --- a/include/uapi/linux/hyperv.h
 +++ b/include/uapi/linux/hyperv.h
 @@ -26,6 +26,7 @@
@@ -225,7 +225,7 @@ index e347b24..eb3e44b 100644
 +
  #endif /* _UAPI_HYPERV_H */
 diff --git a/net/Kconfig b/net/Kconfig
-index c2cdbce..921e86f 100644
+index 7b6cd340b72b..a9be6907a620 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
 @@ -231,6 +231,7 @@ source "net/dns_resolver/Kconfig"
@@ -237,10 +237,10 @@ index c2cdbce..921e86f 100644
  source "net/mpls/Kconfig"
  source "net/hsr/Kconfig"
 diff --git a/net/Makefile b/net/Makefile
-index 9bd20bb..b4d4e9a 100644
+index 4cafaa2b4667..2b357eb81865 100644
 --- a/net/Makefile
 +++ b/net/Makefile
-@@ -70,6 +70,7 @@ obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
+@@ -71,6 +71,7 @@ obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
  obj-$(CONFIG_NFC)		+= nfc/
  obj-$(CONFIG_OPENVSWITCH)	+= openvswitch/
  obj-$(CONFIG_VSOCKETS)	+= vmw_vsock/
@@ -250,7 +250,7 @@ index 9bd20bb..b4d4e9a 100644
  ifneq ($(CONFIG_NET_SWITCHDEV),)
 diff --git a/net/hv_sock/Kconfig b/net/hv_sock/Kconfig
 new file mode 100644
-index 0000000..ff84875
+index 000000000000..ff84875564d1
 --- /dev/null
 +++ b/net/hv_sock/Kconfig
 @@ -0,0 +1,10 @@
@@ -266,7 +266,7 @@ index 0000000..ff84875
 +	  will be called hv_sock.
 diff --git a/net/hv_sock/Makefile b/net/hv_sock/Makefile
 new file mode 100644
-index 0000000..716c012
+index 000000000000..716c01230129
 --- /dev/null
 +++ b/net/hv_sock/Makefile
 @@ -0,0 +1,3 @@
@@ -275,7 +275,7 @@ index 0000000..716c012
 +hv_sock-y += af_hvsock.o
 diff --git a/net/hv_sock/af_hvsock.c b/net/hv_sock/af_hvsock.c
 new file mode 100644
-index 0000000..331d375
+index 000000000000..331d3759f5cb
 --- /dev/null
 +++ b/net/hv_sock/af_hvsock.c
 @@ -0,0 +1,1507 @@
@@ -1787,5 +1787,5 @@ index 0000000..331d375
 +MODULE_DESCRIPTION("Hyper-V Sockets");
 +MODULE_LICENSE("Dual BSD/GPL");
 -- 
-2.10.2
+2.11.0
 
