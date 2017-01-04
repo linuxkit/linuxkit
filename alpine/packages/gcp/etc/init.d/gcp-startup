@@ -8,7 +8,7 @@ depend()
 }
 
 metadata() {
-  curl -sH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/${1}
+  curl -sfH 'Metadata-Flavor: Google' http://metadata.google.internal/computeMetadata/v1/${1}
 }
 
 start()
