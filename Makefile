@@ -57,7 +57,7 @@ INITRD_IMAGE=mobylinux/mobylinux:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 KERNEL_IMAGE=mobylinux/kernel:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 media: Dockerfile.media alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-efi.iso
 ifeq ($(STATUS),)
-	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux alpine/kernel/x86_64/kernel-headers.tar | docker build -f Dockerfile.media -t $(MEDIA_IMAGE) -
+	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux alpine/kernel/x86_64/kernel-headers.tar alpine/kernel/x86_64/kernel-dev.tar | docker build -f Dockerfile.media -t $(MEDIA_IMAGE) -
 	docker push $(MEDIA_IMAGE)
 	[ -f $(MOBYLINUX_TAG) ]
 	docker tag $(shell cat $(MOBYLINUX_TAG)) $(INITRD_IMAGE)
@@ -75,6 +75,7 @@ ifeq ($(STATUS),)
 	docker cp $$IMAGE:vmlinuz64 alpine/kernel/x86_64/vmlinuz64 && \
 	docker cp $$IMAGE:vmlinux alpine/kernel/x86_64/vmlinux && \
 	docker cp $$IMAGE:kernel-headers.tar alpine/kernel/x86_64/kernel-headers.tar && \
+	docker cp $$IMAGE:kernel-dev.tar alpine/kernel/x86_64/kernel-dev.tar && \
 	docker cp $$IMAGE:initrd.img alpine/initrd.img && \
 	docker cp $$IMAGE:mobylinux-efi.iso alpine/mobylinux-efi.iso && \
 	docker cp $$IMAGE:mobylinux.efi alpine/mobylinux.efi && \
