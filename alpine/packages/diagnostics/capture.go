@@ -56,9 +56,11 @@ var (
 		{"/usr/bin/nslookup", []string{"docker.com"}, defaultCommandTimeout},
 		{"/usr/bin/nslookup", []string{"docker.com", "8.8.8.8"}, defaultCommandTimeout},
 		{"/usr/bin/curl", []string{"http://www.docker.com/"}, defaultCommandTimeout},
-		{"/usr/bin/curl", []string{"http://104.239.220.248/"}, defaultCommandTimeout}, // a www.docker.com address
-		{"/usr/bin/curl", []string{"http://216.58.213.68/"}, defaultCommandTimeout},   // a www.google.com address
-		{"/usr/bin/curl", []string{"http://91.198.174.192/"}, defaultCommandTimeout},  // a www.wikipedia.com address
+		{"/usr/bin/curl", []string{"http://104.239.220.248/"}, defaultCommandTimeout},              // a www.docker.com address
+		{"/usr/bin/curl", []string{"http://216.58.213.68/"}, defaultCommandTimeout},                // a www.google.com address
+		{"/usr/bin/curl", []string{"http://91.198.174.192/"}, defaultCommandTimeout},               // a www.wikipedia.com address
+		{"/bin/cat", []string{"/var/lib/docker/volumes/metadata.db"}, defaultCommandTimeout},       // [docker/docker#29636]
+		{"/bin/cat", []string{"/var/lib/docker/network/files/local-kv.db"}, defaultCommandTimeout}, // [docker/docker#29636]
 	}
 	localCmdCaptures = []CommandCapturer{
 		{"/usr/bin/tail", []string{"-100", "/var/log/proxy-vsockd.log"}, defaultCommandTimeout},
