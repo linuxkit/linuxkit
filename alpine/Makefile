@@ -10,6 +10,9 @@ else
 DIRTY=-dirty
 endif
 
+# By default we want to always auth to GCE to upload moby images
+FORCE_GSUTIL_AUTH ?= 1
+
 # Tag: 22b043cb43f6bc3bc4e1f1ecf9d64932f9325642
 BIOS_IMAGE=mobylinux/mkimage-iso-bios@sha256:7e28f7745fd62284142dce59a137c3331f7673efe8b3f19ee5c65e4cc27ff18c
 
@@ -88,7 +91,15 @@ gce.img.tar.gz: common
 		docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
 gce-upload:
-	docker run -it --rm --volumes-from gcloud-config google/cloud-sdk gsutil cp -a public-read gce.img.tar.gz gs://docker-for-gcp-images/latest/gce.img.tar.gz
+ifeq ($(FORCE_GSUTIL_AUTH),1)
+	-docker rm gsutil-moby-config 2>/dev/null
+	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth login --brief --project=docker-for-gcp
+endif
+	docker run --rm -ti \
+		--volumes-from gsutil-moby-config \
+		-v $(CURDIR)/gce.img.tar.gz:/gce.img.tar.gz \
+		google/cloud-sdk \
+		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-templates/latest/gce.img.tar.gz
 
 common: initrd.img
 	$(MAKE) -C kernel
