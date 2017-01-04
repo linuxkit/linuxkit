@@ -1,0 +1,11 @@
+--- libelf/Makefile.am-orig
++++ libelf/Makefile.am
+@@ -95,7 +95,7 @@
+ libelf_pic_a_SOURCES =
+ am_libelf_pic_a_OBJECTS = $(libelf_a_SOURCES:.c=.os)
+ 
+-libelf_so_LDLIBS = -lz
++libelf_so_LDLIBS = -lz -lintl
+ if USE_LOCKS
+ libelf_so_LDLIBS += -lpthread
+ endif
