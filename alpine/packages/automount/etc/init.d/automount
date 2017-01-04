@@ -40,6 +40,9 @@ do_fsck_extend_mount()
 		sfdisk -q --delete "$DRIVE" 2> /dev/null
 		echo "${START},,83;" | sfdisk -q "$DRIVE"
 
+		# set bootable flag
+		sfdisk -A "$DRIVE" 1
+
 		# update status
 		blockdev --rereadpt $diskdev 2> /dev/null
 		mdev -s
