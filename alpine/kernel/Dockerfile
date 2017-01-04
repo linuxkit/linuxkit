@@ -32,8 +32,23 @@ RUN make defconfig && \
     make oldconfig && \
     make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie"
 RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
-    make INSTALL_HDR_PATH=/tmp headers_install && \
-    ( cd /tmp && tar cf /kernel-headers.tar include ) && \
-    ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar . )
+    ( DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
+      cd /tmp/kernel-modules/lib/modules/$DVER && \
+      rm build source && \
+      ln -s /usr/src/linux-headers-$DVER build ) && \
+    mkdir -p /tmp/kernel-headers/usr && \
+    make INSTALL_HDR_PATH=/tmp/kernel-headers/usr headers_install && \
+    ( cd /tmp/kernel-headers && tar cf /kernel-headers.tar usr ) && \
+    ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar lib ) && \
+    cp vmlinux arch/x86_64/boot/bzImage /
+
+RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
+    dir=/tmp/usr/src/linux-headers-$DVER && \
+    mkdir -p $dir && \
+    cp /linux/.config $dir && \
+    cd /linux && \
+    cp -a include "$dir" && \
+    mkdir -p "$dir"/arch/x86 && cp -a arch/x86/include "$dir"/arch/x86/ && \
+    ( cd /tmp && tar cf /kernel-dev.tar usr/src )
 
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /kernel-source-info
