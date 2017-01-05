@@ -28,6 +28,7 @@ GCE_IMAGE=mobylinux/mkimage-gce@sha256:f9abf2eae20984b7dd3c1afb700b2c9c41e39e6e7
 moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
+	$(MAKE) -C base/ebpf
 	printf $(TAG)$(DIRTY) > etc/moby-commit
 	BUILD=$$( tar cf - \
 	  Dockerfile etc usr init mkinitrd.sh \
@@ -214,5 +215,6 @@ clean:
 	$(MAKE) -C containers clean
 	$(MAKE) -C test clean
 	$(MAKE) -C kernel clean
+	$(MAKE) -C base/ebpf clean
 
 .DELETE_ON_ERROR:

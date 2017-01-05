@@ -1,0 +1,27 @@
+--- src/cc/usdt.h-orig
++++ src/cc/usdt.h
+@@ -86,6 +86,24 @@
+   ArgumentParser(const char *arg) : arg_(arg), cur_pos_(0) {}
+ };
+ 
++#undef REG_A
++#undef REG_B
++#undef REG_C
++#undef REG_D
++#undef REG_SI
++#undef REG_DI
++#undef REG_BP
++#undef REG_SP
++#undef REG_8
++#undef REG_9
++#undef REG_10
++#undef REG_11
++#undef REG_12
++#undef REG_13
++#undef REG_14
++#undef REG_15
++#undef REG_RIP
++
+ class ArgumentParser_x64 : public ArgumentParser {
+   enum Register {
+     REG_A,
