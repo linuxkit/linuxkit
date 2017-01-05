@@ -68,6 +68,17 @@ else
 	$(error "git not clean")
 endif
 
+EBPF_TAG=alpine/base/ebpf/ebpf.tag
+EBPF_IMAGE=mobylinux/ebpf:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
+ebpf: alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+ifeq ($(STATUS),)
+	[ -f $(EBPF_TAG) ]
+	docker tag $(shell cat $(EBPF_TAG)) $(EBPF_IMAGE)
+	docker push $(EBPF_IMAGE)
+else
+	$(error "git not clean")
+endif
+
 get:
 ifeq ($(STATUS),)
 	IMAGE=$$( docker create mobylinux/media:$(MEDIA_PREFIX)$(TAG) /dev/null ) && \
