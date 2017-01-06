@@ -27,11 +27,12 @@ RUN cd /linux && \
         patch -p1 < "$patch"; \
     done
 
-WORKDIR /linux
-RUN make defconfig && \
+RUN cd /linux && \
+    make defconfig && \
     make oldconfig && \
     make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie"
-RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
+RUN cd /linux && \
+    make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     ( DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
       cd /tmp/kernel-modules/lib/modules/$DVER && \
       rm build source && \
