@@ -6,7 +6,7 @@ COPY cdefs.h /usr/include/sys/
 ADD kernel-headers.tar /
 ADD kernel-dev.tar /
 ADD kernel-modules.tar /
-ADD 100-musl-compat.patch decl.patch intl.patch bcc-gnuism.patch ./
+ADD 100-musl-compat.patch decl.patch intl.patch bcc-gnuism.patch bcc-stack-protector.patch ./
 RUN cat elfutils-$ELFUTILS_VERSION.tar.bz2 | tar xjf -
 RUN cd elfutils-$ELFUTILS_VERSION && \
   patch -p1 < ../100-musl-compat.patch && \
@@ -15,7 +15,7 @@ RUN cd elfutils-$ELFUTILS_VERSION && \
   automake && \
   ./configure --prefix=/usr CFLAGS=-Wno-strict-aliasing && \
   make -C libelf && make -C libelf install
-RUN cd bcc && patch -p0 < ../bcc-gnuism.patch
+RUN cd bcc && patch -p0 < ../bcc-gnuism.patch && patch -p0 < ../bcc-stack-protector.patch
 RUN mkdir -p bcc/build && cd bcc/build && \
   cmake .. -DCMAKE_INSTALL_PREFIX=/usr -DLUAJIT_INCLUDE_DIR=/usr/include/luajit-2.1 && \
   make && \
