@@ -44,6 +44,11 @@ start()
 	then
 		mkdir -p /var/etc
 	fi
+	if [ ! -d /var/home/ ]
+	then
+		mkdir -p /var/home/
+		chown docker:docker /var/home/
+	fi
 	if [ ! -f /var/etc/hostname ]
 	then
 		echo "moby" >/var/etc/hostname
