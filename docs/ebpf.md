@@ -11,7 +11,7 @@ benchmarks etc.
 
 You probably want to run with
 
-`docker run -it -v /sys/kernel/debug:/sys/kernel/debug --privileged mobylinux/ebpf:tag sh` for
+`docker run -it -v /sys/kernel/debug:/sys/kernel/debug --privileged --pid=host mobylinux/ebpf:tag sh` for
 interactive use as some things use debugfs. You need at least `CAP_SYS_ADMIN` to do anything.
 There are examples in `bcc/examples` that should generally just work, I have tried several of
 the Lua ones.
