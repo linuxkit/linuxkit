@@ -50,6 +50,11 @@ func (h HTTPDiagnosticListener) Listen() {
 	})
 
 	http.HandleFunc("/diagnose", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Invalid request type.  Should be POST with form value 'session' set", http.StatusBadRequest)
+			return
+		}
+
 		diagnosticsSessionID := r.FormValue(sessionIDField)
 
 		if diagnosticsSessionID == "" {
