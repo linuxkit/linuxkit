@@ -3,23 +3,26 @@ package main
 import (
 	"archive/tar"
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 )
 
 const (
-	dockerSock     = "/var/run/docker.sock"
-	lgtm           = "LGTM"
-	httpMagicPort  = ":44554" // chosen arbitrarily due to IANA availability -- might change
-	bucket         = "editionsdiagnostics"
-	sessionIDField = "session"
+	healthcheckTimeout = 5 * time.Second
+	dockerSock         = "/var/run/docker.sock"
+	lgtm               = "LGTM"
+	httpMagicPort      = ":44554" // chosen arbitrarily due to IANA availability -- might change
+	bucket             = "editionsdiagnostics"
+	sessionIDField     = "session"
 )
 
 var (
@@ -38,10 +41,32 @@ type HTTPDiagnosticListener struct{}
 
 func (h HTTPDiagnosticListener) Listen() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := os.Stat(dockerSock); os.IsNotExist(err) {
-			http.Error(w, "Docker socket not found -- daemon is down", http.StatusServiceUnavailable)
+		ctx, cancel := context.WithTimeout(context.Background(), healthcheckTimeout)
+		defer cancel()
+
+		// Vendoring the Docker Go client is overkill for this
+		// small program, and we can fairly safely rely on the
+		// `docker` client's existence locally, so we just
+		// shell out here.
+		cmd := exec.CommandContext(ctx, "docker", "info")
+		errCh := make(chan error)
+
+		go func() {
+			_, err := cmd.CombinedOutput()
+			errCh <- err
+		}()
+
+		select {
+		case err := <-errCh:
+			if err != nil {
+				http.Error(w, "Docker daemon ping error", http.StatusInternalServerError)
+				return
+			}
+		case <-ctx.Done():
+			http.Error(w, "Docker daemon ping timed out", http.StatusServiceUnavailable)
 			return
 		}
+
 		if _, err := w.Write([]byte(lgtm)); err != nil {
 			log.Println("Error writing HTTP success response:", err)
 			return
