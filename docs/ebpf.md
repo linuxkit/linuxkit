@@ -15,3 +15,8 @@ You probably want to run with
 interactive use as some things use debugfs. You need at least `CAP_SYS_ADMIN` to do anything.
 There are examples in `bcc/examples` that should generally just work, I have tried several of
 the Lua ones.
+
+Some of the `iovisor/bcc` samples try to access the kernel symbols. For them to work correctly you should also execute:
+```sh
+echo 0 > /proc/sys/kernel/kptr_restrict
+```
