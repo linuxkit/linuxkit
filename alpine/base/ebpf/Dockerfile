@@ -21,3 +21,5 @@ RUN mkdir -p bcc/build && cd bcc/build && \
   make && \
   make install
 RUN mkdir -p /usr/local/share/lua/5.1/ && cd ljsyscall && cp -a *.lua syscall /usr/local/share/lua/5.1/
+
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib64
