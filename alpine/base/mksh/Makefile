@@ -1,10 +1,12 @@
 .PHONY: tag push
 
+BASE=alpine:3.5
 IMAGE=mksh
 
 default: push
 
 hash: Dockerfile
+	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm --entrypoint sh $(IMAGE):build -c 'cat /Dockerfile /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
 
