@@ -34,8 +34,28 @@ start()
 
 	einfo "Running Windows Azure Linux Agent container"
 
-	export DOCKER_FOR_IAAS_VERSION="azure-v1.13.0-rc3-beta13"
-	export DOCKER_FOR_IAAS_VERSION_DIGEST="b58fe8af38fd05d58fecf978451e74cbda303a5a04607202e428718c71c14065"
+	export DOCKER_FOR_IAAS_VERSION="azure-v1.13.0-rc5-beta15"
+	export DOCKER_FOR_IAAS_VERSION_DIGEST="85c28edf90026ae6713c435fa40c36a1710e963a6478a7cdeac3da944f6c13ad"
+
+	# "Fake" /etc/hostname setup for persistence across reboots
+	#
+	# Note the bind mount in 'docker run' below.
+	if [ ! -d /var/etc/ ]
+	then
+		mkdir -p /var/etc
+	fi
+	if [ ! -f /var/etc/hostname ]
+	then
+		echo "moby" >/var/etc/hostname
+	fi
+
+	if [ -f /var/lib/waagent/provisioned ]
+	then
+		# During provisioning, the Azure agent usually does this, but
+		# on reboots, it will need to be invoked "manually".
+		hostname -F /var/etc/hostname
+		kill -HUP "$(pidof dhcpcd)"
+	fi
 
 	docker run -d \
 		--privileged \
@@ -47,12 +67,13 @@ start()
 		--restart unless-stopped \
 		-e DOCKER_FOR_IAAS_VERSION \
 		-v /usr/bin/docker:/usr/local/bin/docker:ro \
+		-v /mnt:/mnt \
+		-v /etc:/etc \
+		-v /var/etc/ssh:/etc/ssh \
+		-v /var/etc/hostname:/etc/hostname \
+		-v /var/home:/home \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v /var/log:/var/log \
-		-v /mnt:/mnt \
-		-v /home:/home \
-		-v /etc:/etc \
-		-v /etc/hostname:/etc/hostname \
 		-v /lib/modules:/lib/modules \
 		-v /lib/firmware:/lib/firmware \
 		-v /var/lib/waagent:/var/lib/waagent \
