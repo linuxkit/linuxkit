@@ -4,22 +4,28 @@ import (
 	"archive/tar"
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
+	"net/http/httputil"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"time"
 )
 
+var (
+	errDockerPingNotOK = errors.New("Docker /_ping did not return OK")
+)
+
 const (
 	healthcheckTimeout = 5 * time.Second
 	dockerSock         = "/var/run/docker.sock"
-	lgtm               = "LGTM"
+	dockerPingOK       = "LGTM"
 	httpMagicPort      = ":44554" // chosen arbitrarily due to IANA availability -- might change
 	bucket             = "editionsdiagnostics"
 	sessionIDField     = "session"
@@ -39,22 +45,53 @@ func init() {
 // for cloud editions.
 type HTTPDiagnosticListener struct{}
 
+// UnixSocketRoundTripper provides a way to make HTTP request to Docker socket
+// directly.
+type UnixSocketRoundTripper struct{}
+
+// RoundTrip dials the Docker UNIX socket to make a HTTP request.
+func (u UnixSocketRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	dial, err := net.Dial("unix", dockerSock)
+	if err != nil {
+		return nil, err
+	}
+	conn := httputil.NewClientConn(dial, nil)
+	defer conn.Close()
+	return conn.Do(req)
+}
+
 // Listen starts the HTTPDiagnosticListener and sets up handlers for its endpoints
 func (h HTTPDiagnosticListener) Listen() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		client := &http.Client{
+			Transport: &UnixSocketRoundTripper{},
+		}
+
+		req, err := http.NewRequest(http.MethodGet, "/_ping", nil)
+		if err != nil {
+			http.Error(w, "Error creating HTTP request to talk to Docker", http.StatusInternalServerError)
+			return
+		}
+
 		ctx, cancel := context.WithTimeout(context.Background(), healthcheckTimeout)
 		defer cancel()
 
-		// Vendoring the Docker Go client is overkill for this
-		// small program, and we can fairly safely rely on the
-		// `docker` client's existence locally, so we just
-		// shell out here.
-		cmd := exec.CommandContext(ctx, "docker", "info")
+		req = req.WithContext(ctx)
+
 		errCh := make(chan error)
 
 		go func() {
-			_, err := cmd.CombinedOutput()
-			errCh <- err
+			resp, err := client.Do(req)
+			if err != nil {
+				errCh <- err
+				return
+			}
+			defer resp.Body.Close()
+			if resp.StatusCode != http.StatusOK {
+				errCh <- errDockerPingNotOK
+				return
+			}
+			errCh <- nil
 		}()
 
 		select {
@@ -68,7 +105,7 @@ func (h HTTPDiagnosticListener) Listen() {
 			return
 		}
 
-		if _, err := w.Write([]byte(lgtm)); err != nil {
+		if _, err := w.Write([]byte(dockerPingOK)); err != nil {
 			log.Println("Error writing HTTP success response:", err)
 			return
 		}
