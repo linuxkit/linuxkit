@@ -1,5 +1,5 @@
-# Tag c530ee985d21d6c0ee495d03086fc408b8183466
-TINI_IMAGE=mobylinux/tini@sha256:065d5a16baf022324ac5fb997908f3efa5cc21982b455e832aed1151eb636a2a
+# Tag 7cb780fd6b60c089964e81efd6553853c491d59f
+TINI_IMAGE=mobylinux/tini@sha256:7da8c5b371e0d7d3fb1778e96c0bc634e39ace7bf1e7a73bffbf1f8360127fdb
 TINI_BINARY=tini
 
 default: rootfs
