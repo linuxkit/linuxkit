@@ -1,5 +1,13 @@
-# Tag: b77cfc4ad0033d4366df830ed697afc7bab458a2
-FROM mobylinux/alpine-build-c@sha256:53739ea6042cb0ac39cf6e262012c1c4224206b2c9b719569fe7efa3a381348c
+FROM alpine:3.5
+RUN \
+  apk update && apk upgrade && \
+  apk add \
+  cmake \
+  gcc \
+  make \
+  musl-dev \
+  vim \
+  && true
 
 COPY . /
 ENV TINI_VERSION=0.13.0
