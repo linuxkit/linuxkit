@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	errDockerPingNotOK = errors.New("Docker /_ping did not return OK")
+	errDockerRespNotOK = errors.New("Docker API call did not return OK")
 )
 
 const (
@@ -39,15 +39,58 @@ func init() {
 	for _, c := range commonCmdCaptures {
 		cloudCaptures = append(cloudCaptures, c)
 	}
+
+	cloudCaptures = append(cloudCaptures, SystemContainerCapturer{})
 }
 
 // HTTPDiagnosticListener sets a health check and optional diagnostic endpoint
 // for cloud editions.
 type HTTPDiagnosticListener struct{}
 
+func dockerHTTPGet(ctx context.Context, url string) (*http.Response, error) {
+	client := &http.Client{
+		Transport: &UnixSocketRoundTripper{},
+	}
+
+	return dockerHTTPGetWithClient(ctx, url, client)
+}
+
+func dockerHTTPGetWithClient(ctx context.Context, url string, client *http.Client) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req = req.WithContext(ctx)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return resp, errDockerRespNotOK
+	}
+
+	return resp, err
+
+}
+
 // UnixSocketRoundTripper provides a way to make HTTP request to Docker socket
 // directly.
-type UnixSocketRoundTripper struct{}
+type UnixSocketRoundTripper struct {
+	Stream bool
+	conn   *httputil.ClientConn
+}
+
+// Close will close the connection if the caller needs to clean up after
+// themselves in a streaming request.
+func (u UnixSocketRoundTripper) Close() error {
+	if u.conn != nil {
+		return u.conn.Close()
+	}
+	return nil
+}
 
 // RoundTrip dials the Docker UNIX socket to make a HTTP request.
 func (u UnixSocketRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -55,43 +98,29 @@ func (u UnixSocketRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 	if err != nil {
 		return nil, err
 	}
-	conn := httputil.NewClientConn(dial, nil)
-	defer conn.Close()
-	return conn.Do(req)
+	u.conn = httputil.NewClientConn(dial, nil)
+
+	// If the client makes a streaming request (e.g., /container/x/logs)
+	// it's their responsibility to close the connection, because it needs
+	// to remain open to stream the response body.
+	if !u.Stream {
+		defer u.conn.Close()
+	}
+
+	return u.conn.Do(req)
 }
 
 // Listen starts the HTTPDiagnosticListener and sets up handlers for its endpoints
 func (h HTTPDiagnosticListener) Listen() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		client := &http.Client{
-			Transport: &UnixSocketRoundTripper{},
-		}
-
-		req, err := http.NewRequest(http.MethodGet, "/_ping", nil)
-		if err != nil {
-			http.Error(w, "Error creating HTTP request to talk to Docker", http.StatusInternalServerError)
-			return
-		}
-
 		ctx, cancel := context.WithTimeout(context.Background(), healthcheckTimeout)
 		defer cancel()
-
-		req = req.WithContext(ctx)
 
 		errCh := make(chan error)
 
 		go func() {
-			resp, err := client.Do(req)
-			if err != nil {
-				errCh <- err
-				return
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				errCh <- errDockerPingNotOK
-				return
-			}
-			errCh <- nil
+			_, err := dockerHTTPGet(ctx, "/_ping")
+			errCh <- err
 		}()
 
 		select {
