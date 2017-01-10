@@ -7,6 +7,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
+	"net/http"
 )
 
 const (
@@ -20,15 +21,15 @@ type SystemContainerCapturer struct{}
 
 // Capture writes output from a CommandCapturer to a tar archive
 func (s SystemContainerCapturer) Capture(parentCtx context.Context, w *tar.Writer) {
-	done := make(chan struct{})
-
 	ctx, cancel := context.WithTimeout(context.Background(), defaultCaptureTimeout)
 	defer cancel()
+
+	errCh := make(chan error)
 
 	go func() {
 		resp, err := dockerHTTPGet(ctx, "/containers/json?all=1&label="+systemContainerLabel)
 		if err != nil {
-			log.Println("ERROR:", err)
+			errCh <- err
 			return
 		}
 
@@ -40,22 +41,35 @@ func (s SystemContainerCapturer) Capture(parentCtx context.Context, w *tar.Write
 		}{}
 
 		if err := json.NewDecoder(resp.Body).Decode(&names); err != nil {
-			log.Println("ERROR:", err)
+			errCh <- err
 			return
 		}
 
 		for _, c := range names {
-			resp, err := dockerHTTPGet(ctx, "/containers/"+c.ID+"/logs?stderr=1&stdout=1&timestamps=1")
+			transport := &UnixSocketRoundTripper{
+				Stream: true,
+			}
+
+			client := &http.Client{
+				Transport: transport,
+			}
+
+			resp, err := dockerHTTPGetWithClient(ctx, "/containers/"+c.ID+"/logs?stderr=1&stdout=1&timestamps=1&tail=all", client)
 			if err != nil {
-				log.Println("ERROR:", err)
+				log.Println("ERROR (get request):", err)
 				continue
 			}
 
 			defer resp.Body.Close()
 
+			// logs makes streaming request where the original http
+			// conn is left open so we must clean up after
+			// ourselves when we're done reading
+			defer transport.Close()
+
 			logLines, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				log.Println("ERROR:", err)
+				log.Println("ERROR (reading response):", err)
 				continue
 			}
 
@@ -72,13 +86,16 @@ func (s SystemContainerCapturer) Capture(parentCtx context.Context, w *tar.Write
 			tarWrite(w, bytes.NewBuffer(logLines), systemLogDir+c.Names[0])
 		}
 
-		done <- struct{}{}
+		errCh <- nil
 	}()
 
 	select {
 	case <-ctx.Done():
-		log.Println("System container log capture error", ctx.Err())
-	case <-done:
-		log.Println("System container log capture finished")
+		log.Println("System container log capture context error", ctx.Err())
+	case err := <-errCh:
+		if err != nil {
+			log.Println("System container log capture error", err)
+		}
+		log.Println("System container log capture finished successfully")
 	}
 }
