@@ -1,2 +1,3 @@
 rootfs
+config.json
 qemu-*
