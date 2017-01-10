@@ -15,7 +15,8 @@ import (
 )
 
 const (
-	defaultCommandTimeout = 5 * time.Second
+	defaultCaptureTimeout = 5 * time.Second
+	defaultCommandTimeout = defaultCaptureTimeout
 
 	// Might eventually have some pretty long (~30s) traces in here, so 35
 	// seconds seems reasonable.

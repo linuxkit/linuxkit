@@ -19,7 +19,7 @@ import (
 )
 
 var (
-	errDockerPingNotOK = errors.New("Docker /_ping did not return OK")
+	errDockerRespNotOK = errors.New("Docker API call did not return OK")
 )
 
 const (
@@ -39,11 +39,37 @@ func init() {
 	for _, c := range commonCmdCaptures {
 		cloudCaptures = append(cloudCaptures, c)
 	}
+
+	cloudCaptures = append(cloudCaptures, SystemContainerCapturer{})
 }
 
 // HTTPDiagnosticListener sets a health check and optional diagnostic endpoint
 // for cloud editions.
 type HTTPDiagnosticListener struct{}
+
+func dockerHTTPGet(ctx context.Context, url string) (*http.Response, error) {
+	client := &http.Client{
+		Transport: &UnixSocketRoundTripper{},
+	}
+
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req = req.WithContext(ctx)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return resp, errDockerRespNotOK
+	}
+
+	return resp, err
+}
 
 // UnixSocketRoundTripper provides a way to make HTTP request to Docker socket
 // directly.
@@ -63,35 +89,14 @@ func (u UnixSocketRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 // Listen starts the HTTPDiagnosticListener and sets up handlers for its endpoints
 func (h HTTPDiagnosticListener) Listen() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		client := &http.Client{
-			Transport: &UnixSocketRoundTripper{},
-		}
-
-		req, err := http.NewRequest(http.MethodGet, "/_ping", nil)
-		if err != nil {
-			http.Error(w, "Error creating HTTP request to talk to Docker", http.StatusInternalServerError)
-			return
-		}
-
 		ctx, cancel := context.WithTimeout(context.Background(), healthcheckTimeout)
 		defer cancel()
-
-		req = req.WithContext(ctx)
 
 		errCh := make(chan error)
 
 		go func() {
-			resp, err := client.Do(req)
-			if err != nil {
-				errCh <- err
-				return
-			}
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				errCh <- errDockerPingNotOK
-				return
-			}
-			errCh <- nil
+			_, err := dockerHTTPGet(ctx, "/_ping")
+			errCh <- err
 		}()
 
 		select {
