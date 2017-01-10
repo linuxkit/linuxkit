@@ -13,9 +13,7 @@ hash: Dockerfile check-kernel-config.sh
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
 		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
-		 docker tag $(IMAGE):build mobylinux/$(IMAGE):latest && \
-		 docker push mobylinux/$(IMAGE):$(shell cat hash) && \
-		 docker push mobylinux/$(IMAGE):latest)
+		 docker push mobylinux/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
