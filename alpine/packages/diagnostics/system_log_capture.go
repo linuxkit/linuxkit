@@ -12,7 +12,7 @@ import (
 
 const (
 	systemLogDir         = "editionslogs"
-	systemContainerLabel = "system"
+	systemContainerLabel = "com.docker.editions.system"
 )
 
 // SystemContainerCapturer gets the logs from containers which are run
