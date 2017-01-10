@@ -56,6 +56,9 @@ start() {
 		"aws")
 			sed -i -e "s/^server [^ ]\+/server 0.amazon.pool.ntp.org/g" /etc/chrony/chrony.conf
 		;;
+		"gcp")
+			sed -i -e "s/^server [^ ]\+/server metadata.google.internal/g" /etc/chrony/chrony.conf
+		;;
 		"azure")
 			# TODO needs an ntp solution
 		;;
