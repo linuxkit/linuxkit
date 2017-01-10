@@ -18,6 +18,9 @@ start()
 		"azure")
 			DIAGNOSTICS_SERVER_FLAGS="-http"
 		;;
+		"gcp")
+			DIAGNOSTICS_SERVER_FLAGS="-http"
+		;;
 		"windows")
 			DIAGNOSTICS_SERVER_FLAGS="-hvsock"
 		;;
