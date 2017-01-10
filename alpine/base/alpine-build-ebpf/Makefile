@@ -5,10 +5,10 @@ IMAGE=alpine-build-ebpf
 
 default: push
 
-hash: Dockerfile
+hash: Dockerfile *.patch cdefs.h error.h
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build sh -c 'cat /Dockerfile /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
+	docker run --rm $(IMAGE):build sh -c 'cat /Dockerfile /build/*.patch /build/*.h /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \

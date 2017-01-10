@@ -25,11 +25,20 @@ RUN apk update && apk upgrade -a && \
   python \
   zlib-dev \
   && true
-COPY . .
 WORKDIR /build
+COPY . ./
+COPY Dockerfile /
+COPY error.h /usr/include/
+COPY cdefs.h /usr/include/sys/
 ENV ELFUTILS_VERSION=0.165
 RUN curl -sSL -O https://fedorahosted.org/releases/e/l/elfutils/0.165/elfutils-$ELFUTILS_VERSION.tar.bz2
-ENV BCC_COMMIT=eb6cdda7739bfd9b6bce85b2dc4edef798590c21
+RUN cat elfutils-$ELFUTILS_VERSION.tar.bz2 | tar xjf - && \
+  cd elfutils-$ELFUTILS_VERSION && \
+  patch -p1 < ../100-musl-compat.patch && \
+  patch -p0 < ../decl.patch && \
+  patch -p0 < ../intl.patch
+ENV BCC_COMMIT=d4fc95d92ec9bace9bd607dfd1833e9e06457486
 RUN git clone https://github.com/iovisor/bcc.git && cd bcc && git checkout $BCC_COMMIT
+RUN cd bcc && patch -p0 < ../bcc-gnuism.patch
 ENV LJSYSCALL_COMMIT=0b266e8f4f751ae894299d24a2d40d16c6cf856f
 RUN git clone https://github.com/justincormack/ljsyscall.git && cd ljsyscall && git checkout $LJSYSCALL_COMMIT
