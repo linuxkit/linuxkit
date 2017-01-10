@@ -27,8 +27,3 @@ start()
 
   eend 0
 }
-
-stop()
-{
-  [ "$(mobyplatform)" != "gcp" ] && exit 0
-}
