@@ -1,3 +1,4 @@
 ca-certificates.crt
 mksh
 rootfs
+config.json
