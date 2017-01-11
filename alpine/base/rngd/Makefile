@@ -1,7 +1,10 @@
+.PHONY: tag push
+
+IMAGE=rngd
+
 # Tag 7cb780fd6b60c089964e81efd6553853c491d59f
 TINI_IMAGE=mobylinux/tini@sha256:7da8c5b371e0d7d3fb1778e96c0bc634e39ace7bf1e7a73bffbf1f8360127fdb
 TINI_BINARY=tini
-IMAGE=rngd
 
 default: push
 
