@@ -34,7 +34,7 @@ start()
 
 	einfo "Running Windows Azure Linux Agent container"
 
-	export DOCKER_FOR_IAAS_VERSION="azure-v1.13.0-rc4-beta14"
+	export DOCKER_FOR_IAAS_VERSION="azure-v1.13.0-rc5-beta15"
 	export DOCKER_FOR_IAAS_VERSION_DIGEST="85c28edf90026ae6713c435fa40c36a1710e963a6478a7cdeac3da944f6c13ad"
 
 	# "Fake" /etc/hostname setup for persistence across reboots
@@ -43,6 +43,11 @@ start()
 	if [ ! -d /var/etc/ ]
 	then
 		mkdir -p /var/etc
+	fi
+	if [ ! -d /var/home/ ]
+	then
+		mkdir -p /var/home/
+		chown docker:docker /var/home/
 	fi
 	if [ ! -f /var/etc/hostname ]
 	then
@@ -64,6 +69,7 @@ start()
 		--pid host \
 		--net host \
 		--uts host \
+		--label com.docker.editions.system \
 		--restart unless-stopped \
 		-e DOCKER_FOR_IAAS_VERSION \
 		-v /usr/bin/docker:/usr/local/bin/docker:ro \

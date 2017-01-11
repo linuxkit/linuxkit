@@ -3,23 +3,32 @@ package main
 import (
 	"archive/tar"
 	"bytes"
+	"context"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"net/http"
+	"net/http/httputil"
 	"os"
 	"strconv"
 	"strings"
 	"time"
 )
 
+var (
+	errDockerRespNotOK = errors.New("Docker API call did not return OK")
+)
+
 const (
-	dockerSock     = "/var/run/docker.sock"
-	lgtm           = "LGTM"
-	httpMagicPort  = ":44554" // chosen arbitrarily due to IANA availability -- might change
-	bucket         = "editionsdiagnostics"
-	sessionIDField = "session"
+	healthcheckTimeout = 5 * time.Second
+	dockerSock         = "/var/run/docker.sock"
+	dockerPingOK       = "LGTM"
+	httpMagicPort      = ":44554" // chosen arbitrarily due to IANA availability -- might change
+	bucket             = "editionsdiagnostics"
+	sessionIDField     = "session"
 )
 
 var (
@@ -30,25 +39,113 @@ func init() {
 	for _, c := range commonCmdCaptures {
 		cloudCaptures = append(cloudCaptures, c)
 	}
+
+	cloudCaptures = append(cloudCaptures, SystemContainerCapturer{})
 }
 
 // HTTPDiagnosticListener sets a health check and optional diagnostic endpoint
 // for cloud editions.
 type HTTPDiagnosticListener struct{}
 
+func dockerHTTPGet(ctx context.Context, url string) (*http.Response, error) {
+	client := &http.Client{
+		Transport: &UnixSocketRoundTripper{},
+	}
+
+	return dockerHTTPGetWithClient(ctx, url, client)
+}
+
+func dockerHTTPGetWithClient(ctx context.Context, url string, client *http.Client) (*http.Response, error) {
+	req, err := http.NewRequest(http.MethodGet, url, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	req = req.WithContext(ctx)
+
+	resp, err := client.Do(req)
+	if err != nil {
+		return resp, err
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return resp, errDockerRespNotOK
+	}
+
+	return resp, err
+
+}
+
+// UnixSocketRoundTripper provides a way to make HTTP request to Docker socket
+// directly.
+type UnixSocketRoundTripper struct {
+	Stream bool
+	conn   *httputil.ClientConn
+}
+
+// Close will close the connection if the caller needs to clean up after
+// themselves in a streaming request.
+func (u UnixSocketRoundTripper) Close() error {
+	if u.conn != nil {
+		return u.conn.Close()
+	}
+	return nil
+}
+
+// RoundTrip dials the Docker UNIX socket to make a HTTP request.
+func (u UnixSocketRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	dial, err := net.Dial("unix", dockerSock)
+	if err != nil {
+		return nil, err
+	}
+	u.conn = httputil.NewClientConn(dial, nil)
+
+	// If the client makes a streaming request (e.g., /container/x/logs)
+	// it's their responsibility to close the connection, because it needs
+	// to remain open to stream the response body.
+	if !u.Stream {
+		defer u.conn.Close()
+	}
+
+	return u.conn.Do(req)
+}
+
+// Listen starts the HTTPDiagnosticListener and sets up handlers for its endpoints
 func (h HTTPDiagnosticListener) Listen() {
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		if _, err := os.Stat(dockerSock); os.IsNotExist(err) {
-			http.Error(w, "Docker socket not found -- daemon is down", http.StatusServiceUnavailable)
+		ctx, cancel := context.WithTimeout(context.Background(), healthcheckTimeout)
+		defer cancel()
+
+		errCh := make(chan error)
+
+		go func() {
+			_, err := dockerHTTPGet(ctx, "/_ping")
+			errCh <- err
+		}()
+
+		select {
+		case err := <-errCh:
+			if err != nil {
+				http.Error(w, "Docker daemon ping error", http.StatusInternalServerError)
+				return
+			}
+		case <-ctx.Done():
+			http.Error(w, "Docker daemon ping timed out", http.StatusServiceUnavailable)
 			return
 		}
-		if _, err := w.Write([]byte(lgtm)); err != nil {
+
+		if _, err := w.Write([]byte(dockerPingOK)); err != nil {
 			log.Println("Error writing HTTP success response:", err)
 			return
 		}
 	})
 
 	http.HandleFunc("/diagnose", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			http.Error(w, "Invalid request type.  Should be POST with form value 'session' set", http.StatusBadRequest)
+			return
+		}
+
 		diagnosticsSessionID := r.FormValue(sessionIDField)
 
 		if diagnosticsSessionID == "" {
