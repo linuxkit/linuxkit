@@ -1,6 +1,6 @@
 FROM ocaml/opam:alpine
 RUN sudo apk add m4
-RUN opam install ocamlfind astring syslog -y
+RUN opam install --use-internal-solver ocamlfind astring syslog -y
 WORKDIR /app
 ADD . /app
 RUN sudo chown -R opam /app
