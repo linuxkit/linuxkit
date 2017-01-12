@@ -1,8 +1,8 @@
-From 0ee181462b9f52d60ca5188e3013870621068864 Mon Sep 17 00:00:00 2001
+From cd11346c60451032d97062e25ed025bf692dff91 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 21 May 2016 16:55:50 +0800
-Subject: [PATCH 2/5] Drivers: hv: vmbus: fix the race when querying & updating
- the percpu list
+Subject: [PATCH 41/42] Drivers: hv: vmbus: fix the race when querying &
+ updating the percpu list
 
 There is a rare race when we remove an entry from the global list
 hv_context.percpu_list[cpu] in hv_process_channel_removal() ->
@@ -28,7 +28,7 @@ Origin: https://github.com/dcui/linux/commit/fbcca73228b9b90911ab30fdf75f532b2b7
  2 files changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 56dd261..75343e0 100644
+index 57a1b65..da76a2e 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
 @@ -592,6 +592,7 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
@@ -40,7 +40,7 @@ index 56dd261..75343e0 100644
  	return ret;
  }
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index b6c1211..8f4e6070 100644
+index c892db5..0a54317 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -21,6 +21,7 @@
@@ -129,5 +129,5 @@ index b6c1211..8f4e6070 100644
  err_free_chan:
  	free_channel(newchannel);
 -- 
-2.10.2
+2.10.0
 

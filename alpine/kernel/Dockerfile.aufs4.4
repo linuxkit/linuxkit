@@ -1,7 +1,7 @@
-# Tag: 3da0b0ea0da2724232603094e67c75b41adab551
-FROM mobylinux/alpine-build-c@sha256:0236d6599f6c8f7aa42829285e04202fbe99984df2818af0f5a453a59de8b090
+# Tag: b77cfc4ad0033d4366df830ed697afc7bab458a2
+FROM mobylinux/alpine-build-c@sha256:53739ea6042cb0ac39cf6e262012c1c4224206b2c9b719569fe7efa3a381348c
 
-ARG KERNEL_VERSION=4.9
+ARG KERNEL_VERSION=4.4.41
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
@@ -9,10 +9,10 @@ RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
-# this is aufs4.9 20161219
+# this is aufs4.4 20161219
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
-ENV AUFS_BRANCH     aufs4.9
-ENV AUFS_COMMIT     0d8e71c28da317ec6371b6b95b46a70cefe13777
+ENV AUFS_BRANCH     aufs4.4
+ENV AUFS_COMMIT     45192fd8c7c447090b990953c62760dc18508dd7
 
 # Download AUFS
 RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
@@ -48,7 +48,8 @@ RUN cd /linux && \
 COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
 COPY kernel_config.aufs /linux/aufs_config
-RUN cat /linux/aufs_config >> /linux/arch/x86/configs/x86_64_defconfig
+COPY kernel_config.4.4 /linux/kernel_config.4.4
+RUN cat /linux/kernel_config.4.4 /linux/aufs_config >> /linux/arch/x86/configs/x86_64_defconfig
 
 ARG DEBUG=0
 
@@ -58,7 +59,7 @@ RUN if [ $DEBUG -ne "0" ]; then \
     fi
 
 # Apply local patches
-COPY patches-4.9 /patches
+COPY patches-4.4 /patches
 RUN cd /linux && \
     set -e && for patch in /patches/*.patch; do \
         echo "Applying $patch"; \
