@@ -81,7 +81,7 @@ endif
 
 get:
 ifeq ($(STATUS),)
-	IMAGE=$$( docker create mobylinux/media:$(MEDIA_PREFIX)$(TAG) /dev/null ) && \
+	IMAGE=$$( docker create mobylinux/media:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG) /dev/null ) && \
 	mkdir -p alpine/kernel/x86_64 && \
 	docker cp $$IMAGE:vmlinuz64 alpine/kernel/x86_64/vmlinuz64 && \
 	docker cp $$IMAGE:vmlinux alpine/kernel/x86_64/vmlinux && \
