@@ -91,8 +91,8 @@ ifeq ($(STATUS),)
 	mkdir -p alpine/kernel/x86_64 && \
 	docker cp $$IMAGE:vmlinuz64 alpine/kernel/x86_64/vmlinuz64 && \
 	docker cp $$IMAGE:vmlinux alpine/kernel/x86_64/vmlinux && \
-	docker cp $$IMAGE:kernel-headers.tar alpine/kernel/x86_64/kernel-headers.tar && \
-	docker cp $$IMAGE:kernel-dev.tar alpine/kernel/x86_64/kernel-dev.tar && \
+	(docker cp $$IMAGE:kernel-headers.tar alpine/kernel/x86_64/kernel-headers.tar || true) && \
+	(docker cp $$IMAGE:kernel-dev.tar alpine/kernel/x86_64/kernel-dev.tar || true) && \
 	docker cp $$IMAGE:initrd.img alpine/initrd.img && \
 	docker cp $$IMAGE:mobylinux-efi.iso alpine/mobylinux-efi.iso && \
 	docker cp $$IMAGE:mobylinux.efi alpine/mobylinux.efi && \
