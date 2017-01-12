@@ -55,6 +55,9 @@ endif
 ifdef AUFS4.4
 AUFS_PREFIX=aufs4.4-
 endif
+ifdef LTS4.4
+AUFS_PREFIX=lts4.4-
+endif
 MEDIA_IMAGE=mobylinux/media:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 INITRD_IMAGE=mobylinux/mobylinux:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 KERNEL_IMAGE=mobylinux/kernel:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
