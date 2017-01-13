@@ -10,14 +10,17 @@ CACERT_PATH=/etc/ssl/certs
 
 default: config.json
 
+BASE=alpine:3.5
+
 $(MKSH_FILE):
 	docker run --rm --net=none $(MKSH_IMAGE) tar cf - -C $(MKSH_PATH) $(MKSH_FILE) | tar xf -
 
 $(CACERT_FILE):
 	docker run --rm --net=none $(CACERT_IMAGE) tar cf - -C $(CACERT_PATH) $(CACERT_FILE) | tar xf -
 
-config.json: Dockerfile test.sh $(MKSH_FILE) $(CACERT_FILE)
+config.json: Dockerfile test.sh moby $(MKSH_FILE) $(CACERT_FILE)
 	mkdir -p rootfs
+	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	BUILD=$$( tar cf - $^ | docker build -q - ) && \
 	[ -n "$$BUILD" ] && \
 	echo "Built $$BUILD" && \
