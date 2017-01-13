@@ -8,7 +8,7 @@ CACERT_IMAGE=mobylinux/ca-certificates@sha256:6ca2dca9cfb8534a55f3a17f8797943527
 CACERT_FILE=ca-certificates.crt
 CACERT_PATH=/etc/ssl/certs
 
-default: rootfs
+default: config.json
 
 $(MKSH_FILE):
 	docker run --rm --net=none $(MKSH_IMAGE) tar cf - -C $(MKSH_PATH) $(MKSH_FILE) | tar xf -
@@ -16,8 +16,8 @@ $(MKSH_FILE):
 $(CACERT_FILE):
 	docker run --rm --net=none $(CACERT_IMAGE) tar cf - -C $(CACERT_PATH) $(CACERT_FILE) | tar xf -
 
-rootfs: Dockerfile test.sh $(MKSH_FILE) $(CACERT_FILE)
-	mkdir -p $@
+config.json: Dockerfile test.sh $(MKSH_FILE) $(CACERT_FILE)
+	mkdir -p rootfs
 	BUILD=$$( tar cf - $^ | docker build -q - ) && \
 	[ -n "$$BUILD" ] && \
 	echo "Built $$BUILD" && \
@@ -25,11 +25,11 @@ rootfs: Dockerfile test.sh $(MKSH_FILE) $(CACERT_FILE)
 	[ -n "$$IMAGE" ] && \
 	echo "Built $$IMAGE" && \
 	CONTAINER=$$( docker create $$IMAGE /dev/null ) && \
-	docker export $$CONTAINER | tar -xf - -C $@ && \
+	docker export $$CONTAINER | tar -xf - -C rootfs $(EXCLUDE) && \
 	docker rm $$CONTAINER && \
-	( cd $@ && rm -rf .dockerenv Dockerfile dev/* etc/hostname etc/hosts etc/mtab etc/resolv.conf )
+	../containers/riddler.sh --cap-drop all --cap-add SYS_ADMIN -e HOME=/tmp -u 0:0 -v /var/tmp:/tmp -v /var/run/docker.sock:/var/run/docker.sock:ro -v /usr/bin/docker:/usr/bin/docker:ro -v /etc/resolv.conf:/etc/resolv.conf:ro --net host --read-only $$IMAGE /bin/test.sh >$@
 
 clean:
-	rm -rf rootfs $(MKSH_FILE) $(CACERT_FILE)
+	rm -rf rootfs config.json $(MKSH_FILE) $(CACERT_FILE)
 
 .DELETE_ON_ERROR:
