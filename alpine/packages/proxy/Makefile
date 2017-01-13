@@ -1,12 +1,12 @@
+# Tag: 470f68ec32e016484fb8e0bcc2f06cd3f201ea68
+GO_COMPILE=mobylinux/go-compile@sha256:b723c0e95a6293300392e57d6ab52574f9217e2410b390a24cbfc4f9070edb6b
+
 all: usr/bin/slirp-proxy sbin/proxy-vsockd
 
 DEPS=Dockerfile $(wildcard *.go libproxy/*.go)
 
 proxy: $(DEPS) ../vendor/manifest
-	BUILD=$$( tar cf - $(DEPS) -C .. vendor | docker build -q - ) && \
-	[ -n "$$BUILD" ] && \
-	echo "Built $$BUILD" && \
-	docker run --rm --net=none $$BUILD | tar xf -
+	tar cf - $(DEPS) -C .. vendor | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
 
 usr/bin/slirp-proxy: proxy
 	mkdir -p usr/bin
