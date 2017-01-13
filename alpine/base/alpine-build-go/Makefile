@@ -5,9 +5,9 @@ IMAGE=alpine-build-go
 
 default: push
 
-hash:
+hash: Dockerfile lint.sh
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
-	tar cf - Dockerfile lint.sh | docker build --no-cache -t $(IMAGE):build -
+	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sh -c 'cat /usr/local/go/bin/go /lib/apk/db/installed /usr/bin/lint.sh  /go/bin/golint | sha1sum' | sed 's/ .*//' > hash
 
 push: hash
