@@ -1,7 +1,7 @@
 From ce622362a9535c8a7d0a40c3f580a348ad7219eb Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:07 -0800
-Subject: [PATCH 4/5] Drivers: hv: utils: Fix the mapping between host version
+Subject: [PATCH 4/6] Drivers: hv: utils: Fix the mapping between host version
  and protocol to use
 
 We should intentionally declare the protocols to use for every known host
@@ -16,7 +16,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/hv/hv_util.c b/drivers/hv/hv_util.c
-index bcd06306f3e8..e7707747f56d 100644
+index bcd0630..e770774 100644
 --- a/drivers/hv/hv_util.c
 +++ b/drivers/hv/hv_util.c
 @@ -389,16 +389,19 @@ static int util_probe(struct hv_device *dev,
@@ -43,5 +43,5 @@ index bcd06306f3e8..e7707747f56d 100644
  	}
  
 -- 
-2.11.0
+2.7.1
 

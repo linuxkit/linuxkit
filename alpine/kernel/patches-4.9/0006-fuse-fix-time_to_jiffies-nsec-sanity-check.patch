@@ -1,0 +1,35 @@
+From cf88604f5275ea9f72059cf5ee8ea033aa9817d3 Mon Sep 17 00:00:00 2001
+From: David Sheets <david.sheets@docker.com>
+Date: Fri, 13 Jan 2017 15:58:30 +0000
+Subject: [PATCH 6/6] fuse: fix time_to_jiffies nsec sanity check
+
+Commit bcb6f6d2b9c2 ("fuse: use timespec64") introduced clamped nsec values
+in time_to_jiffies but used the max of nsec and NSEC_PER_SEC - 1 instead of
+the min. Because of this, dentries would stay in the cache longer than
+requested and go stale in scenarios that relied on their timely eviction.
+
+Fixes: bcb6f6d2b9c2 ("fuse: use timespec64")
+Signed-off-by: David Sheets <dsheets@docker.com>
+Signed-off-by: Miklos Szeredi <mszeredi@redhat.com>
+Cc: <stable@vger.kernel.org> # 4.9
+(cherry picked from commit 210675270caa33253e4c33f3c5e657e7d6060812)
+---
+ fs/fuse/dir.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
+index 096f799..642c57b 100644
+--- a/fs/fuse/dir.c
++++ b/fs/fuse/dir.c
+@@ -68,7 +68,7 @@ static u64 time_to_jiffies(u64 sec, u32 nsec)
+ 	if (sec || nsec) {
+ 		struct timespec64 ts = {
+ 			sec,
+-			max_t(u32, nsec, NSEC_PER_SEC - 1)
++			min_t(u32, nsec, NSEC_PER_SEC - 1)
+ 		};
+ 
+ 		return get_jiffies_64() + timespec64_to_jiffies(&ts);
+-- 
+2.7.1
+
