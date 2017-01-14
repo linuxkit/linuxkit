@@ -1,6 +1,6 @@
 #!/bin/sh
 
-set -ex
+set -e
 
 echo "starting kernel config sanity test with /proc/config.gz"
 
