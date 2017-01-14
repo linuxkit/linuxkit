@@ -1,4 +1,4 @@
-FROM golang:1.7-alpine
+FROM golang:1.7-alpine3.5
 RUN apk update && apk add --no-cache build-base git
 
 RUN go get -u github.com/golang/lint/golint
