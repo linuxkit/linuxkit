@@ -1,7 +1,25 @@
-# Tag: 3da0b0ea0da2724232603094e67c75b41adab551
-FROM mobylinux/alpine-build-c@sha256:0236d6599f6c8f7aa42829285e04202fbe99984df2818af0f5a453a59de8b090
+FROM alpine:3.4
 
-ARG KERNEL_VERSION=4.8.14
+RUN \
+  apk update && apk upgrade && \
+  apk add \
+  argp-standalone \
+  automake \
+  bc \
+  binutils-dev \
+  bison \
+  build-base \
+  curl \
+  flex \
+  libelf-dev \
+  linux-headers \
+  sed \
+  tar \
+  util-linux-dev \
+  xz \
+  && true
+
+ARG KERNEL_VERSION=4.9.3
 
 # get kernel source and extract it under /linux
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
