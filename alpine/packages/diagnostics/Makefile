@@ -1,5 +1,5 @@
-# Tag: 9c777a22fd84f08e1ea342c0b4ebabfb09fca086
-GO_COMPILE=mobylinux/go-compile@sha256:5e7f1909b0316261653d84f73aeb9188ef20d06b1ecf92eaa4402b32221adfba
+# Tag: 6075d4b9c5fe30e19581f1b7ef1813f3041cca32
+GO_COMPILE=mobylinux/go-compile@sha256:badfd8a1730ab6e640682d0f95a8f9c51f3cd4b2e8db261fe1a1fd8c6f60bd6e
 
 default: usr/bin/diagnostics-server
 
