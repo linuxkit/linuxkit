@@ -1,5 +1,5 @@
-# Tag: 470f68ec32e016484fb8e0bcc2f06cd3f201ea68
-GO_COMPILE=mobylinux/go-compile@sha256:b723c0e95a6293300392e57d6ab52574f9217e2410b390a24cbfc4f9070edb6b
+# Tag: 9c777a22fd84f08e1ea342c0b4ebabfb09fca086
+GO_COMPILE=mobylinux/go-compile@sha256:5e7f1909b0316261653d84f73aeb9188ef20d06b1ecf92eaa4402b32221adfba
 
 all: usr/bin/slirp-proxy sbin/proxy-vsockd
 
