@@ -3,7 +3,7 @@ GO_COMPILE=mobylinux/go-compile@sha256:b723c0e95a6293300392e57d6ab52574f9217e241
 
 all: usr/bin/slirp-proxy sbin/proxy-vsockd
 
-DEPS=Dockerfile $(wildcard *.go libproxy/*.go)
+DEPS=$(wildcard *.go libproxy/*.go)
 
 proxy: $(DEPS) ../vendor/manifest
 	tar cf - $(DEPS) -C .. vendor | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
