@@ -8,7 +8,7 @@
 set -e
 
 usage() {
-	echo "Usage: -o file [--docker]"
+	echo "Usage: -o file"
 	exit 1
 }
 
@@ -30,8 +30,6 @@ do
 	shift
 done
 
-[ $# -gt 0 ] && [ $1 = "--docker" ] && DOCKER=1 && shift
-
 [ $# -gt 0 ] && usage
 [ -z "$out" ] && usage
 
@@ -46,14 +44,9 @@ tar xf - -C $dir
 
 /usr/bin/lint.sh $dir
 
+>&2 echo "go build..."
+
 go build -o $out --ldflags '-extldflags "-fno-PIC -static"' "$package"
 
-if [ -z "$DOCKER" ]
-then
-	tar cf - $out
-	exit 0
-fi
-
-printf "FROM scratch\nCOPY $out $out\nENTRYPOINT [\"$out\"]\n" > Dockerfile
-
-tar cf - Dockerfile $out
+tar cf - $out
+exit 0
