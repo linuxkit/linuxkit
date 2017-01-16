@@ -1,7 +1,7 @@
 # Tag: b77cfc4ad0033d4366df830ed697afc7bab458a2
 FROM mobylinux/alpine-build-c@sha256:53739ea6042cb0ac39cf6e262012c1c4224206b2c9b719569fe7efa3a381348c
 
-ARG KERNEL_VERSION=4.9.3
+ARG KERNEL_VERSION=4.9.4
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
