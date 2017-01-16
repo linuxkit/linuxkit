@@ -97,7 +97,7 @@ void unlock(char *const descr, pthread_mutex_t *mutex)
 
 int bind_socket(const char *socket)
 {
-	int sock;
+	int sock = -1;
 
 	if (socket[0] == 0)
 		die(2, NULL, NULL, "Socket family required");
@@ -118,7 +118,7 @@ int bind_socket(const char *socket)
 
 int connect_socket(const char *socket)
 {
-	int sock;
+	int sock = -1;
 
 	if (socket[0] == 0)
 		die(2, NULL, NULL, "Socket family required");
@@ -549,12 +549,15 @@ void start_writer(connection_t *connection, int fuse)
 void negotiate_notify_channel(char *mount_point, int notify_sock)
 {
 	int len = strlen(mount_point);
-	char hdr[6];
+	struct {
+		uint32_t len;
+		uint16_t channel;
+	} __attribute__((packed)) hdr;
 
-	*((uint32_t *)hdr) = 6 + len;
-	*((uint16_t *)(hdr + 4)) = TRANSFUSE_NOTIFY_CHANNEL;
+	hdr.len = 6 + len;
+	hdr.channel = TRANSFUSE_NOTIFY_CHANNEL;
 
-	write_exactly("negotiate_notify_channel hdr", notify_sock, hdr, 6);
+	write_exactly("negotiate_notify_channel hdr", notify_sock, &hdr, 6);
 	write_exactly("negotiate_notify_channel mnt",
 		      notify_sock, mount_point, len);
 }
@@ -1087,7 +1090,7 @@ void serve(parameters *params)
 	char subproto_selector;
 	pthread_t child;
 	connection_t *conn;
-	void *(*connection_handler_thread)(void *);
+	void *(*connection_handler_thread)(void *) = NULL;
 
 	if (listen(params->data_sock, 16))
 		die(1, NULL, "listen", "");
