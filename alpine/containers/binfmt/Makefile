@@ -1,30 +1,20 @@
-# Tag 7a07de557d7f6ae3d72873c32bfb4c51c7687d03
-QEMU_IMAGE=mobylinux/qemu-user-static@sha256:cbeba25809c7c3feebc9e20522145e33d8abe5956674afa52814fc57c6644497
-QEMU_BINARIES=qemu-arm-static qemu-aarch64-static qemu-ppc64le-static
+# Tag d584b5be1bfb0dda11751706218e95ac0ddd0fa8
+DOCKER_IMAGE=mobylinux/binfmt@sha256:45bab9a0203be3da86d4e878e7c7b9869c396d0cd8d3443de6484fd3eab61777
 
 default: config.json
-
-$(QEMU_BINARIES):
-	docker run --rm --net=none $(QEMU_IMAGE) tar cf - -C /usr/bin $@ | tar xf -
 
 EXCLUDE=--exclude .dockerenv --exclude Dockerfile \
 	--exclude dev/console --exclude dev/pts --exclude dev/shm \
 	--exclude etc/hostname --exclude etc/hosts --exclude etc/mtab --exclude etc/resolv.conf
 
-config.json: Dockerfile main.go 00_moby.conf $(QEMU_BINARIES)
+config.json:
 	mkdir -p rootfs
-	BUILD=$$( tar cf - $^ | docker build -q - ) && \
-	[ -n "$$BUILD" ] && \
-	echo "Built $$BUILD" && \
-	IMAGE=$$( docker run --rm --net=none $$BUILD | docker build -q - ) && \
-	[ -n "$$IMAGE" ] && \
-	echo "Built $$IMAGE" && \
-	CONTAINER=$$( docker create $$IMAGE /dev/null ) && \
+	CONTAINER=$$( docker create $(DOCKER_IMAGE) /dev/null ) && \
 	docker export $$CONTAINER | tar -xf - -C rootfs $(EXCLUDE) && \
 	docker rm $$CONTAINER && \
-	../riddler.sh --cap-drop all --read-only -v /proc/sys/fs/binfmt_misc:/binfmt_misc $$IMAGE /usr/bin/binfmt -dir /etc/binfmt.d/ -mount /binfmt_misc >$@
+	../riddler.sh --cap-drop all --read-only -v /proc/sys/fs/binfmt_misc:/binfmt_misc $(DOCKER_IMAGE) /usr/bin/binfmt -dir /etc/binfmt.d/ -mount /binfmt_misc >$@
 
 clean:
-	rm -rf rootfs config.json $(QEMU_BINARIES)
+	rm -rf rootfs config.json
 
 .DELETE_ON_ERROR:
