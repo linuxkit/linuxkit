@@ -87,8 +87,7 @@ start()
 	fi
 
 	# On GCP, send logs to Google Cloud Logging
-	# Disabled because of https://github.com/docker/docker/issues/29344
-	# [ $(mobyplatform) = "gcp" ] && DOCKER_OPTS="${DOCKER_OPTS} --log-driver=gcplogs"
+	[ $(mobyplatform) = "gcp" ] && DOCKER_OPTS="${DOCKER_OPTS} --log-driver=gcplogs"
 
 	# choose storage driver
 	if ! $(cat /etc/docker/daemon.json | jq -e '."storage-driver"' > /dev/null)
