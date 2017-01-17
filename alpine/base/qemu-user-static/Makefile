@@ -1,6 +1,6 @@
 .PHONY: tag push
 
-BASE=debian:testing
+BASE=alpine:edge
 IMAGE=qemu-user-static
 
 default: push

@@ -1,4 +1,8 @@
-FROM debian:testing
-
-ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get -yq upgrade && apt-get install -yq qemu-user-static
+FROM alpine:edge
+RUN \
+  apk update && apk upgrade && \
+  apk add \
+  qemu-aarch64 \
+  qemu-arm \
+  qemu-ppc64le \
+  && true
