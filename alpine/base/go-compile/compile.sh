@@ -46,7 +46,6 @@ tar xf - -C $dir
 
 >&2 echo "go build..."
 
-go build -o $out --ldflags '-extldflags "-fno-PIC -static"' "$package"
+go build -o $out -buildmode pie --ldflags '-extldflags "-fno-PIC -static"' "$package"
 
 tar cf - $out
-exit 0
