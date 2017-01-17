@@ -16,10 +16,6 @@ ENV VERSION=mksh-R54
 RUN curl -O -sSL https://github.com/MirBSD/mksh/archive/$VERSION.tar.gz
 RUN zcat $VERSION.tar.gz | tar xvf -
 
-WORKDIR mksh-$VERSION
-
 ENV LDFLAGS=-static
 
-RUN sh ./Build.sh
-RUN strip mksh
-RUN install -c -s -o root -g bin -m 555 mksh /bin/mksh
+RUN cd mksh-$VERSION && sh ./Build.sh && strip mksh && install -c -s -o root -g bin -m 555 mksh /bin/mksh
