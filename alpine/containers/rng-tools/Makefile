@@ -1,5 +1,5 @@
-# Tag: 6fb2e0bd1844349222ad57af92b5c627fd73375a
-RNGD_IMAGE=mobylinux/rngd@sha256:8370ecd6f5d2092b27b40c2dabe25a2cbeb6469dd6e973c27a5152af6ab8d12a
+# Tag: 3dad6dd43270fa632ac031e99d1947f20b22eec9
+RNGD_IMAGE=mobylinux/rngd@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92
 
 default: config.json
 

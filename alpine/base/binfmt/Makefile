@@ -33,7 +33,7 @@ container: Dockerfile $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 
 hash: Dockerfile $(DEPS)
-	tar cf - $^ | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
+	find $^ -type f | xargs cat | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
 
 push: hash container
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
