@@ -1,5 +1,5 @@
-# Tag: 8c52d6a837be80b4e0535b5d9e693b604e970f7d
-BINFMT_IMAGE=mobylinux/binfmt@sha256:4f1d647bfdd46cf015f7c7b161687fe9557647b4542245d45f714774446730ed
+# Tag: 76d5101db8a98f469e2023e44be78bd5df44a674
+BINFMT_IMAGE=mobylinux/binfmt@sha256:53f3d3366366daad17ab9ed2421a888b43c49048dd04c61dfa132d5f4d8fb1ab
 
 default: config.json
 
