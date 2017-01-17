@@ -1,6 +1,6 @@
-# Tag 7a07de557d7f6ae3d72873c32bfb4c51c7687d03
-QEMU_IMAGE=mobylinux/qemu-user-static@sha256:cbeba25809c7c3feebc9e20522145e33d8abe5956674afa52814fc57c6644497
-QEMU_FILES=qemu-arm-static qemu-aarch64-static qemu-ppc64le-static
+# Tag da39a3ee5e6b4b0d3255bfef95601890afd80709
+QEMU_IMAGE=mobylinux/qemu-user-static@sha256:6c022f700dc6c263c9107c08aa29b4eae3b43b7b7594b7be3e421f69b51f53e5
+QEMU_FILES=qemu-arm qemu-aarch64 qemu-ppc64le
 QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
 
 # Tag: 6075d4b9c5fe30e19581f1b7ef1813f3041cca32
