@@ -1,7 +1,7 @@
-From cf88604f5275ea9f72059cf5ee8ea033aa9817d3 Mon Sep 17 00:00:00 2001
+From e71b5a916a8b24c02961150aafeeca40776f1c71 Mon Sep 17 00:00:00 2001
 From: David Sheets <david.sheets@docker.com>
 Date: Fri, 13 Jan 2017 15:58:30 +0000
-Subject: [PATCH 6/6] fuse: fix time_to_jiffies nsec sanity check
+Subject: [PATCH 6/7] fuse: fix time_to_jiffies nsec sanity check
 
 Commit bcb6f6d2b9c2 ("fuse: use timespec64") introduced clamped nsec values
 in time_to_jiffies but used the max of nsec and NSEC_PER_SEC - 1 instead of
@@ -18,7 +18,7 @@ Cc: <stable@vger.kernel.org> # 4.9
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-index 096f799..642c57b 100644
+index 096f79997f75..642c57b8de7b 100644
 --- a/fs/fuse/dir.c
 +++ b/fs/fuse/dir.c
 @@ -68,7 +68,7 @@ static u64 time_to_jiffies(u64 sec, u32 nsec)
@@ -31,5 +31,5 @@ index 096f799..642c57b 100644
  
  		return get_jiffies_64() + timespec64_to_jiffies(&ts);
 -- 
-2.7.1
+2.11.0
 
