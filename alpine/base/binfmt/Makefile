@@ -7,7 +7,8 @@ QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
 GO_COMPILE=mobylinux/go-compile@sha256:badfd8a1730ab6e640682d0f95a8f9c51f3cd4b2e8db261fe1a1fd8c6f60bd6e
 BINFMT_BINARY=usr/bin/binfmt
 
-SHA_IMAGE=alpine:3.5
+# Tag: alpine:3.5
+SHA_IMAGE=alpine@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
 
 IMAGE=binfmt
 
@@ -32,7 +33,6 @@ container: Dockerfile $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 
 hash: Dockerfile $(DEPS)
-	DOCKER_CONTENT_TRUST=1 docker pull $(SHA_IMAGE)
 	tar cf - $^ | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
 
 push: hash container
