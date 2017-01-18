@@ -5,6 +5,8 @@ default: sbin/transfused
 
 DEPS=$(wildcard *.c *.h)
 
+all: sbin/transfused
+
 sbin/transfused: $(DEPS)
 	mkdir -p $(dir $@)
 	tar cf - $(DEPS) | docker run --rm --net=none --log-driver=none -i $(C_COMPILE) -o $@ | tar xf -
