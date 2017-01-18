@@ -12,7 +12,7 @@ config.json:
 	CONTAINER=$$( docker create $(RNGD_IMAGE) /dev/null ) && \
 	docker export $$CONTAINER | tar -xf - -C rootfs $(EXCLUDE) && \
 	docker rm $$CONTAINER && \
-	../riddler.sh --cap-drop all --cap-add SYS_ADMIN --read-only $(RNGD_IMAGE) /bin/tini /usr/sbin/rngd -f >$@
+	../riddler.sh --cap-drop all --cap-add SYS_ADMIN --read-only --oom-score-adj -800 $(RNGD_IMAGE) /bin/tini /usr/sbin/rngd -f >$@
 
 clean:
 	rm -rf rootfs config.json
