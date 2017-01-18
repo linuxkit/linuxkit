@@ -28,15 +28,30 @@ qemu-gce: Dockerfile.qemugce alpine/gce.img.tar.gz
 	tar cf - $^ | docker build -f Dockerfile.qemugce -t mobyqemugce:build -
 	docker run -it --rm mobyqemugce:build
 
-hyperkit.git:
-	git clone https://github.com/docker/hyperkit.git hyperkit.git
+hyperkit.bin:
+	mkdir $@
 
-hyperkit.git/build/com.docker.hyperkit: hyperkit.git
-	cd hyperkit.git && make
+hyperkit.bin/com.docker.hyperkit: hyperkit.bin
+	curl -fsSL https://circleci.com/api/v1/project/docker/hyperkit/latest/artifacts/0//Users/distiller/hyperkit/build/com.docker.hyperkit > $@
+	chmod a+x $@
 
-hyperkit: hyperkit.sh hyperkit.git/build/com.docker.hyperkit alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
-	sudo ./hyperkit.sh
+hyperkit.bin/com.docker.slirp:
+	curl -fsSL https://circleci.com/api/v1/project/docker/vpnkit/latest/artifacts/0//Users/distiller/vpnkit/com.docker.slirp.tgz \
+		| tar xz --strip=2 -C hyperkit.bin Contents/MacOS/com.docker.slirp
 
+hyperkit: hyperkit.sh hyperkit.bin/com.docker.hyperkit hyperkit.bin/com.docker.slirp alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+	./hyperkit.sh
+
+define check_test_log
+	@cat $1 |grep -q 'Moby test suite PASSED'
+endef
+
+hyperkit-test: hyperkit.sh hyperkit.bin/com.docker.hyperkit hyperkit.bin/com.docker.slirp alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
+	rm disk.img
+	touch test.log && \
+	INITRD=alpine/initrd-test.img ./hyperkit.sh 2>&1 | tee -a test.log
+	$(call check_test_log, test.log)
+	
 test: Dockerfile.test alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
 	$(MAKE) -C alpine
 	BUILD=$$( tar cf - $^ | docker build -f Dockerfile.test -q - ) && \
@@ -44,7 +59,7 @@ test: Dockerfile.test alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
 	echo "Built $$BUILD" && \
 	touch test.log && \
 	docker run --rm $$BUILD 2>&1 | tee -a test.log
-	@cat test.log | grep -q 'Moby test suite PASSED'
+	$(call check_test_log, test.log)
 
 TAG=$(shell git rev-parse HEAD)
 STATUS=$(shell git status -s)
@@ -113,4 +128,4 @@ ci-pr:
 
 clean:
 	$(MAKE) -C alpine clean
-	rm -rf hyperkit.git disk.img
+	rm -rf hyperkit.bin disk.img
