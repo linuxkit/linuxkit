@@ -12,4 +12,3 @@ Several kernel variants are supported:
 - default
 - `make LTS4.4=1` 4.4 LTS series
 - `make AUFS=1` supports AUFS (deprecated)
-- `make AUFS4.4=1` 4.4 LTS series with AUFS (deprecated)
