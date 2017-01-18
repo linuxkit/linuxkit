@@ -52,9 +52,6 @@ MOBYLINUX_TAG=alpine/mobylinux.tag
 ifdef AUFS
 AUFS_PREFIX=aufs-
 endif
-ifdef AUFS4.4
-AUFS_PREFIX=aufs4.4-
-endif
 ifdef LTS4.4
 AUFS_PREFIX=lts4.4-
 endif
