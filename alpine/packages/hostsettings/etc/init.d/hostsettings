@@ -11,9 +11,6 @@ depend() {
 start() {
 	ebegin "Configuring host settings from database"
 
-	mobyconfig exists etc/sysctl.conf && mobyconfig get etc/sysctl.conf > /etc/sysctl.conf
-	mobyconfig exists etc/sysfs.conf && mobyconfig get etc/sysfs.conf > /etc/sysfs.conf
-
 	mobyconfig exists random-seed && mobyconfig get random-seed > /dev/urandom
 
 	mobyconfig exists etc/resolv.conf && mobyconfig get etc/resolv.conf > /etc/resolv.conf
