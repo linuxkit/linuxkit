@@ -9,7 +9,7 @@ RUN \
   passwd -d root && \
   adduser -D -H -s /sbin/nologin dockremap
 
-COPY . .
+COPY . /
 RUN rm Dockerfile
 RUN cd /usr/bin && \
   ln -s docker-runc runc && \
