@@ -1,6 +1,6 @@
 .PHONY: tag push
 
-BASE=debian:stable
+BASE=debian:testing
 IMAGE=ca-certificates
 
 default: push
@@ -8,7 +8,7 @@ default: push
 hash: Dockerfile
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build sh -c 'apt list --installed 2>/dev/null | sha1sum' | sed 's/ .*//' > hash
+	docker run --rm $(IMAGE):build sh -c 'cat /etc/ssl/certs/ca-certificates.crt | sha1sum' | sed 's/ .*//' > hash
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
