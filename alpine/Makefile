@@ -39,6 +39,7 @@ moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/docker usr etc -C ../.. \
 	  -C packages/diagnostics usr etc -C ../.. \
 	  -C packages/automount etc -C ../.. \
+	  -C packages/windowsnet etc -C ../.. \
 	  -C packages/hostsettings etc -C ../.. \
 	  -C packages/chronyd etc -C ../.. \
 	  -C packages/userns etc -C ../.. \
