@@ -3,8 +3,8 @@ MKSH_IMAGE=mobylinux/mksh@sha256:b3ca9febef294d002894b91e0ce0f794235db73a3024be3
 MKSH_BINARY=bin/mksh
 SH_BINARY=bin/sh
 
-# Tag: 41e4b91c9a619e46f76ce2d024067c09b62f07b4
-CACERT_IMAGE=mobylinux/ca-certificates@sha256:6ca2dca9cfb8534a55f3a17f8797943527db5bbac08c98a5c9a4836250f4c548
+# Tag: e091a05fbf7c5e16f18b23602febd45dd690ba2f
+CACERT_IMAGE=mobylinux/ca-certificates@sha256:a4e217ab2036bc128dc57a639a25fd285dbd68c47f9a46a91f1a9afab2bab3d3
 CACERT_FILE=etc/ssl/certs/ca-certificates.crt
 
 TEST_SCRIPT=bin/test.sh
