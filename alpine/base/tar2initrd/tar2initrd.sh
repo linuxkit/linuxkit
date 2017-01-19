@@ -1,5 +1,7 @@
 #!/bin/sh
 
+set -e
+
 mkdir -p /tmp/input
 
 cd /tmp/input
@@ -15,7 +17,7 @@ SIZE4=$(( $SIZE / 4 \* 4 ))
 DIFF=$(( $SIZE - $SIZE4 ))
 [ $DIFF -ne 0 ] && DIFF=$(( 4 - $DIFF ))
 
-dd if=/dev/zero bs=1 count=$DIFF of=zeropad
+dd if=/dev/zero bs=1 count=$DIFF of=zeropad 2>/dev/null
 
 cat zeropad >> initrd.img
 
