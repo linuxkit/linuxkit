@@ -17,26 +17,21 @@ then
   mkdir -p /Database
   case "$(mobyplatform)" in
     windows)
-      /sbin/9pmount-vsock listen db /Database
+      mkdir -p /tmp/db
+      /sbin/9pmount-vsock listen db /tmp/db
       [ $? -ne 0 ] && rm -rf /Database && printf "Could not mount configuration database\n" 1>&2 && exit 1
+      mount --bind /tmp/db/branch/master/ro/com.docker.driver.amd64-linux /Database
     ;;
     mac)
-      mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /Database
+      mkdir -p /tmp/db
+      mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /tmp/db
       [ $? -ne 0 ] && rm -rf /Database && printf "Could not mount configuration database\n" 1>&2 && exit 1
+      mount --bind /tmp/db/branch/master/ro/com.docker.driver.amd64-linux /Database
     ;;
   esac
 fi
 
-case "$(mobyplatform)" in
-  windows|mac)
-    DATABASE="com.docker.driver.amd64-linux"
-    BASE="/Database/branch/master/ro/${DATABASE}"
-  ;;
-  *)
-    # For other editions, currently all database keys will be reported as empty.
-    # Later they will build a tree from other sources.
-    BASE="/Database"
-esac
+BASE=/Database
 
 KEY=$(echo $2 | sed 's@^/@@')
 
