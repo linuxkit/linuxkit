@@ -1,7 +1,7 @@
-From 5e89daa5e8c0b5950b46ba77dd6248c5e61bc405 Mon Sep 17 00:00:00 2001
+From 9b2cf4ec84e167a677b1deda17e8cef862d795b6 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:43 -0800
-Subject: [PATCH 32/42] Drivers: hv: vmbus: add an API
+Subject: [PATCH 32/44] Drivers: hv: vmbus: add an API
  vmbus_hvsock_device_unregister()
 
 The hvsock driver needs this API to release all the resources related
@@ -18,7 +18,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  3 files changed, 32 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 76864c9..cf311be 100644
+index 76864c98a110..cf311be88cb4 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -310,6 +310,7 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
@@ -114,7 +114,7 @@ index 76864c9..cf311be 100644
   * vmbus_onoffers_delivered -
   * This is invoked when all offers have been delivered.
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index 521f48e..09c08b5 100644
+index 521f48ed188e..09c08b56e3dc 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
 @@ -285,7 +285,8 @@ struct vmbus_channel *relid2channel(u32 relid)
@@ -136,7 +136,7 @@ index 521f48e..09c08b5 100644
  	return found_channel;
  }
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index ad04017..993318a 100644
+index ad04017ba06f..993318a6d147 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1071,6 +1071,8 @@ int __must_check __vmbus_driver_register(struct hv_driver *hv_driver,
@@ -149,5 +149,5 @@ index ad04017..993318a 100644
  			resource_size_t min, resource_size_t max,
  			resource_size_t size, resource_size_t align,
 -- 
-2.10.0
+2.11.0
 

@@ -1,7 +1,7 @@
-From 761aa629641afa804127aea0e3ce5c95dddfcb17 Mon Sep 17 00:00:00 2001
+From 4644873be14865b14b9dd11a78fb20881a116ea0 Mon Sep 17 00:00:00 2001
 From: Claudio Imbrenda <imbrenda@linux.vnet.ibm.com>
 Date: Tue, 22 Mar 2016 17:05:52 +0100
-Subject: [PATCH 03/42] AF_VSOCK: Shrink the area influenced by prepare_to_wait
+Subject: [PATCH 03/44] AF_VSOCK: Shrink the area influenced by prepare_to_wait
 
 When a thread is prepared for waiting by calling prepare_to_wait, sleeping
 is not allowed until either the wait has taken place or finish_wait has
@@ -18,7 +18,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  1 file changed, 85 insertions(+), 73 deletions(-)
 
 diff --git a/net/vmw_vsock/af_vsock.c b/net/vmw_vsock/af_vsock.c
-index 9b5bd6d..b5f1221 100644
+index 9b5bd6d142dc..b5f1221f48d4 100644
 --- a/net/vmw_vsock/af_vsock.c
 +++ b/net/vmw_vsock/af_vsock.c
 @@ -1209,10 +1209,14 @@ static int vsock_stream_connect(struct socket *sock, struct sockaddr *addr,
@@ -332,5 +332,5 @@ index 9b5bd6d..b5f1221 100644
  	release_sock(sk);
  	return err;
 -- 
-2.10.0
+2.11.0
 

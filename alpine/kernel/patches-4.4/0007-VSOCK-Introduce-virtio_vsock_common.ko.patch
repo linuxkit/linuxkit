@@ -1,7 +1,7 @@
-From fe9f8cb30a5c819adabb5b9b598f7776cbbdc4f0 Mon Sep 17 00:00:00 2001
+From 7d8134e14e6199a3843d3297be701051691e0443 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:32 +0100
-Subject: [PATCH 07/42] VSOCK: Introduce virtio_vsock_common.ko
+Subject: [PATCH 07/44] VSOCK: Introduce virtio_vsock_common.ko
 
 This module contains the common code and header files for the following
 virtio_transporto and vhost_vsock kernel modules.
@@ -27,7 +27,7 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  create mode 100644 net/vmw_vsock/virtio_transport_common.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index ab65bbe..b93ba8b 100644
+index ab65bbecb159..b93ba8b21be7 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -11382,6 +11382,16 @@ S:	Maintained
@@ -49,7 +49,7 @@ index ab65bbe..b93ba8b 100644
  S:	Maintained
 diff --git a/include/linux/virtio_vsock.h b/include/linux/virtio_vsock.h
 new file mode 100644
-index 0000000..9638bfe
+index 000000000000..9638bfeb0d1f
 --- /dev/null
 +++ b/include/linux/virtio_vsock.h
 @@ -0,0 +1,154 @@
@@ -208,7 +208,7 @@ index 0000000..9638bfe
 +
 +#endif /* _LINUX_VIRTIO_VSOCK_H */
 diff --git a/include/net/af_vsock.h b/include/net/af_vsock.h
-index 3af0b22..f275896 100644
+index 3af0b224f754..f2758964ce6f 100644
 --- a/include/net/af_vsock.h
 +++ b/include/net/af_vsock.h
 @@ -63,6 +63,8 @@ struct vsock_sock {
@@ -222,7 +222,7 @@ index 3af0b22..f275896 100644
  	bool ignore_connecting_rst;
 diff --git a/include/trace/events/vsock_virtio_transport_common.h b/include/trace/events/vsock_virtio_transport_common.h
 new file mode 100644
-index 0000000..b7f1d62
+index 000000000000..b7f1d6278280
 --- /dev/null
 +++ b/include/trace/events/vsock_virtio_transport_common.h
 @@ -0,0 +1,144 @@
@@ -371,7 +371,7 @@ index 0000000..b7f1d62
 +/* This part must be outside protection */
 +#include <trace/define_trace.h>
 diff --git a/include/uapi/linux/Kbuild b/include/uapi/linux/Kbuild
-index ebd10e6..6c51a4d 100644
+index ebd10e624598..6c51a4d8bb62 100644
 --- a/include/uapi/linux/Kbuild
 +++ b/include/uapi/linux/Kbuild
 @@ -447,6 +447,7 @@ header-y += virtio_ring.h
@@ -383,7 +383,7 @@ index ebd10e6..6c51a4d 100644
  header-y += vt.h
  header-y += wait.h
 diff --git a/include/uapi/linux/virtio_ids.h b/include/uapi/linux/virtio_ids.h
-index 77925f5..3228d58 100644
+index 77925f587b15..3228d582234a 100644
 --- a/include/uapi/linux/virtio_ids.h
 +++ b/include/uapi/linux/virtio_ids.h
 @@ -41,5 +41,6 @@
@@ -395,7 +395,7 @@ index 77925f5..3228d58 100644
  #endif /* _LINUX_VIRTIO_IDS_H */
 diff --git a/include/uapi/linux/virtio_vsock.h b/include/uapi/linux/virtio_vsock.h
 new file mode 100644
-index 0000000..6b011c1
+index 000000000000..6b011c19b50f
 --- /dev/null
 +++ b/include/uapi/linux/virtio_vsock.h
 @@ -0,0 +1,94 @@
@@ -495,7 +495,7 @@ index 0000000..6b011c1
 +#endif /* _UAPI_LINUX_VIRTIO_VSOCK_H */
 diff --git a/net/vmw_vsock/virtio_transport_common.c b/net/vmw_vsock/virtio_transport_common.c
 new file mode 100644
-index 0000000..a53b3a1
+index 000000000000..a53b3a16b4f1
 --- /dev/null
 +++ b/net/vmw_vsock/virtio_transport_common.c
 @@ -0,0 +1,992 @@
@@ -1492,5 +1492,5 @@ index 0000000..a53b3a1
 +MODULE_AUTHOR("Asias He");
 +MODULE_DESCRIPTION("common code for virtio vsock");
 -- 
-2.10.0
+2.11.0
 

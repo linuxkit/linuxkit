@@ -1,0 +1,103 @@
+From 72c60164c3508d229686d64e624d1d2f47d01676 Mon Sep 17 00:00:00 2001
+From: "K. Y. Srinivasan" <kys@microsoft.com>
+Date: Sun, 6 Nov 2016 13:14:16 -0800
+Subject: [PATCH 08/11] Drivers: hv: vmbus: Base host signaling strictly on the
+ ring state
+
+One of the factors that can result in the host concluding that a given
+guest in mounting a DOS attack is if the guest generates interrupts
+to the host when the host is not expecting it. If these "spurious"
+interrupts reach a certain rate, the host can throttle the guest to
+minimize the impact. The host computation of the "expected number
+of interrupts" is strictly based on the ring transitions. Until
+the host logic is fixed, base the guest logic to interrupt solely
+on the ring state.
+
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 74198eb4a42c4a3c4fbef08fa01a291a282f7c2e)
+---
+ drivers/hv/channel.c      | 23 ++++++++++++++++++++---
+ drivers/hv/channel_mgmt.c |  2 --
+ drivers/hv/ring_buffer.c  |  7 -------
+ 3 files changed, 20 insertions(+), 12 deletions(-)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index 16f91c8490fe..5e482d7f60cb 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -676,10 +676,18 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
+ 	 * NOTE: in this case, the hvsock channel is an exception, because
+ 	 * it looks the host side's hvsock implementation has a throttling
+ 	 * mechanism which can hurt the performance otherwise.
++	 *
++	 * KYS: Oct. 30, 2016:
++	 * It looks like Windows hosts have logic to deal with DOS attacks that
++	 * can be triggered if it receives interrupts when it is not expecting
++	 * the interrupt. The host expects interrupts only when the ring
++	 * transitions from empty to non-empty (or full to non full on the guest
++	 * to host ring).
++	 * So, base the signaling decision solely on the ring state until the
++	 * host logic is fixed.
+ 	 */
+ 
+-	if (((ret == 0) && kick_q && signal) ||
+-	    (ret && !is_hvsock_channel(channel)))
++	if (((ret == 0) && signal))
+ 		vmbus_setevent(channel);
+ 
+ 	return ret;
+@@ -786,9 +794,18 @@ int vmbus_sendpacket_pagebuffer_ctl(struct vmbus_channel *channel,
+ 	 * If we cannot write to the ring-buffer; signal the host
+ 	 * even if we may not have written anything. This is a rare
+ 	 * enough condition that it should not matter.
++	 *
++	 * KYS: Oct. 30, 2016:
++	 * It looks like Windows hosts have logic to deal with DOS attacks that
++	 * can be triggered if it receives interrupts when it is not expecting
++	 * the interrupt. The host expects interrupts only when the ring
++	 * transitions from empty to non-empty (or full to non full on the guest
++	 * to host ring).
++	 * So, base the signaling decision solely on the ring state until the
++	 * host logic is fixed.
+ 	 */
+ 
+-	if (((ret == 0) && kick_q && signal) || (ret))
++	if (((ret == 0) && signal))
+ 		vmbus_setevent(channel);
+ 
+ 	return ret;
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index db5bccf4fa7e..8f3d9f787288 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -448,8 +448,6 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ 	}
+ 
+ 	dev_type = hv_get_dev_type(newchannel);
+-	if (dev_type == HV_NIC)
+-		set_channel_signal_state(newchannel, HV_SIGNAL_POLICY_EXPLICIT);
+ 
+ 	init_vp_index(newchannel, dev_type);
+ 
+diff --git a/drivers/hv/ring_buffer.c b/drivers/hv/ring_buffer.c
+index 08043da1a61c..5d11d93eedf4 100644
+--- a/drivers/hv/ring_buffer.c
++++ b/drivers/hv/ring_buffer.c
+@@ -75,13 +75,6 @@ static bool hv_need_to_signal(u32 old_write, struct hv_ring_buffer_info *rbi,
+ 	if (READ_ONCE(rbi->ring_buffer->interrupt_mask))
+ 		return false;
+ 
+-	/*
+-	 * When the client wants to control signaling,
+-	 * we only honour the host interrupt mask.
+-	 */
+-	if (policy == HV_SIGNAL_POLICY_EXPLICIT)
+-		return true;
+-
+ 	/* check interrupt_mask before read_index */
+ 	virt_rmb();
+ 	/*
+-- 
+2.11.0
+
