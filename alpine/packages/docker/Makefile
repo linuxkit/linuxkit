@@ -12,6 +12,11 @@ else
 DOCKER_HOST=get.docker.com
 endif
 
+# temporary hack for 1.13.0 release while in staging
+ifeq ($(DOCKER_VERSION),1.13.0)
+DOCKER_HOST=test.docker.com
+endif
+
 DOCKER_IMAGE?=docker:$(DOCKER_VERSION)
 
 .PHONY: download hub cleanusr
