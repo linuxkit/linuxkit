@@ -1,4 +1,4 @@
-From 437e8d0400f01c896004f4eb4e54cf09bb265673 Mon Sep 17 00:00:00 2001
+From 00ef9fe4743da2cdd5b55d97335e678304329e24 Mon Sep 17 00:00:00 2001
 From: Rolf Neugebauer <rolf.neugebauer@docker.com>
 Date: Tue, 17 Jan 2017 18:13:51 +0000
 Subject: [PATCH 7/7] virtio: don't set VIRTIO_NET_HDR_F_DATA_VALID on xmit
