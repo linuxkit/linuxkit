@@ -1,7 +1,7 @@
-From 9a08c352d05305ca7651540c3b107da1e4e1f40b Mon Sep 17 00:00:00 2001
+From 784c13b38b4413144b146699bb3ab090c291e6c2 Mon Sep 17 00:00:00 2001
 From: James Bottomley <James.Bottomley@HansenPartnership.com>
 Date: Wed, 17 Feb 2016 16:49:38 -0800
-Subject: [PATCH] fs: add filp_clone_open API
+Subject: [PATCH 43/44] fs: add filp_clone_open API
 
 I need an API that allows me to obtain a clone of the current file
 pointer to pass in to an exec handler.  I've labelled this as an
@@ -17,7 +17,7 @@ Acked-by: Jan Kara <jack@suse.cz>
  2 files changed, 21 insertions(+)
 
 diff --git a/fs/internal.h b/fs/internal.h
-index b71deee..c8ca0c9 100644
+index 71859c4d0b41..c0022708ff3a 100644
 --- a/fs/internal.h
 +++ b/fs/internal.h
 @@ -108,6 +108,7 @@ extern long do_handle_open(int mountdirfd,
@@ -29,10 +29,10 @@ index b71deee..c8ca0c9 100644
  /*
   * inode.c
 diff --git a/fs/open.c b/fs/open.c
-index 17cb6b1..bfe6f2b 100644
+index 157b9940dd73..9d993f928ea0 100644
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -1002,6 +1002,26 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
+@@ -1001,6 +1001,26 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
  }
  EXPORT_SYMBOL(file_open_root);
  
@@ -60,5 +60,5 @@ index 17cb6b1..bfe6f2b 100644
  {
  	struct open_flags op;
 -- 
-1.9.1
+2.11.0
 

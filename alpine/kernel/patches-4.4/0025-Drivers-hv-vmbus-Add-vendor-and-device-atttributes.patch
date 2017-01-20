@@ -1,7 +1,7 @@
-From 69933a7f325a93afbb5ed819388b8b063d602066 Mon Sep 17 00:00:00 2001
+From b8f2da0e5160cd380ee25b81a1e5f8c922a713fe Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Fri, 25 Dec 2015 20:00:30 -0800
-Subject: [PATCH 25/42] Drivers: hv: vmbus: Add vendor and device atttributes
+Subject: [PATCH 25/44] Drivers: hv: vmbus: Add vendor and device atttributes
 
 Add vendor and device attributes to VMBUS devices. These will be used
 by Hyper-V tools as well user-level RDMA libraries that will use the
@@ -18,7 +18,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  4 files changed, 186 insertions(+), 43 deletions(-)
 
 diff --git a/Documentation/ABI/stable/sysfs-bus-vmbus b/Documentation/ABI/stable/sysfs-bus-vmbus
-index 636e938..5d0125f 100644
+index 636e938d5e33..5d0125f7bcaf 100644
 --- a/Documentation/ABI/stable/sysfs-bus-vmbus
 +++ b/Documentation/ABI/stable/sysfs-bus-vmbus
 @@ -27,3 +27,17 @@ Description:	The mapping of which primary/sub channels are bound to which
@@ -40,7 +40,7 @@ index 636e938..5d0125f 100644
 +Description:	The 16 bit vendor ID of the device
 +Users:		tools/hv/lsvmbus and user level RDMA libraries
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 763d0c1..d6c6114 100644
+index 763d0c19c16f..d6c611457601 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -33,8 +33,122 @@
@@ -259,7 +259,7 @@ index 763d0c1..d6c6114 100644
  	    (vmbus_proto_version == VERSION_WIN7) || (!perf_chn)) {
  		/*
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 7973aa5..de7130c 100644
+index 7973aa55fec8..de7130c58a62 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -480,6 +480,24 @@ static ssize_t channel_vp_mapping_show(struct device *dev,
@@ -305,7 +305,7 @@ index 7973aa5..de7130c 100644
  
  	return child_device_obj;
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 9e2de6a..51c98fd 100644
+index 9e2de6a7cc96..51c98fd6044d 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -635,6 +635,32 @@ enum hv_signal_policy {
@@ -351,5 +351,5 @@ index 9e2de6a..51c98fd 100644
  	struct device device;
  
 -- 
-2.10.0
+2.11.0
 
