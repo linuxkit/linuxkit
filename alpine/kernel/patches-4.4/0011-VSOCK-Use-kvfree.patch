@@ -1,7 +1,7 @@
-From e9a09f08525c736a71d8331fd6412a0ad19ee428 Mon Sep 17 00:00:00 2001
+From 2eb16145fb76667bcc47b02bf3708ff2fc6389fb Mon Sep 17 00:00:00 2001
 From: Wei Yongjun <weiyj.lk@gmail.com>
 Date: Tue, 2 Aug 2016 13:50:42 +0000
-Subject: [PATCH 11/42] VSOCK: Use kvfree()
+Subject: [PATCH 11/44] VSOCK: Use kvfree()
 
 Use kvfree() instead of open-coding it.
 
@@ -13,7 +13,7 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  1 file changed, 1 insertion(+), 4 deletions(-)
 
 diff --git a/drivers/vhost/vsock.c b/drivers/vhost/vsock.c
-index 028ca16..0ddf3a2 100644
+index 028ca16c2d36..0ddf3a2dbfc4 100644
 --- a/drivers/vhost/vsock.c
 +++ b/drivers/vhost/vsock.c
 @@ -434,10 +434,7 @@ err:
@@ -29,5 +29,5 @@ index 028ca16..0ddf3a2 100644
  
  static int vhost_vsock_dev_open(struct inode *inode, struct file *file)
 -- 
-2.10.0
+2.11.0
 

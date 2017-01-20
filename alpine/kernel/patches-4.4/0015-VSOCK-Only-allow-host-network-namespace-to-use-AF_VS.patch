@@ -1,7 +1,7 @@
-From 8719b508f509c06a7821d6f8e2fc1fcad84d6fbb Mon Sep 17 00:00:00 2001
+From e2d417429738c3a8da5086a4f9bd815fca3ba0a6 Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
 Date: Mon, 4 Apr 2016 14:50:10 +0100
-Subject: [PATCH 15/42] VSOCK: Only allow host network namespace to use
+Subject: [PATCH 15/44] VSOCK: Only allow host network namespace to use
  AF_VSOCK.
 
 The VSOCK addressing schema does not really lend itself to simply creating an
@@ -13,7 +13,7 @@ Signed-off-by: Ian Campbell <ian.campbell@docker.com>
  1 file changed, 3 insertions(+)
 
 diff --git a/net/vmw_vsock/af_vsock.c b/net/vmw_vsock/af_vsock.c
-index 17dbbe6..1bb1b01 100644
+index 17dbbe64cd73..1bb1b016e945 100644
 --- a/net/vmw_vsock/af_vsock.c
 +++ b/net/vmw_vsock/af_vsock.c
 @@ -1852,6 +1852,9 @@ static const struct proto_ops vsock_stream_ops = {
@@ -27,5 +27,5 @@ index 17dbbe6..1bb1b01 100644
  		return -EINVAL;
  
 -- 
-2.10.0
+2.11.0
 

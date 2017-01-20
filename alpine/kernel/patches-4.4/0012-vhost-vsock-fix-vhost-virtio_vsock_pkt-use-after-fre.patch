@@ -1,7 +1,7 @@
-From f886059ea8d0ac8ed981263d91d94275b85c50d5 Mon Sep 17 00:00:00 2001
+From de224dfc853e82a22203479455d8fd3192e9b535 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 4 Aug 2016 14:52:53 +0100
-Subject: [PATCH 12/42] vhost/vsock: fix vhost virtio_vsock_pkt use-after-free
+Subject: [PATCH 12/44] vhost/vsock: fix vhost virtio_vsock_pkt use-after-free
 
 Stash the packet length in a local variable before handing over
 ownership of the packet to virtio_transport_recv_pkt() or
@@ -19,7 +19,7 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/vhost/vsock.c b/drivers/vhost/vsock.c
-index 0ddf3a2..e3b30ea 100644
+index 0ddf3a2dbfc4..e3b30ea9ece5 100644
 --- a/drivers/vhost/vsock.c
 +++ b/drivers/vhost/vsock.c
 @@ -307,6 +307,8 @@ static void vhost_vsock_handle_tx_kick(struct vhost_work *work)
@@ -49,5 +49,5 @@ index 0ddf3a2..e3b30ea 100644
  	}
  
 -- 
-2.10.0
+2.11.0
 
