@@ -1,7 +1,7 @@
-From 51293adacd73d7bc6baee18e87b0d17ad52a61d4 Mon Sep 17 00:00:00 2001
+From ddba6d4b693a1f67f32ea40ddaf6c240f6615b01 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sun, 15 May 2016 09:53:11 -0700
-Subject: [PATCH 39/42] hv_sock: introduce Hyper-V Sockets
+Subject: [PATCH 39/44] hv_sock: introduce Hyper-V Sockets
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
 mechanism between the host and the guest. It's somewhat like TCP over
@@ -41,7 +41,7 @@ Origin: https://patchwork.ozlabs.org/patch/622404/
  create mode 100644 net/hv_sock/af_hvsock.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 12d49f5..fa87bdd 100644
+index 12d49f58c4e0..fa87bddcf2df 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -5123,7 +5123,9 @@ F:	drivers/input/serio/hyperv-keyboard.c
@@ -55,7 +55,7 @@ index 12d49f5..fa87bdd 100644
  F:	Documentation/ABI/stable/sysfs-bus-vmbus
  
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 6c9695e..187d4bd 100644
+index 6c9695ef757e..187d4bda4d8c 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1349,4 +1349,18 @@ extern __u32 vmbus_proto_version;
@@ -78,7 +78,7 @@ index 6c9695e..187d4bd 100644
 +					PREV_INDICES_LEN)
  #endif /* _HYPERV_H */
 diff --git a/include/linux/socket.h b/include/linux/socket.h
-index dbd81e7..6634c47 100644
+index dbd81e7f21fd..6634c47c1825 100644
 --- a/include/linux/socket.h
 +++ b/include/linux/socket.h
 @@ -202,8 +202,9 @@ struct ucred {
@@ -102,7 +102,7 @@ index dbd81e7..6634c47 100644
  /* Maximum queue length specifiable by listen.  */
 diff --git a/include/net/af_hvsock.h b/include/net/af_hvsock.h
 new file mode 100644
-index 0000000..7c8c41e
+index 000000000000..7c8c41e78157
 --- /dev/null
 +++ b/include/net/af_hvsock.h
 @@ -0,0 +1,78 @@
@@ -185,7 +185,7 @@ index 0000000..7c8c41e
 +
 +#endif /* __AF_HVSOCK_H__ */
 diff --git a/include/uapi/linux/hyperv.h b/include/uapi/linux/hyperv.h
-index e347b24..408b832 100644
+index e347b24ef9fb..408b832716b8 100644
 --- a/include/uapi/linux/hyperv.h
 +++ b/include/uapi/linux/hyperv.h
 @@ -26,6 +26,7 @@
@@ -226,7 +226,7 @@ index e347b24..408b832 100644
 +
  #endif /* _UAPI_HYPERV_H */
 diff --git a/net/Kconfig b/net/Kconfig
-index 1c9fda1..9eeccb7 100644
+index 1c9fda1c602d..9eeccb75ee4e 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
 @@ -228,6 +228,7 @@ source "net/dns_resolver/Kconfig"
@@ -238,7 +238,7 @@ index 1c9fda1..9eeccb7 100644
  source "net/mpls/Kconfig"
  source "net/hsr/Kconfig"
 diff --git a/net/Makefile b/net/Makefile
-index bdd1455..ec175dd 100644
+index bdd14553a774..ec175ddfac38 100644
 --- a/net/Makefile
 +++ b/net/Makefile
 @@ -70,6 +70,7 @@ obj-$(CONFIG_BATMAN_ADV)	+= batman-adv/
@@ -251,7 +251,7 @@ index bdd1455..ec175dd 100644
  ifneq ($(CONFIG_NET_SWITCHDEV),)
 diff --git a/net/hv_sock/Kconfig b/net/hv_sock/Kconfig
 new file mode 100644
-index 0000000..1f41848
+index 000000000000..1f4184829dde
 --- /dev/null
 +++ b/net/hv_sock/Kconfig
 @@ -0,0 +1,10 @@
@@ -267,7 +267,7 @@ index 0000000..1f41848
 +	  will be called hv_sock.
 diff --git a/net/hv_sock/Makefile b/net/hv_sock/Makefile
 new file mode 100644
-index 0000000..716c012
+index 000000000000..716c01230129
 --- /dev/null
 +++ b/net/hv_sock/Makefile
 @@ -0,0 +1,3 @@
@@ -276,7 +276,7 @@ index 0000000..716c012
 +hv_sock-y += af_hvsock.o
 diff --git a/net/hv_sock/af_hvsock.c b/net/hv_sock/af_hvsock.c
 new file mode 100644
-index 0000000..b91bd60
+index 000000000000..b91bd608bf39
 --- /dev/null
 +++ b/net/hv_sock/af_hvsock.c
 @@ -0,0 +1,1520 @@
@@ -1801,5 +1801,5 @@ index 0000000..b91bd60
 +MODULE_DESCRIPTION("Hyper-V Sockets");
 +MODULE_LICENSE("Dual BSD/GPL");
 -- 
-2.10.0
+2.11.0
 

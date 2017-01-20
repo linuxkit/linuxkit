@@ -1,7 +1,7 @@
-From fa3647ae889af3cccaaee37ac0723fc1b74689e3 Mon Sep 17 00:00:00 2001
+From b0bf62f85f29a28c998b288aa164f98b449776a9 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:18 -0800
-Subject: [PATCH 35/42] Drivers: hv: vmbus: avoid unneeded compiler
+Subject: [PATCH 35/44] Drivers: hv: vmbus: avoid unneeded compiler
  optimizations in vmbus_wait_for_unload()
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -22,7 +22,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index f70e352..c892db5 100644
+index f70e35278b94..c892db5df665 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -605,7 +605,7 @@ static void vmbus_wait_for_unload(void)
@@ -35,5 +35,5 @@ index f70e352..c892db5 100644
  			continue;
  		}
 -- 
-2.10.0
+2.11.0
 

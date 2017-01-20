@@ -1,7 +1,7 @@
-From af2dd29e3cf40c789045199893c232d57f0b7057 Mon Sep 17 00:00:00 2001
+From a71950ae5474cdb6dabb2aac9ef05bf51a6331d6 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:16 -0800
-Subject: [PATCH 34/42] Drivers: hv: vmbus: avoid wait_for_completion() on
+Subject: [PATCH 34/44] Drivers: hv: vmbus: avoid wait_for_completion() on
  crash
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -26,7 +26,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  4 files changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index b40f429..f70e352 100644
+index b40f429aaa13..f70e35278b94 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -641,7 +641,7 @@ static void vmbus_unload_response(struct vmbus_channel_message_header *hdr)
@@ -48,7 +48,7 @@ index b40f429..f70e352 100644
  	else
  		vmbus_wait_for_unload();
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index 09c08b5..78b8be8 100644
+index 09c08b56e3dc..78b8be87844c 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
 @@ -233,7 +233,7 @@ void vmbus_disconnect(void)
@@ -61,7 +61,7 @@ index 09c08b5..78b8be8 100644
  	if (vmbus_connection.work_queue) {
  		drain_workqueue(vmbus_connection.work_queue);
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 89bb559..f424c2d 100644
+index 89bb5591498e..f424c2df6c19 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -756,7 +756,7 @@ void hv_vss_onchannelcallback(void *);
@@ -74,7 +74,7 @@ index 89bb559..f424c2d 100644
  static inline void hv_poll_channel(struct vmbus_channel *channel,
  				   void (*cb)(void *))
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 03fc5d3..b0cc6fd 100644
+index 03fc5d317b22..b0cc6fd74fd0 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -1276,7 +1276,7 @@ static void hv_kexec_handler(void)
@@ -96,5 +96,5 @@ index 03fc5d3..b0cc6fd 100644
  	 * In crash handler we can't schedule synic cleanup for all CPUs,
  	 * doing the cleanup for current CPU only. This should be sufficient
 -- 
-2.10.0
+2.11.0
 

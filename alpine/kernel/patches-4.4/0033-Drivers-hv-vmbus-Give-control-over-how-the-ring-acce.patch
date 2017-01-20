@@ -1,7 +1,7 @@
-From b7e3c4ad47b7fd47a79a723ac0c1823b6782d1ff Mon Sep 17 00:00:00 2001
+From a62a66fbd2a18f72dfae5f6e3a50e1abb0cf8322 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:45 -0800
-Subject: [PATCH 33/42] Drivers: hv: vmbus: Give control over how the ring
+Subject: [PATCH 33/44] Drivers: hv: vmbus: Give control over how the ring
  access is serialized
 
 On the channel send side, many of the VMBUS
@@ -24,7 +24,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  5 files changed, 37 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 415f6c7..57a1b65 100644
+index 415f6c7d92a6..57a1b659d05f 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
 @@ -639,6 +639,7 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
@@ -99,7 +99,7 @@ index 415f6c7..57a1b65 100644
  	if (ret == 0 && signal)
  		vmbus_setevent(channel);
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index cf311be..b40f429 100644
+index cf311be88cb4..b40f429aaa13 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -259,6 +259,7 @@ static struct vmbus_channel *alloc_channel(void)
@@ -111,7 +111,7 @@ index cf311be..b40f429 100644
  	spin_lock_init(&channel->lock);
  
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 50b1de7..89bb559 100644
+index 50b1de7439cf..89bb5591498e 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -617,7 +617,7 @@ void hv_ringbuffer_cleanup(struct hv_ring_buffer_info *ring_info);
@@ -124,7 +124,7 @@ index 50b1de7..89bb559 100644
  int hv_ringbuffer_peek(struct hv_ring_buffer_info *ring_info, void *buffer,
  		   u32 buflen);
 diff --git a/drivers/hv/ring_buffer.c b/drivers/hv/ring_buffer.c
-index 70a1a9a..89a428f 100644
+index 70a1a9a22f87..89a428f7dc46 100644
 --- a/drivers/hv/ring_buffer.c
 +++ b/drivers/hv/ring_buffer.c
 @@ -388,7 +388,7 @@ void hv_ringbuffer_cleanup(struct hv_ring_buffer_info *ring_info)
@@ -175,7 +175,7 @@ index 70a1a9a..89a428f 100644
  	*signal = hv_need_to_signal(old_write, outring_info);
  	return 0;
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 993318a..6c9695e 100644
+index 993318a6d147..6c9695ef757e 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -813,8 +813,24 @@ struct vmbus_channel {
@@ -204,5 +204,5 @@ index 993318a..6c9695e 100644
  {
  	return !!(c->offermsg.offer.chn_flags &
 -- 
-2.10.0
+2.11.0
 

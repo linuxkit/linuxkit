@@ -1,8 +1,8 @@
-From e12cf066a2d5ad8f7e915e1925ee0b66ad99bc8b Mon Sep 17 00:00:00 2001
+From 5d339781f71a37083d4c4d304ba45b89aede184f Mon Sep 17 00:00:00 2001
 From: Rolf Neugebauer <rolf.neugebauer@docker.com>
 Date: Wed, 11 Jan 2017 22:40:38 +0000
-Subject: [PATCH 5/7] Drivers: hv: utils: Force TimeSync version 3.0 on Windows
- 10
+Subject: [PATCH 05/11] Drivers: hv: utils: Force TimeSync version 3.0 on
+ Windows 10
 
 Some older Windows 10 builds, including 10586 do not seem to
 support TimeSync protocol 4.0 causing loss of time synchronisation

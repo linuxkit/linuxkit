@@ -1,7 +1,7 @@
-From 948b701a607f123df92ed29084413e5dd8cda2ed Mon Sep 17 00:00:00 2001
+From 20127ca4e2ea3b4adfdf2161a915439454005579 Mon Sep 17 00:00:00 2001
 From: James Bottomley <James.Bottomley@HansenPartnership.com>
 Date: Wed, 17 Feb 2016 16:51:16 -0800
-Subject: [PATCH] binfmt_misc: add persistent opened binary handler for
+Subject: [PATCH 44/44] binfmt_misc: add persistent opened binary handler for
  containers
 
 This patch adds a new flag 'F' to the binfmt handlers.  If you pass in
@@ -20,7 +20,7 @@ Acked-by: Serge Hallyn <serge.hallyn@canonical.com>
  1 file changed, 39 insertions(+), 2 deletions(-)
 
 diff --git a/fs/binfmt_misc.c b/fs/binfmt_misc.c
-index 3a3ced7..8a108c4 100644
+index 78f005f37847..4beb3d9e0001 100644
 --- a/fs/binfmt_misc.c
 +++ b/fs/binfmt_misc.c
 @@ -26,6 +26,8 @@
@@ -32,7 +32,7 @@ index 3a3ced7..8a108c4 100644
  #ifdef DEBUG
  # define USE_DEBUG 1
  #else
-@@ -43,6 +45,7 @@ enum {
+@@ -43,6 +45,7 @@ enum {Enabled, Magic};
  #define MISC_FMT_PRESERVE_ARGV0 (1 << 31)
  #define MISC_FMT_OPEN_BINARY (1 << 30)
  #define MISC_FMT_CREDENTIALS (1 << 29)
@@ -40,7 +40,7 @@ index 3a3ced7..8a108c4 100644
  
  typedef struct {
  	struct list_head list;
-@@ -54,6 +57,7 @@ enum {
+@@ -54,6 +57,7 @@ typedef struct {
  	char *interpreter;		/* filename of interpreter */
  	char *name;
  	struct dentry *dentry;
@@ -118,7 +118,7 @@ index 3a3ced7..8a108c4 100644
  	e->dentry = dget(dentry);
  	inode->i_private = e;
  	inode->i_fop = &bm_entry_operations;
-@@ -716,7 +753,7 @@ static ssize_t bm_register_write(struct file *file, const char __user *buffer,
+@@ -716,7 +753,7 @@ out:
  
  	if (err) {
  		kfree(e);
@@ -128,5 +128,5 @@ index 3a3ced7..8a108c4 100644
  	return count;
  }
 -- 
-1.9.1
+2.11.0
 
