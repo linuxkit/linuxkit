@@ -5,7 +5,7 @@ set -ex
 docker version
 docker info
 docker ps
-DOCKER_CONTENT_TRUST=1 docker pull alpine
+DOCKER_CONTENT_TRUST=1 docker pull alpine:3.5
 docker run --rm alpine true
 docker pull armhf/alpine
 docker run --rm armhf/alpine uname -a

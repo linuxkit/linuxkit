@@ -1,5 +1,5 @@
-# Tag: a61cdb69d8b5c95c2766b2b856e4f331bd2a6d2d
-TEST_IMAGE=mobylinux/test@sha256:1a2cb7acab25059532c5287c2cdde1a5cfc0fbb944593e02b85b5bb334a4187d
+# Tag: e79cbcc45b715cea7047a802944b478a7b5a906a
+TEST_IMAGE=mobylinux/test@sha256:bc9403a9fc7aa5298f92c83d1e3423e804097f08dbba623e076c1728666f6b73
 
 default: config.json
 
