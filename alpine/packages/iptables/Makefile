@@ -1,5 +1,5 @@
 # This image is currently just tagged latest as non reproducible
-IPTABLES_IMAGE=mobylinux/pinata-iptables@sha256:4dc27c9515c99dc80c8ec431de2c7db7d382425e5c1de13a560e6ec4c6a52b89
+IPTABLES_IMAGE=mobylinux/pinata-iptables@sha256:c94aa6902e858712058d0550320564ecb03d1f8f6370f91cdbc3f18b87662411
 
 all: usr/local/sbin/iptables
 
