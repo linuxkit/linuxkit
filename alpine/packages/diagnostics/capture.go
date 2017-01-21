@@ -174,7 +174,7 @@ func NewDatabaseCapturer() DatabaseCapturer {
 // Capture writes output from a DatabaseCapturer to a tar archive
 func (dc DatabaseCapturer) Capture(parentCtx context.Context, w *tar.Writer) {
 	// Dump the database
-	dbBase := "/Database/branch/master/ro"
+	dbBase := "/Database"
 	filepath.Walk(dbBase, func(path string, f os.FileInfo, err error) error {
 		if f.Mode().IsRegular() {
 			dc.CommandCapturer.args = []string{path}
