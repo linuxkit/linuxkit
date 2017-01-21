@@ -76,7 +76,7 @@ let _ =
   ( try Unix.mkdir _pid_dir 0o0755 with Unix.Unix_error(Unix.EEXIST, _, _) -> () );
   let port_forwarding =
     try
-      let ic = open_in "/Database/branch/master/ro/com.docker.driver.amd64-linux/native/port-forwarding" in
+      let ic = open_in "/Database/native/port-forwarding" in
       bool_of_string (String.trim (input_line ic))
     with _ -> false in
   logf "port_forwarding=%b intercepted arguments [%s]" port_forwarding (String.concat "; " (Array.to_list Sys.argv));
