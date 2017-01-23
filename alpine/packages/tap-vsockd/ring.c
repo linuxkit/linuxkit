@@ -23,14 +23,18 @@ struct ring {
 	int size;            /* Maximum number of buffered bytes */
 	pthread_cond_t c;
 	pthread_mutex_t m;
-	char data[];
+	char *data;
 };
 
 struct ring *ring_allocate(int size)
 {
-	struct ring *ring = (struct ring*)malloc(sizeof(struct ring) + size);
+	struct ring *ring = (struct ring*)malloc(sizeof(struct ring));
 	if (!ring) {
-		fatal("Failed to allocate ring buffer");
+		fatal("Failed to allocate ring buffer metadata");
+	}
+	ring->data = (char*)malloc(size);
+	if (!ring->data) {
+		fatal("Failed to allocate ring buffer data");
 	}
 	int err = 0;
 	if ((err = pthread_cond_init(&ring->c, NULL)) != 0) {
