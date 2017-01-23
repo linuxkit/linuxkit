@@ -4,6 +4,7 @@ description="VPN proxy"
 
 depend()
 {
+	need database-windows
 	before net
 }
 

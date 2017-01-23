@@ -3,6 +3,7 @@
 description="Configuring Windows network settings from database."
 
 depend() {
+	need database-windows
 	before sysctl net
 }
 
