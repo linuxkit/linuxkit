@@ -47,7 +47,7 @@ define check_test_log
 endef
 
 hyperkit-test: hyperkit.sh hyperkit.bin/com.docker.hyperkit hyperkit.bin/com.docker.slirp alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
-	rm disk.img
+	rm -f disk.img
 	touch test.log && \
 	INITRD=alpine/initrd-test.img ./hyperkit.sh 2>&1 | tee -a test.log
 	$(call check_test_log, test.log)
