@@ -1,0 +1,29 @@
+#!/sbin/openrc-run
+
+description="Set up database (AWS)."
+
+depend() {
+	before docker hostsettings windowsnet
+}
+
+start() {
+	[ "$(mobyplatform)" = "aws" ] || exit 0
+
+	ebegin "Setting up database (AWS)"
+
+	mkdir -p /Database
+	mount -t tmpfs tmpfs /Database
+
+	ENDPOINT="http://169.254.169.254/latest/meta-data"
+	curl "${ENDPOINT}/local-hostname" 2> /dev/null | mobyconfig set etc/hostname
+	# as this is a bit late let us set it anyway
+	mobyconfig get etc/hostname > /etc/hostname
+	hostname -F /etc/hostname
+	# TODO should collect all keys
+	curl -f -I "${ENDPOINT}/public-keys/0/openssh-key" 2> /dev/null > /dev/null && \
+		curl "${ENDPOINT}/public-keys/0/openssh-key" 2> /dev/null | mobyconfig set etc/ssh/authorized_keys
+	USERDATA="http://169.254.169.254/latest/user-data/"
+	curl "${USERDATA}" 2> /dev/null | mobyconfig set userdata
+
+	eend 0
+}

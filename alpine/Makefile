@@ -45,7 +45,7 @@ moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  -C packages/userns etc -C ../.. \
 	  -C packages/nc-vsock usr -C ../.. \
 	  -C packages/vsudd sbin etc -C ../.. \
-	  -C packages/mobyconfig usr -C ../.. \
+	  -C packages/mobyconfig etc usr -C ../.. \
 	  -C packages/mobyplatform usr -C ../.. \
 	  -C packages/oom etc -C ../.. \
 	  -C packages/9pmount-vsock sbin -C ../.. \
