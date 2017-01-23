@@ -58,7 +58,7 @@ RUN if [ $DEBUG -ne "0" ]; then \
     fi
 
 # Apply local patches
-COPY patches-4.9 /patches
+COPY patches-4.9/* patches-4.9-aufs/* /patches/
 RUN cd /linux && \
     set -e && for patch in /patches/*.patch; do \
         echo "Applying $patch"; \
