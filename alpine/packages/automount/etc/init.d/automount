@@ -142,8 +142,13 @@ start()
 	fi
 
 	# Use existing swap partition of present; we do not create one now
-	SWAP=$(fdisk -l "$DRIVE" | grep 'Linux swap' | head -1 | awk '{print $1}')
-	[ -z "$SWAP" ] && do_swapfile "$DRIVE" || swapon "$SWAP"
+	SWAP_PART=$(fdisk -l "$DRIVE" | grep 'Linux swap' | head -1 | awk '{print $1}')
+	if [ -z "$SWAP_PART" ]
+	then
+		do_swapfile "$DRIVE"
+	else
+		swapon "$SWAP_PART"
+	fi
 
 	# boot2docker compat, has /var and /tmp on partition
 	[ -d /var/var/lib/boot2docker/ ] && (mv /var/var/* /var && rm -rf /var/var)
