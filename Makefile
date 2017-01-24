@@ -16,17 +16,21 @@ alpine/kernel/x86_64/vmlinuz64:
 alpine/mobylinux-bios.iso:
 	$(MAKE) -C alpine mobylinux-bios.iso
 
-qemu: Dockerfile.qemu alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
-	tar cf - $^ | docker build -f Dockerfile.qemu -t mobyqemu:build -
-	docker run -it --rm mobyqemu:build
+alpine/gce.img.tar.gz:
+	$(MAKE) -C alpine gce.img.tar.gz
 
-qemu-iso: Dockerfile.qemuiso alpine/mobylinux-bios.iso
-	tar cf - $^ | docker build -f Dockerfile.qemuiso -t mobyqemuiso:build -
-	docker run -it --rm mobyqemuiso:build
+# Tag: 0fb8c648e8ed9ef6b1ec449587aeab6c53872744
+QEMU_IMAGE=mobylinux/qemu@sha256:606f30d815102e73bc01c07915dc0d5f153b0252c63f5f0ed1e39621ec656eb5
 
-qemu-gce: Dockerfile.qemugce alpine/gce.img.tar.gz
-	tar cf - $^ | docker build -f Dockerfile.qemugce -t mobyqemugce:build -
-	docker run -it --rm mobyqemugce:build
+# interactive versions need to use volume mounts
+qemu: alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+	docker run -it --rm -v $(CURDIR)/alpine/initrd.img:/tmp/initrd.img -v $(CURDIR)/alpine/kernel/x86_64/vmlinuz64:/tmp/vmlinuz64 $(QEMU_IMAGE)
+
+qemu-iso: alpine/mobylinux-bios.iso
+	docker run -it --rm -v $(CURDIR)/alpine/mobylinux-bios.iso:/tmp/mobylinux-bios.iso $(QEMU_IMAGE)
+
+qemu-gce: alpine/gce.img.tar.gz
+	docker run -it --rm -v $(CURDIR)/alpine/gce.img.tar.gz:/tmp/gce.img.tar.gz $(QEMU_IMAGE)
 
 hyperkit.bin:
 	mkdir $@
@@ -48,17 +52,11 @@ endef
 
 hyperkit-test: hyperkit.sh hyperkit.bin/com.docker.hyperkit hyperkit.bin/com.docker.slirp alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
 	rm -f disk.img
-	touch test.log && \
-	INITRD=alpine/initrd-test.img ./hyperkit.sh 2>&1 | tee -a test.log
+	INITRD=alpine/initrd-test.img ./hyperkit.sh 2>&1 | tee test.log
 	$(call check_test_log, test.log)
 	
-test: Dockerfile.test alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
-	$(MAKE) -C alpine
-	BUILD=$$( tar cf - $^ | docker build -f Dockerfile.test -q - ) && \
-	[ -n "$$BUILD" ] && \
-	echo "Built $$BUILD" && \
-	touch test.log && \
-	docker run --rm $$BUILD 2>&1 | tee -a test.log
+test: alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
+	tar cf - $^ | docker run --rm -i $(QEMU_IMAGE) 2>&1 | tee test.log
 	$(call check_test_log, test.log)
 
 TAG=$(shell git rev-parse HEAD)
@@ -128,4 +126,4 @@ ci-pr:
 
 clean:
 	$(MAKE) -C alpine clean
-	rm -rf hyperkit.bin disk.img
+	rm -rf hyperkit.bin disk.img test.log

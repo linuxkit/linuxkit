@@ -1,9 +1,0 @@
-# Tag: 97cc67f5569c437175f2e54b3c3b9a96a8615a16
-FROM mobylinux/alpine-qemu@sha256:80e17a465b332d774fd91b53c0bcb18ed0ea8a77c17bf8d8451c57a8ab8b4e66
-
-COPY alpine/initrd.img .
-COPY alpine/kernel/x86_64/vmlinuz64 .
-
-RUN qemu-img create -f raw disk.img 256M
-
-ENTRYPOINT [ "qemu-system-x86_64", "-drive", "file=disk.img,format=raw", "-device", "virtio-rng-pci", "-serial", "stdio", "-kernel", "vmlinuz64", "-initrd", "initrd.img", "-m", "2048", "-append", "earlyprintk=serial console=ttyS0 noapic", "-vnc", "none" ]
