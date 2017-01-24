@@ -21,7 +21,7 @@ RUN cp /usr/lib/gummiboot/linuxx64.efi.stub . && \
 
 # create a ISO with a EFI boot partition
 RUN mkdir -p iso && \
-    dd if=/dev/zero of=iso/efi.raw bs=1024 count=70000 && \
+    dd if=/dev/zero of=iso/efi.raw bs=1024 count=78000 && \
     mkfs.vfat iso/efi.raw
 
 RUN echo "mtools_skip_check=1" >> /etc/mtools.conf && \
