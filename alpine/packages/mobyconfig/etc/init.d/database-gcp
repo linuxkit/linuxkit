@@ -1,0 +1,27 @@
+#!/sbin/openrc-run
+
+description="Set up database (GCP)."
+
+depend() {
+	before docker hostsettings windowsnet
+}
+
+start() {
+	[ "$(mobyplatform)" = "gcp" ] || exit 0
+
+	ebegin "Setting up database (GCP)"
+
+	mkdir -p /Database
+	mount -t tmpfs tmpfs /Database
+
+	PROJECT=http://metadata.google.internal/computeMetadata/v1/project
+	INSTANCE=http://metadata.google.internal/computeMetadata/v1/instance
+	curl "${INSTANCE}/hostname" 2> /dev/null | mobyconfig set etc/hostname
+	# as this is a bit late let us set it anyway
+	mobyconfig get etc/hostname > /etc/hostname
+	hostname -F /etc/hostname
+	curl -f -I "${PROJECT}/attributes/sshKeys" 2> /dev/null > /dev/null && \
+		curl "${PROJECT}/attributes/sshKeys" 2> /dev/null | mobyconfig set etc/ssh/authorized_keys
+
+	eend 0
+}

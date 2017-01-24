@@ -2,33 +2,8 @@
 
 if [ $# -ne 2 ]
 then
-  printf "usage: $0 [get|exists|path|dir|find] key\n"
+  printf "usage: $0 [get|set|wait|exists|path|dir|find] key\n"
   exit 0
-fi
-
-if [ $1 == "set" ]
-then
-  printf "Configuration is immutable\n" 1>&2
-  exit 1
-fi
-
-if [ ! -d /Database ]
-then
-  mkdir -p /Database
-  case "$(mobyplatform)" in
-    windows)
-      mkdir -p /tmp/db
-      /sbin/9pmount-vsock listen db /tmp/db
-      [ $? -ne 0 ] && rm -rf /Database && printf "Could not mount configuration database\n" 1>&2 && exit 1
-      mount --bind /tmp/db/branch/master/ro/com.docker.driver.amd64-linux /Database
-    ;;
-    mac)
-      mkdir -p /tmp/db
-      mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /tmp/db
-      [ $? -ne 0 ] && rm -rf /Database && printf "Could not mount configuration database\n" 1>&2 && exit 1
-      mount --bind /tmp/db/branch/master/ro/com.docker.driver.amd64-linux /Database
-    ;;
-  esac
 fi
 
 BASE=/Database
@@ -61,6 +36,22 @@ then
   fi
 fi
 
+if [ $1 == "set" ]
+then
+  mkdir -p $(dirname "${BASE}/${KEY}")
+  cat - > ${BASE}/${KEY}
+  exit 0
+fi
+
+if [ $1 == "wait" ]
+then
+  while [ ! -s ${BASE}/${KEY} ]
+  do
+    sleep 1
+  done
+  exit 0
+fi
+
 if [ $1 == "path" ]
 then
   if [ -e ${BASE}/${KEY} ]
@@ -85,5 +76,5 @@ then
   fi
 fi
 
-printf "usage: $0 [get|exists|path|dir|find] key\n"
+printf "usage: $0 [get|set|wait|exists|path|dir|find] key\n"
 exit 1
