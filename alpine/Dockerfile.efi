@@ -10,7 +10,7 @@ COPY kernel/x86_64/vmlinuz64 ./
 # Create a EFI boot file with kernel and initrd. From:
 # https://github.com/haraldh/mkrescue-uefi/blob/master/mkrescue-uefi.sh
 RUN cp /usr/lib/gummiboot/linuxx64.efi.stub . && \
-    echo "earlyprintk=ttyS0,115200 console=ttyS0,115200 mobyplatform=windows vsyscall=emulate rootdelay=300 noautodetect" > cmdline.txt && \
+    echo "earlyprintk=ttyS0,115200 console=ttyS0,115200 mobyplatform=windows vsyscall=emulate panic=1 rootdelay=300 noautodetect" > cmdline.txt && \
     objcopy \
         --add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
         --add-section .cmdline=./cmdline.txt --change-section-vma .cmdline=0x30000 \
