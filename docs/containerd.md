@@ -19,12 +19,9 @@ docker rm ${CONTAINER}
 
 mkdir -p /var/log/nginx /var/cache/nginx
 
-containerd-ctr containers start ${NAME} .
-containerd-ctr containers
+ctr run --bundle . ${NAME}
+ctr list
 ```
 
-For debugging it helps to run `containerd-ctr containers start --attach ${NAME} .` It may
-well turn out that you need to create directories that are empty volumes in docker.
-
 For production, you will want to create the `config.json` offline and bundle it in with your
-intii script, but you can create the rootfs online.
+init script, but you can create the rootfs online.
