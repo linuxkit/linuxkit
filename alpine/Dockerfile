@@ -11,11 +11,6 @@ RUN \
 
 COPY . .
 RUN rm Dockerfile
-RUN cd /usr/bin && \
-  ln -s docker-runc runc && \
-  ln -s docker-containerd-shim containerd-shim && \
-  ln -s docker-containerd-ctr containerd-ctr && \
-  ln -s docker-containerd containerd
 
 RUN \
   rc-update add sysctl boot && \
