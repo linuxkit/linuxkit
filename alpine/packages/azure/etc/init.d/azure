@@ -44,10 +44,10 @@ start()
 	then
 		mkdir -p /var/etc
 	fi
-	if [ ! -d /var/home/ ]
+	if [ ! -d /var/home/docker ]
 	then
-		mkdir -p /var/home/
-		chown docker:docker /var/home/
+		mkdir -p /var/home/docker
+		chown -R docker:docker /var/home/docker
 	fi
 	if [ ! -f /var/etc/hostname ]
 	then
