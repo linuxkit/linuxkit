@@ -22,6 +22,9 @@ PAD4_IMAGE=mobylinux/pad4@sha256:1ad26970698670373ee0bf374a06900f712a61b8038255e
 # Tag: d5711601eb5b89de0f052d87365e18388ff3f1b5
 TAR2INITRD_IMAGE=mobylinux/tar2initrd@sha256:58d377e65845f91400e173ce9fca93462f2f237947eef2b0d2c17bb4f2da5ee8
 
+# Tag: d56cde1558e3080e59a32e3cd7c7141baa601811
+TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd@sha256:e1ad4522ff906d339da5f250b9ef6bffa5a70b4dec7d2cf7f7dbd0447b79352f
+
 # Tag: 77bc577875fb3a80ac2d14b70d1daa885bbf199c
 GCE_IMAGE=mobylinux/mkimage-gce@sha256:f9abf2eae20984b7dd3c1afb700b2c9c41e39e6e7c688c78348a51d0780d74cc
 
@@ -63,12 +66,12 @@ moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 
 container.img:
 	$(MAKE) -j -C containers
-	tar cf - containers/*/rootfs containers/*/config.json | \
-		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
+	tar cf - $$(find containers -name container.tar) | \
+		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TARTAR2INITRD_IMAGE) > $@
 
 test.img:
 	$(MAKE) -j -C test
-	tar cf - test/rootfs test/config.json | \
+	cat test/container.tar | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 initrd.img: moby.img container.img

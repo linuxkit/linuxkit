@@ -2,6 +2,7 @@
 *.tag
 *.iso
 *.vhd
+*.tar
 *.tar.gz
 /mobylinux-boot.vhdx
 /mobylinux.efi
