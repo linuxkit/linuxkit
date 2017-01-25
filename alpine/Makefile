@@ -208,7 +208,7 @@ vhdartifact:
 	docker volume create --name vhdartifact || true
 
 clean:
-	rm -f *.img *.vhd *.iso *.tag mobylinux.efi etc/moby-commit
+	rm -f *.img *.vhd *.iso *.tag mobylinux.efi etc/moby-commit gce.img.tar.gz
 	docker images -q moby-azure:build | xargs docker rmi -f || true
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
