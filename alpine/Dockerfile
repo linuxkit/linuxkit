@@ -43,6 +43,7 @@ RUN \
   rc-update add transfused default && \
   rc-update add automount sysinit && \
   rc-update add diagnostics default && \
+  rc-update add diagnostics-server boot && \
   rc-update add database-mac boot && \
   rc-update add database-windows boot && \
   rc-update add database-aws default && \
