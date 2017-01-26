@@ -9,6 +9,7 @@ RUN \
   jq \
   linux-headers \
   musl-dev \
+  tar \
   && true
 
 COPY Dockerfile /
