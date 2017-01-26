@@ -1,19 +1,19 @@
 .PHONY: tag push
 
-BASE=golang:1.7-alpine
-IMAGE=riddler
+BASE=alpine:3.5
+IMAGE=tartar2initrd
 
 default: push
 
-hash: Dockerfile riddler.sh
+hash: Dockerfile tartar2initrd.sh
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --entrypoint=/bin/sh --rm $(IMAGE):build -c 'cat /Dockerfile /usr/bin/riddler.sh /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
+	docker run --rm --entrypoint=/bin/sh $(IMAGE):build -c "cat $^ /lib/apk/db/installed | sha1sum" | sed 's/ .*//' > $@
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		 (docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
-		  docker push mobylinux/$(IMAGE):$(shell cat hash))
+		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
+		 docker push mobylinux/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
