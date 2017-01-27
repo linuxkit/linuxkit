@@ -3,6 +3,7 @@ FROM mobylinux/toybox-media@sha256:5ac38f77b66deb194c9016591b9b096e81fcdc9f7c3e6
 
 ADD \
   alpine/initrd.img \
+  alpine/initrd-test.img \
   alpine/kernel/x86_64/vmlinuz64 \
   alpine/kernel/x86_64/vmlinux \
   alpine/kernel/x86_64/kernel-headers.tar \
