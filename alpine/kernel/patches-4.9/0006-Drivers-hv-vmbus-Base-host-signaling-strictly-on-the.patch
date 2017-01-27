@@ -1,7 +1,7 @@
-From 72c60164c3508d229686d64e624d1d2f47d01676 Mon Sep 17 00:00:00 2001
+From dedfc354773877960dcf6c8a926faa4a94803ec5 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:16 -0800
-Subject: [PATCH 08/11] Drivers: hv: vmbus: Base host signaling strictly on the
+Subject: [PATCH 06/12] Drivers: hv: vmbus: Base host signaling strictly on the
  ring state
 
 One of the factors that can result in the host concluding that a given
