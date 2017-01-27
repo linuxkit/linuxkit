@@ -1,4 +1,4 @@
-.PHONY: test hyperkit-test qemu qemu-iso qemu-gce media ebpf ci ci-pr
+.PHONY: test hyperkit-test qemu qemu-iso qemu-gce media ebpf ci ci-pr get get-regextract
 
 all:
 	$(MAKE) -C alpine
@@ -10,7 +10,7 @@ alpine/initrd.img:
 	$(MAKE) -C alpine initrd.img
 
 alpine/initrd-test.img:
-	$(MAKE) -C alpine
+	$(MAKE) -C alpine initrd-test.img
 
 alpine/kernel/x86_64/vmlinuz64:
 	$(MAKE) -C alpine/kernel x86_64/vmlinuz64
@@ -36,14 +36,18 @@ qemu-gce: alpine/gce.img.tar.gz
 bin:
 	mkdir -p $@
 
-bin/com.docker.hyperkit: bin
+bin/com.docker.hyperkit: | bin
 	curl -fsSL https://circleci.com/api/v1/project/docker/hyperkit/latest/artifacts/0//Users/distiller/hyperkit/build/com.docker.hyperkit > $@
 	chmod a+x $@
 
-bin/com.docker.slirp: bin
+bin/com.docker.slirp: | bin
 	curl -fsSL https://circleci.com/api/v1/project/docker/vpnkit/latest/artifacts/0//Users/distiller/vpnkit/com.docker.slirp.tgz \
 		| tar xz --strip=2 -C $(dir $@) Contents/MacOS/com.docker.slirp
 	touch $@
+
+bin/regextract: | bin
+	curl -fsSL https://circleci.com/api/v1/project/justincormack/regextract/latest/artifacts/0/\$$CIRCLE_ARTIFACTS/darwin/amd64/regextract > $@
+	chmod a+x $@
 
 hyperkit: hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	./hyperkit.sh
@@ -73,7 +77,7 @@ endif
 MEDIA_IMAGE=mobylinux/media:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 INITRD_IMAGE=mobylinux/mobylinux:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 KERNEL_IMAGE=mobylinux/kernel:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
-media: Dockerfile.media alpine/initrd.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-efi.iso
+media: Dockerfile.media alpine/initrd.img alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64 alpine/mobylinux-efi.iso
 ifeq ($(STATUS),)
 	tar cf - $^ alpine/mobylinux.efi alpine/kernel/x86_64/vmlinux alpine/kernel/x86_64/kernel-headers.tar alpine/kernel/x86_64/kernel-dev.tar | docker build -f Dockerfile.media -t $(MEDIA_IMAGE) -
 	docker push $(MEDIA_IMAGE)
@@ -97,18 +101,29 @@ else
 	$(error "git not clean")
 endif
 
+MEDIA_FILES=alpine/kernel/x86_64/vmlinuz64 alpine/kernel/x86_64/vmlinux alpine/initrd.img alpine/mobylinux-efi.iso alpine/mobylinux.efi 
+MEDIA_FILES_OPT=alpine/kernel/x86_64/kernel-headers.tar alpine/kernel/x86_64/kernel-dev.tar alpine/initrd-test.img
+
 get:
 ifeq ($(STATUS),)
 	IMAGE=$$( docker create mobylinux/media:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG) /dev/null ) && \
 	mkdir -p alpine/kernel/x86_64 && \
-	docker cp $$IMAGE:vmlinuz64 alpine/kernel/x86_64/vmlinuz64 && \
-	docker cp $$IMAGE:vmlinux alpine/kernel/x86_64/vmlinux && \
-	(docker cp $$IMAGE:kernel-headers.tar alpine/kernel/x86_64/kernel-headers.tar || true) && \
-	(docker cp $$IMAGE:kernel-dev.tar alpine/kernel/x86_64/kernel-dev.tar || true) && \
-	docker cp $$IMAGE:initrd.img alpine/initrd.img && \
-	docker cp $$IMAGE:mobylinux-efi.iso alpine/mobylinux-efi.iso && \
-	docker cp $$IMAGE:mobylinux.efi alpine/mobylinux.efi && \
+	for FILE in $(MEDIA_FILES); do  docker cp $$IMAGE:$$(basename $$FILE) $$FILE || exit; done; \
+	for FILE in $(MEDIA_FILES_OPT); do docker cp $$IMAGE:$$(basename $$FILE) $$FILE; done; \
 	docker rm $$IMAGE
+else
+	$(error "git not clean")
+endif
+
+# Get artifacts using regextract for cases where docker is not available
+get-regextract: bin/regextract
+ifeq ($(STATUS),)
+	TMP_EXTRACT=$$(mktemp -d) && \
+	for FILE in $(MEDIA_FILES) $(MEDIA_FILES_OPT); do mkdir -p $$(dirname $$FILE); done; \
+	bin/regextract mobylinux/media:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG) | tar xf - -C $$TMP_EXTRACT && \
+	for FILE in $(MEDIA_FILES); do cp $$TMP_EXTRACT/$$(basename $$FILE) $$FILE || exit; done; \
+	for FILE in $(MEDIA_FILES_OPT); do cp $$TMP_EXTRACT/$$(basename $$FILE) $$FILE; done; \
+	rm -Rf $$TMP_EXTRACT
 else
 	$(error "git not clean")
 endif
