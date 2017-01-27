@@ -1,7 +1,7 @@
-From c9dc13e8f77c09369dae49f265176999e3f327c8 Mon Sep 17 00:00:00 2001
+From 21d5ad16c820d2e949ca80881986db3d228d8a33 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
-Date: Mon, 16 Jan 2017 15:46:19 +0800
-Subject: [PATCH 11/11] Drivers: hv: vmbus: finally fix
+Date: Tue, 24 Jan 2017 06:54:46 +0000
+Subject: [PATCH 09/12] Drivers: hv: vmbus: finally fix
  hv_need_to_signal_on_read()
 
 Commit a389fcfd2cb5 ("Drivers: hv: vmbus: Fix signaling logic in hv_need_to_signal_on_read()")
@@ -26,13 +26,12 @@ Cc: "K. Y. Srinivasan" <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
 Cc: <stable@vger.kernel.org>
-
-Origin: Email from Dexuan
+Origin: https://patchwork.kernel.org/patch/9534107/
 ---
  drivers/hv/ring_buffer.c    |  1 +
- drivers/net/hyperv/netvsc.c |  2 ++
+ drivers/net/hyperv/netvsc.c |  6 ++++++
  include/linux/hyperv.h      | 32 ++++++++++++++++++++++++++++++--
- 3 files changed, 33 insertions(+), 2 deletions(-)
+ 3 files changed, 37 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/hv/ring_buffer.c b/drivers/hv/ring_buffer.c
 index cd49cb17eb7f..308dbda700eb 100644
@@ -47,18 +46,29 @@ index cd49cb17eb7f..308dbda700eb 100644
  	next_read_location = hv_copyfrom_ringbuffer(inring_info, &desc,
  						    sizeof(desc),
 diff --git a/drivers/net/hyperv/netvsc.c b/drivers/net/hyperv/netvsc.c
-index 720b5fa9e625..9cd74817b09c 100644
+index 720b5fa9e625..c2ac39a940f7 100644
 --- a/drivers/net/hyperv/netvsc.c
 +++ b/drivers/net/hyperv/netvsc.c
-@@ -1288,6 +1288,8 @@ void netvsc_channel_cb(void *context)
+@@ -1288,6 +1288,9 @@ void netvsc_channel_cb(void *context)
  	ndev = hv_get_drvdata(device);
  	buffer = get_per_channel_state(channel);
  
++	/* commit_rd_index() -> hv_signal_on_read() needs this. */
 +	init_cached_read_index(channel);
 +
  	do {
  		desc = get_next_pkt_raw(channel);
  		if (desc != NULL) {
+@@ -1340,6 +1343,9 @@ void netvsc_channel_cb(void *context)
+ 
+ 			bufferlen = bytes_recvd;
+ 		}
++
++		init_cached_read_index(channel);
++
+ 	} while (1);
+ 
+ 	if (bufferlen > NETVSC_PACKET_SIZE)
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
 index 5343b7406acc..e34da6846348 100644
 --- a/include/linux/hyperv.h
