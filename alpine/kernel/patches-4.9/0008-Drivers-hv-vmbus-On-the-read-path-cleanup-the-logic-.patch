@@ -1,7 +1,7 @@
-From 9e0ab3ccac70147f6e0e04cf0872d6f477ec6b68 Mon Sep 17 00:00:00 2001
+From d77258d2dded3a5601ccd54edb6f99e035dc7b20 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:18 -0800
-Subject: [PATCH 10/11] Drivers: hv: vmbus: On the read path cleanup the logic
+Subject: [PATCH 08/12] Drivers: hv: vmbus: On the read path cleanup the logic
  to interrupt the host
 
 Signal the host when we determine the host is to be signaled -
@@ -12,6 +12,7 @@ poll the channel. Make the necessary adjustments.
 
 Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 3372592a140db69fd63837e81f048ab4abf8111e)
 ---
  drivers/hv/channel.c      | 11 ++---------
  drivers/hv/hyperv_vmbus.h |  4 ++--
