@@ -13,10 +13,10 @@ start() {
 
 	mkdir -p /Database
 	mount -t tmpfs tmpfs /Database
-	mkdir -p /tmp/db
+	mkdir -p /mnt/db
 	mount -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 db /tmp/db
 	[ $? -ne 0 ] && rm -rf /Database && printf "Could not mount configuration database\n" 1>&2 && eend 1
-	cp -a /tmp/db/branch/master/ro/com.docker.driver.amd64-linux/* /Database
+	cp -a /mnt/db/branch/master/ro/com.docker.driver.amd64-linux/* /Database
 
 	eend 0
 }
