@@ -3,7 +3,7 @@ DEBUG ?= 0
 all:	x86_64/vmlinuz64
 
 ifdef AUFS
-x86_64/vmlinuz64: Dockerfile.aufs kernel_config kernel_config.debug kernel_config.aufs patches-4.9 patches-4.9-aufs
+x86_64/vmlinuz64: Dockerfile.aufs kernel_config kernel_config.debug kernel_config.aufs patches-4.9
 	mkdir -p x86_64 etc lib usr sbin
 	BUILD=$$( tar cf - $^ | docker build -f Dockerfile.aufs --build-arg DEBUG=$(DEBUG) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	docker run --rm --net=none --log-driver=none $$BUILD cat aufs-utils.tar | tar xf - && \
@@ -11,7 +11,7 @@ x86_64/vmlinuz64: Dockerfile.aufs kernel_config kernel_config.debug kernel_confi
 	docker run --rm --net=none --log-driver=none $$BUILD tar cf - bzImage kernel-dev.tar kernel-headers.tar vmlinux kernel-modules.tar | tar xf - -C x86_64
 	mv x86_64/bzImage $@
 	mkdir -p etc/kernel-patches
-	cp -a patches-4.9/* patches-4.9-aufs/* etc/kernel-patches
+	cp -a patches-4.9/* etc/kernel-patches
 	tar xf x86_64/kernel-modules.tar
 else
 ifdef LTS4.4
