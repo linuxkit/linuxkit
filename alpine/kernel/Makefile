@@ -10,6 +10,7 @@ x86_64/vmlinuz64: Dockerfile.aufs kernel_config kernel_config.debug kernel_confi
 	docker run --rm --net=none --log-driver=none $$BUILD cat kernel-source-info > etc/kernel-source-info && \
 	docker run --rm --net=none --log-driver=none $$BUILD tar cf - bzImage kernel-dev.tar kernel-headers.tar vmlinux kernel-modules.tar | tar xf - -C x86_64
 	mv x86_64/bzImage $@
+	rm -rf etc/kernel-patches
 	mkdir -p etc/kernel-patches
 	cp -a patches-4.9/* etc/kernel-patches
 	tar xf x86_64/kernel-modules.tar
@@ -21,7 +22,9 @@ x86_64/vmlinuz64: Dockerfile.4.4 kernel_config kernel_config.debug kernel_config
 	docker run --rm --net=none --log-driver=none $$BUILD cat kernel-source-info > etc/kernel-source-info && \
 	docker run --rm --net=none --log-driver=none $$BUILD tar cf - bzImage kernel-dev.tar kernel-headers.tar vmlinux kernel-modules.tar | tar xf - -C x86_64
 	mv x86_64/bzImage $@
-	cp -a patches-4.4 etc/kernel-patches
+	rm -rf etc/kernel-patches
+	mkdir -p etc/kernel-patches
+	cp -a patches-4.4/* etc/kernel-patches
 	tar xf x86_64/kernel-modules.tar
 else
 x86_64/vmlinuz64: Dockerfile kernel_config kernel_config.debug patches-4.9
@@ -30,7 +33,9 @@ x86_64/vmlinuz64: Dockerfile kernel_config kernel_config.debug patches-4.9
 	docker run --rm --net=none --log-driver=none $$BUILD cat kernel-source-info > etc/kernel-source-info && \
 	docker run --rm --net=none --log-driver=none $$BUILD tar cf - bzImage kernel-dev.tar kernel-headers.tar vmlinux kernel-modules.tar | tar xf - -C x86_64
 	mv x86_64/bzImage $@
-	cp -a patches-4.9 etc/kernel-patches
+	rm -rf etc/kernel-patches
+	mkdir -p etc/kernel-patches
+	cp -a patches-4.9/* etc/kernel-patches
 	tar xf x86_64/kernel-modules.tar
 endif
 endif
