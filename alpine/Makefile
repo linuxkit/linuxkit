@@ -1,4 +1,4 @@
-all:	initrd.img initrd-test.img mobylinux-efi.iso mobylinux-bios.iso
+all:	initrd.img initrd-test.img mobylinux-efi.iso mobylinux-bios.iso ebpf
 
 ETCFILES=$(shell find etc)
 
@@ -29,13 +29,10 @@ TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd@sha256:e1ad4522ff906d339da5f250b9ef6
 GCE_IMAGE=mobylinux/mkimage-gce@sha256:f9abf2eae20984b7dd3c1afb700b2c9c41e39e6e7c688c78348a51d0780d74cc
 
 moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
-	$(MAKE) -C kernel
 	$(MAKE) -j -C packages
-	$(MAKE) -C ebpf
 	printf $(TAG)$(DIRTY) > etc/moby-commit
 	BUILD=$$( tar cf - \
 	  Dockerfile etc usr init mkinitrd.sh \
-	  -C kernel usr etc sbin lib -C .. \
 	  -C packages/proxy usr sbin etc -C ../.. \
 	  -C packages/transfused sbin etc -C ../.. \
 	  -C packages/tap-vsockd sbin etc -C ../.. \
@@ -74,11 +71,18 @@ test.img:
 	cat test/container.tar | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
-initrd.img: moby.img container.img
+kernel/x86_64/kernel.img:
+	$(MAKE) -C kernel
+
+initrd.img: moby.img kernel/x86_64/kernel.img container.img
 	cat $^ > $@
 
 initrd-test.img: initrd.img test.img
 	cat $^ > $@
+
+.PHONY: epbf
+ebpf: kernel/x86_64/kernel.img
+	$(MAKE) -C ebpf
 
 mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
 	BUILD=$$( tar cf - $^ | docker build -q -f Dockerfile.efi - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
