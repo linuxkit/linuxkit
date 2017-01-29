@@ -1,6 +1,13 @@
 DEBUG ?= 0
 
+# Tag: d5711601eb5b89de0f052d87365e18388ff3f1b5
+TAR2INITRD_IMAGE=mobylinux/tar2initrd@sha256:58d377e65845f91400e173ce9fca93462f2f237947eef2b0d2c17bb4f2da5ee8
+
 all:	x86_64/vmlinuz64
+
+x86_64/kernel.img:
+	tar cf - etc lib usr sbin | \
+		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 ifdef AUFS
 x86_64/vmlinuz64: Dockerfile.aufs kernel_config kernel_config.debug kernel_config.aufs patches-4.9
@@ -13,6 +20,7 @@ x86_64/vmlinuz64: Dockerfile.aufs kernel_config kernel_config.debug kernel_confi
 	mkdir -p etc/kernel-patches
 	cp -a patches-4.9/* etc/kernel-patches
 	tar xf x86_64/kernel-modules.tar
+	$(MAKE) x86_64/kernel.img
 else
 ifdef LTS4.4
 x86_64/vmlinuz64: Dockerfile.4.4 kernel_config kernel_config.debug kernel_config.4.4 patches-4.4
@@ -23,6 +31,7 @@ x86_64/vmlinuz64: Dockerfile.4.4 kernel_config kernel_config.debug kernel_config
 	mv x86_64/bzImage $@
 	cp -a patches-4.4 etc/kernel-patches
 	tar xf x86_64/kernel-modules.tar
+	$(MAKE) x86_64/kernel.img
 else
 x86_64/vmlinuz64: Dockerfile kernel_config kernel_config.debug patches-4.9
 	mkdir -p x86_64 etc lib usr sbin
@@ -32,6 +41,7 @@ x86_64/vmlinuz64: Dockerfile kernel_config kernel_config.debug patches-4.9
 	mv x86_64/bzImage $@
 	cp -a patches-4.9 etc/kernel-patches
 	tar xf x86_64/kernel-modules.tar
+	$(MAKE) x86_64/kernel.img
 endif
 endif
 
