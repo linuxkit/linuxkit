@@ -32,6 +32,8 @@
 #define MOUNT_SUITABILITY_REPLY 4
 #define TRANSFUSE_NOTIFY_CHANNEL 5
 
+struct connection;
+
 typedef struct {
 	char *server;
 	char *socket;
@@ -42,16 +44,20 @@ typedef struct {
 	int ctl_sock;
 	int data_sock;
 	pthread_mutex_t ctl_lock;
+	struct connection *connections;
 } parameters_t;
 
-typedef struct {
+struct connection {
+	struct connection *next;
 	parameters_t *params;
 	char *type_descr;
 	char *mount_point;
 	struct sockaddr sa_client;
 	socklen_t socklen_client;
 	int sock;
-} connection_t;
+};
+
+typedef struct connection connection_t;
 
 pthread_attr_t detached;
 

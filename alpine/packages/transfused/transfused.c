@@ -1013,6 +1013,7 @@ void parse_parameters(int argc, char *argv[], parameters_t *params)
 	params->data_sock = 0;
 	params->ctl_sock = 0;
 	lock_init("ctl_lock", &params->ctl_lock, NULL);
+	params->connections = NULL;
 
 	while ((c = getopt(argc, argv, ":p:d:s:f:l:")) != -1) {
 		switch (c) {
@@ -1105,6 +1106,8 @@ void serve(parameters_t *params)
 		conn = (connection_t *)must_malloc("connection state",
 						   sizeof(connection_t));
 		conn->params = params;
+		conn->next = params->connections;
+		params->connections = conn;
 		conn->mount_point = "";
 
 		conn->sock = accept(params->data_sock,
