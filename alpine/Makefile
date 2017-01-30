@@ -13,8 +13,11 @@ endif
 # By default we want to always auth to GCE to upload moby images
 FORCE_GSUTIL_AUTH ?= 1
 
-# Tag: 22b043cb43f6bc3bc4e1f1ecf9d64932f9325642
-BIOS_IMAGE=mobylinux/mkimage-iso-bios@sha256:7e28f7745fd62284142dce59a137c3331f7673efe8b3f19ee5c65e4cc27ff18c
+# Tag: 2a860edda12a44c8e141a924f29ea931dbc01110
+BIOS_IMAGE=mobylinux/mkimage-iso-bios@sha256:974304cfff80524a37bf96d299de9b3163ba07df5feeb620c6bdcd132b46f16d
+
+# Tag: f81034d118744a42e8e93cfe0777dc3490c1f6a0
+EFI_IMAGE=mobylinux/mkimage-iso-efi@sha256:4bb10d794fd0fe58366c36ab0fabf7b6d22e5bd760a994900da3b910230519cc
 
 # Tag: 1edffcbfa13d4795f006d38e871a778ffba03d8a
 PAD4_IMAGE=mobylinux/pad4@sha256:1ad26970698670373ee0bf374a06900f712a61b8038255e78271b840a1267b25
@@ -84,14 +87,12 @@ initrd-test.img: initrd.img test.img
 ebpf: kernel/x86_64/kernel.img
 	$(MAKE) -C ebpf
 
-mobylinux-efi.iso: Dockerfile.efi initrd.img kernel/x86_64/vmlinuz64
-	BUILD=$$( tar cf - $^ | docker build -q -f Dockerfile.efi - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
-	docker run --rm --net=none --log-driver=none --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux.efi > mobylinux.efi && \
-	docker run --rm --net=none --log-driver=none --cap-add sys_admin $$BUILD cat /tmp/efi/mobylinux-efi.iso > $@
+# outputs tarball of mobylinux-efi.iso mobylinux.efi
+mobylinux-efi.iso: initrd.img kernel/x86_64/vmlinuz64
+	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(EFI_IMAGE) | tar xf -
 
 mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
-	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
-		docker run --rm --net=none --log-driver=none -i $(BIOS_IMAGE) >$@
+	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(BIOS_IMAGE) >$@
 
 gce: gce.img.tar.gz
 

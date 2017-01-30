@@ -1,12 +1,38 @@
 #!/bin/sh
 
+set -e
+
+mkdir -p /tmp/iso
+cd /tmp/iso
+
 # input is a tarball of vmlinuz64 and initrd.img on stdin
 # output is an iso on stdout
 
+# extract. BSD tar auto recognises compression, unlike GNU tar
+# only if stdin is a tty, if so need files volume mounted...
+[ -t 0 ] || bsdtar xzf -
+
+INITRD="$(find . -name '*.img')"
+KERNEL="$(find . -name vmlinuz64 -or -name bzImage)"
+
+[ "$KERNEL" = "vmlinuz64" ] || mv "$KERNEL" vmlinuz64
+[ "$INITRD" = "initrd.img" ] || mv "$INITRD" initrd.img
+
+# clean up subdirectories
+find . -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
+
+mkdir -p isolinux
 cp /usr/share/syslinux/isolinux.bin ./isolinux/
 cp /usr/share/syslinux/ldlinux.c32 ./isolinux/
 
-tar xf -
+CFG="DEFAULT linux
+LABEL linux
+    KERNEL /vmlinuz64
+    INITRD /initrd.img
+    APPEND earlyprintk=serial console=ttyS0 console=tty1 $*
+"
+
+printf "$CFG" > isolinux/isolinux.cfg
 
 genisoimage -o ../mobylinux-bios.iso -l -J -R \
                 -c isolinux/boot.cat  \
