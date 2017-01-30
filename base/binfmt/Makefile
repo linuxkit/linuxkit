@@ -3,8 +3,9 @@ QEMU_IMAGE=mobylinux/qemu-user-static@sha256:6c022f700dc6c263c9107c08aa29b4eae3b
 QEMU_FILES=qemu-arm qemu-aarch64 qemu-ppc64le
 QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
 
-# Tag: 56f72369b2100961d418cd8a614a6019bb53dc9c
-GO_COMPILE=mobylinux/go-compile@sha256:98eb2ded03c6bb717b5b19c5723f221b00e85c18352c042d0c8470a4fb32ea24
+# Tag: 1ccd40acabb46f43593a960f5d3e0a42df53fb90
+GO_COMPILE=mobylinux/go-compile@sha256:208c795a9b6572df09d9bf52ff3cfa97b9a07d109811ec9d28453a22c53f9d17
+
 BINFMT_BINARY=usr/bin/binfmt
 
 # Tag: alpine:3.5
