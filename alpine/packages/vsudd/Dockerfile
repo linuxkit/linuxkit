@@ -1,5 +1,5 @@
-# Tag: 1ae7bf8ec49a6537a93fba0c90720c65fa1c6ece
-FROM mobylinux/alpine-build-go@sha256:5e9aed92363c25349c2845b9be4a5285e0f56376b8b3ce92c7361bb59e6eeb2d
+# Tag: d7262323ec56ef884f04a58447e2417364680544
+FROM mobylinux/alpine-build-go@sha256:dda58e831bf72d6b59928d963f7dae65ed0d9d52398e99be9c2456c2da66a7fd
 
 COPY ./ /go/src/vsudd/
 
