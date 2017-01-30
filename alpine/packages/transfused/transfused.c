@@ -24,6 +24,7 @@
 
 #include "transfused_log.h"
 #include "transfused_vsock.h"
+#include "transfused_perfstat.h"
 
 char *default_fusermount = DEFAULT_FUSERMOUNT;
 char *default_socket = DEFAULT_SOCKET;
@@ -235,6 +236,7 @@ void copy_into_fuse(copy_thread_state *copy_state)
 	void *buf;
 	connection_t *conn = copy_state->connection;
 	parameters_t *params = conn->params;
+	uint64_t unique;
 
 	buf = must_malloc(descr, IN_BUFSZ);
 
@@ -251,6 +253,12 @@ void copy_into_fuse(copy_thread_state *copy_state)
 			die(1, params, NULL,
 			    "copy %s: read %d but only wrote %d",
 			    descr, read_count, write_count);
+
+		unique = *((uint64_t *)buf + 1);
+		if (perfstat_close(unique, conn))
+			log_time(params,
+				 "dropping perfstat for edge message %lld",
+				 unique);
 	}
 
 	free(buf);
@@ -326,6 +334,7 @@ void copy_outof_fuse(copy_thread_state *copy_state)
 	void *buf;
 	connection_t *conn = copy_state->connection;
 	parameters_t *params = conn->params;
+	uint64_t unique;
 
 	buf = must_malloc(descr, OUT_BUFSZ);
 
@@ -336,6 +345,12 @@ void copy_outof_fuse(copy_thread_state *copy_state)
 			die(1, params, "", "copy %s: error reading: ", descr);
 
 		write_exactly(descr, to, (char *)buf, read_count);
+
+		unique = *((uint64_t *)buf + 1);
+		if (perfstat_open(unique, conn))
+			die(1, params, NULL,
+			    "copy %s: could not open perfstat for %d",
+			    descr, unique);
 	}
 
 	free(buf);
@@ -928,6 +943,38 @@ void *determine_mount_suitability(parameters_t *params, int allow_empty,
 	return (void *)reply;
 }
 
+void *error_reply(uint16_t id, const char *fmt, ...)
+{
+	char *reply;
+	char *message;
+	size_t mlen;
+	va_list args;
+
+	va_start(args, fmt);
+	vasprintf(&message, fmt, args);
+	va_end(args);
+
+	mlen = strlen(message);
+	reply = (char *)must_malloc("error_reply", 8 + mlen);
+	*((uint32_t *)reply) = 8 + mlen;
+	*((uint16_t *) (reply + 4)) = ERROR_REPLY;
+	*((uint16_t *) (reply + 6)) = id;
+	memcpy(reply + 8, message, mlen);
+	free(message);
+
+	return (void *)reply;
+}
+
+connection_t *find_connection(connection_t *conn, char *name, size_t len)
+{
+	while (conn) {
+		if (strncmp(name, conn->mount_point, len) == 0)
+			return conn;
+		conn = conn->next;
+	}
+	return NULL;
+}
+
 void *init_thread(void *params_ptr)
 {
 	parameters_t *params = params_ptr;
@@ -953,7 +1000,7 @@ void *init_thread(void *params_ptr)
 
 	while (1) {
 		read_count = read_message("control", params, params->ctl_sock,
-					  buf, CTL_BUFSZ);
+					  buf, CTL_BUFSZ - 1);
 		msg_type = *((uint16_t *)buf + 2);
 		switch (msg_type) {
 		case MOUNT_SUITABILITY_REQUEST:
@@ -972,6 +1019,26 @@ void *init_thread(void *params_ptr)
 							       read_count - 6);
 			len = *((size_t *) response);
 			write_exactly("init thread: export suitability response",
+				      params->ctl_sock, response, len);
+			free(response);
+			break;
+
+		case START_PERFSTAT_REQUEST:
+			((char *)buf)[read_count] = '\0';
+			response = start_perfstat(params, (char *)buf + 6,
+						  read_count - 6);
+			len = *((size_t *) response);
+			write_exactly("init thread: start perfstat response",
+				      params->ctl_sock, response, len);
+			free(response);
+			break;
+
+		case STOP_PERFSTAT_REQUEST:
+			((char *)buf)[read_count] = '\0';
+			response = stop_perfstat(params, (char *)buf + 6,
+						 read_count - 6);
+			len = *((size_t *) response);
+			write_exactly("init thread: stop perfstat response",
 				      params->ctl_sock, response, len);
 			free(response);
 			break;
@@ -1109,6 +1176,9 @@ void serve(parameters_t *params)
 		conn->next = params->connections;
 		params->connections = conn;
 		conn->mount_point = "";
+		conn->perfstat = 0;
+		conn->perfstats = NULL;
+		lock_init("perfstat lock",&conn->perfstat_lock,NULL);
 
 		conn->sock = accept(params->data_sock,
 				    &conn->sa_client, &conn->socklen_client);
