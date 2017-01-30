@@ -201,7 +201,7 @@ void read_exactly(char *descr, int fd, void *p, size_t nbyte)
 	}
 }
 
-int read_message(char *descr, parameters *params, int fd,
+int read_message(char *descr, parameters_t *params, int fd,
 		 char *buf, size_t max_read)
 {
 	size_t nbyte = sizeof(uint32_t);
@@ -233,7 +233,8 @@ void copy_into_fuse(copy_thread_state *copy_state)
 	char *descr = copy_state->connection->mount_point;
 	int read_count, write_count;
 	void *buf;
-	parameters *params = copy_state->connection->params;
+	connection_t *conn = copy_state->connection;
+	parameters_t *params = conn->params;
 
 	buf = must_malloc(descr, IN_BUFSZ);
 
@@ -263,7 +264,7 @@ void copy_notify_fuse(copy_thread_state *copy_state)
 	int read_count, write_count;
 	uint32_t zero = 0, err;
 	void *buf;
-	parameters *params = copy_state->connection->params;
+	parameters_t *params = copy_state->connection->params;
 
 	buf = must_malloc(descr, IN_BUFSZ);
 
@@ -323,7 +324,8 @@ void copy_outof_fuse(copy_thread_state *copy_state)
 	char *descr = copy_state->connection->mount_point;
 	int read_count;
 	void *buf;
-	parameters *params = copy_state->connection->params;
+	connection_t *conn = copy_state->connection;
+	parameters_t *params = conn->params;
 
 	buf = must_malloc(descr, OUT_BUFSZ);
 
@@ -387,7 +389,7 @@ void *copy_clean_outof_fuse_thread(void *copy_state)
 	return copy_clean_outof_fuse((copy_thread_state *) copy_state);
 }
 
-int recv_fd(parameters *params, int sock)
+int recv_fd(parameters_t *params, int sock)
 {
 	int ret;
 	int fd = -1;
@@ -625,7 +627,7 @@ void mkdir_p(connection_t *conn, char *path)
 		}
 }
 
-int is_next_child_ok(parameters *params, char *path, DIR *dir)
+int is_next_child_ok(parameters_t *params, char *path, DIR *dir)
 {
 	struct dirent *child;
 
@@ -641,7 +643,7 @@ int is_next_child_ok(parameters *params, char *path, DIR *dir)
 	return 1;
 }
 
-int is_path_mountable(parameters *params, int allow_empty, char *path)
+int is_path_mountable(parameters_t *params, int allow_empty, char *path)
 {
 	DIR *dir;
 
@@ -737,9 +739,9 @@ void *mount_connection(connection_t *conn)
 	return NULL;
 }
 
-void *mount_thread(void *connection)
+void *mount_thread(void *conn)
 {
-	return mount_connection((connection_t *) connection);
+	return mount_connection((connection_t *) conn);
 }
 
 void write_pid(connection_t *connection)
@@ -758,7 +760,7 @@ void write_pid(connection_t *connection)
 	free(pid_s);
 }
 
-void pong(parameters *params)
+void pong(parameters_t *params)
 {
 	char pong_msg[6] = {'\6', '\0', '\0', '\0', PONG_REPLY, '\0'};
 
@@ -862,7 +864,7 @@ void *event_thread(void *connection_ptr)
 	return NULL;
 }
 
-void write_pidfile(parameters *params)
+void write_pidfile(parameters_t *params)
 {
 	int fd;
 	pid_t pid = getpid();
@@ -894,7 +896,7 @@ void write_pidfile(parameters *params)
 }
 
 /* TODO: the message parsing here is rickety, do it properly */
-void *determine_mount_suitability(parameters *params, int allow_empty,
+void *determine_mount_suitability(parameters_t *params, int allow_empty,
 				  char *req, int len)
 {
 	void *buf = (void *)req;
@@ -928,7 +930,7 @@ void *determine_mount_suitability(parameters *params, int allow_empty,
 
 void *init_thread(void *params_ptr)
 {
-	parameters *params = params_ptr;
+	parameters_t *params = params_ptr;
 	int read_count, len;
 	char init_msg[6] = {'\6', '\0', '\0', '\0', '\0', '\0'};
 	void *buf, *response;
@@ -998,7 +1000,7 @@ void setup_debug(void)
 		die(1, NULL, "Couldn't set siginterrupt for SIGHUP", "");
 }
 
-void parse_parameters(int argc, char *argv[], parameters *params)
+void parse_parameters(int argc, char *argv[], parameters_t *params)
 {
 	int c;
 	int errflg = 0;
@@ -1085,7 +1087,7 @@ void parse_parameters(int argc, char *argv[], parameters *params)
 		}
 }
 
-void serve(parameters *params)
+void serve(parameters_t *params)
 {
 	char subproto_selector;
 	pthread_t child;
@@ -1140,7 +1142,7 @@ void serve(parameters *params)
 
 int main(int argc, char *argv[])
 {
-	parameters params;
+	parameters_t params;
 	struct rlimit core_limit;
 
 	core_limit.rlim_cur = RLIM_INFINITY;

@@ -42,10 +42,10 @@ typedef struct {
 	int ctl_sock;
 	int data_sock;
 	pthread_mutex_t ctl_lock;
-} parameters;
+} parameters_t;
 
 typedef struct {
-	parameters *params;
+	parameters_t *params;
 	char *type_descr;
 	char *mount_point;
 	struct sockaddr sa_client;
