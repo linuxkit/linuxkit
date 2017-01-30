@@ -54,7 +54,7 @@ hyperkit-test: hyperkit.sh hyperkit.bin/com.docker.hyperkit hyperkit.bin/com.doc
 	rm -f disk.img
 	INITRD=alpine/initrd-test.img ./hyperkit.sh 2>&1 | tee test.log
 	$(call check_test_log, test.log)
-	
+
 test: alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
 	tar cf - $^ | docker run --rm -i $(QEMU_IMAGE) 2>&1 | tee test.log
 	$(call check_test_log, test.log)
