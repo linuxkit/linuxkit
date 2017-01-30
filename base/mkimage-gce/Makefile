@@ -4,7 +4,7 @@ IMAGE=mkimage-gce
 
 default: push
 
-hash: Dockerfile make-gce syslinux.cfg
+hash: Dockerfile make-gce
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sh -c "(cat $^; apt list --installed 2>/dev/null) | sha1sum" | sed 's/ .*//' > hash
 

@@ -28,8 +28,8 @@ TAR2INITRD_IMAGE=mobylinux/tar2initrd@sha256:58d377e65845f91400e173ce9fca93462f2
 # Tag: d56cde1558e3080e59a32e3cd7c7141baa601811
 TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd@sha256:e1ad4522ff906d339da5f250b9ef6bffa5a70b4dec7d2cf7f7dbd0447b79352f
 
-# Tag: 77bc577875fb3a80ac2d14b70d1daa885bbf199c
-GCE_IMAGE=mobylinux/mkimage-gce@sha256:f9abf2eae20984b7dd3c1afb700b2c9c41e39e6e7c688c78348a51d0780d74cc
+# Tag: 83158ebe303a970a3131c3d02ef2ba00ca5e4a14
+GCE_IMAGE=mobylinux/mkimage-gce@sha256:51c30fbf946ca9967688a411e7bf69769a22987cd47ad03428491dd1556fcf63
 
 moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	$(MAKE) -j -C packages
@@ -96,9 +96,8 @@ mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
 
 gce: gce.img.tar.gz
 
-gce.img.tar.gz: common
-	tar cf - initrd.img -C kernel/x86_64 vmlinuz64 | \
-		docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
+gce.img.tar.gz: initrd.img kernel/x86_64/vmlinuz64
+	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
 gce-upload:
 ifeq ($(FORCE_GSUTIL_AUTH),1)
