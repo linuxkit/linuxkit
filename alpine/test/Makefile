@@ -1,8 +1,8 @@
 # Tag: 893c93bf54bc037f6952886330d5ba58746ace37
 RIDDLER=mobylinux/riddler@sha256:3d4a61555110be4b6e8ff6bcdcf5f8aa24d64564eb4162ea4e580d8916d083cc
 
-# Tag: e79cbcc45b715cea7047a802944b478a7b5a906a
-TEST_IMAGE=mobylinux/test@sha256:bc9403a9fc7aa5298f92c83d1e3423e804097f08dbba623e076c1728666f6b73
+# Tag: fc8e36cbd58b5e9078ae6aa57a348ca2fbec76dc
+TEST_IMAGE=mobylinux/test@sha256:7155b16109270dc2d950f63279e5a682b2793b83bb26ff70c4783e6d723db5ba
 
 default: container.tar
 
