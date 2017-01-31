@@ -5,7 +5,7 @@ generally with tags based on the image contents.
 
 - `mobylinux/alpine-base` the base packages for Moby, before we add Docker and our code and config
 - `mobylinux/alpine-build-c` for building C code
-- `mobylinux/alpine-bios` for building BIOS image
+- `mobylinux/mkimage-iso-bios` for building BIOS image
 - `mobylinux/alpine-efi` for building efi images
 - `mobylinux/alpine-qemu` for Qemu eg for the tests
 - `mobylinux/go-compile` for building Go code
