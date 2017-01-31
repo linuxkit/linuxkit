@@ -1,10 +1,8 @@
-# Tag b784b685b2c39b9bed4d58a989d06d8f0281b87c
-MKSH_IMAGE=mobylinux/mksh@sha256:b3ca9febef294d002894b91e0ce0f794235db73a3024be3cae16d34022913de3
+MKSH_IMAGE=mobylinux/mksh:b784b685b2c39b9bed4d58a989d06d8f0281b87c@sha256:b3ca9febef294d002894b91e0ce0f794235db73a3024be3cae16d34022913de3
 MKSH_BINARY=bin/mksh
 SH_BINARY=bin/sh
 
-# Tag: e091a05fbf7c5e16f18b23602febd45dd690ba2f
-CACERT_IMAGE=mobylinux/ca-certificates@sha256:a4e217ab2036bc128dc57a639a25fd285dbd68c47f9a46a91f1a9afab2bab3d3
+CACERT_IMAGE=mobylinux/ca-certificates:e091a05fbf7c5e16f18b23602febd45dd690ba2f@sha256:a4e217ab2036bc128dc57a639a25fd285dbd68c47f9a46a91f1a9afab2bab3d3
 CACERT_FILE=etc/ssl/certs/ca-certificates.crt
 
 TEST_SCRIPT=bin/test.sh
@@ -24,8 +22,7 @@ $(CACERT_FILE):
 	mkdir -p $(dir $@)
 	docker run --rm --net=none $(CACERT_IMAGE) tar cf - $@ | tar xf -
 
-# Tag: alpine:3.5
-SHA_IMAGE=alpine@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
+SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
 
 IMAGE=test
 

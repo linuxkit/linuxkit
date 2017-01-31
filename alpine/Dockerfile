@@ -1,5 +1,4 @@
-# Tag: 5837a236153f00bb215642e3e0639252eb49cdf9
-FROM mobylinux/alpine-base@sha256:f6f12aebe2af07c9250014ff283485dbdf082bd9cfbd74aad27a3d2dcf13e0b1
+FROM mobylinux/alpine-base:5837a236153f00bb215642e3e0639252eb49cdf9@sha256:f6f12aebe2af07c9250014ff283485dbdf082bd9cfbd74aad27a3d2dcf13e0b1
 
 ENV ARCH=x86_64
 

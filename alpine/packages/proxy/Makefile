@@ -1,5 +1,4 @@
-# Tag: 1ccd40acabb46f43593a960f5d3e0a42df53fb90
-GO_COMPILE=mobylinux/go-compile@sha256:208c795a9b6572df09d9bf52ff3cfa97b9a07d109811ec9d28453a22c53f9d17
+GO_COMPILE=mobylinux/go-compile:1ccd40acabb46f43593a960f5d3e0a42df53fb90@sha256:208c795a9b6572df09d9bf52ff3cfa97b9a07d109811ec9d28453a22c53f9d17
 
 all: usr/bin/slirp-proxy sbin/proxy-vsockd
 
