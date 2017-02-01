@@ -1,7 +1,5 @@
 FROM mobylinux/alpine-base:5837a236153f00bb215642e3e0639252eb49cdf9@sha256:f6f12aebe2af07c9250014ff283485dbdf082bd9cfbd74aad27a3d2dcf13e0b1
 
-ENV ARCH=x86_64
-
 RUN \
   addgroup -g 50 docker && \
   adduser -G docker -u 1001 -s /bin/sh -D -g "Docker" docker && \
@@ -9,7 +7,6 @@ RUN \
   adduser -D -H -s /sbin/nologin dockremap
 
 COPY . .
-RUN rm Dockerfile
 
 RUN \
   rc-update add sysctl boot && \
@@ -59,5 +56,3 @@ RUN \
   rc-update add gcp-hostname default && \
   rc-update add gcp-startup default && \
   true
-
-CMD ["/mkinitrd.sh"]
