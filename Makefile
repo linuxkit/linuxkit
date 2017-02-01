@@ -31,27 +31,28 @@ qemu-iso: alpine/mobylinux-bios.iso
 qemu-gce: alpine/gce.img.tar.gz
 	docker run -it --rm -v $(CURDIR)/alpine/gce.img.tar.gz:/tmp/gce.img.tar.gz $(QEMU_IMAGE)
 
-hyperkit.bin:
-	mkdir $@
+bin:
+	mkdir -p $@
 
-hyperkit.bin/com.docker.hyperkit: hyperkit.bin
+bin/com.docker.hyperkit: bin
 	curl -fsSL https://circleci.com/api/v1/project/docker/hyperkit/latest/artifacts/0//Users/distiller/hyperkit/build/com.docker.hyperkit > $@
 	chmod a+x $@
 
-hyperkit.bin/com.docker.slirp:
+bin/com.docker.slirp: bin
 	curl -fsSL https://circleci.com/api/v1/project/docker/vpnkit/latest/artifacts/0//Users/distiller/vpnkit/com.docker.slirp.tgz \
-		| tar xz --strip=2 -C hyperkit.bin Contents/MacOS/com.docker.slirp
+		| tar xz --strip=2 -C $(dir $@) Contents/MacOS/com.docker.slirp
+	touch $@
 
-hyperkit: hyperkit.sh hyperkit.bin/com.docker.hyperkit hyperkit.bin/com.docker.slirp alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
+hyperkit: hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd.img alpine/kernel/x86_64/vmlinuz64
 	./hyperkit.sh
 
 define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
 endef
 
-hyperkit-test: hyperkit.sh hyperkit.bin/com.docker.hyperkit hyperkit.bin/com.docker.slirp alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
+hyperkit-test: hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
 	rm -f disk.img
-	INITRD=alpine/initrd-test.img ./hyperkit.sh 2>&1 | tee test.log
+	INITRD=alpine/initrd-test.img script -q /dev/null ./hyperkit.sh | tee test.log
 	$(call check_test_log, test.log)
 
 test: alpine/initrd-test.img alpine/kernel/x86_64/vmlinuz64
@@ -125,4 +126,4 @@ ci-pr:
 
 clean:
 	$(MAKE) -C alpine clean
-	rm -rf hyperkit.bin disk.img test.log
+	rm -rf bin disk.img test.log
