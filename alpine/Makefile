@@ -1,4 +1,4 @@
-all:	initrd.img initrd-test.img mobylinux-efi.iso mobylinux-bios.iso ebpf
+all:	initrd.img initrd-test.img mobylinux-efi.iso mobylinux-bios.iso
 
 ETCFILES=$(shell find etc)
 
@@ -76,10 +76,6 @@ initrd.img: moby.img kernel/x86_64/kernel.img container.img
 
 initrd-test.img: initrd.img test.img
 	cat $^ > $@
-
-.PHONY: epbf
-ebpf: kernel/x86_64/kernel.img
-	$(MAKE) -C ebpf
 
 # outputs tarball of mobylinux-efi.iso mobylinux.efi
 mobylinux-efi.iso: initrd.img kernel/x86_64/vmlinuz64
@@ -217,6 +213,5 @@ clean:
 	$(MAKE) -C containers clean
 	$(MAKE) -C test clean
 	$(MAKE) -C kernel clean
-	$(MAKE) -C ebpf clean
 
 .DELETE_ON_ERROR:
