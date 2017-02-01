@@ -58,10 +58,8 @@ moby.img: Dockerfile etc usr init
 ../containers/container.img:
 	$(MAKE) -C ../containers
 
-test.img:
-	$(MAKE) -j -C test
-	cat test/container.tar | \
-		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
+../test/test.img:
+	$(MAKE) -C ../test
 
 kernel/x86_64/kernel.img:
 	$(MAKE) -C kernel
@@ -69,7 +67,7 @@ kernel/x86_64/kernel.img:
 initrd.img: moby.img kernel/x86_64/kernel.img ../containers/container.img
 	cat $^ > $@
 
-initrd-test.img: initrd.img test.img
+initrd-test.img: initrd.img ../test/test.img
 	cat $^ > $@
 
 # outputs tarball of mobylinux-efi.iso mobylinux.efi
@@ -202,7 +200,6 @@ clean:
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
 	$(MAKE) -C packages clean
-	$(MAKE) -C test clean
 	$(MAKE) -C kernel clean
 
 .DELETE_ON_ERROR:

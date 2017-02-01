@@ -1,3 +1,5 @@
+.PHONY: test hyperkit-test qemu qemu-iso qemu-gce media ebpf ci ci-pr
+
 all:
 	$(MAKE) -C alpine
 
@@ -127,4 +129,5 @@ ci-pr:
 clean:
 	$(MAKE) -C alpine clean
 	$(MAKE) -C containers clean
+	$(MAKE) -C test clean
 	rm -rf bin disk.img test.log
