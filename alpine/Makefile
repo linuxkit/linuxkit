@@ -1,7 +1,5 @@
 all:	initrd.img initrd-test.img mobylinux-efi.iso mobylinux-bios.iso
 
-ETCFILES=$(shell find etc)
-
 TAG=$(shell git rev-parse HEAD)
 STATUS=$(shell git status -s)
 ifeq ($(STATUS),)
@@ -25,11 +23,12 @@ TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa60
 
 GCE_IMAGE=mobylinux/mkimage-gce:83158ebe303a970a3131c3d02ef2ba00ca5e4a14@sha256:51c30fbf946ca9967688a411e7bf69769a22987cd47ad03428491dd1556fcf63
 
-moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
+MKIMAGE_BASE=mobylinux/mkimage-base:870f7512498f2ce5feccebe15fb0d03c5c3ebac2@sha256:47d1ed872b6a44f13b61ea80b3eeab4519dc151c7d684a89a53aa26233b4e087
+
+moby.img: Dockerfile etc usr init
 	$(MAKE) -j -C packages
 	printf $(TAG)$(DIRTY) > etc/moby-commit
-	BUILD=$$( tar cf - \
-	  Dockerfile etc usr init mkinitrd.sh \
+	BUILD=$$( tar cf - $^ \
 	  -C packages/proxy usr sbin etc -C ../.. \
 	  -C packages/transfused sbin etc -C ../.. \
 	  -C packages/tap-vsockd sbin etc -C ../.. \
@@ -55,8 +54,8 @@ moby.img: Dockerfile mkinitrd.sh init $(ETCFILES)
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	echo $$BUILD > mobylinux.tag && \
-	docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp --tmpfs /initrd $$BUILD | \
-		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(PAD4_IMAGE) > $@
+	docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -v /var/run/docker.sock:/var/run/docker.sock $(MKIMAGE_BASE) $$BUILD | \
+		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
 container.img:
 	$(MAKE) -j -C containers
