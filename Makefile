@@ -126,4 +126,5 @@ ci-pr:
 
 clean:
 	$(MAKE) -C alpine clean
+	$(MAKE) -C containers clean
 	rm -rf bin disk.img test.log
