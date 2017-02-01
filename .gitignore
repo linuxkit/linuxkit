@@ -1,6 +1,6 @@
 test.log
+/bin
 *.swp
-/hyperkit.bin
 *.img
 *.tag
 *.iso
