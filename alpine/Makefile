@@ -19,8 +19,6 @@ PAD4_IMAGE=mobylinux/pad4:1edffcbfa13d4795f006d38e871a778ffba03d8a@sha256:1ad269
 
 TAR2INITRD_IMAGE=mobylinux/tar2initrd:d5711601eb5b89de0f052d87365e18388ff3f1b5@sha256:58d377e65845f91400e173ce9fca93462f2f237947eef2b0d2c17bb4f2da5ee8
 
-TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa601811@sha256:e1ad4522ff906d339da5f250b9ef6bffa5a70b4dec7d2cf7f7dbd0447b79352f
-
 GCE_IMAGE=mobylinux/mkimage-gce:83158ebe303a970a3131c3d02ef2ba00ca5e4a14@sha256:51c30fbf946ca9967688a411e7bf69769a22987cd47ad03428491dd1556fcf63
 
 MKIMAGE_BASE=mobylinux/mkimage-base:870f7512498f2ce5feccebe15fb0d03c5c3ebac2@sha256:47d1ed872b6a44f13b61ea80b3eeab4519dc151c7d684a89a53aa26233b4e087
@@ -57,10 +55,8 @@ moby.img: Dockerfile etc usr init
 	docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -v /var/run/docker.sock:/var/run/docker.sock $(MKIMAGE_BASE) $$BUILD | \
 		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TAR2INITRD_IMAGE) > $@
 
-container.img:
-	$(MAKE) -j -C containers
-	tar cf - $$(find containers -name container.tar) | \
-		docker run --rm --read-only --net=none --log-driver=none --tmpfs /tmp -i $(TARTAR2INITRD_IMAGE) > $@
+../containers/container.img:
+	$(MAKE) -C ../containers
 
 test.img:
 	$(MAKE) -j -C test
@@ -70,7 +66,7 @@ test.img:
 kernel/x86_64/kernel.img:
 	$(MAKE) -C kernel
 
-initrd.img: moby.img kernel/x86_64/kernel.img container.img
+initrd.img: moby.img kernel/x86_64/kernel.img ../containers/container.img
 	cat $^ > $@
 
 initrd-test.img: initrd.img test.img
@@ -99,10 +95,7 @@ endif
 		google/cloud-sdk \
 		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-templates/latest/gce.img.tar.gz
 
-common: initrd.img
-	$(MAKE) -C kernel
-	$(MAKE) -j -C packages
-	$(MAKE) -j -C containers
+common: initrd.img kernel/x86_64/vmlinuz64
 
 ami: common
 	tar cf - \
@@ -209,7 +202,6 @@ clean:
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
 	$(MAKE) -C packages clean
-	$(MAKE) -C containers clean
 	$(MAKE) -C test clean
 	$(MAKE) -C kernel clean
 
