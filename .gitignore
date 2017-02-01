@@ -1,4 +1,11 @@
 test.log
 *.swp
 /hyperkit.bin
-/disk.img
+*.img
+*.tag
+*.iso
+*.vhd
+*.tar
+*.tar.gz
+*.vhdx
+*.efi
