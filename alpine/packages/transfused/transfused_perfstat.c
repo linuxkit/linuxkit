@@ -165,6 +165,7 @@ void *stop_perfstat(parameters_t *params, char *req, size_t len)
 	*((uint64_t *) (reply + 8)) = now(params);
 
 	copy_and_free_perfstats(conn->perfstats, reply + 16);
+	conn->perfstats = NULL;
 
 	unlock("perfstat lock: stop_perfstat", &conn->perfstat_lock);
 
