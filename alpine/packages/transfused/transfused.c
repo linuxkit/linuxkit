@@ -24,6 +24,7 @@
 
 #include "transfused_log.h"
 #include "transfused_vsock.h"
+#include "transfused_perfstat.h"
 
 char *default_fusermount = DEFAULT_FUSERMOUNT;
 char *default_socket = DEFAULT_SOCKET;
@@ -201,7 +202,7 @@ void read_exactly(char *descr, int fd, void *p, size_t nbyte)
 	}
 }
 
-int read_message(char *descr, parameters *params, int fd,
+int read_message(char *descr, parameters_t *params, int fd,
 		 char *buf, size_t max_read)
 {
 	size_t nbyte = sizeof(uint32_t);
@@ -233,7 +234,9 @@ void copy_into_fuse(copy_thread_state *copy_state)
 	char *descr = copy_state->connection->mount_point;
 	int read_count, write_count;
 	void *buf;
-	parameters *params = copy_state->connection->params;
+	connection_t *conn = copy_state->connection;
+	parameters_t *params = conn->params;
+	uint64_t unique;
 
 	buf = must_malloc(descr, IN_BUFSZ);
 
@@ -250,6 +253,12 @@ void copy_into_fuse(copy_thread_state *copy_state)
 			die(1, params, NULL,
 			    "copy %s: read %d but only wrote %d",
 			    descr, read_count, write_count);
+
+		unique = *((uint64_t *)buf + 1);
+		if (perfstat_close(unique, conn))
+			log_time(params,
+				 "dropping perfstat for edge message %lld",
+				 unique);
 	}
 
 	free(buf);
@@ -263,7 +272,7 @@ void copy_notify_fuse(copy_thread_state *copy_state)
 	int read_count, write_count;
 	uint32_t zero = 0, err;
 	void *buf;
-	parameters *params = copy_state->connection->params;
+	parameters_t *params = copy_state->connection->params;
 
 	buf = must_malloc(descr, IN_BUFSZ);
 
@@ -323,7 +332,9 @@ void copy_outof_fuse(copy_thread_state *copy_state)
 	char *descr = copy_state->connection->mount_point;
 	int read_count;
 	void *buf;
-	parameters *params = copy_state->connection->params;
+	connection_t *conn = copy_state->connection;
+	parameters_t *params = conn->params;
+	uint64_t unique;
 
 	buf = must_malloc(descr, OUT_BUFSZ);
 
@@ -334,6 +345,12 @@ void copy_outof_fuse(copy_thread_state *copy_state)
 			die(1, params, "", "copy %s: error reading: ", descr);
 
 		write_exactly(descr, to, (char *)buf, read_count);
+
+		unique = *((uint64_t *)buf + 1);
+		if (perfstat_open(unique, conn))
+			die(1, params, NULL,
+			    "copy %s: could not open perfstat for %d",
+			    descr, unique);
 	}
 
 	free(buf);
@@ -387,7 +404,7 @@ void *copy_clean_outof_fuse_thread(void *copy_state)
 	return copy_clean_outof_fuse((copy_thread_state *) copy_state);
 }
 
-int recv_fd(parameters *params, int sock)
+int recv_fd(parameters_t *params, int sock)
 {
 	int ret;
 	int fd = -1;
@@ -625,7 +642,7 @@ void mkdir_p(connection_t *conn, char *path)
 		}
 }
 
-int is_next_child_ok(parameters *params, char *path, DIR *dir)
+int is_next_child_ok(parameters_t *params, char *path, DIR *dir)
 {
 	struct dirent *child;
 
@@ -641,7 +658,7 @@ int is_next_child_ok(parameters *params, char *path, DIR *dir)
 	return 1;
 }
 
-int is_path_mountable(parameters *params, int allow_empty, char *path)
+int is_path_mountable(parameters_t *params, int allow_empty, char *path)
 {
 	DIR *dir;
 
@@ -737,9 +754,9 @@ void *mount_connection(connection_t *conn)
 	return NULL;
 }
 
-void *mount_thread(void *connection)
+void *mount_thread(void *conn)
 {
-	return mount_connection((connection_t *) connection);
+	return mount_connection((connection_t *) conn);
 }
 
 void write_pid(connection_t *connection)
@@ -758,7 +775,7 @@ void write_pid(connection_t *connection)
 	free(pid_s);
 }
 
-void pong(parameters *params)
+void pong(parameters_t *params)
 {
 	char pong_msg[6] = {'\6', '\0', '\0', '\0', PONG_REPLY, '\0'};
 
@@ -862,7 +879,7 @@ void *event_thread(void *connection_ptr)
 	return NULL;
 }
 
-void write_pidfile(parameters *params)
+void write_pidfile(parameters_t *params)
 {
 	int fd;
 	pid_t pid = getpid();
@@ -894,7 +911,7 @@ void write_pidfile(parameters *params)
 }
 
 /* TODO: the message parsing here is rickety, do it properly */
-void *determine_mount_suitability(parameters *params, int allow_empty,
+void *determine_mount_suitability(parameters_t *params, int allow_empty,
 				  char *req, int len)
 {
 	void *buf = (void *)req;
@@ -926,9 +943,41 @@ void *determine_mount_suitability(parameters *params, int allow_empty,
 	return (void *)reply;
 }
 
+void *error_reply(uint16_t id, const char *fmt, ...)
+{
+	char *reply;
+	char *message;
+	size_t mlen;
+	va_list args;
+
+	va_start(args, fmt);
+	vasprintf(&message, fmt, args);
+	va_end(args);
+
+	mlen = strlen(message);
+	reply = (char *)must_malloc("error_reply", 8 + mlen);
+	*((uint32_t *)reply) = 8 + mlen;
+	*((uint16_t *) (reply + 4)) = ERROR_REPLY;
+	*((uint16_t *) (reply + 6)) = id;
+	memcpy(reply + 8, message, mlen);
+	free(message);
+
+	return (void *)reply;
+}
+
+connection_t *find_connection(connection_t *conn, char *name, size_t len)
+{
+	while (conn) {
+		if (strncmp(name, conn->mount_point, len) == 0)
+			return conn;
+		conn = conn->next;
+	}
+	return NULL;
+}
+
 void *init_thread(void *params_ptr)
 {
-	parameters *params = params_ptr;
+	parameters_t *params = params_ptr;
 	int read_count, len;
 	char init_msg[6] = {'\6', '\0', '\0', '\0', '\0', '\0'};
 	void *buf, *response;
@@ -951,7 +1000,7 @@ void *init_thread(void *params_ptr)
 
 	while (1) {
 		read_count = read_message("control", params, params->ctl_sock,
-					  buf, CTL_BUFSZ);
+					  buf, CTL_BUFSZ - 1);
 		msg_type = *((uint16_t *)buf + 2);
 		switch (msg_type) {
 		case MOUNT_SUITABILITY_REQUEST:
@@ -970,6 +1019,26 @@ void *init_thread(void *params_ptr)
 							       read_count - 6);
 			len = *((size_t *) response);
 			write_exactly("init thread: export suitability response",
+				      params->ctl_sock, response, len);
+			free(response);
+			break;
+
+		case START_PERFSTAT_REQUEST:
+			((char *)buf)[read_count] = '\0';
+			response = start_perfstat(params, (char *)buf + 6,
+						  read_count - 6);
+			len = *((size_t *) response);
+			write_exactly("init thread: start perfstat response",
+				      params->ctl_sock, response, len);
+			free(response);
+			break;
+
+		case STOP_PERFSTAT_REQUEST:
+			((char *)buf)[read_count] = '\0';
+			response = stop_perfstat(params, (char *)buf + 6,
+						 read_count - 6);
+			len = *((size_t *) response);
+			write_exactly("init thread: stop perfstat response",
 				      params->ctl_sock, response, len);
 			free(response);
 			break;
@@ -998,7 +1067,7 @@ void setup_debug(void)
 		die(1, NULL, "Couldn't set siginterrupt for SIGHUP", "");
 }
 
-void parse_parameters(int argc, char *argv[], parameters *params)
+void parse_parameters(int argc, char *argv[], parameters_t *params)
 {
 	int c;
 	int errflg = 0;
@@ -1011,6 +1080,7 @@ void parse_parameters(int argc, char *argv[], parameters *params)
 	params->data_sock = 0;
 	params->ctl_sock = 0;
 	lock_init("ctl_lock", &params->ctl_lock, NULL);
+	params->connections = NULL;
 
 	while ((c = getopt(argc, argv, ":p:d:s:f:l:")) != -1) {
 		switch (c) {
@@ -1085,7 +1155,7 @@ void parse_parameters(int argc, char *argv[], parameters *params)
 		}
 }
 
-void serve(parameters *params)
+void serve(parameters_t *params)
 {
 	char subproto_selector;
 	pthread_t child;
@@ -1103,7 +1173,12 @@ void serve(parameters *params)
 		conn = (connection_t *)must_malloc("connection state",
 						   sizeof(connection_t));
 		conn->params = params;
+		conn->next = params->connections;
+		params->connections = conn;
 		conn->mount_point = "";
+		conn->perfstat = 0;
+		conn->perfstats = NULL;
+		lock_init("perfstat lock",&conn->perfstat_lock,NULL);
 
 		conn->sock = accept(params->data_sock,
 				    &conn->sa_client, &conn->socklen_client);
@@ -1140,7 +1215,7 @@ void serve(parameters *params)
 
 int main(int argc, char *argv[])
 {
-	parameters params;
+	parameters_t params;
 	struct rlimit core_limit;
 
 	core_limit.rlim_cur = RLIM_INFINITY;

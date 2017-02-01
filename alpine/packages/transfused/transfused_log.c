@@ -80,7 +80,7 @@ void log_sock_locked(int fd, uint16_t msg_type, const char *fmt, ...)
 	va_end(args);
 }
 
-void die(int exit_code, parameters *params, const char *parg,
+void die(int exit_code, parameters_t *params, const char *parg,
 	 const char *fmt, ...)
 {
 	va_list argp, targs;
@@ -121,7 +121,7 @@ void die(int exit_code, parameters *params, const char *parg,
 	unlock("die ctl_lock", &params->ctl_lock);
 }
 
-void vlog_locked(parameters *params, uint16_t msg_type,
+void vlog_locked(parameters_t *params, uint16_t msg_type,
 		 const char *fmt, va_list args)
 {
 	int rc;
@@ -149,7 +149,7 @@ void vlog_locked(parameters *params, uint16_t msg_type,
 	}
 }
 
-void vlog_time_locked(parameters *params, uint16_t msg_type,
+void vlog_time_locked(parameters_t *params, uint16_t msg_type,
 		      const char *fmt, va_list args)
 {
 	int fd = params->logfile_fd;
@@ -159,7 +159,7 @@ void vlog_time_locked(parameters *params, uint16_t msg_type,
 	vlog_locked(params, msg_type, fmt, args);
 }
 
-void log_time_locked(parameters *params, uint16_t msg_type,
+void log_time_locked(parameters_t *params, uint16_t msg_type,
 		     const char *fmt, ...)
 {
 	va_list args;
@@ -169,7 +169,7 @@ void log_time_locked(parameters *params, uint16_t msg_type,
 	va_end(args);
 }
 
-void log_time(parameters *params, const char *fmt, ...)
+void log_time(parameters_t *params, const char *fmt, ...)
 {
 	va_list args;
 
@@ -180,7 +180,7 @@ void log_time(parameters *params, const char *fmt, ...)
 	va_end(args);
 }
 
-void log_notice_time(parameters *params, const char *fmt, ...)
+void log_notice_time(parameters_t *params, const char *fmt, ...)
 {
 	va_list args;
 
@@ -193,7 +193,7 @@ void log_notice_time(parameters *params, const char *fmt, ...)
 }
 
 typedef struct {
-	parameters *params;
+	parameters_t *params;
 	char *msg;
 } log_thread_state;
 
@@ -234,7 +234,7 @@ void thread_log_time(connection_t *conn, const char *fmt, ...)
 		    conn->type_descr, conn->mount_point);
 }
 
-void log_continue_locked(parameters *params, const char *fmt, ...)
+void log_continue_locked(parameters_t *params, const char *fmt, ...)
 {
 	va_list args;
 
@@ -243,7 +243,7 @@ void log_continue_locked(parameters *params, const char *fmt, ...)
 	va_end(args);
 }
 
-void log_continue(parameters *params, const char *fmt, ...)
+void log_continue(parameters_t *params, const char *fmt, ...)
 {
 	va_list args;
 
