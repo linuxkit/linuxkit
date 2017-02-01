@@ -1,4 +1,4 @@
-KERNEL_FILES=-C ../kernel/x86_64 kernel-headers.tar kernel-dev.tar kernel-modules.tar
+KERNEL_FILES=-C ../alpine/kernel/x86_64 kernel-headers.tar kernel-dev.tar kernel-modules.tar
 
 default: ebpf.tag
 

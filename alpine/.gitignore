@@ -1,9 +1,1 @@
-*.img
-*.tag
-*.iso
-*.vhd
-*.tar
-*.tar.gz
-/mobylinux-boot.vhdx
-/mobylinux.efi
 etc/moby-commit
