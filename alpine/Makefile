@@ -91,7 +91,7 @@ endif
 		--volumes-from gsutil-moby-config \
 		-v $(CURDIR)/gce.img.tar.gz:/gce.img.tar.gz \
 		google/cloud-sdk \
-		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-templates/latest/gce.img.tar.gz
+		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/latest/gce.img.tar.gz
 
 common: initrd.img kernel/x86_64/vmlinuz64
 
