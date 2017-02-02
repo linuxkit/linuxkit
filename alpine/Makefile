@@ -61,26 +61,26 @@ moby.img: Dockerfile etc usr init
 ../test/test.img:
 	$(MAKE) -C ../test
 
-kernel/x86_64/kernel.img:
-	$(MAKE) -C kernel
+../kernel/x86_64/kernel.img:
+	$(MAKE) -C ../kernel
 
-initrd.img: moby.img kernel/x86_64/kernel.img ../containers/container.img
+initrd.img: moby.img ../kernel/x86_64/kernel.img ../containers/container.img
 	cat $^ > $@
 
 initrd-test.img: initrd.img ../test/test.img
 	cat $^ > $@
 
 # outputs tarball of mobylinux-efi.iso mobylinux.efi
-mobylinux-efi.iso: initrd.img kernel/x86_64/vmlinuz64
-	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(EFI_IMAGE) | tar xf -
+mobylinux-efi.iso: initrd.img ../kernel/x86_64/vmlinuz64
+	tar cf - initrd.img -C ../kernel/x86_64 vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(EFI_IMAGE) | tar xf -
 
-mobylinux-bios.iso: initrd.img kernel/x86_64/vmlinuz64
-	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(BIOS_IMAGE) >$@
+mobylinux-bios.iso: initrd.img ../kernel/x86_64/vmlinuz64
+	tar cf - initrd.img -C ../kernel/x86_64 vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(BIOS_IMAGE) >$@
 
 gce: gce.img.tar.gz
 
-gce.img.tar.gz: initrd.img kernel/x86_64/vmlinuz64
-	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
+gce.img.tar.gz: initrd.img ../kernel/x86_64/vmlinuz64
+	tar cf - initrd.img -C ../kernel/x86_64 vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
 gce-upload:
 ifeq ($(FORCE_GSUTIL_AUTH),1)
@@ -93,11 +93,9 @@ endif
 		google/cloud-sdk \
 		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/latest/gce.img.tar.gz
 
-common: initrd.img kernel/x86_64/vmlinuz64
-
-ami: common
+ami: initrd.img ../kernel/x86_64/vmlinuz64
 	tar cf - \
-	  cloud initrd.img kernel/x86_64/vmlinuz64 \
+	  cloud initrd.img -C .. kernel/x86_64/vmlinuz64 \
 	  | \
 	  docker build -t moby-ami:build -f cloud/Dockerfile.ami -
 	# The EBS device seems not to show up without mounting in /dev, even
@@ -155,9 +153,9 @@ uploadvhd: azure
 		moby-azure:build \
 		uploadvhd >./cloud/azure/vhd_blob_url.out
 
-azure: common vhdartifact
+azure: initrd.img ../kernel/x86_64/vmlinuz64 vhdartifact
 	tar cf - \
-	  cloud initrd.img kernel/x86_64/vmlinuz64 \
+	  cloud initrd.img -C .. kernel/x86_64/vmlinuz64 \
 	  | \
 	  docker build -t moby-azure:build -f cloud/Dockerfile.azure -
 	tar cf - \
@@ -200,6 +198,5 @@ clean:
 	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
 	docker volume rm vhdartifact || true
 	$(MAKE) -C packages clean
-	$(MAKE) -C kernel clean
 
 .DELETE_ON_ERROR:
