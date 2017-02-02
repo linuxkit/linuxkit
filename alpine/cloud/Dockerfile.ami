@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-aws:da39a3ee5e6b4b0d3255bfef95601890afd80709:@sha256:70799a47473700b5000557f07c0c2b6d293b017a5388c21dd5abe94f6b878632
+FROM mobylinux/alpine-aws:da39a3ee5e6b4b0d3255bfef95601890afd80709@sha256:70799a47473700b5000557f07c0c2b6d293b017a5388c21dd5abe94f6b878632
 
 RUN mkdir /build
 RUN mkdir /scripts
