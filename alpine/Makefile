@@ -45,7 +45,7 @@ moby.img: Dockerfile etc usr init
 	  -C packages/9pmount-vsock sbin -C ../.. \
 	  -C packages/test etc -C ../.. \
 	  -C packages/iptables usr -C ../.. \
-	  -C packages/containerd etc usr -C ../.. \
+	  -C packages/containerd etc -C ../.. \
 	  -C packages/aws etc -C ../.. \
 	  -C packages/azure etc -C ../.. \
 	  -C packages/gcp etc -C ../.. \
