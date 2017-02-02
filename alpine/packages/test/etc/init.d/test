@@ -11,7 +11,7 @@ start()
 
 	ebegin "Running tests"
 
-	if ctr run --bundle /test test
+	if containerd-ctr containers start --no-pivot --attach test /test
 	then
 		printf "Moby test suite PASSED\n"
 	else

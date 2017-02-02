@@ -7,6 +7,11 @@ RUN \
   adduser -D -H -s /sbin/nologin dockremap
 
 COPY . .
+RUN cd /usr/bin && \
+  ln -s docker-runc runc && \
+  ln -s docker-containerd-shim containerd-shim && \
+  ln -s docker-containerd-ctr containerd-ctr && \
+  ln -s docker-containerd containerd
 
 RUN \
   rc-update add sysctl boot && \
