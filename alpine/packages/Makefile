@@ -1,4 +1,4 @@
-DEPS=proxy diagnostics transfused tap-vsockd docker nc-vsock vsudd 9pmount-vsock iptables containerd
+DEPS=proxy diagnostics transfused tap-vsockd docker nc-vsock vsudd 9pmount-vsock iptables
 .PHONY: clean $(DEPS)
 
 default: $(DEPS)
