@@ -26,7 +26,7 @@ start()
 
 	for f in /containers/*
 	do
-		ctr run --bundle "$f" "$(basename $f)" 2>$LOG >$LOG &
+		containerd-ctr containers start --no-pivot --attach "$(basename $f)" "$f" 2>$LOG >$LOG &
 		printf " $(basename $f)"
 	done
 

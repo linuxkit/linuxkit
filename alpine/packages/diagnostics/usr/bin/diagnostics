@@ -40,7 +40,7 @@ DIAGNOSTICS=$(ps -eo args | grep '^/usr/bin/diagnostics-server')
 [ $? -eq 0 ] && ok "Diagnostics server running: $DIAGNOSTICS\n" || fail "No diagnostics server\n"
 CONTAINERD=$(ps -eo args | grep '^/usr/bin/containerd')
 [ $? -eq 0 ] && ok "System containerd server running: $CONTAINERD\n" || fail "No containerd server\n"
-CONTAINERPS=$(ctr list 2>&1)
+CONTAINERPS=$(containerd-ctr containers 2>&1)
 [ $? -eq 0 ] && ok "System containerd working\n" || fail "containerd failed: $CONTAINERPS\n"
 
 exit $EXIT_STATUS

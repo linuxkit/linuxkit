@@ -19,8 +19,8 @@ docker rm ${CONTAINER}
 
 mkdir -p /var/log/nginx /var/cache/nginx
 
-ctr run --bundle . ${NAME}
-ctr list
+containerd-ctr containers start ${NAME} .
+containerd-ctr containers
 ```
 
 For production, you will want to create the `config.json` offline and bundle it in with your
