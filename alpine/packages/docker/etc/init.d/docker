@@ -121,6 +121,20 @@ start()
 
 	ewaitfile 20 ${pidfile} /var/run/docker.sock /var/run/docker/libcontainerd/docker-containerd.sock
 
+	# On desktop forward metrics to host if enabled in daemon.json
+	case "$(mobyplatform)" in
+	windows|mac)
+		METRICS_ADDR=$(cat /etc/docker/daemon.json | jq -r '."metrics-addr"')
+		if [ -n "$METRICS_ADDR" ]
+		then
+			METRICS_IP="$(echo "$METRICS_ADDR" | cut -d: -f1)"
+			METRICS_PORT="$(echo "$METRICS_ADDR" | cut -d: -f2)"
+			/usr/bin/slirp-proxy -proto tcp -host-ip 0.0.0.0 -host-port "$METRICS_PORT" -container-ip "$METRICS_IP" -container-port "$METRICS_PORT" -i -no-local-ip &
+		fi
+		;;
+	esac
+
+
 	eend $? "Failed to start docker"
 }
 
