@@ -36,14 +36,25 @@ qemu-gce: alpine/gce.img.tar.gz
 bin:
 	mkdir -p $@
 
+DOCKER_HYPERKIT=/Applications/Docker.app/Contents/MacOS/com.docker.hyperkit
+DOCKER_SLIRP=/Applications/Docker.app/Contents/MacOS/com.docker.slirp
+
 bin/com.docker.hyperkit: | bin
+ifneq ("$(wildcard $(DOCKER_HYPERKIT))","")
+	ln -s $(DOCKER_HYPERKIT) $@
+else
 	curl -fsSL https://circleci.com/api/v1/project/docker/hyperkit/latest/artifacts/0//Users/distiller/hyperkit/build/com.docker.hyperkit > $@
 	chmod a+x $@
+endif
 
 bin/com.docker.slirp: | bin
+ifneq ("$(wildcard $(DOCKER_SLIRP))","")
+	ln -s $(DOCKER_SLIRP) $@
+else
 	curl -fsSL https://circleci.com/api/v1/project/docker/vpnkit/latest/artifacts/0//Users/distiller/vpnkit/com.docker.slirp.tgz \
 		| tar xz --strip=2 -C $(dir $@) Contents/MacOS/com.docker.slirp
 	touch $@
+endif
 
 bin/regextract: | bin
 	curl -fsSL https://circleci.com/api/v1/project/justincormack/regextract/latest/artifacts/0/\$$CIRCLE_ARTIFACTS/darwin/amd64/regextract > $@
