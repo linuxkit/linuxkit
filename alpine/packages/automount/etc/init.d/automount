@@ -58,6 +58,9 @@ do_fsck_extend_mount()
 		blockdev --rereadpt $diskdev 2> /dev/null
 		mdev -s
 
+		# wait for device
+		for i in $(seq 1 50); do test -b "$DATA" && break || sleep .1; done
+
 		# resize2fs fails unless we use -f here
 		do_fsck -f "$DATA" || return 1
 		resize2fs "$DATA"
