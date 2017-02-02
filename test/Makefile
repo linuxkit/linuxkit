@@ -2,7 +2,7 @@ default: test.img
 
 RIDDLER=mobylinux/riddler:893c93bf54bc037f6952886330d5ba58746ace37@sha256:3d4a61555110be4b6e8ff6bcdcf5f8aa24d64564eb4162ea4e580d8916d083cc
 
-TEST_IMAGE=mobylinux/test:fc8e36cbd58b5e9078ae6aa57a348ca2fbec76dc@sha256:7155b16109270dc2d950f63279e5a682b2793b83bb26ff70c4783e6d723db5ba
+TEST_IMAGE=mobylinux/test:1a8c5de8ebfa27962f7623846e8538babdf48e76@sha256:7dada68bcb76e897a7a7aa2a28b6b1808b04e8eda7319e1da97bd1cff9952fee
 
 container.tar:
 	docker run --rm -v /var/run/docker.sock:/var/run/docker.sock $(RIDDLER) \
