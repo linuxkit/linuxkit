@@ -2,7 +2,7 @@
 
 set -e
 
-KERNEL="alpine/kernel/x86_64/vmlinuz64"
+KERNEL="kernel/x86_64/vmlinuz64"
 : ${INITRD:="alpine/initrd.img"}
 CMDLINE="earlyprintk=serial console=ttyS0"
 
