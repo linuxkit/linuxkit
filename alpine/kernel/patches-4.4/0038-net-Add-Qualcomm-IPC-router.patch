@@ -1,7 +1,7 @@
-From 9e184cb0991a4cc08cd7688f2d4e23740c60e382 Mon Sep 17 00:00:00 2001
+From 5565201c88f9c6a25b8ce9d064266c91adccdc5d Mon Sep 17 00:00:00 2001
 From: Courtney Cavin <courtney.cavin@sonymobile.com>
 Date: Wed, 27 Apr 2016 12:13:03 -0700
-Subject: [PATCH 38/42] net: Add Qualcomm IPC router
+Subject: [PATCH 38/44] net: Add Qualcomm IPC router
 
 Add an implementation of Qualcomm's IPC router protocol, used to
 communicate with service providing remote processors.
@@ -30,7 +30,7 @@ Origin: https://patchwork.ozlabs.org/patch/615774/
  create mode 100644 net/qrtr/smd.c
 
 diff --git a/include/linux/socket.h b/include/linux/socket.h
-index 4e1ea53..dbd81e7 100644
+index 4e1ea53aa329..dbd81e7f21fd 100644
 --- a/include/linux/socket.h
 +++ b/include/linux/socket.h
 @@ -201,8 +201,9 @@ struct ucred {
@@ -54,7 +54,7 @@ index 4e1ea53..dbd81e7 100644
  /* Maximum queue length specifiable by listen.  */
 diff --git a/include/uapi/linux/qrtr.h b/include/uapi/linux/qrtr.h
 new file mode 100644
-index 0000000..66c0748
+index 000000000000..66c0748d26e2
 --- /dev/null
 +++ b/include/uapi/linux/qrtr.h
 @@ -0,0 +1,12 @@
@@ -71,7 +71,7 @@ index 0000000..66c0748
 +
 +#endif /* _LINUX_QRTR_H */
 diff --git a/net/Kconfig b/net/Kconfig
-index b8439e6..1c9fda1 100644
+index b8439e61f9a0..1c9fda1c602d 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
 @@ -233,6 +233,7 @@ source "net/mpls/Kconfig"
@@ -83,7 +83,7 @@ index b8439e6..1c9fda1 100644
  config RPS
  	bool
 diff --git a/net/Makefile b/net/Makefile
-index 81d1411..bdd1455 100644
+index 81d14119eab5..bdd14553a774 100644
 --- a/net/Makefile
 +++ b/net/Makefile
 @@ -78,3 +78,4 @@ endif
@@ -93,7 +93,7 @@ index 81d1411..bdd1455 100644
 +obj-$(CONFIG_QRTR)		+= qrtr/
 diff --git a/net/qrtr/Kconfig b/net/qrtr/Kconfig
 new file mode 100644
-index 0000000..0c2619d
+index 000000000000..0c2619d068bd
 --- /dev/null
 +++ b/net/qrtr/Kconfig
 @@ -0,0 +1,24 @@
@@ -123,7 +123,7 @@ index 0000000..0c2619d
 +endif # QRTR
 diff --git a/net/qrtr/Makefile b/net/qrtr/Makefile
 new file mode 100644
-index 0000000..e282a84
+index 000000000000..e282a84ffc5c
 --- /dev/null
 +++ b/net/qrtr/Makefile
 @@ -0,0 +1,2 @@
@@ -131,7 +131,7 @@ index 0000000..e282a84
 +obj-$(CONFIG_QRTR_SMD) += smd.o
 diff --git a/net/qrtr/qrtr.c b/net/qrtr/qrtr.c
 new file mode 100644
-index 0000000..c985ecb
+index 000000000000..c985ecbe9bd6
 --- /dev/null
 +++ b/net/qrtr/qrtr.c
 @@ -0,0 +1,1007 @@
@@ -1144,7 +1144,7 @@ index 0000000..c985ecb
 +MODULE_LICENSE("GPL v2");
 diff --git a/net/qrtr/qrtr.h b/net/qrtr/qrtr.h
 new file mode 100644
-index 0000000..2b84871
+index 000000000000..2b848718f8fe
 --- /dev/null
 +++ b/net/qrtr/qrtr.h
 @@ -0,0 +1,31 @@
@@ -1181,7 +1181,7 @@ index 0000000..2b84871
 +#endif
 diff --git a/net/qrtr/smd.c b/net/qrtr/smd.c
 new file mode 100644
-index 0000000..84ebce7
+index 000000000000..84ebce73aa23
 --- /dev/null
 +++ b/net/qrtr/smd.c
 @@ -0,0 +1,117 @@
@@ -1303,5 +1303,5 @@ index 0000000..84ebce7
 +MODULE_DESCRIPTION("Qualcomm IPC-Router SMD interface driver");
 +MODULE_LICENSE("GPL v2");
 -- 
-2.10.0
+2.11.0
 

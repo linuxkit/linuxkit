@@ -1,7 +1,7 @@
-From 30e1801c9e9683512a0cd169edf015923497dd70 Mon Sep 17 00:00:00 2001
+From 6eecb6ff272b4931e019198880478b519b11a90e Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:35 +0100
-Subject: [PATCH 10/42] VSOCK: Add Makefile and Kconfig
+Subject: [PATCH 10/44] VSOCK: Add Makefile and Kconfig
 
 Enable virtio-vsock and vhost-vsock.
 
@@ -17,7 +17,7 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  4 files changed, 44 insertions(+)
 
 diff --git a/drivers/vhost/Kconfig b/drivers/vhost/Kconfig
-index 533eaf0..2b5f588 100644
+index 533eaf04f12f..2b5f588f5b1e 100644
 --- a/drivers/vhost/Kconfig
 +++ b/drivers/vhost/Kconfig
 @@ -21,6 +21,20 @@ config VHOST_SCSI
@@ -42,7 +42,7 @@ index 533eaf0..2b5f588 100644
  	tristate
  	---help---
 diff --git a/drivers/vhost/Makefile b/drivers/vhost/Makefile
-index e0441c3..6b012b9 100644
+index e0441c34db1c..6b012b986b57 100644
 --- a/drivers/vhost/Makefile
 +++ b/drivers/vhost/Makefile
 @@ -4,5 +4,9 @@ vhost_net-y := net.o
@@ -56,7 +56,7 @@ index e0441c3..6b012b9 100644
 +
  obj-$(CONFIG_VHOST)	+= vhost.o
 diff --git a/net/vmw_vsock/Kconfig b/net/vmw_vsock/Kconfig
-index 14810ab..8831e7c 100644
+index 14810abedc2e..8831e7c42167 100644
 --- a/net/vmw_vsock/Kconfig
 +++ b/net/vmw_vsock/Kconfig
 @@ -26,3 +26,23 @@ config VMWARE_VMCI_VSOCKETS
@@ -84,7 +84,7 @@ index 14810ab..8831e7c 100644
 +	  the virtio_vsock.  The module will be called
 +	  vmw_vsock_virtio_transport_common.
 diff --git a/net/vmw_vsock/Makefile b/net/vmw_vsock/Makefile
-index 2ce52d7..bc27c70 100644
+index 2ce52d70f224..bc27c70e0e59 100644
 --- a/net/vmw_vsock/Makefile
 +++ b/net/vmw_vsock/Makefile
 @@ -1,7 +1,13 @@
@@ -102,5 +102,5 @@ index 2ce52d7..bc27c70 100644
 +
 +vmw_vsock_virtio_transport_common-y += virtio_transport_common.o
 -- 
-2.10.0
+2.11.0
 

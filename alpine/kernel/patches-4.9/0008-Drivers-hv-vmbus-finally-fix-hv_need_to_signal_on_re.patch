@@ -1,0 +1,150 @@
+From 4e662fc5eed67dbc95569ee89fc628d27a1646d3 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Tue, 24 Jan 2017 06:54:46 +0000
+Subject: [PATCH 08/12] Drivers: hv: vmbus: finally fix
+ hv_need_to_signal_on_read()
+
+Commit a389fcfd2cb5 ("Drivers: hv: vmbus: Fix signaling logic in hv_need_to_signal_on_read()")
+added the proper mb(), but removed the test "prev_write_sz < pending_sz"
+when making the signal decision.
+
+As a result, the guest can signal the host unnecessarily,
+and then the host can throttle the guest because the host
+thinks the guest is buggy or malicious; finally the user
+running stress test can perceive intermittent freeze of
+the guest.
+
+This patch brings back the test, and properly handles the
+in-place consumption APIs used by NetVSC (see get_next_pkt_raw(),
+put_pkt_raw() and commit_rd_index()).
+
+Fixes: a389fcfd2cb5 ("Drivers: hv: vmbus: Fix signaling logic in hv_need_to_signal_on_read()")
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Reported-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
+Tested-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
+Cc: "K. Y. Srinivasan" <kys@microsoft.com>
+Cc: Haiyang Zhang <haiyangz@microsoft.com>
+Cc: Stephen Hemminger <sthemmin@microsoft.com>
+Cc: <stable@vger.kernel.org>
+Origin: https://patchwork.kernel.org/patch/9534107/
+---
+ drivers/hv/ring_buffer.c    |  1 +
+ drivers/net/hyperv/netvsc.c |  6 ++++++
+ include/linux/hyperv.h      | 32 ++++++++++++++++++++++++++++++--
+ 3 files changed, 37 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/hv/ring_buffer.c b/drivers/hv/ring_buffer.c
+index cd49cb17eb7f..308dbda700eb 100644
+--- a/drivers/hv/ring_buffer.c
++++ b/drivers/hv/ring_buffer.c
+@@ -383,6 +383,7 @@ int hv_ringbuffer_read(struct vmbus_channel *channel,
+ 		return ret;
+ 	}
+ 
++	init_cached_read_index(channel);
+ 	next_read_location = hv_get_next_read_location(inring_info);
+ 	next_read_location = hv_copyfrom_ringbuffer(inring_info, &desc,
+ 						    sizeof(desc),
+diff --git a/drivers/net/hyperv/netvsc.c b/drivers/net/hyperv/netvsc.c
+index 720b5fa9e625..c2ac39a940f7 100644
+--- a/drivers/net/hyperv/netvsc.c
++++ b/drivers/net/hyperv/netvsc.c
+@@ -1288,6 +1288,9 @@ void netvsc_channel_cb(void *context)
+ 	ndev = hv_get_drvdata(device);
+ 	buffer = get_per_channel_state(channel);
+ 
++	/* commit_rd_index() -> hv_signal_on_read() needs this. */
++	init_cached_read_index(channel);
++
+ 	do {
+ 		desc = get_next_pkt_raw(channel);
+ 		if (desc != NULL) {
+@@ -1340,6 +1343,9 @@ void netvsc_channel_cb(void *context)
+ 
+ 			bufferlen = bytes_recvd;
+ 		}
++
++		init_cached_read_index(channel);
++
+ 	} while (1);
+ 
+ 	if (bufferlen > NETVSC_PACKET_SIZE)
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index 5343b7406acc..e34da6846348 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -128,6 +128,7 @@ struct hv_ring_buffer_info {
+ 	u32 ring_data_startoffset;
+ 	u32 priv_write_index;
+ 	u32 priv_read_index;
++	u32 cached_read_index;
+ };
+ 
+ /*
+@@ -180,6 +181,19 @@ static inline u32 hv_get_bytes_to_write(struct hv_ring_buffer_info *rbi)
+ 	return write;
+ }
+ 
++static inline u32 hv_get_cached_bytes_to_write(
++	const struct hv_ring_buffer_info *rbi)
++{
++	u32 read_loc, write_loc, dsize, write;
++
++	dsize = rbi->ring_datasize;
++	read_loc = rbi->cached_read_index;
++	write_loc = rbi->ring_buffer->write_index;
++
++	write = write_loc >= read_loc ? dsize - (write_loc - read_loc) :
++		read_loc - write_loc;
++	return write;
++}
+ /*
+  * VMBUS version is 32 bit entity broken up into
+  * two 16 bit quantities: major_number. minor_number.
+@@ -1482,7 +1496,7 @@ hv_get_ring_buffer(struct hv_ring_buffer_info *ring_info)
+ 
+ static inline  void hv_signal_on_read(struct vmbus_channel *channel)
+ {
+-	u32 cur_write_sz;
++	u32 cur_write_sz, cached_write_sz;
+ 	u32 pending_sz;
+ 	struct hv_ring_buffer_info *rbi = &channel->inbound;
+ 
+@@ -1506,12 +1520,24 @@ static inline  void hv_signal_on_read(struct vmbus_channel *channel)
+ 
+ 	cur_write_sz = hv_get_bytes_to_write(rbi);
+ 
+-	if (cur_write_sz >= pending_sz)
++	if (cur_write_sz < pending_sz)
++		return;
++
++	cached_write_sz = hv_get_cached_bytes_to_write(rbi);
++	if (cached_write_sz < pending_sz)
+ 		vmbus_setevent(channel);
+ 
+ 	return;
+ }
+ 
++static inline void
++init_cached_read_index(struct vmbus_channel *channel)
++{
++	struct hv_ring_buffer_info *rbi = &channel->inbound;
++
++	rbi->cached_read_index = rbi->ring_buffer->read_index;
++}
++
+ /*
+  * An API to support in-place processing of incoming VMBUS packets.
+  */
+@@ -1573,6 +1599,8 @@ static inline void put_pkt_raw(struct vmbus_channel *channel,
+  * This call commits the read index and potentially signals the host.
+  * Here is the pattern for using the "in-place" consumption APIs:
+  *
++ * init_cached_read_index();
++ *
+  * while (get_next_pkt_raw() {
+  *	process the packet "in-place";
+  *	put_pkt_raw();
+-- 
+2.11.0
+

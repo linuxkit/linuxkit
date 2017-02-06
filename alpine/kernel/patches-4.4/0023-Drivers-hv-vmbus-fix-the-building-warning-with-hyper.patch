@@ -1,7 +1,7 @@
-From 4c754b011766c2d8a99424637656ea8096d55890 Mon Sep 17 00:00:00 2001
+From 1391ff6973074b30f917970e0c38ef9207cd66d8 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Dec 2015 12:21:22 -0800
-Subject: [PATCH 23/42] Drivers: hv: vmbus: fix the building warning with
+Subject: [PATCH 23/44] Drivers: hv: vmbus: fix the building warning with
  hyperv-keyboard
 
 With the recent change af3ff643ea91ba64dd8d0b1cbed54d44512f96cd
@@ -28,7 +28,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 8 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/input/serio/hyperv-keyboard.c b/drivers/input/serio/hyperv-keyboard.c
-index e74e5d6..c948866 100644
+index e74e5d6e5f9f..c948866edf87 100644
 --- a/drivers/input/serio/hyperv-keyboard.c
 +++ b/drivers/input/serio/hyperv-keyboard.c
 @@ -412,16 +412,6 @@ static int hv_kbd_remove(struct hv_device *hv_dev)
@@ -49,7 +49,7 @@ index e74e5d6..c948866 100644
  	/* Keyboard guid */
  	{ HV_KBD_GUID, },
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 4712d7d..9e2de6a 100644
+index 4712d7d07b8c..9e2de6a7cc96 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1091,6 +1091,14 @@ int vmbus_allocate_mmio(struct resource **new, struct hv_device *device_obj,
@@ -68,5 +68,5 @@ index 4712d7d..9e2de6a 100644
   */
  #define HV_VSS_GUID \
 -- 
-2.10.0
+2.11.0
 

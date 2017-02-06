@@ -1,7 +1,7 @@
-From 6dd9db116b0985dfc56b3028205549f4c52d8be0 Mon Sep 17 00:00:00 2001
+From b000aea3b2148f409df6cf1a358daaac48b3282a Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:42 -0800
-Subject: [PATCH 31/42] Drivers: hv: vmbus: add a per-channel rescind callback
+Subject: [PATCH 31/44] Drivers: hv: vmbus: add a per-channel rescind callback
 
 This will be used by the coming hv_sock driver.
 
@@ -15,7 +15,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 20 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 60ca25b..76864c9 100644
+index 60ca25b93b4c..76864c98a110 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -741,6 +741,10 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
@@ -41,7 +41,7 @@ index 60ca25b..76864c9 100644
 +}
 +EXPORT_SYMBOL_GPL(vmbus_set_chn_rescind_callback);
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 05966e2..ad04017 100644
+index 05966e279ec8..ad04017ba06f 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -768,6 +768,12 @@ struct vmbus_channel {
@@ -68,5 +68,5 @@ index 05966e2..ad04017 100644
   * Retrieve the (sub) channel on which to send an outgoing request.
   * When a primary channel has multiple sub-channels, we choose a
 -- 
-2.10.0
+2.11.0
 

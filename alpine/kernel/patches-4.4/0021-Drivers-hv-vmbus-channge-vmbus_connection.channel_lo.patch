@@ -1,7 +1,7 @@
-From e34354b98924dba0128289e722bde4ca35eafa90 Mon Sep 17 00:00:00 2001
+From 01ddf13654bcea824dc2d1d3f16d1fad0a93e9c0 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:51 -0800
-Subject: [PATCH 21/42] Drivers: hv: vmbus: channge
+Subject: [PATCH 21/44] Drivers: hv: vmbus: channge
  vmbus_connection.channel_lock to mutex
 
 spinlock is unnecessary here.
@@ -18,7 +18,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  3 files changed, 10 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 8529dd2..306c7df 100644
+index 8529dd2ebc3d..306c7dff6c77 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -207,9 +207,9 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
@@ -64,7 +64,7 @@ index 8529dd2..306c7df 100644
  	if (newchannel->target_cpu != get_cpu()) {
  		put_cpu();
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index 4fc2e88..521f48e 100644
+index 4fc2e8836e60..521f48ed188e 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
 @@ -146,7 +146,7 @@ int vmbus_connect(void)
@@ -99,7 +99,7 @@ index 4fc2e88..521f48e 100644
  	return found_channel;
  }
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 12156db..50b1de7 100644
+index 12156db2e88e..50b1de7439cf 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -683,7 +683,7 @@ struct vmbus_connection {
@@ -112,5 +112,5 @@ index 12156db..50b1de7 100644
  	struct workqueue_struct *work_queue;
  };
 -- 
-2.10.0
+2.11.0
 

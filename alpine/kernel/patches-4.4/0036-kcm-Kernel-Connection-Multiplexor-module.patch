@@ -1,7 +1,7 @@
-From afde92b79d7bbdf25d3f583898cbee4773b07d41 Mon Sep 17 00:00:00 2001
+From 1a2b165efc132d750c2e0de8c3fa1a07ec08b28d Mon Sep 17 00:00:00 2001
 From: Tom Herbert <tom@herbertland.com>
 Date: Mon, 7 Mar 2016 14:11:06 -0800
-Subject: [PATCH 36/42] kcm: Kernel Connection Multiplexor module
+Subject: [PATCH 36/44] kcm: Kernel Connection Multiplexor module
 
 This module implements the Kernel Connection Multiplexor.
 
@@ -32,7 +32,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  create mode 100644 net/kcm/kcmsock.c
 
 diff --git a/include/linux/socket.h b/include/linux/socket.h
-index 5bf59c8..4e1ea53 100644
+index 5bf59c8493b7..4e1ea53aa329 100644
 --- a/include/linux/socket.h
 +++ b/include/linux/socket.h
 @@ -200,7 +200,9 @@ struct ucred {
@@ -64,7 +64,7 @@ index 5bf59c8..4e1ea53 100644
  #define IPX_TYPE	1
 diff --git a/include/net/kcm.h b/include/net/kcm.h
 new file mode 100644
-index 0000000..1bcae39
+index 000000000000..1bcae39070ec
 --- /dev/null
 +++ b/include/net/kcm.h
 @@ -0,0 +1,125 @@
@@ -195,7 +195,7 @@ index 0000000..1bcae39
 +#endif /* __NET_KCM_H_ */
 diff --git a/include/uapi/linux/kcm.h b/include/uapi/linux/kcm.h
 new file mode 100644
-index 0000000..d72350f
+index 000000000000..d72350fd048d
 --- /dev/null
 +++ b/include/uapi/linux/kcm.h
 @@ -0,0 +1,39 @@
@@ -239,7 +239,7 @@ index 0000000..d72350f
 +
 +#endif
 diff --git a/net/Kconfig b/net/Kconfig
-index 127da94..b8439e6 100644
+index 127da94ae25e..b8439e61f9a0 100644
 --- a/net/Kconfig
 +++ b/net/Kconfig
 @@ -351,6 +351,7 @@ source "net/can/Kconfig"
@@ -251,7 +251,7 @@ index 127da94..b8439e6 100644
  config FIB_RULES
  	bool
 diff --git a/net/Makefile b/net/Makefile
-index a5d0409..81d1411 100644
+index a5d04098dfce..81d14119eab5 100644
 --- a/net/Makefile
 +++ b/net/Makefile
 @@ -34,6 +34,7 @@ obj-$(CONFIG_IRDA)		+= irda/
@@ -264,7 +264,7 @@ index a5d0409..81d1411 100644
  obj-$(CONFIG_DECNET)		+= decnet/
 diff --git a/net/kcm/Kconfig b/net/kcm/Kconfig
 new file mode 100644
-index 0000000..4f28332
+index 000000000000..4f28332c7f15
 --- /dev/null
 +++ b/net/kcm/Kconfig
 @@ -0,0 +1,9 @@
@@ -279,7 +279,7 @@ index 0000000..4f28332
 +	  protocol over kernel connectons (e.g. TCP connections).
 diff --git a/net/kcm/Makefile b/net/kcm/Makefile
 new file mode 100644
-index 0000000..cb525f7
+index 000000000000..cb525f7c5a13
 --- /dev/null
 +++ b/net/kcm/Makefile
 @@ -0,0 +1,3 @@
@@ -288,7 +288,7 @@ index 0000000..cb525f7
 +kcm-y := kcmsock.o
 diff --git a/net/kcm/kcmsock.c b/net/kcm/kcmsock.c
 new file mode 100644
-index 0000000..649d246
+index 000000000000..649d246c6799
 --- /dev/null
 +++ b/net/kcm/kcmsock.c
 @@ -0,0 +1,2015 @@
@@ -2308,5 +2308,5 @@ index 0000000..649d246
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS_NETPROTO(PF_KCM);
 -- 
-2.10.0
+2.11.0
 

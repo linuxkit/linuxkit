@@ -1,7 +1,7 @@
-From 01a403dce6afb34dd0430e12d93b7acd5f384439 Mon Sep 17 00:00:00 2001
+From ee1d1bdcb41f3925aed5e93a361bd8d1bd2929a4 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:44 -0800
-Subject: [PATCH 18/42] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing
+Subject: [PATCH 18/44] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing
  GUIDs
 
 Use uuid_le_cmp() for comparing GUIDs.
@@ -15,7 +15,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 339277b..9b4525c 100644
+index 339277b76468..9b4525c56376 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -409,8 +409,7 @@ static void init_vp_index(struct vmbus_channel *channel, const uuid_le *type_gui
@@ -29,7 +29,7 @@ index 339277b..9b4525c 100644
  			break;
  		}
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 6ce2bf8..7973aa5 100644
+index 6ce2bf81dae3..7973aa55fec8 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -535,7 +535,7 @@ static const uuid_le null_guid;
@@ -51,5 +51,5 @@ index 6ce2bf8..7973aa5 100644
  
  	return NULL;
 -- 
-2.10.0
+2.11.0
 

@@ -1,8 +1,8 @@
-From b5faf9d0201a0c720c25f23dab06d07693558c45 Mon Sep 17 00:00:00 2001
+From 550e05bf72b6be4bc525b0274c02fc00c2d20e52 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:07 -0800
-Subject: [PATCH 4/7] Drivers: hv: utils: Fix the mapping between host version
- and protocol to use
+Subject: [PATCH 04/12] Drivers: hv: utils: Fix the mapping between host
+ version and protocol to use
 
 We should intentionally declare the protocols to use for every known host
 and default to using the latest protocol if the host is unknown or new.
