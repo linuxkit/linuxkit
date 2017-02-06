@@ -1,12 +1,3 @@
 FROM mobylinux/toybox-media:0a26fe5f574e444849983f9c4148ef74b3804d55@sha256:5ac38f77b66deb194c9016591b9b096e81fcdc9f7c3e6d01566294a6b4b4ebd2
 
-ADD \
-  alpine/initrd.img \
-  alpine/initrd-test.img \
-  kernel/x86_64/vmlinuz64 \
-  kernel/x86_64/vmlinux \
-  kernel/x86_64/kernel-headers.tar \
-  kernel/x86_64/kernel-dev.tar \
-  alpine/mobylinux-efi.iso \
-  alpine/mobylinux.efi \
-  / 
+ADD . /
