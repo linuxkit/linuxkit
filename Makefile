@@ -60,16 +60,16 @@ bin/regextract: | bin
 	curl -fsSL https://circleci.com/api/v1/project/justincormack/regextract/latest/artifacts/0/\$$CIRCLE_ARTIFACTS/darwin/amd64/regextract > $@
 	chmod a+x $@
 
-hyperkit: hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd.img kernel/x86_64/vmlinuz64
-	./hyperkit.sh
+hyperkit: scripts/hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd.img kernel/x86_64/vmlinuz64
+	./scripts/hyperkit.sh
 
 define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
 endef
 
-hyperkit-test: hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd-test.img kernel/x86_64/vmlinuz64
+hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd-test.img kernel/x86_64/vmlinuz64
 	rm -f disk.img
-	INITRD=alpine/initrd-test.img script -q /dev/null ./hyperkit.sh | tee test.log
+	INITRD=alpine/initrd-test.img script -q /dev/null ./scripts/hyperkit.sh | tee test.log
 	$(call check_test_log, test.log)
 
 test: alpine/initrd-test.img kernel/x86_64/vmlinuz64
