@@ -1,7 +1,7 @@
-From 816c87fe6ecfa46981c0ca332d21f1e0d8bfd8a0 Mon Sep 17 00:00:00 2001
+From 4796e1fe473b506ba6f9268cae7e8da03e7af1d8 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:31 +0100
-Subject: [PATCH 06/42] VSOCK: defer sock removal to transports
+Subject: [PATCH 06/44] VSOCK: defer sock removal to transports
 
 The virtio transport will implement graceful shutdown and the related
 SO_LINGER socket option.  This requires orphaning the sock but keeping
@@ -20,7 +20,7 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  3 files changed, 13 insertions(+), 6 deletions(-)
 
 diff --git a/include/net/af_vsock.h b/include/net/af_vsock.h
-index 23f5525..3af0b22 100644
+index 23f55259b60d..3af0b224f754 100644
 --- a/include/net/af_vsock.h
 +++ b/include/net/af_vsock.h
 @@ -180,6 +180,7 @@ void vsock_remove_connected(struct vsock_sock *vsk);
@@ -32,7 +32,7 @@ index 23f5525..3af0b22 100644
  
  #endif /* __AF_VSOCK_H__ */
 diff --git a/net/vmw_vsock/af_vsock.c b/net/vmw_vsock/af_vsock.c
-index e34d96f..17dbbe6 100644
+index e34d96f8bde2..17dbbe64cd73 100644
 --- a/net/vmw_vsock/af_vsock.c
 +++ b/net/vmw_vsock/af_vsock.c
 @@ -344,6 +344,16 @@ static bool vsock_in_connected_table(struct vsock_sock *vsk)
@@ -66,7 +66,7 @@ index e34d96f..17dbbe6 100644
  
  		lock_sock(sk);
 diff --git a/net/vmw_vsock/vmci_transport.c b/net/vmw_vsock/vmci_transport.c
-index 0a369bb..706991e 100644
+index 0a369bb440e7..706991e00e93 100644
 --- a/net/vmw_vsock/vmci_transport.c
 +++ b/net/vmw_vsock/vmci_transport.c
 @@ -1644,6 +1644,8 @@ static void vmci_transport_destruct(struct vsock_sock *vsk)
@@ -79,5 +79,5 @@ index 0a369bb..706991e 100644
  		vmci_datagram_destroy_handle(vmci_trans(vsk)->dg_handle);
  		vmci_trans(vsk)->dg_handle = VMCI_INVALID_HANDLE;
 -- 
-2.10.0
+2.11.0
 

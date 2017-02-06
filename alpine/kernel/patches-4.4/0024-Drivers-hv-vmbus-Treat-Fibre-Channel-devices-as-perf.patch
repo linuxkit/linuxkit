@@ -1,7 +1,7 @@
-From 6cb1a2f24c7b049f8a0c259afa4f5de37ac84084 Mon Sep 17 00:00:00 2001
+From d1750564e8aad31593d1dc8621edd79f7ab50031 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Tue, 15 Dec 2015 16:27:27 -0800
-Subject: [PATCH 24/42] Drivers: hv: vmbus: Treat Fibre Channel devices as
+Subject: [PATCH 24/44] Drivers: hv: vmbus: Treat Fibre Channel devices as
  performance critical
 
 For performance critical devices, we distribute the incoming
@@ -17,7 +17,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  1 file changed, 3 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 306c7df..763d0c1 100644
+index 306c7dff6c77..763d0c19c16f 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -362,6 +362,7 @@ err_free_chan:
@@ -38,5 +38,5 @@ index 306c7df..763d0c1 100644
  	{ HV_NIC_GUID, },
  	/* NetworkDirect Guest RDMA */
 -- 
-2.10.0
+2.11.0
 

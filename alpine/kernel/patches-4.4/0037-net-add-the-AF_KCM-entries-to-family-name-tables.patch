@@ -1,7 +1,7 @@
-From 2f2e6e31ed1b82f1658139e0abe7155ee3755da1 Mon Sep 17 00:00:00 2001
+From db99c3e4c5996421990fb988b1969351cfc9a9a3 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Mar 2016 02:51:09 -0700
-Subject: [PATCH 37/42] net: add the AF_KCM entries to family name tables
+Subject: [PATCH 37/44] net: add the AF_KCM entries to family name tables
 
 This is for the recent kcm driver, which introduces AF_KCM(41) in
 b7ac4eb(kcm: Kernel Connection Multiplexor module).
@@ -14,7 +14,7 @@ Origin: https://patchwork.ozlabs.org/patch/600006
  1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/net/core/sock.c b/net/core/sock.c
-index 0d91f7d..925def4 100644
+index f4c0917e66b5..ba24aeb6999c 100644
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
 @@ -263,7 +263,8 @@ static const char *const af_family_key_strings[AF_MAX+1] = {
@@ -48,5 +48,5 @@ index 0d91f7d..925def4 100644
  
  /*
 -- 
-2.10.0
+2.11.0
 

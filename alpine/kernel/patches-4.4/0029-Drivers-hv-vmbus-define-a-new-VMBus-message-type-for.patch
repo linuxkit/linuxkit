@@ -1,7 +1,7 @@
-From 2c5183043209906ad0a41fb1a5b4d0c4c8a8e735 Mon Sep 17 00:00:00 2001
+From b6cfb4c6ee1271f99ddec40476f8ac005ac46a72 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:40 -0800
-Subject: [PATCH 29/42] Drivers: hv: vmbus: define a new VMBus message type for
+Subject: [PATCH 29/44] Drivers: hv: vmbus: define a new VMBus message type for
  hvsock
 
 A function to send the type of message is also added.
@@ -20,7 +20,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  3 files changed, 32 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 128dcf2..415f6c7 100644
+index 128dcf22e459..415f6c7d92a6 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
 @@ -219,6 +219,21 @@ error0:
@@ -46,7 +46,7 @@ index 128dcf2..415f6c7 100644
   * create_gpadl_header - Creates a gpadl for the specified buffer
   */
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index d6c6114..60ca25b 100644
+index d6c611457601..60ca25b93b4c 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -958,6 +958,10 @@ struct vmbus_channel_message_table_entry
@@ -61,7 +61,7 @@ index d6c6114..60ca25b 100644
  
  /*
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index a4f105d..191bc5d 100644
+index a4f105d55881..191bc5d0ffbf 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -394,6 +394,10 @@ enum vmbus_channel_message_type {
@@ -97,5 +97,5 @@ index a4f105d..191bc5d 100644
 +				  const uuid_le *shv_host_servie_id);
  #endif /* _HYPERV_H */
 -- 
-2.10.0
+2.11.0
 

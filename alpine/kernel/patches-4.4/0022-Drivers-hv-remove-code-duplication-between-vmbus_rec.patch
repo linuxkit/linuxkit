@@ -1,7 +1,7 @@
-From 91a65c691fc22cc6bfb884dea29cc7c5c3e5f9a9 Mon Sep 17 00:00:00 2001
+From ea36e149bb07676f2752cd718cea6d435074eb74 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Mon, 14 Dec 2015 19:02:00 -0800
-Subject: [PATCH 22/42] Drivers: hv: remove code duplication between
+Subject: [PATCH 22/44] Drivers: hv: remove code duplication between
  vmbus_recvpacket()/vmbus_recvpacket_raw()
 
 vmbus_recvpacket() and vmbus_recvpacket_raw() are almost identical but
@@ -21,7 +21,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  1 file changed, 22 insertions(+), 43 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 2889d97..dd6de7f 100644
+index 2889d97c03b1..dd6de7fc442f 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
 @@ -922,8 +922,10 @@ EXPORT_SYMBOL_GPL(vmbus_sendpacket_multipagebuffer);
@@ -122,5 +122,5 @@ index 2889d97..dd6de7f 100644
  }
  EXPORT_SYMBOL_GPL(vmbus_recvpacket_raw);
 -- 
-2.10.0
+2.11.0
 

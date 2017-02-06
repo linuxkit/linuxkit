@@ -1,7 +1,7 @@
-From b7da2c01ddbb00ed9ccdd3d646f6129f07016cf8 Mon Sep 17 00:00:00 2001
+From 4a409111d98dd8fd1431fe862f64c56dd1bf36f7 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Mar 2016 02:53:08 -0700
-Subject: [PATCH 40/42] net: add the AF_HYPERV entries to family name tables
+Subject: [PATCH 40/44] net: add the AF_HYPERV entries to family name tables
 
 This is for the hv_sock driver, which introduces AF_HYPERV(42).
 
@@ -14,7 +14,7 @@ Origin: https://patchwork.ozlabs.org/patch/600009
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/net/core/sock.c b/net/core/sock.c
-index 925def4..323f7a3 100644
+index ba24aeb6999c..c75ebeec3290 100644
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
 @@ -264,7 +264,7 @@ static const char *const af_family_key_strings[AF_MAX+1] = {
@@ -45,5 +45,5 @@ index 925def4..323f7a3 100644
  
  /*
 -- 
-2.10.0
+2.11.0
 

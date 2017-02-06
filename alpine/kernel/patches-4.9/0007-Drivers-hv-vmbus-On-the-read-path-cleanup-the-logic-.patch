@@ -1,0 +1,142 @@
+From 983afbbd6d063c25e8bb8b4e0cbaa840e7ddb0b6 Mon Sep 17 00:00:00 2001
+From: "K. Y. Srinivasan" <kys@microsoft.com>
+Date: Sun, 6 Nov 2016 13:14:18 -0800
+Subject: [PATCH 07/12] Drivers: hv: vmbus: On the read path cleanup the logic
+ to interrupt the host
+
+Signal the host when we determine the host is to be signaled -
+on th read path. The currrent code determines the need to signal in the
+ringbuffer code and actually issues the signal elsewhere. This can result
+in the host viewing this interrupt as spurious since the host may also
+poll the channel. Make the necessary adjustments.
+
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 3372592a140db69fd63837e81f048ab4abf8111e)
+---
+ drivers/hv/channel.c      | 11 ++---------
+ drivers/hv/hyperv_vmbus.h |  4 ++--
+ drivers/hv/ring_buffer.c  |  7 ++++---
+ include/linux/hyperv.h    | 12 ++++++------
+ 4 files changed, 14 insertions(+), 20 deletions(-)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index 8a8148f7b842..5fb4c6d9209b 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -879,16 +879,9 @@ __vmbus_recvpacket(struct vmbus_channel *channel, void *buffer,
+ 		   u32 bufferlen, u32 *buffer_actual_len, u64 *requestid,
+ 		   bool raw)
+ {
+-	int ret;
+-	bool signal = false;
+-
+-	ret = hv_ringbuffer_read(&channel->inbound, buffer, bufferlen,
+-				 buffer_actual_len, requestid, &signal, raw);
++	return hv_ringbuffer_read(channel, buffer, bufferlen,
++				  buffer_actual_len, requestid, raw);
+ 
+-	if (signal)
+-		vmbus_setevent(channel);
+-
+-	return ret;
+ }
+ 
+ int vmbus_recvpacket(struct vmbus_channel *channel, void *buffer,
+diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
+index fa782e13c8da..2b13f2a0a71e 100644
+--- a/drivers/hv/hyperv_vmbus.h
++++ b/drivers/hv/hyperv_vmbus.h
+@@ -532,9 +532,9 @@ int hv_ringbuffer_write(struct vmbus_channel *channel,
+ 		    u32 kv_count, bool lock,
+ 		    bool kick_q);
+ 
+-int hv_ringbuffer_read(struct hv_ring_buffer_info *inring_info,
++int hv_ringbuffer_read(struct vmbus_channel *channel,
+ 		       void *buffer, u32 buflen, u32 *buffer_actual_len,
+-		       u64 *requestid, bool *signal, bool raw);
++		       u64 *requestid, bool raw);
+ 
+ void hv_ringbuffer_get_debuginfo(struct hv_ring_buffer_info *ring_info,
+ 			    struct hv_ring_buffer_debug_info *debug_info);
+diff --git a/drivers/hv/ring_buffer.c b/drivers/hv/ring_buffer.c
+index 4af71306d0ff..cd49cb17eb7f 100644
+--- a/drivers/hv/ring_buffer.c
++++ b/drivers/hv/ring_buffer.c
+@@ -353,9 +353,9 @@ int hv_ringbuffer_write(struct vmbus_channel *channel,
+ 	return 0;
+ }
+ 
+-int hv_ringbuffer_read(struct hv_ring_buffer_info *inring_info,
++int hv_ringbuffer_read(struct vmbus_channel *channel,
+ 		       void *buffer, u32 buflen, u32 *buffer_actual_len,
+-		       u64 *requestid, bool *signal, bool raw)
++		       u64 *requestid, bool raw)
+ {
+ 	u32 bytes_avail_toread;
+ 	u32 next_read_location = 0;
+@@ -364,6 +364,7 @@ int hv_ringbuffer_read(struct hv_ring_buffer_info *inring_info,
+ 	u32 offset;
+ 	u32 packetlen;
+ 	int ret = 0;
++	struct hv_ring_buffer_info *inring_info = &channel->inbound;
+ 
+ 	if (buflen <= 0)
+ 		return -EINVAL;
+@@ -421,7 +422,7 @@ int hv_ringbuffer_read(struct hv_ring_buffer_info *inring_info,
+ 	/* Update the read index */
+ 	hv_set_next_read_location(inring_info, next_read_location);
+ 
+-	*signal = hv_need_to_signal_on_read(inring_info);
++	hv_signal_on_read(channel);
+ 
+ 	return ret;
+ }
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index 9a2d657a7fe7..5343b7406acc 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -1480,10 +1480,11 @@ hv_get_ring_buffer(struct hv_ring_buffer_info *ring_info)
+  *    there is room for the producer to send the pending packet.
+  */
+ 
+-static inline  bool hv_need_to_signal_on_read(struct hv_ring_buffer_info *rbi)
++static inline  void hv_signal_on_read(struct vmbus_channel *channel)
+ {
+ 	u32 cur_write_sz;
+ 	u32 pending_sz;
++	struct hv_ring_buffer_info *rbi = &channel->inbound;
+ 
+ 	/*
+ 	 * Issue a full memory barrier before making the signaling decision.
+@@ -1501,14 +1502,14 @@ static inline  bool hv_need_to_signal_on_read(struct hv_ring_buffer_info *rbi)
+ 	pending_sz = READ_ONCE(rbi->ring_buffer->pending_send_sz);
+ 	/* If the other end is not blocked on write don't bother. */
+ 	if (pending_sz == 0)
+-		return false;
++		return;
+ 
+ 	cur_write_sz = hv_get_bytes_to_write(rbi);
+ 
+ 	if (cur_write_sz >= pending_sz)
+-		return true;
++		vmbus_setevent(channel);
+ 
+-	return false;
++	return;
+ }
+ 
+ /*
+@@ -1590,8 +1591,7 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
+ 	virt_rmb();
+ 	ring_info->ring_buffer->read_index = ring_info->priv_read_index;
+ 
+-	if (hv_need_to_signal_on_read(ring_info))
+-		vmbus_set_event(channel);
++	hv_signal_on_read(channel);
+ }
+ 
+ struct vmpipe_proto_header {
+-- 
+2.11.0
+

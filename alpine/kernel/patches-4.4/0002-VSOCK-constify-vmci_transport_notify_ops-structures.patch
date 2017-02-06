@@ -1,7 +1,7 @@
-From 8dc15fd8fab55e076a640d1a5d6f34b77e196632 Mon Sep 17 00:00:00 2001
+From a4e4e50474fe9699ae86bda2f6158a9b17b55ce6 Mon Sep 17 00:00:00 2001
 From: Julia Lawall <julia.lawall@lip6.fr>
 Date: Sat, 21 Nov 2015 18:39:17 +0100
-Subject: [PATCH 02/42] VSOCK: constify vmci_transport_notify_ops structures
+Subject: [PATCH 02/44] VSOCK: constify vmci_transport_notify_ops structures
 
 The vmci_transport_notify_ops structures are never modified, so declare
 them as const.
@@ -19,7 +19,7 @@ Signed-off-by: David S. Miller <davem@davemloft.net>
  4 files changed, 6 insertions(+), 5 deletions(-)
 
 diff --git a/net/vmw_vsock/vmci_transport.h b/net/vmw_vsock/vmci_transport.h
-index 2ad46f3..1820e74 100644
+index 2ad46f39649f..1820e74a5752 100644
 --- a/net/vmw_vsock/vmci_transport.h
 +++ b/net/vmw_vsock/vmci_transport.h
 @@ -121,7 +121,7 @@ struct vmci_transport {
@@ -32,7 +32,7 @@ index 2ad46f3..1820e74 100644
  	struct sock *sk;
  	spinlock_t lock; /* protects sk. */
 diff --git a/net/vmw_vsock/vmci_transport_notify.c b/net/vmw_vsock/vmci_transport_notify.c
-index 9b7f207..fd8cf02 100644
+index 9b7f207f2bee..fd8cf0214d51 100644
 --- a/net/vmw_vsock/vmci_transport_notify.c
 +++ b/net/vmw_vsock/vmci_transport_notify.c
 @@ -661,7 +661,7 @@ static void vmci_transport_notify_pkt_process_negotiate(struct sock *sk)
@@ -45,7 +45,7 @@ index 9b7f207..fd8cf02 100644
  	vmci_transport_notify_pkt_socket_destruct,
  	vmci_transport_notify_pkt_poll_in,
 diff --git a/net/vmw_vsock/vmci_transport_notify.h b/net/vmw_vsock/vmci_transport_notify.h
-index 7df7932..3c464d3 100644
+index 7df793249b6c..3c464d394a8f 100644
 --- a/net/vmw_vsock/vmci_transport_notify.h
 +++ b/net/vmw_vsock/vmci_transport_notify.h
 @@ -77,7 +77,8 @@ struct vmci_transport_notify_ops {
@@ -60,7 +60,7 @@ index 7df7932..3c464d3 100644
  
  #endif /* __VMCI_TRANSPORT_NOTIFY_H__ */
 diff --git a/net/vmw_vsock/vmci_transport_notify_qstate.c b/net/vmw_vsock/vmci_transport_notify_qstate.c
-index dc9c792..21e591d 100644
+index dc9c7929a2f9..21e591dafb03 100644
 --- a/net/vmw_vsock/vmci_transport_notify_qstate.c
 +++ b/net/vmw_vsock/vmci_transport_notify_qstate.c
 @@ -419,7 +419,7 @@ vmci_transport_notify_pkt_send_pre_enqueue(
@@ -73,5 +73,5 @@ index dc9c792..21e591d 100644
  	vmci_transport_notify_pkt_socket_destruct,
  	vmci_transport_notify_pkt_poll_in,
 -- 
-2.10.0
+2.11.0
 

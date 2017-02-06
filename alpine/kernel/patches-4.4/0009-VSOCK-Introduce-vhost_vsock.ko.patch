@@ -1,7 +1,7 @@
-From a0af1060ea091348b94bd3780e5b92a3334e64b2 Mon Sep 17 00:00:00 2001
+From eace43fb2842f04c484f38ff336b52c8e9b40145 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:34 +0100
-Subject: [PATCH 09/42] VSOCK: Introduce vhost_vsock.ko
+Subject: [PATCH 09/44] VSOCK: Introduce vhost_vsock.ko
 
 VM sockets vhost transport implementation.  This driver runs on the
 host.
@@ -18,7 +18,7 @@ Signed-off-by: Michael S. Tsirkin <mst@redhat.com>
  create mode 100644 drivers/vhost/vsock.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 82d1123..12d49f5 100644
+index 82d11235cacb..12d49f58c4e0 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -11392,6 +11392,8 @@ F:	include/linux/virtio_vsock.h
@@ -32,7 +32,7 @@ index 82d1123..12d49f5 100644
  M:	Stephen Chandler Paul <thatslyude@gmail.com>
 diff --git a/drivers/vhost/vsock.c b/drivers/vhost/vsock.c
 new file mode 100644
-index 0000000..028ca16
+index 000000000000..028ca16c2d36
 --- /dev/null
 +++ b/drivers/vhost/vsock.c
 @@ -0,0 +1,722 @@
@@ -759,7 +759,7 @@ index 0000000..028ca16
 +MODULE_AUTHOR("Asias He");
 +MODULE_DESCRIPTION("vhost transport for vsock ");
 diff --git a/include/uapi/linux/vhost.h b/include/uapi/linux/vhost.h
-index ab373191..b306476 100644
+index ab3731917bac..b30647697774 100644
 --- a/include/uapi/linux/vhost.h
 +++ b/include/uapi/linux/vhost.h
 @@ -169,4 +169,9 @@ struct vhost_scsi_target {
@@ -773,5 +773,5 @@ index ab373191..b306476 100644
 +
  #endif
 -- 
-2.10.0
+2.11.0
 

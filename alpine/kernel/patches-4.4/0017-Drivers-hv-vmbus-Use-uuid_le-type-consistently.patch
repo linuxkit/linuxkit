@@ -1,7 +1,7 @@
-From 12fbf6bcf859c7ce33766ae450dc291d0b857197 Mon Sep 17 00:00:00 2001
+From 2040901bd94f69e4deda11bd834f99b0bda1b143 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:43 -0800
-Subject: [PATCH 17/42] Drivers: hv: vmbus: Use uuid_le type consistently
+Subject: [PATCH 17/44] Drivers: hv: vmbus: Use uuid_le type consistently
 
 Consistently use uuid_le type in the Hyper-V driver code.
 
@@ -17,7 +17,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  5 files changed, 40 insertions(+), 68 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index a562318..339277b 100644
+index a562318b856b..339277b76468 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -409,7 +409,7 @@ static void init_vp_index(struct vmbus_channel *channel, const uuid_le *type_gui
@@ -30,7 +30,7 @@ index a562318..339277b 100644
  			perf_chn = true;
  			break;
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 509ed97..6ce2bf8 100644
+index 509ed9731630..6ce2bf81dae3 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -533,7 +533,7 @@ static int vmbus_uevent(struct device *device, struct kobj_uevent_env *env)
@@ -73,7 +73,7 @@ index 509ed97..6ce2bf8 100644
  		ret = drv->probe(dev, dev_id);
  		if (ret != 0)
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 10dda1e..4712d7d 100644
+index 10dda1e3b560..4712d7d07b8c 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1012,6 +1012,8 @@ int vmbus_allocate_mmio(struct resource **new, struct hv_device *device_obj,
@@ -267,7 +267,7 @@ index 10dda1e..4712d7d 100644
  /*
   * Common header for Hyper-V ICs
 diff --git a/include/linux/mod_devicetable.h b/include/linux/mod_devicetable.h
-index 64f36e0..6e4c645 100644
+index 64f36e09a790..6e4c645e1c0d 100644
 --- a/include/linux/mod_devicetable.h
 +++ b/include/linux/mod_devicetable.h
 @@ -404,7 +404,7 @@ struct virtio_device_id {
@@ -280,7 +280,7 @@ index 64f36e0..6e4c645 100644
  };
  
 diff --git a/scripts/mod/file2alias.c b/scripts/mod/file2alias.c
-index 9f5cdd4..8e8c69b 100644
+index 9f5cdd49ff0b..8e8c69bee78f 100644
 --- a/scripts/mod/file2alias.c
 +++ b/scripts/mod/file2alias.c
 @@ -917,7 +917,7 @@ static int do_vmbus_entry(const char *filename, void *symval,
@@ -293,5 +293,5 @@ index 9f5cdd4..8e8c69b 100644
  	strcpy(alias, "vmbus:");
  	strcat(alias, guid_name);
 -- 
-2.10.0
+2.11.0
 
