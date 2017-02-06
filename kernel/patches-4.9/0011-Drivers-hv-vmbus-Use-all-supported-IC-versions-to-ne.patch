@@ -1,7 +1,7 @@
-From 3cbf33b27c52d640801d8482fa2b7b8376addff5 Mon Sep 17 00:00:00 2001
+From 364e61023027502953bb24666508073d73f39d4b Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
-Date: Wed, 18 Jan 2017 12:02:44 -0800
-Subject: [PATCH 12/12] Drivers: hv: vmbus: Use all supported IC versions to
+Date: Sat, 28 Jan 2017 12:37:17 -0700
+Subject: [PATCH 11/12] Drivers: hv: vmbus: Use all supported IC versions to
  negotiate
 
 Previously, we were assuming that each IC protocol version was tied to a
@@ -20,18 +20,20 @@ version and protocol to use")
 
 Reported-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
 Signed-off-by: Alex Ng <alexng@messages.microsoft.com>
-Origin: Email from Alex Ng
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit a1656454131880980bc3a5313c8bf66ef5990c91)
 ---
- drivers/hv/channel_mgmt.c | 78 ++++++++++++++++++++++++++-------------
+ drivers/hv/channel_mgmt.c | 80 +++++++++++++++++++++++++++-------------
  drivers/hv/hv_fcopy.c     | 20 +++++++---
  drivers/hv/hv_kvp.c       | 41 +++++++++------------
  drivers/hv/hv_snapshot.c  | 18 +++++++--
  drivers/hv/hv_util.c      | 94 +++++++++++++++++++++++++----------------------
  include/linux/hyperv.h    |  7 ++--
- 6 files changed, 152 insertions(+), 106 deletions(-)
+ 6 files changed, 154 insertions(+), 106 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 8f3d9f787288..253e17c78c58 100644
+index 8f3d9f787288..672a8859a3e9 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -179,33 +179,34 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
@@ -111,7 +113,7 @@ index 8f3d9f787288..253e17c78c58 100644
  	}
  
  	if (!found_match)
-@@ -235,14 +245,24 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+@@ -235,14 +245,26 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
  
  	found_match = false;
  
@@ -129,8 +131,10 @@ index 8f3d9f787288..253e17c78c58 100644
 +		for (j = negop->icframe_vercnt;
 +			(j < negop->icframe_vercnt + negop->icmsg_vercnt);
 +			j++) {
++
 +			if ((negop->icversion_data[j].major == srv_major) &&
-+			    (negop->icversion_data[j].minor == srv_minor)) {
++				(negop->icversion_data[j].minor == srv_minor)) {
++
 +				icmsg_major = negop->icversion_data[j].major;
 +				icmsg_minor = negop->icversion_data[j].minor;
 +				found_match = true;
@@ -143,7 +147,7 @@ index 8f3d9f787288..253e17c78c58 100644
  	}
  
  	/*
-@@ -259,6 +279,12 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+@@ -259,6 +281,12 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
  		negop->icmsg_vercnt = 1;
  	}
  
@@ -465,7 +469,7 @@ index e7707747f56d..f3797c07be10 100644
  			srv->util_cb, dev->channel);
  	if (ret)
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index e34da6846348..032322e4a73e 100644
+index e34da6846348..6c3ed0c001ff 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1452,9 +1452,10 @@ struct hyperv_service_callback {
@@ -475,10 +479,10 @@ index e34da6846348..032322e4a73e 100644
 -extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *,
 -					struct icmsg_negotiate *, u8 *, int,
 -					int);
-+extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *, u8 *,
-+					const int *, int,
-+					const int *, int,
-+					int *, int *);
++extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp, u8 *buf,
++				const int *fw_version, int fw_vercnt,
++				const int *srv_version, int srv_vercnt,
++				int *nego_fw_version, int *nego_srv_version);
  
  void hv_event_tasklet_disable(struct vmbus_channel *channel);
  void hv_event_tasklet_enable(struct vmbus_channel *channel);

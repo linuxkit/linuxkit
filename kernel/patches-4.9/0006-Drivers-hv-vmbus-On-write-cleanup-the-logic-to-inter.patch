@@ -1,7 +1,7 @@
-From 59b43ccde9636cdb874156a6f6e570414eb3d67b Mon Sep 17 00:00:00 2001
+From 78777547745d7f0bf25e55cbf323ce5191e4b89a Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:17 -0800
-Subject: [PATCH 07/12] Drivers: hv: vmbus: On write cleanup the logic to
+Subject: [PATCH 06/12] Drivers: hv: vmbus: On write cleanup the logic to
  interrupt the host
 
 Signal the host when we determine the host is to be signaled.
