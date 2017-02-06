@@ -1,7 +1,7 @@
-From d77258d2dded3a5601ccd54edb6f99e035dc7b20 Mon Sep 17 00:00:00 2001
+From 983afbbd6d063c25e8bb8b4e0cbaa840e7ddb0b6 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:18 -0800
-Subject: [PATCH 08/12] Drivers: hv: vmbus: On the read path cleanup the logic
+Subject: [PATCH 07/12] Drivers: hv: vmbus: On the read path cleanup the logic
  to interrupt the host
 
 Signal the host when we determine the host is to be signaled -

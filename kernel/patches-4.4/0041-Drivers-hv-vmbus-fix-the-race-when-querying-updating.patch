@@ -1,4 +1,4 @@
-From 23b4d08adcd276a1fcd8949b09f75f722f5ecaa2 Mon Sep 17 00:00:00 2001
+From 4ece12b8c2c09887e1eb2fa62ef47d6da029e116 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 21 May 2016 16:55:50 +0800
 Subject: [PATCH 41/44] Drivers: hv: vmbus: fix the race when querying &
