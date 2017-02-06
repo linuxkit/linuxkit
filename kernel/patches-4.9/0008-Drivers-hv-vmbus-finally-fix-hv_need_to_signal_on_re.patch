@@ -1,7 +1,7 @@
-From 21d5ad16c820d2e949ca80881986db3d228d8a33 Mon Sep 17 00:00:00 2001
+From 4e662fc5eed67dbc95569ee89fc628d27a1646d3 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Tue, 24 Jan 2017 06:54:46 +0000
-Subject: [PATCH 09/12] Drivers: hv: vmbus: finally fix
+Subject: [PATCH 08/12] Drivers: hv: vmbus: finally fix
  hv_need_to_signal_on_read()
 
 Commit a389fcfd2cb5 ("Drivers: hv: vmbus: Fix signaling logic in hv_need_to_signal_on_read()")
