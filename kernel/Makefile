@@ -22,19 +22,6 @@ x86_64/vmlinuz64: Dockerfile.aufs kernel_config kernel_config.debug kernel_confi
 	tar xf x86_64/kernel-modules.tar
 	$(MAKE) x86_64/kernel.img
 else
-ifdef LTS4.4
-x86_64/vmlinuz64: Dockerfile.4.4 kernel_config kernel_config.debug kernel_config.4.4 patches-4.4
-	mkdir -p x86_64 etc lib usr sbin
-	BUILD=$$( tar cf - $^ | docker build -f Dockerfile.4.4 --build-arg DEBUG=$(DEBUG) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
-	docker run --rm --net=none --log-driver=none $$BUILD cat kernel-source-info > etc/kernel-source-info && \
-	docker run --rm --net=none --log-driver=none $$BUILD tar cf - bzImage kernel-dev.tar kernel-headers.tar vmlinux kernel-modules.tar | tar xf - -C x86_64
-	mv x86_64/bzImage $@
-	rm -rf etc/kernel-patches
-	mkdir -p etc/kernel-patches
-	cp -a patches-4.4/* etc/kernel-patches
-	tar xf x86_64/kernel-modules.tar
-	$(MAKE) x86_64/kernel.img
-else
 x86_64/vmlinuz64: Dockerfile kernel_config kernel_config.debug patches-4.9
 	mkdir -p x86_64 etc lib usr sbin
 	BUILD=$$( tar cf - $^ | docker build --build-arg DEBUG=$(DEBUG) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
@@ -46,7 +33,6 @@ x86_64/vmlinuz64: Dockerfile kernel_config kernel_config.debug patches-4.9
 	cp -a patches-4.9/* etc/kernel-patches
 	tar xf x86_64/kernel-modules.tar
 	$(MAKE) x86_64/kernel.img
-endif
 endif
 
 clean:
