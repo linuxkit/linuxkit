@@ -8,10 +8,10 @@ RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
-# this is aufs4.9 20170130
+# this is aufs4.9 20170206
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
 ENV AUFS_BRANCH     aufs4.9
-ENV AUFS_COMMIT     6f44e3b0bd99399516982a04782d78f8dae96600
+ENV AUFS_COMMIT     ecd2bfe6f46f36658c9aef74fc43ac40e47f8438
 
 # Download AUFS
 RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
