@@ -19,7 +19,7 @@ else
 	backup_once "$mobydir"/initrd.img
 	backup_once "$mobydir"/vmlinuz64
 	cp alpine/initrd.img "$mobydir"/initrd.img
-	cp alpine/kernel/x86_64/vmlinuz64 "$mobydir"/vmlinuz64
+	cp kernel/x86_64/vmlinuz64 "$mobydir"/vmlinuz64
 fi
 
 docker run --rm --privileged --pid=host justincormack/nsenter1 /sbin/reboot
