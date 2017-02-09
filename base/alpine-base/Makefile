@@ -5,10 +5,10 @@ IMAGE=alpine-base
 
 default: push
 
-hash: Dockerfile repositories
+hash: Dockerfile repositories selinux-config
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build sha1sum /lib/apk/db/installed | sed 's/ .*//' > hash
+	docker run --rm $(IMAGE):build sh -c 'cat /lib/apk/db/installed /etc/selinux/config | sha1sum' | sed 's/ .*//' > $@
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
