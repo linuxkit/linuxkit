@@ -124,8 +124,8 @@ start()
 	# On desktop forward metrics to host if enabled in daemon.json
 	case "$(mobyplatform)" in
 	windows|mac)
-		METRICS_ADDR=$(cat /etc/docker/daemon.json | jq -r '."metrics-addr"')
-		if [ -n "$METRICS_ADDR" ]
+		METRICS_ADDR=$(cat /etc/docker/daemon.json | jq -e -r '."metrics-addr"')
+		if [ $? -eq 0 ]
 		then
 			METRICS_IP="$(echo "$METRICS_ADDR" | cut -d: -f1)"
 			METRICS_PORT="$(echo "$METRICS_ADDR" | cut -d: -f2)"
