@@ -86,6 +86,9 @@ gce: gce.img.tar.gz
 gce.img.tar.gz: initrd.img ../kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C ../kernel/x86_64 vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
 
+gce-test.img.tar.gz: initrd-test.img ../kernel/x86_64/vmlinuz64
+	tar cf - initrd-test.img -C ../kernel/x86_64 vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
+
 gce-upload:
 ifeq ($(FORCE_GSUTIL_AUTH),1)
 	-docker rm gsutil-moby-config 2>/dev/null
