@@ -52,10 +52,6 @@ func dockerHTTPGet(ctx context.Context, url string) (*http.Response, error) {
 		Transport: &UnixSocketRoundTripper{},
 	}
 
-	return dockerHTTPGetWithClient(ctx, url, client)
-}
-
-func dockerHTTPGetWithClient(ctx context.Context, url string, client *http.Client) (*http.Response, error) {
 	req, err := http.NewRequest(http.MethodGet, url, nil)
 	if err != nil {
 		return nil, err
@@ -73,24 +69,11 @@ func dockerHTTPGetWithClient(ctx context.Context, url string, client *http.Clien
 	}
 
 	return resp, err
-
 }
 
 // UnixSocketRoundTripper provides a way to make HTTP request to Docker socket
 // directly.
-type UnixSocketRoundTripper struct {
-	Stream bool
-	conn   *httputil.ClientConn
-}
-
-// Close will close the connection if the caller needs to clean up after
-// themselves in a streaming request.
-func (u UnixSocketRoundTripper) Close() error {
-	if u.conn != nil {
-		return u.conn.Close()
-	}
-	return nil
-}
+type UnixSocketRoundTripper struct{}
 
 // RoundTrip dials the Docker UNIX socket to make a HTTP request.
 func (u UnixSocketRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -98,16 +81,9 @@ func (u UnixSocketRoundTripper) RoundTrip(req *http.Request) (*http.Response, er
 	if err != nil {
 		return nil, err
 	}
-	u.conn = httputil.NewClientConn(dial, nil)
+	conn := httputil.NewClientConn(dial, nil)
 
-	// If the client makes a streaming request (e.g., /container/x/logs)
-	// it's their responsibility to close the connection, because it needs
-	// to remain open to stream the response body.
-	if !u.Stream {
-		defer u.conn.Close()
-	}
-
-	return u.conn.Do(req)
+	return conn.Do(req)
 }
 
 // Listen starts the HTTPDiagnosticListener and sets up handlers for its endpoints
