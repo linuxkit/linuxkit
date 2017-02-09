@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"log"
-	"net/http"
 )
 
 const (
@@ -27,7 +26,10 @@ func (s SystemContainerCapturer) Capture(parentCtx context.Context, w *tar.Write
 	errCh := make(chan error)
 
 	go func() {
-		resp, err := dockerHTTPGet(ctx, "/containers/json?all=1&label="+systemContainerLabel)
+		// URL encoded.
+		// Reads more like this:
+		// /v1.25/containers/json?all=1&filters={"label":{"com.docker.editions.system":true}}
+		resp, err := dockerHTTPGet(ctx, "/containers/json?all=1&filters=%7B%22label%22%3A%7B%22"+systemContainerLabel+"%22%3Atrue%7D%7D")
 		if err != nil {
 			errCh <- err
 			return
@@ -46,26 +48,13 @@ func (s SystemContainerCapturer) Capture(parentCtx context.Context, w *tar.Write
 		}
 
 		for _, c := range names {
-			transport := &UnixSocketRoundTripper{
-				Stream: true,
-			}
-
-			client := &http.Client{
-				Transport: transport,
-			}
-
-			resp, err := dockerHTTPGetWithClient(ctx, "/containers/"+c.ID+"/logs?stderr=1&stdout=1&timestamps=1&tail=all", client)
+			resp, err := dockerHTTPGet(ctx, "/containers/"+c.ID+"/logs?stderr=1&stdout=1&timestamps=1&tail=all")
 			if err != nil {
 				log.Println("ERROR (get request):", err)
 				continue
 			}
 
 			defer resp.Body.Close()
-
-			// logs makes streaming request where the original http
-			// conn is left open so we must clean up after
-			// ourselves when we're done reading
-			defer transport.Close()
 
 			logLines, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
