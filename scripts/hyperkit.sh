@@ -4,7 +4,7 @@ set -e
 
 KERNEL="kernel/x86_64/vmlinuz64"
 : ${INITRD:="alpine/initrd.img"}
-CMDLINE="earlyprintk=serial console=ttyS0 security=selinux selinux=1"
+CMDLINE="earlyprintk=serial console=ttyS0 security=selinux selinux=1 enforcing=1"
 
 [ -f disk.img ] || dd if=/dev/zero of=disk.img bs=1048576 count=256
 
