@@ -22,7 +22,7 @@ KERNEL="$(find . -name vmlinuz64 -or -name bzImage)"
 find . -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
 
 # Docker for Windows specific options, should be moved
-WINDOWS_OPTIONS="mobyplatform=windows vsyscall=emulate panic=1 rootdelay=300 noautodetect"
+WINDOWS_OPTIONS="mobyplatform=windows vsyscall=emulate page_poison=1 panic=1 rootdelay=300 noautodetect"
 
 # Create a EFI boot file with kernel and initrd. From:
 # https://github.com/haraldh/mkrescue-uefi/blob/master/mkrescue-uefi.sh
