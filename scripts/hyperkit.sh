@@ -6,7 +6,7 @@ KERNEL="kernel/x86_64/vmlinuz64"
 : ${INITRD:="alpine/initrd.img"}
 CMDLINE="earlyprintk=serial console=ttyS0"
 
-[ -f disk.img ] || dd if=/dev/zero of=disk.img bs=1m count=256
+[ -f disk.img ] || dd if=/dev/zero of=disk.img bs=1048576 count=256
 
 MEM="-m 1G"
 SMP="-c 1"
