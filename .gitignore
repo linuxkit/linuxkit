@@ -1,4 +1,5 @@
 test.log
+Dockerfile.media
 /bin
 *.swp
 *.img
