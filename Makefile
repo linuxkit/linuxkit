@@ -89,6 +89,11 @@ MEDIA_IMAGE=mobylinux/media:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 INITRD_IMAGE=mobylinux/mobylinux:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 KERNEL_IMAGE=mobylinux/kernel:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 
+MEDIA_TOYBOX=mobylinux/toybox-media:0a26fe5f574e444849983f9c4148ef74b3804d55@sha256:5ac38f77b66deb194c9016591b9b096e81fcdc9f7c3e6d01566294a6b4b4ebd2
+
+Dockerfile.media:
+	printf "FROM $(MEDIA_TOYBOX)\nADD . /\n" > $@
+
 MEDIA_TARBALL=Dockerfile.media -C alpine initrd.img initrd-test.img mobylinux-efi.iso mobylinux.efi -C ../kernel/x86_64 vmlinuz64 vmlinux kernel-headers.tar kernel-dev.tar
 
 media: Dockerfile.media alpine/initrd.img alpine/initrd-test.img kernel/x86_64/vmlinuz64 alpine/mobylinux-efi.iso
@@ -159,4 +164,4 @@ ci-pr:
 clean:
 	$(MAKE) -C alpine clean
 	$(MAKE) -C kernel clean
-	rm -rf bin disk.img test.log
+	rm -rf bin disk.img test.log Dockerfile.media
