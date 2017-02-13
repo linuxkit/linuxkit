@@ -2,33 +2,23 @@ FROM alpine:3.5
 RUN \
   apk update && apk upgrade && \
   apk add \
-  alpine-sdk \
+  build-base \
   argp-standalone \
   automake \
   bash \
   bc \
   binutils-dev \
-  bison \
-  cmake \
   curl \
-  flex \
+  git \
   gmp-dev \
-  gtk+2.0-dev \
-  gtk+-dev \
-  groff \
   installkernel \
   kmod \
   libelf-dev \
   linux-headers \
   ncurses-dev \
-  perl-dev \
-  python-dev \
   sed \
-  slang-dev \
   squashfs-tools \
   syslinux \
-  unzip \
-  util-linux-dev \
-  vim \
+  tar \
   xz \
   && true
