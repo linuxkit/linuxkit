@@ -20,6 +20,7 @@ cat unzipped_config | grep CONFIG_DEBUG_RODATA=y
 cat unzipped_config | grep CONFIG_CC_STACKPROTECTOR=y
 cat unzipped_config | grep CONFIG_CC_STACKPROTECTOR_STRONG=y
 cat unzipped_config | grep CONFIG_STRICT_DEVMEM=y
+cat unzipped_config | grep CONFIG_IO_STRICT_DEVMEM=y
 cat unzipped_config | grep CONFIG_SYN_COOKIES=y
 cat unzipped_config | grep CONFIG_DEBUG_CREDENTIALS=y
 cat unzipped_config | grep CONFIG_DEBUG_NOTIFIERS=y
@@ -30,6 +31,15 @@ cat unzipped_config | grep CONFIG_SECURITY=y
 cat unzipped_config | grep CONFIG_SECURITY_YAMA=y
 cat unzipped_config | grep CONFIG_PANIC_ON_OOPS=y
 cat unzipped_config | grep CONFIG_DEBUG_SET_MODULE_RONX=y
+cat unzipped_config | grep CONFIG_HARDENED_USERCOPY=y
+cat unzipped_config | grep CONFIG_SYN_COOKIES=y
+cat unzipped_config | grep CONFIG_PAGE_POISONING=y
+cat unzipped_config | grep CONFIG_PAGE_POISONING_NO_SANITY=y
+cat unzipped_config | grep CONFIG_PAGE_POISONING_ZERO=y
+cat unzipped_config | grep CONFIG_LEGACY_VSYSCALL_NONE=y
+cat unzipped_config | grep CONFIG_BUG_ON_DATA_CORRUPTION=y
+cat unzipped_config | grep CONFIG_RANDOMIZE_BASE=y
+cat unzipped_config | grep CONFIG_RANDOMIZE_MEMORY=y
 
 # Conditional on kernel version
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 5 ]; then
@@ -51,3 +61,7 @@ cat unzipped_config | grep 'CONFIG_COMPAT_VDSO is not set'
 cat unzipped_config | grep 'CONFIG_KEXEC is not set'
 cat unzipped_config | grep 'CONFIG_HIBERNATION is not set'
 cat unzipped_config | grep 'CONFIG_LEGACY_PTYS is not set'
+cat unzipped_config | grep 'CONFIG_X86_X32 is not set'
+cat unzipped_config | grep 'CONFIG_MODIFY_LDT_SYSCALL is not set'
+cat unzipped_config | grep 'CONFIG_KEXEC is not set'
+cat unzipped_config | grep 'CONFIG_HIBERNATION is not set'
