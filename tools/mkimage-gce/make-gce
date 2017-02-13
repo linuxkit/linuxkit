@@ -26,7 +26,7 @@ KERNEL="$(find . -name vmlinuz64 -or -name bzImage)"
 find . -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
 
 # should be externally provided as GCE specific
-GCE_CONFIG="earlyprintk=ttyS0,115200 console=ttyS0,115200 mobyplatform=gcp vsyscall=emulate"
+GCE_CONFIG="earlyprintk=ttyS0,115200 console=ttyS0,115200 mobyplatform=gcp vsyscall=emulate page_poison=1"
 
 CFG="DEFAULT linux
 LABEL linux
