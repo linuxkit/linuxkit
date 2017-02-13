@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-base:5837a236153f00bb215642e3e0639252eb49cdf9@sha256:f6f12aebe2af07c9250014ff283485dbdf082bd9cfbd74aad27a3d2dcf13e0b1
+FROM mobylinux/alpine-base:4e8f7f4d8e13873511859189da4f3bd051d4b9ee@sha256:9693bed86d72e99d070dce54a5029b686dde5435895f6e69879484578789e315
 
 RUN \
   addgroup -g 50 docker && \

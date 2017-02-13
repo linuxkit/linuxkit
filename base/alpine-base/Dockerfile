@@ -1,6 +1,7 @@
 FROM alpine:3.5
 
 COPY repositories /etc/apk/
+COPY selinux-config /etc/selinux/config
 
 RUN \
   apk update && apk upgrade -a && \
@@ -17,6 +18,9 @@ RUN \
   hvtools \
   iptables \
   jq \
+  libselinux \
+  libsepol \
+  libselinux-utils \
   openrc \
   openssh-client \
   sfdisk \
