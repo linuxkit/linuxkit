@@ -29,6 +29,7 @@ var (
 		{"/bin/uname", []string{"-a"}, defaultCommandTimeout},
 		{"/bin/ps", []string{"uax"}, defaultCommandTimeout},
 		{"/bin/netstat", []string{"-tulpn"}, defaultCommandTimeout},
+		{"/sbin/apk", []string{"audit", "--system"}, defaultCommandTimeout}, // check if system binaries were modified
 		{"/sbin/iptables-save", nil, defaultCommandTimeout},
 		{"/sbin/ifconfig", nil, defaultCommandTimeout},
 		{"/sbin/route", nil, defaultCommandTimeout},
