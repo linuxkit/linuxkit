@@ -51,10 +51,13 @@ start() {
 			exit 0
 		;;
 		"mac")
-			sed -i '/server pool.ntp.org/d' /etc/chrony/chrony.conf
+			sed -i '/pool pool.ntp.org/d' /etc/chrony/chrony.conf
 		;;
 		"aws")
-			sed -i -e "s/^server [^ ]\+/server 0.amazon.pool.ntp.org/g" /etc/chrony/chrony.conf
+			sed -i -e "s/^pool [^ ]\+/pool 0.amazon.pool.ntp.org/g" /etc/chrony/chrony.conf
+		;;
+		"gcp")
+			sed -i -e "s/^pool [^ ]\+/server metadata.google.internal/g" /etc/chrony/chrony.conf
 		;;
 		"azure")
 			# TODO needs an ntp solution
