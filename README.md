@@ -10,4 +10,5 @@ Requires GNU `make`, GNU `tar` (not Busybox tar), Docker to build.
 
 Several kernel variants are supported:
 - default
-- `make AUFS=1` supports AUFS
+- `make LTS4.4=1` 4.4 LTS series
+- `make AUFS=1` supports AUFS (deprecated)
