@@ -1,12 +1,8 @@
 #!/bin/bash
 #
 # TODO:
-# - Get billing enabled for moby-ci project
-# - pick sane defaults
 # - Use docker repo google/cloud-sdk as per Alpine/makefile upload-gce:
-# - Parameterize where log is stored, which gce image is used
 # - Handle race conditions between boot and serial connection
-# - Better cleanup on error, maybe exit handler
 #
 # This script
 # - Uploads gce-test.img.tar.gz
@@ -15,6 +11,12 @@
 # - Collects output from serial port
 # - Deletes instance, image and uploaded object
 #
+# Images and instances are named with a combination of the current git commit
+# hash and and a random number.  The random number is to avoid collisions
+# if mutliple people are using the same GCP project. Example:
+#
+#    img-inst-069b999-dirty-u3d5c1a7a
+#             ^git hash      ^random
 # Pre-reqs:
 # - Override env variables below for project, zone and bucket
 # - Install gcloud, eg::
@@ -47,21 +49,30 @@ GITHASH=$(git rev-parse --short HEAD)${DIRTY}
 
 UNIQ=${GITHASH}-u"$(printf '%x%x' $RANDOM $RANDOM)"
 
-TARBALL="alpine/gce-test.img.tar.gz"
+: ${TARBALL="alpine/gce-test.img.tar.gz"}
 GSOBJ="gce-test.img-${UNIQ}.tar.gz"
 GSOBJ_URL="https://storage.googleapis.com/${BUCKET}/${GSOBJ}"
 IMG_NAME="img-${UNIQ}"
 INST_NAME="inst-${UNIQ}"
 
-echo "Uploading ${TARBALL}..."
+cleanup () {
+  set +e
+  echo "Cleaning up..."
+  gcloud compute -q instances delete ${INST_NAME}
+  gcloud compute -q images delete ${IMG_NAME}
+  gsutil rm gs://${BUCKET}/${GSOBJ}
+}
+trap cleanup exit
+
+echo "Uploading ${TARBALL} to bucket..."
 gsutil cp ${TARBALL} gs://${BUCKET}/${GSOBJ}
-echo "Creating GCE image..."
+echo "Creating GCE image from bucket..."
 gcloud compute images create --source-uri ${GSOBJ_URL} ${IMG_NAME}
-echo "Creating GCE instace..."
+echo "Creating GCE instance..."
 gcloud compute instances create ${INST_NAME} \
     --image=${IMG_NAME} \
     --metadata serial-port-enable=true \
-    --machine-type="g1-small" \
+    --machine-type="n1-standard-1" \
     --boot-disk-size=200
 
 if [[ -n ${INTERACT} ]]; then
@@ -70,14 +81,5 @@ if [[ -n ${INTERACT} ]]; then
 else
   # This works because Moby test shuts moby down.
   echo "Tailing serial port buffer until shutdown..."
-  set -x
-  # TODO: I really want this to work:
-  #gcloud compute instances tail-serial-port-output ${INST_NAME} | tee ${LOG} && true
-  # but it seems to have a race, so:
-  script -q /dev/null gcloud compute connect-to-serial-port ${INST_NAME} | tee test.log && true
+  gcloud compute instances tail-serial-port-output ${INST_NAME} | tee ${LOG} && true
 fi
-
-echo "Cleaning up..."
-gcloud compute -q instances delete ${INST_NAME}
-gcloud compute -q images delete ${IMG_NAME}
-gsutil rm gs://${BUCKET}/${GSOBJ}
