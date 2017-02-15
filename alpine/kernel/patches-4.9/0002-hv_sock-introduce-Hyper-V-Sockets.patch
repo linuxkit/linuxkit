@@ -1,7 +1,7 @@
-From ed8ec8533647a523bd510b41b128888adec2d2a7 Mon Sep 17 00:00:00 2001
+From c76fa3c421e8d424cab8a048f186fe61e0415f82 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 23 Jul 2016 01:35:51 +0000
-Subject: [PATCH 02/12] hv_sock: introduce Hyper-V Sockets
+Subject: [PATCH 2/8] hv_sock: introduce Hyper-V Sockets
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
 mechanism between the host and the guest. It's somewhat like TCP over
@@ -56,11 +56,11 @@ index 63cefa62324c..e64920219d88 100644
  F:	Documentation/ABI/stable/sysfs-bus-vmbus
  
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index cd184bdca58f..468e15e29f5f 100644
+index c92a083bcf16..e34da6846348 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1593,5 +1593,18 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
- 		vmbus_set_event(channel);
+@@ -1622,5 +1622,18 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
+ 	hv_signal_on_read(channel);
  }
  
 +struct vmpipe_proto_header {
