@@ -59,7 +59,7 @@ do_fsck_extend_mount()
 		mdev -s
 
 		# wait for device
-		for i in $(seq 1 50); do test -b "$DATA" && break || sleep .1; done
+		for i in $(seq 1 50); do test -b "$DATA" && break || sleep .1; mdev -s; done
 
 		# resize2fs fails unless we use -f here
 		do_fsck -f "$DATA" || return 1
