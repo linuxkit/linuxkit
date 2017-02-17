@@ -1,0 +1,18 @@
+#!/bin/sh
+
+# TODO more robust
+while [ ! -S /run/containerd/containerd.sock ]; do sleep 1; done
+while ! ctr list 2> /dev/null; do sleep 1; done
+
+# start system containers
+# temporarily using runc not containerd
+LOG=/var/log/system-containers.log
+touch $LOG
+for f in /containers/*
+do
+	base="$(basename $f)"
+	/sbin/start-stop-daemon --start --pidfile /run/$base.pid --exec /usr/bin/runc -- run --bundle "$f" --pid-file /run/$base.pid "$(basename $f)" </dev/null 2>$LOG >$LOG &
+	printf " - $(basename $f)\n"
+done
+
+wait
