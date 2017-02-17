@@ -1,6 +1,6 @@
 .PHONY: tag push
 
-BASE=golang:1.7-alpine3.5
+BASE=golang:1.8-alpine
 IMAGE=go-compile
 
 default: push

@@ -1,6 +1,6 @@
 .PHONY: tag push
 
-BASE=golang:1.7-alpine
+BASE=golang:1.8-alpine
 IMAGE=riddler
 
 default: push
