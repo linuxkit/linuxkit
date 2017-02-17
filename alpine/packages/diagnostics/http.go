@@ -16,6 +16,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/didip/tollbooth"
 )
 
 var (
@@ -116,7 +118,7 @@ func (h HTTPDiagnosticListener) Listen() {
 		}
 	})
 
-	http.HandleFunc("/diagnose", func(w http.ResponseWriter, r *http.Request) {
+	http.Handle("/diagnose", tollbooth.LimitFuncHandler(tollbooth.NewLimiter(1, time.Second), func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			http.Error(w, "Invalid request type.  Should be POST with form value 'session' set", http.StatusBadRequest)
 			return
@@ -143,7 +145,7 @@ func (h HTTPDiagnosticListener) Listen() {
 			return
 		}
 
-		// Do the actual capture and uplaod to S3 in the background.
+		// Do the actual capture and upload to S3 in the background.
 		// No need to make caller sit and wait for the result.  They
 		// probably have a lot of other things going on, like other
 		// servers to request diagnostics for.
@@ -217,7 +219,7 @@ func (h HTTPDiagnosticListener) Listen() {
 			log.Println("No error sending S3 request")
 			log.Println("Diagnostics request finished")
 		}()
-	})
+	}))
 
 	// Start HTTP server to indicate general Docker health.
 	// TODO: no magic port?
