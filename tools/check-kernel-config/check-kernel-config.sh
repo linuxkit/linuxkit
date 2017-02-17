@@ -20,7 +20,6 @@ cat unzipped_config | grep CONFIG_DEBUG_RODATA=y
 cat unzipped_config | grep CONFIG_CC_STACKPROTECTOR=y
 cat unzipped_config | grep CONFIG_CC_STACKPROTECTOR_STRONG=y
 cat unzipped_config | grep CONFIG_STRICT_DEVMEM=y
-cat unzipped_config | grep CONFIG_IO_STRICT_DEVMEM=y
 cat unzipped_config | grep CONFIG_SYN_COOKIES=y
 cat unzipped_config | grep CONFIG_DEBUG_CREDENTIALS=y
 cat unzipped_config | grep CONFIG_DEBUG_NOTIFIERS=y
@@ -31,15 +30,9 @@ cat unzipped_config | grep CONFIG_SECURITY=y
 cat unzipped_config | grep CONFIG_SECURITY_YAMA=y
 cat unzipped_config | grep CONFIG_PANIC_ON_OOPS=y
 cat unzipped_config | grep CONFIG_DEBUG_SET_MODULE_RONX=y
-cat unzipped_config | grep CONFIG_HARDENED_USERCOPY=y
 cat unzipped_config | grep CONFIG_SYN_COOKIES=y
-cat unzipped_config | grep CONFIG_PAGE_POISONING=y
-cat unzipped_config | grep CONFIG_PAGE_POISONING_NO_SANITY=y
-cat unzipped_config | grep CONFIG_PAGE_POISONING_ZERO=y
 cat unzipped_config | grep CONFIG_LEGACY_VSYSCALL_NONE=y
-cat unzipped_config | grep CONFIG_BUG_ON_DATA_CORRUPTION=y
 cat unzipped_config | grep CONFIG_RANDOMIZE_BASE=y
-cat unzipped_config | grep CONFIG_RANDOMIZE_MEMORY=y
 
 # Conditional on kernel version
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 5 ]; then
@@ -51,6 +44,18 @@ if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 7 ]; then
 fi
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 8 ]; then
   cat unzipped_config | grep CONFIG_HARDENED_USERCOPY=y
+  cat unzipped_config | grep CONFIG_RANDOMIZE_MEMORY=y
+fi
+
+# poisoning cannot be enabled in 4.4
+if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 9 ]; then
+  cat unzipped_config | grep CONFIG_PAGE_POISONING=y
+  cat unzipped_config | grep CONFIG_PAGE_POISONING_NO_SANITY=y
+  cat unzipped_config | grep CONFIG_PAGE_POISONING_ZERO=y
+fi
+
+if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 10 ]; then
+  cat unzipped_config | grep CONFIG_BUG_ON_DATA_CORRUPTION=y
 fi
 
 # Negative cases
