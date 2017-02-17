@@ -1,7 +1,7 @@
 From 3d6fce5663241a06b78e10c2b5ae298abd7a72ba Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
 Date: Mon, 4 Apr 2016 14:50:10 +0100
-Subject: [PATCH 1/8] VSOCK: Only allow host network namespace to use AF_VSOCK.
+Subject: [PATCH 1/9] VSOCK: Only allow host network namespace to use AF_VSOCK.
 
 The VSOCK addressing schema does not really lend itself to simply creating an
 alternative end point address within a namespace.
