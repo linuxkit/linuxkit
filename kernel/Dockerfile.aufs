@@ -1,6 +1,6 @@
 FROM mobylinux/alpine-build-kernel:0e893fbf6fa7638d2f23354de03ea11017bb8065@sha256:3ef3f9d11f0802b759dbd9c43a7706cf0ec37263c99ae90e2b10c29ea85739fa
 
-ARG KERNEL_VERSION=4.9.10
+ARG KERNEL_VERSION=4.9.11
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
@@ -8,10 +8,10 @@ RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
-# this is aufs4.9 20170206
+# this is aufs4.9 20170220
 ENV AUFS_REPO       https://github.com/sfjro/aufs4-standalone
 ENV AUFS_BRANCH     aufs4.9
-ENV AUFS_COMMIT     ecd2bfe6f46f36658c9aef74fc43ac40e47f8438
+ENV AUFS_COMMIT     97ef00a26bd2e098fb91d87852cc926e517ec8f7
 
 # Download AUFS
 RUN git clone -b "$AUFS_BRANCH" "$AUFS_REPO" /aufs && \
