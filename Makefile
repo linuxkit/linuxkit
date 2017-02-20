@@ -103,7 +103,7 @@ ifeq ($(STATUS),)
 	[ -f $(MOBYLINUX_TAG) ]
 	docker tag $(shell cat $(MOBYLINUX_TAG)) $(INITRD_IMAGE)
 	docker push $(INITRD_IMAGE)
-	tar cf - Dockerfile.media -C kernel/x86_64 vmlinuz64 | docker build -f Dockerfile.media -t $(KERNEL_IMAGE) -
+	tar cf - Dockerfile.media -C kernel/x86_64 bzImage kernel.tar | docker build -f Dockerfile.media -t $(KERNEL_IMAGE) -
 	docker push $(KERNEL_IMAGE)
 else
 	$(error "git not clean")
