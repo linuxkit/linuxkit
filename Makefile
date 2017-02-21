@@ -1,4 +1,4 @@
-.PHONY: test hyperkit-test qemu qemu-iso qemu-gce media ebpf ci ci-pr get get-regextract
+.PHONY: test hyperkit-test qemu qemu-iso media ebpf ci ci-pr get get-regextract
 
 all:
 	$(MAKE) -C alpine
@@ -38,9 +38,6 @@ qemu: alpine/initrd.img kernel/x86_64/vmlinuz64
 
 qemu-iso: alpine/mobylinux-bios.iso
 	docker run -it --rm -v $(CURDIR)/alpine/mobylinux-bios.iso:/tmp/mobylinux-bios.iso $(QEMU_IMAGE)
-
-qemu-gce: alpine/gce.img.tar.gz
-	docker run -it --rm -v $(CURDIR)/alpine/gce.img.tar.gz:/tmp/gce.img.tar.gz $(QEMU_IMAGE)
 
 bin:
 	mkdir -p $@
