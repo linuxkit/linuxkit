@@ -1,6 +1,0 @@
-FROM mobylinux/alpine-qemu:97cc67f5569c437175f2e54b3c3b9a96a8615a16@sha256:80e17a465b332d774fd91b53c0bcb18ed0ea8a77c17bf8d8451c57a8ab8b4e66
-
-COPY ./cloud/azure/raw2vhd.sh /raw2vhd.sh
-
-VOLUME ["/tmp"]
-ENTRYPOINT ["/raw2vhd.sh"]
