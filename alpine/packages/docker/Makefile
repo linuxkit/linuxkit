@@ -39,7 +39,7 @@ cleanusr:
 
 download: cleanusr
 ifdef DOCKER_BIN_URL
-	(curl -fsSL ${DOCKER_BIN_URL} && touch ok) | tar xzf -
+	(curl -fsSL "${DOCKER_BIN_URL}" && touch ok) | tar xzf -
 else
 	(curl -fsSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
 endif
