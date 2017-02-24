@@ -1,7 +1,8 @@
-DOCKER_VERSION?=17.03.0-ce-rc1
+DOCKER_VERSION?=${BUNDLE}-rc1
 FORCE_CURL?=1
 ARCH?=x86_64
 OS?=Linux
+BUNDLE?=
 
 AWS_CLI_IMAGE=mobylinux/aws-cli:9432b650794d38a70cf00be4da971367c52d1d5b@sha256:679f6f45fb8598cab90888733a07ddeeb26a27a7889114f89aaf712eaa3abe06
 
@@ -52,6 +53,16 @@ else
 	(curl -fsSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
 endif
 	rm ok
+ifdef BUNDLE
+	mv bundles/${BUNDLE}/binary-daemon/docker-containerd-ctr \
+		bundles/${BUNDLE}/binary-client/docker \
+		bundles/${BUNDLE}/binary-daemon/docker-containerd \
+		bundles/${BUNDLE}/binary-daemon/dockerd \
+		bundles/${BUNDLE}/binary-daemon/docker-proxy \
+		bundles/${BUNDLE}/binary-daemon/docker-runc \
+		bundles/${BUNDLE}/binary-daemon/docker-containerd-shim \
+	usr/bin/
+else
 	mv docker/docker-containerd-ctr \
 	   docker/docker \
 	   docker/docker-containerd \
@@ -60,6 +71,7 @@ endif
 	   docker/docker-runc \
 	   docker/docker-containerd-shim \
 	usr/bin/
+endif
 	([ -e docker/docker-init ] && mv docker/docker-init usr/bin/) || true
 	([ -d docker/completion ] && rm -rf docker/completion) || true
 
