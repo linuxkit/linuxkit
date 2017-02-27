@@ -1,0 +1,10 @@
+FROM mobylinux/go-compile:d2d25ac665b5148ad356d0eab3ff3762a68c633d@sha256:aab55d0c317460850e66a07dd94139cc11ea9e1c0bee88716a6a8c768740885f
+
+ENV GOPATH=/go
+ENV PATH=/go/bin:/usr/local/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+
+# The project sources
+VOLUME ["/go/src/github.com/docker/infrakit.hyperkit"]
+WORKDIR /go/src/github.com/docker/infrakit.hyperkit
+
+ENTRYPOINT ["make"]
