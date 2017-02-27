@@ -3,6 +3,8 @@ FORCE_CURL?=1
 ARCH?=x86_64
 OS?=Linux
 
+AWS_CLI_IMAGE=mobylinux/aws-cli:9432b650794d38a70cf00be4da971367c52d1d5b@sha256:679f6f45fb8598cab90888733a07ddeeb26a27a7889114f89aaf712eaa3abe06
+
 all: usr/bin/docker
 
 RELEASE_CANDIDATE=$(findstring -rc,$(DOCKER_VERSION))
@@ -37,9 +39,15 @@ cleanusr:
 	mkdir -p usr/bin
 	rm -f usr/bin/* ok
 
+S3_PREFIX=s3://
+
 download: cleanusr
 ifdef DOCKER_BIN_URL
+ifeq ($(filter $(S3_PREFIX)%, $(DOCKER_BIN_URL)),)
 	(curl -fsSL "${DOCKER_BIN_URL}" && touch ok) | tar xzf -
+else
+	(docker run --rm -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID $(AWS_CLI_IMAGE) s3 cp '$(DOCKER_BIN_URL)' -) | tar xzf -
+endif
 else
 	(curl -fsSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
 endif
