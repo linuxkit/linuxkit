@@ -1,4 +1,4 @@
-From ea36e149bb07676f2752cd718cea6d435074eb74 Mon Sep 17 00:00:00 2001
+From 3883966d04d1cd764f712500c7d52be256f796f7 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Mon, 14 Dec 2015 19:02:00 -0800
 Subject: [PATCH 22/44] Drivers: hv: remove code duplication between
