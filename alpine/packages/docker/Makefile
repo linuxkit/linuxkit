@@ -1,4 +1,3 @@
-BUNDLE?=
 ifdef BUNDLE
 DOCKER_VERSION?=${BUNDLE}
 else
