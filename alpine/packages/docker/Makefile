@@ -7,7 +7,6 @@ FORCE_CURL?=1
 ARCH?=x86_64
 OS?=Linux
 
-
 AWS_CLI_IMAGE=mobylinux/aws-cli:9432b650794d38a70cf00be4da971367c52d1d5b@sha256:679f6f45fb8598cab90888733a07ddeeb26a27a7889114f89aaf712eaa3abe06
 
 all: usr/bin/docker
