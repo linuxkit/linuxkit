@@ -6,21 +6,27 @@ all:
 aufs:
 	$(MAKE) AUFS=true all
 
+.PHONY: alpine/initrd.img
 alpine/initrd.img:
 	$(MAKE) -C alpine initrd.img
 
+.PHONY: alpine/initrd-test.img
 alpine/initrd-test.img:
 	$(MAKE) -C alpine initrd-test.img
 
+.PHONY: kernel/x86_64/vmlinuz64
 kernel/x86_64/vmlinuz64:
 	$(MAKE) -C kernel
 
+.PHONY: alpine/mobylinux-bios.iso
 alpine/mobylinux-bios.iso:
 	$(MAKE) -C alpine mobylinux-bios.iso
 
+.PHONY: alpine/mobylinux-efi.iso
 alpine/mobylinux-efi.iso:
 	$(MAKE) -C alpine mobylinux-efi.iso
 
+.PHONY: alpine/gce.img.tar.gz
 alpine/gce.img.tar.gz:
 	$(MAKE) -C alpine gce.img.tar.gz
 
