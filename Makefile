@@ -18,6 +18,9 @@ kernel/x86_64/vmlinuz64:
 alpine/mobylinux-bios.iso:
 	$(MAKE) -C alpine mobylinux-bios.iso
 
+alpine/mobylinux-efi.iso:
+	$(MAKE) -C alpine mobylinux-efi.iso
+
 alpine/gce.img.tar.gz:
 	$(MAKE) -C alpine gce.img.tar.gz
 
