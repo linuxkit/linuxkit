@@ -1,6 +1,5 @@
 DOCKER_BIN_URL?=https://s3.amazonaws.com/editions-stage-us-east-1-150610-005505/linux/static/stable/x86_64/docker-17.03.0-ce.tgz
 DOCKER_VERSION?=17.03.0-ce
-FORCE_CURL?=1
 ARCH?=x86_64
 OS?=Linux
 
@@ -28,21 +27,11 @@ MASTER_VERSION:=$(shell curl -fsSL https://master.dockerproject.org/version)
 DOCKER_BIN_URL=https://master.dockerproject.org/$(OS)/$(ARCH)/docker-$(MASTER_VERSION).tgz
 endif
 
-.PHONY: download hub cleanusr
-
-ifeq ($(DOCKER_BIN_URL)$(FORCE_CURL)$(RELEASE_CANDIDATE),)
-usr/bin/docker: Makefile hub
-else
-usr/bin/docker: Makefile download
-endif
-
-cleanusr:
-	mkdir -p usr/bin
-	rm -f usr/bin/* ok
-
 S3_PREFIX=s3://
 
-download: cleanusr
+usr/bin/docker: Makefile
+	mkdir -p usr/bin
+	rm -f usr/bin/* ok
 ifdef DOCKER_BIN_URL
 ifeq ($(filter $(S3_PREFIX)%, $(DOCKER_BIN_URL)),)
 	(curl -fsSL "${DOCKER_BIN_URL}" && touch ok) | tar xzf -
@@ -73,11 +62,6 @@ endif
 	usr/bin/ ; fi 
 	([ -e docker/docker-init ] && mv docker/docker-init usr/bin/) || true
 	([ -d docker/completion ] && rm -rf docker/completion) || true
-
-hub: cleanusr
-	(DOCKER_CONTENT_TRUST=1 docker run --rm $(DOCKER_IMAGE) tar cf - -C /usr/local/bin . && touch ok) | tar xf - -C usr/bin
-	rm ok
-	rm -f usr/bin/docker-entrypoint.sh
 
 clean:
 	rm -rf usr/ docker/ ok
