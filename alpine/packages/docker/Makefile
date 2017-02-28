@@ -1,4 +1,5 @@
-DOCKER_VERSION?=17.03.0-ce-rc1
+DOCKER_BIN_URL?=https://s3.amazonaws.com/editions-stage-us-east-1-150610-005505/linux/static/stable/x86_64/docker-17.03.0-ce.tgz
+DOCKER_VERSION?=17.03.0-ce
 FORCE_CURL?=1
 ARCH?=x86_64
 OS?=Linux
