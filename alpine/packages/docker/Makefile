@@ -1,25 +1,18 @@
-DOCKER_VERSION?=17.03.0-ce-rc1
+DOCKER_VERSION?=17.03.0-ce
 FORCE_CURL?=1
 ARCH?=x86_64
-OS?=Linux
+OS?=linux
 
 AWS_CLI_IMAGE=mobylinux/aws-cli:9432b650794d38a70cf00be4da971367c52d1d5b@sha256:679f6f45fb8598cab90888733a07ddeeb26a27a7889114f89aaf712eaa3abe06
 
 all: usr/bin/docker
 
-RELEASE_CANDIDATE=$(findstring -rc,$(DOCKER_VERSION))
-ifeq ($(RELEASE_CANDIDATE),-rc)
-DOCKER_HOST=test.docker.com
-else
-DOCKER_HOST=get.docker.com
-endif
+# The binaries have not yet been pushed to the usual place:
+DOCKER_HOST=download-stage.docker.com
 
 DOCKER_IMAGE?=docker:$(DOCKER_VERSION)
 
 ifeq ($(DOCKER_VERSION),master)
-ifeq ($(OS),Linux)
-OS=linux
-endif
 ifeq ($(ARCH),x86_64)
 ARCH=amd64
 endif
@@ -49,7 +42,7 @@ else
 	(docker run --rm -e AWS_SECRET_ACCESS_KEY -e AWS_ACCESS_KEY_ID $(AWS_CLI_IMAGE) s3 cp '$(DOCKER_BIN_URL)' -) | tar xzf -
 endif
 else
-	(curl -fsSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
+	(curl -fsSL https://${DOCKER_HOST}/${OS}/static/stable/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
 endif
 	rm ok
 	mv docker/docker-containerd-ctr \
