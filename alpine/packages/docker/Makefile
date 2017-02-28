@@ -53,6 +53,16 @@ else
 	(curl -fsSL https://${DOCKER_HOST}/builds/${OS}/${ARCH}/docker-${DOCKER_VERSION}.tgz && touch ok) | tar xzf -
 endif
 	rm ok
+	if [ -d "./bundles" ]; then \
+	mv bundles/${DOCKER_VERSION}/binary-daemon/docker-containerd-ctr \
+		bundles/${DOCKER_VERSION}/binary-client/docker \
+		bundles/${DOCKER_VERSION}/binary-daemon/docker-containerd \
+		bundles/${DOCKER_VERSION}/binary-daemon/dockerd \
+		bundles/${DOCKER_VERSION}/binary-daemon/docker-proxy \
+		bundles/${DOCKER_VERSION}/binary-daemon/docker-runc \
+		bundles/${DOCKER_VERSION}/binary-daemon/docker-containerd-shim \
+	usr/bin/ ;\
+	else \
 	mv docker/docker-containerd-ctr \
 	   docker/docker \
 	   docker/docker-containerd \
@@ -60,7 +70,7 @@ endif
 	   docker/docker-proxy \
 	   docker/docker-runc \
 	   docker/docker-containerd-shim \
-	usr/bin/
+	usr/bin/ ; fi 
 	([ -e docker/docker-init ] && mv docker/docker-init usr/bin/) || true
 	([ -d docker/completion ] && rm -rf docker/completion) || true
 
