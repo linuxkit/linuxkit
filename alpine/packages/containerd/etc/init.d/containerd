@@ -13,7 +13,7 @@ start()
 	ulimit -n 1048576
 	ulimit -p unlimited
 
-	/usr/bin/containerd 1>&2 2>/var/log/containerd.log &
+	/usr/bin/containerd -e nats://localhost:61725 1>&2 2>/var/log/containerd.log &
 
 	ewaitfile 5 /var/run/containerd/containerd.sock
 
