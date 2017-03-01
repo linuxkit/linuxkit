@@ -1,2 +1,2 @@
 tmpfs	/run	tmpfs	defaults,nodev,nosuid,noexec,relatime,size=10%,mode=755 0 0
-tmpfs	/tmp	tmpfs	defaults,nodev,nosuid,noexec,relatime,size=10%,mode=1777	0 0
+tmpfs	/tmp	tmpfs	defaults,nodev,nosuid,relatime,size=10%,mode=1777	0 0
