@@ -1,0 +1,88 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+
+HERE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+cd "$HERE"
+cd ..
+
+make binaries
+
+cleanup() {
+  kill $(jobs -p)
+  rm -rf tutorial
+}
+trap cleanup EXIT
+
+mkdir -p tutorial
+build/infrakit-instance-file --dir ./tutorial/ &
+build/infrakit-group-default &
+build/infrakit-flavor-vanilla &
+
+sleep 1
+
+expect_exact_output() {
+  message=$1
+  cmd=$2
+  expected_output=$3
+
+  echo -n "$1: "
+  if [ "$($2)" = "$3" ]
+  then
+    echo 'PASS'
+  else
+    echo 'FAIL'
+    exit 1
+  fi
+}
+
+expect_output_lines() {
+  message=$1
+  cmd=$2
+  expected_lines=$3
+
+  echo -n "$1: "
+  if [ "$($2 | wc -l)" -eq "$3" ]
+  then
+    echo 'PASS'
+  else
+    echo 'FAIL'
+    exit 1
+  fi
+}
+
+expect_output_lines "3 plugins should be discoverable" "build/infrakit plugin ls -q" "3"
+expect_output_lines "0 instances should exist" "build/infrakit instance describe -q --name instance-file" "0"
+
+build/infrakit group watch docs/cattle.json
+
+echo 'Waiting for group to be provisioned'
+sleep 2
+
+expect_output_lines "5 instances should exist in group" "build/infrakit group inspect cattle -q" "5"
+expect_output_lines "5 instances should exist" "build/infrakit instance describe -q --name instance-file" "5"
+
+expect_exact_output \
+  "Update should roll 5 and scale group to 10" \
+  "build/infrakit group describe docs/cattle2.json" \
+  "Performs a rolling update on 5 instances, then adds 5 instances to increase the group size to 10"
+
+build/infrakit group update docs/cattle2.json
+sleep 20
+
+expect_output_lines "10 instances should exist in group" "build/infrakit group inspect cattle -q" "10"
+
+# Terminate 3 instances.
+pushd tutorial
+  rm $(ls | head -3)
+popd
+
+sleep 20
+
+expect_output_lines "10 instances should exist in group" "build/infrakit group inspect cattle -q" "10"
+
+build/infrakit group destroy cattle
+expect_output_lines "0 instances should exist" "build/infrakit instance describe -q --name instance-file" "0"
+
+echo 'ALL TESTS PASSED'

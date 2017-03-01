@@ -1,0 +1,34 @@
+{
+  "ID": "combo",
+  "Properties": {
+    "Allocation": {
+      "Size": 1
+    },
+    "Instance": {
+      "Plugin": "instance-file",
+      "Properties": {
+      }
+    },
+    "Flavor": {
+      "Plugin": "flavor-combo",
+      "Properties": {
+        "Flavors": [
+          {
+            "Plugin": "flavor-vanilla",
+            "Properties": {
+              "Init": ["vanilla one"],
+              "Tags": {"v1": "tag one"}
+            }
+          },
+          {
+            "Plugin": "flavor-vanilla",
+            "Properties": {
+              "Init": ["vanilla two"],
+              "Tags": {"v2": "tag two"}
+            }
+          }
+        ]
+      }
+    }
+  }
+}

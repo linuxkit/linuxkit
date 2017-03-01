@@ -1,0 +1,38 @@
+machine:
+  environment:
+    OS: "linux"
+    ARCH: "amd64"
+
+    GOVERSION: "1.6"
+    GOPATH: "$HOME/.go_workspace"
+
+    WORKDIR: "$GOPATH/src/github.com/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
+
+dependencies:
+  pre:
+    # Wipe out the default go install.
+    - sudo rm -rf /usr/local/go
+
+    # Force the wipe out of GOPATH to make sure we're not relying on
+    # external dependencies.
+    - rm -rf "$GOPATH"
+
+  override:
+    # Install Go
+    - wget "https://storage.googleapis.com/golang/go$GOVERSION.$OS-$ARCH.tar.gz"
+    - sudo tar -C /usr/local -xzf "go$GOVERSION.$OS-$ARCH.tar.gz"
+
+    # Setup the GOPATH
+    - mkdir -p "$(dirname $WORKDIR)"
+    - cp -R "$HOME/$CIRCLE_PROJECT_REPONAME" "$WORKDIR"
+
+    # Install dependencies
+    - cd $WORKDIR && go get github.com/axw/gocov/gocov github.com/golang/lint/golint
+
+test:
+  override:
+    - cd $WORKDIR && make ci
+
+  post:
+    # Report to codecov
+    - cd $WORKDIR && bash <(curl -s https://codecov.io/bash)

@@ -1,4 +1,4 @@
-DEPS=proxy diagnostics transfused tap-vsockd docker nc-vsock vsudd 9pmount-vsock iptables
+DEPS=proxy diagnostics transfused tap-vsockd docker nc-vsock vsudd 9pmount-vsock iptables infrakit
 .PHONY: clean $(DEPS)
 
 default: $(DEPS)
