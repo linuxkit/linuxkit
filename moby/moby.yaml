@@ -1,5 +1,5 @@
 kernel: "mobylinux/kernel:7fa748810d7866797fd807a5682d5cb3c9c98111"
-init: "mobylinux/init:1f283250ba0f8e2f7ac0a9d7543719dd1a3b761b"
+init: "mobylinux/init:ecc2f4a116aca240081754ca063151c52d3e697c"
 system:
   - name: binfmt
     image: "mobylinux/binfmt:a94e0587b702edaa95cc6f303464959d0eb2311c@sha256:432732b90cbe0498f5ca148d75b90bb1eabd8fbfe8c872df8b23906c225091b1"
