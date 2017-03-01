@@ -1,4 +1,5 @@
-.PHONY: test hyperkit-test qemu qemu-iso qemu-gce media ebpf ci ci-pr get get-regextract
+.PHONY: test test-hyperkit qemu qemu-iso qemu-gce media ebpf ci ci-pr get \
+        get-regextract test-gce
 
 all:
 	$(MAKE) -C alpine
@@ -30,6 +31,9 @@ alpine/mobylinux-efi.iso:
 alpine/gce.img.tar.gz:
 	$(MAKE) -C alpine gce.img.tar.gz
 
+alpine/gce-test.img.tar.gz:
+	$(MAKE) -C alpine gce-test.img.tar.gz
+
 QEMU_IMAGE=mobylinux/qemu:0fb8c648e8ed9ef6b1ec449587aeab6c53872744@sha256:606f30d815102e73bc01c07915dc0d5f153b0252c63f5f0ed1e39621ec656eb5
 
 # interactive versions need to use volume mounts
@@ -41,6 +45,11 @@ qemu-iso: alpine/mobylinux-bios.iso
 
 qemu-gce: alpine/gce.img.tar.gz
 	docker run -it --rm -v $(CURDIR)/alpine/gce.img.tar.gz:/tmp/gce.img.tar.gz $(QEMU_IMAGE)
+
+test-gce: alpine/gce-test.img.tar.gz
+	rm -f test.log
+	scripts/gce.sh test.log
+	$(call check_test_log, test.log)
 
 bin:
 	mkdir -p $@
@@ -76,7 +85,7 @@ define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
 endef
 
-hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd-test.img kernel/x86_64/vmlinuz64
+test-hyperkit: scripts/hyperkit.sh bin/com.docker.hyperkit bin/com.docker.slirp alpine/initrd-test.img kernel/x86_64/vmlinuz64
 	rm -f disk.img
 	INITRD=alpine/initrd-test.img script -q /dev/null ./scripts/hyperkit.sh | tee test.log
 	$(call check_test_log, test.log)
@@ -135,7 +144,7 @@ else
 	$(error "git not clean")
 endif
 
-MEDIA_FILES=kernel/x86_64/vmlinuz64 kernel/x86_64/vmlinux alpine/initrd.img alpine/mobylinux-efi.iso alpine/mobylinux.efi 
+MEDIA_FILES=kernel/x86_64/vmlinuz64 kernel/x86_64/vmlinux alpine/initrd.img alpine/mobylinux-efi.iso alpine/mobylinux.efi
 MEDIA_FILES_OPT=kernel/x86_64/kernel-headers.tar kernel/x86_64/kernel-dev.tar alpine/initrd-test.img
 
 get:
