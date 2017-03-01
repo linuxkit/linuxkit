@@ -17,7 +17,7 @@ PCI_DEV="-s 0:0,hostbridge -s 31,lpc"
 RND="-s 5,virtio-rnd"
 LPC_DEV="-l com1,stdio"
 
-bin/com.docker.slirp --ethernet $SLIRP_SOCK &>/dev/null &
+bin/vpnkit --ethernet $SLIRP_SOCK &>/dev/null &
 trap "kill $!; rm $SLIRP_SOCK" EXIT
 
 bin/com.docker.hyperkit -A $MEM $SMP $PCI_DEV $LPC_DEV $NET $IMG_HDD $RND -u -f kexec,$KERNEL,$INITRD,"$CMDLINE"

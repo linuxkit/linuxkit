@@ -46,7 +46,7 @@ bin:
 	mkdir -p $@
 
 DOCKER_HYPERKIT=/Applications/Docker.app/Contents/MacOS/com.docker.hyperkit
-DOCKER_SLIRP=/Applications/Docker.app/Contents/MacOS/com.docker.slirp
+DOCKER_VPNKIT=/Applications/Docker.app/Contents/MacOS/vpnkit
 
 bin/com.docker.hyperkit: | bin
 ifneq ("$(wildcard $(DOCKER_HYPERKIT))","")
@@ -56,12 +56,12 @@ else
 	chmod a+x $@
 endif
 
-bin/com.docker.slirp: | bin
-ifneq ("$(wildcard $(DOCKER_SLIRP))","")
-	ln -s $(DOCKER_SLIRP) $@
+bin/vpnkit: | bin
+ifneq ("$(wildcard $(DOCKER_VPNKIT))","")
+	ln -s $(DOCKER_VPNKIT) $@
 else
-	curl -fsSL https://circleci.com/api/v1/project/docker/vpnkit/latest/artifacts/0//Users/distiller/vpnkit/com.docker.slirp.tgz \
-		| tar xz --strip=2 -C $(dir $@) Contents/MacOS/com.docker.slirp
+	curl -fsSL https://circleci.com/api/v1/project/docker/vpnkit/latest/artifacts/0//Users/distiller/vpnkit/vpnkit.tgz \
+		| tar xz --strip=2 -C $(dir $@) Contents/MacOS/vpnkit
 	touch $@
 endif
 
