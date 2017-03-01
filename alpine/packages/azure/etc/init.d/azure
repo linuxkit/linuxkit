@@ -107,6 +107,7 @@ start()
 
 	cat <<EOF >/etc/docker/daemon.json
 {
+	"experimental": true,
 	"log-driver": "syslog",
 	"log-opts": {
 		"syslog-address": "udp://localhost:514",
