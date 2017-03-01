@@ -1,0 +1,5 @@
+# allow overriding the installed docker version
+# by putting alternative docker binaries in
+# /usr/local/docker
+PATH=/usr/local/docker:$PATH
+DOCKER_BINARY="dockerd"
