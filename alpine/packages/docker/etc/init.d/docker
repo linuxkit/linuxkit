@@ -80,6 +80,9 @@ start()
 	# Set Docker to debug debug if not specified in daemon.json
 	cat /etc/docker/daemon.json | jq -e 'has("debug")' > /dev/null || DOCKER_OPTS="${DOCKER_OPTS} --debug"
 
+	# Disable legacy registries if not specified in daemon.json, deprecated in 1.14
+	cat /etc/docker/daemon.json | jq -e 'has("disable-legacy-registry")' > /dev/null || DOCKER_OPTS="${DOCKER_OPTS} --disable-legacy-registry"
+
 	# Set experimental=true if not specified in daemon.json and on 1.13+
 	if dockerd --help | grep -q -- --experimental
 	then
