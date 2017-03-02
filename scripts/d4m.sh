@@ -12,7 +12,7 @@ DB_BRIDGE=com.docker.driver.amd64-linux/slirp/bridge-connections
 # Check if VPNKit L2 bridge mode is enabled
 enable_bridge() {
     (cd $DB && \
-         echo 1 > ${DB_BRIDGE} && \
+         echo -n "1" > ${DB_BRIDGE} && \
          git add ${DB_BRIDGE} && \
          git commit -m "enable bridge"
     )
