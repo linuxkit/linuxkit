@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/user"
 	"path"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -40,14 +42,9 @@ func main() {
 		Use:   os.Args[0],
 		Short: "HyperKit instance plugin",
 	}
-	defaultVMDir, err := os.Getwd()
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
-	defaultVMDir = path.Join(defaultVMDir, "vms")
-	homeDir := os.Getenv("HOME")
-	defaultVPNKitSock = path.Join(homeDir, defaultVPNKitSock)
+
+	defaultVMDir := filepath.Join(getHome(), ".infrakit/hyperkit-vms")
+	defaultVPNKitSock = path.Join(getHome(), defaultVPNKitSock)
 
 	name := cmd.Flags().String("name", "instance-hyperkit", "Plugin name to advertise for discovery")
 	logLevel := cmd.Flags().Int("log", cli.DefaultLogLevel, "Logging level. 0 is least verbose. Max is 5")
@@ -69,6 +66,8 @@ func main() {
 		if err != nil {
 			return err
 		}
+
+		os.MkdirAll(*vmDir, os.ModePerm)
 
 		cli.SetLogLevel(*logLevel)
 		cli.RunPlugin(*name,
@@ -104,4 +103,11 @@ func main() {
 		log.Error(err)
 		os.Exit(1)
 	}
+}
+
+func getHome() string {
+	if usr, err := user.Current(); err == nil {
+		return usr.HomeDir
+	}
+	return os.Getenv("HOME")
 }
