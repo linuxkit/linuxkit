@@ -9,10 +9,6 @@ each instance keeps some state in a sub-directory. The VM state
 directory can be specified at the kernel command line using the
 `--vm-dir` option.
 
-The plugin also needs to know where the kernel and `initrd` images are
-located. The `--vm-lib` command line argument to the plugin specifies
-the directory. Inside the VM library directory every kernel/initrd configuration should be stored in a sub-directory. The sub-directory name is used in the instance configuration.
-
 ## Building
 
 ```sh
