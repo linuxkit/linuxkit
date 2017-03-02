@@ -8,4 +8,8 @@
 ::ctrlaltdel:/sbin/reboot
 
 # Stuff to do before rebooting
-#::shutdown:/sbin/openrc shutdown
+::shutdown:/usr/sbin/killall5 -15
+::shutdown:/bin/sleep 5
+::shutdown:/usr/sbin/killall5 -9
+::shutdown:/bin/echo "Unmounting filesystems"
+::shutdown:/bin/umount -a -r
