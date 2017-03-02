@@ -46,9 +46,6 @@ moby.img: Dockerfile etc usr init
 	  -C packages/test etc -C ../.. \
 	  -C packages/iptables usr -C ../.. \
 	  -C packages/containerd etc -C ../.. \
-	  -C packages/aws etc -C ../.. \
-	  -C packages/azure etc -C ../.. \
-	  -C packages/gcp etc -C ../.. \
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	echo $$BUILD > mobylinux.tag && \
