@@ -52,7 +52,6 @@ func main() {
 	name := cmd.Flags().String("name", "instance-hyperkit", "Plugin name to advertise for discovery")
 	logLevel := cmd.Flags().Int("log", cli.DefaultLogLevel, "Logging level. 0 is least verbose. Max is 5")
 
-	vmLib := cmd.Flags().String("vm-lib", "", "Directory with subdirectories of kernels/initrds combinations")
 	vmDir := cmd.Flags().String("vm-dir", defaultVMDir, "Directory where to store VM state")
 	hyperkit := cmd.Flags().String("hyperkit", defaultHyperKit, "Path to HyperKit executable")
 
@@ -73,7 +72,7 @@ func main() {
 
 		cli.SetLogLevel(*logLevel)
 		cli.RunPlugin(*name,
-			instance_plugin.PluginServer(NewHyperKitPlugin(*vmLib, *vmDir, *hyperkit, *vpnkitSock, thyper, tkern)),
+			instance_plugin.PluginServer(NewHyperKitPlugin(*vmDir, *hyperkit, *vpnkitSock, thyper, tkern)),
 			metadata_plugin.PluginServer(metadata.NewPluginFromData(
 				map[string]interface{}{
 					"version":    Version,

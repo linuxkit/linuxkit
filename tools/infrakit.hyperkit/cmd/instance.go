@@ -20,9 +20,8 @@ import (
 )
 
 // NewHyperKitPlugin creates an instance plugin for hyperkit.
-func NewHyperKitPlugin(vmLib, vmDir, hyperkit, vpnkitSock string, thyper, tkern *template.Template) instance.Plugin {
-	return &hyperkitPlugin{VMLib: vmLib,
-		VMDir:      vmDir,
+func NewHyperKitPlugin(vmDir, hyperkit, vpnkitSock string, thyper, tkern *template.Template) instance.Plugin {
+	return &hyperkitPlugin{VMDir: vmDir,
 		HyperKit:   hyperkit,
 		VPNKitSock: vpnkitSock,
 
@@ -32,10 +31,6 @@ func NewHyperKitPlugin(vmLib, vmDir, hyperkit, vpnkitSock string, thyper, tkern 
 }
 
 type hyperkitPlugin struct {
-	// VMLib is the path to a directory where each sub-directory
-	// contains a vmlinuz and a initrd image
-	VMLib string
-
 	// VMDir is the path to a directory where per VM state is kept
 	VMDir string
 
@@ -91,7 +86,6 @@ func (v hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	// Apply parameters
 	params := map[string]interface{}{
 		"VMLocation": instanceDir,
-		"VMLib":      v.VMLib,
 		"VPNKitSock": v.VPNKitSock,
 		"Properties": properties,
 	}
@@ -250,8 +244,8 @@ const hyperkitArgs = "-A -u -F {{.VMLocation}}/hyperkit.pid " +
 	"-s 2:0,virtio-vpnkit,path={{.VPNKitSock}} " +
 	"-l com1,autopty={{.VMLocation}}/tty,log={{.VMLocation}}/console-ring"
 const hyperkitKernArgs = "kexec," +
-	"{{.VMLib}}/{{.Properties.Moby}}/vmlinuz64," +
-	"{{.VMLib}}/{{.Properties.Moby}}/initrd.img," +
+	"{{.Properties.Moby}}/vmlinuz64," +
+	"{{.Properties.Moby}}/initrd.img," +
 	"earlyprintk=serial console=ttyS0 panic=1 vsyscall=emulate page_poison=1 ntp=gateway"
 
 func (v hyperkitPlugin) execHyperKit(params map[string]interface{}) error {
