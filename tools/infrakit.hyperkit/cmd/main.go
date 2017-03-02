@@ -4,15 +4,20 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"os/user"
 	"path"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/spf13/cobra"
+
 	"github.com/docker/infrakit/pkg/cli"
+	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/plugin/metadata"
 	instance_plugin "github.com/docker/infrakit/pkg/rpc/instance"
 	metadata_plugin "github.com/docker/infrakit/pkg/rpc/metadata"
 	instance_spi "github.com/docker/infrakit/pkg/spi/instance"
-	"github.com/spf13/cobra"
+	"github.com/docker/infrakit/pkg/template"
 )
 
 const (
@@ -37,28 +42,36 @@ func main() {
 		Use:   os.Args[0],
 		Short: "HyperKit instance plugin",
 	}
-	defaultVMDir, err := os.Getwd()
-	if err != nil {
-		log.Error(err)
-		os.Exit(1)
-	}
-	defaultVMDir = path.Join(defaultVMDir, "vms")
-	homeDir := os.Getenv("HOME")
-	defaultVPNKitSock = path.Join(homeDir, defaultVPNKitSock)
+
+	defaultVMDir := filepath.Join(getHome(), ".infrakit/hyperkit-vms")
+	defaultVPNKitSock = path.Join(getHome(), defaultVPNKitSock)
 
 	name := cmd.Flags().String("name", "instance-hyperkit", "Plugin name to advertise for discovery")
 	logLevel := cmd.Flags().Int("log", cli.DefaultLogLevel, "Logging level. 0 is least verbose. Max is 5")
 
-	vmLib := cmd.Flags().String("vm-lib", "", "Directory with subdirectories of kernels/initrds combinations")
 	vmDir := cmd.Flags().String("vm-dir", defaultVMDir, "Directory where to store VM state")
 	hyperkit := cmd.Flags().String("hyperkit", defaultHyperKit, "Path to HyperKit executable")
 
 	vpnkitSock := cmd.Flags().String("vpnkit-sock", defaultVPNKitSock, "Path to VPNKit UNIX domain socket")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
+		opts := template.Options{
+			SocketDir: discovery.Dir(),
+		}
+		thyper, err := template.NewTemplate("str://"+hyperkitArgs, opts)
+		if err != nil {
+			return err
+		}
+		tkern, err := template.NewTemplate("str://"+hyperkitKernArgs, opts)
+		if err != nil {
+			return err
+		}
+
+		os.MkdirAll(*vmDir, os.ModePerm)
+
 		cli.SetLogLevel(*logLevel)
 		cli.RunPlugin(*name,
-			instance_plugin.PluginServer(NewHyperKitPlugin(*vmLib, *vmDir, *hyperkit, *vpnkitSock)),
+			instance_plugin.PluginServer(NewHyperKitPlugin(*vmDir, *hyperkit, *vpnkitSock, thyper, tkern)),
 			metadata_plugin.PluginServer(metadata.NewPluginFromData(
 				map[string]interface{}{
 					"version":    Version,
@@ -90,4 +103,11 @@ func main() {
 		log.Error(err)
 		os.Exit(1)
 	}
+}
+
+func getHome() string {
+	if usr, err := user.Current(); err == nil {
+		return usr.HomeDir
+	}
+	return os.Getenv("HOME")
 }
