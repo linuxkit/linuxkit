@@ -149,12 +149,12 @@ func (v hyperkitPlugin) Destroy(id instance.ID) error {
 	p, err := getProcess(instanceDir)
 	if err != nil {
 		log.Warningln("Can't find processes: ", err)
-		return err
-	}
-	err = p.Kill()
-	if err != nil {
-		log.Warningln("Can't kill processes with pid: ", p.Pid, err)
-		return err
+	} else {
+		err = p.Kill()
+		if err != nil {
+			log.Warningln("Can't kill processes with pid: ", p.Pid, err)
+			return err
+		}
 	}
 
 	if err := os.RemoveAll(instanceDir); err != nil {
@@ -205,10 +205,12 @@ func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.De
 
 		if allMatched {
 			var logicalID *instance.LogicalID
+			id := instance.ID(file.Name())
+
 			pidData, err := ioutil.ReadFile(path.Join(instanceDir, hyperkitPid))
 			if err == nil {
-				id := instance.LogicalID(pidData)
-				logicalID = &id
+				lid := instance.LogicalID(pidData)
+				logicalID = &lid
 			} else {
 				if !os.IsNotExist(err) {
 					return nil, err
@@ -217,17 +219,13 @@ func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.De
 
 			// Check if process is running
 			if _, err := getProcess(instanceDir); err != nil {
-				log.Warningln("Process not running: Instance ", file.Name())
-				if err := os.RemoveAll(instanceDir); err != nil {
-					log.Warningln("Can't remove instance dir ", instanceDir, " error ", err)
-
-				}
-
+				log.Warningln("Process not running: Instance ", id)
+				v.Destroy(id)
 				continue
 			}
 
 			descriptions = append(descriptions, instance.Description{
-				ID:        instance.ID(file.Name()),
+				ID:        id,
 				LogicalID: logicalID,
 				Tags:      instanceTags,
 			})
