@@ -10,18 +10,25 @@ import (
 	"os/exec"
 	"path"
 	"strconv"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
+
 	"github.com/docker/infrakit/pkg/spi/instance"
+	"github.com/docker/infrakit/pkg/template"
 	"github.com/docker/infrakit/pkg/types"
 )
 
 // NewHyperKitPlugin creates an instance plugin for hyperkit.
-func NewHyperKitPlugin(vmLib, vmDir, hyperkit, vpnkitSock string) instance.Plugin {
+func NewHyperKitPlugin(vmLib, vmDir, hyperkit, vpnkitSock string, thyper, tkern *template.Template) instance.Plugin {
 	return &hyperkitPlugin{VMLib: vmLib,
 		VMDir:      vmDir,
 		HyperKit:   hyperkit,
-		VPNKitSock: vpnkitSock}
+		VPNKitSock: vpnkitSock,
+
+		HyperKitTmpl: thyper,
+		KernelTmpl:   tkern,
+	}
 }
 
 type hyperkitPlugin struct {
@@ -37,6 +44,9 @@ type hyperkitPlugin struct {
 
 	// VPNKitSock is the path to the VPNKit Unix domain socket.
 	VPNKitSock string
+
+	HyperKitTmpl *template.Template
+	KernelTmpl   *template.Template
 }
 
 const (
@@ -62,41 +72,31 @@ func (v hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	if properties["Moby"] == nil {
 		return nil, errors.New("Property 'Moby' must be set")
 	}
-	mobyStr, ok := properties["Moby"].(string)
-	if !ok {
-		return nil, errors.New("Property 'Moby' must be a string")
-	}
 	if properties["CPUs"] == nil {
 		properties["CPUs"] = 1
-	}
-	numCPUs, ok := properties["CPUs"].(int)
-	if !ok {
-		return nil, errors.New("Property 'CPUs' must be a integer")
 	}
 	if properties["Memory"] == nil {
 		properties["Memory"] = 512
 	}
-	memSz, ok := properties["Memory"].(int)
-	if !ok {
-		return nil, errors.New("Property 'Memory' must be a integer")
-	}
-
 	if properties["Disk"] == nil {
-		properties["Disk"] = 256
-	}
-	diskSz, ok := properties["Disk"].(int)
-	if !ok {
-		return nil, errors.New("Property 'Disk' must be a integer")
+		properties["Disk"] = float64(256)
 	}
 
 	instanceDir, err := ioutil.TempDir(v.VMDir, "infrakit-")
 	if err != nil {
 		return nil, err
 	}
-
 	id := instance.ID(path.Base(instanceDir))
 
-	err = v.execHyperKit(instanceDir, mobyStr, numCPUs, memSz, diskSz)
+	// Apply parameters
+	params := map[string]interface{}{
+		"VMLocation": instanceDir,
+		"VMLib":      v.VMLib,
+		"VPNKitSock": v.VPNKitSock,
+		"Properties": properties,
+	}
+
+	err = v.execHyperKit(params)
 	if err != nil {
 		v.Destroy(id)
 		return nil, err
@@ -243,42 +243,49 @@ func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.De
 	return descriptions, nil
 }
 
-func (v hyperkitPlugin) execHyperKit(instanceDir, moby string, cpus, memSz, diskSz int) error {
-	err := createDisk(instanceDir, diskSz)
+const hyperkitArgs = "-A -u -F {{.VMLocation}}/hyperkit.pid " +
+	"-c {{.Properties.CPUs}} -m {{.Properties.Memory}}M " +
+	"-s 0:0,hostbridge -s 31,lpc -s 5,virtio-rnd " +
+	"-s 4,virtio-blk,{{.VMLocation}}/disk.img " +
+	"-s 2:0,virtio-vpnkit,path={{.VPNKitSock}} " +
+	"-l com1,autopty={{.VMLocation}}/tty,log={{.VMLocation}}/console-ring"
+const hyperkitKernArgs = "kexec," +
+	"{{.VMLib}}/{{.Properties.Moby}}/vmlinuz64," +
+	"{{.VMLib}}/{{.Properties.Moby}}/initrd.img," +
+	"earlyprintk=serial console=ttyS0 panic=1 vsyscall=emulate page_poison=1 ntp=gateway"
+
+func (v hyperkitPlugin) execHyperKit(params map[string]interface{}) error {
+
+	instanceDir := params["VMLocation"].(string)
+
+	args, err := v.HyperKitTmpl.Render(params)
+	if err != nil {
+		return err
+	}
+	kernArgs, err := v.KernelTmpl.Render(params)
 	if err != nil {
 		return err
 	}
 
-	id := path.Base(instanceDir)
+	// Build arguments
+	c := []string{v.HyperKit}
+	c = append(c, strings.Split(args, " ")...)
+	c = append(c, "-f", kernArgs)
 
-	c := []string{v.HyperKit, "-A", "-u"}
+	// Write command line to state
+	if err := ioutil.WriteFile(path.Join(instanceDir, "cmdline"), []byte(strings.Join(c, " ")), 0666); err != nil {
+		return err
+	}
 
-	// Pid file
-	c = append(c, "-F", path.Join(instanceDir, hyperkitPid))
-
-	// CPU and Memory
-	c = append(c, "-c", fmt.Sprintf("%d", cpus))
-	c = append(c, "-m", fmt.Sprintf("%dM", memSz))
-
-	// Devices
-	c = append(c, "-s", "0:0,hostbridge")
-	c = append(c, "-s", "31,lpc")
-	c = append(c, "-s", "5,virtio-rnd")
-	c = append(c, "-s", fmt.Sprintf("4,virtio-blk,%s", path.Join(instanceDir, "disk.img")))
-	c = append(c, "-s", fmt.Sprintf("2:0,virtio-vpnkit,path=%s", v.VPNKitSock))
-	c = append(c, "-l", fmt.Sprintf("com1,autopty=%s,log=%s",
-		path.Join(instanceDir, "tty"),
-		path.Join(instanceDir, "console-ring")))
-
-	// Kernel command line
-	// Note, it is important that the kernel is one argv, not multiple
-	kernStr := fmt.Sprintf("kexec,%s,%s,",
-		path.Join(v.VMLib, moby, "vmlinuz64"),
-		path.Join(v.VMLib, moby, "initrd.img"))
-	kernStr += "earlyprintk=serial console=ttyS0"
-	kernStr += " panic=1 vsyscall=emulate page_poison=1"
-	kernStr += " ntp=gateway "
-	c = append(c, "-f", kernStr)
+	prop := params["Properties"].(map[string]interface{})
+	sz, ok := prop["Disk"].(float64)
+	if !ok {
+		return fmt.Errorf("Unable to extract Disk Size: %s", prop["Disk"])
+	}
+	err = createDisk(instanceDir, int(sz))
+	if err != nil {
+		return err
+	}
 
 	cmd := exec.Command(c[0], c[1:]...)
 	cmd.Env = os.Environ()
@@ -304,18 +311,19 @@ func (v hyperkitPlugin) execHyperKit(instanceDir, moby string, cpus, memSz, disk
 		for {
 			select {
 			case stderrl := <-stderrChan:
-				log.Warningln("HyperKit ", id, " STDERR: ", stderrl)
+				log.Warningln("HyperKit STDERR: ", stderrl)
 			case stdoutl := <-stdoutChan:
-				log.Infoln("HyperKit ", id, " STDOUT: ", stdoutl)
+				log.Infoln("HyperKit STDOUT: ", stdoutl)
 			case <-done:
 				return
 			}
 		}
 	}()
 
-	log.Infoln("Starting ", id, ": ", c)
+	log.Infoln("Starting: ", c)
 
 	err = cmd.Start()
+
 	return err
 }
 

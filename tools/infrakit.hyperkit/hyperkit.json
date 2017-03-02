@@ -8,7 +8,9 @@
             "Plugin": "instance-hyperkit",
             "Properties": {
                 "Moby": "default",
-                "Note": "Instance properties version 1.0"
+                "Disk" : 512,
+                "CPUs" : 2,
+                "Memory" : 1024
             }
         },
         "Flavor": {

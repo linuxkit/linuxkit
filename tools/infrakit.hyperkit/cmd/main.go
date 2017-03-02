@@ -7,12 +7,15 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/spf13/cobra"
+
 	"github.com/docker/infrakit/pkg/cli"
+	"github.com/docker/infrakit/pkg/discovery"
 	"github.com/docker/infrakit/pkg/plugin/metadata"
 	instance_plugin "github.com/docker/infrakit/pkg/rpc/instance"
 	metadata_plugin "github.com/docker/infrakit/pkg/rpc/metadata"
 	instance_spi "github.com/docker/infrakit/pkg/spi/instance"
-	"github.com/spf13/cobra"
+	"github.com/docker/infrakit/pkg/template"
 )
 
 const (
@@ -56,9 +59,21 @@ func main() {
 	vpnkitSock := cmd.Flags().String("vpnkit-sock", defaultVPNKitSock, "Path to VPNKit UNIX domain socket")
 
 	cmd.RunE = func(c *cobra.Command, args []string) error {
+		opts := template.Options{
+			SocketDir: discovery.Dir(),
+		}
+		thyper, err := template.NewTemplate("str://"+hyperkitArgs, opts)
+		if err != nil {
+			return err
+		}
+		tkern, err := template.NewTemplate("str://"+hyperkitKernArgs, opts)
+		if err != nil {
+			return err
+		}
+
 		cli.SetLogLevel(*logLevel)
 		cli.RunPlugin(*name,
-			instance_plugin.PluginServer(NewHyperKitPlugin(*vmLib, *vmDir, *hyperkit, *vpnkitSock)),
+			instance_plugin.PluginServer(NewHyperKitPlugin(*vmLib, *vmDir, *hyperkit, *vpnkitSock, thyper, tkern)),
 			metadata_plugin.PluginServer(metadata.NewPluginFromData(
 				map[string]interface{}{
 					"version":    Version,
