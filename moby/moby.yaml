@@ -20,6 +20,6 @@ system:
      - CAP_SETUID
      - CAP_SETGID
     network_mode: host
-database:
-  - file: etc/docker/daemon.json
-    value: '{"debug": true}'
+files:
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
