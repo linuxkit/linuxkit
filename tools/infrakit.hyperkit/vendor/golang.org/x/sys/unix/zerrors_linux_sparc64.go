@@ -470,6 +470,8 @@ const (
 	F_ULOCK                          = 0x0
 	F_UNLCK                          = 0x3
 	F_WRLCK                          = 0x2
+	GRND_NONBLOCK                    = 0x1
+	GRND_RANDOM                      = 0x2
 	HUPCL                            = 0x400
 	IBSHIFT                          = 0x10
 	ICANON                           = 0x2
