@@ -18,6 +18,7 @@ start() {
 	[ $? -ne 0 ] && rm -rf /Database && printf "Could not mount configuration database\n" 1>&2 && eend 1
 	cp -a /mnt/db/branch/master/ro/com.docker.driver.amd64-linux/* /Database
 	umount /mnt/db
+	rmdir /mnt/db
 
 	eend 0
 }
