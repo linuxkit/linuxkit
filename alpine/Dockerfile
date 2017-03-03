@@ -56,8 +56,4 @@ RUN \
   rc-update add oom default && \
   rc-update add test default && \
   rc-update add containerd default && \
-  rc-update add aws default && \
-  rc-update add azure default && \
-  rc-update add gcp-hostname default && \
-  rc-update add gcp-startup default && \
   true

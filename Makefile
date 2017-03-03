@@ -1,4 +1,4 @@
-.PHONY: test hyperkit-test qemu qemu-iso qemu-gce media ebpf ci ci-pr get get-regextract
+.PHONY: test hyperkit-test qemu qemu-iso media ebpf ci ci-pr get get-regextract
 
 all:
 	$(MAKE) -C alpine
@@ -26,10 +26,6 @@ alpine/mobylinux-bios.iso:
 alpine/mobylinux-efi.iso:
 	$(MAKE) -C alpine mobylinux-efi.iso
 
-.PHONY: alpine/gce.img.tar.gz
-alpine/gce.img.tar.gz:
-	$(MAKE) -C alpine gce.img.tar.gz
-
 QEMU_IMAGE=mobylinux/qemu:0fb8c648e8ed9ef6b1ec449587aeab6c53872744@sha256:606f30d815102e73bc01c07915dc0d5f153b0252c63f5f0ed1e39621ec656eb5
 
 # interactive versions need to use volume mounts
@@ -38,9 +34,6 @@ qemu: alpine/initrd.img kernel/x86_64/vmlinuz64
 
 qemu-iso: alpine/mobylinux-bios.iso
 	docker run -it --rm -v $(CURDIR)/alpine/mobylinux-bios.iso:/tmp/mobylinux-bios.iso $(QEMU_IMAGE)
-
-qemu-gce: alpine/gce.img.tar.gz
-	docker run -it --rm -v $(CURDIR)/alpine/gce.img.tar.gz:/tmp/gce.img.tar.gz $(QEMU_IMAGE)
 
 bin:
 	mkdir -p $@
