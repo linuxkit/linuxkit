@@ -21,8 +21,6 @@ TAR2INITRD_IMAGE=mobylinux/tar2initrd:d5711601eb5b89de0f052d87365e18388ff3f1b5@s
 
 TARTAR2INITRD_IMAGE=mobylinux/tartar2initrd:d56cde1558e3080e59a32e3cd7c7141baa601811@sha256:e1ad4522ff906d339da5f250b9ef6bffa5a70b4dec7d2cf7f7dbd0447b79352f
 
-GCE_IMAGE=mobylinux/mkimage-gce:83158ebe303a970a3131c3d02ef2ba00ca5e4a14@sha256:51c30fbf946ca9967688a411e7bf69769a22987cd47ad03428491dd1556fcf63
-
 MKIMAGE_BASE=mobylinux/mkimage-base:870f7512498f2ce5feccebe15fb0d03c5c3ebac2@sha256:47d1ed872b6a44f13b61ea80b3eeab4519dc151c7d684a89a53aa26233b4e087
 
 moby.img: Dockerfile etc usr init
@@ -48,9 +46,6 @@ moby.img: Dockerfile etc usr init
 	  -C packages/test etc -C ../.. \
 	  -C packages/iptables usr -C ../.. \
 	  -C packages/containerd etc -C ../.. \
-	  -C packages/aws etc -C ../.. \
-	  -C packages/azure etc -C ../.. \
-	  -C packages/gcp etc -C ../.. \
 	  | \
 	  docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	echo $$BUILD > mobylinux.tag && \
@@ -81,126 +76,8 @@ mobylinux-efi.iso: initrd.img ../kernel/x86_64/vmlinuz64
 mobylinux-bios.iso: initrd.img ../kernel/x86_64/vmlinuz64
 	tar cf - initrd.img -C ../kernel/x86_64 vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(BIOS_IMAGE) >$@
 
-gce: gce.img.tar.gz
-
-gce.img.tar.gz: initrd.img ../kernel/x86_64/vmlinuz64
-	tar cf - initrd.img -C ../kernel/x86_64 vmlinuz64 | docker run --rm --net=none --log-driver=none -i $(GCE_IMAGE) >$@
-
-gce-upload:
-ifeq ($(FORCE_GSUTIL_AUTH),1)
-	-docker rm gsutil-moby-config 2>/dev/null
-	docker run -it --name gsutil-moby-config google/cloud-sdk gcloud auth login --brief --project=docker-for-gcp
-endif
-	docker run --rm -ti \
-		--volumes-from gsutil-moby-config \
-		-v $(CURDIR)/gce.img.tar.gz:/gce.img.tar.gz \
-		google/cloud-sdk \
-		gsutil cp -a public-read /gce.img.tar.gz gs://docker-for-gcp-images/latest/gce.img.tar.gz
-
-ami: initrd.img ../kernel/x86_64/vmlinuz64
-	tar cf - \
-	  cloud initrd.img -C .. kernel/x86_64/vmlinuz64 \
-	  | \
-	  docker build -t moby-ami:build -f cloud/Dockerfile.ami -
-	# The EBS device seems not to show up without mounting in /dev, even
-	# with --privileged enabled.
-	docker run \
-		--rm \
-		--privileged \
-		-v /dev:/dev \
-		-e AWS_SECRET_ACCESS_KEY \
-		-e AWS_ACCESS_KEY_ID \
-		-e TAG_KEY \
-		-e TAG_KEY_PREV \
-		-e CHANNEL \
-		-e MOBY_SRC_ROOT \
-		-e DOCKER_BIN_URL \
-		moby-ami:build clean
-	docker run \
-		--rm \
-		--privileged \
-		-v /dev:/dev \
-		-e AWS_SECRET_ACCESS_KEY \
-		-e AWS_ACCESS_KEY_ID \
-		-e TAG_KEY \
-		-e TAG_KEY_PREV \
-		-e CHANNEL \
-		-e MOBY_SRC_ROOT \
-		-e DOCKER_BIN_URL \
-		moby-ami:build bake >./cloud/aws/ami_id.out
-
-ami-clean-mount:
-	docker run \
-		--rm \
-		--privileged \
-		-v /dev:/dev \
-		-e AWS_SECRET_ACCESS_KEY \
-		-e AWS_ACCESS_KEY_ID \
-		-e TAG_KEY \
-		-e TAG_KEY_PREV \
-		-e CHANNEL \
-		-e MOBY_SRC_ROOT \
-		-e DOCKER_BIN_URL \
-		moby-ami:build clean-mount
-
-# TODO(nathanleclaire): Migrate this to docker/editions repo.
-uploadvhd: azure
-	docker run \
-		-i \
-		-e VHD_SIZE \
-		-e AZURE_STG_ACCOUNT_KEY \
-		-e AZURE_STG_ACCOUNT_NAME \
-		-e CONTAINER_NAME \
-		--log-driver none \
-		--rm \
-		-v vhdartifact:/tmp \
-		moby-azure:build \
-		uploadvhd >./cloud/azure/vhd_blob_url.out
-
-azure: initrd.img ../kernel/x86_64/vmlinuz64 vhdartifact
-	tar cf - \
-	  cloud initrd.img -C .. kernel/x86_64/vmlinuz64 \
-	  | \
-	  docker build -t moby-azure:build -f cloud/Dockerfile.azure -
-	tar cf - \
-	  cloud \
-	  | \
-	  docker build -t moby-azure:raw2vhd -f cloud/Dockerfile.raw2vhd -
-	# -v /dev:/dev needed in addition to --privileged due to creation of
-	#  loopback device (mount namespace?)
-	docker run \
-		--rm \
-		--privileged \
-		--log-driver none \
-		-v vhdartifact:/tmp \
-		-v /dev:/dev \
-		moby-azure:build \
-		makeraw
-	docker run \
-		--rm \
-		--log-driver none \
-		-v vhdartifact:/tmp \
-		moby-azure:raw2vhd
-	docker run \
-		--rm \
-		-i \
-		--log-driver none \
-		-v vhdartifact:/tmp \
-		moby-azure:build \
-		tarout \
-	| tar -xvf -
-
-vhdartifact:
-	# NB: Multiple 'docker volume create' with same name does not return
-	# non-zero even though maybe it should.  The '|| true' is included as
-	# future insurance.
-	docker volume create --name vhdartifact || true
-
 clean:
-	rm -f *.img *.vhd *.iso *.tag mobylinux.efi etc/moby-commit gce.img.tar.gz
-	docker images -q moby-azure:build | xargs docker rmi -f || true
-	docker images -q moby-azure:raw2vhd | xargs docker rmi -f || true
-	docker volume rm vhdartifact || true
+	rm -f *.img *.vhd *.iso *.tag mobylinux.efi etc/moby-commit
 	$(MAKE) -C packages clean
 	$(MAKE) -C containers clean
 	$(MAKE) -C test clean
