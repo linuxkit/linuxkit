@@ -13,7 +13,7 @@ system:
     oom_score_adj: -800
     command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: nginx
-    image: "nginx"
+    image: "nginx:alpine"
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN
@@ -25,3 +25,5 @@ files:
     contents: '{"debug": true}'
 outputs:
   - format: kernel+initrd
+  - format: iso-bios
+  - format: iso-efi
