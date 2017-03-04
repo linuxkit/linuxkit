@@ -50,7 +50,7 @@ mcopy -i iso/efi.raw mobylinux.efi ::/EFI/BOOT/BOOTX64.EFI
 xorriso -as mkisofs \
 	-R -f -e efi.raw -no-emul-boot -o mobylinux-efi.iso iso
 
-tar cf - mobylinux-efi.iso mobylinux.efi
+cat mobylinux-efi.iso
 
 # How to build a VHDX. Commented out because we are currently not using it
 # Don't delete: It took too long to figure out how to do this...
