@@ -11,3 +11,4 @@ disk.img.*
 *.tar.gz
 *.vhdx
 *.efi
+*-bzImage

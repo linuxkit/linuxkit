@@ -1,8 +1,8 @@
-FROM golang:1.8-alpine
-RUN apk update && apk add --no-cache build-base git
-
+FROM alpine:3.5
+RUN apk update && apk add --no-cache build-base git go
+ENV GOPATH=/go PATH=$PATH:/go/bin
 RUN go get -u github.com/golang/lint/golint
 
-COPY compile.sh /usr/bin/
+COPY . ./
 
-ENTRYPOINT ["/usr/bin/compile.sh"]
+ENTRYPOINT ["/compile.sh"]

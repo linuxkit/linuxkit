@@ -1,4 +1,0 @@
-#!/bin/sh
-
-# TODO check with hdparm if supports TRIM
-/sbin/fstrim /var || true

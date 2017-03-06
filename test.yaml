@@ -1,0 +1,20 @@
+kernel: "mobylinux/kernel:7fa748810d7866797fd807a5682d5cb3c9c98111"
+init: "mobylinux/init:99cd639fa724a706e2d85575cabc4b645b71a727"
+system:
+  - name: binfmt
+    image: "mobylinux/binfmt:a94e0587b702edaa95cc6f303464959d0eb2311c@sha256:432732b90cbe0498f5ca148d75b90bb1eabd8fbfe8c872df8b23906c225091b1"
+    binds:
+     - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
+  - name: check
+    image: "mobylinux/check:6dd4f08c02c1f80cf38f63b30046e48b88d72743"
+    pid: host
+    capabilities:
+     - CAP_SYS_BOOT
+files:
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
+outputs:
+  - format: kernel+initrd
+  - format: iso-bios
+  - format: iso-efi
