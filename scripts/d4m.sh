@@ -11,17 +11,17 @@ DB_BRIDGE=com.docker.driver.amd64-linux/slirp/bridge-connections
 
 # Check if VPNKit L2 bridge mode is enabled
 enable_bridge() {
-    (cd $DB && \
+    (cd "${DB}" && \
          echo -n "1" > ${DB_BRIDGE} && \
          git add ${DB_BRIDGE} && \
          git commit -m "enable bridge"
     )
 }
 
-(cd $DB; git reset --hard)
-if [ -f ${DB}/${DB_BRIDGE} ]; then
-    content=$(cat ${DB}/${DB_BRIDGE})
-    [ ${content} != "1" ] && enable_bridge
+(cd "${DB}"; git reset --hard)
+if [ -f "${DB}/${DB_BRIDGE}" ]; then
+    content=$(cat "${DB}/${DB_BRIDGE}")
+    [ "${content}" != "1" ] && enable_bridge
 else
     enable_bridge
 fi
@@ -31,7 +31,7 @@ KERNEL="kernel/x86_64/vmlinuz64"
 CMDLINE="earlyprintk=serial console=ttyS0"
 
 DISK=$(mktemp disk.img.XXXX)
-dd if=/dev/zero of=$DISK bs=1048576 count=256
+dd if=/dev/zero of="$DISK" bs=1048576 count=256
 
 MEM="-m 1G"
 SMP="-c 1"
