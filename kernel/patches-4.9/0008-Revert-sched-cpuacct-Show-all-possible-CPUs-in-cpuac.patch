@@ -1,7 +1,7 @@
-From ba848e33943d29bc4f50175b8a6a947fcc9c32c8 Mon Sep 17 00:00:00 2001
+From 3fc81fca77e4368e219e528880d9fcd871506bf0 Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
 Date: Fri, 17 Feb 2017 11:45:31 +0000
-Subject: [PATCH 9/9] Revert "sched/cpuacct: Show all possible CPUs in cpuacct
+Subject: [PATCH 8/8] Revert "sched/cpuacct: Show all possible CPUs in cpuacct
  output"
 
 This reverts commit 5ca3726af7f66a8cc71ce4414cfeb86deb784491.

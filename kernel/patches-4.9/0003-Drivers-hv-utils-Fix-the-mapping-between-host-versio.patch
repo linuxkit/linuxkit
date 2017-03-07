@@ -1,7 +1,7 @@
-From 8ab2322a422619e3af01691da0ae93ad05e81d39 Mon Sep 17 00:00:00 2001
+From d59f45195664c102c5b9f135627a2da5d1427034 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:07 -0800
-Subject: [PATCH 4/9] Drivers: hv: utils: Fix the mapping between host version
+Subject: [PATCH 3/8] Drivers: hv: utils: Fix the mapping between host version
  and protocol to use
 
 We should intentionally declare the protocols to use for every known host
