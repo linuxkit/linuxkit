@@ -2,12 +2,26 @@
 
 We may apply patches to the Linux kernel used in Moby, primarily to
 cherry-pick some upstream patches or to add some additional
-functionality, not yet accepted upstream.  This document outlines the
-recommended procedure to handle these patches.
+functionality, not yet accepted upstream.
 
-Patches are located in `alpine/kernel/patches` and are maintained in
-`git am` format to keep important meta data such as the provenance of
-the patch.
+Patches are located in `alpine/kernel/patches-<kernel version>` and should follow these rules:
+- Patches *must* be in `git am` format, i.e. they should contain a
+  complete and sensible commit message.
+- Patches *must* contain a Developer's Certificate of Origin.
+- Patch files *must* have a numeric prefix to ensure the ordering in
+  which they are applied.
+- If patches are cherry-picked, they *must* be cherry-picked with `-x`
+  to contain the original commit ID.
+
+This document outlines the recommended procedure to handle
+patches. The general process is to apply them to a branch of the
+[Linux stable tree](https://kernel.googlesource.com/pub/scm/linux/kernel/git/stable/linux-stable/)
+and then export them with `git format-patch`.
+
+If you want to add or remove patches currently used, please also ping
+@rneugeba on the PR so that we can update our internal Linux tree to
+ensure that patches are carried forward if we update the kernel in the
+future.
 
 
 # Preparation
@@ -17,30 +31,26 @@ Patches are applied to point releases of the linux stable tree. You need an up-t
 git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 ```
 
-Throughout we use the following variables:
+We use the following variables:
 - `MOBYSRC`: Base directory of Moby Linux repository
 - `LINUXSRC`: Base directory of Linux stable kernel repository
-- `CURTAG`: Release tag patches are currently based on
-- `NEWTAG`: New release tag to base the patches on
 e.g.:
 ```sh
 MOBYSRC=~/src/docker/moby
 LINUXSRC=~/src/docker/linux-stable
-
-CURTAG=v4.4.23
-NEWTAG=v4.4.24
 ```
+to refer to the location of the Moby and Linux kernel trees.
 
 
 # Updating the patches to a new kernel version
 
-There are different ways to do this. You can either rebase or try to
-re-apply the patches.  rebase is the recommended way. Once you have
-the patches in a new branch you need to export them.
+There are different ways to do this, but we recommend applying the patches to the current version and then rebase to the new version. We define the following variables to refer to the current base tag and the new tag you want to rebase the patches to:
+```sh
+CURTAG=v4.9.13
+NEWTAG=v4.9.13
+```
 
-## Rebase
-
-The simplest way is to create a new branch of the current tag, apply the patches and then rebase to the new tag:
+If you don't already have a branch, it's best to import the current patch set and then rebase:
 ```sh
 cd $LINUXSRC
 git checkout -b ${NEWTAG}-moby ${CURTAG}
@@ -50,7 +60,7 @@ git rebase ${NEWTAG}-moby ${NEWTAG}
 
 The `git am` should not have any conflicts and if the rebase has conflicts resolve them, then `git add <files>` and `git rebase --continue`.
 
-If you already have a `${CURTAG}-moby` branch, you can also do a more complex rebase by creating a new branch from the current branch and then rebase:
+If you already have linux tree with a `${CURTAG}-moby` branch, you can rebase by creating a new branch from the current branch and then rebase:
 ```sh
 cd $LINUXSRC
 git checkout ${CURTAG}-moby
@@ -60,50 +70,25 @@ git rebase --onto ${NEWTAG} ${NEWTAG} ${NEWTAG}-moby
 Again, resolve any conflicts as described above.
 
 
-## Re-apply patches
+# Adding/Removing patches
 
-Create a branch from a tag for the new patches, e.g.:
-```sh
-cd $LINUXSRC
-git checkout -b ${NEWTAG}-moby ${NEWTAG}
-```
+If you want to add or remove patches make sure you have an up-to-date branch with the currently applied patches (see above). Then either any normal means (`git cherry-pick -x`, `git am`, or `git commit`, etc) to add new patches.
 
-Import all the existing patches into the new branch:
-```sh
-cd $LINUXSRC
-git am --reject ${MOBYSRC}/alpine/kernel/patches/*.patch
-```
-
-If this causes merge conflicts resolve them as they arise and continue as instructed.
-
-
-## Export patches to moby
-
-Irrespective of using the rebase or re-apply method, you should now have a `${NEWTAG}-moby` branch. Form this export the patches to moby:
-```sh
-cd $LINUXSRC
-rm $MOBYSRC/alpine/kernel/patches/*
-git format-patch -o $MOBYSRC/alpine/kernel/patches ${NEWTAG}..HEAD
-```
-
-Create a PR for Moby.
-
-
-# Adding new patches
-
-For patches from upstream Linux kernel versions, use cherry-picking:
-```sh
-git cherry-pick -x <sha of commit>
-```
-The `-x` ensures that the origin of the patch is recorded in the commit.
-
-
-For patches from the mailing list or patchworks, add a line like:
+If the patch is not cherry-picked from a standard Linux tree (like
+newer stable branches, `linux-next`, `net-next`, Linus' tree) try to
+include as much information in the commit message as possible as to
+where the patch originated from. The canonical form would be to add a `Origin:` line after the DCO lines, e.g.:
 ```
 Origin: https://patchwork.ozlabs.org/patch/622404/
 ```
-to the patch (after the `Signed-off-by` and `Cc` lines.
 
+# Export patches to moby
 
-For patches written from scratch, make sure it has a sensible commit
-messages as well as a DCO line.
+To export patches to Moby, you should use `git format-patch` from the Linux tree, e.g., something along these lines:
+```sh
+cd $LINUXSRC
+rm $MOBYSRC/alpine/kernel/patches-4.9/*
+git format-patch -o $MOBYSRC/alpine/kernel/patches-4.9 v4.9.13..HEAD
+```
+
+The, create a PR for Moby.
