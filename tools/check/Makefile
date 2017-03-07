@@ -1,14 +1,14 @@
 .PHONY: tag push
 
 BASE=alpine:3.5
-IMAGE=go-compile
+IMAGE=check
 
 default: push
 
-hash: Dockerfile compile.sh
+hash: Dockerfile check.sh check-kernel-config.sh
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm --entrypoint=/bin/sh $(IMAGE):build -c "cat $^ /lib/apk/db/installed /go/bin/golint | sha1sum" | sed 's/ .*//' > hash
+	docker run --rm --entrypoint=/bin/sh $(IMAGE):build -c "cat $^ /lib/apk/db/installed | sha1sum" | sed 's/ .*//' > hash
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \

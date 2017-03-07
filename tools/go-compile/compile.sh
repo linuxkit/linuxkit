@@ -3,7 +3,6 @@
 # This is designed to compile a single package to a single binary
 # so it makes some assumptions about things to simplify config
 # to output a single binary (in a tarball) just use -o file
-# use --docker to output a tarball for input to docker build -
 
 set -e
 
@@ -23,6 +22,10 @@ do
 		mkdir -p "$(dirname $2)"
 		shift
 	;;
+	--package)
+		package="$2"
+		shift
+	;;
 	*)
 		echo "Unknown option $1"
 		exit 1
@@ -33,7 +36,7 @@ done
 [ $# -gt 0 ] && usage
 [ -z "$out" ] && usage
 
-package=$(basename "$out")
+[ -z "$package" ] && package=$(basename "$out")
 
 dir="$GOPATH/src/$package"
 
@@ -46,16 +49,21 @@ cd $dir
 
 # lint before building
 >&2 echo "gofmt..."
-test -z $(gofmt -s -l .| grep -v .pb. | grep -v */vendor/ | tee /dev/stderr)
+test -z $(gofmt -s -l .| grep -v .pb. | grep -v vendor/ | tee /dev/stderr)
 
 >&2 echo "govet..."
-test -z $(go tool vet -printf=false . 2>&1 | grep -v */vendor/ | tee /dev/stderr)
+test -z $(GOOS=linux go tool vet -printf=false . 2>&1 | grep -v vendor/ | tee /dev/stderr)
 
 >&2 echo "golint..."
 test -z $(find . -type f -name "*.go" -not -path "*/vendor/*" -not -name "*.pb.*" -exec golint {} \; | tee /dev/stderr)
 
 >&2 echo "go build..."
 
-go build -o $out -buildmode pie --ldflags '-extldflags "-static"' "$package"
+if [ "$GOOS" = "darwin" ]
+then
+	go build -o $out "$package"
+else
+	go build -o $out -buildmode pie --ldflags '-extldflags "-static"' "$package"
+fi
 
 tar cf - $out
