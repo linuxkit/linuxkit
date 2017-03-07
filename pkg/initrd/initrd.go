@@ -112,10 +112,10 @@ func (w *Writer) Write(b []byte) (n int, e error) {
 }
 
 // Close closes the writer
-func (initrd *Writer) Close() error {
-	err1 := initrd.cw.Close()
-	err2 := initrd.gw.Close()
-	err3 := initrd.pw.Close()
+func (w *Writer) Close() error {
+	err1 := w.cw.Close()
+	err2 := w.gw.Close()
+	err3 := w.pw.Close()
 	if err1 != nil {
 		return err1
 	}
