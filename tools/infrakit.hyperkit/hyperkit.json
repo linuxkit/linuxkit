@@ -15,16 +15,7 @@
         },
         "Flavor": {
             "Plugin": "flavor-vanilla",
-            "Properties": {
-                "Init": [
-                    "docker pull nginx:alpine",
-                    "docker run -d -p 80:80 nginx-alpine"
-                ],
-                "Tags": {
-                    "tier": "web",
-                    "project": "infrakit"
-                }
-            }
+            "Properties": { }
         }
     }
 }
