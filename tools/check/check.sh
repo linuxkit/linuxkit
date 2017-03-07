@@ -9,4 +9,7 @@ function failed {
 bash /check-config.sh || failed
 
 printf "Moby test suite PASSED\n"
+
+cat /etc/moby
+
 /sbin/poweroff -f
