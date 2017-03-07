@@ -26,11 +26,7 @@ func dockerRun(args ...string) ([]byte, error) {
 	}
 	args = append([]string{"run", "--rm"}, args...)
 	cmd := exec.Command(docker, args...)
-	out, err := cmd.Output()
-	if err != nil {
-		return []byte{}, err
-	}
-	return out, nil
+	return cmd.CombinedOutput()
 }
 
 func dockerRunInput(input io.Reader, args ...string) ([]byte, error) {
@@ -122,7 +118,7 @@ func build(configfile string) {
 	)
 	out, err := dockerRun(m.Kernel, "tar", "cf", "-", bzimageName, ktarName)
 	if err != nil {
-		log.Fatalf("Failed to extract kernel image and tarball")
+		log.Fatalf("Failed to extract kernel image and tarball: %s", string(out))
 	}
 	buf := bytes.NewBuffer(out)
 	bzimage, ktar, err := untarKernel(buf, bzimageName, ktarName)
