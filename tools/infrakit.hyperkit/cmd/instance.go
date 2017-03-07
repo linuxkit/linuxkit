@@ -242,8 +242,8 @@ const hyperkitArgs = "-A -u -F {{.VMLocation}}/hyperkit.pid " +
 	"-s 2:0,virtio-vpnkit,path={{.VPNKitSock}} " +
 	"-l com1,autopty={{.VMLocation}}/tty,log={{.VMLocation}}/console-ring"
 const hyperkitKernArgs = "kexec," +
-	"{{.Properties.Moby}}/vmlinuz64," +
-	"{{.Properties.Moby}}/initrd.img," +
+	"{{.Properties.Moby}}-bzImage," +
+	"{{.Properties.Moby}}-initrd.img," +
 	"earlyprintk=serial console=ttyS0 panic=1 vsyscall=emulate page_poison=1 ntp=gateway"
 
 func (v hyperkitPlugin) execHyperKit(params map[string]interface{}) error {
