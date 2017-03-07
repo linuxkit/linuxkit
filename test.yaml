@@ -7,7 +7,7 @@ system:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: check
-    image: "mobylinux/check:6dd4f08c02c1f80cf38f63b30046e48b88d72743"
+    image: "mobylinux/check:699ca8e3792dda19a6fd981f58b47c3be0e5d6ec"
     pid: host
     capabilities:
      - CAP_SYS_BOOT
