@@ -1,5 +1,5 @@
 .PHONY: default all
-default: bin/moby
+default: bin/moby moby-initrd.img
 all: default
 
 GO_COMPILE=mobylinux/go-compile:236629d9fc0779db9e7573ceb8b0e92f08f553be@sha256:16020c2d90cecb1f1d2d731187e947535c23f38b62319dd386ae642b4b32e1fb
@@ -14,8 +14,6 @@ endif
 bin/moby: $(MOBY_DEPS) | bin
 	tar cf - $(MOBY_DEPS) | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 
-QEMU_IMAGE=mobylinux/qemu:156d2160c2ccf4d5118221bc2708f6c0981d54cc@sha256:e1345ba0400d6c45bf3bdf4f4ed425c3d7596d11e6553b83f17f5893dfc49f7b
-
 moby-initrd.img: bin/moby moby.yaml
 	$^
 
@@ -28,11 +26,11 @@ test-bzImage: test-initrd.img
 
 # interactive versions need to use volume mounts
 .PHONY: qemu qemu-iso
-qemu: moby-initrd.img
-	docker run -it --rm -v $(CURDIR)/moby-initrd.img:/tmp/initrd.img -v $(CURDIR)/moby-bzImage:/tmp/vmlinuz64 $(QEMU_IMAGE)
+qemu: moby-initrd.img moby-bzImage
+	./scripts/qemu.sh $^
 
 qemu-iso: alpine/mobylinux-bios.iso
-	docker run -it --rm -v $(CURDIR)/mobylinux-bios.iso:/tmp/mobylinux-bios.iso $(QEMU_IMAGE)
+	./scripts/qemu.sh $^
 
 bin:
 	mkdir -p $@
@@ -58,8 +56,8 @@ else
 endif
 
 .PHONY: hyperkit hyperkit-test
-hyperkit: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit alpine/initrd.img kernel/x86_64/vmlinuz64
-	./scripts/hyperkit.sh
+hyperkit: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit moby-initrd.img moby-bzImage
+	./scripts/hyperkit.sh moby
 
 define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
@@ -72,7 +70,7 @@ hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit test-initr
 
 .PHONY: test
 test: test-initrd.img test-bzImage
-	tar cf - $^ | docker run --rm -i $(QEMU_IMAGE) 2>&1 | tee test.log
+	tar cf - $^ | ./scripts/qemu.sh 2>&1 | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: ebpf
