@@ -30,7 +30,7 @@ then
 	then
 		ARGS="$ARGS -initrd $INITRD"
 	fi
-	ARGS="$ARGS -append console=ttyS0 -drive file=systemdisk.img,format=raw"
+	ARGS="$ARGS -drive file=systemdisk.img,format=raw"
 else
 	echo "no recognised boot media" >2
 	exit 1
@@ -38,4 +38,4 @@ fi
 
 echo "$ARGS" | grep -q systemdisk && qemu-img create -f raw systemdisk.img 256M
 
-qemu-system-x86_64 -device virtio-rng-pci -serial stdio -vnc none -m 1024 $ARGS $*
+qemu-system-x86_64 -device virtio-rng-pci -serial stdio -vnc none -m 1024 -append "$*" $ARGS
