@@ -1,7 +1,5 @@
-.PHONY: default test hyperkit-test qemu qemu-iso media ebpf ci ci-pr
-
+.PHONY: default all
 default: bin/moby
-
 all: default
 
 GO_COMPILE=mobylinux/go-compile:236629d9fc0779db9e7573ceb8b0e92f08f553be@sha256:16020c2d90cecb1f1d2d731187e947535c23f38b62319dd386ae642b4b32e1fb
@@ -29,6 +27,7 @@ test-initrd.img: bin/moby test.yaml
 test-bzImage: test-initrd.img
 
 # interactive versions need to use volume mounts
+.PHONY: qemu qemu-iso
 qemu: moby-initrd.img
 	docker run -it --rm -v $(CURDIR)/moby-initrd.img:/tmp/initrd.img -v $(CURDIR)/moby-bzImage:/tmp/vmlinuz64 $(QEMU_IMAGE)
 
@@ -58,6 +57,7 @@ else
 	touch $@
 endif
 
+.PHONY: hyperkit hyperkit-test
 hyperkit: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit alpine/initrd.img kernel/x86_64/vmlinuz64
 	./scripts/hyperkit.sh
 
@@ -70,10 +70,12 @@ hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit test-initr
 	script -q /dev/null ./scripts/hyperkit.sh test | tee test.log
 	$(call check_test_log, test.log)
 
+.PHONY: test
 test: test-initrd.img test-bzImage
 	tar cf - $^ | docker run --rm -i $(QEMU_IMAGE) 2>&1 | tee test.log
 	$(call check_test_log, test.log)
 
+.PHONY: ebpf
 EBPF_TAG=ebpf/ebpf.tag
 EBPF_IMAGE=mobylinux/ebpf:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
 ebpf: alpine/initrd.img kernel/x86_64/vmlinuz64
@@ -85,6 +87,7 @@ else
 	$(error "git not clean")
 endif
 
+.PHONY: ci ci-tag ci-pr
 ci:
 	$(MAKE) clean
 	$(MAKE)
@@ -101,6 +104,5 @@ ci-pr:
 	$(MAKE) test
 
 .PHONY: clean
-
 clean:
 	rm -rf bin disk.img test.log *-initrd.img *-bzImage *.iso
