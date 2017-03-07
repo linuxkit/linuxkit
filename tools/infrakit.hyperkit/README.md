@@ -34,7 +34,7 @@ Then start the hyperkit plugin:
 ./build/infrakit-instance-hyperkit
 ```
 
-Next, you can commit a new configuration. There is a sample infrakit config file in `hyperkit.json` which assumes that the directory `./vms/default` contains the `vmlinuz64` and `initrd.img` image to boot.
+Next, you can commit a new configuration. There is a sample infrakit config file in `hyperkit.json`. It assumes that you have a default moby build in the top-level directory. The `Moby` property needs to be of the form `<dir>/<prefix>` and assumes that the kernel and initrd images are called `<prefix>-bzImage` and `<prefix>-initrd.img` respectively (this is the convention used by the `moby` tool).
 ```
 infrakit group commit hyperkit.json
 ```

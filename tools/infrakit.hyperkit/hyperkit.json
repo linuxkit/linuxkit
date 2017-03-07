@@ -7,7 +7,7 @@
         "Instance": {
             "Plugin": "instance-hyperkit",
             "Properties": {
-                "Moby": "./vms/default",
+                "Moby": "../../moby",
                 "Disk" : 512,
                 "CPUs" : 2,
                 "Memory" : 1024
