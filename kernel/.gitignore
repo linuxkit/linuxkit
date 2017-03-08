@@ -3,3 +3,4 @@ etc/
 lib/
 usr/
 sbin/
+bzImage
