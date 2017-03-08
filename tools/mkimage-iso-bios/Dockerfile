@@ -10,4 +10,4 @@ RUN \
 
 COPY . .
 
-CMD [ "/make-iso" ]
+ENTRYPOINT [ "/make-iso" ]

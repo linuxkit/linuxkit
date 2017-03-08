@@ -14,6 +14,7 @@ cd /tmp/efi
 
 INITRD="$(find . -name '*.img')"
 KERNEL="$(find . -name vmlinuz64 -or -name bzImage)"
+CMDLINE="$*"
 
 [ "$KERNEL" = "vmlinuz64" ] || mv "$KERNEL" vmlinuz64
 [ "$INITRD" = "initrd.img" ] || mv "$INITRD" initrd.img
@@ -21,13 +22,10 @@ KERNEL="$(find . -name vmlinuz64 -or -name bzImage)"
 # clean up subdirectories
 find . -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
 
-# Docker for Windows specific options, should be moved
-WINDOWS_OPTIONS="mobyplatform=windows vsyscall=emulate page_poison=1 panic=1 rootdelay=300 noautodetect"
-
 # Create a EFI boot file with kernel and initrd. From:
 # https://github.com/haraldh/mkrescue-uefi/blob/master/mkrescue-uefi.sh
 cp /usr/lib/gummiboot/linuxx64.efi.stub .
-echo "earlyprintk=ttyS0,115200 console=ttyS0,115200 $WINDOWS_OPTIONS" > cmdline.txt
+echo "${CMDLINE} rootdelay=300 noautodetect" > cmdline.txt
 
 objcopy \
 	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
