@@ -1,4 +1,4 @@
-kernel: "mobylinux/kernel:7fa748810d7866797fd807a5682d5cb3c9c98111"
+kernel: "mobylinux/kernel:598481c08deafa37dccb33c88ad69fdecda57909"
 init: "mobylinux/init:99cd639fa724a706e2d85575cabc4b645b71a727"
 system:
   - name: binfmt
