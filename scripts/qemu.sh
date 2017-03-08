@@ -12,6 +12,7 @@ fi
 
 FILE=$1
 FILE2=$2
+CMDLINE=$3
 [ -z "$FILE" ] && FILE="$PWD/moby"
 
 BASE=$(basename "$FILE")
@@ -32,4 +33,4 @@ BASE=$(basename "$FILE")
 MOUNTS="-v $FILE:/tmp/$BASE"
 BASE2=$(basename "$FILE2")
 [ ! -z "$FILE2" ] && MOUNTS="$MOUNTS -v $FILE2:/tmp/$BASE2"
-docker run -it --rm $MOUNTS "$QEMU_IMAGE" console=ttyS0
+docker run -it --rm $MOUNTS "$QEMU_IMAGE" $CMDLINE
