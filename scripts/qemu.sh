@@ -1,6 +1,6 @@
 #!/bin/sh
 
-QEMU_IMAGE=mobylinux/qemu:156d2160c2ccf4d5118221bc2708f6c0981d54cc@sha256:e1345ba0400d6c45bf3bdf4f4ed425c3d7596d11e6553b83f17f5893dfc49f7b
+QEMU_IMAGE=mobylinux/qemu:db81e782519dd9169e0cbc38fa883fb9d77e3c05@sha256:bfad5ef66a2ee1473bcda6bf2485673cf2b72fbe4b29b228dc152a63ce0dfc7a
 
 # if not interactive
 if [ ! -t 0 -a -z "$1" ]
@@ -32,4 +32,4 @@ BASE=$(basename "$FILE")
 MOUNTS="-v $FILE:/tmp/$BASE"
 BASE2=$(basename "$FILE2")
 [ ! -z "$FILE2" ] && MOUNTS="$MOUNTS -v $FILE2:/tmp/$BASE2"
-docker run -it --rm $MOUNTS "$QEMU_IMAGE"
+docker run -it --rm $MOUNTS "$QEMU_IMAGE" console=ttyS0
