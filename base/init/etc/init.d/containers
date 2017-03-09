@@ -1,8 +1,8 @@
 #!/bin/sh
 
 # TODO more robust
-while [ ! -S /run/containerd/containerd.sock ]; do sleep 1; done
-while ! ctr list 2> /dev/null; do sleep 1; done
+# while [ ! -S /run/containerd/containerd.sock ]; do sleep 1; done
+# while ! ctr list 2> /dev/null; do sleep 1; done
 
 # start system containers
 # temporarily using runc not containerd
