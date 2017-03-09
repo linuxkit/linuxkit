@@ -2,7 +2,7 @@
 default: bin/moby moby-initrd.img
 all: default
 
-GO_COMPILE=mobylinux/go-compile:236629d9fc0779db9e7573ceb8b0e92f08f553be@sha256:16020c2d90cecb1f1d2d731187e947535c23f38b62319dd386ae642b4b32e1fb
+GO_COMPILE=mobylinux/go-compile:3afebc59c5cde31024493c3f91e6102d584a30b9@sha256:e0786141ea7df8ba5735b63f2a24b4ade9eae5a02b0e04c4fca33b425ec69b0a
 
 MOBY_DEPS=$(wildcard *.go) pkg vendor
 GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')

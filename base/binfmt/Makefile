@@ -2,7 +2,7 @@ QEMU_IMAGE=mobylinux/qemu-user-static:da39a3ee5e6b4b0d3255bfef95601890afd80709@s
 QEMU_FILES=qemu-arm qemu-aarch64 qemu-ppc64le
 QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
 
-GO_COMPILE=mobylinux/go-compile:236629d9fc0779db9e7573ceb8b0e92f08f553be@sha256:16020c2d90cecb1f1d2d731187e947535c23f38b62319dd386ae642b4b32e1fb
+GO_COMPILE=mobylinux/go-compile:3afebc59c5cde31024493c3f91e6102d584a30b9@sha256:e0786141ea7df8ba5735b63f2a24b4ade9eae5a02b0e04c4fca33b425ec69b0a
 
 BINFMT_BINARY=usr/bin/binfmt
 
