@@ -1,6 +1,13 @@
 kernel: "mobylinux/kernel:598481c08deafa37dccb33c88ad69fdecda57909"
 init: "mobylinux/init:2f1b5c1be1157cb17e5b1e6dee171dccdebb5277"
 system:
+  - name: sysctl
+    image: "mobylinux/sysctl:9bef9130afb8023ed1b2cecb4d961ba34a0f6628"
+    network_mode: host
+    pid: host
+    ipc: host
+    capabilities:
+     - CAP_SYS_ADMIN
   - name: binfmt
     image: "mobylinux/binfmt:a94e0587b702edaa95cc6f303464959d0eb2311c@sha256:432732b90cbe0498f5ca148d75b90bb1eabd8fbfe8c872df8b23906c225091b1"
     binds:
