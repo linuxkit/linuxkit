@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	ps "github.com/mitchellh/go-ps"
 
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/template"
@@ -303,9 +304,9 @@ func (v hyperkitPlugin) execHyperKit(params map[string]interface{}) error {
 		for {
 			select {
 			case stderrl := <-stderrChan:
-				log.Warningln("HyperKit STDERR: ", stderrl)
+				log.Warning("HyperKit STDERR: ", stderrl)
 			case stdoutl := <-stdoutChan:
-				log.Infoln("HyperKit STDOUT: ", stdoutl)
+				log.Info("HyperKit STDOUT: ", stdoutl)
 			case <-done:
 				return
 			}
@@ -362,5 +363,23 @@ func getProcess(instanceDir string) (*os.Process, error) {
 		log.Warningln("Can't convert pidData: ", pidData, err)
 		return nil, err
 	}
-	return os.FindProcess(pid)
+
+	p, err := os.FindProcess(pid)
+	if err != nil {
+		log.Warningln("Can't find process with pid: ", pid)
+		return nil, err
+	}
+	// os.FindProcess on Unix always returns a process object even
+	// if the process does not exists. There does not seem to be
+	// a call to find out if the process is running either, so we
+	// use another package to find out.
+	proc, err := ps.FindProcess(p.Pid)
+	if err != nil {
+		log.Warningln("Can't find process", err)
+		return nil, err
+	}
+	if proc == nil {
+		return nil, errors.New("Process not found")
+	}
+	return p, nil
 }
