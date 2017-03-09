@@ -63,7 +63,7 @@ if [ "$GOOS" = "darwin" ]
 then
 	go build -o $out "$package"
 else
-	go build -o $out -buildmode pie --ldflags '-extldflags "-static"' "$package"
+	go build -o $out -buildmode pie --ldflags '-s -w -extldflags "-static"' "$package"
 fi
 
 tar cf - $out
