@@ -7,8 +7,7 @@ PREFIX="moby"
 
 KERNEL="$PREFIX-bzImage"
 INITRD="$PREFIX-initrd.img"
-
-CMDLINE="earlyprintk=serial console=ttyS0"
+CMDLINE="$2"
 
 SLIRP_SOCK="$HOME/Library/Containers/com.docker.docker/Data/s50"
 

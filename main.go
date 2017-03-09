@@ -4,11 +4,11 @@ import (
 	"archive/tar"
 	"bytes"
 	"errors"
+	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"log"
-	"os"
 	"os/exec"
 	"path/filepath"
 
@@ -70,11 +70,38 @@ func dockerRunInput(input io.Reader, args ...string) ([]byte, error) {
 	args = append([]string{"run", "--rm", "-i"}, args...)
 	cmd := exec.Command(docker, args...)
 	cmd.Stdin = input
-	out, err := cmd.Output()
+
+	stderrPipe, err := cmd.StderrPipe()
 	if err != nil {
 		return []byte{}, err
 	}
-	return out, nil
+
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return []byte{}, err
+	}
+
+	err = cmd.Start()
+	if err != nil {
+		return []byte{}, err
+	}
+
+	stdout, err := ioutil.ReadAll(stdoutPipe)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	stderr, err := ioutil.ReadAll(stderrPipe)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	err = cmd.Wait()
+	if err != nil {
+		return []byte{}, fmt.Errorf("%s: %s", err, stderr)
+	}
+
+	return stdout, nil
 }
 
 func untarKernel(buf *bytes.Buffer, bzimageName, ktarName string) (*bytes.Buffer, *bytes.Buffer, error) {
@@ -129,17 +156,7 @@ func containersInitrd(containers []*bytes.Buffer) (*bytes.Buffer, error) {
 	return w, nil
 }
 
-func build(configfile string) {
-	config, err := ioutil.ReadFile(configfile)
-	if err != nil {
-		log.Fatalf("Cannot open config file: %v", err)
-	}
-
-	m, err := NewConfig(config)
-	if err != nil {
-		log.Fatalf("Invalid config: %v", err)
-	}
-
+func build(m *Moby) {
 	containers := []*bytes.Buffer{}
 
 	// get kernel bzImage and initrd tarball from container
@@ -148,7 +165,7 @@ func build(configfile string) {
 		bzimageName = "bzImage"
 		ktarName    = "kernel.tar"
 	)
-	out, err := dockerRun(m.Kernel, "tar", "cf", "-", bzimageName, ktarName)
+	out, err := dockerRun(m.Kernel.Image, "tar", "cf", "-", bzimageName, ktarName)
 	if err != nil {
 		log.Fatalf("Failed to extract kernel image and tarball: %v", err)
 	}
@@ -211,11 +228,34 @@ func build(configfile string) {
 	}
 }
 
-var conf = "moby.yaml"
+var (
+	conf    string
+	cmdline bool
+)
 
 func main() {
-	if len(os.Args) >= 2 {
-		conf = os.Args[1]
+	flag.BoolVar(&cmdline, "cmdline", false, "Print the kernel command line and exit")
+	flag.Parse()
+
+	conf = "moby.yaml"
+	if len(flag.Args()) > 0 {
+		conf = flag.Args()[0]
 	}
-	build(conf)
+
+	config, err := ioutil.ReadFile(conf)
+	if err != nil {
+		log.Fatalf("Cannot open config file: %v", err)
+	}
+
+	m, err := NewConfig(config)
+	if err != nil {
+		log.Fatalf("Invalid config: %v", err)
+	}
+
+	if cmdline {
+		fmt.Printf("%s\n", m.Kernel.Cmdline)
+		return
+	}
+
+	build(m)
 }

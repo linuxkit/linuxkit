@@ -12,4 +12,4 @@ RUN \
 
 COPY . .
 
-CMD [ "/make-efi" ]
+ENTRYPOINT [ "/make-efi" ]
