@@ -1,31 +1,23 @@
-QEMU_IMAGE=mobylinux/qemu-user-static:da39a3ee5e6b4b0d3255bfef95601890afd80709@sha256:6c022f700dc6c263c9107c08aa29b4eae3b43b7b7594b7be3e421f69b51f53e5
-QEMU_FILES=qemu-arm qemu-aarch64 qemu-ppc64le
-QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
-
 GO_COMPILE=mobylinux/go-compile:236629d9fc0779db9e7573ceb8b0e92f08f553be@sha256:16020c2d90cecb1f1d2d731187e947535c23f38b62319dd386ae642b4b32e1fb
-
-BINFMT_BINARY=usr/bin/binfmt
 
 SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
 
-IMAGE=binfmt
+SYSCTL_BINARY=usr/bin/sysctl
+
+IMAGE=sysctl
 
 .PHONY: tag push clean container
 default: push
 
-$(QEMU_BINARIES):
-	mkdir -p $(dir $@)
-	docker run --rm --net=none $(QEMU_IMAGE) tar cf - $@ | tar xf -
-
-$(BINFMT_BINARY): main.go
+$(SYSCTL_BINARY): main.go
 	mkdir -p $(dir $@)
 	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
-	
+
 DIRS=dev proc sys
 $(DIRS):
 	mkdir -p $@
 
-DEPS=$(DIRS) $(QEMU_BINARIES) $(BINFMT_BINARY) etc/binfmt.d/00_moby.conf
+DEPS=$(DIRS) $(SYSCTL_BINARY) etc/sysctl.d/00-moby.conf
 
 container: Dockerfile $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
