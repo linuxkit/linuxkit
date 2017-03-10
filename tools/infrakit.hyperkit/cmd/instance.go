@@ -239,9 +239,11 @@ func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.De
 
 const hyperkitArgs = "-A -u -F {{.VMLocation}}/hyperkit.pid " +
 	"-c {{.Properties.CPUs}} -m {{.Properties.Memory}}M " +
-	"-s 0:0,hostbridge -s 31,lpc -s 5,virtio-rnd " +
-	"-s 4,virtio-blk,{{.VMLocation}}/disk.img " +
-	"-s 2:0,virtio-vpnkit,path={{.VPNKitSock}} " +
+	"-s 0:0,hostbridge " +
+	"-s 1:0,virtio-vpnkit,path={{.VPNKitSock}} " +
+	"-s 2,virtio-blk,{{.VMLocation}}/disk.img " +
+	"-s 10,virtio-rnd " +
+	"-s 31,lpc " +
 	"-l com1,autopty={{.VMLocation}}/tty,log={{.VMLocation}}/console-ring"
 const hyperkitKernArgs = "kexec," +
 	"{{.Properties.Moby}}-bzImage," +
@@ -260,7 +262,6 @@ func (v hyperkitPlugin) execHyperKit(spec instance.Spec, params map[string]inter
 	if err != nil {
 		return err
 	}
-
 	// Build arguments
 	c := []string{v.HyperKit}
 	c = append(c, strings.Split(args, " ")...)
@@ -286,6 +287,7 @@ func (v hyperkitPlugin) execHyperKit(spec instance.Spec, params map[string]inter
 		if err != nil {
 			return err
 		}
+		c = append(c, "-s", "4,ahci-cd,"+path.Join(instanceDir, "config.iso"))
 	}
 
 	cmd := exec.Command(c[0], c[1:]...)
