@@ -1,0 +1,21 @@
+FROM mobylinux/mirage-compile:4e4686b60909d88a75f3f24c0429d0a8e415faa3
+RUN cd /home/opam/opam-repository && git pull && opam update -u
+
+RUN opam pin -n add conduit https://github.com/samoht/ocaml-conduit.git#fd
+RUN opam pin -n add mirage-net-unix https://github.com/samoht/mirage-net-unix.git#fd
+
+RUN opam depext -iy mirage-net-unix logs-syslog cohttp decompress
+RUN opam depext -iy rawlink
+
+RUN sudo mkdir -p /src /bin
+
+COPY calf /src/calf
+RUN sudo chown opam -R /src
+RUN cd /src/calf && opam config exec -- mirage configure && make depend
+
+COPY . /src
+COPY init-dev.sh /home/opam/init-dev.sh
+
+USER opam
+WORKDIR /src
+ENTRYPOINT ["/bin/sh", "/home/opam/init-dev.sh"]
