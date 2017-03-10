@@ -1,0 +1,4 @@
+PKG mirage-net-unix logs-syslog.lwt irmin-unix webmachine cmdliner decompress
+PKG rawlink
+S .
+B _build/
