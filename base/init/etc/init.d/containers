@@ -14,7 +14,7 @@ then
 	for f in $(find /containers/system -mindepth 1 -maxdepth 1 | sort)
 	do
 		base="$(basename $f)"
-		/usr/bin/runc -- run --bundle "$f" "$(basename $f)"
+		/usr/bin/runc run --bundle "$f" "$(basename $f)"
 		printf " - $base\n"
 	done
 fi
