@@ -15,7 +15,16 @@
         },
         "Flavor": {
             "Plugin": "flavor-vanilla",
-            "Properties": { }
+            "Properties": {
+                "Init": [
+                    "test1",
+                    "test2"
+                ],
+                "Tags": {
+                    "tier": "sample",
+                    "project": "infrakit"
+                }
+            }
         }
     }
 }

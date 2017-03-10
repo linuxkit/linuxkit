@@ -14,6 +14,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	ps "github.com/mitchellh/go-ps"
+	"github.com/rneugeba/iso9660wrap"
 
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/template"
@@ -91,7 +92,7 @@ func (v hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 		"Properties": properties,
 	}
 
-	err = v.execHyperKit(params)
+	err = v.execHyperKit(spec, params)
 	if err != nil {
 		v.Destroy(id)
 		return nil, err
@@ -238,16 +239,18 @@ func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.De
 
 const hyperkitArgs = "-A -u -F {{.VMLocation}}/hyperkit.pid " +
 	"-c {{.Properties.CPUs}} -m {{.Properties.Memory}}M " +
-	"-s 0:0,hostbridge -s 31,lpc -s 5,virtio-rnd " +
-	"-s 4,virtio-blk,{{.VMLocation}}/disk.img " +
-	"-s 2:0,virtio-vpnkit,path={{.VPNKitSock}} " +
+	"-s 0:0,hostbridge " +
+	"-s 1:0,virtio-vpnkit,path={{.VPNKitSock}} " +
+	"-s 2,virtio-blk,{{.VMLocation}}/disk.img " +
+	"-s 10,virtio-rnd " +
+	"-s 31,lpc " +
 	"-l com1,autopty={{.VMLocation}}/tty,log={{.VMLocation}}/console-ring"
 const hyperkitKernArgs = "kexec," +
 	"{{.Properties.Moby}}-bzImage," +
 	"{{.Properties.Moby}}-initrd.img," +
 	"earlyprintk=serial console=ttyS0 panic=1 vsyscall=emulate page_poison=1 ntp=gateway"
 
-func (v hyperkitPlugin) execHyperKit(params map[string]interface{}) error {
+func (v hyperkitPlugin) execHyperKit(spec instance.Spec, params map[string]interface{}) error {
 
 	instanceDir := params["VMLocation"].(string)
 
@@ -259,7 +262,6 @@ func (v hyperkitPlugin) execHyperKit(params map[string]interface{}) error {
 	if err != nil {
 		return err
 	}
-
 	// Build arguments
 	c := []string{v.HyperKit}
 	c = append(c, strings.Split(args, " ")...)
@@ -278,6 +280,14 @@ func (v hyperkitPlugin) execHyperKit(params map[string]interface{}) error {
 	err = createDisk(instanceDir, int(sz))
 	if err != nil {
 		return err
+	}
+
+	if len(spec.Init) != 0 {
+		err = createConfigISO(instanceDir, spec.Init)
+		if err != nil {
+			return err
+		}
+		c = append(c, "-s", "4,ahci-cd,"+path.Join(instanceDir, "config.iso"))
 	}
 
 	cmd := exec.Command(c[0], c[1:]...)
@@ -335,6 +345,29 @@ func createDisk(instanceDir string, diskSz int) error {
 	for i := 0; i < diskSz; i++ {
 		f.Write(buf)
 	}
+	return nil
+}
+
+func createConfigISO(instanceDir, init string) error {
+	inName := path.Join(instanceDir, "config")
+
+	if err := ioutil.WriteFile(inName, []byte(init), 0666); err != nil {
+		return err
+	}
+
+	outfh, err := os.OpenFile(inName+".iso", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
+	if err != nil {
+		return err
+	}
+	infh, err := os.Open(inName)
+	if err != nil {
+		return err
+	}
+	err = iso9660wrap.WriteFile(outfh, infh)
+	if err != nil {
+		log.Fatalf("writing file failed with %s", err)
+	}
+
 	return nil
 }
 
