@@ -33,4 +33,6 @@ RUN set -x \
 	&& rm docker.tgz \
 	&& docker -v
 
+COPY . ./
+
 ENTRYPOINT ["/usr/bin/docker-init", "/usr/bin/dockerd"]
