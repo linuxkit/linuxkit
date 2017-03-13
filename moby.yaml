@@ -10,10 +10,12 @@ system:
     ipc: host
     capabilities:
      - CAP_SYS_ADMIN
+    read_only: true
   - name: binfmt
     image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    read_only: true
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
 daemon:
   - name: rngd
@@ -21,6 +23,7 @@ daemon:
     capabilities:
      - CAP_SYS_ADMIN
     oom_score_adj: -800
+    read_only: true
     command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: nginx
     image: "nginx:alpine"
