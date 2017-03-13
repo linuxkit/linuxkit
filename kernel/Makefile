@@ -3,12 +3,12 @@ DEBUG ?= 0
 all:	bzImage push
 
 ifdef AUFS
-DEPS=Dockerfile.aufs kernel_config kernel_config.debug kernel_config.aufs patches-4.9
+DEPS=Dockerfile.aufs Makefile kernel_config kernel_config.debug kernel_config.aufs patches-4.9
 else
 ifdef LTS4.4
-DEPS=Dockerfile.4.4 kernel_config kernel_config.debug kernel_config.4.4 patches-4.4
+DEPS=Dockerfile.4.4 Makefile kernel_config kernel_config.debug kernel_config.4.4 patches-4.4
 else
-DEPS=Dockerfile kernel_config kernel_config.debug patches-4.9
+DEPS=Dockerfile Makefile kernel_config kernel_config.debug patches-4.9
 endif
 endif
 kernel.tag: $(DEPS)
