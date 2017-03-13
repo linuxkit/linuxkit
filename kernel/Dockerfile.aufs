@@ -1,6 +1,7 @@
 FROM mobylinux/alpine-build-kernel:0e893fbf6fa7638d2f23354de03ea11017bb8065@sha256:3ef3f9d11f0802b759dbd9c43a7706cf0ec37263c99ae90e2b10c29ea85739fa
 
-ARG KERNEL_VERSION=4.9.14
+ARG KERNEL_VERSION
+ARG DEBUG=0
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
@@ -48,8 +49,6 @@ COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
 COPY kernel_config.aufs /linux/aufs_config
 RUN cat /linux/aufs_config >> /linux/arch/x86/configs/x86_64_defconfig
-
-ARG DEBUG=0
 
 RUN if [ $DEBUG -ne "0" ]; then \
     sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' /linux/arch/x86/configs/x86_64_defconfig; \
