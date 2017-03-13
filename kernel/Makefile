@@ -2,17 +2,12 @@ DEBUG ?= 0
 
 all:	bzImage push
 
-ifdef AUFS
-KERNEL_VERSION=4.9.14
-DEPS=Dockerfile.aufs Makefile kernel_config kernel_config.debug kernel_config.aufs patches-4.9
-else
 ifdef LTS4.4
 KERNEL_VERSION=4.4.53
 DEPS=Dockerfile.4.4 Makefile kernel_config kernel_config.debug kernel_config.4.4 patches-4.4
 else
 KERNEL_VERSION=4.9.14
 DEPS=Dockerfile Makefile kernel_config kernel_config.debug patches-4.9
-endif
 endif
 kernel.tag: $(DEPS)
 	BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
