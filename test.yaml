@@ -7,6 +7,7 @@ system:
     image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    read_only: true
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: check
     image: "mobylinux/check:699ca8e3792dda19a6fd981f58b47c3be0e5d6ec"
