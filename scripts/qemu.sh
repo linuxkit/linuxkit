@@ -1,6 +1,6 @@
 #!/bin/sh
 
-QEMU_IMAGE=mobylinux/qemu:2e63db70759e37de6f9cc5cdf67c15f3aa8373c8@sha256:958c6bb1fca426cadf7a3664b8c019eba9f9e2ad4f6b4f3ed02d766fe5e709e4
+QEMU_IMAGE=mobylinux/qemu:97973fb6721778c639676812ccb8bc3332e0a542@sha256:c08dac641a75fda3232a8ff3250f23d743aeac12aa4db02ec7926a42b79b0e69
 
 # if not interactive
 if [ ! -t 0 -a -z "$1" ]
@@ -29,8 +29,11 @@ then
 	echo "$FILE2" | grep -q '^/' || FILE2="$PWD/$FILE2"
 fi
 
+if [ -c "/dev/kvm" ] ; then
+    DEVKVM="--device=/dev/kvm"
+fi
 BASE=$(basename "$FILE")
 MOUNTS="-v $FILE:/tmp/$BASE"
 BASE2=$(basename "$FILE2")
 [ ! -z "$FILE2" ] && MOUNTS="$MOUNTS -v $FILE2:/tmp/$BASE2"
-docker run -it --rm $MOUNTS "$QEMU_IMAGE" $CMDLINE
+docker run -it --rm $MOUNTS $DEVKVM "$QEMU_IMAGE" $CMDLINE
