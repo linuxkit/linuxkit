@@ -1,4 +1,4 @@
-From 54ac3db2f284a4f4885f319f90ca8e23bf5e1c05 Mon Sep 17 00:00:00 2001
+From c14439147f536e0a5c91123fc5a8e2f69cd9bc1c Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 6/8] Drivers: hv: vmbus: Use all supported IC versions to
@@ -33,10 +33,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  6 files changed, 154 insertions(+), 106 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 8f3d9f787288..672a8859a3e9 100644
+index eec03051da78..84c5bc352034 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -179,33 +179,34 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
+@@ -202,33 +202,34 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
   * @buf: Raw buffer channel data
   *
   * @icmsghdrp is of type &struct icmsg_hdr.
@@ -84,7 +84,7 @@ index 8f3d9f787288..672a8859a3e9 100644
  	negop = (struct icmsg_negotiate *)&buf[
  		sizeof(struct vmbuspipe_hdr) +
  		sizeof(struct icmsg_hdr)];
-@@ -221,13 +222,22 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+@@ -244,13 +245,22 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
  	 * support.
  	 */
  
@@ -113,7 +113,7 @@ index 8f3d9f787288..672a8859a3e9 100644
  	}
  
  	if (!found_match)
-@@ -235,14 +245,26 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+@@ -258,14 +268,26 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
  
  	found_match = false;
  
@@ -147,7 +147,7 @@ index 8f3d9f787288..672a8859a3e9 100644
  	}
  
  	/*
-@@ -259,6 +281,12 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+@@ -282,6 +304,12 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
  		negop->icmsg_vercnt = 1;
  	}
  
@@ -161,7 +161,7 @@ index 8f3d9f787288..672a8859a3e9 100644
  	negop->icversion_data[0].minor = icframe_minor;
  	negop->icversion_data[1].major = icmsg_major;
 diff --git a/drivers/hv/hv_fcopy.c b/drivers/hv/hv_fcopy.c
-index 8b2ba98831ec..3e3a633cab58 100644
+index e47d8c9db03a..0a315e6aa589 100644
 --- a/drivers/hv/hv_fcopy.c
 +++ b/drivers/hv/hv_fcopy.c
 @@ -31,6 +31,16 @@
@@ -181,7 +181,7 @@ index 8b2ba98831ec..3e3a633cab58 100644
  /*
   * Global state maintained for transaction that is being processed.
   * For a class of integration services, including the "file copy service",
-@@ -227,8 +237,6 @@ void hv_fcopy_onchannelcallback(void *context)
+@@ -228,8 +238,6 @@ void hv_fcopy_onchannelcallback(void *context)
  	u64 requestid;
  	struct hv_fcopy_hdr *fcopy_msg;
  	struct icmsg_hdr *icmsghdr;
@@ -190,7 +190,7 @@ index 8b2ba98831ec..3e3a633cab58 100644
  	int fcopy_srv_version;
  
  	if (fcopy_transaction.state > HVUTIL_READY)
-@@ -242,10 +250,10 @@ void hv_fcopy_onchannelcallback(void *context)
+@@ -243,10 +251,10 @@ void hv_fcopy_onchannelcallback(void *context)
  	icmsghdr = (struct icmsg_hdr *)&recv_buffer[
  			sizeof(struct vmbuspipe_hdr)];
  	if (icmsghdr->icmsgtype == ICMSGTYPE_NEGOTIATE) {
@@ -206,7 +206,7 @@ index 8b2ba98831ec..3e3a633cab58 100644
  		fcopy_msg = (struct hv_fcopy_hdr *)&recv_buffer[
  				sizeof(struct vmbuspipe_hdr) +
 diff --git a/drivers/hv/hv_kvp.c b/drivers/hv/hv_kvp.c
-index 5e1fdc8d32ab..70c28b8806de 100644
+index 3abfc5983c97..2cc670442f6c 100644
 --- a/drivers/hv/hv_kvp.c
 +++ b/drivers/hv/hv_kvp.c
 @@ -46,6 +46,19 @@
@@ -229,7 +229,7 @@ index 5e1fdc8d32ab..70c28b8806de 100644
  /*
   * Global state maintained for transaction that is being processed. For a class
   * of integration services, including the "KVP service", the specified protocol
-@@ -609,8 +622,6 @@ void hv_kvp_onchannelcallback(void *context)
+@@ -610,8 +623,6 @@ void hv_kvp_onchannelcallback(void *context)
  	struct hv_kvp_msg *kvp_msg;
  
  	struct icmsg_hdr *icmsghdrp;
@@ -238,7 +238,7 @@ index 5e1fdc8d32ab..70c28b8806de 100644
  	int kvp_srv_version;
  	static enum {NEGO_NOT_STARTED,
  		     NEGO_IN_PROGRESS,
-@@ -639,28 +650,10 @@ void hv_kvp_onchannelcallback(void *context)
+@@ -640,28 +651,10 @@ void hv_kvp_onchannelcallback(void *context)
  			sizeof(struct vmbuspipe_hdr)];
  
  		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
@@ -272,7 +272,7 @@ index 5e1fdc8d32ab..70c28b8806de 100644
  			kvp_msg = (struct hv_kvp_msg *)&recv_buffer[
  				sizeof(struct vmbuspipe_hdr) +
 diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
-index eee238cc60bd..8e62bf7f6265 100644
+index 4e543dbb731a..d14f10b924a0 100644
 --- a/drivers/hv/hv_snapshot.c
 +++ b/drivers/hv/hv_snapshot.c
 @@ -31,6 +31,16 @@
@@ -292,7 +292,7 @@ index eee238cc60bd..8e62bf7f6265 100644
  /*
   * Timeout values are based on expecations from host
   */
-@@ -296,7 +306,6 @@ void hv_vss_onchannelcallback(void *context)
+@@ -297,7 +307,6 @@ void hv_vss_onchannelcallback(void *context)
  
  
  	struct icmsg_hdr *icmsghdrp;
@@ -300,7 +300,7 @@ index eee238cc60bd..8e62bf7f6265 100644
  
  	if (vss_transaction.state > HVUTIL_READY)
  		return;
-@@ -309,9 +318,10 @@ void hv_vss_onchannelcallback(void *context)
+@@ -310,9 +319,10 @@ void hv_vss_onchannelcallback(void *context)
  			sizeof(struct vmbuspipe_hdr)];
  
  		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
@@ -469,10 +469,10 @@ index e7707747f56d..f3797c07be10 100644
  			srv->util_cb, dev->channel);
  	if (ret)
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index e34da6846348..6c3ed0c001ff 100644
+index 4148c98dba24..514cdf390370 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1452,9 +1452,10 @@ struct hyperv_service_callback {
+@@ -1453,9 +1453,10 @@ struct hyperv_service_callback {
  };
  
  #define MAX_SRV_VER	0x7ffffff
