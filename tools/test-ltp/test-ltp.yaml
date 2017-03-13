@@ -1,5 +1,5 @@
 kernel:
-  image: "mobylinux/kernel-4.9.x-moby:c752c32911815b1cbdd580f10553767e934dc0fa"
+  image: "mobylinux/kernel:4.9.x"
   cmdline: "console=ttyS0"
 init: "mobylinux/init:2f1b5c1be1157cb17e5b1e6dee171dccdebb5277"
 system:
