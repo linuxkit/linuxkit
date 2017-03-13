@@ -44,4 +44,4 @@ then
 	CMDLINE="console=ttyS0"
 fi
 
-qemu-system-x86_64 -device virtio-rng-pci -serial stdio -vnc none -m 1024 -append "${CMDLINE}" $ARGS
+qemu-system-x86_64 -machine q35,accel=kvm:tcg -device virtio-rng-pci -serial stdio -vnc none -m 1024 -append "${CMDLINE}" $ARGS
