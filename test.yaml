@@ -10,10 +10,11 @@ system:
     read_only: true
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: check
-    image: "mobylinux/check:699ca8e3792dda19a6fd981f58b47c3be0e5d6ec"
+    image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
     pid: host
     capabilities:
      - CAP_SYS_BOOT
+    read_only: true
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
