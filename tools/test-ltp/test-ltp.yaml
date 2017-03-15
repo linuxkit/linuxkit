@@ -1,7 +1,7 @@
 kernel:
   image: "mobylinux/kernel:4.9.x"
   cmdline: "console=ttyS0"
-init: "mobylinux/init:2f1b5c1be1157cb17e5b1e6dee171dccdebb5277"
+init: "mobylinux/init:1402058c0f90adf2b12fcfb8332b334c7e9c5d8c"
 system:
   - name: ltp
     image: "mobylinux/test-ltp-20170116:fdca2d1bb019b1d51e722e6032c82c7933d4b870"
