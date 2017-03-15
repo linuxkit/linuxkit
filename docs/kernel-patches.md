@@ -46,15 +46,15 @@ to refer to the location of the Moby and Linux kernel trees.
 
 There are different ways to do this, but we recommend applying the patches to the current version and then rebase to the new version. We define the following variables to refer to the current base tag and the new tag you want to rebase the patches to:
 ```sh
-CURTAG=v4.9.13
-NEWTAG=v4.9.13
+CURTAG=v4.9.14
+NEWTAG=v4.9.15
 ```
 
 If you don't already have a branch, it's best to import the current patch set and then rebase:
 ```sh
 cd $LINUXSRC
 git checkout -b ${NEWTAG}-moby ${CURTAG}
-git am ${MOBYSRC}/alpine/kernel/patches/*.patch
+git am ${MOBYSRC}/kernel/patches/*.patch
 git rebase ${NEWTAG}-moby ${NEWTAG}
 ```
 
@@ -88,7 +88,7 @@ To export patches to Moby, you should use `git format-patch` from the Linux tree
 ```sh
 cd $LINUXSRC
 rm $MOBYSRC/alpine/kernel/patches-4.9/*
-git format-patch -o $MOBYSRC/alpine/kernel/patches-4.9 v4.9.13..HEAD
+git format-patch -o $MOBYSRC/kernel/patches-4.9 v4.9.15..HEAD
 ```
 
 The, create a PR for Moby.
