@@ -6,8 +6,6 @@
 
 # start system containers
 # temporarily using runc not containerd
-LOG=/var/log/system-containers.log
-touch $LOG
 
 if [ -d /containers/system ]
 then
@@ -24,7 +22,8 @@ then
 	for f in $(find /containers/daemon -mindepth 1 -maxdepth 1 | sort)
 	do
 		base="$(basename $f)"
-		/sbin/start-stop-daemon --start --pidfile /run/$base.pid --exec /usr/bin/runc -- run --bundle "$f" --pid-file /run/$base.pid "$(basename $f)" </dev/null 2>$LOG >$LOG &
+		log="/var/log/$base.log"
+		/sbin/start-stop-daemon --start --pidfile /run/$base.pid --exec /usr/bin/runc -- run --bundle "$f" --pid-file /run/$base.pid "$(basename $f)" </dev/null 2>$log >$log &
 		printf " - $base\n"
 	done
 fi
