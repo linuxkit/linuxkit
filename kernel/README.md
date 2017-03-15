@@ -1,12 +1,18 @@
-Temporary non modular kernel config for pinata alpha
+Linux kernel builds, based on mostly-vanilla upstream Linux kernels.
+See [../docs/kernel-patches.md] for how the local patches in `patches-*`
+are maintained.
 
-TODO: build with Alpine and/or use Alpine kernels - needs some patches.
-
-The build is mostly silent. To view the output use `docker log -f <containerid>`. The build creates multiple containers, so multiple
-invocations may be necessary. To view the full build output one may also invoke `docker build .` and then copy the build artefacts from the image afterwards.
+The build is mostly silent. A local build can be run via `make`. To view
+the output use `docker log -f <containerid>`. The build creates multiple
+containers, so multiple invocations may be necessary. To view the full build
+output one may also invoke `docker build .` and then copy the build artefacts
+from the image afterwards.
 
 To build with various debug options enabled, build the kernel with
-`make DEBUG=1`. The options enabled are listed in `kernel_config.debug`. This allocates a significant amount of memory on boot and you may need to adjust the kernel config on some systems. Specifically:
+`make DEBUG=1`. The options enabled are listed in `kernel_config.debug`.
+This allocates a significant amount of memory on boot and you may need to
+adjust the kernel config on some systems. Specifically:
+
 ```diff
 --- a/alpine/kernel/kernel_config
 +++ b/alpine/kernel/kernel_config
