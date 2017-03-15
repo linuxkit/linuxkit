@@ -1,4 +1,4 @@
-From 7305ac5886d0b7d8f245de4c6fa6f963bf49a8a9 Mon Sep 17 00:00:00 2001
+From 00d2045a66c92e13fd3bcac37825e96a9e8d1c71 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:33 +0100
 Subject: [PATCH 08/44] VSOCK: Introduce virtio_transport.ko
