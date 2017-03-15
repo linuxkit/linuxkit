@@ -57,7 +57,7 @@ endif
 
 .PHONY: hyperkit hyperkit-test
 hyperkit: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit moby-initrd.img moby-bzImage moby.yaml
-	./scripts/hyperkit.sh moby "$(shell bin/moby --cmdline moby.yaml)"
+	./scripts/hyperkit.sh moby
 
 define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
@@ -65,7 +65,7 @@ endef
 
 hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit test-initrd.img test-bzImage
 	rm -f disk.img
-	script -q /dev/null ./scripts/hyperkit.sh test "$(shell bin/moby --cmdline moby.yaml)" | tee test.log
+	script -q /dev/null ./scripts/hyperkit.sh test | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: test

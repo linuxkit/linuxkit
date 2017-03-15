@@ -2,12 +2,23 @@
 
 set -e
 
-PREFIX="moby"
-[ $# -ge 1 ] && PREFIX="$1"
-
-KERNEL="$PREFIX-bzImage"
-INITRD="$PREFIX-initrd.img"
-CMDLINE="$2"
+if [ $# -eq 0 ]
+then
+	PREFIX="moby"
+	KERNEL="$PREFIX-bzImage"
+	INITRD="$PREFIX-initrd.img"
+	CMDLINE=$(bin/moby --cmdline ${PREFIX}.yaml)
+elif [ $# -eq 1 ]
+then
+	PREFIX="$1"
+	KERNEL="$PREFIX-bzImage"
+	INITRD="$PREFIX-initrd.img"
+	CMDLINE=$(bin/moby --cmdline ${PREFIX}.yaml)
+else
+	KERNEL=$1
+	INITRD=$2
+	CMDLINE=$3
+fi
 
 SLIRP_SOCK="$HOME/Library/Containers/com.docker.docker/Data/s50"
 
