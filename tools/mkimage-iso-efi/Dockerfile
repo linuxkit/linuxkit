@@ -1,8 +1,9 @@
-FROM alpine:3.5
+FROM alpine:edge
 
 RUN \
   apk update && apk upgrade && \
   apk add --no-cache \
+  dosfstools \
   libarchive-tools \
   binutils \
   gummiboot \
