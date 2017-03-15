@@ -1,6 +1,6 @@
 DEBUG ?= 0
 
-all:	bzImage push
+all:	bzImage tag
 
 # We push the image to hub twice, once with the full kernel version of
 # "mobylinux/kernel:<kernel version>.<major version>.<minor version>-<n>",
