@@ -4,7 +4,7 @@ We may apply patches to the Linux kernel used in Moby, primarily to
 cherry-pick some upstream patches or to add some additional
 functionality, not yet accepted upstream.
 
-Patches are located in `alpine/kernel/patches-<kernel version>` and should follow these rules:
+Patches are located in `kernel/patches-<kernel version>` and should follow these rules:
 - Patches *must* be in `git am` format, i.e. they should contain a
   complete and sensible commit message.
 - Patches *must* contain a Developer's Certificate of Origin.
@@ -87,7 +87,7 @@ Origin: https://patchwork.ozlabs.org/patch/622404/
 To export patches to Moby, you should use `git format-patch` from the Linux tree, e.g., something along these lines:
 ```sh
 cd $LINUXSRC
-rm $MOBYSRC/alpine/kernel/patches-4.9/*
+rm $MOBYSRC/kernel/patches-4.9/*
 git format-patch -o $MOBYSRC/kernel/patches-4.9 v4.9.15..HEAD
 ```
 
