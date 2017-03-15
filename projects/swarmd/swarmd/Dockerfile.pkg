@@ -1,0 +1,4 @@
+FROM scratch
+WORKDIR /
+ADD swarmd.tar .
+CMD ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
