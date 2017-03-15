@@ -1,4 +1,4 @@
-From d644b3a159b02684a1f29b28e6d28f03f0cd659f Mon Sep 17 00:00:00 2001
+From 29d08fe58aec0a2b21d7289a8933c8d08ce8f1c8 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:18 -0800
 Subject: [PATCH 35/44] Drivers: hv: vmbus: avoid unneeded compiler
