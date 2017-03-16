@@ -17,6 +17,16 @@ system:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     read_only: true
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
+  - name: metadata-gcp
+    image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
+    binds:
+     - /tmp:/etc/ssh
+     - /etc/resolv.conf:/etc/resolv.conf
+    read_only: true
+    network_mode: host
+    uts: host
+    capabilities:
+     - CAP_SYS_ADMIN
 daemon:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
@@ -25,6 +35,21 @@ daemon:
     oom_score_adj: -800
     read_only: true
     command: [/bin/tini, /usr/sbin/rngd, -f]
+  - name: sshd
+    image: "mobylinux/sshd:3940f3fa07da1b6adab975112894b103b3c491f1"
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+     - CAP_SYS_CHROOT
+     - CAP_KILL
+    network_mode: host
+    binds:
+     - /tmp/authorized_keys:/root/.ssh/authorized_keys
+     - /etc/resolv.conf:/etc/resolv.conf
+    pid: host
   - name: nginx
     image: "nginx:alpine"
     capabilities:

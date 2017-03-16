@@ -30,9 +30,17 @@ docker rm $CONTAINER > /dev/null
 # remove user namespaces
 # --read-only sets /dev ro
 # /sysfs ro unless privileged - cannot detect so will do if grant all caps
-#
+# ipc, uts namespaces always isolated
+
+UTS="."
+IPC="."
+echo $ARGS | grep -q uts=host && UTS=".linux.namespaces = (.linux.namespaces|map(select(.type!=\"uts\")))"
+echo $ARGS | grep -q ipc=host && IPC=".linux.namespaces = (.linux.namespaces|map(select(.type!=\"ipc\")))"
+
 mv config.json config.json.orig
 cat config.json.orig | \
+  jq "$UTS" | \
+  jq "$IPC" | \
   jq 'del(.process.rlimits)' | \
   jq 'del (.linux.resources.memory.swappiness)' | \
   jq 'del(.linux.uidMappings) | del(.linux.gidMappings) | .linux.namespaces = (.linux.namespaces|map(select(.type!="user")))' | \
