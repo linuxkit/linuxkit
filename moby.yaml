@@ -17,6 +17,13 @@ system:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     read_only: true
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
+  - name: dhcp-client
+    network_mode: host
+    image: "mobylinux/dhcp-client:dc3fd177a588ca9a850cfc75dd9083fb26d278dc"
+    capabilities:
+     - CAP_NET_RAW
+    command: [/dhcp-client]
+    read_only: true
 daemon:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
