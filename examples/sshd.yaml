@@ -31,6 +31,7 @@ daemon:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
      - CAP_SYS_CHROOT
+     - CAP_KILL
     network_mode: host
     binds:
      - /root/.ssh:/root/.ssh
