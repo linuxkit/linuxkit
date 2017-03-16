@@ -1,11 +1,12 @@
 FROM alpine:3.5
 
 RUN \
-  apk update && apk upgrade -a && \
-  apk add --no-cache \
+  apk --no-cache update && \
+  apk --no-cache upgrade -a && \
+  apk --no-cache add \
   dhcpcd \
   e2fsprogs \
   e2fsprogs-extra \
-  && true
+  && rm -rf /var/cache/apk/*
 
 COPY . ./
