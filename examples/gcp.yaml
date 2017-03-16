@@ -42,3 +42,5 @@ outputs:
   - format: gce
     project: moby
     bucket: mobytestjustin
+    family: moby-dev
+    replace: true
