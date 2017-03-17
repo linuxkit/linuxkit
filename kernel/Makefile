@@ -20,12 +20,12 @@ all:	bzImage tag
 # IMAGE_VERSION is used to determine if a new image should be pushed to hub.
 ifdef LTS4.4
 KERNEL_VERSION=4.4.54
-IMAGE_VERSION=$(KERNEL_VERSION)-1
+IMAGE_VERSION=$(KERNEL_VERSION)-2
 IMAGE_MAJOR_VERSION=4.4.x
 DEPS=Dockerfile.4.4 Makefile kernel_config kernel_config.debug kernel_config.4.4 patches-4.4
 else
 KERNEL_VERSION=4.9.15
-IMAGE_VERSION=$(KERNEL_VERSION)-1
+IMAGE_VERSION=$(KERNEL_VERSION)-2
 IMAGE_MAJOR_VERSION=4.9.x
 DEPS=Dockerfile Makefile kernel_config kernel_config.debug patches-4.9
 endif
