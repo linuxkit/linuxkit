@@ -7,7 +7,7 @@
                | privileged shim |                      |       calf     |
                |=================|                      |================|
                |                 |                      |                |
-    eth0 ----> |    eBPF rules   | <--- network IO ---> |   type-safe    |
+<--  eth0 ---> |    eBPF rules   | <--- network IO ---> |   type-safe    |
                |                 |      (data path)     | network stack  |
                |                 |                      |                |
                |-----------------|                      |----------------|
@@ -86,7 +86,7 @@ share it with the calf on startup).
 - Has access to a Mirage_net.S interface for network traffic
 - Has access to a a simple KV interface
 
-Internally, it might use something more typed than a KV store:
+Internally, it uses something more typed than a KV store:
 
 ```
 module Shim: sig
@@ -114,8 +114,25 @@ What the SDK should enable:
 
 ### Roadmap
 
-- first PoC
-- ipv6 support
-- gracefully handle expiration
+#### first PoC: DHCP client
+
+Current status: one container containing two static binaries (priv + calf),
+private pipes open between the process for stdout/stderr aggregation +
+raw sockets (data path). Control path is using a simple HTTP server running
+in the priv container. The calf is using the dev version of mirage/charrua-core,
+and is able to get a DHCP lease on boot.
+
+##### TODO
+
+- use runc to isolate the calf
+- eBPF filtering
+- use seccomp to isolate the privileged container
+- use the DHCP results to actually update the system
+- add metrics aggregation (using prometheus)
+- better logging aggregation (using syslog)
+- IPv6 support
 - tests, tests, tests (especially against non compliant RFC servers)
-- second iteration: NTP
+
+### Second iteration: NTP
+
+TODO
