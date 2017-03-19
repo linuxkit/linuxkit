@@ -194,6 +194,16 @@ func build(m *Moby, name string) {
 		containers = append(containers, buffer)
 	}
 
+	for i, image := range m.Image {
+		args := ConfigToRun(i, "image", &image)
+		out, err := dockerRun(args...)
+		if err != nil {
+			log.Fatalf("Failed to build container tarball: %v", err)
+		}
+		buffer := bytes.NewBuffer(out)
+		containers = append(containers, buffer)
+	}
+
 	for i, image := range m.Daemon {
 		args := ConfigToRun(i, "daemon", &image)
 		out, err := dockerRun(args...)

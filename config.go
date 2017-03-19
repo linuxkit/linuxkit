@@ -20,6 +20,7 @@ type Moby struct {
 	}
 	Init   string
 	System []MobyImage
+	Image  []MobyImage
 	Daemon []MobyImage
 	Files  []struct {
 		Path     string
