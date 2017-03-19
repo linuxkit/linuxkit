@@ -13,9 +13,9 @@ If you want to  create a project, please submit a pull request to create a new d
 - [Kernel Self Protection Project enhancements](kspp/)
 - [Mirage SDK](miragesdk/) privilege separation for userspace services
 - [Wireguard](wireguard/) cryptographic enforced container network separation
+- [OKernel](okernel/) intra-kernel protection using EPT (HPE)
 
 ## Current projects not yet documented
 - Clear Linux integration (Intel)
 - VMWare support (VMWare)
 - ARM port and secure boot integration (ARM)
-- OKernel integration (HPE)
