@@ -75,7 +75,7 @@ test: test-initrd.img test-bzImage
 
 .PHONY: ebpf
 EBPF_TAG=ebpf/ebpf.tag
-EBPF_IMAGE=mobylinux/ebpf:$(MEDIA_PREFIX)$(AUFS_PREFIX)$(TAG)
+EBPF_IMAGE=mobylinux/ebpf:$(MEDIA_PREFIX)$(TAG)
 ebpf: alpine/initrd.img kernel/x86_64/vmlinuz64
 ifeq ($(STATUS),)
 	[ -f $(EBPF_TAG) ]
