@@ -1,34 +1,25 @@
 package main
 
 import (
-	"bufio"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"path"
-	"strconv"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	ps "github.com/mitchellh/go-ps"
-	"github.com/rneugeba/iso9660wrap"
+
+	"github.com/docker/hyperkit/go"
 
 	"github.com/docker/infrakit/pkg/spi/instance"
-	"github.com/docker/infrakit/pkg/template"
 	"github.com/docker/infrakit/pkg/types"
 )
 
 // NewHyperKitPlugin creates an instance plugin for hyperkit.
-func NewHyperKitPlugin(vmDir, hyperkit, vpnkitSock string, thyper, tkern *template.Template) instance.Plugin {
+func NewHyperKitPlugin(vmDir, hyperkit, vpnkitSock string) instance.Plugin {
 	return &hyperkitPlugin{VMDir: vmDir,
 		HyperKit:   hyperkit,
 		VPNKitSock: vpnkitSock,
-
-		HyperKitTmpl: thyper,
-		KernelTmpl:   tkern,
 	}
 }
 
@@ -41,22 +32,15 @@ type hyperkitPlugin struct {
 
 	// VPNKitSock is the path to the VPNKit Unix domain socket.
 	VPNKitSock string
-
-	HyperKitTmpl *template.Template
-	KernelTmpl   *template.Template
 }
 
-const (
-	hyperkitPid = "hyperkit.pid"
-)
-
 // Validate performs local validation on a provision request.
-func (v hyperkitPlugin) Validate(req *types.Any) error {
+func (p hyperkitPlugin) Validate(req *types.Any) error {
 	return nil
 }
 
 // Provision creates a new instance.
-func (v hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
+func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 
 	var properties map[string]interface{}
 
@@ -76,34 +60,39 @@ func (v hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 		properties["Memory"] = 512
 	}
 	if properties["Disk"] == nil {
-		properties["Disk"] = float64(256)
+		properties["Disk"] = 256
 	}
 
-	instanceDir, err := ioutil.TempDir(v.VMDir, "infrakit-")
+	instanceDir, err := ioutil.TempDir(p.VMDir, "infrakit-")
 	if err != nil {
 		return nil, err
 	}
 	id := instance.ID(path.Base(instanceDir))
 
-	// Apply parameters
-	params := map[string]interface{}{
-		"VMLocation": instanceDir,
-		"VPNKitSock": v.VPNKitSock,
-		"Properties": properties,
-	}
-
-	err = v.execHyperKit(spec, params)
+	// Start a HyperKit instance
+	h, err := hyperkit.New(p.HyperKit, instanceDir, p.VPNKitSock, "")
 	if err != nil {
-		v.Destroy(id)
 		return nil, err
 	}
+	h.Kernel = properties["Moby"].(string) + "-bzImage"
+	h.Initrd = properties["Moby"].(string) + "-initrd.img"
+	h.CPUs = int(properties["CPUs"].(float64))
+	h.Memory = int(properties["Memory"].(float64))
+	h.DiskSize = int(properties["Disk"].(float64))
+	h.UserData = spec.Init
+	h.Console = hyperkit.ConsoleFile
+	err = h.Start("console=ttyS0")
+	if err != nil {
+		return nil, err
+	}
+	log.Info("Started new VM: ", id)
 
 	tagData, err := types.AnyValue(spec.Tags)
 	if err != nil {
 		return nil, err
 	}
 
-	if err := ioutil.WriteFile(path.Join(instanceDir, "tags"), tagData.Bytes(), 0666); err != nil {
+	if err := ioutil.WriteFile(path.Join(instanceDir, "tags"), tagData.Bytes(), 0644); err != nil {
 		return nil, err
 	}
 
@@ -111,8 +100,8 @@ func (v hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 }
 
 // Label labels the instance
-func (v hyperkitPlugin) Label(instance instance.ID, labels map[string]string) error {
-	instanceDir := path.Join(v.VMDir, string(instance))
+func (p hyperkitPlugin) Label(instance instance.ID, labels map[string]string) error {
+	instanceDir := path.Join(p.VMDir, string(instance))
 	tagFile := path.Join(instanceDir, "tags")
 	buff, err := ioutil.ReadFile(tagFile)
 	if err != nil {
@@ -133,14 +122,14 @@ func (v hyperkitPlugin) Label(instance instance.ID, labels map[string]string) er
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(tagFile, encoded.Bytes(), 0666)
+	return ioutil.WriteFile(tagFile, encoded.Bytes(), 0644)
 }
 
 // Destroy terminates an existing instance.
-func (v hyperkitPlugin) Destroy(id instance.ID) error {
-	fmt.Println("Destroying ", id)
+func (p hyperkitPlugin) Destroy(id instance.ID) error {
+	log.Info("Destroying VM: ", id)
 
-	instanceDir := path.Join(v.VMDir, string(id))
+	instanceDir := path.Join(p.VMDir, string(id))
 	_, err := os.Stat(instanceDir)
 	if err != nil {
 		if os.IsNotExist(err) {
@@ -148,27 +137,24 @@ func (v hyperkitPlugin) Destroy(id instance.ID) error {
 		}
 	}
 
-	p, err := getProcess(instanceDir)
+	h, err := hyperkit.FromState(instanceDir)
 	if err != nil {
-		log.Warningln("Can't find processes: ", err)
-	} else {
-		err = p.Kill()
-		if err != nil {
-			log.Warningln("Can't kill processes with pid: ", p.Pid, err)
-			return err
-		}
-	}
-
-	if err := os.RemoveAll(instanceDir); err != nil {
 		return err
 	}
-
+	err = h.Stop()
+	if err != nil {
+		return err
+	}
+	err = h.Remove(false)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
 // DescribeInstances returns descriptions of all instances matching all of the provided tags.
-func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.Description, error) {
-	files, err := ioutil.ReadDir(v.VMDir)
+func (p hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.Description, error) {
+	files, err := ioutil.ReadDir(p.VMDir)
 	if err != nil {
 		return nil, err
 	}
@@ -180,7 +166,7 @@ func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.De
 			continue
 		}
 
-		instanceDir := path.Join(v.VMDir, file.Name())
+		instanceDir := path.Join(p.VMDir, file.Name())
 
 		tagData, err := ioutil.ReadFile(path.Join(instanceDir, "tags"))
 		if err != nil {
@@ -209,22 +195,19 @@ func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.De
 			var logicalID *instance.LogicalID
 			id := instance.ID(file.Name())
 
-			pidData, err := ioutil.ReadFile(path.Join(instanceDir, hyperkitPid))
-			if err == nil {
-				lid := instance.LogicalID(pidData)
-				logicalID = &lid
-			} else {
-				if !os.IsNotExist(err) {
-					return nil, err
-				}
-			}
-
-			// Check if process is running
-			if _, err := getProcess(instanceDir); err != nil {
-				log.Warningln("Process not running: Instance ", id)
-				v.Destroy(id)
+			h, err := hyperkit.FromState(instanceDir)
+			if err != nil {
+				log.Warningln("Could not get instance data. Id: ", id)
+				p.Destroy(id)
 				continue
 			}
+			if !h.IsRunning() {
+				log.Warningln("Instance is not running. Id: ", id)
+				p.Destroy(id)
+				continue
+			}
+			lid := instance.LogicalID(h.Pid)
+			logicalID = &lid
 
 			descriptions = append(descriptions, instance.Description{
 				ID:        id,
@@ -235,184 +218,4 @@ func (v hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.De
 	}
 
 	return descriptions, nil
-}
-
-const hyperkitArgs = "-A -u -F {{.VMLocation}}/hyperkit.pid " +
-	"-c {{.Properties.CPUs}} -m {{.Properties.Memory}}M " +
-	"-s 0:0,hostbridge " +
-	"-s 1:0,virtio-vpnkit,path={{.VPNKitSock}} " +
-	"-s 2,virtio-blk,{{.VMLocation}}/disk.img " +
-	"-s 10,virtio-rnd " +
-	"-s 31,lpc " +
-	"-l com1,autopty={{.VMLocation}}/tty,log={{.VMLocation}}/console-ring"
-const hyperkitKernArgs = "kexec," +
-	"{{.Properties.Moby}}-bzImage," +
-	"{{.Properties.Moby}}-initrd.img," +
-	"earlyprintk=serial console=ttyS0 panic=1 vsyscall=emulate page_poison=1 ntp=gateway"
-
-func (v hyperkitPlugin) execHyperKit(spec instance.Spec, params map[string]interface{}) error {
-
-	instanceDir := params["VMLocation"].(string)
-
-	args, err := v.HyperKitTmpl.Render(params)
-	if err != nil {
-		return err
-	}
-	kernArgs, err := v.KernelTmpl.Render(params)
-	if err != nil {
-		return err
-	}
-	// Build arguments
-	c := []string{v.HyperKit}
-	c = append(c, strings.Split(args, " ")...)
-	c = append(c, "-f", kernArgs)
-
-	// Write command line to state
-	if err := ioutil.WriteFile(path.Join(instanceDir, "cmdline"), []byte(strings.Join(c, " ")), 0666); err != nil {
-		return err
-	}
-
-	prop := params["Properties"].(map[string]interface{})
-	sz, ok := prop["Disk"].(float64)
-	if !ok {
-		return fmt.Errorf("Unable to extract Disk Size: %s", prop["Disk"])
-	}
-	err = createDisk(instanceDir, int(sz))
-	if err != nil {
-		return err
-	}
-
-	if len(spec.Init) != 0 {
-		err = createConfigISO(instanceDir, spec.Init)
-		if err != nil {
-			return err
-		}
-		c = append(c, "-s", "4,ahci-cd,"+path.Join(instanceDir, "config.iso"))
-	}
-
-	cmd := exec.Command(c[0], c[1:]...)
-	cmd.Env = os.Environ()
-
-	stdoutChan := make(chan string)
-	stderrChan := make(chan string)
-
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		return err
-	}
-
-	stream(stdout, stdoutChan)
-	stream(stderr, stderrChan)
-
-	done := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case stderrl := <-stderrChan:
-				log.Warning("HyperKit STDERR: ", stderrl)
-			case stdoutl := <-stdoutChan:
-				log.Info("HyperKit STDOUT: ", stdoutl)
-			case <-done:
-				return
-			}
-		}
-	}()
-
-	log.Infoln("Starting: ", c)
-
-	err = cmd.Start()
-
-	return err
-}
-
-func createDisk(instanceDir string, diskSz int) error {
-	f, err := os.Create(path.Join(instanceDir, "disk.img"))
-	if err != nil {
-		return err
-	}
-	defer f.Close()
-
-	buf := make([]byte, 1048676)
-	for i := 0; i < len(buf); i++ {
-		buf[i] = 0
-	}
-
-	for i := 0; i < diskSz; i++ {
-		f.Write(buf)
-	}
-	return nil
-}
-
-func createConfigISO(instanceDir, init string) error {
-	inName := path.Join(instanceDir, "config")
-
-	if err := ioutil.WriteFile(inName, []byte(init), 0666); err != nil {
-		return err
-	}
-
-	outfh, err := os.OpenFile(inName+".iso", os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0666)
-	if err != nil {
-		return err
-	}
-	infh, err := os.Open(inName)
-	if err != nil {
-		return err
-	}
-	err = iso9660wrap.WriteFile(outfh, infh)
-	if err != nil {
-		log.Fatalf("writing file failed with %s", err)
-	}
-
-	return nil
-}
-
-func stream(r io.ReadCloser, dest chan<- string) {
-	go func() {
-		defer r.Close()
-		reader := bufio.NewReader(r)
-		for {
-			line, err := reader.ReadString('\n')
-			if err != nil {
-				return
-			}
-			dest <- line
-		}
-	}()
-}
-
-func getProcess(instanceDir string) (*os.Process, error) {
-	pidData, err := ioutil.ReadFile(path.Join(instanceDir, hyperkitPid))
-	if err != nil {
-		log.Warningln("Can't read pid file: ", err)
-		return nil, err
-	}
-	pid, err := strconv.Atoi(string(pidData[:]))
-	if err != nil {
-		log.Warningln("Can't convert pidData: ", pidData, err)
-		return nil, err
-	}
-
-	p, err := os.FindProcess(pid)
-	if err != nil {
-		log.Warningln("Can't find process with pid: ", pid)
-		return nil, err
-	}
-	// os.FindProcess on Unix always returns a process object even
-	// if the process does not exists. There does not seem to be
-	// a call to find out if the process is running either, so we
-	// use another package to find out.
-	proc, err := ps.FindProcess(p.Pid)
-	if err != nil {
-		log.Warningln("Can't find process", err)
-		return nil, err
-	}
-	if proc == nil {
-		return nil, errors.New("Process not found")
-	}
-	return p, nil
 }
