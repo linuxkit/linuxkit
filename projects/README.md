@@ -17,5 +17,5 @@ If you want to  create a project, please submit a pull request to create a new d
 ## Current projects not yet documented
 - Clear Linux integration (Intel)
 - VMWare support (VMWare)
-- ARM port and security boot integration (ARM)
+- ARM port and secure boot integration (ARM)
 - OKernel integration (HPE)
