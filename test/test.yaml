@@ -15,9 +15,6 @@ system:
     capabilities:
      - CAP_SYS_BOOT
     read_only: true
-files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
 outputs:
   - format: kernel+initrd
   - format: iso-bios
