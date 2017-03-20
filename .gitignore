@@ -13,3 +13,4 @@ disk.img.*
 *.efi
 *.qcow2
 *-bzImage
+*-cmdline
