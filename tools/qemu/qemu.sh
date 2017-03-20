@@ -15,6 +15,7 @@ ISO="$(find . -name '*.iso')"
 RAW="$(find . -name '*.raw')"
 INITRD="$(find . -name '*.img')"
 KERNEL="$(find . -name vmlinuz64 -or -name '*bzImage')"
+CMDLINE="$(find . -name '*-cmdline')"
 
 if [ -n "$ISO" ]
 then
@@ -38,7 +39,12 @@ fi
 
 echo "$ARGS" | grep -q systemdisk && qemu-img create -f raw systemdisk.img 256M
 
-CMDLINE="$*"
+if [ -n "${CMDLINE}" ]
+then
+	CMDLINE="$(cat $CMDLINE)"
+else
+	CMDLINE="$*"
+fi
 if [ -z "${CMDLINE}" ]
 then
 	CMDLINE="console=ttyS0"

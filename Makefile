@@ -26,8 +26,8 @@ test-bzImage: test-initrd.img
 
 # interactive versions need to use volume mounts
 .PHONY: qemu qemu-iso
-qemu: moby-initrd.img moby-bzImage bin/moby moby.yaml
-	./scripts/qemu.sh moby-initrd.img moby-bzImage "$(shell bin/moby --cmdline moby.yaml)"
+qemu: moby-initrd.img moby-bzImage moby-cmdline
+	./scripts/qemu.sh moby-initrd.img moby-bzImage "$(shell cat moby-cmdline)"
 
 qemu-iso: alpine/mobylinux-bios.iso
 	./scripts/qemu.sh $^
@@ -63,13 +63,13 @@ define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
 endef
 
-hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit test-initrd.img test-bzImage
+hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit test-initrd.img test-bzImage test-cmdline
 	rm -f disk.img
 	script -q /dev/null ./scripts/hyperkit.sh test | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: test
-test: test-initrd.img test-bzImage
+test: test-initrd.img test-bzImage test-cmdline
 	tar cf - $^ | ./scripts/qemu.sh 2>&1 | tee test.log
 	$(call check_test_log, test.log)
 

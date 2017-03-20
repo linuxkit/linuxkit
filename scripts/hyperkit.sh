@@ -20,13 +20,13 @@ then
 	PREFIX="moby"
 	KERNEL="$PREFIX-bzImage"
 	INITRD="$PREFIX-initrd.img"
-	CMDLINE=$(bin/moby --cmdline ${PREFIX}.yaml)
+	CMDLINE="$PREFIX-cmdline"
 elif [ $# -eq 1 ]
 then
 	PREFIX="$1"
 	KERNEL="$PREFIX-bzImage"
 	INITRD="$PREFIX-initrd.img"
-	CMDLINE=$(bin/moby --cmdline ${PREFIX}.yaml)
+	CMDLINE="$PREFIX-cmdline"
 else
 	KERNEL=$1
 	INITRD=$2
