@@ -19,7 +19,7 @@ moby-initrd.img: bin/moby moby.yaml
 
 moby-bzImage: moby-initrd.img
 
-test-initrd.img: bin/moby test.yaml
+test-initrd.img: bin/moby test/test.yaml
 	$^
 
 test-bzImage: test-initrd.img
@@ -55,7 +55,7 @@ else
 	touch $@
 endif
 
-.PHONY: hyperkit hyperkit-test
+.PHONY: hyperkit
 hyperkit: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit moby-initrd.img moby-bzImage moby.yaml
 	./scripts/hyperkit.sh moby
 
@@ -63,6 +63,7 @@ define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
 endef
 
+.PHONY: hyperkit-test
 hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit test-initrd.img test-bzImage test-cmdline
 	rm -f disk.img
 	script -q /dev/null ./scripts/hyperkit.sh test | tee test.log
