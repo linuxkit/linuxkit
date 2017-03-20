@@ -52,7 +52,7 @@ rm config.json.orig
 # extract rootfs
 EXCLUDE="--exclude .dockerenv --exclude Dockerfile \
         --exclude dev/console --exclude dev/pts --exclude dev/shm \
-        --exclude etc/hostname --exclude etc/hosts --exclude etc/mtab --exclude etc/resolv.conf"
+        --exclude etc/hostname --exclude etc/hosts --exclude etc/resolv.conf"
 mkdir -p rootfs
 CONTAINER="$(docker create $IMAGE /dev/null)"
 docker export "$CONTAINER" | tar -xf - -C rootfs $EXCLUDE
