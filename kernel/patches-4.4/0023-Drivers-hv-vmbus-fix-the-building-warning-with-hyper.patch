@@ -1,4 +1,4 @@
-From 273f8cab60d8774e83bfc7f01081f6fa7ce7768e Mon Sep 17 00:00:00 2001
+From 52999b55e36c8ace069ea1028d371672bd19c1d3 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Dec 2015 12:21:22 -0800
 Subject: [PATCH 23/44] Drivers: hv: vmbus: fix the building warning with

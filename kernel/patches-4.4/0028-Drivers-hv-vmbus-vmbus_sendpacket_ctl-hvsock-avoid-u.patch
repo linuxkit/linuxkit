@@ -1,4 +1,4 @@
-From e87b311be1dfabcf3fbd00ceec98efd3effef578 Mon Sep 17 00:00:00 2001
+From 4cfa66eb6da21cd44906cb3aa056a5dd06866ae1 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:39 -0800
 Subject: [PATCH 28/44] Drivers: hv: vmbus: vmbus_sendpacket_ctl: hvsock: avoid
