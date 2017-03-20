@@ -20,13 +20,13 @@ then
 	PREFIX="moby"
 	KERNEL="$PREFIX-bzImage"
 	INITRD="$PREFIX-initrd.img"
-	CMDLINE="$PREFIX-cmdline"
+	CMDLINE="$(cat $PREFIX-cmdline)"
 elif [ $# -eq 1 ]
 then
 	PREFIX="$1"
 	KERNEL="$PREFIX-bzImage"
 	INITRD="$PREFIX-initrd.img"
-	CMDLINE="$PREFIX-cmdline"
+	CMDLINE="$(cat $PREFIX-cmdline)"
 else
 	KERNEL=$1
 	INITRD=$2
@@ -49,4 +49,4 @@ LPC_DEV="-l com1,stdio"
 #$VPNKIT --ethernet $SLIRP_SOCK &>/dev/null &
 #trap "kill $!; rm $SLIRP_SOCK" EXIT
 
-$HYPERKIT -A $MEM $SMP $PCI_DEV $LPC_DEV $NET $IMG_HDD $RND -u -f kexec,$KERNEL,$INITRD,"$CMDLINE"
+$HYPERKIT -A $MEM $SMP $PCI_DEV $LPC_DEV $NET $IMG_HDD $RND -u -f "kexec,$KERNEL,$INITRD,$CMDLINE"
