@@ -22,7 +22,7 @@ This will build the Moby customisation tool and a Moby initrd image.
 
 If you already have a Go build environment and installed the source in your `GOPATH`
 you can do `go install github.com/docker/moby/cmd/moby` to install the `moby` tool
-instead, and then use `moby moby.yaml` to build the example configuration.
+instead, and then use `moby build moby.yaml` to build the example configuration.
 
 #### Build requirements
 
@@ -40,7 +40,7 @@ instead, and then use `moby moby.yaml` to build the example configuration.
 
 ## Customise
 
-To customise, copy or modify the [`moby.yaml`](moby.yaml) to your own `file.yaml` or use on of the [examples](examples/) and then run `./bin/moby file.yaml` to
+To customise, copy or modify the [`moby.yaml`](moby.yaml) to your own `file.yaml` or use on of the [examples](examples/) and then run `./bin/moby build file.yaml` to
 generate its specified output. You can run the output with `./scripts/qemu.sh` or `./scripts/hyperkit.sh`, or on other
 platforms.
 

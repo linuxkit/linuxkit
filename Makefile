@@ -15,12 +15,12 @@ bin/moby: $(MOBY_DEPS) | bin
 	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 
 moby-initrd.img: bin/moby moby.yaml
-	$^
+	bin/moby build moby.yaml
 
 moby-bzImage: moby-initrd.img
 
 test-initrd.img: bin/moby test/test.yaml
-	$^
+	bin/moby build test/test.yaml
 
 test-bzImage: test-initrd.img
 
