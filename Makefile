@@ -4,7 +4,7 @@ all: default
 
 GO_COMPILE=mobylinux/go-compile:3afebc59c5cde31024493c3f91e6102d584a30b9@sha256:e0786141ea7df8ba5735b63f2a24b4ade9eae5a02b0e04c4fca33b425ec69b0a
 
-MOBY_DEPS=$(wildcard *.go) pkg vendor
+MOBY_DEPS=$(wildcard src/cmd/moby/*.go)
 GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH=amd64
 ifneq ($(GOOS),linux)
@@ -12,7 +12,7 @@ CROSS=-e GOOS=$(GOOS) -e GOARCH=$(GOARCH)
 endif
 
 bin/moby: $(MOBY_DEPS) | bin
-	tar cf - $(MOBY_DEPS) | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
+	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 
 moby-initrd.img: bin/moby moby.yaml
 	$^
