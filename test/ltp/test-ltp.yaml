@@ -13,5 +13,4 @@ files:
 outputs:
   - format: kernel+initrd
   - format: iso-bios
-# The initrd is too large for a pre-allocated EFI ISO
-# - format: iso-efi
+  - format: iso-efi
