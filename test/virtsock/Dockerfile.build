@@ -1,0 +1,11 @@
+FROM mobylinux/go-compile:3afebc59c5cde31024493c3f91e6102d584a30b9
+
+ENV VIRTSOCK_COMMIT=6b4dec728264e07c41e108caebd6bc2b72559a5f
+RUN mkdir -p $GOPATH/src/github.com/rneugeba && \
+  cd $GOPATH/src/github.com/rneugeba && \
+  git clone https://github.com/rneugeba/virtsock.git
+WORKDIR $GOPATH/src/github.com/rneugeba/virtsock
+RUN git checkout $VIRTSOCK_COMMIT
+RUN make build/virtsock_stress.linux
+
+ENTRYPOINT ["cat", "build/virtsock_stress.linux"]
