@@ -9,6 +9,7 @@ RUN \
   e2fsprogs \
   e2fsprogs-extra \
   policycoreutils \
+  libselinux-utils \
   && true
 
 COPY . ./
