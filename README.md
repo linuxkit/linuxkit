@@ -2,7 +2,7 @@
 
 Moby, a toolkit for building custom minimal, immutable Linux distributions.
 
-- Good, secure defaults included
+- Secure defaults without compromising usability
 - Everything is replaceable and customisable
 - Immutable infrastructure applied to building Linux distributions
 - Completely stateless, but persistent storage can be attached
@@ -68,8 +68,8 @@ The config is liable to be changed, and there are missing features; full documen
 This project was extensively reworked from the code we are shipping in Docker Editions, and the result is not yet production quality. The plan is to return to production
 quality during Q2 2017, and rebase the Docker Editions on this open source project.
 
-Security by default is a key aim. In the short term this means using modern kernels, using best practise settings for the kernel, from [KSPP](https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project)
-and elsewhere. It also means working to incorporate more security features into the kernel, including those in our [projects](projects/). In userspace, the core system components
+Security by default is a key aim. In the short term this means Moby uses modern kernels, best practise settings for the kernel from [KSPP](https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project)
+and elsewhere, and a minimal and immutable base. It also means working to incorporate more security features into the kernel, including those in our [projects](projects/). In userspace, the core system components
 are key to security, and we believe they should be written in type safe languages, such as Rust, Go and OCaml, and run with maximum privilege separation and isolation.
 There is ongoing work to remove C components, and to improve, fuzz test and isolate the base daemons.
 
