@@ -41,3 +41,9 @@ WireGuard has a [network namespace integration](https://www.wireguard.io/netns/)
 - We have yet to determine the best way to integrate WireGuard into Moby - at the node level or service level isolation.
   - Node level: it's plausible that Moby's provisioner could allocate keys per Moby node
   - Service level: swarmkit could set up WireGuard on a per-service basis, handing the container the wireguard interface
+
+*Service Level*: one proposal is to use WireGuard between container network [`links`](https://docs.docker.com/compose/networking/#links).
+This is a natural fit because WireGuard associates public keys to IP addresses: a docker-compose link would simply need
+a reference to a key in addition to the existing IP address info for this to work.  However there are some open questions:
+  - `containerd` does not intend to support networks from the roadmap
+  - `links` are not currently supported on swarm stack deploys at present
