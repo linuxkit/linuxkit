@@ -36,7 +36,7 @@ daemon:
     read_only: true
     command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: sshd
-    image: "mobylinux/sshd:3940f3fa07da1b6adab975112894b103b3c491f1"
+    image: "mobylinux/sshd:4f8452ddaff703416fd7452fcd9693b96b23e847"
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN
