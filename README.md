@@ -59,3 +59,27 @@ For the images, you can specify the configuration much like Compose, with some c
 there are no volumes only `binds`.
 
 The config is liable to be changed, and there are missing features; full documentation will be available shortly.
+
+## Roadmap
+
+This project was extensively reworked from the code we are shipping in Docker Editions, and the result is not yet production quality. The plan is to return to production
+quality during Q2 2017, and rebase the Docker Editions on this open source project.
+
+Security by default is a key aim. In the short term this means using modern kernels, using best practise settings for the kernel, from [KSPP](https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project)
+and elsewhere. It also means working to incorporate more security features into the kernel, including those in our [projects](projects/). In userspace, the core system components
+are key to security, and we believe they should be written in type safe languages, such as Rust, Go and OCaml, and run with maximum privilege separation and isolation.
+There is ongoing work to remove C components, and to improve, fuzz test and isolate the base daemons.
+
+This is an open project without fixed judgements, open to the community to set the direction. The guiding principles are:
+- Security informs design
+- Infrastructure as code: immutable, manageable with code
+- Sensible secure and well tested defaults
+- An open, pluggable platform for diverse use cases
+- Easy to use and participate in the project
+- Built with containers, for portability and reproducibility
+- Run with system containers, for isolation and extensibility
+- A base for robust products
+
+## FAQ
+
+See [FAQ](docs/faq.md).
