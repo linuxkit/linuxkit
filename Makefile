@@ -101,6 +101,7 @@ ci-pr:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) test
+	test-failure
 
 .PHONY: clean
 clean:
