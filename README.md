@@ -32,6 +32,9 @@ instead, and then use `moby build moby.yaml` to build the example configuration.
 
 ### Booting and Testing
 
+If you have a recent version of Docker for Mac installed you can use `moby run <name>` to execute the image you created with `moby build <name>.yaml`
+
+The Makefile also specifies a number of targets:
 - `make qemu` will boot up a sample Moby in qemu in a container
 - on OSX: `make hyperkit` will boot up Moby in hyperkit
 - `make test` or `make hyperkit-test` will run the test suite
