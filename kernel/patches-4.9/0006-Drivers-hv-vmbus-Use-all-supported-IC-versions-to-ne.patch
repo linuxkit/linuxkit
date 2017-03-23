@@ -1,4 +1,4 @@
-From ca8e4da18726bb6263ff4ed22e2f8d106ae0f29e Mon Sep 17 00:00:00 2001
+From 526abebd5a31f44b7819f2e9fc92073297b8b59c Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 6/8] Drivers: hv: vmbus: Use all supported IC versions to
@@ -469,7 +469,7 @@ index e7707747f56d..f3797c07be10 100644
  			srv->util_cb, dev->channel);
  	if (ret)
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 4148c98dba24..514cdf390370 100644
+index 489ad74c1e6e..956acfc93487 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1453,9 +1453,10 @@ struct hyperv_service_callback {
