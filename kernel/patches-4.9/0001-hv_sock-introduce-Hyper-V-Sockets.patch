@@ -1,4 +1,4 @@
-From 41cf7c7ea77a3c51b023aefa912f96654c293bfd Mon Sep 17 00:00:00 2001
+From 6ebb6fc113b41112479233a32ba7845bf0765fef Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 23 Jul 2016 01:35:51 +0000
 Subject: [PATCH 1/8] hv_sock: introduce Hyper-V Sockets
@@ -56,10 +56,10 @@ index 63cefa62324c..e64920219d88 100644
  F:	Documentation/ABI/stable/sysfs-bus-vmbus
  
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 192eef2fd766..4148c98dba24 100644
+index d596a076da11..489ad74c1e6e 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1623,5 +1623,18 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
+@@ -1613,5 +1613,18 @@ static inline void commit_rd_index(struct vmbus_channel *channel)
  	hv_signal_on_read(channel);
  }
  
