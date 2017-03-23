@@ -19,10 +19,13 @@ system:
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: dhcp-client
     network_mode: host
-    image: "mobylinux/dhcp-client:dc3fd177a588ca9a850cfc75dd9083fb26d278dc"
+    image: "mobylinux/dhcp-client:d910ad5712a86cf2848753eecd1b7d07d80ad095"
     capabilities:
-     - CAP_NET_RAW
-    command: [/dhcp-client]
+     - CAP_NET_ADMIN # to bring eth0 up
+     - CAP_NET_RAW   # to read /dev/eth0
+    binds:
+     - /var/run/dhcp-client:/data
+    command: [/dhcp-client, -vv]
     read_only: true
 daemon:
   - name: rngd
@@ -32,18 +35,9 @@ daemon:
     oom_score_adj: -800
     read_only: true
     command: [/bin/tini, /usr/sbin/rngd, -f]
-  - name: nginx
-    image: "nginx:alpine"
-    capabilities:
-     - CAP_NET_BIND_SERVICE
-     - CAP_CHOWN
-     - CAP_SETUID
-     - CAP_SETGID
-     - CAP_DAC_OVERRIDE
-    network_mode: host
 files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
+  - path: /var/run/dhcp-client/README
+    contents: 'data for dhcp-client'
 outputs:
   - format: kernel+initrd
   - format: iso-bios

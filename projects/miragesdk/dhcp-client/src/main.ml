@@ -39,7 +39,7 @@ let dup2 ~src ~dst =
   close src
 
 let proxy_rawlink ~rawlink ~fd =
-  Log.debug (fun l -> l "proxy-netif tap0 <=> %a" pp_fd fd);
+  Log.debug (fun l -> l "proxy-netif eth0 <=> %a" pp_fd fd);
   let rec listen_rawlink () =
     Lwt_rawlink.read_packet rawlink >>= fun buf ->
     Log.debug (fun l -> l "PROXY-NETIF: => %a" Cstruct.hexdump_pp buf);
@@ -171,9 +171,12 @@ module Store = struct
   module KV = Store(Irmin.Contents.String)
 
   let client () =
-    let config = Irmin_git.config "/data/git" in
+    let config = Irmin_git.config "/data" in
     KV.Repo.v config >>= fun repo ->
     KV.of_branch repo "calf"
+
+  let set_listen_dir_hook () =
+    Irmin.Private.Watch.set_listen_dir_hook Irmin_watcher.hook
 
   module HTTP = struct
 
@@ -265,7 +268,7 @@ module Store = struct
               (Uri.path (Request.uri request)));
         Log.debug (fun l -> l "path=%a" Fmt.(Dump.list string) path);
         (* Finally, send the response to the client *)
-        Cohttp_lwt_unix.Server.respond ~headers ~body ~status ()
+        Cohttp_lwt_unix.Server.respond ~flush:true ~headers ~body ~status ()
       in
       (* create the server and handle requests with the function defined above *)
       let conn_closed (_, conn) =
@@ -273,21 +276,56 @@ module Store = struct
             l "connection %s closed\n%!" (Cohttp.Connection.to_string conn))
       in
       Cohttp_lwt_unix.Server.make ~callback ~conn_closed ()
-
     end
 
-  let start () =
+  let serve () =
     client () >>= fun db ->
     let http = HTTP.v db in
     let fd = fst store in
+    let on_exn e = Log.err (fun l -> l "XXX %a" Fmt.exn e) in
     Log.info (fun l -> l "serving KV store on %a" pp_fd fd);
-    Cohttp_lwt_unix.Server.create ~mode:(`Fd fd.fd) http
+    Cohttp_lwt_unix.Server.create ~on_exn ~mode:(`Fd fd.fd) http
 
 end
 
-let rawlink () =
-  (* FIXME: enable DHCP filtering via eBPF *)
-  Lwt_rawlink.open_link (* ~filter:(Rawlink.dhcp_filter ())*) "eth0"
+module Handlers = struct
+
+  (* System handlers *)
+
+  let contents_of_diff = function
+    | `Added (_, `Contents (v, _))
+    | `Updated (_, (_, `Contents (v, _))) -> Some v
+    | _ -> None
+
+  let ip t =
+    Store.KV.watch_key t ["ip"] (fun diff ->
+        match contents_of_diff diff with
+        | Some ip ->
+          Log.info (fun l -> l "SET IP to %s" ip);
+          Lwt.return ()
+        | _ ->
+          Lwt.return ()
+      )
+
+  let handlers = [
+    ip;
+  ]
+
+  let install () =
+    Store.client () >>= fun db ->
+    Lwt_list.map_p (fun f -> f db) handlers >>= fun _ ->
+    let t, _ = Lwt.task () in
+    t
+
+end
+
+external bpf_filter: unit -> string = "bpf_filter"
+
+let rawlink ethif =
+  Log.debug (fun l -> l "bringing up %s" ethif);
+  (try Tuntap.set_up_and_running ethif
+   with e -> Log.err (fun l -> l "rawling: %a" Fmt.exn e));
+  Lwt_rawlink.open_link ~filter:(bpf_filter ()) ethif
 
 let check_exit_status cmd status =
   let cmds = String.concat " " cmd in
@@ -297,9 +335,9 @@ let check_exit_status cmd status =
   | Unix.WSIGNALED i -> failf "%s: signal %d" cmds i
   | Unix.WSTOPPED i  -> failf "%s: stopped %d" cmds i
 
-let parent cmd pid =
+let parent cmd pid ethif =
   (* network traffic *)
-  let rawlink = rawlink () in
+  let rawlink = rawlink ethif in
 
   (* close child fds *)
   close_and_dup stdin  >>= fun () ->
@@ -325,15 +363,17 @@ let parent cmd pid =
     forward ~src:(fst logs_out) ~dst:stdout;
     forward ~src:(fst logs_err) ~dst:stderr;
     (* metrics: TODO *)
-    (* store: TODO *)
+
+    Store.serve ();
+    Handlers.install ();
   ]
 
-let run () cmd =
+let run () cmd ethif =
   Lwt_main.run (
     Lwt_io.flush_all () >>= fun () ->
     match Lwt_unix.fork () with
     | 0   -> child cmd
-    | pid -> parent cmd pid
+    | pid -> parent cmd pid ethif
   )
 
 (* CLI *)
@@ -368,8 +408,14 @@ let cmd =
   in
   Arg.(value & opt (list ~sep:' ' string) default_cmd & doc)
 
+let ethif =
+  let doc =
+    Arg.info ~docv:"NAME" ~doc:"The interface to listen too." ["ethif"]
+  in
+  Arg.(value & opt string "eth0" & doc)
+
 let run =
-  Term.(const run $ setup_log $ cmd),
+  Term.(const run $ setup_log $ cmd $ ethif),
   Term.info "dhcp-client" ~version:"0.0"
 
 let () = match Term.eval run with

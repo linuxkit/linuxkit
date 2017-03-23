@@ -1,5 +1,6 @@
 BASE=ocaml/opam:alpine-3.5_ocaml-4.04.0
-FILES=src/main.ml src/inflator.ml src/io_fs.ml src/_tags
+FILES=src/main.ml src/inflator.ml src/io_fs.ml src/bpf/dhcp.c \
+	src/jbuild src/bpf/jbuild
 IMAGE=dhcp-client
 OBJS=obj/dhcp-client
 
@@ -65,7 +66,9 @@ clean::
 
 dev:
 	cd calf && mirage configure && make
-	ocamlbuild -use-ocamlfind -lflags -cclib,-static src/main.native
-	sudo ./_build/src/main.native -vv --cmd 'calf/_build/main.native -l debug --store 10 --net 12'
+	jbuilder build src/main.exe
+#	_build/default/src/main.exe -vv \
+#	  --cmd 'calf/_build/main.native -l debug --store 10 --net 12' \
+#	  --ethif eno1
 
 .DELETE_ON_ERROR:
