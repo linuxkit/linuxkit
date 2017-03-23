@@ -13,6 +13,7 @@ endif
 
 bin/moby: $(MOBY_DEPS) | bin
 	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
+	touch $@
 
 moby-initrd.img: bin/moby moby.yaml
 	bin/moby build moby.yaml
