@@ -5,7 +5,7 @@ RUN opam pin -n add conduit https://github.com/samoht/ocaml-conduit.git#fd
 RUN opam pin -n add mirage-net-unix https://github.com/samoht/mirage-net-unix.git#fd
 
 RUN opam depext -iy mirage-net-unix logs-syslog irmin-unix cohttp decompress
-RUN opam depext -iy rawlink
+RUN opam depext -iy rawlink tuntap.1.0.0 jbuilder irmin-watcher inotify
 
 RUN sudo mkdir -p /src /bin
 COPY ./src /src
@@ -14,5 +14,7 @@ RUN sudo chown opam -R /src
 USER opam
 WORKDIR /src
 
-RUN opam config exec -- ocamlbuild -use-ocamlfind -lflags -cclib,-static main.native
-RUN sudo cp /src/_build/main.native /dhcp-client
+RUN opam pin add tuntap 1.0.0
+
+RUN opam config exec -- jbuilder build main.exe
+RUN sudo cp /src/_build/default/main.exe /dhcp-client
