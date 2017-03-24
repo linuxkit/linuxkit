@@ -46,7 +46,7 @@ Notes:
   hyperkit so the build will find the ocaml environment.
 - Any previous pin of `mirage-block-unix` or `qcow`
   should be removed with the commands:
-
+  
   ```sh
   $ opam update
   $ opam pin remove mirage-block-unix

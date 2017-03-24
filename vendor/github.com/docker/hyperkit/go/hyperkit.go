@@ -60,6 +60,7 @@ const (
 var defaultHyperKits = []string{"hyperkit",
 	"com.docker.hyperkit",
 	"/usr/local/bin/hyperkit",
+	"/Applications/Docker.app/Contents/Resources/bin/hyperkit",
 	"/Applications/Docker.app/Contents/MacOS/com.docker.hyperkit"}
 
 // HyperKit contains the configuration of the hyperkit VM
