@@ -44,8 +44,8 @@ The Makefile also specifies a number of targets:
 ## Customise
 
 To customise, copy or modify the [`moby.yaml`](moby.yaml) to your own `file.yaml` or use on of the [examples](examples/) and then run `./bin/moby build file.yaml` to
-generate its specified output. You can run the output with `./scripts/qemu.sh` or `./scripts/hyperkit.sh`, or on other
-platforms.
+generate its specified output. You can run the output with `./scripts/qemu.sh` or on OSX with `./bin/moby run file`. `moby run` targets will be available for other
+platforms shortly. 
 
 ### Yaml Specification
 
