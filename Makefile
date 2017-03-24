@@ -36,38 +36,18 @@ qemu-iso: alpine/mobylinux-bios.iso
 bin:
 	mkdir -p $@
 
-DOCKER_HYPERKIT=/Applications/Docker.app/Contents/MacOS/com.docker.hyperkit
-DOCKER_VPNKIT=/Applications/Docker.app/Contents/MacOS/vpnkit
-
-bin/com.docker.hyperkit: | bin
-ifneq ("$(wildcard $(DOCKER_HYPERKIT))","")
-	ln -s $(DOCKER_HYPERKIT) $@
-else
-	curl -fsSL https://circleci.com/api/v1/project/docker/hyperkit/latest/artifacts/0//Users/distiller/hyperkit/build/com.docker.hyperkit > $@
-	chmod a+x $@
-endif
-
-bin/vpnkit: | bin
-ifneq ("$(wildcard $(DOCKER_VPNKIT))","")
-	ln -s $(DOCKER_VPNKIT) $@
-else
-	curl -fsSL https://circleci.com/api/v1/project/docker/vpnkit/latest/artifacts/0//Users/distiller/vpnkit/vpnkit.tgz \
-		| tar xz --strip=2 -C $(dir $@) Contents/MacOS/vpnkit
-	touch $@
-endif
-
 .PHONY: hyperkit
-hyperkit: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit moby-initrd.img moby-bzImage moby.yaml
-	./scripts/hyperkit.sh moby
+hyperkit: bin/moby moby-initrd.img moby-bzImage moby.yaml
+	bin/moby run moby
 
 define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
 endef
 
 .PHONY: hyperkit-test
-hyperkit-test: scripts/hyperkit.sh bin/com.docker.hyperkit bin/vpnkit test-initrd.img test-bzImage test-cmdline
+hyperkit-test: bin/moby test-initrd.img test-bzImage test-cmdline
 	rm -f disk.img
-	script -q /dev/null ./scripts/hyperkit.sh test | tee test.log
+	script -q /dev/null bin/moby run test | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: test
