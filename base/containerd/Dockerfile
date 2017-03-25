@@ -9,7 +9,7 @@ RUN \
   linux-headers \
   make \
   && true
-ENV CONTAINERD_COMMIT=0e0ae74b824c71f991de4765711a383450d60655
+ENV CONTAINERD_COMMIT=8353da59c6ae7e1933aac2228df23541ef8b163f
 RUN mkdir -p $GOPATH/src/github.com/docker && \
   cd $GOPATH/src/github.com/docker && \
   git clone https://github.com/docker/containerd.git
