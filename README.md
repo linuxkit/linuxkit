@@ -83,6 +83,10 @@ This is an open project without fixed judgements, open to the community to set t
 - Run with system containers, for isolation and extensibility
 - A base for robust products
 
+## Development reports
+
+There are weekly [development reports](reports/) summarizing work carried out in the week.
+
 ## FAQ
 
 See [FAQ](docs/faq.md).
