@@ -18,7 +18,6 @@ RUN \
   ncurses-dev \
   sed \
   squashfs-tools \
-  syslinux \
   tar \
   xz \
   && true
