@@ -1,0 +1,31 @@
+#!/bin/sh
+
+# TODO more robust
+# while [ ! -S /run/containerd/containerd.sock ]; do sleep 1; done
+# while ! ctr list 2> /dev/null; do sleep 1; done
+
+# start system containers
+# temporarily using runc not containerd
+
+if [ -d /containers/system ]
+then
+	for f in $(find /containers/system -mindepth 1 -maxdepth 1 | sort)
+	do
+		base="$(basename $f)"
+		/usr/bin/runc run --bundle "$f" "$(basename $f)"
+		printf " - $base\n"
+	done
+fi
+
+if [ -d /containers/daemon ]
+then
+	for f in $(find /containers/daemon -mindepth 1 -maxdepth 1 | sort)
+	do
+		base="$(basename $f)"
+		log="/var/log/$base.log"
+		/sbin/start-stop-daemon --start --pidfile /run/$base.pid --exec /usr/bin/runc -- run --bundle "$f" --pid-file /run/$base.pid "$(basename $f)" </dev/null 2>$log >$log &
+		printf " - $base\n"
+	done
+fi
+
+wait
