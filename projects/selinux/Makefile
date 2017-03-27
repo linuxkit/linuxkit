@@ -1,6 +1,6 @@
 MOBY=../../bin/moby
 
-selinux-initrd.img: $(MOBY) selinux.yaml
+selinux-initrd.img: $(MOBY) selinux.yml
 	$^
 
 .PHONY: qemu

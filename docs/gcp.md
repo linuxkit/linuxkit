@@ -26,9 +26,9 @@ gcloud beta auth application-default login
 
 ## Build a moby image
 
-Add a `gcp` output line to your yaml config, see the example in `examples/gcp.yaml`.
+Add a `gcp` output line to your yaml config, see the example in `examples/gcp.yml`.
 
-Then do `./bin/moby myfile.yaml`
+Then do `./bin/moby myfile.yml`
 
 This will create a local `myfile.img.tar.gz` compressed image file, upload it to the
 specified bucket, and create a bootable image.
