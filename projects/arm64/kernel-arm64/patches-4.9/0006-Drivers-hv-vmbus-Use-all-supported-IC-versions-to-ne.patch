@@ -1,0 +1,491 @@
+From ca8e4da18726bb6263ff4ed22e2f8d106ae0f29e Mon Sep 17 00:00:00 2001
+From: Alex Ng <alexng@messages.microsoft.com>
+Date: Sat, 28 Jan 2017 12:37:17 -0700
+Subject: [PATCH 6/8] Drivers: hv: vmbus: Use all supported IC versions to
+ negotiate
+
+Previously, we were assuming that each IC protocol version was tied to a
+specific host version. For example, some Windows 10 preview hosts only
+support v3 TimeSync even though driver assumes v4 is supported by all
+Windows 10 hosts.
+
+The guest will stop trying to negotiate even though older supported
+versions may still be offered by the host.
+
+Make IC version negotiation more robust by going through all versions
+that are supported by the guest.
+
+Fixes: 3da0401b4d0e ("Drivers: hv: utils: Fix the mapping between host
+version and protocol to use")
+
+Reported-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
+Signed-off-by: Alex Ng <alexng@messages.microsoft.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit a1656454131880980bc3a5313c8bf66ef5990c91)
+---
+ drivers/hv/channel_mgmt.c | 80 +++++++++++++++++++++++++++-------------
+ drivers/hv/hv_fcopy.c     | 20 +++++++---
+ drivers/hv/hv_kvp.c       | 41 +++++++++------------
+ drivers/hv/hv_snapshot.c  | 18 +++++++--
+ drivers/hv/hv_util.c      | 94 +++++++++++++++++++++++++----------------------
+ include/linux/hyperv.h    |  7 ++--
+ 6 files changed, 154 insertions(+), 106 deletions(-)
+
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index eec03051da78..84c5bc352034 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -202,33 +202,34 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
+  * @buf: Raw buffer channel data
+  *
+  * @icmsghdrp is of type &struct icmsg_hdr.
+- * @negop is of type &struct icmsg_negotiate.
+  * Set up and fill in default negotiate response message.
+  *
+- * The fw_version specifies the  framework version that
+- * we can support and srv_version specifies the service
+- * version we can support.
++ * The fw_version and fw_vercnt specifies the framework version that
++ * we can support.
++ *
++ * The srv_version and srv_vercnt specifies the service
++ * versions we can support.
++ *
++ * Versions are given in decreasing order.
++ *
++ * nego_fw_version and nego_srv_version store the selected protocol versions.
+  *
+  * Mainly used by Hyper-V drivers.
+  */
+ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+-				struct icmsg_negotiate *negop, u8 *buf,
+-				int fw_version, int srv_version)
++				u8 *buf, const int *fw_version, int fw_vercnt,
++				const int *srv_version, int srv_vercnt,
++				int *nego_fw_version, int *nego_srv_version)
+ {
+ 	int icframe_major, icframe_minor;
+ 	int icmsg_major, icmsg_minor;
+ 	int fw_major, fw_minor;
+ 	int srv_major, srv_minor;
+-	int i;
++	int i, j;
+ 	bool found_match = false;
++	struct icmsg_negotiate *negop;
+ 
+ 	icmsghdrp->icmsgsize = 0x10;
+-	fw_major = (fw_version >> 16);
+-	fw_minor = (fw_version & 0xFFFF);
+-
+-	srv_major = (srv_version >> 16);
+-	srv_minor = (srv_version & 0xFFFF);
+-
+ 	negop = (struct icmsg_negotiate *)&buf[
+ 		sizeof(struct vmbuspipe_hdr) +
+ 		sizeof(struct icmsg_hdr)];
+@@ -244,13 +245,22 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+ 	 * support.
+ 	 */
+ 
+-	for (i = 0; i < negop->icframe_vercnt; i++) {
+-		if ((negop->icversion_data[i].major == fw_major) &&
+-		   (negop->icversion_data[i].minor == fw_minor)) {
+-			icframe_major = negop->icversion_data[i].major;
+-			icframe_minor = negop->icversion_data[i].minor;
+-			found_match = true;
++	for (i = 0; i < fw_vercnt; i++) {
++		fw_major = (fw_version[i] >> 16);
++		fw_minor = (fw_version[i] & 0xFFFF);
++
++		for (j = 0; j < negop->icframe_vercnt; j++) {
++			if ((negop->icversion_data[j].major == fw_major) &&
++			    (negop->icversion_data[j].minor == fw_minor)) {
++				icframe_major = negop->icversion_data[j].major;
++				icframe_minor = negop->icversion_data[j].minor;
++				found_match = true;
++				break;
++			}
+ 		}
++
++		if (found_match)
++			break;
+ 	}
+ 
+ 	if (!found_match)
+@@ -258,14 +268,26 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+ 
+ 	found_match = false;
+ 
+-	for (i = negop->icframe_vercnt;
+-		 (i < negop->icframe_vercnt + negop->icmsg_vercnt); i++) {
+-		if ((negop->icversion_data[i].major == srv_major) &&
+-		   (negop->icversion_data[i].minor == srv_minor)) {
+-			icmsg_major = negop->icversion_data[i].major;
+-			icmsg_minor = negop->icversion_data[i].minor;
+-			found_match = true;
++	for (i = 0; i < srv_vercnt; i++) {
++		srv_major = (srv_version[i] >> 16);
++		srv_minor = (srv_version[i] & 0xFFFF);
++
++		for (j = negop->icframe_vercnt;
++			(j < negop->icframe_vercnt + negop->icmsg_vercnt);
++			j++) {
++
++			if ((negop->icversion_data[j].major == srv_major) &&
++				(negop->icversion_data[j].minor == srv_minor)) {
++
++				icmsg_major = negop->icversion_data[j].major;
++				icmsg_minor = negop->icversion_data[j].minor;
++				found_match = true;
++				break;
++			}
+ 		}
++
++		if (found_match)
++			break;
+ 	}
+ 
+ 	/*
+@@ -282,6 +304,12 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+ 		negop->icmsg_vercnt = 1;
+ 	}
+ 
++	if (nego_fw_version)
++		*nego_fw_version = (icframe_major << 16) | icframe_minor;
++
++	if (nego_srv_version)
++		*nego_srv_version = (icmsg_major << 16) | icmsg_minor;
++
+ 	negop->icversion_data[0].major = icframe_major;
+ 	negop->icversion_data[0].minor = icframe_minor;
+ 	negop->icversion_data[1].major = icmsg_major;
+diff --git a/drivers/hv/hv_fcopy.c b/drivers/hv/hv_fcopy.c
+index e47d8c9db03a..0a315e6aa589 100644
+--- a/drivers/hv/hv_fcopy.c
++++ b/drivers/hv/hv_fcopy.c
+@@ -31,6 +31,16 @@
+ #define WIN8_SRV_MINOR		1
+ #define WIN8_SRV_VERSION	(WIN8_SRV_MAJOR << 16 | WIN8_SRV_MINOR)
+ 
++#define FCOPY_VER_COUNT 1
++static const int fcopy_versions[] = {
++	WIN8_SRV_VERSION
++};
++
++#define FW_VER_COUNT 1
++static const int fw_versions[] = {
++	UTIL_FW_VERSION
++};
++
+ /*
+  * Global state maintained for transaction that is being processed.
+  * For a class of integration services, including the "file copy service",
+@@ -228,8 +238,6 @@ void hv_fcopy_onchannelcallback(void *context)
+ 	u64 requestid;
+ 	struct hv_fcopy_hdr *fcopy_msg;
+ 	struct icmsg_hdr *icmsghdr;
+-	struct icmsg_negotiate *negop = NULL;
+-	int util_fw_version;
+ 	int fcopy_srv_version;
+ 
+ 	if (fcopy_transaction.state > HVUTIL_READY)
+@@ -243,10 +251,10 @@ void hv_fcopy_onchannelcallback(void *context)
+ 	icmsghdr = (struct icmsg_hdr *)&recv_buffer[
+ 			sizeof(struct vmbuspipe_hdr)];
+ 	if (icmsghdr->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-		util_fw_version = UTIL_FW_VERSION;
+-		fcopy_srv_version = WIN8_SRV_VERSION;
+-		vmbus_prep_negotiate_resp(icmsghdr, negop, recv_buffer,
+-				util_fw_version, fcopy_srv_version);
++		vmbus_prep_negotiate_resp(icmsghdr, recv_buffer,
++				fw_versions, FW_VER_COUNT,
++				fcopy_versions, FCOPY_VER_COUNT,
++				NULL, &fcopy_srv_version);
+ 	} else {
+ 		fcopy_msg = (struct hv_fcopy_hdr *)&recv_buffer[
+ 				sizeof(struct vmbuspipe_hdr) +
+diff --git a/drivers/hv/hv_kvp.c b/drivers/hv/hv_kvp.c
+index 3abfc5983c97..2cc670442f6c 100644
+--- a/drivers/hv/hv_kvp.c
++++ b/drivers/hv/hv_kvp.c
+@@ -46,6 +46,19 @@
+ #define WIN8_SRV_MINOR   0
+ #define WIN8_SRV_VERSION     (WIN8_SRV_MAJOR << 16 | WIN8_SRV_MINOR)
+ 
++#define KVP_VER_COUNT 3
++static const int kvp_versions[] = {
++	WIN8_SRV_VERSION,
++	WIN7_SRV_VERSION,
++	WS2008_SRV_VERSION
++};
++
++#define FW_VER_COUNT 2
++static const int fw_versions[] = {
++	UTIL_FW_VERSION,
++	UTIL_WS2K8_FW_VERSION
++};
++
+ /*
+  * Global state maintained for transaction that is being processed. For a class
+  * of integration services, including the "KVP service", the specified protocol
+@@ -610,8 +623,6 @@ void hv_kvp_onchannelcallback(void *context)
+ 	struct hv_kvp_msg *kvp_msg;
+ 
+ 	struct icmsg_hdr *icmsghdrp;
+-	struct icmsg_negotiate *negop = NULL;
+-	int util_fw_version;
+ 	int kvp_srv_version;
+ 	static enum {NEGO_NOT_STARTED,
+ 		     NEGO_IN_PROGRESS,
+@@ -640,28 +651,10 @@ void hv_kvp_onchannelcallback(void *context)
+ 			sizeof(struct vmbuspipe_hdr)];
+ 
+ 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-			/*
+-			 * Based on the host, select appropriate
+-			 * framework and service versions we will
+-			 * negotiate.
+-			 */
+-			switch (vmbus_proto_version) {
+-			case (VERSION_WS2008):
+-				util_fw_version = UTIL_WS2K8_FW_VERSION;
+-				kvp_srv_version = WS2008_SRV_VERSION;
+-				break;
+-			case (VERSION_WIN7):
+-				util_fw_version = UTIL_FW_VERSION;
+-				kvp_srv_version = WIN7_SRV_VERSION;
+-				break;
+-			default:
+-				util_fw_version = UTIL_FW_VERSION;
+-				kvp_srv_version = WIN8_SRV_VERSION;
+-			}
+-			vmbus_prep_negotiate_resp(icmsghdrp, negop,
+-				 recv_buffer, util_fw_version,
+-				 kvp_srv_version);
+-
++			vmbus_prep_negotiate_resp(icmsghdrp,
++				 recv_buffer, fw_versions, FW_VER_COUNT,
++				 kvp_versions, KVP_VER_COUNT,
++				 NULL, &kvp_srv_version);
+ 		} else {
+ 			kvp_msg = (struct hv_kvp_msg *)&recv_buffer[
+ 				sizeof(struct vmbuspipe_hdr) +
+diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
+index 4e543dbb731a..d14f10b924a0 100644
+--- a/drivers/hv/hv_snapshot.c
++++ b/drivers/hv/hv_snapshot.c
+@@ -31,6 +31,16 @@
+ #define VSS_MINOR  0
+ #define VSS_VERSION    (VSS_MAJOR << 16 | VSS_MINOR)
+ 
++#define VSS_VER_COUNT 1
++static const int vss_versions[] = {
++	VSS_VERSION
++};
++
++#define FW_VER_COUNT 1
++static const int fw_versions[] = {
++	UTIL_FW_VERSION
++};
++
+ /*
+  * Timeout values are based on expecations from host
+  */
+@@ -297,7 +307,6 @@ void hv_vss_onchannelcallback(void *context)
+ 
+ 
+ 	struct icmsg_hdr *icmsghdrp;
+-	struct icmsg_negotiate *negop = NULL;
+ 
+ 	if (vss_transaction.state > HVUTIL_READY)
+ 		return;
+@@ -310,9 +319,10 @@ void hv_vss_onchannelcallback(void *context)
+ 			sizeof(struct vmbuspipe_hdr)];
+ 
+ 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-			vmbus_prep_negotiate_resp(icmsghdrp, negop,
+-				 recv_buffer, UTIL_FW_VERSION,
+-				 VSS_VERSION);
++			vmbus_prep_negotiate_resp(icmsghdrp,
++				 recv_buffer, fw_versions, FW_VER_COUNT,
++				 vss_versions, VSS_VER_COUNT,
++				 NULL, NULL);
+ 		} else {
+ 			vss_msg = (struct hv_vss_msg *)&recv_buffer[
+ 				sizeof(struct vmbuspipe_hdr) +
+diff --git a/drivers/hv/hv_util.c b/drivers/hv/hv_util.c
+index e7707747f56d..f3797c07be10 100644
+--- a/drivers/hv/hv_util.c
++++ b/drivers/hv/hv_util.c
+@@ -57,7 +57,31 @@
+ static int sd_srv_version;
+ static int ts_srv_version;
+ static int hb_srv_version;
+-static int util_fw_version;
++
++#define SD_VER_COUNT 2
++static const int sd_versions[] = {
++	SD_VERSION,
++	SD_VERSION_1
++};
++
++#define TS_VER_COUNT 3
++static const int ts_versions[] = {
++	TS_VERSION,
++	TS_VERSION_3,
++	TS_VERSION_1
++};
++
++#define HB_VER_COUNT 2
++static const int hb_versions[] = {
++	HB_VERSION,
++	HB_VERSION_1
++};
++
++#define FW_VER_COUNT 2
++static const int fw_versions[] = {
++	UTIL_FW_VERSION,
++	UTIL_WS2K8_FW_VERSION
++};
+ 
+ static void shutdown_onchannelcallback(void *context);
+ static struct hv_util_service util_shutdown = {
+@@ -118,7 +142,6 @@ static void shutdown_onchannelcallback(void *context)
+ 	struct shutdown_msg_data *shutdown_msg;
+ 
+ 	struct icmsg_hdr *icmsghdrp;
+-	struct icmsg_negotiate *negop = NULL;
+ 
+ 	vmbus_recvpacket(channel, shut_txf_buf,
+ 			 PAGE_SIZE, &recvlen, &requestid);
+@@ -128,9 +151,14 @@ static void shutdown_onchannelcallback(void *context)
+ 			sizeof(struct vmbuspipe_hdr)];
+ 
+ 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-			vmbus_prep_negotiate_resp(icmsghdrp, negop,
+-					shut_txf_buf, util_fw_version,
+-					sd_srv_version);
++			if (vmbus_prep_negotiate_resp(icmsghdrp, shut_txf_buf,
++					fw_versions, FW_VER_COUNT,
++					sd_versions, SD_VER_COUNT,
++					NULL, &sd_srv_version)) {
++				pr_info("Shutdown IC version %d.%d\n",
++					sd_srv_version >> 16,
++					sd_srv_version & 0xFFFF);
++			}
+ 		} else {
+ 			shutdown_msg =
+ 				(struct shutdown_msg_data *)&shut_txf_buf[
+@@ -253,7 +281,6 @@ static void timesync_onchannelcallback(void *context)
+ 	struct ictimesync_data *timedatap;
+ 	struct ictimesync_ref_data *refdata;
+ 	u8 *time_txf_buf = util_timesynch.recv_buffer;
+-	struct icmsg_negotiate *negop = NULL;
+ 
+ 	vmbus_recvpacket(channel, time_txf_buf,
+ 			 PAGE_SIZE, &recvlen, &requestid);
+@@ -263,12 +290,14 @@ static void timesync_onchannelcallback(void *context)
+ 				sizeof(struct vmbuspipe_hdr)];
+ 
+ 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-			vmbus_prep_negotiate_resp(icmsghdrp, negop,
+-						time_txf_buf,
+-						util_fw_version,
+-						ts_srv_version);
+-			pr_info("Using TimeSync version %d.%d\n",
+-				ts_srv_version >> 16, ts_srv_version & 0xFFFF);
++			if (vmbus_prep_negotiate_resp(icmsghdrp, time_txf_buf,
++						fw_versions, FW_VER_COUNT,
++						ts_versions, TS_VER_COUNT,
++						NULL, &ts_srv_version)) {
++				pr_info("TimeSync version %d.%d\n",
++					ts_srv_version >> 16,
++					ts_srv_version & 0xFFFF);
++			}
+ 		} else {
+ 			if (ts_srv_version > TS_VERSION_3) {
+ 				refdata = (struct ictimesync_ref_data *)
+@@ -312,7 +341,6 @@ static void heartbeat_onchannelcallback(void *context)
+ 	struct icmsg_hdr *icmsghdrp;
+ 	struct heartbeat_msg_data *heartbeat_msg;
+ 	u8 *hbeat_txf_buf = util_heartbeat.recv_buffer;
+-	struct icmsg_negotiate *negop = NULL;
+ 
+ 	while (1) {
+ 
+@@ -326,9 +354,16 @@ static void heartbeat_onchannelcallback(void *context)
+ 				sizeof(struct vmbuspipe_hdr)];
+ 
+ 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-			vmbus_prep_negotiate_resp(icmsghdrp, negop,
+-				hbeat_txf_buf, util_fw_version,
+-				hb_srv_version);
++			if (vmbus_prep_negotiate_resp(icmsghdrp,
++					hbeat_txf_buf,
++					fw_versions, FW_VER_COUNT,
++					hb_versions, HB_VER_COUNT,
++					NULL, &hb_srv_version)) {
++
++				pr_info("Heartbeat version %d.%d\n",
++					hb_srv_version >> 16,
++					hb_srv_version & 0xFFFF);
++			}
+ 		} else {
+ 			heartbeat_msg =
+ 				(struct heartbeat_msg_data *)&hbeat_txf_buf[
+@@ -378,33 +413,6 @@ static int util_probe(struct hv_device *dev,
+ 
+ 	hv_set_drvdata(dev, srv);
+ 
+-	/*
+-	 * Based on the host; initialize the framework and
+-	 * service version numbers we will negotiate.
+-	 */
+-	switch (vmbus_proto_version) {
+-	case (VERSION_WS2008):
+-		util_fw_version = UTIL_WS2K8_FW_VERSION;
+-		sd_srv_version = SD_VERSION_1;
+-		ts_srv_version = TS_VERSION_1;
+-		hb_srv_version = HB_VERSION_1;
+-		break;
+-	case VERSION_WIN7:
+-	case VERSION_WIN8:
+-	case VERSION_WIN8_1:
+-		util_fw_version = UTIL_FW_VERSION;
+-		sd_srv_version = SD_VERSION;
+-		ts_srv_version = TS_VERSION_3;
+-		hb_srv_version = HB_VERSION;
+-		break;
+-	case VERSION_WIN10:
+-	default:
+-		util_fw_version = UTIL_FW_VERSION;
+-		sd_srv_version = SD_VERSION;
+-		ts_srv_version = TS_VERSION;
+-		hb_srv_version = HB_VERSION;
+-	}
+-
+ 	ret = vmbus_open(dev->channel, 4 * PAGE_SIZE, 4 * PAGE_SIZE, NULL, 0,
+ 			srv->util_cb, dev->channel);
+ 	if (ret)
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index 4148c98dba24..514cdf390370 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -1453,9 +1453,10 @@ struct hyperv_service_callback {
+ };
+ 
+ #define MAX_SRV_VER	0x7ffffff
+-extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *,
+-					struct icmsg_negotiate *, u8 *, int,
+-					int);
++extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp, u8 *buf,
++				const int *fw_version, int fw_vercnt,
++				const int *srv_version, int srv_vercnt,
++				int *nego_fw_version, int *nego_srv_version);
+ 
+ void hv_event_tasklet_disable(struct vmbus_channel *channel);
+ void hv_event_tasklet_enable(struct vmbus_channel *channel);
+-- 
+2.11.0
+

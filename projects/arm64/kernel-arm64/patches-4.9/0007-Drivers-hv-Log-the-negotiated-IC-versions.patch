@@ -1,0 +1,117 @@
+From 918e18d6946733e1391fc5cec714d51febe59e8e Mon Sep 17 00:00:00 2001
+From: Alex Ng <alexng@messages.microsoft.com>
+Date: Sat, 28 Jan 2017 12:37:18 -0700
+Subject: [PATCH 7/8] Drivers: hv: Log the negotiated IC versions.
+
+Log the negotiated IC versions.
+
+Signed-off-by: Alex Ng <alexng@messages.microsoft.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 1274a690f6b2bd2b37447c47e3062afa8aa43f93)
+---
+ drivers/hv/hv_fcopy.c    |  9 +++++++--
+ drivers/hv/hv_kvp.c      |  8 ++++++--
+ drivers/hv/hv_snapshot.c | 11 ++++++++---
+ drivers/hv/hv_util.c     |  4 ++--
+ 4 files changed, 23 insertions(+), 9 deletions(-)
+
+diff --git a/drivers/hv/hv_fcopy.c b/drivers/hv/hv_fcopy.c
+index 0a315e6aa589..9aee6014339d 100644
+--- a/drivers/hv/hv_fcopy.c
++++ b/drivers/hv/hv_fcopy.c
+@@ -251,10 +251,15 @@ void hv_fcopy_onchannelcallback(void *context)
+ 	icmsghdr = (struct icmsg_hdr *)&recv_buffer[
+ 			sizeof(struct vmbuspipe_hdr)];
+ 	if (icmsghdr->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-		vmbus_prep_negotiate_resp(icmsghdr, recv_buffer,
++		if (vmbus_prep_negotiate_resp(icmsghdr, recv_buffer,
+ 				fw_versions, FW_VER_COUNT,
+ 				fcopy_versions, FCOPY_VER_COUNT,
+-				NULL, &fcopy_srv_version);
++				NULL, &fcopy_srv_version)) {
++
++			pr_info("FCopy IC version %d.%d\n",
++				fcopy_srv_version >> 16,
++				fcopy_srv_version & 0xFFFF);
++		}
+ 	} else {
+ 		fcopy_msg = (struct hv_fcopy_hdr *)&recv_buffer[
+ 				sizeof(struct vmbuspipe_hdr) +
+diff --git a/drivers/hv/hv_kvp.c b/drivers/hv/hv_kvp.c
+index 2cc670442f6c..de263712e247 100644
+--- a/drivers/hv/hv_kvp.c
++++ b/drivers/hv/hv_kvp.c
+@@ -651,10 +651,14 @@ void hv_kvp_onchannelcallback(void *context)
+ 			sizeof(struct vmbuspipe_hdr)];
+ 
+ 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-			vmbus_prep_negotiate_resp(icmsghdrp,
++			if (vmbus_prep_negotiate_resp(icmsghdrp,
+ 				 recv_buffer, fw_versions, FW_VER_COUNT,
+ 				 kvp_versions, KVP_VER_COUNT,
+-				 NULL, &kvp_srv_version);
++				 NULL, &kvp_srv_version)) {
++				pr_info("KVP IC version %d.%d\n",
++					kvp_srv_version >> 16,
++					kvp_srv_version & 0xFFFF);
++			}
+ 		} else {
+ 			kvp_msg = (struct hv_kvp_msg *)&recv_buffer[
+ 				sizeof(struct vmbuspipe_hdr) +
+diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
+index d14f10b924a0..bcc03f0748d6 100644
+--- a/drivers/hv/hv_snapshot.c
++++ b/drivers/hv/hv_snapshot.c
+@@ -304,7 +304,7 @@ void hv_vss_onchannelcallback(void *context)
+ 	u32 recvlen;
+ 	u64 requestid;
+ 	struct hv_vss_msg *vss_msg;
+-
++	int vss_srv_version;
+ 
+ 	struct icmsg_hdr *icmsghdrp;
+ 
+@@ -319,10 +319,15 @@ void hv_vss_onchannelcallback(void *context)
+ 			sizeof(struct vmbuspipe_hdr)];
+ 
+ 		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
+-			vmbus_prep_negotiate_resp(icmsghdrp,
++			if (vmbus_prep_negotiate_resp(icmsghdrp,
+ 				 recv_buffer, fw_versions, FW_VER_COUNT,
+ 				 vss_versions, VSS_VER_COUNT,
+-				 NULL, NULL);
++				 NULL, &vss_srv_version)) {
++
++				pr_info("VSS IC version %d.%d\n",
++					vss_srv_version >> 16,
++					vss_srv_version & 0xFFFF);
++			}
+ 		} else {
+ 			vss_msg = (struct hv_vss_msg *)&recv_buffer[
+ 				sizeof(struct vmbuspipe_hdr) +
+diff --git a/drivers/hv/hv_util.c b/drivers/hv/hv_util.c
+index f3797c07be10..89440c2eb346 100644
+--- a/drivers/hv/hv_util.c
++++ b/drivers/hv/hv_util.c
+@@ -294,7 +294,7 @@ static void timesync_onchannelcallback(void *context)
+ 						fw_versions, FW_VER_COUNT,
+ 						ts_versions, TS_VER_COUNT,
+ 						NULL, &ts_srv_version)) {
+-				pr_info("TimeSync version %d.%d\n",
++				pr_info("TimeSync IC version %d.%d\n",
+ 					ts_srv_version >> 16,
+ 					ts_srv_version & 0xFFFF);
+ 			}
+@@ -360,7 +360,7 @@ static void heartbeat_onchannelcallback(void *context)
+ 					hb_versions, HB_VER_COUNT,
+ 					NULL, &hb_srv_version)) {
+ 
+-				pr_info("Heartbeat version %d.%d\n",
++				pr_info("Heartbeat IC version %d.%d\n",
+ 					hb_srv_version >> 16,
+ 					hb_srv_version & 0xFFFF);
+ 			}
+-- 
+2.11.0
+
