@@ -21,7 +21,7 @@ Simple build instructions: use `make` to build.
 This will build the Moby customisation tool and a Moby initrd image.
 
 If you already have a Go build environment and installed the source in your `GOPATH`
-you can do `go install github.com/docker/moby/cmd/moby` to install the `moby` tool
+you can do `go install github.com/docker/moby/src/cmd/moby` to install the `moby` tool
 instead, and then use `moby build moby.yml` to build the example configuration.
 
 #### Build requirements
