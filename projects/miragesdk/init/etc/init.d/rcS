@@ -101,6 +101,3 @@ hwclock --hctosys --utc
 ip addr add 127.0.0.1/8 dev lo brd + scope host
 ip route add 127.0.0.0/8 dev lo scope host
 ip link set lo up
-
-# will be containerised
-/sbin/dhcpcd
