@@ -23,13 +23,13 @@ bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
 
-moby-initrd.img: bin/moby moby.yaml
-	bin/moby build moby.yaml
+moby-initrd.img: bin/moby moby.yml
+	bin/moby build moby.yml
 
 moby-bzImage: moby-initrd.img
 
-test-initrd.img: bin/moby test/test.yaml
-	bin/moby build test/test.yaml
+test-initrd.img: bin/moby test/test.yml
+	bin/moby build test/test.yml
 
 test-bzImage: test-initrd.img
 
@@ -45,7 +45,7 @@ bin:
 	mkdir -p $@
 
 .PHONY: hyperkit
-hyperkit: bin/moby moby-initrd.img moby-bzImage moby.yaml
+hyperkit: bin/moby moby-initrd.img moby-bzImage moby.yml
 	bin/moby run moby
 
 define check_test_log
