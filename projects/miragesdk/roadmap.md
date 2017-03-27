@@ -126,7 +126,6 @@ and is able to get a DHCP lease on boot.
 
 - use runc to isolate the calf
 - system handler (see https://github.com/kobolabs/dhcpcd/tree/kobo/dhcpcd-hooks)
-- eBPF filtering
 - use seccomp to isolate the privileged container
 - use the DHCP results to actually update the system
 - add metrics aggregation (using prometheus)
