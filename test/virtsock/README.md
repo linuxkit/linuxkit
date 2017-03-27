@@ -1,5 +1,5 @@
 This directory contains the files to build and run a container containing the
-virtio and Hyper-V socket stress tests. `test-virtsock-server.yaml` builds images which start the server inside the VM.
+virtio and Hyper-V socket stress tests. `test-virtsock-server.yml` builds images which start the server inside the VM.
 
 The client, to be run on the host as per this [README](https://github.com/rneugeba/virtsock/blob/master/examples/README.md), can be obtained compiled from [here](https://github.com/rneugeba/virtsock).
 

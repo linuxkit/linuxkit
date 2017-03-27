@@ -22,7 +22,7 @@ This will build the Moby customisation tool and a Moby initrd image.
 
 If you already have a Go build environment and installed the source in your `GOPATH`
 you can do `go install github.com/docker/moby/cmd/moby` to install the `moby` tool
-instead, and then use `moby build moby.yaml` to build the example configuration.
+instead, and then use `moby build moby.yml` to build the example configuration.
 
 #### Build requirements
 
@@ -32,7 +32,7 @@ instead, and then use `moby build moby.yaml` to build the example configuration.
 
 ### Booting and Testing
 
-If you have a recent version of Docker for Mac installed you can use `moby run <name>` to execute the image you created with `moby build <name>.yaml`
+If you have a recent version of Docker for Mac installed you can use `moby run <name>` to execute the image you created with `moby build <name>.yml`
 
 The Makefile also specifies a number of targets:
 - `make qemu` will boot up a sample Moby in qemu in a container
@@ -43,7 +43,7 @@ The Makefile also specifies a number of targets:
 
 ## Customise
 
-To customise, copy or modify the [`moby.yaml`](moby.yaml) to your own `file.yaml` or use on of the [examples](examples/) and then run `./bin/moby build file.yaml` to
+To customise, copy or modify the [`moby.yml`](moby.yml) to your own `file.yml` or use on of the [examples](examples/) and then run `./bin/moby build file.yml` to
 generate its specified output. You can run the output with `./scripts/qemu.sh` or on OSX with `./bin/moby run file`. `moby run` targets will be available for other
 platforms shortly. 
 
