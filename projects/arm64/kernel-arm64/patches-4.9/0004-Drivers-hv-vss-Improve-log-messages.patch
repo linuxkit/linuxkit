@@ -1,0 +1,104 @@
+From 286360c75fcfdfdaa9da2016d61ac41f23a39546 Mon Sep 17 00:00:00 2001
+From: Alex Ng <alexng@messages.microsoft.com>
+Date: Sun, 6 Nov 2016 13:14:10 -0800
+Subject: [PATCH 4/8] Drivers: hv: vss: Improve log messages.
+
+Adding log messages to help troubleshoot error cases and transaction
+handling.
+
+Signed-off-by: Alex Ng <alexng@microsoft.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 23d2cc0c29eb0e7c6fe4cac88098306c31c40208)
+---
+ drivers/hv/hv_snapshot.c | 25 +++++++++++++++++++------
+ 1 file changed, 19 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
+index a76e3db0d01f..b1446d51ef45 100644
+--- a/drivers/hv/hv_snapshot.c
++++ b/drivers/hv/hv_snapshot.c
+@@ -121,7 +121,7 @@ static int vss_handle_handshake(struct hv_vss_msg *vss_msg)
+ 	default:
+ 		return -EINVAL;
+ 	}
+-	pr_debug("VSS: userspace daemon ver. %d connected\n", dm_reg_value);
++	pr_info("VSS: userspace daemon ver. %d connected\n", dm_reg_value);
+ 	return 0;
+ }
+ 
+@@ -129,8 +129,10 @@ static int vss_on_msg(void *msg, int len)
+ {
+ 	struct hv_vss_msg *vss_msg = (struct hv_vss_msg *)msg;
+ 
+-	if (len != sizeof(*vss_msg))
++	if (len != sizeof(*vss_msg)) {
++		pr_debug("VSS: Message size does not match length\n");
+ 		return -EINVAL;
++	}
+ 
+ 	if (vss_msg->vss_hdr.operation == VSS_OP_REGISTER ||
+ 	    vss_msg->vss_hdr.operation == VSS_OP_REGISTER1) {
+@@ -138,8 +140,11 @@ static int vss_on_msg(void *msg, int len)
+ 		 * Don't process registration messages if we're in the middle
+ 		 * of a transaction processing.
+ 		 */
+-		if (vss_transaction.state > HVUTIL_READY)
++		if (vss_transaction.state > HVUTIL_READY) {
++			pr_debug("VSS: Got unexpected registration request\n");
+ 			return -EINVAL;
++		}
++
+ 		return vss_handle_handshake(vss_msg);
+ 	} else if (vss_transaction.state == HVUTIL_USERSPACE_REQ) {
+ 		vss_transaction.state = HVUTIL_USERSPACE_RECV;
+@@ -156,7 +161,7 @@ static int vss_on_msg(void *msg, int len)
+ 		}
+ 	} else {
+ 		/* This is a spurious call! */
+-		pr_warn("VSS: Transaction not active\n");
++		pr_debug("VSS: Transaction not active\n");
+ 		return -EINVAL;
+ 	}
+ 	return 0;
+@@ -169,8 +174,10 @@ static void vss_send_op(void)
+ 	struct hv_vss_msg *vss_msg;
+ 
+ 	/* The transaction state is wrong. */
+-	if (vss_transaction.state != HVUTIL_HOSTMSG_RECEIVED)
++	if (vss_transaction.state != HVUTIL_HOSTMSG_RECEIVED) {
++		pr_debug("VSS: Unexpected attempt to send to daemon\n");
+ 		return;
++	}
+ 
+ 	vss_msg = kzalloc(sizeof(*vss_msg), GFP_KERNEL);
+ 	if (!vss_msg)
+@@ -211,9 +218,13 @@ static void vss_handle_request(struct work_struct *dummy)
+ 	case VSS_OP_HOT_BACKUP:
+ 		if (vss_transaction.state < HVUTIL_READY) {
+ 			/* Userspace is not registered yet */
++			pr_debug("VSS: Not ready for request.\n");
+ 			vss_respond_to_host(HV_E_FAIL);
+ 			return;
+ 		}
++
++		pr_debug("VSS: Received request for op code: %d\n",
++			vss_transaction.msg->vss_hdr.operation);
+ 		vss_transaction.state = HVUTIL_HOSTMSG_RECEIVED;
+ 		vss_send_op();
+ 		return;
+@@ -356,8 +367,10 @@ hv_vss_init(struct hv_util_service *srv)
+ 
+ 	hvt = hvutil_transport_init(vss_devname, CN_VSS_IDX, CN_VSS_VAL,
+ 				    vss_on_msg, vss_on_reset);
+-	if (!hvt)
++	if (!hvt) {
++		pr_warn("VSS: Failed to initialize transport\n");
+ 		return -EFAULT;
++	}
+ 
+ 	return 0;
+ }
+-- 
+2.11.0
+

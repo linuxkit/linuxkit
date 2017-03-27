@@ -1,0 +1,30 @@
+From 4d10e16196f7c219540a96a486447c7c8eee0d3c Mon Sep 17 00:00:00 2001
+From: Rolf Neugebauer <rolf.neugebauer@gmail.com>
+Date: Mon, 23 May 2016 18:55:45 +0100
+Subject: [PATCH 2/8] vmbus: Don't spam the logs with unknown GUIDs
+
+With Hyper-V sockets device types are introduced on the fly. The pr_info()
+then prints a message on every connection, which is way too verbose.  Since
+there doesn't seem to be an easy way to check for registered services,
+disable the pr_info() completely.
+
+Signed-off-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
+---
+ drivers/hv/channel_mgmt.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index cb9531541a12..eec03051da78 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -192,7 +192,6 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
+ 		if (!uuid_le_cmp(*guid, vmbus_devs[i].guid))
+ 			return i;
+ 	}
+-	pr_info("Unknown GUID: %pUl\n", guid);
+ 	return i;
+ }
+ 
+-- 
+2.11.0
+
