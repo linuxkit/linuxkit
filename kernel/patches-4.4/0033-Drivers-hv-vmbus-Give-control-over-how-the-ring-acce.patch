@@ -1,4 +1,4 @@
-From 6dff61b3ec25d9d10e248688e1a8e58a5f9d6dfe Mon Sep 17 00:00:00 2001
+From 6cf4900b125efa655cac0855f71caaf37d129087 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:45 -0800
 Subject: [PATCH 33/44] Drivers: hv: vmbus: Give control over how the ring
@@ -111,7 +111,7 @@ index cf311be88cb4..b40f429aaa13 100644
  	spin_lock_init(&channel->lock);
  
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 50b1de7439cf..89bb5591498e 100644
+index 9a95beb87015..9976774d6abc 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -617,7 +617,7 @@ void hv_ringbuffer_cleanup(struct hv_ring_buffer_info *ring_info);
