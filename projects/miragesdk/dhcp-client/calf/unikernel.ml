@@ -199,13 +199,13 @@ end
 module Main
     (Time :Mirage_time_lwt.S)
     (Net  : Mirage_net_lwt.S)
-    (Store: Mirage_net_lwt.S) =
+    (Ctl  : Mirage_net_lwt.S) =
 struct
 
-  module API = API(Store)
+  module API = API(Ctl)
   module Dhcp_client = Dhcp_client_mirage.Make(Time)(Net)
 
-  let start () net store =
+  let start () net ctl =
     let requests = match Key_gen.codes () with
       | [] -> default_options
       | l  ->
@@ -220,6 +220,6 @@ struct
     Lwt_stream.last_new stream >>= fun result ->
     let result = of_ipv4_config result in
     Log.info (fun l -> l "found lease: %a" pp result);
-    API.set_ip store result.address
+    API.set_ip ctl result.address
 
 end

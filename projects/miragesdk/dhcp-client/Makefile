@@ -1,5 +1,5 @@
 BASE=ocaml/opam:alpine-3.5_ocaml-4.04.0
-FILES=src/main.ml src/inflator.ml src/io_fs.ml src/bpf/dhcp.c \
+FILES=$(shell find src/ -regex '.*\.mli?') src/bpf/dhcp.c \
 	src/jbuild src/bpf/jbuild
 IMAGE=dhcp-client
 OBJS=obj/dhcp-client
