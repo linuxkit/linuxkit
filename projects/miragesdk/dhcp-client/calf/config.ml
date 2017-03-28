@@ -33,9 +33,9 @@ let net =
   let key = Key.(create "input" Arg.(opt int 3 doc)) in
   netif_of_fd key
 
-let store =
+let ctl =
   let doc =
-    Key.Arg.info ~docv:"FD" ~doc:"Store interface" ["store"]
+    Key.Arg.info ~docv:"FD" ~doc:"Control interface" ["ctl"]
   in
   let key = Key.(create "output" Arg.(opt int 4 doc)) in
   netif_of_fd key
@@ -54,4 +54,4 @@ let main =
   foreign ~keys ~packages "Unikernel.Main"
     (time @-> network @-> network @-> job)
 
-let () = register "dhcp-client" [main $ default_time $ net $ store]
+let () = register "dhcp-client" [main $ default_time $ net $ ctl]

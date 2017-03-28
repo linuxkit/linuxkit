@@ -5,7 +5,9 @@ RUN opam pin -n add conduit https://github.com/samoht/ocaml-conduit.git#fd
 RUN opam pin -n add mirage-net-unix https://github.com/samoht/mirage-net-unix.git#fd
 
 RUN opam depext -iy mirage-net-unix logs-syslog cohttp decompress
-RUN opam depext -iy rawlink
+RUN opam depext -iy rawlink tuntap.1.0.0 jbuilder
+
+RUN opam pin add tuntap 1.0.0
 
 RUN sudo mkdir -p /src /bin
 

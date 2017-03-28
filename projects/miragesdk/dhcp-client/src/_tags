@@ -1,6 +1,0 @@
-true: bin_annot, debug, strict_sequence
-true: warn_error(+1..49+60), warn(A-4-41-44-7)
-true: thread
-true: package(mirage-net-unix,logs-syslog.lwt,threads,cohttp.lwt)
-true: package(cmdliner,fmt.cli,logs.fmt,logs.cli,fmt.tty,decompress)
-true: package(irmin,irmin-git,irmin-http,lwt.unix,rawlink)
