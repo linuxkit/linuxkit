@@ -97,10 +97,17 @@ let ethif =
   in
   Arg.(value & opt string "eth0" & doc)
 
+let path =
+  let doc =
+    Arg.info ~docv:"DIR"
+      ~doc:"The directory where control state will be stored." ["path"]
+  in
+  Arg.(value & opt string "/data" & doc)
+
 let run =
-  Term.(const run $ setup_log $ cmd $ ethif),
+  Term.(const run $ setup_log $ cmd $ ethif $ path),
   Term.info "dhcp-client" ~version:"0.0"
 
 let () = match Term.eval run with
   | `Error _ -> exit 1
-  | _        -> exit 0
+  | `Ok () |`Help |`Version -> exit 0

@@ -25,10 +25,10 @@ let v path =
   KV.Repo.v config >>= fun repo ->
   KV.of_branch repo "calf"
 
-let set_listen_dir_hook () =
+let () =
   Irmin.Private.Watch.set_listen_dir_hook Irmin_watcher.hook
 
-module HTTP = struct
+module Dispatch = struct
 
   module Wm = struct
     module Rd = Webmachine.Rd
@@ -112,7 +112,7 @@ module HTTP = struct
             (Uri.path (Request.uri request)));
       Log.debug (fun l -> l "path=%a" Fmt.(Dump.list string) path);
       (* Finally, send the response to the client *)
-      Cohttp_lwt_unix.Server.respond ~flush:true ~headers ~body ~status ()
+      Cohttp_lwt_unix.Server.respond ~headers ~body ~status ()
     in
     (* create the server and handle requests with the function defined above *)
     let conn_closed (_, conn) =
@@ -122,7 +122,15 @@ module HTTP = struct
     Cohttp_lwt_unix.Server.make ~callback ~conn_closed ()
 end
 
+let int_of_fd (t:Lwt_unix.file_descr) =
+  (Obj.magic (Lwt_unix.unix_file_descr t): int)
+
 let serve ~routes db fd =
   let http = HTTP.v db routes in
   let on_exn e = Log.err (fun l -> l "ERROR: %a" Fmt.exn e) in
+  Lwt_unix.blocking fd >>= fun blocking ->
+  Log.debug (fun l ->
+      l "Serving the control state over fd:%d (blocking=%b)"
+        (int_of_fd fd) blocking
+    );
   Cohttp_lwt_unix.Server.create ~on_exn ~mode:(`Fd fd) http
