@@ -6,5 +6,6 @@
               cmdliner fmt.cli logs.fmt logs.cli fmt.tty decompress
               irmin irmin-git irmin-http lwt.unix rawlink tuntap bpf_dhcp
               irmin-watcher inotify))
+  (preprocess (pps (cstruct.ppx)))
   (flags (-cclib -static))
  ))
