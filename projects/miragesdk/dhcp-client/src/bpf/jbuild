@@ -1,0 +1,6 @@
+(jbuild_version 1)
+
+(library
+ ((name            bpf_dhcp)
+  (c_names         (dhcp))
+))
