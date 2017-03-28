@@ -15,17 +15,16 @@ Moby, a toolkit for building custom minimal, immutable Linux distributions.
 
 ## Getting Started
 
-### Build
+### Build the `moby` tool
 
 Simple build instructions: use `make` to build.
-This will build the Moby customisation tool and a Moby initrd image.
+This will build the Moby customisation tool and an example Moby initrd image from the `moby.yml` file.
 
 If you already have a Go build environment and installed the source in your `GOPATH`
 you can do `go install github.com/docker/moby/src/cmd/moby` to install the `moby` tool
 instead, and then use `moby build moby.yml` to build the example configuration.
 
-#### Build requirements
-
+Build requirements:
 - GNU `make`
 - GNU or BSD `tar` (not `busybox` `tar`)
 - Docker
@@ -41,15 +40,18 @@ The Makefile also specifies a number of targets:
 - There are also docs for booting on [Google Cloud](docs/gcp.md)
 - More detailed docs will be available shortly, for running single hosts and clusters.
 
-## Customise
+## Building your own customised image
 
-To customise, copy or modify the [`moby.yml`](moby.yml) to your own `file.yml` or use on of the [examples](examples/) and then run `./bin/moby build file.yml` to
+To customise, copy or modify the [`moby.yml`](moby.yml) to your own `file.yml` or use one of the [examples](examples/) and then run `./bin/moby build file.yml` to
 generate its specified output. You can run the output with `./scripts/qemu.sh` or on OSX with `./bin/moby run file`. `moby run` targets will be available for other
-platforms shortly. 
+platforms shortly.
+
+The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. It also specifies what
+formats to output, such as bootable ISOs and images for various platforms.
 
 ### Yaml Specification
 
-The Yaml format is loosely based on Docker Compose:
+The yaml format is loosely based on Docker Compose:
 
 - `kernel` specifies a kernel Docker image, containing a kernel and a filesystem tarball, eg containing modules. `mobylinux/kernel` is built from `kernel/`
 - `init` is the base `init` process Docker image, which is unpacked as the base system, containing `init`, `containerd`, `runc` and a few tools. Built from `base/init/`
@@ -62,6 +64,11 @@ For the images, you can specify the configuration much like Compose, with some c
 there are no volumes only `binds`.
 
 The config is liable to be changed, and there are missing features; full documentation will be available shortly.
+
+
+## Architecture
+
+There is an [overview of the architecture](architecture/) covering how the system works.
 
 ## Roadmap
 
