@@ -1,6 +1,6 @@
 Authors: Chris Dalton <cid@hpi.com>, Nigel Edwards <nigel.edwards@hpe.com>
 
-Split Kernel
+# Split Kernel
 
 Similar to the nested-kernel work for BSD by Dautenhan[1], the aim of
 the split kernel is to introduce a level of intra-kernel protection
@@ -64,8 +64,7 @@ conflict with permissions in the lower-level page tables, a VMEXIT (in
 the current prototype which uses Intel VMX) is triggered. R-mode is
 then entered where will handle the permission violation.
 
-
-LIMITATIONS AND CAVEATS
+# Limitations and Caveats
 
 The current implementation does not have any protection of the kernel
 in place yet. It is a demonstration that you can create processes run
@@ -83,16 +82,14 @@ are:
  - Protection of kernel executable code RX only
  - Protection of kernel data structures RO
 
+# References
 
-REFERENCES:
-
-[1] Nested Kernel: An Operating System Architecture for Intra-Kernel
+- [1] Nested Kernel: An Operating System Architecture for Intra-Kernel
 Privilege Separation, Nathan Dautenhahn, Theodoros Kasampalis, Will
 Dietz, John Criswell, Vikram Adve, ASPLOS '15, Proceedings of the
 Twentieth International Conference on Architectural Support for
 Programming Languages and Operating Systems, March 2015.
-
-[2] Dune: Safe user-level access to privileged CPU features, Adam
+- [2] Dune: Safe user-level access to privileged CPU features, Adam
 Belay, Andrea Bittau, Ali Mashtizadeh, David Terei, David Mazières,
 and Christos Kozyrakis, OSDI '12, Proceedings of the 10th USENIX
 Symposium on Operating Systems Design and Implementation, October
