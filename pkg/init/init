@@ -14,9 +14,10 @@ setup_console() {
 		line="-L"
 		term="vt100"
 		;;
-	tty0)
-		# skip current console
-		return 0
+	tty?)
+		line=""
+		speed="38400"
+		term=""
 		;;
 	esac
 	# skip consoles already in inittab
