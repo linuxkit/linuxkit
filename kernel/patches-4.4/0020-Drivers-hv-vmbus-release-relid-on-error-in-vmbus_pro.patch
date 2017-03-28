@@ -1,4 +1,4 @@
-From da2a577174d79446488b2c4a3043ad61ec5b805d Mon Sep 17 00:00:00 2001
+From 4a11c27e225efac7b5c83293b35b491e6fc206fa Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:50 -0800
 Subject: [PATCH 20/44] Drivers: hv: vmbus: release relid on error in

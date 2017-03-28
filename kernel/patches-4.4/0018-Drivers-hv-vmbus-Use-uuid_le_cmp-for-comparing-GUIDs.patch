@@ -1,4 +1,4 @@
-From f952ef62880a08a1cc3359659ced549efa9a0d32 Mon Sep 17 00:00:00 2001
+From 660faacaab63072bd6cce85a15b9f12172e957d6 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:44 -0800
 Subject: [PATCH 18/44] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing
@@ -29,7 +29,7 @@ index 339277b76468..9b4525c56376 100644
  			break;
  		}
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 6ce2bf81dae3..7973aa55fec8 100644
+index f1fbb6b98f5c..e71f3561dbab 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -535,7 +535,7 @@ static const uuid_le null_guid;
