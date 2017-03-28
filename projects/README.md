@@ -7,7 +7,7 @@ in its current state, which ideally will be integrated in the Moby CI so there a
 time we hope that many projects will graduate into the recommended production defaults, but other projects may remain as
 ongoing projects, such as kernel hardening.
 
-If you want to  create a project, please submit a pull request to create a new directory here.
+If you want to create a project, please submit a pull request to create a new directory here.
 
 ## Current projects
 - [Kernel Self Protection Project enhancements](kspp/)
