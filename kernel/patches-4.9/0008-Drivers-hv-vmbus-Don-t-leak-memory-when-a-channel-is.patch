@@ -1,4 +1,4 @@
-From ba6078e0069da20c0aebcab38a6d76e371d61da6 Mon Sep 17 00:00:00 2001
+From a8c7a3307f4a4a2cff3cd66ae90aeb45c2cfe017 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 12 Mar 2017 20:00:30 -0700
 Subject: [PATCH 8/8] Drivers: hv: vmbus: Don't leak memory when a channel is

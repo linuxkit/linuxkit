@@ -1,4 +1,4 @@
-From 608be9f80b46b13603f454a099516914c8ca5251 Mon Sep 17 00:00:00 2001
+From 8fd76670d0030231caf284661cd41b31f50919aa Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:51 -0800
 Subject: [PATCH 21/44] Drivers: hv: vmbus: channge
@@ -99,7 +99,7 @@ index 4fc2e8836e60..521f48ed188e 100644
  	return found_channel;
  }
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 12156db2e88e..50b1de7439cf 100644
+index 75e383e6d03d..9a95beb87015 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -683,7 +683,7 @@ struct vmbus_connection {

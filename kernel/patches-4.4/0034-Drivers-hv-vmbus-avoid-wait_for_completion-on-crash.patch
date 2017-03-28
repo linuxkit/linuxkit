@@ -1,4 +1,4 @@
-From b69e0416edf6d148c25b0098f6bf53bf583ab1a1 Mon Sep 17 00:00:00 2001
+From 8c1531920129543abc16064dfa975e0c43479ac1 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:16 -0800
 Subject: [PATCH 34/44] Drivers: hv: vmbus: avoid wait_for_completion() on
@@ -61,7 +61,7 @@ index 09c08b56e3dc..78b8be87844c 100644
  	if (vmbus_connection.work_queue) {
  		drain_workqueue(vmbus_connection.work_queue);
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 89bb5591498e..f424c2df6c19 100644
+index 9976774d6abc..4aadad6a0cde 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -756,7 +756,7 @@ void hv_vss_onchannelcallback(void *);
@@ -74,7 +74,7 @@ index 89bb5591498e..f424c2df6c19 100644
  static inline void hv_poll_channel(struct vmbus_channel *channel,
  				   void (*cb)(void *))
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 03fc5d317b22..b0cc6fd74fd0 100644
+index a220efc297c4..d9801855ad4e 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -1276,7 +1276,7 @@ static void hv_kexec_handler(void)
@@ -85,7 +85,7 @@ index 03fc5d317b22..b0cc6fd74fd0 100644
 +	vmbus_initiate_unload(false);
  	for_each_online_cpu(cpu)
  		smp_call_function_single(cpu, hv_synic_cleanup, NULL, 1);
- 	hv_cleanup();
+ 	hv_cleanup(false);
 @@ -1284,7 +1284,7 @@ static void hv_kexec_handler(void)
  
  static void hv_crash_handler(struct pt_regs *regs)

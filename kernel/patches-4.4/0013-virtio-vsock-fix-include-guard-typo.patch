@@ -1,4 +1,4 @@
-From 8766952865ef882300fffdaf15b92c9f7d55b10b Mon Sep 17 00:00:00 2001
+From 8c5b0e95393280c29bda5c87f921470dee326829 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Fri, 5 Aug 2016 13:52:09 +0100
 Subject: [PATCH 13/44] virtio-vsock: fix include guard typo

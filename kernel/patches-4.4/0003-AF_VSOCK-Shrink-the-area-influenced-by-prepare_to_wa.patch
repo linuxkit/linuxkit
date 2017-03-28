@@ -1,4 +1,4 @@
-From cd1c3d1b54de4cc16c9069d09602b16f81c0dd91 Mon Sep 17 00:00:00 2001
+From 71330f083c95bf08f9003dde832336a1fe59332c Mon Sep 17 00:00:00 2001
 From: Claudio Imbrenda <imbrenda@linux.vnet.ibm.com>
 Date: Tue, 22 Mar 2016 17:05:52 +0100
 Subject: [PATCH 03/44] AF_VSOCK: Shrink the area influenced by prepare_to_wait
