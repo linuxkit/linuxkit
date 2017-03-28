@@ -1,4 +1,4 @@
-From 42ecff880b8b4eddaabadebc98a09dff0addb50e Mon Sep 17 00:00:00 2001
+From 0ffbed6c39e20d8871354ada8d71acbea5436de8 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Fri, 25 Dec 2015 20:00:30 -0800
 Subject: [PATCH 25/44] Drivers: hv: vmbus: Add vendor and device atttributes
@@ -259,7 +259,7 @@ index 763d0c19c16f..d6c611457601 100644
  	    (vmbus_proto_version == VERSION_WIN7) || (!perf_chn)) {
  		/*
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 7973aa55fec8..de7130c58a62 100644
+index e71f3561dbab..f688c051ca17 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -480,6 +480,24 @@ static ssize_t channel_vp_mapping_show(struct device *dev,

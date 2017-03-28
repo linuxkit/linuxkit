@@ -1,4 +1,4 @@
-From 1aa9eab5b9303e3a5d3e95e3cac6d7c5055462c4 Mon Sep 17 00:00:00 2001
+From 9c4c8be9ef0fb7bd67145dade8082754b686b8d0 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:41 -0800
 Subject: [PATCH 30/44] Drivers: hv: vmbus: add a hvsock flag in struct
@@ -20,7 +20,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 18 insertions(+)
 
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index de7130c58a62..03fc5d317b22 100644
+index f688c051ca17..a220efc297c4 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
 @@ -585,6 +585,10 @@ static int vmbus_match(struct device *device, struct device_driver *driver)
