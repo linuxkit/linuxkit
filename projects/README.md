@@ -14,6 +14,7 @@ If you want to create a project, please submit a pull request to create a new di
 - [Mirage SDK](miragesdk/) privilege separation for userspace services
 - [Wireguard](wireguard/) cryptographic enforced container network separation
 - [OKernel](okernel/) intra-kernel protection using EPT (HPE)
+- [AWS](aws) AWS build support
 
 ## Current projects not yet documented
 - Clear Linux integration (Intel)
