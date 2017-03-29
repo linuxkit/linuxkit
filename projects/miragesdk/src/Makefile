@@ -66,8 +66,8 @@ clean::
 	(docker rmi -f $(IMAGE):dev || echo ok)
 
 dev:
-	cd calf && mirage configure && make
-	jbuilder build src/main.exe
+	cd dhcp-client/calf && mirage configure && make
+	jbuilder build dhcp-client/main.exe
 #	_build/default/src/main.exe -vv \
 #	  --cmd 'calf/_build/main.native -l debug --store 10 --net 12' \
 #	  --ethif eno1
