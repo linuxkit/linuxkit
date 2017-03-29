@@ -70,13 +70,13 @@ clean::
 .PHONY: test
 
 test:
-	jbuilder runtest
+	jbuilder runtest --dev
 
 dev-clean:
 	rm -rf _build dhcp-client/calf/_build
 
 dev:
 	cd dhcp-client/calf && mirage configure && make
-	jbuilder build dhcp-client/main.exe
+	jbuilder build dhcp-client/main.exe --dev
 
 .DELETE_ON_ERROR:
