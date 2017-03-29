@@ -2,7 +2,7 @@
 
 (executables
   ((names (test))
-   (libraries (sdk alcotest))))
+   (libraries (sdk alcotest astring mtime.os))))
 
 (alias
  ((name    runtest)
