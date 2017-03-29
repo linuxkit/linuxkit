@@ -126,8 +126,8 @@ module Pipe = struct
     { Fd.name = name; fd = priv }, { Fd.name = name ^ "-calf"; fd = calf }
 
   (* logs pipe *)
-  let stdout = pipe "logs-out"
-  let stderr = pipe "logs-err"
+  let stdout = pipe "stdout"
+  let stderr = pipe "stderr"
 
   (* store pipe *)
   let ctl = socketpair "ctl"
@@ -182,8 +182,9 @@ let check_exit_status cmd status =
 
 let exec_priv ~pid ~cmd ~net ~ctl ~handlers =
 
+  Fd.(redirect_to_dev_null stdin) >>= fun () ->
+
   (* close child fds *)
-  Fd.(redirect_to_dev_null stdin)   >>= fun () ->
   Fd.close Pipe.(calf stdout)  >>= fun () ->
   Fd.close Pipe.(calf stderr)  >>= fun () ->
   Fd.close Pipe.(calf net)     >>= fun () ->
@@ -206,7 +207,7 @@ let exec_priv ~pid ~cmd ~net ~ctl ~handlers =
       Fd.forward ~src:Pipe.(priv stderr)  ~dst:Fd.stderr;
       (* TODO: Init.Fd.forward ~src:Init.Pipe.(priv metrics) ~dst:Init.Fd.metric; *)
       ctl ();
-      handlers ();
+(*      handlers (); *)
     ])
 
 let run ~net ~ctl ~handlers cmd =

@@ -1,10 +1,9 @@
 (jbuild_version 1)
 
-(executables
- ((names (main))
+(library
+ ((name sdk)
   (libraries (logs-syslog.lwt threads cohttp.lwt cstruct.lwt
               cmdliner fmt.cli logs.fmt logs.cli fmt.tty decompress
-              irmin irmin-git irmin-http lwt.unix rawlink tuntap bpf_dhcp
+              irmin irmin-git irmin-http lwt.unix rawlink tuntap
               irmin-watcher inotify))
-  (flags (-cclib -static))
  ))
