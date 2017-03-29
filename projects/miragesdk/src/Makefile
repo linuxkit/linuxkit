@@ -65,6 +65,9 @@ clean::
 	(docker rmi -f $(IMAGE):pkg || echo ok)
 	(docker rmi -f $(IMAGE):dev || echo ok)
 
+dev-clean:
+	rm -rf _build dhcp-client/calf/_build
+
 dev:
 	cd dhcp-client/calf && mirage configure && make
 	jbuilder build dhcp-client/main.exe
