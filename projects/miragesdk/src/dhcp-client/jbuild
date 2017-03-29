@@ -1,0 +1,7 @@
+(jbuild_version 1)
+
+(executables
+ ((names (main))
+  (libraries (sdk bpf_dhcp))
+  (flags (-cclib -static))
+ ))

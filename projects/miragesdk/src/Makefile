@@ -1,12 +1,13 @@
 BASE=ocaml/opam:alpine-3.5_ocaml-4.04.0
-FILES=$(shell find src/ -regex '.*\.mli?') src/bpf/dhcp.c \
-	src/jbuild src/bpf/jbuild
+FILES=$(shell find . -name jbuild) \
+	$(shell find sdk/ -regex '.*\.mli?') \
+	dhcp-client/bpf/dhcp.c dhcp-client/main.ml
 IMAGE=dhcp-client
 OBJS=obj/dhcp-client
 
 MIRAGE_COMPILE=mobylinux/mirage-compile:f903b0e1b4328271364cc63f123ac49d56739cef@sha256:a54d9ca84d3f5998dba92ce83d60d49289cee8908a8b0f6ec280d30ab8edf46c
 CALF_OBJS=obj/dhcp-client-calf
-CALF_FILES=calf/config.ml calf/unikernel.ml
+CALF_FILES=dhcp-client/calf/config.ml dhcp-client/calf/unikernel.ml
 
 default: push
 	@

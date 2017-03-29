@@ -1,4 +1,5 @@
 open Lwt.Infix
+open Sdk
 
 let src = Logs.Src.create "dhcp-client" ~doc:"DHCP client"
 module Log = (val Logs.src_log src : Logs.LOG)
