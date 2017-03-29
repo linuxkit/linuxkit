@@ -15,6 +15,21 @@
     }*)
 
 
+module IO: sig
+
+  (** {IO helpers} *)
+
+  val really_write: Lwt_unix.file_descr -> string -> int -> int -> unit Lwt.t
+  (** [really_write fd buf off len] writes exactly [len] bytes. *)
+
+  val really_read: Lwt_unix.file_descr -> string -> int -> int -> unit Lwt.t
+  (** [really_read fd buf off len] reads exactly [len] bytes. *)
+
+  val read_all: Lwt_unix.file_descr -> string Lwt.t
+  (** [read_all fd] reads all the contents of [fd] bytes. *)
+
+end
+
 module Fd: sig
 
   type t
