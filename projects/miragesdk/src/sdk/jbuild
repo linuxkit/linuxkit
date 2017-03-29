@@ -2,9 +2,8 @@
 
 (library
  ((name sdk)
-  (libraries (threads cohttp.lwt cstruct.lwt
-              cmdliner fmt.cli logs.fmt logs.cli fmt.tty decompress
-              irmin irmin-git irmin-http lwt.unix rawlink tuntap
+  (libraries (threads cstruct.lwt cmdliner fmt.cli logs.fmt logs.cli fmt.tty
+              decompress irmin irmin-git lwt.unix rawlink tuntap dispatch
               irmin-watcher inotify))
   (preprocess (per_file ((pps (cstruct.ppx)) (ctl))))
  ))

@@ -5,35 +5,6 @@ module Log = (val Logs.src_log src : Logs.LOG)
 
 let failf fmt = Fmt.kstrf Lwt.fail_with fmt
 
-module IO = struct
-
-  let rec really_write fd buf off len =
-    match len with
-    | 0   -> Lwt.return_unit
-    | len ->
-      Lwt_unix.write fd buf off len >>= fun n ->
-      really_write fd buf (off+n) (len-n)
-
-  let rec really_read fd buf off len =
-    match len with
-    | 0   -> Lwt.return_unit
-    | len ->
-      Lwt_unix.read fd buf off len >>= fun n ->
-      really_write fd buf (off+n) (len-n)
-
-  let read_all fd =
-    let len = 16 * 1024 in
-    let buf = Bytes.create len in
-    let rec loop acc =
-      Lwt_unix.read fd buf 0 len >>= fun len ->
-      let res = String.sub buf 0 len in
-      loop (res :: acc)
-    in
-    loop [] >|= fun bufs ->
-    String.concat "" (List.rev bufs)
-
-end
-
 module Fd = struct
 
   type t = {
@@ -119,12 +90,6 @@ module Fd = struct
       )
     in
     loop ()
-
-  let proxy x y =
-    Lwt.pick [
-      forward ~src:x ~dst:y;
-      forward ~src:y ~dst:x;
-    ]
 
 end
 
@@ -229,7 +194,7 @@ let exec_priv ~pid ~cmd ~net ~ctl ~handlers =
       Fd.forward ~src:Pipe.(priv stderr)  ~dst:Fd.stderr;
       (* TODO: Init.Fd.forward ~src:Init.Pipe.(priv metrics) ~dst:Init.Fd.metric; *)
       ctl ();
-(*      handlers (); *)
+      handlers ();
     ])
 
 let run ~net ~ctl ~handlers cmd =
