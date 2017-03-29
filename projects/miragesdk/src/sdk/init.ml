@@ -5,6 +5,35 @@ module Log = (val Logs.src_log src : Logs.LOG)
 
 let failf fmt = Fmt.kstrf Lwt.fail_with fmt
 
+module IO = struct
+
+  let rec really_write fd buf off len =
+    match len with
+    | 0   -> Lwt.return_unit
+    | len ->
+      Lwt_unix.write fd buf off len >>= fun n ->
+      really_write fd buf (off+n) (len-n)
+
+  let rec really_read fd buf off len =
+    match len with
+    | 0   -> Lwt.return_unit
+    | len ->
+      Lwt_unix.read fd buf off len >>= fun n ->
+      really_write fd buf (off+n) (len-n)
+
+  let read_all fd =
+    let len = 16 * 1024 in
+    let buf = Bytes.create len in
+    let rec loop acc =
+      Lwt_unix.read fd buf 0 len >>= fun len ->
+      let res = String.sub buf 0 len in
+      loop (res :: acc)
+    in
+    loop [] >|= fun bufs ->
+    String.concat "" (List.rev bufs)
+
+end
+
 module Fd = struct
 
   type t = {
@@ -72,13 +101,6 @@ module Fd = struct
       listen_socket ();
     ]
 
-  let rec really_write dst buf off len =
-    match len with
-    | 0   -> Lwt.return_unit
-    | len ->
-      Lwt_unix.write dst.fd buf off len >>= fun n ->
-      really_write dst buf (off+n) (len-n)
-
   let forward ~src ~dst =
     Log.debug (fun l -> l "forward %a => %a" pp src pp dst);
     let len = 16 * 1024 in
@@ -92,7 +114,7 @@ module Fd = struct
         Log.debug (fun l ->
             l "FORWARD[%a => %a]: %S (%d)"
               pp src pp dst (Bytes.sub buf 0 len) len);
-        really_write dst buf 0 len >>= fun () ->
+        IO.really_write dst.fd buf 0 len >>= fun () ->
         loop ()
       )
     in

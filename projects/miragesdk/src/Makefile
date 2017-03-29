@@ -65,14 +65,18 @@ clean::
 	(docker rmi -f $(IMAGE):pkg || echo ok)
 	(docker rmi -f $(IMAGE):dev || echo ok)
 
+#### DEV
+
+.PHONY: test
+
+test:
+	jbuilder runtest
+
 dev-clean:
 	rm -rf _build dhcp-client/calf/_build
 
 dev:
 	cd dhcp-client/calf && mirage configure && make
 	jbuilder build dhcp-client/main.exe
-#	_build/default/src/main.exe -vv \
-#	  --cmd 'calf/_build/main.native -l debug --store 10 --net 12' \
-#	  --ethif eno1
 
 .DELETE_ON_ERROR:
