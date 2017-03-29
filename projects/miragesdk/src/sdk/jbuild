@@ -1,0 +1,10 @@
+(jbuild_version 1)
+
+(library
+ ((name sdk)
+  (libraries (logs-syslog.lwt threads cohttp.lwt cstruct.lwt
+              cmdliner fmt.cli logs.fmt logs.cli fmt.tty decompress
+              irmin irmin-git irmin-http lwt.unix rawlink tuntap
+              irmin-watcher inotify))
+  (preprocess (per_file ((pps (cstruct.ppx)) (ctl))))
+ ))
