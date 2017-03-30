@@ -6,6 +6,7 @@ RUN opam pin -n add mirage-net-unix https://github.com/samoht/mirage-net-unix.gi
 
 RUN opam depext -iy mirage-net-unix logs-syslog irmin-unix cohttp decompress
 RUN opam depext -iy rawlink tuntap.1.0.0 jbuilder irmin-watcher inotify
+RUN opam install rresult
 
 RUN sudo mkdir -p /src
 COPY ./sdk /src/sdk
@@ -14,6 +15,8 @@ RUN sudo chown opam -R /src
 
 USER opam
 WORKDIR /src
+
+RUN opam pin add cstruct --dev # for ppx/jbuilder
 
 RUN opam config exec -- jbuilder build dhcp-client/main.exe
 RUN sudo cp /src/_build/default/dhcp-client/main.exe /dhcp-client

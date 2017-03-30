@@ -52,7 +52,7 @@ let run () cmd ethif path =
     ] in
     Ctl.v "/data" >>= fun ctl ->
     let fd = Init.(Fd.fd @@ Pipe.(priv ctl)) in
-    let ctl () = Ctl.serve ~routes ctl fd in
+    let ctl () = Ctl.Server.listen ~routes ctl fd in
     let handlers () = Handlers.watch path in
     Init.run ~net ~ctl ~handlers cmd
   )
