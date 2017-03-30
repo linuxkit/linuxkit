@@ -19,15 +19,16 @@ type Writer struct {
 	cw *cpio.Writer
 }
 
-func typeconv(t byte) int64 {
-	switch t {
+func typeconv(thdr *tar.Header) int64 {
+	switch thdr.Typeflag {
 	case tar.TypeReg:
 		return cpio.TYPE_REG
 	case tar.TypeRegA:
 		return cpio.TYPE_REG
-	// Currently hard links not supported
+	// Currently hard links not supported very well :)
 	case tar.TypeLink:
-		return cpio.TYPE_REG
+		thdr.Linkname = "/" + thdr.Linkname
+		return cpio.TYPE_SYMLINK
 	case tar.TypeSymlink:
 		return cpio.TYPE_SYMLINK
 	case tar.TypeChar:
@@ -54,7 +55,7 @@ func CopyTar(w *Writer, r *tar.Reader) (written int64, err error) {
 		if err != nil {
 			return
 		}
-		tp := typeconv(thdr.Typeflag)
+		tp := typeconv(thdr)
 		if tp == -1 {
 			return written, errors.New("cannot convert tar file")
 		}
