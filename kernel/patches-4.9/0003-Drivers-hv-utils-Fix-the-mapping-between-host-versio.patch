@@ -1,7 +1,7 @@
-From 9db0219d4a8338b91da3a57e61b0238412980596 Mon Sep 17 00:00:00 2001
+From a9c848779876b7b98a6c588494cd20010894fbf1 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:07 -0800
-Subject: [PATCH 3/8] Drivers: hv: utils: Fix the mapping between host version
+Subject: [PATCH 3/7] Drivers: hv: utils: Fix the mapping between host version
  and protocol to use
 
 We should intentionally declare the protocols to use for every known host
@@ -10,6 +10,7 @@ and default to using the latest protocol if the host is unknown or new.
 Signed-off-by: Alex Ng <alexng@microsoft.com>
 Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 (cherry picked from commit 3da0401b4d0e17aea7526db0235d98fa535d903e)
 ---
  drivers/hv/hv_util.c | 9 ++++++---

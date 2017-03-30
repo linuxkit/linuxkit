@@ -1,4 +1,4 @@
-From 6fb88b14e8b096eb0c6d490eaafabff87fa40d69 Mon Sep 17 00:00:00 2001
+From 1c2fe7a0a54f2320241299844362b568b09e4122 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:35 +0100
 Subject: [PATCH 10/44] VSOCK: Add Makefile and Kconfig

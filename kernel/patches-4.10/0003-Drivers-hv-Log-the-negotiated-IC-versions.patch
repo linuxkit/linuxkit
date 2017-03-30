@@ -1,13 +1,14 @@
-From 15a8be4e26e2ab23e2bff953aed060f0cb5fab39 Mon Sep 17 00:00:00 2001
+From 1dc474194b72f224081c90311887317415f987dc Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:18 -0700
-Subject: [PATCH 3/4] Drivers: hv: Log the negotiated IC versions.
+Subject: [PATCH 3/3] Drivers: hv: Log the negotiated IC versions.
 
 Log the negotiated IC versions.
 
 Signed-off-by: Alex Ng <alexng@messages.microsoft.com>
 Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 (cherry picked from commit 1274a690f6b2bd2b37447c47e3062afa8aa43f93)
 ---
  drivers/hv/hv_fcopy.c    |  9 +++++++--

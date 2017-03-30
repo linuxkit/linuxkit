@@ -1,7 +1,7 @@
-From 1bca2f8a8059291f0b3f24f11694eafafb413886 Mon Sep 17 00:00:00 2001
+From 554ba8b0c4d9aa719d239b2f97eb59075c6c33d9 Mon Sep 17 00:00:00 2001
 From: Rolf Neugebauer <rolf.neugebauer@gmail.com>
 Date: Mon, 23 May 2016 18:55:45 +0100
-Subject: [PATCH 2/8] vmbus: Don't spam the logs with unknown GUIDs
+Subject: [PATCH 2/7] vmbus: Don't spam the logs with unknown GUIDs
 
 With Hyper-V sockets device types are introduced on the fly. The pr_info()
 then prints a message on every connection, which is way too verbose.  Since
@@ -14,7 +14,7 @@ Signed-off-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
  1 file changed, 1 deletion(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index cb9531541a12..eec03051da78 100644
+index d8bc4b910192..8df02f3ca0b2 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -192,7 +192,6 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
