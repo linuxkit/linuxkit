@@ -78,9 +78,7 @@ module Fd = struct
     let buf = Bytes.create len in
     let rec loop () =
       Lwt_unix.read src.fd buf 0 len >>= fun len ->
-      if len = 0 then
-        (* FIXME: why this ever happen *)
-        Fmt.kstrf Lwt.fail_with "FORWARD[%a => %a]: EOF" pp src pp dst
+      if len = 0 then Lwt.return_unit (* EOF *)
       else (
         Log.debug (fun l ->
             l "FORWARD[%a => %a]: %S (%d)"
