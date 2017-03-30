@@ -1,0 +1,177 @@
+From 83ba0bff619dc73f2aa6385ed3e039bb7641550a Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Fri, 24 Mar 2017 20:53:18 +0800
+Subject: [PATCH 10/10] vmbus: dynamically enqueue/dequeue the channel on
+ vmbus_open/close
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit bee4910daa4aed57ce60d2e2350e3cc120c383ca)
+---
+ drivers/hv/channel.c      | 16 ++++++++++---
+ drivers/hv/channel_mgmt.c | 58 ++++++++++++++++++++---------------------------
+ include/linux/hyperv.h    |  3 +++
+ 3 files changed, 40 insertions(+), 37 deletions(-)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index 1caed01954f6..5bbcc964dbf7 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -181,6 +181,10 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+ 		      &vmbus_connection.chn_msg_list);
+ 	spin_unlock_irqrestore(&vmbus_connection.channelmsg_lock, flags);
+ 
++	hv_event_tasklet_disable(newchannel);
++	hv_percpu_channel_enq(newchannel);
++	hv_event_tasklet_enable(newchannel);
++
+ 	ret = vmbus_post_msg(open_msg,
+ 			     sizeof(struct vmbus_channel_open_channel), true);
+ 
+@@ -193,23 +197,27 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+ 
+ 	if (ret != 0) {
+ 		err = ret;
+-		goto error_free_gpadl;
++		goto error_deq_channel;
+ 	}
+ 
+ 	if (newchannel->rescind) {
+ 		err = -ENODEV;
+-		goto error_free_gpadl;
++		goto error_deq_channel;
+ 	}
+ 
+ 	if (open_info->response.open_result.status) {
+ 		err = -EAGAIN;
+-		goto error_free_gpadl;
++		goto error_deq_channel;
+ 	}
+ 
+ 	newchannel->state = CHANNEL_OPENED_STATE;
+ 	kfree(open_info);
+ 	return 0;
+ 
++error_deq_channel:
++	hv_event_tasklet_disable(newchannel);
++	hv_percpu_channel_deq(newchannel);
++	hv_event_tasklet_enable(newchannel);
+ error_free_gpadl:
+ 	vmbus_teardown_gpadl(newchannel, newchannel->ringbuffer_gpadlhandle);
+ 	kfree(open_info);
+@@ -555,6 +563,8 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+ 		goto out;
+ 	}
+ 
++	hv_percpu_channel_deq(channel);
++
+ 	channel->state = CHANNEL_OPEN_STATE;
+ 	channel->sc_creation_callback = NULL;
+ 	/* Stop callback and cancel the timer asap */
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index 2fe024e86209..b2bdcfb49144 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -375,6 +375,30 @@ static void vmbus_release_relid(u32 relid)
+ 		       true);
+ }
+ 
++void hv_percpu_channel_enq(struct vmbus_channel *channel)
++{
++	if (channel->target_cpu != get_cpu())
++		smp_call_function_single(channel->target_cpu,
++					 percpu_channel_enq,
++					 channel, true);
++	else
++		percpu_channel_enq(channel);
++	put_cpu();
++
++}
++
++void hv_percpu_channel_deq(struct vmbus_channel *channel)
++{
++	if (channel->target_cpu != get_cpu())
++		smp_call_function_single(channel->target_cpu,
++					 percpu_channel_deq,
++					 channel, true);
++	else
++		percpu_channel_deq(channel);
++	put_cpu();
++
++}
++
+ void hv_event_tasklet_disable(struct vmbus_channel *channel)
+ {
+ 	struct tasklet_struct *tasklet;
+@@ -409,17 +433,6 @@ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
+ 	BUG_ON(!channel->rescind);
+ 	BUG_ON(!mutex_is_locked(&vmbus_connection.channel_mutex));
+ 
+-	hv_event_tasklet_disable(channel);
+-	if (channel->target_cpu != get_cpu()) {
+-		put_cpu();
+-		smp_call_function_single(channel->target_cpu,
+-					 percpu_channel_deq, channel, true);
+-	} else {
+-		percpu_channel_deq(channel);
+-		put_cpu();
+-	}
+-	hv_event_tasklet_enable(channel);
+-
+ 	if (channel->primary_channel == NULL) {
+ 		list_del(&channel->listentry);
+ 
+@@ -512,18 +525,6 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ 
+ 	init_vp_index(newchannel, dev_type);
+ 
+-	hv_event_tasklet_disable(newchannel);
+-	if (newchannel->target_cpu != get_cpu()) {
+-		put_cpu();
+-		smp_call_function_single(newchannel->target_cpu,
+-					 percpu_channel_enq,
+-					 newchannel, true);
+-	} else {
+-		percpu_channel_enq(newchannel);
+-		put_cpu();
+-	}
+-	hv_event_tasklet_enable(newchannel);
+-
+ 	/*
+ 	 * This state is used to indicate a successful open
+ 	 * so that when we do close the channel normally, we
+@@ -572,17 +573,6 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ 	list_del(&newchannel->listentry);
+ 	mutex_unlock(&vmbus_connection.channel_mutex);
+ 
+-	hv_event_tasklet_disable(newchannel);
+-	if (newchannel->target_cpu != get_cpu()) {
+-		put_cpu();
+-		smp_call_function_single(newchannel->target_cpu,
+-					 percpu_channel_deq, newchannel, true);
+-	} else {
+-		percpu_channel_deq(newchannel);
+-		put_cpu();
+-	}
+-	hv_event_tasklet_enable(newchannel);
+-
+ 	vmbus_release_relid(newchannel->offermsg.child_relid);
+ 
+ err_free_chan:
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index 956acfc93487..9ee292b28e41 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -1461,6 +1461,9 @@ extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp, u8 *buf,
+ void hv_event_tasklet_disable(struct vmbus_channel *channel);
+ void hv_event_tasklet_enable(struct vmbus_channel *channel);
+ 
++void hv_percpu_channel_enq(struct vmbus_channel *channel);
++void hv_percpu_channel_deq(struct vmbus_channel *channel);
++
+ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid);
+ 
+ void vmbus_setevent(struct vmbus_channel *channel);
+-- 
+2.11.0
+
