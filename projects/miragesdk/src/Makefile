@@ -36,9 +36,9 @@ enter-dev: .dev
 $(CALF_OBJS): $(CALF_FILES)
 	mkdir -p obj/bin
 	( cd obj && \
-	  tar -C ../calf -cf - $(CALF_FILES:calf/%=%) | \
+	  tar -C ../dhcp-client/calf -cf - $(CALF_FILES:dhcp-client/calf/%=%) | \
 	    docker run --rm -i --log-driver=none $(MIRAGE_COMPILE) -o dhcp-client-calf | \
-	    tar xf - ) && \
+	    tar xf - || exit 1) && \
 	touch $@
 
 $(OBJS): .build $(FILES)
@@ -47,7 +47,7 @@ $(OBJS): .build $(FILES)
 	  docker run --rm --net=none --log-driver=none -i $(IMAGE):build tar -cf - $(OBJS:obj/%=/%) | tar xf - ) && \
 	touch $@
 
-hash: Dockerfile.build Dockerfile.pkg $(FILES) $(CALF_FILES) .build
+hash: Makefile Dockerfile.build Dockerfile.pkg $(FILES) $(CALF_FILES) .build
 	{ cat $^; \
 	  docker run --rm --entrypoint sh $(IMAGE):build -c 'cat /lib/apk/db/installed'; \
 	  docker run --rm --entrypoint sh $(IMAGE):build -c 'opam list'; } \
