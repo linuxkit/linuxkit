@@ -9,11 +9,11 @@ START_STOP_DAEMON=sbin/start-stop-daemon
 
 default: push
 
-$(RUNC_BINARY):
+$(RUNC_BINARY): Makefile
 	mkdir -p $(dir $@)
 	docker run --rm --net=none $(RUNC_IMAGE) tar cf - $@ | tar xf -
 
-$(CONTAINERD_BINARIES):
+$(CONTAINERD_BINARIES): Makefile
 	mkdir -p $(dir $@)
 	docker run --rm --net=none $(CONTAINERD_IMAGE) tar cf - $@ | tar xf -
 
