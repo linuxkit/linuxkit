@@ -408,7 +408,7 @@ mevent_dispatch(void)
 	ret = pipe(mevent_pipefd);
 	if (ret < 0) {
 		perror("pipe");
-		exit(0);
+		exit(1);
 	}
 
 	/*
