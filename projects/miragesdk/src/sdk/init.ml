@@ -97,6 +97,8 @@ module Pipe = struct
 
   type t = Fd.t * Fd.t
 
+  let name (x, _) = x.Fd.name
+
   let priv = fst
   let calf = snd
 

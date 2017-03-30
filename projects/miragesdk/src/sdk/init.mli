@@ -63,6 +63,9 @@ module Pipe: sig
   (** The type for pipes. Could be either uni-directional (normal
       pipes) or a bi-directional (socket pairs). *)
 
+  val name: t -> string
+  (** [name t] is [t]'s name. *)
+
   val priv: t -> Fd.t
   (** [priv p] is the private side of the pipe [p]. *)
 
