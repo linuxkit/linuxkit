@@ -1,6 +1,7 @@
 BASE=ocaml/opam:alpine-3.5_ocaml-4.04.0
 FILES=$(shell find . -name jbuild) \
-	$(shell find sdk/ -regex '.*\.mli?') \
+	$(shell find sdk/ -name '*.ml') \
+	$(shell find sdk/ -name '*.mli') \
 	dhcp-client/bpf/dhcp.c dhcp-client/main.ml
 IMAGE=dhcp-client
 OBJS=obj/dhcp-client
