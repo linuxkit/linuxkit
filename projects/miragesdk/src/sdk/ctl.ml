@@ -41,7 +41,7 @@ module Message = struct
   type t = {
     operation: operation;
     path     : string;
-    payload  : string option;
+    payload  : string;
   }
 
   [%%cstruct type message = {
@@ -53,48 +53,65 @@ module Message = struct
 
   (* to avoid warning 32 *)
   let _ = hexdump_message
-  let _ = operation_to_string
   let _ = string_to_operation
 
-  let read_message fd =
-    IO.read_n fd 4 >>= fun buf ->
-    let len =
-      Cstruct.LE.get_uint32 (Cstruct.of_string buf) 0
-      |> Int32.to_int
-    in
-    IO.read_n fd len >>= fun buf ->
-    let buf = Cstruct.of_string buf in
+  let pp ppf t =
+    Fmt.pf ppf "%s:%S:%S" (operation_to_string t.operation) t.path t.payload
+
+  (* FIXME: allocate less ... *)
+
+  let of_cstruct buf =
+    Log.debug (fun l -> l "Message.of_cstruct %S" @@ Cstruct.to_string buf);
     let operation = match int_to_operation (get_message_operation buf) with
       | None   -> failwith "invalid operation"
       | Some o -> o
     in
     let path_len = get_message_path buf in
     let payload_len = get_message_payload buf in
-    IO.read_n fd path_len >>= fun path ->
-    (match payload_len with
-     | 0 -> Lwt.return None
-     | n -> IO.read_n fd n >|= fun x -> Some x)
-    >|= fun payload ->
+    Log.debug (fun l -> l "XXX path=%d len=%d" path_len payload_len);
+    let path =
+      Cstruct.sub buf sizeof_message path_len
+      |> Cstruct.to_string
+    in
+    let payload =
+      Cstruct.sub buf (sizeof_message+path_len) payload_len
+      |> Cstruct.to_string
+    in
     { operation; path; payload }
 
-  let write_message fd msg =
+  let to_cstruct msg =
+    Log.debug (fun l -> l "Message.to_cstruct %a" pp msg);
     let operation = operation_to_int msg.operation in
     let path = String.length msg.path in
-    let payload = match msg.payload with
-      | None   -> 0
-      | Some x -> String.length x
-    in
+    let payload = String.length msg.payload in
     let len = sizeof_message + path + payload in
     let buf = Cstruct.create len in
     set_message_operation buf operation;
     set_message_path buf path;
-    set_message_payload buf path;
+    set_message_payload buf payload;
     Cstruct.blit_from_bytes msg.path 0 buf sizeof_message path;
-    let () = match msg.payload with
-      | None   -> ()
-      | Some x -> Cstruct.blit_from_bytes x 0 buf (sizeof_message+path) payload
+    Cstruct.blit_from_bytes msg.payload 0 buf (sizeof_message+path) payload;
+    buf
+
+  let read fd =
+    IO.read_n fd 4 >>= fun buf ->
+    Log.debug (fun l -> l "Message.read len=%S" buf);
+    let len =
+      Cstruct.LE.get_uint32 (Cstruct.of_string buf) 0
+      |> Int32.to_int
     in
-    IO.really_write fd (Cstruct.to_string buf) 0 len
+    IO.read_n fd len >|= fun buf ->
+    of_cstruct (Cstruct.of_string buf)
+
+  let write fd msg =
+    let buf = to_cstruct msg |> Cstruct.to_string in
+    let len =
+      let len = Cstruct.create 4 in
+      Cstruct.LE.set_uint32 len 0 (Int32.of_int @@ String.length buf);
+      Cstruct.to_string len
+    in
+    IO.write fd len >>= fun () ->
+    IO.write fd buf
 
 end
 
@@ -118,9 +135,7 @@ module Dispatch = struct
         match msg.operation with
         | Write ->
           let info = infof "Updating %a" KV.Key.pp key in
-          (match msg.payload with
-           | None   -> Fmt.kstrf Lwt.fail_with "dispatch: missing payload"
-           | Some v -> KV.set db ~info key v)
+          KV.set db ~info key msg.payload
         | _ -> failwith "TODO"
       )
 
@@ -128,7 +143,7 @@ module Dispatch = struct
     let msgs = Queue.create () in
     let cond = Lwt_condition.create () in
     let rec listen () =
-      read_message fd >>= fun msg ->
+      Message.read fd >>= fun msg ->
       Queue.add msg msgs;
       Lwt_condition.signal cond ();
       listen ()

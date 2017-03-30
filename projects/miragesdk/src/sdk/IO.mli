@@ -3,6 +3,9 @@
 val really_write: Lwt_unix.file_descr -> string -> int -> int -> unit Lwt.t
 (** [really_write fd buf off len] writes exactly [len] bytes to [fd]. *)
 
+val write: Lwt_unix.file_descr -> string -> unit Lwt.t
+(** [write fd buf] writes all the buffer [buf] in [fd]. *)
+
 val really_read: Lwt_unix.file_descr -> string -> int -> int -> unit Lwt.t
 (** [really_read fd buf off len] reads exactly [len] bytes from [fd]. *)
 
