@@ -72,12 +72,12 @@ Again, resolve any conflicts as described above.
 
 # Adding/Removing patches
 
-If you want to add or remove patches make sure you have an up-to-date branch with the currently applied patches (see above). Then either any normal means (`git cherry-pick -x`, `git am`, or `git commit`, etc) to add new patches.
+If you want to add or remove patches make sure you have an up-to-date branch with the currently applied patches (see above). Then either any normal means (`git cherry-pick -x`, `git am`, or `git commit`, etc) to add new patches. For cherry-picked patches also please add a `Origin:` line after the DCO lines with a reference the git tree the patch was cherry-picked from.
 
-If the patch is not cherry-picked from a standard Linux tree (like
-newer stable branches, `linux-next`, `net-next`, Linus' tree) try to
-include as much information in the commit message as possible as to
-where the patch originated from. The canonical form would be to add a `Origin:` line after the DCO lines, e.g.:
+If the patch is not cherry-picked try to include as much information
+in the commit message as possible as to where the patch originated
+from. The canonical form would be to add a `Origin:` line after the
+DCO lines, e.g.:
 ```
 Origin: https://patchwork.ozlabs.org/patch/622404/
 ```
