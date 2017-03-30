@@ -3,6 +3,29 @@
 
 module KV: Irmin.KV with type contents = string
 
+module Message: sig
+
+  (** The type for operations. *)
+  type operation =
+    | Write
+    | Read
+    | Delete
+
+  (** The type for control messages. *)
+  type t = {
+    operation: operation;
+    path     : string;
+    payload  : string option;
+  }
+
+  val write_message: Lwt_unix.file_descr -> t -> unit Lwt.t
+  (** [write_message fd t] writes a control message. *)
+
+  val read_message: Lwt_unix.file_descr -> t Lwt.t
+  (** [read_message fd] reads a control message. *)
+
+end
+
 val v: string -> KV.t Lwt.t
 (** [v p] is the KV store storing the control state, located at path
     [p] in the filesystem of the privileged container. *)
