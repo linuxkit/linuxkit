@@ -14,7 +14,6 @@
        data, e.g. the IP address once a DHCP lease is obtained.}
     }*)
 
-
 module Fd: sig
 
   type t
