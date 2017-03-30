@@ -1,4 +1,4 @@
-From 5e39f91f019412407ed0e28f7f0a7502d7883258 Mon Sep 17 00:00:00 2001
+From 4c0016aad9295d0096315519c0ade153731ed314 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Mar 2016 02:51:09 -0700
 Subject: [PATCH 37/44] net: add the AF_KCM entries to family name tables
@@ -14,7 +14,7 @@ Origin: https://patchwork.ozlabs.org/patch/600006
  1 file changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/net/core/sock.c b/net/core/sock.c
-index f4c0917e66b5..ba24aeb6999c 100644
+index 9c708a5fb751..36afa5d4598b 100644
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
 @@ -263,7 +263,8 @@ static const char *const af_family_key_strings[AF_MAX+1] = {

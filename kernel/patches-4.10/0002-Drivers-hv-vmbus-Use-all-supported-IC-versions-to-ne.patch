@@ -1,7 +1,7 @@
-From 350d124854fcb5ecfe9347fb4b893d27d6b6660e Mon Sep 17 00:00:00 2001
+From 268b402c42c140328224ff994d1d76053f3113f9 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
-Subject: [PATCH 2/4] Drivers: hv: vmbus: Use all supported IC versions to
+Subject: [PATCH 2/3] Drivers: hv: vmbus: Use all supported IC versions to
  negotiate
 
 Previously, we were assuming that each IC protocol version was tied to a
@@ -22,6 +22,7 @@ Reported-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
 Signed-off-by: Alex Ng <alexng@messages.microsoft.com>
 Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 (cherry picked from commit a1656454131880980bc3a5313c8bf66ef5990c91)
 ---
  drivers/hv/channel_mgmt.c | 80 +++++++++++++++++++++++++++-------------
@@ -33,7 +34,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  6 files changed, 154 insertions(+), 106 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 0af7e39006c8..b42d69c05ebb 100644
+index a58cd102af1b..feca5d2e7b25 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -203,33 +203,34 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)

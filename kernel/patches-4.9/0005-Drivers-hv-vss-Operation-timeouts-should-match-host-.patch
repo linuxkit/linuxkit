@@ -1,7 +1,7 @@
-From dc9e5688dad32ec5874c767b6660665d014a1e45 Mon Sep 17 00:00:00 2001
+From d303deabd611b45b7574015c06ad2d7408235e77 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:11 -0800
-Subject: [PATCH 5/8] Drivers: hv: vss: Operation timeouts should match host
+Subject: [PATCH 5/7] Drivers: hv: vss: Operation timeouts should match host
  expectation
 
 Increase the timeout of backup operations. When system is under I/O load,
@@ -11,6 +11,7 @@ host timeout values more closely.
 Signed-off-by: Alex Ng <alexng@microsoft.com>
 Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 (cherry picked from commit b357fd3908c1191f2f56e38aa77f2aecdae18bc8)
 ---
  drivers/hv/hv_snapshot.c | 8 ++++++--

@@ -1,7 +1,7 @@
-From c3e4ab7b456d60a2672cbad46ba0ca31b18ff03b Mon Sep 17 00:00:00 2001
+From ccab2062a98a38bd5ff2d57e184229345ff057ff Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:10 -0800
-Subject: [PATCH 4/8] Drivers: hv: vss: Improve log messages.
+Subject: [PATCH 4/7] Drivers: hv: vss: Improve log messages.
 
 Adding log messages to help troubleshoot error cases and transaction
 handling.
@@ -9,6 +9,7 @@ handling.
 Signed-off-by: Alex Ng <alexng@microsoft.com>
 Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 (cherry picked from commit 23d2cc0c29eb0e7c6fe4cac88098306c31c40208)
 ---
  drivers/hv/hv_snapshot.c | 25 +++++++++++++++++++------

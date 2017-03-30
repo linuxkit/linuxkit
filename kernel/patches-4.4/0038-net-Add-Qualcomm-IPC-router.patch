@@ -1,4 +1,4 @@
-From c95c1bb451b392a6c6917b6140f0ec5b943c2523 Mon Sep 17 00:00:00 2001
+From e894e87f386637462f82582fd28d71f2be3a2213 Mon Sep 17 00:00:00 2001
 From: Courtney Cavin <courtney.cavin@sonymobile.com>
 Date: Wed, 27 Apr 2016 12:13:03 -0700
 Subject: [PATCH 38/44] net: Add Qualcomm IPC router
