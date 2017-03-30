@@ -1,6 +1,6 @@
 #!/bin/sh
 
-QEMU_IMAGE=mobylinux/qemu:75ef01c780850daf78ee45078606eb740a999edf@sha256:ec93951816b57d86f7a90c129a5580e083093e5a92263d0d2be6822daa2162dd
+QEMU_IMAGE=mobylinux/qemu:ac2f8d3258d09541f0dab7529f62bb7e9b9bb79c@sha256:b60d1421937b0ebf4846341a1cda1ca00f44a45553d5494080b2ca8aac468773
 
 # if not interactive
 if [ ! -t 0 -a -z "$1" ]

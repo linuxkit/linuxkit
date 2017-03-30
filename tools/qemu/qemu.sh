@@ -11,20 +11,24 @@ cd /tmp
 TGZ="$(find . -name '*.tgz' -or -name '*.tar.gz')"
 [ -n "$TGZ" ] && bsdtar xzf "$TGZ"
 
+EFI_ISO="$(find . -name '*efi.iso')"
 ISO="$(find . -name '*.iso')"
 RAW="$(find . -name '*.raw')"
 INITRD="$(find . -name '*.img')"
 KERNEL="$(find . -name vmlinuz64 -or -name '*bzImage')"
 CMDLINE="$(find . -name '*-cmdline')"
 
-if [ -n "$ISO" ]
+if [ -n "$EFI_ISO" ]
+then
+	ARGS="-pflash /usr/share/ovmf/bios.bin -usbdevice tablet -cdrom $EFI_ISO -boot d -drive file=systemdisk.img,format=raw"
+elif [ -n "$ISO" ]
 then
 	ARGS="-cdrom $ISO -drive file=systemdisk.img,format=raw"
 elif [ -n "$RAW" ]
 then
 	# should test with more drives
 	ARGS="-drive file=$RAW,format=raw"
-elif [ -n "KERNEL" ]
+elif [ -n "$KERNEL" ]
 then
 	ARGS="-kernel $KERNEL"
 	if [ -n "$INITRD" ]
@@ -50,4 +54,9 @@ then
 	CMDLINE="console=ttyS0"
 fi
 
-qemu-system-x86_64 -machine q35,accel=kvm:tcg -device virtio-rng-pci -serial stdio -vnc none -m 1024 -append "${CMDLINE}" $ARGS
+if [ -z "$EFI_ISO" ] && [ -z "$ISO" ]
+then
+	ARGS="-append ${CMDLINE} ${ARGS}"
+fi
+
+qemu-system-x86_64 -machine q35,accel=kvm:tcg -device virtio-rng-pci -nographic -vnc none -m 1024 $ARGS
