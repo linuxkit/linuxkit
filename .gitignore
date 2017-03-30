@@ -1,4 +1,4 @@
-test.log
+*.log
 Dockerfile.media
 /bin
 disk.img.*
