@@ -1,5 +1,6 @@
 open Lwt.Infix
 open Sdk
+open Astring
 
 let src = Logs.Src.create "dhcp-client" ~doc:"DHCP client"
 module Log = (val Logs.src_log src : Logs.LOG)
@@ -40,7 +41,33 @@ end
 
 external bpf_filter: unit -> string = "bpf_filter"
 
-let run () cmd ethif path =
+let ctl = string_of_int Init.(Fd.to_int Pipe.(calf ctl))
+let net = string_of_int Init.(Fd.to_int Pipe.(calf net))
+let default_cmd = [
+  "/dhcp-client-calf"; "--ctl="^ctl; "--net="^net
+]
+
+(* FIXME: use runc isolation
+   let default_cmd = [
+    "/usr/bin/runc"; "--"; "run";
+    "--bundle"; "/containers/images/000-dhcp-client";
+    "dhcp-client"
+  ] in
+  *)
+
+let read_cmd file =
+  if Sys.file_exists file then
+    let ic = open_in_bin file in
+    let line = input_line ic in
+    String.cuts ~sep:" " line
+  else
+    failwith ("Cannot read " ^ file)
+
+ let run () cmd ethif path =
+  let cmd = match cmd with
+    | None   -> default_cmd
+    | Some f -> read_cmd f
+  in
   Lwt_main.run (
     let net = Init.rawlink ~filter:(bpf_filter ()) ethif in
     let routes = [
@@ -73,24 +100,11 @@ let setup_log style_renderer level =
 let setup_log =
   Term.(const setup_log $ Fmt_cli.style_renderer () $ Logs_cli.level ())
 
-let ctl = string_of_int Init.(Fd.to_int Pipe.(calf ctl))
-let net = string_of_int Init.(Fd.to_int Pipe.(calf net))
-
 let cmd =
-  (* FIXME: use runc isolation
-   let default_cmd = [
-    "/usr/bin/runc"; "--"; "run";
-    "--bundle"; "/containers/images/000-dhcp-client";
-    "dhcp-client"
-  ] in
-  *)
-  let default_cmd = [
-    "/dhcp-client-calf"; "--ctl="^ctl; "--net="^net
-  ] in
   let doc =
     Arg.info ~docv:"CMD" ~doc:"Command to run the calf process." ["cmd"]
   in
-  Arg.(value & opt (list ~sep:' ' string) default_cmd & doc)
+  Arg.(value & opt (some string) None & doc)
 
 let ethif =
   let doc =
