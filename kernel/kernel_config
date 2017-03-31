@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.9.10 Kernel Configuration
+# Linux/x86 4.9.19 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -1733,6 +1733,7 @@ CONFIG_NLMON=y
 # Distributed Switch Architecture drivers
 #
 CONFIG_ETHERNET=y
+CONFIG_MDIO=y
 # CONFIG_NET_VENDOR_3COM is not set
 # CONFIG_NET_VENDOR_ADAPTEC is not set
 # CONFIG_NET_VENDOR_AGERE is not set
@@ -1764,9 +1765,11 @@ CONFIG_E1000=y
 CONFIG_E1000E=y
 CONFIG_E1000E_HWTS=y
 CONFIG_IGB=y
+CONFIG_IGB_HWMON=y
 CONFIG_IGBVF=y
 CONFIG_IXGB=y
 CONFIG_IXGBE=y
+CONFIG_IXGBE_HWMON=y
 CONFIG_IXGBEVF=y
 # CONFIG_I40E is not set
 # CONFIG_I40EVF is not set
@@ -1775,6 +1778,10 @@ CONFIG_IXGBEVF=y
 # CONFIG_JME is not set
 # CONFIG_NET_VENDOR_MARVELL is not set
 CONFIG_NET_VENDOR_MELLANOX=y
+# CONFIG_MLX4_EN is not set
+# CONFIG_MLX4_CORE is not set
+# CONFIG_MLX5_CORE is not set
+# CONFIG_MLXSW_CORE is not set
 # CONFIG_NET_VENDOR_MICREL is not set
 # CONFIG_NET_VENDOR_MYRI is not set
 # CONFIG_FEALNX is not set
@@ -2016,6 +2023,7 @@ CONFIG_I2C_MUX=y
 # CONFIG_I2C_MUX_PCA9541 is not set
 # CONFIG_I2C_MUX_REG is not set
 CONFIG_I2C_HELPER_AUTO=y
+CONFIG_I2C_ALGOBIT=y
 
 #
 # I2C Hardware Bus support
