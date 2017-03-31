@@ -17,16 +17,6 @@ system:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     read_only: true
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
-  - name: dhcp-client
-    network_mode: host
-    image: "mobylinux/dhcp-client:aaf811d77ff8d8b2e16ca4dd9d0a2849ef8977b6"
-    capabilities:
-     - CAP_NET_ADMIN # to bring eth0 up
-     - CAP_NET_RAW   # to read /dev/eth0
-    binds:
-     - /var/run/dhcp-client:/data
-    command: [/dhcp-client, -vv]
-    read_only: true
 daemon:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
@@ -35,6 +25,16 @@ daemon:
     oom_score_adj: -800
     read_only: true
     command: [/bin/tini, /usr/sbin/rngd, -f]
+  - name: dhcp-client
+    network_mode: host
+    image: "mobylinux/dhcp-client:f40cafe2ade4b115704750a85d21eb35b1116b91"
+    capabilities:
+     - CAP_NET_ADMIN # to bring eth0 up
+     - CAP_NET_RAW   # to read /dev/eth0
+    binds:
+     - /var/run/dhcp-client:/data
+    command: [/dhcp-client, -vv]
+    read_only: true
 files:
   - path: /var/run/dhcp-client/README
     contents: 'data for dhcp-client'
