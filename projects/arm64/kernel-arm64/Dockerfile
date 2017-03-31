@@ -42,7 +42,7 @@ RUN cd /linux && \
     make INSTALL_HDR_PATH=/tmp/kernel-headers/usr headers_install && \
     ( cd /tmp/kernel-headers && tar cf /kernel-headers.tar usr ) && \
     ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar lib ) && \
-    cp vmlinux arch/arm64/boot/bzImage /
+    cp vmlinux arch/arm64/boot/Image.gz /
 
 RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
     dir=/tmp/usr/src/linux-headers-$DVER && \

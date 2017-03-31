@@ -1,5 +1,5 @@
 .PHONY: default all
-default: bin/moby bin/linuxkit 
+default: bin/moby bin/linuxkit
 all: default
 
 VERSION="0.0" # dummy for now
@@ -10,7 +10,7 @@ GO_COMPILE=linuxkit/go-compile:5bf17af781df44f07906099402680b9a661f999b
 MOBY?=bin/moby
 LINUXKIT?=bin/linuxkit
 GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
-GOARCH=amd64
+GOARCH=aarch64
 ifneq ($(GOOS),linux)
 CROSS=-e GOOS=$(GOOS) -e GOARCH=$(GOARCH)
 endif
