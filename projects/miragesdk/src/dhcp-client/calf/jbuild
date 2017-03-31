@@ -1,0 +1,8 @@
+(jbuild_version 1)
+
+(executables
+ ((names (unikernel))
+  (libraries (sdk mirage-net-fd lwt charrua-client.mirage charrua-client
+              lwt.unix))
+  (flags (-cclib -static))
+ ))
