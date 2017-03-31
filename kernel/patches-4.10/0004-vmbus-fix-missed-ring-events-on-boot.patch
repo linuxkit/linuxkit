@@ -1,0 +1,56 @@
+From 686f341e764920ada0163bedf354924250ed32d8 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Sun, 26 Mar 2017 16:42:20 +0800
+Subject: [PATCH 4/6] vmbus: fix missed ring events on boot
+
+During initialization, the channel initialization code schedules the
+tasklet to scan the VMBUS receive event page (i.e. simulates an
+interrupt). The problem was that it invokes the tasklet on a different
+CPU from where it normally runs and therefore if an event is present,
+it will clear the bit but not find the associated channel.
+
+This can lead to missed events, typically stuck tasks, during bootup
+when sub channels are being initialized. Typically seen as stuck
+boot with 8 or more CPU's.
+
+This patch is not necessary for upstream (4.11 and later) since
+commit 631e63a9f346 ("vmbus: change to per channel tasklet").
+This changed vmbus code to get rid of common tasklet which
+caused the problem.
+
+Cc: stable@vger.kernel.org
+Fixes: 638fea33aee8 ("Drivers: hv: vmbus: fix the race when querying & updating the percpu list")
+Signed-off-by: Stephen Hemminger <sthemmin@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit 5cf3a72a111cecc7da759542c56560ce509159d7)
+---
+ drivers/hv/channel_mgmt.c | 13 +++++++++++--
+ 1 file changed, 11 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index feca5d2e7b25..3fda63bf60ab 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -389,8 +389,17 @@ void hv_event_tasklet_enable(struct vmbus_channel *channel)
+ 	tasklet = hv_context.event_dpc[channel->target_cpu];
+ 	tasklet_enable(tasklet);
+ 
+-	/* In case there is any pending event */
+-	tasklet_schedule(tasklet);
++	/*
++	 * In case there is any pending event schedule a rescan
++	 * but must be on the correct CPU for the channel.
++	 */
++	if (channel->target_cpu == get_cpu())
++		tasklet_schedule(tasklet);
++	else
++		smp_call_function_single(channel->target_cpu,
++					 (smp_call_func_t)tasklet_schedule,
++					 tasklet, false);
++	put_cpu();
+ }
+ 
+ void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
+-- 
+2.11.0
+
