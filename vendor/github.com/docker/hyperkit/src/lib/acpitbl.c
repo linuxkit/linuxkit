@@ -737,7 +737,7 @@ void dsdt_fixup(int bus, uint16_t iobase, uint16_t iolimit, uint32_t membase32,
 {
 	if (bus != 0) {
 		fprintf(stderr, "DSDT, unsupported PCI bus (%d)\n", bus);
-		exit(-1);
+		exit(1);
 	}
 
 	acpitbl_write16(dsdt, 0xb6, iobase);

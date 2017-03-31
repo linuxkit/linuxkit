@@ -40,33 +40,6 @@ func main() {
 	flagQuiet := flag.Bool("q", false, "Quiet execution")
 	flagVerbose := flag.Bool("v", false, "Verbose execution")
 
-	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
-	buildCmd.Usage = func() {
-		fmt.Printf("USAGE: %s build [options] [file.yml]\n\n", os.Args[0])
-		fmt.Printf("'file.yml' defaults to 'moby.yml' if not specified.\n\n")
-		fmt.Printf("Options:\n")
-		buildCmd.PrintDefaults()
-	}
-	buildName := buildCmd.String("name", "", "Name to use for output files")
-	buildPull := buildCmd.Bool("pull", false, "Always pull images")
-
-	runCmd := flag.NewFlagSet("run", flag.ExitOnError)
-	runCmd.Usage = func() {
-		fmt.Printf("USAGE: %s run [options] [prefix]\n\n", os.Args[0])
-		fmt.Printf("'prefix' specifies the path to the VM image.\n")
-		fmt.Printf("It defaults to './moby'.\n")
-		fmt.Printf("\n")
-		fmt.Printf("Options:\n")
-		runCmd.PrintDefaults()
-		fmt.Printf("\n")
-		fmt.Printf("If 'data' is supplied or if 'background' is selected\n")
-		fmt.Printf("some per VM state is kept in a sub-directory in the ~/.moby\n")
-	}
-	runCPUs := runCmd.Int("cpus", 1, "Number of CPUs")
-	runMem := runCmd.Int("mem", 1024, "Amount of memory in MB")
-	runDiskSz := runCmd.Int("disk-size", 0, "Size of Disk in MB")
-	runDisk := runCmd.String("disk", "", "Path to disk image to used")
-
 	// Set up logging
 	log.SetFormatter(new(infoFormatter))
 	log.SetLevel(log.InfoLevel)
@@ -93,11 +66,9 @@ func main() {
 
 	switch args[0] {
 	case "build":
-		buildCmd.Parse(args[1:])
-		build(*buildName, *buildPull, buildCmd.Args())
+		build(args[1:])
 	case "run":
-		runCmd.Parse(args[1:])
-		run(*runCPUs, *runMem, *runDiskSz, *runDisk, runCmd.Args())
+		run(args[1:])
 	case "help":
 		flag.Usage()
 	default:
