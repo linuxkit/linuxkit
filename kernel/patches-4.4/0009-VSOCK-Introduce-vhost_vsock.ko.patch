@@ -1,4 +1,4 @@
-From 8c891d7e147e4515c22b67216776a05cd232f638 Mon Sep 17 00:00:00 2001
+From a0b0f3bdf891086e680940b1742590acd08eb38c Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:34 +0100
 Subject: [PATCH 09/44] VSOCK: Introduce vhost_vsock.ko
