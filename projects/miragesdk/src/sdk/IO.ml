@@ -4,18 +4,20 @@ let src = Logs.Src.create "IO" ~doc:"IO helpers"
 module Log = (val Logs.src_log src : Logs.LOG)
 
 let rec really_write fd buf off len =
-  Log.debug (fun l -> l "really_write");
   match len with
   | 0   -> Lwt.return_unit
   | len ->
+    Log.debug (fun l -> l "really_write off=%d len=%d" off len);
     Lwt_unix.write fd buf off len >>= fun n ->
     really_write fd buf (off+n) (len-n)
 
+let write fd buf = really_write fd buf 0 (String.length buf)
+
 let rec really_read fd buf off len =
-  Log.debug (fun l -> l "really_read");
   match len with
   | 0   -> Lwt.return_unit
   | len ->
+    Log.debug (fun l -> l "really_read off=%d len=%d" off len);
     Lwt_unix.read fd buf off len >>= fun n ->
     really_read fd buf (off+n) (len-n)
 
@@ -33,7 +35,7 @@ let read_all fd =
   String.concat "" bufs
 
 let read_n fd len =
-  Log.debug (fun l -> l "read_n");
+  Log.debug (fun l -> l "read_n len=%d" len);
   let buf = Bytes.create len in
   let rec loop acc len =
     Lwt_unix.read fd buf 0 len >>= fun n ->

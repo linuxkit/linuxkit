@@ -19,7 +19,7 @@ system:
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: dhcp-client
     network_mode: host
-    image: "mobylinux/dhcp-client:f6ef2cc4c3bf7dcad643f22fbd3d355af1725105"
+    image: "mobylinux/dhcp-client:aaf811d77ff8d8b2e16ca4dd9d0a2849ef8977b6"
     capabilities:
      - CAP_NET_ADMIN # to bring eth0 up
      - CAP_NET_RAW   # to read /dev/eth0
