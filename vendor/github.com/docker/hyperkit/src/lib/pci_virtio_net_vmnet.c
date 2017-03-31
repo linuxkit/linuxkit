@@ -728,14 +728,6 @@ pci_vtnet_init(struct pci_devinst *pi, UNUSED char *opts)
 		return (-1);
 	}
 
-    if (print_mac == 1)
-    {
-		printf("MAC: %02x:%02x:%02x:%02x:%02x:%02x\n",
-			sc->vms->mac[0], sc->vms->mac[1], sc->vms->mac[2],
-			sc->vms->mac[3], sc->vms->mac[4], sc->vms->mac[5]);
-		exit(0);
-    }
-
 	sc->vsc_config.mac[0] = sc->vms->mac[0];
 	sc->vsc_config.mac[1] = sc->vms->mac[1];
 	sc->vsc_config.mac[2] = sc->vms->mac[2];
