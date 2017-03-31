@@ -17,8 +17,8 @@ and elsewhere.
 
 The Moby project maintainers are actively collaborating with KSPP and it is an established [priority for the project](../projects/kspp/roadmap.md).
 
-The Moby kernel is intended to be identical to the upstream kernel - at the time of this writing the only patches in the
-`4.9.x` series are for Hyper-V socket fixes that are intended to be upstreamed.
+The Moby kernel is intended to be identical to the upstream kernel - We only intend to carry patches that are on track
+to be upstreamed, or fix regressions or bugs and that we will upstream.
 
 
 ## Minimal Base
@@ -31,7 +31,7 @@ individual operators to include any additional bits they may require.
 
 ## Type Safe System Daemons
 
-The the core system components that we must include in Moby userspace are key to security, and we believe
+The core system components that we must include in Moby userspace are key to security, and we believe
 they should be written in type safe languages, such as [Rust](https://www.rust-lang.org/en-US/), [Go](https://golang.org/)
 and [OCaml](http://www.ocaml.org/), and run with maximum privilege separation and isolation.
 
@@ -46,24 +46,30 @@ and namespaced separately from the host as appropriate.
 ## Built With Hardened Toolchains and Containers
 
 Moby's build process heavily leverages Docker images for packaging. Of note, all intermediate build images
-are referenced by digest - which ensures reproducibility across Moby builds.
-Certain images, such as the kernel image, are signed by Moby maintainers using [Docker Content Trust](https://docs.docker.com/engine/security/trust/content_trust/),
+are referenced by digest to ensures reproducibility across Moby builds. Tags are mutable, and thus subject to override
+(intentionally or maliciously) - referencing by digest mitigates classes of registry poisoning attacks in Moby's buildchain.
+Certain images, such as the kernel image, will be signed by Moby maintainers using [Docker Content Trust](https://docs.docker.com/engine/security/trust/content_trust/),
 which guarantees authenticity, integrity, and freshness of the image.
 
-Moreover, Moby's build process leverages [Alpine Linux's](https://alpinelinux.org/) hardened userspace tools such as its
-musl libc C-compiler with default `-fstack-protector` and position-independent executable output. Go binaries are also PIE.
+Moreover, Moby's build process leverages [Alpine Linux's](https://alpinelinux.org/) hardened userspace tools such as
+Musl libc, and compiler options that include `-fstack-protector` and position-independent executable output. Go binaries
+are also PIE.
 
 
 ## Immutable Infrastructure
 
 Moby runs as an initramfs and its system containers are baked in at build-time, essentially making Moby immutable.
 
-Moreover, Moby has a read-only root filesystem: the only userspace that is allowed to modified pertains to namespaced
-container data and stateful partitions.
+Moreover, Moby has a read-only root filesystem: system configuration and sensitive files cannot be modified after boot.
+The only files on Moby that are allowed to be modified pertain to namespaced container data and stateful partitions.
 
 As such, Moby access to the Moby base system is limited in scope: in the event of any container escape, the attack surface
 is also limited because the system binaries and configuration is unmodifiable. To that end, the Moby base system does not
 supply a package manger: containers must be built beforehand with the dependencies they require.
+
+Once a secure Moby base system has been built, it cannot be tampered with, even by malicious user containers. Even if user
+containers unintentionally expose themselves to attack vectors, immutability of the Moby base system limits the scope of
+host attack.
 
 
 ## External Updates - Trusted Provisioning
@@ -80,7 +86,7 @@ can be used to provide trusted boot information and integrate with existing trus
 "trusted boot-ready" and the team is already collaborating with cloud and hardware providers to make this a reality.
 
 
-## Incubating Next-generation Kernel Security
+## Incubating Next-generation Security Projects
 
 Since Moby is meant to only run containers and be secure, it is the perfect platform to incubate new (and potentially radical!)
 paradigms and strategies for securing the Linux kernel - allowing them to be used in production environments and attract
