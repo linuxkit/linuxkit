@@ -41,7 +41,7 @@ mkdir -p iso
 # headroom seems to be enough; (x+31)/32*32 rounds up to multiple of 32.
 mkfs.vfat -v -C iso/efi.raw \
         $(( ($(stat -c %s "mobylinux.efi") / 1024 + 511) \
-		/ 32 * 32 ))
+		/ 32 * 32 )) > /dev/null
 echo "mtools_skip_check=1" >> /etc/mtools.conf && \
 mmd -i iso/efi.raw ::/EFI
 mmd -i iso/efi.raw ::/EFI/BOOT
