@@ -2,6 +2,7 @@ package iso9660wrap
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"io"
@@ -154,21 +155,38 @@ const rootDirectorySectorNum uint32 = primaryVolumeSectorNum + numVolumeSectors 
 
 // WriteFile writes the contents of infh to an iso at outfh with the name provided
 func WriteFile(outfh, infh *os.File) error {
-	inputFileSize, inputFilename, err := getInputFileSizeAndName(infh)
+	fileSize, filename, err := getInputFileSizeAndName(infh)
 	if err != nil {
 		return err
 	}
-	if inputFileSize == 0 {
+	if fileSize == 0 {
 		return fmt.Errorf("input file must be at least 1 byte in size")
 	}
-	inputFilename = strings.ToUpper(inputFilename)
-	if !filenameSatisfiesISOConstraints(inputFilename) {
-		return fmt.Errorf("Input file name %s does not satisfy the ISO9660 character set constraints", inputFilename)
+	filename = strings.ToUpper(filename)
+	if !filenameSatisfiesISOConstraints(filename) {
+		return fmt.Errorf("Input file name %s does not satisfy the ISO9660 character set constraints", filename)
 	}
+
+	buf := make([]byte, fileSize, fileSize)
+	_, err = infh.Read(buf)
+	if err != nil {
+		return err
+	}
+
+	return WriteBuffer(outfh, buf, filename)
+}
+
+// WriteBuffer writes the contents of buf to an iso at outfh with the name provided
+func WriteBuffer(outfh *os.File, buf []byte, filename string) error {
+	fileSize := uint32(len(buf))
+	if fileSize == 0 {
+		return fmt.Errorf("input buffer must be at least 1 byte in size")
+	}
+	r := bytes.NewReader(buf)
 
 	// reserved sectors
 	reservedAreaLength := int64(16 * SectorSize)
-	_, err = outfh.Write([]byte(reservedAreaData))
+	_, err := outfh.Write([]byte(reservedAreaData))
 	if err != nil {
 		return fmt.Errorf("could not write to output file: %s", err)
 	}
@@ -198,11 +216,11 @@ func WriteFile(outfh, infh *os.File) error {
 
 		w := NewISO9660Writer(bufw)
 
-		writePrimaryVolumeDescriptor(w, inputFileSize, inputFilename)
+		writePrimaryVolumeDescriptor(w, fileSize, filename)
 		writeVolumeDescriptorSetTerminator(w)
 		writePathTable(w, binary.LittleEndian)
 		writePathTable(w, binary.BigEndian)
-		writeData(w, infh, inputFileSize, inputFilename)
+		writeData(w, r, fileSize, filename)
 
 		w.Finish()
 
@@ -217,9 +235,9 @@ func WriteFile(outfh, infh *os.File) error {
 	return nil
 }
 
-func writePrimaryVolumeDescriptor(w *ISO9660Writer, inputFileSize uint32, inputFilename string) {
-	if len(inputFilename) > 32 {
-		inputFilename = inputFilename[:32]
+func writePrimaryVolumeDescriptor(w *ISO9660Writer, fileSize uint32, filename string) {
+	if len(filename) > 32 {
+		filename = filename[:32]
 	}
 	now := time.Now()
 
@@ -233,10 +251,10 @@ func writePrimaryVolumeDescriptor(w *ISO9660Writer, inputFileSize uint32, inputF
 	sw.WriteByte('\x00')
 
 	sw.WritePaddedString("", 32)
-	sw.WritePaddedString(inputFilename, 32)
+	sw.WritePaddedString(filename, 32)
 
 	sw.WriteZeros(8)
-	sw.WriteBothEndianDWord(numTotalSectors(inputFileSize))
+	sw.WriteBothEndianDWord(numTotalSectors(fileSize))
 	sw.WriteZeros(32)
 
 	sw.WriteBothEndianWord(1) // volume set size
@@ -294,7 +312,7 @@ func writePathTable(w *ISO9660Writer, bo binary.ByteOrder) {
 	sw.PadWithZeros()
 }
 
-func writeData(w *ISO9660Writer, infh io.Reader, inputFileSize uint32, inputFilename string) {
+func writeData(w *ISO9660Writer, infh io.Reader, fileSize uint32, filename string) {
 	sw := w.NextSector()
 	if w.CurrentSector() != rootDirectorySectorNum {
 		Panicf("internal error: unexpected root directory sector %d", w.CurrentSector())
@@ -302,7 +320,7 @@ func writeData(w *ISO9660Writer, infh io.Reader, inputFileSize uint32, inputFile
 
 	WriteDirectoryRecord(sw, "\x00", w.CurrentSector())
 	WriteDirectoryRecord(sw, "\x01", rootDirectorySectorNum)
-	WriteFileRecordHeader(sw, inputFilename, w.CurrentSector()+1, inputFileSize)
+	WriteFileRecordHeader(sw, filename, w.CurrentSector()+1, fileSize)
 
 	// Now stream the data.  Note that the first buffer is never of SectorSize,
 	// since we've already filled a part of the sector.
@@ -322,17 +340,17 @@ func writeData(w *ISO9660Writer, infh io.Reader, inputFileSize uint32, inputFile
 			break
 		}
 	}
-	if total != inputFileSize {
-		Panicf("input file size changed while the ISO file was being created (expected to read %d, read %d)", inputFileSize, total)
-	} else if w.CurrentSector() != numTotalSectors(inputFileSize)-1 {
+	if total != fileSize {
+		Panicf("input file size changed while the ISO file was being created (expected to read %d, read %d)", fileSize, total)
+	} else if w.CurrentSector() != numTotalSectors(fileSize)-1 {
 		Panicf("internal error: unexpected last sector number (expected %d, actual %d)",
-			numTotalSectors(inputFileSize)-1, w.CurrentSector())
+			numTotalSectors(fileSize)-1, w.CurrentSector())
 	}
 }
 
-func numTotalSectors(inputFileSize uint32) uint32 {
+func numTotalSectors(fileSize uint32) uint32 {
 	var numDataSectors uint32
-	numDataSectors = (inputFileSize + (SectorSize - 1)) / SectorSize
+	numDataSectors = (fileSize + (SectorSize - 1)) / SectorSize
 	return 1 + rootDirectorySectorNum + numDataSectors
 }
 
