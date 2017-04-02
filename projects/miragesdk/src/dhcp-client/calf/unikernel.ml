@@ -128,98 +128,81 @@ end = struct
 
 end
 
-(* FIXME: this code is way too much complex *)
-module HTTP (Net: Mirage_net_lwt.S) = struct
-  module Flow = Raw(Net)
-  module Channel = Mirage_channel_lwt.Make(Flow)
-  (* FIXME: copy/pasted from mirage-http to avoid the dependency chain:
-      mirage-http -> mirage-conduit -> nocrypto -> gmp -> .so needed  *)
-  module HTTP_IO = struct
-    type 'a t = 'a Lwt.t
-    type ic = Channel.t
-    type oc = Channel.t
-    type conn = Channel.flow
-    let failf fmt = Fmt.kstrf Lwt.fail_with fmt
-    let read_line ic =
-      Channel.read_line ic >>= function
-      | Ok (`Data [])   -> Lwt.return_none
-      | Ok `Eof         -> Lwt.return_none
-      | Ok (`Data bufs) -> Lwt.return (Some (Cstruct.copyv bufs))
-      | Error e         -> failf "Flow error: %a" Channel.pp_error e
-    let read ic len =
-      Channel.read_some ~len ic >>= function
-      | Ok (`Data buf) -> Lwt.return (Cstruct.to_string buf)
-      | Ok `Eof        -> Lwt.return ""
-      | Error e        -> failf "Flow error: %a" Channel.pp_error e
-    let write oc buf =
-      Channel.write_string oc buf 0 (String.length buf);
-      Channel.flush oc >>= function
-      | Ok ()         -> Lwt.return_unit
-      | Error `Closed -> Lwt.fail_with "Trying to write on closed channel"
-      | Error e       -> failf "Flow error: %a" Channel.pp_write_error e
-    let flush _ = Lwt.return_unit
-    let  (>>= ) = Lwt.( >>= )
-    let return = Lwt.return
-  end
-  module Net_IO = struct
-    module IO = HTTP_IO
-    type ctx = Net.t option
-    let default_ctx = None
-    let sexp_of_ctx _ = Sexplib.Sexp.Atom "netif"
-    let connect_uri ~ctx _uri =
-      match ctx with
-      | None     -> Lwt.fail_with "No context"
-      | Some ctx ->
-        Flow.connect ctx >|= fun flow ->
-        let ch = Channel.create flow in
-        flow, ch, ch
-    let close_in _ic = ()
-    let close_out _oc = ()
-    let close ic _oc = Lwt.ignore_result (Channel.close ic)
-  end
-  include Cohttp_lwt.Make_client(HTTP_IO)(Net_IO)
+(* FIXME: use the mirage tool *)
+
+module Time = struct
+  type +'a io = 'a Lwt.t
+  let sleep_ns x = Lwt_unix.sleep (Int64.to_float x /. 1_000_000_000.)
 end
+module Net = Netif_fd
+module Ctl = Netif_fd
 
-module API (Store: Mirage_net_lwt.S) = struct
+open Cmdliner
 
-  module HTTP = HTTP(Store)
+let dhcp_codes =
+  let doc = Arg.info ~docv:"OPT" ~doc:"DHCP options." ["c";"codes"] in
+  Arg.(value & opt (list string) [] doc)
 
-  let http_post t uri ~body =
-    HTTP.post ~ctx:(Some t) ~body:(`String body) uri >|= fun (response, _) ->
-    (* FIXME check that response is ok *)
-    Log.info
-      (fun l -> l "POST %a: %a" Uri.pp_hum uri Cohttp.Response.pp_hum response)
+let net =
+  let doc = Arg.info ~docv:"FD" ~doc:"Network interface" ["net"] in
+  Arg.(value & opt int 3 doc)
 
-  let set_ip t ip =
-    http_post t (Uri.of_string "/ip") ~body:(Ipaddr.V4.to_string ip)
+let ctl =
+  let doc = Arg.info ~docv:"FD" ~doc:"Control interface" ["ctl"] in
+  Arg.(value & opt int 4 doc)
 
-end
+let setup_log style_renderer level =
+  Fmt_tty.setup_std_outputs ?style_renderer ();
+  Logs.set_level level;
+  let pp_header ppf x =
+    Fmt.pf ppf "%5d: %a " (Unix.getpid ()) Logs_fmt.pp_header x
+  in
+  Logs.set_reporter (Logs_fmt.reporter ~pp_header ());
+  ()
 
+let setup_log =
+  Term.(const setup_log $ Fmt_cli.style_renderer () $ Logs_cli.level ())
 
-module Main
-    (Time :Mirage_time_lwt.S)
-    (Net  : Mirage_net_lwt.S)
-    (Ctl  : Mirage_net_lwt.S) =
-struct
+(* FIXME: module Main ... *)
 
-  module API = API(Ctl)
-  module Dhcp_client = Dhcp_client_mirage.Make(Time)(Net)
+module Dhcp_client = Dhcp_client_mirage.Make(Time)(Net)
 
-  let start () net ctl =
-    let requests = match Key_gen.codes () with
-      | [] -> default_options
-      | l  ->
-        List.fold_left (fun acc c -> match parse_option_code c with
-            | Ok x    -> x :: acc
-            | Error e ->
-              Log.err (fun l -> l "error: %s" e);
-              acc
-          ) [] l
-    in
-    Dhcp_client.connect ~requests net >>= fun stream ->
-    Lwt_stream.last_new stream >>= fun result ->
-    let result = of_ipv4_config result in
-    Log.info (fun l -> l "found lease: %a" pp result);
-    API.set_ip ctl result.address
+let start () dhcp_codes net ctl =
+  Netif_fd.connect net >>= fun net ->
+  let ctl = Sdk.Ctl.Client.v (Lwt_unix.of_unix_file_descr ctl) in
+  let requests = match dhcp_codes with
+    | [] -> default_options
+    | l  ->
+      List.fold_left (fun acc c -> match parse_option_code c with
+          | Ok x    -> x :: acc
+          | Error e ->
+            Log.err (fun l -> l "error: %s" e);
+            acc
+        ) [] l
+  in
+  Dhcp_client.connect ~requests net >>= fun stream ->
+  Lwt_stream.last_new stream >>= fun result ->
+  let result = of_ipv4_config result in
+  Log.info (fun l -> l "found lease: %a" pp result);
+  Sdk.Ctl.Client.write ctl "/ip" (Ipaddr.V4.to_string result.address ^ "\n")
 
-end
+(* FIXME: Main end *)
+let magic (x: int) = (Obj.magic x: Unix.file_descr)
+
+let start () dhcp_codes net ctl =
+  Lwt_main.run (
+    let net = magic net in
+    let ctl = magic ctl in
+    start () dhcp_codes net ctl
+  )
+
+let run =
+  Term.(const start $ setup_log $ dhcp_codes $ net $ ctl),
+  Term.info "dhcp-client" ~version:"0.0"
+
+let () = match Term.eval run with
+  | `Error _ -> exit 1
+  | `Ok (Ok ()) |`Help |`Version -> exit 0
+  | `Ok (Error (`Msg e)) ->
+    Printf.eprintf "%s\n%!" e;
+    exit 1

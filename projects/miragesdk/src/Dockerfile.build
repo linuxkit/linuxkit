@@ -7,6 +7,14 @@ RUN opam pin -n add mirage-net-unix https://github.com/samoht/mirage-net-unix.gi
 RUN opam depext -iy mirage-net-unix logs-syslog irmin-unix cohttp decompress
 RUN opam depext -iy rawlink tuntap.1.0.0 jbuilder irmin-watcher inotify
 RUN opam install rresult
+RUN opam pin add cstruct --dev # for ppx/jbuilder
+RUN opam pin add tuntap 1.0.0
+
+# TMP: to compile the calf
+RUN opam pin add -n charrua-client https://github.com/yomimono/charrua-client.git#state-halfway
+RUN opam depext -uiy ocamlfind topkg-care ocamlbuild lwt mirage-types-lwt mirage
+RUN opam depext -uiy charrua-client cohttp conduit mirage-unix
+RUN opam depext -uiy mirage-net-fd ptime mirage-logs
 
 RUN sudo mkdir -p /src
 COPY ./sdk /src/sdk
@@ -16,7 +24,8 @@ RUN sudo chown opam -R /src
 USER opam
 WORKDIR /src
 
-RUN opam pin add cstruct --dev # for ppx/jbuilder
-
 RUN opam config exec -- jbuilder build dhcp-client/main.exe
 RUN sudo cp /src/_build/default/dhcp-client/main.exe /dhcp-client
+
+RUN opam config exec -- jbuilder build dhcp-client/calf/unikernel.exe
+RUN sudo cp /src/_build/default/dhcp-client/calf/unikernel.exe /dhcp-client-calf

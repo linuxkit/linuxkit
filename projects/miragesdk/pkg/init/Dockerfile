@@ -5,6 +5,7 @@ RUN \
   apk --no-cache upgrade -a && \
   apk --no-cache add \
     strace \
+    git \
   && rm -rf /var/cache/apk/*
 
 COPY . ./
