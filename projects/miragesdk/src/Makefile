@@ -8,7 +8,8 @@ OBJS=obj/dhcp-client
 
 MIRAGE_COMPILE=mobylinux/mirage-compile:f903b0e1b4328271364cc63f123ac49d56739cef@sha256:a54d9ca84d3f5998dba92ce83d60d49289cee8908a8b0f6ec280d30ab8edf46c
 CALF_OBJS=obj/dhcp-client-calf
-CALF_FILES=dhcp-client/calf/config.ml dhcp-client/calf/unikernel.ml
+CALF_FILES=dhcp-client/calf/config.ml dhcp-client/calf/unikernel.ml \
+	   dhcp-client/calf/jbuild
 
 default: push
 	@
@@ -34,18 +35,18 @@ enter-build: .build
 enter-dev: .dev
 	docker run --privileged -it -v `pwd`:/src $(shell cat .dev)
 
-$(CALF_OBJS): $(CALF_FILES)
-	mkdir -p obj/bin
-	( cd obj && \
-	  tar -C ../dhcp-client/calf -cf - $(CALF_FILES:dhcp-client/calf/%=%) | \
-	    docker run --rm -i --log-driver=none $(MIRAGE_COMPILE) -o dhcp-client-calf | \
-	    tar xf - || exit 1) && \
-	touch $@
+#$(CALF_OBJS): $(CALF_FILES)
+#	mkdir -p obj/bin
+#	( cd obj && \
+#	  tar -C ../dhcp-client/calf -cf - $(CALF_FILES:dhcp-client/calf/%=%) | \
+#	    docker run --rm -i --log-driver=none $(MIRAGE_COMPILE) -o dhcp-client-calf | \
+#	    tar xf - || exit 1) && \
+#	touch $@
 
-$(OBJS): .build $(FILES)
+$(OBJS) $(CALF_OBJS): .build $(FILES) $(CALF_FILES)
 	mkdir -p obj/usr/lib obj/bin
 	( cd obj && \
-	  docker run --rm --net=none --log-driver=none -i $(IMAGE):build tar -cf - $(OBJS:obj/%=/%) | tar xf - ) && \
+	  docker run --rm --net=none --log-driver=none -i $(IMAGE):build tar -cf - $(OBJS:obj/%=/%) $(CALF_OBJS:obj/%=/%) | tar xf - ) && \
 	touch $@
 
 hash: Makefile Dockerfile.build Dockerfile.pkg $(FILES) $(CALF_FILES) .build
@@ -77,7 +78,8 @@ dev-clean:
 	rm -rf _build dhcp-client/calf/_build
 
 dev:
-	cd dhcp-client/calf && mirage configure && make
 	jbuilder build dhcp-client/main.exe --dev
+	jbuilder build dhcp-client/calf/unikernel.exe --dev
+#	cd dhcp-client/calf && mirage configure && make
 
 .DELETE_ON_ERROR:

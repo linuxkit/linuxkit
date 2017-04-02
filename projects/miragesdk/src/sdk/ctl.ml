@@ -27,7 +27,10 @@ let v path =
   KV.of_branch repo "calf"
 
 let () =
-  Irmin.Private.Watch.set_listen_dir_hook Irmin_watcher.hook
+  Irmin.Private.Watch.set_listen_dir_hook
+    (fun _ _ _ -> Lwt.return (fun () -> Lwt.return_unit))
+    (* FIXME: inotify need some unknown massaging. *)
+    (* Irmin_watcher.hook *)
 
 module Query = struct
 
