@@ -1,4 +1,4 @@
-From e6c41b6c46816d22a502e998dc85c97613510652 Mon Sep 17 00:00:00 2001
+From 19842694e5fd7b82aad62dd5096f011ff90c6474 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 16:53:43 +0800
 Subject: [PATCH 01/44] virtio: make find_vqs() checkpatch.pl-friendly
@@ -115,7 +115,7 @@ index 1b831598df7c..bf2d1300a957 100644
  	struct virtio_ccw_device *vcdev = to_vc_device(vdev);
  	unsigned long *indicatorp = NULL;
 diff --git a/drivers/virtio/virtio_balloon.c b/drivers/virtio/virtio_balloon.c
-index 56f7e2521202..66082c99f6ea 100644
+index 01d15dca940e..0c5533813cde 100644
 --- a/drivers/virtio/virtio_balloon.c
 +++ b/drivers/virtio/virtio_balloon.c
 @@ -394,7 +394,7 @@ static int init_vqs(struct virtio_balloon *vb)
