@@ -26,12 +26,12 @@ DEPS=Dockerfile.4.4 Makefile kernel_config kernel_config.debug kernel_config.4.4
 else
 ifeq ($(KERNEL),v4.10)
 KERNEL_VERSION=4.10.8
-IMAGE_VERSION=$(KERNEL_VERSION)-0
+IMAGE_VERSION=$(KERNEL_VERSION)-1
 IMAGE_MAJOR_VERSION=4.10.x
 DEPS=Dockerfile.4.10 Makefile kernel_config kernel_config.debug patches-4.10
 else
 KERNEL_VERSION=4.9.20
-IMAGE_VERSION=$(KERNEL_VERSION)-0
+IMAGE_VERSION=$(KERNEL_VERSION)-1
 IMAGE_MAJOR_VERSION=4.9.x
 DEPS=Dockerfile Makefile kernel_config kernel_config.debug patches-4.9
 endif
