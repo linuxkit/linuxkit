@@ -7,14 +7,14 @@ system:
     image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
-    read_only: true
+    readonly: true
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: check
     image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
     pid: host
     capabilities:
      - CAP_SYS_BOOT
-    read_only: true
+    readonly: true
 outputs:
   - format: kernel+initrd
   - format: iso-bios
