@@ -5,7 +5,7 @@ init: "mobylinux/init:00c3a5bbfd9794f4a3187fcc4a9f0c826c46d474"
 system:
   - name: sysctl
     image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
-    network_mode: host
+    net: host
     pid: host
     ipc: host
     capabilities:
@@ -20,7 +20,7 @@ daemon:
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
     capabilities:
      - CAP_SYS_ADMIN
-    oom_score_adj: -800
+    oomScoreAdj: -800
     command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: sshd
     image: "mobylinux/sshd:4f8452ddaff703416fd7452fcd9693b96b23e847"
@@ -32,11 +32,11 @@ daemon:
      - CAP_DAC_OVERRIDE
      - CAP_SYS_CHROOT
      - CAP_KILL
-    network_mode: host
+    net: host
+    pid: host
     binds:
      - /root/.ssh:/root/.ssh
      - /etc/resolv.conf:/etc/resolv.conf
-    pid: host
 files:
   - path: root/.ssh/authorized_keys
     contents: '#your ssh key here'

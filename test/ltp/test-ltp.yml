@@ -5,7 +5,7 @@ init: "mobylinux/init:00c3a5bbfd9794f4a3187fcc4a9f0c826c46d474"
 system:
   - name: ltp
     image: "mobylinux/test-ltp-20170116:fdca2d1bb019b1d51e722e6032c82c7933d4b870"
-    network_mode: host
+    net: host
     pid: host
     capabilities:
      - CAP_SYS_ADMIN
