@@ -1,6 +1,6 @@
 kernel:
   image: "mobylinux/kernel:4.9.x"
-  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1 slub_debug=p"
 init: "mobylinux/init:83b229223adbdd5ae38f39b4754e61b951529664"
 system:
   - name: sysctl
