@@ -42,7 +42,8 @@ cat config.json.orig | \
   jq 'del (.linux.resources.memory.swappiness)' | \
   jq 'del(.linux.uidMappings) | del(.linux.gidMappings) | .linux.namespaces = (.linux.namespaces|map(select(.type!="user")))' | \
   jq 'if .root.readonly==true then .mounts = (.mounts|map(if .destination=="/dev" then .options |= .+ ["ro"] else . end)) else . end' | \
-  jq '.mounts = if .process.capabilities | length != 38 then (.mounts|map(if .destination=="/sys" then .options |= .+ ["ro"] else . end)) else . end' \
+  jq '.mounts = if .process.capabilities | length != 38 then (.mounts|map(if .destination=="/sys" then .options |= .+ ["ro"] else . end)) else . end' | \
+  jq '.process.capabilities = { bounding: .process.capabilities, effective: .process.capabilities, ambient: .process.capabilities, inheritable: .process.capabilities, permitted: .process.capabilities }' \
   > config.json
 
 cat config.json
