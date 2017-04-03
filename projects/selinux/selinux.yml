@@ -5,19 +5,19 @@ init: "mobylinux/init:b5249a412536b4e69f8e1f668680d2ae185cc505"
 system:
   - name: sysctl
     image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
-    network_mode: host
+    net: host
     pid: host
     ipc: host
     capabilities:
      - CAP_SYS_ADMIN
-    read_only: true
+    readonly: true
 daemon:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
     capabilities:
      - CAP_SYS_ADMIN
-    oom_score_adj: -800
-    read_only: true
+    oomScoreAdj: -800
+    readonly: true
     command: [/bin/tini, /usr/sbin/rngd, -f]
 files:
   - path: etc/docker/daemon.json

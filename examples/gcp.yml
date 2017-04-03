@@ -5,25 +5,25 @@ init: "mobylinux/init:00c3a5bbfd9794f4a3187fcc4a9f0c826c46d474"
 system:
   - name: sysctl
     image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
-    network_mode: host
+    net: host
     pid: host
     ipc: host
     capabilities:
      - CAP_SYS_ADMIN
-    read_only: true
+    readonly: true
   - name: binfmt
     image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
-    read_only: true
+    readonly: true
     command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: metadata-gcp
     image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
     binds:
      - /tmp:/etc/ssh
      - /etc/resolv.conf:/etc/resolv.conf
-    read_only: true
-    network_mode: host
+    readonly: true
+    net: host
     uts: host
     capabilities:
      - CAP_SYS_ADMIN
@@ -32,8 +32,8 @@ daemon:
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
     capabilities:
      - CAP_SYS_ADMIN
-    oom_score_adj: -800
-    read_only: true
+    oomScoreAdj: -800
+    readonly: true
     command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: sshd
     image: "mobylinux/sshd:4f8452ddaff703416fd7452fcd9693b96b23e847"
@@ -45,11 +45,11 @@ daemon:
      - CAP_DAC_OVERRIDE
      - CAP_SYS_CHROOT
      - CAP_KILL
-    network_mode: host
+    net: host
+    pid: host
     binds:
      - /tmp/authorized_keys:/root/.ssh/authorized_keys
      - /etc/resolv.conf:/etc/resolv.conf
-    pid: host
   - name: nginx
     image: "nginx:alpine"
     capabilities:
@@ -58,7 +58,7 @@ daemon:
      - CAP_SETUID
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
-    network_mode: host
+    net: host
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
