@@ -1,7 +1,23 @@
-## DHCP client using MirageOS
+### SDK
 
-To debug/build, the `enter-dev` target will create a dev container where
-`make dev` will build and run the current state of the prototype:
+To build and test the SDK, run:
+
+```
+$ make test
+```
+
+This will work on any OS.
+
+### DHCP client using MirageOS
+
+To build the MirageOS DHCP client, run:
+
+```
+$ make dev
+```
+
+As this is using some BPF runes, this will work only on Linux. To debug/build
+on OSX, you can create a container and build from there:
 
 ```
 make enter-dev
