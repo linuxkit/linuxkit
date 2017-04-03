@@ -52,7 +52,7 @@ ChromeOS has, with upgrade and fallback facilities.
 Because the image is run as an initramfs, and the system containers are
 baked in, upgrades are done by updating the system externally. This makes the whole
 system immutable, the [phoenix server](https://martinfowler.com/bliki/ImmutableServer.html)
-model.Persistent storage can be added using a volume (examples coming soon based on
+model. Persistent storage can be added using a volume (examples coming soon based on
 what the Docker Editions use). For running programs dynamically, a container
 orchestrator such as Docker or Kubernetes can be used; simpler distributed applications
 can be hard coded into the initramfs if they are suited to being run directly on
