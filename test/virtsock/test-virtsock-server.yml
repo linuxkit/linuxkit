@@ -22,12 +22,9 @@ daemon:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
-    command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: virtsock-server
     image: "mobylinux/test-virtsock:35fea96fd01f6edb67021c494ddf098fdb8bbca0"
     readonly: true
-    command: [/bin/tini, /bin/virtsock_stress, -s, -v, 1]
-
 outputs:
   - format: kernel+initrd
   - format: iso-bios

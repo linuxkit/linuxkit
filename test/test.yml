@@ -8,7 +8,6 @@ system:
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
-    command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: check
     image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
     pid: host
