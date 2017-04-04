@@ -26,7 +26,7 @@ moby run etcd
 This should create a HyperKit based, InfraKit managed `etcd` cluster with 5 `etcd` instances.
 
 #### Infrakit setup
-You need the [infrakit](https://github.com/docker/infrakit) binaries for this. I normally compile from source using `make build-in-container`. The below was tried with commit `2153cbb0c28d450d271bbcdb9b3765eb486a9ac9`
+You need the [infrakit](https://github.com/docker/infrakit) binaries for this. I normally compile from source using `make build-in-container`. The below was tried with commit `cb420e3e50ea60afe58538b1d3cab1cb14059433`.
 
 - Make sure you start from scratch
 ```
