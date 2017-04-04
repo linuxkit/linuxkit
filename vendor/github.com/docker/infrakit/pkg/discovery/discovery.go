@@ -2,9 +2,6 @@ package discovery
 
 import (
 	"fmt"
-	"os"
-	"os/user"
-	"path"
 
 	"github.com/docker/infrakit/pkg/plugin"
 )
@@ -21,40 +18,28 @@ const (
 	PluginDirEnvVar = "INFRAKIT_PLUGINS_DIR"
 )
 
-// Dir returns the directory to use for plugin discovery, which may be customized by the environment.
-func Dir() string {
-	if pluginDir := os.Getenv(PluginDirEnvVar); pluginDir != "" {
-		return pluginDir
-	}
+// ErrNotUnixSocket is the error raised when the file is not a unix socket
+type ErrNotUnixSocket string
 
-	home := os.Getenv("HOME")
-	if usr, err := user.Current(); err == nil {
-		home = usr.HomeDir
-	}
-	return path.Join(home, ".infrakit/plugins")
+func (e ErrNotUnixSocket) Error() string {
+	return fmt.Sprintf("not a unix socket:%s", string(e))
 }
 
-// NewPluginDiscovery creates a plugin discovery based on the environment configuration.
-func NewPluginDiscovery() (Plugins, error) {
-	return NewPluginDiscoveryWithDirectory(Dir())
+// IsErrNotUnixSocket returns true if the error is due to the file not being a valid unix socket.
+func IsErrNotUnixSocket(e error) bool {
+	_, is := e.(ErrNotUnixSocket)
+	return is
 }
 
-// NewPluginDiscoveryWithDirectory creates a plugin discovery based on the directory given.
-func NewPluginDiscoveryWithDirectory(pluginDir string) (Plugins, error) {
-	stat, err := os.Stat(pluginDir)
-	if err == nil {
-		if !stat.IsDir() {
-			return nil, fmt.Errorf("Plugin dir %s is a file", pluginDir)
-		}
-	} else {
-		if os.IsNotExist(err) {
-			if err := os.MkdirAll(pluginDir, 0700); err != nil {
-				return nil, fmt.Errorf("Failed to create plugin dir %s: %s", pluginDir, err)
-			}
-		} else {
-			return nil, fmt.Errorf("Failed to access plugin dir %s: %s", pluginDir, err)
-		}
-	}
+// ErrNotFound is the error raised when the plugin is not found
+type ErrNotFound string
 
-	return newDirPluginDiscovery(pluginDir)
+func (e ErrNotFound) Error() string {
+	return fmt.Sprintf("plugin not found:%s", string(e))
+}
+
+// IsErrNotFound returns true if the error is due to a plugin not found.
+func IsErrNotFound(e error) bool {
+	_, is := e.(ErrNotFound)
+	return is
 }

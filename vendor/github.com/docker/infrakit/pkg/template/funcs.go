@@ -4,12 +4,16 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
+	"net/http"
 	"reflect"
 	"strings"
 	"time"
 
 	"github.com/docker/infrakit/pkg/types"
+	"github.com/ghodss/yaml"
 	"github.com/jmespath/go-jmespath"
+	"github.com/vaughan0/go-ini"
 )
 
 // DeepCopyObject makes a deep copy of the argument, using encoding/gob encode/decode.
@@ -80,6 +84,47 @@ func ToJSONFormat(prefix, indent string, o interface{}) (string, error) {
 	return string(buff), err
 }
 
+// FromYAML decode the input YAML encoded as string or byte slice into a map.
+func FromYAML(o interface{}) (interface{}, error) {
+	var ret interface{}
+	switch o := o.(type) {
+	case string:
+		err := yaml.Unmarshal([]byte(o), &ret)
+		return ret, err
+	case []byte:
+		err := yaml.Unmarshal(o, &ret)
+		return ret, err
+	case *types.Any:
+		err := yaml.Unmarshal(o.Bytes(), &ret)
+		return ret, err
+	}
+	return ret, fmt.Errorf("not-supported-value-type")
+}
+
+// ToYAML encodes the input struct into a YAML string.
+func ToYAML(o interface{}) (string, error) {
+	buff, err := yaml.Marshal(o)
+	return string(buff), err
+}
+
+// FromINI decodes content formatted in INI format at path
+func FromINI(v string) (map[string]interface{}, error) {
+	buff := bytes.NewBufferString(v)
+	file, err := ini.Load(buff)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]interface{}{}
+	for n, section := range file {
+		m := map[string]interface{}{}
+		for k, v := range section {
+			m[k] = v
+		}
+		out[n] = m
+	}
+	return out, nil
+}
+
 // FromMap decodes map into raw struct
 func FromMap(m map[string]interface{}, raw interface{}) error {
 	// The safest way, but the slowest, is to just marshal and unmarshal back
@@ -134,8 +179,45 @@ func IndexOf(srch interface{}, array interface{}, strictOptional ...bool) int {
 	return -1
 }
 
+// given optional args in a template function call, extra headers and the context
+func headersAndContext(opt ...interface{}) (headers map[string][]string, context interface{}) {
+	if len(opt) == 0 {
+		return
+	}
+	// scan through all the args and if it's a string of the form x=y, then use as header
+	// the element that doesn't follow the form is the context
+	headers = map[string][]string{}
+	for _, v := range opt {
+		if vv, is := v.(string); is && strings.Index(vv, "=") > 0 {
+			kv := strings.Split(vv, "=")
+			key := kv[0]
+			value := ""
+			if len(kv) == 2 {
+				value = kv[1]
+			}
+			if _, has := headers[key]; !has {
+				headers[key] = []string{value}
+			} else {
+				headers[key] = append(headers[key], value)
+			}
+		} else {
+			context = v
+		}
+	}
+	return
+}
+
+func setHeaders(req *http.Request, headers map[string][]string) {
+	for k, vv := range headers {
+		for _, v := range vv {
+			req.Header.Add(k, v)
+		}
+	}
+}
+
 // DefaultFuncs returns a list of default functions for binding in the template
 func (t *Template) DefaultFuncs() []Function {
+
 	return []Function{
 		{
 			Name: "source",
@@ -143,13 +225,11 @@ func (t *Template) DefaultFuncs() []Function {
 				"Source / evaluate the template at the input location (as URL).",
 				"This will make all of the global variables declared there visible in this template's context.",
 				"Similar to 'source' in bash, sourcing another template means applying it in the same context ",
-				"as the calling template.  The context (e.g. variables) of the calling template as a result can be mutated.",
+				"as the calling template.  The context (e.g. variables) of the calling template as a result can",
+				"be mutated.",
 			},
 			Func: func(p string, opt ...interface{}) (string, error) {
-				var o interface{}
-				if len(opt) > 0 {
-					o = opt[0]
-				}
+				headers, context := headersAndContext(opt...)
 				loc := p
 				if strings.Index(loc, "str://") == -1 {
 					buff, err := getURL(t.url, p)
@@ -157,6 +237,14 @@ func (t *Template) DefaultFuncs() []Function {
 						return "", err
 					}
 					loc = buff
+				}
+
+				prev := t.options.CustomizeFetch
+				t.options.CustomizeFetch = func(req *http.Request) {
+					setHeaders(req, headers)
+					if prev != nil {
+						prev(req)
+					}
 				}
 				sourced, err := NewTemplate(loc, t.options)
 				if err != nil {
@@ -167,11 +255,11 @@ func (t *Template) DefaultFuncs() []Function {
 				sourced.forkFrom(t)
 				sourced.context = t.context
 
-				if o == nil {
-					o = sourced.context
+				if context == nil {
+					context = sourced.context
 				}
 				// TODO(chungers) -- let the sourced template define new functions that can be called in the parent.
-				return sourced.Render(o)
+				return sourced.Render(context)
 			},
 		},
 		{
@@ -184,10 +272,7 @@ func (t *Template) DefaultFuncs() []Function {
 				"be visible in the calling template's context.",
 			},
 			Func: func(p string, opt ...interface{}) (string, error) {
-				var o interface{}
-				if len(opt) > 0 {
-					o = opt[0]
-				}
+				headers, context := headersAndContext(opt...)
 				loc := p
 				if strings.Index(loc, "str://") == -1 {
 					buff, err := getURL(t.url, p)
@@ -196,6 +281,15 @@ func (t *Template) DefaultFuncs() []Function {
 					}
 					loc = buff
 				}
+
+				prev := t.options.CustomizeFetch
+				t.options.CustomizeFetch = func(req *http.Request) {
+					setHeaders(req, headers)
+					if prev != nil {
+						prev(req)
+					}
+				}
+
 				included, err := NewTemplate(loc, t.options)
 				if err != nil {
 					return "", err
@@ -206,11 +300,11 @@ func (t *Template) DefaultFuncs() []Function {
 				}
 				included.context = dotCopy
 
-				if o == nil {
-					o = included.context
+				if context == nil {
+					context = included.context
 				}
 
-				return included.Render(o)
+				return included.Render(context)
 			},
 		},
 		{
@@ -278,29 +372,30 @@ func (t *Template) DefaultFuncs() []Function {
 			Func: QueryObject,
 		},
 		{
-			Name: "to_json",
+			Name: "yamlEncode",
 			Description: []string{
-				"Encodes the input as a JSON string",
-				"This is useful for taking an object (interface{}) and render it inline as proper JSON.",
-				"Example: {{ include \"https://httpbin.org/get\" | from_json | to_json }}",
+				"Encodes the input as a YAML string",
+				"This is useful for taking an object (interface{}) and render it inline as proper YAML.",
+				"Example: {{ include \"https://httpbin.org/get\" | jsonDecode | yamlEncode }}",
 			},
-			Func: ToJSON,
+			Func: ToYAML,
+		},
+		{
+			Name: "yamlDecode",
+			Description: []string{
+				"Decodes the input YAML (first arg) into a structure (a map[string]interface{} or []interface{}).",
+				"This is useful for parsing arbitrary resources in YAML format as object.  The object is the queryable via 'q'",
+			},
+			Func: FromYAML,
 		},
 		{
 			Name: "jsonEncode",
 			Description: []string{
 				"Encodes the input as a JSON string",
 				"This is useful for taking an object (interface{}) and render it inline as proper JSON.",
-				"Example: {{ include \"https://httpbin.org/get\" | from_json | to_json }}",
+				"Example: {{ include \"https://httpbin.org/get\" | jsonDecode | jsonEncode }}",
 			},
 			Func: ToJSON,
-		},
-		{
-			Name: "to_json_format",
-			Description: []string{
-				"Encodes the input as a JSON string with first arg as prefix, second arg the indentation, then the object",
-			},
-			Func: ToJSONFormat,
 		},
 		{
 			Name: "jsonEncodeIndent",
@@ -310,20 +405,11 @@ func (t *Template) DefaultFuncs() []Function {
 			Func: ToJSONFormat,
 		},
 		{
-			Name: "from_json",
-			Description: []string{
-				"Decodes the input (first arg) into a structure (a map[string]interface{} or []interface{}).",
-				"This is useful for parsing arbitrary resources in JSON format as object.  The object is the queryable via 'q'",
-				"For example: {{ include \"https://httpbin.org/get\" | from_json | q \"origin\" }} returns the origin of request.",
-			},
-			Func: FromJSON,
-		},
-		{
 			Name: "jsonDecode",
 			Description: []string{
 				"Decodes the input (first arg) into a structure (a map[string]interface{} or []interface{}).",
 				"This is useful for parsing arbitrary resources in JSON format as object.  The object is the queryable via 'q'",
-				"For example: {{ include \"https://httpbin.org/get\" | from_json | q \"origin\" }} returns the origin of request.",
+				"For example: {{ include \"https://httpbin.org/get\" | jsonDecode | q \"origin\" }} returns the origin of request.",
 			},
 			Func: FromJSON,
 		},
@@ -356,6 +442,68 @@ func (t *Template) DefaultFuncs() []Function {
 				"Example: {{ index_of \"foo\" (from_json \"[\"bar\",\"foo\",\"baz\"]\") }} returns 1 (int).",
 			},
 			Func: IndexOf,
+		},
+		{
+			Name: "iniDecode",
+			Description: []string{
+				"Decodes the input INI into a structure (a map[string]interface{}).",
+				"This is useful for parsing arbitrary resources in INI format as object.  The object is the queryable via 'q'",
+			},
+			Func: FromINI,
+		},
+		{
+			Name: "k",
+			Description: []string{
+				"Get value from dictionary by key. First arg is the key, second must be a map[string]interface{}",
+			},
+			Func: // MapIndex gets the value of key from map
+			func(k interface{}, m map[string]interface{}) interface{} {
+				return m[fmt.Sprintf("%v", k)]
+			},
+		},
+		{
+			Name: "echo",
+			Description: []string{
+				"Print the args to stderr. This does not affect the evaluation of the template and result is not in the template.",
+			},
+			Func: // echo out to stderr
+			func(args ...interface{}) string {
+				var out io.Writer
+				if t.options.Stderr != nil {
+					out = t.options.Stderr()
+				}
+				if out != nil {
+					fmt.Fprintln(out, args...)
+				}
+				return ""
+			},
+		},
+
+		// Deprecated
+		{
+			Name: "to_json",
+			Description: []string{
+				"Encodes the input as a JSON string",
+				"This is useful for taking an object (interface{}) and render it inline as proper JSON.",
+				"Example: {{ include \"https://httpbin.org/get\" | from_json | to_json }}",
+			},
+			Func: ToJSON,
+		},
+		{
+			Name: "to_json_format",
+			Description: []string{
+				"Encodes the input as a JSON string with first arg as prefix, second arg the indentation, then the object",
+			},
+			Func: ToJSONFormat,
+		},
+		{
+			Name: "from_json",
+			Description: []string{
+				"Decodes the input (first arg) into a structure (a map[string]interface{} or []interface{}).",
+				"This is useful for parsing arbitrary resources in JSON format as object.  The object is the queryable via 'q'",
+				"For example: {{ include \"https://httpbin.org/get\" | from_json | q \"origin\" }} returns the origin of request.",
+			},
+			Func: FromJSON,
 		},
 	}
 }

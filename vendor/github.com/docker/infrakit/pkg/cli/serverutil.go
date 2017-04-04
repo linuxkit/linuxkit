@@ -6,8 +6,8 @@ import (
 	"os"
 	"path"
 
-	log "github.com/Sirupsen/logrus"
-	"github.com/docker/infrakit/pkg/discovery"
+	"github.com/Sirupsen/logrus"
+	"github.com/docker/infrakit/pkg/discovery/local"
 	"github.com/docker/infrakit/pkg/rpc/server"
 )
 
@@ -20,7 +20,7 @@ func EnsureDirExists(dir string) {
 // The plugin should conform to the rpc call convention as implemented in the rpc package.
 func RunPlugin(name string, plugin server.VersionedInterface, more ...server.VersionedInterface) {
 
-	dir := discovery.Dir()
+	dir := local.Dir()
 	EnsureDirExists(dir)
 
 	socketPath := path.Join(dir, name)
@@ -28,20 +28,20 @@ func RunPlugin(name string, plugin server.VersionedInterface, more ...server.Ver
 
 	stoppable, err := server.StartPluginAtPath(socketPath, plugin, more...)
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 	}
 
 	// write PID file
 	err = ioutil.WriteFile(pidPath, []byte(fmt.Sprintf("%v", os.Getpid())), 0644)
 	if err != nil {
-		log.Error(err)
+		logrus.Error(err)
 	}
-	log.Infoln("PID file at", pidPath)
+	logrus.Infoln("PID file at", pidPath)
 	if stoppable != nil {
 		stoppable.AwaitStopped()
 	}
 
 	// clean up
 	os.Remove(pidPath)
-	log.Infoln("Removed PID file at", pidPath)
+	logrus.Infoln("Removed PID file at", pidPath)
 }

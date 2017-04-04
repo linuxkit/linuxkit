@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"net/http"
 	"reflect"
 	"strings"
 	"sync"
@@ -52,9 +53,16 @@ type Context interface {
 // Options contains parameters for customizing the behavior of the engine
 type Options struct {
 
-	// SocketDir is the directory for locating the socket file for
-	// a template URL of the form unix://socket_file/path/to/resource
-	SocketDir string
+	// DelimLeft is the left delimiter, default is {{
+	DelimLeft string
+
+	// DelimRight is the right delimiter, default is }}
+	DelimRight string
+
+	// CustomizeFetch allows setting of http request header, etc. during fetch
+	CustomizeFetch func(*http.Request)
+
+	Stderr func() io.Writer
 }
 
 type defaultValue struct {
@@ -298,7 +306,12 @@ func (t *Template) build(context Context) error {
 
 	t.registered = registered
 
-	parsed, err := template.New(t.url).Funcs(fm).Parse(string(t.body))
+	tt := template.New(t.url).Funcs(fm)
+	if t.options.DelimLeft != "" && t.options.DelimRight != "" {
+		tt.Delims(t.options.DelimLeft, t.options.DelimRight)
+	}
+
+	parsed, err := tt.Parse(string(t.body))
 	if err != nil {
 		return err
 	}

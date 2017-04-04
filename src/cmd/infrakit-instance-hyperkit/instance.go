@@ -153,7 +153,7 @@ func (p hyperkitPlugin) Destroy(id instance.ID) error {
 }
 
 // DescribeInstances returns descriptions of all instances matching all of the provided tags.
-func (p hyperkitPlugin) DescribeInstances(tags map[string]string) ([]instance.Description, error) {
+func (p hyperkitPlugin) DescribeInstances(tags map[string]string, properties bool) ([]instance.Description, error) {
 	files, err := ioutil.ReadDir(p.VMDir)
 	if err != nil {
 		return nil, err
