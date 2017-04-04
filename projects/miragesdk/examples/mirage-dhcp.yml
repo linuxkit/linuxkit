@@ -16,7 +16,6 @@ system:
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
-    command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
 daemon:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
@@ -24,7 +23,6 @@ daemon:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
-    command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: dhcp-client
     net: host
     image: "mobylinux/dhcp-client:f40cafe2ade4b115704750a85d21eb35b1116b91"

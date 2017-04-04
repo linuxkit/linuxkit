@@ -16,7 +16,6 @@ system:
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
-    command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
   - name: metadata-gcp
     image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
     binds:
@@ -34,7 +33,6 @@ daemon:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
-    command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: sshd
     image: "mobylinux/sshd:4f8452ddaff703416fd7452fcd9693b96b23e847"
     capabilities:
