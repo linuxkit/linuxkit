@@ -15,7 +15,7 @@ set -x
 set -v
 
 # Change depending on the cluster size
-NUMPEERS=1
+NUMPEERS=5
 
 # Start a local etcd for bootstrapping
 NAME=etcd-bootstrap

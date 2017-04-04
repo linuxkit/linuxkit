@@ -1,0 +1,28 @@
+{
+    "ID": "cattle",
+    "Properties": {
+        "Allocation": {
+            "Size": 5
+        },
+        "Instance": {
+            "Plugin": "instance-hyperkit",
+            "Properties": {
+                "Moby": "etcd",
+                "Disk" : 0,
+                "CPUs" : 1,
+                "Memory" : 512
+            }
+        },
+        "Flavor": {
+            "Plugin": "flavor-vanilla",
+            "Properties": {
+                "Init": [
+                ],
+                "Tags": {
+                    "tier": "etcd-cluster",
+                    "project": "infrakit"
+                }
+            }
+        }
+    }
+}
