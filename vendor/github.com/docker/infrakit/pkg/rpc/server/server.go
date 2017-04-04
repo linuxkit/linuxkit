@@ -24,6 +24,7 @@ import (
 type Stoppable interface {
 	Stop()
 	AwaitStopped()
+	Wait() <-chan struct{}
 }
 
 type stoppableServer struct {
@@ -32,6 +33,10 @@ type stoppableServer struct {
 
 func (s *stoppableServer) Stop() {
 	s.server.Stop(10 * time.Second)
+}
+
+func (s *stoppableServer) Wait() <-chan struct{} {
+	return s.server.StopChan()
 }
 
 func (s *stoppableServer) AwaitStopped() {

@@ -12,6 +12,10 @@ type Description struct {
 	ID        ID
 	LogicalID *LogicalID
 	Tags      map[string]string
+
+	// Properties carry the opaque, platform specific blob about the resource.
+	// It can represent the current state of the resource.
+	Properties *types.Any `json:",omitempty" yaml:",omitempty"`
 }
 
 // LogicalID is the logical identifier to associate with an instance.
