@@ -18,7 +18,6 @@ daemon:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
-    command: [/bin/tini, /usr/sbin/rngd, -f]
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
