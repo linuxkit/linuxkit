@@ -71,6 +71,15 @@ push: image
 	docker rmi $(IMAGE):build
 	rm -f hash
 
+sign: image
+	DOCKER_CONTENT_TRUST=1 docker pull mobylinux/$(IMAGE):$(IMAGE_VERSION) || \
+		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
+		 DOCKER_CONTENT_TRUST=1 docker push mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
+		 DOCKER_CONTENT_TRUST=1 docker push mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	docker rmi $(IMAGE):build
+	rm -f hash
+
 tag: image
 	(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
 	docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
