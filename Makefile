@@ -100,4 +100,4 @@ ci-pr:
 
 .PHONY: clean
 clean:
-	rm -rf bin disk.img test.log *-initrd.img *-bzImage *-cmdline *.iso *.tar.gz *.qcow2 *.vhd
+	rm -rf bin *.log *-bzImage *-cmdline *.img *.iso *.tar.gz *.qcow2 *.vhd
