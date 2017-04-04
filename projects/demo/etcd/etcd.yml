@@ -1,0 +1,31 @@
+kernel:
+  image: "mobylinux/kernel:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init: "mobylinux/init:00c3a5bbfd9794f4a3187fcc4a9f0c826c46d474"
+system:
+  - name: sysctl
+    image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    net: host
+    pid: host
+    ipc: host
+    capabilities:
+     - CAP_SYS_ADMIN
+    readonly: true
+daemon:
+  - name: rngd
+    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
+    capabilities:
+     - CAP_SYS_ADMIN
+    oomScoreAdj: -800
+    readonly: true
+  - name: etcd
+    image: "mobylinux/etcd"
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+    net: host
+outputs:
+  - format: kernel+initrd
