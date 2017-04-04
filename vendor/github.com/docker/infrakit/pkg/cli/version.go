@@ -28,7 +28,7 @@ func RegisterInfo(key string, data map[string]interface{}) {
 func VersionCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "version",
-		Short: "print build version information",
+		Short: "Print build version information",
 		Run: func(cmd *cobra.Command, args []string) {
 			fmt.Printf("\n%-24s:  %v", "Version", Version)
 			fmt.Printf("\n%-24s:  %v", "Revision", Revision)

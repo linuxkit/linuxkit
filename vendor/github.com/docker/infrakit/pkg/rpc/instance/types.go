@@ -56,8 +56,9 @@ type DestroyResponse struct {
 
 // DescribeInstancesRequest is the rpc wrapper for DescribeInstances request
 type DescribeInstancesRequest struct {
-	Type string
-	Tags map[string]string
+	Type       string
+	Tags       map[string]string
+	Properties bool
 }
 
 // DescribeInstancesResponse is the rpc wrapper for the DescribeInstances response

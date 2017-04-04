@@ -145,7 +145,7 @@ func (p *Instance) DescribeInstances(_ *http.Request, req *DescribeInstancesRequ
 	if c == nil {
 		return fmt.Errorf("no-plugin:%s", req.Type)
 	}
-	desc, err := c.DescribeInstances(req.Tags)
+	desc, err := c.DescribeInstances(req.Tags, req.Properties)
 	if err != nil {
 		return err
 	}

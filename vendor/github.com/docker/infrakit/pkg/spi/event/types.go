@@ -103,3 +103,12 @@ func (event *Event) FromAny(any *types.Any) *Event {
 	}
 	return event
 }
+
+// Bytes returns the bytes representation
+func (event *Event) Bytes() ([]byte, error) {
+	v, err := types.AnyValue(event)
+	if err != nil {
+		return nil, err
+	}
+	return v.Bytes(), nil
+}
