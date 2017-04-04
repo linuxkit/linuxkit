@@ -38,5 +38,5 @@ type Publisher interface {
 type Subscriber interface {
 
 	// SubscribeOn returns the channel for the topic
-	SubscribeOn(topic types.Path) (<-chan *Event, error)
+	SubscribeOn(topic types.Path) (<-chan *Event, chan<- struct{}, error)
 }

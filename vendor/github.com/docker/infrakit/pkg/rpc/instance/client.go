@@ -62,9 +62,9 @@ func (c client) Destroy(instance instance.ID) error {
 }
 
 // DescribeInstances returns descriptions of all instances matching all of the provided tags.
-func (c client) DescribeInstances(tags map[string]string) ([]instance.Description, error) {
+func (c client) DescribeInstances(tags map[string]string, properties bool) ([]instance.Description, error) {
 	_, instanceType := c.name.GetLookupAndType()
-	req := DescribeInstancesRequest{Tags: tags, Type: instanceType}
+	req := DescribeInstancesRequest{Tags: tags, Type: instanceType, Properties: properties}
 	resp := DescribeInstancesResponse{}
 
 	err := c.client.Call("Instance.DescribeInstances", req, &resp)
