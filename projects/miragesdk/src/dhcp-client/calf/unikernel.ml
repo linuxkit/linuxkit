@@ -3,8 +3,11 @@ open Lwt.Infix
 let src = Logs.Src.create "charrua"
 module Log = (val Logs.src_log src : Logs.LOG)
 
+let failf fmt = Fmt.kstrf Lwt.fail_with fmt
+
 type t = {
   address: Ipaddr.V4.t;
+  gateway: Ipaddr.V4.t option;
   domain: string option;
   search: string option;
   nameservers: Ipaddr.V4.t list;
@@ -13,8 +16,9 @@ type t = {
 (* FIXME: we loose lots of info here *)
 let of_ipv4_config (t: Mirage_protocols_lwt.ipv4_config) =
   { address = t.Mirage_protocols_lwt.address;
-    domain = None;
-    search = None;
+    gateway = t.Mirage_protocols_lwt.gateway;
+    domain  = None;
+    search  = None;
     nameservers = [] }
 
 let pp ppf t =
@@ -33,10 +37,14 @@ let of_pkt lease =
   (* ipv4_config expects a single IP address and the information
    * needed to construct a prefix. It can optionally use one router. *)
   let address = lease.yiaddr in
+  let gateway = match Dhcp_wire.collect_routers lease.options with
+    |  []  -> None
+    | h::_ -> Some h
+  in
   let domain = Dhcp_wire.find_domain_name lease.options in
   let search = Dhcp_wire.find_domain_search lease.options in
   let nameservers = Dhcp_wire.collect_name_servers lease.options in
-  { address; domain; search; nameservers }
+  { address; gateway; domain; search; nameservers }
 
 let of_pkt_opt = function
   | None       -> None
@@ -167,6 +175,16 @@ let setup_log =
 
 module Dhcp_client = Dhcp_client_mirage.Make(Time)(Net)
 
+let set_ip ctl k ip =
+  let str = Ipaddr.V4.to_string ip ^ "\n" in
+  Sdk.Ctl.Client.write ctl k str >>= function
+  | Ok ()           -> Lwt.return_unit
+  | Error (`Msg e) -> failf "error while writing %s: %s" k e
+
+let set_ip_opt ctl k = function
+  | None    -> Lwt.return_unit
+  | Some ip -> set_ip ctl k ip
+
 let start () dhcp_codes net ctl =
   Netif_fd.connect net >>= fun net ->
   let ctl = Sdk.Ctl.Client.v (Lwt_unix.of_unix_file_descr ctl) in
@@ -184,7 +202,8 @@ let start () dhcp_codes net ctl =
   Lwt_stream.last_new stream >>= fun result ->
   let result = of_ipv4_config result in
   Log.info (fun l -> l "found lease: %a" pp result);
-  Sdk.Ctl.Client.write ctl "/ip" (Ipaddr.V4.to_string result.address ^ "\n")
+  set_ip ctl "/ip" result.address >>= fun () ->
+  set_ip_opt ctl "/gateway" result.gateway
 
 (* FIXME: Main end *)
 let magic (x: int) = (Obj.magic x: Unix.file_descr)
@@ -202,7 +221,4 @@ let run =
 
 let () = match Term.eval run with
   | `Error _ -> exit 1
-  | `Ok (Ok ()) |`Help |`Version -> exit 0
-  | `Ok (Error (`Msg e)) ->
-    Printf.eprintf "%s\n%!" e;
-    exit 1
+  | `Ok () |`Help |`Version -> exit 0

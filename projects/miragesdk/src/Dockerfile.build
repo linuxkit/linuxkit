@@ -1,13 +1,11 @@
 FROM ocaml/opam:alpine-3.5_ocaml-4.04.0
 RUN git -C /home/opam/opam-repository pull origin master && opam update -u
 
-RUN opam pin -n add conduit https://github.com/samoht/ocaml-conduit.git#fd
-RUN opam pin -n add mirage-net-unix https://github.com/samoht/mirage-net-unix.git#fd
+RUN opam info mirage-net-fd
 
 RUN opam depext -iy mirage-net-unix logs-syslog irmin-unix cohttp decompress
 RUN opam depext -iy rawlink tuntap.1.0.0 jbuilder irmin-watcher inotify
 RUN opam install rresult
-RUN opam pin add cstruct --dev # for ppx/jbuilder
 RUN opam pin add tuntap 1.0.0
 
 # TMP: to compile the calf

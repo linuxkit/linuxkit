@@ -7,6 +7,12 @@ module Log = (val Logs.src_log src : Logs.LOG)
 
 let failf fmt = Fmt.kstrf Lwt.fail_with fmt
 
+let run fmt =
+  Fmt.kstrf (fun str ->
+      match Sys.command str with
+      | 0 -> Lwt.return ()
+      | i -> Fmt.kstrf Lwt.fail_with "%S exited with code %d" str i
+    ) fmt
 
 module Handlers = struct
 
@@ -17,23 +23,37 @@ module Handlers = struct
     | `Updated (_, (_, `Contents (v, _))) -> Some v
     | _ -> None
 
-  let ip t =
+  let ip ~ethif t =
     Ctl.KV.watch_key t ["ip"] (fun diff ->
         match contents_of_diff diff with
+        | None    -> Lwt.return_unit
         | Some ip ->
+          let ip = String.trim ip in
           Log.info (fun l -> l "SET IP to %s" ip);
-          Lwt.return ()
-        | _ ->
-          Lwt.return ()
+          (* FIXME: use language bindings to netlink instead *)
+          run "ifconfig %s %s netmask 255.255.255.0" ethif ip
+          (* run "ip addr add %s/24 dev %s" ip ethif *)
       )
 
-  let handlers = [
-    ip;
+  let gateway t =
+    Ctl.KV.watch_key t ["gateway"] (fun diff ->
+        match contents_of_diff diff with
+        | None    -> Lwt.return_unit
+        | Some gw ->
+          let gw = String.trim gw in
+          Log.info (fun l -> l "SET GATEWAY to %s" gw);
+          (* FIXME: use language bindings to netlink instead *)
+          run "ip route add default via %s" gw
+      )
+
+  let handlers ~ethif = [
+    ip ~ethif;
+    gateway;
   ]
 
-  let watch path =
+  let watch ~ethif path =
     Ctl.v path >>= fun db ->
-    Lwt_list.map_p (fun f -> f db) handlers >>= fun _ ->
+    Lwt_list.map_p (fun f -> f db) (handlers ethif) >>= fun _ ->
     let t, _ = Lwt.task () in
     t
 
@@ -74,6 +94,7 @@ let read_cmd file =
     let net = Init.rawlink ~filter:(bpf_filter ()) ethif in
     let routes = [
       "/ip";
+      "/gateway";
       "/domain";
       "/search";
       "/mtu";
@@ -82,7 +103,7 @@ let read_cmd file =
     Ctl.v "/data" >>= fun ctl ->
     let fd = Init.(Fd.fd @@ Pipe.(priv @@ ctl t)) in
     let ctl () = Ctl.Server.listen ~routes ctl fd in
-    let handlers () = Handlers.watch path in
+    let handlers () = Handlers.watch ~ethif path in
     Init.run t ~net ~ctl ~handlers cmd
   )
 

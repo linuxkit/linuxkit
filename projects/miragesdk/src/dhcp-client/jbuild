@@ -2,6 +2,6 @@
 
 (executables
  ((names (main))
-  (libraries (sdk bpf_dhcp))
+  (libraries (sdk bpf_dhcp bos))
   (flags (-cclib -static))
  ))
