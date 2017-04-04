@@ -102,5 +102,7 @@ ip addr add 127.0.0.1/8 dev lo brd + scope host
 ip route add 127.0.0.0/8 dev lo scope host
 ip link set lo up
 
-# will be containerised
-/sbin/dhcpcd
+# for containerising dhcpcd and other containers that need writable etc
+mkdir /tmp/etc
+mv /etc/resolv.conf /tmp/etc/resolv.conf
+ln -snf /tmp/etc/resolv.conf /etc/resolv.conf
