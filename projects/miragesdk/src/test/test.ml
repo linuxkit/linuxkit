@@ -117,9 +117,9 @@ let test_serialization to_cstruct of_cstruct message messages =
   in
   List.iter test messages
 
-let test_send write read message messages =
-  let calf = Init.Fd.fd @@ Init.Pipe.(calf ctl) in
-  let priv = Init.Fd.fd @@ Init.Pipe.(priv ctl) in
+let test_send t write read message messages =
+  let calf = Init.Fd.fd @@ Init.Pipe.(calf @@ ctl t) in
+  let priv = Init.Fd.fd @@ Init.Pipe.(priv @@ ctl t) in
   let test m =
     write calf m >>= fun () ->
     read priv >|= function
@@ -136,13 +136,13 @@ let test_reply_serialization () =
   let open Ctl.Reply in
   test_serialization to_cstruct of_cstruct reply replies
 
-let test_query_send () =
+let test_query_send t () =
   let open Ctl.Query in
-  test_send write read query queries
+  test_send t write read query queries
 
-let test_reply_send () =
+let test_reply_send t () =
   let open Ctl.Reply in
-  test_send write read reply replies
+  test_send t write read reply replies
 
 let failf fmt = Fmt.kstrf Alcotest.fail fmt
 
@@ -191,9 +191,9 @@ let delete_should_work t k =
   | Ok ()          -> ()
   | Error (`Msg e) -> failf "write(%s) -> error: %s" k e
 
-let test_ctl () =
-  let calf = Init.Fd.fd @@ Init.Pipe.(calf ctl) in
-  let priv = Init.Fd.fd @@ Init.Pipe.(priv ctl) in
+let test_ctl t () =
+  let calf = Init.Fd.fd @@ Init.Pipe.(calf @@ ctl t) in
+  let priv = Init.Fd.fd @@ Init.Pipe.(priv @@ ctl t) in
   let k1 = "/foo/bar" in
   let k2 = "a" in
   let k3 = "b/c" in
@@ -238,16 +238,18 @@ let run f () =
 
 let test_stderr () = ()
 
+let t = Init.Pipe.v ()
+
 let test = [
-  "stdout is a pipe"    , `Quick, run (test_pipe Init.Pipe.stdout);
-  "stdout is a pipe"    , `Quick, run (test_pipe Init.Pipe.stderr);
-  "net is a socket pair", `Quick, run (test_socketpair Init.Pipe.net);
-  "ctl is a socket pair", `Quick, run (test_socketpair Init.Pipe.ctl);
+  "stdout is a pipe"    , `Quick, run (test_pipe Init.Pipe.(stdout t));
+  "stdout is a pipe"    , `Quick, run (test_pipe Init.Pipe.(stderr t));
+  "net is a socket pair", `Quick, run (test_socketpair Init.Pipe.(net t));
+  "ctl is a socket pair", `Quick, run (test_socketpair Init.Pipe.(ctl t));
   "seralize queries"    , `Quick, test_query_serialization;
   "seralize replies"    , `Quick, test_reply_serialization;
-  "send queries"        , `Quick, run test_query_send;
-  "send replies"        , `Quick, run test_reply_send;
-  "ctl"                 , `Quick, run test_ctl;
+  "send queries"        , `Quick, run (test_query_send t);
+  "send replies"        , `Quick, run (test_reply_send t);
+  "ctl"                 , `Quick, run (test_ctl t);
 ]
 
 let reporter ?(prefix="") () =
