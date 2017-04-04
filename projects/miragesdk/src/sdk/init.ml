@@ -95,6 +95,20 @@ module Pipe = struct
 
   type t = Fd.t * Fd.t
 
+  type monitor = {
+    stdout: t;
+    stderr: t;
+    metrics: t;
+    ctl: t;
+    net: t;
+  }
+
+  let stdout t = t.stdout
+  let stderr t = t.stderr
+  let metrics t = t.metrics
+  let ctl t = t.ctl
+  let net t = t.net
+
   let name (x, _) = x.Fd.name
 
   let priv = fst
@@ -112,37 +126,36 @@ module Pipe = struct
     Lwt_unix.clear_close_on_exec calf;
     { Fd.name = name; fd = priv }, { Fd.name = name ^ "-calf"; fd = calf }
 
-  (* logs pipe *)
-  let stdout = pipe "stdout"
-  let stderr = pipe "stderr"
-
-  (* store pipe *)
-  let ctl = socketpair "ctl"
-
-  (* network pipe *)
-  let net = socketpair "net"
-
-  (* metrics pipe *)
-  let metrics = pipe "metrics"
+  let v () =
+    (* logs pipe *)
+    let stdout = pipe "stdout" in
+    let stderr = pipe "stderr" in
+    (* store pipe *)
+    let ctl = socketpair "ctl" in
+    (* network pipe *)
+    let net = socketpair "net" in
+    (* metrics pipe *)
+    let metrics = pipe "metrics" in
+    { stdout; stderr; ctl; net; metrics }
 
 end
 
-let exec_calf cmd =
+let exec_calf t cmd =
   Fd.(redirect_to_dev_null stdin) >>= fun () ->
 
   (* close parent fds *)
-  Fd.close Pipe.(priv stdout)  >>= fun () ->
-  Fd.close Pipe.(priv stderr)  >>= fun () ->
-  Fd.close Pipe.(priv ctl)     >>= fun () ->
-  Fd.close Pipe.(priv net)     >>= fun () ->
-  Fd.close Pipe.(priv metrics) >>= fun () ->
+  Fd.close Pipe.(priv t.stdout)  >>= fun () ->
+  Fd.close Pipe.(priv t.stderr)  >>= fun () ->
+  Fd.close Pipe.(priv t.ctl)     >>= fun () ->
+  Fd.close Pipe.(priv t.net)     >>= fun () ->
+  Fd.close Pipe.(priv t.metrics) >>= fun () ->
 
   let cmds = String.concat " " cmd in
 
-  let calf_net = Pipe.(calf net) in
-  let calf_ctl = Pipe.(calf ctl) in
-  let calf_stdout = Pipe.(calf stdout) in
-  let calf_stderr = Pipe.(calf stderr) in
+  let calf_net = Pipe.(calf t.net) in
+  let calf_ctl = Pipe.(calf t.ctl) in
+  let calf_stdout = Pipe.(calf t.stdout) in
+  let calf_stderr = Pipe.(calf t.stderr) in
 
   Log.info (fun l -> l "Executing %s" cmds);
   Log.debug (fun l -> l "net-fd=%a store-fd=%a" Fd.pp calf_net Fd.pp calf_ctl);
@@ -167,16 +180,16 @@ let check_exit_status cmd status =
   | Unix.WSIGNALED i -> failf "%s: signal %d" cmds i
   | Unix.WSTOPPED i  -> failf "%s: stopped %d" cmds i
 
-let exec_priv ~pid ~cmd ~net ~ctl ~handlers =
+let exec_priv t ~pid ~cmd ~net ~ctl ~handlers =
 
   Fd.(redirect_to_dev_null stdin) >>= fun () ->
 
   (* close child fds *)
-  Fd.close Pipe.(calf stdout)  >>= fun () ->
-  Fd.close Pipe.(calf stderr)  >>= fun () ->
-  Fd.close Pipe.(calf net)     >>= fun () ->
-  Fd.close Pipe.(calf ctl)     >>= fun () ->
-  Fd.close Pipe.(calf metrics) >>= fun () ->
+  Fd.close Pipe.(calf t.stdout)  >>= fun () ->
+  Fd.close Pipe.(calf t.stderr)  >>= fun () ->
+  Fd.close Pipe.(calf t.net)     >>= fun () ->
+  Fd.close Pipe.(calf t.ctl)     >>= fun () ->
+  Fd.close Pipe.(calf t.metrics) >>= fun () ->
 
   let wait () =
     Lwt_unix.waitpid [] pid >>= fun (_pid, w) ->
@@ -187,18 +200,18 @@ let exec_priv ~pid ~cmd ~net ~ctl ~handlers =
   Lwt.pick ([
       wait ();
       (* data *)
-      Fd.proxy_net ~net Pipe.(priv net);
+      Fd.proxy_net ~net Pipe.(priv t.net);
 
       (* redirect the calf stdout to the shim stdout *)
-      Fd.forward ~src:Pipe.(priv stdout)  ~dst:Fd.stdout;
-      Fd.forward ~src:Pipe.(priv stderr)  ~dst:Fd.stderr;
+      Fd.forward ~src:Pipe.(priv t.stdout)  ~dst:Fd.stdout;
+      Fd.forward ~src:Pipe.(priv t.stderr)  ~dst:Fd.stderr;
       (* TODO: Init.Fd.forward ~src:Init.Pipe.(priv metrics) ~dst:Init.Fd.metric; *)
       ctl ();
       handlers ();
     ])
 
-let run ~net ~ctl ~handlers cmd =
+let run t ~net ~ctl ~handlers cmd =
   Lwt_io.flush_all () >>= fun () ->
   match Lwt_unix.fork () with
-  | 0   -> exec_calf cmd
-  | pid -> exec_priv ~pid ~cmd ~net ~ctl ~handlers
+  | 0   -> exec_calf t cmd
+  | pid -> exec_priv t ~pid ~cmd ~net ~ctl ~handlers

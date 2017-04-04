@@ -41,8 +41,10 @@ end
 
 external bpf_filter: unit -> string = "bpf_filter"
 
-let ctl = string_of_int Init.(Fd.to_int Pipe.(calf ctl))
-let net = string_of_int Init.(Fd.to_int Pipe.(calf net))
+let t = Init.Pipe.v ()
+
+let ctl = string_of_int Init.(Fd.to_int Pipe.(calf @@ ctl t))
+let net = string_of_int Init.(Fd.to_int Pipe.(calf @@ net t))
 let default_cmd = [
   "/dhcp-client-calf"; "--ctl="^ctl; "--net="^net
 ]
@@ -78,10 +80,10 @@ let read_cmd file =
       "/nameservers/*"
     ] in
     Ctl.v "/data" >>= fun ctl ->
-    let fd = Init.(Fd.fd @@ Pipe.(priv ctl)) in
+    let fd = Init.(Fd.fd @@ Pipe.(priv @@ ctl t)) in
     let ctl () = Ctl.Server.listen ~routes ctl fd in
     let handlers () = Handlers.watch path in
-    Init.run ~net ~ctl ~handlers cmd
+    Init.run t ~net ~ctl ~handlers cmd
   )
 
 (* CLI *)

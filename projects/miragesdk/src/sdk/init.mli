@@ -63,6 +63,11 @@ module Pipe: sig
   (** The type for pipes. Could be either uni-directional (normal
       pipes) or a bi-directional (socket pairs). *)
 
+  type monitor
+  (** The type for pipe monitors. *)
+
+  val v: unit -> monitor
+
   val name: t -> string
   (** [name t] is [t]'s name. *)
 
@@ -74,23 +79,26 @@ module Pipe: sig
 
   (** {1 Useful Pipes} *)
 
-  val stdout: t
-  (** [stdout] is the uni-directional pipe from the calf's stdout . *)
+  val stdout: monitor -> t
+  (** [stdout m] is the uni-directional pipe from the calf's stdout
+      monitored by [m]. *)
 
-  val stderr: t
-  (** [stderr] is the uni-directional pipe from the calf's stderr. *)
+  val stderr: monitor -> t
+  (** [stderr m] is the uni-directional pipe from the calf's stderr
+      monitored by [m]. *)
 
-  val metrics: t
-  (** [metrics] is the uni-directional pipe fomr the calf's metric
-      endpoint. *)
+  val metrics: monitor -> t
+  (** [metrics m] is the uni-directional pipe from the calf's metric
+      endpoint monitored by [m]. *)
 
-  val ctl: t
-  (** [ctl] is the bi-directional pipe used to exchange control
-      data between the calf and the priv containers. *)
+  val ctl: monitor -> t
+  (** [ctl m] is the bi-directional pipe used to exchange control data
+      between the calf and the priv containers monitored by [m]. *)
 
-  val net: t
-  (** [net] is the bi-directional pipe used to exchange network
-      traffic between the calf and the priv containers. *)
+  val net: monitor -> t
+  (** [net m] is the bi-directional pipe used to exchange network
+      traffic between the calf and the priv containers monitored by
+      [m]. *)
 
 end
 
@@ -98,12 +106,12 @@ val rawlink: ?filter:string -> string -> Lwt_rawlink.t
 (** [rawlink ?filter i] is the net raw link to the interface [i] using
     the (optional) BPF filter [filter]. *)
 
-val run:
+val run: Pipe.monitor ->
   net:Lwt_rawlink.t ->
   ctl:(unit -> unit Lwt.t) ->
   handlers:(unit -> unit Lwt.t) ->
   string list -> unit Lwt.t
-(** [run ~net ~ctl ~handlers cmd] runs [cmd] in a unprivileged calf
+(** [run m ~net ~ctl ~handlers cmd] runs [cmd] in a unprivileged calf
     process. [ctl] is the control thread connected to the {Pipe.ctl}
     pipe. [net] is the net raw link which will be connected to the
     calf via the {!Pipe.net} socket pair. [handlers] are the system
