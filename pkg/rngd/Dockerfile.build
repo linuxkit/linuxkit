@@ -31,3 +31,5 @@ RUN cd $pkgname-$pkgver && \
   make && \
   make DESTDIR=/ install && \
   strip /usr/sbin/rngd
+
+ENTRYPOINT ["cat", "/usr/sbin/rngd"]
