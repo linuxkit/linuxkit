@@ -1,4 +1,6 @@
-FROM alpine:3.5
+FROM alpine:edge
+
+COPY repositories /etc/apk/
 
 RUN \
   apk update && apk upgrade && \
@@ -7,6 +9,7 @@ RUN \
   qemu-img \
   qemu-system-arm \
   qemu-system-x86_64 \
+  ovmf@testing \
   && true
 
 COPY . .
