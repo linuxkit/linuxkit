@@ -14,14 +14,12 @@ system:
     image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
-    command: [/usr/bin/binfmt, -dir, /etc/binfmt.d/, -mount, /binfmt_misc]
 daemon:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
-    command: [/bin/tini, /usr/sbin/rngd, -f]
   - name: sshd
     image: "mobylinux/sshd:4f8452ddaff703416fd7452fcd9693b96b23e847"
     capabilities:
