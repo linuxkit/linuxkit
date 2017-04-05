@@ -30,7 +30,7 @@ daemon:
      - CAP_NET_BIND_SERVICE
      - CAP_NET_RAW
     net: host
-    oom_score_adj: -800
+    oomScoreAdj: -800
   - name: sshd
     image: "mobylinux/sshd:4f8452ddaff703416fd7452fcd9693b96b23e847"
     capabilities:
