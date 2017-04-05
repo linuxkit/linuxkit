@@ -98,3 +98,5 @@ There are weekly [development reports](reports/) summarizing work carried out in
 ## FAQ
 
 See [FAQ](docs/faq.md).
+
+Released under the [Apache 2.0 license](LICENSE).
