@@ -1,7 +1,7 @@
 kernel:
   image: "mobylinux/kernel:4.9.x"
   cmdline: "console=ttyS0"
-init: "mobylinux/init:a27e32a8d6c8865d691fbfb4d0bbb93846cf7802"
+init: "mobylinux/init:bdc1897c40048c9ab490681be2b89ccf5740ff77"
 system:
   - name: binfmt
     image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
@@ -16,7 +16,7 @@ system:
     readonly: true
 daemon:
   - name: dhcpcd
-    image: "mobylinux/dhcpcd:d01a17d211218f289e2bac601bfe9787d4fabaf2"
+    image: "mobylinux/dhcpcd:57a8ef29d3a910645b2b24c124f9ce9ef53ce703"
     binds:
      - /var:/var
      - /tmp:/etc
