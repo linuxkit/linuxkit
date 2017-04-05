@@ -1,4 +1,4 @@
 FROM debian:jessie-slim@sha256:2a14128195ab26b1c56c5773dda9def9b909c2e01596ef9108e2295d418210a3
 ADD . /
 WORKDIR /opt/ltp
-ENTRYPOINT ["./runltplite.sh"]
+ENTRYPOINT ["/bin/sh", "/check.sh"]

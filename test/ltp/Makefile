@@ -17,10 +17,10 @@ IMAGE=test-ltp-$(LTP_VERSION)
 # because the ltp binaries will change everytime we build. Ideally, we
 # would calculate the hash from the source and the apt-get cache, but
 # it's not that critical.
-hash: Dockerfile.pkg ltp.tar $(DEPS)
+hash: Dockerfile.pkg ltp.tar check.sh $(DEPS)
 	tar xf ltp.tar
-	tar cf - Dockerfile.pkg opt | docker build --no-cache -t $(IMAGE):build -f Dockerfile.pkg -
-	cat Dockerfile.pkg $(DEPS) | DOCKER_CONTENT_TRUST=1 docker run --rm -i $(SHASUM) sha1sum | sed 's/ .*//' > $@
+	tar cf - Dockerfile.pkg opt check.sh | docker build --no-cache -t $(IMAGE):build -f Dockerfile.pkg -
+	cat Dockerfile.pkg check.sh $(DEPS) | DOCKER_CONTENT_TRUST=1 docker run --rm -i $(SHASUM) sha1sum | sed 's/ .*//' > $@
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \

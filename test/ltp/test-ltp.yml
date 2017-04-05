@@ -8,25 +8,25 @@ init:
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: ltp
-    image: "mobylinux/test-ltp-20170116:fdca2d1bb019b1d51e722e6032c82c7933d4b870"
+    image: "mobylinux/test-ltp-20170116:d4722477c11e0006d6e5529efe241b6ae70ff3a9" 
     net: host
     pid: host
-    capabilities:
-     - CAP_SYS_ADMIN
-services:
-  - name: dhcpcd
-    image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
     binds:
-     - /var:/var
-     - /tmp:/etc
+     - /etc/ltp/baseline:/etc/ltp/baseline
     capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
-    oomScoreAdj: -800
+     - all
+services:
+  - name: poweroff
+    image: "mobylinux/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
+    pid: host
+    capabilities:
+      - CAP_SYS_BOOT
+    readonly: true
 files:
+  - path: /etc/ltp/baseline
+    contents: "100"
 outputs:
   - format: kernel+initrd
   - format: iso-bios
   - format: iso-efi
+  - format: gcp-img
