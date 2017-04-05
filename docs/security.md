@@ -38,6 +38,7 @@ and [OCaml](http://www.ocaml.org/), and run with maximum privilege separation an
 The project is currently leveraging [MirageOS](https://mirage.io/) to construct unikernels to achieve this, and that progress can be
 [tracked here](../projects/miragesdk/roadmap.md): as of this writing, `dhcp` is the first such type safe program.
 There is ongoing work to remove more C components, and to improve, fuzz test and isolate the base daemons.
+Further rationale about the decision to rewrite system daemons in MirageOS is explained at length in [this document](../projects/miragesdk/README.md).
 
 For the daemons in which this is not complete, as an intermediate step they are running as `containerd` containers,
 and namespaced separately from the host as appropriate.
@@ -92,9 +93,9 @@ Since Moby is meant to only run containers and be secure, it is the perfect plat
 paradigms and strategies for securing the Linux kernel - allowing them to be used in production environments and attract
 critical mass before eventually being upstreamed.
 
-In this spirit, the [`/projects`](../projects) subdirectory houses a number of such projects. At this time, these include 
-[WireGuard](../projects/wireguard/roadmap.md) - a modern and minimal VPN implemented with the state-of-the-art cryptography
-like the [Noise protocol framework](http://www.noiseprotocol.org/) - and [okernel](../projects/okernel/roadmap.md) - a
-mechanism to split the kernel into inner and outer subkernels with different trust properties.
+In this spirit, the [`/projects`](../projects) subdirectory houses a number of such projects. At this time, these include:
+- [WireGuard](../projects/wireguard/roadmap.md): a modern and minimal VPN implemented with the state-of-the-art cryptography
+like the [Noise protocol framework](http://www.noiseprotocol.org/)
+- [okernel](../projects/okernel/roadmap.md): a mechanism to split the kernel into inner and outer subkernels with different trust properties
 
 The Moby community welcomes new security projects - please propose a new project if you have one you'd like to include!
