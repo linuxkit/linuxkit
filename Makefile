@@ -18,7 +18,7 @@ bin/moby: $(MOBY_DEPS) | bin
 	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
 
-MOBY_DEPS=$(wildcard src/cmd/infrakit-instance-hyperkit/*.go)
+INFRAKIT_DEPS=$(wildcard src/cmd/infrakit-instance-hyperkit/*.go)
 bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
