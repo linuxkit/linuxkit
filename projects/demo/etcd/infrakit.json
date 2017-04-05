@@ -2,7 +2,13 @@
     "ID": "cattle",
     "Properties": {
         "Allocation": {
-            "Size": 5
+            "LogicalIDs": [
+                "192.168.65.200",
+                "192.168.65.201",
+                "192.168.65.202",
+                "192.168.65.203",
+                "192.168.65.204"
+            ]
         },
         "Instance": {
             "Plugin": "instance-hyperkit",
@@ -10,7 +16,7 @@
                 "Moby": "etcd",
                 "Disk" : 0,
                 "CPUs" : 1,
-                "Memory" : 512
+                "Memory" : 512,
             }
         },
         "Flavor": {
