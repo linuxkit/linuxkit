@@ -4,7 +4,6 @@ all: default
 
 GO_COMPILE=mobylinux/go-compile:3afebc59c5cde31024493c3f91e6102d584a30b9@sha256:e0786141ea7df8ba5735b63f2a24b4ade9eae5a02b0e04c4fca33b425ec69b0a
 
-MOBY_DEPS=$(wildcard src/cmd/moby/*.go)
 GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH=amd64
 ifneq ($(GOOS),linux)
@@ -14,11 +13,13 @@ ifeq ($(GOOS),darwin)
 default: bin/infrakit-instance-hyperkit
 endif
 
+MOBY_DEPS=$(wildcard src/cmd/moby/*.go) Makefile vendor.conf
+MOBY_DEPS+=$(wildcard src/initrd/*.go) $(wildcard src/pad4/*.go)
 bin/moby: $(MOBY_DEPS) | bin
 	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
 
-INFRAKIT_DEPS=$(wildcard src/cmd/infrakit-instance-hyperkit/*.go)
+INFRAKIT_DEPS=$(wildcard src/cmd/infrakit-instance-hyperkit/*.go) Makefile vendor.conf
 bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
