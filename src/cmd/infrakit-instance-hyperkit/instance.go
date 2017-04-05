@@ -68,6 +68,13 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 		return nil, err
 	}
 	id := instance.ID(path.Base(instanceDir))
+	log.Infof("[%s] New instance", id)
+
+	logicalID := string(id)
+	if spec.LogicalID != nil {
+		logicalID = string(*spec.LogicalID)
+	}
+	log.Infof("[%s] LogicalID: %s", id, logicalID)
 
 	// Start a HyperKit instance
 	h, err := hyperkit.New(p.HyperKit, instanceDir, p.VPNKitSock, "")
@@ -81,17 +88,25 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	h.DiskSize = int(properties["Disk"].(float64))
 	h.UserData = spec.Init
 	h.Console = hyperkit.ConsoleFile
+	log.Infof("[%s] Booting: %s/%s", id, h.Kernel, h.Initrd)
+	log.Infof("[%s] %d CPUs, %dMB Memory, %dMB Disk", id, h.CPUs, h.Memory, h.DiskSize)
+
 	err = h.Start("console=ttyS0")
 	if err != nil {
 		return nil, err
 	}
-	log.Info("Started new VM: ", id)
+	log.Infof("[%s] Started", id)
+
+	if err := ioutil.WriteFile(path.Join(instanceDir, "logical.id"), []byte(logicalID), 0644); err != nil {
+		return nil, err
+	}
 
 	tagData, err := types.AnyValue(spec.Tags)
 	if err != nil {
 		return nil, err
 	}
 
+	log.Debugf("[%s] tags: %s", id, tagData)
 	if err := ioutil.WriteFile(path.Join(instanceDir, "tags"), tagData.Bytes(), 0644); err != nil {
 		return nil, err
 	}
@@ -206,7 +221,14 @@ func (p hyperkitPlugin) DescribeInstances(tags map[string]string, properties boo
 				p.Destroy(id)
 				continue
 			}
-			lid := instance.LogicalID(h.Pid)
+
+			lidData, err := ioutil.ReadFile(path.Join(instanceDir, "logical.id"))
+			if err != nil {
+				log.Warningln("Could not get logical ID. Id: ", id)
+				p.Destroy(id)
+				continue
+			}
+			lid := instance.LogicalID(lidData)
 			logicalID = &lid
 
 			descriptions = append(descriptions, instance.Description{
