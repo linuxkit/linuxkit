@@ -25,7 +25,7 @@ daemon:
      - CAP_NET_BIND_SERVICE
      - CAP_NET_RAW
     net: host
-    oom_score_adj: -800
+    oomScoreAdj: -800
 outputs:
   - format: kernel+initrd
   - format: iso-bios

@@ -32,7 +32,7 @@ daemon:
      - CAP_NET_BIND_SERVICE
      - CAP_NET_RAW
     net: host
-    oom_score_adj: -800
+    oomScoreAdj: -800
   - name: virtsock-server
     image: "mobylinux/test-virtsock:35fea96fd01f6edb67021c494ddf098fdb8bbca0"
     readonly: true
