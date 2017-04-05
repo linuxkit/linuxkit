@@ -34,16 +34,16 @@ daemon:
     oomScoreAdj: -800
     readonly: true
   - name: dhcpcd
-      image: "mobylinux/dhcpcd:d01a17d211218f289e2bac601bfe9787d4fabaf2"
-      binds:
-       - /var:/var
-       - /tmp:/etc
-      capabilities:
-       - CAP_NET_ADMIN
-       - CAP_NET_BIND_SERVICE
-       - CAP_NET_RAW
-      net: host
-      oomScoreAdj: -800
+    image: "mobylinux/dhcpcd:d01a17d211218f289e2bac601bfe9787d4fabaf2"
+    binds:
+     - /var:/var
+     - /tmp:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    oomScoreAdj: -800
   - name: sshd
     image: "mobylinux/sshd:4f8452ddaff703416fd7452fcd9693b96b23e847"
     capabilities:
