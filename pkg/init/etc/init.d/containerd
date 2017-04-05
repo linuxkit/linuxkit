@@ -6,4 +6,4 @@ ulimit -p unlimited
 
 printf "\nStarting containerd\n"
 mkdir -p /var/log
-exec /sbin/start-stop-daemon --start --exec /usr/bin/containerd
+exec /usr/bin/containerd
