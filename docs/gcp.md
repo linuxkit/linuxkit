@@ -4,6 +4,13 @@ This is a quick guide to run Moby on GCP.
 
 ## Setup
 
+You have two choices for authentication with Google Cloud
+
+1. You can use [Application Default Credentials](https://developers.google.com/identity/protocols/application-default-credentials)
+2. You can use a Service Account
+
+### Application Default Credentials
+
 You need the [Google Cloud SDK](https://cloud.google.com/sdk/)
 installed.  Either install it from the URL or view `brew` (on a Mac):
 ```shell
@@ -21,8 +28,15 @@ The authentication will redirect to a browser with Google login.
 
 Also authenticate local applications with
 ```
-gcloud beta auth application-default login
+gcloud auth application-default login
 ```
+
+### Service Account
+
+You can use [this guide](https://cloud.google.com/compute/docs/access/create-enable-service-accounts-for-instances#createanewserviceaccount)
+to create a Service Account.
+
+Make sure to download the credentials in JSON format and store them somewhere safe.
 
 ## Build a moby image
 
@@ -38,10 +52,6 @@ specified bucket, and create a bootable image.
 With the image created, we can now create an instance and connect to
 the serial port.
 
-```shell
-gcloud compute instances create my-node \
-  --image="myfile" --metadata serial-port-enable=true \
-  --machine-type="g1-small" --boot-disk-size=200
-
-gcloud compute connect-to-serial-port my-node
+```
+moby run gcp -project myproject-1234 myfile
 ```
