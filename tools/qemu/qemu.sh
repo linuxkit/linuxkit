@@ -45,18 +45,18 @@ echo "$ARGS" | grep -q systemdisk && qemu-img create -f raw systemdisk.img 256M
 
 if [ -n "${CMDLINE}" ]
 then
-	CMDLINE="$(cat $CMDLINE)"
+	APPEND="$(cat $CMDLINE)"
 else
-	CMDLINE="$*"
+	APPEND="$*"
 fi
-if [ -z "${CMDLINE}" ]
+if [ -z "${APPEND}" ]
 then
-	CMDLINE="console=ttyS0"
+	APPEND="console=ttyS0"
 fi
 
 if [ -z "$EFI_ISO" ] && [ -z "$ISO" ]
 then
-	ARGS="-append ${CMDLINE} ${ARGS}"
+	ARGS="-append \"${APPEND}\" ${ARGS}"
 fi
 
-qemu-system-x86_64 -machine q35,accel=kvm:tcg -device virtio-rng-pci -nographic -vnc none -m 1024 $ARGS
+eval qemu-system-x86_64 -machine q35,accel=kvm:tcg -device virtio-rng-pci -nographic -vnc none -m 1024 $ARGS
