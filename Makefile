@@ -7,6 +7,7 @@ GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
 GO_COMPILE=mobylinux/go-compile:a2ff853b00d687f845d0f67189fa645a567c006e@sha256:09fff8a5c022fc9ead35b2779209c043196b09193c6e61d98603d402c0971f03
 
+MOBY?=bin/moby
 GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH=amd64
 ifneq ($(GOOS),linux)
@@ -27,7 +28,7 @@ bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
 
-test-initrd.img: bin/moby test/test.yml
+test-initrd.img: $(MOBY) test/test.yml
 	bin/moby build test/test.yml
 
 test-bzImage: test-initrd.img
@@ -46,9 +47,9 @@ define check_test_log
 endef
 
 .PHONY: hyperkit-test
-hyperkit-test: bin/moby test-initrd.img test-bzImage test-cmdline
+hyperkit-test: $(MOBY) test-initrd.img test-bzImage test-cmdline
 	rm -f disk.img
-	script -q /dev/null bin/moby run test | tee test.log
+	script -q /dev/null $(MOBY) run test | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: test
