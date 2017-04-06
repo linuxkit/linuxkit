@@ -1,5 +1,5 @@
 {
-    "ID": "cattle",
+    "ID": "etcd",
     "Properties": {
         "Allocation": {
             "LogicalIDs": [
@@ -16,7 +16,7 @@
                 "Moby": "etcd",
                 "Disk" : 0,
                 "CPUs" : 1,
-                "Memory" : 512,
+                "Memory" : 512
             }
         },
         "Flavor": {
