@@ -24,17 +24,24 @@ daemon:
     oomScoreAdj: -800
     readonly: true
   - name: dhcp-client
-    image: "mobylinux/dhcp-client:30fddee3bf4a17945065dffb6f6bbef0d729f60d@sha256:32d5d93a96253928268ddd03a900f9404afb6267d60ba1e551859ca92d35663c"
+    image: "mobylinux/dhcp-client:9e7009ae469ddd4d37f9cffaad2cf612114a3fb0@sha256:4421e05a0082b56c4ef83ca652e1da1a5af3a24e5baec61e7ba5b981f3b94a09"
     net: host
     capabilities:
      - CAP_NET_ADMIN # to bring eth0 up
      - CAP_NET_RAW   # to read /dev/eth0
+     - CAP_SYS_ADMIN # for runc (unshare)
+     - CAP_SETGID    # for runc (setns)
+     - CAP_SYS_PTRACE # for runc (read /proc/[pid]/fd)
+    mounts: # for runc
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
     binds:
      - /var/run/dhcp-client:/data
+     - /usr/bin/runc:/usr/bin/runc # for runc
+     - /run/runc:/run/runc         # for runc
      - /sbin:/sbin   # for ifconfig
      - /bin:/bin     # for ifconfig
      - /lib:/lib     # for ifconfig
-    readonly: true
 files:
   - path: /var/run/dhcp-client/README
     contents: 'data for dhcp-client'
