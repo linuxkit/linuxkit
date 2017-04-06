@@ -48,6 +48,7 @@ services:
      - CAP_SYS_CHROOT
      - CAP_KILL
      - CAP_AUDIT_WRITE
+    pid: host
     net: host
     binds:
       - /run/containerd/containerd.sock:/run/containerd/containerd.sock
