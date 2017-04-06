@@ -15,6 +15,7 @@ func runUsage() {
 	fmt.Printf("If not specified the platform specific default will be used\n")
 	fmt.Printf("Supported backends are (default platform in brackets):\n")
 	fmt.Printf("  hyperkit [macOS]\n")
+	fmt.Printf("  gce\n")
 	fmt.Printf("  vmware\n")
 	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
