@@ -65,6 +65,9 @@ module Query = struct
     } [@@little_endian]
   ]
 
+  type error = [ `Eof | `Msg of string ]
+  let pp_error ppf t = Fmt.string ppf (match t with `Eof -> "EOF" | `Msg s -> s)
+
   (* to avoid warning 32 *)
   let _ = hexdump_msg
   let _ = string_to_operation
@@ -114,7 +117,7 @@ module Query = struct
     buf
 
   let err e = Lwt.return (Error (`Msg (Fmt.to_to_string C.pp_error e)))
-  let err_eof = Lwt.return (Error (`Msg "EOF"))
+  let err_eof = Lwt.return (Error `Eof)
 
   let read fd =
     let fd = C.create fd in
@@ -171,6 +174,9 @@ module Reply = struct
     } [@@little_endian]
   ]
 
+  type error = [ `Eof | `Msg of string ]
+  let pp_error ppf t = Fmt.string ppf (match t with `Eof -> "EOF" | `Msg s -> s)
+
   (* to avoid warning 32 *)
   let _ = hexdump_msg
   let _ = string_to_status
@@ -208,7 +214,7 @@ module Reply = struct
     buf
 
   let err e = Lwt.return (Result.Error (`Msg (Fmt.to_to_string C.pp_error e)))
-  let err_eof = Lwt.return (Result.Error (`Msg "EOF"))
+  let err_eof = Lwt.return (Result.Error `Eof)
 
   let read fd =
     let fd = C.create fd in
@@ -275,8 +281,9 @@ module Client = struct
         Lwt.return r
       with Not_found ->
         Reply.read t.fd >>= function
-        | Error (`Msg e) ->
-          Log.err (fun l -> l "Got %s while waiting for a reply to %ld" e id);
+        | Error e ->
+          Log.err (fun l -> l "Got %a while waiting for a reply to %ld"
+                      Query.pp_error e id);
           loop ()
         | Ok r ->
           if r.id = id then Lwt.return r
@@ -361,6 +368,7 @@ module Server = struct
     let cond = Lwt_condition.create () in
     let rec listen () =
       Query.read fd >>= function
+      | Error `Eof     -> Lwt.return_unit
       | Error (`Msg e) ->
         Log.err (fun l -> l "received invalid message: %s" e);
         listen ()
