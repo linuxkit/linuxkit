@@ -46,6 +46,7 @@ do_fsck_extend_mount()
 		SPACE=$(sfdisk -F "$DRIVE" | grep 'Unpartitioned space')
 		printf "Resizing disk partition: $SPACE\n"
 
+		# 83 is Linux partition id
 		START=$(sfdisk -J "$DRIVE" | jq -e '.partitiontable.partitions | map(select(.type=="83")) | .[0].start')
 
 		sfdisk -q --delete "$DRIVE" 2> /dev/null
@@ -84,7 +85,9 @@ do_mkfs()
 
 	# update status
 	blockdev --rereadpt $diskdev 2> /dev/null
-	mdev -s
+
+	# wait for device
+	for i in $(seq 1 50); do test -b "$DATA" && break || sleep .1; mdev -s; done
 
 	FSOPTS="-O resize_inode,has_journal,extent,huge_file,flex_bg,uninit_bg,64bit,dir_nlink,extra_isize"
 

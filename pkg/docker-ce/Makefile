@@ -5,7 +5,7 @@ IMAGE=docker-ce
 
 default: push
 
-hash: Dockerfile
+hash: Dockerfile docker.sh
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --entrypoint /bin/sh --rm $(IMAGE):build -c 'cat $^ /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
