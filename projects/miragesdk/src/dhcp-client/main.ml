@@ -94,7 +94,7 @@ let read_cmd file =
       "/mtu";
       "/nameservers/*"
     ] in
-    Ctl.v "/data" >>= fun db ->
+    Ctl.v path >>= fun db ->
     let ctl fd = Ctl.Server.listen ~routes db fd in
     let handlers () = Handlers.watch ~ethif db in
     let net = Init.rawlink ~filter:(dhcp_filter ()) ethif in
