@@ -1,6 +1,6 @@
-# Using Moby on Google Cloud Platform (GCP)
+# Using Moby on Google Compute Engine (GCE)
 
-This is a quick guide to run Moby on GCP.
+This is a quick guide to run Moby on GCE.
 
 ## Setup
 
@@ -19,7 +19,7 @@ brew install google-cloud-sdk
 
 Then, set up some environment variables (adjust as needed) and login:
 ```shell
-export CLOUDSDK_CORE_PROJECT=<GCP project>
+export CLOUDSDK_CORE_PROJECT=<GCE project>
 export CLOUDSDK_COMPUTE_ZONE=europe-west1-d
 gcloud auth login
 ```
@@ -40,7 +40,7 @@ Make sure to download the credentials in JSON format and store them somewhere sa
 
 ## Build a moby image
 
-Add a `gcp` output line to your yaml config, see the example in `examples/gcp.yml`.
+Add a `gce` output line to your yaml config, see the example in `examples/gce.yml`.
 
 Then do `./bin/moby myfile.yml`
 
@@ -53,5 +53,5 @@ With the image created, we can now create an instance and connect to
 the serial port.
 
 ```
-moby run gcp -project myproject-1234 myfile
+moby run gce -project myproject-1234 myfile
 ```

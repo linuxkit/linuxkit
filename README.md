@@ -37,7 +37,7 @@ The Makefile also specifies a number of targets:
 - `make qemu` will boot up a sample Moby in qemu in a container
 - on OSX: `make hyperkit` will boot up Moby in hyperkit
 - `make test` or `make hyperkit-test` will run the test suite
-- There are also docs for booting on [Google Cloud](docs/gcp.md)
+- There are also docs for booting on [Google Cloud](docs/gce.md)
 - More detailed docs will be available shortly, for running single hosts and clusters.
 
 ## Building your own customised image
