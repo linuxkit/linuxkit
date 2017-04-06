@@ -3,52 +3,61 @@ open Lwt.Infix
 let src = Logs.Src.create "IO" ~doc:"IO helpers"
 module Log = (val Logs.src_log src : Logs.LOG)
 
-let rec really_write fd buf off len =
-  match len with
-  | 0   -> Lwt.return_unit
-  | len ->
-    Log.debug (fun l -> l "really_write off=%d len=%d" off len);
-    Lwt_unix.write fd buf off len >>= fun n ->
-    if n = 0 then Lwt.fail_with "write 0"
-    else really_write fd buf (off+n) (len-n)
+(* from mirage-conduit. FIXME: move to mirage-flow *)
+type 'a io = 'a Lwt.t
+type buffer = Cstruct.t
+type error = [`Msg of string]
+type write_error = [ Mirage_flow.write_error | error ]
+let pp_error ppf (`Msg s) = Fmt.string ppf s
 
-let write fd buf = really_write fd buf 0 (String.length buf)
+let pp_write_error ppf = function
+  | #Mirage_flow.write_error as e -> Mirage_flow.pp_write_error ppf e
+  | #error as e                   -> pp_error ppf e
 
-let rec really_read fd buf off len =
-  match len with
-  | 0   -> Lwt.return_unit
-  | len ->
-    Log.debug (fun l -> l "really_read off=%d len=%d" off len);
-    Lwt_unix.read fd buf off len >>= fun n ->
-    if n = 0 then Lwt.fail_with "read 0"
-    else really_read fd buf (off+n) (len-n)
+type flow =
+  | Flow: string
+          * (module Mirage_flow_lwt.CONCRETE with type flow = 'a)
+          * 'a
+    -> flow
 
-let read_all fd =
-  Log.debug (fun l -> l "read_all");
-  let len = 16 * 1024 in
-  let buf = Bytes.create len in
-  let rec loop acc =
-    Lwt_unix.read fd buf 0 len >>= fun n ->
-    if n = 0 then Lwt.fail_with "read 0"
-    else
-      let acc = String.sub buf 0 n :: acc in
-      if n <= len then Lwt.return (List.rev acc)
-      else loop acc
+let create (type a) (module M: Mirage_flow_lwt.S with type flow = a) t name =
+  let m =
+    (module Mirage_flow_lwt.Concrete(M):
+       Mirage_flow_lwt.CONCRETE with type flow = a)
   in
-  loop [] >|= fun bufs ->
-  String.concat "" bufs
+  Flow (name, m , t)
 
-let read_n fd len =
-  Log.debug (fun l -> l "read_n len=%d" len);
-  let buf = Bytes.create len in
-  let rec loop acc len =
-    Lwt_unix.read fd buf 0 len >>= fun n ->
-    if n = 0 then Lwt.fail_with "read 0"
-    else
-      let acc = String.sub buf 0 n :: acc in
-      match len - n with
-      | 0 -> Lwt.return (List.rev acc)
-      | r -> loop acc r
+let read (Flow (_, (module F), flow)) = F.read flow
+let write (Flow (_, (module F), flow)) b = F.write flow b
+let writev (Flow (_, (module F), flow)) b = F.writev flow b
+let close (Flow (_, (module F), flow)) = F.close flow
+let pp ppf (Flow (name, _, _)) = Fmt.string ppf name
+
+type t = flow
+
+let forward ~src ~dst =
+  let rec loop () =
+    read src >>= function
+    | Ok `Eof ->
+      Log.err (fun l -> l "forward[%a => %a] EOF" pp src pp dst);
+      Lwt.return_unit
+    | Error e ->
+      Log.err (fun l -> l "forward[%a => %a] %a" pp src pp dst pp_error e);
+      Lwt.return_unit
+    | Ok (`Data buf) ->
+      Log.debug (fun l -> l "forward[%a => %a] %a"
+                    pp src pp dst Cstruct.hexdump_pp buf);
+      write dst buf >>= function
+      | Ok ()   -> loop ()
+      | Error e ->
+        Log.err (fun l -> l "forward[%a => %a] %a"
+                    pp src pp dst pp_write_error e);
+        Lwt.return_unit
   in
-  loop [] len >|= fun bufs ->
-  String.concat "" bufs
+  loop ()
+
+let proxy f1 f2 =
+  Lwt.join [
+    forward ~src:f1 ~dst:f2;
+    forward ~src:f2 ~dst:f1;
+  ]

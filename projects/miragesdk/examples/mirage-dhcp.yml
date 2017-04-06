@@ -24,13 +24,14 @@ daemon:
     oomScoreAdj: -800
     readonly: true
   - name: dhcp-client
-    image: "mobylinux/dhcp-client:99ecd3304172eb7570aa5c7f527cec2577b48a84"
+    image: "mobylinux/dhcp-client:6478d616909eee58bfda46ba742b5b286965fb03"
     net: host
     capabilities:
      - CAP_NET_ADMIN # to bring eth0 up
      - CAP_NET_RAW   # to read /dev/eth0
     binds:
      - /var/run/dhcp-client:/data
+     - /usr/bin/runc:/usr/bin/runc
      - /sbin:/sbin   # for ifconfig
      - /bin:/bin     # for ifconfig
      - /lib:/lib     # for ifconfig

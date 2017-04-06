@@ -4,6 +4,8 @@ open Astring
 let src = Logs.Src.create "init" ~doc:"Init steps"
 module Log = (val Logs.src_log src : Logs.LOG)
 
+let failf fmt = Fmt.kstrf Lwt.fail_with fmt
+
 (* FIXME: to avoid linking with gmp *)
 module No_IO = struct
   type ic = unit
@@ -31,6 +33,8 @@ let () =
     (fun _ _ _ -> Lwt.return (fun () -> Lwt.return_unit))
     (* FIXME: inotify need some unknown massaging. *)
     (* Irmin_watcher.hook *)
+
+module C = Mirage_channel_lwt.Make(IO)
 
 module Query = struct
 
@@ -109,25 +113,37 @@ module Query = struct
     Cstruct.blit_from_bytes msg.payload 0 buf (sizeof_msg+path) payload;
     buf
 
+  let err e = Lwt.return (Error (`Msg (Fmt.to_to_string C.pp_error e)))
+  let err_eof = Lwt.return (Error (`Msg "EOF"))
+
   let read fd =
-    IO.read_n fd 4 >>= fun buf ->
-    Log.debug (fun l -> l "Message.read len=%S" buf);
-    let len =
-      Cstruct.LE.get_uint32 (Cstruct.of_string buf) 0
-      |> Int32.to_int
-    in
-    IO.read_n fd len >|= fun buf ->
-    of_cstruct (Cstruct.of_string buf)
+    let fd = C.create fd in
+    C.read_exactly fd ~len:4 >>= function
+    | Ok `Eof -> err_eof
+    | Error e -> err e
+    | Ok (`Data buf) ->
+      let buf = Cstruct.concat buf in
+      Log.debug (fun l -> l "Message.read len=%a" Cstruct.hexdump_pp buf);
+      let len = Cstruct.LE.get_uint32 buf 0 |> Int32.to_int in
+      C.read_exactly fd ~len >>= function
+      | Ok `Eof        -> err_eof
+      | Error e        -> err e
+      | Ok (`Data buf) ->
+        let buf = Cstruct.concat buf in
+        Lwt.return (of_cstruct buf)
 
   let write fd msg =
-    let buf = to_cstruct msg |> Cstruct.to_string in
+    let buf = to_cstruct msg in
     let len =
       let len = Cstruct.create 4 in
-      Cstruct.LE.set_uint32 len 0 (Int32.of_int @@ String.length buf);
-      Cstruct.to_string len
+      Cstruct.LE.set_uint32 len 0 (Int32.of_int @@ Cstruct.len buf);
+      len
     in
-    IO.write fd len >>= fun () ->
-    IO.write fd buf
+    IO.write fd len >>= function
+    | Error e   -> failf "Query.write(len) %a" IO.pp_write_error e
+    | Ok ()     -> IO.write fd buf >>= function
+      | Ok ()   -> Lwt.return_unit
+      | Error e -> failf "Query.write(buf) %a" IO.pp_write_error e
 
 end
 
@@ -191,25 +207,37 @@ module Reply = struct
     Cstruct.blit_from_bytes msg.payload 0 buf sizeof_msg payload;
     buf
 
+  let err e = Lwt.return (Result.Error (`Msg (Fmt.to_to_string C.pp_error e)))
+  let err_eof = Lwt.return (Result.Error (`Msg "EOF"))
+
   let read fd =
-    IO.read_n fd 4 >>= fun buf ->
-    Log.debug (fun l -> l "Message.read len=%S" buf);
-    let len =
-      Cstruct.LE.get_uint32 (Cstruct.of_string buf) 0
-      |> Int32.to_int
-    in
-    IO.read_n fd len >|= fun buf ->
-    of_cstruct (Cstruct.of_string buf)
+    let fd = C.create fd in
+    C.read_exactly fd ~len:4 >>= function
+    | Ok `Eof        -> err_eof
+    | Error e        -> err e
+    | Ok (`Data buf) ->
+      let buf = Cstruct.concat buf in
+      Log.debug (fun l -> l "Message.read len=%a" Cstruct.hexdump_pp buf);
+      let len = Cstruct.LE.get_uint32 buf 0 |> Int32.to_int in
+      C.read_exactly fd ~len >>= function
+      | Ok `Eof        -> err_eof
+      | Error e        -> err e
+      | Ok (`Data buf) ->
+        let buf = Cstruct.concat buf in
+        Lwt.return (of_cstruct buf)
 
   let write fd msg =
-    let buf = to_cstruct msg |> Cstruct.to_string in
+    let buf = to_cstruct msg in
     let len =
       let len = Cstruct.create 4 in
-      Cstruct.LE.set_uint32 len 0 (Int32.of_int @@ String.length buf);
-      Cstruct.to_string len
+      Cstruct.LE.set_uint32 len 0 (Int32.of_int @@ Cstruct.len buf);
+      len
     in
-    IO.write fd len >>= fun () ->
-    IO.write fd buf
+    IO.write fd len >>= function
+    | Error e   -> failf "Reply.write(len) %a" IO.pp_write_error e
+    | Ok ()     -> IO.write fd buf >>= function
+      | Ok ()   -> Lwt.return_unit
+      | Error e -> failf "Reply.write(buf) %a" IO.pp_write_error e
 
 end
 
@@ -231,7 +259,7 @@ module Client = struct
   module Cache = Hashtbl.Make(K)
 
   type t = {
-    fd     : Lwt_unix.file_descr;
+    fd     : IO.t;
     replies: Reply.t Cache.t;
   }
 
@@ -327,16 +355,8 @@ module Server = struct
           | Some v -> ok q v
       )
 
-
-  let int_of_fd (t:Lwt_unix.file_descr) =
-    (Obj.magic (Lwt_unix.unix_file_descr t): int)
-
   let listen ~routes db fd =
-    Lwt_unix.blocking fd >>= fun blocking ->
-    Log.debug (fun l ->
-        l "Serving the control state over fd:%d (blocking=%b)"
-          (int_of_fd fd) blocking
-      );
+    Log.debug (fun l -> l "Serving the control state over %a" IO.pp fd);
     let queries = Queue.create () in
     let cond = Lwt_condition.create () in
     let rec listen () =
