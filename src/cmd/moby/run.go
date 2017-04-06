@@ -15,6 +15,7 @@ func runUsage() {
 	fmt.Printf("If not specified the platform specific default will be used\n")
 	fmt.Printf("Supported backends are (default platform in brackets):\n")
 	fmt.Printf("  hyperkit [macOS]\n")
+	fmt.Printf("  qemu [linux]\n")
 	fmt.Printf("  vmware\n")
 	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
@@ -39,10 +40,14 @@ func run(args []string) {
 		runVMware(args[1:])
 	case "gcp":
 		runGcp(args[1:])
+	case "qemu":
+		runQemu(args[1:])
 	default:
 		switch runtime.GOOS {
 		case "darwin":
 			runHyperKit(args)
+		case "linux":
+			runQemu(args)
 		default:
 			log.Errorf("There currently is no default 'run' backend for your platform.")
 		}
