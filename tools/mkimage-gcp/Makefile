@@ -1,10 +1,10 @@
 .PHONY: tag push
 
-IMAGE=mkimage-gce
+IMAGE=mkimage-gcp
 
 default: push
 
-hash: Dockerfile make-gce
+hash: Dockerfile make-gcp
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --entrypoint sh --rm $(IMAGE):build -c "(cat $^; apt list --installed 2>/dev/null) | sha1sum" | sed 's/ .*//' > hash
 
