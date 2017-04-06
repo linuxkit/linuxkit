@@ -1,0 +1,91 @@
+image_name = "errordeveloper/mobykube"
+
+@versions = {
+  kubernetes: "v1.6.1",
+  weave: "v1.9.4",
+  tini: "v0.14.0",
+}
+
+from "gcr.io/google_containers/hyperkube-amd64:#{@versions[:kubernetes]}"
+
+def install_packages pkgs
+  cmds = [
+    %(apt-get update -q),
+    %(apt-get upgrade -qy),
+    %(apt-get install -qy #{pkgs}),
+  ]
+
+  cmds.each { |cmd| run cmd }
+end
+
+def install_dependencies
+
+  prepare = [
+    'curl --silent "https://packages.cloud.google.com/apt/doc/apt-key.gpg" | apt-key add -',
+    'echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list',
+  ]
+
+  dependencies = %(curl apt-transport-https)
+
+  official_packages = %(kubernetes-cni)
+
+  kube_release_artefacts = "https://dl.k8s.io/#{@versions[:kubernetes]}/bin/linux/amd64"
+  weave_launcher = "https://cloud.weave.works/k8s/v1.6/net.yaml?v=#{@versions[:weave]}"
+
+  download_files = [
+    "/etc/weave.yaml" => {
+      url: weave_launcher,
+      mode: '0644',
+    },
+    "/usr/bin/kubeadm" => {
+      url: "#{kube_release_artefacts}/kubeadm",
+      mode: '0755',
+    },
+    "/usr/bin/tini" => {
+      url: "https://github.com/krallin/tini/releases/download/#{@versions[:tini]}/tini",
+      mode: '0755',
+    },
+  ]
+
+  install_packages dependencies
+
+  prepare.each { |cmd| run cmd }
+
+  install_packages official_packages
+
+  download_files.each do |file|
+    file.each do |dest,info|
+      run %(curl --output "#{dest}" --fail --silent --location "#{info[:url]}")
+      run %(chmod "#{info[:mode]}" "#{dest}")
+    end
+  end
+
+end
+
+def kubelet_cmd
+  %w(
+    /hyperkube kubelet
+      --kubeconfig=/etc/kubernetes/kubelet.conf --require-kubeconfig=true
+      --pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true
+      --network-plugin=cni --cni-conf-dir=/etc/cni/net.d --cni-bin-dir=/opt/cni/bin
+      --cluster-dns=10.96.0.10 --cluster-domain=cluster.local
+      --cgroups-per-qos=false --enforce-node-allocatable=""
+      --node-ip="192.168.65.2"
+      --enable-cri=false
+  )
+end
+
+def create_kubelet_wrapper
+  kubelet_wrapper = "#!/bin/sh\nuntil #{kubelet_cmd.join(' ')} ; do sleep 1 ; done"
+  run "echo \"#{kubelet_wrapper}\" > /usr/bin/kubelet.sh && chmod 0755 /usr/bin/kubelet.sh"
+end
+
+install_dependencies
+
+create_kubelet_wrapper
+
+env KUBECONFIG: "/etc/kubernetes/admin.conf"
+
+set_exec entrypoint: %w(tini -s --), cmd: %w(kubelet.sh)
+
+tag "#{image_name}:master"
