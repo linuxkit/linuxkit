@@ -52,6 +52,11 @@ hyperkit-test: $(MOBY) test-initrd.img test-bzImage test-cmdline
 	script -q /dev/null $(MOBY) run test | tee test.log
 	$(call check_test_log, test.log)
 
+.PHONY: test-gcp
+test-gcp: $(MOBY) test.img.tar.gz
+	script -q /dev/null $(MOBY) run gcp test.img.tar.gz | tee test-gcp.log
+	$(call check_test_log, test-gcp.log)
+
 .PHONY: test
 test: test-initrd.img test-bzImage test-cmdline
 	tar cf - $^ | ./scripts/qemu.sh 2>&1 | tee test.log
