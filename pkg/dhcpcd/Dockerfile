@@ -7,8 +7,6 @@ RUN \
   openrc \
   && true
 
-ADD dhcpcd.conf /dhcpcd.conf
-ADD start_dhcpcd.sh /usr/local/bin/start_dhcpcd.sh
-ADD 10-mtu /usr/lib/dhcpcd/dhcpcd-hooks/10-mtu
+COPY . .
 
-CMD ["/usr/local/bin/start_dhcpcd.sh"]
+CMD ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf"]

@@ -23,7 +23,7 @@ daemon:
     oomScoreAdj: -800
     readonly: true
   - name: dhcpcd
-    image: "mobylinux/dhcpcd:57a8ef29d3a910645b2b24c124f9ce9ef53ce703"
+    image: "mobylinux/dhcpcd:3eb32da7ff8051f61e0f18edd90dd0fbfcf148ea"
     binds:
      - /var:/var
      - /tmp:/etc
