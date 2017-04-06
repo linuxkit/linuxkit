@@ -51,31 +51,26 @@ module Handlers = struct
     gateway;
   ]
 
-  let watch ~ethif path =
-    Ctl.v path >>= fun db ->
+  let watch ~ethif db =
     Lwt_list.map_p (fun f -> f db) (handlers ethif) >>= fun _ ->
     let t, _ = Lwt.task () in
     t
 
 end
 
-external bpf_filter: unit -> string = "bpf_filter"
+external dhcp_filter: unit -> string = "bpf_filter"
 
 let t = Init.Pipe.v ()
 
-let ctl = string_of_int Init.(Fd.to_int Pipe.(calf @@ ctl t))
-let net = string_of_int Init.(Fd.to_int Pipe.(calf @@ net t))
 let default_cmd = [
-  "/dhcp-client-calf"; "--ctl="^ctl; "--net="^net
+  "/calf/dhcp-client-calf"; "--net=3"; "--ctl=4"; "-vv";
 ]
 
-(* FIXME: use runc isolation
-   let default_cmd = [
-    "/usr/bin/runc"; "--"; "run";
-    "--bundle"; "/containers/images/000-dhcp-client";
-    "dhcp-client"
-  ] in
-  *)
+(*
+let default_cmd = [
+  "/usr/bin/runc"; "run"; "--preserve-fds"; "2"; "--bundle"; ".";  "dhcp-client"
+]
+*)
 
 let read_cmd file =
   if Sys.file_exists file then
@@ -91,7 +86,6 @@ let read_cmd file =
     | Some f -> read_cmd f
   in
   Lwt_main.run (
-    let net = Init.rawlink ~filter:(bpf_filter ()) ethif in
     let routes = [
       "/ip";
       "/gateway";
@@ -100,10 +94,10 @@ let read_cmd file =
       "/mtu";
       "/nameservers/*"
     ] in
-    Ctl.v "/data" >>= fun ctl ->
-    let fd = Init.(Fd.fd @@ Pipe.(priv @@ ctl t)) in
-    let ctl () = Ctl.Server.listen ~routes ctl fd in
-    let handlers () = Handlers.watch ~ethif path in
+    Ctl.v "/data" >>= fun db ->
+    let ctl fd = Ctl.Server.listen ~routes db fd in
+    let handlers () = Handlers.watch ~ethif db in
+    let net = Init.rawlink ~filter:(dhcp_filter ()) ethif in
     Init.run t ~net ~ctl ~handlers cmd
   )
 

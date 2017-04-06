@@ -28,10 +28,10 @@ module Query: sig
   val to_cstruct: t -> Cstruct.t
   (** [to_cstruct t] is the serialization of [t]. *)
 
-  val write: Lwt_unix.file_descr -> t -> unit Lwt.t
+  val write: IO.flow -> t -> unit Lwt.t
   (** [write fd t] writes a query message. *)
 
-  val read: Lwt_unix.file_descr -> (t, [`Msg of string]) result Lwt.t
+  val read: IO.flow -> (t, [`Msg of string]) result Lwt.t
   (** [read fd] reads a query message. *)
 
 end
@@ -60,10 +60,10 @@ module Reply: sig
   val to_cstruct: t -> Cstruct.t
   (** [to_cstruct t] is the serialization of [t]. *)
 
-  val write: Lwt_unix.file_descr -> t -> unit Lwt.t
+  val write: IO.flow -> t -> unit Lwt.t
   (** [write fd t] writes a reply message. *)
 
-  val read: Lwt_unix.file_descr -> (t, [`Msg of string]) result Lwt.t
+  val read: IO.flow -> (t, [`Msg of string]) result Lwt.t
   (** [read fd] reads a reply message. *)
 
 end
@@ -80,7 +80,7 @@ module Client: sig
   type t
   (** The type for client state. *)
 
-  val v: Lwt_unix.file_descr -> t
+  val v: IO.t -> t
   (** [v fd] is the client state using [fd] to send requests to the
       server. A client state also stores some state for all the
       incomplete client queries. *)
@@ -108,7 +108,7 @@ val v: string -> KV.t Lwt.t
 
 module Server: sig
 
-  val listen: routes:string list -> KV.t -> Lwt_unix.file_descr -> unit Lwt.t
+  val listen: routes:string list -> KV.t -> IO.t -> unit Lwt.t
   (** [listen ~routes kv fd] is the thread exposing the KV store [kv],
       holding control plane state, running inside the privileged
       container. [routes] are the routes exposed by the server to the

@@ -26,4 +26,5 @@ RUN opam config exec -- jbuilder build dhcp-client/main.exe
 RUN sudo cp /src/_build/default/dhcp-client/main.exe /dhcp-client
 
 RUN opam config exec -- jbuilder build dhcp-client/calf/unikernel.exe
-RUN sudo cp /src/_build/default/dhcp-client/calf/unikernel.exe /dhcp-client-calf
+RUN sudo mkdir -p /calf
+RUN sudo cp /src/_build/default/dhcp-client/calf/unikernel.exe /calf/dhcp-client-calf

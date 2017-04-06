@@ -187,7 +187,6 @@ let set_ip_opt ctl k = function
 
 let start () dhcp_codes net ctl =
   Netif_fd.connect net >>= fun net ->
-  let ctl = Sdk.Ctl.Client.v (Lwt_unix.of_unix_file_descr ctl) in
   let requests = match dhcp_codes with
     | [] -> default_options
     | l  ->
@@ -206,12 +205,15 @@ let start () dhcp_codes net ctl =
   set_ip_opt ctl "/gateway" result.gateway
 
 (* FIXME: Main end *)
-let magic (x: int) = (Obj.magic x: Unix.file_descr)
+
+let fd (x: int) = (Obj.magic x: Unix.file_descr)
+
+let flow (x: int) = Sdk.Init.file_descr (Lwt_unix.of_unix_file_descr @@ fd x)
 
 let start () dhcp_codes net ctl =
   Lwt_main.run (
-    let net = magic net in
-    let ctl = magic ctl in
+    let net = fd net in
+    let ctl = Sdk.Ctl.Client.v (flow ctl) in
     start () dhcp_codes net ctl
   )
 

@@ -14,6 +14,7 @@
        data, e.g. the IP address once a DHCP lease is obtained.}
     }*)
 
+
 module Fd: sig
 
   type t
@@ -21,12 +22,6 @@ module Fd: sig
 
   val pp: t Fmt.t
   (** [pp_fd] pretty prints a file descriptor. *)
-
-  val fd: t -> Lwt_unix.file_descr
-  (** [fd t] is [t]'s underlying unix file descriptor. *)
-
-  val to_int: t -> int
-(** [to_int fd] is [fd]'s number. *)
 
   val redirect_to_dev_null: t -> unit Lwt.t
   (** [redirect_to_dev_null fd] redirects [fd] [/dev/null]. *)
@@ -36,13 +31,6 @@ module Fd: sig
 
   val dup2: src:t -> dst:t -> unit Lwt.t
   (** [dup2 ~src ~dst] calls [Unix.dup2] on [src] and [dst]. *)
-
-  val proxy_net: net:Lwt_rawlink.t -> t -> unit Lwt.t
-  (** [proxy_net ~net fd] proxies the traffic between the raw net link
-      [net] and [fd]. *)
-
-  val forward: src:t -> dst:t -> unit Lwt.t
-  (** [forward ~src ~dst] forwards the flow from [src] to [dst]. *)
 
   (** {1 Usefull File Descriptors} *)
 
@@ -55,7 +43,13 @@ module Fd: sig
   val stderr: t
   (** [stderr] is the standard error. *)
 
+  val flow: t -> IO.t
+  (** [flow t] is the flow representing [t]. *)
+
 end
+
+val file_descr: ?name:string -> Lwt_unix.file_descr -> IO.t
+(** [file_descr ?name fd] is the flow for the file-descripor [fd]. *)
 
 module Pipe: sig
 
@@ -102,18 +96,21 @@ module Pipe: sig
 
 end
 
-val rawlink: ?filter:string -> string -> Lwt_rawlink.t
-(** [rawlink ?filter i] is the net raw link to the interface [i] using
-    the (optional) BPF filter [filter]. *)
+val rawlink: ?filter:string -> string -> IO.t
+(** [rawlink ?filter x] is the flow using the network interface
+    [x]. The packets can be filtered using the BPF filter
+    [filter]. See the documentation of
+    {{:https://github.com/haesbaert/rawlink}rawlink} for more details
+    on how to build that filter. *)
 
+(* FIXME(samoht): not very happy with that signatue *)
 val run: Pipe.monitor ->
-  net:Lwt_rawlink.t ->
-  ctl:(unit -> unit Lwt.t) ->
+  net:IO.t ->
+  ctl:(IO.t -> unit Lwt.t) ->
   handlers:(unit -> unit Lwt.t) ->
   string list -> unit Lwt.t
 (** [run m ~net ~ctl ~handlers cmd] runs [cmd] in a unprivileged calf
-    process. [ctl] is the control thread connected to the {Pipe.ctl}
-    pipe. [net] is the net raw link which will be connected to the
-    calf via the {!Pipe.net} socket pair. [handlers] are the system
+    process. [net] is the network interface flow. [ctl] is the control
+    thread connected to the {Pipe.ctl} pipe. [handlers] are the system
     handler thread which will react to control data to perform
     privileged system actions. *)
