@@ -123,14 +123,14 @@ let test_serialization to_cstruct of_cstruct message messages =
   in
   List.iter test messages
 
-let test_send t write read message messages =
+let test_send t write read message pp_error messages =
   let calf = calf Init.Pipe.(ctl t) in
   let priv = priv Init.Pipe.(ctl t) in
   let test m =
     write calf m >>= fun () ->
     read priv >|= function
-    | Ok m' -> Alcotest.(check message) "write/read" m m'
-    | Error (`Msg e) -> Alcotest.fail ("Message.read: " ^ e)
+    | Ok m'   -> Alcotest.(check message) "write/read" m m'
+    | Error e -> Fmt.kstrf Alcotest.fail "Message.read: %a" pp_error e
   in
   Lwt_list.iter_s test messages
 
@@ -144,11 +144,11 @@ let test_reply_serialization () =
 
 let test_query_send t () =
   let open Ctl.Query in
-  test_send t write read query queries
+  test_send t write read query pp_error queries
 
 let test_reply_send t () =
   let open Ctl.Reply in
-  test_send t write read reply replies
+  test_send t write read reply pp_error replies
 
 let failf fmt = Fmt.kstrf Alcotest.fail fmt
 

@@ -18,6 +18,12 @@ module Query: sig
     payload  : string;                                 (** Arbitrary payload. *)
   }
 
+  type error = [ `Eof | `Msg of string ]
+  (** The type of errors. *)
+
+  val pp_error: error Fmt.t
+  (** [pp_error] is the pretty-printer for query errors. *)
+
   val pp: t Fmt.t
   (** [pp] is the pretty-printer for queries. *)
 
@@ -31,7 +37,7 @@ module Query: sig
   val write: IO.flow -> t -> unit Lwt.t
   (** [write fd t] writes a query message. *)
 
-  val read: IO.flow -> (t, [`Msg of string]) result Lwt.t
+  val read: IO.flow -> (t, error) result Lwt.t
   (** [read fd] reads a query message. *)
 
 end
@@ -60,10 +66,16 @@ module Reply: sig
   val to_cstruct: t -> Cstruct.t
   (** [to_cstruct t] is the serialization of [t]. *)
 
+  type error = [`Eof | `Msg of string ]
+  (** The type for reply errors. *)
+
+  val pp_error: error Fmt.t
+  (** [pp_error] is the pretty-printer for errors. *)
+
   val write: IO.flow -> t -> unit Lwt.t
   (** [write fd t] writes a reply message. *)
 
-  val read: IO.flow -> (t, [`Msg of string]) result Lwt.t
+  val read: IO.flow -> (t, error) result Lwt.t
   (** [read fd] reads a reply message. *)
 
 end
