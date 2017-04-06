@@ -26,6 +26,10 @@ do
 		package="$2"
 		shift
 	;;
+	--ldflags)
+		ldflags="$2"
+		shift
+	;;
 	*)
 		echo "Unknown option $1"
 		exit 1
@@ -61,9 +65,14 @@ test -z $(find . -type f -name "*.go" -not -path "*/vendor/*" -not -name "*.pb.*
 
 if [ "$GOOS" = "darwin" ]
 then
-	go build -o $out "$package"
+	if [ -z "$ldflags" ]
+	then
+		go build -o $out "$package"
+	else
+		go build -o $out -ldflags "${ldflags}" "$package"
+	fi
 else
-	go build -o $out -buildmode pie --ldflags '-s -w -extldflags "-static"' "$package"
+	go build -o $out -buildmode pie -ldflags "-s -w ${ldflags} -extldflags \"-static\"" "$package"
 fi
 
 tar cf - $out
