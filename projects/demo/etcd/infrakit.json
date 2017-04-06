@@ -14,7 +14,7 @@
                 "Moby": "etcd",
                 "Disk" : 0,
                 "CPUs" : 1,
-                "Memory" : 512
+                "Memory" : 1024
             }
         },
         "Flavor": {
