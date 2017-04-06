@@ -1,0 +1,36 @@
+{
+    "ID": "etcd",
+    "Properties": {
+        "Allocation": {
+            "LogicalIDs": [
+                "10.132.0.200",
+                "10.132.0.201",
+                "10.132.0.202"
+            ]
+        },
+        "Instance": {
+            "Plugin": "instance-gcp",
+            "Properties": {
+                "NamePrefix": "etcdtest",
+                "Description": "ETCD test cluster",
+                "Network": "rneugeba-demo",
+                "Connect" : true,
+                "MachineType": "n1-standard-1",
+                "DiskSizeMb": 60,
+                "DiskImage": "https://www.googleapis.com/compute/v1/projects/docker4x/global/images/etcd",
+                "DiskType": "pd-standard",
+                "Scopes": [ ]
+            }
+        },
+        "Flavor": {
+            "Plugin": "flavor-vanilla",
+            "Properties": {
+                "Init": [ ],
+                "Tags": {
+                    "tier": "etcd-cluster",
+                    "project": "infrakit"
+                }
+            }
+        }
+    }
+}
