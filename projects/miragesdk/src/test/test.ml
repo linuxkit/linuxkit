@@ -124,8 +124,8 @@ let test_serialization to_cstruct of_cstruct message messages =
   List.iter test messages
 
 let test_send t write read message messages =
-  let calf = Init.(Fd.flow Pipe.(calf @@ ctl t)) in
-  let priv = Init.(Fd.flow Pipe.(priv @@ ctl t)) in
+  let calf = calf Init.Pipe.(ctl t) in
+  let priv = priv Init.Pipe.(ctl t) in
   let test m =
     write calf m >>= fun () ->
     read priv >|= function
@@ -198,8 +198,8 @@ let delete_should_work t k =
   | Error (`Msg e) -> failf "write(%s) -> error: %s" k e
 
 let test_ctl t () =
-  let calf = Init.(Fd.flow Init.Pipe.(calf @@ ctl t)) in
-  let priv = Init.(Fd.flow Init.Pipe.(priv @@ ctl t)) in
+  let calf = calf Init.Pipe.(ctl t) in
+  let priv = priv Init.Pipe.(ctl t) in
   let k1 = "/foo/bar" in
   let k2 = "a" in
   let k3 = "b/c" in
@@ -236,6 +236,33 @@ let test_ctl t () =
     server ();
   ]
 
+let in_memory_flow () =
+  let flow = Mirage_flow_lwt.F.string () in
+  IO.create (module Mirage_flow_lwt.F) flow "mem"
+
+let test_exec () =
+  let test () =
+    let check n pipe =
+      let t = Init.Pipe.v () in
+      let pipe = pipe t in
+      Init.exec t ["/bin/sh"; "-c"; "echo foo >& " ^ string_of_int n] @@ fun _pid ->
+      read @@ priv pipe >>= fun foo ->
+      let name = Fmt.strf "fork %s" Init.Pipe.(name pipe) in
+      Alcotest.(check string) name "foo\n" foo;
+      Lwt.return_unit
+    in
+    check 1 Init.Pipe.stdout >>= fun () ->
+    (* avoid logging interference *)
+    let level = Logs.level () in
+    Logs.set_level None;
+    check 2 Init.Pipe.stderr >>= fun () ->
+    Logs.set_level level;
+    check 3 Init.Pipe.net    >>= fun () ->
+    check 4 Init.Pipe.ctl    >>= fun () ->
+    Lwt.return_unit
+  in
+  test ()
+
 let run f () =
   try Lwt_main.run (f ())
   with e ->
@@ -256,6 +283,7 @@ let test = [
   "send queries"        , `Quick, run (test_query_send t);
   "send replies"        , `Quick, run (test_reply_send t);
   "ctl"                 , `Quick, run (test_ctl t);
+  "exec"                , `Quick, run test_exec;
 ]
 
 let reporter ?(prefix="") () =

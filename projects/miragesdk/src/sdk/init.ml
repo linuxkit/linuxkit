@@ -138,7 +138,8 @@ module Fd = struct
   let stdin  = { name = "stdin" ; fd = Lwt_unix.stdin  }
 
   let of_int name (i:int) =
-    let fd = Lwt_unix.of_unix_file_descr (Obj.magic i: Unix.file_descr) in
+    let fd : Unix.file_descr = Obj.magic i in
+    let fd = Lwt_unix.of_unix_file_descr fd in
     { name; fd }
 
   let to_int t =
@@ -148,7 +149,7 @@ module Fd = struct
 
   let close fd =
     Log.debug (fun l -> l "close %a" pp fd);
-    Lwt_unix.close fd.fd
+    Unix.close (Lwt_unix.unix_file_descr fd.fd)
 
   let dev_null =
     Lwt_unix.of_unix_file_descr ~blocking:false
@@ -156,9 +157,9 @@ module Fd = struct
 
   let redirect_to_dev_null fd =
     Log.debug (fun l -> l "redirect-stdin-to-dev-null");
-    Lwt_unix.close fd.fd >>= fun () ->
+    Unix.close (Lwt_unix.unix_file_descr fd.fd);
     Lwt_unix.dup2 dev_null fd.fd;
-    Lwt_unix.close dev_null
+    Unix.close (Lwt_unix.unix_file_descr dev_null)
 
   let dup2 ~src ~dst =
     Log.debug (fun l -> l "dup2 %a => %a" pp src pp dst);
@@ -220,14 +221,14 @@ end
 
 let exec_calf t cmd =
   Log.info (fun l -> l "child pid is %d" Unix.(getpid ()));
-  Fd.(redirect_to_dev_null stdin) >>= fun () ->
+  Fd.(redirect_to_dev_null stdin);
 
   (* close parent fds *)
-  Fd.close Pipe.(priv t.stdout)  >>= fun () ->
-  Fd.close Pipe.(priv t.stderr)  >>= fun () ->
-  Fd.close Pipe.(priv t.ctl)     >>= fun () ->
-  Fd.close Pipe.(priv t.net)     >>= fun () ->
-  Fd.close Pipe.(priv t.metrics) >>= fun () ->
+  Fd.close Pipe.(priv t.stdout);
+  Fd.close Pipe.(priv t.stderr);
+  Fd.close Pipe.(priv t.ctl);
+  Fd.close Pipe.(priv t.net);
+  Fd.close Pipe.(priv t.metrics);
 
   let cmds = String.concat " " cmd in
 
@@ -239,10 +240,10 @@ let exec_calf t cmd =
   Log.info (fun l -> l "Executing %s" cmds);
 
   (* Move all open fds at the top *)
-  Fd.dup2 ~src:Pipe.(calf t.stdout) ~dst:calf_stdout >>= fun () ->
-  Fd.dup2 ~src:Pipe.(calf t.stderr) ~dst:calf_stderr >>= fun () ->
-  Fd.dup2 ~src:Pipe.(calf t.net)    ~dst:calf_net    >>= fun () ->
-  Fd.dup2 ~src:Pipe.(calf t.ctl)    ~dst:calf_ctl    >>= fun () ->
+  Fd.dup2 ~src:Pipe.(calf t.net)    ~dst:calf_net;
+  Fd.dup2 ~src:Pipe.(calf t.ctl)    ~dst:calf_ctl;
+  Fd.dup2 ~src:Pipe.(calf t.stderr) ~dst:calf_stderr;
+  Fd.dup2 ~src:Pipe.(calf t.stdout) ~dst:calf_stdout;
 
   (* exec the calf *)
   Unix.execve (List.hd cmd) (Array.of_list cmd) [||]
@@ -255,22 +256,16 @@ let check_exit_status cmd status =
   | Unix.WSIGNALED i -> failf "%s: signal %d" cmds i
   | Unix.WSTOPPED i  -> failf "%s: stopped %d" cmds i
 
-let exec_priv t ~pid ~cmd ~net ~ctl ~handlers =
+let exec_priv t ~pid cmd =
 
-  Fd.(redirect_to_dev_null stdin) >>= fun () ->
+  Fd.(redirect_to_dev_null stdin);
 
   (* close child fds *)
-  Fd.close Pipe.(calf t.stdout)  >>= fun () ->
-  Fd.close Pipe.(calf t.stderr)  >>= fun () ->
-  Fd.close Pipe.(calf t.net)     >>= fun () ->
-  Fd.close Pipe.(calf t.ctl)     >>= fun () ->
-  Fd.close Pipe.(calf t.metrics) >>= fun () ->
-
-
-  let priv_net    = Fd.flow Pipe.(priv t.net)    in
-  let priv_ctl    = Fd.flow Pipe.(priv t.ctl)    in
-  let priv_stdout = Fd.flow Pipe.(priv t.stdout) in
-  let priv_stderr = Fd.flow Pipe.(priv t.stderr) in
+  Fd.close Pipe.(calf t.stdout);
+  Fd.close Pipe.(calf t.stderr);
+  Fd.close Pipe.(calf t.net);
+  Fd.close Pipe.(calf t.ctl);
+  Fd.close Pipe.(calf t.metrics);
 
   let wait () =
     Lwt_unix.waitpid [] pid >>= fun (_pid, w) ->
@@ -278,6 +273,21 @@ let exec_priv t ~pid ~cmd ~net ~ctl ~handlers =
 
     check_exit_status cmd w
   in
+  Lwt.return wait
+
+let block_for_ever =
+  let t, _ = Lwt.task () in
+  fun () -> t
+
+let exec_and_forward ?(handlers=block_for_ever) ~pid ~cmd ~net ~ctl t =
+
+  exec_priv t ~pid cmd >>= fun wait ->
+
+  let priv_net    = Fd.flow Pipe.(priv t.net)    in
+  let priv_ctl    = Fd.flow Pipe.(priv t.ctl)    in
+  let priv_stdout = Fd.flow Pipe.(priv t.stdout) in
+  let priv_stderr = Fd.flow Pipe.(priv t.stderr) in
+
   Lwt.pick ([
       wait ();
       (* data *)
@@ -286,13 +296,17 @@ let exec_priv t ~pid ~cmd ~net ~ctl ~handlers =
       (* redirect the calf stdout to the shim stdout *)
       IO.forward ~src:priv_stdout ~dst:Fd.(flow stdout);
       IO.forward ~src:priv_stderr ~dst:Fd.(flow stderr);
-      (* TODO: Init.Fd.forward ~src:Init.Pipe.(priv metrics) ~dst:Init.Fd.metric; *)
+      (* TODO: Init.Fd.forward ~src:Init.Pipe.(priv metrics)
+         ~dst:Init.Fd.metric; *)
       ctl priv_ctl;
       handlers ();
     ])
 
-let run t ~net ~ctl ~handlers cmd =
+let exec t cmd fn =
   Lwt_io.flush_all () >>= fun () ->
   match Lwt_unix.fork () with
   | 0   -> exec_calf t cmd
-  | pid -> exec_priv t ~pid ~cmd ~net ~ctl ~handlers
+  | pid -> fn pid
+
+let run t ~net ~ctl ?handlers cmd =
+  exec t cmd (fun pid -> exec_and_forward ?handlers ~pid ~cmd ~net ~ctl t)

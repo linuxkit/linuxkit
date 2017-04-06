@@ -23,13 +23,13 @@ module Fd: sig
   val pp: t Fmt.t
   (** [pp_fd] pretty prints a file descriptor. *)
 
-  val redirect_to_dev_null: t -> unit Lwt.t
+  val redirect_to_dev_null: t -> unit
   (** [redirect_to_dev_null fd] redirects [fd] [/dev/null]. *)
 
-  val close: t -> unit Lwt.t
+  val close: t -> unit
   (** [close fd] closes [fd]. *)
 
-  val dup2: src:t -> dst:t -> unit Lwt.t
+  val dup2: src:t -> dst:t -> unit
   (** [dup2 ~src ~dst] calls [Unix.dup2] on [src] and [dst]. *)
 
   (** {1 Usefull File Descriptors} *)
@@ -103,13 +103,17 @@ val rawlink: ?filter:string -> string -> IO.t
     {{:https://github.com/haesbaert/rawlink}rawlink} for more details
     on how to build that filter. *)
 
+val exec: Pipe.monitor -> string list -> (int -> unit Lwt.t) -> unit Lwt.t
+(** [exec t cmd k] executes [cmd] in an unprivileged calf process and
+    call [k] with the pid of the parent process. The child and parents
+    are connected using [t]. *)
+
 (* FIXME(samoht): not very happy with that signatue *)
 val run: Pipe.monitor ->
-  net:IO.t ->
-  ctl:(IO.t -> unit Lwt.t) ->
-  handlers:(unit -> unit Lwt.t) ->
+  net:IO.t -> ctl:(IO.t -> unit Lwt.t) ->
+  ?handlers:(unit -> unit Lwt.t) ->
   string list -> unit Lwt.t
-(** [run m ~net ~ctl ~handlers cmd] runs [cmd] in a unprivileged calf
+(** [run m ~net ~ctl ?handlers cmd] runs [cmd] in a unprivileged calf
     process. [net] is the network interface flow. [ctl] is the control
     thread connected to the {Pipe.ctl} pipe. [handlers] are the system
     handler thread which will react to control data to perform
