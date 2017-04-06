@@ -13,7 +13,7 @@ import (
 const (
 	bios = "mobylinux/mkimage-iso-bios:489b1f054a77a8f379d0bfc6cd91639b4db6b67c@sha256:0f058951aac4367d132682aa19eeb5cdcb05600a5d51fe5d0fcbd97b03ae4f87"
 	efi  = "mobylinux/mkimage-iso-efi:1b0ea6b8a7956e67e903876be5baf476e9a5cc40@sha256:a026cd9e9d0146503274e575a165039c67b853bde0013ade78df80d9280ffa7c"
-	gce  = "mobylinux/mkimage-gce:2039be4e39e855d1845aee188e266bba3f1d2eed@sha256:e12f76003fd9eaa0c6f39f149db5998cf56de42539b989c994893c8344ca69c0"
+	gce  = "mobylinux/mkimage-gce:4b90bc3392dac8b03d8af1d12b768ed3d7cb719b@sha256:d6cb2906afefa615e5e824a9be92e3370287ab6ffc1c6c0f9cb81603a6cc19ac"
 	qcow = "mobylinux/mkimage-qcow:9b3632f111675898ed3a22ac71897e735b5a8364@sha256:2132cf3fb593d65f09c8d109d40e1fad138d81485d4750fc29a7f54611d78d35"
 	vhd  = "mobylinux/mkimage-vhd:73c80e433bf717578c507621a84fd58cec27fe95@sha256:0ae1eda2d6592f309977dc4b25cca120cc4e2ee2cc786e88fdc2761c0d49cb14"
 	vmdk = "mobylinux/mkimage-vmdk:1de360a30f3ac6a91d4eae1ae4611cea4b82f22a@sha256:d7e65edc6dd88f6e12dcb0d749d4c7e5793d1250e548b58c105dbfd082940787"
@@ -51,9 +51,9 @@ func outputs(m *Moby, base string, bzimage []byte, initrd []byte) error {
 			if o.Bucket == "" {
 				return fmt.Errorf("No bucket specified for GCE output")
 			}
-			gClient, err := NewGCPClient(o.Keys, o.Project)
+			gClient, err := NewGCEClient(o.Keys, o.Project)
 			if err != nil {
-				return fmt.Errorf("Unable to connect to GCP")
+				return fmt.Errorf("Unable to connect to GCE")
 			}
 			err = gClient.UploadFile(base+".img.tar.gz", o.Bucket, o.Public)
 			if err != nil {
@@ -67,9 +67,9 @@ func outputs(m *Moby, base string, bzimage []byte, initrd []byte) error {
 			if o.Bucket == "" {
 				return fmt.Errorf("No bucket specified for GCE output")
 			}
-			gClient, err := NewGCPClient(o.Keys, o.Project)
+			gClient, err := NewGCEClient(o.Keys, o.Project)
 			if err != nil {
-				return fmt.Errorf("Unable to connect to GCP")
+				return fmt.Errorf("Unable to connect to GCE")
 			}
 			err = gClient.UploadFile(base+".img.tar.gz", o.Bucket, o.Public)
 			if err != nil {

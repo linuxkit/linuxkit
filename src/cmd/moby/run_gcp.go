@@ -11,35 +11,35 @@ import (
 
 // Process the run arguments and execute run
 func runGcp(args []string) {
-	gcpCmd := flag.NewFlagSet("gcp", flag.ExitOnError)
-	gcpCmd.Usage = func() {
-		fmt.Printf("USAGE: %s run gcp [options] [name]\n\n", os.Args[0])
+	gceCmd := flag.NewFlagSet("gce", flag.ExitOnError)
+	gceCmd.Usage = func() {
+		fmt.Printf("USAGE: %s run gce [options] [name]\n\n", os.Args[0])
 		fmt.Printf("'name' specifies either the name of an already uploaded\n")
 		fmt.Printf("GCE image or the full path to a image file which will be\n")
 		fmt.Printf("uploaded before it is run.\n\n")
 		fmt.Printf("Options:\n\n")
-		gcpCmd.PrintDefaults()
+		gceCmd.PrintDefaults()
 	}
-	zone := gcpCmd.String("zone", "europe-west1-d", "GCP Zone")
-	machine := gcpCmd.String("machine", "g1-small", "GCE Machine Type")
-	keys := gcpCmd.String("keys", "", "Path to Service Account JSON key file")
-	project := gcpCmd.String("project", "", "GCP Project Name")
-	bucket := gcpCmd.String("bucket", "", "GS Bucket to upload to. *Required* when 'prefix' is a filename")
-	public := gcpCmd.Bool("public", false, "Select if file on GS should be public. *Optional* when 'prefix' is a filename")
-	family := gcpCmd.String("family", "", "GCE Image Family. A group of images where the family name points to the most recent image. *Optional* when 'prefix' is a filename")
+	zone := gceCmd.String("zone", "europe-west1-d", "GCE Zone")
+	machine := gceCmd.String("machine", "g1-small", "GCE Machine Type")
+	keys := gceCmd.String("keys", "", "Path to Service Account JSON key file")
+	project := gceCmd.String("project", "", "GCE Project Name")
+	bucket := gceCmd.String("bucket", "", "GS Bucket to upload to. *Required* when 'prefix' is a filename")
+	public := gceCmd.Bool("public", false, "Select if file on GS should be public. *Optional* when 'prefix' is a filename")
+	family := gceCmd.String("family", "", "GCE Image Family. A group of images where the family name points to the most recent image. *Optional* when 'prefix' is a filename")
 
-	gcpCmd.Parse(args)
-	remArgs := gcpCmd.Args()
+	gceCmd.Parse(args)
+	remArgs := gceCmd.Args()
 	if len(remArgs) == 0 {
 		fmt.Printf("Please specify the prefix to the image to boot\n")
-		gcpCmd.Usage()
+		gceCmd.Usage()
 		os.Exit(1)
 	}
 	prefix := remArgs[0]
 
-	client, err := NewGCPClient(*keys, *project)
+	client, err := NewGCEClient(*keys, *project)
 	if err != nil {
-		log.Fatalf("Unable to connect to GCP")
+		log.Fatalf("Unable to connect to GCE")
 	}
 
 	suffix := ".img.tar.gz"

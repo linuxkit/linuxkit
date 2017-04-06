@@ -23,8 +23,8 @@ import (
 const pollingInterval = 500 * time.Millisecond
 const timeout = 300
 
-// GCPClient contains state required for communication with GCP
-type GCPClient struct {
+// GCEClient contains state required for communication with GCE
+type GCEClient struct {
 	client      *http.Client
 	compute     *compute.Service
 	storage     *storage.Service
@@ -33,11 +33,11 @@ type GCPClient struct {
 	privKey     *rsa.PrivateKey
 }
 
-// NewGCPClient creates a new GCP client
-func NewGCPClient(keys, projectName string) (*GCPClient, error) {
-	log.Debugf("Connecting to GCP")
+// NewGCEClient creates a new GCE client
+func NewGCEClient(keys, projectName string) (*GCEClient, error) {
+	log.Debugf("Connecting to GCE")
 	ctx := context.Background()
-	var client *GCPClient
+	var client *GCEClient
 	if keys != "" {
 		log.Debugf("Using Keys %s", keys)
 		f, err := os.Open(keys)
@@ -58,7 +58,7 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 			return nil, err
 		}
 
-		client = &GCPClient{
+		client = &GCEClient{
 			client:      config.Client(ctx),
 			projectName: projectName,
 		}
@@ -72,7 +72,7 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 		if err != nil {
 			return nil, err
 		}
-		client = &GCPClient{
+		client = &GCEClient{
 			client:      gc,
 			projectName: projectName,
 		}
@@ -99,7 +99,7 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 }
 
 // UploadFile uploads a file to Google Storage
-func (g GCPClient) UploadFile(filename, bucketName string, public bool) error {
+func (g GCEClient) UploadFile(filename, bucketName string, public bool) error {
 	log.Infof("Uploading file %s to Google Storage", filename)
 	f, err := os.Open(filename)
 	if err != nil {
@@ -123,7 +123,7 @@ func (g GCPClient) UploadFile(filename, bucketName string, public bool) error {
 }
 
 // CreateImage creates a GCE image using the a source from Google Storage
-func (g GCPClient) CreateImage(filename, storageURL, family string, replace bool) error {
+func (g GCEClient) CreateImage(filename, storageURL, family string, replace bool) error {
 	if replace {
 		if err := g.DeleteImage(filename); err != nil {
 			return err
@@ -155,7 +155,7 @@ func (g GCPClient) CreateImage(filename, storageURL, family string, replace bool
 }
 
 // DeleteImage deletes and image
-func (g GCPClient) DeleteImage(filename string) error {
+func (g GCEClient) DeleteImage(filename string) error {
 	var notFound bool
 	op, err := g.compute.Images.Delete(g.projectName, filename).Do()
 	if err != nil {
@@ -175,7 +175,7 @@ func (g GCPClient) DeleteImage(filename string) error {
 }
 
 // CreateInstance creates and starts an instance on GCE
-func (g GCPClient) CreateInstance(image, zone, machineType string, replace bool) error {
+func (g GCEClient) CreateInstance(image, zone, machineType string, replace bool) error {
 	if replace {
 		if err := g.DeleteInstance(image, zone, true); err != nil {
 			return err
@@ -236,7 +236,7 @@ func (g GCPClient) CreateInstance(image, zone, machineType string, replace bool)
 }
 
 // DeleteInstance removes an instance
-func (g GCPClient) DeleteInstance(instance, zone string, wait bool) error {
+func (g GCEClient) DeleteInstance(instance, zone string, wait bool) error {
 	var notFound bool
 	op, err := g.compute.Instances.Delete(g.projectName, zone, instance).Do()
 	if err != nil {
@@ -256,7 +256,7 @@ func (g GCPClient) DeleteInstance(instance, zone string, wait bool) error {
 }
 
 // GetInstanceSerialOutput streams the serial output of an instance
-func (g GCPClient) GetInstanceSerialOutput(instance, zone string) error {
+func (g GCEClient) GetInstanceSerialOutput(instance, zone string) error {
 	log.Infof("Getting serial port output for instance %s", instance)
 	var next int64
 	for {
@@ -284,7 +284,7 @@ func (g GCPClient) GetInstanceSerialOutput(instance, zone string) error {
 }
 
 // ConnectToInstanceSerialPort uses SSH to connect to the serial port of the instance
-func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
+func (g GCEClient) ConnectToInstanceSerialPort(instance, zone string) error {
 	log.Infof("Connecting to serial port of instance %s", instance)
 	gPubKeyURL := "https://cloud-certs.storage.googleapis.com/google-cloud-serialport-host-key.pub"
 	resp, err := http.Get(gPubKeyURL)
@@ -408,7 +408,7 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 	return nil
 }
 
-func (g *GCPClient) pollOperationStatus(operationName string) error {
+func (g *GCEClient) pollOperationStatus(operationName string) error {
 	for i := 0; i < timeout; i++ {
 		operation, err := g.compute.GlobalOperations.Get(g.projectName, operationName).Do()
 		if err != nil {
@@ -425,7 +425,7 @@ func (g *GCPClient) pollOperationStatus(operationName string) error {
 	return fmt.Errorf("timeout waiting for operation to finish")
 
 }
-func (g *GCPClient) pollZoneOperationStatus(operationName, zone string) error {
+func (g *GCEClient) pollZoneOperationStatus(operationName, zone string) error {
 	for i := 0; i < timeout; i++ {
 		operation, err := g.compute.ZoneOperations.Get(g.projectName, zone, operationName).Do()
 		if err != nil {
