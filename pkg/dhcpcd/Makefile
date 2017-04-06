@@ -5,7 +5,7 @@ IMAGE=dhcpcd
 
 BASE=alpine:3.5
 
-DEPS=dhcpcd.conf 10-mtu start_dhcpcd.sh
+DEPS=dhcpcd.conf usr/lib/dhcpcd/dhcpcd-hooks/10-mtu
 
 container: Dockerfile $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
@@ -13,7 +13,7 @@ container: Dockerfile $(DEPS)
 hash: Dockerfile $(DEPS)
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build sh -c '(cat /usr/local/bin/start_dhcpcd.sh /dhcpcd.conf /usr/lib/dhcpcd/dhcpcd-hooks/10-mtu /lib/apk/db/installed) | sha1sum' | sed 's/ .*//' > hash
+	docker run --rm $(IMAGE):build sh -c 'cat $^ /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > hash
 
 push: hash container
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
@@ -29,6 +29,6 @@ tag: hash container
 	rm -f hash
 
 clean:
-	rm -rf hash $(DIRS)
+	rm -rf hash
 
 .DELETE_ON_ERROR:
