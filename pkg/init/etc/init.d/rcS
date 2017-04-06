@@ -106,3 +106,12 @@ ip link set lo up
 mkdir /tmp/etc
 mv /etc/resolv.conf /tmp/etc/resolv.conf
 ln -snf /tmp/etc/resolv.conf /etc/resolv.conf
+
+# remount rootfs as readonly
+mount -o remount,ro /
+
+# bind and remount containers and var as read-write
+mount -o bind /containers /containers
+mount -o bind /var /var
+mount -o remount,rw,relatime /containers /containers
+mount -o remount,rw,nodev,nosuid,relatime /var /var
