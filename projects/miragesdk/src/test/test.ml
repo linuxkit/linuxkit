@@ -8,44 +8,50 @@ let random_string n =
 (* workaround https://github.com/mirage/alcotest/issues/88 *)
 exception Check_error of string
 
-let check_raises msg exn f =
+let check_raises msg f =
   Lwt.catch (fun () ->
       f () >>= fun () ->
       Lwt.fail (Check_error msg)
     ) (function
-      | Check_error e    -> Alcotest.fail e
-      | e ->
-        if exn e then Lwt.return_unit
-        else Fmt.kstrf Alcotest.fail "%s raised %a" msg Fmt.exn e)
-
-let is_unix_error = function
-  | Unix.Unix_error _ -> true
-  | _ -> false
+      | Check_error e -> Alcotest.fail e
+      | _             -> Lwt.return_unit
+    )
 
 let escape = String.Ascii.escape
 
 let write fd strs =
   Lwt_list.iter_s (fun str ->
-      IO.really_write fd str 0 (String.length str)
+      IO.write fd (Cstruct.of_string str) >>= function
+      | Ok ()   -> Lwt.return_unit
+      | Error e -> Fmt.kstrf Lwt.fail_with "write: %a" IO.pp_write_error e
     ) strs
 
+let read fd =
+  IO.read fd >>= function
+  | Ok (`Data x) -> Lwt.return (Cstruct.to_string x)
+  | Ok `Eof      -> Lwt.fail_with "read: EOF"
+  | Error e      -> Fmt.kstrf Lwt.fail_with "read: %a" IO.pp_error e
+
+let calf pipe = Init.(Fd.flow Pipe.(calf pipe))
+let priv pipe = Init.(Fd.flow Pipe.(priv pipe))
+
 let test_pipe pipe () =
-  let calf = Init.Fd.fd @@ Init.Pipe.(calf pipe) in
-  let priv = Init.Fd.fd @@ Init.Pipe.(priv pipe) in
+  let calf = calf pipe in
+  let priv = priv pipe in
   let name = Init.Pipe.name pipe in
   let test strs =
     let escape_strs = String.concat ~sep:"" @@ List.map escape strs in
     (* pipes are unidirectional *)
     (* calf -> priv works *)
     write calf strs >>= fun () ->
-    IO.read_all priv >>= fun buf ->
+    read priv >>= fun buf ->
     let msg = Fmt.strf "%s: calf -> priv" name in
     Alcotest.(check string) msg escape_strs (escape buf);
     (* priv -> calf don't *)
-    check_raises (Fmt.strf "%s: priv side is writable!" name) is_unix_error
+    check_raises (Fmt.strf "%s: priv side is writable!" name)
       (fun () -> write priv strs) >>= fun () ->
-    check_raises (Fmt.strf "%s: calf sid is readable!" name) is_unix_error
-      (fun () -> IO.read_all calf >|= ignore) >>= fun () ->
+    check_raises (Fmt.strf "%s: calf sid is readable!" name)
+      (fun () -> read calf >|= ignore) >>= fun () ->
     Lwt.return_unit
   in
   test [random_string 1] >>= fun () ->
@@ -56,19 +62,19 @@ let test_pipe pipe () =
   Lwt.return_unit
 
 let test_socketpair pipe () =
-  let calf = Init.Fd.fd @@ Init.Pipe.(calf pipe) in
-  let priv = Init.Fd.fd @@ Init.Pipe.(priv pipe) in
+  let calf = calf pipe in
+  let priv = priv pipe in
   let name = Init.Pipe.name pipe in
   let test strs =
     let escape_strs = String.concat ~sep:"" @@ List.map escape strs in
     (* socket pairs are bi-directional *)
     (* calf -> priv works *)
     write calf strs >>= fun () ->
-    IO.read_all priv >>= fun buf ->
+    read priv >>= fun buf ->
     Alcotest.(check string) (name ^ " calf -> priv") escape_strs (escape buf);
     (* priv -> cal works *)
     write priv strs >>= fun () ->
-    IO.read_all calf >>= fun buf ->
+    read calf >>= fun buf ->
     Alcotest.(check string) (name ^ " priv -> calf") escape_strs (escape buf);
     Lwt.return_unit
   in
@@ -117,14 +123,14 @@ let test_serialization to_cstruct of_cstruct message messages =
   in
   List.iter test messages
 
-let test_send t write read message messages =
-  let calf = Init.Fd.fd @@ Init.Pipe.(calf @@ ctl t) in
-  let priv = Init.Fd.fd @@ Init.Pipe.(priv @@ ctl t) in
+let test_send t write read message pp_error messages =
+  let calf = calf Init.Pipe.(ctl t) in
+  let priv = priv Init.Pipe.(ctl t) in
   let test m =
     write calf m >>= fun () ->
     read priv >|= function
-    | Ok m' -> Alcotest.(check message) "write/read" m m'
-    | Error (`Msg e) -> Alcotest.fail ("Message.read: " ^ e)
+    | Ok m'   -> Alcotest.(check message) "write/read" m m'
+    | Error e -> Fmt.kstrf Alcotest.fail "Message.read: %a" pp_error e
   in
   Lwt_list.iter_s test messages
 
@@ -138,11 +144,11 @@ let test_reply_serialization () =
 
 let test_query_send t () =
   let open Ctl.Query in
-  test_send t write read query queries
+  test_send t write read query pp_error queries
 
 let test_reply_send t () =
   let open Ctl.Reply in
-  test_send t write read reply replies
+  test_send t write read reply pp_error replies
 
 let failf fmt = Fmt.kstrf Alcotest.fail fmt
 
@@ -192,8 +198,8 @@ let delete_should_work t k =
   | Error (`Msg e) -> failf "write(%s) -> error: %s" k e
 
 let test_ctl t () =
-  let calf = Init.Fd.fd @@ Init.Pipe.(calf @@ ctl t) in
-  let priv = Init.Fd.fd @@ Init.Pipe.(priv @@ ctl t) in
+  let calf = calf Init.Pipe.(ctl t) in
+  let priv = priv Init.Pipe.(ctl t) in
   let k1 = "/foo/bar" in
   let k2 = "a" in
   let k3 = "b/c" in
@@ -230,6 +236,33 @@ let test_ctl t () =
     server ();
   ]
 
+let in_memory_flow () =
+  let flow = Mirage_flow_lwt.F.string () in
+  IO.create (module Mirage_flow_lwt.F) flow "mem"
+
+let test_exec () =
+  let test () =
+    let check n pipe =
+      let t = Init.Pipe.v () in
+      let pipe = pipe t in
+      Init.exec t ["/bin/sh"; "-c"; "echo foo >& " ^ string_of_int n] @@ fun _pid ->
+      read @@ priv pipe >>= fun foo ->
+      let name = Fmt.strf "fork %s" Init.Pipe.(name pipe) in
+      Alcotest.(check string) name "foo\n" foo;
+      Lwt.return_unit
+    in
+    check 1 Init.Pipe.stdout >>= fun () ->
+    (* avoid logging interference *)
+    let level = Logs.level () in
+    Logs.set_level None;
+    check 2 Init.Pipe.stderr >>= fun () ->
+    Logs.set_level level;
+    check 3 Init.Pipe.net    >>= fun () ->
+    check 4 Init.Pipe.ctl    >>= fun () ->
+    Lwt.return_unit
+  in
+  test ()
+
 let run f () =
   try Lwt_main.run (f ())
   with e ->
@@ -250,6 +283,7 @@ let test = [
   "send queries"        , `Quick, run (test_query_send t);
   "send replies"        , `Quick, run (test_reply_send t);
   "ctl"                 , `Quick, run (test_ctl t);
+  "exec"                , `Quick, run test_exec;
 ]
 
 let reporter ?(prefix="") () =
