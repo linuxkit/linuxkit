@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"path"
 
@@ -70,11 +71,23 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	id := instance.ID(path.Base(instanceDir))
 	log.Infof("[%s] New instance", id)
 
+	// The LogicalID may be a IP address. If so, translate it into a
+	// magic UUID which cause VPNKit to assign a fixed IP address
 	logicalID := string(id)
+	uuidStr := ""
 	if spec.LogicalID != nil {
 		logicalID = string(*spec.LogicalID)
+		if ip := net.ParseIP(logicalID); len(ip) > 0 {
+			uuid := make([]byte, 16)
+			uuid[12] = ip.To4()[0]
+			uuid[13] = ip.To4()[1]
+			uuid[14] = ip.To4()[2]
+			uuid[15] = ip.To4()[3]
+			uuidStr = fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
+		}
 	}
 	log.Infof("[%s] LogicalID: %s", id, logicalID)
+	log.Debugf("[%s] UUID: %s", id, uuidStr)
 
 	// Start a HyperKit instance
 	h, err := hyperkit.New(p.HyperKit, instanceDir, p.VPNKitSock, "")
@@ -86,6 +99,7 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	h.CPUs = int(properties["CPUs"].(float64))
 	h.Memory = int(properties["Memory"].(float64))
 	h.DiskSize = int(properties["Disk"].(float64))
+	h.UUID = uuidStr
 	h.UserData = spec.Init
 	h.Console = hyperkit.ConsoleFile
 	log.Infof("[%s] Booting: %s/%s", id, h.Kernel, h.Initrd)
