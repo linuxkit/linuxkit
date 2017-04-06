@@ -73,7 +73,7 @@ files:
     contents: '{"debug": true}'
 outputs:
   - format: kernel+initrd
-  - format: gce
+  - format: gcp
     project: moby
     bucket: mobytestjustin
     family: moby-dev
