@@ -36,7 +36,7 @@ test-bzImage: test-initrd.img
 # interactive versions need to use volume mounts
 .PHONY: qemu qemu-iso qemu-efi test-qemu-efi
 qemu: moby-initrd.img moby-bzImage moby-cmdline
-	./scripts/qemu.sh moby-initrd.img moby-bzImage "$(shell cat moby-cmdline)"
+	./scripts/qemu.sh moby-initrd.img moby-bzImage moby-cmdline
 
 qemu-iso: alpine/mobylinux-bios.iso
 	./scripts/qemu.sh $^
