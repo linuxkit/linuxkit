@@ -68,7 +68,8 @@ let default_cmd = [
 
 (*
 let default_cmd = [
-  "/usr/bin/runc"; "run"; "--preserve-fds"; "2"; "--bundle"; ".";  "dhcp-client"
+  "/usr/bin/runc"; "run"; "--preserve-fds"; "2"; "--bundle"; ".";  "calf
+"
 ]
 *)
 
