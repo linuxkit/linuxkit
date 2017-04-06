@@ -4,12 +4,19 @@
 set -x
 set -v
 
-# Needs to come from metadata
-UUID=6c007a14875d53d9bf0ef5a6fc0257c817f0fb83
-DISCOVER_URL=http://192.168.65.2:2381/v2/keys/discovery/${UUID}
+# --initial-cluster argument should come from meta data
 
-IP=$(ifconfig eth0 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://')
-NAME=$(hostname)
+# Wait till we have an IP address
+IP=""
+while [ -z "$IP" ]; do
+    IP=$(ifconfig eth0 2>/dev/null|awk '/inet addr:/ {print $2}'|sed 's/addr://')
+    sleep 1
+done
+
+# Name is infra+last octet of IP address
+NUM=$(echo ${IP} | cut -d . -f 4)
+PREFIX=$(echo ${IP} | cut -d . -f 1,2,3)
+NAME=infra${NUM}
 
 /usr/local/bin/etcd \
     --name ${NAME} \
@@ -19,4 +26,6 @@ NAME=$(hostname)
     --listen-peer-urls http://${IP}:2380 \
     --listen-client-urls http://${IP}:2379,http://127.0.0.1:2379 \
     --advertise-client-urls http://${IP}:2379 \
-    --discovery ${DISCOVER_URL}
+    --initial-cluster-token etcd-cluster-1 \
+    --initial-cluster infra200=http://${PREFIX}.200:2380,infra201=http://${PREFIX}.201:2380,infra202=http://${PREFIX}.202:2380 \
+    --initial-cluster-state new
