@@ -7,7 +7,7 @@ IMAGE=dhcp-client
 OBJS=obj/dhcp-client
 
 MIRAGE_COMPILE=mobylinux/mirage-compile:f903b0e1b4328271364cc63f123ac49d56739cef@sha256:a54d9ca84d3f5998dba92ce83d60d49289cee8908a8b0f6ec280d30ab8edf46c
-CALF_OBJS=obj/dhcp-client-calf
+CALF_OBJS=obj/calf/dhcp-client-calf
 CALF_FILES=dhcp-client/calf/config.ml dhcp-client/calf/unikernel.ml \
 	   dhcp-client/calf/jbuild
 
@@ -18,8 +18,8 @@ default: push
 	docker build -t $(IMAGE):build -f Dockerfile.build -q . > .build || \
 	 (rm -f $@ && exit 1)
 
-.pkg: Dockerfile.pkg $(OBJS) $(CALF_OBJS)
-	docker build -t $(IMAGE):pkg -f Dockerfile.pkg -q . > .pkg || \
+.pkg: Dockerfile.pkg $(OBJS) $(CALF_OBJS) obj/config.json
+	docker build --no-cache -t $(IMAGE):pkg -f Dockerfile.pkg -q . > .pkg || \
 	  (rm -f $@ && exit 1)
 
 .dev: Dockerfile.dev init-dev.sh
@@ -43,13 +43,23 @@ enter-dev: .dev
 #	    tar xf - || exit 1) && \
 #	touch $@
 
-$(OBJS) $(CALF_OBJS): .build $(FILES) $(CALF_FILES)
-	mkdir -p obj/usr/lib obj/bin
+$(OBJS): .build $(FILES)
+	mkdir -p obj/calf
 	( cd obj && \
-	  docker run --rm --net=none --log-driver=none -i $(IMAGE):build tar -cf - $(OBJS:obj/%=/%) $(CALF_OBJS:obj/%=/%) | tar xf - ) && \
+	  docker run --rm --net=none --log-driver=none -i $(IMAGE):build tar -cf - $(OBJS:obj/%=/%) | tar xf - ) && \
 	touch $@
 
-hash: Makefile Dockerfile.build Dockerfile.pkg $(FILES) $(CALF_FILES) .build
+$(CALF_OBJS): .build $(CALF_FILES)
+	mkdir -p obj/calf
+	( cd obj && \
+	  docker run --rm --net=none --log-driver=none -i $(IMAGE):build tar -cf - $(CALF_OBJS:obj/%=/%) | tar xf - ) && \
+	touch $@
+
+obj/config.json: dhcp-client/calf/config.json
+	mkdir -p obj/calf
+	cp $^ $@
+
+hash: Makefile Dockerfile.build Dockerfile.pkg $(FILES) $(CALF_FILES) .build obj/config.json
 	{ cat $^; \
 	  docker run --rm --entrypoint sh $(IMAGE):build -c 'cat /lib/apk/db/installed'; \
 	  docker run --rm --entrypoint sh $(IMAGE):build -c 'opam list'; } \

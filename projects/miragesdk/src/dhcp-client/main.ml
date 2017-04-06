@@ -7,6 +7,12 @@ module Log = (val Logs.src_log src : Logs.LOG)
 
 let failf fmt = Fmt.kstrf Lwt.fail_with fmt
 
+let run fmt =
+  Fmt.kstrf (fun str ->
+      match Sys.command str with
+      | 0 -> Lwt.return ()
+      | i -> Fmt.kstrf Lwt.fail_with "%S exited with code %d" str i
+    ) fmt
 
 module Handlers = struct
 
@@ -17,45 +23,55 @@ module Handlers = struct
     | `Updated (_, (_, `Contents (v, _))) -> Some v
     | _ -> None
 
-  let ip t =
+  let ip ~ethif t =
     Ctl.KV.watch_key t ["ip"] (fun diff ->
         match contents_of_diff diff with
+        | None    -> Lwt.return_unit
         | Some ip ->
+          let ip = String.trim ip in
           Log.info (fun l -> l "SET IP to %s" ip);
-          Lwt.return ()
-        | _ ->
-          Lwt.return ()
+          (* FIXME: use language bindings to netlink instead *)
+          run "ifconfig %s %s netmask 255.255.255.0" ethif ip
+          (* run "ip addr add %s/24 dev %s" ip ethif *)
       )
 
-  let handlers = [
-    ip;
+  let gateway t =
+    Ctl.KV.watch_key t ["gateway"] (fun diff ->
+        match contents_of_diff diff with
+        | None    -> Lwt.return_unit
+        | Some gw ->
+          let gw = String.trim gw in
+          Log.info (fun l -> l "SET GATEWAY to %s" gw);
+          (* FIXME: use language bindings to netlink instead *)
+          run "ip route add default via %s" gw
+      )
+
+  let handlers ~ethif = [
+    ip ~ethif;
+    gateway;
   ]
 
-  let watch path =
-    Ctl.v path >>= fun db ->
-    Lwt_list.map_p (fun f -> f db) handlers >>= fun _ ->
+  let watch ~ethif db =
+    Lwt_list.map_p (fun f -> f db) (handlers ethif) >>= fun _ ->
     let t, _ = Lwt.task () in
     t
 
 end
 
-external bpf_filter: unit -> string = "bpf_filter"
+external dhcp_filter: unit -> string = "bpf_filter"
 
 let t = Init.Pipe.v ()
 
-let ctl = string_of_int Init.(Fd.to_int Pipe.(calf @@ ctl t))
-let net = string_of_int Init.(Fd.to_int Pipe.(calf @@ net t))
 let default_cmd = [
-  "/dhcp-client-calf"; "--ctl="^ctl; "--net="^net
+  "/calf/dhcp-client-calf"; "--net=3"; "--ctl=4"; "-vv";
 ]
 
-(* FIXME: use runc isolation
-   let default_cmd = [
-    "/usr/bin/runc"; "--"; "run";
-    "--bundle"; "/containers/images/000-dhcp-client";
-    "dhcp-client"
-  ] in
-  *)
+(*
+let default_cmd = [
+  "/usr/bin/runc"; "run"; "--preserve-fds"; "2"; "--bundle"; ".";  "calf
+"
+]
+*)
 
 let read_cmd file =
   if Sys.file_exists file then
@@ -71,18 +87,18 @@ let read_cmd file =
     | Some f -> read_cmd f
   in
   Lwt_main.run (
-    let net = Init.rawlink ~filter:(bpf_filter ()) ethif in
     let routes = [
       "/ip";
+      "/gateway";
       "/domain";
       "/search";
       "/mtu";
       "/nameservers/*"
     ] in
-    Ctl.v "/data" >>= fun ctl ->
-    let fd = Init.(Fd.fd @@ Pipe.(priv @@ ctl t)) in
-    let ctl () = Ctl.Server.listen ~routes ctl fd in
-    let handlers () = Handlers.watch path in
+    Ctl.v path >>= fun db ->
+    let ctl fd = Ctl.Server.listen ~routes db fd in
+    let handlers () = Handlers.watch ~ethif db in
+    let net = Init.rawlink ~filter:(dhcp_filter ()) ethif in
     Init.run t ~net ~ctl ~handlers cmd
   )
 
