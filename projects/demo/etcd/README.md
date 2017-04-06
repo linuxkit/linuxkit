@@ -6,7 +6,7 @@ Docker for Mac container to bootstrap the cluster. For a cloud based demo, we'd 
 The moby `etcd` package is build with [build-pkg.sh](./build-pkg.sh). It take the official `etcd` container and adds a [script](./etcd.sh) to start `etcd`.
 
 
-## Simple single node cluster
+## Simple single node cluster (OUTDATED)
 
 - Edit `./dfm-setup.sh` and set `NUMPEERS` to `1`
 - Start the etcd bootstrap container in on window:
@@ -21,7 +21,7 @@ moby build etcd
 moby run etcd
 ```
 
-## InfraKit cluster setup
+## InfraKit cluster setup (OUTDATED)
 
 This should create a HyperKit based, InfraKit managed `etcd` cluster with 5 `etcd` instances.
 
@@ -34,10 +34,10 @@ rm -rf ~/.infrakit
 ```
 - Start the infrakit plugins, each in it's own window from the root of the infrakit source tree:
 ```
-./build/infrakit-group-default
+infrakit-group-default
 ```
 ```
-./build/infrakit-flavor-vanilla
+infrakit-flavor-vanilla
 ```
 - Start the hyperkit instance plugin from this directory:
 ```
@@ -53,11 +53,34 @@ rm -rf ~/.infrakit
 
 - Commit the infrakit config:
 ```
-~/src/docker/infrakit/build/infrakit group commit infrakit.json
+infrakit group commit infrakit.json
 ```
 
 To check if everything is fine, note down the IP address from one of
 the nodes and then:
 ```
 docker run --rm -t quay.io/coreos/etcd:v3.1.5 etcdctl --endpoints http://192.168.65.24:2379 member list
+```
+
+## Infrakit GCP setup
+
+Note: This setup is somewhat specific to our GCP setup (IP addresses
+and account info) and needs to be adjusted to your setting. The
+configuration is documented in the top-level README.md.
+
+Build the image and upload it:
+```
+moby build etcd
+```
+
+Start the infrakit components in separate windows:
+```
+infrakit-group-default
+infrakit-flavor-vanilla
+infrakit-instance-gcp
+```
+
+Commit the configuration:
+```
+infrakit group commit infrakit-gce.json
 ```
