@@ -92,21 +92,27 @@ module Client: sig
   type t
   (** The type for client state. *)
 
+  type error
+  (** The type for client errors. *)
+
+  val pp_error: error Fmt.t
+  (** [pp_error] is the pretty-printer for client errors. *)
+
   val v: IO.t -> t
   (** [v fd] is the client state using [fd] to send requests to the
       server. A client state also stores some state for all the
       incomplete client queries. *)
 
-  val read: t -> string -> (string option, [`Msg of string]) result Lwt.t
+  val read: t -> string -> (string option, error) result Lwt.t
   (** [read t k] is the value associated with the key [k] in the
       control plane state. Return [None] if no value is associated to
       [k]. *)
 
-  val write: t -> string -> string -> (unit, [`Msg of string]) result Lwt.t
+  val write: t -> string -> string -> (unit, error) result Lwt.t
   (** [write t p v] associates [v] to the key [k] in the control plane
       state. *)
 
-  val delete: t -> string -> (unit, [`Msg of string]) result Lwt.t
+  val delete: t -> string -> (unit, error) result Lwt.t
   (** [delete t k] remove [k]'s binding in the control plane state. *)
 
 end

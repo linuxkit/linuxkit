@@ -257,6 +257,9 @@ module Client = struct
 
   let version = 0l
 
+  type error = [`Msg of string]
+  let pp_error ppf (`Msg s) = Fmt.string ppf s
+
   module K = struct
     type t = int32
     let equal = Int32.equal
