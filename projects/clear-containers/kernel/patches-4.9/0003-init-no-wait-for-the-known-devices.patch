@@ -1,0 +1,39 @@
+From 58736c7e70371aa602e284812d493108b25070c3 Mon Sep 17 00:00:00 2001
+From: Arjan van de Ven <arjan@linux.intel.com>
+Date: Mon, 22 Jun 2015 09:33:33 -0500
+Subject: [PATCH 3/4] init: no wait for the known devices
+
+No wait for the known devices to complete their probing
+
+Author:    Arjan van de Ven <arjan@linux.intel.com>
+
+Signed-off-by: Miguel Bernal Marin <miguel.bernal.marin@linux.intel.com>
+---
+ init/do_mounts.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/init/do_mounts.c b/init/do_mounts.c
+index dea5de95..da840946 100644
+--- a/init/do_mounts.c
++++ b/init/do_mounts.c
+@@ -28,6 +28,7 @@
+ #include <linux/slab.h>
+ #include <linux/ramfs.h>
+ #include <linux/shmem_fs.h>
++#include <linux/async.h>
+ 
+ #include <linux/nfs_fs.h>
+ #include <linux/nfs_fs_sb.h>
+@@ -563,7 +564,8 @@ void __init prepare_namespace(void)
+ 	 * For example, it is not atypical to wait 5 seconds here
+ 	 * for the touchpad of a laptop to initialize.
+ 	 */
+-	wait_for_device_probe();
++	//wait_for_device_probe();
++	async_synchronize_full();
+ 
+ 	md_run_setup();
+ 
+-- 
+2.12.2
+
