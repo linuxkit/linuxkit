@@ -20,4 +20,5 @@ RUN git checkout $RUNC_COMMIT
 RUN make static BUILDTAGS="seccomp"
 RUN cp runc /usr/bin/
 WORKDIR /
-COPY . .
+RUN printf "FROM scratch\nCOPY /usr/bin/runc /usr/bin/\n" > Dockerfile
+CMD ["tar", "cf", "-", "Dockerfile", "usr/bin/runc"]
