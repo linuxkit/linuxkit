@@ -1,7 +1,8 @@
 kernel:
   image: "mobylinux/kernel-selinux:4.9.x"
   cmdline: "console=ttyS0 page_poison=1 security=selinux selinux=1"
-init: "mobylinux/init:b5249a412536b4e69f8e1f668680d2ae185cc505"
+init:
+  - "mobylinux/init:b5249a412536b4e69f8e1f668680d2ae185cc505"
 system:
   - name: sysctl
     image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"

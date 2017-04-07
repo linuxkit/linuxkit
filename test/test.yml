@@ -1,7 +1,8 @@
 kernel:
   image: "mobylinux/kernel:4.9.x"
   cmdline: "console=ttyS0"
-init: "mobylinux/init:7a17035030dca3938947516241f51d28922cebb2"
+init:
+  - "mobylinux/init:7a17035030dca3938947516241f51d28922cebb2"
 system:
   - name: binfmt
     image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"

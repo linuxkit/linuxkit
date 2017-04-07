@@ -1,7 +1,8 @@
 kernel:
   image: "mobylinux/kernel:4.9.x"
   cmdline: "console=ttyS0 page_poison=1"
-init: "mobylinux/init:9d755f7e7d108d523448e4a503f1613b7d870389@sha256:9ccb16f2d8b3a09d12f5459106763f1836c064e420a13360e2e25599337960dc"
+init:
+  - "mobylinux/init:9d755f7e7d108d523448e4a503f1613b7d870389@sha256:9ccb16f2d8b3a09d12f5459106763f1836c064e420a13360e2e25599337960dc"
 system:
   - name: sysctl
     image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
