@@ -1,0 +1,6 @@
+# A dockerfile to build an etcd container image from the upstream one
+#
+# It sets the environment to talk to the local cluster
+FROM quay.io/coreos/etcd:v3.1.5
+
+ENV ETCDCTL_ENDPOINTS="http://192.168.65.200:2379,http://192.168.65.201:2379,http://192.168.65.202:2379,http://192.168.65.203:2379,http://192.168.65.204:2379"
