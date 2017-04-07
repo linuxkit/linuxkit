@@ -41,7 +41,7 @@ daemon:
     net: host
 outputs:
   - format: kernel+initrd
-  - format: gce
-    project: docker4x
-    bucket: rolf
-    replace: true
+#  - format: gcp
+#    project: docker4x
+#    bucket: rolf
+#    replace: true
