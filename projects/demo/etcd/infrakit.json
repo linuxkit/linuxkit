@@ -14,7 +14,7 @@
             "Plugin": "instance-hyperkit",
             "Properties": {
                 "Moby": "etcd",
-                "Disk" : 0,
+                "Disk" : 1024,
                 "CPUs" : 1,
                 "Memory" : 1024
             }
