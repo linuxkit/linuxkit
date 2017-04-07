@@ -4,8 +4,6 @@
 set -x
 set -v
 
-# --initial-cluster argument should come from meta data
-
 # Wait till we have an IP address
 IP=""
 while [ -z "$IP" ]; do
@@ -18,6 +16,10 @@ NUM=$(echo ${IP} | cut -d . -f 4)
 PREFIX=$(echo ${IP} | cut -d . -f 1,2,3)
 NAME=infra${NUM}
 
+# This should come from Metadata
+INIT_CLUSTER=infra200=http://${PREFIX}.200:2380,infra201=http://${PREFIX}.201:2380,infra202=http://${PREFIX}.202:2380,infra203=http://${PREFIX}.203:2380,infra204=http://${PREFIX}.204:2380
+
+# Try to start in *new* cluster mode
 /usr/local/bin/etcd \
     --name ${NAME} \
     --debug \
@@ -27,13 +29,12 @@ NAME=infra${NUM}
     --listen-client-urls http://${IP}:2379,http://127.0.0.1:2379 \
     --advertise-client-urls http://${IP}:2379 \
     --initial-cluster-token etcd-cluster-1 \
-    --initial-cluster infra200=http://${PREFIX}.200:2380,infra201=http://${PREFIX}.201:2380,infra202=http://${PREFIX}.202:2380 \
+    --initial-cluster ${INIT_CLUSTER} \
     --initial-cluster-state new
 
-echo "Returned $?"
+[ $? -eq 0 ] && exit 0
 
-# If we get here, joining a new cluster failed. Let's try joining an
-# existing cluster
+# Joining the new cluster failed. Let's try joining an *existing* cluster
 /usr/local/bin/etcd \
     --name ${NAME} \
     --debug \
@@ -42,5 +43,5 @@ echo "Returned $?"
     --listen-peer-urls http://${IP}:2380 \
     --listen-client-urls http://${IP}:2379,http://127.0.0.1:2379 \
     --advertise-client-urls http://${IP}:2379 \
-    --initial-cluster infra200=http://${PREFIX}.200:2380,infra201=http://${PREFIX}.201:2380,infra202=http://${PREFIX}.202:2380 \
+    --initial-cluster ${INIT_CLUSTER} \
     --initial-cluster-state existing
