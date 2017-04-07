@@ -10,7 +10,7 @@ RUN \
   linux-headers \
   make \
   && true
-ENV RUNC_COMMIT=ef9a4b315558d31eae520725ff67383c2f79c3cb
+ENV RUNC_COMMIT=ac50e77bbb440dcab354a328c79754e2502b79ca
 RUN mkdir -p $GOPATH/src/github.com/opencontainers && \
   cd $GOPATH/src/github.com/opencontainers && \
   git clone https://github.com/opencontainers/runc.git
