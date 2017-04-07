@@ -6,13 +6,26 @@ Most of the scripts/files assume you are on a Mac.
 
 - Recent Docker for Mac installed (edge, nightly, master channel)
 - Currently, you need a *custom* version of VPNKit installed in Docker
-  for Mac. Contact @magnus or @rneugeba.
+  for Mac (see below)
 - For the GCP portion: `brew install google-cloud-sdk`
 - For `etcd`: `brew install etcd`
 - Infrakit: Clone [infrakit](https://github.com/docker/infrakit) and
   the [GCP plugin](https://github.com/docker/infrakit.gcp) for
   infrakit.  For each, `make build-in-container` and then copy the
   contents of `./build` somewhere in your path.
+
+For some of the demos, you currently need an updated version of VPNKit
+for Docker for Mac. Hopefully this version will ship as default soon.
+
+Quit docker for Mac
+```
+curl -fsSL --retry 10 -z vpnkit.tgz -o vpnkit.tgz https://circle-artifacts.com/gh/docker/vpnkit/708/artifacts/0/Users/distiller/vpnkit/vpnkit.tgz
+
+tar xzvf vpnkit.tgz
+cp Contents/MacOS/vpnkit /Applications/Docker.app/Contents/Resources/bin/
+```
+Restart Docker for Mac.
+
 
 # GCP Setup
 
