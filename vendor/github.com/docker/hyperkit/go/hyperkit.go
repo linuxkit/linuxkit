@@ -69,6 +69,8 @@ type HyperKit struct {
 	StateDir string `json:"state_dir"`
 	// VPNKitSock is the location of the VPNKit socket used for networking.
 	VPNKitSock string `json:"vpnkit_sock"`
+	// UUID is a string containing a UUID for the VM. It can be used in conjunction with VPNKit to get consistent IP address.
+	UUID string `json:"uuid"`
 	// DiskImage is the path to the disk image to use
 	DiskImage string `json:"disk"`
 	// ISOImage is the (optional) path to a ISO image to attach
@@ -144,12 +146,12 @@ func New(hyperkit, statedir, vpnkitsock, diskimage string) (*HyperKit, error) {
 func FromState(statedir string) (*HyperKit, error) {
 	b, err := ioutil.ReadFile(filepath.Join(statedir, jsonFile))
 	if err != nil {
-		return nil, fmt.Errorf("Can't read json file: ", err)
+		return nil, fmt.Errorf("Can't read json file: %s", err)
 	}
 	h := &HyperKit{}
 	err = json.Unmarshal(b, h)
 	if err != nil {
-		return nil, fmt.Errorf("Can't parse json file: ", err)
+		return nil, fmt.Errorf("Can't parse json file: %s", err)
 	}
 
 	// Make sure the pid written by hyperkit is the same as in the json
@@ -353,7 +355,11 @@ func (h *HyperKit) buildArgs(cmdline string) {
 
 	a = append(a, "-s", "0:0,hostbridge")
 	if h.VPNKitSock != "" {
-		a = append(a, "-s", fmt.Sprintf("1:0,virtio-vpnkit,path=%s", h.VPNKitSock))
+		if h.UUID == "" {
+			a = append(a, "-s", fmt.Sprintf("1:0,virtio-vpnkit,path=%s", h.VPNKitSock))
+		} else {
+			a = append(a, "-s", fmt.Sprintf("1:0,virtio-vpnkit,path=%s,uuid=%s", h.VPNKitSock, h.UUID))
+		}
 	}
 	if h.DiskImage != "" {
 		a = append(a, "-s", fmt.Sprintf("2:0,virtio-blk,%s", h.DiskImage))
@@ -502,7 +508,7 @@ func checkHyperKit(hyperkit string) (string, error) {
 	if hyperkit != "" {
 		p, err := exec.LookPath(hyperkit)
 		if err != nil {
-			return "", fmt.Errorf("Could not find hyperkit executable: ", hyperkit)
+			return "", fmt.Errorf("Could not find hyperkit executable %s: %s", hyperkit, err)
 		}
 		return p, nil
 	}
