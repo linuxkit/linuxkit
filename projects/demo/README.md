@@ -27,6 +27,19 @@ cp Contents/MacOS/vpnkit /Applications/Docker.app/Contents/Resources/bin/
 Restart Docker for Mac.
 
 
+# Local setup
+
+We use a `socat` container to forward ports from the VM to localhost (via Docker for Mac), to make it easier to access some VMs. To build
+```
+(cd dockerfiles; docker build -t socat -f Dockerfile.socat .)
+```
+And then run:
+```
+docker run --rm -t -d -p 8080:8080 socat tcp-listen:8080,reuseaddr,fork tcp:192.168.65.100:80
+```
+This forwards local port `8080` to `192.168.65.100:80`, so if you start, say the `intro` image, run `moby run -ip 196.168.65.100 intro`
+
+
 # GCP Setup
 
 You probably want to change the project/zone
