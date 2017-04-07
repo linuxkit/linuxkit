@@ -62,16 +62,15 @@ external dhcp_filter: unit -> string = "bpf_filter"
 
 let t = Init.Pipe.v ()
 
+(*
 let default_cmd = [
   "/calf/dhcp-client-calf"; "--net=3"; "--ctl=4"; "-vv";
 ]
-
-(*
-let default_cmd = [
-  "/usr/bin/runc"; "run"; "--preserve-fds"; "2"; "--bundle"; ".";  "calf
-"
-]
 *)
+
+let default_cmd = [
+  "/usr/bin/runc"; "run"; "--preserve-fds"; "2"; "--bundle"; ".";  "calf"
+]
 
 let read_cmd file =
   if Sys.file_exists file then
