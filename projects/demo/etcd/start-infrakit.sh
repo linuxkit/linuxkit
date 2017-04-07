@@ -6,6 +6,7 @@ INFRAKIT_HOME=~/.infrakit
 IK_PLUGINS=$INFRAKIT_HOME/plugins
 
 rm -rf $INFRAKIT_HOME
+mkdir -p $INFRAKIT_HOME/cli
 
 infrakit-flavor-vanilla &
 infrakit-instance-hyperkit &
