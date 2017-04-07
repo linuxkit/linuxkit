@@ -53,7 +53,9 @@ daemon:
     binds:
      - /dev:/dev
      - /lib/modules:/lib/modules
-     - /var:/var
+     - /var/run:/var/run
+     - /var/lib:/var/lib
+     - /etc/kubernetes:/etc/kubernetes
   - name: kubelet
     image: "errordeveloper/mobykube:master"
     capabilities:
@@ -64,7 +66,14 @@ daemon:
      - type: cgroup
        options: ["rw","nosuid","noexec","nodev","relatime"]
     binds:
-     - /etc/resolv.conf:/etc/resolv.conf
-     - /var:/var
+     - /dev:/dev
+     - /var/run:/var/run
+     - /var/lib:/var/lib
+     # TODO /{etc,opt}/cni & /var/lib/kubelet:rw,rshared
+     - /var/log:/var/log #/var/log/containers
+     - /etc/kubernetes:/etc/kubernetes
+files:
+  - path: etc/kubernetes/.empty
+    contents: '# workaround to create parent directory'
 outputs:
   - format: kernel+initrd
