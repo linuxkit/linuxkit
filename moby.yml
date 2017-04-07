@@ -50,6 +50,9 @@ daemon:
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
+trust:
+  image:
+    - mobylinux/kernel
 outputs:
   - format: kernel+initrd
   - format: iso-bios
