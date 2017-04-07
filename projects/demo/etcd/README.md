@@ -15,7 +15,7 @@ moby build etcd
 
 ## InfraKit cluster setup (OUTDATED)
 
-This should create a HyperKit based, InfraKit managed `etcd` cluster with 3 `etcd` instances.
+This should create a HyperKit based, InfraKit managed `etcd` cluster with 5 `etcd` instances.
 
 Start InfraKit:
 ```
