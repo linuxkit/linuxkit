@@ -1,0 +1,8 @@
+# A dockerfile to build a socat container
+#
+# It sets the environment to talk to the local cluster
+FROM alpine:edge
+
+RUN apk add --no-cache socat
+
+ENTRYPOINT [ "/usr/bin/socat" ]
