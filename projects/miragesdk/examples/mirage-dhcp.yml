@@ -25,7 +25,7 @@ services:
     oomScoreAdj: -800
     readonly: true
   - name: dhcp-client
-    image: "mobylinux/dhcp-client:9e7009ae469ddd4d37f9cffaad2cf612114a3fb0@sha256:4421e05a0082b56c4ef83ca652e1da1a5af3a24e5baec61e7ba5b981f3b94a09"
+    image: "mobylinux/dhcp-client:aadc4b05ef53cc75befcf60963d4b273f34267bd"
     net: host
     capabilities:
      - CAP_NET_ADMIN # to bring eth0 up

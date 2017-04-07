@@ -71,24 +71,30 @@ let read_cmd file =
   else
     failwith ("Cannot read " ^ file)
 
- let run () cmd ethif path =
+let infof fmt =
+  Fmt.kstrf (fun msg () ->
+      let date = Int64.of_float (Unix.gettimeofday ()) in
+      Irmin.Info.v ~date ~author:"priv" msg
+    ) fmt
+
+let run () cmd ethif path =
   let cmd = match cmd with
     | None   -> default_cmd
     | Some f -> read_cmd f
   in
   Lwt_main.run (
     let routes = [
-      "/ip";
-      "/gateway";
-      "/domain";
-      "/search";
-      "/mtu";
-      "/nameservers/*"
+      "/ip"     , [`Write];
+      "/mac"    , [`Read ];
+      "/gateway", [`Write];
     ] in
     Ctl.v path >>= fun db ->
     let ctl fd = Ctl.Server.listen ~routes db fd in
     let handlers () = Handlers.watch ~ethif db in
     let net = Init.rawlink ~filter:(dhcp_filter ()) ethif in
+    Net.mac ethif >>= fun mac ->
+    let mac = Macaddr.to_string mac ^ "\n" in
+    Ctl.KV.set db ~info:(infof "Add mac") ["mac"] mac >>= fun () ->
     Init.run t ~net ~ctl ~handlers cmd
   )
 
