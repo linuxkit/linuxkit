@@ -1,5 +1,5 @@
 .PHONY: default all
-default: bin/moby moby-initrd.img
+default: bin/moby 
 all: default
 
 VERSION="0.0" # dummy for now
@@ -27,37 +27,19 @@ bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
 
-moby-initrd.img: bin/moby moby.yml
-	bin/moby build moby.yml
-
-moby-bzImage: moby-initrd.img
-
 test-initrd.img: bin/moby test/test.yml
 	bin/moby build test/test.yml
 
 test-bzImage: test-initrd.img
 
 # interactive versions need to use volume mounts
-.PHONY: qemu qemu-iso qemu-efi test-qemu-efi
-qemu: moby-initrd.img moby-bzImage moby-cmdline
-	./scripts/qemu.sh moby-initrd.img moby-bzImage moby-cmdline
-
-qemu-iso: alpine/mobylinux-bios.iso
-	./scripts/qemu.sh $^
-
-qemu-efi: moby-efi.iso
-	./scripts/qemu.sh $^
-
+.PHONY: test-qemu-efi
 test-qemu-efi: test-efi.iso
 	./scripts/qemu.sh $^ 2>&1 | tee test-efi.log
 	$(call check_test_log, test-efi.log)
 
 bin:
 	mkdir -p $@
-
-.PHONY: hyperkit
-hyperkit: bin/moby moby-initrd.img moby-bzImage moby.yml
-	bin/moby run moby
 
 define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
@@ -73,18 +55,6 @@ hyperkit-test: bin/moby test-initrd.img test-bzImage test-cmdline
 test: test-initrd.img test-bzImage test-cmdline
 	tar cf - $^ | ./scripts/qemu.sh 2>&1 | tee test.log
 	$(call check_test_log, test.log)
-
-.PHONY: ebpf
-EBPF_TAG=ebpf/ebpf.tag
-EBPF_IMAGE=mobylinux/ebpf:$(MEDIA_PREFIX)$(TAG)
-ebpf: alpine/initrd.img kernel/x86_64/vmlinuz64
-ifeq ($(STATUS),)
-	[ -f $(EBPF_TAG) ]
-	docker tag $(shell cat $(EBPF_TAG)) $(EBPF_IMAGE)
-	docker push $(EBPF_IMAGE)
-else
-	$(error "git not clean")
-endif
 
 .PHONY: ci ci-tag ci-pr
 ci:
