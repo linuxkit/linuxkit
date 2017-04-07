@@ -46,7 +46,7 @@ the hardware support is available.
   a lot of architectural questions and makes subsequent protocol implementations such
   as HTTPS or NTP more straightforward.  See [why-dhcp](why-dhcp.md) for more details.
 
-- The **[roadmap](roadmap.md)** describes the architecture of the DHCP client and current 
+- The **[roadmap](roadmap.md)** describes the architecture of the DHCP client and current
   development directions.
 
 - We are also packaging up the Alpine `dhcpcd` with the same configuration conventions
@@ -63,6 +63,6 @@ the hardware support is available.
 # Getting Started
 
 ```
-../../bin/moby examples/mirage-dhcp.yml`
-../../scripts/qemu.sh mirage-dhcp-initrd.img mirage-dhcp-bzImage "$(bin/moby --cmdline mirage-dhcp.yml)"
+../../bin/moby build examples/mirage-dhcp.yml`
+../../bin/moby run mirage-dhcp
 ```
