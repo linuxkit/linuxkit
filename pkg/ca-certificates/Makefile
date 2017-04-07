@@ -1,14 +1,16 @@
 .PHONY: tag push
 
-BASE=golang:1.7-alpine3.5
-IMAGE=containerd
+BASE=debian:testing
+IMAGE=ca-certificates
 
 default: push
 
 hash: Dockerfile
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build sh -c 'cat Dockerfile /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
+	tar cf - $^ | docker build --no-cache -t $(IMAGE):build0 -
+	docker run --rm $(IMAGE):build0 | docker build --no-cache -t $(IMAGE):build -
+	docker run --rm -i $(IMAGE):build0 sh -c "cat /etc/ssl/certs/ca-certificates.crt /etc/debian_version | sha1sum - | sed 's/ .*//'" > $@
+	docker rmi $(IMAGE):build0
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
