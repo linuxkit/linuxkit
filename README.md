@@ -17,12 +17,14 @@ Moby, a toolkit for building custom minimal, immutable Linux distributions.
 
 ### Build the `moby` tool
 
-Simple build instructions: use `make` to build.
-This will build the Moby customisation tool and an example Moby initrd image from the `moby.yml` file.
+Simple build instructions: use `make` to build. This will build the Moby customisation tool. 
 
 If you already have a Go build environment and installed the source in your `GOPATH`
 you can do `go install github.com/docker/moby/src/cmd/moby` to install the `moby` tool
-instead, and then use `moby build moby.yml` to build the example configuration.
+instead
+
+Once you have built the tool, use `bin/moby build moby.yml` to build the example configuration,
+and `bin/moby run moby` to run locally. Use `halt` to terminate on the console.
 
 Build requirements:
 - GNU `make`
