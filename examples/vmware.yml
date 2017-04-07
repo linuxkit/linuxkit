@@ -47,6 +47,9 @@ daemon:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
     net: host
+trust:
+  image:
+    - mobylinux/kernel
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
