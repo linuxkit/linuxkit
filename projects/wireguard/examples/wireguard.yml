@@ -1,7 +1,8 @@
 kernel:
   image: "mobylinux/kernel-wireguard:4.9.x"
   cmdline: "console=ttyS0 page_poison=1"
-init: "mobylinux/init-wireguard:4309fb8b65cafa9e07b0e75d86a0bff4070e67e9"
+init:
+  - "mobylinux/init-wireguard:4309fb8b65cafa9e07b0e75d86a0bff4070e67e9"
 system:
   - name: sysctl
     image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
