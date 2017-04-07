@@ -126,7 +126,10 @@ val v: string -> KV.t Lwt.t
 
 module Server: sig
 
-  val listen: routes:string list -> KV.t -> IO.t -> unit Lwt.t
+  type op = [ `Read | `Write | `Delete ]
+  (** The type for operations to perform on routes. *)
+
+  val listen: routes:(string * op list) list -> KV.t -> IO.t -> unit Lwt.t
   (** [listen ~routes kv fd] is the thread exposing the KV store [kv],
       holding control plane state, running inside the privileged
       container. [routes] are the routes exposed by the server to the

@@ -330,6 +330,8 @@ end
 
 module Server = struct
 
+  type op = [ `Read | `Write | `Delete ]
+
   let ok q payload =
     { Reply.id = q.Query.id; status = Reply.Ok; payload }
 
@@ -348,21 +350,29 @@ module Server = struct
         Irmin.Info.v ~date ~author:"calf" msg
       ) fmt
 
-  let dispatch db q =
+  let not_allowed q =
+    let path = q.Query.path in
+    let err = Fmt.strf "%s is not an allowed path" path in
+    Log.err (fun l -> l "%ld: %s" q.Query.id path);
+    error q err
+
+  let dispatch db op q =
     with_key q (fun key ->
+        let can x = List.mem x op in
         match q.Query.operation with
-        | Write ->
+        | Write when can `Write ->
           let info = infof "Updating %a" KV.Key.pp key in
           KV.set db ~info key q.payload >|= fun () ->
           ok q ""
-        | Delete ->
+        | Delete when can `Delete ->
           let info = infof "Removing %a" KV.Key.pp key in
           KV.remove db ~info key >|= fun () ->
           ok q ""
-        | Read ->
-          KV.find db key >|= function
+        | Read when can `Read ->
+          (KV.find db key >|= function
           | None   -> error q err_not_found
-          | Some v -> ok q v
+          | Some v -> ok q v)
+        | _ -> Lwt.return (not_allowed q)
       )
 
   let listen ~routes db fd =
@@ -384,13 +394,12 @@ module Server = struct
       Lwt_condition.wait cond >>= fun () ->
       let q = Queue.pop queries in
       let path = q.Query.path in
-      (if List.mem path routes then (
-          dispatch db q >>= fun r ->
+      (if List.mem_assoc path routes then (
+          let op = List.assoc path routes in
+          dispatch db op q >>= fun r ->
           Reply.write fd r
         ) else (
-         let err = Fmt.strf "%s is not an allowed path" path in
-         Log.err (fun l -> l "%ld: %s" q.Query.id path);
-         Reply.write fd (error q err)
+         Reply.write fd (not_allowed q)
        )) >>= fun () ->
       process ()
     in
