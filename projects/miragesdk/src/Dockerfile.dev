@@ -1,23 +1,26 @@
-FROM mobylinux/mirage-compile:4e4686b60909d88a75f3f24c0429d0a8e415faa3
+FROM ocaml/opam:alpine-3.5_ocaml-4.04.0
 RUN cd /home/opam/opam-repository && git pull && opam update -u
 
-RUN opam pin -n add conduit https://github.com/samoht/ocaml-conduit.git#fd
-RUN opam pin -n add mirage-net-unix https://github.com/samoht/mirage-net-unix.git#fd
+# to be able to use cstruct.ppx + jbuilder
+RUN opam pin add cstruct 2.4.0 -n
+# to bring eth0 up
+RUN opam pin add tuntap 1.0.0 -n
+RUN opam pin add mirage-net-fd --dev -n
 
-RUN opam depext -iy mirage-net-unix logs-syslog cohttp decompress
-RUN opam depext -iy rawlink tuntap.1.0.0 jbuilder
+RUN opam depext -iy mirage-net-unix logs-syslog irmin-unix cohttp decompress
+RUN opam depext -iy rawlink tuntap jbuilder irmin-watcher inotify rresult
 
-RUN opam pin add tuntap 1.0.0
+# TMP: to compile the calf
+RUN opam pin add -n charrua-client https://github.com/yomimono/charrua-client.git#state-halfway
+RUN opam depext -uiy ocamlfind topkg-care ocamlbuild lwt mirage-types-lwt mirage
+RUN opam depext -uiy charrua-client cohttp conduit mirage-unix
+RUN opam depext -uiy mirage-net-fd ptime mirage-logs
 
 RUN sudo mkdir -p /src /bin
-
-COPY calf /src/calf
-RUN sudo chown opam -R /src
-RUN cd /src/calf && opam config exec -- mirage configure && make depend
-
 COPY . /src
 COPY init-dev.sh /home/opam/init-dev.sh
 
 USER opam
 WORKDIR /src
+
 ENTRYPOINT ["/bin/sh", "/home/opam/init-dev.sh"]
