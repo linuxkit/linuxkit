@@ -34,14 +34,19 @@ Build requirements:
 
 ### Booting and Testing
 
-If you have a recent version of Docker for Mac installed you can use `moby run <name>` to execute the image you created with `moby build <name>.yml`
+You can use `bin/moby run <name>` to execute the image you created with `moby build <name>.yml`.
+This will use a suitable backend for your platform or you can choose one, for example VMWare.
+See `moby run --help`.
 
-The Makefile also specifies a number of targets:
-- `make qemu` will boot up a sample Moby in qemu in a container
-- on OSX: `make hyperkit` will boot up Moby in hyperkit
-- `make test` or `make hyperkit-test` will run the test suite
-- There are also docs for booting on [Google Cloud](docs/gcp.md)
-- More detailed docs will be available shortly, for running single hosts and clusters.
+Some platforms do not yet have `moby run` support, so you can use `./scripts/qemu.sh moby-initrd.img moby-bzImage moby-cmdline`
+or `./scripts/qemu.sh mobylinux-bios.iso` which runs qemu in a Docker container.
+
+`make test` or `make hyperkit-test` will run the test suite
+
+There are also docs for booting on [Google Cloud](docs/gcp.md); `./bin/moby run --gcp <name>.yml` should
+work if you specified a GCP image to be built in the config.
+
+More detailed docs will be available shortly, for running both single hosts and clusters.
 
 ## Building your own customised image
 
