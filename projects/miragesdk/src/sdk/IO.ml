@@ -45,8 +45,8 @@ let forward ~src ~dst =
       Log.err (fun l -> l "forward[%a => %a] %a" pp src pp dst pp_error e);
       Lwt.return_unit
     | Ok (`Data buf) ->
-      Log.debug (fun l -> l "forward[%a => %a] %a"
-                    pp src pp dst Cstruct.hexdump_pp buf);
+      Log.debug (fun l -> l "forward[%a => %a] @[%S@]"
+                    pp src pp dst @@ Cstruct.to_string buf);
       write dst buf >>= function
       | Ok ()   -> loop ()
       | Error e ->

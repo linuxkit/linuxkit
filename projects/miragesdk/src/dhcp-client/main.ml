@@ -5,15 +5,6 @@ open Astring
 let src = Logs.Src.create "dhcp-client" ~doc:"DHCP client"
 module Log = (val Logs.src_log src : Logs.LOG)
 
-let failf fmt = Fmt.kstrf Lwt.fail_with fmt
-
-let run fmt =
-  Fmt.kstrf (fun str ->
-      match Sys.command str with
-      | 0 -> Lwt.return ()
-      | i -> Fmt.kstrf Lwt.fail_with "%S exited with code %d" str i
-    ) fmt
-
 module Handlers = struct
 
   (* System handlers *)
@@ -23,27 +14,27 @@ module Handlers = struct
     | `Updated (_, (_, `Contents (v, _))) -> Some v
     | _ -> None
 
+  let with_ip str f =
+    match Ipaddr.V4.of_string (String.trim str) with
+    | Some ip ->
+      Log.info (fun l -> l "SET IP to %a" Ipaddr.V4.pp_hum ip);
+      f ip
+    | None ->
+      Log.err (fun l -> l "%s is not a valid IP" str);
+      Lwt.return_unit
+
   let ip ~ethif t =
     Ctl.KV.watch_key t ["ip"] (fun diff ->
         match contents_of_diff diff with
         | None    -> Lwt.return_unit
-        | Some ip ->
-          let ip = String.trim ip in
-          Log.info (fun l -> l "SET IP to %s" ip);
-          (* FIXME: use language bindings to netlink instead *)
-          run "ifconfig %s %s netmask 255.255.255.0" ethif ip
-          (* run "ip addr add %s/24 dev %s" ip ethif *)
+        | Some ip -> with_ip ip (fun ip -> Net.set_ip ethif ip)
       )
 
   let gateway t =
     Ctl.KV.watch_key t ["gateway"] (fun diff ->
         match contents_of_diff diff with
         | None    -> Lwt.return_unit
-        | Some gw ->
-          let gw = String.trim gw in
-          Log.info (fun l -> l "SET GATEWAY to %s" gw);
-          (* FIXME: use language bindings to netlink instead *)
-          run "ip route add default via %s" gw
+        | Some gw -> with_ip gw (fun gw -> Net.set_gateway gw)
       )
 
   let handlers ~ethif = [
@@ -52,7 +43,7 @@ module Handlers = struct
   ]
 
   let watch ~ethif db =
-    Lwt_list.map_p (fun f -> f db) (handlers ethif) >>= fun _ ->
+    Lwt_list.map_p (fun f -> f db) (handlers ~ethif) >>= fun _ ->
     let t, _ = Lwt.task () in
     t
 
