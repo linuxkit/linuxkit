@@ -154,23 +154,25 @@ let failf fmt = Fmt.kstrf Alcotest.fail fmt
 
 (* read ops *)
 
+let pp_error = Ctl.Client.pp_error
+
 let read_should_err t k =
   Ctl.Client.read t k >|= function
-  | Error (`Msg _) -> ()
-  | Ok None        -> failf "read(%s) -> got: none, expected: err" k
-  | Ok Some v      -> failf "read(%s) -> got: found:%S, expected: err" k v
+  | Error _   -> ()
+  | Ok None   -> failf "read(%s) -> got: none, expected: err" k
+  | Ok Some v -> failf "read(%s) -> got: found:%S, expected: err" k v
 
 let read_should_none t k =
   Ctl.Client.read t k >|= function
-  | Error (`Msg e) -> failf "read(%s) -> got: error:%s, expected none" k e
-  | Ok None        -> ()
-  | Ok Some v      -> failf "read(%s) -> got: found:%S, expected none" k v
+  | Error e   -> failf "read(%s) -> got: error:%a, expected none" k pp_error e
+  | Ok None   -> ()
+  | Ok Some v -> failf "read(%s) -> got: found:%S, expected none" k v
 
 let read_should_work t k v =
   Ctl.Client.read t k >|= function
-  | Error (`Msg e) -> failf "read(%s) -> got: error:%s, expected ok" k e
-  | Ok None        -> failf "read(%s) -> got: none, expected ok" k
-  | Ok Some v'     ->
+  | Error e    -> failf "read(%s) -> got: error:%a, expected ok" k pp_error e
+  | Ok None    -> failf "read(%s) -> got: none, expected ok" k
+  | Ok Some v' ->
     if v <> v' then failf "read(%s) -> got: ok:%S, expected: ok:%S" k v' v
 
 (* write ops *)
@@ -182,8 +184,8 @@ let write_should_err t k v =
 
 let write_should_work t k v =
   Ctl.Client.write t k v >|= function
-  | Ok ()          -> ()
-  | Error (`Msg e) -> failf "write(%s) -> error: %s" k e
+  | Ok ()   -> ()
+  | Error e -> failf "write(%s) -> error: %a" k pp_error e
 
 (* del ops *)
 
@@ -194,8 +196,8 @@ let delete_should_err t k =
 
 let delete_should_work t k =
   Ctl.Client.delete t k >|= function
-  | Ok ()          -> ()
-  | Error (`Msg e) -> failf "write(%s) -> error: %s" k e
+  | Ok ()   -> ()
+  | Error e -> failf "write(%s) -> error: %a" k pp_error e
 
 let test_ctl t () =
   let calf = calf Init.Pipe.(ctl t) in

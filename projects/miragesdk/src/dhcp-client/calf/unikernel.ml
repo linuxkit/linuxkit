@@ -178,8 +178,8 @@ module Dhcp_client = Dhcp_client_mirage.Make(Time)(Net)
 let set_ip ctl k ip =
   let str = Ipaddr.V4.to_string ip ^ "\n" in
   Sdk.Ctl.Client.write ctl k str >>= function
-  | Ok ()           -> Lwt.return_unit
-  | Error (`Msg e) -> failf "error while writing %s: %s" k e
+  | Ok ()   -> Lwt.return_unit
+  | Error e -> failf "error while writing %s: %a" k Sdk.Ctl.Client.pp_error e
 
 let set_ip_opt ctl k = function
   | None    -> Lwt.return_unit
