@@ -5,6 +5,8 @@ This directory contains files used in moby demos.
 Most of the scripts/files assume you are on a Mac.
 
 - Recent Docker for Mac installed (edge, nightly, master channel)
+- Currently, you need a *custom* version of VPNKit installed in Docker
+  for Mac. Contact @magnus or @rneugeba.
 - For the GCP portion: `brew install google-cloud-sdk`
 - For `etcd`: `brew install etcd`
 - Infrakit: Clone [infrakit](https://github.com/docker/infrakit) and
