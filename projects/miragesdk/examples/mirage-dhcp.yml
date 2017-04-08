@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - "mobylinux/init:9d755f7e7d108d523448e4a503f1613b7d870389@sha256:9ccb16f2d8b3a09d12f5459106763f1836c064e420a13360e2e25599337960dc"
-system:
+onboot:
   - name: sysctl
     image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
     net: host
@@ -17,7 +17,7 @@ system:
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
-daemon:
+services:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
     capabilities:
