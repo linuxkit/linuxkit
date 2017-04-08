@@ -49,15 +49,9 @@ daemon:
     net: host
     oomScoreAdj: -800
   - name: sshd
-    image: "mobylinux/sshd:4f8452ddaff703416fd7452fcd9693b96b23e847"
+    image: "mobylinux/sshd:160631d59fffc13d523ff7f09b3b49538d34b9cd"
     capabilities:
-     - CAP_NET_BIND_SERVICE
-     - CAP_CHOWN
-     - CAP_SETUID
-     - CAP_SETGID
-     - CAP_DAC_OVERRIDE
-     - CAP_SYS_CHROOT
-     - CAP_KILL
+     - all
     net: host
     pid: host
     binds:
