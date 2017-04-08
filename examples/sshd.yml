@@ -50,6 +50,9 @@ daemon:
     binds:
      - /root/.ssh:/root/.ssh
      - /etc/resolv.conf:/etc/resolv.conf
+trust:
+  image:
+    - mobylinux/kernel
 files:
   - path: root/.ssh/authorized_keys
     contents: '#your ssh key here'
