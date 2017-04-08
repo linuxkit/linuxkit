@@ -7,7 +7,7 @@ IMAGE=containerd
 
 default: push
 
-hash: Dockerfile
+hash: Dockerfile etc/containerd/config.toml
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build0 -
 	docker run --rm $(IMAGE):build0 | docker build --no-cache -t $(IMAGE):build -
