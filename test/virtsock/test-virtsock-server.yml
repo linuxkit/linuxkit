@@ -8,7 +8,7 @@ kernel:
 init:
   - mobylinux/init:02f05d99b4eb9cd9223bb5915f4070cf7b67c862
   - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - mobylinux/containerd:68bb523deea09da293d675cbf88474eced540b8c
+  - mobylinux/containerd:c7f6ecdcbcb615a53edee556ba03c7c873bc8488
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl

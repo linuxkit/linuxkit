@@ -18,5 +18,6 @@ RUN git checkout $CONTAINERD_COMMIT
 RUN make binaries GO_GCFLAGS="-buildmode pie --ldflags '-extldflags \"-fno-PIC -static\"'"
 RUN cp bin/containerd bin/ctr bin/containerd-shim bin/dist /usr/bin/
 WORKDIR /
-RUN printf "FROM scratch\nCOPY /usr/bin/* /usr/bin/\n" > Dockerfile
-CMD ["tar", "cf", "-", "Dockerfile", "usr/bin/containerd", "usr/bin/ctr", "usr/bin/containerd-shim", "usr/bin/dist"]
+COPY . .
+RUN printf "FROM scratch\nCOPY /usr/bin/* /usr/bin/\nCOPY /etc/containerd/config.toml /etc/containerd/\n" > Dockerfile
+CMD ["tar", "cf", "-", "Dockerfile", "usr/bin/containerd", "usr/bin/ctr", "usr/bin/containerd-shim", "usr/bin/dist", "etc/containerd/config.toml"]
