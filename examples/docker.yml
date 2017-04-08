@@ -56,5 +56,8 @@ daemon:
     binds:
      - /dev:/dev
      - /lib/modules:/lib/modules
+trust:
+  image:
+    - mobylinux/kernel
 outputs:
   - format: kernel+initrd
