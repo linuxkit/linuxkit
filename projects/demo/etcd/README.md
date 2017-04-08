@@ -4,6 +4,9 @@ An `etcd` cluster can be bootstrapped in different ways (see the [Documentation]
 
 The moby `etcd` package is build with [build-pkg.sh](./build-pkg.sh). It takes the official `etcd` container and adds a [script](./etcd.sh) to start `etcd`. [etcd.sh](./etcd.sh) first attempts to join a new cluster. If that fails it attempts to join an existing cluster. Note, the number and members of the cluster are somewhat hard coded in the script.
 
+Each node is also configured with a disk, which is mounted inside the
+`etcd` container. `etcd` uses it to keep some state to help with
+restarts.
 
 ## Preparation
 
@@ -37,6 +40,9 @@ the nodes and then:
 ```
 docker run --rm -t quay.io/coreos/etcd:v3.1.5 etcdctl --endpoints http://192.168.65.200:2379 member list
 ```
+
+You can perform rolling updates, by for example, switching the kernel version in `etcd.yml`, build a new moby, e.g., `moby build -name etcd-4.10 etcd`, update `infrakit.json`, and then commit the new configuration to InfraKit: `infrakit group commit infrakit.json`.
+
 
 ## Infrakit GCP setup
 

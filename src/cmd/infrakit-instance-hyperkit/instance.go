@@ -21,6 +21,7 @@ func NewHyperKitPlugin(vmDir, hyperkit, vpnkitSock string) instance.Plugin {
 	return &hyperkitPlugin{VMDir: vmDir,
 		HyperKit:   hyperkit,
 		VPNKitSock: vpnkitSock,
+		DiskDir:    path.Join(vmDir, "disks"),
 	}
 }
 
@@ -33,6 +34,9 @@ type hyperkitPlugin struct {
 
 	// VPNKitSock is the path to the VPNKit Unix domain socket.
 	VPNKitSock string
+
+	// DiskDir is the path to persistent (across reboots) disk images
+	DiskDir string
 }
 
 // Validate performs local validation on a provision request.
@@ -60,8 +64,9 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	if properties["Memory"] == nil {
 		properties["Memory"] = 512
 	}
-	if properties["Disk"] == nil {
-		properties["Disk"] = 256
+	diskSize := 0
+	if properties["Disk"] != nil {
+		diskSize = int(properties["Disk"].(float64))
 	}
 
 	instanceDir, err := ioutil.TempDir(p.VMDir, "infrakit-")
@@ -71,12 +76,15 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	id := instance.ID(path.Base(instanceDir))
 	log.Infof("[%s] New instance", id)
 
-	// The LogicalID may be a IP address. If so, translate it into a
-	// magic UUID which cause VPNKit to assign a fixed IP address
 	logicalID := string(id)
 	uuidStr := ""
+
+	diskImage := ""
 	if spec.LogicalID != nil {
 		logicalID = string(*spec.LogicalID)
+		// The LogicalID may be a IP address. If so, translate
+		// it into a magic UUID which cause VPNKit to assign a
+		// fixed IP address
 		if ip := net.ParseIP(logicalID); len(ip) > 0 {
 			uuid := make([]byte, 16)
 			uuid[12] = ip.To4()[0]
@@ -85,12 +93,23 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 			uuid[15] = ip.To4()[3]
 			uuidStr = fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
 		}
+		// If a LogicalID is supplied and the Disk size is
+		// non-zero, we place the disk in a special directory
+		// so it persists across reboots.
+		if diskSize != 0 {
+			diskImage = path.Join(p.DiskDir, logicalID+".img")
+			// Make sure the directory exists
+			err = os.MkdirAll(p.DiskDir, 0755)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	log.Infof("[%s] LogicalID: %s", id, logicalID)
 	log.Debugf("[%s] UUID: %s", id, uuidStr)
 
 	// Start a HyperKit instance
-	h, err := hyperkit.New(p.HyperKit, instanceDir, p.VPNKitSock, "")
+	h, err := hyperkit.New(p.HyperKit, instanceDir, p.VPNKitSock, diskImage)
 	if err != nil {
 		return nil, err
 	}
@@ -98,12 +117,12 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	h.Initrd = properties["Moby"].(string) + "-initrd.img"
 	h.CPUs = int(properties["CPUs"].(float64))
 	h.Memory = int(properties["Memory"].(float64))
-	h.DiskSize = int(properties["Disk"].(float64))
+	h.DiskSize = diskSize
 	h.UUID = uuidStr
 	h.UserData = spec.Init
 	h.Console = hyperkit.ConsoleFile
 	log.Infof("[%s] Booting: %s/%s", id, h.Kernel, h.Initrd)
-	log.Infof("[%s] %d CPUs, %dMB Memory, %dMB Disk", id, h.CPUs, h.Memory, h.DiskSize)
+	log.Infof("[%s] %d CPUs, %dMB Memory, %dMB Disk (%s)", id, h.CPUs, h.Memory, h.DiskSize, h.DiskImage)
 
 	err = h.Start("console=ttyS0")
 	if err != nil {
