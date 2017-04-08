@@ -1,6 +1,6 @@
 This directory contains scripts/files to bootstrap a `etcd` cluster both on the local machine as well as on Google Cloud.
 
-An `etcd` cluster can be bootstrapped in different ways (see the [Documentatiob](https://coreos.com/etcd/docs/latest/op-guide/clustering.html) for more details. For the demo we use configuration via static IP addresses. With Infrakit these are managed by assigning `LogicalID`s to cluster members. The `LogicalID` is interpreted as a IP address.
+An `etcd` cluster can be bootstrapped in different ways (see the [Documentation](https://coreos.com/etcd/docs/latest/op-guide/clustering.html) for more details. For the demo we use configuration via static IP addresses. With Infrakit these are managed by assigning `LogicalID`s to cluster members. The `LogicalID` is interpreted as a IP address.
 
 The moby `etcd` package is build with [build-pkg.sh](./build-pkg.sh). It takes the official `etcd` container and adds a [script](./etcd.sh) to start `etcd`. [etcd.sh](./etcd.sh) first attempts to join a new cluster. If that fails it attempts to join an existing cluster. Note, the number and members of the cluster are somewhat hard coded in the script.
 
