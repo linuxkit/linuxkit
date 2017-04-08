@@ -1,15 +1,10 @@
 #!/bin/sh
 
-# TODO more robust
-# while [ ! -S /run/containerd/containerd.sock ]; do sleep 1; done
-# while ! ctr list 2> /dev/null; do sleep 1; done
+# start onboot containers, run to completion
 
-# start system containers
-# temporarily using runc not containerd
-
-if [ -d /containers/system ]
+if [ -d /containers/onboot ]
 then
-	for f in $(find /containers/system -mindepth 1 -maxdepth 1 | sort)
+	for f in $(find /containers/onboot -mindepth 1 -maxdepth 1 | sort)
 	do
 		base="$(basename $f)"
 		/usr/bin/runc run --bundle "$f" "$(basename $f)"
@@ -17,9 +12,12 @@ then
 	done
 fi
 
-if [ -d /containers/daemon ]
+# start service containers
+# temporarily using runc not containerd
+
+if [ -d /containers/services ]
 then
-	for f in $(find /containers/daemon -mindepth 1 -maxdepth 1 | sort)
+	for f in $(find /containers/services -mindepth 1 -maxdepth 1 | sort)
 	do
 		base="$(basename $f)"
 		log="/var/log/$base.log"

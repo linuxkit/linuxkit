@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - "mobylinux/init:a27e32a8d6c8865d691fbfb4d0bbb93846cf7802"
-system:
+onboot:
   - name: sysctl
     image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
     net: host
@@ -12,7 +12,7 @@ system:
     capabilities:
      - CAP_SYS_ADMIN
     readonly: true
-daemon:
+services:
   - name: dhcpcd
     image: "mobylinux/dhcpcd:3eb32da7ff8051f61e0f18edd90dd0fbfcf148ea"
     binds:
