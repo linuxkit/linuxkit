@@ -74,7 +74,7 @@ daemon:
      - /var/log:/var/log #/var/log/containers
      - /etc/kubernetes:/etc/kubernetes
 files:
-  - path: etc/kubernetes/.empty
-    contents: '# workaround to create parent directory'
+  - path: etc/kubernetes/
+    directory: true
 outputs:
   - format: kernel+initrd
