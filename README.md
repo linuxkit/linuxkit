@@ -59,20 +59,16 @@ formats to output, such as bootable ISOs and images for various platforms.
 
 ### Yaml Specification
 
-The yaml format is loosely based on Docker Compose:
+The yaml format specifies the image to be built:
 
 - `kernel` specifies a kernel Docker image, containing a kernel and a filesystem tarball, eg containing modules. `mobylinux/kernel` is built from `kernel/`
 - `init` is the base `init` process Docker image, which is unpacked as the base system, containing `init`, `containerd`, `runc` and a few tools. Built from `base/init/`
-- `system` are the system containers, executed sequentially in order. They should terminate quickly when done.
-- `daemon` is the system daemons, which normally run for the whole time
+- `onboot` are the system containers, executed sequentially in order. They should terminate quickly when done.
+- `services` is the system services, which normally run for the whole time the system is up
 - `files` are additional files to add to the image
 - `outputs` are descriptions of what to build, such as ISOs.
 
-For the images, you can specify the configuration much like Compose, with some changes, eg `capabilities` must be specified in full, rather than `add` and `drop`, and
-there are no volumes only `binds`.
-
-The config is liable to be changed, and there are missing features; full documentation will be available shortly.
-
+For a more detailed overview of the options see [yaml documentation](docs/yaml.md).
 
 ## Architecture
 
