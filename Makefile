@@ -46,8 +46,8 @@ define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
 endef
 
-.PHONY: hyperkit-test
-hyperkit-test: $(MOBY) test-initrd.img test-bzImage test-cmdline
+.PHONY: test-hyperkit
+test-hyperkit: $(MOBY) test-initrd.img test-bzImage test-cmdline
 	rm -f disk.img
 	script -q /dev/null $(MOBY) run test | tee test.log
 	$(call check_test_log, test.log)
