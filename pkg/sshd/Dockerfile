@@ -5,6 +5,7 @@ RUN \
   apk add --no-cache \
   openssh-server \
   tini \
+  util-linux \
   && true
 
 COPY . .
