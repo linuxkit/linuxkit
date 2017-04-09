@@ -15,11 +15,6 @@ onboot:
     capabilities:
      - CAP_SYS_ADMIN
     readonly: true
-  - name: binfmt
-    image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
-    binds:
-     - /proc/sys/fs/binfmt_misc:/binfmt_misc
-    readonly: true
   - name: metadata-gcp
     image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
     binds:
