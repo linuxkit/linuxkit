@@ -7,6 +7,7 @@ then
 	for f in $(find /containers/onboot -mindepth 1 -maxdepth 1 | sort)
 	do
 		base="$(basename $f)"
+		/bin/mount --bind "$f/rootfs" "$f/rootfs"
 		/usr/bin/runc run --bundle "$f" "$(basename $f)"
 		printf " - $base\n"
 	done
@@ -20,6 +21,7 @@ then
 	for f in $(find /containers/services -mindepth 1 -maxdepth 1 | sort)
 	do
 		base="$(basename $f)"
+		/bin/mount --bind "$f/rootfs" "$f/rootfs"
 		log="/var/log/$base.log"
 		/sbin/start-stop-daemon --start --pidfile /run/$base.pid --exec /usr/bin/runc -- run --bundle "$f" --pid-file /run/$base.pid "$(basename $f)" </dev/null 2>$log >$log &
 		printf " - $base\n"
