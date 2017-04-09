@@ -1,14 +1,14 @@
 .PHONY: tag push
 
 BASE=alpine:3.5
-IMAGE=docker-ce
+IMAGE=mount
 
 default: push
 
-hash: Dockerfile
+hash: Dockerfile mount.sh
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --entrypoint /bin/sh --rm $(IMAGE):build -c 'cat $^ /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
+	docker run --rm --entrypoint /bin/sh $(IMAGE):build -c "cat $^ /lib/apk/db/installed | sha1sum" | sed 's/ .*//' > $@
 
 push: hash
 	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \

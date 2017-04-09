@@ -38,7 +38,5 @@ RUN set -x \
 	&& rm docker.tgz \
 	&& docker -v
 
-COPY . ./
-
 # use the Docker copy of tini as our init for zombie reaping
-ENTRYPOINT ["/usr/bin/docker-init", "/bin/sh", "/docker.sh"]
+ENTRYPOINT ["/usr/bin/docker-init", "/usr/bin/dockerd"]
