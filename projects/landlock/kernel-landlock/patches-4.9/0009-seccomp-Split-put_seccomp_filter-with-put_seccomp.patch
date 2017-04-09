@@ -1,0 +1,143 @@
+From 1512eca4f0a5b3d1a98ed9940cae462bf71cc956 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@digikod.net>
+Date: Wed, 29 Mar 2017 01:30:33 +0200
+Subject: [PATCH 09/12] seccomp: Split put_seccomp_filter() with put_seccomp()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The semantic is unchanged. This will be useful for the Landlock
+integration with seccomp (next commit).
+
+Signed-off-by: Mickaël Salaün <mic@digikod.net>
+Cc: Kees Cook <keescook@chromium.org>
+Cc: Andy Lutomirski <luto@amacapital.net>
+Cc: Will Drewry <wad@chromium.org>
+(cherry picked from commit 2f707c41fd744e5c2beb382dafe3b2dc658c26d4)
+---
+ include/linux/seccomp.h   |  4 ++--
+ kernel/fork.c             |  2 +-
+ kernel/seccomp.c          | 18 +++++++++++++-----
+ security/landlock/hooks.c |  4 +---
+ security/landlock/init.c  |  2 +-
+ 5 files changed, 18 insertions(+), 12 deletions(-)
+
+diff --git a/include/linux/seccomp.h b/include/linux/seccomp.h
+index ecc296c137cd..e25aee2cdfc0 100644
+--- a/include/linux/seccomp.h
++++ b/include/linux/seccomp.h
+@@ -77,10 +77,10 @@ static inline int seccomp_mode(struct seccomp *s)
+ #endif /* CONFIG_SECCOMP */
+ 
+ #ifdef CONFIG_SECCOMP_FILTER
+-extern void put_seccomp_filter(struct task_struct *tsk);
++extern void put_seccomp(struct task_struct *tsk);
+ extern void get_seccomp_filter(struct task_struct *tsk);
+ #else  /* CONFIG_SECCOMP_FILTER */
+-static inline void put_seccomp_filter(struct task_struct *tsk)
++static inline void put_seccomp(struct task_struct *tsk)
+ {
+ 	return;
+ }
+diff --git a/kernel/fork.c b/kernel/fork.c
+index ba8a01564985..48996df6eb5e 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -352,7 +352,7 @@ void free_task(struct task_struct *tsk)
+ #endif
+ 	rt_mutex_debug_task_free(tsk);
+ 	ftrace_graph_exit_task(tsk);
+-	put_seccomp_filter(tsk);
++	put_seccomp(tsk);
+ 	arch_release_task_struct(tsk);
+ 	free_task_struct(tsk);
+ }
+diff --git a/kernel/seccomp.c b/kernel/seccomp.c
+index 0db7c8a2afe2..e741a82eab4d 100644
+--- a/kernel/seccomp.c
++++ b/kernel/seccomp.c
+@@ -63,6 +63,8 @@ struct seccomp_filter {
+ /* Limit any path through the tree to 256KB worth of instructions. */
+ #define MAX_INSNS_PER_PATH ((1 << 18) / sizeof(struct sock_filter))
+ 
++static void put_seccomp_filter(struct seccomp_filter *filter);
++
+ /*
+  * Endianness is explicitly ignored and left for BPF program authors to manage
+  * as per the specific architecture.
+@@ -313,7 +315,7 @@ static inline void seccomp_sync_threads(void)
+ 		 * current's path will hold a reference.  (This also
+ 		 * allows a put before the assignment.)
+ 		 */
+-		put_seccomp_filter(thread);
++		put_seccomp_filter(thread->seccomp.filter);
+ 		smp_store_release(&thread->seccomp.filter,
+ 				  caller->seccomp.filter);
+ 
+@@ -475,10 +477,11 @@ static inline void seccomp_filter_free(struct seccomp_filter *filter)
+ 	}
+ }
+ 
+-/* put_seccomp_filter - decrements the ref count of tsk->seccomp.filter */
+-void put_seccomp_filter(struct task_struct *tsk)
++/* put_seccomp_filter - decrements the ref count of a filter */
++static void put_seccomp_filter(struct seccomp_filter *filter)
+ {
+-	struct seccomp_filter *orig = tsk->seccomp.filter;
++	struct seccomp_filter *orig = filter;
++
+ 	/* Clean up single-reference branches iteratively. */
+ 	while (orig && atomic_dec_and_test(&orig->usage)) {
+ 		struct seccomp_filter *freeme = orig;
+@@ -487,6 +490,11 @@ void put_seccomp_filter(struct task_struct *tsk)
+ 	}
+ }
+ 
++void put_seccomp(struct task_struct *tsk)
++{
++	put_seccomp_filter(tsk->seccomp.filter);
++}
++
+ /**
+  * seccomp_send_sigsys - signals the task to allow in-process syscall emulation
+  * @syscall: syscall number to send to userland
+@@ -898,7 +906,7 @@ long seccomp_get_filter(struct task_struct *task, unsigned long filter_off,
+ 	if (copy_to_user(data, fprog->filter, bpf_classic_proglen(fprog)))
+ 		ret = -EFAULT;
+ 
+-	put_seccomp_filter(task);
++	put_seccomp_filter(task->seccomp.filter);
+ 	return ret;
+ 
+ out:
+diff --git a/security/landlock/hooks.c b/security/landlock/hooks.c
+index eaee8162ff70..cbad4b66ca13 100644
+--- a/security/landlock/hooks.c
++++ b/security/landlock/hooks.c
+@@ -27,10 +27,8 @@ __init void landlock_register_hooks(struct security_hook_list *hooks, int count)
+ {
+ 	int i;
+ 
+-	for (i = 0; i < count; i++) {
+-		hooks[i].lsm = "landlock";
++	for (i = 0; i < count; i++)
+ 		list_add_tail_rcu(&hooks[i].list, hooks[i].head);
+-	}
+ }
+ 
+ bool landlock_is_valid_access(int off, int size, enum bpf_access_type type,
+diff --git a/security/landlock/init.c b/security/landlock/init.c
+index 1c2750e12dfa..909c51c3fa32 100644
+--- a/security/landlock/init.c
++++ b/security/landlock/init.c
+@@ -137,6 +137,6 @@ void __init landlock_add_hooks(void)
+ {
+ 	pr_info("landlock: Version %u", LANDLOCK_VERSION);
+ 	landlock_add_hooks_fs();
+-	security_add_hooks(NULL, 0, "landlock");
++	security_add_hooks(NULL, 0);
+ 	bpf_register_prog_type(&bpf_landlock_type);
+ }
+-- 
+2.11.0
+
