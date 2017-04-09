@@ -1,0 +1,6 @@
+x86_64/
+etc/
+lib/
+usr/
+sbin/
+bzImage
