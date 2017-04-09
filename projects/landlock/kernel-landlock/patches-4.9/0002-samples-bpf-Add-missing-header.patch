@@ -1,0 +1,39 @@
+From 7dbf58fc4e42a55cc2d37130362080f7ecf8ca1a Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@digikod.net>
+Date: Wed, 8 Feb 2017 21:27:44 +0100
+Subject: [PATCH 02/12] samples/bpf: Add missing header
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Include unistd.h to define __NR_getuid and __NR_getsid.
+
+Signed-off-by: Mickaël Salaün <mic@digikod.net>
+Acked-by: Joe Stringer <joe@ovn.org>
+Acked-by: Wang Nan <wangnan0@huawei.com>
+Cc: Alexei Starovoitov <ast@fb.com>
+Cc: Daniel Borkmann <daniel@iogearbox.net>
+Cc: David S. Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org
+Link: http://lkml.kernel.org/r/20170208202744.16274-4-mic@digikod.net
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+(cherry picked from commit af392a8f5399e831cb502ff210dacef8b38ca513)
+---
+ samples/bpf/tracex5_kern.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/samples/bpf/tracex5_kern.c b/samples/bpf/tracex5_kern.c
+index fd12d7154d42..7e4cf74553ff 100644
+--- a/samples/bpf/tracex5_kern.c
++++ b/samples/bpf/tracex5_kern.c
+@@ -8,6 +8,7 @@
+ #include <linux/version.h>
+ #include <uapi/linux/bpf.h>
+ #include <uapi/linux/seccomp.h>
++#include <uapi/linux/unistd.h>
+ #include "bpf_helpers.h"
+ 
+ #define PROG(F) SEC("kprobe/"__stringify(F)) int bpf_func_##F
+-- 
+2.11.0
+
