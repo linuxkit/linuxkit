@@ -1,0 +1,40 @@
+From 7e0ee6e01fbafac371e50052eddd59af9b053825 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@digikod.net>
+Date: Wed, 8 Feb 2017 21:27:42 +0100
+Subject: [PATCH 03/12] samples/bpf: Ignore already processed ELF sections
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Add a missing check for the map fixup loop.
+
+Signed-off-by: Mickaël Salaün <mic@digikod.net>
+Acked-by: Joe Stringer <joe@ovn.org>
+Acked-by: Wang Nan <wangnan0@huawei.com>
+Cc: Alexei Starovoitov <ast@fb.com>
+Cc: Daniel Borkmann <daniel@iogearbox.net>
+Cc: David S. Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org
+Link: http://lkml.kernel.org/r/20170208202744.16274-2-mic@digikod.net
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+(cherry picked from commit 16ad1329002f905c643a438ddcfb0a180787850a)
+---
+ samples/bpf/bpf_load.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/samples/bpf/bpf_load.c b/samples/bpf/bpf_load.c
+index 97913e109b14..4b86bd3c7c6b 100644
+--- a/samples/bpf/bpf_load.c
++++ b/samples/bpf/bpf_load.c
+@@ -307,6 +307,8 @@ int load_bpf_file(char *path)
+ 
+ 	/* load programs that need map fixup (relocations) */
+ 	for (i = 1; i < ehdr.e_shnum; i++) {
++		if (processed_sec[i])
++			continue;
+ 
+ 		if (get_sec(elf, i, &ehdr, &shname, &shdr, &data))
+ 			continue;
+-- 
+2.11.0
+

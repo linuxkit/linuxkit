@@ -1,0 +1,38 @@
+From 9a94a681dffa7b2115806405ab573ba41052ad04 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@digikod.net>
+Date: Tue, 7 Feb 2017 21:56:05 +0100
+Subject: [PATCH 01/12] tools lib bpf: Add missing header to the library
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Include stddef.h to define size_t.
+
+Signed-off-by: Mickaël Salaün <mic@digikod.net>
+Acked-by: Wang Nan <wangnan0@huawei.com>
+Cc: Alexei Starovoitov <ast@fb.com>
+Cc: Daniel Borkmann <daniel@iogearbox.net>
+Cc: David S. Miller <davem@davemloft.net>
+Cc: Joe Stringer <joe@ovn.org>
+Link: http://lkml.kernel.org/r/20170207205609.8035-2-mic@digikod.net
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+(cherry picked from commit 7a5980f9c0066d085319415ec15ee51f165111f5)
+---
+ tools/lib/bpf/bpf.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/tools/lib/bpf/bpf.h b/tools/lib/bpf/bpf.h
+index e8ba54087497..eb584e639500 100644
+--- a/tools/lib/bpf/bpf.h
++++ b/tools/lib/bpf/bpf.h
+@@ -22,6 +22,7 @@
+ #define __BPF_BPF_H
+ 
+ #include <linux/bpf.h>
++#include <stddef.h>
+ 
+ int bpf_create_map(enum bpf_map_type map_type, int key_size, int value_size,
+ 		   int max_entries);
+-- 
+2.11.0
+
