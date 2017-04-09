@@ -1,4 +1,4 @@
-From 8222069e40b4f5e723e2f8a05ce9d774c5228f54 Mon Sep 17 00:00:00 2001
+From 611e556031e39cd5d2fe21834d3b385b05614ce2 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:43 -0800
 Subject: [PATCH 32/44] Drivers: hv: vmbus: add an API
@@ -149,5 +149,5 @@ index ad04017ba06f..993318a6d147 100644
  			resource_size_t min, resource_size_t max,
  			resource_size_t size, resource_size_t align,
 -- 
-2.11.0
+2.11.1
 

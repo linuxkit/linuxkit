@@ -1,4 +1,4 @@
-From 608836228c05419f7f977f3ad3203bcebd6d6a68 Mon Sep 17 00:00:00 2001
+From 5db06bc394ad0f4f16a8d9537874c130420ab909 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sun, 26 Mar 2017 16:42:20 +0800
 Subject: [PATCH 08/10] vmbus: fix missed ring events on boot
@@ -52,5 +52,5 @@ index e7949b64bfbc..2fe024e86209 100644
  
  void hv_process_channel_removal(struct vmbus_channel *channel, u32 relid)
 -- 
-2.11.0
+2.11.1
 

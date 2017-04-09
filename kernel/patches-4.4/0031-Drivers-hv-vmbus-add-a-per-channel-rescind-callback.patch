@@ -1,4 +1,4 @@
-From ca49cad1ef390f9542e3bae9cddd930aa0413e7d Mon Sep 17 00:00:00 2001
+From 87ff2afc1a9d20c65b34fe63043a01f481d5642a Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:42 -0800
 Subject: [PATCH 31/44] Drivers: hv: vmbus: add a per-channel rescind callback
@@ -68,5 +68,5 @@ index 05966e279ec8..ad04017ba06f 100644
   * Retrieve the (sub) channel on which to send an outgoing request.
   * When a primary channel has multiple sub-channels, we choose a
 -- 
-2.11.0
+2.11.1
 
