@@ -1,4 +1,4 @@
-From df85f0354f07b9d77a98f6846f4a6f95e8a8d4f9 Mon Sep 17 00:00:00 2001
+From b76b2a229f27dd36399f52075053bfda032f27e1 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Fri, 5 Aug 2016 13:52:09 +0100
 Subject: [PATCH 13/44] virtio-vsock: fix include guard typo
@@ -24,5 +24,5 @@ index 6b011c19b50f..1d57ed3d84d2 100644
  #include <linux/types.h>
  #include <linux/virtio_ids.h>
 -- 
-2.11.0
+2.11.1
 
