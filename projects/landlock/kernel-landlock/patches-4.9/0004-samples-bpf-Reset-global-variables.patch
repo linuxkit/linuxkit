@@ -1,0 +1,44 @@
+From 3dd0d725f5e83a53ea2d4cbb3fe0856ce2b836cf Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Micka=C3=ABl=20Sala=C3=BCn?= <mic@digikod.net>
+Date: Wed, 8 Feb 2017 21:27:43 +0100
+Subject: [PATCH 04/12] samples/bpf: Reset global variables
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Before loading a new ELF, clean previous kernel version, license and
+processed sections.
+
+Signed-off-by: Mickaël Salaün <mic@digikod.net>
+Acked-by: Joe Stringer <joe@ovn.org>
+Acked-by: Wang Nan <wangnan0@huawei.com>
+Cc: Alexei Starovoitov <ast@fb.com>
+Cc: Daniel Borkmann <daniel@iogearbox.net>
+Cc: David S. Miller <davem@davemloft.net>
+Cc: netdev@vger.kernel.org
+Link: http://lkml.kernel.org/r/20170208202744.16274-3-mic@digikod.net
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+(cherry picked from commit a734fb5d60067a73dd7099a58756847c07f9cd68)
+---
+ samples/bpf/bpf_load.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/samples/bpf/bpf_load.c b/samples/bpf/bpf_load.c
+index 4b86bd3c7c6b..765a6e45b92d 100644
+--- a/samples/bpf/bpf_load.c
++++ b/samples/bpf/bpf_load.c
+@@ -256,6 +256,11 @@ int load_bpf_file(char *path)
+ 	Elf_Data *data, *data_prog, *symbols = NULL;
+ 	char *shname, *shname_prog;
+ 
++	/* reset global variables */
++	kern_version = 0;
++	memset(license, 0, sizeof(license));
++	memset(processed_sec, 0, sizeof(processed_sec));
++
+ 	if (elf_version(EV_CURRENT) == EV_NONE)
+ 		return 1;
+ 
+-- 
+2.11.0
+
