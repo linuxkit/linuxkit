@@ -2,12 +2,14 @@
 
 set -x
 
+MOUNTPOINT="$1"
+
+[ -z "$MOUNTPOINT" ] && echo "No mountpoint specified" && exit 1
+
+mkdir -p "$MOUNTPOINT"
+
 mount_drive()
 {
-	MOUNTPOINT=/var/lib/docker
-
-	mkdir -p "$MOUNTPOINT"
-
 	# TODO fix for multiple disks, cdroms etc
 	DEVS="$(find /dev -maxdepth 1 -type b ! -name 'loop*' ! -name 'nbd*' | grep -v '[0-9]$' | sed 's@.*/dev/@@' | sort)"
 
@@ -28,11 +30,6 @@ mount_drive()
 	done
 
 	echo "WARNING: Failed to mount a persistent volume (is there one?)"
-
-	# not sure if we want to fatally bail here, in some debug situations it is ok
-	# exit 1
 }
 
 mount_drive
-
-exec /usr/bin/dockerd
