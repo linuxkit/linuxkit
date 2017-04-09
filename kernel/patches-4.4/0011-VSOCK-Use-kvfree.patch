@@ -1,4 +1,4 @@
-From 751ffbe2eb77c9854418b904d1d4bef7c015fe08 Mon Sep 17 00:00:00 2001
+From 0af1362108e6452fdcd49945bc4cad54ce74fd05 Mon Sep 17 00:00:00 2001
 From: Wei Yongjun <weiyj.lk@gmail.com>
 Date: Tue, 2 Aug 2016 13:50:42 +0000
 Subject: [PATCH 11/44] VSOCK: Use kvfree()
@@ -29,5 +29,5 @@ index 028ca16c2d36..0ddf3a2dbfc4 100644
  
  static int vhost_vsock_dev_open(struct inode *inode, struct file *file)
 -- 
-2.11.0
+2.11.1
 

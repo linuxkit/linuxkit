@@ -1,4 +1,4 @@
-From da15f2b59e4f9fb237c3303de9dad31db8f5831f Mon Sep 17 00:00:00 2001
+From f66fbbe2f3305a7e6f0466fd0b6c45cc65cba580 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 2/6] Drivers: hv: vmbus: Use all supported IC versions to
@@ -488,5 +488,5 @@ index ca26335de49a..41e5ed87f833 100644
  void hv_event_tasklet_disable(struct vmbus_channel *channel);
  void hv_event_tasklet_enable(struct vmbus_channel *channel);
 -- 
-2.11.0
+2.11.1
 
