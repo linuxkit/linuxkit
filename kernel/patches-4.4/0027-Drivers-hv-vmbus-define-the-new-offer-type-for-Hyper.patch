@@ -1,4 +1,4 @@
-From 842a0b400a8ff0eaad90694d1e0331e68e70bacd Mon Sep 17 00:00:00 2001
+From 15492be77cdb113d97c06799250e5b6221fe0e4c Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:38 -0800
 Subject: [PATCH 27/44] Drivers: hv: vmbus: define the new offer type for
@@ -40,5 +40,5 @@ index 934542ac1394..a4f105d55881 100644
  					    enum hv_signal_policy policy)
  {
 -- 
-2.11.0
+2.11.1
 

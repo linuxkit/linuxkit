@@ -1,4 +1,4 @@
-From 691327e9ccecaf2db6903a545e9b7c4efbbe99aa Mon Sep 17 00:00:00 2001
+From 42aab29663c1cadcab10ed1c0647aa63fe8bbd0d Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:37 -0800
 Subject: [PATCH 26/44] Drivers: hv: vmbus: add a helper function to set a
@@ -32,5 +32,5 @@ index 51c98fd6044d..934542ac1394 100644
  
  int vmbus_request_offers(void);
 -- 
-2.11.0
+2.11.1
 
