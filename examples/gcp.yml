@@ -2,7 +2,7 @@ kernel:
   image: "mobylinux/kernel:4.9.x"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - mobylinux/init:c394f4bf59566206e5036798c058a9894a7e0fc8
+  - mobylinux/init:4a731380d1d9b29472c7de165a1cdf93136ab1e7
   - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
   - mobylinux/containerd:c7f6ecdcbcb615a53edee556ba03c7c873bc8488
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
