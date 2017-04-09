@@ -107,11 +107,17 @@ mkdir /tmp/etc
 mv /etc/resolv.conf /tmp/etc/resolv.conf
 ln -snf /tmp/etc/resolv.conf /etc/resolv.conf
 
+# mount rootfs as rshared
+mount --make-rshared /
+
 # remount rootfs as readonly
 mount -o remount,ro /
 
-# bind and remount containers and var as read-write
+# bind and remount containers as read-write but private
 mount -o bind /containers /containers
-mount -o bind /var /var
 mount -o remount,rw,relatime /containers /containers
-mount -o remount,rw,nodev,nosuid,relatime /var /var
+mount --make-private /containers
+
+# make /var its own tmpfs mount point
+mount -n -t tmpfs var /var -o nodev,nosuid,noexec,relatime,size=10%,mode=755
+mount --make-rshared /var
