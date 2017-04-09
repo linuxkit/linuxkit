@@ -7,11 +7,6 @@ init:
   - mobylinux/containerd:c7f6ecdcbcb615a53edee556ba03c7c873bc8488
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
-  - name: binfmt
-    image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
-    binds:
-     - /proc/sys/fs/binfmt_misc:/binfmt_misc
-    readonly: true
   - name: check
     image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
     pid: host
