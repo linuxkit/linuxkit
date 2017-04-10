@@ -59,6 +59,9 @@ do
 	esac
 done < /proc/cgroups
 
+# use hierarchy for memory
+echo 1 > /sys/fs/cgroup/memory/memory.use_hierarchy
+
 # for compatibility
 mkdir -p /sys/fs/cgroup/systemd
 mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
