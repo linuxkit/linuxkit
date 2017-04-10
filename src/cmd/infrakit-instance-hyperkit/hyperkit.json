@@ -7,7 +7,8 @@
         "Instance": {
             "Plugin": "instance-hyperkit",
             "Properties": {
-                "Moby": "../../moby",
+                "_comment" : "kernel+initrd specifies the prefix as in <prefix>-bzImage and <prefix>-initrd.img",
+                "kernel+initrd": "linux",
                 "Disk" : 512,
                 "CPUs" : 2,
                 "Memory" : 1024

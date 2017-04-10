@@ -13,7 +13,7 @@
         "Instance": {
             "Plugin": "instance-hyperkit",
             "Properties": {
-                "Moby": "etcd",
+                "kernel+initrd": "etcd",
                 "Disk" : 1024,
                 "CPUs" : 1,
                 "Memory" : 1024
