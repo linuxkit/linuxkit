@@ -1,0 +1,31 @@
+kernel:
+  image: "mobylinux/kernel-landlock:4.9.x"
+  cmdline: "console=ttyS0 page_poison=1"
+init:
+  - mobylinux/init:4a731380d1d9b29472c7de165a1cdf93136ab1e7
+  - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - mobylinux/containerd:c7f6ecdcbcb615a53edee556ba03c7c873bc8488
+  - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+onboot:
+  - name: sysctl
+    image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    net: host
+    pid: host
+    ipc: host
+    capabilities:
+     - CAP_SYS_ADMIN
+    readonly: true
+services:
+  - name: rngd
+    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
+    capabilities:
+     - CAP_SYS_ADMIN
+    oomScoreAdj: -800
+    readonly: true
+files:
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
+outputs:
+  - format: kernel+initrd
+  - format: iso-bios
+  - format: iso-efi
