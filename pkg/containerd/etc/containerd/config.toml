@@ -1,0 +1,16 @@
+state = "/run/containerd"
+root = "/var/lib/containerd"
+snapshotter = "overlay"
+subreaper = false
+
+[grpc]
+  address = "/run/containerd/containerd.sock"
+  uid = 0
+  gid = 0
+
+[debug]
+  address = "/run/containerd/debug.sock"
+  level = "info"
+
+[metrics]
+  address = ""
