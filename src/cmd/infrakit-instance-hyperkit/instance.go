@@ -9,11 +9,10 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
-
 	"github.com/docker/hyperkit/go"
-
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/types"
+	"github.com/rneugeba/iso9660wrap"
 )
 
 // NewHyperKitPlugin creates an instance plugin for hyperkit.
@@ -98,28 +97,39 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 		// so it persists across reboots.
 		if diskSize != 0 {
 			diskImage = path.Join(p.DiskDir, logicalID+".img")
-			// Make sure the directory exists
-			err = os.MkdirAll(p.DiskDir, 0755)
-			if err != nil {
-				return nil, err
-			}
 		}
 	}
+
+	isoImage := ""
+	if spec.Init != "" {
+		isoImage = path.Join(instanceDir, "data.iso")
+		outfh, err := os.OpenFile(isoImage, os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			log.Fatalf("Cannot create user data ISO: %s", err)
+		}
+		err = iso9660wrap.WriteBuffer(outfh, []byte(spec.Init), "config")
+		if err != nil {
+			log.Fatalf("Cannot write user data ISO: %s", err)
+		}
+		outfh.Close()
+	}
+
 	log.Infof("[%s] LogicalID: %s", id, logicalID)
 	log.Debugf("[%s] UUID: %s", id, uuidStr)
 
 	// Start a HyperKit instance
-	h, err := hyperkit.New(p.HyperKit, instanceDir, p.VPNKitSock, diskImage)
+	h, err := hyperkit.New(p.HyperKit, p.VPNKitSock, instanceDir)
 	if err != nil {
 		return nil, err
 	}
 	h.Kernel = properties["Moby"].(string) + "-bzImage"
 	h.Initrd = properties["Moby"].(string) + "-initrd.img"
+	h.UUID = uuidStr
+	h.DiskImage = diskImage
+	h.ISOImage = isoImage
 	h.CPUs = int(properties["CPUs"].(float64))
 	h.Memory = int(properties["Memory"].(float64))
 	h.DiskSize = diskSize
-	h.UUID = uuidStr
-	h.UserData = spec.Init
 	h.Console = hyperkit.ConsoleFile
 	log.Infof("[%s] Booting: %s/%s", id, h.Kernel, h.Initrd)
 	log.Infof("[%s] %d CPUs, %dMB Memory, %dMB Disk (%s)", id, h.CPUs, h.Memory, h.DiskSize, h.DiskImage)
