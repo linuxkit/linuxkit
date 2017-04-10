@@ -8,7 +8,10 @@ build-container-images: Boxfile
 	    boxbuilder/box:master Boxfile
 
 push-container-images: build-container-image
-	docker push errordeveloper/mobykube:master
+	docker push mobylinux/kubernetes:latest
 
 build-vm-images:
 	../../bin/moby build -name kube-master kube-master.yml
+
+clean:
+	rm -f kube-master-bzImage kube-master-cmdline kube-master-disk.img kube-master-initrd.img 
