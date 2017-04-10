@@ -83,6 +83,8 @@ install_dependencies
 
 create_kubelet_wrapper
 
+flatten
+
 env KUBECONFIG: "/etc/kubernetes/admin.conf"
 
 set_exec entrypoint: %w(tini -s --), cmd: %w(kubelet.sh)
