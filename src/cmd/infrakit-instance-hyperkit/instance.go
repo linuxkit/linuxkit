@@ -54,8 +54,8 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 		}
 	}
 
-	if properties["Moby"] == nil {
-		return nil, errors.New("Property 'Moby' must be set")
+	if properties["kernel+initrd"] == nil {
+		return nil, errors.New("Property 'kernel+initrd' must be set")
 	}
 	if properties["CPUs"] == nil {
 		properties["CPUs"] = 1
@@ -122,8 +122,8 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	if err != nil {
 		return nil, err
 	}
-	h.Kernel = properties["Moby"].(string) + "-bzImage"
-	h.Initrd = properties["Moby"].(string) + "-initrd.img"
+	h.Kernel = properties["kernel+initrd"].(string) + "-bzImage"
+	h.Initrd = properties["kernel+initrd"].(string) + "-initrd.img"
 	h.UUID = uuidStr
 	h.DiskImage = diskImage
 	h.ISOImage = isoImage
