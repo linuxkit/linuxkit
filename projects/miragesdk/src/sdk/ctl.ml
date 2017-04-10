@@ -1,10 +1,7 @@
 open Lwt.Infix
-open Astring
 
 let src = Logs.Src.create "init" ~doc:"Init steps"
 module Log = (val Logs.src_log src : Logs.LOG)
-
-let failf fmt = Fmt.kstrf Lwt.fail_with fmt
 
 (* FIXME: to avoid linking with gmp *)
 module No_IO = struct
@@ -36,214 +33,199 @@ let () =
 
 module C = Mirage_channel_lwt.Make(IO)
 
-module Query = struct
+module P = Proto.Make(Capnp.BytesMessage)
 
-  (* FIXME: this should probably be replaced by protobuf *)
+exception Undefined_field of int
 
-  [%%cenum
-    type operation =
-      | Write
-      | Read
-      | Delete
-    [@@uint8_t]
-  ]
+module Endpoint = struct
+
+  let compression = `None
 
   type t = {
-    version  : int32;
-    id       : int32;
-    operation: operation;
-    path     : string;
-    payload  : string;
+    output : IO.t;
+    input  : C.t;  (* reads are buffered *)
+    decoder: Capnp.Codecs.FramedStream.t;
   }
 
-  [%%cstruct type msg = {
-      version   : uint32_t; (* protocol version *)
-      id        : uint32_t; (* session identifier *)
-      operation : uint8_t;  (* = type operation *)
-      path      : uint16_t;
-      payload   : uint32_t;
-    } [@@little_endian]
+  type error = [
+    | `IO of IO.write_error
+    | `Channel of C.error
+    | `Msg of string
+    | `Undefined_field of int
   ]
 
-  type error = [ `Eof | `Msg of string ]
-  let pp_error ppf t = Fmt.string ppf (match t with `Eof -> "EOF" | `Msg s -> s)
+  let pp_error ppf (e:error) = match e with
+    | `IO e              -> Fmt.pf ppf "IO: %a" IO.pp_write_error e
+    | `Channel e         -> Fmt.pf ppf "channel: %a" C.pp_error e
+    | `Msg e             -> Fmt.string ppf e
+    | `Undefined_field i -> Fmt.pf ppf "undefined field %d" i
 
-  (* to avoid warning 32 *)
-  let _ = hexdump_msg
-  let _ = string_to_operation
+  let err_io e = Error (`IO e)
+  let err_channel e = Error (`Channel e)
+  let err_msg fmt = Fmt.kstrf (fun s -> Error (`Msg s)) fmt
+  let err_frame = err_msg "Unsupported Cap'n'Proto frame received"
+  let err_undefined_field i = Error (`Undefined_field i)
 
-  let pp ppf t =
-    Fmt.pf ppf "%ld:%s:%S:%S"
-      t.id (operation_to_string t.operation) t.path t.payload
+  let v fd =
+    let output = fd in
+    let input = C.create fd in
+    let decoder = Capnp.Codecs.FramedStream.empty compression in
+    { output; input; decoder }
 
-  (* FIXME: allocate less ... *)
+  let send t msg =
+    let buf = Capnp.Codecs.serialize ~compression msg in
+    (* FIXME: avoid copying *)
+    IO.write t.output (Cstruct.of_string buf) >|= function
+    | Error e -> err_io e
+    | Ok ()   -> Ok ()
 
-  let of_cstruct buf =
-    let open Rresult.R in
-    Log.debug (fun l -> l "Query.of_cstruct %S" @@ Cstruct.to_string buf);
-    let version = get_msg_version buf in
-    let id = get_msg_id buf in
-    (match int_to_operation (get_msg_operation buf) with
-     | None   -> Error (`Msg "invalid operation")
-     | Some o -> Ok o)
-    >>= fun operation ->
-    let path_len = get_msg_path buf in
-    let payload_len = get_msg_payload buf in
-    let path =
-      Cstruct.sub buf sizeof_msg path_len
-      |> Cstruct.to_string
-    in
-    let payload =
-      Cstruct.sub buf (sizeof_msg + path_len) (Int32.to_int payload_len)
-      |> Cstruct.to_string
-    in
-    if String.Ascii.is_valid path then Ok { version; id; operation; path; payload }
-    else Error (`Msg "invalid path")
-
-  let to_cstruct msg =
-    Log.debug (fun l -> l "Query.to_cstruct %a" pp msg);
-    let operation = operation_to_int msg.operation in
-    let path = String.length msg.path in
-    let payload = String.length msg.payload in
-    let len = sizeof_msg + path + payload in
-    let buf = Cstruct.create len in
-    set_msg_version buf msg.version;
-    set_msg_id buf msg.id;
-    set_msg_operation buf operation;
-    set_msg_path buf path;
-    set_msg_payload buf (Int32.of_int payload);
-    Cstruct.blit_from_bytes msg.path 0 buf sizeof_msg path;
-    Cstruct.blit_from_bytes msg.payload 0 buf (sizeof_msg+path) payload;
-    buf
-
-  let err e = Lwt.return (Error (`Msg (Fmt.to_to_string C.pp_error e)))
-  let err_eof = Lwt.return (Error `Eof)
-
-  let read fd =
-    let fd = C.create fd in
-    C.read_exactly fd ~len:4 >>= function
-    | Ok `Eof -> err_eof
-    | Error e -> err e
-    | Ok (`Data buf) ->
-      let buf = Cstruct.concat buf in
-      Log.debug (fun l -> l "Message.read len=%a" Cstruct.hexdump_pp buf);
-      let len = Cstruct.LE.get_uint32 buf 0 |> Int32.to_int in
-      C.read_exactly fd ~len >>= function
-      | Ok `Eof        -> err_eof
-      | Error e        -> err e
-      | Ok (`Data buf) ->
-        let buf = Cstruct.concat buf in
-        Lwt.return (of_cstruct buf)
-
-  let write fd msg =
-    let buf = to_cstruct msg in
-    let len =
-      let len = Cstruct.create 4 in
-      Cstruct.LE.set_uint32 len 0 (Int32.of_int @@ Cstruct.len buf);
-      len
-    in
-    IO.write fd len >>= function
-    | Error e   -> failf "Query.write(len) %a" IO.pp_write_error e
-    | Ok ()     -> IO.write fd buf >>= function
-      | Ok ()   -> Lwt.return_unit
-      | Error e -> failf "Query.write(buf) %a" IO.pp_write_error e
+  let rec recv t =
+    match Capnp.Codecs.FramedStream.get_next_frame t.decoder with
+    | Ok msg                                      -> Lwt.return (Ok (`Data msg))
+    | Error Capnp.Codecs.FramingError.Unsupported ->  Lwt.return err_frame
+    | Error Capnp.Codecs.FramingError.Incomplete  ->
+      Log.info (fun f -> f "Endpoint.recv: incomplete; waiting for more data");
+      C.read_some ~len:4096 t.input >>= function
+      | Ok `Eof         -> Lwt.return (Ok `Eof)
+      | Error e         -> Lwt.return (err_channel e)
+      | Ok (`Data data) ->
+        (* FIXME: avoid copying *)
+        let data = Cstruct.to_string data in
+        Log.info (fun f -> f "Got %S" data);
+        Capnp.Codecs.FramedStream.add_fragment t.decoder data;
+        recv t
 
 end
 
-module Reply = struct
+module Request = struct
 
-  (* FIXME: this should probably be replaced by protobuf *)
+  type action =
+    | Write of string
+    | Read
+    | Delete
 
-  [%%cenum
-    type status =
-      | Ok
-      | Error
-    [@@uint8_t]
-  ]
+  let pp_action ppf = function
+    | Write s -> Fmt.pf ppf "write[%S]" s
+    | Read    -> Fmt.pf ppf "read"
+    | Delete  -> Fmt.pf ppf "delete"
 
   type t = {
-    id     : int32;
-    status : status;
-    payload: string;
+    id    : int32 Lazy.t;
+    path  : string list Lazy.t;
+    action: action Lazy.t;
   }
 
-  [%%cstruct type msg = {
-      id     : uint32_t; (* session identifier *)
-      status : uint8_t;  (* = type operation *)
-      payload: uint32_t;
-    } [@@little_endian]
-  ]
+  let id t = Lazy.force t.id
+  let path t = Lazy.force t.path
+  let action t = Lazy.force t.action
 
-  type error = [ `Eof | `Msg of string ]
-  let pp_error ppf t = Fmt.string ppf (match t with `Eof -> "EOF" | `Msg s -> s)
-
-  (* to avoid warning 32 *)
-  let _ = hexdump_msg
-  let _ = string_to_status
+  let pp_path = Fmt.(list ~sep:(unit "/") string)
 
   let pp ppf t =
-    Fmt.pf ppf "%ld:%s:%S" t.id (status_to_string t.status) t.payload
+    let id = id t and path = path t and action = action t in
+    match action with
+    | exception Undefined_field i -> Fmt.pf ppf "<undefined-field: %d>" i
+    | action -> Fmt.pf ppf "%ld:%a:%a" id pp_path path pp_action action
 
-  (* FIXME: allocate less ... *)
+  let equal x y =
+    id x = id y && path x = path y && match action x = action y with
+    | exception Undefined_field _ -> false
+    | b -> b
 
-  let of_cstruct buf =
-    let open Rresult.R in
-    Log.debug (fun l -> l "Message.of_cstruct %S" @@ Cstruct.to_string buf);
-    let id = get_msg_id buf in
-    (match int_to_status (get_msg_status buf) with
-     | None   -> Error (`Msg "invalid operation")
-     | Some o -> Ok o)
-    >>= fun status ->
-    let payload_len = Int32.to_int (get_msg_payload buf) in
-    let payload =
-      Cstruct.sub buf sizeof_msg payload_len
-      |> Cstruct.to_string
-    in
-    Ok { id; status; payload }
+  let v ~id ~path action =
+    { id = lazy id; action = lazy action; path = lazy path }
 
-  let to_cstruct msg =
-    Log.debug (fun l -> l "Message.to_cstruct %a" pp msg);
-    let status = status_to_int msg.status in
-    let payload = String.length msg.payload in
-    let len = sizeof_msg + payload in
-    let buf = Cstruct.create len in
-    set_msg_id buf msg.id;
-    set_msg_status buf status;
-    set_msg_payload buf (Int32.of_int payload);
-    Cstruct.blit_from_bytes msg.payload 0 buf sizeof_msg payload;
-    buf
+  let read e: (t, Endpoint.error) result Lwt.t =
+    Endpoint.recv e >|= function
+    | Error e      -> Error e
+    | Ok `Eof      -> Error (`IO `Closed)
+    | Ok (`Data x) ->
+      let open P.Reader in
+      let msg = Request.of_message x in
+      let id = lazy (Request.id_get msg) in
+      let path = lazy (Request.path_get_list msg) in
+      let action = lazy (match Request.get msg with
+          | Request.Write x     -> Write x
+          | Request.Read        -> Read
+          | Request.Delete      -> Delete
+          | Request.Undefined i -> raise (Undefined_field i)
+        ) in
+      Ok { id; path; action }
 
-  let err e = Lwt.return (Result.Error (`Msg (Fmt.to_to_string C.pp_error e)))
-  let err_eof = Lwt.return (Result.Error `Eof)
+  let write e t =
+    let open P.Builder in
+    match action t with
+    | exception Undefined_field i -> Lwt.return (Endpoint.err_undefined_field i)
+    | action ->
+      let msg =
+        let b = Request.init_root () in
+        Request.id_set b (id t);
+        ignore (Request.path_set_list b (path t));
+        (match action with
+         | Write x -> Request.write_set b x
+         | Read    -> Request.read_set b
+         | Delete  -> Request.delete_set b);
+        b
+      in
+      Endpoint.send e (Request.to_message msg)
 
-  let read fd =
-    let fd = C.create fd in
-    C.read_exactly fd ~len:4 >>= function
-    | Ok `Eof        -> err_eof
-    | Error e        -> err e
-    | Ok (`Data buf) ->
-      let buf = Cstruct.concat buf in
-      Log.debug (fun l -> l "Message.read len=%a" Cstruct.hexdump_pp buf);
-      let len = Cstruct.LE.get_uint32 buf 0 |> Int32.to_int in
-      C.read_exactly fd ~len >>= function
-      | Ok `Eof        -> err_eof
-      | Error e        -> err e
-      | Ok (`Data buf) ->
-        let buf = Cstruct.concat buf in
-        Lwt.return (of_cstruct buf)
+end
 
-  let write fd msg =
-    let buf = to_cstruct msg in
-    let len =
-      let len = Cstruct.create 4 in
-      Cstruct.LE.set_uint32 len 0 (Int32.of_int @@ Cstruct.len buf);
-      len
-    in
-    IO.write fd len >>= function
-    | Error e   -> failf "Reply.write(len) %a" IO.pp_write_error e
-    | Ok ()     -> IO.write fd buf >>= function
-      | Ok ()   -> Lwt.return_unit
-      | Error e -> failf "Reply.write(buf) %a" IO.pp_write_error e
+module Response = struct
+
+  type status = (string, string) result
+
+  let pp_status ppf = function
+    | Ok ok   -> Fmt.pf ppf "ok:%S" ok
+    | Error e -> Fmt.pf ppf "error:%S" e
+
+  type t = {
+    id    : int32 Lazy.t;
+    status: status Lazy.t;
+  }
+
+  let v ~id status = { id = lazy id; status = lazy status }
+  let id t = Lazy.force t.id
+  let status t = Lazy.force t.status
+
+  let pp ppf t = match status t with
+    | exception Undefined_field i -> Fmt.pf ppf "<undefined-field %d>" i
+    | s -> Fmt.pf ppf "%ld:%a" (id t) pp_status s
+
+  let equal x y =
+    id x = id y && match status x = status y with
+    | exception Undefined_field _ -> false
+    | b -> b
+
+  let read e: (t, Endpoint.error) result Lwt.t =
+    Endpoint.recv e >|= function
+    | Error e      -> Error e
+    | Ok `Eof      -> Error (`IO `Closed)
+    | Ok (`Data x) ->
+      let open P.Reader in
+      let msg = Response.of_message x in
+      let id = lazy (Response.id_get msg) in
+      let status = lazy (match Response.get msg with
+          | Response.Ok x        -> Ok x
+          | Response.Error x     -> Error x
+          | Response.Undefined i -> raise (Undefined_field i)
+        ) in
+      Ok { id; status }
+
+  let write e t =
+    let open P.Builder in
+    match status t with
+    | exception Undefined_field i -> Lwt.return (Endpoint.err_undefined_field i)
+    | s ->
+      let msg =
+        let b = Response.init_root () in
+        Response.id_set b (id t);
+        (match s with
+         | Error s -> Response.error_set b s
+         | Ok s    -> Response.ok_set b s);
+        b
+      in
+      Endpoint.send e (Response.to_message msg)
 
 end
 
@@ -254,8 +236,6 @@ module Client = struct
   let new_id =
     let n = ref 0l in
     fun () -> n := Int32.succ !n; !n
-
-  let version = 0l
 
   type error = [`Msg of string]
   let pp_error ppf (`Msg s) = Fmt.string ppf s
@@ -268,60 +248,64 @@ module Client = struct
   module Cache = Hashtbl.Make(K)
 
   type t = {
-    fd     : IO.t;
-    replies: Reply.t Cache.t;
+    e      : Endpoint.t;
+    replies: Response.t Cache.t;
   }
 
-  let v fd = { fd; replies = Cache.create 12 }
+  let v fd = { e = Endpoint.v fd; replies = Cache.create 12 }
+  let err e = Fmt.kstrf (fun e -> Error (`Msg e)) "%a" Endpoint.pp_error e
 
-  let call t query =
-    let id = query.Query.id in
-    Query.write t.fd query >>= fun () ->
-    let rec loop () =
-      try
-        let r = Cache.find t.replies id in
-        Cache.remove t.replies id;
-        Lwt.return r
-      with Not_found ->
-        Reply.read t.fd >>= function
-        | Error e ->
-          Log.err (fun l -> l "Got %a while waiting for a reply to %ld"
-                      Query.pp_error e id);
-          loop ()
-        | Ok r ->
-          if r.id = id then Lwt.return r
-          else (
-            (* FIXME: maybe we want to check if id is not already
-               allocated *)
-            Cache.add t.replies r.id r;
+  let call t r =
+    let id = Request.id r in
+    Request.write t.e r >>= function
+    | Error e -> Lwt.return (err e)
+    | Ok ()   ->
+      let rec loop () =
+        try
+          let r = Cache.find t.replies id in
+          Cache.remove t.replies id;
+          Lwt.return r
+        with Not_found ->
+          Response.read t.e >>= function
+          | Error e ->
+            Log.err (fun l -> l "Got %a while waiting for a reply to %ld"
+                        Endpoint.pp_error e id);
             loop ()
-          )
-    in
-    loop () >|= fun r ->
-    assert (r.Reply.id = id);
-    match r.Reply.status with
-    | Ok    -> Ok r.Reply.payload
-    | Error -> Error (`Msg r.Reply.payload)
+          | Ok r ->
+            let rid = Response.id r in
+            if rid = id then Lwt.return r
+            else (
+              (* FIXME: maybe we want to check if id is not already
+                 allocated *)
+              Cache.add t.replies rid r;
+              loop ()
+            )
+      in
+      loop () >|= fun r ->
+      assert (Response.id r = id);
+      match Response.status r with
+      | Ok s    -> Ok s
+      | Error s -> Error (`Msg s)
 
-  let query operation path payload =
+  let request path action =
     let id = new_id () in
-    { Query.version; id; operation; path; payload }
+    Request.v ~id ~path action
 
   let read t path =
-    call t (query Read path "") >|= function
-    | Ok x           -> Ok (Some x)
-    | Error (`Msg e) ->
-      if e = err_not_found then Ok None
-      else Error (`Msg e)
+    call t (request path Read) >|= function
+    | Ok x    -> Ok (Some x)
+    | Error e ->
+      if e = `Msg err_not_found then Ok None
+      else Error e
 
   let write t path v =
-    call t (query Write path v) >|= function
+    call t (request path @@ Write v) >|= function
     | Ok ""        -> Ok ()
     | Ok _         -> Error (`Msg "invalid return")
     | Error _ as e -> e
 
   let delete t path =
-    call t (query Delete path "") >|= function
+    call t (request path Delete) >|= function
     | Ok ""        -> Ok ()
     | Ok _         -> Error (`Msg "invalid return")
     | Error _ as e -> e
@@ -332,17 +316,9 @@ module Server = struct
 
   type op = [ `Read | `Write | `Delete ]
 
-  let ok q payload =
-    { Reply.id = q.Query.id; status = Reply.Ok; payload }
-
-  let error q payload =
-    { Reply.id = q.Query.id; status = Reply.Error; payload }
-
-  let with_key q f =
-    match KV.Key.of_string q.Query.path with
-    | Ok x           -> f x
-    | Error (`Msg e) ->
-      Fmt.kstrf (fun msg -> Lwt.return (error q msg)) "invalid key: %s" e
+  let ok q s = Response.v ~id:(Request.id q) (Ok s)
+  let error q s = Response.v ~id:(Request.id q) (Error s)
+  let with_key q f = f (Request.path q)
 
   let infof fmt =
     Fmt.kstrf (fun msg () ->
@@ -351,18 +327,20 @@ module Server = struct
       ) fmt
 
   let not_allowed q =
-    let path = q.Query.path in
-    let err = Fmt.strf "%s is not an allowed path" path in
-    Log.err (fun l -> l "%ld: %s" q.Query.id path);
+    let path = Request.path q in
+    let err = Fmt.strf "%a is not an allowed path" Request.pp_path path in
+    Log.err (fun l -> l "%ld: %a" (Request.id q) Request.pp_path path);
     error q err
 
   let dispatch db op q =
     with_key q (fun key ->
         let can x = List.mem x op in
-        match q.Query.operation with
-        | Write when can `Write ->
+        match Request.action q with
+        | exception Undefined_field i ->
+          Fmt.kstrf (fun e -> Lwt.return (error q e)) "undefined field %i" i
+        | Write s when can `Write ->
           let info = infof "Updating %a" KV.Key.pp key in
-          KV.set db ~info key q.payload >|= fun () ->
+          KV.set db ~info key s >|= fun () ->
           ok q ""
         | Delete when can `Delete ->
           let info = infof "Removing %a" KV.Key.pp key in
@@ -379,11 +357,14 @@ module Server = struct
     Log.debug (fun l -> l "Serving the control state over %a" IO.pp fd);
     let queries = Queue.create () in
     let cond = Lwt_condition.create () in
+    let e = Endpoint.v fd in
     let rec listen () =
-      Query.read fd >>= function
-      | Error `Eof     -> Lwt.return_unit
-      | Error (`Msg e) ->
-        Log.err (fun l -> l "received invalid message: %s" e);
+      Request.read e >>= function
+      | Error (`Channel _ | `IO _ as e) ->
+        Log.err (fun l -> l "fatal error: %a" Endpoint.pp_error e);
+        Lwt.return_unit
+      | Error (`Msg _ | `Undefined_field _ as e) ->
+        Log.err (fun l -> l "transient error: %a" Endpoint.pp_error e);
         listen ()
       | Ok q ->
         Queue.add q queries;
@@ -393,15 +374,18 @@ module Server = struct
     let rec process () =
       Lwt_condition.wait cond >>= fun () ->
       let q = Queue.pop queries in
-      let path = q.Query.path in
+      let path = Request.path q in
       (if List.mem_assoc path routes then (
           let op = List.assoc path routes in
           dispatch db op q >>= fun r ->
-          Reply.write fd r
+          Response.write e r
         ) else (
-         Reply.write fd (not_allowed q)
-       )) >>= fun () ->
-      process ()
+         Response.write e (not_allowed q)
+       )) >>= function
+      | Ok ()   -> process ()
+      | Error e ->
+        Log.err (fun l -> l "%a" Endpoint.pp_error e);
+        process ()
     in
     Lwt.pick [
       listen ();
