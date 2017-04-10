@@ -1,20 +1,22 @@
 FROM ocaml/opam:alpine-3.5_ocaml-4.04.0
 RUN cd /home/opam/opam-repository && git pull && opam update -u
 
-# to be able to use cstruct.ppx + jbuilder
-RUN opam pin add cstruct 2.4.0 -n
+## pins for priv
+
 # to bring eth0 up
 RUN opam pin add tuntap 1.0.0 -n
-RUN opam pin add mirage-net-fd --dev -n
+RUN opam pin add mirage-net-fd 0.2.0 -n
 
-RUN opam depext -iy mirage-net-unix logs-syslog irmin-unix cohttp decompress
-RUN opam depext -iy rawlink tuntap jbuilder irmin-watcher inotify rresult
+## pins for calf
 
-# TMP: to compile the calf
-RUN opam pin add -n charrua-client https://github.com/yomimono/charrua-client.git#state-halfway
-RUN opam depext -uiy ocamlfind topkg-care ocamlbuild lwt mirage-types-lwt mirage
-RUN opam depext -uiy charrua-client cohttp conduit mirage-unix
-RUN opam depext -uiy mirage-net-fd ptime mirage-logs
+RUN opam pin add charrua-client https://github.com/yomimono/charrua-client.git#state-halfway -n
+
+## depdendencies
+
+RUN opam depext -iy \
+    irmin-unix cohttp decompress rawlink tuntap jbuilder irmin-watcher inotify \
+    rresult lwt capnp charrua-client mirage-net-fd ptime bos                   \
+    mirage-flow-lwt mirage-channel-lwt mirage-types-lwt
 
 RUN sudo mkdir -p /src /bin
 COPY . /src

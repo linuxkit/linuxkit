@@ -84,9 +84,9 @@ let run () cmd ethif path =
   in
   Lwt_main.run (
     let routes = [
-      "/ip"     , [`Write];
-      "/mac"    , [`Read ];
-      "/gateway", [`Write];
+      ["ip"]     , [`Write];
+      ["mac"]    , [`Read ];
+      ["gateway"], [`Write];
     ] in
     Ctl.v path >>= fun db ->
     let ctl fd = Ctl.Server.listen ~routes db fd in
