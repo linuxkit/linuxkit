@@ -4,7 +4,7 @@ kernel:
 init:
   - mobylinux/init:671bdce1ed0803daeb35e83e4bcd576bb449ea35
   - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - mobylinux/containerd:c7f6ecdcbcb615a53edee556ba03c7c873bc8488
+  - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: check
