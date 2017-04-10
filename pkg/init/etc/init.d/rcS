@@ -63,14 +63,6 @@ done < /proc/cgroups
 mkdir -p /sys/fs/cgroup/systemd
 mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
 
-# set SELinux contexts
-if [ -x /sbin/restorecon ]
-then
-	restorecon -F /sys/devices/system/cpu/online >/dev/null 2>&1
-	restorecon -rF /sys/fs/cgroup >/dev/null 2>&1
-	restorecon -rF /dev >/dev/null 2>&1
-fi
-
 # start mdev for hotplug
 echo "/sbin/mdev" > /proc/sys/kernel/hotplug
 
