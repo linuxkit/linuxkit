@@ -1,4 +1,4 @@
-image_name = "errordeveloper/mobykube"
+@image_name = "mobylinux/kubernetes"
 
 @versions = {
   kubernetes: "v1.6.1",
@@ -65,8 +65,8 @@ end
 def kubelet_cmd
   %w(
     /hyperkube kubelet
-      --kubeconfig=/etc/kubernetes/kubelet.conf --require-kubeconfig=true
-      --pod-manifest-path=/etc/kubernetes/manifests --allow-privileged=true
+      --kubeconfig=/var/lib/kubeadm/kubelet.conf --require-kubeconfig=true
+      --pod-manifest-path=/var/lib/kubeadm/manifests --allow-privileged=true
       --cluster-dns=10.96.0.10 --cluster-domain=cluster.local
       --cgroups-per-qos=false --enforce-node-allocatable=""
   )
@@ -74,14 +74,23 @@ def kubelet_cmd
   #--node-ip="192.168.65.2"
 end
 
+def create_shell_wrapper script, path
+  run "echo \"#!/bin/sh\n#{script}\n\" > #{path} && chmod 0755 #{path}"
+end
+
 def create_kubelet_wrapper
-  kubelet_wrapper = "#!/bin/sh\nuntil #{kubelet_cmd.join(' ')} ; do sleep 1 ; done"
-  run "echo \"#{kubelet_wrapper}\" > /usr/bin/kubelet.sh && chmod 0755 /usr/bin/kubelet.sh"
+  create_shell_wrapper "until #{kubelet_cmd.join(' ')} ; do sleep 1 ; done", '/usr/bin/kubelet.sh'
+end
+
+def create_kubeadm_wrappers
+  #create_shell_wrapper 'env KUBE_KUBERNETES_DIR=/var/lib/kubeadm kubeadm init --skip-preflight-checks --kubernetes-version v1.6.1 --cert-dir /var/lib/kubeadm/pki', '/usr/bin/kubeadm-init.sh'
+  create_shell_wrapper "kubeadm init --skip-preflight-checks --kubernetes-version v1.6.1", '/usr/bin/kubeadm-init.sh'
 end
 
 install_dependencies
 
 create_kubelet_wrapper
+create_kubeadm_wrappers
 
 flatten
 
@@ -89,4 +98,4 @@ env KUBECONFIG: "/etc/kubernetes/admin.conf"
 
 set_exec entrypoint: %w(tini -s --), cmd: %w(kubelet.sh)
 
-tag "#{image_name}:master"
+tag "#{@image_name}:latest"

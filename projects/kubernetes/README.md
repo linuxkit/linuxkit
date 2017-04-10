@@ -11,12 +11,12 @@ make
 
 Boot Kubernetes master OS image using `hyperkit` on macOS:
 ```
-../../bin/moby run hyperkit -mem 4096 -cpus 2 kube-master
+../../bin/moby run hyperkit -cpus 2 -mem 4096 -disk-size 2048 kube-master
 ```
 
 Manually initialise master with `kubeadm`:
 ```
-runc exec kubelet kubeadm init --skip-preflight-checks
+runc exec kubelet kubeadm-init.sh
 ```
 
 Once `kubeadm` exits, try `runc exec kubelet kubectl get nodes`.
