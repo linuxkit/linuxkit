@@ -37,8 +37,15 @@ DEPS=Dockerfile Makefile kernel_config kernel_config.debug patches-4.9
 endif
 endif
 
-kernel.tag: $(DEPS)
-	BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
+.PHONY: image push tag
+
+MEDIA_TOYBOX=mobylinux/toybox-media:0a26fe5f574e444849983f9c4148ef74b3804d55@sha256:5ac38f77b66deb194c9016591b9b096e81fcdc9f7c3e6d01566294a6b4b4ebd2
+
+BASE=$(MEDIA_TOYBOX)
+IMAGE=kernel
+
+kernel.tag: $(DEPS) hash
+	docker pull mobylinux/$(IMAGE):$(shell cat hash) || BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
 
 bzImage: kernel.tag
 	rm -rf etc/kernel-patches
@@ -47,14 +54,13 @@ bzImage: kernel.tag
 	cp x86_64/kernel-modules.tar kernel.tar
 	cp x86_64/bzImage $@
 
-.PHONY: image push tag
-
-MEDIA_TOYBOX=mobylinux/toybox-media:0a26fe5f574e444849983f9c4148ef74b3804d55@sha256:5ac38f77b66deb194c9016591b9b096e81fcdc9f7c3e6d01566294a6b4b4ebd2
-
-BASE="$MEDIA_TOYBOX"
-IMAGE=kernel
 
 default: push
+
+hash: $(DEPS)
+	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
+	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
+	docker run --rm --entrypoint=/bin/sh $(IMAGE):build -c "cat $^ /lib/apk/db/installed /go/bin/golint | sha1sum" | sed 's/ .*//' > hash
 
 Dockerfile.media:
 	printf "FROM $(MEDIA_TOYBOX)\nADD . /\n" > $@
@@ -63,9 +69,11 @@ image: Dockerfile.media bzImage kernel.tar $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -f Dockerfile.media -
 
 push: image
-	docker pull mobylinux/$(IMAGE):$(IMAGE_VERSION) || \
+	docker pull mobylinux/$(IMAGE):$(IMAGE_VERSION) || docker pull mobylinux$(IMAGE):$(shell cat hash) \
 		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
 		 docker push mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
+         docker push mobylinux/$(IMAGE):$(shell cat hash) && \
 		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
 		 docker push mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
@@ -82,6 +90,7 @@ sign: image
 
 tag: image
 	(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
+	docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
 	docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
