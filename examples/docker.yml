@@ -56,6 +56,15 @@ services:
      - CAP_NET_RAW
     net: host
     oomScoreAdj: -800
+  - name: ntpd
+    image: "mobylinux/openntpd:a570316d7fc49ca1daa29bd945499f4963d227af"
+    capabilities:
+      - CAP_SYS_TIME
+      - CAP_SYS_NICE
+      - CAP_SYS_CHROOT
+      - CAP_SETUID
+      - CAP_SETGID
+    net: host
   - name: docker
     image: "mobylinux/docker-ce:741bf21513328f674e0cdcaa55492b0b75974e08"
     capabilities:
