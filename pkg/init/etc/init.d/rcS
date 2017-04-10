@@ -8,6 +8,13 @@ mount -n -t proc proc /proc -o ndodev,nosuid,noexec,relatime
 mount -n -t tmpfs tmpfs /run -o nodev,nosuid,noexec,relatime,size=10%,mode=755
 mount -n -t tmpfs tmpfs /tmp -o nodev,nosuid,noexec,relatime,size=10%,mode=1777
 
+# make /var its own tmpfs mount point, preserve any existing files
+tar cpf /tmp/var.tar /var
+mount -n -t tmpfs var /var -o nodev,nosuid,noexec,relatime,size=10%,mode=755
+mount --make-rshared /var
+tar xpf /tmp/var.tar
+rm -f /tmp/var.tag
+
 # mount devfs
 mount -n -t devtmpfs dev /dev -o nosuid,noexec,relatime,size=10m,nr_inodes=248418,mode=755
 # devices
@@ -117,7 +124,3 @@ mount -o remount,ro /
 mount -o bind /containers /containers
 mount -o remount,rw,relatime /containers /containers
 mount --make-private /containers
-
-# make /var its own tmpfs mount point
-mount -n -t tmpfs var /var -o nodev,nosuid,noexec,relatime,size=10%,mode=755
-mount --make-rshared /var
