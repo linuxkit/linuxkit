@@ -22,9 +22,7 @@ This should create a HyperKit based, InfraKit managed `etcd` cluster with 5 `etc
 
 Start InfraKit:
 ```
-infrakit-flavor-vanilla &
-infrakit-group-default &
-../../../bin/infrakit-instance-hyperkit
+./start-infrakit
 ```
 
 Note: The HyperKit InfraKit plugin must be started from the directory
@@ -35,10 +33,10 @@ Now, commit the new config:
 infrakit group commit infrakit.json
 ```
 
-To check if everything is fine, note down the IP address from one of
-the nodes and then:
+To check if everything is fine, we created (above) a local `etcd.local` docker image which already has the environment set up to contact the cluster:
 ```
-docker run --rm -t quay.io/coreos/etcd:v3.1.5 etcdctl --endpoints http://192.168.65.200:2379 member list
+docker run --rm -ti etcd.local etcdctl member list
+docker run --rm -ti etcd.local etcdctl cluster-health
 ```
 
 You can perform rolling updates, by for example, switching the kernel version in `etcd.yml`, build a new moby, e.g., `moby build -name etcd-4.10 etcd`, update `infrakit.json`, and then commit the new configuration to InfraKit: `infrakit group commit infrakit.json`.

@@ -31,13 +31,6 @@ onboot:
      - CAP_SYS_ADMIN
     rootfsPropagation: shared
     command: ["/mount.sh", "/var/lib/etcd"]
-services:
-  - name: rngd
-    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
-    capabilities:
-     - CAP_SYS_ADMIN
-    oomScoreAdj: -800
-    readonly: true
   - name: dhcpcd
     image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
     binds:
@@ -48,7 +41,32 @@ services:
      - CAP_NET_BIND_SERVICE
      - CAP_NET_RAW
     net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: metadata
+    image: mobylinux/metadata:960e6c371c9a07cf512dfcfa9734a5e0db427e96
+    net: host
+    binds:
+      - /dev:/dev
+      - /var:/var
+      - /etc/resolv.conf:/etc/resolv.conf
+    capabilities:
+      - all
+services:
+  - name: rngd
+    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    capabilities:
+     - CAP_SYS_ADMIN
     oomScoreAdj: -800
+    readonly: true
+  - name: ntpd
+    image: "mobylinux/openntpd:a570316d7fc49ca1daa29bd945499f4963d227af"
+    capabilities:
+      - CAP_SYS_TIME
+      - CAP_SYS_NICE
+      - CAP_SYS_CHROOT
+      - CAP_SETUID
+      - CAP_SETGID
+    net: host
   - name: etcd
     image: "mobylinux/etcd"
     capabilities:
@@ -61,10 +79,11 @@ services:
     net: host
     binds:
      - /var/lib/etcd:/var/lib/etcd
+     - /var/config/etcd:/etc/etcd
 
 outputs:
   - format: kernel+initrd
-#  - format: gcp
-#    project: docker4x
-#    bucket: rolf
-#    replace: true
+  - format: gcp
+    project: docker4x
+    bucket: rolf
+    replace: true
