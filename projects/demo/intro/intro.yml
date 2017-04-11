@@ -16,7 +16,7 @@ onboot:
     readonly: true
 services:
   - name: dhcpcd
-    image: "mobylinux/dhcpcd:3eb32da7ff8051f61e0f18edd90dd0fbfcf148ea"
+    image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
     binds:
      - /var:/var
      - /tmp/etc:/etc
