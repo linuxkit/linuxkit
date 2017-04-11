@@ -38,6 +38,11 @@ onboot:
      - CAP_SYS_ADMIN
     rootfsPropagation: shared
     command: ["/mount.sh", "/var/lib"]
+  - name: mount
+    image: "mobylinux/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"
+    binds:
+     - /var:/var
+    command: ["mkdir", "-p", "/var/lib/kubeadm"]
 services:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
@@ -115,7 +120,5 @@ services:
 files:
   - path: root/.ssh/authorized_keys
     contents: '# Your ssh key goes here'
-  - path: var/lib/kubeadm
-    directory: true
 outputs:
   - format: kernel+initrd
