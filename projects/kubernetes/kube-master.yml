@@ -77,8 +77,16 @@ services:
      - /var:/var:rshared,rbind
      - /var/lib/kubeadm:/etc/kubernetes
     rootfsPropagation: shared
+  - name: kubernetes-image-cache-common
+    image: "mobylinux/kubernetes:latest-image-cache-common"
+    binds:
+      - /var/run:/var/run
+  - name: kubernetes-image-cache-control-plane
+    image: "mobylinux/kubernetes:latest-image-cache-control-plane"
+    binds:
+      - /var/run:/var/run
   - name: kubelet
-    image: "errordeveloper/mobykube:master"
+    image: "mobylinux/kubernetes:latest"
     capabilities:
      - all
     net: host
