@@ -97,10 +97,6 @@ services:
     image: "mobylinux/kubernetes:latest-image-cache-common"
     binds:
       - /var/run:/var/run
-  - name: kubernetes-image-cache-control-plane
-    image: "mobylinux/kubernetes:latest-image-cache-control-plane"
-    binds:
-      - /var/run:/var/run
   - name: kubelet
     image: "mobylinux/kubernetes:latest"
     capabilities:
