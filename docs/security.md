@@ -96,6 +96,6 @@ critical mass before eventually being upstreamed.
 In this spirit, the [`/projects`](../projects) subdirectory houses a number of such projects. At this time, these include:
 - [WireGuard](../projects/wireguard/roadmap.md): a modern and minimal VPN implemented with the state-of-the-art cryptography
 like the [Noise protocol framework](http://www.noiseprotocol.org/)
-- [okernel](../projects/okernel/roadmap.md): a mechanism to split the kernel into inner and outer subkernels with different trust properties
+- [okernel](../projects/okernel/README.md): a mechanism to split the kernel into inner and outer subkernels with different trust properties
 
 The Moby community welcomes new security projects - please propose a new project if you have one you'd like to include!
