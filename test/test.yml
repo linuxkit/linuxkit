@@ -7,15 +7,8 @@ init:
   - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
-  - name: check
-    image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
-    pid: host
-    capabilities:
-     - CAP_SYS_BOOT
-    readonly: true
-services:
   - name: dhcpcd
-    image: "mobylinux/dhcpcd:3eb32da7ff8051f61e0f18edd90dd0fbfcf148ea"
+    image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
     binds:
      - /var:/var
      - /tmp:/etc
@@ -24,7 +17,13 @@ services:
      - CAP_NET_BIND_SERVICE
      - CAP_NET_RAW
     net: host
-    oomScoreAdj: -800
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: check
+    image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
+    pid: host
+    capabilities:
+     - CAP_SYS_BOOT
+    readonly: true
 outputs:
   - format: kernel+initrd
   - format: iso-bios

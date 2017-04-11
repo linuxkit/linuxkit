@@ -15,6 +15,17 @@ onboot:
     capabilities:
      - CAP_SYS_ADMIN
     readonly: true
+  - name: dhcpcd
+    image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
+    binds:
+     - /var:/var
+     - /tmp:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata-gcp
     image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
     binds:
@@ -32,17 +43,6 @@ services:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
-  - name: dhcpcd
-    image: "mobylinux/dhcpcd:3eb32da7ff8051f61e0f18edd90dd0fbfcf148ea"
-    binds:
-     - /var:/var
-     - /tmp:/etc
-    capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
-    oomScoreAdj: -800
   - name: sshd
     image: "mobylinux/sshd:160631d59fffc13d523ff7f09b3b49538d34b9cd"
     capabilities:
