@@ -18,16 +18,31 @@
                 "Network": "rneugeba-demo",
                 "Connect" : true,
                 "MachineType": "n1-standard-1",
+                "DiskType": "pd-standard",
                 "DiskSizeMb": 60,
                 "DiskImage": "https://www.googleapis.com/compute/v1/projects/docker4x/global/images/etcd",
-                "DiskType": "pd-standard",
+                "AutoDeleteDisk": true,
+                "ReuseExistingDisk": false,
                 "Scopes": [ ]
             }
         },
         "Flavor": {
             "Plugin": "flavor-vanilla",
             "Properties": {
-                "Init": [ ],
+                "Init": [
+                    "{",
+                    "  \"etcd\": {",
+                    "    \"name_prefix\": {",
+                    "      \"perm\": \"0644\",",
+                    "      \"content\": \"server\"",
+                         "},",
+                    "    \"init_cluster\": {",
+                    "      \"perm\": \"0644\",",
+                    "      \"content\": \"server200=http://10.132.0.200:2380,server201=http://10.132.0.201:2380,server202=http://10.132.0.202:2380,server203=http://10.132.0.203:2380,server204=http://10.132.0.204:2380\"",
+                         "}",
+                       "}",
+                    "}"
+                ],
                 "Tags": {
                     "tier": "etcd-cluster",
                     "project": "infrakit"
