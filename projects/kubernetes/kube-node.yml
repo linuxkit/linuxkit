@@ -1,0 +1,120 @@
+kernel:
+  image: "mobylinux/kernel:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - mobylinux/init:e10e2efc1b78ef41d196175cbc07e069391f406e
+  - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
+  - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+onboot:
+  - name: sysctl
+    image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    net: host
+    pid: host
+    ipc: host
+    capabilities:
+     - CAP_SYS_ADMIN
+    readonly: true
+  - name: sysfs
+    image: mobylinux/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c
+  - name: binfmt
+    image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
+    binds:
+     - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    readonly: true
+  - name: format
+    image: "mobylinux/format:53748000acf515549d398e6ae68545c26c0f3a2e"
+    binds:
+     - /dev:/dev
+    capabilities:
+     - CAP_SYS_ADMIN
+     - CAP_MKNOD
+  - name: mount
+    image: "mobylinux/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"
+    binds:
+     - /dev:/dev
+     - /var:/var:rshared,rbind
+    capabilities:
+     - CAP_SYS_ADMIN
+    rootfsPropagation: shared
+    command: ["/mount.sh", "/var/lib"]
+  - name: mount
+    image: "mobylinux/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"
+    binds:
+     - /var:/var
+    command: ["mkdir", "-p", "/var/lib/kubeadm"]
+services:
+  - name: rngd
+    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
+    capabilities:
+     - CAP_SYS_ADMIN
+    oomScoreAdj: -800
+    readonly: true
+  - name: dhcpcd
+    image: "mobylinux/dhcpcd:57a8ef29d3a910645b2b24c124f9ce9ef53ce703"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    oomScoreAdj: -800
+  - name: ntpd
+    image: "mobylinux/openntpd:a570316d7fc49ca1daa29bd945499f4963d227af"
+    capabilities:
+      - CAP_SYS_TIME
+      - CAP_SYS_NICE
+      - CAP_SYS_CHROOT
+      - CAP_SETUID
+      - CAP_SETGID
+    net: host
+  - name: sshd
+    image: "mobylinux/sshd:160631d59fffc13d523ff7f09b3b49538d34b9cd"
+    capabilities:
+     - all
+    net: host
+    pid: host
+    binds:
+     - /root/.ssh:/root/.ssh
+  - name: docker
+    image: "mobylinux/docker-ce:741bf21513328f674e0cdcaa55492b0b75974e08"
+    capabilities:
+     - all
+    net: host
+    pid: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /dev:/dev
+     - /lib/modules:/lib/modules
+     - /var:/var:rshared,rbind
+     - /var/lib/kubeadm:/etc/kubernetes
+    rootfsPropagation: shared
+  - name: kubernetes-image-cache-common
+    image: "mobylinux/kubernetes:latest-image-cache-common"
+    binds:
+      - /var/run:/var/run
+  - name: kubelet
+    image: "mobylinux/kubernetes:latest"
+    capabilities:
+     - all
+    net: host
+    pid: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /dev:/dev
+     - /var:/var:rshared,rbind
+     - /var/lib/kubeadm:/etc/kubernetes
+     #- /var/log:/var/log #/var/log/containers
+     # TODO /{etc,opt}/cni & /var/lib/kubelet:rw,rshared
+    rootfsPropagation: shared
+files:
+  - path: root/.ssh/authorized_keys
+    contents: '# Your ssh key goes here'
+outputs:
+  - format: kernel+initrd
