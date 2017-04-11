@@ -23,6 +23,18 @@
             "Plugin": "flavor-vanilla",
             "Properties": {
                 "Init": [
+                    "{",
+                    "  \"etcd\": {",
+                    "    \"name_prefix\": {",
+                    "      \"perm\": \"0644\",",
+                    "      \"content\": \"server\"",
+                         "},",
+                    "    \"init_cluster\": {",
+                    "      \"perm\": \"0644\",",
+                    "      \"content\": \"server200=http://192.168.65.200:2380,server201=http://192.168.65.201:2380,server202=http://192.168.65.202:2380,server203=http://192.168.65.203:2380,server204=http://192.168.65.204:2380\"",
+                         "}",
+                       "}",
+                    "}"
                 ],
                 "Tags": {
                     "tier": "etcd-cluster",
