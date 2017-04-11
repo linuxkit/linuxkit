@@ -78,18 +78,12 @@ def create_shell_wrapper script, path
   run "echo \"#!/bin/sh\n#{script}\n\" > #{path} && chmod 0755 #{path}"
 end
 
-def create_kubelet_wrapper
-  create_shell_wrapper "until #{kubelet_cmd.join(' ')} ; do sleep 1 ; done", '/usr/bin/kubelet.sh'
-end
-
-def create_kubeadm_wrappers
-  create_shell_wrapper "kubeadm init --skip-preflight-checks --kubernetes-version #{@versions[:kubernetes]}", '/usr/bin/kubeadm-init.sh'
-end
-
 install_dependencies
 
-create_kubelet_wrapper
-create_kubeadm_wrappers
+# At the moment we trigger `kubeadm init` manually on the master, then start nodes which expect `kubeadm join` args in metadata volume
+create_shell_wrapper "until #{kubelet_cmd.join(' ')} ; do [ ! -e /dev/sr0 ] && sleep 1 || (mount -o ro /dev/sr0 /mnt && kubeadm join --skip-preflight-checks \\\$(cat /mnt/config)) ; done", '/usr/bin/kubelet.sh'
+
+create_shell_wrapper "kubeadm init --skip-preflight-checks --kubernetes-version #{@versions[:kubernetes]}", '/usr/bin/kubeadm-init.sh'
 
 flatten
 

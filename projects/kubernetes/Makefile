@@ -1,23 +1,28 @@
 all: build-container-images build-vm-images
 
-build-container-images: Boxfile
+build-container-image: Boxfile
 	docker run --rm -ti \
 	  -v $(PWD):$(PWD) \
 	  -v /var/run/docker.sock:/var/run/docker.sock \
 	  -w $(PWD) \
 	    boxbuilder/box:master Boxfile
 
-push-container-images: build-container-image
+push-container-images: build-container-image cache-images
 	docker image push mobylinux/kubernetes:latest
 	docker image push mobylinux/kubernetes:latest-image-cache-common
 	docker image push mobylinux/kubernetes:latest-image-cache-control-plane
 
-build-vm-images:
+build-vm-images: kube-master-initrd.img kube-node-initrd.img
+
+kube-master-initrd.img: kube-master.yml
 	../../bin/moby build -name kube-master kube-master.yml
+
+kube-node-initrd.img: kube-node.yml
+	../../bin/moby build -name kube-node kube-node.yml
 
 clean:
 	rm -f -r \
-	  kube-master-bzImage kube-master-cmdline kube-master-disk.img kube-master-initrd.img \
+	  kube-*-bzImage kube-*-cmdline kube-*-disk.img kube-*-initrd.img \
 	  image-cache/common image-cache/control-plane
 
 COMMON_IMAGES := \
