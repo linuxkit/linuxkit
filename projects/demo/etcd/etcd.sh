@@ -4,7 +4,9 @@
 set -x
 set -v
 
-DATADIR=/var/lib/etcd
+# Get initial cluster data from metadata
+NAME_PREFIX="$(cat /etc/etcd/name_prefix)"
+INIT_CLUSTER="$(cat /etc/etcd/init_cluster)"
 
 # Wait till we have an IP address
 IP=""
@@ -13,13 +15,12 @@ while [ -z "$IP" ]; do
     sleep 1
 done
 
-# Name is infra+last octet of IP address
-NUM=$(echo ${IP} | cut -d . -f 4)
-PREFIX=$(echo ${IP} | cut -d . -f 1,2,3)
-NAME=infra${NUM}
+# Where to store data
+DATADIR=/var/lib/etcd
 
-# This should come from Metadata
-INIT_CLUSTER="infra200=http://${PREFIX}.200:2380,infra201=http://${PREFIX}.201:2380,infra202=http://${PREFIX}.202:2380,infra203=http://${PREFIX}.203:2380,infra204=http://${PREFIX}.204:2380"
+# Name is NAME_PREFIX+last octet of IP address
+NUM=$(echo ${IP} | cut -d . -f 4)
+NAME=${NAME_PREFIX}${NUM}
 
 # We currently have no easy way to determine if we join a cluster for
 # the first time or if we got restarted and need to join an existing
