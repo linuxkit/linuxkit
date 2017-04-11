@@ -4,9 +4,11 @@ This project aims to demonstrate how one can create minimal and immutable Kubern
 
 Make sure to `cd projects/kubernetes` first.
 
-Build container & OS images:
+Edit `kube-master.yml` and add your public SSH key to `files` section.
+
+Build OS images:
 ```
-make
+make build-vm-images
 ```
 
 Boot Kubernetes master OS image using `hyperkit` on macOS:
@@ -14,9 +16,19 @@ Boot Kubernetes master OS image using `hyperkit` on macOS:
 ./boot-master.sh
 ```
 
+Get IP address of the master:
+```
+ip addr show dev eth0
+```
+
+Login to the kubelet container:
+```
+./ssh_into_kubelet.sh <master-ip>
+```
+
 Manually initialise master with `kubeadm`:
 ```
-runc exec kubelet kubeadm-init.sh
+kubeadm-init.sh
 ```
 
 Once `kubeadm` exits, make sure to copy the `kubeadm join` arguments,

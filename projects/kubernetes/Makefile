@@ -1,14 +1,19 @@
 all: build-container-images build-vm-images
 
-build-container-image: Boxfile
-	docker run --rm -ti \
-	  -v $(PWD):$(PWD) \
-	  -v /var/run/docker.sock:/var/run/docker.sock \
-	  -w $(PWD) \
-	    boxbuilder/box:master Boxfile
+BOX_PLANS = kubernetes.rb mounts.rb
 
-push-container-images: build-container-image cache-images
+build-container-images: $(BOX_PLANS)
+	for plan in $(BOX_PLANS) ; do \
+	  docker run --rm -ti \
+	    -v $(PWD):$(PWD) \
+	    -v /var/run/docker.sock:/var/run/docker.sock \
+	    -w $(PWD) \
+	      boxbuilder/box:master $$plan \
+	; done
+
+push-container-images: build-container-images cache-images
 	docker image push mobylinux/kubernetes:latest
+	docker image push mobylinux/kubernetes:latest-mounts
 	docker image push mobylinux/kubernetes:latest-image-cache-common
 	docker image push mobylinux/kubernetes:latest-image-cache-control-plane
 
@@ -47,10 +52,10 @@ cache-images:
 	for image in $(COMMON_IMAGES) ; \
 	  do $(MAKE) "image-cache/common/$${image}.tar" \
 	  ; done
-	cp image-cache/Dockerfile image-cache/common
+	cp image-cache/Dockerfile image-cache/.dockerignore image-cache/common
 	docker image build -t mobylinux/kubernetes:latest-image-cache-common image-cache/common
 	for image in $(CONTROL_PLANE_IMAGES) ; \
 	  do $(MAKE) "image-cache/control-plane/$${image}.tar" \
 	  ; done
-	cp image-cache/Dockerfile image-cache/control-plane
+	cp image-cache/Dockerfile image-cache/.dockerignore image-cache/control-plane
 	docker image build -t mobylinux/kubernetes:latest-image-cache-control-plane image-cache/control-plane
