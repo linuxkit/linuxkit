@@ -26,16 +26,15 @@ onboot:
      - CAP_NET_RAW
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
-  - name: metadata-gcp
-    image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
-    binds:
-     - /tmp:/etc/ssh
-     - /etc/resolv.conf:/etc/resolv.conf
-    readonly: true
+  - name: metadata
+    image: mobylinux/metadata:960e6c371c9a07cf512dfcfa9734a5e0db427e96
     net: host
-    uts: host
+    binds:
+      - /dev:/dev
+      - /var:/var
+      - /etc/resolv.conf:/etc/resolv.conf
     capabilities:
-     - CAP_SYS_ADMIN
+      - all
 services:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
@@ -50,7 +49,7 @@ services:
     net: host
     pid: host
     binds:
-     - /tmp/authorized_keys:/root/.ssh/authorized_keys
+     - /var/conf/authorized_keys:/root/.ssh/authorized_keys
      - /etc/resolv.conf:/etc/resolv.conf
   - name: nginx
     image: "nginx:alpine"
@@ -64,9 +63,6 @@ services:
 trust:
   image:
     - mobylinux/kernel
-files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
 outputs:
   - format: kernel+initrd
   - format: gcp
