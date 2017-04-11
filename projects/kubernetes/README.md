@@ -11,7 +11,7 @@ make
 
 Boot Kubernetes master OS image using `hyperkit` on macOS:
 ```
-../../bin/moby run hyperkit -cpus 2 -mem 4096 -disk-size 2048 kube-master
+./boot-master.sh
 ```
 
 Manually initialise master with `kubeadm`:

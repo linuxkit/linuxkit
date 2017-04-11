@@ -83,8 +83,7 @@ def create_kubelet_wrapper
 end
 
 def create_kubeadm_wrappers
-  #create_shell_wrapper 'env KUBE_KUBERNETES_DIR=/var/lib/kubeadm kubeadm init --skip-preflight-checks --kubernetes-version v1.6.1 --cert-dir /var/lib/kubeadm/pki', '/usr/bin/kubeadm-init.sh'
-  create_shell_wrapper "kubeadm init --skip-preflight-checks --kubernetes-version v1.6.1", '/usr/bin/kubeadm-init.sh'
+  create_shell_wrapper "kubeadm init --skip-preflight-checks --kubernetes-version #{@versions[:kubernetes]}", '/usr/bin/kubeadm-init.sh'
 end
 
 install_dependencies
