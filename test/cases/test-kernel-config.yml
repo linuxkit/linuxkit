@@ -19,8 +19,13 @@ onboot:
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: check-kernel-config
-    image: "mobylinux/kernel-config:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
+    image: "linuxkit/kernel-config:ecff41279ccbc408079a3996a956432651c6eb9c"
+    readonly: true
+services:
+  - name: poweroff
+    image: "linuxkit/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
     pid: host
+    command: ["/bin/sh", "/poweroff.sh", "3"]
     capabilities:
      - CAP_SYS_BOOT
     readonly: true
