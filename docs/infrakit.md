@@ -1,9 +1,9 @@
-## Hyperkit/Moby Infrakit plugin
+## Hyperkit Infrakit plugin
 
-There is a HyperKit Moby instance plugin for infrakit in
+There is a HyperKit instance plugin for infrakit in
 `src/cmd/infrakit-instance-hyperkit`. The instance plugin is capable
 to start/manage several hyperkit instances with with different
-configurations and Moby configurations.
+configurations and LinuxKit configurations.
 
 The plugin keeps state in a local directory (default
 `.infrakit/hyperkit-vms`) where each instance keeps some state in a
@@ -35,7 +35,7 @@ Then start the hyperkit plugin:
 ./bin/infrakit-instance-hyperkit
 ```
 
-Next, you can commit a new configuration. There is a sample infrakit config file in `hyperkit.json`. It assumes that you have a default moby build in the top-level directory. The `Moby` property needs to be of the form `<dir>/<prefix>` and assumes that the kernel and initrd images are called `<prefix>-bzImage` and `<prefix>-initrd.img` respectively (this is the convention used by the `moby` tool).
+Next, you can commit a new configuration. There is a sample infrakit config file in `hyperkit.json`. It assumes that you have a default LinuxKit build in the top-level directory. The `Moby` property needs to be of the form `<dir>/<prefix>` and assumes that the kernel and initrd images are called `<prefix>-bzImage` and `<prefix>-initrd.img` respectively (this is the convention used by the `moby` tool).
 ```
 infrakit group commit hyperkit.json
 ```
@@ -48,4 +48,3 @@ If you kill the hyperkit process a new instance will be restarted. If
 you change the VM parameter in JSON file and commit the new config, a
 new VM will be created. f you change the `Size` parameter, multiple
 VMs will get started.
-
