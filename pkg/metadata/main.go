@@ -29,6 +29,9 @@ const (
 
 // Provider is a generic interface for metadata/userdata providers.
 type Provider interface {
+	// String should return a unique name for the Provider
+	String() string
+
 	// Probe returns true if the provider was detected.
 	Probe() bool
 
@@ -58,6 +61,7 @@ func main() {
 	found := false
 	for _, p := range netProviders {
 		if p.Probe() {
+			log.Printf("%s: Probe succeeded", p)
 			userdata, err = p.Extract()
 			found = true
 			break
@@ -78,6 +82,7 @@ func main() {
 
 		for _, p := range cdromProviders {
 			if p.Probe() {
+				log.Printf("%s: Probe succeeded", p)
 				userdata, err = p.Extract()
 				found = true
 				break
