@@ -69,7 +69,9 @@ type HyperKit struct {
 	StateDir string `json:"state_dir"`
 	// VPNKitSock is the location of the VPNKit socket used for networking.
 	VPNKitSock string `json:"vpnkit_sock"`
-	// UUID is a string containing a UUID for the VM. It can be used in conjunction with VPNKit to get consistent IP address.
+	// VPNKitKey is a string containing a UUID, it can be used in conjunction with VPNKit to get consistent IP address.
+	VPNKitKey string `json:"vpnkit_key"`
+	// UUID is a string containing a UUID, it sets BIOS DMI UUID for the VM (as found in /sys/class/dmi/id/product_uuid on Linux).
 	UUID string `json:"uuid"`
 	// DiskImage is the path to the disk image to use
 	DiskImage string `json:"disk"`
@@ -344,11 +346,14 @@ func (h *HyperKit) buildArgs(cmdline string) {
 
 	a = append(a, "-s", "0:0,hostbridge")
 	if h.VPNKitSock != "" {
-		if h.UUID == "" {
+		if h.VPNKitKey == "" {
 			a = append(a, "-s", fmt.Sprintf("1:0,virtio-vpnkit,path=%s", h.VPNKitSock))
 		} else {
-			a = append(a, "-s", fmt.Sprintf("1:0,virtio-vpnkit,path=%s,uuid=%s", h.VPNKitSock, h.UUID))
+			a = append(a, "-s", fmt.Sprintf("1:0,virtio-vpnkit,path=%s,uuid=%s", h.VPNKitSock, h.VPNKitKey))
 		}
+	}
+	if h.UUID != "" {
+		a = append(a, "-U", h.UUID)
 	}
 	if h.DiskImage != "" {
 		a = append(a, "-s", fmt.Sprintf("2:0,virtio-blk,%s", h.DiskImage))
