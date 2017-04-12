@@ -59,17 +59,12 @@ do
 	esac
 done < /proc/cgroups
 
+# use hierarchy for memory
+echo 1 > /sys/fs/cgroup/memory/memory.use_hierarchy
+
 # for compatibility
 mkdir -p /sys/fs/cgroup/systemd
 mount -t cgroup -o none,name=systemd cgroup /sys/fs/cgroup/systemd
-
-# set SELinux contexts
-if [ -x /sbin/restorecon ]
-then
-	restorecon -F /sys/devices/system/cpu/online >/dev/null 2>&1
-	restorecon -rF /sys/fs/cgroup >/dev/null 2>&1
-	restorecon -rF /dev >/dev/null 2>&1
-fi
 
 # start mdev for hotplug
 echo "/sbin/mdev" > /proc/sys/kernel/hotplug
@@ -101,3 +96,19 @@ hwclock --hctosys --utc
 ip addr add 127.0.0.1/8 dev lo brd + scope host
 ip route add 127.0.0.0/8 dev lo scope host
 ip link set lo up
+
+# for containerising dhcpcd and other containers that need writable etc
+mkdir /tmp/etc
+mv /etc/resolv.conf /tmp/etc/resolv.conf
+ln -snf /tmp/etc/resolv.conf /etc/resolv.conf
+
+# remount rootfs as readonly
+mount -o remount,ro /
+
+# make /var writeable and shared
+mount -o bind /var /var
+mount -o remount,rw,nodev,nosuid,noexec,relatime /var /var
+mount --make-rshared /var
+
+# make / rshared
+mount --make-rshared /
