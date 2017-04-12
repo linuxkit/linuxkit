@@ -84,6 +84,3 @@ services:
 outputs:
   - format: kernel+initrd
   - format: gcp
-    project: docker4x
-    bucket: rolf
-    replace: true
