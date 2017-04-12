@@ -1,4 +1,4 @@
-FROM mobylinux/alpine-build-kernel:0e893fbf6fa7638d2f23354de03ea11017bb8065@sha256:3ef3f9d11f0802b759dbd9c43a7706cf0ec37263c99ae90e2b10c29ea85739fa
+FROM linuxkit/alpine-build-kernel:cfdd576c36a52ed2dd62f237f79eeedc2dd3697b@sha256:3fe08db373a9373ba1616a485858f01ebd2d7a3cb364a099d0ed8b45fa419da2
 
 ARG KERNEL_VERSION
 ARG DEBUG=0
