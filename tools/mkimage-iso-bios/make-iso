@@ -35,12 +35,12 @@ LABEL linux
 
 printf "$CFG" > isolinux/isolinux.cfg
 
-genisoimage -o ../mobylinux-bios.iso -l -J -R \
+genisoimage -o ../linuxkit-bios.iso -l -J -R \
                 -c isolinux/boot.cat  \
                 -b isolinux/isolinux.bin \
                    -no-emul-boot -boot-load-size 4 -boot-info-table \
-                -V MobyLinux .
+                -V LinuxKit .
 
-isohybrid ../mobylinux-bios.iso
+isohybrid ../linuxkit-bios.iso
 
-cat ../mobylinux-bios.iso
+cat ../linuxkit-bios.iso

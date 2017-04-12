@@ -35,7 +35,7 @@ bzImage: kernel.tag
 
 .PHONY: image push tag
 
-MEDIA_TOYBOX=mobylinux/toybox-media:0a26fe5f574e444849983f9c4148ef74b3804d55@sha256:5ac38f77b66deb194c9016591b9b096e81fcdc9f7c3e6d01566294a6b4b4ebd2
+MEDIA_TOYBOX=linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
 
 BASE="$MEDIA_TOYBOX"
 IMAGE=kernel-wireguard

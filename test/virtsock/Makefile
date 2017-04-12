@@ -12,7 +12,7 @@ $(VIRTSOCK_BINARY): virtsock.tag
 	docker run --rm --net=none --log-driver=none $(shell cat virtsock.tag) > $@
 	chmod ugo+x $@
 
-TINI_IMAGE=mobylinux/tini:6b25b62f4d893de8721fd2581411039b17e8a253@sha256:39b4a459018ffc155a9fcbbf952fa625c77f5a8d7599b326eade529d3dc723fc
+TINI_IMAGE=linuxkit/tini:da0e068f8b537b81f817439a52f63e8f6d91cca3@sha256:bdca5e6703c9553d890c79a4a094e2f05df87f09f6bd5bef26c06d6cba56c112
 TINI_BINARY=bin/tini
 
 $(TINI_BINARY):

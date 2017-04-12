@@ -33,23 +33,23 @@ objcopy \
 	--add-section .linux=./vmlinuz64 --change-section-vma .linux=0x40000 \
 	--add-section .initrd=initrd.img --change-section-vma .initrd=0x3000000 \
 	./linuxx64.efi.stub \
-	mobylinux.efi
+	linuxkit.efi
 
 # create a ISO with a EFI boot partition
 mkdir -p iso
 # Stuff it into a FAT filesystem, making it as small as possible.  511KiB
 # headroom seems to be enough; (x+31)/32*32 rounds up to multiple of 32.
 mkfs.vfat -v -C iso/efi.raw \
-        $(( ($(stat -c %s "mobylinux.efi") / 1024 + 511) \
+        $(( ($(stat -c %s "linuxkit.efi") / 1024 + 511) \
 		/ 32 * 32 )) > /dev/null
 echo "mtools_skip_check=1" >> /etc/mtools.conf && \
 mmd -i iso/efi.raw ::/EFI
 mmd -i iso/efi.raw ::/EFI/BOOT
-mcopy -i iso/efi.raw mobylinux.efi ::/EFI/BOOT/BOOTX64.EFI
+mcopy -i iso/efi.raw linuxkit.efi ::/EFI/BOOT/BOOTX64.EFI
 xorriso -as mkisofs \
-	-R -f -e efi.raw -no-emul-boot -o mobylinux-efi.iso iso
+	-R -f -e efi.raw -no-emul-boot -o linuxkit-efi.iso iso
 
-cat mobylinux-efi.iso
+cat linuxkit-efi.iso
 
 # How to build a VHDX. Commented out because we are currently not using it
 # Don't delete: It took too long to figure out how to do this...
@@ -66,7 +66,7 @@ cat mobylinux-efi.iso
 #     echo "drive c: file=\"/dev/loop/1\" mtools_skip_check=1" > /etc/mtools.conf && \
 #     mmd c:/EFI && \
 #     mmd c:/EFI/BOOT && \
-#     mcopy mobylinux.efi c:/EFI/BOOT/BOOTX64.EFI && \
+#     mcopy linuxkit.efi c:/EFI/BOOT/BOOTX64.EFI && \
 #     losetup -d /dev/loop/1 && \
-#     qemu-img convert -O vhdx disk.raw mobylinux-boot.vhdx && \
-#     cp /tmp/efi/mobylinux.efi /tmp/efi/mobylinuxefi.iso /tmp/efi/mobylinux-boot.vhdx /mnt/
+#     qemu-img convert -O vhdx disk.raw linuxkit-boot.vhdx && \
+#     cp /tmp/efi/linuxkit.efi /tmp/efi/linuxkitefi.iso /tmp/efi/linuxkit-boot.vhdx /mnt/
