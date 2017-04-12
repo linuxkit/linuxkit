@@ -19,7 +19,7 @@ onboot:
     image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
     binds:
      - /var:/var
-     - /tmp:/etc
+     - /tmp/etc:/etc
     capabilities:
      - CAP_NET_ADMIN
      - CAP_NET_BIND_SERVICE
@@ -30,7 +30,7 @@ onboot:
     image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
     binds:
      - /tmp:/etc/ssh
-     - /etc/resolv.conf:/etc/resolv.conf
+     - /tmp/etc/resolv.conf:/etc/resolv.conf
     readonly: true
     net: host
     uts: host
@@ -51,7 +51,7 @@ services:
     pid: host
     binds:
      - /tmp/authorized_keys:/root/.ssh/authorized_keys
-     - /etc/resolv.conf:/etc/resolv.conf
+     - /tmp/etc/resolv.conf:/etc/resolv.conf
   - name: nginx
     image: "nginx:alpine"
     capabilities:
