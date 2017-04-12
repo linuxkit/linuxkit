@@ -4,10 +4,10 @@
 
 ```
                |=================|                      |================|
-               | privileged shim |                      |       calf     |
+               |       priv      |                      |       calf     |
                |=================|                      |================|
                |                 |                      |                |
-<--  eth0 ---> |    eBPF rules   | <--- network IO ---> |   type-safe    |
+<--  eth0 ---> |    BPF rules    | <--- network IO ---> |   type-safe    |
                |                 |      (data path)     | network stack  |
                |                 |                      |                |
                |-----------------|                      |----------------|
@@ -31,73 +31,96 @@
                |_________________|
 ```
 
-1. privileged shim (privileged system service)
-  - run in a privileged container
-  - can read all network traffic
-  - can set-up eBPF rules (or a dumb forwarder to start with)
-  - exposes an easily auditable KV store for configuration values
-    (over a simple REST/HTTP API to start with).
-    Expose a scoped "view" of the config store to the
-    calf (a different branch in a datakit store for instance) and another
-    unscoped "view" to the host (could be a Git log if using datakit).
-  - has a set of system handlers who watches for changes in the KV
-    store and perform privileged operations inside moby (syscalls, edit
-    global config files, etc). System handlers use the config store CLI
-    to wait for events and react.
+#### Priv: privileged system service
 
-2. calf (sandboxed system service)
-  - run in a fully isolated container
-  - full sandbox (initially a normal Unix process, later on unielf/wasm)
-  - has a type-safe network stack to handle network IO
-  - has type-safe business logic to process network IO
-  - has a limited access read and write access to the config store where the
-    result of the business logic is output
+- run in a privileged container (but can have limited capabilities + seccomp)
+- can read all network traffic
+- can set-up (e)BPF rules
+- exposes an easily auditable KV store for configuration values
+- has a set of system handlers who watches for changes in the KV
+    store and perform privileged operations inside moby (syscalls, edit
+    of global config files, etc)
+
+#### Calf: sandboxed system service
+
+- run in a fully isolated container
+- full sandbox (initially a normal Unix process, later on unielf/wasm)
+- has a type-safe network stack to handle network IO
+- has type-safe business logic to process network IO
+- has a limited access read and write access to the config store where the
+  result of the business logic is output
 
 ### DHCP client
 
-#### Shim
+#### Priv
 
-- forward DHCP traffic only (in both directions)
-- expose a simple store to the calf, with the following keys:
+- The privileged system service forwards DHCP traffic in both directions and
+  block all other traffic. This is ensured by setting up BPF filters on the
+  network interface.
 
-```
-/ip (mandatory)
-/mtu (optional)
-/domain (optional)
-/search (optional)
-/nameserver/001 (optional)
-...
-/nameserver/xxx (optional)
-```
+- The privileged system service initialize the calf by opening the file
+  descriptors for the control and data paths and calling `runc`.
 
-If runs a small webserver where it exposes a simple CRUD interface
-over these keys -- only the calf can see it (e.g. it opens a pipe and
-share it with the calf on startup).
+- The privileged system service exposes a simple KV store to the calf, using
+  the following keys:
 
-- system handlers:
-  - if /ip change -> set IP address on moby host
-  - if /domain change -> set moby domain name
-  - if /search -> set search domain on moby host
-  - if /nameserver/xxx -> set DNS servers on moby
+    ```
+    # read-only, set on startup by the priv
+    /mac
+
+    # write-only, set by the calf when it gots a lease
+    /ip
+    /gateway
+    /mtu
+    /domain
+    /search
+    /nameserver/001
+    ...
+    /nameserver/xxx
+    ```
+
+  The the KV store API is defined in term of [cap-n-proto](https://capnproto.org/)
+  prototype:
+
+    ```capnp
+    @0x9e83562906de8259;
+
+    struct Request {
+      id   @0 :Int32;
+      path @1 :List(Text);
+      union {
+        write  @2 :Data;
+        read   @3 :Void;
+        delete @4 :Void;
+      }
+    }
+
+    struct Response {
+      id   @0: Int32;
+      union {
+        ok    @1 :Data;
+        error @2 :Data;
+      }
+    }
+    ```
+
+- The privileged system service installs the following system handlers:
+  - if /ip change -> bring up the default interface and set IP address (done)
+  - if /gateway change -> set up route (done)
+  - if /domain change -> set moby domain name (todo)
+  - if /search -> set search domain on moby host (todo)
+  - if /nameserver/xxx -> set DNS servers on moby (todo)
+
+- The privileged system service update configuration files:
+  - /ect/resolv.conf (todo)
 
 #### Calf
 
-- MirageOS unikernel using charrua-client (or a fork of it).
-- Has access to a Mirage_net.S interface for network traffic
-- Has access to a a simple KV interface
-
-Internally, it uses something more typed than a KV store:
-
-```
-module Shim: sig
-  val set_ip: Ipaddr.V4.t -> unit Lwt.t
-  val set_domain: string -> unit Lwt.t
-  val set_search: string -> unit Lwt.t
-  val set_nameservers: Ipaddr.V4.t list Lwt.t
-end
-```
-
-but this ends up being translated into REST/RPC calls to the shim.
+- The sandboxed system service is a MirageOS unikernel using [charrua-core](https://github.com/mirage/charrua-core).
+- The sandboxed system service reads the DHCP network traffic from an already
+  opened file descriptor.
+- The sandboxed system service reads and sets the control state using and
+  already opened file descriptor,
 
 ### SDK
 
@@ -112,22 +135,18 @@ What the SDK should enable:
 3. (later) generate shim/caft containers from a single (API?)
    description.
 
+See `./src/sdk` for the current state of the SDK.
+
 ### Roadmap
 
 #### first PoC: DHCP client
 
-Current status: one container containing two static binaries (priv + calf),
-private pipes open between the process for stdout/stderr aggregation +
-raw sockets (data path). Control path is using a simple HTTP server running
-in the priv container. The calf is using the dev version of mirage/charrua-core,
-and is able to get a DHCP lease on boot.
-
 ##### TODO
 
-- use runc to isolate the calf
-- system handler (see https://github.com/kobolabs/dhcpcd/tree/kobo/dhcpcd-hooks)
+- better system handler using language bindings instead of shelling out to ifconfig
 - use seccomp to isolate the privileged container
-- use the DHCP results to actually update the system
+- use mtu, domain, nameservers parameters
+- generate resolv.conf
 - add metrics aggregation (using prometheus)
 - better logging aggregation (using syslog)
 - IPv6 support
