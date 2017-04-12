@@ -11,15 +11,15 @@ hash: Dockerfile
 	docker run --rm $(IMAGE):build sh -c 'apt list --installed 2>/dev/null | sha1sum' | sed 's/ .*//' > hash
 
 push: hash
-	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
-		 docker push mobylinux/$(IMAGE):$(shell cat hash))
+	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
+		 docker push linuxkit/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: hash
-	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash)
+	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
 	docker rmi $(IMAGE):build
 	rm -f hash
 
