@@ -43,14 +43,15 @@ onboot:
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: mobylinux/metadata:960e6c371c9a07cf512dfcfa9734a5e0db427e96
-    net: host
+    image: "mobylinux/metadata:5c64c2305040009891b713df22bd4bae7894c3ec"
     binds:
-      - /dev:/dev
-      - /var:/var
-      - /etc/resolv.conf:/etc/resolv.conf
+     - /dev:/dev
+     - /var:/var
+     - /tmp/etc/resolv.conf:/etc/resolv.conf
+    readonly: true
+    net: host
     capabilities:
-      - all
+     - CAP_SYS_ADMIN
 services:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"

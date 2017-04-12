@@ -29,6 +29,9 @@ const (
 
 // Provider is a generic interface for metadata/userdata providers.
 type Provider interface {
+	// String should return a unique name for the Provider
+	String() string
+
 	// Probe returns true if the provider was detected.
 	Probe() bool
 
@@ -53,11 +56,13 @@ func main() {
 		log.Fatalf("Could not create %s: %s", ConfigPath, err)
 	}
 
+	var p Provider
 	var userdata []byte
 	var err error
 	found := false
-	for _, p := range netProviders {
+	for _, p = range netProviders {
 		if p.Probe() {
+			log.Printf("%s: Probe succeeded", p)
 			userdata, err = p.Extract()
 			found = true
 			break
@@ -76,8 +81,9 @@ func main() {
 		defer syscall.Unmount(MountPoint, 0)
 		// Don't worry about removing MountPoint. We are in a container
 
-		for _, p := range cdromProviders {
+		for _, p = range cdromProviders {
 			if p.Probe() {
+				log.Printf("%s: Probe succeeded", p)
 				userdata, err = p.Extract()
 				found = true
 				break
@@ -93,6 +99,11 @@ ErrorOut:
 
 	if err != nil {
 		log.Printf("Error during metadata probe: %s", err)
+	}
+
+	err = ioutil.WriteFile(path.Join(ConfigPath, "provider"), []byte(p.String()), 0644)
+	if err != nil {
+		log.Printf("Error writing metadata provider: %s", err)
 	}
 
 	if userdata != nil {
@@ -139,16 +150,28 @@ func processUserData(data []byte) error {
 		// This is not an error
 		return nil
 	}
-	cm := fd.(map[string]interface{})
+	cm, ok := fd.(map[string]interface{})
+	if !ok {
+		log.Printf("Could convert JSON to desired format: %s", fd)
+		return nil
+	}
 	for d, val := range cm {
 		dir := path.Join(ConfigPath, d)
 		if err := os.Mkdir(dir, 0755); err != nil {
 			log.Printf("Failed to create %s: %s", dir, err)
 			continue
 		}
-		files := val.(map[string]interface{})
+		files, ok := val.(map[string]interface{})
+		if !ok {
+			log.Printf("Could convert JSON for files: %s", val)
+			continue
+		}
 		for f, i := range files {
 			fi := i.(map[string]interface{})
+			if !ok {
+				log.Printf("Could convert JSON for items: %s", i)
+				continue
+			}
 			if _, ok := fi["perm"]; !ok {
 				log.Printf("No permission provided %s:%s", f, fi)
 				continue
