@@ -2,7 +2,7 @@ QEMU_IMAGE=linuxkit/qemu-user-static:da39a3ee5e6b4b0d3255bfef95601890afd80709@sh
 QEMU_FILES=qemu-arm qemu-aarch64 qemu-ppc64le
 QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
 
-GO_COMPILE=linuxkit/go-compile:90607983001c2789911afabf420394d51f78ced8@sha256:8b6566c6fd9f3bca31191b919449248d3cb1ca3a562276fca7199e93451d6596
+GO_COMPILE=linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5
 
 BINFMT_BINARY=usr/bin/binfmt
 
