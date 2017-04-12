@@ -144,16 +144,28 @@ func processUserData(data []byte) error {
 		// This is not an error
 		return nil
 	}
-	cm := fd.(map[string]interface{})
+	cm, ok := fd.(map[string]interface{})
+	if !ok {
+		log.Printf("Could convert JSON to desired format: %s", fd)
+		return nil
+	}
 	for d, val := range cm {
 		dir := path.Join(ConfigPath, d)
 		if err := os.Mkdir(dir, 0755); err != nil {
 			log.Printf("Failed to create %s: %s", dir, err)
 			continue
 		}
-		files := val.(map[string]interface{})
+		files, ok := val.(map[string]interface{})
+		if !ok {
+			log.Printf("Could convert JSON for files: %s", val)
+			continue
+		}
 		for f, i := range files {
 			fi := i.(map[string]interface{})
+			if !ok {
+				log.Printf("Could convert JSON for items: %s", i)
+				continue
+			}
 			if _, ok := fi["perm"]; !ok {
 				log.Printf("No permission provided %s:%s", f, fi)
 				continue
