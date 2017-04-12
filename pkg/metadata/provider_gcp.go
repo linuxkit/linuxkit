@@ -24,11 +24,14 @@ func NewGCP() *ProviderGCP {
 	return &ProviderGCP{}
 }
 
+func (p *ProviderGCP) String() string {
+	return "GCP"
+}
+
 // Probe checks if we are running on GCP
 func (p *ProviderGCP) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := gcpGet(instance + "hostname")
-	log.Printf("GCP: Probe -> %s", err)
 	return (err == nil)
 }
 
