@@ -13,10 +13,10 @@ const (
 	defaultZone     = "europe-west1-d"
 	defaultMachine  = "g1-small"
 	defaultDiskSize = 1
-	zoneVar         = "MOBY_GCP_ZONE"
+	zoneVar         = "CLOUDSDK_CORE_ZONE"
 	machineVar      = "MOBY_GCP_MACHINE"
 	keysVar         = "MOBY_GCP_KEYS"
-	projectVar      = "MOBY_GCP_PROJECT"
+	projectVar      = "CLOUDSDK_CORE_PROJECT"
 	bucketVar       = "MOBY_GCP_BUCKET"
 	familyVar       = "MOBY_GCP_FAMILY"
 	publicVar       = "MOBY_GCP_PUBLIC"
