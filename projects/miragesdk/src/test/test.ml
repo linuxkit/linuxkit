@@ -93,119 +93,107 @@ let test_socketpair pipe () =
 
   Lwt.return_unit
 
-let query = Alcotest.testable Ctl.Query.pp (=)
-let reply = Alcotest.testable Ctl.Reply.pp (=)
+let request = Alcotest.testable Ctl.Request.pp Ctl.Request.equal
+let response = Alcotest.testable Ctl.Response.pp Ctl.Response.equal
 
 let queries =
-  let open Ctl.Query in
+  let open Ctl.Request in
   [
-    { version = 0l; id = 0l; operation = Read; path = "/foo/bar"; payload = "" };
-    { version = Int32.max_int; id = Int32.max_int; operation = Write ; path = ""; payload = "foo" };
-    { version = 1l;id = 0l; operation = Delete; path = ""; payload = "" };
-    { version = -2l; id = -3l; operation = Delete; path = "foo"; payload = "foo" };
+    v ~id:0l ~path:["foo";"bar"] Read;
+    v ~id:Int32.max_int ~path:[] (Write "foo");
+    v ~id:0l ~path:[] Delete;
+    v ~id:(-3l) ~path:["foo"] Delete;
   ]
 
 let replies =
-  let open Ctl.Reply in
+  let open Ctl.Response in
   [
-    { id = 0l; status = Ok; payload = "" };
-    { id = Int32.max_int; status = Ok; payload = "foo" };
-    { id = 0l; status = Error; payload = "" };
-    { id = -3l; status = Error; payload = "foo" };
+    v ~id:0l (Ok "");
+    v ~id:Int32.max_int (Ok "foo");
+    v ~id:0l (Error "");
+    v ~id:(-3l) (Error "foo");
   ]
 
-let test_serialization to_cstruct of_cstruct message messages =
-  let test m =
-    let buf = to_cstruct m in
-    match of_cstruct buf with
-    | Ok m' -> Alcotest.(check message) "to_cstruct/of_cstruct" m m'
-    | Error (`Msg e) -> Alcotest.fail ("Message.of_cstruct: " ^ e)
-  in
-  List.iter test messages
+let failf fmt = Fmt.kstrf Alcotest.fail fmt
 
-let test_send t write read message pp_error messages =
-  let calf = calf Init.Pipe.(ctl t) in
-  let priv = priv Init.Pipe.(ctl t) in
+let test_send t write read message messages =
+  let calf = Ctl.Endpoint.v @@ calf Init.Pipe.(ctl t) in
+  let priv = Ctl.Endpoint.v @@ priv Init.Pipe.(ctl t) in
   let test m =
-    write calf m >>= fun () ->
-    read priv >|= function
-    | Ok m'   -> Alcotest.(check message) "write/read" m m'
-    | Error e -> Fmt.kstrf Alcotest.fail "Message.read: %a" pp_error e
+    write calf m >>= function
+    | Error e -> failf "Message.write: %a" Ctl.Endpoint.pp_error e
+    | Ok ()   ->
+      read priv >|= function
+      | Ok m'   -> Alcotest.(check message) "write/read" m m'
+      | Error e -> failf "Message.read: %a" Ctl.Endpoint.pp_error e
   in
   Lwt_list.iter_s test messages
 
-let test_query_serialization () =
-  let open Ctl.Query in
-  test_serialization to_cstruct of_cstruct query queries
+let test_request_send t () =
+  let open Ctl.Request in
+  test_send t write read request queries
 
-let test_reply_serialization () =
-  let open Ctl.Reply in
-  test_serialization to_cstruct of_cstruct reply replies
-
-let test_query_send t () =
-  let open Ctl.Query in
-  test_send t write read query pp_error queries
-
-let test_reply_send t () =
-  let open Ctl.Reply in
-  test_send t write read reply pp_error replies
+let test_response_send t () =
+  let open Ctl.Response in
+  test_send t write read response replies
 
 let failf fmt = Fmt.kstrf Alcotest.fail fmt
 
 (* read ops *)
 
 let pp_error = Ctl.Client.pp_error
+let pp_path = Fmt.(Dump.list string)
 
 let read_should_err t k =
   Ctl.Client.read t k >|= function
   | Error _   -> ()
-  | Ok None   -> failf "read(%s) -> got: none, expected: err" k
-  | Ok Some v -> failf "read(%s) -> got: found:%S, expected: err" k v
+  | Ok None   -> failf "read(%a) -> got: none, expected: err" pp_path k
+  | Ok Some v -> failf "read(%a) -> got: found:%S, expected: err" pp_path k v
 
 let read_should_none t k =
   Ctl.Client.read t k >|= function
-  | Error e   -> failf "read(%s) -> got: error:%a, expected none" k pp_error e
+  | Error e   -> failf "read(%a) -> got: error:%a, expected none" pp_path k pp_error e
   | Ok None   -> ()
-  | Ok Some v -> failf "read(%s) -> got: found:%S, expected none" k v
+  | Ok Some v -> failf "read(%a) -> got: found:%S, expected none" pp_path k v
 
 let read_should_work t k v =
   Ctl.Client.read t k >|= function
-  | Error e    -> failf "read(%s) -> got: error:%a, expected ok" k pp_error e
-  | Ok None    -> failf "read(%s) -> got: none, expected ok" k
+  | Error e    -> failf "read(%a) -> got: error:%a, expected ok" pp_path k pp_error e
+  | Ok None    -> failf "read(%a) -> got: none, expected ok" pp_path k
   | Ok Some v' ->
-    if v <> v' then failf "read(%s) -> got: ok:%S, expected: ok:%S" k v' v
+    if v <> v' then failf "read(%a) -> got: ok:%S, expected: ok:%S" pp_path k v' v
 
 (* write ops *)
 
 let write_should_err t k v =
   Ctl.Client.write t k v >|= function
-  | Ok ()   -> failf "write(%s) -> ok" k
+  | Ok ()   -> failf "write(%a) -> ok" pp_path k
   | Error _ -> ()
 
 let write_should_work t k v =
   Ctl.Client.write t k v >|= function
   | Ok ()   -> ()
-  | Error e -> failf "write(%s) -> error: %a" k pp_error e
+  | Error e -> failf "write(%a) -> error: %a" pp_path k pp_error e
 
 (* del ops *)
 
 let delete_should_err t k =
   Ctl.Client.delete t k >|= function
-  | Ok ()   -> failf "del(%s) -> ok" k
+  | Ok ()   -> failf "del(%a) -> ok" pp_path k
   | Error _ -> ()
 
 let delete_should_work t k =
   Ctl.Client.delete t k >|= function
   | Ok ()   -> ()
-  | Error e -> failf "write(%s) -> error: %a" k pp_error e
+  | Error e -> failf "write(%a) -> error: %a" pp_path k pp_error e
 
 let test_ctl t () =
   let calf = calf Init.Pipe.(ctl t) in
   let priv = priv Init.Pipe.(ctl t) in
-  let k1 = "/foo/bar" in
-  let k2 = "a" in
-  let k3 = "b/c" in
-  let k4 = "xxxxxx" in
+  let k1 = ["foo"; "bar"] in
+  let k2 = ["a"] in
+  let k3 = ["b"; "c"] in
+  let k4 = ["xxxxxx"] in
   let all = [`Read; `Write; `Delete] in
   let routes = [k1,all; k2,all; k3,all ] in
   let git_root = "/tmp/sdk/ctl" in
@@ -215,12 +203,11 @@ let test_ctl t () =
   let client () =
     let t = Ctl.Client.v calf in
     let allowed k v =
-      delete_should_work t k >>= fun () ->
+      delete_should_work t k  >>= fun () ->
       read_should_none t k    >>= fun () ->
       write_should_work t k v >>= fun () ->
       read_should_work t k v  >>= fun () ->
-      let path = String.cuts ~empty:false ~sep:"/" k in
-      Ctl.KV.get ctl path     >|= fun v' ->
+      Ctl.KV.get ctl k        >|= fun v' ->
       Alcotest.(check string) "in the db" v v'
     in
     let disallowed k v =
@@ -281,10 +268,8 @@ let test = [
   "stdout is a pipe"    , `Quick, run (test_pipe Init.Pipe.(stderr t));
   "net is a socket pair", `Quick, run (test_socketpair Init.Pipe.(net t));
   "ctl is a socket pair", `Quick, run (test_socketpair Init.Pipe.(ctl t));
-  "seralize queries"    , `Quick, test_query_serialization;
-  "seralize replies"    , `Quick, test_reply_serialization;
-  "send queries"        , `Quick, run (test_query_send t);
-  "send replies"        , `Quick, run (test_reply_send t);
+  "send requests"       , `Quick, run (test_request_send t);
+  "send responses"      , `Quick, run (test_response_send t);
   "ctl"                 , `Quick, run (test_ctl t);
   "exec"                , `Quick, run test_exec;
 ]

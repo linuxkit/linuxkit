@@ -175,18 +175,21 @@ let setup_log =
 
 module Dhcp_client = Dhcp_client_mirage.Make(Time)(Net)
 
+let pp_path = Fmt.(list ~sep:(unit "/") string)
+
 let set_ip ctl k ip =
   let str = Ipaddr.V4.to_string ip ^ "\n" in
   Sdk.Ctl.Client.write ctl k str >>= function
   | Ok ()   -> Lwt.return_unit
-  | Error e -> failf "error while writing %s: %a" k Sdk.Ctl.Client.pp_error e
+  | Error e ->
+    failf "error while writing %a: %a" pp_path k  Sdk.Ctl.Client.pp_error e
 
 let set_ip_opt ctl k = function
   | None    -> Lwt.return_unit
   | Some ip -> set_ip ctl k ip
 
 let get_mac ctl =
-  Sdk.Ctl.Client.read ctl "/mac" >>= function
+  Sdk.Ctl.Client.read ctl ["mac"] >>= function
   | Ok None   -> Lwt.return None
   | Ok Some s -> Lwt.return @@ Macaddr.of_string (String.trim s)
   | Error e   -> failf "get_mac: %a" Sdk.Ctl.Client.pp_error e
@@ -208,8 +211,8 @@ let start () dhcp_codes net ctl =
   Lwt_stream.last_new stream >>= fun result ->
   let result = of_ipv4_config result in
   Log.info (fun l -> l "found lease: %a" pp result);
-  set_ip ctl "/ip" result.address >>= fun () ->
-  set_ip_opt ctl "/gateway" result.gateway
+  set_ip ctl ["ip"] result.address >>= fun () ->
+  set_ip_opt ctl ["gateway"] result.gateway
 
 (* FIXME: Main end *)
 

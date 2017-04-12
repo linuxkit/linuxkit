@@ -15,7 +15,7 @@ default: push
 	@
 
 .build: Dockerfile.build $(FILES)
-	docker build -t $(IMAGE):build -f Dockerfile.build -q . > .build || \
+	docker build  $(NO_CACHE) -t $(IMAGE):build -f Dockerfile.build -q . > .build || \
 	 (rm -f $@ && exit 1)
 
 .pkg: Dockerfile.pkg $(OBJS) $(CALF_OBJS) obj/config.json
@@ -23,7 +23,7 @@ default: push
 	  (rm -f $@ && exit 1)
 
 .dev: Dockerfile.dev init-dev.sh
-	docker build -t $(IMAGE):dev -f Dockerfile.dev -q . > .dev || \
+	docker build $(NO_CACHE) -t $(IMAGE):dev -f Dockerfile.dev -q . > .dev || \
 	  (rm -f $@ && exit 1)
 
 enter-pkg: .pkg
