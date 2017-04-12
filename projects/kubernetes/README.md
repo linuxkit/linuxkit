@@ -1,6 +1,6 @@
-# Kubernetes
+# Kubernetes and LinuxKit
 
-This project aims to demonstrate how one can create minimal and immutable Kubernetes OS images with Moby.
+This project aims to demonstrate how one can create minimal and immutable Kubernetes OS images with LinuxKit.
 
 Make sure to `cd projects/kubernetes` first.
 
