@@ -30,6 +30,7 @@ RUN opam list
 
 RUN opam config exec -- jbuilder build dhcp-client/main.exe
 RUN sudo cp /src/_build/default/dhcp-client/main.exe /dhcp-client
+RUN apk add capnp
 
 RUN opam config exec -- jbuilder build dhcp-client/calf/unikernel.exe
 RUN sudo mkdir -p /calf

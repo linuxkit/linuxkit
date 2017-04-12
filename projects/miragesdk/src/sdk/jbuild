@@ -8,11 +8,11 @@
               mirage-channel-lwt io-page.unix ipaddr capnp))
  ))
 
-(rule
-  ((targets (proto.ml proto.mli))
-   (deps (proto.capnp))
-   (action (progn
-     (run capnp compile -o ocaml ${<})
-     (system "mv proto.ml proto.ml.in")
-     (system "echo '[@@@ocaml.warning \"-A\"]\n' > proto.ml")
-     (system "cat proto.ml.in >> proto.ml")))))
+;(rule
+;  ((targets (proto.ml proto.mli))
+;   (deps (proto.capnp))
+;   (action (progn
+;     (run capnp compile -o ocaml ${<})
+;     (system "mv proto.ml proto.ml.in")
+;     (system "echo '[@@@ocaml.warning \"-A\"]\n' > proto.ml")
+;     (system "cat proto.ml.in >> proto.ml")))))
