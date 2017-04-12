@@ -33,7 +33,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
+    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800

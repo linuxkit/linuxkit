@@ -14,7 +14,7 @@ onboot:
     readonly: true
 services:
   - name: rngd
-    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
+    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
@@ -31,7 +31,7 @@ services:
     net: host
     oomScoreAdj: -800
   - name: swarmd
-    image: "mobylinux/swarmd:cf11a7626278ebf17efe2780c138b4e626b02c73@sha256:7b31bb4482e6823d2aec291d13782669c22bc03c9fac1dfd7ed207d942c3c061"
+    image: "mobylinux/swarmd:cf11a7626278ebf17efe2780c138b4e626b02c73"
     command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/containerd/swarmd"]
     capabilities:
      - CAP_CHOWN
