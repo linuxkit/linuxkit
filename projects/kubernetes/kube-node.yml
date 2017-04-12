@@ -29,20 +29,15 @@ onboot:
     capabilities:
      - CAP_SYS_ADMIN
      - CAP_MKNOD
-  - name: mount
-    image: "mobylinux/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"
+  - name: mounts
+    image: "mobylinux/kubernetes:latest-mounts"
+    capabilities:
+     - all
+    pid: host
+    rootfsPropagation: shared
     binds:
      - /dev:/dev
      - /var:/var:rshared,rbind
-    capabilities:
-     - CAP_SYS_ADMIN
-    rootfsPropagation: shared
-    command: ["/mount.sh", "/var/lib"]
-  - name: mount
-    image: "mobylinux/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"
-    binds:
-     - /var:/var
-    command: ["mkdir", "-p", "/var/lib/kubeadm"]
 services:
   - name: rngd
     image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
@@ -92,6 +87,8 @@ services:
      - /lib/modules:/lib/modules
      - /var:/var:rshared,rbind
      - /var/lib/kubeadm:/etc/kubernetes
+     - /etc/cni:/etc/cni:rshared,rbind
+     - /opt/cni:/opt/cni:rshared,rbind
     rootfsPropagation: shared
   - name: kubernetes-image-cache-common
     image: "mobylinux/kubernetes:latest-image-cache-common"
@@ -110,11 +107,13 @@ services:
      - /dev:/dev
      - /var:/var:rshared,rbind
      - /var/lib/kubeadm:/etc/kubernetes
-     #- /var/log:/var/log #/var/log/containers
-     # TODO /{etc,opt}/cni & /var/lib/kubelet:rw,rshared
+     - /etc/cni:/rootfs/etc/cni:rshared,rbind
+     - /opt/cni:/rootfs/opt/cni:rshared,rbind
     rootfsPropagation: shared
 files:
   - path: root/.ssh/authorized_keys
     contents: '# Your ssh key goes here'
+  - {path: etc/cni, directory: true}
+  - {path: opt/cni, directory: true}
 outputs:
   - format: kernel+initrd
