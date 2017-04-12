@@ -12,10 +12,14 @@ val create: (module Mirage_flow_lwt.S with type flow = 'a) -> 'a -> string -> fl
 val pp: flow Fmt.t
 (** [pp] is the pretty-printer for IO flows. *)
 
-val forward: src:t -> dst:t -> unit Lwt.t
-(** [forward ~src ~dst] forwards writes from [src] to [dst]. Block
-    until either [src] or [dst] is closed. *)
+val forward: ?verbose:bool -> src:t -> dst:t -> unit Lwt.t
+(** [forward ?verbose ~src ~dst] forwards writes from [src] to
+    [dst]. Block until either [src] or [dst] is closed. If [verbose]
+    is set (by default it is not), show the raw flow in debug mode,
+    otherwise just show the lenght. *)
 
-val proxy: t -> t -> unit Lwt.t
-(** [proxy x y] is the same as [forward x y <*> forward y x]. Block
-    until both flows are closed. *)
+val proxy: ?verbose:bool -> t -> t -> unit Lwt.t
+(** [proxy ?verbose x y] is the same as [forward x y <*> forward y
+    x]. Block until both flows are closed. If [verbose] is set (by
+    default it is not), show the raw flow in debug mode, otherwise
+    just show the lenght. *)

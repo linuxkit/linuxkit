@@ -35,7 +35,7 @@ let pp ppf (Flow (name, _, _)) = Fmt.string ppf name
 
 type t = flow
 
-let forward ~src ~dst =
+let forward ?(verbose=false) ~src ~dst =
   let rec loop () =
     read src >>= function
     | Ok `Eof ->
@@ -45,8 +45,12 @@ let forward ~src ~dst =
       Log.err (fun l -> l "forward[%a => %a] %a" pp src pp dst pp_error e);
       Lwt.return_unit
     | Ok (`Data buf) ->
-      Log.debug (fun l -> l "forward[%a => %a] %d bytes"
-                    pp src pp dst @@ Cstruct.len buf);
+      Log.debug (fun l ->
+          let payload =
+            if verbose then Fmt.strf "[%S]" @@ Cstruct.to_string buf
+            else Fmt.strf "%d bytes" (Cstruct.len buf)
+          in
+          l "forward[%a => %a] %s" pp src pp dst payload);
       write dst buf >>= function
       | Ok ()   -> loop ()
       | Error e ->
@@ -56,8 +60,8 @@ let forward ~src ~dst =
   in
   loop ()
 
-let proxy f1 f2 =
+let proxy ?verbose f1 f2 =
   Lwt.join [
-    forward ~src:f1 ~dst:f2;
-    forward ~src:f2 ~dst:f1;
+    forward ?verbose ~src:f1 ~dst:f2;
+    forward ?verbose ~src:f2 ~dst:f1;
   ]

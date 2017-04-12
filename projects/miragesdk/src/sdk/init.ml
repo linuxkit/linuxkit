@@ -291,11 +291,11 @@ let exec_and_forward ?(handlers=block_for_ever) ~pid ~cmd ~net ~ctl t =
   Lwt.pick ([
       wait ();
       (* data *)
-      IO.proxy net priv_net;
+      IO.proxy ~verbose:true net priv_net;
 
       (* redirect the calf stdout to the shim stdout *)
-      IO.forward ~src:priv_stdout ~dst:Fd.(flow stdout);
-      IO.forward ~src:priv_stderr ~dst:Fd.(flow stderr);
+      IO.forward ~verbose:false ~src:priv_stdout ~dst:Fd.(flow stdout);
+      IO.forward ~verbose:false ~src:priv_stderr ~dst:Fd.(flow stderr);
       (* TODO: Init.Fd.forward ~src:Init.Pipe.(priv metrics)
          ~dst:Init.Fd.metric; *)
       ctl priv_ctl;
