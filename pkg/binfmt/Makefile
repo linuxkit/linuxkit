@@ -1,4 +1,4 @@
-QEMU_IMAGE=mobylinux/qemu-user-static:da39a3ee5e6b4b0d3255bfef95601890afd80709@sha256:6c022f700dc6c263c9107c08aa29b4eae3b43b7b7594b7be3e421f69b51f53e5
+QEMU_IMAGE=linuxkit/qemu-user-static:da39a3ee5e6b4b0d3255bfef95601890afd80709@sha256:65ee2b44b35c9457d83884c292b46bc3b5558a13af2c8eb187322f09160131a4
 QEMU_FILES=qemu-arm qemu-aarch64 qemu-ppc64le
 QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
 
