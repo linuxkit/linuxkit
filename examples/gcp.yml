@@ -27,7 +27,7 @@ onboot:
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: "mobylinux/metadata:5c64c2305040009891b713df22bd4bae7894c3ec"
+    image: "mobylinux/metadata:c5567e65e9125f0a4c4b8cb9d56a86377be62652"
     binds:
      - /dev:/dev
      - /var:/var
