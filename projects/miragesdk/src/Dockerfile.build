@@ -1,12 +1,14 @@
 FROM ocaml/opam:alpine-3.5_ocaml-4.04.0
-RUN git -C /home/opam/opam-repository pull origin master && opam update -u
+RUN cd /home/opam/opam-repository && git pull && opam update -u
 
-RUN opam info mirage-net-fd
+# to be able to use cstruct.ppx + jbuilder
+RUN opam pin add cstruct 2.4.0 -n
+# to bring eth0 up
+RUN opam pin add tuntap 1.0.0 -n
+RUN opam pin add mirage-net-fd --dev -n
 
 RUN opam depext -iy mirage-net-unix logs-syslog irmin-unix cohttp decompress
-RUN opam depext -iy rawlink tuntap.1.0.0 jbuilder irmin-watcher inotify
-RUN opam install rresult
-RUN opam pin add tuntap 1.0.0
+RUN opam depext -iy rawlink tuntap jbuilder irmin-watcher inotify rresult
 
 # TMP: to compile the calf
 RUN opam pin add -n charrua-client https://github.com/yomimono/charrua-client.git#state-halfway
@@ -21,6 +23,8 @@ RUN sudo chown opam -R /src
 
 USER opam
 WORKDIR /src
+
+RUN opam list
 
 RUN opam config exec -- jbuilder build dhcp-client/main.exe
 RUN sudo cp /src/_build/default/dhcp-client/main.exe /dhcp-client

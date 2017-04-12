@@ -178,15 +178,22 @@ module Dhcp_client = Dhcp_client_mirage.Make(Time)(Net)
 let set_ip ctl k ip =
   let str = Ipaddr.V4.to_string ip ^ "\n" in
   Sdk.Ctl.Client.write ctl k str >>= function
-  | Ok ()           -> Lwt.return_unit
-  | Error (`Msg e) -> failf "error while writing %s: %s" k e
+  | Ok ()   -> Lwt.return_unit
+  | Error e -> failf "error while writing %s: %a" k Sdk.Ctl.Client.pp_error e
 
 let set_ip_opt ctl k = function
   | None    -> Lwt.return_unit
   | Some ip -> set_ip ctl k ip
 
+let get_mac ctl =
+  Sdk.Ctl.Client.read ctl "/mac" >>= function
+  | Ok None   -> Lwt.return None
+  | Ok Some s -> Lwt.return @@ Macaddr.of_string (String.trim s)
+  | Error e   -> failf "get_mac: %a" Sdk.Ctl.Client.pp_error e
+
 let start () dhcp_codes net ctl =
-  Netif_fd.connect net >>= fun net ->
+  get_mac ctl >>= fun mac ->
+  Netif_fd.connect ?mac net >>= fun net ->
   let requests = match dhcp_codes with
     | [] -> default_options
     | l  ->
