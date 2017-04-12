@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"path"
 	"strings"
 	"time"
@@ -57,6 +58,10 @@ func (p *ProviderGCP) Extract() ([]byte, error) {
 	//      container construct those users
 	sshKeys, err := gcpGet(project + "attributes/sshKeys")
 	if err == nil {
+		if err := os.Mkdir(path.Join(ConfigPath, SSH), 0755); err != nil {
+			log.Printf("Failed to create %s: %s", SSH, err)
+			goto ErrorSSH
+		}
 		rootKeys := ""
 		for _, line := range strings.Split(string(sshKeys), "\n") {
 			parts := strings.SplitN(line, ":", 2)
@@ -71,6 +76,7 @@ func (p *ProviderGCP) Extract() ([]byte, error) {
 		}
 	}
 
+ErrorSSH:
 	// Generic userdata
 	userData, err := gcpGet(instance + "attributes/userdata")
 	if err != nil {
