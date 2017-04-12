@@ -109,3 +109,6 @@ mount -o remount,ro /
 mount -o bind /var /var
 mount -o remount,rw,nodev,nosuid,noexec,relatime /var /var
 mount --make-rshared /var
+
+# make / rshared
+mount --make-rshared /
