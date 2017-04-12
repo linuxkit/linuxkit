@@ -2,7 +2,7 @@ QEMU_IMAGE=mobylinux/qemu-user-static:da39a3ee5e6b4b0d3255bfef95601890afd80709@s
 QEMU_FILES=qemu-arm qemu-aarch64 qemu-ppc64le
 QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
 
-GO_COMPILE=mobylinux/go-compile:3afebc59c5cde31024493c3f91e6102d584a30b9@sha256:e0786141ea7df8ba5735b63f2a24b4ade9eae5a02b0e04c4fca33b425ec69b0a
+GO_COMPILE=linuxkit/go-compile:90607983001c2789911afabf420394d51f78ced8@sha256:8b6566c6fd9f3bca31191b919449248d3cb1ca3a562276fca7199e93451d6596
 
 BINFMT_BINARY=usr/bin/binfmt
 
@@ -20,7 +20,7 @@ $(QEMU_BINARIES):
 $(BINFMT_BINARY): main.go
 	mkdir -p $(dir $@)
 	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
-	
+
 DIRS=dev proc sys
 $(DIRS):
 	mkdir -p $@

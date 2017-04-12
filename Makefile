@@ -5,7 +5,7 @@ all: default
 VERSION="0.0" # dummy for now
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=mobylinux/go-compile:90607983001c2789911afabf420394d51f78ced8@sha256:188beb574d4702a92fa3396a57cabaade28003c82f9413c3121a370ff8becea4
+GO_COMPILE=linuxkit/go-compile:90607983001c2789911afabf420394d51f78ced8@sha256:8b6566c6fd9f3bca31191b919449248d3cb1ca3a562276fca7199e93451d6596
 
 MOBY?=bin/moby
 GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
