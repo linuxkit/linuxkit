@@ -9,21 +9,6 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-const (
-	defaultZone     = "europe-west1-d"
-	defaultMachine  = "g1-small"
-	defaultDiskSize = 1
-	zoneVar         = "CLOUDSDK_CORE_ZONE"
-	machineVar      = "MOBY_GCP_MACHINE"
-	keysVar         = "MOBY_GCP_KEYS"
-	projectVar      = "CLOUDSDK_CORE_PROJECT"
-	bucketVar       = "MOBY_GCP_BUCKET"
-	familyVar       = "MOBY_GCP_FAMILY"
-	publicVar       = "MOBY_GCP_PUBLIC"
-	nameVar         = "MOBY_GCP_IMAGE_NAME"
-	diskSizeVar     = "MOBY_GCP_DISK_SIZE"
-)
-
 // Process the run arguments and execute run
 func runGcp(args []string) {
 	gcpCmd := flag.NewFlagSet("gcp", flag.ExitOnError)

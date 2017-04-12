@@ -31,13 +31,7 @@ var schema = string(`
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "format": {"type": "string"},
-        "project": {"type": "string"},
-        "bucket": {"type": "string"},
-        "family": {"type": "string"},
-        "keys": {"type": "string"},
-        "public": {"type": "boolean"},
-        "replace": {"type": "boolean"}
+        "format": {"type": "string"}
       }
     },
     "outputs": {
