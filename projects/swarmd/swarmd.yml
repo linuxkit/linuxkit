@@ -53,9 +53,6 @@ services:
       - /run/containerd/containerd.sock:/run/containerd/containerd.sock
       - /var/lib/containerd:/var/lib/containerd
       - /etc/resolv.conf:/etc/resolv.conf
-files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
 outputs:
   - format: kernel+initrd
   - format: iso-bios

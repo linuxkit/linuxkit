@@ -45,8 +45,5 @@ services:
 trust:
   image:
     - mobylinux/kernel
-files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
 outputs:
   - format: vmdk

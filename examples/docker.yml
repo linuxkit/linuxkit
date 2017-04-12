@@ -76,6 +76,9 @@ services:
     binds:
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
+files:
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
 trust:
   image:
     - mobylinux/kernel
