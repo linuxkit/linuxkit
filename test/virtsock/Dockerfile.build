@@ -1,4 +1,4 @@
-FROM mobylinux/go-compile:3afebc59c5cde31024493c3f91e6102d584a30b9
+FROM linuxkit/go-compile:90607983001c2789911afabf420394d51f78ced8@sha256:8b6566c6fd9f3bca31191b919449248d3cb1ca3a562276fca7199e93451d6596
 
 ENV VIRTSOCK_COMMIT=6b4dec728264e07c41e108caebd6bc2b72559a5f
 RUN mkdir -p $GOPATH/src/github.com/rneugeba && \
