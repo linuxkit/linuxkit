@@ -19,7 +19,7 @@ onboot:
     image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
     binds:
      - /var:/var
-     - /tmp:/etc
+     - /tmp/etc:/etc
     capabilities:
      - CAP_NET_ADMIN
      - CAP_NET_BIND_SERVICE
@@ -30,7 +30,7 @@ onboot:
     image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
     binds:
      - /tmp:/etc/ssh
-     - /etc/resolv.conf:/etc/resolv.conf
+     - /tmp/etc/resolv.conf:/etc/resolv.conf
     readonly: true
     net: host
     uts: host
@@ -38,7 +38,7 @@ onboot:
      - CAP_SYS_ADMIN
 services:
   - name: rngd
-    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
+    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
@@ -51,7 +51,7 @@ services:
     pid: host
     binds:
      - /tmp/authorized_keys:/root/.ssh/authorized_keys
-     - /etc/resolv.conf:/etc/resolv.conf
+     - /tmp/etc/resolv.conf:/etc/resolv.conf
   - name: nginx
     image: "nginx:alpine"
     capabilities:
@@ -64,9 +64,6 @@ services:
 trust:
   image:
     - mobylinux/kernel
-files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
 outputs:
   - format: kernel+initrd
   - format: gcp
