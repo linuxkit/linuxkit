@@ -19,9 +19,6 @@ services:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
-files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
 outputs:
   - format: kernel+initrd
   - format: iso-bios
