@@ -32,15 +32,15 @@ hash: Dockerfile $(DEPS)
 	find $^ -type f | xargs cat | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
 
 push: hash container
-	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
-		 docker push mobylinux/$(IMAGE):$(shell cat hash))
+	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
+		 docker push linuxkit/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: hash container
-	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash)
+	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
 	docker rmi $(IMAGE):build
 	rm -f hash
 
