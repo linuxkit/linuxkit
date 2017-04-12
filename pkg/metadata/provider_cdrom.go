@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 )
@@ -22,12 +21,13 @@ func NewCDROM() *ProviderCDROM {
 	return &ProviderCDROM{}
 }
 
+func (p *ProviderCDROM) String() string {
+	return "CDROM"
+}
+
 // Probe checks if the CD has the right file
 func (p *ProviderCDROM) Probe() bool {
 	_, err := os.Stat(path.Join(MountPoint, configFile))
-	if err != nil {
-		log.Printf("CDROM: Probe -> %s", err)
-	}
 	return (!os.IsNotExist(err))
 }
 
