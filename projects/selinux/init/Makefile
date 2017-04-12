@@ -4,7 +4,7 @@ CONTAINERD_BINARIES=usr/bin/containerd usr/bin/containerd-shim usr/bin/ctr usr/b
 RUNC_IMAGE=mobylinux/runc:f1cee12a65e7b7de06a01aec24609dc3175e1542@sha256:ff1ead6aa4388418ee07f8e93304e5b2fa9b975fe2399474d408654a1411a44a
 RUNC_BINARY=usr/bin/runc
 
-C_COMPILE=mobylinux/c-compile:81a6bd8ff45d769b60a2ee1acdaccda11ab835c8@sha256:eac250997a3b9784d3285a03c0c8311d4ca6fb63dc75164c987411ba93006487
+C_COMPILE=linuxkit/c-compile:63b085bbaec1aa7c42a7bd22a4b1c350d900617d@sha256:286e3a729c7a0b1a605ae150235416190f9f430c29b00e65fa50ff73158998e5
 START_STOP_DAEMON=sbin/start-stop-daemon
 
 default: push
