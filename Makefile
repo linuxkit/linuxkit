@@ -28,14 +28,12 @@ bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
 
-test-initrd.img: $(MOBY) test/test.yml
-	bin/moby build test/test.yml
-
-test-bzImage: test-initrd.img
+test-kernel-config-initrd.img: $(MOBY) test/cases/test-kernel-config.yml
+	bin/moby build test/cases/test-kernel-config.yml
 
 # interactive versions need to use volume mounts
 .PHONY: test-qemu-efi
-test-qemu-efi: test-efi.iso
+test-qemu-efi: test-kernel-config-efi.iso
 	./scripts/qemu.sh $^ 2>&1 | tee test-efi.log
 	$(call check_test_log, test-efi.log)
 
@@ -47,9 +45,9 @@ define check_test_log
 endef
 
 .PHONY: test-hyperkit
-test-hyperkit: $(MOBY) test-initrd.img test-bzImage test-cmdline
+test-hyperkit: $(MOBY) test-kernel-config-initrd.img test-kernel-config-bzImage test-kernel-config-cmdline
 	rm -f disk.img
-	script -q /dev/null $(MOBY) run test | tee test.log
+	script -q /dev/null $(MOBY) run test-kernel-config | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: test-gcp
@@ -58,7 +56,7 @@ test-gcp: $(MOBY) test.img.tar.gz
 	$(call check_test_log, test-gcp.log)
 
 .PHONY: test
-test: test-initrd.img test-bzImage test-cmdline
+test: test-kernel-config-initrd.img test-kernel-config-bzImage test-kernel-config-cmdline
 	tar cf - $^ | ./scripts/qemu.sh 2>&1 | tee test.log
 	$(call check_test_log, test.log)
 

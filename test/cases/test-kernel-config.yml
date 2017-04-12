@@ -18,8 +18,8 @@ onboot:
      - CAP_NET_RAW
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
-  - name: check
-    image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
+  - name: check-kernel-config
+    image: "mobylinux/kernel-config:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
     pid: host
     capabilities:
      - CAP_SYS_BOOT
