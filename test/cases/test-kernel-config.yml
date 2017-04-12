@@ -7,20 +7,14 @@ init:
   - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
-  - name: dhcpcd
-    image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
-    binds:
-     - /var:/var
-     - /tmp:/etc
-    capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
-    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
-  - name: check
-    image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
+  - name: check-kernel-config
+    image: "mobylinux/kernel-config:885d7462302363fb4080ae2c4b04be3c782b48a0"
+    readonly: true
+services:
+  - name: poweroff
+    image: "mobylinux/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
     pid: host
+    command: ["/bin/sh", "/poweroff.sh", "3"]
     capabilities:
      - CAP_SYS_BOOT
     readonly: true

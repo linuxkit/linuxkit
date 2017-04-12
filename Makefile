@@ -28,39 +28,13 @@ bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ | tar xf -
 	touch $@
 
-test-initrd.img: $(MOBY) test/test.yml
-	bin/moby build test/test.yml
-
-test-bzImage: test-initrd.img
-
-# interactive versions need to use volume mounts
-.PHONY: test-qemu-efi
-test-qemu-efi: test-efi.iso
-	./scripts/qemu.sh $^ 2>&1 | tee test-efi.log
-	$(call check_test_log, test-efi.log)
-
 bin:
 	mkdir -p $@
 
-define check_test_log
-	@cat $1 |grep -q 'Moby test suite PASSED'
-endef
-
-.PHONY: test-hyperkit
-test-hyperkit: $(MOBY) test-initrd.img test-bzImage test-cmdline
-	rm -f disk.img
-	script -q /dev/null $(MOBY) run test | tee test.log
-	$(call check_test_log, test.log)
-
-.PHONY: test-gcp
-test-gcp: $(MOBY) test.img.tar.gz
-	script -q /dev/null $(MOBY) run gcp test.img.tar.gz | tee test-gcp.log
-	$(call check_test_log, test-gcp.log)
-
 .PHONY: test
-test: test-initrd.img test-bzImage test-cmdline
-	tar cf - $^ | ./scripts/qemu.sh 2>&1 | tee test.log
-	$(call check_test_log, test.log)
+test: $(MOBY)
+	@MOBY=$$(if [ "$(MOBY)" = "bin/moby" ]; then echo $(PWD)/$(MOBY); else echo $(MOBY); fi) \
+	     $(MAKE) -C test
 
 .PHONY: ci ci-tag ci-pr
 ci:
@@ -81,3 +55,4 @@ ci-pr:
 .PHONY: clean
 clean:
 	rm -rf bin *.log *-bzImage *-cmdline *.img *.iso *.tar.gz *.qcow2 *.vhd
+	$(MAKE) -C test clean
