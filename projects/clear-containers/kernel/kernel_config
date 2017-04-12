@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.9.4 Kernel Configuration
+# Linux/x86 4.9.22 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -1945,9 +1945,11 @@ CONFIG_DEBUG_KERNEL=y
 #
 # Memory Debugging
 #
-# CONFIG_PAGE_EXTENSION is not set
+CONFIG_PAGE_EXTENSION=y
 # CONFIG_DEBUG_PAGEALLOC is not set
-# CONFIG_PAGE_POISONING is not set
+CONFIG_PAGE_POISONING=y
+CONFIG_PAGE_POISONING_NO_SANITY=y
+CONFIG_PAGE_POISONING_ZERO=y
 # CONFIG_DEBUG_OBJECTS is not set
 # CONFIG_DEBUG_SLAB is not set
 CONFIG_HAVE_DEBUG_KMEMLEAK=y
