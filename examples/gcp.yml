@@ -20,6 +20,7 @@ onboot:
     binds:
      - /var:/var
      - /tmp:/etc
+     - /etc/resolv.conf:/etc/resolv.conf
     capabilities:
      - CAP_NET_ADMIN
      - CAP_NET_BIND_SERVICE
