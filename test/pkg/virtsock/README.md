@@ -1,11 +1,11 @@
 This directory contains the files to build and run a container containing the
-virtio and Hyper-V socket stress tests. `test-virtsock-server.yml` builds images which start the server inside the VM.
+virtio and Hyper-V socket stress tests. `../../cases/test-virtsock-server.yml` builds images which start the server inside the VM.
 
 The client, to be run on the host as per this [README](https://github.com/rneugeba/virtsock/blob/master/examples/README.md), can be obtained compiled from [here](https://github.com/rneugeba/virtsock).
 
 ## How to use (on Windows)
 
-- Build the images: `moby build test-virtsock-server`
+- Build the images: `moby build tests/cases/test-virtsock-server.yml`
 - Copy the `test-virtsock-server.iso` to a Windows system
 - Create a Type 1 Hyper-V VM (called `virtsock`).
   - No Disk or network required
