@@ -56,10 +56,11 @@ func main() {
 		log.Fatalf("Could not create %s: %s", ConfigPath, err)
 	}
 
+	var p Provider
 	var userdata []byte
 	var err error
 	found := false
-	for _, p := range netProviders {
+	for _, p = range netProviders {
 		if p.Probe() {
 			log.Printf("%s: Probe succeeded", p)
 			userdata, err = p.Extract()
@@ -80,7 +81,7 @@ func main() {
 		defer syscall.Unmount(MountPoint, 0)
 		// Don't worry about removing MountPoint. We are in a container
 
-		for _, p := range cdromProviders {
+		for _, p = range cdromProviders {
 			if p.Probe() {
 				log.Printf("%s: Probe succeeded", p)
 				userdata, err = p.Extract()
@@ -98,6 +99,11 @@ ErrorOut:
 
 	if err != nil {
 		log.Printf("Error during metadata probe: %s", err)
+	}
+
+	err = ioutil.WriteFile(path.Join(ConfigPath, "provider"), []byte(p.String()), 0644)
+	if err != nil {
+		log.Printf("Error writing metadata provider: %s", err)
 	}
 
 	if userdata != nil {
