@@ -26,14 +26,14 @@ onboot:
      - CAP_NET_RAW
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
-  - name: metadata-gcp
-    image: "mobylinux/metadata-gcp:7fc3dd5ef92e0408fb3f76048bbaae88bbb55ad9"
+  - name: metadata
+    image: "mobylinux/metadata:5c64c2305040009891b713df22bd4bae7894c3ec"
     binds:
-     - /tmp:/etc/ssh
+     - /dev:/dev
+     - /var:/var
      - /tmp/etc/resolv.conf:/etc/resolv.conf
     readonly: true
     net: host
-    uts: host
     capabilities:
      - CAP_SYS_ADMIN
 services:
@@ -50,7 +50,7 @@ services:
     net: host
     pid: host
     binds:
-     - /tmp/authorized_keys:/root/.ssh/authorized_keys
+     - /var/config/ssh/authorized_keys:/root/.ssh/authorized_keys
      - /tmp/etc/resolv.conf:/etc/resolv.conf
   - name: nginx
     image: "nginx:alpine"
