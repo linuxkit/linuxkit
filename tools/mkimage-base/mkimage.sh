@@ -39,7 +39,7 @@ nameserver 2001:4860:4860::8888
 nameserver 2001:4860:4860::8844
 EOF
 
-printf 'moby' > etc/hostname
+printf 'linuxkit' > etc/hostname
 
 ln -s /proc/mounts etc/mtab
 

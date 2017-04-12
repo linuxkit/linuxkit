@@ -11,15 +11,15 @@ hash: Dockerfile compile.sh
 	docker run --rm --entrypoint=/bin/sh $(IMAGE):build -c 'cat /lib/apk/db/installed /usr/bin/compile.sh | sha1sum' | sed 's/ .*//' > hash
 
 push: hash
-	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash) && \
-		 docker push mobylinux/$(IMAGE):$(shell cat hash))
+	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
+		 docker push linuxkit/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: hash
-	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build mobylinux/$(IMAGE):$(shell cat hash)
+	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
 	docker rmi $(IMAGE):build
 	rm -f hash
 
