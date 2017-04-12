@@ -48,35 +48,10 @@ func (p *ProviderGCP) Extract() ([]byte, error) {
 		return nil, fmt.Errorf("GCP: Failed to write hostname: %s", err)
 	}
 
-	// SSH keys:
-	// TODO also retrieve the instance keys and respect block
-	//      project keys see:
-	//      https://cloud.google.com/compute/docs/instances/ssh-keys
-	// The keys have usernames attached, but as a simplification
-	// we are going to add them all to one root file
-	// TODO split them into individual user files and make the ssh
-	//      container construct those users
-	sshKeys, err := gcpGet(project + "attributes/sshKeys")
-	if err == nil {
-		if err := os.Mkdir(path.Join(ConfigPath, SSH), 0755); err != nil {
-			log.Printf("Failed to create %s: %s", SSH, err)
-			goto ErrorSSH
-		}
-		rootKeys := ""
-		for _, line := range strings.Split(string(sshKeys), "\n") {
-			parts := strings.SplitN(line, ":", 2)
-			// ignoring username for now
-			if len(parts) == 2 {
-				rootKeys = rootKeys + parts[1] + "\n"
-			}
-		}
-		err = ioutil.WriteFile(path.Join(ConfigPath, SSH, "authorized_keys"), []byte(rootKeys), 0600)
-		if err != nil {
-			log.Printf("GCP: Failed to write ssh keys: %s", err)
-		}
+	if err := p.handleSSH(); err != nil {
+		log.Printf("GCP: Failed to get ssh data: %s", err)
 	}
 
-ErrorSSH:
 	// Generic userdata
 	userData, err := gcpGet(instance + "attributes/userdata")
 	if err != nil {
@@ -111,4 +86,37 @@ func gcpGet(url string) ([]byte, error) {
 		return nil, fmt.Errorf("GCP: Failed to read http response: %s", err)
 	}
 	return body, nil
+}
+
+// SSH keys:
+// TODO also retrieve the instance keys and respect block
+//      project keys see:
+//      https://cloud.google.com/compute/docs/instances/ssh-keys
+// The keys have usernames attached, but as a simplification
+// we are going to add them all to one root file
+// TODO split them into individual user files and make the ssh
+//      container construct those users
+func (p *ProviderGCP) handleSSH() error {
+	sshKeys, err := gcpGet(project + "attributes/sshKeys")
+	if err != nil {
+		return fmt.Errorf("Failed to get sshKeys: %s", err)
+	}
+
+	if err := os.Mkdir(path.Join(ConfigPath, SSH), 0755); err != nil {
+		return fmt.Errorf("Failed to create %s: %s", SSH, err)
+	}
+
+	rootKeys := ""
+	for _, line := range strings.Split(string(sshKeys), "\n") {
+		parts := strings.SplitN(line, ":", 2)
+		// ignoring username for now
+		if len(parts) == 2 {
+			rootKeys = rootKeys + parts[1] + "\n"
+		}
+	}
+	err = ioutil.WriteFile(path.Join(ConfigPath, SSH, "authorized_keys"), []byte(rootKeys), 0600)
+	if err != nil {
+		return fmt.Errorf("Failed to write ssh keys: %s", err)
+	}
+	return nil
 }
