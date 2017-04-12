@@ -1,6 +1,6 @@
-# Working with Linux kernel patches for Moby
+# Working with Linux kernel patches for LinuxKit
 
-We may apply patches to the Linux kernel used in Moby, primarily to
+We may apply patches to the Linux kernel used in LinuxKit, primarily to
 cherry-pick some upstream patches or to add some additional
 functionality, not yet accepted upstream.
 
@@ -32,14 +32,14 @@ git clone git://git.kernel.org/pub/scm/linux/kernel/git/stable/linux-stable.git
 ```
 
 We use the following variables:
-- `MOBYSRC`: Base directory of Moby Linux repository
+- `KITSRC`: Base directory of LinuxKit repository
 - `LINUXSRC`: Base directory of Linux stable kernel repository
 e.g.:
 ```sh
-MOBYSRC=~/src/docker/moby
+KITSRC=~/src/docker/linuxkit
 LINUXSRC=~/src/docker/linux-stable
 ```
-to refer to the location of the Moby and Linux kernel trees.
+to refer to the location of the LinuxKit and Linux kernel trees.
 
 
 # Updating the patches to a new kernel version
@@ -54,7 +54,7 @@ If you don't already have a branch, it's best to import the current patch set an
 ```sh
 cd $LINUXSRC
 git checkout -b ${NEWTAG}-moby ${CURTAG}
-git am ${MOBYSRC}/kernel/patches/*.patch
+git am ${KITSRC}/kernel/patches/*.patch
 git rebase ${NEWTAG}-moby ${NEWTAG}
 ```
 
@@ -82,13 +82,13 @@ DCO lines, e.g.:
 Origin: https://patchwork.ozlabs.org/patch/622404/
 ```
 
-# Export patches to moby
+# Export patches to LinuxKit
 
-To export patches to Moby, you should use `git format-patch` from the Linux tree, e.g., something along these lines:
+To export patches to LinuxKit, you should use `git format-patch` from the Linux tree, e.g., something along these lines:
 ```sh
 cd $LINUXSRC
-rm $MOBYSRC/kernel/patches-4.9/*
-git format-patch -o $MOBYSRC/kernel/patches-4.9 v4.9.15..HEAD
+rm $KITSRC/kernel/patches-4.9/*
+git format-patch -o $KITSRC/kernel/patches-4.9 v4.9.15..HEAD
 ```
 
 The, create a PR for Moby.

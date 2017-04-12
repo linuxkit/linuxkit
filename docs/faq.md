@@ -4,7 +4,7 @@ Please open an issue if you want to add a question here.
 
 ## How do updates work?
 
-Moby does not require being installed on a disk, it is often run from an ISO, PXE or other
+LinuxKit does not require being installed on a disk, it is often run from an ISO, PXE or other
 such means, so it does not require an on disk upgrade method such as the ChromeOS code that
 is often used. It would definitely be possible to use that type of upgrade method if the 
 system is installed, and it would be useful to support this for that use case, and an

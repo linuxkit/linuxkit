@@ -1,6 +1,7 @@
-# Using Moby on Google Cloud Platform (GCP)
+# Using LinuxKit on Google Cloud Platform (GCP)
 
-This is a quick guide to run Moby on GCP.
+This is a quick guide to run LinuxKit on GCP. A lot of internal development and CI
+has used Google Cloud so the support is very good; other platforms will have similar support soon.
 
 ## Setup
 
@@ -38,11 +39,11 @@ to create a Service Account.
 
 Make sure to download the credentials in JSON format and store them somewhere safe.
 
-## Build a moby image
+## Build an image
 
 Add a `gcp` output line to your yaml config, see the example in `examples/gcp.yml`.
 
-Then do `./bin/moby myfile.yml`
+Then do `moby build myfile.yml`
 
 This will create a local `myfile.img.tar.gz` compressed image file, upload it to the
 specified bucket, and create a bootable image.

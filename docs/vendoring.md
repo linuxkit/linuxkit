@@ -1,4 +1,4 @@
-vendoring
+Vendoring
 =========
 
 The Go code in this repo depends on a number of Go libraries.
