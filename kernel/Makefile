@@ -62,26 +62,26 @@ image: Dockerfile.media bzImage kernel.tar $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -f Dockerfile.media -
 
 push: image
-	docker pull mobylinux/$(IMAGE):$(IMAGE_VERSION) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker push mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
-		 docker push mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	docker pull linuxkit/$(IMAGE):$(IMAGE_VERSION) || \
+		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker push linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
+		 docker push linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 sign: image
-	DOCKER_CONTENT_TRUST=1 docker pull mobylinux/$(IMAGE):$(IMAGE_VERSION) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 DOCKER_CONTENT_TRUST=1 docker push mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
-		 DOCKER_CONTENT_TRUST=1 docker push mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(IMAGE_VERSION) || \
+		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
+		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: image
-	(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-	docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+	docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
