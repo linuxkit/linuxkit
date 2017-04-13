@@ -1,5 +1,5 @@
 kernel:
-  image: "mobylinux/kernel-landlock:4.9.x"
+  image: "mobylinux/kernel-landlock:4.9.22-1"
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - mobylinux/init:8375addb923b8b88b2209740309c92aa5f2a4f9d
