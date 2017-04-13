@@ -51,7 +51,6 @@ bzImage: kernel.tag
 
 MEDIA_TOYBOX=linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
 
-BASE="$MEDIA_TOYBOX"
 IMAGE=kernel
 
 default: push
