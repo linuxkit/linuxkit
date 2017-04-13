@@ -45,6 +45,7 @@ func runGcp(args []string) {
 	familyFlag := gcpCmd.String("family", "", "GCP Image Family. A group of images where the family name points to the most recent image. *Optional* when 'prefix' is a filename")
 	nameFlag := gcpCmd.String("img-name", "", "Overrides the Name used to identify the file in Google Storage, Image and Instance. Defaults to [name]")
 	diskSizeFlag := gcpCmd.Int("disk-size", 0, "Size of system disk in GB")
+	skipCleanup := gcpCmd.Bool("skip-cleanup", false, "Don't remove images or VMs")
 
 	if err := gcpCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -107,7 +108,9 @@ func runGcp(args []string) {
 		log.Fatal(err)
 	}
 
-	if err = client.DeleteInstance(name, zone, true); err != nil {
-		log.Fatal(err)
+	if !*skipCleanup {
+		if err = client.DeleteInstance(name, zone, true); err != nil {
+			log.Fatal(err)
+		}
 	}
 }
