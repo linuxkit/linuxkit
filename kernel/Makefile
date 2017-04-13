@@ -30,7 +30,7 @@ IMAGE_VERSION=$(KERNEL_VERSION)-0
 IMAGE_MAJOR_VERSION=4.10.x
 DEPS=Dockerfile.4.10 Makefile kernel_config kernel_config.debug patches-4.10
 else
-KERNEL_VERSION=4.9.21
+KERNEL_VERSION=4.9.22
 IMAGE_VERSION=$(KERNEL_VERSION)-0
 IMAGE_MAJOR_VERSION=4.9.x
 DEPS=Dockerfile Makefile kernel_config kernel_config.debug patches-4.9
