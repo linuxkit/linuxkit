@@ -70,6 +70,17 @@ following command:
 ./bin/moby build ./projects/clear-containers/clear-containers.yml
 ```
 
+3. Test kernel
+
+The Makefile target `qemu-lite` from `projects/clear-containers/tools`
+will launch the Clear Containers base OS and the 
+with kernel built with moby. Use the `root` user to access to the test system,
+it will ask to setup a password.
+
+```
+cd projects/clear-containers/tools
+make qemu-lite
+```
 
 The file `clear-containers-bzImage`  is not a bzImage\*. The file
 is a vmlinux image, see TODO. The [cc-oci-runtime] project can be
