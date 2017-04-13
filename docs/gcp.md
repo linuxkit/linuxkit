@@ -15,7 +15,16 @@ You have two choices for authentication with Google Cloud
 You need the [Google Cloud SDK](https://cloud.google.com/sdk/)
 installed.  Either install it from the URL or view `brew` (on a Mac):
 ```shell
-brew install google-cloud-sdk
+brew tap caskroom/cask
+brew cask install google-cloud-sdk
+```
+
+Or via source code:
+
+```shell
+wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-151.0.0-darwin-x86_64.tar.gz
+tar xzvf google-cloud-sdk-151.0.0-darwin-x86_64.tar.gz
+./google-cloud-sdk/install.sh
 ```
 
 Then, set up some environment variables (adjust as needed) and login:
