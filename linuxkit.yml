@@ -16,7 +16,7 @@ onboot:
      - CAP_SYS_ADMIN
     readonly: true
   - name: binfmt
-    image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
+    image: "linuxkit/binfmt:8881283ac627be1542811bd25c85e7782aebc692"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true

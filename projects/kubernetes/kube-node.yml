@@ -18,7 +18,7 @@ onboot:
   - name: sysfs
     image: mobylinux/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c
   - name: binfmt
-    image: "mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01"
+    image: "linuxkit/binfmt:8881283ac627be1542811bd25c85e7782aebc692"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
