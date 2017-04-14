@@ -17,6 +17,8 @@ ifeq ($(GOOS),darwin)
 default: bin/infrakit-instance-hyperkit
 endif
 
+PREFIX?=/usr/local/
+
 MOBY_DEPS=$(wildcard src/cmd/moby/*.go) Makefile vendor.conf
 MOBY_DEPS+=$(wildcard src/initrd/*.go) $(wildcard src/pad4/*.go)
 bin/moby: $(MOBY_DEPS) | bin
@@ -45,6 +47,9 @@ test-qemu-efi: test-efi.iso
 
 bin:
 	mkdir -p $@
+
+install:
+	cp -R ./bin/* $(PREFIX)/bin
 
 define check_test_log
 	@cat $1 |grep -q 'Moby test suite PASSED'
