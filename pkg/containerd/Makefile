@@ -2,7 +2,7 @@ SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c
 
 .PHONY: tag push
 
-BASE=golang:1.7-alpine3.5
+BASE=golang:1.8-alpine
 IMAGE=containerd
 
 default: push
