@@ -2,6 +2,6 @@
 
 (executables
  ((names (main))
-  (libraries (sdk bpf_dhcp bos))
+  (libraries (sdk bpf_dhcp bos cmdliner fmt.cli logs.fmt logs.cli fmt.tty))
   (flags (-cclib -static))
  ))

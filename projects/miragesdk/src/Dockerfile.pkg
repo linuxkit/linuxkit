@@ -1,4 +1,0 @@
-#FROM ocaml/opam:alpine-3.5_ocaml-4.04.0
-FROM scratch
-COPY obj ./
-CMD ["/dhcp-client", "-vv"]
