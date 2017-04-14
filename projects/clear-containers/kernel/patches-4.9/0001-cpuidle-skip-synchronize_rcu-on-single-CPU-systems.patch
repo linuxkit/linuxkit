@@ -1,0 +1,34 @@
+From ae8bbac0d97941a8d54451c98479dc14dddf9678 Mon Sep 17 00:00:00 2001
+From: Arjan van de Ven <arjan@linux.intel.com>
+Date: Wed, 11 Feb 2015 16:19:26 -0600
+Subject: [PATCH 1/4] cpuidle: skip synchronize_rcu() on single CPU systems
+
+synchronize_rcu() is pretty expensive, and on single CPU systems we don't need
+it in this specific case, so skip it.
+
+Signed-off-by: Arjan van de Ven <arjan@linux.intel.com>
+Signed-off-by: Miguel Bernal Marin <miguel.bernal.marin@linux.intel.com>
+---
+ drivers/cpuidle/cpuidle.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/drivers/cpuidle/cpuidle.c b/drivers/cpuidle/cpuidle.c
+index c73207ab..224cefc0 100644
+--- a/drivers/cpuidle/cpuidle.c
++++ b/drivers/cpuidle/cpuidle.c
+@@ -307,8 +307,11 @@ void cpuidle_uninstall_idle_handler(void)
+ 	/*
+ 	 * Make sure external observers (such as the scheduler)
+ 	 * are done looking at pointed idle states.
++	 * This is only relevant if there is more than one cpu,
++	 * if there is only one CPU, that is us... and we're
++	 * coherent to ourselves.
+ 	 */
+-	synchronize_rcu();
++
+ }
+ 
+ /**
+-- 
+2.12.2
+
