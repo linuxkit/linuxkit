@@ -52,7 +52,7 @@ install:
 	cp -R ./bin/* $(PREFIX)/bin
 
 define check_test_log
-	@cat $1 |grep -q 'Moby test suite PASSED'
+	@cat $1 |grep -q 'test suite PASSED'
 endef
 
 .PHONY: test-hyperkit
@@ -71,16 +71,26 @@ test: test-initrd.img test-bzImage test-cmdline
 	tar cf - $^ | ./scripts/qemu.sh 2>&1 | tee test.log
 	$(call check_test_log, test.log)
 
+test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
+	$(MOBY) build test/ltp/test-ltp.yml
+
+.PHONY: test-ltp
+test-ltp: $(MOBY) test-ltp.img.tar.gz
+	$(MOBY) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp.img.tar.gz | tee test-ltp.log
+	$(call check_test_log, test-ltp.log)
+
 .PHONY: ci ci-tag ci-pr
 ci:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) test
+	$(MAKE) test-ltp
 
 ci-tag:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) test
+	$(MAKE) test-ltp
 
 ci-pr:
 	$(MAKE) clean
