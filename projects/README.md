@@ -19,6 +19,7 @@ If you want to create a project, please submit a pull request to create a new di
 - [Swarmd](swarmd) Standalone swarmkit based orchestrator
 - [Landlock LSM](landlock/) programmatic access control
 - [Clear Containers](clear-containers/) Clear Containers image
+- [Logging](logging/) Experimental logging tools
 
 ## Current projects not yet documented
 - VMWare support (VMWare)
