@@ -1,4 +1,4 @@
-FROM linuxkit/go-compile:90607983001c2789911afabf420394d51f78ced8@sha256:8b6566c6fd9f3bca31191b919449248d3cb1ca3a562276fca7199e93451d6596
+FROM linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5
 
 ENV VIRTSOCK_COMMIT=6b4dec728264e07c41e108caebd6bc2b72559a5f
 RUN mkdir -p $GOPATH/src/github.com/rneugeba && \

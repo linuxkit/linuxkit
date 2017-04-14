@@ -8,7 +8,7 @@ init:
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c
+    image: linuxkit/sysctl:1f5ec5d5e6f7a7a1b3d2ff9dd9e36fd6fb14756a
     net: host
     pid: host
     ipc: host
@@ -16,7 +16,7 @@ onboot:
      - CAP_SYS_ADMIN
     readonly: true
   - name: binfmt
-    image: mobylinux/binfmt:bdb754f25a5d851b4f5f8d185a43dfcbb3c22d01
+    image: linuxkit/binfmt:8881283ac627be1542811bd25c85e7782aebc692
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
