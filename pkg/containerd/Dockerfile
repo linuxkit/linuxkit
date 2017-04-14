@@ -1,4 +1,4 @@
-FROM golang:1.7-alpine3.5
+FROM golang:1.8-alpine
 RUN \
   apk update && apk upgrade -a && \
   apk add --no-cache \
@@ -9,10 +9,10 @@ RUN \
   linux-headers \
   make \
   && true
-ENV CONTAINERD_COMMIT=e5c8c5634a1fa82da41c1b707f8a9889bcfca248
+ENV CONTAINERD_COMMIT=ffe684b017252262431e157741406d4e1fb22831
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
-  git clone https://github.com/containerd/containerd.git
+  git clone https://github.com/justincormack/containerd.git
 WORKDIR $GOPATH/src/github.com/containerd/containerd
 RUN git checkout $CONTAINERD_COMMIT
 RUN make binaries GO_GCFLAGS="-buildmode pie --ldflags '-extldflags \"-fno-PIC -static\"'"
