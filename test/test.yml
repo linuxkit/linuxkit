@@ -1,11 +1,11 @@
 kernel:
-  image: "mobylinux/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
-  - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
-  - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
+  - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: dhcpcd
     image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
@@ -19,7 +19,7 @@ onboot:
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: check
-    image: "mobylinux/check:c9e41ab96b3ea6a3ced97634751e20d12a5bf52f"
+    image: "linuxkit/check:43c4147dda4e02d066ef158cd81718dbff8c8bd0"
     pid: host
     capabilities:
      - CAP_SYS_BOOT
