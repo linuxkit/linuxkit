@@ -1,4 +1,4 @@
-From 8a253420a3dca5714304cee3f5727eadecdc35b9 Mon Sep 17 00:00:00 2001
+From ae948f812784ea85a0bc28fc3c7ead1255b639be Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Tue, 15 Dec 2015 16:27:27 -0800
 Subject: [PATCH 24/44] Drivers: hv: vmbus: Treat Fibre Channel devices as
@@ -38,5 +38,5 @@ index 306c7dff6c77..763d0c19c16f 100644
  	{ HV_NIC_GUID, },
  	/* NetworkDirect Guest RDMA */
 -- 
-2.11.1
+2.11.0
 
