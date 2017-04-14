@@ -1,4 +1,4 @@
-FROM debian:jessie-slim@sha256:2a14128195ab26b1c56c5773dda9def9b909c2e01596ef9108e2295d418210a3
+FROM debian:jessie-slim@sha256:fb22c1cef74071a6cd0145c1f91ca85ba9bd3f8b4d6db8560fe69eb36a175ca3
 ADD . /
 WORKDIR /opt/ltp
 ENTRYPOINT ["/bin/sh", "/check.sh"]
