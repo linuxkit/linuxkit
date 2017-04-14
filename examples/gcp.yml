@@ -32,7 +32,6 @@ onboot:
      - /dev:/dev
      - /var:/var
      - /tmp/etc/resolv.conf:/etc/resolv.conf
-    readonly: true
     net: host
     capabilities:
      - CAP_SYS_ADMIN

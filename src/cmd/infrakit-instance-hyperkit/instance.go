@@ -76,7 +76,7 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	log.Infof("[%s] New instance", id)
 
 	logicalID := string(id)
-	uuidStr := ""
+	vpnkitKeyStr := ""
 
 	diskImage := ""
 	if spec.LogicalID != nil {
@@ -85,12 +85,12 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 		// it into a magic UUID which cause VPNKit to assign a
 		// fixed IP address
 		if ip := net.ParseIP(logicalID); len(ip) > 0 {
-			uuid := make([]byte, 16)
-			uuid[12] = ip.To4()[0]
-			uuid[13] = ip.To4()[1]
-			uuid[14] = ip.To4()[2]
-			uuid[15] = ip.To4()[3]
-			uuidStr = fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
+			vpnkitkey := make([]byte, 16)
+			vpnkitkey[12] = ip.To4()[0]
+			vpnkitkey[13] = ip.To4()[1]
+			vpnkitkey[14] = ip.To4()[2]
+			vpnkitkey[15] = ip.To4()[3]
+			vpnkitKeyStr = fmt.Sprintf("%x-%x-%x-%x-%x", vpnkitkey[0:4], vpnkitkey[4:6], vpnkitkey[6:8], vpnkitkey[8:10], vpnkitkey[10:])
 		}
 		// If a LogicalID is supplied and the Disk size is
 		// non-zero, we place the disk in a special directory
@@ -115,7 +115,7 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	}
 
 	log.Infof("[%s] LogicalID: %s", id, logicalID)
-	log.Debugf("[%s] UUID: %s", id, uuidStr)
+	log.Debugf("[%s] VPNKitKey: %s", id, vpnkitKeyStr)
 
 	// Start a HyperKit instance
 	h, err := hyperkit.New(p.HyperKit, p.VPNKitSock, instanceDir)
@@ -124,7 +124,7 @@ func (p hyperkitPlugin) Provision(spec instance.Spec) (*instance.ID, error) {
 	}
 	h.Kernel = properties["kernel+initrd"].(string) + "-bzImage"
 	h.Initrd = properties["kernel+initrd"].(string) + "-initrd.img"
-	h.UUID = uuidStr
+	h.VPNKitKey = vpnkitKeyStr
 	h.DiskImage = diskImage
 	h.ISOImage = isoImage
 	h.CPUs = int(properties["CPUs"].(float64))
