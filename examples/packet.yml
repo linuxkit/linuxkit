@@ -21,7 +21,7 @@ services:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
   - name: dhcpcd
-    image: "mobylinux/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
+    image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
     binds:
      - /var:/var
      - /tmp:/etc
@@ -32,7 +32,7 @@ services:
     net: host
     oomScoreAdj: -800
   - name: sshd
-    image: "mobylinux/sshd:160631d59fffc13d523ff7f09b3b49538d34b9cd"
+    image: "linuxkit/sshd:e108d208adf692c8a0954f602743e0eec445364e"
     capabilities:
      - all
     net: host

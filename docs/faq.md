@@ -11,16 +11,16 @@ system is installed, and it would be useful to support this for that use case, a
 updater container to control this for people who want to use this.
 
 We generally use external tooling such as [Infrakit](https://github.com/docker/infrakit) or
-CloudFormation templates to manage the update process externally from Moby, including
+CloudFormation templates to manage the update process externally from LinuxKit, including
 doing rolling cluster upgrades to make sure distributed applciations stay up and responsive.
 
 Updates may preserve the state disk used by applications if needed, either on the same physical
 node, or by reattaching a virtual cloud volume to a new node.
 
-## What do I need to build Moby?
+## What do I need to build LinuxKit?
 
 We have tried to make this as simple as possible, by using containers for the build process, so
-you should be able to build Moby on any OSX or Linux laptop; we should have Windows build support
+you should be able to build LinuxKit on any OSX or Linux laptop; we should have Windows build support
 soon.
 
 ## Why not use `systemd`?
