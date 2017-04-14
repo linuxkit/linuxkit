@@ -52,7 +52,7 @@ install:
 	cp -R ./bin/* $(PREFIX)/bin
 
 define check_test_log
-	@cat $1 |grep -q 'Moby test suite PASSED'
+	@cat $1 |grep -q 'Kernel config test suite PASSED'
 endef
 
 .PHONY: test-hyperkit
