@@ -91,4 +91,4 @@ rm $KITSRC/kernel/patches-4.9/*
 git format-patch -o $KITSRC/kernel/patches-4.9 v4.9.15..HEAD
 ```
 
-The, create a PR for Moby.
+The, create a PR for LinuxKit.
