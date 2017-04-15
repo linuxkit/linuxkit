@@ -10,13 +10,13 @@ restarts.
 
 ## Preparation
 
-- Build the `etcd` image and then moby image:
+- Build the `etcd` image and then moby image inside the `pkg` directory:
 ```
 ./build-pkg.sh
 moby build etcd
 ```
 
-## InfraKit cluster setup (OUTDATED)
+## InfraKit cluster setup
 
 This should create a HyperKit based, InfraKit managed `etcd` cluster with 5 `etcd` instances.
 
@@ -53,14 +53,12 @@ Build the image and upload it:
 moby build etcd
 ```
 
-Start the infrakit components in separate windows:
+Start infrakit as above:
 ```
-infrakit-group-default
-infrakit-flavor-vanilla
-infrakit-instance-gcp
+./start-infrakit
 ```
 
 Commit the configuration:
 ```
-infrakit group commit infrakit-gce.json
+infrakit group commit infrakit-gcp.json
 ```
