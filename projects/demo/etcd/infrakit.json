@@ -16,7 +16,7 @@
                 "kernel+initrd": "etcd",
                 "Disk" : 1024,
                 "CPUs" : 1,
-                "Memory" : 1024
+                "Memory" : 512
             }
         },
         "Flavor": {
