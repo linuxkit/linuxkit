@@ -66,7 +66,3 @@ trust:
 outputs:
   - format: kernel+initrd
   - format: gcp
-    project: moby
-    bucket: mobytestjustin
-    family: moby-dev
-    replace: true

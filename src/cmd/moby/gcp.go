@@ -20,8 +20,23 @@ import (
 	"google.golang.org/api/storage/v1"
 )
 
-const pollingInterval = 500 * time.Millisecond
-const timeout = 300
+const (
+	defaultZone     = "europe-west1-d"
+	defaultMachine  = "g1-small"
+	defaultDiskSize = 1
+	zoneVar         = "CLOUDSDK_CORE_ZONE"
+	machineVar      = "MOBY_GCP_MACHINE"
+	keysVar         = "MOBY_GCP_KEYS"
+	projectVar      = "CLOUDSDK_CORE_PROJECT"
+	bucketVar       = "MOBY_GCP_BUCKET"
+	familyVar       = "MOBY_GCP_FAMILY"
+	publicVar       = "MOBY_GCP_PUBLIC"
+	nameVar         = "MOBY_GCP_IMAGE_NAME"
+	diskSizeVar     = "MOBY_GCP_DISK_SIZE"
+	replaceVar      = "MOBY_GCP_REPLACE"
+	pollingInterval = 500 * time.Millisecond
+	timeout         = 300
+)
 
 // GCPClient contains state required for communication with GCP
 type GCPClient struct {
@@ -31,6 +46,20 @@ type GCPClient struct {
 	projectName string
 	fileName    string
 	privKey     *rsa.PrivateKey
+}
+
+// GCPConfig retains the config derived from the flags and environment
+type GCPConfig struct {
+	Zone     string
+	Keys     string
+	Project  string
+	Bucket   string
+	Family   string
+	Machine  string
+	Public   bool
+	Replace  bool
+	Name     string
+	DiskSize int
 }
 
 // NewGCPClient creates a new GCP client

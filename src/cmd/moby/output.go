@@ -19,7 +19,7 @@ const (
 	vmdk = "linuxkit/mkimage-vmdk:10b8717b6a2099741b702c31af2d9a42ce50425e@sha256:bf7cf6029e61685e9085a1883b1be1167a7f06199f3b76a944ea87b6f23f60d8"
 )
 
-func outputs(m *Moby, base string, bzimage []byte, initrd []byte) error {
+func outputs(m *Moby, base string, bzimage []byte, initrd []byte, gcpConfig GCPConfig) error {
 	log.Debugf("output: %s %s", m.Outputs, base)
 	for _, o := range m.Outputs {
 		switch o.Format {
@@ -48,14 +48,14 @@ func outputs(m *Moby, base string, bzimage []byte, initrd []byte) error {
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
-			if o.Bucket == "" {
+			if gcpConfig.Bucket == "" {
 				return fmt.Errorf("No bucket specified for GCP output")
 			}
-			gClient, err := NewGCPClient(o.Keys, o.Project)
+			gClient, err := NewGCPClient(gcpConfig.Keys, gcpConfig.Project)
 			if err != nil {
 				return fmt.Errorf("Unable to connect to GCP")
 			}
-			err = gClient.UploadFile(base+".img.tar.gz", base+".img.tar.gz", o.Bucket, o.Public)
+			err = gClient.UploadFile(base+".img.tar.gz", base+".img.tar.gz", gcpConfig.Bucket, gcpConfig.Public)
 			if err != nil {
 				return fmt.Errorf("Error copying to Google Storage: %v", err)
 			}
@@ -64,18 +64,18 @@ func outputs(m *Moby, base string, bzimage []byte, initrd []byte) error {
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
-			if o.Bucket == "" {
+			if gcpConfig.Bucket == "" {
 				return fmt.Errorf("No bucket specified for GCP output")
 			}
-			gClient, err := NewGCPClient(o.Keys, o.Project)
+			gClient, err := NewGCPClient(gcpConfig.Keys, gcpConfig.Project)
 			if err != nil {
 				return fmt.Errorf("Unable to connect to GCP")
 			}
-			err = gClient.UploadFile(base+".img.tar.gz", base+".img.tar.gz", o.Bucket, o.Public)
+			err = gClient.UploadFile(base+".img.tar.gz", base+".img.tar.gz", gcpConfig.Bucket, gcpConfig.Public)
 			if err != nil {
 				return fmt.Errorf("Error copying to Google Storage: %v", err)
 			}
-			err = gClient.CreateImage(base, "https://storage.googleapis.com/"+o.Bucket+"/"+base+".img.tar.gz", o.Family, o.Replace)
+			err = gClient.CreateImage(base, "https://storage.googleapis.com/"+gcpConfig.Bucket+"/"+base+".img.tar.gz", gcpConfig.Family, gcpConfig.Replace)
 			if err != nil {
 				return fmt.Errorf("Error creating Google Compute Image: %v", err)
 			}

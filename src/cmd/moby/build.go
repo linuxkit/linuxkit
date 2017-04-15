@@ -26,6 +26,13 @@ func build(args []string) {
 	}
 	buildName := buildCmd.String("name", "", "Name to use for output files")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
+	// gcp flags
+	keysFlag := buildCmd.String("gcp-keys", "", "Path to GCP Service Account JSON key file")
+	projectFlag := buildCmd.String("gcp-project", "", "GCP Project Name")
+	bucketFlag := buildCmd.String("gcp-bucket", "", "GS Bucket to upload to. *Required* when 'prefix' is a filename")
+	publicFlag := buildCmd.Bool("gcp-public", false, "Select if file on GS should be public. *Optional* when 'prefix' is a filename")
+	familyFlag := buildCmd.String("gcp-family", "", "GCP Image Family. A group of images where the family name points to the most recent image. *Optional* when 'prefix' is a filename")
+	replaceFlag := buildCmd.Bool("gcp-replace", false, "Replace existing GCP files and images")
 
 	if err := buildCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -42,43 +49,18 @@ func build(args []string) {
 		conf = conf + ".yml"
 	}
 
-	buildInternal(*buildName, *buildPull, conf)
-}
+	name := *buildName
+	pull := *buildPull
 
-func initrdAppend(iw *initrd.Writer, r io.Reader) {
-	_, err := initrd.Copy(iw, r)
-	if err != nil {
-		log.Fatalf("initrd write error: %v", err)
-	}
-}
-
-func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
-	for _, img := range config.Image {
-		// First check for an exact name match
-		if img == fullImageName {
-			return true
-		}
-		// Also check for an image name only match
-		// by removing a possible tag (with possibly added digest):
-		if img == strings.TrimSuffix(fullImageName, ":") {
-			return true
-		}
-		// and by removing a possible digest:
-		if img == strings.TrimSuffix(fullImageName, "@sha256:") {
-			return true
-		}
+	gcpConfig := GCPConfig{
+		Keys:    getStringValue(keysVar, *keysFlag, ""),
+		Project: getStringValue(projectVar, *projectFlag, ""),
+		Bucket:  getStringValue(bucketVar, *bucketFlag, ""),
+		Public:  getBoolValue(publicVar, *publicFlag),
+		Family:  getStringValue(familyVar, *familyFlag, ""),
+		Replace: getBoolValue(replaceVar, *replaceFlag),
 	}
 
-	for _, org := range config.Org {
-		if strings.HasPrefix(fullImageName, org+"/") {
-			return true
-		}
-	}
-	return false
-}
-
-// Perform the actual build process
-func buildInternal(name string, pull bool, conf string) {
 	if name == "" {
 		name = filepath.Base(conf)
 		ext := filepath.Ext(conf)
@@ -203,10 +185,42 @@ func buildInternal(name string, pull bool, conf string) {
 	}
 
 	log.Infof("Create outputs:")
-	err = outputs(m, name, bzimage.Bytes(), w.Bytes())
+	err = outputs(m, name, bzimage.Bytes(), w.Bytes(), gcpConfig)
 	if err != nil {
 		log.Fatalf("Error writing outputs: %v", err)
 	}
+}
+
+func initrdAppend(iw *initrd.Writer, r io.Reader) {
+	_, err := initrd.Copy(iw, r)
+	if err != nil {
+		log.Fatalf("initrd write error: %v", err)
+	}
+}
+
+func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
+	for _, img := range config.Image {
+		// First check for an exact name match
+		if img == fullImageName {
+			return true
+		}
+		// Also check for an image name only match
+		// by removing a possible tag (with possibly added digest):
+		if img == strings.TrimSuffix(fullImageName, ":") {
+			return true
+		}
+		// and by removing a possible digest:
+		if img == strings.TrimSuffix(fullImageName, "@sha256:") {
+			return true
+		}
+	}
+
+	for _, org := range config.Org {
+		if strings.HasPrefix(fullImageName, org+"/") {
+			return true
+		}
+	}
+	return false
 }
 
 func untarKernel(buf *bytes.Buffer, bzimageName, ktarName string) (*bytes.Buffer, *bytes.Buffer, error) {
