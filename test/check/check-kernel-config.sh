@@ -4,7 +4,7 @@ set -e
 
 echo "starting kernel config sanity test with /proc/config.gz"
 
-# decompress /proc/config.gz from the Moby host
+# decompress /proc/config.gz from the host
 UNZIPPED_CONFIG=$(zcat /proc/config.gz)
 
 kernelVersion="$(uname -r)"
