@@ -13,7 +13,7 @@
         "Instance": {
             "Plugin": "instance-gcp",
             "Properties": {
-                "NamePrefix": "etcdtest",
+                "NamePrefix": "etcd-demo",
                 "Description": "ETCD test cluster",
                 "Network": "rneugeba-demo",
                 "Connect" : true,
