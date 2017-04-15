@@ -5,15 +5,6 @@ init:
   - linuxkit/init:42fe8cb1508b3afed39eb89821906e3cc7a70551
   - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
   - linuxkit/containerd:fe1b7f438a234cb6481c6538295115eac2a0596d
-onboot:
-  - name: sysctl
-    image: "linuxkit/sysctl:1f5ec5d5e6f7a7a1b3d2ff9dd9e36fd6fb14756a"
-    net: host
-    pid: host
-    ipc: host
-    capabilities:
-     - CAP_SYS_ADMIN
-    readonly: true
 services:
   - name: dhcpcd
     image: "linuxkit/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
