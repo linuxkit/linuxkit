@@ -51,7 +51,7 @@ def kubelet_cmd
   )
 end
 
-kubelet_dependencies = %w(libc6-compat tini util-linux iproute2 iptables ebtables ethtool socat curl)
+kubelet_dependencies = %w(libc6-compat util-linux iproute2 iptables ebtables ethtool socat curl)
 install_packages kubelet_dependencies
 install_node_dependencies
 
@@ -72,6 +72,6 @@ flatten
 
 env KUBECONFIG: "/etc/kubernetes/admin.conf"
 
-set_exec entrypoint: %w(tini -s --), cmd: %w(kubelet.sh)
+set_exec entrypoint: %w(kubelet.sh)
 
 tag "#{@image_name}:latest"
