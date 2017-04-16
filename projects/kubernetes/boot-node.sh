@@ -5,4 +5,4 @@ shift
 disk="kube-${name}-disk.img"
 set -x
 rm -f "${disk}"
-../../bin/moby run hyperkit -cpus 2 -mem 4096 -disk-size 1024 -disk "${disk}" -data "${*}" kube-node
+../../bin/moby run hyperkit -cpus 2 -mem 4096 -disk-size 4096 -disk "${disk}" -data "${*}" kube-node

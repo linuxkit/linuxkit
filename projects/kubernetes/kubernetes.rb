@@ -1,49 +1,58 @@
 import 'common.rb'
 
-from "gcr.io/google_containers/hyperkube-amd64:#{@versions[:kubernetes]}"
+from "alpine:edge"
 
 def install_node_dependencies
   kube_release_artefacts = "https://dl.k8s.io/#{@versions[:kubernetes]}/bin/linux/amd64"
-  weave_launcher = "https://frontend.dev.weave.works/k8s/v1.6/net?v=#{@versions[:weave]}"
+  cni_release_artefacts = "https://dl.k8s.io/network-plugins/cni-amd64-#{@versions[:cni]}.tar.gz"
+  weave_launcher = "https://cloud.weave.works/k8s/v1.6/net?v=#{@versions[:weave]}"
 
   download_files = [
-    "/etc/weave.yaml" => {
+    '/etc/weave.yaml' => {
       url: weave_launcher,
       mode: '0644',
     },
-    "/usr/bin/kubeadm" => {
+    '/tmp/cni.tgz' => {
+      url: cni_release_artefacts,
+      mode: '0644',
+    },
+    '/usr/bin/kubelet' => {
+      url: "#{kube_release_artefacts}/kubelet",
+      mode: '0755',
+    },
+    '/usr/bin/kubeadm' => {
       url: "#{kube_release_artefacts}/kubeadm",
       mode: '0755',
     },
-    "/usr/bin/tini" => {
-      url: "https://github.com/krallin/tini/releases/download/#{@versions[:tini]}/tini",
+    '/usr/bin/kubectl' => {
+      url: "#{kube_release_artefacts}/kubectl",
       mode: '0755',
     },
   ]
 
   download_files.each do |file|
     file.each do |dest,info|
-      run %(curl --insecure --output "#{dest}" --fail --silent --location "#{info[:url]}")
+      run %(curl --output "#{dest}" --fail --silent --location "#{info[:url]}")
       run %(chmod "#{info[:mode]}" "#{dest}")
     end
   end
+
+  run "mkdir -p /opt/cni/bin /etc/cni/net.d && tar xzf /tmp/cni.tgz -C /opt/cni && rm -f /tmp/cni.tgz"
 end
 
 def kubelet_cmd
   %w(
-    /hyperkube kubelet
+    kubelet
       --kubeconfig=/var/lib/kubeadm/kubelet.conf --require-kubeconfig=true
       --pod-manifest-path=/var/lib/kubeadm/manifests --allow-privileged=true
       --cluster-dns=10.96.0.10 --cluster-domain=cluster.local
       --cgroups-per-qos=false --enforce-node-allocatable=""
       --network-plugin=cni --cni-conf-dir=/etc/cni/net.d --cni-bin-dir=/opt/cni/bin
   )
-  #--node-ip="192.168.65.2"
 end
 
-setup_apt_config
-run "rm -f /etc/cni/net.d/10-containernet.conf"
-install_packages 'kubernetes-cni'
+kubelet_dependencies = %w(libc6-compat util-linux iproute2 iptables ebtables ethtool socat curl)
+install_packages kubelet_dependencies
 install_node_dependencies
 
 # Exploit shared mounts, give CNI paths back to the host
@@ -63,6 +72,6 @@ flatten
 
 env KUBECONFIG: "/etc/kubernetes/admin.conf"
 
-set_exec entrypoint: %w(tini -s --), cmd: %w(kubelet.sh)
+set_exec entrypoint: %w(kubelet.sh)
 
 tag "#{@image_name}:latest"
