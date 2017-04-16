@@ -19,18 +19,18 @@ all:	bzImage tag
 #
 # IMAGE_VERSION is used to determine if a new image should be pushed to hub.
 ifeq ($(KERNEL),v4.4)
-KERNEL_VERSION=4.4.60
+KERNEL_VERSION=4.4.61
 IMAGE_VERSION=$(KERNEL_VERSION)-0
 IMAGE_MAJOR_VERSION=4.4.x
 DEPS=Dockerfile.4.4 Makefile kernel_config kernel_config.debug kernel_config.4.4 patches-4.4
 else
 ifeq ($(KERNEL),v4.10)
-KERNEL_VERSION=4.10.9
+KERNEL_VERSION=4.10.10
 IMAGE_VERSION=$(KERNEL_VERSION)-0
 IMAGE_MAJOR_VERSION=4.10.x
 DEPS=Dockerfile.4.10 Makefile kernel_config kernel_config.debug patches-4.10
 else
-KERNEL_VERSION=4.9.21
+KERNEL_VERSION=4.9.22
 IMAGE_VERSION=$(KERNEL_VERSION)-0
 IMAGE_MAJOR_VERSION=4.9.x
 DEPS=Dockerfile Makefile kernel_config kernel_config.debug patches-4.9
@@ -51,7 +51,6 @@ bzImage: kernel.tag
 
 MEDIA_TOYBOX=linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
 
-BASE="$MEDIA_TOYBOX"
 IMAGE=kernel
 
 default: push
@@ -63,26 +62,26 @@ image: Dockerfile.media bzImage kernel.tar $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -f Dockerfile.media -
 
 push: image
-	docker pull mobylinux/$(IMAGE):$(IMAGE_VERSION) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker push mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
-		 docker push mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	docker pull linuxkit/$(IMAGE):$(IMAGE_VERSION) || \
+		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker push linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
+		 docker push linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 sign: image
-	DOCKER_CONTENT_TRUST=1 docker pull mobylinux/$(IMAGE):$(IMAGE_VERSION) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 DOCKER_CONTENT_TRUST=1 docker push mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
-		 DOCKER_CONTENT_TRUST=1 docker push mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(IMAGE_VERSION) || \
+		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
+		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: image
-	(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-	docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+	docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 

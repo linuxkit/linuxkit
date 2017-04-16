@@ -39,8 +39,8 @@ For details of the config for each container, see below.
 
 This section specifies which build components are to be cryptographically verified with
 [Docker Content Trust](https://docs.docker.com/engine/security/trust/content_trust/) prior to pulling.
-Trust is a central concern in any build system, and Moby's is no exception: Docker Content Trust provides authenticity,
-integrity, and freshness guarantees for the components it verifies.  The Moby maintainers are responsible for signing
+Trust is a central concern in any build system, and LinuxKit's is no exception: Docker Content Trust provides authenticity,
+integrity, and freshness guarantees for the components it verifies.  The LinuxKit maintainers are responsible for signing
 `mobylinux` components, though collaborators can sign their own images with Docker Content Trust or [Notary](https://github.com/docker/notary).
 
 - `image` lists which individual images to enforce pulling with Docker Content Trust.

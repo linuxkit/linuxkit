@@ -18,8 +18,8 @@ If you want to create a project, please submit a pull request to create a new di
 - [AWS](aws/) AWS build support
 - [Swarmd](swarmd) Standalone swarmkit based orchestrator
 - [Landlock LSM](landlock/) programmatic access control
+- [Clear Containers](clear-containers/) Clear Containers image
 
 ## Current projects not yet documented
-- Clear Linux integration (Intel)
 - VMWare support (VMWare)
 - ARM port and secure boot integration (ARM)

@@ -18,7 +18,7 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 ### Build the `moby` tool
 
 Simple build instructions: use `make` to build. This will build the customisation tool in `bin/`. Add this
-to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/moby /usr/local/bin/`.
+to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/moby /usr/local/bin/`. Or you can use `sudo make install`.
 
 If you already have `go` installed you can use `go get -u github.com/docker/moby/src/cmd/moby` to install
 the `moby` tool, and then use `moby build linuxkit.yml` to build the example configuration. You

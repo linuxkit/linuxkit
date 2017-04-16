@@ -1,14 +1,14 @@
 kernel:
-  image: "mobylinux/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0"
 init:
-  - mobylinux/init:8375addb923b8b88b2209740309c92aa5f2a4f9d
-  - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
-  - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+  - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
+  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
+  - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: ltp
-    image: "mobylinux/test-ltp-20170116:d4722477c11e0006d6e5529efe241b6ae70ff3a9" 
+    image: "linuxkit/test-ltp-20170116:81229df2d25065b06f0a3071faaace8d66c87e67"
     net: host
     pid: host
     binds:
@@ -17,7 +17,7 @@ onboot:
      - all
 services:
   - name: poweroff
-    image: "mobylinux/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
+    image: "linuxkit/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
     pid: host
     capabilities:
       - CAP_SYS_BOOT

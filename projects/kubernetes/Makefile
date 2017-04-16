@@ -12,10 +12,10 @@ build-container-images: $(BOX_PLANS)
 	; done
 
 push-container-images: build-container-images cache-images
-	docker image push mobylinux/kubernetes:latest
-	docker image push mobylinux/kubernetes:latest-mounts
-	docker image push mobylinux/kubernetes:latest-image-cache-common
-	docker image push mobylinux/kubernetes:latest-image-cache-control-plane
+	docker image push linuxkit/kubernetes:latest
+	docker image push linuxkit/kubernetes:latest-mounts
+	docker image push linuxkit/kubernetes:latest-image-cache-common
+	docker image push linuxkit/kubernetes:latest-image-cache-control-plane
 
 build-vm-images: kube-master-initrd.img kube-node-initrd.img
 
@@ -53,9 +53,9 @@ cache-images:
 	  do $(MAKE) "image-cache/common/$${image}.tar" \
 	  ; done
 	cp image-cache/Dockerfile image-cache/.dockerignore image-cache/common
-	docker image build -t mobylinux/kubernetes:latest-image-cache-common image-cache/common
+	docker image build -t linuxkit/kubernetes:latest-image-cache-common image-cache/common
 	for image in $(CONTROL_PLANE_IMAGES) ; \
 	  do $(MAKE) "image-cache/control-plane/$${image}.tar" \
 	  ; done
 	cp image-cache/Dockerfile image-cache/.dockerignore image-cache/control-plane
-	docker image build -t mobylinux/kubernetes:latest-image-cache-control-plane image-cache/control-plane
+	docker image build -t linuxkit/kubernetes:latest-image-cache-control-plane image-cache/control-plane
