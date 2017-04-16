@@ -10,7 +10,8 @@ mkdir -p $INFRAKIT_HOME/cli
 
 infrakit-flavor-vanilla &
 infrakit-instance-hyperkit &
-infrakit-instance-gcp --project docker4x --zone europe-west1-d &
+infrakit-instance-gcp --project $CLOUDSDK_CORE_PROJECT --zone $CLOUDSDK_COMPUTE_ZONE &
+
 
 # start the group plugin in the foreground. If it exits, it will take
 # the others down as well.
