@@ -1,0 +1,3 @@
+FROM scratch
+COPY . ./
+CMD ["/usr/bin/memlogd","-fd","3"]
