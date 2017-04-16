@@ -1,14 +1,14 @@
 kernel:
-  image: "mobylinux/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
-  - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
-  - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
+  - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    image: "linuxkit/sysctl:1f5ec5d5e6f7a7a1b3d2ff9dd9e36fd6fb14756a"
     net: host
     pid: host
     ipc: host
@@ -16,21 +16,21 @@ onboot:
      - CAP_SYS_ADMIN
     readonly: true
   - name: sysfs
-    image: mobylinux/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c
+    image: linuxkit/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c
   - name: binfmt
     image: "linuxkit/binfmt:8881283ac627be1542811bd25c85e7782aebc692"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
   - name: format
-    image: "mobylinux/format:53748000acf515549d398e6ae68545c26c0f3a2e"
+    image: "linuxkit/format:53748000acf515549d398e6ae68545c26c0f3a2e"
     binds:
      - /dev:/dev
     capabilities:
      - CAP_SYS_ADMIN
      - CAP_MKNOD
   - name: mounts
-    image: "mobylinux/kubernetes:latest-mounts"
+    image: "linuxkit/kubernetes:latest-mounts"
     capabilities:
      - all
     pid: host
@@ -40,13 +40,13 @@ onboot:
      - /var:/var:rshared,rbind
 services:
   - name: rngd
-    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9@sha256:1c93c1db7196f6f71f8e300bc1d15f0376dd18e8891c8789d77c8ff19f3a9a92"
+    image: "linuxkit/rngd:f5e5be43e730ea819c3293d5c6dcbfa7f4c5c314"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
   - name: dhcpcd
-    image: "mobylinux/dhcpcd:57a8ef29d3a910645b2b24c124f9ce9ef53ce703"
+    image: "linuxkit/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
     binds:
      - /var:/var
      - /tmp/etc:/etc
@@ -57,7 +57,7 @@ services:
     net: host
     oomScoreAdj: -800
   - name: ntpd
-    image: "mobylinux/openntpd:a570316d7fc49ca1daa29bd945499f4963d227af"
+    image: "linuxkit/openntpd:a570316d7fc49ca1daa29bd945499f4963d227af"
     capabilities:
       - CAP_SYS_TIME
       - CAP_SYS_NICE
@@ -74,7 +74,7 @@ services:
     binds:
      - /root/.ssh:/root/.ssh
   - name: docker
-    image: "mobylinux/docker-ce:741bf21513328f674e0cdcaa55492b0b75974e08"
+    image: "linuxkit/docker-ce:741bf21513328f674e0cdcaa55492b0b75974e08"
     capabilities:
      - all
     net: host
@@ -91,15 +91,15 @@ services:
      - /opt/cni:/opt/cni:rshared,rbind
     rootfsPropagation: shared
   - name: kubernetes-image-cache-common
-    image: "mobylinux/kubernetes:latest-image-cache-common"
+    image: "linuxkit/kubernetes:latest-image-cache-common"
     binds:
       - /var/run:/var/run
   - name: kubernetes-image-cache-control-plane
-    image: "mobylinux/kubernetes:latest-image-cache-control-plane"
+    image: "linuxkit/kubernetes:latest-image-cache-control-plane"
     binds:
       - /var/run:/var/run
   - name: kubelet
-    image: "mobylinux/kubernetes:latest"
+    image: "linuxkit/kubernetes:latest"
     capabilities:
      - all
     net: host
