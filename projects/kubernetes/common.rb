@@ -1,4 +1,4 @@
-@image_name = "mobylinux/kubernetes"
+@image_name = "linuxkit/kubernetes"
 
 @versions = {
   kubernetes: "v1.6.1",
