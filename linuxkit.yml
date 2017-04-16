@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:42fe8cb1508b3afed39eb89821906e3cc7a70551
   - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - linuxkit/containerd:fe1b7f438a234cb6481c6538295115eac2a0596d
+  - linuxkit/containerd:60e2486a74c665ba4df57e561729aec20758daed
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
