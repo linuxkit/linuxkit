@@ -1,32 +1,18 @@
 @image_name = "linuxkit/kubernetes"
 
 @versions = {
-  kubernetes: "v1.6.1",
-  weave: "v1.9.4",
-  tini: "v0.14.0",
+  kubernetes: 'v1.6.1',
+  weave: 'v1.9.4',
+  cni: '0799f5732f2a11b329d9e3d51b9c8f2e3759f2ff',
 }
 
 def install_packages pkgs
   cmds = [
-    %(apt-get update -q),
-    %(apt-get upgrade -qy),
-    %(apt-get install -qy #{pkgs}),
+    %(apk update),
+    %(apk add #{pkgs.join(' ')}),
   ]
 
   cmds.each { |cmd| run cmd }
-end
-
-def setup_apt_config
-  prepare = [
-    'curl --silent "https://packages.cloud.google.com/apt/doc/apt-key.gpg" | apt-key add -',
-    'echo "deb http://apt.kubernetes.io/ kubernetes-xenial main" > /etc/apt/sources.list.d/kubernetes.list',
-  ]
-
-  dependencies = %(curl apt-transport-https)
-
-  install_packages dependencies
-
-  prepare.each { |cmd| run cmd }
 end
 
 def create_shell_wrapper script, path
