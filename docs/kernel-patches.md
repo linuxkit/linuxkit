@@ -36,8 +36,8 @@ We use the following variables:
 - `LINUXSRC`: Base directory of Linux stable kernel repository
 e.g.:
 ```sh
-KITSRC=~/src/docker/linuxkit
-LINUXSRC=~/src/docker/linux-stable
+KITSRC=~/src/linuxkit/linuxkit
+LINUXSRC=~/src/linuxkit/linux
 ```
 to refer to the location of the LinuxKit and Linux kernel trees.
 
