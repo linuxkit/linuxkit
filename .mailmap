@@ -1,0 +1,26 @@
+# Generate AUTHORS: scripts/generate-authors.sh
+
+# Tip for finding duplicates (besides scanning the output of AUTHORS for name
+# duplicates that aren't also email duplicates): scan the output of:
+#   git log --format='%aE - %aN' | sort -uf
+#
+# For explanation on this file format: man git-shortlog
+
+Dan Finneran <dan@thebsdbox.co.uk> <dan@dev.fnnrn.me>
+Dan Finneran <dan@thebsdbox.co.uk> <daniel.finneran@gmail.com>
+Dave Scott <dave.scott@docker.com> <dave.scott@unikernel.com>
+Dave Scott <dave.scott@docker.com> <dave@recoil.org>
+Dave Scott <dave.scott@docker.com> <djs55@users.noreply.github.com>
+David Sheets <david.sheets@docker.com> <dsheets@docker.com>
+David Sheets <david.sheets@docker.com> <sheets@alum.mit.edu>
+Ian Campbell <ian.campbell@docker.com> <ijc25@users.noreply.github.com>
+Jeremy Yallop <yallop@docker.com> <yallop@gmail.com>
+Justin Cormack <justin.cormack@docker.com> <justin.cormack@unikernel.com>
+Justin Cormack <justin.cormack@docker.com> <justin@specialbusservice.com>
+Mindy Preston <mindy.preston@docker.com> <meetup@yomimono.org>
+Nathan LeClaire <nathan.leclaire@gmail.com> <nathanleclaire@gmail.com>
+Riyaz Faizullabhoy <riyaz.faizullabhoy@docker.com> <riyazdf@berkeley.edu>
+Riyaz Faizullabhoy <riyaz.faizullabhoy@docker.com> <riyazdf@gmail.com>
+Rolf Neugebauer <rolf.neugebauer@docker.com> <rneugeba@users.noreply.github.com>
+Simon Ferquel <simon.ferquel@docker.com> <simon.ferquel@hotmail.fr>
+Thomas Gazagnaire <thomas@gazagnaire.org> <thomas@gazagnaire.com>
