@@ -16,8 +16,8 @@ services:
      - CAP_NET_BIND_SERVICE
      - CAP_NET_RAW
     net: host
-  - name: nginx
-    image: "nginx:1.11.12-alpine"
+  - name: redis
+    image: "redis:3.0.7-alpine"
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN
