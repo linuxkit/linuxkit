@@ -7,7 +7,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/docker/moby/src/pad4"
+	"github.com/linuxkit/linuxkit/src/pad4"
 	"github.com/surma/gocpio"
 )
 
