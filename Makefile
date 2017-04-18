@@ -22,14 +22,14 @@ PREFIX?=/usr/local/
 MOBY_DEPS=$(wildcard src/cmd/moby/*.go) Makefile vendor.conf
 MOBY_DEPS+=$(wildcard src/initrd/*.go) $(wildcard src/pad4/*.go)
 bin/moby: $(MOBY_DEPS) | bin
-	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
+	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
 	tar xf tmp_moby_bin.tar > $@
 	rm tmp_moby_bin.tar
 	touch $@
 
 INFRAKIT_DEPS=$(wildcard src/cmd/infrakit-instance-hyperkit/*.go) Makefile vendor.conf
 bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
-	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/docker/moby -o $@ > tmp_infrakit_instance_hyperkit_bin.tar
+	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit -o $@ > tmp_infrakit_instance_hyperkit_bin.tar
 	tar xf tmp_infrakit_instance_hyperkit_bin.tar > $@
 	rm tmp_infrakit_instance_hyperkit_bin.tar
 	touch $@

@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/moby/src/initrd"
+	"github.com/linuxkit/linuxkit/src/initrd"
 )
 
 // Process the build arguments and execute build
