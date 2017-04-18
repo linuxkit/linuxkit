@@ -1,0 +1,65 @@
+From 52b289d7080701cd0d67e8070888c0f8e0649c92 Mon Sep 17 00:00:00 2001
+From: Ian Campbell <ian.campbell@docker.com>
+Date: Fri, 17 Feb 2017 11:45:31 +0000
+Subject: [PATCH 8/8] Revert "sched/cpuacct: Show all possible CPUs in cpuacct
+ output"
+
+This reverts commit 5ca3726af7f66a8cc71ce4414cfeb86deb784491.
+
+Signed-off-by: Ian Campbell <ian.campbell@docker.com>
+---
+ kernel/sched/cpuacct.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/kernel/sched/cpuacct.c b/kernel/sched/cpuacct.c
+index bc0b309c3f19..64d2115f3564 100644
+--- a/kernel/sched/cpuacct.c
++++ b/kernel/sched/cpuacct.c
+@@ -169,7 +169,7 @@ static u64 __cpuusage_read(struct cgroup_subsys_state *css,
+ 	u64 totalcpuusage = 0;
+ 	int i;
+ 
+-	for_each_possible_cpu(i)
++	for_each_present_cpu(i)
+ 		totalcpuusage += cpuacct_cpuusage_read(ca, i, index);
+ 
+ 	return totalcpuusage;
+@@ -204,7 +204,7 @@ static int cpuusage_write(struct cgroup_subsys_state *css, struct cftype *cft,
+ 	if (val)
+ 		return -EINVAL;
+ 
+-	for_each_possible_cpu(cpu)
++	for_each_present_cpu(cpu)
+ 		cpuacct_cpuusage_write(ca, cpu, 0);
+ 
+ 	return 0;
+@@ -217,7 +217,7 @@ static int __cpuacct_percpu_seq_show(struct seq_file *m,
+ 	u64 percpu;
+ 	int i;
+ 
+-	for_each_possible_cpu(i) {
++	for_each_present_cpu(i) {
+ 		percpu = cpuacct_cpuusage_read(ca, i, index);
+ 		seq_printf(m, "%llu ", (unsigned long long) percpu);
+ 	}
+@@ -251,7 +251,7 @@ static int cpuacct_all_seq_show(struct seq_file *m, void *V)
+ 		seq_printf(m, " %s", cpuacct_stat_desc[index]);
+ 	seq_puts(m, "\n");
+ 
+-	for_each_possible_cpu(cpu) {
++	for_each_online_cpu(cpu) {
+ 		struct cpuacct_usage *cpuusage = per_cpu_ptr(ca->cpuusage, cpu);
+ 
+ 		seq_printf(m, "%d", cpu);
+@@ -284,7 +284,7 @@ static int cpuacct_stats_show(struct seq_file *sf, void *v)
+ 	int stat;
+ 
+ 	memset(val, 0, sizeof(val));
+-	for_each_possible_cpu(cpu) {
++	for_each_online_cpu(cpu) {
+ 		u64 *cpustat = per_cpu_ptr(ca->cpustat, cpu)->cpustat;
+ 
+ 		val[CPUACCT_STAT_USER]   += cpustat[CPUTIME_USER];
+-- 
+2.11.0
+

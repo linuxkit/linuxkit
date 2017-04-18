@@ -111,7 +111,7 @@ func buildInternal(name string, pull bool, conf string) {
 	// TODO examine contents to see what names they might have
 	log.Infof("Extract kernel image: %s", m.Kernel.Image)
 	const (
-		bzimageName = "bzImage"
+		bzimageName = "Image.gz"
 		ktarName    = "kernel.tar"
 	)
 	out, err := dockerRun(m.Kernel.Image, "tar", "cf", "-", bzimageName, ktarName)

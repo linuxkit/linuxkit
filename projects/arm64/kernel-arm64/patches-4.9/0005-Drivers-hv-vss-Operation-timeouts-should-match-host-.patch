@@ -1,0 +1,47 @@
+From 6ddf71aef1f50115da8f54e296e6cfdd84e998a3 Mon Sep 17 00:00:00 2001
+From: Alex Ng <alexng@messages.microsoft.com>
+Date: Sun, 6 Nov 2016 13:14:11 -0800
+Subject: [PATCH 5/8] Drivers: hv: vss: Operation timeouts should match host
+ expectation
+
+Increase the timeout of backup operations. When system is under I/O load,
+it needs more time to freeze. These timeout values should also match the
+host timeout values more closely.
+
+Signed-off-by: Alex Ng <alexng@microsoft.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit b357fd3908c1191f2f56e38aa77f2aecdae18bc8)
+---
+ drivers/hv/hv_snapshot.c | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
+index b1446d51ef45..4e543dbb731a 100644
+--- a/drivers/hv/hv_snapshot.c
++++ b/drivers/hv/hv_snapshot.c
+@@ -31,7 +31,10 @@
+ #define VSS_MINOR  0
+ #define VSS_VERSION    (VSS_MAJOR << 16 | VSS_MINOR)
+ 
+-#define VSS_USERSPACE_TIMEOUT (msecs_to_jiffies(10 * 1000))
++/*
++ * Timeout values are based on expecations from host
++ */
++#define VSS_FREEZE_TIMEOUT (15 * 60)
+ 
+ /*
+  * Global state maintained for transaction that is being processed. For a class
+@@ -187,7 +190,8 @@ static void vss_send_op(void)
+ 
+ 	vss_transaction.state = HVUTIL_USERSPACE_REQ;
+ 
+-	schedule_delayed_work(&vss_timeout_work, VSS_USERSPACE_TIMEOUT);
++	schedule_delayed_work(&vss_timeout_work, op == VSS_OP_FREEZE ?
++			VSS_FREEZE_TIMEOUT * HZ : HV_UTIL_TIMEOUT * HZ);
+ 
+ 	rc = hvutil_transport_send(hvt, vss_msg, sizeof(*vss_msg), NULL);
+ 	if (rc) {
+-- 
+2.11.0
+

@@ -1,0 +1,47 @@
+From e6fc7be9a7d041de632c5306d4872e27b26bd74f Mon Sep 17 00:00:00 2001
+From: Alex Ng <alexng@messages.microsoft.com>
+Date: Sun, 6 Nov 2016 13:14:07 -0800
+Subject: [PATCH 3/8] Drivers: hv: utils: Fix the mapping between host version
+ and protocol to use
+
+We should intentionally declare the protocols to use for every known host
+and default to using the latest protocol if the host is unknown or new.
+
+Signed-off-by: Alex Ng <alexng@microsoft.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 3da0401b4d0e17aea7526db0235d98fa535d903e)
+---
+ drivers/hv/hv_util.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
+
+diff --git a/drivers/hv/hv_util.c b/drivers/hv/hv_util.c
+index bcd06306f3e8..e7707747f56d 100644
+--- a/drivers/hv/hv_util.c
++++ b/drivers/hv/hv_util.c
+@@ -389,16 +389,19 @@ static int util_probe(struct hv_device *dev,
+ 		ts_srv_version = TS_VERSION_1;
+ 		hb_srv_version = HB_VERSION_1;
+ 		break;
+-	case(VERSION_WIN10):
++	case VERSION_WIN7:
++	case VERSION_WIN8:
++	case VERSION_WIN8_1:
+ 		util_fw_version = UTIL_FW_VERSION;
+ 		sd_srv_version = SD_VERSION;
+-		ts_srv_version = TS_VERSION;
++		ts_srv_version = TS_VERSION_3;
+ 		hb_srv_version = HB_VERSION;
+ 		break;
++	case VERSION_WIN10:
+ 	default:
+ 		util_fw_version = UTIL_FW_VERSION;
+ 		sd_srv_version = SD_VERSION;
+-		ts_srv_version = TS_VERSION_3;
++		ts_srv_version = TS_VERSION;
+ 		hb_srv_version = HB_VERSION;
+ 	}
+ 
+-- 
+2.11.0
+
