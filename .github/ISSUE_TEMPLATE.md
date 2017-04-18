@@ -10,7 +10,7 @@ information within 7 days, we cannot debug your issue and will close it. We
 will, however, reopen it if you later provide the information.
 
 For more information about reporting issues, see
-https://github.com/docker/linuxkit/blob/master/CONTRIBUTING.md#reporting-other-issues
+https://github.com/linuxkit/linuxkit/blob/master/CONTRIBUTING.md#reporting-other-issues
 
 ---------------------------------------------------
 BUG REPORT INFORMATION

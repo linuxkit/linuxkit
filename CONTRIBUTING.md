@@ -3,8 +3,8 @@
 Want to hack on this project? Awesome! Here are instructions to get you started.
 
 Additional information can be found in the docs:
-[issue triage](https://github.com/docker/linuxkit/blob/master/docs/issue-triage.md),
- and [review process](https://github.com/docker/linuxkit/blob/master/docs/reviewing.md).
+[issue triage](https://github.com/linuxkit/linuxkit/blob/master/docs/issue-triage.md),
+ and [review process](https://github.com/linuxkit/linuxkit/blob/master/docs/reviewing.md).
 
 ## Reporting security issues
 
@@ -25,7 +25,7 @@ A great way to contribute to the project is to send a detailed report when you
 encounter an issue. We always appreciate a well-written, thorough bug report,
 and will thank you for it!
 
-Check that [our issue database](https://github.com/docker/linuxkit/issues)
+Check that [our issue database](https://github.com/linuxkit/linuxkit/issues)
 doesn't already include that problem or suggestion before submitting an issue.
 If you find a match, you can use the "subscribe" button to get notified on
 updates. Do *not* leave random "+1" or "I have this too" comments, as they
@@ -47,7 +47,7 @@ This section gives the experienced contributor some tips and guidelines.
 
 Not sure if that typo is worth a pull request? Found a bug and know how to fix
 it? Do it! We will appreciate it. Any significant improvement should be
-documented as [a GitHub issue](https://github.com/docker/linuxkit/issues) before
+documented as [a GitHub issue](https://github.com/linuxkit/linuxkit/issues) before
 anybody starts working on it.
 
 We are always thrilled to receive pull requests. We do our best to process them
