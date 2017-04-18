@@ -18,7 +18,7 @@ all:	bzImage push
 # frequently.
 #
 # IMAGE_VERSION is used to determine if a new image should be pushed to hub.
-KERNEL_VERSION=4.9.20
+KERNEL_VERSION=4.9.22
 IMAGE_VERSION=$(KERNEL_VERSION)-1
 IMAGE_MAJOR_VERSION=4.9.x
 DEPS=Dockerfile Makefile kernel_config kernel_config.debug patches-4.9
