@@ -18,3 +18,8 @@ Configuration is constructed from `configs/`:
   * `arm64_defconfig`, the `arch/arm64/configs/defconfig` from Linux 4.9.15
   * `kernel_config` adding settings and overriding `CONFIG_BRIDGE m -> y`
   * `kernel_config.debug` if `$DEBUG != 0` configuring kernel debug options
+
+# Notes
+
+  * `Makefile` `find ... -depth ...` is broken on Linux
+  * vendor path in `src/cmd/moby/build.go` refs `docker/moby`
