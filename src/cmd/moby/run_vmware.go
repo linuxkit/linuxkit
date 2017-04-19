@@ -151,6 +151,13 @@ func buildVMX(cpus int, mem int, diskPath string, prefix string) string {
 
 	if diskPath != "" {
 		returnString += fmt.Sprintf(vmxDisk, diskPath)
+	} else {
+		vmdkPath := prefix + ".vmdk"
+		if _, err := os.Stat(vmdkPath); os.IsNotExist(err) {
+			log.Fatalf("File [%s] does not exist in current directory", vmdkPath)
+		} else {
+			returnString += fmt.Sprintf(vmxDisk, vmdkPath)
+		}
 	}
 
 	returnString += vmxPCI
