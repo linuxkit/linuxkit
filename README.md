@@ -84,7 +84,7 @@ quality during Q2 2017, and rebase the Docker Editions on this open source proje
 This is an open project without fixed judgements, open to the community to set the direction. The guiding principles are:
 - Security informs design
 - Infrastructure as code: immutable, manageable with code
-- Sensible, secure and well-tested defaults
+- Sensible, secure, and well-tested defaults
 - An open, pluggable platform for diverse use cases
 - Easy to use and participate in the project
 - Built with containers, for portability and reproducibility
