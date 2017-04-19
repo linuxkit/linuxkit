@@ -19,7 +19,7 @@
                |-----------------|                      |----------------|
                |                 |                      |                |
 <-- audit ---  |  config store   | <----- KV store ---> |  config store  |
-   diagnostic  |     deamon      |     (control path)   |     client     |
+   diagnostic  |     daemon      |     (control path)   |     client     |
                |                 |                      |                |
                |_________________|                      |________________|
                |                 |
@@ -111,7 +111,7 @@
   - if /search -> set search domain on moby host (todo)
   - if /nameserver/xxx -> set DNS servers on moby (todo)
 
-- The privileged system service update configuration files:
+- The privileged system service updates configuration files:
   - /ect/resolv.conf (todo)
 
 #### Calf
