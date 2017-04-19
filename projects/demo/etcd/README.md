@@ -44,9 +44,23 @@ You can perform rolling updates, by for example, switching the kernel version in
 
 ## Infrakit GCP setup
 
-Note: This setup is somewhat specific to our GCP setup (IP addresses
-and account info) and needs to be adjusted to your setting. The
-configuration is documented in the top-level README.md.
+You need to do the general setup as described in the demo [README](../README.md). Specifically, you need the `CLOUDSDK_*` environment variables set and you need to have authenticated with GCP.
+
+Note, the demo uses static IP addresses and they are specific to our
+setup. The IP addresses need to be changed in the `infrakit-gcp.json`
+config file.
+
+In order to use the static IP addresses we created a custom network:
+```
+gcloud compute networks create rneugeba-demo --mode auto
+gcloud compute networks subnets list
+# get IP subnet for rneugeba-demo
+gcloud compute firewall-rules create rneugeba-demo-internal --network \
+    rneugeba-demo --allow tcp,udp,icmp --source-ranges 10.132.0.0/9
+```
+The firewall setup means that all our projects networks can talk to the demo
+network.
+
 
 Build the image and upload it:
 ```
