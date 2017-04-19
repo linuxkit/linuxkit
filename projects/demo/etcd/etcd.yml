@@ -67,8 +67,18 @@ services:
       - CAP_SETUID
       - CAP_SETGID
     net: host
+  - name: node_exporter
+    image: "linuxkit/node_exporter:0c7c1588e4cbce9cc946c1a84d3902b38b4b7ada"
+    capabilities:
+     - all
+    net: host
+    pid: host
+    binds:
+     - /proc:/host/proc
+     - /sys:/host/sys
+     - /:/rootfs
   - name: etcd
-    image: "linuxkit/etcd"
+    image: "moby/etcd"
     capabilities:
      - CAP_CHOWN
      - CAP_SETUID
@@ -83,4 +93,8 @@ services:
 
 outputs:
   - format: kernel+initrd
-  - format: gcp-img
+  - format: gcp
+    project: docker4x
+    bucket: rolf
+    family: moby-demo
+    replace: true

@@ -1,0 +1,19 @@
+global:
+
+scrape_configs:
+  # - job_name: 'prometheus'
+  #   scrape_interval: 20s
+  #   static_configs:
+  #     - targets: ['localhost:9090']
+
+  # Scrape the Node Exporter
+  - job_name: 'node'
+    scrape_interval: 20s
+    static_configs:
+      - targets: ['localhost:9100', 'localhost:9101', 'localhost:9102', 'localhost:9103', 'localhost:9104']
+
+  # # Scrape the containerd exporter
+  # - job_name: 'containerd'
+  #   scrape_interval: 15s
+  #   static_configs:
+  #     - targets: ['192.168.65.200:13337', '192.168.65.201:13337', '192.168.65.202:13337', '192.168.65.203:13337', '192.168.65.204:13337']

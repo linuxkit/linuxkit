@@ -2,9 +2,9 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:42fe8cb1508b3afed39eb89821906e3cc7a70551
+  - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
   - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - linuxkit/containerd:fe1b7f438a234cb6481c6538295115eac2a0596d
+  - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
 services:
   - name: dhcpcd
     image: "linuxkit/dhcpcd:0d4012269cb142972fed8542fbdc3ff5a7b695cd"
@@ -16,9 +16,8 @@ services:
      - CAP_NET_BIND_SERVICE
      - CAP_NET_RAW
     net: host
-    oomScoreAdj: -800
-  - name: nginx
-    image: "nginx:1.11.12-alpine"
+  - name: redis
+    image: "redis:3.0.7-alpine"
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN
