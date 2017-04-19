@@ -1,6 +1,6 @@
 DEBUG ?= 0
-
-all:	bzImage push
+VMLINUX = Image.gz
+all:	$(VMLINUX) push
 
 # We push the image to hub twice, once with the full kernel version of
 # "mobylinux/kernel:<kernel version>.<major version>.<minor version>-<n>",
@@ -29,26 +29,26 @@ DEPS=Dockerfile Makefile configs patches-4.9
 kernel.tag: $(DEPS)
 	BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
 
-bzImage: kernel.tag
+$(VMLINUX): kernel.tag
 	rm -rf etc/kernel-patches
 	mkdir -p arm64 etc lib usr sbin etc/kernel-patches
-	docker run --rm --net=none --log-driver=none $(shell cat kernel.tag) tar cf - bzImage kernel-dev.tar kernel-headers.tar vmlinux kernel-modules.tar | tar xf - -C arm64
+	docker run --rm --net=none --log-driver=none $(shell cat kernel.tag) tar cf - $(VMLINUX) kernel-dev.tar kernel-headers.tar vmlinux kernel-modules.tar | tar xf - -C arm64
 	cp arm64/kernel-modules.tar kernel.tar
-	cp arm64/bzImage $@
+	cp arm64/$(VMLINUX) $@
 
 .PHONY: image push tag
 
 MEDIA_TOYBOX=mobylinux/toybox-media:0a26fe5f574e444849983f9c4148ef74b3804d55@sha256:5ac38f77b66deb194c9016591b9b096e81fcdc9f7c3e6d01566294a6b4b4ebd2
 
 BASE="$MEDIA_TOYBOX"
-IMAGE=kernel-wireguard
+IMAGE=kernel-arm64
 
 default: push
 
 Dockerfile.media:
 	printf "FROM $(MEDIA_TOYBOX)\nADD . /\n" > $@
 
-image: Dockerfile.media bzImage kernel.tar $(DEPS)
+image: Dockerfile.media $(VMLINUX) kernel.tar $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -f Dockerfile.media -
 
 push: image
@@ -68,6 +68,6 @@ tag: image
 
 .PHONY: clean
 clean:
-	rm -rf arm64 lib usr sbin kernel.tag Dockerfile.media bzImage kernel.tar
+	rm -rf arm64 lib usr sbin kernel.tag Dockerfile.media $(VMLINUX) kernel.tar
 
 .DELETE_ON_ERROR:

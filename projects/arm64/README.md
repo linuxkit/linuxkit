@@ -1,12 +1,11 @@
-# ARM64 Moby
+# ARM64 LinuxKit
 
-Attempting to build Moby for ARM64.
-
+Attempting to support ARM64 in LinuxKit.
 
 ## Builder Container
 
-`make -C alpine-build-kernel-arm64` builds the container used for building ARM64
-images on ARM64.
+`make -C alpine-build-kernel-aarch64` builds the container used for building
+ARM64 images on ARM64.
 
 Based off `aarch64/alpine:3.5`.
 

@@ -1,5 +1,4 @@
-# FROM mor1/alpine-build-kernel-arm64:4614215ee9a7ccedb53cf0e7ab2efe2c99b57ba3
-FROM mor1/alpine-build-kernel:cfdd576c36a52ed2dd62f237f79eeedc2dd3697b
+FROM mor1/alpine-build-kernel-aarch64:6e4505a2e9f9ef66fc306469638c5e1a3b69bfd8
 
 ARG KERNEL_VERSION
 ARG DEBUG=0
@@ -7,7 +6,8 @@ ARG DEBUG=0
 # Fetch Linux source
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
-RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
+RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ \
+    && mv /linux-${KERNEL_VERSION} /linux
 
 # Build config
 COPY configs /configs

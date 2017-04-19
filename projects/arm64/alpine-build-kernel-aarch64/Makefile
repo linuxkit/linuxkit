@@ -2,7 +2,7 @@
 
 ORG=mor1
 BASE=aarch64/alpine:3.5
-IMAGE=alpine-build-kernel-arm64
+IMAGE=alpine-build-kernel-aarch64
 
 default: push
 
