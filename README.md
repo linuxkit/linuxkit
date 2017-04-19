@@ -9,9 +9,9 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 - Easy tooling, with easy iteration
 - Built with containers, for running containers
 - Designed for building and running clustered applications, including but not limited to container orchestration such as Docker or Kubernetes
-- Designed from the experience of building Docker Editions, but redesigned as a general purpose toolkit
+- Designed from the experience of building Docker Editions, but redesigned as a general-purpose toolkit
 - Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) or similar tools
-- Includes a set of longer term collaborative projects in various stages of development to innovate on kernel and userspace changes, particularly around security
+- Includes a set of longer-term collaborative projects in various stages of development to innovate on kernel and userspace changes, particularly around security
 
 ## Getting Started
 
@@ -84,7 +84,7 @@ quality during Q2 2017, and rebase the Docker Editions on this open source proje
 This is an open project without fixed judgements, open to the community to set the direction. The guiding principles are:
 - Security informs design
 - Infrastructure as code: immutable, manageable with code
-- Sensible secure and well tested defaults
+- Sensible, secure, and well-tested defaults
 - An open, pluggable platform for diverse use cases
 - Easy to use and participate in the project
 - Built with containers, for portability and reproducibility
