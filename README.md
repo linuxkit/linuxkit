@@ -20,10 +20,9 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 Simple build instructions: use `make` to build. This will build the customisation tool in `bin/`. Add this
 to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/moby /usr/local/bin/`. Or you can use `sudo make install`.
 
-If you already have `go` installed you can use `go get -u github.com/docker/moby/src/cmd/moby` to install
-the `moby` tool, and then use `moby build linuxkit.yml` to build the example configuration. You
-can use `go get -u github.com/docker/moby/src/cmd/infrakit-instance-hyperkit` to get the
-hyperkit infrakit tool.
+If you already have `go` installed you can use `go get -u github.com/linuxkit/linuxkit/src/cmd/moby` to install
+the `moby` tool. You can use `go get -u github.com/linuxkit/linuxkit/src/cmd/infrakit-instance-hyperkit`
+to get the hyperkit infrakit tool.
 
 Once you have built the tool, use `moby build linuxkit.yml` to build the example configuration,
 and `bin/moby run linuxkit` to run locally. Use `halt` to terminate on the console.
