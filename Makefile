@@ -42,7 +42,7 @@ test-bzImage: test-initrd.img
 # interactive versions need to use volume mounts
 .PHONY: test-qemu-efi
 test-qemu-efi: test-efi.iso
-	./scripts/qemu.sh $^ 2>&1 | tee test-efi.log
+	script -q /dev/null $(MOBY) run $^ | tee test-efi.log
 	$(call check_test_log, test-efi.log)
 
 bin:
@@ -68,7 +68,7 @@ test-gcp: $(MOBY) test.img.tar.gz
 
 .PHONY: test
 test: test-initrd.img test-bzImage test-cmdline
-	tar cf - $^ | ./scripts/qemu.sh 2>&1 | tee test.log
+	script -q /dev/null $(MOBY) run test | tee test.log
 	$(call check_test_log, test.log)
 
 test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
