@@ -32,7 +32,7 @@ kubeadm-init.sh
 ```
 
 Once `kubeadm` exits, make sure to copy the `kubeadm join` arguments,
-and try `runc exec kubelet kubectl get nodes`.
+and try `kubectl get nodes` from within the master.
 
 To boot a node use:
 ```
