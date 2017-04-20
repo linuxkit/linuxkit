@@ -1,0 +1,49 @@
+kernel:
+  image: "linuxkit/okernel:latest"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
+  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
+  - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    net: host
+    pid: host
+    ipc: host
+    capabilities:
+     - CAP_SYS_ADMIN
+services:
+  - name: rngd
+    image: "linuxkit/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    capabilities:
+     - CAP_SYS_ADMIN
+    oomScoreAdj: -800
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
+    binds:
+     - /var:/var
+     - /tmp:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    oomScoreAdj: -800
+  - name: sshd
+    image: "linuxkit/sshd:e108d208adf692c8a0954f602743e0eec445364e"
+    capabilities:
+     - all
+    net: host
+    pid: host
+    binds:
+     - /root/.ssh:/root/.ssh
+     - /etc/resolv.conf:/etc/resolv.conf
+files:
+  - path: root/.ssh/authorized_keys
+    contents: '#your ssh key here'
+outputs:
+  - format: kernel+initrd
+  - format: iso-bios
+  - format: iso-efi

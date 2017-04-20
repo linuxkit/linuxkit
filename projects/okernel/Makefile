@@ -3,9 +3,9 @@ DEBUG ?= 0
 all:	bzImage tag
 
 # We push the image to hub twice, once with the full kernel version of
-# "mobylinux/kernel:<kernel version>.<major version>.<minor version>-<n>",
+# "linuxkit/kernel:<kernel version>.<major version>.<minor version>-<n>",
 # where "<n>" is a monotonically increasing config number, and as
-# "mobylinux/kernel:<kernel version>.<major version>.x". This version
+# "linuxkit/kernel:<kernel version>.<major version>.x". This version
 # number is stored in IMAGE_VERSION.
 #
 # We expect most users to us the "<kernel version>.<major version>.x"
@@ -19,16 +19,29 @@ all:	bzImage tag
 #
 # IMAGE_VERSION is used to determine if a new image should be pushed to hub.
 
-KERNEL_VERSION=4.11-rc4
+ifdef KERNEL
+ifneq ($(KERNEL),latest)
+KERNEL_VERSION=$(KERNEL)
 IMAGE_VERSION=$(KERNEL_VERSION)-0
+else
+KERNEL_VERSION=linux-okernel
+IMAGE_VERSION=latest
+endif
+else
+KERNEL_VERSION=linux-okernel
+IMAGE_VERSION=latest
+endif
+
+IMAGE=okernel
 IMAGE_MAJOR_VERSION=4.11.x
 DEPS=Dockerfile.okernel Makefile kernel_config.okernel Dockerfile.kvmod
 
-PROXY_URL=$(HTTP_PROXY)
+MEDIA_TOYBOX=linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
+
 
 kernel.tag: $(DEPS)
-ifdef PROXY_URL
-	BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) --build-arg PROXY=$(PROXY_URL) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
+ifdef HTTP_PROXY
+	BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) --build-arg HTTP_PROXY=$(HTTP_PROXY) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
 else
 	BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
 endif
@@ -42,34 +55,31 @@ bzImage: kernel.tag
 	tar xf kernel_vuln.tar -C kvmod
 	cp x86_64/bzImage $@
 
-.PHONY: image push tag
-
-MEDIA_TOYBOX=linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
-
-#BASE="$MEDIA_TOYBOX"
-IMAGE=kernel
+.PHONY: image push tag kvmod
 
 default: push
 
 Dockerfile.media:
-	printf "FROM $(MEDIA_TOYBOX)\nADD . /\n" > $@
+	printf "FROM $(MEDIA_TOYBOX)\nCOPY bzImage kernel.tar /\n" > $@
 
 image: Dockerfile.media bzImage kernel.tar Dockerfile.kvmod kvmod/root/kvmod/kernel_vuln.ko $(DEPS)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -f Dockerfile.media -
-	tar cf - $^ | docker build --no-cache -t ok-kvmod:$(IMAGE_VERSION) -f Dockerfile.kvmod -
+
+kvmod: Dockerfile.kvmod kvmod/root/kvmod/kernel_vuln.ko $(DEPS)
+	tar cf - $^ | docker build --no-cache -t okernel-kvmod:$(IMAGE_VERSION) -f Dockerfile.kvmod -
 
 push: image
-	docker pull mobylinux/$(IMAGE):$(IMAGE_VERSION) || \
-		(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker push mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
-		 docker push mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	docker pull linuxkit/$(IMAGE):$(IMAGE_VERSION) || \
+		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker push linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
+		 docker push linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: image
-	(docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_VERSION) && \
-	docker tag $(IMAGE):build mobylinux/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
+	docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
