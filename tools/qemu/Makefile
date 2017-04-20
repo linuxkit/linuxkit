@@ -5,10 +5,10 @@ IMAGE=qemu
 
 default: push
 
-hash: Dockerfile qemu.sh repositories
+hash: Dockerfile repositories
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm --entrypoint /bin/sh $(IMAGE):build -c 'cat Dockerfile qemu.sh /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
+	docker run --rm --entrypoint /bin/sh $(IMAGE):build -c 'cat Dockerfile /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
 
 push: hash
 	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
