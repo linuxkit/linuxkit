@@ -1,20 +1,21 @@
 FROM linuxkit/alpine-build-kernel:cfdd576c36a52ed2dd62f237f79eeedc2dd3697b@sha256:3fe08db373a9373ba1616a485858f01ebd2d7a3cb364a099d0ed8b45fa419da2
 
-#ARG KERNEL_PREFIX
 ARG KERNEL_VERSION
 ARG DEBUG=0
-ARG PROXY
 
-#ENV KERNEL_SOURCE=https://github.com/linux-okernel/linux-okernel/archive/ok-${KERNEL_VERSION}.tar.gz
-ENV KERNEL_SOURCE=https://github.com/linux-okernel/linux-okernel/archive/linux-okernel.tar.gz
-
+ENV OKERNEL_SOURCE=https://github.com/linux-okernel/linux-okernel/archive/${KERNEL_VERSION}.tar.gz
 ENV USPACE_SOURCE=https://github.com/linux-okernel/linux-okernel-components/archive/master.tar.gz
 
-RUN curl -fsSL -x ${PROXY} -o linux-${KERNEL_VERSION}.tar.gz ${KERNEL_SOURCE}
+RUN apk --update add openssl openssl-dev
 
-RUN cat linux-${KERNEL_VERSION}.tar.gz | tar --absolute-names -xz && mv /linux-okernel-linux-okernel /linux
+RUN if [ -n $HTTP_PROXY ]; then \
+    curl -fsSL -x ${HTTP_PROXY} -o linux-${KERNEL_VERSION}.tar.gz ${OKERNEL_SOURCE}; \
+    else \
+    curl -fsSL -o linux-${KERNEL_VERSION}.tar.gz ${OKERNEL_SOURCE}; \
+    fi
 
-# NOTE: This currently re-uses the 4.9 kernel config with CONFIG_OKERNEL set
+RUN cat linux-${KERNEL_VERSION}.tar.gz | tar --absolute-names -xz && mv /linux-okernel-${KERNEL_VERSION} /linux
+
 COPY kernel_config.okernel /linux/arch/x86/configs/x86_64_defconfig
 #COPY kernel_config.debug /linux/debug_config
 
@@ -57,17 +58,23 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
     mkdir -p "$dir"/arch/x86 && cp -a arch/x86/include "$dir"/arch/x86/ && \
     ( cd /tmp && tar cf /kernel-dev.tar usr/src )
 
-RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /kernel-source-info
+RUN printf "KERNEL_SOURCE=${OKERNEL_SOURCE}\n" > /kernel-source-info
 
 # Build kernel module from linux-okernel-components
-RUN curl -fsSL -x ${PROXY} -o okernel-userspace.tar.gz ${USPACE_SOURCE}
+RUN if [ -n $HTTP_PROXY ]; then \
+    curl -fsSL -x ${HTTP_PROXY} -o okernel-userspace.tar.gz ${USPACE_SOURCE}; \
+    else \
+    curl -fsSL -o okernel-userspace.tar.gz ${USPACE_SOURCE}; \
+    fi
 
 RUN cat okernel-userspace.tar.gz | tar --absolute-names -xz && mv /linux-okernel-components-master /ok_components
 
 WORKDIR /ok_components/test_mappings/kvmod
-RUN sed -i 's_~/linux-okernel_/linux_' Makefile
-RUN make
-RUN mkdir -p /tmp/root/kvmod && cp kernel_vuln.ko /tmp/root/kvmod
-WORKDIR /tmp
-RUN tar cf /kernel_vuln.tar root
+
+RUN sed -i 's_~/linux-okernel_/linux_' Makefile && \
+    make && \
+    mkdir -p /tmp/root/kvmod && cp kernel_vuln.ko /tmp/root/kvmod && \
+    cd /tmp && \
+    tar cf /kernel_vuln.tar root
+
 WORKDIR /
