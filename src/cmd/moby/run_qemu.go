@@ -10,6 +10,28 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+// QemuImg is the version of qemu container
+const QemuImg = "linuxkit/qemu:17f052263d63c8a2b641ad91c589edcbb8a18c82"
+
+// QemuConfig contains the config for Qemu
+type QemuConfig struct {
+	Prefix        string
+	ISO           bool
+	UEFI          bool
+	Kernel        bool
+	GUI           bool
+	DiskPath      string
+	DiskSize      string
+	FWPath        string
+	Arch          string
+	CPUs          string
+	Memory        string
+	KVM           bool
+	Containerized bool
+	QemuBinPath   string
+	QemuImgPath   string
+}
+
 func runQemu(args []string) {
 	qemuFlags := flag.NewFlagSet("qemu", flag.ExitOnError)
 	qemuFlags.Usage = func() {
@@ -53,78 +75,192 @@ func runQemu(args []string) {
 		log.Warnf("Both -iso and -uefi have been used")
 	}
 
-	// Before building qemu arguments, check qemu is in the $PATH
-	qemuBinPath := "qemu-system-" + *qemuArch
-	qemuImgPath := "qemu-img"
-	fullQemuPath, err := exec.LookPath(qemuBinPath)
+	config := QemuConfig{
+		Prefix:   prefix,
+		ISO:      *qemuIso,
+		UEFI:     *qemuUEFI,
+		Kernel:   *qemuKernel,
+		GUI:      *qemuGUI,
+		DiskPath: *qemuDiskPath,
+		DiskSize: *qemuDiskSize,
+		FWPath:   *qemuFWPath,
+		Arch:     *qemuArch,
+		CPUs:     *qemuCPUs,
+		Memory:   *qemuMem,
+	}
+
+	config, qemuArgs := buildQemuCmdline(config)
+
+	var err error
+	if config.Containerized {
+		err = runQemuContainer(config, qemuArgs)
+	} else {
+		err = runQemuLocal(config, qemuArgs)
+	}
 	if err != nil {
-		log.Fatalf("Unable to find %s within the $PATH", qemuBinPath)
+		log.Fatal(err.Error())
+	}
+}
+
+func runQemuLocal(config QemuConfig, args []string) error {
+	if config.DiskPath != "" {
+		// If disk doesn't exist then create one
+		if _, err := os.Stat(config.DiskPath); err != nil {
+			if os.IsNotExist(err) {
+				log.Infof("Creating new qemu disk [%s]", config.DiskPath)
+				qemuImgCmd := exec.Command(config.QemuImgPath, "create", "-f", "qcow2", config.DiskPath, config.DiskSize)
+				log.Debugf("%v\n", qemuImgCmd.Args)
+				if err := qemuImgCmd.Run(); err != nil {
+					return fmt.Errorf("Error creating disk [%s]:  %s", config.DiskPath, err.Error())
+				}
+			} else {
+				return err
+			}
+		} else {
+			log.Infof("Using existing disk [%s]", config.DiskPath)
+		}
+	}
+
+	// Check for OVMF firmware before running
+	if config.UEFI {
+		if _, err := os.Stat(config.FWPath); err != nil {
+			if os.IsNotExist(err) {
+				return fmt.Errorf("File [%s] does not exist, please ensure OVMF is installed", config.FWPath)
+			}
+			return err
+		}
+	}
+
+	qemuCmd := exec.Command(config.QemuBinPath, args...)
+	// If verbosity is enabled print out the full path/arguments
+	log.Debugf("%v\n", qemuCmd.Args)
+
+	// If we're not using a separate window then link the execution to stdin/out
+	if config.GUI != true {
+		qemuCmd.Stdin = os.Stdin
+		qemuCmd.Stdout = os.Stdout
+		qemuCmd.Stderr = os.Stderr
+	}
+
+	return qemuCmd.Run()
+}
+
+func runQemuContainer(config QemuConfig, args []string) error {
+	wd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	dockerArgs := []string{"run", "-i", "--rm", "-v", fmt.Sprintf("%s:%s", wd, "/tmp"), "-w", "/tmp"}
+
+	if config.KVM {
+		dockerArgs = append(dockerArgs, "--device", "/dev/kvm")
+	}
+
+	dockerPath, err := exec.LookPath("docker")
+	if err != nil {
+		return fmt.Errorf("Unable to find docker in the $PATH")
+	}
+
+	if config.DiskPath != "" {
+		// If disk doesn't exist then create one
+		if _, err = os.Stat(config.DiskPath); err != nil {
+			if os.IsNotExist(err) {
+				log.Infof("Creating new qemu disk [%s]", config.DiskPath)
+				imgArgs := append(dockerArgs, QemuImg, "qemu-img", "create", "-f", "qcow2", config.DiskPath, config.DiskSize)
+				qemuImgCmd := exec.Command(dockerPath, imgArgs...)
+				log.Debugf("%v\n", qemuImgCmd.Args)
+				if err = qemuImgCmd.Run(); err != nil {
+					return fmt.Errorf("Error creating disk [%s]:  %s", config.DiskPath, err.Error())
+				}
+			} else {
+				return err
+			}
+		} else {
+			log.Infof("Using existing disk [%s]", config.DiskPath)
+		}
+	}
+
+	qemuArgs := append(dockerArgs, QemuImg, "qemu-system-"+config.Arch)
+	qemuArgs = append(qemuArgs, args...)
+	qemuCmd := exec.Command(dockerPath, qemuArgs...)
+	// If verbosity is enabled print out the full path/arguments
+	log.Debugf("%v\n", qemuCmd.Args)
+
+	// GUI mode not currently supported in a container. Although it could be in future.
+	if config.GUI == true {
+		return fmt.Errorf("GUI mode is only supported when running locally, not in a container")
+	}
+
+	qemuCmd.Stdin = os.Stdin
+	qemuCmd.Stdout = os.Stdout
+	qemuCmd.Stderr = os.Stderr
+
+	return qemuCmd.Run()
+}
+
+func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
+	// Before building qemu arguments, check if qemu is in the PATH or fallback to containerized
+	qemuBinPath := "qemu-system-" + config.Arch
+	qemuImgPath := "qemu-img"
+
+	var err error
+	config.QemuBinPath, err = exec.LookPath(qemuBinPath)
+	if err != nil {
+		log.Infof("Unable to find %s within the $PATH. Using a container", qemuBinPath)
+		config.Containerized = true
+	}
+
+	config.QemuImgPath, err = exec.LookPath(qemuImgPath)
+	if err != nil {
+		// No need to show the error message twice
+		if !config.Containerized {
+			log.Infof("Unable to find %s within the $PATH. Using a container", qemuImgPath)
+			config.Containerized = true
+		}
 	}
 
 	// Iterate through the flags and build arguments
 	var qemuArgs []string
 	qemuArgs = append(qemuArgs, "-device", "virtio-rng-pci")
-	qemuArgs = append(qemuArgs, "-smp", *qemuCPUs)
-	qemuArgs = append(qemuArgs, "-m", *qemuMem)
+	qemuArgs = append(qemuArgs, "-smp", config.CPUs)
+	qemuArgs = append(qemuArgs, "-m", config.Memory)
 
 	// Look for kvm device and enable for qemu if it exists
 	if _, err = os.Stat("/dev/kvm"); os.IsNotExist(err) {
 		qemuArgs = append(qemuArgs, "-machine", "q35")
 	} else {
+		config.KVM = true
 		qemuArgs = append(qemuArgs, "-enable-kvm")
 		qemuArgs = append(qemuArgs, "-machine", "q35,accel=kvm:tcg")
 	}
 
-	if *qemuDiskPath != "" {
-		// If disk doesn't exist then create one
-		if _, err = os.Stat(*qemuDiskPath); os.IsNotExist(err) {
-			log.Infof("Creating new qemu disk [%s]", *qemuDiskPath)
-			fullQemuImgPath, err := exec.LookPath(qemuImgPath)
-			if err != nil {
-				log.Fatalf("Unable to find %s within the $PATH", qemuImgPath)
-			}
-			cmd := exec.Command(fullQemuImgPath, "create", "-f", "qcow2", *qemuDiskPath, *qemuDiskSize)
-			if err = cmd.Run(); err != nil {
-				log.Fatalf("Error creating disk [%s]:  %s", *qemuDiskPath, err.Error())
-			}
-		} else {
-			log.Infof("Using existing disk [%s]", *qemuDiskPath)
-		}
-		qemuArgs = append(qemuArgs, "-drive", "file="+*qemuDiskPath+",format=qcow2")
+	if config.DiskPath != "" {
+		qemuArgs = append(qemuArgs, "-drive", "file="+config.DiskPath+",format=qcow2")
 	}
 
 	// Check flags for iso/uefi boot and if so disable kernel boot
-	if *qemuIso {
-		*qemuKernel = false
-		qemuIsoPath := buildPath(prefix, ".iso")
+	if config.ISO {
+		config.Kernel = false
+		qemuIsoPath := buildPath(config.Prefix, ".iso")
 		qemuArgs = append(qemuArgs, "-cdrom", qemuIsoPath)
 	}
 
-	if *qemuUEFI {
-		// Check for OVMF firmware before building paths
-		_, err = os.Stat(*qemuFWPath)
-		if err != nil {
-			if os.IsNotExist(err) {
-				log.Fatalf("File [%s] does not exist, please ensure OVMF is installed", *qemuFWPath)
-			} else {
-				log.Fatalf("%s", err.Error())
-			}
-		}
-
-		*qemuKernel = false
-		qemuIsoPath := buildPath(prefix, "-efi.iso")
-		qemuArgs = append(qemuArgs, "-pflash", *qemuFWPath)
+	if config.UEFI {
+		config.Kernel = false
+		qemuIsoPath := buildPath(config.Prefix, "-efi.iso")
+		qemuArgs = append(qemuArgs, "-pflash", config.FWPath)
 		qemuArgs = append(qemuArgs, "-cdrom", qemuIsoPath)
 		qemuArgs = append(qemuArgs, "-boot", "d")
 	}
 
 	// build kernel boot config from bzImage/initrd/cmdline
-	if *qemuKernel {
-		qemuKernelPath := buildPath(prefix, "-bzImage")
-		qemuInitrdPath := buildPath(prefix, "-initrd.img")
+	if config.Kernel {
+		qemuKernelPath := buildPath(config.Prefix, "-bzImage")
+		qemuInitrdPath := buildPath(config.Prefix, "-initrd.img")
 		qemuArgs = append(qemuArgs, "-kernel", qemuKernelPath)
 		qemuArgs = append(qemuArgs, "-initrd", qemuInitrdPath)
-		consoleString, err := ioutil.ReadFile(prefix + "-cmdline")
+		consoleString, err := ioutil.ReadFile(config.Prefix + "-cmdline")
 		if err != nil {
 			log.Infof(" %s\n defaulting to console output", err.Error())
 			qemuArgs = append(qemuArgs, "-append", "console=ttyS0 console=tty0 page_poison=1")
@@ -133,25 +269,11 @@ func runQemu(args []string) {
 		}
 	}
 
-	if *qemuGUI != true {
+	if config.GUI != true {
 		qemuArgs = append(qemuArgs, "-nographic")
 	}
 
-	// If verbosity is enabled print out the full path/arguments
-	log.Debugf("%s %v\n", fullQemuPath, qemuArgs)
-
-	cmd := exec.Command(fullQemuPath, qemuArgs...)
-
-	// If we're not using a seperate window then link the execution to stdin/out
-	if *qemuGUI != true {
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-	}
-
-	if err = cmd.Run(); err != nil {
-		log.Fatalf("Error starting %s: %s", fullQemuPath, err.Error())
-	}
+	return config, qemuArgs
 }
 
 func buildPath(prefix string, postfix string) string {
