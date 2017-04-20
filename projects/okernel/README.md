@@ -1,19 +1,25 @@
-Authors: Chris Dalton <cid@hpi.com>, Nigel Edwards <nigel.edwards@hpe.com>
+Authors: Chris Dalton <cid@hpi.com>, Nigel Edwards <nigel.edwards@hpe.com>,
+Theo Koulouris <theo.koulouris@hpe.com>
 
 # Split Kernel
 
-Similar to the nested-kernel work for BSD by Dautenhan[1], the aim of
-the split kernel is to introduce a level of intra-kernel protection
-into the kernel so that, amongst other things, we can offer lifetime
-guarantees over kernel code and data integrity.  Unlike the BSD-based
-nested kernel work we are focused on the Linux kernel not BSD and do
-make use of HW virtualization features such as Extended Page Tables
+Project links:
+- okernel sources on GitHub: https://github.com/linux-okernel/linux-okernel
+- Userspace components and supporting material:
+  https://github.com/linux-okernel/linux-okernel-components
+
+Similar to the nested-kernel work for BSD by Dautenhan et al[1], the aim
+of the split kernel (okernel) is to introduce a level of intra-kernel
+protection into the kernel so that, amongst other things, we can offer
+lifetime guarantees over kernel code and data integrity.  Unlike the BSD-
+based nested kernel work, we are focused on the Linux kernel (not BSD) and
+do make use of HW virtualization features such as Extended Page Tables
 (EPT) or equivalent to provide protection from malicious kernel
 changes. (Our initial prototype is based on Intel x86, but the
 intention is to be architecture neutral so we can apply it to other
 architectures, including AMD and ARM.)
 
-The split-kernel provides a (protected) virtualized view of the kernel
+The split kernel provides a (protected) virtualized view of the kernel
 for processes entering the kernel through exceptions, syscalls and
 interrupts. Though we make use of hardware features designed to
 support virtualization, we do not virtualize at the full virtual
@@ -62,25 +68,52 @@ to the NR-mode context.
 If a process in NR-mode attempts to change the kernel memory in
 conflict with permissions in the lower-level page tables, a VMEXIT (in
 the current prototype which uses Intel VMX) is triggered. R-mode is
-then entered where will handle the permission violation.
+then entered where the permission violation can be handled.
+
+# Integration with LinuxKit
+
+Custom Linux distributions utilizing the split kernel can be readily built
+using LinuxKit by simply specifying an okernel Docker image in the `kernel`
+section of the OS image YAML specification. See the sample YAML files provided
+in [examples](https://github.com/linuxkit/linuxkit/tree/master/projects/okernel/examples).
+
+## Building the split kernel image for LinuxKit
+
+ - `make` will build and package the latest version of the split kernel, by
+   pulling sources from the top-of-tree of the okernel project GitHub
+   (https://github.com/linux-okernel/linux-okernel).
+ - Additionally, a specific version of the kernel can be built
+   by setting the 'KERNEL' environment variable to the appropriate
+   value, e.g.: `make KERNEL=ok-4.11-rc2`. The value MUST correspond
+   to a legitimate okernel tag present in the project GitHub
+   (https://github.com/linux-okernel/linux-okernel/tags) beginning
+   with __"ok-"__.
+   `make KERNEL=latest` will build the top-of-tree release, equivalent to `make`.
+
+`make kvmod` or `make KERNEL=NNNNNNNN kvmod` where "NNNNNNNN" is the release
+string corresponding to a kernel version, will build the kernel
+vulnerability emulation kernel module for that kernel, useful for testing.
+
 
 # Limitations and Caveats
 
 The current implementation does not have any protection of the kernel
-in place yet. It is a demonstration that you can create processes run
-them in NR-mode using EPTs with a shared kernel. As a further
-demonstrations of the concept, it implements protected memory pages,
+in place yet. It is a demonstration that you can create processes and
+run them in NR-mode using EPTs with a shared kernel. As a further
+demonstration of the concept, it implements protected memory pages,
 whereby a process may request a protected memory page which will not
 be mapped into the EPTs for other processes.
+
+## Roadmap
 
 The next step, and the subject of our ongoing research is to design
 the memory protection architecture for the kernel. Examples of the
 things that we are considering protecting from root mode processes
 are:
- - Protection of the page tables (no NR mode process can modify an
-   page table) 
- - Protection of kernel executable code RX only
- - Protection of kernel data structures RO
+ - Protection of the page tables (no NR mode process can modify a
+   page table)
+ - Protection of kernel executable code (RX only)
+ - Protection of kernel data structures (RO)
 
 # References
 
@@ -92,5 +125,4 @@ Programming Languages and Operating Systems, March 2015.
 - [2] Dune: Safe user-level access to privileged CPU features, Adam
 Belay, Andrea Bittau, Ali Mashtizadeh, David Terei, David Mazières,
 and Christos Kozyrakis, OSDI '12, Proceedings of the 10th USENIX
-Symposium on Operating Systems Design and Implementation, October
-2012.
+Symposium on Operating Systems Design and Implementation, October 2012.
