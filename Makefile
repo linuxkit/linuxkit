@@ -5,13 +5,11 @@ all: default
 VERSION="0.0" # dummy for now
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5
-
 MOBY?=bin/moby
 GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH=amd64
 ifneq ($(GOOS),linux)
-CROSS=-e GOOS=$(GOOS) -e GOARCH=$(GOARCH)
+CROSS=--build-arg GOOS=$(GOOS) --build-arg GOARCH=$(GOARCH)
 endif
 ifeq ($(GOOS),darwin)
 default: bin/infrakit-instance-hyperkit
@@ -22,17 +20,17 @@ PREFIX?=/usr/local/
 MOBY_DEPS=$(wildcard src/cmd/moby/*.go) Makefile vendor.conf
 MOBY_DEPS+=$(wildcard src/initrd/*.go) $(wildcard src/pad4/*.go)
 bin/moby: $(MOBY_DEPS) | bin
-	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
-	tar xf tmp_moby_bin.tar > $@
-	rm tmp_moby_bin.tar
-	touch $@
+	docker build --build-arg ldflags="-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" --build-arg target=moby $(CROSS) -t $(GIT_COMMIT)-builder .
+	$(eval cid = $(shell docker create $(GIT_COMMIT)-builder))
+	docker cp $(cid):/out/moby $@
+	docker rm $(cid)
 
 INFRAKIT_DEPS=$(wildcard src/cmd/infrakit-instance-hyperkit/*.go) Makefile vendor.conf
 bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
-	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit -o $@ > tmp_infrakit_instance_hyperkit_bin.tar
-	tar xf tmp_infrakit_instance_hyperkit_bin.tar > $@
-	rm tmp_infrakit_instance_hyperkit_bin.tar
-	touch $@
+	docker build --build-arg target=infrakit-instance-hyperkit -t $(GIT_COMMIT)-builder .
+	$(eval cid = $(shell docker create $(GIT_COMMIT)-builder))
+	docker cp $(cid):/out/moby $@
+	docker rm $(cid)
 
 test-initrd.img: $(MOBY) test/test.yml
 	bin/moby build test/test.yml
