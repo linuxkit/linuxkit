@@ -1,5 +1,5 @@
 Linux kernel builds, based on mostly-vanilla upstream Linux kernels.
-See [../docs/kernel-patches.md] for how the local patches in `patches-*`
+See [../docs/kernel-patches.md](../docs/kernel-patches.md) for how the local patches in `patches-*`
 are maintained.
 
 The build is mostly silent. A local build can be run via `make`. To view
