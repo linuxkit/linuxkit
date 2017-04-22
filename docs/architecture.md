@@ -12,7 +12,7 @@ of the container is extracted. The `init` and `kernel` filesystems are left unch
 while the other containers are currently extracted under the `containers/` directory
 where the `init` script runs them. In future they may be extracted to the `containerd`
 image store instead. The builds and source for these containers can be found in the
-[`pkg/` directory)(pkg/).
+[`pkg/`](../pkg/) directory.
 
 The `init` that is being used is being reworked, as an earlier incarnation was much
 less containerised and we ran a full Alpine Linux distribution here. It should end
