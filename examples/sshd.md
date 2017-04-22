@@ -1,6 +1,6 @@
 # SSH example
 
-The LinuxKit [sshd example](./sshd.yaml) defines an image running a SSH
+The LinuxKit [sshd example](./sshd.yml) defines an image running a SSH
 daemon. You can build it as usual (though you should add your public
 key to the `contents` field in the `files` section).
 
