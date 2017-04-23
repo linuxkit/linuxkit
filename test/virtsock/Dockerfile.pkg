@@ -1,3 +1,0 @@
-FROM scratch
-COPY . ./
-CMD ["/bin/tini", "/bin/virtsock_stress", "-s", "-v", "1"]
