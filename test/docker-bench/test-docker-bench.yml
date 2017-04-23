@@ -40,7 +40,7 @@ onboot:
     command: ["/mount.sh", "/var/lib/docker"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:f5e5be43e730ea819c3293d5c6dcbfa7f4c5c314"
+    image: "linuxkit/rngd:c42fd499690b2cb6e4e6cb99e41dfafca1cf5b14"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
