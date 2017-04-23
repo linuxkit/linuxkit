@@ -38,8 +38,11 @@ services:
     net: host
     oomScoreAdj: -800
   - name: virtsock-server
-    image: "linuxkit/test-virtsock:cd2135acdc225f3bd0503678bb50bbd3e0b194b2"
+    image: "linuxkit/test-virtsock:89133a5081b44dcda66e57502bcbc783e0a654be"
     readonly: true
+trust:
+  image:
+    - linuxkit/kernel
 outputs:
   - format: kernel+initrd
   - format: iso-bios
