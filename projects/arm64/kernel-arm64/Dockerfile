@@ -1,4 +1,4 @@
-FROM mor1/alpine-build-kernel-aarch64:6e4505a2e9f9ef66fc306469638c5e1a3b69bfd8
+FROM mor1/alpine-build-kernel-arm64:6e4505a2e9f9ef66fc306469638c5e1a3b69bfd8
 
 ARG KERNEL_VERSION
 ARG DEBUG=0

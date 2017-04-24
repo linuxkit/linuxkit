@@ -38,8 +38,7 @@ $(VMLINUX): kernel.tag
 
 .PHONY: image push tag
 
-MEDIA_TOYBOX=mobylinux/toybox-media:0a26fe5f574e444849983f9c4148ef74b3804d55@sha256:5ac38f77b66deb194c9016591b9b096e81fcdc9f7c3e6d01566294a6b4b4ebd2
-
+MEDIA_TOYBOX=mor1/toybox-media:d1f17849e666768293da6047c97410c69019816c
 BASE="$MEDIA_TOYBOX"
 IMAGE=kernel-arm64
 
