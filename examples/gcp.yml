@@ -37,7 +37,7 @@ onboot:
      - CAP_SYS_ADMIN
 services:
   - name: rngd
-    image: "linuxkit/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    image: "linuxkit/rngd:c42fd499690b2cb6e4e6cb99e41dfafca1cf5b14"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800

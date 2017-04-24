@@ -2,13 +2,22 @@ FROM alpine:3.5
 RUN \
   apk update && apk upgrade && \
   apk add \
-  bsd-compat-headers \
-  curl \
-  gcc \
-  git \
-  libc-dev \
-  linux-headers \
-  util-linux-dev \
+    argp-standalone \
+    automake \
+    bash \
+    bsd-compat-headers \
+    build-base \
+    cmake \
+    curl \
+    gcc \
+    git \
+    libc-dev \
+    linux-headers \
+    make \
+    musl-dev \
+    patch \
+    util-linux-dev \
+    vim \
   && true
 
 COPY compile.sh /usr/bin/

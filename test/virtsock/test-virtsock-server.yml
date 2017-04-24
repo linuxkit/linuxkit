@@ -21,7 +21,7 @@ onboot:
     readonly: true
 services:
   - name: rngd
-    image: "linuxkit/rngd:f5e5be43e730ea819c3293d5c6dcbfa7f4c5c314"
+    image: "linuxkit/rngd:c42fd499690b2cb6e4e6cb99e41dfafca1cf5b14"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
@@ -38,8 +38,11 @@ services:
     net: host
     oomScoreAdj: -800
   - name: virtsock-server
-    image: "linuxkit/test-virtsock:cd2135acdc225f3bd0503678bb50bbd3e0b194b2"
+    image: "linuxkit/test-virtsock:89133a5081b44dcda66e57502bcbc783e0a654be"
     readonly: true
+trust:
+  image:
+    - linuxkit/kernel
 outputs:
   - format: kernel+initrd
   - format: iso-bios
