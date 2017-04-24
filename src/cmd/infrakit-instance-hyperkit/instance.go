@@ -9,9 +9,9 @@ import (
 	"path"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/hyperkit/go"
 	"github.com/docker/infrakit/pkg/spi/instance"
 	"github.com/docker/infrakit/pkg/types"
+	"github.com/moby/hyperkit/go"
 	"github.com/rneugeba/iso9660wrap"
 )
 
