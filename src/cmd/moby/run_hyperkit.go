@@ -8,7 +8,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/hyperkit/go"
+	"github.com/moby/hyperkit/go"
 	"github.com/rneugeba/iso9660wrap"
 	"github.com/satori/go.uuid"
 )
