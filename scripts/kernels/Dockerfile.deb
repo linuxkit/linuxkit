@@ -1,0 +1,24 @@
+FROM alpine:3.5 AS extract
+
+ARG DEB_URLS
+
+RUN apk add --no-cache curl dpkg tar && true
+WORKDIR /deb
+RUN mkdir extract
+RUN for url in ${DEB_URLS}; do \
+        echo "Extracting: $url"; \
+        curl -fsSL -o dl.deb $url && \
+        dpkg-deb -x dl.deb . ;\
+    done
+
+RUN mkdir /out
+RUN cp -a boot/vmlinuz-* /out/kernel
+RUN cp -a boot/config-* /out/kernel_config
+RUN tar cf /out/kernel.tar lib
+RUN tar cf /out/kernel-dev.tar usr
+
+FROM linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
+WORKDIR /
+ENTRYPOINT []
+CMD []
+COPY --from=extract /out/* /
