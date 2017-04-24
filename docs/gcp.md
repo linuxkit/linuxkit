@@ -22,7 +22,7 @@ brew cask install google-cloud-sdk
 Or via source code:
 
 ```shell
-wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-151.0.0-darwin-x86_64.tar.gz
+curl -SsL https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-151.0.0-darwin-x86_64.tar.gz
 tar xzvf google-cloud-sdk-151.0.0-darwin-x86_64.tar.gz
 ./google-cloud-sdk/install.sh
 ```
@@ -50,12 +50,16 @@ Make sure to download the credentials in JSON format and store them somewhere sa
 
 ## Build an image
 
-Add a `gcp` output line to your yaml config, see the example in `examples/gcp.yml`.
+Add a `gcp-img` output line to your yaml config, see the example in `examples/gcp.yml`.
 
 Then do `moby build myfile.yml`
 
-This will create a local `myfile.img.tar.gz` compressed image file, upload it to the
-specified bucket, and create a bootable image.
+This will create a local `myfile.img.tar.gz` compressed image file.
+
+## Push image
+
+Do `moby push gcp -project myproject-1234 -bucket bucketname myfile.img.tar.gz` to upload it to the
+specified bucket, and create a bootable image from the stored image.
 
 ## Create an instance and connect to it
 
