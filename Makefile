@@ -63,7 +63,8 @@ test-hyperkit: $(MOBY) test-initrd.img test-bzImage test-cmdline
 
 .PHONY: test-gcp
 test-gcp: $(MOBY) test.img.tar.gz
-	$(MOBY) run gcp test.img.tar.gz | tee test-gcp.log
+	$(MOBY) push gcp test.img.tar.gz
+	$(MOBY) run gcp test | tee test-gcp.log
 	$(call check_test_log, test-gcp.log)
 
 .PHONY: test
@@ -76,7 +77,8 @@ test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
 
 .PHONY: test-ltp
 test-ltp: $(MOBY) test-ltp.img.tar.gz
-	$(MOBY) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp.img.tar.gz | tee test-ltp.log
+	$(MOBY) push gcp test-ltp.img.tar.gz
+	$(MOBY) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp | tee test-ltp.log
 	$(call check_test_log, test-ltp.log)
 
 .PHONY: ci ci-tag ci-pr

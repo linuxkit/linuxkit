@@ -65,8 +65,4 @@ trust:
     - linuxkit/kernel
 outputs:
   - format: kernel+initrd
-  - format: gcp
-    project: moby
-    bucket: mobytestjustin
-    family: moby-dev
-    replace: true
+  - format: gcp-img
