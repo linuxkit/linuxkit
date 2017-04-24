@@ -41,7 +41,8 @@ func main() {
 	flag.Usage = func() {
 		fmt.Printf("USAGE: %s [options] COMMAND\n\n", filepath.Base(os.Args[0]))
 		fmt.Printf("Commands:\n")
-		fmt.Printf("  build       Build a Moby image from a YAML file\n")
+		fmt.Printf("  push        Push a VM image to a cloud or image store\n")
+		fmt.Printf("  run         Run a VM image on a local hypervisor or remote cloud\n")
 		fmt.Printf("  version     Print version information\n")
 		fmt.Printf("  help        Print this message\n")
 		fmt.Printf("\n")
@@ -78,8 +79,10 @@ func main() {
 	}
 
 	switch args[0] {
-	case "build":
-		build(args[1:])
+	case "push":
+		push(args[1:])
+	case "run":
+		run(args[1:])
 	case "version":
 		version()
 	case "help":

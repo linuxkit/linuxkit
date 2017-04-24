@@ -15,17 +15,20 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 
 ## Getting Started
 
-### Build the `moby` tool
+### Build the `moby` and `linuxkit` tools
 
-Simple build instructions: use `make` to build. This will build the customisation tool in `bin/`. Add this
-to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/moby /usr/local/bin/`. Or you can use `sudo make install`.
+LinuxKit uses the `moby` tool for image builds, and the `linuxkit` tool for pushing and running VM images.
+
+Simple build instructions: use `make` to build. This will build the tools in `bin/`. Add this
+to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/* /usr/local/bin/`. Or you can use `sudo make install`.
 
 If you already have `go` installed you can use `go get -u github.com/linuxkit/linuxkit/src/cmd/moby` to install
-the `moby` tool. You can use `go get -u github.com/linuxkit/linuxkit/src/cmd/infrakit-instance-hyperkit`
+the `moby` build tool, and `go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit` to install the `linuxkit` tool.
+You can use `go get -u github.com/linuxkit/linuxkit/src/cmd/infrakit-instance-hyperkit`
 to get the hyperkit infrakit tool.
 
 Once you have built the tool, use `moby build linuxkit.yml` to build the example configuration,
-and `bin/moby run linuxkit` to run locally. Use `halt` to terminate on the console.
+and `linuxkit run linuxkit` to run locally. Use `halt` to terminate on the console.
 
 Build requirements:
 - GNU `make`
@@ -34,16 +37,13 @@ Build requirements:
 
 ### Booting and Testing
 
-You can use `moby run <name>` to execute the image you created with `moby build <name>.yml`.
+You can use `linuxkit run <name>` to execute the image you created with `moby build <name>.yml`.
 This will use a suitable backend for your platform or you can choose one, for example VMWare.
-See `moby run --help`.
-
-Some platforms do not yet have `moby run` support, so you can use `./scripts/qemu.sh moby-initrd.img moby-bzImage moby-cmdline`
-or `./scripts/qemu.sh mobylinux-bios.iso` which runs qemu in a Docker container.
+See `linuxkit run --help`.
 
 `make test` or `make test-hyperkit` will run the test suite
 
-There are also docs for booting on [Google Cloud](docs/gcp.md); `./bin/moby run --gcp <name>.yml` should
+There are also docs for booting on [Google Cloud](docs/gcp.md); `linuxkit push gcp <name> && linuxkit run gcp <name>.yml` should
 work if you specified a GCP image to be built in the config.
 
 More detailed docs will be available shortly, for running both single hosts and clusters.
@@ -51,7 +51,7 @@ More detailed docs will be available shortly, for running both single hosts and 
 ## Building your own customised image
 
 To customise, copy or modify the [`linuxkit.yml`](linuxkit.yml) to your own `file.yml` or use one of the [examples](examples/) and then run `moby build file.yml` to
-generate its specified output. You can run the output with `moby run file`.
+generate its specified output. You can run the output with `linuxkit run file`.
 
 The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. It also specifies what
 formats to output, such as bootable ISOs and images for various platforms.

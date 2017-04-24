@@ -1,5 +1,5 @@
 .PHONY: default all
-default: bin/moby 
+default: bin/moby bin/linuxkit 
 all: default
 
 VERSION="0.0" # dummy for now
@@ -8,6 +8,7 @@ GIT_COMMIT=$(shell git rev-list -1 HEAD)
 GO_COMPILE=linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5
 
 MOBY?=bin/moby
+LINUXKIT?=bin/linuxkit
 GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH=amd64
 ifneq ($(GOOS),linux)
@@ -27,6 +28,13 @@ bin/moby: $(MOBY_DEPS) | bin
 	rm tmp_moby_bin.tar
 	touch $@
 
+LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) Makefile vendor.conf
+bin/linuxkit: $(LINUXKIT_DEPS) | bin
+	tar cf - vendor -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_linuxkit_bin.tar
+	tar xf tmp_linuxkit_bin.tar > $@
+	rm tmp_linuxkit_bin.tar
+	touch $@
+
 INFRAKIT_DEPS=$(wildcard src/cmd/infrakit-instance-hyperkit/*.go) Makefile vendor.conf
 bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	tar cf - vendor -C src/cmd/infrakit-instance-hyperkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit -o $@ > tmp_infrakit_instance_hyperkit_bin.tar
@@ -35,14 +43,13 @@ bin/infrakit-instance-hyperkit: $(INFRAKIT_DEPS) | bin
 	touch $@
 
 test-initrd.img: $(MOBY) test/test.yml
-	bin/moby build test/test.yml
+	$(MOBY) build test/test.yml
 
 test-bzImage: test-initrd.img
 
-# interactive versions need to use volume mounts
 .PHONY: test-qemu-efi
-test-qemu-efi: test-efi.iso
-	$(MOBY) run $^ | tee test-efi.log
+test-qemu-efi: $(LINUXKIT) test-efi.iso
+	$(LINUXKIT) run $^ | tee test-efi.log
 	$(call check_test_log, test-efi.log)
 
 bin:
@@ -56,29 +63,29 @@ define check_test_log
 endef
 
 .PHONY: test-hyperkit
-test-hyperkit: $(MOBY) test-initrd.img test-bzImage test-cmdline
+test-hyperkit: $(LINUXKIT) test-initrd.img test-bzImage test-cmdline
 	rm -f disk.img
-	$(MOBY) run test | tee test.log
+	$(LINUXKIT) run test | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: test-gcp
-test-gcp: $(MOBY) test.img.tar.gz
-	$(MOBY) push gcp test.img.tar.gz
-	$(MOBY) run gcp test | tee test-gcp.log
+test-gcp: $(LINUXKIT) test.img.tar.gz
+	$(LINUXKIT) push gcp test.img.tar.gz
+	$(LINUXKIT) run gcp test | tee test-gcp.log
 	$(call check_test_log, test-gcp.log)
 
 .PHONY: test
-test: test-initrd.img test-bzImage test-cmdline
-	$(MOBY) run test | tee test.log
+test: $(LINUXKIT) test-initrd.img test-bzImage test-cmdline
+	$(LINUXKIT) run test | tee test.log
 	$(call check_test_log, test.log)
 
 test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
 	$(MOBY) build test/ltp/test-ltp.yml
 
 .PHONY: test-ltp
-test-ltp: $(MOBY) test-ltp.img.tar.gz
-	$(MOBY) push gcp test-ltp.img.tar.gz
-	$(MOBY) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp | tee test-ltp.log
+test-ltp: $(LINUXKIT) test-ltp.img.tar.gz
+	$(LINUXKIT) push gcp test-ltp.img.tar.gz
+	$(LINUXKIT) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp | tee test-ltp.log
 	$(call check_test_log, test-ltp.log)
 
 .PHONY: ci ci-tag ci-pr
