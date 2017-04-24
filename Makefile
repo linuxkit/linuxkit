@@ -42,7 +42,7 @@ test-bzImage: test-initrd.img
 # interactive versions need to use volume mounts
 .PHONY: test-qemu-efi
 test-qemu-efi: test-efi.iso
-	$(MOBY) run $^ | tee test-efi.log
+	script -q /dev/null $(MOBY) run $^ | tee test-efi.log
 	$(call check_test_log, test-efi.log)
 
 bin:
@@ -58,18 +58,18 @@ endef
 .PHONY: test-hyperkit
 test-hyperkit: $(MOBY) test-initrd.img test-bzImage test-cmdline
 	rm -f disk.img
-	$(MOBY) run test | tee test.log
+	script -q /dev/null $(MOBY) run test | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: test-gcp
 test-gcp: $(MOBY) test.img.tar.gz
 	$(MOBY) push gcp test.img.tar.gz
-	$(MOBY) run gcp test | tee test-gcp.log
+	script -q /dev/null $(MOBY) run gcp test | tee test-gcp.log
 	$(call check_test_log, test-gcp.log)
 
 .PHONY: test
 test: test-initrd.img test-bzImage test-cmdline
-	$(MOBY) run test | tee test.log
+	script -q /dev/null $(MOBY) run test | tee test.log
 	$(call check_test_log, test.log)
 
 test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
@@ -78,7 +78,7 @@ test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
 .PHONY: test-ltp
 test-ltp: $(MOBY) test-ltp.img.tar.gz
 	$(MOBY) push gcp test-ltp.img.tar.gz
-	$(MOBY) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp | tee test-ltp.log
+	script -q /dev/null $(MOBY) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp | tee test-ltp.log
 	$(call check_test_log, test-ltp.log)
 
 .PHONY: ci ci-tag ci-pr
