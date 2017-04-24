@@ -13,4 +13,3 @@ RUN \
   && true
 
 COPY . .
-ENTRYPOINT ["/qemu.sh"]
