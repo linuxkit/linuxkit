@@ -35,13 +35,7 @@ type Moby struct {
 		Contents  string
 	}
 	Outputs []struct {
-		Format  string
-		Project string
-		Bucket  string
-		Family  string
-		Keys    string
-		Public  bool
-		Replace bool
+		Format string
 	}
 }
 
