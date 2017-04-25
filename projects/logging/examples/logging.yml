@@ -21,8 +21,15 @@ onboot:
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
+services:
+  - name: rngd
+    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    capabilities:
+     - CAP_SYS_ADMIN
+    oomScoreAdj: -800
+    readonly: true
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
+    image: "linuxkit/dhcpcd:57a8ef29d3a910645b2b24c124f9ce9ef53ce703"
     binds:
      - /var:/var
      - /tmp/etc:/etc
@@ -31,14 +38,7 @@ onboot:
      - CAP_NET_BIND_SERVICE
      - CAP_NET_RAW
     net: host
-    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
-services:
-  - name: rngd
-    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
-    capabilities:
-     - CAP_SYS_ADMIN
     oomScoreAdj: -800
-    readonly: true
   - name: nginx
     image: "nginx:alpine"
     capabilities:

@@ -15,17 +15,6 @@ onboot:
     capabilities:
      - CAP_SYS_ADMIN
     readonly: true
-  - name: dhcpcd
-    image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
-    binds:
-     - /var:/var
-     - /tmp/etc:/etc
-    capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
-    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
     image: "linuxkit/metadata:c5567e65e9125f0a4c4b8cb9d56a86377be62652"
     binds:
@@ -42,6 +31,17 @@ services:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:57a8ef29d3a910645b2b24c124f9ce9ef53ce703"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    oomScoreAdj: -800
   - name: sshd
     image: "linuxkit/sshd:e108d208adf692c8a0954f602743e0eec445364e"
     capabilities:

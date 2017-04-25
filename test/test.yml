@@ -7,23 +7,24 @@ init:
   - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
   - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
-  - name: dhcpcd
-    image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
-    binds:
-     - /var:/var
-     - /tmp:/etc
-    capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
-    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: check
     image: "linuxkit/check:43c4147dda4e02d066ef158cd81718dbff8c8bd0"
     pid: host
     capabilities:
      - CAP_SYS_BOOT
     readonly: true
+services:
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:57a8ef29d3a910645b2b24c124f9ce9ef53ce703"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    oomScoreAdj: -800
 outputs:
   - format: kernel+initrd
   - format: iso-bios
