@@ -50,16 +50,19 @@ Make sure to download the credentials in JSON format and store them somewhere sa
 
 ## Build an image
 
-Add a `gcp-img` output line to your yaml config, see the example in `examples/gcp.yml`.
+Add a `gcp-img` output line to your yaml config, see the example in [`examples/gcp.yml`](../example/gcp.yml).
 
-Then do `moby build myfile.yml`
+Then do `moby build myprefix.yml`
 
-This will create a local `myfile.img.tar.gz` compressed image file.
+This will create a local `myprefix.img.tar.gz` compressed image file.
 
 ## Push image
 
-Do `moby push gcp -project myproject-1234 -bucket bucketname myfile.img.tar.gz` to upload it to the
+Do `linuxkit push gcp -project myproject-1234 -bucket bucketname myprefix.img.tar.gz` to upload it to the
 specified bucket, and create a bootable image from the stored image.
+
+Alternatively, you can set the project name and the bucket name using environment variables, `CLOUDSDK_CORE_PROJECT` and `CLOUDSDK_IMAGE_BUCKET`.
+See the constant values defined in [`src/cmd/linuxkit/run_gcp.go`](../src/cmd/linuxkit/run_gcp.go) for the complete list of the supported environment variables.
 
 ## Create an instance and connect to it
 
@@ -67,5 +70,5 @@ With the image created, we can now create an instance and connect to
 the serial port.
 
 ```
-moby run gcp -project myproject-1234 myfile
+linuxkit run gcp -project myproject-1234 myprefix
 ```
