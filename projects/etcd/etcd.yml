@@ -2,7 +2,7 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:42fe8cb1508b3afed39eb89821906e3cc7a70551
+  - linuxkit/init:1c8cd75ec89313f4058b069449e9bac966cd96b1
   - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
   - linuxkit/containerd:fe1b7f438a234cb6481c6538295115eac2a0596d
   - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
