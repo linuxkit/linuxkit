@@ -5,7 +5,7 @@ all: default
 VERSION="0.0" # dummy for now
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5
+GO_COMPILE=linuxkit/go-compile:5bf17af781df44f07906099402680b9a661f999b@sha256:0bf523bcebb96ccc525f983a118f1fd8cb5e17dbf90e83044ca71bb983000e70
 
 MOBY?=bin/moby
 LINUXKIT?=bin/linuxkit
@@ -17,10 +17,8 @@ endif
 
 PREFIX?=/usr/local/
 
-MOBY_DEPS=$(wildcard src/cmd/moby/*.go) Makefile vendor.conf
-MOBY_DEPS+=$(wildcard src/initrd/*.go) $(wildcard src/pad4/*.go)
-bin/moby: $(MOBY_DEPS) | bin
-	tar cf - vendor src/initrd src/pad4 -C src/cmd/moby . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
+bin/moby: | bin
+	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
 	tar xf tmp_moby_bin.tar > $@
 	rm tmp_moby_bin.tar
 	touch $@
