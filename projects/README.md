@@ -20,6 +20,7 @@ If you want to create a project, please submit a pull request to create a new di
 - [Landlock LSM](landlock/) programmatic access control
 - [Clear Containers](clear-containers/) Clear Containers image
 - [Logging](logging/) Experimental logging tools
+- [etcd cluster](etcd/) etcd cluster demo from DockerCon'17
 
 ## Current projects not yet documented
 - VMWare support (VMWare)
