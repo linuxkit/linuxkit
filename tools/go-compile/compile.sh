@@ -30,6 +30,18 @@ do
 		ldflags="$2"
 		shift
 	;;
+	--clone-path)
+		clonepath="$2"
+		shift
+	;;
+	--clone)
+		clone="$2"
+		shift
+	;;
+	--commit)
+		commit="$2"
+		shift
+	;;
 	*)
 		echo "Unknown option $1"
 		exit 1
@@ -44,12 +56,22 @@ done
 
 dir="$GOPATH/src/$package"
 
-mkdir -p $dir
+if [ -z "$clone" ]
+then
+	mkdir -p "$dir"
+	cd "$dir"
+	# untar input
+	tar xf -
+else
+	mkdir -p "$GOPATH/src/$clonepath"
+	cd "$GOPATH/src/$clonepath"
+	git clone "$clone" .
+	[ ! -z "$commit" ] && git checkout "$commit"
+	mkdir -p "$dir"
+	cd "$dir"
+fi
 
-# untar input
-tar xf - -C $dir
-
-cd $dir
+cd "$dir"
 
 # lint before building
 >&2 echo "gofmt..."
