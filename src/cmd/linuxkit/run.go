@@ -21,9 +21,9 @@ func runUsage() {
 	fmt.Printf("  packet\n")
 	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
-	fmt.Printf("See 'moby run [backend] --help' for details.\n\n")
+	fmt.Printf("See 'linuxkit run [backend] --help' for details.\n\n")
 	fmt.Printf("'prefix' specifies the path to the VM image.\n")
-	fmt.Printf("It defaults to './moby'.\n")
+	fmt.Printf("It defaults to './image'.\n")
 }
 
 func run(args []string) {
