@@ -43,8 +43,7 @@ See `linuxkit run --help`.
 
 `make test` or `make test-hyperkit` will run the test suite
 
-There are also docs for booting on [Google Cloud](docs/gcp.md); `linuxkit push gcp <name> && linuxkit run gcp <name>.yml` should
-work if you specified a GCP image to be built in the config.
+There are also docs for booting on [Google Cloud](docs/gcp.md).
 
 More detailed docs will be available shortly, for running both single hosts and clusters.
 
