@@ -22,7 +22,7 @@ LinuxKit uses the `moby` tool for image builds, and the `linuxkit` tool for push
 Simple build instructions: use `make` to build. This will build the tools in `bin/`. Add this
 to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/* /usr/local/bin/`. Or you can use `sudo make install`.
 
-If you already have `go` installed you can use `go get -u github.com/linuxkit/linuxkit/src/cmd/moby` to install
+If you already have `go` installed you can use `go get -u github.com/moby/tool/cmd/moby` to install
 the `moby` build tool, and `go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit` to install the `linuxkit` tool.
 
 Once you have built the tool, use `moby build linuxkit.yml` to build the example configuration,
