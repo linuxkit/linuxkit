@@ -83,10 +83,10 @@ then
 	hostname -F /etc/hostname
 fi
 
-if [ $(hostname) = "moby" -a -f /sys/class/net/eth0/address ]
+if [ $(hostname) = "(none)" -a -f /sys/class/net/eth0/address ]
 then
 	mac=$(cat /sys/class/net/eth0/address)
-	hostname moby-$(echo $mac | sed 's/://g')
+	hostname linuxkit-$(echo $mac | sed 's/://g')
 fi
 
 # set system clock from hwclock
