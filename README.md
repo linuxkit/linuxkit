@@ -41,9 +41,11 @@ See `linuxkit run --help`.
 
 `make test` or `make test-hyperkit` will run the test suite
 
-There are also docs for booting on [Google Cloud](docs/gcp.md).
+Additional, platform specific information is available for:
+- [macOS](docs/mac.md)
+- [Google Cloud](docs/gcp.md)
 
-More detailed docs will be available shortly, for running both single hosts and clusters.
+We'll add more detailed docs for other platforms in the future.
 
 ## Building your own customised image
 
