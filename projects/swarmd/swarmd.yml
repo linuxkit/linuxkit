@@ -15,6 +15,15 @@ onboot:
     capabilities:
      - CAP_SYS_ADMIN
     readonly: true
+  - name: metadata
+    image: "linuxkit/metadata:a810b68fec9c9282cf096eed50605ddd6b2f3142"
+    binds:
+     - /dev:/dev
+     - /var:/var
+     - /tmp/etc/resolv.conf:/etc/resolv.conf
+    net: host
+    capabilities:
+     - CAP_SYS_ADMIN
 services:
   - name: rngd
     image: "linuxkit/rngd:61a07ced77a9747708223ca16a4aec621eacf518"
