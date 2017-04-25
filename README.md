@@ -24,8 +24,6 @@ to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/* /usr/loc
 
 If you already have `go` installed you can use `go get -u github.com/linuxkit/linuxkit/src/cmd/moby` to install
 the `moby` build tool, and `go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit` to install the `linuxkit` tool.
-You can use `go get -u github.com/linuxkit/linuxkit/src/cmd/infrakit-instance-hyperkit`
-to get the hyperkit infrakit tool.
 
 Once you have built the tool, use `moby build linuxkit.yml` to build the example configuration,
 and `linuxkit run linuxkit` to run locally. Use `halt` to terminate on the console.
@@ -43,9 +41,11 @@ See `linuxkit run --help`.
 
 `make test` or `make test-hyperkit` will run the test suite
 
-There are also docs for booting on [Google Cloud](docs/gcp.md).
+Additional, platform specific information is available for:
+- [macOS](docs/mac.md)
+- [Google Cloud](docs/gcp.md)
 
-More detailed docs will be available shortly, for running both single hosts and clusters.
+We'll add more detailed docs for other platforms in the future.
 
 ## Building your own customised image
 
