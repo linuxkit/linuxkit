@@ -16,11 +16,13 @@ import (
 	"github.com/linuxkit/linuxkit/src/initrd"
 )
 
+const defaultNameForStdin = "moby"
+
 // Process the build arguments and execute build
 func build(args []string) {
 	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
 	buildCmd.Usage = func() {
-		fmt.Printf("USAGE: %s build [options] <file>[.yml]\n\n", os.Args[0])
+		fmt.Printf("USAGE: %s build [options] <file>[.yml] | -\n\n", os.Args[0])
 		fmt.Printf("Options:\n")
 		buildCmd.PrintDefaults()
 	}
@@ -37,12 +39,32 @@ func build(args []string) {
 		buildCmd.Usage()
 		os.Exit(1)
 	}
-	conf := remArgs[0]
-	if !(filepath.Ext(conf) == ".yml" || filepath.Ext(conf) == ".yaml") {
-		conf = conf + ".yml"
+	name := *buildName
+	var config []byte
+	if conf := remArgs[0]; conf == "-" {
+		var err error
+		config, err = ioutil.ReadAll(os.Stdin)
+		if err != nil {
+			log.Fatalf("Cannot read stdin: %v", err)
+		}
+		if name == "" {
+			name = defaultNameForStdin
+		}
+	} else {
+		if !(filepath.Ext(conf) == ".yml" || filepath.Ext(conf) == ".yaml") {
+			conf = conf + ".yml"
+		}
+		var err error
+		config, err = ioutil.ReadFile(conf)
+		if err != nil {
+			log.Fatalf("Cannot open config file: %v", err)
+		}
+		if name == "" {
+			name = strings.TrimSuffix(filepath.Base(conf), filepath.Ext(conf))
+		}
 	}
 
-	buildInternal(*buildName, *buildPull, conf)
+	buildInternal(name, *buildPull, config)
 }
 
 func initrdAppend(iw *initrd.Writer, r io.Reader) {
@@ -78,20 +100,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 }
 
 // Perform the actual build process
-func buildInternal(name string, pull bool, conf string) {
-	if name == "" {
-		name = filepath.Base(conf)
-		ext := filepath.Ext(conf)
-		if ext != "" {
-			name = name[:len(name)-len(ext)]
-		}
-	}
-
-	config, err := ioutil.ReadFile(conf)
-	if err != nil {
-		log.Fatalf("Cannot open config file: %v", err)
-	}
-
+func buildInternal(name string, pull bool, config []byte) {
 	m, err := NewConfig(config)
 	if err != nil {
 		log.Fatalf("Invalid config: %v", err)
