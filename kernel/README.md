@@ -1,12 +1,5 @@
-Linux kernel builds, based on mostly-vanilla upstream Linux kernels.
-See [../docs/kernel-patches.md](../docs/kernel-patches.md) for how the local patches in `patches-*`
-are maintained.
-
-The build is mostly silent. A local build can be run via `make`. To view
-the output use `docker log -f <containerid>`. The build creates multiple
-containers, so multiple invocations may be necessary. To view the full build
-output one may also invoke `docker build .` and then copy the build artefacts
-from the image afterwards.
+See [../docs/kernel-patches.md](../docs/kernels.md) for more
+information on kernel builds.
 
 To build with various debug options enabled, build the kernel with
 `make DEBUG=1`. The options enabled are listed in `kernel_config.debug`.

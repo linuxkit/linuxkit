@@ -1,6 +1,7 @@
-FROM linuxkit/alpine-build-kernel:cfdd576c36a52ed2dd62f237f79eeedc2dd3697b@sha256:3fe08db373a9373ba1616a485858f01ebd2d7a3cb364a099d0ed8b45fa419da2
+FROM linuxkit/kernel-compile:1b396c221af673757703258159ddc8539843b02b@sha256:6b32d205bfc6407568324337b707d195d027328dbfec554428ea93e7b0a8299b AS kernel-build
 
 ARG KERNEL_VERSION
+ARG KERNEL_SERIES
 ARG DEBUG=0
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
@@ -9,7 +10,7 @@ RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
-COPY kernel_config /linux/arch/x86/configs/x86_64_defconfig
+COPY kernel_config-${KERNEL_SERIES} /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
 
 RUN if [ $DEBUG -ne "0" ]; then \
@@ -18,7 +19,7 @@ RUN if [ $DEBUG -ne "0" ]; then \
     fi
 
 # Apply local patches
-COPY patches-4.9 /patches
+COPY patches-${KERNEL_SERIES} /patches
 RUN cd /linux && \
     set -e && for patch in /patches/*.patch; do \
         echo "Applying $patch"; \
@@ -51,3 +52,14 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
     ( cd /tmp && tar cf /kernel-dev.tar usr/src )
 
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /kernel-source-info
+
+
+FROM linuxkit/toybox-media:eee3dd4d72cd784801e95b1781e6c4f9d8a5e5eb@sha256:7f940e687164ee2676e11c61705c79f7dd2d144ee87ad17a494848a7045f5f53
+ENTRYPOINT []
+CMD []
+WORKDIR /
+COPY --from=kernel-build bzImage /
+COPY --from=kernel-build kernel-headers.tar /
+COPY --from=kernel-build kernel-modules.tar /kernel.tar
+COPY --from=kernel-build kernel-dev.tar /
+COPY --from=kernel-build kernel-source-info /
