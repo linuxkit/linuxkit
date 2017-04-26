@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -12,8 +13,9 @@ import (
 // Process the run arguments and execute run
 func pushGcp(args []string) {
 	gcpCmd := flag.NewFlagSet("gcp", flag.ExitOnError)
+	invoked := filepath.Base(os.Args[0])
 	gcpCmd.Usage = func() {
-		fmt.Printf("USAGE: %s push gcp [options] [name]\n\n", os.Args[0])
+		fmt.Printf("USAGE: %s push gcp [options] [name]\n\n", invoked)
 		fmt.Printf("'name' specifies the full path of an image file which will be uploaded\n")
 		fmt.Printf("Options:\n\n")
 		gcpCmd.PrintDefaults()

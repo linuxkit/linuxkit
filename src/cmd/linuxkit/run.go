@@ -3,13 +3,15 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"runtime"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 func runUsage() {
-	fmt.Printf("USAGE: %s run [backend] [options] [prefix]\n\n", os.Args[0])
+	invoked := filepath.Base(os.Args[0])
+	fmt.Printf("USAGE: %s run [backend] [options] [prefix]\n\n", invoked)
 
 	fmt.Printf("'backend' specifies the run backend.\n")
 	fmt.Printf("If not specified the platform specific default will be used\n")
@@ -21,7 +23,7 @@ func runUsage() {
 	fmt.Printf("  packet\n")
 	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
-	fmt.Printf("See 'linuxkit run [backend] --help' for details.\n\n")
+	fmt.Printf("See '%s run [backend] --help' for details.\n\n", invoked)
 	fmt.Printf("'prefix' specifies the path to the VM image.\n")
 	fmt.Printf("It defaults to './image'.\n")
 }

@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"runtime"
 
 	log "github.com/Sirupsen/logrus"
@@ -58,9 +59,10 @@ guestOS = "other3xlinux-64"
 `
 
 func runVMware(args []string) {
+	invoked := filepath.Base(os.Args[0])
 	vmwareArgs := flag.NewFlagSet("vmware", flag.ExitOnError)
 	vmwareArgs.Usage = func() {
-		fmt.Printf("USAGE: %s run vmware [options] prefix\n\n", os.Args[0])
+		fmt.Printf("USAGE: %s run vmware [options] prefix\n\n", invoked)
 		fmt.Printf("'prefix' specifies the path to the VM image.\n")
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")

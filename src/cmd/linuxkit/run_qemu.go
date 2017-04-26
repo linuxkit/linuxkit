@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -33,9 +34,10 @@ type QemuConfig struct {
 }
 
 func runQemu(args []string) {
+	invoked := filepath.Base(os.Args[0])
 	qemuFlags := flag.NewFlagSet("qemu", flag.ExitOnError)
 	qemuFlags.Usage = func() {
-		fmt.Printf("USAGE: %s run qemu [options] prefix\n\n", os.Args[0])
+		fmt.Printf("USAGE: %s run qemu [options] prefix\n\n", invoked)
 		fmt.Printf("'prefix' specifies the path to the VM image.\n")
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")

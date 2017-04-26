@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/moby/hyperkit/go"
@@ -16,8 +17,9 @@ import (
 // Process the run arguments and execute run
 func runHyperKit(args []string) {
 	hyperkitCmd := flag.NewFlagSet("hyperkit", flag.ExitOnError)
+	invoked := filepath.Base(os.Args[0])
 	hyperkitCmd.Usage = func() {
-		fmt.Printf("USAGE: %s run hyperkit [options] prefix\n\n", os.Args[0])
+		fmt.Printf("USAGE: %s run hyperkit [options] prefix\n\n", invoked)
 		fmt.Printf("'prefix' specifies the path to the VM image.\n")
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")
