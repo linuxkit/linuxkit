@@ -1,4 +1,4 @@
-From 9dc7d833d2e45c7826e580054acdc87f589f9d77 Mon Sep 17 00:00:00 2001
+From ed49f87f8a1d5c750ebd5d998cc5ccb83002f157 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:43 -0800
 Subject: [PATCH 32/44] Drivers: hv: vmbus: add an API

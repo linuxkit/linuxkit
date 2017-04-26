@@ -1,4 +1,4 @@
-From 99ff3ce849b8c40aa6418059d058074d751e0dae Mon Sep 17 00:00:00 2001
+From eaa6c8c32bbcf67d0a2d11eed8d3592d9a38f766 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sun, 26 Mar 2017 16:42:20 +0800
 Subject: [PATCH 08/10] vmbus: fix missed ring events on boot
