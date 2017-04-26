@@ -2,6 +2,7 @@
 default: push
 
 IMAGE=binfmt
+BASE=alpine:edge
 SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
 DEPS=Dockerfile Makefile main.go $(wildcard etc/binmft.d/*)
 
@@ -14,7 +15,8 @@ hash: $(DEPS)
 
 tag: hash
 	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker build --no-cache -t $(IMAGE):build . && \
+		(DOCKER_CONTENT_TRUST=1 docker pull $(BASE) && \
+		 docker build --no-cache -t $(IMAGE):build . && \
 		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash))
 
 push: tag

@@ -18,6 +18,7 @@ endif
 PREFIX?=/usr/local/
 
 bin/moby: | bin
+	DOCKER_CONTENT_TRUST=1 docker pull $(GO_COMPILE)
 	DOCKER_CONTENT_TRUST=1 docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
 	tar xf tmp_moby_bin.tar > $@
 	rm tmp_moby_bin.tar
@@ -25,7 +26,8 @@ bin/moby: | bin
 
 LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) Makefile vendor.conf
 bin/linuxkit: $(LINUXKIT_DEPS) | bin
-	tar cf - vendor -C src/cmd/linuxkit . | DOCKER_CONTENT_TRUST=1 docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_linuxkit_bin.tar
+	DOCKER_CONTENT_TRUST=1 docker pull $(GO_COMPILE)
+	tar cf - vendor -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_linuxkit_bin.tar
 	tar xf tmp_linuxkit_bin.tar > $@
 	rm tmp_linuxkit_bin.tar
 	touch $@

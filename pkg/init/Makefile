@@ -5,6 +5,7 @@ default: push
 
 $(START_STOP_DAEMON): start-stop-daemon.c
 	mkdir -p $(dir $@)
+	DOCKER_CONTENT_TRUST=1 docker pull $(C_COMPILE)
 	tar cf - $^ | DOCKER_CONTENT_TRUST=1 docker run --rm --net=none --log-driver=none -i $(C_COMPILE) -o $@ | tar xf -
 
 .PHONY: tag push
