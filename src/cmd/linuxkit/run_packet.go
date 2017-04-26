@@ -4,10 +4,12 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	log "github.com/Sirupsen/logrus"
-	"github.com/packethost/packngo"
 	"net/http"
 	"os"
+	"path/filepath"
+
+	log "github.com/Sirupsen/logrus"
+	"github.com/packethost/packngo"
 )
 
 const (
@@ -39,8 +41,9 @@ func ValidateHTTPURL(url string) {
 // Process the run arguments and execute run
 func runPacket(args []string) {
 	packetCmd := flag.NewFlagSet("packet", flag.ExitOnError)
+	invoked := filepath.Base(os.Args[0])
 	packetCmd.Usage = func() {
-		fmt.Printf("USAGE: %s run packet [options] [name]\n\n", os.Args[0])
+		fmt.Printf("USAGE: %s run packet [options] [name]\n\n", invoked)
 		fmt.Printf("Options:\n\n")
 		packetCmd.PrintDefaults()
 	}
