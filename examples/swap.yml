@@ -1,0 +1,83 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:42fe8cb1508b3afed39eb89821906e3cc7a70551
+  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/containerd:60e2486a74c665ba4df57e561729aec20758daed
+  - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    net: host
+    pid: host
+    ipc: host
+    capabilities:
+     - CAP_SYS_ADMIN
+    readonly: true
+  - name: binfmt
+    image: "linuxkit/binfmt:8881283ac627be1542811bd25c85e7782aebc692"
+    binds:
+     - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    readonly: true
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: format
+    image: "linuxkit/format:53748000acf515549d398e6ae68545c26c0f3a2e"
+    binds:
+     - /dev:/dev
+    capabilities:
+     - CAP_SYS_ADMIN
+     - CAP_MKNOD
+  - name: mount
+    image: "linuxkit/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"
+    binds:
+     - /dev:/dev
+     - /var:/var:rshared,rbind
+    capabilities:
+     - CAP_SYS_ADMIN
+    rootfsPropagation: shared
+    command: ["/mount.sh", "/var/external"]
+  - name: swap
+    image: "linuxkit/swap:68deee354ec4bbed405c5efedb25d60bb799b07d"
+    net: host
+    pid: host
+    capabilities:
+     - CAP_SYS_ADMIN
+    readonly: true
+    binds:
+     - /var:/var
+     - /dev:/dev
+    command: ["swap.sh", "--path", "/var/external/swap", "--size","1G"]
+services:
+  - name: rngd
+    image: "linuxkit/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    capabilities:
+     - CAP_SYS_ADMIN
+    oomScoreAdj: -800
+    readonly: true
+  - name: nginx
+    image: "nginx:alpine"
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+    net: host
+trust:
+  image:
+    - linuxkit/kernel
+outputs:
+  - format: kernel+initrd
+  - format: iso-bios
+  - format: iso-efi
