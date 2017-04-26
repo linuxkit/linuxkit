@@ -53,6 +53,8 @@ files:
 trust:
   image:
     - linuxkit/kernel
+    - linuxkit/binfmt
+    - linuxkit/rngd
 outputs:
   - format: kernel+initrd
   - format: iso-bios

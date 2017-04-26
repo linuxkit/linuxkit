@@ -43,6 +43,7 @@ services:
 trust:
   image:
     - linuxkit/kernel
+    - linuxkit/rngd
 files:
   - path: root/.ssh/authorized_keys
     contents: '#your ssh key here'
