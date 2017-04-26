@@ -18,7 +18,7 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c
   - name: binfmt
-    image: "linuxkit/binfmt:8881283ac627be1542811bd25c85e7782aebc692"
+    image: "linuxkit/binfmt:c7e69ebd918a237dd086a5c58dd888df772746bd"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true

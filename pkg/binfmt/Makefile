@@ -1,52 +1,30 @@
-QEMU_IMAGE=linuxkit/qemu-user-static:da39a3ee5e6b4b0d3255bfef95601890afd80709@sha256:65ee2b44b35c9457d83884c292b46bc3b5558a13af2c8eb187322f09160131a4
-QEMU_FILES=qemu-arm qemu-aarch64 qemu-ppc64le
-QEMU_BINARIES=$(addprefix usr/bin/,$(QEMU_FILES))
-
-GO_COMPILE=linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5
-
-BINFMT_BINARY=usr/bin/binfmt
-
-SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
-
-IMAGE=binfmt
-
-.PHONY: tag push clean container
+.PHONY: tag push
 default: push
 
-$(QEMU_BINARIES):
-	mkdir -p $(dir $@)
-	docker run --rm --net=none $(QEMU_IMAGE) tar cf - $@ | tar xf -
+IMAGE=binfmt
+SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
+DEPS=Dockerfile Makefile main.go $(wildcard etc/binmft.d/*)
 
-$(BINFMT_BINARY): main.go
-	mkdir -p $(dir $@)
-	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
-
-DIRS=dev proc sys
-$(DIRS):
-	mkdir -p $@
-
-DEPS=$(DIRS) $(QEMU_BINARIES) $(BINFMT_BINARY) etc/binfmt.d/00_moby.conf
-
-container: Dockerfile $(DEPS)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-
-hash: Dockerfile $(DEPS)
+# Note, this isn't quite right as we pull in qemu binaries from
+# alpine:edge and they may vary over time. BUT: We are going to change
+# the hashing stuff soon anyway, so there is little point in faffing
+# about with computing a hash during the build and get it out.
+hash: $(DEPS)
 	find $^ -type f | xargs cat | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
 
-push: hash container
+tag: hash
 	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 docker push linuxkit/$(IMAGE):$(shell cat hash))
-	docker rmi $(IMAGE):build
-	rm -f hash
+		(docker build --no-cache -t $(IMAGE):build . && \
+		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash))
 
-tag: hash container
+push: tag
 	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
+		docker push linuxkit/$(IMAGE):$(shell cat hash)
 	rm -f hash
+	docker rmi $(IMAGE):build || true
 
 clean:
-	rm -rf hash $(DIRS) usr
+	rm -f hash
+	docker rmi $(IMAGE):build || true
 
 .DELETE_ON_ERROR:
