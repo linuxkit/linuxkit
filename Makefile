@@ -37,7 +37,7 @@ test-bzImage: test-initrd.img
 
 .PHONY: test-qemu-efi
 test-qemu-efi: $(LINUXKIT) test-efi.iso
-	$(LINUXKIT) run $^ | tee test-efi.log
+	$(LINUXKIT) run qemu test | tee test-efi.log
 	$(call check_test_log, test-efi.log)
 
 bin:
@@ -53,7 +53,7 @@ endef
 .PHONY: test-hyperkit
 test-hyperkit: $(LINUXKIT) test-initrd.img test-bzImage test-cmdline
 	rm -f disk.img
-	$(LINUXKIT) run test | tee test.log
+	$(LINUXKIT) run hyperkit test | tee test.log
 	$(call check_test_log, test.log)
 
 .PHONY: test-gcp
