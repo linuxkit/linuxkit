@@ -7,19 +7,31 @@ run` uses [HyperKit](https://github.com/moby/hyperkit) and
 [VPNKit](https://github.com/moby/vpnkit) and the edge release ships
 with updated versions of both.
 
+
 ## Networking
 
 By default, `linuxkit run` creates a VM with a single network
-interface which, logically, is attached to a L2 bridge, which also has
-the VM used by Docker for Mac attached to it. This means that the LinuxKit
-VMs can be accessed from containers running on Docker for Mac.
+interface which, logically, is attached to a L2 bridge. The bridge
+also has the VM used by Docker for Mac attached to it. This means that
+the LinuxKit VMs, created with `linuxkit run`, can be accessed from
+containers running on Docker for Mac.
 
 The LinuxKit VMs have IP addresses on the `192.168.65.0/24` subnet
 assigned by a DHCP server part of VPNKit. `192.168.65.1` is reserved
 for VPNKit as the default gateway and `192.168.65.2` is used by the
 Docker for Mac VM.
 
-By default, LinuxKit VMs get incrementally increasing IP addresses, but you can assign a fixed IP address with `linuxkit run -ip`. It's best to choose an IP address from the DHCP address range above, but care must be taking to avoid clashes of IP address.
+By default, LinuxKit VMs get incrementally increasing IP addresses,
+but you can assign a fixed IP address with `linuxkit run -ip`. It's
+best to choose an IP address from the DHCP address range above, but
+care must be taken to avoid clashes of IP address.
+
+*NOTE:* The LinuxKit VMs can *not* be directly accessed by IP address
+from the host.  Enabling this would require use of the macOS `vmnet`
+framework, which requires the VMs to run as `root`.  We don't consider
+this option palatable, and provide alternative options to access the
+VMs over the network below.
+
 
 ### Accessing services
 
