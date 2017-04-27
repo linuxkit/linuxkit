@@ -48,7 +48,7 @@ func runQemu(args []string) {
 	qemuGUI := qemuFlags.Bool("gui", false, "Set qemu to use video output instead of stdio")
 	qemuUEFI := qemuFlags.Bool("uefi", false, "Set UEFI boot from 'prefix'-efi.iso")
 	qemuIso := qemuFlags.Bool("iso", false, "Set Legacy BIOS boot from 'prefix'.iso")
-	qemuKernel := qemuFlags.Bool("kernel", true, "Set boot using 'prefix'-bzImage/-initrd/-cmdline")
+	qemuKernel := qemuFlags.Bool("kernel", true, "Set boot using 'prefix'-kernel/-initrd/-cmdline")
 
 	// Paths and settings for Disks and UEFI firware
 	qemuDiskPath := qemuFlags.String("diskpath", "", "Path to disk image to use")
@@ -256,9 +256,9 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		qemuArgs = append(qemuArgs, "-boot", "d")
 	}
 
-	// build kernel boot config from bzImage/initrd/cmdline
+	// build kernel boot config from kernel/initrd/cmdline
 	if config.Kernel {
-		qemuKernelPath := buildPath(config.Prefix, "-bzImage")
+		qemuKernelPath := buildPath(config.Prefix, "-kernel")
 		qemuInitrdPath := buildPath(config.Prefix, "-initrd.img")
 		qemuArgs = append(qemuArgs, "-kernel", qemuKernelPath)
 		qemuArgs = append(qemuArgs, "-initrd", qemuInitrdPath)

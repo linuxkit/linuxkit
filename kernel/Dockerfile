@@ -58,7 +58,7 @@ FROM linuxkit/toybox-media:eee3dd4d72cd784801e95b1781e6c4f9d8a5e5eb@sha256:7f940
 ENTRYPOINT []
 CMD []
 WORKDIR /
-COPY --from=kernel-build bzImage /
+COPY --from=kernel-build bzImage /kernel
 COPY --from=kernel-build kernel-headers.tar /
 COPY --from=kernel-build kernel-modules.tar /kernel.tar
 COPY --from=kernel-build kernel-dev.tar /

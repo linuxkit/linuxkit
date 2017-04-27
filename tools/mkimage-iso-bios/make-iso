@@ -5,7 +5,7 @@ set -e
 mkdir -p /tmp/iso
 cd /tmp/iso
 
-# input is a tarball of vmlinuz64 and initrd.img on stdin
+# input is a tarball of kernel and initrd.img on stdin
 # output is an iso on stdout
 
 # extract. BSD tar auto recognises compression, unlike GNU tar
@@ -13,10 +13,10 @@ cd /tmp/iso
 [ -t 0 ] || bsdtar xzf -
 
 INITRD="$(find . -name '*.img')"
-KERNEL="$(find . -name vmlinuz64 -or -name bzImage)"
+KERNEL="$(find . -name kernel -or -name '*bzImage')"
 CMDLINE="$*"
 
-[ "$KERNEL" = "vmlinuz64" ] || mv "$KERNEL" vmlinuz64
+[ "$KERNEL" = "kernel" ] || mv "$KERNEL" kernel
 [ "$INITRD" = "initrd.img" ] || mv "$INITRD" initrd.img
 
 # clean up subdirectories
@@ -28,7 +28,7 @@ cp /usr/share/syslinux/ldlinux.c32 ./isolinux/
 
 CFG="DEFAULT linux
 LABEL linux
-    KERNEL /vmlinuz64
+    KERNEL /kernel
     INITRD /initrd.img
     APPEND ${CMDLINE}
 "

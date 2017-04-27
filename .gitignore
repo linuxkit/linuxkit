@@ -11,5 +11,5 @@ Dockerfile.media
 *.vhdx
 *.efi
 *.qcow2
-*-bzImage
+*-kernel
 *-cmdline
