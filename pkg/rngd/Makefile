@@ -22,7 +22,13 @@ push: tag
 	rm -f hash
 	docker rmi $(IMAGE):build || true
 
-sign: tag
+signed-tag: hash
+	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+		(DOCKER_CONTENT_TRUST=1 docker pull $(BASE) && \
+		 docker build --no-cache -t $(IMAGE):build . && \
+		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash))
+
+sign: signed-tag
 	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
 		DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(shell cat hash)
 	rm -f hash
