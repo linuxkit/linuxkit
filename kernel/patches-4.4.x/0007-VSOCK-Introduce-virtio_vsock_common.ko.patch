@@ -1,4 +1,4 @@
-From 2e00a63d8effe207c3ab15e935fd8bc94a7e3d8e Mon Sep 17 00:00:00 2001
+From 5f2c7a423a485fe4e24e989aa21f2959a76a623d Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:32 +0100
 Subject: [PATCH 07/44] VSOCK: Introduce virtio_vsock_common.ko

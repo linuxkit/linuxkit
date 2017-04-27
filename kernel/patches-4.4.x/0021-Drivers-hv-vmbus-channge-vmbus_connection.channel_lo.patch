@@ -1,4 +1,4 @@
-From c4ed24265ff63770c8e2aa13fd9a343f7e082d55 Mon Sep 17 00:00:00 2001
+From 0b50537d8322491c2e46f566aaa449955a07d3cf Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:51 -0800
 Subject: [PATCH 21/44] Drivers: hv: vmbus: channge
@@ -64,7 +64,7 @@ index 8529dd2ebc3d..306c7dff6c77 100644
  	if (newchannel->target_cpu != get_cpu()) {
  		put_cpu();
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index 4fc2e8836e60..521f48ed188e 100644
+index 2bbc53025549..c0c0aaf88228 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
 @@ -146,7 +146,7 @@ int vmbus_connect(void)

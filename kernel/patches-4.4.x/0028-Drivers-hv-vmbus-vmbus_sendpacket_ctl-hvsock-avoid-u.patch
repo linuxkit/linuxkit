@@ -1,4 +1,4 @@
-From a44136941cd9a14ed3862733215b0cd9d05405ca Mon Sep 17 00:00:00 2001
+From 071ef6098a5c485c00463711bb7de80cfe241dd9 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:39 -0800
 Subject: [PATCH 28/44] Drivers: hv: vmbus: vmbus_sendpacket_ctl: hvsock: avoid
@@ -17,10 +17,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  1 file changed, 5 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index dd6de7fc442f..128dcf22e459 100644
+index def21d34f3ea..a42104ed0b59 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -659,6 +659,9 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
+@@ -661,6 +661,9 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
  	 * If we cannot write to the ring-buffer; signal the host
  	 * even if we may not have written anything. This is a rare
  	 * enough condition that it should not matter.
@@ -30,7 +30,7 @@ index dd6de7fc442f..128dcf22e459 100644
  	 */
  
  	if (channel->signal_policy)
-@@ -666,7 +669,8 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
+@@ -668,7 +671,8 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
  	else
  		kick_q = true;
  

@@ -1,4 +1,4 @@
-From eec959fe413a0e01513cfbf35b00b856b6bb90d0 Mon Sep 17 00:00:00 2001
+From 3fe16c66afb8d13c0ac3606b69b06d008612031e Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Mon, 14 Dec 2015 19:02:00 -0800
 Subject: [PATCH 22/44] Drivers: hv: remove code duplication between
@@ -21,10 +21,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  1 file changed, 22 insertions(+), 43 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 2889d97c03b1..dd6de7fc442f 100644
+index b00cdfb725de..def21d34f3ea 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -922,8 +922,10 @@ EXPORT_SYMBOL_GPL(vmbus_sendpacket_multipagebuffer);
+@@ -924,8 +924,10 @@ EXPORT_SYMBOL_GPL(vmbus_sendpacket_multipagebuffer);
   *
   * Mainly used by Hyper-V drivers.
   */
@@ -37,7 +37,7 @@ index 2889d97c03b1..dd6de7fc442f 100644
  {
  	struct vmpacket_descriptor desc;
  	u32 packetlen;
-@@ -941,27 +943,34 @@ int vmbus_recvpacket(struct vmbus_channel *channel, void *buffer,
+@@ -943,27 +945,34 @@ int vmbus_recvpacket(struct vmbus_channel *channel, void *buffer,
  		return 0;
  
  	packetlen = desc.len8 << 3;
@@ -81,7 +81,7 @@ index 2889d97c03b1..dd6de7fc442f 100644
  }
  EXPORT_SYMBOL(vmbus_recvpacket);
  
-@@ -972,37 +981,7 @@ int vmbus_recvpacket_raw(struct vmbus_channel *channel, void *buffer,
+@@ -974,37 +983,7 @@ int vmbus_recvpacket_raw(struct vmbus_channel *channel, void *buffer,
  			      u32 bufferlen, u32 *buffer_actual_len,
  			      u64 *requestid)
  {

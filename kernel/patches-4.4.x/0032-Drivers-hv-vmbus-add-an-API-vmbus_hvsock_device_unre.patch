@@ -1,4 +1,4 @@
-From ed49f87f8a1d5c750ebd5d998cc5ccb83002f157 Mon Sep 17 00:00:00 2001
+From 00f2a6e60fbfd79b5c8b891e6a19c310c90d91fd Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:43 -0800
 Subject: [PATCH 32/44] Drivers: hv: vmbus: add an API
@@ -114,7 +114,7 @@ index 76864c98a110..cf311be88cb4 100644
   * vmbus_onoffers_delivered -
   * This is invoked when all offers have been delivered.
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index 521f48ed188e..09c08b56e3dc 100644
+index c0c0aaf88228..4a1679d54c1f 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
 @@ -285,7 +285,8 @@ struct vmbus_channel *relid2channel(u32 relid)

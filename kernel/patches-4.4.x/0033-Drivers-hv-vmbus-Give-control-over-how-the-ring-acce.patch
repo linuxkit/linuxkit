@@ -1,4 +1,4 @@
-From 3fb0c2d93fed61f62937316842f64f4cbff1162b Mon Sep 17 00:00:00 2001
+From 99735e5a356d8a2d409872f8062e9e89ed2fb377 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:45 -0800
 Subject: [PATCH 33/44] Drivers: hv: vmbus: Give control over how the ring
@@ -24,10 +24,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  5 files changed, 37 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 415f6c7d92a6..57a1b659d05f 100644
+index b27054e4eac2..4077e7243151 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -639,6 +639,7 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
+@@ -641,6 +641,7 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
  	u64 aligned_data = 0;
  	int ret;
  	bool signal = false;
@@ -35,7 +35,7 @@ index 415f6c7d92a6..57a1b659d05f 100644
  	int num_vecs = ((bufferlen != 0) ? 3 : 1);
  
  
-@@ -658,7 +659,7 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
+@@ -660,7 +661,7 @@ int vmbus_sendpacket_ctl(struct vmbus_channel *channel, void *buffer,
  	bufferlist[2].iov_len = (packetlen_aligned - packetlen);
  
  	ret = hv_ringbuffer_write(&channel->outbound, bufferlist, num_vecs,
@@ -44,7 +44,7 @@ index 415f6c7d92a6..57a1b659d05f 100644
  
  	/*
  	 * Signalling the host is conditional on many factors:
-@@ -738,6 +739,7 @@ int vmbus_sendpacket_pagebuffer_ctl(struct vmbus_channel *channel,
+@@ -740,6 +741,7 @@ int vmbus_sendpacket_pagebuffer_ctl(struct vmbus_channel *channel,
  	struct kvec bufferlist[3];
  	u64 aligned_data = 0;
  	bool signal = false;
@@ -52,7 +52,7 @@ index 415f6c7d92a6..57a1b659d05f 100644
  
  	if (pagecount > MAX_PAGE_BUFFER_COUNT)
  		return -EINVAL;
-@@ -774,7 +776,8 @@ int vmbus_sendpacket_pagebuffer_ctl(struct vmbus_channel *channel,
+@@ -776,7 +778,8 @@ int vmbus_sendpacket_pagebuffer_ctl(struct vmbus_channel *channel,
  	bufferlist[2].iov_base = &aligned_data;
  	bufferlist[2].iov_len = (packetlen_aligned - packetlen);
  
@@ -62,7 +62,7 @@ index 415f6c7d92a6..57a1b659d05f 100644
  
  	/*
  	 * Signalling the host is conditional on many factors:
-@@ -837,6 +840,7 @@ int vmbus_sendpacket_mpb_desc(struct vmbus_channel *channel,
+@@ -839,6 +842,7 @@ int vmbus_sendpacket_mpb_desc(struct vmbus_channel *channel,
  	struct kvec bufferlist[3];
  	u64 aligned_data = 0;
  	bool signal = false;
@@ -70,7 +70,7 @@ index 415f6c7d92a6..57a1b659d05f 100644
  
  	packetlen = desc_size + bufferlen;
  	packetlen_aligned = ALIGN(packetlen, sizeof(u64));
-@@ -856,7 +860,8 @@ int vmbus_sendpacket_mpb_desc(struct vmbus_channel *channel,
+@@ -858,7 +862,8 @@ int vmbus_sendpacket_mpb_desc(struct vmbus_channel *channel,
  	bufferlist[2].iov_base = &aligned_data;
  	bufferlist[2].iov_len = (packetlen_aligned - packetlen);
  
@@ -80,7 +80,7 @@ index 415f6c7d92a6..57a1b659d05f 100644
  
  	if (ret == 0 && signal)
  		vmbus_setevent(channel);
-@@ -881,6 +886,7 @@ int vmbus_sendpacket_multipagebuffer(struct vmbus_channel *channel,
+@@ -883,6 +888,7 @@ int vmbus_sendpacket_multipagebuffer(struct vmbus_channel *channel,
  	struct kvec bufferlist[3];
  	u64 aligned_data = 0;
  	bool signal = false;
@@ -88,7 +88,7 @@ index 415f6c7d92a6..57a1b659d05f 100644
  	u32 pfncount = NUM_PAGES_SPANNED(multi_pagebuffer->offset,
  					 multi_pagebuffer->len);
  
-@@ -919,7 +925,8 @@ int vmbus_sendpacket_multipagebuffer(struct vmbus_channel *channel,
+@@ -921,7 +927,8 @@ int vmbus_sendpacket_multipagebuffer(struct vmbus_channel *channel,
  	bufferlist[2].iov_base = &aligned_data;
  	bufferlist[2].iov_len = (packetlen_aligned - packetlen);
  
