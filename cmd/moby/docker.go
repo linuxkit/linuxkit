@@ -4,6 +4,7 @@ package main
 // and also using the Docker API not shelling out
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -13,8 +14,9 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/engine-api/client"
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
 	"golang.org/x/net/context"
 )
 
@@ -107,131 +109,54 @@ func dockerRunInput(input io.Reader, args ...string) ([]byte, error) {
 
 func dockerCreate(image string) (string, error) {
 	log.Debugf("docker create: %s", image)
-	docker, err := exec.LookPath("docker")
+	cli, err := dockerClient()
 	if err != nil {
-		return "", errors.New("Docker does not seem to be installed")
+		return "", errors.New("could not initialize Docker API client")
 	}
 	// we do not ever run the container, so /dev/null is used as command
-	args := []string{"create", image, "/dev/null"}
-	cmd := exec.Command(docker, args...)
-
-	stderrPipe, err := cmd.StderrPipe()
+	config := &container.Config{
+		Cmd:   []string{"/dev/null"},
+		Image: image,
+	}
+	respBody, err := cli.ContainerCreate(context.Background(), config, nil, nil, "")
 	if err != nil {
 		return "", err
 	}
 
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return "", err
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return "", err
-	}
-
-	stdout, err := ioutil.ReadAll(stdoutPipe)
-	if err != nil {
-		return "", err
-	}
-
-	stderr, err := ioutil.ReadAll(stderrPipe)
-	if err != nil {
-		return "", err
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		return "", fmt.Errorf("%v: %s", err, stderr)
-	}
-
-	container := strings.TrimSpace(string(stdout))
 	log.Debugf("docker create: %s...Done", image)
-	return container, nil
+	return respBody.ID, nil
 }
 
 func dockerExport(container string) ([]byte, error) {
 	log.Debugf("docker export: %s", container)
-	docker, err := exec.LookPath("docker")
+	cli, err := dockerClient()
 	if err != nil {
-		return []byte{}, errors.New("Docker does not seem to be installed")
+		return []byte{}, errors.New("could not initialize Docker API client")
 	}
-	args := []string{"export", container}
-	cmd := exec.Command(docker, args...)
+	responseBody, err := cli.ContainerExport(context.Background(), container)
+	if err != nil {
+		return []byte{}, err
+	}
+	defer responseBody.Close()
 
-	stderrPipe, err := cmd.StderrPipe()
+	output := bytes.NewBuffer(nil)
+	_, err = io.Copy(output, responseBody)
 	if err != nil {
 		return []byte{}, err
 	}
 
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return []byte{}, err
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return []byte{}, err
-	}
-
-	stdout, err := ioutil.ReadAll(stdoutPipe)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	stderr, err := ioutil.ReadAll(stderrPipe)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		return []byte{}, fmt.Errorf("%v: %s", err, stderr)
-	}
-
-	log.Debugf("docker export: %s...Done", container)
-	return stdout, nil
+	return output.Bytes(), nil
 }
 
 func dockerRm(container string) error {
 	log.Debugf("docker rm: %s", container)
-	docker, err := exec.LookPath("docker")
+	cli, err := dockerClient()
 	if err != nil {
-		return errors.New("Docker does not seem to be installed")
+		return errors.New("could not initialize Docker API client")
 	}
-	args := []string{"rm", container}
-	cmd := exec.Command(docker, args...)
-
-	stderrPipe, err := cmd.StderrPipe()
-	if err != nil {
+	if err = cli.ContainerRemove(context.Background(), container, types.ContainerRemoveOptions{}); err != nil {
 		return err
 	}
-
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
-
-	_, err = ioutil.ReadAll(stdoutPipe)
-	if err != nil {
-		return err
-	}
-
-	stderr, err := ioutil.ReadAll(stderrPipe)
-	if err != nil {
-		return err
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		return fmt.Errorf("%v: %s", err, stderr)
-	}
-
 	log.Debugf("docker rm: %s...Done", container)
 	return nil
 }
@@ -296,14 +221,14 @@ func dockerClient() (*client.Client, error) {
 func dockerInspectImage(cli *client.Client, image string) (types.ImageInspect, error) {
 	log.Debugf("docker inspect image: %s", image)
 
-	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), image, false)
+	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), image)
 	if err != nil {
 		if client.IsErrImageNotFound(err) {
 			pullErr := dockerPull(image, false)
 			if pullErr != nil {
 				return types.ImageInspect{}, pullErr
 			}
-			inspect, _, err = cli.ImageInspectWithRaw(context.Background(), image, false)
+			inspect, _, err = cli.ImageInspectWithRaw(context.Background(), image)
 			if err != nil {
 				return types.ImageInspect{}, err
 			}

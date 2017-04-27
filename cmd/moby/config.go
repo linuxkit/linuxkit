@@ -13,7 +13,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/docker/engine-api/types"
+	"github.com/docker/docker/api/types"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v2"
