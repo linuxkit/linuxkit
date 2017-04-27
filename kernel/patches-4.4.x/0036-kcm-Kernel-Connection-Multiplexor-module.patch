@@ -1,4 +1,4 @@
-From ef26fc5c932885ff8f5ca8ed4e3118e3ec34ae9c Mon Sep 17 00:00:00 2001
+From 0075101abb0553041e205862a4c1207d12b42050 Mon Sep 17 00:00:00 2001
 From: Tom Herbert <tom@herbertland.com>
 Date: Mon, 7 Mar 2016 14:11:06 -0800
 Subject: [PATCH 36/44] kcm: Kernel Connection Multiplexor module

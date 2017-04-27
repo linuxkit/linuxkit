@@ -1,4 +1,4 @@
-From ded0d58d840303123dd7e792a36892141d19bc79 Mon Sep 17 00:00:00 2001
+From 8cd0a07327d9a76d2fd2b9b133632edd38dcd82e Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:42 -0800
 Subject: [PATCH 31/44] Drivers: hv: vmbus: add a per-channel rescind callback

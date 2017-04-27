@@ -59,6 +59,6 @@ endef
 #
 # Build Targets
 #
-$(eval $(call kernel,4.10.11,4.10.x))
-$(eval $(call kernel,4.9.23,4.9.x))
-$(eval $(call kernel,4.4.62,4.4.x))
+$(eval $(call kernel,4.10.12,4.10.x))
+$(eval $(call kernel,4.9.24,4.9.x))
+$(eval $(call kernel,4.4.63,4.4.x))
