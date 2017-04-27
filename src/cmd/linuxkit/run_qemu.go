@@ -238,7 +238,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	}
 
 	if config.DiskPath != "" {
-		qemuArgs = append(qemuArgs, "-drive", "file="+config.DiskPath+",format=qcow2")
+		qemuArgs = append(qemuArgs, "-drive", "file="+config.DiskPath+",format=qcow2,index=0,media=disk")
 	}
 
 	// Check flags for iso/uefi boot and if so disable kernel boot
