@@ -1,11 +1,12 @@
-C_COMPILE=linuxkit/c-compile:63b085bbaec1aa7c42a7bd22a4b1c350d900617d@sha256:286e3a729c7a0b1a605ae150235416190f9f430c29b00e65fa50ff73158998e5
+C_COMPILE=linuxkit/c-compile:63b085bbaec1aa7c42a7bd22a4b1c350d900617d
 START_STOP_DAEMON=sbin/start-stop-daemon
 
 default: push
 
 $(START_STOP_DAEMON): start-stop-daemon.c
 	mkdir -p $(dir $@)
-	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(C_COMPILE) -o $@ | tar xf -
+	DOCKER_CONTENT_TRUST=1 docker pull $(C_COMPILE)
+	tar cf - $^ | DOCKER_CONTENT_TRUST=1 docker run --rm --net=none --log-driver=none -i $(C_COMPILE) -o $@ | tar xf -
 
 .PHONY: tag push
 
