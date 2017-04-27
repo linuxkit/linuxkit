@@ -1,4 +1,4 @@
-From 2e9d0312a7cdeffc7c8587eba9cfde4d4d8c053a Mon Sep 17 00:00:00 2001
+From 47f183f5dc2b326a5894c303591567fe84c656db Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:48 -0800
 Subject: [PATCH 19/44] Drivers: hv: vmbus: do sanity check of channel state in
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  1 file changed, 12 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 1ef37c727572..2889d97c03b1 100644
+index d037454fe7b8..b00cdfb725de 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -512,6 +512,18 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+@@ -514,6 +514,18 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
  	tasklet = hv_context.event_dpc[channel->target_cpu];
  	tasklet_disable(tasklet);
  

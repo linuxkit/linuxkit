@@ -1,4 +1,4 @@
-From 87c1e6106d038f24305d498eb20c617f3c64dd03 Mon Sep 17 00:00:00 2001
+From eca5fc2f7461ac64a9b6a3d102c2d1edefa74dc8 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:40 -0800
 Subject: [PATCH 29/44] Drivers: hv: vmbus: define a new VMBus message type for
@@ -20,10 +20,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  3 files changed, 32 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 128dcf22e459..415f6c7d92a6 100644
+index a42104ed0b59..b27054e4eac2 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -219,6 +219,21 @@ error0:
+@@ -214,6 +214,21 @@ error0:
  }
  EXPORT_SYMBOL_GPL(vmbus_open);
  

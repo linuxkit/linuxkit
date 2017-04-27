@@ -1,4 +1,4 @@
-From 71f4e7a785f9a8e44ff66a778cf652d8d539929b Mon Sep 17 00:00:00 2001
+From b7443966e422f409f0ee950941512755e446e855 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:16 -0800
 Subject: [PATCH 34/44] Drivers: hv: vmbus: avoid wait_for_completion() on
@@ -48,7 +48,7 @@ index b40f429aaa13..f70e35278b94 100644
  	else
  		vmbus_wait_for_unload();
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index 09c08b56e3dc..78b8be87844c 100644
+index 4a1679d54c1f..46cc9c639775 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
 @@ -233,7 +233,7 @@ void vmbus_disconnect(void)

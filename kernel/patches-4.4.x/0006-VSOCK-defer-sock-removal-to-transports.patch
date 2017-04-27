@@ -1,4 +1,4 @@
-From a42aaacf46cee7eb5f24df7ea9537308f24b1ed9 Mon Sep 17 00:00:00 2001
+From 9ad46b96863f47ae1bcf0db7600a3839c378701e Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:31 +0100
 Subject: [PATCH 06/44] VSOCK: defer sock removal to transports
@@ -66,7 +66,7 @@ index e34d96f8bde2..17dbbe64cd73 100644
  
  		lock_sock(sk);
 diff --git a/net/vmw_vsock/vmci_transport.c b/net/vmw_vsock/vmci_transport.c
-index 0a369bb440e7..706991e00e93 100644
+index 662bdd20a748..5f8c99eb104c 100644
 --- a/net/vmw_vsock/vmci_transport.c
 +++ b/net/vmw_vsock/vmci_transport.c
 @@ -1644,6 +1644,8 @@ static void vmci_transport_destruct(struct vsock_sock *vsk)

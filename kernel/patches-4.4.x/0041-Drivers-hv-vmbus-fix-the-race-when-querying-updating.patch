@@ -1,4 +1,4 @@
-From 73602650e735f0f4c405ef8ce9ef1b73bd75cda6 Mon Sep 17 00:00:00 2001
+From 5550ad5e1a94401410f32ed9fb91763f6aa3bd00 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 21 May 2016 16:55:50 +0800
 Subject: [PATCH 41/44] Drivers: hv: vmbus: fix the race when querying &
@@ -28,10 +28,10 @@ Origin: https://github.com/dcui/linux/commit/fbcca73228b9b90911ab30fdf75f532b2b7
  2 files changed, 17 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 57a1b659d05f..da76a2e9199a 100644
+index 4077e7243151..a19aadc4a297 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -592,6 +592,7 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+@@ -594,6 +594,7 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
  
  out:
  	tasklet_enable(tasklet);
