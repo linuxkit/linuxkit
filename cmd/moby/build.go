@@ -116,21 +116,21 @@ func buildInternal(name string, pull bool, config []byte) {
 			log.Fatalf("Could not pull image %s: %v", m.Kernel.Image, err)
 		}
 	}
-	// get kernel bzImage and initrd tarball from container
+	// get kernel and initrd tarball from container
 	// TODO examine contents to see what names they might have
 	log.Infof("Extract kernel image: %s", m.Kernel.Image)
 	const (
-		bzimageName = "bzImage"
-		ktarName    = "kernel.tar"
+		kernelName = "kernel"
+		ktarName   = "kernel.tar"
 	)
-	out, err := dockerRun(m.Kernel.Image, "tar", "cf", "-", bzimageName, ktarName)
+	out, err := dockerRun(m.Kernel.Image, "tar", "cf", "-", kernelName, ktarName)
 	if err != nil {
 		log.Fatalf("Failed to extract kernel image and tarball: %v", err)
 	}
 	buf := bytes.NewBuffer(out)
-	bzimage, ktar, err := untarKernel(buf, bzimageName, ktarName)
+	kernel, ktar, err := untarKernel(buf, kernelName, ktarName)
 	if err != nil {
-		log.Fatalf("Could not extract bzImage and kernel filesystem from tarball. %v", err)
+		log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
 	}
 	initrdAppend(iw, ktar)
 
@@ -212,16 +212,16 @@ func buildInternal(name string, pull bool, config []byte) {
 	}
 
 	log.Infof("Create outputs:")
-	err = outputs(m, name, bzimage.Bytes(), w.Bytes())
+	err = outputs(m, name, kernel.Bytes(), w.Bytes())
 	if err != nil {
 		log.Fatalf("Error writing outputs: %v", err)
 	}
 }
 
-func untarKernel(buf *bytes.Buffer, bzimageName, ktarName string) (*bytes.Buffer, *bytes.Buffer, error) {
+func untarKernel(buf *bytes.Buffer, kernelName, ktarName string) (*bytes.Buffer, *bytes.Buffer, error) {
 	tr := tar.NewReader(buf)
 
-	var bzimage, ktar *bytes.Buffer
+	var kernel, ktar *bytes.Buffer
 
 	for {
 		hdr, err := tr.Next()
@@ -232,9 +232,9 @@ func untarKernel(buf *bytes.Buffer, bzimageName, ktarName string) (*bytes.Buffer
 			log.Fatalln(err)
 		}
 		switch hdr.Name {
-		case bzimageName:
-			bzimage = new(bytes.Buffer)
-			_, err := io.Copy(bzimage, tr)
+		case kernelName:
+			kernel = new(bytes.Buffer)
+			_, err := io.Copy(kernel, tr)
 			if err != nil {
 				return nil, nil, err
 			}
@@ -249,9 +249,12 @@ func untarKernel(buf *bytes.Buffer, bzimageName, ktarName string) (*bytes.Buffer
 		}
 	}
 
-	if ktar == nil || bzimage == nil {
-		return nil, nil, errors.New("did not find bzImage and kernel.tar in tarball")
+	if kernel == nil {
+		return nil, nil, errors.New("did not find kernel in kernel image")
+	}
+	if ktar == nil {
+		return nil, nil, errors.New("did not find kernel.tar in kernel image")
 	}
 
-	return bzimage, ktar, nil
+	return kernel, ktar, nil
 }

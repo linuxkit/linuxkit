@@ -11,50 +11,50 @@ import (
 )
 
 const (
-	bios = "linuxkit/mkimage-iso-bios:6ebdce90f63991eb1d5a578e6570dc1e5781e9fe@sha256:0c6116d4c069d17ebdaa86737841b3be6ae84f6c69a5e79fe59cd8310156aa96"
-	efi  = "linuxkit/mkimage-iso-efi:008fac48c41ec38b36ce1ae62f93a69ee9328569@sha256:35282010b95680fe754e557bc65f0b2ffd85e925bd62f427fb77bf494145083b"
-	gcp  = "linuxkit/mkimage-gcp:a8b909202c0a0ed2ac31b5c21f6701d3253ff29a@sha256:2ba307e537d6fae37115848c8a0f5a9b3ed578e102c93c5d2578ece4a91cb828"
-	qcow = "linuxkit/mkimage-qcow:a1053b5dc80834adcba2e5f49354f62797e35f84@sha256:3312d523a67e7c7efb3c3eaa5a4dfbd46659549681d6d62cdeb02bd475b3a22c"
-	vhd  = "linuxkit/mkimage-vhd:98d6c879a52cb85b87269bc6ecf9df7dd134427a@sha256:0ca6f46690c7890c77295cc6c531f95fc8bb41df42c237ae4b32eea338cec4e7"
-	vmdk = "linuxkit/mkimage-vmdk:10b8717b6a2099741b702c31af2d9a42ce50425e@sha256:bf7cf6029e61685e9085a1883b1be1167a7f06199f3b76a944ea87b6f23f60d8"
+	bios = "linuxkit/mkimage-iso-bios:db791abed6f2b5320feb6cec255a635aee3756f6@sha256:e57483075307bcea4a7257f87eee733d3e24e7a964ba15dcc01111df6729ab3b"
+	efi  = "linuxkit/mkimage-iso-efi:5c2fc616bde288476a14f4f6dd0d273a66832822@sha256:876ef47ec2b30af40e70f1e98f496206eb430915867c4f9f400e1af47fd58d7c"
+	gcp  = "linuxkit/mkimage-gcp:46716b3d3f7aa1a7607a3426fe0ccebc554b14ee@sha256:18d8e0482f65a2481f5b6ba1e7ce77723b246bf13bdb612be5e64df90297940c"
+	qcow = "linuxkit/mkimage-qcow:69890f35b55e4ff8a2c7a714907f988e57056d02@sha256:f89dc09f82bdbf86d7edae89604544f20b99d99c9b5cabcf1f93308095d8c244"
+	vhd  = "linuxkit/mkimage-vhd:a04c8480d41ca9cef6b7710bd45a592220c3acb2@sha256:ba373dc8ae5dc72685dbe4b872d8f588bc68b2114abd8bdc6a74d82a2b62cce3"
+	vmdk = "linuxkit/mkimage-vmdk:182b541474ca7965c8e8f987389b651859f760da@sha256:99638c5ddb17614f54c6b8e11bd9d49d1dea9d837f38e0f6c1a5f451085d449b"
 )
 
-func outputs(m *Moby, base string, bzimage []byte, initrd []byte) error {
+func outputs(m *Moby, base string, kernel []byte, initrd []byte) error {
 	log.Debugf("output: %s %s", m.Outputs, base)
 	for _, o := range m.Outputs {
 		switch o.Format {
 		case "kernel+initrd":
-			err := outputKernelInitrd(base, bzimage, initrd, m.Kernel.Cmdline)
+			err := outputKernelInitrd(base, kernel, initrd, m.Kernel.Cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "iso-bios":
-			err := outputISO(bios, base+".iso", bzimage, initrd, m.Kernel.Cmdline)
+			err := outputISO(bios, base+".iso", kernel, initrd, m.Kernel.Cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "iso-efi":
-			err := outputISO(efi, base+"-efi.iso", bzimage, initrd, m.Kernel.Cmdline)
+			err := outputISO(efi, base+"-efi.iso", kernel, initrd, m.Kernel.Cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "gcp-img":
-			err := outputImg(gcp, base+".img.tar.gz", bzimage, initrd, m.Kernel.Cmdline)
+			err := outputImg(gcp, base+".img.tar.gz", kernel, initrd, m.Kernel.Cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "qcow", "qcow2":
-			err := outputImg(qcow, base+".qcow2", bzimage, initrd, m.Kernel.Cmdline)
+			err := outputImg(qcow, base+".qcow2", kernel, initrd, m.Kernel.Cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "vhd":
-			err := outputImg(vhd, base+".vhd", bzimage, initrd, m.Kernel.Cmdline)
+			err := outputImg(vhd, base+".vhd", kernel, initrd, m.Kernel.Cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "vmdk":
-			err := outputImg(vmdk, base+".vmdk", bzimage, initrd, m.Kernel.Cmdline)
+			err := outputImg(vmdk, base+".vmdk", kernel, initrd, m.Kernel.Cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
@@ -67,19 +67,19 @@ func outputs(m *Moby, base string, bzimage []byte, initrd []byte) error {
 	return nil
 }
 
-func tarInitrdKernel(bzimage, initrd []byte) (*bytes.Buffer, error) {
+func tarInitrdKernel(kernel, initrd []byte) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
 	hdr := &tar.Header{
-		Name: "bzImage",
+		Name: "kernel",
 		Mode: 0600,
-		Size: int64(len(bzimage)),
+		Size: int64(len(kernel)),
 	}
 	err := tw.WriteHeader(hdr)
 	if err != nil {
 		return buf, err
 	}
-	_, err = tw.Write(bzimage)
+	_, err = tw.Write(kernel)
 	if err != nil {
 		return buf, err
 	}
@@ -103,10 +103,10 @@ func tarInitrdKernel(bzimage, initrd []byte) (*bytes.Buffer, error) {
 	return buf, nil
 }
 
-func outputImg(image, filename string, bzimage []byte, initrd []byte, args ...string) error {
+func outputImg(image, filename string, kernel []byte, initrd []byte, args ...string) error {
 	log.Debugf("output img: %s %s", image, filename)
 	log.Infof("  %s", filename)
-	buf, err := tarInitrdKernel(bzimage, initrd)
+	buf, err := tarInitrdKernel(kernel, initrd)
 	if err != nil {
 		return err
 	}
@@ -121,10 +121,10 @@ func outputImg(image, filename string, bzimage []byte, initrd []byte, args ...st
 	return nil
 }
 
-func outputISO(image, filename string, bzimage []byte, initrd []byte, args ...string) error {
+func outputISO(image, filename string, kernel []byte, initrd []byte, args ...string) error {
 	log.Debugf("output iso: %s %s", image, filename)
 	log.Infof("  %s", filename)
-	buf, err := tarInitrdKernel(bzimage, initrd)
+	buf, err := tarInitrdKernel(kernel, initrd)
 	if err != nil {
 		return err
 	}
@@ -139,14 +139,14 @@ func outputISO(image, filename string, bzimage []byte, initrd []byte, args ...st
 	return nil
 }
 
-func outputKernelInitrd(base string, bzimage []byte, initrd []byte, cmdline string) error {
+func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline string) error {
 	log.Debugf("output kernel/initrd: %s %s", base, cmdline)
-	log.Infof("  %s %s %s", base+"-bzImage", base+"-initrd.img", base+"-cmdline")
+	log.Infof("  %s %s %s", base+"-kernel", base+"-initrd.img", base+"-cmdline")
 	err := ioutil.WriteFile(base+"-initrd.img", initrd, os.FileMode(0644))
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(base+"-bzImage", bzimage, os.FileMode(0644))
+	err = ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644))
 	if err != nil {
 		return err
 	}
