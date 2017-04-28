@@ -48,7 +48,7 @@ onboot:
     rootfsPropagation: shared
     command: ["/mount.sh", "/var/external"]
   - name: swap
-    image: "linuxkit/swap:68deee354ec4bbed405c5efedb25d60bb799b07d"
+    image: "linuxkit/swap:edd74ce7ced2b97dba5075012f497570c5490299"
     net: host
     pid: host
     capabilities:
