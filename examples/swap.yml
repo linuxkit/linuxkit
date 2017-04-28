@@ -48,7 +48,7 @@ onboot:
     rootfsPropagation: shared
     command: ["/mount.sh", "/var/external"]
   - name: swap
-    image: "linuxkit/swap:edd74ce7ced2b97dba5075012f497570c5490299"
+    image: "linuxkit/swap:d089b31acad8a5f6a5f1c368ddd1dfe1d049b100"
     net: host
     pid: host
     capabilities:
@@ -57,7 +57,7 @@ onboot:
     binds:
      - /var:/var
      - /dev:/dev
-    command: ["swap.sh", "--path", "/var/external/swap", "--size","1G"]
+    command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G"]
 services:
   - name: rngd
     image: "linuxkit/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
