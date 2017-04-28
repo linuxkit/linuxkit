@@ -40,7 +40,7 @@ nameserver 2001:4860:4860::8844
 }
 
 // ImageExtract extracts the filesystem from an image and returns a tarball with the files prefixed by the given path
-func ImageExtract(image, prefix string) ([]byte, error) {
+func ImageExtract(image, prefix string, trust bool, pull bool) ([]byte, error) {
 	log.Debugf("image extract: %s %s", image, prefix)
 	out := new(bytes.Buffer)
 	tw := tar.NewWriter(out)
@@ -48,7 +48,7 @@ func ImageExtract(image, prefix string) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	err = imageTar(image, prefix, tw)
+	err = imageTar(image, prefix, tw, trust, pull)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -87,14 +87,31 @@ func tarPrefix(path string, tw *tar.Writer) error {
 	return nil
 }
 
-func imageTar(image, prefix string, tw *tar.Writer) error {
+func imageTar(image, prefix string, tw *tar.Writer, trust bool, pull bool) error {
 	log.Debugf("image tar: %s %s", image, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != byte('/') {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
 	}
+
+	if pull || trust {
+		log.Infof("Pull image: %s", image)
+		err := dockerPull(image, trust)
+		if err != nil {
+			return fmt.Errorf("Could not pull image %s: %v", image, err)
+		}
+	}
 	container, err := dockerCreate(image)
 	if err != nil {
-		return fmt.Errorf("Failed to docker create image %s: %v", image, err)
+		// most likely we need to pull the image if this failed
+		log.Infof("Pull image: %s", image)
+		err := dockerPull(image, trust)
+		if err != nil {
+			return fmt.Errorf("Could not pull image %s: %v", image, err)
+		}
+		container, err = dockerCreate(image)
+		if err != nil {
+			return fmt.Errorf("Failed to docker create image %s: %v", image, err)
+		}
 	}
 	contents, err := dockerExport(container)
 	if err != nil {
@@ -161,7 +178,7 @@ func imageTar(image, prefix string, tw *tar.Writer) error {
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(path string, image string, config []byte) ([]byte, error) {
+func ImageBundle(path string, image string, config []byte, trust bool, pull bool) ([]byte, error) {
 	log.Debugf("image bundle: %s %s cfg: %s", path, image, string(config))
 	out := new(bytes.Buffer)
 	tw := tar.NewWriter(out)
@@ -183,7 +200,7 @@ func ImageBundle(path string, image string, config []byte) ([]byte, error) {
 	if err != nil {
 		return []byte{}, err
 	}
-	err = imageTar(image, path+"/rootfs/", tw)
+	err = imageTar(image, path+"/rootfs/", tw, trust, pull)
 	if err != nil {
 		return []byte{}, err
 	}
