@@ -31,7 +31,7 @@ bin/linuxkit: $(LINUXKIT_DEPS) | bin
 	touch $@
 
 test-initrd.img: $(MOBY) test/test.yml
-	$(MOBY) build test/test.yml
+	$(MOBY) build --pull test/test.yml
 
 test-bzImage: test-initrd.img
 
@@ -68,7 +68,7 @@ test: $(LINUXKIT) test-initrd.img test-bzImage test-cmdline
 	$(call check_test_log, test.log)
 
 test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
-	$(MOBY) build test/ltp/test-ltp.yml
+	$(MOBY) build --pull test/ltp/test-ltp.yml
 
 .PHONY: test-ltp
 test-ltp: $(LINUXKIT) test-ltp.img.tar.gz
