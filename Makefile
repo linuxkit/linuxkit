@@ -17,8 +17,9 @@ endif
 
 PREFIX?=/usr/local/
 
+MOBY_COMMIT=3375f32d51dcf1a043b79a4d6f4a9cc696a8b19e
 bin/moby: | bin
-	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
+	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
 	tar xf tmp_moby_bin.tar > $@
 	rm tmp_moby_bin.tar
 	touch $@
@@ -31,7 +32,7 @@ bin/linuxkit: $(LINUXKIT_DEPS) | bin
 	touch $@
 
 test-initrd.img: $(MOBY) test/test.yml
-	$(MOBY) build test/test.yml
+	$(MOBY) build --pull test/test.yml
 
 test-bzImage: test-initrd.img
 
@@ -68,7 +69,7 @@ test: $(LINUXKIT) test-initrd.img test-bzImage test-cmdline
 	$(call check_test_log, test.log)
 
 test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
-	$(MOBY) build test/ltp/test-ltp.yml
+	$(MOBY) build --pull test/ltp/test-ltp.yml
 
 .PHONY: test-ltp
 test-ltp: $(LINUXKIT) test-ltp.img.tar.gz
