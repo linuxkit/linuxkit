@@ -101,7 +101,7 @@ func runHyperKit(args []string) {
 		log.Fatalln("Error creating hyperkit: ", err)
 	}
 
-	h.Kernel = prefix + "-bzImage"
+	h.Kernel = prefix + "-kernel"
 	h.Initrd = prefix + "-initrd.img"
 	h.VPNKitKey = vpnKitKey
 	h.UUID = vmUUID

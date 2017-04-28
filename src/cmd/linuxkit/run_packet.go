@@ -66,7 +66,7 @@ func runPacket(args []string) {
 
 	url := getStringValue(packetBaseURL, *baseURLFlag, "")
 	if url == "" {
-		log.Fatal("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-bzImage and <url>/%s-initrd.img")
+		log.Fatal("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel and <url>/%s-initrd.img")
 	}
 	facility := getStringValue(packetZoneVar, *zoneFlag, "")
 	plan := getStringValue(packetMachineVar, *machineFlag, defaultMachine)
@@ -82,10 +82,10 @@ func runPacket(args []string) {
 	name := getStringValue(packetNameVar, *nameFlag, prefix)
 	osType := "custom_ipxe"
 	billing := "hourly"
-	userData := fmt.Sprintf("#!ipxe\n\ndhcp\nset base-url %s\nset kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200\nkernel ${base-url}/%s-bzImage ${kernel-params}\ninitrd ${base-url}/%s-initrd.img\nboot", url, name, name)
+	userData := fmt.Sprintf("#!ipxe\n\ndhcp\nset base-url %s\nset kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200\nkernel ${base-url}/%s-kernel ${kernel-params}\ninitrd ${base-url}/%s-initrd.img\nboot", url, name, name)
 	log.Debugf("Using userData of:\n%s\n", userData)
 	initrdURL := fmt.Sprintf("%s/%s-initrd.img", url, name)
-	kernelURL := fmt.Sprintf("%s/%s-bzImage", url, name)
+	kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
 	ValidateHTTPURL(kernelURL)
 	ValidateHTTPURL(initrdURL)
 	client := packngo.NewClient("", apiKey, nil)
