@@ -25,10 +25,10 @@ for KERN_DEB in $KERNELS; do
     # HDR_ARCH_DEB=$(echo $LINKS | \
     #     grep -o "linux-headers-${VERSION}-generic_[^ ]\+_${ARCH}\.deb")
 
-    URLS="${BASE_URL}/${KERN_DEB} ${BASE_URL}/${EXTRA_DEB} ${BASE_URL}/${HDR_DEB} ${BASE_URL}/${HDR_ARCH_DEB}"
+    URLS="${BASE_URL}/${KERN_DEB} ${BASE_URL}/${EXTRA_DEB}"
 
     # Doesn't exist build and push
     docker build -t ${REPO}:${VERSION} -f Dockerfile.deb --no-cache \
            --build-arg DEB_URLS="${URLS}" . &&
-        DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION})
+        DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
 done

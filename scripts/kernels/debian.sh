@@ -21,5 +21,5 @@ for KERN_DEB in $KERNELS; do
     # Doesn't exist build and push
     docker build -t ${REPO}:${VERSION} -f Dockerfile.deb --no-cache \
            --build-arg DEB_URLS="${URLS}" . &&
-        DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION})
+        DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
 done
