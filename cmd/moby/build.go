@@ -123,7 +123,7 @@ func buildInternal(name string, pull bool, config []byte) {
 		kernelAltName = "bzImage"
 		ktarName      = "kernel.tar"
 	)
-	out, err := ImageExtract(m.Kernel.Image, "")
+	out, err := ImageExtract(m.Kernel.Image, "", enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
 	if err != nil {
 		log.Fatalf("Failed to extract kernel image and tarball: %v", err)
 	}
@@ -138,15 +138,8 @@ func buildInternal(name string, pull bool, config []byte) {
 	// convert init images to tarballs
 	log.Infof("Add init containers:")
 	for _, ii := range m.Init {
-		if pull || enforceContentTrust(ii, &m.Trust) {
-			log.Infof("Pull init image: %s", ii)
-			err := dockerPull(ii, enforceContentTrust(ii, &m.Trust))
-			if err != nil {
-				log.Fatalf("Could not pull image %s: %v", ii, err)
-			}
-		}
 		log.Infof("Process init image: %s", ii)
-		init, err := ImageExtract(ii, "")
+		init, err := ImageExtract(ii, "", enforceContentTrust(ii, &m.Trust), pull)
 		if err != nil {
 			log.Fatalf("Failed to build init tarball from %s: %v", ii, err)
 		}
@@ -156,13 +149,6 @@ func buildInternal(name string, pull bool, config []byte) {
 
 	log.Infof("Add onboot containers:")
 	for i, image := range m.Onboot {
-		if pull || enforceContentTrust(image.Image, &m.Trust) {
-			log.Infof("  Pull: %s", image.Image)
-			err := dockerPull(image.Image, enforceContentTrust(image.Image, &m.Trust))
-			if err != nil {
-				log.Fatalf("Could not pull image %s: %v", image.Image, err)
-			}
-		}
 		log.Infof("  Create OCI config for %s", image.Image)
 		config, err := ConfigToOCI(&image)
 		if err != nil {
@@ -170,7 +156,7 @@ func buildInternal(name string, pull bool, config []byte) {
 		}
 		so := fmt.Sprintf("%03d", i)
 		path := "containers/onboot/" + so + "-" + image.Name
-		out, err := ImageBundle(path, image.Image, config)
+		out, err := ImageBundle(path, image.Image, config, enforceContentTrust(image.Image, &m.Trust), pull)
 		if err != nil {
 			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
@@ -180,20 +166,13 @@ func buildInternal(name string, pull bool, config []byte) {
 
 	log.Infof("Add service containers:")
 	for _, image := range m.Services {
-		if pull || enforceContentTrust(image.Image, &m.Trust) {
-			log.Infof("  Pull: %s", image.Image)
-			err := dockerPull(image.Image, enforceContentTrust(image.Image, &m.Trust))
-			if err != nil {
-				log.Fatalf("Could not pull image %s: %v", image.Image, err)
-			}
-		}
 		log.Infof("  Create OCI config for %s", image.Image)
 		config, err := ConfigToOCI(&image)
 		if err != nil {
 			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
 		}
 		path := "containers/services/" + image.Name
-		out, err := ImageBundle(path, image.Image, config)
+		out, err := ImageBundle(path, image.Image, config, enforceContentTrust(image.Image, &m.Trust), pull)
 		if err != nil {
 			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
