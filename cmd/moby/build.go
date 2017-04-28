@@ -117,18 +117,19 @@ func buildInternal(name string, pull bool, config []byte) {
 		}
 	}
 	// get kernel and initrd tarball from container
-	// TODO examine contents to see what names they might have
 	log.Infof("Extract kernel image: %s", m.Kernel.Image)
 	const (
-		kernelName = "kernel"
-		ktarName   = "kernel.tar"
+		kernelName    = "kernel"
+		kernelAltName = "bzImage"
+		ktarName      = "kernel.tar"
 	)
-	out, err := dockerRun(m.Kernel.Image, "tar", "cf", "-", kernelName, ktarName)
+	out, err := ImageExtract(m.Kernel.Image, "")
 	if err != nil {
 		log.Fatalf("Failed to extract kernel image and tarball: %v", err)
 	}
 	buf := bytes.NewBuffer(out)
-	kernel, ktar, err := untarKernel(buf, kernelName, ktarName)
+
+	kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName)
 	if err != nil {
 		log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
 	}
@@ -218,10 +219,11 @@ func buildInternal(name string, pull bool, config []byte) {
 	}
 }
 
-func untarKernel(buf *bytes.Buffer, kernelName, ktarName string) (*bytes.Buffer, *bytes.Buffer, error) {
+func untarKernel(buf *bytes.Buffer, kernelName, kernelAltName, ktarName string) (*bytes.Buffer, *bytes.Buffer, error) {
 	tr := tar.NewReader(buf)
 
 	var kernel, ktar *bytes.Buffer
+	foundKernel := false
 
 	for {
 		hdr, err := tr.Next()
@@ -232,7 +234,11 @@ func untarKernel(buf *bytes.Buffer, kernelName, ktarName string) (*bytes.Buffer,
 			log.Fatalln(err)
 		}
 		switch hdr.Name {
-		case kernelName:
+		case kernelName, kernelAltName:
+			if foundKernel {
+				return nil, nil, errors.New("found more than one possible kernel image")
+			}
+			foundKernel = true
 			kernel = new(bytes.Buffer)
 			_, err := io.Copy(kernel, tr)
 			if err != nil {
