@@ -1,0 +1,25 @@
+FROM alpine:3.5 AS extract
+
+ARG RPM_URLS
+
+RUN apk add --no-cache curl rpm tar && true
+WORKDIR /rpm
+RUN mkdir extract
+RUN for url in ${RPM_URLS}; do \
+        echo "Extracting: $url"; \
+        curl -fsSL -o dl.rpm $url && \
+        rpm2cpio dl.rpm | cpio -idm ;\
+    done
+
+RUN mkdir /out
+RUN cp -a boot/vmlinuz-* /out/kernel
+RUN cp -a boot/config-* /out/kernel_config
+RUN cp -a boot/System.map-* /out/System.map
+RUN tar cf /out/kernel.tar lib
+RUN tar cf /out/kernel-dev.tar usr || true
+
+FROM linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
+WORKDIR /
+ENTRYPOINT []
+CMD []
+COPY --from=extract /out/* /
