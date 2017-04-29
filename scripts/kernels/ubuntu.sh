@@ -3,6 +3,8 @@
 REPO="linuxkit/kernel-ubuntu"
 BASE_URL=http://mirrors.kernel.org/ubuntu/pool/main/l/linux/
 
+TAGS=$(curl --silent -f -lSL https://registry.hub.docker.com/v1/repositories/${REPO}/tags)
+
 ARCH=amd64
 LINKS=$(curl -s ${BASE_URL}/ | sed -n 's/.*href="\([^"]*\).*/\1/p')
 # Just get names for 4.x kernels
@@ -13,8 +15,10 @@ for KERN_DEB in $KERNELS; do
     VERSION=$(echo $KERN_DEB | \
         grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9]\+" | head -1)
 
-    echo "$VERSION -> $KERN_DEB"
-    DOCKER_CONTENT_TRUST=1 docker pull ${REPO}:${VERSION} && continue
+    if echo $TAGS | grep -q "\"${VERSION}\""; then
+        echo "${REPO}:${VERSION} exists"
+        continue
+    fi
 
     EXTRA_DEB=$(echo $LINKS | \
         grep -o "linux-image-extra-${VERSION}-generic_[^ ]\+${ARCH}\.deb")
@@ -27,7 +31,6 @@ for KERN_DEB in $KERNELS; do
 
     URLS="${BASE_URL}/${KERN_DEB} ${BASE_URL}/${EXTRA_DEB}"
 
-    # Doesn't exist build and push
     docker build -t ${REPO}:${VERSION} -f Dockerfile.deb --no-cache \
            --build-arg DEB_URLS="${URLS}" . &&
         DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
