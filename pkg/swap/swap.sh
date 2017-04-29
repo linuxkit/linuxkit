@@ -2,7 +2,7 @@
 
 set -e
 
-while [ $# -gt 1 ]; do
+while [ $# -ge 1 ]; do
 	key="$1"
 
 	case $key in
@@ -74,7 +74,9 @@ fi
 ## check each of our conditions
 for cond in $CONDITIONS; do
 	# split the condition parts
-	IFS=: read condtype arg1 arg2 arg3 arg4 <<< "$cond"
+	IFS=: read condtype arg1 arg2 arg3 arg4 <<EOF
+$cond
+EOF
 	case $condtype in
 		part)
 			partition=$arg1
