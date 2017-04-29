@@ -9,8 +9,8 @@ GO_COMPILE=mor1/go-compile:021f2dca9228cdd27cffc304aafae1b1f900bfc2
 
 MOBY?=bin/moby
 LINUXKIT?=bin/linuxkit
-GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
-GOARCH=arm64
+GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+GOARCH?=$(shell uname -m | sed 's/aarch64/arm64/;s/x86_64/amd64/')
 ifneq ($(GOOS),linux)
 CROSS=-e GOOS=$(GOOS) -e GOARCH=$(GOARCH)
 endif
