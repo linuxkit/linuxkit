@@ -23,13 +23,14 @@ for KERN_DEB in $KERNELS; do
     EXTRA_DEB=$(echo $LINKS | \
         grep -o "linux-image-extra-${VERSION}-generic_[^ ]\+${ARCH}\.deb")
 
+    URLS="${BASE_URL}/${KERN_DEB} ${BASE_URL}/${EXTRA_DEB}"
+
     # Don't pull in the headers. This is mostly for testing
     # HDR_DEB=$(echo $LINKS | \
     #     grep -o "linux-headers-${VERSION}_[^ ]\+_all\.deb")
     # HDR_ARCH_DEB=$(echo $LINKS | \
     #     grep -o "linux-headers-${VERSION}-generic_[^ ]\+_${ARCH}\.deb")
-
-    URLS="${BASE_URL}/${KERN_DEB} ${BASE_URL}/${EXTRA_DEB}"
+    # URLS="${URLS} ${BASE_URL}/${HDR_DEB} ${BASE_URL}/${HDR_ARCH_DEB}"
 
     docker build -t ${REPO}:${VERSION} -f Dockerfile.deb --no-cache \
            --build-arg DEB_URLS="${URLS}" . &&
