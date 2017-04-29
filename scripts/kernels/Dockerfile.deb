@@ -11,6 +11,8 @@ RUN for url in ${DEB_URLS}; do \
         dpkg-deb -x dl.deb . ;\
     done
 
+RUN for d in lib/modules/*; do depmod -b . $(basename $d); done
+
 RUN mkdir /out
 RUN cp -a boot/vmlinuz-* /out/kernel
 RUN cp -a boot/config-* /out/kernel_config
