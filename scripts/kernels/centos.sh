@@ -40,5 +40,8 @@ for URL in $URLS; do
         docker build -t ${REPO}:${VERSION} -f Dockerfile.rpm --no-cache \
                --build-arg RPM_URLS="${RPM_URLS}" . &&
             DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
+
+        docker rmi ${REPO}:${VERSION}
+        docker system prune -f
     done
 done

@@ -51,4 +51,7 @@ for KDIR in $KDIRS; do
     fi
     build_image ${VERSION} ${KDIR} && \
         DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
+
+    docker rmi ${REPO}:${VERSION}
+    docker system prune -f
 done
