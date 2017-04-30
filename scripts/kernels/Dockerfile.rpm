@@ -14,9 +14,10 @@ RUN for url in ${RPM_URLS}; do \
 RUN for d in lib/modules/*; do depmod -b . $(basename $d); done
 
 RUN mkdir /out
-RUN cp -a boot/vmlinuz-* /out/kernel
-RUN cp -a boot/config-* /out/kernel_config
-RUN cp -a boot/System.map-* /out/System.map
+# With some fedora rpms, the kernel and system map are in modules directory
+RUN cp -a boot/vmlinuz-* /out/kernel || mv lib/modules/*/vmlinuz /out/kernel
+RUN cp -a boot/config-* /out/kernel_config || mv lib/modules/*/config /out/kernel_config
+RUN cp -a boot/System.map-* /out/System.map || mv lib/modules/*/System.map /out/System.map
 RUN tar cf /out/kernel.tar lib
 RUN tar cf /out/kernel-dev.tar usr || true
 
