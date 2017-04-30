@@ -126,7 +126,7 @@ if [ "$ENCRYPT" == "true" ]; then
 	#loop=$(losetup -f)
 	#losetup ${loop} ${path}
 
-	cryptsetup open --type plain --key-file /dev/urandom --key-size=256 --hash=sha256 --cipher=aes-cbc-essiv --offset=0  ${path} swapfile
+	cryptsetup open --type plain --key-file /dev/urandom --key-size=256 --cipher=aes-cbc-essiv:sha256 --offset=0  ${path} swapfile
 	SWAPDEV=/dev/mapper/swapfile
 else
 	SWAPDEV=$path

@@ -8,11 +8,12 @@ Normally, unless you are running explicitly in a desktop version, LinuxKit image
 ```
 onboot:
   - name: swap
-    image: "linuxkit/swap:1.0.0"
-    net: none
+    image: "linuxkit/swap:a881d50445ea27624be67dcda39313e7a2051982"
+    net: host
     pid: host
     capabilities:
      - CAP_SYS_ADMIN
+     - CAP_MKNOD
     readonly: true
     binds:
      - /dev:/dev
@@ -34,7 +35,8 @@ Options are passed to it via command-line options. The following are the options
 |`--path`|Path to file as seen in the underlying OS||**Yes**||
 |`--size`|Target swapfile size||**Yes**||
 |`--condition`|_condition_||No|Condition that must be met to create a swapfile|
-|`--debug`||No|Turns on verbose output from the command making the swap|
+|`--debug`|||No|Turns on verbose output from the command making the swap|
+|`--encrypt`|||No|Encrypts swapfile|
 
 
 #### File
@@ -48,6 +50,11 @@ You **always** should put the swap file somewhere under `/var`, since that is wh
 `--size <size>` indicates the desired swapfile size, e.g. `2G` `100M` `5670K` `8765432`. There is no default. Acceptable size units are `G`, `M`, `K` and bytes of no unit provided.
 
 If disk space on the requested partition is insufficient to create the swapfile, the container exits with an error.
+
+#### Encryption
+If you want the swapfile to be encrypted, pass the `--encrypt` option. It will create an encrypted swapfile at the path you provide to `--path`, using devicemapper to map the clear device to `/dev/mapper/swapfile`.
+
+Encryption is performed using `cryptsetup` with `plain` encryption, using `/dev/urandom` to generate a random keyfile, key size of `256`, and cipher `aes-cbc-essiv:sha256`.
 
 #### Conditions
 You may want to create a swapfile only if certain conditions are met. Supported conditions are:

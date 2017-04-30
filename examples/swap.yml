@@ -48,16 +48,19 @@ onboot:
     rootfsPropagation: shared
     command: ["/mount.sh", "/var/external"]
   - name: swap
-    image: "linuxkit/swap:d089b31acad8a5f6a5f1c368ddd1dfe1d049b100"
+    image: "linuxkit/swap:a881d50445ea27624be67dcda39313e7a2051982"
     net: host
     pid: host
     capabilities:
      - CAP_SYS_ADMIN
+     - CAP_MKNOD
     readonly: true
     binds:
      - /var:/var
      - /dev:/dev
-    command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G"]
+    # to use unencrypted swap, use:
+    # command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G"]
+    command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]
 services:
   - name: rngd
     image: "linuxkit/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
