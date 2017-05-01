@@ -40,7 +40,8 @@ RUN cd /linux && \
     make INSTALL_HDR_PATH=/tmp/kernel-headers/usr headers_install && \
     ( cd /tmp/kernel-headers && tar cf /kernel-headers.tar usr ) && \
     ( cd /tmp/kernel-modules && tar cf /kernel-modules.tar lib ) && \
-    cp vmlinux arch/x86_64/boot/bzImage /
+    cp vmlinux arch/x86_64/boot/bzImage / && \
+    cp .config /kernel_config
 
 RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
     dir=/tmp/usr/src/linux-headers-$DVER && \
@@ -54,7 +55,8 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /kernel-source-info
 
 
-FROM linuxkit/toybox-media:eee3dd4d72cd784801e95b1781e6c4f9d8a5e5eb@sha256:7f940e687164ee2676e11c61705c79f7dd2d144ee87ad17a494848a7045f5f53
+# FROM linuxkit/toybox-media:eee3dd4d72cd784801e95b1781e6c4f9d8a5e5eb@sha256:7f940e687164ee2676e11c61705c79f7dd2d144ee87ad17a494848a7045f5f53
+FROM 9375904404b1
 ENTRYPOINT []
 CMD []
 WORKDIR /
@@ -63,3 +65,4 @@ COPY --from=kernel-build kernel-headers.tar /
 COPY --from=kernel-build kernel-modules.tar /kernel.tar
 COPY --from=kernel-build kernel-dev.tar /
 COPY --from=kernel-build kernel-source-info /
+COPY --from=kernel-build kernel_config /

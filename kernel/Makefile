@@ -20,9 +20,11 @@ IMAGE:=kernel
 # build: builds all kernels
 # push:  pushes all tagged kernel images to hub
 # sign:  sign and push all kernel images to hub
+# update-config: update kernel configuration
 build:
 push:
 sign:
+update-config:
 
 # A template for defining kernel build
 # Arguments:
@@ -51,9 +53,18 @@ sign_$(2): build_$(2)
 		 docker tag linuxkit/$(IMAGE):$(1)-$(HASH) linuxkit/$(IMAGE):$(2) && \
 		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(2))
 
+update-config_$(2): kernel_config-$(2) Dockerfile.config
+	docker build -f Dockerfile.config \
+		--build-arg KERNEL_VERSION=$(1) \
+		--build-arg KERNEL_SERIES=$(2) \
+		--no-cache -t linuxkit/$(IMAGE):$(1)-$(HASH)-config .
+	docker run --rm linuxkit/$(IMAGE):$(1)-$(HASH)-config cat /linux/.config > kernel_config-$(2)
+	docker rmi linuxkit/$(IMAGE):$(1)-$(HASH)-config
+
 build: build_$(2)
 push: push_$(2)
 sign: sign_$(2)
+update-config: update-config_$(2)
 endef
 
 #
