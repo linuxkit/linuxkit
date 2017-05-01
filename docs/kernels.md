@@ -1,19 +1,36 @@
-# LinuxKit kernels
+# Linux kernels
 
-Currently, LinuxKit supports a number of kernels. These kernels are
-typically based on the latest stable releases and are updated
-frequently to include bug and security fixes.  For some kernels we do
-carry some additional patches, which are mostly back-ported fixes from
-newer kernels. The full kernel source with patches is on
-[github](https://github.com/linuxkit/linux).
+LinuxKit kernel images are distributed as hub images which contain the
+kernel, kernel modules, kernel config file, and optionally, kernel
+headers to compile kernel modules against. The repository containing
+the official LinuxKit kernels is at
+[linuxkit/kernels](https://hub.docker.com/r/linuxkit/kernel/).
 
-The kernel images are stored on Hub under
-[linuxkit/kernel](https://hub.docker.com/r/linuxkit/kernel/). Each
-kernel image is tagged with the full kernel version plus the hash of
-the files it was created from (git tree hash of the `./kernel`
+The LinuxKit kernels are based on the latest stable releases and are
+updated frequently to include bug and security fixes.  For some
+kernels we do carry additional patches, which are mostly back-ported
+fixes from newer kernels. The full kernel source with patches can be
+found on [github](https://github.com/linuxkit/linux). Each kernel
+image is tagged with the full kernel version plus the hash of the
+files it was created from (git tree hash of the `./kernel`
 directory). For convenience, the latest kernel of each stable series
-is also available under the a shorthand tag,
-e.g. `linuxkit/kernel:4.9.x` for the latest `4.9` kernel.
+is also available under a shorthand tag, e.g. `linuxkit/kernel:4.9.x`
+for the latest `4.9` kernel.
+
+In addition to the official kernel images, LinuxKit offers the ability
+to build bootable Linux images with kernels from various
+distributions. We mostly offer this mostly for testing
+purposes. "Foreign" kernel images are created by re-packing the native
+kernel packages into hub images. The hub images are typically tagged
+with the kernel version.
+
+In summary, LinuxKit offers a choice of the following kernels:
+- [linuxkit/kernel](https://hub.docker.com/r/linuxkit/kernel/): Official LinuxKit kernels.
+- [linuxkit/kernel-mainline](https://hub.docker.com/r/linuxkit/kernel-mainline/): Mainline [kernel.org](http://kernel.org) kernels from the [Ubuntu Mainline PPA](http://kernel.ubuntu.com/~kernel-ppa/mainline/).
+- [linuxkit/kernel-ubuntu](https://hub.docker.com/r/linuxkit/kernel-ubuntu/): Selected Ubuntu kernels.
+- [linuxkit/kernel-debian](https://hub.docker.com/r/linuxkit/kernel-debian/): Selected Debian kernels.
+- [linuxkit/kernel-centos](https://hub.docker.com/r/linuxkit/kernel-centos/): Selected CentOS kernels.
+- [linuxkit/kernel-fedora](https://hub.docker.com/r/linuxkit/kernel-fedora/): Selected Fedora kernels.
 
 
 ## Working with Linux kernel patches for LinuxKit
@@ -66,13 +83,17 @@ to refer to the location of the LinuxKit and Linux kernel trees.
 
 ### Updating the patches to a new kernel version
 
-There are different ways to do this, but we recommend applying the patches to the current version and then rebase to the new version. We define the following variables to refer to the current base tag and the new tag you want to rebase the patches to:
+There are different ways to do this, but we recommend applying the
+patches to the current version and then rebase to the new version. We
+define the following variables to refer to the current base tag and
+the new tag you want to rebase the patches to:
 ```sh
 CURTAG=v4.9.14
 NEWTAG=v4.9.15
 ```
 
-If you don't already have a branch, it's best to import the current patch set and then rebase:
+If you don't already have a branch, it's best to import the current
+patch set and then rebase:
 ```sh
 cd $LINUXSRC
 git checkout -b ${NEWTAG}-linuxkit ${CURTAG}
@@ -80,9 +101,13 @@ git am ${KITSRC}/kernel/patches/*.patch
 git rebase ${NEWTAG}-linuxkit ${NEWTAG}
 ```
 
-The `git am` should not have any conflicts and if the rebase has conflicts resolve them, then `git add <files>` and `git rebase --continue`.
+The `git am` should not have any conflicts and if the rebase has
+conflicts resolve them, then `git add <files>` and `git rebase
+--continue`.
 
-If you already have linux tree with a `${CURTAG}-linuxkit` branch, you can rebase by creating a new branch from the current branch and then rebase:
+If you already have linux tree with a `${CURTAG}-linuxkit` branch, you
+can rebase by creating a new branch from the current branch and then
+rebase:
 ```sh
 cd $LINUXSRC
 git checkout ${CURTAG}-linuxkit
@@ -94,7 +119,12 @@ Again, resolve any conflicts as described above.
 
 ### Adding/Removing patches
 
-If you want to add or remove patches make sure you have an up-to-date branch with the currently applied patches (see above). Then either any normal means (`git cherry-pick -x`, `git am`, or `git commit`, etc) to add new patches. For cherry-picked patches also please add a `Origin:` line after the DCO lines with a reference the git tree the patch was cherry-picked from.
+If you want to add or remove patches make sure you have an up-to-date
+branch with the currently applied patches (see above). Then either any
+normal means (`git cherry-pick -x`, `git am`, or `git commit`, etc) to
+add new patches. For cherry-picked patches also please add a `Origin:`
+line after the DCO lines with a reference the git tree the patch was
+cherry-picked from.
 
 If the patch is not cherry-picked try to include as much information
 in the commit message as possible as to where the patch originated
@@ -106,7 +136,8 @@ Origin: https://patchwork.ozlabs.org/patch/622404/
 
 ### Export patches to LinuxKit
 
-To export patches to LinuxKit, you should use `git format-patch` from the Linux tree, e.g., something along these lines:
+To export patches to LinuxKit, you should use `git format-patch` from
+the Linux tree, e.g., something along these lines:
 ```sh
 cd $LINUXSRC
 rm $KITSRC/kernel/patches-4.9.x/*

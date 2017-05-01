@@ -3,6 +3,8 @@
 REPO="linuxkit/kernel-mainline"
 BASE_URL=http://kernel.ubuntu.com/~kernel-ppa/mainline
 
+TAGS=$(curl --silent -f -lSL https://registry.hub.docker.com/v1/repositories/${REPO}/tags)
+
 build_image() {
     VERSION=$1
     KDIR=$2
@@ -43,7 +45,13 @@ for KDIR in $KDIRS; do
     # Strip the Ubuntu release name for the tag and also the 'v' like with
     # the other kernel packages
     VERSION=$(echo $KDIR | grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+")
-    DOCKER_CONTENT_TRUST=1 docker pull ${REPO}:${VERSION} && continue
+    if echo $TAGS | grep -q "\"${VERSION}\""; then
+        echo "${REPO}:${VERSION} exists"
+        continue
+    fi
     build_image ${VERSION} ${KDIR} && \
         DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
+
+    docker rmi ${REPO}:${VERSION}
+    docker system prune -f
 done
