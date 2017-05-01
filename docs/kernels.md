@@ -144,4 +144,4 @@ rm $KITSRC/kernel/patches-4.9.x/*
 git format-patch -o $KITSRC/kernel/patches-4.9.x v4.9.15..HEAD
 ```
 
-The, create a PR for LinuxKit.
+Then, create a PR for LinuxKit.
