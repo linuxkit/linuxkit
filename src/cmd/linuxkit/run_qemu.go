@@ -51,9 +51,9 @@ func runQemu(args []string) {
 	qemuKernel := qemuFlags.Bool("kernel", true, "Set boot using 'prefix'-kernel/-initrd/-cmdline")
 
 	// Paths and settings for Disks and UEFI firware
-	qemuDiskPath := qemuFlags.String("diskpath", "", "Path to disk image to use")
-	qemuDiskSize := qemuFlags.String("disksize", "", "Size of disk to create, only created if it doesn't exist")
-	qemuFWPath := qemuFlags.String("fwpath", "/usr/share/ovmf/bios.bin", "Path to OVMF firmware for UEFI boot")
+	qemuDiskPath := qemuFlags.String("disk", "", "Path to disk image to use")
+	qemuDiskSize := qemuFlags.String("disk-size", "", "Size of disk to create, only created if it doesn't exist")
+	qemuFWPath := qemuFlags.String("fw", "/usr/share/ovmf/bios.bin", "Path to OVMF firmware for UEFI boot")
 
 	// VM configuration
 	qemuArch := qemuFlags.String("arch", "x86_64", "Type of architecture to use, e.g. x86_64, aarch64")
