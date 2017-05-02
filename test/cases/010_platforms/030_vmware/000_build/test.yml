@@ -1,0 +1,31 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:f71c3b30ac1ba4ef16c160c89610fa4976f9752f
+  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/containerd:60e2486a74c665ba4df57e561729aec20758daed
+onboot:
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:8837289b78ecd80f59524883085424e115dd0b3a"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: poweroff
+    image: "linuxkit/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
+    pid: host
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+    capabilities:
+     - CAP_SYS_BOOT
+    readonly: true
+trust:
+  image:
+    - linuxkit/kernel
+outputs:
+  - format: vmdk 

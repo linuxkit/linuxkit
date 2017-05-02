@@ -1,5 +1,5 @@
 .PHONY: default all
-default: bin/moby bin/linuxkit 
+default: bin/moby bin/linuxkit bin/rtf 
 all: default
 
 VERSION="0.0" # dummy for now
@@ -23,6 +23,15 @@ bin/moby: | bin
 	tar xf tmp_moby_bin.tar > $@
 	rm tmp_moby_bin.tar
 	touch $@
+
+RTF_COMMIT=3ced00340aacfc1932e8c03281bf3bfc586c147c
+RTF_CMD=github.com/linuxkit/rtf/cmd
+bin/rtf: | bin
+	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(VERSION)" -o $@ > tmp_rtf_bin.tar
+	tar xf tmp_rtf_bin.tar > $@
+	rm tmp_rtf_bin.tar
+	touch $@
+
 
 LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) Makefile vendor.conf
 bin/linuxkit: $(LINUXKIT_DEPS) | bin
@@ -66,4 +75,3 @@ ci-pr:
 .PHONY: clean
 clean:
 	rm -rf bin *.log *-kernel *-cmdline *.img *.iso *.gz *.qcow2 *.vhd *.vmx *.vmdk *.tar
-	$(MAKE) -C test clean

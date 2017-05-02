@@ -21,7 +21,6 @@ onboot:
   - name: check-kernel-config
     image: "linuxkit/test-kernel-config:ecff41279ccbc408079a3996a956432651c6eb9c"
     readonly: true
-services:
   - name: poweroff
     image: "linuxkit/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
     pid: host
@@ -31,6 +30,3 @@ services:
     readonly: true
 outputs:
   - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi
-  - format: gcp-img
