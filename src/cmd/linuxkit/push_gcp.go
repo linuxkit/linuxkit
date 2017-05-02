@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -25,7 +24,7 @@ func pushGcp(args []string) {
 	bucketFlag := gcpCmd.String("bucket", "", "GS Bucket to upload to. *Required*")
 	publicFlag := gcpCmd.Bool("public", false, "Select if file on GS should be public. *Optional*")
 	familyFlag := gcpCmd.String("family", "", "GCP Image Family. A group of images where the family name points to the most recent image. *Optional*")
-	nameFlag := gcpCmd.String("img-name", "", "Overrides the Name used to identify the file in Google Storage and Image. Defaults to [name]")
+	nameFlag := gcpCmd.String("img-name", "", "Overrides the Name used to identify the file in Google Storage and Image. Defaults to [name] with the '.img.tar.gz' suffix removed")
 
 	if err := gcpCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -37,7 +36,8 @@ func pushGcp(args []string) {
 		gcpCmd.Usage()
 		os.Exit(1)
 	}
-	prefix := remArgs[0]
+	src := remArgs[0]
+	suffix := ".img.tar.gz"
 
 	keys := getStringValue(keysVar, *keysFlag, "")
 	project := getStringValue(projectVar, *projectFlag, "")
@@ -51,24 +51,19 @@ func pushGcp(args []string) {
 		log.Fatalf("Unable to connect to GCP")
 	}
 
-	suffix := ".img.tar.gz"
-	src := prefix
-	if strings.HasSuffix(prefix, suffix) {
-		prefix = prefix[:len(prefix)-len(suffix)]
-	} else {
-		src = prefix + suffix
+	if name == "" {
+		name = src[:len(src)-len(suffix)]
 	}
-	if name != "" {
-		prefix = name
-	}
+
 	if bucket == "" {
 		log.Fatalf("No bucket specified. Please provide one using the -bucket flag")
 	}
-	err = client.UploadFile(src, prefix+suffix, bucket, public)
+
+	err = client.UploadFile(src, name+suffix, bucket, public)
 	if err != nil {
 		log.Fatalf("Error copying to Google Storage: %v", err)
 	}
-	err = client.CreateImage(prefix, "https://storage.googleapis.com/"+bucket+"/"+prefix+".img.tar.gz", family, true)
+	err = client.CreateImage(name, "https://storage.googleapis.com/"+bucket+"/"+name+suffix, family, true)
 	if err != nil {
 		log.Fatalf("Error creating Google Compute Image: %v", err)
 	}
