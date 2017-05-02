@@ -12,17 +12,16 @@ RUN set -x \
 	&& echo 'dockremap:165536:65536' >> /etc/subgid
 
 # https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
-# sfdisk and jq used by disk mounting code at present
+# removed openssl as I do not think server needs it
 RUN apk add --no-cache \
+	btrfs-progs \
 	ca-certificates \
 	curl \
+	e2fsprogs \
+	e2fsprogs-extra \
 	iptables \
-	xz \
-	sfdisk \
-	jq
-
-# removed xfsprogs e2fs btrfs as we do not support dm or btrfs yet
-# removed openssl as I do not think server needs it
+	xfsprogs \
+	xz
 
 ENV DOCKER_BUCKET get.docker.com
 ENV DOCKER_VERSION 17.04.0-ce

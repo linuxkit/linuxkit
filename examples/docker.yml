@@ -66,7 +66,7 @@ services:
       - CAP_SETGID
     net: host
   - name: docker
-    image: "linuxkit/docker-ce:741bf21513328f674e0cdcaa55492b0b75974e08"
+    image: "linuxkit/docker-ce:a82b61b151f6d6a3606e66f284c927b4c83b50f5"
     capabilities:
      - all
     net: host
