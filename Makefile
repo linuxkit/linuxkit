@@ -58,9 +58,10 @@ test-hyperkit: $(LINUXKIT) test-initrd.img test-bzImage test-cmdline
 	$(call check_test_log, test.log)
 
 .PHONY: test-gcp
+test-gcp: export CLOUDSDK_IMAGE_NAME?=test
 test-gcp: $(LINUXKIT) test.img.tar.gz
 	$(LINUXKIT) push gcp test.img.tar.gz
-	$(LINUXKIT) run gcp test | tee test-gcp.log
+	$(LINUXKIT) run gcp $(CLOUDSDK_IMAGE_NAME) | tee test-gcp.log
 	$(call check_test_log, test-gcp.log)
 
 .PHONY: test
@@ -72,9 +73,10 @@ test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
 	$(MOBY) build --pull test/ltp/test-ltp.yml
 
 .PHONY: test-ltp
+test-ltp: export CLOUDSDK_IMAGE_NAME?=test-ltp
 test-ltp: $(LINUXKIT) test-ltp.img.tar.gz
 	$(LINUXKIT) push gcp test-ltp.img.tar.gz
-	$(LINUXKIT) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp | tee test-ltp.log
+	$(LINUXKIT) run gcp -skip-cleanup -machine n1-highcpu-4 $(CLOUDSDK_IMAGE_NAME) | tee test-ltp.log
 	$(call check_test_log, test-ltp.log)
 
 .PHONY: ci ci-tag ci-pr
