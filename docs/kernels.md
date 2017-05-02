@@ -15,7 +15,10 @@ image is tagged with the full kernel version plus the hash of the
 files it was created from (git tree hash of the `./kernel`
 directory). For convenience, the latest kernel of each stable series
 is also available under a shorthand tag, e.g. `linuxkit/kernel:4.9.x`
-for the latest `4.9` kernel.
+for the latest `4.9` kernel. For selected kernels (mostly the LTS
+kernels and latest stable kernels) we also compile/push kernels with
+additional debugging enabled. The hub images for these kernels have
+the `_dbg` suffix in the tag.
 
 In addition to the official kernel images, LinuxKit offers the ability
 to build bootable Linux images with kernels from various

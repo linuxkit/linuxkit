@@ -2,7 +2,7 @@ FROM linuxkit/kernel-compile:1b396c221af673757703258159ddc8539843b02b@sha256:6b3
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
-ARG DEBUG=0
+ARG DEBUG
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
@@ -13,7 +13,7 @@ RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-
 COPY kernel_config-${KERNEL_SERIES} /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
 
-RUN if [ $DEBUG -ne "0" ]; then \
+RUN if [ -n "${DEBUG}" ]; then \
     sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' /linux/arch/x86/configs/x86_64_defconfig; \
     cat /linux/debug_config >> /linux/arch/x86/configs/x86_64_defconfig; \
     fi
