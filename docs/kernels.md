@@ -36,6 +36,35 @@ In summary, LinuxKit offers a choice of the following kernels:
 - [linuxkit/kernel-fedora](https://hub.docker.com/r/linuxkit/kernel-fedora/): Selected Fedora kernels.
 
 
+## Compiling kernel modules
+
+The LinuxKit kernel packages include `kernel-dev.tar` which contains
+the headers and other files required to compile kernel modules against
+the specific version of the kernel. Currently, the headers are not
+included in the initial RAM disk, but it is possible to compile custom
+modules offline and include then include the modules in the initial
+RAM disk.
+
+There is a [example](../tests/kmod), but basically one can use a
+multi-stage build to compile the kernel modules:
+```
+FROM linuxkit/kernel:4.9.x AS ksrc
+# Extract headers and compile module
+FROM linuxkit/kernel-compile:1b396c221af673757703258159ddc8539843b02b@sha256:6b32d205bfc6407568324337b707d195d027328dbfec554428ea93e7b0a8299b AS build
+COPY --from=ksrc /kernel-dev.tar /
+RUN tar xf kernel-dev.tar
+
+# copy module source code and compile
+```
+
+To use the kernel module, we recommend adding a final stage to the
+Dockerfile above, which copies the kernel module from the `build`
+stage and performs a `insmod` as the entry point. You can add this
+package to the `onboot` section in your YAML
+file. [kmod.yml](../tests/kmod/kmod.yml) contains an example for the
+configuration.
+
+
 ## Working with Linux kernel patches for LinuxKit
 
 We may apply patches to the Linux kernel used in LinuxKit, primarily to
