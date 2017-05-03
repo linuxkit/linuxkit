@@ -53,9 +53,13 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
     dir=/tmp/usr/src/linux-headers-$DVER && \
     mkdir -p $dir && \
     cp /linux/.config $dir && \
-    cd /linux && \
-    cp -a include "$dir" && \
-    mkdir -p "$dir"/arch/x86 && cp -a arch/x86/include "$dir"/arch/x86/ && \
+    cp /linux/Module.symvers $dir && \
+    find . -path './include/*' -prune -o \
+           -path './arch/*/include' -prune -o \
+           -path './scripts/*' -prune -o \
+           -type f \( -name 'Makefile*' -o -name 'Kconfig*' -o -name 'Kbuild*' -o \
+                      -name '*.lds' -o -name '*.pl' -o -name '*.sh' \) | \
+         tar cf - -T - | (cd $dir; tar xf -) && \
     ( cd /tmp && tar cf /out/kernel-dev.tar usr/src )
 
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
