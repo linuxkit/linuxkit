@@ -8,7 +8,7 @@ Project links:
 - Userspace components and supporting material:
   https://github.com/linux-okernel/linux-okernel-components
 
-Similar to the nested-kernel work for BSD by Dautenhan et al[1], the aim
+Similar to the nested-kernel work for BSD by Dautenhahn et al[1], the aim
 of the split kernel (okernel) is to introduce a level of intra-kernel
 protection into the kernel so that, amongst other things, we can offer
 lifetime guarantees over kernel code and data integrity.  Unlike the BSD-
