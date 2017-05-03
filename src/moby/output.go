@@ -12,11 +12,12 @@ import (
 )
 
 const (
-	bios = "linuxkit/mkimage-iso-bios:db791abed6f2b5320feb6cec255a635aee3756f6@sha256:e57483075307bcea4a7257f87eee733d3e24e7a964ba15dcc01111df6729ab3b"
-	efi  = "linuxkit/mkimage-iso-efi:5c2fc616bde288476a14f4f6dd0d273a66832822@sha256:876ef47ec2b30af40e70f1e98f496206eb430915867c4f9f400e1af47fd58d7c"
-	gcp  = "linuxkit/mkimage-gcp:46716b3d3f7aa1a7607a3426fe0ccebc554b14ee@sha256:18d8e0482f65a2481f5b6ba1e7ce77723b246bf13bdb612be5e64df90297940c"
-	vhd  = "linuxkit/mkimage-vhd:a04c8480d41ca9cef6b7710bd45a592220c3acb2@sha256:ba373dc8ae5dc72685dbe4b872d8f588bc68b2114abd8bdc6a74d82a2b62cce3"
-	vmdk = "linuxkit/mkimage-vmdk:182b541474ca7965c8e8f987389b651859f760da@sha256:99638c5ddb17614f54c6b8e11bd9d49d1dea9d837f38e0f6c1a5f451085d449b"
+	bios       = "linuxkit/mkimage-iso-bios:db791abed6f2b5320feb6cec255a635aee3756f6@sha256:e57483075307bcea4a7257f87eee733d3e24e7a964ba15dcc01111df6729ab3b"
+	efi        = "linuxkit/mkimage-iso-efi:5c2fc616bde288476a14f4f6dd0d273a66832822@sha256:876ef47ec2b30af40e70f1e98f496206eb430915867c4f9f400e1af47fd58d7c"
+	gcp        = "linuxkit/mkimage-gcp:46716b3d3f7aa1a7607a3426fe0ccebc554b14ee@sha256:18d8e0482f65a2481f5b6ba1e7ce77723b246bf13bdb612be5e64df90297940c"
+	vhd        = "linuxkit/mkimage-vhd:a04c8480d41ca9cef6b7710bd45a592220c3acb2@sha256:ba373dc8ae5dc72685dbe4b872d8f588bc68b2114abd8bdc6a74d82a2b62cce3"
+	vmdk       = "linuxkit/mkimage-vmdk:182b541474ca7965c8e8f987389b651859f760da@sha256:99638c5ddb17614f54c6b8e11bd9d49d1dea9d837f38e0f6c1a5f451085d449b"
+	dynamicvhd = "linuxkit/mkimage-dynamic-vhd:a652b15c281499ecefa6a7a47d0f9c56d70ab208@sha256:10e2a9179d48934c864639df895a6efdee34c2865eb574934398209625b297ff"
 )
 
 var outFuns = map[string]func(string, []byte, int, bool) error{
@@ -96,6 +97,17 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 			return fmt.Errorf("Error converting to initrd: %v", err)
 		}
 		err = outputImg(vhd, base+".vhd", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing vhd output: %v", err)
+		}
+		return nil
+	},
+	"dynamic-vhd": func(base string, image []byte, size int, hyperkit bool) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImg(dynamicvhd, base+".vhd", kernel, initrd, cmdline)
 		if err != nil {
 			return fmt.Errorf("Error writing vhd output: %v", err)
 		}
