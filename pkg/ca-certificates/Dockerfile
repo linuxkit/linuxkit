@@ -1,6 +1,6 @@
-FROM alpine:3.5 as alpine
+FROM linuxkit/alpine:f0169b60fb260d74025496ae6fd93213fecaba8f as alpine
 
-RUN apk update && apk upgrade -a && apk add --no-cache ca-certificates
+RUN apk add ca-certificates
 
 FROM scratch
 ENTRYPOINT []

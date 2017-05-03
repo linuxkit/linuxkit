@@ -5,7 +5,7 @@ init:
   - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
   - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
   - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
-  - linuxkit/ca-certificates:e091a05fbf7c5e16f18b23602febd45dd690ba2f
+  - linuxkit/ca-certificates:5fc6ba7f91534ddbfef975404c33e44581e6ed7a
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:1f5ec5d5e6f7a7a1b3d2ff9dd9e36fd6fb14756a"
