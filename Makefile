@@ -74,28 +74,43 @@ test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
 
 .PHONY: test-ltp
 test-ltp: export CLOUDSDK_IMAGE_NAME?=test-ltp
-test-ltp: $(LINUXKIT) test-ltp.img.tar.gz
-	$(LINUXKIT) push gcp test-ltp.img.tar.gz
+test-ltp: $(LINUXKIT) artifacts/test-ltp.img.tar.gz
+	$(LINUXKIT) push gcp artifacts/test-ltp.img.tar.gz
 	$(LINUXKIT) run gcp -skip-cleanup -machine n1-highcpu-4 $(CLOUDSDK_IMAGE_NAME) | tee test-ltp.log
 	$(call check_test_log, test-ltp.log)
+
+artifacts:
+	mkdir -p $@
+
+artifacts/test.img.tar.gz: test.img.tar.gz | artifacts
+	cp test.img.tar.gz artifacts/
+
+artifacts/test-ltp.img.tar.gz: test-ltp.img.tar.gz | artifacts
+	cp test-ltp.img.tar.gz artifacts/
+
+.PHONY: collect-artifacts
+collect-artifacts: artifacts/test.img.tar.gz artifacts/test-ltp.img.tar.gz
 
 .PHONY: ci ci-tag ci-pr
 ci:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) test
+	$(MAKE) collect-artifacts
 	$(MAKE) test-ltp
 
 ci-tag:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) test
+	$(MAKE) collect-artifacts
 	$(MAKE) test-ltp
 
 ci-pr:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) test
+	$(MAKE) artifacts/test.img.tar.gz
 
 .PHONY: clean
 clean:
