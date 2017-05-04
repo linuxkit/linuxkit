@@ -1,29 +1,14 @@
-.PHONY: tag push clean container
+.PHONY: tag push
 default: push
 
 IMAGE=node_exporter
-SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
+DEPS=Dockerfile
 
-container: Dockerfile
-	docker build --no-cache -t $(IMAGE):build .
+HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
-hash: Dockerfile
-	find $^ -type f | xargs cat | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
+tag: $(DEPS)
+	docker build --no-cache --network=none -t linuxkit/$(IMAGE):$(HASH) .
 
-push: hash container
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 docker push linuxkit/$(IMAGE):$(shell cat hash))
-	docker rmi $(IMAGE):build
-	rm -f hash
-
-tag: hash container
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
-	rm -f hash
-
-clean:
-	rm -rf hash
-
-.DELETE_ON_ERROR:
+push: tag
+	docker pull linuxkit/$(IMAGE):$(HASH) || \
+	docker push linuxkit/$(IMAGE):$(HASH)
