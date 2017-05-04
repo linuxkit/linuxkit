@@ -27,7 +27,7 @@ services:
     oomScoreAdj: -800
     readonly: true
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
+    image: "linuxkit/dhcpcd:8837289b78ecd80f59524883085424e115dd0b3a"
     binds:
      - /var:/var
      - /tmp:/etc
