@@ -1,7 +1,7 @@
-From 9ab0abb7cbbfd39bae399909d6e7e08284f58090 Mon Sep 17 00:00:00 2001
+From 6d21f35a580779c88a2f251395097b082574f4cc Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
-Subject: [PATCH 2/6] Drivers: hv: vmbus: Use all supported IC versions to
+Subject: [PATCH 2/7] Drivers: hv: vmbus: Use all supported IC versions to
  negotiate
 
 Previously, we were assuming that each IC protocol version was tied to a
@@ -488,5 +488,5 @@ index ca26335de49a..41e5ed87f833 100644
  void hv_event_tasklet_disable(struct vmbus_channel *channel);
  void hv_event_tasklet_enable(struct vmbus_channel *channel);
 -- 
-2.11.1
+2.11.0
 
