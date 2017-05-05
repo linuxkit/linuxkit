@@ -5,7 +5,7 @@ init:
   - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
   - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
   - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
-  - linuxkit/ca-certificates:5fc6ba7f91534ddbfef975404c33e44581e6ed7a
+  - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
 onboot:
   - name: ltp
     image: "linuxkit/test-ltp-20170116:81229df2d25065b06f0a3071faaace8d66c87e67"

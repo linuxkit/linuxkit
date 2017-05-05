@@ -9,7 +9,7 @@ init:
   - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
 services:
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:8837289b78ecd80f59524883085424e115dd0b3a"
+    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
     binds:
      - /var:/var
      - /tmp/etc:/etc

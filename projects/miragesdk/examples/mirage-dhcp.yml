@@ -16,7 +16,7 @@ onboot:
      - CAP_SYS_ADMIN
     readonly: true
   - name: binfmt
-    image: linuxkit/binfmt:aebd6ed6cc29921371ca78314697881086f4577a
+    image: linuxkit/binfmt:131026c0cf6084467316395fed3b358f64bda00c
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
