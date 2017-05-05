@@ -1,5 +1,11 @@
-FROM linuxkit/c-compile:f52f485825c890d581e82a62af6906c1d33d8e5d@sha256:473fd283a090d3546e93915adacf00c69a23ff615c95c968c4a40e8723985853 AS tini-build
-COPY . /
+FROM linuxkit/alpine:c5021a113803f7608e3908014d316c3490183d0b@sha256:4c7a80173c71ca5019dc56f40442b3a8345f141dd46593bd1fe6d130294d07cb AS build
+RUN apk add \
+    cmake \
+    gcc \
+    make \
+    musl-dev \
+    vim
+
 ENV TINI_VERSION=0.13.0
 ADD https://github.com/krallin/tini/archive/v${TINI_VERSION}.tar.gz tini-${TINI_VERSION}.tar.gz
 
@@ -10,4 +16,4 @@ FROM scratch
 ENTRYPOINT []
 CMD []
 WORKDIR /
-COPY --from=tini-build bin/tini bin/tini
+COPY --from=build bin/tini bin/tini
