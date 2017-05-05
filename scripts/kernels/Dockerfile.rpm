@@ -21,7 +21,7 @@ RUN cp -a boot/System.map-* /out/System.map || mv lib/modules/*/System.map /out/
 RUN tar cf /out/kernel.tar lib
 RUN tar cf /out/kernel-dev.tar usr || true
 
-FROM linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
+FROM linuxkit/toybox-media:b396a375852e5dffc002389d95e0658c8de72914@sha256:a317cc378946ee48cc011cdfc5aa08f0229f5bf10ff70e3690d8f60b36700033
 WORKDIR /
 ENTRYPOINT []
 CMD []
