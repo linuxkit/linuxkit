@@ -1,0 +1,17 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
+  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
+onboot:
+  - name: check
+    image: "kmod-test"
+    binds:
+     - /dev:/dev
+     - /lib/modules:/lib/modules
+    capabilities:
+     - all
+outputs:
+  - format: kernel+initrd

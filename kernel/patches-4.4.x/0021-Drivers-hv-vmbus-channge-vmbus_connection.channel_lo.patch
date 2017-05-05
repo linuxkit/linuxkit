@@ -1,4 +1,4 @@
-From 0b50537d8322491c2e46f566aaa449955a07d3cf Mon Sep 17 00:00:00 2001
+From 6078a1469613cd8ae73d701f0b75296b53645992 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:51 -0800
 Subject: [PATCH 21/44] Drivers: hv: vmbus: channge
@@ -112,5 +112,5 @@ index 75e383e6d03d..9a95beb87015 100644
  	struct workqueue_struct *work_queue;
  };
 -- 
-2.11.1
+2.11.0
 

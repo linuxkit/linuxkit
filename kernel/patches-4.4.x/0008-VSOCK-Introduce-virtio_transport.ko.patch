@@ -1,4 +1,4 @@
-From 96f038468e83e7e7858c9f32ce3120db2144f92d Mon Sep 17 00:00:00 2001
+From e68cc033460e45b09a0c62883bede33ef8e7d7a7 Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:33 +0100
 Subject: [PATCH 08/44] VSOCK: Introduce virtio_transport.ko
@@ -659,5 +659,5 @@ index 000000000000..699dfabdbccd
 +MODULE_DESCRIPTION("virtio transport for vsock");
 +MODULE_DEVICE_TABLE(virtio, id_table);
 -- 
-2.11.1
+2.11.0
 

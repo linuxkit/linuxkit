@@ -13,3 +13,4 @@ Dockerfile.media
 *.qcow2
 *-kernel
 *-cmdline
+artifacts/*

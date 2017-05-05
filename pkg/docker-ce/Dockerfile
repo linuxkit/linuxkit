@@ -1,6 +1,22 @@
-FROM alpine:3.5
+FROM linuxkit/alpine:f0169b60fb260d74025496ae6fd93213fecaba8f@sha256:23743c7206ebe8a609442c5ac7084a26ed45ce8f5213960428bca264225849f1 AS mirror
 
-# Docker daemon only minimal Alpine install
+FROM alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
+COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
+COPY --from=mirror /etc/apk/keys /etc/apk/keys/
+COPY --from=mirror /mirror /mirror/
+
+# https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
+# removed openssl as I do not think server needs it
+RUN apk add --no-cache \
+	btrfs-progs \
+	ca-certificates \
+	curl \
+	e2fsprogs \
+	e2fsprogs-extra \
+	iptables \
+	xfsprogs \
+	xz
+RUN rm -rf /mirror /etc/apk/repositories /etc/apk/keys
 
 # set up Docker group
 # set up subuid/subgid so that "--userns-remap=default" works out-of-the-box
@@ -10,19 +26,6 @@ RUN set -x \
 	&& adduser -S -G dockremap dockremap \
 	&& echo 'dockremap:165536:65536' >> /etc/subuid \
 	&& echo 'dockremap:165536:65536' >> /etc/subgid
-
-# https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
-# sfdisk and jq used by disk mounting code at present
-RUN apk add --no-cache \
-	ca-certificates \
-	curl \
-	iptables \
-	xz \
-	sfdisk \
-	jq
-
-# removed xfsprogs e2fs btrfs as we do not support dm or btrfs yet
-# removed openssl as I do not think server needs it
 
 ENV DOCKER_BUCKET get.docker.com
 ENV DOCKER_VERSION 17.04.0-ce

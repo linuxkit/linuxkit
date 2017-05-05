@@ -31,70 +31,39 @@ bin/linuxkit: $(LINUXKIT_DEPS) | bin
 	rm tmp_linuxkit_bin.tar
 	touch $@
 
-test-initrd.img: $(MOBY) test/test.yml
-	$(MOBY) build --pull test/test.yml
-
-test-bzImage: test-initrd.img
-
-.PHONY: test-qemu-efi
-test-qemu-efi: $(LINUXKIT) test-efi.iso
-	$(LINUXKIT) run qemu test | tee test-efi.log
-	$(call check_test_log, test-efi.log)
-
 bin:
 	mkdir -p $@
 
 install:
 	cp -R ./bin/* $(PREFIX)/bin
 
-define check_test_log
-	@cat $1 |grep -q 'test suite PASSED'
-endef
-
-.PHONY: test-hyperkit
-test-hyperkit: $(LINUXKIT) test-initrd.img test-bzImage test-cmdline
-	rm -f disk.img
-	$(LINUXKIT) run hyperkit test | tee test.log
-	$(call check_test_log, test.log)
-
-.PHONY: test-gcp
-test-gcp: $(LINUXKIT) test.img.tar.gz
-	$(LINUXKIT) push gcp test.img.tar.gz
-	$(LINUXKIT) run gcp test | tee test-gcp.log
-	$(call check_test_log, test-gcp.log)
-
 .PHONY: test
-test: $(LINUXKIT) test-initrd.img test-bzImage test-cmdline
-	$(LINUXKIT) run test | tee test.log
-	$(call check_test_log, test.log)
+test:
+	$(MAKE) -C test
 
-test-ltp.img.tar.gz: $(MOBY) test/ltp/test-ltp.yml
-	$(MOBY) build --pull test/ltp/test-ltp.yml
-
-.PHONY: test-ltp
-test-ltp: $(LINUXKIT) test-ltp.img.tar.gz
-	$(LINUXKIT) push gcp test-ltp.img.tar.gz
-	$(LINUXKIT) run gcp -skip-cleanup -machine n1-highcpu-4 test-ltp | tee test-ltp.log
-	$(call check_test_log, test-ltp.log)
+.PHONY: collect-artifacts
+collect-artifacts: artifacts/test.img.tar.gz artifacts/test-ltp.img.tar.gz
 
 .PHONY: ci ci-tag ci-pr
 ci:
 	$(MAKE) clean
 	$(MAKE)
-	$(MAKE) test
-	$(MAKE) test-ltp
+	$(MAKE) install
+	$(MAKE) -C test all
 
 ci-tag:
 	$(MAKE) clean
 	$(MAKE)
-	$(MAKE) test
-	$(MAKE) test-ltp
+	$(MAKE) install
+	$(MAKE) -C test all
 
 ci-pr:
 	$(MAKE) clean
 	$(MAKE)
-	$(MAKE) test
+	$(MAKE) install
+	$(MAKE) -C test pr
 
 .PHONY: clean
 clean:
-	rm -rf bin *.log *-bzImage *-cmdline *.img *.iso *.tar.gz *.qcow2 *.vhd
+	rm -rf bin *.log *-kernel *-cmdline *.img *.iso *.tar.gz *.qcow2 *.vhd *.vmx *.vmdk
+	$(MAKE) -C test clean

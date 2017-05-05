@@ -16,12 +16,12 @@ onboot:
      - CAP_SYS_ADMIN
     readonly: true
   - name: binfmt
-    image: "linuxkit/binfmt:8881283ac627be1542811bd25c85e7782aebc692"
+    image: "linuxkit/binfmt:aebd6ed6cc29921371ca78314697881086f4577a"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:48e249ebef6a521eed886b3bce032db69fbb4afa"
+    image: "linuxkit/dhcpcd:8837289b78ecd80f59524883085424e115dd0b3a"
     binds:
      - /var:/var
      - /tmp/etc:/etc
@@ -32,14 +32,14 @@ onboot:
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: "linuxkit/format:53748000acf515549d398e6ae68545c26c0f3a2e"
+    image: "linuxkit/format:a16f2bd94a83dd0cea4d490f710567a0cc60be33"
     binds:
      - /dev:/dev
     capabilities:
      - CAP_SYS_ADMIN
      - CAP_MKNOD
   - name: mount
-    image: "linuxkit/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"
+    image: "linuxkit/mount:ad138d252798d9d0d6779f7f4d35b7fbcbbeefb9"
     binds:
      - /dev:/dev
      - /var:/var:rshared,rbind
