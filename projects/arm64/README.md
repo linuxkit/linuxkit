@@ -38,3 +38,4 @@ Configuration is constructed from `configs/`:
   * vendor path in `src/cmd/moby/build.go` refs `docker/moby`
   * Alpine `apk update ... && ...` preamble lines could be collapsed?
   * `aarch64/alpine:linux-headers` seems to be 4.4.6 but we build 4.9.x?
+  * `runc` build with my `go-1.8` container, not `1.7`?
