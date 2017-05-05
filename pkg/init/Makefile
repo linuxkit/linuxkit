@@ -1,39 +1,14 @@
-C_COMPILE=linuxkit/c-compile:63b085bbaec1aa7c42a7bd22a4b1c350d900617d
-START_STOP_DAEMON=sbin/start-stop-daemon
-
+.PHONY: tag push
 default: push
 
-$(START_STOP_DAEMON): start-stop-daemon.c
-	mkdir -p $(dir $@)
-	DOCKER_CONTENT_TRUST=1 docker pull $(C_COMPILE)
-	tar cf - $^ | DOCKER_CONTENT_TRUST=1 docker run --rm --net=none --log-driver=none -i $(C_COMPILE) -o $@ | tar xf -
-
-.PHONY: tag push
-
-BASE=alpine:3.5
 IMAGE=init
+DEPS=Dockerfile init $(wildcard etc/*) $(wildcard etc/init.d/*)
 
-ETC=$(shell find etc -type f)
+HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
-hash: Dockerfile $(ETC) init $(START_STOP_DAEMON)
-	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build sh -c 'cat $^ /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
+tag: $(DEPS)
+	docker build --no-cache --network=none -t linuxkit/$(IMAGE):$(HASH) .
 
-push: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 docker push linuxkit/$(IMAGE):$(shell cat hash))
-	docker rmi $(IMAGE):build
-	rm -f hash
-
-tag: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
-	rm -f hash
-
-clean:
-	rm -rf hash sbin usr
-
-.DELETE_ON_ERROR:
+push: tag
+	docker pull linuxkit/$(IMAGE):$(HASH) || \
+	docker push linuxkit/$(IMAGE):$(HASH)
