@@ -1,7 +1,7 @@
 .PHONY: tag push
 
 BASE=alpine:3.5
-IMAGE=kernel-config
+IMAGE=test-kernel-config
 
 default: push
 
