@@ -9,6 +9,6 @@ RUN git checkout $VIRTSOCK_COMMIT
 RUN make build/virtsock_stress.linux
 RUN cp -a build/virtsock_stress.linux /virtsock_stress
 
-FROM linuxkit/tini:6714d66b82b5397f497b2aa05764096ed1ffe7d7@sha256:ba594b96af6195737ce2df702196d7adea2cafde554e18940ee14ad575d27f3b
+FROM linuxkit/tini:cb32c9b3ceb16505e1d62919cf28c8b52bf6d57e@sha256:1645296b3e155f8cf672f71f8d20b274bf38ee94c39dd1b58f7b18e0163b00b8
 COPY --from=virtsock-build virtsock_stress bin/virtsock_stress
 CMD ["/bin/tini", "/bin/virtsock_stress", "-s", "-v", "1"]

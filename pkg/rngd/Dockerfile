@@ -31,7 +31,7 @@ RUN cd $pkgname-$pkgver && \
 RUN mkdir -p /tmp/dev /tmp/proc /tmp/sys
 
 
-FROM linuxkit/tini:6714d66b82b5397f497b2aa05764096ed1ffe7d7@sha256:ba594b96af6195737ce2df702196d7adea2cafde554e18940ee14ad575d27f3b
+FROM linuxkit/tini:cb32c9b3ceb16505e1d62919cf28c8b52bf6d57e@sha256:1645296b3e155f8cf672f71f8d20b274bf38ee94c39dd1b58f7b18e0163b00b8
 ENTRYPOINT []
 WORKDIR /
 COPY --from=build usr/sbin/rngd usr/sbin/rngd
