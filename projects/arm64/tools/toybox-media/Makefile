@@ -1,29 +1,42 @@
 .PHONY: tag push
-ORG=mor1
-BASE=mor1/alpine-build-toybox:f830f77db6a50393157e80200eee8a23865a7b12
-IMAGE=toybox-media
-
 default: push
 
-hash:
-	docker run --rm $(BASE) ls tar sh find sha1sum | \
-		docker build -q -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build tar cf - bin | docker run -i $(IMAGE):build sha1sum -b - > hash
+TRUST=0
+ORG=mor1
+IMAGE=toybox-media
+BASE=$(ORG)/c-compile:d8aa4bec68dcd4e6a48762ed9de09ee8051ed2d3
+SHA_IMAGE=aarch64/alpine:3.5
+DEPS=Dockerfile Makefile
 
-push: hash
-	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash) && \
-		 docker push $(ORG)/$(IMAGE):$(shell cat hash))
-	docker rmi $(IMAGE):build
-	rm -f hash
+hash: $(DEPS)
+	DOCKER_CONTENT_TRUST=$(TRUST) docker pull $(BASE)
+	find $^ -type f | xargs cat | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
 
 tag: hash
 	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
+		(docker build --no-cache -t $(IMAGE):build . && \
+		 docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash))
+
+push: tag
+	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
+		docker push $(ORG)/$(IMAGE):$(shell cat hash)
 	rm -f hash
+	docker rmi $(IMAGE):build || true
+
+signed-tag: hash
+	DOCKER_CONTENT_TRUST=$(TRUST) docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
+		(DOCKER_CONTENT_TRUST=$(TRUST) docker pull $(BASE) && \
+		 docker build --no-cache -t $(IMAGE):build . && \
+		 docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash))
+
+sign: signed-tag
+	DOCKER_CONTENT_TRUST=$(TRUST) docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
+		DOCKER_CONTENT_TRUST=$(TRUST) docker push $(ORG)/$(IMAGE):$(shell cat hash)
+	rm -f hash
+	docker rmi $(IMAGE):build || true
 
 clean:
 	rm -f hash
+	docker rmi $(IMAGE):build || true
 
 .DELETE_ON_ERROR:
