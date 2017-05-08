@@ -98,20 +98,23 @@ func runQemu(args []string) {
 		PublishedPorts: publishFlags,
 	}
 
-	config, qemuArgs := buildQemuCmdline(config)
+	config = discoverBackend(config)
 
 	var err error
 	if config.Containerized {
-		err = runQemuContainer(config, qemuArgs)
+		err = runQemuContainer(config)
 	} else {
-		err = runQemuLocal(config, qemuArgs)
+		err = runQemuLocal(config)
 	}
 	if err != nil {
 		log.Fatal(err.Error())
 	}
 }
 
-func runQemuLocal(config QemuConfig, args []string) error {
+func runQemuLocal(config QemuConfig) error {
+	var args []string
+	config, args = buildQemuCmdline(config)
+
 	if config.DiskPath != "" {
 		// If disk doesn't exist then create one
 		if _, err := os.Stat(config.DiskPath); err != nil {
@@ -154,11 +157,22 @@ func runQemuLocal(config QemuConfig, args []string) error {
 	return qemuCmd.Run()
 }
 
-func runQemuContainer(config QemuConfig, args []string) error {
-	wd, err := os.Getwd()
-	if err != nil {
-		return err
+func runQemuContainer(config QemuConfig) error {
+	var wd string
+	if filepath.IsAbs(config.Prefix) {
+		// Split the path
+		wd, config.Prefix = filepath.Split(config.Prefix)
+		log.Debugf("Prefix: %s", config.Prefix)
+	} else {
+		var err error
+		wd, err = os.Getwd()
+		if err != nil {
+			return err
+		}
 	}
+
+	var args []string
+	config, args = buildQemuCmdline(config)
 
 	dockerArgs := []string{"run", "-i", "--rm", "-v", fmt.Sprintf("%s:%s", wd, "/tmp"), "-w", "/tmp"}
 
@@ -217,26 +231,6 @@ func runQemuContainer(config QemuConfig, args []string) error {
 }
 
 func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
-	// Before building qemu arguments, check if qemu is in the PATH or fallback to containerized
-	qemuBinPath := "qemu-system-" + config.Arch
-	qemuImgPath := "qemu-img"
-
-	var err error
-	config.QemuBinPath, err = exec.LookPath(qemuBinPath)
-	if err != nil {
-		log.Infof("Unable to find %s within the $PATH. Using a container", qemuBinPath)
-		config.Containerized = true
-	}
-
-	config.QemuImgPath, err = exec.LookPath(qemuImgPath)
-	if err != nil {
-		// No need to show the error message twice
-		if !config.Containerized {
-			log.Infof("Unable to find %s within the $PATH. Using a container", qemuImgPath)
-			config.Containerized = true
-		}
-	}
-
 	// Iterate through the flags and build arguments
 	var qemuArgs []string
 	qemuArgs = append(qemuArgs, "-device", "virtio-rng-pci")
@@ -244,6 +238,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
 
 	// Look for kvm device and enable for qemu if it exists
+	var err error
 	if _, err = os.Stat("/dev/kvm"); os.IsNotExist(err) {
 		qemuArgs = append(qemuArgs, "-machine", "q35")
 	} else {
@@ -302,10 +297,34 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	return config, qemuArgs
 }
 
+func discoverBackend(config QemuConfig) QemuConfig {
+	qemuBinPath := "qemu-system-" + config.Arch
+	qemuImgPath := "qemu-img"
+
+	var err error
+	config.QemuBinPath, err = exec.LookPath(qemuBinPath)
+	if err != nil {
+		log.Infof("Unable to find %s within the $PATH. Using a container", qemuBinPath)
+		config.Containerized = true
+	}
+
+	config.QemuImgPath, err = exec.LookPath(qemuImgPath)
+	if err != nil {
+		// No need to show the error message twice
+		if !config.Containerized {
+			log.Infof("Unable to find %s within the $PATH. Using a container", qemuImgPath)
+			config.Containerized = true
+		}
+	}
+	return config
+}
+
 func buildPath(prefix string, postfix string) string {
 	path := prefix + postfix
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatalf("File [%s] does not exist in current directory", path)
+	if filepath.IsAbs(path) {
+		if _, err := os.Stat(path); os.IsNotExist(err) {
+			log.Fatalf("File [%s] does not exist in current directory", path)
+		}
 	}
 	return path
 }
