@@ -13,7 +13,6 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/linuxkit/linuxkit/src/initrd"
 )
 
 const defaultNameForStdin = "moby"
@@ -64,13 +63,38 @@ func build(args []string) {
 		}
 	}
 
-	buildInternal(name, *buildPull, config)
+	m, err := NewConfig(config)
+	if err != nil {
+		log.Fatalf("Invalid config: %v", err)
+	}
+
+	image := buildInternal(m, name, *buildPull)
+
+	log.Infof("Create outputs:")
+	err = outputs(m, name, image)
+	if err != nil {
+		log.Fatalf("Error writing outputs: %v", err)
+	}
 }
 
-func initrdAppend(iw *initrd.Writer, r io.Reader) {
-	_, err := initrd.Copy(iw, r)
-	if err != nil {
-		log.Fatalf("initrd write error: %v", err)
+func initrdAppend(iw *tar.Writer, r io.Reader) {
+	tr := tar.NewReader(r)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			log.Fatalln(err)
+		}
+		err = iw.WriteHeader(hdr)
+		if err != nil {
+			log.Fatalln(err)
+		}
+		_, err = io.Copy(iw, tr)
+		if err != nil {
+			log.Fatalln(err)
+		}
 	}
 }
 
@@ -100,14 +124,10 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 }
 
 // Perform the actual build process
-func buildInternal(name string, pull bool, config []byte) {
-	m, err := NewConfig(config)
-	if err != nil {
-		log.Fatalf("Invalid config: %v", err)
-	}
-
+// TODO return error not panic
+func buildInternal(m *Moby, name string, pull bool) []byte {
 	w := new(bytes.Buffer)
-	iw := initrd.NewWriter(w)
+	iw := tar.NewWriter(w)
 
 	if pull || enforceContentTrust(m.Kernel.Image, &m.Trust) {
 		log.Infof("Pull kernel image: %s", m.Kernel.Image)
@@ -129,10 +149,11 @@ func buildInternal(name string, pull bool, config []byte) {
 	}
 	buf := bytes.NewBuffer(out)
 
-	kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName)
+	kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName, m.Kernel.Cmdline)
 	if err != nil {
 		log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
 	}
+	initrdAppend(iw, kernel)
 	initrdAppend(iw, ktar)
 
 	// convert init images to tarballs
@@ -191,14 +212,10 @@ func buildInternal(name string, pull bool, config []byte) {
 		log.Fatalf("initrd close error: %v", err)
 	}
 
-	log.Infof("Create outputs:")
-	err = outputs(m, name, kernel.Bytes(), w.Bytes())
-	if err != nil {
-		log.Fatalf("Error writing outputs: %v", err)
-	}
+	return w.Bytes()
 }
 
-func untarKernel(buf *bytes.Buffer, kernelName, kernelAltName, ktarName string) (*bytes.Buffer, *bytes.Buffer, error) {
+func untarKernel(buf *bytes.Buffer, kernelName, kernelAltName, ktarName string, cmdline string) (*bytes.Buffer, *bytes.Buffer, error) {
 	tr := tar.NewReader(buf)
 
 	var kernel, ktar *bytes.Buffer
@@ -219,8 +236,43 @@ func untarKernel(buf *bytes.Buffer, kernelName, kernelAltName, ktarName string) 
 			}
 			foundKernel = true
 			kernel = new(bytes.Buffer)
-			_, err := io.Copy(kernel, tr)
+			// make a new tarball with kernel in /boot/kernel
+			tw := tar.NewWriter(kernel)
+			whdr := &tar.Header{
+				Name:     "boot",
+				Mode:     0700,
+				Typeflag: tar.TypeDir,
+			}
+			if err := tw.WriteHeader(whdr); err != nil {
+				return nil, nil, err
+			}
+			whdr = &tar.Header{
+				Name: "boot/kernel",
+				Mode: hdr.Mode,
+				Size: hdr.Size,
+			}
+			if err := tw.WriteHeader(whdr); err != nil {
+				return nil, nil, err
+			}
+			_, err = io.Copy(tw, tr)
 			if err != nil {
+				return nil, nil, err
+			}
+			// add the cmdline in /boot/cmdline
+			whdr = &tar.Header{
+				Name: "boot/cmdline",
+				Mode: 0700,
+				Size: int64(len(cmdline)),
+			}
+			if err := tw.WriteHeader(whdr); err != nil {
+				return nil, nil, err
+			}
+			buf := bytes.NewBufferString(cmdline)
+			_, err = io.Copy(tw, buf)
+			if err != nil {
+				return nil, nil, err
+			}
+			if err := tw.Close(); err != nil {
 				return nil, nil, err
 			}
 		case ktarName:
