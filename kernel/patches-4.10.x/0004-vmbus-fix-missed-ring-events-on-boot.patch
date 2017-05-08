@@ -1,7 +1,7 @@
-From 64b212adc820690cb54855b79e30e23329aecc5a Mon Sep 17 00:00:00 2001
+From a37349b0ec71d431bb70981c3eae6390e06888b2 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sun, 26 Mar 2017 16:42:20 +0800
-Subject: [PATCH 4/7] vmbus: fix missed ring events on boot
+Subject: [PATCH 4/6] vmbus: fix missed ring events on boot
 
 During initialization, the channel initialization code schedules the
 tasklet to scan the VMBUS receive event page (i.e. simulates an

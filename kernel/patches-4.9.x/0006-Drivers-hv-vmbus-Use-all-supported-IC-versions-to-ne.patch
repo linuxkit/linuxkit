@@ -1,7 +1,7 @@
-From df244245d15f278d893b35a2f89f1eb16aa056c7 Mon Sep 17 00:00:00 2001
+From 9f985f0dc1c0edce1609e7078a9f510ac783b508 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
-Subject: [PATCH 06/11] Drivers: hv: vmbus: Use all supported IC versions to
+Subject: [PATCH 06/10] Drivers: hv: vmbus: Use all supported IC versions to
  negotiate
 
 Previously, we were assuming that each IC protocol version was tied to a
