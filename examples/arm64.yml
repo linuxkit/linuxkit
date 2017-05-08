@@ -1,0 +1,24 @@
+kernel:
+  image: "mor1/kernel:4.10.x_dbg-arm64"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - mor1/init:eac58da67f34c68b9f55e5193528cf18c043b1c6
+  - mor1/runc:ea7f1c3422c464ca2fed68e2503ceb57a31dcc09
+  - mor1/containerd:5bb8a6e6979e8e36140baf7a50044635b622b976
+onboot:
+  - name: dhcpcd
+    image: "mor1/dhcpcd:3119ae4587d44c382864a27ae32ff2ca8722cfc2"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+trust:
+  image:
+    - linuxkit/kernel
+outputs:
+  - format: kernel+initrd

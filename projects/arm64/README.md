@@ -31,6 +31,19 @@ Configuration is constructed from `configs/`:
   * `kernel_config` adding settings and overriding `CONFIG_BRIDGE m -> y`
   * `kernel_config.debug` if `$DEBUG != 0` configuring kernel debug options
 
+## packet.net type 2A IPXE boot
+
+  * iPXE boot only on first boot; subsequent boots assume disk boot will work,
+    so need to `^B` into SOS session during boot to get to iPXE CLI
+  * iPXE boot features are `DNS HTTP HTTPS iSCSI TFTP VLAN AoE EFI Menu` -- so
+    `-kernel` and `-bzImage` `moby` outputs don't work as both are gzipped.
+
+    ```
+    mv foo-kernel foo-kernel.gz
+    gnuzip foo-kernel.gz
+    ```
+
+    ...boots but panics because no root device
 
 # Notes
 
