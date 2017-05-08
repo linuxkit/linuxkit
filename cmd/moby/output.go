@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"os"
 
+	"github.com/linuxkit/linuxkit/src/initrd"
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -19,42 +20,76 @@ const (
 	vmdk = "linuxkit/mkimage-vmdk:182b541474ca7965c8e8f987389b651859f760da@sha256:99638c5ddb17614f54c6b8e11bd9d49d1dea9d837f38e0f6c1a5f451085d449b"
 )
 
-func outputs(m *Moby, base string, kernel []byte, initrd []byte) error {
+func outputs(m *Moby, base string, image []byte) error {
 	log.Debugf("output: %s %s", m.Outputs, base)
+
 	for _, o := range m.Outputs {
 		switch o.Format {
+		case "tar":
+			err := outputTar(base, image)
+			if err != nil {
+				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
+			}
 		case "kernel+initrd":
-			err := outputKernelInitrd(base, kernel, initrd, m.Kernel.Cmdline)
+			kernel, initrd, cmdline, err := tarToInitrd(image)
+			if err != nil {
+				return fmt.Errorf("Error converting to initrd: %v", err)
+			}
+			err = outputKernelInitrd(base, kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "iso-bios":
-			err := outputISO(bios, base+".iso", kernel, initrd, m.Kernel.Cmdline)
+			kernel, initrd, cmdline, err := tarToInitrd(image)
+                        if err != nil {
+                                return fmt.Errorf("Error converting to initrd: %v", err)
+                        }
+			err = outputISO(bios, base+".iso", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "iso-efi":
-			err := outputISO(efi, base+"-efi.iso", kernel, initrd, m.Kernel.Cmdline)
+			kernel, initrd, cmdline, err := tarToInitrd(image)
+                        if err != nil {
+                                return fmt.Errorf("Error converting to initrd: %v", err)
+                        }
+			err = outputISO(efi, base+"-efi.iso", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "gcp-img":
-			err := outputImg(gcp, base+".img.tar.gz", kernel, initrd, m.Kernel.Cmdline)
+			kernel, initrd, cmdline, err := tarToInitrd(image)
+                        if err != nil {
+                                return fmt.Errorf("Error converting to initrd: %v", err)
+                        }
+			err = outputImg(gcp, base+".img.tar.gz", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "qcow", "qcow2":
-			err := outputImg(qcow, base+".qcow2", kernel, initrd, m.Kernel.Cmdline)
+			kernel, initrd, cmdline, err := tarToInitrd(image)
+                        if err != nil {
+                                return fmt.Errorf("Error converting to initrd: %v", err)
+                        }
+			err = outputImg(qcow, base+".qcow2", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "vhd":
-			err := outputImg(vhd, base+".vhd", kernel, initrd, m.Kernel.Cmdline)
+			kernel, initrd, cmdline, err := tarToInitrd(image)
+                        if err != nil {
+                                return fmt.Errorf("Error converting to initrd: %v", err)
+                        }
+			err = outputImg(vhd, base+".vhd", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "vmdk":
-			err := outputImg(vmdk, base+".vmdk", kernel, initrd, m.Kernel.Cmdline)
+			kernel, initrd, cmdline, err := tarToInitrd(image)
+                        if err != nil {
+                                return fmt.Errorf("Error converting to initrd: %v", err)
+                        }
+			err = outputImg(vmdk, base+".vmdk", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
@@ -65,6 +100,18 @@ func outputs(m *Moby, base string, kernel []byte, initrd []byte) error {
 		}
 	}
 	return nil
+}
+
+func tarToInitrd(image []byte) ([]byte, []byte, string, error) {
+	w := new(bytes.Buffer)
+	iw := initrd.NewWriter(w)
+	r := bytes.NewReader(image)
+	tr := tar.NewReader(r)
+	kernel, cmdline, err := initrd.CopySplitTar(iw, tr)
+	if err != nil {
+		return []byte{}, []byte{}, "", err
+	}
+	return kernel, w.Bytes(), cmdline, nil
 }
 
 func tarInitrdKernel(kernel, initrd []byte) (*bytes.Buffer, error) {
@@ -155,4 +202,10 @@ func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline strin
 		return err
 	}
 	return nil
+}
+
+func outputTar(base string, initrd []byte) error {
+	log.Debugf("output tar: %s", base)
+	log.Infof("  %s", base+".tar")
+	return ioutil.WriteFile(base+".tar", initrd, os.FileMode(0644))
 }
