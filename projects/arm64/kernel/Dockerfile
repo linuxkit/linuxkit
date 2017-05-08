@@ -3,7 +3,8 @@ FROM mor1/kernel-compile:3a358614b3822fdc0bc9cc6bfe2302588e4f7d09@sha256:e4f2d21
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
 ARG DEBUG
-ARG ARCH
+ARG LKARCH
+ARG LKIMAGE
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 
@@ -11,16 +12,16 @@ RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
 
 RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
 
-COPY ${ARCH}/kernel_config-${KERNEL_SERIES} /linux/arch/${ARCH}/configs/defconfig
-COPY ${ARCH}/kernel_config.debug /linux/debug_config
+COPY kernel_config-${KERNEL_SERIES}-${LKARCH} /linux/arch/${LKARCH}/configs/defconfig
+COPY kernel_config.debug /linux/debug_config
 
 RUN if [ -n "${DEBUG}" ]; then \
-    sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' /linux/arch/${ARCH}/configs/defconfig; \
-    cat /linux/debug_config >> /linux/arch/${ARCH}/configs/defconfig; \
+    sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' /linux/arch/${LKARCH}/configs/defconfig; \
+    cat /linux/debug_config >> /linux/arch/${LKARCH}/configs/defconfig; \
     fi
 
 # Apply local patches
-COPY ${ARCH}/patches-${KERNEL_SERIES} /patches
+COPY patches-${KERNEL_SERIES} /patches
 WORKDIR /linux
 RUN set -e && for patch in /patches/*.patch; do \
         echo "Applying $patch"; \
@@ -33,7 +34,7 @@ RUN mkdir /out
 RUN make defconfig && \
     make oldconfig && \
     make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
-    cp arch/${ARCH}/boot/Image.gz /out/kernel && \
+    cp arch/${LKARCH}/boot/${LKIMAGE} /out/kernel && \
     cp System.map /out
 
 # Modules

@@ -8,8 +8,10 @@
 # of the current directory. The build will only rebuild the kernel
 # image if the git tree hash changed.
 
-TRUST=0
-ORG=mor1
+TRUST  = 0
+ORG    = mor1
+LKARCH  ?= arm64
+LKIMAGE ?= Image.gz
 
 # Git tree hash of this directory. Override to force build
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
@@ -36,37 +38,39 @@ sign:
 # Set $3 to "_dbg", to build debug kernels. This defines targets like
 # build_4.9.x_dbg and adds "_dbg" to the hub image name.
 define kernel
-build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) kernel_config-$(2) kernel_config.debug
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) || \
+build_$(2)$(3)-$(LKARCH): Dockerfile Makefile $(wildcard patches-$(2)/*) kernel_config-$(2)-$(LKARCH) kernel_config.debug
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(LKARCH)-$(HASH) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
 			--build-arg KERNEL_SERIES=$(2) \
 			--build-arg DEBUG=$(3) \
-			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) .
+			--build-arg LKARCH=$(LKARCH) \
+			--build-arg LKIMAGE=$(LKIMAGE) \
+			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(LKARCH)-$(HASH) .
 
-push_$(2)$(3): build_$(2)$(3)
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) || \
-		(docker push $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) && \
-		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) $(ORG)/$(IMAGE):$(2)$(3) && \
-		 docker push $(ORG)/$(IMAGE):$(2)$(3))
+push_$(2)$(3)-$(LKARCH): build_$(2)$(3)-$(LKARCH)
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(LKARCH)-$(HASH) || \
+		(docker push $(ORG)/$(IMAGE):$(1)$(3)-$(LKARCH)-$(HASH) && \
+		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(LKARCH)-$(HASH) $(ORG)/$(IMAGE):$(2)$(3)-$(LKARCH) && \
+		 docker push $(ORG)/$(IMAGE):$(2)$(3)-$(LKARCH))
 
-sign_$(2)$(3): build_$(2)$(3)
-	DOCKER_CONTENT_TRUST=$(TRUST) docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) || \
-		(DOCKER_CONTENT_TRUST=$(TRUST) docker push $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) && \
-		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) $(ORG)/$(IMAGE):$(2)$(3) && \
-		 DOCKER_CONTENT_TRUST=$(TRUST) docker push $(ORG)/$(IMAGE):$(2)$(3))
+sign_$(2)$(3)-$(LKARCH): build_$(2)$(3)-$(LKARCH)
+	DOCKER_CONTENT_TRUST=$(TRUST) docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(LKARCH)-$(HASH) || \
+		(DOCKER_CONTENT_TRUST=$(TRUST) docker push $(ORG)/$(IMAGE):$(1)$(3)-$(LKARCH)-$(HASH) && \
+		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(LKARCH)-$(HASH) $(ORG)/$(IMAGE):$(2)$(3)-$(LKARCH) && \
+		 DOCKER_CONTENT_TRUST=$(TRUST) docker push $(ORG)/$(IMAGE):$(2)$(3)-$(LKARCH))
 
-build: build_$(2)$(3)
-push: push_$(2)$(3)
-sign: sign_$(2)$(3)
+build: build_$(2)$(3)-$(LKARCH)
+push: push_$(2)$(3)-$(LKARCH)
+sign: sign_$(2)$(3)-$(LKARCH)
 endef
 
 #
 # Build Targets
 # Debug targets only for latest stable and LTS stable
 #
-$(eval $(call kernel,4.10.14,4.10.x))
+#$(eval $(call kernel,4.10.14,4.10.x))
 $(eval $(call kernel,4.10.14,4.10.x,_dbg))
-$(eval $(call kernel,4.9.26,4.9.x))
-$(eval $(call kernel,4.9.26,4.9.x,_dbg))
-$(eval $(call kernel,4.4.66,4.4.x))
+#$(eval $(call kernel,4.9.26,4.9.x))
+#$(eval $(call kernel,4.9.26,4.9.x,_dbg))
+#$(eval $(call kernel,4.4.66,4.4.x))
