@@ -1,14 +1,15 @@
-FROM golang:1.8-alpine
+FROM linuxkit/alpine:d0cef04aa75159e373fa08a49478ed6bf4adb9b4@sha256:4d8e181db968645b8b3308d2fe725e6f7bb9d9d44a9c3c7782e86c02a6d9e0f1 as alpine
 RUN \
-  apk update && apk upgrade -a && \
-  apk add --no-cache \
+  apk add \
   btrfs-progs-dev \
   gcc \
   git \
+  go \
   libc-dev \
   linux-headers \
   make \
   && true
+ENV GOPATH=/root/go
 ENV CONTAINERD_COMMIT=25a161bf5d4483bd0bea9e38b0e8fe3ecb17b53e
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
@@ -19,5 +20,9 @@ RUN make binaries GO_GCFLAGS="-buildmode pie --ldflags '-extldflags \"-fno-PIC -
 RUN cp bin/containerd bin/ctr bin/containerd-shim bin/dist /usr/bin/
 WORKDIR /
 COPY . .
-RUN printf "FROM scratch\nCOPY /usr/bin/* /usr/bin/\nCOPY /etc/containerd/config.toml /etc/containerd/\n" > Dockerfile
-CMD ["tar", "cf", "-", "Dockerfile", "usr/bin/containerd", "usr/bin/ctr", "usr/bin/containerd-shim", "etc/containerd/config.toml"]
+
+FROM scratch
+ENTRYPOINT []
+WORKDIR /
+COPY --from=alpine /usr/bin/containerd /usr/bin/ctr /usr/bin/containerd-shim /usr/bin/
+COPY --from=alpine /etc/containerd/config.toml /etc/containerd/

@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
-  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/runc:2649198589ef0020d99f613adaeda45ce0093a38
   - linuxkit/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
   - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
 onboot:
