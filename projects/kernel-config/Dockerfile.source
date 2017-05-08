@@ -16,3 +16,6 @@ RUN set -e && for patch in /patches/*.patch; do \
         echo "Applying $patch"; \
         patch -p1 < "$patch"; \
     done
+
+RUN mkdir /out
+RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info

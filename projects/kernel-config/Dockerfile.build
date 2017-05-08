@@ -1,24 +1,13 @@
 ARG source=nosuchimage
-FROM ${source}
+FROM ${source} AS kernel-build
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
-ARG DEBUG
 
-COPY kernel_config-${KERNEL_SERIES} /linux/arch/x86/configs/x86_64_defconfig
-COPY kernel_config.debug /linux/debug_config
-
-RUN if [ -n "${DEBUG}" ]; then \
-    sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' /linux/arch/x86/configs/x86_64_defconfig; \
-    cat /linux/debug_config >> /linux/arch/x86/configs/x86_64_defconfig; \
-    fi
-
-RUN mkdir /out
+WORKDIR /linux
 
 # Kernel
-RUN make defconfig && \
-    make oldconfig && \
-    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
+RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
     cp arch/x86_64/boot/bzImage /out/kernel && \
     cp System.map /out
 

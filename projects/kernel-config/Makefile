@@ -35,19 +35,30 @@ sign:
 define kernel
 .PHONY: source_$(2)$(3)
 source_$(2)$(3):
-	docker image inspect linuxkit/$(IMAGE)-source:$(1)-$(HASH) >/dev/null || \
+	@# XXX: intentionally dropping $(3) here, since the source is the same for
+	@# both debug and non-debug builds.
+	docker image inspect linuxkit/$(IMAGE)-source:$(1)$-$(HASH) >/dev/null || \
 		docker build -f Dockerfile.source \
 		--build-arg KERNEL_VERSION=$(1) \
 		--build-arg KERNEL_SERIES=$(2) \
-		--no-cache -t linuxkit/$(IMAGE)-source:$(1)-$(HASH) .
+		--no-cache -t linuxkit/$(IMAGE)-source:$(1)$-$(HASH) .
 
-build_$(2)$(3): Dockerfile.build Makefile $(wildcard patches-$(2)/*) kernel_config-$(2) kernel_config.debug source_$(2)$(3)
+.PHONY: config_$(2)$(3)
+config_$(2)$(3): source_$(2)
+	docker image inspect linuxkit/$(IMAGE)-config:$(1)$(3)-$(HASH) >/dev/null || \
+		docker build -f Dockerfile.config \
+		--build-arg KERNEL_SERIES=$(2) \
+		--build-arg ARCH=x86 \
+		--build-arg DEBUG=$(3) \
+		--build-arg source=linuxkit/$(IMAGE)-source:$(1)-$(HASH) \
+		--no-cache -t linuxkit/$(IMAGE)-config:$(1)$(3)-$(HASH) .
+
+build_$(2)$(3): Dockerfile.build Makefile $(wildcard patches-$(2)/*) kernel_config-$(2) kernel_config.debug config_$(2)$(3)
 	docker pull linuxkit/$(IMAGE):$(1)$(3)-$(HASH) || \
 		docker build -f Dockerfile.build \
 			--build-arg KERNEL_VERSION=$(1) \
 			--build-arg KERNEL_SERIES=$(2) \
-			--build-arg DEBUG=$(3) \
-			--build-arg source=linuxkit/$(IMAGE)-source:$(1)$(3)-$(HASH) \
+			--build-arg source=linuxkit/$(IMAGE)-config:$(1)$(3)-$(HASH) \
 			--no-cache -t linuxkit/$(IMAGE):$(1)$(3)-$(HASH) .
 
 push_$(2)$(3): build_$(2)$(3)
