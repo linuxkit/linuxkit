@@ -1,7 +1,8 @@
 .PHONY: tag push
 
-BASE=alpine:edge
+ORG?=linuxkit
 IMAGE=alpine
+BASE=alpine:edge
 
 default: push
 
@@ -15,16 +16,16 @@ hash: Dockerfile packages
 	docker run --rm $(IMAGE):build sh -c 'find /mirror -name '*.apk' -type f | xargs cat | cat /lib/apk/db/installed - | sha1sum' | sed 's/ .*//' > $@
 
 push: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 docker push linuxkit/$(IMAGE):$(shell cat hash))
+	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
+		(docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash) && \
+		 docker push $(ORG)/$(IMAGE):$(shell cat hash))
 	docker run --rm $(IMAGE):build find /mirror -name '*.apk' -exec basename '{}' .apk \; | sort | (echo '# automatically generated list of installed packages'; cat -) > versions
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
+	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
+		docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash)
 	docker rmi $(IMAGE):build
 	rm -f hash
 
