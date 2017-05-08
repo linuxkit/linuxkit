@@ -7,6 +7,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -16,21 +18,22 @@ const QemuImg = "linuxkit/qemu:17f052263d63c8a2b641ad91c589edcbb8a18c82"
 
 // QemuConfig contains the config for Qemu
 type QemuConfig struct {
-	Prefix        string
-	ISO           bool
-	UEFI          bool
-	Kernel        bool
-	GUI           bool
-	DiskPath      string
-	DiskSize      string
-	FWPath        string
-	Arch          string
-	CPUs          string
-	Memory        string
-	KVM           bool
-	Containerized bool
-	QemuBinPath   string
-	QemuImgPath   string
+	Prefix         string
+	ISO            bool
+	UEFI           bool
+	Kernel         bool
+	GUI            bool
+	DiskPath       string
+	DiskSize       string
+	FWPath         string
+	Arch           string
+	CPUs           string
+	Memory         string
+	KVM            bool
+	Containerized  bool
+	QemuBinPath    string
+	QemuImgPath    string
+	PublishedPorts []string
 }
 
 func runQemu(args []string) {
@@ -60,6 +63,9 @@ func runQemu(args []string) {
 	qemuCPUs := qemuFlags.String("cpus", "1", "Number of CPUs")
 	qemuMem := qemuFlags.String("mem", "1024", "Amount of memory in MB")
 
+	publishFlags := multipleFlag{}
+	qemuFlags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
+
 	if err := qemuFlags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
@@ -78,17 +84,18 @@ func runQemu(args []string) {
 	}
 
 	config := QemuConfig{
-		Prefix:   prefix,
-		ISO:      *qemuIso,
-		UEFI:     *qemuUEFI,
-		Kernel:   *qemuKernel,
-		GUI:      *qemuGUI,
-		DiskPath: *qemuDiskPath,
-		DiskSize: *qemuDiskSize,
-		FWPath:   *qemuFWPath,
-		Arch:     *qemuArch,
-		CPUs:     *qemuCPUs,
-		Memory:   *qemuMem,
+		Prefix:         prefix,
+		ISO:            *qemuIso,
+		UEFI:           *qemuUEFI,
+		Kernel:         *qemuKernel,
+		GUI:            *qemuGUI,
+		DiskPath:       *qemuDiskPath,
+		DiskSize:       *qemuDiskSize,
+		FWPath:         *qemuFWPath,
+		Arch:           *qemuArch,
+		CPUs:           *qemuCPUs,
+		Memory:         *qemuMem,
+		PublishedPorts: publishFlags,
 	}
 
 	config, qemuArgs := buildQemuCmdline(config)
@@ -157,6 +164,14 @@ func runQemuContainer(config QemuConfig, args []string) error {
 
 	if config.KVM {
 		dockerArgs = append(dockerArgs, "--device", "/dev/kvm")
+	}
+
+	if config.PublishedPorts != nil && len(config.PublishedPorts) > 0 {
+		forwardings, err := buildDockerForwardings(config.PublishedPorts)
+		if err != nil {
+			return err
+		}
+		dockerArgs = append(dockerArgs, forwardings...)
 	}
 
 	dockerPath, err := exec.LookPath("docker")
@@ -271,6 +286,15 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		}
 	}
 
+	if config.PublishedPorts != nil && len(config.PublishedPorts) > 0 {
+		forwardings, err := buildQemuForwardings(config.PublishedPorts, config.Containerized)
+		if err != nil {
+			log.Error(err)
+		}
+		qemuArgs = append(qemuArgs, "-net", forwardings)
+		qemuArgs = append(qemuArgs, "-net", "nic")
+	}
+
 	if config.GUI != true {
 		qemuArgs = append(qemuArgs, "-nographic")
 	}
@@ -284,4 +308,97 @@ func buildPath(prefix string, postfix string) string {
 		log.Fatalf("File [%s] does not exist in current directory", path)
 	}
 	return path
+}
+
+type multipleFlag []string
+
+type publishedPorts struct {
+	guest    int
+	host     int
+	protocol string
+}
+
+func (f *multipleFlag) String() string {
+	return "A multiple flag is a type of flag that can be repeated any number of times"
+}
+
+func (f *multipleFlag) Set(value string) error {
+	*f = append(*f, value)
+	return nil
+}
+
+func splitPublish(publish string) (publishedPorts, error) {
+	p := publishedPorts{}
+	slice := strings.Split(publish, ":")
+
+	if len(slice) < 2 {
+		return p, fmt.Errorf("Unable to parse the ports to be published, should be in format <host>:<guest> or <host>:<guest>/<tcp|udp>")
+	}
+
+	hostPort, err := strconv.Atoi(slice[0])
+
+	if err != nil {
+		return p, fmt.Errorf("The provided hostPort can't be converted to int")
+	}
+
+	right := strings.Split(slice[1], "/")
+
+	protocol := "tcp"
+	if len(right) == 2 {
+		protocol = strings.TrimSpace(strings.ToLower(right[1]))
+	}
+
+	if protocol != "tcp" && protocol != "udp" {
+		return p, fmt.Errorf("Provided protocol is not valid, valid options are: udp and tcp")
+	}
+	guestPort, err := strconv.Atoi(right[0])
+
+	if err != nil {
+		return p, fmt.Errorf("The provided guestPort can't be converted to int")
+	}
+
+	if hostPort < 1 || hostPort > 65535 {
+		return p, fmt.Errorf("Invalid hostPort: %d", hostPort)
+	}
+
+	if guestPort < 1 || guestPort > 65535 {
+		return p, fmt.Errorf("Invalid guestPort: %d", guestPort)
+	}
+
+	p.guest = guestPort
+	p.host = hostPort
+	p.protocol = protocol
+	return p, nil
+}
+
+func buildQemuForwardings(publishFlags multipleFlag, containerized bool) (string, error) {
+	forwardings := "user"
+	for _, publish := range publishFlags {
+		p, err := splitPublish(publish)
+		if err != nil {
+			return "", err
+		}
+
+		hostPort := p.host
+		guestPort := p.guest
+
+		if containerized {
+			hostPort = guestPort
+		}
+		forwardings = fmt.Sprintf("%s,hostfwd=%s::%d-:%d", forwardings, p.protocol, hostPort, guestPort)
+	}
+
+	return forwardings, nil
+}
+
+func buildDockerForwardings(publishedPorts []string) ([]string, error) {
+	pmap := []string{}
+	for _, port := range publishedPorts {
+		s, err := splitPublish(port)
+		if err != nil {
+			return nil, err
+		}
+		pmap = append(pmap, "-p", fmt.Sprintf("%d:%d/%s", s.host, s.guest, s.protocol))
+	}
+	return pmap, nil
 }
