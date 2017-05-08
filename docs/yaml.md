@@ -106,3 +106,35 @@ For more details see the [OCI specification](https://github.com/opencontainers/r
 - `sysctl` sets a list of `sysctl` key value pairs that are set inside the container namespace.
 
 Further OCI values will be added, as the list is not yet complete.
+
+### Mount Options
+When mounting filesystem paths into a container - whether as part of `onboot` or `services` - there are several options of which you need to be aware. Using them properly is necessary for your containers to function properly.
+
+For most containers - e.g. nginx or even docker - these options are not needed. Simply doing the following will work fine:
+
+```yml
+binds:
+ - /var:/some/var/path
+```
+
+However, in some circumstances you will need additional options. These options are used primarily if you intend to make changes to mount points _from within your container_ that should be visible from outside the container, e.g., if you intend to mount an external disk from inside the container but have it be visible outside.
+
+In order for new mounts from within a container to be propagated, you must set the following on the container:
+
+1. `rootfsPropagation: shared`
+2. The mount point into the container below which new mounts are to occur must be `rshared,rbind`. In practice, this is `/var` (or some subdir of `/var`), since that is the only true read-write area of the filesystem where you will mount things.
+
+Thus, if you have a regular container that is only reading and writing, go ahead and do:
+
+```yml
+binds:
+ - /var:/some/var/path
+```
+
+On the other hand, if you have a container that will make new mounts that you wish to be visible outside the container, do:
+
+```yml
+binds:
+ - /var:/var:rshared,rbind
+rootfsPropagation: shared
+```
