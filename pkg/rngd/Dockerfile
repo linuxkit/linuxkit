@@ -1,9 +1,18 @@
-FROM linuxkit/c-compile:f52f485825c890d581e82a62af6906c1d33d8e5d@sha256:473fd283a090d3546e93915adacf00c69a23ff615c95c968c4a40e8723985853 AS rng-build
+FROM linuxkit/alpine:c5021a113803f7608e3908014d316c3490183d0b@sha256:4c7a80173c71ca5019dc56f40442b3a8345f141dd46593bd1fe6d130294d07cb AS build
+RUN apk add \
+    argp-standalone \
+    automake \
+    gcc \
+    linux-headers \
+    make \
+    musl-dev \
+    patch    
 
 COPY . /
 
 ENV pkgname=rng-tools pkgver=5
-RUN curl -O -sSL http://downloads.sourceforge.net/project/gkernel/$pkgname/$pkgver/$pkgname-$pkgver.tar.gz
+
+ADD http://downloads.sourceforge.net/project/gkernel/$pkgname/$pkgver/$pkgname-$pkgver.tar.gz $pkgname-$pkgver.tar.gz
 RUN sha256sum -c sha256sums
 RUN zcat $pkgname-$pkgver.tar.gz | tar xf -
 
@@ -22,12 +31,12 @@ RUN cd $pkgname-$pkgver && \
 RUN mkdir -p /tmp/dev /tmp/proc /tmp/sys
 
 
-FROM linuxkit/tini:6714d66b82b5397f497b2aa05764096ed1ffe7d7@sha256:ba594b96af6195737ce2df702196d7adea2cafde554e18940ee14ad575d27f3b
+FROM linuxkit/tini:cb32c9b3ceb16505e1d62919cf28c8b52bf6d57e@sha256:1645296b3e155f8cf672f71f8d20b274bf38ee94c39dd1b58f7b18e0163b00b8
 ENTRYPOINT []
 WORKDIR /
-COPY --from=rng-build usr/sbin/rngd usr/sbin/rngd
+COPY --from=build usr/sbin/rngd usr/sbin/rngd
 # Can't create directories, so copy empty dirs from previous context
-COPY --from=rng-build tmp/dev dev
-COPY --from=rng-build tmp/proc proc
-COPY --from=rng-build tmp/sys sys
+COPY --from=build tmp/dev dev
+COPY --from=build tmp/proc proc
+COPY --from=build tmp/sys sys
 CMD ["/bin/tini", "/usr/sbin/rngd", "-f"]
