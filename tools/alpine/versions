@@ -44,6 +44,7 @@ glib-2.52.1-r0
 gmp-6.1.2-r0
 gmp-dev-6.1.2-r0
 gnutls-3.5.10-r0
+go-1.7.4-r2
 gummiboot-48.1-r0
 installkernel-3.5-r0
 iptables-1.6.1-r0
