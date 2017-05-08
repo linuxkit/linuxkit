@@ -1,0 +1,62 @@
+From dade92a41fb20bc4224f412f4fb6b9de34f48c56 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Fri, 5 May 2017 16:57:20 -0600
+Subject: [PATCH 3/7] vmbus: remove "goto error_clean_msglist" in vmbus_open()
+
+This is just a cleanup patch to simplify the code a little.
+No semantic change.
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Cc: K. Y. Srinivasan <kys@microsoft.com>
+Cc: Haiyang Zhang <haiyangz@microsoft.com>
+Cc: Stephen Hemminger <sthemmin@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit 2deba76a449075c5a05bd572bfdee660f710b207)
+---
+ drivers/hv/channel.c | 18 +++++++-----------
+ 1 file changed, 7 insertions(+), 11 deletions(-)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index 7cd2bd9fd1f1..db5e6f8730d2 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -180,17 +180,18 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+ 	ret = vmbus_post_msg(open_msg,
+ 			     sizeof(struct vmbus_channel_open_channel), true);
+ 
+-	if (ret != 0) {
+-		err = ret;
+-		goto error_clean_msglist;
+-	}
+-
+-	wait_for_completion(&open_info->waitevent);
++	if (ret == 0)
++		wait_for_completion(&open_info->waitevent);
+ 
+ 	spin_lock_irqsave(&vmbus_connection.channelmsg_lock, flags);
+ 	list_del(&open_info->msglistentry);
+ 	spin_unlock_irqrestore(&vmbus_connection.channelmsg_lock, flags);
+ 
++	if (ret != 0) {
++		err = ret;
++		goto error_free_gpadl;
++	}
++
+ 	if (newchannel->rescind) {
+ 		err = -ENODEV;
+ 		goto error_free_gpadl;
+@@ -205,11 +206,6 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+ 	kfree(open_info);
+ 	return 0;
+ 
+-error_clean_msglist:
+-	spin_lock_irqsave(&vmbus_connection.channelmsg_lock, flags);
+-	list_del(&open_info->msglistentry);
+-	spin_unlock_irqrestore(&vmbus_connection.channelmsg_lock, flags);
+-
+ error_free_gpadl:
+ 	vmbus_teardown_gpadl(newchannel, newchannel->ringbuffer_gpadlhandle);
+ 	kfree(open_info);
+-- 
+2.11.1
+

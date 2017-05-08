@@ -62,6 +62,8 @@ endef
 # Build Targets
 # Debug targets only for latest stable and LTS stable
 #
+$(eval $(call kernel,4.11,4.11.x))
+$(eval $(call kernel,4.11,4.11.x,_dbg))
 $(eval $(call kernel,4.10.15,4.10.x))
 $(eval $(call kernel,4.10.15,4.10.x,_dbg))
 $(eval $(call kernel,4.9.27,4.9.x))
