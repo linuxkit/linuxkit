@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"os"
 
-	"github.com/linuxkit/linuxkit/src/initrd"
 	log "github.com/Sirupsen/logrus"
+	"github.com/linuxkit/linuxkit/src/initrd"
 )
 
 const (
@@ -41,54 +41,54 @@ func outputs(m *Moby, base string, image []byte) error {
 			}
 		case "iso-bios":
 			kernel, initrd, cmdline, err := tarToInitrd(image)
-                        if err != nil {
-                                return fmt.Errorf("Error converting to initrd: %v", err)
-                        }
+			if err != nil {
+				return fmt.Errorf("Error converting to initrd: %v", err)
+			}
 			err = outputISO(bios, base+".iso", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "iso-efi":
 			kernel, initrd, cmdline, err := tarToInitrd(image)
-                        if err != nil {
-                                return fmt.Errorf("Error converting to initrd: %v", err)
-                        }
+			if err != nil {
+				return fmt.Errorf("Error converting to initrd: %v", err)
+			}
 			err = outputISO(efi, base+"-efi.iso", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "gcp-img":
 			kernel, initrd, cmdline, err := tarToInitrd(image)
-                        if err != nil {
-                                return fmt.Errorf("Error converting to initrd: %v", err)
-                        }
+			if err != nil {
+				return fmt.Errorf("Error converting to initrd: %v", err)
+			}
 			err = outputImg(gcp, base+".img.tar.gz", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "qcow", "qcow2":
 			kernel, initrd, cmdline, err := tarToInitrd(image)
-                        if err != nil {
-                                return fmt.Errorf("Error converting to initrd: %v", err)
-                        }
+			if err != nil {
+				return fmt.Errorf("Error converting to initrd: %v", err)
+			}
 			err = outputImg(qcow, base+".qcow2", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "vhd":
 			kernel, initrd, cmdline, err := tarToInitrd(image)
-                        if err != nil {
-                                return fmt.Errorf("Error converting to initrd: %v", err)
-                        }
+			if err != nil {
+				return fmt.Errorf("Error converting to initrd: %v", err)
+			}
 			err = outputImg(vhd, base+".vhd", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
 			}
 		case "vmdk":
 			kernel, initrd, cmdline, err := tarToInitrd(image)
-                        if err != nil {
-                                return fmt.Errorf("Error converting to initrd: %v", err)
-                        }
+			if err != nil {
+				return fmt.Errorf("Error converting to initrd: %v", err)
+			}
 			err = outputImg(vmdk, base+".vmdk", kernel, initrd, cmdline)
 			if err != nil {
 				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
