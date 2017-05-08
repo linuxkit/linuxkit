@@ -1,13 +1,14 @@
 .PHONY: tag push
 
+TRUST=0
 ORG=mor1
 BASE=aarch64/alpine:3.5
-IMAGE=alpine-build-kernel-arm64
+IMAGE=kernel-compile
 
 default: push
 
 hash:
-	DOCKER_CONTENT_TRUST=0 docker pull $(BASE)
+	DOCKER_CONTENT_TRUST=$(TRUST) docker pull $(BASE)
 	tar cf - Dockerfile | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sha1sum /lib/apk/db/installed | sed 's/ .*//' > hash
 
