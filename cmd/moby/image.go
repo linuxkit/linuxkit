@@ -114,9 +114,9 @@ func imageTar(image, prefix string, tw *tar.Writer, trust bool, pull bool) error
 			if err != nil {
 				return fmt.Errorf("Failed to docker create image %s: %v", image, err)
 			}
+		} else {
+			return fmt.Errorf("Failed to create docker image %s: %v", image, err)
 		}
-		return fmt.Errorf("Failed to create docker image %s: %v", image, err)
-
 	}
 	contents, err := dockerExport(container)
 	if err != nil {
