@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:f0169b60fb260d74025496ae6fd93213fecaba8f@sha256:23743c7206ebe8a609442c5ac7084a26ed45ce8f5213960428bca264225849f1 AS mirror
+FROM linuxkit/alpine:c5021a113803f7608e3908014d316c3490183d0b@sha256:4c7a80173c71ca5019dc56f40442b3a8345f141dd46593bd1fe6d130294d07cb AS mirror
 
 FROM alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
