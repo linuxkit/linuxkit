@@ -1,7 +1,7 @@
-From 8c9e43ab0c900ec022e5ead9da3ae0f6c3550d1a Mon Sep 17 00:00:00 2001
+From 5c65085ef26273bcacf17e00780ad6566152fdb0 Mon Sep 17 00:00:00 2001
 From: Rolf Neugebauer <rolf.neugebauer@gmail.com>
 Date: Mon, 23 May 2016 18:55:45 +0100
-Subject: [PATCH 02/11] vmbus: Don't spam the logs with unknown GUIDs
+Subject: [PATCH 02/10] vmbus: Don't spam the logs with unknown GUIDs
 
 With Hyper-V sockets device types are introduced on the fly. The pr_info()
 then prints a message on every connection, which is way too verbose.  Since
