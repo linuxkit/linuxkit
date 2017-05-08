@@ -65,5 +65,5 @@ ci-pr:
 
 .PHONY: clean
 clean:
-	rm -rf bin *.log *-kernel *-cmdline *.img *.iso *.tar.gz *.qcow2 *.vhd *.vmx *.vmdk
+	rm -rf bin *.log *-kernel *-cmdline *.img *.iso *.tar.gz *.qcow2 *.vhd *.vmx *.vmdk *.tar
 	$(MAKE) -C test clean
