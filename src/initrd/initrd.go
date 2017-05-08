@@ -6,6 +6,7 @@ import (
 	"compress/gzip"
 	"errors"
 	"io"
+	"io/ioutil"
 
 	"github.com/linuxkit/linuxkit/src/pad4"
 	"github.com/surma/gocpio"
@@ -88,6 +89,68 @@ func CopyTar(w *Writer, r *tar.Reader) (written int64, err error) {
 		written += n
 		if err != nil {
 			return
+		}
+	}
+}
+
+// CopySplitTar copies a tar stream into an initrd, but splits out kernel and cmdline
+func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, err error) {
+	for {
+		var thdr *tar.Header
+		thdr, err = r.Next()
+		if err == io.EOF {
+			return kernel, cmdline, nil
+		}
+		if err != nil {
+			return
+		}
+		tp := typeconv(thdr)
+		if tp == -1 {
+			return kernel, cmdline, errors.New("cannot convert tar file")
+		}
+		switch thdr.Name {
+		case "boot/kernel":
+			kernel, err = ioutil.ReadAll(r)
+			if err != nil {
+				return
+			}
+		case "boot/cmdline":
+			var buf []byte
+			buf, err = ioutil.ReadAll(r)
+			if err != nil {
+				return
+			}
+			cmdline = string(buf)
+		case "boot":
+		default:
+			size := thdr.Size
+			if tp == cpio.TYPE_SYMLINK {
+				size = int64(len(thdr.Linkname))
+			}
+			chdr := cpio.Header{
+				Mode:     thdr.Mode,
+				Uid:      thdr.Uid,
+				Gid:      thdr.Gid,
+				Mtime:    thdr.ModTime.Unix(),
+				Size:     size,
+				Devmajor: thdr.Devmajor,
+				Devminor: thdr.Devminor,
+				Type:     tp,
+				Name:     thdr.Name,
+			}
+			err = w.WriteHeader(&chdr)
+			if err != nil {
+				return
+			}
+			if tp == cpio.TYPE_SYMLINK {
+				buffer := bytes.NewBufferString(thdr.Linkname)
+				_, err = io.Copy(w, buffer)
+			} else {
+				_, err = io.Copy(w, r)
+			}
+			if err != nil {
+				return
+			}
 		}
 	}
 }
