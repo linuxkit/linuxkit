@@ -32,6 +32,7 @@ type Moby struct {
 	Files    []struct {
 		Path      string
 		Directory bool
+		Symlink   string
 		Contents  string
 	}
 	Outputs []struct {
@@ -438,7 +439,7 @@ func filesystem(m *Moby) (*bytes.Buffer, error) {
 		if f.Path == "" {
 			return buf, errors.New("Did not specify path for file")
 		}
-		if !f.Directory && f.Contents == "" {
+		if !f.Directory && f.Contents == "" && f.Symlink == "" {
 			return buf, errors.New("Contents of file not specified")
 		}
 		// we need all the leading directories
@@ -472,6 +473,17 @@ func filesystem(m *Moby) (*bytes.Buffer, error) {
 				Name:     f.Path,
 				Typeflag: tar.TypeDir,
 				Mode:     0700,
+			}
+			err := tw.WriteHeader(hdr)
+			if err != nil {
+				return buf, err
+			}
+		} else if f.Symlink != "" {
+			hdr := &tar.Header{
+				Name:     f.Path,
+				Typeflag: tar.TypeSymlink,
+				Mode:     0600,
+				Linkname: f.Symlink,
 			}
 			err := tw.WriteHeader(hdr)
 			if err != nil {
