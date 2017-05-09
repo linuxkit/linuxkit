@@ -50,7 +50,7 @@ Make sure to download the credentials in JSON format and store them somewhere sa
 
 ## Build an image
 
-Add a `gcp-img` output line to your yaml config, see the example in [`examples/gcp.yml`](../example/gcp.yml).
+Add a `gcp-img` output line to your yaml config, see the example in [`examples/gcp.yml`](../examples/gcp.yml).
 
 Then do `moby build myprefix.yml`
 
