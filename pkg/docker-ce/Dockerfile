@@ -28,8 +28,8 @@ RUN set -x \
 	&& echo 'dockremap:165536:65536' >> /etc/subgid
 
 ENV DOCKER_BUCKET get.docker.com
-ENV DOCKER_VERSION 17.04.0-ce
-ENV DOCKER_SHA256 c52cff62c4368a978b52e3d03819054d87bcd00d15514934ce2e0e09b99dd100
+ENV DOCKER_VERSION 17.05.0-ce
+ENV DOCKER_SHA256 340e0b5a009ba70e1b644136b94d13824db0aeb52e09071410f35a95d94316d9
 
 # we could avoid installing client here I suppose
 RUN set -x \
