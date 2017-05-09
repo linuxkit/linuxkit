@@ -45,6 +45,43 @@ func typeconv(thdr *tar.Header) int64 {
 	}
 }
 
+func copyTarEntry(w *Writer, thdr *tar.Header, r *tar.Reader) (written int64, err error) {
+	tp := typeconv(thdr)
+	if tp == -1 {
+		return written, errors.New("cannot convert tar file")
+	}
+	size := thdr.Size
+	if tp == cpio.TYPE_SYMLINK {
+		size = int64(len(thdr.Linkname))
+	}
+	chdr := cpio.Header{
+		Mode:     thdr.Mode,
+		Uid:      thdr.Uid,
+		Gid:      thdr.Gid,
+		Mtime:    thdr.ModTime.Unix(),
+		Size:     size,
+		Devmajor: thdr.Devmajor,
+		Devminor: thdr.Devminor,
+		Type:     tp,
+		Name:     thdr.Name,
+	}
+	err = w.WriteHeader(&chdr)
+	if err != nil {
+		return
+	}
+	var n int64
+	switch tp {
+	case cpio.TYPE_SYMLINK:
+		buffer := bytes.NewBufferString(thdr.Linkname)
+		n, err = io.Copy(w, buffer)
+	case cpio.TYPE_REG:
+		n, err = io.Copy(w, r)
+	}
+	written += n
+
+	return
+}
+
 // CopyTar copies a tar stream into an initrd
 func CopyTar(w *Writer, r *tar.Reader) (written int64, err error) {
 	for {
@@ -56,37 +93,7 @@ func CopyTar(w *Writer, r *tar.Reader) (written int64, err error) {
 		if err != nil {
 			return
 		}
-		tp := typeconv(thdr)
-		if tp == -1 {
-			return written, errors.New("cannot convert tar file")
-		}
-		size := thdr.Size
-		if tp == cpio.TYPE_SYMLINK {
-			size = int64(len(thdr.Linkname))
-		}
-		chdr := cpio.Header{
-			Mode:     thdr.Mode,
-			Uid:      thdr.Uid,
-			Gid:      thdr.Gid,
-			Mtime:    thdr.ModTime.Unix(),
-			Size:     size,
-			Devmajor: thdr.Devmajor,
-			Devminor: thdr.Devminor,
-			Type:     tp,
-			Name:     thdr.Name,
-		}
-		err = w.WriteHeader(&chdr)
-		if err != nil {
-			return
-		}
-		var n int64
-		if tp == cpio.TYPE_SYMLINK {
-			buffer := bytes.NewBufferString(thdr.Linkname)
-			n, err = io.Copy(w, buffer)
-		} else {
-			n, err = io.Copy(w, r)
-		}
-		written += n
+		written, err = copyTarEntry(w, thdr, r)
 		if err != nil {
 			return
 		}
@@ -104,10 +111,6 @@ func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, err 
 		if err != nil {
 			return
 		}
-		tp := typeconv(thdr)
-		if tp == -1 {
-			return kernel, cmdline, errors.New("cannot convert tar file")
-		}
 		switch thdr.Name {
 		case "boot/kernel":
 			kernel, err = ioutil.ReadAll(r)
@@ -122,32 +125,9 @@ func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, err 
 			}
 			cmdline = string(buf)
 		case "boot":
+			// skip this entry
 		default:
-			size := thdr.Size
-			if tp == cpio.TYPE_SYMLINK {
-				size = int64(len(thdr.Linkname))
-			}
-			chdr := cpio.Header{
-				Mode:     thdr.Mode,
-				Uid:      thdr.Uid,
-				Gid:      thdr.Gid,
-				Mtime:    thdr.ModTime.Unix(),
-				Size:     size,
-				Devmajor: thdr.Devmajor,
-				Devminor: thdr.Devminor,
-				Type:     tp,
-				Name:     thdr.Name,
-			}
-			err = w.WriteHeader(&chdr)
-			if err != nil {
-				return
-			}
-			if tp == cpio.TYPE_SYMLINK {
-				buffer := bytes.NewBufferString(thdr.Linkname)
-				_, err = io.Copy(w, buffer)
-			} else {
-				_, err = io.Copy(w, r)
-			}
+			_, err = copyTarEntry(w, thdr, r)
 			if err != nil {
 				return
 			}
