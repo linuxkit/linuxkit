@@ -12,6 +12,7 @@
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 # Name on Hub
 IMAGE:=kernel
+ARCH?=$(shell if [ "$$(arch)" = "x86_64" ]]; then echo x86; else $$(arch); fi)
 
 .PHONY: check tag push sign
 # Targets:
@@ -33,32 +34,13 @@ sign:
 # Set $3 to "_dbg", to build debug kernels. This defines targets like
 # build_4.9.x_dbg and adds "_dbg" to the hub image name.
 define kernel
-.PHONY: source_$(2)$(3)
-source_$(2)$(3):
-	@# XXX: intentionally dropping $(3) here, since the source is the same for
-	@# both debug and non-debug builds.
-	docker image inspect linuxkit/$(IMAGE)-source:$(1)$-$(HASH) >/dev/null || \
-		docker build -f Dockerfile.source \
-		--build-arg KERNEL_VERSION=$(1) \
-		--build-arg KERNEL_SERIES=$(2) \
-		--no-cache -t linuxkit/$(IMAGE)-source:$(1)$-$(HASH) .
-
-.PHONY: config_$(2)$(3)
-config_$(2)$(3): source_$(2)
-	docker image inspect linuxkit/$(IMAGE)-config:$(1)$(3)-$(HASH) >/dev/null || \
-		docker build -f Dockerfile.config \
-		--build-arg KERNEL_SERIES=$(2) \
-		--build-arg ARCH=x86 \
-		--build-arg DEBUG=$(3) \
-		--build-arg source=linuxkit/$(IMAGE)-source:$(1)-$(HASH) \
-		--no-cache -t linuxkit/$(IMAGE)-config:$(1)$(3)-$(HASH) .
-
-build_$(2)$(3): Dockerfile.build Makefile $(wildcard patches-$(2)/*) kernel_config-$(2) kernel_config.debug config_$(2)$(3)
+build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel_config.$(2)*) kernel_config.base kernel_config.$(ARCH)
 	docker pull linuxkit/$(IMAGE):$(1)$(3)-$(HASH) || \
-		docker build -f Dockerfile.build \
+		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
 			--build-arg KERNEL_SERIES=$(2) \
-			--build-arg source=linuxkit/$(IMAGE)-config:$(1)$(3)-$(HASH) \
+			--build-arg ARCH=$(ARCH) \
+			--build-arg DEBUG=$(3) \
 			--no-cache -t linuxkit/$(IMAGE):$(1)$(3)-$(HASH) .
 
 push_$(2)$(3): build_$(2)$(3)

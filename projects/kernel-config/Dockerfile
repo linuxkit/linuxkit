@@ -1,10 +1,32 @@
-ARG source=nosuchimage
-FROM ${source} AS kernel-build
+FROM linuxkit/kernel-compile:1b396c221af673757703258159ddc8539843b02b@sha256:6b32d205bfc6407568324337b707d195d027328dbfec554428ea93e7b0a8299b AS kernel-build
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
+ARG ARCH
+ARG DEBUG
 
+ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
+
+RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
+
+RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
+
+RUN mkdir /config
+COPY kernel_config.* /config/
+COPY makeconfig.sh /config
+
+# Apply local patches
+COPY patches-${KERNEL_SERIES} /patches
 WORKDIR /linux
+RUN set -e && for patch in /patches/*.patch; do \
+        echo "Applying $patch"; \
+        patch -p1 < "$patch"; \
+    done
+
+RUN /config/makeconfig.sh ${ARCH} ${KERNEL_SERIES}
+
+RUN mkdir /out
+RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
 # Kernel
 RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
@@ -37,9 +59,6 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
                       -name '*.lds' -o -name '*.pl' -o -name '*.sh' \) | \
          tar cf - -T - | (cd $dir; tar xf -) && \
     ( cd /tmp && tar cf /out/kernel-dev.tar usr/src )
-
-RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
-
 
 FROM linuxkit/toybox-media:eee3dd4d72cd784801e95b1781e6c4f9d8a5e5eb@sha256:7f940e687164ee2676e11c61705c79f7dd2d144ee87ad17a494848a7045f5f53
 ENTRYPOINT []
