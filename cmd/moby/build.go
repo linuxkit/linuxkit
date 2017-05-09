@@ -159,7 +159,9 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 	}
 
 	// convert init images to tarballs
-	log.Infof("Add init containers:")
+	if len(m.Init) != 0 {
+		log.Infof("Add init containers:")
+	}
 	for _, ii := range m.Init {
 		log.Infof("Process init image: %s", ii)
 		init, err := ImageExtract(ii, "", enforceContentTrust(ii, &m.Trust), pull)
@@ -170,7 +172,9 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 		initrdAppend(iw, buffer)
 	}
 
-	log.Infof("Add onboot containers:")
+	if len(m.Onboot) != 0 {
+		log.Infof("Add onboot containers:")
+	}
 	for i, image := range m.Onboot {
 		log.Infof("  Create OCI config for %s", image.Image)
 		config, err := ConfigToOCI(&image)
@@ -187,7 +191,9 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 		initrdAppend(iw, buffer)
 	}
 
-	log.Infof("Add service containers:")
+	if len(m.Services) != 0 {
+		log.Infof("Add service containers:")
+	}
 	for _, image := range m.Services {
 		log.Infof("  Create OCI config for %s", image.Image)
 		config, err := ConfigToOCI(&image)

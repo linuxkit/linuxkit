@@ -430,7 +430,9 @@ func filesystem(m *Moby) (*bytes.Buffer, error) {
 	tw := tar.NewWriter(buf)
 	defer tw.Close()
 
-	log.Infof("Add files:")
+	if len(m.Files) != 0 {
+		log.Infof("Add files:")
+	}
 	for _, f := range m.Files {
 		log.Infof("  %s", f.Path)
 		if f.Path == "" {
