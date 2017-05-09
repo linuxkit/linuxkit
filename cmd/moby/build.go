@@ -136,25 +136,27 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 			log.Fatalf("Could not pull image %s: %v", m.Kernel.Image, err)
 		}
 	}
-	// get kernel and initrd tarball from container
-	log.Infof("Extract kernel image: %s", m.Kernel.Image)
-	const (
-		kernelName    = "kernel"
-		kernelAltName = "bzImage"
-		ktarName      = "kernel.tar"
-	)
-	out, err := ImageExtract(m.Kernel.Image, "", enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
-	if err != nil {
-		log.Fatalf("Failed to extract kernel image and tarball: %v", err)
-	}
-	buf := bytes.NewBuffer(out)
+	if m.Kernel.Image != "" {
+		// get kernel and initrd tarball from container
+		log.Infof("Extract kernel image: %s", m.Kernel.Image)
+		const (
+			kernelName    = "kernel"
+			kernelAltName = "bzImage"
+			ktarName      = "kernel.tar"
+		)
+		out, err := ImageExtract(m.Kernel.Image, "", enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
+		if err != nil {
+			log.Fatalf("Failed to extract kernel image and tarball: %v", err)
+		}
+		buf := bytes.NewBuffer(out)
 
-	kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName, m.Kernel.Cmdline)
-	if err != nil {
-		log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
+		kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName, m.Kernel.Cmdline)
+		if err != nil {
+			log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
+		}
+		initrdAppend(iw, kernel)
+		initrdAppend(iw, ktar)
 	}
-	initrdAppend(iw, kernel)
-	initrdAppend(iw, ktar)
 
 	// convert init images to tarballs
 	log.Infof("Add init containers:")
