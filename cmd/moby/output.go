@@ -111,6 +111,7 @@ func tarToInitrd(image []byte) ([]byte, []byte, string, error) {
 	if err != nil {
 		return []byte{}, []byte{}, "", err
 	}
+	iw.Close()
 	return kernel, w.Bytes(), cmdline, nil
 }
 

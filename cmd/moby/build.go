@@ -136,28 +136,32 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 			log.Fatalf("Could not pull image %s: %v", m.Kernel.Image, err)
 		}
 	}
-	// get kernel and initrd tarball from container
-	log.Infof("Extract kernel image: %s", m.Kernel.Image)
-	const (
-		kernelName    = "kernel"
-		kernelAltName = "bzImage"
-		ktarName      = "kernel.tar"
-	)
-	out, err := ImageExtract(m.Kernel.Image, "", enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
-	if err != nil {
-		log.Fatalf("Failed to extract kernel image and tarball: %v", err)
-	}
-	buf := bytes.NewBuffer(out)
+	if m.Kernel.Image != "" {
+		// get kernel and initrd tarball from container
+		log.Infof("Extract kernel image: %s", m.Kernel.Image)
+		const (
+			kernelName    = "kernel"
+			kernelAltName = "bzImage"
+			ktarName      = "kernel.tar"
+		)
+		out, err := ImageExtract(m.Kernel.Image, "", enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
+		if err != nil {
+			log.Fatalf("Failed to extract kernel image and tarball: %v", err)
+		}
+		buf := bytes.NewBuffer(out)
 
-	kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName, m.Kernel.Cmdline)
-	if err != nil {
-		log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
+		kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName, m.Kernel.Cmdline)
+		if err != nil {
+			log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
+		}
+		initrdAppend(iw, kernel)
+		initrdAppend(iw, ktar)
 	}
-	initrdAppend(iw, kernel)
-	initrdAppend(iw, ktar)
 
 	// convert init images to tarballs
-	log.Infof("Add init containers:")
+	if len(m.Init) != 0 {
+		log.Infof("Add init containers:")
+	}
 	for _, ii := range m.Init {
 		log.Infof("Process init image: %s", ii)
 		init, err := ImageExtract(ii, "", enforceContentTrust(ii, &m.Trust), pull)
@@ -168,7 +172,9 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 		initrdAppend(iw, buffer)
 	}
 
-	log.Infof("Add onboot containers:")
+	if len(m.Onboot) != 0 {
+		log.Infof("Add onboot containers:")
+	}
 	for i, image := range m.Onboot {
 		log.Infof("  Create OCI config for %s", image.Image)
 		config, err := ConfigToOCI(&image)
@@ -185,7 +191,9 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 		initrdAppend(iw, buffer)
 	}
 
-	log.Infof("Add service containers:")
+	if len(m.Services) != 0 {
+		log.Infof("Add service containers:")
+	}
 	for _, image := range m.Services {
 		log.Infof("  Create OCI config for %s", image.Image)
 		config, err := ConfigToOCI(&image)

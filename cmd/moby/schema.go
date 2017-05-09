@@ -20,6 +20,7 @@ var schema = string(`
         "properties": {
           "path": {"type": "string"},
           "directory": {"type": "boolean"},
+          "symlink": {"type": "string"},
           "contents": {"type": "string"}
         }
     },
