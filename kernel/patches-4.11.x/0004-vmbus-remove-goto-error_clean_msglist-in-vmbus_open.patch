@@ -1,7 +1,7 @@
-From dade92a41fb20bc4224f412f4fb6b9de34f48c56 Mon Sep 17 00:00:00 2001
+From dc0bd14f20b08b4bec097949ad0d4ec421d75ebf Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:20 -0600
-Subject: [PATCH 3/7] vmbus: remove "goto error_clean_msglist" in vmbus_open()
+Subject: [PATCH 4/8] vmbus: remove "goto error_clean_msglist" in vmbus_open()
 
 This is just a cleanup patch to simplify the code a little.
 No semantic change.
@@ -58,5 +58,5 @@ index 7cd2bd9fd1f1..db5e6f8730d2 100644
  	vmbus_teardown_gpadl(newchannel, newchannel->ringbuffer_gpadlhandle);
  	kfree(open_info);
 -- 
-2.11.1
+2.12.2
 
