@@ -17,7 +17,7 @@ endif
 
 PREFIX?=/usr/local/
 
-MOBY_COMMIT=a1b24b4de2cc0261c4802b3f008395e973d96671
+MOBY_COMMIT=0a06eb2ceac8f0d02d196c7a51d188f25ecc4ad1
 bin/moby: | bin
 	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
 	tar xf tmp_moby_bin.tar > $@
