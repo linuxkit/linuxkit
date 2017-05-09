@@ -167,9 +167,9 @@ func processUserData(data []byte) error {
 			continue
 		}
 		for f, i := range files {
-			fi := i.(map[string]interface{})
+			fi, ok := i.(map[string]interface{})
 			if !ok {
-				log.Printf("Could convert JSON for items: %s", i)
+				log.Printf("Couldn't convert JSON for items: %s", i)
 				continue
 			}
 			if _, ok := fi["perm"]; !ok {
