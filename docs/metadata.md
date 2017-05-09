@@ -29,10 +29,7 @@ For example, the following userdata file:
         }
     },
     "foo" : {
-        "bar" : {
-            "perm": "0644",
-            "content": "foobar"
-        },
+        "bar" : "foobar",
         "baz" : {
             "perm": "0600",
             "content": "bar"
@@ -46,6 +43,16 @@ will generate the following files:
 /var/config/foo/bar
 /var/config/foo/baz
 ```
+
+Each file can either be:
+
+- a simple string (as for `foo/bar` above) in which case the file will
+  be created with the given contents and read/write (but not execute)
+  permissions for user and read permissions for group and everyone else (in octal format `0644`).
+- a map (as for `ssh/sshd_config` and `foo/baz` above) with the
+  following mandatory keys:
+  - `content`: the contents of the file.
+  - `perm`: the permissions to create the file with.
 
 This hierarchy can then be used by individual containers, who can bind
 mount the config sub-directory into their namespace where it is
