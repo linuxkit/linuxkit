@@ -21,6 +21,7 @@ If you want to create a project, please submit a pull request to create a new di
 - [Clear Containers](clear-containers/) Clear Containers image
 - [Logging](logging/) Experimental logging tools
 - [etcd cluster](etcd/) etcd cluster demo from DockerCon'17
+- [kernel-config](kernel-config/) an experiment on how to manage kernel config
 
 ## Current projects not yet documented
 - VMWare support (VMWare)
