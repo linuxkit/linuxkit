@@ -51,6 +51,15 @@ This hierarchy can then be used by individual containers, who can bind
 mount the config sub-directory into their namespace where it is
 needed.
 
+# Metadata image creation
+
+Run `linuxkit run` backends accept a `--data=STRING` option which will
+cause the given string to be passed to the VM in a platform specific
+manner to be picked up by the `pkg/metadata` component.
+
+Alternatively `linuxkit metadata create meta.iso STRING` will produce
+a correctly formatted ISO image which can be passed to a VM as a CDROM
+device for consumption by the `pkg/metadata` component.
 
 # Providers
 
