@@ -1,6 +1,6 @@
 FROM linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5 AS virtsock-build
 
-ENV VIRTSOCK_COMMIT=6b4dec728264e07c41e108caebd6bc2b72559a5f
+ENV VIRTSOCK_COMMIT=3bfdf22e3b63a7d130ae5db41c2d76eaffa444d4
 RUN mkdir -p $GOPATH/src/github.com/rneugeba && \
   cd $GOPATH/src/github.com/rneugeba && \
   git clone https://github.com/rneugeba/virtsock.git
