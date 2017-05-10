@@ -20,6 +20,10 @@ onboot:
   - name: metadata
     image: "linuxkit/metadata:b053fd6a945829bb626bb3546cad69aae0ff7803"
 services:
+  - name: qemu-ga
+    image: "linuxkit/qemu-ga:e5fbcf55926f6e1a96b3e49a392e547e8be1022c"
+    binds:
+      - /dev/vport0p1:/dev/vport0p1
   - name: rngd
     image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
   - name: ntpd
