@@ -1,8 +1,6 @@
 #!/bin/sh
 
 # mount filesystems
-mkdir -p -m 0755 /proc /run /tmp /sys /dev
-
 mount -n -t proc proc /proc -o nodev,nosuid,noexec,relatime
 
 mount -n -t tmpfs tmpfs /run -o nodev,nosuid,noexec,relatime,size=10%,mode=755
