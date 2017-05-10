@@ -1,9 +1,9 @@
 kernel:
   # Alternatively:
-  # image: "linuxkit/kernel:4.10.4-0"
-  # image: "linuxkit/kernel:4.9.16-1"
-  # image: "linuxkit/kernel:4.9.14-0"
+  #image: "linuxkit/kernel:4.11.x"
+  # image: "linuxkit/kernel:4.10.x"
   image: "linuxkit/kernel:4.9.x"
+  # image: "linuxkit/kernel:4.4.x"
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:63eed9ca7a09d2ce4c0c5e7238ac005fa44f564b
@@ -38,7 +38,7 @@ services:
     net: host
     oomScoreAdj: -800
   - name: virtsock-server
-    image: "linuxkit/test-virtsock:bac78d3bffa55b9ab00eb023c32512e260d7fed0"
+    image: "linuxkit/test-virtsock:a7dc8e477d99ea82f56eacd94579ca65985eb0b3"
     readonly: true
 trust:
   image:
@@ -46,5 +46,4 @@ trust:
     - linuxkit/rngd
 outputs:
   - format: kernel+initrd
-  - format: iso-bios
   - format: iso-efi
