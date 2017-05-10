@@ -89,7 +89,7 @@ function New-LinuxKitVM {
     $vm = Get-VM $VmName -ea SilentlyContinue
     if ($vm) {
         if ($vm.Length -ne 1) {
-            Fatal "Multiple VMs exist with the name $VmName. Delete invalid ones or reset Docker to factory defaults."
+            Fatal "Multiple VMs exist with the name $VmName. Delete invalid ones."
         }
     } else {
         Write-Output "Creating VM $VmName..."
@@ -137,7 +137,7 @@ function New-LinuxKitVM {
 
     $iso = $vm | Get-VMFirmware | select -ExpandProperty BootOrder | ? { $_.FirmwarePath.EndsWith("Scsi(0,1)") }
     $vm | Set-VMFirmware -EnableSecureBoot Off -FirstBootDevice $iso
-    $vm | Set-VMComPort -number 1 -Path "\\.\pipe\docker$VmName-com1"
+    $vm | Set-VMComPort -number 1 -Path "\\.\pipe\$VmName-com1"
 
     Write-Output "VM created."
 }
