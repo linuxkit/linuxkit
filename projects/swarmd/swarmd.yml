@@ -34,6 +34,16 @@ services:
     image: "linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b"
   - name: ntpd
     image: "linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90"
+  - name: weave
+    image: weaveworks/weave@sha256:05172329b6ff72099db7bb891ac311b89948a3064ca9b8641c6b4abe38548677 # Must match swarmd/Dockerfile
+    command: ["/bin/sh", "/home/weave/weaver-wrapper"]
+    capabilities:
+     - all
+    pid: host
+    binds:
+      - /usr/local/bin/weaver-wrapper:/home/weave/weaver-wrapper
+      - /var:/var
+      - /var/lib/swarmd:/weavedb
   - name: swarmd
     image: "linuxkit/swarmd:a65dc4a5464a56771af056387b85d3d4593dbcf0"
     command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
@@ -49,3 +59,19 @@ services:
 files:
   - path: /etc/sysctl.d/01-swarmd.conf
     contents: 'net.ipv4.ip_forward = 1'
+  - path: usr/local/bin/weaver-wrapper
+    contents: |
+      /home/weave/weaver \
+          --weave-bridge=weave \
+          --datapath=datapath \
+          --docker-api="" \
+          --ipalloc-range=192.168.106.0/24 \
+          --http-addr=127.0.0.1:6784 \
+          --status-addr=127.0.0.1:6782 &
+
+      while [ ! -e /sys/class/net/weave/ ] ; do
+         sleep 1s
+      done
+
+      /home/weave/weave --local expose net:default
+      wait %1
