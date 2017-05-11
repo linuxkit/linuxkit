@@ -15,6 +15,17 @@ onboot:
     capabilities:
      - CAP_SYS_ADMIN
     readonly: true
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
     image: "linuxkit/metadata:a810b68fec9c9282cf096eed50605ddd6b2f3142"
     binds:
@@ -40,17 +51,6 @@ services:
      - CAP_SETUID
      - CAP_SETGID
     net: host
-  - name: dhcpcd
-    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
-    binds:
-     - /var:/var
-     - /tmp/etc:/etc
-    capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
-    oomScoreAdj: -800
   - name: swarmd
     image: "mobylinux/swarmd:cf11a7626278ebf17efe2780c138b4e626b02c73"
     command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/containerd/swarmd"]
