@@ -1,15 +1,15 @@
 kernel:
-  image: "mobylinux/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:b5c88b78cd9cc73ed83b45f66bc9de618223768a # with runc, logwrite, startmemlogd
-  - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b # unmodified containerd, from pre pr #1636
-  - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+  - linuxkit/init:062e57b1d1e017e44c6339fc2b4cd41f3f10b2a9 # with runc, logwrite, startmemlogd
+  - linuxkit/runc:2649198589ef0020d99f613adaeda45ce0093a38
+  - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
+  - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
   - linuxkit/memlogd:9b5834189f598f43c507f6938077113906f51012
 onboot:
   - name: sysctl
-    image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    image: "linuxkit/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
     net: host
     pid: host
     ipc: host
@@ -34,7 +34,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    image: "linuxkit/rngd:61a07ced77a9747708223ca16a4aec621eacf518"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800

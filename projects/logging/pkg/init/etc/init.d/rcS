@@ -1,8 +1,6 @@
 #!/bin/sh
 
 # mount filesystems
-mkdir -p -m 0755 /proc /run /tmp /sys /dev
-
 mount -n -t proc proc /proc -o nodev,nosuid,noexec,relatime
 
 mount -n -t tmpfs tmpfs /run -o nodev,nosuid,noexec,relatime,size=10%,mode=755
@@ -83,10 +81,10 @@ then
 	hostname -F /etc/hostname
 fi
 
-if [ $(hostname) = "moby" -a -f /sys/class/net/eth0/address ]
+if [ $(hostname) = "(none)" -a -f /sys/class/net/eth0/address ]
 then
 	mac=$(cat /sys/class/net/eth0/address)
-	hostname moby-$(echo $mac | sed 's/://g')
+	hostname linuxkit-$(echo $mac | sed 's/://g')
 fi
 
 # set system clock from hwclock

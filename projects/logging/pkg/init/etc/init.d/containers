@@ -28,7 +28,7 @@ then
 		/bin/mount --bind "$f/rootfs" "$f/rootfs"
 		mount -o remount,rw "$f/rootfs"
 		log="/var/log/$base.log"
-		/usr/bin/logwrite -n "$(basename $f)" /sbin/start-stop-daemon --start --pidfile /run/$base.pid --exec /usr/bin/runc -- run --bundle "$f" --pid-file /run/$base.pid "$(basename $f)" </dev/null 2>$log >$log &
+		/usr/bin/logwrite -n "$(basename $f)" ctr run --runtime-config "$f/config.json" --rootfs "$f/rootfs" --id "$(basename $f)" </dev/null 2>$log >$log &
 		printf " - $base\n"
 	done
 fi
