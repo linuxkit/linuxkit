@@ -26,6 +26,22 @@ onboot:
      - CAP_NET_RAW
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: format
+    image: "linuxkit/format:d78093e943f9c88386e30c00353f9476d34fb551"
+    binds:
+     - /dev:/dev
+    capabilities:
+     - CAP_SYS_ADMIN
+     - CAP_MKNOD
+  - name: mount
+    image: "linuxkit/mount:fc7164d7c4e1fe5d1da395c7f949fb332cffe752"
+    binds:
+     - /dev:/dev
+     - /var:/var:rshared,rbind
+    capabilities:
+     - CAP_SYS_ADMIN
+    rootfsPropagation: shared
+    command: ["/mount.sh", "/var/lib/swarmd"]
   - name: metadata
     image: "linuxkit/metadata:a810b68fec9c9282cf096eed50605ddd6b2f3142"
     binds:
@@ -53,7 +69,7 @@ services:
     net: host
   - name: swarmd
     image: "mobylinux/swarmd:cf11a7626278ebf17efe2780c138b4e626b02c73"
-    command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/containerd/swarmd"]
+    command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
     capabilities:
      - CAP_CHOWN
      - CAP_DAC_OVERRIDE
@@ -74,6 +90,7 @@ services:
     binds:
       - /run/containerd/containerd.sock:/run/containerd/containerd.sock
       - /var/lib/containerd:/var/lib/containerd
+      - /var/lib/swarmd:/var/lib/swarmd
       - /etc/resolv.conf:/etc/resolv.conf
 outputs:
   - format: kernel+initrd
