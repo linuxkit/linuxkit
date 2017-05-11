@@ -10,7 +10,6 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -161,48 +160,22 @@ func dockerRm(container string) error {
 
 func dockerPull(image string, trustedPull bool) error {
 	log.Debugf("docker pull: %s", image)
-	docker, err := exec.LookPath("docker")
-	if err != nil {
-		return errors.New("Docker does not seem to be installed")
-	}
-	var args = []string{"pull"}
 	if trustedPull {
 		log.Debugf("pulling %s with content trust", image)
-		args = append(args, "--disable-content-trust=false")
+		trustedImg, err := TrustedReference(image)
+		if err != nil {
+			return fmt.Errorf("Trusted pull for %s failed: %v", image, err)
+		}
+		image = trustedImg.String()
 	}
-	args = append(args, image)
-	cmd := exec.Command(docker, args...)
-
-	stderrPipe, err := cmd.StderrPipe()
+	cli, err := dockerClient()
 	if err != nil {
+		return errors.New("could not initialize Docker API client")
+	}
+
+	if _, err := cli.ImagePull(context.Background(), image, types.ImagePullOptions{}); err != nil {
 		return err
 	}
-
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return err
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return err
-	}
-
-	_, err = ioutil.ReadAll(stdoutPipe)
-	if err != nil {
-		return err
-	}
-
-	stderr, err := ioutil.ReadAll(stderrPipe)
-	if err != nil {
-		return err
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		return fmt.Errorf("%v: %s", err, stderr)
-	}
-
 	log.Debugf("docker pull: %s...Done", image)
 	return nil
 }
