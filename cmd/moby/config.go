@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -34,6 +35,7 @@ type Moby struct {
 		Directory bool
 		Symlink   string
 		Contents  string
+		Source    string
 	}
 	Outputs []struct {
 		Format string
@@ -440,7 +442,16 @@ func filesystem(m *Moby) (*bytes.Buffer, error) {
 			return buf, errors.New("Did not specify path for file")
 		}
 		if !f.Directory && f.Contents == "" && f.Symlink == "" {
-			return buf, errors.New("Contents of file not specified")
+			if f.Source == "" {
+				return buf, errors.New("Contents of file not specified")
+			}
+
+			contents, err := ioutil.ReadFile(f.Source)
+			if err != nil {
+				return buf, err
+			}
+
+			f.Contents = string(contents)
 		}
 		// we need all the leading directories
 		parts := strings.Split(path.Dir(f.Path), "/")

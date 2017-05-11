@@ -21,11 +21,12 @@ var schema = string(`
           "path": {"type": "string"},
           "directory": {"type": "boolean"},
           "symlink": {"type": "string"},
-          "contents": {"type": "string"}
+          "contents": {"type": "string"},
+          "source": {"type": "string"}
         }
     },
     "files": {
-        "type": "array", 
+        "type": "array",
         "items": { "$ref": "#/definitions/file" }
     },
     "output": {
@@ -36,7 +37,7 @@ var schema = string(`
       }
     },
     "outputs": {
-        "type": "array", 
+        "type": "array",
         "items": { "$ref": "#/definitions/output" }
     },
     "trust": {
@@ -48,7 +49,7 @@ var schema = string(`
       }
     },
     "strings": {
-        "type": "array", 
+        "type": "array",
         "items": {"type": "string"}
     },
     "mount": {
@@ -89,7 +90,7 @@ var schema = string(`
         "uid": {"type": "integer"},
         "gid": {"type": "integer"},
         "additionalGids": {
-            "type": "array", 
+            "type": "array",
             "items": { "type": "integer" }
         },
         "noNewPrivileges": {"type": "boolean"},
@@ -99,18 +100,18 @@ var schema = string(`
         "rootfsPropagation": {"type": "string"},
         "cgroupsPath": {"type": "string"},
         "sysctl": {
-            "type": "array", 
+            "type": "array",
             "items": { "$ref": "#/definitions/strings" }
         }
       }
     },
     "images": {
-        "type": "array", 
+        "type": "array",
         "items": { "$ref": "#/definitions/image" }
     }
   },
   "properties": {
-    "kernel": { "$ref": "#/definitions/kernel" },  
+    "kernel": { "$ref": "#/definitions/kernel" },
     "init": { "$ref": "#/definitions/strings" },
     "onboot": { "$ref": "#/definitions/images" },
     "services": { "$ref": "#/definitions/images" },
