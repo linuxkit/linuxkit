@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# start memlogd container
-
-/usr/bin/startmemlogd
-
 # start onboot containers, run to completion
 
 if [ -d /containers/onboot ]
@@ -13,7 +9,7 @@ then
 		base="$(basename $f)"
 		/bin/mount --bind "$f/rootfs" "$f/rootfs"
 		mount -o remount,rw "$f/rootfs"
-		/usr/bin/logwrite -n "$(basename $f)" /usr/bin/runc run --bundle "$f" "$(basename $f)"
+		/usr/bin/runc run --bundle "$f" "$(basename $f)"
 		printf " - $base\n"
 	done
 fi
@@ -28,7 +24,7 @@ then
 		/bin/mount --bind "$f/rootfs" "$f/rootfs"
 		mount -o remount,rw "$f/rootfs"
 		log="/var/log/$base.log"
-		/usr/bin/logwrite -n "$(basename $f)" /sbin/start-stop-daemon --start --pidfile /run/$base.pid --exec /usr/bin/runc -- run --bundle "$f" --pid-file /run/$base.pid "$(basename $f)" </dev/null 2>$log >$log &
+		ctr run --runtime-config "$f/config.json" --rootfs "$f/rootfs" --id "$(basename $f)" </dev/null 2>$log >$log &
 		printf " - $base\n"
 	done
 fi
