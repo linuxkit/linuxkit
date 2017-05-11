@@ -10,7 +10,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/moby/hyperkit/go"
-	"github.com/rneugeba/iso9660wrap"
 	"github.com/satori/go.uuid"
 )
 
@@ -56,16 +55,8 @@ func runHyperKit(args []string) {
 			}
 		}
 		isoPath = prefix + "-data.iso"
-		outfh, err := os.OpenFile(isoPath, os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatalf("Cannot create user data ISO: %v", err)
-		}
-		err = iso9660wrap.WriteBuffer(outfh, d, "config")
-		if err != nil {
-			log.Fatalf("Cannot write user data ISO: %v", err)
-		}
-		if err = outfh.Close(); err != nil {
-			log.Fatalf("Cannot close output ISO: %v", err)
+		if err := WriteMetadataISO(isoPath, d); err != nil {
+			log.Fatalf("Cannot write user data ISO: %s", err)
 		}
 	}
 

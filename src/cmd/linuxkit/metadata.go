@@ -9,6 +9,17 @@ import (
 	"github.com/rneugeba/iso9660wrap"
 )
 
+// WriteMetadataISO writes a metadata ISO file in a format usable by pkg/metadata
+func WriteMetadataISO(path string, content []byte) error {
+	outfh, err := os.OpenFile(path, os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		return err
+	}
+	defer outfh.Close()
+
+	return iso9660wrap.WriteBuffer(outfh, content, "config")
+}
+
 func metadataCreateUsage() {
 	invoked := filepath.Base(os.Args[0])
 	fmt.Printf("USAGE: %s metadata create [file.iso] [metadata]\n\n", invoked)
@@ -32,15 +43,8 @@ func metadataCreate(args []string) {
 	isoImage := args[0]
 	metadata := args[1]
 
-	outfh, err := os.OpenFile(isoImage, os.O_CREATE|os.O_WRONLY, 0644)
-	if err != nil {
-		log.Fatal("Cannot create user data ISOs", "err", err)
-	}
-	defer outfh.Close()
-
-	err = iso9660wrap.WriteBuffer(outfh, []byte(metadata), "config")
-	if err != nil {
-		log.Fatal("Cannot write user data ISO", "err", err)
+	if err := WriteMetadataISO(isoImage, []byte(metadata)); err != nil {
+		log.Fatal("Failed to write user data ISO: ", err)
 	}
 }
 
