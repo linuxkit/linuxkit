@@ -9,6 +9,8 @@ init:
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
+    binds:
+     - /etc/sysctl.d/01-swarmd.conf:/etc/sysctl.d/01-swarmd.conf
   - name: dhcpcd
     image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
@@ -39,3 +41,6 @@ services:
       - /var/lib/containerd:/var/lib/containerd
       - /var/lib/swarmd:/var/lib/swarmd
       - /etc/resolv.conf:/etc/resolv.conf
+files:
+  - path: /etc/sysctl.d/01-swarmd.conf
+    contents: 'net.ipv4.ip_forward = 1'
