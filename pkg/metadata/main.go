@@ -167,25 +167,31 @@ func processUserData(data []byte) error {
 			continue
 		}
 		for f, i := range files {
-			fi := i.(map[string]interface{})
-			if !ok {
-				log.Printf("Could convert JSON for items: %s", i)
+			p := uint64(0644)
+			var c string
+
+			switch fi := i.(type) {
+			case map[string]interface{}:
+				if _, ok := fi["perm"]; !ok {
+					log.Printf("No permission provided %s:%s", f, fi)
+					continue
+				}
+				if _, ok := fi["content"]; !ok {
+					log.Printf("No content provided %s:%s", f, fi)
+					continue
+				}
+				c = fi["content"].(string)
+				if p, err = strconv.ParseUint(fi["perm"].(string), 8, 32); err != nil {
+					log.Printf("Failed to parse permission %s: %s", fi, err)
+					continue
+				}
+			case string:
+				c = fi
+			default:
+				log.Printf("Couldn't convert JSON for items: %s", i)
 				continue
 			}
-			if _, ok := fi["perm"]; !ok {
-				log.Printf("No permission provided %s:%s", f, fi)
-				continue
-			}
-			if _, ok := fi["content"]; !ok {
-				log.Printf("No content provided %s:%s", f, fi)
-				continue
-			}
-			c := fi["content"].(string)
-			p, err := strconv.ParseUint(fi["perm"].(string), 8, 32)
-			if err != nil {
-				log.Printf("Failed to parse permission %s: %s", fi, err)
-				continue
-			}
+
 			if err := ioutil.WriteFile(path.Join(dir, f), []byte(c), os.FileMode(p)); err != nil {
 				log.Printf("Failed to write %s/%s: %s", dir, f, err)
 				continue
