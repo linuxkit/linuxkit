@@ -176,7 +176,13 @@ func dockerPull(image string, trustedPull bool) error {
 		return errors.New("could not initialize Docker API client")
 	}
 
-	if _, err := cli.ImagePull(context.Background(), image, types.ImagePullOptions{}); err != nil {
+	r, err := cli.ImagePull(context.Background(), image, types.ImagePullOptions{})
+	if err != nil {
+		return err
+	}
+	defer r.Close()
+	_, err = io.Copy(ioutil.Discard, r)
+	if err != nil {
 		return err
 	}
 	log.Debugf("docker pull: %s...Done", image)
