@@ -1,4 +1,4 @@
-FROM golang:1.7-alpine3.5
+FROM golang:1.7-alpine3.5 AS build
 
 RUN \
   apk update && apk upgrade && \
@@ -9,9 +9,6 @@ RUN \
   libc-dev \
   make \
   && true
-
-WORKDIR /
-COPY Dockerfile.build Dockerfile.pkg Makefile /build/
 
 # PR https://github.com/docker/swarmkit/pull/1965 from ijc25/containerd
 ENV SWARMKIT_PR=1965
@@ -32,5 +29,8 @@ RUN strip /build/dist/usr/bin/swarmd /build/dist/usr/bin/swarmctl
 
 RUN cp -r /etc/ssl /build/dist/etc/ssl
 
-WORKDIR /build
-CMD ["/bin/tar", "cf", "-", "-C", "dist", "."]
+FROM scratch
+WORKDIR /
+ENTRYPOINT []
+COPY --from=build /build/dist /
+CMD ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
