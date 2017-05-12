@@ -22,6 +22,6 @@ RUN make static BUILDTAGS="seccomp"
 RUN cp runc /usr/bin/
 
 FROM scratch
-ENTRYPOINT []
 WORKDIR /
+ENTRYPOINT []
 COPY --from=alpine /usr/bin/runc /usr/bin/
