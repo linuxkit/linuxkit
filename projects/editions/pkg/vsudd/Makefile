@@ -1,14 +1,23 @@
-GO_COMPILE=mobylinux/go-compile:d2d25ac665b5148ad356d0eab3ff3762a68c633d@sha256:aab55d0c317460850e66a07dd94139cc11ea9e1c0bee88716a6a8c768740885f
+.PHONY: clean push
+GO_COMPILE=linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5
+IMAGE=vsudd
 
-default: sbin/vsudd
+default: tag
 
-DEPS=$(wildcard *.go)
+DEPS=$(wildcard *.go) ../../../../vendor ../../../../vendor.conf
+HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
-sbin/vsudd: $(DEPS) ../vendor/manifest
-	mkdir -p $(dir $@)
-	tar cf - $(DEPS) -C .. vendor | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
+vsudd: $(DEPS) Dockerfile Makefile
+	tar cf - $(DEPS) | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
+
+tag: vsudd
+	tar -cf - $^ | docker build --no-cache --network=none -t linuxkit/$(IMAGE):$(HASH) -
+
+push: tag
+	docker pull linuxkit/$(IMAGE):$(HASH) || \
+	docker push linuxkit/$(IMAGE):$(HASH)
 
 clean:
-	rm -rf sbin
+	rm -f vsudd
 
 .DELETE_ON_ERROR:

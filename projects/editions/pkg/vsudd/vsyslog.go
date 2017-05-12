@@ -15,8 +15,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rneugeba/virtsock/go/hvsock"
-	"github.com/rneugeba/virtsock/go/vsock"
+	"github.com/linuxkit/virtsock/pkg/hvsock"
+	"github.com/linuxkit/virtsock/pkg/vsock"
 )
 
 var (
@@ -63,12 +63,12 @@ func forwardSyslogDatagram(buf []byte, portstr string) error {
 		conn := currentConn
 		if conn == nil {
 			if strings.Contains(portstr, "-") {
-				svcid, err := hvsock.GuidFromString(portstr)
+				svcid, err := hvsock.GUIDFromString(portstr)
 				if err != nil {
 					console.Fatalln("Failed to parse GUID", portstr, err)
 				}
 
-				conn, err = hvsock.Dial(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
+				conn, err = hvsock.Dial(hvsock.HypervAddr{VMID: hvsock.GUIDWildcard, ServiceID: svcid})
 				if err != nil {
 					console.Printf("Failed to dial hvsock port: %s", err)
 					continue
@@ -79,7 +79,7 @@ func forwardSyslogDatagram(buf []byte, portstr string) error {
 					console.Fatalln("Can't convert %s to a uint.", portstr, err)
 				}
 
-				conn, err = vsock.Dial(vsock.VSOCK_CID_HOST, uint(port))
+				conn, err = vsock.Dial(vsock.CIDHost, uint32(port))
 				if err != nil {
 					console.Printf("Failed to dial vsock port %d: %s", port, err)
 					continue

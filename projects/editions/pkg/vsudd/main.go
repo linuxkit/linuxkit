@@ -13,8 +13,8 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/rneugeba/virtsock/go/hvsock"
-	"github.com/rneugeba/virtsock/go/vsock"
+	"github.com/linuxkit/virtsock/pkg/hvsock"
+	"github.com/linuxkit/virtsock/pkg/vsock"
 )
 
 type forward struct {
@@ -130,11 +130,11 @@ func main() {
 		log.Printf("incoming port forward from %s to %s", portstr, usock)
 
 		if strings.Contains(portstr, "-") {
-			svcid, err := hvsock.GuidFromString(portstr)
+			svcid, err := hvsock.GUIDFromString(portstr)
 			if err != nil {
 				log.Fatalln("Failed to parse GUID", portstr, err)
 			}
-			l, err = hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
+			l, err = hvsock.Listen(hvsock.HypervAddr{VMID: hvsock.GUIDWildcard, ServiceID: svcid})
 			if err != nil {
 				log.Fatalf("Failed to bind to hvsock port: %s", err)
 			}
@@ -145,7 +145,7 @@ func main() {
 			if err != nil {
 				log.Fatalln("Can't convert %s to a uint.", portstr, err)
 			}
-			l, err = vsock.Listen(uint(port))
+			l, err = vsock.Listen(vsock.CIDAny, uint32(port))
 			if err != nil {
 				log.Fatalf("Failed to bind to vsock port %d: %s", port, err)
 			}
