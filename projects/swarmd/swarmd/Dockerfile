@@ -12,7 +12,7 @@ RUN \
 
 # PR https://github.com/docker/swarmkit/pull/1965 from ijc25/containerd
 ENV SWARMKIT_PR=1965
-ENV SWARMKIT_COMMIT=82e9f43d84e9a0586903392cbe5bbac15fdbf552
+ENV SWARMKIT_COMMIT=321b9c6600a9422c3245b277a1b3ae599244d4b7
 
 RUN mkdir -p $GOPATH/src/github.com/docker && \
   cd $GOPATH/src/github.com/docker && \

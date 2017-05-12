@@ -68,7 +68,7 @@ services:
      - CAP_SETGID
     net: host
   - name: swarmd
-    image: "mobylinux/swarmd:cf11a7626278ebf17efe2780c138b4e626b02c73"
+    image: "linuxkit/swarmd:a2f57f14f07fb6d7cded7832b2dabe878b28554e"
     command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
     capabilities:
      - CAP_CHOWN
