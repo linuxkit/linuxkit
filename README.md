@@ -39,13 +39,38 @@ You can use `linuxkit run <name>` to execute the image you created with `moby bu
 This will use a suitable backend for your platform or you can choose one, for example VMWare.
 See `linuxkit run --help`.
 
-`make test` or `make test-hyperkit` will run the test suite
-
 Additional, platform specific information is available for:
 - [macOS](docs/mac.md)
 - [Google Cloud](docs/gcp.md)
 
 We'll add more detailed docs for other platforms in the future.
+
+#### Running the Tests
+
+The test suite uses [`rtf`](https://github.com/linuxkit/rtf)
+To install this you should use `make bin/rtf && make install`.
+
+To run the test suite:
+
+```
+cd test
+rtf -x run
+```
+
+This will run the tests and put the results in a the `_results` directory!
+
+Run control is handled using labels and with pattern matching.
+To run add a label you may use:
+
+```
+rtf -x -l slow run
+```
+
+To run tests that match the pattern `linuxkit.examples` you would use the following command:
+
+```
+rtf -x run linuxkit.examples
+```
 
 ## Building your own customised image
 

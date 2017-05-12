@@ -5,28 +5,20 @@ init:
   - linuxkit/init:b3740303f3d1e5689a84c87b7dfb48fd2a40a192
   - linuxkit/runc:47b1c38d63468c0f3078f8b1b055d07965a1895d
   - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
-  - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
 onboot:
-  - name: ltp
-    image: "linuxkit/test-ltp-20170116:81229df2d25065b06f0a3071faaace8d66c87e67"
-    net: host
-    pid: host
+  - name: check
+    image: "kmod-test"
     binds:
-     - /etc/ltp/baseline:/etc/ltp/baseline
+     - /dev:/dev
+     - /lib/modules:/lib/modules
     capabilities:
      - all
-services:
   - name: poweroff
     image: "linuxkit/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
     pid: host
+    command: ["/bin/sh", "/poweroff.sh", "3"]
     capabilities:
-      - CAP_SYS_BOOT
+     - CAP_SYS_BOOT
     readonly: true
-files:
-  - path: /etc/ltp/baseline
-    contents: "100"
 outputs:
   - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi
-  - format: gcp-img
