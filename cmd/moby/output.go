@@ -158,7 +158,7 @@ func outputImg(image, filename string, kernel []byte, initrd []byte, args ...str
 	if err != nil {
 		return err
 	}
-	img, err := dockerRunInput(buf, image, args...)
+	img, err := dockerRunInput(buf, append([]string{image}, args...)...)
 	if err != nil {
 		return err
 	}
@@ -176,7 +176,7 @@ func outputISO(image, filename string, kernel []byte, initrd []byte, args ...str
 	if err != nil {
 		return err
 	}
-	iso, err := dockerRunInput(buf, image, args...)
+	iso, err := dockerRunInput(buf, append([]string{image}, args...)...)
 	if err != nil {
 		return err
 	}
