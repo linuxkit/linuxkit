@@ -7,7 +7,7 @@ Dockerfile.media
 *.iso
 *.vhd
 *.tar
-*.tar.gz
+*.gz
 *.vhdx
 *.efi
 *.qcow2
