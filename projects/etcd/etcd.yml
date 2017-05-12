@@ -43,7 +43,7 @@ onboot:
     net: host
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: "linuxkit/metadata:c5567e65e9125f0a4c4b8cb9d56a86377be62652"
+    image: "linuxkit/metadata:a810b68fec9c9282cf096eed50605ddd6b2f3142"
     binds:
      - /dev:/dev
      - /var:/var
