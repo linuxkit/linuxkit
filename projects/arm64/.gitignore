@@ -1,0 +1,8 @@
+## Editor droppings
+**/.#*
+**/#*
+**/.fuse*
+
+## Build droppings
+kernel-arm64/Image.gz
+kernel-arm64/arm64/

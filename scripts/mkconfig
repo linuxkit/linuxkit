@@ -1,0 +1,12 @@
+#!/bin/bash
+
+set -e
+
+for n in $@ ; do
+    echo === $n
+    TMPFILE=$n.tmp
+    rm -f $TMPFILE
+    sort $n | grep -Ev "^[:space:]*$|^#.*$" > $TMPFILE
+    mv $TMPFILE $n
+done
+rm -f *.tmp

@@ -1,16 +1,16 @@
 .PHONY: default all
-default: bin/moby bin/linuxkit 
+default: bin/moby bin/linuxkit
 all: default
 
 VERSION="0.0" # dummy for now
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=linuxkit/go-compile:5bf17af781df44f07906099402680b9a661f999b
+GO_COMPILE=mor1/go-compile:021f2dca9228cdd27cffc304aafae1b1f900bfc2
 
 MOBY?=bin/moby
 LINUXKIT?=bin/linuxkit
-GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
-GOARCH=amd64
+GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+GOARCH?=$(shell uname -m | sed 's/aarch64/arm64/;s/x86_64/amd64/')
 ifneq ($(GOOS),linux)
 CROSS=-e GOOS=$(GOOS) -e GOARCH=$(GOARCH)
 endif
