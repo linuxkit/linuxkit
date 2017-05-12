@@ -1,5 +1,6 @@
 #!/bin/bash -eux
 docker run \
+  --rm \
   -ti \
   -v ~/.ssh/:/root/.ssh \
     jdeathe/centos-ssh \
