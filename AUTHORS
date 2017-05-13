@@ -1,37 +1,50 @@
 # This file lists all individuals having contributed content to the repository.
 # For how it is generated, see `scripts/generate-authors.sh`.
 
+Akihiro Suda <suda.akihiro@lab.ntt.co.jp>
 Amir Chaudhry <amirmc@gmail.com>
 Anil Madhavapeddy <anil@recoil.org>
+Avi Deitcher <avi@deitcher.net>
+Carlton-Semple <carlton.semple@ibm.com>
 Dan Finneran <dan@thebsdbox.co.uk>
 Daniel Hiltgen <daniel.hiltgen@docker.com>
 Dave Scott <dave.scott@docker.com>
 Dave Tucker <dt@docker.com>
 David Gageot <david@gageot.net>
-David Scott <dave.scott@docker.com>
 David Sheets <david.sheets@docker.com>
 Dieter Reuter <dieter.reuter@me.com>
 French Ben <frenchben@docker.com>
+George Papanikolaou <g3orge.app@gmail.com>
 Gianluca Arbezzano <gianarb92@gmail.com>
 Ian Campbell <ian.campbell@docker.com>
 Ilya Dmitrichenko <errordeveloper@gmail.com>
+Jeffrey Hogan <jeff.hogan1@gmail.com>
 Jeremy Yallop <yallop@docker.com>
+Jesse Adametz <jesseadametz@gmail.com>
+John Albietz <inthecloud247@gmail.com>
 Jose Carlos Venegas Munoz <jose.carlos.venegas.munoz@intel.com>
 Justin Cormack <justin.cormack@docker.com>
 Ken Cochrane <KenCochrane@gmail.com>
+Lorenzo Fontana <lo@linux.com>
 Madhu Venugopal <madhu@docker.com>
 Magnus Skjegstad <magnus@skjegstad.com>
+Matt Bajor <matt.bajor@workday.com>
 Michel Courtine <michel.courtine@docker.com>
 Mickaël Salaün <mic@digikod.net>
 Mindy Preston <mindy.preston@docker.com>
 Natanael Copa <natanael.copa@docker.com>
+Nathan Dautenhahn <ndd@seas.upenn.edu>
 Nathan LeClaire <nathan.leclaire@gmail.com>
+Phil Estes <estesp@linux.vnet.ibm.com>
 Richard Mortier <mort@cantab.net>
 Riyaz Faizullabhoy <riyaz.faizullabhoy@docker.com>
 Robb Kistler <robb.kistler@docker.com>
 Rolf Neugebauer <rolf.neugebauer@docker.com>
 Sebastiaan van Stijn <github@gone.nl>
 Simon Ferquel <simon.ferquel@docker.com>
+solidnerd <niclas@mietz.io>
 Theo Koulouris <theo.koulouris@hpe.com>
 Thomas Gazagnaire <thomas@gazagnaire.org>
+Thomas Shaw <tomwillfixit@users.noreply.github.com>
+Tiago Pires <tandrepires@gmail.com>
 Tycho Andersen <tycho@docker.com>
