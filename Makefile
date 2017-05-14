@@ -74,4 +74,4 @@ ci-pr:
 
 .PHONY: clean
 clean:
-	rm -rf bin *.log *-kernel *-cmdline *.img *.iso *.gz *.qcow2 *.vhd *.vmx *.vmdk *.tar
+	rm -rf bin *.log *-kernel *-cmdline *-state *.img *.iso *.gz *.qcow2 *.vhd *.vmx *.vmdk *.tar 

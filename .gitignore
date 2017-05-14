@@ -11,6 +11,7 @@ Dockerfile.media
 *.vhdx
 *.efi
 *.qcow2
-*-kernel$
+*-kernel
 *-cmdline
+*-state
 artifacts/*

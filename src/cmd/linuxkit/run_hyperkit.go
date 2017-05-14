@@ -31,6 +31,7 @@ func runHyperKit(args []string) {
 	disk := hyperkitCmd.String("disk", "", "Path to disk image to used")
 	data := hyperkitCmd.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
 	ipStr := hyperkitCmd.String("ip", "", "IP address for the VM")
+	state := hyperkitCmd.String("state", "", "Path to directory to keep VM state in")
 
 	if err := hyperkitCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -43,6 +44,13 @@ func runHyperKit(args []string) {
 	}
 	prefix := remArgs[0]
 
+	if *state == "" {
+		*state = prefix + "-state"
+	}
+	if err := os.MkdirAll(*state, 0755); err != nil {
+		log.Fatalf("Could not create state directory: %v", err)
+	}
+
 	isoPath := ""
 	if *data != "" {
 		var d []byte
@@ -54,9 +62,9 @@ func runHyperKit(args []string) {
 				log.Fatalf("Cannot read user data: %v", err)
 			}
 		}
-		isoPath = prefix + "-data.iso"
+		isoPath = filepath.Join(*state, "data.iso")
 		if err := WriteMetadataISO(isoPath, d); err != nil {
-			log.Fatalf("Cannot write user data ISO: %s", err)
+			log.Fatalf("Cannot write user data ISO: %v", err)
 		}
 	}
 
@@ -84,10 +92,10 @@ func runHyperKit(args []string) {
 	}
 
 	if *diskSz != 0 && *disk == "" {
-		*disk = prefix + "-disk.img"
+		*disk = filepath.Join(*state, "disk.img")
 	}
 
-	h, err := hyperkit.New(*hyperkitPath, "auto", "")
+	h, err := hyperkit.New(*hyperkitPath, "auto", *state)
 	if err != nil {
 		log.Fatalln("Error creating hyperkit: ", err)
 	}
@@ -98,6 +106,7 @@ func runHyperKit(args []string) {
 	h.UUID = vmUUID
 	h.DiskImage = *disk
 	h.ISOImage = isoPath
+	h.VSock = true
 	h.CPUs = *cpus
 	h.Memory = *mem
 	h.DiskSize = *diskSz
