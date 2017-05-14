@@ -22,14 +22,20 @@ floppy0.present = "FALSE"
 displayName = "%s"
 numvcpus = "%d"
 memsize = "%d"
-`
-
-const vmxDisk string = `scsi0.present = "TRUE"
+scsi0.present = "TRUE"
 scsi0.sharedBus = "none"
 scsi0.virtualDev = "lsilogic"
+`
+
+const vmxDisk string = `
 scsi0:0.present = "TRUE"
 scsi0:0.fileName = "%s"
 scsi0:0.deviceType = "scsi-hardDisk"
+`
+
+const vmxDiskPersistent string = `scsi0:1.present = "TRUE"
+scsi0:1.fileName = "%s"
+scsi0:1.deviceType = "scsi-hardDisk"
 `
 
 const vmxCdrom string = `ide1:0.present = "TRUE"
@@ -68,9 +74,10 @@ func runVMware(args []string) {
 		fmt.Printf("Options:\n")
 		vmwareArgs.PrintDefaults()
 	}
-	runCPUs := vmwareArgs.Int("cpus", 1, "Number of CPUs")
-	runMem := vmwareArgs.Int("mem", 1024, "Amount of memory in MB")
-	runDisk := vmwareArgs.String("disk", "", "Path to disk image to use")
+	vmwareCPUs := vmwareArgs.Int("cpus", 1, "Number of CPUs")
+	vmwareMem := vmwareArgs.Int("mem", 1024, "Amount of memory in MB")
+	vmwareDisk := vmwareArgs.String("disk", "", "Path to disk image to use")
+	vmwareDiskSize := vmwareArgs.String("disk-size", "", "Size of the disk to create, only created if it doesn't exist")
 
 	if err := vmwareArgs.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -84,39 +91,66 @@ func runVMware(args []string) {
 	}
 	prefix := remArgs[0]
 
-	// Build the contents of the VMWare .vmx file
-	vmx := buildVMX(*runCPUs, *runMem, *runDisk, prefix)
-
-	if vmx == "" {
-		log.Fatalf("VMware .vmx file could not be generated, please confirm inputs")
-	}
-
-	var path string
+	var vmrunPath, vmDiskManagerPath string
 	var vmrunArgs []string
 
 	if runtime.GOOS == "windows" {
-		path = "C:\\Program\\ files\\VMware Workstation\\vmrun.exe"
+		vmrunPath = "C:\\Program\\ files\\VMware Workstation\\vmrun.exe"
+		vmDiskManagerPath = "C:\\Program\\ files\\VMware Workstation\\vmware-vdiskmanager.exe"
 		vmrunArgs = []string{"-T", "ws", "start", prefix + ".vmx"}
 	}
 
 	if runtime.GOOS == "darwin" {
-		path = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
+		vmrunPath = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
+		vmDiskManagerPath = "/Applications/VMware Fusion.app/Contents/Library/vmware-vdiskmanager"
 		vmrunArgs = []string{"-T", "fusion", "start", prefix + ".vmx"}
 	}
 
 	if runtime.GOOS == "linux" {
-		path = "vmrun"
-		fullVMrunPath, err := exec.LookPath(path)
+		vmrunPath = "vmrun"
+		vmDiskManagerPath = "vmware-vdiskmanager"
+		fullVMrunPath, err := exec.LookPath(vmrunPath)
 		if err != nil {
-			log.Fatalf("Unable to find %s within the $PATH", path)
+			// Kept as separate error as people may manually change their environment vars
+			log.Fatalf("Unable to find %s within the $PATH", vmrunPath)
 		}
-		path = fullVMrunPath
+		vmrunPath = fullVMrunPath
 		vmrunArgs = []string{"-T", "ws", "start", prefix + ".vmx"}
 	}
 
-	// Check executables exist before attempting to execute
-	if _, err := os.Stat(path); os.IsNotExist(err) {
-		log.Fatalf("ERROR VMware exectuables can not be found, ensure software is installed")
+	// Check vmrunPath exists before attempting to execute
+	if _, err := os.Stat(vmrunPath); os.IsNotExist(err) {
+		log.Fatalf("ERROR VMware executables can not be found, ensure software is installed")
+	}
+
+	if *vmwareDisk != "" {
+		// Check vmDiskManagerPath exist before attempting to execute
+		if _, err := os.Stat(vmDiskManagerPath); os.IsNotExist(err) {
+			log.Fatalf("ERROR VMware Disk Manager executables can not be found, ensure software is installed")
+		}
+
+		// If disk doesn't exist then create one, error if disk is unreadable
+		if _, err := os.Stat(*vmwareDisk); err != nil {
+			if os.IsPermission(err) {
+				log.Fatalf("Unable to read file [%s], please check permissions", *vmwareDisk)
+			}
+			if os.IsNotExist(err) {
+				log.Infof("Creating new VMware disk [%s]", *vmwareDisk)
+				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", *vmwareDiskSize, "-a", "lsilogic", "-t", "0", *vmwareDisk)
+				if err = vmDiskCmd.Run(); err != nil {
+					log.Fatalf("Error creating disk [%s]:  %s", *vmwareDisk, err.Error())
+				}
+			}
+		} else {
+			log.Infof("Using existing disk [%s]", *vmwareDisk)
+		}
+	}
+
+	// Build the contents of the VMWare .vmx file
+	vmx := buildVMX(*vmwareCPUs, *vmwareMem, *vmwareDisk, prefix)
+
+	if vmx == "" {
+		log.Fatalf("VMware .vmx file could not be generated, please confirm inputs")
 	}
 
 	// Create the .vmx file
@@ -126,7 +160,7 @@ func runVMware(args []string) {
 		log.Fatalf("Error writing .vmx file")
 	}
 
-	cmd := exec.Command(path, vmrunArgs...)
+	cmd := exec.Command(vmrunPath, vmrunArgs...)
 	out, err := cmd.Output()
 
 	if err != nil {
@@ -139,7 +173,7 @@ func runVMware(args []string) {
 	}
 }
 
-func buildVMX(cpus int, mem int, diskPath string, prefix string) string {
+func buildVMX(cpus int, mem int, persistentDisk string, prefix string) string {
 	// CD-ROM can be added for use in a further release
 	cdromPath := ""
 
@@ -151,15 +185,20 @@ func buildVMX(cpus int, mem int, diskPath string, prefix string) string {
 		returnString += fmt.Sprintf(vmxCdrom, cdromPath)
 	}
 
-	if diskPath != "" {
-		returnString += fmt.Sprintf(vmxDisk, diskPath)
-	} else {
-		vmdkPath := prefix + ".vmdk"
-		if _, err := os.Stat(vmdkPath); os.IsNotExist(err) {
-			log.Fatalf("File [%s] does not exist in current directory", vmdkPath)
-		} else {
-			returnString += fmt.Sprintf(vmxDisk, vmdkPath)
+	vmdkPath := prefix + ".vmdk"
+	if _, err := os.Stat(vmdkPath); err != nil {
+		if os.IsPermission(err) {
+			log.Fatalf("Unable to read file [%s], please check permissions", vmdkPath)
 		}
+		if os.IsNotExist(err) {
+			log.Fatalf("File [%s] does not exist in current directory", vmdkPath)
+		}
+	} else {
+		returnString += fmt.Sprintf(vmxDisk, vmdkPath)
+	}
+	// Add persistentDisk to the vmx if it has been specified in the args.
+	if persistentDisk != "" {
+		returnString += fmt.Sprintf(vmxDiskPersistent, persistentDisk)
 	}
 
 	returnString += vmxPCI
