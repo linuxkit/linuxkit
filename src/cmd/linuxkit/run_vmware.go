@@ -66,27 +66,27 @@ guestOS = "other3xlinux-64"
 
 func runVMware(args []string) {
 	invoked := filepath.Base(os.Args[0])
-	vmwareArgs := flag.NewFlagSet("vmware", flag.ExitOnError)
-	vmwareArgs.Usage = func() {
+	flags := flag.NewFlagSet("vmware", flag.ExitOnError)
+	flags.Usage = func() {
 		fmt.Printf("USAGE: %s run vmware [options] prefix\n\n", invoked)
 		fmt.Printf("'prefix' specifies the path to the VM image.\n")
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")
-		vmwareArgs.PrintDefaults()
+		flags.PrintDefaults()
 	}
-	vmwareCPUs := vmwareArgs.Int("cpus", 1, "Number of CPUs")
-	vmwareMem := vmwareArgs.Int("mem", 1024, "Amount of memory in MB")
-	vmwareDisk := vmwareArgs.String("disk", "", "Path to disk image to use")
-	vmwareDiskSize := vmwareArgs.String("disk-size", "", "Size of the disk to create, only created if it doesn't exist")
+	cpus := flags.Int("cpus", 1, "Number of CPUs")
+	mem := flags.Int("mem", 1024, "Amount of memory in MB")
+	disk := flags.String("disk", "", "Path to disk image to use")
+	diskSz := flags.String("disk-size", "", "Size of the disk to create, only created if it doesn't exist")
 
-	if err := vmwareArgs.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
-	remArgs := vmwareArgs.Args()
+	remArgs := flags.Args()
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the prefix to the image to boot")
-		vmwareArgs.Usage()
+		flags.Usage()
 		os.Exit(1)
 	}
 	prefix := remArgs[0]
@@ -123,31 +123,31 @@ func runVMware(args []string) {
 		log.Fatalf("ERROR VMware executables can not be found, ensure software is installed")
 	}
 
-	if *vmwareDisk != "" {
+	if *disk != "" {
 		// Check vmDiskManagerPath exist before attempting to execute
 		if _, err := os.Stat(vmDiskManagerPath); os.IsNotExist(err) {
 			log.Fatalf("ERROR VMware Disk Manager executables can not be found, ensure software is installed")
 		}
 
 		// If disk doesn't exist then create one, error if disk is unreadable
-		if _, err := os.Stat(*vmwareDisk); err != nil {
+		if _, err := os.Stat(*disk); err != nil {
 			if os.IsPermission(err) {
-				log.Fatalf("Unable to read file [%s], please check permissions", *vmwareDisk)
+				log.Fatalf("Unable to read file [%s], please check permissions", *disk)
 			}
 			if os.IsNotExist(err) {
-				log.Infof("Creating new VMware disk [%s]", *vmwareDisk)
-				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", *vmwareDiskSize, "-a", "lsilogic", "-t", "0", *vmwareDisk)
+				log.Infof("Creating new VMware disk [%s]", *disk)
+				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", *diskSz, "-a", "lsilogic", "-t", "0", *disk)
 				if err = vmDiskCmd.Run(); err != nil {
-					log.Fatalf("Error creating disk [%s]:  %s", *vmwareDisk, err.Error())
+					log.Fatalf("Error creating disk [%s]:  %s", *disk, err.Error())
 				}
 			}
 		} else {
-			log.Infof("Using existing disk [%s]", *vmwareDisk)
+			log.Infof("Using existing disk [%s]", *disk)
 		}
 	}
 
 	// Build the contents of the VMWare .vmx file
-	vmx := buildVMX(*vmwareCPUs, *vmwareMem, *vmwareDisk, prefix)
+	vmx := buildVMX(*cpus, *mem, *disk, prefix)
 
 	if vmx == "" {
 		log.Fatalf("VMware .vmx file could not be generated, please confirm inputs")

@@ -40,25 +40,25 @@ func ValidateHTTPURL(url string) {
 
 // Process the run arguments and execute run
 func runPacket(args []string) {
-	packetCmd := flag.NewFlagSet("packet", flag.ExitOnError)
+	flags := flag.NewFlagSet("packet", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
-	packetCmd.Usage = func() {
+	flags.Usage = func() {
 		fmt.Printf("USAGE: %s run packet [options] [name]\n\n", invoked)
 		fmt.Printf("Options:\n\n")
-		packetCmd.PrintDefaults()
+		flags.PrintDefaults()
 	}
-	baseURLFlag := packetCmd.String("base-url", "", "Base URL that the kernel and initrd are served from.")
-	zoneFlag := packetCmd.String("zone", packetDefaultZone, "Packet Zone")
-	machineFlag := packetCmd.String("machine", packetDefaultMachine, "Packet Machine Type")
-	apiKeyFlag := packetCmd.String("api-key", "", "Packet API key")
-	projectFlag := packetCmd.String("project-id", "", "Packet Project ID")
-	hostNameFlag := packetCmd.String("hostname", packetDefaultHostname, "Hostname of new instance")
-	nameFlag := packetCmd.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name]")
-	if err := packetCmd.Parse(args); err != nil {
+	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel and initrd are served from.")
+	zoneFlag := flags.String("zone", packetDefaultZone, "Packet Zone")
+	machineFlag := flags.String("machine", packetDefaultMachine, "Packet Machine Type")
+	apiKeyFlag := flags.String("api-key", "", "Packet API key")
+	projectFlag := flags.String("project-id", "", "Packet Project ID")
+	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance")
+	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name]")
+	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
 
-	remArgs := packetCmd.Args()
+	remArgs := flags.Args()
 	prefix := "packet"
 	if len(remArgs) > 0 {
 		prefix = remArgs[0]

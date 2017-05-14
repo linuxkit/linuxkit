@@ -38,63 +38,63 @@ type QemuConfig struct {
 
 func runQemu(args []string) {
 	invoked := filepath.Base(os.Args[0])
-	qemuFlags := flag.NewFlagSet("qemu", flag.ExitOnError)
-	qemuFlags.Usage = func() {
+	flags := flag.NewFlagSet("qemu", flag.ExitOnError)
+	flags.Usage = func() {
 		fmt.Printf("USAGE: %s run qemu [options] prefix\n\n", invoked)
 		fmt.Printf("'prefix' specifies the path to the VM image.\n")
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")
-		qemuFlags.PrintDefaults()
+		flags.PrintDefaults()
 	}
 
 	// Determine Flags
-	qemuGUI := qemuFlags.Bool("gui", false, "Set qemu to use video output instead of stdio")
-	qemuUEFI := qemuFlags.Bool("uefi", false, "Set UEFI boot from 'prefix'-efi.iso")
-	qemuIso := qemuFlags.Bool("iso", false, "Set Legacy BIOS boot from 'prefix'.iso")
-	qemuKernel := qemuFlags.Bool("kernel", true, "Set boot using 'prefix'-kernel/-initrd/-cmdline")
+	enableGUI := flags.Bool("gui", false, "Set qemu to use video output instead of stdio")
+	uefiBoot := flags.Bool("uefi", false, "Set UEFI boot from 'prefix'-efi.iso")
+	isoBoot := flags.Bool("iso", false, "Set Legacy BIOS boot from 'prefix'.iso")
+	kernelBoot := flags.Bool("kernel", true, "Set boot using 'prefix'-kernel/-initrd/-cmdline")
 
 	// Paths and settings for Disks and UEFI firware
-	qemuDiskPath := qemuFlags.String("disk", "", "Path to disk image to use")
-	qemuDiskSize := qemuFlags.String("disk-size", "", "Size of disk to create, only created if it doesn't exist")
-	qemuFWPath := qemuFlags.String("fw", "/usr/share/ovmf/bios.bin", "Path to OVMF firmware for UEFI boot")
+	disk := flags.String("disk", "", "Path to disk image to use")
+	diskSz := flags.String("disk-size", "", "Size of disk to create, only created if it doesn't exist")
+	fw := flags.String("fw", "/usr/share/ovmf/bios.bin", "Path to OVMF firmware for UEFI boot")
 
 	// VM configuration
-	qemuArch := qemuFlags.String("arch", "x86_64", "Type of architecture to use, e.g. x86_64, aarch64")
-	qemuCPUs := qemuFlags.String("cpus", "1", "Number of CPUs")
-	qemuMem := qemuFlags.String("mem", "1024", "Amount of memory in MB")
+	arch := flags.String("arch", "x86_64", "Type of architecture to use, e.g. x86_64, aarch64")
+	cpus := flags.String("cpus", "1", "Number of CPUs")
+	mem := flags.String("mem", "1024", "Amount of memory in MB")
 
 	publishFlags := multipleFlag{}
-	qemuFlags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
+	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
 
-	if err := qemuFlags.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
-	remArgs := qemuFlags.Args()
+	remArgs := flags.Args()
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the prefix to the image to boot")
-		qemuFlags.Usage()
+		flags.Usage()
 		os.Exit(1)
 	}
 	prefix := remArgs[0]
 
 	// Print warning if conflicting UEFI and ISO flags are set
-	if *qemuUEFI && *qemuIso {
+	if *uefiBoot && *isoBoot {
 		log.Warnf("Both -iso and -uefi have been used")
 	}
 
 	config := QemuConfig{
 		Prefix:         prefix,
-		ISO:            *qemuIso,
-		UEFI:           *qemuUEFI,
-		Kernel:         *qemuKernel,
-		GUI:            *qemuGUI,
-		DiskPath:       *qemuDiskPath,
-		DiskSize:       *qemuDiskSize,
-		FWPath:         *qemuFWPath,
-		Arch:           *qemuArch,
-		CPUs:           *qemuCPUs,
-		Memory:         *qemuMem,
+		ISO:            *isoBoot,
+		UEFI:           *uefiBoot,
+		Kernel:         *kernelBoot,
+		GUI:            *enableGUI,
+		DiskPath:       *disk,
+		DiskSize:       *diskSz,
+		FWPath:         *fw,
+		Arch:           *arch,
+		CPUs:           *cpus,
+		Memory:         *mem,
 		PublishedPorts: publishFlags,
 	}
 

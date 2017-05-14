@@ -15,31 +15,31 @@ import (
 
 // Process the run arguments and execute run
 func runHyperKit(args []string) {
-	hyperkitCmd := flag.NewFlagSet("hyperkit", flag.ExitOnError)
+	flags := flag.NewFlagSet("hyperkit", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
-	hyperkitCmd.Usage = func() {
+	flags.Usage = func() {
 		fmt.Printf("USAGE: %s run hyperkit [options] prefix\n\n", invoked)
 		fmt.Printf("'prefix' specifies the path to the VM image.\n")
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")
-		hyperkitCmd.PrintDefaults()
+		flags.PrintDefaults()
 	}
-	hyperkitPath := hyperkitCmd.String("hyperkit", "", "Path to hyperkit binary (if not in default location)")
-	cpus := hyperkitCmd.Int("cpus", 1, "Number of CPUs")
-	mem := hyperkitCmd.Int("mem", 1024, "Amount of memory in MB")
-	diskSz := hyperkitCmd.Int("disk-size", 0, "Size of Disk in MB")
-	disk := hyperkitCmd.String("disk", "", "Path to disk image to used")
-	data := hyperkitCmd.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
-	ipStr := hyperkitCmd.String("ip", "", "IP address for the VM")
-	state := hyperkitCmd.String("state", "", "Path to directory to keep VM state in")
+	hyperkitPath := flags.String("hyperkit", "", "Path to hyperkit binary (if not in default location)")
+	cpus := flags.Int("cpus", 1, "Number of CPUs")
+	mem := flags.Int("mem", 1024, "Amount of memory in MB")
+	diskSz := flags.Int("disk-size", 0, "Size of Disk in MB")
+	disk := flags.String("disk", "", "Path to disk image to used")
+	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
+	ipStr := flags.String("ip", "", "IP address for the VM")
+	state := flags.String("state", "", "Path to directory to keep VM state in")
 
-	if err := hyperkitCmd.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
-	remArgs := hyperkitCmd.Args()
+	remArgs := flags.Args()
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the prefix to the image to boot\n")
-		hyperkitCmd.Usage()
+		flags.Usage()
 		os.Exit(1)
 	}
 	prefix := remArgs[0]
