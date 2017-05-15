@@ -27,31 +27,31 @@ const (
 
 // Process the run arguments and execute run
 func runGcp(args []string) {
-	gcpCmd := flag.NewFlagSet("gcp", flag.ExitOnError)
+	flags := flag.NewFlagSet("gcp", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
-	gcpCmd.Usage = func() {
+	flags.Usage = func() {
 		fmt.Printf("USAGE: %s run gcp [options] [name]\n\n", invoked)
 		fmt.Printf("'name' specifies either the name of an already uploaded\n")
 		fmt.Printf("GCP image or the full path to a image file which will be\n")
 		fmt.Printf("uploaded before it is run.\n\n")
 		fmt.Printf("Options:\n\n")
-		gcpCmd.PrintDefaults()
+		flags.PrintDefaults()
 	}
-	zoneFlag := gcpCmd.String("zone", defaultZone, "GCP Zone")
-	machineFlag := gcpCmd.String("machine", defaultMachine, "GCP Machine Type")
-	keysFlag := gcpCmd.String("keys", "", "Path to Service Account JSON key file")
-	projectFlag := gcpCmd.String("project", "", "GCP Project Name")
-	diskSizeFlag := gcpCmd.Int("disk-size", 0, "Size of system disk in GB")
-	skipCleanup := gcpCmd.Bool("skip-cleanup", false, "Don't remove images or VMs")
+	zoneFlag := flags.String("zone", defaultZone, "GCP Zone")
+	machineFlag := flags.String("machine", defaultMachine, "GCP Machine Type")
+	keysFlag := flags.String("keys", "", "Path to Service Account JSON key file")
+	projectFlag := flags.String("project", "", "GCP Project Name")
+	diskSizeFlag := flags.Int("disk-size", 0, "Size of system disk in GB")
+	skipCleanup := flags.Bool("skip-cleanup", false, "Don't remove images or VMs")
 
-	if err := gcpCmd.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
 
-	remArgs := gcpCmd.Args()
+	remArgs := flags.Args()
 	if len(remArgs) == 0 {
 		fmt.Printf("Please specify the name of the image to boot\n")
-		gcpCmd.Usage()
+		flags.Usage()
 		os.Exit(1)
 	}
 	name := remArgs[0]

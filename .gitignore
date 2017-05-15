@@ -6,11 +6,14 @@ Dockerfile.media
 *.tag
 *.iso
 *.vhd
+*.vmdk
+*.vmdk.lck
 *.tar
 *.gz
 *.vhdx
 *.efi
 *.qcow2
-*-kernel$
+*-kernel
 *-cmdline
+*-state
 artifacts/*

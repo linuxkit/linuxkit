@@ -66,30 +66,38 @@ guestOS = "other3xlinux-64"
 
 func runVMware(args []string) {
 	invoked := filepath.Base(os.Args[0])
-	vmwareArgs := flag.NewFlagSet("vmware", flag.ExitOnError)
-	vmwareArgs.Usage = func() {
+	flags := flag.NewFlagSet("vmware", flag.ExitOnError)
+	flags.Usage = func() {
 		fmt.Printf("USAGE: %s run vmware [options] prefix\n\n", invoked)
 		fmt.Printf("'prefix' specifies the path to the VM image.\n")
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")
-		vmwareArgs.PrintDefaults()
+		flags.PrintDefaults()
 	}
-	vmwareCPUs := vmwareArgs.Int("cpus", 1, "Number of CPUs")
-	vmwareMem := vmwareArgs.Int("mem", 1024, "Amount of memory in MB")
-	vmwareDisk := vmwareArgs.String("disk", "", "Path to disk image to use")
-	vmwareDiskSize := vmwareArgs.String("disk-size", "", "Size of the disk to create, only created if it doesn't exist")
+	cpus := flags.Int("cpus", 1, "Number of CPUs")
+	mem := flags.Int("mem", 1024, "Amount of memory in MB")
+	disk := flags.String("disk", "", "Path to disk image to use")
+	diskSz := flags.String("disk-size", "", "Size of the disk to create, only created if it doesn't exist")
+	state := flags.String("state", "", "Path to directory to keep VM state in")
 
-	if err := vmwareArgs.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
-	remArgs := vmwareArgs.Args()
+	remArgs := flags.Args()
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the prefix to the image to boot")
-		vmwareArgs.Usage()
+		flags.Usage()
 		os.Exit(1)
 	}
 	prefix := remArgs[0]
+
+	if *state == "" {
+		*state = prefix + "-state"
+	}
+	if err := os.MkdirAll(*state, 0755); err != nil {
+		log.Fatalf("Could not create state directory: %v", err)
+	}
 
 	var vmrunPath, vmDiskManagerPath string
 	var vmrunArgs []string
@@ -97,13 +105,13 @@ func runVMware(args []string) {
 	if runtime.GOOS == "windows" {
 		vmrunPath = "C:\\Program\\ files\\VMware Workstation\\vmrun.exe"
 		vmDiskManagerPath = "C:\\Program\\ files\\VMware Workstation\\vmware-vdiskmanager.exe"
-		vmrunArgs = []string{"-T", "ws", "start", prefix + ".vmx"}
+		vmrunArgs = []string{"-T", "ws", "start"}
 	}
 
 	if runtime.GOOS == "darwin" {
 		vmrunPath = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
 		vmDiskManagerPath = "/Applications/VMware Fusion.app/Contents/Library/vmware-vdiskmanager"
-		vmrunArgs = []string{"-T", "fusion", "start", prefix + ".vmx"}
+		vmrunArgs = []string{"-T", "fusion", "start"}
 	}
 
 	if runtime.GOOS == "linux" {
@@ -115,7 +123,7 @@ func runVMware(args []string) {
 			log.Fatalf("Unable to find %s within the $PATH", vmrunPath)
 		}
 		vmrunPath = fullVMrunPath
-		vmrunArgs = []string{"-T", "ws", "start", prefix + ".vmx"}
+		vmrunArgs = []string{"-T", "ws", "start"}
 	}
 
 	// Check vmrunPath exists before attempting to execute
@@ -123,48 +131,50 @@ func runVMware(args []string) {
 		log.Fatalf("ERROR VMware executables can not be found, ensure software is installed")
 	}
 
-	if *vmwareDisk != "" {
+	if *disk == "" && *diskSz != "" {
+		*disk = filepath.Join(*state, "disk.vmdk")
+	}
+	if *disk != "" {
 		// Check vmDiskManagerPath exist before attempting to execute
 		if _, err := os.Stat(vmDiskManagerPath); os.IsNotExist(err) {
 			log.Fatalf("ERROR VMware Disk Manager executables can not be found, ensure software is installed")
 		}
 
 		// If disk doesn't exist then create one, error if disk is unreadable
-		if _, err := os.Stat(*vmwareDisk); err != nil {
+		if _, err := os.Stat(*disk); err != nil {
 			if os.IsPermission(err) {
-				log.Fatalf("Unable to read file [%s], please check permissions", *vmwareDisk)
+				log.Fatalf("Unable to read file [%s], please check permissions", *disk)
 			}
 			if os.IsNotExist(err) {
-				log.Infof("Creating new VMware disk [%s]", *vmwareDisk)
-				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", *vmwareDiskSize, "-a", "lsilogic", "-t", "0", *vmwareDisk)
+				log.Infof("Creating new VMware disk [%s]", *disk)
+				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", *diskSz, "-a", "lsilogic", "-t", "0", *disk)
 				if err = vmDiskCmd.Run(); err != nil {
-					log.Fatalf("Error creating disk [%s]:  %s", *vmwareDisk, err.Error())
+					log.Fatalf("Error creating disk [%s]:  %v", *disk, err)
 				}
 			}
 		} else {
-			log.Infof("Using existing disk [%s]", *vmwareDisk)
+			log.Infof("Using existing disk [%s]", *disk)
 		}
 	}
 
 	// Build the contents of the VMWare .vmx file
-	vmx := buildVMX(*vmwareCPUs, *vmwareMem, *vmwareDisk, prefix)
-
+	vmx := buildVMX(*cpus, *mem, *disk, prefix)
 	if vmx == "" {
 		log.Fatalf("VMware .vmx file could not be generated, please confirm inputs")
 	}
 
 	// Create the .vmx file
-	err := ioutil.WriteFile(prefix+".vmx", []byte(vmx), 0644)
-
+	vmxPath := filepath.Join(*state, "linuxkit.vmx")
+	err := ioutil.WriteFile(vmxPath, []byte(vmx), 0644)
 	if err != nil {
-		log.Fatalf("Error writing .vmx file")
+		log.Fatalf("Error writing .vmx file: %v", err)
 	}
+	vmrunArgs = append(vmrunArgs, vmxPath)
 
 	cmd := exec.Command(vmrunPath, vmrunArgs...)
 	out, err := cmd.Output()
-
 	if err != nil {
-		log.Fatalf("Error starting vmrun")
+		log.Fatalf("Error starting vmrun: %v", err)
 	}
 
 	// check there is output to push to logging
@@ -185,7 +195,10 @@ func buildVMX(cpus int, mem int, persistentDisk string, prefix string) string {
 		returnString += fmt.Sprintf(vmxCdrom, cdromPath)
 	}
 
-	vmdkPath := prefix + ".vmdk"
+	vmdkPath, err := filepath.Abs(prefix + ".vmdk")
+	if err != nil {
+		log.Fatalf("Unable get absolute path for boot vmdk: %v", err)
+	}
 	if _, err := os.Stat(vmdkPath); err != nil {
 		if os.IsPermission(err) {
 			log.Fatalf("Unable to read file [%s], please check permissions", vmdkPath)
@@ -198,6 +211,10 @@ func buildVMX(cpus int, mem int, persistentDisk string, prefix string) string {
 	}
 	// Add persistentDisk to the vmx if it has been specified in the args.
 	if persistentDisk != "" {
+		persistentDisk, err = filepath.Abs(persistentDisk)
+		if err != nil {
+			log.Fatalf("Unable get absolute path for persistent disk: %v", err)
+		}
 		returnString += fmt.Sprintf(vmxDiskPersistent, persistentDisk)
 	}
 
