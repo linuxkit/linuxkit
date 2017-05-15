@@ -18,6 +18,10 @@ lint:
 	# govet
 	@test -z "$$(go tool vet -printf=false . 2>&1 | grep -v vendor/ | tee /dev/stderr)"
 
+test: moby
+	./moby build test/test.yml
+	rm moby test.tar
+
 PHONY: install
 install: moby
 	cp -a $^ $(PREFIX)/bin/
