@@ -6,6 +6,8 @@ Dockerfile.media
 *.tag
 *.iso
 *.vhd
+*.vmdk
+*.vmdk.lck
 *.tar
 *.gz
 *.vhdx
