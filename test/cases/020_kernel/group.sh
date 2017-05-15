@@ -1,12 +1,6 @@
 #!/bin/sh
-# SUMMARY: LinuxKit stress tests
+# SUMMARY: Kernel tests
 # LABELS:
-# For the top level group.sh also specify a 'NAME:' comment
-
-# Source libraries. Uncomment if needed/defined
-#. "${RT_LIB}"
-#. "${RT_PROJECT_ROOT}/_lib/lib.sh"
-
 
 group_init() {
     # Group initialisation code goes here

@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Test the kernel configuration is suitable for running Docker
+# SUMMARY: Sanity check on the kernel config file
 # LABELS:
 # REPEAT:
 # AUTHOR: Dave Tucker <dt@docker.com>
