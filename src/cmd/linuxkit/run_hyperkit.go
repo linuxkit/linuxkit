@@ -32,6 +32,7 @@ func runHyperKit(args []string) {
 	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
 	ipStr := flags.String("ip", "", "IP address for the VM")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
+	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -98,6 +99,10 @@ func runHyperKit(args []string) {
 	h, err := hyperkit.New(*hyperkitPath, "auto", *state)
 	if err != nil {
 		log.Fatalln("Error creating hyperkit: ", err)
+	}
+
+	if h.VSockPorts, err = stringToIntArray(*vsockports, ","); err != nil {
+		log.Fatalln("Unable to parse vsock-ports: ", err)
 	}
 
 	h.Kernel = prefix + "-kernel"

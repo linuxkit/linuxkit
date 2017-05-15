@@ -3,6 +3,7 @@ package main
 import (
 	"os"
 	"strconv"
+	"strings"
 )
 
 func getStringValue(envKey string, flagVal string, defaultVal string) string {
@@ -80,4 +81,19 @@ func getBoolValue(envKey string, flagVal bool) bool {
 	}
 
 	return res
+}
+
+func stringToIntArray(l string, sep string) ([]int, error) {
+	var err error
+	if l == "" {
+		return []int{}, err
+	}
+	s := strings.Split(l, sep)
+	i := make([]int, len(s))
+	for idx := range s {
+		if i[idx], err = strconv.Atoi(s[idx]); err != nil {
+			return nil, err
+		}
+	}
+	return i, nil
 }
