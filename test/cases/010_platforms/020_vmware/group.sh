@@ -1,6 +1,6 @@
 #!/bin/sh
-# SUMMARY: LinuxKit configuration tests
-# LABELS:
+# SUMMARY: LinuxKit VMware tests
+# LABELS: darwin
 # For the top level group.sh also specify a 'NAME:' comment
 
 # Source libraries. Uncomment if needed/defined

@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: LinuxKit configuration tests
+# SUMMARY: LinuxKit Google Cloud tests
 # LABELS:
 # For the top level group.sh also specify a 'NAME:' comment
 
