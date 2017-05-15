@@ -1,0 +1,33 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:b3740303f3d1e5689a84c87b7dfb48fd2a40a192
+  - linuxkit/runc:47b1c38d63468c0f3078f8b1b055d07965a1895d
+  - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
+onboot:
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+trust:
+  image:
+    - linuxkit/kernel
+outputs:
+  - format: tar
+  - format: kernel+initrd
+  - format: iso-bios
+  - format: iso-efi
+  - format: img-gz
+  - format: gcp-img
+  - format: qcow2
+# Disable VHD for now. It requires a lot of memory, which our CI instance currently doesn't have
+#  - format: vhd
+  - format: vmdk
