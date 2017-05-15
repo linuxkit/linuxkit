@@ -1,4 +1,4 @@
-From d2ceb0d3a8934fb8963d3e5aa046b29f048e1018 Mon Sep 17 00:00:00 2001
+From 32ac7ef9a298722ef67ec41b6126bdc3550cae8b Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:43 -0800
 Subject: [PATCH 17/44] Drivers: hv: vmbus: Use uuid_le type consistently
@@ -293,5 +293,5 @@ index 9f5cdd49ff0b..8e8c69bee78f 100644
  	strcpy(alias, "vmbus:");
  	strcat(alias, guid_name);
 -- 
-2.11.0
+2.12.2
 

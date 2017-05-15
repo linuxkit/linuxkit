@@ -1,4 +1,4 @@
-From aa2f792d7c0c0c9f80e03e4e72f57c148dae6226 Mon Sep 17 00:00:00 2001
+From b287d7d9005185894b951c117b31dd220ab49a6a Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 23 Jun 2016 16:28:58 +0100
 Subject: [PATCH 04/44] vsock: make listener child lock ordering explicit
@@ -59,5 +59,5 @@ index b5f1221f48d4..b96ac918e0ba 100644
  
  		/* If the listener socket has received an error, then we should
 -- 
-2.11.0
+2.12.2
 

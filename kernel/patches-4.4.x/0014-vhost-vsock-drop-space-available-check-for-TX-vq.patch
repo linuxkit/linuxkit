@@ -1,4 +1,4 @@
-From d59652fd5f273d3abf754bcf7129d728c0693346 Mon Sep 17 00:00:00 2001
+From ee2e34b771da87dd1c2878b5b8edd335ac11ca9d Mon Sep 17 00:00:00 2001
 From: Gerard Garcia <ggarcia@deic.uab.cat>
 Date: Wed, 10 Aug 2016 17:24:34 +0200
 Subject: [PATCH 14/44] vhost/vsock: drop space available check for TX vq
@@ -57,5 +57,5 @@ index 699dfabdbccd..936d7eee62d0 100644
  		}
  
 -- 
-2.11.0
+2.12.2
 

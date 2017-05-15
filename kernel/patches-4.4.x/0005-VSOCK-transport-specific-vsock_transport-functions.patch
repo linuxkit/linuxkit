@@ -1,4 +1,4 @@
-From 8fe813cfb48c38acad56d94fb30391317534069d Mon Sep 17 00:00:00 2001
+From 6573cd78f66293e365fe857f88f7a33bc70311d8 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:30 +0100
 Subject: [PATCH 05/44] VSOCK: transport-specific vsock_transport functions
@@ -55,5 +55,5 @@ index b96ac918e0ba..e34d96f8bde2 100644
  MODULE_DESCRIPTION("VMware Virtual Socket Family");
  MODULE_VERSION("1.0.1.0-k");
 -- 
-2.11.0
+2.12.2
 
