@@ -51,6 +51,8 @@ const (
 	defaultCPUs   = 1
 	defaultMemory = 1024 // 1G
 
+	defaultVSockGuestCID = 3
+
 	jsonFile = "hyperkit.json"
 	pidFile  = "hyperkit.pid"
 )
@@ -79,6 +81,10 @@ type HyperKit struct {
 	ISOImage string `json:"iso"`
 	// VSock enables the virtio-socket device and exposes it on the host
 	VSock bool `json:"vsock"`
+	// VSockPorts is a list of guest VSock ports that should be exposed as sockets on the host
+	VSockPorts []int `json:"vsock_ports"`
+	// VSock guest CID
+	VSockGuestCID int `json:"vsock_guest_cid"`
 
 	// Kernel is the path to the kernel image to boot
 	Kernel string `json:"kernel"`
@@ -132,6 +138,8 @@ func New(hyperkit, vpnkitsock, statedir string) (*HyperKit, error) {
 
 	h.CPUs = defaultCPUs
 	h.Memory = defaultMemory
+
+	h.VSockGuestCID = defaultVSockGuestCID
 
 	h.Console = ConsoleStdio
 
@@ -202,6 +210,9 @@ func (h *HyperKit) execute(cmdline string) error {
 	}
 	if h.VSock && h.StateDir == "" {
 		return fmt.Errorf("If virtio-sockets are enabled, StateDir must be specified")
+	}
+	if !h.VSock && len(h.VSockPorts) > 0 {
+		return fmt.Errorf("To forward vsock ports vsock must be enabled")
 	}
 	if _, err = os.Stat(h.Kernel); os.IsNotExist(err) {
 		return fmt.Errorf("Kernel %s does not exist", h.Kernel)
@@ -335,6 +346,17 @@ func CreateDiskImage(location string, sizeMB int) error {
 	return nil
 }
 
+func intArrayToString(i []int, sep string) string {
+	if len(i) == 0 {
+		return ""
+	}
+	s := make([]string, len(i))
+	for idx := range i {
+		s[idx] = strconv.Itoa(i[idx])
+	}
+	return strings.Join(s, sep)
+}
+
 func (h *HyperKit) buildArgs(cmdline string) {
 	a := []string{"-A", "-u"}
 	if h.StateDir != "" {
@@ -359,7 +381,11 @@ func (h *HyperKit) buildArgs(cmdline string) {
 		a = append(a, "-s", fmt.Sprintf("2:0,virtio-blk,%s", h.DiskImage))
 	}
 	if h.VSock {
-		a = append(a, "-s", fmt.Sprintf("3,virtio-sock,guest_cid=3,path=%s", h.StateDir))
+		l := fmt.Sprintf("3,virtio-sock,guest_cid=%d,path=%s", h.VSockGuestCID, h.StateDir)
+		if len(h.VSockPorts) > 0 {
+			l = fmt.Sprintf("%s,guest_forwards=%s", l, intArrayToString(h.VSockPorts, ";"))
+		}
+		a = append(a, "-s", l)
 	}
 	if h.ISOImage != "" {
 		a = append(a, "-s", fmt.Sprintf("4,ahci-cd,%s", h.ISOImage))

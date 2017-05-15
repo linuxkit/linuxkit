@@ -317,11 +317,6 @@ static int vpnkit_connect(int fd, const char uuid[36], struct vif_info *vif)
 			init_reply.magic[4]);
 		return -1;
 	}
-	if (init_reply.version != 1) {
-		fprintf(stderr, "virtio-net-vpnkit: bad init version %d\n",
-			init_reply.version);
-		return -1;
-	}
 
 	fprintf(stderr, "virtio-net-vpnkit: magic=%c%c%c%c%c version=%d commit=%*s\n",
 		init_reply.magic[0], init_reply.magic[1],

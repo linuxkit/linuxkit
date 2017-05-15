@@ -82,5 +82,5 @@ struct zero_page {
 	uint8_t _7[276];
 } __attribute__((packed));
 
-void kexec_init(char *kernel_path, char *initrd_path, char *cmdline);
+int kexec_init(char *kernel_path, char *initrd_path, char *cmdline);
 uint64_t kexec(void);
