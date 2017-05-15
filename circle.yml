@@ -1,3 +1,8 @@
-test:
-  override:
-    - make test
+version: 2
+jobs:
+  build:
+    working_directory: /go/src/github.com/moby/tool
+    steps:
+      - checkout
+      - run: go get github.com/golang/lint/golint
+      - run: make test
