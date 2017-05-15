@@ -20,7 +20,7 @@ lint:
 
 test: moby
 	./moby build test/test.yml
-	rm moby test.iso test-cmdline test-efi.iso test-initrd.img test-kernel
+	rm moby test.tar
 
 PHONY: install
 install: moby
