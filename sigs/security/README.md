@@ -11,5 +11,5 @@
 - Re-implement system daemons in type-safe languages, such as Rust and OCaml
 
 ## Meeting Info:
-- Meeting notes and agendas for upcoming meetings are kept in the [/reports/sigs/security directory](../../reports/sigs/security)
+- Meeting notes and agendas for upcoming meetings are kept in the [/reports/sig-security directory](../../reports/sig-security)
 
