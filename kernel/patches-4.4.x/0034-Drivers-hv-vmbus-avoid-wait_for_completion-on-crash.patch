@@ -1,4 +1,4 @@
-From e6cad6631319b0eaccc1e1e21789aab94ad98b32 Mon Sep 17 00:00:00 2001
+From 0cddac74fa6f8bd57f78beabeec979bfcffff6a6 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:16 -0800
 Subject: [PATCH 34/44] Drivers: hv: vmbus: avoid wait_for_completion() on
@@ -96,5 +96,5 @@ index a220efc297c4..d9801855ad4e 100644
  	 * In crash handler we can't schedule synic cleanup for all CPUs,
  	 * doing the cleanup for current CPU only. This should be sufficient
 -- 
-2.11.0
+2.12.2
 

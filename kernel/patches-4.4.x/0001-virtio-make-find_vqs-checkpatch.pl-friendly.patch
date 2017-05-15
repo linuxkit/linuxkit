@@ -1,4 +1,4 @@
-From 65587c034a86fafade057176f87c2a9c0fbe3892 Mon Sep 17 00:00:00 2001
+From af21a15283141bde0cb81c3749304f8cbbd7f5f4 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 16:53:43 +0800
 Subject: [PATCH 01/44] virtio: make find_vqs() checkpatch.pl-friendly
@@ -215,5 +215,5 @@ index e5ce8ab0b8b0..6e6cb0c9d7cb 100644
  	u64 (*get_features)(struct virtio_device *vdev);
  	int (*finalize_features)(struct virtio_device *vdev);
 -- 
-2.11.0
+2.12.2
 

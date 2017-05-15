@@ -1,4 +1,4 @@
-From 961ebd43722d7549568d82cd0141d91d54f8957b Mon Sep 17 00:00:00 2001
+From 9668f6d095d4ecfd5a96e2fb86b0089bc9f3a3d9 Mon Sep 17 00:00:00 2001
 From: Courtney Cavin <courtney.cavin@sonymobile.com>
 Date: Wed, 27 Apr 2016 12:13:03 -0700
 Subject: [PATCH 38/44] net: Add Qualcomm IPC router
@@ -1303,5 +1303,5 @@ index 000000000000..84ebce73aa23
 +MODULE_DESCRIPTION("Qualcomm IPC-Router SMD interface driver");
 +MODULE_LICENSE("GPL v2");
 -- 
-2.11.0
+2.12.2
 
