@@ -1,0 +1,2 @@
+vendor/* linguist-vendored
+kernel/*.x linguist-language=text
