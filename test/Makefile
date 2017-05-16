@@ -50,4 +50,4 @@ test: gcp-hack
 	@rtf -l build -x run
 
 test-pr: gcp-hack
-	@rtf -vvv -l build -x run
+	@rtf -l build -x run
