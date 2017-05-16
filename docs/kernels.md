@@ -65,6 +65,27 @@ file. [kmod.yml](../tests/kmod/kmod.yml) contains an example for the
 configuration.
 
 
+## Building and using custom kernels
+
+To build and test locally modified kernels, e.g., to try a different
+kernel config or new patches, the existing kernel build system in the
+[`./kernel`](./kernel) can be re-used. For example, assuming the
+current 4.9 kernel is 4.9.28, you can build a local kernel with:
+```
+make build_4.9.28 HASH=foo
+```
+This will create a local kernel image called
+`linuxkit/kernel:4.9.28-foo` which you can use in your YAML file as:
+```
+kernel:
+  image: "linuxkit/kernel:4.9.28-foo"
+```
+
+If you have more substantial changes, or require a different kernel
+version, it's best to replicate the kernel build system and change the
+Docker Hub organisation to your own.
+
+
 ## Working with Linux kernel patches for LinuxKit
 
 We may apply patches to the Linux kernel used in LinuxKit, primarily to
