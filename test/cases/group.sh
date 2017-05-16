@@ -10,8 +10,6 @@ group_init() {
     # Group initialisation code goes here
     [ -r "${LINUXKIT_TMPDIR}" ] && rm -rf "${LINUXKIT_TMPDIR}"
     mkdir "${LINUXKIT_TMPDIR}"
-    [ -r "${LINUXKIT_ARTIFACTS_DIR}" ] && rm -rf "${LINUXKIT_ARTIFACTS_DIR}"
-    mkdir "${LINUXKIT_ARTIFACTS_DIR}"
     echo "export LINUXKIT_EXAMPLES_DIR=${RT_PROJECT_ROOT}/../../examples" >> "${LINUXKIT_TMPDIR}/env.sh"
 
     if rt_label_set "gcp"; then
