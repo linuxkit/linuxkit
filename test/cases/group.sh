@@ -1,7 +1,6 @@
 #!/bin/sh
 # NAME: linuxkit
 # SUMMARY: LinuxKit Regression Tests
-# LABELS:
 
 # Source libraries. Uncomment if needed/defined
 # . "${RT_LIB}"
@@ -14,6 +13,15 @@ group_init() {
     [ -r "${LINUXKIT_ARTIFACTS_DIR}" ] && rm -rf "${LINUXKIT_ARTIFACTS_DIR}"
     mkdir "${LINUXKIT_ARTIFACTS_DIR}"
     echo "export LINUXKIT_EXAMPLES_DIR=${RT_PROJECT_ROOT}/../../examples" >> "${LINUXKIT_TMPDIR}/env.sh"
+
+    if rt_label_set "gcp"; then
+        # If we run GCP tests, make sure it is configured
+        if [ -z "${CLOUDSDK_CORE_PROJECT}" ]; then
+            echo "GCP does not seem to be configured"
+            return 1
+        fi
+    fi
+
     return 0
 }
 
