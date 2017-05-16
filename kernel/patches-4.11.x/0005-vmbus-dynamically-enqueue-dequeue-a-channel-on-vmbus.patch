@@ -1,7 +1,7 @@
-From 07c35ba69ab292b925a08c2ac21d255f0b93a15b Mon Sep 17 00:00:00 2001
+From 3809a76e095d648d7d99cb1822ce17844a22ad2a Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:23 -0600
-Subject: [PATCH 5/8] vmbus: dynamically enqueue/dequeue a channel on
+Subject: [PATCH 5/9] vmbus: dynamically enqueue/dequeue a channel on
  vmbus_open/close
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -22,8 +22,8 @@ Tested-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
 Cc: K. Y. Srinivasan <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
-Origin: git@github.com:dcui/linux.git
-(cherry picked from commit fed51f8f6068cb953be480c6b6322a3a6e97745d)
+Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511
+(cherry picked from commit 1df677b35ff010d0def33f5420773015815cf843)
 ---
  drivers/hv/channel.c      | 12 +++++++++---
  drivers/hv/channel_mgmt.c | 50 +++++++++++++++++++++--------------------------
