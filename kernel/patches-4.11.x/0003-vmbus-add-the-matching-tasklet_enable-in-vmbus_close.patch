@@ -1,7 +1,7 @@
-From e0ea4ac1148a83e19426015b1ab790e53d2ac87b Mon Sep 17 00:00:00 2001
+From d1d1e90f2106c7048feab6a6da955fc2ed521896 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:15 -0600
-Subject: [PATCH 3/8] vmbus: add the matching tasklet_enable() in
+Subject: [PATCH 3/9] vmbus: add the matching tasklet_enable() in
  vmbus_close_internal()
 
 If we disable a tasklet that is scheduled but hasn't started to run,
@@ -19,8 +19,8 @@ Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Cc: K. Y. Srinivasan <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
-Origin: git@github.com:dcui/linux.git
-(cherry picked from commit 2e653533181f0c70db04d2ca13a4ae60251d1a93)
+Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511
+(cherry picked from commit 008d8d8bc0c86473a8549a365bee9a479243e412)
 ---
  drivers/hv/channel.c | 1 +
  1 file changed, 1 insertion(+)

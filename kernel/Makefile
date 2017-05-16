@@ -10,7 +10,8 @@
 
 # Git tree hash of this directory. Override to force build
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
-# Name on Hub
+# Name and Org on Hub
+ORG?=linuxkit
 IMAGE:=kernel
 
 .PHONY: check tag push sign
@@ -34,24 +35,24 @@ sign:
 # build_4.9.x_dbg and adds "_dbg" to the hub image name.
 define kernel
 build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) kernel_config-$(2) kernel_config.debug
-	docker pull linuxkit/$(IMAGE):$(1)$(3)-$(HASH) || \
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
 			--build-arg KERNEL_SERIES=$(2) \
 			--build-arg DEBUG=$(3) \
-			--no-cache -t linuxkit/$(IMAGE):$(1)$(3)-$(HASH) .
+			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) .
 
 push_$(2)$(3): build_$(2)$(3)
-	docker pull linuxkit/$(IMAGE):$(1)$(3)-$(HASH) || \
-		(docker push linuxkit/$(IMAGE):$(1)$(3)-$(HASH) && \
-		 docker tag linuxkit/$(IMAGE):$(1)$(3)-$(HASH) linuxkit/$(IMAGE):$(2)$(3) && \
-		 docker push linuxkit/$(IMAGE):$(2)$(3))
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) || \
+		(docker push $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) && \
+		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) $(ORG)/$(IMAGE):$(2)$(3) && \
+		 docker push $(ORG)/$(IMAGE):$(2)$(3))
 
 sign_$(2)$(3): build_$(2)$(3)
-	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(1)$(3)-$(HASH) || \
-		(DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(1)$(3)-$(HASH) && \
-		 docker tag linuxkit/$(IMAGE):$(1)$(3)-$(HASH) linuxkit/$(IMAGE):$(2)$(3) && \
-		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(2)$(3))
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) || \
+		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) && \
+		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) $(ORG)/$(IMAGE):$(2)$(3) && \
+		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(2)$(3))
 
 build: build_$(2)$(3)
 push: push_$(2)$(3)
