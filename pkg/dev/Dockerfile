@@ -1,4 +1,4 @@
-FROM alpine:edge
+FROM linuxkit/sshd:e108d208adf692c8a0954f602743e0eec445364e
 
 ENV DOCKER_BUCKET get.docker.com
 ENV DOCKER_VERSION 17.05.0-ce
@@ -8,9 +8,6 @@ RUN \
   apk update && apk upgrade && \
   apk add --no-cache \
   curl \
-  openssh-server \
-  tini \
-  util-linux \
   && true
 
 RUN set -x \
@@ -22,8 +19,5 @@ RUN set -x \
 	&& rm docker.tgz \
 	&& docker -v
 
-COPY . .
-
-RUN mkdir -p /etc/ssh /root/.ssh && chmod 0700 /root/.ssh
 
 CMD ["/sbin/tini", "/usr/bin/ssh.sh"]
