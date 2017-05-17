@@ -33,7 +33,8 @@ RUN make defconfig && \
     make oldconfig && \
     make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
     cp arch/x86_64/boot/bzImage /out/kernel && \
-    cp System.map /out
+    cp System.map /out && \
+    ([ -n "${DEBUG}" ] && cp vmlinux /out || true)
 
 # Modules
 RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
