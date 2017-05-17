@@ -1,8 +1,6 @@
-# FIXME: This should use the minimal example
-# We continue to use the kernel-config-test as CI is currently expecting to see a success message
 kernel:
   image: "linuxkit/kernel:4.9.x"
-  cmdline: "console=ttyS0"
+  cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
   - linuxkit/runc:2649198589ef0020d99f613adaeda45ce0093a38
@@ -13,6 +11,9 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: check-kernel-config
     image: "linuxkit/test-kernel-config:ecff41279ccbc408079a3996a956432651c6eb9c"
+  - name: whalesay
+    image: "docker/whalesay"
+    command: ["/usr/local/bin/cowsay", "I Can Haz Linux?"]
     readonly: true
   - name: poweroff
     image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
@@ -24,3 +25,5 @@ trust:
     - linuxkit/runc
     - linuxkit/containerd
     - linuxkit/dhcpcd
+outputs:
+  - format: gcp-img

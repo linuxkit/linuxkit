@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: LinuxKit Google Cloud tests
-# LABELS:
+# LABELS: gcp
 # For the top level group.sh also specify a 'NAME:' comment
 
 # Source libraries. Uncomment if needed/defined

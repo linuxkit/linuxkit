@@ -67,19 +67,18 @@ The test logs are available via the `Details` link but also via this [website](h
 
 ## PR Testing
 
-Each PR is tested on disposable VM's spawned in Google Cloud Platform
+Each PR is tested on disposable VMs spawned in Google Cloud Platform
 This machine has no privileges or credentials to talk to GCP or other cloud platforms.
 
 TODO: Add instructions on how to build a base image for LinuxKit CI in GCP.
 
 LinuxKit CI runs `make ci-pr` in the VM.
 This target runs the tests using `rtf` and the results directory is `scp`'ed back to the controller.
-The test results will be stored in DataKit for additional access
-Additionally, the `./artifacts` folder is `scp`'ed back to the controller.
+The test results are stored in DataKit.
 
-If the tests passed the next step is to check if the kernel config test image runs on GCP.
-The `./artifacts/test.img.tar.gz` file is used to create a GCP image by the Python scripts
-that are part of LiunxKit CI. It runs this image and greps for the success message in the logs.
+If the tests passed the next step is to run additional platform tests.
+LinxKit CI runs `make ci-platforms` from the controller.
+This will use `rtf` to run tests on all local and/or cloud platforms in the test suite.
 
 ## Branch and Tag testing
 
@@ -87,8 +86,8 @@ Branches and Tags are tested on a dedicated machine that runs in GCP.
 
 LinuxKit CI runs `make ci` or `make ci-tag` in the VM
 This target runs the tests using `rtf` and the results directory is SCP'd back to the controller.
+The labels supplied to `rtf` via the `Makefile` will enable slower tests like the Linux Testing Project tests
+for more thorough test coverage.
 The test results will be stored in DataKit.
 
-If the tests pass, the GCP test is run in the same manner as described for PR tests.
-
-Finally, CI will run `make test-ltp` which will run the Linux Testing Project tests.
+If the tests pass, the platform tests are run in the same manner as described for PR's. 

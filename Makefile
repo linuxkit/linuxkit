@@ -53,24 +53,29 @@ test:
 .PHONY: collect-artifacts
 collect-artifacts: artifacts/test.img.tar.gz artifacts/test-ltp.img.tar.gz
 
-.PHONY: ci ci-tag ci-pr
+.PHONY: ci ci-tag ci-pr ci-platforms
 ci:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
+	$(MAKE) -C test platforms
 
 ci-tag:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
+	$(MAKE) -C test platforms
 
 ci-pr:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test pr
+
+ci-platforms:
+	$(MAKE) -C test platforms
 
 .PHONY: clean
 clean:
