@@ -24,10 +24,18 @@ To run add a label you may use:
 rtf -x -l slow run
 ```
 
-To run tests that match the pattern `linuxkit.examples` you would use the following command:
+You can list the tests which will be run using:
 
 ```
-rtf -x run linuxkit.examples
+rtf list
+```
+
+Some tests may be marked as `SKIP` and `LABELS` column will typically provide and indication as to why a test may be skipped.
+
+To run tests that match the pattern `linuxkit.build` you would use the following command:
+
+```
+rtf -x run linuxkit.build
 ```
 
 ### Writing new tests
@@ -41,7 +49,7 @@ If you feel that a new group is warranted you can create one by `mkdir 000_name`
 You must copy an existing `group.sh` in to this folder and adjust as required or you may use the
 [example](https://github.com/linuxkit/rtf/tree/master/etc/templates/group.sh)
 
-To write your test, create a folder within the group using the `000_name` format as described aboce.
+To write your test, create a folder within the group using the `000_name` format as described above.
 You should then copy an existing `test.sh` in to this directory and amdend it,
 or start from an [example](http://github.com/linuxkit/rtf/tree/master/etc/templates/test.sh)
 
@@ -50,8 +58,12 @@ avoid it being run by default and document the use of the label in `tests/README
 
 ## Continuous Integration
 
-The LiunxKit CI system uses [DatakitCI](https://github.com/moby/datakit/tree/master/ci)
+*Note: This will hopefully change significantly soon*
+
+The LinuxKit CI system uses [DatakitCI](https://github.com/moby/datakit/tree/master/ci)
 The configuration can be found [here](https://github.com/linuxkit/linuxkit-ci)
+
+The test logs are available via the `Details` link but also via this [website](https://linuxkit.datakit.ci). The raw test logs are also stored on [GitHub](https://github.com/linuxkit/linuxkit-logs) where each branch contains the results for a particular run.
 
 ## PR Testing
 
@@ -61,9 +73,9 @@ This machine has no privileges or credentials to talk to GCP or other cloud plat
 TODO: Add instructions on how to build a base image for LinuxKit CI in GCP.
 
 LinuxKit CI runs `make ci-pr` in the VM.
-This target runs the tests using `rtf` and the results directory is SCP'd back to the controller.
+This target runs the tests using `rtf` and the results directory is `scp`'ed back to the controller.
 The test results will be stored in DataKit for additional access
-Additionally a the `./artifacts` folder is SCP'd back to the controller.
+Additionally, the `./artifacts` folder is `scp`'ed back to the controller.
 
 If the tests passed the next step is to check if the kernel config test image runs on GCP.
 The `./artifacts/test.img.tar.gz` file is used to create a GCP image by the Python scripts

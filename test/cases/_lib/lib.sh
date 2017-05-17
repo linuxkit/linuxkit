@@ -5,7 +5,6 @@
 
 # Temporary directory for tests to use.
 LINUXKIT_TMPDIR="${RT_PROJECT_ROOT}/_tmp"
-LINUXKIT_ARTIFACTS_DIR="${RT_PROJECT_ROOT}/../../artifacts"
 
 # The top-level group.sh of the project creates a env.sh file
 # containing environment variables for tests. Source it if present.
