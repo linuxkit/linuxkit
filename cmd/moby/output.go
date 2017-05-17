@@ -21,7 +21,7 @@ const (
 	vmdk = "linuxkit/mkimage-vmdk:182b541474ca7965c8e8f987389b651859f760da@sha256:99638c5ddb17614f54c6b8e11bd9d49d1dea9d837f38e0f6c1a5f451085d449b"
 )
 
-func outputs(m *Moby, base string, image []byte) error {
+func outputs(m Moby, base string, image []byte) error {
 	log.Debugf("output: %s %s", m.Outputs, base)
 
 	for _, o := range m.Outputs {

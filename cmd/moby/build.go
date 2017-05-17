@@ -125,7 +125,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 
 // Perform the actual build process
 // TODO return error not panic
-func buildInternal(m *Moby, name string, pull bool) []byte {
+func buildInternal(m Moby, name string, pull bool) []byte {
 	w := new(bytes.Buffer)
 	iw := tar.NewWriter(w)
 
@@ -177,7 +177,7 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 	}
 	for i, image := range m.Onboot {
 		log.Infof("  Create OCI config for %s", image.Image)
-		config, err := ConfigToOCI(&image)
+		config, err := ConfigToOCI(image)
 		if err != nil {
 			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
 		}
@@ -196,7 +196,7 @@ func buildInternal(m *Moby, name string, pull bool) []byte {
 	}
 	for _, image := range m.Services {
 		log.Infof("  Create OCI config for %s", image.Image)
-		config, err := ConfigToOCI(&image)
+		config, err := ConfigToOCI(image)
 		if err != nil {
 			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
 		}

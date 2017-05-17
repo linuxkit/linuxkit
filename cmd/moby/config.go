@@ -14,6 +14,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v2"
@@ -48,32 +49,32 @@ type TrustConfig struct {
 
 // MobyImage is the type of an image config
 type MobyImage struct {
-	Name              string
-	Image             string
-	Capabilities      []string
-	Mounts            []specs.Mount
-	Binds             []string
-	Tmpfs             []string
-	Command           []string
-	Env               []string
-	Cwd               string
-	Net               string
-	Pid               string
-	Ipc               string
-	Uts               string
-	Readonly          bool
-	MaskedPaths       []string `yaml:"maskedPaths"`
-	ReadonlyPaths     []string `yaml:"readonlyPaths"`
-	UID               uint32   `yaml:"uid"`
-	GID               uint32   `yaml:"gid"`
-	AdditionalGids    []uint32 `yaml:"additionalGids"`
-	NoNewPrivileges   bool     `yaml:"noNewPrivileges"`
-	Hostname          string
-	OomScoreAdj       int    `yaml:"oomScoreAdj"`
-	DisableOOMKiller  bool   `yaml:"disableOOMKiller"`
-	RootfsPropagation string `yaml:"rootfsPropagation"`
-	CgroupsPath       string `yaml:"cgroupsPath"`
-	Sysctl            map[string]string
+	Name              string             `yaml:"name" json:"name"`
+	Image             string             `yaml:"image" json:"image"`
+	Capabilities      *[]string          `yaml:"capabilities" json:"capabilities,omitempty"`
+	Mounts            *[]specs.Mount     `yaml:"mounts" json:"mounts,omitempty"`
+	Binds             *[]string          `yaml:"binds" json:"binds,omitempty"`
+	Tmpfs             *[]string          `yaml:"tmpfs" json:"tmpfs,omitempty"`
+	Command           *[]string          `yaml:"command" json:"command,omitempty"`
+	Env               *[]string          `yaml:"env" json:"env,omitempty"`
+	Cwd               string             `yaml:"cwd" json:"cwd"`
+	Net               string             `yaml:"net" json:"net"`
+	Pid               string             `yaml:"pid" json:"pid"`
+	Ipc               string             `yaml:"ipc" json:"ipc"`
+	Uts               string             `yaml:"uts" json:"uts"`
+	Hostname          string             `yaml:"hostname" json:"hostname"`
+	Readonly          *bool              `yaml:"readonly" json:"readonly,omitempty"`
+	MaskedPaths       *[]string          `yaml:"maskedPaths" json:"maskedPaths,omitempty"`
+	ReadonlyPaths     *[]string          `yaml:"readonlyPaths" json:"readonlyPaths,omitempty"`
+	UID               *uint32            `yaml:"uid" json:"uid,omitempty"`
+	GID               *uint32            `yaml:"gid" json:"gid,omitempty"`
+	AdditionalGids    *[]uint32          `yaml:"additionalGids" json:"additionalGids,omitempty"`
+	NoNewPrivileges   *bool              `yaml:"noNewPrivileges" json:"noNewPrivileges,omitempty"`
+	OOMScoreAdj       *int               `yaml:"oomScoreAdj" json:"oomScoreAdj,omitempty"`
+	DisableOOMKiller  *bool              `yaml:"disableOOMKiller" json:"disableOOMKiller,omitempty"`
+	RootfsPropagation *string            `yaml:"rootfsPropagation" json:"rootfsPropagation,omitempty"`
+	CgroupsPath       *string            `yaml:"cgroupsPath" json:"cgroupsPath,omitempty"`
+	Sysctl            *map[string]string `yaml:"sysctl" json:"sysctl,omitempty"`
 }
 
 // github.com/go-yaml/yaml treats map keys as interface{} while encoding/json
@@ -98,14 +99,14 @@ func convert(i interface{}) interface{} {
 }
 
 // NewConfig parses a config file
-func NewConfig(config []byte) (*Moby, error) {
+func NewConfig(config []byte) (Moby, error) {
 	m := Moby{}
 
 	// Parse raw yaml
 	var rawYaml interface{}
 	err := yaml.Unmarshal(config, &rawYaml)
 	if err != nil {
-		return &m, err
+		return m, err
 	}
 
 	// Convert to raw JSON
@@ -116,27 +117,93 @@ func NewConfig(config []byte) (*Moby, error) {
 	documentLoader := gojsonschema.NewGoLoader(rawJSON)
 	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
 	if err != nil {
-		return &m, err
+		return m, err
 	}
 	if !result.Valid() {
 		fmt.Printf("The configuration file is invalid:\n")
 		for _, desc := range result.Errors() {
 			fmt.Printf("- %s\n", desc)
 		}
-		return &m, fmt.Errorf("invalid configuration file")
+		return m, fmt.Errorf("invalid configuration file")
 	}
 
 	// Parse yaml
 	err = yaml.Unmarshal(config, &m)
 	if err != nil {
-		return &m, err
+		return m, err
 	}
 
-	return &m, nil
+	return m, nil
+}
+
+// NewImage validates an parses yaml or json for a MobyImage
+func NewImage(config []byte) (MobyImage, error) {
+	log.Debugf("Reading label config: %s", string(config))
+
+	mi := MobyImage{}
+
+	// Parse raw yaml
+	var rawYaml interface{}
+	err := yaml.Unmarshal(config, &rawYaml)
+	if err != nil {
+		return mi, err
+	}
+
+	// Convert to raw JSON
+	rawJSON := convert(rawYaml)
+
+	// check it is an object not an array
+	jsonObject, ok := rawJSON.(map[string]interface{})
+	if !ok {
+		return mi, fmt.Errorf("JSON is an array not an object: %s", string(config))
+	}
+
+	// add a dummy name and image to pass validation
+	var dummyName interface{}
+	var dummyImage interface{}
+	dummyName = "dummyname"
+	dummyImage = "dummyimage"
+	jsonObject["name"] = dummyName
+	jsonObject["image"] = dummyImage
+
+	// Validate it as {"services": [config]}
+	var services [1]interface{}
+	services[0] = rawJSON
+	serviceJSON := map[string]interface{}{"services": services}
+
+	// Validate serviceJSON with JSON schema
+	schemaLoader := gojsonschema.NewStringLoader(schema)
+	documentLoader := gojsonschema.NewGoLoader(serviceJSON)
+	result, err := gojsonschema.Validate(schemaLoader, documentLoader)
+	if err != nil {
+		return mi, err
+	}
+	if !result.Valid() {
+		fmt.Printf("The org.mobyproject.config label is invalid:\n")
+		for _, desc := range result.Errors() {
+			fmt.Printf("- %s\n", desc)
+		}
+		return mi, fmt.Errorf("invalid configuration label")
+	}
+
+	// Parse yaml
+	err = yaml.Unmarshal(config, &mi)
+	if err != nil {
+		return mi, err
+	}
+
+	if mi.Name != "" {
+		return mi, fmt.Errorf("name cannot be set in metadata label")
+	}
+	if mi.Image != "" {
+		return mi, fmt.Errorf("image cannot be set in metadata label")
+	}
+
+	return mi, nil
 }
 
 // ConfigToOCI converts a config specification to an OCI config file
-func ConfigToOCI(image *MobyImage) ([]byte, error) {
+func ConfigToOCI(image MobyImage) ([]byte, error) {
 
 	// TODO pass through same docker client to all functions
 	cli, err := dockerClient()
@@ -149,7 +216,12 @@ func ConfigToOCI(image *MobyImage) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	return ConfigInspectToOCI(image, inspect)
+	oci, err := ConfigInspectToOCI(image, inspect)
+	if err != nil {
+		return []byte{}, err
+	}
+
+	return json.MarshalIndent(oci, "", "    ")
 }
 
 func defaultMountpoint(tp string) string {
@@ -185,39 +257,192 @@ func (m mlist) parts(i int) int {
 	return strings.Count(filepath.Clean(m[i].Destination), string(os.PathSeparator))
 }
 
-// ConfigInspectToOCI converts a config and the output of image inspect to an OCI config file
-func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, error) {
+// assignBool does ordered overrides from JSON bool pointers
+func assignBool(v1, v2 *bool) bool {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return false
+}
+
+// assignBoolPtr does ordered overrides from JSON bool pointers
+func assignBoolPtr(v1, v2 *bool) *bool {
+	if v2 != nil {
+		return v2
+	}
+	if v1 != nil {
+		return v1
+	}
+	return nil
+}
+
+// assignIntPtr does ordered overrides from JSON int pointers
+func assignIntPtr(v1, v2 *int) *int {
+	if v2 != nil {
+		return v2
+	}
+	if v1 != nil {
+		return v1
+	}
+	return nil
+}
+
+// assignUint32 does ordered overrides from JSON uint32 pointers
+func assignUint32(v1, v2 *uint32) uint32 {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return 0
+}
+
+// assignUint32Array does ordered overrides from JSON uint32 array pointers
+func assignUint32Array(v1, v2 *[]uint32) []uint32 {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return []uint32{}
+}
+
+// assignStrings does ordered overrides from JSON string array pointers
+func assignStrings(v1, v2 *[]string) []string {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return []string{}
+}
+
+// assignStrings3 does ordered overrides from JSON string array pointers
+func assignStrings3(v1 []string, v2, v3 *[]string) []string {
+	if v3 != nil {
+		return *v3
+	}
+	if v2 != nil {
+		return *v2
+	}
+	return v1
+}
+
+// assignMaps does ordered overrides from JSON string map pointers
+func assignMaps(v1, v2 *map[string]string) map[string]string {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return map[string]string{}
+}
+
+// assignBinds does ordered overrides from JSON Bind array pointers
+func assignBinds(v1, v2 *[]specs.Mount) []specs.Mount {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return []specs.Mount{}
+}
+
+// assignString does ordered overrides from JSON string pointers
+func assignString(v1, v2 *string) string {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return ""
+}
+
+// assignStringEmpty does ordered overrides if strings are empty, for
+// values where there is always an explicit override eg "none"
+func assignStringEmpty(v1, v2 string) string {
+	if v2 != "" {
+		return v2
+	}
+	return v1
+}
+
+// assign StringEmpty4 does ordered overrides if strings are empty, for
+// values where there is always an explicit override eg "none"
+func assignStringEmpty4(v1, v2, v3, v4 string) string {
+	if v4 != "" {
+		return v4
+	}
+	if v3 != "" {
+		return v3
+	}
+	if v2 != "" {
+		return v2
+	}
+	return v1
+}
+
+// emptyNone replaces "none" with the empty string
+func emptyNone(v string) string {
+	if v == "none" {
+		return ""
+	}
+	return v
+}
+
+// ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
+func ConfigInspectToOCI(yaml MobyImage, inspect types.ImageInspect) (specs.Spec, error) {
 	oci := specs.Spec{}
 
-	config := inspect.Config
-	if config == nil {
-		return []byte{}, errors.New("empty image config")
+	var inspectConfig container.Config
+	if inspect.Config != nil {
+		inspectConfig = *inspect.Config
 	}
 
-	args := append(config.Entrypoint, config.Cmd...)
-	if len(image.Command) != 0 {
-		args = image.Command
+	// look for org.mobyproject.config label
+	var label MobyImage
+	labelString := inspectConfig.Labels["org.mobyproject.config"]
+	if labelString != "" {
+		var err error
+		label, err = NewImage([]byte(labelString))
+		if err != nil {
+			return oci, err
+		}
 	}
-	env := config.Env
-	if len(image.Env) != 0 {
-		env = image.Env
-	}
-	cwd := config.WorkingDir
-	if image.Cwd != "" {
-		cwd = image.Cwd
-	}
-	if cwd == "" {
-		cwd = "/"
-	}
+
+	// command, env and cwd can be taken from image, as they are commonly specified in Dockerfile
+
+	// TODO we could handle entrypoint and cmd independently more like Docker
+	inspectCommand := append(inspectConfig.Entrypoint, inspect.Config.Cmd...)
+	args := assignStrings3(inspectCommand, label.Command, yaml.Command)
+
+	env := assignStrings3(inspectConfig.Env, label.Env, yaml.Env)
+
+	// empty Cwd not allowed in OCI, must be / in that case
+	cwd := assignStringEmpty4("/", inspectConfig.WorkingDir, label.Cwd, yaml.Cwd)
+
+	// the other options will never be in the image config, but may be in label or yaml
+
+	readonly := assignBool(label.Readonly, yaml.Readonly)
+
 	// default options match what Docker does
 	procOptions := []string{"nosuid", "nodev", "noexec", "relatime"}
 	devOptions := []string{"nosuid", "strictatime", "mode=755", "size=65536k"}
-	if image.Readonly {
+	if readonly {
 		devOptions = append(devOptions, "ro")
 	}
 	ptsOptions := []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"}
 	sysOptions := []string{"nosuid", "noexec", "nodev"}
-	if image.Readonly {
+	if readonly {
 		sysOptions = append(sysOptions, "ro")
 	}
 	cgroupOptions := []string{"nosuid", "noexec", "nodev", "relatime", "ro"}
@@ -229,10 +454,10 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 		"/sys":           {Destination: "/sys", Type: "sysfs", Source: "sysfs", Options: sysOptions},
 		"/sys/fs/cgroup": {Destination: "/sys/fs/cgroup", Type: "cgroup", Source: "cgroup", Options: cgroupOptions},
 	}
-	for _, t := range image.Tmpfs {
+	for _, t := range assignStrings(label.Tmpfs, yaml.Tmpfs) {
 		parts := strings.Split(t, ":")
 		if len(parts) > 2 {
-			return []byte{}, fmt.Errorf("Cannot parse tmpfs, too many ':': %s", t)
+			return oci, fmt.Errorf("Cannot parse tmpfs, too many ':': %s", t)
 		}
 		dest := parts[0]
 		opts := []string{}
@@ -241,13 +466,13 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 		}
 		mounts[dest] = specs.Mount{Destination: dest, Type: "tmpfs", Source: "tmpfs", Options: opts}
 	}
-	for _, b := range image.Binds {
+	for _, b := range assignStrings(label.Binds, yaml.Binds) {
 		parts := strings.Split(b, ":")
 		if len(parts) < 2 {
-			return []byte{}, fmt.Errorf("Cannot parse bind, missing ':': %s", b)
+			return oci, fmt.Errorf("Cannot parse bind, missing ':': %s", b)
 		}
 		if len(parts) > 3 {
-			return []byte{}, fmt.Errorf("Cannot parse bind, too many ':': %s", b)
+			return oci, fmt.Errorf("Cannot parse bind, too many ':': %s", b)
 		}
 		src := parts[0]
 		dest := parts[1]
@@ -257,7 +482,7 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 		}
 		mounts[dest] = specs.Mount{Destination: dest, Type: "bind", Source: src, Options: opts}
 	}
-	for _, m := range image.Mounts {
+	for _, m := range assignBinds(label.Mounts, yaml.Mounts) {
 		tp := m.Type
 		src := m.Source
 		dest := m.Destination
@@ -272,7 +497,7 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 			tp = "tmpfs"
 		}
 		if tp == "" {
-			return []byte{}, fmt.Errorf("Mount for destination %s is missing type", dest)
+			return oci, fmt.Errorf("Mount for destination %s is missing type", dest)
 		}
 		if src == "" {
 			// usually sane, eg proc, tmpfs etc
@@ -282,7 +507,7 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 			dest = defaultMountpoint(tp)
 		}
 		if dest == "" {
-			return []byte{}, fmt.Errorf("Mount type %s is missing destination", tp)
+			return oci, fmt.Errorf("Mount type %s is missing destination", tp)
 		}
 		mounts[dest] = specs.Mount{Destination: dest, Type: tp, Source: src, Options: opts}
 	}
@@ -294,22 +519,26 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 
 	namespaces := []specs.LinuxNamespace{}
 	// to attach to an existing namespace, easiest to bind mount with nsfs in a system container
-	if image.Net != "host" {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.NetworkNamespace, Path: image.Net})
+	netNS := assignStringEmpty(label.Net, yaml.Net)
+	if netNS != "host" {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.NetworkNamespace, Path: emptyNone(netNS)})
 	}
-	if image.Pid != "host" {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.PIDNamespace, Path: image.Pid})
+	pidNS := assignStringEmpty(label.Pid, yaml.Pid)
+	if pidNS != "host" {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.PIDNamespace, Path: emptyNone(pidNS)})
 	}
-	if image.Ipc != "host" {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.IPCNamespace, Path: image.Ipc})
+	ipcNS := assignStringEmpty(label.Ipc, yaml.Ipc)
+	if ipcNS != "host" {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.IPCNamespace, Path: emptyNone(ipcNS)})
 	}
-	if image.Uts != "host" {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UTSNamespace, Path: image.Uts})
+	utsNS := assignStringEmpty(label.Uts, yaml.Uts)
+	if utsNS != "host" {
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UTSNamespace, Path: emptyNone(utsNS)})
 	}
 	// TODO user, cgroup namespaces, maybe mount=host if useful
 	namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.MountNamespace})
 
-	caps := image.Capabilities
+	caps := assignStrings(label.Capabilities, yaml.Capabilities)
 	if len(caps) == 1 {
 		switch cap := strings.ToLower(caps[0]); cap {
 		case "none":
@@ -369,9 +598,9 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 		Terminal: false,
 		//ConsoleSize
 		User: specs.User{
-			UID:            image.UID,
-			GID:            image.GID,
-			AdditionalGids: image.AdditionalGids,
+			UID:            assignUint32(label.UID, yaml.UID),
+			GID:            assignUint32(label.GID, yaml.GID),
+			AdditionalGids: assignUint32Array(label.AdditionalGids, yaml.AdditionalGids),
 			// Username (Windows)
 		},
 		Args: args,
@@ -385,26 +614,28 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 			Ambient:     []string{},
 		},
 		Rlimits:         []specs.LinuxRlimit{},
-		NoNewPrivileges: image.NoNewPrivileges,
+		NoNewPrivileges: assignBool(label.NoNewPrivileges, yaml.NoNewPrivileges),
 		// ApparmorProfile
+		// TODO FIXME this has moved in runc spec and needs a revendor and update
+		//OOMScoreAdj: assignIntPtr(label.OOMScoreAdj, yaml.OOMScoreAdj),
 		// SelinuxLabel
 	}
 
 	oci.Root = specs.Root{
 		Path:     "rootfs",
-		Readonly: image.Readonly,
+		Readonly: readonly,
 	}
 
-	oci.Hostname = image.Hostname
+	oci.Hostname = assignStringEmpty(label.Hostname, yaml.Hostname)
 	oci.Mounts = mountList
 
 	oci.Linux = &specs.Linux{
 		// UIDMappings
 		// GIDMappings
-		Sysctl: image.Sysctl,
+		Sysctl: assignMaps(label.Sysctl, yaml.Sysctl),
 		Resources: &specs.LinuxResources{
 			// Devices
-			DisableOOMKiller: &image.DisableOOMKiller,
+			DisableOOMKiller: assignBoolPtr(label.DisableOOMKiller, yaml.DisableOOMKiller),
 			// Memory
 			// CPU
 			// Pids
@@ -412,21 +643,21 @@ func ConfigInspectToOCI(image *MobyImage, inspect types.ImageInspect) ([]byte, e
 			// HugepageLimits
 			// Network
 		},
-		CgroupsPath: image.CgroupsPath,
+		CgroupsPath: assignString(label.CgroupsPath, yaml.CgroupsPath),
 		Namespaces:  namespaces,
 		// Devices
 		// Seccomp
-		RootfsPropagation: image.RootfsPropagation,
-		MaskedPaths:       image.MaskedPaths,
-		ReadonlyPaths:     image.ReadonlyPaths,
+		RootfsPropagation: assignString(label.RootfsPropagation, yaml.RootfsPropagation),
+		MaskedPaths:       assignStrings(label.MaskedPaths, yaml.MaskedPaths),
+		ReadonlyPaths:     assignStrings(label.ReadonlyPaths, yaml.ReadonlyPaths),
 		// MountLabel
 		// IntelRdt
 	}
 
-	return json.MarshalIndent(oci, "", "    ")
+	return oci, nil
 }
 
-func filesystem(m *Moby) (*bytes.Buffer, error) {
+func filesystem(m Moby) (*bytes.Buffer, error) {
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
 	defer tw.Close()
