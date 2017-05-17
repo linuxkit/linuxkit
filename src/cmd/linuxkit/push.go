@@ -33,6 +33,8 @@ func push(args []string) {
 		os.Exit(0)
 	case "gcp":
 		pushGcp(args[1:])
+	case "azure":
+		pushAzure(args[1:])
 	default:
 		log.Errorf("No 'push' backend specified.")
 	}
