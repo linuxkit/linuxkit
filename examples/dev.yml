@@ -77,8 +77,8 @@ services:
      - /var/run/:/var/run/
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
-  - name: sshd
-    image: "linuxkit/sshd:e108d208adf692c8a0954f602743e0eec445364e"
+  - name: dev
+    image: "linuxkit/dev:8079304d97ae9eb3c0f6240d674407c036ea817e"
     capabilities:
      - all
     net: host
