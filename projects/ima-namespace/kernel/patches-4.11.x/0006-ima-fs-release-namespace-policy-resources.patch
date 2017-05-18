@@ -1,0 +1,104 @@
+From 49c15686df3676edcc354a02c666f66b81bbb348 Mon Sep 17 00:00:00 2001
+From: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+Date: Tue, 9 May 2017 16:50:01 -0300
+Subject: [PATCH 06/11] ima, fs: release namespace policy resources
+
+Release all namespace IMA policy resources when the mount namespace is
+released.
+This is the suggested mechanism to release namespace policy resources,
+but we still can discuss other methods to avoid cross-component changes.
+
+Signed-off-by: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+---
+ fs/namespace.c                  |  4 ++++
+ include/linux/integrity.h       |  9 +++++++++
+ security/integrity/ima/ima_fs.c | 26 ++++++++++++++++++++++++++
+ 3 files changed, 39 insertions(+)
+
+diff --git a/fs/namespace.c b/fs/namespace.c
+index cc1375ef..80940998 100644
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -15,6 +15,7 @@
+ #include <linux/user_namespace.h>
+ #include <linux/namei.h>
+ #include <linux/security.h>
++#include <linux/integrity.h>
+ #include <linux/cred.h>
+ #include <linux/idr.h>
+ #include <linux/init.h>		/* init_rootfs */
+@@ -3283,6 +3284,9 @@ void put_mnt_ns(struct mnt_namespace *ns)
+ {
+ 	if (!atomic_dec_and_test(&ns->count))
+ 		return;
++
++	ima_mnt_namespace_dying(ns->ns.inum);
++
+ 	drop_collected_mounts(&ns->root->mnt);
+ 	free_mnt_ns(ns);
+ }
+diff --git a/include/linux/integrity.h b/include/linux/integrity.h
+index c2d6082..034d082 100644
+--- a/include/linux/integrity.h
++++ b/include/linux/integrity.h
+@@ -43,4 +43,13 @@ static inline void integrity_load_keys(void)
+ }
+ #endif /* CONFIG_INTEGRITY */
+ 
++#ifdef CONFIG_IMA_PER_NAMESPACE
++extern void ima_mnt_namespace_dying(unsigned int ns_id);
++#else
++static inline void ima_mnt_namespace_dying(unsigned int ns_id)
++{
++	return;
++}
++#endif /* CONFIG_IMA_PER_NAMESPACE */
++
+ #endif /* _LINUX_INTEGRITY_H */
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index ce6dcdf..56ba0ff 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -423,6 +423,7 @@ static ssize_t ima_write_policy(struct file *file, const char __user *buf,
+ 		integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL, NULL,
+ 				    "policy_update", "signed policy required",
+ 				    1, 0);
++
+ 		if (ima_appraise & IMA_APPRAISE_ENFORCE)
+ 			result = -EACCES;
+ 	} else {
+@@ -579,6 +580,31 @@ static int create_mnt_ns_directory(unsigned int ns_id)
+ 	return result;
+ }
+ 
++/*
++ * ima_mnt_namespace_dying - releases all namespace policy resources
++ * It is called automatically when the namespace is released.
++ * @ns_id namespace id to be released
++ *
++ * Note: This function is called by put_mnt_ns() in the context
++ * of a namespace release. We need to make sure that a lock on
++ * this path is allowed.
++ */
++void ima_mnt_namespace_dying(unsigned int ns_id)
++{
++	struct ima_ns_policy *p;
++
++	spin_lock(&ima_ns_policy_lock);
++	p = radix_tree_delete(&ima_ns_policy_mapping, ns_id);
++
++	if (!p) {
++		spin_unlock(&ima_ns_policy_lock);
++		return;
++	}
++
++	free_namespace_policy(p);
++	spin_unlock(&ima_ns_policy_lock);
++}
++
+ static ssize_t handle_new_namespace_policy(const char *data, size_t datalen)
+ {
+ 	unsigned int ns_id;
+-- 
+2.9.3
+

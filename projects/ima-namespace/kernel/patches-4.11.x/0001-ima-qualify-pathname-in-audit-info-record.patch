@@ -1,0 +1,44 @@
+From 9d601ff5f8a643bf2d9995e073fa5ba2f5a5e9db Mon Sep 17 00:00:00 2001
+From: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+Date: Tue, 9 May 2017 10:34:10 -0300
+Subject: [PATCH 01/11] ima: qualify pathname in audit info record
+
+Adding new field (mount namespace id, along with already existent file
+inode and device name) to uniquely identify a pathname considering
+different mount namespaces. The file inode on a given device is unique
+and these fields are required to identify a namespace id since this
+id can be released and later reused by a different namespace.
+
+Signed-off-by: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+---
+ security/integrity/integrity_audit.c | 5 +++++
+ 1 file changed, 5 insertions(+)
+
+diff --git a/security/integrity/integrity_audit.c b/security/integrity/integrity_audit.c
+index 90987d1..e675e42 100644
+--- a/security/integrity/integrity_audit.c
++++ b/security/integrity/integrity_audit.c
+@@ -13,6 +13,7 @@
+ #include <linux/fs.h>
+ #include <linux/gfp.h>
+ #include <linux/audit.h>
++#include <linux/proc_ns.h>
+ #include "integrity.h"
+ 
+ static int integrity_audit_info;
+@@ -52,8 +53,12 @@ void integrity_audit_msg(int audit_msgno, struct inode *inode,
+ 	audit_log_format(ab, " comm=");
+ 	audit_log_untrustedstring(ab, get_task_comm(name, current));
+ 	if (fname) {
++		struct ns_common *ns;
+ 		audit_log_format(ab, " name=");
+ 		audit_log_untrustedstring(ab, fname);
++		ns = mntns_operations.get(current);
++		audit_log_format(ab, " mnt_ns=%u", ns->inum);
++		mntns_operations.put(ns);
+ 	}
+ 	if (inode) {
+ 		audit_log_format(ab, " dev=");
+-- 
+2.9.3
+

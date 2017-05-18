@@ -22,6 +22,8 @@ If you want to create a project, please submit a pull request to create a new di
 - [Logging](logging/) Experimental logging tools
 - [etcd cluster](etcd/) etcd cluster demo from DockerCon'17
 - [kernel-config](kernel-config/) an experiment on how to manage kernel config
+- [IMA-namespace](ima-namespace/) patches for supporting per-mount-namespace
+  IMA policies
 
 ## Current projects not yet documented
 - VMWare support (VMWare)
