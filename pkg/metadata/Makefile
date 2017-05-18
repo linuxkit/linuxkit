@@ -4,6 +4,7 @@ SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c
 
 METADATA_BINARY=usr/bin/metadata
 
+ORG?=linuxkit
 IMAGE=metadata
 
 .PHONY: tag push clean container
@@ -26,15 +27,15 @@ hash: Dockerfile $(DEPS)
 	find $^ -type f | xargs cat | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
 
 push: hash container
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 docker push linuxkit/$(IMAGE):$(shell cat hash))
+	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
+		(docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash) && \
+		 docker push $(ORG)/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: hash container
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
+	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
+		docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash)
 	docker rmi $(IMAGE):build
 	rm -f hash
 

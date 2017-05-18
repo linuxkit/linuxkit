@@ -1,3 +1,6 @@
+alpine-baselayout
+alpine-keys
+apk-tools
 argp-standalone
 automake
 bash
@@ -12,6 +15,7 @@ build-base
 ca-certificates
 cdrkit
 cmake
+cryptsetup
 curl
 dhcpcd
 dosfstools
@@ -29,6 +33,7 @@ jq
 kmod
 libarchive-tools
 libc-dev
+libc-utils
 libelf-dev
 libseccomp-dev
 linux-headers
@@ -51,6 +56,7 @@ sfdisk
 squashfs-tools
 syslinux
 tar
+tini
 util-linux
 util-linux-dev
 vim

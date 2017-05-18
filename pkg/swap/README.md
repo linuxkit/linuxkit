@@ -8,7 +8,7 @@ Normally, unless you are running explicitly in a desktop version, LinuxKit image
 ```
 onboot:
   - name: swap
-    image: "linuxkit/swap:a881d50445ea27624be67dcda39313e7a2051982"
+    image: "linuxkit/swap:c4c723a3d6678dc49770181bbb231ec99b271c75"
     net: host
     pid: host
     capabilities:

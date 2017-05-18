@@ -3,8 +3,8 @@ kernel:
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:42fe8cb1508b3afed39eb89821906e3cc7a70551
-  - linuxkit/runc:47b1c38d63468c0f3078f8b1b055d07965a1895d
-  - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
+  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
+  - linuxkit/containerd:1c71f95fa36040ea7e987deb98a7a2a363853f01
   - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
@@ -16,12 +16,12 @@ onboot:
      - CAP_SYS_ADMIN
     readonly: true
   - name: binfmt
-    image: "linuxkit/binfmt:131026c0cf6084467316395fed3b358f64bda00c"
+    image: "linuxkit/binfmt:548f7f044f5411a8938913527c5ce55d9876bb07"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
+    image: "linuxkit/dhcpcd:cb96c09a33c166eca6530f166f0f79927c3e83b0"
     binds:
      - /var:/var
      - /tmp/etc:/etc
@@ -48,7 +48,7 @@ onboot:
     rootfsPropagation: shared
     command: ["/mount.sh", "/var/external"]
   - name: swap
-    image: "linuxkit/swap:a881d50445ea27624be67dcda39313e7a2051982"
+    image: "linuxkit/swap:c4c723a3d6678dc49770181bbb231ec99b271c75"
     net: host
     pid: host
     capabilities:
