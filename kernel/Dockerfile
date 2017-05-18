@@ -66,7 +66,7 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
 
-FROM linuxkit/toybox-media:b396a375852e5dffc002389d95e0658c8de72914@sha256:a317cc378946ee48cc011cdfc5aa08f0229f5bf10ff70e3690d8f60b36700033
+FROM scratch
 ENTRYPOINT []
 CMD []
 WORKDIR /
