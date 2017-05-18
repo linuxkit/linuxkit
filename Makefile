@@ -9,6 +9,7 @@ PREFIX?=/usr/local
 moby: $(DEPS) lint
 	go build --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ github.com/moby/tool/cmd/moby
 
+.PHONY: lint
 lint:
 	@echo "+ $@: golint, gofmt, go vet"
 	# golint
@@ -17,6 +18,8 @@ lint:
 	@test -z "$$(gofmt -s -l .| grep -v .pb. | grep -v vendor/ | tee /dev/stderr)"
 	# govet
 	@test -z "$$(go tool vet -printf=false . 2>&1 | grep -v vendor/ | tee /dev/stderr)"
+	# go test
+	@go test github.com/moby/tool/cmd/moby
 
 test: moby
 	./moby build test/test.yml
