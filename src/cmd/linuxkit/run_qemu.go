@@ -63,6 +63,9 @@ func runQemu(args []string) {
 	cpus := flags.String("cpus", "1", "Number of CPUs")
 	mem := flags.String("mem", "1024", "Amount of memory in MB")
 
+	// Backend configuration
+	qemuContainerized := flags.Bool("containerized", false, "Run qemu in a container")
+
 	publishFlags := multipleFlag{}
 	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
 
@@ -95,6 +98,7 @@ func runQemu(args []string) {
 		Arch:           *arch,
 		CPUs:           *cpus,
 		Memory:         *mem,
+		Containerized:  *qemuContainerized,
 		PublishedPorts: publishFlags,
 	}
 
