@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 // QemuImg is the version of qemu container
@@ -178,7 +179,11 @@ func runQemuContainer(config QemuConfig) error {
 	var args []string
 	config, args = buildQemuCmdline(config)
 
-	dockerArgs := []string{"run", "-i", "--rm", "-v", fmt.Sprintf("%s:%s", wd, "/tmp"), "-w", "/tmp"}
+	dockerArgs := []string{"run", "--interactive", "--rm", "-v", fmt.Sprintf("%s:%s", wd, "/tmp"), "-w", "/tmp"}
+
+	if terminal.IsTerminal(int(os.Stdin.Fd())) {
+		dockerArgs = append(dockerArgs, "--tty")
+	}
 
 	if config.KVM {
 		dockerArgs = append(dockerArgs, "--device", "/dev/kvm")
