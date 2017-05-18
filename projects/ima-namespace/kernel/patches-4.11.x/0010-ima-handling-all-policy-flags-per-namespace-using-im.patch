@@ -1,0 +1,689 @@
+From c424a95ccee13d974fa54e92ca50cec5b19a9e94 Mon Sep 17 00:00:00 2001
+From: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+Date: Tue, 9 May 2017 18:00:55 -0300
+Subject: [PATCH 10/11] ima: handling all policy flags per namespace using
+ ima_ns_policy structure
+
+Global ima_appraise still saves the initial appraise mode and it is used to
+initialize namespace.ima_appraise flag when a user defined policy is set.
+Globals moved into ima_ns_policy structure (namespace IMA policy private data):
+    - ima_policy_flag
+    - ima_appraise
+    - ima_rules
+    - ima_policy_rules
+Functions changed to take as parameter the correct ima_ns_policy structure.
+ima_initial_namespace_policy is initialized in ima_init_policy and stores the
+initial namespace IMA policy data.
+Replacing direct uses of ima_ns_policy lock with the ima_namespace_lock() and
+ima_namespace_unlock() functions.
+
+Signed-off-by: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+---
+ security/integrity/ima/ima.h          |  17 +++---
+ security/integrity/ima/ima_api.c      |   6 +-
+ security/integrity/ima/ima_appraise.c |  21 +++++--
+ security/integrity/ima/ima_fs.c       |  26 ++++++---
+ security/integrity/ima/ima_init.c     |  11 +++-
+ security/integrity/ima/ima_main.c     |  36 ++++++++----
+ security/integrity/ima/ima_policy.c   | 100 +++++++++++++++++++++++++---------
+ 7 files changed, 150 insertions(+), 67 deletions(-)
+
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index 20b927e..fd5cfe9 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -61,9 +61,6 @@ enum tpm_pcrs { TPM_PCR0 = 0, TPM_PCR8 = 8 };
+ #endif
+ 
+ 
+-/* current content of the policy */
+-extern int ima_policy_flag;
+-
+ /* set during initialization */
+ extern int ima_initialized;
+ extern int ima_used_chip;
+@@ -149,7 +146,6 @@ struct ima_ns_policy {
+ 	int ima_policy_flag;
+ 	int ima_appraise;
+ };
+-
+ extern struct ima_ns_policy ima_initial_namespace_policy;
+ #ifdef CONFIG_IMA_PER_NAMESPACE
+ extern spinlock_t ima_ns_policy_lock;
+@@ -241,7 +237,7 @@ enum ima_hooks {
+ 
+ /* LIM API function definitions */
+ int ima_get_action(struct inode *inode, int mask,
+-		   enum ima_hooks func, int *pcr);
++		   enum ima_hooks func, int *pcr, struct ima_ns_policy *ins);
+ int ima_must_measure(struct inode *inode, int mask, enum ima_hooks func);
+ int ima_collect_measurement(struct integrity_iint_cache *iint,
+ 			    struct file *file, void *buf, loff_t size,
+@@ -262,10 +258,10 @@ const char *ima_d_path(const struct path *path, char **pathbuf, char *filename);
+ 
+ /* IMA policy related functions */
+ int ima_match_policy(struct inode *inode, enum ima_hooks func, int mask,
+-		     int flags, int *pcr);
++		     int flags, int *pcr, struct ima_ns_policy *ins);
+ void ima_init_policy(void);
+-void ima_update_policy(void);
+-void ima_update_policy_flag(void);
++void ima_update_policy(struct ima_ns_policy *ins);
++void ima_update_policy_flag(struct ima_ns_policy *ins);
+ ssize_t ima_parse_add_rule(char *);
+ void ima_delete_rules(void);
+ void ima_free_policy_rules(struct list_head *policy_rules);
+@@ -283,12 +279,13 @@ int ima_policy_show(struct seq_file *m, void *v);
+ #define IMA_APPRAISE_FIRMWARE	0x10
+ #define IMA_APPRAISE_POLICY	0x20
+ 
++
+ #ifdef CONFIG_IMA_APPRAISE
+ int ima_appraise_measurement(enum ima_hooks func,
+ 			     struct integrity_iint_cache *iint,
+ 			     struct file *file, const unsigned char *filename,
+ 			     struct evm_ima_xattr_data *xattr_value,
+-			     int xattr_len, int opened);
++			     int xattr_len, int opened, struct ima_ns_policy *ins);
+ int ima_must_appraise(struct inode *inode, int mask, enum ima_hooks func);
+ void ima_update_xattr(struct integrity_iint_cache *iint, struct file *file);
+ enum integrity_status ima_get_cache_status(struct integrity_iint_cache *iint,
+@@ -304,7 +301,7 @@ static inline int ima_appraise_measurement(enum ima_hooks func,
+ 					   struct file *file,
+ 					   const unsigned char *filename,
+ 					   struct evm_ima_xattr_data *xattr_value,
+-					   int xattr_len, int opened)
++					   int xattr_len, int opened, struct ima_ns_policy *ins)
+ {
+ 	return INTEGRITY_UNKNOWN;
+ }
+diff --git a/security/integrity/ima/ima_api.c b/security/integrity/ima/ima_api.c
+index b05c1fd..9aba542 100644
+--- a/security/integrity/ima/ima_api.c
++++ b/security/integrity/ima/ima_api.c
+@@ -173,13 +173,13 @@ void ima_add_violation(struct file *file, const unsigned char *filename,
+  * Returns IMA_MEASURE, IMA_APPRAISE mask.
+  *
+  */
+-int ima_get_action(struct inode *inode, int mask, enum ima_hooks func, int *pcr)
++int ima_get_action(struct inode *inode, int mask, enum ima_hooks func, int *pcr, struct ima_ns_policy *ins)
+ {
+ 	int flags = IMA_MEASURE | IMA_AUDIT | IMA_APPRAISE;
+ 
+-	flags &= ima_policy_flag;
++	flags &= ins->ima_policy_flag;
+ 
+-	return ima_match_policy(inode, func, mask, flags, pcr);
++	return ima_match_policy(inode, func, mask, flags, pcr, ins);
+ }
+ 
+ /*
+diff --git a/security/integrity/ima/ima_appraise.c b/security/integrity/ima/ima_appraise.c
+index 1fd9539..510bb2f 100644
+--- a/security/integrity/ima/ima_appraise.c
++++ b/security/integrity/ima/ima_appraise.c
+@@ -26,6 +26,7 @@ static int __init default_appraise_setup(char *str)
+ 		ima_appraise = IMA_APPRAISE_LOG;
+ 	else if (strncmp(str, "fix", 3) == 0)
+ 		ima_appraise = IMA_APPRAISE_FIX;
++
+ 	return 1;
+ }
+ 
+@@ -38,10 +39,12 @@ __setup("ima_appraise=", default_appraise_setup);
+  */
+ int ima_must_appraise(struct inode *inode, int mask, enum ima_hooks func)
+ {
+-	if (!ima_appraise)
++	struct ima_ns_policy *ins = ima_get_current_namespace_policy();
++
++	if (!ins->ima_appraise)
+ 		return 0;
+ 
+-	return ima_match_policy(inode, func, mask, IMA_APPRAISE, NULL);
++	return ima_match_policy(inode, func, mask, IMA_APPRAISE, NULL, ins);
+ }
+ 
+ static int ima_fix_xattr(struct dentry *dentry,
+@@ -189,7 +192,7 @@ int ima_appraise_measurement(enum ima_hooks func,
+ 			     struct integrity_iint_cache *iint,
+ 			     struct file *file, const unsigned char *filename,
+ 			     struct evm_ima_xattr_data *xattr_value,
+-			     int xattr_len, int opened)
++			     int xattr_len, int opened, struct ima_ns_policy *ins)
+ {
+ 	static const char op[] = "appraise_data";
+ 	char *cause = "unknown";
+@@ -273,7 +276,7 @@ int ima_appraise_measurement(enum ima_hooks func,
+ 
+ out:
+ 	if (status != INTEGRITY_PASS) {
+-		if ((ima_appraise & IMA_APPRAISE_FIX) &&
++		if ((ins->ima_appraise & IMA_APPRAISE_FIX) &&
+ 		    (!xattr_value ||
+ 		     xattr_value->type != EVM_IMA_XATTR_DIGSIG)) {
+ 			if (!ima_fix_xattr(dentry, iint))
+@@ -326,8 +329,11 @@ void ima_inode_post_setattr(struct dentry *dentry)
+ 	struct inode *inode = d_backing_inode(dentry);
+ 	struct integrity_iint_cache *iint;
+ 	int must_appraise;
++	struct ima_ns_policy *ins;
+ 
+-	if (!(ima_policy_flag & IMA_APPRAISE) || !S_ISREG(inode->i_mode)
++	ins = ima_get_current_namespace_policy();
++
++	if (!(ins->ima_policy_flag & IMA_APPRAISE) || !S_ISREG(inode->i_mode)
+ 	    || !(inode->i_opflags & IOP_XATTR))
+ 		return;
+ 
+@@ -363,8 +369,11 @@ static int ima_protect_xattr(struct dentry *dentry, const char *xattr_name,
+ static void ima_reset_appraise_flags(struct inode *inode, int digsig)
+ {
+ 	struct integrity_iint_cache *iint;
++	struct ima_ns_policy *ins;
++
++	ins = ima_get_current_namespace_policy();
+ 
+-	if (!(ima_policy_flag & IMA_APPRAISE) || !S_ISREG(inode->i_mode))
++	if (!(ins->ima_policy_flag & IMA_APPRAISE) || !S_ISREG(inode->i_mode))
+ 		return;
+ 
+ 	iint = integrity_iint_find(inode);
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index 94e89fe..bc18722 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -308,7 +308,7 @@ static int allocate_namespace_policy(struct ima_ns_policy **ins,
+ 
+ 	p->policy_dentry = policy_dentry;
+ 	p->ns_dentry = ns_dentry;
+-	p->ima_appraise = 0;
++	p->ima_appraise = ima_appraise;
+ 	p->ima_policy_flag = 0;
+ 	INIT_LIST_HEAD(&p->ima_policy_rules);
+ 	/* namespace starts with empty rules and not pointing to
+@@ -488,6 +488,7 @@ static ssize_t ima_write_policy(struct file *file, const char __user *buf,
+ {
+ 	char *data;
+ 	ssize_t result;
++	struct ima_ns_policy *ins;
+ 
+ 	if (datalen >= PAGE_SIZE)
+ 		datalen = PAGE_SIZE - 1;
+@@ -512,19 +513,30 @@ static ssize_t ima_write_policy(struct file *file, const char __user *buf,
+ 	if (result < 0)
+ 		goto out_free;
+ 
++	ima_namespace_lock();
++	ins = ima_get_namespace_policy_from_inode(file->f_inode);
++	if (!ins) {
++		/* the namespace is not valid anymore, indicate the error
++		 * and exit */
++		result = -EINVAL;
++		goto out_unlock;
++	}
++
+ 	if (data[0] == '/') {
+ 		result = ima_read_policy(data);
+-	} else if (ima_appraise & IMA_APPRAISE_POLICY) {
++	} else if (ins->ima_appraise & IMA_APPRAISE_POLICY) {
+ 		pr_err("IMA: signed policy file (specified as an absolute pathname) required\n");
+ 		integrity_audit_msg(AUDIT_INTEGRITY_STATUS, NULL, NULL,
+ 				    "policy_update", "signed policy required",
+ 				    1, 0);
+ 
+-		if (ima_appraise & IMA_APPRAISE_ENFORCE)
++		if (ins->ima_appraise & IMA_APPRAISE_ENFORCE)
+ 			result = -EACCES;
+ 	} else {
+ 		result = ima_parse_add_rule(data);
+ 	}
++out_unlock:
++	ima_namespace_unlock();
+ 	mutex_unlock(&ima_write_mutex);
+ out_free:
+ 	kfree(data);
+@@ -611,7 +623,7 @@ static int ima_release_policy(struct inode *inode, struct file *file)
+ 		return 0;
+ 	}
+ 
+-	ima_update_policy();
++	ima_update_policy(ins);
+ #ifndef	CONFIG_IMA_WRITE_POLICY
+ 	if (ins == &ima_initial_namespace_policy) {
+ 		securityfs_remove(ima_policy_initial_ns);
+@@ -698,16 +710,16 @@ void ima_mnt_namespace_dying(unsigned int ns_id)
+ {
+ 	struct ima_ns_policy *p;
+ 
+-	spin_lock(&ima_ns_policy_lock);
++	ima_namespace_lock();
+ 	p = radix_tree_delete(&ima_ns_policy_mapping, ns_id);
+ 
+ 	if (!p) {
+-		spin_unlock(&ima_ns_policy_lock);
++		ima_namespace_unlock();
+ 		return;
+ 	}
+ 
+ 	free_namespace_policy(p);
+-	spin_unlock(&ima_ns_policy_lock);
++	ima_namespace_unlock();
+ }
+ 
+ static ssize_t handle_new_namespace_policy(const char *data, size_t datalen)
+diff --git a/security/integrity/ima/ima_init.c b/security/integrity/ima/ima_init.c
+index b557ee3..f0bb196 100644
+--- a/security/integrity/ima/ima_init.c
++++ b/security/integrity/ima/ima_init.c
+@@ -96,11 +96,16 @@ static int __init ima_add_boot_aggregate(void)
+ #ifdef CONFIG_IMA_LOAD_X509
+ void __init ima_load_x509(void)
+ {
+-	int unset_flags = ima_policy_flag & IMA_APPRAISE;
++	int unset_flags;
++	struct ima_ns_policy *ins;
+ 
+-	ima_policy_flag &= ~unset_flags;
++	ins = ima_get_current_namespace_policy();
++
++	unset_flags = ins->ima_policy_flag & IMA_APPRAISE;
++
++	ins->ima_policy_flag &= ~unset_flags;
+ 	integrity_load_x509(INTEGRITY_KEYRING_IMA, CONFIG_IMA_X509_PATH);
+-	ima_policy_flag |= unset_flags;
++	ins->ima_policy_flag |= unset_flags;
+ }
+ #endif
+ 
+diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+index 2aebb79..1b995bb 100644
+--- a/security/integrity/ima/ima_main.c
++++ b/security/integrity/ima/ima_main.c
+@@ -30,6 +30,7 @@
+ int ima_initialized;
+ 
+ #ifdef CONFIG_IMA_APPRAISE
++/* Used during IMA initialization only */
+ int ima_appraise = IMA_APPRAISE_ENFORCE;
+ #else
+ int ima_appraise;
+@@ -144,9 +145,13 @@ void ima_file_free(struct file *file)
+ {
+ 	struct inode *inode = file_inode(file);
+ 	struct integrity_iint_cache *iint;
++	struct ima_ns_policy *ins;
+ 
+-	if (!ima_policy_flag || !S_ISREG(inode->i_mode))
++	ins = ima_get_current_namespace_policy();
++
++	if (!ins->ima_policy_flag || !S_ISREG(inode->i_mode)) {
+ 		return;
++	}
+ 
+ 	iint = integrity_iint_find(inode);
+ 	if (!iint)
+@@ -170,17 +175,20 @@ static int process_measurement(struct file *file, char *buf, loff_t size,
+ 	int xattr_len = 0;
+ 	bool violation_check;
+ 	enum hash_algo hash_algo;
++	struct ima_ns_policy *ins;
+ 
+-	if (!ima_policy_flag || !S_ISREG(inode->i_mode))
++	ins = ima_get_current_namespace_policy();
++
++	if (!ins->ima_policy_flag || !S_ISREG(inode->i_mode))
+ 		return 0;
+ 
+ 	/* Return an IMA_MEASURE, IMA_APPRAISE, IMA_AUDIT action
+ 	 * bitmask based on the appraise/audit/measurement policy.
+ 	 * Included is the appraise submask.
+ 	 */
+-	action = ima_get_action(inode, mask, func, &pcr);
++	action = ima_get_action(inode, mask, func, &pcr, ins);
+ 	violation_check = ((func == FILE_CHECK || func == MMAP_CHECK) &&
+-			   (ima_policy_flag & IMA_MEASURE));
++			   (ins->ima_policy_flag & IMA_MEASURE));
+ 	if (!action && !violation_check)
+ 		return 0;
+ 
+@@ -249,7 +257,7 @@ static int process_measurement(struct file *file, char *buf, loff_t size,
+ 				      xattr_value, xattr_len, pcr);
+ 	if (action & IMA_APPRAISE_SUBMASK)
+ 		rc = ima_appraise_measurement(func, iint, file, pathname,
+-					      xattr_value, xattr_len, opened);
++					      xattr_value, xattr_len, opened, ins);
+ 	if (action & IMA_AUDIT)
+ 		ima_audit_measurement(iint, pathname);
+ 
+@@ -263,7 +271,7 @@ static int process_measurement(struct file *file, char *buf, loff_t size,
+ 		__putname(pathbuf);
+ out:
+ 	inode_unlock(inode);
+-	if ((rc && must_appraise) && (ima_appraise & IMA_APPRAISE_ENFORCE))
++	if ((rc && must_appraise) && (ins->ima_appraise & IMA_APPRAISE_ENFORCE))
+ 		return -EACCES;
+ 	return 0;
+ }
+@@ -361,8 +369,10 @@ int ima_read_file(struct file *file, enum kernel_read_file_id read_id)
+ {
+ 	if (!file && read_id == READING_MODULE) {
+ #ifndef CONFIG_MODULE_SIG_FORCE
+-		if ((ima_appraise & IMA_APPRAISE_MODULES) &&
+-		    (ima_appraise & IMA_APPRAISE_ENFORCE))
++		struct ima_ns_policy *ins;
++		ins = ima_get_current_namespace_policy();
++		if ((ins->ima_appraise & IMA_APPRAISE_MODULES) &&
++		    (ins->ima_appraise & IMA_APPRAISE_ENFORCE))
+ 			return -EACCES;	/* INTEGRITY_UNKNOWN */
+ #endif
+ 		return 0;	/* We rely on module signature checking */
+@@ -395,10 +405,13 @@ int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 		       enum kernel_read_file_id read_id)
+ {
+ 	enum ima_hooks func;
++	struct ima_ns_policy *ins;
++
++	ins = ima_get_current_namespace_policy();
+ 
+ 	if (!file && read_id == READING_FIRMWARE) {
+-		if ((ima_appraise & IMA_APPRAISE_FIRMWARE) &&
+-		    (ima_appraise & IMA_APPRAISE_ENFORCE))
++		if ((ins->ima_appraise & IMA_APPRAISE_FIRMWARE) &&
++		    (ins->ima_appraise & IMA_APPRAISE_ENFORCE))
+ 			return -EACCES;	/* INTEGRITY_UNKNOWN */
+ 		return 0;
+ 	}
+@@ -407,7 +420,7 @@ int ima_post_read_file(struct file *file, void *buf, loff_t size,
+ 		return 0;
+ 
+ 	if (!file || !buf || size == 0) { /* should never happen */
+-		if (ima_appraise & IMA_APPRAISE_ENFORCE)
++		if (ins->ima_appraise & IMA_APPRAISE_ENFORCE)
+ 			return -EACCES;
+ 		return 0;
+ 	}
+@@ -425,7 +438,6 @@ static int __init init_ima(void)
+ 	error = ima_init();
+ 	if (!error) {
+ 		ima_initialized = 1;
+-		ima_update_policy_flag();
+ 	}
+ 	return error;
+ }
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index 8c0d4c9..4ffb4ad 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -46,7 +46,7 @@
+ #define INVALID_PCR(a) (((a) < 0) || \
+ 	(a) >= (FIELD_SIZEOF(struct integrity_iint_cache, measured_pcrs) * 8))
+ 
+-int ima_policy_flag;
++/* used only during policy initialization and policy change */
+ static int temp_ima_appraise;
+ 
+ #ifdef CONFIG_IMA_PER_NAMESPACE
+@@ -66,6 +66,7 @@ struct ima_ns_policy ima_initial_namespace_policy = {
+ 			   .ima_appraise = 0
+ 	   };
+ 
++
+ #define MAX_LSM_RULES 6
+ enum lsm_rule_types { LSM_OBJ_USER, LSM_OBJ_ROLE, LSM_OBJ_TYPE,
+ 	LSM_SUBJ_USER, LSM_SUBJ_ROLE, LSM_SUBJ_TYPE
+@@ -166,11 +167,12 @@ static struct ima_rule_entry default_appraise_rules[] = {
+ #endif
+ };
+ 
++/* used only during policy setup of the initial namespace */
+ static LIST_HEAD(ima_default_rules);
+-static LIST_HEAD(ima_policy_rules);
++/* used during policy setting and cleaned up for the next policy setting */
+ static LIST_HEAD(ima_temp_rules);
+-static struct list_head *ima_rules;
+ 
++/* only used during setup of the initial namespace policy */
+ static int ima_policy __initdata;
+ 
+ static int __init default_measure_policy_setup(char *str)
+@@ -268,13 +270,14 @@ struct ima_ns_policy *ima_get_current_namespace_policy(void)
+  * the reloaded LSM policy.  We assume the rules still exist; and BUG_ON() if
+  * they don't.
+  */
+-static void ima_lsm_update_rules(void)
++static void ima_lsm_update_rules(struct ima_ns_policy *ins)
+ {
+ 	struct ima_rule_entry *entry;
+ 	int result;
+ 	int i;
+ 
+-	list_for_each_entry(entry, &ima_policy_rules, list) {
++	rcu_read_lock();
++	list_for_each_entry_rcu(entry, &ins->ima_policy_rules, list) {
+ 		for (i = 0; i < MAX_LSM_RULES; i++) {
+ 			if (!entry->lsm[i].rule)
+ 				continue;
+@@ -285,6 +288,7 @@ static void ima_lsm_update_rules(void)
+ 			BUG_ON(!entry->lsm[i].rule);
+ 		}
+ 	}
++	rcu_read_unlock();
+ }
+ 
+ /**
+@@ -297,7 +301,7 @@ static void ima_lsm_update_rules(void)
+  * Returns true on rule match, false on failure.
+  */
+ static bool ima_match_rules(struct ima_rule_entry *rule, struct inode *inode,
+-			    enum ima_hooks func, int mask)
++			    enum ima_hooks func, int mask, struct ima_ns_policy *ins)
+ {
+ 	struct task_struct *tsk = current;
+ 	const struct cred *cred = current_cred();
+@@ -365,7 +369,7 @@ static bool ima_match_rules(struct ima_rule_entry *rule, struct inode *inode,
+ 		}
+ 		if ((rc < 0) && (!retried)) {
+ 			retried = 1;
+-			ima_lsm_update_rules();
++			ima_lsm_update_rules(ins);
+ 			goto retry;
+ 		}
+ 		if (!rc)
+@@ -412,18 +416,18 @@ static int get_subaction(struct ima_rule_entry *rule, enum ima_hooks func)
+  * than writes so ima_match_policy() is classical RCU candidate.
+  */
+ int ima_match_policy(struct inode *inode, enum ima_hooks func, int mask,
+-		     int flags, int *pcr)
++		     int flags, int *pcr, struct ima_ns_policy *ins)
+ {
+ 	struct ima_rule_entry *entry;
+ 	int action = 0, actmask = flags | (flags << 1);
+ 
+ 	rcu_read_lock();
+-	list_for_each_entry_rcu(entry, ima_rules, list) {
++	list_for_each_entry_rcu(entry, ins->ima_rules, list) {
+ 
+ 		if (!(entry->action & actmask))
+ 			continue;
+ 
+-		if (!ima_match_rules(entry, inode, func, mask))
++		if (!ima_match_rules(entry, inode, func, mask, ins))
+ 			continue;
+ 
+ 		action |= entry->flags & IMA_ACTION_FLAGS;
+@@ -454,18 +458,20 @@ int ima_match_policy(struct inode *inode, enum ima_hooks func, int mask,
+  * out of a function or not call the function in the first place
+  * can be made earlier.
+  */
+-void ima_update_policy_flag(void)
++void ima_update_policy_flag(struct ima_ns_policy *ins)
+ {
+ 	struct ima_rule_entry *entry;
+ 
+-	list_for_each_entry(entry, ima_rules, list) {
++	rcu_read_lock();
++	list_for_each_entry_rcu(entry, ins->ima_rules, list) {
+ 		if (entry->action & IMA_DO_MASK)
+-			ima_policy_flag |= entry->action;
++			ins->ima_policy_flag |= entry->action;
+ 	}
++	rcu_read_unlock();
+ 
+-	ima_appraise |= temp_ima_appraise;
+-	if (!ima_appraise)
+-		ima_policy_flag &= ~IMA_APPRAISE;
++	ins->ima_appraise |= temp_ima_appraise;
++	if (!ins->ima_appraise)
++		ins->ima_policy_flag &= ~IMA_APPRAISE;
+ }
+ 
+ /**
+@@ -477,6 +483,7 @@ void ima_update_policy_flag(void)
+ void __init ima_init_policy(void)
+ {
+ 	int i, measure_entries, appraise_entries;
++	struct ima_ns_policy *ins;
+ 
+ 	/* if !ima_policy set entries = 0 so we load NO default rules */
+ 	measure_entries = ima_policy ? ARRAY_SIZE(dont_measure_rules) : 0;
+@@ -507,8 +514,13 @@ void __init ima_init_policy(void)
+ 			temp_ima_appraise |= IMA_APPRAISE_POLICY;
+ 	}
+ 
+-	ima_rules = &ima_default_rules;
+-	ima_update_policy_flag();
++	ins = &ima_initial_namespace_policy;
++
++	ins->ima_rules = &ima_default_rules;
++	ins->ima_appraise = ima_appraise;
++
++	ima_update_policy_flag(ins);
++	temp_ima_appraise = 0;
+ }
+ 
+ /* Make sure we have a valid policy, at least containing some rules. */
+@@ -530,14 +542,14 @@ int ima_check_policy(void)
+  * Policy rules are never deleted so ima_policy_flag gets zeroed only once when
+  * we switch from the default policy to user defined.
+  */
+-void ima_update_policy(void)
++void ima_update_policy(struct ima_ns_policy *ins)
+ {
+ 	struct list_head *first, *last, *policy;
+ 
+ 	/* append current policy with the new rules */
+ 	first = (&ima_temp_rules)->next;
+ 	last = (&ima_temp_rules)->prev;
+-	policy = &ima_policy_rules;
++	policy = &ins->ima_policy_rules;
+ 
+ 	synchronize_rcu();
+ 
+@@ -549,11 +561,14 @@ void ima_update_policy(void)
+ 	/* prepare for the next policy rules addition */
+ 	INIT_LIST_HEAD(&ima_temp_rules);
+ 
+-	if (ima_rules != policy) {
+-		ima_policy_flag = 0;
+-		ima_rules = policy;
++	if (ins->ima_rules != policy) {
++		ins->ima_policy_flag = 0;
++		ins->ima_rules = policy;
++		ins->ima_appraise = ima_appraise;
+ 	}
+-	ima_update_policy_flag();
++
++	ima_update_policy_flag(ins);
++	temp_ima_appraise = 0;
+ }
+ 
+ enum {
+@@ -964,6 +979,7 @@ void ima_free_policy_rules(struct list_head *policy_rules)
+ void ima_delete_rules(void)
+ {
+ 	temp_ima_appraise = 0;
++
+ 	ima_free_policy_rules(&ima_temp_rules);
+ }
+ 
+@@ -1002,28 +1018,49 @@ void *ima_policy_start(struct seq_file *m, loff_t *pos)
+ {
+ 	loff_t l = *pos;
+ 	struct ima_rule_entry *entry;
++	struct ima_ns_policy *ins;
++
++	ima_namespace_lock();
++	ins = ima_get_namespace_policy_from_inode(m->file->f_inode);
++	if (!ins) {
++		ima_namespace_unlock();
++		return NULL;
++	}
+ 
+ 	rcu_read_lock();
+-	list_for_each_entry_rcu(entry, ima_rules, list) {
++	list_for_each_entry_rcu(entry, ins->ima_rules, list) {
+ 		if (!l--) {
+ 			rcu_read_unlock();
++			ima_namespace_unlock();
+ 			return entry;
+ 		}
+ 	}
+ 	rcu_read_unlock();
++	ima_namespace_unlock();
+ 	return NULL;
+ }
+ 
+ void *ima_policy_next(struct seq_file *m, void *v, loff_t *pos)
+ {
+ 	struct ima_rule_entry *entry = v;
++	struct ima_ns_policy *ins;
++	void *p;
++
++	ima_namespace_lock();
++	ins = ima_get_namespace_policy_from_inode(m->file->f_inode);
++	if (!ins) {
++		ima_namespace_unlock();
++		return NULL;
++	}
+ 
+ 	rcu_read_lock();
+ 	entry = list_entry_rcu(entry->list.next, struct ima_rule_entry, list);
+ 	rcu_read_unlock();
+ 	(*pos)++;
+ 
+-	return (&entry->list == ima_rules) ? NULL : entry;
++	p = (&entry->list == ins->ima_rules) ? NULL : entry;
++	ima_namespace_unlock();
++	return p;
+ }
+ 
+ void ima_policy_stop(struct seq_file *m, void *v)
+@@ -1082,6 +1119,16 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 	struct ima_rule_entry *entry = v;
+ 	int i;
+ 	char tbuf[64] = {0,};
++	struct ima_ns_policy *ins;
++
++	ima_namespace_lock();
++	ins = ima_get_namespace_policy_from_inode(m->file->f_inode);
++	if (!ins) {
++		/* this namespace was release and the policy entry is not valid
++		 * anymore */
++		ima_namespace_unlock();
++		return 0;
++	}
+ 
+ 	rcu_read_lock();
+ 
+@@ -1184,6 +1231,7 @@ int ima_policy_show(struct seq_file *m, void *v)
+ 		seq_puts(m, "permit_directio ");
+ 	rcu_read_unlock();
+ 	seq_puts(m, "\n");
++	ima_namespace_unlock();
+ 	return 0;
+ }
+ #endif	/* CONFIG_IMA_READ_POLICY */
+-- 
+2.9.3
+

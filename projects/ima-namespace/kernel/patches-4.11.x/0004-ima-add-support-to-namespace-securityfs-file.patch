@@ -1,0 +1,262 @@
+From 3966bcc59bbb0d43b4b2bf8b005788cad75cf65d Mon Sep 17 00:00:00 2001
+From: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+Date: Tue, 9 May 2017 13:41:24 -0300
+Subject: [PATCH 04/11] ima: add support to namespace securityfs file
+
+Creating the namespace securityfs file under ima folder. When a mount
+namespace id is written to the namespace file, a new folder is created and
+with a policy file for that specified namespace. Then, user defined policy
+for namespaces may be set by writing rules to this namespace policy file.
+With this interface, there is no need to give visibility for the securityfs
+inside mount namespaces or containers in userspace.
+
+Signed-off-by: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+---
+ security/integrity/ima/ima.h    |   4 +
+ security/integrity/ima/ima_fs.c | 183 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 187 insertions(+)
+
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index 42fb91ba..6e8ca8e 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -326,4 +326,8 @@ static inline int security_filter_rule_match(u32 secid, u32 field, u32 op,
+ #define	POLICY_FILE_FLAGS	S_IWUSR
+ #endif /* CONFIG_IMA_WRITE_POLICY */
+ 
++#ifdef CONFIG_IMA_PER_NAMESPACE
++#define NAMESPACES_FILE_FLAGS  S_IWUSR
++#endif
++
+ #endif /* __LINUX_IMA_H */
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index ca303e5..6456407 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -23,6 +23,8 @@
+ #include <linux/rcupdate.h>
+ #include <linux/parser.h>
+ #include <linux/vmalloc.h>
++#include <linux/proc_ns.h>
++#include <linux/radix-tree.h>
+ 
+ #include "ima.h"
+ 
+@@ -272,6 +274,40 @@ static const struct file_operations ima_ascii_measurements_ops = {
+ 	.release = seq_release,
+ };
+ 
++#ifdef CONFIG_IMA_PER_NAMESPACE
++/*
++ * check_mntns: check a mount namespace is valid
++ *
++ * @ns_id: namespace id to be checked
++ * Returns 0 if the namespace is valid.
++ *
++ * Note: a better way to implement this check is needed. There are
++ * cases where the namespace id is valid but not in use by any process
++ * and then this implementation misses this case. Could we use an
++ * interface similar to what setns implements?
++ */
++static int check_mntns(unsigned int ns_id)
++{
++	struct task_struct *p;
++	int result = 1;
++	struct ns_common *ns;
++
++	rcu_read_lock();
++	for_each_process(p) {
++		ns = mntns_operations.get(p);
++		if (ns->inum == ns_id) {
++			result = 0;
++			mntns_operations.put(ns);
++			break;
++		}
++		mntns_operations.put(ns);
++	}
++	rcu_read_unlock();
++
++	return result;
++}
++#endif
++
+ static ssize_t ima_read_policy(char *path)
+ {
+ 	void *data;
+@@ -366,6 +402,9 @@ static struct dentry *ascii_runtime_measurements;
+ static struct dentry *runtime_measurements_count;
+ static struct dentry *violations;
+ static struct dentry *ima_policy;
++#ifdef CONFIG_IMA_PER_NAMESPACE
++static struct dentry *ima_namespaces;
++#endif
+ 
+ enum ima_fs_flags {
+ 	IMA_FS_BUSY,
+@@ -451,6 +490,139 @@ static const struct file_operations ima_measure_policy_ops = {
+ 	.llseek = generic_file_llseek,
+ };
+ 
++#ifdef CONFIG_IMA_PER_NAMESPACE
++/*
++ * Assumes namespace id is in use by some process and this mapping
++ * does not exist in the map table.
++ */
++static int create_mnt_ns_directory(unsigned int ns_id)
++{
++	int result;
++	struct dentry *ns_dir, *ns_policy;
++	char dir_name[64];
++
++	snprintf(dir_name, sizeof(dir_name), "%u", ns_id);
++
++	ns_dir = securityfs_create_dir(dir_name, ima_dir);
++	if (IS_ERR(ns_dir)) {
++		result = PTR_ERR(ns_dir);
++		goto out;
++	}
++
++	ns_policy = securityfs_create_file("policy", POLICY_FILE_FLAGS,
++		                                ns_dir, NULL,
++		                                &ima_measure_policy_ops);
++	if (IS_ERR(ns_policy)) {
++		result = PTR_ERR(ns_policy);
++		securityfs_remove(ns_dir);
++		goto out;
++	}
++
++	result = 0;
++
++out:
++	return result;
++}
++
++static ssize_t handle_new_namespace_policy(const char *data, size_t datalen)
++{
++	unsigned int ns_id;
++	ssize_t result;
++
++	result = -EINVAL;
++
++	if (sscanf(data, "%u", &ns_id) != 1) {
++		pr_err("IMA: invalid namespace id: %s\n", data);
++		goto out;
++	}
++
++	if (check_mntns(ns_id)) {
++		result = -ENOENT;
++		pr_err("IMA: unused namespace id %u\n", ns_id);
++		goto out;
++	}
++
++	result = create_mnt_ns_directory(ns_id);
++	if (result != 0) {
++		pr_err("IMA: namespace id %u directory creation failed\n", ns_id);
++		goto out;
++	}
++
++	result = datalen;
++	pr_info("IMA: directory created for namespace id %u\n", ns_id);
++
++out:
++	return result;
++}
++
++static ssize_t ima_write_namespaces(struct file *file, const char __user *buf,
++		                            size_t datalen, loff_t *ppos)
++{
++	char *data;
++	ssize_t result;
++
++	if (datalen >= PAGE_SIZE)
++		datalen = PAGE_SIZE - 1;
++
++	/* No partial writes. */
++	result = -EINVAL;
++	if (*ppos != 0)
++		goto out;
++
++	result = -ENOMEM;
++	data = kmalloc(datalen + 1, GFP_KERNEL);
++	if (!data)
++		goto out;
++
++	*(data + datalen) = '\0';
++
++	result = -EFAULT;
++	if (copy_from_user(data, buf, datalen))
++		goto out_free;
++
++	result = mutex_lock_interruptible(&ima_write_mutex);
++	if (result < 0)
++		goto out_free;
++
++	result = handle_new_namespace_policy(data, datalen);
++
++	mutex_unlock(&ima_write_mutex);
++
++out_free:
++	kfree(data);
++out:
++	return result;
++}
++
++static int ima_open_namespaces(struct inode *inode, struct file *filp)
++{
++	if (!(filp->f_flags & O_WRONLY))
++		return -EACCES;
++
++	if (!capable(CAP_SYS_ADMIN))
++		return -EPERM;
++
++	if (test_and_set_bit(IMA_FS_BUSY, &ima_fs_flags))
++		return -EBUSY;
++	return 0;
++}
++
++static int ima_release_namespaces(struct inode *inode, struct file *file)
++{
++	clear_bit(IMA_FS_BUSY, &ima_fs_flags);
++
++	return 0;
++}
++
++static const struct file_operations ima_namespaces_ops = {
++		.open = ima_open_namespaces,
++		.write = ima_write_namespaces,
++		.read = seq_read,
++		.release = ima_release_namespaces,
++		.llseek = generic_file_llseek,
++};
++#endif
++
+ int __init ima_fs_init(void)
+ {
+ 	ima_dir = securityfs_create_dir("ima", NULL);
+@@ -490,6 +662,14 @@ int __init ima_fs_init(void)
+ 	if (IS_ERR(ima_policy))
+ 		goto out;
+ 
++#ifdef CONFIG_IMA_PER_NAMESPACE
++	ima_namespaces = securityfs_create_file("namespaces", NAMESPACES_FILE_FLAGS,
++						ima_dir, NULL,
++						&ima_namespaces_ops);
++	if (IS_ERR(ima_namespaces))
++		goto out;
++#endif
++
+ 	return 0;
+ out:
+ 	securityfs_remove(violations);
+@@ -498,5 +678,8 @@ int __init ima_fs_init(void)
+ 	securityfs_remove(binary_runtime_measurements);
+ 	securityfs_remove(ima_dir);
+ 	securityfs_remove(ima_policy);
++#ifdef CONFIG_IMA_PER_NAMESPACE
++	securityfs_remove(ima_namespaces);
++#endif
+ 	return -1;
+ }
+-- 
+2.9.3
+

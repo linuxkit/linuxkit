@@ -1,0 +1,141 @@
+From c2ef1411f1671f0b5121392e69954977b7a76789 Mon Sep 17 00:00:00 2001
+From: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+Date: Tue, 9 May 2017 18:04:16 -0300
+Subject: [PATCH 11/11] ima: appraise mode per namespace with new enforce_ns
+ appraise mode
+
+Global ima_appraise renamed to ima_appraise_mode and it saves the initial
+appraise mode. It is used to initialize the ima_appraise ima_ns_policy field
+when the policy is defined by user the first time for a namespace.
+New 'enforce_ns' appraise mode created. On this new appraise mode, the initial
+appraise mode works in 'enforce' mode, but for new namespaces the appraise
+mode is set to 'fix' until a policy is defined for the new namespace and then
+the appraise mode is automatically set to 'enforce'.
+This new mode is useful to keep the initial namespace appraise mode clearly in
+'enforce' mode while namespaces can set their appraise modes separatedly.
+
+Signed-off-by: Guilherme Magalhaes <guilherme.magalhaes@hpe.com>
+---
+ security/integrity/ima/ima.h          |  6 +++++-
+ security/integrity/ima/ima_appraise.c | 11 +++++++----
+ security/integrity/ima/ima_fs.c       |  7 ++++++-
+ security/integrity/ima/ima_main.c     |  4 ++--
+ security/integrity/ima/ima_policy.c   | 13 +++++++++++--
+ 5 files changed, 31 insertions(+), 10 deletions(-)
+
+diff --git a/security/integrity/ima/ima.h b/security/integrity/ima/ima.h
+index fd5cfe9..9d451fd 100644
+--- a/security/integrity/ima/ima.h
++++ b/security/integrity/ima/ima.h
+@@ -65,7 +65,7 @@ enum tpm_pcrs { TPM_PCR0 = 0, TPM_PCR8 = 8 };
+ extern int ima_initialized;
+ extern int ima_used_chip;
+ extern int ima_hash_algo;
+-extern int ima_appraise;
++extern int ima_appraise_mode;
+ 
+ /* IMA event related data */
+ struct ima_event_data {
+@@ -278,6 +278,10 @@ int ima_policy_show(struct seq_file *m, void *v);
+ #define IMA_APPRAISE_MODULES	0x08
+ #define IMA_APPRAISE_FIRMWARE	0x10
+ #define IMA_APPRAISE_POLICY	0x20
++#ifdef CONFIG_IMA_PER_NAMESPACE
++#define IMA_APPRAISE_NAMESPACE 0x40
++#define IMA_APPRAISE_ENFORCE_NS (IMA_APPRAISE_ENFORCE | IMA_APPRAISE_NAMESPACE)
++#endif
+ 
+ 
+ #ifdef CONFIG_IMA_APPRAISE
+diff --git a/security/integrity/ima/ima_appraise.c b/security/integrity/ima/ima_appraise.c
+index 510bb2f..4b94c2a 100644
+--- a/security/integrity/ima/ima_appraise.c
++++ b/security/integrity/ima/ima_appraise.c
+@@ -21,12 +21,15 @@
+ static int __init default_appraise_setup(char *str)
+ {
+ 	if (strncmp(str, "off", 3) == 0)
+-		ima_appraise = 0;
++		ima_appraise_mode = 0;
+ 	else if (strncmp(str, "log", 3) == 0)
+-		ima_appraise = IMA_APPRAISE_LOG;
++		ima_appraise_mode = IMA_APPRAISE_LOG;
+ 	else if (strncmp(str, "fix", 3) == 0)
+-		ima_appraise = IMA_APPRAISE_FIX;
+-
++		ima_appraise_mode = IMA_APPRAISE_FIX;
++#ifdef CONFIG_IMA_PER_NAMESPACE
++	else if (strncmp(str, "enforce_ns", 10) == 0)
++		ima_appraise_mode = IMA_APPRAISE_ENFORCE_NS;
++#endif
+ 	return 1;
+ }
+ 
+diff --git a/security/integrity/ima/ima_fs.c b/security/integrity/ima/ima_fs.c
+index bc18722..91cafb5 100644
+--- a/security/integrity/ima/ima_fs.c
++++ b/security/integrity/ima/ima_fs.c
+@@ -308,7 +308,12 @@ static int allocate_namespace_policy(struct ima_ns_policy **ins,
+ 
+ 	p->policy_dentry = policy_dentry;
+ 	p->ns_dentry = ns_dentry;
+-	p->ima_appraise = ima_appraise;
++	if (ima_appraise_mode == IMA_APPRAISE_ENFORCE_NS)
++		/* For now, on the enforce_ns mode, a new namespace starts in
++		 * fix mode */
++		p->ima_appraise = IMA_APPRAISE_FIX;
++	else
++		p->ima_appraise = ima_appraise_mode;
+ 	p->ima_policy_flag = 0;
+ 	INIT_LIST_HEAD(&p->ima_policy_rules);
+ 	/* namespace starts with empty rules and not pointing to
+diff --git a/security/integrity/ima/ima_main.c b/security/integrity/ima/ima_main.c
+index 1b995bb..1938c74 100644
+--- a/security/integrity/ima/ima_main.c
++++ b/security/integrity/ima/ima_main.c
+@@ -31,9 +31,9 @@ int ima_initialized;
+ 
+ #ifdef CONFIG_IMA_APPRAISE
+ /* Used during IMA initialization only */
+-int ima_appraise = IMA_APPRAISE_ENFORCE;
++int ima_appraise_mode = IMA_APPRAISE_ENFORCE;
+ #else
+-int ima_appraise;
++int ima_appraise_mode;
+ #endif
+ 
+ int ima_hash_algo = HASH_ALGO_SHA1;
+diff --git a/security/integrity/ima/ima_policy.c b/security/integrity/ima/ima_policy.c
+index 4ffb4ad..bd67a08 100644
+--- a/security/integrity/ima/ima_policy.c
++++ b/security/integrity/ima/ima_policy.c
+@@ -517,7 +517,7 @@ void __init ima_init_policy(void)
+ 	ins = &ima_initial_namespace_policy;
+ 
+ 	ins->ima_rules = &ima_default_rules;
+-	ins->ima_appraise = ima_appraise;
++	ins->ima_appraise = ima_appraise_mode;
+ 
+ 	ima_update_policy_flag(ins);
+ 	temp_ima_appraise = 0;
+@@ -564,7 +564,16 @@ void ima_update_policy(struct ima_ns_policy *ins)
+ 	if (ins->ima_rules != policy) {
+ 		ins->ima_policy_flag = 0;
+ 		ins->ima_rules = policy;
+-		ins->ima_appraise = ima_appraise;
++		ins->ima_appraise = ima_appraise_mode;
++#ifdef CONFIG_IMA_PER_NAMESPACE
++		if (ins != &ima_initial_namespace_policy &&
++				ima_appraise_mode == IMA_APPRAISE_ENFORCE_NS) {
++			/* For now, on the enforce_ns mode, switch to enforce mode
++			 * when new policy is set for a namespace and for the first
++			 * time */
++			ins->ima_appraise = IMA_APPRAISE_ENFORCE;
++		}
++#endif
+ 	}
+ 
+ 	ima_update_policy_flag(ins);
+-- 
+2.9.3
+
