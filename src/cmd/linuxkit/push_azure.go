@@ -28,9 +28,7 @@ func pushAzure(args []string) {
 	accountKey := flags.String("accountKey", "", "Azure Storage Account Key")
 
 	containerName := flags.String("containerName", "default-container", "Storage container name")
-
 	blobName := flags.String("blobName", "default-linuxkit-blob", "Name of the blob to upload image")
-
 	imageName := flags.String("imageName", "disk.vhd", "Name of the image to be uploaded")
 
 	if err := flags.Parse(args); err != nil {
@@ -67,16 +65,6 @@ func pushAzure(args []string) {
 		log.Fatalf("Unable to create block blob from reader")
 	}
 	fmt.Printf("You can find the file at https://%s.blob.core.windows.net/%s/%s\n", *accountName, *containerName, *blobName)
-}
-
-func getEnvVarOrExit(varName string) string {
-	value := os.Getenv(varName)
-	if value == "" {
-		fmt.Printf("%s missing! Exiting...\n", varName)
-		os.Exit(1)
-	}
-
-	return value
 }
 
 func newFile(fn string) *os.File {
