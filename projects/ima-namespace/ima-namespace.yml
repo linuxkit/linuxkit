@@ -1,26 +1,60 @@
 kernel:
-  image: "linuxkit/kernel-ima:4.11.x"
-  cmdline: "console=ttyS0 page_poison=1 ima_appraise=enforce_ns"
+  image: "linuxkit/kernel-ima:4.11.1-"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1 ima_appraise=enforce_ns"
 init:
-  - linuxkit/init-ima:1bf49efd6df8d137813884211860607c58ff383e
-  - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
-  - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+  - linuxkit/init:b3740303f3d1e5689a84c87b7dfb48fd2a40a192
+  - linuxkit/runc:47b1c38d63468c0f3078f8b1b055d07965a1895d
+  - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
+  - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
+  - linuxkit/ima-utils:fe119c7dac08884f4144cd106dc279ddd8b37517
 onboot:
   - name: sysctl
-    image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    image: "linuxkit/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
     net: host
     pid: host
     ipc: host
     capabilities:
      - CAP_SYS_ADMIN
     readonly: true
+  - name: binfmt
+    image: "linuxkit/binfmt:131026c0cf6084467316395fed3b358f64bda00c"
+    binds:
+     - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    readonly: true
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: "mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    image: "linuxkit/rngd:61a07ced77a9747708223ca16a4aec621eacf518"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
+  - name: nginx
+    image: "nginx:alpine"
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+    net: host
+files:
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
+trust:
+  image:
+    - linuxkit/kernel
+    - linuxkit/binfmt
+    - linuxkit/rngd
 outputs:
   - format: kernel+initrd

@@ -1,8 +1,8 @@
 .PHONY: tag push
 default: push
 
-IMAGE=init-ima
-DEPS=Dockerfile init $(wildcard etc/*) $(wildcard etc/init.d/*)
+IMAGE=ima-utils
+DEPS=Dockerfile
 
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
