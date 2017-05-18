@@ -66,6 +66,7 @@ func pushAzure(args []string) {
 		fmt.Printf(err.Error())
 		log.Fatalf("Unable to create block blob from reader")
 	}
+	fmt.Printf("You can find the file at https://%s.blob.core.windows.net/%s/%s\n", *accountName, *containerName, *blobName)
 }
 
 func getEnvVarOrExit(varName string) string {
