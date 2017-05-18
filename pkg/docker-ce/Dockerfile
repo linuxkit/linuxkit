@@ -1,22 +1,24 @@
-FROM linuxkit/alpine:c5021a113803f7608e3908014d316c3490183d0b@sha256:4c7a80173c71ca5019dc56f40442b3a8345f141dd46593bd1fe6d130294d07cb AS mirror
-
-FROM alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
-COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
-COPY --from=mirror /etc/apk/keys /etc/apk/keys/
-COPY --from=mirror /mirror /mirror/
+FROM linuxkit/alpine:6336329f15b4166514782eaa555cf0ffd35c519c@sha256:f6c2ce92910b1d6e4e5557850a554f4a3ae9f66c1e89ad86a24d6c6e550f165e AS mirror
 
 # https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
 # removed openssl as I do not think server needs it
-RUN apk add --no-cache \
+RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
+RUN apk add --no-cache --initdb -p /out \
+	alpine-baselayout \
 	btrfs-progs \
+	busybox \
 	ca-certificates \
 	curl \
 	e2fsprogs \
 	e2fsprogs-extra \
 	iptables \
+	musl \
 	xfsprogs \
 	xz
-RUN rm -rf /mirror /etc/apk/repositories /etc/apk/keys
+RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+
+FROM scratch
+COPY --from=mirror /out/ /
 
 # set up Docker group
 # set up subuid/subgid so that "--userns-remap=default" works out-of-the-box
