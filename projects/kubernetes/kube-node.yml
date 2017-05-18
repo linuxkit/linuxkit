@@ -2,10 +2,10 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:b3740303f3d1e5689a84c87b7dfb48fd2a40a192
-  - linuxkit/runc:47b1c38d63468c0f3078f8b1b055d07965a1895d
-  - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
-  - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
+  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
+  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
+  - linuxkit/containerd:1c71f95fa36040ea7e987deb98a7a2a363853f01
+  - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:1f5ec5d5e6f7a7a1b3d2ff9dd9e36fd6fb14756a"
@@ -18,7 +18,7 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c
   - name: binfmt
-    image: "linuxkit/binfmt:131026c0cf6084467316395fed3b358f64bda00c"
+    image: "linuxkit/binfmt:548f7f044f5411a8938913527c5ce55d9876bb07"
     binds:
      - /proc/sys/fs/binfmt_misc:/binfmt_misc
     readonly: true
@@ -46,7 +46,7 @@ services:
     oomScoreAdj: -800
     readonly: true
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
+    image: "linuxkit/dhcpcd:cb96c09a33c166eca6530f166f0f79927c3e83b0"
     binds:
      - /var:/var
      - /tmp/etc:/etc
@@ -57,7 +57,7 @@ services:
     net: host
     oomScoreAdj: -800
   - name: ntpd
-    image: "linuxkit/openntpd:a38eabb308d0405f58894979f8b8031a6c7e1134"
+    image: "linuxkit/openntpd:ad834449a7eaf10dc022b3d8d2ed9faf7ec99d37"
     capabilities:
       - CAP_SYS_TIME
       - CAP_SYS_NICE
@@ -66,7 +66,7 @@ services:
       - CAP_SETGID
     net: host
   - name: sshd
-    image: "linuxkit/sshd:e108d208adf692c8a0954f602743e0eec445364e"
+    image: "linuxkit/sshd:1613253e5def414e0dfd261acd0e191eadb5fedf"
     capabilities:
      - all
     net: host
@@ -74,7 +74,7 @@ services:
     binds:
      - /root/.ssh:/root/.ssh
   - name: docker
-    image: "linuxkit/docker-ce:050e734489f2d19b42ec818a4242a318ea446bc3"
+    image: "linuxkit/docker-ce:261f93927d85001c65e5ce0f421eb6062f09c0a5"
     capabilities:
      - all
     net: host

@@ -2,17 +2,17 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:b3740303f3d1e5689a84c87b7dfb48fd2a40a192
-  - linuxkit/runc:47b1c38d63468c0f3078f8b1b055d07965a1895d
-  - linuxkit/containerd:fe1b7f438a234cb6481c6538295115eac2a0596d
+  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
+  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
+  - linuxkit/containerd:1c71f95fa36040ea7e987deb98a7a2a363853f01
 services:
   - name: rngd
-    image: "linuxkit/rngd:61a07ced77a9747708223ca16a4aec621eacf518"
+    image: "linuxkit/rngd:c97ef16be340884a985d8b025983505a9bcc51f0"
     capabilities:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
+    image: "linuxkit/dhcpcd:cb96c09a33c166eca6530f166f0f79927c3e83b0"
     binds:
      - /var:/var
      - /tmp:/etc
@@ -23,7 +23,7 @@ services:
     net: host
     oomScoreAdj: -800
   - name: node_exporter
-    image: "linuxkit/node_exporter:0c7c1588e4cbce9cc946c1a84d3902b38b4b7ada"
+    image: "linuxkit/node_exporter:bdb20b41855d0e2b4edeec44ef569d030ea3cc47"
     capabilities:
      - all
     net: host

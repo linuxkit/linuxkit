@@ -59,7 +59,7 @@ To simplify the process, two `onboot` images are available for you to use:
 ```yml
 onboot:
   - name: format
-    image: "linuxkit/format:a16f2bd94a83dd0cea4d490f710567a0cc60be33"
+    image: "linuxkit/format:fdbfda789fe30a97ff194a06ac51ee0ff6b3ccf4"
     binds:
      - /dev:/dev
     capabilities:
