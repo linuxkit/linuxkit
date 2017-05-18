@@ -1,3 +1,16 @@
+## IMA
+
+IMA stands for Integrity Management Architecture. The basic idea is to prevent
+userspace from even *opening* files that have been mutated, by tracking file
+content via a hash in the `security.ima` extended attribute. IMA supports
+keeping track of these hashes and signing the result via the TPM, and a host of
+other features.
+
+Today, this is not namespace aware, so there is no way to differentiate in
+IMA's appraisal output between files in one mount namespace vs another, which
+makes this not particularly useful for container engines. The goal of this
+patchset is to make IMA namespace aware.
+
 ## IMA namespace patches
 
 These are draft patches for an implementation of IMA namespacing. They are
