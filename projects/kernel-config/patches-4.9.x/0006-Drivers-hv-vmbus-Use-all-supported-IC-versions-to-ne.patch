@@ -1,7 +1,7 @@
-From d9aa9429204658ccfc3563b99ea555207d3ce455 Mon Sep 17 00:00:00 2001
+From 18bbea8bb178648186dfcf70f57f6ddfd7ca1151 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
-Subject: [PATCH 2/6] Drivers: hv: vmbus: Use all supported IC versions to
+Subject: [PATCH 06/10] Drivers: hv: vmbus: Use all supported IC versions to
  negotiate
 
 Previously, we were assuming that each IC protocol version was tied to a
@@ -34,10 +34,10 @@ Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
  6 files changed, 154 insertions(+), 106 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index a58cd102af1b..feca5d2e7b25 100644
+index 8df02f3ca0b2..e7949b64bfbc 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -203,33 +203,34 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
+@@ -202,33 +202,34 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
   * @buf: Raw buffer channel data
   *
   * @icmsghdrp is of type &struct icmsg_hdr.
@@ -85,7 +85,7 @@ index a58cd102af1b..feca5d2e7b25 100644
  	negop = (struct icmsg_negotiate *)&buf[
  		sizeof(struct vmbuspipe_hdr) +
  		sizeof(struct icmsg_hdr)];
-@@ -245,13 +246,22 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+@@ -244,13 +245,22 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
  	 * support.
  	 */
  
@@ -114,7 +114,7 @@ index a58cd102af1b..feca5d2e7b25 100644
  	}
  
  	if (!found_match)
-@@ -259,14 +269,26 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+@@ -258,14 +268,26 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
  
  	found_match = false;
  
@@ -148,7 +148,7 @@ index a58cd102af1b..feca5d2e7b25 100644
  	}
  
  	/*
-@@ -283,6 +305,12 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
+@@ -282,6 +304,12 @@ bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp,
  		negop->icmsg_vercnt = 1;
  	}
  
@@ -470,10 +470,10 @@ index e7707747f56d..f3797c07be10 100644
  			srv->util_cb, dev->channel);
  	if (ret)
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index ca26335de49a..41e5ed87f833 100644
+index 489ad74c1e6e..956acfc93487 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1459,9 +1459,10 @@ struct hyperv_service_callback {
+@@ -1453,9 +1453,10 @@ struct hyperv_service_callback {
  };
  
  #define MAX_SRV_VER	0x7ffffff

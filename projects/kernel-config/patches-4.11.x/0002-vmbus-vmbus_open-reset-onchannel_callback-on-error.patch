@@ -1,0 +1,34 @@
+From 0cf4173a76cf771d4d4406f48c59fcb85b5a5400 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Fri, 5 May 2017 16:57:12 -0600
+Subject: [PATCH 2/9] vmbus: vmbus_open(): reset onchannel_callback on error
+
+No real issue is observed without the patch, but let's add this
+just in case.
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Cc: K. Y. Srinivasan <kys@microsoft.com>
+Cc: Haiyang Zhang <haiyangz@microsoft.com>
+Cc: Stephen Hemminger <sthemmin@microsoft.com>
+Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511
+(cherry picked from commit c248b14174e1337c1461f9b13a573ad90a136e1c)
+---
+ drivers/hv/channel.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index 321b8833fa6f..628d6fde1887 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -220,6 +220,8 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+ 		     get_order(send_ringbuffer_size + recv_ringbuffer_size));
+ error_set_chnstate:
+ 	newchannel->state = CHANNEL_OPEN_STATE;
++	newchannel->onchannel_callback = NULL;
++	newchannel->channel_callback_context = NULL;
+ 	return err;
+ }
+ EXPORT_SYMBOL_GPL(vmbus_open);
+-- 
+2.12.2
+

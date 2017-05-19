@@ -1,0 +1,369 @@
+From a1b252ef7f38e04a2f5c8218adab6c1689fc3418 Mon Sep 17 00:00:00 2001
+From: stephen hemminger <stephen@networkplumber.org>
+Date: Mon, 27 Feb 2017 10:26:48 -0800
+Subject: [PATCH 1/9] vmbus: introduce in-place packet iterator
+
+This is mostly just a refactoring of previous functions
+(get_pkt_next_raw, put_pkt_raw and commit_rd_index) to make it easier
+to use for other drivers and NAPI.
+
+Signed-off-by: Stephen Hemminger <sthemmin@microsoft.com>
+Signed-off-by: David S. Miller <davem@davemloft.net>
+(cherry picked from commit f3dd3f4797652c311df9c074436d420f1ad3566e)
+---
+ drivers/hv/ring_buffer.c    | 94 +++++++++++++++++++++++++++++++++++++++++++-
+ drivers/net/hyperv/netvsc.c | 34 +++++-----------
+ include/linux/hyperv.h      | 96 ++++++++++++++-------------------------------
+ 3 files changed, 133 insertions(+), 91 deletions(-)
+
+diff --git a/drivers/hv/ring_buffer.c b/drivers/hv/ring_buffer.c
+index 87799e81af97..c3f1a9e33cef 100644
+--- a/drivers/hv/ring_buffer.c
++++ b/drivers/hv/ring_buffer.c
+@@ -32,6 +32,8 @@
+ 
+ #include "hyperv_vmbus.h"
+ 
++#define VMBUS_PKT_TRAILER	8
++
+ /*
+  * When we write to the ring buffer, check if the host needs to
+  * be signaled. Here is the details of this protocol:
+@@ -336,6 +338,12 @@ int hv_ringbuffer_write(struct vmbus_channel *channel,
+ 	return 0;
+ }
+ 
++static inline void
++init_cached_read_index(struct hv_ring_buffer_info *rbi)
++{
++	rbi->cached_read_index = rbi->ring_buffer->read_index;
++}
++
+ int hv_ringbuffer_read(struct vmbus_channel *channel,
+ 		       void *buffer, u32 buflen, u32 *buffer_actual_len,
+ 		       u64 *requestid, bool raw)
+@@ -366,7 +374,8 @@ int hv_ringbuffer_read(struct vmbus_channel *channel,
+ 		return ret;
+ 	}
+ 
+-	init_cached_read_index(channel);
++	init_cached_read_index(inring_info);
++
+ 	next_read_location = hv_get_next_read_location(inring_info);
+ 	next_read_location = hv_copyfrom_ringbuffer(inring_info, &desc,
+ 						    sizeof(desc),
+@@ -410,3 +419,86 @@ int hv_ringbuffer_read(struct vmbus_channel *channel,
+ 
+ 	return ret;
+ }
++
++/*
++ * Determine number of bytes available in ring buffer after
++ * the current iterator (priv_read_index) location.
++ *
++ * This is similar to hv_get_bytes_to_read but with private
++ * read index instead.
++ */
++static u32 hv_pkt_iter_avail(const struct hv_ring_buffer_info *rbi)
++{
++	u32 priv_read_loc = rbi->priv_read_index;
++	u32 write_loc = READ_ONCE(rbi->ring_buffer->write_index);
++
++	if (write_loc >= priv_read_loc)
++		return write_loc - priv_read_loc;
++	else
++		return (rbi->ring_datasize - priv_read_loc) + write_loc;
++}
++
++/*
++ * Get first vmbus packet from ring buffer after read_index
++ *
++ * If ring buffer is empty, returns NULL and no other action needed.
++ */
++struct vmpacket_descriptor *hv_pkt_iter_first(struct vmbus_channel *channel)
++{
++	struct hv_ring_buffer_info *rbi = &channel->inbound;
++
++	/* set state for later hv_signal_on_read() */
++	init_cached_read_index(rbi);
++
++	if (hv_pkt_iter_avail(rbi) < sizeof(struct vmpacket_descriptor))
++		return NULL;
++
++	return hv_get_ring_buffer(rbi) + rbi->priv_read_index;
++}
++EXPORT_SYMBOL_GPL(hv_pkt_iter_first);
++
++/*
++ * Get next vmbus packet from ring buffer.
++ *
++ * Advances the current location (priv_read_index) and checks for more
++ * data. If the end of the ring buffer is reached, then return NULL.
++ */
++struct vmpacket_descriptor *
++__hv_pkt_iter_next(struct vmbus_channel *channel,
++		   const struct vmpacket_descriptor *desc)
++{
++	struct hv_ring_buffer_info *rbi = &channel->inbound;
++	u32 packetlen = desc->len8 << 3;
++	u32 dsize = rbi->ring_datasize;
++
++	/* bump offset to next potential packet */
++	rbi->priv_read_index += packetlen + VMBUS_PKT_TRAILER;
++	if (rbi->priv_read_index >= dsize)
++		rbi->priv_read_index -= dsize;
++
++	/* more data? */
++	if (hv_pkt_iter_avail(rbi) < sizeof(struct vmpacket_descriptor))
++		return NULL;
++	else
++		return hv_get_ring_buffer(rbi) + rbi->priv_read_index;
++}
++EXPORT_SYMBOL_GPL(__hv_pkt_iter_next);
++
++/*
++ * Update host ring buffer after iterating over packets.
++ */
++void hv_pkt_iter_close(struct vmbus_channel *channel)
++{
++	struct hv_ring_buffer_info *rbi = &channel->inbound;
++
++	/*
++	 * Make sure all reads are done before we update the read index since
++	 * the writer may start writing to the read area once the read index
++	 * is updated.
++	 */
++	virt_rmb();
++	rbi->ring_buffer->read_index = rbi->priv_read_index;
++
++	hv_signal_on_read(channel);
++}
++EXPORT_SYMBOL_GPL(hv_pkt_iter_close);
+diff --git a/drivers/net/hyperv/netvsc.c b/drivers/net/hyperv/netvsc.c
+index 15ef713d96c0..ab9fe48ec133 100644
+--- a/drivers/net/hyperv/netvsc.c
++++ b/drivers/net/hyperv/netvsc.c
+@@ -646,14 +646,11 @@ static void netvsc_send_tx_complete(struct netvsc_device *net_device,
+ static void netvsc_send_completion(struct netvsc_device *net_device,
+ 				   struct vmbus_channel *incoming_channel,
+ 				   struct hv_device *device,
+-				   struct vmpacket_descriptor *packet)
++				   const struct vmpacket_descriptor *desc)
+ {
+-	struct nvsp_message *nvsp_packet;
++	struct nvsp_message *nvsp_packet = hv_pkt_data(desc);
+ 	struct net_device *ndev = hv_get_drvdata(device);
+ 
+-	nvsp_packet = (struct nvsp_message *)((unsigned long)packet +
+-					      (packet->offset8 << 3));
+-
+ 	switch (nvsp_packet->hdr.msg_type) {
+ 	case NVSP_MSG_TYPE_INIT_COMPLETE:
+ 	case NVSP_MSG1_TYPE_SEND_RECV_BUF_COMPLETE:
+@@ -667,7 +664,7 @@ static void netvsc_send_completion(struct netvsc_device *net_device,
+ 
+ 	case NVSP_MSG1_TYPE_SEND_RNDIS_PKT_COMPLETE:
+ 		netvsc_send_tx_complete(net_device, incoming_channel,
+-					device, packet);
++					device, desc);
+ 		break;
+ 
+ 	default:
+@@ -1070,9 +1067,11 @@ static void netvsc_receive(struct net_device *ndev,
+ 		   struct net_device_context *net_device_ctx,
+ 		   struct hv_device *device,
+ 		   struct vmbus_channel *channel,
+-		   struct vmtransfer_page_packet_header *vmxferpage_packet,
++		   const struct vmpacket_descriptor *desc,
+ 		   struct nvsp_message *nvsp)
+ {
++	const struct vmtransfer_page_packet_header *vmxferpage_packet
++		= container_of(desc, const struct vmtransfer_page_packet_header, d);
+ 	char *recv_buf = net_device->recv_buf;
+ 	u32 status = NVSP_STAT_SUCCESS;
+ 	int i;
+@@ -1180,12 +1179,10 @@ static void netvsc_process_raw_pkt(struct hv_device *device,
+ 				   struct netvsc_device *net_device,
+ 				   struct net_device *ndev,
+ 				   u64 request_id,
+-				   struct vmpacket_descriptor *desc)
++				   const struct vmpacket_descriptor *desc)
+ {
+ 	struct net_device_context *net_device_ctx = netdev_priv(ndev);
+-	struct nvsp_message *nvmsg
+-		= (struct nvsp_message *)((unsigned long)desc
+-					  + (desc->offset8 << 3));
++	struct nvsp_message *nvmsg = hv_pkt_data(desc);
+ 
+ 	switch (desc->type) {
+ 	case VM_PKT_COMP:
+@@ -1194,9 +1191,7 @@ static void netvsc_process_raw_pkt(struct hv_device *device,
+ 
+ 	case VM_PKT_DATA_USING_XFER_PAGES:
+ 		netvsc_receive(ndev, net_device, net_device_ctx,
+-			       device, channel,
+-			       (struct vmtransfer_page_packet_header *)desc,
+-			       nvmsg);
++			       device, channel, desc, nvmsg);
+ 		break;
+ 
+ 	case VM_PKT_DATA_INBAND:
+@@ -1218,7 +1213,6 @@ void netvsc_channel_cb(void *context)
+ 	struct netvsc_device *net_device;
+ 	struct vmpacket_descriptor *desc;
+ 	struct net_device *ndev;
+-	bool need_to_commit = false;
+ 
+ 	if (channel->primary_channel != NULL)
+ 		device = channel->primary_channel->device_obj;
+@@ -1237,20 +1231,12 @@ void netvsc_channel_cb(void *context)
+ 		     netvsc_channel_idle(net_device, q_idx)))
+ 		return;
+ 
+-	/* commit_rd_index() -> hv_signal_on_read() needs this. */
+-	init_cached_read_index(channel);
+-
+-	while ((desc = get_next_pkt_raw(channel)) != NULL) {
++	foreach_vmbus_pkt(desc, channel) {
+ 		netvsc_process_raw_pkt(device, channel, net_device,
+ 				       ndev, desc->trans_id, desc);
+ 
+-		put_pkt_raw(channel, desc);
+-		need_to_commit = true;
+ 	}
+ 
+-	if (need_to_commit)
+-		commit_rd_index(channel);
+-
+ 	netvsc_chk_recv_comp(net_device, channel, q_idx);
+ }
+ 
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index 970771a5f739..0c170a3f0d8b 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -1508,14 +1508,6 @@ static inline  void hv_signal_on_read(struct vmbus_channel *channel)
+ 	return;
+ }
+ 
+-static inline void
+-init_cached_read_index(struct vmbus_channel *channel)
+-{
+-	struct hv_ring_buffer_info *rbi = &channel->inbound;
+-
+-	rbi->cached_read_index = rbi->ring_buffer->read_index;
+-}
+-
+ /*
+  * Mask off host interrupt callback notifications
+  */
+@@ -1549,76 +1541,48 @@ static inline u32 hv_end_read(struct hv_ring_buffer_info *rbi)
+ /*
+  * An API to support in-place processing of incoming VMBUS packets.
+  */
+-#define VMBUS_PKT_TRAILER	8
+ 
+-static inline struct vmpacket_descriptor *
+-get_next_pkt_raw(struct vmbus_channel *channel)
++/* Get data payload associated with descriptor */
++static inline void *hv_pkt_data(const struct vmpacket_descriptor *desc)
+ {
+-	struct hv_ring_buffer_info *ring_info = &channel->inbound;
+-	u32 priv_read_loc = ring_info->priv_read_index;
+-	void *ring_buffer = hv_get_ring_buffer(ring_info);
+-	u32 dsize = ring_info->ring_datasize;
+-	/*
+-	 * delta is the difference between what is available to read and
+-	 * what was already consumed in place. We commit read index after
+-	 * the whole batch is processed.
+-	 */
+-	u32 delta = priv_read_loc >= ring_info->ring_buffer->read_index ?
+-		priv_read_loc - ring_info->ring_buffer->read_index :
+-		(dsize - ring_info->ring_buffer->read_index) + priv_read_loc;
+-	u32 bytes_avail_toread = (hv_get_bytes_to_read(ring_info) - delta);
+-
+-	if (bytes_avail_toread < sizeof(struct vmpacket_descriptor))
+-		return NULL;
+-
+-	return ring_buffer + priv_read_loc;
++	return (void *)((unsigned long)desc + (desc->offset8 << 3));
+ }
+ 
+-/*
+- * A helper function to step through packets "in-place"
+- * This API is to be called after each successful call
+- * get_next_pkt_raw().
+- */
+-static inline void put_pkt_raw(struct vmbus_channel *channel,
+-				struct vmpacket_descriptor *desc)
++/* Get data size associated with descriptor */
++static inline u32 hv_pkt_datalen(const struct vmpacket_descriptor *desc)
+ {
+-	struct hv_ring_buffer_info *ring_info = &channel->inbound;
+-	u32 packetlen = desc->len8 << 3;
+-	u32 dsize = ring_info->ring_datasize;
+-
+-	/*
+-	 * Include the packet trailer.
+-	 */
+-	ring_info->priv_read_index += packetlen + VMBUS_PKT_TRAILER;
+-	ring_info->priv_read_index %= dsize;
++	return (desc->len8 << 3) - (desc->offset8 << 3);
+ }
+ 
++
++struct vmpacket_descriptor *
++hv_pkt_iter_first(struct vmbus_channel *channel);
++
++struct vmpacket_descriptor *
++__hv_pkt_iter_next(struct vmbus_channel *channel,
++		   const struct vmpacket_descriptor *pkt);
++
++void hv_pkt_iter_close(struct vmbus_channel *channel);
++
+ /*
+- * This call commits the read index and potentially signals the host.
+- * Here is the pattern for using the "in-place" consumption APIs:
+- *
+- * init_cached_read_index();
+- *
+- * while (get_next_pkt_raw() {
+- *	process the packet "in-place";
+- *	put_pkt_raw();
+- * }
+- * if (packets processed in place)
+- *	commit_rd_index();
++ * Get next packet descriptor from iterator
++ * If at end of list, return NULL and update host.
+  */
+-static inline void commit_rd_index(struct vmbus_channel *channel)
++static inline struct vmpacket_descriptor *
++hv_pkt_iter_next(struct vmbus_channel *channel,
++		 const struct vmpacket_descriptor *pkt)
+ {
+-	struct hv_ring_buffer_info *ring_info = &channel->inbound;
+-	/*
+-	 * Make sure all reads are done before we update the read index since
+-	 * the writer may start writing to the read area once the read index
+-	 * is updated.
+-	 */
+-	virt_rmb();
+-	ring_info->ring_buffer->read_index = ring_info->priv_read_index;
++	struct vmpacket_descriptor *nxt;
++
++	nxt = __hv_pkt_iter_next(channel, pkt);
++	if (!nxt)
++		hv_pkt_iter_close(channel);
+ 
+-	hv_signal_on_read(channel);
++	return nxt;
+ }
+ 
++#define foreach_vmbus_pkt(pkt, channel) \
++	for (pkt = hv_pkt_iter_first(channel); pkt; \
++	    pkt = hv_pkt_iter_next(channel, pkt))
+ 
+ #endif /* _HYPERV_H */
+-- 
+2.12.2
+
