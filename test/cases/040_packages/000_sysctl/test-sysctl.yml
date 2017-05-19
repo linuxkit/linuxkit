@@ -10,9 +10,7 @@ onboot:
   - name: sysctl
     image: "linuxkit/sysctl:13a37b8d38fbec34d8c7d3bd4dadb57c9f92c94c"
   - name: test
-    image: "linuxkit/test-sysctl:37315a58ec0c18a28be7e2770feb3bf38384492d"
-    net: host
-    pid: host
+    image: "linuxkit/test-sysctl:c4df4c4d692904d6245dcdef1f4a79389bd3d894"
   - name: poweroff
     image: "linuxkit/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
     net: host
