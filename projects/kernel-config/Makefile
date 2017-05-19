@@ -35,6 +35,7 @@ sign:
 # build_4.9.x_dbg and adds "_dbg" to the hub image name.
 define kernel
 build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel_config.$(2)*) kernel_config.base kernel_config.$(ARCH)
+	cp ../../test/pkg/kernel-config/check-kernel-config.sh .
 	docker pull linuxkit/$(IMAGE):$(1)$(3)-$(HASH) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
@@ -42,6 +43,7 @@ build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel
 			--build-arg ARCH=$(ARCH) \
 			--build-arg DEBUG=$(3) \
 			--no-cache -t linuxkit/$(IMAGE):$(1)$(3)-$(HASH) .
+	-rm check-kernel-config.sh
 
 push_$(2)$(3): build_$(2)$(3)
 	docker pull linuxkit/$(IMAGE):$(1)$(3)-$(HASH) || \
