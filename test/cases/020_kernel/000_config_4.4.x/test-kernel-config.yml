@@ -1,0 +1,16 @@
+kernel:
+  image: "linuxkit/kernel:4.4.x"
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
+  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
+  - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
+onboot:
+  - name: check-kernel-config
+    image: "linuxkit/test-kernel-config:ecff41279ccbc408079a3996a956432651c6eb9c"
+    readonly: true
+  - name: poweroff
+    image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
+    command: ["/bin/sh", "/poweroff.sh", "3"]
+outputs:
+  - format: kernel+initrd

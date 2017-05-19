@@ -1,23 +1,11 @@
 kernel:
-  image: "linuxkit/kernel:4.9.x"
+  image: "linuxkit/kernel:4.11.x"
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
   - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
   - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
-  - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
 onboot:
-  - name: dhcpcd
-    image: "linuxkit/dhcpcd:cb96c09a33c166eca6530f166f0f79927c3e83b0"
-    binds:
-     - /var:/var
-     - /tmp:/etc
-    capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
-    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: check-kernel-config
     image: "linuxkit/test-kernel-config:ecff41279ccbc408079a3996a956432651c6eb9c"
     readonly: true
