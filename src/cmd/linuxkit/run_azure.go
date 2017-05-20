@@ -45,5 +45,8 @@ func runAzure(args []string) {
 
 	group := createResourceGroup(*resourceGroupName, *location)
 	createStorageAccount(*accountName, *location, *group)
-	createVirtualNetwork(*group, "linuxkitvnetgo", *location)
+	createVirtualNetwork(*group, "linuxkitvnetgo9", *location)
+	subnet := createSubnet(*group, "linuxkitvnetgo9", "subnet")
+	publicIPAddress := createPublicIPAddress(*group, "publicip46", *location)
+	createNetworkInterface(*group, "linxkitNetworkInterface46", *publicIPAddress, *subnet, *location)
 }
