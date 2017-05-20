@@ -27,7 +27,7 @@ RUN echo "/mirror" > /etc/apk/repositories && apk update
 
 # add Go validation tools
 COPY go-compile.sh /go/bin/
-RUN apk add --no-cache build-base git go
+RUN apk add --no-cache git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
 RUN go get -u github.com/golang/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
