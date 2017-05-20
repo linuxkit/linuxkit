@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/Azure/azure-sdk-for-go/arm/compute"
+	"github.com/Azure/azure-sdk-for-go/arm/network"
 	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
 	"github.com/Azure/azure-sdk-for-go/arm/storage"
 	simpleStorage "github.com/Azure/azure-sdk-for-go/storage"
@@ -19,6 +20,7 @@ var (
 	simpleStorageClient   simpleStorage.Client
 	groupsClient          resources.GroupsClient
 	accountsClient        storage.AccountsClient
+	virtualNetworksClient network.VirtualNetworksClient
 	virtualMachinesClient compute.VirtualMachinesClient
 )
 
@@ -41,6 +43,9 @@ func initializeAzureClients(subscriptionID, tenantID, clientID, clientSecret str
 	accountsClient = storage.NewAccountsClient(subscriptionID)
 	accountsClient.Authorizer = autorest.NewBearerAuthorizer(token)
 
+	virtualNetworksClient = network.NewVirtualNetworksClient(subscriptionID)
+	virtualNetworksClient.Authorizer = autorest.NewBearerAuthorizer(token)
+
 	virtualMachinesClient = compute.NewVirtualMachinesClient(subscriptionID)
 	virtualMachinesClient.Authorizer = autorest.NewBearerAuthorizer(token)
 
@@ -60,7 +65,7 @@ func getOrCreateResourceGroup(resourceGroupName, location string) *resources.Gro
 }
 
 func createResourceGroup(resourceGroupName, location string) *resources.Group {
-	fmt.Printf("Creating resource group in %s", location)
+	fmt.Printf("\nCreating resource group in %s", location)
 
 	resourceGroupParameters := resources.Group{
 		Location: &location,
@@ -75,7 +80,7 @@ func createResourceGroup(resourceGroupName, location string) *resources.Group {
 }
 
 func createStorageAccount(accountName, location string, resourceGroup resources.Group) *storage.Account {
-	fmt.Printf("Creating storage account in %s, resource group %s\n", location, *resourceGroup.Name)
+	fmt.Printf("\nCreating storage account in %s, resource group %s\n", location, *resourceGroup.Name)
 
 	storageAccountCreateParameters := storage.AccountCreateParameters{
 		Sku: &storage.Sku{
@@ -94,8 +99,7 @@ func createStorageAccount(accountName, location string, resourceGroup resources.
 			if !ok {
 				storageChannel = nil
 			}
-		case err, ok := <-errorChannel:
-			fmt.Println("error", err, ok)
+		case _, ok := <-errorChannel:
 			if !ok {
 				errorChannel = nil
 			}
@@ -106,6 +110,39 @@ func createStorageAccount(accountName, location string, resourceGroup resources.
 	}
 
 	return &storageAccount
+}
+
+func createVirtualNetwork(resourceGroup resources.Group, virtualNetworkName string, location string) *network.VirtualNetwork {
+	fmt.Printf("Creating virtual network in resource group %s, in %s", *resourceGroup.Name, location)
+
+	virtualNetworkParameters := network.VirtualNetwork{
+		Location: &location,
+		VirtualNetworkPropertiesFormat: &network.VirtualNetworkPropertiesFormat{
+			AddressSpace: &network.AddressSpace{
+				AddressPrefixes: &[]string{"10.0.0.0/16"},
+			},
+		},
+	}
+	virtualNetworkChannel, errorChannel := virtualNetworksClient.CreateOrUpdate(*resourceGroup.Name, virtualNetworkName, virtualNetworkParameters, nil)
+	var virtualNetwork network.VirtualNetwork
+	for {
+		select {
+		case v, ok := <-virtualNetworkChannel:
+			virtualNetwork = v
+			if !ok {
+				virtualNetworkChannel = nil
+			}
+		case _, ok := <-errorChannel:
+			if !ok {
+				errorChannel = nil
+			}
+		}
+		if virtualNetworkChannel == nil && errorChannel == nil {
+			break
+		}
+	}
+
+	return &virtualNetwork
 }
 
 // Uploads a file to Azure Storage, to account accountName, in contaiener containerName and blob blobName
