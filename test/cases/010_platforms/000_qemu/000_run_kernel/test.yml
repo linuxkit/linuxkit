@@ -7,12 +7,8 @@ init:
   - linuxkit/containerd:60e2486a74c665ba4df57e561729aec20758daed
 onboot:
   - name: poweroff
-    image: "linuxkit/poweroff:961412b8ef5c5285de0d40ec076701d955eaa084"
-    pid: host
+    image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
     command: ["/bin/sh", "/poweroff.sh", "10"]
-    capabilities:
-     - CAP_SYS_BOOT
-    readonly: true
 trust:
   image:
     - linuxkit/kernel

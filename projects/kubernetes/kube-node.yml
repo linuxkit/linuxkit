@@ -8,13 +8,7 @@ init:
   - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:1f5ec5d5e6f7a7a1b3d2ff9dd9e36fd6fb14756a"
-    net: host
-    pid: host
-    ipc: host
-    capabilities:
-     - CAP_SYS_ADMIN
-    readonly: true
+    image: "linuxkit/sysctl:13a37b8d38fbec34d8c7d3bd4dadb57c9f92c94c"
   - name: sysfs
     image: linuxkit/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c
   - name: binfmt

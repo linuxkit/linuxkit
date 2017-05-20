@@ -1,24 +1,22 @@
 kernel:
   image: "linuxkit/kernel:4.9.x"
-  cmdline: "console=ttyS0"
+  cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
   - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
   - linuxkit/containerd:1c71f95fa36040ea7e987deb98a7a2a363853f01
   - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
 onboot:
-  - name: ltp
-    image: "linuxkit/test-ltp-20170116:81229df2d25065b06f0a3071faaace8d66c87e67"
-    net: host
-    pid: host
-    binds:
-     - /etc/ltp/baseline:/etc/ltp/baseline
-    capabilities:
-     - all
+  - name: sysctl
+    image: "linuxkit/sysctl:13a37b8d38fbec34d8c7d3bd4dadb57c9f92c94c"
+  - name: test
+    image: "linuxkit/test-sysctl:c4df4c4d692904d6245dcdef1f4a79389bd3d894"
   - name: poweroff
     image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
-files:
-  - path: /etc/ltp/baseline
-    contents: "100"
+trust:
+  image:
+    - linuxkit/kernel
+    - linuxkit/binfmt
+    - linuxkit/rngd
 outputs:
-  - format: gcp-img
+  - format: kernel+initrd

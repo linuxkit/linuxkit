@@ -25,10 +25,19 @@ RUN abuild-sign /mirror/$(uname -m)/APKINDEX.tar.gz
 # set this as our repo
 RUN echo "/mirror" > /etc/apk/repositories && apk update
 
+# add Go validation tools
+COPY go-compile.sh /go/bin/
+RUN apk add --no-cache build-base git go
+ENV GOPATH=/go PATH=$PATH:/go/bin
+RUN go get -u github.com/golang/lint/golint
+RUN go get -u github.com/gordonklaus/ineffassign
+RUN go get -u github.com/LK4D4/vndr
+
 FROM alpine:edge
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/keys /etc/apk/keys/
 COPY --from=mirror /mirror /mirror/
+COPY --from=mirror /go/bin /go/bin/
 
 RUN apk update && apk upgrade -a

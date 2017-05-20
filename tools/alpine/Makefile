@@ -6,14 +6,10 @@ BASE=alpine:edge
 
 default: push
 
-define NEWLINE
-
-endef
-
-hash: Dockerfile packages
+hash:
 	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build sh -c 'find /mirror -name '*.apk' -type f | xargs cat | cat /lib/apk/db/installed - | sha1sum' | sed 's/ .*//' > $@
+	docker build --no-cache -t $(IMAGE):build .
+	docker run --rm $(IMAGE):build sh -c 'echo /lib/apk/db/installed $$(find /mirror -name '*.apk' -type f) $$(find /go/bin -type f) | xargs cat | sha1sum' | sed 's/ .*//' > $@
 
 push: hash
 	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
@@ -31,5 +27,3 @@ tag: hash
 
 clean:
 	rm -f hash
-
-.DELETE_ON_ERROR:
