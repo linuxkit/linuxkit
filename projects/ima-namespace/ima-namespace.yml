@@ -9,7 +9,7 @@ init:
   - linuxkit/ima-utils:fe119c7dac08884f4144cd106dc279ddd8b37517
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:13a37b8d38fbec34d8c7d3bd4dadb57c9f92c94c"
+    image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"
   - name: binfmt
     image: "linuxkit/binfmt:131026c0cf6084467316395fed3b358f64bda00c"
     binds:
