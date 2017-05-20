@@ -44,7 +44,6 @@ func runAzure(args []string) {
 	initializeAzureClients(subscriptionID, tenantID, clientID, clientSecret)
 
 	group := createResourceGroup(*resourceGroupName, *location)
-	storageAccount := createStorageAccount(*accountName, *location, *group)
-
-	fmt.Println(storageAccount.Name)
+	createStorageAccount(*accountName, *location, *group)
+	createVirtualNetwork(*group, "linuxkitvnetgo", *location)
 }
