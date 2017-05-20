@@ -1,14 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"flag"
 	"fmt"
 	"log"
 	"os"
 	"path/filepath"
-
-	"github.com/radu-matei/azure-sdk-for-go/storage"
 )
 
 // Process the run arguments and execute run
@@ -35,42 +32,5 @@ func pushAzure(args []string) {
 		log.Fatal("Unable to parse args")
 	}
 
-	client, err := storage.NewBasicClient(*accountName, *accountKey)
-	if err != nil {
-		log.Fatalf("Unable to create storage client")
-	}
-
-	blobClient := client.GetBlobService()
-	options := storage.CreateContainerOptions{}
-	container := blobClient.GetContainerReference(*containerName)
-
-	_, err = container.CreateIfNotExists(&options)
-	if err != nil {
-		fmt.Printf(err.Error())
-		log.Fatalf("Unable to create storage container")
-	}
-
-	blob := container.GetBlobReference(*blobName)
-
-	file := newFile(*imageName)
-	defer file.Close()
-
-	reader := bufio.NewReader(file)
-	stat, err := file.Stat()
-	size := int(stat.Size())
-
-	err = blob.CreateBlockBlobFromReader(reader, nil, size)
-	if err != nil {
-		fmt.Printf(err.Error())
-		log.Fatalf("Unable to create block blob from reader")
-	}
-	fmt.Printf("You can find the file at https://%s.blob.core.windows.net/%s/%s\n", *accountName, *containerName, *blobName)
-}
-
-func newFile(fn string) *os.File {
-	fp, err := os.OpenFile(fn, os.O_RDONLY, 0644)
-	if err != nil {
-		log.Fatal(err)
-	}
-	return fp
+	uploadFile(*accountName, *accountKey, *containerName, *blobName, *imageName)
 }
