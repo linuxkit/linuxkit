@@ -14,14 +14,18 @@ import (
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
+	"github.com/Azure/go-autorest/autorest/to"
 )
 
 var (
-	simpleStorageClient   simpleStorage.Client
-	groupsClient          resources.GroupsClient
-	accountsClient        storage.AccountsClient
-	virtualNetworksClient network.VirtualNetworksClient
-	virtualMachinesClient compute.VirtualMachinesClient
+	simpleStorageClient     simpleStorage.Client
+	groupsClient            resources.GroupsClient
+	accountsClient          storage.AccountsClient
+	virtualNetworksClient   network.VirtualNetworksClient
+	subnetsClient           network.SubnetsClient
+	publicIPAddressesClient network.PublicIPAddressesClient
+	interfacesClient        network.InterfacesClient
+	virtualMachinesClient   compute.VirtualMachinesClient
 )
 
 func initializeAzureClients(subscriptionID, tenantID, clientID, clientSecret string) {
@@ -45,6 +49,15 @@ func initializeAzureClients(subscriptionID, tenantID, clientID, clientSecret str
 
 	virtualNetworksClient = network.NewVirtualNetworksClient(subscriptionID)
 	virtualNetworksClient.Authorizer = autorest.NewBearerAuthorizer(token)
+
+	subnetsClient = network.NewSubnetsClient(subscriptionID)
+	subnetsClient.Authorizer = autorest.NewBearerAuthorizer(token)
+
+	publicIPAddressesClient = network.NewPublicIPAddressesClient(subscriptionID)
+	publicIPAddressesClient.Authorizer = autorest.NewBearerAuthorizer(token)
+
+	interfacesClient = network.NewInterfacesClient(subscriptionID)
+	interfacesClient.Authorizer = autorest.NewBearerAuthorizer(token)
 
 	virtualMachinesClient = compute.NewVirtualMachinesClient(subscriptionID)
 	virtualMachinesClient.Authorizer = autorest.NewBearerAuthorizer(token)
@@ -143,6 +156,116 @@ func createVirtualNetwork(resourceGroup resources.Group, virtualNetworkName stri
 	}
 
 	return &virtualNetwork
+}
+
+func createSubnet(resourceGroup resources.Group, virtualNetworkName, subnetName string) *network.Subnet {
+	fmt.Printf("\nCreating subnet %s in resource group %s, within virtual network %s", subnetName, *resourceGroup.Name, virtualNetworkName)
+
+	subnetParameters := network.Subnet{
+		SubnetPropertiesFormat: &network.SubnetPropertiesFormat{
+			AddressPrefix: to.StringPtr("10.0.0.0/24"),
+		},
+	}
+
+	subnetChannel, errorChannel := subnetsClient.CreateOrUpdate(*resourceGroup.Name, virtualNetworkName, subnetName, subnetParameters, nil)
+	for {
+		select {
+		case _, ok := <-subnetChannel:
+			if !ok {
+				subnetChannel = nil
+			}
+		case _, ok := <-errorChannel:
+			if !ok {
+				errorChannel = nil
+			}
+		}
+		if subnetChannel == nil && errorChannel == nil {
+			break
+		}
+	}
+	subnet, err := subnetsClient.Get(*resourceGroup.Name, virtualNetworkName, subnetName, "")
+	if err != nil {
+		log.Fatalf("Unable to retrieve subnet")
+	}
+
+	return &subnet
+}
+
+func createPublicIPAddress(resourceGroup resources.Group, ipName, location string) *network.PublicIPAddress {
+	fmt.Printf("\nCreating public IP Address in resource group %s, with name %s", *resourceGroup.Name, ipName)
+
+	ipParameters := network.PublicIPAddress{
+		Location: &location,
+		PublicIPAddressPropertiesFormat: &network.PublicIPAddressPropertiesFormat{
+			DNSSettings: &network.PublicIPAddressDNSSettings{
+				DomainNameLabel: to.StringPtr(fmt.Sprintf("linuxkit%s", ipName)),
+			},
+		},
+	}
+	ipAddressChannel, errorChannel := publicIPAddressesClient.CreateOrUpdate(*resourceGroup.Name, ipName, ipParameters, nil)
+	for {
+		select {
+		case _, ok := <-ipAddressChannel:
+			if !ok {
+				ipAddressChannel = nil
+			}
+		case _, ok := <-errorChannel:
+			if !ok {
+				errorChannel = nil
+			}
+		}
+		if ipAddressChannel == nil && errorChannel == nil {
+			break
+		}
+	}
+	publicIPAddress, err := publicIPAddressesClient.Get(*resourceGroup.Name, ipName, "")
+	if err != nil {
+		log.Fatalf("Unable to retrieve public IP address")
+	}
+
+	return &publicIPAddress
+}
+
+func createNetworkInterface(resourceGroup resources.Group, networkInterfaceName string, publicIPAddress network.PublicIPAddress, subnet network.Subnet, location string) *network.Interface {
+	//fmt.Printf("\nCreating network interface in resource group %s, with name %s, in location %s, with public IP %s", *resourceGroup.Name, networkInterfaceName, location, *publicIPAddress.IPAddress)
+
+	networkInterfaceParameters := network.Interface{
+		Location: &location,
+		InterfacePropertiesFormat: &network.InterfacePropertiesFormat{
+			IPConfigurations: &[]network.InterfaceIPConfiguration{
+				{
+					Name: to.StringPtr(fmt.Sprintf("IPconfig-%s", networkInterfaceName)),
+					InterfaceIPConfigurationPropertiesFormat: &network.InterfaceIPConfigurationPropertiesFormat{
+						PublicIPAddress:           &publicIPAddress,
+						PrivateIPAllocationMethod: network.Dynamic,
+						Subnet: &subnet,
+					},
+				},
+			},
+		},
+	}
+	networkInterfaceChannel, errorChannel := interfacesClient.CreateOrUpdate(*resourceGroup.Name, networkInterfaceName, networkInterfaceParameters, nil)
+	for {
+		select {
+		case _, ok := <-networkInterfaceChannel:
+			if !ok {
+				networkInterfaceChannel = nil
+			}
+		case _, ok := <-errorChannel:
+			if !ok {
+				errorChannel = nil
+			}
+		}
+		if networkInterfaceChannel == nil && errorChannel == nil {
+			break
+		}
+	}
+
+	networkInterface, err := interfacesClient.Get(*resourceGroup.Name, networkInterfaceName, "")
+	if err != nil {
+		log.Fatalf("Unable to retrieve network interface")
+	}
+	return &networkInterface
 }
 
 // Uploads a file to Azure Storage, to account accountName, in contaiener containerName and blob blobName
