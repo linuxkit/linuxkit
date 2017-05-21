@@ -33,14 +33,4 @@ go test
 
 export CGO_ENABLED=0
 
-if [ "$GOOS" = "darwin" -o "$GOOS" = "windows" ]
-then
-	if [ -z "$ldflags" ]
-	then
-		go install
-	else
-		go install -ldflags "${ldflags}"
-	fi
-else
-	go install -buildmode pie -ldflags "-s -w ${ldflags} -extldflags \"-fno-PIC -static\""
-fi
+go install -buildmode pie -ldflags "-s -w ${ldflags} -extldflags \"-fno-PIC -static\""

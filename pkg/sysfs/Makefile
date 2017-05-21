@@ -1,45 +1,15 @@
-GO_COMPILE=linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5
-
-SHA_IMAGE=alpine:3.5@sha256:dfbd4a3a8ebca874ebd2474f044a0b33600d4523d03b0df76e5c5986cb02d7e8
-
-SYSFS_BINARY=usr/bin/sysfs
+.PHONY: tag push
+default: push
 
 ORG?=linuxkit
 IMAGE=sysfs
+DEPS=Dockerfile Makefile main.go
 
-.PHONY: tag push clean container
-default: push
+HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
-$(SYSFS_BINARY): main.go
-	mkdir -p $(dir $@)
-	tar cf - $^ | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
+tag: $(DEPS)
+	docker build --squash --no-cache --network=none -t $(ORG)/$(IMAGE):$(HASH) .
 
-DIRS=dev proc sys
-$(DIRS):
-	mkdir -p $@
-
-DEPS=$(DIRS) $(SYSFS_BINARY) etc/sysfs.d/00-moby.conf
-
-container: Dockerfile $(DEPS)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-
-hash: Dockerfile $(DEPS)
-	find $^ -type f | xargs cat | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
-
-push: hash container
-	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash) && \
-		 docker push $(ORG)/$(IMAGE):$(shell cat hash))
-	docker rmi $(IMAGE):build
-	rm -f hash
-
-tag: hash container
-	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
-	rm -f hash
-
-clean:
-	rm -rf hash $(DIRS) usr
-
-.DELETE_ON_ERROR:
+push: tag
+	docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	docker push $(ORG)/$(IMAGE):$(HASH)

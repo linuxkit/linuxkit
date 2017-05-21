@@ -113,7 +113,7 @@ lzo-2.10-r0
 m4-1.4.18-r0
 make-4.2.1-r0
 mesa-gbm-17.0.3-r1
-mkinitfs-3.0.9-r1
+mkinitfs-3.1.0_rc1-r0
 mpc1-1.0.3-r0
 mpfr3-3.1.5-r0
 mtools-4.0.18-r1
@@ -136,7 +136,7 @@ patch-2.7.5-r1
 pcre-8.40-r2
 perl-5.24.1-r2
 pixman-0.34.0-r0
-pkgconf-1.3.6-r0
+pkgconf-1.3.7-r0
 popt-1.16-r6
 qemu-2.8.1-r1
 qemu-aarch64-2.8.1-r1

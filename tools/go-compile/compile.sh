@@ -88,7 +88,7 @@ test -z $(find . -type f -name "*.go" -not -path "*/vendor/*" -not -name "*.pb.*
 
 >&2 echo "go build..."
 
-if [ "$GOOS" = "darwin" ]
+if [ "$GOOS" = "darwin" -o "$GOOS" = "windows" ]
 then
 	if [ -z "$ldflags" ]
 	then
