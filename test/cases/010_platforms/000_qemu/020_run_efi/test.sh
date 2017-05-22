@@ -19,9 +19,9 @@ clean_up() {
 
 trap clean_up EXIT
 
-if command -v qemu; then
+if command -v qemu-system-x86_64; then
 	if [ ! -f /usr/share/ovmf/bios.bin ]; then
-		exit RT_CANCEL
+		exit $RT_CANCEL
 	fi
 fi
 
