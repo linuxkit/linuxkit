@@ -185,6 +185,7 @@ func runQemuContainer(config QemuConfig) error {
 	config, args = buildQemuCmdline(config)
 
 	dockerArgs := []string{"run", "--interactive", "--rm", "-v", fmt.Sprintf("%s:%s", wd, "/tmp"), "-w", "/tmp"}
+	dockerArgsImg := []string{"run", "--rm", "-v", fmt.Sprintf("%s:%s", wd, "/tmp"), "-w", "/tmp"}
 
 	if terminal.IsTerminal(int(os.Stdin.Fd())) {
 		dockerArgs = append(dockerArgs, "--tty")
@@ -212,8 +213,9 @@ func runQemuContainer(config QemuConfig) error {
 		if _, err = os.Stat(config.DiskPath); err != nil {
 			if os.IsNotExist(err) {
 				log.Infof("Creating new qemu disk [%s] format %s", config.DiskPath, config.DiskFormat)
-				imgArgs := append(dockerArgs, QemuImg, "qemu-img", "create", "-f", config.DiskFormat, config.DiskPath, config.DiskSize)
+				imgArgs := append(dockerArgsImg, QemuImg, "qemu-img", "create", "-f", config.DiskFormat, config.DiskPath, config.DiskSize)
 				qemuImgCmd := exec.Command(dockerPath, imgArgs...)
+				qemuImgCmd.Stderr = os.Stderr
 				log.Debugf("%v\n", qemuImgCmd.Args)
 				if err = qemuImgCmd.Run(); err != nil {
 					return fmt.Errorf("Error creating disk [%s] format %s:  %s", config.DiskPath, config.DiskFormat, err.Error())
