@@ -1,0 +1,31 @@
+#!/usr/bin/env expect
+spawn linuxkit run hyperkit hyperkit-kernel
+set pid [exp_pid]
+set timeout 30
+
+expect {
+    timeout {
+        puts "FAILED boot"
+        exec kill -9 $pid
+        exit 1
+    }
+    "Welcome to LinuxKit" {
+        puts "SUCCESS boot"
+    }
+}
+expect {
+    timeout {
+        puts "FAILED poweroff"
+        exec kill -9 $pid
+        exit 1
+    }
+    "Power down" {
+        puts "SUCCESS poweroff"
+    }
+    eof {
+        puts "SUCCESS poweroff"
+    }
+}
+set waitval [wait -i $spawn_id]
+set exval [lindex $waitval 3]
+exit $exval
