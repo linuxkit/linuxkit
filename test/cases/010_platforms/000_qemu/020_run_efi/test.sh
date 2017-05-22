@@ -27,5 +27,5 @@ fi
 
 moby build -name "${NAME}" test.yml
 [ -f "${NAME}-efi.iso" ] || exit 1
-linuxkit run qemu -uefi "${NAME}" | grep -q "Welcome to LinuxKit"
+linuxkit run qemu -iso -uefi "${NAME}-efi.iso" | grep -q "Welcome to LinuxKit"
 exit 0

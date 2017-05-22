@@ -19,7 +19,7 @@ const QemuImg = "linuxkit/qemu:17f052263d63c8a2b641ad91c589edcbb8a18c82"
 
 // QemuConfig contains the config for Qemu
 type QemuConfig struct {
-	Prefix         string
+	Path           string
 	ISO            bool
 	UEFI           bool
 	Kernel         bool
@@ -42,18 +42,20 @@ func runQemu(args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("qemu", flag.ExitOnError)
 	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run qemu [options] prefix\n\n", invoked)
-		fmt.Printf("'prefix' specifies the path to the VM image.\n")
+		fmt.Printf("USAGE: %s run qemu [options] path\n\n", invoked)
+		fmt.Printf("'path' specifies the path to the VM image.\n")
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")
 		flags.PrintDefaults()
 	}
 
-	// Determine Flags
+	// Display flags
 	enableGUI := flags.Bool("gui", false, "Set qemu to use video output instead of stdio")
-	uefiBoot := flags.Bool("uefi", false, "Set UEFI boot from 'prefix'-efi.iso")
-	isoBoot := flags.Bool("iso", false, "Set Legacy BIOS boot from 'prefix'.iso")
-	kernelBoot := flags.Bool("kernel", true, "Set boot using 'prefix'-kernel/-initrd/-cmdline")
+
+	// Boot type; we try to determine automatically
+	uefiBoot := flags.Bool("uefi", false, "Use UEFI boot")
+	isoBoot := flags.Bool("iso", false, "Boot image is an ISO")
+	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
 	// Paths and settings for disks
 	disk := flags.String("disk", "", "Path to disk image to use")
@@ -80,19 +82,45 @@ func runQemu(args []string) {
 	remArgs := flags.Args()
 
 	if len(remArgs) == 0 {
-		fmt.Println("Please specify the prefix to the image to boot")
+		fmt.Println("Please specify the path to the image to boot")
 		flags.Usage()
 		os.Exit(1)
 	}
-	prefix := remArgs[0]
+	path := remArgs[0]
 
-	// Print warning if conflicting UEFI and ISO flags are set
-	if *uefiBoot && *isoBoot {
-		log.Warnf("Both -iso and -uefi have been used")
+	_, err := os.Stat(path)
+	stat := err == nil
+
+	// if the path does not exist, must be trying to do a kernel boot
+	if !stat {
+		_, err = os.Stat(path + "-kernel")
+		statKernel := err == nil
+		if statKernel {
+			*kernelBoot = true
+		}
+		// we will error out later if neither found
+	} else {
+		// if path ends in .iso they meant an ISO
+		if strings.HasSuffix(path, ".iso") {
+			*isoBoot = true
+		}
+		// autodetect EFI ISO from our default naming
+		if strings.HasSuffix(path, "-efi.iso") {
+			*uefiBoot = true
+		}
+	}
+
+	// user not trying to boot off ISO or kernel, so assume booting from a disk image
+	if !*kernelBoot && !*isoBoot {
+		if *disk != "" {
+			// Need to add multiple disk support to do this
+			log.Fatalf("Cannot boot from disk and specify a disk as well at present")
+		}
+		*disk = path
 	}
 
 	config := QemuConfig{
-		Prefix:         prefix,
+		Path:           path,
 		ISO:            *isoBoot,
 		UEFI:           *uefiBoot,
 		Kernel:         *kernelBoot,
@@ -110,7 +138,6 @@ func runQemu(args []string) {
 
 	config = discoverBackend(config)
 
-	var err error
 	if config.Containerized {
 		err = runQemuContainer(config)
 	} else {
@@ -169,10 +196,10 @@ func runQemuLocal(config QemuConfig) error {
 
 func runQemuContainer(config QemuConfig) error {
 	var wd string
-	if filepath.IsAbs(config.Prefix) {
+	if filepath.IsAbs(config.Path) {
 		// Split the path
-		wd, config.Prefix = filepath.Split(config.Prefix)
-		log.Debugf("Prefix: %s", config.Prefix)
+		wd, config.Path = filepath.Split(config.Path)
+		log.Debugf("Path: %s", config.Path)
 	} else {
 		var err error
 		wd, err = os.Getwd()
@@ -267,33 +294,26 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		qemuArgs = append(qemuArgs, "-drive", "file="+config.DiskPath+",format="+config.DiskFormat+",index=0,media=disk")
 	}
 
-	// Check flags for iso/uefi boot and if so disable kernel boot
 	if config.ISO {
-		config.Kernel = false
-		qemuIsoPath := buildPath(config.Prefix, ".iso")
-		qemuArgs = append(qemuArgs, "-cdrom", qemuIsoPath)
+		qemuArgs = append(qemuArgs, "-cdrom", config.Path)
+		qemuArgs = append(qemuArgs, "-boot", "d")
 	}
 
 	if config.UEFI {
-		config.Kernel = false
-		qemuIsoPath := buildPath(config.Prefix, "-efi.iso")
 		qemuArgs = append(qemuArgs, "-pflash", config.FWPath)
-		qemuArgs = append(qemuArgs, "-cdrom", qemuIsoPath)
-		qemuArgs = append(qemuArgs, "-boot", "d")
 	}
 
 	// build kernel boot config from kernel/initrd/cmdline
 	if config.Kernel {
-		qemuKernelPath := buildPath(config.Prefix, "-kernel")
-		qemuInitrdPath := buildPath(config.Prefix, "-initrd.img")
+		qemuKernelPath := buildPath(config.Path, "-kernel")
+		qemuInitrdPath := buildPath(config.Path, "-initrd.img")
 		qemuArgs = append(qemuArgs, "-kernel", qemuKernelPath)
 		qemuArgs = append(qemuArgs, "-initrd", qemuInitrdPath)
-		consoleString, err := ioutil.ReadFile(config.Prefix + "-cmdline")
+		cmdlineString, err := ioutil.ReadFile(config.Path + "-cmdline")
 		if err != nil {
-			log.Infof(" %s\n defaulting to console output", err.Error())
-			qemuArgs = append(qemuArgs, "-append", "console=ttyS0 console=tty0 page_poison=1")
+			log.Errorf("Cannot open cmdline file: %v", err)
 		} else {
-			qemuArgs = append(qemuArgs, "-append", string(consoleString))
+			qemuArgs = append(qemuArgs, "-append", string(cmdlineString))
 		}
 	}
 
