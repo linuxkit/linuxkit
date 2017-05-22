@@ -1,0 +1,16 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:f71c3b30ac1ba4ef16c160c89610fa4976f9752f
+  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
+  - linuxkit/containerd:60e2486a74c665ba4df57e561729aec20758daed
+onboot:
+  - name: poweroff
+    image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+trust:
+  image:
+    - linuxkit/kernel
+outputs:
+  - format: kernel+initrd

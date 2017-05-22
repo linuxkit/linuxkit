@@ -14,14 +14,14 @@ NAME=qemu-efi
 
 clean_up() {
 	# remove any files, containers, images etc
-	rm -rf "${NAME}*" || true
+	rm -rf ${NAME}* || true
 }
 
 trap clean_up EXIT
 
-if command -v qemu; then
+if command -v qemu-system-x86_64; then
 	if [ ! -f /usr/share/ovmf/bios.bin ]; then
-		exit RT_CANCEL
+		exit $RT_CANCEL
 	fi
 fi
 
