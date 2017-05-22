@@ -13,7 +13,7 @@ set -e
 NAME=qemu-iso
 
 clean_up() {
-	rm -rf "${NAME}*" || true
+	rm -rf ${NAME}* || true
 }
 
 trap clean_up EXIT

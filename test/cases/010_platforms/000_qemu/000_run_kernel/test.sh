@@ -14,7 +14,7 @@ NAME=qemu-kernel
 
 clean_up() {
 	# remove any files, containers, images etc
-	rm -rf "${NAME}*" || true
+	rm -rf ${NAME}* || true
 }
 
 trap clean_up EXIT
