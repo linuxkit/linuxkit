@@ -12,10 +12,7 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:1cde5876d44117af61dfea629ad922defcd48808
   - name: binfmt
-    image: "linuxkit/binfmt:548f7f044f5411a8938913527c5ce55d9876bb07"
-    binds:
-     - /proc/sys/fs/binfmt_misc:/binfmt_misc
-    readonly: true
+    image: "linuxkit/binfmt:603e5f064b3e8a64088c0fcf7a80d2783541ee1d"
   - name: format
     image: "linuxkit/format:d78093e943f9c88386e30c00353f9476d34fb551"
     binds:
@@ -35,21 +32,8 @@ onboot:
 services:
   - name: rngd
     image: "linuxkit/rngd:f5e5be43e730ea819c3293d5c6dcbfa7f4c5c314"
-    capabilities:
-     - CAP_SYS_ADMIN
-    oomScoreAdj: -800
-    readonly: true
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:cb96c09a33c166eca6530f166f0f79927c3e83b0"
-    binds:
-     - /var:/var
-     - /tmp/etc:/etc
-    capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
-    oomScoreAdj: -800
+    image: "linuxkit/dhcpcd:ae03169274d19fe8841314fa5a6fea3c61adbf4e"
   - name: ntpd
     image: "linuxkit/openntpd:ad834449a7eaf10dc022b3d8d2ed9faf7ec99d37"
     capabilities:

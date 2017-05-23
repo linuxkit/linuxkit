@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:dae8bcbc6e2cec0a1cc1958dddbc5d6bd3ccf9a0@sha256:02c251d54c4083a596ead8cae92144306b385db0ff961c95a3a620a4c69961ed AS mirror
+FROM linuxkit/alpine:5f6db26ab7bf6a9c452a612e236cc7495408132b@sha256:d009afc85d0b005daf51c8f3026aa552ab997dc47cab43915e9dc761accae086 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     tini
@@ -42,3 +42,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build usr/sbin/rngd usr/sbin/rngd
 CMD ["/sbin/tini", "/usr/sbin/rngd", "-f"]
+LABEL org.mobyproject.config='{"capabilities": ["CAP_SYS_ADMIN"], "oomScoreAdj": -800, "readonly": true}'

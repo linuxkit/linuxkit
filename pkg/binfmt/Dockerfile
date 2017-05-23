@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:6336329f15b4166514782eaa555cf0ffd35c519c@sha256:f6c2ce92910b1d6e4e5557850a554f4a3ae9f66c1e89ad86a24d6c6e550f165e AS qemu
+FROM linuxkit/alpine:5f6db26ab7bf6a9c452a612e236cc7495408132b@sha256:d009afc85d0b005daf51c8f3026aa552ab997dc47cab43915e9dc761accae086 AS qemu
 RUN apk add \
     qemu-aarch64 \
     qemu-arm \
@@ -18,3 +18,4 @@ COPY --from=qemu usr/bin/qemu-* usr/bin/
 COPY --from=build usr/bin/binfmt usr/bin/binfmt
 COPY etc/binfmt.d/00_linuxkit.conf etc/binfmt.d/00_linuxkit.conf
 CMD ["/usr/bin/binfmt", "-dir", "/etc/binfmt.d/", "-mount", "/binfmt_misc"]
+LABEL org.mobyproject.config='{"binds": ["/proc/sys/fs/binfmt_misc:/binfmt_misc"], "readonly": true}'

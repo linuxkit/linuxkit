@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:6336329f15b4166514782eaa555cf0ffd35c519c@sha256:f6c2ce92910b1d6e4e5557850a554f4a3ae9f66c1e89ad86a24d6c6e550f165e AS mirror
+FROM linuxkit/alpine:5f6db26ab7bf6a9c452a612e236cc7495408132b@sha256:d009afc85d0b005daf51c8f3026aa552ab997dc47cab43915e9dc761accae086 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \
@@ -16,3 +16,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY /dhcpcd.conf /usr/ /
 CMD ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf"]
+LABEL org.mobyproject.config='{"binds": ["/var:/var", "/tmp/etc:/etc"], "net": "host", "capabilities": ["CAP_NET_ADMIN", "CAP_NET_BIND_SERVICE", "CAP_NET_RAW"]}'
