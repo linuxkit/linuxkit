@@ -10,10 +10,6 @@ onboot:
   - name: sysctl
     image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"
   - name: binfmt
-    image: linuxkit/binfmt:548f7f044f5411a8938913527c5ce55d9876bb07
-    binds:
-     - /proc/sys/fs/binfmt_misc:/binfmt_misc
-    readonly: true
 services:
   - name: rngd
     image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9
