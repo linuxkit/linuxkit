@@ -17,7 +17,7 @@ trap clean_up EXIT
 
 # Test code goes here
 moby build test-kernel-config
-RESULT="$(linuxkit run qemu test-kernel-config)"
+RESULT="$(linuxkit run qemu -kernel test-kernel-config)"
 echo "${RESULT}" | grep -q "suite PASSED"
 
 exit 0
