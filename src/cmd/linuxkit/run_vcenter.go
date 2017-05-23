@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"strings"
 
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
@@ -24,12 +25,13 @@ type vmConfig struct {
 	networkName *string
 	vSphereHost *string
 
-	vmName     *string
-	path       *string
-	persistent *int64
-	vCpus      *int
-	mem        *int64
-	poweron    *bool
+	vmName       *string
+	path         *string
+	persistent   *string
+	persistentSz int
+	vCpus        *int
+	mem          *int64
+	poweron      *bool
 }
 
 func runVcenter(args []string) {
@@ -48,14 +50,14 @@ func runVcenter(args []string) {
 
 	newVM.vmName = flags.String("vmname", "", "Specify a name for virtual Machine")
 	newVM.path = flags.String("path", "", "Path to a specific image")
-	newVM.persistent = flags.Int64("persistentSize", 0, "Size in MB of persistent storage to allocate to the VM")
+	newVM.persistent = flags.String("persistentSize", "", "Size in MB of persistent storage to allocate to the VM")
 	newVM.mem = flags.Int64("mem", 1024, "Size in MB of memory to allocate to the VM")
 	newVM.vCpus = flags.Int("cpus", 1, "Amount of vCPUs to allocate to the VM")
 	newVM.poweron = flags.Bool("powerOn", false, "Power On the new VM once it has been created")
 
 	flags.Usage = func() {
-		fmt.Printf("USAGE: %s push vcenter [options] [name]\n\n", invoked)
-		fmt.Printf("'name' specifies the full path of an image file which will be uploaded\n")
+		fmt.Printf("USAGE: %s run vcenter [options] [name]\n\n", invoked)
+		fmt.Printf("'name' specifies the full path of an image that will be ran\n")
 		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
@@ -66,28 +68,30 @@ func runVcenter(args []string) {
 
 	remArgs := flags.Args()
 	if len(remArgs) == 0 {
-		fmt.Printf("Please specify the prefix to the image to push\n")
+		fmt.Printf("Please specify the path to the image to run\n")
 		flags.Usage()
 		os.Exit(1)
 	}
-	prefix := remArgs[0]
+	*newVM.path = remArgs[0]
 
-	// Allow alternative names for new virtual machines being created in vCenter
-	if *newVM.vmName == "" {
-		*newVM.vmName = prefix
+	// Ensure an iso has been passed to the vCenter run Command
+	if strings.HasSuffix(*newVM.path, ".iso") {
+		// Allow alternative names for new virtual machines being created in vCenter
+		if *newVM.vmName == "" {
+			*newVM.vmName = strings.TrimSuffix(path.Base(*newVM.path), ".iso")
+		}
+	} else {
+		log.Fatalln("Ensure that an \".iso\" file is used as part of the path")
 	}
+
+	// Test any passed in files before creating a new VM
+	checkFile(*newVM.path)
 
 	// Parse URL from string
 	u, err := url.Parse(*newVM.vCenterURL)
 	if err != nil {
 		log.Fatalf("URL can't be parsed, ensure it is https://username:password/<address>/sdk")
 	}
-
-	// Test any passed in files before creating a new VM
-	if *newVM.path == "" {
-		*newVM.path = prefix + ".iso"
-	}
-	checkFile(*newVM.path)
 
 	// Connect and log in to ESX or vCenter
 	c, err := govmomi.NewClient(ctx, u, true)
@@ -160,7 +164,7 @@ func runVcenter(args []string) {
 
 	info, err := task.WaitForResult(ctx, nil)
 	if err != nil {
-		log.Fatalln("Creating new VM failed, more detail can be found in vCenter tasks")
+		log.Fatalf("Creating new VM failed\n%v", err)
 	}
 
 	// Retrieve the new VM
@@ -169,7 +173,11 @@ func runVcenter(args []string) {
 	uploadFile(c, newVM, dss)
 	addISO(ctx, newVM, vm, dss)
 
-	if *newVM.persistent != 0 {
+	if *newVM.persistent != "" {
+		newVM.persistentSz, err = getDiskSizeMB(*newVM.persistent)
+		if err != nil {
+			log.Fatalf("Couldn't parse disk-size %s: %v", *newVM.persistent, err)
+		}
 		addVMDK(ctx, vm, dss, newVM)
 	}
 
@@ -242,7 +250,7 @@ func addVMDK(ctx context.Context, vm *object.VirtualMachine, dss *object.Datasto
 	// The default is to have all persistent disks named linuxkit.vmdk
 	disk := devices.CreateDisk(controller, dss.Reference(), dss.Path(fmt.Sprintf("%s/%s", *newVM.vmName, "linuxkit.vmdk")))
 
-	disk.CapacityInKB = *newVM.persistent * 1024
+	disk.CapacityInKB = int64(newVM.persistentSz * 1024)
 
 	var add []types.BaseVirtualDevice
 	add = append(add, disk)
@@ -271,7 +279,7 @@ func addISO(ctx context.Context, newVM vmConfig, vm *object.VirtualMachine, dss 
 	}
 
 	var add []types.BaseVirtualDevice
-	add = append(add, devices.InsertIso(cdrom, dss.Path(fmt.Sprintf("%s/%s", *newVM.vmName, "linuxkit.iso"))))
+	add = append(add, devices.InsertIso(cdrom, dss.Path(fmt.Sprintf("%s/%s", *newVM.vmName, path.Base(*newVM.path)))))
 
 	log.Infof("Adding ISO to the Virtual Machine")
 
@@ -284,9 +292,10 @@ func checkFile(file string) {
 	if _, err := os.Stat(file); err != nil {
 		if os.IsPermission(err) {
 			log.Fatalf("Unable to read file [%s], please check permissions", file)
-		}
-		if os.IsNotExist(err) {
+		} else if os.IsNotExist(err) {
 			log.Fatalf("File [%s], does not exist", file)
+		} else {
+			log.Fatalf("Unable to stat file [%s]: %v", file, err)
 		}
 	}
 }
