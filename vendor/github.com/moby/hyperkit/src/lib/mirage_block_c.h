@@ -31,10 +31,12 @@ mirage_block_unregister_thread(void);
 /* An opened mirage-block device */
 typedef int mirage_block_handle;
 
-/* Open a mirage block device with the given optional string configuration.
-   To use the default configuration, pass NULL for options. */
+/* Open a mirage block device with the given optional qcow and stats
+   configuration.
+   To use the default configuration, pass NULL for qcow_config.
+   To not expose stats, pass NULL for stats_config */
 extern mirage_block_handle
-mirage_block_open(const char *config, const char *options);
+mirage_block_open(const char *device, const char *qcow_config, const char *stats_config);
 
 struct mirage_block_stat {
 	int candelete;      /* 1 if the device supports TRIM/DELETE/DISCARD */

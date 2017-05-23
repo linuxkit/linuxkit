@@ -46,19 +46,26 @@ if (fn == NULL) { \
 	acquiring the runtime lock. */
 
 static void
-ocaml_mirage_block_open(const char *config, const char *options, int *out, int *err) {
+ocaml_mirage_block_open(const char *device, const char *qcow_config, const char *stats_config, int *out, int *err) {
 	CAMLparam0();
-	CAMLlocal4(ocaml_config, ocaml_options_opt, ocaml_string, handle);
-	ocaml_config = caml_copy_string(config);
-	if (options == NULL) {
-		ocaml_options_opt = Val_int(0); /* None */
+	CAMLlocal5(ocaml_device, ocaml_qcow_config, ocaml_stats_config, ocaml_string, handle);
+	ocaml_device = caml_copy_string(device);
+	if (qcow_config == NULL) {
+		ocaml_qcow_config = Val_int(0); /* None */
 	} else {
-		ocaml_string = caml_copy_string(options);
-		ocaml_options_opt = caml_alloc(1, 0); /* Some */
-		Store_field (ocaml_options_opt, 0, ocaml_string);
+		ocaml_string = caml_copy_string(qcow_config);
+		ocaml_qcow_config = caml_alloc(1, 0); /* Some */
+		Store_field (ocaml_qcow_config, 0, ocaml_string);
+	}
+	if (stats_config == NULL) {
+		ocaml_stats_config = Val_int(0); /* None */
+	} else {
+		ocaml_string = caml_copy_string(stats_config);
+		ocaml_stats_config = caml_alloc(1, 0); /* Some */
+		Store_field (ocaml_stats_config, 0, ocaml_string);
 	}
 	OCAML_NAMED_FUNCTION("mirage_block_open")
-	handle = caml_callback2_exn(*fn, ocaml_config, ocaml_options_opt);
+	handle = caml_callback3_exn(*fn, ocaml_device, ocaml_qcow_config, ocaml_stats_config);
 	if (Is_exception_result(handle)){
 		*err = 1;
 	} else {
@@ -69,11 +76,11 @@ ocaml_mirage_block_open(const char *config, const char *options, int *out, int *
 }
 
 mirage_block_handle
-mirage_block_open(const char *config, const char *options) {
+mirage_block_open(const char *device, const char *qcow_config, const char *stats_config) {
 	int result;
 	int err = 1;
 	caml_acquire_runtime_system();
-	ocaml_mirage_block_open(config, options, &result, &err);
+	ocaml_mirage_block_open(device, qcow_config, stats_config, &result, &err);
 	caml_release_runtime_system();
 	if (err){
 		errno = EINVAL;
