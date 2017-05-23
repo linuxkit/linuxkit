@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/rneugeba/virtsock/go/vsock"
+	"github.com/linuxkit/virtsock/pkg/vsock"
 )
 
 // Proxy defines the behavior of a proxy. It forwards traffic back and forth
@@ -30,13 +30,13 @@ type Proxy interface {
 func NewVsockProxy(frontendAddr *vsock.VsockAddr, backendAddr net.Addr) (Proxy, error) {
 	switch backendAddr.(type) {
 	case *net.UDPAddr:
-		listener, err := vsock.Listen(frontendAddr.Port)
+		listener, err := vsock.Listen(vsock.CIDAny, frontendAddr.Port)
 		if err != nil {
 			return nil, err
 		}
 		return NewUDPProxy(frontendAddr, NewUDPListener(listener), backendAddr.(*net.UDPAddr))
 	case *net.TCPAddr:
-		listener, err := vsock.Listen(frontendAddr.Port)
+		listener, err := vsock.Listen(vsock.CIDAny, frontendAddr.Port)
 		if err != nil {
 			return nil, err
 		}
@@ -62,7 +62,7 @@ func NewIPProxy(frontendAddr, backendAddr net.Addr) (Proxy, error) {
 		}
 		return NewTCPProxy(listener, backendAddr.(*net.TCPAddr))
 	case *vsock.VsockAddr:
-		listener, err := vsock.Listen(frontendAddr.(*vsock.VsockAddr).Port)
+		listener, err := vsock.Listen(vsock.CIDAny, frontendAddr.(*vsock.VsockAddr).Port)
 		if err != nil {
 			return nil, err
 		}

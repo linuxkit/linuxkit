@@ -7,8 +7,8 @@ import (
 	"net"
 	"proxy/libproxy"
 
-	"github.com/rneugeba/virtsock/go/hvsock"
-	"github.com/rneugeba/virtsock/go/vsock"
+	"github.com/linuxkit/virtsock/pkg/hvsock"
+	"github.com/linuxkit/virtsock/pkg/vsock"
 )
 
 // Listen on virtio-vsock and AF_HYPERV for multiplexed connections
@@ -21,14 +21,14 @@ func manyPorts() {
 
 	listeners := make([]net.Listener, 0)
 
-	vsock, err := vsock.Listen(uint(*vsockPort))
+	vsock, err := vsock.Listen(vsock.CIDAny, uint32(*vsockPort))
 	if err != nil {
 		log.Printf("Failed to bind to vsock port %d: %#v", vsockPort, err)
 	} else {
 		listeners = append(listeners, vsock)
 	}
-	svcid, _ := hvsock.GuidFromString(*hvGUID)
-	hvsock, err := hvsock.Listen(hvsock.HypervAddr{VmId: hvsock.GUID_WILDCARD, ServiceId: svcid})
+	svcid, _ := hvsock.GUIDFromString(*hvGUID)
+	hvsock, err := hvsock.Listen(hvsock.HypervAddr{VMID: hvsock.GUIDWildcard, ServiceID: svcid})
 	if err != nil {
 		log.Printf("Failed to bind hvsock guid: %s: %#v", *hvGUID, err)
 	} else {
