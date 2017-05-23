@@ -20,49 +20,6 @@ import (
 	"golang.org/x/net/context"
 )
 
-func dockerRun(args ...string) ([]byte, error) {
-	log.Debugf("docker run: %s", strings.Join(args, " "))
-	docker, err := exec.LookPath("docker")
-	if err != nil {
-		return []byte{}, errors.New("Docker does not seem to be installed")
-	}
-	args = append([]string{"run", "--rm", "--log-driver=none"}, args...)
-	cmd := exec.Command(docker, args...)
-
-	stderrPipe, err := cmd.StderrPipe()
-	if err != nil {
-		return []byte{}, err
-	}
-
-	stdoutPipe, err := cmd.StdoutPipe()
-	if err != nil {
-		return []byte{}, err
-	}
-
-	err = cmd.Start()
-	if err != nil {
-		return []byte{}, err
-	}
-
-	stdout, err := ioutil.ReadAll(stdoutPipe)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	stderr, err := ioutil.ReadAll(stderrPipe)
-	if err != nil {
-		return []byte{}, err
-	}
-
-	err = cmd.Wait()
-	if err != nil {
-		return []byte{}, fmt.Errorf("%v: %s", err, stderr)
-	}
-
-	log.Debugf("docker run: %s...Done", strings.Join(args, " "))
-	return stdout, nil
-}
-
 func dockerRunInput(input io.Reader, args ...string) ([]byte, error) {
 	log.Debugf("docker run (input): %s", strings.Join(args, " "))
 	docker, err := exec.LookPath("docker")
