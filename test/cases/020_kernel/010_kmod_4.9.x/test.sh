@@ -2,7 +2,6 @@
 # SUMMARY: Test build and insertion of kernel modules
 # LABELS:
 # REPEAT:
-# AUTHOR: Rolf Neugebauer <rolf.neugebauer@docker.com>
 
 set -e
 

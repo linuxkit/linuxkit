@@ -1,8 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that qcow2 image boots in qemu
 # LABELS:
-# AUTHOR: Dave Tucker <dt@docker.com>
-# AUTHOR: Justin Cormack <justin.cormack@docker.com>
 
 set -e
 

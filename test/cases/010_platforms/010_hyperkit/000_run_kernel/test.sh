@@ -1,7 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that the kernel+initrd image boots on hyperkit
 # LABELS:
-# AUTHOR: Rolf Neugebauer <rolf.neugebauer@docker.com>
 
 set -e
 set -x

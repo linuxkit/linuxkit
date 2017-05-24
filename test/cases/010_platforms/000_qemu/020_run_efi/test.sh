@@ -1,8 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that legacy BIOS ISO boots in qemu
 # LABELS:
-# AUTHOR: Dave Tucker <dt@docker.com>
-# AUTHOR: Rolf Neugebauer <rolf.neugebauer@docker.com>
 
 set -e
 

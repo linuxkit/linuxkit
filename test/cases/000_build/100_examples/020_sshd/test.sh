@@ -1,7 +1,6 @@
 #!/bin/sh
 # SUMMARY: Test the sshd example
 # LABELS:
-# AUTHOR: Dave Tucker <dt@docker.com>
 
 set -e
 
