@@ -58,8 +58,8 @@ func runQemu(args []string) {
 	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
 	// Paths and settings for disks
+	diskSzFlag := flags.String("disk-size", "", "Size of Disk in MB (or GB if 'G' is appended)")
 	disk := flags.String("disk", "", "Path to disk image to use")
-	diskSz := flags.String("disk-size", "", "Size of disk to create, only created if it doesn't exist")
 	diskFmt := flags.String("disk-format", "qcow2", "Format of disk: raw, qcow2 etc")
 
 	// Paths and settings for UEFI firware
@@ -87,6 +87,7 @@ func runQemu(args []string) {
 		os.Exit(1)
 	}
 	path := remArgs[0]
+	prefix := path
 
 	_, err := os.Stat(path)
 	stat := err == nil
@@ -103,11 +104,21 @@ func runQemu(args []string) {
 		// if path ends in .iso they meant an ISO
 		if strings.HasSuffix(path, ".iso") {
 			*isoBoot = true
+			prefix = strings.TrimSuffix(path, ".iso")
 		}
 		// autodetect EFI ISO from our default naming
 		if strings.HasSuffix(path, "-efi.iso") {
 			*uefiBoot = true
+			prefix = strings.TrimSuffix(path, "-efi.iso")
 		}
+	}
+
+	diskSz, err := getDiskSizeMB(*diskSzFlag)
+	if err != nil {
+		log.Fatalf("Could parse disk-size %s: %v", *diskSzFlag, err)
+	}
+	if diskSz != 0 && *disk == "" {
+		*disk = prefix + "-disk.img"
 	}
 
 	// user not trying to boot off ISO or kernel, so assume booting from a disk image
@@ -126,7 +137,7 @@ func runQemu(args []string) {
 		Kernel:         *kernelBoot,
 		GUI:            *enableGUI,
 		DiskPath:       *disk,
-		DiskSize:       *diskSz,
+		DiskSize:       fmt.Sprintf("%dM", diskSz),
 		DiskFormat:     *diskFmt,
 		FWPath:         *fw,
 		Arch:           *arch,

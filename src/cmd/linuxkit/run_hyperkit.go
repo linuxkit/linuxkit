@@ -27,8 +27,8 @@ func runHyperKit(args []string) {
 	hyperkitPath := flags.String("hyperkit", "", "Path to hyperkit binary (if not in default location)")
 	cpus := flags.Int("cpus", 1, "Number of CPUs")
 	mem := flags.Int("mem", 1024, "Amount of memory in MB")
-	diskSz := flags.Int("disk-size", 0, "Size of Disk in MB")
-	disk := flags.String("disk", "", "Path to disk image to used")
+	diskSzFlag := flags.String("disk-size", "", "Size of Disk in MB (or GB if 'G' is appended)")
+	disk := flags.String("disk", "", "Path to disk image to use")
 	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
 	ipStr := flags.String("ip", "", "IP address for the VM")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
@@ -50,6 +50,11 @@ func runHyperKit(args []string) {
 	}
 	if err := os.MkdirAll(*state, 0755); err != nil {
 		log.Fatalf("Could not create state directory: %v", err)
+	}
+
+	diskSz, err := getDiskSizeMB(*diskSzFlag)
+	if err != nil {
+		log.Fatalf("Could parse disk-size %s: %v", *diskSzFlag, err)
 	}
 
 	isoPath := ""
@@ -92,7 +97,7 @@ func runHyperKit(args []string) {
 		log.Fatalf("Cannot open cmdline file: %v", err)
 	}
 
-	if *diskSz != 0 && *disk == "" {
+	if diskSz != 0 && *disk == "" {
 		*disk = filepath.Join(*state, "disk.img")
 	}
 
@@ -114,7 +119,7 @@ func runHyperKit(args []string) {
 	h.VSock = true
 	h.CPUs = *cpus
 	h.Memory = *mem
-	h.DiskSize = *diskSz
+	h.DiskSize = diskSz
 
 	err = h.Run(string(cmdline))
 	if err != nil {

@@ -76,8 +76,8 @@ func runVMware(args []string) {
 	}
 	cpus := flags.Int("cpus", 1, "Number of CPUs")
 	mem := flags.Int("mem", 1024, "Amount of memory in MB")
+	diskSzFlag := flags.String("disk-size", "", "Size of Disk in MB (or GB if 'G' is appended)")
 	disk := flags.String("disk", "", "Path to disk image to use")
-	diskSz := flags.String("disk-size", "", "Size of the disk to create, only created if it doesn't exist")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
 
 	if err := flags.Parse(args); err != nil {
@@ -97,6 +97,11 @@ func runVMware(args []string) {
 	}
 	if err := os.MkdirAll(*state, 0755); err != nil {
 		log.Fatalf("Could not create state directory: %v", err)
+	}
+
+	diskSz, err := getDiskSizeMB(*diskSzFlag)
+	if err != nil {
+		log.Fatalf("Could parse disk-size %s: %v", *diskSzFlag, err)
 	}
 
 	var vmrunPath, vmDiskManagerPath string
@@ -131,7 +136,7 @@ func runVMware(args []string) {
 		log.Fatalf("ERROR VMware executables can not be found, ensure software is installed")
 	}
 
-	if *disk == "" && *diskSz != "" {
+	if diskSz != 0 && *disk == "" {
 		*disk = filepath.Join(*state, "disk.vmdk")
 	}
 	if *disk != "" {
@@ -147,7 +152,7 @@ func runVMware(args []string) {
 			}
 			if os.IsNotExist(err) {
 				log.Infof("Creating new VMware disk [%s]", *disk)
-				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", *diskSz, "-a", "lsilogic", "-t", "0", *disk)
+				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", fmt.Sprintf("%dMB", diskSz), "-a", "lsilogic", "-t", "0", *disk)
 				if err = vmDiskCmd.Run(); err != nil {
 					log.Fatalf("Error creating disk [%s]:  %v", *disk, err)
 				}
@@ -165,7 +170,7 @@ func runVMware(args []string) {
 
 	// Create the .vmx file
 	vmxPath := filepath.Join(*state, "linuxkit.vmx")
-	err := ioutil.WriteFile(vmxPath, []byte(vmx), 0644)
+	err = ioutil.WriteFile(vmxPath, []byte(vmx), 0644)
 	if err != nil {
 		log.Fatalf("Error writing .vmx file: %v", err)
 	}
