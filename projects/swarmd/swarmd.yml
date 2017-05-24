@@ -29,7 +29,7 @@ services:
   - name: ntpd
     image: "linuxkit/openntpd:45deeb05f736162d941c9bf494983f655ab80aa5"
   - name: swarmd
-    image: "linuxkit/swarmd:a2f57f14f07fb6d7cded7832b2dabe878b28554e"
+    image: "linuxkit/swarmd:1002422b78339a767559058d704b086889e90447"
     command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
     capabilities:
      - all

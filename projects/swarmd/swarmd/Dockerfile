@@ -13,15 +13,16 @@ RUN \
 
 ENV GOPATH=/root/go
 
-# PR https://github.com/docker/swarmkit/pull/1965 from ijc25/containerd
-ENV SWARMKIT_PR=1965
-ENV SWARMKIT_COMMIT=321b9c6600a9422c3245b277a1b3ae599244d4b7
+# https://github.com/ijc25/swarmkit/tree/containerd-wip
+ENV SWARMKIT_REPO=https://github.com/ijc25/swarmkit
+ENV SWARMKIT_BRANCH=containerd-wip
+ENV SWARMKIT_COMMIT=cb429323fa86df0c279a8d629e674f79a20e01e3
 
 RUN mkdir -p $GOPATH/src/github.com/docker && \
   cd $GOPATH/src/github.com/docker && \
-  git clone https://github.com/docker/swarmkit.git
+  git clone $SWARMKIT_REPO
 WORKDIR $GOPATH/src/github.com/docker/swarmkit
-RUN [ -z "$SWARMKIT_PR" ] || git fetch origin pull/$SWARMKIT_PR/head
+RUN [ -z "$SWARMKIT_BRANCH" ] || git fetch origin $SWARMKIT_BRANCH
 RUN git checkout $SWARMKIT_COMMIT
 
 RUN make binaries GO_GCFLAGS="-buildmode pie --ldflags '-extldflags \"-fno-PIC -static\"'"
