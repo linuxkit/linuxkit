@@ -1,23 +1,26 @@
-From ddfa35f8ed42cd04e98144489a08ab9e56106529 Mon Sep 17 00:00:00 2001
+From 3fe617c0af23272071c320b295fb987f69f0ac77 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
-Date: Wed, 29 Mar 2017 18:37:10 +0800
-Subject: [PATCH 5/6] vmbus: remove "goto error_clean_msglist" in vmbus_open()
+Date: Fri, 5 May 2017 16:57:20 -0600
+Subject: [PATCH 4/9] vmbus: remove "goto error_clean_msglist" in vmbus_open()
 
 This is just a cleanup patch to simplify the code a little.
 No semantic change.
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
-Origin: git@github.com:dcui/linux.git
-(cherry picked from commit 2c89f21cbdfd39299482cd6068094097a45f13b3)
+Cc: K. Y. Srinivasan <kys@microsoft.com>
+Cc: Haiyang Zhang <haiyangz@microsoft.com>
+Cc: Stephen Hemminger <sthemmin@microsoft.com>
+Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511
+(cherry picked from commit 4713066c11b2396eafd2873cbed7bdd72d1571eb)
 ---
  drivers/hv/channel.c | 18 +++++++-----------
  1 file changed, 7 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 1606e7f08f4b..1caed01954f6 100644
+index 7cd2bd9fd1f1..db5e6f8730d2 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -184,17 +184,18 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+@@ -180,17 +180,18 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
  	ret = vmbus_post_msg(open_msg,
  			     sizeof(struct vmbus_channel_open_channel), true);
  
@@ -42,7 +45,7 @@ index 1606e7f08f4b..1caed01954f6 100644
  	if (newchannel->rescind) {
  		err = -ENODEV;
  		goto error_free_gpadl;
-@@ -209,11 +210,6 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+@@ -205,11 +206,6 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
  	kfree(open_info);
  	return 0;
  

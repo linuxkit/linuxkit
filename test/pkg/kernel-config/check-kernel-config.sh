@@ -2,10 +2,14 @@
 
 set -e
 
-echo "starting kernel config sanity test with /proc/config.gz"
+echo "starting kernel config sanity test with ${1:-/proc/config.gz}"
 
-# decompress /proc/config.gz from the host
-UNZIPPED_CONFIG=$(zcat /proc/config.gz)
+if [ -n "$1" ]; then
+  UNZIPPED_CONFIG=$(cat "$1")
+else
+  # decompress /proc/config.gz from the host
+  UNZIPPED_CONFIG=$(zcat /proc/config.gz)
+fi
 
 kernelVersion="$(uname -r)"
 kernelMajor="${kernelVersion%%.*}"

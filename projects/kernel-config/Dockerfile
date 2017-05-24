@@ -13,7 +13,7 @@ RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-
 
 RUN mkdir /config
 COPY kernel_config.* /config/
-COPY makeconfig.sh /config
+COPY *.sh /config/
 
 # Apply local patches
 COPY patches-${KERNEL_SERIES} /patches
@@ -24,6 +24,7 @@ RUN set -e && for patch in /patches/*.patch; do \
     done
 
 RUN /config/makeconfig.sh ${ARCH} ${KERNEL_SERIES}
+RUN /config/check-kernel-config.sh /linux/.config
 
 RUN mkdir /out
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info

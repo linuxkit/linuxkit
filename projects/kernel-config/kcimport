@@ -1,0 +1,84 @@
+#!/usr/bin/env python3
+
+import sys
+import subprocess
+import os.path
+
+import kconfiglib
+
+KERNEL_VERSION="4.11.x"
+
+LINUXKIT_KERNEL=os.path.expanduser("~/packages/linuxkit/kernel")
+
+def collect_config(f):
+    config = {}
+    for line in f:
+        line = line.strip()
+        if line.startswith("# CONFIG_"):
+            opt = line[len("# CONFIG_"):-len(" is not set")]
+            value = "n"
+        elif line.startswith("CONFIG_"):
+            [opt, value] = line.strip().split("=")
+            opt = opt[len("CONFIG_"):]
+        else:
+            continue
+
+        config[opt] = value
+    return config
+
+with open(os.path.join(LINUXKIT_KERNEL, "kernel_config-%s" % KERNEL_VERSION)) as f:
+    config = collect_config(f)
+
+opts = sorted(config.keys())
+
+klib = kconfiglib.Config(sys.argv[1])
+# this needs to be `make defconfig`
+klib.load_config(".config")
+
+ours = kconfiglib.Config(sys.argv[1])
+ours.load_config(os.path.join(LINUXKIT_KERNEL, "kernel_config-%s" % KERNEL_VERSION))
+
+arch = []
+generic = []
+for o in opts:
+    # our hyperv patch stuff
+    if o in ("AF_KCM", "HYPERV_SOCK", "VIRTIO_VSOCKETS", "VIRTIO_VSOCKETS_COMMON", "HYPERV_VSOCKETS"):
+        generic.append(o)
+        continue
+
+    sym = klib.get_symbol(o)
+    if sym is None:
+        print("symbol %s unknown" % o)
+        sys.exit(1)
+
+    oursym = ours.get_symbol(o)
+    if sym is None:
+        print("symbol %s unknown" % o)
+        sys.exit(1)
+
+    # don't render invisble symbols
+    if oursym.get_visibility() == 'n':
+        continue
+
+    # If defconfig of this symbol matches our value, we don't need to track it:
+    value = config[o]
+    if value == sym.get_value():
+        continue
+
+    if sym.get_def_locations()[0][0].startswith("arch"):
+        arch.append(o)
+    else:
+        generic.append(o)
+
+def render_diff(diff):
+    for o in sorted(diff):
+        value = config[o]
+        if value == "n":
+            print("# CONFIG_%s is not set" % o)
+        else:
+            print("CONFIG_%s=%s" % (o, value))
+
+print("ARCH\n\n")
+render_diff(arch)
+print("\n\nGENRIC\n\n")
+render_diff(generic)

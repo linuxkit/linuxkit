@@ -1,0 +1,42 @@
+From d1d1e90f2106c7048feab6a6da955fc2ed521896 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Fri, 5 May 2017 16:57:15 -0600
+Subject: [PATCH 3/9] vmbus: add the matching tasklet_enable() in
+ vmbus_close_internal()
+
+If we disable a tasklet that is scheduled but hasn't started to run,
+the tasklet has no chance to run any longer, so later we'll hang
+in free_channel() -> tasklet_kill(), because the TASKLET_STATE_SCHED
+can't be cleared in tasklet_action().
+
+With the patch, before free_channel() -> tasklet_kill() returns, the
+tasklet still has a chance to run with a NULL channel->onchannel_callback,
+which will be ignored safely, e.g. by vmbus_on_event().
+
+Fixes: dad72a1d2844 ("vmbus: remove hv_event_tasklet_disable/enable")
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Cc: K. Y. Srinivasan <kys@microsoft.com>
+Cc: Haiyang Zhang <haiyangz@microsoft.com>
+Cc: Stephen Hemminger <sthemmin@microsoft.com>
+Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511
+(cherry picked from commit 008d8d8bc0c86473a8549a365bee9a479243e412)
+---
+ drivers/hv/channel.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index 628d6fde1887..7cd2bd9fd1f1 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -608,6 +608,7 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+ 		get_order(channel->ringbuffer_pagecount * PAGE_SIZE));
+ 
+ out:
++	tasklet_enable(&channel->callback_event);
+ 	return ret;
+ }
+ 
+-- 
+2.12.2
+
