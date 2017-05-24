@@ -2,7 +2,6 @@
 # SUMMARY: Check that the sysctl config works
 # LABELS:
 # REPEAT:
-# AUTHOR: Justin Cormack <justin.cormack@docker.com>
 
 set -e
 

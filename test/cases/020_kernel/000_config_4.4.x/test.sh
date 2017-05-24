@@ -2,7 +2,6 @@
 # SUMMARY: Sanity check on the kernel config file
 # LABELS:
 # REPEAT:
-# AUTHOR: Dave Tucker <dt@docker.com>
 
 set -e
 

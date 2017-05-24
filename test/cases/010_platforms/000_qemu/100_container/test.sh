@@ -1,7 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that qemu runs containerised
 # LABELS:
-# AUTHOR: Rolf Neugebauer <rolf.neugebauer@docker.com>
 
 set -e
 
