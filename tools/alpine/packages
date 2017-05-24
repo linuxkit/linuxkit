@@ -27,6 +27,7 @@ git
 gmp-dev
 go
 gummiboot
+hvtools
 installkernel
 iptables
 jq
@@ -44,10 +45,12 @@ ncurses-dev
 openntpd
 openrc
 openssh-server
+open-vm-tools
 patch
 qemu-aarch64
 qemu-arm
 qemu-img
+qemu-guest-agent
 qemu-ppc64le
 qemu-system-arm
 qemu-system-x86_64
