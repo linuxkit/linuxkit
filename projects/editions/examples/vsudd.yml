@@ -40,18 +40,13 @@ services:
     oomScoreAdj: -800
     readonly: true
   - name: vsudd
-    image: "linuxkit/vsudd:7dfbee8f973f333ed3a7d74c75cd31a1f067db8a"
+    image: "edtestorg/vsudd:299ec5ce41424606afe79066df6f93460a40a7a9"
     binds:
         - /run/containerd/containerd.sock:/run/containerd/containerd.sock
         - /tmp/memlogdq.sock:/tmp/memlogdq.sock
-    command: ["/vsudd", "-inport", "2375:unix:/run/containerd/containerd.sock", "-inport", "2374:unix:/tmp/memlogdq.sock"]
-files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
+    command: ["/vsudd", 
+                    "-inport", "2374:unix:/run/containerd/containerd.sock", 
+                    "-inport", "2373:unix:/tmp/memlogdq.sock"]
 trust:
   image:
     - linuxkit/kernel
-outputs:
-  - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi

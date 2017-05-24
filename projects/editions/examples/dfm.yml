@@ -1,0 +1,101 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:062e57b1d1e017e44c6339fc2b4cd41f3f10b2a9 # with memlogd
+  - linuxkit/runc:2649198589ef0020d99f613adaeda45ce0093a38
+  - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
+  - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
+  - linuxkit/memlogd:9b5834189f598f43c507f6938077113906f51012
+  - edtestorg/install-dfm:256c1e9a344ca9f68b4131759a4c8f868a3e790b # adds /dfm
+onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    net: host
+    pid: host
+    ipc: host
+    capabilities:
+     - CAP_SYS_ADMIN
+    readonly: true
+  - name: binfmt
+    image: "linuxkit/binfmt:131026c0cf6084467316395fed3b358f64bda00c"
+    binds:
+     - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    readonly: true
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: format
+    image: "linuxkit/format:53748000acf515549d398e6ae68545c26c0f3a2e"
+    binds:
+        - /dev:/dev
+    capabilities:
+        - CAP_SYS_ADMIN
+        - CAP_MKNOD
+  - name: mount
+    image: "linuxkit/mount:d2669e7c8ddda99fa0618a414d44261eba6e299a"
+    binds:
+     - /dev:/dev
+     - /var:/var:rshared,rbind
+    capabilities:
+     - CAP_SYS_ADMIN
+    rootfsPropagation: shared
+    command: ["/mount.sh", "/var/lib/docker"]
+  - name: configure-dfm
+    image: "edtestorg/configure-dfm:0b9df830916025048b33056834eed10f9217324b"
+    capabilities:
+     - CAP_SYS_ADMIN
+    binds:
+     - /dfm:/dfm:rbind,rshared
+     - /var/lib/docker:/var/lib/docker
+    rootfsPropagation: shared
+services:
+  - name: rngd
+    image: "linuxkit/rngd:61a07ced77a9747708223ca16a4aec621eacf518"
+    capabilities:
+     - CAP_SYS_ADMIN
+    oomScoreAdj: -800
+    readonly: true
+  - name: vsudd
+    image: "edtestorg/vsudd:299ec5ce41424606afe79066df6f93460a40a7a9"
+    binds:
+        - /run/containerd/containerd.sock:/run/containerd/containerd.sock
+        - /tmp/memlogdq.sock:/tmp/memlogdq.sock
+        - /var/run:/var/run
+    command: ["/vsudd", "-inport", "2373:unix:/tmp/memlogdq.sock",
+                        "-inport", "2374:unix:/run/containerd/containerd.sock", 
+                        "-inport", "2375:unix:/var/run/docker.sock" ]
+  - name: proxy-vsockd
+    image: "edtestorg/proxy-vsockd:f1eec56e1a7196f6a786223baa30e2f5e026a27d"
+    binds:
+        - /dfm/port:/port
+    net: host
+    command: ["/proxy-vsockd","-vsockPort","62373","-hvGuid","0B95756A-9985-48AD-9470-78E060895BE7"]
+  - name: docker-dfm
+    image: "edtestorg/docker-dfm:8678ab5564478d58ce98031e962fc77db874a988"
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /var/lib/docker:/var/lib/docker
+     - /lib/modules:/lib/modules
+     - /tmp/memlogd.sock:/tmp/memlogd.sock
+     - /dfm/port:/port
+     - /var/run:/var/run
+files:
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
+trust:
+  image:
+    - linuxkit/kernel
