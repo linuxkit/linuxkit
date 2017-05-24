@@ -5,38 +5,18 @@
 2. Mount the disk
 
 ## Make Disk Available
-In order to make the disk available, you need to tell `linuxkit` where the disk file or block device is. This depends on your run method.
+In order to make the disk available, you need to tell `linuxkit` where the disk file or block device is.
 
-**Note:** With all of the options below, *always* give disk options before the _prefix_.
+All local `linuxkit run` methods (currently `hyperkit`, `qemu`, and `vmware`) take two arguments:
 
-### Mac HyperKit
-`linuxkit run hyperkit -disk <path_to_disk> -disk-size <size> <prefix>`
-
-* `-disk-size <size>`: size of disk in MB, e.g. `-disk-size 4096` will provide a 4GB disk.
+* `-disk-size <size>`: size of disk. The default is in MB but a `G` can be appended to specify the size in GB, e.g. `-disk-size 4096` or `disk-size 4G` will provide a 4GB disk.
 * `-disk <path>`: use the disk at location _path_, e.g. `-disk foo.img` will use the disk at `$PWD/foo.img`
 
-Several important points to note:
+If you do not provide `-disk `_path_, `linuxkit` assumes a default, which is _prefix_`-state/disk.img` for `hyperkit` and `vmware` and _prefix_`-disk.img` for `qemu`. 
 
-1. if you do not provide `-disk `_path_, `linuxkit` assumes the default to be `$PWD/`_prefix_`-disk.img`.
-2. If the disk at `<path>`, or the default if `-disk` option is not provided, does not exist, `linuxkit` will create one of size `<size>`.
+If the disk at `<path>`, or the default if `-disk` option is not provided, does not exist, `linuxkit` will create one of size `<size>`.
 
-### QEMU
-`linuxkit run qemu -disk <path_to_disk> -disk-size <size> <prefix>`
-
-* `-disk-size <size>`: size of disk in MB, e.g. `-disk-size 4096` will provide a 4GB disk.
-* `-disk <path>`: use the disk at location _path_, e.g. `-disk foo.img` will use the disk at `$PWD/foo.img`
-
-Several important points to note:
-
-1. if you do not provide `-disk `_path_, `linuxkit` assumes the default to be `$PWD/`_prefix_`-disk.img`.
-2. If the disk at `<path>`, or the default if `-disk` option is not provided, does not exist, `linuxkit` will create one of size `<size>`.
-
-### vmware
-`linuxkit run vmware -disk <path_to_disk> <prefix>`
-
-* `-disk <path>`: use the disk at location _path_, e.g. `-disk foo.img` will use the disk at `$PWD/foo.img`
-
-Unlike with qemu and hyperkit, `linuxkit run vmware` _currently_ will not create the disk for you if it does not exist. We intend to align the functionality in the near future. 
+**TODO:** GCP
 
 ## Mount the Disk
 A disk created or used via `hyperkit run` will be available inside the image at `/dev/vda` with the first partition at `/dev/vda1`.
