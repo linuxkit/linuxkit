@@ -11,4 +11,5 @@ tag: Dockerfile
 	docker build -t $(ORG)/$(IMAGE):$(HASH) .
 
 push: tag
-	docker pull $(ORG)/$(IMAGE):$(HASH) || docker push $(ORG)/$(IMAGE):$(HASH)
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(HASH)
