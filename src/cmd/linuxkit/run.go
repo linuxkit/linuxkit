@@ -19,6 +19,7 @@ func runUsage() {
 	fmt.Printf("  gcp\n")
 	fmt.Printf("  hyperkit [macOS]\n")
 	fmt.Printf("  qemu [linux]\n")
+	fmt.Printf("  vcenter\n")
 	fmt.Printf("  vmware\n")
 	fmt.Printf("  packet\n")
 	fmt.Printf("\n")
@@ -48,6 +49,8 @@ func run(args []string) {
 		runQemu(args[1:])
 	case "packet":
 		runPacket(args[1:])
+	case "vcenter":
+		runVcenter(args[1:])
 	default:
 		switch runtime.GOOS {
 		case "darwin":
