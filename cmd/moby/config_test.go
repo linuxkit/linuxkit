@@ -12,7 +12,7 @@ import (
 func TestOverrides(t *testing.T) {
 	var yamlCaps = []string{"CAP_SYS_ADMIN"}
 
-	var yaml MobyImage = MobyImage{
+	var yaml = MobyImage{
 		Name:         "test",
 		Image:        "testimage",
 		Capabilities: &yamlCaps,
@@ -20,7 +20,7 @@ func TestOverrides(t *testing.T) {
 
 	var labelCaps = []string{"CAP_SYS_CHROOT"}
 
-	var label MobyImage = MobyImage{
+	var label = MobyImage{
 		Capabilities: &labelCaps,
 		Cwd:          "/label/directory",
 	}

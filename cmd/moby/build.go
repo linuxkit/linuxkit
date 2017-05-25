@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -17,8 +18,30 @@ import (
 
 const defaultNameForStdin = "moby"
 
+type outputList []string
+
+func (o *outputList) String() string {
+	return fmt.Sprint(*o)
+}
+
+func (o *outputList) Set(value string) error {
+	// allow comma seperated options or multiple options
+	for _, cs := range strings.Split(value, ",") {
+		*o = append(*o, cs)
+	}
+	return nil
+}
+
 // Process the build arguments and execute build
 func build(args []string) {
+	var buildOut outputList
+
+	outputTypes := []string{}
+	for k := range outFuns {
+		outputTypes = append(outputTypes, k)
+	}
+	sort.Strings(outputTypes)
+
 	buildCmd := flag.NewFlagSet("build", flag.ExitOnError)
 	buildCmd.Usage = func() {
 		fmt.Printf("USAGE: %s build [options] <file>[.yml] | -\n\n", os.Args[0])
@@ -27,11 +50,18 @@ func build(args []string) {
 	}
 	buildName := buildCmd.String("name", "", "Name to use for output files")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
+	buildCmd.Var(&buildOut, "output", "Output types to create [ "+strings.Join(outputTypes, " ")+" ]")
 
 	if err := buildCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
 	remArgs := buildCmd.Args()
+
+	if len(buildOut) == 0 {
+		buildOut = outputList{"kernel+initrd"}
+	}
+
+	log.Debugf("Outputs selected: %s", buildOut.String())
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify a configuration file")
@@ -71,7 +101,7 @@ func build(args []string) {
 	image := buildInternal(m, name, *buildPull)
 
 	log.Infof("Create outputs:")
-	err = outputs(m, name, image)
+	err = outputs(name, image, buildOut)
 	if err != nil {
 		log.Fatalf("Error writing outputs: %v", err)
 	}
