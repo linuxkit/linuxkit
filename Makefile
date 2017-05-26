@@ -22,7 +22,7 @@ lint:
 	@go test github.com/moby/tool/cmd/moby
 
 test: moby
-	./moby build test/test.yml
+	./moby build -output tar test/test.yml
 	rm moby test.tar
 
 PHONY: install

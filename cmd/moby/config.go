@@ -38,9 +38,6 @@ type Moby struct {
 		Contents  string
 		Source    string
 	}
-	Outputs []struct {
-		Format string
-	}
 }
 
 // TrustConfig is the type of a content trust config

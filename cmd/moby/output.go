@@ -21,94 +21,118 @@ const (
 	vmdk = "linuxkit/mkimage-vmdk:182b541474ca7965c8e8f987389b651859f760da@sha256:99638c5ddb17614f54c6b8e11bd9d49d1dea9d837f38e0f6c1a5f451085d449b"
 )
 
-func outputs(m Moby, base string, image []byte) error {
-	log.Debugf("output: %s %s", m.Outputs, base)
+var outFuns = map[string]func(string, []byte) error{
+	"tar": func(base string, image []byte) error {
+		err := outputTar(base, image)
+		if err != nil {
+			return fmt.Errorf("Error writing tar output: %v", err)
+		}
+		return nil
+	},
+	"kernel+initrd": func(base string, image []byte) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputKernelInitrd(base, kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing kernel+initrd output: %v", err)
+		}
+		return nil
+	},
+	"iso-bios": func(base string, image []byte) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImg(bios, base+".iso", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing iso-bios output: %v", err)
+		}
+		return nil
+	},
+	"iso-efi": func(base string, image []byte) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImg(efi, base+"-efi.iso", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing iso-efi output: %v", err)
+		}
+		return nil
+	},
+	"img-gz": func(base string, image []byte) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImgSize(img, base+".img.gz", kernel, initrd, cmdline, "1G")
+		if err != nil {
+			return fmt.Errorf("Error writing img-gz output: %v", err)
+		}
+		return nil
+	},
+	"gcp-img": func(base string, image []byte) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImg(gcp, base+".img.tar.gz", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing gcp-img output: %v", err)
+		}
+		return nil
+	},
+	"qcow2": func(base string, image []byte) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImg(qcow, base+".qcow2", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing qcow2 output: %v", err)
+		}
+		return nil
+	},
+	"vhd": func(base string, image []byte) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImg(vhd, base+".vhd", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writingvhd output: %v", err)
+		}
+		return nil
+	},
+	"vmdk": func(base string, image []byte) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImg(vmdk, base+".vmdk", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing vmdk output: %v", err)
+		}
+		return nil
+	},
+}
 
-	for _, o := range m.Outputs {
-		switch o.Format {
-		case "tar":
-			err := outputTar(base, image)
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "kernel+initrd":
-			kernel, initrd, cmdline, err := tarToInitrd(image)
-			if err != nil {
-				return fmt.Errorf("Error converting to initrd: %v", err)
-			}
-			err = outputKernelInitrd(base, kernel, initrd, cmdline)
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "iso-bios":
-			kernel, initrd, cmdline, err := tarToInitrd(image)
-			if err != nil {
-				return fmt.Errorf("Error converting to initrd: %v", err)
-			}
-			err = outputImg(bios, base+".iso", kernel, initrd, cmdline)
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "iso-efi":
-			kernel, initrd, cmdline, err := tarToInitrd(image)
-			if err != nil {
-				return fmt.Errorf("Error converting to initrd: %v", err)
-			}
-			err = outputImg(efi, base+"-efi.iso", kernel, initrd, cmdline)
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "img-gz":
-			kernel, initrd, cmdline, err := tarToInitrd(image)
-			if err != nil {
-				return fmt.Errorf("Error converting to initrd: %v", err)
-			}
-			err = outputImgSize(img, base+".img.gz", kernel, initrd, cmdline, "1G")
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "gcp-img":
-			kernel, initrd, cmdline, err := tarToInitrd(image)
-			if err != nil {
-				return fmt.Errorf("Error converting to initrd: %v", err)
-			}
-			err = outputImg(gcp, base+".img.tar.gz", kernel, initrd, cmdline)
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "qcow", "qcow2":
-			kernel, initrd, cmdline, err := tarToInitrd(image)
-			if err != nil {
-				return fmt.Errorf("Error converting to initrd: %v", err)
-			}
-			err = outputImg(qcow, base+".qcow2", kernel, initrd, cmdline)
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "vhd":
-			kernel, initrd, cmdline, err := tarToInitrd(image)
-			if err != nil {
-				return fmt.Errorf("Error converting to initrd: %v", err)
-			}
-			err = outputImg(vhd, base+".vhd", kernel, initrd, cmdline)
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "vmdk":
-			kernel, initrd, cmdline, err := tarToInitrd(image)
-			if err != nil {
-				return fmt.Errorf("Error converting to initrd: %v", err)
-			}
-			err = outputImg(vmdk, base+".vmdk", kernel, initrd, cmdline)
-			if err != nil {
-				return fmt.Errorf("Error writing %s output: %v", o.Format, err)
-			}
-		case "":
-			return fmt.Errorf("No format specified for output")
-		default:
-			return fmt.Errorf("Unknown output type %s", o.Format)
+func outputs(base string, image []byte, out outputList) error {
+	log.Debugf("output: %v %s", out, base)
+
+	for _, o := range out {
+		f := outFuns[o]
+		if f == nil {
+			return fmt.Errorf("Unknown output type %s", o)
+		}
+		err := f(base, image)
+		if err != nil {
+			return err
 		}
 	}
+
 	return nil
 }
 

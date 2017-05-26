@@ -29,17 +29,6 @@ var schema = string(`
         "type": "array",
         "items": { "$ref": "#/definitions/file" }
     },
-    "output": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "format": {"type": "string"}
-      }
-    },
-    "outputs": {
-        "type": "array",
-        "items": { "$ref": "#/definitions/output" }
-    },
     "trust": {
       "type": "object",
       "additionalProperties": false,
@@ -116,8 +105,7 @@ var schema = string(`
     "onboot": { "$ref": "#/definitions/images" },
     "services": { "$ref": "#/definitions/images" },
     "trust": { "$ref": "#/definitions/trust" },
-    "files": { "$ref": "#/definitions/files" },
-    "outputs": { "$ref": "#/definitions/outputs" }
+    "files": { "$ref": "#/definitions/files" }
   }
 }
 `)
