@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
 onboot:
   - name: ltp
-    image: "linuxkit/test-ltp-20170116:81229df2d25065b06f0a3071faaace8d66c87e67"
+    image: "linuxkit/test-ltp:20170116"
     net: host
     pid: host
     binds:

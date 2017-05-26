@@ -11,7 +11,7 @@ ltp.tar: ltp.tag
 	docker run --rm --net=none --log-driver=none $(shell cat ltp.tag) tar cf - opt/ltp  > $@
 
 SHASUM=alpine:3.5
-IMAGE=test-ltp-$(LTP_VERSION)
+IMAGE=test-ltp
 
 # Note: We do not compute the hash from all the dependencies here
 # because the ltp binaries will change everytime we build. Ideally, we
@@ -25,7 +25,9 @@ hash: Dockerfile.pkg ltp.tar check.sh $(DEPS)
 push: hash
 	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
 		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(shell cat hash))
+		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(LTP_VERSION) && \
+		DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(shell cat hash) && \
+		DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(LTP_VERSION))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
