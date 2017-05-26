@@ -49,7 +49,7 @@ glib-2.52.1-r0
 gmp-6.1.2-r0
 gmp-dev-6.1.2-r0
 gnutls-3.5.13-r0
-go-1.8.1-r0
+go-1.8.1-r2
 gummiboot-48.1-r0
 hvtools-4.4.15-r0
 icu-libs-58.2-r2
@@ -130,7 +130,7 @@ lzo-2.10-r0
 m4-1.4.18-r0
 make-4.2.1-r0
 mesa-gbm-17.0.3-r1
-mkinitfs-3.1.0_rc1-r0
+mkinitfs-3.1.0-r0
 mpc1-1.0.3-r0
 mpfr3-3.1.5-r0
 mtools-4.0.18-r1
