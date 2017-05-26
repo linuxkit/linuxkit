@@ -23,9 +23,9 @@ hash: Dockerfile.pkg ltp.tar check.sh $(DEPS)
 	cat Dockerfile.pkg check.sh $(DEPS) | DOCKER_CONTENT_TRUST=1 docker run --rm -i $(SHASUM) sha1sum | sed 's/ .*//' > $@
 
 push: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
 		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		docker push linuxkit/$(IMAGE):$(shell cat hash))
+		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 

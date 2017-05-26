@@ -45,16 +45,5 @@ services:
     capabilities:
      - all
 trust:
-  image:
-    - linuxkit/kernel
-    - linuxkit/init
-    - linuxkit/runc
-    - linuxkit/containerd
-    - linuxkit/ca-certificates
-    - linuxkit/sysctl
-    - linuxkit/sysfs
-    - linuxkit/binfmt
-    - linuxkit/format
-    - linuxkit/mount
-    - linuxkit/rngd
-    - linuxkit/dhcpcd
+  org:
+    - linuxkit

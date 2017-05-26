@@ -13,9 +13,5 @@ onboot:
   - name: poweroff
     image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
 trust:
-  image:
-    - linuxkit/kernel
-    - linuxkit/init
-    - linuxkit/runc
-    - linuxkit/containerd
-    - linuxkit/sysctl
+  org:
+    - linuxkit
