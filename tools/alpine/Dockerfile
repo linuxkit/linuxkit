@@ -3,6 +3,8 @@ FROM alpine:3.6 AS mirror
 # update base image
 RUN apk update && apk upgrade -a
 
+# Copy Dockerfile so we can include it in the hash
+COPY Dockerfile /Dockerfile
 COPY packages /tmp/
 
 # mirror packages
@@ -42,6 +44,7 @@ COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/keys /etc/apk/keys/
 COPY --from=mirror /mirror /mirror/
 COPY --from=mirror /go/bin /go/bin/
+COPY --from=mirror /Dockerfile /Dockerfile
 
 COPY --from=shellcheck /usr/local/bin/shellcheck /usr/local/bin/shellcheck
 COPY --from=shellcheck /usr/local/lib/ /usr/local/lib/
