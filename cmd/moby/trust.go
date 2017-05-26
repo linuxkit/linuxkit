@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 	"time"
 
@@ -61,8 +62,14 @@ func TrustedReference(image string) (reference.Reference, error) {
 		return nil, err
 	}
 
+	tmpTrustDir, err := ioutil.TempDir("", "notary")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmpTrustDir)
+
 	nRepo, err := notaryClient.NewNotaryRepository(
-		"",
+		tmpTrustDir,
 		gun,
 		server,
 		rt,
