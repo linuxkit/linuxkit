@@ -21,5 +21,3 @@ services:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
     net: host
-outputs:
-  - format: kernel+initrd

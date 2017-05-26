@@ -24,5 +24,3 @@ trust:
   image:
     - linuxkit/kernel
     - linuxkit/rngd
-outputs:
-  - format: kernel+initrd

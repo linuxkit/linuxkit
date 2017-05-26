@@ -34,7 +34,3 @@ trust:
     - linuxkit/kernel
     - linuxkit/binfmt
     - linuxkit/rngd
-outputs:
-  - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi

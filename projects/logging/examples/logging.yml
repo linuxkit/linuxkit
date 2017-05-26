@@ -33,7 +33,3 @@ files:
 trust:
   image:
     - mobylinux/kernel
-outputs:
-  - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi

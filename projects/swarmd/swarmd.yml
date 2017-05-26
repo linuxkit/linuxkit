@@ -74,7 +74,3 @@ services:
       - /var/lib/containerd:/var/lib/containerd
       - /var/lib/swarmd:/var/lib/swarmd
       - /etc/resolv.conf:/etc/resolv.conf
-outputs:
-  - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi

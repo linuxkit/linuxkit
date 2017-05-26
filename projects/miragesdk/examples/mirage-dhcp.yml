@@ -38,7 +38,3 @@ services:
 files:
   - path: /var/run/dhcp-client/README
     contents: 'data for dhcp-client'
-outputs:
-  - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi

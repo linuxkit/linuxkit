@@ -12,14 +12,3 @@ onboot:
 trust:
   image:
     - linuxkit/kernel
-outputs:
-  - format: tar
-  - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi
-  - format: img-gz
-  - format: gcp-img
-  - format: qcow2
-# Disable VHD for now. It requires a lot of memory, which our CI instance currently doesn't have
-#  - format: vhd
-  - format: vmdk

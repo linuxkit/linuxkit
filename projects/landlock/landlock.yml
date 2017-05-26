@@ -22,7 +22,3 @@ services:
      - CAP_SYS_ADMIN
     oomScoreAdj: -800
     readonly: true
-outputs:
-  - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi

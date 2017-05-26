@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -name "${NAME}" test.yml
+moby build -output iso-bios -name "${NAME}" test.yml
 [ -f "${NAME}.iso" ] || exit 1
 linuxkit run qemu -iso "${NAME}.iso" | grep -q "Welcome to LinuxKit"
 exit 0

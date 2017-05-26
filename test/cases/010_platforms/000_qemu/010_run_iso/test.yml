@@ -12,5 +12,3 @@ onboot:
 trust:
   image:
     - linuxkit/kernel
-outputs:
-  - format: iso-bios

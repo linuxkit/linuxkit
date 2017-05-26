@@ -72,11 +72,3 @@ services:
     binds:
      - /var/lib/etcd:/var/lib/etcd
      - /var/config/etcd:/etc/etcd
-
-outputs:
-  - format: kernel+initrd
-  - format: gcp
-    project: docker4x
-    bucket: rolf
-    family: moby-demo
-    replace: true

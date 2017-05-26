@@ -23,7 +23,7 @@ if command -v qemu-system-x86_64; then
 	fi
 fi
 
-moby build -name "${NAME}" test.yml
+moby build -output iso-efi -name "${NAME}" test.yml
 [ -f "${NAME}-efi.iso" ] || exit 1
 linuxkit run qemu -iso -uefi "${NAME}-efi.iso" | grep -q "Welcome to LinuxKit"
 exit 0

@@ -26,7 +26,7 @@ if [ -z "${QEMU}" ]; then
     exit $RT_CANCEL
 fi
 
-moby build -name "${NAME}" test.yml
+moby build -output kernel+initrd -name "${NAME}" test.yml
 [ -f "${NAME}-kernel" ] || exit 1
 [ -f "${NAME}-initrd.img" ] || exit 1
 [ -f "${NAME}-cmdline" ]|| exit 1
