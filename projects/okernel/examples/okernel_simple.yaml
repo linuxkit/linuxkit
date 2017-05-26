@@ -2,27 +2,20 @@ kernel:
   image: "linuxkit/okernel:latest"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
-  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
-  - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
-  - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
+  - linuxkit/init:4fc8aa82ab34d62d510575c8fbe0c58b7ba9c480
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
+  - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"
+    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
 services:
   - name: rngd
-    image: "linuxkit/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:ae03169274d19fe8841314fa5a6fea3c61adbf4e"
+    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
   - name: sshd
-    image: "linuxkit/sshd:1613253e5def414e0dfd261acd0e191eadb5fedf"
-    capabilities:
-     - all
-    net: host
-    pid: host
-    binds:
-     - /root/.ssh:/root/.ssh
-     - /etc/resolv.conf:/etc/resolv.conf
+    image: "linuxkit/sshd:ddce15b9fbde068941e31294acdcd22befa4fc20"
 files:
   - path: root/.ssh/authorized_keys
     contents: '#your ssh key here'

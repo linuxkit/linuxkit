@@ -2,15 +2,12 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
-  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
-  - linuxkit/containerd:1c71f95fa36040ea7e987deb98a7a2a363853f01
-  - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
+  - linuxkit/init:4fc8aa82ab34d62d510575c8fbe0c58b7ba9c480
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
 onboot:
   - name: poweroff
     image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
 trust:
   image:
     - linuxkit/kernel
-    - linuxkit/binfmt
-    - linuxkit/rngd

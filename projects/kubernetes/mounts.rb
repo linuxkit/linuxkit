@@ -1,6 +1,6 @@
 import 'common.rb'
 
-from "linuxkit/mount:fc7164d7c4e1fe5d1da395c7f949fb332cffe752"
+from "linuxkit/mount:15e20f27abe69d276f796e4026531833ec5ff345"
 
 script = [
   mount_bind_hostns_self("/etc/cni"), mount_make_hostns_rshared("/etc/cni"),
