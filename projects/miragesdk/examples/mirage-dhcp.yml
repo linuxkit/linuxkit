@@ -8,15 +8,10 @@ init:
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"
-  - name: binfmt
+    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
 services:
   - name: rngd
     image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9
-    capabilities:
-     - CAP_SYS_ADMIN
-    oomScoreAdj: -800
-    readonly: true
   - name: dhcp-client
     image: mobylinux/dhcp-client:a7a6b49b0ff51ffa2f44ac848cd649e29f946e0c
     net: host

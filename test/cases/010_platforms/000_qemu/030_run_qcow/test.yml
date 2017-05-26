@@ -2,9 +2,9 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:f71c3b30ac1ba4ef16c160c89610fa4976f9752f
-  - linuxkit/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - linuxkit/containerd:60e2486a74c665ba4df57e561729aec20758daed
+  - linuxkit/init:4fc8aa82ab34d62d510575c8fbe0c58b7ba9c480
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
 onboot:
   - name: poweroff
     image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
@@ -12,3 +12,6 @@ onboot:
 trust:
   image:
     - linuxkit/kernel
+    - linuxkit/init
+    - linuxkit/runc
+    - linuxkit/containerd

@@ -50,8 +50,7 @@ The image name may include tag or digest, but the matching also succeeds if the 
 ## Image specification
 
 For each image in the `system` and `daemon` sections you can specify the OCI options that are passed to
-`runc`, so you can specify what capabilities are needed and so on. Generally there are few defaults.
-For more details see the [OCI specification](https://github.com/opencontainers/runtime-spec/blob/master/spec.md).
+`runc`, so you can specify what capabilities are needed and so on. Most LinuxKit packages now define defaults in the `org.mobyproject.config` image label. For more details see the [OCI specification](https://github.com/opencontainers/runtime-spec/blob/master/spec.md).
 
 - `name` a unique name for the program being executed, used as the `containerd` id.
 - `image` the Docker image to use for the root filesystem. The default command, path and environment are

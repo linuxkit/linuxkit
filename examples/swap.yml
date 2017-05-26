@@ -2,51 +2,29 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:42fe8cb1508b3afed39eb89821906e3cc7a70551
-  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
-  - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
+  - linuxkit/init:4fc8aa82ab34d62d510575c8fbe0c58b7ba9c480
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
   - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"
-  - name: binfmt
-    image: "linuxkit/binfmt:603e5f064b3e8a64088c0fcf7a80d2783541ee1d"
+    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:ae03169274d19fe8841314fa5a6fea3c61adbf4e"
+    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: "linuxkit/format:d78093e943f9c88386e30c00353f9476d34fb551"
-    binds:
-     - /dev:/dev
-    capabilities:
-     - CAP_SYS_ADMIN
-     - CAP_MKNOD
+    image: "linuxkit/format:55afe08816c2a4d8dbae3ee51ef53e0bee422d66"
   - name: mount
-    image: "linuxkit/mount:fc7164d7c4e1fe5d1da395c7f949fb332cffe752"
-    binds:
-     - /dev:/dev
-     - /var:/var:rshared,rbind
-    capabilities:
-     - CAP_SYS_ADMIN
-    rootfsPropagation: shared
+    image: "linuxkit/mount:15e20f27abe69d276f796e4026531833ec5ff345"
     command: ["/mount.sh", "/var/external"]
   - name: swap
-    image: "linuxkit/swap:c4c723a3d6678dc49770181bbb231ec99b271c75"
-    net: host
-    pid: host
-    capabilities:
-     - CAP_SYS_ADMIN
-     - CAP_MKNOD
-    readonly: true
-    binds:
-     - /var:/var
-     - /dev:/dev
+    image: "linuxkit/swap:085f0088dd1ef2f994e707e438218ea4d41bad13"
     # to use unencrypted swap, use:
     # command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G"]
     command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9"
+    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
   - name: nginx
     image: "nginx:alpine"
     capabilities:
@@ -59,3 +37,12 @@ services:
 trust:
   image:
     - linuxkit/kernel
+    - linuxkit/init
+    - linuxkit/runc
+    - linuxkit/containerd
+    - linuxkit/ca-certificates
+    - linuxkit/sysctl
+    - linuxkit/dhcpcd
+    - linuxkit/format
+    - linuxkit/mount
+    - linuxkit/rngd

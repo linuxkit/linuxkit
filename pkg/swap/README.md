@@ -8,16 +8,7 @@ Normally, unless you are running explicitly in a desktop version, LinuxKit image
 ```
 onboot:
   - name: swap
-    image: "linuxkit/swap:c4c723a3d6678dc49770181bbb231ec99b271c75"
-    net: host
-    pid: host
-    capabilities:
-     - CAP_SYS_ADMIN
-     - CAP_MKNOD
-    readonly: true
-    binds:
-     - /dev:/dev
-     - /var:/var
+    image: "linuxkit/swap:085f0088dd1ef2f994e707e438218ea4d41bad13"
     command: ["swap.sh","--path","/var/external/swap","--size","2G"]
 ```
 

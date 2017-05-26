@@ -2,31 +2,20 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
-  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
-  - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
-  - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
+  - linuxkit/init:4fc8aa82ab34d62d510575c8fbe0c58b7ba9c480
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
+  - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"
+    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
   - name: format
-    image: "linuxkit/format:d78093e943f9c88386e30c00353f9476d34fb551"
-    binds:
-     - /dev:/dev
-    capabilities:
-     - CAP_SYS_ADMIN
-     - CAP_MKNOD
+    image: "linuxkit/format:55afe08816c2a4d8dbae3ee51ef53e0bee422d66"
   - name: mount
-    image: "linuxkit/mount:fc7164d7c4e1fe5d1da395c7f949fb332cffe752"
-    binds:
-     - /dev:/dev
-     - /var:/var:rshared,rbind
-    capabilities:
-     - CAP_SYS_ADMIN
-    rootfsPropagation: shared
+    image: "linuxkit/mount:15e20f27abe69d276f796e4026531833ec5ff345"
     command: ["/mount.sh", "/var/lib/etcd"]
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:ae03169274d19fe8841314fa5a6fea3c61adbf4e"
+    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
     image: "linuxkit/metadata:a810b68fec9c9282cf096eed50605ddd6b2f3142"
@@ -39,26 +28,11 @@ onboot:
      - CAP_SYS_ADMIN
 services:
   - name: rngd
-    image: "linuxkit/rngd:f5e5be43e730ea819c3293d5c6dcbfa7f4c5c314"
+    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
   - name: ntpd
     image: "linuxkit/openntpd:ad834449a7eaf10dc022b3d8d2ed9faf7ec99d37"
-    capabilities:
-      - CAP_SYS_TIME
-      - CAP_SYS_NICE
-      - CAP_SYS_CHROOT
-      - CAP_SETUID
-      - CAP_SETGID
-    net: host
   - name: node_exporter
-    image: "linuxkit/node_exporter:bdb20b41855d0e2b4edeec44ef569d030ea3cc47"
-    capabilities:
-     - all
-    net: host
-    pid: host
-    binds:
-     - /proc:/host/proc
-     - /sys:/host/sys
-     - /:/rootfs
+    image: "linuxkit/node_exporter:29a85e9c5de1a1bd470a963878194303f6a7bd8c"
   - name: etcd
     image: "moby/etcd"
     capabilities:
@@ -72,3 +46,16 @@ services:
     binds:
      - /var/lib/etcd:/var/lib/etcd
      - /var/config/etcd:/etc/etcd
+trust:
+  - images:
+    - linuxkit/kernel
+    - linuxkit/init
+    - linuxkit/runc
+    - linuxkit/containerd
+    - linuxkit/ca-certificates
+    - linuxkit/sysctl
+    - linuxkit/format
+    - linuxkit/mount
+    - linuxkit/dhcpcd
+    - linuxkit/rngd
+    - linuxkit/openntpd
