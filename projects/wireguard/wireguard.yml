@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
   - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
   - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
-  - linuxkit/wireguard-utils:984114305fe31abfeaaeb735c413bb20bc20f47b
+  - linuxkit/wireguard-utils:26fe3d38455f2d441549e3c54bdec1b26ac819b8
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"

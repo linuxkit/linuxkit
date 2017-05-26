@@ -1,4 +1,4 @@
-FROM alpine:edge as tools
+FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 as tools
 RUN echo http://dl-cdn.alpinelinux.org/alpine/edge/testing >> /etc/apk/repositories
 RUN \
   apk update && \
