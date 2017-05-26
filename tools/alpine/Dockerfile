@@ -33,11 +33,17 @@ RUN go get -u github.com/golang/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
+FROM koalaman/shellcheck:v0.4.6@sha256:191b61e5f436fc51f22faaf2f4e0f77799f75977c7210377dd73a1a0f99ef8bd AS shellcheck
+
+
 FROM alpine:3.6
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/keys /etc/apk/keys/
 COPY --from=mirror /mirror /mirror/
 COPY --from=mirror /go/bin /go/bin/
+
+COPY --from=shellcheck /usr/local/bin/shellcheck /usr/local/bin/shellcheck
+COPY --from=shellcheck /usr/local/lib/ /usr/local/lib/
 
 RUN apk update && apk upgrade -a
