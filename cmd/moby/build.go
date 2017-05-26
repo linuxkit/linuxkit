@@ -99,10 +99,10 @@ func build(args []string) {
 		log.Fatalf("Invalid config: %v", err)
 	}
 
-	image := buildInternal(m, filepath.Join(*buildDir, name), *buildPull)
+	image := buildInternal(m, *buildPull)
 
 	log.Infof("Create outputs:")
-	err = outputs(name, image, buildOut)
+	err = outputs(filepath.Join(*buildDir, name), image, buildOut)
 	if err != nil {
 		log.Fatalf("Error writing outputs: %v", err)
 	}
@@ -156,7 +156,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 
 // Perform the actual build process
 // TODO return error not panic
-func buildInternal(m Moby, name string, pull bool) []byte {
+func buildInternal(m Moby, pull bool) []byte {
 	w := new(bytes.Buffer)
 	iw := tar.NewWriter(w)
 
