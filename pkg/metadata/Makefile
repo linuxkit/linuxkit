@@ -27,9 +27,9 @@ hash: Dockerfile $(DEPS)
 	find $^ -type f | xargs cat | docker run --rm -i $(SHA_IMAGE) sha1sum - | sed 's/ .*//' > hash
 
 push: hash container
-	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
 		(docker tag $(IMAGE):build $(ORG)/$(IMAGE):$(shell cat hash) && \
-		 docker push $(ORG)/$(IMAGE):$(shell cat hash))
+		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 
