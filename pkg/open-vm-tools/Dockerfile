@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:dc7d4cdb5932f3e6ff62172c05627816c0d412fa@sha256:0239e6984a9932bfe1b44dc9be6f8e4c29dd7bdb431ba0b040b6d027b1091f08 AS mirror
+FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \
