@@ -18,7 +18,7 @@ endif
 PREFIX?=/usr/local/
 
 MOBY_COMMIT=1cb9fab3e13c8d3931c6f989c5d36087382e8710
-bin/moby: | bin
+bin/moby: Makefile | bin
 	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
 	tar xf tmp_moby_bin.tar > $@
 	rm tmp_moby_bin.tar
@@ -26,7 +26,7 @@ bin/moby: | bin
 
 RTF_COMMIT=3ced00340aacfc1932e8c03281bf3bfc586c147c
 RTF_CMD=github.com/linuxkit/rtf/cmd
-bin/rtf: | bin
+bin/rtf: Makefile | bin
 	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(VERSION)" -o $@ > tmp_rtf_bin.tar
 	tar xf tmp_rtf_bin.tar > $@
 	rm tmp_rtf_bin.tar
