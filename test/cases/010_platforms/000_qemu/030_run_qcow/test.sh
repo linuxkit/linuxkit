@@ -17,7 +17,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -name "${NAME}" test.yml
+moby build -output qcow2 -name "${NAME}" test.yml
 [ -f "${NAME}.qcow2" ] || exit 1
 linuxkit run qemu -disk-format qcow2 "${NAME}.qcow2" | grep -q "Welcome to LinuxKit"
 exit 0

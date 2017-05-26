@@ -27,5 +27,3 @@ trust:
   image:
     - linuxkit/kernel
     - linuxkit/rngd
-outputs:
-  - format: vmdk

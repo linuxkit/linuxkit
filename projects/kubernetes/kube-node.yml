@@ -93,5 +93,3 @@ files:
     contents: '# Your ssh key goes here'
   - {path: etc/cni, directory: true}
   - {path: opt/cni, directory: true}
-outputs:
-  - format: kernel+initrd

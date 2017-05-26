@@ -35,10 +35,3 @@ services:
 trust:
   image:
     - mobylinux/kernel
-outputs:
-  - format: kernel+initrd
-  - format: gcp
-    project: docker4x
-    bucket: rolf
-    family: moby-demo
-    replace: true

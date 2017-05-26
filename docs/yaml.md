@@ -47,25 +47,6 @@ integrity, and freshness guarantees for the components it verifies.  The LinuxKi
 The image name may include tag or digest, but the matching also succeeds if the base image name is the same.
 - `org` lists which organizations for which Docker Content Trust is to be enforced across all images (ex: `mobylinux` is the org for `mobylinux/kernel`)
 
-## `output`
-
-This section specifies the output formats that are created. Files are created with the base name of
-the config file, eg `moby` for `moby.yml` or the name specified with `moby build --name ...`. Then
-they will have a suffix related to the file type created, such as `moby-bzImage` or `moby.img.tar.gz`.
-The generated names are output by the command for reference or scripting.
-
-- `kernel+initrd` outputs the raw kernel (`bzImage`), the init ramdisk, and a file with the specified
-  command line. This is used for example by the hyperkit driver.
-- `iso-bios` outputs a CD image that is bootable via a traditional BIOS. Can also be used with Qemu.
-- `iso-efi` outputs a CD image that can be used by an EFI BIOS, as required by Hyper-V and newer hardware.
-- `gcp-img` outputs a compressed tarred filesystem image as used on Google Cloud Platform.
-- `gcp-storage` stores the `gcp-img` in a GCP bucket. `bucket` and `project` must be specified.
-- `gcp` stores the `gcp-img` as a bootable machine image, after uploading to the bucket. `bucket` and `project`
-  must be specified. Use `replace: true` to replace any existing image. You can specify an image `family`.
-- `qcow` or `qcow2` creates a `qcow2` image for Qemu and similar systems
-- `vhd` creates a VHD image.
-- `vmdk` creates a VMDK image, suitable for use with VMWare.
-
 ## Image specification
 
 For each image in the `system` and `daemon` sections you can specify the OCI options that are passed to

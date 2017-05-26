@@ -77,8 +77,8 @@ rtf -x run linuxkit.examples
 To customise, copy or modify the [`linuxkit.yml`](linuxkit.yml) to your own `file.yml` or use one of the [examples](examples/) and then run `moby build file.yml` to
 generate its specified output. You can run the output with `linuxkit run file`.
 
-The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. It also specifies what
-formats to output, such as bootable ISOs and images for various platforms.
+The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. You can specify the type
+of artifact to build with the `moby` tool eg `moby build -output vhd linuxkit.yml`.
 
 ### Yaml Specification
 
@@ -89,7 +89,6 @@ The yaml format specifies the image to be built:
 - `onboot` are the system containers, executed sequentially in order. They should terminate quickly when done.
 - `services` is the system services, which normally run for the whole time the system is up
 - `files` are additional files to add to the image
-- `outputs` are descriptions of what to build, such as ISOs.
 
 For a more detailed overview of the options see [yaml documentation](docs/yaml.md).
 

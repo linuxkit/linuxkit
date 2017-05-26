@@ -59,7 +59,3 @@ services:
 trust:
   image:
     - linuxkit/kernel
-outputs:
-  - format: kernel+initrd
-  - format: iso-bios
-  - format: iso-efi

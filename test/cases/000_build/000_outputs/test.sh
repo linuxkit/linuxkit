@@ -17,8 +17,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -name "${NAME}" test.yml
-
+moby build -output tar,kernel+initrd,iso-bios,iso-efi,img-gz,qcow2,vmdk -name "${NAME}" test.yml
 [ -f "${NAME}.tar" ] || exit 1
 [ -f "${NAME}-kernel" ] || exit 1
 [ -f "${NAME}-initrd.img" ] || exit 1

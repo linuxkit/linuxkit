@@ -30,5 +30,3 @@ trust:
 files:
   - path: root/.ssh/authorized_keys
     contents: '#your ssh key here'
-outputs:
-  - format: kernel+initrd
