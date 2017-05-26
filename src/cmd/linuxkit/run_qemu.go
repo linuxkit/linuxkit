@@ -167,7 +167,7 @@ func runQemuLocal(config QemuConfig) error {
 		// If disk doesn't exist then create one
 		if _, err := os.Stat(config.DiskPath); err != nil {
 			if os.IsNotExist(err) {
-				log.Infof("Creating new qemu disk [%s] format %s", config.DiskPath, config.DiskFormat)
+				log.Debugf("Creating new qemu disk [%s] format %s", config.DiskPath, config.DiskFormat)
 				qemuImgCmd := exec.Command(config.QemuImgPath, "create", "-f", config.DiskFormat, config.DiskPath, config.DiskSize)
 				log.Debugf("%v\n", qemuImgCmd.Args)
 				if err := qemuImgCmd.Run(); err != nil {
@@ -250,7 +250,7 @@ func runQemuContainer(config QemuConfig) error {
 		// If disk doesn't exist then create one
 		if _, err = os.Stat(config.DiskPath); err != nil {
 			if os.IsNotExist(err) {
-				log.Infof("Creating new qemu disk [%s] format %s", config.DiskPath, config.DiskFormat)
+				log.Debugf("Creating new qemu disk [%s] format %s", config.DiskPath, config.DiskFormat)
 				imgArgs := append(dockerArgsImg, QemuImg, "qemu-img", "create", "-f", config.DiskFormat, config.DiskPath, config.DiskSize)
 				qemuImgCmd := exec.Command(dockerPath, imgArgs...)
 				qemuImgCmd.Stderr = os.Stderr
