@@ -1,0 +1,37 @@
+kernel:
+  image: "mobylinux/kernel-wireguard:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
+  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
+  - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
+  - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
+  - linuxkit/wireguard-utils:984114305fe31abfeaaeb735c413bb20bc20f47b
+onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"
+  - name: binfmt
+    image: "linuxkit/binfmt:603e5f064b3e8a64088c0fcf7a80d2783541ee1d"
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:ae03169274d19fe8841314fa5a6fea3c61adbf4e"
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+services:
+  - name: rngd
+    image: "linuxkit/rngd:69f951ce2a3a9534dbbc7ba8119e1df4391f06c0"
+  - name: nginx
+    image: "nginx:alpine"
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+    net: host
+files:
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
+trust:
+  image:
+    - linuxkit/kernel
+    - linuxkit/binfmt
+    - linuxkit/rngd

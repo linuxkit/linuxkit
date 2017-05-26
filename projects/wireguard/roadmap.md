@@ -33,7 +33,6 @@ WireGuard has a [network namespace integration](https://www.wireguard.io/netns/)
 ## Roadmap
 
 **Near-term:**
-- moving `wireguard-tools` out of the init image (with any other tools, as well)
 - decide between either carrying the WireGuard patches in our kernel tree or using a module
 
 **Long-term:**
