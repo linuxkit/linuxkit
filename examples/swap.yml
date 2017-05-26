@@ -35,14 +35,5 @@ services:
      - CAP_DAC_OVERRIDE
     net: host
 trust:
-  image:
-    - linuxkit/kernel
-    - linuxkit/init
-    - linuxkit/runc
-    - linuxkit/containerd
-    - linuxkit/ca-certificates
-    - linuxkit/sysctl
-    - linuxkit/dhcpcd
-    - linuxkit/format
-    - linuxkit/mount
-    - linuxkit/rngd
+  org:
+    - linuxkit
