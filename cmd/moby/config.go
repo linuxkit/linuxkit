@@ -477,7 +477,7 @@ func ConfigInspectToOCI(yaml MobyImage, inspect types.ImageInspect) (specs.Spec,
 		dest := parts[1]
 		opts := []string{"rw", "rbind", "rprivate"}
 		if len(parts) == 3 {
-			opts = strings.Split(parts[2], ",")
+			opts = append(strings.Split(parts[2], ","), "rbind")
 		}
 		mounts[dest] = specs.Mount{Destination: dest, Type: "bind", Source: src, Options: opts}
 	}
