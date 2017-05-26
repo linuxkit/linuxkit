@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:5f6db26ab7bf6a9c452a612e236cc7495408132b@sha256:d009afc85d0b005daf51c8f3026aa552ab997dc47cab43915e9dc761accae086 AS qemu
+FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 AS qemu
 RUN apk add \
     qemu-aarch64 \
     qemu-arm \

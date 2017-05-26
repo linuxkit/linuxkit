@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:dae8bcbc6e2cec0a1cc1958dddbc5d6bd3ccf9a0@sha256:02c251d54c4083a596ead8cae92144306b385db0ff961c95a3a620a4c69961ed AS mirror
+FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     tini
