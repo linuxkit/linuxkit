@@ -563,6 +563,7 @@ blockif_open(const char *optstr, const char *ident)
 
 #ifdef HAVE_OCAML_QCOW
 	char *mirage_qcow_config = NULL;
+	char *mirage_qcow_stats_config = NULL;
 	struct mirage_block_stat msbuf;
 #endif
 
@@ -597,6 +598,8 @@ blockif_open(const char *optstr, const char *ident)
 			use_mirage = 1;
 		else if (strncmp(cp, "qcow-config=", 12) == 0)
 			mirage_qcow_config = cp + 12;
+		else if (strncmp(cp, "qcow-stats-config=", 18) == 0)
+			mirage_qcow_stats_config = cp + 18;
 #endif
 		else if (sscanf(cp, "sectorsize=%d/%d", &ssopt, &pssopt) == 2)
 			;
@@ -622,7 +625,7 @@ blockif_open(const char *optstr, const char *ident)
 	if (use_mirage) {
 #ifdef HAVE_OCAML_QCOW
 		mirage_block_register_thread();
-		mbh = mirage_block_open(nopt, mirage_qcow_config);
+		mbh = mirage_block_open(nopt, mirage_qcow_config, mirage_qcow_stats_config);
 		if (mbh < 0) {
 			perror("Could not open mirage-block device");
 			goto err;

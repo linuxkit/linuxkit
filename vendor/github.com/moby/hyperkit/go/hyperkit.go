@@ -63,6 +63,12 @@ var defaultHyperKits = []string{"hyperkit",
 	"/Applications/Docker.app/Contents/Resources/bin/hyperkit",
 	"/Applications/Docker.app/Contents/MacOS/com.docker.hyperkit"}
 
+// Socket9P contains a unix domain socket path and 9p tag
+type Socket9P struct {
+	Path string `json:"path"`
+	Tag  string `json:"tag"`
+}
+
 // HyperKit contains the configuration of the hyperkit VM
 type HyperKit struct {
 	// HyperKit is the path to the hyperkit binary
@@ -85,6 +91,9 @@ type HyperKit struct {
 	VSockPorts []int `json:"vsock_ports"`
 	// VSock guest CID
 	VSockGuestCID int `json:"vsock_guest_cid"`
+
+	// 9P sockets
+	Sockets9P []Socket9P `json:"9p_sockets"`
 
 	// Kernel is the path to the kernel image to boot
 	Kernel string `json:"kernel"`
@@ -367,32 +376,49 @@ func (h *HyperKit) buildArgs(cmdline string) {
 	a = append(a, "-m", fmt.Sprintf("%dM", h.Memory))
 
 	a = append(a, "-s", "0:0,hostbridge")
+	a = append(a, "-s", "31,lpc")
+
+	nextSlot := 1
+
 	if h.VPNKitSock != "" {
 		if h.VPNKitKey == "" {
-			a = append(a, "-s", fmt.Sprintf("1:0,virtio-vpnkit,path=%s", h.VPNKitSock))
+			a = append(a, "-s", fmt.Sprintf("%d:0,virtio-vpnkit,path=%s", nextSlot, h.VPNKitSock))
 		} else {
-			a = append(a, "-s", fmt.Sprintf("1:0,virtio-vpnkit,path=%s,uuid=%s", h.VPNKitSock, h.VPNKitKey))
+			a = append(a, "-s", fmt.Sprintf("%d:0,virtio-vpnkit,path=%s,uuid=%s", nextSlot, h.VPNKitSock, h.VPNKitKey))
 		}
+		nextSlot++
 	}
+
 	if h.UUID != "" {
 		a = append(a, "-U", h.UUID)
 	}
+
 	if h.DiskImage != "" {
-		a = append(a, "-s", fmt.Sprintf("2:0,virtio-blk,%s", h.DiskImage))
+		a = append(a, "-s", fmt.Sprintf("%d:0,virtio-blk,%s", nextSlot, h.DiskImage))
+		nextSlot++
 	}
+
 	if h.VSock {
-		l := fmt.Sprintf("3,virtio-sock,guest_cid=%d,path=%s", h.VSockGuestCID, h.StateDir)
+		l := fmt.Sprintf("%d,virtio-sock,guest_cid=%d,path=%s", nextSlot, h.VSockGuestCID, h.StateDir)
 		if len(h.VSockPorts) > 0 {
 			l = fmt.Sprintf("%s,guest_forwards=%s", l, intArrayToString(h.VSockPorts, ";"))
 		}
 		a = append(a, "-s", l)
-	}
-	if h.ISOImage != "" {
-		a = append(a, "-s", fmt.Sprintf("4,ahci-cd,%s", h.ISOImage))
+		nextSlot++
 	}
 
-	a = append(a, "-s", "10,virtio-rnd")
-	a = append(a, "-s", "31,lpc")
+	if h.ISOImage != "" {
+		a = append(a, "-s", fmt.Sprintf("%d,ahci-cd,%s", nextSlot, h.ISOImage))
+		nextSlot++
+	}
+
+	a = append(a, "-s", fmt.Sprintf("%d,virtio-rnd", nextSlot))
+	nextSlot++
+
+	for _, p := range h.Sockets9P {
+		a = append(a, "-s", fmt.Sprintf("%d,virtio-9p,path=%s,tag=%s", nextSlot, p.Path, p.Tag))
+		nextSlot++
+	}
 
 	if h.Console == ConsoleFile {
 		a = append(a, "-l", fmt.Sprintf("com1,autopty=%s/tty,log=%s/console-ring", h.StateDir, h.StateDir))

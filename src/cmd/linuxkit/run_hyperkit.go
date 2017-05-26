@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net"
 	"os"
+	"os/exec"
 	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
@@ -33,6 +34,7 @@ func runHyperKit(args []string) {
 	ipStr := flags.String("ip", "", "IP address for the VM")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
 	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
+	startVPNKit := flags.Bool("start-vpnkit", false, "Launch a new VPNKit instead of reusing the instance from Docker for Mac. The new instance will be on a separate internal network. This enables IP port forwarding from the host to the guest if the guest supports it.")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -101,7 +103,30 @@ func runHyperKit(args []string) {
 		*disk = filepath.Join(*state, "disk.img")
 	}
 
-	h, err := hyperkit.New(*hyperkitPath, "auto", *state)
+	vpnKitEthernetSocket := "auto"
+	var vpnKitPortSocket string
+	var vpnKitProcess *os.Process
+
+	// Launch new VPNKit if needed
+	if *startVPNKit {
+		vpnKitEthernetSocket = filepath.Join(*state, "vpnkit_eth.sock")
+		vpnKitPortSocket = filepath.Join(*state, "vpnkit_port.sock")
+		vsockSocket := filepath.Join(*state, "connect")
+		vpnKitProcess, err = launchVPNKit(vpnKitEthernetSocket, vsockSocket, vpnKitPortSocket)
+		if err != nil {
+			log.Fatalln("Unable to start vpnkit: ", err)
+		}
+		defer func() {
+			if vpnKitProcess != nil {
+				err := vpnKitProcess.Kill()
+				if err != nil {
+					log.Println(err)
+				}
+			}
+		}()
+	}
+
+	h, err := hyperkit.New(*hyperkitPath, vpnKitEthernetSocket, *state)
 	if err != nil {
 		log.Fatalln("Error creating hyperkit: ", err)
 	}
@@ -121,8 +146,74 @@ func runHyperKit(args []string) {
 	h.Memory = *mem
 	h.DiskSize = diskSz
 
+	// Add 9p and vsock for port forwarding if VPNKit is launched automatically
+	if *startVPNKit {
+		// The guest will use this 9P mount to configure which ports to forward
+		h.Sockets9P = []hyperkit.Socket9P{{Path: vpnKitPortSocket, Tag: "port"}}
+		// VSOCK port 62373 is used to pass traffic from host->guest
+		h.VSockPorts = append(h.VSockPorts, 62373)
+	}
+
 	err = h.Run(string(cmdline))
 	if err != nil {
 		log.Fatalf("Cannot run hyperkit: %v", err)
 	}
+}
+
+// createListenSocket creates a new unix domain socket and returns the open file
+func createListenSocket(path string) (*os.File, error) {
+	os.Remove(path)
+	conn, err := net.ListenUnix("unix", &net.UnixAddr{Name: path, Net: "unix"})
+	if err != nil {
+		return nil, fmt.Errorf("unable to create socket: %v", err)
+	}
+	f, err := conn.File()
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
+// launchVPNKit starts a new instance of VPNKit. Ethernet socket and port socket
+// will be created and passed to VPNKit. The VSOCK socket should be created
+// by HyperKit when it starts.
+func launchVPNKit(etherSock string, vsockSock string, portSock string) (*os.Process, error) {
+	var err error
+
+	vpnKitPath, err := exec.LookPath("vpnkit")
+	if err != nil {
+		return nil, fmt.Errorf("Unable to find vpnkit binary")
+	}
+
+	etherFile, err := createListenSocket(etherSock)
+	if err != nil {
+		return nil, err
+	}
+
+	portFile, err := createListenSocket(portSock)
+	if err != nil {
+		return nil, err
+	}
+
+	cmd := exec.Command(vpnKitPath,
+		"--ethernet", "fd:3",
+		"--vsock-path", vsockSock,
+		"--port", "fd:4")
+
+	cmd.ExtraFiles = append(cmd.ExtraFiles, etherFile)
+	cmd.ExtraFiles = append(cmd.ExtraFiles, portFile)
+
+	cmd.Env = os.Environ() // pass env for DEBUG
+
+	cmd.Stdin = os.Stdin
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Start(); err != nil {
+		return nil, err
+	}
+
+	go cmd.Wait() // run in background
+
+	return cmd.Process, nil
 }
