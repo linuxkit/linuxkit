@@ -39,20 +39,9 @@ To simplify the process, two `onboot` images are available for you to use:
 ```yml
 onboot:
   - name: format
-    image: "linuxkit/format:fdbfda789fe30a97ff194a06ac51ee0ff6b3ccf4"
-    binds:
-     - /dev:/dev
-    capabilities:
-     - CAP_SYS_ADMIN
-     - CAP_MKNOD
+    image: "linuxkit/format:55afe08816c2a4d8dbae3ee51ef53e0bee422d66"
   - name: mount
-    image: "linuxkit/mount:ad138d252798d9d0d6779f7f4d35b7fbcbbeefb9"
-    binds:
-     - /dev:/dev
-     - /var:/var:rshared,rbind
-    capabilities:
-     - CAP_SYS_ADMIN
-    rootfsPropagation: shared
+    image: "linuxkit/mount:15e20f27abe69d276f796e4026531833ec5ff345"
     command: ["/mount.sh", "/var/external"]
 ```
 
@@ -62,10 +51,12 @@ Notice several key points:
     * The format container needs to have bind mounts for `/dev`
     * The format container needs `CAP_SYS_ADMIN` and `CAP_MKNOD` capabilities
     * The format container only needs to run **once**, not matter how many external disks or partitions are provided. It finds all block devices under `/dev` and processes them.
+    * The default container config should be sufficient
 2. mount container
     * The mount container `command` is `mount.sh` followed by the desired mount point. Remember that nearly everything in a linuxkit image is read-only except under `/var`, so mount it there.
     * The mount container needs to have bind mounts for `/dev` and `/var`
     * The mount container needs `CAP_SYS_ADMIN` capabilities
     * The mount container needs `rootfsPropagation: shared`
+    * The default container config should be sufficient, though the `mount.sh` command needs to be specified
 
 With the above in place, if run with the current disk options, the image will make the external disk available as `/dev/vda1` and mount it at `/var/external`.
