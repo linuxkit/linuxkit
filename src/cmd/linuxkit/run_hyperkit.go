@@ -35,6 +35,8 @@ func runHyperKit(args []string) {
 	state := flags.String("state", "", "Path to directory to keep VM state in")
 	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
 	startVPNKit := flags.Bool("start-vpnkit", false, "Launch a new VPNKit instead of reusing the instance from Docker for Mac. The new instance will be on a separate internal network. This enables IP port forwarding from the host to the guest if the guest supports it.")
+	vpnKitDefaultSocket := filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/s50")
+	vpnKitEthernetSocket := flags.String("vpnkit-socket", vpnKitDefaultSocket, "Path to VPNKit ethernet socket. The Docker for Mac socket is used by default. Overridden if -start-vpnkit is set.")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -103,16 +105,15 @@ func runHyperKit(args []string) {
 		*disk = filepath.Join(*state, "disk.img")
 	}
 
-	vpnKitEthernetSocket := "auto"
 	var vpnKitPortSocket string
 	var vpnKitProcess *os.Process
 
 	// Launch new VPNKit if needed
 	if *startVPNKit {
-		vpnKitEthernetSocket = filepath.Join(*state, "vpnkit_eth.sock")
+		*vpnKitEthernetSocket = filepath.Join(*state, "vpnkit_eth.sock")
 		vpnKitPortSocket = filepath.Join(*state, "vpnkit_port.sock")
 		vsockSocket := filepath.Join(*state, "connect")
-		vpnKitProcess, err = launchVPNKit(vpnKitEthernetSocket, vsockSocket, vpnKitPortSocket)
+		vpnKitProcess, err = launchVPNKit(*vpnKitEthernetSocket, vsockSocket, vpnKitPortSocket)
 		if err != nil {
 			log.Fatalln("Unable to start vpnkit: ", err)
 		}
@@ -126,7 +127,7 @@ func runHyperKit(args []string) {
 		}()
 	}
 
-	h, err := hyperkit.New(*hyperkitPath, vpnKitEthernetSocket, *state)
+	h, err := hyperkit.New(*hyperkitPath, *vpnKitEthernetSocket, *state)
 	if err != nil {
 		log.Fatalln("Error creating hyperkit: ", err)
 	}
