@@ -3,12 +3,14 @@ default: push
 
 IMAGE=ima-utils
 DEPS=Dockerfile
+ORG?=linuxkit
 
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
 tag: $(DEPS)
-	docker build --no-cache -t linuxkit/$(IMAGE):$(HASH) .
+	docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	docker build --no-cache -t $(ORG)/$(IMAGE):$(HASH) .
 
 push: tag
-	docker pull linuxkit/$(IMAGE):$(HASH) || \
-	docker push linuxkit/$(IMAGE):$(HASH)
+	docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	docker push $(ORG)/$(IMAGE):$(HASH)
