@@ -1,4 +1,4 @@
-FROM alpine:edge AS mirror
+FROM alpine:3.6 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -33,7 +33,7 @@ RUN go get -u github.com/golang/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
-FROM alpine:edge
+FROM alpine:3.6
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/keys /etc/apk/keys/

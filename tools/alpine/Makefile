@@ -2,7 +2,7 @@
 
 ORG?=linuxkit
 IMAGE=alpine
-BASE=alpine:edge
+BASE=alpine:3.6
 
 default: push
 
