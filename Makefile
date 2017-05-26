@@ -11,7 +11,6 @@ moby: $(DEPS) lint
 
 .PHONY: lint
 lint:
-	@echo "+ $@: golint, gofmt, go vet"
 	# golint
 	@test -z "$(shell find . -type f -name "*.go" -not -path "./vendor/*" -not -name "*.pb.*" -exec golint {} \; | tee /dev/stderr)"
 	# gofmt
@@ -25,6 +24,10 @@ test: moby
 	./moby build test/test.yml
 	rm moby test.tar
 
-PHONY: install
+.PHONY: install
 install: moby
 	cp -a $^ $(PREFIX)/bin/
+
+.PHONY: clean
+clean:
+	rm -f moby
