@@ -49,6 +49,7 @@ func build(args []string) {
 		buildCmd.PrintDefaults()
 	}
 	buildName := buildCmd.String("name", "", "Name to use for output files")
+	buildDir := buildCmd.String("dir", "", "Directory for output files, default current directory")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildCmd.Var(&buildOut, "output", "Output types to create [ "+strings.Join(outputTypes, " ")+" ]")
 
@@ -98,7 +99,7 @@ func build(args []string) {
 		log.Fatalf("Invalid config: %v", err)
 	}
 
-	image := buildInternal(m, name, *buildPull)
+	image := buildInternal(m, filepath.Join(*buildDir, name), *buildPull)
 
 	log.Infof("Create outputs:")
 	err = outputs(name, image, buildOut)
