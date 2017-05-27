@@ -57,6 +57,7 @@ qemu-system-x86_64
 sed
 sfdisk
 squashfs-tools
+strace
 syslinux
 tar
 tini
