@@ -120,17 +120,27 @@ func dockerRm(container string) error {
 
 func dockerPull(image string, trustedPull bool) error {
 	log.Debugf("docker pull: %s", image)
+	cli, err := dockerClient()
+	if err != nil {
+		return errors.New("could not initialize Docker API client")
+	}
+
 	if trustedPull {
 		log.Debugf("pulling %s with content trust", image)
 		trustedImg, err := TrustedReference(image)
 		if err != nil {
 			return fmt.Errorf("Trusted pull for %s failed: %v", image, err)
 		}
+
+		// tag the image on a best-effort basis after pulling with content trust,
+		// ensuring that docker picks up the tag and digest fom the canonical format
+		defer func(src, dst string) {
+			if err := cli.ImageTag(context.Background(), src, dst); err != nil {
+				log.Debugf("could not tag trusted image %s to %s", src, dst)
+			}
+		}(trustedImg.String(), image)
+
 		image = trustedImg.String()
-	}
-	cli, err := dockerClient()
-	if err != nil {
-		return errors.New("could not initialize Docker API client")
 	}
 
 	r, err := cli.ImagePull(context.Background(), image, types.ImagePullOptions{})
