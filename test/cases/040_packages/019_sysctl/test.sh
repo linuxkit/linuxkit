@@ -4,6 +4,7 @@
 # REPEAT:
 
 set -e
+set -v
 
 # Source libraries. Uncomment if needed/defined
 #. "${RT_LIB}"
@@ -17,6 +18,7 @@ trap clean_up EXIT
 # Test code goes here
 moby build -output kernel+initrd test-sysctl
 RESULT="$(linuxkit run qemu -kernel test-sysctl)"
+echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
 
 exit 0
