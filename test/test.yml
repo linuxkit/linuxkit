@@ -1,44 +1,22 @@
-# linuxkit.yml from linuxkit/linuxkit 2388f483c397010d528a9a97b71224dbdb3897b5
 kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:b3740303f3d1e5689a84c87b7dfb48fd2a40a192
-  - linuxkit/runc:2649198589ef0020d99f613adaeda45ce0093a38
-  - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
-  - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
+  - linuxkit/init:4fc8aa82ab34d62d510575c8fbe0c58b7ba9c480
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
+  - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
-    net: host
-    pid: host
-    ipc: host
-    capabilities:
-     - CAP_SYS_ADMIN
-    readonly: true
+    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
   - name: binfmt
-    image: "linuxkit/binfmt:131026c0cf6084467316395fed3b358f64bda00c"
-    binds:
-     - /proc/sys/fs/binfmt_misc:/binfmt_misc
-    readonly: true
+    image: "linuxkit/binfmt:eb3977596d5fc9e847eee1d34cb3beb3f574cac9"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
-    binds:
-     - /var:/var
-     - /tmp/etc:/etc
-    capabilities:
-     - CAP_NET_ADMIN
-     - CAP_NET_BIND_SERVICE
-     - CAP_NET_RAW
-    net: host
+    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:61a07ced77a9747708223ca16a4aec621eacf518"
-    capabilities:
-     - CAP_SYS_ADMIN
-    oomScoreAdj: -800
-    readonly: true
+    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
   - name: nginx
     image: "nginx:alpine"
     capabilities:
@@ -52,7 +30,7 @@ files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
 trust:
+  org:
+    - linuxkit
   image:
-    - linuxkit/kernel
-    - linuxkit/binfmt
-    - linuxkit/rngd
+    - nginx:alpine
