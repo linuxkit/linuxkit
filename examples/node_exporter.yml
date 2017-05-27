@@ -13,10 +13,5 @@ services:
   - name: node_exporter
     image: "linuxkit/node_exporter:29a85e9c5de1a1bd470a963878194303f6a7bd8c"
 trust:
-  image:
-    - linuxkit/kernel
-    - linuxkit/init
-    - linuxkit/runc
-    - linuxkit/containerd
-    - linuxkit/rngd
-    - linuxkit/dhcpcd
+  org:
+    - linuxkit

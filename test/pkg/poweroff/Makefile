@@ -11,9 +11,9 @@ hash: Dockerfile poweroff.sh
 	docker run --rm --entrypoint=/bin/sh $(IMAGE):build -c "cat $^ /lib/apk/db/installed | sha1sum" | sed 's/ .*//' > hash
 
 push: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
+	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
 		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 docker push linuxkit/$(IMAGE):$(shell cat hash))
+		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(shell cat hash))
 	docker rmi $(IMAGE):build
 	rm -f hash
 

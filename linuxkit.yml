@@ -30,13 +30,7 @@ files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
 trust:
+  org:
+    - linuxkit
   image:
-    - linuxkit/kernel
-    - linuxkit/init
-    - linuxkit/runc
-    - linuxkit/containerd
-    - linuxkit/ca-certificates
-    - linuxkit/sysctl
-    - linuxkit/binfmt
-    - linuxkit/dhcpcd
-    - linuxkit/rngd
+    - nginx:alpine

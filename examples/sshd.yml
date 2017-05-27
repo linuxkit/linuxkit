@@ -20,13 +20,5 @@ files:
   - path: root/.ssh/authorized_keys
     contents: '#your ssh key here'
 trust:
-  image:
-    - linuxkit/kernel
-    - linuxkit/init
-    - linuxkit/runc
-    - linuxkit/containerd
-    - linuxkit/ca-certificates
-    - linuxkit/sysctl
-    - linuxkit/rngd
-    - linuxkit/dhcpcd
-    - linuxkit/sshd
+  org:
+    - linuxkit

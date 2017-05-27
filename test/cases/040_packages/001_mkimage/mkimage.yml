@@ -18,8 +18,5 @@ files:
   - path: data/cmdline
     source: run-cmdline
 trust:
-  image:
-    - linuxkit/kernel
-    - linuxkit/init
-    - linuxkit/runc
-    - linuxkit/containerd
+  org:
+    - linuxkit
