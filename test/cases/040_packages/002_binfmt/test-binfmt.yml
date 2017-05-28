@@ -1,0 +1,28 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 page_poison=1"
+init:
+  - linuxkit/init:4fc8aa82ab34d62d510575c8fbe0c58b7ba9c480
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
+onboot:
+  - name: binfmt
+    image: "linuxkit/binfmt:eb3977596d5fc9e847eee1d34cb3beb3f574cac9"
+  - name: test
+    image: "alpine:3.6"
+    readonly: true
+    binds:
+      - /check.sh:/check.sh
+      - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    command: ["sh", "./check.sh"]
+  - name: poweroff
+    image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+files:
+  - path: check.sh
+    source: ./check.sh
+trust:
+  org:
+    - linuxkit
+  image:
+    - alpine:3.6
