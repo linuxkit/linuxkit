@@ -553,6 +553,9 @@ func checkVPNKitSock(vpnkitsock string) (string, error) {
 	if vpnkitsock == "auto" {
 		vpnkitsock = filepath.Join(getHome(), defaultVPNKitSock)
 	}
+	if vpnkitsock == "" {
+		return "", nil
+	}
 
 	vpnkitsock = filepath.Clean(vpnkitsock)
 	_, err := os.Stat(vpnkitsock)
