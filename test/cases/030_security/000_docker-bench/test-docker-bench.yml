@@ -36,7 +36,7 @@ services:
      - /lib/modules:/lib/modules
      - /run:/var/run
   - name: test-docker-bench
-    image: "linuxkit/test-docker-bench:2f941429d874c5dcf05e38005affb4f10192e1a8"
+    image: "linuxkit/test-docker-bench:5264fdfd098d2bfbacd88159e92bc59a9d2be6cc"
     ipc: host
     pid: host
     net: host
