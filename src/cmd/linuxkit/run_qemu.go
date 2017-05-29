@@ -115,7 +115,7 @@ func runQemu(args []string) {
 
 	diskSz, err := getDiskSizeMB(*diskSzFlag)
 	if err != nil {
-		log.Fatalf("Could parse disk-size %s: %v", *diskSzFlag, err)
+		log.Fatalf("Couldn't parse disk-size %s: %v", *diskSzFlag, err)
 	}
 	if diskSz != 0 && *disk == "" {
 		*disk = prefix + "-disk.img"
