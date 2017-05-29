@@ -4,7 +4,10 @@ RUN apk add --no-cache --initdb -p /out \
     tini
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
-FROM linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:bdfadbe3e4ec699ca45b67453662321ec270f2d1a1dbdbf09625776d3ebd68c5 AS build
+FROM linuxkit/alpine:451603daf499e3a40308dbf5571dcffed2343ffa AS build
+
+RUN apk add --no-cache go musl-dev git make
+ENV GOPATH=/go PATH=$PATH:/go/bin
 
 ENV VIRTSOCK_COMMIT=3bfdf22e3b63a7d130ae5db41c2d76eaffa444d4
 RUN mkdir -p $GOPATH/src/github.com/rneugeba && \
@@ -12,10 +15,11 @@ RUN mkdir -p $GOPATH/src/github.com/rneugeba && \
   git clone https://github.com/rneugeba/virtsock.git
 WORKDIR $GOPATH/src/github.com/rneugeba/virtsock
 RUN git checkout $VIRTSOCK_COMMIT
-RUN make build/virtsock_stress.linux
-RUN cp -a build/virtsock_stress.linux /virtsock_stress
+# Don't use go-compile.sh quite yet as the virtsock package is not yet lint free
+RUN make build/virtsock_stress.linux && \
+    cp -a build/virtsock_stress.linux /virtsock_stress
 
 FROM scratch
 COPY --from=mirror /out/ /
-COPY --from=build virtsock_stress bin/virtsock_stress
-CMD ["/sbin/tini", "/bin/virtsock_stress", "-s", "-v", "1"]
+COPY --from=build virtsock_stress usr/bin/virtsock_stress
+CMD ["/sbin/tini", "/usr/bin/virtsock_stress", "-s", "-v", "1"]
