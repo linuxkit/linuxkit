@@ -18,14 +18,7 @@ onboot:
     image: "linuxkit/mount:15e20f27abe69d276f796e4026531833ec5ff345"
     command: ["/mount.sh", "/var/lib/swarmd"]
   - name: metadata
-    image: "linuxkit/metadata:a810b68fec9c9282cf096eed50605ddd6b2f3142"
-    binds:
-     - /dev:/dev
-     - /var:/var
-     - /tmp/etc/resolv.conf:/etc/resolv.conf
-    net: host
-    capabilities:
-     - CAP_SYS_ADMIN
+    image: "linuxkit/metadata:b053fd6a945829bb626bb3546cad69aae0ff7803"
 services:
   - name: rngd
     image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"

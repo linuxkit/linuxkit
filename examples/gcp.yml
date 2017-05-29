@@ -13,14 +13,7 @@ onboot:
     image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: "linuxkit/metadata:a810b68fec9c9282cf096eed50605ddd6b2f3142"
-    binds:
-     - /dev:/dev
-     - /var:/var
-     - /tmp/etc/resolv.conf:/etc/resolv.conf
-    net: host
-    capabilities:
-     - CAP_SYS_ADMIN
+    image: "linuxkit/metadata:b053fd6a945829bb626bb3546cad69aae0ff7803"
 services:
   - name: rngd
     image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
