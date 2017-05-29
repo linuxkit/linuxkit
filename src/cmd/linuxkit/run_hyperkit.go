@@ -8,10 +8,17 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/moby/hyperkit/go"
 	"github.com/satori/go.uuid"
+)
+
+const (
+	networkingNone         string = "none"
+	networkingDockerForMac        = "docker-for-mac"
+	networkingVPNKit              = "vpnkit"
 )
 
 // Process the run arguments and execute run
@@ -34,9 +41,7 @@ func runHyperKit(args []string) {
 	ipStr := flags.String("ip", "", "IP address for the VM")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
 	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
-	startVPNKit := flags.Bool("start-vpnkit", false, "Launch a new VPNKit instead of reusing the instance from Docker for Mac. The new instance will be on a separate internal network. This enables IP port forwarding from the host to the guest if the guest supports it.")
-	vpnKitDefaultSocket := filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/s50")
-	vpnKitEthernetSocket := flags.String("vpnkit-socket", vpnKitDefaultSocket, "Path to VPNKit ethernet socket. The Docker for Mac socket is used by default. Overridden if -start-vpnkit is set.")
+	networking := flags.String("networking", networkingDockerForMac, "Networking mode. Valid options are 'docker-for-mac', 'vpnkit[,socket-path]' and 'none'. 'docker-for-mac' connects to the network used by Docker for Mac. 'vpnkit' connects to the VPNKit socket specified. If socket-path is omitted a new VPNKit instance will be started and 'vpnkit_eth.sock' will be created in the state directory. 'none' disables networking.`")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -105,35 +110,53 @@ func runHyperKit(args []string) {
 		*disk = filepath.Join(*state, "disk.img")
 	}
 
-	var vpnKitPortSocket string
-	var vpnKitProcess *os.Process
-
-	// Launch new VPNKit if needed
-	if *startVPNKit {
-		*vpnKitEthernetSocket = filepath.Join(*state, "vpnkit_eth.sock")
-		vpnKitPortSocket = filepath.Join(*state, "vpnkit_port.sock")
-		vsockSocket := filepath.Join(*state, "connect")
-		vpnKitProcess, err = launchVPNKit(*vpnKitEthernetSocket, vsockSocket, vpnKitPortSocket)
-		if err != nil {
-			log.Fatalln("Unable to start vpnkit: ", err)
-		}
-		defer func() {
-			if vpnKitProcess != nil {
-				err := vpnKitProcess.Kill()
-				if err != nil {
-					log.Println(err)
-				}
-			}
-		}()
-	}
-
-	h, err := hyperkit.New(*hyperkitPath, *vpnKitEthernetSocket, *state)
+	// Create new HyperKit instance (w/o networking for now)
+	h, err := hyperkit.New(*hyperkitPath, "", *state)
 	if err != nil {
 		log.Fatalln("Error creating hyperkit: ", err)
 	}
 
 	if h.VSockPorts, err = stringToIntArray(*vsockports, ","); err != nil {
 		log.Fatalln("Unable to parse vsock-ports: ", err)
+	}
+
+	// Select network mode
+	var vpnKitProcess *os.Process
+	netMode := strings.SplitN(*networking, ",", 2)
+
+	switch netMode[0] {
+	case networkingDockerForMac:
+		h.VPNKitSock = filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/s50")
+	case networkingVPNKit:
+		if len(netMode) > 1 {
+			// Socket path specified, try to use existing VPNKit instance
+			h.VPNKitSock = netMode[1]
+		} else {
+			// Start new VPNKit instance
+			h.VPNKitSock = filepath.Join(*state, "vpnkit_eth.sock")
+			vpnKitPortSocket := filepath.Join(*state, "vpnkit_port.sock")
+			vsockSocket := filepath.Join(*state, "connect")
+			vpnKitProcess, err = launchVPNKit(h.VPNKitSock, vsockSocket, vpnKitPortSocket)
+			if err != nil {
+				log.Fatalln("Unable to start vpnkit: ", err)
+			}
+			defer func() {
+				if vpnKitProcess != nil {
+					err := vpnKitProcess.Kill()
+					if err != nil {
+						log.Println(err)
+					}
+				}
+			}()
+			// The guest will use this 9P mount to configure which ports to forward
+			h.Sockets9P = []hyperkit.Socket9P{{Path: vpnKitPortSocket, Tag: "port"}}
+			// VSOCK port 62373 is used to pass traffic from host->guest
+			h.VSockPorts = append(h.VSockPorts, 62373)
+		}
+	case networkingNone:
+		h.VPNKitSock = ""
+	default:
+		log.Fatalf("Invalid networking mode: %s", netMode[0])
 	}
 
 	h.Kernel = prefix + "-kernel"
@@ -146,14 +169,6 @@ func runHyperKit(args []string) {
 	h.CPUs = *cpus
 	h.Memory = *mem
 	h.DiskSize = diskSz
-
-	// Add 9p and vsock for port forwarding if VPNKit is launched automatically
-	if *startVPNKit {
-		// The guest will use this 9P mount to configure which ports to forward
-		h.Sockets9P = []hyperkit.Socket9P{{Path: vpnKitPortSocket, Tag: "port"}}
-		// VSOCK port 62373 is used to pass traffic from host->guest
-		h.VSockPorts = append(h.VSockPorts, 62373)
-	}
 
 	err = h.Run(string(cmdline))
 	if err != nil {
