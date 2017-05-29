@@ -8,4 +8,4 @@ function failed {
 # this is a non default value, so will fail if sysctl failed
 [ "$(sysctl -n fs.inotify.max_user_watches)" -eq 524288 ] || failed
 
-printf "Sysctl test suite PASSED\n" >&1
+printf "sysctl test suite PASSED\n" >&1
