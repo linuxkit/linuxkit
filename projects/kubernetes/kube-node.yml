@@ -12,7 +12,7 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:47367d0ef851e8bf2a9e2f80a05392c17f5c2c88
   - name: binfmt
-    image: "linuxkit/binfmt:eb3977596d5fc9e847eee1d34cb3beb3f574cac9"
+    image: "linuxkit/binfmt:3433ade10a9271d4035f9424e8669358e425b6f6"
   - name: format
     image: "linuxkit/format:55afe08816c2a4d8dbae3ee51ef53e0bee422d66"
   - name: mounts
