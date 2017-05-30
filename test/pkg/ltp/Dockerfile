@@ -1,7 +1,6 @@
-FROM debian:jessie
+FROM debian:jessie@sha256:476959f29a17423a24a17716e058352ff6fbf13d8389e4a561c8ccc758245937 AS build
 
-ARG LTP_VERSION
-
+ENV LTP_VERSION=20170116
 ENV LTP_SOURCE=https://github.com/linux-test-project/ltp/releases/download/${LTP_VERSION}/ltp-full-${LTP_VERSION}.tar.xz
 ENV DEBIAN_FRONTEND=noninteractive
 
@@ -17,3 +16,10 @@ RUN cd /ltp \
     && ./configure \
     && make -j "$(getconf _NPROCESSORS_ONLN)" all \
     && make install
+
+FROM debian:jessie-slim@sha256:12d31a3d5a1f7cb272708be35031ba068dec46fa84af6aeb38aef5c8a83e8974
+COPY --from=build /opt/ltp/ /opt/ltp/
+ADD check.sh ./check.sh
+WORKDIR /opt/ltp
+ENTRYPOINT ["/bin/sh", "/check.sh"]
+LABEL org.mobyproject.config='{"pid": "host", "capabilities": ["all"]}'
