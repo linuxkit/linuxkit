@@ -1,5 +1,19 @@
 #!/bin/sh
 
+# set global ulimits TODO move to /etc/limits.conf
+ulimit -n 1048576
+ulimit -p unlimited
+
+# bring up containerd
+printf "\nStarting containerd\n"
+/usr/bin/containerd &
+
+# wait for socket to be there
+while [ ! -S /run/containerd/containerd.sock ]
+do
+	sleep 0.1
+done
+
 # start onboot containers, run to completion
 
 if [ -d /containers/onboot ]

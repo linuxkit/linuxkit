@@ -1,15 +1,9 @@
 # /etc/inittab
 
-::sysinit:/etc/init.d/rcS
-::once:/etc/init.d/containerd
-::once:/etc/init.d/containers
+::sysinit:/bin/rc.init
 
 # Stuff to do for the 3-finger salute
-::ctrlaltdel:/sbin/reboot
+::ctrlaltdel:/bin/rc.shutdown reboot
 
-# Stuff to do before rebooting
-::shutdown:/usr/sbin/killall5 -15
-::shutdown:/bin/sleep 5
-::shutdown:/usr/sbin/killall5 -9
-::shutdown:/bin/echo "Unmounting filesystems"
-::shutdown:/bin/umount -a -r
+# Stuff to do on shutdown
+::shutdown:/bin/rc.shutdown poweroff

@@ -12,3 +12,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY init /
 COPY etc etc/
+COPY bin bin/
