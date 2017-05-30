@@ -22,7 +22,7 @@ docker run -it --rm \
 -v $(PWD):/go/src/github.com/docker/moby \
 -w /go/src/github.com/docker/moby \
 --entrypoint /go/bin/vndr \
-linuxkit/go-compile:90607983001c2789911afabf420394d51f78ced8
+linuxkit/go-compile:6579a00b44686d0e504d513fc4860094769fe7df
 ```
 
 To update a single dependency:
@@ -32,7 +32,7 @@ docker run -it --rm \
 -v $(PWD):/go/src/github.com/docker/moby \
 -w /go/src/github.com/docker/moby \
 --entrypoint /go/bin/vndr \
-linuxkit/go-compile:90607983001c2789911afabf420394d51f78ced8 \
+linuxkit/go-compile:6579a00b44686d0e504d513fc4860094769fe7df \
 github.com/docker/docker
 ```
 
