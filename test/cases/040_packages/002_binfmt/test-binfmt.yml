@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
 onboot:
   - name: binfmt
-    image: "linuxkit/binfmt:3433ade10a9271d4035f9424e8669358e425b6f6"
+    image: "linuxkit/binfmt:8ac5535f57f0c6f5fe88317b9d22a7677093c765"
   - name: test
     image: "alpine:3.6"
     readonly: true

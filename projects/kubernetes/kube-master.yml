@@ -8,13 +8,13 @@ init:
   - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
   - name: sysfs
-    image: linuxkit/sysfs:47367d0ef851e8bf2a9e2f80a05392c17f5c2c88
+    image: linuxkit/sysfs:1244c5a86dfa2318c4e304af68d37e12367e1b7f
   - name: binfmt
-    image: "linuxkit/binfmt:3433ade10a9271d4035f9424e8669358e425b6f6"
+    image: "linuxkit/binfmt:8ac5535f57f0c6f5fe88317b9d22a7677093c765"
   - name: format
-    image: "linuxkit/format:55afe08816c2a4d8dbae3ee51ef53e0bee422d66"
+    image: "linuxkit/format:180cb2dc1de5e60373385080f8148abf10a3afac"
   - name: mounts
     image: "linuxkit/kubernetes:latest-mounts"
     capabilities:
@@ -26,13 +26,13 @@ onboot:
      - /var:/var:rshared,rbind
 services:
   - name: rngd
-    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
+    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
   - name: ntpd
-    image: "linuxkit/openntpd:ad834449a7eaf10dc022b3d8d2ed9faf7ec99d37"
+    image: "linuxkit/openntpd:45deeb05f736162d941c9bf494983f655ab80aa5"
   - name: sshd
-    image: "linuxkit/sshd:ddce15b9fbde068941e31294acdcd22befa4fc20"
+    image: "linuxkit/sshd:abc1f5e096982ebc3fb61c506aed3ac9c2ae4d55"
   - name: docker
     image: "linuxkit/docker-ce:668d62da6e3da081a8f8aca7db3e2a98adf5da59"
     capabilities:

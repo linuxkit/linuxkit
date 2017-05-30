@@ -7,11 +7,11 @@ init:
   - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
 services:
   - name: rngd
-    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
+    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
   - name: node_exporter
-    image: "linuxkit/node_exporter:29a85e9c5de1a1bd470a963878194303f6a7bd8c"
+    image: "linuxkit/node_exporter:265b35e1c9bd659fff22b0345fc7c8735c787b3c"
 trust:
   org:
     - linuxkit
