@@ -1,4 +1,4 @@
-From 8fe167786e3dd5013877a9fed27f889bcf3037f6 Mon Sep 17 00:00:00 2001
+From 45af324d45d69e8e1a0c07d17b135492f0dd5607 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:29 -0600
 Subject: [PATCH 7/9] VMCI: only try to load on VMware hypervisor
@@ -60,5 +60,5 @@ index d7eaf1eb11e7..1789ea71ff5d 100644
  	if (vmci_err < VMCI_SUCCESS) {
  		pr_err("Failed to initialize VMCIEvent (result=%d)\n",
 -- 
-2.12.2
+2.13.0
 
