@@ -1,0 +1,13 @@
+#!/bin/sh
+
+[ "$1" = "reboot" ] && exec /sbin/reboot
+
+# poweroff
+
+/usr/sbin/killall5 -15
+/bin/sleep 5
+/usr/sbin/killall5 -9
+/sbin/swapoff -a
+/bin/echo "Unmounting filesystems"
+/bin/umount -a -r
+/sbin/poweroff -f
