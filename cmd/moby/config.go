@@ -375,6 +375,18 @@ func assignStringEmpty(v1, v2 string) string {
 	return v1
 }
 
+// assignStringEmpty3 does ordered overrides if strings are empty, for
+// values where there is always an explicit override eg "none"
+func assignStringEmpty3(v1, v2, v3 string) string {
+	if v3 != "" {
+		return v3
+	}
+	if v2 != "" {
+		return v2
+	}
+	return v1
+}
+
 // assign StringEmpty4 does ordered overrides if strings are empty, for
 // values where there is always an explicit override eg "none"
 func assignStringEmpty4(v1, v2, v3, v4 string) string {
@@ -388,14 +400,6 @@ func assignStringEmpty4(v1, v2, v3, v4 string) string {
 		return v2
 	}
 	return v1
-}
-
-// emptyNone replaces "none" with the empty string
-func emptyNone(v string) string {
-	if v == "none" {
-		return ""
-	}
-	return v
 }
 
 // ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
@@ -518,24 +522,43 @@ func ConfigInspectToOCI(yaml MobyImage, inspect types.ImageInspect) (specs.Spec,
 
 	namespaces := []specs.LinuxNamespace{}
 	// to attach to an existing namespace, easiest to bind mount with nsfs in a system container
-	netNS := assignStringEmpty(label.Net, yaml.Net)
-	if netNS != "host" {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.NetworkNamespace, Path: emptyNone(netNS)})
+
+	// net, ipc and uts namespaces: default to not creating a new namespace (usually host namespace)
+	netNS := assignStringEmpty3("root", label.Net, yaml.Net)
+	if netNS != "host" && netNS != "root" {
+		if netNS == "none" || netNS == "new" {
+			netNS = ""
+		}
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.NetworkNamespace, Path: netNS})
 	}
+	ipcNS := assignStringEmpty3("root", label.Ipc, yaml.Ipc)
+	if ipcNS != "host" && ipcNS != "root" {
+		if ipcNS == "new" {
+			ipcNS = ""
+		}
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.IPCNamespace, Path: ipcNS})
+	}
+	utsNS := assignStringEmpty3("root", label.Uts, yaml.Uts)
+	if utsNS != "host" && utsNS != "root" {
+		if utsNS == "new" {
+			utsNS = ""
+		}
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UTSNamespace, Path: utsNS})
+	}
+
+	// default to creating a new pid namespace
 	pidNS := assignStringEmpty(label.Pid, yaml.Pid)
-	if pidNS != "host" {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.PIDNamespace, Path: emptyNone(pidNS)})
+	if pidNS != "host" && pidNS != "root" {
+		if pidNS == "new" {
+			pidNS = ""
+		}
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.PIDNamespace, Path: pidNS})
 	}
-	ipcNS := assignStringEmpty(label.Ipc, yaml.Ipc)
-	if ipcNS != "host" {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.IPCNamespace, Path: emptyNone(ipcNS)})
-	}
-	utsNS := assignStringEmpty(label.Uts, yaml.Uts)
-	if utsNS != "host" {
-		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UTSNamespace, Path: emptyNone(utsNS)})
-	}
-	// TODO user, cgroup namespaces, maybe mount=host if useful
+
+	// Always create a new mount namespace
 	namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.MountNamespace})
+
+	// TODO user, cgroup namespaces
 
 	caps := assignStrings(label.Capabilities, yaml.Capabilities)
 	if len(caps) == 1 {
