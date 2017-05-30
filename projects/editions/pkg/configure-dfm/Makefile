@@ -1,5 +1,5 @@
 default=tag
-ORG?=linuxkit
+ORG?=edtestorg
 IMAGE=configure-dfm
 DEPS=Dockerfile run.sh
 

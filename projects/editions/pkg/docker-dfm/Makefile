@@ -2,7 +2,7 @@ GO_COMPILE=linuxkit/go-compile:4513068d9a7e919e4ec42e2d7ee879ff5b95b7f5@sha256:b
 
 default: tag
 
-ORG?=linuxkit
+ORG?=edtestorg
 IMAGE=docker-dfm
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
