@@ -1,29 +1,15 @@
 .PHONY: tag push
-
-BASE=alpine:3.5
-IMAGE=qemu
-
 default: push
 
-hash: Dockerfile repositories
-	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm --entrypoint /bin/sh $(IMAGE):build -c 'cat Dockerfile /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
+ORG?=linuxkit
+IMAGE=qemu
+DEPS=Dockerfile Makefile
 
-push: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 docker push linuxkit/$(IMAGE):$(shell cat hash))
-	docker rmi $(IMAGE):build
-	rm -f hash
+HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
-tag: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
-	rm -f hash
+tag: $(DEPS)
+	DOCKER_CONTENT_TRUST=1 docker build --no-cache --network=none -t $(ORG)/$(IMAGE):$(HASH) .
 
-clean:
-	rm -f hash
-
-.DELETE_ON_ERROR:
+push: tag
+	docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	docker push $(ORG)/$(IMAGE):$(HASH)
