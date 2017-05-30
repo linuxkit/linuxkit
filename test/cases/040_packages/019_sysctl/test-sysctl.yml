@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
   - name: test
     image: "alpine:3.6"
     net: host

@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
 onboot:
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 trust:
   org:

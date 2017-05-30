@@ -14,4 +14,3 @@ CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
 CMD ["/usr/bin/vmtoolsd"]
-LABEL org.mobyproject.config='{"net": "host"}'

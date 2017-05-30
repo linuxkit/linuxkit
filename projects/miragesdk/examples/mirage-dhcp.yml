@@ -8,7 +8,7 @@ init:
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
 services:
   - name: rngd
     image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9

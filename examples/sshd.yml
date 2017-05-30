@@ -8,14 +8,14 @@ init:
   - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
 services:
   - name: rngd
-    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
+    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
   - name: sshd
-    image: "linuxkit/sshd:ddce15b9fbde068941e31294acdcd22befa4fc20"
+    image: "linuxkit/sshd:abc1f5e096982ebc3fb61c506aed3ac9c2ae4d55"
 files:
   - path: root/.ssh/authorized_keys
     contents: '#your ssh key here'

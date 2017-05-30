@@ -9,15 +9,15 @@ init:
   - linuxkit/ima-utils:dfeb3896fd29308b80ff9ba7fe5b8b767e40ca29
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
   - name: binfmt
-    image: "linuxkit/binfmt:3433ade10a9271d4035f9424e8669358e425b6f6"
+    image: "linuxkit/binfmt:8ac5535f57f0c6f5fe88317b9d22a7677093c765"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
+    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
   - name: nginx
     image: "nginx:alpine"
     capabilities:

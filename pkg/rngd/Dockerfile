@@ -42,4 +42,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build usr/sbin/rngd usr/sbin/rngd
 CMD ["/sbin/tini", "/usr/sbin/rngd", "-f"]
-LABEL org.mobyproject.config='{"capabilities": ["CAP_SYS_ADMIN"], "oomScoreAdj": -800, "readonly": true}'
+LABEL org.mobyproject.config='{"capabilities": ["CAP_SYS_ADMIN"], "oomScoreAdj": -800, "readonly": true, "net": "new", "ipc": "new"}'

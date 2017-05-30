@@ -19,4 +19,4 @@ COPY etc/ /etc/
 COPY usr/ /usr/
 RUN mkdir -p /etc/ssh /root/.ssh && chmod 0700 /root/.ssh
 CMD ["/sbin/tini", "/usr/bin/ssh.sh"]
-LABEL org.mobyproject.config='{"net": "host", "pid": "host", "binds": ["/root/.ssh:/root/.ssh", "/etc/resolv.conf:/etc/resolv.conf"], "capabilities": ["all"]}'
+LABEL org.mobyproject.config='{"pid": "host", "binds": ["/root/.ssh:/root/.ssh", "/etc/resolv.conf:/etc/resolv.conf"], "capabilities": ["all"]}'

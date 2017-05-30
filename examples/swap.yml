@@ -8,23 +8,23 @@ init:
   - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:b16a483897dd5f71be7e0c04cd090b05f52682e1"
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: "linuxkit/format:55afe08816c2a4d8dbae3ee51ef53e0bee422d66"
+    image: "linuxkit/format:180cb2dc1de5e60373385080f8148abf10a3afac"
   - name: mount
-    image: "linuxkit/mount:15e20f27abe69d276f796e4026531833ec5ff345"
+    image: "linuxkit/mount:ff5338822f20375b8913f5a80f9ed4f6ea9a592b"
     command: ["/mount.sh", "/var/external"]
   - name: swap
-    image: "linuxkit/swap:085f0088dd1ef2f994e707e438218ea4d41bad13"
+    image: "linuxkit/swap:e36b5e794256c2a56c000035f73a4d46f7ffb3e6"
     # to use unencrypted swap, use:
     # command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G"]
     command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
+    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
   - name: nginx
     image: "nginx:alpine"
     capabilities:

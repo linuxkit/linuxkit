@@ -19,4 +19,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY format.sh /
 CMD ["/bin/sh", "/format.sh"]
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev"], "capabilities": ["CAP_SYS_ADMIN", "CAP_MKNOD"]}'
+LABEL org.mobyproject.config='{"binds": ["/dev:/dev"], "capabilities": ["CAP_SYS_ADMIN", "CAP_MKNOD"], "net": "new", "ipc": "new"}'

@@ -16,4 +16,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY etc/ /etc/
 CMD ["/usr/sbin/ntpd", "-d", "-s"]
-LABEL org.mobyproject.config='{"net": "host", "capabilities": ["CAP_SYS_TIME", "CAP_SYS_NICE", "CAP_SYS_CHROOT", "CAP_SETUID", "CAP_SETGID"]}'
+LABEL org.mobyproject.config='{"capabilities": ["CAP_SYS_TIME", "CAP_SYS_NICE", "CAP_SYS_CHROOT", "CAP_SETUID", "CAP_SETGID"]}'

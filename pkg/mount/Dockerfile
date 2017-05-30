@@ -17,4 +17,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY mount.sh /
 CMD ["/bin/sh", "/mount.sh"]
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var:rshared,rbind"], "capabilities": ["CAP_SYS_ADMIN"], "rootfsPropagation": "shared"}'
+LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var:rshared,rbind"], "capabilities": ["CAP_SYS_ADMIN"], "rootfsPropagation": "shared", "net": "new", "ipc": "new"}'

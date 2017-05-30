@@ -16,4 +16,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY /swap.sh .
 ENTRYPOINT ["swap.sh"]
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var"], "capabilities": ["CAP_SYS_ADMIN", "CAP_MKNOD"]}'
+LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var"], "capabilities": ["CAP_SYS_ADMIN", "CAP_MKNOD"], "net": "new", "ipc": "new"}'
