@@ -23,7 +23,7 @@ func pushUsage() {
 
 func push(args []string) {
 	if len(args) < 1 {
-		runUsage()
+		pushUsage()
 		os.Exit(1)
 	}
 
