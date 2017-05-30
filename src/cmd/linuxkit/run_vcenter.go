@@ -25,7 +25,7 @@ type vmConfig struct {
 	networkName *string
 	vSphereHost *string
 
-	vmName       *string
+	vmFolder     *string
 	path         *string
 	persistent   *string
 	persistentSz int
@@ -43,12 +43,12 @@ func runVcenter(args []string) {
 	flags := flag.NewFlagSet("vCenter", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
 
-	newVM.vCenterURL = flags.String("url", os.Getenv("VCURL"), "URL in the format of https://username:password@host/sdk")
-	newVM.dsName = flags.String("datastore", os.Getenv("VMDATASTORE"), "The Name of the DataStore to host the VM")
-	newVM.networkName = flags.String("network", os.Getenv("VMNETWORK"), "The VMware vSwitch the VM will use")
-	newVM.vSphereHost = flags.String("hostname", os.Getenv("VMHOST"), "The Server that will run the VM")
+	newVM.vCenterURL = flags.String("url", os.Getenv("VCURL"), "URL of VMware vCenter in the format of https://username:password@VCaddress/sdk")
+	newVM.dsName = flags.String("datastore", os.Getenv("VCDATASTORE"), "The name of the DataStore to host the VM")
+	newVM.networkName = flags.String("network", os.Getenv("VCNETWORK"), "The network label the VM will use")
+	newVM.vSphereHost = flags.String("hostname", os.Getenv("VCHOST"), "The server that will run the VM")
 
-	newVM.vmName = flags.String("vmname", "", "Specify a name for virtual Machine")
+	newVM.vmFolder = flags.String("vmfolder", "", "Specify a name/folder for the virtual machine to reside in")
 	newVM.path = flags.String("path", "", "Path to a specific image")
 	newVM.persistent = flags.String("persistentSize", "", "Size in MB of persistent storage to allocate to the VM")
 	newVM.mem = flags.Int64("mem", 1024, "Size in MB of memory to allocate to the VM")
@@ -56,8 +56,8 @@ func runVcenter(args []string) {
 	newVM.poweron = flags.Bool("powerOn", false, "Power On the new VM once it has been created")
 
 	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run vcenter [options] [name]\n\n", invoked)
-		fmt.Printf("'name' specifies the full path of an image that will be ran\n")
+		fmt.Printf("USAGE: %s run vcenter [options] path\n\n", invoked)
+		fmt.Printf("'path' specifies the full path of an image to run\n")
 		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
@@ -77,65 +77,22 @@ func runVcenter(args []string) {
 	// Ensure an iso has been passed to the vCenter run Command
 	if strings.HasSuffix(*newVM.path, ".iso") {
 		// Allow alternative names for new virtual machines being created in vCenter
-		if *newVM.vmName == "" {
-			*newVM.vmName = strings.TrimSuffix(path.Base(*newVM.path), ".iso")
+		if *newVM.vmFolder == "" {
+			*newVM.vmFolder = strings.TrimSuffix(path.Base(*newVM.path), ".iso")
 		}
 	} else {
-		log.Fatalln("Ensure that an \".iso\" file is used as part of the path")
+		log.Fatalln("Please pass an \".iso\" file as the path")
 	}
 
 	// Test any passed in files before creating a new VM
 	checkFile(*newVM.path)
 
-	// Parse URL from string
-	u, err := url.Parse(*newVM.vCenterURL)
-	if err != nil {
-		log.Fatalf("URL can't be parsed, ensure it is https://username:password/<address>/sdk")
-	}
-
-	// Connect and log in to ESX or vCenter
-	c, err := govmomi.NewClient(ctx, u, true)
-	if err != nil {
-		log.Fatalln("Error logging into vCenter, check address and credentials")
-	}
-
-	f := find.NewFinder(c.Client, true)
-
-	// Find one and only datacenter, not sure how VMware linked mode will work
-	dc, err := f.DefaultDatacenter(ctx)
-	if err != nil {
-		log.Fatalln("No Datacenter instance could be found inside of vCenter")
-	}
-
-	// Make future calls local to this datacenter
-	f.SetDatacenter(dc)
-
-	// Find Datastore/Network
-	dss, err := f.DatastoreOrDefault(ctx, *newVM.dsName)
-	if err != nil {
-		log.Fatalf("Datastore [%s], could not be found", *newVM.dsName)
-	}
-
-	net, err := f.NetworkOrDefault(ctx, *newVM.networkName)
-	if err != nil {
-		log.Fatalf("Network [%s], could not be found", *newVM.networkName)
-	}
-
-	// Set the host that the VM will be created on
-	hs, err := f.HostSystemOrDefault(ctx, *newVM.vSphereHost)
-	if err != nil {
-		log.Fatalf("vSphere host [%s], could not be found", *newVM.vSphereHost)
-	}
-
-	var rp *object.ResourcePool
-	rp, err = hs.ResourcePool(ctx)
-	if err != nil {
-		log.Fatalln("Error locating default resource pool")
-	}
+	// Connect to VMware vCenter and return the default and found values needed for a new VM
+	c, dss, folders, hs, net, rp := vCenterConnect(ctx, newVM)
 
 	log.Infof("Creating new LinuxKit Virtual Machine")
 	spec := types.VirtualMachineConfigSpec{
-		Name:     *newVM.vmName,
+		Name:     *newVM.vmFolder,
 		GuestId:  "otherLinux64Guest",
 		Files:    &types.VirtualMachineFileInfo{VmPathName: fmt.Sprintf("[%s]", dss.Name())},
 		NumCPUs:  int32(*newVM.vCpus),
@@ -151,11 +108,6 @@ func runVcenter(args []string) {
 		Operation: types.VirtualDeviceConfigSpecOperationAdd,
 		Device:    scsi,
 	})
-
-	folders, err := dc.Folders(ctx)
-	if err != nil {
-		log.Fatalln("Error locating default datacenter folder")
-	}
 
 	task, err := folders.VmFolder.CreateVM(ctx, spec, rp, hs)
 	if err != nil {
@@ -191,6 +143,66 @@ func runVcenter(args []string) {
 	}
 }
 
+func vCenterConnect(ctx context.Context, newVM vmConfig) (*govmomi.Client, *object.Datastore, *object.DatacenterFolders, *object.HostSystem, object.NetworkReference, *object.ResourcePool) {
+
+	// Parse URL from string
+	u, err := url.Parse(*newVM.vCenterURL)
+	if err != nil {
+		log.Fatalf("URL can't be parsed, ensure it is https://username:password/<address>/sdk %v", err)
+	}
+
+	// Connect and log in to ESX or vCenter
+	c, err := govmomi.NewClient(ctx, u, true)
+	if err != nil {
+		log.Fatalf("Error logging into vCenter, check address and credentials %v", err)
+	}
+
+	// Create a new finder that will discover the defaults and are looked for Networks/Datastores
+	f := find.NewFinder(c.Client, true)
+
+	// Find one and only datacenter, not sure how VMware linked mode will work
+	dc, err := f.DefaultDatacenter(ctx)
+	if err != nil {
+		log.Fatalf("No Datacenter instance could be found inside of vCenter %v", err)
+	}
+
+	// Make future calls local to this datacenter
+	f.SetDatacenter(dc)
+
+	// Find Datastore/Network
+	dss, err := f.DatastoreOrDefault(ctx, *newVM.dsName)
+	if err != nil {
+		log.Fatalf("Datastore [%s], could not be found", *newVM.dsName)
+	}
+
+	folders, err := dc.Folders(ctx)
+	if err != nil {
+		log.Fatalln("Error locating default datacenter folder")
+	}
+
+	// Check if network connectivity is requested
+	var net object.NetworkReference
+	if *newVM.networkName != "" {
+		net, err = f.NetworkOrDefault(ctx, *newVM.networkName)
+		if err != nil {
+			log.Fatalf("Network [%s], could not be found", *newVM.networkName)
+		}
+	}
+
+	// Set the host that the VM will be created on
+	hs, err := f.HostSystemOrDefault(ctx, *newVM.vSphereHost)
+	if err != nil {
+		log.Fatalf("vSphere host [%s], could not be found", *newVM.vSphereHost)
+	}
+
+	var rp *object.ResourcePool
+	rp, err = hs.ResourcePool(ctx)
+	if err != nil {
+		log.Fatalln("Error locating default resource pool")
+	}
+	return c, dss, folders, hs, net, rp
+}
+
 func powerOnVM(ctx context.Context, vm *object.VirtualMachine) {
 	task, err := vm.PowerOn(ctx)
 	if err != nil {
@@ -209,7 +221,7 @@ func uploadFile(c *govmomi.Client, newVM vmConfig, dss *object.Datastore) {
 	if *newVM.path == "" {
 		log.Fatalf("No file specified")
 	}
-	dsurl := dss.NewURL(fmt.Sprintf("%s/%s", *newVM.vmName, fileName))
+	dsurl := dss.NewURL(fmt.Sprintf("%s/%s", *newVM.vmFolder, fileName))
 
 	p := soap.DefaultUpload
 	if err := c.Client.UploadFile(*newVM.path, dsurl, &p); err != nil {
@@ -248,7 +260,7 @@ func addVMDK(ctx context.Context, vm *object.VirtualMachine, dss *object.Datasto
 		log.Fatalf("Unable to find SCSI device from VM configuration\n%v", err)
 	}
 	// The default is to have all persistent disks named linuxkit.vmdk
-	disk := devices.CreateDisk(controller, dss.Reference(), dss.Path(fmt.Sprintf("%s/%s", *newVM.vmName, "linuxkit.vmdk")))
+	disk := devices.CreateDisk(controller, dss.Reference(), dss.Path(fmt.Sprintf("%s/%s", *newVM.vmFolder, "linuxkit.vmdk")))
 
 	disk.CapacityInKB = int64(newVM.persistentSz * 1024)
 
@@ -279,7 +291,7 @@ func addISO(ctx context.Context, newVM vmConfig, vm *object.VirtualMachine, dss 
 	}
 
 	var add []types.BaseVirtualDevice
-	add = append(add, devices.InsertIso(cdrom, dss.Path(fmt.Sprintf("%s/%s", *newVM.vmName, path.Base(*newVM.path)))))
+	add = append(add, devices.InsertIso(cdrom, dss.Path(fmt.Sprintf("%s/%s", *newVM.vmFolder, path.Base(*newVM.path)))))
 
 	log.Infof("Adding ISO to the Virtual Machine")
 
