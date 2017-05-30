@@ -1,4 +1,4 @@
-From bc241d095a4013fb9f4d6e7be0c5282768e347f5 Mon Sep 17 00:00:00 2001
+From 496112e94ea46ea6069af0c849df325ff0fcc819 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 29 Mar 2017 18:37:10 +0800
 Subject: [PATCH 09/10] vmbus: remove "goto error_clean_msglist" in
@@ -56,5 +56,5 @@ index 1606e7f08f4b..1caed01954f6 100644
  	vmbus_teardown_gpadl(newchannel, newchannel->ringbuffer_gpadlhandle);
  	kfree(open_info);
 -- 
-2.12.2
+2.13.0
 

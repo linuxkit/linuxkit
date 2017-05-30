@@ -1,4 +1,4 @@
-From 9cbb2612c617f9b52c4abe663d13ba9ad9883471 Mon Sep 17 00:00:00 2001
+From 3374875345189a841861ec5ebd2f0f1d266d7c76 Mon Sep 17 00:00:00 2001
 From: Tom Herbert <tom@herbertland.com>
 Date: Mon, 7 Mar 2016 14:11:06 -0800
 Subject: [PATCH 36/44] kcm: Kernel Connection Multiplexor module
@@ -2308,5 +2308,5 @@ index 000000000000..649d246c6799
 +MODULE_LICENSE("GPL");
 +MODULE_ALIAS_NETPROTO(PF_KCM);
 -- 
-2.12.2
+2.13.0
 

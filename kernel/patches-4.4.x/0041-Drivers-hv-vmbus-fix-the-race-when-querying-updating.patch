@@ -1,4 +1,4 @@
-From 3da1fa2cbe8cf858d9ed2c7cc91087c658ad9129 Mon Sep 17 00:00:00 2001
+From 593980b03120dc41ff52b8c623ce53473981f261 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 21 May 2016 16:55:50 +0800
 Subject: [PATCH 41/44] Drivers: hv: vmbus: fix the race when querying &
@@ -129,5 +129,5 @@ index c892db5df665..0a543170eba0 100644
  err_free_chan:
  	free_channel(newchannel);
 -- 
-2.12.2
+2.13.0
 

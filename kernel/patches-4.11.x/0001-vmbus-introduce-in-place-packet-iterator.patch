@@ -1,4 +1,4 @@
-From 9dff166a5d0a91e8b22f41a8311ebdd946acde82 Mon Sep 17 00:00:00 2001
+From 1c9660f96d1e38a84d1c6565a219e432e95c8409 Mon Sep 17 00:00:00 2001
 From: stephen hemminger <stephen@networkplumber.org>
 Date: Mon, 27 Feb 2017 10:26:48 -0800
 Subject: [PATCH 1/9] vmbus: introduce in-place packet iterator
@@ -365,5 +365,5 @@ index 970771a5f739..0c170a3f0d8b 100644
  
  #endif /* _HYPERV_H */
 -- 
-2.12.2
+2.13.0
 
