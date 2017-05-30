@@ -24,6 +24,9 @@ RUN apk index --rewrite-arch $(uname -m) -o /mirror/$(uname -m)/APKINDEX.unsigne
 RUN cp /mirror/$(uname -m)/APKINDEX.unsigned.tar.gz /mirror/$(uname -m)/APKINDEX.tar.gz
 RUN abuild-sign /mirror/$(uname -m)/APKINDEX.tar.gz
 
+# fetch OVMF for qemu EFI boot (this is not added as a package)
+RUN apk add -X http://dl-cdn.alpinelinux.org/alpine/edge/community ovmf
+
 # set this as our repo
 RUN echo "/mirror" > /etc/apk/repositories && apk update
 
@@ -44,6 +47,7 @@ COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/keys /etc/apk/keys/
 COPY --from=mirror /mirror /mirror/
 COPY --from=mirror /go/bin /go/bin/
+COPY --from=mirror /usr/share/ovmf/bios.bin /usr/share/ovmf/bios.bin
 COPY --from=mirror /Dockerfile /Dockerfile
 
 COPY --from=shellcheck /usr/local/bin/shellcheck /usr/local/bin/shellcheck

@@ -15,7 +15,7 @@ import (
 )
 
 // QemuImg is the version of qemu container
-const QemuImg = "linuxkit/qemu:17f052263d63c8a2b641ad91c589edcbb8a18c82"
+const QemuImg = "linuxkit/qemu:c9691f5c50dd191e62b77eaa2f3dfd05ed2ed77c"
 
 // QemuConfig contains the config for Qemu
 type QemuConfig struct {

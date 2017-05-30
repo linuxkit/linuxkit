@@ -1,29 +1,15 @@
 .PHONY: tag push
-
-BASE=alpine:3.5
-IMAGE=test-docker-bench
-
 default: push
 
-hash: Dockerfile bench_runner.sh
-	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm --entrypoint=/bin/sh $(IMAGE):build -c "cat $^ /lib/apk/db/installed | sha1sum" | sed 's/ .*//' > hash
+ORG?=linuxkit
+IMAGE=test-docker-bench
+DEPS=Dockerfile Makefile bench_runner.sh
 
-push: hash
-	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(shell cat hash))
-	docker rmi $(IMAGE):build
-	rm -f hash
+HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
-tag: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
-	rm -f hash
+tag: $(DEPS)
+	docker build --squash --no-cache -t $(ORG)/$(IMAGE):$(HASH) .
 
-clean:
-	rm -f hash
-
-.DELETE_ON_ERROR:
+push: tag
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(HASH)

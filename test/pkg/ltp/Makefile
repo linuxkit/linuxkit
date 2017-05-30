@@ -1,44 +1,15 @@
-LTP_VERSION=20170116
+.PHONY: tag push
+default: push
 
-all: ltp.tar push
-
-# Build LTP and get the result as a tarball
-DEPS=Dockerfile.build Makefile
-ltp.tag: $(DEPS)
-	BUILD=$$(docker build -f $< -q . --build-arg LTP_VERSION=$(LTP_VERSION)) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
-
-ltp.tar: ltp.tag
-	docker run --rm --net=none --log-driver=none $(shell cat ltp.tag) tar cf - opt/ltp  > $@
-
-SHASUM=alpine:3.5
+ORG?=linuxkit
 IMAGE=test-ltp
+DEPS=Dockerfile Makefile check.sh
 
-# Note: We do not compute the hash from all the dependencies here
-# because the ltp binaries will change everytime we build. Ideally, we
-# would calculate the hash from the source and the apt-get cache, but
-# it's not that critical.
-hash: Dockerfile.pkg ltp.tar check.sh $(DEPS)
-	tar xf ltp.tar
-	tar cf - Dockerfile.pkg opt check.sh | docker build --no-cache -t $(IMAGE):build -f Dockerfile.pkg -
-	cat Dockerfile.pkg check.sh $(DEPS) | DOCKER_CONTENT_TRUST=1 docker run --rm -i $(SHASUM) sha1sum | sed 's/ .*//' > $@
+HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
-push: hash
-	DOCKER_CONTENT_TRUST=1 docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
-		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(LTP_VERSION) && \
-		DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(shell cat hash) && \
-		DOCKER_CONTENT_TRUST=1 docker push linuxkit/$(IMAGE):$(LTP_VERSION))
-	docker rmi $(IMAGE):build
-	rm -f hash
+tag: $(DEPS)
+	docker build --no-cache -t $(ORG)/$(IMAGE):$(HASH) .
 
-tag: hash
-	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
-	rm -f hash
-
-.PHONY: clean
-clean:
-	rm -rf opt ltp.tar ltp.tag hash
-
-.DELETE_ON_ERROR:
+push: tag
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(HASH)

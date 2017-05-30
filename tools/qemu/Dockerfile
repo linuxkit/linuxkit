@@ -1,15 +1,19 @@
-FROM alpine:edge
+FROM linuxkit/alpine:5240cbd9cf371c8211c8f1968e57c51a32098c8f AS mirror
+RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
+RUN apk add --no-cache --initdb -p /out \
+    alpine-baselayout \
+    busybox \
+    libarchive-tools \
+    qemu-img \
+    qemu-system-x86_64
 
-COPY repositories /etc/apk/
+RUN mkdir -p /out/usr/share/ovmf \
+    && cp /usr/share/ovmf/bios.bin /out/usr/share/ovmf/bios.bin
+RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
-RUN \
-  apk update && apk upgrade && \
-  apk add --no-cache \
-  libarchive-tools \
-  qemu-img \
-  qemu-system-arm \
-  qemu-system-x86_64 \
-  ovmf@testing \
-  && true
+FROM scratch
+ENTRYPOINT []
+CMD []
+WORKDIR /
+COPY --from=mirror /out/ /
 
-COPY . .

@@ -10,7 +10,7 @@ onboot:
     image: "linuxkit/test-kernel-config:ecff41279ccbc408079a3996a956432651c6eb9c"
     readonly: true
   - name: poweroff
-    image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
+    image: "linuxkit/poweroff:7404cf2295df89ccfa2dda41997a28307a90cf28"
     command: ["/bin/sh", "/poweroff.sh", "3"]
 trust:
   org:
