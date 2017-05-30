@@ -4,4 +4,4 @@ ENTRYPOINT ["/bin/node_exporter", "-collector.procfs",  "/host/proc", \
             "-collector.sysfs",  "/host/sys", \
             "-collector.filesystem.ignored-mount-points", \
             "^/(sys|proc|dev|host|etc)($|/)"]
-LABEL org.mobyproject.config='{"net": "host", "pid": "host", "binds": ["/proc:/host/proc", "/sys:/host/sys", "/:/rootfs"], "capabilities": ["all"]}'
+LABEL org.mobyproject.config='{"pid": "host", "binds": ["/proc:/host/proc", "/sys:/host/sys", "/:/rootfs"], "capabilities": ["all"]}'

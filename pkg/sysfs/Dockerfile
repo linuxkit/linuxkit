@@ -13,3 +13,4 @@ WORKDIR /
 COPY --from=mirror /go/bin/sysfs /usr/bin/sysfs
 COPY etc/ /etc/
 CMD ["/usr/bin/sysfs"]
+LABEL org.mobyproject.config='{"net": "new", "ipc": "new"}'
