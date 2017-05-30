@@ -9,7 +9,7 @@ This document details the process for setting this up, intended for maintainers.
 Let's say we're publishing a new `linuxkit/foo` image that we want to sign and verify in LinuxKit.
 We first need to initialize the Notary repository:
 
-```apple js
+```
 notary -s https://notary.docker.io -d ~/.docker/trust init -p docker.io/linuxkit/foo
 ```
 
@@ -17,7 +17,7 @@ This command will generate some private keys in `~/.docker/trust` and ask you fo
 All linuxkit repositories are currently using the same root key so we can pin trust on key ID `1908a0cf4f55710138e63f65ab2a97e8fa3948e5ca3b8857a29f235a3b61ea1b`.
 
 We'll also let the notary server take control of the snapshot key, for easier delegation collaboration:
-```apple js
+```
 notary -s https://notary.docker.io -d ~/.docker/trust key rotate docker.io/linuxkit/foo snapshot -r
 ```
 
@@ -30,12 +30,12 @@ for release consumption, as well as an individual `targets/<maintainer_name>` ro
 Docker will automatically sign into both roles when pushing with Docker Content Trust.
 
 Here's what the command looks like to add all maintainers to the `targets/releases` role:
-```apple js
+```
 notary -s https://notary.docker.io -d ~/.docker/trust delegation add -p docker.io/linuxkit/foo targets/releases alice.crt bob.crt charlie.crt --all-paths
 ```
 
 Here's what the commands look like to add all maintainers to their individually named roles:
-```apple js
+```
 notary -s https://notary.docker.io -d ~/.docker/trust delegation add -p docker.io/linuxkit/foo targets/alice alice.crt --all-paths
 notary -s https://notary.docker.io -d ~/.docker/trust delegation add -p docker.io/linuxkit/foo targets/bob bob.crt --all-paths
 notary -s https://notary.docker.io -d ~/.docker/trust delegation add -p docker.io/linuxkit/foo targets/charlie charlie.crt --all-paths
@@ -44,6 +44,6 @@ notary -s https://notary.docker.io -d ~/.docker/trust delegation add -p docker.i
 ## Maintainers import their private keys
 
 It's important that each maintainer imports their private key into Docker's key storage, so Docker can use it to sign:
-```apple js
+```
 notary -d ~/.docker/trust key import alice.key -r user
 ```
