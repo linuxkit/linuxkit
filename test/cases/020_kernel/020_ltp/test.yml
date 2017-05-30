@@ -2,9 +2,9 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
-  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
+  - linuxkit/init:deea956a9ab07bf262083e93a86930bdc610cc2f
+  - linuxkit/runc:2649198589ef0020d99f613adaeda45ce0093a38
+  - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
 onboot:
   - name: ltp
     image: "linuxkit/test-ltp:20170116"
