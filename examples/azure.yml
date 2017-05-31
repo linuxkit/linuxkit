@@ -1,0 +1,101 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:b3740303f3d1e5689a84c87b7dfb48fd2a40a192
+  - linuxkit/runc:47b1c38d63468c0f3078f8b1b055d07965a1895d
+  - linuxkit/containerd:cf2614f5a96c569a0bd4bd54e054a65ba17d167f
+  - linuxkit/ca-certificates:3344cdca1bc59fdfa17bd7f0fcbf491b9dbaa288
+onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:1f5ec5d5e6f7a7a1b3d2ff9dd9e36fd6fb14756a"
+    net: host
+    pid: host
+    ipc: host
+    capabilities:
+     - CAP_SYS_ADMIN
+    readonly: true
+  - name: sysfs
+    image: linuxkit/sysfs:6c1d06f28ddd9681799d3950cddf044b930b221c
+  - name: binfmt
+    image: "linuxkit/binfmt:131026c0cf6084467316395fed3b358f64bda00c"
+    binds:
+     - /proc/sys/fs/binfmt_misc:/binfmt_misc
+    readonly: true
+  - name: format
+    image: "linuxkit/format:d78093e943f9c88386e30c00353f9476d34fb551"
+    binds:
+     - /dev:/dev
+    capabilities:
+     - CAP_SYS_ADMIN
+     - CAP_MKNOD
+  - name: mount
+    image: "linuxkit/mount:fc7164d7c4e1fe5d1da395c7f949fb332cffe752"
+    binds:
+     - /dev:/dev
+     - /var:/var:rshared,rbind
+    capabilities:
+     - CAP_SYS_ADMIN
+    rootfsPropagation: shared
+    command: ["/mount.sh", "/var/lib/docker"]
+services:
+  - name: rngd
+    image: "linuxkit/rngd:61a07ced77a9747708223ca16a4aec621eacf518"
+    capabilities:
+     - CAP_SYS_ADMIN
+    oomScoreAdj: -800
+    readonly: true
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:2def74ab3f9233b4c09ebb196ba47c27c08b0ed8"
+    binds:
+     - /var:/var
+     - /tmp/etc:/etc
+    capabilities:
+     - CAP_NET_ADMIN
+     - CAP_NET_BIND_SERVICE
+     - CAP_NET_RAW
+    net: host
+    oomScoreAdj: -800
+  - name: ntpd
+    image: "linuxkit/openntpd:a38eabb308d0405f58894979f8b8031a6c7e1134"
+    capabilities:
+      - CAP_SYS_TIME
+      - CAP_SYS_NICE
+      - CAP_SYS_CHROOT
+      - CAP_SETUID
+      - CAP_SETGID
+    net: host
+  - name: docker
+    image: "linuxkit/docker-ce:050e734489f2d19b42ec818a4242a318ea446bc3"
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /var/run/:/var/run/
+     - /var/lib/docker:/var/lib/docker
+     - /lib/modules:/lib/modules
+  - name: dev
+    image: "radumatei/linuxkit-dev:dev"
+    capabilities:
+     - all
+    net: host
+    pid: host
+    binds:
+     - /var/run/:/var/run/
+     - /root/.ssh:/root/.ssh
+     - /etc/resolv.conf:/etc/resolv.conf
+files:
+  - path: root/.ssh/authorized_keys
+    contents: '#public ssh key here'
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
+trust:
+  image:
+    - linuxkit/kernel
+    - linuxkit/binfmt
+    - linuxkit/rngd
+outputs:
+  - format: vhd

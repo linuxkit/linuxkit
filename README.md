@@ -42,6 +42,7 @@ See `linuxkit run --help`.
 Additional, platform specific information is available for:
 - [macOS](docs/mac.md)
 - [Google Cloud](docs/gcp.md)
+- [Azure](docs/azure.md)
 
 We'll add more detailed docs for other platforms in the future.
 
