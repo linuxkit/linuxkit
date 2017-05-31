@@ -7,14 +7,15 @@
 ## Make Disk Available
 In order to make the disk available, you need to tell `linuxkit` where the disk file or block device is.
 
-All local `linuxkit run` methods (currently `hyperkit`, `qemu`, and `vmware`) take two arguments:
+All local `linuxkit run` methods (currently `hyperkit`, `qemu`, and `vmware`) take a `-disk` argument:
 
-* `-disk-size <size>`: size of disk. The default is in MB but a `G` can be appended to specify the size in GB, e.g. `-disk-size 4096` or `disk-size 4G` will provide a 4GB disk.
-* `-disk <path>`: use the disk at location _path_, e.g. `-disk foo.img` will use the disk at `$PWD/foo.img`
+* `-disk path,size=100M,format=qcow2`. For size the default is in MB but `G` can be aspecified for GB. The format can be omitted for the platform default, and is only useful on `qemu` at present.
 
-If you do not provide `-disk `_path_, `linuxkit` assumes a default, which is _prefix_`-state/disk.img` for `hyperkit` and `vmware` and _prefix_`-disk.img` for `qemu`. 
+If the _path` is specified it will use the disk at location _path_, if you do not provide `-disk `_path_, `linuxkit` assumes a default, which is _prefix_`-state/disk.img` for `hyperkit` and `vmware` and _prefix_`-disk.img` for `qemu`. 
 
-If the disk at `<path>`, or the default if `-disk` option is not provided, does not exist, `linuxkit` will create one of size `<size>`.
+If the disk at the specified or default `<path>` does not exist, `linuxkit` will create one of size `<size>`.
+
+The `-disk` specification may be repeated for multiple disks, although a limited number may be supported, and some platforms currently only support a single disk.
 
 **TODO:** GCP
 

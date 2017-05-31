@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -35,8 +36,8 @@ func runHyperKit(args []string) {
 	hyperkitPath := flags.String("hyperkit", "", "Path to hyperkit binary (if not in default location)")
 	cpus := flags.Int("cpus", 1, "Number of CPUs")
 	mem := flags.Int("mem", 1024, "Amount of memory in MB")
-	diskSzFlag := flags.String("disk-size", "", "Size of Disk in MB (or GB if 'G' is appended)")
-	disk := flags.String("disk", "", "Path to disk image to use")
+	var disks Disks
+	flags.Var(&disks, "disk", "Disk config. [file=]path[,size=1G]")
 	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
 	ipStr := flags.String("ip", "", "IP address for the VM")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
@@ -59,11 +60,6 @@ func runHyperKit(args []string) {
 	}
 	if err := os.MkdirAll(*state, 0755); err != nil {
 		log.Fatalf("Could not create state directory: %v", err)
-	}
-
-	diskSz, err := getDiskSizeMB(*diskSzFlag)
-	if err != nil {
-		log.Fatalf("Could parse disk-size %s: %v", *diskSzFlag, err)
 	}
 
 	isoPath := ""
@@ -106,8 +102,22 @@ func runHyperKit(args []string) {
 		log.Fatalf("Cannot open cmdline file: %v", err)
 	}
 
-	if diskSz != 0 && *disk == "" {
-		*disk = filepath.Join(*state, "disk.img")
+	for i, d := range disks {
+		id := ""
+		if i != 0 {
+			id = strconv.Itoa(i)
+		}
+		if d.Size != 0 && d.Path == "" {
+			d.Path = filepath.Join(*state, "disk"+id+".img")
+		}
+		if d.Path == "" {
+			log.Fatalf("disk specified with no size or name")
+		}
+		disks[i] = d
+	}
+
+	if len(disks) > 1 {
+		log.Fatalf("Hyperkit driver currently only supports a single disk")
 	}
 
 	// Create new HyperKit instance (w/o networking for now)
@@ -163,12 +173,14 @@ func runHyperKit(args []string) {
 	h.Initrd = prefix + "-initrd.img"
 	h.VPNKitKey = vpnKitKey
 	h.UUID = vmUUID
-	h.DiskImage = *disk
+	if len(disks) == 1 {
+		h.DiskImage = disks[0].Path
+		h.DiskSize = disks[0].Size
+	}
 	h.ISOImage = isoPath
 	h.VSock = true
 	h.CPUs = *cpus
 	h.Memory = *mem
-	h.DiskSize = diskSz
 
 	err = h.Run(string(cmdline))
 	if err != nil {

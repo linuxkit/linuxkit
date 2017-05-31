@@ -24,9 +24,7 @@ type QemuConfig struct {
 	UEFI           bool
 	Kernel         bool
 	GUI            bool
-	DiskPath       string
-	DiskSize       string
-	DiskFormat     string
+	Disks          Disks
 	FWPath         string
 	Arch           string
 	CPUs           string
@@ -58,9 +56,8 @@ func runQemu(args []string) {
 	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
 	// Paths and settings for disks
-	diskSzFlag := flags.String("disk-size", "", "Size of Disk in MB (or GB if 'G' is appended)")
-	disk := flags.String("disk", "", "Path to disk image to use")
-	diskFmt := flags.String("disk-format", "qcow2", "Format of disk: raw, qcow2 etc")
+	var disks Disks
+	flags.Var(&disks, "disk", "Disk config, may be repeated. [file=]path[,size=1G][,format=qcow2]")
 
 	// Paths and settings for UEFI firware
 	fw := flags.String("fw", "/usr/share/ovmf/bios.bin", "Path to OVMF firmware for UEFI boot")
@@ -113,21 +110,28 @@ func runQemu(args []string) {
 		}
 	}
 
-	diskSz, err := getDiskSizeMB(*diskSzFlag)
-	if err != nil {
-		log.Fatalf("Couldn't parse disk-size %s: %v", *diskSzFlag, err)
-	}
-	if diskSz != 0 && *disk == "" {
-		*disk = prefix + "-disk.img"
+	for i, d := range disks {
+		id := ""
+		if i != 0 {
+			id = strconv.Itoa(i)
+		}
+		if d.Size != 0 && d.Format == "" {
+			d.Format = "qcow2"
+		}
+		if d.Size != 0 && d.Path == "" {
+			d.Path = prefix + "-disk" + id + ".img"
+		}
+		if d.Path == "" {
+			log.Fatalf("disk specified with no size or name")
+		}
+		disks[i] = d
 	}
 
 	// user not trying to boot off ISO or kernel, so assume booting from a disk image
 	if !*kernelBoot && !*isoBoot {
-		if *disk != "" {
-			// Need to add multiple disk support to do this
-			log.Fatalf("Cannot boot from disk and specify a disk as well at present")
-		}
-		*disk = path
+		// currently no way to set format, but autodetect probably works
+		d := Disks{DiskConfig{Path: path}}
+		disks = append(d, disks...)
 	}
 
 	config := QemuConfig{
@@ -136,9 +140,7 @@ func runQemu(args []string) {
 		UEFI:           *uefiBoot,
 		Kernel:         *kernelBoot,
 		GUI:            *enableGUI,
-		DiskPath:       *disk,
-		DiskSize:       fmt.Sprintf("%dM", diskSz),
-		DiskFormat:     *diskFmt,
+		Disks:          disks,
 		FWPath:         *fw,
 		Arch:           *arch,
 		CPUs:           *cpus,
@@ -163,21 +165,21 @@ func runQemuLocal(config QemuConfig) error {
 	var args []string
 	config, args = buildQemuCmdline(config)
 
-	if config.DiskPath != "" {
+	for _, d := range config.Disks {
 		// If disk doesn't exist then create one
-		if _, err := os.Stat(config.DiskPath); err != nil {
+		if _, err := os.Stat(d.Path); err != nil {
 			if os.IsNotExist(err) {
-				log.Debugf("Creating new qemu disk [%s] format %s", config.DiskPath, config.DiskFormat)
-				qemuImgCmd := exec.Command(config.QemuImgPath, "create", "-f", config.DiskFormat, config.DiskPath, config.DiskSize)
+				log.Debugf("Creating new qemu disk [%s] format %s", d.Path, d.Format)
+				qemuImgCmd := exec.Command(config.QemuImgPath, "create", "-f", d.Format, d.Path, fmt.Sprintf("%dM", d.Size))
 				log.Debugf("%v\n", qemuImgCmd.Args)
 				if err := qemuImgCmd.Run(); err != nil {
-					return fmt.Errorf("Error creating disk [%s] format %s:  %s", config.DiskPath, config.DiskFormat, err.Error())
+					return fmt.Errorf("Error creating disk [%s] format %s:  %s", d.Path, d.Format, err.Error())
 				}
 			} else {
 				return err
 			}
 		} else {
-			log.Infof("Using existing disk [%s] format %s", config.DiskPath, config.DiskFormat)
+			log.Infof("Using existing disk [%s] format %s", d.Path, d.Format)
 		}
 	}
 
@@ -246,23 +248,23 @@ func runQemuContainer(config QemuConfig) error {
 		return fmt.Errorf("Unable to find docker in the $PATH")
 	}
 
-	if config.DiskPath != "" {
+	for _, d := range config.Disks {
 		// If disk doesn't exist then create one
-		if _, err = os.Stat(config.DiskPath); err != nil {
+		if _, err = os.Stat(d.Path); err != nil {
 			if os.IsNotExist(err) {
-				log.Debugf("Creating new qemu disk [%s] format %s", config.DiskPath, config.DiskFormat)
-				imgArgs := append(dockerArgsImg, QemuImg, "qemu-img", "create", "-f", config.DiskFormat, config.DiskPath, config.DiskSize)
+				log.Debugf("Creating new qemu disk [%s] format %s", d.Path, d.Format)
+				imgArgs := append(dockerArgsImg, QemuImg, "qemu-img", "create", "-f", d.Format, d.Path, fmt.Sprintf("%dM", d.Size))
 				qemuImgCmd := exec.Command(dockerPath, imgArgs...)
 				qemuImgCmd.Stderr = os.Stderr
 				log.Debugf("%v\n", qemuImgCmd.Args)
 				if err = qemuImgCmd.Run(); err != nil {
-					return fmt.Errorf("Error creating disk [%s] format %s:  %s", config.DiskPath, config.DiskFormat, err.Error())
+					return fmt.Errorf("Error creating disk [%s] format %s:  %s", d.Path, d.Format, err.Error())
 				}
 			} else {
 				return err
 			}
 		} else {
-			log.Infof("Using existing disk [%s] format %s", config.DiskPath, config.DiskFormat)
+			log.Infof("Using existing disk [%s] format %s", d.Path, d.Format)
 		}
 	}
 
@@ -301,8 +303,17 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		qemuArgs = append(qemuArgs, "-machine", "q35,accel=kvm:tcg")
 	}
 
-	if config.DiskPath != "" {
-		qemuArgs = append(qemuArgs, "-drive", "file="+config.DiskPath+",format="+config.DiskFormat+",index=0,media=disk")
+	for i, d := range config.Disks {
+		index := i
+		// hdc is CDROM in qemu
+		if i >= 2 && config.ISO {
+			index++
+		}
+		if d.Format != "" {
+			qemuArgs = append(qemuArgs, "-drive", "file="+d.Path+",format="+d.Format+",index="+strconv.Itoa(index)+",media=disk")
+		} else {
+			qemuArgs = append(qemuArgs, "-drive", "file="+d.Path+",index="+strconv.Itoa(index)+",media=disk")
+		}
 	}
 
 	if config.ISO {
