@@ -34,7 +34,6 @@ services:
     capabilities:
      - all
     pid: host
-    net: host
     binds:
       - /run/containerd/containerd.sock:/run/containerd/containerd.sock
       - /var/lib/containerd:/var/lib/containerd
