@@ -51,6 +51,7 @@ func build(args []string) {
 	buildName := buildCmd.String("name", "", "Name to use for output files")
 	buildDir := buildCmd.String("dir", "", "Directory for output files, default current directory")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
+	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
 	buildCmd.Var(&buildOut, "output", "Output types to create [ "+strings.Join(outputTypes, " ")+" ]")
 
 	if err := buildCmd.Parse(args); err != nil {
@@ -97,6 +98,11 @@ func build(args []string) {
 	m, err := NewConfig(config)
 	if err != nil {
 		log.Fatalf("Invalid config: %v", err)
+	}
+
+	if *buildDisableTrust {
+		log.Debugf("Disabling content trust checks for this build")
+		m.Trust = TrustConfig{}
 	}
 
 	image := buildInternal(m, *buildPull)
