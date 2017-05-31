@@ -30,7 +30,8 @@ RUN \
     "kernel_config.${ARCH}" \
     "kernel_config.${ARCH}.${KERNEL_SERIES}" \
     "kernel_config.${KERNEL_SERIES}" \
-    "$dbg"
+    "$dbg" \
+    "kernel_config.probational"
 RUN /config/check-kernel-config.sh /linux/.config
 
 RUN mkdir /out
