@@ -137,11 +137,13 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 		}
 		// Also check for an image name only match
 		// by removing a possible tag (with possibly added digest):
-		if img == strings.TrimSuffix(fullImageName, ":") {
+		imgAndTag := strings.Split(fullImageName, ":")
+		if len(imgAndTag) >= 2 && img == imgAndTag[0] {
 			return true
 		}
 		// and by removing a possible digest:
-		if img == strings.TrimSuffix(fullImageName, "@sha256:") {
+		imgAndDigest := strings.Split(fullImageName, "@sha256:")
+		if len(imgAndDigest) >= 2 && img == imgAndDigest[0] {
 			return true
 		}
 	}
