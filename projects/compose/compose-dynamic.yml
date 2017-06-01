@@ -1,0 +1,56 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 page_poison=1"
+init:
+  - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
+  - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
+onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
+  - name: sysfs
+    image: linuxkit/sysfs:1244c5a86dfa2318c4e304af68d37e12367e1b7f
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: binfmt
+    image: "linuxkit/binfmt:8ac5535f57f0c6f5fe88317b9d22a7677093c765"
+  - name: format
+    image: "linuxkit/format:180cb2dc1de5e60373385080f8148abf10a3afac"
+  - name: mount
+    image: "linuxkit/mount:ff5338822f20375b8913f5a80f9ed4f6ea9a592b"
+    command: ["/mount.sh", "/var/lib/docker"]
+services:
+  - name: rngd
+    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
+  - name: ntpd
+    image: "linuxkit/openntpd:45deeb05f736162d941c9bf494983f655ab80aa5"
+  - name: docker
+    image: "linuxkit/docker-ce:668d62da6e3da081a8f8aca7db3e2a98adf5da59"
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /var/lib/docker:/var/lib/docker
+     - /lib/modules:/lib/modules
+     - /var/run:/var/run
+     - /var/html:/var/html
+  - name: compose
+    image: "linuxkitprojects/compose:0535e78608f57702745dfd56fbe78d28d237e469"
+    binds:
+     - /var/run:/var/run
+     - /var/compose:/compose
+files:
+  - path: var/html/a/index.html
+    source: html-a.html
+  - path: var/html/b/index.html
+    source: html-b.html
+  - path: var/compose/docker-compose.yml
+    source: docker-compose.yml
+trust:
+  org:
+    - linuxkit

@@ -1,0 +1,25 @@
+version: '2.1'
+services:
+  a:
+    image: nginx:alpine
+    volumes:
+      - /var/html/a:/usr/share/nginx/html
+    labels:
+      - "traefik.backend=a"
+      - "traefik.frontend.rule=Host:a.docker.localhost"
+  b:
+    image: nginx:alpine
+    volumes:
+      - /var/html/b:/usr/share/nginx/html
+    labels:
+      - "traefik.backend=b"
+      - "traefik.frontend.rule=Host:b.docker.localhost"
+      - "traefik.port=80"
+  proxy:
+    image: traefik
+    command: --web --docker --docker.domain=docker.localhost --logLevel=DEBUG
+    ports:
+      - "80:80"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /dev/null:/traefik.toml
