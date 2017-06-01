@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
   - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:5749f2e9e65395cc6635229e8da0e0d484320ddf
+  - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
 onboot:
   - name: mkimage
     image: "linuxkit/mkimage:f4bf0c24261f7d120c8674892805ab3054eb8ac3"
