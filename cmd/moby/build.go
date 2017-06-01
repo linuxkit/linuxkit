@@ -149,7 +149,23 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 	}
 
 	for _, org := range config.Org {
-		if strings.HasPrefix(fullImageName, org+"/") {
+		var imgOrg string
+		splitName := strings.Split(fullImageName, "/")
+		switch len(splitName) {
+		case 0:
+			// if the image is empty, return false
+			return false
+		case 1:
+			// for single names like nginx, use library
+			imgOrg = "library"
+		case 2:
+			// for names that assume docker hub, like linxukit/alpine, take the first split
+			imgOrg = splitName[0]
+		default:
+			// for names that include the registry, the second piece is the org, ex: docker.io/library/alpine
+			imgOrg = splitName[1]
+		}
+		if imgOrg == org {
 			return true
 		}
 	}

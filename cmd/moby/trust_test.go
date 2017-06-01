@@ -43,4 +43,10 @@ func TestEnforceContentTrust(t *testing.T) {
 	require.False(t, enforceContentTrust("linuxkit/differentImage", &TrustConfig{Image: []string{}, Org: []string{"notlinuxkit"}}))
 	require.False(t, enforceContentTrust("linuxkit/differentImage:tag", &TrustConfig{Image: []string{}, Org: []string{"notlinuxkit"}}))
 	require.False(t, enforceContentTrust("linuxkit/differentImage@sha256:abc123", &TrustConfig{Image: []string{}, Org: []string{"notlinuxkit"}}))
+
+	// Tests for Org with library organization
+	require.True(t, enforceContentTrust("nginx", &TrustConfig{Image: []string{}, Org: []string{"library"}}))
+	require.True(t, enforceContentTrust("nginx:alpine", &TrustConfig{Image: []string{}, Org: []string{"library"}}))
+	require.True(t, enforceContentTrust("library/nginx:alpine", &TrustConfig{Image: []string{}, Org: []string{"library"}}))
+	require.False(t, enforceContentTrust("nginx", &TrustConfig{Image: []string{}, Org: []string{"notLibrary"}}))
 }
