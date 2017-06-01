@@ -5,7 +5,7 @@ FROM alpine:3.5 as capnp
 RUN mkdir -p /src
 RUN apk update && apk add autoconf automake libtool linux-headers git g++ make
 
-RUN cd /src && git clone https://github.com/sandstorm-io/capnproto.git
+RUN cd /src && git clone -b v0.6.0 https://github.com/sandstorm-io/capnproto.git
 WORKDIR /src/capnproto/c++
 RUN ./setup-autotools.sh
 RUN autoreconf -i
@@ -21,17 +21,17 @@ FROM ocaml/opam:alpine-3.5_ocaml-4.04.0 as sdk
 RUN git -C /home/opam/opam-repository pull && opam update -u
 
 COPY --from=capnp /usr/local/bin/capnp /usr/local/bin/
-COPY --from=capnp /usr/local/lib/libcapnpc-0.6-dev.so /usr/local/lib/
-COPY --from=capnp /usr/local/lib/libcapnp-0.6-dev.so /usr/local/lib/
-COPY --from=capnp /usr/local/lib/libkj-0.6-dev.so /usr/local/lib/
+COPY --from=capnp /usr/local/lib/libcapnpc-0.6.0.so /usr/local/lib/
+COPY --from=capnp /usr/local/lib/libcapnp-0.6.0.so /usr/local/lib/
+COPY --from=capnp /usr/local/lib/libkj-0.6.0.so /usr/local/lib/
 
 RUN sudo mkdir -p /src
 USER opam
 WORKDIR /src
 
-RUN opam pin add jbuilder 1.0+beta7 -n
+RUN opam pin add jbuilder 1.0+beta9 -n
 
-RUN opam depext -uiy cstruct lwt logs irmin-git rawlink tuntap astring rresult \
+RUN opam depext -uiy cstruct cstruct-lwt lwt lwt logs irmin-git rawlink tuntap astring rresult \
     mirage-flow-lwt mirage-channel-lwt io-page decompress capnp
 
 RUN opam list
