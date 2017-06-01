@@ -31,6 +31,5 @@ files:
     contents: '{"debug": true}'
 trust:
   org:
+    - library
     - linuxkit
-  image:
-    - nginx:alpine
