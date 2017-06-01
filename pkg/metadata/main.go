@@ -47,7 +47,7 @@ var netProviders []Provider
 var cdromProviders []Provider
 
 func init() {
-	netProviders = []Provider{NewGCP()}
+	netProviders = []Provider{NewGCP(), NewAWS()}
 	cdromProviders = []Provider{NewCDROM()}
 }
 
