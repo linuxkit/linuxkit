@@ -13,4 +13,4 @@ subreaper = false
   level = "info"
 
 [metrics]
-  address = ":13337"
+  address = ""

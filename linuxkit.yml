@@ -28,6 +28,24 @@ services:
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
+  - path: etc/containerd/config.toml
+    contents: |
+      state = "/run/containerd"
+      root = "/var/lib/containerd"
+      snapshotter = "overlay"
+      subreaper = false
+
+      [grpc]
+      address = "/run/containerd/containerd.sock"
+      uid = 0
+      gid = 0
+
+      [debug]
+      address = "/run/containerd/debug.sock"
+      level = "info"
+
+      [metrics]
+      address = ":13337"
 trust:
   org:
     - linuxkit
