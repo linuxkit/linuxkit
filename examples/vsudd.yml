@@ -1,0 +1,22 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 page_poison=1"
+init:
+  - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:deaf5bf838bf7f131c2287ecff3ed9835b0497e2
+onboot:
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+services:
+  - name: vsudd
+    image: "edtestorg/vsudd:6fa9a36dc5157cb0af54f0251769eb38a64c912a"
+    binds:
+        - /run/containerd/containerd.sock:/run/containerd/containerd.sock
+    command: ["/vsudd", 
+        "-inport", "2374:unix:/run/containerd/containerd.sock"]
+
+trust:
+  org:
+    - linuxkit
