@@ -1,4 +1,4 @@
-# Yaml configuration
+# Configuration Reference
 
 The yaml configuration specifies the components and the build time artifacts. All components
 are downloaded at build time to create an image. The image is self-contained and immutable,
@@ -9,7 +9,7 @@ Each section adds file to the root file system
 
 ## `kernel`
 
-This section defines the kernel configuration. The `image` field specifies the Docker image,
+The `kernel` section defines the kernel configuration. The `image` field specifies the Docker image,
 which should contain a `bzImage` (for `amd64` architecture, others may vary) and a file
 called `kernel.tar` which is a tarball that is unpacked into the root, which should usually
 contain a kernel modules directory. See [`kernel/`](../kernel/) for source code. `cmdline`
@@ -17,7 +17,7 @@ specifies the kernel command line options if required.
 
 ## `init`
 
-This section currently just lists images that is used for the `init` system and are unpacked directly
+The `init` section is a list of images that are used for the `init` system and are unpacked directly
 into the root filesystem. This should bring up `containerd`, start the system and daemon containers,
 and set up basic filesystem mounts. See [`pkg/init/`](../pkg/init/) for source code. For ease of
 modification `runc` and `containerd` images, which just contain these programs are added here
@@ -25,19 +25,21 @@ rather than bundled into the `init` container.
 
 ## `onboot`
 
-These containers are run to completion sequentially, using `runc` before anything else is started.
-They can be used to configure one shot settings. For details of the config for each container, see
-below.
+The `onboot` section is a list of images. These images are run before any other
+images. They are run sequentially and each must exit before the next one is run.
+These images can be used to configure one shot settings. See [Image
+specification](#image-specification) for a list of supported fields.
 
 ## `services`
 
-These containers are started with `containerd` and are expected to remain running. Startup order
-is not guaranteed, so containers should wait on any resources, such as networking, that they need.
-For details of the config for each container, see below.
+The `services` section is a list of images for long running services which are
+run with `containerd`.  Startup order is undefined, so containers should wait
+on any resources, such as networking, that they need.  See [Image
+specification](#image-specification) for a list of supported fields.
 
 ## `trust`
 
-This section specifies which build components are to be cryptographically verified with
+The `trust` section specifies which build components are to be cryptographically verified with
 [Docker Content Trust](https://docs.docker.com/engine/security/trust/content_trust/) prior to pulling.
 Trust is a central concern in any build system, and LinuxKit's is no exception: Docker Content Trust provides authenticity,
 integrity, and freshness guarantees for the components it verifies.  The LinuxKit maintainers are responsible for signing
@@ -49,8 +51,9 @@ The image name may include tag or digest, but the matching also succeeds if the 
 
 ## Image specification
 
-For each image in the `system` and `daemon` sections you can specify the OCI options that are passed to
-`runc`, so you can specify what capabilities are needed and so on. Most LinuxKit packages now define defaults in the `org.mobyproject.config` image label. For more details see the [OCI specification](https://github.com/opencontainers/runtime-spec/blob/master/spec.md).
+Entries in the `onboot` and `services` sections specify an OCI image and
+options. Default values may be specified using the `org.mobyproject.config` image label.
+For more details see the [OCI specification](https://github.com/opencontainers/runtime-spec/blob/master/spec.md).
 
 - `name` a unique name for the program being executed, used as the `containerd` id.
 - `image` the Docker image to use for the root filesystem. The default command, path and environment are
