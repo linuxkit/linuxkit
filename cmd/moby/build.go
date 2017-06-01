@@ -65,6 +65,13 @@ func build(args []string) {
 
 	log.Debugf("Outputs selected: %s", buildOut.String())
 
+	err := validateOutputs(buildOut)
+	if err != nil {
+		log.Errorf("Error parsing outputs: %v", err)
+		buildCmd.Usage()
+		os.Exit(1)
+	}
+
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify a configuration file")
 		buildCmd.Usage()

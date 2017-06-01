@@ -119,15 +119,29 @@ var outFuns = map[string]func(string, []byte) error{
 	},
 }
 
-func outputs(base string, image []byte, out outputList) error {
-	log.Debugf("output: %v %s", out, base)
+func validateOutputs(out outputList) error {
+	log.Debugf("validating output: %v", out)
 
 	for _, o := range out {
 		f := outFuns[o]
 		if f == nil {
 			return fmt.Errorf("Unknown output type %s", o)
 		}
-		err := f(base, image)
+	}
+
+	return nil
+}
+
+func outputs(base string, image []byte, out outputList) error {
+	log.Debugf("output: %v %s", out, base)
+
+	err := validateOutputs(out)
+	if err != nil {
+		return err
+	}
+	for _, o := range out {
+		f := outFuns[o]
+		err = f(base, image)
 		if err != nil {
 			return err
 		}
