@@ -19,7 +19,7 @@ trap clean_up EXIT
 # Test code goes here
 moby build -output kernel+initrd run.yml
 moby build -output kernel+initrd mkimage.yml
-linuxkit run qemu -disk-size 200 -disk-format qcow2 -disk disk.qcow2 -kernel mkimage
+linuxkit run qemu -disk disk.qcow2,size=200M,format=qcow2 -kernel mkimage
 linuxkit run qemu disk.qcow2
 
 exit 0

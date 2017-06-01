@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"strconv"
 	"strings"
@@ -117,4 +118,49 @@ func getDiskSizeMB(s string) (int, error) {
 		s = s[:sz-1]
 	}
 	return strconv.Atoi(s)
+}
+
+// DiskConfig is the config for a disk
+type DiskConfig struct {
+	Path   string
+	Size   int
+	Format string
+}
+
+// Disks is the type for a list of DiskConfig
+type Disks []DiskConfig
+
+func (l *Disks) String() string {
+	return fmt.Sprint(*l)
+}
+
+// Set is used by flag to configure value from CLI
+func (l *Disks) Set(value string) error {
+	d := DiskConfig{}
+	s := strings.Split(value, ",")
+	for _, p := range s {
+		c := strings.SplitN(p, "=", 2)
+		switch len(c) {
+		case 1:
+			// assume it is a filename even if no file=x
+			d.Path = c[0]
+		case 2:
+			switch c[0] {
+			case "file":
+				d.Path = c[1]
+			case "size":
+				size, err := getDiskSizeMB(c[1])
+				if err != nil {
+					return err
+				}
+				d.Size = size
+			case "format":
+				d.Format = c[1]
+			default:
+				return fmt.Errorf("Unknown disk config: %s", c[0])
+			}
+		}
+	}
+	*l = append(*l, d)
+	return nil
 }

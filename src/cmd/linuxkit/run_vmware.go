@@ -8,6 +8,7 @@ import (
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -76,8 +77,8 @@ func runVMware(args []string) {
 	}
 	cpus := flags.Int("cpus", 1, "Number of CPUs")
 	mem := flags.Int("mem", 1024, "Amount of memory in MB")
-	diskSzFlag := flags.String("disk-size", "", "Size of Disk in MB (or GB if 'G' is appended)")
-	disk := flags.String("disk", "", "Path to disk image to use")
+	var disks Disks
+	flags.Var(&disks, "disk", "Disk config. [file=]path[,size=1G]")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
 
 	if err := flags.Parse(args); err != nil {
@@ -99,27 +100,19 @@ func runVMware(args []string) {
 		log.Fatalf("Could not create state directory: %v", err)
 	}
 
-	diskSz, err := getDiskSizeMB(*diskSzFlag)
-	if err != nil {
-		log.Fatalf("Could parse disk-size %s: %v", *diskSzFlag, err)
-	}
-
 	var vmrunPath, vmDiskManagerPath string
 	var vmrunArgs []string
 
-	if runtime.GOOS == "windows" {
+	switch runtime.GOOS {
+	case "windows":
 		vmrunPath = "C:\\Program\\ files\\VMware Workstation\\vmrun.exe"
 		vmDiskManagerPath = "C:\\Program\\ files\\VMware Workstation\\vmware-vdiskmanager.exe"
 		vmrunArgs = []string{"-T", "ws", "start"}
-	}
-
-	if runtime.GOOS == "darwin" {
+	case "darwin":
 		vmrunPath = "/Applications/VMware Fusion.app/Contents/Library/vmrun"
 		vmDiskManagerPath = "/Applications/VMware Fusion.app/Contents/Library/vmware-vdiskmanager"
 		vmrunArgs = []string{"-T", "fusion", "start"}
-	}
-
-	if runtime.GOOS == "linux" {
+	default:
 		vmrunPath = "vmrun"
 		vmDiskManagerPath = "vmware-vdiskmanager"
 		fullVMrunPath, err := exec.LookPath(vmrunPath)
@@ -136,41 +129,65 @@ func runVMware(args []string) {
 		log.Fatalf("ERROR VMware executables can not be found, ensure software is installed")
 	}
 
-	if diskSz != 0 && *disk == "" {
-		*disk = filepath.Join(*state, "disk.vmdk")
+	for i, d := range disks {
+		id := ""
+		if i != 0 {
+			id = strconv.Itoa(i)
+		}
+		if d.Size != 0 && d.Path == "" {
+			d.Path = filepath.Join(*state, "disk"+id+".vmdk")
+		}
+		if d.Format != "" && d.Format != "vmdk" {
+			log.Fatalf("only vmdk supported for VMware driver")
+		}
+		if d.Path == "" {
+			log.Fatalf("disk specified with no size or name")
+		}
+		disks[i] = d
 	}
-	if *disk != "" {
+
+	for _, d := range disks {
 		// Check vmDiskManagerPath exist before attempting to execute
 		if _, err := os.Stat(vmDiskManagerPath); os.IsNotExist(err) {
 			log.Fatalf("ERROR VMware Disk Manager executables can not be found, ensure software is installed")
 		}
 
 		// If disk doesn't exist then create one, error if disk is unreadable
-		if _, err := os.Stat(*disk); err != nil {
+		if _, err := os.Stat(d.Path); err != nil {
 			if os.IsPermission(err) {
-				log.Fatalf("Unable to read file [%s], please check permissions", *disk)
-			}
-			if os.IsNotExist(err) {
-				log.Infof("Creating new VMware disk [%s]", *disk)
-				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", fmt.Sprintf("%dMB", diskSz), "-a", "lsilogic", "-t", "0", *disk)
+				log.Fatalf("Unable to read file [%s], please check permissions", d.Path)
+			} else if os.IsNotExist(err) {
+				log.Infof("Creating new VMware disk [%s]", d.Path)
+				vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", fmt.Sprintf("%dMB", d.Size), "-a", "lsilogic", "-t", "0", d.Path)
 				if err = vmDiskCmd.Run(); err != nil {
-					log.Fatalf("Error creating disk [%s]:  %v", *disk, err)
+					log.Fatalf("Error creating disk [%s]:  %v", d.Path, err)
 				}
+			} else {
+				log.Fatalf("Unable to read file [%s]: %v", d.Path, err)
 			}
 		} else {
-			log.Infof("Using existing disk [%s]", *disk)
+			log.Infof("Using existing disk [%s]", d.Path)
 		}
 	}
 
+	if len(disks) > 1 {
+		log.Fatalf("VMware driver currently only supports a single disk")
+	}
+
+	disk := ""
+	if len(disks) == 1 {
+		disk = disks[0].Path
+	}
+
 	// Build the contents of the VMWare .vmx file
-	vmx := buildVMX(*cpus, *mem, *disk, prefix)
+	vmx := buildVMX(*cpus, *mem, disk, prefix)
 	if vmx == "" {
 		log.Fatalf("VMware .vmx file could not be generated, please confirm inputs")
 	}
 
 	// Create the .vmx file
 	vmxPath := filepath.Join(*state, "linuxkit.vmx")
-	err = ioutil.WriteFile(vmxPath, []byte(vmx), 0644)
+	err := ioutil.WriteFile(vmxPath, []byte(vmx), 0644)
 	if err != nil {
 		log.Fatalf("Error writing .vmx file: %v", err)
 	}
