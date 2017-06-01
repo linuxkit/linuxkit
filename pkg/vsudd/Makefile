@@ -1,14 +1,15 @@
-GO_COMPILE=mobylinux/go-compile:d2d25ac665b5148ad356d0eab3ff3762a68c633d@sha256:aab55d0c317460850e66a07dd94139cc11ea9e1c0bee88716a6a8c768740885f
+default: tag
 
-default: sbin/vsudd
+ORG?=linuxkit
+IMAGE=vsudd
+DEPS=$(wildcard *.go) Makefile Dockerfile
 
-DEPS=$(wildcard *.go)
+HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
-sbin/vsudd: $(DEPS) ../vendor/manifest
-	mkdir -p $(dir $@)
-	tar cf - $(DEPS) -C .. vendor | docker run --rm --net=none --log-driver=none -i $(GO_COMPILE) -o $@ | tar xf -
+tag: $(DEPS)
+	docker build --squash --no-cache -t $(ORG)/$(IMAGE):$(HASH) .
 
-clean:
-	rm -rf sbin
+push: tag
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(HASH)
 
-.DELETE_ON_ERROR:
