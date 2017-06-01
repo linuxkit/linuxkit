@@ -9,6 +9,8 @@ init:
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
+    binds:
+     - /etc/sysctl.d/01-swarmd.conf:/etc/sysctl.d/01-swarmd.conf
   - name: dhcpcd
     image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
@@ -29,27 +31,16 @@ services:
   - name: ntpd
     image: "linuxkit/openntpd:45deeb05f736162d941c9bf494983f655ab80aa5"
   - name: swarmd
-    image: "linuxkit/swarmd:a2f57f14f07fb6d7cded7832b2dabe878b28554e"
+    image: "linuxkit/swarmd:1002422b78339a767559058d704b086889e90447"
     command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
     capabilities:
-     - CAP_CHOWN
-     - CAP_DAC_OVERRIDE
-     - CAP_FSETID
-     - CAP_FOWNER
-     - CAP_MKNOD
-     - CAP_NET_RAW
-     - CAP_SETGID
-     - CAP_SETUID
-     - CAP_SETFCAP
-     - CAP_SETPCAP
-     - CAP_NET_BIND_SERVICE
-     - CAP_SYS_CHROOT
-     - CAP_KILL
-     - CAP_AUDIT_WRITE
+     - all
     pid: host
-    net: host
     binds:
       - /run/containerd/containerd.sock:/run/containerd/containerd.sock
       - /var/lib/containerd:/var/lib/containerd
       - /var/lib/swarmd:/var/lib/swarmd
       - /etc/resolv.conf:/etc/resolv.conf
+files:
+  - path: /etc/sysctl.d/01-swarmd.conf
+    contents: 'net.ipv4.ip_forward = 1'

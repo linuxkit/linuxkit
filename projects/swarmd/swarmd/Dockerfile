@@ -1,4 +1,4 @@
-FROM golang:1.7-alpine3.5 AS build
+FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 AS build
 
 RUN \
   apk update && apk upgrade && \
@@ -6,31 +6,42 @@ RUN \
   ca-certificates \
   gcc \
   git \
+  go \
   libc-dev \
   make \
   && true
 
-# PR https://github.com/docker/swarmkit/pull/1965 from ijc25/containerd
-ENV SWARMKIT_PR=1965
-ENV SWARMKIT_COMMIT=321b9c6600a9422c3245b277a1b3ae599244d4b7
+ENV GOPATH=/root/go
+
+# https://github.com/ijc25/swarmkit/tree/containerd-wip
+ENV SWARMKIT_REPO=https://github.com/ijc25/swarmkit
+ENV SWARMKIT_BRANCH=containerd-wip
+ENV SWARMKIT_COMMIT=cb429323fa86df0c279a8d629e674f79a20e01e3
 
 RUN mkdir -p $GOPATH/src/github.com/docker && \
   cd $GOPATH/src/github.com/docker && \
-  git clone https://github.com/docker/swarmkit.git
+  git clone $SWARMKIT_REPO
 WORKDIR $GOPATH/src/github.com/docker/swarmkit
-RUN [ -z "$SWARMKIT_PR" ] || git fetch origin pull/$SWARMKIT_PR/head
+RUN [ -z "$SWARMKIT_BRANCH" ] || git fetch origin $SWARMKIT_BRANCH
 RUN git checkout $SWARMKIT_COMMIT
 
 RUN make binaries GO_GCFLAGS="-buildmode pie --ldflags '-extldflags \"-fno-PIC -static\"'"
 
-RUN mkdir -p /build/dist/usr/bin/ /build/dist/etc
-RUN cp bin/swarmd bin/swarmctl /build/dist/usr/bin/
-RUN strip /build/dist/usr/bin/swarmd /build/dist/usr/bin/swarmctl
+RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
+RUN apk add --no-cache --initdb -p /out \
+    alpine-baselayout \
+    busybox \
+    ca-certificates \
+    iptables \
+    musl \
+    util-linux
 
-RUN cp -r /etc/ssl /build/dist/etc/ssl
+RUN mkdir -p /out/usr/bin/ /out/etc
+RUN cp bin/swarmd bin/swarmctl /out/usr/bin/
+RUN strip /out/usr/bin/swarmd /out/usr/bin/swarmctl
 
 FROM scratch
 WORKDIR /
 ENTRYPOINT []
-COPY --from=build /build/dist /
+COPY --from=build /out /
 CMD ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
