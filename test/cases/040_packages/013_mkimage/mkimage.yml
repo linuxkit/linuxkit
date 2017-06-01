@@ -7,16 +7,9 @@ init:
   - linuxkit/containerd:deaf5bf838bf7f131c2287ecff3ed9835b0497e2
 onboot:
   - name: mkimage
-    image: "linuxkit/mkimage:a3fd615543b84733ac8ba6f7e1927727665ef404"
+    image: "linuxkit/mkimage:f4bf0c24261f7d120c8674892805ab3054eb8ac3"
   - name: poweroff
     image: "linuxkit/poweroff:7404cf2295df89ccfa2dda41997a28307a90cf28"
-files:
-  - path: data/kernel
-    source: run-kernel
-  - path: data/initrd.img
-    source: run-initrd.img
-  - path: data/cmdline
-    source: run-cmdline
 trust:
   org:
     - linuxkit

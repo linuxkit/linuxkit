@@ -27,10 +27,13 @@ do_mkfs()
 }
 
 DEV="$(find /dev -maxdepth 1 -type b ! -name 'loop*' | grep -v '[0-9]$' | sed 's@.*/dev/@@' | sort | head -1 )"
+DEV2="$(find /dev -maxdepth 1 -type b ! -name 'loop*' | grep -v '[0-9]$' | sed 's@.*/dev/@@' | sort | head -2 | tail -1)"
 
 [ -z "${DEV}" ] && exit 1
+[ -z "${DEV2}" ] && exit 1
 
 DRIVE="/dev/${DEV}"
+DRIVE2="/dev/${DEV2}"
 
 # format
 do_mkfs "$DRIVE"
@@ -40,11 +43,20 @@ PARTITION="${DRIVE}1"
 # mount
 mount "$PARTITION" /mnt
 
-# copy kernel, initrd
-cp -a /data/kernel /data/initrd.img /mnt/
+# copy kernel, initrd from tarball on second disk
+tar xf "${DRIVE2}" -C /mnt
+
+# rename if they do not have canonical names
+(
+	cd /mnt
+	[ -f kernel ] || mv *-kernel kernel
+	[ -f initrd.img ] || mv *-initrd.img initrd.img
+	[ -f cmdline ] || mv *-cmdline cmdline
+)
 
 # create syslinux.cfg
-CMDLINE="$(cat /data/cmdline)"
+CMDLINE="$(cat /mnt/cmdline)"
+rm -f /mnt/cmdline
 
 CFG="DEFAULT linux
 LABEL linux

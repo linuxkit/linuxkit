@@ -20,4 +20,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY mkimage.sh /usr/bin/
 CMD ["mkimage.sh"]
-LABEL org.mobyproject.config='{"readonly": true, "capabilities": ["CAP_SYS_ADMIN", "CAP_MKNOD"], "binds": ["/dev:/dev", "/data:/data"]}'
+LABEL org.mobyproject.config='{"readonly": true, "capabilities": ["CAP_SYS_ADMIN", "CAP_MKNOD"], "binds": ["/dev:/dev"]}'
