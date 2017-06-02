@@ -22,7 +22,7 @@ init:
   - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
 onboot:
   - name: mkimage
-    image: "linuxkit/mkimage:f4bf0c24261f7d120c8674892805ab3054eb8ac3"
+    image: "linuxkit/mkimage:5ad60299be03008f29c5caec3c5ea4ac0387aae6"
   - name: poweroff
     image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
 trust:
