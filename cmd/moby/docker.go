@@ -175,13 +175,13 @@ func dockerClient() (*client.Client, error) {
 	return client.NewEnvClient()
 }
 
-func dockerInspectImage(cli *client.Client, image string) (types.ImageInspect, error) {
+func dockerInspectImage(cli *client.Client, image string, trustedPull bool) (types.ImageInspect, error) {
 	log.Debugf("docker inspect image: %s", image)
 
 	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), image)
 	if err != nil {
 		if client.IsErrImageNotFound(err) {
-			pullErr := dockerPull(image, true, false)
+			pullErr := dockerPull(image, true, trustedPull)
 			if pullErr != nil {
 				return types.ImageInspect{}, pullErr
 			}

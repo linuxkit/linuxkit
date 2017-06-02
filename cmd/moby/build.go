@@ -262,13 +262,14 @@ func buildInternal(m Moby, pull bool) []byte {
 	}
 	for i, image := range m.Onboot {
 		log.Infof("  Create OCI config for %s", image.Image)
-		config, err := ConfigToOCI(image)
+		useTrust := enforceContentTrust(image.Image, &m.Trust)
+		config, err := ConfigToOCI(image, useTrust)
 		if err != nil {
 			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
 		}
 		so := fmt.Sprintf("%03d", i)
 		path := "containers/onboot/" + so + "-" + image.Name
-		out, err := ImageBundle(path, image.Image, config, enforceContentTrust(image.Image, &m.Trust), pull)
+		out, err := ImageBundle(path, image.Image, config, useTrust, pull)
 		if err != nil {
 			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
@@ -281,12 +282,13 @@ func buildInternal(m Moby, pull bool) []byte {
 	}
 	for _, image := range m.Services {
 		log.Infof("  Create OCI config for %s", image.Image)
-		config, err := ConfigToOCI(image)
+		useTrust := enforceContentTrust(image.Image, &m.Trust)
+		config, err := ConfigToOCI(image, useTrust)
 		if err != nil {
 			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
 		}
 		path := "containers/services/" + image.Name
-		out, err := ImageBundle(path, image.Image, config, enforceContentTrust(image.Image, &m.Trust), pull)
+		out, err := ImageBundle(path, image.Image, config, useTrust, pull)
 		if err != nil {
 			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
