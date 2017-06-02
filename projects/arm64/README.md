@@ -44,6 +44,8 @@ Configuration is constructed from `configs/`:
     ```
 
     ...boots but panics because no root device
+  * Same needed to be done with `initrd.img` as well as specifying
+    `initrd=initrd.img` on kernel boot command line
 
 # Notes
 
