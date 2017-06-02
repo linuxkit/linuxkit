@@ -10,7 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
-	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -62,14 +62,8 @@ func TrustedReference(image string) (reference.Reference, error) {
 		return nil, err
 	}
 
-	tmpTrustDir, err := ioutil.TempDir("", "notary")
-	if err != nil {
-		return nil, err
-	}
-	defer os.Remove(tmpTrustDir)
-
 	nRepo, err := notaryClient.NewNotaryRepository(
-		tmpTrustDir,
+		trustDirectory(),
 		gun,
 		server,
 		rt,
@@ -105,6 +99,10 @@ func getTrustServer(gun string) (string, error) {
 		return "https://notary.docker.io", nil
 	}
 	return "", errors.New("non-hub images not yet supported")
+}
+
+func trustDirectory() string {
+	return filepath.Join(MobyDir, "trust")
 }
 
 type credentialStore struct {
