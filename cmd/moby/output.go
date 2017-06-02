@@ -82,10 +82,11 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
 		}
-		tmp, err := ioutil.TempDir("", "img-gz")
+		tmp, err := ioutil.TempDir(filepath.Join(MobyDir, "tmp"), "img-gz")
 		if err != nil {
 			return err
 		}
+		defer os.RemoveAll(tmp)
 		err = outputLinuxKit("raw", filepath.Join(tmp, "uncompressed.img"), kernel, initrd, cmdline, size, hyperkit)
 		if err != nil {
 			return fmt.Errorf("Error writing img-gz output: %v", err)
@@ -112,10 +113,6 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		if err != nil {
 			return err
 		}
-		err = os.RemoveAll(tmp)
-		if err != nil {
-			return err
-		}
 		return nil
 	},
 	"gcp-img": func(base string, image []byte, size int, hyperkit bool) error {
@@ -125,10 +122,11 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
 		}
-		tmp, err := ioutil.TempDir("", "gcp-img")
+		tmp, err := ioutil.TempDir(filepath.Join(MobyDir, "tmp"), "gcp-img")
 		if err != nil {
 			return err
 		}
+		defer os.RemoveAll(tmp)
 		err = outputLinuxKit("raw", filepath.Join(tmp, "disk.raw"), kernel, initrd, cmdline, size, hyperkit)
 		if err != nil {
 			return fmt.Errorf("Error writing gcp-img output: %v", err)
@@ -170,10 +168,6 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 			return err
 		}
 		err = out.Close()
-		if err != nil {
-			return err
-		}
-		err = os.RemoveAll(tmp)
 		if err != nil {
 			return err
 		}
