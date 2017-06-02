@@ -14,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/client/auth"
 	"github.com/docker/distribution/registry/client/auth/challenge"
@@ -59,7 +60,8 @@ func TrustedReference(image string) (reference.Reference, error) {
 
 	rt, err := GetReadOnlyAuthTransport(server, []string{gun}, "", "", "")
 	if err != nil {
-		return nil, err
+		log.Debugf("failed to reach %s notary server for repo: %s, falling back to cache: %v", server, gun, err)
+		rt = nil
 	}
 
 	nRepo, err := notaryClient.NewNotaryRepository(

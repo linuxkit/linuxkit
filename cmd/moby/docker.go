@@ -16,6 +16,7 @@ import (
 	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	"golang.org/x/net/context"
 )
@@ -118,7 +119,7 @@ func dockerRm(container string) error {
 	return nil
 }
 
-func dockerPull(image string, trustedPull bool) error {
+func dockerPull(image string, forcePull, trustedPull bool) error {
 	log.Debugf("docker pull: %s", image)
 	cli, err := dockerClient()
 	if err != nil {
@@ -140,9 +141,18 @@ func dockerPull(image string, trustedPull bool) error {
 			}
 		}(trustedImg.String(), image)
 
+		log.Debugf("successfully verified trusted reference %s from notary", trustedImg.String())
 		image = trustedImg.String()
+
+		imageSearchArg := filters.NewArgs()
+		imageSearchArg.Add("reference", trustedImg.String())
+		if _, err := cli.ImageList(context.Background(), types.ImageListOptions{Filters: imageSearchArg}); err == nil && !forcePull {
+			log.Debugf("docker pull: trusted image %s already cached...Done", trustedImg.String())
+			return nil
+		}
 	}
 
+	log.Infof("Pull image: %s", image)
 	r, err := cli.ImagePull(context.Background(), image, types.ImagePullOptions{})
 	if err != nil {
 		return err
@@ -171,7 +181,7 @@ func dockerInspectImage(cli *client.Client, image string) (types.ImageInspect, e
 	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), image)
 	if err != nil {
 		if client.IsErrImageNotFound(err) {
-			pullErr := dockerPull(image, false)
+			pullErr := dockerPull(image, true, false)
 			if pullErr != nil {
 				return types.ImageInspect{}, pullErr
 			}

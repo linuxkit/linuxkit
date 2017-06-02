@@ -221,13 +221,6 @@ func buildInternal(m Moby, pull bool) []byte {
 	w := new(bytes.Buffer)
 	iw := tar.NewWriter(w)
 
-	if pull || enforceContentTrust(m.Kernel.Image, &m.Trust) {
-		log.Infof("Pull kernel image: %s", m.Kernel.Image)
-		err := dockerPull(m.Kernel.Image, enforceContentTrust(m.Kernel.Image, &m.Trust))
-		if err != nil {
-			log.Fatalf("Could not pull image %s: %v", m.Kernel.Image, err)
-		}
-	}
 	if m.Kernel.Image != "" {
 		// get kernel and initrd tarball from container
 		log.Infof("Extract kernel image: %s", m.Kernel.Image)
