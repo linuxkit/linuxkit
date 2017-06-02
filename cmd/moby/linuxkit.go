@@ -90,7 +90,7 @@ func writeKernelInitrd(filename string, kernel []byte, initrd []byte, cmdline st
 func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte, cmdline string, size int, hyperkit bool) error {
 	log.Debugf("output linuxkit generated img: %s %s size %d", format, filename, size)
 
-	tmp, err := ioutil.TempDir("", "moby")
+	tmp, err := ioutil.TempDir(filepath.Join(MobyDir, "tmp"), "moby")
 	if err != nil {
 		return err
 	}

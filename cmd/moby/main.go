@@ -97,6 +97,11 @@ func main() {
 		log.Fatalf("Could not create config directory [%s]: %v", MobyDir, err)
 	}
 
+	err = os.MkdirAll(filepath.Join(MobyDir, "tmp"), 0755)
+	if err != nil {
+		log.Fatalf("Could not create config tmp directory [%s]: %v", filepath.Join(MobyDir, "tmp"), err)
+	}
+
 	switch args[0] {
 	case "build":
 		build(args[1:])
