@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -50,14 +51,22 @@ func build(args []string) {
 	}
 	buildName := buildCmd.String("name", "", "Name to use for output files")
 	buildDir := buildCmd.String("dir", "", "Directory for output files, default current directory")
+	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
+	buildHyperkit := buildCmd.Bool("hyperkit", false, "Use hyperkit for LinuxKit based builds where possible")
 	buildCmd.Var(&buildOut, "output", "Output types to create [ "+strings.Join(outputTypes, " ")+" ]")
 
 	if err := buildCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
 	remArgs := buildCmd.Args()
+
+	if len(remArgs) == 0 {
+		fmt.Println("Please specify a configuration file")
+		buildCmd.Usage()
+		os.Exit(1)
+	}
 
 	if len(buildOut) == 0 {
 		buildOut = outputList{"kernel+initrd"}
@@ -72,11 +81,11 @@ func build(args []string) {
 		os.Exit(1)
 	}
 
-	if len(remArgs) == 0 {
-		fmt.Println("Please specify a configuration file")
-		buildCmd.Usage()
-		os.Exit(1)
+	size, err := getDiskSizeMB(*buildSize)
+	if err != nil {
+		log.Fatalf("Unable to parse disk size: %v", err)
 	}
+
 	name := *buildName
 	var config []byte
 	if conf := remArgs[0]; conf == "-" {
@@ -115,10 +124,31 @@ func build(args []string) {
 	image := buildInternal(m, *buildPull)
 
 	log.Infof("Create outputs:")
-	err = outputs(filepath.Join(*buildDir, name), image, buildOut)
+	err = outputs(filepath.Join(*buildDir, name), image, buildOut, size, *buildHyperkit)
 	if err != nil {
 		log.Fatalf("Error writing outputs: %v", err)
 	}
+}
+
+// Parse a string which is either a number in MB, or a number with
+// either M (for Megabytes) or G (for GigaBytes) as a suffix and
+// returns the number in MB. Return 0 if string is empty.
+func getDiskSizeMB(s string) (int, error) {
+	if s == "" {
+		return 0, nil
+	}
+	sz := len(s)
+	if strings.HasSuffix(s, "G") {
+		i, err := strconv.Atoi(s[:sz-1])
+		if err != nil {
+			return 0, err
+		}
+		return i * 1024, nil
+	}
+	if strings.HasSuffix(s, "M") {
+		s = s[:sz-1]
+	}
+	return strconv.Atoi(s)
 }
 
 func initrdAppend(iw *tar.Writer, r io.Reader) {
