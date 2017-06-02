@@ -17,6 +17,9 @@ var (
 
 	// GitCommit hash, set at compile time
 	GitCommit = "unknown"
+
+	// MobyDir is the location of the cache directory ~/.moby by default
+	MobyDir string
 )
 
 // infoFormatter overrides the default format for Info() log events to
@@ -37,6 +40,13 @@ func version() {
 	os.Exit(0)
 }
 
+const mobyDefaultDir string = ".moby"
+
+func defaultMobyConfigDir() string {
+	home := homeDir()
+	return filepath.Join(home, mobyDefaultDir)
+}
+
 func main() {
 	flag.Usage = func() {
 		fmt.Printf("USAGE: %s [options] COMMAND\n\n", filepath.Base(os.Args[0]))
@@ -53,9 +63,13 @@ func main() {
 	flagQuiet := flag.Bool("q", false, "Quiet execution")
 	flagVerbose := flag.Bool("v", false, "Verbose execution")
 
+	// config and cache directory
+	flagConfigDir := flag.String("config", defaultMobyConfigDir(), "Configuration directory")
+
 	// Set up logging
 	log.SetFormatter(new(infoFormatter))
 	log.SetLevel(log.InfoLevel)
+
 	flag.Parse()
 	if *flagQuiet && *flagVerbose {
 		fmt.Printf("Can't set quiet and verbose flag at the same time\n")
@@ -75,6 +89,12 @@ func main() {
 		fmt.Printf("Please specify a command.\n\n")
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	MobyDir = *flagConfigDir
+	err := os.MkdirAll(MobyDir, 0755)
+	if err != nil {
+		log.Fatalf("Could not create config directory [%s]: %v", MobyDir, err)
 	}
 
 	switch args[0] {
