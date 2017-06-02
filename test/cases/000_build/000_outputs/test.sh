@@ -17,13 +17,14 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -output tar,kernel+initrd,iso-bios,iso-efi,img-gz,qcow2,vmdk -name "${NAME}" test.yml
+moby build -disable-content-trust -output tar,kernel+initrd,iso-bios,iso-efi,img,img-gz,qcow2,vmdk -name "${NAME}" test.yml
 [ -f "${NAME}.tar" ] || exit 1
 [ -f "${NAME}-kernel" ] || exit 1
 [ -f "${NAME}-initrd.img" ] || exit 1
 [ -f "${NAME}-cmdline" ] || exit 1
 [ -f "${NAME}.iso" ] || exit 1
 [ -f "${NAME}-efi.iso" ] || exit 1
+[ -f "${NAME}.img" ] || exit 1
 [ -f "${NAME}.img.gz" ] || exit 1
 [ -f "${NAME}.qcow2" ] || exit 1
 # VHD currently requires a lot of memory, disable for now
