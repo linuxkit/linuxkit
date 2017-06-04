@@ -202,7 +202,7 @@ func NewImage(config []byte) (MobyImage, error) {
 }
 
 // ConfigToOCI converts a config specification to an OCI config file
-func ConfigToOCI(image MobyImage) ([]byte, error) {
+func ConfigToOCI(image MobyImage, trust bool) ([]byte, error) {
 
 	// TODO pass through same docker client to all functions
 	cli, err := dockerClient()
@@ -210,7 +210,7 @@ func ConfigToOCI(image MobyImage) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	inspect, err := dockerInspectImage(cli, image.Image)
+	inspect, err := dockerInspectImage(cli, image.Image, trust)
 	if err != nil {
 		return []byte{}, err
 	}

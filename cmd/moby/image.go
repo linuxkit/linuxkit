@@ -94,8 +94,7 @@ func imageTar(image, prefix string, tw *tar.Writer, trust bool, pull bool) error
 	}
 
 	if pull || trust {
-		log.Infof("Pull image: %s", image)
-		err := dockerPull(image, trust)
+		err := dockerPull(image, pull, trust)
 		if err != nil {
 			return fmt.Errorf("Could not pull image %s: %v", image, err)
 		}
@@ -104,8 +103,7 @@ func imageTar(image, prefix string, tw *tar.Writer, trust bool, pull bool) error
 	if err != nil {
 		// if the image wasn't found, pull it down.  Bail on other errors.
 		if strings.Contains(err.Error(), "No such image") {
-			log.Infof("Pull image: %s", image)
-			err := dockerPull(image, trust)
+			err := dockerPull(image, true, trust)
 			if err != nil {
 				return fmt.Errorf("Could not pull image %s: %v", image, err)
 			}
