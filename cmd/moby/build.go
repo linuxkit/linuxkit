@@ -87,41 +87,46 @@ func build(args []string) {
 	}
 
 	name := *buildName
-	var config []byte
-	if conf := remArgs[0]; conf == "-" {
-		var err error
-		config, err = ioutil.ReadAll(os.Stdin)
-		if err != nil {
-			log.Fatalf("Cannot read stdin: %v", err)
-		}
-		if name == "" {
-			name = defaultNameForStdin
-		}
-	} else {
-		if !(filepath.Ext(conf) == ".yml" || filepath.Ext(conf) == ".yaml") {
-			conf = conf + ".yml"
-		}
-		var err error
-		config, err = ioutil.ReadFile(conf)
-		if err != nil {
-			log.Fatalf("Cannot open config file: %v", err)
-		}
-		if name == "" {
-			name = strings.TrimSuffix(filepath.Base(conf), filepath.Ext(conf))
-		}
-	}
 
-	m, err := NewConfig(config)
-	if err != nil {
-		log.Fatalf("Invalid config: %v", err)
+	var moby Moby
+	for _, arg := range remArgs {
+		var config []byte
+		if conf := arg; conf == "-" {
+			var err error
+			config, err = ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				log.Fatalf("Cannot read stdin: %v", err)
+			}
+			if name == "" {
+				name = defaultNameForStdin
+			}
+		} else {
+			if !(filepath.Ext(conf) == ".yml" || filepath.Ext(conf) == ".yaml") {
+				conf = conf + ".yml"
+			}
+			var err error
+			config, err = ioutil.ReadFile(conf)
+			if err != nil {
+				log.Fatalf("Cannot open config file: %v", err)
+			}
+			if name == "" {
+				name = strings.TrimSuffix(filepath.Base(conf), filepath.Ext(conf))
+			}
+		}
+
+		m, err := NewConfig(config)
+		if err != nil {
+			log.Fatalf("Invalid config: %v", err)
+		}
+		moby = AppendConfig(moby, m)
 	}
 
 	if *buildDisableTrust {
 		log.Debugf("Disabling content trust checks for this build")
-		m.Trust = TrustConfig{}
+		moby.Trust = TrustConfig{}
 	}
 
-	image := buildInternal(m, *buildPull)
+	image := buildInternal(moby, *buildPull)
 
 	log.Infof("Create outputs:")
 	err = outputs(filepath.Join(*buildDir, name), image, buildOut, size, *buildHyperkit)
