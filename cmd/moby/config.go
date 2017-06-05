@@ -135,6 +135,25 @@ func NewConfig(config []byte) (Moby, error) {
 	return m, nil
 }
 
+// AppendConfig appends two configs.
+func AppendConfig(m0, m1 Moby) Moby {
+	moby := m0
+	if m1.Kernel.Image != "" {
+		moby.Kernel.Image = m1.Kernel.Image
+	}
+	if m1.Kernel.Cmdline != "" {
+		moby.Kernel.Cmdline = m1.Kernel.Cmdline
+	}
+	moby.Init = append(moby.Init, m1.Init...)
+	moby.Onboot = append(moby.Onboot, m1.Onboot...)
+	moby.Services = append(moby.Services, m1.Services...)
+	moby.Files = append(moby.Files, m1.Files...)
+	moby.Trust.Image = append(moby.Trust.Image, m1.Trust.Image...)
+	moby.Trust.Org = append(moby.Trust.Org, m1.Trust.Org...)
+
+	return moby
+}
+
 // NewImage validates an parses yaml or json for a MobyImage
 func NewImage(config []byte) (MobyImage, error) {
 	log.Debugf("Reading label config: %s", string(config))
