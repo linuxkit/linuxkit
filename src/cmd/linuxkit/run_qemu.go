@@ -208,24 +208,32 @@ func runQemuLocal(config QemuConfig) error {
 }
 
 func runQemuContainer(config QemuConfig) error {
-	var wd string
+	cwd, err := os.Getwd()
+	if err != nil {
+		return err
+	}
+
+	var binds []string
 	if filepath.IsAbs(config.Path) {
-		// Split the path
-		wd, config.Path = filepath.Split(config.Path)
-		log.Debugf("Path: %s", config.Path)
+		binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", filepath.Dir(config.Path)))
 	} else {
-		var err error
-		wd, err = os.Getwd()
-		if err != nil {
-			return err
+		binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", cwd))
+	}
+
+	// also try to bind mount disk paths so the command works
+	for _, d := range config.Disks {
+		if filepath.IsAbs(d.Path) {
+			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", filepath.Dir(d.Path)))
+		} else {
+			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", cwd))
 		}
 	}
 
 	var args []string
 	config, args = buildQemuCmdline(config)
 
-	dockerArgs := []string{"run", "--interactive", "--rm", "-v", fmt.Sprintf("%s:%s", wd, "/tmp"), "-w", "/tmp"}
-	dockerArgsImg := []string{"run", "--rm", "-v", fmt.Sprintf("%s:%s", wd, "/tmp"), "-w", "/tmp"}
+	dockerArgs := append([]string{"run", "--interactive", "--rm", "-w", cwd}, binds...)
+	dockerArgsImg := append([]string{"run", "--rm", "-w", cwd}, binds...)
 
 	if terminal.IsTerminal(int(os.Stdin.Fd())) {
 		dockerArgs = append(dockerArgs, "--tty")
@@ -327,8 +335,8 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 
 	// build kernel boot config from kernel/initrd/cmdline
 	if config.Kernel {
-		qemuKernelPath := buildPath(config.Path, "-kernel")
-		qemuInitrdPath := buildPath(config.Path, "-initrd.img")
+		qemuKernelPath := config.Path + "-kernel"
+		qemuInitrdPath := config.Path + "-initrd.img"
 		qemuArgs = append(qemuArgs, "-kernel", qemuKernelPath)
 		qemuArgs = append(qemuArgs, "-initrd", qemuInitrdPath)
 		cmdlineString, err := ioutil.ReadFile(config.Path + "-cmdline")
@@ -375,16 +383,6 @@ func discoverBackend(config QemuConfig) QemuConfig {
 		}
 	}
 	return config
-}
-
-func buildPath(prefix string, postfix string) string {
-	path := prefix + postfix
-	if filepath.IsAbs(path) {
-		if _, err := os.Stat(path); os.IsNotExist(err) {
-			log.Fatalf("File [%s] does not exist in current directory", path)
-		}
-	}
-	return path
 }
 
 type multipleFlag []string
