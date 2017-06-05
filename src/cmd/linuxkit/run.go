@@ -16,6 +16,7 @@ func runUsage() {
 	fmt.Printf("'backend' specifies the run backend.\n")
 	fmt.Printf("If not specified the platform specific default will be used\n")
 	fmt.Printf("Supported backends are (default platform in brackets):\n")
+	fmt.Printf("  aws\n")
 	fmt.Printf("  azure\n")
 	fmt.Printf("  gcp\n")
 	fmt.Printf("  hyperkit [macOS]\n")
@@ -40,6 +41,8 @@ func run(args []string) {
 	case "help", "-h", "-help", "--help":
 		runUsage()
 		os.Exit(0)
+	case "aws":
+		runAWS(args[1:])
 	case "hyperkit":
 		runHyperKit(args[1:])
 	case "azure":
