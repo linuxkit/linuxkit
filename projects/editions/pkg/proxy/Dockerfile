@@ -1,0 +1,5 @@
+FROM scratch
+CMD []
+ENTRYPOINT []
+WORKDIR /
+COPY . /
