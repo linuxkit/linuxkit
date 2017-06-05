@@ -17,6 +17,8 @@ func pushUsage() {
 	fmt.Printf("  gcp\n")
 	fmt.Printf("  vcenter\n")
 	fmt.Printf("  azure\n")
+	fmt.Printf("  aws\n")
+	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
 	fmt.Printf("See '%s push [backend] --help' for details.\n\n", invoked)
 	fmt.Printf("'prefix' specifies the path to the VM image.\n")
@@ -38,6 +40,8 @@ func push(args []string) {
 		pushVCenter(args[1:])
 	case "azure":
 		pushAzure(args[1:])
+	case "aws":
+		pushAWS(args[1:])
 	default:
 		log.Errorf("No 'push' backend specified.")
 	}
