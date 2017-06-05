@@ -1,0 +1,47 @@
+# There are three processes running in the DHCP daemon:
+# - dhcp-network: handles L2 network traffic
+# - dhcp-engine: protocol state machine
+# - dhcp-actuator: sets interface state
+# And a dhcp-client which starts the three above and exits.
+#
+# dhcp-actuator: can be written in Rust and only contain
+#   minimal support for setting syscalls.
+# dhcp-engine: requires no system access beyond the input
+#   from `dhcp-network` and output to `dhcp-actuator`.
+# dhcp-network: requires L2 network access and then only
+#   outputs to dhcp-engine.  It may transmit via responses
+#   from dhcp-engine.
+- name: dhcp-client
+  image: <image>
+  net: host
+  capabilities:
+   - CAP_SYS_ADMIN # for runc (unshare)
+   - CAP_SETGID    # for runc (setns)
+  mounts: # for runc
+   - type: cgroup
+     options: ["rw","nosuid","noexec","nodev","relatime"]
+  binds:
+    - /var/run/dhcp-client:/data
+    - /usr/bin/runc:/usr/bin/runc # for runc
+    - /run/runc:/run/runc         # for runc
+- name: dhcp-network
+  capabilities:
+   - CAP_NET_ADMIN # to bring eth0 up
+   - CAP_NET_RAW   # to read /dev/eth0
+- name: dhcp-engine
+  image: <image>
+  rpc:
+   - dhcp-network
+   - dhcp-actuator
+- name: dhcp-actuator
+  image: <image>
+  capabilities:
+    - CAP_NET_ADMIN # for syscall, needs to be ebpf
+  binds:
+    - /state # needs to write resolv.conf file
+    - /sbin:/sbin   # for ifconfig
+    - /bin:/bin     # for ifconfig
+    - /lib:/lib     # for ifconfig
+files:
+  - path: /var/run/dhcp-client/README
+    contents: 'data for dhcp-client'
