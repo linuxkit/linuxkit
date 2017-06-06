@@ -10,7 +10,7 @@ RUN \
   make \
   && true
 ENV GOPATH=/root/go
-ENV CONTAINERD_COMMIT=7fc91b05917e93d474fab9465547d44eacd10ce3
+ENV CONTAINERD_COMMIT=25cc7614ae1cc2c192f6c9ceca0c1c6fd6b091aa
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git
