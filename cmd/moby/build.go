@@ -33,11 +33,18 @@ func (o *outputList) Set(value string) error {
 	return nil
 }
 
+var streamable = map[string]bool{
+	"tar": true,
+}
+
 // Process the build arguments and execute build
 func build(args []string) {
 	var buildOut outputList
 
 	outputTypes := []string{}
+	for k := range streamable {
+		outputTypes = append(outputTypes, k)
+	}
 	for k := range outFuns {
 		outputTypes = append(outputTypes, k)
 	}
@@ -51,6 +58,7 @@ func build(args []string) {
 	}
 	buildName := buildCmd.String("name", "", "Name to use for output files")
 	buildDir := buildCmd.String("dir", "", "Directory for output files, default current directory")
+	buildOutputFile := buildCmd.String("o", "", "File to use for a single output, or '-' for stdout")
 	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
@@ -68,25 +76,85 @@ func build(args []string) {
 		os.Exit(1)
 	}
 
+	name := *buildName
+	if name == "" {
+		conf := remArgs[len(remArgs)-1]
+		if conf == "-" {
+			name = defaultNameForStdin
+		} else {
+			name = strings.TrimSuffix(filepath.Base(conf), filepath.Ext(conf))
+		}
+	}
+
+	// There are two types of output, they will probably be split into "build" and "package" later
+	// the basic outputs are tarballs, while the packaged ones are the LinuxKit out formats that
+	// cannot be streamed but we do allow multiple ones to be built.
+
 	if len(buildOut) == 0 {
-		buildOut = outputList{"kernel+initrd"}
+		if *buildOutputFile == "" {
+			buildOut = outputList{"kernel+initrd"}
+		} else {
+			buildOut = outputList{"tar"}
+		}
 	}
 
 	log.Debugf("Outputs selected: %s", buildOut.String())
 
-	err := validateOutputs(buildOut)
-	if err != nil {
-		log.Errorf("Error parsing outputs: %v", err)
-		buildCmd.Usage()
-		os.Exit(1)
+	if len(buildOut) > 1 {
+		for _, o := range buildOut {
+			if streamable[o] {
+				log.Fatalf("Output type %s must be the only output specified", o)
+			}
+		}
+	}
+
+	if len(buildOut) == 1 && streamable[buildOut[0]] {
+		if *buildOutputFile == "" {
+			*buildOutputFile = filepath.Join(*buildDir, name+"."+buildOut[0])
+			// stop the erros in the validation below
+			*buildName = ""
+			*buildDir = ""
+		}
+
+	} else {
+		err := validateOutputs(buildOut)
+		if err != nil {
+			log.Errorf("Error parsing outputs: %v", err)
+			buildCmd.Usage()
+			os.Exit(1)
+		}
+	}
+
+	var outputFile *os.File
+	if *buildOutputFile != "" {
+		if len(buildOut) > 1 {
+			log.Fatal("The -output option can only be specified when generating a single output format")
+		}
+		if *buildName != "" {
+			log.Fatal("The -output option cannot be specified with -name")
+		}
+		if *buildDir != "" {
+			log.Fatal("The -output option cannot be specified with -dir")
+		}
+		if !streamable[buildOut[0]] {
+			log.Fatalf("The -output option cannot be specified for build type %s as it cannot be streamed", buildOut[0])
+		}
+		if *buildOutputFile == "-" {
+			outputFile = os.Stdout
+		} else {
+			var err error
+			outputFile, err = os.Create(*buildOutputFile)
+			if err != nil {
+				log.Fatalf("Cannot open output file: %v", err)
+			}
+			defer outputFile.Close()
+		}
 	}
 
 	size, err := getDiskSizeMB(*buildSize)
 	if err != nil {
 		log.Fatalf("Unable to parse disk size: %v", err)
 	}
-
-	name := *buildName
 
 	var moby Moby
 	for _, arg := range remArgs {
@@ -97,20 +165,11 @@ func build(args []string) {
 			if err != nil {
 				log.Fatalf("Cannot read stdin: %v", err)
 			}
-			if name == "" {
-				name = defaultNameForStdin
-			}
 		} else {
-			if !(filepath.Ext(conf) == ".yml" || filepath.Ext(conf) == ".yaml") {
-				conf = conf + ".yml"
-			}
 			var err error
 			config, err = ioutil.ReadFile(conf)
 			if err != nil {
 				log.Fatalf("Cannot open config file: %v", err)
-			}
-			if name == "" {
-				name = strings.TrimSuffix(filepath.Base(conf), filepath.Ext(conf))
 			}
 		}
 
@@ -126,12 +185,23 @@ func build(args []string) {
 		moby.Trust = TrustConfig{}
 	}
 
-	image := buildInternal(moby, *buildPull)
+	var buf *bytes.Buffer
+	var w io.Writer
+	if outputFile != nil {
+		w = outputFile
+	} else {
+		buf = new(bytes.Buffer)
+		w = buf
+	}
+	buildInternal(moby, w, *buildPull)
 
-	log.Infof("Create outputs:")
-	err = outputs(filepath.Join(*buildDir, name), image, buildOut, size, *buildHyperkit)
-	if err != nil {
-		log.Fatalf("Error writing outputs: %v", err)
+	if outputFile == nil {
+		image := buf.Bytes()
+		log.Infof("Create outputs:")
+		err = outputs(filepath.Join(*buildDir, name), image, buildOut, size, *buildHyperkit)
+		if err != nil {
+			log.Fatalf("Error writing outputs: %v", err)
+		}
 	}
 }
 
@@ -222,8 +292,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 
 // Perform the actual build process
 // TODO return error not panic
-func buildInternal(m Moby, pull bool) []byte {
-	w := new(bytes.Buffer)
+func buildInternal(m Moby, w io.Writer, pull bool) {
 	iw := tar.NewWriter(w)
 
 	if m.Kernel.Image != "" {
@@ -312,7 +381,7 @@ func buildInternal(m Moby, pull bool) []byte {
 		log.Fatalf("initrd close error: %v", err)
 	}
 
-	return w.Bytes()
+	return
 }
 
 func untarKernel(buf *bytes.Buffer, kernelName, kernelAltName, ktarName string, cmdline string) (*bytes.Buffer, *bytes.Buffer, error) {

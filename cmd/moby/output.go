@@ -23,13 +23,6 @@ const (
 )
 
 var outFuns = map[string]func(string, []byte, int, bool) error{
-	"tar": func(base string, image []byte, size int, hyperkit bool) error {
-		err := outputTar(base, image)
-		if err != nil {
-			return fmt.Errorf("Error writing tar output: %v", err)
-		}
-		return nil
-	},
 	"kernel+initrd": func(base string, image []byte, size int, hyperkit bool) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
@@ -335,10 +328,4 @@ func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline strin
 		return err
 	}
 	return nil
-}
-
-func outputTar(base string, initrd []byte) error {
-	log.Debugf("output tar: %s", base)
-	log.Infof("  %s", base+".tar")
-	return ioutil.WriteFile(base+".tar", initrd, os.FileMode(0644))
 }
