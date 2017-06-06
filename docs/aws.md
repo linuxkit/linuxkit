@@ -1,6 +1,6 @@
 # Using LinuxKit on Amazon Web Services (AWS)
 
-This is a quick guide to run LinuxKit on AWS. 
+This is a quick guide to run LinuxKit on AWS.
 
 ## Setup
 
@@ -31,6 +31,12 @@ Do `linuxkit push aws -bucket bucketname aws.img` to upload it to the
 specified bucket, and create a bootable image from the stored image.
 
 Alternatively, you can use the `AWS_BUCKET` environment variable to specify the bucket name.
+
+**Note:** If the push times out before it finishes, you can use the `-timeout` flag to extend the timeout.
+
+```
+linuxkit push aws -bucket bucketname -timeout 1200 aws.img
+```
 
 ## Create an instance and connect to it
 
