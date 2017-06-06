@@ -11,12 +11,14 @@ import (
 func pushUsage() {
 	invoked := filepath.Base(os.Args[0])
 	fmt.Printf("USAGE: %s push [backend] [options] [prefix]\n\n", invoked)
-
 	fmt.Printf("'backend' specifies the push backend.\n")
 	fmt.Printf("Supported backends are\n")
+	// Please keep these in alphabetical order
+	fmt.Printf("  aws\n")
+	fmt.Printf("  azure\n")
 	fmt.Printf("  gcp\n")
 	fmt.Printf("  vcenter\n")
-	fmt.Printf("  azure\n")
+	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
 	fmt.Printf("See '%s push [backend] --help' for details.\n\n", invoked)
 	fmt.Printf("'prefix' specifies the path to the VM image.\n")
@@ -29,15 +31,18 @@ func push(args []string) {
 	}
 
 	switch args[0] {
+	// Please keep cases in alphabetical order
+	case "aws":
+		pushAWS(args[1:])
+	case "azure":
+		pushAzure(args[1:])
+	case "gcp":
+		pushGcp(args[1:])
 	case "help", "-h", "-help", "--help":
 		pushUsage()
 		os.Exit(0)
-	case "gcp":
-		pushGcp(args[1:])
 	case "vcenter":
 		pushVCenter(args[1:])
-	case "azure":
-		pushAzure(args[1:])
 	default:
 		log.Errorf("No 'push' backend specified.")
 	}

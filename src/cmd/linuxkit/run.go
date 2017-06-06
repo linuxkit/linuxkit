@@ -16,13 +16,15 @@ func runUsage() {
 	fmt.Printf("'backend' specifies the run backend.\n")
 	fmt.Printf("If not specified the platform specific default will be used\n")
 	fmt.Printf("Supported backends are (default platform in brackets):\n")
+	// Please keep these in alphabetical order
+	fmt.Printf("  aws\n")
 	fmt.Printf("  azure\n")
 	fmt.Printf("  gcp\n")
 	fmt.Printf("  hyperkit [macOS]\n")
+	fmt.Printf("  packet\n")
 	fmt.Printf("  qemu [linux]\n")
 	fmt.Printf("  vcenter\n")
 	fmt.Printf("  vmware\n")
-	fmt.Printf("  packet\n")
 	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
 	fmt.Printf("See '%s run [backend] --help' for details.\n\n", invoked)
@@ -37,21 +39,24 @@ func run(args []string) {
 	}
 
 	switch args[0] {
+	// Please keep cases in alphabetical order
+	case "aws":
+		runAWS(args[1:])
+	case "azure":
+		runAzure(args[1:])
+	case "gcp":
+		runGcp(args[1:])
 	case "help", "-h", "-help", "--help":
 		runUsage()
 		os.Exit(0)
 	case "hyperkit":
 		runHyperKit(args[1:])
-	case "azure":
-		runAzure(args[1:])
-	case "vmware":
-		runVMware(args[1:])
-	case "gcp":
-		runGcp(args[1:])
-	case "qemu":
-		runQemu(args[1:])
 	case "packet":
 		runPacket(args[1:])
+	case "qemu":
+		runQemu(args[1:])
+	case "vmware":
+		runVMware(args[1:])
 	case "vcenter":
 		runVcenter(args[1:])
 	default:
