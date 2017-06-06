@@ -283,7 +283,7 @@ let reporter ?(prefix="") () =
     let k _ = over (); k () in
     let ppf = match level with Logs.App -> Fmt.stdout | _ -> Fmt.stderr in
     let with_stamp h _tags k fmt =
-      let dt = Mtime.to_us (Mtime.elapsed ()) in
+      let dt = Mtime.Span.to_us (Mtime_clock.elapsed ()) in
       Fmt.kpf k ppf ("%s%+04.0fus %a %a @[" ^^ fmt ^^ "@]@.")
         prefix
         dt
