@@ -50,9 +50,12 @@ Make sure to download the credentials in JSON format and store them somewhere sa
 
 ## Build an image
 
-Add a `gcp-img` output line to your yaml config, see the example in [`examples/gcp.yml`](../examples/gcp.yml).
+When using `moby build ...` to build an image, specify `-output gcp-img` to
+build an image in a format that GCP will understand. For example:
 
-Then do `moby build myprefix.yml`
+```
+moby build -output gcp-img myprefix.yml
+```
 
 This will create a local `myprefix.img.tar.gz` compressed image file.
 
