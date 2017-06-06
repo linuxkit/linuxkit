@@ -32,6 +32,7 @@ type vmConfig struct {
 	vCpus        *int
 	mem          *int64
 	poweron      *bool
+	guestIP      *bool
 }
 
 func runVcenter(args []string) {
@@ -54,6 +55,7 @@ func runVcenter(args []string) {
 	newVM.mem = flags.Int64("mem", 1024, "Size in MB of memory to allocate to the VM")
 	newVM.vCpus = flags.Int("cpus", 1, "Amount of vCPUs to allocate to the VM")
 	newVM.poweron = flags.Bool("powerOn", false, "Power On the new VM once it has been created")
+	newVM.guestIP = flags.Bool("waitForIP", false, "LinuxKit will wait for the VM to power on and return the guest IP, requires open-vm-tools and the -powerOn flag to be set")
 
 	flags.Usage = func() {
 		fmt.Printf("USAGE: %s run vcenter [options] path\n\n", invoked)
@@ -74,6 +76,9 @@ func runVcenter(args []string) {
 	}
 	*newVM.path = remArgs[0]
 
+	if (*newVM.guestIP == true) && *newVM.poweron != true {
+		log.Fatalln("The waitForIP flag can not be used without the powerOn flag")
+	}
 	// Ensure an iso has been passed to the vCenter run Command
 	if strings.HasSuffix(*newVM.path, ".iso") {
 		// Allow alternative names for new virtual machines being created in vCenter
@@ -141,6 +146,23 @@ func runVcenter(args []string) {
 		log.Infoln("Powering on LinuxKit VM")
 		powerOnVM(ctx, vm)
 	}
+
+	if *newVM.guestIP {
+		log.Infof("Waiting for OpenVM Tools to come online")
+		guestIP, err := getVMToolsIP(ctx, vm)
+		if err != nil {
+			log.Errorf("%v", err)
+		}
+		log.Infof("Guest IP Address: %s", guestIP)
+	}
+}
+
+func getVMToolsIP(ctx context.Context, vm *object.VirtualMachine) (string, error) {
+	guestIP, err := vm.WaitForIP(ctx)
+	if err != nil {
+		return "", err
+	}
+	return guestIP, err
 }
 
 func vCenterConnect(ctx context.Context, newVM vmConfig) (*govmomi.Client, *object.Datastore, *object.DatacenterFolders, *object.HostSystem, object.NetworkReference, *object.ResourcePool) {
