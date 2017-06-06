@@ -138,6 +138,8 @@ func pushAWS(args []string) {
 
 	if snapshotID == nil {
 		log.Fatalf("SnapshotID unavailable after import completed")
+	} else {
+		log.Debugf("SnapshotID: %s", snapshotID)
 	}
 
 	regParams := &ec2.RegisterImageInput{
@@ -160,7 +162,7 @@ func pushAWS(args []string) {
 	log.Debugf("RegisterImage:\n%v", regParams)
 	regResp, err := compute.RegisterImage(regParams)
 	if err != nil {
-		log.Fatalf("Error registering the image: %s", err)
+		log.Fatalf("Error registering the image: %s; %s", name, err)
 	}
 	log.Infof("Created AMI: %s", *regResp.ImageId)
 }
