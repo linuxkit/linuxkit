@@ -65,7 +65,7 @@ func pushAWS(args []string) {
 	defer f.Close()
 
 	if name == "" {
-		name = strings.TrimSuffix(name, filepath.Ext(src))
+		name = strings.TrimSuffix(src, filepath.Ext(src))
 	}
 
 	content, err := ioutil.ReadAll(f)
