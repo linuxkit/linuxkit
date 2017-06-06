@@ -15,7 +15,6 @@ If you want to create a project, please submit a pull request to create a new di
 - [Wireguard](wireguard/) cryptographic enforced container network separation
 - [OKernel](okernel/) intra-kernel protection using EPT (HPE)
 - [eBPF](ebpf/) iovisor eBPF tools
-- [AWS](aws/) AWS build support
 - [Swarmd](swarmd) Standalone swarmkit based orchestrator
 - [Landlock LSM](landlock/) programmatic access control
 - [Clear Containers](clear-containers/) Clear Containers image
@@ -28,3 +27,7 @@ If you want to create a project, please submit a pull request to create a new di
 ## Current projects not yet documented
 - VMWare support (VMWare)
 - ARM port and secure boot integration (ARM)
+
+## Completed projects
+
+- `aws/`: AWS support was merged into mainline in #1964.
