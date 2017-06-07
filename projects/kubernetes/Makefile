@@ -20,9 +20,13 @@ push-container-images: build-container-images cache-images
 build-vm-images: kube-master-initrd.img kube-node-initrd.img
 
 kube-master-initrd.img: kube-master.yml
+	[ ! -f ~/.ssh/id_rsa.pub ] || echo "The public key was not found at ~/.ssh/id_rsa.pub" || exit 1
+	KEY="$(shell cat ~/.ssh/id_rsa.pub)"; sed -i 's|    contents: .*$$|    contents: '"$$KEY"'|' kube-master.yml
 	../../bin/moby build -name kube-master kube-master.yml
 
 kube-node-initrd.img: kube-node.yml
+	[ ! -f ~/.ssh/sid_rsa.pub ] || echo "The public key found at ~/.ssh/id_rsa.pub" || exit 1
+	KEY="$(shell cat ~/.ssh/id_rsa.pub)"; sed -i 's|    contents: .*$$|    contents: '"$$KEY"'|' kube-node.yml
 	../../bin/moby build -name kube-node kube-node.yml
 
 clean:

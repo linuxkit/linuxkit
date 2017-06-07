@@ -2,16 +2,17 @@
 
 This project aims to demonstrate how one can create minimal and immutable Kubernetes OS images with LinuxKit.
 
-Make sure to `cd projects/kubernetes` first.
-
-Edit `kube-master.yml` and add your public SSH key to `files` section.
+Make sure to change directory to `projects/kubernetes` first.
 
 Build OS images:
 ```
 make build-vm-images
 ```
+Please note: The make process copies your public ssh key to the
+`kube-master.yml` and `kube-node.yml` files adding your public key to the
+authorized_key file so you are able to ssh to systems running these images.
 
-Boot Kubernetes master OS image using `hyperkit` on macOS:
+Boot Kubernetes master OS image using the `linuxkit run` command:
 ```
 ./boot-master.sh
 ```
