@@ -16,7 +16,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-moby build -output kernel+initrd test-binfmt
+moby build -output kernel+initrd test-binfmt.yml
 RESULT="$(linuxkit run qemu -kernel test-binfmt)"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"

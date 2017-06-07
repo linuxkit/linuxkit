@@ -31,7 +31,7 @@ gcp-hack: ../artifacts/test.img.tar.gz
 ../artifacts/test.img.tar.gz:
 	rm -rf ../artifacts
 	mkdir -p ../artifacts
-	$(MOBY) build -output gcp-img -pull -name ../artifacts/test hack/test.yml
+	$(MOBY) build -output gcp -pull -name ../artifacts/test hack/test.yml
 
 define check_test_log
 	@cat $1 |grep -q 'test suite PASSED'
@@ -40,7 +40,7 @@ endef
 .PHONY: ltp
 ltp: export CLOUDSDK_IMAGE_NAME?=test-ltp
 ltp: $(LINUXKIT) test-ltp.img.tar.gz
-	$(MOBY) build -output gcp-img -pull hack/test-ltp.yml
+	$(MOBY) build -output gcp -pull hack/test-ltp.yml
 	$(LINUXKIT) push gcp test-ltp.img.tar.gz
 	$(LINUXKIT) run gcp -skip-cleanup -machine n1-highcpu-4 $(CLOUDSDK_IMAGE_NAME) | tee test-ltp.log
 	$(call check_test_log, test-ltp.log)
