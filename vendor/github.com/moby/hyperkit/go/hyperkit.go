@@ -35,6 +35,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/mitchellh/go-ps"
 )
@@ -211,6 +212,9 @@ func (h *HyperKit) execute(cmdline string) error {
 	// Sanity checks on configuration
 	if h.Console == ConsoleFile && h.StateDir == "" {
 		return fmt.Errorf("If ConsoleFile is set, StateDir must be specified")
+	}
+	if h.Console == ConsoleStdio && !isTerminal(os.Stdout) && h.StateDir == "" {
+		return fmt.Errorf("If ConsoleStdio is set but stdio is not a terminal, StateDir must be specified")
 	}
 	if h.ISOImage != "" {
 		if _, err = os.Stat(h.ISOImage); os.IsNotExist(err) {
@@ -420,10 +424,10 @@ func (h *HyperKit) buildArgs(cmdline string) {
 		nextSlot++
 	}
 
-	if h.Console == ConsoleFile {
-		a = append(a, "-l", fmt.Sprintf("com1,autopty=%s/tty,log=%s/console-ring", h.StateDir, h.StateDir))
-	} else {
+	if h.Console == ConsoleStdio && isTerminal(os.Stdout) {
 		a = append(a, "-l", "com1,stdio")
+	} else if h.StateDir != "" {
+		a = append(a, "-l", fmt.Sprintf("com1,autopty=%s/tty,log=%s/console-ring", h.StateDir, h.StateDir))
 	}
 
 	kernArgs := fmt.Sprintf("kexec,%s,%s,earlyprintk=serial %s", h.Kernel, h.Initrd, cmdline)
@@ -439,14 +443,43 @@ func (h *HyperKit) execHyperKit() error {
 	cmd := exec.Command(h.HyperKit, h.Arguments...)
 	cmd.Env = os.Environ()
 
-	// Plumb in stdin/stdout/stderr. If ConsoleStdio is configured
-	// plumb them to the system streams. If a logger is specified,
-	// use it for stdout/stderr logging. Otherwise use the default
-	// /dev/null.
+	// Plumb in stdin/stdout/stderr.
+	//
+	// If ConsoleStdio is configured and we are on a terminal,
+	// just plugin stdio. If we are not on a terminal we have a
+	// StateDir (as per checks above) and have configured HyperKit
+	// to use a PTY in the statedir. In this case, we just open
+	// the PTY slave and copy it to stdout (and ignore
+	// stdin). This allows for redirecting of the VM output, used
+	// for testing.
+	//
+	// If a logger is specified, use it for stdout/stderr
+	// logging. Otherwise use the default /dev/null.
 	if h.Console == ConsoleStdio {
-		cmd.Stdin = os.Stdin
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
+		if isTerminal(os.Stdout) {
+			cmd.Stdin = os.Stdin
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
+		} else {
+			go func() {
+				ttyPath := fmt.Sprintf("%s/tty", h.StateDir)
+				var tty *os.File
+				var err error
+				for {
+					tty, err = os.OpenFile(ttyPath, os.O_RDONLY, 0)
+					if err != nil {
+						time.Sleep(10 * 1000 * 1000 * time.Nanosecond)
+						continue
+					} else {
+						break
+					}
+				}
+				saneTerminal(tty)
+				setRaw(tty)
+				io.Copy(os.Stdout, tty)
+				tty.Close()
+			}()
+		}
 	} else if h.log != nil {
 		stdoutChan := make(chan string)
 		stderrChan := make(chan string)
