@@ -65,3 +65,7 @@ and then:
 docker build -t socat .
 docker run --rm -t -d -p 6379:6379 socat tcp-listen:6379,reuseaddr,fork tcp:<IP address of VM>:6379
 ```
+
+### Networking Limitations
+
+Due to the VPNKit limitations the `host` is not able to access the `VMs` using its `IPs` (e.g. `$ ssh root@192.168.65.100`)
