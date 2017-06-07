@@ -3,12 +3,9 @@ package main
 import (
 	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
-	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/linuxkit/linuxkit/src/initrd"
@@ -56,7 +53,7 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		return nil
 	},
-	"img": func(base string, image []byte, size int, hyperkit bool) error {
+	"raw": func(base string, image []byte, size int, hyperkit bool) error {
 		filename := base + ".img"
 		log.Infof("  %s", filename)
 		kernel, initrd, cmdline, err := tarToInitrd(image)
@@ -69,47 +66,7 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		return nil
 	},
-	"img-gz": func(base string, image []byte, size int, hyperkit bool) error {
-		filename := base + ".img.gz"
-		log.Infof("  %s", filename)
-		kernel, initrd, cmdline, err := tarToInitrd(image)
-		if err != nil {
-			return fmt.Errorf("Error converting to initrd: %v", err)
-		}
-		tmp, err := ioutil.TempDir(filepath.Join(MobyDir, "tmp"), "img-gz")
-		if err != nil {
-			return err
-		}
-		defer os.RemoveAll(tmp)
-		err = outputLinuxKit("raw", filepath.Join(tmp, "uncompressed.img"), kernel, initrd, cmdline, size, hyperkit)
-		if err != nil {
-			return fmt.Errorf("Error writing img-gz output: %v", err)
-		}
-		out, err := os.Create(filename)
-		if err != nil {
-			return err
-		}
-		in, err := os.Open(filepath.Join(tmp, "uncompressed.img"))
-		if err != nil {
-			return err
-		}
-		zw := gzip.NewWriter(out)
-		io.Copy(zw, in)
-		err = zw.Close()
-		if err != nil {
-			return err
-		}
-		err = in.Close()
-		if err != nil {
-			return err
-		}
-		err = out.Close()
-		if err != nil {
-			return err
-		}
-		return nil
-	},
-	"gcp-img": func(base string, image []byte, size int, hyperkit bool) error {
+	"gcp": func(base string, image []byte, size int, hyperkit bool) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -158,10 +115,8 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 }
 
 var prereq = map[string]string{
-	"img":     "mkimage",
-	"img-gz":  "mkimage",
-	"gcp-img": "mkimage",
-	"qcow2":   "mkimage",
+	"raw":   "mkimage",
+	"qcow2": "mkimage",
 }
 
 func ensurePrereq(out string) error {
