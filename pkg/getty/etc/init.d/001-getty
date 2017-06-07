@@ -1,0 +1,5 @@
+#!/bin/sh
+
+# if we are here, then we need to debug a linuxkit build
+# so we always run in INSECURE mode
+INSECURE=true /usr/bin/rungetty.sh
