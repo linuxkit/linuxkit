@@ -1,14 +1,9 @@
 package main
 
 import (
-	"archive/tar"
-	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"path"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -696,95 +691,4 @@ func ConfigInspectToOCI(yaml MobyImage, inspect types.ImageInspect) (specs.Spec,
 	}
 
 	return oci, nil
-}
-
-func filesystem(m Moby) (*bytes.Buffer, error) {
-	buf := new(bytes.Buffer)
-	tw := tar.NewWriter(buf)
-	defer tw.Close()
-
-	if len(m.Files) != 0 {
-		log.Infof("Add files:")
-	}
-	for _, f := range m.Files {
-		log.Infof("  %s", f.Path)
-		if f.Path == "" {
-			return buf, errors.New("Did not specify path for file")
-		}
-		if !f.Directory && f.Contents == "" && f.Symlink == "" {
-			if f.Source == "" {
-				return buf, errors.New("Contents of file not specified")
-			}
-
-			contents, err := ioutil.ReadFile(f.Source)
-			if err != nil {
-				return buf, err
-			}
-
-			f.Contents = string(contents)
-		}
-		// we need all the leading directories
-		parts := strings.Split(path.Dir(f.Path), "/")
-		root := ""
-		for _, p := range parts {
-			if p == "." || p == "/" {
-				continue
-			}
-			if root == "" {
-				root = p
-			} else {
-				root = root + "/" + p
-			}
-			hdr := &tar.Header{
-				Name:     root,
-				Typeflag: tar.TypeDir,
-				Mode:     0700,
-			}
-			err := tw.WriteHeader(hdr)
-			if err != nil {
-				return buf, err
-			}
-		}
-
-		if f.Directory {
-			if f.Contents != "" {
-				return buf, errors.New("Directory with contents not allowed")
-			}
-			hdr := &tar.Header{
-				Name:     f.Path,
-				Typeflag: tar.TypeDir,
-				Mode:     0700,
-			}
-			err := tw.WriteHeader(hdr)
-			if err != nil {
-				return buf, err
-			}
-		} else if f.Symlink != "" {
-			hdr := &tar.Header{
-				Name:     f.Path,
-				Typeflag: tar.TypeSymlink,
-				Mode:     0600,
-				Linkname: f.Symlink,
-			}
-			err := tw.WriteHeader(hdr)
-			if err != nil {
-				return buf, err
-			}
-		} else {
-			hdr := &tar.Header{
-				Name: f.Path,
-				Mode: 0600,
-				Size: int64(len(f.Contents)),
-			}
-			err := tw.WriteHeader(hdr)
-			if err != nil {
-				return buf, err
-			}
-			_, err = tw.Write([]byte(f.Contents))
-			if err != nil {
-				return buf, err
-			}
-		}
-	}
-	return buf, nil
 }

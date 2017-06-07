@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -33,11 +34,18 @@ func (o *outputList) Set(value string) error {
 	return nil
 }
 
+var streamable = map[string]bool{
+	"tar": true,
+}
+
 // Process the build arguments and execute build
 func build(args []string) {
 	var buildOut outputList
 
 	outputTypes := []string{}
+	for k := range streamable {
+		outputTypes = append(outputTypes, k)
+	}
 	for k := range outFuns {
 		outputTypes = append(outputTypes, k)
 	}
@@ -51,6 +59,7 @@ func build(args []string) {
 	}
 	buildName := buildCmd.String("name", "", "Name to use for output files")
 	buildDir := buildCmd.String("dir", "", "Directory for output files, default current directory")
+	buildOutputFile := buildCmd.String("o", "", "File to use for a single output, or '-' for stdout")
 	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
@@ -68,25 +77,85 @@ func build(args []string) {
 		os.Exit(1)
 	}
 
+	name := *buildName
+	if name == "" {
+		conf := remArgs[len(remArgs)-1]
+		if conf == "-" {
+			name = defaultNameForStdin
+		} else {
+			name = strings.TrimSuffix(filepath.Base(conf), filepath.Ext(conf))
+		}
+	}
+
+	// There are two types of output, they will probably be split into "build" and "package" later
+	// the basic outputs are tarballs, while the packaged ones are the LinuxKit out formats that
+	// cannot be streamed but we do allow multiple ones to be built.
+
 	if len(buildOut) == 0 {
-		buildOut = outputList{"kernel+initrd"}
+		if *buildOutputFile == "" {
+			buildOut = outputList{"kernel+initrd"}
+		} else {
+			buildOut = outputList{"tar"}
+		}
 	}
 
 	log.Debugf("Outputs selected: %s", buildOut.String())
 
-	err := validateOutputs(buildOut)
-	if err != nil {
-		log.Errorf("Error parsing outputs: %v", err)
-		buildCmd.Usage()
-		os.Exit(1)
+	if len(buildOut) > 1 {
+		for _, o := range buildOut {
+			if streamable[o] {
+				log.Fatalf("Output type %s must be the only output specified", o)
+			}
+		}
+	}
+
+	if len(buildOut) == 1 && streamable[buildOut[0]] {
+		if *buildOutputFile == "" {
+			*buildOutputFile = filepath.Join(*buildDir, name+"."+buildOut[0])
+			// stop the errors in the validation below
+			*buildName = ""
+			*buildDir = ""
+		}
+
+	} else {
+		err := validateOutputs(buildOut)
+		if err != nil {
+			log.Errorf("Error parsing outputs: %v", err)
+			buildCmd.Usage()
+			os.Exit(1)
+		}
+	}
+
+	var outputFile *os.File
+	if *buildOutputFile != "" {
+		if len(buildOut) > 1 {
+			log.Fatal("The -output option can only be specified when generating a single output format")
+		}
+		if *buildName != "" {
+			log.Fatal("The -output option cannot be specified with -name")
+		}
+		if *buildDir != "" {
+			log.Fatal("The -output option cannot be specified with -dir")
+		}
+		if !streamable[buildOut[0]] {
+			log.Fatalf("The -output option cannot be specified for build type %s as it cannot be streamed", buildOut[0])
+		}
+		if *buildOutputFile == "-" {
+			outputFile = os.Stdout
+		} else {
+			var err error
+			outputFile, err = os.Create(*buildOutputFile)
+			if err != nil {
+				log.Fatalf("Cannot open output file: %v", err)
+			}
+			defer outputFile.Close()
+		}
 	}
 
 	size, err := getDiskSizeMB(*buildSize)
 	if err != nil {
 		log.Fatalf("Unable to parse disk size: %v", err)
 	}
-
-	name := *buildName
 
 	var moby Moby
 	for _, arg := range remArgs {
@@ -97,20 +166,11 @@ func build(args []string) {
 			if err != nil {
 				log.Fatalf("Cannot read stdin: %v", err)
 			}
-			if name == "" {
-				name = defaultNameForStdin
-			}
 		} else {
-			if !(filepath.Ext(conf) == ".yml" || filepath.Ext(conf) == ".yaml") {
-				conf = conf + ".yml"
-			}
 			var err error
 			config, err = ioutil.ReadFile(conf)
 			if err != nil {
 				log.Fatalf("Cannot open config file: %v", err)
-			}
-			if name == "" {
-				name = strings.TrimSuffix(filepath.Base(conf), filepath.Ext(conf))
 			}
 		}
 
@@ -126,12 +186,23 @@ func build(args []string) {
 		moby.Trust = TrustConfig{}
 	}
 
-	image := buildInternal(moby, *buildPull)
+	var buf *bytes.Buffer
+	var w io.Writer
+	if outputFile != nil {
+		w = outputFile
+	} else {
+		buf = new(bytes.Buffer)
+		w = buf
+	}
+	buildInternal(moby, w, *buildPull)
 
-	log.Infof("Create outputs:")
-	err = outputs(filepath.Join(*buildDir, name), image, buildOut, size, *buildHyperkit)
-	if err != nil {
-		log.Fatalf("Error writing outputs: %v", err)
+	if outputFile == nil {
+		image := buf.Bytes()
+		log.Infof("Create outputs:")
+		err = outputs(filepath.Join(*buildDir, name), image, buildOut, size, *buildHyperkit)
+		if err != nil {
+			log.Fatalf("Error writing outputs: %v", err)
+		}
 	}
 }
 
@@ -154,27 +225,6 @@ func getDiskSizeMB(s string) (int, error) {
 		s = s[:sz-1]
 	}
 	return strconv.Atoi(s)
-}
-
-func initrdAppend(iw *tar.Writer, r io.Reader) {
-	tr := tar.NewReader(r)
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatalln(err)
-		}
-		err = iw.WriteHeader(hdr)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		_, err = io.Copy(iw, tr)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
 }
 
 func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
@@ -222,30 +272,21 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 
 // Perform the actual build process
 // TODO return error not panic
-func buildInternal(m Moby, pull bool) []byte {
-	w := new(bytes.Buffer)
+func buildInternal(m Moby, w io.Writer, pull bool) {
 	iw := tar.NewWriter(w)
 
 	if m.Kernel.Image != "" {
 		// get kernel and initrd tarball from container
 		log.Infof("Extract kernel image: %s", m.Kernel.Image)
-		const (
-			kernelName    = "kernel"
-			kernelAltName = "bzImage"
-			ktarName      = "kernel.tar"
-		)
-		out, err := ImageExtract(m.Kernel.Image, "", enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
+		kf := newKernelFilter(iw, m.Kernel.Cmdline)
+		err := ImageTar(m.Kernel.Image, "", kf, enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
 		if err != nil {
 			log.Fatalf("Failed to extract kernel image and tarball: %v", err)
 		}
-		buf := bytes.NewBuffer(out)
-
-		kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName, m.Kernel.Cmdline)
+		err = kf.Close()
 		if err != nil {
-			log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
+			log.Fatalf("Close error: %v", err)
 		}
-		initrdAppend(iw, kernel)
-		initrdAppend(iw, ktar)
 	}
 
 	// convert init images to tarballs
@@ -254,12 +295,10 @@ func buildInternal(m Moby, pull bool) []byte {
 	}
 	for _, ii := range m.Init {
 		log.Infof("Process init image: %s", ii)
-		init, err := ImageExtract(ii, "", enforceContentTrust(ii, &m.Trust), pull)
+		err := ImageTar(ii, "", iw, enforceContentTrust(ii, &m.Trust), pull)
 		if err != nil {
 			log.Fatalf("Failed to build init tarball from %s: %v", ii, err)
 		}
-		buffer := bytes.NewBuffer(init)
-		initrdAppend(iw, buffer)
 	}
 
 	if len(m.Onboot) != 0 {
@@ -274,12 +313,10 @@ func buildInternal(m Moby, pull bool) []byte {
 		}
 		so := fmt.Sprintf("%03d", i)
 		path := "containers/onboot/" + so + "-" + image.Name
-		out, err := ImageBundle(path, image.Image, config, useTrust, pull)
+		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
 		if err != nil {
 			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
-		buffer := bytes.NewBuffer(out)
-		initrdAppend(iw, buffer)
 	}
 
 	if len(m.Services) != 0 {
@@ -293,105 +330,235 @@ func buildInternal(m Moby, pull bool) []byte {
 			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
 		}
 		path := "containers/services/" + image.Name
-		out, err := ImageBundle(path, image.Image, config, useTrust, pull)
+		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
 		if err != nil {
 			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
-		buffer := bytes.NewBuffer(out)
-		initrdAppend(iw, buffer)
 	}
 
 	// add files
-	buffer, err := filesystem(m)
+	err := filesystem(m, iw)
 	if err != nil {
 		log.Fatalf("failed to add filesystem parts: %v", err)
 	}
-	initrdAppend(iw, buffer)
 	err = iw.Close()
 	if err != nil {
 		log.Fatalf("initrd close error: %v", err)
 	}
 
-	return w.Bytes()
+	return
 }
 
-func untarKernel(buf *bytes.Buffer, kernelName, kernelAltName, ktarName string, cmdline string) (*bytes.Buffer, *bytes.Buffer, error) {
-	tr := tar.NewReader(buf)
+// kernelFilter is a tar.Writer that transforms a kernel image into the output we want on underlying tar writer
+type kernelFilter struct {
+	tw          *tar.Writer
+	buffer      *bytes.Buffer
+	cmdline     string
+	discard     bool
+	foundKernel bool
+	foundKTar   bool
+}
 
-	var kernel, ktar *bytes.Buffer
-	foundKernel := false
+func newKernelFilter(tw *tar.Writer, cmdline string) *kernelFilter {
+	return &kernelFilter{tw: tw, cmdline: cmdline}
+}
 
+func (k *kernelFilter) finishTar() error {
+	if k.buffer == nil {
+		return nil
+	}
+	tr := tar.NewReader(k.buffer)
+	err := tarAppend(k.tw, tr)
+	k.buffer = nil
+	return err
+}
+
+func (k *kernelFilter) Close() error {
+	if !k.foundKernel {
+		return errors.New("did not find kernel in kernel image")
+	}
+	if !k.foundKTar {
+		return errors.New("did not find kernel.tar in kernel image")
+	}
+	return k.finishTar()
+}
+
+func (k *kernelFilter) Flush() error {
+	err := k.finishTar()
+	if err != nil {
+		return err
+	}
+	return k.tw.Flush()
+}
+
+func (k *kernelFilter) Write(b []byte) (n int, err error) {
+	if k.discard {
+		return len(b), nil
+	}
+	if k.buffer != nil {
+		return k.buffer.Write(b)
+	}
+	return k.tw.Write(b)
+}
+
+func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
+	err := k.finishTar()
+	if err != nil {
+		return err
+	}
+	tw := k.tw
+	switch hdr.Name {
+	case "kernel":
+		if k.foundKernel {
+			return errors.New("found more than one possible kernel image")
+		}
+		k.foundKernel = true
+		k.discard = false
+		whdr := &tar.Header{
+			Name:     "boot",
+			Mode:     0755,
+			Typeflag: tar.TypeDir,
+		}
+		if err := tw.WriteHeader(whdr); err != nil {
+			return err
+		}
+		// add the cmdline in /boot/cmdline
+		whdr = &tar.Header{
+			Name: "boot/cmdline",
+			Mode: 0644,
+			Size: int64(len(k.cmdline)),
+		}
+		if err := tw.WriteHeader(whdr); err != nil {
+			return err
+		}
+		buf := bytes.NewBufferString(k.cmdline)
+		_, err = io.Copy(tw, buf)
+		if err != nil {
+			return err
+		}
+		whdr = &tar.Header{
+			Name: "boot/kernel",
+			Mode: hdr.Mode,
+			Size: hdr.Size,
+		}
+		if err := tw.WriteHeader(whdr); err != nil {
+			return err
+		}
+	case "kernel.tar":
+		k.foundKTar = true
+		k.discard = false
+		k.buffer = new(bytes.Buffer)
+	default:
+		k.discard = true
+	}
+
+	return nil
+}
+
+func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			log.Fatalln(err)
+			return err
 		}
-		switch hdr.Name {
-		case kernelName, kernelAltName:
-			if foundKernel {
-				return nil, nil, errors.New("found more than one possible kernel image")
+		err = iw.WriteHeader(hdr)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(iw, tr)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func filesystem(m Moby, tw *tar.Writer) error {
+	if len(m.Files) != 0 {
+		log.Infof("Add files:")
+	}
+	for _, f := range m.Files {
+		log.Infof("  %s", f.Path)
+		if f.Path == "" {
+			return errors.New("Did not specify path for file")
+		}
+		if !f.Directory && f.Contents == "" && f.Symlink == "" {
+			if f.Source == "" {
+				return errors.New("Contents of file not specified")
 			}
-			foundKernel = true
-			kernel = new(bytes.Buffer)
-			// make a new tarball with kernel in /boot/kernel
-			tw := tar.NewWriter(kernel)
-			whdr := &tar.Header{
-				Name:     "boot",
-				Mode:     0700,
+
+			contents, err := ioutil.ReadFile(f.Source)
+			if err != nil {
+				return err
+			}
+
+			f.Contents = string(contents)
+		}
+		// we need all the leading directories
+		parts := strings.Split(path.Dir(f.Path), "/")
+		root := ""
+		for _, p := range parts {
+			if p == "." || p == "/" {
+				continue
+			}
+			if root == "" {
+				root = p
+			} else {
+				root = root + "/" + p
+			}
+			hdr := &tar.Header{
+				Name:     root,
 				Typeflag: tar.TypeDir,
+				Mode:     0700,
 			}
-			if err := tw.WriteHeader(whdr); err != nil {
-				return nil, nil, err
-			}
-			whdr = &tar.Header{
-				Name: "boot/kernel",
-				Mode: hdr.Mode,
-				Size: hdr.Size,
-			}
-			if err := tw.WriteHeader(whdr); err != nil {
-				return nil, nil, err
-			}
-			_, err = io.Copy(tw, tr)
+			err := tw.WriteHeader(hdr)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
-			// add the cmdline in /boot/cmdline
-			whdr = &tar.Header{
-				Name: "boot/cmdline",
-				Mode: 0700,
-				Size: int64(len(cmdline)),
+		}
+
+		if f.Directory {
+			if f.Contents != "" {
+				return errors.New("Directory with contents not allowed")
 			}
-			if err := tw.WriteHeader(whdr); err != nil {
-				return nil, nil, err
+			hdr := &tar.Header{
+				Name:     f.Path,
+				Typeflag: tar.TypeDir,
+				Mode:     0700,
 			}
-			buf := bytes.NewBufferString(cmdline)
-			_, err = io.Copy(tw, buf)
+			err := tw.WriteHeader(hdr)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
-			if err := tw.Close(); err != nil {
-				return nil, nil, err
+		} else if f.Symlink != "" {
+			hdr := &tar.Header{
+				Name:     f.Path,
+				Typeflag: tar.TypeSymlink,
+				Mode:     0600,
+				Linkname: f.Symlink,
 			}
-		case ktarName:
-			ktar = new(bytes.Buffer)
-			_, err := io.Copy(ktar, tr)
+			err := tw.WriteHeader(hdr)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
-		default:
-			continue
+		} else {
+			hdr := &tar.Header{
+				Name: f.Path,
+				Mode: 0600,
+				Size: int64(len(f.Contents)),
+			}
+			err := tw.WriteHeader(hdr)
+			if err != nil {
+				return err
+			}
+			_, err = tw.Write([]byte(f.Contents))
+			if err != nil {
+				return err
+			}
 		}
 	}
-
-	if kernel == nil {
-		return nil, nil, errors.New("did not find kernel in kernel image")
-	}
-	if ktar == nil {
-		return nil, nil, errors.New("did not find kernel.tar in kernel image")
-	}
-
-	return kernel, ktar, nil
+	return nil
 }

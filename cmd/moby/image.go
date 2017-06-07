@@ -11,6 +11,13 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+type tarWriter interface {
+	Close() error
+	Flush() error
+	Write(b []byte) (n int, err error)
+	WriteHeader(hdr *tar.Header) error
+}
+
 // This uses Docker to convert a Docker image into a tarball. It would be an improvement if we
 // used the containerd libraries to do this instead locally direct from a local image
 // cache as it would be much simpler.
@@ -39,28 +46,8 @@ nameserver 2001:4860:4860::8844
 	"etc/hostname": "moby",
 }
 
-// ImageExtract extracts the filesystem from an image and returns a tarball with the files prefixed by the given path
-func ImageExtract(image, prefix string, trust bool, pull bool) ([]byte, error) {
-	log.Debugf("image extract: %s %s", image, prefix)
-	out := new(bytes.Buffer)
-	tw := tar.NewWriter(out)
-	err := tarPrefix(prefix, tw)
-	if err != nil {
-		return []byte{}, err
-	}
-	err = imageTar(image, prefix, tw, trust, pull)
-	if err != nil {
-		return []byte{}, err
-	}
-	err = tw.Close()
-	if err != nil {
-		return []byte{}, err
-	}
-	return out.Bytes(), nil
-}
-
 // tarPrefix creates the leading directories for a path
-func tarPrefix(path string, tw *tar.Writer) error {
+func tarPrefix(path string, tw tarWriter) error {
 	if path == "" {
 		return nil
 	}
@@ -87,10 +74,16 @@ func tarPrefix(path string, tw *tar.Writer) error {
 	return nil
 }
 
-func imageTar(image, prefix string, tw *tar.Writer, trust bool, pull bool) error {
+// ImageTar takes a Docker image and outputs it to a tar stream
+func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool) error {
 	log.Debugf("image tar: %s %s", image, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != byte('/') {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
+	}
+
+	err := tarPrefix(prefix, tw)
+	if err != nil {
+		return err
 	}
 
 	if pull || trust {
@@ -172,21 +165,15 @@ func imageTar(image, prefix string, tw *tar.Writer, trust bool, pull bool) error
 			}
 		}
 	}
-	err = tw.Close()
-	if err != nil {
-		return err
-	}
 	return nil
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(path string, image string, config []byte, trust bool, pull bool) ([]byte, error) {
+func ImageBundle(path string, image string, config []byte, tw tarWriter, trust bool, pull bool) error {
 	log.Debugf("image bundle: %s %s cfg: %s", path, image, string(config))
-	out := new(bytes.Buffer)
-	tw := tar.NewWriter(out)
-	err := tarPrefix(path+"/rootfs/", tw)
+	err := ImageTar(image, path+"/rootfs/", tw, trust, pull)
 	if err != nil {
-		return []byte{}, err
+		return err
 	}
 	hdr := &tar.Header{
 		Name: path + "/" + "config.json",
@@ -195,20 +182,13 @@ func ImageBundle(path string, image string, config []byte, trust bool, pull bool
 	}
 	err = tw.WriteHeader(hdr)
 	if err != nil {
-		return []byte{}, err
+		return err
 	}
 	buf := bytes.NewBuffer(config)
 	_, err = io.Copy(tw, buf)
 	if err != nil {
-		return []byte{}, err
+		return err
 	}
-	err = imageTar(image, path+"/rootfs/", tw, trust, pull)
-	if err != nil {
-		return []byte{}, err
-	}
-	err = tw.Close()
-	if err != nil {
-		return []byte{}, err
-	}
-	return out.Bytes(), nil
+
+	return nil
 }
