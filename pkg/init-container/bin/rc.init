@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# execute other init processes
+INITS="$(find /etc/init.d -type f | sort)"
+for f in $INITS
+do
+	$f &
+done
+
+wait
