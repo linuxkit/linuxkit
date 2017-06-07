@@ -17,7 +17,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -output img -name "${NAME}" test.yml
-[ -f "${NAME}.img" ] || exit 1
-linuxkit run qemu "${NAME}.img" | grep -q "Welcome to LinuxKit"
+moby build -output raw -name "${NAME}" test.yml
+[ -f "${NAME}.raw" ] || exit 1
+linuxkit run qemu "${NAME}.raw" | grep -q "Welcome to LinuxKit"
 exit 0

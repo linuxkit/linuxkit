@@ -5,6 +5,7 @@ Dockerfile.media
 *.img
 *.tag
 *.iso
+*.raw
 *.vhd
 *.vmdk
 *.vmdk.lck

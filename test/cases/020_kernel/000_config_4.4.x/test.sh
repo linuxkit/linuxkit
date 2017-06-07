@@ -15,7 +15,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-moby build -output kernel+initrd test-kernel-config
+moby build -output kernel+initrd test-kernel-config.yml
 RESULT="$(linuxkit run qemu -kernel test-kernel-config)"
 echo "${RESULT}" | grep -q "suite PASSED"
 
