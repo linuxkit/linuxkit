@@ -25,7 +25,7 @@ to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/* /usr/loc
 If you already have `go` installed you can use `go get -u github.com/moby/tool/cmd/moby` to install
 the `moby` build tool, and `go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit` to install the `linuxkit` tool.
 
-Once you have built the tool, use `moby build linuxkit.yml` to build the example configuration,
+Once you have built the tool, use `moby build -pull linuxkit.yml` to build the example configuration,
 and `linuxkit run linuxkit` to run locally. Use `halt` to terminate on the console.
 
 Build requirements:
@@ -35,7 +35,7 @@ Build requirements:
 
 ### Booting and Testing
 
-You can use `linuxkit run <name>` to execute the image you created with `moby build <name>.yml`.
+You can use `linuxkit run <name>` to execute the image you created with `moby build -pull <name>.yml`.
 This will use a suitable backend for your platform or you can choose one, for example VMWare.
 See `linuxkit run --help`.
 
