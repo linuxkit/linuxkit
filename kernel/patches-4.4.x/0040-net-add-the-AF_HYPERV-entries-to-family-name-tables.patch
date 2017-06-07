@@ -1,4 +1,4 @@
-From d07f21bfe5751ce5bb1a62c81c8635cb933323db Mon Sep 17 00:00:00 2001
+From 4242dcb301bd1999efff217dbf1fbe8d84e72cc7 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Mar 2016 02:53:08 -0700
 Subject: [PATCH 40/44] net: add the AF_HYPERV entries to family name tables
@@ -14,7 +14,7 @@ Origin: https://patchwork.ozlabs.org/patch/600009
  1 file changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/net/core/sock.c b/net/core/sock.c
-index 36afa5d4598b..5077059e352b 100644
+index ef337bf176f7..1c5f0a2ef836 100644
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
 @@ -264,7 +264,7 @@ static const char *const af_family_key_strings[AF_MAX+1] = {
@@ -45,5 +45,5 @@ index 36afa5d4598b..5077059e352b 100644
  
  /*
 -- 
-2.13.0
+2.11.1
 

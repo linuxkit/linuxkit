@@ -1,4 +1,4 @@
-From 548ab5497f78e8a7c1fb2b7755a150cc738eb70b Mon Sep 17 00:00:00 2001
+From 7fbe9efe9ecf2ecdfc65bc34a1f318899dc5c3ee Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sun, 15 May 2016 09:53:11 -0700
 Subject: [PATCH 39/44] hv_sock: introduce Hyper-V Sockets
@@ -1801,5 +1801,5 @@ index 000000000000..b91bd608bf39
 +MODULE_DESCRIPTION("Hyper-V Sockets");
 +MODULE_LICENSE("Dual BSD/GPL");
 -- 
-2.13.0
+2.11.1
 
