@@ -35,7 +35,37 @@ func (o *outputList) Set(value string) error {
 }
 
 var streamable = map[string]bool{
-	"tar": true,
+	"docker": true,
+	"tar":    true,
+}
+
+type addFun func(*tar.Writer) error
+
+const dockerfile = `
+FROM scratch
+
+COPY . ./
+RUN rm -f Dockerfile
+
+ENTRYPOINT ["/sbin/tini", "--", "/bin/rc.init"]
+`
+
+var additions = map[string]addFun{
+	"docker": func(tw *tar.Writer) error {
+		log.Infof("  Adding Dockerfile")
+		hdr := &tar.Header{
+			Name: "Dockerfile",
+			Mode: 0644,
+			Size: int64(len(dockerfile)),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if _, err := tw.Write([]byte(dockerfile)); err != nil {
+			return err
+		}
+		return nil
+	},
 }
 
 // Process the build arguments and execute build
@@ -127,6 +157,7 @@ func build(args []string) {
 	}
 
 	var outputFile *os.File
+	var addition addFun
 	if *buildOutputFile != "" {
 		if len(buildOut) > 1 {
 			log.Fatal("The -output option can only be specified when generating a single output format")
@@ -150,6 +181,7 @@ func build(args []string) {
 			}
 			defer outputFile.Close()
 		}
+		addition = additions[buildOut[0]]
 	}
 
 	size, err := getDiskSizeMB(*buildSize)
@@ -194,7 +226,7 @@ func build(args []string) {
 		buf = new(bytes.Buffer)
 		w = buf
 	}
-	buildInternal(moby, w, *buildPull)
+	buildInternal(moby, w, *buildPull, addition)
 
 	if outputFile == nil {
 		image := buf.Bytes()
@@ -272,7 +304,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 
 // Perform the actual build process
 // TODO return error not panic
-func buildInternal(m Moby, w io.Writer, pull bool) {
+func buildInternal(m Moby, w io.Writer, pull bool, addition addFun) {
 	iw := tar.NewWriter(w)
 
 	if m.Kernel.Image != "" {
@@ -341,6 +373,15 @@ func buildInternal(m Moby, w io.Writer, pull bool) {
 	if err != nil {
 		log.Fatalf("failed to add filesystem parts: %v", err)
 	}
+
+	// add anything additional for this output type
+	if addition != nil {
+		err = addition(iw)
+		if err != nil {
+			log.Fatalf("Failed to add additional files")
+		}
+	}
+
 	err = iw.Close()
 	if err != nil {
 		log.Fatalf("initrd close error: %v", err)

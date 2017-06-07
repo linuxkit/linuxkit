@@ -1,0 +1,12 @@
+services:
+  - name: nginx
+    image: "nginx:alpine"
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+trust:
+  org:
+    - library
