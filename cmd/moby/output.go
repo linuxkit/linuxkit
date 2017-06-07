@@ -54,7 +54,7 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		return nil
 	},
 	"raw": func(base string, image []byte, size int, hyperkit bool) error {
-		filename := base + ".img"
+		filename := base + ".raw"
 		log.Infof("  %s", filename)
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
@@ -62,7 +62,7 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		err = outputLinuxKit("raw", filename, kernel, initrd, cmdline, size, hyperkit)
 		if err != nil {
-			return fmt.Errorf("Error writing qcow2 output: %v", err)
+			return fmt.Errorf("Error writing raw output: %v", err)
 		}
 		return nil
 	},
@@ -73,7 +73,7 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		err = outputImg(gcp, base+".img.tar.gz", kernel, initrd, cmdline)
 		if err != nil {
-			return fmt.Errorf("Error writing gcp-img output: %v", err)
+			return fmt.Errorf("Error writing gcp output: %v", err)
 		}
 		return nil
 	},
@@ -97,7 +97,7 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		err = outputImg(vhd, base+".vhd", kernel, initrd, cmdline)
 		if err != nil {
-			return fmt.Errorf("Error writingvhd output: %v", err)
+			return fmt.Errorf("Error writing vhd output: %v", err)
 		}
 		return nil
 	},
