@@ -1,4 +1,4 @@
-From 13cf8a976680bc8072b405db1b226834e48dd7fd Mon Sep 17 00:00:00 2001
+From 8eb0473cb513e25b2379c5e700f6fb6df80d287d Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:26 -0600
 Subject: [PATCH 6/9] hv_sock: implements Hyper-V transport for Virtual Sockets
@@ -930,5 +930,5 @@ index 000000000000..fd89bf357617
 +MODULE_VERSION("1.0.0");
 +MODULE_LICENSE("GPL");
 -- 
-2.13.0
+2.11.1
 

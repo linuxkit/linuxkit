@@ -1,4 +1,4 @@
-From 679e54bcf920baf6bc1712786b1ced644ce3b5b7 Mon Sep 17 00:00:00 2001
+From 464d40f2c505ebd36b3db44aff580ce05fb4dc36 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:48 -0800
 Subject: [PATCH 19/44] Drivers: hv: vmbus: do sanity check of channel state in
@@ -38,5 +38,5 @@ index d037454fe7b8..b00cdfb725de 100644
  	channel->sc_creation_callback = NULL;
  	/* Stop callback and cancel the timer asap */
 -- 
-2.13.0
+2.11.1
 

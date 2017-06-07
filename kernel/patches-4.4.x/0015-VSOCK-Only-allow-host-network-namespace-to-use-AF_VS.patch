@@ -1,4 +1,4 @@
-From f289f5cc8439638a7e66d4c15db3f751d790a08a Mon Sep 17 00:00:00 2001
+From 1bda3ad2cd6cdee93ef9cb05743428dfb815675b Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
 Date: Mon, 4 Apr 2016 14:50:10 +0100
 Subject: [PATCH 15/44] VSOCK: Only allow host network namespace to use
@@ -27,5 +27,5 @@ index 17dbbe64cd73..1bb1b016e945 100644
  		return -EINVAL;
  
 -- 
-2.13.0
+2.11.1
 

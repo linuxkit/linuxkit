@@ -1,4 +1,4 @@
-From c7e4a3522798797a1c4f32bb7bbec353290781b4 Mon Sep 17 00:00:00 2001
+From 08972e2d8c500f113e3dc714b99cc95356ab4389 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:40 -0800
 Subject: [PATCH 29/44] Drivers: hv: vmbus: define a new VMBus message type for
@@ -97,5 +97,5 @@ index a4f105d55881..191bc5d0ffbf 100644
 +				  const uuid_le *shv_host_servie_id);
  #endif /* _HYPERV_H */
 -- 
-2.13.0
+2.11.1
 

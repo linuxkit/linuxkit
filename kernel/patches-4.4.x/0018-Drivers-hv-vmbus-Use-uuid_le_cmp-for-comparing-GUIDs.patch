@@ -1,4 +1,4 @@
-From e2f7f5eefd77ea61a765850959b46e84d30140e1 Mon Sep 17 00:00:00 2001
+From ef0df99bf8c62bbebbffba08f13059d7562a2e63 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:44 -0800
 Subject: [PATCH 18/44] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing
@@ -51,5 +51,5 @@ index f1fbb6b98f5c..e71f3561dbab 100644
  
  	return NULL;
 -- 
-2.13.0
+2.11.1
 
