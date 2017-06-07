@@ -9,8 +9,8 @@ GO_COMPILE=linuxkit/go-compile:6579a00b44686d0e504d513fc4860094769fe7df
 
 MOBY?=bin/moby
 LINUXKIT?=bin/linuxkit
-GOOS=$(shell uname -s | tr '[:upper:]' '[:lower:]')
-GOARCH=amd64
+GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+GOARCH?=amd64
 ifneq ($(GOOS),linux)
 CROSS=-e GOOS=$(GOOS) -e GOARCH=$(GOARCH)
 endif
