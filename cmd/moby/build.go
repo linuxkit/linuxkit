@@ -9,6 +9,7 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"sort"
 	"strconv"
@@ -111,7 +112,7 @@ func build(args []string) {
 	if len(buildOut) == 1 && streamable[buildOut[0]] {
 		if *buildOutputFile == "" {
 			*buildOutputFile = filepath.Join(*buildDir, name+"."+buildOut[0])
-			// stop the erros in the validation below
+			// stop the errors in the validation below
 			*buildName = ""
 			*buildDir = ""
 		}
@@ -226,27 +227,6 @@ func getDiskSizeMB(s string) (int, error) {
 	return strconv.Atoi(s)
 }
 
-func initrdAppend(iw *tar.Writer, r io.Reader) {
-	tr := tar.NewReader(r)
-	for {
-		hdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatalln(err)
-		}
-		err = iw.WriteHeader(hdr)
-		if err != nil {
-			log.Fatalln(err)
-		}
-		_, err = io.Copy(iw, tr)
-		if err != nil {
-			log.Fatalln(err)
-		}
-	}
-}
-
 func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 	for _, img := range config.Image {
 		// First check for an exact name match
@@ -298,23 +278,15 @@ func buildInternal(m Moby, w io.Writer, pull bool) {
 	if m.Kernel.Image != "" {
 		// get kernel and initrd tarball from container
 		log.Infof("Extract kernel image: %s", m.Kernel.Image)
-		const (
-			kernelName    = "kernel"
-			kernelAltName = "bzImage"
-			ktarName      = "kernel.tar"
-		)
-		out, err := ImageExtract(m.Kernel.Image, "", enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
+		kf := newKernelFilter(iw, m.Kernel.Cmdline)
+		err := ImageTar(m.Kernel.Image, "", kf, enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
 		if err != nil {
 			log.Fatalf("Failed to extract kernel image and tarball: %v", err)
 		}
-		buf := bytes.NewBuffer(out)
-
-		kernel, ktar, err := untarKernel(buf, kernelName, kernelAltName, ktarName, m.Kernel.Cmdline)
+		err = kf.Close()
 		if err != nil {
-			log.Fatalf("Could not extract kernel image and filesystem from tarball. %v", err)
+			log.Fatalf("Close error: %v", err)
 		}
-		initrdAppend(iw, kernel)
-		initrdAppend(iw, ktar)
 	}
 
 	// convert init images to tarballs
@@ -323,12 +295,10 @@ func buildInternal(m Moby, w io.Writer, pull bool) {
 	}
 	for _, ii := range m.Init {
 		log.Infof("Process init image: %s", ii)
-		init, err := ImageExtract(ii, "", enforceContentTrust(ii, &m.Trust), pull)
+		err := ImageTar(ii, "", iw, enforceContentTrust(ii, &m.Trust), pull)
 		if err != nil {
 			log.Fatalf("Failed to build init tarball from %s: %v", ii, err)
 		}
-		buffer := bytes.NewBuffer(init)
-		initrdAppend(iw, buffer)
 	}
 
 	if len(m.Onboot) != 0 {
@@ -343,12 +313,10 @@ func buildInternal(m Moby, w io.Writer, pull bool) {
 		}
 		so := fmt.Sprintf("%03d", i)
 		path := "containers/onboot/" + so + "-" + image.Name
-		out, err := ImageBundle(path, image.Image, config, useTrust, pull)
+		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
 		if err != nil {
 			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
-		buffer := bytes.NewBuffer(out)
-		initrdAppend(iw, buffer)
 	}
 
 	if len(m.Services) != 0 {
@@ -362,20 +330,17 @@ func buildInternal(m Moby, w io.Writer, pull bool) {
 			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
 		}
 		path := "containers/services/" + image.Name
-		out, err := ImageBundle(path, image.Image, config, useTrust, pull)
+		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
 		if err != nil {
 			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
-		buffer := bytes.NewBuffer(out)
-		initrdAppend(iw, buffer)
 	}
 
 	// add files
-	buffer, err := filesystem(m)
+	err := filesystem(m, iw)
 	if err != nil {
 		log.Fatalf("failed to add filesystem parts: %v", err)
 	}
-	initrdAppend(iw, buffer)
 	err = iw.Close()
 	if err != nil {
 		log.Fatalf("initrd close error: %v", err)
@@ -384,83 +349,216 @@ func buildInternal(m Moby, w io.Writer, pull bool) {
 	return
 }
 
-func untarKernel(buf *bytes.Buffer, kernelName, kernelAltName, ktarName string, cmdline string) (*bytes.Buffer, *bytes.Buffer, error) {
-	tr := tar.NewReader(buf)
+// kernelFilter is a tar.Writer that transforms a kernel image into the output we want on underlying tar writer
+type kernelFilter struct {
+	tw          *tar.Writer
+	buffer      *bytes.Buffer
+	cmdline     string
+	discard     bool
+	foundKernel bool
+	foundKTar   bool
+}
 
-	var kernel, ktar *bytes.Buffer
-	foundKernel := false
+func newKernelFilter(tw *tar.Writer, cmdline string) *kernelFilter {
+	return &kernelFilter{tw: tw, cmdline: cmdline}
+}
 
+func (k *kernelFilter) finishTar() error {
+	if k.buffer == nil {
+		return nil
+	}
+	tr := tar.NewReader(k.buffer)
+	err := tarAppend(k.tw, tr)
+	k.buffer = nil
+	return err
+}
+
+func (k *kernelFilter) Close() error {
+	if !k.foundKernel {
+		return errors.New("did not find kernel in kernel image")
+	}
+	if !k.foundKTar {
+		return errors.New("did not find kernel.tar in kernel image")
+	}
+	return k.finishTar()
+}
+
+func (k *kernelFilter) Flush() error {
+	err := k.finishTar()
+	if err != nil {
+		return err
+	}
+	return k.tw.Flush()
+}
+
+func (k *kernelFilter) Write(b []byte) (n int, err error) {
+	if k.discard {
+		return len(b), nil
+	}
+	if k.buffer != nil {
+		return k.buffer.Write(b)
+	}
+	return k.tw.Write(b)
+}
+
+func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
+	err := k.finishTar()
+	if err != nil {
+		return err
+	}
+	tw := k.tw
+	switch hdr.Name {
+	case "kernel":
+		if k.foundKernel {
+			return errors.New("found more than one possible kernel image")
+		}
+		k.foundKernel = true
+		k.discard = false
+		whdr := &tar.Header{
+			Name:     "boot",
+			Mode:     0755,
+			Typeflag: tar.TypeDir,
+		}
+		if err := tw.WriteHeader(whdr); err != nil {
+			return err
+		}
+		// add the cmdline in /boot/cmdline
+		whdr = &tar.Header{
+			Name: "boot/cmdline",
+			Mode: 0644,
+			Size: int64(len(k.cmdline)),
+		}
+		if err := tw.WriteHeader(whdr); err != nil {
+			return err
+		}
+		buf := bytes.NewBufferString(k.cmdline)
+		_, err = io.Copy(tw, buf)
+		if err != nil {
+			return err
+		}
+		whdr = &tar.Header{
+			Name: "boot/kernel",
+			Mode: hdr.Mode,
+			Size: hdr.Size,
+		}
+		if err := tw.WriteHeader(whdr); err != nil {
+			return err
+		}
+	case "kernel.tar":
+		k.foundKTar = true
+		k.discard = false
+		k.buffer = new(bytes.Buffer)
+	default:
+		k.discard = true
+	}
+
+	return nil
+}
+
+func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			log.Fatalln(err)
+			return err
 		}
-		switch hdr.Name {
-		case kernelName, kernelAltName:
-			if foundKernel {
-				return nil, nil, errors.New("found more than one possible kernel image")
+		err = iw.WriteHeader(hdr)
+		if err != nil {
+			return err
+		}
+		_, err = io.Copy(iw, tr)
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func filesystem(m Moby, tw *tar.Writer) error {
+	if len(m.Files) != 0 {
+		log.Infof("Add files:")
+	}
+	for _, f := range m.Files {
+		log.Infof("  %s", f.Path)
+		if f.Path == "" {
+			return errors.New("Did not specify path for file")
+		}
+		if !f.Directory && f.Contents == "" && f.Symlink == "" {
+			if f.Source == "" {
+				return errors.New("Contents of file not specified")
 			}
-			foundKernel = true
-			kernel = new(bytes.Buffer)
-			// make a new tarball with kernel in /boot/kernel
-			tw := tar.NewWriter(kernel)
-			whdr := &tar.Header{
-				Name:     "boot",
-				Mode:     0700,
+
+			contents, err := ioutil.ReadFile(f.Source)
+			if err != nil {
+				return err
+			}
+
+			f.Contents = string(contents)
+		}
+		// we need all the leading directories
+		parts := strings.Split(path.Dir(f.Path), "/")
+		root := ""
+		for _, p := range parts {
+			if p == "." || p == "/" {
+				continue
+			}
+			if root == "" {
+				root = p
+			} else {
+				root = root + "/" + p
+			}
+			hdr := &tar.Header{
+				Name:     root,
 				Typeflag: tar.TypeDir,
+				Mode:     0700,
 			}
-			if err := tw.WriteHeader(whdr); err != nil {
-				return nil, nil, err
-			}
-			whdr = &tar.Header{
-				Name: "boot/kernel",
-				Mode: hdr.Mode,
-				Size: hdr.Size,
-			}
-			if err := tw.WriteHeader(whdr); err != nil {
-				return nil, nil, err
-			}
-			_, err = io.Copy(tw, tr)
+			err := tw.WriteHeader(hdr)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
-			// add the cmdline in /boot/cmdline
-			whdr = &tar.Header{
-				Name: "boot/cmdline",
-				Mode: 0700,
-				Size: int64(len(cmdline)),
+		}
+
+		if f.Directory {
+			if f.Contents != "" {
+				return errors.New("Directory with contents not allowed")
 			}
-			if err := tw.WriteHeader(whdr); err != nil {
-				return nil, nil, err
+			hdr := &tar.Header{
+				Name:     f.Path,
+				Typeflag: tar.TypeDir,
+				Mode:     0700,
 			}
-			buf := bytes.NewBufferString(cmdline)
-			_, err = io.Copy(tw, buf)
+			err := tw.WriteHeader(hdr)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
-			if err := tw.Close(); err != nil {
-				return nil, nil, err
+		} else if f.Symlink != "" {
+			hdr := &tar.Header{
+				Name:     f.Path,
+				Typeflag: tar.TypeSymlink,
+				Mode:     0600,
+				Linkname: f.Symlink,
 			}
-		case ktarName:
-			ktar = new(bytes.Buffer)
-			_, err := io.Copy(ktar, tr)
+			err := tw.WriteHeader(hdr)
 			if err != nil {
-				return nil, nil, err
+				return err
 			}
-		default:
-			continue
+		} else {
+			hdr := &tar.Header{
+				Name: f.Path,
+				Mode: 0600,
+				Size: int64(len(f.Contents)),
+			}
+			err := tw.WriteHeader(hdr)
+			if err != nil {
+				return err
+			}
+			_, err = tw.Write([]byte(f.Contents))
+			if err != nil {
+				return err
+			}
 		}
 	}
-
-	if kernel == nil {
-		return nil, nil, errors.New("did not find kernel in kernel image")
-	}
-	if ktar == nil {
-		return nil, nil, errors.New("did not find kernel.tar in kernel image")
-	}
-
-	return kernel, ktar, nil
+	return nil
 }
