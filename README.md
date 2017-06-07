@@ -40,9 +40,11 @@ This will use a suitable backend for your platform or you can choose one, for ex
 See `linuxkit run --help`.
 
 Additional, platform specific information is available for:
-- [macOS](docs/mac.md)
-- [Google Cloud](docs/gcp.md)
-- [Azure](docs/azure.md)
+- [macOS/HyperKit](docs/platform-hyperkit.md)
+- [qemu/kvm](docs/platform-qemu.md)
+- [Amazon Web Services](docs/platform-aws.md)
+- [Google Cloud](docs/platform-gcp.md)
+- [Microsoft Azure](docs/platform-azure.md)
 
 We'll add more detailed docs for other platforms in the future.
 

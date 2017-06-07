@@ -17,7 +17,7 @@ Finally, you must set the `AWS_REGION` environment variable as this is used by t
 export AWS_REGION=eu-west-1
 ```
 
-## Build an image
+## Build an image
 
 AWS requires a `RAW` image. To create one:
 

@@ -65,3 +65,28 @@ and then:
 docker build -t socat .
 docker run --rm -t -d -p 6379:6379 socat tcp-listen:6379,reuseaddr,fork tcp:<IP address of VM>:6379
 ```
+
+## `vsudd` unix domain socket forwarding
+
+The [`vsudd` package](/pkg/vsudd) provides a daemon that exposes unix
+domain socket inside the VM to the host via virtio or Hyper-V sockets.
+With HyperKit, the virtio sockets can be exposed as unix domain
+sockets on the host, enabling access to other daemons, like
+`containerd` and `dockerd`, from the host.  An example configuration
+file is available in [examples/vsudd.yml](/examples/vsudd.yml).
+
+After building the example, run it with `linuxkit run hyperkit
+-vsock-ports 2374 vsudd`. This will create a unix domain socket in the state
+directory that maps to the `containerd` control socket. The socket is called
+`guest.00000946`.
+
+If you install the `ctr` tool on the host you should be able to access the
+`containerd` running in the VM:
+
+```
+$ go get -u -ldflags -s github.com/containerd/containerd/cmd/ctr
+...
+$ ctr -a vsudd-state/guest.00000946 list
+ID        IMAGE     PID       STATUS
+vsudd               466       RUNNING
+```
