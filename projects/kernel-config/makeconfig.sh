@@ -2,10 +2,6 @@
 
 set -e
 
-ARCH=$1
-KERNEL_SERIES=$2
-DEBUG=$3
-
 cd /linux && make defconfig
 
 function merge_config()
@@ -32,15 +28,9 @@ function merge_config()
 
 cd /linux && make defconfig && make oldconfig
 
-merge_config "/config/kernel_config.base"
-merge_config "/config/kernel_config.${ARCH}"
-merge_config "/config/kernel_config.${KERNEL_SERIES}"
-merge_config "/config/kernel_config.${ARCH}.${KERNEL_SERIES}"
-
-if [ -n "${DEBUG}" ]; then
-    sed -i sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' /linux/arch/x86/configs/x86_64_defconfig
-    append_config "/config/kernel_config.debug"
-fi
+for config in "$@"; do
+  merge_config "$config"
+done
 
 cd /linux && make oldconfig
 
@@ -51,7 +41,9 @@ function check_config()
     if [ ! -f "$1" ]; then return; fi
 
     while read line; do
-      if [ -n "${DEBUG}" ] && [ "$line" == "CONFIG_PANIC_ON_OOPS=y" ]; then continue; fi
+      # CONFIG_PANIC_ON_OOPS is special, and set both ways, depending on
+      # whether DEBUG is set or not.
+      if [ "$line" == *"CONFIG_PANIC_ON_OOPS"* ]; then continue; fi
       value="$(grep "^${line}$" /linux/.config || true)"
 
       # It's okay to for the merging script to have simply not listed values we
@@ -67,10 +59,6 @@ function check_config()
     done < $1
 }
 
-check_config "/config/kernel_config.base"
-check_config "/config/kernel_config.${ARCH}"
-check_config "/config/kernel_config.${KERNEL_SERIES}"
-check_config "/config/kernel_config.${ARCH}.${KERNEL_SERIES}"
-if [ -n "${DEBUG}" ]; then
-    check_config "/config/kernel_config.debug"
-fi
+for config in "$@"; do
+  check_config "$config"
+done

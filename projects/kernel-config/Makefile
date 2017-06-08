@@ -11,7 +11,7 @@
 # Git tree hash of this directory. Override to force build
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 # Name on Hub
-IMAGE:=kernel
+IMAGE?=kernel
 ARCH?=$(shell if [ "$$(arch)" = "x86_64" ]]; then echo x86; else $$(arch); fi)
 
 .PHONY: check tag push sign

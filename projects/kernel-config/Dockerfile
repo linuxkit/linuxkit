@@ -23,7 +23,15 @@ RUN set -e && for patch in /patches/*.patch; do \
         patch -p1 < "$patch"; \
     done
 
-RUN /config/makeconfig.sh ${ARCH} ${KERNEL_SERIES}
+RUN \
+  if [ -n "${DEBUG}" ]; then dbg=kernel_config.debug; else dbg=; fi && \
+  /config/makeconfig.sh \
+    kernel_config.base \
+    "kernel_config.${ARCH}" \
+    "kernel_config.${ARCH}.${KERNEL_SERIES}" \
+    "kernel_config.${KERNEL_SERIES}" \
+    "$dbg" \
+    "kernel_config.probational"
 RUN /config/check-kernel-config.sh /linux/.config
 
 RUN mkdir /out

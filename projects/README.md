@@ -23,6 +23,8 @@ If you want to create a project, please submit a pull request to create a new di
 - [kernel-config](kernel-config/) an experiment on how to manage kernel config
 - [IMA-namespace](ima-namespace/) patches for supporting per-mount-namespace
   IMA policies
+- [probational](probational/) a "probational" channel, which is a collection of
+  a subset of other projects.
 
 ## Current projects not yet documented
 - VMWare support (VMWare)
