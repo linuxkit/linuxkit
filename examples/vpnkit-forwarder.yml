@@ -1,0 +1,44 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 page_poison=1"
+init:
+  - linuxkit/init:2599bcd5013ce5962aa155ee8929c26160de13bd
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
+onboot:
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: mount-vpnkit
+    image: "alpine:3.6"
+    binds:
+        - /var/:/host_var:rbind,rshared
+    capabilities:
+        - CAP_SYS_ADMIN
+    rootfsPropagation: shared
+    command: ["sh", "-c", "mkdir /host_var/vpnkit && mount -v -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /host_var/vpnkit"]
+services:
+  - name: sshd
+    image: "linuxkit/sshd:abc1f5e096982ebc3fb61c506aed3ac9c2ae4d55"
+  - name: vpnkit-forwarder
+    image: "linuxkit/vpnkit-forwarder:883de832c2c3cb72cd9b01e3f7bd788649e0f2c2"
+    binds:
+        - /var/vpnkit:/port
+    net: host
+    command: ["/vpnkit-forwarder"]
+  - name: vpnkit-expose-port
+    image: "linuxkit/vpnkit-forwarder:883de832c2c3cb72cd9b01e3f7bd788649e0f2c2"
+    net: none
+    binds:
+        - /var/vpnkit:/port
+    command: ["/vpnkit-expose-port","-i",
+              "-host-ip","127.0.0.1","-host-port","22",
+              "-container-ip","127.0.0.1","-container-port","22","-no-local-ip"]
+
+files:
+  - path: root/.ssh/authorized_keys
+    contents: '#your ssh key here'
+
+trust:
+  org:
+    - linuxkit
