@@ -13,7 +13,7 @@ IMAGE_NAME="kmod-test"
 
 clean_up() {
 	docker rmi ${IMAGE_NAME} || true
-	find . -iname "kmod*" -not -iname "*.yml" -exec rm -rf {} \;
+	find . -iname "kmod*" -not -iname "*.yml" -exec rm -rf {} \; || true
 }
 trap clean_up EXIT
 
@@ -21,7 +21,10 @@ trap clean_up EXIT
 docker pull linuxkit/kernel:4.9.x
 # Build a package
 docker build -t ${IMAGE_NAME} .
-# Build a LinuxKit image with kernel module (and test script)
+
+# Build and run a LinuxKit image with kernel module (and test script)
 moby build -output kernel+initrd kmod.yml
-# Run it
-linuxkit run qemu kmod | grep -q "Hello LinuxKit"
+RESULT="$(linuxkit run kmod)"
+echo "${RESULT}" | grep -q "Hello LinuxKit"
+
+exit 0

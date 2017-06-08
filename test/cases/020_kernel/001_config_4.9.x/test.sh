@@ -10,13 +10,13 @@ set -e
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
 clean_up() {
-	find . -iname "test-kernel-config*" -not -iname "*.yml" -exec rm -rf {} \;
+	find . -iname "test-kernel-config*" -not -iname "*.yml" -exec rm -rf {} \; || true
 }
 trap clean_up EXIT
 
 # Test code goes here
 moby build -output kernel+initrd test-kernel-config.yml
-RESULT="$(linuxkit run qemu test-kernel-config)"
+RESULT="$(linuxkit run test-kernel-config)"
 echo "${RESULT}" | grep -q "suite PASSED"
 
 exit 0
