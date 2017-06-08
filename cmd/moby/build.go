@@ -518,6 +518,9 @@ func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 }
 
 func filesystem(m Moby, tw *tar.Writer) error {
+	// TODO also include the files added in other parts of the build
+	var addedFiles = map[string]bool{}
+
 	if len(m.Files) != 0 {
 		log.Infof("Add files:")
 	}
@@ -525,6 +528,27 @@ func filesystem(m Moby, tw *tar.Writer) error {
 		log.Infof("  %s", f.Path)
 		if f.Path == "" {
 			return errors.New("Did not specify path for file")
+		}
+		mode := int64(0600)
+		if f.Directory {
+			mode = 0700
+		}
+		if f.Mode != "" {
+			var err error
+			mode, err = strconv.ParseInt(f.Mode, 8, 32)
+			if err != nil {
+				return fmt.Errorf("Cannot parse file mode as octal value: %v", err)
+			}
+		}
+		dirMode := mode
+		if dirMode&0700 != 0 {
+			dirMode |= 0100
+		}
+		if dirMode&0070 != 0 {
+			dirMode |= 0010
+		}
+		if dirMode&0007 != 0 {
+			dirMode |= 0001
 		}
 		if !f.Directory && f.Contents == "" && f.Symlink == "" {
 			if f.Source == "" {
@@ -550,17 +574,20 @@ func filesystem(m Moby, tw *tar.Writer) error {
 			} else {
 				root = root + "/" + p
 			}
-			hdr := &tar.Header{
-				Name:     root,
-				Typeflag: tar.TypeDir,
-				Mode:     0700,
-			}
-			err := tw.WriteHeader(hdr)
-			if err != nil {
-				return err
+			if !addedFiles[root] {
+				hdr := &tar.Header{
+					Name:     root,
+					Typeflag: tar.TypeDir,
+					Mode:     dirMode,
+				}
+				err := tw.WriteHeader(hdr)
+				if err != nil {
+					return err
+				}
+				addedFiles[root] = true
 			}
 		}
-
+		addedFiles[f.Path] = true
 		if f.Directory {
 			if f.Contents != "" {
 				return errors.New("Directory with contents not allowed")
@@ -568,7 +595,7 @@ func filesystem(m Moby, tw *tar.Writer) error {
 			hdr := &tar.Header{
 				Name:     f.Path,
 				Typeflag: tar.TypeDir,
-				Mode:     0700,
+				Mode:     mode,
 			}
 			err := tw.WriteHeader(hdr)
 			if err != nil {
@@ -578,7 +605,7 @@ func filesystem(m Moby, tw *tar.Writer) error {
 			hdr := &tar.Header{
 				Name:     f.Path,
 				Typeflag: tar.TypeSymlink,
-				Mode:     0600,
+				Mode:     mode,
 				Linkname: f.Symlink,
 			}
 			err := tw.WriteHeader(hdr)
@@ -588,7 +615,7 @@ func filesystem(m Moby, tw *tar.Writer) error {
 		} else {
 			hdr := &tar.Header{
 				Name: f.Path,
-				Mode: 0600,
+				Mode: mode,
 				Size: int64(len(f.Contents)),
 			}
 			err := tw.WriteHeader(hdr)

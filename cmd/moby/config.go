@@ -32,6 +32,7 @@ type Moby struct {
 		Symlink   string
 		Contents  string
 		Source    string
+		Mode      string
 	}
 }
 

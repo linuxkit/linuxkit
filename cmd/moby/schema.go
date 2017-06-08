@@ -22,7 +22,8 @@ var schema = string(`
           "directory": {"type": "boolean"},
           "symlink": {"type": "string"},
           "contents": {"type": "string"},
-          "source": {"type": "string"}
+          "source": {"type": "string"},
+          "mode": {"type": "string"}
         }
     },
     "files": {
