@@ -2,7 +2,7 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
+  - linuxkit/init:2599bcd5013ce5962aa155ee8929c26160de13bd
   - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
   - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
 onboot:
@@ -14,7 +14,7 @@ services:
     image: "linuxkit/vsudd:a66df914201aac784195d5b78262f622fe7f910c"
     binds:
         - /run/containerd/containerd.sock:/run/containerd/containerd.sock
-    command: ["/vsudd", 
+    command: ["/vsudd",
         "-inport", "2374:unix:/run/containerd/containerd.sock"]
 
 trust:

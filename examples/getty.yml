@@ -2,7 +2,7 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
+  - linuxkit/init:2599bcd5013ce5962aa155ee8929c26160de13bd
   - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
   - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
   - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
@@ -13,13 +13,13 @@ onboot:
     image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
-  - name: rngd
-    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
   - name: getty
     image: "linuxkit/getty:148946d72d1c96df3ea91cb8ee4f9583cd3cc5c2"
     # to make insecure with passwordless root login, uncomment following lines
     #env:
     # - INSECURE=true
+  - name: rngd
+    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)
