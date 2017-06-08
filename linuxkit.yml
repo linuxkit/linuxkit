@@ -26,8 +26,6 @@ services:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
 files:
-  - path: etc/docker/daemon.json
-    contents: '{"debug": true}'
   - path: etc/containerd/config.toml
     contents: |
       state = "/run/containerd"
