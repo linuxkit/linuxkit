@@ -12,7 +12,10 @@ LINUXKIT?=bin/linuxkit
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH?=amd64
 ifneq ($(GOOS),linux)
-CROSS=-e GOOS=$(GOOS) -e GOARCH=$(GOARCH)
+CROSS+=-e GOOS=$(GOOS)
+endif
+ifneq ($(GOARCH),amd64)
+CROSS+=-e GOARCH=$(GOARCH)
 endif
 
 PREFIX?=/usr/local/
@@ -56,6 +59,12 @@ collect-artifacts: artifacts/test.img.tar.gz artifacts/test-ltp.img.tar.gz
 .PHONY: ci ci-tag ci-pr
 ci:
 	$(MAKE) clean
+	$(MAKE) GOOS=darwin
+	$(MAKE) clean
+	$(MAKE) GOOS=linux
+	$(MAKE) clean
+	$(MAKE) GOOS=windows
+	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
@@ -63,12 +72,24 @@ ci:
 
 ci-tag:
 	$(MAKE) clean
+	$(MAKE) GOOS=darwin
+	$(MAKE) clean
+	$(MAKE) GOOS=linux
+	$(MAKE) clean
+	$(MAKE) GOOS=windows
+	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
 	$(MAKE) -C pkg tag
 
 ci-pr:
+	$(MAKE) clean
+	$(MAKE) GOOS=darwin
+	$(MAKE) clean
+	$(MAKE) GOOS=linux
+	$(MAKE) clean
+	$(MAKE) GOOS=windows
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) install
