@@ -30,12 +30,12 @@ and `linuxkit run linuxkit` to run locally. Use `halt` to terminate on the conso
 
 Build requirements:
 - GNU `make`
-- GNU or BSD `tar` (not `busybox` `tar`)
 - Docker
+- optionally `qemu`
 
 ### Booting and Testing
 
-You can use `linuxkit run <name>` to execute the image you created with `moby build <name>.yml`.
+You can use `linuxkit run <name>` or `linuxkit run <name>.<format> to execute the image you created with `moby build <name>.yml`.
 This will use a suitable backend for your platform or you can choose one, for example VMWare.
 See `linuxkit run --help`.
 
@@ -93,7 +93,7 @@ The yaml format specifies the image to be built:
 - `services` is the system services, which normally run for the whole time the system is up
 - `files` are additional files to add to the image
 
-For a more detailed overview of the options see [yaml documentation](docs/yaml.md).
+For a more detailed overview of the options see [yaml documentation](https://github.com/moby/tool/blob/master/docs/yaml.md)
 
 ## Architecture and security
 
