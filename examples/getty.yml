@@ -16,7 +16,7 @@ services:
   - name: rngd
     image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
   - name: getty
-    image: "linuxkit/getty:6a9fabaa705c5dddba58d1b8fe56c7f9ee4ab813"
+    image: "linuxkit/getty:148946d72d1c96df3ea91cb8ee4f9583cd3cc5c2"
     # to make insecure with passwordless root login, uncomment following lines
     #env:
     # - INSECURE=true
