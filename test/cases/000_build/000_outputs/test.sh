@@ -17,7 +17,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -disable-content-trust -output kernel+initrd,iso-bios,iso-efi,gcp,raw,qcow2,vmdk -name "${NAME}" test.yml
+moby build -output kernel+initrd,iso-bios,iso-efi,gcp,raw,qcow2,vmdk -name "${NAME}" test.yml
 [ -f "${NAME}-kernel" ] || exit 1
 [ -f "${NAME}-initrd.img" ] || exit 1
 [ -f "${NAME}-cmdline" ] || exit 1
