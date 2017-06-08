@@ -59,18 +59,21 @@ ci:
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
+	$(MAKE) -C pkg tag
 
 ci-tag:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
+	$(MAKE) -C pkg tag
 
 ci-pr:
 	$(MAKE) clean
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test pr
+	$(MAKE) -C pkg tag
 
 .PHONY: clean
 clean:
