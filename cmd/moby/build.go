@@ -529,6 +529,10 @@ func filesystem(m Moby, tw *tar.Writer) error {
 		if f.Path == "" {
 			return errors.New("Did not specify path for file")
 		}
+		// tar archives should not have absolute paths
+		if f.Path[0] == os.PathSeparator {
+			f.Path = f.Path[1:]
+		}
 		mode := int64(0600)
 		if f.Directory {
 			mode = 0700
