@@ -43,6 +43,9 @@ bin/linuxkit: $(LINUXKIT_DEPS) | bin
 	rm tmp_linuxkit_bin.tar
 	touch $@
 
+local: $(LINUXKIT_DEPS) | bin
+	go build -o bin/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
+
 bin:
 	mkdir -p $@
 
