@@ -79,5 +79,5 @@ The sample command to run the enclosed is:
 
 ```
 moby build swap.yml
-moby run -disk-size 4096 swap
+linuxkit run -disk size=4G swap
 ```

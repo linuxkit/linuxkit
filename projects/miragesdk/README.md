@@ -64,5 +64,5 @@ the hardware support is available.
 
 ```
 ../../bin/moby build examples/mirage-dhcp.yml`
-../../bin/moby run mirage-dhcp
+../../bin/linuxkit run mirage-dhcp
 ```

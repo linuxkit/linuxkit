@@ -28,6 +28,6 @@ down. There are more options to change the behaviour.
 ## TODO
 
 - Add scripts to create Hyper-V VM
-- Enable virtio sockets in `moby run` with HyperKit
+- Enable virtio sockets in `linuxkit run` with HyperKit
 - Add some sample client YAML files which would connect from the VM to the host
 - Hook up to CI for both HyperKit and Hyper-V
