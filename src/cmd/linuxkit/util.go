@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -97,6 +98,18 @@ func stringToIntArray(l string, sep string) ([]int, error) {
 		}
 	}
 	return i, nil
+}
+
+// Convert a multi-line string into an array of strings
+func splitLines(in string) []string {
+	res := []string{}
+
+	s := bufio.NewScanner(strings.NewReader(in))
+	for s.Scan() {
+		res = append(res, s.Text())
+	}
+
+	return res
 }
 
 // This function parses the "size" parameter of a disk specification

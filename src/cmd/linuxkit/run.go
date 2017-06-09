@@ -21,6 +21,7 @@ func runUsage() {
 	fmt.Printf("  azure\n")
 	fmt.Printf("  gcp\n")
 	fmt.Printf("  hyperkit [macOS]\n")
+	fmt.Printf("  hyperv [Windows]\n")
 	fmt.Printf("  packet\n")
 	fmt.Printf("  qemu [linux]\n")
 	fmt.Printf("  vcenter\n")
@@ -51,6 +52,8 @@ func run(args []string) {
 		os.Exit(0)
 	case "hyperkit":
 		runHyperKit(args[1:])
+	case "hyperv":
+		runHyperV(args[1:])
 	case "packet":
 		runPacket(args[1:])
 	case "qemu":
@@ -65,6 +68,8 @@ func run(args []string) {
 			runHyperKit(args)
 		case "linux":
 			runQemu(args)
+		case "windows":
+			runHyperV(args)
 		default:
 			log.Errorf("There currently is no default 'run' backend for your platform.")
 		}
