@@ -25,6 +25,14 @@ to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/* /usr/loc
 If you already have `go` installed you can use `go get -u github.com/moby/tool/cmd/moby` to install
 the `moby` build tool, and `go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit` to install the `linuxkit` tool.
 
+On MacOS there is a `brew tap` available. Detailed instructions are at [linuxkit/homebrew-linuxkit](https://github.com/linuxkit/homebrew-linuxkit),
+the short summary is
+```
+brew tap linuxkit/linuxkit
+brew install --HEAD moby
+brew install --HEAD linuxkit
+```
+
 Once you have built the tool, use `moby build linuxkit.yml` to build the example configuration,
 and `linuxkit run linuxkit` to run locally. Use `halt` to terminate on the console.
 
