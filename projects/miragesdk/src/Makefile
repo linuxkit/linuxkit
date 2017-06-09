@@ -23,13 +23,13 @@ hash: Makefile Dockerfile $(FILES) .build
 	| sha1sum | sed 's/ .*//' > $@
 
 tag: .build
-	docker tag $(IMAGE) mobylinux/$(IMAGE):$(shell cat hash)
+	docker tag $(IMAGE) linuxkitprojects/$(IMAGE):$(shell cat hash)
 
 push: hash .build
 	docker pull $(BASE)
-	docker pull mobylinux/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE) mobylinux/$(IMAGE):$(shell cat hash) && \
-		 docker push mobylinux/$(IMAGE):$(shell cat hash))
+	docker pull linuxkitprojects/$(IMAGE):$(shell cat hash) || \
+		(docker tag $(IMAGE) linuxkitprojects/$(IMAGE):$(shell cat hash) && \
+		 docker push linuxkitprojects/$(IMAGE):$(shell cat hash))
 
 clean::
 	rm -rf hash .build
