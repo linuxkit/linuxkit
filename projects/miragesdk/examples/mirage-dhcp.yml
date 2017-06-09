@@ -13,7 +13,7 @@ services:
   - name: rngd
     image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9
   - name: dhcp-client
-    image: mobylinux/dhcp-client:a7a6b49b0ff51ffa2f44ac848cd649e29f946e0c
+    image: linuxkitprojects/dhcp-client:6c231135a88d42e7d18d2ba952f0798910550cbd
     net: host
     capabilities:
      - CAP_NET_ADMIN # to bring eth0 up

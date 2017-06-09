@@ -13,13 +13,17 @@ type t = {
   nameservers: Ipaddr.V4.t list;
 }
 
-(* FIXME: we loose lots of info here *)
-let of_ipv4_config (t: Mirage_protocols_lwt.ipv4_config) =
-  { address = t.Mirage_protocols_lwt.address;
-    gateway = t.Mirage_protocols_lwt.gateway;
-    domain  = None;
-    search  = None;
-    nameservers = [] }
+(* FIXME: we (still) lose lots of info here *)
+let of_lease (t: Dhcp_wire.pkt) =
+  let gateway = match Dhcp_wire.collect_routers t.Dhcp_wire.options with
+  | [] -> None
+  | n::_ -> Some n
+  in
+  { address = t.Dhcp_wire.yiaddr;
+    gateway;
+    domain = Dhcp_wire.find_domain_name t.Dhcp_wire.options;
+    search = Dhcp_wire.find_domain_search t.Dhcp_wire.options;
+    nameservers = Dhcp_wire.collect_dns_servers t.Dhcp_wire.options }
 
 let pp ppf t =
   Fmt.pf ppf "\n\
@@ -31,24 +35,6 @@ let pp ppf t =
     Fmt.(option ~none:(unit "--") string) t.domain
     Fmt.(option ~none:(unit "--") string) t.search
     Fmt.(list ~sep:(unit " ") Ipaddr.V4.pp_hum) t.nameservers
-
-let of_pkt lease =
-  let open Dhcp_wire in
-  (* ipv4_config expects a single IP address and the information
-   * needed to construct a prefix. It can optionally use one router. *)
-  let address = lease.yiaddr in
-  let gateway = match Dhcp_wire.collect_routers lease.options with
-    |  []  -> None
-    | h::_ -> Some h
-  in
-  let domain = Dhcp_wire.find_domain_name lease.options in
-  let search = Dhcp_wire.find_domain_search lease.options in
-  let nameservers = Dhcp_wire.collect_name_servers lease.options in
-  { address; gateway; domain; search; nameservers }
-
-let of_pkt_opt = function
-  | None       -> None
-  | Some lease -> Some (of_pkt lease)
 
 let parse_option_code str =
   match Dhcp_wire.string_to_option_code str with
@@ -173,7 +159,7 @@ let setup_log =
 
 (* FIXME: module Main ... *)
 
-module Dhcp_client = Dhcp_client_mirage.Make(Time)(Net)
+module Dhcp_client = Dhcp_client_lwt.Make(Time)(Net)
 
 let pp_path = Fmt.(list ~sep:(unit "/") string)
 
@@ -209,7 +195,7 @@ let start () dhcp_codes net ctl =
   in
   Dhcp_client.connect ~requests net >>= fun stream ->
   Lwt_stream.last_new stream >>= fun result ->
-  let result = of_ipv4_config result in
+  let result = of_lease result in
   Log.info (fun l -> l "found lease: %a" pp result);
   set_ip ctl ["ip"] result.address >>= fun () ->
   set_ip_opt ctl ["gateway"] result.gateway
