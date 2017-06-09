@@ -11,10 +11,10 @@
 [Org]
 	[Org."Core maintainers"]
 		people = [
-			"ijc25",
+			"ijc",
 			"justincormack",
 			"riyazdf",
-			"rneugeba",
+			"rn",
 		]
 
 [people]
@@ -25,10 +25,10 @@
 
 	# ADD YOURSELF HERE IN ALPHABETICAL ORDER
 
-	[People.ijc25]
+	[People.ijc]
 	Name = "Ian Campbell"
 	Email = "ian.campbell@docker.com"
-	GitHub = "ijc25"
+	GitHub = "ijc"
 
 	[people.justincormack]
 	Name = "Justin Cormack"
@@ -40,7 +40,7 @@
 	Email = "riyaz@docker.com"
 	GitHub = "riyazdf"
 
-	[people.rneugeba]
+	[people.rn]
 	Name = "Rolf Neugebauer"
 	Email = "rolf.neugebauer@docker.com"
-	GitHub = "rneugeba"
+	GitHub = "rn"
