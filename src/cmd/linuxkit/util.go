@@ -99,22 +99,23 @@ func stringToIntArray(l string, sep string) ([]int, error) {
 	return i, nil
 }
 
-// Parse a string which is either a number in MB, or a number with
-// either M (for Megabytes) or G (for GigaBytes) as a suffix and
-// returns the number in MB. Return 0 if string is empty.
+// This function parses the "size" parameter of a disk specification
+// and returns the size in MB. The "size" paramter defaults to GB, but
+// the unit can be explicitly set with either a G (for GB) or M (for
+// MB). It returns the disk size in MB.
 func getDiskSizeMB(s string) (int, error) {
 	if s == "" {
 		return 0, nil
 	}
 	sz := len(s)
-	if strings.HasSuffix(s, "G") {
+	if strings.HasSuffix(s, "M") {
 		i, err := strconv.Atoi(s[:sz-1])
 		if err != nil {
 			return 0, err
 		}
-		return i * 1024, nil
+		return i, nil
 	}
-	if strings.HasSuffix(s, "M") {
+	if strings.HasSuffix(s, "G") {
 		s = s[:sz-1]
 	}
 	return strconv.Atoi(s)

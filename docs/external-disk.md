@@ -9,7 +9,7 @@ In order to make the disk available, you need to tell `linuxkit` where the disk 
 
 All local `linuxkit run` methods (currently `hyperkit`, `qemu`, and `vmware`) take a `-disk` argument:
 
-* `-disk path,size=100M,format=qcow2`. For size the default is in MB but `G` can be aspecified for GB. The format can be omitted for the platform default, and is only useful on `qemu` at present.
+* `-disk path,size=100M,format=qcow2`. For size the default is in GB but an `M` can be appended to specify sizes in MB. The format can be omitted for the platform default, and is only useful on `qemu` at present.
 
 If the _path` is specified it will use the disk at location _path_, if you do not provide `-disk `_path_, `linuxkit` assumes a default, which is _prefix_`-state/disk.img` for `hyperkit` and `vmware` and _prefix_`-disk.img` for `qemu`. 
 
