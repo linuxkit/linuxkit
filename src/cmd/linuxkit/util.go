@@ -109,16 +109,17 @@ func getDiskSizeMB(s string) (int, error) {
 	}
 	sz := len(s)
 	if strings.HasSuffix(s, "M") {
-		i, err := strconv.Atoi(s[:sz-1])
-		if err != nil {
-			return 0, err
-		}
-		return i, nil
+		return strconv.Atoi(s[:sz-1])
 	}
 	if strings.HasSuffix(s, "G") {
 		s = s[:sz-1]
 	}
-	return strconv.Atoi(s)
+
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	return 1024 * i, nil
 }
 
 // DiskConfig is the config for a disk
