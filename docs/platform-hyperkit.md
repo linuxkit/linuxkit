@@ -1,4 +1,4 @@
-# LinuxKit on a Mac
+# LinuxKit with HyperKit (macOS)
 
 We recommend using LinuxKit in conjunction with
 [Docker for Mac](https://docs.docker.com/docker-for-mac/install/). For
@@ -6,6 +6,30 @@ the time being it's best to be on the latest edge release. `linuxkit
 run` uses [HyperKit](https://github.com/moby/hyperkit) and
 [VPNKit](https://github.com/moby/vpnkit) and the edge release ships
 with updated versions of both.
+
+Alternatively, you can install HyperKit and VPNKit standalone and use it without Docker for Mac.
+
+
+## Boot
+
+The HyperKit backend currently only supports booting the
+`kernel+initrd` output from `moby` (technically we could support EFI
+boot as well).
+
+
+## Console
+
+With `linuxkit run` on HyperKit the serial console is redirected to
+stdio, providing interactive access to the VM. The output of the VM
+can be re-directed to a file or pipe, but then stdin is not available.
+HyperKit does not provide a console device.
+
+
+## Disks
+
+The HyperKit backend support configuring a persistent disk using the
+standard `linuxkit` `-disk` syntax.  Currently, only one disk is
+supported and the disk is in raw format.
 
 
 ## Networking
@@ -55,6 +79,7 @@ While VPNKit has the general tooling to expose any VMs port on the
 localhost (just like it does with containers in Docker for Mac), we
 are unlikely to expose this as a general feature in `linuxkit run` as
 it is very specific to the macOS. However, you can use a `socat` container to proxy between LinuxKit VMs ports and localhost.  For example, to expose the redis port from the [RedisOS example](../examples/redis-os.yml), use this Dockerfile:
+
 ```
 FROM alpine:edge
 RUN apk add --no-cache socat
@@ -66,7 +91,18 @@ docker build -t socat .
 docker run --rm -t -d -p 6379:6379 socat tcp-listen:6379,reuseaddr,fork tcp:<IP address of VM>:6379
 ```
 
-## `vsudd` unix domain socket forwarding
+## Integration services and Metadata
+
+There are no special integration services available for HyperKit, but
+there are a number of packages, such as `vsudd`, which enable
+tighter integration of the VM with the host (see below).
+
+The HyperKit backend also allows passing custom userdata into the
+[metadata pacakge](./metadata.md) using the `-data` command-line
+option.
+
+
+### `vsudd` unix domain socket forwarding
 
 The [`vsudd` package](/pkg/vsudd) provides a daemon that exposes unix
 domain socket inside the VM to the host via virtio or Hyper-V sockets.
@@ -76,9 +112,7 @@ sockets on the host, enabling access to other daemons, like
 file is available in [examples/vsudd.yml](/examples/vsudd.yml).
 
 After building the example, run it with `linuxkit run hyperkit
--vsock-ports 2374 vsudd`. This will create a unix domain socket in the state
-directory that maps to the `containerd` control socket. The socket is called
-`guest.00000946`.
+-vsock-ports 2374 vsudd`. This will create a unix domain socket in the state directory that maps to the `containerd` control socket. The socket is called `guest.00000946`.
 
 If you install the `ctr` tool on the host you should be able to access the
 `containerd` running in the VM:

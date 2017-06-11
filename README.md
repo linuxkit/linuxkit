@@ -47,14 +47,18 @@ You can use `linuxkit run <name>` or `linuxkit run <name>.<format> to execute th
 This will use a suitable backend for your platform or you can choose one, for example VMWare.
 See `linuxkit run --help`.
 
-Additional, platform specific information is available for:
-- [macOS/HyperKit](docs/platform-hyperkit.md)
-- [qemu/kvm](docs/platform-qemu.md)
-- [Amazon Web Services](docs/platform-aws.md)
-- [Google Cloud](docs/platform-gcp.md)
-- [Microsoft Azure](docs/platform-azure.md)
+Currently supported platforms are:
+- Local hypervisors
+  - [HyperKit (macOS)](docs/platform-hyperkit.md)
+  - [Hyper-V (Windows)](docs/platform-hyperv.md)
+  - [qemu (macOS, Linux, Windows)](docs/platform-qemu.md)
+  - [VMware (macOS, Windows)](dos/platform-vmware.md)
+- Cloud based platforms:
+  - [Amazon Web Services](docs/platform-aws.md)
+  - [Google Cloud](docs/platform-gcp.md)
+  - [Microsoft Azure](docs/platform-azure.md)
+  - [packet.net](docs/platform-packet.md)
 
-We'll add more detailed docs for other platforms in the future.
 
 #### Running the Tests
 

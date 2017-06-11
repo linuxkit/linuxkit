@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/rneugeba/iso9660wrap"
+	"github.com/rn/iso9660wrap"
 )
 
 // WriteMetadataISO writes a metadata ISO file in a format usable by pkg/metadata

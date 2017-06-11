@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"strconv"
@@ -99,6 +100,18 @@ func stringToIntArray(l string, sep string) ([]int, error) {
 	return i, nil
 }
 
+// Convert a multi-line string into an array of strings
+func splitLines(in string) []string {
+	res := []string{}
+
+	s := bufio.NewScanner(strings.NewReader(in))
+	for s.Scan() {
+		res = append(res, s.Text())
+	}
+
+	return res
+}
+
 // This function parses the "size" parameter of a disk specification
 // and returns the size in MB. The "size" paramter defaults to GB, but
 // the unit can be explicitly set with either a G (for GB) or M (for
@@ -109,16 +122,17 @@ func getDiskSizeMB(s string) (int, error) {
 	}
 	sz := len(s)
 	if strings.HasSuffix(s, "M") {
-		i, err := strconv.Atoi(s[:sz-1])
-		if err != nil {
-			return 0, err
-		}
-		return i, nil
+		return strconv.Atoi(s[:sz-1])
 	}
 	if strings.HasSuffix(s, "G") {
 		s = s[:sz-1]
 	}
-	return strconv.Atoi(s)
+
+	i, err := strconv.Atoi(s)
+	if err != nil {
+		return 0, err
+	}
+	return 1024 * i, nil
 }
 
 // DiskConfig is the config for a disk
