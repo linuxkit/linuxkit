@@ -19,4 +19,4 @@ Landlock is stackable on top of other LSMs, like SELinux and Apparmor.
 - Offer design and code review help on Landlock, using Moby as a test-bed
 
 **Long-term:**
-- Develop a robust container-minded Landlock policy, and include it in Moby by default
+- Develop a robust container-minded Landlock policy, and include it in LinuxKit by default
