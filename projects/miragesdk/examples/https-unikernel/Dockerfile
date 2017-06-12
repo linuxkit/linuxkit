@@ -1,6 +1,6 @@
 FROM ocaml/opam@sha256:a469435632d0cacbceab799d7e48201b727d025fa1805cbbe210d94233b251ad
 #FROM ocaml/opam:debian-9_ocaml-4.04.0
-RUN opam pin add -yn capnp 'https://github.com/talex5/capnp-ocaml.git#interfaces'
+RUN opam pin add -yn capnp 'https://github.com/talex5/capnp-ocaml.git#demo1'
 RUN opam pin add -yn capnp-rpc 'https://github.com/talex5/capnp-rpc.git#demo1'
 RUN opam pin add -yn capnp-rpc-lwt 'https://github.com/talex5/capnp-rpc.git#demo1'
 RUN opam depext -i -y jbuilder lwt cohttp astring tls capnp camlzip alcotest cohttp
