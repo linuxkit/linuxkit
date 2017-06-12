@@ -22,12 +22,12 @@ export AWS_REGION=eu-west-1
 AWS requires a `RAW` image. To create one:
 
 ```
-$ moby build -output img examples/aws.yml
+$ moby build -output raw examples/aws.yml
 ```
 
 ## Push image
 
-Do `linuxkit push aws -bucket bucketname aws.img` to upload it to the
+Do `linuxkit push aws -bucket bucketname aws.raw` to upload it to the
 specified bucket, and create a bootable image from the stored image.
 
 Alternatively, you can use the `AWS_BUCKET` environment variable to specify the bucket name.
@@ -35,7 +35,7 @@ Alternatively, you can use the `AWS_BUCKET` environment variable to specify the 
 **Note:** If the push times out before it finishes, you can use the `-timeout` flag to extend the timeout.
 
 ```
-linuxkit push aws -bucket bucketname -timeout 1200 aws.img
+linuxkit push aws -bucket bucketname -timeout 1200 aws.raw
 ```
 
 ## Create an instance and connect to it
