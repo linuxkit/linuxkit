@@ -8,7 +8,7 @@ import (
 	"os"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/linuxkit/linuxkit/src/initrd"
+	"github.com/moby/tool/src/initrd"
 )
 
 const (
