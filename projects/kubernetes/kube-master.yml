@@ -76,6 +76,8 @@ services:
     rootfsPropagation: shared
 files:
   - path: root/.ssh/authorized_keys
-    contents: '# Your ssh key goes here'
+    source: ~/.ssh/id_rsa.pub
+    mode: "0600"
+    optional: true
   - {path: etc/cni, directory: true}
   - {path: opt/cni, directory: true}
