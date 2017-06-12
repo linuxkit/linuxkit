@@ -91,7 +91,7 @@ docker build -t socat .
 docker run --rm -t -d -p 6379:6379 socat tcp-listen:6379,reuseaddr,fork tcp:<IP address of VM>:6379
 ```
 
-#### Port forwarding with VPNKit`
+#### Port forwarding with VPNKit
 
 VPNKit has the general tooling to expose any guest VM port on the host (just
 like it does with containers in Docker for Mac). To enable forwarding, a
