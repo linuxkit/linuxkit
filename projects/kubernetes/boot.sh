@@ -3,12 +3,14 @@ if [ $# -eq 0 ] ; then
     img="kube-master"
     disk="kube-master-disk.img"
     data=""
+    state="kube-master-state"
 elif [ $# -gt 1 ] ; then
     img="kube-node"
     name="node-${1}"
     shift
     disk="kube-${name}-disk.img"
     data="${*}"
+    state="kube-${name}-state"
 else
     echo "Usage:"
     echo " - Boot master:"
@@ -19,4 +21,5 @@ else
 fi
 set -x
 rm -f "${disk}"
-../../bin/linuxkit run -cpus 2 -mem 4096 -disk "${disk}",size=4G -data "${data}" "${img}"
+rm -rf "${state}"
+../../bin/linuxkit run -cpus 2 -mem 4096 -state "${state}" -disk "${disk}",size=4G -data "${data}" "${img}"
