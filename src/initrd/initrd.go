@@ -8,7 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 
-	"github.com/linuxkit/linuxkit/src/pad4"
+	"github.com/moby/tool/src/pad4"
 	"github.com/surma/gocpio"
 )
 
