@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"path/filepath"
@@ -198,6 +199,18 @@ func build(args []string) {
 			if err != nil {
 				log.Fatalf("Cannot read stdin: %v", err)
 			}
+		} else if strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "https://") {
+			buffer := new(bytes.Buffer)
+			response, err := http.Get(arg)
+			if err != nil {
+				log.Fatal("Cannot fetch remote yaml file: %v", err)
+			}
+			defer response.Body.Close()
+			_, err = io.Copy(buffer, response.Body)
+			if err != nil {
+				log.Fatalf("Error reading http body: %v", err)
+			}
+			config = buffer.Bytes()
 		} else {
 			var err error
 			config, err = ioutil.ReadFile(conf)
