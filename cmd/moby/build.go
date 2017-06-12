@@ -558,7 +558,9 @@ func filesystem(m Moby, tw *tar.Writer) error {
 			if f.Source == "" {
 				return errors.New("Contents of file not specified")
 			}
-
+			if len(f.Source) > 2 && f.Source[:2] == "~/" {
+				f.Source = homeDir() + f.Source[1:]
+			}
 			contents, err := ioutil.ReadFile(f.Source)
 			if err != nil {
 				return err
