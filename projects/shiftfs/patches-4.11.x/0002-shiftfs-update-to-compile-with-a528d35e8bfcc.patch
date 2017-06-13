@@ -1,0 +1,44 @@
+From b0eb5c2b15df95ddec67436766f613aa7dd031be Mon Sep 17 00:00:00 2001
+From: Tycho Andersen <tycho@docker.com>
+Date: Fri, 14 Apr 2017 15:37:31 -0600
+Subject: [PATCH 2/2] shiftfs: update to compile with a528d35e8bfcc
+
+Signed-off-by: Tycho Andersen <tycho@docker.com>
+---
+ fs/shiftfs.c | 12 +++++++-----
+ 1 file changed, 7 insertions(+), 5 deletions(-)
+
+diff --git a/fs/shiftfs.c b/fs/shiftfs.c
+index ea8ac57b3ce1..fbe336ca0aa1 100644
+--- a/fs/shiftfs.c
++++ b/fs/shiftfs.c
+@@ -545,19 +545,21 @@ static int shiftfs_setattr(struct dentry *dentry, struct iattr *attr)
+ 	return 0;
+ }
+ 
+-static int shiftfs_getattr(struct vfsmount *mnt, struct dentry *dentry,
+-			   struct kstat *stat)
++static int shiftfs_getattr(const struct path *path, struct kstat *stat,
++			   u32 request_mask, unsigned int flags)
+ {
+-	struct inode *inode = dentry->d_inode;
++	struct inode *inode = d_inode(path->dentry);
+ 	struct dentry *real = inode->i_private;
+ 	struct inode *reali = real->d_inode;
+ 	const struct inode_operations *iop = reali->i_op;
++	struct path realpath;
+ 	int err = 0;
+ 
+-	mnt = dentry->d_sb->s_fs_info;
++	realpath.mnt = path->dentry->d_sb->s_fs_info;
++	realpath.dentry = real;
+ 
+ 	if (iop->getattr)
+-		err = iop->getattr(mnt, real, stat);
++		err = iop->getattr(&realpath, stat, request_mask, flags);
+ 	else
+ 		generic_fillattr(reali, stat);
+ 
+-- 
+2.11.0
+
