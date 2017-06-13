@@ -27,4 +27,4 @@ Now, let's make a user namespace:
     Access: (0644/-rw-r--r--)  Uid: (    0/    root)   Gid: (    0/    root)
 
 And thanks to the magic of shiftfs, the file is root owned in the user
-namespce.
+namespace.
