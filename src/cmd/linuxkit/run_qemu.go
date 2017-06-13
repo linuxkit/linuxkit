@@ -118,8 +118,12 @@ func runQemu(args []string) {
 	if *state == "" {
 		*state = prefix + "-state"
 	}
-	if err := os.MkdirAll(*state, 0755); err != nil {
-		log.Fatalf("Could not create state directory: %v", err)
+	var mkstate func()
+	mkstate = func() {
+		if err := os.MkdirAll(*state, 0755); err != nil {
+			log.Fatalf("Could not create state directory: %v", err)
+		}
+		mkstate = func() {}
 	}
 
 	isoPath := ""
@@ -133,6 +137,7 @@ func runQemu(args []string) {
 				log.Fatalf("Cannot read user data: %v", err)
 			}
 		}
+		mkstate()
 		isoPath = filepath.Join(*state, "data.iso")
 		if err := WriteMetadataISO(isoPath, d); err != nil {
 			log.Fatalf("Cannot write user data ISO: %v", err)
@@ -148,6 +153,7 @@ func runQemu(args []string) {
 			d.Format = "qcow2"
 		}
 		if d.Size != 0 && d.Path == "" {
+			mkstate()
 			d.Path = filepath.Join(*state, "disk"+id+".img")
 		}
 		if d.Path == "" {
