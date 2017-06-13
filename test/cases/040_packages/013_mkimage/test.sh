@@ -10,9 +10,10 @@ set -e
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
 clean_up() {
-	find . -iname "run*" -not -iname "*.yml" -exec rm -rf {} \;
-	find . -iname "mkimage*" -not -iname "*.yml" -exec rm -rf {} \;
-	rm -f disk.qcow2 tarball.img
+	find . -depth -iname "run*" -not -iname "*.yml" -exec rm -rf {} \;
+	find . -depth -iname "mkimage*" -not -iname "*.yml" -exec rm -rf {} \;
+	find . -depth -iname "disk.qcow2*" -not -iname "*.yml" -exec rm -rf {} \;
+	rm -f tarball.img
 }
 trap clean_up EXIT
 

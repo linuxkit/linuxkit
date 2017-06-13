@@ -13,7 +13,7 @@ IMAGE_NAME="kmod-test"
 
 clean_up() {
 	docker rmi ${IMAGE_NAME} || true
-	find . -iname "kmod*" -not -iname "*.yml" -exec rm -rf {} \; || true
+	find . -depth -iname "kmod*" -not -iname "*.yml" -exec rm -rf {} \;
 }
 trap clean_up EXIT
 
