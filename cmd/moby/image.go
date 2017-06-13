@@ -23,11 +23,12 @@ type tarWriter interface {
 // cache as it would be much simpler.
 
 var exclude = map[string]bool{
-	".dockerenv":  true,
-	"Dockerfile":  true,
-	"dev/console": true,
-	"dev/pts":     true,
-	"dev/shm":     true,
+	".dockerenv":   true,
+	"Dockerfile":   true,
+	"dev/console":  true,
+	"dev/pts":      true,
+	"dev/shm":      true,
+	"etc/hostname": true,
 }
 
 var replace = map[string]string{
@@ -43,7 +44,6 @@ nameserver 8.8.4.4
 nameserver 2001:4860:4860::8888
 nameserver 2001:4860:4860::8844
 `,
-	"etc/hostname": "moby",
 }
 
 // tarPrefix creates the leading directories for a path
