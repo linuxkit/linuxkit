@@ -20,19 +20,19 @@ The incomplete list below is an assessment of some CVEs, and LinuxKit's resilien
   This CVE only applies to kernels `<= 4.5, <= 4.4.21`. By using recent kernels
   (specifically, kernels `=> 4.9, >= 4.4.21`, LinuxKit mitigates this bug.
 
-### Bugs not mitigated:
-
-
-### Bugs outstanding:
+### Bugs fixed:
 
 * [CVE-2017-8890](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-8890)
-  All users can do `accept()`, so we are vulnerable.
+  All users can do `accept()`, mitigated for kernels `>= 4.9.31, >= 4.10.16, >= 4.11.2` now packaged by LinuxKit
 * [CVE-2017-9077](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-9077)
   Same as CVE-2017-8890, but for ipv6.
 * [CVE-2017-9074](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-9074):
-  Users have access to ipv6 sockets, so we are vulnerable.
+  Users have access to ipv6 sockets, mitigated for kernels `>= 4.9.31, >= 4.10.16, >= 4.11.2` now packaged by LinuxKit
 * [CVE-2017-9242](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-9242):
   Same as CVE-2017-9074.
 * [CVE-2017-9076](https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2017-9076):
   Users have access to ipv6 sockets (note that part of this is mitigated as
-  well, so listed above: we do not set CONFIG_IP_DCCP).
+  well, so listed above: we do not set CONFIG_IP_DCCP), mitigated for kernels
+  `>= 4.9.31, >= 4.10.16, >= 4.11.2` now packaged by LinuxKit
+
+### Bugs outstanding:
