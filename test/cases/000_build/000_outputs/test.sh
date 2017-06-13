@@ -12,7 +12,7 @@ NAME=check
 
 clean_up() {
 	# remove any images
-	find . -iname "${NAME}*" -exec rm {} \;
+	find . -depth -iname "${NAME}*" -exec rm -rf {} \;
 }
 
 trap clean_up EXIT

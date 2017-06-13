@@ -20,11 +20,12 @@ const QemuImg = "linuxkit/qemu:c9691f5c50dd191e62b77eaa2f3dfd05ed2ed77c"
 // QemuConfig contains the config for Qemu
 type QemuConfig struct {
 	Path           string
-	ISO            bool
+	ISOBoot        bool
 	UEFI           bool
 	Kernel         bool
 	GUI            bool
 	Disks          Disks
+	MetadataPath   string
 	FWPath         string
 	Arch           string
 	CPUs           string
@@ -55,9 +56,13 @@ func runQemu(args []string) {
 	isoBoot := flags.Bool("iso", false, "Boot image is an ISO")
 	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
+	// State flags
+	state := flags.String("state", "", "Path to directory to keep VM state in")
+
 	// Paths and settings for disks
 	var disks Disks
 	flags.Var(&disks, "disk", "Disk config, may be repeated. [file=]path[,size=1G][,format=qcow2]")
+	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
 
 	// Paths and settings for UEFI firware
 	fw := flags.String("fw", "/usr/share/ovmf/bios.bin", "Path to OVMF firmware for UEFI boot")
@@ -110,6 +115,35 @@ func runQemu(args []string) {
 		}
 	}
 
+	if *state == "" {
+		*state = prefix + "-state"
+	}
+	var mkstate func()
+	mkstate = func() {
+		if err := os.MkdirAll(*state, 0755); err != nil {
+			log.Fatalf("Could not create state directory: %v", err)
+		}
+		mkstate = func() {}
+	}
+
+	isoPath := ""
+	if *data != "" {
+		var d []byte
+		if _, err := os.Stat(*data); os.IsNotExist(err) {
+			d = []byte(*data)
+		} else {
+			d, err = ioutil.ReadFile(*data)
+			if err != nil {
+				log.Fatalf("Cannot read user data: %v", err)
+			}
+		}
+		mkstate()
+		isoPath = filepath.Join(*state, "data.iso")
+		if err := WriteMetadataISO(isoPath, d); err != nil {
+			log.Fatalf("Cannot write user data ISO: %v", err)
+		}
+	}
+
 	for i, d := range disks {
 		id := ""
 		if i != 0 {
@@ -119,7 +153,8 @@ func runQemu(args []string) {
 			d.Format = "qcow2"
 		}
 		if d.Size != 0 && d.Path == "" {
-			d.Path = prefix + "-disk" + id + ".img"
+			mkstate()
+			d.Path = filepath.Join(*state, "disk"+id+".img")
 		}
 		if d.Path == "" {
 			log.Fatalf("disk specified with no size or name")
@@ -134,13 +169,18 @@ func runQemu(args []string) {
 		disks = append(d, disks...)
 	}
 
+	if *isoBoot && isoPath != "" {
+		log.Fatalf("metadata and ISO boot currently cannot coexist")
+	}
+
 	config := QemuConfig{
 		Path:           path,
-		ISO:            *isoBoot,
+		ISOBoot:        *isoBoot,
 		UEFI:           *uefiBoot,
 		Kernel:         *kernelBoot,
 		GUI:            *enableGUI,
 		Disks:          disks,
+		MetadataPath:   isoPath,
 		FWPath:         *fw,
 		Arch:           *arch,
 		CPUs:           *cpus,
@@ -214,19 +254,21 @@ func runQemuContainer(config QemuConfig) error {
 	}
 
 	var binds []string
-	if filepath.IsAbs(config.Path) {
-		binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", filepath.Dir(config.Path)))
-	} else {
-		binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", cwd))
-	}
-
-	// also try to bind mount disk paths so the command works
-	for _, d := range config.Disks {
-		if filepath.IsAbs(d.Path) {
-			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", filepath.Dir(d.Path)))
+	addBind := func(p string) {
+		if filepath.IsAbs(p) {
+			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", filepath.Dir(p)))
 		} else {
 			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", cwd))
 		}
+	}
+	addBind(config.Path)
+
+	if config.MetadataPath != "" {
+		addBind(config.MetadataPath)
+	}
+	// also try to bind mount disk paths so the command works
+	for _, d := range config.Disks {
+		addBind(d.Path)
 	}
 
 	var args []string
@@ -314,7 +356,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	for i, d := range config.Disks {
 		index := i
 		// hdc is CDROM in qemu
-		if i >= 2 && config.ISO {
+		if i >= 2 && config.ISOBoot {
 			index++
 		}
 		if d.Format != "" {
@@ -324,9 +366,11 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		}
 	}
 
-	if config.ISO {
+	if config.ISOBoot {
 		qemuArgs = append(qemuArgs, "-cdrom", config.Path)
 		qemuArgs = append(qemuArgs, "-boot", "d")
+	} else if config.MetadataPath != "" {
+		qemuArgs = append(qemuArgs, "-cdrom", config.MetadataPath)
 	}
 
 	if config.UEFI {

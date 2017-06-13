@@ -13,7 +13,7 @@ make build-vm-images
 
 Boot Kubernetes master OS image using `hyperkit` on macOS:
 ```
-./boot-master.sh
+./boot.sh
 ```
 
 Get IP address of the master:
@@ -36,12 +36,12 @@ and try `kubectl get nodes` from within the master.
 
 To boot a node use:
 ```
-./boot-node.sh <n> [<join_args> ...]
+./boot.sh <n> [<join_args> ...]
 ```
 
 More specifically, to start 3 nodes use 3 separate shells and run this:
 ```
-shell1> ./boot-node.sh 1 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
-shell2> ./boot-node.sh 2 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
-shell3> ./boot-node.sh 3 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
+shell1> ./boot.sh 1 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
+shell2> ./boot.sh 2 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
+shell3> ./boot.sh 3 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
 ```
