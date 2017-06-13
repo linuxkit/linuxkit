@@ -55,6 +55,9 @@ func runQemu(args []string) {
 	isoBoot := flags.Bool("iso", false, "Boot image is an ISO")
 	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
+	// State flags
+	state := flags.String("state", "", "Path to directory to keep VM state in")
+
 	// Paths and settings for disks
 	var disks Disks
 	flags.Var(&disks, "disk", "Disk config, may be repeated. [file=]path[,size=1G][,format=qcow2]")
@@ -110,6 +113,13 @@ func runQemu(args []string) {
 		}
 	}
 
+	if *state == "" {
+		*state = prefix + "-state"
+	}
+	if err := os.MkdirAll(*state, 0755); err != nil {
+		log.Fatalf("Could not create state directory: %v", err)
+	}
+
 	for i, d := range disks {
 		id := ""
 		if i != 0 {
@@ -119,7 +129,7 @@ func runQemu(args []string) {
 			d.Format = "qcow2"
 		}
 		if d.Size != 0 && d.Path == "" {
-			d.Path = prefix + "-disk" + id + ".img"
+			d.Path = filepath.Join(*state, "disk"+id+".img")
 		}
 		if d.Path == "" {
 			log.Fatalf("disk specified with no size or name")
