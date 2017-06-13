@@ -7,12 +7,11 @@ infinite_loop() {
 	done
 }
 
-# run getty on all known consoles - except those already in inittab
+# run getty on all known consoles
 start_getty() {
 	tty=${1%,*}
 	speed=${1#*,}
-	inittab="$2"
-	securetty="$3"
+	securetty="$2"
 	line=
 	term="linux"
 	[ "$speed" = "$1" ] && speed=115200
@@ -39,7 +38,7 @@ start_getty() {
 		echo "$tty" >> "$securetty"
 	fi
 	# respawn forever
-	infinite_loop setsid -w /sbin/getty $loginargs $line $speed $tty $term &
+	infinite_loop setsid.getty -w /sbin/getty $loginargs $line $speed $tty $term &
 }
 
 # check if we have /etc/getty.shadow
@@ -53,7 +52,7 @@ fi
 for opt in $(cat /proc/cmdline); do
 	case "$opt" in
 	console=*)
-		start_getty ${opt#console=} /etc/inittab /etc/securetty
+		start_getty ${opt#console=} /etc/securetty
 	esac
 done
 
