@@ -1,7 +1,7 @@
 .PHONY: tag push
 default: push
 
-ORG?=linuxkitprojects
+ORG?=miragesdk
 IMAGE=dhcp-client
 NOCACHE?=
 
