@@ -1,6 +1,7 @@
 state = "/run/containerd"
 root = "/var/lib/containerd"
-snapshotter = "overlay"
+snapshotter = "io.containerd.snapshotter.v1.overlayfs"
+differ = "io.containerd.differ.v1.base-diff"
 subreaper = false
 
 [grpc]
