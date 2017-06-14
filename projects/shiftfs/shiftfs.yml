@@ -16,7 +16,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: "linuxkit/getty:886d35fe30c47750e8cfbf2f73016e9d2cc6361a"
+    image: "linuxkit/getty:d0765e0a14733f9454010ac109a7c846a4e67fc5"
     env:
      - INSECURE=true
   - name: rngd
