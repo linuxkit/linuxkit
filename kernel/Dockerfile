@@ -1,4 +1,32 @@
-FROM linuxkit/kernel-compile:1b396c221af673757703258159ddc8539843b02b@sha256:6b32d205bfc6407568324337b707d195d027328dbfec554428ea93e7b0a8299b AS kernel-build
+FROM linuxkit/alpine:4f0ddee221c46f142e5a190dd43d2e07256ef98d AS kernel-build
+RUN apk add \
+    argp-standalone \
+    automake \
+    bash \
+    bc \
+    binutils-dev \
+    bison \
+    build-base \
+    curl \
+    diffutils \
+    elfutils-dev \
+    flex \
+    git \
+    gmp-dev \
+    installkernel \
+    kmod \
+    libelf-dev \
+    libressl-dev \
+    libunwind-dev \
+    linux-headers \
+    ncurses-dev \
+    sed \
+    squashfs-tools \
+    tar \
+    xz \
+    xz-dev \
+    zlib-dev \
+    || true
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
