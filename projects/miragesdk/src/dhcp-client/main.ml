@@ -83,13 +83,18 @@ let run () cmd ethif path =
     | Some f -> read_cmd f
   in
   Lwt_main.run (
+    Lwt_switch.with_switch @@ fun switch ->
     let routes = [
       ["ip"]     , [`Write];
       ["mac"]    , [`Read ];
       ["gateway"], [`Write];
     ] in
     Ctl.v path >>= fun db ->
-    let ctl fd = Ctl.Server.listen ~routes db fd in
+    let ctl fd =
+      let service = Ctl.Server.service ~routes db in
+      let endpoint = Capnp_rpc_lwt.Endpoint.of_flow ~switch (module Sdk.IO) fd in
+      ignore (Capnp_rpc_lwt.CapTP.of_endpoint ~switch ~offer:service endpoint)
+    in
     let handlers () = Handlers.watch ~ethif db in
     let net = Init.rawlink ~filter:(dhcp_filter ()) ethif in
     Net.mac ethif >>= fun mac ->

@@ -93,50 +93,6 @@ let test_socketpair pipe () =
 
   Lwt.return_unit
 
-let request = Alcotest.testable Ctl.Request.pp Ctl.Request.equal
-let response = Alcotest.testable Ctl.Response.pp Ctl.Response.equal
-
-let queries =
-  let open Ctl.Request in
-  [
-    v ~id:0l ~path:["foo";"bar"] Read;
-    v ~id:Int32.max_int ~path:[] (Write "foo");
-    v ~id:0l ~path:[] Delete;
-    v ~id:(-3l) ~path:["foo"] Delete;
-  ]
-
-let replies =
-  let open Ctl.Response in
-  [
-    v ~id:0l (Ok "");
-    v ~id:Int32.max_int (Ok "foo");
-    v ~id:0l (Error "");
-    v ~id:(-3l) (Error "foo");
-  ]
-
-let failf fmt = Fmt.kstrf Alcotest.fail fmt
-
-let test_send t write read message messages =
-  let calf = Ctl.Endpoint.v @@ calf Init.Pipe.(ctl t) in
-  let priv = Ctl.Endpoint.v @@ priv Init.Pipe.(ctl t) in
-  let test m =
-    write calf m >>= function
-    | Error e -> failf "Message.write: %a" Ctl.Endpoint.pp_error e
-    | Ok ()   ->
-      read priv >|= function
-      | Ok m'   -> Alcotest.(check message) "write/read" m m'
-      | Error e -> failf "Message.read: %a" Ctl.Endpoint.pp_error e
-  in
-  Lwt_list.iter_s test messages
-
-let test_request_send t () =
-  let open Ctl.Request in
-  test_send t write read request queries
-
-let test_response_send t () =
-  let open Ctl.Response in
-  test_send t write read response replies
-
 let failf fmt = Fmt.kstrf Alcotest.fail fmt
 
 (* read ops *)
@@ -188,6 +144,7 @@ let delete_should_work t k =
   | Error e -> failf "write(%a) -> error: %a" pp_path k pp_error e
 
 let test_ctl t () =
+  Lwt_switch.with_switch @@ fun switch ->
   let calf = calf Init.Pipe.(ctl t) in
   let priv = priv Init.Pipe.(ctl t) in
   let k1 = ["foo"; "bar"] in
@@ -199,32 +156,30 @@ let test_ctl t () =
   let git_root = "/tmp/sdk/ctl" in
   let _ = Sys.command (Fmt.strf "rm -rf %s" git_root) in
   Ctl.v git_root >>= fun ctl ->
-  let server () = Ctl.Server.listen ~routes ctl priv in
-  let client () =
-    let t = Ctl.Client.v calf in
-    let allowed k v =
-      delete_should_work t k  >>= fun () ->
-      read_should_none t k    >>= fun () ->
-      write_should_work t k v >>= fun () ->
-      read_should_work t k v  >>= fun () ->
-      Ctl.KV.get ctl k        >|= fun v' ->
-      Alcotest.(check string) "in the db" v v'
-    in
-    let disallowed k v =
-      read_should_err t k    >>= fun () ->
-      write_should_err t k v >>= fun () ->
-      delete_should_err t k
-    in
-    allowed k1 ""                           >>= fun () ->
-    allowed k2 "xxx"                        >>= fun () ->
-    allowed k3 (random_string (255 * 1024)) >>= fun () ->
-    disallowed k4 "" >>= fun () ->
-    Lwt.return_unit
+  let _server =
+    let service = Ctl.Server.service ~routes ctl in
+    Capnp_rpc_lwt.CapTP.of_endpoint ~switch ~offer:service (Capnp_rpc_lwt.Endpoint.of_flow ~switch (module IO) priv)
   in
-  Lwt.pick [
-    client ();
-    server ();
-  ]
+  let client = Capnp_rpc_lwt.CapTP.of_endpoint ~switch (Capnp_rpc_lwt.Endpoint.of_flow ~switch (module IO) calf) in
+  let t = Capnp_rpc_lwt.CapTP.bootstrap client in
+  let allowed k v =
+    delete_should_work t k  >>= fun () ->
+    read_should_none t k    >>= fun () ->
+    write_should_work t k v >>= fun () ->
+    read_should_work t k v  >>= fun () ->
+    Ctl.KV.get ctl k        >|= fun v' ->
+    Alcotest.(check string) "in the db" v v'
+  in
+  let disallowed k v =
+    read_should_err t k    >>= fun () ->
+    write_should_err t k v >>= fun () ->
+    delete_should_err t k
+  in
+  allowed k1 ""                           >>= fun () ->
+  allowed k2 "xxx"                        >>= fun () ->
+  allowed k3 (random_string (255 * 1024)) >>= fun () ->
+  disallowed k4 "" >>= fun () ->
+  Lwt.return_unit
 
 let in_memory_flow () =
   let flow = Mirage_flow_lwt.F.string () in
@@ -268,8 +223,6 @@ let test = [
   "stdout is a pipe"    , `Quick, run (test_pipe Init.Pipe.(stderr t));
   "net is a socket pair", `Quick, run (test_socketpair Init.Pipe.(net t));
   "ctl is a socket pair", `Quick, run (test_socketpair Init.Pipe.(ctl t));
-  "send requests"       , `Quick, run (test_request_send t);
-  "send responses"      , `Quick, run (test_response_send t);
   "ctl"                 , `Quick, run (test_ctl t);
   "exec"                , `Quick, run test_exec;
 ]

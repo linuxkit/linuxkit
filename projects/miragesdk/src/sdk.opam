@@ -13,6 +13,7 @@ depends: [
   "jbuilder"  {build & >= "1.0+beta7"}
   "ocamlfind" {build}
   "cstruct"
+  "cstruct-lwt"
   "lwt"
   "logs" "astring" "rresult"
   "mirage-flow-lwt"
@@ -20,5 +21,9 @@ depends: [
   "io-page"
   "irmin-git"
   "decompress"
-  "capnp"
+  "capnp-rpc-lwt"
+  "rawlink"
+  "tuntap"
+  "ipaddr"
+  "alcotest" {test}
 ]

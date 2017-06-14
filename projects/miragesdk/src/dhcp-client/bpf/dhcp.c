@@ -28,6 +28,8 @@
 
 #include <net/ethernet.h>
 
+#ifdef __linux__
+
 #include <linux/if_packet.h>
 #include <linux/filter.h>
 
@@ -87,3 +89,5 @@ CAMLprim value bpf_filter(value vunit)
   memcpy(String_val(vfilter), bootp_bpf_filter, sizeof(bootp_bpf_filter));
   CAMLreturn (vfilter);
 }
+
+#endif

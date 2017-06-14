@@ -288,6 +288,8 @@ let exec_and_forward ?(handlers=block_for_ever) ~pid ~cmd ~net ~ctl t =
   let priv_stdout = Fd.flow Pipe.(priv t.stdout) in
   let priv_stderr = Fd.flow Pipe.(priv t.stderr) in
 
+  ctl priv_ctl;
+
   Lwt.pick ([
       wait ();
       (* data *)
@@ -298,7 +300,6 @@ let exec_and_forward ?(handlers=block_for_ever) ~pid ~cmd ~net ~ctl t =
       IO.forward ~verbose:false ~src:priv_stderr ~dst:Fd.(flow stderr);
       (* TODO: Init.Fd.forward ~src:Init.Pipe.(priv metrics)
          ~dst:Init.Fd.metric; *)
-      ctl priv_ctl;
       handlers ();
     ])
 
