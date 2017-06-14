@@ -2,8 +2,12 @@
 
 open Lwt.Infix
 
+let src = Logs.Src.create "net" ~doc:"Network Configuration"
+module Log = (val Logs.src_log src : Logs.LOG)
+
 let run fmt =
   Fmt.kstrf (fun str ->
+      Log.info (fun l -> l "run: %S" str);
       match Sys.command str with
       | 0 -> Lwt.return ()
       | i -> Fmt.kstrf Lwt.fail_with "%S exited with code %d" str i

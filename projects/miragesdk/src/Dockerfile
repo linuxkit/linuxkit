@@ -56,7 +56,6 @@ RUN opam update sdk && opam install sdk -t
 
 FROM sdk as priv
 
-RUN opam pin add tuntap 1.0.0 -n
 RUN opam depext -iy bos cmdliner
 
 RUN opam list
@@ -65,8 +64,8 @@ COPY ./dhcp-client /src/dhcp-client
 RUN sudo chown opam -R /src
 
 RUN opam config exec -- jbuilder build dhcp-client/main.exe
-RUN sudo mkdir -p /bin
-RUN sudo cp /src/_build/default/dhcp-client/main.exe /bin/dhcp-client
+RUN sudo mkdir -p /out
+RUN sudo cp /src/_build/default/dhcp-client/main.exe /out/dhcp-client
 
 
 ### Calf Container
@@ -85,15 +84,15 @@ COPY ./dhcp-client-calf/jbuild /src/dhcp-client-calf/
 RUN sudo chown opam -R /src
 
 RUN opam config exec -- jbuilder build dhcp-client-calf/unikernel.exe
-RUN sudo mkdir -p /bin/calf
-RUN sudo cp /src/_build/default/dhcp-client-calf/unikernel.exe /bin/calf/dhcp-client-calf
-USER 0
+RUN sudo mkdir -p /out/
+RUN sudo cp /src/_build/default/dhcp-client-calf/unikernel.exe /out/dhcp-client-calf
 
 ### Final build
 
 FROM scratch
 
-COPY --from=priv /bin /
-COPY --from=calf /bin /
-COPY dhcp-client-calf/config.json /calf/
+USER 0
+COPY --from=priv /out /
+COPY --from=calf /out /calf/rootfs/
+COPY dhcp-client-calf/config.json /calf
 CMD ["/dhcp-client", "-vv"]

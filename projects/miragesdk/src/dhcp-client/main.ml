@@ -60,7 +60,7 @@ let default_cmd = [
 *)
 
 let default_cmd = [
-  "/usr/bin/runc"; "run"; "--preserve-fds"; "2"; "--bundle"; ".";  "calf"
+  "/usr/bin/runc"; "run"; "--preserve-fds"; "2"; "--bundle"; "calf";  "calf"
 ]
 
 let read_cmd file =

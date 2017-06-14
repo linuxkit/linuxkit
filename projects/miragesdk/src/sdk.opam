@@ -23,7 +23,7 @@ depends: [
   "decompress"
   "capnp-rpc-lwt"
   "rawlink"
-  "tuntap"
+  "tuntap" {= "1.0.0"}
   "ipaddr"
   "alcotest" {test}
 ]
