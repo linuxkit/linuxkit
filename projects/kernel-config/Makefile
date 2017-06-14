@@ -12,7 +12,7 @@
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 # Name on Hub
 IMAGE:=kernel
-ARCH?=$(shell if [ "$$(arch)" = "x86_64" ]]; then echo x86; else $$(arch); fi)
+ARCH?=x86_64
 
 .PHONY: check tag push sign
 # Targets:
