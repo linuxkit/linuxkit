@@ -39,5 +39,3 @@ then
 		service start "$(basename $f)"
 	done
 fi
-
-wait
