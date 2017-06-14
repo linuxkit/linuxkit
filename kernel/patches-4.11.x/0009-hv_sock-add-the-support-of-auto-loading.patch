@@ -1,7 +1,7 @@
-From cf272990facec39bd5f42ef82a65f1a00c37ab73 Mon Sep 17 00:00:00 2001
+From 2782da00ad2d3f24b9ba4c5418ebd50dff0fa00c Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:35 -0600
-Subject: [PATCH 8/9] hv_sock: add the support of auto-loading
+Subject: [PATCH 09/14] hv_sock: add the support of auto-loading
 
 After we disable VMWare virtual sockets driver's auto-loading on Hyper-V,
 we can enable hv_sock's auto-loading now.
@@ -10,7 +10,7 @@ Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Cc: K. Y. Srinivasan <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
-Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511
+Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605
 (cherry picked from commit 6f1aa69011356ff95ed6c57400095e5f2d9eb900)
 ---
  net/vmw_vsock/hyperv_transport.c | 1 +
@@ -26,5 +26,5 @@ index fd89bf357617..f465b0b662df 100644
  MODULE_LICENSE("GPL");
 +MODULE_ALIAS_NETPROTO(PF_VSOCK);
 -- 
-2.11.1
+2.13.0
 
