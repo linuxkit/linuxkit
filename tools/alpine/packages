@@ -18,9 +18,11 @@ cmake
 cryptsetup
 curl
 dhcpcd
+diffutils
 dosfstools
 e2fsprogs
 e2fsprogs-extra
+elfutils-dev
 flex
 gcc
 git
@@ -36,7 +38,9 @@ libarchive-tools
 libc-dev
 libc-utils
 libelf-dev
+libressl-dev
 libseccomp-dev
+libunwind-dev
 linux-headers
 make
 mtools
@@ -56,6 +60,7 @@ qemu-system-arm
 qemu-system-x86_64
 sed
 sfdisk
+slang-dev
 squashfs-tools
 strace
 syslinux
@@ -67,3 +72,5 @@ vim
 xfsprogs
 xorriso
 xz
+xz-dev
+zlib-dev
