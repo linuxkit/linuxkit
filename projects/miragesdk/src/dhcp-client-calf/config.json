@@ -17,7 +17,7 @@
         }
     },
     "root": {
-        "path": "calf",
+        "path": "rootfs",
         "readonly": true
     },
     "mounts": [

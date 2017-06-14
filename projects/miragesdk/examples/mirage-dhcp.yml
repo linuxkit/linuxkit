@@ -1,19 +1,15 @@
 kernel:
-  image: "mobylinux/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - mobylinux/init:61a72fa20b9b9be269fe6b2b6360031f2cb897a7 # base init + strace + git
-  - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
-  - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
-  - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
+  - linuxkit/init:2599bcd5013ce5962aa155ee8929c26160de13bd
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
-services:
-  - name: rngd
-    image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9
+    image: linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018
   - name: dhcp-client
-    image: linuxkitprojects/dhcp-client:6c231135a88d42e7d18d2ba952f0798910550cbd
+    image: miragesdk/dhcp-client:22aa9d527820534295a8cd59901c0c5197af6585
     net: host
     capabilities:
      - CAP_NET_ADMIN # to bring eth0 up
@@ -30,6 +26,15 @@ services:
      - /sbin:/sbin   # for ifconfig
      - /bin:/bin     # for ifconfig
      - /lib:/lib     # for ifconfig
+services:
+  - name: sshd
+    image: "linuxkit/sshd:abc1f5e096982ebc3fb61c506aed3ac9c2ae4d55"
+  - name: getty
+    image: "linuxkit/getty:ef9d667af71089326419fb08e9cc9d567cf15748"
+    env:
+     - INSECURE=true
 files:
-  - path: /var/run/dhcp-client/README
+  - path: var/run/dhcp-client/README
     contents: 'data for dhcp-client'
+  - path: root/.ssh/authorized_keys
+    contents: '#your SSH key here'

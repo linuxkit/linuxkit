@@ -208,8 +208,10 @@ let flow (x: int) = Sdk.Init.file_descr (Lwt_unix.of_unix_file_descr @@ fd x)
 
 let start () dhcp_codes net ctl =
   Lwt_main.run (
+    Lwt_switch.with_switch @@ fun switch ->
     let net = fd net in
-    let ctl = Sdk.Ctl.Client.v (flow ctl) in
+    let client = Capnp_rpc_lwt.CapTP.of_endpoint ~switch (Capnp_rpc_lwt.Endpoint.of_flow ~switch (module Sdk.IO) (flow ctl)) in
+    let ctl = Capnp_rpc_lwt.CapTP.bootstrap client in
     start () dhcp_codes net ctl
   )
 

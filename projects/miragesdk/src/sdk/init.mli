@@ -110,11 +110,11 @@ val exec: Pipe.monitor -> string list -> (int -> unit Lwt.t) -> unit Lwt.t
 
 (* FIXME(samoht): not very happy with that signatue *)
 val run: Pipe.monitor ->
-  net:IO.t -> ctl:(IO.t -> unit Lwt.t) ->
+  net:IO.t -> ctl:(IO.t -> unit) ->
   ?handlers:(unit -> unit Lwt.t) ->
   string list -> unit Lwt.t
 (** [run m ~net ~ctl ?handlers cmd] runs [cmd] in a unprivileged calf
-    process. [net] is the network interface flow. [ctl] is the control
+    process. [net] is the network interface flow. [ctl] runs the control
     thread connected to the {Pipe.ctl} pipe. [handlers] are the system
     handler thread which will react to control data to perform
     privileged system actions. *)

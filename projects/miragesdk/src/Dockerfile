@@ -5,7 +5,7 @@ FROM alpine:3.5 as capnp
 RUN mkdir -p /src
 RUN apk update && apk add autoconf automake libtool linux-headers git g++ make
 
-RUN cd /src && git clone -b v0.6.0 https://github.com/sandstorm-io/capnproto.git
+RUN cd /src && git clone https://github.com/sandstorm-io/capnproto.git
 WORKDIR /src/capnproto/c++
 RUN ./setup-autotools.sh
 RUN autoreconf -i
@@ -17,37 +17,45 @@ RUN which capnp
 
 ### SDK
 
-FROM ocaml/opam:alpine-3.5_ocaml-4.04.0 as sdk
+FROM ocaml/opam@sha256:1e1d7fafbfd461bf684b5e11213c85a71fec93577455285e5d82d902ffad91d2 as sdk
+#FROM ocaml/opam:alpine-3.5_ocaml-4.04.0 as sdk
 
 COPY --from=capnp /usr/local/bin/capnp /usr/local/bin/
-COPY --from=capnp /usr/local/lib/libcapnpc-0.6.0.so /usr/local/lib/
-COPY --from=capnp /usr/local/lib/libcapnp-0.6.0.so /usr/local/lib/
-COPY --from=capnp /usr/local/lib/libkj-0.6.0.so /usr/local/lib/
+COPY --from=capnp /usr/local/bin/capnpc /usr/local/bin/
+COPY --from=capnp /usr/local/lib/libcapnpc-0.7-dev.so /usr/local/lib/
+COPY --from=capnp /usr/local/lib/libcapnp-0.7-dev.so /usr/local/lib/
+COPY --from=capnp /usr/local/lib/libkj-0.7-dev.so /usr/local/lib/
 
 RUN sudo mkdir -p /src
 USER opam
 WORKDIR /src
 
-RUN git -C /home/opam/opam-repository pull && opam update -u
-RUN opam pin add jbuilder 1.0+beta10 -n
+RUN git -C /home/opam/opam-repository fetch origin && \
+    git -C /home/opam/opam-repository reset ad921dfa87c2e201ef54806d0367aaacce75bc62 --hard && \
+    opam update -u
 
-RUN opam depext -uiy cstruct cstruct-lwt lwt lwt logs irmin-git rawlink tuntap astring rresult \
-    mirage-flow-lwt mirage-channel-lwt io-page decompress capnp
+RUN opam pin add -n capnp.dev 'https://github.com/talex5/capnp-ocaml.git#interfaces'
+RUN opam pin add -n capnp-rpc.dev 'https://github.com/mirage/capnp-rpc.git'
+RUN opam pin add -n capnp-rpc-lwt.dev 'https://github.com/mirage/capnp-rpc.git'
+
+COPY sdk.opam /src
+RUN sudo chown opam -R /src
+RUN opam pin add sdk.local /src -n
+
+RUN opam depext -y alcotest sdk
+RUN opam install alcotest && opam install --deps sdk
 
 RUN opam list
 
 COPY ./sdk /src/
-COPY ./sdk.opam /src/
 RUN sudo chown opam -R /src
 
-RUN opam config exec -- jbuilder build -p sdk @install
-RUN opam config exec -- jbuilder install sdk
+RUN opam update sdk && opam install sdk -t
 
 ### Privileged Container
 
 FROM sdk as priv
 
-RUN opam pin add tuntap 1.0.0 -n
 RUN opam depext -iy bos cmdliner
 
 RUN opam list
@@ -56,16 +64,17 @@ COPY ./dhcp-client /src/dhcp-client
 RUN sudo chown opam -R /src
 
 RUN opam config exec -- jbuilder build dhcp-client/main.exe
-RUN sudo mkdir -p /bin
-RUN sudo cp /src/_build/default/dhcp-client/main.exe /bin/dhcp-client
+RUN sudo mkdir -p /out
+RUN sudo cp /src/_build/default/dhcp-client/main.exe /out/dhcp-client
 
 
 ### Calf Container
 
 FROM sdk as calf
 
-RUN opam pin add charrua-client https://github.com/yomimono/charrua-client.git#with-cdhcpc -n
+RUN opam pin add charrua-client.dev https://github.com/samoht/charrua-client.git#with-cdhcpc -n
 RUN opam pin add mirage-net-fd 0.2.0 -n
+RUN opam list
 RUN opam depext -iy mirage-net-fd charrua-client lwt mirage-types-lwt cmdliner
 
 RUN opam list
@@ -75,15 +84,15 @@ COPY ./dhcp-client-calf/jbuild /src/dhcp-client-calf/
 RUN sudo chown opam -R /src
 
 RUN opam config exec -- jbuilder build dhcp-client-calf/unikernel.exe
-RUN sudo mkdir -p /bin/calf
-RUN sudo cp /src/_build/default/dhcp-client-calf/unikernel.exe /bin/calf/dhcp-client-calf
-USER 0
+RUN sudo mkdir -p /out/
+RUN sudo cp /src/_build/default/dhcp-client-calf/unikernel.exe /out/dhcp-client-calf
 
 ### Final build
 
 FROM scratch
 
-COPY --from=priv /bin /
-COPY --from=calf /bin /
-COPY dhcp-client-calf/config.json /calf/
+USER 0
+COPY --from=priv /out /
+COPY --from=calf /out /calf/rootfs/
+COPY dhcp-client-calf/config.json /calf
 CMD ["/dhcp-client", "-vv"]
