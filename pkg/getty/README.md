@@ -10,7 +10,7 @@ If you want a console getty, add the following to your `moby.yml`:
 ```
 services:
   - name: getty
-    image: "linuxkit/getty:e36b5e794256c2a56c000035f73a4d46f7ffb3e6"
+    image: "linuxkit/getty:886d35fe30c47750e8cfbf2f73016e9d2cc6361a"
 ```
 
 The above will launch a getty for each console defined in the cmdline, i.e. `/proc/cmdline`.

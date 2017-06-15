@@ -11,7 +11,7 @@ onboot:
     image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
 services:
   - name: getty
-    image: "linuxkit/getty:ef9d667af71089326419fb08e9cc9d567cf15748"
+    image: "linuxkit/getty:886d35fe30c47750e8cfbf2f73016e9d2cc6361a"
     env:
      - INSECURE=true
   - name: rngd

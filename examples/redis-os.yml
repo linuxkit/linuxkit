@@ -13,7 +13,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: "linuxkit/getty:ef9d667af71089326419fb08e9cc9d567cf15748"
+    image: "linuxkit/getty:886d35fe30c47750e8cfbf2f73016e9d2cc6361a"
     env:
      - INSECURE=true
   - name: redis
