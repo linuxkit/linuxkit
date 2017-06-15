@@ -38,11 +38,11 @@ func push(args []string) {
 		pushAzure(args[1:])
 	case "gcp":
 		pushGcp(args[1:])
+	case "vcenter":
+		pushVCenter(args[1:])
 	case "help", "-h", "-help", "--help":
 		pushUsage()
 		os.Exit(0)
-	case "vcenter":
-		pushVCenter(args[1:])
 	default:
 		log.Errorf("No 'push' backend specified.")
 	}
