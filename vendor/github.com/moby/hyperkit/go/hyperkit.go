@@ -47,7 +47,6 @@ const (
 	ConsoleFile
 
 	defaultVPNKitSock = "Library/Containers/com.docker.docker/Data/s50"
-	defaultDiskImage  = "disk.img"
 
 	defaultCPUs   = 1
 	defaultMemory = 1024 // 1G
@@ -70,6 +69,12 @@ type Socket9P struct {
 	Tag  string `json:"tag"`
 }
 
+// DiskConfig contains the path to a disk image and an optional size if the image needs to be created.
+type DiskConfig struct {
+	Path string `json:"path"`
+	Size int    `json:"size"`
+}
+
 // HyperKit contains the configuration of the hyperkit VM
 type HyperKit struct {
 	// HyperKit is the path to the hyperkit binary
@@ -82,8 +87,8 @@ type HyperKit struct {
 	VPNKitKey string `json:"vpnkit_key"`
 	// UUID is a string containing a UUID, it sets BIOS DMI UUID for the VM (as found in /sys/class/dmi/id/product_uuid on Linux).
 	UUID string `json:"uuid"`
-	// DiskImage is the path to the disk image to use
-	DiskImage string `json:"disk"`
+	// Disks contains disk images to use/create.
+	Disks []DiskConfig `json:"disks"`
 	// ISOImage is the (optional) path to a ISO image to attach
 	ISOImage string `json:"iso"`
 	// VSock enables the virtio-socket device and exposes it on the host
@@ -105,8 +110,6 @@ type HyperKit struct {
 	CPUs int `json:"cpus"`
 	// Memory is the amount of megabytes of memory for the VM
 	Memory int `json:"memory"`
-	// DiskSize is the size of the disk image in megabytes. If zero and DiskImage does not exist, no disk will be attached.
-	DiskSize int `json:"disk_size"`
 
 	// Console defines where the console of the VM should be
 	// connected to. ConsoleStdio and ConsoleFile are supported.
@@ -233,9 +236,6 @@ func (h *HyperKit) execute(cmdline string) error {
 	if _, err = os.Stat(h.Initrd); os.IsNotExist(err) {
 		return fmt.Errorf("initrd %s does not exist", h.Initrd)
 	}
-	if h.DiskImage == "" && h.StateDir == "" && h.DiskSize != 0 {
-		return fmt.Errorf("Can't create disk, because neither DiskImage nor StateDir is set")
-	}
 
 	// Create files
 	if h.StateDir != "" {
@@ -244,14 +244,26 @@ func (h *HyperKit) execute(cmdline string) error {
 			return err
 		}
 	}
-	if h.DiskImage == "" && h.DiskSize != 0 {
-		h.DiskImage = filepath.Join(h.StateDir, "disk.img")
-	}
-	if _, err = os.Stat(h.DiskImage); os.IsNotExist(err) {
-		if h.DiskSize != 0 {
-			err = CreateDiskImage(h.DiskImage, h.DiskSize)
-			if err != nil {
-				return err
+
+	for idx, config := range h.Disks {
+		if config.Path == "" {
+			if h.StateDir == "" {
+				return fmt.Errorf("Unable to create disk image when neither path nor state dir is set")
+			}
+			if config.Size <= 0 {
+				return fmt.Errorf("Unable to create disk image when size is 0 or not set")
+			}
+			config.Path = fmt.Sprintf(filepath.Clean(filepath.Join(h.StateDir, "disk%02d.img")), idx)
+			h.Disks[idx] = config
+		}
+		if _, err = os.Stat(config.Path); os.IsNotExist(err) {
+			if config.Size != 0 {
+				err = CreateDiskImage(config.Path, config.Size)
+				if err != nil {
+					return err
+				}
+			} else {
+				return fmt.Errorf("Disk image %s not found and unable to create it as size is not specified", config.Path)
 			}
 		}
 	}
@@ -298,9 +310,19 @@ func (h *HyperKit) IsRunning() bool {
 	return true
 }
 
+// isDisk checks if the specified path is used as a disk image
+func (h *HyperKit) isDisk(path string) bool {
+	for _, config := range h.Disks {
+		if filepath.Clean(path) == filepath.Clean(config.Path) {
+			return true
+		}
+	}
+	return false
+}
+
 // Remove deletes all statefiles if present.
 // This also removes the StateDir if empty.
-// If keepDisk is set, the diskimage will not get removed.
+// If keepDisk is set, the disks will not get removed.
 func (h *HyperKit) Remove(keepDisk bool) error {
 	if h.IsRunning() {
 		return fmt.Errorf("Can't remove state as process is running")
@@ -317,7 +339,7 @@ func (h *HyperKit) Remove(keepDisk bool) error {
 	files, _ := ioutil.ReadDir(h.StateDir)
 	for _, f := range files {
 		fn := filepath.Clean(filepath.Join(h.StateDir, f.Name()))
-		if fn == h.DiskImage {
+		if h.isDisk(fn) {
 			continue
 		}
 		err := os.Remove(fn)
@@ -397,8 +419,8 @@ func (h *HyperKit) buildArgs(cmdline string) {
 		a = append(a, "-U", h.UUID)
 	}
 
-	if h.DiskImage != "" {
-		a = append(a, "-s", fmt.Sprintf("%d:0,virtio-blk,%s", nextSlot, h.DiskImage))
+	for _, p := range h.Disks {
+		a = append(a, "-s", fmt.Sprintf("%d:0,virtio-blk,%s", nextSlot, p.Path))
 		nextSlot++
 	}
 
