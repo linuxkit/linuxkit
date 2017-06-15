@@ -12,6 +12,7 @@ import (
 	"os"
 	"path"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strconv"
 	"strings"
@@ -94,7 +95,7 @@ func build(args []string) {
 	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
-	buildHyperkit := buildCmd.Bool("hyperkit", false, "Use hyperkit for LinuxKit based builds where possible")
+	buildHyperkit := buildCmd.Bool("hyperkit", runtime.GOOS == "darwin", "Use hyperkit for LinuxKit based builds where possible")
 	buildCmd.Var(&buildOut, "output", "Output types to create [ "+strings.Join(outputTypes, " ")+" ]")
 
 	if err := buildCmd.Parse(args); err != nil {
