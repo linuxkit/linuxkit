@@ -1,4 +1,4 @@
-From 850b740ed9152079ebccda95d424eb15b89910b4 Mon Sep 17 00:00:00 2001
+From 8fc57b00a1add26d3e700405db8802ec9229443e Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:32 +0100
 Subject: [PATCH 07/44] VSOCK: Introduce virtio_vsock_common.ko
@@ -1492,5 +1492,5 @@ index 000000000000..a53b3a16b4f1
 +MODULE_AUTHOR("Asias He");
 +MODULE_DESCRIPTION("common code for virtio vsock");
 -- 
-2.11.1
+2.13.0
 
