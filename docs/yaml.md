@@ -58,12 +58,17 @@ files:
     source: "/some/path/on/local/filesystem"
     mode: "0666"
   - path: dir/name2
+    source: "/some/path/that/it/is/ok/to/omit"
+    optional: true
+    mode: "0666"
+  - path: dir/name3
     contents: "orange"
     mode: "0644"
 ```
 
 Specifying the `mode` is optional, and will default to `0600`. Leading directories will be
-created if not specified.
+created if not specified. You can use `~/path` in `source` to specify a path in the build
+user's home directory.
 
 ## `trust`
 
