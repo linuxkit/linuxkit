@@ -18,7 +18,10 @@ is also available under a shorthand tag, e.g. `linuxkit/kernel:4.9.x`
 for the latest `4.9` kernel. For selected kernels (mostly the LTS
 kernels and latest stable kernels) we also compile/push kernels with
 additional debugging enabled. The hub images for these kernels have
-the `_dbg` suffix in the tag.
+the `_dbg` suffix in the tag. For some kernels, we also provide
+matching packages containing the `perf` utility for debugging and
+performance tracing.  The perf package is called `kernel-perf` and is
+tagged the same way as the kernel packages.
 
 In addition to the official kernel images, LinuxKit offers the ability
 to build bootable Linux images with kernels from various
@@ -198,3 +201,20 @@ git format-patch -o $KITSRC/kernel/patches-4.9.x v4.9.15..HEAD
 ```
 
 Then, create a PR for LinuxKit.
+
+
+## Using `perf`
+
+The `kernel-perf` package contains a statically linked `perf` binary
+under `/usr/bin` which is matched with the kernel of the same tag.
+The simplest way to use the `perf` utility is to add the package to
+the `init` section in the YAML file. This adds the binary to the root
+filesystem.
+
+To use the binary, you can either bind mount it into the `getty` or `ssh` service container or you can access the root filesystem from the `getty` container via `nsenter`:
+```
+nsenter -m/proc/1/ns/mnt ash
+```
+
+Alternatively, you can add the `kernel-perf` package as stage in a
+multi-stage build to add it to a custom package.
