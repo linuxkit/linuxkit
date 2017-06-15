@@ -102,6 +102,12 @@ func runHyperKit(args []string) {
 		log.Fatalf("Cannot open cmdline file: %v", err)
 	}
 
+	// Create new HyperKit instance (w/o networking for now)
+	h, err := hyperkit.New(*hyperkitPath, "", *state)
+	if err != nil {
+		log.Fatalln("Error creating hyperkit: ", err)
+	}
+
 	for i, d := range disks {
 		id := ""
 		if i != 0 {
@@ -113,17 +119,8 @@ func runHyperKit(args []string) {
 		if d.Path == "" {
 			log.Fatalf("disk specified with no size or name")
 		}
-		disks[i] = d
-	}
-
-	if len(disks) > 1 {
-		log.Fatalf("Hyperkit driver currently only supports a single disk")
-	}
-
-	// Create new HyperKit instance (w/o networking for now)
-	h, err := hyperkit.New(*hyperkitPath, "", *state)
-	if err != nil {
-		log.Fatalln("Error creating hyperkit: ", err)
+		hd := hyperkit.DiskConfig{Path: d.Path, Size: d.Size}
+		h.Disks = append(h.Disks, hd)
 	}
 
 	if h.VSockPorts, err = stringToIntArray(*vsockports, ","); err != nil {
@@ -173,10 +170,6 @@ func runHyperKit(args []string) {
 	h.Initrd = prefix + "-initrd.img"
 	h.VPNKitKey = vpnKitKey
 	h.UUID = vmUUID
-	if len(disks) == 1 {
-		h.DiskImage = disks[0].Path
-		h.DiskSize = disks[0].Size
-	}
 	h.ISOImage = isoPath
 	h.VSock = true
 	h.CPUs = *cpus
