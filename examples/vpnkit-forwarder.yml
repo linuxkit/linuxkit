@@ -37,7 +37,9 @@ services:
 
 files:
   - path: root/.ssh/authorized_keys
-    contents: '#your ssh key here'
+    source: ~/.ssh/id_rsa.pub
+    mode: "0600"
+    optional: true
 
 trust:
   org:
