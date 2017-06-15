@@ -574,6 +574,14 @@ func filesystem(m Moby, tw *tar.Writer) error {
 			if len(f.Source) > 2 && f.Source[:2] == "~/" {
 				f.Source = homeDir() + f.Source[1:]
 			}
+			if f.Optional {
+				_, err := os.Stat(f.Source)
+				if err != nil {
+					// skip if not found or readable
+					log.Debugf("Skipping file [%s] as not readable and marked optional", f.Source)
+					continue
+				}
+			}
 			contents, err := ioutil.ReadFile(f.Source)
 			if err != nil {
 				return err

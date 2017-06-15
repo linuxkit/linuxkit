@@ -23,6 +23,7 @@ var schema = string(`
           "symlink": {"type": "string"},
           "contents": {"type": "string"},
           "source": {"type": "string"},
+          "optional": {"type": "boolean"},
           "mode": {"type": "string"}
         }
     },
