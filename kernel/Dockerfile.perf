@@ -1,0 +1,10 @@
+# This Dockerfile extracts the perf utility from a kernel package and
+# places it into a scratch image
+ARG IMAGE
+FROM ${IMAGE} AS kernel
+
+FROM scratch
+ENTRYPOINT []
+CMD []
+WORKDIR /
+COPY --from=kernel /perf /usr/bin/perf

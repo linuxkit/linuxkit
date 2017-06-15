@@ -1,18 +1,23 @@
 # This builds the supported LinuxKit kernels. Kernels are wrapped up
-# in a minimal toybox container, which contains the bzImage, a tar
-# ball with modules and the kernel source.
+# in a scratch container, which contains the bzImage, a tar
+# ball with modules, the kernel sourcs, and in some case, the perf binary.
 #
 # Each kernel is pushed to hub twice, once as
 # linuxkit/kernel:<kernel>.<major>.<minor>-<hash> and once as
 # inuxkit/kernel:<kernel>.<major>.x. The <hash> is the git tree hash
 # of the current directory. The build will only rebuild the kernel
 # image if the git tree hash changed.
+#
+# For some kernels we also build a separate package containing the perf utility
+# which is specific to a given kernel. perf packages are tagged the same way
+# kernel packages.
 
 # Git tree hash of this directory. Override to force build
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 # Name and Org on Hub
 ORG?=linuxkit
 IMAGE:=kernel
+IMAGE_PERF:=kernel-perf
 
 .PHONY: check tag push sign
 # Targets:
@@ -57,6 +62,31 @@ sign_$(2)$(3): build_$(2)$(3)
 build: build_$(2)$(3)
 push: push_$(2)$(3)
 sign: sign_$(2)$(3)
+
+ifneq ($(2), 4.4.x)
+build_perf_$(2)$(3): build_$(2)$(3)
+	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(HASH) || \
+		docker build -f Dockerfile.perf \
+			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(HASH) \
+	 		--no-cache --network=none -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(HASH) .
+
+push_perf_$(2)$(3): build_perf_$(2)$(3)
+	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(HASH) || \
+		(docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(HASH) && \
+		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(HASH) $(ORG)/$(IMAGE_PERF):$(2)$(3) && \
+		 docker push $(ORG)/$(IMAGE_PERF):$(2)$(3))
+
+sign_perf_$(2)$(3): build_perf_$(2)$(3)
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(HASH) || \
+		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(HASH) && \
+		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(HASH) $(ORG)/$(IMAGE_PERF):$(2)$(3) && \
+		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(2)$(3))
+
+build: build_perf_$(2)$(3)
+push: push_perf_$(2)$(3)
+sign: sign_perf_$(2)$(3)
+endif
+
 endef
 
 #
