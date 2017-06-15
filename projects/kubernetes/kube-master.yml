@@ -38,7 +38,7 @@ services:
   - name: sshd
     image: "linuxkit/sshd:abc1f5e096982ebc3fb61c506aed3ac9c2ae4d55"
   - name: docker
-    image: "linuxkit/docker-ce:668d62da6e3da081a8f8aca7db3e2a98adf5da59"
+    image: "linuxkit/docker-ce:dda71ff9fe5ebbfa794b98c57c32df286b212848"
     capabilities:
      - all
     net: host
