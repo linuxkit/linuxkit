@@ -75,6 +75,9 @@ done
 
 mdev -s
 
+# Load modules for cold-plugged devices (ie devices present on boot)
+grep -h MODALIAS /sys/bus/*/devices/*/uevent | cut -d= -f2 | xargs modprobe -abq 2> /dev/null
+
 # set hostname
 if [ -s /etc/hostname ]
 then
