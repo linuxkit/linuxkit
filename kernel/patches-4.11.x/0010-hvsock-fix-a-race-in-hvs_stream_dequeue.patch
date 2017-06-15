@@ -1,7 +1,7 @@
-From b9bf375c542c1d2eec22f599dc1cc897ba0b3d66 Mon Sep 17 00:00:00 2001
+From a1fb69445672e790cb4c1b9c105af09eec69cd64 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Tue, 16 May 2017 22:14:03 +0800
-Subject: [PATCH 9/9] hvsock: fix a race in hvs_stream_dequeue()
+Subject: [PATCH 10/14] hvsock: fix a race in hvs_stream_dequeue()
 
 If hv_pkt_iter_next() returns a non-NULL pointer, we must update
 the recv_data_len/data_off info, otherwise the received data will
@@ -11,7 +11,7 @@ Thank Rolf for finding this!
 
 Reported-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
-Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511
+Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605
 (cherry picked from commit 83c8635b893bbc0b5b329c632cea0382d5479763)
 ---
  net/vmw_vsock/hyperv_transport.c | 50 +++++++++++++++++++++++++++++-----------
@@ -109,5 +109,5 @@ index f465b0b662df..30154836acd0 100644
  	case 1:
  		ret = 1;
 -- 
-2.11.1
+2.13.0
 
