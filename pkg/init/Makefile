@@ -3,7 +3,7 @@ default: push
 
 ORG?=linuxkit
 IMAGE=init
-DEPS=Dockerfile init $(wildcard etc/*) $(wildcard etc/init.d/*)
+DEPS=Dockerfile init $(wildcard etc/*) $(wildcard etc/init.d/*) usermode-helper.c
 
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 
