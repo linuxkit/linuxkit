@@ -9,6 +9,17 @@ RUN apk add --no-cache --initdb -p /out \
     util-linux \
     && true
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+#
+# We require a version of `setsid(1)` which supports the `-w`
+# option, which is not available in all implementations (e.g. the
+# `busybox` implementation does not support it). When this is run
+# as part of a LinuxKit `init` image (rather than as a standalone
+# container) we cannot guarantee which version of `setsid` will
+# be present once the layers are combined, so we take a copy of
+# our own, known good, version for use later.
+RUN cp /out/usr/bin/setsid /out/usr/bin/setsid.getty
+# we really do not want a rogue inittab here
+RUN rm -rf /out/etc/inittab
 
 FROM scratch
 ENTRYPOINT ["/sbin/tini","-s","-v","--"]
