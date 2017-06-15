@@ -1,4 +1,4 @@
-From 308b5f237f0c4881bd7cc347d5752ac88515afb4 Mon Sep 17 00:00:00 2001
+From 5693e15bb358f58823d459702e4bdc199bc49fe0 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:31 +0100
 Subject: [PATCH 06/44] VSOCK: defer sock removal to transports
@@ -79,5 +79,5 @@ index 662bdd20a748..5f8c99eb104c 100644
  		vmci_datagram_destroy_handle(vmci_trans(vsk)->dg_handle);
  		vmci_trans(vsk)->dg_handle = VMCI_INVALID_HANDLE;
 -- 
-2.11.1
+2.13.0
 
