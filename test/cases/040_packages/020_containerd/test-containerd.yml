@@ -1,0 +1,21 @@
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 page_poison=1"
+init:
+  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
+  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
+  - linuxkit/containerd:1c71f95fa36040ea7e987deb98a7a2a363853f01
+  - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
+onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:225c52c2d6f04a040663bac84cabf81825027f64"
+  - name: test
+    image: "test-containerd:latest" # maintainers please push and update
+  - name: poweroff
+    image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
+trust:
+  image:
+    - linuxkit/kernel
+    - linuxkit/binfmt
+    - linuxkit/rngd
+
