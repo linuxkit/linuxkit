@@ -10,7 +10,7 @@ onboot:
   - name: sysctl
     image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
   - name: test
-    image: "test-containerd:latest" # maintainers please push and update
+    image: "linuxkit/test-containerd:b9b6046f1eb8ed8a15eb70523bc584e7da657baa"
   - name: poweroff
     image: "linuxkit/poweroff:7404cf2295df89ccfa2dda41997a28307a90cf28"
 trust:
