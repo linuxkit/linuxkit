@@ -20,6 +20,7 @@ const (
 	networkingNone         string = "none"
 	networkingDockerForMac        = "docker-for-mac"
 	networkingVPNKit              = "vpnkit"
+	networkingVMNet               = "vmnet"
 )
 
 // Process the run arguments and execute run
@@ -42,7 +43,7 @@ func runHyperKit(args []string) {
 	ipStr := flags.String("ip", "", "IP address for the VM")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
 	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
-	networking := flags.String("networking", networkingDockerForMac, "Networking mode. Valid options are 'docker-for-mac', 'vpnkit[,socket-path]' and 'none'. 'docker-for-mac' connects to the network used by Docker for Mac. 'vpnkit' connects to the VPNKit socket specified. If socket-path is omitted a new VPNKit instance will be started and 'vpnkit_eth.sock' will be created in the state directory. 'none' disables networking.`")
+	networking := flags.String("networking", networkingDockerForMac, "Networking mode. Valid options are 'docker-for-mac', 'vpnkit[,socket-path]', 'vmnet' and 'none'. 'docker-for-mac' connects to the network used by Docker for Mac. 'vpnkit' connects to the VPNKit socket specified. If socket-path is omitted a new VPNKit instance will be started and 'vpnkit_eth.sock' will be created in the state directory. 'vmnet' uses the Apple vmnet framework, requires root/sudo. 'none' disables networking.`")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -160,6 +161,9 @@ func runHyperKit(args []string) {
 			// VSOCK port 62373 is used to pass traffic from host->guest
 			h.VSockPorts = append(h.VSockPorts, 62373)
 		}
+	case networkingVMNet:
+		h.VPNKitSock = ""
+		h.VMNet = true
 	case networkingNone:
 		h.VPNKitSock = ""
 	default:
