@@ -20,29 +20,29 @@ import (
 const timeoutVar = "LINUXKIT_UPLOAD_TIMEOUT"
 
 func pushAWS(args []string) {
-	awsCmd := flag.NewFlagSet("aws", flag.ExitOnError)
+	flags := flag.NewFlagSet("aws", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
-	awsCmd.Usage = func() {
-		fmt.Printf("USAGE: %s push aws [options] [name]\n\n", invoked)
-		fmt.Printf("'name' specifies the full path of an image file which will be uploaded\n")
+	flags.Usage = func() {
+		fmt.Printf("USAGE: %s push aws [options] path\n\n", invoked)
+		fmt.Printf("'path' specifies the full path of an AWS image. It will be uploaded to S3 and an AMI will be created from it.\n")
 		fmt.Printf("Options:\n\n")
-		awsCmd.PrintDefaults()
+		flags.PrintDefaults()
 	}
-	timeoutFlag := awsCmd.Int("timeout", 0, "Upload timeout in seconds")
-	bucketFlag := awsCmd.String("bucket", "", "S3 Bucket to upload to. *Required*")
-	nameFlag := awsCmd.String("img-name", "", "Overrides the Name used to identify the file in Amazon S3 and Image. Defaults to [name] with the file extension removed.")
+	timeoutFlag := flags.Int("timeout", 0, "Upload timeout in seconds")
+	bucketFlag := flags.String("bucket", "", "S3 Bucket to upload to. *Required*")
+	nameFlag := flags.String("img-name", "", "Overrides the name used to identify the file in Amazon S3 and the VM image. Defaults to the base of 'path' with the file extension removed.")
 
-	if err := awsCmd.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
 
-	remArgs := awsCmd.Args()
+	remArgs := flags.Args()
 	if len(remArgs) == 0 {
 		fmt.Printf("Please specify the path to the image to push\n")
-		awsCmd.Usage()
+		flags.Usage()
 		os.Exit(1)
 	}
-	src := remArgs[0]
+	path := remArgs[0]
 
 	timeout := getIntValue(timeoutVar, *timeoutFlag, 600)
 	bucket := getStringValue(bucketVar, *bucketFlag, "")
@@ -55,25 +55,26 @@ func pushAWS(args []string) {
 	defer cancelFn()
 
 	if bucket == "" {
-		log.Fatalf("No bucket specified. Please provide one using the -bucket flag")
+		log.Fatalf("Please provide the bucket to use")
 	}
 
-	f, err := os.Open(src)
+	f, err := os.Open(path)
 	if err != nil {
-		log.Fatalf("Error opening file: %s", err)
+		log.Fatalf("Error opening file: %v", err)
 	}
 	defer f.Close()
 
 	if name == "" {
-		name = strings.TrimSuffix(src, filepath.Ext(src))
+		name = strings.TrimSuffix(path, filepath.Ext(path))
+		name = filepath.Base(name)
 	}
 
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
-		log.Fatalf("error reading file: %s", err)
+		log.Fatalf("Error reading file: %v", err)
 	}
 
-	dst := name + filepath.Ext(src)
+	dst := name + filepath.Ext(path)
 	putParams := &s3.PutObjectInput{
 		Bucket:        aws.String(bucket),
 		Key:           aws.String(dst),
@@ -85,7 +86,7 @@ func pushAWS(args []string) {
 
 	_, err = storage.PutObjectWithContext(ctx, putParams)
 	if err != nil {
-		log.Fatalf("Error uploading to S3: %s", err)
+		log.Fatalf("Error uploading to S3: %v", err)
 	}
 
 	compute := ec2.New(sess)
@@ -105,7 +106,7 @@ func pushAWS(args []string) {
 
 	resp, err := compute.ImportSnapshot(importParams)
 	if err != nil {
-		log.Fatalf("Error importing snapshot: %s", err)
+		log.Fatalf("Error importing snapshot: %v", err)
 	}
 
 	var snapshotID *string
@@ -118,7 +119,7 @@ func pushAWS(args []string) {
 		log.Debugf("DescribeImportSnapshotTask:\n%v", describeParams)
 		status, err := compute.DescribeImportSnapshotTasks(describeParams)
 		if err != nil {
-			log.Fatalf("Error getting import snapshot status: %s", err)
+			log.Fatalf("Error getting import snapshot status: %v", err)
 		}
 		if len(status.ImportSnapshotTasks) == 0 {
 			log.Fatalf("Unable to get import snapshot task status")
@@ -162,7 +163,7 @@ func pushAWS(args []string) {
 	log.Debugf("RegisterImage:\n%v", regParams)
 	regResp, err := compute.RegisterImage(regParams)
 	if err != nil {
-		log.Fatalf("Error registering the image: %s; %s", name, err)
+		log.Fatalf("Error registering the image: %s; %v", name, err)
 	}
 	log.Infof("Created AMI: %s", *regResp.ImageId)
 }

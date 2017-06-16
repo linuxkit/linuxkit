@@ -5,39 +5,38 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/Sirupsen/logrus"
 )
 
-// Process the run arguments and execute run
 func pushGcp(args []string) {
-	gcpCmd := flag.NewFlagSet("gcp", flag.ExitOnError)
+	flags := flag.NewFlagSet("gcp", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
-	gcpCmd.Usage = func() {
-		fmt.Printf("USAGE: %s push gcp [options] [name]\n\n", invoked)
-		fmt.Printf("'name' specifies the full path of an image file which will be uploaded\n")
+	flags.Usage = func() {
+		fmt.Printf("USAGE: %s push gcp [options] path\n\n", invoked)
+		fmt.Printf("'path' is the full path to a GCP image. It will be uploaded to GCS and GCP VM image will be created from it.\n")
 		fmt.Printf("Options:\n\n")
-		gcpCmd.PrintDefaults()
+		flags.PrintDefaults()
 	}
-	keysFlag := gcpCmd.String("keys", "", "Path to Service Account JSON key file")
-	projectFlag := gcpCmd.String("project", "", "GCP Project Name")
-	bucketFlag := gcpCmd.String("bucket", "", "GS Bucket to upload to. *Required*")
-	publicFlag := gcpCmd.Bool("public", false, "Select if file on GS should be public. *Optional*")
-	familyFlag := gcpCmd.String("family", "", "GCP Image Family. A group of images where the family name points to the most recent image. *Optional*")
-	nameFlag := gcpCmd.String("img-name", "", "Overrides the Name used to identify the file in Google Storage and Image. Defaults to [name] with the '.img.tar.gz' suffix removed")
+	keysFlag := flags.String("keys", "", "Path to Service Account JSON key file")
+	projectFlag := flags.String("project", "", "GCP Project Name")
+	bucketFlag := flags.String("bucket", "", "GCS Bucket to upload to. *Required*")
+	publicFlag := flags.Bool("public", false, "Select if file on GCS should be public. *Optional*")
+	familyFlag := flags.String("family", "", "GCP Image Family. A group of images where the family name points to the most recent image. *Optional*")
+	nameFlag := flags.String("img-name", "", "Overrides the name used to identify the file in Google Storage and the VM image. Defaults to the base of 'path' with the '.img.tar.gz' suffix removed")
 
-	if err := gcpCmd.Parse(args); err != nil {
+	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
 
-	remArgs := gcpCmd.Args()
+	remArgs := flags.Args()
 	if len(remArgs) == 0 {
-		fmt.Printf("Please specify the prefix to the image to push\n")
-		gcpCmd.Usage()
+		fmt.Printf("Please specify the path to the image to push\n")
+		flags.Usage()
 		os.Exit(1)
 	}
-	src := remArgs[0]
-	suffix := ".img.tar.gz"
+	path := remArgs[0]
 
 	keys := getStringValue(keysVar, *keysFlag, "")
 	project := getStringValue(projectVar, *projectFlag, "")
@@ -46,20 +45,22 @@ func pushGcp(args []string) {
 	family := getStringValue(familyVar, *familyFlag, "")
 	name := getStringValue(nameVar, *nameFlag, "")
 
-	client, err := NewGCPClient(keys, project)
-	if err != nil {
-		log.Fatalf("Unable to connect to GCP")
-	}
-
+	const suffix = ".img.tar.gz"
 	if name == "" {
-		name = src[:len(src)-len(suffix)]
+		name = strings.TrimSuffix(path, suffix)
+		name = filepath.Base(name)
 	}
 
 	if bucket == "" {
-		log.Fatalf("No bucket specified. Please provide one using the -bucket flag")
+		log.Fatalf("Please specify the bucket to use")
 	}
 
-	err = client.UploadFile(src, name+suffix, bucket, public)
+	client, err := NewGCPClient(keys, project)
+	if err != nil {
+		log.Fatalf("Unable to connect to GCP: %v", err)
+	}
+
+	err = client.UploadFile(path, name+suffix, bucket, public)
 	if err != nil {
 		log.Fatalf("Error copying to Google Storage: %v", err)
 	}

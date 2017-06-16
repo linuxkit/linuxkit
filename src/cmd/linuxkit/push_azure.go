@@ -13,15 +13,15 @@ func pushAzure(args []string) {
 	flags := flag.NewFlagSet("azure", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
 	flags.Usage = func() {
-		fmt.Printf("USAGE: %s push azure [options] name\n\n", invoked)
-		fmt.Printf("'imagePath' specifies the path (absolute or relative) of a\n")
-		fmt.Printf("VHD image be uploaded to an Azure Storage Account\n")
+		fmt.Printf("USAGE: %s push azure [options] path\n\n", invoked)
+		fmt.Printf("Push a disk image to Azure\n")
+		fmt.Printf("'path' specifies the path to a VHD. It will be uploaded to an Azure Storage Account.\n")
 		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
 
-	resourceGroupName := flags.String("resourceGroupName", "", "Name of resource group to be used for VM")
-	accountName := flags.String("accountName", "", "Name of the storage account")
+	resourceGroup := flags.String("resource-group", "", "Name of resource group to be used for VM")
+	accountName := flags.String("storage-account", "", "Name of the storage account")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -29,11 +29,11 @@ func pushAzure(args []string) {
 
 	remArgs := flags.Args()
 	if len(remArgs) == 0 {
-		fmt.Printf("Please specify the image to push\n")
+		fmt.Printf("Please specify the path to the image to push\n")
 		flags.Usage()
 		os.Exit(1)
 	}
-	imagePath := remArgs[0]
+	path := remArgs[0]
 
 	subscriptionID := getEnvVarOrExit("AZURE_SUBSCRIPTION_ID")
 	tenantID := getEnvVarOrExit("AZURE_TENANT_ID")
@@ -43,5 +43,5 @@ func pushAzure(args []string) {
 
 	initializeAzureClients(subscriptionID, tenantID, clientID, clientSecret)
 
-	uploadVMImage(*resourceGroupName, *accountName, imagePath)
+	uploadVMImage(*resourceGroup, *accountName, path)
 }

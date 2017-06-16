@@ -21,6 +21,12 @@ func pushVCenter(args []string) {
 
 	flags := flag.NewFlagSet("vCenter", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
+	flags.Usage = func() {
+		fmt.Printf("USAGE: %s push vcenter [options] path \n\n", invoked)
+		fmt.Printf("'path' specifies the full path of an ISO image. It will be pushed to a vCenter cluster.\n")
+		fmt.Printf("Options:\n\n")
+		flags.PrintDefaults()
+	}
 
 	newVM.vCenterURL = flags.String("url", os.Getenv("VCURL"), "URL of VMware vCenter in the format of https://username:password@VCaddress/sdk")
 	newVM.dsName = flags.String("datastore", os.Getenv("VCDATASTORE"), "The name of the DataStore to host the image")
@@ -29,13 +35,6 @@ func pushVCenter(args []string) {
 	newVM.path = flags.String("path", "", "Path to a specific image")
 
 	newVM.vmFolder = flags.String("folder", "", "A folder on the datastore to push the image too")
-
-	flags.Usage = func() {
-		fmt.Printf("USAGE: %s push vcenter [options] path \n\n", invoked)
-		fmt.Printf("'path' specifies the full path of an image that will be pushed\n")
-		fmt.Printf("Options:\n\n")
-		flags.PrintDefaults()
-	}
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatalln("Unable to parse args")
@@ -51,7 +50,7 @@ func pushVCenter(args []string) {
 
 	// Ensure an iso has been passed to the vCenter push Command
 	if !strings.HasSuffix(*newVM.path, ".iso") {
-		log.Fatalln("Please pass an \".iso\" file as the path")
+		log.Fatalln("Please specify an '.iso' file")
 	}
 
 	// Test any passed in files before uploading image
