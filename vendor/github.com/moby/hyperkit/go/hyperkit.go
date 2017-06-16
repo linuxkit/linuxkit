@@ -98,6 +98,9 @@ type HyperKit struct {
 	// VSock guest CID
 	VSockGuestCID int `json:"vsock_guest_cid"`
 
+	// VMNet whether to create vmnet network
+	VMNet bool `json:"vmnet"`
+
 	// 9P sockets
 	Sockets9P []Socket9P `json:"9p_sockets"`
 
@@ -412,6 +415,11 @@ func (h *HyperKit) buildArgs(cmdline string) {
 		} else {
 			a = append(a, "-s", fmt.Sprintf("%d:0,virtio-vpnkit,path=%s,uuid=%s", nextSlot, h.VPNKitSock, h.VPNKitKey))
 		}
+		nextSlot++
+	}
+
+	if h.VMNet {
+		a = append(a, "-s", fmt.Sprintf("%d:0,virtio-net", nextSlot))
 		nextSlot++
 	}
 
