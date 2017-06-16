@@ -2,9 +2,9 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:781cec2360313a6d4aca25f5e90623294f8432f7
+  - linuxkit/init:17693d233dd009b2a3a8d23673cb85969e1dce80
   - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
+  - linuxkit/containerd:04880f344709830aa4c938baa765764e644fc973
 onboot:
   - name: binfmt
     image: "linuxkit/binfmt:8ac5535f57f0c6f5fe88317b9d22a7677093c765"

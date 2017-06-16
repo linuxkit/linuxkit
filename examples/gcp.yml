@@ -2,9 +2,9 @@ kernel:
   image: "linuxkit/kernel:4.9.x"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:781cec2360313a6d4aca25f5e90623294f8432f7
+  - linuxkit/init:17693d233dd009b2a3a8d23673cb85969e1dce80
   - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
+  - linuxkit/containerd:04880f344709830aa4c938baa765764e644fc973
   - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
 onboot:
   - name: sysctl
@@ -16,7 +16,7 @@ onboot:
     image: "linuxkit/metadata:31a0b0f5557c6123beaa9c33e3400ae3c03447e0"
 services:
   - name: getty
-    image: "linuxkit/getty:886d35fe30c47750e8cfbf2f73016e9d2cc6361a"
+    image: "linuxkit/getty:d0765e0a14733f9454010ac109a7c846a4e67fc5"
     env:
      - INSECURE=true
   - name: rngd
