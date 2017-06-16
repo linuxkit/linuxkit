@@ -9,11 +9,13 @@ with appropriate read/write permissions to allow the image to boot.
 [create a Packet account]:https://app.packet.net/#/registration/
 [create an API key]:https://help.packet.net/quick-start/api-integrations
 
-Linuxkit is known to boot on the [Type 0] server at Packet.
+Linuxkit is known to boot on the [Type 0] 
+and [Type 1] servers at Packet.
 Support for other server types, including the [Type 2A] ARM server,
 is a work in progress.
 
 [Type 0]:https://www.packet.net/bare-metal/servers/type-0/
+[Type 1]:https://www.packet.net/bare-metal/servers/type-1/
 [Type 2A]:https://www.packet.net/bare-metal/servers/type-2a/
 
 ## Boot
@@ -66,6 +68,14 @@ for details on that mode.
 At this moment the Linuxkit server boots from RAM, with no persistent
 storage and there is no code that mounts disks. As a result,
 when the Linuxkit image reboots, all is lost. 
+
+Packet supports a [persistent iPXE] mode through its API
+which would allow a server to come back up after a reboot
+and re-start the PXE process. This is great for testing your
+provisioning scripts. This is not yet available directly
+through Linuxkit.
+
+[persistent iPXE]:https://help.packet.net/technical/infrastructure/custom-ipxe
 
 ## Networking
 
