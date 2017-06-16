@@ -32,5 +32,4 @@ services:
 trust:
   org:
     - linuxkit
-  image:
-    - nginx:alpine
+    - library
