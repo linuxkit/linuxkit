@@ -64,7 +64,8 @@ for details on that mode.
 ## Disks
 
 At this moment the Linuxkit server boots from RAM, with no persistent
-storage and there is no code that mounts disks.
+storage and there is no code that mounts disks. As a result,
+when the Linuxkit image reboots, all is lost. 
 
 ## Networking
 
