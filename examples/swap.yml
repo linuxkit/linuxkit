@@ -40,3 +40,4 @@ services:
 trust:
   org:
     - linuxkit
+    - library
