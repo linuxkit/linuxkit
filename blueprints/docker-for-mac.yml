@@ -1,0 +1,89 @@
+# This is a blueprint for building the open source components of Docker for Mac
+kernel:
+  image: "linuxkit/kernel:4.9.x"
+  cmdline: "console=ttyS0 page_poison=1"
+init:
+  - linuxkit/init:2599bcd5013ce5962aa155ee8929c26160de13bd
+  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
+  - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
+onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
+  - name: sysfs
+    image: "linuxkit/sysfs:1244c5a86dfa2318c4e304af68d37e12367e1b7f"
+  - name: binfmt
+    image: "linuxkit/binfmt:8ac5535f57f0c6f5fe88317b9d22a7677093c765"
+  # Format and mount the disk image in /var/lib/docker
+  - name: format
+    image: "linuxkit/format:180cb2dc1de5e60373385080f8148abf10a3afac"
+  - name: mount
+    image: "linuxkit/mount:ff5338822f20375b8913f5a80f9ed4f6ea9a592b"
+    command: ["/mount.sh", "/var/lib/docker"]
+  # mount-vpnkit mounts the 9p share used by vpnkit to coordinate port forwarding
+  - name: mount-vpnkit
+    image: "alpine:3.6"
+    binds:
+        - /var/:/host_var:rbind,rshared
+    capabilities:
+        - CAP_SYS_ADMIN
+    rootfsPropagation: shared
+    command: ["sh", "-c", "mkdir -p /host_var/vpnkit/port && mount -v -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /host_var/vpnkit"]
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+services:
+  # Enable getty for easier debugging
+  - name: getty
+    image: "linuxkit/getty:ef9d667af71089326419fb08e9cc9d567cf15748"
+    env:
+        - INSECURE=true
+  - name: rngd
+    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
+  # Run ntpd to keep time synchronised in the VM
+  - name: ntpd
+    image: "linuxkit/openntpd:45deeb05f736162d941c9bf494983f655ab80aa5"
+  # VSOCK to unix domain socket forwarding. Forwards guest /var/run/docker.sock
+  # to a socket on the host.
+  - name: vsudd
+    image: "linuxkit/vsudd:a66df914201aac784195d5b78262f622fe7f910c"
+    binds:
+        - /var/run:/var/run
+    command: ["/vsudd", "-inport", "2375:unix:/var/run/docker.sock"]
+  # vpnkit-forwarder forwards network traffic to/from the host via VSOCK port 62373. 
+  # It needs access to the vpnkit 9P coordination share 
+  - name: vpnkit-forwarder
+    image: "linuxkit/vpnkit-forwarder:883de832c2c3cb72cd9b01e3f7bd788649e0f2c2"
+    binds:
+        - /var/vpnkit:/port
+    net: host
+    command: ["/vpnkit-forwarder", "-vsockPort", "62373"]
+  # Run dockerd with the vpnkit userland proxy from the vpnkit-forwarder container.
+  # Bind mounts /var/run to allow vsudd to connect to docker.sock, /var/vpnkit
+  # for vpnkit coordination and /var/config/docker for the configuration file.
+  - name: docker-dfm
+    image: "linuxkit/docker-ce:dda71ff9fe5ebbfa794b98c57c32df286b212848"
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+        - /var/lib/docker:/var/lib/docker
+        - /lib/modules:/lib/modules
+        - /var/vpnkit:/port
+        - /var/run:/var/run
+        - /var/config/docker:/var/config/docker
+    command: [ "/usr/bin/docker-init", "/usr/bin/dockerd", "--",
+            "--config-file", "/var/config/docker/daemon.json",
+            "--swarm-default-advertise-addr=eth0",
+            "--userland-proxy-path", "/usr/bin/vpnkit-expose-port",
+            "--storage-driver", "overlay2" ]
+
+files:
+    - path: /var/config/docker/daemon.json
+      contents: '{ "debug": true }'
+
+trust:
+    org:
+        - linuxkit
