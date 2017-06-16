@@ -1,0 +1,25 @@
+(* -*- tuareg -*- *)
+open Jbuild_plugin.V1
+
+let extra_flags =
+  match Sys.getenv "JBUILD_STATIC" with
+  | "true" -> "-cclib -static"
+  | x -> failwith (Printf.sprintf "JBUILD_STATIC: unknown value %S" x)
+  | exception Not_found -> ""
+
+let sexp = Printf.sprintf {|
+  (jbuild_version 1)
+
+  (executables (
+    (names (main store_main http_main tls_main))
+    (libraries (capnp-rpc-lwt cohttp.lwt irmin-unix cmdliner fmt.tty))
+    (flags (:standard -w -53-55 %s))
+  ))
+  (rule
+   ((targets (proto.ml proto.mli))
+    (deps (proto.capnp))
+    (action  (run capnpc -o ocaml ${<}))))
+|} extra_flags
+
+let () =
+  send sexp
