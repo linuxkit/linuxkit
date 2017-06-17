@@ -13,17 +13,17 @@ import (
 )
 
 const (
-	packetDefaultZone     = "ams1"
-	packetDefaultMachine  = "baremetal_0"
-	packetDefaultHostname = "moby"
-	packetDefaultAlwaysPXE = "false"
-	packetBaseURL         = "PACKET_BASE_URL"
-	packetZoneVar         = "PACKET_ZONE"
-	packetMachineVar      = "PACKET_MACHINE"
-	packetAPIKeyVar       = "PACKET_API_KEY"
-	packetProjectIDVar    = "PACKET_PROJECT_ID"
-	packetHostnameVar     = "PACKET_HOSTNAME"
-	packetNameVar         = "PACKET_NAME"
+	packetDefaultZone      = "ams1"
+	packetDefaultMachine   = "baremetal_0"
+	packetDefaultHostname  = "moby"
+	packetDefaultAlwaysPXE = "true"
+	packetBaseURL          = "PACKET_BASE_URL"
+	packetZoneVar          = "PACKET_ZONE"
+	packetMachineVar       = "PACKET_MACHINE"
+	packetAPIKeyVar        = "PACKET_API_KEY"
+	packetProjectIDVar     = "PACKET_PROJECT_ID"
+	packetHostnameVar      = "PACKET_HOSTNAME"
+	packetNameVar          = "PACKET_NAME"
 )
 
 // ValidateHTTPURL does a sanity check that a URL returns a 200 or 300 response
@@ -51,7 +51,7 @@ func runPacket(args []string) {
 	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel and initrd are served from.")
 	zoneFlag := flags.String("zone", packetDefaultZone, "Packet Zone")
 	machineFlag := flags.String("machine", packetDefaultMachine, "Packet Machine Type")
-	alwaysPXEFlag := flags.String("always-pxe", packetDefaultAlwaysPXE, "Reboot from PXE every time. Defaults to false")
+	alwaysPXEFlag := flags.String("always-pxe", packetDefaultAlwaysPXE, "Reboot from PXE every time. Defaults to true")
 	apiKeyFlag := flags.String("api-key", "", "Packet API key")
 	projectFlag := flags.String("project-id", "", "Packet Project ID")
 	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance")
