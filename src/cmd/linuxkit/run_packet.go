@@ -82,10 +82,9 @@ func runPacket(args []string) {
 	}
 	hostname := getStringValue(packetHostnameVar, *hostNameFlag, "")
 	name := getStringValue(packetNameVar, *nameFlag, prefix)
-	alwaysPXE := getStringValue(packetAlwaysPXEVar, *alwaysPXEFlag, defaultAlwaysPXE)
 	osType := "custom_ipxe"
 	billing := "hourly"
-	userData := fmt.Sprintf("#!ipxe\n\ndhcp\nset always_pxe %s\nset base-url %s\nset kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200\nkernel ${base-url}/%s-kernel ${kernel-params}\ninitrd ${base-url}/%s-initrd.img\nboot", alwaysPXE, url, name, name)
+	userData := fmt.Sprintf("#!ipxe\n\ndhcp\nset always_pxe %s\nset base-url %s\nset kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200\nkernel ${base-url}/%s-kernel ${kernel-params}\ninitrd ${base-url}/%s-initrd.img\nboot", alwaysPXEFlag, url, name, name)
 	log.Debugf("Using userData of:\n%s\n", userData)
 	initrdURL := fmt.Sprintf("%s/%s-initrd.img", url, name)
 	kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
