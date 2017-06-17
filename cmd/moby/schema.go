@@ -93,7 +93,8 @@ var schema = string(`
         "sysctl": {
             "type": "array",
             "items": { "$ref": "#/definitions/strings" }
-        }
+        },
+        "rlimits": { "$ref": "#/definitions/strings" }
       }
     },
     "images": {

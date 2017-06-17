@@ -132,6 +132,7 @@ bind mounted into a container.
 - `rootfsPropagation` sets the rootfs propagation, eg `shared`, `slave` or (default) `private`.
 - `cgroupsPath` sets the path for cgroups.
 - `sysctl` sets a list of `sysctl` key value pairs that are set inside the container namespace.
+- `rmlimits` sets a list of `rlimit` values in the form `name,soft,hard`, eg `nofile,100,200`. You can use `unlimited` as a value too.
 
 ### Mount Options
 When mounting filesystem paths into a container - whether as part of `onboot` or `services` - there are several options of which you need to be aware. Using them properly is necessary for your containers to function properly.
