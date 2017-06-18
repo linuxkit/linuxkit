@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"sort"
+	"strconv"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -71,6 +72,7 @@ type MobyImage struct {
 	RootfsPropagation *string            `yaml:"rootfsPropagation" json:"rootfsPropagation,omitempty"`
 	CgroupsPath       *string            `yaml:"cgroupsPath" json:"cgroupsPath,omitempty"`
 	Sysctl            *map[string]string `yaml:"sysctl" json:"sysctl,omitempty"`
+	Rlimits           *[]string          `yaml:"rlimits" json:"rlimits,omitempty"`
 }
 
 // github.com/go-yaml/yaml treats map keys as interface{} while encoding/json
@@ -625,6 +627,66 @@ func ConfigInspectToOCI(yaml MobyImage, inspect types.ImageInspect) (specs.Spec,
 		}
 	}
 
+	rlimitsString := assignStrings(label.Rlimits, yaml.Rlimits)
+	rlimits := []specs.LinuxRlimit{}
+	for _, limitString := range rlimitsString {
+		rs := strings.SplitN(limitString, ",", 3)
+		var limit string
+		var soft, hard uint64
+		switch len(rs) {
+		case 3:
+			origLimit := limit
+			limit = strings.ToUpper(strings.TrimSpace(rs[0]))
+			if !strings.HasPrefix(limit, "RLIMIT_") {
+				limit = "RLIMIT_" + limit
+			}
+			softString := strings.TrimSpace(rs[1])
+			if strings.ToLower(softString) == "unlimited" {
+				soft = 18446744073709551615
+			} else {
+				var err error
+				soft, err = strconv.ParseUint(softString, 10, 64)
+				if err != nil {
+					return oci, fmt.Errorf("Cannot parse %s as uint64: %v", softString, err)
+				}
+			}
+			hardString := strings.TrimSpace(rs[2])
+			if strings.ToLower(hardString) == "unlimited" {
+				hard = 18446744073709551615
+			} else {
+				var err error
+				hard, err = strconv.ParseUint(hardString, 10, 64)
+				if err != nil {
+					return oci, fmt.Errorf("Cannot parse %s as uint64: %v", hardString, err)
+				}
+			}
+			switch limit {
+			case
+				"RLIMIT_CPU",
+				"RLIMIT_FSIZE",
+				"RLIMIT_DATA",
+				"RLIMIT_STACK",
+				"RLIMIT_CORE",
+				"RLIMIT_RSS",
+				"RLIMIT_NPROC",
+				"RLIMIT_NOFILE",
+				"RLIMIT_MEMLOCK",
+				"RLIMIT_AS",
+				"RLIMIT_LOCKS",
+				"RLIMIT_SIGPENDING",
+				"RLIMIT_MSGQUEUE",
+				"RLIMIT_NICE",
+				"RLIMIT_RTPRIO",
+				"RLIMIT_RTTIME":
+				rlimits = append(rlimits, specs.LinuxRlimit{Type: limit, Soft: soft, Hard: hard})
+			default:
+				return oci, fmt.Errorf("Unknown limit: %s", origLimit)
+			}
+		default:
+			return oci, fmt.Errorf("Cannot parse rlimit: %s", rlimitsString)
+		}
+	}
+
 	oci.Version = specs.Version
 
 	oci.Platform = specs.Platform{
@@ -651,7 +713,7 @@ func ConfigInspectToOCI(yaml MobyImage, inspect types.ImageInspect) (specs.Spec,
 			Permitted:   caps,
 			Ambient:     []string{},
 		},
-		Rlimits:         []specs.LinuxRlimit{},
+		Rlimits:         rlimits,
 		NoNewPrivileges: assignBool(label.NoNewPrivileges, yaml.NoNewPrivileges),
 		// ApparmorProfile
 		// TODO FIXME this has moved in runc spec and needs a revendor and update
