@@ -6,7 +6,8 @@
   (flags (:standard -w -53-55))
   (libraries (cstruct.lwt decompress irmin irmin-git lwt.unix rawlink
               tuntap astring rresult mirage-flow-lwt capnp capnp-rpc-lwt
-              mirage-channel-lwt io-page.unix ipaddr))))
+              mirage-channel-lwt io-page.unix ipaddr mirage-flow-unix
+              mirage-flow-rawlink))))
 
 (rule
   ((targets (proto.ml proto.mli))

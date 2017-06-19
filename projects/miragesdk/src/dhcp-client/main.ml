@@ -92,7 +92,7 @@ let run () cmd ethif path =
     Ctl.v path >>= fun db ->
     let ctl fd =
       let service = Ctl.Server.service ~routes db in
-      let endpoint = Capnp_rpc_lwt.Endpoint.of_flow ~switch (module Sdk.IO) fd in
+      let endpoint = Capnp_rpc_lwt.Endpoint.of_flow ~switch (module Mirage_flow_lwt) fd in
       ignore (Capnp_rpc_lwt.CapTP.of_endpoint ~switch ~offer:service endpoint)
     in
     let handlers () = Handlers.watch ~ethif db in

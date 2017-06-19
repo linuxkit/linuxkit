@@ -210,7 +210,10 @@ let start () dhcp_codes net ctl =
   Lwt_main.run (
     Lwt_switch.with_switch @@ fun switch ->
     let net = fd net in
-    let client = Capnp_rpc_lwt.CapTP.of_endpoint ~switch (Capnp_rpc_lwt.Endpoint.of_flow ~switch (module Sdk.IO) (flow ctl)) in
+    let flow =
+      Capnp_rpc_lwt.Endpoint.of_flow ~switch (module Mirage_flow_lwt) (flow ctl)
+    in
+    let client = Capnp_rpc_lwt.CapTP.of_endpoint ~switch flow in
     let ctl = Capnp_rpc_lwt.CapTP.bootstrap client in
     start () dhcp_codes net ctl
   )

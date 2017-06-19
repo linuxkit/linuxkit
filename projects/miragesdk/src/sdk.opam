@@ -7,7 +7,6 @@ homepage:     "https://github.com/linuxkit/linuxkit"
 bug-reports:  "https://github.com/linuxkit/linuxkit/issues"
 license:      "Apache"
 dev-repo:     "https://github.com/linuxkit/linuxkit.git"
-
 build: ["jbuilder" "build" "-p" name "-j" jobs "@install"]
 depends: [
   "jbuilder"  {build & >= "1.0+beta7"}
@@ -25,5 +24,10 @@ depends: [
   "rawlink"
   "tuntap" {= "1.0.0"}
   "ipaddr"
+  "bos"
+  "mirage-flow-rawlink"
+  "mirage-net-fd"
+  "charrua-client"
+  "mirage-types-lwt"
   "alcotest" {test}
 ]
