@@ -1,10 +1,10 @@
 # This builds the supported LinuxKit kernels. Kernels are wrapped up
 # in a scratch container, which contains the bzImage, a tar
-# ball with modules, the kernel sources, and in some case, the perf binary.
+# ball with modules, the kernel sourcs, and in some case, the perf binary.
 #
 # Each kernel is pushed to hub twice, once as
 # linuxkit/kernel:<kernel>.<major>.<minor>-<hash> and once as
-# linuxkit/kernel:<kernel>.<major>.x. The <hash> is the git tree hash
+# inuxkit/kernel:<kernel>.<major>.x. The <hash> is the git tree hash
 # of the current directory. The build will only rebuild the kernel
 # image if the git tree hash changed.
 #

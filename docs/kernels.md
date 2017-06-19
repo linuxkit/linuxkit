@@ -72,7 +72,7 @@ configuration.
 
 To build and test locally modified kernels, e.g., to try a different
 kernel config or new patches, the existing kernel build system in the
-[`./kernel`](./kernel) can be re-used. For example, assuming the
+[`./kernel`](../kernel/README.md) can be re-used. For example, assuming the
 current 4.9 kernel is 4.9.28, you can build a local kernel with:
 ```
 make build_4.9.28 HASH=foo
