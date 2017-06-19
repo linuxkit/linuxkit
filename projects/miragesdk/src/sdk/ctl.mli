@@ -13,7 +13,7 @@ module Client: sig
       TODO: decide if we want to support test_and_set (instead of
       write) and some kind of watches. *)
 
-  type t = Ctl_api.Reader.Ctl.t Capnp_rpc_lwt.Capability.t
+  type t = Api.Reader.Ctl.t Capnp_rpc_lwt.Capability.t
   (** The type for client state. *)
 
   type error
@@ -45,10 +45,13 @@ val v: string -> KV.t Lwt.t
 
 module Server: sig
 
+  type t = Api.Reader.Ctl.t Capnp_rpc_lwt.Capability.t
+  (** The type for server state. *)
+
   type op = [ `Read | `Write | `Delete ]
   (** The type for operations to perform on routes. *)
 
-  val service: routes:(string list * op list) list -> KV.t -> Ctl_api.Reader.Ctl.t Capnp_rpc_lwt.Capability.t
+  val service: routes:(string list * op list) list -> KV.t -> t
   (** [service ~routes kv] is the thread exposing the KV store [kv],
       holding control plane state, running inside the privileged
       container. [routes] are the routes exposed by the server to the

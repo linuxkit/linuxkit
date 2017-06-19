@@ -43,7 +43,7 @@ let errorf fmt =
 
 module Client = struct
 
-  module C = Ctl_api.Reader.Ctl
+  module C = Api.Reader.Ctl
 
   type error = [`Msg of string]
   let pp_error ppf (`Msg s) = Fmt.string ppf s
@@ -51,8 +51,8 @@ module Client = struct
   type t = C.t Capability.t
 
   let read t path =
-    let module P = Ctl_api.Builder.Ctl.Read_params in
-    let module R = Ctl_api.Reader.Response in
+    let module P = Api.Builder.Ctl.Read_params in
+    let module R = Api.Reader.Response in
     let req, p = Capability.Request.create P.init_pointer in
     P.path_set_list p path |> ignore;
     Capability.call_for_value t C.read_method req >|= function
@@ -65,7 +65,7 @@ module Client = struct
       | R.Undefined _ -> Error (`Msg "invalid return")
 
   let write t path data =
-    let module P = Ctl_api.Builder.Ctl.Write_params in
+    let module P = Api.Builder.Ctl.Write_params in
     let req, p = Capability.Request.create P.init_pointer in
     P.path_set_list p path |> ignore;
     P.data_set p data;
@@ -74,7 +74,7 @@ module Client = struct
     | Error e -> errorf "error: write(%a) -> %a" pp_path path Capnp_rpc.Error.pp e
 
   let delete t path =
-    let module P = Ctl_api.Builder.Ctl.Delete_params in
+    let module P = Api.Builder.Ctl.Delete_params in
     let req, p = Capability.Request.create P.init_pointer in
     P.path_set_list p path |> ignore;
     Capability.call_for_value t C.delete_method req >|= function
@@ -86,6 +86,8 @@ end
 module Server = struct
 
   type op = [ `Read | `Write | `Delete ]
+
+  type t = Api.Reader.Ctl.t Capability.t
 
   let infof fmt =
     Fmt.kstrf (fun msg () ->
@@ -113,11 +115,11 @@ module Server = struct
     | exception Not_found -> Service.fail "%s" (not_allowed key)
 
   let service ~routes db =
-    Ctl_api.Builder.Ctl.local @@
-    object (_ : Ctl_api.Builder.Ctl.service)
+    Api.Builder.Ctl.local @@
+    object (_ : Api.Builder.Ctl.service)
       method read req =
-        let module P = Ctl_api.Reader.Ctl.Read_params in
-        let module R = Ctl_api.Builder.Response in
+        let module P = Api.Reader.Ctl.Read_params in
+        let module R = Api.Builder.Response in
         let params = P.of_payload req in
         let key = P.path_get_list params in
         with_permission_check ~routes `Read key @@ fun () ->
@@ -131,7 +133,7 @@ module Server = struct
           )
 
       method write req =
-        let module P = Ctl_api.Reader.Ctl.Write_params in
+        let module P = Api.Reader.Ctl.Write_params in
         let params = P.of_payload req in
         let key = P.path_get_list params in
         let value = P.data_get params in
@@ -142,7 +144,7 @@ module Server = struct
           )
 
       method delete req =
-        let module P = Ctl_api.Reader.Ctl.Delete_params in
+        let module P = Api.Reader.Ctl.Delete_params in
         let params = P.of_payload req in
         let key = P.path_get_list params in
         with_permission_check ~routes `Delete key @@ fun () ->
