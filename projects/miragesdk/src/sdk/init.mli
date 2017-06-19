@@ -43,12 +43,12 @@ module Fd: sig
   val stderr: t
   (** [stderr] is the standard error. *)
 
-  val flow: t -> IO.t
+  val flow: t -> Mirage_flow_lwt.t
   (** [flow t] is the flow representing [t]. *)
 
 end
 
-val file_descr: ?name:string -> Lwt_unix.file_descr -> IO.t
+val file_descr: ?name:string -> Lwt_unix.file_descr -> Mirage_flow_lwt.t
 (** [file_descr ?name fd] is the flow for the file-descripor [fd]. *)
 
 module Pipe: sig
@@ -96,7 +96,7 @@ module Pipe: sig
 
 end
 
-val rawlink: ?filter:string -> string -> IO.t
+val rawlink: ?filter:string -> string -> Mirage_flow_lwt.t
 (** [rawlink ?filter x] is the flow using the network interface
     [x]. The packets can be filtered using the BPF filter
     [filter]. See the documentation of
@@ -110,7 +110,7 @@ val exec: Pipe.monitor -> string list -> (int -> unit Lwt.t) -> unit Lwt.t
 
 (* FIXME(samoht): not very happy with that signatue *)
 val run: Pipe.monitor ->
-  net:IO.t -> ctl:(IO.t -> unit) ->
+  net:Mirage_flow_lwt.t -> ctl:(Mirage_flow_lwt.t -> unit) ->
   ?handlers:(unit -> unit Lwt.t) ->
   string list -> unit Lwt.t
 (** [run m ~net ~ctl ?handlers cmd] runs [cmd] in a unprivileged calf

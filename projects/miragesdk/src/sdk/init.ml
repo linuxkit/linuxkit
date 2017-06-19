@@ -5,113 +5,13 @@ module Log = (val Logs.src_log src : Logs.LOG)
 
 let failf fmt = Fmt.kstrf Lwt.fail_with fmt
 
-let pp_fd ppf (t:Lwt_unix.file_descr) =
-  Fmt.int ppf (Obj.magic (Lwt_unix.unix_file_descr t): int)
-
-let rec really_write fd buf off len =
-  match len with
-  | 0   -> Lwt.return_unit
-  | len ->
-    Log.debug (fun l -> l "really_write %a off=%d len=%d" pp_fd fd off len);
-    Lwt_unix.write fd buf off len >>= fun n ->
-    if n = 0 then Lwt.fail_with "write 0"
-    else really_write fd buf (off+n) (len-n)
-
-let write_all fd buf = really_write fd buf 0 (String.length buf)
-
-let read_all fd =
-  Log.debug (fun l -> l "read_all %a" pp_fd fd);
-  let len = 16 * 1024 in
-  let buf = Bytes.create len in
-  let rec loop acc =
-    Lwt_unix.read fd buf 0 len >>= fun n ->
-    if n = 0 then failf "read %a: 0" pp_fd fd
-    else
-      let acc = String.sub buf 0 n :: acc in
-      if n <= len then Lwt.return (List.rev acc)
-      else loop acc
-  in
-  loop [] >|= fun bufs ->
-  String.concat "" bufs
-
 module Flow = struct
-
-  (* build a flow from Lwt_unix.file_descr *)
-  module Fd: Mirage_flow_lwt.CONCRETE with type flow = Lwt_unix.file_descr = struct
-    type 'a io = 'a Lwt.t
-    type buffer = Cstruct.t
-    type error = [`Msg of string]
-    type write_error = [ Mirage_flow.write_error | error ]
-
-    let pp_error ppf (`Msg s) = Fmt.string ppf s
-
-    let pp_write_error ppf = function
-      | #Mirage_flow.write_error as e -> Mirage_flow.pp_write_error ppf e
-      | #error as e                   -> pp_error ppf e
-
-    type flow = Lwt_unix.file_descr
-
-    let err e =  Lwt.return (Error (`Msg (Printexc.to_string e)))
-
-    let read t =
-      Lwt.catch (fun () ->
-          read_all t >|= fun buf -> Ok (`Data (Cstruct.of_string buf))
-        ) (function Failure _ -> Lwt.return (Ok `Eof) | e -> err e)
-
-    let write t b =
-      Lwt.catch (fun () ->
-          write_all t (Cstruct.to_string b) >|= fun () -> Ok ()
-        ) (fun e  -> err e)
-
-    let close t = Lwt_unix.close t
-
-    let writev t bs =
-      Lwt.catch (fun () ->
-          Lwt_list.iter_s (fun b -> write_all t (Cstruct.to_string b)) bs
-          >|= fun () -> Ok ()
-        ) (fun e -> err e)
-  end
-
-  (* build a flow from rawlink *)
-  module Rawlink: Mirage_flow_lwt.CONCRETE with type flow = Lwt_rawlink.t = struct
-    type 'a io = 'a Lwt.t
-    type buffer = Cstruct.t
-    type error = [`Msg of string]
-    type write_error = [ Mirage_flow.write_error | error ]
-
-    let pp_error ppf (`Msg s) = Fmt.string ppf s
-
-    let pp_write_error ppf = function
-      | #Mirage_flow.write_error as e -> Mirage_flow.pp_write_error ppf e
-      | #error as e                   -> pp_error ppf e
-
-    type flow = Lwt_rawlink.t
-
-    let err e =  Lwt.return (Error (`Msg (Printexc.to_string e)))
-
-    let read t =
-      Lwt.catch (fun () ->
-          Lwt_rawlink.read_packet t >|= fun buf -> Ok (`Data buf)
-        ) (function Failure _ -> Lwt.return (Ok `Eof) | e -> err e)
-
-    let write t b =
-      Lwt.catch (fun () ->
-          Lwt_rawlink.send_packet t b >|= fun () -> Ok ()
-        ) (fun e  -> err e)
-
-    let close t = Lwt_rawlink.close_link t
-
-    let writev t bs =
-      Lwt.catch (fun () ->
-          Lwt_list.iter_s (Lwt_rawlink.send_packet t) bs >|= fun () -> Ok ()
-        ) (fun e -> err e)
-  end
 
   let int_of_fd t =
     (Obj.magic (Lwt_unix.unix_file_descr t): int)
 
   let fd ?name t =
-    IO.create (module Fd) t (match name with
+    Mirage_flow_lwt.create (module Mirage_flow_unix.Fd) t (match name with
         | None   -> string_of_int (int_of_fd t)
         | Some n -> n)
 
@@ -124,7 +24,7 @@ let rawlink ?filter ethif =
   (try Tuntap.set_up_and_running ethif
    with e -> Log.err (fun l -> l "rawlink: %a" Fmt.exn e));
   let t = Lwt_rawlink.open_link ?filter ethif in
-  IO.create (module Flow.Rawlink) t ethif
+  Mirage_flow_lwt.create (module Mirage_flow_rawlink) t ethif
 
 module Fd = struct
 
@@ -293,11 +193,11 @@ let exec_and_forward ?(handlers=block_for_ever) ~pid ~cmd ~net ~ctl t =
   Lwt.pick ([
       wait ();
       (* data *)
-      IO.proxy ~verbose:true net priv_net;
+      Mirage_flow_lwt.proxy ~verbose:true net priv_net;
 
       (* redirect the calf stdout to the shim stdout *)
-      IO.forward ~verbose:false ~src:priv_stdout ~dst:Fd.(flow stdout);
-      IO.forward ~verbose:false ~src:priv_stderr ~dst:Fd.(flow stderr);
+      Mirage_flow_lwt.forward ~verbose:false ~src:priv_stdout ~dst:Fd.(flow stdout);
+      Mirage_flow_lwt.forward ~verbose:false ~src:priv_stderr ~dst:Fd.(flow stderr);
       (* TODO: Init.Fd.forward ~src:Init.Pipe.(priv metrics)
          ~dst:Init.Fd.metric; *)
       handlers ();

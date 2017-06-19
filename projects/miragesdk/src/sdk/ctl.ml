@@ -34,7 +34,7 @@ let () =
     (* FIXME: inotify need some unknown massaging. *)
     (* Irmin_watcher.hook *)
 
-module C = Mirage_channel_lwt.Make(IO)
+module C = Mirage_channel_lwt.Make(Mirage_flow_lwt)
 
 exception Undefined_field of int
 

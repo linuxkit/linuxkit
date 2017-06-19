@@ -37,6 +37,10 @@ RUN git -C /home/opam/opam-repository fetch origin && \
 RUN opam pin add -n capnp.dev 'https://github.com/talex5/capnp-ocaml.git#interfaces'
 RUN opam pin add -n capnp-rpc.dev 'https://github.com/mirage/capnp-rpc.git'
 RUN opam pin add -n capnp-rpc-lwt.dev 'https://github.com/mirage/capnp-rpc.git'
+RUN opam pin add -n charrua-client.dev https://github.com/samoht/charrua-client.git#with-cdhcpc
+RUN opam pin add -n mirage-flow-rawlink.dev https://github.com/mirage/mirage-flow-rawlink.git
+RUN opam pin add -n mirage-flow-lwt --dev
+RUN opam pin add -n mirage-flow-unix --dev
 
 COPY sdk.opam /src
 RUN sudo chown opam -R /src
@@ -56,14 +60,10 @@ RUN opam update sdk && opam install sdk -t
 
 FROM sdk as priv
 
-RUN opam depext -iy bos cmdliner
-
-RUN opam list
-
 COPY ./dhcp-client /src/dhcp-client
 RUN sudo chown opam -R /src
 
-RUN opam config exec -- jbuilder build dhcp-client/main.exe
+RUN opam config exec -- jbuilder build --dev dhcp-client/main.exe
 RUN sudo mkdir -p /out
 RUN sudo cp /src/_build/default/dhcp-client/main.exe /out/dhcp-client
 
@@ -72,18 +72,11 @@ RUN sudo cp /src/_build/default/dhcp-client/main.exe /out/dhcp-client
 
 FROM sdk as calf
 
-RUN opam pin add charrua-client.dev https://github.com/samoht/charrua-client.git#with-cdhcpc -n
-RUN opam pin add mirage-net-fd 0.2.0 -n
-RUN opam list
-RUN opam depext -iy mirage-net-fd charrua-client lwt mirage-types-lwt cmdliner
-
-RUN opam list
-
 COPY ./dhcp-client-calf/unikernel.ml /src/dhcp-client-calf/
 COPY ./dhcp-client-calf/jbuild /src/dhcp-client-calf/
 RUN sudo chown opam -R /src
 
-RUN opam config exec -- jbuilder build dhcp-client-calf/unikernel.exe
+RUN opam config exec -- jbuilder build --dev dhcp-client-calf/unikernel.exe
 RUN sudo mkdir -p /out/
 RUN sudo cp /src/_build/default/dhcp-client-calf/unikernel.exe /out/dhcp-client-calf
 

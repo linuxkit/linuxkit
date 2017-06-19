@@ -53,75 +53,6 @@ let default_options =
     INTERFACE_MTU;
   ]
 
-(* Build a raw flow from a network interface *)
-module Raw (Net: Mirage_net_lwt.S): sig
-  include Mirage_flow_lwt.S
-  val connect: Net.t -> flow Lwt.t
-end = struct
-
-  type 'a io = 'a Net.io
-  type error = Net.error
-  let pp_error = Net.pp_error
-  type write_error = [ Mirage_flow.write_error | `Net of Net.error ]
-
-  let pp_write_error ppf = function
-    | #Mirage_flow.write_error as e -> Mirage_flow.pp_write_error ppf e
-    | `Net e -> Net.pp_error ppf e
-
-  type flow = {
-    netif: Net.t;
-    mutable closed: bool;
-    listener: unit Lwt.t;
-    bufs: Cstruct.t Queue.t;
-    cond: [`Eof | `Data] Lwt_condition.t;
-  }
-
-  type buffer = Cstruct.t
-
-  let connect netif =
-    let cond = Lwt_condition.create () in
-    let bufs = Queue.create () in
-    let listener =
-      Net.listen netif (fun buf ->
-          Queue.add buf bufs;
-          Lwt_condition.signal cond `Data;
-          Lwt.return_unit)
-      >|= function
-      | Ok ()   -> ()
-      | Error e ->
-        Log.debug (fun l -> l "net->flow listen: %a" Net.pp_error e);
-        Lwt_condition.broadcast cond `Eof
-    in
-    Lwt.return { netif; bufs; cond; closed = false; listener }
-
-  let read flow =
-    if flow.closed then Lwt.return (Error `Disconnected)
-    else if Queue.is_empty flow.bufs then
-      Lwt_condition.wait flow.cond >|= function
-      | `Eof  -> Ok `Eof
-      | `Data -> Ok (`Data (Queue.pop flow.bufs))
-    else
-      Lwt.return (Ok (`Data (Queue.pop flow.bufs)))
-
-  let close flow =
-    flow.closed <- true;
-    Lwt.cancel flow.listener;
-    Lwt.return_unit
-
-  let writev t bufs =
-    if t.closed then Lwt.return (Error `Closed)
-    else Net.writev t.netif bufs >|= function
-      | Ok ()   -> Ok ()
-      | Error e -> Error (`Net e)
-
-  let write t buf =
-    if t.closed then Lwt.return (Error `Closed)
-    else Net.write t.netif buf >|= function
-      | Ok ()   -> Ok ()
-      | Error e -> Error (`Net e)
-
-end
-
 (* FIXME: use the mirage tool *)
 
 module Time = struct
@@ -210,7 +141,10 @@ let start () dhcp_codes net ctl =
   Lwt_main.run (
     Lwt_switch.with_switch @@ fun switch ->
     let net = fd net in
-    let client = Capnp_rpc_lwt.CapTP.of_endpoint ~switch (Capnp_rpc_lwt.Endpoint.of_flow ~switch (module Sdk.IO) (flow ctl)) in
+    let flow =
+      Capnp_rpc_lwt.Endpoint.of_flow ~switch (module Mirage_flow_lwt) (flow ctl)
+    in
+    let client = Capnp_rpc_lwt.CapTP.of_endpoint ~switch flow in
     let ctl = Capnp_rpc_lwt.CapTP.bootstrap client in
     start () dhcp_codes net ctl
   )
