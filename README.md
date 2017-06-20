@@ -52,7 +52,7 @@ Currently supported platforms are:
   - [HyperKit (macOS)](docs/platform-hyperkit.md)
   - [Hyper-V (Windows)](docs/platform-hyperv.md)
   - [qemu (macOS, Linux, Windows)](docs/platform-qemu.md)
-  - [VMware (macOS, Windows)](dos/platform-vmware.md)
+  - [VMware (macOS, Windows)](docs/platform-vmware.md)
 - Cloud based platforms:
   - [Amazon Web Services](docs/platform-aws.md)
   - [Google Cloud](docs/platform-gcp.md)
