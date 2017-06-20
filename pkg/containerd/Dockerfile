@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:7cf5393e04fe0e26e9fa8f507379cacb64595918 as alpine
+FROM linuxkit/alpine:24fe1b6bbf1fc95b484741587acb10da6dbc9211 as alpine
 RUN \
   apk add \
   btrfs-progs-dev \
@@ -10,11 +10,11 @@ RUN \
   make \
   && true
 ENV GOPATH=/go PATH=$PATH:/go/bin
-ENV CONTAINERD_COMMIT=c215531a8f63a98a69134e804fea4ee6d354bb90
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git
 WORKDIR $GOPATH/src/github.com/containerd/containerd
+# CONTAINERD_COMMIT is defined in linuxkit/alpine
 RUN git checkout $CONTAINERD_COMMIT
 RUN make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
 RUN cp bin/containerd bin/ctr bin/containerd-shim bin/dist /usr/bin/

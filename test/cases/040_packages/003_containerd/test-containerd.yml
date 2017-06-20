@@ -1,14 +1,19 @@
 kernel:
   image: "linuxkit/kernel:4.9.x"
-  cmdline: "console=ttyS0"
+  cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:17693d233dd009b2a3a8d23673cb85969e1dce80
   - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
   - linuxkit/containerd:be69ded7ed4437e2989da850581b631bac877d3e
+  - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
 onboot:
+  - name: sysctl
+    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
+  - name: test
+    image: "linuxkit/test-containerd:b9b6046f1eb8ed8a15eb70523bc584e7da657baa"
   - name: poweroff
     image: "linuxkit/poweroff:7404cf2295df89ccfa2dda41997a28307a90cf28"
-    command: ["/bin/sh", "/poweroff.sh", "3"]
 trust:
   org:
     - linuxkit
+
