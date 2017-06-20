@@ -27,7 +27,7 @@ bin/moby: Makefile | bin
 	rm tmp_moby_bin.tar
 	touch $@
 
-RTF_COMMIT=3ced00340aacfc1932e8c03281bf3bfc586c147c
+RTF_COMMIT=34ec986e726d661f2a25ff085d669e057e3e5345
 RTF_CMD=github.com/linuxkit/rtf/cmd
 bin/rtf: Makefile | bin
 	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(VERSION)" -o $@ > tmp_rtf_bin.tar
