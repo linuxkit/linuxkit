@@ -31,7 +31,7 @@ type Moby struct {
 		Path      string
 		Directory bool
 		Symlink   string
-		Contents  string
+		Contents  *string
 		Source    string
 		Optional  bool
 		Mode      string
