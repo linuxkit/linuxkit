@@ -568,7 +568,11 @@ func filesystem(m Moby, tw *tar.Writer) error {
 		if dirMode&0007 != 0 {
 			dirMode |= 0001
 		}
-		if !f.Directory && f.Contents == "" && f.Symlink == "" {
+		var contents []byte
+		if f.Contents != nil {
+			contents = []byte(*f.Contents)
+		}
+		if !f.Directory && f.Contents == nil && f.Symlink == "" {
 			if f.Source == "" {
 				return errors.New("Contents of file not specified")
 			}
@@ -583,12 +587,11 @@ func filesystem(m Moby, tw *tar.Writer) error {
 					continue
 				}
 			}
-			contents, err := ioutil.ReadFile(f.Source)
+			var err error
+			contents, err = ioutil.ReadFile(f.Source)
 			if err != nil {
 				return err
 			}
-
-			f.Contents = string(contents)
 		}
 		// we need all the leading directories
 		parts := strings.Split(path.Dir(f.Path), "/")
@@ -617,7 +620,7 @@ func filesystem(m Moby, tw *tar.Writer) error {
 		}
 		addedFiles[f.Path] = true
 		if f.Directory {
-			if f.Contents != "" {
+			if f.Contents != nil {
 				return errors.New("Directory with contents not allowed")
 			}
 			hdr := &tar.Header{
@@ -644,13 +647,13 @@ func filesystem(m Moby, tw *tar.Writer) error {
 			hdr := &tar.Header{
 				Name: f.Path,
 				Mode: mode,
-				Size: int64(len(f.Contents)),
+				Size: int64(len(contents)),
 			}
 			err := tw.WriteHeader(hdr)
 			if err != nil {
 				return err
 			}
-			_, err = tw.Write([]byte(f.Contents))
+			_, err = tw.Write(contents)
 			if err != nil {
 				return err
 			}
