@@ -15,16 +15,16 @@
 # Git tree hash of this directory. Override to force build
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 # Name and Org on Hub
-ORG?=linuxkit
+ORG?=ndauten
 IMAGE:=kernel
 IMAGE_PERF:=kernel-perf
 
-.PHONY: check tag push sign
+.PHONY: check tag push sign 
 # Targets:
 # build: builds all kernels
 # push:  pushes all tagged kernel images to hub
 # sign:  sign and push all kernel images to hub
-build:
+build: memorizer
 push:
 sign:
 
@@ -89,12 +89,14 @@ endif
 
 endef
 
+memorizer: 
+	$(eval $(call memorizer,4.10.0,4.10.x))
+
 #
 # Build Targets
 # Debug targets only for latest stable and LTS stable
-#
-$(eval $(call kernel,4.11.5,4.11.x))
-$(eval $(call kernel,4.11.5,4.11.x,_dbg))
-$(eval $(call kernel,4.9.32,4.9.x))
-$(eval $(call kernel,4.9.32,4.9.x,_dbg))
-$(eval $(call kernel,4.4.72,4.4.x))
+#$(eval $(call kernel,4.11.5,4.11.x))
+#$(eval $(call kernel,4.11.5,4.11.x,_dbg))
+#$(eval $(call kernel,4.9.32,4.9.x))
+#$(eval $(call kernel,4.9.32,4.9.x,_dbg))
+#$(eval $(call kernel,4.4.72,4.4.x))
