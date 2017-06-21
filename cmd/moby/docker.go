@@ -21,7 +21,7 @@ import (
 	"golang.org/x/net/context"
 )
 
-func dockerRunInput(input io.Reader, args ...string) ([]byte, error) {
+func dockerRun(input io.Reader, args ...string) ([]byte, error) {
 	log.Debugf("docker run (input): %s", strings.Join(args, " "))
 	docker, err := exec.LookPath("docker")
 	if err != nil {
