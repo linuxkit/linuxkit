@@ -1,4 +1,4 @@
-package main
+package moby
 
 import (
 	"archive/tar"
@@ -128,7 +128,8 @@ func ensurePrereq(out string) error {
 	return err
 }
 
-func validateOutputs(out outputList) error {
+// ValidateOutputs checks if the output type is known
+func ValidateOutputs(out []string) error {
 	log.Debugf("validating output: %v", out)
 
 	for _, o := range out {
@@ -145,10 +146,11 @@ func validateOutputs(out outputList) error {
 	return nil
 }
 
-func outputs(base string, image []byte, out outputList, size int, hyperkit bool) error {
+// Outputs generates all the specified output formats
+func Outputs(base string, image []byte, out []string, size int, hyperkit bool) error {
 	log.Debugf("output: %v %s", out, base)
 
-	err := validateOutputs(out)
+	err := ValidateOutputs(out)
 	if err != nil {
 		return err
 	}

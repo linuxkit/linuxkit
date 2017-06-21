@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/moby/tool/src/moby"
 )
 
 var (
@@ -17,9 +18,6 @@ var (
 
 	// GitCommit hash, set at compile time
 	GitCommit = "unknown"
-
-	// MobyDir is the location of the cache directory ~/.moby by default
-	MobyDir string
 )
 
 // infoFormatter overrides the default format for Info() log events to
@@ -91,16 +89,17 @@ func main() {
 		os.Exit(1)
 	}
 
-	MobyDir = *flagConfigDir
-	err := os.MkdirAll(MobyDir, 0755)
+	mobyDir := *flagConfigDir
+	err := os.MkdirAll(mobyDir, 0755)
 	if err != nil {
-		log.Fatalf("Could not create config directory [%s]: %v", MobyDir, err)
+		log.Fatalf("Could not create config directory [%s]: %v", mobyDir, err)
 	}
 
-	err = os.MkdirAll(filepath.Join(MobyDir, "tmp"), 0755)
+	err = os.MkdirAll(filepath.Join(mobyDir, "tmp"), 0755)
 	if err != nil {
-		log.Fatalf("Could not create config tmp directory [%s]: %v", filepath.Join(MobyDir, "tmp"), err)
+		log.Fatalf("Could not create config tmp directory [%s]: %v", filepath.Join(mobyDir, "tmp"), err)
 	}
+	moby.MobyDir = mobyDir
 
 	switch args[0] {
 	case "build":

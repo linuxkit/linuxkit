@@ -18,7 +18,7 @@ lint:
 	# govet
 	@test -z "$$(go tool vet -printf=false . 2>&1 | grep -v vendor/ | tee /dev/stderr)"
 	# go test
-	@go test github.com/moby/tool/cmd/moby
+	@go test github.com/moby/tool/src/moby
 
 test: moby
 	./moby build -output tar test/test.yml

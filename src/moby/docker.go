@@ -1,4 +1,4 @@
-package main
+package moby
 
 // We want to replace much of this with use of containerd tools
 // and also using the Docker API not shelling out

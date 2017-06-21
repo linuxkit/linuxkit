@@ -1,4 +1,4 @@
-package main
+package moby
 
 import (
 	"encoding/json"
@@ -12,7 +12,7 @@ import (
 func TestOverrides(t *testing.T) {
 	var yamlCaps = []string{"CAP_SYS_ADMIN"}
 
-	var yaml = MobyImage{
+	var yaml = Image{
 		Name:         "test",
 		Image:        "testimage",
 		Capabilities: &yamlCaps,
@@ -20,7 +20,7 @@ func TestOverrides(t *testing.T) {
 
 	var labelCaps = []string{"CAP_SYS_CHROOT"}
 
-	var label = MobyImage{
+	var label = Image{
 		Capabilities: &labelCaps,
 		Cwd:          "/label/directory",
 	}
