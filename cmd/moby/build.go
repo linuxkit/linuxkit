@@ -240,7 +240,10 @@ func build(args []string) {
 		buf = new(bytes.Buffer)
 		w = buf
 	}
-	buildInternal(moby, w, *buildPull, addition)
+	err = buildInternal(moby, w, *buildPull, addition)
+	if err != nil {
+		log.Fatalf("%v", err)
+	}
 
 	if outputFile == nil {
 		image := buf.Bytes()
@@ -317,8 +320,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 }
 
 // Perform the actual build process
-// TODO return error not panic
-func buildInternal(m Moby, w io.Writer, pull bool, addition addFun) {
+func buildInternal(m Moby, w io.Writer, pull bool, addition addFun) error {
 	iw := tar.NewWriter(w)
 
 	if m.Kernel.Image != "" {
@@ -327,11 +329,11 @@ func buildInternal(m Moby, w io.Writer, pull bool, addition addFun) {
 		kf := newKernelFilter(iw, m.Kernel.Cmdline)
 		err := ImageTar(m.Kernel.Image, "", kf, enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
 		if err != nil {
-			log.Fatalf("Failed to extract kernel image and tarball: %v", err)
+			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
 		}
 		err = kf.Close()
 		if err != nil {
-			log.Fatalf("Close error: %v", err)
+			return fmt.Errorf("Close error: %v", err)
 		}
 	}
 
@@ -343,7 +345,7 @@ func buildInternal(m Moby, w io.Writer, pull bool, addition addFun) {
 		log.Infof("Process init image: %s", ii)
 		err := ImageTar(ii, "", iw, enforceContentTrust(ii, &m.Trust), pull)
 		if err != nil {
-			log.Fatalf("Failed to build init tarball from %s: %v", ii, err)
+			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}
 	}
 
@@ -355,13 +357,13 @@ func buildInternal(m Moby, w io.Writer, pull bool, addition addFun) {
 		useTrust := enforceContentTrust(image.Image, &m.Trust)
 		config, err := ConfigToOCI(image, useTrust)
 		if err != nil {
-			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
+			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
 		}
 		so := fmt.Sprintf("%03d", i)
 		path := "containers/onboot/" + so + "-" + image.Name
 		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
 		if err != nil {
-			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
+			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
 	}
 
@@ -373,35 +375,35 @@ func buildInternal(m Moby, w io.Writer, pull bool, addition addFun) {
 		useTrust := enforceContentTrust(image.Image, &m.Trust)
 		config, err := ConfigToOCI(image, useTrust)
 		if err != nil {
-			log.Fatalf("Failed to create config.json for %s: %v", image.Image, err)
+			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
 		}
 		path := "containers/services/" + image.Name
 		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
 		if err != nil {
-			log.Fatalf("Failed to extract root filesystem for %s: %v", image.Image, err)
+			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
 	}
 
 	// add files
 	err := filesystem(m, iw)
 	if err != nil {
-		log.Fatalf("failed to add filesystem parts: %v", err)
+		return fmt.Errorf("failed to add filesystem parts: %v", err)
 	}
 
 	// add anything additional for this output type
 	if addition != nil {
 		err = addition(iw)
 		if err != nil {
-			log.Fatalf("Failed to add additional files")
+			return fmt.Errorf("Failed to add additional files: %v", err)
 		}
 	}
 
 	err = iw.Close()
 	if err != nil {
-		log.Fatalf("initrd close error: %v", err)
+		return fmt.Errorf("initrd close error: %v", err)
 	}
 
-	return
+	return nil
 }
 
 // kernelFilter is a tar.Writer that transforms a kernel image into the output we want on underlying tar writer
