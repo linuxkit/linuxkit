@@ -232,7 +232,7 @@ func outputImg(image, filename string, kernel []byte, initrd []byte, cmdline str
 	if err != nil {
 		return err
 	}
-	img, err := dockerRunInput(buf, image, cmdline)
+	img, err := dockerRun(buf, image, cmdline)
 	if err != nil {
 		return err
 	}
@@ -253,9 +253,9 @@ func outputImgSize(image, filename string, kernel []byte, initrd []byte, cmdline
 	}
 	var img []byte
 	if size == 0 {
-		img, err = dockerRunInput(buf, image)
+		img, err = dockerRun(buf, image)
 	} else {
-		img, err = dockerRunInput(buf, image, fmt.Sprintf("%dM", size))
+		img, err = dockerRun(buf, image, fmt.Sprintf("%dM", size))
 	}
 	if err != nil {
 		return err
