@@ -27,6 +27,7 @@ flex
 gcc
 git
 gmp-dev
+gnupg
 go
 gummiboot
 hvtools
@@ -73,4 +74,5 @@ xfsprogs
 xorriso
 xz
 xz-dev
+zfs
 zlib-dev
