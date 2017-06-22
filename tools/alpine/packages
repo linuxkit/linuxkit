@@ -27,6 +27,7 @@ flex
 gcc
 git
 gmp-dev
+gnupg
 go
 gummiboot
 hvtools
