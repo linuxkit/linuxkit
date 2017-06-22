@@ -8,21 +8,21 @@
 do_fsck()
 {
 	# preen
-	/sbin/e2fsck -p $*
+	/sbin/e2fsck -p "$@"
 	EXIT_CODE=$?
 	# exit code 1 is errors corrected
 	[ "${EXIT_CODE}" -eq 1 ] && EXIT_CODE=0
 	# exit code 2 or 3 means need to reboot
-	[ "${EXIT_CODE}" -eq 2 -o "${EXIT_CODE}" -eq 3 ] && /sbin/reboot
+	[ "${EXIT_CODE}" -eq 2 ] || [ "${EXIT_CODE}" -eq 3 ] && /sbin/reboot
 	# exit code 4 or over is fatal
 	[ "${EXIT_CODE}" -lt 4 ] && return "${EXIT_CODE}"
 
 	# try harder
-	/sbin/e2fsck -y $*
+	/sbin/e2fsck -y "$@"
 	# exit code 1 is errors corrected
 	[ "${EXIT_CODE}" -eq 1 ] && EXIT_CODE=0
 	# exit code 2 or 3 means need to reboot
-	[ "${EXIT_CODE}" -eq 2 -o "${EXIT_CODE}" -eq 3 ] && /sbin/reboot
+	[ "${EXIT_CODE}" -eq 2 ] || [ "${EXIT_CODE}" -eq 3 ] && /sbin/reboot
 	# exit code 4 or over is fatal
 	[ "${EXIT_CODE}" -ge 4 ] && printf "Filesystem unrecoverably corrupted, will reformat\n"
 
@@ -44,7 +44,7 @@ do_fsck_extend_mount()
 		! sfdisk -F "$DRIVE" | grep -q '0 B, 0 bytes, 0 sectors'
 	then
 		SPACE=$(sfdisk -F "$DRIVE" | grep 'Unpartitioned space')
-		printf "Resizing disk partition: $SPACE\n"
+		printf "Resizing disk partition: %s\n" "$SPACE"
 
 		# 83 is Linux partition id
 		START=$(sfdisk -J "$DRIVE" | jq -e '.partitiontable.partitions | map(select(.type=="83")) | .[0].start')
@@ -56,11 +56,16 @@ do_fsck_extend_mount()
 		sfdisk -A "$DRIVE" 1
 
 		# update status
-		blockdev --rereadpt $diskdev 2> /dev/null
+		blockdev --rereadpt "$diskdev" 2> /dev/null
 		mdev -s
 
 		# wait for device
-		for i in $(seq 1 50); do test -b "$DATA" && break || sleep .1; mdev -s; done
+		for i in $(seq 1 50)
+		do
+			# shellcheck disable=SC2015
+			test -b "$DATA" && break || sleep .1
+			mdev -s
+		done
 
 		# resize2fs fails unless we use -f here
 		do_fsck -f "$DATA" || return 1
@@ -78,20 +83,26 @@ do_mkfs()
 	# this makes sfdisk complain. We can workaround this by letting
 	# fdisk create that DOS signature, by just do a "w", a write.
 	# http://bugs.alpinelinux.org/issues/145
-	echo "w" | fdisk $diskdev >/dev/null
+	echo "w" | fdisk "$diskdev" >/dev/null
 
 	# format one large partition
-	echo ";" | sfdisk --quiet $diskdev
+	echo ";" | sfdisk --quiet "$diskdev"
 
 	# update status
-	blockdev --rereadpt $diskdev 2> /dev/null
+	blockdev --rereadpt "$diskdev" 2> /dev/null
 
 	# wait for device
-	for i in $(seq 1 50); do test -b "$DATA" && break || sleep .1; mdev -s; done
+	# shellcheck disable=SC2034
+	for i in $(seq 1 50)
+	do
+		# shellcheck disable=SC2015
+		test -b "$DATA" && break || sleep .1
+		mdev -s
+	done
 
 	FSOPTS="-O resize_inode,has_journal,extent,huge_file,flex_bg,uninit_bg,64bit,dir_nlink,extra_isize"
 
-	mkfs.ext4 -q -F $FSOPTS ${diskdev}1
+	mkfs.ext4 -q -F "$FSOPTS" "${diskdev}"1
 }
 
 # TODO fix for multiple disks, cdroms etc
@@ -105,6 +116,7 @@ DRIVE="/dev/${DEV}"
 if sfdisk -d "${DRIVE}" >/dev/null 2>/dev/null
 then
 	DATA=$(sfdisk -J "$DRIVE" | jq -e -r '.partitiontable.partitions | map(select(.type=="83")) | .[0].node')
+	# shellcheck disable=SC2181
 	if [ $? -eq 0 ]
 	then
 		do_fsck_extend_mount "$DRIVE" "$DATA" || do_mkfs "$DRIVE"
