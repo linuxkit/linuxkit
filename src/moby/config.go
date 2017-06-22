@@ -420,6 +420,47 @@ func assignStringEmpty4(v1, v2, v3, v4 string) string {
 	return v1
 }
 
+var allCaps = []string{
+	"CAP_AUDIT_CONTROL",
+	"CAP_AUDIT_READ",
+	"CAP_AUDIT_WRITE",
+	"CAP_BLOCK_SUSPEND",
+	"CAP_CHOWN",
+	"CAP_DAC_OVERRIDE",
+	"CAP_DAC_READ_SEARCH",
+	"CAP_FOWNER",
+	"CAP_FSETID",
+	"CAP_IPC_LOCK",
+	"CAP_IPC_OWNER",
+	"CAP_KILL",
+	"CAP_LEASE",
+	"CAP_LINUX_IMMUTABLE",
+	"CAP_MAC_ADMIN",
+	"CAP_MAC_OVERRIDE",
+	"CAP_MKNOD",
+	"CAP_NET_ADMIN",
+	"CAP_NET_BIND_SERVICE",
+	"CAP_NET_BROADCAST",
+	"CAP_NET_RAW",
+	"CAP_SETFCAP",
+	"CAP_SETGID",
+	"CAP_SETPCAP",
+	"CAP_SETUID",
+	"CAP_SYSLOG",
+	"CAP_SYS_ADMIN",
+	"CAP_SYS_BOOT",
+	"CAP_SYS_CHROOT",
+	"CAP_SYS_MODULE",
+	"CAP_SYS_NICE",
+	"CAP_SYS_PACCT",
+	"CAP_SYS_PTRACE",
+	"CAP_SYS_RAWIO",
+	"CAP_SYS_RESOURCE",
+	"CAP_SYS_TIME",
+	"CAP_SYS_TTY_CONFIG",
+	"CAP_WAKE_ALARM",
+}
+
 // ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
 func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, error) {
 	oci := specs.Spec{}
@@ -579,51 +620,30 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, err
 	// TODO user, cgroup namespaces
 
 	caps := assignStrings(label.Capabilities, yaml.Capabilities)
+	for _, capability := range caps {
+		if capability == "none" || capability == "all" {
+			continue
+		}
+
+		found := false
+		for _, ac := range allCaps {
+			if ac == capability {
+				found = true
+				break
+			}
+		}
+
+		if !found {
+			return oci, fmt.Errorf("unknown capability: %s", capability)
+		}
+	}
+
 	if len(caps) == 1 {
 		switch cap := strings.ToLower(caps[0]); cap {
 		case "none":
 			caps = []string{}
 		case "all":
-			caps = []string{
-				"CAP_AUDIT_CONTROL",
-				"CAP_AUDIT_READ",
-				"CAP_AUDIT_WRITE",
-				"CAP_BLOCK_SUSPEND",
-				"CAP_CHOWN",
-				"CAP_DAC_OVERRIDE",
-				"CAP_DAC_READ_SEARCH",
-				"CAP_FOWNER",
-				"CAP_FSETID",
-				"CAP_IPC_LOCK",
-				"CAP_IPC_OWNER",
-				"CAP_KILL",
-				"CAP_LEASE",
-				"CAP_LINUX_IMMUTABLE",
-				"CAP_MAC_ADMIN",
-				"CAP_MAC_OVERRIDE",
-				"CAP_MKNOD",
-				"CAP_NET_ADMIN",
-				"CAP_NET_BIND_SERVICE",
-				"CAP_NET_BROADCAST",
-				"CAP_NET_RAW",
-				"CAP_SETFCAP",
-				"CAP_SETGID",
-				"CAP_SETPCAP",
-				"CAP_SETUID",
-				"CAP_SYSLOG",
-				"CAP_SYS_ADMIN",
-				"CAP_SYS_BOOT",
-				"CAP_SYS_CHROOT",
-				"CAP_SYS_MODULE",
-				"CAP_SYS_NICE",
-				"CAP_SYS_PACCT",
-				"CAP_SYS_PTRACE",
-				"CAP_SYS_RAWIO",
-				"CAP_SYS_RESOURCE",
-				"CAP_SYS_TIME",
-				"CAP_SYS_TTY_CONFIG",
-				"CAP_WAKE_ALARM",
-			}
+			caps = allCaps[:]
 		}
 	}
 
