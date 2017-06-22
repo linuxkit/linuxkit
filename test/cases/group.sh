@@ -11,6 +11,7 @@ group_init() {
     [ -r "${LINUXKIT_TMPDIR}" ] && rm -rf "${LINUXKIT_TMPDIR}"
     mkdir "${LINUXKIT_TMPDIR}"
     echo "export LINUXKIT_EXAMPLES_DIR=${RT_PROJECT_ROOT}/../../examples" >> "${LINUXKIT_TMPDIR}/env.sh"
+    echo "export LINUXKIT_BLUEPRINTS_DIR=${RT_PROJECT_ROOT}/../../blueprints" >> "${LINUXKIT_TMPDIR}/env.sh"
 
     if rt_label_set "gcp"; then
         # If we run GCP tests, make sure it is configured
