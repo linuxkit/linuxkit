@@ -18,7 +18,7 @@ services:
   - name: rngd
     image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
   - name: sshd
-    image: "linuxkit/sshd:abc1f5e096982ebc3fb61c506aed3ac9c2ae4d55"
+    image: "linuxkit/sshd:14f9d669ba6b0ba1658dfb2eb7ac08e1b7d9f5a4"
     binds:
      - /var/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx

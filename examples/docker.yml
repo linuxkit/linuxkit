@@ -20,7 +20,7 @@ onboot:
     command: ["/mount.sh", "/var/lib/docker"]
 services:
   - name: getty
-    image: "linuxkit/getty:d0765e0a14733f9454010ac109a7c846a4e67fc5"
+    image: "linuxkit/getty:9f27c1272b6d128c9a09745e916f151d09cb0d27"
     env:
      - INSECURE=true
   - name: rngd
