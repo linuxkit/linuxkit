@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that legacy BIOS ISO boots in qemu
+# SUMMARY: Check that EFI BIOS ISO boots in qemu
 # LABELS:
 
 set -e
@@ -16,6 +16,10 @@ clean_up() {
 }
 
 trap clean_up EXIT
+
+# see https://github.com/linuxkit/linuxkit/issues/1872 this is very flaky in qemu
+# disabling for now until we fix a config that works
+exit $RT_CANCEL
 
 if command -v qemu-system-x86_64; then
 	if [ ! -f /usr/share/ovmf/bios.bin ]; then
