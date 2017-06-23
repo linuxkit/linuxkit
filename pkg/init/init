@@ -2,6 +2,14 @@
 
 /bin/mount -t tmpfs tmpfs /mnt
 
+# just copying everything uses a lot of space, so use mv which frees it up
+# copy directory structure under /containers
+find /containers -type d | cpio -p /mnt 2> /dev/null
+# move files under /containers
+find /containers -not -type d -exec mv {} /mnt/{} \;
+# delete remaining directories
+rm -rf /containers
+
 /bin/cp -a / /mnt 2>/dev/null
 
 /bin/mount -t proc -o noexec,nosuid,nodev proc /proc
