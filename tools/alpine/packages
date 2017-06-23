@@ -54,8 +54,8 @@ open-vm-tools
 patch
 qemu-aarch64
 qemu-arm
-qemu-img
 qemu-guest-agent
+qemu-img
 qemu-ppc64le
 qemu-system-arm
 qemu-system-x86_64
@@ -67,6 +67,7 @@ strace
 syslinux
 tar
 tini
+tzdata
 util-linux
 util-linux-dev
 vim
