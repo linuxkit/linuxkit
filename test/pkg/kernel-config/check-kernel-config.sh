@@ -86,6 +86,15 @@ echo $UNZIPPED_CONFIG | grep -q 'CONFIG_LEGACY_PTYS is not set' || fail "CONFIG_
 echo $UNZIPPED_CONFIG | grep -q 'CONFIG_X86_X32 is not set' || fail "CONFIG_X86_X32 is not set"
 echo $UNZIPPED_CONFIG | grep -q 'CONFIG_MODIFY_LDT_SYSCALL is not set' || fail "CONFIG_MODIFY_LDT_SYSCALL is not set"
 
+# modprobe
+for mod in \
+nfs \
+nfsd \
+ntfs
+do
+	modprobe $mod
+done
+
 # check filesystems that are built in
 for fs in \
 sysfs \

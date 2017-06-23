@@ -1,4 +1,4 @@
-From 52ca5fae32b3f70fced17326b8ce8eee20114a8f Mon Sep 17 00:00:00 2001
+From 078cc623ad8b8bc567506f70362ca907249b9cae Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:15 -0600
 Subject: [PATCH 04/14] vmbus: add the matching tasklet_enable() in

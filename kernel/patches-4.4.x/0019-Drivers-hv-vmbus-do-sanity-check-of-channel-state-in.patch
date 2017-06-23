@@ -1,4 +1,4 @@
-From 42ec6b68ad82ac78339dd687a31d33e5fae53c16 Mon Sep 17 00:00:00 2001
+From eac620960a72cbb65490315a84e962594fb3c324 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:48 -0800
 Subject: [PATCH 19/44] Drivers: hv: vmbus: do sanity check of channel state in

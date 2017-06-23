@@ -1,4 +1,4 @@
-From c143e7a4334c363240d0bb1bb5240d2121ce669f Mon Sep 17 00:00:00 2001
+From c7719ca663995d6bc720c19be7d5f26b52f9d604 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:51 -0800
 Subject: [PATCH 21/44] Drivers: hv: vmbus: channge

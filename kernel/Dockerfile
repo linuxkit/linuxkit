@@ -9,7 +9,6 @@ RUN apk add \
     build-base \
     curl \
     diffutils \
-    elfutils-dev \
     flex \
     git \
     gmp-dev \
@@ -26,8 +25,7 @@ RUN apk add \
     tar \
     xz \
     xz-dev \
-    zlib-dev \
-    || true
+    zlib-dev
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
