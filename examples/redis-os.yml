@@ -6,7 +6,7 @@ kernel:
 init:
   - linuxkit/init:17693d233dd009b2a3a8d23673cb85969e1dce80
   - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:be69ded7ed4437e2989da850581b631bac877d3e
+  - linuxkit/containerd:a33cdcf50b8107ffe14c92802c460fe7ada39acd
 onboot:
   - name: dhcpcd
     image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
