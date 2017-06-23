@@ -1,4 +1,4 @@
-package main
+package moby
 
 import (
 	"bytes"
@@ -60,7 +60,7 @@ func ensureLinuxkitImage(name string) error {
 	}
 	// TODO pass through --pull to here
 	buf := new(bytes.Buffer)
-	buildInternal(m, buf, false, nil)
+	Build(m, buf, false, "")
 	image := buf.Bytes()
 	kernel, initrd, cmdline, err := tarToInitrd(image)
 	if err != nil {

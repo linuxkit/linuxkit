@@ -1,4 +1,4 @@
-package main
+package moby
 
 import (
 	"encoding/json"
@@ -24,8 +24,8 @@ type Moby struct {
 		Cmdline string
 	}
 	Init     []string
-	Onboot   []MobyImage
-	Services []MobyImage
+	Onboot   []Image
+	Services []Image
 	Trust    TrustConfig
 	Files    []struct {
 		Path      string
@@ -44,8 +44,8 @@ type TrustConfig struct {
 	Org   []string
 }
 
-// MobyImage is the type of an image config
-type MobyImage struct {
+// Image is the type of an image config
+type Image struct {
 	Name              string             `yaml:"name" json:"name"`
 	Image             string             `yaml:"image" json:"image"`
 	Capabilities      *[]string          `yaml:"capabilities" json:"capabilities,omitempty"`
@@ -153,11 +153,11 @@ func AppendConfig(m0, m1 Moby) Moby {
 	return moby
 }
 
-// NewImage validates an parses yaml or json for a MobyImage
-func NewImage(config []byte) (MobyImage, error) {
+// NewImage validates an parses yaml or json for a Image
+func NewImage(config []byte) (Image, error) {
 	log.Debugf("Reading label config: %s", string(config))
 
-	mi := MobyImage{}
+	mi := Image{}
 
 	// Parse raw yaml
 	var rawYaml interface{}
@@ -220,7 +220,7 @@ func NewImage(config []byte) (MobyImage, error) {
 }
 
 // ConfigToOCI converts a config specification to an OCI config file
-func ConfigToOCI(image MobyImage, trust bool) ([]byte, error) {
+func ConfigToOCI(image Image, trust bool) ([]byte, error) {
 
 	// TODO pass through same docker client to all functions
 	cli, err := dockerClient()
@@ -421,7 +421,7 @@ func assignStringEmpty4(v1, v2, v3, v4 string) string {
 }
 
 // ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
-func ConfigInspectToOCI(yaml MobyImage, inspect types.ImageInspect) (specs.Spec, error) {
+func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, error) {
 	oci := specs.Spec{}
 
 	var inspectConfig container.Config
@@ -430,7 +430,7 @@ func ConfigInspectToOCI(yaml MobyImage, inspect types.ImageInspect) (specs.Spec,
 	}
 
 	// look for org.mobyproject.config label
-	var label MobyImage
+	var label Image
 	labelString := inspectConfig.Labels["org.mobyproject.config"]
 	if labelString != "" {
 		var err error
