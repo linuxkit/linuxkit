@@ -33,13 +33,20 @@ brew install --HEAD moby
 brew install --HEAD linuxkit
 ```
 
-Once you have built the tool, use `moby build linuxkit.yml` to build the example configuration,
-and `linuxkit run linuxkit` to run locally. Use `halt` to terminate on the console.
-
-Build requirements:
+Build requirements from source:
 - GNU `make`
 - Docker
 - optionally `qemu`
+
+### Building images
+
+Once you have built the tool, use
+
+```
+moby build linuxkit.yml
+```
+to build the example configuration. You can also specify different output formats, eg `moby build -output raw linuxkit.yml` to
+output a raw bootable disk image. See `moby build -help` for more information.
 
 ### Booting and Testing
 
