@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:17693d233dd009b2a3a8d23673cb85969e1dce80
   - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:be69ded7ed4437e2989da850581b631bac877d3e
+  - linuxkit/containerd:a33cdcf50b8107ffe14c92802c460fe7ada39acd
   - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
@@ -24,7 +24,7 @@ onboot:
     command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]
 services:
   - name: getty
-    image: "linuxkit/getty:d0765e0a14733f9454010ac109a7c846a4e67fc5"
+    image: "linuxkit/getty:9f27c1272b6d128c9a09745e916f151d09cb0d27"
     env:
      - INSECURE=true
   - name: rngd

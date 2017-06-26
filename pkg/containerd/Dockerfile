@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:24fe1b6bbf1fc95b484741587acb10da6dbc9211 as alpine
+FROM linuxkit/alpine:c96f56ef989ccb31fd115d25c1b90f05b992271d as alpine
 RUN \
   apk add \
   btrfs-progs-dev \
@@ -8,6 +8,7 @@ RUN \
   libc-dev \
   linux-headers \
   make \
+  tzdata \
   && true
 ENV GOPATH=/go PATH=$PATH:/go/bin
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
@@ -31,3 +32,4 @@ ENTRYPOINT []
 WORKDIR /
 COPY --from=alpine /usr/bin/containerd /usr/bin/ctr /usr/bin/dist /usr/bin/containerd-shim /go/bin/service /usr/bin/
 COPY --from=alpine /etc/containerd/config.toml /etc/containerd/
+COPY --from=alpine /usr/share/zoneinfo/UTC /etc/localtime

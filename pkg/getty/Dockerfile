@@ -4,6 +4,7 @@ RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \
     busybox \
+    ca-certificates \
     musl \
     tini \
     util-linux \
@@ -28,4 +29,4 @@ COPY --from=mirror /out/ /
 COPY usr/ /usr/
 COPY etc/ /etc/
 CMD ["/usr/bin/rungetty.sh"]
-LABEL org.mobyproject.config='{"pid": "host", "net":"host", "binds": ["/run:/run", "/etc:/hostroot/etc", "/usr/bin/ctr:/usr/bin/ctr", "/usr/bin/runc:/usr/bin/runc", "/usr/bin/dist:/usr/bin/dist", "/var:/var","/containers:/containers","/dev:/dev","/sys:/sys"], "capabilities": ["all"]}'
+LABEL org.mobyproject.config='{"pid": "host", "net":"host", "binds": ["/run:/run", "/tmp:/tmp", "/etc:/hostroot/etc", "/usr/bin/ctr:/usr/bin/ctr", "/usr/bin/runc:/usr/bin/runc", "/usr/bin/dist:/usr/bin/dist", "/var:/var","/containers:/containers","/dev:/dev","/sys:/sys"], "capabilities": ["all"]}'
