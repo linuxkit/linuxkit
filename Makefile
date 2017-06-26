@@ -21,27 +21,35 @@ endif
 PREFIX?=/usr/local/
 
 MOBY_COMMIT=d8cc1b3f08df02ad563d3f548ac2527931a925a6
-bin/moby: Makefile | bin
-	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_moby_bin.tar
-	tar xf tmp_moby_bin.tar > $@
-	rm tmp_moby_bin.tar
+MOBY_VERSION=0.0
+bin/moby: tmp_moby_bin.tar | bin
+	tar xf $<
+	rm $<
 	touch $@
+
+tmp_moby_bin.tar: Makefile
+	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(MOBY_COMMIT) -X main.Version=$(MOBY_VERSION)" -o bin/moby > $@
 
 RTF_COMMIT=34ec986e726d661f2a25ff085d669e057e3e5345
 RTF_CMD=github.com/linuxkit/rtf/cmd
-bin/rtf: Makefile | bin
-	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(VERSION)" -o $@ > tmp_rtf_bin.tar
-	tar xf tmp_rtf_bin.tar > $@
-	rm tmp_rtf_bin.tar
+RTF_VERSION=0.0
+bin/rtf: tmp_rtf_bin.tar | bin
+	tar xf $<
+	rm $<
 	touch $@
+
+tmp_rtf_bin.tar: Makefile
+	docker run --rm --log-driver=none $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(RTF_VERSION)" -o bin/rtf > $@
 
 
 LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) Makefile vendor.conf
-bin/linuxkit: $(LINUXKIT_DEPS) | bin
-	tar cf - vendor -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o $@ > tmp_linuxkit_bin.tar
-	tar xf tmp_linuxkit_bin.tar > $@
-	rm tmp_linuxkit_bin.tar
+bin/linuxkit: tmp_linuxkit_bin.tar
+	tar xf $<
+	rm $<
 	touch $@
+
+tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
+	tar cf - vendor -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o bin/linuxkit > $@
 
 local: $(LINUXKIT_DEPS) | bin
 	go build -o bin/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
