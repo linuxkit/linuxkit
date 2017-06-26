@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Run contianerd test
+# SUMMARY: Run containerd test
 # LABELS:
 # REPEAT:
 
