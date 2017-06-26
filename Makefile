@@ -51,6 +51,17 @@ bin/linuxkit: tmp_linuxkit_bin.tar
 tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
 	tar cf - vendor -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o bin/linuxkit > $@
 
+.PHONY: test-cross
+test-cross:
+	$(MAKE) clean
+	$(MAKE) -j 3 GOOS=darwin tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) clean
+	$(MAKE) -j 3 GOOS=windows tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) clean
+	$(MAKE) -j 3 GOOS=linux tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) clean
+
+
 local: $(LINUXKIT_DEPS) | bin
 	go build -o bin/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
 
@@ -68,40 +79,19 @@ test:
 collect-artifacts: artifacts/test.img.tar.gz artifacts/test-ltp.img.tar.gz
 
 .PHONY: ci ci-tag ci-pr
-ci:
-	$(MAKE) clean
-	$(MAKE) GOOS=darwin
-	$(MAKE) clean
-	$(MAKE) GOOS=linux
-	$(MAKE) clean
-	$(MAKE) GOOS=windows
-	$(MAKE) clean
+ci: test-cross
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
 	$(MAKE) -C pkg tag
 
-ci-tag:
-	$(MAKE) clean
-	$(MAKE) GOOS=darwin
-	$(MAKE) clean
-	$(MAKE) GOOS=linux
-	$(MAKE) clean
-	$(MAKE) GOOS=windows
-	$(MAKE) clean
+ci-tag: test-cross
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
 	$(MAKE) -C pkg tag
 
-ci-pr:
-	$(MAKE) clean
-	$(MAKE) GOOS=darwin
-	$(MAKE) clean
-	$(MAKE) GOOS=linux
-	$(MAKE) clean
-	$(MAKE) GOOS=windows
-	$(MAKE) clean
+ci-pr: test-cross
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test pr
