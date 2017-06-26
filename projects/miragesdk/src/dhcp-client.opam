@@ -7,22 +7,8 @@ license:      "Apache"
 dev-repo:     "https://github.com/linuxkit/linuxkit.git"
 build: ["jbuilder" "build" "-p" name "-j" jobs]
 depends: [
-  "jbuilder"  {build & >= "1.0+beta10"}
-  "cstruct"
-  "lwt"
-  "logs"
-  "astring"
-  "mirage-time-lwt"
-  "mirage-flow-lwt"  {>= "1.4.0"}
-  "mirage-flow-unix" {>= "1.4.0"}
-  "mirage-flow-rawlink"
-  "irmin-mem"
-  "capnp-rpc-lwt"
-  "rawlink"
-  "tuntap" {= "1.0.0"}
-  "ipaddr"
-  "mirage-net-flow"
-  "mirage-net-fd"
-  "charrua-core"
-  "alcotest" {test}
+  "jbuilder" {build & >= "1.0+beta10"}
+  "charrua-client"
+  "charrua-client-mirage"
+  "sdk"
 ]

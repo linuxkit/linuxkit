@@ -2,8 +2,7 @@
 
 (executables
   ((names (test))
-   (libraries (sdk alcotest astring mtime mtime.clock.os mirage-flow-lwt
-               logs.fmt))))
+   (libraries (sdk alcotest astring mtime mtime.clock.os logs.fmt))))
 
 (alias
  ((name    runtest)

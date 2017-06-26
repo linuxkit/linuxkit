@@ -1,7 +1,13 @@
 (jbuild_version 1)
 
+(library
+  ((name    dhcp_filter)
+   (modules ())
+   (c_names (dhcp))))
+
 (executables
- ((names (main))
-  (libraries (sdk bpf_dhcp bos cmdliner fmt.cli logs.fmt logs.cli fmt.tty))
-  (flags (-cclib -static))
- ))
+  ((names        (main main_eng main_act main_net))
+   (public_names (dhcp-client dhcp-client-eng dhcp-client-act dhcp-client-net))
+   (package      dhcp-client)
+   (libraries    (sdk charrua-client charrua-client-mirage dhcp_filter
+                  cmdliner fmt.cli logs.fmt logs.cli fmt.tty))))

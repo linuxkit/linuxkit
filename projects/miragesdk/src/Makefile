@@ -1,7 +1,7 @@
 .PHONY: tag push
 default: push
 
-ORG?=miragesdk
+ORG?=linuxkitprojects
 IMAGE=dhcp-client
 NOCACHE?=
 
@@ -32,5 +32,5 @@ clean:
 	jbuilder clean
 
 dev:
-	jbuilder build dhcp-client/main.exe --dev
-	jbuilder build dhcp-client-calf/unikernel.exe --dev
+	jbuilder build sdk.install dhcp-client.install --dev
+	jbuilder build test/test.exe --dev
