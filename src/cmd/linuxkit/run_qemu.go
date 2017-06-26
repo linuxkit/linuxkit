@@ -37,6 +37,11 @@ type QemuConfig struct {
 	PublishedPorts []string
 }
 
+func haveKVM() bool {
+	_, err := os.Stat("/dev/kvm")
+	return !os.IsNotExist(err)
+}
+
 func runQemu(args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("qemu", flag.ExitOnError)
@@ -68,6 +73,7 @@ func runQemu(args []string) {
 	fw := flags.String("fw", "/usr/share/ovmf/bios.bin", "Path to OVMF firmware for UEFI boot")
 
 	// VM configuration
+	enableKVM := flags.Bool("kvm", haveKVM(), "Enable KVM acceleration")
 	arch := flags.String("arch", "x86_64", "Type of architecture to use, e.g. x86_64, aarch64")
 	cpus := flags.String("cpus", "1", "Number of CPUs")
 	mem := flags.String("mem", "1024", "Amount of memory in MB")
@@ -185,6 +191,7 @@ func runQemu(args []string) {
 		Arch:           *arch,
 		CPUs:           *cpus,
 		Memory:         *mem,
+		KVM:            *enableKVM,
 		Containerized:  *qemuContainerized,
 		PublishedPorts: publishFlags,
 	}
@@ -343,14 +350,11 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	qemuArgs = append(qemuArgs, "-smp", config.CPUs)
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
 
-	// Look for kvm device and enable for qemu if it exists
-	var err error
-	if _, err = os.Stat("/dev/kvm"); os.IsNotExist(err) {
-		qemuArgs = append(qemuArgs, "-machine", "q35")
-	} else {
-		config.KVM = true
+	if config.KVM {
 		qemuArgs = append(qemuArgs, "-enable-kvm")
 		qemuArgs = append(qemuArgs, "-machine", "q35,accel=kvm:tcg")
+	} else {
+		qemuArgs = append(qemuArgs, "-machine", "q35")
 	}
 
 	for i, d := range config.Disks {
