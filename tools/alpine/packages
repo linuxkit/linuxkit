@@ -1,3 +1,4 @@
+abuild
 alpine-baselayout
 alpine-keys
 apk-tools
@@ -36,6 +37,7 @@ iptables
 jq
 kmod
 libarchive-tools
+libcap-ng-dev
 libc-dev
 libc-utils
 libelf-dev
@@ -52,6 +54,7 @@ openrc
 openssh-server
 open-vm-tools
 patch
+python3
 qemu-aarch64
 qemu-arm
 qemu-guest-agent
@@ -64,6 +67,7 @@ sfdisk
 slang-dev
 squashfs-tools
 strace
+swig
 syslinux
 tar
 tini
