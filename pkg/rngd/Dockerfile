@@ -9,6 +9,7 @@ FROM linuxkit/alpine:c608d404c1cb36cce0c7d9303e30b52c9d81ccf0 AS build
 RUN apk add \
     argp-standalone \
     automake \
+    curl \
     gcc \
     linux-headers \
     make \
@@ -19,7 +20,7 @@ COPY . /
 
 ENV pkgname=rng-tools pkgver=5
 
-ADD http://downloads.sourceforge.net/project/gkernel/$pkgname/$pkgver/$pkgname-$pkgver.tar.gz $pkgname-$pkgver.tar.gz
+RUN curl -fSL "http://downloads.sourceforge.net/project/gkernel/$pkgname/$pkgver/$pkgname-$pkgver.tar.gz" -o "$pkgname-$pkgver.tar.gz"
 RUN sha256sum -c sha256sums
 RUN zcat $pkgname-$pkgver.tar.gz | tar xf -
 
