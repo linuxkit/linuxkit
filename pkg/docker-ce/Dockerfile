@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 AS mirror
+FROM linuxkit/alpine:c608d404c1cb36cce0c7d9303e30b52c9d81ccf0 AS mirror
 
 # https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
 # removed openssl as I do not think server needs it
