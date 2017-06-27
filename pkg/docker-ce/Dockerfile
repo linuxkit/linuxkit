@@ -17,7 +17,7 @@ RUN apk add --no-cache --initdb -p /out \
 	xz
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
-FROM linuxkit/vpnkit-forwarder:883de832c2c3cb72cd9b01e3f7bd788649e0f2c2 AS vpnkit
+FROM linuxkit/vpnkit-forwarder:e2776b82ddfe82ed7f90e55d7a2b424e62e9a279 AS vpnkit
 FROM scratch
 COPY --from=mirror /out/ /
 COPY --from=vpnkit /vpnkit-expose-port /usr/bin/vpnkit-expose-port

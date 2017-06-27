@@ -1,20 +1,20 @@
 kernel:
-  image: "linuxkit/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.34"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:17693d233dd009b2a3a8d23673cb85969e1dce80
-  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:a33cdcf50b8107ffe14c92802c460fe7ada39acd
-  - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
+  - linuxkit/init:36c56f0664d49c5a6adc1120d1bf5ba6ac30b389
+  - linuxkit/runc:291131ec026430371e7c36165c3f43734fbc2541
+  - linuxkit/containerd:1e3e8f207421de8deac8cedc26a138d6b1661a0d
+  - linuxkit/ca-certificates:46b59484919bfa9af700e54e042048cb06261de4
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
   - name: sysfs
-    image: linuxkit/sysfs:1244c5a86dfa2318c4e304af68d37e12367e1b7f
+    image: linuxkit/sysfs:b4091d81261f4582ff899a8510110fc4f2be2b49
   - name: binfmt
-    image: "linuxkit/binfmt:8ac5535f57f0c6f5fe88317b9d22a7677093c765"
+    image: "linuxkit/binfmt:24e2b996f7d6ad20bfa9c9f1564a3c6172db47ce"
   - name: format
-    image: "linuxkit/format:180cb2dc1de5e60373385080f8148abf10a3afac"
+    image: "linuxkit/format:ba085fdcac31c383acee3b4b91d78eb7095e5ac3"
   - name: mounts
     image: "linuxkit/kubernetes:latest-mounts"
     capabilities:
@@ -26,19 +26,19 @@ onboot:
      - /var:/var:rshared,rbind
 services:
   - name: getty
-    image: "linuxkit/getty:9f27c1272b6d128c9a09745e916f151d09cb0d27"
+    image: "linuxkit/getty:6cbeee0392b0670053ce2bf05a5a0d67ec2bce05"
     env:
      - INSECURE=true
   - name: rngd
-    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
+    image: "linuxkit/rngd:b50b22dd574c5377708977af769f053009fff6d5"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
+    image: "linuxkit/dhcpcd:6c1ca76dbf808d5c27d10cbf22a8d4399be5c8ae"
   - name: ntpd
-    image: "linuxkit/openntpd:45deeb05f736162d941c9bf494983f655ab80aa5"
+    image: "linuxkit/openntpd:a4c642d52e985922fcd97db52e471db123cc6841"
   - name: sshd
-    image: "linuxkit/sshd:14f9d669ba6b0ba1658dfb2eb7ac08e1b7d9f5a4"
+    image: "linuxkit/sshd:f095b62ddca658e99d5751872c933ef3d5d18cec"
   - name: docker
-    image: "linuxkit/docker-ce:dda71ff9fe5ebbfa794b98c57c32df286b212848"
+    image: "linuxkit/docker-ce:530912564c0b648aeeab2459c7b82ce40d48fd6a"
     capabilities:
      - all
     net: host
