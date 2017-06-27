@@ -1,0 +1,96 @@
+#!/usr/bin/env expect
+spawn linuxkit run test-ctr
+set pid [exp_pid]
+set timeout 60
+set prompt ":~# "
+
+expect {
+    timeout {
+        puts "FAILED boot"
+        exec kill -9 $pid
+        exit 1
+    }
+    "Welcome to LinuxKit" {
+        puts "SUCCESS boot"
+    }
+}
+expect {
+    timeout {
+        puts "FAILED login user"
+        exec kill -9 $pid
+        exit 1
+    }
+    "ogin: " {
+	send "root\n"
+    }
+}
+expect {
+    timeout {
+        puts "FAILED login pass"
+        exec kill -9 $pid
+        exit 1
+    }
+    "assword: " {
+	send "abcdefgh\n"
+    }
+}
+
+expect {
+    timeout {
+        puts "FAILED dist pull"
+        exec kill -9 $pid
+        exit 1
+    }
+    $prompt {
+	send "dist pull docker.io/library/redis:alpine\n"
+    }
+}
+expect {
+    timeout {
+        puts "FAILED dist pull"
+        exec kill -9 $pid
+        exit 1
+    }
+    $prompt {
+	puts "SUCCESS dist pull"
+	send "ctr run -t docker.io/library/redis:alpine test\n"
+    }
+}
+expect {
+    timeout {
+        puts "FAILED ctr run"
+        exec kill -9 $pid
+        exit 1
+    }
+    "The server is now ready to accept connections on port 6379" {
+	puts "SUCCESS ctr run"
+	# Ctrl-C
+	send "\003"
+    }
+}
+expect {
+    timeout {
+        puts "FAILED kill ctr"
+        exec kill -9 $pid
+        exit 1
+    }
+    $prompt {
+	send "poweroff -f\n"
+    }
+}
+expect {
+    timeout {
+        puts "FAILED poweroff"
+        exec kill -9 $pid
+        exit 1
+    }
+    "Power down" {
+        puts "SUCCESS poweroff"
+    }
+    eof {
+        puts "SUCCESS poweroff"
+    }
+}
+set waitval [wait -i $spawn_id]
+set exval [lindex $waitval 3]
+exit $exval
