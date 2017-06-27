@@ -1,4 +1,4 @@
-.PHONY: tag push
+.PHONY: image tag show-tag
 default: push
 
 ORG?=linuxkit
@@ -26,6 +26,9 @@ NET_OPT=
 else
 NET_OPT=--network=none
 endif
+
+show-tag:
+	@echo $(ORG)/$(IMAGE):$(TAG)
 
 tag: $(BASE_DEPS) $(DEPS)
 	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(TAG) || \
