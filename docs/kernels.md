@@ -11,17 +11,16 @@ updated frequently to include bug and security fixes.  For some
 kernels we do carry additional patches, which are mostly back-ported
 fixes from newer kernels. The full kernel source with patches can be
 found on [github](https://github.com/linuxkit/linux). Each kernel
-image is tagged with the full kernel version plus the hash of the
-files it was created from (git tree hash of the `./kernel`
-directory). For convenience, the latest kernel of each stable series
-is also available under a shorthand tag, e.g. `linuxkit/kernel:4.9.x`
-for the latest `4.9` kernel. For selected kernels (mostly the LTS
-kernels and latest stable kernels) we also compile/push kernels with
-additional debugging enabled. The hub images for these kernels have
-the `_dbg` suffix in the tag. For some kernels, we also provide
-matching packages containing the `perf` utility for debugging and
-performance tracing.  The perf package is called `kernel-perf` and is
-tagged the same way as the kernel packages.
+image is tagged with the full kernel version (e.g.,
+`linuxkit/kernel:4.9.33`) and with the full kernel version plus the
+hash of the files it was created from (git tree hash of the `./kernel`
+directory). For selected kernels (mostly the LTS kernels and latest
+stable kernels) we also compile/push kernels with additional debugging
+enabled. The hub images for these kernels have the `_dbg` suffix in
+the tag. For some kernels, we also provide matching packages
+containing the `perf` utility for debugging and performance tracing.
+The perf package is called `kernel-perf` and is tagged the same way as
+the kernel packages.
 
 In addition to the official kernel images, LinuxKit offers the ability
 to build bootable Linux images with kernels from various
@@ -51,7 +50,7 @@ RAM disk.
 There is a [example](../tests/kmod), but basically one can use a
 multi-stage build to compile the kernel modules:
 ```
-FROM linuxkit/kernel:4.9.x AS ksrc
+FROM linuxkit/kernel:4.9.33 AS ksrc
 # Extract headers and compile module
 FROM linuxkit/kernel-compile:1b396c221af673757703258159ddc8539843b02b@sha256:6b32d205bfc6407568324337b707d195d027328dbfec554428ea93e7b0a8299b AS build
 COPY --from=ksrc /kernel-dev.tar /
@@ -73,20 +72,24 @@ configuration.
 To build and test locally modified kernels, e.g., to try a different
 kernel config or new patches, the existing kernel build system in the
 [`../kernel`](../kernel/) can be re-used. For example, assuming the
-current 4.9 kernel is 4.9.28, you can build a local kernel with:
+current 4.9 kernel is 4.9.33, you can build a local kernel with:
 ```
-make build_4.9.28 HASH=foo
+make build_4.9.x
 ```
 This will create a local kernel image called
-`linuxkit/kernel:4.9.28-foo` which you can use in your YAML file as:
+`linuxkit/kernel:4.9.33-<hash>-dirty` assuming you haven't committed you local changes. You can then use this in your YAML file as:
 ```
 kernel:
-  image: "linuxkit/kernel:4.9.28-foo"
+  image: "linuxkit/kernel:4.9.33-<hash>-dirty"
 ```
 
-If you have more substantial changes, or require a different kernel
-version, it's best to replicate the kernel build system and change the
-Docker Hub organisation to your own.
+If you have committed your local changes, the `-dirty` will not be appended. Then you can also override the Hub organisation to use the image elsewhere with:
+```
+make ORG=<your hub org>
+```
+The image will be uploaded to Hub and can be use in a YAML file as
+`<your hub org>/kernel:4.9.33` or as `<your hub
+org>/kernel:4.9.33-<hash>`.
 
 
 ## Working with Linux kernel patches for LinuxKit

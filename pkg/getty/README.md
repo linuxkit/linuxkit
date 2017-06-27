@@ -10,7 +10,7 @@ If you want a console getty, add the following to your `moby.yml`:
 ```
 services:
   - name: getty
-    image: "linuxkit/getty:886d35fe30c47750e8cfbf2f73016e9d2cc6361a"
+    image: "linuxkit/getty:<hash>"
 ```
 
 The above will launch a getty for each console defined in the cmdline, i.e. `/proc/cmdline`.
@@ -70,17 +70,3 @@ In addition to the usual getty shell, it is possible that you have a LinuxKit bu
 In that case, you can make `linuxkit/getty` an `init:` level container. This will lead to a `sh` running on the console.
 
 **This is highly insecure and should not be used except to debug system startup where containerd will not start itself or services. In all other cases, use getty only via services.**
-
-To use it this way:
-
-```yml
-kernel:
-  image: "linuxkit/kernel:4.9.x"
-  cmdline: "console=ttyS0 console=tty0 page_poison=1"
-init:
-  - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
-  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:b1766e4c4c09f63ac4925a6e4612852a93f7e73b
-  - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
-  - linuxkit/getty:8305d9a564bfbe38b7ea6d6f5bccd95ae59b03d2
-```

@@ -13,7 +13,7 @@ onboot:
   - name: binfmt
     image: "linuxkit/binfmt:603e5f064b3e8a64088c0fcf7a80d2783541ee1d"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:ae03169274d19fe8841314fa5a6fea3c61adbf4e"
+    image: "linuxkit/dhcpcd:6c1ca76dbf808d5c27d10cbf22a8d4399be5c8ae"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd

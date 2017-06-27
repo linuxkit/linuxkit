@@ -1,34 +1,34 @@
 kernel:
-  image: "linuxkit/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.34"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:17693d233dd009b2a3a8d23673cb85969e1dce80
-  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:a33cdcf50b8107ffe14c92802c460fe7ada39acd
+  - linuxkit/init:36c56f0664d49c5a6adc1120d1bf5ba6ac30b389
+  - linuxkit/runc:291131ec026430371e7c36165c3f43734fbc2541
+  - linuxkit/containerd:1e3e8f207421de8deac8cedc26a138d6b1661a0d
   - linuxkit/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
+    image: "linuxkit/dhcpcd:6c1ca76dbf808d5c27d10cbf22a8d4399be5c8ae"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: "linuxkit/format:180cb2dc1de5e60373385080f8148abf10a3afac"
+    image: "linuxkit/format:ba085fdcac31c383acee3b4b91d78eb7095e5ac3"
   - name: mount
-    image: "linuxkit/mount:ff5338822f20375b8913f5a80f9ed4f6ea9a592b"
+    image: "linuxkit/mount:fe22dc5cbf109b4637b1caaafc76ccbf5140c3da"
     command: ["/mount.sh", "/var/external"]
   - name: swap
-    image: "linuxkit/swap:e36b5e794256c2a56c000035f73a4d46f7ffb3e6"
+    image: "linuxkit/swap:cfdce4b41db13ce996cfa986b12b69b94f56f718"
     # to use unencrypted swap, use:
     # command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G"]
     command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]
 services:
   - name: getty
-    image: "linuxkit/getty:9f27c1272b6d128c9a09745e916f151d09cb0d27"
+    image: "linuxkit/getty:6cbeee0392b0670053ce2bf05a5a0d67ec2bce05"
     env:
      - INSECURE=true
   - name: rngd
-    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
+    image: "linuxkit/rngd:b50b22dd574c5377708977af769f053009fff6d5"
   - name: nginx
     image: "nginx:alpine"
     capabilities:

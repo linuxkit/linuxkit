@@ -1,10 +1,10 @@
-FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 AS build
+FROM linuxkit/alpine:c608d404c1cb36cce0c7d9303e30b52c9d81ccf0 AS build
 RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev
 
 ADD usermode-helper.c .
 RUN make usermode-helper
 
-FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 AS mirror
+FROM linuxkit/alpine:c608d404c1cb36cce0c7d9303e30b52c9d81ccf0 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
 

@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:630ee558e4869672fae230c78364e367b8ea67a9 AS mirror
+FROM linuxkit/alpine:c608d404c1cb36cce0c7d9303e30b52c9d81ccf0 AS mirror
 
 # https://github.com/docker/docker/blob/master/project/PACKAGERS.md#runtime-dependencies
 # removed openssl as I do not think server needs it
@@ -17,7 +17,7 @@ RUN apk add --no-cache --initdb -p /out \
 	xz
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
-FROM linuxkit/vpnkit-forwarder:883de832c2c3cb72cd9b01e3f7bd788649e0f2c2 AS vpnkit
+FROM linuxkit/vpnkit-forwarder:e2776b82ddfe82ed7f90e55d7a2b424e62e9a279 AS vpnkit
 FROM scratch
 COPY --from=mirror /out/ /
 COPY --from=vpnkit /vpnkit-expose-port /usr/bin/vpnkit-expose-port

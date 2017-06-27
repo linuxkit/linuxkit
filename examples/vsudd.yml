@@ -1,17 +1,17 @@
 kernel:
-  image: "linuxkit/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.34"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:17693d233dd009b2a3a8d23673cb85969e1dce80
-  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:a33cdcf50b8107ffe14c92802c460fe7ada39acd
+  - linuxkit/init:36c56f0664d49c5a6adc1120d1bf5ba6ac30b389
+  - linuxkit/runc:291131ec026430371e7c36165c3f43734fbc2541
+  - linuxkit/containerd:1e3e8f207421de8deac8cedc26a138d6b1661a0d
 onboot:
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
+    image: "linuxkit/dhcpcd:6c1ca76dbf808d5c27d10cbf22a8d4399be5c8ae"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: vsudd
-    image: "linuxkit/vsudd:a66df914201aac784195d5b78262f622fe7f910c"
+    image: "linuxkit/vsudd:9e5882b4450a97836e113bcad231f497aa7bdba4"
     binds:
         - /run/containerd/containerd.sock:/run/containerd/containerd.sock
     command: ["/vsudd",

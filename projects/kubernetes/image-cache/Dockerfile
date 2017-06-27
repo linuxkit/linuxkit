@@ -1,4 +1,4 @@
-FROM linuxkit/docker-ce:dda71ff9fe5ebbfa794b98c57c32df286b212848
+FROM linuxkit/docker-ce:530912564c0b648aeeab2459c7b82ce40d48fd6a
 ADD . /images
 ENTRYPOINT [ "/bin/sh", "-c" ]
 CMD [ "for image in /images/*.tar ; do docker image load -i $image && rm -f $image ; done" ]
