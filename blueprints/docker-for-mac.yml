@@ -79,6 +79,9 @@ services:
             "--swarm-default-advertise-addr=eth0",
             "--userland-proxy-path", "/usr/bin/vpnkit-expose-port",
             "--storage-driver", "overlay2" ]
+  # Monitor for image deletes and invoke a TRIM on the container filesystem
+  - name: trim-after-delete
+    image: "linuxkit/trim-after-delete:6cc6131300c287fcd40041a28119fee2fc874539"
 
 files:
     - path: /var/config/docker/daemon.json
