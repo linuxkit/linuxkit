@@ -82,20 +82,20 @@ collect-artifacts: artifacts/test.img.tar.gz artifacts/test-ltp.img.tar.gz
 ci: test-cross
 	$(MAKE)
 	$(MAKE) install
+	$(MAKE) -C pkg check
 	$(MAKE) -C test all
-	$(MAKE) -C pkg tag
 
 ci-tag: test-cross
 	$(MAKE)
 	$(MAKE) install
+	$(MAKE) -C pkg check
 	$(MAKE) -C test all
-	$(MAKE) -C pkg tag
 
 ci-pr: test-cross
 	$(MAKE)
 	$(MAKE) install
+	$(MAKE) -C pkg check
 	$(MAKE) -C test pr
-	$(MAKE) -C pkg tag
 
 .PHONY: clean
 clean:
