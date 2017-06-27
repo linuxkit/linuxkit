@@ -1,4 +1,4 @@
-From b337b6399bcea6eba637d4027e02edcb4ae7be8d Mon Sep 17 00:00:00 2001
+From d083af622027f48d514b52e666120d44a85b8d89 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:40 -0800
 Subject: [PATCH 29/44] Drivers: hv: vmbus: define a new VMBus message type for

@@ -1,4 +1,4 @@
-From 02c09488deec0c48a6779b79ebbc8d79bc49fc6a Mon Sep 17 00:00:00 2001
+From 6a5dbd141d423dd1be2f3073831295dade952266 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Fri, 26 Feb 2016 15:13:16 -0800
 Subject: [PATCH 34/44] Drivers: hv: vmbus: avoid wait_for_completion() on

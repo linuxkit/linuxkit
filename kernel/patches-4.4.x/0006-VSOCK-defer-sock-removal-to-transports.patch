@@ -1,4 +1,4 @@
-From 134048e777be5ab1cec359b736cb74cffc194880 Mon Sep 17 00:00:00 2001
+From 46ad8affca21edda770e5a277d98fc05697f49cd Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:31 +0100
 Subject: [PATCH 06/44] VSOCK: defer sock removal to transports

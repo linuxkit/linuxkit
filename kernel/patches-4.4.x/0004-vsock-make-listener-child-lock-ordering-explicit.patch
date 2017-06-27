@@ -1,4 +1,4 @@
-From 0f5ac5dc71f20dfb46a2c1094171677661ef0aa0 Mon Sep 17 00:00:00 2001
+From c8dc3e9da5364cc99ce3e625dac34cd1868588d9 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 23 Jun 2016 16:28:58 +0100
 Subject: [PATCH 04/44] vsock: make listener child lock ordering explicit
