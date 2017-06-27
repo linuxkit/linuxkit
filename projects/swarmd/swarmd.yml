@@ -1,6 +1,6 @@
 kernel:
   image: "linuxkit/kernel:4.9.35"
-  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+  cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:24942921d1356bb801b30ca6d7197d2bfdcc26f9
   - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
@@ -22,6 +22,10 @@ onboot:
   - name: metadata
     image: "linuxkit/metadata:4e73345cdcb4f7e9df07b0ee7aede652960297f2"
 services:
+  - name: getty
+    image: "linuxkit/getty:9f27c1272b6d128c9a09745e916f151d09cb0d27"
+    env:
+     - INSECURE=true
   - name: qemu-ga
     image: "linuxkit/qemu-ga:585e4f0161a4df7583d5e0479d7621040c1ee140"
     binds:
