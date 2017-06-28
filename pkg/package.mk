@@ -6,7 +6,7 @@ HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 BASE_DEPS=Dockerfile Makefile
 
 DIRTY=$(shell git diff-index --quiet HEAD -- ../$(notdir $(CURDIR)) || echo "-dirty")
-TAG=$(HASH)$(DIRTY)
+TAG=$(ORG)/$(IMAGE):$(HASH)$(DIRTY)
 
 # Get a release tag, if present
 RELEASE=$(shell git tag -l --points-at HEAD)
@@ -18,19 +18,19 @@ NET_OPT=--network=none
 endif
 
 show-tag:
-	@echo $(ORG)/$(IMAGE):$(TAG)
+	@echo $(TAG)
 
 tag: $(BASE_DEPS) $(DEPS)
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(TAG) || \
-	docker build $(NET_OPT) -t $(ORG)/$(IMAGE):$(TAG) .
+	DOCKER_CONTENT_TRUST=1 docker pull $(TAG) || \
+	docker build $(NET_OPT) -t $(TAG) .
 
 push: tag
 ifneq ($(DIRTY),)
 	$(error Your repository is not clean. Will not push package image.)
 endif
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(TAG) || \
-	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(TAG)
+	DOCKER_CONTENT_TRUST=1 docker pull $(TAG) || \
+	DOCKER_CONTENT_TRUST=1 docker push $(TAG)
 ifneq ($(RELEASE),)
-	docker tag $(ORG)/$(IMAGE):$(TAG) $(ORG)/$(IMAGE):$(RELEASE)	
+	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
 	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(RELEASE)
 endif
