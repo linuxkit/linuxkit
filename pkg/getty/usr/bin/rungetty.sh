@@ -31,14 +31,14 @@ start_getty() {
 	# are we secure or insecure?
 	loginargs=
 	if [ "$INSECURE" == "true" ]; then
-		loginargs="-n -l /bin/sh"
+		loginargs="-a root"
 	fi
 
 	if ! grep -q -w "$tty" "$securetty"; then
 		echo "$tty" >> "$securetty"
 	fi
 	# respawn forever
-	infinite_loop setsid.getty -w /sbin/getty $loginargs $line $speed $tty $term &
+	infinite_loop setsid.getty -w /sbin/agetty $loginargs $line $speed $tty $term &
 }
 
 # check if we have /etc/getty.shadow
