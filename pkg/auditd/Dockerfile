@@ -1,10 +1,10 @@
-FROM linuxkit/alpine:cdb4e4d12ada4071a6c6a60bf4c14d35171ffae8 AS build
+FROM linuxkit/alpine:77e00ca02b6ee1bc0ad9cd595acf3f36917b028c AS build
 RUN apk add abuild gcc git
 
 ADD build.sh /
 RUN adduser -D -G abuild builder && sudo -u builder /build.sh
 
-FROM linuxkit/alpine:cdb4e4d12ada4071a6c6a60bf4c14d35171ffae8 AS mirror
+FROM linuxkit/alpine:77e00ca02b6ee1bc0ad9cd595acf3f36917b028c AS mirror
 COPY --from=build /home/builder/*apk /
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
