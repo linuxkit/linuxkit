@@ -51,14 +51,23 @@ bin/linuxkit: tmp_linuxkit_bin.tar
 tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
 	tar cf - vendor -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o bin/linuxkit > $@
 
+# For profiling we add timestamps around some targets
+define TIME
+@echo "=== [" `date -u -R` "]"
+endef
+
 .PHONY: test-cross
 test-cross:
+	$(TIME)
 	$(MAKE) clean
 	$(MAKE) -j 3 GOOS=darwin tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(TIME)
 	$(MAKE) clean
 	$(MAKE) -j 3 GOOS=windows tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(TIME)
 	$(MAKE) clean
 	$(MAKE) -j 3 GOOS=linux tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(TIME)
 	$(MAKE) clean
 
 
@@ -81,21 +90,33 @@ collect-artifacts: artifacts/test.img.tar.gz artifacts/test-ltp.img.tar.gz
 .PHONY: ci ci-tag ci-pr
 ci: test-cross
 	$(MAKE)
+	$(TIME)
 	$(MAKE) install
+	$(TIME)
 	$(MAKE) -C test all
+	$(TIME)
 	$(MAKE) -C pkg tag
+	$(TIME)
 
 ci-tag: test-cross
 	$(MAKE)
+	$(TIME)
 	$(MAKE) install
+	$(TIME)
 	$(MAKE) -C test all
+	$(TIME)
 	$(MAKE) -C pkg tag
+	$(TIME)
 
 ci-pr: test-cross
 	$(MAKE)
+	$(TIME)
 	$(MAKE) install
+	$(TIME)
 	$(MAKE) -C test pr
+	$(TIME)
 	$(MAKE) -C pkg tag
+	$(TIME)
 
 .PHONY: clean
 clean:
