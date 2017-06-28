@@ -5,7 +5,7 @@ ORG?=linuxkit
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 BASE_DEPS=Dockerfile Makefile
 
-DIRTY=$(shell git diff-index --quiet HEAD -- ) || echo "-dirty")
+DIRTY=$(shell git diff-index --quiet HEAD -- ../$(notdir $(CURDIR)) || echo "-dirty")
 TAG=$(HASH)$(DIRTY)
 
 # Get a release tag, if present
