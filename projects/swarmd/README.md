@@ -3,27 +3,33 @@
 This adds a `swarmd` package for Moby which contains the standalone
 swarmkit orchestration daemon (`swarmd`) and CLI tool (`swarmctl`).
 
-The package tracks [docker/swarmkit#1965][PR1965] which
-is a WIP PR adding a containerd executor to swarmkit.
+The package tracks [ijc's `container-wip` branch][containerd-wip].
+Compared with mainline swarmkit (which container a basic containerd
+executor merged in [PR1965]) this reworks the executor to use the
+container client library and adds support for CNI networking.
 
-With a suitable moby image (such as `swarmd.yml` from this directory)
-something like this should work:
+With a suitable LinuxKit image (such as `swarmd.yml` from this
+directory) something like this should work:
 
-    runc exec swarmd swarmctl service create --image docker.io/library/nginx:alpine --name nginx
-    runc exec swarmd swarmctl service ls
+    ctr exec -- swarmd swarmd swarmctl service create --image docker.io/library/nginx:alpine --name nginx
+    ctr exec -- swarmd swarmd swarmctl service ls
+
+Note that `swarmd` uses the "swarmd" containerd namespace, so to see
+swarmd managed containers you will need to use `-n swarmd` on all
+`ctr` commands e.g.:
+
+    ctr -n swarmd containers ls
+
+Alternatively you may export `CONTAINERD_NAMESPACE=swarmd`.
 
 ### TODO
 
-Currently the swarm state directory needs to be at a path which is
-identical from the PoV of both the `containerd` and `swarmd`
-processes. For now this means that the swarmkit state is put in
-`/var/lib/containerd/swarmd`.
-
-Bootstrapping a cluster needs more invesigation. Tokens and join
+Bootstrapping a cluster needs more investigation. Tokens and join
 addresses can currently only be passed on the `swarmd` command line
 which is inconvenient for automated image deployment.
 
 Swarmkit [PR 1965][PR1965] also contains a number of TODOs which are not
 separately listed here.
 
-[PR1665]: https://github.com/docker/swarmkit/pull/1965
+[PR1965]: https://github.com/docker/swarmkit/pull/1965
+[containerd-wip]: https://github.com/ijc/swarmkit/tree/containerd-wip
