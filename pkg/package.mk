@@ -2,14 +2,18 @@
 default: push
 
 ORG?=linuxkit
+ifeq ($(HASH),)
 HASH_COMMIT?=HEAD # Setting this is only really useful with the show-tag target
 HASH?=$(shell git ls-tree --full-tree $(HASH_COMMIT) -- $(CURDIR) | awk '{print $$3}')
-BASE_DEPS=Dockerfile Makefile
 
 ifneq ($(HASH_COMMIT),HEAD) # Others can't be dirty by definition
 DIRTY=$(shell git diff-index --quiet HEAD -- $(CURDIR) || echo "-dirty")
 endif
+endif
+
 TAG=$(ORG)/$(IMAGE):$(HASH)$(DIRTY)
+
+BASE_DEPS=Dockerfile Makefile
 
 # Get a release tag, if present
 RELEASE=$(shell git tag -l --points-at HEAD)
