@@ -16,7 +16,7 @@ ENV GOPATH=/root/go
 # https://github.com/ijc25/swarmkit/tree/containerd-wip
 ENV SWARMKIT_REPO=https://github.com/ijc25/swarmkit
 ENV SWARMKIT_BRANCH=containerd-wip
-ENV SWARMKIT_COMMIT=cb429323fa86df0c279a8d629e674f79a20e01e3
+ENV SWARMKIT_COMMIT=4a484ccb498bee117fe6167d5a5e7ea0f6d4f2e9
 
 RUN mkdir -p $GOPATH/src/github.com/docker && \
   cd $GOPATH/src/github.com/docker && \
