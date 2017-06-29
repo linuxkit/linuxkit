@@ -1,0 +1,19 @@
+opam-version: "1.2"
+maintainer:   "Thomas Gazagnaire <thomas@gazagnaire.org>"
+authors:      "Thomas Gazagnaire <thomas@gazagnaire.org>"
+homepage:     "https://github.com/linuxkit/linuxkit"
+bug-reports:  "https://github.com/linuxkit/linuxkit/issues"
+license:      "Apache"
+dev-repo:     "https://github.com/linuxkit/linuxkit.git"
+build: [
+  ["jbuilder" "subst"]{pinned}
+  ["jbuilder" "build" "-p" name "-j" jobs]
+]
+depends: [
+  "jbuilder" {build & >= "1.0+beta10"}
+  "lwt"
+  "fd-send-recv"
+  "logs"
+  "fmt"
+  "cmdliner"
+]

@@ -1,0 +1,4 @@
+*.install
+.merlin
+_build
+*~
