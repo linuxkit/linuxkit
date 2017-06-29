@@ -5,7 +5,7 @@ kernel:
 init:
   - linuxkit/init:36c56f0664d49c5a6adc1120d1bf5ba6ac30b389
   - linuxkit/runc:291131ec026430371e7c36165c3f43734fbc2541
-  - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
+  - linuxkit/containerd:1e3e8f207421de8deac8cedc26a138d6b1661a0d
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
@@ -39,9 +39,11 @@ services:
         - INSECURE=true
   - name: rngd
     image: "linuxkit/rngd:b50b22dd574c5377708977af769f053009fff6d5"
-  # Run ntpd to keep time synchronised in the VM
-  - name: ntpd
-    image: "linuxkit/openntpd:a4c642d52e985922fcd97db52e471db123cc6841"
+  # Run chronyd to keep time synchronised in the VM
+  - name: chronyd
+    image: "linuxkit/chronyd:bacf63f7b3f4b4f1ddf22289a4220669023828a0-dirty"
+    binds:
+        - /var/config/chrony/chrony.conf:/etc/chrony/chrony.conf
   # VSOCK to unix domain socket forwarding. Forwards guest /var/run/docker.sock
   # to a socket on the host.
   - name: vsudd
@@ -86,6 +88,10 @@ services:
 files:
     - path: /var/config/docker/daemon.json
       contents: '{ "debug": true }'
+    - path: /var/config/chrony/chrony.conf
+      contents: "pool pool.ntp.org iburst minpoll 2\n
+      makestep 0.5 -1\n
+      cmdport 0\n"
 
 trust:
     org:
