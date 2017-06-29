@@ -11,6 +11,7 @@
 [Org]
 	[Org."Core maintainers"]
 		people = [
+			"deitch",
 			"ijc",
 			"justincormack",
 			"riyazdf",
@@ -24,6 +25,10 @@
 # in the people section.
 
 	# ADD YOURSELF HERE IN ALPHABETICAL ORDER
+	[People.deitch]
+	Name = "Avi Deitcher"
+	Email = "avi@atomicinc.com"
+	GitHub = "deitch"
 
 	[People.ijc]
 	Name = "Ian Campbell"
