@@ -26,7 +26,7 @@ onboot:
      - /var:/var:rshared,rbind
 services:
   - name: getty
-    image: "linuxkit/getty:6cbeee0392b0670053ce2bf05a5a0d67ec2bce05"
+    image: "linuxkit/getty:6d35e3fe138aaeaf099b5b4f31b3f12ba725cb49"
     env:
      - INSECURE=true
   - name: rngd
@@ -36,7 +36,7 @@ services:
   - name: ntpd
     image: "linuxkit/openntpd:a4c642d52e985922fcd97db52e471db123cc6841"
   - name: sshd
-    image: "linuxkit/sshd:f095b62ddca658e99d5751872c933ef3d5d18cec"
+    image: "linuxkit/sshd:7535658a08a01c61e2851e4bc1f6346e89412de8"
   - name: docker
     image: "linuxkit/docker-ce:530912564c0b648aeeab2459c7b82ce40d48fd6a"
     capabilities:
