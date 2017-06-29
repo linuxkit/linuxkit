@@ -1,0 +1,6 @@
+(executable
+  ((name         fdd)
+    (public_name fdd)
+    (package     fdd)
+    (libraries (unix lwt.unix lwt.preemptive fd-send-recv logs fmt cmdliner
+                fmt.cli logs.fmt fmt.tty logs.cli))))
