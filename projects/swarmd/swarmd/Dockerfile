@@ -36,6 +36,9 @@ RUN apk add --no-cache --initdb -p /out \
     musl \
     util-linux
 
+# Remove apk residuals. We have a read-only rootfs, so apk is of no use.
+RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+
 RUN mkdir -p /out/usr/bin/ /out/etc
 RUN cp bin/swarmd bin/swarmctl /out/usr/bin/
 RUN strip /out/usr/bin/swarmd /out/usr/bin/swarmctl
