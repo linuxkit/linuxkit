@@ -2,5 +2,6 @@
   ((name         fdd)
     (public_name fdd)
     (package     fdd)
+    (flags     (:standard -cclib -static))
     (libraries (unix lwt.unix lwt.preemptive fd-send-recv logs fmt cmdliner
                 fmt.cli logs.fmt fmt.tty logs.cli))))
