@@ -21,12 +21,18 @@ the [examples/](../examples/) directory.
 
 ### Docker for Mac
 
-An initial blueprint for the open source components of Docker for Mac is available in [docker-for-mac.yml](docker-for-mac.yml). The blueprint has support for controlling `dockerd` from the host via `vsudd` and port forwarding with VPNKit. It requires HyperKit, VPNKit and a Docker client on the host to run. The easiest way to install these at the moment is to install a recent version of Docker for Mac.
+An initial blueprint for the open source components of Docker for Mac is available in [docker-for-mac](docker-for-mac). The blueprint has support for controlling `dockerd` from the host via `vsudd` and port forwarding with VPNKit. It requires HyperKit, VPNKit and a Docker client on the host to run. The easiest way to install these at the moment is to install a recent version of Docker for Mac.
+
+To build it with Docker 17.06:
+
+```
+$ moby build -name docker-for-mac base.yml docker-17.06-ce.yml
+```
 
 To run the VM with a 500M disk:
 
 ```
-linuxkit run hyperkit -networking=vpnkit -vsock-ports=2375 -disk size=500M docker-for-mac
+linuxkit run hyperkit -networking=vpnkit -vsock-ports=2376 -disk size=500M docker-for-mac
 ```
 
 In another terminal you should now be able to access docker via the socket `guest.00000947` in the state directory (`docker-for-mac-state/` by default):
