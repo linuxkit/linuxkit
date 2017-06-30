@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:4f0ddee221c46f142e5a190dd43d2e07256ef98d AS kernel-build
+FROM linuxkit/alpine:a44da41b988024aa2c73b28dee8a51d026f6240b AS kernel-build
 RUN apk add \
     argp-standalone \
     automake \
@@ -9,10 +9,10 @@ RUN apk add \
     build-base \
     curl \
     diffutils \
-    elfutils-dev \
     flex \
     git \
     gmp-dev \
+    gnupg \
     installkernel \
     kmod \
     libelf-dev \
@@ -25,18 +25,30 @@ RUN apk add \
     tar \
     xz \
     xz-dev \
-    zlib-dev \
-    || true
+    zlib-dev
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
 ARG DEBUG
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
+ENV KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/v4.x/sha256sums.asc
+ENV KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.sign
 
-RUN curl -fsSL -o linux-${KERNEL_VERSION}.tar.xz ${KERNEL_SOURCE}
+# PGP keys: 589DA6B1 (greg@kroah.com) & 6092693E (autosigner@kernel.org) & 00411886 (torvalds@linux-foundation.org)
+COPY keys.asc keys.asc
 
-RUN cat linux-${KERNEL_VERSION}.tar.xz | tar --absolute-names -xJ &&  mv /linux-${KERNEL_VERSION} /linux
+# Download and verify kernel
+RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
+    gpg2 -q --import keys.asc && \
+    gpg2 --verify sha256sums.asc && \
+    KERNEL_SHA256=$(grep linux-${KERNEL_VERSION}.tar.xz sha256sums.asc | cut -d ' ' -f 1) && \
+    curl -fsSLO ${KERNEL_SOURCE} && \
+    echo "${KERNEL_SHA256}  linux-${KERNEL_VERSION}.tar.xz" | sha256sum -c - && \
+    xz -d linux-${KERNEL_VERSION}.tar.xz && \
+    curl -fsSLO ${KERNEL_PGP2_SIGN} && \
+    gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
+    cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
 COPY kernel_config-${KERNEL_SERIES} /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
