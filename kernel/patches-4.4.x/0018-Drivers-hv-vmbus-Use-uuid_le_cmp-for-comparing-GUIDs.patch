@@ -1,4 +1,4 @@
-From ab8bbb657b0c4160c47995b2ef8e8eef986eba15 Mon Sep 17 00:00:00 2001
+From a309df3556bfcb9076437a3e6bd2196884658256 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:44 -0800
 Subject: [PATCH 18/44] Drivers: hv: vmbus: Use uuid_le_cmp() for comparing

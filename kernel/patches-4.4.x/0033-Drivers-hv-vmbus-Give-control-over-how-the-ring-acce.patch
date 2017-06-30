@@ -1,4 +1,4 @@
-From 7bfc57aa67900875d2cc85b83ea105ac2f8a5ea2 Mon Sep 17 00:00:00 2001
+From 92c179584bdbd0a0ad1b154f4115517ca8bdeafb Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:45 -0800
 Subject: [PATCH 33/44] Drivers: hv: vmbus: Give control over how the ring
