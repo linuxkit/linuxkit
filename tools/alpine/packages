@@ -15,6 +15,7 @@ btrfs-progs-dev
 build-base
 ca-certificates
 cdrkit
+chrony
 cmake
 cryptsetup
 curl
