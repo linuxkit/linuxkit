@@ -21,7 +21,7 @@ endif
 # Get a release tag, if present
 RELEASE=$(shell git tag -l --points-at HEAD)
 
-ifndef $(NETWORK)
+ifdef NETWORK
 NET_OPT=
 else
 NET_OPT=--network=none

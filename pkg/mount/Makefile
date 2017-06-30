@@ -1,4 +1,4 @@
-include ../package.mk
-
 IMAGE=mount
 DEPS=mount.sh
+
+include ../package.mk
