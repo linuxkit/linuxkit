@@ -15,7 +15,7 @@
 # Git tree hash of this directory. Override to force build
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 # Name and Org on Hub
-ORG?=ndauten
+ORG?=linuxkit
 IMAGE:=kernel
 IMAGE_PERF:=kernel-perf
 
@@ -68,6 +68,23 @@ push_$(2)$(3): build_$(2)$(3)
 build: build_$(2)$(3)
 push: push_$(2)$(3)
 
+ifneq ($(2), 4.4.x)
+build_perf_$(2)$(3): build_$(2)$(3)
+	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) || \
+		docker build -f Dockerfile.perf \
+			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG) \
+	 		--no-cache --network=none -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) .
+
+push_perf_$(2)$(3): build_perf_$(2)$(3)
+	@if [ $(DIRTY) -ne 0 ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) || \
+		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) && \
+		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) $(ORG)/$(IMAGE_PERF):$(1)$(3) && \
+		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3))
+
+build: build_perf_$(2)$(3)
+push: push_perf_$(2)$(3)
+endif
 
 endef
 
@@ -75,8 +92,8 @@ endef
 # Build Targets
 # Debug targets only for latest stable and LTS stable
 #
-$(eval $(call kernel,4.10,4.10.x,_dbg))
-#$(eval $(call kernel,4.11.7,4.11.x,_dbg))
-#$(eval $(call kernel,4.9.34,4.9.x))
-#$(eval $(call kernel,4.9.34,4.9.x,_dbg))
-#$(eval $(call kernel,4.4.74,4.4.x))
+$(eval $(call kernel,4.11.7,4.11.x))
+$(eval $(call kernel,4.11.7,4.11.x,_dbg))
+$(eval $(call kernel,4.9.34,4.9.x))
+$(eval $(call kernel,4.9.34,4.9.x,_dbg))
+$(eval $(call kernel,4.4.74,4.4.x))
