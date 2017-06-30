@@ -1,6 +1,6 @@
 FROM ocaml/opam:alpine as base
 RUN sudo apk add m4
-RUN opam install jbuilder lwt fd-send-recv logs fmt cmdliner
+RUN opam install jbuilder lwt fd-send-recv logs fmt cmdliner astring
 ADD . /src
 RUN opam pin add fdd /src
 RUN sudo mkdir -p /out/bin

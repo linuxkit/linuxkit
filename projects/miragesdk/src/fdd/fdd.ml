@@ -1,3 +1,4 @@
+open Astring
 open Cmdliner
 
 let socket =
@@ -42,6 +43,38 @@ let share =
   Term.(const f $ socket $ share $ setup_log),
   Term.info "share" ~doc:"Share a new socketpair on a given unix domain socket."
 
+let exec =
+  let dup =
+    let parse str = match String.cuts ~sep:":" str with
+      | [] | [_] ->
+        Error (`Msg ("A valid share map should have the form \
+                      <path>:<fd-number>[:fd-number]*"))
+      | s :: fds  -> Ok (s, List.map int_of_string fds)
+    in
+    let pp ppf (name, fds) =
+      Fmt.pf ppf "%s:%a" name Fmt.(list ~sep:(unit ":") int) fds
+    in
+    Arg.conv (parse, pp)
+  in
+  let dups =
+    let doc =
+      Arg.info ~docv:"MAP" ~doc:
+        "Maps of socketpairs/local fds in the form \
+         <path>:<fd-number>[:fd-number]*,..."
+        ["m";"map"]
+    in
+    Arg.(value & opt (list dup) [] doc)
+  in
+  let cmd =
+    let doc = Arg.info ~docv:"COMMAND" ~doc:"The command to execute" [] in
+    Arg.(non_empty & pos_all string [] doc)
+  in
+  let f dups cmd () = run (Exec.f dups cmd) in
+  Term.(const f $ dups $ cmd $ setup_log),
+  Term.info "exec"
+    ~doc:"Execute a command with a side of the socketpair pre-opened on the \
+          specified files descriptors."
+
 let default =
   let usage () =
     Fmt.pr "usage: fdd [--version]\n\
@@ -64,6 +97,7 @@ let cmds = [
   init;
   share;
   test;
+  exec;
 ]
 
 let () = match Term.eval_choice default cmds with

@@ -4,4 +4,4 @@
     (package     fdd)
     (flags     (:standard -cclib -static))
     (libraries (unix lwt.unix lwt.preemptive fd-send-recv logs fmt cmdliner
-                fmt.cli logs.fmt fmt.tty logs.cli))))
+                fmt.cli logs.fmt fmt.tty logs.cli astring))))
