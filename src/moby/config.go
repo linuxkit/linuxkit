@@ -45,8 +45,8 @@ type File struct {
 	Source    string
 	Optional  bool
 	Mode      string
-	UID       uint32 `yaml:"uid" json:"uid"`
-	GID       uint32 `yaml:"gid" json:"gid"`
+	UID       string `yaml:"uid" json:"uid"`
+	GID       string `yaml:"gid" json:"gid"`
 }
 
 // Image is the type of an image config
@@ -69,9 +69,9 @@ type Image struct {
 	Readonly          *bool              `yaml:"readonly" json:"readonly,omitempty"`
 	MaskedPaths       *[]string          `yaml:"maskedPaths" json:"maskedPaths,omitempty"`
 	ReadonlyPaths     *[]string          `yaml:"readonlyPaths" json:"readonlyPaths,omitempty"`
-	UID               *uint32            `yaml:"uid" json:"uid,omitempty"`
-	GID               *uint32            `yaml:"gid" json:"gid,omitempty"`
-	AdditionalGids    *[]uint32          `yaml:"additionalGids" json:"additionalGids,omitempty"`
+	UID               *string            `yaml:"uid" json:"uid,omitempty"`
+	GID               *string            `yaml:"gid" json:"gid,omitempty"`
+	AdditionalGids    *[]string          `yaml:"additionalGids" json:"additionalGids,omitempty"`
 	NoNewPrivileges   *bool              `yaml:"noNewPrivileges" json:"noNewPrivileges,omitempty"`
 	OOMScoreAdj       *int               `yaml:"oomScoreAdj" json:"oomScoreAdj,omitempty"`
 	DisableOOMKiller  *bool              `yaml:"disableOOMKiller" json:"disableOOMKiller,omitempty"`
@@ -226,7 +226,7 @@ func NewImage(config []byte) (Image, error) {
 }
 
 // ConfigToOCI converts a config specification to an OCI config file
-func ConfigToOCI(image Image, trust bool) ([]byte, error) {
+func ConfigToOCI(image Image, trust bool, idMap map[string]uint32) ([]byte, error) {
 
 	// TODO pass through same docker client to all functions
 	cli, err := dockerClient()
@@ -239,7 +239,7 @@ func ConfigToOCI(image Image, trust bool) ([]byte, error) {
 		return []byte{}, err
 	}
 
-	oci, err := ConfigInspectToOCI(image, inspect)
+	oci, err := ConfigInspectToOCI(image, inspect, idMap)
 	if err != nil {
 		return []byte{}, err
 	}
@@ -467,8 +467,24 @@ var allCaps = []string{
 	"CAP_WAKE_ALARM",
 }
 
+func idNumeric(id string, idMap map[string]uint32) (uint32, error) {
+	if id == "" || id == "root" {
+		return 0, nil
+	}
+	for k, v := range idMap {
+		if id == k {
+			return v, nil
+		}
+	}
+	v, err := strconv.ParseUint(id, 10, 32)
+	if err != nil {
+		return 0, fmt.Errorf("Cannot find or parse id (%s): %v", id, err)
+	}
+	return uint32(v), nil
+}
+
 // ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
-func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, error) {
+func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string]uint32) (specs.Spec, error) {
 	oci := specs.Spec{}
 
 	var inspectConfig container.Config
@@ -726,6 +742,27 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, err
 		}
 	}
 
+	// handle mapping of named uid, gid to numbers
+	uidString := assignString(label.UID, yaml.UID)
+	gidString := assignString(label.GID, yaml.GID)
+	agStrings := assignStrings(label.AdditionalGids, yaml.AdditionalGids)
+	uid, err := idNumeric(uidString, idMap)
+	if err != nil {
+		return oci, err
+	}
+	gid, err := idNumeric(gidString, idMap)
+	if err != nil {
+		return oci, err
+	}
+	additionalGroups := []uint32{}
+	for _, id := range agStrings {
+		ag, err := idNumeric(id, idMap)
+		if err != nil {
+			return oci, err
+		}
+		additionalGroups = append(additionalGroups, ag)
+	}
+
 	oci.Version = specs.Version
 
 	oci.Platform = specs.Platform{
@@ -737,9 +774,9 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, err
 		Terminal: false,
 		//ConsoleSize
 		User: specs.User{
-			UID:            assignUint32(label.UID, yaml.UID),
-			GID:            assignUint32(label.GID, yaml.GID),
-			AdditionalGids: assignUint32Array(label.AdditionalGids, yaml.AdditionalGids),
+			UID:            uid,
+			GID:            gid,
+			AdditionalGids: additionalGroups,
 			// Username (Windows)
 		},
 		Args: args,

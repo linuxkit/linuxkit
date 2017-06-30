@@ -13,6 +13,27 @@ so it can be tested reliably for continuous delivery.
 The configuration file is processed in the order `kernel`, `init`, `onboot`, `services`, `files`.
 Each section adds file to the root file system. Sections may be omitted.
 
+Each container that is specified is allocated a unique `uid` and `gid` that it may use if it
+wishes to run as an isolated user (or user namespace). Anywhere you specify a `uid` or `gid`
+field you specify a string that can either be the numeric id, or if you use a name it will
+refer to the id allocated to the container with that name.
+
+```
+services:
+  - name: redis
+    image: redis:latest
+    uid: redis
+    gid: redis
+    binds:
+     - /etc/redis:/etc/redis
+files:
+  - path: /etc/redis/redis.conf
+    contents: "..."
+    uid: redis
+    gid: redis
+    mode: "0600"
+```
+
 ## `kernel`
 
 The `kernel` section is only required if booting a VM. The files will be put into the `boot/`
@@ -64,6 +85,8 @@ files:
   - path: dir/name3
     contents: "orange"
     mode: "0644"
+    uid: 100
+    gid: 100
 ```
 
 Specifying the `mode` is optional, and will default to `0600`. Leading directories will be
@@ -123,9 +146,9 @@ bind mounted into a container.
 - `readonly` sets the root filesystem to read only, and changes the other default filesystems to read only.
 - `maskedPaths` sets paths which should be hidden.
 - `readonlyPaths` sets paths to read only.
-- `uid` sets the user id of the process. Only numbers are accepted.
-- `gid` sets the group id of the process. Only numbers are accepted.
-- `additionalGids` sets additional groups for the process. A list of numbers is accepted.
+- `uid` sets the user id of the process.
+- `gid` sets the group id of the process.
+- `additionalGids` sets a list of additional groups for the process.
 - `noNewPrivileges` is `true` means no additional capabilities can be acquired and `suid` binaries do not work.
 - `hostname` sets the hostname inside the image.
 - `oomScoreAdj` changes the OOM score.
