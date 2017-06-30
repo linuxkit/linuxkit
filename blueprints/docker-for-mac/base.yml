@@ -48,7 +48,7 @@ services:
     image: "linuxkit/vsudd:9e5882b4450a97836e113bcad231f497aa7bdba4"
     binds:
         - /var/run:/var/run
-    command: ["/vsudd", "-inport", "2375:unix:/var/run/docker.sock"]
+    command: ["/vsudd", "-inport", "2376:unix:/var/run/docker.sock"]
   # vpnkit-forwarder forwards network traffic to/from the host via VSOCK port 62373. 
   # It needs access to the vpnkit 9P coordination share 
   - name: vpnkit-forwarder

@@ -32,7 +32,7 @@ $ moby build -name docker-for-mac base.yml docker-17.06-ce.yml
 To run the VM with a 500M disk:
 
 ```
-linuxkit run hyperkit -networking=vpnkit -vsock-ports=2375 -disk size=500M docker-for-mac
+linuxkit run hyperkit -networking=vpnkit -vsock-ports=2376 -disk size=500M docker-for-mac
 ```
 
 In another terminal you should now be able to access docker via the socket `guest.00000947` in the state directory (`docker-for-mac-state/` by default):
