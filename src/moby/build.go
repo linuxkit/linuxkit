@@ -414,6 +414,8 @@ func filesystem(m Moby, tw *tar.Writer) error {
 					Name:     root,
 					Typeflag: tar.TypeDir,
 					Mode:     dirMode,
+					Uid:      int(f.UID),
+					Gid:      int(f.GID),
 				}
 				err := tw.WriteHeader(hdr)
 				if err != nil {
@@ -423,36 +425,30 @@ func filesystem(m Moby, tw *tar.Writer) error {
 			}
 		}
 		addedFiles[f.Path] = true
+		hdr := &tar.Header{
+			Name: f.Path,
+			Mode: mode,
+			Uid:  int(f.UID),
+			Gid:  int(f.GID),
+		}
 		if f.Directory {
 			if f.Contents != nil {
 				return errors.New("Directory with contents not allowed")
 			}
-			hdr := &tar.Header{
-				Name:     f.Path,
-				Typeflag: tar.TypeDir,
-				Mode:     mode,
-			}
+			hdr.Typeflag = tar.TypeDir
 			err := tw.WriteHeader(hdr)
 			if err != nil {
 				return err
 			}
 		} else if f.Symlink != "" {
-			hdr := &tar.Header{
-				Name:     f.Path,
-				Typeflag: tar.TypeSymlink,
-				Mode:     mode,
-				Linkname: f.Symlink,
-			}
+			hdr.Typeflag = tar.TypeSymlink
+			hdr.Linkname = f.Symlink
 			err := tw.WriteHeader(hdr)
 			if err != nil {
 				return err
 			}
 		} else {
-			hdr := &tar.Header{
-				Name: f.Path,
-				Mode: mode,
-				Size: int64(len(contents)),
-			}
+			hdr.Size = int64(len(contents))
 			err := tw.WriteHeader(hdr)
 			if err != nil {
 				return err

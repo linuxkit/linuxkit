@@ -24,7 +24,9 @@ var schema = string(`
           "contents": {"type": "string"},
           "source": {"type": "string"},
           "optional": {"type": "boolean"},
-          "mode": {"type": "string"}
+          "mode": {"type": "string"},
+          "uid": {"type": "integer"},
+          "gid": {"type": "integer"}
         }
     },
     "files": {
@@ -65,6 +67,7 @@ var schema = string(`
         "name": {"type": "string"},
         "image": {"type": "string"},
         "capabilities": { "$ref": "#/definitions/strings" },
+        "ambient": { "$ref": "#/definitions/strings" },
         "mounts": { "$ref": "#/definitions/mounts" },
         "binds": { "$ref": "#/definitions/strings" },
         "tmpfs": { "$ref": "#/definitions/strings" },

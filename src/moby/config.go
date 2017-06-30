@@ -27,15 +27,7 @@ type Moby struct {
 	Onboot   []Image
 	Services []Image
 	Trust    TrustConfig
-	Files    []struct {
-		Path      string
-		Directory bool
-		Symlink   string
-		Contents  *string
-		Source    string
-		Optional  bool
-		Mode      string
-	}
+	Files    []File
 }
 
 // TrustConfig is the type of a content trust config
@@ -44,11 +36,25 @@ type TrustConfig struct {
 	Org   []string
 }
 
+// File is the type of a file specification
+type File struct {
+	Path      string
+	Directory bool
+	Symlink   string
+	Contents  *string
+	Source    string
+	Optional  bool
+	Mode      string
+	UID       uint32 `yaml:"uid" json:"uid"`
+	GID       uint32 `yaml:"gid" json:"gid"`
+}
+
 // Image is the type of an image config
 type Image struct {
 	Name              string             `yaml:"name" json:"name"`
 	Image             string             `yaml:"image" json:"image"`
 	Capabilities      *[]string          `yaml:"capabilities" json:"capabilities,omitempty"`
+	Ambient           *[]string          `yaml:"ambient" json:"ambient,omitempty"`
 	Mounts            *[]specs.Mount     `yaml:"mounts" json:"mounts,omitempty"`
 	Binds             *[]string          `yaml:"binds" json:"binds,omitempty"`
 	Tmpfs             *[]string          `yaml:"tmpfs" json:"tmpfs,omitempty"`
@@ -619,25 +625,13 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, err
 
 	// TODO user, cgroup namespaces
 
-	caps := assignStrings(label.Capabilities, yaml.Capabilities)
-	for _, capability := range caps {
-		if capability == "none" || capability == "all" {
-			continue
-		}
-
-		found := false
-		for _, ac := range allCaps {
-			if ac == capability {
-				found = true
-				break
-			}
-		}
-
-		if !found {
-			return oci, fmt.Errorf("unknown capability: %s", capability)
-		}
+	// Capabilities
+	capCheck := map[string]bool{}
+	for _, capability := range allCaps {
+		capCheck[capability] = true
 	}
-
+	boundingSet := map[string]bool{}
+	caps := assignStrings(label.Capabilities, yaml.Capabilities)
 	if len(caps) == 1 {
 		switch cap := strings.ToLower(caps[0]); cap {
 		case "none":
@@ -645,6 +639,31 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, err
 		case "all":
 			caps = allCaps[:]
 		}
+	}
+	for _, capability := range caps {
+		if !capCheck[capability] {
+			return oci, fmt.Errorf("unknown capability: %s", capability)
+		}
+		boundingSet[capability] = true
+	}
+	ambient := assignStrings(label.Ambient, yaml.Ambient)
+	if len(ambient) == 1 {
+		switch cap := strings.ToLower(ambient[0]); cap {
+		case "none":
+			ambient = []string{}
+		case "all":
+			ambient = allCaps[:]
+		}
+	}
+	for _, capability := range ambient {
+		if !capCheck[capability] {
+			return oci, fmt.Errorf("unknown capability: %s", capability)
+		}
+		boundingSet[capability] = true
+	}
+	bounding := []string{}
+	for capability := range boundingSet {
+		bounding = append(bounding, capability)
 	}
 
 	rlimitsString := assignStrings(label.Rlimits, yaml.Rlimits)
@@ -727,11 +746,11 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect) (specs.Spec, err
 		Env:  env,
 		Cwd:  cwd,
 		Capabilities: &specs.LinuxCapabilities{
-			Bounding:    caps,
+			Bounding:    bounding,
 			Effective:   caps,
-			Inheritable: caps,
-			Permitted:   caps,
-			Ambient:     []string{},
+			Inheritable: bounding,
+			Permitted:   bounding,
+			Ambient:     ambient,
 		},
 		Rlimits:         rlimits,
 		NoNewPrivileges: assignBool(label.NoNewPrivileges, yaml.NoNewPrivileges),
