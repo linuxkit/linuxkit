@@ -1,0 +1,27 @@
+services:
+  # Run dockerd with the vpnkit userland proxy from the vpnkit-forwarder container.
+  # Bind mounts /var/run to allow vsudd to connect to docker.sock, /var/vpnkit
+  # for vpnkit coordination and /var/config/docker for the configuration file.
+  - name: docker-dfm
+    image: "linuxkit/docker-ce:9e125aa533108731d11f6d7ec17aba6ded0cb4eb"
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+        - /var/lib/docker:/var/lib/docker
+        - /lib/modules:/lib/modules
+        - /var/vpnkit:/port
+        - /var/run:/var/run
+        - /var/config/docker:/var/config/docker
+    command: [ "/usr/bin/docker-init", "/usr/bin/dockerd", "--",
+            "--config-file", "/var/config/docker/daemon.json",
+            "--swarm-default-advertise-addr=eth0",
+            "--userland-proxy-path", "/usr/bin/vpnkit-expose-port",
+            "--storage-driver", "overlay2" ]
+
+files:
+    - path: /var/config/docker/daemon.json
+      contents: '{ "debug": true }'

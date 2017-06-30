@@ -5,7 +5,7 @@ kernel:
 init:
   - linuxkit/init:36c56f0664d49c5a6adc1120d1bf5ba6ac30b389
   - linuxkit/runc:291131ec026430371e7c36165c3f43734fbc2541
-  - linuxkit/containerd:b50181bc6e0084e5fcd6b6ad3cf433c4f66cae5a
+  - linuxkit/containerd:1e3e8f207421de8deac8cedc26a138d6b1661a0d
 onboot:
   - name: sysctl
     image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
@@ -57,35 +57,9 @@ services:
         - /var/vpnkit:/port
     net: host
     command: ["/vpnkit-forwarder", "-vsockPort", "62373"]
-  # Run dockerd with the vpnkit userland proxy from the vpnkit-forwarder container.
-  # Bind mounts /var/run to allow vsudd to connect to docker.sock, /var/vpnkit
-  # for vpnkit coordination and /var/config/docker for the configuration file.
-  - name: docker-dfm
-    image: "linuxkit/docker-ce:9e125aa533108731d11f6d7ec17aba6ded0cb4eb"
-    capabilities:
-     - all
-    net: host
-    mounts:
-     - type: cgroup
-       options: ["rw","nosuid","noexec","nodev","relatime"]
-    binds:
-        - /var/lib/docker:/var/lib/docker
-        - /lib/modules:/lib/modules
-        - /var/vpnkit:/port
-        - /var/run:/var/run
-        - /var/config/docker:/var/config/docker
-    command: [ "/usr/bin/docker-init", "/usr/bin/dockerd", "--",
-            "--config-file", "/var/config/docker/daemon.json",
-            "--swarm-default-advertise-addr=eth0",
-            "--userland-proxy-path", "/usr/bin/vpnkit-expose-port",
-            "--storage-driver", "overlay2" ]
   # Monitor for image deletes and invoke a TRIM on the container filesystem
   - name: trim-after-delete
     image: "linuxkit/trim-after-delete:6cc6131300c287fcd40041a28119fee2fc874539"
-
-files:
-    - path: /var/config/docker/daemon.json
-      contents: '{ "debug": true }'
 
 trust:
     org:
