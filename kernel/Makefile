@@ -22,7 +22,7 @@ HASH_COMMIT?=HEAD # Setting this is only really useful with the show-tag target
 HASH?=$(shell git ls-tree --full-tree $(HASH_COMMIT) -- $(CURDIR) | awk '{print $$3}')
 
 ifneq ($(HASH_COMMIT),HEAD) # Others can't be dirty by definition
-DIRTY=$(shell git diff-index --quiet HEAD -- $(CURDIR) || echo "-dirty")
+DIRTY=$(shell  git update-index -q --refresh && git diff-index --quiet HEAD -- $(CURDIR) || echo "-dirty")
 endif
 endif
 
