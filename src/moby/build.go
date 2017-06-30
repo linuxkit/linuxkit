@@ -125,6 +125,18 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	// add additions
 	addition := additions[tp]
 
+	// allocate each container a uid, gid that can be referenced by name
+	idMap := map[string]uint32{}
+	id := uint32(100)
+	for _, image := range m.Onboot {
+		idMap[image.Name] = id
+		id++
+	}
+	for _, image := range m.Services {
+		idMap[image.Name] = id
+		id++
+	}
+
 	if m.Kernel.Image != "" {
 		// get kernel and initrd tarball from container
 		log.Infof("Extract kernel image: %s", m.Kernel.Image)
@@ -157,7 +169,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	for i, image := range m.Onboot {
 		log.Infof("  Create OCI config for %s", image.Image)
 		useTrust := enforceContentTrust(image.Image, &m.Trust)
-		config, err := ConfigToOCI(image, useTrust)
+		config, err := ConfigToOCI(image, useTrust, idMap)
 		if err != nil {
 			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
 		}
@@ -175,7 +187,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	for _, image := range m.Services {
 		log.Infof("  Create OCI config for %s", image.Image)
 		useTrust := enforceContentTrust(image.Image, &m.Trust)
-		config, err := ConfigToOCI(image, useTrust)
+		config, err := ConfigToOCI(image, useTrust, idMap)
 		if err != nil {
 			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
 		}
@@ -187,7 +199,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	}
 
 	// add files
-	err := filesystem(m, iw)
+	err := filesystem(m, iw, idMap)
 	if err != nil {
 		return fmt.Errorf("failed to add filesystem parts: %v", err)
 	}
@@ -335,7 +347,7 @@ func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 	return nil
 }
 
-func filesystem(m Moby, tw *tar.Writer) error {
+func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 	// TODO also include the files added in other parts of the build
 	var addedFiles = map[string]bool{}
 
@@ -372,6 +384,16 @@ func filesystem(m Moby, tw *tar.Writer) error {
 		if dirMode&0007 != 0 {
 			dirMode |= 0001
 		}
+
+		uid, err := idNumeric(f.UID, idMap)
+		if err != nil {
+			return err
+		}
+		gid, err := idNumeric(f.GID, idMap)
+		if err != nil {
+			return err
+		}
+
 		var contents []byte
 		if f.Contents != nil {
 			contents = []byte(*f.Contents)
@@ -414,8 +436,8 @@ func filesystem(m Moby, tw *tar.Writer) error {
 					Name:     root,
 					Typeflag: tar.TypeDir,
 					Mode:     dirMode,
-					Uid:      int(f.UID),
-					Gid:      int(f.GID),
+					Uid:      int(uid),
+					Gid:      int(gid),
 				}
 				err := tw.WriteHeader(hdr)
 				if err != nil {
@@ -428,8 +450,8 @@ func filesystem(m Moby, tw *tar.Writer) error {
 		hdr := &tar.Header{
 			Name: f.Path,
 			Mode: mode,
-			Uid:  int(f.UID),
-			Gid:  int(f.GID),
+			Uid:  int(uid),
+			Gid:  int(gid),
 		}
 		if f.Directory {
 			if f.Contents != nil {

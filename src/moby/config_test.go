@@ -25,6 +25,8 @@ func setupInspect(t *testing.T, label Image) types.ImageInspect {
 }
 
 func TestOverrides(t *testing.T) {
+	idMap := map[string]uint32{}
+
 	var yamlCaps = []string{"CAP_SYS_ADMIN"}
 
 	var yaml = Image{
@@ -42,7 +44,7 @@ func TestOverrides(t *testing.T) {
 
 	inspect := setupInspect(t, label)
 
-	oci, err := ConfigInspectToOCI(yaml, inspect)
+	oci, err := ConfigInspectToOCI(yaml, inspect, idMap)
 	if err != nil {
 		t.Error(err)
 	}
@@ -56,6 +58,8 @@ func TestOverrides(t *testing.T) {
 }
 
 func TestInvalidCap(t *testing.T) {
+	idMap := map[string]uint32{}
+
 	yaml := Image{
 		Name:  "test",
 		Image: "testimage",
@@ -68,8 +72,38 @@ func TestInvalidCap(t *testing.T) {
 
 	inspect := setupInspect(t, label)
 
-	_, err := ConfigInspectToOCI(yaml, inspect)
+	_, err := ConfigInspectToOCI(yaml, inspect, idMap)
 	if err == nil {
 		t.Error("expected error, got valid OCI config")
+	}
+}
+
+func TestIdMap(t *testing.T) {
+	idMap := map[string]uint32{"test": 199}
+
+	uid := "test"
+	gid := "76"
+
+	yaml := Image{
+		Name:  "test",
+		Image: "testimage",
+		UID:   &uid,
+		GID:   &gid,
+	}
+
+	var label = Image{}
+
+	inspect := setupInspect(t, label)
+
+	oci, err := ConfigInspectToOCI(yaml, inspect, idMap)
+	if err != nil {
+		t.Error(err)
+	}
+
+	if oci.Process.User.UID != 199 {
+		t.Error("Expected named uid to work")
+	}
+	if oci.Process.User.GID != 76 {
+		t.Error("Expected numerical gid to work")
 	}
 }

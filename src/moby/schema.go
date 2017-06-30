@@ -25,8 +25,8 @@ var schema = string(`
           "source": {"type": "string"},
           "optional": {"type": "boolean"},
           "mode": {"type": "string"},
-          "uid": {"type": "integer"},
-          "gid": {"type": "integer"}
+          "uid": {"type": "string"},
+          "gid": {"type": "string"}
         }
     },
     "files": {
@@ -81,11 +81,11 @@ var schema = string(`
         "readonly": { "type": "boolean"},
         "maskedPaths": { "$ref": "#/definitions/strings" },
         "readonlyPaths": { "$ref": "#/definitions/strings" },
-        "uid": {"type": "integer"},
-        "gid": {"type": "integer"},
+        "uid": {"type": "string"},
+        "gid": {"type": "string"},
         "additionalGids": {
             "type": "array",
-            "items": { "type": "integer" }
+            "items": { "type": "string" }
         },
         "noNewPrivileges": {"type": "boolean"},
         "hostname": {"type": "string"},
