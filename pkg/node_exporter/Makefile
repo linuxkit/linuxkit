@@ -1,3 +1,3 @@
-include ../package.mk
-
 IMAGE=node_exporter
+
+include ../package.mk

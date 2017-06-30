@@ -1,3 +1,3 @@
-include ../package.mk
-
 IMAGE=ca-certificates
+
+include ../package.mk

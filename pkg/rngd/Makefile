@@ -1,3 +1,3 @@
-include ../package.mk
-
 IMAGE=rngd
+
+include ../package.mk

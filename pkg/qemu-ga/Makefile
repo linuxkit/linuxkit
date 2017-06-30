@@ -1,3 +1,3 @@
-include ../package.mk
-
 IMAGE=qemu-ga
+
+include ../package.mk

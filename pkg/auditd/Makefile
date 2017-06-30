@@ -1,3 +1,3 @@
-include ../package.mk
-
 IMAGE?=auditd
+
+include ../package.mk
