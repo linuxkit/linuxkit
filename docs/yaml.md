@@ -105,6 +105,7 @@ bind mounted into a container.
   extracted from this so they need not be filled in.
 - `capabilities` the Linux capabilities required, for example `CAP_SYS_ADMIN`. If there is a single
   capability `all` then all capabilities are added.
+- `ambient` the Linux ambient capabilities (capabilities passed to non root users) that are required.
 - `mounts` is the full form for specifying a mount, which requires `type`, `source`, `destination`
   and a list of `options`. If any fields are omitted, sensible defaults are used if possible, for example
   if the `type` is `dev` it is assumed you want to mount at `/dev`. The default mounts and their options
