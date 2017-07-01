@@ -40,9 +40,9 @@ To simplify the process, two `onboot` images are available for you to use:
 ```yml
 onboot:
   - name: format
-    image: "linuxkit/format:ba085fdcac31c383acee3b4b91d78eb7095e5ac3"
+    image: "linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954"
   - name: mount
-    image: "linuxkit/mount:fe22dc5cbf109b4637b1caaafc76ccbf5140c3da"
+    image: "linuxkit/mount:b24bd97ae43397b469dbaadd80f17f291c817bdf"
     command: ["/mount.sh", "/var/external"]
 ```
 
