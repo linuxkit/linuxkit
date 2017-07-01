@@ -17,10 +17,8 @@ RUN apk add --no-cache --initdb -p /out \
 	xz
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
-FROM linuxkit/vpnkit-forwarder:e2776b82ddfe82ed7f90e55d7a2b424e62e9a279 AS vpnkit
 FROM scratch
 COPY --from=mirror /out/ /
-COPY --from=vpnkit /vpnkit-expose-port /usr/bin/vpnkit-expose-port
 
 # set up Docker group
 # set up subuid/subgid so that "--userns-remap=default" works out-of-the-box
