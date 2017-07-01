@@ -3,6 +3,7 @@ kernel:
   image: "linuxkit/kernel:4.9.35"
   cmdline: "console=ttyS0 page_poison=1"
 init:
+  - linuxkit/vpnkit-expose-port:b9bbd9b79c4682daec991c71934341b50772de00 # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
   - linuxkit/init:36c56f0664d49c5a6adc1120d1bf5ba6ac30b389
   - linuxkit/runc:291131ec026430371e7c36165c3f43734fbc2541
   - linuxkit/containerd:1e3e8f207421de8deac8cedc26a138d6b1661a0d
@@ -52,7 +53,7 @@ services:
   # vpnkit-forwarder forwards network traffic to/from the host via VSOCK port 62373. 
   # It needs access to the vpnkit 9P coordination share 
   - name: vpnkit-forwarder
-    image: "linuxkit/vpnkit-forwarder:e2776b82ddfe82ed7f90e55d7a2b424e62e9a279"
+    image: "linuxkit/vpnkit-forwarder:79aaeefac19b396396a3d3073c0a082735e86673"
     binds:
         - /var/vpnkit:/port
     net: host

@@ -8,8 +8,8 @@ RUN git clone https://github.com/moby/vpnkit.git /go/src/github.com/moby/vpnkit 
     cd /go/src/github.com/moby/vpnkit && \
     git checkout $COMMIT && \
     cd go && \
-    make build/vpnkit-forwarder.linux
+    make build/vpnkit-iptables-wrapper.linux build/vpnkit-expose-port.linux
 
 FROM scratch
-COPY --from=mirror /go/src/github.com/moby/vpnkit/go/build/vpnkit-forwarder.linux /vpnkit-forwarder
-CMD ["/vpnkit-forwarder"]
+COPY --from=mirror /go/src/github.com/moby/vpnkit/go/build/vpnkit-iptables-wrapper.linux /usr/bin/vpnkit-iptables-wrapper
+COPY --from=mirror /go/src/github.com/moby/vpnkit/go/build/vpnkit-expose-port.linux /usr/bin/vpnkit-expose-port
