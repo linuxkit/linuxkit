@@ -2,19 +2,19 @@ kernel:
   image: "linuxkit/kernel:4.9.35"
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:36c56f0664d49c5a6adc1120d1bf5ba6ac30b389
-  - linuxkit/runc:291131ec026430371e7c36165c3f43734fbc2541
-  - linuxkit/containerd:1e3e8f207421de8deac8cedc26a138d6b1661a0d
-  - linuxkit/ca-certificates:46b59484919bfa9af700e54e042048cb06261de4
+  - linuxkit/init:24942921d1356bb801b30ca6d7197d2bfdcc26f9
+  - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
+  - linuxkit/containerd:e0607d117e0286792c5bd62d9a7e2a9c49be3bbf
+  - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:3aa6bc663c2849ef239be7d941d3eaf3e6fcc018"
+    image: "linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0"
   - name: sysfs
-    image: linuxkit/sysfs:b4091d81261f4582ff899a8510110fc4f2be2b49
+    image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
   - name: binfmt
-    image: "linuxkit/binfmt:24e2b996f7d6ad20bfa9c9f1564a3c6172db47ce"
+    image: "linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5"
   - name: format
-    image: "linuxkit/format:ba085fdcac31c383acee3b4b91d78eb7095e5ac3"
+    image: "linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954"
   - name: mounts
     image: "linuxkit/kubernetes:latest-mounts"
     capabilities:
@@ -26,19 +26,19 @@ onboot:
      - /var:/var:rshared,rbind
 services:
   - name: getty
-    image: "linuxkit/getty:6d35e3fe138aaeaf099b5b4f31b3f12ba725cb49"
+    image: "linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c"
     env:
      - INSECURE=true
   - name: rngd
-    image: "linuxkit/rngd:b50b22dd574c5377708977af769f053009fff6d5"
+    image: "linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:6c1ca76dbf808d5c27d10cbf22a8d4399be5c8ae"
+    image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
   - name: ntpd
-    image: "linuxkit/openntpd:a4c642d52e985922fcd97db52e471db123cc6841"
+    image: "linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90"
   - name: sshd
-    image: "linuxkit/sshd:7535658a08a01c61e2851e4bc1f6346e89412de8"
+    image: "linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb"
   - name: docker
-    image: "linuxkit/docker-ce:9e125aa533108731d11f6d7ec17aba6ded0cb4eb"
+    image: "linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190"
     capabilities:
      - all
     net: host

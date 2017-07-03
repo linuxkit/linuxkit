@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
-  - linuxkit/runc:24dfe632ed3ff53a026ee3fac046fd544434e2d6
+  - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
   - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
   - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
   - linuxkit/wireguard-utils:26fe3d38455f2d441549e3c54bdec1b26ac819b8
@@ -13,11 +13,11 @@ onboot:
   - name: binfmt
     image: "linuxkit/binfmt:603e5f064b3e8a64088c0fcf7a80d2783541ee1d"
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:6c1ca76dbf808d5c27d10cbf22a8d4399be5c8ae"
+    image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:69f951ce2a3a9534dbbc7ba8119e1df4391f06c0"
+    image: "linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b"
   - name: nginx
     image: "nginx:alpine"
     capabilities:

@@ -2,12 +2,12 @@ kernel:
   image: "linuxkit/kernel:4.9.35"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:36c56f0664d49c5a6adc1120d1bf5ba6ac30b389
-  - linuxkit/runc:291131ec026430371e7c36165c3f43734fbc2541
-  - linuxkit/containerd:1e3e8f207421de8deac8cedc26a138d6b1661a0d
+  - linuxkit/init:24942921d1356bb801b30ca6d7197d2bfdcc26f9
+  - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
+  - linuxkit/containerd:e0607d117e0286792c5bd62d9a7e2a9c49be3bbf
 onboot:
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:6c1ca76dbf808d5c27d10cbf22a8d4399be5c8ae"
+    image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: mount-vpnkit
     image: "alpine:3.6"
@@ -19,15 +19,15 @@ onboot:
     command: ["sh", "-c", "mkdir /host_var/vpnkit && mount -v -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /host_var/vpnkit"]
 services:
   - name: sshd
-    image: "linuxkit/sshd:7535658a08a01c61e2851e4bc1f6346e89412de8"
+    image: "linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb"
   - name: vpnkit-forwarder
-    image: "linuxkit/vpnkit-forwarder:e2776b82ddfe82ed7f90e55d7a2b424e62e9a279"
+    image: "linuxkit/vpnkit-forwarder:9c1545e7b093d1210118de7661d7346393ec195b"
     binds:
         - /var/vpnkit:/port
     net: host
     command: ["/vpnkit-forwarder"]
   - name: vpnkit-expose-port
-    image: "linuxkit/vpnkit-forwarder:e2776b82ddfe82ed7f90e55d7a2b424e62e9a279"
+    image: "linuxkit/vpnkit-forwarder:9c1545e7b093d1210118de7661d7346393ec195b"
     net: none
     binds:
         - /var/vpnkit:/port

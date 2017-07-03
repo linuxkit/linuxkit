@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:451603daf499e3a40308dbf5571dcffed2343ffa AS mirror
+FROM linuxkit/alpine:9bcf61f605ef0ce36cc94d59b8eac307862de6e1 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \
@@ -11,14 +11,14 @@ FROM scratch
 WORKDIR /
 COPY --from=mirror /out/ /
 
-# Add docker
-ENV DOCKER_BUCKET get.docker.com
-ENV DOCKER_VERSION 17.05.0-ce
-ENV DOCKER_SHA256 340e0b5a009ba70e1b644136b94d13824db0aeb52e09071410f35a95d94316d9
+# DOCKER_TYPE is stable, edge or test
+ENV DOCKER_TYPE stable
+ENV DOCKER_VERSION 17.06.0-ce
+ENV DOCKER_SHA256 e582486c9db0f4229deba9f8517145f8af6c5fae7a1243e6b07876bd3e706620
 
 # Install just the client
 RUN set -x \
-        && curl -fSL "https://${DOCKER_BUCKET}/builds/Linux/x86_64/docker-${DOCKER_VERSION}.tgz" -o docker.tgz \
+        && curl -fSL "https://download.docker.com/linux/static/${DOCKER_TYPE}/$(uname -m)/docker-${DOCKER_VERSION}.tgz" -o docker.tgz \
         && echo "${DOCKER_SHA256} *docker.tgz" | sha256sum -c - \
         && tar -xzvf docker.tgz \
         && mv docker/docker /usr/bin/ \

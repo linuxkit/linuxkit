@@ -55,4 +55,4 @@ COPY --from=shellcheck /usr/local/lib/ /usr/local/lib/
 
 RUN apk update && apk upgrade -a
 
-ARG CONTAINERD_COMMIT=c215531a8f63a98a69134e804fea4ee6d354bb90
+ENV CONTAINERD_COMMIT=c215531a8f63a98a69134e804fea4ee6d354bb90
