@@ -2,9 +2,9 @@ kernel:
   image: "linuxkit/kernel:4.11.8"
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:24942921d1356bb801b30ca6d7197d2bfdcc26f9
+  - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
   - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
-  - linuxkit/containerd:e0607d117e0286792c5bd62d9a7e2a9c49be3bbf
+  - linuxkit/containerd:c977f27c234d55b85172813b8451f67ea86be4a3
 onboot:
   - name: check-kernel-config
     image: "linuxkit/test-kernel-config:9f08e3b99f8ac2f422251b3e8c94ce874ee34119"
