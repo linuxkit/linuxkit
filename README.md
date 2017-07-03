@@ -123,7 +123,7 @@ There is an [overview of the security considerations and direction](docs/securit
 ## Roadmap
 
 This project was extensively reworked from the code we are shipping in Docker Editions, and the result is not yet production quality. The plan is to return to production
-quality during Q2 2017, and rebase the Docker Editions on this open source project.
+quality during Q3 2017, and rebase the Docker Editions on this open source project during this quarter. We plan to start making stable releases on this timescale.
 
 This is an open project without fixed judgements, open to the community to set the direction. The guiding principles are:
 - Security informs design
