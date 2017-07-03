@@ -33,3 +33,4 @@ WORKDIR /
 COPY --from=alpine /usr/bin/containerd /usr/bin/ctr /usr/bin/dist /usr/bin/containerd-shim /go/bin/service /usr/bin/
 COPY --from=alpine /etc/containerd/config.toml /etc/containerd/
 COPY --from=alpine /usr/share/zoneinfo/UTC /etc/localtime
+COPY etc etc/
