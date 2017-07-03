@@ -1,0 +1,5 @@
+FROM linuxkit/guestfs:2657580764d5791e103647237dac5a0276533e2e@sha256:8f99eba6720df17bce8893052d7ca9a07cdc9cd09b335a5a9c57ebd5a44934be
+
+COPY . .
+
+ENTRYPOINT [ "/make-gcp" ]

@@ -1,0 +1,55 @@
+#!/bin/sh
+
+set -e
+
+mkdir -p /tmp/image
+cd /tmp/image
+
+# input is a tarball of kernel and initrd.img on stdin
+# output is a compressed tarball of a raw disk image on stdout
+
+mkdir -p files
+
+cd files
+
+# extract. As guestfs base is currently Debian, no compression support
+# only if stdin is a tty, if so need files volume mounted...
+[ -t 0 ] || tar xf -
+
+INITRD="$(find . -name '*.img')"
+KERNEL="$(find . -name kernel -or -name bzImage)"
+CMDLINE="$*"
+
+[ "$KERNEL" = "./kernel" ] || mv "$KERNEL" kernel
+[ "$INITRD" = "./initrd.img" ] || mv "$INITRD" initrd.img
+
+# clean up subdirectories
+find . -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
+
+# should be externally provided as GCP specific
+GCP_CONFIG="earlyprintk=ttyS0,115200 console=ttyS0,115200 vsyscall=emulate page_poison=1"
+
+CFG="DEFAULT linux
+LABEL linux
+    KERNEL /kernel
+    INITRD /initrd.img
+    APPEND ${CMDLINE}
+"
+
+printf "$CFG" > syslinux.cfg
+
+cd ..
+
+tar cf files.tar -C files .
+
+virt-make-fs --size=1G --type=ext4 --partition files.tar disk.raw
+
+guestfish -a disk.raw -m /dev/sda1 <<EOF
+  upload /usr/lib/SYSLINUX/mbr.bin /mbr.bin
+  copy-file-to-device /mbr.bin /dev/sda size:440
+  rm /mbr.bin
+  extlinux /
+  part-set-bootable /dev/sda 1 true
+EOF
+
+tar cf - disk.raw | gzip -9
