@@ -49,6 +49,15 @@ if [ -f $ROOTSHADOW ]; then
 	echo >> /etc/shadow
 fi
 
+# check for scripts that should be added to profile.d
+PROFILED=/hostroot/etc/profile.d/
+for f in ${PROFILED}*.sh; do
+	filename="$(basename ${f})"
+	if [ ! -f "/etc/profile.d/${filename}" ]; then
+		cp "${f}" /etc/profile.d/
+	fi
+done
+
 for opt in $(cat /proc/cmdline); do
 	case "$opt" in
 	console=*)
