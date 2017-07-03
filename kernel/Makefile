@@ -12,25 +12,21 @@
 # which is specific to a given kernel. perf packages are tagged the same way
 # kernel packages.
 
-# Git tree hash of this directory. Override to force build
-HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 # Name and Org on Hub
 ORG?=linuxkit
 IMAGE:=kernel
 IMAGE_PERF:=kernel-perf
 
-# Add '-dirty' to hash if the repository is not clean. make does not
-# concatenate strings without spaces, so we use the documented trick
-# of replacing the space with nothing.
-DIRTY=$(shell git diff-index --quiet HEAD --; echo $$?)
-ifneq ($(DIRTY),0)
-HASH+=-dirty
-nullstring :=
-space := $(nullstring) $(nullstring)
-TAG=$(subst $(space),,$(HASH))
-else
-TAG=$(HASH)
+ifeq ($(HASH),)
+HASH_COMMIT?=HEAD # Setting this is only really useful with the show-tag target
+HASH?=$(shell git ls-tree --full-tree $(HASH_COMMIT) -- $(CURDIR) | awk '{print $$3}')
+
+ifneq ($(HASH_COMMIT),HEAD) # Others can't be dirty by definition
+DIRTY=$(shell  git update-index -q --refresh && git diff-index --quiet HEAD -- $(CURDIR) || echo "-dirty")
 endif
+endif
+
+TAG=$(HASH)$(DIRTY)
 
 .PHONY: check tag push
 # Targets:
@@ -59,14 +55,18 @@ build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) kernel_config-$(2
 			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) .
 
 push_$(2)$(3): build_$(2)$(3)
-	@if [ $(DIRTY) -ne 0 ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
 	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) || \
 		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) && \
 		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) $(ORG)/$(IMAGE):$(1)$(3) && \
 		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3))
 
+show-tag_$(2)$(3):
+	@echo $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)
+
 build: build_$(2)$(3)
 push: push_$(2)$(3)
+show-tags: show-tag_$(2)$(3)
 
 ifneq ($(2), 4.4.x)
 build_perf_$(2)$(3): build_$(2)$(3)
@@ -76,7 +76,7 @@ build_perf_$(2)$(3): build_$(2)$(3)
 	 		--no-cache --network=none -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) .
 
 push_perf_$(2)$(3): build_perf_$(2)$(3)
-	@if [ $(DIRTY) -ne 0 ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
 	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) || \
 		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) && \
 		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) $(ORG)/$(IMAGE_PERF):$(1)$(3) && \

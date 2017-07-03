@@ -1,4 +1,4 @@
-DIRS = $(shell find . -type d -depth 1)
+DIRS = $(shell find . -maxdepth 1 -mindepth 1 -type d)
 .PHONY: clean dirs $(DIRS)
 
 push:

@@ -1,22 +1,19 @@
-.PHONY: tag push
+.PHONY: image tag show-tag
 default: push
 
 ORG?=linuxkit
-HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
-BASE_DEPS=Dockerfile Makefile
+ifeq ($(HASH),)
+HASH_COMMIT?=HEAD # Setting this is only really useful with the show-tag target
+HASH?=$(shell git ls-tree --full-tree $(HASH_COMMIT) -- $(CURDIR) | awk '{print $$3}')
 
-# Add '-dirty' to hash if the repository is not clean. make does not
-# concatenate strings without spaces, so we use the documented trick
-# of replacing the space with nothing.
-DIRTY=$(shell git diff-index --quiet HEAD --; echo $$?)
-ifneq ($(DIRTY),0)
-HASH+=-dirty
-nullstring :=
-space := $(nullstring) $(nullstring)
-TAG=$(subst $(space),,$(HASH))
-else
-TAG=$(HASH)
+ifneq ($(HASH_COMMIT),HEAD) # Others can't be dirty by definition
+DIRTY=$(shell git update-index -q --refresh && git diff-index --quiet HEAD -- $(CURDIR) || echo "-dirty")
 endif
+endif
+
+TAG=$(ORG)/$(IMAGE):$(HASH)$(DIRTY)
+
+BASE_DEPS=Dockerfile Makefile
 
 # Get a release tag, if present
 RELEASE=$(shell git tag -l --points-at HEAD)
@@ -27,17 +24,20 @@ else
 NET_OPT=--network=none
 endif
 
+show-tag:
+	@echo $(TAG)
+
 tag: $(BASE_DEPS) $(DEPS)
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(TAG) || \
-	docker build $(NET_OPT) -t $(ORG)/$(IMAGE):$(TAG) .
+	DOCKER_CONTENT_TRUST=1 docker pull $(TAG) || \
+	docker build $(NET_OPT) -t $(TAG) .
 
 push: tag
-ifneq ($(DIRTY),0)
+ifneq ($(DIRTY),)
 	$(error Your repository is not clean. Will not push package image.)
 endif
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(TAG) || \
-	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(TAG)
+	DOCKER_CONTENT_TRUST=1 docker pull $(TAG) || \
+	DOCKER_CONTENT_TRUST=1 docker push $(TAG)
 ifneq ($(RELEASE),)
-	docker tag $(ORG)/$(IMAGE):$(TAG) $(ORG)/$(IMAGE):$(RELEASE)	
+	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
 	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(RELEASE)
 endif
