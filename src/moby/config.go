@@ -51,34 +51,37 @@ type File struct {
 
 // Image is the type of an image config
 type Image struct {
-	Name              string             `yaml:"name" json:"name"`
-	Image             string             `yaml:"image" json:"image"`
-	Capabilities      *[]string          `yaml:"capabilities" json:"capabilities,omitempty"`
-	Ambient           *[]string          `yaml:"ambient" json:"ambient,omitempty"`
-	Mounts            *[]specs.Mount     `yaml:"mounts" json:"mounts,omitempty"`
-	Binds             *[]string          `yaml:"binds" json:"binds,omitempty"`
-	Tmpfs             *[]string          `yaml:"tmpfs" json:"tmpfs,omitempty"`
-	Command           *[]string          `yaml:"command" json:"command,omitempty"`
-	Env               *[]string          `yaml:"env" json:"env,omitempty"`
-	Cwd               string             `yaml:"cwd" json:"cwd"`
-	Net               string             `yaml:"net" json:"net"`
-	Pid               string             `yaml:"pid" json:"pid"`
-	Ipc               string             `yaml:"ipc" json:"ipc"`
-	Uts               string             `yaml:"uts" json:"uts"`
-	Hostname          string             `yaml:"hostname" json:"hostname"`
-	Readonly          *bool              `yaml:"readonly" json:"readonly,omitempty"`
-	MaskedPaths       *[]string          `yaml:"maskedPaths" json:"maskedPaths,omitempty"`
-	ReadonlyPaths     *[]string          `yaml:"readonlyPaths" json:"readonlyPaths,omitempty"`
-	UID               *string            `yaml:"uid" json:"uid,omitempty"`
-	GID               *string            `yaml:"gid" json:"gid,omitempty"`
-	AdditionalGids    *[]string          `yaml:"additionalGids" json:"additionalGids,omitempty"`
-	NoNewPrivileges   *bool              `yaml:"noNewPrivileges" json:"noNewPrivileges,omitempty"`
-	OOMScoreAdj       *int               `yaml:"oomScoreAdj" json:"oomScoreAdj,omitempty"`
-	DisableOOMKiller  *bool              `yaml:"disableOOMKiller" json:"disableOOMKiller,omitempty"`
-	RootfsPropagation *string            `yaml:"rootfsPropagation" json:"rootfsPropagation,omitempty"`
-	CgroupsPath       *string            `yaml:"cgroupsPath" json:"cgroupsPath,omitempty"`
-	Sysctl            *map[string]string `yaml:"sysctl" json:"sysctl,omitempty"`
-	Rlimits           *[]string          `yaml:"rlimits" json:"rlimits,omitempty"`
+	Name              string                  `yaml:"name" json:"name"`
+	Image             string                  `yaml:"image" json:"image"`
+	Capabilities      *[]string               `yaml:"capabilities" json:"capabilities,omitempty"`
+	Ambient           *[]string               `yaml:"ambient" json:"ambient,omitempty"`
+	Mounts            *[]specs.Mount          `yaml:"mounts" json:"mounts,omitempty"`
+	Binds             *[]string               `yaml:"binds" json:"binds,omitempty"`
+	Tmpfs             *[]string               `yaml:"tmpfs" json:"tmpfs,omitempty"`
+	Command           *[]string               `yaml:"command" json:"command,omitempty"`
+	Env               *[]string               `yaml:"env" json:"env,omitempty"`
+	Cwd               string                  `yaml:"cwd" json:"cwd"`
+	Net               string                  `yaml:"net" json:"net"`
+	Pid               string                  `yaml:"pid" json:"pid"`
+	Ipc               string                  `yaml:"ipc" json:"ipc"`
+	Uts               string                  `yaml:"uts" json:"uts"`
+	Userns            string                  `yaml:"userns" json:"userns"`
+	Hostname          string                  `yaml:"hostname" json:"hostname"`
+	Readonly          *bool                   `yaml:"readonly" json:"readonly,omitempty"`
+	MaskedPaths       *[]string               `yaml:"maskedPaths" json:"maskedPaths,omitempty"`
+	ReadonlyPaths     *[]string               `yaml:"readonlyPaths" json:"readonlyPaths,omitempty"`
+	UID               *string                 `yaml:"uid" json:"uid,omitempty"`
+	GID               *string                 `yaml:"gid" json:"gid,omitempty"`
+	AdditionalGids    *[]string               `yaml:"additionalGids" json:"additionalGids,omitempty"`
+	NoNewPrivileges   *bool                   `yaml:"noNewPrivileges" json:"noNewPrivileges,omitempty"`
+	OOMScoreAdj       *int                    `yaml:"oomScoreAdj" json:"oomScoreAdj,omitempty"`
+	DisableOOMKiller  *bool                   `yaml:"disableOOMKiller" json:"disableOOMKiller,omitempty"`
+	RootfsPropagation *string                 `yaml:"rootfsPropagation" json:"rootfsPropagation,omitempty"`
+	CgroupsPath       *string                 `yaml:"cgroupsPath" json:"cgroupsPath,omitempty"`
+	Sysctl            *map[string]string      `yaml:"sysctl" json:"sysctl,omitempty"`
+	Rlimits           *[]string               `yaml:"rlimits" json:"rlimits,omitempty"`
+	UIDMappings       *[]specs.LinuxIDMapping `yaml:"uidMappings" json:"uidMappings,omitempty"`
+	GIDMappings       *[]specs.LinuxIDMapping `yaml:"gidMappings" json:"gidMappings,omitempty"`
 }
 
 // github.com/go-yaml/yaml treats map keys as interface{} while encoding/json
@@ -390,6 +393,17 @@ func assignString(v1, v2 *string) string {
 	return ""
 }
 
+// assignMappings does prdered overrides from UID, GID maps
+func assignMappings(v1, v2 *[]specs.LinuxIDMapping) []specs.LinuxIDMapping {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return []specs.LinuxIDMapping{}
+}
+
 // assignStringEmpty does ordered overrides if strings are empty, for
 // values where there is always an explicit override eg "none"
 func assignStringEmpty(v1, v2 string) string {
@@ -604,7 +618,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	namespaces := []specs.LinuxNamespace{}
 	// to attach to an existing namespace, easiest to bind mount with nsfs in a system container
 
-	// net, ipc and uts namespaces: default to not creating a new namespace (usually host namespace)
+	// net, ipc, and uts namespaces: default to not creating a new namespace (usually host namespace)
 	netNS := assignStringEmpty3("root", label.Net, yaml.Net)
 	if netNS != "host" && netNS != "root" {
 		if netNS == "none" || netNS == "new" {
@@ -636,10 +650,19 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.PIDNamespace, Path: pidNS})
 	}
 
+	// do not create a user namespace unless asked, needs additional configuration
+	userNS := assignStringEmpty3("root", label.Userns, yaml.Userns)
+	if userNS != "host" && userNS != "root" {
+		if userNS == "new" {
+			userNS = ""
+		}
+		namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.UserNamespace, Path: userNS})
+	}
+
 	// Always create a new mount namespace
 	namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.MountNamespace})
 
-	// TODO user, cgroup namespaces
+	// TODO cgroup namespaces
 
 	// Capabilities
 	capCheck := map[string]bool{}
@@ -806,9 +829,9 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	oci.Mounts = mountList
 
 	oci.Linux = &specs.Linux{
-		// UIDMappings
-		// GIDMappings
-		Sysctl: assignMaps(label.Sysctl, yaml.Sysctl),
+		UIDMappings: assignMappings(label.UIDMappings, yaml.UIDMappings),
+		GIDMappings: assignMappings(label.GIDMappings, yaml.GIDMappings),
+		Sysctl:      assignMaps(label.Sysctl, yaml.Sysctl),
 		Resources: &specs.LinuxResources{
 			// Devices
 			DisableOOMKiller: assignBoolPtr(label.DisableOOMKiller, yaml.DisableOOMKiller),

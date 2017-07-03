@@ -59,6 +59,19 @@ var schema = string(`
       "type": "array",
       "items": { "$ref": "#/definitions/mount" }
     },
+    "idmapping": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "hostID": { "type": "integer" },
+        "containerID": { "type": "integer" },
+        "size": { "type": "integer" }
+      }
+    },
+    "idmappings": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/idmapping" }
+    },
     "image": {
       "type": "object",
       "additionalProperties": false,
@@ -78,6 +91,7 @@ var schema = string(`
         "pid": { "type": "string"},
         "ipc": { "type": "string"},
         "uts": { "type": "string"},
+        "userns": { "type": "string"},
         "readonly": { "type": "boolean"},
         "maskedPaths": { "$ref": "#/definitions/strings" },
         "readonlyPaths": { "$ref": "#/definitions/strings" },
@@ -97,7 +111,9 @@ var schema = string(`
             "type": "array",
             "items": { "$ref": "#/definitions/strings" }
         },
-        "rlimits": { "$ref": "#/definitions/strings" }
+        "rlimits": { "$ref": "#/definitions/strings" },
+        "uidMappings": { "$ref": "#/definitions/idmappings" },
+        "gidMappings": { "$ref": "#/definitions/idmappings" }
       }
     },
     "images": {
