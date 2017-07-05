@@ -1,0 +1,17 @@
+kernel:
+  image: "linuxkit/kernel:4.11.9"
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
+  - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
+  - linuxkit/containerd:c977f27c234d55b85172813b8451f67ea86be4a3
+onboot:
+  - name: test-netns
+    image: "linuxkit/test-netns:3e02fb2730ad29a732eb2d4c711cb890169ed776"
+    command: ["/bin/sh", "/runp.sh", "20", "/netns.sh", "-r", "-i", "20", "-c", "5", "-t", "veth", "-p", "-udp", "-ip", "6"]
+  - name: poweroff
+    image: "linuxkit/poweroff:bce51402e293da0b653923a43c3c7be6e0effa05"
+    command: ["/bin/sh", "/poweroff.sh", "3"]
+trust:
+  org:
+    - linuxkit
