@@ -13,6 +13,7 @@ bsd-compat-headers
 btrfs-progs
 btrfs-progs-dev
 build-base
+busybox-initscripts
 ca-certificates
 cdrkit
 cmake

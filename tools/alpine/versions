@@ -20,6 +20,7 @@ btrfs-progs-dev-4.10.2-r0
 btrfs-progs-libs-4.10.2-r0
 build-base-0.5-r0
 busybox-1.26.2-r5
+busybox-initscripts-3.1-r1
 bzip2-1.0.6-r5
 ca-certificates-20161130-r2
 cdrkit-1.1.11-r2
