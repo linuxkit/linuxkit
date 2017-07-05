@@ -99,7 +99,7 @@ libexecinfo-dev-1.1-r0
 libfdisk-2.28.2-r2
 libffi-3.2.1-r3
 libgcc-6.3.0-r4
-libgcrypt-1.7.7-r0
+libgcrypt-1.7.8-r0
 libgmpxx-6.1.2-r0
 libgomp-6.3.0-r4
 libgpg-error-1.27-r0
@@ -151,9 +151,9 @@ mkinitfs-3.1.0-r0
 mpc1-1.0.3-r0
 mpfr3-3.1.5-r0
 mtools-4.0.18-r1
-musl-1.1.16-r10
-musl-dev-1.1.16-r10
-musl-utils-1.1.16-r10
+musl-1.1.16-r13
+musl-dev-1.1.16-r13
+musl-utils-1.1.16-r13
 ncurses-dev-6.0-r7
 ncurses-libs-6.0-r7
 ncurses-terminfo-6.0-r7
