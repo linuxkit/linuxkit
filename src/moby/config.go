@@ -765,12 +765,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 
 	oci.Version = specs.Version
 
-	oci.Platform = specs.Platform{
-		OS:   inspect.Os,
-		Arch: inspect.Architecture,
-	}
-
-	oci.Process = specs.Process{
+	oci.Process = &specs.Process{
 		Terminal: false,
 		//ConsoleSize
 		User: specs.User{
@@ -792,8 +787,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 		Rlimits:         rlimits,
 		NoNewPrivileges: assignBool(label.NoNewPrivileges, yaml.NoNewPrivileges),
 		// ApparmorProfile
-		// TODO FIXME this has moved in runc spec and needs a revendor and update
-		//OOMScoreAdj: assignIntPtr(label.OOMScoreAdj, yaml.OOMScoreAdj),
+		OOMScoreAdj: assignIntPtr(label.OOMScoreAdj, yaml.OOMScoreAdj),
 		// SelinuxLabel
 	}
 
