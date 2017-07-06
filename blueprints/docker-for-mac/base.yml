@@ -36,6 +36,9 @@ onboot:
     image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
+  # Enable acpi to shutdown on power events
+  - name: acpid
+    image: linuxkit/acpid:1966310cb75e28ffc668863a6577ee991327f918
   # Enable getty for easier debugging
   - name: getty
     image: "linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c"
