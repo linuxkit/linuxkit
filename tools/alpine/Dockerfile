@@ -49,4 +49,4 @@ COPY --from=mirror /Dockerfile /Dockerfile
 
 RUN apk update && apk upgrade -a
 
-ENV CONTAINERD_COMMIT=c215531a8f63a98a69134e804fea4ee6d354bb90
+ENV CONTAINERD_COMMIT=v1.0.0-alpha0
