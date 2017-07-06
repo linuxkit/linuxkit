@@ -1,0 +1,52 @@
+#!/usr/bin/env expect
+spawn linuxkit run hyperkit hyperkit-acpi
+set vm_spawn_id $spawn_id
+set pid [exp_pid]
+set timeout 30
+
+expect {
+    timeout {
+        puts "FAILED boot"
+        exec kill -9 $pid
+        exit 1
+    }
+    "Welcome to LinuxKit" {
+        puts "SUCCESS boot"
+    }
+}
+
+expect {
+    timeout {
+        puts "FAILED ACPI not started"
+        exec kill -9 $pid
+        exit 1
+    }
+    "acpid/shim.sock" {
+        puts "SUCCESS acpid started"
+    }
+}
+
+set f [open "hyperkit-acpi-state/hyperkit.pid" r]
+set hyperkit_pid [read $f]
+close $f
+
+sleep 2
+spawn kill -TERM $hyperkit_pid
+
+expect -i $vm_spawn_id {
+    timeout {
+        puts "FAILED shutdown on SIGTERM"
+        exec kill -9 $pid
+        exit 1
+    }
+    "reboot: Power down" {
+        puts "SUCCESS ACPI shutdown"
+    }
+    eof {
+        puts "SUCCESS ACPI shutdown"
+    }
+}
+
+set waitval [wait -i $vm_spawn_id]
+set exval [lindex $waitval 3]
+exit $exval
