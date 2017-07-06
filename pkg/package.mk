@@ -24,20 +24,24 @@ else
 NET_OPT=--network=none
 endif
 
+ifeq ($(DOCKER_CONTENT_TRUST),)
+ifndef NOTRUST
+export DOCKER_CONTENT_TRUST=1
+endif
+endif
+
 show-tag:
 	@echo $(TAG)
 
 tag: $(BASE_DEPS) $(DEPS)
-	DOCKER_CONTENT_TRUST=1 docker pull $(TAG) || \
-	docker build $(NET_OPT) -t $(TAG) .
+	docker pull $(TAG) || docker build $(NET_OPT) -t $(TAG) .
 
 push: tag
 ifneq ($(DIRTY),)
 	$(error Your repository is not clean. Will not push package image.)
 endif
-	DOCKER_CONTENT_TRUST=1 docker pull $(TAG) || \
-	DOCKER_CONTENT_TRUST=1 docker push $(TAG)
+	docker pull $(TAG) || docker push $(TAG)
 ifneq ($(RELEASE),)
 	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
-	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(RELEASE)
+	docker push $(ORG)/$(IMAGE):$(RELEASE)
 endif
