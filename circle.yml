@@ -9,3 +9,5 @@ jobs:
       - checkout
       - run: go get github.com/golang/lint/golint
       - run: cd $GOPATH/src/github.com/moby/tool && make test
+      - run: cd $GOPATH/src/github.com/moby/tool && make clean && make GOOS=darwin
+      - run: cd $GOPATH/src/github.com/moby/tool && make clean && make GOOS=windows
