@@ -8,6 +8,9 @@ init:
   - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
   - linuxkit/containerd:c977f27c234d55b85172813b8451f67ea86be4a3
 onboot:
+  # support metadata for optional config in /var/config
+  - name: metadata
+    image: "linuxkit/metadata:231fa2a96626af8af6224d2f1d2d71d833f370ea"
   - name: sysctl
     image: "linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0"
   - name: sysfs
