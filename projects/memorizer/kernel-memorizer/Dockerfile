@@ -50,6 +50,8 @@ RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
+#COPY linux-slice /linux
+
 COPY kernel_config-${KERNEL_SERIES} /linux/arch/x86/configs/x86_64_defconfig
 COPY kernel_config.debug /linux/debug_config
 
@@ -106,12 +108,12 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
 # perf (Don't compile for 4.4.x, it's broken and tedious to fix)
-RUN if [ "${KERNEL_SERIES}" != "4.4.x" ]; then \
-       mkdir -p /build/perf && \
-       make -C tools/perf LDFLAGS=-static O=/build/perf && \
-       strip /build/perf/perf && \
-       cp /build/perf/perf /out; \
-     fi
+#RUN if [ "${KERNEL_SERIES}" != "4.4.x" ]; then \
+       #mkdir -p /build/perf && \
+       #make -C tools/perf LDFLAGS=-static O=/build/perf && \
+       #strip /build/perf/perf && \
+       #cp /build/perf/perf /out; \
+     #fi
 
 FROM scratch
 ENTRYPOINT []
