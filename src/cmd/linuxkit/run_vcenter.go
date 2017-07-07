@@ -20,6 +20,7 @@ import (
 
 type vmConfig struct {
 	vCenterURL  *string
+	dcName      *string
 	dsName      *string
 	networkName *string
 	vSphereHost *string
@@ -44,6 +45,7 @@ func runVcenter(args []string) {
 	invoked := filepath.Base(os.Args[0])
 
 	newVM.vCenterURL = flags.String("url", os.Getenv("VCURL"), "URL of VMware vCenter in the format of https://username:password@VCaddress/sdk")
+	newVM.dcName = flags.String("datacenter", os.Getenv("VCDATACENTER"), "The name of the Datacenter to host the VM")
 	newVM.dsName = flags.String("datastore", os.Getenv("VCDATASTORE"), "The name of the DataStore to host the VM")
 	newVM.networkName = flags.String("network", os.Getenv("VCNETWORK"), "The network label the VM will use")
 	newVM.vSphereHost = flags.String("hostname", os.Getenv("VCHOST"), "The server that will run the VM")
@@ -178,7 +180,7 @@ func vCenterConnect(ctx context.Context, newVM vmConfig) (*govmomi.Client, *obje
 	f := find.NewFinder(c.Client, true)
 
 	// Find one and only datacenter, not sure how VMware linked mode will work
-	dc, err := f.DefaultDatacenter(ctx)
+	dc, err := f.DatacenterOrDefault(ctx, *newVM.dcName)
 	if err != nil {
 		log.Fatalf("No Datacenter instance could be found inside of vCenter %v", err)
 	}
