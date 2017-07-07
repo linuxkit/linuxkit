@@ -10,6 +10,9 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/vmware/govmomi"
+	"github.com/vmware/govmomi/object"
+	"github.com/vmware/govmomi/vim25/soap"
 )
 
 // Process the push arguments and execute push
@@ -66,4 +69,30 @@ func pushVCenter(args []string) {
 
 	// The CreateFolder method isn't necessary as the *newVM.vmname will be created automatically
 	uploadFile(c, newVM, dss)
+}
+
+func checkFile(file string) {
+	if _, err := os.Stat(file); err != nil {
+		if os.IsPermission(err) {
+			log.Fatalf("Unable to read file [%s], please check permissions", file)
+		} else if os.IsNotExist(err) {
+			log.Fatalf("File [%s], does not exist", file)
+		} else {
+			log.Fatalf("Unable to stat file [%s]: %v", file, err)
+		}
+	}
+}
+
+func uploadFile(c *govmomi.Client, newVM vmConfig, dss *object.Datastore) {
+	_, fileName := path.Split(*newVM.path)
+	log.Infof("Uploading LinuxKit file [%s]", *newVM.path)
+	if *newVM.path == "" {
+		log.Fatalf("No file specified")
+	}
+	dsurl := dss.NewURL(fmt.Sprintf("%s/%s", *newVM.vmFolder, fileName))
+
+	p := soap.DefaultUpload
+	if err := c.Client.UploadFile(*newVM.path, dsurl, &p); err != nil {
+		log.Fatalf("Unable to upload file to vCenter Datastore\n%v", err)
+	}
 }

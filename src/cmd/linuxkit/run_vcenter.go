@@ -13,7 +13,6 @@ import (
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
-	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
 
 	log "github.com/Sirupsen/logrus"
@@ -89,9 +88,6 @@ func runVcenter(args []string) {
 		log.Fatalln("Please pass an \".iso\" file as the path")
 	}
 
-	// Test any passed in files before creating a new VM
-	checkFile(*newVM.path)
-
 	// Connect to VMware vCenter and return the default and found values needed for a new VM
 	c, dss, folders, hs, net, rp := vCenterConnect(ctx, newVM)
 
@@ -127,7 +123,6 @@ func runVcenter(args []string) {
 	// Retrieve the new VM
 	vm := object.NewVirtualMachine(c.Client, info.Result.(types.ManagedObjectReference))
 
-	uploadFile(c, newVM, dss)
 	addISO(ctx, newVM, vm, dss)
 
 	if *newVM.persistent != "" {
@@ -237,20 +232,6 @@ func powerOnVM(ctx context.Context, vm *object.VirtualMachine) {
 	}
 }
 
-func uploadFile(c *govmomi.Client, newVM vmConfig, dss *object.Datastore) {
-	_, fileName := path.Split(*newVM.path)
-	log.Infof("Uploading LinuxKit file [%s]", *newVM.path)
-	if *newVM.path == "" {
-		log.Fatalf("No file specified")
-	}
-	dsurl := dss.NewURL(fmt.Sprintf("%s/%s", *newVM.vmFolder, fileName))
-
-	p := soap.DefaultUpload
-	if err := c.Client.UploadFile(*newVM.path, dsurl, &p); err != nil {
-		log.Fatalf("Unable to upload file to vCenter Datastore\n%v", err)
-	}
-}
-
 func addNIC(ctx context.Context, vm *object.VirtualMachine, net object.NetworkReference) {
 	backing, err := net.EthernetCardBackingInfo(ctx)
 	if err != nil {
@@ -319,17 +300,5 @@ func addISO(ctx context.Context, newVM vmConfig, vm *object.VirtualMachine, dss 
 
 	if vm.AddDevice(ctx, add...); err != nil {
 		log.Fatalf("Unable to add new CD-ROM device to VM configuration\n%v", err)
-	}
-}
-
-func checkFile(file string) {
-	if _, err := os.Stat(file); err != nil {
-		if os.IsPermission(err) {
-			log.Fatalf("Unable to read file [%s], please check permissions", file)
-		} else if os.IsNotExist(err) {
-			log.Fatalf("File [%s], does not exist", file)
-		} else {
-			log.Fatalf("Unable to stat file [%s]: %v", file, err)
-		}
 	}
 }
