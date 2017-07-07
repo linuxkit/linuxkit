@@ -1,7 +1,7 @@
-From dcd257f478a71d0cf0d9d31cc9e1daf59e08c089 Mon Sep 17 00:00:00 2001
+From daa0ed9004d76620cce3dde8cc2ae679d13aa326 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:29 -0600
-Subject: [PATCH 08/14] VMCI: only try to load on VMware hypervisor
+Subject: [PATCH 08/15] VMCI: only try to load on VMware hypervisor
 
 Without the patch, vmw_vsock_vmci_transport.ko and vmw_vmci.ko can
 automatically load when an application creates an AF_VSOCK socket.

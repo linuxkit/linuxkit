@@ -1,7 +1,7 @@
-From 156389cd321dddf61b89786c69dbc402632d3eae Mon Sep 17 00:00:00 2001
+From 450289bfe78b23f55419274b0bf08221b4c918de Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:15 -0600
-Subject: [PATCH 04/14] vmbus: add the matching tasklet_enable() in
+Subject: [PATCH 04/15] vmbus: add the matching tasklet_enable() in
  vmbus_close_internal()
 
 If we disable a tasklet that is scheduled but hasn't started to run,

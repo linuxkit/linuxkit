@@ -1,7 +1,7 @@
-From dfc55c3f54d5f19a61059b7d5dba4bfaa8270cb0 Mon Sep 17 00:00:00 2001
+From 86991dc78e3b6fa4a4468553960e60e7059f1d61 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Tue, 16 May 2017 22:14:03 +0800
-Subject: [PATCH 10/14] hvsock: fix a race in hvs_stream_dequeue()
+Subject: [PATCH 10/15] hvsock: fix a race in hvs_stream_dequeue()
 
 If hv_pkt_iter_next() returns a non-NULL pointer, we must update
 the recv_data_len/data_off info, otherwise the received data will

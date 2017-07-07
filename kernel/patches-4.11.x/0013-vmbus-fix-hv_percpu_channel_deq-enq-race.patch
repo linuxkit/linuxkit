@@ -1,7 +1,7 @@
-From 49b67e5e6a6e11aad74d379af82021f1eddbaccd Mon Sep 17 00:00:00 2001
+From 6f5032f60fbee1c947cf412599f9f07bd54bd1da Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 16:13:18 +0800
-Subject: [PATCH 13/14] vmbus:  fix hv_percpu_channel_deq/enq race
+Subject: [PATCH 13/15] vmbus:  fix hv_percpu_channel_deq/enq race
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605

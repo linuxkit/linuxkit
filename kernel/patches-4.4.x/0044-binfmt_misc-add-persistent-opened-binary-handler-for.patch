@@ -1,4 +1,4 @@
-From d9b498804640edef8a62a431847ad184e4ec11aa Mon Sep 17 00:00:00 2001
+From 5b697cfb94fa9fcd10963396780082538eea0609 Mon Sep 17 00:00:00 2001
 From: James Bottomley <James.Bottomley@HansenPartnership.com>
 Date: Wed, 17 Feb 2016 16:51:16 -0800
 Subject: [PATCH 44/44] binfmt_misc: add persistent opened binary handler for
