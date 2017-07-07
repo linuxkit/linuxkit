@@ -11,9 +11,9 @@ All local `linuxkit run` methods (currently `hyperkit`, `qemu`, and `vmware`) ta
 
 * `-disk path,size=100M,format=qcow2`. For size the default is in GB but an `M` can be appended to specify sizes in MB. The format can be omitted for the platform default, and is only useful on `qemu` at present.
 
-If the _path` is specified it will use the disk at location _path_, if you do not provide `-disk `_path_, `linuxkit` assumes a default, which is _prefix_`-state/disk.img` for `hyperkit` and `vmware` and _prefix_`-disk.img` for `qemu`. 
+If a _path_ is specified `linuxkit` will use the disk at location _path_. If you do not provide `-disk ` _path_, `linuxkit` assumes a default path, which is _prefix_`-state/disk.img`. 
 
-If the disk at the specified or default `<path>` does not exist, `linuxkit` will create one of size `<size>`.
+If the disk at the specified or default _path_ does not exist, `linuxkit` will create one of size _size_.
 
 The `-disk` specification may be repeated for multiple disks, although a limited number may be supported, and some platforms currently only support a single disk.
 
