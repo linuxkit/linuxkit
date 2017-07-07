@@ -13,7 +13,7 @@ onboot:
     image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: "linuxkit/metadata:231fa2a96626af8af6224d2f1d2d71d833f370ea"
+    image: "linuxkit/metadata:f122f1b4e873f1d08cd67bd9105385fd923af0cb"
 services:
   - name: getty
     image: "linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c"
