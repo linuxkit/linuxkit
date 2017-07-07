@@ -1,8 +1,8 @@
-FROM ocaml/opam@sha256:a469435632d0cacbceab799d7e48201b727d025fa1805cbbe210d94233b251ad
+FROM ocaml/opam@sha256:523988cb7ac4c51e1c6e2f00658686c320330000859f49e1ec8fe3d6df046a26
 #FROM ocaml/opam:debian-9_ocaml-4.04.0
-RUN opam pin add -yn capnp 'https://github.com/talex5/capnp-ocaml.git#demo1'
-RUN opam pin add -yn capnp-rpc 'https://github.com/talex5/capnp-rpc.git#demo1'
-RUN opam pin add -yn capnp-rpc-lwt 'https://github.com/talex5/capnp-rpc.git#demo1'
+RUN opam pin add -yn capnp 'https://github.com/talex5/capnp-ocaml.git#demo2'
+RUN opam pin add -yn capnp-rpc 'https://github.com/talex5/capnp-rpc.git#demo2'
+RUN opam pin add -yn capnp-rpc-lwt 'https://github.com/talex5/capnp-rpc.git#demo2'
 RUN opam depext -i -y jbuilder lwt cohttp astring tls capnp camlzip alcotest cohttp
 RUN sudo apt-get install -y screen python-pip python-setuptools python-dev --no-install-recommends
 RUN pip install cython pycapnp

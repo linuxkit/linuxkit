@@ -21,15 +21,15 @@ let () =
     begin
       Store.service () >>= fun service ->
       let tags = Logs.Tag.add Common.Actor.tag (`Green, "Store ") Logs.Tag.empty in
-      let _ : CapTP.t = CapTP.of_endpoint ~offer:service ~tags ~switch store_to_http in
+      let _ : CapTP.t = CapTP.connect ~offer:service ~tags ~switch store_to_http in
       Lwt.return ()
     end
     >>= fun () ->
     begin
       let tags = Logs.Tag.add Common.Actor.tag (`Red, "HTTP  ") Logs.Tag.empty in
-      let store = CapTP.bootstrap (CapTP.of_endpoint ~tags ~switch http_to_store) in
+      let store = CapTP.bootstrap (CapTP.connect ~tags ~switch http_to_store) in
       let service = Http_server.service store in
-      let _ : CapTP.t = CapTP.of_endpoint ~offer:service ~tags ~switch http_to_tls in
+      let _ : CapTP.t = CapTP.connect ~offer:service ~tags ~switch http_to_tls in
       Lwt.return ()
     end
     >>= fun () ->

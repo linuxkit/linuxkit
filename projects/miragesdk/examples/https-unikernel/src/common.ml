@@ -11,7 +11,7 @@ let connect ~switch path =
     exit 1
   end;
   let endpoint = Endpoint.of_socket ~switch socket in
-  let conn = CapTP.of_endpoint ~switch endpoint in
+  let conn = CapTP.connect ~switch endpoint in
   CapTP.bootstrap conn
 
 let rm_socket path =
@@ -33,7 +33,7 @@ let listen ~switch ~offer path =
     Logs.info (fun f -> f "Got connection on %S" path);
     Lwt_switch.with_switch @@ fun switch ->     (* todo: with_child_switch *)
     let endpoint = Endpoint.of_socket ~switch (Lwt_unix.unix_file_descr c) in
-    ignore (CapTP.of_endpoint ~switch ~offer endpoint);
+    ignore (CapTP.connect ~switch ~offer endpoint);
     loop () in
   loop ()
 
