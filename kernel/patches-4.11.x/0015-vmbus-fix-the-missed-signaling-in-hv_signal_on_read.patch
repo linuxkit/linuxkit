@@ -1,0 +1,47 @@
+From 578f66359c91feb68ba6874522a5b9b357b61e17 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Thu, 6 Jul 2017 21:37:11 +0000
+Subject: [PATCH 15/15] vmbus: fix the missed signaling in hv_signal_on_read()
+
+There is an off-by-one bug here, which can cause host-to-guest write to stall.
+
+When cur_write_sz == pending_sz, we shouldn't signal the host because it's
+meaningless: the ring mustn't be 100% full.
+
+But when cached_write_sz == pending_sz, we must signal the host.
+
+Fixes: 433e19cf33d3 ("Drivers: hv: vmbus: finally fix
+hv_need_to_signal_on_read()")
+
+Signed-off-by: John Starks <John.Starks@microsoft.com>
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Cc: Haiyang Zhang <haiyangz@microsoft.com>
+Cc: Stephen Hemminger <sthemmin@microsoft.com>
+Cc: "K. Y. Srinivasan" <kys@microsoft.com>
+Cc: <stable@vger.kernel.org>
+Origin: https://patchwork.kernel.org/patch/9829039/
+---
+ include/linux/hyperv.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index ba93b7e4a972..246bc6baf745 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -1501,11 +1501,11 @@ static inline  void hv_signal_on_read(struct vmbus_channel *channel)
+ 
+ 	cur_write_sz = hv_get_bytes_to_write(rbi);
+ 
+-	if (cur_write_sz < pending_sz)
++	if (cur_write_sz <= pending_sz)
+ 		return;
+ 
+ 	cached_write_sz = hv_get_cached_bytes_to_write(rbi);
+-	if (cached_write_sz < pending_sz)
++	if (cached_write_sz <= pending_sz)
+ 		vmbus_setevent(channel);
+ 
+ 	return;
+-- 
+2.13.0
+

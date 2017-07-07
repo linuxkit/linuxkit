@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.9.35 Kernel Configuration
+# Linux/x86 4.9.36 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y

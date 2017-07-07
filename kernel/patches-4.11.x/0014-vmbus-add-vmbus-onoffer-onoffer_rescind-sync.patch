@@ -1,7 +1,7 @@
-From 2064263ca20e400fd5bfe9d13e0c43e081dcc27e Mon Sep 17 00:00:00 2001
+From c2369f25d343852682b888928b560c40942398ae Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 21:32:00 +0800
-Subject: [PATCH 14/14] vmbus: add vmbus onoffer/onoffer_rescind sync.
+Subject: [PATCH 14/15] vmbus: add vmbus onoffer/onoffer_rescind sync.
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605

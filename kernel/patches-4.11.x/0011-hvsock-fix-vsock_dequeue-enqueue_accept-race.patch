@@ -1,7 +1,7 @@
-From 83fb0b3ad29ddc6fcce68d2f1010efb19146d4ac Mon Sep 17 00:00:00 2001
+From 2517cc6863d81f64da73fcc715458f5331a3eed0 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 19 May 2017 21:49:59 +0800
-Subject: [PATCH 11/14] hvsock: fix vsock_dequeue/enqueue_accept race
+Subject: [PATCH 11/15] hvsock: fix vsock_dequeue/enqueue_accept race
 
 Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605
 (cherry picked from commit 29e6c6204845176c78c7840377a72389d188563c)
