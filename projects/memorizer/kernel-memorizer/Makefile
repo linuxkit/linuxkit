@@ -15,7 +15,7 @@
 # Git tree hash of this directory. Override to force build
 HASH?=$(shell git ls-tree HEAD -- ../$(notdir $(CURDIR)) | awk '{print $$3}')
 # Name and Org on Hub
-ORG?=ndauten
+ORG?=linuxkitprojects
 IMAGE:=kernel
 IMAGE_PERF:=kernel-perf
 
