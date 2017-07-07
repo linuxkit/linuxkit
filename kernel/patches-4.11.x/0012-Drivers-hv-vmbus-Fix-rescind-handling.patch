@@ -1,7 +1,7 @@
-From e96b7fa77ff1bce7cedebe2c2dde9feee69e0ada Mon Sep 17 00:00:00 2001
+From c10d941318f2fd808ff9316d0a8d676c99f6ba6b Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 30 Apr 2017 16:21:18 -0700
-Subject: [PATCH 12/14] Drivers: hv: vmbus: Fix rescind handling
+Subject: [PATCH 12/15] Drivers: hv: vmbus: Fix rescind handling
 
 Fix the rescind handling. This patch addresses the following rescind
 scenario that is currently not handled correctly:

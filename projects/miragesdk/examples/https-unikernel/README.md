@@ -23,13 +23,12 @@ The easiest way to build and run is using Docker:
 
 Once inside the container, you can run all the services in a single process like this:
 
-    reset
     https-unikernel-single
 
 You should be able to try out the service by opening <https://localhost:8443> in a browser.
 
 You can also run the service as three separate processes.
-The easiest way to do this is by running `screen`.
+The easiest way to do this is by creating multiple windows in `screen` (which is running by default in the Docker image).
 
 First, start the store:
 
@@ -64,7 +63,7 @@ $ python
 ( ok = "<p>It works!</p><p>Powered by Irmin.</p>\n" )
 ```
 
-(or just do `python test_store.py`)
+(or just do `python src/test_store.py`)
 
 
 [Cap'n Proto RPC]: https://capnproto.org/rpc.html

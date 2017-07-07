@@ -17,8 +17,7 @@ module Remote_flow = struct
   let read t =
     let module R = Api.Reader.Flow.Read_results in
     let req = Capability.Request.create_no_args () in
-    let proxy = new Api.Reader.Flow.client t in
-    Capability.call_for_value_exn proxy#read req >>= fun resp ->
+    Capability.call_for_value_exn t Api.Reader.Flow.read_method req >>= fun resp ->
     let p = R.of_payload resp in
     let data = R.data_get p in
     Lwt.return (Ok (`Data (Cstruct.of_string data)))
@@ -26,9 +25,8 @@ module Remote_flow = struct
   let write t data =
     let module P = Api.Builder.Flow.Write_params in
     let req, p = Capability.Request.create P.init_pointer in
-    let proxy = new Api.Reader.Flow.client t in
     P.data_set p (Cstruct.to_string data);
-    Capability.call_for_value_exn proxy#write req >>= fun _ ->
+    Capability.call_for_value_exn t Api.Reader.Flow.write_method req >>= fun _ ->
     Lwt.return (Ok ())
 
   let writev t data =
@@ -77,8 +75,7 @@ let get t path =
   let module P = Api.Builder.Store.Get_params in
   let req, p = Capability.Request.create P.init_pointer in
   ignore (P.path_set_list p path);
-  let proxy = new Api.Reader.Store.client t in
-  Capability.call_for_value_exn proxy#get req >>= fun resp ->
+  Capability.call_for_value_exn t Api.Reader.Store.get_method req >>= fun resp ->
   let open Api.Reader.Store in
   match GetResults.get (GetResults.of_payload resp) with
   | GetResults.NotFound -> Lwt.return None
@@ -119,8 +116,10 @@ let handle_connection store c =
 
 let service store =
   Api.Builder.HttpServer.local @@
-    object (_ : Api.Builder.HttpServer.service)
-      method accept req =
+    object
+      inherit Api.Builder.HttpServer.service
+
+      method accept_impl req =
         Log.info (fun f -> f "Handing new connection");
         let module P = Api.Reader.HttpServer.Accept_params in
         let p = P.of_payload req in

@@ -1,5 +1,5 @@
 kernel:
-  image: "linuxkit/kernel:4.9.35"
+  image: "linuxkit/kernel:4.9.36"
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
@@ -13,7 +13,7 @@ onboot:
     image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: "linuxkit/metadata:231fa2a96626af8af6224d2f1d2d71d833f370ea"
+    image: "linuxkit/metadata:f122f1b4e873f1d08cd67bd9105385fd923af0cb"
 services:
   - name: rngd
     image: "linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b"

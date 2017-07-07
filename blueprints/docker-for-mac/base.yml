@@ -1,6 +1,6 @@
 # This is a blueprint for building the open source components of Docker for Mac
 kernel:
-  image: "linuxkit/kernel:4.9.35"
+  image: "linuxkit/kernel:4.9.36"
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/vpnkit-expose-port:e2b49a6c56fbf876ea24f0a5ce4ccae5f940d1be # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
@@ -10,7 +10,7 @@ init:
 onboot:
   # support metadata for optional config in /var/config
   - name: metadata
-    image: "linuxkit/metadata:231fa2a96626af8af6224d2f1d2d71d833f370ea"
+    image: "linuxkit/metadata:f122f1b4e873f1d08cd67bd9105385fd923af0cb"
   - name: sysctl
     image: "linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0"
   - name: sysfs
@@ -67,6 +67,9 @@ services:
   # Monitor for image deletes and invoke a TRIM on the container filesystem
   - name: trim-after-delete
     image: "linuxkit/trim-after-delete:2a5fcbe080cd4a45bd75c2ea3856c069475d706d"
+  # When the host resumes from sleep, force a clock resync
+  - name: host-timesync-daemon
+    image: "linuxkit/host-timesync-daemon:e6c15e6ef75d302c1c22827bac249598fb365a83"
 
 trust:
     org:

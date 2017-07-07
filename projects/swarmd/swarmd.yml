@@ -1,5 +1,5 @@
 kernel:
-  image: "linuxkit/kernel:4.9.35"
+  image: "linuxkit/kernel:4.9.36"
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
@@ -20,7 +20,7 @@ onboot:
     image: "linuxkit/mount:b24bd97ae43397b469dbaadd80f17f291c817bdf"
     command: ["/mount.sh", "/var/lib/swarmd"]
   - name: metadata
-    image: "linuxkit/metadata:4e73345cdcb4f7e9df07b0ee7aede652960297f2"
+    image: "linuxkit/metadata:f122f1b4e873f1d08cd67bd9105385fd923af0cb"
 services:
   - name: getty
     image: "linuxkit/getty:9f27c1272b6d128c9a09745e916f151d09cb0d27"
