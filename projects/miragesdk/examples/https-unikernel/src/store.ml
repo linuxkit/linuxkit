@@ -13,8 +13,10 @@ let service () =
   Irmin_store.Repo.v config >>= fun repo ->
   Irmin_store.of_branch repo Irmin_store.Branch.master >|= fun db ->
   Api.Builder.Store.local @@
-    object (_ : Api.Builder.Store.service)
-      method get req =
+    object
+      inherit Api.Builder.Store.service
+
+      method get_impl req =
         let module P = Api.Reader.Store.Get_params in
         let module R = Api.Builder.Store.GetResults in
         let params = P.of_payload req in

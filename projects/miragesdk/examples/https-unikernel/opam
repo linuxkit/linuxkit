@@ -8,7 +8,7 @@ build: [
 ]
 depends: [
   "lwt"
-  "cohttp"
+  "cohttp" {>="0.21.0" & <"0.99"}
   "astring"
   "tls"
   "irmin-unix"
