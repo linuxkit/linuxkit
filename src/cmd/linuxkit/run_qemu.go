@@ -349,12 +349,27 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	qemuArgs = append(qemuArgs, "-device", "virtio-rng-pci")
 	qemuArgs = append(qemuArgs, "-smp", config.CPUs)
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
+	// Need to specify the vcpu type when running qemu on arm64 platform, for security reason,
+	// the vcpu should be "host" instead of other names such as "cortex-a53"...
+	if config.Arch == "aarch64" {
+		qemuArgs = append(qemuArgs, "-cpu", "host")
+	}
 
 	if config.KVM {
 		qemuArgs = append(qemuArgs, "-enable-kvm")
-		qemuArgs = append(qemuArgs, "-machine", "q35,accel=kvm:tcg")
+		// Remove the hardcode of virtual machine type for x86, since we will
+		// support aarch64 in future
+		if config.Arch == "aarch64" {
+			qemuArgs = append(qemuArgs, "-machine", "virt")
+		} else {
+			qemuArgs = append(qemuArgs, "-machine", "q35,accel=kvm:tcg")
+		}
 	} else {
-		qemuArgs = append(qemuArgs, "-machine", "q35")
+		if config.Arch == "aarch64" {
+			qemuArgs = append(qemuArgs, "-machine", "virt")
+		} else {
+			qemuArgs = append(qemuArgs, "-machine", "q35")
+		}
 	}
 
 	for i, d := range config.Disks {
