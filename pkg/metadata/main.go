@@ -70,7 +70,7 @@ func main() {
 	}
 	if !found {
 		log.Printf("Trying CDROM")
-		if err := os.Mkdir(MountPoint, 0755); err != nil {
+		if err := os.MkdirAll(MountPoint, 0755); err != nil {
 			log.Printf("CDROM: Failed to create %s: %s", MountPoint, err)
 			goto ErrorOut
 		}
@@ -157,7 +157,7 @@ func processUserData(data []byte) error {
 	}
 	for d, val := range cm {
 		dir := path.Join(ConfigPath, d)
-		if err := os.Mkdir(dir, 0755); err != nil {
+		if err := os.MkdirAll(dir, 0755); err != nil {
 			log.Printf("Failed to create %s: %s", dir, err)
 			continue
 		}
