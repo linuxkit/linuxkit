@@ -25,6 +25,7 @@ dosfstools
 e2fsprogs
 e2fsprogs-extra
 elfutils-dev
+expect
 flex
 gcc
 git
@@ -34,6 +35,8 @@ go
 gummiboot
 hvtools
 installkernel
+iperf3
+iproute2
 iptables
 jq
 kmod
@@ -71,6 +74,7 @@ strace
 swig
 syslinux
 tar
+tcpdump
 tini
 tzdata
 util-linux
