@@ -1,0 +1,19 @@
+kernel:
+  image: "linuxkitprojects/kernel:4.10_dbg-06f822b6a73c5a4b8188624c13841f9f32a2cb0e-dirty"
+  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+init:
+  - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
+  - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
+  - linuxkit/containerd:c977f27c234d55b85172813b8451f67ea86be4a3
+onboot:
+  - name: dhcpcd
+    image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+services:
+  - name: getty
+    image: "linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c"
+    env:
+     - INSECURE=true
+trust:
+  org:
+    - linuxkit
