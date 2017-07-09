@@ -50,7 +50,7 @@ output a raw bootable disk image. See `moby build -help` for more information.
 
 ### Booting and Testing
 
-You can use `linuxkit run <name>` or `linuxkit run <name>.<format> to execute the image you created with `moby build <name>.yml`.
+You can use `linuxkit run <name>` or `linuxkit run <name>.<format>` to execute the image you created with `moby build <name>.yml`.
 This will use a suitable backend for your platform or you can choose one, for example VMWare.
 See `linuxkit run --help`.
 
