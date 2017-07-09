@@ -1,6 +1,6 @@
 kernel:
   image: linuxkit/kernel:4.9.36
-  cmdline: "console=ttyS0 page_poison=1"
+  cmdline: "console=tty0 console=ttyS0"
 init:
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
   - linuxkit/runc:2310ad9d266cf5d9c4d07613bd2135ed7eb8a21f
