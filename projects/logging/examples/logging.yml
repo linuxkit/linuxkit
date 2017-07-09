@@ -1,5 +1,5 @@
 kernel:
-  image: "linuxkit/kernel:4.9.36"
+  image: linuxkit/kernel:4.9.36
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:12348442d56c2ee9abf13ff38dff2e36b515bd1e # with runc, logwrite, startmemlogd
@@ -9,17 +9,17 @@ init:
   - linuxkit/memlogd:9b5834189f598f43c507f6938077113906f51012
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0"
+    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: binfmt
-    image: "linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5"
+    image: linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
+    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b"
+    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   - name: nginx
-    image: "nginx:alpine"
+    image: nginx:alpine
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN

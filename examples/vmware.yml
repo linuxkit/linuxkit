@@ -1,5 +1,5 @@
 kernel:
-  image: "linuxkit/kernel:4.9.36"
+  image: linuxkit/kernel:4.9.36
   cmdline: "console=tty0 page_poison=1"
 init:
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
@@ -8,18 +8,18 @@ init:
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0"
+    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
 services:
   - name: getty
-    image: "linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c"
+    image: linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c
     env:
      - INSECURE=true
   - name: rngd
-    image: "linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b"
+    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
+    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
   - name: nginx
-    image: "nginx:alpine"
+    image: nginx:alpine
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN

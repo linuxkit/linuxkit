@@ -25,7 +25,7 @@ Usage:
 ```
 services:
   - name: open-vm-tools
-    image: "linuxkit/open-vm-tools:<HASH>"
+    image: linuxkit/open-vm-tools:<HASH>
 ```
 
 ### Qemu GuestAgent

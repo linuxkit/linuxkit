@@ -8,7 +8,7 @@ Normally, unless you are running explicitly in a desktop version, LinuxKit image
 ```
 onboot:
   - name: swap
-    image: "linuxkit/swap:<hash>"
+    image: linuxkit/swap:<hash>
     command: ["swap.sh","--path","/var/external/swap","--size","2G"]
 ```
 

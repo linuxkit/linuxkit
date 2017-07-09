@@ -1,11 +1,11 @@
 kernel:
-  image: "linuxkit/kernel-clear-containers:4.9.x"
+  image: linuxkit/kernel-clear-containers:4.9.x
   cmdline: "root=/dev/pmem0p1 rootflags=dax,data=ordered,errors=remount-ro rw rootfstype=ext4 tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k panic=1 console=hvc0 console=hvc1 initcall_debug iommu=off quiet  cryptomgr.notests page_poison=on"
 init:
   - linuxkit/init:12348442d56c2ee9abf13ff38dff2e36b515bd1e
 onboot:
   - name: sysctl
-    image: "mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c"
+    image: mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c
 services:
   - name: rngd
 files:

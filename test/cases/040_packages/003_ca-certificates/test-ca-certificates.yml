@@ -1,5 +1,5 @@
 kernel:
-  image: "linuxkit/kernel:4.9.36"
+  image: linuxkit/kernel:4.9.36
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
@@ -8,14 +8,14 @@ init:
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: test
-    image: "alpine:3.6"
+    image: alpine:3.6
     readonly: true
     binds:
       - /check.sh:/check.sh
       - /etc:/host-etc
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: "linuxkit/poweroff:bce51402e293da0b653923a43c3c7be6e0effa05"
+    image: linuxkit/poweroff:bce51402e293da0b653923a43c3c7be6e0effa05
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh
