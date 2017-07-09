@@ -80,7 +80,7 @@ This will create a local kernel image called
 `linuxkit/kernel:4.9.33-<hash>-dirty` assuming you haven't committed you local changes. You can then use this in your YAML file as:
 ```
 kernel:
-  image: "linuxkit/kernel:4.9.33-<hash>-dirty"
+  image: linuxkit/kernel:4.9.33-<hash>-dirty
 ```
 
 If you have committed your local changes, the `-dirty` will not be appended. Then you can also override the Hub organisation to use the image elsewhere with:

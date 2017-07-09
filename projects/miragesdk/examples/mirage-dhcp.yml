@@ -1,5 +1,5 @@
 kernel:
-  image: "linuxkit/kernel:4.9.36"
+  image: linuxkit/kernel:4.9.36
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
@@ -28,9 +28,9 @@ onboot:
      - /lib:/lib     # for ifconfig
 services:
   - name: sshd
-    image: "linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb"
+    image: linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb
   - name: getty
-    image: "linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c"
+    image: linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c
     env:
      - INSECURE=true
 files:

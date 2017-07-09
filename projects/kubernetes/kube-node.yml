@@ -1,5 +1,5 @@
 kernel:
-  image: "linuxkit/kernel:4.9.36"
+  image: linuxkit/kernel:4.9.36
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
@@ -8,15 +8,15 @@ init:
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0"
+    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: sysfs
     image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
   - name: binfmt
-    image: "linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5"
+    image: linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5
   - name: format
-    image: "linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954"
+    image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
   - name: mounts
-    image: "linuxkit/kubernetes:latest-mounts"
+    image: linuxkit/kubernetes:latest-mounts
     capabilities:
      - all
     pid: host
@@ -26,19 +26,19 @@ onboot:
      - /var:/var:rshared,rbind
 services:
   - name: getty
-    image: "linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c"
+    image: linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c
     env:
      - INSECURE=true
   - name: rngd
-    image: "linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b"
+    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
+    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
   - name: ntpd
-    image: "linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90"
+    image: linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90
   - name: sshd
-    image: "linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb"
+    image: linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb
   - name: docker
-    image: "linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190"
+    image: linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190
     capabilities:
      - all
     net: host
@@ -55,11 +55,11 @@ services:
      - /opt/cni:/opt/cni:rshared,rbind
     rootfsPropagation: shared
   - name: kubernetes-image-cache-common
-    image: "linuxkit/kubernetes:latest-image-cache-common"
+    image: linuxkit/kubernetes:latest-image-cache-common
     binds:
       - /var/run:/var/run
   - name: kubelet
-    image: "linuxkit/kubernetes:latest"
+    image: linuxkit/kubernetes:latest
     capabilities:
      - all
     net: host

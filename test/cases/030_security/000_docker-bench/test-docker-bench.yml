@@ -1,5 +1,5 @@
 kernel:
-  image: "linuxkit/kernel:4.9.36"
+  image: linuxkit/kernel:4.9.36
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
@@ -8,23 +8,23 @@ init:
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: sysctl
-    image: "linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0"
+    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: sysfs
-    image: "linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc"
+    image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
   - name: binfmt
-    image: "linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5"
+    image: linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5
   - name: format
-    image: "linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954"
+    image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
   - name: mount
-    image: "linuxkit/mount:b24bd97ae43397b469dbaadd80f17f291c817bdf"
+    image: linuxkit/mount:b24bd97ae43397b469dbaadd80f17f291c817bdf
     command: ["/mount.sh", "/var/lib/docker"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b"
+    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41"
+    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
   - name: docker
-    image: "linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190"
+    image: linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190
     capabilities:
      - all
     net: host
@@ -36,7 +36,7 @@ services:
      - /lib/modules:/lib/modules
      - /run:/var/run
   - name: test-docker-bench
-    image: "linuxkit/test-docker-bench:4999d3484771e8466580c0dc2e479595e49faa85"
+    image: linuxkit/test-docker-bench:4999d3484771e8466580c0dc2e479595e49faa85
     ipc: host
     pid: host
     net: host
