@@ -44,8 +44,6 @@ services:
     image: linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c
     env:
         - INSECURE=true
-  - name: rngd
-    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   # Run ntpd to keep time synchronised in the VM
   - name: ntpd
     image: linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90
