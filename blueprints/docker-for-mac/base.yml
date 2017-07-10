@@ -22,7 +22,13 @@ onboot:
     image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
   - name: mount
     image: linuxkit/mount:b24bd97ae43397b469dbaadd80f17f291c817bdf
-    command: ["/mount.sh", "/var/lib/docker"]
+    command: ["/mount.sh", "/var/lib"]
+  # create docker dir on mounted drive if it doesn't exist
+  - name: mkdir-docker
+    image: alpine:3.6
+    binds:
+        - /var/lib:/host_var_lib
+    command: ["sh", "-c", "mkdir -p /host_var_lib/docker"]
   # mount-vpnkit mounts the 9p share used by vpnkit to coordinate port forwarding
   - name: mount-vpnkit
     image: alpine:3.6
@@ -32,6 +38,12 @@ onboot:
         - CAP_SYS_ADMIN
     rootfsPropagation: shared
     command: ["sh", "-c", "mkdir -p /host_var/vpnkit/port && mount -v -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /host_var/vpnkit"]
+  # move logs to the mounted disk (this is a temporary fix until we can limit the log sizes)
+  - name: move-logs
+    image: alpine:3.6
+    binds:
+        - /var:/host_var
+    command: ["sh", "-c", "mv -v /host_var/log /host_var/lib && ln -vs /var/lib/log /host_var/log"]
   - name: dhcpcd
     image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]

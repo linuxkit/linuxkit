@@ -13,7 +13,6 @@ services:
     binds:
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
-     - /var/vpnkit:/port
      - /var/vpnkit:/port # vpnkit control 9p mount
      - /var/run:/var/run
      - /var/config/docker:/var/config/docker
