@@ -16,6 +16,12 @@ services:
 The above will launch a getty for each console defined in the cmdline, i.e. `/proc/cmdline`.
 
 
+### securetty
+Every console defined in the `cmdline` **must** also already exist in `/etc/securetty` if you wish to login on that tty as root. If it does not exist, a getty will be started, but you will not be able to login as root. A warning message will be sent to that tty.
+
+If you are using a console that is not in `securetty`, you can add it by overriding the default `securetty` file in the linuxkit root filesystem using `files:` in your moby `.yml` file.
+
+
 ### Login Options
 There are 3 ways to launch a getty on a linuxkit instance:
 

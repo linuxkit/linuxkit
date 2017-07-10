@@ -35,7 +35,8 @@ start_getty() {
 	fi
 
 	if ! grep -q -w "$tty" "$securetty"; then
-		echo "$tty" >> "$securetty"
+		# we could not find the tty in securetty, so start a getty but warn that root login will not work
+		echo "getty: cmdline has console=$tty but does not exist in $securetty; will not be able to log in as root on this tty $tty." > /dev/$tty
 	fi
 	# respawn forever
 	infinite_loop setsid.getty -w /sbin/agetty $loginargs $line $speed $tty $term &
@@ -47,6 +48,13 @@ if [ -f $ROOTSHADOW ]; then
 	cp $ROOTSHADOW /etc/shadow
 	# just in case someone forgot a newline
 	echo >> /etc/shadow
+fi
+
+ROOTSTTY=/hostroot/etc/securetty
+if [ -f $ROOTSTTY ]; then
+	cp $ROOTSTTY /etc/securetty
+	# just in case someone forgot a newline
+	echo >> /etc/securetty
 fi
 
 for opt in $(cat /proc/cmdline); do
