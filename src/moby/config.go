@@ -105,6 +105,18 @@ func convert(i interface{}) interface{} {
 	return i
 }
 
+func uniqueServices(m Moby) error {
+	// service names must be unique, as they run as simultaneous containers
+	names := map[string]bool{}
+	for _, s := range m.Services {
+		if names[s.Name] {
+			return fmt.Errorf("duplicate service name: %s", s.Name)
+		}
+		names[s.Name] = true
+	}
+	return nil
+}
+
 // NewConfig parses a config file
 func NewConfig(config []byte) (Moby, error) {
 	m := Moby{}
@@ -140,11 +152,15 @@ func NewConfig(config []byte) (Moby, error) {
 		return m, err
 	}
 
+	if err := uniqueServices(m); err != nil {
+		return m, err
+	}
+
 	return m, nil
 }
 
 // AppendConfig appends two configs.
-func AppendConfig(m0, m1 Moby) Moby {
+func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby := m0
 	if m1.Kernel.Image != "" {
 		moby.Kernel.Image = m1.Kernel.Image
@@ -159,7 +175,11 @@ func AppendConfig(m0, m1 Moby) Moby {
 	moby.Trust.Image = append(moby.Trust.Image, m1.Trust.Image...)
 	moby.Trust.Org = append(moby.Trust.Org, m1.Trust.Org...)
 
-	return moby
+	if err := uniqueServices(moby); err != nil {
+		return moby, err
+	}
+
+	return moby, nil
 }
 
 // NewImage validates an parses yaml or json for a Image
