@@ -34,7 +34,6 @@ func pushVCenter(args []string) {
 	newVM.vCenterURL = flags.String("url", os.Getenv("VCURL"), "URL of VMware vCenter in the format of https://username:password@VCaddress/sdk")
 	newVM.dcName = flags.String("datacenter", os.Getenv("VCDATACENTER"), "The name of the DataCenter to host the image")
 	newVM.dsName = flags.String("datastore", os.Getenv("VCDATASTORE"), "The name of the DataStore to host the image")
-	newVM.networkName = flags.String("network", os.Getenv("VCNETWORK"), "The network label the VM will use")
 	newVM.vSphereHost = flags.String("hostname", os.Getenv("VCHOST"), "The server that will host the image")
 	newVM.path = flags.String("path", "", "Path to a specific image")
 
