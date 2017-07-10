@@ -2,6 +2,13 @@
 
 set -x
 
+# read optional device indentifier
+if [ $# -eq 2 ]
+then
+	DEV_ID="$1"
+	shift
+fi
+
 MOUNTPOINT="$1"
 
 [ -z "$MOUNTPOINT" ] && echo "No mountpoint specified" && exit 1
@@ -9,6 +16,42 @@ MOUNTPOINT="$1"
 mkdir -p "$MOUNTPOINT"
 
 mount_drive()
+{
+	# if explicit device identifier was given
+	if [ -n "$DEV_ID" ]
+	then
+		mount_specified_drive && return
+	else
+		mount_detected_drive && return
+	fi
+
+	echo "WARNING: Failed to mount a persistent volume at $MOUNTPOINT (is there one?)"
+}
+
+mount_specified_drive()
+{
+	# if explicit device identifier was given
+	if [ -n "$DEV_ID" ]
+	then
+		if [ -n "$(echo $DEV_ID | grep -E '^(LABEL|UUID)=')" ]
+		then
+			# identifier is LABEL or UUID
+			DEV=$(findfs $DEV_ID)
+			mount "$DEV" "$MOUNTPOINT" && return
+		elif [ -b "$DEV_ID" ]
+		then
+			# identifier is a block-device
+			DEV="$DEV_ID"
+			mount "$DEV" "$MOUNTPOINT" && return
+		fi
+		echo "Warning: Unknown Device identifier provided: $DEV_ID"
+	fi
+
+	# unable to mount specified device
+	return 1
+}
+
+mount_detected_drive()
 {
 	# TODO fix for multiple disks, cdroms etc
 	DEVS="$(find /dev -maxdepth 1 -type b ! -name 'loop*' ! -name 'nbd*' | grep -v '[0-9]$' | sed 's@.*/dev/@@' | sort)"
@@ -29,7 +72,8 @@ mount_drive()
 		fi
 	done
 
-	echo "WARNING: Failed to mount a persistent volume (is there one?)"
+	# unable to detect and mount device
+	return 1
 }
 
 mount_drive
