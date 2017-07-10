@@ -13,7 +13,6 @@ import (
 	"github.com/vmware/govmomi"
 	"github.com/vmware/govmomi/find"
 	"github.com/vmware/govmomi/object"
-	"github.com/vmware/govmomi/vim25/soap"
 	"github.com/vmware/govmomi/vim25/types"
 
 	log "github.com/Sirupsen/logrus"
@@ -21,6 +20,7 @@ import (
 
 type vmConfig struct {
 	vCenterURL  *string
+	dcName      *string
 	dsName      *string
 	networkName *string
 	vSphereHost *string
@@ -45,6 +45,7 @@ func runVcenter(args []string) {
 	invoked := filepath.Base(os.Args[0])
 
 	newVM.vCenterURL = flags.String("url", os.Getenv("VCURL"), "URL of VMware vCenter in the format of https://username:password@VCaddress/sdk")
+	newVM.dcName = flags.String("datacenter", os.Getenv("VCDATACENTER"), "The name of the Datacenter to host the VM")
 	newVM.dsName = flags.String("datastore", os.Getenv("VCDATASTORE"), "The name of the DataStore to host the VM")
 	newVM.networkName = flags.String("network", os.Getenv("VCNETWORK"), "The network label the VM will use")
 	newVM.vSphereHost = flags.String("hostname", os.Getenv("VCHOST"), "The server that will run the VM")
@@ -89,9 +90,6 @@ func runVcenter(args []string) {
 		log.Fatalln("Please pass an \".iso\" file as the path")
 	}
 
-	// Test any passed in files before creating a new VM
-	checkFile(*newVM.path)
-
 	// Connect to VMware vCenter and return the default and found values needed for a new VM
 	c, dss, folders, hs, net, rp := vCenterConnect(ctx, newVM)
 
@@ -127,7 +125,6 @@ func runVcenter(args []string) {
 	// Retrieve the new VM
 	vm := object.NewVirtualMachine(c.Client, info.Result.(types.ManagedObjectReference))
 
-	uploadFile(c, newVM, dss)
 	addISO(ctx, newVM, vm, dss)
 
 	if *newVM.persistent != "" {
@@ -183,7 +180,7 @@ func vCenterConnect(ctx context.Context, newVM vmConfig) (*govmomi.Client, *obje
 	f := find.NewFinder(c.Client, true)
 
 	// Find one and only datacenter, not sure how VMware linked mode will work
-	dc, err := f.DefaultDatacenter(ctx)
+	dc, err := f.DatacenterOrDefault(ctx, *newVM.dcName)
 	if err != nil {
 		log.Fatalf("No Datacenter instance could be found inside of vCenter %v", err)
 	}
@@ -234,20 +231,6 @@ func powerOnVM(ctx context.Context, vm *object.VirtualMachine) {
 	_, err = task.WaitForResult(ctx, nil)
 	if err != nil {
 		log.Errorln("Power On Task has failed, more detail can be found in vCenter tasks")
-	}
-}
-
-func uploadFile(c *govmomi.Client, newVM vmConfig, dss *object.Datastore) {
-	_, fileName := path.Split(*newVM.path)
-	log.Infof("Uploading LinuxKit file [%s]", *newVM.path)
-	if *newVM.path == "" {
-		log.Fatalf("No file specified")
-	}
-	dsurl := dss.NewURL(fmt.Sprintf("%s/%s", *newVM.vmFolder, fileName))
-
-	p := soap.DefaultUpload
-	if err := c.Client.UploadFile(*newVM.path, dsurl, &p); err != nil {
-		log.Fatalf("Unable to upload file to vCenter Datastore\n%v", err)
 	}
 }
 
@@ -319,17 +302,5 @@ func addISO(ctx context.Context, newVM vmConfig, vm *object.VirtualMachine, dss 
 
 	if vm.AddDevice(ctx, add...); err != nil {
 		log.Fatalf("Unable to add new CD-ROM device to VM configuration\n%v", err)
-	}
-}
-
-func checkFile(file string) {
-	if _, err := os.Stat(file); err != nil {
-		if os.IsPermission(err) {
-			log.Fatalf("Unable to read file [%s], please check permissions", file)
-		} else if os.IsNotExist(err) {
-			log.Fatalf("File [%s], does not exist", file)
-		} else {
-			log.Fatalf("Unable to stat file [%s]: %v", file, err)
-		}
 	}
 }
