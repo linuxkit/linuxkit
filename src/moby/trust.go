@@ -10,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"path"
 	"path/filepath"
 	"strings"
 	"time"
@@ -19,11 +20,15 @@ import (
 	"github.com/docker/distribution/registry/client/auth"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/docker/distribution/registry/client/transport"
-	"github.com/docker/docker/cli/trust"
 	notaryClient "github.com/docker/notary/client"
 	"github.com/docker/notary/trustpinning"
 	"github.com/docker/notary/tuf/data"
 	"github.com/opencontainers/go-digest"
+)
+
+var (
+	// ReleasesRole is the role named "releases"
+	ReleasesRole = path.Join(data.CanonicalTargetsRole, "releases")
 )
 
 // TrustedReference parses an image string, and does a notary lookup to verify and retrieve the signed digest reference
@@ -75,13 +80,13 @@ func TrustedReference(image string) (reference.Reference, error) {
 	if err != nil {
 		return nil, err
 	}
-	target, err := nRepo.GetTargetByName(targetName, trust.ReleasesRole, data.CanonicalTargetsRole)
+	target, err := nRepo.GetTargetByName(targetName, ReleasesRole, data.CanonicalTargetsRole)
 	if err != nil {
 		return nil, err
 	}
 	// Only get the tag if it's in the top level targets role or the releases delegation role
 	// ignore it if it's in any other delegation roles
-	if target.Role != trust.ReleasesRole && target.Role != data.CanonicalTargetsRole {
+	if target.Role != ReleasesRole && target.Role != data.CanonicalTargetsRole {
 		return nil, errors.New("not signed in valid role")
 	}
 
