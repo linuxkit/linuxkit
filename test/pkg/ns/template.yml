@@ -1,0 +1,21 @@
+# Sample YAML file for manual testing
+kernel:
+  image: linuxkit/kernel:4.9.38
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:d049e7b2074da5cd699a27defb47eb101142455d
+  - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
+onboot:
+  - name: test-ns
+    image: linuxkit/test-ns:<hash>
+    command: ["/bin/sh", "/runp-runc-net.sh", "mix-unix"]
+    # command: ["/bin/sh", "/runc-net.sh", "-l", "5", "-i", "2", "-c", "5", "-p", "unix", "-ip", "6"]
+    mounts: # for runc
+    - type: cgroup
+      options: ["rw"]
+  - name: poweroff
+    image: linuxkit/poweroff:bce51402e293da0b653923a43c3c7be6e0effa05
+    command: ["/bin/sh", "/poweroff.sh", "3"]
+trust:
+  org:
+    - linuxkit
