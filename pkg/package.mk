@@ -46,6 +46,9 @@ show-tag:
 tag: $(BASE_DEPS) $(DEPS)
 	docker pull $(TAG) || docker build $(LABELS) $(NET_OPT) -t $(TAG) .
 
+forcetag: $(BASE_DEPS) $(DEPS)
+	docker build $(LABELS) $(NET_OPT) -t $(TAG) .
+
 push: tag
 ifneq ($(DIRTY),)
 	$(error Your repository is not clean. Will not push package image.)
