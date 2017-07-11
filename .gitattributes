@@ -1,2 +1,2 @@
-vendor/* linguist-vendored
+**/vendor/** linguist-vendored
 kernel/*.x linguist-language=text

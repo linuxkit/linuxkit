@@ -2,12 +2,12 @@ Vendoring
 =========
 
 The Go code in this repo depends on a number of Go libraries.
-Theses are vendored in to the `vendor` directory using [`vndr`](https://github.com/lk4d4/vndr)
+These are vendored in to the `src/cmd/linuxkit/vendor` directory using [`vndr`](https://github.com/lk4d4/vndr)
 The `vendor.conf` file contains a list of the repositories and the git SHA or branch name that should be vendored
 
 ## Updating dependencies
 
-Update `vendor.conf` with the dependency that you would like to add.
+Update `src/cmd/linuxkit/vendor.conf` with the dependency that you would like to add.
 Details of usage of the `vndr` tool and the format of `vendor.conf` can be found [here](https://github.com/LK4D4/vndr/blob/master/README.md)
 
 Once done, you must run the `vndr` tool to add the necessary files to the `vendor` directory.
@@ -19,8 +19,8 @@ To update all dependencies:
 
 ```
 docker run -it --rm \
--v $(PWD):/go/src/github.com/docker/moby \
--w /go/src/github.com/docker/moby \
+-v $(PWD):/go/src/github.com/linuxkit/linuxkit \
+-w /go/src/github.com/linuxkit/linuxkit/src/cmd/linuxkit \
 --entrypoint /go/bin/vndr \
 linuxkit/go-compile:f68574b165475cff908190e0f1e86cbbb1884f86
 ```
@@ -29,8 +29,8 @@ To update a single dependency:
 
 ```
 docker run -it --rm \
--v $(PWD):/go/src/github.com/docker/moby \
--w /go/src/github.com/docker/moby \
+-v $(PWD):/go/src/github.com/linuxkit/linuxkit \
+-w /go/src/github.com/linuxkit/linuxkit/src/cmd/linuxkit \
 --entrypoint /go/bin/vndr \
 linuxkit/go-compile:f68574b165475cff908190e0f1e86cbbb1884f86 \
 github.com/docker/docker
@@ -47,11 +47,13 @@ go get -u github.com/LK4D4/vndr
 To update all dependencies:
 
 ```
+cd src/cmd/linuxkit
 vndr
 ```
 
 To update a single dependency:
 
 ```
+cd /src/cmd/linuxkit
 vndr github.com/docker/docker
 ```
