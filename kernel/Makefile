@@ -28,6 +28,16 @@ endif
 
 TAG=$(HASH)$(DIRTY)
 
+REPO?=https://github.com/linuxkit/linuxkit
+ifneq ($(REPO),)
+REPO_LABEL=--label org.opencontainers.image.source=$(REPO)
+endif
+ifeq ($(DIRTY),)
+REPO_COMMIT=$(shell git rev-parse HEAD)
+COMMIT_LABEL=--label org.opencontainers.image.revision=$(REPO_COMMIT)
+endif
+LABELS=$(REPO_LABEL) $(COMMIT_LABEL)
+
 .PHONY: check tag push
 # Targets:
 # build: builds all kernels
@@ -52,6 +62,7 @@ build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) kernel_config-$(2
 			--build-arg KERNEL_VERSION=$(1) \
 			--build-arg KERNEL_SERIES=$(2) \
 			--build-arg DEBUG=$(3) \
+			$(LABELS) \
 			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) .
 
 push_$(2)$(3): build_$(2)$(3)
@@ -73,7 +84,7 @@ build_perf_$(2)$(3): build_$(2)$(3)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) || \
 		docker build -f Dockerfile.perf \
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG) \
-	 		--no-cache --network=none -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) .
+	 		--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) .
 
 push_perf_$(2)$(3): build_perf_$(2)$(3)
 	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi

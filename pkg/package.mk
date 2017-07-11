@@ -13,6 +13,16 @@ endif
 
 TAG:=$(ORG)/$(IMAGE):$(HASH)$(DIRTY)
 
+REPO?=https://github.com/linuxkit/linuxkit
+ifneq ($(REPO),)
+REPO_LABEL=--label org.opencontainers.image.source=$(REPO)
+endif
+ifeq ($(DIRTY),)
+REPO_COMMIT=$(shell git rev-parse HEAD)
+COMMIT_LABEL=--label org.opencontainers.image.revision=$(REPO_COMMIT)
+endif
+LABELS=$(REPO_LABEL) $(COMMIT_LABEL)
+
 BASE_DEPS=Dockerfile Makefile
 
 # Get a release tag, if present
@@ -34,7 +44,10 @@ show-tag:
 	@echo $(TAG)
 
 tag: $(BASE_DEPS) $(DEPS)
-	docker pull $(TAG) || docker build $(NET_OPT) -t $(TAG) .
+	docker pull $(TAG) || docker build $(LABELS) $(NET_OPT) -t $(TAG) .
+
+forcetag: $(BASE_DEPS) $(DEPS)
+	docker build $(LABELS) $(NET_OPT) -t $(TAG) .
 
 push: tag
 ifneq ($(DIRTY),)
