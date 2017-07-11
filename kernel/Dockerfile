@@ -17,7 +17,6 @@ RUN apk add \
     kmod \
     libelf-dev \
     libressl-dev \
-    libunwind-dev \
     linux-headers \
     ncurses-dev \
     sed \
@@ -25,7 +24,11 @@ RUN apk add \
     tar \
     xz \
     xz-dev \
-    zlib-dev
+    zlib-dev && \
+# libunwind-dev pkg is missed from arm64 now, below statement will be removed if the pkg is available.
+    if [ $(uname -m) == x86_64 ]; then \
+        apk add libunwind-dev; \
+    fi
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
@@ -50,13 +53,25 @@ RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
-COPY kernel_config-${KERNEL_SERIES} /linux/arch/x86/configs/x86_64_defconfig
+# When using COPY with more than one source file, the destination must be a directory and end with a /
+COPY kernel_config-${KERNEL_SERIES}* /linux/
 COPY kernel_config.debug /linux/debug_config
 
-RUN if [ -n "${DEBUG}" ]; then \
-    sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' /linux/arch/x86/configs/x86_64_defconfig; \
-    cat /linux/debug_config >> /linux/arch/x86/configs/x86_64_defconfig; \
-    fi
+RUN case $(uname -m) in \
+    x86_64) \
+        KERNEL_DEF_CONF=/linux/arch/x86/configs/x86_64_defconfig; \
+        cp /linux/kernel_config-${KERNEL_SERIES} ${KERNEL_DEF_CONF}; \
+        ;; \
+    aarch64) \
+        KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
+        cp /linux/kernel_config-${KERNEL_SERIES}-aarch64 ${KERNEL_DEF_CONF}; \
+        ;; \
+    esac  && \
+    if [ -n "${DEBUG}" ]; then \
+        sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
+        cat /linux/debug_config >> ${KERNEL_DEF_CONF}; \
+    fi && \
+    rm /linux/kernel_config-${KERNEL_SERIES}*
 
 # Apply local patches
 COPY patches-${KERNEL_SERIES} /patches
@@ -72,7 +87,14 @@ RUN mkdir /out
 RUN make defconfig && \
     make oldconfig && \
     make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
-    cp arch/x86_64/boot/bzImage /out/kernel && \
+    case $(uname -m) in \
+    x86_64) \
+        cp arch/x86_64/boot/bzImage /out/kernel; \
+        ;; \
+    aarch64) \
+        cp arch/arm64/boot/Image.gz /out/kernel; \
+        ;; \
+    esac && \
     cp System.map /out && \
     ([ -n "${DEBUG}" ] && cp vmlinux /out || true)
 
