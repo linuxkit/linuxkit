@@ -15,10 +15,12 @@ lint:
 	@test -z "$(shell find . -type f -name "*.go" -not -path "./vendor/*" -not -name "*.pb.*" -exec golint {} \; | tee /dev/stderr)"
 	# gofmt
 	@test -z "$$(gofmt -s -l .| grep -v .pb. | grep -v vendor/ | tee /dev/stderr)"
+ifeq ($(GOOS),)
 	# govet
 	@test -z "$$(go tool vet -printf=false . 2>&1 | grep -v vendor/ | tee /dev/stderr)"
 	# go test
 	@go test github.com/moby/tool/src/moby
+endif
 
 test: moby
 	./moby build -output tar test/test.yml
