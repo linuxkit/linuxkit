@@ -199,7 +199,10 @@ func build(args []string) {
 		if err != nil {
 			log.Fatalf("Invalid config: %v", err)
 		}
-		m = moby.AppendConfig(m, c)
+		m, err = moby.AppendConfig(m, c)
+		if err != nil {
+			log.Fatalf("Cannot append config files: %v", err)
+		}
 	}
 
 	if *buildDisableTrust {
