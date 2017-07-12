@@ -56,7 +56,8 @@ push:
 # Set $3 to "_dbg", to build debug kernels. This defines targets like
 # build_4.9.x_dbg and adds "_dbg" to the hub image name.
 define kernel
-build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) kernel_config-$(2) kernel_config.debug
+
+build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel_config-$(2)*) kernel_config.debug
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
