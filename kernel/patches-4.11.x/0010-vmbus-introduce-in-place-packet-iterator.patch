@@ -1,7 +1,7 @@
-From 19aba7e5812fdb16ccce5da10a8c40025db68cd1 Mon Sep 17 00:00:00 2001
+From 2aaa664f7216763e69f44ca30fbf0dba23b0bd89 Mon Sep 17 00:00:00 2001
 From: stephen hemminger <stephen@networkplumber.org>
 Date: Mon, 27 Feb 2017 10:26:48 -0800
-Subject: [PATCH 02/15] vmbus: introduce in-place packet iterator
+Subject: [PATCH 10/20] vmbus: introduce in-place packet iterator
 
 This is mostly just a refactoring of previous functions
 (get_pkt_next_raw, put_pkt_raw and commit_rd_index) to make it easier
@@ -9,7 +9,8 @@ to use for other drivers and NAPI.
 
 Signed-off-by: Stephen Hemminger <sthemmin@microsoft.com>
 Signed-off-by: David S. Miller <davem@davemloft.net>
-(cherry picked from commit f3dd3f4797652c311df9c074436d420f1ad3566e)
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit 2e307800c6a01cd789afe34eccbcabf384959b3f)
 ---
  drivers/hv/ring_buffer.c    | 94 +++++++++++++++++++++++++++++++++++++++++++-
  drivers/net/hyperv/netvsc.c | 34 +++++-----------
@@ -239,10 +240,10 @@ index 15ef713d96c0..ab9fe48ec133 100644
  }
  
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 970771a5f739..0c170a3f0d8b 100644
+index a8bae2caa69f..ba93b7e4a972 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1508,14 +1508,6 @@ static inline  void hv_signal_on_read(struct vmbus_channel *channel)
+@@ -1511,14 +1511,6 @@ static inline  void hv_signal_on_read(struct vmbus_channel *channel)
  	return;
  }
  
@@ -257,7 +258,7 @@ index 970771a5f739..0c170a3f0d8b 100644
  /*
   * Mask off host interrupt callback notifications
   */
-@@ -1549,76 +1541,48 @@ static inline u32 hv_end_read(struct hv_ring_buffer_info *rbi)
+@@ -1552,76 +1544,48 @@ static inline u32 hv_end_read(struct hv_ring_buffer_info *rbi)
  /*
   * An API to support in-place processing of incoming VMBUS packets.
   */

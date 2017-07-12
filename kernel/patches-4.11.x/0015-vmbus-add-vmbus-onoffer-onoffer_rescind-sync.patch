@@ -1,11 +1,11 @@
-From c2369f25d343852682b888928b560c40942398ae Mon Sep 17 00:00:00 2001
+From 21d1da652810bdc3dd1c0ce62fbf3cb9bc6313b4 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 21:32:00 +0800
-Subject: [PATCH 14/15] vmbus: add vmbus onoffer/onoffer_rescind sync.
+Subject: [PATCH 15/20] vmbus: add vmbus onoffer/onoffer_rescind sync.
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
-Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605
-(cherry picked from commit 9a00fd7c4ad9c5d1da39c3c44328145fe063ceed)
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit 1b91aa6d0e745d9765e3d90058928829f0b0bd40)
 ---
  drivers/hv/channel_mgmt.c | 25 +++++++++++++++++++------
  drivers/hv/hyperv_vmbus.h |  1 +

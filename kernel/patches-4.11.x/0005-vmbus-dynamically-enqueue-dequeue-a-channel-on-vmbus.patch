@@ -1,7 +1,7 @@
-From 18f2c9ce4120584b90e5f8d4c1011dbf8fe1c0ee Mon Sep 17 00:00:00 2001
+From ab979cc7a97f66073e8e57b42dfb4f87ec7cd0ea Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:23 -0600
-Subject: [PATCH 06/15] vmbus: dynamically enqueue/dequeue a channel on
+Subject: [PATCH 05/20] vmbus: dynamically enqueue/dequeue a channel on
  vmbus_open/close
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -22,7 +22,7 @@ Tested-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
 Cc: K. Y. Srinivasan <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
-Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605
+Origin: git@github.com:dcui/linux.git
 (cherry picked from commit 1df677b35ff010d0def33f5420773015815cf843)
 ---
  drivers/hv/channel.c      | 12 +++++++++---
@@ -171,7 +171,7 @@ index fbcb06352308..c5a01a4d589e 100644
  
  err_free_chan:
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 0c170a3f0d8b..ba93b7e4a972 100644
+index 970771a5f739..a8bae2caa69f 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1437,6 +1437,9 @@ extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp, u8 *buf,

@@ -1,7 +1,7 @@
-From fa998da5f367c29df8a7590781a2a7bdc9217afe Mon Sep 17 00:00:00 2001
+From 5bddcbe8e03893267d2674da93894007f5be08b7 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:20 -0600
-Subject: [PATCH 05/15] vmbus: remove "goto error_clean_msglist" in
+Subject: [PATCH 04/20] vmbus: remove "goto error_clean_msglist" in
  vmbus_open()
 
 This is just a cleanup patch to simplify the code a little.
@@ -11,7 +11,7 @@ Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Cc: K. Y. Srinivasan <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
-Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605
+Origin: git@github.com:dcui/linux.git
 (cherry picked from commit 4713066c11b2396eafd2873cbed7bdd72d1571eb)
 ---
  drivers/hv/channel.c | 18 +++++++-----------

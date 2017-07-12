@@ -1,7 +1,7 @@
-From c10d941318f2fd808ff9316d0a8d676c99f6ba6b Mon Sep 17 00:00:00 2001
+From b0a431963f3fcd2742c2d12d670bbee5814b6ab6 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 30 Apr 2017 16:21:18 -0700
-Subject: [PATCH 12/15] Drivers: hv: vmbus: Fix rescind handling
+Subject: [PATCH 13/20] Drivers: hv: vmbus: Fix rescind handling
 
 Fix the rescind handling. This patch addresses the following rescind
 scenario that is currently not handled correctly:
@@ -16,8 +16,8 @@ Long Li <longli@microsoft.com> for working with me on this patch.
 
 Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
-Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605
-(cherry picked from commit 6172aa1bbfb66a9e0b0da0f162f0e91c129e3c94)
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit be1ce15dfbdfe3f42c8ed23c5904674d5d90b545)
 ---
  drivers/hv/channel.c      |  8 ++++--
  drivers/hv/channel_mgmt.c | 69 ++++++++++++++++++++++++++++++++++++-----------
