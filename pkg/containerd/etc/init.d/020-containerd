@@ -1,9 +1,5 @@
 #!/bin/sh
 
-# set global ulimits TODO move to /etc/limits.conf
-ulimit -n 1048576
-ulimit -p unlimited
-
 # bring up containerd
 printf "\nStarting containerd\n"
 /usr/bin/containerd &
@@ -13,20 +9,6 @@ while [ ! -S /run/containerd/containerd.sock ]
 do
 	sleep 0.1
 done
-
-# start onboot containers, run to completion
-
-if [ -d /containers/onboot ]
-then
-	for f in $(find /containers/onboot -mindepth 1 -maxdepth 1 | sort)
-	do
-		base="$(basename $f)"
-		/bin/mount --bind "$f/rootfs" "$f/rootfs"
-		mount -o remount,rw "$f/rootfs"
-		/usr/bin/runc run --bundle "$f" "$(basename $f)"
-		printf " - $base\n"
-	done
-fi
 
 # start service containers
 
