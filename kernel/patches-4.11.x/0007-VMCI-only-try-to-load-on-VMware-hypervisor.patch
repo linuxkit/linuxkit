@@ -1,7 +1,7 @@
-From daa0ed9004d76620cce3dde8cc2ae679d13aa326 Mon Sep 17 00:00:00 2001
+From a8e8b701064574c36ea5a130904ab59beb9e3ad7 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:29 -0600
-Subject: [PATCH 08/15] VMCI: only try to load on VMware hypervisor
+Subject: [PATCH 07/20] VMCI: only try to load on VMware hypervisor
 
 Without the patch, vmw_vsock_vmci_transport.ko and vmw_vmci.ko can
 automatically load when an application creates an AF_VSOCK socket.
@@ -27,7 +27,7 @@ Cc: Jorgen Hansen <jhansen@vmware.com>
 Cc: K. Y. Srinivasan <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
-Origin: https://github.com/dcui/linux/commits/decui/hv_sock/v4.11/20170511-debug-0605
+Origin: git@github.com:dcui/linux.git
 (cherry picked from commit b5566b1b6e5cb19b381590587f841f950caabe4d)
 ---
  drivers/misc/vmw_vmci/vmci_driver.c | 8 ++++++++
