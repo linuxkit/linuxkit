@@ -6,7 +6,7 @@ init:
   - linuxkit/vpnkit-expose-port:e2b49a6c56fbf876ea24f0a5ce4ccae5f940d1be # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
   - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
   - linuxkit/runc:a0f2894e50bacbd1ff82be41edff8b8e06e0b161
-  - linuxkit/containerd:d08e5f12f1ce609fcc8ee6817bb422ff03f09122
+  - linuxkit/containerd:389e67c3c1fc009c1315f32b3e2b6659691a3ad4
 onboot:
   # support metadata for optional config in /var/config
   - name: metadata
