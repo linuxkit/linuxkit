@@ -11,11 +11,11 @@ RUN \
   tzdata \
   && true
 ENV GOPATH=/go PATH=$PATH:/go/bin
+# CONTAINERD_REPO and CONTAINERD_COMMIT are defined in linuxkit/alpine
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
-  git clone https://github.com/containerd/containerd.git
+  git clone $CONTAINERD_REPO
 WORKDIR $GOPATH/src/github.com/containerd/containerd
-# CONTAINERD_COMMIT is defined in linuxkit/alpine
 RUN git checkout $CONTAINERD_COMMIT
 RUN make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
 RUN cp bin/containerd bin/ctr bin/containerd-shim bin/dist /usr/bin/
