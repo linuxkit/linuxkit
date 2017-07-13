@@ -42,6 +42,19 @@ func haveKVM() bool {
 	return !os.IsNotExist(err)
 }
 
+func envOverrideBool(env string, b *bool) {
+	val := os.Getenv(env)
+	if val == "" {
+		return
+	}
+
+	var err error
+	*b, err = strconv.ParseBool(val)
+	if err != nil {
+		log.Fatal("Unable to parse %q=%q as a boolean", env, val)
+	}
+}
+
 func runQemu(args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("qemu", flag.ExitOnError)
@@ -88,6 +101,11 @@ func runQemu(args []string) {
 		log.Fatal("Unable to parse args")
 	}
 	remArgs := flags.Args()
+
+	// These envvars override the corresponding command line
+	// options. So this must remain after the `flags.Parse` above.
+	envOverrideBool("LINUXKIT_QEMU_KVM", enableKVM)
+	envOverrideBool("LINUXKIT_QEMU_CONTAINERIZED", qemuContainerized)
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the path to the image to boot")
