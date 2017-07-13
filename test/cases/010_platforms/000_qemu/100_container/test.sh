@@ -1,6 +1,8 @@
 #!/bin/sh
 # SUMMARY: Check that qemu runs containerised
-# LABELS:
+# LABELS: skip
+
+# this test is not working at present see https://github.com/linuxkit/linuxkit/issues/2020
 
 set -e
 
