@@ -170,6 +170,9 @@ func runQemu(args []string) {
 
 	// user not trying to boot off ISO or kernel, so assume booting from a disk image
 	if !*kernelBoot && !*isoBoot {
+		if _, err := os.Stat(path); err != nil {
+			log.Fatalf("Boot disk image %s does not exist", path)
+		}
 		// currently no way to set format, but autodetect probably works
 		d := Disks{DiskConfig{Path: path}}
 		disks = append(d, disks...)
