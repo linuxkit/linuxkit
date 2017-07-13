@@ -12,6 +12,8 @@ done
 
 # start service containers
 
+service system-init
+
 if [ -d /containers/services ]
 then
 	for f in $(find /containers/services -mindepth 1 -maxdepth 1 | sort)
