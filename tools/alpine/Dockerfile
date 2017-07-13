@@ -49,4 +49,5 @@ COPY --from=mirror /Dockerfile /Dockerfile
 
 RUN apk update && apk upgrade -a
 
-ENV CONTAINERD_COMMIT=c215531a8f63a98a69134e804fea4ee6d354bb90
+ENV CONTAINERD_REPO=https://github.com/ijc/containerd.git
+ENV CONTAINERD_COMMIT=3455ffc08c553db0ca9fe60b4ba2b3e8a2dc960b

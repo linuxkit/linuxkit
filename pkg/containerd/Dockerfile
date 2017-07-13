@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:9bcf61f605ef0ce36cc94d59b8eac307862de6e1 as alpine
+FROM linuxkit/alpine:6832775a7e861ee2d7842e157688ece52d007142 as alpine
 RUN \
   apk add \
   btrfs-progs-dev \
@@ -11,11 +11,11 @@ RUN \
   tzdata \
   && true
 ENV GOPATH=/go PATH=$PATH:/go/bin
+# CONTAINERD_REPO and CONTAINERD_COMMIT are defined in linuxkit/alpine
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
-  git clone https://github.com/containerd/containerd.git
+  git clone $CONTAINERD_REPO
 WORKDIR $GOPATH/src/github.com/containerd/containerd
-# CONTAINERD_COMMIT is defined in linuxkit/alpine
 RUN git checkout $CONTAINERD_COMMIT
 RUN make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
 RUN cp bin/containerd bin/ctr bin/containerd-shim bin/dist /usr/bin/
