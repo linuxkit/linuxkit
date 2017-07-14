@@ -27,8 +27,8 @@ RUN abuild-sign /mirror/$(uname -m)/APKINDEX.tar.gz
 # fetch OVMF for qemu EFI boot (this is not added as a package)
 RUN apk add -X http://dl-cdn.alpinelinux.org/alpine/edge/community ovmf
 
-# set this as our repo
-RUN echo "/mirror" > /etc/apk/repositories && apk update
+# set this as our repo but keep a copy of the upstream for downstream use
+RUN mv /etc/apk/repositories /etc/apk/repositories.upstream && echo "/mirror" > /etc/apk/repositories && apk update
 
 # add Go validation tools
 COPY go-compile.sh /go/bin/
@@ -41,6 +41,7 @@ RUN go get -u github.com/LK4D4/vndr
 FROM alpine:3.6
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
+COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
 COPY --from=mirror /etc/apk/keys /etc/apk/keys/
 COPY --from=mirror /mirror /mirror/
 COPY --from=mirror /go/bin /go/bin/
