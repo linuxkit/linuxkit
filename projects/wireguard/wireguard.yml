@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel-wireguard:4.9.15-2ca28b7589b673373a33274023ca870a3a77e081
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:cbd7ae748f0a082516501a3e914fa0c924ee941e
-  - linuxkit/runc:a0f2894e50bacbd1ff82be41edff8b8e06e0b161
-  - linuxkit/containerd:f1130450206d4f64f0ddc13d15bb68435aa1ff61
+  - linuxkit/init:a626edd428b575d10b994be0d4c5b034838e9946
+  - linuxkit/runc:f5b28379fc969237e0fb11aa1ed946622150e9a0
+  - linuxkit/containerd:f1f9c27e153b510e09b2e3f221181f87ade0fe1a
   - linuxkit/ca-certificates:4e9a83e890e6477dcd25029fc4f1ced61d0642f4
   - linuxkit/wireguard-utils:26fe3d38455f2d441549e3c54bdec1b26ac819b8
 onboot:
