@@ -15,8 +15,8 @@ Each section adds file to the root file system. Sections may be omitted.
 
 Each container that is specified is allocated a unique `uid` and `gid` that it may use if it
 wishes to run as an isolated user (or user namespace). Anywhere you specify a `uid` or `gid`
-field you specify a string that can either be the numeric id, or if you use a name it will
-refer to the id allocated to the container with that name.
+field you specify either the numeric id, or if you use a name it will refer to the id allocated
+to the container with that name.
 
 ```
 services:

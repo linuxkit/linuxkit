@@ -81,8 +81,8 @@ func TestInvalidCap(t *testing.T) {
 func TestIdMap(t *testing.T) {
 	idMap := map[string]uint32{"test": 199}
 
-	uid := "test"
-	gid := "76"
+	var uid interface{} = "test"
+	var gid interface{} = 76
 
 	yaml := Image{
 		Name:  "test",

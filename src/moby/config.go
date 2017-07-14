@@ -50,8 +50,8 @@ type File struct {
 	Source    string
 	Optional  bool
 	Mode      string
-	UID       string `yaml:"uid" json:"uid"`
-	GID       string `yaml:"gid" json:"gid"`
+	UID       interface{} `yaml:"uid" json:"uid"`
+	GID       interface{} `yaml:"gid" json:"gid"`
 }
 
 // Image is the type of an image config
@@ -75,9 +75,9 @@ type Image struct {
 	Readonly          *bool                   `yaml:"readonly" json:"readonly,omitempty"`
 	MaskedPaths       *[]string               `yaml:"maskedPaths" json:"maskedPaths,omitempty"`
 	ReadonlyPaths     *[]string               `yaml:"readonlyPaths" json:"readonlyPaths,omitempty"`
-	UID               *string                 `yaml:"uid" json:"uid,omitempty"`
-	GID               *string                 `yaml:"gid" json:"gid,omitempty"`
-	AdditionalGids    *[]string               `yaml:"additionalGids" json:"additionalGids,omitempty"`
+	UID               *interface{}            `yaml:"uid" json:"uid,omitempty"`
+	GID               *interface{}            `yaml:"gid" json:"gid,omitempty"`
+	AdditionalGids    *[]interface{}          `yaml:"additionalGids" json:"additionalGids,omitempty"`
 	NoNewPrivileges   *bool                   `yaml:"noNewPrivileges" json:"noNewPrivileges,omitempty"`
 	OOMScoreAdj       *int                    `yaml:"oomScoreAdj" json:"oomScoreAdj,omitempty"`
 	DisableOOMKiller  *bool                   `yaml:"disableOOMKiller" json:"disableOOMKiller,omitempty"`
@@ -369,6 +369,29 @@ func assignUint32Array(v1, v2 *[]uint32) []uint32 {
 	return []uint32{}
 }
 
+// assignInterface does ordered overrides from Go interfaces
+// we return 0 as we are using this for uid and this is the default
+func assignInterface(v1, v2 *interface{}) interface{} {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return 0
+}
+
+// assignInterfaceArray does ordered overrides from arrays of Go interfaces
+func assignInterfaceArray(v1, v2 *[]interface{}) []interface{} {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return []interface{}{}
+}
+
 // assignStrings does ordered overrides from JSON string array pointers
 func assignStrings(v1, v2 *[]string) []string {
 	if v2 != nil {
@@ -424,7 +447,7 @@ func assignString(v1, v2 *string) string {
 	return ""
 }
 
-// assignMappings does prdered overrides from UID, GID maps
+// assignMappings does ordered overrides from UID, GID maps
 func assignMappings(v1, v2 *[]specs.LinuxIDMapping) []specs.LinuxIDMapping {
 	if v2 != nil {
 		return *v2
@@ -512,20 +535,25 @@ var allCaps = []string{
 	"CAP_WAKE_ALARM",
 }
 
-func idNumeric(id string, idMap map[string]uint32) (uint32, error) {
-	if id == "" || id == "root" {
-		return 0, nil
-	}
-	for k, v := range idMap {
-		if id == k {
-			return v, nil
+func idNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
+	switch id := v.(type) {
+	case nil:
+		return uint32(0), nil
+	case int:
+		return uint32(id), nil
+	case string:
+		if id == "" || id == "root" {
+			return uint32(0), nil
 		}
+		for k, v := range idMap {
+			if id == k {
+				return v, nil
+			}
+		}
+		return 0, fmt.Errorf("Cannot find id: %s", id)
+	default:
+		return 0, fmt.Errorf("Bad type for uid or gid")
 	}
-	v, err := strconv.ParseUint(id, 10, 32)
-	if err != nil {
-		return 0, fmt.Errorf("Cannot find or parse id (%s): %v", id, err)
-	}
-	return uint32(v), nil
 }
 
 // ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
@@ -797,19 +825,19 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	}
 
 	// handle mapping of named uid, gid to numbers
-	uidString := assignString(label.UID, yaml.UID)
-	gidString := assignString(label.GID, yaml.GID)
-	agStrings := assignStrings(label.AdditionalGids, yaml.AdditionalGids)
-	uid, err := idNumeric(uidString, idMap)
+	uidIf := assignInterface(label.UID, yaml.UID)
+	gidIf := assignInterface(label.GID, yaml.GID)
+	agIf := assignInterfaceArray(label.AdditionalGids, yaml.AdditionalGids)
+	uid, err := idNumeric(uidIf, idMap)
 	if err != nil {
 		return oci, err
 	}
-	gid, err := idNumeric(gidString, idMap)
+	gid, err := idNumeric(gidIf, idMap)
 	if err != nil {
 		return oci, err
 	}
 	additionalGroups := []uint32{}
-	for _, id := range agStrings {
+	for _, id := range agIf {
 		ag, err := idNumeric(id, idMap)
 		if err != nil {
 			return oci, err
