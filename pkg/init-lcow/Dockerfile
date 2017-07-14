@@ -26,10 +26,18 @@ RUN mkdir /out && \
     mkdir -p /out/root/integration && \
     cp /go/src/github.com/Microsoft/opengcs/kernelconfig/4.11/prebuildSandbox.vhdx /out/root/integration/prebuildSandbox.vhdx
 
-# This d line below should be removed once
+# This line and the one below should be removed once
 # https://github.com/Microsoft/opengcs/issues/52 is addressed and then
 # runc should be added via the YAML file
-FROM linuxkit/runc:a0f2894e50bacbd1ff82be41edff8b8e06e0b161 AS runc
+FROM linuxkit/runc:4a35484aa6f90a1f06cdf1fb36f7056926a084b9 AS runc
+
+# This is also a hack. opengcs currently hardcodes udhcpc which we
+# don't have in alpine. So we use dhcpcd and a hacky script to emulate
+# the one command it invokes.
+FROM linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41 AS dhcpd
+RUN mkdir -p /out/sbin && cp /sbin/dhcpcd /out/sbin/dhcpcd && \
+    mkdir -p /out/etc && cp /dhcpcd.conf /out/etc/dhcpcd.conf && \
+    mkdir -p /out/usr/lib && cp -r /usr/lib/dhcpcd /out/usr/lib/dhcpcd
 
 FROM scratch
 ENTRYPOINT []
@@ -38,4 +46,5 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build /out/ /
 COPY --from=runc /usr/bin/runc /sbin/runc
-
+COPY --from=dhcpd /out/ /
+COPY /dhcpd-hack.sh /bin/udhcpc
