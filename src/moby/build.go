@@ -140,7 +140,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	if m.Kernel.Image != "" {
 		// get kernel and initrd tarball from container
 		log.Infof("Extract kernel image: %s", m.Kernel.Image)
-		kf := newKernelFilter(iw, m.Kernel.Cmdline)
+		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar)
 		err := ImageTar(m.Kernel.Image, "", kf, enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
@@ -225,13 +225,25 @@ type kernelFilter struct {
 	tw          *tar.Writer
 	buffer      *bytes.Buffer
 	cmdline     string
+	kernel      string
+	tar         string
 	discard     bool
 	foundKernel bool
 	foundKTar   bool
 }
 
-func newKernelFilter(tw *tar.Writer, cmdline string) *kernelFilter {
-	return &kernelFilter{tw: tw, cmdline: cmdline}
+func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar *string) *kernelFilter {
+	tarName, kernelName := "kernel.tar", "kernel"
+	if tar != nil {
+		tarName = *tar
+		if tarName == "none" {
+			tarName = ""
+		}
+	}
+	if kernel != "" {
+		kernelName = kernel
+	}
+	return &kernelFilter{tw: tw, cmdline: cmdline, kernel: kernelName, tar: tarName}
 }
 
 func (k *kernelFilter) finishTar() error {
@@ -248,8 +260,8 @@ func (k *kernelFilter) Close() error {
 	if !k.foundKernel {
 		return errors.New("did not find kernel in kernel image")
 	}
-	if !k.foundKTar {
-		return errors.New("did not find kernel.tar in kernel image")
+	if !k.foundKTar && k.tar != "" {
+		return errors.New("did not find kernel tar in kernel image")
 	}
 	return k.finishTar()
 }
@@ -279,7 +291,7 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 	}
 	tw := k.tw
 	switch hdr.Name {
-	case "kernel":
+	case k.kernel:
 		if k.foundKernel {
 			return errors.New("found more than one possible kernel image")
 		}
@@ -315,7 +327,7 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
 		}
-	case "kernel.tar":
+	case k.tar:
 		k.foundKTar = true
 		k.discard = false
 		k.buffer = new(bytes.Buffer)

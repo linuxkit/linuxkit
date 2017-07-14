@@ -10,8 +10,10 @@ var schema = string(`
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "image": { "type": "string"},
-        "cmdline": { "type": "string"}
+        "image": {"type": "string"},
+        "cmdline": {"type": "string"},
+        "binary": {"type": "string"},
+        "tar": {"type": "string"}
       }
     },
     "file": {

@@ -19,15 +19,20 @@ import (
 
 // Moby is the type of a Moby config file
 type Moby struct {
-	Kernel struct {
-		Image   string
-		Cmdline string
-	}
+	Kernel   KernelConfig
 	Init     []string
 	Onboot   []Image
 	Services []Image
 	Trust    TrustConfig
 	Files    []File
+}
+
+// KernelConfig is the type of the config for a kernel
+type KernelConfig struct {
+	Image   string
+	Cmdline string
+	Binary  string
+	Tar     *string
 }
 
 // TrustConfig is the type of a content trust config
@@ -167,6 +172,12 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	}
 	if m1.Kernel.Cmdline != "" {
 		moby.Kernel.Cmdline = m1.Kernel.Cmdline
+	}
+	if m1.Kernel.Binary != "" {
+		moby.Kernel.Binary = m1.Kernel.Binary
+	}
+	if m1.Kernel.Tar != nil {
+		moby.Kernel.Tar = m1.Kernel.Tar
 	}
 	moby.Init = append(moby.Init, m1.Init...)
 	moby.Onboot = append(moby.Onboot, m1.Onboot...)
