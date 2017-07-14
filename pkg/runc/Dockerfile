@@ -17,8 +17,7 @@ RUN mkdir -p $GOPATH/src/github.com/opencontainers && \
   git clone https://github.com/opencontainers/runc.git
 WORKDIR $GOPATH/src/github.com/opencontainers/runc
 RUN git checkout $RUNC_COMMIT
-# TODO static pie, currently no easy way to change build options
-RUN make static BUILDTAGS="seccomp"
+RUN make static BUILDTAGS="seccomp" EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
 RUN cp runc /usr/bin/
 
 FROM scratch
