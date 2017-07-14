@@ -44,6 +44,12 @@ onboot:
     binds:
         - /var:/host_var
     command: ["sh", "-c", "mv -v /host_var/log /host_var/lib && ln -vs /var/lib/log /host_var/log"]
+  # remove old containers from the previous boot
+  - name: remove-old-state
+    image: alpine:3.6
+    binds:
+        - /var:/host_var
+    command: ["sh", "-c", "rm -rf /host_var/lib/containerd/io.containerd.runtime.v1.linux/default"]
   - name: dhcpcd
     image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
