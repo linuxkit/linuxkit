@@ -302,6 +302,13 @@ func runQemuContainer(config QemuConfig) error {
 	var args []string
 	config, args = buildQemuCmdline(config)
 
+	// if user specify the "-fw" parameter, this should override the default in container context,
+	// with "-v" option, we will have the chance to assign an external FW binary to the containerized qemu
+	// instead of the fixed FW bin instealled by the build process of the image.
+	if config.UEFI {
+		binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", config.FWPath))
+	}
+
 	dockerArgs := append([]string{"run", "--interactive", "--rm", "-w", cwd}, binds...)
 	dockerArgsImg := append([]string{"run", "--rm", "-w", cwd}, binds...)
 
