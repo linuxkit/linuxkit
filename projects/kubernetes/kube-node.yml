@@ -59,20 +59,6 @@ services:
       - /var/run:/var/run
   - name: kubelet
     image: linuxkitprojects/kubernetes:dev
-    capabilities:
-     - all
-    net: host
-    pid: host
-    mounts:
-     - type: cgroup
-       options: ["rw","nosuid","noexec","nodev","relatime"]
-    binds:
-     - /dev:/dev
-     - /var:/var:rshared,rbind
-     - /var/lib/kubeadm:/etc/kubernetes
-     - /etc/cni:/rootfs/etc/cni:rshared,rbind
-     - /opt/cni:/rootfs/opt/cni:rshared,rbind
-    rootfsPropagation: shared
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
