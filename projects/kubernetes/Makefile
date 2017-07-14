@@ -1,18 +1,10 @@
 all: build-container-images build-vm-images
 
-BOX_PLANS = kubernetes.rb
+build-container-images:
+	make -C kubernetes tag
 
-build-container-images: $(BOX_PLANS)
-	for plan in $(BOX_PLANS) ; do \
-	  docker run --rm -ti \
-	    -v $(PWD):$(PWD) \
-	    -v /var/run/docker.sock:/var/run/docker.sock \
-	    -w $(PWD) \
-	      boxbuilder/box:master $$plan \
-	; done
-
-push-container-images: build-container-images cache-images
-	docker image push linuxkit/kubernetes:latest
+push-container-images: cache-images
+	make -C kubernetes push
 	docker image push linuxkit/kubernetes:latest-image-cache-common
 	docker image push linuxkit/kubernetes:latest-image-cache-control-plane
 

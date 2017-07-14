@@ -58,7 +58,7 @@ services:
     binds:
       - /var/run:/var/run
   - name: kubelet
-    image: linuxkit/kubernetes:latest
+    image: linuxkitprojects/kubernetes:dev
     capabilities:
      - all
     net: host
