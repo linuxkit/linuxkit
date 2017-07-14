@@ -49,13 +49,6 @@ if [ -f $ROOTSHADOW ]; then
 	echo >> /etc/shadow
 fi
 
-ROOTSTTY=/hostroot/etc/securetty
-if [ -f $ROOTSTTY ]; then
-	cp $ROOTSTTY /etc/securetty
-	# just in case someone forgot a newline
-	echo >> /etc/securetty
-fi
-
 for opt in $(cat /proc/cmdline); do
 	case "$opt" in
 	console=*)
