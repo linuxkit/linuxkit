@@ -1,7 +1,5 @@
 #!/bin/sh
 
-set -x
-
 MOUNTPOINT="$1"
 
 [ -z "$MOUNTPOINT" ] && echo "No mountpoint specified" && exit 1
