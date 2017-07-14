@@ -36,7 +36,7 @@ CONTROL_PLANE_IMAGES := \
 
 image-cache/%.tar:
 	mkdir -p $(dir $@)
-	DOCKER_CONTENT_TRUST=1 docker image pull gcr.io/google_containers/$(shell basename $@ .tar)
+	docker image pull gcr.io/google_containers/$(shell basename $@ .tar)
 	docker image save -o $@ gcr.io/google_containers/$(shell basename $@ .tar)
 
 cache-images:
