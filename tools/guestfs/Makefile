@@ -1,6 +1,6 @@
 .PHONY: tag push
 
-BASE=debian:jessie
+BASE=debian:stretch
 IMAGE=guestfs
 
 default: push
