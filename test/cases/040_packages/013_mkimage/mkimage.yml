@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:a626edd428b575d10b994be0d4c5b034838e9946
-  - linuxkit/runc:f5b28379fc969237e0fb11aa1ed946622150e9a0
+  - linuxkit/runc:4a35484aa6f90a1f06cdf1fb36f7056926a084b9
 onboot:
   - name: mkimage
     image: linuxkit/mkimage:a63b8ee4c5de335afc32ba850e0af319b25b96c0
