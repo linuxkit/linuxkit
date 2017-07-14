@@ -16,7 +16,7 @@ onboot:
   - name: format
     image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
   - name: mounts
-    image: linuxkit/mount:b24bd97ae43397b469dbaadd80f17f291c817bdf
+    image: linuxkit/mount:ac8939c4102f97c084d9ddfd445c1908fce6d768
     command: ["/mount.sh", "/var/lib/"]
   - name: var
     image: library/alpine:3.6
