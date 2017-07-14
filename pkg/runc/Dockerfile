@@ -25,3 +25,4 @@ FROM scratch
 WORKDIR /
 ENTRYPOINT []
 COPY --from=alpine /usr/bin/runc /usr/bin/
+COPY etc etc/

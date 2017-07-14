@@ -114,6 +114,10 @@ mount --make-rshared /var
 # make / rshared
 mount --make-rshared /
 
+# set global ulimits TODO move to /etc/limits.conf?
+ulimit -n 1048576
+ulimit -p unlimited
+
 # execute other init processes
 INITS="$(find /etc/init.d -type f | sort)"
 for f in $INITS
