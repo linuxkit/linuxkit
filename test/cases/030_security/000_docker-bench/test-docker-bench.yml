@@ -24,7 +24,7 @@ services:
   - name: dhcpcd
     image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
   - name: docker
-    image: linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190
+    image: linuxkit/docker-ce:baf282455697809fc4e2ee398567d9a4d6c061d9
     capabilities:
      - all
     net: host

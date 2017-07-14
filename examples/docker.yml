@@ -30,7 +30,7 @@ services:
   - name: ntpd
     image: linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90
   - name: docker
-    image: linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190
+    image: linuxkit/docker-ce:baf282455697809fc4e2ee398567d9a4d6c061d9
     capabilities:
      - all
     net: host
