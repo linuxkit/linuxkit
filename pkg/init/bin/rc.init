@@ -122,5 +122,5 @@ ulimit -p unlimited
 INITS="$(find /etc/init.d -type f | sort)"
 for f in $INITS
 do
-	$f &
+	$f
 done
