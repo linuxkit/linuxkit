@@ -1,5 +1,4 @@
 #!/bin/sh
-set -x
 
 infinite_loop() {
 	while true; do
