@@ -8,6 +8,7 @@ jobs:
     steps:
       - checkout
       - run: go get github.com/golang/lint/golint
+      - run: go get github.com/gordonklaus/ineffassign
       - run: cd $GOPATH/src/github.com/moby/tool && make test
-      - run: cd $GOPATH/src/github.com/moby/tool && make clean && make GOOS=darwin
-      - run: cd $GOPATH/src/github.com/moby/tool && make clean && make GOOS=windows
+      - run: cd $GOPATH/src/github.com/moby/tool && make clean && make GOOS=darwin lint moby
+      - run: cd $GOPATH/src/github.com/moby/tool && make clean && make GOOS=windows lint moby
