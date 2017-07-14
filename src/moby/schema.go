@@ -27,8 +27,8 @@ var schema = string(`
           "source": {"type": "string"},
           "optional": {"type": "boolean"},
           "mode": {"type": "string"},
-          "uid": {"type": "string"},
-          "gid": {"type": "string"}
+          "uid": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+          "gid": {"anyOf": [{"type": "string"}, {"type": "integer"}]}
         }
     },
     "files": {
@@ -97,11 +97,11 @@ var schema = string(`
         "readonly": { "type": "boolean"},
         "maskedPaths": { "$ref": "#/definitions/strings" },
         "readonlyPaths": { "$ref": "#/definitions/strings" },
-        "uid": {"type": "string"},
-        "gid": {"type": "string"},
+        "uid": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
+        "gid": {"anyOf": [{"type": "string"}, {"type": "integer"}]},
         "additionalGids": {
             "type": "array",
-            "items": { "type": "string" }
+            "items": {"anyOf": [{"type": "string"}, {"type": "integer"}]}
         },
         "noNewPrivileges": {"type": "boolean"},
         "hostname": {"type": "string"},
