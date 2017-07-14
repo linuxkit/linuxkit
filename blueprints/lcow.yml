@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0"
   tar: none
 init:
-  - linuxkit/init-lcow:ae67df4c4cabb35aae06898cb94fe03972a172e9
+  - linuxkit/init-lcow:b927dd20ba43ec626a0be705ffefe93c13b2acf5
 trust:
   org:
     - linuxkit
