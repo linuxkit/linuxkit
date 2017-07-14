@@ -22,19 +22,3 @@ end
 def mount_bind src, dst
   "mount --bind #{src} #{dst}"
 end
-
-def mount_bind_hostns_self mnt
-  "nsenter --mount=/proc/1/ns/mnt mount -- --bind #{mnt} #{mnt}"
-end
-
-def mount_make_hostns_rshared mnt
-  "nsenter --mount=/proc/1/ns/mnt mount -- --make-rshared #{mnt}"
-end
-
-def mount_persistent_disk mnt
-  "/mount.sh #{mnt}"
-end
-
-def mkdir_p dir
-  "mkdir -p #{dir}"
-end

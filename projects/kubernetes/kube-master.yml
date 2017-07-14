@@ -16,14 +16,13 @@ onboot:
   - name: format
     image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
   - name: mounts
-    image: linuxkit/kubernetes:latest-mounts
-    capabilities:
-     - all
-    pid: host
-    rootfsPropagation: shared
+    image: linuxkit/mount:b24bd97ae43397b469dbaadd80f17f291c817bdf
+    command: ["/mount.sh", "/var/lib/"]
+  - name: var
+    image: library/alpine:3.6
+    command: ["mkdir", "/var/lib/kubeadm"]
     binds:
-     - /dev:/dev
-     - /var:/var:rshared,rbind
+      - /var/lib:/var/lib
 services:
   - name: getty
     image: linuxkit/getty:deb9332e786e72591bd9be200bcc9c7a534eb754

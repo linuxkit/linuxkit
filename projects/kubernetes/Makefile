@@ -1,6 +1,6 @@
 all: build-container-images build-vm-images
 
-BOX_PLANS = kubernetes.rb mounts.rb
+BOX_PLANS = kubernetes.rb
 
 build-container-images: $(BOX_PLANS)
 	for plan in $(BOX_PLANS) ; do \
@@ -13,7 +13,6 @@ build-container-images: $(BOX_PLANS)
 
 push-container-images: build-container-images cache-images
 	docker image push linuxkit/kubernetes:latest
-	docker image push linuxkit/kubernetes:latest-mounts
 	docker image push linuxkit/kubernetes:latest-image-cache-common
 	docker image push linuxkit/kubernetes:latest-image-cache-control-plane
 
