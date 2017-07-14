@@ -29,6 +29,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Printf("USAGE: %s [options] COMMAND\n\n", filepath.Base(os.Args[0]))
 		fmt.Printf("Commands:\n")
+		fmt.Printf("  system-init Prepare the system at start of day\n")
 		fmt.Printf("  start       Start a service\n")
 		fmt.Printf("  help        Print this message\n")
 		fmt.Printf("\n")
@@ -67,6 +68,8 @@ func main() {
 	switch args[0] {
 	case "start":
 		start(args[1:])
+	case "system-init":
+		systemInit(args[1:])
 	default:
 		fmt.Printf("%q is not valid command.\n\n", args[0])
 		flag.Usage()
