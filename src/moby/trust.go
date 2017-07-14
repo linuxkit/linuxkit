@@ -194,13 +194,7 @@ func httpsTransport(caFile string) (*http.Transport, error) {
 		TLSClientConfig:     tlsConfig,
 	}
 	// Override with the system cert pool if the caFile was empty
-	if caFile == "" {
-		systemCertPool, err := x509.SystemCertPool()
-		if err != nil {
-			return nil, err
-		}
-		transport.TLSClientConfig.RootCAs = systemCertPool
-	} else {
+	if caFile != "" {
 		certPool := x509.NewCertPool()
 		pems, err := ioutil.ReadFile(caFile)
 		if err != nil {
