@@ -92,7 +92,7 @@ nfs \
 nfsd \
 ntfs
 do
-	modprobe $mod
+	modprobe $mod 2>/dev/null || true
 done
 
 # check filesystems that are built in
