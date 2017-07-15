@@ -53,7 +53,7 @@ services:
     image: linuxkit/acpid:1966310cb75e28ffc668863a6577ee991327f918
   # Enable getty for easier debugging
   - name: getty
-    image: linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c
+    image: linuxkit/getty:deb9332e786e72591bd9be200bcc9c7a534eb754
     env:
         - INSECURE=true
   # Run ntpd to keep time synchronised in the VM

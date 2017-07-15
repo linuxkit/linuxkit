@@ -1,5 +1,4 @@
 #!/bin/sh
-set -x
 
 infinite_loop() {
 	while true; do
@@ -48,13 +47,6 @@ if [ -f $ROOTSHADOW ]; then
 	cp $ROOTSHADOW /etc/shadow
 	# just in case someone forgot a newline
 	echo >> /etc/shadow
-fi
-
-ROOTSTTY=/hostroot/etc/securetty
-if [ -f $ROOTSTTY ]; then
-	cp $ROOTSTTY /etc/securetty
-	# just in case someone forgot a newline
-	echo >> /etc/securetty
 fi
 
 for opt in $(cat /proc/cmdline); do

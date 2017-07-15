@@ -26,7 +26,7 @@ onboot:
      - /var:/var:rshared,rbind
 services:
   - name: getty
-    image: linuxkit/getty:5ab31289889d61a5d2ecbeea8e36ce74ac54737c
+    image: linuxkit/getty:deb9332e786e72591bd9be200bcc9c7a534eb754
     env:
      - INSECURE=true
   - name: rngd

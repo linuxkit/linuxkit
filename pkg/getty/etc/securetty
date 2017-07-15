@@ -1,0 +1,33 @@
+console
+tty1
+tty2
+tty3
+tty4
+tty5
+tty6
+tty7
+tty8
+tty9
+tty10
+tty11
+
+# UART serial ports
+ttyS0
+ttyS1
+ttyS2
+ttyS3
+
+# IBM iSeries/pSeries virtual console, Xen
+hvc0
+hvc1
+
+#IBM pSeries console ports
+hvsi0
+hvsi1
+
+# ARM "AMBA" serial ports
+ttyAM0
+ttyAM1
+
+# s390 and s390x ports in LPAR mode
+ttysclp0
