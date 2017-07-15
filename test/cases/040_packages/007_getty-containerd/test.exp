@@ -62,7 +62,7 @@ expect {
         exec kill -9 $pid
         exit 1
     }
-    "The server is now ready to accept connections on port 6379" {
+    "Ready to accept connections" {
 	puts "SUCCESS ctr run"
 	# Ctrl-C
 	send "\003"
