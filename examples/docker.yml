@@ -42,6 +42,8 @@ services:
      - /lib/modules:/lib/modules
      - /etc/docker/daemon.json:/etc/docker/daemon.json
 files:
+  - path: var/lib/docker
+    directory: true
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
 trust:
