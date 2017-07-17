@@ -12,9 +12,9 @@ until kubelet --kubeconfig=/var/lib/kubeadm/kubelet.conf \
 	      --network-plugin=cni \
 	      --cni-conf-dir=/etc/cni/net.d \
 	      --cni-bin-dir=/opt/cni/bin ; do
-    if [ ! -e /dev/sr0 ] ; then
+    if [ ! -f /var/config/userdata ] ; then
 	sleep 1
     else
-	mount -o ro /dev/sr0 /mnt && kubeadm join --skip-preflight-checks $(cat /mnt/config)
+	kubeadm join --skip-preflight-checks $(cat /var/config/userdata)
     fi
 done
