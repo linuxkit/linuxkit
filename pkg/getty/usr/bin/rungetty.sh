@@ -41,6 +41,14 @@ start_getty() {
 	infinite_loop setsid.getty -w /sbin/agetty $loginargs $line $speed $tty $term &
 }
 
+
+# check if we are namespaced, and, if so, indicate in the PS1
+if [ -z "$INIGETTY" ]; then
+	cat >/etc/profile.d/namespace.sh <<"EOF"
+export PS1="(ns: getty) $PS1"
+EOF
+fi
+
 # check if we have /etc/getty.shadow
 ROOTSHADOW=/hostroot/etc/getty.shadow
 if [ -f $ROOTSHADOW ]; then
