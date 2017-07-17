@@ -429,19 +429,20 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 				return fmt.Errorf("Specified Source and Metadata for file: %s", f.Path)
 			}
 			if f.Source != "" {
-				if len(f.Source) > 2 && f.Source[:2] == "~/" {
-					f.Source = homeDir() + f.Source[1:]
+				source := f.Source
+				if len(source) > 2 && source[:2] == "~/" {
+					source = homeDir() + source[1:]
 				}
 				if f.Optional {
-					_, err := os.Stat(f.Source)
+					_, err := os.Stat(source)
 					if err != nil {
 						// skip if not found or readable
-						log.Debugf("Skipping file [%s] as not readable and marked optional", f.Source)
+						log.Debugf("Skipping file [%s] as not readable and marked optional", source)
 						continue
 					}
 				}
 				var err error
-				contents, err = ioutil.ReadFile(f.Source)
+				contents, err = ioutil.ReadFile(source)
 				if err != nil {
 					return err
 				}
