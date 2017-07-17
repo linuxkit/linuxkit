@@ -25,6 +25,7 @@ var schema = string(`
           "symlink": {"type": "string"},
           "contents": {"type": "string"},
           "source": {"type": "string"},
+          "metadata": {"type": "string"},
           "optional": {"type": "boolean"},
           "mode": {"type": "string"},
           "uid": {"anyOf": [{"type": "string"}, {"type": "integer"}]},

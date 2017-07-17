@@ -48,6 +48,7 @@ type File struct {
 	Symlink   string
 	Contents  *string
 	Source    string
+	Metadata  string
 	Optional  bool
 	Mode      string
 	UID       interface{} `yaml:"uid" json:"uid"`
