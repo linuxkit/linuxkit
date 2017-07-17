@@ -1,6 +1,6 @@
 kernel:
   image: linuxkit/kernel:4.9.38
-  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+  cmdline: "console=tty0 console=ttyS0"
 init:
   - linuxkit/init:059b2bb4b6efa5c58cf53fed4d0ea863521959fc
   - linuxkit/runc:4a35484aa6f90a1f06cdf1fb36f7056926a084b9
@@ -13,17 +13,18 @@ onboot:
     image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
   - name: binfmt
     image: linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5
+  - name: metadata
+    image: linuxkit/metadata:f122f1b4e873f1d08cd67bd9105385fd923af0cb
   - name: format
     image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
   - name: mounts
-    image: linuxkit/kubernetes:latest-mounts
-    capabilities:
-     - all
-    pid: host
-    rootfsPropagation: shared
+    image: linuxkit/mount:ac8939c4102f97c084d9ddfd445c1908fce6d768
+    command: ["/mount.sh", "/var/lib/"]
+  - name: var
+    image: library/alpine:3.6
+    command: ["mkdir", "/var/lib/kubeadm"]
     binds:
-     - /dev:/dev
-     - /var:/var:rshared,rbind
+      - /var/lib:/var/lib
 services:
   - name: getty
     image: linuxkit/getty:deb9332e786e72591bd9be200bcc9c7a534eb754
@@ -56,28 +57,10 @@ services:
     rootfsPropagation: shared
   - name: kubernetes-image-cache-common
     image: linuxkit/kubernetes:latest-image-cache-common
-    binds:
-      - /var/run:/var/run
   - name: kubernetes-image-cache-control-plane
     image: linuxkit/kubernetes:latest-image-cache-control-plane
-    binds:
-      - /var/run:/var/run
   - name: kubelet
-    image: linuxkit/kubernetes:latest
-    capabilities:
-     - all
-    net: host
-    pid: host
-    mounts:
-     - type: cgroup
-       options: ["rw","nosuid","noexec","nodev","relatime"]
-    binds:
-     - /dev:/dev
-     - /var:/var:rshared,rbind
-     - /var/lib/kubeadm:/etc/kubernetes
-     - /etc/cni:/rootfs/etc/cni:rshared,rbind
-     - /opt/cni:/rootfs/opt/cni:rshared,rbind
-    rootfsPropagation: shared
+    image: linuxkitprojects/kubernetes:4f8c61254ff6243e93d5bb6315386ac66e94ed14
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
