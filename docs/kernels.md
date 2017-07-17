@@ -38,7 +38,10 @@ In summary, LinuxKit offers a choice of the following kernels:
 - [linuxkit/kernel-fedora](https://hub.docker.com/r/linuxkit/kernel-fedora/): Selected Fedora kernels.
 
 
-## Compiling kernel modules
+## Compiling external kernel modules
+
+This section describes how to build external (out-of-tree) kernel modules. It is assumed you have
+the source available to those modules, and require the correct kernel version headers and compile tools.
 
 The LinuxKit kernel packages include `kernel-dev.tar` which contains
 the headers and other files required to compile kernel modules against
@@ -66,6 +69,26 @@ package to the `onboot` section in your YAML
 file. [kmod.yml](../tests/kmod/kmod.yml) contains an example for the
 configuration.
 
+## Compiling internal kernel modules
+If you want to compile in-tree kernel modules, i.e. those whose source is already in the
+kernel tree but have not been included in `linuxkit/kernel`, you have two options:
+
+1. Follow the external kernel modules process from above
+2. Modify the kernel config in [../kernel/](../kernel/) and rebuild the kernel.
+
+In general, if it is an in-tree module, we prefer to include it in the standard linuxkit kernel
+distribution, i.e. option 2 above. Once you have it working, please open a Pull Request to include it.
+
+### External Process
+The `kernel-dev.tar` included with each kernel does *not* include the kernel sources, *only* the headers.
+To build those modules, you will need to download the kernel source separately and recompile. The
+in-container process that downloads the source is available in the [Dockerfile](../kernel/Dockerfile).
+
+### Modify Config
+Building an in-tree module is very similar to building a new modified kernel (see below):
+
+1. Modify the appropriate `kernel.config-*` file(s)
+2. Compile
 
 ## Building and using custom kernels
 
@@ -73,9 +96,11 @@ To build and test locally modified kernels, e.g., to try a different
 kernel config or new patches, the existing kernel build system in the
 [`../kernel`](../kernel/) can be re-used. For example, assuming the
 current 4.9 kernel is 4.9.33, you can build a local kernel with:
+
 ```
 make build_4.9.x
 ```
+
 This will create a local kernel image called
 `linuxkit/kernel:4.9.33-<hash>-dirty` assuming you haven't committed you local changes. You can then use this in your YAML file as:
 ```
@@ -90,6 +115,63 @@ make ORG=<your hub org>
 The image will be uploaded to Hub and can be use in a YAML file as
 `<your hub org>/kernel:4.9.33` or as `<your hub
 org>/kernel:4.9.33-<hash>`.
+
+### Modifying the Config
+Each series of kernels has a config file dedicated to it in [../kernel/](../kernel), e.g.
+[kernel.config-4.9.x](../kernel/kernel.config-4.9.x). To build a particular series of kernel:
+
+1. Create a separate `git` branch (not required but *strongly* recommended)
+2. Modify the appropriate `kernel.config`, e.g. `kernel.config-4.9.x`
+3. Run `make build_<series>` with appropriate arguments per this section, e.g. `make build_4.9.x ORG=foo HASH=bar`
+4. Create a `.yml`, build and test
+
+You can modify the config in one of two ways:
+
+* Manually, editing the config file
+* Using a standard config generator, like `menuconfig`
+
+Generally, you will manually edit a file if you are a Linux kernel expert and _fully_ understand all of the dependencies, or if the change is minor and you are _highly confident_ there are no dependencies.
+
+If you wish to use `menuconfig`, which figures out dependencies for you, you will need an environment in which to run it. Fortunately, the linuxkit project's kernel compile process already sets one up for you.
+To get an appropriate environment:
+
+1. `cd kernel/`
+2. Run a build for your desired kernel series, e.g. `make build_4.9.x ORG=foo HASH=bar`
+3. When you see the output from `make defconfig && make oldconfig` complete, hit `Ctrl-C` to stop the build
+4. Note the hash from the intermediate container. That intermediate container has all of the tools and source in it, and can be used to build.
+5. Get a shell in that intermediate container, mounting the current directory in: `docker run -it --rm -v ${PWD}:/src <hash> sh`
+
+This will give you a read-to-run kernel build environment, with all of the config files in `/src/`.
+
+For the output of step 4, e.g.:
+
+```
+Step X/29 : COMMAND
+ ---> b2a4a976d661
+```
+
+Once you have your shell, and you want to run the config, you can do the following. We assume you have launched your config container using the steps above, i.e. `docker run -it --rm -v ${PWD}:/src <hash> sh`. The kernel source is in `/linux/`, while the `kernel/` directory from linuxkit is in `/src/`:
+
+Unless you are building the config from scratch, you probably want to make small modifications to the existing config.
+
+The appropriate config at `/src/kernel.config-<series>` was already copied over to `/linux/.config` by the build.
+
+1. `cd /linux`
+2. `make menuconfig`
+3. Load in the existing config: On the bottom menu, use the left-right arrow keys to `Load`
+4. Load it from `.config`
+5. `Exit` from the `Load` pop-up and make the desired changes
+6. Save the modified config: On the bottom menu, use the left-right arrow keys to `Save`
+7. Save it to `.config`
+8. Exit the menu by selecting `Exit` from the bottom meny as many times as necessary
+9. Copy the saved config to the mount location: `cp /linux/.config /src/some-saved-name.config` (replace with an appropriate name)
+10. Exit out of the container
+11. Check the differences generated by menuconfig with `diff kernel.config-<series> some-saved-name.config`.
+    * If the changes are as you expected, proceed to the next step
+    * If the changes are different, either return to the container and menuconfig, or edit manually
+12. Copy the new config file to the build location: `cp some-saved-name.config kernel.config-<series>`
+13. Run your build: `make build_<series>`
+
 
 
 ## Working with Linux kernel patches for LinuxKit
