@@ -31,6 +31,8 @@ files:
     contents: '{"debug": true}'
   - path: /empty
     contents: ""
+  - path: etc/moby-config
+    metadata: yaml
 trust:
   org:
     - library
