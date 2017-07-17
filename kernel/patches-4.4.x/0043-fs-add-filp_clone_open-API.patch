@@ -1,4 +1,4 @@
-From 441070052852e615194df40e83260611eeb34e77 Mon Sep 17 00:00:00 2001
+From 0c831954f862451e12e10dc30ef2f046f3231fe2 Mon Sep 17 00:00:00 2001
 From: James Bottomley <James.Bottomley@HansenPartnership.com>
 Date: Wed, 17 Feb 2016 16:49:38 -0800
 Subject: [PATCH 43/44] fs: add filp_clone_open API
@@ -29,10 +29,10 @@ index 71859c4d0b41..c0022708ff3a 100644
  /*
   * inode.c
 diff --git a/fs/open.c b/fs/open.c
-index 157b9940dd73..9d993f928ea0 100644
+index fbc5c7b230b3..94fe386e566d 100644
 --- a/fs/open.c
 +++ b/fs/open.c
-@@ -1001,6 +1001,26 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
+@@ -1007,6 +1007,26 @@ struct file *file_open_root(struct dentry *dentry, struct vfsmount *mnt,
  }
  EXPORT_SYMBOL(file_open_root);
  
