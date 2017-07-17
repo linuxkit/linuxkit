@@ -96,6 +96,14 @@ Specifying the `mode` is optional, and will default to `0600`. Leading directori
 created if not specified. You can use `~/path` in `source` to specify a path in the build
 user's home directory.
 
+In addition there is a `metadata` option that will generate the file. Currently the only value
+supported here is `"yaml"` which will output the yaml used to generate the image into the specified
+file:
+```
+  - path: etc/linuxkit.yml
+    metadata:yaml
+```
+
 ## `trust`
 
 The `trust` section specifies which build components are to be cryptographically verified with
