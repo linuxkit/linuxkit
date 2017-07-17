@@ -3,6 +3,9 @@ spawn linuxkit run test-ctr
 set pid [exp_pid]
 set timeout 60
 set prompt ":~# "
+# Running $image should produce $output
+set image "docker.io/library/hello-world@sha256:f3b3b28a45160805bb16542c9531888519430e9e6d6ffc09d72261b0d26ff74f"
+set output "Hello from Docker!"
 
 expect {
     timeout {
@@ -42,7 +45,7 @@ expect {
         exit 1
     }
     $prompt {
-	send "dist pull docker.io/library/redis:alpine\n"
+	send "dist pull $image\n"
     }
 }
 expect {
@@ -53,7 +56,7 @@ expect {
     }
     $prompt {
 	puts "SUCCESS dist pull"
-	send "ctr run -t docker.io/library/redis:alpine test\n"
+	send "ctr run -t $image test\n"
     }
 }
 expect {
@@ -62,7 +65,7 @@ expect {
         exec kill -9 $pid
         exit 1
     }
-    "Ready to accept connections" {
+    $output {
 	puts "SUCCESS ctr run"
 	# Ctrl-C
 	send "\003"
