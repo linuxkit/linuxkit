@@ -27,10 +27,9 @@ services:
   - name: ntpd
     image: linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90
   - name: docker
-    image: linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190
+    image: docker:17.06.0-ce-dind
     capabilities:
      - all
-    net: host
     mounts:
      - type: cgroup
        options: ["rw","nosuid","noexec","nodev","relatime"]
@@ -39,6 +38,7 @@ services:
      - /lib/modules:/lib/modules
      - /var/run:/var/run
      - /var/html:/var/html
+    command: ["/usr/bin/docker-init", "/usr/bin/dockerd"]
   - name: compose
     image: linuxkitprojects/compose:0535e78608f57702745dfd56fbe78d28d237e469
     binds:
