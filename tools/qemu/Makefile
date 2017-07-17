@@ -1,3 +1,4 @@
+IMAGE=qemu
+
 include ../../pkg/package.mk
 
-IMAGE=qemu
