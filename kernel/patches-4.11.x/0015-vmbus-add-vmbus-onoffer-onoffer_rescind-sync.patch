@@ -1,4 +1,4 @@
-From 21d1da652810bdc3dd1c0ce62fbf3cb9bc6313b4 Mon Sep 17 00:00:00 2001
+From c0d2283fc1763beefa870ca0b2b3eeed1278e9b1 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 21:32:00 +0800
 Subject: [PATCH 15/20] vmbus: add vmbus onoffer/onoffer_rescind sync.

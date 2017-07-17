@@ -1,4 +1,4 @@
-From b0a431963f3fcd2742c2d12d670bbee5814b6ab6 Mon Sep 17 00:00:00 2001
+From a5fc9e6c5441686775934c2d3ee26d8a4ecad8c5 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 30 Apr 2017 16:21:18 -0700
 Subject: [PATCH 13/20] Drivers: hv: vmbus: Fix rescind handling
