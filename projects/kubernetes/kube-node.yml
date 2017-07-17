@@ -55,8 +55,6 @@ services:
     rootfsPropagation: shared
   - name: kubernetes-image-cache-common
     image: linuxkit/kubernetes:latest-image-cache-common
-    binds:
-      - /var/run:/var/run
   - name: kubelet
     image: linuxkitprojects/kubernetes:dev
 files:
