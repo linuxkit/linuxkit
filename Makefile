@@ -20,7 +20,7 @@ endif
 
 PREFIX?=/usr/local/
 
-MOBY_COMMIT=a824287800b1871fde9859f5b2bd9009eaefa990
+MOBY_COMMIT=4105b7ea313b04bfd930aa45b8a091e8e3a1b2ac
 MOBY_VERSION=0.0
 bin/moby: tmp_moby_bin.tar | bin
 	tar xf $<

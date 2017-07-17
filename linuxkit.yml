@@ -49,6 +49,8 @@ files:
 
       [metrics]
       address = ":13337"
+  - path: etc/linuxkit-config
+    metadata: yaml
 trust:
   org:
     - linuxkit
