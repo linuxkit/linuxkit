@@ -3,6 +3,7 @@ package moby
 import (
 	"archive/tar"
 	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -359,6 +360,16 @@ func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 	return nil
 }
 
+// this allows inserting metadata into a file in the image
+func metadata(m Moby, md string) ([]byte, error) {
+	switch md {
+	case "yaml":
+		return json.MarshalIndent(m, "", "    ")
+	default:
+		return []byte{}, fmt.Errorf("Unsupported metadata type: %s", md)
+	}
+}
+
 func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 	// TODO also include the files added in other parts of the build
 	var addedFiles = map[string]bool{}
@@ -410,25 +421,43 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 		if f.Contents != nil {
 			contents = []byte(*f.Contents)
 		}
-		if !f.Directory && f.Contents == nil && f.Symlink == "" {
-			if f.Source == "" {
-				return errors.New("Contents of file not specified")
+		if !f.Directory && f.Symlink == "" && f.Contents == nil {
+			if f.Source == "" && f.Metadata == "" {
+				return fmt.Errorf("Contents of file (%s) not specified", f.Path)
 			}
-			if len(f.Source) > 2 && f.Source[:2] == "~/" {
-				f.Source = homeDir() + f.Source[1:]
+			if f.Source != "" && f.Metadata != "" {
+				return fmt.Errorf("Specified Source and Metadata for file: %s", f.Path)
 			}
-			if f.Optional {
-				_, err := os.Stat(f.Source)
+			if f.Source != "" {
+				source := f.Source
+				if len(source) > 2 && source[:2] == "~/" {
+					source = homeDir() + source[1:]
+				}
+				if f.Optional {
+					_, err := os.Stat(source)
+					if err != nil {
+						// skip if not found or readable
+						log.Debugf("Skipping file [%s] as not readable and marked optional", source)
+						continue
+					}
+				}
+				var err error
+				contents, err = ioutil.ReadFile(source)
 				if err != nil {
-					// skip if not found or readable
-					log.Debugf("Skipping file [%s] as not readable and marked optional", f.Source)
-					continue
+					return err
+				}
+			} else {
+				contents, err = metadata(m, f.Metadata)
+				if err != nil {
+					return err
 				}
 			}
-			var err error
-			contents, err = ioutil.ReadFile(f.Source)
-			if err != nil {
-				return err
+		} else {
+			if f.Metadata != "" {
+				return fmt.Errorf("Specified Contents and Metadata for file: %s", f.Path)
+			}
+			if f.Source != "" {
+				return fmt.Errorf("Specified Contents and Source for file: %s", f.Path)
 			}
 		}
 		// we need all the leading directories

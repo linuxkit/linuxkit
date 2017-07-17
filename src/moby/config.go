@@ -29,29 +29,30 @@ type Moby struct {
 
 // KernelConfig is the type of the config for a kernel
 type KernelConfig struct {
-	Image   string
-	Cmdline string
-	Binary  string
-	Tar     *string
+	Image   string  `yaml:"image" json:"image"`
+	Cmdline string  `yaml:"cmdline" json:"cmdline,omitempty"`
+	Binary  string  `yaml:"binary" json:"binary,omitempty"`
+	Tar     *string `yaml:"tar" json:"tar,omitempty"`
 }
 
 // TrustConfig is the type of a content trust config
 type TrustConfig struct {
-	Image []string
-	Org   []string
+	Image []string `yaml:"image" json:"image,omitempty"`
+	Org   []string `yaml:"org" json:"org,omitempty"`
 }
 
 // File is the type of a file specification
 type File struct {
-	Path      string
-	Directory bool
-	Symlink   string
-	Contents  *string
-	Source    string
-	Optional  bool
-	Mode      string
-	UID       interface{} `yaml:"uid" json:"uid"`
-	GID       interface{} `yaml:"gid" json:"gid"`
+	Path      string      `yaml:"path" json:"path"`
+	Directory bool        `yaml:"directory" json:"directory"`
+	Symlink   string      `yaml:"symlink" json:"symlink,omitempty"`
+	Contents  *string     `yaml:"contents" json:"contents,omitempty"`
+	Source    string      `yaml:"source" json:"source,omitempty"`
+	Metadata  string      `yaml:"metadata" json:"metadata,omitempty"`
+	Optional  bool        `yaml:"optional" json:"optional"`
+	Mode      string      `yaml:"mode" json:"mode,omitempty"`
+	UID       interface{} `yaml:"uid" json:"uid,omitempty"`
+	GID       interface{} `yaml:"gid" json:"gid,omitempty"`
 }
 
 // Image is the type of an image config
@@ -65,13 +66,13 @@ type Image struct {
 	Tmpfs             *[]string               `yaml:"tmpfs" json:"tmpfs,omitempty"`
 	Command           *[]string               `yaml:"command" json:"command,omitempty"`
 	Env               *[]string               `yaml:"env" json:"env,omitempty"`
-	Cwd               string                  `yaml:"cwd" json:"cwd"`
-	Net               string                  `yaml:"net" json:"net"`
-	Pid               string                  `yaml:"pid" json:"pid"`
-	Ipc               string                  `yaml:"ipc" json:"ipc"`
-	Uts               string                  `yaml:"uts" json:"uts"`
-	Userns            string                  `yaml:"userns" json:"userns"`
-	Hostname          string                  `yaml:"hostname" json:"hostname"`
+	Cwd               string                  `yaml:"cwd" json:"cwd,omitempty"`
+	Net               string                  `yaml:"net" json:"net,omitempty"`
+	Pid               string                  `yaml:"pid" json:"pid,omitempty"`
+	Ipc               string                  `yaml:"ipc" json:"ipc,omitempty"`
+	Uts               string                  `yaml:"uts" json:"uts,omitempty"`
+	Userns            string                  `yaml:"userns" json:"userns,omitempty"`
+	Hostname          string                  `yaml:"hostname" json:"hostname,omitempty"`
 	Readonly          *bool                   `yaml:"readonly" json:"readonly,omitempty"`
 	MaskedPaths       *[]string               `yaml:"maskedPaths" json:"maskedPaths,omitempty"`
 	ReadonlyPaths     *[]string               `yaml:"readonlyPaths" json:"readonlyPaths,omitempty"`
