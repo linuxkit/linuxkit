@@ -4,11 +4,24 @@ RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \
     busybox \
     libarchive-tools \
-    qemu-img \
-    qemu-system-x86_64
+    qemu-img && \
+    case $(uname -m) in \
+    x86_64) \
+        apk add --no-cache --initdb -p /out qemu-system-x86_64; \
+        ;; \
+    aarch64) \
+        apk add --no-cache --initdb -p /out qemu-system-aarch64; \
+        ;; \
+    esac
 
-RUN mkdir -p /out/usr/share/ovmf \
-    && cp /usr/share/ovmf/bios.bin /out/usr/share/ovmf/bios.bin
+RUN case $(uname -m) in \
+    x86_64) \
+        mkdir -p /out/usr/share/ovmf \
+        && cp /usr/share/ovmf/bios.bin /out/usr/share/ovmf/bios.bin; \
+        ;; \
+    aarch64) \
+        ;; \
+    esac
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 FROM scratch
