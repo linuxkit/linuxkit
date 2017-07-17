@@ -5,7 +5,7 @@ RUN apk add --no-cache --initdb -p /out \
     busybox \
     e2fsprogs \
     musl
-RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache /out/var/run
 
 FROM linuxkit/alpine:3744607156e6b67e3e7d083b15be9e7722215e73 AS build
 RUN apk add --no-cache build-base curl git go musl-dev
@@ -38,4 +38,5 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build /out/ /
 COPY --from=runc /usr/bin/runc /sbin/runc
+RUN ln -s /run /var/
 

@@ -9,7 +9,7 @@ RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
 
 # Remove apk residuals. We have a read-only rootfs, so apk is of no use.
-RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache /out/var/run
 
 FROM scratch
 ENTRYPOINT []
@@ -20,3 +20,4 @@ COPY --from=mirror /out/ /
 COPY init /
 COPY etc etc/
 COPY bin bin/
+RUN ln -s /run /var/
