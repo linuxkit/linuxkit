@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.11.10 Kernel Configuration
+# Linux/x86 4.11.11 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y

@@ -1,4 +1,4 @@
-From 546d05baf3ec141f3c1e41785997ad788e5770b2 Mon Sep 17 00:00:00 2001
+From 56ceb6b4fdbd45fa464702c98d8eb9b28bf8e431 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:38 -0800
 Subject: [PATCH 27/44] Drivers: hv: vmbus: define the new offer type for
