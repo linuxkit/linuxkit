@@ -18,7 +18,7 @@ kube-node-initrd.img: kube-node.yml
 
 clean:
 	rm -f -r \
-	  kube-*-bzImage kube-*-cmdline kube-*-disk.img kube-*-initrd.img \
+	  kube-*-kernel kube-*-cmdline kube-*-state kube-*-initrd.img \
 	  image-cache/common image-cache/control-plane
 
 COMMON_IMAGES := \
