@@ -30,7 +30,7 @@ bin/moby: tmp_moby_bin.tar | bin
 tmp_moby_bin.tar: Makefile
 	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(MOBY_COMMIT) -X main.Version=$(MOBY_VERSION)" -o bin/moby > $@
 
-RTF_COMMIT=1268bd2ef979bd840dc35dcb8d5dc0a5c75ba129
+RTF_COMMIT=a5c5885a833d6378fa61fcd66374cc55f0dde503
 RTF_CMD=github.com/linuxkit/rtf/cmd
 RTF_VERSION=0.0
 bin/rtf: tmp_rtf_bin.tar | bin
