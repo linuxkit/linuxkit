@@ -128,6 +128,7 @@ var schema = string(`
     "kernel": { "$ref": "#/definitions/kernel" },
     "init": { "$ref": "#/definitions/strings" },
     "onboot": { "$ref": "#/definitions/images" },
+    "onshutdown": { "$ref": "#/definitions/images" },
     "services": { "$ref": "#/definitions/images" },
     "trust": { "$ref": "#/definitions/trust" },
     "files": { "$ref": "#/definitions/files" }

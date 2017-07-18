@@ -133,6 +133,10 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		idMap[image.Name] = id
 		id++
 	}
+	for _, image := range m.Onshutdown {
+		idMap[image.Name] = id
+		id++
+	}
 	for _, image := range m.Services {
 		idMap[image.Name] = id
 		id++
@@ -176,6 +180,24 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		}
 		so := fmt.Sprintf("%03d", i)
 		path := "containers/onboot/" + so + "-" + image.Name
+		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
+		if err != nil {
+			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
+		}
+	}
+
+	if len(m.Onshutdown) != 0 {
+		log.Infof("Add onshutdown containers:")
+	}
+	for i, image := range m.Onshutdown {
+		log.Infof("  Create OCI config for %s", image.Image)
+		useTrust := enforceContentTrust(image.Image, &m.Trust)
+		config, err := ConfigToOCI(image, useTrust, idMap)
+		if err != nil {
+			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
+		}
+		so := fmt.Sprintf("%03d", i)
+		path := "containers/onshutdown/" + so + "-" + image.Name
 		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
 		if err != nil {
 			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)

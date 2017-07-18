@@ -19,12 +19,13 @@ import (
 
 // Moby is the type of a Moby config file
 type Moby struct {
-	Kernel   KernelConfig `kernel:"cmdline" json:"kernel,omitempty"`
-	Init     []string     `init:"cmdline" json:"init"`
-	Onboot   []Image      `yaml:"onboot" json:"onboot"`
-	Services []Image      `yaml:"services" json:"services"`
-	Trust    TrustConfig  `yaml:"trust" json:"trust,omitempty"`
-	Files    []File       `yaml:"files" json:"files"`
+	Kernel     KernelConfig `kernel:"cmdline" json:"kernel,omitempty"`
+	Init       []string     `init:"cmdline" json:"init"`
+	Onboot     []Image      `yaml:"onboot" json:"onboot"`
+	Onshutdown []Image      `yaml:"onshutdown" json:"onshutdown"`
+	Services   []Image      `yaml:"services" json:"services"`
+	Trust      TrustConfig  `yaml:"trust" json:"trust,omitempty"`
+	Files      []File       `yaml:"files" json:"files"`
 }
 
 // KernelConfig is the type of the config for a kernel
@@ -182,6 +183,7 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	}
 	moby.Init = append(moby.Init, m1.Init...)
 	moby.Onboot = append(moby.Onboot, m1.Onboot...)
+	moby.Onshutdown = append(moby.Onshutdown, m1.Onshutdown...)
 	moby.Services = append(moby.Services, m1.Services...)
 	moby.Files = append(moby.Files, m1.Files...)
 	moby.Trust.Image = append(moby.Trust.Image, m1.Trust.Image...)

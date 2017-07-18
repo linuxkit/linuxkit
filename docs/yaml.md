@@ -10,8 +10,8 @@ The yaml configuration specifies the components used to build up an image . All 
 are downloaded at build time to create an image. The image is self-contained and immutable,
 so it can be tested reliably for continuous delivery.
 
-The configuration file is processed in the order `kernel`, `init`, `onboot`, `services`, `files`.
-Each section adds file to the root file system. Sections may be omitted.
+The configuration file is processed in the order `kernel`, `init`, `onboot`, `onshutdown`,
+`services`, `files`. Each section adds files to the root file system. Sections may be omitted.
 
 Each container that is specified is allocated a unique `uid` and `gid` that it may use if it
 wishes to run as an isolated user (or user namespace). Anywhere you specify a `uid` or `gid`
@@ -61,6 +61,15 @@ The `onboot` section is a list of images. These images are run before any other
 images. They are run sequentially and each must exit before the next one is run.
 These images can be used to configure one shot settings. See [Image
 specification](#image-specification) for a list of supported fields.
+
+## `onshutdown`
+
+This is a list of images to run on a clean shutdown. Note that you must not rely on these
+being run at all, as machines may be be powered off or shut down without having time to run
+these scripts. If you add anything here you should test both in the case where they are
+run and when they are not. Most systems are likely to be "crash only" and not have any setup here,
+but you can attempt to deregister cleanly from a network service here, rather than relying
+on timeouts, for example.
 
 ## `services`
 
