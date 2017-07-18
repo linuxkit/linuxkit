@@ -11,6 +11,7 @@ RUN apk add --no-cache --initdb -p /out \
 	curl \
 	e2fsprogs \
 	e2fsprogs-extra \
+	git \
 	iptables \
 	musl \
 	xfsprogs \
