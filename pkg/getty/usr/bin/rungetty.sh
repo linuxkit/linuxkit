@@ -56,5 +56,5 @@ for opt in $(cat /proc/cmdline); do
 	esac
 done
 
-# wait for all our child process to exit; tini will handle subreaping, if necessary
-wait
+# if we are in a container (not in root init) wait for all our child process to exit; tini will handle subreaping, if necessary
+[ -z "$INITGETTY" ] && wait
