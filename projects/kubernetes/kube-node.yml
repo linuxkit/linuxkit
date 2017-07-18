@@ -56,7 +56,7 @@ services:
     rootfsPropagation: shared
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: kubernetes-image-cache-common
-    image: linuxkitprojects/kubernetes-image-cache-common:dev
+    image: linuxkitprojects/kubernetes-image-cache-common:d49a861bde872e6e975153a98a2c482834a30ef9
   - name: kubelet
     image: linuxkitprojects/kubernetes:4f8c61254ff6243e93d5bb6315386ac66e94ed14
 files:
