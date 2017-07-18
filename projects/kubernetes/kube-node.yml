@@ -27,7 +27,7 @@ onboot:
       - /var/lib:/var/lib
 services:
   - name: getty
-    image: linuxkit/getty:deb9332e786e72591bd9be200bcc9c7a534eb754
+    image: linuxkit/getty:0a2955f3d7a10a0e71972791c3ba6400118f327e
     env:
      - INSECURE=true
   - name: rngd

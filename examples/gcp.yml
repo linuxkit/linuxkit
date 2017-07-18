@@ -16,7 +16,7 @@ onboot:
     image: linuxkit/metadata:f122f1b4e873f1d08cd67bd9105385fd923af0cb
 services:
   - name: getty
-    image: linuxkit/getty:0bd92d5f906491c20e4177c57f965338fe5a8c5f
+    image: linuxkit/getty:0a2955f3d7a10a0e71972791c3ba6400118f327e
     env:
      - INSECURE=true
   - name: rngd
