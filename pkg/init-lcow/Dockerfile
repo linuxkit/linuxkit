@@ -8,10 +8,11 @@ RUN apk add --no-cache --initdb -p /out \
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 FROM linuxkit/alpine:3744607156e6b67e3e7d083b15be9e7722215e73 AS build
+ENV OPENGCS_REPO=https://github.com/rn/opengcs
+ENV OPENGCS_COMMIT=d3ba8e211c0df4b0ee663bcfc00b4c2d88abcb9c
 RUN apk add --no-cache build-base curl git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
-ENV OPENGCS_COMMIT=4e4e6f28a03e974e6c32f00a91d51f9605821fdd
-RUN git clone https://github.com/Microsoft/opengcs.git /go/src/github.com/Microsoft/opengcs && \
+RUN git clone $OPENGCS_REPO /go/src/github.com/Microsoft/opengcs && \
     cd /go/src/github.com/Microsoft/opengcs && \
     git checkout $OPENGCS_COMMIT && \
     cd service && \
@@ -26,16 +27,9 @@ RUN mkdir /out && \
     mkdir -p /out/root/integration && \
     cp /go/src/github.com/Microsoft/opengcs/kernelconfig/4.11/prebuildSandbox.vhdx /out/root/integration/prebuildSandbox.vhdx
 
-# This d line below should be removed once
-# https://github.com/Microsoft/opengcs/issues/52 is addressed and then
-# runc should be added via the YAML file
-FROM linuxkit/runc:a0f2894e50bacbd1ff82be41edff8b8e06e0b161 AS runc
-
 FROM scratch
 ENTRYPOINT []
 CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build /out/ /
-COPY --from=runc /usr/bin/runc /sbin/runc
-
