@@ -39,10 +39,9 @@ services:
   - name: sshd
     image: linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb
   - name: docker
-    image: linuxkit/docker-ce:9b937df179bdbebbc70243779978057df0b54190
+    image: docker:17.06.0-ce-dind
     capabilities:
      - all
-    net: host
     pid: host
     mounts:
      - type: cgroup
@@ -55,6 +54,7 @@ services:
      - /etc/cni:/etc/cni:rshared,rbind
      - /opt/cni:/opt/cni:rshared,rbind
     rootfsPropagation: shared
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: kubernetes-image-cache-common
     image: linuxkit/kubernetes:latest-image-cache-common
   - name: kubernetes-image-cache-control-plane
