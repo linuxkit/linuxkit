@@ -28,15 +28,6 @@
 
 #include <net/ethernet.h>
 
-#ifdef __linux__
-
-#include <linux/if_packet.h>
-#include <linux/filter.h>
-
-#include <net/if.h>
-
-#include <arpa/inet.h>
-
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -51,6 +42,15 @@
 #include "caml/alloc.h"
 #include "caml/custom.h"
 #include "caml/bigarray.h"
+
+#ifdef __linux__
+
+#include <linux/if_packet.h>
+#include <linux/filter.h>
+
+#include <net/if.h>
+
+#include <arpa/inet.h>
 
 #define BOOTPC          68
 #define BPF_WHOLEPACKET 0x0fffffff
@@ -80,6 +80,13 @@ static const struct sock_filter bootp_bpf_filter [] = {
   BPF_STMT(BPF_RET + BPF_K, 0),
 };
 
+#else
+
+struct sock_filter {};
+static const struct sock_filter bootp_bpf_filter [] = {};
+
+#endif
+
 /* Filters */
 CAMLprim value bpf_filter(value vunit)
 {
@@ -89,5 +96,3 @@ CAMLprim value bpf_filter(value vunit)
   memcpy(String_val(vfilter), bootp_bpf_filter, sizeof(bootp_bpf_filter));
   CAMLreturn (vfilter);
 }
-
-#endif

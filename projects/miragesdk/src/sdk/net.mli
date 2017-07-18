@@ -1,10 +1,35 @@
-(** [Net] exposes low-level system functions related to network. *)
+(** MirageOS's net interface over RPC *)
 
-val mac: string -> Macaddr.t Lwt.t
-(** [mac e] is the MAC address of the interface [e]. *)
+(** {1 Remote Networks} *)
 
-val set_ip: string -> Ipaddr.V4.t -> unit Lwt.t
-(** [set_ip e ip] sets [e]'s IP address to [ip]. *)
+module type S = Mirage_net_lwt.S
 
-val set_gateway: Ipaddr.V4.t -> unit Lwt.t
-(** [set_gateway ip] set the default host gateway to [ip]. *)
+(** [Client(F)] a an implementation of MirageOS's net interface over
+    the flow [F]. Once connected, to the other side of the net, behave
+    just as a normal local net, althought all the calls are now sent
+    to the remote end. *)
+module Client (F: Flow.S): sig
+  include S
+  val connect: switch:Lwt_switch.t -> ?tags:Logs.Tag.set -> F.t -> t Lwt.t
+end
+
+(** [Server(F)(Local)] exposes the MirageOS's network [Local] as a
+    Cap-n-p RPC endpoint over the flow [F]. Clients calls done on the
+    other end of [F] will be executed on the server-side. *)
+module Server (F: Flow.S) (Local: S): sig
+  type t
+  val service: Local.t -> t
+  val listen: switch:Lwt_switch.t -> ?tags:Logs.Tag.set -> t -> F.t -> unit
+end
+
+(** {1 Local Networks} *)
+
+module Fd: sig
+  include S
+  val connect: ?mac:Macaddr.t -> int -> t Lwt.t
+end
+
+module Rawlink: sig
+  include S
+  val connect: filter:string -> ?mac:Macaddr.t -> string -> t Lwt.t
+end

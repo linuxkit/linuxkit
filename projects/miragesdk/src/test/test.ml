@@ -1,6 +1,5 @@
 open Astring
 open Lwt.Infix
-open Sdk
 
 let random_string n =
   Bytes.init n (fun _ -> char_of_int (Random.int 255))
@@ -19,6 +18,8 @@ let check_raises msg f =
 
 let escape = String.Ascii.escape
 
+module IO = Sdk.Flow.FIFO
+
 let write fd strs =
   Lwt_list.iter_s (fun str ->
       IO.write fd (Cstruct.of_string str) >>= function
@@ -32,50 +33,46 @@ let read fd =
   | Ok `Eof      -> Lwt.fail_with "read: EOF"
   | Error e      -> Fmt.kstrf Lwt.fail_with "read: %a" IO.pp_error e
 
-let calf pipe = Init.(Fd.flow Pipe.(calf pipe))
-let priv pipe = Init.(Fd.flow Pipe.(priv pipe))
-
-let test_pipe pipe () =
-  let calf = calf pipe in
-  let priv = priv pipe in
-  let name = Init.Pipe.name pipe in
+(*
+let test_socketpair c s () =
+  IO.connect path >>= fun c ->
+  IO.connect path >>= fun s ->
   let test strs =
     let escape_strs = String.concat ~sep:"" @@ List.map escape strs in
-    (* pipes are unidirectional *)
-    (* calf -> priv works *)
-    write calf strs >>= fun () ->
-    read priv >>= fun buf ->
-    let msg = Fmt.strf "%s: calf -> priv" name in
-    Alcotest.(check string) msg escape_strs (escape buf);
-    (* priv -> calf don't *)
-    check_raises (Fmt.strf "%s: priv side is writable!" name)
-      (fun () -> write priv strs) >>= fun () ->
-    check_raises (Fmt.strf "%s: calf sid is readable!" name)
-      (fun () -> read calf >|= ignore) >>= fun () ->
+    (* socket pairs are bi-directional *)
+    (* c -> s works *)
+    write c strs >>= fun () ->
+    read s       >>= fun buf ->
+    Alcotest.(check string) "c -> s" escape_strs (escape buf);
+    (* s -> c works *)
+    write s strs >>= fun () ->
+    read c       >>= fun buf ->
+    Alcotest.(check string) "s -> c" escape_strs (escape buf);
     Lwt.return_unit
   in
   test [random_string 1] >>= fun () ->
   test [random_string 1; random_string 1; random_string 10] >>= fun () ->
   test [random_string 100] >>= fun () ->
-  test [random_string 10241] >>= fun () ->
+  (* note: if size(writes) > 8192 then the next writes will block (as
+     we are using SOCK_STREAM *)
+  let n = 8182 / 4 in
+  test [
+    random_string n;
+    random_string n;
+    random_string n;
+    random_string n;
+  ] >>= fun () ->
 
   Lwt.return_unit
+*)
 
-let test_socketpair pipe () =
-  let calf = calf pipe in
-  let priv = priv pipe in
-  let name = Init.Pipe.name pipe in
+let test_fifo path () =
+  IO.connect path >>= fun t ->
   let test strs =
     let escape_strs = String.concat ~sep:"" @@ List.map escape strs in
-    (* socket pairs are bi-directional *)
-    (* calf -> priv works *)
-    write calf strs >>= fun () ->
-    read priv >>= fun buf ->
-    Alcotest.(check string) (name ^ " calf -> priv") escape_strs (escape buf);
-    (* priv -> cal works *)
-    write priv strs >>= fun () ->
-    read calf >>= fun buf ->
-    Alcotest.(check string) (name ^ " priv -> calf") escape_strs (escape buf);
+    write t strs >>= fun () ->
+    read t       >>= fun buf ->
+    Alcotest.(check string) "fifo" escape_strs (escape buf);
     Lwt.return_unit
   in
   test [random_string 1] >>= fun () ->
@@ -97,77 +94,87 @@ let failf fmt = Fmt.kstrf Alcotest.fail fmt
 
 (* read ops *)
 
-let pp_error = Ctl.Client.pp_error
+module Client = Sdk.Conf.Client(IO)
+module Server = Sdk.Conf.Server(IO)
+
 let pp_path = Fmt.(Dump.list string)
 
 let read_should_err t k =
-  Ctl.Client.read t k >|= function
-  | Error _   -> ()
-  | Ok None   -> failf "read(%a) -> got: none, expected: err" pp_path k
-  | Ok Some v -> failf "read(%a) -> got: found:%S, expected: err" pp_path k v
+  Lwt.catch (fun () ->
+      Client.find t k >|= function
+      | None   -> failf "read(%a) -> got: none, expected: err" pp_path k
+      | Some v -> failf "read(%a) -> got: found:%S, expected: err" pp_path k v
+    ) (fun _ -> Lwt.return ())
 
 let read_should_none t k =
-  Ctl.Client.read t k >|= function
-  | Error e   -> failf "read(%a) -> got: error:%a, expected none" pp_path k pp_error e
-  | Ok None   -> ()
-  | Ok Some v -> failf "read(%a) -> got: found:%S, expected none" pp_path k v
+  Lwt.catch (fun () ->
+      Client.find t k >|= function
+      | None   -> ()
+      | Some v -> failf "read(%a) -> got: found:%S, expected none" pp_path k v
+    ) (fun e ->
+      failf "read(%a) -> got: error:%a, expected none" pp_path k Fmt.exn e)
 
 let read_should_work t k v =
-  Ctl.Client.read t k >|= function
-  | Error e    -> failf "read(%a) -> got: error:%a, expected ok" pp_path k pp_error e
-  | Ok None    -> failf "read(%a) -> got: none, expected ok" pp_path k
-  | Ok Some v' ->
-    if v <> v' then failf "read(%a) -> got: ok:%S, expected: ok:%S" pp_path k v' v
+  Lwt.catch (fun () ->
+      Client.find t k >|= function
+      | None    -> failf "read(%a) -> got: none, expected ok" pp_path k
+      | Some v' ->
+        if v <> v' then
+          failf "read(%a) -> got: ok:%S, expected: ok:%S" pp_path k v' v
+    ) (fun e ->
+      failf "read(%a) -> got: error:%a, expected ok" pp_path k Fmt.exn e)
 
 (* write ops *)
 
 let write_should_err t k v =
-  Ctl.Client.write t k v >|= function
-  | Ok ()   -> failf "write(%a) -> ok" pp_path k
-  | Error _ -> ()
+  Lwt.catch
+    (fun () -> Client.set t k v >|= fun () -> failf "write(%a) -> ok" pp_path k)
+    (fun _  -> Lwt.return ())
 
 let write_should_work t k v =
-  Ctl.Client.write t k v >|= function
-  | Ok ()   -> ()
-  | Error e -> failf "write(%a) -> error: %a" pp_path k pp_error e
+  Lwt.catch
+    (fun () -> Client.set t k v)
+    (fun e  -> failf "write(%a) -> error: %a" pp_path k Fmt.exn e)
 
 (* del ops *)
 
 let delete_should_err t k =
-  Ctl.Client.delete t k >|= function
-  | Ok ()   -> failf "del(%a) -> ok" pp_path k
-  | Error _ -> ()
+  Lwt.catch
+    (fun () -> Client.delete t k >|= fun () -> failf "del(%a) -> ok" pp_path k)
+    (fun _  -> Lwt.return ())
 
 let delete_should_work t k =
-  Ctl.Client.delete t k >|= function
-  | Ok ()   -> ()
-  | Error e -> failf "write(%a) -> error: %a" pp_path k pp_error e
+  Lwt.catch
+    (fun () -> Client.delete t k)
+    (fun e  -> failf "write(%a) -> error: %a" pp_path k Fmt.exn e)
 
-let test_ctl t () =
+let pp_actor f (style, name) = Fmt.(styled style (const string name)) f ()
+let unknown = `Black, "------"
+let actor_tag = Logs.Tag.def "actor" pp_actor
+
+let server_tags = Logs.Tag.(empty |> add actor_tag (`Red, "server"))
+let client_tags = Logs.Tag.(empty |> add actor_tag (`Green, "client"))
+
+let test_ctl c s  () =
   Lwt_switch.with_switch @@ fun switch ->
-  let calf = calf Init.Pipe.(ctl t) in
-  let priv = priv Init.Pipe.(ctl t) in
   let k1 = ["foo"; "bar"] in
   let k2 = ["a"] in
   let k3 = ["b"; "c"] in
   let k4 = ["xxxxxx"] in
   let all = [`Read; `Write; `Delete] in
   let routes = [k1,all; k2,all; k3,all ] in
-  let git_root = "/tmp/sdk/ctl" in
-  let _ = Sys.command (Fmt.strf "rm -rf %s" git_root) in
-  Ctl.v git_root >>= fun ctl ->
+  Server.KV.v () >>= fun kv ->
   let _server =
-    let service = Ctl.Server.service ~routes ctl in
-    Capnp_rpc_lwt.CapTP.of_endpoint ~switch ~offer:service (Capnp_rpc_lwt.Endpoint.of_flow ~switch (module IO) priv)
+    let service = Server.service ~switch ~routes kv in
+    Server.listen ~switch ~tags:server_tags service s
   in
-  let client = Capnp_rpc_lwt.CapTP.of_endpoint ~switch (Capnp_rpc_lwt.Endpoint.of_flow ~switch (module IO) calf) in
-  let t = Capnp_rpc_lwt.CapTP.bootstrap client in
+  Client.connect ~switch ~tags:client_tags c >>= fun t ->
   let allowed k v =
     delete_should_work t k  >>= fun () ->
     read_should_none t k    >>= fun () ->
     write_should_work t k v >>= fun () ->
     read_should_work t k v  >>= fun () ->
-    Ctl.KV.get ctl k        >|= fun v' ->
+    Server.KV.get kv k      >|= fun v' ->
     Alcotest.(check string) "in the db" v v'
   in
   let disallowed k v =
@@ -181,33 +188,6 @@ let test_ctl t () =
   disallowed k4 "" >>= fun () ->
   Lwt.return_unit
 
-let in_memory_flow () =
-  let flow = Mirage_flow_lwt.F.string () in
-  IO.create (module Mirage_flow_lwt.F) flow "mem"
-
-let test_exec () =
-  let test () =
-    let check n pipe =
-      let t = Init.Pipe.v () in
-      let pipe = pipe t in
-      Init.exec t ["/bin/sh"; "-c"; "echo foo >& " ^ string_of_int n] @@ fun _pid ->
-      read @@ priv pipe >>= fun foo ->
-      let name = Fmt.strf "fork %s" Init.Pipe.(name pipe) in
-      Alcotest.(check string) name "foo\n" foo;
-      Lwt.return_unit
-    in
-    check 1 Init.Pipe.stdout >>= fun () ->
-    (* avoid logging interference *)
-    let level = Logs.level () in
-    Logs.set_level None;
-    check 2 Init.Pipe.stderr >>= fun () ->
-    Logs.set_level level;
-    check 3 Init.Pipe.net    >>= fun () ->
-    check 4 Init.Pipe.ctl    >>= fun () ->
-    Lwt.return_unit
-  in
-  test ()
-
 let run f () =
   try Lwt_main.run (f ())
   with e ->
@@ -216,16 +196,21 @@ let run f () =
 
 let test_stderr () = ()
 
-let t = Init.Pipe.v ()
+let fifo = "/tmp/sdk-fifo"
+let c, s =
+  let c, s = Lwt_unix.(socketpair PF_UNIX SOCK_STREAM 0) in
+  IO.of_fd c, IO.of_fd s
 
 let test = [
-  "stdout is a pipe"    , `Quick, run (test_pipe Init.Pipe.(stdout t));
-  "stdout is a pipe"    , `Quick, run (test_pipe Init.Pipe.(stderr t));
-  "net is a socket pair", `Quick, run (test_socketpair Init.Pipe.(net t));
-  "ctl is a socket pair", `Quick, run (test_socketpair Init.Pipe.(ctl t));
-  "ctl"                 , `Quick, run (test_ctl t);
-  "exec"                , `Quick, run test_exec;
+  "FIFO flows", `Quick, run (test_fifo fifo);
+  "conf"      , `Quick, run (test_ctl c s);
 ]
+
+let pp_qid f = function
+  | None -> ()
+  | Some x ->
+    let s = Uint32.to_string x in
+    Fmt.(styled `Magenta (fun f x -> Fmt.pf f " (qid=%s)" x)) f s
 
 let reporter ?(prefix="") () =
   let pad n x =
@@ -233,18 +218,27 @@ let reporter ?(prefix="") () =
     else x ^ String.v ~len:(n - String.length x) (fun _ -> ' ')
   in
   let report src level ~over k msgf =
-    let k _ = over (); k () in
     let ppf = match level with Logs.App -> Fmt.stdout | _ -> Fmt.stderr in
-    let with_stamp h _tags k fmt =
+    let with_stamp h ?(tags=Logs.Tag.empty) k fmt =
+      let actor =
+        match Logs.Tag.find actor_tag tags with
+        | Some x -> x
+        | None -> unknown
+      in
+      let qid = Logs.Tag.find Capnp_rpc.Debug.qid_tag tags in
       let dt = Mtime.Span.to_us (Mtime_clock.elapsed ()) in
-      Fmt.kpf k ppf ("%s%+04.0fus %a %a @[" ^^ fmt ^^ "@]@.")
+      let k _ =
+        Fmt.(pf ppf) "%a@." pp_qid qid;
+        over (); k () in
+      Fmt.kpf k ppf ("%s%+04.0fus %a %a %a @[" ^^ fmt ^^ "@]")
         prefix
         dt
         Fmt.(styled `Magenta string) (pad 10 @@ Logs.Src.name src)
         Logs_fmt.pp_header (level, h)
+        pp_actor actor
     in
     msgf @@ fun ?header ?tags fmt ->
-    with_stamp header tags k fmt
+    with_stamp header ?tags k fmt
   in
   { Logs.report = report }
 

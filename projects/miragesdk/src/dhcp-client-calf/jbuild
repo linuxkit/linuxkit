@@ -1,8 +1,0 @@
-(jbuild_version 1)
-
-(executables
- ((names (unikernel))
-  (libraries (sdk mirage-net-fd lwt charrua-client.mirage charrua-client
-              lwt.unix cmdliner fmt.cli logs.fmt logs.cli fmt.tty))
-  (flags (-cclib -static))
- ))
