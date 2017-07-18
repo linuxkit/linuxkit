@@ -119,7 +119,7 @@ ulimit -n 1048576
 ulimit -p unlimited
 
 # execute other init processes
-INITS="$(find /etc/init.d -type f | sort)"
+INITS="$(find /etc/init.d -type f 2>/dev/null | sort)"
 for f in $INITS
 do
 	$f
