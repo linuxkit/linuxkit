@@ -19,12 +19,12 @@ import (
 
 // Moby is the type of a Moby config file
 type Moby struct {
-	Kernel   KernelConfig
-	Init     []string
-	Onboot   []Image
-	Services []Image
-	Trust    TrustConfig
-	Files    []File
+	Kernel   KernelConfig `kernel:"cmdline" json:"kernel,omitempty"`
+	Init     []string     `init:"cmdline" json:"init"`
+	Onboot   []Image      `yaml:"onboot" json:"onboot"`
+	Services []Image      `yaml:"services" json:"services"`
+	Trust    TrustConfig  `yaml:"trust" json:"trust,omitempty"`
+	Files    []File       `yaml:"files" json:"files"`
 }
 
 // KernelConfig is the type of the config for a kernel
