@@ -14,6 +14,10 @@ onboot:
   - name: dhcpcd
     image: "linuxkit/dhcpcd:7d2f17a0e5d1ef9a75a527821a9ab0d753b22e7e"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+onshutdown:
+  - name: shutdown
+    image: busybox:latest
+    command: ["/bin/echo", "so long and thanks for all the fish"]
 services:
   - name: rngd
     image: "linuxkit/rngd:b67c3151a52b05db50e6207b40876900f2208d14"
