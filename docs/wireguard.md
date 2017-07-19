@@ -15,14 +15,12 @@ A full technical paper from NDSS 2017 is available [here](https://www.wireguard.
 ## Contents
 
 ### Kernel Patches
-The `kernel/patches-*` sub-directories contain a kernel patch.
+The default kernels build WireGuard in as a module.
 
 ### Userspace Tools
-The userspace tools are available from the `wireguard-tools` package.
+The userspace tools are part of `tools/alpine`.
 
 ## Quickstart
-The quickest way to get started is to use the provided `examples/wireguard.yml` in this directory and use the prebuilt images.
-
 To give WireGuard a spin, the [official quick start](https://www.wireguard.com/quickstart/) is a good way to get going.  For containers,
 WireGuard has a [network namespace integration](https://www.wireguard.com/netns/) that we could use for Moby's containers.
 

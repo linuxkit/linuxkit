@@ -12,7 +12,6 @@ If you want to create a project, please submit a pull request to create a new di
 ## Current projects
 - [Kernel Self Protection Project enhancements](kspp/)
 - [Mirage SDK](miragesdk/) privilege separation for userspace services
-- [Wireguard](wireguard/) cryptographic enforced container network separation
 - [OKernel](okernel/) intra-kernel protection using EPT (HPE)
 - [eBPF](ebpf/) iovisor eBPF tools
 - [Swarmd](swarmd) Standalone swarmkit based orchestrator
@@ -33,3 +32,4 @@ If you want to create a project, please submit a pull request to create a new di
 ## Completed projects
 
 - `aws/`: AWS support was merged into mainline in #1964.
+- `wireguard/`: [WireGuard](https://www.wireguard.com/) is now part of the default LinuxKit kernel and package set.
