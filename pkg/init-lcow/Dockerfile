@@ -19,8 +19,6 @@ RUN git clone $OPENGCS_REPO /go/src/github.com/Microsoft/opengcs && \
     make
 RUN mkdir /out && \
     cp -r /go/src/github.com/Microsoft/opengcs/service/bin /out/bin && \
-    cp /go/src/github.com/Microsoft/opengcs/kernelconfig/4.11/scripts/init_script /out/init && \
-    chmod ugo+rx /out/init && \
     mkdir /out/sbin && \
     curl -fSL "https://raw.githubusercontent.com/mirror/busybox/38d966943f5288bb1f2e7219f50a92753c730b14/examples/udhcp/simple.script" -o /out/sbin/udhcpc_config.script && \
     chmod ugo+rx /out/sbin/udhcpc_config.script && \
@@ -33,3 +31,4 @@ CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build /out/ /
+COPY init /
