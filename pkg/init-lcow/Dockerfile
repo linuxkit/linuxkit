@@ -9,7 +9,7 @@ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 FROM linuxkit/alpine:3744607156e6b67e3e7d083b15be9e7722215e73 AS build
 ENV OPENGCS_REPO=https://github.com/rn/opengcs
-ENV OPENGCS_COMMIT=d3ba8e211c0df4b0ee663bcfc00b4c2d88abcb9c
+ENV OPENGCS_COMMIT=3a4ca49c445caaf4c6d4f0c1e613bae0c7455fb6
 RUN apk add --no-cache build-base curl git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
 RUN git clone $OPENGCS_REPO /go/src/github.com/Microsoft/opengcs && \
@@ -19,8 +19,6 @@ RUN git clone $OPENGCS_REPO /go/src/github.com/Microsoft/opengcs && \
     make
 RUN mkdir /out && \
     cp -r /go/src/github.com/Microsoft/opengcs/service/bin /out/bin && \
-    cp /go/src/github.com/Microsoft/opengcs/kernelconfig/4.11/scripts/init_script /out/init && \
-    chmod ugo+rx /out/init && \
     mkdir /out/sbin && \
     curl -fSL "https://raw.githubusercontent.com/mirror/busybox/38d966943f5288bb1f2e7219f50a92753c730b14/examples/udhcp/simple.script" -o /out/sbin/udhcpc_config.script && \
     chmod ugo+rx /out/sbin/udhcpc_config.script && \
@@ -33,3 +31,4 @@ CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build /out/ /
+COPY init /

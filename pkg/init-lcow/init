@@ -1,0 +1,63 @@
+#!/bin/sh
+
+export PATH=/sbin:/bin/:/usr/sbin/:/usr/bin/:/usr/local/sbin:/usr/local/bin
+
+# Set up mounts
+mount -n -t proc proc /proc -o nodev,nosuid,noexec,relatime
+
+mount -n -t tmpfs tmpfs /run -o nodev,nosuid,noexec,relatime,size=10%,mode=755
+mount -n -t tmpfs tmpfs /tmp -o nodev,nosuid,noexec,relatime,size=10%,mode=1777
+
+# mount devfs
+mount -n -t devtmpfs dev /dev -o nosuid,noexec,relatime,size=10m,nr_inodes=248418,mode=755
+# devices
+[ -c /dev/console ] || mknod -m 600 /dev/console c 5 1
+[ -c /dev/tty1 ] || mknod -m 620 /dev/tty1 c 4 1
+[ -c /dev/tty ] || mknod -m 666 /dev/tty c 5 0
+
+[ -c /dev/null ] || mknod -m 666 /dev/null c 1 3
+[ -c /dev/kmsg ] || mknod -m 660 /dev/kmsg c 1 11
+
+# extra symbolic links not provided by default
+[ -e /dev/fd ] || ln -snf /proc/self/fd /dev/fd
+[ -e /dev/stdin ] || ln -snf /proc/self/fd/0 /dev/stdin
+[ -e /dev/stdout ] || ln -snf /proc/self/fd/1 /dev/stdout
+[ -e /dev/stderr ] || ln -snf /proc/self/fd/2 /dev/stderr
+[ -e /proc/kcore ] && ln -snf /proc/kcore /dev/core
+
+# devfs filesystems
+mkdir -p -m 1777 /dev/mqueue
+mkdir -p -m 1777 /dev/shm
+mkdir -p -m 0755 /dev/pts
+mount -n -t mqueue -o noexec,nosuid,nodev mqueue /dev/mqueue
+mount -n -t tmpfs -o noexec,nosuid,nodev,mode=1777 shm /dev/shm
+mount -n -t devpts -o noexec,nosuid,gid=5,mode=0620 devpts /dev/pts
+
+# mount sysfs
+sysfs_opts=nodev,noexec,nosuid
+mount -n -t sysfs -o ${sysfs_opts} sysfs /sys
+[ -d /sys/kernel/security ] && mount -n -t securityfs -o ${sysfs_opts} securityfs /sys/kernel/security
+[ -d /sys/kernel/debug ] && mount -n -t debugfs -o ${sysfs_opts} debugfs /sys/kernel/debug
+[ -d /sys/kernel/config ] && mount -n -t configfs -o ${sysfs_opts} configfs /sys/kernel/config
+[ -d /sys/fs/fuse/connections ] && mount -n -t fusectl -o ${sysfs_opts} fusectl /sys/fs/fuse/connections
+[ -d /sys/fs/selinux ] && mount -n -t selinuxfs -o nosuid,noexec selinuxfs /sys/fs/selinux
+[ -d /sys/fs/pstore ] && mount -n -t pstore pstore -o ${sysfs_opts} /sys/fs/pstore
+[ -d /sys/firmware/efi/efivars ] && mount -n -t efivarfs -o ro,${sysfs_opts} efivarfs /sys/firmware/efi/efivars
+
+# mount cgroups
+mount -n -t tmpfs -o nodev,noexec,nosuid,mode=755,size=10m cgroup_root /sys/fs/cgroup
+
+while read name hier groups enabled rest
+do
+        case "${enabled}" in
+        1)      mkdir -p /sys/fs/cgroup/${name}
+                mount -n -t cgroup -o ${sysfs_opts},${name} ${name} /sys/fs/cgroup/${name}
+        ;;
+        esac
+done < /proc/cgroups
+
+# Run gcs in the background
+/bin/gcs  -loglevel=debug -logfile=/tmp/gcs.log &
+
+# Start shell so we can have access for debug
+sh
