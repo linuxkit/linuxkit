@@ -73,6 +73,7 @@ fi
 
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 11 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_STRICT_KERNEL_RWX=y || fail "CONFIG_STRICT_KERNEL_RWX=y"
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_STRICT_MODULE_RWX=y || fail "CONFIG_STRICT_MODULE_RWX=y"
 fi
 
 # Negative cases
