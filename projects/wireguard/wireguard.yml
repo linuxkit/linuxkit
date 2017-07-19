@@ -1,6 +1,3 @@
-kernel:
-  image: linuxkit/kernel-wireguard:4.9.15-2ca28b7589b673373a33274023ca870a3a77e081
-  cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:d049e7b2074da5cd699a27defb47eb101142455d
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
