@@ -1,4 +1,4 @@
-FROM docker:17.06.0-ce-dind AS docker
+FROM docker:17.06.0-ce AS docker
 
 # Nothing to do in here, just for COPY --from=docker below
 
