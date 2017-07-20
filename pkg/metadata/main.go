@@ -173,11 +173,11 @@ func processUserData(data []byte) error {
 			switch fi := i.(type) {
 			case map[string]interface{}:
 				if _, ok := fi["perm"]; !ok {
-					log.Printf("No permission provided %s:%s", f, fi)
+					log.Printf("No permission provided %s", f)
 					continue
 				}
 				if _, ok := fi["content"]; !ok {
-					log.Printf("No content provided %s:%s", f, fi)
+					log.Printf("No content provided %s", f)
 					continue
 				}
 				c = fi["content"].(string)

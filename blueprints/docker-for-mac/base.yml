@@ -10,7 +10,7 @@ init:
 onboot:
   # support metadata for optional config in /var/config
   - name: metadata
-    image: linuxkit/metadata:f122f1b4e873f1d08cd67bd9105385fd923af0cb
+    image: linuxkit/metadata:428093dd1c4178e8ba1952af44b46c0fd16f8e79
   - name: sysctl
     image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: sysfs
