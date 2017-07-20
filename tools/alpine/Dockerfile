@@ -11,6 +11,9 @@ COPY packages /tmp/
 RUN mkdir -p /mirror/$(uname -m) && \
    apk fetch --recursive -o /mirror/$(uname -m) $(apk info; cat /tmp/packages)
 
+# add the tools for WireGuard, since the kernel module is now included, but from edge/testing
+RUN apk fetch --recursive -o /mirror/$(uname -m) -X http://dl-cdn.alpinelinux.org/alpine/edge/testing -U wireguard-tools
+
 # install abuild for signing
 RUN apk add --no-cache abuild
 
@@ -26,9 +29,6 @@ RUN abuild-sign /mirror/$(uname -m)/APKINDEX.tar.gz
 
 # fetch OVMF for qemu EFI boot (this is not added as a package)
 RUN apk add -X http://dl-cdn.alpinelinux.org/alpine/edge/community ovmf
-
-# add the tools for WireGuard, since the kernel module is now included
-RUN apk add -X http://dl-cdn.alpinelinux.org/alpine/edge/testing -U wireguard-tools
 
 # set this as our repo but keep a copy of the upstream for downstream use
 RUN mv /etc/apk/repositories /etc/apk/repositories.upstream && echo "/mirror" > /etc/apk/repositories && apk update
