@@ -64,6 +64,7 @@ Currently supported platforms are:
   - [Amazon Web Services](docs/platform-aws.md)
   - [Google Cloud](docs/platform-gcp.md)
   - [Microsoft Azure](docs/platform-azure.md)
+  - [OpenStack](docs/platform-openstack.md)
   - [packet.net](docs/platform-packet.md)
 
 

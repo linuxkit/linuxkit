@@ -17,6 +17,7 @@ func pushUsage() {
 	fmt.Printf("  aws\n")
 	fmt.Printf("  azure\n")
 	fmt.Printf("  gcp\n")
+	fmt.Printf("  openstack\n")
 	fmt.Printf("  vcenter\n")
 	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
@@ -38,6 +39,8 @@ func push(args []string) {
 		pushAzure(args[1:])
 	case "gcp":
 		pushGcp(args[1:])
+	case "openstack":
+		pushOpenstack(args[1:])
 	case "vcenter":
 		pushVCenter(args[1:])
 	case "help", "-h", "-help", "--help":
