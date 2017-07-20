@@ -9,6 +9,7 @@ RUN apk add --no-cache --initdb -p /out \
     musl \
     tini \
     util-linux \
+    wireguard-tools \
     && true
 RUN mv /out/etc/apk/repositories.upstream /out/etc/apk/repositories
 
