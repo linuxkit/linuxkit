@@ -14,7 +14,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:9c32352b2a7b2f233de8741396afeb26b58f9a05
+    image: linuxkit/getty:08b704915af0ce90f8f40df5d41d4c1aa14ef83a
     # to make insecure with passwordless root login, uncomment following lines
     #env:
     # - INSECURE=true
