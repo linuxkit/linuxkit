@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:6832775a7e861ee2d7842e157688ece52d007142 as alpine
+FROM linuxkit/alpine:a39a433162a873519910a07beeb3e8db22529956 as alpine
 RUN \
   apk add \
   btrfs-progs-dev \
@@ -18,7 +18,7 @@ RUN mkdir -p $GOPATH/src/github.com/containerd && \
 WORKDIR $GOPATH/src/github.com/containerd/containerd
 RUN git checkout $CONTAINERD_COMMIT
 RUN make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
-RUN cp bin/containerd bin/ctr bin/containerd-shim bin/dist /usr/bin/
+RUN cp bin/containerd bin/ctr bin/containerd-shim /usr/bin/
 
 ADD cmd /go/src/cmd
 RUN cd /go/src/cmd/service && ./skanky-vendor.sh $GOPATH/src/github.com/containerd/containerd
@@ -30,7 +30,7 @@ COPY . .
 FROM scratch
 ENTRYPOINT []
 WORKDIR /
-COPY --from=alpine /usr/bin/containerd /usr/bin/ctr /usr/bin/dist /usr/bin/containerd-shim /go/bin/service /usr/bin/
+COPY --from=alpine /usr/bin/containerd /usr/bin/ctr /usr/bin/containerd-shim /go/bin/service /usr/bin/
 COPY --from=alpine /etc/containerd/config.toml /etc/containerd/
 COPY --from=alpine /usr/share/zoneinfo/UTC /etc/localtime
 COPY etc etc/
