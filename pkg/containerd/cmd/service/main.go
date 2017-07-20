@@ -31,6 +31,7 @@ func main() {
 		fmt.Printf("Commands:\n")
 		fmt.Printf("  system-init Prepare the system at start of day\n")
 		fmt.Printf("  start       Start a service\n")
+		fmt.Printf("  exec        Execute a command in a service\n")
 		fmt.Printf("  help        Print this message\n")
 		fmt.Printf("\n")
 		fmt.Printf("Run '%s COMMAND --help' for more information on the command\n", filepath.Base(os.Args[0]))
@@ -70,6 +71,8 @@ func main() {
 		start(args[1:])
 	case "system-init":
 		systemInit(args[1:])
+	case "exec":
+		exec(args[1:])
 	default:
 		fmt.Printf("%q is not valid command.\n\n", args[0])
 		flag.Usage()
