@@ -16,13 +16,13 @@ onboot:
     image: linuxkit/metadata:428093dd1c4178e8ba1952af44b46c0fd16f8e79
 services:
   - name: getty
-    image: linuxkit/getty:08b704915af0ce90f8f40df5d41d4c1aa14ef83a
+    image: linuxkit/getty:1b651a91f1c17f50357be9873b580ccf81668630
     env:
      - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   - name: sshd
-    image: linuxkit/sshd:dc98a72c1d1285c30f2db176252f3ce2bf645d5b
+    image: linuxkit/sshd:9e9186dd5989ae9c604eba77e306b0e67500b55c
     binds:
      - /var/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx
