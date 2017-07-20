@@ -6,7 +6,7 @@ init:
   - linuxkit/vpnkit-expose-port:e2b49a6c56fbf876ea24f0a5ce4ccae5f940d1be # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
   - linuxkit/init:d049e7b2074da5cd699a27defb47eb101142455d
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
-  - linuxkit/containerd:b6ffbb669248e3369081a6c4427026aa968a2385
+  - linuxkit/containerd:e33e0534d6fca88e1eb86897a1ea410b4a5d722e
 onboot:
   # support metadata for optional config in /var/config
   - name: metadata
@@ -53,7 +53,7 @@ services:
     image: linuxkit/acpid:1966310cb75e28ffc668863a6577ee991327f918
   # Enable getty for easier debugging
   - name: getty
-    image: linuxkit/getty:0a2955f3d7a10a0e71972791c3ba6400118f327e
+    image: linuxkit/getty:9c32352b2a7b2f233de8741396afeb26b58f9a05
     env:
         - INSECURE=true
   # Run ntpd to keep time synchronised in the VM
