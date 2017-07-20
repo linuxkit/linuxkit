@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:d049e7b2074da5cd699a27defb47eb101142455d
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
-  - linuxkit/containerd:b6ffbb669248e3369081a6c4427026aa968a2385
+  - linuxkit/containerd:e33e0534d6fca88e1eb86897a1ea410b4a5d722e
 onboot:
   - name: sysctl
     image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
@@ -28,9 +28,9 @@ onboot:
      - /lib:/lib     # for ifconfig
 services:
   - name: sshd
-    image: linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb
+    image: linuxkit/sshd:a00846032891f77f4f78b8a197e94e13a476a3ee
   - name: getty
-    image: linuxkit/getty:0a2955f3d7a10a0e71972791c3ba6400118f327e
+    image: linuxkit/getty:9c32352b2a7b2f233de8741396afeb26b58f9a05
     env:
      - INSECURE=true
 files:

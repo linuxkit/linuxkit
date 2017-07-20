@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:d049e7b2074da5cd699a27defb47eb101142455d
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
-  - linuxkit/containerd:b6ffbb669248e3369081a6c4427026aa968a2385
+  - linuxkit/containerd:e33e0534d6fca88e1eb86897a1ea410b4a5d722e
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: sysctl
@@ -16,13 +16,13 @@ onboot:
     image: linuxkit/metadata:428093dd1c4178e8ba1952af44b46c0fd16f8e79
 services:
   - name: getty
-    image: linuxkit/getty:0a2955f3d7a10a0e71972791c3ba6400118f327e
+    image: linuxkit/getty:9c32352b2a7b2f233de8741396afeb26b58f9a05
     env:
      - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   - name: sshd
-    image: linuxkit/sshd:89b2e91d7d1bf2f40220be0e3ed586e74746cceb
+    image: linuxkit/sshd:a00846032891f77f4f78b8a197e94e13a476a3ee
     binds:
      - /var/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx

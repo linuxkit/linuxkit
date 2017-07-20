@@ -85,4 +85,5 @@ xorriso
 xz
 xz-dev
 zfs
+xfsprogs-extra
 zlib-dev

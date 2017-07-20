@@ -4,14 +4,14 @@ kernel:
 init:
   - linuxkit/init:d049e7b2074da5cd699a27defb47eb101142455d
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
-  - linuxkit/containerd:b6ffbb669248e3369081a6c4427026aa968a2385
+  - linuxkit/containerd:e33e0534d6fca88e1eb86897a1ea410b4a5d722e
 onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:0a2955f3d7a10a0e71972791c3ba6400118f327e
+    image: linuxkit/getty:9c32352b2a7b2f233de8741396afeb26b58f9a05
     env:
      - INSECURE=true
 trust:

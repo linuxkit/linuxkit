@@ -10,6 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/pkg/errors"
 )
@@ -17,7 +18,7 @@ import (
 func cleanupTask(ctx context.Context, ctr containerd.Container) error {
 	task, err := ctr.Task(ctx, nil)
 	if err != nil {
-		if err == containerd.ErrNoRunningTask {
+		if errdefs.IsNotFound(err) {
 			return nil
 		}
 		return errors.Wrap(err, "getting task")
@@ -36,7 +37,7 @@ func cleanupTask(ctx context.Context, ctr containerd.Container) error {
 	}(deleteCtx, deleteErr)
 
 	sig := syscall.SIGKILL
-	if err := task.Kill(ctx, sig); err != nil && err != containerd.ErrProcessExited {
+	if err := task.Kill(ctx, sig); err != nil && !errdefs.IsNotFound(err) {
 		return errors.Wrapf(err, "killing task with %q", sig)
 	}
 
