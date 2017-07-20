@@ -1,6 +1,6 @@
-# linuxkit/alpine:3744607156e6b67e3e7d083b15be9e7722215e73
+# linuxkit/alpine:8130ebbcd8dd55e9a837067d1eb3884b2c72c5c3
 # automatically generated list of installed packages
-abuild-3.0.0_rc2-r7
+abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
 alpine-keys-2.1-r1
 alsa-lib-1.1.3-r0
@@ -216,6 +216,8 @@ vde2-libs-2.3.2-r7
 vim-8.0.0595-r0
 wayland-1.13.0-r0
 xfsprogs-4.5.0-r0
+xfsprogs-extra-4.5.0-r0
+xfsprogs-libs-4.5.0-r0
 xorriso-1.4.6-r0
 xz-5.2.3-r0
 xz-dev-5.2.3-r0
