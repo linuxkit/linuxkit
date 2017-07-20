@@ -8,8 +8,8 @@ RUN apk add --no-cache --initdb -p /out \
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 FROM linuxkit/alpine:3744607156e6b67e3e7d083b15be9e7722215e73 AS build
-ENV OPENGCS_REPO=https://github.com/rn/opengcs
-ENV OPENGCS_COMMIT=3a4ca49c445caaf4c6d4f0c1e613bae0c7455fb6
+ENV OPENGCS_REPO=https://github.com/Microsoft/opengcs
+ENV OPENGCS_COMMIT=dec72ab7c137eb9aa5b3464a86b063359b8284bd
 RUN apk add --no-cache build-base curl git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
 RUN git clone $OPENGCS_REPO /go/src/github.com/Microsoft/opengcs && \
