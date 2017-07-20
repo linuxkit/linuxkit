@@ -1,4 +1,4 @@
-# linuxkit/alpine:a39a433162a873519910a07beeb3e8db22529956
+# linuxkit/alpine:4248059c38452217ff63853869df36034a890401
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -86,13 +86,13 @@ libattr-2.4.47-r6
 libblkid-2.28.2-r2
 libburn-1.4.6-r0
 libbz2-1.0.6-r5
+libc-dev-0.7.1-r0
+libc-utils-0.7.1-r0
 libcap-2.25-r1
 libcap-ng-0.7.8-r0
 libcap-ng-dev-0.7.8-r0
-libc-dev-0.7.1-r0
 libcom_err-1.43.4-r0
 libcurl-7.54.0-r0
-libc-utils-0.7.1-r0
 libdrm-2.4.80-r0
 libedit-20170329.3.1-r2
 libelf-0.8.13-r2
@@ -125,10 +125,10 @@ libpcap-1.8.1-r0
 libpciaccess-0.13.4-r1
 libpng-1.6.29-r1
 libressl-2.5.4-r0
+libressl-dev-2.5.4-r0
 libressl2.5-libcrypto-2.5.4-r0
 libressl2.5-libssl-2.5.4-r0
 libressl2.5-libtls-2.5.4-r0
-libressl-dev-2.5.4-r0
 libsasl-2.1.26-r10
 libseccomp-2.3.2-r0
 libseccomp-dev-2.3.2-r0
@@ -166,11 +166,11 @@ ncurses-terminfo-base-6.0-r7
 nettle-3.3-r0
 npth-1.2-r0
 oniguruma-6.2.0-r0
+open-vm-tools-10.1.0-r7
 openntpd-6.0_p1-r3
 openrc-0.24.1-r2
 openssh-keygen-7.5_p1-r1
 openssh-server-7.5_p1-r1
-open-vm-tools-10.1.0-r7
 opus-1.1.4-r0
 p11-kit-0.23.2-r1
 patch-2.7.5-r1
@@ -215,6 +215,7 @@ util-linux-dev-2.28.2-r2
 vde2-libs-2.3.2-r7
 vim-8.0.0595-r0
 wayland-1.13.0-r0
+wireguard-tools-0.0.20170629-r0
 xfsprogs-4.5.0-r0
 xfsprogs-extra-4.5.0-r0
 xfsprogs-libs-4.5.0-r0
