@@ -768,7 +768,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	}
 
 	rlimitsString := assignStrings(label.Rlimits, yaml.Rlimits)
-	rlimits := []specs.LinuxRlimit{}
+	rlimits := []specs.POSIXRlimit{}
 	for _, limitString := range rlimitsString {
 		rs := strings.SplitN(limitString, ",", 3)
 		var limit string
@@ -818,7 +818,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 				"RLIMIT_NICE",
 				"RLIMIT_RTPRIO",
 				"RLIMIT_RTTIME":
-				rlimits = append(rlimits, specs.LinuxRlimit{Type: limit, Soft: soft, Hard: hard})
+				rlimits = append(rlimits, specs.POSIXRlimit{Type: limit, Soft: soft, Hard: hard})
 			default:
 				return oci, fmt.Errorf("Unknown limit: %s", origLimit)
 			}
@@ -876,7 +876,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 		// SelinuxLabel
 	}
 
-	oci.Root = specs.Root{
+	oci.Root = &specs.Root{
 		Path:     "rootfs",
 		Readonly: readonly,
 	}
@@ -890,8 +890,15 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 		Sysctl:      assignMaps(label.Sysctl, yaml.Sysctl),
 		Resources: &specs.LinuxResources{
 			// Devices
-			DisableOOMKiller: assignBoolPtr(label.DisableOOMKiller, yaml.DisableOOMKiller),
-			// Memory
+			Memory: &specs.LinuxMemory{
+				// Limit
+				// Reservation
+				// Swap
+				// Kernel
+				// KernelTCP
+				// Swappiness
+				DisableOOMKiller: assignBoolPtr(label.DisableOOMKiller, yaml.DisableOOMKiller),
+			},
 			// CPU
 			// Pids
 			// BlockIO
