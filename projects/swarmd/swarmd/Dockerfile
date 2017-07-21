@@ -1,4 +1,4 @@
-FROM weaveworks/weave@sha256:05172329b6ff72099db7bb891ac311b89948a3064ca9b8641c6b4abe38548677 AS weave
+FROM weaveworks/weave:2.0.1@sha256:2d70caac7db33365482cc923d40ff8d3ec1238ae7fe06a00b3dde310d09f226e AS weave
 
 # Nothing to do in here, just for COPY --from=weave below
 

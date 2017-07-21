@@ -35,7 +35,7 @@ services:
   - name: ntpd
     image: linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90
   - name: weave
-    image: weaveworks/weave@sha256:05172329b6ff72099db7bb891ac311b89948a3064ca9b8641c6b4abe38548677 # Must match swarmd/Dockerfile
+    image: weaveworks/weave:2.0.1@sha256:2d70caac7db33365482cc923d40ff8d3ec1238ae7fe06a00b3dde310d09f226e # Must match swarmd/Dockerfile
     command: ["/bin/sh", "/home/weave/weaver-wrapper"]
     capabilities:
      - all
