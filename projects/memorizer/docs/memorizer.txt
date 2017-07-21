@@ -1,0 +1,92 @@
+             
+             +--------------------------------------------------+
+             | Memorizer: Kernel Memory Access Patterns (KMAPs) |
+             +--------------------------------------------------+
+
+Introduction
+============
+
+Memorizer is a tool to record information about access to kernel objects:
+specifically, it counts memory accesses from distinct IP addresses in the
+kernel source and also the PID that accessed, thereby providing spatial and
+temporal dimensions.
+
+Interface via debugfs
+=====================
+
+The tool has a very simple interface at the moment. It can:
+
+- Print out some statistics about memory allocations and memory accesses
+- Control enable/disable of memory object allocation tracking and memory access
+  tracing
+- Print the KMAP using the debugfs file system
+
+Enable object allocation tracking:
+```bash
+echo 1 > /sys/kernel/debug/memorizer/memorizer_enabled
+```
+
+Enable object access tracking:
+```bash
+echo 1 > /sys/kernel/debug/memorizer/memorizer_log_access
+```
+
+Show allocation statistics:
+```bash
+cat /sys/kernel/debug/memorizer/show_stats
+```
+
+Clear free'd objects:
+```bash
+echo 1 > /sys/kernel/debug/memorizer/clear_object_list
+```
+    
+Using Memorizer to Collect KMAPs
+================================
+
+Memorizer lacks push style logging and clearing of the object lists, therefore
+it has the propensity of overflowing memory. The only way to manage the log and
+current set of objects is to manually clear and print the KMAPs.
+
+Therefore, a typical run using memorizer to create KMAPs includes:
+
+```bash
+# mount the debugfs filesystem if it isn't already
+mount -t debugfs nodev /sys/kernel/debug
+# clear free objects: the current system traces from boot with a lot of
+# uninteresting data
+echo 1 > /sys/kernel/debug/clear_object_list
+# enable memorizer object access tracking, which by default is off
+echo 1 > /sys/kernel/debug/memorizer_log_access
+# Now run whatever test
+tar zcf something.tar.gz /somedir &
+ssh u@h:/somefile 
+...
+# Disable access logging
+echo 0 > /sys/kernel/debug/memorizer/memorizer_log_access
+# Disable memorizer object tracking: isn't necessary but will reduce noise
+echo 0 > /sys/kernel/debug/memorizer/memorizer_enabled
+# Cat the results: make sure to pipe to something
+cat /sys/kernel/debug/memorizer/kmap > test.kmap
+```
+
+Output Format
+=============
+
+Memorizer outputs data as text, which may change if space is a problem. The
+format of the kmap file is as follows:
+
+alloc_ip,pid,obj_va_ptr,size,alloc_jiffies,free_jiffies,free_ip,executable
+  access_ip,access_pid,write_count,read_count
+  access_ip,access_pid,write_count,read_count
+  access_ip,access_pid,write_count,read_count
+    ...
+    ...
+
+There are a few special error codes: 
+
+    - Not all free_ip's could be obtained correctly and therefore some of these
+      will be 0.
+    - There is a bug where we insert into the live object map over another
+      allocation, this implies that we are missing a free. So for now we mark
+      the free_ip as 0xDEADBEEF.

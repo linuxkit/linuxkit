@@ -24,6 +24,8 @@ If you want to create a project, please submit a pull request to create a new di
   IMA policies
 - [shiftfs](shiftfs/) is a filesystem for mapping mountpoints across user
   namespaces
+- [Memorizer](memorizer/) is a tool to trace intra-kernel
+  memory operations. 
 
 ## Current projects not yet documented
 - VMWare support (VMWare)
