@@ -11,7 +11,7 @@ onboot:
     image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
 services:
   - name: getty
-    image: linuxkit/getty:1b651a91f1c17f50357be9873b580ccf81668630
+    image: linuxkit/getty:97c5e2c8ebad23c2ed743366b475b5c15c42f70e
     env:
      - INSECURE=true
   - name: rngd
@@ -19,7 +19,7 @@ services:
   - name: dhcpcd
     image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
   - name: sshd
-    image: linuxkit/sshd:9e9186dd5989ae9c604eba77e306b0e67500b55c
+    image: linuxkit/sshd:5dc5c3c4470c85f6c89f0e26b9d477ae4ff85a3c
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
