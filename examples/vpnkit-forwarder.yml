@@ -19,7 +19,7 @@ onboot:
     command: ["sh", "-c", "mkdir /host_var/vpnkit && mount -v -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /host_var/vpnkit"]
 services:
   - name: sshd
-    image: linuxkit/sshd:dc98a72c1d1285c30f2db176252f3ce2bf645d5b
+    image: linuxkit/sshd:9e9186dd5989ae9c604eba77e306b0e67500b55c
   - name: vpnkit-forwarder
     image: linuxkit/vpnkit-forwarder:9c1545e7b093d1210118de7661d7346393ec195b
     binds:
