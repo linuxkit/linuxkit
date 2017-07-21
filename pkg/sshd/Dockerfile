@@ -22,4 +22,4 @@ COPY etc/ /etc/
 COPY usr/ /usr/
 RUN mkdir -p /etc/ssh /root/.ssh && chmod 0700 /root/.ssh
 CMD ["/sbin/tini", "/usr/bin/ssh.sh"]
-LABEL org.mobyproject.config='{"pid": "host", "binds": ["/root/.ssh:/root/.ssh", "/etc/resolv.conf:/etc/resolv.conf", "/run:/run", "/tmp:/tmp", "/etc:/hostroot/etc", "/usr/bin/ctr:/usr/bin/ctr", "/usr/bin/runc:/usr/bin/runc", "/containers:/containers","/dev:/dev","/sys:/sys"], "capabilities": ["all"]}'
+LABEL org.mobyproject.config='{"pid": "host", "binds": ["/root/.ssh:/root/.ssh", "/etc/resolv.conf:/etc/resolv.conf", "/run:/run", "/tmp:/tmp", "/etc:/hostroot/etc", "/usr/bin/ctr:/usr/bin/ctr", "/usr/bin/runc:/usr/bin/runc", "/containers:/containers","/var/log:/var/log","/dev:/dev","/sys:/sys"], "capabilities": ["all"]}'
