@@ -35,6 +35,7 @@ type QemuConfig struct {
 	QemuBinPath    string
 	QemuImgPath    string
 	PublishedPorts []string
+	TapDevice      string
 }
 
 func haveKVM() bool {
@@ -96,6 +97,7 @@ func runQemu(args []string) {
 
 	publishFlags := multipleFlag{}
 	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
+	tapDevice := flags.String("tap-device", "", "Tap device to use as eth0 (optional)")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -215,6 +217,7 @@ func runQemu(args []string) {
 		KVM:            *enableKVM,
 		Containerized:  *qemuContainerized,
 		PublishedPorts: publishFlags,
+		TapDevice:      *tapDevice,
 	}
 
 	config = discoverBackend(config)
@@ -445,6 +448,12 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		}
 		qemuArgs = append(qemuArgs, "-net", forwardings)
 		qemuArgs = append(qemuArgs, "-net", "nic")
+	}
+
+	if config.TapDevice != "" {
+		qemuArgs = append(qemuArgs, "-net", "nic,model=virtio")
+		tapArg := fmt.Sprintf("tap,ifname=%s,script=no,downscript=no", config.TapDevice)
+		qemuArgs = append(qemuArgs, "-net", tapArg)
 	}
 
 	if config.GUI != true {
