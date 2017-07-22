@@ -1,4 +1,4 @@
-FROM weaveworks/weave@sha256:05172329b6ff72099db7bb891ac311b89948a3064ca9b8641c6b4abe38548677 AS weave
+FROM weaveworks/weave:2.0.1@sha256:2d70caac7db33365482cc923d40ff8d3ec1238ae7fe06a00b3dde310d09f226e AS weave
 
 # Nothing to do in here, just for COPY --from=weave below
 
@@ -40,9 +40,9 @@ RUN mkdir -p /out/usr/bin/ /out/etc  /out/opt/cni/bin /out/etc/cni/net.d
 # Swarmd
 
 # https://github.com/ijc/swarmkit/tree/containerd-wip
-ENV SWARMKIT_REPO=https://github.com/ijc25/swarmkit
+ENV SWARMKIT_REPO=https://github.com/ijc/swarmkit
 ENV SWARMKIT_BRANCH=containerd-wip
-ENV SWARMKIT_COMMIT=4a484ccb498bee117fe6167d5a5e7ea0f6d4f2e9
+ENV SWARMKIT_COMMIT=8a09c038f1ba8f227a28b7f48ccc92a04edb85f5
 
 RUN mkdir -p $GOPATH/src/github.com/docker && \
   cd $GOPATH/src/github.com/docker && \
