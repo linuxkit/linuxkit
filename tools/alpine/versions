@@ -1,4 +1,4 @@
-# linuxkit/alpine:4248059c38452217ff63853869df36034a890401
+# linuxkit/alpine:43c139f87122e94af5fac9a9d1d96f0292ca1c0b
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -7,6 +7,7 @@ alsa-lib-1.1.3-r0
 apk-tools-2.7.2-r0
 argp-standalone-1.3-r2
 attr-2.4.47-r6
+autoconf-2.69-r0
 automake-1.15-r0
 bash-4.3.48-r1
 bc-1.06.95-r2
@@ -52,6 +53,10 @@ g++-6.3.0-r4
 gc-7.6.0-r1
 gcc-6.3.0-r4
 gdbm-1.12-r0
+gettext-0.19.8.1-r1
+gettext-asprintf-0.19.8.1-r1
+gettext-dev-0.19.8.1-r1
+gettext-libs-0.19.8.1-r1
 git-2.13.0-r0
 glib-2.52.1-r0
 gmp-6.1.2-r0
@@ -92,6 +97,7 @@ libcap-2.25-r1
 libcap-ng-0.7.8-r0
 libcap-ng-dev-0.7.8-r0
 libcom_err-1.43.4-r0
+libcrypto1.0-1.0.2k-r0
 libcurl-7.54.0-r0
 libdrm-2.4.80-r0
 libedit-20170329.3.1-r2
@@ -134,9 +140,11 @@ libseccomp-2.3.2-r0
 libseccomp-dev-2.3.2-r0
 libsmartcols-2.28.2-r2
 libssh2-1.8.0-r1
+libssl1.0-1.0.2k-r0
 libstdc++-6.3.0-r4
 libtasn1-4.10-r1
 libtirpc-1.0.1-r1
+libtool-2.4.6-r1
 libunistring-0.9.7-r0
 libunwind-1.2-r2
 libunwind-dev-1.2-r2
@@ -144,6 +152,7 @@ libusb-1.0.21-r0
 libuuid-2.28.2-r2
 libuv-1.11.0-r1
 libverto-0.2.5-r2
+libxml2-2.9.4-r4
 linux-headers-4.4.6-r2
 lua5.2-libs-5.2.4-r2
 lz4-libs-1.7.5-r0
@@ -171,6 +180,7 @@ openntpd-6.0_p1-r3
 openrc-0.24.1-r2
 openssh-keygen-7.5_p1-r1
 openssh-server-7.5_p1-r1
+openssl-dev-1.0.2k-r0
 opus-1.1.4-r0
 p11-kit-0.23.2-r1
 patch-2.7.5-r1

@@ -3,6 +3,7 @@ alpine-baselayout
 alpine-keys
 apk-tools
 argp-standalone
+autoconf
 automake
 bash
 bc
@@ -28,6 +29,8 @@ elfutils-dev
 expect
 flex
 gcc
+gettext
+gettext-dev
 git
 gmp-dev
 gnupg
@@ -47,6 +50,7 @@ libc-utils
 libelf-dev
 libressl-dev
 libseccomp-dev
+libtool
 libunwind-dev
 linux-headers
 make
@@ -56,6 +60,7 @@ ncurses-dev
 openntpd
 openrc
 openssh-server
+openssl-dev
 open-vm-tools
 patch
 python3
