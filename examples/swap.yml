@@ -24,7 +24,7 @@ onboot:
     command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]
 services:
   - name: getty
-    image: linuxkit/getty:1b651a91f1c17f50357be9873b580ccf81668630
+    image: linuxkit/getty:97c5e2c8ebad23c2ed743366b475b5c15c42f70e
     env:
      - INSECURE=true
   - name: rngd

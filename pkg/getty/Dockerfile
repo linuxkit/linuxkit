@@ -32,4 +32,4 @@ COPY --from=mirror /out/ /
 COPY usr/ /usr/
 COPY etc/ /etc/
 CMD ["/usr/bin/rungetty.sh"]
-LABEL org.mobyproject.config='{"pid": "host", "net":"host", "binds": ["/run:/run", "/tmp:/tmp", "/etc:/hostroot/etc", "/usr/bin/ctr:/usr/bin/ctr", "/usr/bin/runc:/usr/bin/runc", "/containers:/containers","/dev:/dev","/sys:/sys"], "capabilities": ["all"]}'
+LABEL org.mobyproject.config='{"pid": "host", "net":"host", "binds": ["/run:/run", "/tmp:/tmp", "/etc:/hostroot/etc", "/usr/bin/ctr:/usr/bin/ctr", "/usr/bin/runc:/usr/bin/runc", "/containers:/containers","/var/log:/var/log","/dev:/dev","/sys:/sys"], "capabilities": ["all"]}'
