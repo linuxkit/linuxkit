@@ -61,7 +61,6 @@ openntpd
 openrc
 openssh-server
 openssl-dev
-open-vm-tools
 patch
 python3
 qemu-aarch64
@@ -77,7 +76,6 @@ slang-dev
 squashfs-tools
 strace
 swig
-syslinux
 tar
 tcpdump
 tini
