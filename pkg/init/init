@@ -1,9 +1,0 @@
-#!/bin/sh
-
-/bin/mount -t tmpfs tmpfs /mnt
-
-/bin/cp -a / /mnt 2>/dev/null
-
-/bin/mount -t proc -o noexec,nosuid,nodev proc /proc
-
-exec /bin/busybox switch_root /mnt /sbin/init
