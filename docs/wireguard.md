@@ -18,7 +18,9 @@ A full technical paper from NDSS 2017 is available [here](https://www.wireguard.
 The default kernels build WireGuard in as a module.
 
 ### Userspace Tools
-The userspace tools are now a package available in `tools/alpine`, which can be installed via `apk add wireguard-tools`.
+The userspace tools can be installed via `apk add -U -X http://dl-cdn.alpinelinux.org/alpine/edge/testing wireguard-tools` in the `getty` and `sshd` containers.
+
+The tools are also installed in the base `linuxkit/alpine` image for use when building system containers. In this context, a simple `apk add wireguard-tools` will install the tools.
 
 ## Quickstart
 To give WireGuard a spin, the [official quick start](https://www.wireguard.com/quickstart/) is a good way to get going.  For containers,
