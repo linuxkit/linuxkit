@@ -1,4 +1,4 @@
-From eede177e637798f2fef330fd85d9f231f5342f11 Mon Sep 17 00:00:00 2001
+From b9500355b558a265bcbf1256ed5bda639bec7688 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 19 May 2017 21:49:59 +0800
 Subject: [PATCH 12/20] hvsock: fix vsock_dequeue/enqueue_accept race
