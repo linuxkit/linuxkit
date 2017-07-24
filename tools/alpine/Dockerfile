@@ -9,7 +9,7 @@ COPY Dockerfile /Dockerfile
 COPY packages* /tmp/
 
 # mirror packages
-RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \ 
+RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
    mkdir -p /mirror/$(uname -m) && \
    apk fetch --recursive -o /mirror/$(uname -m) $(apk info; cat /tmp/packages)
 
@@ -30,7 +30,7 @@ RUN cp /mirror/$(uname -m)/APKINDEX.unsigned.tar.gz /mirror/$(uname -m)/APKINDEX
 RUN abuild-sign /mirror/$(uname -m)/APKINDEX.tar.gz
 
 # fetch OVMF for qemu EFI boot (this is not added as a package)
-RUN mkdir -p /usr/share/ovmf && \ 
+RUN mkdir -p /usr/share/ovmf && \
     if [ $(uname -m) = x86_64 ]; then \
        apk add -X http://dl-cdn.alpinelinux.org/alpine/edge/community ovmf; \
     fi
