@@ -1,7 +1,7 @@
 #!/bin/bash -eux
 ssh="docker run --rm -ti \
   -v $HOME/.ssh/:/root/.ssh \
-    jdeathe/centos-ssh \
+    ijc25/alpine-ssh \
 	-o LogLevel=FATAL \
 	-o StrictHostKeyChecking=no \
 	-o UserKnownHostsFile=/dev/null \
