@@ -189,6 +189,16 @@ func ImageBundle(path string, image string, config []byte, tw tarWriter, trust b
 	if err != nil {
 		return err
 	}
+	// add a tmp directory to be used as a mount point if needed
+	hdr = &tar.Header{
+		Name:     path + "/" + "tmp",
+		Mode:     0755,
+		Typeflag: tar.TypeDir,
+	}
+	err = tw.WriteHeader(hdr)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
