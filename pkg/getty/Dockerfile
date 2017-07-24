@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:4248059c38452217ff63853869df36034a890401 AS mirror
+FROM linuxkit/alpine:a39a433162a873519910a07beeb3e8db22529956 AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
@@ -9,7 +9,6 @@ RUN apk add --no-cache --initdb -p /out \
     musl \
     tini \
     util-linux \
-    wireguard-tools \
     && true
 RUN mv /out/etc/apk/repositories.upstream /out/etc/apk/repositories
 
