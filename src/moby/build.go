@@ -40,6 +40,12 @@ RUN rm -f Dockerfile
 ENTRYPOINT ["/sbin/tini", "--", "/bin/rc.init"]
 `
 
+// For now this is a constant that we use in init section only to make
+// resolv.conf point at somewhere writeable. In future whe we are not using
+// Docker to extract images we can read this directly from image, but now Docker
+// will overwrite anything we put in the image.
+const resolvconfSymlink = "/run/resolvconf/resolv.conf"
+
 var additions = map[string]addFun{
 	"docker": func(tw *tar.Writer) error {
 		log.Infof("  Adding Dockerfile")
@@ -146,7 +152,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		// get kernel and initrd tarball from container
 		log.Infof("Extract kernel image: %s", m.Kernel.Image)
 		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar)
-		err := ImageTar(m.Kernel.Image, "", kf, enforceContentTrust(m.Kernel.Image, &m.Trust), pull)
+		err := ImageTar(m.Kernel.Image, "", kf, enforceContentTrust(m.Kernel.Image, &m.Trust), pull, "")
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
 		}
@@ -162,7 +168,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	}
 	for _, ii := range m.Init {
 		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", iw, enforceContentTrust(ii, &m.Trust), pull)
+		err := ImageTar(ii, "", iw, enforceContentTrust(ii, &m.Trust), pull, resolvconfSymlink)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}
