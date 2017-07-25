@@ -22,6 +22,11 @@ type tarWriter interface {
 // used the containerd libraries to do this instead locally direct from a local image
 // cache as it would be much simpler.
 
+// Unfortunately there are some files that Docker always makes appear in a running image and
+// export shows them. In particular we have no way for a user to specify their own resolv.conf.
+// Even if we were not using docker export to get the image, users of docker build cannot override
+// the resolv.conf either, as it is not writeable and bind mounted in.
+
 var exclude = map[string]bool{
 	".dockerenv":   true,
 	"Dockerfile":   true,
@@ -39,10 +44,8 @@ ff00::0 ip6-mcastprefix
 ff02::1 ip6-allnodes
 ff02::2 ip6-allrouters
 `,
-	"etc/resolv.conf": `nameserver 8.8.8.8
-nameserver 8.8.4.4
-nameserver 2001:4860:4860::8888
-nameserver 2001:4860:4860::8844
+	"etc/resolv.conf": `
+# no resolv.conf configured
 `,
 }
 
@@ -75,7 +78,7 @@ func tarPrefix(path string, tw tarWriter) error {
 }
 
 // ImageTar takes a Docker image and outputs it to a tar stream
-func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool) error {
+func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv string) error {
 	log.Debugf("image tar: %s %s", image, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != byte('/') {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
@@ -137,17 +140,29 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool) error {
 				return err
 			}
 		} else if replace[hdr.Name] != "" {
-			contents := replace[hdr.Name]
-			hdr.Size = int64(len(contents))
-			hdr.Name = prefix + hdr.Name
-			log.Debugf("image tar: %s %s add %s", image, prefix, hdr.Name)
-			if err := tw.WriteHeader(hdr); err != nil {
-				return err
-			}
-			buf := bytes.NewBufferString(contents)
-			_, err = io.Copy(tw, buf)
-			if err != nil {
-				return err
+			if hdr.Name != "etc/resolv.conf" || resolv == "" {
+				contents := replace[hdr.Name]
+				hdr.Size = int64(len(contents))
+				hdr.Name = prefix + hdr.Name
+				log.Debugf("image tar: %s %s add %s", image, prefix, hdr.Name)
+				if err := tw.WriteHeader(hdr); err != nil {
+					return err
+				}
+				buf := bytes.NewBufferString(contents)
+				_, err = io.Copy(tw, buf)
+				if err != nil {
+					return err
+				}
+			} else {
+				// replace resolv.conf with specified symlink
+				hdr.Name = prefix + hdr.Name
+				hdr.Size = 0
+				hdr.Typeflag = tar.TypeSymlink
+				hdr.Linkname = resolv
+				log.Debugf("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", image, prefix, resolv)
+				if err := tw.WriteHeader(hdr); err != nil {
+					return err
+				}
 			}
 			_, err = io.Copy(ioutil.Discard, tr)
 			if err != nil {
@@ -171,7 +186,7 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool) error {
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
 func ImageBundle(path string, image string, config []byte, tw tarWriter, trust bool, pull bool) error {
 	log.Debugf("image bundle: %s %s cfg: %s", path, image, string(config))
-	err := ImageTar(image, path+"/rootfs/", tw, trust, pull)
+	err := ImageTar(image, path+"/rootfs/", tw, trust, pull, "")
 	if err != nil {
 		return err
 	}
