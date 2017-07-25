@@ -1,0 +1,37 @@
+{
+    "ociVersion": "1.0.0-rc5-dev",
+    "platform": {
+        "os": "linux",
+        "arch": "amd64"
+    },
+    "process": {
+        "consoleSize": {"height": 0, "width": 0},
+        "user": { },
+        "args": [ ],
+        "cwd": "/",
+        "capabilities": {
+            "bounding": [ ],
+            "effective": [ ],
+            "inheritable": [ ],
+            "permitted": [ ]
+        }
+    },
+    "root": { "path": "/rootfs" },
+    "mounts": [
+        { "destination": "/proc", "type": "proc",  "source": "proc" },
+        { "destination": "/dev",  "type": "tmpfs", "source": "tmpfs" },
+        { "destination": "/sys",  "type": "sysfs", "source": "sysfs" }
+    ],
+    "linux": {
+        "resources": {},
+        "namespaces": [
+            { "type": "pid" },
+            { "type": "network" },
+            { "type": "mount" },
+            { "type": "ipc" }
+        ]
+    },
+    "hooks": {
+        "prestart": [ ]
+    }
+}
