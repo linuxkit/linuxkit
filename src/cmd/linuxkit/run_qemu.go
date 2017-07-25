@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/satori/go.uuid"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -36,6 +37,7 @@ type QemuConfig struct {
 	QemuImgPath    string
 	PublishedPorts []string
 	TapDevice      string
+	UUID           uuid.UUID
 }
 
 func haveKVM() bool {
@@ -94,6 +96,9 @@ func runQemu(args []string) {
 
 	// Backend configuration
 	qemuContainerized := flags.Bool("containerized", false, "Run qemu in a container")
+
+	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
+	vmUUID := uuid.NewV4()
 
 	publishFlags := multipleFlag{}
 	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
@@ -218,6 +223,7 @@ func runQemu(args []string) {
 		Containerized:  *qemuContainerized,
 		PublishedPorts: publishFlags,
 		TapDevice:      *tapDevice,
+		UUID:           vmUUID,
 	}
 
 	config = discoverBackend(config)
@@ -380,6 +386,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	qemuArgs = append(qemuArgs, "-device", "virtio-rng-pci")
 	qemuArgs = append(qemuArgs, "-smp", config.CPUs)
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
+	qemuArgs = append(qemuArgs, "-uuid", config.UUID.String())
 	// Need to specify the vcpu type when running qemu on arm64 platform, for security reason,
 	// the vcpu should be "host" instead of other names such as "cortex-a53"...
 	if config.Arch == "aarch64" {
