@@ -12,4 +12,4 @@ CMD []
 WORKDIR /
 COPY --from=mirror /go/bin/metadata /usr/bin/metadata
 CMD ["/usr/bin/metadata"]
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var", "/tmp/etc/resolv.conf:/etc/resolv.conf"], "capabilities": ["CAP_SYS_ADMIN"]}'
+LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var", "/etc/resolv.conf:/etc/resolv.conf"], "capabilities": ["CAP_SYS_ADMIN"]}'

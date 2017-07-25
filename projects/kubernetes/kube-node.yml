@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.9.39
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:a19363d2546205d4613a52371414f79c06d7070e
+  - linuxkit/init:838b772355a8690143b37de1cdd4ac5db725271f
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
   - linuxkit/containerd:e33e0534d6fca88e1eb86897a1ea410b4a5d722e
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
@@ -14,7 +14,7 @@ onboot:
   - name: binfmt
     image: linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5
   - name: metadata
-    image: linuxkit/metadata:428093dd1c4178e8ba1952af44b46c0fd16f8e79
+    image: linuxkit/metadata:f5d4299909b159db35f72547e4ae70bd76c42c6c
   - name: format
     image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
   - name: mounts
@@ -27,15 +27,15 @@ onboot:
       - /var/lib:/var/lib
 services:
   - name: getty
-    image: linuxkit/getty:97c5e2c8ebad23c2ed743366b475b5c15c42f70e
+    image: linuxkit/getty:894eef1e5f62f3bc31de8ffaff2b6c0e093c4595
     env:
      - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   - name: dhcpcd
-    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
+    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
   - name: ntpd
-    image: linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90
+    image: linuxkit/openntpd:2874b66c9fa51fa5b4d11c8b50441eb94ee22a5a
   - name: sshd
     image: linuxkit/sshd:dc98a72c1d1285c30f2db176252f3ce2bf645d5b
   - name: docker

@@ -20,7 +20,8 @@ endif
 
 PREFIX?=/usr/local/
 
-MOBY_COMMIT=8e720bff08cb9f20488d1ae6f114a5b1e4edf9cd
+MOBY_REPO=https://github.com/moby/tool.git
+MOBY_COMMIT=36217e5145f1e54807490c09cc389f5e3ac99075
 MOBY_VERSION=0.0
 bin/moby: tmp_moby_bin.tar | bin
 	tar xf $<
@@ -28,7 +29,7 @@ bin/moby: tmp_moby_bin.tar | bin
 	touch $@
 
 tmp_moby_bin.tar: Makefile
-	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone https://github.com/moby/tool.git --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(MOBY_COMMIT) -X main.Version=$(MOBY_VERSION)" -o bin/moby > $@
+	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone $(MOBY_REPO) --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(MOBY_COMMIT) -X main.Version=$(MOBY_VERSION)" -o bin/moby > $@
 
 RTF_COMMIT=a5c5885a833d6378fa61fcd66374cc55f0dde503
 RTF_CMD=github.com/linuxkit/rtf/cmd

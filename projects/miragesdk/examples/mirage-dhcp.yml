@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.9.39
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:a19363d2546205d4613a52371414f79c06d7070e
+  - linuxkit/init:838b772355a8690143b37de1cdd4ac5db725271f
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
   - linuxkit/containerd:e33e0534d6fca88e1eb86897a1ea410b4a5d722e
 onboot:
@@ -30,7 +30,7 @@ services:
   - name: sshd
     image: linuxkit/sshd:dc98a72c1d1285c30f2db176252f3ce2bf645d5b
   - name: getty
-    image: linuxkit/getty:97c5e2c8ebad23c2ed743366b475b5c15c42f70e
+    image: linuxkit/getty:894eef1e5f62f3bc31de8ffaff2b6c0e093c4595
     env:
      - INSECURE=true
 files:
