@@ -56,11 +56,11 @@ services:
     rootfsPropagation: shared
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: kubernetes-image-cache-common
-    image: linuxkitprojects/kubernetes-image-cache-common:d49a861bde872e6e975153a98a2c482834a30ef9
+    image: linuxkitprojects/kubernetes-image-cache-common:6fccda74ea301f9a62cdcfc2fe4952cff2c8c97b
   - name: kubernetes-image-cache-control-plane
-    image: linuxkitprojects/kubernetes-image-cache-control-plane:d49a861bde872e6e975153a98a2c482834a30ef9
+    image: linuxkitprojects/kubernetes-image-cache-control-plane:6fccda74ea301f9a62cdcfc2fe4952cff2c8c97b
   - name: kubelet
-    image: linuxkitprojects/kubernetes:4f8c61254ff6243e93d5bb6315386ac66e94ed14
+    image: linuxkitprojects/kubernetes:d4d722823b1265a57355ae8a309d4953e293fd58
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
