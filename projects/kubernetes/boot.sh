@@ -3,6 +3,7 @@
 : ${KUBE_VCPUS:=2}
 : ${KUBE_MEM:=4096}
 : ${KUBE_DISK:=4G}
+: ${KUBE_NETWORKING:=default}
 : ${KUBE_RUN_ARGS:=}
 if [ $# -eq 0 ] ; then
     img="kube-master"
@@ -35,4 +36,4 @@ else
 fi
 set -x
 rm -rf "${state}"
-../../bin/linuxkit run ${KUBE_RUN_ARGS} -cpus ${KUBE_VCPUS} -mem ${KUBE_MEM} -state "${state}" -disk size=${KUBE_DISK} -data "${data}" "${img}"
+../../bin/linuxkit run ${KUBE_RUN_ARGS} -networking ${KUBE_NETWORKING} -cpus ${KUBE_VCPUS} -mem ${KUBE_MEM} -state "${state}" -disk size=${KUBE_DISK} -data "${data}" "${img}"
