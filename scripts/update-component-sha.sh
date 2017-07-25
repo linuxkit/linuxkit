@@ -7,7 +7,7 @@ set -e
 # see usage() for usage and functionality
 #
 
-function usage() {
+usage() {
     cat >&2 <<EOF
 $0 --<mode> <how-to-find> <new-hash>
 
