@@ -15,15 +15,15 @@ onboot:
     image: linuxkit/mount:ac8939c4102f97c084d9ddfd445c1908fce6d768
     command: ["/mount.sh", "/var/lib/etcd"]
   - name: dhcpcd
-    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
+    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:428093dd1c4178e8ba1952af44b46c0fd16f8e79
+    image: linuxkit/metadata:f5d4299909b159db35f72547e4ae70bd76c42c6c
 services:
   - name: rngd
     image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
   - name: ntpd
-    image: linuxkit/openntpd:19370f5d9bec84eb91073b7196b732f1301d9c90
+    image: linuxkit/openntpd:2874b66c9fa51fa5b4d11c8b50441eb94ee22a5a
   - name: node_exporter
     image: linuxkit/node_exporter:a058fe1c6a4440a9689022a9fd7cffdcfd56d52c
   - name: etcd

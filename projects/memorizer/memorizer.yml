@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:b6ffbb669248e3369081a6c4427026aa968a2385
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
+    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty

@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.9.39
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:a19363d2546205d4613a52371414f79c06d7070e
+  - linuxkit/init:838b772355a8690143b37de1cdd4ac5db725271f
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
 onboot:
   - name: test-netns

@@ -2,12 +2,12 @@ kernel:
   image: linuxkit/kernel:4.9.39
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:a19363d2546205d4613a52371414f79c06d7070e
+  - linuxkit/init:838b772355a8690143b37de1cdd4ac5db725271f
   - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
   - linuxkit/containerd:e33e0534d6fca88e1eb86897a1ea410b4a5d722e
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
+    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: mount-vpnkit
     image: alpine:3.6

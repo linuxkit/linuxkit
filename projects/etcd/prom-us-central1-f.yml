@@ -10,10 +10,10 @@ onboot:
   - name: sysctl
     image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: dhcpcd
-    image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
+    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:428093dd1c4178e8ba1952af44b46c0fd16f8e79
+    image: linuxkit/metadata:f5d4299909b159db35f72547e4ae70bd76c42c6c
 services:
   - name: rngd
     image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9
