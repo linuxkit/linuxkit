@@ -1,9 +1,11 @@
 package main
 
 import (
+	"crypto/rand"
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -36,9 +38,17 @@ type QemuConfig struct {
 	QemuBinPath    string
 	QemuImgPath    string
 	PublishedPorts []string
-	TapDevice      string
+	NetdevConfig   string
 	UUID           uuid.UUID
 }
+
+const (
+	qemuNetworkingNone    string = "none"
+	qemuNetworkingUser           = "user"
+	qemuNetworkingTap            = "tap"
+	qemuNetworkingBridge         = "bridge"
+	qemuNetworkingDefault        = qemuNetworkingUser
+)
 
 func haveKVM() bool {
 	_, err := os.Stat("/dev/kvm")
@@ -58,6 +68,20 @@ func envOverrideBool(env string, b *bool) {
 	}
 }
 
+func generateMAC() net.HardwareAddr {
+	mac := make([]byte, 6)
+	n, err := rand.Read(mac)
+	if err != nil {
+		log.WithError(err).Fatal("failed to generate random mac address")
+	}
+	if n != 6 {
+		log.WithError(err).Fatal("generated %d bytes for random mac address", n)
+	}
+	mac[0] &^= 0x01 // Clear multicast bit
+	mac[0] |= 0x2   // Set locally administered bit
+	return net.HardwareAddr(mac)
+}
+
 func runQemu(args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("qemu", flag.ExitOnError)
@@ -67,6 +91,10 @@ func runQemu(args []string) {
 		fmt.Printf("\n")
 		fmt.Printf("Options:\n")
 		flags.PrintDefaults()
+		fmt.Printf("\n")
+		fmt.Printf("If not running as root note that '-networking bridge,br0' requires a\n")
+		fmt.Printf("setuid network helper and appropriate host configuration, see\n")
+		fmt.Printf("http://wiki.qemu.org/Features/HelperNetworking.\n")
 	}
 
 	// Display flags
@@ -100,9 +128,11 @@ func runQemu(args []string) {
 	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
 	vmUUID := uuid.NewV4()
 
+	// Networking
+	networking := flags.String("networking", qemuNetworkingDefault, "Networking mode. Valid options are 'default', 'user', 'bridge[,name]', tap[,name] and 'none'. 'user' uses QEMUs userspace networking. 'bridge' connects to a preexisting bridge. 'tap' uses a prexisting tap device. 'none' disables networking.`")
+
 	publishFlags := multipleFlag{}
 	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
-	tapDevice := flags.String("tap-device", "", "Tap device to use as eth0 (optional)")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -206,6 +236,40 @@ func runQemu(args []string) {
 	if *isoBoot && isoPath != "" {
 		log.Fatalf("metadata and ISO boot currently cannot coexist")
 	}
+	if *networking == "" || *networking == "default" {
+		dflt := qemuNetworkingDefault
+		networking = &dflt
+	}
+	netMode := strings.SplitN(*networking, ",", 2)
+
+	var netdevConfig string
+	switch netMode[0] {
+	case qemuNetworkingUser:
+		netdevConfig = "user"
+	case qemuNetworkingTap:
+		if len(netMode) != 2 {
+			log.Fatalf("Not enough arugments for %q networking mode", qemuNetworkingTap)
+		}
+		if len(publishFlags) != 0 {
+			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
+		}
+		netdevConfig = fmt.Sprintf("tap,ifname=%s,script=no,downscript=no", netMode[1])
+	case qemuNetworkingBridge:
+		if len(netMode) != 2 {
+			log.Fatalf("Not enough arugments for %q networking mode", qemuNetworkingBridge)
+		}
+		if len(publishFlags) != 0 {
+			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
+		}
+		netdevConfig = fmt.Sprintf("bridge,br=%s", netMode[1])
+	case qemuNetworkingNone:
+		if len(publishFlags) != 0 {
+			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
+		}
+		netdevConfig = ""
+	default:
+		log.Fatalf("Invalid networking mode: %s", netMode[0])
+	}
 
 	config := QemuConfig{
 		Path:           path,
@@ -222,7 +286,7 @@ func runQemu(args []string) {
 		KVM:            *enableKVM,
 		Containerized:  *qemuContainerized,
 		PublishedPorts: publishFlags,
-		TapDevice:      *tapDevice,
+		NetdevConfig:   netdevConfig,
 		UUID:           vmUUID,
 	}
 
@@ -448,19 +512,16 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		}
 	}
 
-	if config.PublishedPorts != nil && len(config.PublishedPorts) > 0 {
+	if config.NetdevConfig == "" {
+		qemuArgs = append(qemuArgs, "-net", "none")
+	} else {
+		mac := generateMAC()
+		qemuArgs = append(qemuArgs, "-net", "nic,model=virtio,macaddr="+mac.String())
 		forwardings, err := buildQemuForwardings(config.PublishedPorts, config.Containerized)
 		if err != nil {
 			log.Error(err)
 		}
-		qemuArgs = append(qemuArgs, "-net", forwardings)
-		qemuArgs = append(qemuArgs, "-net", "nic")
-	}
-
-	if config.TapDevice != "" {
-		qemuArgs = append(qemuArgs, "-net", "nic,model=virtio")
-		tapArg := fmt.Sprintf("tap,ifname=%s,script=no,downscript=no", config.TapDevice)
-		qemuArgs = append(qemuArgs, "-net", tapArg)
+		qemuArgs = append(qemuArgs, "-net", config.NetdevConfig+forwardings)
 	}
 
 	if config.GUI != true {
@@ -554,7 +615,10 @@ func splitPublish(publish string) (publishedPorts, error) {
 }
 
 func buildQemuForwardings(publishFlags multipleFlag, containerized bool) (string, error) {
-	forwardings := "user"
+	if len(publishFlags) == 0 {
+		return "", nil
+	}
+	var forwardings string
 	for _, publish := range publishFlags {
 		p, err := splitPublish(publish)
 		if err != nil {
