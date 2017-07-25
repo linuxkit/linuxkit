@@ -15,10 +15,10 @@ onboot:
     image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
+    image: linuxkit/format:efafddf9bc6165b5efaf09c532c15a1100a10e61
   - name: mount
-    image: linuxkit/mount:ac8939c4102f97c084d9ddfd445c1908fce6d768
-    command: ["/mount.sh", "/var/lib/swarmd"]
+    image: linuxkit/mount:54990a6a69cb3ead4da8a9c1f0b651e27aea8d3f
+    command: ["/usr/bin/mountie", "/var/lib/swarmd"]
   - name: metadata
     image: linuxkit/metadata:f5d4299909b159db35f72547e4ae70bd76c42c6c
 services:
