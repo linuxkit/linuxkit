@@ -2,9 +2,6 @@ default: push
 
 COMMON_IMAGES := \
   kube-proxy-amd64\:v1.6.7@sha256\:652ca0ef7cdf05341fafb590ced1b737126641829c70f5d23f9b714bc61c8607 \
-  k8s-dns-sidecar-amd64\:1.14.4@sha256\:d33a91a5d65c223f410891001cd379ac734d036429e033865d700a4176e944b0 \
-  k8s-dns-kube-dns-amd64\:1.14.4@sha256\:33914315e600dfb756e550828307dfa2b21fb6db24fe3fe495e33d1022f9245d \
-  k8s-dns-dnsmasq-nanny-amd64\:1.14.4@sha256\:89c9a1d3cfbf370a9c1a949f39f92c1dc2dbe8c3e6cc1802b7f2b48e4dfe9a9e \
   pause-amd64\:3.0@sha256\:163ac025575b775d1c0f9bf0bdd0f086883171eb475b5068e7defa4ca9e76516
 
 CONTROL_PLANE_IMAGES := \
