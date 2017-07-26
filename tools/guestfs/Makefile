@@ -1,12 +1,12 @@
 .PHONY: tag push
 
-BASE=debian:stretch
 IMAGE=guestfs
+
+export DOCKER_CONTENT_TRUST=1
 
 default: push
 
 iid: Dockerfile
-	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache --iidfile iid -
 
 hash: Makefile iid
