@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Run containerd test
-# LABELS:
+# LABELS: skip
 # REPEAT:
 
 set -e
