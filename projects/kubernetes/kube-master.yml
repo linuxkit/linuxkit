@@ -13,6 +13,9 @@ onboot:
     image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
   - name: binfmt
     image: linuxkit/binfmt:0bde4ebd422099f45c5ee03217413523ad2223e5
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
     image: linuxkit/metadata:f5d4299909b159db35f72547e4ae70bd76c42c6c
   - name: format
@@ -32,8 +35,6 @@ services:
      - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
-  - name: dhcpcd
-    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
   - name: ntpd
     image: linuxkit/openntpd:2874b66c9fa51fa5b4d11c8b50441eb94ee22a5a
   - name: sshd
@@ -48,6 +49,7 @@ services:
        options: ["rw","nosuid","noexec","nodev","relatime"]
     binds:
      - /dev:/dev
+     - /etc/resolv.conf:/etc/resolv.conf
      - /lib/modules:/lib/modules
      - /var:/var:rshared,rbind
      - /var/lib/kubeadm:/etc/kubernetes
