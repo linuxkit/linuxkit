@@ -62,7 +62,7 @@ services:
   - name: kubernetes-image-cache-control-plane
     image: linuxkitprojects/kubernetes-image-cache-control-plane:6fccda74ea301f9a62cdcfc2fe4952cff2c8c97b
   - name: kubelet
-    image: linuxkitprojects/kubernetes:d4d722823b1265a57355ae8a309d4953e293fd58
+    image: linuxkitprojects/kubernetes:8fca97c5faf0c6288aee82485d8c6539b84db256
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
