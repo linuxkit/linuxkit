@@ -178,7 +178,7 @@ func (g GCPClient) DeleteImage(name string) error {
 }
 
 // CreateInstance creates and starts an instance on GCP
-func (g GCPClient) CreateInstance(name, image, zone, machineType string, diskSize int, replace bool) error {
+func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, replace bool) error {
 	if replace {
 		if err := g.DeleteInstance(name, zone, true); err != nil {
 			return err
@@ -197,32 +197,47 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, diskSiz
 	sshKey := new(string)
 	*sshKey = fmt.Sprintf("moby:%s moby", string(ssh.MarshalAuthorizedKey(k)))
 
-	diskName := name + "-systemdisk"
-	diskOp, err := g.compute.Disks.Insert(g.projectName, zone, &compute.Disk{Name: diskName, SizeGb: int64(diskSize)}).Do()
-	if err != nil {
-		return err
+	instanceDisks := []*compute.AttachedDisk{
+		{
+			AutoDelete: true,
+			Boot:       true,
+			InitializeParams: &compute.AttachedDiskInitializeParams{
+				SourceImage: fmt.Sprintf("global/images/%s", image),
+			},
+		},
 	}
-	if err := g.pollZoneOperationStatus(diskOp.Name, zone); err != nil {
-		return err
+
+	for i, disk := range disks {
+		var diskName string
+		if disk.Path != "" {
+			diskName = disk.Path
+		} else {
+			diskName = fmt.Sprintf("%s-disk-%d", name, i)
+		}
+		var diskSizeGb int64
+		if disk.Size == 0 {
+			diskSizeGb = int64(1)
+		} else {
+			diskSizeGb = int64(convertMBtoGB(disk.Size))
+		}
+		diskOp, err := g.compute.Disks.Insert(g.projectName, zone, &compute.Disk{Name: diskName, SizeGb: diskSizeGb}).Do()
+		if err != nil {
+			return err
+		}
+		if err := g.pollZoneOperationStatus(diskOp.Name, zone); err != nil {
+			return err
+		}
+		instanceDisks = append(instanceDisks, &compute.AttachedDisk{
+			AutoDelete: true,
+			Boot:       false,
+			Source:     fmt.Sprintf("zones/%s/disks/%s", zone, diskName),
+		})
 	}
 
 	instanceObj := &compute.Instance{
 		MachineType: fmt.Sprintf("zones/%s/machineTypes/%s", zone, machineType),
 		Name:        name,
-		Disks: []*compute.AttachedDisk{
-			{
-				AutoDelete: true,
-				Boot:       true,
-				InitializeParams: &compute.AttachedDiskInitializeParams{
-					SourceImage: fmt.Sprintf("global/images/%s", image),
-				},
-			},
-			{
-				AutoDelete: true,
-				Boot:       false,
-				Source:     fmt.Sprintf("zones/%s/disks/%s", zone, diskName),
-			},
-		},
+		Disks:       instanceDisks,
 		NetworkInterfaces: []*compute.NetworkInterface{
 			{
 				Network: "global/networks/default",
