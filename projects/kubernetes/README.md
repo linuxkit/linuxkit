@@ -11,7 +11,7 @@ Build OS images:
 make build-vm-images
 ```
 
-Boot Kubernetes master OS image using `hyperkit` on macOS:
+Boot Kubernetes master OS image using `hyperkit` on macOS: or `qemu` on Linux:
 ```
 ./boot.sh
 ```
@@ -45,3 +45,45 @@ shell1> ./boot.sh 1 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
 shell2> ./boot.sh 2 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
 shell3> ./boot.sh 3 --token bb38c6.117e66eabbbce07d 192.168.65.22:6443
 ```
+
+## Platform specific information
+
+### MacOS
+
+The above instructions should work as is.
+
+### Linux
+
+By default `linuxkit run` uses user mode networking which does not
+support access from the host. To workaround this you can use port
+forwarding e.g.
+
+    KUBE_RUN_ARGS="-publish 2222:22" ./boot.sh
+
+    ssh -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -p 2222 root@localhost
+
+However you will not be able to run worker nodes since individual
+instances cannot see each other.
+
+To enable networking between instance unfortunately requires `root`
+privileges to configure a bridge and setup the bridge mode privileged
+helper.
+
+See http://wiki.qemu.org/Features/HelperNetworking for details in
+brief you will need:
+
+- To setup and configure a bridge (including e.g. DHCP etc) on the
+  host. (You can reuse a bridge created by e.g. `virt-mananger`)
+- To set the `qemu-bridge-helper` setuid root. The location differs by
+  distro, it could be `/usr/lib/qemu/qemu-bridge-helper` or
+  `/usr/local/libexec/qemu-bridge-helper` or elsewhere. You need to
+  `chmod u+s «PATH»`.
+- List the bridge created in the first step in `/etc/qemu/bridge.conf`
+  with a line like `allow br0` (if your bridge is called `br0`).
+
+## Configuration
+
+The `boot.sh` script has various configuration variables at the top
+which can be overridden via the environment e.g.
+
+    KUBE_VCPUS=4 ./boot.sh

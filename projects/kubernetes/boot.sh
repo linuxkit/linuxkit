@@ -1,8 +1,12 @@
 #!/bin/bash -eu
 : ${KUBE_PORT_BASE:=2222}
+: ${KUBE_VCPUS:=2}
+: ${KUBE_MEM:=4096}
+: ${KUBE_DISK:=4G}
+: ${KUBE_NETWORKING:=default}
+: ${KUBE_RUN_ARGS:=}
 if [ $# -eq 0 ] ; then
     img="kube-master"
-    port=${KUBE_PORT_BASE}
     data=""
     state="kube-master-state"
 elif [ $# -gt 1 ] ; then
@@ -19,7 +23,6 @@ elif [ $# -gt 1 ] ; then
     esac
     img="kube-node"
     name="node-${1}"
-    port=$((${KUBE_PORT_BASE} + $1))
     shift
     data="${*}"
     state="kube-${name}-state"
@@ -33,4 +36,4 @@ else
 fi
 set -x
 rm -rf "${state}"
-../../bin/linuxkit run -publish $port:22 -cpus 2 -mem 4096 -state "${state}" -disk size=4G -data "${data}" "${img}"
+../../bin/linuxkit run ${KUBE_RUN_ARGS} -networking ${KUBE_NETWORKING} -cpus ${KUBE_VCPUS} -mem ${KUBE_MEM} -state "${state}" -disk size=${KUBE_DISK} -data "${data}" "${img}"
