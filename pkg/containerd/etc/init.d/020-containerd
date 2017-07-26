@@ -1,18 +1,6 @@
 #!/bin/sh
 
-# bring up containerd
-printf "\nStarting containerd\n"
-/usr/bin/containerd &
-
-# wait for socket to be there
-while [ ! -S /run/containerd/containerd.sock ]
-do
-	sleep 0.1
-done
-
 # start service containers
-
-service system-init
 
 if [ -d /containers/services ]
 then
@@ -20,6 +8,7 @@ then
 	do
 		/bin/mount --bind "$f/rootfs" "$f/rootfs"
 		mount -o remount,rw "$f/rootfs"
-		service start "$(basename $f)"
 	done
 fi
+
+service system-init

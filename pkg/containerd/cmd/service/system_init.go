@@ -4,9 +4,12 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"syscall"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/containerd/containerd"
@@ -49,7 +52,7 @@ func cleanupTask(ctx context.Context, ctr containerd.Container) error {
 	}
 }
 
-func systemInit(args []string) {
+func systemInitCmd(args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("system-init", flag.ExitOnError)
 	flags.Usage = func() {
@@ -58,7 +61,9 @@ func systemInit(args []string) {
 		flags.PrintDefaults()
 	}
 
-	sock := flags.String("sock", "/run/containerd/containerd.sock", "Path to containerd socket")
+	sock := flags.String("sock", defaultSocket, "Path to containerd socket")
+	path := flags.String("path", defaultPath, "Path to service configs")
+	binary := flags.String("containerd", defaultContainerd, "Path to containerd")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -71,6 +76,33 @@ func systemInit(args []string) {
 		os.Exit(1)
 	}
 
+	// remove (unlikely) old containerd socket
+	_ = os.Remove(*sock)
+
+	// start up containerd
+	cmd := exec.Command(*binary)
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	if err := cmd.Start(); err != nil {
+		log.WithError(err).Fatal("cannot start containerd")
+	}
+
+	// wait for containerd socket to appear
+	for {
+		_, err := os.Stat(*sock)
+		if err == nil {
+			break
+		}
+		err = cmd.Process.Signal(syscall.Signal(0))
+		if err != nil {
+			// process not there, wait() to find error
+			err = cmd.Wait()
+			log.WithError(err).Fatal("containerd process exited")
+		}
+		time.Sleep(100 * time.Millisecond)
+	}
+
+	// connect to containerd
 	client, err := containerd.New(*sock)
 	if err != nil {
 		log.WithError(err).Fatal("creating containerd client")
@@ -83,6 +115,7 @@ func systemInit(args []string) {
 		log.WithError(err).Fatal("listing containers")
 	}
 
+	// Clean up any old containers
 	// None of the errors in this loop are fatal since we want to
 	// keep trying.
 	for _, ctr := range ctrs {
@@ -97,6 +130,20 @@ func systemInit(args []string) {
 
 		if err := ctr.Delete(ctx); err != nil {
 			log.WithError(err).Error("deleting container")
+		}
+	}
+
+	// Start up containers
+	files, err := ioutil.ReadDir(*path)
+	// just skip if there is an error, eg no such path
+	if err != nil {
+		return
+	}
+	for _, file := range files {
+		if id, pid, msg, err := start(file.Name(), *sock, *path, ""); err != nil {
+			log.WithError(err).Error(msg)
+		} else {
+			log.Debugf("Started %s pid %d", id, pid)
 		}
 	}
 }

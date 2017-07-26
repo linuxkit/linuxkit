@@ -9,6 +9,12 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
+const (
+	defaultSocket     = "/run/containerd/containerd.sock"
+	defaultPath       = "/containers/services"
+	defaultContainerd = "/usr/bin/containerd"
+)
+
 var (
 	defaultLogFormatter = &log.TextFormatter{}
 )
@@ -67,9 +73,9 @@ func main() {
 
 	switch args[0] {
 	case "start":
-		start(args[1:])
+		startCmd(args[1:])
 	case "system-init":
-		systemInit(args[1:])
+		systemInitCmd(args[1:])
 	default:
 		fmt.Printf("%q is not valid command.\n\n", args[0])
 		flag.Usage()
