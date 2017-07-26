@@ -9,10 +9,10 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	log "github.com/sirupsen/logrus"
 )
 
 func start(args []string) {
@@ -84,21 +84,25 @@ func start(args []string) {
 		log.WithError(err).Fatal("failed to create container")
 	}
 
-	io := func() (*containerd.IO, error) {
-		logfile := filepath.Join("/var/log", service+".log")
-		// We just need this to exist.
-		if err := ioutil.WriteFile(logfile, []byte{}, 0666); err != nil {
-			log.WithError(err).Fatal("failed to touch logfile")
-		}
-		return &containerd.IO{
-			Stdin:    "/dev/null",
-			Stdout:   logfile,
-			Stderr:   logfile,
-			Terminal: false,
-		}, nil
+	logfile := filepath.Join("/var/log", service+".log")
+	// We just need this to exist.
+	if err := ioutil.WriteFile(logfile, []byte{}, 0666); err != nil {
+		log.WithError(err).Fatal("failed to touch logfile")
 	}
 
-	task, err := ctr.NewTask(ctx, io)
+	// io.Reader from '/dev/null'
+	logR, err := os.Open("/dev/null")
+	if err != nil {
+		log.WithError(err).Fatal("failed to open log file")
+	}
+
+	// io.Writer for both normal and error output upon logfile
+	logOE, err := os.Open(logfile)
+	if err != nil {
+		log.WithError(err).Fatal("failed to open log file")
+	}
+
+	task, err := ctr.NewTask(ctx, containerd.NewIO(logR, logOE, logOE))
 	if err != nil {
 		// Don't bother to destroy the container here.
 		log.WithError(err).Fatal("failed to create task")
