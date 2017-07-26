@@ -18,7 +18,7 @@ services:
     env:
      - INSECURE=true
   - name: tss
-    image: linuxkit/tss:e51164ceaa2bd6db7d68e74d071929f5cb1c6c2e
+    image: linuxkit/tss:51d73be868e12af76965f5682ed59309c19972b6
   - name: rngd
     image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
 files:
