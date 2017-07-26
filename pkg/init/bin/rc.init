@@ -99,7 +99,7 @@ ip route add 127.0.0.0/8 dev lo scope host
 ip link set lo up
 
 # for containerizing dhcpcd and other containers that need writable /etc/resolv.conf
-[ -L /etc/resolv.conf ] && mkdir -p $(dirname $(readlink -n /etc/resolv.conf))
+[ -L /etc/resolv.conf ] && mkdir -p $(dirname $(readlink -n /etc/resolv.conf)) && touch /etc/resolv.conf
 
 # remount rootfs as readonly
 mount -o remount,ro /
@@ -117,7 +117,7 @@ ulimit -n 1048576
 ulimit -p unlimited
 
 # execute other init processes
-INITS="$(find /etc/init.d -type f 2>/dev/null | sort)"
+INITS="$(find /etc/init.d ! -type d 2>/dev/null | sort)"
 for f in $INITS
 do
 	$f

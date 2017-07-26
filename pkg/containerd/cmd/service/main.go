@@ -66,9 +66,8 @@ func main() {
 
 	args := flag.Args()
 	if len(args) < 1 {
-		fmt.Printf("Please specify a command.\n\n")
-		flag.Usage()
-		os.Exit(1)
+		systemInitCmd(args)
+		os.Exit(0)
 	}
 
 	switch args[0] {
