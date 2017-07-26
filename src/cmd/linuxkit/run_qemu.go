@@ -18,7 +18,10 @@ import (
 )
 
 // QemuImg is the version of qemu container
-const QemuImg = "linuxkit/qemu:8c07b24790ac5162dfc129791f8afeace159ca20"
+const (
+	QemuImg       = "linuxkit/qemu:8c07b24790ac5162dfc129791f8afeace159ca20"
+	defaultFWPath = "/usr/share/ovmf/bios.bin"
+)
 
 // QemuConfig contains the config for Qemu
 type QemuConfig struct {
@@ -114,7 +117,8 @@ func runQemu(args []string) {
 	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
 
 	// Paths and settings for UEFI firware
-	fw := flags.String("fw", "/usr/share/ovmf/bios.bin", "Path to OVMF firmware for UEFI boot")
+	// Note, we do not use defaultFWPath here as we have a special case for containerised execution
+	fw := flags.String("fw", "", "Path to OVMF firmware for UEFI boot")
 
 	// VM configuration
 	enableKVM := flags.Bool("kvm", haveKVM(), "Enable KVM acceleration")
@@ -326,6 +330,9 @@ func runQemuLocal(config QemuConfig) error {
 
 	// Check for OVMF firmware before running
 	if config.UEFI {
+		if config.FWPath == "" {
+			config.FWPath = defaultFWPath
+		}
 		if _, err := os.Stat(config.FWPath); err != nil {
 			if os.IsNotExist(err) {
 				return fmt.Errorf("File [%s] does not exist, please ensure OVMF is installed", config.FWPath)
@@ -375,11 +382,16 @@ func runQemuContainer(config QemuConfig) error {
 	var args []string
 	config, args = buildQemuCmdline(config)
 
-	// if user specify the "-fw" parameter, this should override the default in container context,
-	// with "-v" option, we will have the chance to assign an external FW binary to the containerized qemu
-	// instead of the fixed FW bin instealled by the build process of the image.
+	// If we are running in a container and if the the user
+	// does not specify the "-fw" parameter, we default to using the
+	// FW image in the container. Otherwise we bind mount the FW image
+	// into the container.
 	if config.UEFI {
-		binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", config.FWPath))
+		if config.FWPath != "" {
+			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", config.FWPath))
+		} else {
+			config.FWPath = defaultFWPath
+		}
 	}
 
 	dockerArgs := append([]string{"run", "--interactive", "--rm", "-w", cwd}, binds...)
