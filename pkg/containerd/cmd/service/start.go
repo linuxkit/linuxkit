@@ -58,6 +58,10 @@ func startCmd(args []string) {
 func start(service, sock, path, dumpSpec string) (string, uint32, string, error) {
 	rootfs := filepath.Join(path, service, "rootfs")
 
+	if err := prepare(filepath.Join(path, service)); err != nil {
+		return "", 0, "preparing rootfs", err
+	}
+
 	client, err := containerd.New(sock)
 	if err != nil {
 		return "", 0, "creating containerd client", err

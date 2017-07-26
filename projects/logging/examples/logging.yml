@@ -3,8 +3,8 @@ kernel:
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:12348442d56c2ee9abf13ff38dff2e36b515bd1e # with runc, logwrite, startmemlogd
-  - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
-  - linuxkit/containerd:ff59f34e79369a6f2ce7c2a7b1cf0fcb226b31f4
+  - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
+  - linuxkit/containerd:acd23f7c020e09799e03331e781f35965e19981f
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
   - linuxkit/memlogd:9b5834189f598f43c507f6938077113906f51012
 onboot:

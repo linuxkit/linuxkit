@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # execute other shutdown processes
-SHUTS="$(find /etc/shutdown.d -type f 2>/dev/null | sort)"
+SHUTS="$(find /etc/shutdown.d ! -type d 2>/dev/null | sort)"
 for f in $SHUTS
 do
         $f

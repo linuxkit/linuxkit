@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:4.9.39
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:838b772355a8690143b37de1cdd4ac5db725271f
-  - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
+  - linuxkit/init:4dcee04c04c900a5796dc719f8d16fea7e771059
+  - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
 onboot:
   - name: test-ns
     image: linuxkit/test-ns:9c282c060d840e39136c138b5943bc9014fa17a9
