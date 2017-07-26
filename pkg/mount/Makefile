@@ -1,4 +1,4 @@
 IMAGE=mount
-DEPS=mount.sh
+DEPS=mountie.go
 
 include ../package.mk

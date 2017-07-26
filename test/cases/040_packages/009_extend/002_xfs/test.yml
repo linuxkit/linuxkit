@@ -1,0 +1,30 @@
+kernel:
+  image: linuxkit/kernel:4.9.39
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:838b772355a8690143b37de1cdd4ac5db725271f
+  - linuxkit/runc:d5cbeb95bdafedb82ad2cf11cff1a5da7fcae630
+onboot:
+  - name: extend
+    image: linuxkit/extend:1e81ffe40ad63887d6210228c2a791f28375ee0f
+    command: ["/usr/bin/extend", "-type", "xfs"]
+  - name: mount
+    image: linuxkit/mount:54990a6a69cb3ead4da8a9c1f0b651e27aea8d3f
+    command: ["/usr/bin/mountie", "/var/lib/docker"]
+  - name: test
+    image: alpine:3.6
+    readonly: true
+    binds:
+      - /var/lib/docker:/var/lib/docker
+      - /check.sh:/check.sh
+    command: ["sh", "./check.sh"]
+  - name: poweroff
+    image: linuxkit/poweroff:bce51402e293da0b653923a43c3c7be6e0effa05
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+files:
+  - path: check.sh
+    source: ./check.sh
+trust:
+  org:
+    - linuxkit
+    - library

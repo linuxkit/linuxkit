@@ -1,4 +1,4 @@
 IMAGE=format
-DEPS=format.sh
+DEPS=format.go
 
 include ../package.mk

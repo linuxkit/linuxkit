@@ -19,45 +19,112 @@ The `-disk` specification may be repeated for multiple disks, although a limited
 
 **TODO:** GCP
 
-## Mount the Disk
-A disk created or used via `hyperkit run` will be available inside the image at `/dev/vda` with the first partition at `/dev/vda1`.
+## Format the disk
 
-In order to use the disk, you need to do several steps to make it available:
+`pkg/format` creates a partition table and format drives for use with LinuxKit
 
-1. Create a partition table if it does not have one.
-2. Create a filesystem if it does not have one.
-3. `fsck` the filesystem.
-4. Mount it.
+### Example Usage
 
-To simplify the process, two `onboot` images are available for you to use:
+This packages supports two modes of use:
 
-1. `format`, which:
-    * checks for a partition table and creates one if necessary
-    * checks for a filesystem on the partition and creates one if necessary
-    * runs `fsck` on the filesystem
-2. `mount` which mounts the filesystem to a provided path
-
-```yml
+```
 onboot:
   - name: format
-    image: linuxkit/format:84a997e69051a1bf05b7c1926ab785bb07932954
-  - name: mount
-    image: linuxkit/mount:ac8939c4102f97c084d9ddfd445c1908fce6d768
-    command: ["/mount.sh", "/var/external"]
+    image: linuxkit/format:<hash>
 ```
 
-Notice several key points:
+In this mode of operation, the first disk found that does not have a valid partition table
+will have one linux partition created that fills the entire disk
 
-1. format container
-    * The format container needs to have bind mounts for `/dev`
-    * The format container needs `CAP_SYS_ADMIN` and `CAP_MKNOD` capabilities
-    * The format container only needs to run **once**, not matter how many external disks or partitions are provided. It finds all block devices under `/dev` and processes them.
-    * The default container config should be sufficient
-2. mount container
-    * The mount container `command` is `mount.sh` followed by the desired mount point. Remember that nearly everything in a linuxkit image is read-only except under `/var`, so mount it there.
-    * The mount container needs to have bind mounts for `/dev` and `/var`
-    * The mount container needs `CAP_SYS_ADMIN` capabilities
-    * The mount container needs `rootfsPropagation: shared`
-    * The default container config should be sufficient, though the `mount.sh` command needs to be specified
+### Options
 
-With the above in place, if run with the current disk options, the image will make the external disk available as `/dev/vda1` and mount it at `/var/external`.
+```
+onboot:
+  - name: format
+    image: linuxkit/format:<hash>
+    command: ["/usr/bin/format", "-type", "ext4", "-label", "DATA", "/dev/vda"]
+```
+
+`-type` can be used to specify the type. This is `ext4` by default but `btrfs` and `xfs` are also supported
+`-label` can be used to give the disk a label
+The final (optional) argument specifies the device name
+
+## Mount the disk
+
+Once a disk has been prepared it will need to be mounted using `pkg/mount`
+
+### Usage
+
+**NOTE: Block devices may only be mounted in `/var` unless you have explicitly added an additional bind mount**
+
+If no additional arguments are provided the first unmounted linux partition on the first block device is mounted to the mountpoint provided.
+
+```
+onboot:
+  - name: mount
+    image: linuxkit/mount:<hash>
+    command: ["/usr/bin/mountie", "/var/lib/docker"]
+```
+
+### Options
+
+You can provide either a partition label, device name or disk UUID to specify which disk should be used.
+For example:
+
+```
+onboot:
+  - name: mount
+    image: linuxkit/mount:<hash>
+    command: ["/usr/bin/mountie", "-label", "DATA", "/var/lib/docker" ]
+```
+
+```
+onboot:
+  - name: mount
+    image: linuxkit/mount:<hash>
+    command: ["/usr/bin/mountie", "-uuid", "a-proper-uuid", "/var/lib/docker" ]
+```
+
+```
+onboot:
+  - name: mount
+    image: linuxkit/mount:<hash>
+    command: ["/usr/bin/mountie", "-device", "/dev/sda1", "/var/lib/docker" ]
+```
+
+For compatibility with the standard `mount` command we also support providing the device name as a positional argument.
+E.g
+
+```
+onboot:
+  - name: mount
+    image: linuxkit/mount:<hash>
+    command: ["/usr/bin/mountie", "/dev/sda1", "/var/lib/docker" ]
+```
+
+## Extending Partitions
+
+`pkg/extend` can extends a single partition to fill the entire disk
+
+### Usage
+
+In the default mode of operation, any disks that are found and have a single partition and free space will have that partition extended.
+
+```
+onboot:
+  - name: extend
+    image: linuxkit/extend:<hash>
+```
+
+### Options
+
+`-type` can be used to specify the type. The default is `ext4` but `btrfs` and `xfs` are also supported.
+If you know the name of the disk that you wish to extend you may supply this as an argument
+
+```
+onboot:
+  - name: extend
+    image: linuxkit/extend:<hash>
+    command: ["/usr/bin/extend", "-type", "btrfs", "/dev/vda"]
+```
+
