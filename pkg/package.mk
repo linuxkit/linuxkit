@@ -1,4 +1,4 @@
-.PHONY: image tag show-tag
+.PHONY: image tag forcetag show-tag check-dirty push forcepush
 default: push
 
 ORG?=linuxkit
@@ -55,11 +55,20 @@ tag: $(BASE_DEPS) $(DEPS)
 forcetag: $(BASE_DEPS) $(DEPS)
 	docker build $(LABELS) $(NET_OPT) -t $(TAG) $(SOURCE)
 
-push: tag
+check-dirty:
 ifneq ($(DIRTY),)
-	$(error Your repository is not clean. Will not push package image.)
+	$(error Your repository is not clean. Will not push package image)
 endif
+
+push: check-dirty tag
 	docker pull $(TAG) || docker push $(TAG)
+ifneq ($(RELEASE),)
+	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
+	docker push $(ORG)/$(IMAGE):$(RELEASE)
+endif
+
+forcepush: check-dirty forcetag
+	docker push $(TAG)
 ifneq ($(RELEASE),)
 	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
 	docker push $(ORG)/$(IMAGE):$(RELEASE)
