@@ -38,6 +38,7 @@ services:
      - type: cgroup
        options: ["rw","nosuid","noexec","nodev","relatime"]
     binds:
+     - /etc/resolv.conf:/etc/resolv.conf
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
      - /etc/docker/daemon.json:/etc/docker/daemon.json
