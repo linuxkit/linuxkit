@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"path/filepath"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -184,35 +185,49 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(path string, image string, config []byte, tw tarWriter, trust bool, pull bool) error {
+func ImageBundle(path string, image string, config []byte, tw tarWriter, trust bool, pull bool, readonly bool) error {
 	log.Debugf("image bundle: %s %s cfg: %s", path, image, string(config))
-	err := ImageTar(image, path+"/rootfs/", tw, trust, pull, "")
-	if err != nil {
+
+	// if read only, just unpack in rootfs/ but otherwise set up for overlay
+	rootfs := "rootfs"
+	if !readonly {
+		rootfs = "lower"
+	}
+
+	if err := ImageTar(image, filepath.Join(path, rootfs)+"/", tw, trust, pull, ""); err != nil {
 		return err
 	}
 	hdr := &tar.Header{
-		Name: path + "/" + "config.json",
+		Name: filepath.Join(path, "config.json"),
 		Mode: 0644,
 		Size: int64(len(config)),
 	}
-	err = tw.WriteHeader(hdr)
-	if err != nil {
+	if err := tw.WriteHeader(hdr); err != nil {
 		return err
 	}
 	buf := bytes.NewBuffer(config)
-	_, err = io.Copy(tw, buf)
-	if err != nil {
+	if _, err := io.Copy(tw, buf); err != nil {
 		return err
 	}
-	// add a tmp directory to be used as a mount point if needed
-	hdr = &tar.Header{
-		Name:     path + "/" + "tmp",
-		Mode:     0755,
-		Typeflag: tar.TypeDir,
-	}
-	err = tw.WriteHeader(hdr)
-	if err != nil {
-		return err
+	if !readonly {
+		// add a tmp directory to be used as a mount point for tmpfs for upper, work
+		hdr = &tar.Header{
+			Name:     filepath.Join(path, "tmp"),
+			Mode:     0755,
+			Typeflag: tar.TypeDir,
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		// add rootfs as merged mount point
+		hdr = &tar.Header{
+			Name:     filepath.Join(path, "rootfs"),
+			Mode:     0755,
+			Typeflag: tar.TypeDir,
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
 	}
 
 	return nil
