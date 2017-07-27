@@ -1,4 +1,4 @@
-# linuxkit/alpine:34af9cb1990debd17fae6d4198c62ce3910d9908
+# linuxkit/alpine:77c8dfc5860012c869a19d7a2c68e701469692c8
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -182,6 +182,7 @@ openssh-keygen-7.5_p1-r1
 openssh-server-7.5_p1-r1
 openssl-dev-1.0.2k-r0
 opus-1.1.4-r0
+ovmf-0.0.20161115-r1
 p11-kit-0.23.2-r1
 patch-2.7.5-r1
 pax-utils-1.2.2-r0
