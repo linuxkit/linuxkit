@@ -24,7 +24,7 @@ else
 	DEVICE="/dev/sda"
 fi
 
-sed -e "s,@DEVICE@,${DEVICE},g" test.yml.orig > test.yml
+sed -e "s,@DEVICE@,${DEVICE},g" test.yml.in > test.yml
 moby build -name ${NAME} -output kernel+initrd test.yml
 RESULT="$(linuxkit run -disk file=${NAME}1.img,size=512M ${NAME})"
 echo "${RESULT}"
