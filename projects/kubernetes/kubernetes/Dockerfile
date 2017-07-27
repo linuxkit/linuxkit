@@ -2,7 +2,7 @@
 # XXX needs ebtables ethtool iproute2 libc6-compat socat
 FROM alpine:3.6 AS build
 
-ENV kubernetes_version v1.6.7
+ENV kubernetes_version v1.7.2
 ENV weave_version      v2.0.1
 ENV cni_version        v0.5.2
 

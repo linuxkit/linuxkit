@@ -1,13 +1,13 @@
 default: push
 
 COMMON_IMAGES := \
-  kube-proxy-amd64\:v1.6.7@sha256\:652ca0ef7cdf05341fafb590ced1b737126641829c70f5d23f9b714bc61c8607 \
+  kube-proxy-amd64\:v1.7.2@sha256\:d455480e81d60e0eff3415675278fe3daec6f56c79cd5b33a9b76548d8ab4365 \
   pause-amd64\:3.0@sha256\:163ac025575b775d1c0f9bf0bdd0f086883171eb475b5068e7defa4ca9e76516
 
 CONTROL_PLANE_IMAGES := \
-  kube-apiserver-amd64\:v1.6.7@sha256\:57e482529b95d32730d1bcd2e374199f27eab4abcf1ff49c5db2a7a7e2231cc8 \
-  kube-controller-manager-amd64\:v1.6.7@sha256\:884f609895fa715d66806681a6bf6f9851a911202ad3484b768fead8b7c78b39 \
-  kube-scheduler-amd64\:v1.6.7@sha256\:a1a498a0ca5ab23c228724d93c3f3d9457b31a046d9025471d98e1096422452c \
+  kube-apiserver-amd64\:v1.7.2@sha256\:a9ccc205760319696d2ef0641de4478ee90fb0b75fbe6c09b1d64058c8819f97 \
+  kube-controller-manager-amd64\:v1.7.2@sha256\:2b268ab9017fadb006ee994f48b7222375fe860dc7bd14bf501b98f0ddc2961b \
+  kube-scheduler-amd64\:v1.7.2@sha256\:b2e897138449e7a00508dc589b1d4b71e56498a4d949ff30eb07b1e9d665e439 \
   etcd-amd64\:3.0.17@sha256\:d83d3545e06fb035db8512e33bd44afb55dea007a3abd7b17742d3ac6d235940
 
 dl/%.tar:
