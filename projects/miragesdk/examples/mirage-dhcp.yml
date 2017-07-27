@@ -30,7 +30,7 @@ services:
   - name: sshd
     image: linuxkit/sshd:dc98a72c1d1285c30f2db176252f3ce2bf645d5b
   - name: getty
-    image: linuxkit/getty:b4cdc4101eb41ce2b8aaf1ef0209445ebdc577b4
+    image: linuxkit/getty:58620cff1b0bf8b5d144d087602115e996f18a02
     env:
      - INSECURE=true
 files:

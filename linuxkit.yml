@@ -20,7 +20,7 @@ onshutdown:
     command: ["/bin/echo", "so long and thanks for all the fish"]
 services:
   - name: getty
-    image: linuxkit/getty:b4cdc4101eb41ce2b8aaf1ef0209445ebdc577b4
+    image: linuxkit/getty:58620cff1b0bf8b5d144d087602115e996f18a02
     env:
      - INSECURE=true
   - name: rngd
