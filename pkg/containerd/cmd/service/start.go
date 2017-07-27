@@ -9,10 +9,10 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/namespaces"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
+	log "github.com/sirupsen/logrus"
 )
 
 func startCmd(args []string) {
@@ -98,7 +98,7 @@ func start(service, sock, path, dumpSpec string) (string, uint32, string, error)
 		return "", 0, "failed to create container", err
 	}
 
-	io := func() (*containerd.IO, error) {
+	io := func(id string) (*containerd.IO, error) {
 		logfile := filepath.Join("/var/log", service+".log")
 		// We just need this to exist.
 		if err := ioutil.WriteFile(logfile, []byte{}, 0600); err != nil {

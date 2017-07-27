@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:34af9cb1990debd17fae6d4198c62ce3910d9908 AS mirror
+FROM linuxkit/alpine:cb6a0b2b068d892996ebadae999d9baf6e08be5b AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 # btrfs-progfs is required for btrfs test (mkfs.btrfs)
 # util-linux is required for btrfs test (losetup)
@@ -14,8 +14,10 @@ RUN apk add --no-cache --initdb -p /out \
     linux-headers \
     make \
     musl \
-    util-linux
+    util-linux \
+    tzdata
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+RUN cp /out/usr/share/zoneinfo/UTC /out/etc/localtime
 
 FROM scratch
 COPY --from=mirror /out/ /
@@ -29,4 +31,4 @@ RUN git checkout $CONTAINERD_COMMIT
 ADD run.sh ./run.sh
 
 ENTRYPOINT ["/bin/sh", "run.sh"]
-LABEL org.mobyproject.config='{"net": "host", "capabilities": ["all"], "tmpfs": ["/tmp:exec"], "binds": ["/dev:/dev"]}'
+LABEL org.mobyproject.config='{"net": "host", "capabilities": ["all"], "tmpfs": ["/tmp:exec"], "binds": ["/dev:/dev", "/etc/resolv.conf:/etc/resolv.conf", "/usr/bin/runc:/usr/bin/runc", "/usr/bin/containerd:/usr/bin/containerd", "/usr/bin/containerd-shim:/usr/bin/containerd-shim"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}],}'

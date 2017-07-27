@@ -11,11 +11,11 @@ import (
 	"syscall"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/namespaces"
 	"github.com/pkg/errors"
+	log "github.com/sirupsen/logrus"
 )
 
 func cleanupTask(ctx context.Context, ctr containerd.Container) error {

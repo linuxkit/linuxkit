@@ -4,16 +4,18 @@ kernel:
 init:
   - linuxkit/init:4dcee04c04c900a5796dc719f8d16fea7e771059
   - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
-  - linuxkit/containerd:acd23f7c020e09799e03331e781f35965e19981f
+  - linuxkit/containerd:8fc87b7f465bde9ece781899a007f47b6d3c096b
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: sysctl
     image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: test
-    image: linuxkit/test-containerd:0e350ce958b379b9ddb2bcdd22aaf4508f6ddbc3
+    image: linuxkit/test-containerd:dd3f2ba599c70994ba875e7c86c04df2967e3144
   - name: poweroff
     image: linuxkit/poweroff:3845c4d64d47a1ea367806be5547e44594b0fa91
 trust:
   org:
     - linuxkit
-
