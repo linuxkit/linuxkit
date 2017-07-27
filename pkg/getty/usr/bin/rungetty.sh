@@ -43,7 +43,7 @@ start_getty() {
 
 
 # check if we are namespaced, and, if so, indicate in the PS1
-if [ -z "$INIGETTY" ]; then
+if [ -z "$INITGETTY" ]; then
 	cat >/etc/profile.d/namespace.sh <<"EOF"
 export PS1="(ns: getty) $PS1"
 EOF
