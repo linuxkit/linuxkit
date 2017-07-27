@@ -1,29 +1,29 @@
 .PHONY: tag push
 
-BASE=debian:stretch
 IMAGE=guestfs
+
+export DOCKER_CONTENT_TRUST=1
 
 default: push
 
-hash: Dockerfile
-	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
-	docker run --rm $(IMAGE):build sh -c 'apt list --installed 2>/dev/null | sha1sum' | sed 's/ .*//' > hash
+iid: Dockerfile
+	tar cf - $^ | docker build --no-cache --iidfile iid -
 
-push: hash
+hash: Makefile iid
+	docker run --rm $(shell cat iid) sh -c 'apt list --installed 2>/dev/null | sha1sum' | sed 's/ .*//' > hash
+
+push: hash iid
 	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash) && \
+		(docker tag $(shell cat iid) linuxkit/$(IMAGE):$(shell cat hash) && \
 		 docker push linuxkit/$(IMAGE):$(shell cat hash))
-	docker rmi $(IMAGE):build
-	rm -f hash
+	rm -f iid
 
-tag: hash
+tag: hash iid
 	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
-		docker tag $(IMAGE):build linuxkit/$(IMAGE):$(shell cat hash)
-	docker rmi $(IMAGE):build
-	rm -f hash
+		docker tag $(shell cat iid) linuxkit/$(IMAGE):$(shell cat hash)
+	rm -f iid
 
 clean:
-	rm -f hash
+	rm -f hash iid
 
 .DELETE_ON_ERROR:

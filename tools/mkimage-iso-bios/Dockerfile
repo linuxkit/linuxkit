@@ -1,4 +1,4 @@
-FROM alpine:3.5
+FROM linuxkit/alpine:34af9cb1990debd17fae6d4198c62ce3910d9908
 
 RUN \
   apk update && apk upgrade && \

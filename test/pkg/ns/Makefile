@@ -1,5 +1,5 @@
 IMAGE=test-ns
 NETWORK=1
-DEPS=Dockerfile Makefile
+DEPS=config.template.json $(wildcard *.sh)
 
 include ../../../pkg/package.mk
