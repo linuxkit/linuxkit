@@ -50,7 +50,7 @@ hash: Makefile iid
 
 versions.$(ARCH): Makefile hash iid
 	echo "# $(ORG)/$(IMAGE):$(shell cat hash)" > versions.$(ARCH)
-	docker run --rm $(shell cat iid) find /mirror -name '*.apk' -exec basename '{}' .apk \; | sort | (echo '# automatically generated list of installed packages'; cat -) >> versions.$(ARCH)
+	docker run --rm $(shell cat iid) find /mirror -name '*.apk' -exec basename '{}' .apk \; | LANG=C sort | (echo '# automatically generated list of installed packages'; cat -) >> versions.$(ARCH)
 
 push: hash iid versions.$(ARCH)
 	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
