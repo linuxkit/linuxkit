@@ -14,8 +14,10 @@ RUN apk add --no-cache --initdb -p /out \
     linux-headers \
     make \
     musl \
-    util-linux
+    util-linux \
+    tzdata
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+RUN cp /out/usr/share/zoneinfo/UTC /out/etc/localtime
 
 FROM scratch
 COPY --from=mirror /out/ /
@@ -29,4 +31,4 @@ RUN git checkout $CONTAINERD_COMMIT
 ADD run.sh ./run.sh
 
 ENTRYPOINT ["/bin/sh", "run.sh"]
-LABEL org.mobyproject.config='{"net": "host", "capabilities": ["all"], "tmpfs": ["/tmp:exec"], "binds": ["/dev:/dev"]}'
+LABEL org.mobyproject.config='{"net": "host", "capabilities": ["all"], "tmpfs": ["/tmp:exec"], "binds": ["/dev:/dev", "/etc/resolv.conf:/etc/resolv.conf", "/usr/bin/runc:/usr/bin/runc", "/usr/bin/containerd:/usr/bin/containerd", "/usr/bin/containerd-shim:/usr/bin/containerd-shim"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}],}'
