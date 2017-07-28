@@ -34,11 +34,12 @@ services:
      - type: cgroup
        options: ["rw","nosuid","noexec","nodev","relatime"]
     binds:
+     - /etc/resolv.conf:/etc/resolv.conf
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
      - /var/run:/var/run
      - /var/html:/var/html
-    command: ["/usr/bin/docker-init", "/usr/bin/dockerd"]
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: compose
     image: linuxkitprojects/compose:0535e78608f57702745dfd56fbe78d28d237e469
     binds:
