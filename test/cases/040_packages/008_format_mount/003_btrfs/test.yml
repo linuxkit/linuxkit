@@ -20,7 +20,6 @@ onboot:
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.6
-    readonly: true
     binds:
       - /var/lib/docker:/var/lib/docker
       - /check.sh:/check.sh

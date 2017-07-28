@@ -12,7 +12,6 @@ onboot:
     net: host
     pid: host
     ipc: host
-    readonly: true
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]

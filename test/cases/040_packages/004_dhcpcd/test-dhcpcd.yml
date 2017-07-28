@@ -10,7 +10,6 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: test
     image: alpine:3.6
-    readonly: true
     net: host
     binds:
       - /check.sh:/check.sh

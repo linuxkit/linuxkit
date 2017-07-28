@@ -19,7 +19,6 @@ onboot:
     command: ["/usr/bin/mountie", "-label", "foo", "/var/foo"]
   - name: test
     image: alpine:3.6
-    readonly: true
     binds:
       - /var/lib/docker:/var/lib/docker
       - /var/foo:/var/foo

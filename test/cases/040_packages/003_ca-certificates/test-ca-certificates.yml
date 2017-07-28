@@ -8,7 +8,6 @@ init:
 onboot:
   - name: test
     image: alpine:3.6
-    readonly: true
     binds:
       - /check.sh:/check.sh
       - /etc:/host-etc

@@ -9,7 +9,6 @@ onboot:
     image: linuxkit/binfmt:257b5174a8e33bc62d5448cc026d72cae3713628
   - name: test
     image: alpine:3.6
-    readonly: true
     binds:
       - /check.sh:/check.sh
       - /proc/sys/fs/binfmt_misc:/binfmt_misc
