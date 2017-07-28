@@ -8,7 +8,7 @@ init:
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
+    image: linuxkit/sysctl:3f7a3f6f9e7e1d3f245c766fcf5c2b9e97382cfb
   - name: sysfs
     image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
   - name: binfmt
