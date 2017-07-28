@@ -1,4 +1,4 @@
-From 442d54559a617e1423f77d0b5a77c775db90eaa4 Mon Sep 17 00:00:00 2001
+From 462af6f438e7c3bff26f5e63a3d8483729e995ff Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:30 +0100
 Subject: [PATCH 05/44] VSOCK: transport-specific vsock_transport functions

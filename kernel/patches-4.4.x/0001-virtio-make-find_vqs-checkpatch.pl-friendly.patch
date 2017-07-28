@@ -1,4 +1,4 @@
-From 4ac367a181ff922cde2b8fcf9777ef283d20d1ab Mon Sep 17 00:00:00 2001
+From a8262618ffb93ddfc9a31c0fcc18a6418bb09442 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 17 Dec 2015 16:53:43 +0800
 Subject: [PATCH 01/44] virtio: make find_vqs() checkpatch.pl-friendly
