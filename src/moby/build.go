@@ -186,7 +186,8 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		}
 		so := fmt.Sprintf("%03d", i)
 		path := "containers/onboot/" + so + "-" + image.Name
-		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
+		readonly := image.Readonly != nil && *image.Readonly
+		err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
 		if err != nil {
 			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
@@ -204,7 +205,8 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		}
 		so := fmt.Sprintf("%03d", i)
 		path := "containers/onshutdown/" + so + "-" + image.Name
-		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
+		readonly := image.Readonly != nil && *image.Readonly
+		err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
 		if err != nil {
 			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
@@ -221,7 +223,8 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
 		}
 		path := "containers/services/" + image.Name
-		err = ImageBundle(path, image.Image, config, iw, useTrust, pull)
+		readonly := image.Readonly != nil && *image.Readonly
+		err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
 		if err != nil {
 			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 		}
