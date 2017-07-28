@@ -60,14 +60,14 @@ ifneq ($(DIRTY),)
 	$(error Your repository is not clean. Will not push package image)
 endif
 
-push: check-dirty tag
+push: tag check-dirty
 	docker pull $(TAG) || docker push $(TAG)
 ifneq ($(RELEASE),)
 	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
 	docker push $(ORG)/$(IMAGE):$(RELEASE)
 endif
 
-forcepush: check-dirty forcetag
+forcepush: forcetag check-dirty
 	docker push $(TAG)
 ifneq ($(RELEASE),)
 	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
