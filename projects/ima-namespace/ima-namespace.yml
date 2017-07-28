@@ -9,7 +9,7 @@ init:
   - linuxkit/ima-utils:dfeb3896fd29308b80ff9ba7fe5b8b767e40ca29
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
+    image: linuxkit/sysctl:3f7a3f6f9e7e1d3f245c766fcf5c2b9e97382cfb
   - name: binfmt
     image: linuxkit/binfmt:257b5174a8e33bc62d5448cc026d72cae3713628
   - name: dhcpcd

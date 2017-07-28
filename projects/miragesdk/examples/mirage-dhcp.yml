@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:8fc87b7f465bde9ece781899a007f47b6d3c096b
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
+    image: linuxkit/sysctl:3f7a3f6f9e7e1d3f245c766fcf5c2b9e97382cfb
   - name: dhcp-client
     image: miragesdk/dhcp-client:22aa9d527820534295a8cd59901c0c5197af6585
     net: host
