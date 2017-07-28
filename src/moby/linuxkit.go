@@ -15,17 +15,16 @@ import (
 
 var linuxkitYaml = map[string]string{"mkimage": `
 kernel:
-  image: "linuxkit/kernel:4.9.x"
+  image: linuxkit/kernel:4.9.39
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:14a38303ee9dcb4541c00e2b87404befc1ba2083
-  - linuxkit/runc:a0f2894e50bacbd1ff82be41edff8b8e06e0b161
-  - linuxkit/containerd:389e67c3c1fc009c1315f32b3e2b6659691a3ad4
+  - linuxkit/init:00ab58c9681a0bf42b2e35134c1ccf1591ebb64d
+  - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
 onboot:
   - name: mkimage
-    image: "linuxkit/mkimage:5ad60299be03008f29c5caec3c5ea4ac0387aae6"
+    image: linuxkit/mkimage:a63b8ee4c5de335afc32ba850e0af319b25b96c0
   - name: poweroff
-    image: "linuxkit/poweroff:a8f1e4ad8d459f1fdaad9e4b007512cb3b504ae8"
+    image: linuxkit/poweroff:3845c4d64d47a1ea367806be5547e44594b0fa91
 trust:
   org:
     - linuxkit
