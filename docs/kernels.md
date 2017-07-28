@@ -50,7 +50,7 @@ included in the initial RAM disk, but it is possible to compile custom
 modules offline and include then include the modules in the initial
 RAM disk.
 
-There is a [example](../tests/kmod), but basically one can use a
+There is a [example](../test/cases/020_kernel/010_kmod_4.9.x), but basically one can use a
 multi-stage build to compile the kernel modules:
 ```
 FROM linuxkit/kernel:4.9.33 AS ksrc
@@ -66,7 +66,7 @@ To use the kernel module, we recommend adding a final stage to the
 Dockerfile above, which copies the kernel module from the `build`
 stage and performs a `insmod` as the entry point. You can add this
 package to the `onboot` section in your YAML
-file. [kmod.yml](../tests/kmod/kmod.yml) contains an example for the
+file. [kmod.yml](../test/cases/020_kernel/010_kmod_4.9.x/kmod.yml) contains an example for the
 configuration.
 
 ## Compiling internal kernel modules
@@ -118,7 +118,7 @@ org>/kernel:4.9.33-<hash>`.
 
 ### Modifying the Config
 Each series of kernels has a config file dedicated to it in [../kernel/](../kernel), e.g.
-[kernel.config-4.9.x](../kernel/kernel.config-4.9.x). To build a particular series of kernel:
+[kernel.config-4.9.x](../kernel/kernel_config-4.9.x). To build a particular series of kernel:
 
 1. Create a separate `git` branch (not required but *strongly* recommended)
 2. Modify the appropriate `kernel.config`, e.g. `kernel.config-4.9.x`
