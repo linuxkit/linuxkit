@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -121,6 +122,26 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 	return false
 }
 
+func outputImage(image Image, section string, prefix string, m Moby, idMap map[string]uint32, pull bool, iw *tar.Writer) error {
+	log.Infof("  Create OCI config for %s", image.Image)
+	useTrust := enforceContentTrust(image.Image, &m.Trust)
+	oci, err := ConfigToOCI(image, useTrust, idMap)
+	if err != nil {
+		return fmt.Errorf("Failed to create OCI spec for %s: %v", image.Image, err)
+	}
+	config, err := json.MarshalIndent(oci, "", "    ")
+	if err != nil {
+		return fmt.Errorf("Failed to create config for %s: %v", image.Image, err)
+	}
+	path := filepath.Join("containers", section, prefix+image.Name)
+	readonly := oci.Root.Readonly
+	err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
+	if err != nil {
+		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
+	}
+	return nil
+}
+
 // Build performs the actual build process
 func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	if MobyDir == "" {
@@ -178,18 +199,9 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		log.Infof("Add onboot containers:")
 	}
 	for i, image := range m.Onboot {
-		log.Infof("  Create OCI config for %s", image.Image)
-		useTrust := enforceContentTrust(image.Image, &m.Trust)
-		config, err := ConfigToOCI(image, useTrust, idMap)
-		if err != nil {
-			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
-		}
 		so := fmt.Sprintf("%03d", i)
-		path := "containers/onboot/" + so + "-" + image.Name
-		readonly := image.Readonly != nil && *image.Readonly
-		err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
-		if err != nil {
-			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
+		if err := outputImage(image, "onboot", so+"-", m, idMap, pull, iw); err != nil {
+			return err
 		}
 	}
 
@@ -197,18 +209,9 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		log.Infof("Add onshutdown containers:")
 	}
 	for i, image := range m.Onshutdown {
-		log.Infof("  Create OCI config for %s", image.Image)
-		useTrust := enforceContentTrust(image.Image, &m.Trust)
-		config, err := ConfigToOCI(image, useTrust, idMap)
-		if err != nil {
-			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
-		}
 		so := fmt.Sprintf("%03d", i)
-		path := "containers/onshutdown/" + so + "-" + image.Name
-		readonly := image.Readonly != nil && *image.Readonly
-		err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
-		if err != nil {
-			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
+		if err := outputImage(image, "onshutdown", so+"-", m, idMap, pull, iw); err != nil {
+			return err
 		}
 	}
 
@@ -216,17 +219,8 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		log.Infof("Add service containers:")
 	}
 	for _, image := range m.Services {
-		log.Infof("  Create OCI config for %s", image.Image)
-		useTrust := enforceContentTrust(image.Image, &m.Trust)
-		config, err := ConfigToOCI(image, useTrust, idMap)
-		if err != nil {
-			return fmt.Errorf("Failed to create config.json for %s: %v", image.Image, err)
-		}
-		path := "containers/services/" + image.Name
-		readonly := image.Readonly != nil && *image.Readonly
-		err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
-		if err != nil {
-			return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
+		if err := outputImage(image, "services", "", m, idMap, pull, iw); err != nil {
+			return err
 		}
 	}
 

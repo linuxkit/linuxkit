@@ -1,7 +1,6 @@
 package moby
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -263,25 +262,25 @@ func NewImage(config []byte) (Image, error) {
 }
 
 // ConfigToOCI converts a config specification to an OCI config file
-func ConfigToOCI(image Image, trust bool, idMap map[string]uint32) ([]byte, error) {
+func ConfigToOCI(image Image, trust bool, idMap map[string]uint32) (specs.Spec, error) {
 
 	// TODO pass through same docker client to all functions
 	cli, err := dockerClient()
 	if err != nil {
-		return []byte{}, err
+		return specs.Spec{}, err
 	}
 
 	inspect, err := dockerInspectImage(cli, image.Image, trust)
 	if err != nil {
-		return []byte{}, err
+		return specs.Spec{}, err
 	}
 
 	oci, err := ConfigInspectToOCI(image, inspect, idMap)
 	if err != nil {
-		return []byte{}, err
+		return specs.Spec{}, err
 	}
 
-	return json.MarshalIndent(oci, "", "    ")
+	return oci, nil
 }
 
 func defaultMountpoint(tp string) string {
