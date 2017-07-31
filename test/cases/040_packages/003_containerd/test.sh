@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Run containerd test
-# LABELS:
+# LABELS: skip
 # REPEAT:
 
 set -e
@@ -16,7 +16,7 @@ trap clean_up EXIT
 
 # Test code goes here
 moby build test-containerd.yml
-RESULT="$(linuxkit run -mem 2048 test-containerd)"
+RESULT="$(linuxkit run -mem 2048 -disk size=2G test-containerd)"
 echo "${RESULT}" | grep -q "suite PASSED"
 
 exit 0

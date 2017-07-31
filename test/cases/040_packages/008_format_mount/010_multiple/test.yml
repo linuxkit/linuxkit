@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:4dcee04c04c900a5796dc719f8d16fea7e771059
-  - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
+  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
 onboot:
   - name: format
     image: linuxkit/format:efafddf9bc6165b5efaf09c532c15a1100a10e61
@@ -19,7 +19,6 @@ onboot:
     command: ["/usr/bin/mountie", "-label", "foo", "/var/foo"]
   - name: test
     image: alpine:3.6
-    readonly: true
     binds:
       - /var/lib/docker:/var/lib/docker
       - /var/foo:/var/foo

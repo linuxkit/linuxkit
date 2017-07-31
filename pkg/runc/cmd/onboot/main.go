@@ -56,6 +56,9 @@ func main() {
 		if err := cmd.Run(); err != nil {
 			log.Printf("Error running %s: %v", name, err)
 			status = 1
+		} else {
+			// do not clean up on error to make debug easier
+			cleanup(fullPath)
 		}
 	}
 

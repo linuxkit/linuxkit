@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:4dcee04c04c900a5796dc719f8d16fea7e771059
-  - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
+  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
 onboot:
   - name: modprobe
     image: alpine:3.6
@@ -20,7 +20,6 @@ onboot:
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.6
-    readonly: true
     binds:
       - /var/lib/docker:/var/lib/docker
     command: ["touch", "/var/lib/docker/bar"]
