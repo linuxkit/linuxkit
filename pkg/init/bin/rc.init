@@ -12,6 +12,17 @@ mount -n -t tmpfs tmpfs /tmp -o nodev,nosuid,noexec,relatime,size=10%,mode=1777
 
 # mount tmpfs for /var. This may be overmounted with a persistent filesystem later
 mount -n -t tmpfs tmpfs /var -o nodev,nosuid,noexec,relatime,size=50%,mode=755
+# add standard directories in /var
+mkdir -m 755 /var/cache
+mkdir -m 555 /var/empty
+mkdir -m 755 /var/lib
+mkdir -m 755 /var/local
+mkdir -m 755 /var/lock
+mkdir -m 755 /var/log
+mkdir -m 755 /var/opt
+ln -s /run /var/run
+mkdir -m 755 /var/spool
+mkdir -m 1777 /var/tmp
 
 # mount devfs
 mount -n -t devtmpfs dev /dev -o nosuid,noexec,relatime,size=10m,nr_inodes=248418,mode=755
