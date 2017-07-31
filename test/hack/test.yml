@@ -5,14 +5,14 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:4dcee04c04c900a5796dc719f8d16fea7e771059
-  - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
-  - linuxkit/containerd:8fc87b7f465bde9ece781899a007f47b6d3c096b
+  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
+  - linuxkit/containerd:1ff17c0908bed91a7bff252fba2e3d360d05a3de
 onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: check-kernel-config
-    image: linuxkit/test-kernel-config:271aa181b78ca9c6e463dfc1107cf9da6090463d
+    image: linuxkit/test-kernel-config:a48f774499238130f0facefab9e3c6999da5d45b
   - name: poweroff
     image: linuxkit/poweroff:3845c4d64d47a1ea367806be5547e44594b0fa91
     command: ["/bin/sh", "/poweroff.sh", "3"]
