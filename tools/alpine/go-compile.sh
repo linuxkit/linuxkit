@@ -31,6 +31,6 @@ go test
 
 >&2 echo "go build..."
 
-export CGO_ENABLED=0
+[ "${REQUIRE_CGO}" = 1 ] || export CGO_ENABLED=0
 
 go install -buildmode pie -ldflags "-s -w ${ldflags} -extldflags \"-fno-PIC -static\""
