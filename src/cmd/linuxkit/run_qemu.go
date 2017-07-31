@@ -40,7 +40,7 @@ type QemuConfig struct {
 	Containerized  bool
 	QemuBinPath    string
 	QemuImgPath    string
-	QemuArgs       []string
+	QemuOptions    []string
 	PublishedPorts []string
 	NetdevConfig   string
 	UUID           uuid.UUID
@@ -111,7 +111,7 @@ func runQemu(args []string) {
 	}
 
 	// Arguments to pass to qemu
-	qemuDirectArgs := flags.String("args", "", "Arguments to pass directly to qemu")
+	qemuDirectOptions := flags.String("qemuOptions", "", "Options to pass directly to qemu")
 
 	// Display flags
 	enableGUI := flags.Bool("gui", false, "Set qemu to use video output instead of stdio")
@@ -158,9 +158,9 @@ func runQemu(args []string) {
 
 	// These envvars override the corresponding command line
 	// options. So this must remain after the `flags.Parse` above.
-	envOverrideString("LINUXKIT_QEMU_ARGS", qemuDirectArgs)
 	envOverrideBool("LINUXKIT_QEMU_KVM", enableKVM)
 	envOverrideBool("LINUXKIT_QEMU_CONTAINERIZED", qemuContainerized)
+	envOverrideString("LINUXKIT_QEMU_OPTIONS", qemuDirectOptions)
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the path to the image to boot")
@@ -303,7 +303,7 @@ func runQemu(args []string) {
 		Memory:         *mem,
 		KVM:            *enableKVM,
 		Containerized:  *qemuContainerized,
-		QemuArgs:       strings.Split(*qemuDirectArgs, " "),
+		QemuOptions:    strings.Split(*qemuDirectOptions, " "),
 		PublishedPorts: publishFlags,
 		NetdevConfig:   netdevConfig,
 		UUID:           vmUUID,
@@ -475,7 +475,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	// Iterate through the flags and build arguments appending to arguments passed via QEMU_OPTIONS
 	var qemuArgs []string
 
-	qemuArgs = append(qemuArgs, config.QemuArgs...)
+	qemuArgs = append(qemuArgs, config.QemuOptions...)
 	qemuArgs = append(qemuArgs, "-device", "virtio-rng-pci")
 	qemuArgs = append(qemuArgs, "-smp", config.CPUs)
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
