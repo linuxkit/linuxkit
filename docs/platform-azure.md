@@ -34,7 +34,7 @@ This will output a `azure.vhd` image.
 To deploy the `azure.vhd` image on Azure, invoke the following command:
 
 ```
-linuxkit run azure --resource-group <resource-group-name> --storage-account <storage-account-name> --location westeurope <path-to-your-azure.vhd>
+linuxkit run azure -resourceGroupName <resource-group-name> -accountName <storage-account-name> -location westeurope <path-to-your-azure.vhd>
 ```
 
 Sample output of the command:
