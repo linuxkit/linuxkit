@@ -1,4 +1,4 @@
-# linuxkit/alpine:cb6a0b2b068d892996ebadae999d9baf6e08be5b
+# linuxkit/alpine:c23813875499d85163dc358fc6370c9de650df57
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -226,7 +226,7 @@ util-linux-dev-2.28.2-r2
 vde2-libs-2.3.2-r7
 vim-8.0.0595-r0
 wayland-1.13.0-r0
-wireguard-tools-0.0.20170629-r0
+wireguard-tools-0.0.20170726-r0
 xfsprogs-4.5.0-r0
 xfsprogs-extra-4.5.0-r0
 xfsprogs-libs-4.5.0-r0
