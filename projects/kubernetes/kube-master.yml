@@ -21,7 +21,7 @@ onboot:
   - name: format
     image: linuxkit/format:efafddf9bc6165b5efaf09c532c15a1100a10e61
   - name: mounts
-    image: linuxkit/mount:54990a6a69cb3ead4da8a9c1f0b651e27aea8d3f
+    image: linuxkit/mount:a738ccad4e3e009b7c5f541226e9232a6287fa5d
     command: ["/usr/bin/mountie", "/var/lib/"]
   - name: var
     image: library/alpine:3.6

@@ -8,7 +8,7 @@ onboot:
   - name: extend
     image: linuxkit/extend:1e81ffe40ad63887d6210228c2a791f28375ee0f
   - name: mount
-    image: linuxkit/mount:54990a6a69cb3ead4da8a9c1f0b651e27aea8d3f
+    image: linuxkit/mount:a738ccad4e3e009b7c5f541226e9232a6287fa5d
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.6
