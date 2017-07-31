@@ -28,7 +28,7 @@ services:
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
+    image: linuxkit/rngd:6565ae49f6be29d4e64614a4df3978b972956ebf
   - name: nginx
     image: nginx:alpine
     capabilities:
