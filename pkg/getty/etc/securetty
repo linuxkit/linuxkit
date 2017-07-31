@@ -28,6 +28,8 @@ hvsi1
 # ARM "AMBA" serial ports
 ttyAM0
 ttyAM1
+ttyAMA0
+ttyAMA1
 
 # s390 and s390x ports in LPAR mode
 ttysclp0
