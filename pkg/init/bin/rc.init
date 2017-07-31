@@ -1,10 +1,28 @@
 #!/bin/sh
 
-# mount filesystems
+# mount proc filesystem
 mount -n -t proc proc /proc -o nodev,nosuid,noexec,relatime
 
+# remount rootfs as readonly
+mount -o remount,ro /
+
+# mount tmpfs for /tmp and /run
 mount -n -t tmpfs tmpfs /run -o nodev,nosuid,noexec,relatime,size=10%,mode=755
 mount -n -t tmpfs tmpfs /tmp -o nodev,nosuid,noexec,relatime,size=10%,mode=1777
+
+# mount tmpfs for /var. This may be overmounted with a persistent filesystem later
+mount -n -t tmpfs tmpfs /var -o nodev,nosuid,noexec,relatime,size=50%,mode=755
+# add standard directories in /var
+mkdir -m 755 /var/cache
+mkdir -m 555 /var/empty
+mkdir -m 755 /var/lib
+mkdir -m 755 /var/local
+mkdir -m 755 /var/lock
+mkdir -m 755 /var/log
+mkdir -m 755 /var/opt
+ln -s /run /var/run
+mkdir -m 755 /var/spool
+mkdir -m 1777 /var/tmp
 
 # mount devfs
 mount -n -t devtmpfs dev /dev -o nosuid,noexec,relatime,size=10m,nr_inodes=248418,mode=755
@@ -100,14 +118,6 @@ ip link set lo up
 
 # for containerizing dhcpcd and other containers that need writable /etc/resolv.conf
 [ -L /etc/resolv.conf ] && mkdir -p $(dirname $(readlink -n /etc/resolv.conf)) && touch /etc/resolv.conf
-
-# remount rootfs as readonly
-mount -o remount,ro /
-
-# make /var writeable and shared
-mount -o bind /var /var
-mount -o remount,rw,nodev,nosuid,noexec,relatime /var /var
-mount --make-rshared /var
 
 # make / rshared
 mount --make-rshared /

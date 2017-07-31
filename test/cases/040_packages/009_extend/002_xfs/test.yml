@@ -2,14 +2,14 @@ kernel:
   image: linuxkit/kernel:4.9.40
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:4dcee04c04c900a5796dc719f8d16fea7e771059
+  - linuxkit/init:e3e376881faced5a890b6ceb3e8e899cbfd04ecd
   - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
 onboot:
   - name: extend
     image: linuxkit/extend:1e81ffe40ad63887d6210228c2a791f28375ee0f
     command: ["/usr/bin/extend", "-type", "xfs"]
   - name: mount
-    image: linuxkit/mount:54990a6a69cb3ead4da8a9c1f0b651e27aea8d3f
+    image: linuxkit/mount:a738ccad4e3e009b7c5f541226e9232a6287fa5d
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.6
