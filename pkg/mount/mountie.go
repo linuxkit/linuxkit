@@ -159,7 +159,7 @@ func main() {
 		log.Fatalf("Too many arguments")
 	}
 
-	err := os.MkdirAll(mountpoint, os.ModeDir)
+	err := os.MkdirAll(mountpoint, 0755)
 	if err != nil {
 		log.Fatalf("Unable to create mountpoint %s: %v", mountpoint, err)
 	}
