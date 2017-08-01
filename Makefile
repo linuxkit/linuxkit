@@ -42,6 +42,16 @@ bin/rtf: tmp_rtf_bin.tar | bin
 tmp_rtf_bin.tar: Makefile
 	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(RTF_VERSION)" -o bin/rtf > $@
 
+# Manifest tool for multi-arch images
+MT_COMMIT=186e7752e8032756bb263b830451f44e5176864f
+MT_REPO=https://github.com/rn/manifest-tool
+bin/manifest-tool: tmp_mt_bin.tar | bin
+	tar xf $<
+	rm $<
+	touch $@
+
+tmp_mt_bin.tar: Makefile
+	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/estesp/manifest-tool --clone $(MT_REPO) --commit $(MT_COMMIT) --package github.com/estesp/manifest-tool --ldflags "-X main.gitCommit=$(MT_COMMIT)" -o bin/manifest-tool > $@
 
 LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) Makefile src/cmd/linuxkit/vendor.conf
 bin/linuxkit: tmp_linuxkit_bin.tar
@@ -55,11 +65,11 @@ tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
 .PHONY: test-cross
 test-cross:
 	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=darwin tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) -j 3 GOOS=darwin tmp_moby_bin.tar tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=windows tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) -j 3 GOOS=windows tmp_moby_bin.tar tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=linux tmp_moby_bin.tar tmp_rtf_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) -j 3 GOOS=linux tmp_moby_bin.tar tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
 
 
