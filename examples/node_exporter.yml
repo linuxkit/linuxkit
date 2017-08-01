@@ -11,7 +11,7 @@ services:
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
+    image: linuxkit/rngd:6565ae49f6be29d4e64614a4df3978b972956ebf
   - name: dhcpcd
     image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
   - name: node_exporter

@@ -8,7 +8,7 @@ init:
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:3f7a3f6f9e7e1d3f245c766fcf5c2b9e97382cfb
+    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: sysfs
     image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
   - name: binfmt
@@ -34,7 +34,7 @@ services:
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
+    image: linuxkit/rngd:6565ae49f6be29d4e64614a4df3978b972956ebf
   - name: ntpd
     image: linuxkit/openntpd:2874b66c9fa51fa5b4d11c8b50441eb94ee22a5a
   - name: sshd

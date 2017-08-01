@@ -8,7 +8,7 @@ init:
   - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:3f7a3f6f9e7e1d3f245c766fcf5c2b9e97382cfb
+    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: dhcpcd
     image: linuxkit/dhcpcd:4b7b8bb024cebb1bbb9c8026d44d7cbc8e202c41
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
@@ -20,7 +20,7 @@ services:
   - name: tss
     image: linuxkit/tss:51d73be868e12af76965f5682ed59309c19972b6
   - name: rngd
-    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
+    image: linuxkit/rngd:6565ae49f6be29d4e64614a4df3978b972956ebf
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)

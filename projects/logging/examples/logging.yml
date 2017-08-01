@@ -9,7 +9,7 @@ init:
   - linuxkit/memlogd:9b5834189f598f43c507f6938077113906f51012
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:3f7a3f6f9e7e1d3f245c766fcf5c2b9e97382cfb
+    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: binfmt
     image: linuxkit/binfmt:257b5174a8e33bc62d5448cc026d72cae3713628
   - name: dhcpcd
@@ -17,7 +17,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: linuxkit/rngd:1516d5d70683a5d925fe475eb1b6164a2f67ac3b
+    image: linuxkit/rngd:6565ae49f6be29d4e64614a4df3978b972956ebf
   - name: nginx
     image: nginx:alpine
     capabilities:

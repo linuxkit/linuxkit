@@ -8,7 +8,7 @@ init:
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:3f7a3f6f9e7e1d3f245c766fcf5c2b9e97382cfb
+    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: dhcpcd
     image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]

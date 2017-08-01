@@ -1,46 +1,15 @@
-FROM linuxkit/alpine:9bcf61f605ef0ce36cc94d59b8eac307862de6e1 AS mirror
-RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
-RUN apk add --no-cache --initdb -p /out \
-    tini
-RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
-RUN mkdir -p /out/dev /out/proc /out/sys
+FROM linuxkit/alpine:c23813875499d85163dc358fc6370c9de650df57 AS mirror
 
-FROM linuxkit/alpine:9bcf61f605ef0ce36cc94d59b8eac307862de6e1 AS build
-RUN apk add \
-    argp-standalone \
-    automake \
-    curl \
-    gcc \
-    linux-headers \
-    make \
-    musl-dev \
-    patch    
+RUN apk add --no-cache go gcc musl-dev linux-headers
+ENV GOPATH=/go PATH=$PATH:/go/bin
 
-COPY . /
-
-ENV pkgname=rng-tools pkgver=5
-
-RUN curl -fSL "http://downloads.sourceforge.net/project/gkernel/$pkgname/$pkgver/$pkgname-$pkgver.tar.gz" -o "$pkgname-$pkgver.tar.gz"
-RUN sha256sum -c sha256sums
-RUN zcat $pkgname-$pkgver.tar.gz | tar xf -
-
-RUN cd $pkgname-$pkgver && for p in ../*.patch; do cat $p | patch -p1; done
-
-RUN cd $pkgname-$pkgver && \
-  export LIBS="-largp" && \
-  LDFLAGS=-static ./configure \
-    --prefix=/usr \
-    --libexecdir=/usr/lib/rng-tools \
-    --sysconfdir=/etc \
-    --disable-silent-rules && \
-  make && \
-  make DESTDIR=/ install && \
-  strip /usr/sbin/rngd
+COPY cmd/rngd/*.go /go/src/rngd/
+RUN REQUIRE_CGO=1 go-compile.sh /go/src/rngd
 
 FROM scratch
 ENTRYPOINT []
+CMD []
 WORKDIR /
-COPY --from=mirror /out/ /
-COPY --from=build usr/sbin/rngd usr/sbin/rngd
-CMD ["/sbin/tini", "/usr/sbin/rngd", "-f"]
+COPY --from=mirror /go/bin/rngd /sbin/rngd
+CMD ["/sbin/rngd"]
 LABEL org.mobyproject.config='{"capabilities": ["CAP_SYS_ADMIN"], "oomScoreAdj": -800, "readonly": true, "net": "new", "ipc": "new"}'
