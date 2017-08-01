@@ -30,6 +30,8 @@ RUN apk add --no-cache --initdb -p /out \
 # Remove apk residuals. We have a read-only rootfs, so apk is of no use.
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
+RUN rmdir /out/var/run && ln -nfs /run /out/var/run
+
 RUN curl -fSL -o /tmp/cni.tgz https://github.com/containernetworking/cni/releases/download/v0.5.2/cni-amd64-${cni_version}.tgz && \
     mkdir -p /out/opt/cni/bin /out/etc/cni/net.d && \
     tar -xzf /tmp/cni.tgz -C /out/opt/cni/bin
@@ -47,4 +49,4 @@ WORKDIR /
 ENTRYPOINT ["/usr/bin/kubelet.sh"]
 COPY --from=build /out /
 ENV KUBECONFIG "/etc/kubernetes/admin.conf"
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/etc/resolv.conf:/etc/resolv.conf", "/var:/var:rshared,rbind", "/var/lib/kubeadm:/etc/kubernetes", "/etc/cni:/rootfs/etc/cni:rshared,rbind", "/opt/cni:/rootfs/opt/cni:rshared,rbind"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}], "capabilities": ["all"], "rootfsPropagation": "shared", "pid": "host"}'
+LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/etc/resolv.conf:/etc/resolv.conf", "/run:/run", "/var:/var:rshared,rbind", "/var/lib/kubeadm:/etc/kubernetes", "/etc/cni:/rootfs/etc/cni:rshared,rbind", "/opt/cni:/rootfs/opt/cni:rshared,rbind"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}], "capabilities": ["all"], "rootfsPropagation": "shared", "pid": "host"}'
