@@ -40,6 +40,7 @@ type QemuConfig struct {
 	Containerized  bool
 	QemuBinPath    string
 	QemuImgPath    string
+	QemuOptions    []string
 	PublishedPorts []string
 	NetdevConfig   string
 	UUID           uuid.UUID
@@ -71,6 +72,15 @@ func envOverrideBool(env string, b *bool) {
 	}
 }
 
+func envOverrideString(env string, s *string) {
+	val := os.Getenv(env)
+	if val == "" {
+		return
+	}
+
+	*s = val
+}
+
 func generateMAC() net.HardwareAddr {
 	mac := make([]byte, 6)
 	n, err := rand.Read(mac)
@@ -99,6 +109,9 @@ func runQemu(args []string) {
 		fmt.Printf("setuid network helper and appropriate host configuration, see\n")
 		fmt.Printf("http://wiki.qemu.org/Features/HelperNetworking.\n")
 	}
+
+	// Arguments to pass to qemu
+	qemuDirectOptions := flags.String("qemuOptions", "", "Options to pass directly to qemu")
 
 	// Display flags
 	enableGUI := flags.Bool("gui", false, "Set qemu to use video output instead of stdio")
@@ -147,6 +160,7 @@ func runQemu(args []string) {
 	// options. So this must remain after the `flags.Parse` above.
 	envOverrideBool("LINUXKIT_QEMU_KVM", enableKVM)
 	envOverrideBool("LINUXKIT_QEMU_CONTAINERIZED", qemuContainerized)
+	envOverrideString("LINUXKIT_QEMU_OPTIONS", qemuDirectOptions)
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the path to the image to boot")
@@ -289,6 +303,7 @@ func runQemu(args []string) {
 		Memory:         *mem,
 		KVM:            *enableKVM,
 		Containerized:  *qemuContainerized,
+		QemuOptions:    strings.Split(*qemuDirectOptions, " "),
 		PublishedPorts: publishFlags,
 		NetdevConfig:   netdevConfig,
 		UUID:           vmUUID,
@@ -457,8 +472,10 @@ func runQemuContainer(config QemuConfig) error {
 }
 
 func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
-	// Iterate through the flags and build arguments
+	// Iterate through the flags and build arguments appending to arguments passed via QEMU_OPTIONS
 	var qemuArgs []string
+
+	qemuArgs = append(qemuArgs, config.QemuOptions...)
 	qemuArgs = append(qemuArgs, "-device", "virtio-rng-pci")
 	qemuArgs = append(qemuArgs, "-smp", config.CPUs)
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
