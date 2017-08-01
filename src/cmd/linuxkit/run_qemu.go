@@ -32,6 +32,7 @@ type QemuConfig struct {
 	GUI            bool
 	Disks          Disks
 	MetadataPath   string
+	StatePath      string
 	FWPath         string
 	Arch           string
 	CPUs           string
@@ -183,12 +184,9 @@ func runQemu(args []string) {
 	if *state == "" {
 		*state = prefix + "-state"
 	}
-	var mkstate func()
-	mkstate = func() {
-		if err := os.MkdirAll(*state, 0755); err != nil {
-			log.Fatalf("Could not create state directory: %v", err)
-		}
-		mkstate = func() {}
+
+	if err := os.MkdirAll(*state, 0755); err != nil {
+		log.Fatalf("Could not create state directory: %v", err)
 	}
 
 	isoPath := ""
@@ -202,7 +200,6 @@ func runQemu(args []string) {
 				log.Fatalf("Cannot read user data: %v", err)
 			}
 		}
-		mkstate()
 		isoPath = filepath.Join(*state, "data.iso")
 		if err := WriteMetadataISO(isoPath, d); err != nil {
 			log.Fatalf("Cannot write user data ISO: %v", err)
@@ -218,7 +215,6 @@ func runQemu(args []string) {
 			d.Format = "qcow2"
 		}
 		if d.Size != 0 && d.Path == "" {
-			mkstate()
 			d.Path = filepath.Join(*state, "disk"+id+".img")
 		}
 		if d.Path == "" {
@@ -283,6 +279,7 @@ func runQemu(args []string) {
 		GUI:            *enableGUI,
 		Disks:          disks,
 		MetadataPath:   isoPath,
+		StatePath:      *state,
 		FWPath:         *fw,
 		Arch:           *arch,
 		CPUs:           *cpus,
@@ -463,6 +460,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	qemuArgs = append(qemuArgs, "-smp", config.CPUs)
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
 	qemuArgs = append(qemuArgs, "-uuid", config.UUID.String())
+	qemuArgs = append(qemuArgs, "-pidfile", filepath.Join(config.StatePath, "qemu.pid"))
 	// Need to specify the vcpu type when running qemu on arm64 platform, for security reason,
 	// the vcpu should be "host" instead of other names such as "cortex-a53"...
 	if config.Arch == "aarch64" {
