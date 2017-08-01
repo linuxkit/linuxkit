@@ -29,10 +29,12 @@ ARCH := $(shell uname -m)
 ifeq ($(ARCH), x86_64)
 BASE=alpine:3.6
 DEPS += packages.x86_64
+SUFFIX=-amd64
 endif
 ifeq ($(ARCH), aarch64)
 BASE=arm64v8/alpine:3.6
 DEPS += packages.aarch64
+SUFFIX=-arm64
 DOCKER_CONTENT_PULL=0
 endif
 
@@ -46,7 +48,7 @@ iid: Dockerfile Makefile $(DEPS)
 	DOCKER_CONTENT_TRUST=0 docker build --no-cache --build-arg BASE=$(BASE) --iidfile iid .
 
 hash: Makefile iid
-	docker run --rm $(shell cat iid) sh -c 'echo Dockerfile /lib/apk/db/installed $$(find /mirror -name '*.apk' -type f) $$(find /go/bin -type f) | xargs cat | sha1sum' | sed 's/ .*//' > $@
+	docker run --rm $(shell cat iid) sh -c 'echo Dockerfile /lib/apk/db/installed $$(find /mirror -name '*.apk' -type f) $$(find /go/bin -type f) | xargs cat | sha1sum' | sed 's/ .*//' | sed 's/$$/$(SUFFIX)/'> $@
 
 versions.$(ARCH): Makefile hash iid
 	echo "# $(ORG)/$(IMAGE):$(shell cat hash)" > versions.$(ARCH)
@@ -56,6 +58,7 @@ push: hash iid versions.$(ARCH)
 	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
 		(docker tag $(shell cat iid) $(ORG)/$(IMAGE):$(shell cat hash) && \
 		 docker push $(ORG)/$(IMAGE):$(shell cat hash))
+	./push-manifest.sh $(ORG) $(IMAGE)
 	rm -f iid
 
 tag: hash iid versions.$(ARCH)
