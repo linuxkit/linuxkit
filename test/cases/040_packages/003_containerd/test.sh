@@ -10,7 +10,7 @@ set -e
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
 clean_up() {
-	find . -iname "test-containerd*" -not -iname "*.yml" -exec rm -rf {} \;
+	find . -depth -iname "test-containerd*" -not -iname "*.yml" -exec rm -rf {} \;
 }
 trap clean_up EXIT
 
