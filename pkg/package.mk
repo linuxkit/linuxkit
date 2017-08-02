@@ -17,6 +17,14 @@ DIRTY:=$(shell git update-index -q --refresh && git diff-index --quiet HEAD -- $
 endif
 endif
 
+ARCH := $(shell uname -m)
+ifeq ($(ARCH), x86_64)
+SUFFIX=-amd64
+endif
+ifeq ($(ARCH), aarch64)
+SUFFIX=-arm64
+endif
+
 TAG:=$(ORG)/$(IMAGE):$(HASH)$(DIRTY)
 
 REPO?=https://github.com/linuxkit/linuxkit
@@ -34,6 +42,9 @@ BASE_DEPS=Dockerfile Makefile
 # Get a release tag, if present
 RELEASE:=$(shell git tag -l --points-at HEAD)
 
+# Path to push-manifest.sh
+PUSH_MANIFEST:=$(shell git rev-parse --show-toplevel)/scripts/push-manifest.sh
+
 ifdef NETWORK
 NET_OPT=
 else
@@ -50,10 +61,11 @@ show-tag:
 	@echo $(TAG)
 
 tag: $(BASE_DEPS) $(DEPS)
-	docker pull $(TAG) || docker build $(LABELS) $(NET_OPT) -t $(TAG) $(SOURCE)
+	docker pull $(TAG)$(SUFFIX) || \
+	docker build $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
 
 forcetag: $(BASE_DEPS) $(DEPS)
-	docker build $(LABELS) $(NET_OPT) -t $(TAG) $(SOURCE)
+	docker build $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
 
 check-dirty:
 ifneq ($(DIRTY),)
@@ -61,15 +73,20 @@ ifneq ($(DIRTY),)
 endif
 
 push: tag check-dirty
-	docker pull $(TAG) || docker push $(TAG)
+	docker pull $(TAG)$(SUFFIX) || \
+		(docker push $(TAG)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(TAG) $(DOCKER_CONTENT_TRUST))
 ifneq ($(RELEASE),)
-	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
-	docker push $(ORG)/$(IMAGE):$(RELEASE)
+	docker tag $(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
+	docker push $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(RELEASE) $(DOCKER_CONTENT_TRUST)
 endif
 
 forcepush: forcetag check-dirty
-	docker push $(TAG)
+	docker push $(TAG)$(SUFFIX)
+	$(PUSH_MANIFEST) $(TAG) $(DOCKER_CONTENT_TRUST)
 ifneq ($(RELEASE),)
-	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
-	docker push $(ORG)/$(IMAGE):$(RELEASE)
+	docker tag $(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(RELEASE)
+	docker push $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(RELEASE) $(DOCKER_CONTENT_TRUST)
 endif
