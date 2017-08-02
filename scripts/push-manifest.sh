@@ -1,41 +1,24 @@
 #! /bin/sh
+
 set -e
 
-# This script creates a multiarch manifest for the 'linuxkit/alpine'
-# image, pushes and signs it. The manifest is pushed with the tag of
-# the amd64 images (which is the suffix removed). On macOS we use the
-# credentials helper to extract the Hub credentials. We need to
-# manually sign the manifest using 'notary'.
+# This script pushes a multiarch manifest for packages and signs it.
 #
-# This script is specific to 'linuxkit/alpine'. For normal packages we
-# use a different scheme.
+# The TARGET must be of the form <org>/<image>:<tag> and this is what
+# the manifest is pushed to. It assumes that there is are images of
+# the form <org>/<image>:<tag>-<arch> already on hub.
+#
+# If TRUST is not set, the manifest will not be signed.
 #
 # For signing, DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE must be set.
-#
+
 # This should all be replaced with 'docker manifest' once it lands.
 
-ORG=$1
-IMAGE=$2
+TARGET=$1
+TRUST=$2
 
-IMG_X86_64=$(head -1 versions.x86_64 | sed 's,[#| ]*,,')
-IMG_ARM64=$(head -1 versions.aarch64 | sed 's,[#| ]*,,')
-# Extract the TAG from the x86_64 name and build the manifest target name
-TAG=$(echo "$IMG_X86_64" | sed 's,\-.*$,,' | cut -d':' -f2)
-TARGET="$ORG/$IMAGE:$TAG"
-
-YAML=$(mktemp)
-cat <<EOF > "$YAML"
-image: $TARGET
-manifests:
-  - image: $IMG_ARM64
-    platform:
-      architecture: arm64
-      os: linux
-  - image: $IMG_X86_64
-    platform:
-      architecture: amd64
-      os: linux
-EOF
+REPO=$(echo "$TARGET" | cut -d':' -f1)
+TAG=$(echo "$TARGET" | cut -d':' -f2)
 
 # Work out credentials. On macOS they are needed for manifest-tool and
 # we need them for notary on all platforms.
@@ -60,20 +43,26 @@ case $(uname -s) in
 esac
 
 # Push manifest list
-OUT=$(manifest-tool $MT_ARGS push from-spec "$YAML")
-rm "$YAML"
+OUT=$(manifest-tool $MT_ARGS push from-args \
+                    --ignore-missing \
+                    --platforms linux/amd64,linux/arm64 \
+                    --template "$TARGET"-ARCH \
+                    --target "$TARGET")
+
 echo "$OUT"
+if [ -z "$TRUST" ]; then
+    echo "Not signing $TARGET"
+    exit 0
+fi
 
 # Extract sha256 and length from the manifest-tool output
 SHA256=$(echo "$OUT" | cut -d' ' -f2 | cut -d':' -f2)
 LEN=$(echo "$OUT" | cut -d' ' -f3)
 
-NOTARY_DELEGATION_PASSPHRASE="$DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"
-
 # Notary requires a PTY for username/password so use expect for that.
 export NOTARY_DELEGATION_PASSPHRASE="$DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"
 NOTARY_CMD="notary -s https://notary.docker.io -d $HOME/.docker/trust addhash \
-             -p docker.io/"$ORG"/"$IMAGE" $TAG $LEN --sha256 $SHA256 \
+             -p docker.io/$REPO $TAG $LEN --sha256 $SHA256 \
              -r targets/releases"
 
 echo '
