@@ -1,6 +1,7 @@
 # This file lists all individuals having contributed content to the repository.
 # For how it is generated, see `scripts/generate-authors.sh`.
 
+Ajeet Singh Raina, Docker Captain, {Code} Catalysts, Dell EMC R&D <ajeetraina@gmail.com>
 Akihiro Suda <suda.akihiro@lab.ntt.co.jp>
 Amir Chaudhry <amir.chaudhry@docker.com>
 Anil Madhavapeddy <anil.madhavapeddy@docker.com>
@@ -25,6 +26,7 @@ Gianluca Arbezzano <gianarb92@gmail.com>
 Hans van den Bogert <hansbogert@gmail.com>
 Ian Campbell <ian.campbell@docker.com>
 Ilya Dmitrichenko <errordeveloper@gmail.com>
+Jason A. Donenfeld <Jason@zx2c4.com>
 Jeffrey Hogan <jeff.hogan1@gmail.com>
 Jeremy Yallop <yallop@docker.com>
 Jes Ferrier <jes.ferrier@gmail.com>
@@ -41,12 +43,14 @@ Madhu Venugopal <madhu@docker.com>
 Magnus Skjegstad <magnus.skjegstad@docker.com>
 Marcus van Dam <marcus@marcusvandam.nl>
 Matt Bajor <matt.bajor@workday.com>
+Matt Bentley <matt.bentley@docker.com>
 Michel Courtine <michel.courtine@docker.com>
 Mickaël Salaün <mic@digikod.net>
 Mindy Preston <mindy.preston@docker.com>
 Natanael Copa <natanael.copa@docker.com>
 Nathan Dautenhahn <ndd@seas.upenn.edu>
 Nathan LeClaire <nathan.leclaire@docker.com>
+Nick Jones <nick@dischord.org>
 Nico Di Rocco <dirocco.nico@gmail.com>
 Phil Estes <estesp@linux.vnet.ibm.com>
 Radu Matei <matei.radu94@gmail.com>
@@ -66,3 +70,4 @@ Thomas Shaw <tomwillfixit@users.noreply.github.com>
 Tiago Pires <tandrepires@gmail.com>
 Tycho Andersen <tycho@docker.com>
 Vincent Demeester <Vincent.Demeester@docker.com>
+Zachery Hostens <zacheryph@gmail.com>
