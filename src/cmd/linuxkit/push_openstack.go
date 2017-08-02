@@ -25,13 +25,12 @@ func pushOpenstack(args []string) {
 		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
-	authurl := flags.String("authurl", "", "The URL of the OpenStack identity service, i.e https://keystone.example.com:5000/v3")
-	usernameFlag := flags.String("username", "", "Username with permissions to upload image")
-	passwordFlag := flags.String("password", "", "Password for the Username")
-	projectName := flags.String("project", "", "Name of the Project (aka Tenant) to be used")
-	userDomainFlag := flags.String("domain", "Default", "Domain name")
-
+	authurlFlag := flags.String("authurl", "", "The URL of the OpenStack identity service, i.e https://keystone.example.com:5000/v3")
 	imageName := flags.String("img-name", "", "A unique name for the image, if blank the filename will be used")
+	passwordFlag := flags.String("password", "", "Password for the specified username")
+	projectNameFlag := flags.String("project", "", "Name of the Project (aka Tenant) to be used")
+	userDomainFlag := flags.String("domain", "Default", "Domain name")
+	usernameFlag := flags.String("username", "", "Username with permissions to upload image")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -47,12 +46,18 @@ func pushOpenstack(args []string) {
 	// Check that the file both exists, and can be read
 	checkFile(filePath)
 
+	authurl := getStringValue(authurlVar, *authurlFlag, "")
+	password := getStringValue(passwordVar, *passwordFlag, "")
+	projectName := getStringValue(projectNameVar, *projectNameFlag, "")
+	userDomain := getStringValue(userDomainVar, *userDomainFlag, "")
+	username := getStringValue(usernameVar, *usernameFlag, "")
+
 	authOpts := gophercloud.AuthOptions{
-		IdentityEndpoint: *authurl,
-		Username:         *usernameFlag,
-		Password:         *passwordFlag,
-		DomainName:       *userDomainFlag,
-		TenantName:       *projectName,
+		DomainName:       userDomain,
+		IdentityEndpoint: authurl,
+		Password:         password,
+		TenantName:       projectName,
+		Username:         username,
 	}
 	provider, err := openstack.AuthenticatedClient(authOpts)
 	if err != nil {

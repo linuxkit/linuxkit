@@ -25,35 +25,49 @@ func runOpenStack(args []string) {
 	flags := flag.NewFlagSet("openstack", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
 	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run openstack [options]\n\n", invoked)
+		fmt.Printf("USAGE: %s run openstack [options] [name]\n\n", invoked)
+		fmt.Printf("'name' is the name of an OpenStack image that has already been\n")
+		fmt.Printf(" uploaded using 'linuxkit push'\n\n")
+		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
 	authurlFlag := flags.String("authurl", "", "The URL of the OpenStack identity service, i.e https://keystone.example.com:5000/v3")
-	usernameFlag := flags.String("username", "", "Username with permissions to create an instance")
+	flavorName := flags.String("flavor", defaultOSFlavor, "Instance size (flavor)")
+	instanceName := flags.String("instancename", "", "Name of instance.  Defaults to the name of the image if not specified")
+	networkID := flags.String("network", "", "The ID of the network to attach the instance to")
 	passwordFlag := flags.String("password", "", "Password for the specified username")
 	projectNameFlag := flags.String("project", "", "Name of the Project (aka Tenant) to be used")
 	userDomainFlag := flags.String("domain", "Default", "Domain name")
-	imageID := flags.String("img-ID", "", "The ID of the image to boot the instance from")
-	networkID := flags.String("network", "", "The ID of the network to attach the instance to")
-	flavorName := flags.String("flavor", defaultOSFlavor, "Instance size (flavor)")
-	name := flags.String("name", "", "Name of the instance")
+	usernameFlag := flags.String("username", "", "Username with permissions to create an instance")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
 
+	remArgs := flags.Args()
+	if len(remArgs) == 0 {
+		fmt.Printf("Please specify the name of the image to boot\n")
+		flags.Usage()
+		os.Exit(1)
+	}
+	name := remArgs[0]
+
+	if *instanceName == "" {
+		*instanceName = name
+	}
+
 	authurl := getStringValue(authurlVar, *authurlFlag, "")
-	username := getStringValue(usernameVar, *usernameFlag, "")
 	password := getStringValue(passwordVar, *passwordFlag, "")
 	projectName := getStringValue(projectNameVar, *projectNameFlag, "")
 	userDomain := getStringValue(userDomainVar, *userDomainFlag, "")
+	username := getStringValue(usernameVar, *usernameFlag, "")
 
 	authOpts := gophercloud.AuthOptions{
-		IdentityEndpoint: authurl,
-		Username:         username,
-		Password:         password,
 		DomainName:       userDomain,
+		IdentityEndpoint: authurl,
+		Password:         password,
 		TenantName:       projectName,
+		Username:         username,
 	}
 	provider, err := openstack.AuthenticatedClient(authOpts)
 	if err != nil {
@@ -71,8 +85,8 @@ func runOpenStack(args []string) {
 
 	serverOpts := &servers.CreateOpts{
 		FlavorName:    *flavorName,
-		ImageRef:      *imageID,
-		Name:          *name,
+		ImageName:     name,
+		Name:          *instanceName,
 		Networks:      []servers.Network{network},
 		ServiceClient: client,
 	}
