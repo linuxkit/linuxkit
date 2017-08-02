@@ -3,6 +3,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"os"
 
@@ -10,10 +11,11 @@ import (
 )
 
 func main() {
-	oneshot := len(os.Args) > 1 && os.Args[1] == "-1"
+	oneshot := flag.Bool("1", false, "Enable oneshot mode")
+	flag.Parse()
 
 	timeout := -1
-	if oneshot {
+	if *oneshot {
 		timeout = 0
 	}
 
@@ -61,7 +63,7 @@ func main() {
 		if nevents == 1 && events[0].Events&unix.EPOLLOUT == unix.EPOLLOUT {
 			continue
 		}
-		if oneshot {
+		if *oneshot {
 			log.Printf("Wrote %d bytes of entropy, exiting as oneshot\n", count)
 			break
 		}
