@@ -7,11 +7,11 @@ init:
   - linuxkit/containerd:1ff17c0908bed91a7bff252fba2e3d360d05a3de
 onboot:
   - name: ltp
-    image: linuxkit/test-ltp:b8ad3dfd0998ddff4fd47b3f693d2a4aa93ab7a4
+    image: linuxkit/test-ltp:38cec1526acc8b1a2ce4b4ece78a810078c807e1
     binds:
      - /etc/ltp/baseline:/etc/ltp/baseline
   - name: poweroff
-    image: linuxkit/poweroff:3845c4d64d47a1ea367806be5547e44594b0fa91
+    image: linuxkit/poweroff:1e9876c682c74d0602b7647c628bb0875fb13998
 files:
   - path: /etc/ltp/baseline
     contents: "100"

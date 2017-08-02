@@ -16,7 +16,7 @@ onboot:
       - /var/lib/docker:/var/lib/docker
     command: ["touch", "/var/lib/docker/bar"]
   - name: poweroff
-    image: linuxkit/poweroff:bce51402e293da0b653923a43c3c7be6e0effa05
+    image: linuxkit/poweroff:1e9876c682c74d0602b7647c628bb0875fb13998
     command: ["/bin/sh", "/poweroff.sh", "10"]
 trust:
   org: 
