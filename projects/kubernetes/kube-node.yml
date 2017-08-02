@@ -51,7 +51,7 @@ services:
      - /dev:/dev
      - /etc/resolv.conf:/etc/resolv.conf
      - /lib/modules:/lib/modules
-     - /run:/run:rshared,rbind
+     - /run:/run
      - /var:/var:rshared,rbind
      - /var/lib/kubeadm:/etc/kubernetes
      - /etc/cni:/etc/cni:rshared,rbind
