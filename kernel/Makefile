@@ -26,6 +26,17 @@ DIRTY=$(shell  git update-index -q --refresh && git diff-index --quiet HEAD -- $
 endif
 endif
 
+# Path to push-manifest.sh
+PUSH_MANIFEST:=$(shell git rev-parse --show-toplevel)/scripts/push-manifest.sh
+
+ARCH := $(shell uname -m)
+ifeq ($(ARCH), x86_64)
+SUFFIX=-amd64
+endif
+ifeq ($(ARCH), aarch64)
+SUFFIX=-arm64
+endif
+
 TAG=$(HASH)$(DIRTY)
 
 REPO?=https://github.com/linuxkit/linuxkit
@@ -58,20 +69,22 @@ push:
 define kernel
 
 build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel_config-$(2)*) kernel_config.debug
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) || \
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
 			--build-arg KERNEL_SERIES=$(2) \
 			--build-arg DEBUG=$(3) \
 			$(LABELS) \
-			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) .
+			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) .
 
 push_$(2)$(3): build_$(2)$(3)
 	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) || \
-		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) && \
-		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) $(ORG)/$(IMAGE):$(1)$(3) && \
-		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3))
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
+		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
+		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
+		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) 1 && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3) 1)
 
 show-tag_$(2)$(3):
 	@echo $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)
@@ -82,17 +95,19 @@ show-tags: show-tag_$(2)$(3)
 
 ifneq ($(2), 4.4.x)
 build_perf_$(2)$(3): build_$(2)$(3)
-	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) || \
+	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
 		docker build -f Dockerfile.perf \
-			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG) \
-	 		--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) .
+			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
+			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) .
 
 push_perf_$(2)$(3): build_perf_$(2)$(3)
 	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) || \
-		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) && \
-		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) $(ORG)/$(IMAGE_PERF):$(1)$(3) && \
-		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3))
+	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
+		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) && \
+		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
+		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) 1 && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3) 1)
 
 build: build_perf_$(2)$(3)
 push: push_perf_$(2)$(3)
@@ -106,4 +121,6 @@ endef
 #
 $(eval $(call kernel,4.9.40,4.9.x))
 $(eval $(call kernel,4.9.40,4.9.x,_dbg))
+ifneq ($(ARCH), aarch64)
 $(eval $(call kernel,4.4.79,4.4.x))
+endif
