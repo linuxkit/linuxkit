@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"io/ioutil"
+	"path/filepath"
 
 	"github.com/moby/tool/src/pad4"
 	"github.com/surma/gocpio"
@@ -27,8 +28,17 @@ func typeconv(thdr *tar.Header) int64 {
 	case tar.TypeRegA:
 		return cpio.TYPE_REG
 	// Currently hard links not supported very well :)
+	// Convert to relative symlink as absolute will not work in container
+	// cpio does support hardlinks but file contents still duplicated, so rely
+	// on compression to fix that which is fairly ugly. Symlink has not caused issues.
 	case tar.TypeLink:
-		thdr.Linkname = "/" + thdr.Linkname
+		dir := filepath.Dir(thdr.Name)
+		rel, err := filepath.Rel(dir, thdr.Linkname)
+		if err != nil {
+			// should never happen, but leave as full abs path
+			rel = "/" + thdr.Linkname
+		}
+		thdr.Linkname = rel
 		return cpio.TYPE_SYMLINK
 	case tar.TypeSymlink:
 		return cpio.TYPE_SYMLINK

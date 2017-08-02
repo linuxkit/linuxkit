@@ -172,6 +172,10 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 		} else {
 			log.Debugf("image tar: %s %s add %s", image, prefix, hdr.Name)
 			hdr.Name = prefix + hdr.Name
+			if hdr.Typeflag == tar.TypeLink {
+				// hard links are referenced by full path so need to be adjusted
+				hdr.Linkname = prefix + hdr.Linkname
+			}
 			if err := tw.WriteHeader(hdr); err != nil {
 				return err
 			}
