@@ -13,10 +13,10 @@ push-container-images:
 build-vm-images: kube-master-initrd.img kube-node-initrd.img
 
 kube-master-initrd.img: kube-master.yml
-	../../bin/moby build -name kube-master kube-master.yml
+	moby build -name kube-master kube-master.yml
 
 kube-node-initrd.img: kube-node.yml
-	../../bin/moby build -name kube-node kube-node.yml
+	moby build -name kube-node kube-node.yml
 
 clean:
 	rm -f -r \
