@@ -1,9 +1,12 @@
+// +build linux
+
 package main
 
 import (
 	"log"
 	"os"
-	"syscall"
+
+	"golang.org/x/sys/unix"
 )
 
 func main() {
@@ -26,18 +29,18 @@ func main() {
 	defer random.Close()
 	fd := int(random.Fd())
 
-	epfd, err := syscall.EpollCreate1(0)
+	epfd, err := unix.EpollCreate1(0)
 	if err != nil {
 		log.Fatalf("epoll create error: %v", err)
 	}
-	defer syscall.Close(epfd)
+	defer unix.Close(epfd)
 
-	var event syscall.EpollEvent
-	var events [1]syscall.EpollEvent
+	var event unix.EpollEvent
+	var events [1]unix.EpollEvent
 
-	event.Events = syscall.EPOLLOUT
+	event.Events = unix.EPOLLOUT
 	event.Fd = int32(fd)
-	if err := syscall.EpollCtl(epfd, syscall.EPOLL_CTL_ADD, fd, &event); err != nil {
+	if err := unix.EpollCtl(epfd, unix.EPOLL_CTL_ADD, fd, &event); err != nil {
 		log.Fatalf("epoll add error: %v", err)
 	}
 
@@ -51,11 +54,11 @@ func main() {
 		}
 		count += n
 		// sleep until we can write more
-		nevents, err := syscall.EpollWait(epfd, events[:], timeout)
+		nevents, err := unix.EpollWait(epfd, events[:], timeout)
 		if err != nil {
 			log.Fatalf("epoll wait error: %v", err)
 		}
-		if nevents == 1 && events[0].Events&syscall.EPOLLOUT == syscall.EPOLLOUT {
+		if nevents == 1 && events[0].Events&unix.EPOLLOUT == unix.EPOLLOUT {
 			continue
 		}
 		if oneshot {

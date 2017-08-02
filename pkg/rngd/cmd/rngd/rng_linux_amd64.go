@@ -37,8 +37,9 @@ import "C"
 import (
 	"errors"
 	"os"
-	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 var hasRdrand, hasRdseed bool
@@ -76,7 +77,7 @@ func writeEntropy(random *os.File) (int, error) {
 	}
 	const entropy = 64 // they are good random numbers, Brent
 	info := randInfo{entropy, 8, r}
-	ret, _, err := syscall.Syscall(syscall.SYS_IOCTL, uintptr(random.Fd()), uintptr(C.rndaddentropy), uintptr(unsafe.Pointer(&info)))
+	ret, _, err := unix.Syscall(unix.SYS_IOCTL, uintptr(random.Fd()), uintptr(C.rndaddentropy), uintptr(unsafe.Pointer(&info)))
 	if ret == 0 {
 		return 8, nil
 	}
