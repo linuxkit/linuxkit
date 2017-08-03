@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:9bcf61f605ef0ce36cc94d59b8eac307862de6e1 AS build
+FROM linuxkit/alpine:87a0cd10449d72f374f950004467737dbf440630 AS build
 RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev
 
 ADD usermode-helper.c .
@@ -11,7 +11,7 @@ COPY init.go /go/src/init/
 COPY vendor /go/src/init/vendor/
 RUN go-compile.sh /go/src/init/
 
-FROM linuxkit/alpine:9bcf61f605ef0ce36cc94d59b8eac307862de6e1 AS mirror
+FROM linuxkit/alpine:87a0cd10449d72f374f950004467737dbf440630 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
 

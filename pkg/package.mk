@@ -17,6 +17,25 @@ DIRTY:=$(shell git update-index -q --refresh && git diff-index --quiet HEAD -- $
 endif
 endif
 
+# Makefiles can specify specific architectures they compile for. Default: all
+ifeq ($(ARCHES),)
+ARCHES:=x86_64 aarch64
+endif
+
+ARCH := $(shell uname -m)
+ifeq ($(ARCH), x86_64)
+SUFFIX=-amd64
+endif
+ifeq ($(ARCH), aarch64)
+SUFFIX=-arm64
+endif
+
+ifneq ($(filter $(ARCH),$(ARCHES)),)
+REAL:=-y
+else
+REAL:=-n
+endif
+
 TAG:=$(ORG)/$(IMAGE):$(HASH)$(DIRTY)
 
 REPO?=https://github.com/linuxkit/linuxkit
@@ -34,6 +53,9 @@ BASE_DEPS=Dockerfile Makefile
 # Get a release tag, if present
 RELEASE:=$(shell git tag -l --points-at HEAD)
 
+# Path to push-manifest.sh
+PUSH_MANIFEST:=$(shell git rev-parse --show-toplevel)/scripts/push-manifest.sh
+
 ifdef NETWORK
 NET_OPT=
 else
@@ -46,30 +68,51 @@ export DOCKER_CONTENT_TRUST=1
 endif
 endif
 
+tag: tag$(REAL)
+forcetag: forcetag$(REAL)
+push: push$(REAL)
+forcepush: forcepush$(REAL)
+
 show-tag:
 	@echo $(TAG)
 
-tag: $(BASE_DEPS) $(DEPS)
-	docker pull $(TAG) || docker build $(LABELS) $(NET_OPT) -t $(TAG) $(SOURCE)
+tag-y: $(BASE_DEPS) $(DEPS)
+	docker pull $(TAG)$(SUFFIX) || \
+	docker build $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
 
-forcetag: $(BASE_DEPS) $(DEPS)
-	docker build $(LABELS) $(NET_OPT) -t $(TAG) $(SOURCE)
+forcetag-y: $(BASE_DEPS) $(DEPS)
+	docker build $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
 
 check-dirty:
 ifneq ($(DIRTY),)
 	$(error Your repository is not clean. Will not push package image)
 endif
 
-push: tag check-dirty
-	docker pull $(TAG) || docker push $(TAG)
+push-y: tag-y check-dirty
+	docker pull $(TAG)$(SUFFIX) || \
+		(docker push $(TAG)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(TAG) $(DOCKER_CONTENT_TRUST))
 ifneq ($(RELEASE),)
-	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
-	docker push $(ORG)/$(IMAGE):$(RELEASE)
+	docker tag $(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
+	docker push $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(RELEASE) $(DOCKER_CONTENT_TRUST)
 endif
 
-forcepush: forcetag check-dirty
-	docker push $(TAG)
+forcepush-y: forcetag-y check-dirty
+	docker push $(TAG)$(SUFFIX)
+	$(PUSH_MANIFEST) $(TAG) $(DOCKER_CONTENT_TRUST)
 ifneq ($(RELEASE),)
-	docker tag $(TAG) $(ORG)/$(IMAGE):$(RELEASE)
-	docker push $(ORG)/$(IMAGE):$(RELEASE)
+	docker tag $(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(RELEASE)
+	docker push $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(RELEASE) $(DOCKER_CONTENT_TRUST)
 endif
+
+# If not supported for an arch, print a message
+tag-n:
+	$(info This package does not work on $(ARCH). Ignored)
+forcetag-n:
+	$(info This package does not work on $(ARCH). Ignored)
+push-n:
+	$(info This package does not work on $(ARCH). Ignored)
+forcepush-n:
+	$(info This package does not work on $(ARCH). Ignored)

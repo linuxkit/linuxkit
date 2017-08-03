@@ -4,7 +4,7 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:d049e7b2074da5cd699a27defb47eb101142455d
-  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
+  - linuxkit/runc:90e45f13e1d0a0983f36ef854621e3eac91cf541
 onboot:
   - name: test-ns
     image: linuxkit/test-ns:<hash>
@@ -14,7 +14,7 @@ onboot:
     - type: cgroup
       options: ["rw"]
   - name: poweroff
-    image: linuxkit/poweroff:3845c4d64d47a1ea367806be5547e44594b0fa91
+    image: linuxkit/poweroff:1e9876c682c74d0602b7647c628bb0875fb13998
     command: ["/bin/sh", "/poweroff.sh", "3"]
 trust:
   org:

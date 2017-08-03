@@ -2,17 +2,17 @@ kernel:
   image: linuxkit/kernel:4.9.40
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:e3e376881faced5a890b6ceb3e8e899cbfd04ecd
-  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
+  - linuxkit/init:906e174b3f2e07f97d6fd693a2e8518e98dafa58
+  - linuxkit/runc:90e45f13e1d0a0983f36ef854621e3eac91cf541
 onboot:
   - name: test-ns
-    image: linuxkit/test-ns:321a9314c3f8b1ce748525b393dd633c48945216
+    image: linuxkit/test-ns:8e93e61e46ebcb302761eca0180e4c7f43e60bcf
     command: ["/bin/sh", "/runp-runc-net.sh", "1", "-l", "5", "-i", "15", "-ip", "4", "-p", "udp", "-c", "10"]
     mounts: # for runc
     - type: cgroup
       options: ["rw"]
   - name: poweroff
-    image: linuxkit/poweroff:3845c4d64d47a1ea367806be5547e44594b0fa91
+    image: linuxkit/poweroff:1e9876c682c74d0602b7647c628bb0875fb13998
     command: ["/bin/sh", "/poweroff.sh", "3"]
 trust:
   org:

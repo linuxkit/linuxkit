@@ -70,8 +70,9 @@ Currently supported platforms are:
 
 #### Running the Tests
 
-The test suite uses [`rtf`](https://github.com/linuxkit/rtf)
-To install this you should use `make bin/rtf && make install`.
+The test suite uses [`rtf`](https://github.com/linuxkit/rtf) To
+install this you should use `make bin/rtf && make install`. You will
+also need to install `expect` on your system as some tests use it.
 
 To run the test suite:
 
@@ -102,6 +103,8 @@ generate its specified output. You can run the output with `linuxkit run file`.
 
 The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. You can specify the type
 of artifact to build with the `moby` tool eg `moby build -output vhd linuxkit.yml`.
+
+If you want to build your own packages, see this [document](docs/packages.md).
 
 ### Yaml Specification
 

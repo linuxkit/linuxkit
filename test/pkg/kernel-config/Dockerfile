@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:34af9cb1990debd17fae6d4198c62ce3910d9908 AS mirror
+FROM linuxkit/alpine:87a0cd10449d72f374f950004467737dbf440630 AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl bash
