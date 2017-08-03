@@ -53,4 +53,4 @@ RUN apk update && apk upgrade -a
 
 # Update `FROM` in `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.0.0-alpha2
+ENV CONTAINERD_COMMIT=v1.0.0-alpha3
