@@ -11,8 +11,6 @@ onboot:
     image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
   - name: sysfs
     image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
-  - name: binfmt
-    image: linuxkit/binfmt:257b5174a8e33bc62d5448cc026d72cae3713628
   - name: dhcpcd
     image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
