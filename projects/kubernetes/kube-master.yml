@@ -2,24 +2,24 @@ kernel:
   image: linuxkit/kernel:4.9.40
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:e3e376881faced5a890b6ceb3e8e899cbfd04ecd
-  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
-  - linuxkit/containerd:1ff17c0908bed91a7bff252fba2e3d360d05a3de
-  - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
+  - linuxkit/init:906e174b3f2e07f97d6fd693a2e8518e98dafa58
+  - linuxkit/runc:90e45f13e1d0a0983f36ef854621e3eac91cf541
+  - linuxkit/containerd:7c986fb7df33bea73b5c8097b46989e46f49d875
+  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
+    image: linuxkit/sysctl:184c914d23a017062d7b53d7fc1dfaf47764bef6
   - name: sysfs
-    image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
+    image: linuxkit/sysfs:3ae01a25583ee37a5ff8b09a0e569cb4bd8cf2e9
   - name: dhcpcd
-    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
+    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:c3871ac5838e052ddb33248ceb95f86e4569aec4
+    image: linuxkit/metadata:cec86f3e1c260c9eafefa80c262fceb40c182ddf
   - name: format
-    image: linuxkit/format:efafddf9bc6165b5efaf09c532c15a1100a10e61
+    image: linuxkit/format:158d992b7bf7ab984100c697d7e72161ea7d7382
   - name: mounts
-    image: linuxkit/mount:a738ccad4e3e009b7c5f541226e9232a6287fa5d
+    image: linuxkit/mount:4fe245efb01384e42622c36302e13e386bbaeb08
     command: ["/usr/bin/mountie", "/var/lib/"]
   - name: var
     image: library/alpine:3.6
@@ -28,15 +28,15 @@ onboot:
       - /var/lib:/var/lib
 services:
   - name: getty
-    image: linuxkit/getty:18c468293c583eb5f275a068b686d55969f1b736
+    image: linuxkit/getty:2c841cdc34396e3fa8f25b62d112808f63f16df6
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:704e8d8b046e89d8fa86400cb106d8c58950b873
+    image: linuxkit/rngd:b2f4bdcb55aa88a25c86733e294628614504f383
   - name: ntpd
-    image: linuxkit/openntpd:2874b66c9fa51fa5b4d11c8b50441eb94ee22a5a
+    image: linuxkit/openntpd:0d7befc79842849d0b88d6c3b64200e340d7cf67
   - name: sshd
-    image: linuxkit/sshd:5dc5c3c4470c85f6c89f0e26b9d477ae4ff85a3c
+    image: linuxkit/sshd:505a985d7bd7a90f15eca9cb4dc6ec92789d51a0
   - name: docker
     image: docker:17.06.0-ce-dind
     capabilities:

@@ -2,20 +2,20 @@ kernel:
   image: linuxkit/kernel-ima:4.11.1-186dd3605ee7b23214850142f8f02b4679dbd148
   cmdline: "console=ttyS0 console=tty0 page_poison=1 ima_appraise=enforce_ns"
 init:
-  - linuxkit/init:e3e376881faced5a890b6ceb3e8e899cbfd04ecd
-  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
-  - linuxkit/containerd:1ff17c0908bed91a7bff252fba2e3d360d05a3de
-  - linuxkit/ca-certificates:67acf038c44bb191ebb704ec7bb39a1524052cdf
+  - linuxkit/init:906e174b3f2e07f97d6fd693a2e8518e98dafa58
+  - linuxkit/runc:90e45f13e1d0a0983f36ef854621e3eac91cf541
+  - linuxkit/containerd:7c986fb7df33bea73b5c8097b46989e46f49d875
+  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
   - linuxkit/ima-utils:dfeb3896fd29308b80ff9ba7fe5b8b767e40ca29
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
+    image: linuxkit/sysctl:184c914d23a017062d7b53d7fc1dfaf47764bef6
   - name: dhcpcd
-    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
+    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: linuxkit/rngd:704e8d8b046e89d8fa86400cb106d8c58950b873
+    image: linuxkit/rngd:b2f4bdcb55aa88a25c86733e294628614504f383
   - name: nginx
     image: nginx:alpine
     capabilities:

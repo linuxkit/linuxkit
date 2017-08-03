@@ -3,25 +3,25 @@ kernel:
   image: linuxkit/kernel:4.9.40
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/vpnkit-expose-port:e2b49a6c56fbf876ea24f0a5ce4ccae5f940d1be # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
-  - linuxkit/init:e3e376881faced5a890b6ceb3e8e899cbfd04ecd
-  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
-  - linuxkit/containerd:1ff17c0908bed91a7bff252fba2e3d360d05a3de
+  - linuxkit/vpnkit-expose-port:fa4ab4ac78b83fe392e39b861b4114c3bb02d170 # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
+  - linuxkit/init:906e174b3f2e07f97d6fd693a2e8518e98dafa58
+  - linuxkit/runc:90e45f13e1d0a0983f36ef854621e3eac91cf541
+  - linuxkit/containerd:7c986fb7df33bea73b5c8097b46989e46f49d875
 onboot:
   # support metadata for optional config in /var/config
   - name: metadata
-    image: linuxkit/metadata:c3871ac5838e052ddb33248ceb95f86e4569aec4
+    image: linuxkit/metadata:cec86f3e1c260c9eafefa80c262fceb40c182ddf
   - name: sysctl
-    image: linuxkit/sysctl:d1a43c7c91e92374766f962dc8534cf9508756b0
+    image: linuxkit/sysctl:184c914d23a017062d7b53d7fc1dfaf47764bef6
   - name: sysfs
-    image: linuxkit/sysfs:006a65b30cfdd9d751d7ab042fde7eca2c3bc9dc
+    image: linuxkit/sysfs:3ae01a25583ee37a5ff8b09a0e569cb4bd8cf2e9
   - name: binfmt
-    image: linuxkit/binfmt:257b5174a8e33bc62d5448cc026d72cae3713628
+    image: linuxkit/binfmt:472eeba777d056c5f98fe074aa0f581c67ccc7ff
   # Format and mount the disk image in /var/lib/docker
   - name: format
-    image: linuxkit/format:efafddf9bc6165b5efaf09c532c15a1100a10e61
+    image: linuxkit/format:158d992b7bf7ab984100c697d7e72161ea7d7382
   - name: mount
-    image: linuxkit/mount:a738ccad4e3e009b7c5f541226e9232a6287fa5d
+    image: linuxkit/mount:4fe245efb01384e42622c36302e13e386bbaeb08
     command: ["/usr/bin/mountie", "/var/lib"]
   # create docker dir on mounted drive if it doesn't exist
   - name: mkdir-docker
@@ -45,41 +45,41 @@ onboot:
         - /var:/host_var
     command: ["sh", "-c", "mv -v /host_var/log /host_var/lib && ln -vs /var/lib/log /host_var/log"]
   - name: dhcpcd
-    image: linuxkit/dhcpcd:17423c1ccced74e3c005fd80486e8177841fe02b
+    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   # Enable acpi to shutdown on power events
   - name: acpid
-    image: linuxkit/acpid:1966310cb75e28ffc668863a6577ee991327f918
+    image: linuxkit/acpid:79e5c20de96e1633c9c40935b99dde45aefba37b
   # Enable getty for easier debugging
   - name: getty
-    image: linuxkit/getty:58620cff1b0bf8b5d144d087602115e996f18a02
+    image: linuxkit/getty:2c841cdc34396e3fa8f25b62d112808f63f16df6
     env:
         - INSECURE=true
   # Run ntpd to keep time synchronised in the VM
   - name: ntpd
-    image: linuxkit/openntpd:2874b66c9fa51fa5b4d11c8b50441eb94ee22a5a
+    image: linuxkit/openntpd:0d7befc79842849d0b88d6c3b64200e340d7cf67
   # VSOCK to unix domain socket forwarding. Forwards guest /var/run/docker.sock
   # to a socket on the host.
   - name: vsudd
-    image: linuxkit/vsudd:adad4b6ab7529b6b95339eb0752b0c81a218d185
+    image: linuxkit/vsudd:d40f65855dfc4fe4740ba5fb5d3282cbc2131715
     binds:
         - /var/run:/var/run
     command: ["/vsudd", "-inport", "2376:unix:/var/run/docker.sock"]
   # vpnkit-forwarder forwards network traffic to/from the host via VSOCK port 62373. 
   # It needs access to the vpnkit 9P coordination share 
   - name: vpnkit-forwarder
-    image: linuxkit/vpnkit-forwarder:9c1545e7b093d1210118de7661d7346393ec195b
+    image: linuxkit/vpnkit-forwarder:42d80758e3b6a9f58cdfd25e53c775eebe951669
     binds:
         - /var/vpnkit:/port
     net: host
     command: ["/vpnkit-forwarder", "-vsockPort", "62373"]
   # Monitor for image deletes and invoke a TRIM on the container filesystem
   - name: trim-after-delete
-    image: linuxkit/trim-after-delete:2a5fcbe080cd4a45bd75c2ea3856c069475d706d
+    image: linuxkit/trim-after-delete:8e7aea3dc87bbb72cf56e62d8b8861ff93946480
   # When the host resumes from sleep, force a clock resync
   - name: host-timesync-daemon
-    image: linuxkit/host-timesync-daemon:e6c15e6ef75d302c1c22827bac249598fb365a83
+    image: linuxkit/host-timesync-daemon:625a906f2c3d9a3a2b8c856f062bc6c0d6b526bd
 
 trust:
     org:

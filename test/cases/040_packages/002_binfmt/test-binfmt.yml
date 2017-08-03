@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:4.9.40
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:e3e376881faced5a890b6ceb3e8e899cbfd04ecd
-  - linuxkit/runc:842318b6ab524783554428c89a27d95af7bd2844
+  - linuxkit/init:906e174b3f2e07f97d6fd693a2e8518e98dafa58
+  - linuxkit/runc:90e45f13e1d0a0983f36ef854621e3eac91cf541
 onboot:
   - name: binfmt
-    image: linuxkit/binfmt:257b5174a8e33bc62d5448cc026d72cae3713628
+    image: linuxkit/binfmt:472eeba777d056c5f98fe074aa0f581c67ccc7ff
   - name: test
     image: alpine:3.6
     binds:
