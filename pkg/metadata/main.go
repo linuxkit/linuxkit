@@ -14,17 +14,11 @@ const (
 	// ConfigPath is where the data is extracted to
 	ConfigPath = "/var/config"
 
-	// MountPoint is where the CDROM is mounted
-	MountPoint = "/cdrom"
-
 	// Hostname is the filename in configPath where the hostname is stored
 	Hostname = "hostname"
 
 	// SSH is the path where sshd configuration from the provider is stored
 	SSH = "ssh"
-
-	// TODO(rneugeba): Need to check this is the same everywhere
-	cdromDev = "/dev/sr0"
 )
 
 // Provider is a generic interface for metadata/userdata providers.
@@ -48,7 +42,7 @@ var cdromProviders []Provider
 
 func init() {
 	netProviders = []Provider{NewGCP(), NewVultr(), NewAWS()}
-	cdromProviders = []Provider{NewCDROM()}
+	cdromProviders = ListCDROMs()
 }
 
 func main() {
@@ -69,19 +63,8 @@ func main() {
 		}
 	}
 	if !found {
-		log.Printf("Trying CDROM")
-		if err := os.MkdirAll(MountPoint, 0755); err != nil {
-			log.Printf("CDROM: Failed to create %s: %s", MountPoint, err)
-			goto ErrorOut
-		}
-		if err := mountCDROM(cdromDev, MountPoint); err != nil {
-			log.Printf("Failed to mount cdrom: %s", err)
-			goto ErrorOut
-		}
-		defer syscall.Unmount(MountPoint, 0)
-		// Don't worry about removing MountPoint. We are in a container
-
 		for _, p = range cdromProviders {
+			log.Printf("Trying %s", p.String())
 			if p.Probe() {
 				log.Printf("%s: Probe succeeded", p)
 				userdata, err = p.Extract()
@@ -91,7 +74,6 @@ func main() {
 		}
 	}
 
-ErrorOut:
 	if !found {
 		log.Printf("No metadata/userdata found. Bye")
 		return
@@ -201,10 +183,4 @@ func processUserData(data []byte) error {
 	}
 
 	return nil
-}
-
-// mountCDROM mounts a CDROM/DVD device under mountPoint
-func mountCDROM(device, mountPoint string) error {
-	// We may need to poll a little for device ready
-	return syscall.Mount(device, mountPoint, "iso9660", syscall.MS_RDONLY, "")
 }
