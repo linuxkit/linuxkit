@@ -7,4 +7,10 @@ push:
 tag:
 	@set -e; for d in $(DIRS); do make -C "$$d" tag; done
 
+forcetag:
+	@set -e; for d in $(DIRS); do make -C "$$d" forcetag; done
+
+show-tag:
+	@set -e; for d in $(DIRS); do make -C "$$d" show-tag; done
+
 clean: ;
