@@ -17,12 +17,23 @@ DIRTY:=$(shell git update-index -q --refresh && git diff-index --quiet HEAD -- $
 endif
 endif
 
+# Makefiles can specify specific architectures they compile for. Default: all
+ifeq ($(ARCHES),)
+ARCHES:=x86_64 aarch64
+endif
+
 ARCH := $(shell uname -m)
 ifeq ($(ARCH), x86_64)
 SUFFIX=-amd64
 endif
 ifeq ($(ARCH), aarch64)
 SUFFIX=-arm64
+endif
+
+ifneq ($(filter $(ARCH),$(ARCHES)),)
+REAL:=-y
+else
+REAL:=-n
 endif
 
 TAG:=$(ORG)/$(IMAGE):$(HASH)$(DIRTY)
@@ -57,14 +68,19 @@ export DOCKER_CONTENT_TRUST=1
 endif
 endif
 
+tag: tag$(REAL)
+forcetag: forcetag$(REAL)
+push: push$(REAL)
+forcepush: forcepush$(REAL)
+
 show-tag:
 	@echo $(TAG)
 
-tag: $(BASE_DEPS) $(DEPS)
+tag-y: $(BASE_DEPS) $(DEPS)
 	docker pull $(TAG)$(SUFFIX) || \
 	docker build $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
 
-forcetag: $(BASE_DEPS) $(DEPS)
+forcetag-y: $(BASE_DEPS) $(DEPS)
 	docker build $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
 
 check-dirty:
@@ -72,7 +88,7 @@ ifneq ($(DIRTY),)
 	$(error Your repository is not clean. Will not push package image)
 endif
 
-push: tag check-dirty
+push-y: tag-y check-dirty
 	docker pull $(TAG)$(SUFFIX) || \
 		(docker push $(TAG)$(SUFFIX) && \
 		 $(PUSH_MANIFEST) $(TAG) $(DOCKER_CONTENT_TRUST))
@@ -82,7 +98,7 @@ ifneq ($(RELEASE),)
 	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(RELEASE) $(DOCKER_CONTENT_TRUST)
 endif
 
-forcepush: forcetag check-dirty
+forcepush-y: forcetag-y check-dirty
 	docker push $(TAG)$(SUFFIX)
 	$(PUSH_MANIFEST) $(TAG) $(DOCKER_CONTENT_TRUST)
 ifneq ($(RELEASE),)
@@ -90,3 +106,13 @@ ifneq ($(RELEASE),)
 	docker push $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
 	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(RELEASE) $(DOCKER_CONTENT_TRUST)
 endif
+
+# If not supported for an arch, print a message
+tag-n:
+	$(info This package does not work on $(ARCH). Ignored)
+forcetag-n:
+	$(info This package does not work on $(ARCH). Ignored)
+push-n:
+	$(info This package does not work on $(ARCH). Ignored)
+forcepush-n:
+	$(info This package does not work on $(ARCH). Ignored)
