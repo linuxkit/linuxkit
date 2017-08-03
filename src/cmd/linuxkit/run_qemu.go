@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strconv"
 	"strings"
 
@@ -134,7 +135,7 @@ func runQemu(args []string) {
 	vmUUID := uuid.NewV4()
 
 	// Networking
-	networking := flags.String("networking", qemuNetworkingDefault, "Networking mode. Valid options are 'default', 'user', 'bridge[,name]', tap[,name] and 'none'. 'user' uses QEMUs userspace networking. 'bridge' connects to a preexisting bridge. 'tap' uses a prexisting tap device. 'none' disables networking.`")
+	networking := flags.String("networking", qemuNetworkingDefault, "Networking mode. Valid options are 'default', 'user', 'bridge[,name]', tap[,name] and 'none'. 'user' uses QEMUs userspace networking. 'bridge' connects to a preexisting bridge. 'tap' uses a prexisting tap device. 'none' disables networking. A custom MAC address can be appended with ,xx:xx:xx:xx:xx:xx`")
 
 	publishFlags := multipleFlag{}
 	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
@@ -525,13 +526,19 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	if config.NetdevConfig == "" {
 		qemuArgs = append(qemuArgs, "-net", "none")
 	} else {
-		mac := generateMAC()
-		qemuArgs = append(qemuArgs, "-net", "nic,model=virtio,macaddr="+mac.String())
+		var macRemoveRegExp = regexp.MustCompile(",((?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2})|((?:[0-9A-Fa-f]{2}[:-]){5}[0-9A-Fa-f]{2}),")
+		var macRegExp = regexp.MustCompile("([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})")
+		var mac = macRegExp.FindString(config.NetdevConfig)
+		var netdevConfig = macRemoveRegExp.ReplaceAllString(config.NetdevConfig, "")
+		if mac == "" {
+			mac = generateMAC().String()
+		}
+		qemuArgs = append(qemuArgs, "-net", "nic,model=virtio,macaddr="+mac)
 		forwardings, err := buildQemuForwardings(config.PublishedPorts, config.Containerized)
 		if err != nil {
 			log.Error(err)
 		}
-		qemuArgs = append(qemuArgs, "-net", config.NetdevConfig+forwardings)
+		qemuArgs = append(qemuArgs, "-net", netdevConfig+forwardings)
 	}
 
 	if config.GUI != true {
