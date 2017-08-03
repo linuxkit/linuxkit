@@ -78,6 +78,7 @@ func (p *ProviderAzure) Extract() ([]byte, error) {
 	return userData, nil
 }
 
+// getUserData returns the userdata stored on disk
 func getUserData() ([]byte, error) {
 	return ioutil.ReadFile(azUserDataLoc)
 }
