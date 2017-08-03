@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strconv"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 //Version 12 relates to Fusion 8 and WS 12

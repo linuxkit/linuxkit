@@ -10,7 +10,7 @@ import (
 
 	"github.com/Azure/go-ansiterm/winterm"
 	"github.com/Microsoft/go-winio"
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 // Some of the code below is copied and modified from:
