@@ -36,10 +36,15 @@ import "C"
 
 import (
 	"errors"
+	"flag"
 	"os"
-	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
+
+var disableRdrand = flag.Bool("disable-rdrand", false, "Disable use of RDRAND")
+var disableRdseed = flag.Bool("disable-rdseed", false, "Disable use of RDSEED")
 
 var hasRdrand, hasRdseed bool
 
@@ -50,19 +55,19 @@ type randInfo struct {
 }
 
 func initRand() bool {
-	hasRdrand = C.hasrdrand() == 1
-	hasRdseed = C.hasrdseed() == 1
+	hasRdrand = C.hasrdrand() == 1 && !*disableRdrand
+	hasRdseed = C.hasrdseed() == 1 && !*disableRdseed
 	return hasRdrand || hasRdseed
 }
 
 func rand() (uint64, error) {
 	var x C.uint64_t
 	// prefer rdseed as that is correct seed
-	if hasRdseed && C.rdseed(&x) == 1 {
+	if hasRdseed && C.rdseed(&x) == 1 && !*disableRdseed {
 		return uint64(x), nil
 	}
 	// failed rdseed, rdrand better than nothing
-	if hasRdrand && C.rdrand(&x) == 1 {
+	if hasRdrand && C.rdrand(&x) == 1 && !*disableRdrand {
 		return uint64(x), nil
 	}
 	return 0, errors.New("No randomness available")
@@ -76,7 +81,7 @@ func writeEntropy(random *os.File) (int, error) {
 	}
 	const entropy = 64 // they are good random numbers, Brent
 	info := randInfo{entropy, 8, r}
-	ret, _, err := syscall.Syscall(syscall.SYS_IOCTL, uintptr(random.Fd()), uintptr(C.rndaddentropy), uintptr(unsafe.Pointer(&info)))
+	ret, _, err := unix.Syscall(unix.SYS_IOCTL, uintptr(random.Fd()), uintptr(C.rndaddentropy), uintptr(unsafe.Pointer(&info)))
 	if ret == 0 {
 		return 8, nil
 	}
