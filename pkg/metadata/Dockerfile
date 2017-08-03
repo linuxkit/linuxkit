@@ -6,10 +6,13 @@ ENV GOPATH=/go PATH=$PATH:/go/bin
 COPY .  /go/src/metadata/
 RUN go-compile.sh /go/src/metadata
 
+RUN mkdir -p out/tmp out/var out/dev out/etc
+
 FROM scratch
 ENTRYPOINT []
 CMD []
 WORKDIR /
 COPY --from=mirror /go/bin/metadata /usr/bin/metadata
+COPY --from=mirror /out/ /
 CMD ["/usr/bin/metadata"]
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var", "/etc/resolv.conf:/etc/resolv.conf"], "capabilities": ["CAP_SYS_ADMIN"]}'
+LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var", "/etc/resolv.conf:/etc/resolv.conf"], "tmpfs": ["/tmp"], "readonly": true, "capabilities": ["CAP_SYS_ADMIN"]}'
