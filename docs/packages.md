@@ -20,8 +20,10 @@ Before you can build packages you need:
 - Docker version 17.06 or newer. If you are on a Mac you also need
   `docker-credential-osxkeychain.bin`, which comes with Docker for Mac.
 - `make`, `notary`, `base64`, `jq`, and `expect`
-- A custom copy of `manifest-tool` which you can build with `make
-  bin/manifest-tool`. `manifest-tool` must be in your path.
+- A *recent* version of `manifest-tool` which you can build with `make
+  bin/manifest-tool`, or `go get github.com:estesp/manifest-tool`, or
+  via the LinuxKit homebrew tap with `brew install --HEAD
+  manifest-tool`. `manifest-tool` must be in your path.
 
 Further, when building packages you need to be logged into hub with
 `docker login` as some of the tooling extracts your hub credentials
