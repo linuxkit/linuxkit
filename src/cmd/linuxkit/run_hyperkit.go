@@ -92,7 +92,9 @@ func runHyperKit(args []string) {
 			*isoBoot = true
 			prefix = strings.TrimSuffix(path, ".iso")
 			// hyperkit only supports UEFI ISO boot at present
-			*uefiBoot = true
+			if !*uefiBoot {
+				log.Fatalf("Hyperkit requires --uefi to be set to boot an ISO")
+			}
 		}
 	}
 
