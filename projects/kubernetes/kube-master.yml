@@ -32,7 +32,7 @@ services:
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:b2f4bdcb55aa88a25c86733e294628614504f383
+    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
   - name: ntpd
     image: linuxkit/openntpd:0d7befc79842849d0b88d6c3b64200e340d7cf67
   - name: sshd

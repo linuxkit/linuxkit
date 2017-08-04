@@ -19,7 +19,7 @@ services:
     #env:
     # - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:b2f4bdcb55aa88a25c86733e294628614504f383
+    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)
