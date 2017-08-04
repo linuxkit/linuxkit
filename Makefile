@@ -43,8 +43,8 @@ tmp_rtf_bin.tar: Makefile
 	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(RTF_VERSION)" -o bin/rtf > $@
 
 # Manifest tool for multi-arch images
-MT_COMMIT=186e7752e8032756bb263b830451f44e5176864f
-MT_REPO=https://github.com/rn/manifest-tool
+MT_COMMIT=bfbd11963b8e0eb5f6e400afaebeaf39820b4e90
+MT_REPO=https://github.com/estesp/manifest-tool
 bin/manifest-tool: tmp_mt_bin.tar | bin
 	tar xf $<
 	rm $<
