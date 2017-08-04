@@ -11,7 +11,7 @@ onboot:
     image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
 services:
   - name: rngd
-    image: linuxkit/rngd:b2f4bdcb55aa88a25c86733e294628614504f383
+    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
   - name: dhcpcd
     image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
   - name: sshd

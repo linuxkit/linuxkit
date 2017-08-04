@@ -16,7 +16,7 @@ onboot:
     image: linuxkit/metadata:cec86f3e1c260c9eafefa80c262fceb40c182ddf
 services:
   - name: rngd
-    image: linuxkit/rngd:b2f4bdcb55aa88a25c86733e294628614504f383
+    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
   - name: sshd
     image: linuxkit/sshd:505a985d7bd7a90f15eca9cb4dc6ec92789d51a0
     binds:
