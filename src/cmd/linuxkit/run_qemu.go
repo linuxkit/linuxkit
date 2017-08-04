@@ -174,11 +174,6 @@ func runQemu(args []string) {
 			*isoBoot = true
 			prefix = strings.TrimSuffix(path, ".iso")
 		}
-		// autodetect EFI ISO from our default naming
-		if strings.HasSuffix(path, "-efi.iso") {
-			*uefiBoot = true
-			prefix = strings.TrimSuffix(path, "-efi.iso")
-		}
 	}
 
 	if *state == "" {

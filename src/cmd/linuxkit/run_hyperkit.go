@@ -46,6 +46,15 @@ func runHyperKit(args []string) {
 	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
 	networking := flags.String("networking", hyperkitNetworkingDefault, "Networking mode. Valid options are 'default', 'docker-for-mac', 'vpnkit[,socket-path]', 'vmnet' and 'none'. 'docker-for-mac' connects to the network used by Docker for Mac. 'vpnkit' connects to the VPNKit socket specified. If socket-path is omitted a new VPNKit instance will be started and 'vpnkit_eth.sock' will be created in the state directory. 'vmnet' uses the Apple vmnet framework, requires root/sudo. 'none' disables networking.`")
 
+	// Boot type; we try to determine automatically
+	uefiBoot := flags.Bool("uefi", false, "Use UEFI boot")
+	isoBoot := flags.Bool("iso", false, "Boot image is an ISO")
+	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
+
+	// Paths and settings for UEFI firware
+	// Note, the default uses the firmware shipped with Docker for Mac
+	fw := flags.String("fw", "/Applications/Docker.app/Contents/Resources/uefi/UEFI.fd", "Path to OVMF firmware for UEFI boot")
+
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
@@ -55,7 +64,50 @@ func runHyperKit(args []string) {
 		flags.Usage()
 		os.Exit(1)
 	}
-	prefix := remArgs[0]
+	path := remArgs[0]
+	prefix := path
+
+	_, err := os.Stat(path)
+	stat := err == nil
+
+	var isoPaths []string
+
+	// if the path does not exist, must be trying to do a kernel boot
+	if !stat {
+		_, err = os.Stat(path + "-kernel")
+		statKernel := err == nil
+		if statKernel {
+			*kernelBoot = true
+		} else {
+			log.Fatalf("Cannot find kernel file (%s): %v", path+"-kernel", err)
+		}
+		_, err = os.Stat(path + "-initrd.img")
+		statInitrd := err == nil
+		if !statInitrd {
+			log.Fatalf("Cannot find initrd file (%s): %v", path+"-initrd.img", err)
+		}
+	} else {
+		// if path ends in .iso they meant an ISO
+		if strings.HasSuffix(path, ".iso") {
+			*isoBoot = true
+			prefix = strings.TrimSuffix(path, ".iso")
+			// hyperkit only supports UEFI ISO boot at present
+			if !*uefiBoot {
+				log.Fatalf("Hyperkit requires --uefi to be set to boot an ISO")
+			}
+		}
+	}
+
+	if *isoBoot {
+		isoPaths = append(isoPaths, path)
+	}
+
+	if *uefiBoot {
+		_, err := os.Stat(*fw)
+		if err != nil {
+			log.Fatalf("Cannot open UEFI firmware file (%s): %v", *fw, err)
+		}
+	}
 
 	if *state == "" {
 		*state = prefix + "-state"
@@ -64,7 +116,6 @@ func runHyperKit(args []string) {
 		log.Fatalf("Could not create state directory: %v", err)
 	}
 
-	isoPath := ""
 	if *data != "" {
 		var d []byte
 		if _, err := os.Stat(*data); os.IsNotExist(err) {
@@ -75,10 +126,11 @@ func runHyperKit(args []string) {
 				log.Fatalf("Cannot read user data: %v", err)
 			}
 		}
-		isoPath = filepath.Join(*state, "data.iso")
+		isoPath := filepath.Join(*state, "data.iso")
 		if err := WriteMetadataISO(isoPath, d); err != nil {
 			log.Fatalf("Cannot write user data ISO: %v", err)
 		}
+		isoPaths = append(isoPaths, isoPath)
 	}
 
 	vpnKitKey := ""
@@ -99,9 +151,12 @@ func runHyperKit(args []string) {
 	vmUUID := uuid.NewV4().String()
 
 	// Run
-	cmdline, err := ioutil.ReadFile(prefix + "-cmdline")
-	if err != nil {
-		log.Fatalf("Cannot open cmdline file: %v", err)
+	var cmdline []byte
+	if *kernelBoot {
+		cmdline, err = ioutil.ReadFile(prefix + "-cmdline")
+		if err != nil {
+			log.Fatalf("Cannot open cmdline file: %v", err)
+		}
 	}
 
 	// Create new HyperKit instance (w/o networking for now)
@@ -175,11 +230,15 @@ func runHyperKit(args []string) {
 		log.Fatalf("Invalid networking mode: %s", netMode[0])
 	}
 
-	h.Kernel = prefix + "-kernel"
-	h.Initrd = prefix + "-initrd.img"
+	if *kernelBoot {
+		h.Kernel = prefix + "-kernel"
+		h.Initrd = prefix + "-initrd.img"
+	} else {
+		h.Bootrom = *fw
+	}
 	h.VPNKitKey = vpnKitKey
 	h.UUID = vmUUID
-	h.ISOImage = isoPath
+	h.ISOImages = isoPaths
 	h.VSock = true
 	h.CPUs = *cpus
 	h.Memory = *mem

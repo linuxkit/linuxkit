@@ -71,8 +71,10 @@ type Socket9P struct {
 
 // DiskConfig contains the path to a disk image and an optional size if the image needs to be created.
 type DiskConfig struct {
-	Path string `json:"path"`
-	Size int    `json:"size"`
+	Path   string `json:"path"`
+	Size   int    `json:"size"`
+	Format string `json:"format"`
+	Driver string `json:"driver"`
 }
 
 // HyperKit contains the configuration of the hyperkit VM
@@ -90,7 +92,7 @@ type HyperKit struct {
 	// Disks contains disk images to use/create.
 	Disks []DiskConfig `json:"disks"`
 	// ISOImage is the (optional) path to a ISO image to attach
-	ISOImage string `json:"iso"`
+	ISOImages []string `json:"iso"`
 	// VSock enables the virtio-socket device and exposes it on the host
 	VSock bool `json:"vsock"`
 	// VSockPorts is a list of guest VSock ports that should be exposed as sockets on the host
@@ -108,6 +110,8 @@ type HyperKit struct {
 	Kernel string `json:"kernel"`
 	// Initrd is the path to the initial ramdisk to boot off
 	Initrd string `json:"initrd"`
+	// Bootrom is the path to a boot rom eg for UEFI boot
+	Bootrom string `json:"bootrom"`
 
 	// CPUs is the number CPUs to configure
 	CPUs int `json:"cpus"`
@@ -222,9 +226,9 @@ func (h *HyperKit) execute(cmdline string) error {
 	if h.Console == ConsoleStdio && !isTerminal(os.Stdout) && h.StateDir == "" {
 		return fmt.Errorf("If ConsoleStdio is set but stdio is not a terminal, StateDir must be specified")
 	}
-	if h.ISOImage != "" {
-		if _, err = os.Stat(h.ISOImage); os.IsNotExist(err) {
-			return fmt.Errorf("ISO %s does not exist", h.ISOImage)
+	for _, image := range h.ISOImages {
+		if _, err = os.Stat(image); os.IsNotExist(err) {
+			return fmt.Errorf("ISO %s does not exist", image)
 		}
 	}
 	if h.VSock && h.StateDir == "" {
@@ -233,11 +237,17 @@ func (h *HyperKit) execute(cmdline string) error {
 	if !h.VSock && len(h.VSockPorts) > 0 {
 		return fmt.Errorf("To forward vsock ports vsock must be enabled")
 	}
-	if _, err = os.Stat(h.Kernel); os.IsNotExist(err) {
-		return fmt.Errorf("Kernel %s does not exist", h.Kernel)
-	}
-	if _, err = os.Stat(h.Initrd); os.IsNotExist(err) {
-		return fmt.Errorf("initrd %s does not exist", h.Initrd)
+	if h.Bootrom == "" {
+		if _, err = os.Stat(h.Kernel); os.IsNotExist(err) {
+			return fmt.Errorf("Kernel %s does not exist", h.Kernel)
+		}
+		if _, err = os.Stat(h.Initrd); os.IsNotExist(err) {
+			return fmt.Errorf("initrd %s does not exist", h.Initrd)
+		}
+	} else {
+		if _, err = os.Stat(h.Bootrom); os.IsNotExist(err) {
+			return fmt.Errorf("Bootrom %s does not exist", h.Bootrom)
+		}
 	}
 
 	// Create files
@@ -428,7 +438,18 @@ func (h *HyperKit) buildArgs(cmdline string) {
 	}
 
 	for _, p := range h.Disks {
-		a = append(a, "-s", fmt.Sprintf("%d:0,virtio-blk,%s", nextSlot, p.Path))
+		// Default the driver to virtio-blk
+		driver := "virtio-blk"
+		if p.Driver != "" {
+			driver = p.Driver
+		}
+		arg := fmt.Sprintf("%d:0,%s,%s", nextSlot, driver, p.Path)
+
+		// Add on a format instruction if specified.
+		if p.Format != "" {
+			arg += ",format=" + p.Format
+		}
+		a = append(a, "-s", arg)
 		nextSlot++
 	}
 
@@ -441,8 +462,8 @@ func (h *HyperKit) buildArgs(cmdline string) {
 		nextSlot++
 	}
 
-	if h.ISOImage != "" {
-		a = append(a, "-s", fmt.Sprintf("%d,ahci-cd,%s", nextSlot, h.ISOImage))
+	for _, image := range h.ISOImages {
+		a = append(a, "-s", fmt.Sprintf("%d,ahci-cd,%s", nextSlot, image))
 		nextSlot++
 	}
 
@@ -460,8 +481,13 @@ func (h *HyperKit) buildArgs(cmdline string) {
 		a = append(a, "-l", fmt.Sprintf("com1,autopty=%s/tty,log=%s/console-ring", h.StateDir, h.StateDir))
 	}
 
-	kernArgs := fmt.Sprintf("kexec,%s,%s,earlyprintk=serial %s", h.Kernel, h.Initrd, cmdline)
-	a = append(a, "-f", kernArgs)
+	if h.Bootrom == "" {
+		kernArgs := fmt.Sprintf("kexec,%s,%s,earlyprintk=serial %s", h.Kernel, h.Initrd, cmdline)
+		a = append(a, "-f", kernArgs)
+	} else {
+		kernArgs := fmt.Sprintf("bootrom,%s,,", h.Bootrom)
+		a = append(a, "-f", kernArgs)
+	}
 
 	h.Arguments = a
 	h.CmdLine = h.HyperKit + " " + strings.Join(a, " ")
