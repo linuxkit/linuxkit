@@ -8,7 +8,7 @@ init:
   - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:184c914d23a017062d7b53d7fc1dfaf47764bef6
+    image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
   - name: format
     image: linuxkit/format:158d992b7bf7ab984100c697d7e72161ea7d7382
   - name: mount

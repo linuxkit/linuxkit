@@ -12,7 +12,7 @@ onboot:
   - name: metadata
     image: linuxkit/metadata:cec86f3e1c260c9eafefa80c262fceb40c182ddf
   - name: sysctl
-    image: linuxkit/sysctl:184c914d23a017062d7b53d7fc1dfaf47764bef6
+    image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
   - name: sysfs
     image: linuxkit/sysfs:3ae01a25583ee37a5ff8b09a0e569cb4bd8cf2e9
   - name: binfmt
