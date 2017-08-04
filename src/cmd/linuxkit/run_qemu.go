@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 
@@ -53,6 +54,19 @@ const (
 	qemuNetworkingBridge         = "bridge"
 	qemuNetworkingDefault        = qemuNetworkingUser
 )
+
+var (
+	defaultArch string
+)
+
+func init() {
+	switch runtime.GOARCH {
+	case "arm64":
+		defaultArch = "aarch64"
+	case "amd64":
+		defaultArch = "x86_64"
+	}
+}
 
 func haveKVM() bool {
 	_, err := os.Stat("/dev/kvm")
@@ -123,7 +137,7 @@ func runQemu(args []string) {
 
 	// VM configuration
 	enableKVM := flags.Bool("kvm", haveKVM(), "Enable KVM acceleration")
-	arch := flags.String("arch", "x86_64", "Type of architecture to use, e.g. x86_64, aarch64")
+	arch := flags.String("arch", defaultArch, "Type of architecture to use, e.g. x86_64, aarch64")
 	cpus := flags.String("cpus", "1", "Number of CPUs")
 	mem := flags.String("mem", "1024", "Amount of memory in MB")
 
@@ -459,7 +473,11 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	// Need to specify the vcpu type when running qemu on arm64 platform, for security reason,
 	// the vcpu should be "host" instead of other names such as "cortex-a53"...
 	if config.Arch == "aarch64" {
-		qemuArgs = append(qemuArgs, "-cpu", "host")
+		if runtime.GOARCH == "arm64" {
+			qemuArgs = append(qemuArgs, "-cpu", "host")
+		} else {
+			qemuArgs = append(qemuArgs, "-cpu", "cortex-a57")
+		}
 	}
 
 	if config.KVM {
