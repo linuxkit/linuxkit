@@ -2,10 +2,14 @@
 
 package main
 
+// int rndaddentropy;
+import "C"
+
 import (
 	"flag"
 	"log"
 	"os"
+	"unsafe"
 
 	"golang.org/x/sys/unix"
 )
@@ -68,4 +72,25 @@ func main() {
 			break
 		}
 	}
+}
+
+type randInfo struct {
+	entropyCount int
+	size         int
+	buf          uint64
+}
+
+func writeEntropy(random *os.File) (int, error) {
+	r, err := rand()
+	if err != nil {
+		// assume can fail occasionally
+		return 0, nil
+	}
+	const entropy = 64 // they are good random numbers, Brent
+	info := randInfo{entropy, 8, r}
+	ret, _, err := unix.Syscall(unix.SYS_IOCTL, uintptr(random.Fd()), uintptr(C.rndaddentropy), uintptr(unsafe.Pointer(&info)))
+	if ret == 0 {
+		return 8, nil
+	}
+	return 0, err
 }
