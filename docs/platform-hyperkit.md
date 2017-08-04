@@ -12,9 +12,8 @@ Alternatively, you can install HyperKit and VPNKit standalone and use it without
 
 ## Boot
 
-The HyperKit backend currently only supports booting the
-`kernel+initrd` output from `moby` (technically we could support EFI
-boot as well).
+The HyperKit backend currently supports booting the
+`kernel+initrd` output from `moby`, and EFI ISOs using the EFI firmware.
 
 
 ## Console
@@ -28,8 +27,8 @@ HyperKit does not provide a console device.
 ## Disks
 
 The HyperKit backend support configuring a persistent disk using the
-standard `linuxkit` `-disk` syntax.  Currently, only one disk is
-supported and the disk is in raw format.
+standard `linuxkit` `-disk` syntax.  Multiple disks are
+supported and the disks are in raw format.
 
 ## Power management
 
@@ -128,8 +127,8 @@ there are a number of packages, such as `vsudd`, which enable
 tighter integration of the VM with the host (see below).
 
 The HyperKit backend also allows passing custom userdata into the
-[metadata pacakge](./metadata.md) using the `-data` command-line
-option.
+[metadata package](./metadata.md) using the `-data` command-line
+option. This attaches a CD device with the data on.
 
 
 ### `vsudd` unix domain socket forwarding
