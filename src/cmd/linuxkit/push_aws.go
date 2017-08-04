@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -69,9 +68,9 @@ func pushAWS(args []string) {
 		name = filepath.Base(name)
 	}
 
-	content, err := ioutil.ReadAll(f)
+	fi, err := f.Stat()
 	if err != nil {
-		log.Fatalf("Error reading file: %v", err)
+		log.Fatalf("Error reading file information: %v", err)
 	}
 
 	dst := name + filepath.Ext(path)
@@ -79,7 +78,7 @@ func pushAWS(args []string) {
 		Bucket:        aws.String(bucket),
 		Key:           aws.String(dst),
 		Body:          f,
-		ContentLength: aws.Int64(int64(len(content))),
+		ContentLength: aws.Int64(fi.Size()),
 		ContentType:   aws.String("application/octet-stream"),
 	}
 	log.Debugf("PutObject:\n%v", putParams)
