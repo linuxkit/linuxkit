@@ -15,6 +15,12 @@ start_getty() {
 	term="linux"
 	[ "$speed" = "$1" ] && speed=115200
 
+	# does the device even exist?
+	if [ ! -c /dev/$tty ]; then
+		echo "getty: cmdline has console=$tty but /dev/$tty is not a character device; not starting getty for $tty" | tee /dev/console
+		return
+	fi
+
 	case "$tty" in
 	ttyS*|ttyAMA*|ttyUSB*|ttyMFD*)
 		line="-L"
@@ -35,7 +41,7 @@ start_getty() {
 
 	if ! grep -q -w "$tty" "$securetty"; then
 		# we could not find the tty in securetty, so start a getty but warn that root login will not work
-		echo "getty: cmdline has console=$tty but does not exist in $securetty; will not be able to log in as root on this tty $tty." > /dev/$tty
+		echo "getty: cmdline has console=$tty but does not exist in $securetty; will not be able to log in as root on this tty $tty." | tee /dev/$tty
 	fi
 	# respawn forever
 	infinite_loop setsid.getty -w /sbin/agetty $loginargs $line $speed $tty $term &
