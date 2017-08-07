@@ -1,16 +1,22 @@
 package main
 
 import (
+	"bufio"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"os/user"
 	"path/filepath"
+	"strings"
 
 	"github.com/bzub/packngo" // TODO(rn): Update to official once iPXE is merged
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const (
@@ -36,19 +42,6 @@ func init() {
 	}
 }
 
-// ValidateHTTPURL does a sanity check that a URL returns a 200 or 300 response
-func ValidateHTTPURL(url string) {
-	log.Printf("Validating URL: %s", url)
-	resp, err := http.Head(url)
-	if err != nil {
-		log.Fatal(err)
-	}
-	if resp.StatusCode >= 400 {
-		log.Fatal("Got a non 200- or 300- HTTP response code: %s", resp)
-	}
-	log.Printf("OK: %d response code", resp.StatusCode)
-}
-
 // Process the run arguments and execute run
 func runPacket(args []string) {
 	flags := flag.NewFlagSet("packet", flag.ExitOnError)
@@ -66,6 +59,7 @@ func runPacket(args []string) {
 	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance (or "+packetHostnameVar+")")
 	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
 	alwaysPXE := flags.Bool("always-pxe", true, "Reboot from PXE every time.")
+	consoleFlag := flags.Bool("console", true, "Provide interactive access on the console.")
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
@@ -99,8 +93,8 @@ func runPacket(args []string) {
 	log.Debugf("Using userData of:\n%s\n", userData)
 	initrdURL := fmt.Sprintf("%s/%s-initrd.img", url, name)
 	kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
-	ValidateHTTPURL(kernelURL)
-	ValidateHTTPURL(initrdURL)
+	validateHTTPURL(kernelURL)
+	validateHTTPURL(initrdURL)
 	client := packngo.NewClient("", apiKey, nil)
 	tags := []string{}
 	req := packngo.DeviceCreateRequest{
@@ -124,7 +118,130 @@ func runPacket(args []string) {
 	}
 	// log response json if in verbose mode
 	log.Debugf("%s\n", string(b))
-	// TODO: poll events api for bringup (requires extpacknogo)
-	// TODO: connect to serial console (requires API extension to get SSH URI)
-	// TODO: add ssh keys via API registered keys
+
+	sshHost := "sos." + d.Facility.Code + ".packet.net"
+	if *consoleFlag {
+		// Connect to the serial console
+		if err := sshSOS(d.ID, sshHost); err != nil {
+			log.Fatal(err)
+		}
+	} else {
+		log.Printf("Machine booting")
+		log.Printf("Access the console with: ssh %s@%s", d.ID, sshHost)
+	}
+}
+
+// validateHTTPURL does a sanity check that a URL returns a 200 or 300 response
+func validateHTTPURL(url string) {
+	log.Printf("Validating URL: %s", url)
+	resp, err := http.Head(url)
+	if err != nil {
+		log.Fatal(err)
+	}
+	if resp.StatusCode >= 400 {
+		log.Fatal("Got a non 200- or 300- HTTP response code: %s", resp)
+	}
+	log.Printf("OK: %d response code", resp.StatusCode)
+}
+
+func sshSOS(user, host string) error {
+	log.Printf("console: ssh %s@%s", user, host)
+
+	hostKey, err := sshHostKey(host)
+	if err != nil {
+		return fmt.Errorf("Host key not found. Maybe need to add it? %v", err)
+	}
+
+	sshConfig := &ssh.ClientConfig{
+		User:            user,
+		HostKeyCallback: ssh.FixedHostKey(hostKey),
+		Auth: []ssh.AuthMethod{
+			sshAgent(),
+		},
+	}
+
+	c, err := ssh.Dial("tcp", host+":22", sshConfig)
+	if err != nil {
+		return fmt.Errorf("Failed to dial: %s", err)
+	}
+
+	s, err := c.NewSession()
+	if err != nil {
+		return fmt.Errorf("Failed to create session: %v", err)
+	}
+	defer s.Close()
+
+	s.Stdout = os.Stdout
+	s.Stderr = os.Stderr
+	s.Stdin = os.Stdin
+
+	modes := ssh.TerminalModes{
+		ssh.ECHO:  0,
+		ssh.IGNCR: 1,
+	}
+
+	width, height, err := terminal.GetSize(0)
+	if err != nil {
+		log.Warningf("Error getting terminal size. Ignored. %v", err)
+		width = 80
+		height = 40
+	}
+	if err := s.RequestPty("vt100", width, height, modes); err != nil {
+		return fmt.Errorf("Request for PTY failed: %v", err)
+	}
+	oldState, err := terminal.MakeRaw(int(os.Stdin.Fd()))
+	if err != nil {
+		return err
+	}
+	defer terminal.Restore(0, oldState)
+
+	// Start remote shell
+	if err := s.Shell(); err != nil {
+		return fmt.Errorf("Failed to start shell: %v", err)
+	}
+
+	s.Wait()
+	return nil
+}
+
+// Get a ssh-agent AuthMethod
+func sshAgent() ssh.AuthMethod {
+	sshAgent, err := net.Dial("unix", os.Getenv("SSH_AUTH_SOCK"))
+	if err != nil {
+		log.Fatalf("Failed to dial ssh-agent: %v", err)
+	}
+	return ssh.PublicKeysCallback(agent.NewClient(sshAgent).Signers)
+}
+
+// This function returns the host key for a given host (the SOS server).
+// If it can't be found, it errors
+func sshHostKey(host string) (ssh.PublicKey, error) {
+	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	if err != nil {
+		return nil, fmt.Errorf("Can't open know_hosts file: %v", err)
+	}
+	defer f.Close()
+
+	s := bufio.NewScanner(f)
+
+	var hostKey ssh.PublicKey
+	for s.Scan() {
+		fields := strings.Split(s.Text(), " ")
+		if len(fields) != 3 {
+			continue
+		}
+		if strings.Contains(fields[0], host) {
+			var err error
+			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(s.Bytes())
+			if err != nil {
+				return nil, fmt.Errorf("Error parsing %q: %v", fields[2], err)
+			}
+			break
+		}
+	}
+
+	if hostKey == nil {
+		return nil, fmt.Errorf("No hostkey for %s", host)
+	}
+	return hostKey, nil
 }
