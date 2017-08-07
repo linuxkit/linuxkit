@@ -13,16 +13,17 @@ import (
 )
 
 const (
-	packetDefaultZone     = "ams1"
-	packetDefaultMachine  = "baremetal_0"
-	packetDefaultHostname = "moby"
-	packetBaseURL         = "PACKET_BASE_URL"
-	packetZoneVar         = "PACKET_ZONE"
-	packetMachineVar      = "PACKET_MACHINE"
-	packetAPIKeyVar       = "PACKET_API_KEY"
-	packetProjectIDVar    = "PACKET_PROJECT_ID"
-	packetHostnameVar     = "PACKET_HOSTNAME"
-	packetNameVar         = "PACKET_NAME"
+	packetDefaultZone      = "ams1"
+	packetDefaultMachine   = "baremetal_0"
+	packetDefaultHostname  = "moby"
+	packetDefaultAlwaysPXE = "true"
+	packetBaseURL          = "PACKET_BASE_URL"
+	packetZoneVar          = "PACKET_ZONE"
+	packetMachineVar       = "PACKET_MACHINE"
+	packetAPIKeyVar        = "PACKET_API_KEY"
+	packetProjectIDVar     = "PACKET_PROJECT_ID"
+	packetHostnameVar      = "PACKET_HOSTNAME"
+	packetNameVar          = "PACKET_NAME"
 )
 
 // ValidateHTTPURL does a sanity check that a URL returns a 200 or 300 response
@@ -50,6 +51,7 @@ func runPacket(args []string) {
 	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel and initrd are served from.")
 	zoneFlag := flags.String("zone", packetDefaultZone, "Packet Zone")
 	machineFlag := flags.String("machine", packetDefaultMachine, "Packet Machine Type")
+	alwaysPXEFlag := flags.String("always-pxe", packetDefaultAlwaysPXE, "Reboot from PXE every time. Defaults to true")
 	apiKeyFlag := flags.String("api-key", "", "Packet API key")
 	projectFlag := flags.String("project-id", "", "Packet Project ID")
 	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance")
@@ -82,7 +84,7 @@ func runPacket(args []string) {
 	name := getStringValue(packetNameVar, *nameFlag, prefix)
 	osType := "custom_ipxe"
 	billing := "hourly"
-	userData := fmt.Sprintf("#!ipxe\n\ndhcp\nset base-url %s\nset kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200\nkernel ${base-url}/%s-kernel ${kernel-params}\ninitrd ${base-url}/%s-initrd.img\nboot", url, name, name)
+	userData := fmt.Sprintf("#!ipxe\n\ndhcp\nset always_pxe %s\nset base-url %s\nset kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200\nkernel ${base-url}/%s-kernel ${kernel-params}\ninitrd ${base-url}/%s-initrd.img\nboot", alwaysPXEFlag, url, name, name)
 	log.Debugf("Using userData of:\n%s\n", userData)
 	initrdURL := fmt.Sprintf("%s/%s-initrd.img", url, name)
 	kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
