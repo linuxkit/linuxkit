@@ -4,7 +4,7 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:d049e7b2074da5cd699a27defb47eb101142455d
-  - linuxkit/runc:90e45f13e1d0a0983f36ef854621e3eac91cf541
+  - linuxkit/runc:2d645aca4eee8d0d1f121177f1b696244219d250
 onboot:
   - name: test-ns
     image: linuxkit/test-ns:<hash>
