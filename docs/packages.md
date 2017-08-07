@@ -46,6 +46,11 @@ To build a package on an architecture:
 DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE="<passphrase>" make
 ```
 
+**Note:** You *must* be logged into hub (`docker login`) and the
+passphrase for the key *must* be supplied as an environment
+variable. The build process has to resort to using `expect` to drive
+`notary` so none of the credentials can be entered interactively.
+
 This will:
 - Build a local images as `linuxkit/<image>:<hash>-<arch>`
 - Push it to hub
