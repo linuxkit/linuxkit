@@ -8,7 +8,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/packethost/packngo"
+	"github.com/bzub/packngo" // TODO(rn): Update to official once iPXE is merged
 	log "github.com/sirupsen/logrus"
 )
 
