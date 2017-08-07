@@ -135,6 +135,18 @@ func getDiskSizeMB(s string) (int, error) {
 	return 1024 * i, nil
 }
 
+func convertMBtoGB(i int) int {
+	if i < 1024 {
+		return 1
+	}
+
+	if i%1024 == 0 {
+		return i / 1024
+	}
+
+	return (i + (1024 - i%1024)) / 1024
+}
+
 // DiskConfig is the config for a disk
 type DiskConfig struct {
 	Path   string

@@ -14,15 +14,14 @@ const (
 	defaultMachine  = "g1-small"
 	defaultDiskSize = 1
 	// Environment variables. Some are non-standard
-	zoneVar     = "CLOUDSDK_COMPUTE_ZONE"
-	machineVar  = "CLOUDSDK_COMPUTE_MACHINE" // non-standard
-	keysVar     = "CLOUDSDK_COMPUTE_KEYS"    // non-standard
-	projectVar  = "CLOUDSDK_CORE_PROJECT"
-	bucketVar   = "CLOUDSDK_IMAGE_BUCKET" // non-standard
-	familyVar   = "CLOUDSDK_IMAGE_FAMILY" // non-standard
-	publicVar   = "CLOUDSDK_IMAGE_PUBLIC" // non-standard
-	nameVar     = "CLOUDSDK_IMAGE_NAME"   // non-standard
-	diskSizeVar = "CLOUDSDK_DISK_SIZE"    // non-standard
+	zoneVar    = "CLOUDSDK_COMPUTE_ZONE"
+	machineVar = "CLOUDSDK_COMPUTE_MACHINE" // non-standard
+	keysVar    = "CLOUDSDK_COMPUTE_KEYS"    // non-standard
+	projectVar = "CLOUDSDK_CORE_PROJECT"
+	bucketVar  = "CLOUDSDK_IMAGE_BUCKET" // non-standard
+	familyVar  = "CLOUDSDK_IMAGE_FAMILY" // non-standard
+	publicVar  = "CLOUDSDK_IMAGE_PUBLIC" // non-standard
+	nameVar    = "CLOUDSDK_IMAGE_NAME"   // non-standard
 )
 
 // Process the run arguments and execute run
@@ -41,7 +40,9 @@ func runGcp(args []string) {
 	machineFlag := flags.String("machine", defaultMachine, "GCP Machine Type")
 	keysFlag := flags.String("keys", "", "Path to Service Account JSON key file")
 	projectFlag := flags.String("project", "", "GCP Project Name")
-	diskSizeFlag := flags.Int("disk-size", 0, "Size of system disk in GB")
+	var disks Disks
+	flags.Var(&disks, "disk", "Disk config, may be repeated. [file=]diskName[,size=1G]")
+
 	skipCleanup := flags.Bool("skip-cleanup", false, "Don't remove images or VMs")
 
 	if err := flags.Parse(args); err != nil {
@@ -60,14 +61,13 @@ func runGcp(args []string) {
 	machine := getStringValue(machineVar, *machineFlag, defaultMachine)
 	keys := getStringValue(keysVar, *keysFlag, "")
 	project := getStringValue(projectVar, *projectFlag, "")
-	diskSize := getIntValue(diskSizeVar, *diskSizeFlag, defaultDiskSize)
 
 	client, err := NewGCPClient(keys, project)
 	if err != nil {
 		log.Fatalf("Unable to connect to GCP")
 	}
 
-	if err = client.CreateInstance(name, name, zone, machine, diskSize, true); err != nil {
+	if err = client.CreateInstance(name, name, zone, machine, disks, true); err != nil {
 		log.Fatal(err)
 	}
 
