@@ -22,12 +22,18 @@ import (
 func copyMetadata(info os.FileInfo, path string) error {
 	// would rather use fd than path but Go makes this very difficult at present
 	stat := info.Sys().(*syscall.Stat_t)
-	if err := syscall.Lchown(path, int(stat.Uid), int(stat.Gid)); err != nil {
+	if err := unix.Lchown(path, int(stat.Uid), int(stat.Gid)); err != nil {
 		return err
 	}
 	timespec := []unix.Timespec{unix.Timespec(stat.Atim), unix.Timespec(stat.Mtim)}
 	if err := unix.UtimesNanoAt(unix.AT_FDCWD, path, timespec, unix.AT_SYMLINK_NOFOLLOW); err != nil {
 		return err
+	}
+	// after chown suid bits may be dropped; re-set on non symlink files
+	if info.Mode()&os.ModeSymlink == 0 {
+		if err := os.Chmod(path, info.Mode()); err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -41,7 +47,7 @@ func copyFS(newRoot string) error {
 	stat := info.Sys().(*syscall.Stat_t)
 	rootDev := stat.Dev
 
-	if err = syscall.Mount("rootfs", newRoot, "tmpfs", 0, ""); err != nil {
+	if err = unix.Mount("rootfs", newRoot, "tmpfs", 0, ""); err != nil {
 		return err
 	}
 
@@ -126,7 +132,7 @@ func copyFS(newRoot string) error {
 				return err
 			}
 		case (info.Mode() & os.ModeDevice) == os.ModeDevice:
-			if err := syscall.Mknod(dest, uint32(info.Mode()), int(stat.Rdev)); err != nil {
+			if err := unix.Mknod(dest, uint32(info.Mode()), int(stat.Rdev)); err != nil {
 				return err
 			}
 		case (info.Mode() & os.ModeNamedPipe) == os.ModeNamedPipe:
@@ -180,12 +186,12 @@ func copyFS(newRoot string) error {
 	}
 
 	// mount --move cwd (/mnt) to /
-	if err := syscall.Mount(".", "/", "", syscall.MS_MOVE, ""); err != nil {
+	if err := unix.Mount(".", "/", "", unix.MS_MOVE, ""); err != nil {
 		return err
 	}
 
 	// chroot to .
-	if err := syscall.Chroot("."); err != nil {
+	if err := unix.Chroot("."); err != nil {
 		return err
 	}
 
@@ -200,8 +206,8 @@ func copyFS(newRoot string) error {
 func main() {
 	// test if we want to do this, ie if tmpfs or ramfs
 	// we could be booting off ISO, disk where we do not need this
-	var sfs syscall.Statfs_t
-	if err := syscall.Statfs("/", &sfs); err != nil {
+	var sfs unix.Statfs_t
+	if err := unix.Statfs("/", &sfs); err != nil {
 		log.Fatalf("Cannot statfs /: %v", err)
 	}
 	const ramfsMagic = 0x858458f6
