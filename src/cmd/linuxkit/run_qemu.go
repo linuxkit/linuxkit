@@ -86,6 +86,25 @@ func envOverrideBool(env string, b *bool) {
 	}
 }
 
+func retrieveMAC(statePath string) net.HardwareAddr {
+	var mac net.HardwareAddr
+	fileName := filepath.Join(statePath, "mac-addr")
+
+	if macString, err := ioutil.ReadFile(fileName); err == nil {
+		if mac, err = net.ParseMAC(string(macString)); err != nil {
+			log.Fatal("failed to parse mac-addr file: %s\n", macString)
+		}
+	} else {
+		// we did not generate a mac yet. generate one
+		mac = generateMAC()
+		if err = ioutil.WriteFile(fileName, []byte(mac.String()), 0640); err != nil {
+			log.Fatalln("failed to write mac-addr file:", err)
+		}
+	}
+
+	return mac
+}
+
 func generateMAC() net.HardwareAddr {
 	mac := make([]byte, 6)
 	n, err := rand.Read(mac)
@@ -538,7 +557,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	if config.NetdevConfig == "" {
 		qemuArgs = append(qemuArgs, "-net", "none")
 	} else {
-		mac := generateMAC()
+		mac := retrieveMAC(config.StatePath)
 		qemuArgs = append(qemuArgs, "-net", "nic,model=virtio,macaddr="+mac.String())
 		forwardings, err := buildQemuForwardings(config.PublishedPorts, config.Containerized)
 		if err != nil {
