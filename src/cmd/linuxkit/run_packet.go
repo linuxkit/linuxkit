@@ -58,13 +58,13 @@ func runPacket(args []string) {
 		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
-	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel and initrd are served from.")
-	zoneFlag := flags.String("zone", packetDefaultZone, "Packet Zone")
-	machineFlag := flags.String("machine", packetDefaultMachine, "Packet Machine Type")
-	apiKeyFlag := flags.String("api-key", "", "Packet API key")
-	projectFlag := flags.String("project-id", "", "Packet Project ID")
-	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance")
-	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name]")
+	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel and initrd are served from (or "+packetBaseURL+")")
+	zoneFlag := flags.String("zone", packetDefaultZone, "Packet Zone (or "+packetZoneVar+")")
+	machineFlag := flags.String("machine", packetDefaultMachine, "Packet Machine Type (or "+packetMachineVar+")")
+	apiKeyFlag := flags.String("api-key", "", "Packet API key (or "+packetAPIKeyVar+")")
+	projectFlag := flags.String("project-id", "", "Packet Project ID (or "+packetProjectIDVar+")")
+	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance (or "+packetHostnameVar+")")
+	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
