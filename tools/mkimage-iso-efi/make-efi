@@ -5,49 +5,47 @@ set -e
 mkdir -p /tmp/efi
 cd /tmp/efi
 
-# input is a tarball of kernel and initrd.img on stdin
+# input is a tarball on stdin with kernel and cmdline in /boot
 # output is an iso on stdout
 
 # extract. BSD tar auto recognises compression, unlike GNU tar
 # only if stdin is a tty, if so need files volume mounted...
 [ -t 0 ] || bsdtar xzf -
 
-INITRD="$(find . -name '*.img')"
-KERNEL="$(find . -name kernel -or -name bzImage)"
-CMDLINE="$*"
+CMDLINE="$(cat boot/cmdline)"
+# if no root= root device specified, assume /dev/sr0 ie first CD drive
+echo "${CMDLINE}" | grep -q 'root=' || CMDLINE="${CMDLINE} root=/dev/sr0"
+rm boot/cmdline
 
-[ "$KERNEL" = "./kernel" ] || mv "$KERNEL" kernel
-[ "$INITRD" = "./initrd.img" ] || mv "$INITRD" initrd.img
-
-# clean up subdirectories
-find . -mindepth 1 -maxdepth 1 -type d | xargs rm -rf
-
-# Create a EFI boot file with kernel and initrd. From:
+# Create a EFI boot file with kernel. From:
 # https://github.com/haraldh/mkrescue-uefi/blob/master/mkrescue-uefi.sh
 cp /usr/lib/gummiboot/linuxx64.efi.stub .
-echo "${CMDLINE} rootdelay=300 noautodetect" > cmdline.txt
+echo "${CMDLINE}" > cmdline.txt
 
 objcopy \
 	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
 	--add-section .cmdline=./cmdline.txt --change-section-vma .cmdline=0x30000 \
-	--add-section .linux=./kernel --change-section-vma .linux=0x40000 \
-	--add-section .initrd=./initrd.img --change-section-vma .initrd=0x3000000 \
+	--add-section .linux=./boot/kernel --change-section-vma .linux=0x40000 \
 	./linuxx64.efi.stub \
 	linuxkit.efi
 
+rm cmdline.txt
+
 # create a ISO with a EFI boot partition
-mkdir -p iso
 # Stuff it into a FAT filesystem, making it as small as possible.  511KiB
 # headroom seems to be enough; (x+31)/32*32 rounds up to multiple of 32.
-mkfs.vfat -v -C iso/efi.raw \
+mkfs.vfat -v -C boot/efi.raw \
         $(( ($(stat -c %s "linuxkit.efi") / 1024 + 511) \
 		/ 32 * 32 )) > /dev/null
 echo "mtools_skip_check=1" >> /etc/mtools.conf && \
-mmd -i iso/efi.raw ::/EFI
-mmd -i iso/efi.raw ::/EFI/BOOT
-mcopy -i iso/efi.raw linuxkit.efi ::/EFI/BOOT/BOOTX64.EFI
+mmd -i boot/efi.raw ::/EFI
+mmd -i boot/efi.raw ::/EFI/BOOT
+mcopy -i boot/efi.raw linuxkit.efi ::/EFI/BOOT/BOOTX64.EFI
+
+rm linuxkit.efi linuxx64.efi.stub
+
 xorriso -as mkisofs \
-	-R -f -e efi.raw -no-emul-boot -o linuxkit-efi.iso iso
+	-R -e boot/efi.raw -no-emul-boot -o linuxkit-efi.iso .
 
 cat linuxkit-efi.iso
 
