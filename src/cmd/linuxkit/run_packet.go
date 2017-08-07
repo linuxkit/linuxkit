@@ -8,8 +8,8 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/packethost/packngo"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

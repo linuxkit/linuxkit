@@ -10,8 +10,8 @@ import (
 	"os"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/docker/pkg/term"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2/google"
