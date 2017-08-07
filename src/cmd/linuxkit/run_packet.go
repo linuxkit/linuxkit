@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"os/user"
 	"path/filepath"
 
 	"github.com/bzub/packngo" // TODO(rn): Update to official once iPXE is merged
@@ -13,17 +14,27 @@ import (
 )
 
 const (
-	packetDefaultZone     = "ams1"
-	packetDefaultMachine  = "baremetal_0"
-	packetDefaultHostname = "moby"
-	packetBaseURL         = "PACKET_BASE_URL"
-	packetZoneVar         = "PACKET_ZONE"
-	packetMachineVar      = "PACKET_MACHINE"
-	packetAPIKeyVar       = "PACKET_API_KEY"
-	packetProjectIDVar    = "PACKET_PROJECT_ID"
-	packetHostnameVar     = "PACKET_HOSTNAME"
-	packetNameVar         = "PACKET_NAME"
+	packetDefaultZone    = "ams1"
+	packetDefaultMachine = "baremetal_0"
+	packetBaseURL        = "PACKET_BASE_URL"
+	packetZoneVar        = "PACKET_ZONE"
+	packetMachineVar     = "PACKET_MACHINE"
+	packetAPIKeyVar      = "PACKET_API_KEY"
+	packetProjectIDVar   = "PACKET_PROJECT_ID"
+	packetHostnameVar    = "PACKET_HOSTNAME"
+	packetNameVar        = "PACKET_NAME"
 )
+
+var (
+	packetDefaultHostname = "linuxkit"
+)
+
+func init() {
+	// Prefix host name with username
+	if u, err := user.Current(); err == nil {
+		packetDefaultHostname = u.Username + "-" + packetDefaultHostname
+	}
+}
 
 // ValidateHTTPURL does a sanity check that a URL returns a 200 or 300 response
 func ValidateHTTPURL(url string) {
