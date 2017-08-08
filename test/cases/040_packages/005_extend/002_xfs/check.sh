@@ -9,5 +9,5 @@ function failed {
 
 [ -f /var/lib/docker/bar ] || failed
 touch /var/lib/docker/foo || failed
-df -h | grep -q "507.7M" || failed
+df -h | grep -q "504.8M" || failed
 printf "extend test suite PASSED\n" >&1
