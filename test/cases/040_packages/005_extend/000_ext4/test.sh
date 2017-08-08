@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that a btrfs partition can be extended
+# SUMMARY: Check that an ext4 partition can be extended
 # LABELS:
 # REPEAT:
 
@@ -9,24 +9,22 @@ set -ex
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
-NAME=test-extend
+NAME=test-extend-ext4
 DISK=disk0.img
 clean_up() {
 	find . -depth -iname "${NAME}*" -not -iname "*.yml" -exec rm -rf {} \;
+	rm -rf "create*" || true
 	rm -rf ${DISK} || true
-	docker rmi ${NAME} || true
 }
 
 trap clean_up EXIT
 
 # Test code goes here
-rm -rf disk0.img || true
-docker build -t ${NAME} .
 moby build --name create -output kernel+initrd test-create.yml
-linuxkit run -disk file=${DISK},size=256M create
-rm -rf "create*"
+linuxkit run -disk file=${DISK},format=raw,size=256M create
 [ -f ${DISK} ] || exit 1
-docker run -i --rm --privileged -v "$PWD:/tmp" -w /tmp ${NAME} ./extend.sh ${DISK}
+# osx takes issue with bs=1M
+dd if=/dev/zero bs=1048576 count=256 >> ${DISK}
 moby build -name ${NAME} -output kernel+initrd test.yml
 RESULT="$(linuxkit run -disk file=${DISK} ${NAME})"
 echo "${RESULT}"
