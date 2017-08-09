@@ -67,18 +67,33 @@ func runHyperKit(args []string) {
 	path := remArgs[0]
 	prefix := path
 
-	_, err := os.Stat(path)
+	info, err := os.Stat(path)
 	stat := err == nil
+
+	/// ignore a directory
+	if stat && info.Mode().IsDir() {
+		stat = false
+	}
+
+	_, err = os.Stat(path + "-kernel")
+	statKernel := err == nil
 
 	var isoPaths []string
 
-	// if the path does not exist, must be trying to do a kernel boot
-	if !stat {
-		_, err = os.Stat(path + "-kernel")
-		statKernel := err == nil
-		if statKernel {
-			*kernelBoot = true
-		} else {
+	// try to autodetect boot type if not specified
+	// if the path does not exist, and the kernel does, must be trying to do a kernel boot
+	// if the path does exist and ends in ISO, must be trying ISO boot
+	if !stat && statKernel && !*isoBoot {
+		*kernelBoot = true
+	} else if stat && strings.HasSuffix(path, ".iso") && !*kernelBoot {
+		*isoBoot = true
+	}
+
+	switch {
+	case *kernelBoot && *isoBoot:
+		log.Fatalf("Cannot specify both kernel and ISO boot together")
+	case *kernelBoot:
+		if !statKernel {
 			log.Fatalf("Cannot find kernel file (%s): %v", path+"-kernel", err)
 		}
 		_, err = os.Stat(path + "-initrd.img")
@@ -86,19 +101,15 @@ func runHyperKit(args []string) {
 		if !statInitrd {
 			log.Fatalf("Cannot find initrd file (%s): %v", path+"-initrd.img", err)
 		}
-	} else {
-		// if path ends in .iso they meant an ISO
-		if strings.HasSuffix(path, ".iso") {
-			*isoBoot = true
-			prefix = strings.TrimSuffix(path, ".iso")
-			// hyperkit only supports UEFI ISO boot at present
-			if !*uefiBoot {
-				log.Fatalf("Hyperkit requires --uefi to be set to boot an ISO")
-			}
+	case *isoBoot:
+		if !stat {
+			log.Fatalf("Cannot find ISO to boot")
 		}
-	}
-
-	if *isoBoot {
+		prefix = strings.TrimSuffix(path, ".iso")
+		// hyperkit only supports UEFI ISO boot at present
+		if !*uefiBoot {
+			log.Fatalf("Hyperkit requires --uefi to be set to boot an ISO")
+		}
 		isoPaths = append(isoPaths, path)
 	}
 
