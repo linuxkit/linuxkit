@@ -172,9 +172,9 @@ bind mounted into a container.
 - `noNewPrivileges` is `true` means no additional capabilities can be acquired and `suid` binaries do not work.
 - `hostname` sets the hostname inside the image.
 - `oomScoreAdj` changes the OOM score.
-- `disableOOMKiller` disables the OOM killer for the service.
 - `rootfsPropagation` sets the rootfs propagation, eg `shared`, `slave` or (default) `private`.
 - `cgroupsPath` sets the path for cgroups.
+- `resources` sets cgroup resource limits as per the OCI spec.
 - `sysctl` sets a list of `sysctl` key value pairs that are set inside the container namespace.
 - `rmlimits` sets a list of `rlimit` values in the form `name,soft,hard`, eg `nofile,100,200`. You can use `unlimited` as a value too.
 
