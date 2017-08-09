@@ -121,6 +121,4 @@ endef
 #
 $(eval $(call kernel,4.9.41,4.9.x))
 $(eval $(call kernel,4.9.41,4.9.x,_dbg))
-ifneq ($(ARCH), aarch64)
 $(eval $(call kernel,4.4.80,4.4.x))
-endif
