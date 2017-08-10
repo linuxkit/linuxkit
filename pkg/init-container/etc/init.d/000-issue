@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ -f /etc/issue ]; then
+	for opt in $(cat /proc/cmdline); do
+		case "$opt" in
+		console=*)
+			fulltty=${opt#console=}
+			tty=${fulltty%,*}
+			cat /etc/issue >> /dev/$tty
+		esac
+	done
+fi
