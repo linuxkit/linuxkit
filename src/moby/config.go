@@ -81,9 +81,9 @@ type Image struct {
 	AdditionalGids    *[]interface{}          `yaml:"additionalGids" json:"additionalGids,omitempty"`
 	NoNewPrivileges   *bool                   `yaml:"noNewPrivileges" json:"noNewPrivileges,omitempty"`
 	OOMScoreAdj       *int                    `yaml:"oomScoreAdj" json:"oomScoreAdj,omitempty"`
-	DisableOOMKiller  *bool                   `yaml:"disableOOMKiller" json:"disableOOMKiller,omitempty"`
 	RootfsPropagation *string                 `yaml:"rootfsPropagation" json:"rootfsPropagation,omitempty"`
 	CgroupsPath       *string                 `yaml:"cgroupsPath" json:"cgroupsPath,omitempty"`
+	Resources         *specs.LinuxResources   `yaml:"resources" json:"resources,omitempty"`
 	Sysctl            *map[string]string      `yaml:"sysctl" json:"sysctl,omitempty"`
 	Rlimits           *[]string               `yaml:"rlimits" json:"rlimits,omitempty"`
 	UIDMappings       *[]specs.LinuxIDMapping `yaml:"uidMappings" json:"uidMappings,omitempty"`
@@ -458,6 +458,17 @@ func assignMappings(v1, v2 *[]specs.LinuxIDMapping) []specs.LinuxIDMapping {
 		return *v1
 	}
 	return []specs.LinuxIDMapping{}
+}
+
+// assignResources does ordered overrides from Resources
+func assignResources(v1, v2 *specs.LinuxResources) specs.LinuxResources {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return specs.LinuxResources{}
 }
 
 // assignStringEmpty does ordered overrides if strings are empty, for
@@ -883,27 +894,13 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	oci.Hostname = assignStringEmpty(label.Hostname, yaml.Hostname)
 	oci.Mounts = mountList
 
+	resources := assignResources(label.Resources, yaml.Resources)
+
 	oci.Linux = &specs.Linux{
 		UIDMappings: assignMappings(label.UIDMappings, yaml.UIDMappings),
 		GIDMappings: assignMappings(label.GIDMappings, yaml.GIDMappings),
 		Sysctl:      assignMaps(label.Sysctl, yaml.Sysctl),
-		Resources: &specs.LinuxResources{
-			// Devices
-			Memory: &specs.LinuxMemory{
-				// Limit
-				// Reservation
-				// Swap
-				// Kernel
-				// KernelTCP
-				// Swappiness
-				DisableOOMKiller: assignBoolPtr(label.DisableOOMKiller, yaml.DisableOOMKiller),
-			},
-			// CPU
-			// Pids
-			// BlockIO
-			// HugepageLimits
-			// Network
-		},
+		Resources:   &resources,
 		CgroupsPath: assignString(label.CgroupsPath, yaml.CgroupsPath),
 		Namespaces:  namespaces,
 		// Devices

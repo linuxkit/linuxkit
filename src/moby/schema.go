@@ -75,6 +75,139 @@ var schema = string(`
       "type": "array",
       "items": { "$ref": "#/definitions/idmapping" }
     },
+    "devicecgroups": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/devicecgroup" }
+    },
+    "devicecgroup": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "allow": {"type": "boolean"},
+        "type": {"type": "string"},
+        "major": {"type": "integer"},
+        "minor": {"type": "integer"},
+        "access": {"type": "string"}
+      }
+    },
+    "memory": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limit": {"type": "integer"},
+        "reservation": {"type": "integer"},
+        "swap": {"type": "integer"},
+        "kernel": {"type": "integer"},
+        "kernelTCP": {"type": "integer"},
+        "swappiness": {"type": "integer"},
+        "disableOOMKiller": {"type": "boolean"}
+      }
+    },
+    "cpu": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "shares": {"type": "integer"},
+        "quota": {"type": "integer"},
+        "period": {"type": "integer"},
+        "realtimeRuntime": {"type": "integer"},
+        "realtimePeriod": {"type": "integer"},
+        "cpus": {"type": "string"},
+        "mems": {"type": "string"}
+      }
+    },
+    "pids": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "limit": {"type": "integer"}
+      }
+    },
+    "weightdevices": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/weightdevice"}
+    },
+    "weightdevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "major": {"type": "integer"},
+        "minor": {"type": "integer"},
+        "weight": {"type": "integer"},
+        "leafWeight": {"type": "integer"}
+      }
+    },
+    "throttledevices": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/throttledevice"}
+    },
+    "throttledevice": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "major": {"type": "integer"},
+        "minor": {"type": "integer"},
+        "rate": {"type": "integer"}
+      }
+    },
+    "blockio": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "weight": {"type": "integer"},
+        "leafWeight": {"type": "integer"},
+        "weightDevice": {"$ref": "#/definitions/weightdevices"},
+        "throttleReadBpsDevice": {"$ref": "#/definitions/throttledevices"},
+        "throttleWriteBpsDevice": {"$ref": "#/definitions/throttledevices"},
+        "throttleReadIOPSDevice": {"$ref": "#/definitions/throttledevices"},
+        "throttleWriteIOPSDevice": {"$ref": "#/definitions/throttledevices"}
+      }
+    },
+    "hugepagelimits": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/hugepagelimit"}
+    },
+    "hugepagelimit": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pageSize": {"type": "integer"},
+        "limit": {"type": "integer"}
+      }
+    },
+    "interfacepriorities": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/interfacepriority"}
+    },
+    "interfacepriority": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "priority": {"type": "integer"}
+      }
+    },
+    "network": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "classID": {"type": "integer"},
+        "priorities": {"$ref": "#/definitions/interfacepriorities"}
+      }
+    },
+    "resources": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "devices": {"$ref": "#/definitions/devicecgroups"},
+        "memory": {"$ref": "#/definitions/memory"},
+        "cpu": {"$ref": "#/definitions/cpu"},
+        "pids": {"$ref": "#/definitions/pids"},
+        "blockio": {"$ref": "#/definitions/blockio"},
+        "hugepageLimits": {"$ref": "#/definitions/hugepagelimits"},
+        "network": {"$ref": "#/definitions/network"}
+      }
+    },
     "image": {
       "type": "object",
       "additionalProperties": false,
@@ -107,9 +240,9 @@ var schema = string(`
         "noNewPrivileges": {"type": "boolean"},
         "hostname": {"type": "string"},
         "oomScoreAdj": {"type": "integer"},
-        "disableOOMKiller": {"type": "boolean"},
         "rootfsPropagation": {"type": "string"},
         "cgroupsPath": {"type": "string"},
+        "resources": {"$ref": "#/definitions/resources"},
         "sysctl": {
             "type": "array",
             "items": { "$ref": "#/definitions/strings" }

@@ -30,6 +30,12 @@ services:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
     net: host
+    resources:
+      devices:
+        - allow: true
+          access: rwm
+      pids:
+        limit: 10
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
