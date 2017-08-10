@@ -4,7 +4,7 @@ kernel:
   tar: none
 init:
   - linuxkit/init-lcow:5506c381816e067c3c8978948352b3bf2025e909
-  - linuxkit/runc:2d645aca4eee8d0d1f121177f1b696244219d250
+  - linuxkit/runc:dfc0437161843bc0dfeb334cda7ffd6a18b76bcd
 trust:
   org:
     - linuxkit

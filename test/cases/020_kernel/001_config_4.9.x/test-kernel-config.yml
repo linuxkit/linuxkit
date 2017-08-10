@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:c7d651da1a5e308c757bc61ce6a41804ea843426
-  - linuxkit/runc:2d645aca4eee8d0d1f121177f1b696244219d250
+  - linuxkit/runc:dfc0437161843bc0dfeb334cda7ffd6a18b76bcd
 onboot:
   - name: check-kernel-config
     image: linuxkit/test-kernel-config:d58766bb6c0def3df9e6ffc645ee11677f127faa
