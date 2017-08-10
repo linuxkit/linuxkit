@@ -88,6 +88,9 @@ func runAWS(args []string) {
 		InstanceType: aws.String(machine),
 		MinCount:     aws.Int64(1),
 		MaxCount:     aws.Int64(1),
+		Placement: &ec2.Placement{
+			AvailabilityZone: aws.String(zone),
+		},
 	}
 	runResult, err := compute.RunInstances(params)
 	if err != nil {
