@@ -170,12 +170,15 @@ func runAWS(args []string) {
 		log.Fatalf("Error getting output from instance %s: %s", *instanceID, err)
 	}
 
-	out, err := base64.StdEncoding.DecodeString(*output.Output)
-	if err != nil {
-		log.Fatalf("Error decoding output: %s", err)
+	if output.Output == nil {
+		log.Warn("No Console Output found")
+	} else {
+		out, err := base64.StdEncoding.DecodeString(*output.Output)
+		if err != nil {
+			log.Fatalf("Error decoding output: %s", err)
+		}
+		fmt.Printf(string(out) + "\n")
 	}
-	fmt.Printf(string(out) + "\n")
-
 	log.Infof("Terminating instance %s", *instanceID)
 	terminateParams := &ec2.TerminateInstancesInput{
 		InstanceIds: []*string{instanceID},
