@@ -36,7 +36,6 @@ const dockerfile = `
 FROM scratch
 
 COPY . ./
-RUN rm -f Dockerfile
 
 ENTRYPOINT ["/sbin/tini", "--", "/bin/rc.init"]
 `

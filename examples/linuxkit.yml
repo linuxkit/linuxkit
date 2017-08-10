@@ -1,18 +1,18 @@
 kernel:
-  image: "linuxkit/kernel:4.9.x"
+  image: "linuxkit/kernel:4.9.41"
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:1b8a7e394d2ec2f1fdb4d67645829d1b5bdca037
-  - linuxkit/runc:3a4e6cbf15470f62501b019b55e1caac5ee7689f
-  - linuxkit/containerd:5749f2e9e65395cc6635229e8da0e0d484320ddf
-  - linuxkit/ca-certificates:75cf419fb58770884c3464eb687ec8dfc704169d
+  - linuxkit/init:c7d651da1a5e308c757bc61ce6a41804ea843426
+  - linuxkit/runc:dfc0437161843bc0dfeb334cda7ffd6a18b76bcd
+  - linuxkit/containerd:d136569c66ce041853d762b7032456419e580efe
+  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
 onboot:
   - name: dhcpcd
-    image: "linuxkit/dhcpcd:7d2b8aaaf20c24ad7d11a5ea2ea5b4a80dc966f1"
+    image: "linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7"
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: rngd
-    image: "linuxkit/rngd:1fa4de44c961bb5075647181891a3e7e7ba51c31"
+    image: "linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e"
 trust:
   org:
     - linuxkit
