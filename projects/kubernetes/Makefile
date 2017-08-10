@@ -10,15 +10,15 @@ push-container-images:
 	$(MAKE) -C kubernetes push
 	$(MAKE) -C image-cache push
 
-build-vm-images: kube-master-initrd.img kube-node-initrd.img
+build-vm-images: kube-master.iso kube-node.iso
 
-kube-master-initrd.img: kube-master.yml
-	../../bin/moby build -name kube-master kube-master.yml
+kube-master.iso: kube-master.yml
+	moby build -name kube-master -output iso-efi -output iso-bios kube-master.yml
 
-kube-node-initrd.img: kube-node.yml
-	../../bin/moby build -name kube-node kube-node.yml
+kube-node.iso: kube-node.yml
+	moby build -name kube-node -output iso-efi -output iso-bios kube-node.yml
 
 clean:
 	rm -f -r \
-	  kube-*-kernel kube-*-cmdline kube-*-state kube-*-initrd.img
+	  kube-*-kernel kube-*-cmdline kube-*-state kube-*-initrd.img *.iso
 	$(MAKE) -C image-cache clean
