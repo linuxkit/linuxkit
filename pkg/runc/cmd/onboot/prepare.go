@@ -43,11 +43,11 @@ func prepareRW(path string) error {
 	}
 	upper := filepath.Join(tmp, "upper")
 	// make the mount points
-	if err := os.Mkdir(upper, 0744); err != nil {
+	if err := os.Mkdir(upper, 0755); err != nil {
 		return err
 	}
 	work := filepath.Join(tmp, "work")
-	if err := os.Mkdir(work, 0744); err != nil {
+	if err := os.Mkdir(work, 0755); err != nil {
 		return err
 	}
 	lower := filepath.Join(path, "lower")
