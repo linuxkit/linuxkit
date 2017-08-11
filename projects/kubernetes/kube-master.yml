@@ -23,7 +23,7 @@ onboot:
     command: ["/usr/bin/mountie", "/var/lib/"]
   - name: var
     image: library/alpine:3.6
-    command: ["mkdir", "/var/lib/kubeadm"]
+    command: ["mkdir", "/var/lib/kubeadm", "/var/lib/etcd"]
     binds:
       - /var/lib:/var/lib
 services:
@@ -37,32 +37,17 @@ services:
     image: linuxkit/openntpd:0d7befc79842849d0b88d6c3b64200e340d7cf67
   - name: sshd
     image: linuxkit/sshd:505a985d7bd7a90f15eca9cb4dc6ec92789d51a0
-  - name: docker
-    image: docker:17.06.0-ce-dind
-    capabilities:
-     - all
-    pid: host
-    mounts:
-     - type: cgroup
-       options: ["rw","nosuid","noexec","nodev","relatime"]
-    binds:
-     - /dev:/dev
-     - /etc/resolv.conf:/etc/resolv.conf
-     - /lib/modules:/lib/modules
-     - /run:/run
-     - /var:/var:rshared,rbind
-     - /var/lib/kubeadm:/etc/kubernetes
-     - /etc/cni:/etc/cni:rshared,rbind
-     - /opt/cni:/opt/cni:rshared,rbind
-    rootfsPropagation: shared
-    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
-  - name: kubernetes-image-cache-common
-    image: linuxkitprojects/kubernetes-image-cache-common:ba16b1f8cfe4f415a5946d521e59f67eaeecd9ce
-  - name: kubernetes-image-cache-control-plane
-    image: linuxkitprojects/kubernetes-image-cache-control-plane:ba16b1f8cfe4f415a5946d521e59f67eaeecd9ce
+  - name: cri-containerd
+    image: linuxkitprojects/cri-containerd:79948ac40f7d5573b95eeb0045257eae8b94d6d8
+  #- name: kubernetes-image-cache-common
+  #  image: linuxkitprojects/kubernetes-image-cache-common:ba16b1f8cfe4f415a5946d521e59f67eaeecd9ce
+  #- name: kubernetes-image-cache-control-plane
+  #  image: linuxkitprojects/kubernetes-image-cache-control-plane:ba16b1f8cfe4f415a5946d521e59f67eaeecd9ce
   - name: kubelet
-    image: linuxkitprojects/kubernetes:bbf14d70199babeea1f71f5b0bd70c1c1c9b5cd2
+    image: linuxkitprojects/kubernetes:edd56f0d58abced32da781e58c9e4c1c3a6b6009
 files:
+  - path: /etc/kubernetes
+    symlink: "/var/lib/kubeadm"
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
     mode: "0600"
