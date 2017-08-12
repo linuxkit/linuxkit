@@ -72,6 +72,7 @@ qemu-system-arm
 qemu-system-x86_64
 sed
 sfdisk
+sgdisk
 slang-dev
 squashfs-tools
 strace
