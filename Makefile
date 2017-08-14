@@ -21,7 +21,7 @@ endif
 PREFIX?=/usr/local/
 
 MOBY_REPO=https://github.com/moby/tool.git
-MOBY_COMMIT=c2b081ed8a9f690820cc0c0568238e641848f58f
+MOBY_COMMIT=d9546ee1ce9c5af213c2f96fc23ce0266c4c3133
 MOBY_VERSION=0.0
 bin/moby: tmp_moby_bin.tar | bin
 	tar xf $<
