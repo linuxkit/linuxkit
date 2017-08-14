@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,9 +10,12 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/packethost/packngo"
 	log "github.com/sirupsen/logrus"
@@ -60,6 +64,7 @@ func runPacket(args []string) {
 	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance (or "+packetHostnameVar+")")
 	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
 	alwaysPXE := flags.Bool("always-pxe", true, "Reboot from PXE every time.")
+	serveFlag := flags.String("serve", "", "Serve local files via the http port specified, e.g. ':8080'.")
 	consoleFlag := flags.Bool("console", true, "Provide interactive access on the console.")
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -96,6 +101,19 @@ func runPacket(args []string) {
 		log.Fatalf("Cannot open cmdline file: %v", err)
 	} else {
 		cmdline = string(c)
+	}
+
+	// Serve files with a local http server
+	var httpServer *http.Server
+	if *serveFlag != "" {
+		fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
+		httpServer = &http.Server{Addr: ":8080", Handler: http.FileServer(fs)}
+		go func() {
+			log.Infof("Listening on http://%s\n", *serveFlag)
+			if err := httpServer.ListenAndServe(); err != nil {
+				log.Infof("http server exited with: %v", err)
+			}
+		}()
 	}
 
 	// Build the iPXE script
@@ -150,6 +168,23 @@ func runPacket(args []string) {
 	} else {
 		log.Printf("Machine booting")
 		log.Printf("Access the console with: ssh %s@%s", d.ID, sshHost)
+
+		// if the serve option is present, wait till 'ctrl-c' is hit.
+		// Otherwise we wouldn't serve the files
+		if *serveFlag != "" {
+			stop := make(chan os.Signal, 1)
+			signal.Notify(stop, os.Interrupt)
+			log.Printf("Hit ctrl-c to stop http server")
+			<-stop
+		}
+	}
+
+	// Stop the http server before exiting
+	if *serveFlag != "" {
+		log.Printf("Shutting down http server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		httpServer.Shutdown(ctx)
 	}
 }
 
@@ -266,4 +301,36 @@ func sshHostKey(host string) (ssh.PublicKey, error) {
 		return nil, fmt.Errorf("No hostkey for %s", host)
 	}
 	return hostKey, nil
+}
+
+// This implements a http.FileSystem which only responds to specific files.
+type serveFiles struct {
+	files []string
+}
+
+// Open implements the Open method for the serveFiles FileSystem
+// implementation.
+// It converts both the name from the URL and the files provided in
+// the serveFiles structure into cleaned, absolute filesystem path and
+// only returns the file if the requested name matches one of the
+// files in the list.
+func (fs serveFiles) Open(name string) (http.File, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	name = filepath.Join(cwd, filepath.FromSlash(path.Clean("/"+name)))
+	for _, fn := range fs.files {
+		fn = filepath.Join(cwd, filepath.FromSlash(path.Clean("/"+fn)))
+		if name == fn {
+			f, err := os.Open(fn)
+			if err != nil {
+				return nil, err
+			}
+			log.Infof("Serving: %s", fn)
+			return f, nil
+		}
+	}
+	return nil, fmt.Errorf("File %s not found", name)
 }
