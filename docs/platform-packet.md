@@ -24,47 +24,25 @@ packet --help` for the options and environment variables.
 
 ## Boot
 
-
-
 LinuxKit on Packet boots the `kernel+initrd` output from moby
 via
 [iPXE](https://help.packet.net/technical/infrastructure/custom-ipxe). iPXE
-booting requires a HTTP server on which you can store your images. At
-the moment there is no builtin support for this, although we are
-working on this too.
+booting requires a HTTP server on which you can store your images. The
+`-base-url` option specifies the URL to the HTTP server.
 
-A simple way to host files is via a simple local http server written in Go, e.g.:
+If you don't have a public HTTP server at hand, you can use the
+`-serve` option. This will create a local HTTP server which can either
+be run on another Packet machine or be made accessible with tools
+like [ngrok](https://ngrok.com/).
 
-```Go
-package main
-
-import (
-	"log"
-	"net/http"
-)
-
-func main() {
-	// Simple static webserver:
-	log.Fatal(http.ListenAndServe(":8080", http.FileServer(http.Dir("."))))
-}
-```
-
-and then `go run` this in the directory with the `kernel+initrd`.
-
-The web server must be accessible from Packet. You can either run the
-server on another Packet machine, or use tools
-like [ngrok](https://ngrok.com/) to make it accessible via a reverse
-proxy.
-
-You then specify the location of your http server using the
-`-base-url` command line option. For example, to boot the
-toplevel [linuxkit.yml](../linuxkit.yml) example:
+For example, to boot the toplevel [linuxkit.yml](../linuxkit.yml)
+example with a local HTTP server:
 
 ```sh
 moby build linuxkit.yml
 # run the web server
 # run 'ngrok http 8080' in another window
-PACKET_API_KEY=<API key> linuxkit run packet -base-url http://9b828514.ngrok.io -project-id <Project ID> linuxkit
+PACKET_API_KEY=<API key> linuxkit run packet -serve :8080 -base-url http://9b828514.ngrok.io -project-id <Project ID> linuxkit
 ```
 
 **Note**: It may take several minutes to deploy a new server. If you
