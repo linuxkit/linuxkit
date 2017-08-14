@@ -1,4 +1,4 @@
-From 59558db6f8d63f4b0577bb96d577906668d4cf05 Mon Sep 17 00:00:00 2001
+From 609a04a4cd31368271c1fd3bfb37f8a1f4231c3c Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Tue, 15 Dec 2015 16:27:27 -0800
 Subject: [PATCH 24/44] Drivers: hv: vmbus: Treat Fibre Channel devices as
