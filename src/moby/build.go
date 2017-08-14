@@ -10,7 +10,6 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -132,7 +131,7 @@ func outputImage(image Image, section string, prefix string, m Moby, idMap map[s
 	if err != nil {
 		return fmt.Errorf("Failed to create config for %s: %v", image.Image, err)
 	}
-	path := filepath.Join("containers", section, prefix+image.Name)
+	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
 	err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
 	if err != nil {

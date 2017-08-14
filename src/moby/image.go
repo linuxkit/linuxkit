@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"path/filepath"
+	"path"
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
@@ -189,8 +189,8 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(path string, image string, config []byte, tw tarWriter, trust bool, pull bool, readonly bool) error {
-	log.Debugf("image bundle: %s %s cfg: %s", path, image, string(config))
+func ImageBundle(prefix string, image string, config []byte, tw tarWriter, trust bool, pull bool, readonly bool) error {
+	log.Debugf("image bundle: %s %s cfg: %s", prefix, image, string(config))
 
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
 	rootfs := "rootfs"
@@ -198,11 +198,11 @@ func ImageBundle(path string, image string, config []byte, tw tarWriter, trust b
 		rootfs = "lower"
 	}
 
-	if err := ImageTar(image, filepath.Join(path, rootfs)+"/", tw, trust, pull, ""); err != nil {
+	if err := ImageTar(image, path.Join(prefix, rootfs)+"/", tw, trust, pull, ""); err != nil {
 		return err
 	}
 	hdr := &tar.Header{
-		Name: filepath.Join(path, "config.json"),
+		Name: path.Join(prefix, "config.json"),
 		Mode: 0644,
 		Size: int64(len(config)),
 	}
@@ -216,7 +216,7 @@ func ImageBundle(path string, image string, config []byte, tw tarWriter, trust b
 	if !readonly {
 		// add a tmp directory to be used as a mount point for tmpfs for upper, work
 		hdr = &tar.Header{
-			Name:     filepath.Join(path, "tmp"),
+			Name:     path.Join(prefix, "tmp"),
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
 		}
@@ -225,7 +225,7 @@ func ImageBundle(path string, image string, config []byte, tw tarWriter, trust b
 		}
 		// add rootfs as merged mount point
 		hdr = &tar.Header{
-			Name:     filepath.Join(path, "rootfs"),
+			Name:     path.Join(prefix, "rootfs"),
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
 		}
