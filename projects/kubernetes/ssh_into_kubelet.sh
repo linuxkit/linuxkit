@@ -15,4 +15,4 @@ case $(uname -s) in
 	    ijc25/alpine-ssh"
 	;;
 esac
-$ssh $sshopts -t root@"$1" ctr exec --tty --exec-id ssh kubelet ash -l
+$ssh $sshopts -t root@"$1" ctr tasks exec --tty --exec-id ssh kubelet ash -l
