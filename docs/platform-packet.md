@@ -45,9 +45,18 @@ moby build linuxkit.yml
 PACKET_API_KEY=<API key> linuxkit run packet -serve :8080 -base-url http://9b828514.ngrok.io -project-id <Project ID> linuxkit
 ```
 
+To boot a `arm64` kernel on a Type 2a machine (`-machine
+baremetal_2a`) you currently need to un-compress both the kernel and
+the initrd before booting, e.g:
+```
+mv linuxkit-initrd.img linuxkit-initrd.img.gz && gzip -d linuxkit-initrd.img.gz
+mv linuxkit-kernel.img linuxkit-kernel.img.gz && gzip -d linuxkit-kernel.img.gz
+```
+
 **Note**: It may take several minutes to deploy a new server. If you
 are attached to the console, you should see the BIOS and the boot
 messages.
+
 
 
 ## Console
