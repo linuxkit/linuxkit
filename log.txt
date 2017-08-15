@@ -1,9 +1,0 @@
-[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[2J[01;01H[=3h[2J[01;01H[0m[39m[49m[2J[01;01H[=3h[2J[01;01H[0m[39m[49m[2J[01;01H..PXE-E16: No offer received.
-Boot Failed. EFI Network
-[2J[01;01H[01;01HUEFI Interactive Shell v2.1
-EDK II
-UEFI v2.40 (BHYVE, 0x00010000)
-[1m[32m[49mMapping table[0m[39m[49m
-[04;01H[1m[32m[49mError. [0m[39m[49mNo mapping found
-[05;01HPress [1m[32m[49mESC[0m[39m[49m in 5 seconds to skip [1m[32m[49mstartup.nsh[0m[39m[49m or any other key to continue.[05;01HPress [1m[32m[49mESC[0m[39m[49m in 4 seconds to skip [1m[32m[49mstartup.nsh[0m[39m[49m or any other key to continue.[05;01HPress [1m[32m[49mESC[0m[39m[49m in 3 seconds to skip [1m[32m[49mstartup.nsh[0m[39m[49m or any other key to continue.[05;01HPress [1m[32m[49mESC[0m[39m[49m in 2 seconds to skip [1m[32m[49mstartup.nsh[0m[39m[49m or any other key to continue.[05;01HPress [1m[32m[49mESC[0m[39m[49m in 1 seconds to skip [1m[32m[49mstartup.nsh[0m[39m[49m or any other key to continue.
-[06;01H[1m[32m[49mShell> [0m[39m[49mtime="2017-08-08T23:15:51+01:00" level=fatal msg="Cannot run hyperkit: signal: killed" 
