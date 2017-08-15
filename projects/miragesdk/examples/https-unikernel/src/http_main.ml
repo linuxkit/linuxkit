@@ -1,22 +1,23 @@
-let () = Common.init_logging ()
+(** Run the HTTP service as a stand-alone Unix process. *)
 
-let main store_socket http_socket =
+let () = Logging.init ()
+
+let main store_addr http_addr =
   Lwt_main.run begin
-    Lwt_switch.with_switch @@ fun switch ->
-    let store = Common.connect ~switch store_socket in
-    let http = Http_server.service store in
-    Common.listen ~switch ~offer:http http_socket
+    let store = Capnp_rpc_unix.connect store_addr in
+    let http = Http_server.local store in
+    Capnp_rpc_unix.serve ~offer:http http_addr
   end
 
 open Cmdliner
 
 let store =
   let doc = "The database store to use" in
-  Arg.(required @@ opt (some string) None @@ info ~doc ~docv:"STORE" ["store"])
+  Arg.(required @@ opt (some Capnp_rpc_unix.Connect_address.conv) None @@ info ~doc ~docv:"STORE" ["store"])
 
 let http =
   let doc = "The http socket to provide" in
-  Arg.(required @@ pos 0 (some string) None @@ info ~doc ~docv:"HTTP" [])
+  Arg.(required @@ pos 0 (some Capnp_rpc_unix.Listen_address.conv) None @@ info ~doc ~docv:"HTTP" [])
 
 let cmd =
   Term.(const main $ store $ http), Term.info "http"

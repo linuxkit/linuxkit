@@ -32,15 +32,15 @@ The easiest way to do this is by creating multiple windows in `screen` (which is
 
 First, start the store:
 
-    https-unikernel-store /tmp/store.sock
+    https-unikernel-store unix:/tmp/store.sock
 
 Then, create a new window (`Ctrl-A c`) and start the http service:
 
-    https-unikernel-http /tmp/http.sock --store=/tmp/store.sock
+    https-unikernel-http unix:/tmp/http.sock --store=unix:/tmp/store.sock
 
 Finally, make another window and run the TLS terminator:
 
-    https-unikernel-tls --http /tmp/http.sock --port 8443
+    https-unikernel-tls --http unix:/tmp/http.sock --port 8443
 
 
 ### Testing with Python

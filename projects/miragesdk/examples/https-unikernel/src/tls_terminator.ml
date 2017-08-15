@@ -1,38 +1,8 @@
+(** The TLS terminator implementation.
+    Listens for TLS connections on a port and forwards the plaintext flow to the HTTP service. *)
+
 open Lwt.Infix
 open Capnp_rpc_lwt
-
-let make_flow _flow ic oc =
-  Api.Builder.Flow.local @@
-    object
-      inherit Api.Builder.Flow.service
-
-      method read_impl _ =
-        Service.return_lwt (fun () ->
-          Lwt_io.read ~count:4096 ic >|= fun data ->
-          let module R = Api.Builder.Flow.Read_results in
-          let resp, results = Service.Response.create R.init_pointer in
-          R.data_set results data;
-          Ok resp
-        )
-
-      method write_impl req =
-        let module R = Api.Reader.Flow.Write_params in
-        let p = R.of_payload req in
-        let data = R.data_get p in
-        Service.return_lwt (fun () ->
-          Lwt_io.write oc data >>= fun () ->
-          Lwt.return (Ok (Service.Response.create_empty ()))
-        )
-    end
-
-let handle ~http_service flow =
-  let module P = Api.Builder.HttpServer.Accept_params in
-  let req, p = Capability.Request.create P.init_pointer in
-  P.connection_set p (Some (Capability.Request.export req flow));
-  Capability.dec_ref flow;
-  Capability.call_for_value http_service Api.Reader.HttpServer.accept_method req >|= function
-  | Ok _ -> ()
-  | Error e -> Logs.warn (fun f -> f "Error from HTTP server: %a" Capnp_rpc.Error.pp e)
 
 let run ~port ~http_service =
   let tls_config : Conduit_lwt_unix.server_tls_config =
@@ -43,13 +13,14 @@ let run ~port ~http_service =
   in
   let mode = `TLS tls_config in
   Logs.info (fun f -> f "Listening on https port %d" port);
-  Conduit_lwt_unix.(serve ~ctx:default_ctx) ~mode (fun flow ic oc ->
+  Conduit_lwt_unix.(serve ~ctx:default_ctx) ~mode (fun _flow ic oc ->
       Logs.info (fun f -> f "Got new TLS connection");
-      let flow_obj = make_flow flow ic oc in
-      handle ~http_service flow_obj
+      let flow_obj = Rpc.Flow.local ic oc in
+      Rpc.Http.accept http_service flow_obj >|= fun () ->
+      Capability.dec_ref flow_obj
     )
 
 let init ~switch ~to_http =
-  let tags = Logs.Tag.add Common.Actor.tag (`Blue, "TLS   ") Logs.Tag.empty in
+  let tags = Logs.Tag.add Logging.Actor.tag (`Blue, "TLS   ") Logs.Tag.empty in
   let http_service = CapTP.bootstrap (CapTP.connect ~tags ~switch to_http) in
   run ~http_service ~port:8443
