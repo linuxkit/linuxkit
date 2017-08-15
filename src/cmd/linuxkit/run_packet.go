@@ -172,7 +172,7 @@ func runPacket(args []string) {
 	}
 	log.Debugf("%s\n", string(b))
 
-	log.Printf("Machine booting...")
+	log.Printf("Booting %s...", dev.ID)
 
 	sshHost := "sos." + dev.Facility.Code + ".packet.net"
 	if *consoleFlag {
