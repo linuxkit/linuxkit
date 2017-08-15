@@ -114,7 +114,7 @@ func runPacket(args []string) {
 		fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
 		httpServer = &http.Server{Addr: ":8080", Handler: http.FileServer(fs)}
 		go func() {
-			log.Infof("Listening on http://%s\n", *serveFlag)
+			log.Debugf("Listening on http://%s\n", *serveFlag)
 			if err := httpServer.ListenAndServe(); err != nil {
 				log.Infof("http server exited with: %v", err)
 			}
@@ -161,8 +161,9 @@ func runPacket(args []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
-	// log response json if in verbose mode
 	log.Debugf("%s\n", string(b))
+
+	log.Printf("Machine booting...")
 
 	sshHost := "sos." + dev.Facility.Code + ".packet.net"
 	if *consoleFlag {
@@ -171,7 +172,6 @@ func runPacket(args []string) {
 			log.Fatal(err)
 		}
 	} else {
-		log.Printf("Machine booting")
 		log.Printf("Access the console with: ssh %s@%s", dev.ID, sshHost)
 
 		// if the serve option is present, wait till 'ctrl-c' is hit.
@@ -186,7 +186,7 @@ func runPacket(args []string) {
 
 	// Stop the http server before exiting
 	if *serveFlag != "" {
-		log.Printf("Shutting down http server...")
+		log.Debugf("Shutting down http server...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		httpServer.Shutdown(ctx)
@@ -202,7 +202,7 @@ func runPacket(args []string) {
 
 // validateHTTPURL does a sanity check that a URL returns a 200 or 300 response
 func validateHTTPURL(url string) {
-	log.Printf("Validating URL: %s", url)
+	log.Infof("Validating URL: %s", url)
 	resp, err := http.Head(url)
 	if err != nil {
 		log.Fatal(err)
@@ -210,11 +210,11 @@ func validateHTTPURL(url string) {
 	if resp.StatusCode >= 400 {
 		log.Fatal("Got a non 200- or 300- HTTP response code: %s", resp)
 	}
-	log.Printf("OK: %d response code", resp.StatusCode)
+	log.Debugf("OK: %d response code", resp.StatusCode)
 }
 
 func sshSOS(user, host string) error {
-	log.Printf("console: ssh %s@%s", user, host)
+	log.Debugf("console: ssh %s@%s", user, host)
 
 	hostKey, err := sshHostKey(host)
 	if err != nil {
@@ -340,7 +340,7 @@ func (fs serveFiles) Open(name string) (http.File, error) {
 			if err != nil {
 				return nil, err
 			}
-			log.Infof("Serving: %s", fn)
+			log.Debugf("Serving: %s", fn)
 			return f, nil
 		}
 	}
