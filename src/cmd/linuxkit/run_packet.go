@@ -66,6 +66,7 @@ func runPacket(args []string) {
 	alwaysPXE := flags.Bool("always-pxe", true, "Reboot from PXE every time.")
 	serveFlag := flags.String("serve", "", "Serve local files via the http port specified, e.g. ':8080'.")
 	consoleFlag := flags.Bool("console", true, "Provide interactive access on the console.")
+	keepFlag := flags.Bool("keep", false, "Keep the machine after exiting/poweroff.")
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
@@ -94,6 +95,10 @@ func runPacket(args []string) {
 	name := getStringValue(packetNameVar, *nameFlag, prefix)
 	osType := "custom_ipxe"
 	billing := "hourly"
+
+	if !*keepFlag && !*consoleFlag {
+		log.Fatalf("Combination of keep=%t and console=%t makes little sense", *keepFlag, *consoleFlag)
+	}
 
 	// Read kernel command line
 	var cmdline string
@@ -148,26 +153,26 @@ func runPacket(args []string) {
 		Tags:         tags,
 		AlwaysPXE:    *alwaysPXE,
 	}
-	d, _, err := client.Devices.Create(&req)
+	dev, _, err := client.Devices.Create(&req)
 	if err != nil {
 		log.Fatal(err)
 	}
-	b, err := json.MarshalIndent(d, "", "    ")
+	b, err := json.MarshalIndent(dev, "", "    ")
 	if err != nil {
 		log.Fatal(err)
 	}
 	// log response json if in verbose mode
 	log.Debugf("%s\n", string(b))
 
-	sshHost := "sos." + d.Facility.Code + ".packet.net"
+	sshHost := "sos." + dev.Facility.Code + ".packet.net"
 	if *consoleFlag {
 		// Connect to the serial console
-		if err := sshSOS(d.ID, sshHost); err != nil {
+		if err := sshSOS(dev.ID, sshHost); err != nil {
 			log.Fatal(err)
 		}
 	} else {
 		log.Printf("Machine booting")
-		log.Printf("Access the console with: ssh %s@%s", d.ID, sshHost)
+		log.Printf("Access the console with: ssh %s@%s", dev.ID, sshHost)
 
 		// if the serve option is present, wait till 'ctrl-c' is hit.
 		// Otherwise we wouldn't serve the files
@@ -186,6 +191,13 @@ func runPacket(args []string) {
 		defer cancel()
 		httpServer.Shutdown(ctx)
 	}
+
+	if !*keepFlag {
+		if _, err := client.Devices.Delete(dev.ID); err != nil {
+			log.Fatalf("Unable to delete device: %v", err)
+		}
+	}
+
 }
 
 // validateHTTPURL does a sanity check that a URL returns a 200 or 300 response
