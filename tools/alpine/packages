@@ -26,6 +26,7 @@ dosfstools
 e2fsprogs
 e2fsprogs-extra
 elfutils-dev
+ethtool
 expect
 flex
 gcc

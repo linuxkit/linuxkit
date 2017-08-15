@@ -1,4 +1,4 @@
-# linuxkit/alpine:d3b34684b68b1bc8ace83750c9df2eb69f1eb08d-arm64
+# linuxkit/alpine:c327d338176ccc28a0d51ef145040463d13975dd-arm64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -40,6 +40,7 @@ e2fsprogs-extra-1.43.4-r0
 e2fsprogs-libs-1.43.4-r0
 elfutils-dev-0.168-r1
 elfutils-libelf-0.168-r1
+ethtool-4.10-r0
 expat-2.2.0-r1
 expect-5.45-r3
 fakeroot-1.21-r1
