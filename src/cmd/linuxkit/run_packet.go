@@ -128,9 +128,18 @@ func runPacket(args []string) {
 	userData := "#!ipxe\n\n"
 	userData += "dhcp\n"
 	userData += fmt.Sprintf("set base-url %s\n", url)
-	userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200 %s\n", cmdline)
-	userData += fmt.Sprintf("kernel ${base-url}/%s-kernel ${kernel-params}\n", name)
-	userData += fmt.Sprintf("initrd ${base-url}/%s-initrd.img\n", name)
+	if *machineFlag != "baremetal_2a" {
+		userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200 %s\n", cmdline)
+		userData += fmt.Sprintf("kernel ${base-url}/%s-kernel ${kernel-params}\n", name)
+		userData += fmt.Sprintf("initrd ${base-url}/%s-initrd.img\n", name)
+	} else {
+		// With EFI boot need to specify the initrd and root dev explicitly. See:
+		// http://ipxe.org/appnote/debian_preseed
+		// http://forum.ipxe.org/showthread.php?tid=7589
+		userData += fmt.Sprintf("initrd --name initrd ${base-url}/%s-initrd.img\n", name)
+		userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro %s\n", cmdline)
+		userData += fmt.Sprintf("kernel ${base-url}/%s-kernel initrd=initrd root=/dev/ram0 ${kernel-params}\n", name)
+	}
 	userData += "boot"
 	log.Debugf("Using userData of:\n%s\n", userData)
 
