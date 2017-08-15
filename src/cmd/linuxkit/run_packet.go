@@ -1,11 +1,11 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net"
 	"net/http"
@@ -14,7 +14,6 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/packethost/packngo"
@@ -285,34 +284,33 @@ func sshAgent() ssh.AuthMethod {
 // This function returns the host key for a given host (the SOS server).
 // If it can't be found, it errors
 func sshHostKey(host string) (ssh.PublicKey, error) {
-	f, err := os.Open(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	f, err := ioutil.ReadFile(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
 	if err != nil {
-		return nil, fmt.Errorf("Can't open know_hosts file: %v", err)
+		return nil, fmt.Errorf("Can't read known_hosts file: %v", err)
 	}
-	defer f.Close()
 
-	s := bufio.NewScanner(f)
-
-	var hostKey ssh.PublicKey
-	for s.Scan() {
-		fields := strings.Split(s.Text(), " ")
-		if len(fields) != 3 {
-			continue
-		}
-		if strings.Contains(fields[0], host) {
-			var err error
-			hostKey, _, _, _, err = ssh.ParseAuthorizedKey(s.Bytes())
-			if err != nil {
-				return nil, fmt.Errorf("Error parsing %q: %v", fields[2], err)
-			}
+	for {
+		marker, hosts, pubKey, _, rest, err := ssh.ParseKnownHosts(f)
+		if err == io.EOF {
 			break
 		}
+		if err != nil {
+			return nil, fmt.Errorf("Parse error in known_hosts: %v", err)
+		}
+		if marker != "" {
+			//ignore CA or revoked key
+			fmt.Printf("ignoring marker: %s\n", marker)
+			continue
+		}
+		for _, h := range hosts {
+			if h == host {
+				return pubKey, nil
+			}
+		}
+		f = rest
 	}
 
-	if hostKey == nil {
-		return nil, fmt.Errorf("No hostkey for %s", host)
-	}
-	return hostKey, nil
+	return nil, fmt.Errorf("No hostkey for %s", host)
 }
 
 // This implements a http.FileSystem which only responds to specific files.
