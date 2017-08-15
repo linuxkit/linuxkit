@@ -48,16 +48,17 @@ func (d Device) String() string {
 
 // DeviceCreateRequest type used to create a Packet device
 type DeviceCreateRequest struct {
-	HostName      string   `json:"hostname"`
-	Plan          string   `json:"plan"`
-	Facility      string   `json:"facility"`
-	OS            string   `json:"operating_system"`
-	BillingCycle  string   `json:"billing_cycle"`
-	ProjectID     string   `json:"project_id"`
-	UserData      string   `json:"userdata"`
-	Tags          []string `json:"tags"`
-	IPXEScriptUrl string   `json:"ipxe_script_url,omitempty"`
-	AlwaysPXE     bool     `json:"always_pxe,omitempty"`
+	HostName             string   `json:"hostname"`
+	Plan                 string   `json:"plan"`
+	Facility             string   `json:"facility"`
+	OS                   string   `json:"operating_system"`
+	BillingCycle         string   `json:"billing_cycle"`
+	ProjectID            string   `json:"project_id"`
+	UserData             string   `json:"userdata"`
+	Tags                 []string `json:"tags"`
+	IPXEScriptUrl        string   `json:"ipxe_script_url,omitempty"`
+	PublicIPv4SubnetSize int      `json:"public_ipv4_subnet_size,omitempty"`
+	AlwaysPXE            bool     `json:"always_pxe,omitempty"`
 }
 
 func (d DeviceCreateRequest) String() string {

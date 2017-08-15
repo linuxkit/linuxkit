@@ -2,6 +2,7 @@ package main
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -9,11 +10,14 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"os/signal"
 	"os/user"
+	"path"
 	"path/filepath"
 	"strings"
+	"time"
 
-	"github.com/bzub/packngo" // TODO(rn): Update to official once iPXE is merged
+	"github.com/packethost/packngo"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -60,7 +64,9 @@ func runPacket(args []string) {
 	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance (or "+packetHostnameVar+")")
 	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
 	alwaysPXE := flags.Bool("always-pxe", true, "Reboot from PXE every time.")
+	serveFlag := flags.String("serve", "", "Serve local files via the http port specified, e.g. ':8080'.")
 	consoleFlag := flags.Bool("console", true, "Provide interactive access on the console.")
+	keepFlag := flags.Bool("keep", false, "Keep the machine after exiting/poweroff.")
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
@@ -90,12 +96,29 @@ func runPacket(args []string) {
 	osType := "custom_ipxe"
 	billing := "hourly"
 
+	if !*keepFlag && !*consoleFlag {
+		log.Fatalf("Combination of keep=%t and console=%t makes little sense", *keepFlag, *consoleFlag)
+	}
+
 	// Read kernel command line
 	var cmdline string
 	if c, err := ioutil.ReadFile(prefix + "-cmdline"); err != nil {
 		log.Fatalf("Cannot open cmdline file: %v", err)
 	} else {
 		cmdline = string(c)
+	}
+
+	// Serve files with a local http server
+	var httpServer *http.Server
+	if *serveFlag != "" {
+		fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
+		httpServer = &http.Server{Addr: ":8080", Handler: http.FileServer(fs)}
+		go func() {
+			log.Debugf("Listening on http://%s\n", *serveFlag)
+			if err := httpServer.ListenAndServe(); err != nil {
+				log.Infof("http server exited with: %v", err)
+			}
+		}()
 	}
 
 	// Build the iPXE script
@@ -130,32 +153,56 @@ func runPacket(args []string) {
 		Tags:         tags,
 		AlwaysPXE:    *alwaysPXE,
 	}
-	d, _, err := client.Devices.Create(&req)
+	dev, _, err := client.Devices.Create(&req)
 	if err != nil {
 		log.Fatal(err)
 	}
-	b, err := json.MarshalIndent(d, "", "    ")
+	b, err := json.MarshalIndent(dev, "", "    ")
 	if err != nil {
 		log.Fatal(err)
 	}
-	// log response json if in verbose mode
 	log.Debugf("%s\n", string(b))
 
-	sshHost := "sos." + d.Facility.Code + ".packet.net"
+	log.Printf("Machine booting...")
+
+	sshHost := "sos." + dev.Facility.Code + ".packet.net"
 	if *consoleFlag {
 		// Connect to the serial console
-		if err := sshSOS(d.ID, sshHost); err != nil {
+		if err := sshSOS(dev.ID, sshHost); err != nil {
 			log.Fatal(err)
 		}
 	} else {
-		log.Printf("Machine booting")
-		log.Printf("Access the console with: ssh %s@%s", d.ID, sshHost)
+		log.Printf("Access the console with: ssh %s@%s", dev.ID, sshHost)
+
+		// if the serve option is present, wait till 'ctrl-c' is hit.
+		// Otherwise we wouldn't serve the files
+		if *serveFlag != "" {
+			stop := make(chan os.Signal, 1)
+			signal.Notify(stop, os.Interrupt)
+			log.Printf("Hit ctrl-c to stop http server")
+			<-stop
+		}
 	}
+
+	// Stop the http server before exiting
+	if *serveFlag != "" {
+		log.Debugf("Shutting down http server...")
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		httpServer.Shutdown(ctx)
+	}
+
+	if !*keepFlag {
+		if _, err := client.Devices.Delete(dev.ID); err != nil {
+			log.Fatalf("Unable to delete device: %v", err)
+		}
+	}
+
 }
 
 // validateHTTPURL does a sanity check that a URL returns a 200 or 300 response
 func validateHTTPURL(url string) {
-	log.Printf("Validating URL: %s", url)
+	log.Infof("Validating URL: %s", url)
 	resp, err := http.Head(url)
 	if err != nil {
 		log.Fatal(err)
@@ -163,11 +210,11 @@ func validateHTTPURL(url string) {
 	if resp.StatusCode >= 400 {
 		log.Fatal("Got a non 200- or 300- HTTP response code: %s", resp)
 	}
-	log.Printf("OK: %d response code", resp.StatusCode)
+	log.Debugf("OK: %d response code", resp.StatusCode)
 }
 
 func sshSOS(user, host string) error {
-	log.Printf("console: ssh %s@%s", user, host)
+	log.Debugf("console: ssh %s@%s", user, host)
 
 	hostKey, err := sshHostKey(host)
 	if err != nil {
@@ -266,4 +313,36 @@ func sshHostKey(host string) (ssh.PublicKey, error) {
 		return nil, fmt.Errorf("No hostkey for %s", host)
 	}
 	return hostKey, nil
+}
+
+// This implements a http.FileSystem which only responds to specific files.
+type serveFiles struct {
+	files []string
+}
+
+// Open implements the Open method for the serveFiles FileSystem
+// implementation.
+// It converts both the name from the URL and the files provided in
+// the serveFiles structure into cleaned, absolute filesystem path and
+// only returns the file if the requested name matches one of the
+// files in the list.
+func (fs serveFiles) Open(name string) (http.File, error) {
+	cwd, err := os.Getwd()
+	if err != nil {
+		return nil, err
+	}
+
+	name = filepath.Join(cwd, filepath.FromSlash(path.Clean("/"+name)))
+	for _, fn := range fs.files {
+		fn = filepath.Join(cwd, filepath.FromSlash(path.Clean("/"+fn)))
+		if name == fn {
+			f, err := os.Open(fn)
+			if err != nil {
+				return nil, err
+			}
+			log.Debugf("Serving: %s", fn)
+			return f, nil
+		}
+	}
+	return nil, fmt.Errorf("File %s not found", name)
 }
