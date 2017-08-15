@@ -1,9 +1,10 @@
-let () = Common.init_logging ()
+(** Run the TLS terminator as a stand-alone Unix process. *)
 
-let main http_socket port =
+let () = Logging.init ()
+
+let main http_addr port =
   Lwt_main.run begin
-    Lwt_switch.with_switch @@ fun switch ->
-    let http_service = Common.connect ~switch http_socket in
+    let http_service = Capnp_rpc_unix.connect http_addr in
     Tls_terminator.run ~http_service ~port
   end
 
@@ -11,7 +12,7 @@ open Cmdliner
 
 let http =
   let doc = "The HTTP service to use" in
-  Arg.(required @@ opt (some string) None @@ info ~doc ~docv:"HTTP" ["http"])
+  Arg.(required @@ opt (some Capnp_rpc_unix.Connect_address.conv) None @@ info ~doc ~docv:"HTTP" ["http"])
 
 let tls =
   let doc = "The TLS port on which to listen for incoming connections" in

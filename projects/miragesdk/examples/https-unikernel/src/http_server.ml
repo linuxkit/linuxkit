@@ -1,47 +1,11 @@
+(** Accepts connections (over Cap'n Proto) and implements the HTTP protocol. *)
+
 let src = Logs.Src.create "web.http" ~doc:"HTTP engine for web server"
 module Log = (val Logs.src_log src: Logs.LOG)
 
 open Capnp_rpc_lwt
 open Lwt.Infix
 open Astring
-
-module Remote_flow = struct
-  type buffer = Cstruct.t
-  type flow = Api.Reader.Flow.t Capability.t
-  type error = [`Capnp of Capnp_rpc.Error.t]
-  type write_error = [Mirage_flow.write_error | `Capnp of Capnp_rpc.Error.t]
-  type 'a io = 'a Lwt.t
-
-  let create x = x
-
-  let read t =
-    let module R = Api.Reader.Flow.Read_results in
-    let req = Capability.Request.create_no_args () in
-    Capability.call_for_value_exn t Api.Reader.Flow.read_method req >>= fun resp ->
-    let p = R.of_payload resp in
-    let data = R.data_get p in
-    Lwt.return (Ok (`Data (Cstruct.of_string data)))
-
-  let write t data =
-    let module P = Api.Builder.Flow.Write_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.data_set p (Cstruct.to_string data);
-    Capability.call_for_value_exn t Api.Reader.Flow.write_method req >>= fun _ ->
-    Lwt.return (Ok ())
-
-  let writev t data =
-    write t (Cstruct.concat data)
-
-  let close _ = failwith "TODO: close"
-
-  let pp_error f = function
-    | `Capnp e -> Capnp_rpc.Error.pp f e
-    | `Closed -> Fmt.string f "Closed"
-
-  let pp_write_error f = function
-    | `Capnp e -> Capnp_rpc.Error.pp f e
-    | #Mirage_flow.write_error as e -> Mirage_flow.pp_write_error f e
-end
 
 module IO = struct
   type 'a t = 'a Lwt.t
@@ -50,7 +14,7 @@ module IO = struct
 
   type ic = Lwt_io.input_channel
   type oc = Lwt_io.output_channel
-  type conn = Remote_flow.flow
+  type conn = Rpc.Flow.flow
 
   let read_line ic =
     Lwt_io.read_line_opt ic
@@ -68,22 +32,8 @@ end
 
 module Server = Cohttp_lwt.Make_server(IO)
 
-type t = Api.Reader.Store.t Capability.t
-
-(* Make a Cap'n'Proto call to the store service *)
-let get t path =
-  let module P = Api.Builder.Store.Get_params in
-  let req, p = Capability.Request.create P.init_pointer in
-  ignore (P.path_set_list p path);
-  Capability.call_for_value_exn t Api.Reader.Store.get_method req >>= fun resp ->
-  let open Api.Reader.Store in
-  match GetResults.get (GetResults.of_payload resp) with
-  | GetResults.NotFound -> Lwt.return None
-  | GetResults.Ok data -> Lwt.return (Some data)
-  | GetResults.Undefined _ -> failwith "Protocol error: bad msg type"
-
-(* Handle HTTP requests *)
-let callback t _conn req _body =
+(* Handle one HTTP request *)
+let handle_request store _conn req _body =
   let open Cohttp in
   let uri = Request.uri req in
   Log.info (fun f -> f "HTTP request for %a" Uri.pp_hum uri);
@@ -95,7 +45,7 @@ let callback t _conn req _body =
       | [] -> ["index.html"]
       | p -> p
     in
-    begin get t path >>= function
+    begin Rpc.Store.get store path >>= function
     | Some body -> Server.respond_string ~status:`OK ~body ()
     | None -> Server.respond_not_found ~uri ()
     end
@@ -103,32 +53,13 @@ let callback t _conn req _body =
     let body = Fmt.strf "Bad method %S" (Code.string_of_method m) in
     Server.respond_error ~status:`Bad_request ~body ()
 
-let callback t = Server.callback (Server.make ~callback:(callback t) ())
+module Remote_flow_unix = Mirage_flow_unix.Make(Rpc.Flow)
 
-module Remote_flow_unix = Mirage_flow_unix.Make(Remote_flow)
-
-let handle_connection store c =
-  Log.info (fun f -> f "Handing new connection");
-  let flow = Remote_flow.create c in
-  callback store flow (Remote_flow_unix.ic flow) (Remote_flow_unix.oc flow) >>= fun () ->
-  Capability.dec_ref c;
-  Lwt.return_unit
-
-let service store =
-  Api.Builder.HttpServer.local @@
-    object
-      inherit Api.Builder.HttpServer.service
-
-      method accept_impl req =
-        Log.info (fun f -> f "Handing new connection");
-        let module P = Api.Reader.HttpServer.Accept_params in
-        let p = P.of_payload req in
-        match P.connection_get p with
-        | None -> Service.fail "No connection!"
-        | Some i ->
-          let c = Payload.import req i in
-          Service.return_lwt (fun () ->
-            handle_connection store c >|= fun () ->
-            Ok (Service.Response.create_empty ())
-          )
-    end
+let local store =
+  let handle_http_connection = Server.callback (Server.make ~callback:(handle_request store) ()) in
+  Rpc.Http.local (fun flow ->
+      Log.info (fun f -> f "Handing new connection");
+      handle_http_connection flow (Remote_flow_unix.ic flow) (Remote_flow_unix.oc flow) >>= fun () ->
+      Capability.dec_ref flow;
+      Lwt.return_unit
+    )

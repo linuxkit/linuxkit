@@ -2,7 +2,7 @@
 
 (executables (
   (names (main store_main http_main tls_main))
-  (libraries (capnp-rpc-lwt cohttp.lwt irmin-unix cmdliner fmt.tty))
+  (libraries (capnp-rpc-lwt capnp-rpc-unix cohttp.lwt irmin-unix cmdliner fmt.tty))
   (flags (:standard -w -53-55))
 ))
 (rule

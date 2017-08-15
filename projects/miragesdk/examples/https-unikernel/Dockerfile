@@ -1,15 +1,12 @@
-FROM ocaml/opam@sha256:523988cb7ac4c51e1c6e2f00658686c320330000859f49e1ec8fe3d6df046a26
+FROM ocaml/opam@sha256:e2e0dbbc859e078504d3a084feda27194406badf0d3d7e3d5321179c1c03190b
 #FROM ocaml/opam:debian-9_ocaml-4.04.0
-RUN opam pin add -yn capnp 'https://github.com/talex5/capnp-ocaml.git#demo2'
-RUN opam pin add -yn capnp-rpc 'https://github.com/talex5/capnp-rpc.git#demo2'
-RUN opam pin add -yn capnp-rpc-lwt 'https://github.com/talex5/capnp-rpc.git#demo2'
-RUN opam depext -i -y jbuilder lwt cohttp astring tls capnp camlzip alcotest cohttp
+RUN cd opam-repository && git fetch && git reset --hard df060ffa5c9d62ec63395fa80d0f5b50a5863c47 && opam update
+RUN opam depext -i -y jbuilder lwt cohttp astring tls capnp camlzip alcotest cohttp capnp-rpc-unix
 RUN sudo apt-get install -y screen python-pip python-setuptools python-dev --no-install-recommends
 RUN pip install cython pycapnp
 ADD opam /home/opam/src/opam
 RUN opam pin add -ny mypkg /home/opam/src
 RUN opam install --deps-only mypkg
-ENV JBUILD_STATIC=true
 WORKDIR /home/opam/src
 ADD . /home/opam/src
 RUN sudo chown -R opam .

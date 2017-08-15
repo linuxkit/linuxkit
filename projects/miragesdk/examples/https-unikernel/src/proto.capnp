@@ -12,7 +12,7 @@ interface Store {
 }
 
 interface Flow {
-  read @0 () -> (data :Data);
+  read @0 () -> (data :Data); 	# "" means end-of-file
   write @1 (data :Data) -> ();
 }
 
