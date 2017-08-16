@@ -34,6 +34,11 @@ kubeadm-init.sh
 Once `kubeadm` exits, make sure to copy the `kubeadm join` arguments,
 and try `kubectl get nodes` from within the master.
 
+If you just want to run a single node cluster with jobs running on the master, you can use:
+```
+kubectl taint nodes --all node-role.kubernetes.io/master- --kubeconfig /etc/kubernetes/admin.conf
+```
+
 To boot a node use:
 ```
 ./boot.sh <n> [<join_args> ...]
