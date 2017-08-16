@@ -74,7 +74,7 @@ host attack.
 
 
 ## Login
-By default, linuxkit has no login available: not on console, not via ssh, nowhere. You have the _option_ of enabling login on console using a `linuxkit/getty` service container, but it is not created by default. Similarly, a `linuxkit/sshd` service container will start a `sshd` for you. See the [getty](../examples/getty.yml) and [sshd](../examples.sshd.yml) examples.
+By default, linuxkit has no login available: not on console, not via ssh, nowhere. You have the _option_ of enabling login on console using a `linuxkit/getty` service container, but it is not created by default. Similarly, a `linuxkit/sshd` service container will start a `sshd` for you. See the [getty](../examples/getty.yml) and [sshd](../examples/sshd.yml) examples.
 
 ## External Updates - Trusted Provisioning
 
