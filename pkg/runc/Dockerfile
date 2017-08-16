@@ -20,14 +20,12 @@ RUN git checkout $RUNC_COMMIT
 RUN make static BUILDTAGS="seccomp" EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
 RUN cp runc /usr/bin/
 
-ADD cmd /go/src/cmd
-RUN go-compile.sh /go/src/cmd/onboot
-RUN mkdir -p /etc/init.d && ln -s /usr/bin/onboot /etc/init.d/010-onboot
-RUN mkdir -p /etc/shutdown.d && ln -s /usr/bin/onboot /etc/shutdown.d/010-onshutdown
+RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/010-onboot
+RUN mkdir -p /etc/shutdown.d && ln -s /usr/bin/service /etc/shutdown.d/010-onshutdown
 
 FROM scratch
 WORKDIR /
 ENTRYPOINT []
-COPY --from=alpine /usr/bin/runc /go/bin/onboot /usr/bin/
+COPY --from=alpine /usr/bin/runc /usr/bin/
 COPY --from=alpine /etc/init.d/ /etc/init.d/
 COPY --from=alpine /etc/shutdown.d/ /etc/shutdown.d/
