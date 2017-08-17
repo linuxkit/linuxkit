@@ -22,6 +22,17 @@ The `linuxkit run packet` command can mostly either be configured via
 command line options or with environment variables. see `linuxkit run
 packet --help` for the options and environment variables.
 
+By default, `linuxkit run` will provision a new machine and remove it
+once you are done. With the `-keep` option the provisioned machine
+will not be removed. You can then use the `-device` option with the
+device ID on subsequent `linuxkit run` invocations to re-use an
+existing machine. These subsequent runs will update the iPXE data so
+you can boot alternative kernels on an existing machine.
+
+**Note**: The update of the iPXE configuration sometimes may take some
+time and the first boot may fail. Hitting return on the console to
+retry the boot typically fixes this.
+
 ## Boot
 
 LinuxKit on Packet boots the `kernel+initrd` output from moby
@@ -66,6 +77,9 @@ Packet
 [SOS ("Serial over SSH") console](https://help.packet.net/technical/networking/sos-rescue-mode). This
 requires `ssh` access, i.e., you must have uploaded your SSH keys to
 Packet beforehand.
+
+You can exit the console vi `~.` on a new line once you are
+disconnected from the serial, e.g. after poweroff.
 
 **Note**: We also require that the Packet SOS host is in your
 `known_hosts` file, otherwise the connection to the console will

@@ -16,7 +16,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/packethost/packngo"
+	"github.com/rn/packngo"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
@@ -60,6 +60,7 @@ func runPacket(args []string) {
 	machineFlag := flags.String("machine", packetDefaultMachine, "Packet Machine Type (or "+packetMachineVar+")")
 	apiKeyFlag := flags.String("api-key", "", "Packet API key (or "+packetAPIKeyVar+")")
 	projectFlag := flags.String("project-id", "", "Packet Project ID (or "+packetProjectIDVar+")")
+	deviceFlag := flags.String("device", "", "The ID of an existing device")
 	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance (or "+packetHostnameVar+")")
 	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
 	alwaysPXE := flags.Bool("always-pxe", true, "Reboot from PXE every time.")
@@ -150,20 +151,52 @@ func runPacket(args []string) {
 
 	client := packngo.NewClient("", apiKey, nil)
 	tags := []string{}
-	req := packngo.DeviceCreateRequest{
-		HostName:     hostname,
-		Plan:         plan,
-		Facility:     facility,
-		OS:           osType,
-		BillingCycle: billing,
-		ProjectID:    projectID,
-		UserData:     userData,
-		Tags:         tags,
-		AlwaysPXE:    *alwaysPXE,
-	}
-	dev, _, err := client.Devices.Create(&req)
-	if err != nil {
-		log.Fatal(err)
+
+	var dev *packngo.Device
+	var err error
+	if *deviceFlag != "" {
+		dev, _, err = client.Devices.Get(*deviceFlag)
+		if err != nil {
+			log.Fatalf("Getting info for device %s failed: %v", *deviceFlag, err)
+		}
+		b, err := json.MarshalIndent(dev, "", "    ")
+		if err != nil {
+			log.Fatal(err)
+		}
+		log.Debugf("%s\n", string(b))
+
+		req := packngo.DeviceUpdateRequest{
+			HostName:     hostname,
+			BillingCycle: dev.BillingCycle,
+			UserData:     userData,
+			Locked:       dev.Locked,
+			Tags:         dev.Tags,
+			AlwaysPXE:    *alwaysPXE,
+		}
+		dev, _, err = client.Devices.Update(*deviceFlag, &req)
+		if err != nil {
+			log.Fatalf("Update device %s failed: %v", *deviceFlag, err)
+		}
+		if _, err := client.Devices.Reboot(*deviceFlag); err != nil {
+			log.Fatalf("Rebooting device %s failed: %v", *deviceFlag, err)
+		}
+	} else {
+		// Create a new device
+		req := packngo.DeviceCreateRequest{
+			HostName:     hostname,
+			Plan:         plan,
+			Facility:     facility,
+			OS:           osType,
+			BillingCycle: billing,
+			ProjectID:    projectID,
+			UserData:     userData,
+			Tags:         tags,
+			AlwaysPXE:    *alwaysPXE,
+		}
+		dev, _, err = client.Devices.Create(&req)
+		if err != nil {
+			log.Fatalf("Creating device failed: %v", err)
+		}
 	}
 	b, err := json.MarshalIndent(dev, "", "    ")
 	if err != nil {
@@ -200,12 +233,15 @@ func runPacket(args []string) {
 		httpServer.Shutdown(ctx)
 	}
 
-	if !*keepFlag {
+	if *keepFlag {
+		log.Printf("The machine is kept...")
+		log.Printf("Device ID: %s", dev.ID)
+		log.Printf("Serial:    ssh %s@%s", dev.ID, sshHost)
+	} else {
 		if _, err := client.Devices.Delete(dev.ID); err != nil {
 			log.Fatalf("Unable to delete device: %v", err)
 		}
 	}
-
 }
 
 // validateHTTPURL does a sanity check that a URL returns a 200 or 300 response

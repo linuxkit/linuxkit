@@ -9,6 +9,7 @@ type DeviceService interface {
 	List(ProjectID string) ([]Device, *Response, error)
 	Get(string) (*Device, *Response, error)
 	Create(*DeviceCreateRequest) (*Device, *Response, error)
+	Update(string, *DeviceUpdateRequest) (*Device, *Response, error)
 	Delete(string) (*Response, error)
 	Reboot(string) (*Response, error)
 	PowerOff(string) (*Response, error)
@@ -38,6 +39,7 @@ type Device struct {
 	Facility      *Facility    `json:"facility,omitempty"`
 	Project       *Project     `json:"project,omitempty"`
 	ProvisionPer  float32      `json:"provisioning_percentage,omitempty"`
+	UserData      string       `json:"userdata",omitempty`
 	IPXEScriptUrl string       `json:"ipxe_script_url,omitempty"`
 	AlwaysPXE     bool         `json:"always_pxe,omitempty"`
 }
@@ -59,6 +61,18 @@ type DeviceCreateRequest struct {
 	IPXEScriptUrl        string   `json:"ipxe_script_url,omitempty"`
 	PublicIPv4SubnetSize int      `json:"public_ipv4_subnet_size,omitempty"`
 	AlwaysPXE            bool     `json:"always_pxe,omitempty"`
+}
+
+// DeviceUpdateRequest type used to update a Packet device
+type DeviceUpdateRequest struct {
+	HostName      string   `json:"hostname"`
+	Description   string   `json:"description"`
+	BillingCycle  string   `json:"billing_cycle"`
+	UserData      string   `json:"userdata"`
+	Locked        bool     `json:"locked"`
+	Tags          []string `json:"tags"`
+	AlwaysPXE     bool     `json:"always_pxe,omitempty"`
+	IPXEScriptUrl string   `json:"ipxe_script_url,omitempty"`
 }
 
 func (d DeviceCreateRequest) String() string {
@@ -120,6 +134,24 @@ func (s *DeviceServiceOp) Create(createRequest *DeviceCreateRequest) (*Device, *
 	path := fmt.Sprintf("%s/%s/devices", projectBasePath, createRequest.ProjectID)
 
 	req, err := s.client.NewRequest("POST", path, createRequest)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	device := new(Device)
+	resp, err := s.client.Do(req, device)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return device, resp, err
+}
+
+// Update updates an existing device
+func (s *DeviceServiceOp) Update(deviceID string, updateRequest *DeviceUpdateRequest) (*Device, *Response, error) {
+	path := fmt.Sprintf("%s/%s?include=facility", deviceBasePath, deviceID)
+
+	req, err := s.client.NewRequest("PUT", path, updateRequest)
 	if err != nil {
 		return nil, nil, err
 	}
