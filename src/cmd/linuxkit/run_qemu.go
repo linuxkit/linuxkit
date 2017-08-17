@@ -537,7 +537,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	}
 
 	if config.UEFI {
-		qemuArgs = append(qemuArgs, "-pflash", config.FWPath)
+		qemuArgs = append(qemuArgs, "-drive", "if=pflash,format=raw,file="+config.FWPath)
 	}
 
 	// build kernel boot config from kernel/initrd/cmdline
