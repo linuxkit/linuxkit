@@ -88,6 +88,33 @@ type Image struct {
 	Rlimits           *[]string               `yaml:"rlimits" json:"rlimits,omitempty"`
 	UIDMappings       *[]specs.LinuxIDMapping `yaml:"uidMappings" json:"uidMappings,omitempty"`
 	GIDMappings       *[]specs.LinuxIDMapping `yaml:"gidMappings" json:"gidMappings,omitempty"`
+	Runtime           *Runtime                `yaml:"runtime" json:"runtime,omitempty"`
+}
+
+// Runtime is the type of config processed at runtime, not used to build the OCI spec
+type Runtime struct {
+	Mkdir      []string    `yaml:"mkdir" json:"mkdir,omitempty"`
+	Interfaces []Interface `yaml:"interfaces" json:"interfaces,omitempty"`
+	BindNS     *Namespaces `yaml:"bindNS" json:"bindNS,omitempty"`
+}
+
+// Namespaces is the type for configuring paths to bind namespaces
+type Namespaces struct {
+	Cgroup string `yaml:"cgroup" json:"cgroup,omitempty"`
+	Ipc    string `yaml:"ipc" json:"ipc,omitempty"`
+	Mnt    string `yaml:"mnt" json:"mnt,omitempty"`
+	Net    string `yaml:"net" json:"net,omitempty"`
+	Pid    string `yaml:"pid" json:"pid,omitempty"`
+	User   string `yaml:"user" json:"user,omitempty"`
+	Uts    string `yaml:"uts" json:"uts,omitempty"`
+}
+
+// Interface is the runtime config for network interfaces
+type Interface struct {
+	Name         string `yaml:"name" json:"name,omitempty"`
+	Add          string `yaml:"add" json:"add,omitempty"`
+	Peer         string `yaml:"peer" json:"peer,omitempty"`
+	CreateInRoot bool   `yaml:"createInRoot" json:"createInRoot"`
 }
 
 // github.com/go-yaml/yaml treats map keys as interface{} while encoding/json
@@ -261,26 +288,26 @@ func NewImage(config []byte) (Image, error) {
 	return mi, nil
 }
 
-// ConfigToOCI converts a config specification to an OCI config file
-func ConfigToOCI(image Image, trust bool, idMap map[string]uint32) (specs.Spec, error) {
+// ConfigToOCI converts a config specification to an OCI config file and a runtime config
+func ConfigToOCI(image Image, trust bool, idMap map[string]uint32) (specs.Spec, Runtime, error) {
 
 	// TODO pass through same docker client to all functions
 	cli, err := dockerClient()
 	if err != nil {
-		return specs.Spec{}, err
+		return specs.Spec{}, Runtime{}, err
 	}
 
 	inspect, err := dockerInspectImage(cli, image.Image, trust)
 	if err != nil {
-		return specs.Spec{}, err
+		return specs.Spec{}, Runtime{}, err
 	}
 
-	oci, err := ConfigInspectToOCI(image, inspect, idMap)
+	oci, runtime, err := ConfigInspectToOCI(image, inspect, idMap)
 	if err != nil {
-		return specs.Spec{}, err
+		return specs.Spec{}, Runtime{}, err
 	}
 
-	return oci, nil
+	return oci, runtime, nil
 }
 
 func defaultMountpoint(tp string) string {
@@ -471,6 +498,17 @@ func assignResources(v1, v2 *specs.LinuxResources) specs.LinuxResources {
 	return specs.LinuxResources{}
 }
 
+// assignRuntime does ordered overrides from Runtime
+func assignRuntime(v1, v2 *Runtime) Runtime {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return Runtime{}
+}
+
 // assignStringEmpty does ordered overrides if strings are empty, for
 // values where there is always an explicit override eg "none"
 func assignStringEmpty(v1, v2 string) string {
@@ -570,8 +608,9 @@ func idNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
 }
 
 // ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
-func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string]uint32) (specs.Spec, error) {
+func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string]uint32) (specs.Spec, Runtime, error) {
 	oci := specs.Spec{}
+	runtime := Runtime{}
 
 	var inspectConfig container.Config
 	if inspect.Config != nil {
@@ -585,7 +624,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 		var err error
 		label, err = NewImage([]byte(labelString))
 		if err != nil {
-			return oci, err
+			return oci, runtime, err
 		}
 	}
 
@@ -627,7 +666,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	for _, t := range assignStrings(label.Tmpfs, yaml.Tmpfs) {
 		parts := strings.Split(t, ":")
 		if len(parts) > 2 {
-			return oci, fmt.Errorf("Cannot parse tmpfs, too many ':': %s", t)
+			return oci, runtime, fmt.Errorf("Cannot parse tmpfs, too many ':': %s", t)
 		}
 		dest := parts[0]
 		opts := []string{}
@@ -639,10 +678,10 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	for _, b := range assignStrings(label.Binds, yaml.Binds) {
 		parts := strings.Split(b, ":")
 		if len(parts) < 2 {
-			return oci, fmt.Errorf("Cannot parse bind, missing ':': %s", b)
+			return oci, runtime, fmt.Errorf("Cannot parse bind, missing ':': %s", b)
 		}
 		if len(parts) > 3 {
-			return oci, fmt.Errorf("Cannot parse bind, too many ':': %s", b)
+			return oci, runtime, fmt.Errorf("Cannot parse bind, too many ':': %s", b)
 		}
 		src := parts[0]
 		dest := parts[1]
@@ -667,7 +706,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 			tp = "tmpfs"
 		}
 		if tp == "" {
-			return oci, fmt.Errorf("Mount for destination %s is missing type", dest)
+			return oci, runtime, fmt.Errorf("Mount for destination %s is missing type", dest)
 		}
 		if src == "" {
 			// usually sane, eg proc, tmpfs etc
@@ -677,7 +716,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 			dest = defaultMountpoint(tp)
 		}
 		if dest == "" {
-			return oci, fmt.Errorf("Mount type %s is missing destination", tp)
+			return oci, runtime, fmt.Errorf("Mount type %s is missing destination", tp)
 		}
 		mounts[dest] = specs.Mount{Destination: dest, Type: tp, Source: src, Options: opts}
 	}
@@ -753,7 +792,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	}
 	for _, capability := range caps {
 		if !capCheck[capability] {
-			return oci, fmt.Errorf("unknown capability: %s", capability)
+			return oci, runtime, fmt.Errorf("unknown capability: %s", capability)
 		}
 		boundingSet[capability] = true
 	}
@@ -768,7 +807,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	}
 	for _, capability := range ambient {
 		if !capCheck[capability] {
-			return oci, fmt.Errorf("unknown capability: %s", capability)
+			return oci, runtime, fmt.Errorf("unknown capability: %s", capability)
 		}
 		boundingSet[capability] = true
 	}
@@ -797,7 +836,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 				var err error
 				soft, err = strconv.ParseUint(softString, 10, 64)
 				if err != nil {
-					return oci, fmt.Errorf("Cannot parse %s as uint64: %v", softString, err)
+					return oci, runtime, fmt.Errorf("Cannot parse %s as uint64: %v", softString, err)
 				}
 			}
 			hardString := strings.TrimSpace(rs[2])
@@ -807,7 +846,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 				var err error
 				hard, err = strconv.ParseUint(hardString, 10, 64)
 				if err != nil {
-					return oci, fmt.Errorf("Cannot parse %s as uint64: %v", hardString, err)
+					return oci, runtime, fmt.Errorf("Cannot parse %s as uint64: %v", hardString, err)
 				}
 			}
 			switch limit {
@@ -830,10 +869,10 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 				"RLIMIT_RTTIME":
 				rlimits = append(rlimits, specs.POSIXRlimit{Type: limit, Soft: soft, Hard: hard})
 			default:
-				return oci, fmt.Errorf("Unknown limit: %s", origLimit)
+				return oci, runtime, fmt.Errorf("Unknown limit: %s", origLimit)
 			}
 		default:
-			return oci, fmt.Errorf("Cannot parse rlimit: %s", rlimitsString)
+			return oci, runtime, fmt.Errorf("Cannot parse rlimit: %s", rlimitsString)
 		}
 	}
 
@@ -843,17 +882,17 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	agIf := assignInterfaceArray(label.AdditionalGids, yaml.AdditionalGids)
 	uid, err := idNumeric(uidIf, idMap)
 	if err != nil {
-		return oci, err
+		return oci, runtime, err
 	}
 	gid, err := idNumeric(gidIf, idMap)
 	if err != nil {
-		return oci, err
+		return oci, runtime, err
 	}
 	additionalGroups := []uint32{}
 	for _, id := range agIf {
 		ag, err := idNumeric(id, idMap)
 		if err != nil {
-			return oci, err
+			return oci, runtime, err
 		}
 		additionalGroups = append(additionalGroups, ag)
 	}
@@ -912,5 +951,7 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 		// IntelRdt
 	}
 
-	return oci, nil
+	runtime = assignRuntime(label.Runtime, yaml.Runtime)
+
+	return oci, runtime, nil
 }

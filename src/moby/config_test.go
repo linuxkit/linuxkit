@@ -44,7 +44,7 @@ func TestOverrides(t *testing.T) {
 
 	inspect := setupInspect(t, label)
 
-	oci, err := ConfigInspectToOCI(yaml, inspect, idMap)
+	oci, _, err := ConfigInspectToOCI(yaml, inspect, idMap)
 	if err != nil {
 		t.Error(err)
 	}
@@ -72,7 +72,7 @@ func TestInvalidCap(t *testing.T) {
 
 	inspect := setupInspect(t, label)
 
-	_, err := ConfigInspectToOCI(yaml, inspect, idMap)
+	_, _, err := ConfigInspectToOCI(yaml, inspect, idMap)
 	if err == nil {
 		t.Error("expected error, got valid OCI config")
 	}
@@ -95,7 +95,7 @@ func TestIdMap(t *testing.T) {
 
 	inspect := setupInspect(t, label)
 
-	oci, err := ConfigInspectToOCI(yaml, inspect, idMap)
+	oci, _, err := ConfigInspectToOCI(yaml, inspect, idMap)
 	if err != nil {
 		t.Error(err)
 	}

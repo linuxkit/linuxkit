@@ -181,6 +181,50 @@ bind mounted into a container.
 There are experimental `userns`, `uidMappings` and `gidMappings` options for user namespaces but these are not yet supported, and may have
 permissions issues in use.
 
+In addition to the parts of the specification above used to generate the OCI spec, there is a `runtime` section in the image specification
+which specifies some actions to take place when the container is being started.
+- `mkdir` takes a list of directories to create at runtime, in the root mount namespace. These are created before the container is started, so they can be used to create
+  directories for bind mounts, for example in `/tmp` or `/run` which would otherwise be empty.
+- `interface` defines a list of actions to perform on a network interface:
+  - `name` specifies the name of an interface. An existing interface with this name will be moved into the container's network namespace.
+  - `add` specifies a type of interface to be created in the containers namespace, with the specified name.
+  - `createInRoot` is a boolean which specifes that the interface being `add`ed should be created in the root namespace first, then moved. This is needed for `wireguard` interfaces.
+  - `peer` specifies the name of the other end when creating a `veth` interface. This end will remain in the root namespace, where it can be attached to a bridge. Specifying this implies `add: veth`.
+- `bindNS` specifies a namespace type and a path where the namespace from the container being created will be bound. This allows a namespace to be set up in an `onboot` container, and then
+  using `net: path` for a `service` container to use that network namespace later.
+
+An example of using the `runtime` config to configure a network namespace with `wireguard` and then run `nginx` in that namespace is shown below:
+```
+onboot:
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:<hash>
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: wg
+    image: linuxkit/ip:<hash>
+    net: new
+    binds:
+      - /etc/wireguard:/etc/wireguard
+    command: ["sh", "-c", "ip link set dev wg0 up; ip address add dev wg0 192.168.2.1 peer 192.168.2.2; wg setconf wg0 /etc/wireguard/wg0.conf; wg show wg0"]
+    runtime:
+      interfaces:
+        - name: wg0
+          add: wireguard
+          createInRoot: true
+      bindNS:
+        net: /run/netns/wg
+services:
+  - name: nginx
+    image: nginx:alpine
+    net: /run/netns/wg
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+```
+
+
 ### Mount Options
 When mounting filesystem paths into a container - whether as part of `onboot` or `services` - there are several options of which you need to be aware. Using them properly is necessary for your containers to function properly.
 
