@@ -40,12 +40,26 @@ var netProviders []Provider
 // cdromProviders is a list of Providers offering metadata/userdata data via CDROM
 var cdromProviders []Provider
 
-func init() {
-	netProviders = []Provider{NewGCP(), NewVultr(), NewAWS()}
-	cdromProviders = ListCDROMs()
-}
-
 func main() {
+	providers := []string{"aws", "gcp", "vultr", "cdrom"}
+	if len(os.Args) > 1 {
+		providers = os.Args[1:]
+	}
+	for _, p := range providers {
+		switch p {
+		case "aws":
+			netProviders = append(netProviders, NewAWS())
+		case "gcp":
+			netProviders = append(netProviders, NewGCP())
+		case "vultr":
+			netProviders = append(netProviders, NewVultr())
+		case "cdrom":
+			cdromProviders = ListCDROMs()
+		default:
+			log.Fatalf("Unrecognised metadata provider: %s", p)
+		}
+	}
+
 	if err := os.MkdirAll(ConfigPath, 0755); err != nil {
 		log.Fatalf("Could not create %s: %s", ConfigPath, err)
 	}
