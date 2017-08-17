@@ -15,7 +15,7 @@ onboot:
     image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:cec86f3e1c260c9eafefa80c262fceb40c182ddf
+    image: linuxkit/metadata:0c29c3ac1e5d2ee591d9710eca987f7df3fb9ca6
   - name: format
     image: linuxkit/format:158d992b7bf7ab984100c697d7e72161ea7d7382
   - name: mounts
