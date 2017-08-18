@@ -109,6 +109,7 @@ type IPReservationRequest struct {
 	Type     string `json:"type"`
 	Quantity int    `json:"quantity"`
 	Comments string `json:"comments"`
+	Facility string `json:"facility"`
 }
 
 // IPReservation represent an IP reservation for a single project
@@ -128,6 +129,7 @@ type IPReservation struct {
 	Created       string              `json:"created_at,omitempty"`
 	Updated       string              `json:"updated_at,omitempty"`
 	Href          string              `json:"href"`
+	Facility      Facility            `json:"facility,omitempty"`
 }
 
 type ipReservationRoot struct {
