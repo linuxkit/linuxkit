@@ -1,4 +1,4 @@
-From 6db2940dc2860c096792329a4fda60711f7c321a Mon Sep 17 00:00:00 2001
+From 02b994fbec42fea966c6e06b6eba099a3087cd9a Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Mar 2016 02:53:08 -0700
 Subject: [PATCH 40/44] net: add the AF_HYPERV entries to family name tables
