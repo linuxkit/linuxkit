@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:6ed3b299f5243acb6459b4993549c5045e4ad7f4 AS mirror
+FROM linuxkit/alpine:85eafb6391ee71af83d4338df70b416b00859469 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 # btrfs-progfs is required for btrfs test (mkfs.btrfs)
 # util-linux is required for btrfs test (losetup)
