@@ -7,20 +7,22 @@ init:
   - linuxkit/containerd:fc35653f832f053bfb1ce1ed84d2bb7a277e9c18
   - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
 onboot:
+  - name: rngd1
+    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
+    command: ["/sbin/rngd", "-1"]
   - name: sysctl
     image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: metadata
+    image: linuxkit/metadata:da3138079c168e0c5608d8f3853366c113ed91d2
+    command: ["/usr/bin/metadata", "packet"]
 services:
   - name: rngd
     image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
-  - name: dhcpcd
-    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
   - name: sshd
     image: linuxkit/sshd:505a985d7bd7a90f15eca9cb4dc6ec92789d51a0
-files:
-  - path: root/.ssh/authorized_keys
-    source: ~/.ssh/id_rsa.pub
-    mode: "0600"
-    optional: true
 trust:
   org:
     - linuxkit
