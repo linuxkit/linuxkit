@@ -1,4 +1,5 @@
 IMAGE=init
-DEPS=init.go vendor.conf usermode-helper.c $(wildcard etc/*) $(wildcard etc/init.d/*)
+NETWORK=1
+DEPS=usermode-helper.c $(wildcard etc/*) $(wildcard etc/init.d/*) $(shell find cmd -type f)
 
 include ../package.mk

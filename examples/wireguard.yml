@@ -1,0 +1,57 @@
+kernel:
+  image: linuxkit/kernel:4.9.43
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:09d549199c7615fee56567c70d8263585dfa02f7
+  - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
+  - linuxkit/containerd:fc35653f832f053bfb1ce1ed84d2bb7a277e9c18
+  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: wg
+    image: linuxkit/ip:4ce3b47fef3a9d5c78ae45e2946c9fdf95af2fa5
+    net: new
+    binds:
+      - /etc/wireguard:/etc/wireguard
+    command: ["sh", "-c", "ip link set dev wg0 up; ip address add dev wg0 192.168.2.1 peer 192.168.2.2; wg setconf wg0 /etc/wireguard/wg0.conf; wg show wg0"]
+    runtime:
+      interfaces:
+        - name: wg0
+          add: wireguard
+          createInRoot: true
+      bindNS:
+          net: /run/netns/wg
+services:
+  - name: getty
+    image: linuxkit/getty:797cb79e0a229fcd16ebf44a0da74bcec03968ec
+    env:
+     - INSECURE=true
+    net: /run/netns/wg
+  - name: rngd
+    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
+  - name: nginx
+    image: nginx:alpine
+    net: /run/netns/wg
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+files:
+  - path: etc/wireguard/wg0.conf
+    contents: |
+      [Interface] 
+      PrivateKey = yAnz5TF+lXXJte14tji3zlMNq+hd2rYUIgJBgB3fBmk= 
+      ListenPort = 51820
+      [Peer] 
+      PublicKey = xTIBA5rboUvnH4htodjb6e697QjLERt1NAB4mZqp8Dg= 
+      AllowedIPs = 0.0.0.0/0
+trust:
+  org:
+    - linuxkit
+    - library

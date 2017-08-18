@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:4.9.43
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:c7d651da1a5e308c757bc61ce6a41804ea843426
-  - linuxkit/runc:838259153885c0c40460379d6cdb7baebaf3fa36
-  - linuxkit/containerd:09a21d6606a4011efebacff62a88b956ecac01be
+  - linuxkit/init:09d549199c7615fee56567c70d8263585dfa02f7
+  - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
+  - linuxkit/containerd:fc35653f832f053bfb1ce1ed84d2bb7a277e9c18
   - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
 onboot:
   - name: sysctl

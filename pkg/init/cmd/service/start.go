@@ -55,11 +55,15 @@ func startCmd(args []string) {
 	log.Debugf("Started %s pid %d", id, pid)
 }
 
-func start(service, sock, path, dumpSpec string) (string, uint32, string, error) {
-	rootfs := filepath.Join(path, service, "rootfs")
+func start(service, sock, basePath, dumpSpec string) (string, uint32, string, error) {
+	path := filepath.Join(basePath, service)
 
-	if err := prepare(filepath.Join(path, service)); err != nil {
-		return "", 0, "preparing rootfs", err
+	runtimeConfig := getRuntimeConfig(path)
+
+	rootfs := filepath.Join(path, "rootfs")
+
+	if err := prepareFilesystem(path, runtimeConfig); err != nil {
+		return "", 0, "preparing filesystem", err
 	}
 
 	client, err := containerd.New(sock)
@@ -70,7 +74,7 @@ func start(service, sock, path, dumpSpec string) (string, uint32, string, error)
 	ctx := namespaces.WithNamespace(context.Background(), "default")
 
 	var spec *specs.Spec
-	specf, err := os.Open(filepath.Join(path, service, "config.json"))
+	specf, err := os.Open(filepath.Join(path, "config.json"))
 	if err != nil {
 		return "", 0, "failed to read service spec", err
 	}
@@ -117,6 +121,10 @@ func start(service, sock, path, dumpSpec string) (string, uint32, string, error)
 	if err != nil {
 		// Don't bother to destroy the container here.
 		return "", 0, "failed to create task", err
+	}
+
+	if err := prepareProcess(int(task.Pid()), runtimeConfig); err != nil {
+		return "", 0, "preparing process", err
 	}
 
 	if err := task.Start(ctx); err != nil {

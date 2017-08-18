@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -13,6 +14,9 @@ const (
 	defaultSocket     = "/run/containerd/containerd.sock"
 	defaultPath       = "/containers/services"
 	defaultContainerd = "/usr/bin/containerd"
+	installPath       = "/usr/bin/service"
+	onbootPath        = "/containers/onboot"
+	shutdownPath      = "/containers/onshutdown"
 )
 
 var (
@@ -66,8 +70,17 @@ func main() {
 
 	args := flag.Args()
 	if len(args) < 1 {
-		systemInitCmd(args)
-		os.Exit(0)
+		// check if called form startup scripts
+		command := os.Args[0]
+		switch {
+		case strings.Contains(command, "onboot"):
+			os.Exit(runcInit(onbootPath))
+		case strings.Contains(command, "onshutdown"):
+			os.Exit(runcInit(shutdownPath))
+		case strings.Contains(command, "containerd"):
+			systemInitCmd([]string{})
+			os.Exit(0)
+		}
 	}
 
 	switch args[0] {
