@@ -166,12 +166,11 @@ func runPacket(args []string) {
 		log.Debugf("%s\n", string(b))
 
 		req := packngo.DeviceUpdateRequest{
-			HostName:     hostname,
-			BillingCycle: dev.BillingCycle,
-			UserData:     userData,
-			Locked:       dev.Locked,
-			Tags:         dev.Tags,
-			AlwaysPXE:    *alwaysPXE,
+			HostName:  hostname,
+			UserData:  userData,
+			Locked:    dev.Locked,
+			Tags:      dev.Tags,
+			AlwaysPXE: *alwaysPXE,
 		}
 		dev, _, err = client.Devices.Update(*deviceFlag, &req)
 		if err != nil {

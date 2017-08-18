@@ -67,7 +67,6 @@ type DeviceCreateRequest struct {
 type DeviceUpdateRequest struct {
 	HostName      string   `json:"hostname"`
 	Description   string   `json:"description"`
-	BillingCycle  string   `json:"billing_cycle"`
 	UserData      string   `json:"userdata"`
 	Locked        bool     `json:"locked"`
 	Tags          []string `json:"tags"`
