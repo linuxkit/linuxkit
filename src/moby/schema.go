@@ -208,6 +208,42 @@ var schema = string(`
         "network": {"$ref": "#/definitions/network"}
       }
     },
+    "interfaces": {
+      "type": "array",
+      "items": {"$ref": "#/definitions/interface"}
+    },
+    "interface": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {"type": "string"},
+        "add": {"type": "string"},
+        "peer": {"type": "string"},
+        "createInRoot": {"type": "boolean"}
+      }
+    },
+    "namespaces": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "cgroup": {"type": "string"},
+        "ipc": {"type": "string"},
+        "mnt": {"type": "string"},
+        "net": {"type": "string"},
+        "pid": {"type": "string"},
+        "user": {"type": "string"},
+        "uts": {"type": "string"}
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "mkdir": {"$ref": "#/definitions/strings"},
+        "interfaces": {"$ref": "#/definitions/interfaces"},
+        "bindNS": {"$ref": "#/definitions/namespaces"}
+      }
+    },
     "image": {
       "type": "object",
       "additionalProperties": false,
@@ -249,7 +285,8 @@ var schema = string(`
         },
         "rlimits": { "$ref": "#/definitions/strings" },
         "uidMappings": { "$ref": "#/definitions/idmappings" },
-        "gidMappings": { "$ref": "#/definitions/idmappings" }
+        "gidMappings": { "$ref": "#/definitions/idmappings" },
+        "runtime": {"$ref": "#/definitions/runtime"}
       }
     },
     "images": {

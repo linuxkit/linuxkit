@@ -189,8 +189,8 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix string, image string, config []byte, tw tarWriter, trust bool, pull bool, readonly bool) error {
-	log.Debugf("image bundle: %s %s cfg: %s", prefix, image, string(config))
+func ImageBundle(prefix string, image string, config []byte, runtimeConfig []byte, tw tarWriter, trust bool, pull bool, readonly bool) error {
+	log.Debugf("image bundle: %s %s cfg: %s runtime: %s", prefix, image, string(config), string(runtimeConfig))
 
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
 	rootfs := "rootfs"
@@ -213,6 +213,23 @@ func ImageBundle(prefix string, image string, config []byte, tw tarWriter, trust
 	if _, err := io.Copy(tw, buf); err != nil {
 		return err
 	}
+
+	// do not write an empty runtime config
+	if string(runtimeConfig) != "{}" {
+		hdr = &tar.Header{
+			Name: path.Join(prefix, "runtime.json"),
+			Mode: 0644,
+			Size: int64(len(runtimeConfig)),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		buf = bytes.NewBuffer(runtimeConfig)
+		if _, err := io.Copy(tw, buf); err != nil {
+			return err
+		}
+	}
+
 	if !readonly {
 		// add a tmp directory to be used as a mount point for tmpfs for upper, work
 		hdr = &tar.Header{

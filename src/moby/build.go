@@ -123,7 +123,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 func outputImage(image Image, section string, prefix string, m Moby, idMap map[string]uint32, pull bool, iw *tar.Writer) error {
 	log.Infof("  Create OCI config for %s", image.Image)
 	useTrust := enforceContentTrust(image.Image, &m.Trust)
-	oci, err := ConfigToOCI(image, useTrust, idMap)
+	oci, runtime, err := ConfigToOCI(image, useTrust, idMap)
 	if err != nil {
 		return fmt.Errorf("Failed to create OCI spec for %s: %v", image.Image, err)
 	}
@@ -131,9 +131,13 @@ func outputImage(image Image, section string, prefix string, m Moby, idMap map[s
 	if err != nil {
 		return fmt.Errorf("Failed to create config for %s: %v", image.Image, err)
 	}
+	runtimeConfig, err := json.MarshalIndent(runtime, "", "    ")
+	if err != nil {
+		return fmt.Errorf("Failed to create runtime config for %s: %v", image.Image, err)
+	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, image.Image, config, iw, useTrust, pull, readonly)
+	err = ImageBundle(path, image.Image, config, runtimeConfig, iw, useTrust, pull, readonly)
 	if err != nil {
 		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 	}
