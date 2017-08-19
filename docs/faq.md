@@ -12,7 +12,7 @@ updater container to control this for people who want to use this.
 
 We generally use external tooling such as [Infrakit](https://github.com/docker/infrakit) or
 CloudFormation templates to manage the update process externally from LinuxKit, including
-doing rolling cluster upgrades to make sure distributed applciations stay up and responsive.
+doing rolling cluster upgrades to make sure distributed applications stay up and responsive.
 
 Updates may preserve the state disk used by applications if needed, either on the same physical
 node, or by reattaching a virtual cloud volume to a new node.
