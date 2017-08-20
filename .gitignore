@@ -10,6 +10,7 @@ Dockerfile.media
 *.vmdk
 *.vmdk.lck
 *.tar
+*.tar.xz
 *.gz
 *.vhdx
 *.efi
