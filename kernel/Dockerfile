@@ -64,13 +64,12 @@ COPY kernel_config.debug /linux/debug_config
 RUN case $(uname -m) in \
     x86_64) \
         KERNEL_DEF_CONF=/linux/arch/x86/configs/x86_64_defconfig; \
-        cp /linux/kernel_config-${KERNEL_SERIES} ${KERNEL_DEF_CONF}; \
         ;; \
     aarch64) \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
-        cp /linux/kernel_config-${KERNEL_SERIES}-aarch64 ${KERNEL_DEF_CONF}; \
         ;; \
     esac  && \
+    cp /linux/kernel_config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
     if [ -n "${DEBUG}" ]; then \
         sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
         cat /linux/debug_config >> ${KERNEL_DEF_CONF}; \
