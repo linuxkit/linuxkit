@@ -57,7 +57,15 @@ RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
-# When using COPY with more than one source file, the destination must be a directory and end with a /
+# Apply local patches
+COPY patches-${KERNEL_SERIES} /patches
+WORKDIR /linux
+RUN set -e && for patch in /patches/*.patch; do \
+        echo "Applying $patch"; \
+        patch -p1 < "$patch"; \
+    done
+
+# Kernel config
 COPY kernel_config-${KERNEL_SERIES}* /linux/
 COPY kernel_config.debug /linux/debug_config
 
@@ -74,22 +82,15 @@ RUN case $(uname -m) in \
         sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
         cat /linux/debug_config >> ${KERNEL_DEF_CONF}; \
     fi && \
-    rm /linux/kernel_config-${KERNEL_SERIES}*
-
-# Apply local patches
-COPY patches-${KERNEL_SERIES} /patches
-WORKDIR /linux
-RUN set -e && for patch in /patches/*.patch; do \
-        echo "Applying $patch"; \
-        patch -p1 < "$patch"; \
-    done
+    rm /linux/kernel_config-${KERNEL_SERIES}* && \
+    make defconfig && \
+    make oldconfig && \
+    diff .config ${KERNEL_DEF_CONF}
 
 RUN mkdir /out
 
 # Kernel
-RUN make defconfig && \
-    make oldconfig && \
-    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
+RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
     case $(uname -m) in \
     x86_64) \
         cp arch/x86_64/boot/bzImage /out/kernel; \
