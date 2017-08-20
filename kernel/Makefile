@@ -51,10 +51,15 @@ LABELS=$(REPO_LABEL) $(COMMIT_LABEL)
 
 .PHONY: check tag push
 # Targets:
-# build: builds all kernels
-# push:  pushes and sign all tagged kernel images to hub
+# fetch: Downloads the kernel sources into ./sources
+# build: Builds all kernels
+# push:  Pushes and sign all tagged kernel images to hub
+fetch:
 build:
 push:
+
+sources:
+	mkdir -p $@
 
 # A template for defining kernel build
 # Arguments:
@@ -68,7 +73,12 @@ push:
 # build_4.9.x_dbg and adds "_dbg" to the hub image name.
 define kernel
 
-build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel_config-$(2)*) kernel_config.debug
+ifeq ($(3),)
+sources/linux-$(1).tar.xz: Makefile | sources
+	curl -fsSLo sources/linux-$(1).tar.xz https://www.kernel.org/pub/linux/kernel/v4.x/linux-$(1).tar.xz 
+endif
+
+build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel_config-$(2)*) kernel_config.debug | sources
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
@@ -92,6 +102,7 @@ show-tag_$(2)$(3):
 build: build_$(2)$(3)
 push: push_$(2)$(3)
 show-tags: show-tag_$(2)$(3)
+fetch: sources/linux-$(1).tar.xz
 
 ifneq ($(2), 4.4.x)
 build_perf_$(2)$(3): build_$(2)$(3)
