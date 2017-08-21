@@ -40,6 +40,17 @@ RUN go get -u github.com/golang/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
+# checkout containerd
+# Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
+# `test/pkg/containerd/Dockerfile` when changing this.
+ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
+ENV CONTAINERD_COMMIT=v1.0.0-alpha4
+RUN mkdir -p $GOPATH/src/github.com/containerd && \
+  cd $GOPATH/src/github.com/containerd && \
+  git clone https://github.com/containerd/containerd.git && \
+  cd $GOPATH/src/github.com/containerd/containerd && \
+  git checkout $CONTAINERD_COMMIT
+
 FROM $BASE
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
@@ -48,10 +59,8 @@ COPY --from=mirror /etc/apk/keys /etc/apk/keys/
 COPY --from=mirror /mirror /mirror/
 COPY --from=mirror /go/bin /go/bin/
 COPY --from=mirror /Dockerfile /Dockerfile
+COPY --from=mirror /go/src/github.com/containerd/containerd /go/src/github.com/containerd/containerd/
 
 RUN apk update && apk upgrade -a
 
-# Update `FROM` in both `pkg/containerd/Dockerfile` and
-# `test/pkg/containerd/Dockerfile` when changing this.
-ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.0.0-alpha4
+ENV GOPATH=/go PATH=$PATH:/go/bin

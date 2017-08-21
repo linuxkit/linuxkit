@@ -25,6 +25,7 @@ diffutils
 dosfstools
 e2fsprogs
 e2fsprogs-extra
+ebtables
 elfutils-dev
 ethtool
 expect
@@ -45,9 +46,10 @@ iptables
 jq
 kmod
 libarchive-tools
-libcap-ng-dev
 libc-dev
 libc-utils
+libc6-compat
+libcap-ng-dev
 libelf-dev
 libressl-dev
 libseccomp-dev
@@ -75,6 +77,7 @@ sed
 sfdisk
 sgdisk
 slang-dev
+socat
 squashfs-tools
 strace
 swig
@@ -86,9 +89,9 @@ util-linux
 util-linux-dev
 vim
 xfsprogs
+xfsprogs-extra
 xorriso
 xz
 xz-dev
 zfs
-xfsprogs-extra
 zlib-dev
