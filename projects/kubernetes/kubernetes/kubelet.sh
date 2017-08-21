@@ -2,6 +2,8 @@
 mount --bind /opt/cni /rootfs/opt/cni
 mount --bind /etc/cni /rootfs/etc/cni
 until kubelet --kubeconfig=/var/lib/kubeadm/kubelet.conf \
+	      --container-runtime=remote \
+	      --container-runtime-endpoint=unix:///var/run/cri-containerd.sock \
 	      --require-kubeconfig=true \
 	      --pod-manifest-path=/var/lib/kubeadm/manifests \
 	      --allow-privileged=true \
