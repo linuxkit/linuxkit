@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:12348442d56c2ee9abf13ff38dff2e36b515bd1e # with runc, logwrite, startmemlogd
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
-  - linuxkit/containerd:fc35653f832f053bfb1ce1ed84d2bb7a277e9c18
+  - linuxkit/containerd:8e4aa6c09e9bceee8300a315c23e0333e187f5fa
   - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
   - linuxkit/memlogd:9b5834189f598f43c507f6938077113906f51012
 onboot:
