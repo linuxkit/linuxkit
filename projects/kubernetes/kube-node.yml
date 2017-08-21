@@ -21,11 +21,6 @@ onboot:
   - name: mounts
     image: linuxkit/mount:4fe245efb01384e42622c36302e13e386bbaeb08
     command: ["/usr/bin/mountie", "/var/lib/"]
-  - name: var
-    image: library/alpine:3.6
-    command: ["mkdir", "/var/lib/kubeadm"]
-    binds:
-      - /var/lib:/var/lib
 services:
   - name: getty
     image: linuxkit/getty:797cb79e0a229fcd16ebf44a0da74bcec03968ec
@@ -56,10 +51,14 @@ services:
      - /opt/cni:/opt/cni:rshared,rbind
     rootfsPropagation: shared
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+    runtime:
+      mkdir: ["/var/lib/kubeadm"]
   - name: kubernetes-image-cache-common
     image: linuxkitprojects/kubernetes-image-cache-common:ba16b1f8cfe4f415a5946d521e59f67eaeecd9ce
   - name: kubelet
     image: linuxkitprojects/kubernetes:bbf14d70199babeea1f71f5b0bd70c1c1c9b5cd2
+    runtime:
+      mkdir: ["/var/lib/kubeadm"]
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
