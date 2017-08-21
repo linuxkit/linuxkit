@@ -1,6 +1,6 @@
 FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS build
 
-ENV kubernetes_version v1.7.2
+ENV kubernetes_version v1.7.4
 ENV weave_version      v2.0.1
 ENV cni_version        v0.5.2
 
