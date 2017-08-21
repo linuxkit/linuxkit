@@ -1,6 +1,4 @@
-#FROM linuxkit/alpine:9bcf61f605ef0ce36cc94d59b8eac307862de6e1 AS build
-# XXX needs ebtables ethtool iproute2 libc6-compat socat
-FROM alpine:3.6 AS build
+FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS build
 
 ENV kubernetes_version v1.7.2
 ENV weave_version      v2.0.1
