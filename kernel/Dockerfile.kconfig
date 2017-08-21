@@ -1,0 +1,36 @@
+FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS kernel-build
+RUN apk add \
+    argp-standalone \
+    build-base \
+    curl \
+    diffutils \
+    ncurses-dev \
+    tar \
+    xz
+
+ARG KERNEL_VERSIONS
+
+# There is no simple way to copy directories with wild cards as needed
+# for patches-*. Copy the entire dir instead.
+COPY / /
+
+# Unpack kernels (download if not present)
+RUN for VERSION in ${KERNEL_VERSIONS}; do \
+        KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${VERSION}.tar.xz && \
+        [ -f sources/linux-${VERSION}.tar.xz ] || curl -fSLo sources/linux-${VERSION}.tar.xz ${KERNEL_SOURCE} && \
+        tar xf sources/linux-${VERSION}.tar.xz; \
+    done
+
+# Apply patches to all kernels and move config files into place
+RUN for VERSION in ${KERNEL_VERSIONS}; do \
+        SERIES=${VERSION%.*}.x && \
+        cd /linux-${VERSION} && \
+        for patch in /patches-${SERIES}/*.patch; do \
+            echo "Applying $patch" && \
+            patch -p1 < "$patch"; \
+        done && \
+        mv /kernel_config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
+        mv /kernel_config-${SERIES}-aarch64 arch/arm64/configs/defconfig; \
+    done
+
+ENTRYPOINT ["/bin/sh"]
