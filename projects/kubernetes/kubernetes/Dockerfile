@@ -33,7 +33,7 @@ RUN rmdir /out/var/run && ln -nfs /run /out/var/run
 RUN curl -fSL -o /tmp/cni.tgz https://github.com/containernetworking/cni/releases/download/v0.5.2/cni-amd64-${cni_version}.tgz && \
     mkdir -p /out/opt/cni/bin /out/etc/cni/net.d && \
     tar -xzf /tmp/cni.tgz -C /out/opt/cni/bin
-RUN curl -fSL -o /out/etc/weave.yaml https://cloud.weave.works/k8s/v1.6/net?v=${weave_version} 
+RUN curl -fSL -o /out/etc/weave.yaml https://cloud.weave.works/k8s/v1.7/net?v=${weave_version} 
 RUN curl -fSL -o /out/usr/bin/kubelet https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubelet && chmod 0755 /out/usr/bin/kubelet
 RUN curl -fSL -o /out/usr/bin/kubeadm https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubeadm && chmod 0755 /out/usr/bin/kubeadm
 RUN curl -fSL -o /out/usr/bin/kubectl https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubectl && chmod 0755 /out/usr/bin/kubectl
