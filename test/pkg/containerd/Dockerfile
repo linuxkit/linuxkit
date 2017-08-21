@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:6ed3b299f5243acb6459b4993549c5045e4ad7f4 AS mirror
+FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 # btrfs-progfs is required for btrfs test (mkfs.btrfs)
 # util-linux is required for btrfs test (losetup)
@@ -21,17 +21,9 @@ RUN apk add --no-cache --initdb -p /out \
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 RUN cp /out/usr/share/zoneinfo/UTC /out/etc/localtime
 
-RUN apk add git
-ENV GOPATH=/out/go
-RUN mkdir -p $GOPATH/src/github.com/containerd && \
-  cd $GOPATH/src/github.com/containerd && \
-  git clone https://github.com/containerd/containerd.git
-WORKDIR $GOPATH/src/github.com/containerd/containerd
-# CONTAINERD_COMMIT is defined in linuxkit/alpine
-RUN git checkout $CONTAINERD_COMMIT
-
 FROM scratch
 COPY --from=mirror /out/ /
+COPY --from=mirror /go/src/github.com/containerd/containerd /go/src/github.com/containerd/containerd/
 ENV GOPATH=/go
 WORKDIR $GOPATH/src/github.com/containerd/containerd
 ADD run.sh ./run.sh
