@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that ctr can run containers
-# LABELS:
+# LABELS: skip
 # REPEAT:
 
 set -e

@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.9.44
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:09d549199c7615fee56567c70d8263585dfa02f7
+  - linuxkit/init:9abee9a05602bba53b44267426e7fdd6047fc40e
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
 onboot:
   - name: sysctl
