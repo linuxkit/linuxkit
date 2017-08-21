@@ -47,24 +47,20 @@ services:
      - /run:/run
      - /var:/var:rshared,rbind
      - /var/lib/kubeadm:/etc/kubernetes
-     - /etc/cni:/etc/cni:rshared,rbind
-     - /opt/cni:/opt/cni:rshared,rbind
+     - /var/lib/cni/etc:/etc/cni:rshared,rbind
+     - /var/lib/cni/opt:/opt/cni:rshared,rbind
     rootfsPropagation: shared
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
     runtime:
-      mkdir: ["/var/lib/kubeadm"]
+      mkdir: ["/var/lib/kubeadm", "/var/lib/cni/etc", "/var/lib/cni/opt"]
   - name: kubernetes-image-cache-common
-    image: linuxkitprojects/kubernetes-image-cache-common:ba16b1f8cfe4f415a5946d521e59f67eaeecd9ce
+    image: linuxkitprojects/kubernetes-image-cache-common:0d818c5b1a7a0a0aa52c2a52e23de784d7fd5e25
   - name: kubernetes-image-cache-control-plane
-    image: linuxkitprojects/kubernetes-image-cache-control-plane:ba16b1f8cfe4f415a5946d521e59f67eaeecd9ce
+    image: linuxkitprojects/kubernetes-image-cache-control-plane:0d818c5b1a7a0a0aa52c2a52e23de784d7fd5e25
   - name: kubelet
-    image: linuxkitprojects/kubernetes:bbf14d70199babeea1f71f5b0bd70c1c1c9b5cd2
-    runtime:
-      mkdir: ["/var/lib/kubeadm"]
+    image: linuxkitprojects/kubernetes:c4a6ae5121df50471ad244b9fc153ff5eb674fb2
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
     mode: "0600"
     optional: true
-  - {path: etc/cni, directory: true}
-  - {path: opt/cni, directory: true}

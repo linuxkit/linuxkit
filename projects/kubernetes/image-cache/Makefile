@@ -1,16 +1,16 @@
 default: push
 
 COMMON_IMAGES := \
-  kube-proxy-amd64\:v1.7.2@sha256\:d455480e81d60e0eff3415675278fe3daec6f56c79cd5b33a9b76548d8ab4365 \
+  kube-proxy-amd64\:v1.7.4@sha256\:5373a1c294c9ffb2e842d74d3df8fcc5bed68c02af3fb3611c2fd71a411a68fe \
   k8s-dns-sidecar-amd64\:1.14.4@sha256\:97074c951046e37d3cbb98b82ae85ed15704a290cce66a8314e7f846404edde9 \
   k8s-dns-kube-dns-amd64\:1.14.4@sha256\:40790881bbe9ef4ae4ff7fe8b892498eecb7fe6dcc22661402f271e03f7de344 \
   k8s-dns-dnsmasq-nanny-amd64\:1.14.4@sha256\:aeeb994acbc505eabc7415187cd9edb38cbb5364dc1c2fc748154576464b3dc2 \
   pause-amd64\:3.0@sha256\:163ac025575b775d1c0f9bf0bdd0f086883171eb475b5068e7defa4ca9e76516
 
 CONTROL_PLANE_IMAGES := \
-  kube-apiserver-amd64\:v1.7.2@sha256\:a9ccc205760319696d2ef0641de4478ee90fb0b75fbe6c09b1d64058c8819f97 \
-  kube-controller-manager-amd64\:v1.7.2@sha256\:2b268ab9017fadb006ee994f48b7222375fe860dc7bd14bf501b98f0ddc2961b \
-  kube-scheduler-amd64\:v1.7.2@sha256\:b2e897138449e7a00508dc589b1d4b71e56498a4d949ff30eb07b1e9d665e439 \
+  kube-apiserver-amd64\:v1.7.4@sha256\:f880371b4cee1a810d7caf4c8a2c0b8fa169879545b06a537e4ea6bcdfbbe1f6 \
+  kube-controller-manager-amd64\:v1.7.4@sha256\:7e31b7f71a8c1904c8b38c1681666ef551d0598fbbb4142522b05074ae0c9fd1 \
+  kube-scheduler-amd64\:v1.7.4@sha256\:3712116f370e21938e6a55e0f73dc02a4a6f4830a33304127105ed89451ee527 \
   etcd-amd64\:3.0.17@sha256\:d83d3545e06fb035db8512e33bd44afb55dea007a3abd7b17742d3ac6d235940
 
 dl/%.tar:

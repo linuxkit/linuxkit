@@ -3,6 +3,7 @@ IMAGE=kubernetes-image-cache-$(CACHE)
 NOTRUST=1
 SOURCE=$(BUILDDIR)
 DEPS=$(BUILDDIR)/Dockerfile
+ARCHES=x86_64
 
 $(BUILDDIR)/Dockerfile: Dockerfile
 	cp $< $@
