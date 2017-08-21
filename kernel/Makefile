@@ -49,6 +49,8 @@ COMMIT_LABEL=--label org.opencontainers.image.revision=$(REPO_COMMIT)
 endif
 LABELS=$(REPO_LABEL) $(COMMIT_LABEL)
 
+KERNEL_VERSIONS=
+
 .PHONY: check tag push
 # Targets:
 # fetch: Downloads the kernel sources into ./sources
@@ -76,6 +78,7 @@ define kernel
 ifeq ($(3),)
 sources/linux-$(1).tar.xz: Makefile | sources
 	curl -fsSLo sources/linux-$(1).tar.xz https://www.kernel.org/pub/linux/kernel/v4.x/linux-$(1).tar.xz 
+KERNEL_VERSIONS+=$(1)
 endif
 
 build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel_config-$(2)*) kernel_config.debug | sources
@@ -133,3 +136,9 @@ endef
 $(eval $(call kernel,4.9.44,4.9.x))
 $(eval $(call kernel,4.9.44,4.9.x,_dbg))
 $(eval $(call kernel,4.4.83,4.4.x))
+
+# Target for kernel config
+kconfig: | sources
+	docker build --no-cache -f Dockerfile.kconfig \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		-t linuxkit/kconfig  .
