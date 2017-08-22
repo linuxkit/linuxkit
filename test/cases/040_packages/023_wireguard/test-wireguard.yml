@@ -1,14 +1,12 @@
 kernel:
   image: linuxkit/kernel:4.9.43
-  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
+  cmdline: "console=ttyS0"
 init:
   - linuxkit/init:2122f8b7202b383c1be0a91a02122b0c078ca6ac
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
   - linuxkit/containerd:8e4aa6c09e9bceee8300a315c23e0333e187f5fa
   - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
 onboot:
-  - name: sysctl
-    image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
   - name: dhcpcd
     image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
@@ -38,14 +36,14 @@ onboot:
           createInRoot: true
       bindNS:
           net: /run/netns/wg1
+onshutdown:
+  - name: test2
+    image: alpine:3.6
+    binds:
+      - /tmp:/tmp
+      - /check.sh:/check.sh
+    command: ["sh", "./check.sh", "shutdown"]
 services:
-  - name: getty
-    image: linuxkit/getty:797cb79e0a229fcd16ebf44a0da74bcec03968ec
-    env:
-     - INSECURE=true
-    net: /run/netns/wg1
-  - name: rngd
-    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
   - name: nginx
     image: nginx:alpine
     net: /run/netns/wg0
@@ -55,6 +53,16 @@ services:
      - CAP_SETUID
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
+  - name: test
+    image: alpine:3.6
+    net: /run/netns/wg1
+    pid: host
+    capabilities:
+      - CAP_KILL
+    binds:
+      - /tmp:/tmp
+      - /check.sh:/check.sh
+    command: ["sh", "./check.sh"]
 files:
   - path: etc/wireguard/wg0.conf
     contents: |
@@ -74,6 +82,8 @@ files:
       PublicKey = AcS5t3PC5nL/oj0sYhc3yFpDlRaXoJ0mfEq6iq0rFF4=
       AllowedIPs = 0.0.0.0/0
       Endpoint = 127.0.0.1:51820
+  - path: check.sh
+    source: ./check.sh
 trust:
   org:
     - linuxkit
