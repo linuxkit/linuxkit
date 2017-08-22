@@ -191,16 +191,28 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool) error {
+func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string) error {
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
-	rootfs := "rootfs"
+	rootExtract := "rootfs"
 	if !readonly {
-		rootfs = "lower"
+		rootExtract = "lower"
 	}
 
-	if err := ImageTar(image, path.Join(prefix, rootfs)+"/", tw, trust, pull, ""); err != nil {
-		return err
+	// See if we have extracted this image previously
+	root := path.Join(prefix, rootExtract)
+	var foundElsewhere = dupMap[image] != ""
+	if !foundElsewhere {
+		if err := ImageTar(image, root+"/", tw, trust, pull, ""); err != nil {
+			return err
+		}
+		dupMap[image] = root
+	} else {
+		if err := tarPrefix(prefix+"/", tw); err != nil {
+			return err
+		}
+		root = dupMap[image]
 	}
+
 	hdr := &tar.Header{
 		Name: path.Join(prefix, "config.json"),
 		Mode: 0644,
@@ -237,11 +249,22 @@ func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw
 		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "tmpfs", Type: "tmpfs", Destination: "/" + tmp})
 		// remount private as nothing else should see the temporary layers
 		runtime.Mounts = append(runtime.Mounts, specs.Mount{Destination: "/" + tmp, Options: []string{"remount", "private"}})
-		overlayOptions := []string{"lowerdir=/" + path.Join(prefix, "lower"), "upperdir=/" + path.Join(tmp, "upper"), "workdir=/" + path.Join(tmp, "work")}
+		overlayOptions := []string{"lowerdir=/" + root, "upperdir=/" + path.Join(tmp, "upper"), "workdir=/" + path.Join(tmp, "work")}
 		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "overlay", Type: "overlay", Destination: "/" + path.Join(prefix, "rootfs"), Options: overlayOptions})
 	} else {
-		// make rootfs a mountpoint as runc can be picky about this
-		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: path.Join(prefix, rootfs), Destination: "/" + path.Join(prefix, "rootfs"), Options: []string{"bind"}})
+		if foundElsewhere {
+			// we need to make the mountpoint at rootfs
+			hdr = &tar.Header{
+				Name:     path.Join(prefix, "rootfs"),
+				Mode:     0755,
+				Typeflag: tar.TypeDir,
+			}
+			if err := tw.WriteHeader(hdr); err != nil {
+				return err
+			}
+		}
+		// either bind from another location, or bind from self to make sure it is a mountpoint as runc prefers this
+		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "/" + root, Destination: "/" + path.Join(prefix, "rootfs"), Options: []string{"bind"}})
 	}
 
 	// write the runtime config
