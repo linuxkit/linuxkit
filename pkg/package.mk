@@ -3,6 +3,7 @@ default: push
 
 ORG?=linuxkit
 SOURCE ?= .
+BUILD_ARG?=
 
 ARCH := $(shell uname -m)
 
@@ -80,10 +81,10 @@ show-tag:
 
 tag-y: $(BASE_DEPS) $(DEPS)
 	docker pull $(TAG)$(SUFFIX) || \
-	docker build $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
+	docker build $(BUILD_ARG) $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
 
 forcetag-y: $(BASE_DEPS) $(DEPS)
-	docker build $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
+	docker build $(BUILD_ARG) $(LABELS) $(NET_OPT) -t $(TAG)$(SUFFIX) $(SOURCE)
 
 check-dirty:
 ifneq ($(DIRTY),)
