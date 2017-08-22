@@ -266,27 +266,7 @@ func prepareProcess(pid int, runtime Runtime) error {
 
 // cleanup functions are best efforts only, mainly for rw onboot containers
 func cleanup(path string) {
-	// see if we are dealing with a read only or read write container
-	if _, err := os.Stat(filepath.Join(path, "lower")); err != nil {
-		cleanupRO(path)
-	} else {
-		cleanupRW(path)
-	}
-}
-
-func cleanupRO(path string) {
-	// remove the bind mount
+	// remove the root mount
 	rootfs := filepath.Join(path, "rootfs")
 	_ = unix.Unmount(rootfs, 0)
-}
-
-func cleanupRW(path string) {
-	// remove the overlay mount
-	rootfs := filepath.Join(path, "rootfs")
-	_ = os.RemoveAll(rootfs)
-	_ = unix.Unmount(rootfs, 0)
-	// remove the tmpfs
-	tmp := filepath.Join(path, "tmp")
-	_ = os.RemoveAll(tmp)
-	_ = unix.Unmount(tmp, 0)
 }
