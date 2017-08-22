@@ -1,0 +1,90 @@
+kernel:
+  image: linuxkit/kernel:4.9.43
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:2122f8b7202b383c1be0a91a02122b0c078ca6ac
+  - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
+  - linuxkit/containerd:8e4aa6c09e9bceee8300a315c23e0333e187f5fa
+  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
+onboot:
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: wg0
+    image: linuxkit/ip:b084fd2ada446015e00e43a441bb0ae41ff8b227
+    net: new
+    binds:
+      - /etc/wireguard:/etc/wireguard
+    command: ["sh", "-c", "ip link set dev wg0 up; ip address add dev wg0 192.168.2.1/24; wg setconf wg0 /etc/wireguard/wg0.conf; wg show wg0"]
+    runtime:
+      interfaces:
+        - name: wg0
+          add: wireguard
+          createInRoot: true
+      bindNS:
+          net: /run/netns/wg0
+  - name: wg1
+    image: linuxkit/ip:b084fd2ada446015e00e43a441bb0ae41ff8b227
+    net: new
+    binds:
+      - /etc/wireguard:/etc/wireguard
+    command: ["sh", "-c", "ip link set dev wg1 up; ip address add dev wg1 192.168.2.2/24; wg setconf wg1 /etc/wireguard/wg1.conf; wg show wg1"]
+    runtime:
+      interfaces:
+        - name: wg1
+          add: wireguard
+          createInRoot: true
+      bindNS:
+          net: /run/netns/wg1
+onshutdown:
+  - name: test2
+    image: alpine:3.6
+    binds:
+      - /tmp:/tmp
+      - /check.sh:/check.sh
+    command: ["sh", "./check.sh", "shutdown"]
+services:
+  - name: nginx
+    image: nginx:alpine
+    net: /run/netns/wg0
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+  - name: test
+    image: alpine:3.6
+    net: /run/netns/wg1
+    pid: host
+    capabilities:
+      - CAP_KILL
+    binds:
+      - /tmp:/tmp
+      - /check.sh:/check.sh
+    command: ["sh", "./check.sh"]
+files:
+  - path: etc/wireguard/wg0.conf
+    contents: |
+      [Interface] 
+      PrivateKey = KG7EKkHDkp7THfW5mOXcZzo3RbGAjq+ARMfJGFm5G1s=
+      ListenPort = 51820
+      [Peer] 
+      PublicKey = ZP7h1OjA1oIAmsAvMKujp2RAAC/f0kY814b3Xq6j/0Y=
+      AllowedIPs = 0.0.0.0/0
+      Endpoint = 127.0.0.1:51821
+  - path: etc/wireguard/wg1.conf
+    contents: |
+      [Interface]
+      PrivateKey = SCGCKDuTm4PMOw+LXdK/2s8mxnv145QHOohKRq3vc2A=
+      ListenPort = 51821
+      [Peer]
+      PublicKey = AcS5t3PC5nL/oj0sYhc3yFpDlRaXoJ0mfEq6iq0rFF4=
+      AllowedIPs = 0.0.0.0/0
+      Endpoint = 127.0.0.1:51820
+  - path: check.sh
+    source: ./check.sh
+trust:
+  org:
+    - linuxkit
+    - library
