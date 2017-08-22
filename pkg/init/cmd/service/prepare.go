@@ -66,7 +66,6 @@ func getRuntimeConfig(path string) Runtime {
 
 // parseMountOptions takes fstab style mount options and parses them for
 // use with a standard mount() syscall
-// taken from containerd, where it is not exported
 func parseMountOptions(options []string) (int, string) {
 	var (
 		flag int
@@ -93,14 +92,18 @@ func parseMountOptions(options []string) (int, string) {
 		"norelatime":    {true, unix.MS_RELATIME},
 		"nostrictatime": {true, unix.MS_STRICTATIME},
 		"nosuid":        {false, unix.MS_NOSUID},
+		"private":       {false, unix.MS_PRIVATE},
 		"rbind":         {false, unix.MS_BIND | unix.MS_REC},
 		"relatime":      {false, unix.MS_RELATIME},
 		"remount":       {false, unix.MS_REMOUNT},
 		"ro":            {false, unix.MS_RDONLY},
 		"rw":            {true, unix.MS_RDONLY},
+		"shared":        {false, unix.MS_SHARED},
+		"slave":         {false, unix.MS_SLAVE},
 		"strictatime":   {false, unix.MS_STRICTATIME},
 		"suid":          {true, unix.MS_NOSUID},
 		"sync":          {false, unix.MS_SYNCHRONOUS},
+		"unbindable":    {false, unix.MS_UNBINDABLE},
 	}
 	for _, o := range options {
 		// If the option does not exist in the flags table or the flag
@@ -130,6 +133,16 @@ func prepareFilesystem(path string, runtime Runtime) error {
 		if err != nil {
 			return fmt.Errorf("Cannot create directory for mount destination %s: %v", mount.Destination, err)
 		}
+		// also mkdir upper and work directories on overlay
+		for _, o := range mount.Options {
+			eq := strings.SplitN(o, "=", 2)
+			if len(eq) == 2 && (eq[0] == "upperdir" || eq[0] == "workdir") {
+				err := os.MkdirAll(eq[1], mode)
+				if err != nil {
+					return fmt.Errorf("Cannot create directory for overlay %s=%s: %v", eq[0], eq[1], err)
+				}
+			}
+		}
 		opts, data := parseMountOptions(mount.Options)
 		if err := unix.Mount(mount.Source, mount.Destination, mount.Type, uintptr(opts), data); err != nil {
 			return fmt.Errorf("Failed to mount %s: %v", mount.Source, err)
@@ -144,51 +157,6 @@ func prepareFilesystem(path string, runtime Runtime) error {
 		}
 	}
 
-	// see if we are dealing with a read only or read write container
-	if _, err := os.Stat(filepath.Join(path, "lower")); err != nil {
-		if os.IsNotExist(err) {
-			return prepareRO(path)
-		}
-		return err
-	}
-	return prepareRW(path)
-}
-
-func prepareRO(path string) error {
-	// make rootfs a mount point, as runc doesn't like it much otherwise
-	rootfs := filepath.Join(path, "rootfs")
-	if err := unix.Mount(rootfs, rootfs, "", unix.MS_BIND, ""); err != nil {
-		return err
-	}
-	return nil
-}
-
-func prepareRW(path string) error {
-	// mount a tmpfs on tmp for upper and workdirs
-	// make it private as nothing else should be using this
-	tmp := filepath.Join(path, "tmp")
-	if err := unix.Mount("tmpfs", tmp, "tmpfs", 0, "size=10%"); err != nil {
-		return err
-	}
-	// make it private as nothing else should be using this
-	if err := unix.Mount("", tmp, "", unix.MS_REMOUNT|unix.MS_PRIVATE, ""); err != nil {
-		return err
-	}
-	upper := filepath.Join(tmp, "upper")
-	// make the mount points
-	if err := os.Mkdir(upper, 0755); err != nil {
-		return err
-	}
-	work := filepath.Join(tmp, "work")
-	if err := os.Mkdir(work, 0755); err != nil {
-		return err
-	}
-	lower := filepath.Join(path, "lower")
-	rootfs := filepath.Join(path, "rootfs")
-	opt := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lower, upper, work)
-	if err := unix.Mount("overlay", rootfs, "overlay", 0, opt); err != nil {
-		return err
-	}
 	return nil
 }
 
