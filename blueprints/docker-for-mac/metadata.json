@@ -1,0 +1,8 @@
+{
+  "docker": {
+    "daemon.json": {
+      "perm": "0644",
+      "content": "{ \"debug\": true }"
+    }
+  }
+}
