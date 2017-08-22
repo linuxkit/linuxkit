@@ -7,9 +7,11 @@ import (
 	"log"
 	"os"
 	"path/filepath"
-	"syscall"
+	"strings"
 
+	"github.com/opencontainers/runtime-spec/specs-go"
 	"github.com/vishvananda/netlink"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -21,9 +23,10 @@ const (
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
 type Runtime struct {
-	Mkdir      []string    `yaml:"mkdir" json:"mkdir,omitempty"`
-	Interfaces []Interface `yaml:"interfaces" json:"interfaces,omitempty"`
-	BindNS     *Namespaces `yaml:"bindNS" json:"bindNS,omitempty"`
+	Mounts     []specs.Mount `yaml:"mounts" json:"mounts,omitempty"`
+	Mkdir      []string      `yaml:"mkdir" json:"mkdir,omitempty"`
+	Interfaces []Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
+	BindNS     Namespaces    `yaml:"bindNS" json:"bindNS,omitempty"`
 }
 
 // Namespaces is the type for configuring paths to bind namespaces
@@ -61,12 +64,80 @@ func getRuntimeConfig(path string) Runtime {
 	return runtime
 }
 
+// parseMountOptions takes fstab style mount options and parses them for
+// use with a standard mount() syscall
+// taken from containerd, where it is not exported
+func parseMountOptions(options []string) (int, string) {
+	var (
+		flag int
+		data []string
+	)
+	flags := map[string]struct {
+		clear bool
+		flag  int
+	}{
+		"async":         {true, unix.MS_SYNCHRONOUS},
+		"atime":         {true, unix.MS_NOATIME},
+		"bind":          {false, unix.MS_BIND},
+		"defaults":      {false, 0},
+		"dev":           {true, unix.MS_NODEV},
+		"diratime":      {true, unix.MS_NODIRATIME},
+		"dirsync":       {false, unix.MS_DIRSYNC},
+		"exec":          {true, unix.MS_NOEXEC},
+		"mand":          {false, unix.MS_MANDLOCK},
+		"noatime":       {false, unix.MS_NOATIME},
+		"nodev":         {false, unix.MS_NODEV},
+		"nodiratime":    {false, unix.MS_NODIRATIME},
+		"noexec":        {false, unix.MS_NOEXEC},
+		"nomand":        {true, unix.MS_MANDLOCK},
+		"norelatime":    {true, unix.MS_RELATIME},
+		"nostrictatime": {true, unix.MS_STRICTATIME},
+		"nosuid":        {false, unix.MS_NOSUID},
+		"rbind":         {false, unix.MS_BIND | unix.MS_REC},
+		"relatime":      {false, unix.MS_RELATIME},
+		"remount":       {false, unix.MS_REMOUNT},
+		"ro":            {false, unix.MS_RDONLY},
+		"rw":            {true, unix.MS_RDONLY},
+		"strictatime":   {false, unix.MS_STRICTATIME},
+		"suid":          {true, unix.MS_NOSUID},
+		"sync":          {false, unix.MS_SYNCHRONOUS},
+	}
+	for _, o := range options {
+		// If the option does not exist in the flags table or the flag
+		// is not supported on the platform,
+		// then it is a data value for a specific fs type
+		if f, exists := flags[o]; exists && f.flag != 0 {
+			if f.clear {
+				flag &^= f.flag
+			} else {
+				flag |= f.flag
+			}
+		} else {
+			data = append(data, o)
+		}
+	}
+	return flag, strings.Join(data, ",")
+}
+
 // prepareFilesystem sets up the mounts, before the container is created
 func prepareFilesystem(path string, runtime Runtime) error {
 	// execute the runtime config that should be done up front
+	// we execute Mounts before Mkdir so you can make a directory under a mount
+	// but we do mkdir of the destination path in case missing
+	for _, mount := range runtime.Mounts {
+		const mode os.FileMode = 0755
+		err := os.MkdirAll(mount.Destination, mode)
+		if err != nil {
+			return fmt.Errorf("Cannot create directory for mount destination %s: %v", mount.Destination, err)
+		}
+		opts, data := parseMountOptions(mount.Options)
+		if err := unix.Mount(mount.Source, mount.Destination, mount.Type, uintptr(opts), data); err != nil {
+			return fmt.Errorf("Failed to mount %s: %v", mount.Source, err)
+		}
+	}
 	for _, dir := range runtime.Mkdir {
 		// in future we may need to change the structure to set mode, ownership
-		var mode os.FileMode = 0755
+		const mode os.FileMode = 0755
 		err := os.MkdirAll(dir, mode)
 		if err != nil {
 			return fmt.Errorf("Cannot create directory %s: %v", dir, err)
@@ -86,7 +157,7 @@ func prepareFilesystem(path string, runtime Runtime) error {
 func prepareRO(path string) error {
 	// make rootfs a mount point, as runc doesn't like it much otherwise
 	rootfs := filepath.Join(path, "rootfs")
-	if err := syscall.Mount(rootfs, rootfs, "", syscall.MS_BIND, ""); err != nil {
+	if err := unix.Mount(rootfs, rootfs, "", unix.MS_BIND, ""); err != nil {
 		return err
 	}
 	return nil
@@ -96,11 +167,11 @@ func prepareRW(path string) error {
 	// mount a tmpfs on tmp for upper and workdirs
 	// make it private as nothing else should be using this
 	tmp := filepath.Join(path, "tmp")
-	if err := syscall.Mount("tmpfs", tmp, "tmpfs", 0, "size=10%"); err != nil {
+	if err := unix.Mount("tmpfs", tmp, "tmpfs", 0, "size=10%"); err != nil {
 		return err
 	}
 	// make it private as nothing else should be using this
-	if err := syscall.Mount("", tmp, "", syscall.MS_REMOUNT|syscall.MS_PRIVATE, ""); err != nil {
+	if err := unix.Mount("", tmp, "", unix.MS_REMOUNT|unix.MS_PRIVATE, ""); err != nil {
 		return err
 	}
 	upper := filepath.Join(tmp, "upper")
@@ -115,7 +186,7 @@ func prepareRW(path string) error {
 	lower := filepath.Join(path, "lower")
 	rootfs := filepath.Join(path, "rootfs")
 	opt := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lower, upper, work)
-	if err := syscall.Mount("overlay", rootfs, "overlay", 0, opt); err != nil {
+	if err := unix.Mount("overlay", rootfs, "overlay", 0, opt); err != nil {
 		return err
 	}
 	return nil
@@ -138,7 +209,7 @@ func bindNS(ns string, path string, pid int) error {
 	if err := fi.Close(); err != nil {
 		return err
 	}
-	if err := syscall.Mount(fmt.Sprintf("/proc/%d/ns/%s", pid, ns), path, "", syscall.MS_BIND, ""); err != nil {
+	if err := unix.Mount(fmt.Sprintf("/proc/%d/ns/%s", pid, ns), path, "", unix.MS_BIND, ""); err != nil {
 		return fmt.Errorf("Failed to bind %s namespace at %s: %v", ns, path, err)
 	}
 	return nil
@@ -203,24 +274,22 @@ func prepareProcess(pid int, runtime Runtime) error {
 		}
 	}
 
-	if runtime.BindNS != nil {
-		binds := []struct {
-			ns   string
-			path string
-		}{
-			{"cgroup", runtime.BindNS.Cgroup},
-			{"ipc", runtime.BindNS.Ipc},
-			{"mnt", runtime.BindNS.Mnt},
-			{"net", runtime.BindNS.Net},
-			{"pid", runtime.BindNS.Pid},
-			{"user", runtime.BindNS.User},
-			{"uts", runtime.BindNS.Uts},
-		}
+	binds := []struct {
+		ns   string
+		path string
+	}{
+		{"cgroup", runtime.BindNS.Cgroup},
+		{"ipc", runtime.BindNS.Ipc},
+		{"mnt", runtime.BindNS.Mnt},
+		{"net", runtime.BindNS.Net},
+		{"pid", runtime.BindNS.Pid},
+		{"user", runtime.BindNS.User},
+		{"uts", runtime.BindNS.Uts},
+	}
 
-		for _, b := range binds {
-			if err := bindNS(b.ns, b.path, pid); err != nil {
-				return err
-			}
+	for _, b := range binds {
+		if err := bindNS(b.ns, b.path, pid); err != nil {
+			return err
 		}
 	}
 
@@ -240,16 +309,16 @@ func cleanup(path string) {
 func cleanupRO(path string) {
 	// remove the bind mount
 	rootfs := filepath.Join(path, "rootfs")
-	_ = syscall.Unmount(rootfs, 0)
+	_ = unix.Unmount(rootfs, 0)
 }
 
 func cleanupRW(path string) {
 	// remove the overlay mount
 	rootfs := filepath.Join(path, "rootfs")
 	_ = os.RemoveAll(rootfs)
-	_ = syscall.Unmount(rootfs, 0)
+	_ = unix.Unmount(rootfs, 0)
 	// remove the tmpfs
 	tmp := filepath.Join(path, "tmp")
 	_ = os.RemoveAll(tmp)
-	_ = syscall.Unmount(tmp, 0)
+	_ = unix.Unmount(tmp, 0)
 }
