@@ -1,0 +1,28 @@
+From e1580d5ac40822f7f44ab4a95973b48cba8c9f63 Mon Sep 17 00:00:00 2001
+From: Cheng-mean Liu <soccerl@microsoft.com>
+Date: Tue, 11 Jul 2017 16:58:26 -0700
+Subject: [PATCH 15/15] NVDIMM: reducded ND_MIN_NAMESPACE_SIZE from 4MB to 4KB
+ (page size)
+
+Signed-off-by: Cheng-mean Liu <soccerl@microsoft.com>
+Origin: https://github.com/Microsoft/opengcs/blob/master/kernelconfig/4.11/patch_lower-the-minimum-PMEM-size.patch
+---
+ include/uapi/linux/ndctl.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/uapi/linux/ndctl.h b/include/uapi/linux/ndctl.h
+index 7ad3863cb88b..670ffdec0924 100644
+--- a/include/uapi/linux/ndctl.h
++++ b/include/uapi/linux/ndctl.h
+@@ -260,7 +260,7 @@ enum nd_driver_flags {
+ };
+ 
+ enum {
+-	ND_MIN_NAMESPACE_SIZE = 0x00400000,
++	ND_MIN_NAMESPACE_SIZE = 0x00001000,
+ };
+ 
+ enum ars_masks {
+-- 
+2.14.1
+
