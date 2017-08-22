@@ -17,6 +17,9 @@ FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
 
+# Add /etc/ssl/certs so it can be bind-mounted into metadata package
+RUN mkdir -p /out/etc/ssl/certs
+
 # Remove apk residuals. We have a read-only rootfs, so apk is of no use.
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
