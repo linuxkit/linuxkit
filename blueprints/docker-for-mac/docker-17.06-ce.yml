@@ -3,7 +3,7 @@ services:
   # Bind mounts /var/run to allow vsudd to connect to docker.sock, /var/vpnkit
   # for vpnkit coordination and /var/config/docker for the configuration file.
   - name: docker-dfm
-    image: docker:17.06.0-ce-dind
+    image: docker:17.06.1-ce-dind
     capabilities:
      - all
     net: host
