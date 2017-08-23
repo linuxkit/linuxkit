@@ -93,9 +93,10 @@ type Image struct {
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
 type Runtime struct {
-	Mkdir      []string    `yaml:"mkdir" json:"mkdir,omitempty"`
-	Interfaces []Interface `yaml:"interfaces" json:"interfaces,omitempty"`
-	BindNS     *Namespaces `yaml:"bindNS" json:"bindNS,omitempty"`
+	Mounts     []specs.Mount `yaml:"mounts" json:"mounts,omitempty"`
+	Mkdir      []string      `yaml:"mkdir" json:"mkdir,omitempty"`
+	Interfaces []Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
+	BindNS     Namespaces    `yaml:"bindNS" json:"bindNS,omitempty"`
 }
 
 // Namespaces is the type for configuring paths to bind namespaces
@@ -727,7 +728,6 @@ func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string
 	sort.Sort(mountList)
 
 	namespaces := []specs.LinuxNamespace{}
-	// to attach to an existing namespace, easiest to bind mount with nsfs in a system container
 
 	// net, ipc, and uts namespaces: default to not creating a new namespace (usually host namespace)
 	netNS := assignStringEmpty3("root", label.Net, yaml.Net)

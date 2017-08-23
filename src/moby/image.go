@@ -3,6 +3,7 @@ package moby
 import (
 	"archive/tar"
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -10,6 +11,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
 type tarWriter interface {
@@ -189,18 +191,28 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix string, image string, config []byte, runtimeConfig []byte, tw tarWriter, trust bool, pull bool, readonly bool) error {
-	log.Debugf("image bundle: %s %s cfg: %s runtime: %s", prefix, image, string(config), string(runtimeConfig))
-
+func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string) error {
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
-	rootfs := "rootfs"
+	rootExtract := "rootfs"
 	if !readonly {
-		rootfs = "lower"
+		rootExtract = "lower"
 	}
 
-	if err := ImageTar(image, path.Join(prefix, rootfs)+"/", tw, trust, pull, ""); err != nil {
-		return err
+	// See if we have extracted this image previously
+	root := path.Join(prefix, rootExtract)
+	var foundElsewhere = dupMap[image] != ""
+	if !foundElsewhere {
+		if err := ImageTar(image, root+"/", tw, trust, pull, ""); err != nil {
+			return err
+		}
+		dupMap[image] = root
+	} else {
+		if err := tarPrefix(prefix+"/", tw); err != nil {
+			return err
+		}
+		root = dupMap[image]
 	}
+
 	hdr := &tar.Header{
 		Name: path.Join(prefix, "config.json"),
 		Mode: 0644,
@@ -214,26 +226,11 @@ func ImageBundle(prefix string, image string, config []byte, runtimeConfig []byt
 		return err
 	}
 
-	// do not write an empty runtime config
-	if string(runtimeConfig) != "{}" {
-		hdr = &tar.Header{
-			Name: path.Join(prefix, "runtime.json"),
-			Mode: 0644,
-			Size: int64(len(runtimeConfig)),
-		}
-		if err := tw.WriteHeader(hdr); err != nil {
-			return err
-		}
-		buf = bytes.NewBuffer(runtimeConfig)
-		if _, err := io.Copy(tw, buf); err != nil {
-			return err
-		}
-	}
-
 	if !readonly {
 		// add a tmp directory to be used as a mount point for tmpfs for upper, work
+		tmp := path.Join(prefix, "tmp")
 		hdr = &tar.Header{
-			Name:     path.Join(prefix, "tmp"),
+			Name:     tmp,
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
 		}
@@ -249,7 +246,47 @@ func ImageBundle(prefix string, image string, config []byte, runtimeConfig []byt
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
 		}
+		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "tmpfs", Type: "tmpfs", Destination: "/" + tmp})
+		// remount private as nothing else should see the temporary layers
+		runtime.Mounts = append(runtime.Mounts, specs.Mount{Destination: "/" + tmp, Options: []string{"remount", "private"}})
+		overlayOptions := []string{"lowerdir=/" + root, "upperdir=/" + path.Join(tmp, "upper"), "workdir=/" + path.Join(tmp, "work")}
+		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "overlay", Type: "overlay", Destination: "/" + path.Join(prefix, "rootfs"), Options: overlayOptions})
+	} else {
+		if foundElsewhere {
+			// we need to make the mountpoint at rootfs
+			hdr = &tar.Header{
+				Name:     path.Join(prefix, "rootfs"),
+				Mode:     0755,
+				Typeflag: tar.TypeDir,
+			}
+			if err := tw.WriteHeader(hdr); err != nil {
+				return err
+			}
+		}
+		// either bind from another location, or bind from self to make sure it is a mountpoint as runc prefers this
+		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "/" + root, Destination: "/" + path.Join(prefix, "rootfs"), Options: []string{"bind"}})
 	}
+
+	// write the runtime config
+	runtimeConfig, err := json.MarshalIndent(runtime, "", "    ")
+	if err != nil {
+		return fmt.Errorf("Failed to create runtime config for %s: %v", image, err)
+	}
+
+	hdr = &tar.Header{
+		Name: path.Join(prefix, "runtime.json"),
+		Mode: 0644,
+		Size: int64(len(runtimeConfig)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return err
+	}
+	buf = bytes.NewBuffer(runtimeConfig)
+	if _, err := io.Copy(tw, buf); err != nil {
+		return err
+	}
+
+	log.Debugf("image bundle: %s %s cfg: %s runtime: %s", prefix, image, string(config), string(runtimeConfig))
 
 	return nil
 }

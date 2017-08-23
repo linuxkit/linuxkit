@@ -120,7 +120,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 	return false
 }
 
-func outputImage(image Image, section string, prefix string, m Moby, idMap map[string]uint32, pull bool, iw *tar.Writer) error {
+func outputImage(image Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer) error {
 	log.Infof("  Create OCI config for %s", image.Image)
 	useTrust := enforceContentTrust(image.Image, &m.Trust)
 	oci, runtime, err := ConfigToOCI(image, useTrust, idMap)
@@ -131,13 +131,9 @@ func outputImage(image Image, section string, prefix string, m Moby, idMap map[s
 	if err != nil {
 		return fmt.Errorf("Failed to create config for %s: %v", image.Image, err)
 	}
-	runtimeConfig, err := json.MarshalIndent(runtime, "", "    ")
-	if err != nil {
-		return fmt.Errorf("Failed to create runtime config for %s: %v", image.Image, err)
-	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, image.Image, config, runtimeConfig, iw, useTrust, pull, readonly)
+	err = ImageBundle(path, image.Image, config, runtime, iw, useTrust, pull, readonly, dupMap)
 	if err != nil {
 		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 	}
@@ -171,6 +167,9 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		id++
 	}
 
+	// deduplicate containers with the same image
+	dupMap := map[string]string{}
+
 	if m.Kernel.Image != "" {
 		// get kernel and initrd tarball from container
 		log.Infof("Extract kernel image: %s", m.Kernel.Image)
@@ -202,7 +201,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	}
 	for i, image := range m.Onboot {
 		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onboot", so+"-", m, idMap, pull, iw); err != nil {
+		if err := outputImage(image, "onboot", so+"-", m, idMap, dupMap, pull, iw); err != nil {
 			return err
 		}
 	}
@@ -212,7 +211,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	}
 	for i, image := range m.Onshutdown {
 		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onshutdown", so+"-", m, idMap, pull, iw); err != nil {
+		if err := outputImage(image, "onshutdown", so+"-", m, idMap, dupMap, pull, iw); err != nil {
 			return err
 		}
 	}
@@ -221,7 +220,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		log.Infof("Add service containers:")
 	}
 	for _, image := range m.Services {
-		if err := outputImage(image, "services", "", m, idMap, pull, iw); err != nil {
+		if err := outputImage(image, "services", "", m, idMap, dupMap, pull, iw); err != nil {
 			return err
 		}
 	}
