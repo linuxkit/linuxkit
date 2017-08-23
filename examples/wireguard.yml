@@ -13,11 +13,11 @@ onboot:
     image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: wg0
-    image: linuxkit/ip:b084fd2ada446015e00e43a441bb0ae41ff8b227
+    image: linuxkit/ip:722329e06dccb26348876a00ba5e2d247cad206b
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
-    command: ["sh", "-c", "ip link set dev wg0 up; ip address add dev wg0 192.168.2.1/24; wg setconf wg0 /etc/wireguard/wg0.conf; wg show wg0"]
+    command: ["/usr/bin/wg-config", "configure", "/etc/wireguard/wg0.conf"]
     runtime:
       interfaces:
         - name: wg0
@@ -26,11 +26,11 @@ onboot:
       bindNS:
           net: /run/netns/wg0
   - name: wg1
-    image: linuxkit/ip:b084fd2ada446015e00e43a441bb0ae41ff8b227
+    image: linuxkit/ip:722329e06dccb26348876a00ba5e2d247cad206b
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
-    command: ["sh", "-c", "ip link set dev wg1 up; ip address add dev wg1 192.168.2.2/24; wg setconf wg1 /etc/wireguard/wg1.conf; wg show wg1"]
+    command: ["/usr/bin/wg-config", "configure", "/etc/wireguard/wg1.conf"]
     runtime:
       interfaces:
         - name: wg1
@@ -58,7 +58,8 @@ services:
 files:
   - path: etc/wireguard/wg0.conf
     contents: |
-      [Interface] 
+      [Interface]
+      Address = 192.168.2.1/24
       PrivateKey = KG7EKkHDkp7THfW5mOXcZzo3RbGAjq+ARMfJGFm5G1s=
       ListenPort = 51820
       [Peer] 
@@ -68,6 +69,7 @@ files:
   - path: etc/wireguard/wg1.conf
     contents: |
       [Interface]
+      Address = 192.168.2.2/24
       PrivateKey = SCGCKDuTm4PMOw+LXdK/2s8mxnv145QHOohKRq3vc2A=
       ListenPort = 51821
       [Peer]
