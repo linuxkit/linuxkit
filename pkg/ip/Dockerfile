@@ -16,4 +16,5 @@ ENTRYPOINT []
 CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
+COPY linuxkit-configure-wireguard-iface.sh /usr/bin/wg-config
 LABEL org.mobyproject.config='{"capabilities": ["CAP_NET_ADMIN", "CAP_NET_RAW"]}'
