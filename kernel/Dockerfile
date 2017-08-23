@@ -86,7 +86,7 @@ RUN case $(uname -m) in \
     rm /linux/kernel_config-${KERNEL_SERIES}* && \
     make defconfig && \
     make oldconfig && \
-    diff .config ${KERNEL_DEF_CONF}
+    if [ -z "${DEBUG}" ]; then diff .config ${KERNEL_DEF_CONF}; fi
 
 RUN mkdir /out
 
