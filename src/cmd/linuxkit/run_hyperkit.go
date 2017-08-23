@@ -70,7 +70,7 @@ func runHyperKit(args []string) {
 	info, err := os.Stat(path)
 	stat := err == nil
 
-	/// ignore a directory
+	// ignore a directory
 	if stat && info.Mode().IsDir() {
 		stat = false
 	}
@@ -111,6 +111,11 @@ func runHyperKit(args []string) {
 			log.Fatalf("Hyperkit requires --uefi to be set to boot an ISO")
 		}
 		isoPaths = append(isoPaths, path)
+	default:
+		if !stat {
+			log.Fatalf("Cannot find file %s to boot", path)
+		}
+		log.Fatalf("Unrecognised boot type, please specify on command line")
 	}
 
 	if *uefiBoot {
