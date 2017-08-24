@@ -80,6 +80,7 @@ RUN case $(uname -m) in \
     cp /linux/kernel_config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
     if [ -n "${DEBUG}" ]; then \
         sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
+        sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${DEBUG}\"/" ${KERNEL_DEF_CONF}; \
         cat /linux/debug_config >> ${KERNEL_DEF_CONF}; \
     fi && \
     rm /linux/kernel_config-${KERNEL_SERIES}* && \
