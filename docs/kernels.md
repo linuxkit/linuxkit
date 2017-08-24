@@ -16,7 +16,7 @@ image is tagged with the full kernel version (e.g.,
 hash of the files it was created from (git tree hash of the `./kernel`
 directory). For selected kernels (mostly the LTS kernels and latest
 stable kernels) we also compile/push kernels with additional debugging
-enabled. The hub images for these kernels have the `_dbg` suffix in
+enabled. The hub images for these kernels have the `-dbg` suffix in
 the tag. For some kernels, we also provide matching packages
 containing the `perf` utility for debugging and performance tracing.
 The perf package is called `kernel-perf` and is tagged the same way as

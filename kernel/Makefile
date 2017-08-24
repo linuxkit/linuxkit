@@ -77,8 +77,8 @@ sources:
 # This defines targets like:
 # build_4.9.x and  push_4.9.x and adds them as dependencies
 # to the global targets
-# Set $3 to "_dbg", to build debug kernels. This defines targets like
-# build_4.9.x_dbg and adds "_dbg" to the hub image name.
+# Set $3 to "-dbg", to build debug kernels. This defines targets like
+# build_4.9.x-dbg and adds "-dbg" to the hub image name.
 define kernel
 
 ifeq ($(3),)
@@ -140,9 +140,9 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 $(eval $(call kernel,4.12.8,4.12.x))
-$(eval $(call kernel,4.12.8,4.12.x,_dbg))
+$(eval $(call kernel,4.12.8,4.12.x,-dbg))
 $(eval $(call kernel,4.9.44,4.9.x))
-$(eval $(call kernel,4.9.44,4.9.x,_dbg))
+$(eval $(call kernel,4.9.44,4.9.x,-dbg))
 $(eval $(call kernel,4.4.83,4.4.x))
 
 # Target for kernel config
