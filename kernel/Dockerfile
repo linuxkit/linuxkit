@@ -24,15 +24,14 @@ RUN apk add \
     tar \
     xz \
     xz-dev \
-    zlib-dev && \
+    zlib-dev
+
 # libunwind-dev pkg is missed from arm64 now, below statement will be removed if the pkg is available.
-    if [ $(uname -m) == x86_64 ]; then \
-        apk add libunwind-dev; \
-    fi
+RUN [ $(uname -m) == x86_64 ] && apk add libunwind-dev || true
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
-ARG DEBUG
+ARG EXTRA
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 ENV KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/v4.x/sha256sums.asc
@@ -67,8 +66,7 @@ RUN set -e && for patch in /patches/*.patch; do \
     done
 
 # Kernel config
-COPY kernel_config-${KERNEL_SERIES}* /linux/
-COPY kernel_config.debug /linux/debug_config
+COPY kernel_config* /linux/
 
 RUN case $(uname -m) in \
     x86_64) \
@@ -79,14 +77,17 @@ RUN case $(uname -m) in \
         ;; \
     esac  && \
     cp /linux/kernel_config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
-    if [ -n "${DEBUG}" ]; then \
-        sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
-        cat /linux/debug_config >> ${KERNEL_DEF_CONF}; \
+    if [ -n "${EXTRA}" ]; then \
+        sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}\"/" ${KERNEL_DEF_CONF}; \
+        if [ "${EXTRA}" = "-dbg" ]; then \
+            sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
+        fi && \
+        cat /linux/kernel_config${EXTRA} >> ${KERNEL_DEF_CONF}; \
     fi && \
-    rm /linux/kernel_config-${KERNEL_SERIES}* && \
+    rm /linux/kernel_config* && \
     make defconfig && \
     make oldconfig && \
-    if [ -z "${DEBUG}" ]; then diff .config ${KERNEL_DEF_CONF}; fi
+    if [ -z "${EXTRA}" ]; then diff .config ${KERNEL_DEF_CONF}; fi
 
 RUN mkdir /out
 
@@ -101,7 +102,7 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
         ;; \
     esac && \
     cp System.map /out && \
-    ([ -n "${DEBUG}" ] && cp vmlinux /out || true)
+    ([ "${EXTRA}" = "-dbg" ] && cp vmlinux /out || true)
 
 # WireGuard
 RUN curl -sSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
