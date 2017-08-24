@@ -49,6 +49,12 @@ COMMIT_LABEL=--label org.opencontainers.image.revision=$(REPO_COMMIT)
 endif
 LABELS=$(REPO_LABEL) $(COMMIT_LABEL)
 
+ifeq ($(DOCKER_CONTENT_TRUST),)
+ifndef NOTRUST
+export DOCKER_CONTENT_TRUST=1
+endif
+endif
+
 KERNEL_VERSIONS=
 
 .PHONY: check tag push
@@ -92,12 +98,12 @@ build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel
 
 push_$(2)$(3): build_$(2)$(3)
 	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
-		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
+		(docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
-		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) 1 && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3) 1)
+		 docker push $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3) $(DOCKER_CONTENT_TRUST))
 
 show-tag_$(2)$(3):
 	@echo $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)
@@ -116,12 +122,12 @@ build_perf_$(2)$(3): build_$(2)$(3)
 
 push_perf_$(2)$(3): build_perf_$(2)$(3)
 	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
-		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) && \
+	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
+		(docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
-		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) 1 && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3) 1)
+		 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3) $(DOCKER_CONTENT_TRUST))
 
 build: build_perf_$(2)$(3)
 push: push_perf_$(2)$(3)
