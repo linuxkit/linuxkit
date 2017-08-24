@@ -24,11 +24,10 @@ RUN apk add \
     tar \
     xz \
     xz-dev \
-    zlib-dev && \
+    zlib-dev
+
 # libunwind-dev pkg is missed from arm64 now, below statement will be removed if the pkg is available.
-    if [ $(uname -m) == x86_64 ]; then \
-        apk add libunwind-dev; \
-    fi
+RUN [ $(uname -m) == x86_64 ] && apk add libunwind-dev || true
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
