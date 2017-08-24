@@ -140,15 +140,26 @@ kernel:
 
 If you have committed your local changes, the `-dirty` will not be
 appended. Then you can also override the Hub organisation to use the
-image elsewhere with:
+image elsewhere with (and also disable image signing):
 
 ```sh
-make ORG=<your hub org>
+make ORG=<your hub org> NOTRUST=1
 ```
 
 The image will be uploaded to Hub and can be use in a YAML file as
 `<your hub org>/kernel:4.9.33` or as `<your hub
 org>/kernel:4.9.33-<hash>`.
+
+The kernel build system has some provision to allow local
+customisation to the build.
+
+If you want to override/add some kernel config options, you can add a
+file called `kernel_config-foo` and then invoke the build with `make
+EXTRA=-foo build_4.9.x-foo` and this will build an image with the
+additional kernel config options enabled.
+
+If you want additional patches being applied, just copy them to the
+`patches-4.X.x` and the build process will pick them up.
 
 
 ## Working with Linux kernel patches for LinuxKit
