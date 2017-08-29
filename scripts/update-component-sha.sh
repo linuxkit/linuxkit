@@ -15,12 +15,12 @@ Available modes: --hash and --image
 
 Replace by hash:
 	$0 --hash <OLD> <NEW>
-	Example: $0 8675309abcdefg abcdef567899
+	Example: $0 --hash 8675309abcdefg abcdef567899
     	   Will replace all instances of 8675309abcdefg with abcdef567899
 
 Replace by image: $0 --image <IMAGE> <NEW>
 	$0 --image <IMAGE> <NEW>
-	Example: $0 linuxkit/foo abcdef567899
+	Example: $0 --image linuxkit/foo abcdef567899
 	   Will tag all instances of linuxkit/foo with abcdef567899
 
 By default, for convenience, if no mode is given (--image or --hash), the first method (--hash) is assumed. 

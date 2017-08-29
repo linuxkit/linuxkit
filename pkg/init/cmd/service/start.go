@@ -55,6 +55,24 @@ func startCmd(args []string) {
 	log.Debugf("Started %s pid %d", id, pid)
 }
 
+type cio struct {
+	config containerd.IOConfig
+}
+
+func (c *cio) Config() containerd.IOConfig {
+	return c.config
+}
+
+func (c *cio) Cancel() {
+}
+
+func (c *cio) Wait() {
+}
+
+func (c *cio) Close() error {
+	return nil
+}
+
 func start(service, sock, basePath, dumpSpec string) (string, uint32, string, error) {
 	path := filepath.Join(basePath, service)
 
@@ -102,18 +120,20 @@ func start(service, sock, basePath, dumpSpec string) (string, uint32, string, er
 		return "", 0, "failed to create container", err
 	}
 
-	io := func(id string) (*containerd.IO, error) {
+	io := func(id string) (containerd.IO, error) {
 		logfile := filepath.Join("/var/log", service+".log")
 		// We just need this to exist.
 		if err := ioutil.WriteFile(logfile, []byte{}, 0600); err != nil {
 			// if we cannot write to log, discard output
 			logfile = "/dev/null"
 		}
-		return &containerd.IO{
-			Stdin:    "/dev/null",
-			Stdout:   logfile,
-			Stderr:   logfile,
-			Terminal: false,
+		return &cio{
+			containerd.IOConfig{
+				Stdin:    "/dev/null",
+				Stdout:   logfile,
+				Stderr:   logfile,
+				Terminal: false,
+			},
 		}, nil
 	}
 
