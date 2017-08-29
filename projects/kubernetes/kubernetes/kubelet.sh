@@ -11,7 +11,8 @@ until kubelet --kubeconfig=/var/lib/kubeadm/kubelet.conf \
 	      --enforce-node-allocatable= \
 	      --network-plugin=cni \
 	      --cni-conf-dir=/etc/cni/net.d \
-	      --cni-bin-dir=/opt/cni/bin ; do
+	      --cni-bin-dir=/opt/cni/bin \
+	      $@; do
     if [ ! -f /var/config/userdata ] ; then
 	sleep 1
     else
