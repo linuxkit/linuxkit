@@ -24,12 +24,6 @@ onboot:
   - name: mount
     image: linuxkit/mount:4fe245efb01384e42622c36302e13e386bbaeb08
     command: ["/usr/bin/mountie", "/var/lib"]
-  # create docker dir on mounted drive if it doesn't exist
-  - name: mkdir-docker
-    image: alpine:3.6
-    binds:
-        - /var/lib:/host_var_lib
-    command: ["sh", "-c", "mkdir -p /host_var_lib/docker"]
   # mount-vpnkit mounts the 9p share used by vpnkit to coordinate port forwarding
   - name: mount-vpnkit
     image: alpine:3.6
