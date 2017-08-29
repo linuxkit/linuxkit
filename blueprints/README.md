@@ -39,7 +39,7 @@ linuxkit run hyperkit -networking=vpnkit -vsock-ports=2376 -disk size=500M -data
 In another terminal you should now be able to access docker via the socket `guest.00000947` in the state directory (`docker-for-mac-state/` by default):
 
 ```
-$ docker -H unix://docker-for-mac-state/guest.00000947 ps
+$ docker -H unix://docker-for-mac-state/guest.00000948 ps
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 ```
 
