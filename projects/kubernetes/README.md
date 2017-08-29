@@ -85,6 +85,10 @@ brief you will need:
   `chmod u+s «PATH»`.
 - List the bridge created in the first step in `/etc/qemu/bridge.conf`
   with a line like `allow br0` (if your bridge is called `br0`).
+- Set `KUBE_NETWORKING=bridge,«name»` e.g.
+
+    KUBE_NETWORKING="bridge,br0" ./boot.sh
+    KUBE_NETWORKING="bridge,br0" ./boot.sh 1 «options»
 
 ## Configuration
 
