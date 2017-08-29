@@ -32,7 +32,7 @@ type QemuConfig struct {
 	Kernel         bool
 	GUI            bool
 	Disks          Disks
-	MetadataPath   string
+	ISOImages      []string
 	StatePath      string
 	FWPath         string
 	Arch           string
@@ -217,7 +217,12 @@ func runQemu(args []string) {
 		log.Fatalf("Could not create state directory: %v", err)
 	}
 
-	isoPath := ""
+	var isoPaths []string
+
+	if *isoBoot {
+		isoPaths = append(isoPaths, path)
+	}
+
 	if *data != "" {
 		var d []byte
 		if _, err := os.Stat(*data); os.IsNotExist(err) {
@@ -228,10 +233,11 @@ func runQemu(args []string) {
 				log.Fatalf("Cannot read user data: %v", err)
 			}
 		}
-		isoPath = filepath.Join(*state, "data.iso")
+		isoPath := filepath.Join(*state, "data.iso")
 		if err := WriteMetadataISO(isoPath, d); err != nil {
 			log.Fatalf("Cannot write user data ISO: %v", err)
 		}
+		isoPaths = append(isoPaths, isoPath)
 	}
 
 	for i, d := range disks {
@@ -261,9 +267,6 @@ func runQemu(args []string) {
 		disks = append(d, disks...)
 	}
 
-	if *isoBoot && isoPath != "" {
-		log.Fatalf("metadata and ISO boot currently cannot coexist")
-	}
 	if *networking == "" || *networking == "default" {
 		dflt := qemuNetworkingDefault
 		networking = &dflt
@@ -306,7 +309,7 @@ func runQemu(args []string) {
 		Kernel:         *kernelBoot,
 		GUI:            *enableGUI,
 		Disks:          disks,
-		MetadataPath:   isoPath,
+		ISOImages:      isoPaths,
 		StatePath:      *state,
 		FWPath:         *fw,
 		Arch:           *arch,
@@ -396,8 +399,8 @@ func runQemuContainer(config QemuConfig) error {
 	}
 	addBind(config.Path)
 
-	if config.MetadataPath != "" {
-		addBind(config.MetadataPath)
+	for _, p := range config.ISOImages {
+		addBind(p)
 	}
 	// also try to bind mount disk paths so the command works
 	for _, d := range config.Disks {
@@ -516,6 +519,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		}
 	}
 
+	var lastDisk int
 	for i, d := range config.Disks {
 		index := i
 		// hdc is CDROM in qemu
@@ -527,13 +531,25 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		} else {
 			qemuArgs = append(qemuArgs, "-drive", "file="+d.Path+",index="+strconv.Itoa(index)+",media=disk")
 		}
+		lastDisk = index
 	}
 
 	if config.ISOBoot {
-		qemuArgs = append(qemuArgs, "-cdrom", config.Path)
 		qemuArgs = append(qemuArgs, "-boot", "d")
-	} else if config.MetadataPath != "" {
-		qemuArgs = append(qemuArgs, "-cdrom", config.MetadataPath)
+	}
+
+	// Ensure CDROMs start from at least hdc
+	if lastDisk < 2 {
+		lastDisk = 2
+	}
+	for i, p := range config.ISOImages {
+		if i == 0 {
+			// This is hdc/CDROM which is skipped by the disk loop above
+			qemuArgs = append(qemuArgs, "-cdrom", p)
+		} else {
+			index := lastDisk + i
+			qemuArgs = append(qemuArgs, "-drive", "file="+p+",index="+strconv.Itoa(index)+",media=cdrom")
+		}
 	}
 
 	if config.UEFI {
