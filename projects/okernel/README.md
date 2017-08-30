@@ -73,18 +73,18 @@ then entered where the permission violation can be handled.
 # Integration with LinuxKit
 
 Custom Linux distributions utilizing the split kernel can be readily built
-using LinuxKit by simply specifying an okernel Docker image in the `kernel`
-section of the OS image YAML specification. See the sample YAML files provided
-in [examples](https://github.com/linuxkit/linuxkit/tree/master/projects/okernel/examples).
+using LinuxKit by simply specifying an okernel image in the `kernel` section
+of the LinuxKit OS image YAML specification. See the sample YAML files provided
+in [examples/](https://github.com/linuxkit/linuxkit/tree/master/projects/okernel/examples) for more details.
 
 ## Building the split kernel image for LinuxKit
 
- - `make` will build and package the latest version of the split kernel, by
-   pulling sources from the top-of-tree of the okernel project GitHub
-   (https://github.com/linux-okernel/linux-okernel).
- - Additionally, a specific version of the kernel can be built
+ - `make` will build and package the latest version of the split kernel
+   for LinuxKit, by    pulling sources from the top-of-tree of the
+   okernel project GitHub    (https://github.com/linux-okernel/linux-okernel).
+ - Alternatively, a specific version of the kernel can be built
    by setting the 'KERNEL' environment variable to the appropriate
-   value, e.g.: `make KERNEL=ok-4.11-rc2`. The value MUST correspond
+   value, e.g.: `make KERNEL=ok-4.13-rc7`. The value MUST correspond
    to a legitimate okernel tag present in the project GitHub
    (https://github.com/linux-okernel/linux-okernel/tags) beginning
    with __"ok-"__.
@@ -93,6 +93,29 @@ in [examples](https://github.com/linuxkit/linuxkit/tree/master/projects/okernel/
 `make kvmod` or `make KERNEL=NNNNNNNN kvmod` where "NNNNNNNN" is the release
 string corresponding to a kernel version, will build the kernel
 vulnerability emulation kernel module for that kernel, useful for testing.
+
+## Enabling NR-mode protections in LinuxKit
+By default, okernel will treat processes like any standard Linux kernel, i.e. no
+R-mode/NR-mode split is applied when processes are created. This is by design to
+assist development and enable coexistence of normal and protected processes in
+the same environment. A consequence of that is that processes must be explicitly
+launched in NR-mode.
+
+In early versions of LinuxKit we provided a lightly-modified version of the
+default 'init' container to ensure runc launched in NR-mode and by extension all
+its children processes/containers got instantiated in NR-mode as well.
+
+Recent changes to how LinuxKit implements init made this approach obsolete. We
+are in the process of developing an alternative (and hopefully more elegant)
+way to launch containers in NR-mode (Aug 2017).
+
+Note that because okernel utilizes the processor's VMX facilities, okernel
+LinuxKit images with full NR-mode operation can only be run in baremetal
+environments. If no processes are switched to NR-mode, okernel will boot and
+operate normally inside a VM, however in this scenario it offers no benefits
+compared to a standard Linux kernel.
+We are investigating nested virtualization support to enable running okernel
+inside VMs.
 
 
 # Limitations and Caveats

@@ -1,5 +1,8 @@
-FROM alpine:3.5
+ARG IMAGE
+FROM ${IMAGE} AS kernel
 
-COPY ./kvmod .
-
-CMD ["insmod", "/root/kvmod/kernel_vuln.ko"]
+FROM scratch
+ENTRYPOINT []
+WORKDIR /
+COPY --from=kernel kernel_vuln.ko .
+CMD ["insmod", "/kernel_vuln.ko"]

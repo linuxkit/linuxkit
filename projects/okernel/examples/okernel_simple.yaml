@@ -1,6 +1,6 @@
 kernel:
-  image: linuxkit/okernel:latest
-  cmdline: "console=ttyS0 console=tty0 page_poison=1"
+  image: okernel:latest
+  cmdline: "console=tty0 page_poison=1"
 init:
   - linuxkit/init:6d11a1f9d299d3425e78cce80dfba8b236d20412
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
@@ -10,14 +10,12 @@ onboot:
   - name: sysctl
     image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
 services:
-  - name: rngd
-    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
   - name: dhcpcd
     image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
-  - name: sshd
-    image: linuxkit/sshd:505a985d7bd7a90f15eca9cb4dc6ec92789d51a0
-files:
-  - path: root/.ssh/authorized_keys
-    source: ~/.ssh/id_rsa.pub
-    mode: "0600"
-    optional: true
+  - name: getty
+    image: linuxkit/getty:797cb79e0a229fcd16ebf44a0da74bcec03968ec
+    env:
+     - INSECURE=true
+trust:
+  org:
+    - linuxkit
