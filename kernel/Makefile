@@ -151,9 +151,9 @@ endef
 #
 $(eval $(call kernel,4.12.9,4.12.x,$(EXTRA)))
 $(eval $(call kernel,4.12.9,4.12.x,-dbg))
-$(eval $(call kernel,4.9.45,4.9.x,$(EXTRA)))
-$(eval $(call kernel,4.9.45,4.9.x,-dbg))
-$(eval $(call kernel,4.4.84,4.4.x,$(EXTRA)))
+$(eval $(call kernel,4.9.46,4.9.x,$(EXTRA)))
+$(eval $(call kernel,4.9.46,4.9.x,-dbg))
+$(eval $(call kernel,4.4.85,4.4.x,$(EXTRA)))
 
 # Target for kernel config
 kconfig: | sources

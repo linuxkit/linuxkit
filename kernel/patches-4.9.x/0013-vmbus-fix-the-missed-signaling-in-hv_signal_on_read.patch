@@ -1,4 +1,4 @@
-From 98741192740037bf8f0d2b4c9b8430621c0229b1 Mon Sep 17 00:00:00 2001
+From 44b7489e07ad45b1ffe3d5190ea759b8d395e23e Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Thu, 6 Jul 2017 21:37:11 +0000
 Subject: [PATCH 13/13] vmbus: fix the missed signaling in hv_signal_on_read()

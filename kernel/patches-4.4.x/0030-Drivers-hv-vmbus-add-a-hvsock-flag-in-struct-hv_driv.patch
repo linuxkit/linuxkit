@@ -1,4 +1,4 @@
-From c330cf75e323f3884295afddd96e417e4a2cd2db Mon Sep 17 00:00:00 2001
+From d5d6e9b507e4cee5774bd25f3a349de7dd903e49 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:41 -0800
 Subject: [PATCH 30/44] Drivers: hv: vmbus: add a hvsock flag in struct
