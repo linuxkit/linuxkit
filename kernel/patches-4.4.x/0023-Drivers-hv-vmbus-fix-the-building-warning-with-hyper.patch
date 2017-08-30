@@ -1,4 +1,4 @@
-From 691946e35a594847b85f8de3214ae513c4028601 Mon Sep 17 00:00:00 2001
+From da54932361c2c19cfa20a5f9f2a233d1ede69d8b Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 21 Dec 2015 12:21:22 -0800
 Subject: [PATCH 23/44] Drivers: hv: vmbus: fix the building warning with
@@ -52,10 +52,11 @@ diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
 index 4712d7d07b8c..9e2de6a7cc96 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1091,6 +1091,14 @@ int vmbus_allocate_mmio(struct resource **new, struct hv_device *device_obj,
+@@ -1090,6 +1090,14 @@ int vmbus_allocate_mmio(struct resource **new, struct hv_device *device_obj,
+ 	.guid = UUID_LE(0xcfa8b69e, 0x5b4a, 0x4cc0, 0xb9, 0x8b, \
  			0x8b, 0xa1, 0xa1, 0xf3, 0xf9, 0x5a)
  
- /*
++/*
 + * Keyboard GUID
 + * {f912ad6d-2b17-48ea-bd65-f927a61c7684}
 + */
@@ -63,10 +64,9 @@ index 4712d7d07b8c..9e2de6a7cc96 100644
 +	.guid = UUID_LE(0xf912ad6d, 0x2b17, 0x48ea, 0xbd, 0x65, \
 +			0xf9, 0x27, 0xa6, 0x1c, 0x76, 0x84)
 +
-+/*
+ /*
   * VSS (Backup/Restore) GUID
   */
- #define HV_VSS_GUID \
 -- 
-2.13.0
+2.14.1
 

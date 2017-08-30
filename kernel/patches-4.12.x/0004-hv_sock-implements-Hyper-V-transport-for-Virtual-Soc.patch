@@ -1,4 +1,4 @@
-From e317beafc5bf9165f1f604d8c201bc0d09a884b5 Mon Sep 17 00:00:00 2001
+From 71945c7c14c7010b7fd0d13cdebf99b25a2e3d45 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 26 Jul 2017 12:31:56 -0600
 Subject: [PATCH 04/15] hv_sock: implements Hyper-V transport for Virtual

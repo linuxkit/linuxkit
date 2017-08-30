@@ -1,4 +1,4 @@
-From d15c33dd3ba5138ee46a64d3f76a6163b4701f46 Mon Sep 17 00:00:00 2001
+From f50566477a1f01e134b0da07d875b2fa5c6e63d1 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:11 -0800
 Subject: [PATCH 07/13] Drivers: hv: vss: Operation timeouts should match host
@@ -44,5 +44,5 @@ index b1446d51ef45..4e543dbb731a 100644
  	rc = hvutil_transport_send(hvt, vss_msg, sizeof(*vss_msg), NULL);
  	if (rc) {
 -- 
-2.13.0
+2.14.1
 
