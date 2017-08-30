@@ -1,6 +1,6 @@
 #!/bin/sh
-mount --bind /opt/cni /rootfs/opt/cni
-mount --bind /etc/cni /rootfs/etc/cni
+mount --bind /opt/cni /var/lib/cni/opt
+mount --bind /etc/cni /var/lib/cni/etc
 until kubelet --kubeconfig=/var/lib/kubeadm/kubelet.conf \
 	      --require-kubeconfig=true \
 	      --pod-manifest-path=/var/lib/kubeadm/manifests \
