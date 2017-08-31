@@ -1,12 +1,32 @@
-FROM linuxkit/kernel-compile:1b396c221af673757703258159ddc8539843b02b@sha256:6b32d205bfc6407568324337b707d195d027328dbfec554428ea93e7b0a8299b AS kernel-build
+FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS kernel-build
+RUN apk --no-cache add \
+    argp-standalone \
+    automake \
+    bash \
+    bc \
+    binutils-dev \
+    bison \
+    build-base \
+    curl \
+    diffutils \
+    git \
+    installkernel \
+    kmod \
+    libelf-dev \
+    linux-headers \
+    sed \
+    tar \
+    xz \
+    zlib-dev \
+    openssl-dev
+
+RUN apk --no-cache add --repository http://dl-cdn.alpinelinux.org/alpine/edge/main openssl
 
 ARG KERNEL_VERSION
 ARG DEBUG=0
 
 ENV OKERNEL_SOURCE=https://github.com/linux-okernel/linux-okernel/archive/${KERNEL_VERSION}.tar.gz
 ENV USPACE_SOURCE=https://github.com/linux-okernel/linux-okernel-components/archive/master.tar.gz
-
-RUN apk --update add openssl openssl-dev
 
 RUN if [ -n $HTTP_PROXY ]; then \
     curl -fsSL -x ${HTTP_PROXY} -o linux-${KERNEL_VERSION}.tar.gz ${OKERNEL_SOURCE}; \
