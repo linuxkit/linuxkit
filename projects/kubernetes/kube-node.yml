@@ -33,7 +33,7 @@ services:
   - name: sshd
     image: linuxkit/sshd:505a985d7bd7a90f15eca9cb4dc6ec92789d51a0
   - name: docker
-    image: docker:17.06.1-ce-dind
+    image: docker:17.07.0-ce-dind
     capabilities:
      - all
     pid: host
