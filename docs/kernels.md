@@ -56,7 +56,9 @@ modules:
 
 ```
 FROM linuxkit/kernel:4.9.33 AS ksrc
-FROM linuxkit/kernel-compile:1b396c221af673757703258159ddc8539843b02b@sha256:6b32d205bfc6407568324337b707d195d027328dbfec554428ea93e7b0a8299b AS build
+FROM linuxkit/alpine:<hash> AS build
+RUN apk add build-base
+
 COPY --from=ksrc /kernel-dev.tar /
 RUN tar xf kernel-dev.tar
 
