@@ -3,6 +3,7 @@ alpine-baselayout
 alpine-keys
 apk-tools
 argp-standalone
+attr-dev
 autoconf
 automake
 bash
@@ -53,6 +54,7 @@ libcap-ng-dev
 libelf-dev
 libressl-dev
 libseccomp-dev
+libtirpc-dev
 libtool
 libunwind-dev
 linux-headers
@@ -63,6 +65,7 @@ ncurses-dev
 openntpd
 openrc
 openssh-server
+openssl
 openssl-dev
 patch
 python3
