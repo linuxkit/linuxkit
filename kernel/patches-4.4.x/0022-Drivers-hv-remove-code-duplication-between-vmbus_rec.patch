@@ -1,4 +1,4 @@
-From 7b98c8e1778122bbaa078ccc81bfd58c5e34ae05 Mon Sep 17 00:00:00 2001
+From f879b7cb85fa3cc8efc576ecfd4eec9631178ec5 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Mon, 14 Dec 2015 19:02:00 -0800
 Subject: [PATCH 22/44] Drivers: hv: remove code duplication between
@@ -122,5 +122,5 @@ index b00cdfb725de..def21d34f3ea 100644
  }
  EXPORT_SYMBOL_GPL(vmbus_recvpacket_raw);
 -- 
-2.13.0
+2.14.1
 

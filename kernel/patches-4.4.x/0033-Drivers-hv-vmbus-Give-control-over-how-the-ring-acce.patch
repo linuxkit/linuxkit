@@ -1,4 +1,4 @@
-From 35c55cc61e763e4783c6525db7b7f9a576e3dfac Mon Sep 17 00:00:00 2001
+From 3121f4506f592c753cb3810cd9fc85dca2c53ff5 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:45 -0800
 Subject: [PATCH 33/44] Drivers: hv: vmbus: Give control over how the ring
@@ -204,5 +204,5 @@ index 993318a6d147..6c9695ef757e 100644
  {
  	return !!(c->offermsg.offer.chn_flags &
 -- 
-2.13.0
+2.14.1
 

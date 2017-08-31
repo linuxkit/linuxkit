@@ -1,4 +1,4 @@
-From da5404c28b7f61378376f832ea9b61c9840eb6de Mon Sep 17 00:00:00 2001
+From 0eb00968941264eb6ca1d8351a924d61fb1c6e2f Mon Sep 17 00:00:00 2001
 From: Asias He <asias@redhat.com>
 Date: Thu, 28 Jul 2016 15:36:35 +0100
 Subject: [PATCH 10/44] VSOCK: Add Makefile and Kconfig
@@ -102,5 +102,5 @@ index 2ce52d70f224..bc27c70e0e59 100644
 +
 +vmw_vsock_virtio_transport_common-y += virtio_transport_common.o
 -- 
-2.13.0
+2.14.1
 

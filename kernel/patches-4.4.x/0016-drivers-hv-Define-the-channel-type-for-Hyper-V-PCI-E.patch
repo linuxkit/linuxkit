@@ -1,4 +1,4 @@
-From 1c9f457285615b12fd3383b9675c39e91639bf56 Mon Sep 17 00:00:00 2001
+From 2405ec3f5163d5b09e1594b97d03a4ab7cdd3293 Mon Sep 17 00:00:00 2001
 From: Jake Oshins <jakeo@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:41 -0800
 Subject: [PATCH 16/44] drivers:hv: Define the channel type for Hyper-V PCI
@@ -40,10 +40,11 @@ diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
 index ae6a711dcd1d..10dda1e3b560 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1156,6 +1156,17 @@ int vmbus_allocate_mmio(struct resource **new, struct hv_device *device_obj,
+@@ -1155,6 +1155,17 @@ int vmbus_allocate_mmio(struct resource **new, struct hv_device *device_obj,
+ 			0xab, 0x99, 0xbd, 0x1f, 0x1c, 0x86, 0xb5, 0x01 \
  		}
  
- /*
++/*
 + * PCI Express Pass Through
 + * {44C4F61D-4444-4400-9D52-802E27EDE19F}
 + */
@@ -54,10 +55,9 @@ index ae6a711dcd1d..10dda1e3b560 100644
 +			0x9D, 0x52, 0x80, 0x2E, 0x27, 0xED, 0xE1, 0x9F \
 +		}
 +
-+/*
+ /*
   * Common header for Hyper-V ICs
   */
- 
 -- 
-2.13.0
+2.14.1
 

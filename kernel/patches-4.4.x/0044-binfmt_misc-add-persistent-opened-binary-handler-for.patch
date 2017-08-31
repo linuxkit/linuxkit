@@ -1,4 +1,4 @@
-From af8784a4b7d89b3514a8fb1e483dd2e9c4f8697e Mon Sep 17 00:00:00 2001
+From 4fa319e795c641456c96c2d966d8ec76747f2871 Mon Sep 17 00:00:00 2001
 From: James Bottomley <James.Bottomley@HansenPartnership.com>
 Date: Wed, 17 Feb 2016 16:51:16 -0800
 Subject: [PATCH 44/44] binfmt_misc: add persistent opened binary handler for
@@ -128,5 +128,5 @@ index 78f005f37847..4beb3d9e0001 100644
  	return count;
  }
 -- 
-2.13.0
+2.14.1
 

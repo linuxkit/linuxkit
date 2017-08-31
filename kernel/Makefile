@@ -119,11 +119,16 @@ show-tags: show-tag_$(2)$(3)
 fetch: sources/linux-$(1).tar.xz
 
 ifneq ($(2), 4.4.x)
+# 'docker build' with the FROM image supplied as --build-arg
+# *and* with DOCKER_CONTENT_TRUST=1 currently does not work
+# (https://github.com/moby/moby/issues/34199). So, we pull the image
+# with DCT and then build with DOCKER_CONTENT_TRUST explicitly set to 0.
 build_perf_$(2)$(3): build_$(2)$(3)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
-		docker build -f Dockerfile.perf \
+		(docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
+		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
-			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) .
+			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) .)
 
 push_perf_$(2)$(3): build_perf_$(2)$(3)
 	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
@@ -144,11 +149,11 @@ endef
 # Build Targets
 # Debug targets only for latest stable and LTS stable
 #
-$(eval $(call kernel,4.12.8,4.12.x,$(EXTRA)))
-$(eval $(call kernel,4.12.8,4.12.x,-dbg))
-$(eval $(call kernel,4.9.44,4.9.x,$(EXTRA)))
-$(eval $(call kernel,4.9.44,4.9.x,-dbg))
-$(eval $(call kernel,4.4.83,4.4.x,$(EXTRA)))
+$(eval $(call kernel,4.12.9,4.12.x,$(EXTRA)))
+$(eval $(call kernel,4.12.9,4.12.x,-dbg))
+$(eval $(call kernel,4.9.46,4.9.x,$(EXTRA)))
+$(eval $(call kernel,4.9.46,4.9.x,-dbg))
+$(eval $(call kernel,4.4.85,4.4.x,$(EXTRA)))
 
 # Target for kernel config
 kconfig: | sources

@@ -1,4 +1,4 @@
-From dc01e1d70da7835fedf37726881cd4737755fe1f Mon Sep 17 00:00:00 2001
+From 2437440fb2b15ee662bbd6525da9265cdf4d6cb4 Mon Sep 17 00:00:00 2001
 From: Claudio Imbrenda <imbrenda@linux.vnet.ibm.com>
 Date: Tue, 22 Mar 2016 17:05:52 +0100
 Subject: [PATCH 03/44] AF_VSOCK: Shrink the area influenced by prepare_to_wait
@@ -332,5 +332,5 @@ index 9b5bd6d142dc..b5f1221f48d4 100644
  	release_sock(sk);
  	return err;
 -- 
-2.13.0
+2.14.1
 

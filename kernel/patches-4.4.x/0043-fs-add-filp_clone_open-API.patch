@@ -1,4 +1,4 @@
-From 79601618d933ba1ec0ce29c9ac93b8d3c2378e4d Mon Sep 17 00:00:00 2001
+From ba909c25e249651395c2826802eb4fa650e3c510 Mon Sep 17 00:00:00 2001
 From: James Bottomley <James.Bottomley@HansenPartnership.com>
 Date: Wed, 17 Feb 2016 16:49:38 -0800
 Subject: [PATCH 43/44] fs: add filp_clone_open API
@@ -60,5 +60,5 @@ index fbc5c7b230b3..94fe386e566d 100644
  {
  	struct open_flags op;
 -- 
-2.13.0
+2.14.1
 
