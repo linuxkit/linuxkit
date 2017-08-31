@@ -1,0 +1,59 @@
+ARG IMAGE
+FROM ${IMAGE} AS ksrc
+FROM linuxkit/alpine:349a817bdd6b293ca623ab97acf5377ccdeac7d2 AS build
+RUN apk add \
+    attr-dev \
+    autoconf \
+    automake \
+    build-base \
+    file \
+    git \
+    libtirpc-dev \ 
+    libtool \
+    util-linux-dev \
+    zlib-dev
+
+COPY --from=ksrc /kernel-dev.tar /
+RUN tar xf kernel-dev.tar
+
+# Also extract the kernel modules
+COPY --from=ksrc /kernel.tar /
+RUN tar xf kernel.tar
+
+# Note: ZFS and SPL commits must match. It's unclear how much the user
+# space tools must match the kernel module version. The current zfs
+# package on Alpine is 0.6.5.9. We pick 0.6.5.10 because it has
+# support for 4.12 based kernels.
+ENV VERSION=0.6.5.10
+
+ENV SPL_REPO=https://github.com/zfsonlinux/spl.git
+ENV SPL_COMMIT=spl-${VERSION}
+RUN git clone ${SPL_REPO} && \
+    cd spl && \
+    git checkout ${SPL_COMMIT}
+
+ENV ZFS_REPO=https://github.com/zfsonlinux/zfs.git
+ENV ZFS_COMMIT=zfs-${VERSION}
+RUN git clone ${ZFS_REPO} && \
+    cd zfs && \
+    git checkout ${ZFS_COMMIT}
+
+WORKDIR /spl
+RUN ./autogen.sh && \
+    ./configure && \
+    cd module && \
+    make && \
+    make install
+
+WORKDIR /zfs
+RUN ./autogen.sh && \
+    ./configure --with-spl=/spl && \
+    cd module && \
+    make -j "$(getconf _NPROCESSORS_ONLN)" && \
+    make install
+
+FROM scratch
+ENTRYPOINT []
+CMD []
+WORKDIR /
+COPY --from=build /lib/modules/ /lib/modules/
