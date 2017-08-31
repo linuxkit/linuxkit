@@ -1,90 +1,67 @@
+all: image tag
+
+IMAGE=okernel
+OKERNEL_REPO=https://github.com/linux-okernel/linux-okernel
+DEPS=Dockerfile.okernel Makefile kernel_config.okernel Dockerfile.kvmod
+
 DEBUG ?= 0
-
-all:	bzImage tag
-
-# We push the image to hub twice, once with the full kernel version of
-# "linuxkit/kernel:<kernel version>.<major version>.<minor version>-<n>",
-# where "<n>" is a monotonically increasing config number, and as
-# "linuxkit/kernel:<kernel version>.<major version>.x". This version
-# number is stored in IMAGE_VERSION.
-#
-# We expect most users to us the "<kernel version>.<major version>.x"
-# variant as this simply is the latest version of a given major kernel
-# version. This version number is stored in IMAGE_MAJOR_VERSION.
-#
-# For IMAGE_VERSION, the "<n>" must be increased whenever
-# the kernel config or the patches change. We don't expect this to
-# happen very often as the minor version number gets update quite
-# frequently.
-#
-# IMAGE_VERSION is used to determine if a new image should be pushed to hub.
 
 ifdef KERNEL
 ifneq ($(KERNEL),latest)
+ifneq (,$(findstring ok-,$(KERNEL)))
 KERNEL_VERSION=$(KERNEL)
-IMAGE_VERSION=$(KERNEL_VERSION)-0
+IMAGE_VERSION=$(KERNEL_VERSION)
+LATEST=0
 else
-KERNEL_VERSION=linux-okernel
-IMAGE_VERSION=latest
+$(error Error, valid okernel kernel versions begin with "ok-")
 endif
 else
 KERNEL_VERSION=linux-okernel
-IMAGE_VERSION=latest
+IMAGE_VERSION=$(shell git ls-remote --tags $(OKERNEL_REPO) ok-\* | awk -F"/" '{print $$3}' | tail -1)
+LATEST=1
+endif
+else
+KERNEL_VERSION=linux-okernel
+IMAGE_VERSION=$(shell git ls-remote --tags $(OKERNEL_REPO) ok-\* | awk -F"/" '{print $$3}' | tail -1)
+LATEST=1
 endif
 
-IMAGE=okernel
-IMAGE_MAJOR_VERSION=4.11.x
-DEPS=Dockerfile.okernel Makefile kernel_config.okernel Dockerfile.kvmod
-
-MEDIA_TOYBOX=linuxkit/toybox-media:d7e82a7d19ccc84c9071fa7a88ecaa58ae958f7c@sha256:4c7d25f2be2429cd08417c36e04161cb924e46f3e419ee33a0aa9ff3a0942e02
 
 
-kernel.tag: $(DEPS)
 ifdef HTTP_PROXY
-	BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) --build-arg HTTP_PROXY=$(HTTP_PROXY) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
-else
-	BUILD=$$( tar cf - $^ | docker build -f $< --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > $@
+	PROXY_ARG = --build-arg HTTP_PROXY=$(HTTP_PROXY)
 endif
 
-bzImage: kernel.tag
-	rm -rf etc/kernel-patches
-	mkdir -p x86_64 etc lib usr sbin etc/kernel-patches kvmod
-	docker run --rm --net=none --log-driver=none $(shell cat kernel.tag) tar cf - bzImage kernel-dev.tar kernel-headers.tar vmlinux kernel-modules.tar kernel_vuln.tar | tar xf - -C x86_64
-	cp x86_64/kernel-modules.tar kernel.tar
-	cp x86_64/kernel_vuln.tar kernel_vuln.tar
-	tar xf kernel_vuln.tar -C kvmod
-	cp x86_64/bzImage $@
+ifdef HTTPS_PROXY
+	PROXY_ARG += --build-arg HTTPS_PROXY=$(HTTPS_PROXY)
+endif
 
 .PHONY: image push tag kvmod
+image: $(DEPS)
+	BUILD=$$( tar cf - $^ | docker build -f $< $(PROXY_ARG) --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q -t $(IMAGE):build - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > build_info
 
-default: push
 
-Dockerfile.media:
-	printf "FROM $(MEDIA_TOYBOX)\nCOPY bzImage kernel.tar /\n" > $@
+default: tag
 
-image: Dockerfile.media bzImage kernel.tar Dockerfile.kvmod kvmod/root/kvmod/kernel_vuln.ko $(DEPS)
-	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -f Dockerfile.media -
-
-kvmod: Dockerfile.kvmod kvmod/root/kvmod/kernel_vuln.ko $(DEPS)
-	tar cf - $^ | docker build --no-cache -t okernel-kvmod:$(IMAGE_VERSION) -f Dockerfile.kvmod -
+kvmod: 
+	docker build --no-cache --build-arg IMAGE=$(IMAGE):$(IMAGE_VERSION) -t okernel-kvmod:$(IMAGE_VERSION) - < Dockerfile.kvmod
 
 push: image
-	docker pull linuxkit/$(IMAGE):$(IMAGE_VERSION) || \
-		(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker push linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
-		 docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION) && \
-		 docker push linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	(docker tag $(IMAGE):build $(IMAGE):$(IMAGE_VERSION) && \
+	 docker push $(IMAGE):$(IMAGE_VERSION)) 
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 tag: image
-	(docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_VERSION) && \
-	docker tag $(IMAGE):build linuxkit/$(IMAGE):$(IMAGE_MAJOR_VERSION))
+	docker tag $(IMAGE):build $(IMAGE):$(IMAGE_VERSION)
+ifeq (1,$(LATEST))
+	docker tag $(IMAGE):build $(IMAGE):latest
+endif
 	docker rmi $(IMAGE):build
 	rm -f hash
 
 .PHONY: clean
 clean:
-	rm -rf x86_64 lib usr sbin kernel.tag Dockerfile.media bzImage kernel.tar kernel_vuln.tar kvmod
+	rm -f build_info
 
 .DELETE_ON_ERROR:
