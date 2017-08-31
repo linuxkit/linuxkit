@@ -1,29 +1,32 @@
-DEBUG ?= 0
-
 all: image tag
 
-# For IMAGE_VERSION, the "<n>" must be increased whenever
-# the kernel config or the patches change. We don't expect this to
-# happen very often as the minor version number gets update quite
-# frequently.
-#
-# IMAGE_VERSION is used to determine if a new image should be pushed to hub.
+IMAGE=okernel
+OKERNEL_REPO=https://github.com/linux-okernel/linux-okernel
+DEPS=Dockerfile.okernel Makefile kernel_config.okernel Dockerfile.kvmod
+
+DEBUG ?= 0
 
 ifdef KERNEL
 ifneq ($(KERNEL),latest)
+ifneq (,$(findstring ok-,$(KERNEL)))
 KERNEL_VERSION=$(KERNEL)
-IMAGE_VERSION=$(KERNEL_VERSION)-0
+IMAGE_VERSION=$(KERNEL_VERSION)
+LATEST=0
 else
-KERNEL_VERSION=linux-okernel
-IMAGE_VERSION=latest
+$(error Error, valid okernel kernel versions begin with "ok-")
 endif
 else
 KERNEL_VERSION=linux-okernel
-IMAGE_VERSION=latest
+IMAGE_VERSION=$(shell git ls-remote --tags $(OKERNEL_REPO) ok-\* | awk -F"/" '{print $$3}' | tail -1)
+LATEST=1
+endif
+else
+KERNEL_VERSION=linux-okernel
+IMAGE_VERSION=$(shell git ls-remote --tags $(OKERNEL_REPO) ok-\* | awk -F"/" '{print $$3}' | tail -1)
+LATEST=1
 endif
 
-IMAGE=okernel
-DEPS=Dockerfile.okernel Makefile kernel_config.okernel Dockerfile.kvmod
+
 
 ifdef HTTP_PROXY
 	PROXY_ARG = --build-arg HTTP_PROXY=$(HTTP_PROXY)
@@ -50,7 +53,10 @@ push: image
 	rm -f hash
 
 tag: image
-	docker tag $(IMAGE):build $(IMAGE):$(IMAGE_VERSION) 
+	docker tag $(IMAGE):build $(IMAGE):$(IMAGE_VERSION)
+ifeq (1,$(LATEST))
+	docker tag $(IMAGE):build $(IMAGE):latest
+endif
 	docker rmi $(IMAGE):build
 	rm -f hash
 
