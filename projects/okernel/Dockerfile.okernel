@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS kernel-build
+FROM linuxkit/alpine:21f2d52a0e20a78a0a81bbf5bebc652a3ec21b01 AS kernel-build
 RUN apk --no-cache add \
     argp-standalone \
     automake \
@@ -18,9 +18,8 @@ RUN apk --no-cache add \
     tar \
     xz \
     zlib-dev \
+    openssl \
     openssl-dev
-
-RUN apk --no-cache add --repository http://dl-cdn.alpinelinux.org/alpine/edge/main openssl
 
 ARG KERNEL_VERSION
 ARG DEBUG=0
