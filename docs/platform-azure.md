@@ -23,7 +23,7 @@ here](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-gro
 
 ## Build an image
 
-Create a new `azure.yml` file [based on the Azure example](../examples/azure.yml), generate a new SSH key and add it in the `yml`, then `moby build -output vhd azure.yml`.
+Create a new `azure.yml` file [based on the Azure example](../examples/azure.yml), generate a new SSH key and add it in the `yml`, then `moby build -format vhd azure.yml`.
 
 
 This will output a `azure.vhd` image.

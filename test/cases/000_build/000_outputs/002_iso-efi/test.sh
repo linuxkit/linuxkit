@@ -18,7 +18,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -output iso-efi -name "${NAME}" ../test.yml
+moby build -format iso-efi -name "${NAME}" ../test.yml
 [ -f "${NAME}-efi.iso" ] || exit 1
 
 exit 0

@@ -18,7 +18,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -output vmdk -name "${NAME}" ../test.yml
+moby build -format vmdk -name "${NAME}" ../test.yml
 [ -f "${NAME}.vmdk" ] || exit 1
 
 exit 0

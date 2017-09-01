@@ -23,7 +23,7 @@ docker pull linuxkit/kernel:4.9.46
 docker build -t ${IMAGE_NAME} .
 
 # Build and run a LinuxKit image with kernel module (and test script)
-moby build -output kernel+initrd kmod.yml
+moby build -format kernel+initrd kmod.yml
 RESULT="$(linuxkit run kmod)"
 echo "${RESULT}" | grep -q "Hello LinuxKit"
 

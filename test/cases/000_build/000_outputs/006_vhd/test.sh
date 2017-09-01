@@ -19,7 +19,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -output vhd -name "${NAME}" ../test.yml
+moby build -format vhd -name "${NAME}" ../test.yml
 [ -f "${NAME}.vhd" ] || exit 1
 
 exit 0
