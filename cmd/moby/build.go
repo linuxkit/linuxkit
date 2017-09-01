@@ -19,16 +19,16 @@ import (
 
 const defaultNameForStdin = "moby"
 
-type outputList []string
+type formatList []string
 
-func (o *outputList) String() string {
-	return fmt.Sprint(*o)
+func (f *formatList) String() string {
+	return fmt.Sprint(*f)
 }
 
-func (o *outputList) Set(value string) error {
+func (f *formatList) Set(value string) error {
 	// allow comma seperated options or multiple options
 	for _, cs := range strings.Split(value, ",") {
-		*o = append(*o, cs)
+		*f = append(*f, cs)
 	}
 	return nil
 }
@@ -56,7 +56,7 @@ func getDiskSizeMB(s string) (int, error) {
 
 // Process the build arguments and execute build
 func build(args []string) {
-	var buildOut outputList
+	var buildFormats formatList
 
 	outputTypes := moby.OutputTypes()
 
@@ -73,7 +73,7 @@ func build(args []string) {
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
 	buildHyperkit := buildCmd.Bool("hyperkit", runtime.GOOS == "darwin", "Use hyperkit for LinuxKit based builds where possible")
-	buildCmd.Var(&buildOut, "output", "Output types to create [ "+strings.Join(outputTypes, " ")+" ]")
+	buildCmd.Var(&buildFormats, "format", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
 
 	if err := buildCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -100,36 +100,35 @@ func build(args []string) {
 	// the basic outputs are tarballs, while the packaged ones are the LinuxKit out formats that
 	// cannot be streamed but we do allow multiple ones to be built.
 
-	if len(buildOut) == 0 {
+	if len(buildFormats) == 0 {
 		if *buildOutputFile == "" {
-			buildOut = outputList{"kernel+initrd"}
+			buildFormats = formatList{"kernel+initrd"}
 		} else {
-			buildOut = outputList{"tar"}
+			buildFormats = formatList{"tar"}
 		}
 	}
 
-	log.Debugf("Outputs selected: %s", buildOut.String())
+	log.Debugf("Formats selected: %s", buildFormats.String())
 
-	if len(buildOut) > 1 {
-		for _, o := range buildOut {
+	if len(buildFormats) > 1 {
+		for _, o := range buildFormats {
 			if moby.Streamable(o) {
-				log.Fatalf("Output type %s must be the only output specified", o)
+				log.Fatalf("Format type %s must be the only format specified", o)
 			}
 		}
 	}
 
-	if len(buildOut) == 1 && moby.Streamable(buildOut[0]) {
+	if len(buildFormats) == 1 && moby.Streamable(buildFormats[0]) {
 		if *buildOutputFile == "" {
-			*buildOutputFile = filepath.Join(*buildDir, name+"."+buildOut[0])
+			*buildOutputFile = filepath.Join(*buildDir, name+"."+buildFormats[0])
 			// stop the errors in the validation below
 			*buildName = ""
 			*buildDir = ""
 		}
-
 	} else {
-		err := moby.ValidateOutputs(buildOut)
+		err := moby.ValidateFormats(buildFormats)
 		if err != nil {
-			log.Errorf("Error parsing outputs: %v", err)
+			log.Errorf("Error parsing formats: %v", err)
 			buildCmd.Usage()
 			os.Exit(1)
 		}
@@ -137,7 +136,7 @@ func build(args []string) {
 
 	var outputFile *os.File
 	if *buildOutputFile != "" {
-		if len(buildOut) > 1 {
+		if len(buildFormats) > 1 {
 			log.Fatal("The -output option can only be specified when generating a single output format")
 		}
 		if *buildName != "" {
@@ -146,8 +145,8 @@ func build(args []string) {
 		if *buildDir != "" {
 			log.Fatal("The -output option cannot be specified with -dir")
 		}
-		if !moby.Streamable(buildOut[0]) {
-			log.Fatalf("The -output option cannot be specified for build type %s as it cannot be streamed", buildOut[0])
+		if !moby.Streamable(buildFormats[0]) {
+			log.Fatalf("The -output option cannot be specified for build type %s as it cannot be streamed", buildFormats[0])
 		}
 		if *buildOutputFile == "-" {
 			outputFile = os.Stdout
@@ -221,8 +220,8 @@ func build(args []string) {
 	// this is a weird interface, but currently only streamable types can have additional files
 	// need to split up the base tarball outputs from the secondary stages
 	var tp string
-	if moby.Streamable(buildOut[0]) {
-		tp = buildOut[0]
+	if moby.Streamable(buildFormats[0]) {
+		tp = buildFormats[0]
 	}
 	err = moby.Build(m, w, *buildPull, tp)
 	if err != nil {
@@ -232,7 +231,7 @@ func build(args []string) {
 	if outputFile == nil {
 		image := buf.Bytes()
 		log.Infof("Create outputs:")
-		err = moby.Outputs(filepath.Join(*buildDir, name), image, buildOut, size, *buildHyperkit)
+		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, *buildHyperkit)
 		if err != nil {
 			log.Fatalf("Error writing outputs: %v", err)
 		}

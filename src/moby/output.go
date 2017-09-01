@@ -132,33 +132,33 @@ func ensurePrereq(out string) error {
 	return err
 }
 
-// ValidateOutputs checks if the output type is known
-func ValidateOutputs(out []string) error {
-	log.Debugf("validating output: %v", out)
+// ValidateFormats checks if the format type is known
+func ValidateFormats(formats []string) error {
+	log.Debugf("validating output: %v", formats)
 
-	for _, o := range out {
+	for _, o := range formats {
 		f := outFuns[o]
 		if f == nil {
-			return fmt.Errorf("Unknown output type %s", o)
+			return fmt.Errorf("Unknown format type %s", o)
 		}
 		err := ensurePrereq(o)
 		if err != nil {
-			return fmt.Errorf("Failed to set up output type %s: %v", o, err)
+			return fmt.Errorf("Failed to set up format type %s: %v", o, err)
 		}
 	}
 
 	return nil
 }
 
-// Outputs generates all the specified output formats
-func Outputs(base string, image []byte, out []string, size int, hyperkit bool) error {
-	log.Debugf("output: %v %s", out, base)
+// Formats generates all the specified output formats
+func Formats(base string, image []byte, formats []string, size int, hyperkit bool) error {
+	log.Debugf("format: %v %s", formats, base)
 
-	err := ValidateOutputs(out)
+	err := ValidateFormats(formats)
 	if err != nil {
 		return err
 	}
-	for _, o := range out {
+	for _, o := range formats {
 		f := outFuns[o]
 		err := f(base, image, size, hyperkit)
 		if err != nil {

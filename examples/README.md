@@ -13,10 +13,10 @@ then start the `onboot` and `service` containers. The example below shows how yo
 can run `nginx` on either of these base configs.
 
 ```
-moby build -output docker -o - docker.yml nginx.yml | docker build -t dockertest -
+moby build -format docker -o - docker.yml nginx.yml | docker build -t dockertest -
 docker run -d -p 80:80 --privileged dockertest
 
-moby build -output kernel+initrd linuxkit.yml nginx.yml
+moby build -format kernel+initrd linuxkit.yml nginx.yml
 linuxkit run nginx
 ```
 

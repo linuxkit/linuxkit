@@ -35,7 +35,7 @@ test: lint moby
 	# go test
 	@go test github.com/moby/tool/src/moby
 	# test build
-	./moby build -output tar test/test.yml
+	./moby build -format tar test/test.yml
 	rm moby test.tar
 
 .PHONY: install
