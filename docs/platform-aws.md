@@ -22,7 +22,7 @@ export AWS_REGION=eu-west-1
 AWS requires a `RAW` image. To create one:
 
 ```
-$ moby build -output raw examples/aws.yml
+$ moby build -format raw examples/aws.yml
 ```
 
 ## Push image

@@ -15,7 +15,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-moby build -output kernel+initrd test-ca-certificates.yml
+moby build -format kernel+initrd test-ca-certificates.yml
 RESULT="$(linuxkit run test-ca-certificates)"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"

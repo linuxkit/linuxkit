@@ -15,7 +15,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-moby build -output kernel+initrd test-sysctl.yml
+moby build -format kernel+initrd test-sysctl.yml
 RESULT="$(linuxkit run test-sysctl)"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"

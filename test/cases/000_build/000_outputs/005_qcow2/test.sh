@@ -18,7 +18,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -output qcow2 -name "${NAME}" ../test.yml
+moby build -format qcow2 -name "${NAME}" ../test.yml
 [ -f "${NAME}.qcow2" ] || exit 1
 
 exit 0

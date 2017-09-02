@@ -17,7 +17,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -output kernel+initrd -name "${NAME}" test.yml
+moby build -format kernel+initrd -name "${NAME}" test.yml
 linuxkit run qemu -kernel "${NAME}"
 #RESULT=$(linuxkit run qemu -kernel "${NAME}")
 #echo "${RESULT}" | grep -q "PASSED"

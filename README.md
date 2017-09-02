@@ -45,7 +45,7 @@ Once you have built the tool, use
 ```
 moby build linuxkit.yml
 ```
-to build the example configuration. You can also specify different output formats, eg `moby build -output raw linuxkit.yml` to
+to build the example configuration. You can also specify different output formats, eg `moby build -format raw linuxkit.yml` to
 output a raw bootable disk image. See `moby build -help` for more information.
 
 ### Booting and Testing
@@ -102,7 +102,7 @@ To customise, copy or modify the [`linuxkit.yml`](linuxkit.yml) to your own `fil
 generate its specified output. You can run the output with `linuxkit run file`.
 
 The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. You can specify the type
-of artifact to build with the `moby` tool eg `moby build -output vhd linuxkit.yml`.
+of artifact to build with the `moby` tool eg `moby build -format vhd linuxkit.yml`.
 
 If you want to build your own packages, see this [document](docs/packages.md).
 

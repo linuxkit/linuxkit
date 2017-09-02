@@ -25,7 +25,7 @@ else
 fi
 
 sed -e "s,@DEVICE@,${DEVICE},g" test.yml.in > test.yml
-moby build -name ${NAME} -output kernel+initrd test.yml
+moby build -name ${NAME} -format kernel+initrd test.yml
 RESULT="$(linuxkit run -disk file=${NAME}1.img,size=512M ${NAME})"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
