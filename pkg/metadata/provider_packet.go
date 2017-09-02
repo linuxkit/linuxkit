@@ -6,8 +6,8 @@ import (
 	"net"
 	"os"
 	"path"
-	"strconv"
 	"strings"
+	"syscall"
 
 	"github.com/packethost/packngo/metadata"
 	"github.com/vishvananda/netlink"
@@ -51,6 +51,10 @@ func (p *ProviderPacket) Extract() ([]byte, error) {
 		return nil, fmt.Errorf("Packet: Failed to write hostname: %s", err)
 	}
 
+	if err := syscall.Sethostname([]byte(p.metadata.Hostname)); err != nil {
+		return nil, fmt.Errorf("Packet: Failed to set hostname: %s", err)
+	}
+
 	if err := os.MkdirAll(path.Join(ConfigPath, SSH), 0755); err != nil {
 		return nil, fmt.Errorf("Failed to create %s: %s", SSH, err)
 	}
@@ -84,6 +88,28 @@ func (p *ProviderPacket) Extract() ([]byte, error) {
 
 // networkConfig handles Packet network configuration, primarily bonding
 func networkConfig(ni metadata.NetworkInfo) error {
+	// set up bonding
+	bond, err := netlink.LinkByName("bond0")
+	if err != nil {
+		if strings.Contains(err.Error(), "Link not found") {
+			newBond := new(netlink.Bond)
+			newBond.LinkAttrs.Name = "bond0"
+			newBond.Mode = netlink.BondMode(ni.BondingMode())
+
+			if err := netlink.LinkAdd(newBond); err != nil {
+				if !strings.Contains(err.Error(), "file exists") {
+					return fmt.Errorf("Could not make new bonded device: %s", err)
+				}
+			}
+			bond, err = netlink.LinkByName("bond0")
+			if err != nil {
+				return fmt.Errorf("Could not get link by name for bond0: %s", err)
+			}
+		} else {
+			return fmt.Errorf("Could not get link by name for bond0: %s", err)
+		}
+	}
+
 	// rename interfaces to match what the metadata calls them
 	links, err := netlink.LinkList()
 	if err != nil {
@@ -114,69 +140,59 @@ func networkConfig(ni metadata.NetworkInfo) error {
 						return fmt.Errorf("Interface rename failed: %v", err)
 					}
 				}
+
+				if err := netlink.LinkSetMasterByIndex(link, bond.Attrs().Index); err != nil {
+					return fmt.Errorf("Cannot join %s to bond0: %v", iface.Name, err)
+				}
 			}
 		}
 	}
 
-	// set up bonding
-	la := netlink.LinkAttrs{Name: "bond0"}
-	bond := &netlink.GenericLink{la, "bond"}
-	if err := netlink.LinkAdd(bond); err != nil {
-		// weirdly creating a bind always seems to return EEXIST
-		fmt.Fprintf(os.Stderr, "Error adding bond0: %v (ignoring)", err)
-	}
-	if err := ioutil.WriteFile("/sys/class/net/bond0/bonding/mode", []byte(strconv.Itoa(int(ni.Bonding.Mode))), 0); err != nil {
-		return fmt.Errorf("Cannot write to /sys/class/net/bond0/bonding/mode: %v", err)
-	}
-	if err := netlink.LinkSetUp(bond); err != nil {
-		return fmt.Errorf("Failed to bring bond0 up: %v", err)
-	}
-	for _, iface := range ni.Interfaces {
-		link, err := netlink.LinkByName(iface.Name)
-		if err != nil {
-			return fmt.Errorf("Cannot find interface %s: %v", iface.Name, err)
-		}
-		if err := netlink.LinkSetMasterByIndex(link, bond.Attrs().Index); err != nil {
-			return fmt.Errorf("Cannot join %s to bond0: %v", iface.Name, err)
-		}
-	}
-
-	// set up addresses and routes
+	// set up addresses
 	for _, address := range ni.Addresses {
-		cidr := "/" + strconv.Itoa(address.NetworkBits)
-		addr, err := netlink.ParseAddr(address.Address.String() + cidr)
+		ipNet := net.IPNet{
+			IP:   address.Address,
+			Mask: net.IPMask(address.NetworkMask),
+		}
+
+		addr, err := netlink.ParseAddr(ipNet.String())
 		if err != nil {
 			return err
 		}
 		if err := netlink.AddrAdd(bond, addr); err != nil {
 			return fmt.Errorf("Failed to add address to bonded interface: %v", err)
 		}
-		var additionalNet string
-		switch {
-		case address.Public && address.Family == metadata.IPv4:
-			additionalNet = "0.0.0.0/0"
-		case address.Public && address.Family == metadata.IPv6:
-			additionalNet = "::/0"
-		case !address.Public && address.Family == metadata.IPv4:
-			// add a gateway for eg 10.0.0.0/8
-			mask := address.Address.DefaultMask()
-			masked := address.Address.Mask(mask)
-			network := &net.IPNet{IP: masked, Mask: mask}
-			additionalNet = network.String()
+	}
+
+	if err := netlink.LinkSetUp(bond); err != nil {
+		return fmt.Errorf("Failed to bring bond0 up: %v", err)
+	}
+
+	var ip4RouteSet bool
+	var ip6RouteSet bool
+	// set up routes
+	for _, address := range ni.Addresses {
+		if ip4RouteSet && ip6RouteSet {
+			break
 		}
-		if additionalNet != "" {
-			_, network, err := net.ParseCIDR(additionalNet)
-			if err != nil {
-				return err
-			}
-			route := netlink.Route{
-				LinkIndex: bond.Attrs().Index,
-				Gw:        address.Gateway,
-				Dst:       network,
-			}
-			if err := netlink.RouteAdd(&route); err != nil {
-				return fmt.Errorf("Failed to add route: %v", err)
-			}
+		if !address.Public {
+			continue
+		}
+		route := &netlink.Route{
+			LinkIndex: bond.Attrs().Index,
+			Gw:        address.Gateway,
+			Dst:       nil,
+		}
+		switch {
+		case address.Family == metadata.IPv4 && !ip4RouteSet:
+			ip4RouteSet = true
+		case address.Family == metadata.IPv6 && !ip6RouteSet:
+			ip6RouteSet = true
+		default:
+			continue
+		}
+		if err := netlink.RouteAdd(route); err != nil {
+			return fmt.Errorf("Failed to add route: %v", err)
 		}
 	}
 
