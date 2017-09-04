@@ -18,7 +18,7 @@ RUN which capnp
 ### SDK
 
 #FROM ocaml/opam@sha256:b42566186327141d715c212da3057942bd4cfa5503a87733d366835fa2ddf98d
-FROM ocaml/opam:alpine-3.5_ocaml-4.04.0 as sdk
+FROM ocaml/opam:alpine-3.5_ocaml-4.05.0 as sdk
 
 COPY --from=capnp /usr/local/bin/capnp /usr/local/bin/
 COPY --from=capnp /usr/local/bin/capnpc /usr/local/bin/
@@ -31,22 +31,17 @@ RUN sudo mkdir -p /src
 USER opam
 WORKDIR /src
 
-RUN git -C /home/opam/opam-repository fetch origin && \
-    git -C /home/opam/opam-repository reset 092a9a66 --hard && \
-    opam update -u
-
-# capnp
-RUN opam pin add -n mirage-flow.dev --dev
-RUN opam pin add -n capnp.dev 'https://github.com/talex5/capnp-ocaml.git#interfaces2'
-RUN opam pin add -n capnp-rpc.dev 'https://github.com/mirage/capnp-rpc.git'
-RUN opam pin add -n capnp-rpc-lwt.dev 'https://github.com/mirage/capnp-rpc.git'
+RUN git -C /home/opam/opam-repository fetch && \
+    git -C /home/opam/opam-repository reset ac26509c --hard && \
+    opam update
 
 COPY sdk.opam /src
 RUN sudo chown opam -R /src
 RUN opam pin add sdk.local /src -n
 
 RUN opam depext -y alcotest sdk
-RUN opam install alcotest && opam install --deps sdk -t
+RUN opam install alcotest mtime
+RUN opam install --deps sdk
 
 RUN opam list
 
@@ -60,9 +55,6 @@ RUN opam update sdk && opam install sdk -t
 FROM sdk as dhcp-client
 
 # charrua
-RUN opam pin add -n charrua-client.dev https://github.com/mirage/charrua-core.git
-RUN opam pin add -n charrua-client-lwt.dev https://github.com/samoht/charrua-core.git#fix-build-and-tests
-RUN opam pin add -n charrua-client-mirage.dev https://github.com/samoht/charrua-core.git#fix-build-and-tests
 
 COPY dhcp-client.opam /src
 RUN sudo chown opam -R /src

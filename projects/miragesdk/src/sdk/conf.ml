@@ -17,19 +17,15 @@ exception Undefined_field of int
 let err_not_found fmt = Fmt.kstrf (fun x -> Lwt.fail_invalid_arg x) fmt
 let failf fmt = Fmt.kstrf (fun x -> Lwt.fail_with x) fmt
 
-
-module R = Api.Reader.Conf
-module B = Api.Builder.Conf
-
 module Callback = struct
 
   let service f =
-    B.Callback.local @@ object (_: B.Callback.service)
-      inherit B.Callback.service
-      method f_impl req =
-        let module P = R.Callback.F_params in
-        let params = P.of_payload req in
-        let change = P.change_get params in
+    let open Api.Service.Conf.Callback in
+    local @@ object (_: service)
+      inherit service
+      method f_impl req release_param_caps =
+        let change = F.Params.change_get req in
+        release_param_caps ();
         Service.return_lwt (fun () ->
             f change >|= fun () ->
             Ok (Service.Response.create_empty ())
@@ -37,21 +33,20 @@ module Callback = struct
     end
 
   let client t change =
-    let module P = B.Callback.F_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.change_set p change;
-    Capability.call_for_value t R.Callback.f_method req >>= function
-    | Ok _    -> Lwt.return ()
-    | Error e -> failf "error: f(%s) -> %a" change Capnp_rpc.Error.pp e
+    let open Api.Client.Conf.Callback in
+    let req, p = Capability.Request.create F.Params.init_pointer in
+    F.Params.change_set p change;
+    Capability.call_for_value_exn t F.method_id req >|=
+    ignore
 
 end
 
 
 module Client (F: Flow.S) = struct
 
-  type t = R.t Capability.t
+  module Conf = Api.Client.Conf
 
-  let pp_error = Capnp_rpc.Error.pp
+  type t = Conf.t Capability.t
 
   let connect ~switch ?tags f =
     let ep = Capnp_rpc_lwt.Endpoint.of_flow ~switch (module F) f in
@@ -59,18 +54,14 @@ module Client (F: Flow.S) = struct
     Capnp_rpc_lwt.CapTP.bootstrap client |> Lwt.return
 
   let find t path =
-    let module P = B.Read_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.path_set_list p path |> ignore;
-    Capability.call_for_value t R.read_method req >>= function
-    | Error e -> failf "error read(%a): %a" pp_path path pp_error e
-    | Ok r ->
-      let module R = R.Response in
-      let r = R.of_payload r in
-      match R.get r with
-      | R.Ok data     -> Lwt.return (Some data)
-      | R.NotFound    -> Lwt.return None
-      | R.Undefined _ -> failf "invalid return"
+    let open Conf.Read in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.path_set_list p path |> ignore;
+    Capability.call_for_value_exn t method_id req >>= fun r ->
+    match Results.get r with
+    | Ok data     -> Lwt.return (Some data)
+    | NotFound    -> Lwt.return None
+    | Undefined _ -> failf "invalid return"
 
   let get t path =
     find t path >>= function
@@ -78,31 +69,24 @@ module Client (F: Flow.S) = struct
     | None   -> err_not_found "get %a" pp_path path
 
   let set t path data =
-    let module P = B.Write_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.path_set_list p path |> ignore;
-    P.data_set p data;
-    Capability.call_for_value t R.write_method req >>= function
-    | Ok _    -> Lwt.return ()
-    | Error e -> failf "error write(%a): %a" pp_path path pp_error e
+    let open Conf.Write in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.path_set_list p path |> ignore;
+    Params.data_set p data;
+    Capability.call_for_value_exn t method_id req >|= ignore
 
   let delete t path =
-    let module P = B.Delete_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.path_set_list p path |> ignore;
-    Capability.call_for_value t R.delete_method req >>= function
-    | Ok _    -> Lwt.return ()
-    | Error e -> failf "error delete(%a): %a" pp_path path pp_error e
+    let open Conf.Delete in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.path_set_list p path |> ignore;
+    Capability.call_for_value_exn t method_id req >|= ignore
 
   let watch t path f =
-    let module P = B.Watch_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.path_set_list p path |> ignore;
-    let callback = Capability.Request.export req (Callback.service f) in
-    P.callback_set p (Some callback);
-    Capability.call_for_value t R.watch_method req >>= function
-    | Ok _    -> Lwt.return ()
-    | Error e -> failf "error watch(%a): %a" pp_path path pp_error e
+    let open Conf.Watch in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.path_set_list p path |> ignore;
+    Params.callback_set p (Some (Callback.service f));
+    Capability.call_for_value_exn t method_id req >|= ignore
 
 end
 
@@ -123,7 +107,8 @@ module Server (F: Flow.S) = struct
 
   type op = [ `Read | `Write | `Delete ]
 
-  type t = R.t Capability.t
+  module Conf = Api.Service.Conf
+  type t = Conf.t Capability.t
 
   let infof fmt =
     Fmt.kstrf (fun msg () ->
@@ -164,55 +149,54 @@ module Server (F: Flow.S) = struct
     | exception Not_found -> Service.fail "%s" (not_allowed key)
 
   let service ~switch ~routes db =
-    B.local @@ object (_ : B.service)
-      inherit B.service
-      method read_impl req =
-        let module P = R.Read_params in
-        let params = P.of_payload req in
-        let key = P.path_get_list params in
+    Conf.local @@ object (_ : Conf.service)
+      inherit Conf.service
+      method read_impl req release_param_caps =
+        let open Conf.Read in
+        let key = Params.path_get_list req in
+        release_param_caps ();
         with_permission_check ~routes `Read key @@ fun () ->
         Service.return_lwt (fun () ->
-            let module R = B.Response in
-            let resp, r = Service.Response.create R.init_pointer in
+            let resp, r = Service.Response.create Results.init_pointer in
             (KV.find db key >|= function
-              | None -> R.not_found_set r
-              | Some x -> R.ok_set r x
+              | None   -> Results.not_found_set r
+              | Some x -> Results.ok_set r x
             ) >|= fun () ->
             Ok resp
           )
 
-      method write_impl req =
-        let module P = R.Write_params in
-        let params = P.of_payload req in
-        let key = P.path_get_list params in
-        let value = P.data_get params in
+      method write_impl req release_param_caps =
+        let open Conf.Write in
+        let key = Params.path_get_list req in
+        let value = Params.data_get req in
+        release_param_caps ();
         with_permission_check ~routes `Write key @@ fun () ->
         Service.return_lwt (fun () ->
             write db key value >|= fun () ->
             Ok (Service.Response.create_empty ())
           )
 
-      method delete_impl req =
-        let module P = R.Delete_params in
-        let params = P.of_payload req in
-        let key = P.path_get_list params in
+      method delete_impl req release_param_caps =
+        let open Conf.Delete in
+        let key = Params.path_get_list req in
+        release_param_caps ();
         with_permission_check ~routes `Delete key @@ fun () ->
         Service.return_lwt (fun () ->
             delete db key >|= fun () ->
             Ok (Service.Response.create_empty ())
           )
 
-      method watch_impl req =
-        let module P = R.Watch_params in
-        let params = P.of_payload req in
-        let key = P.path_get_list params in
-        match P.callback_get params with
-        | None   -> failwith "No watcher callback given"
+      method watch_impl req release_param_caps =
+        let open Conf.Watch in
+        let key = Params.path_get_list req in
+        let callback = Params.callback_get req in
+        release_param_caps ();
+        match callback with
+        | None   -> Service.fail "No watcher callback given"
         | Some i ->
-          let callback = Payload.import req i in
           with_permission_check ~routes `Read key @@ fun () ->
           Service.return_lwt (fun () ->
-              watch ~switch db key (Callback.client callback) >|= fun () ->
+              watch ~switch db key (Callback.client i) >|= fun () ->
               Ok (Service.Response.create_empty ())
             )
     end

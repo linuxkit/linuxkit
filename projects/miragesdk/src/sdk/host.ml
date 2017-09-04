@@ -68,138 +68,117 @@ end
 open Lwt.Infix
 open Capnp_rpc_lwt
 
-module R = Api.Reader.Host
-module B = Api.Builder.Host
-
 module Client (F: Flow.S) = struct
 
-  let pp_error = Capnp_rpc.Error.pp
+  module Host = Api.Client.Host
 
-  type t = R.t Capability.t
-
-  let error e = Fmt.kstrf Lwt.fail_with "%a" pp_error e
+  type t = Host.t Capability.t
 
   let connect ~switch ?tags f =
     let ep = Capnp_rpc_lwt.Endpoint.of_flow ~switch (module F) f in
     let client = Capnp_rpc_lwt.CapTP.connect ~switch ?tags ep in
     Capnp_rpc_lwt.CapTP.bootstrap client |> Lwt.return
 
-  let intf_result r =
-    let module R = R.Intf_results in
-    R.intf_get (R.of_payload r)
-
   let interface t =
-    let module P = B.Intf_params in
-    let req, _ = Capability.Request.create P.init_pointer in
-    Capability.call_for_value t R.intf_method req >>= function
-    | Error e -> error e
-    | Ok r    -> Lwt.return (intf_result r)
-
-  let mac_result r =
-    let module R = R.Mac_results in
-    let mac = R.mac_get (R.of_payload r) in
-    Macaddr.of_string_exn mac
+    let open Host.Intf in
+    let req, _ = Capability.Request.create Params.init_pointer in
+    Capability.call_for_value_exn t method_id req >|=
+    Host.Intf.Results.intf_get
 
   let mac t =
-    let module P = B.Mac_params in
-    let req, _ = Capability.Request.create P.init_pointer in
-    Capability.call_for_value t R.mac_method req >>= function
-    | Error e -> error e
-    | Ok r    -> Lwt.return (mac_result r)
+    let open Host.Mac in
+    let req, _ = Capability.Request.create Params.init_pointer in
+    Capability.call_for_value_exn t method_id req >|= fun r ->
+    Macaddr.of_string_exn (Results.mac_get r)
 
-  let dhcp_options_result r =
-    let module R = R.DhcpOptions_results in
-    let options = R.options_get_list (R.of_payload r) in
+  let dhcp_options t =
+    let open Host.DhcpOptions in
+    let req, _ = Capability.Request.create Params.init_pointer in
+    Capability.call_for_value_exn t method_id req >|= fun r ->
+    let options = Results.options_get_list r in
     List.fold_left (fun acc o ->
         match Dhcp_wire.string_to_option_code o with
         | None   -> acc
         | Some o -> o :: acc
       ) [] options
 
-  let dhcp_options t =
-    let module P = B.DhcpOptions_params in
-    let req, _ = Capability.Request.create P.init_pointer in
-    Capability.call_for_value t R.dhcp_options_method req >>= function
-    | Error e -> error e
-    | Ok r    -> Lwt.return (dhcp_options_result r)
-
   let set_ip t ip =
-    let module P = B.SetIp_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.ip_set p (Ipaddr.V4.to_string ip);
-    Capability.call_for_value t R.set_ip_method req >>= function
-    | Error e -> error e
-    | Ok _    -> Lwt.return ()
+    let open Host.SetIp in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.ip_set p (Ipaddr.V4.to_string ip);
+    Capability.call_for_value_exn t method_id req >|=
+    ignore
 
   let set_gateway t ip =
-    let module P = B.SetGateway_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.ip_set p (Ipaddr.V4.to_string ip);
-    Capability.call_for_value t R.set_gateway_method req >>= function
-    | Error e -> error e
-    | Ok _r   -> Lwt.return ()
+    let open Host.SetGateway in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.ip_set p (Ipaddr.V4.to_string ip);
+    Capability.call_for_value_exn t method_id req >|=
+    ignore
 
 end
 
 module Server (F: Flow.S) (N: S) = struct
 
-  type t = B.t Capability.t
+  module Host = Api.Service.Host
+
+  type t = Host.t Capability.t
 
   let mac_result result =
-    let module R = B.Mac_results in
+    let module R = Host.Mac.Results in
     let resp, r = Service.Response.create R.init_pointer in
     R.mac_set r (Macaddr.to_string result);
     Ok resp
 
   let intf_result result =
-    let module R = B.Intf_results in
+    let module R = Host.Intf.Results in
     let resp, r = Service.Response.create R.init_pointer in
     R.intf_set r result;
     Ok resp
 
   let dhcp_options_result result =
-    let module R = B.DhcpOptions_results in
+    let module R = Host.DhcpOptions.Results in
     let resp, r = Service.Response.create R.init_pointer in
     let result = List.map Dhcp_wire.option_code_to_string result in
     let _ = R.options_set_list r result in
     Ok resp
 
   let service t =
-    B.local @@
-    object (_ : B.service)
-      inherit B.service
+    Host.local @@ object (_ : Host.service)
+      inherit Host.service
 
-      method intf_impl _req =
+      method intf_impl _req release_param_caps =
+        release_param_caps ();
         Service.return_lwt (fun () -> N.interface t >|= intf_result)
 
-      method mac_impl _req =
+      method mac_impl _req release_param_caps =
+        release_param_caps ();
         Service.return_lwt (fun () -> N.mac t >|= mac_result)
 
-      method dhcp_options_impl _req =
+      method dhcp_options_impl _req release_param_caps =
+        release_param_caps ();
         Service.return_lwt (fun () -> N.dhcp_options t >|= dhcp_options_result)
 
-      method set_ip_impl req =
-        let module P = R.SetIp_params in
-        let params = P.of_payload req in
-        let ip = P.ip_get params in
+      method set_ip_impl req release_param_caps =
+        let open Host.SetIp in
+        let ip = Params.ip_get req in
+        release_param_caps ();
         Service.return_lwt (fun () ->
-            let module R = B.SetIp_results in
-            let resp, _ = Service.Response.create R.init_pointer in
+            let resp, _ = Service.Response.create Results.init_pointer in
             match Ipaddr.V4.of_string ip with
-            | None    ->Lwt.fail_invalid_arg "invalid ip"
+            | None    -> Lwt.fail_with "invalid ip"
             | Some ip -> N.set_ip t ip >|= fun () -> Ok resp
           )
 
-      method set_gateway_impl req =
-        let module P = R.SetGateway_params in
-        let params = P.of_payload req in
-        let ip = P.ip_get params in
+      method set_gateway_impl req release_param_caps =
+        let open Host.SetGateway in
+        let ip = Params.ip_get req in
+        release_param_caps ();
         Service.return_lwt (fun () ->
-            let module R = B.SetGateway_results in
-            let resp, _ = Service.Response.create R.init_pointer in
+            let resp, _ = Service.Response.create Results.init_pointer in
             match Ipaddr.V4.of_string ip with
-            | None    ->Lwt.fail_invalid_arg "invalid ip"
-            | Some ip -> N.set_ip t ip >|= fun () -> Ok resp
+            | None    -> Lwt.fail_invalid_arg "invalid ip"
+            | Some ip -> N.set_gateway t ip >|= fun () -> Ok resp
           )
 
     end
