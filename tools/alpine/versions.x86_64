@@ -1,4 +1,4 @@
-# linuxkit/alpine:21f2d52a0e20a78a0a81bbf5bebc652a3ec21b01-amd64
+# linuxkit/alpine:349a817bdd6b293ca623ab97acf5377ccdeac7d2-amd64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -45,6 +45,8 @@ ebtables-2.0.10.4-r2
 elfutils-dev-0.168-r1
 elfutils-libelf-0.168-r1
 ethtool-4.10-r0
+eudev-3.2.2-r1
+eudev-libs-3.2.2-r1
 expat-2.2.0-r1
 expect-5.45-r3
 fakeroot-1.21-r1
@@ -79,6 +81,7 @@ iproute2-4.10.0-r1
 iptables-1.6.1-r0
 isl-0.17.1-r0
 jq-1.5-r3
+json-c-0.12.1-r0
 jsoncpp-1.8.0-r0
 keyutils-libs-1.5.9-r1
 kmod-23-r1
@@ -162,6 +165,7 @@ libuv-1.11.0-r1
 libverto-0.2.5-r2
 libxml2-2.9.4-r4
 linux-headers-4.4.6-r2
+lsscsi-0.28-r0
 lua5.2-libs-5.2.4-r2
 lz4-libs-1.7.5-r0
 lzip-1.19-r0
@@ -173,6 +177,7 @@ mkinitfs-3.1.0-r1
 mpc1-1.0.3-r0
 mpfr3-3.1.5-r0
 mtools-4.0.18-r1
+multipath-tools-0.7.1-r1
 musl-1.1.16-r13
 musl-dev-1.1.16-r13
 musl-utils-1.1.16-r13
@@ -183,6 +188,7 @@ ncurses-terminfo-base-6.0-r8
 nettle-3.3-r0
 npth-1.2-r0
 oniguruma-6.2.0-r0
+open-iscsi-2.0.873-r6
 open-vm-tools-10.1.0-r7
 openntpd-6.0_p1-r3
 openrc-0.24.1-r2
@@ -214,6 +220,7 @@ readline-6.3.008-r5
 scanelf-1.2.2-r0
 sed-4.4-r0
 sfdisk-2.28.2-r2
+sg3_utils-1.42-r0
 sgdisk-1.0.1-r1
 slang-2.3.1-r0
 slang-dev-2.3.1-r0
@@ -231,7 +238,9 @@ tcl-8.6.6-r0
 tcpdump-4.9.1-r0
 tini-0.14.0-r0
 tzdata-2017a-r0
+udev-init-scripts-32-r0
 usbredir-0.7-r2
+userspace-rcu-0.9.3-r1
 util-linux-2.28.2-r2
 util-linux-dev-2.28.2-r2
 vde2-libs-2.3.2-r7
