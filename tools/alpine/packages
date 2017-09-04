@@ -58,10 +58,13 @@ libtirpc-dev
 libtool
 libunwind-dev
 linux-headers
+lsscsi
 make
 mtools
+multipath-tools
 musl-dev
 ncurses-dev
+open-iscsi
 openntpd
 openrc
 openssh-server
@@ -78,6 +81,7 @@ qemu-system-arm
 qemu-system-x86_64
 sed
 sfdisk
+sg3_utils
 sgdisk
 slang-dev
 socat
