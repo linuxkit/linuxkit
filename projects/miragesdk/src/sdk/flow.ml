@@ -8,12 +8,10 @@ end
 
 module Client (F: S) = struct
 
+  module Flow = Api.Client.Flow
+
   type 'a io = 'a Lwt.t
-
-  module R = Api.Reader.Flow
-  module B = Api.Builder.Flow
-
-  type t = R.t Capability.t
+  type t = Flow.t Capability.t
   type flow = t
 
   type buffer = Cstruct.t
@@ -44,59 +42,57 @@ module Client (F: S) = struct
     Capnp_rpc_lwt.CapTP.bootstrap client |> Lwt.return
 
   let read_result r =
-    let module R = R.ReadResult in
-    match R.get (R.of_payload r) with
+    let module R = Flow.Read.Results in
+    match R.get r with
     | R.Data data   -> Ok (`Data (Cstruct.of_string data))
     | R.Eof         -> Ok `Eof
     | R.Error s     -> Error  (`Msg s)
     | R.Undefined i -> Error (`Undefined i)
 
-  let read t =
-    let module P = B.Read_params in
-    let req, _ = Capability.Request.create P.init_pointer in
-    Capability.call_for_value t R.read_method req >|= function
-    | Error e -> Error (`Capnp e)
-    | Ok r    -> read_result r
-
   let write_result r =
-    let module R = R.WriteResult in
-    match R.get (R.of_payload r) with
+    let module R = Flow.Write.Results in
+    match R.get r with
     | R.Ok          -> Ok ()
     | R.Closed      -> Error `Closed
     | R.Error s     -> Error (`Msg s)
     | R.Undefined i -> Error (`Undefined i)
 
+  let read t =
+    let open Flow.Read in
+    let req, _ = Capability.Request.create Params.init_pointer in
+    Capability.call_for_value t method_id req >|= function
+    | Error e -> Error (`Capnp e)
+    | Ok r    -> read_result r
+
   let write t buf =
-    let module P = B.Write_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.buffer_set p (Cstruct.to_string buf);
-    Capability.call_for_value t R.write_method req >|= function
+    let open Flow.Write in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.buffer_set p (Cstruct.to_string buf);
+    Capability.call_for_value t method_id req >|= function
     | Error e -> Error (`Capnp e)
     | Ok r    -> write_result r
 
   let writev t bufs =
-    let module P = B.Writev_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    ignore @@ P.buffers_set_list p (List.map Cstruct.to_string bufs);
-    Capability.call_for_value t R.writev_method req >|= function
+    let open Flow.Writev in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.buffers_set_list p (List.map Cstruct.to_string bufs) |> ignore;
+    Capability.call_for_value t method_id req >|= function
     | Error e -> Error (`Capnp e)
     | Ok r    -> write_result r
 
   let close t =
-    let module P = B.Close_params in
-    let req, _ = Capability.Request.create P.init_pointer in
-    Capability.call_for_value t R.close_method req >|= fun _ ->
-    ()
+    let open Flow.Close in
+    let req, _ = Capability.Request.create Params.init_pointer in
+    Capability.call_for_value_exn t method_id req >|= ignore
 
 end
 
 module Server (F: S) (Local: S) = struct
 
-  module R = Api.Reader.Flow
-  module B = Api.Builder.Flow
+  module Flow = Api.Service.Flow
 
   let read_result result =
-    let module R = B.ReadResult in
+    let module R = Flow.Read.Results in
     let resp, r = Service.Response.create R.init_pointer in
     let () = match result with
       | Ok (`Data buf) -> R.data_set r (Cstruct.to_string buf)
@@ -106,7 +102,7 @@ module Server (F: S) (Local: S) = struct
     Ok resp
 
   let write_result result =
-    let module R = B.WriteResult in
+    let module R = Flow.Write.Results in
     let resp, r = Service.Response.create R.init_pointer in
     let () = match result with
       | Ok ()         -> R.ok_set r
@@ -116,36 +112,37 @@ module Server (F: S) (Local: S) = struct
     Ok resp
 
   let close_result () =
-    let module R = B.Close_results in
+    let module R = Flow.Close.Results in
     let resp, _ = Service.Response.create R.init_pointer in
     Ok resp
 
   let service t =
-    B.local @@
-    object (_ : B.service)
-      inherit B.service
+    Flow.local @@ object (_ : Flow.service)
+      inherit Flow.service
 
-      method read_impl _req =
+      method read_impl _req release_param_caps =
+        release_param_caps ();
         Service.return_lwt (fun () -> Local.read t >|= read_result)
 
-      method write_impl req =
-        let module P = R.Write_params in
-        let params = P.of_payload req in
-        let buf = P.buffer_get params |> Cstruct.of_string in
+      method write_impl req release_param_caps =
+        let open Flow.Write in
+        let buf = Params.buffer_get req |> Cstruct.of_string in
+        release_param_caps ();
         Service.return_lwt (fun () -> Local.write t buf >|= write_result)
 
-      method writev_impl req =
-        let module P = R.Writev_params in
-        let params = P.of_payload req in
-        let bufs = P.buffers_get_list params |> List.map Cstruct.of_string in
+      method writev_impl req release_param_caps =
+        let open Flow.Writev in
+        let bufs = Params.buffers_get_list req |> List.map Cstruct.of_string in
+        release_param_caps ();
         Service.return_lwt (fun () -> Local.writev t bufs >|= write_result)
 
-      method close_impl _req =
+      method close_impl _req release_param_caps =
+        release_param_caps ();
         Service.return_lwt (fun () -> Local.close t >|= close_result)
 
     end
 
-  type t = R.t Capability.t
+  type t = Flow.t Capability.t
 
   let listen ~switch ?tags service fd =
     let endpoint = Capnp_rpc_lwt.Endpoint.of_flow ~switch (module F) fd in

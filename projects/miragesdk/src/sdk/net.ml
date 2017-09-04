@@ -1,46 +1,40 @@
 open Lwt.Infix
 open Capnp_rpc_lwt
 
-module B = Api.Builder.Net
-module R = Api.Reader.Net
-
 module type S = Mirage_net_lwt.S
 
 module Callback = struct
 
   let service f =
-    B.Callback.local @@ object (_: B.Callback.service)
-      inherit B.Callback.service
-      method f_impl req =
-        let module P = R.Callback.F_params in
-        let params = P.of_payload req in
-        let change = P.buffer_get params in
+    let open Api.Service.Net.Callback in
+    local @@ object (_: service)
+      inherit service
+      method f_impl req release_param_caps =
+        let change = F.Params.buffer_get req in
+        release_param_caps ();
         Service.return_lwt (fun () ->
             f (Cstruct.of_string change) >|= fun () ->
             Ok (Service.Response.create_empty ())
           )
     end
 
-  module F = Api.Reader.Conf.Callback
-
   let client t change =
-    let module P = B.Callback.F_params in
-    let req, p = Capability.Request.create P.init_pointer in
+    let open Api.Client.Net.Callback in
+    let req, p = Capability.Request.create F.Params.init_pointer in
     let change = Cstruct.to_string change in
-    P.buffer_set p change;
-    Capability.call_for_value t R.Callback.f_method req >>= function
-    | Ok _    -> Lwt.return ()
-    | Error e ->
-      Fmt.kstrf Lwt.fail_with "error: f(%s) -> %a" change Capnp_rpc.Error.pp e
+    F.Params.buffer_set p change;
+    Capability.call_for_value_exn t F.method_id req >|= ignore
 
 end
 
 module Client (F: Flow.S) = struct
 
+  module Net = Api.Client.Net
+
   type 'a io = 'a Lwt.t
 
   type t = {
-    cap  : R.t Capability.t;
+    cap  : Net.t Capability.t;
     mac  : Macaddr.t;
     stats: Mirage_net.stats;
   }
@@ -62,49 +56,48 @@ module Client (F: Flow.S) = struct
     | `Capnp e     -> Fmt.pf ppf "capnp: %a" Capnp_rpc.Error.pp e
     | #Mirage_device.error as e -> Mirage_device.pp_error ppf e
 
-  let result r =
-    let module R = R.Result in
-    match R.get (R.of_payload r) with
-    | R.Ok             -> Ok ()
+  let result r: (unit, error) result =
+    let module R = Net.Write.Results in
+    match R.get r with
+    | R.Ok            -> Ok ()
     | R.Unimplemented -> Error `Unimplemented
     | R.Disconnected  -> Error `Disconnected
     | R.Error s       -> Error (`Msg s)
     | R.Undefined i   -> Error (`Undefined i)
 
   let write t buf =
-    let module P = B.Write_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    P.buffer_set p (Cstruct.to_string buf);
-    Capability.call_for_value t.cap R.write_method req >|= function
+    let open Net.Write in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.buffer_set p (Cstruct.to_string buf);
+    Capability.call_for_value t.cap method_id req >|= function
     | Error e -> Error (`Capnp e)
     | Ok r    ->
       Mirage_net.Stats.tx t.stats (Int64.of_int @@ Cstruct.len buf);
       result r
 
   let writev t bufs =
-    let module P = B.Writev_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    ignore @@ P.buffers_set_list p (List.map Cstruct.to_string bufs);
-    Capability.call_for_value t.cap R.writev_method req >|= function
+    let open Net.Writev in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.buffers_set_list p (List.map Cstruct.to_string bufs) |> ignore;
+    Capability.call_for_value t.cap method_id req >|= function
     | Error e -> Error (`Capnp e)
     | Ok r    ->
       Mirage_net.Stats.tx t.stats (Int64.of_int @@ Cstruct.lenv bufs);
       result r
 
   let listen t f =
-    let module P = B.Listen_params in
-    let req, p = Capability.Request.create P.init_pointer in
-    let callback = Capability.Request.export req (Callback.service f) in
-    P.callback_set p (Some callback);
-    Capability.call_for_value t.cap R.listen_method req >|= function
+    let open Net.Listen in
+    let req, p = Capability.Request.create Params.init_pointer in
+    Params.callback_set p (Some (Callback.service f));
+    Capability.call_for_value t.cap method_id req >|= function
     | Ok _    -> Ok ()
     | Error e -> Error (`Capnp e)
 
   let disconnect { cap; _ } =
-    let module P = B.Disconnect_params in
-    let req, _ = Capability.Request.create P.init_pointer in
-    Capability.call_for_value cap R.disconnect_method req >|= fun _ ->
-    ()
+    let open Net.Disconnect in
+    let req, _ = Capability.Request.create Params.init_pointer in
+    Capability.call_for_value_exn cap method_id req >|=
+    ignore
 
   let mac t = t.mac
 
@@ -114,16 +107,13 @@ module Client (F: Flow.S) = struct
     Capnp_rpc_lwt.CapTP.bootstrap client |> Lwt.return
 
   let connect ~switch ?tags f =
+    let open Net.Mac in
     capability ~switch ?tags f >>= fun cap ->
-    let module P = B.Mac_params in
-    let req, _ = Capability.Request.create P.init_pointer in
-    Capability.call_for_value cap R.mac_method req >>= function
-    | Error e -> Fmt.kstrf Lwt.fail_with "%a" Capnp_rpc.Error.pp e
-    | Ok r    ->
-      let module R = R.Mac_results in
-      let mac = R.mac_get (R.of_payload r) |> Macaddr.of_string_exn in
-      let stats = Mirage_net.Stats.create () in
-      Lwt.return { cap; mac; stats }
+    let req, _ = Capability.Request.create Params.init_pointer in
+    Capability.call_for_value_exn cap method_id req >|= fun r ->
+    let mac = Results.mac_get r |> Macaddr.of_string_exn in
+    let stats = Mirage_net.Stats.create () in
+    { cap; mac; stats }
 
   let reset_stats_counters t = Mirage_net.Stats.reset t.stats
   let get_stats_counters t = t.stats
@@ -131,8 +121,10 @@ end
 
 module Server (F: Flow.S) (Local: Mirage_net_lwt.S) = struct
 
+  module Net = Api.Service.Net
+
   let result x =
-    let module R = B.Result in
+    let module R = Net.Write.Results in
     let resp, r = Service.Response.create R.init_pointer in
     let () = match x with
       | Ok ()                -> R.ok_set r
@@ -143,55 +135,54 @@ module Server (F: Flow.S) (Local: Mirage_net_lwt.S) = struct
     Ok resp
 
   let mac_result x =
-    let module R = B.Mac_results in
+    let module R = Net.Mac.Results in
     let resp, r = Service.Response.create R.init_pointer in
     R.mac_set r (Macaddr.to_string x);
-    Ok resp
+    resp
 
   let disconnect_result () =
-    let module R = B.Disconnect_results in
+    let module R = Net.Disconnect.Results in
     let resp, _ = Service.Response.create R.init_pointer in
     Ok resp
 
   let service t =
-    B.local @@
-    object (_ : B.service)
-      inherit B.service
+    Net.local @@ object (_ : Net.service)
+      inherit Net.service
 
-      method disconnect_impl _req =
+      method disconnect_impl _req release_param_caps =
+        release_param_caps ();
         Service.return_lwt (fun () -> Local.disconnect t >|= disconnect_result)
 
-      method write_impl req =
-        let module P = R.Write_params in
-        let params = P.of_payload req in
-        let buf = P.buffer_get params |> Cstruct.of_string in
+      method write_impl req release_param_caps =
+        let open Net.Write in
+        let buf = Params.buffer_get req |> Cstruct.of_string in
+        release_param_caps ();
         Service.return_lwt (fun () -> Local.write t buf >|= result)
 
-      method writev_impl req =
-        let module P = R.Writev_params in
-        let params = P.of_payload req in
-        let bufs = P.buffers_get_list params |> List.map Cstruct.of_string in
+      method writev_impl req release_param_caps =
+        let open Net.Writev in
+        let bufs = Params.buffers_get_list req |> List.map Cstruct.of_string in
+        release_param_caps ();
         Service.return_lwt (fun () -> Local.writev t bufs >|= result)
 
-      method listen_impl req =
-        let module P = R.Listen_params in
-        let params = P.of_payload req in
-        match P.callback_get params with
-        | None   -> failwith "No watcher callback given"
+      method listen_impl req release_param_caps =
+        let open Net.Listen in
+        let callback = Params.callback_get req in
+        release_param_caps ();
+        match callback with
+        | None   -> Service.fail "No watcher callback given"
         | Some i ->
-          let callback = Payload.import req i in
           Service.return_lwt (fun () ->
-              Local.listen t (Callback.client callback) >|= result
+              Local.listen t (Callback.client i) >|= result
             )
 
-      method mac_impl req =
-        let module P = R.Mac_params in
-        let _params = P.of_payload req in
-        Service.return_lwt (fun () -> Lwt.return (mac_result (Local.mac t)))
+      method mac_impl _req release_param_caps =
+        release_param_caps ();
+        Service.return (mac_result (Local.mac t))
 
     end
 
-  type t = R.t Capability.t
+  type t = Net.t Capability.t
 
   let listen ~switch ?tags service fd =
     let endpoint = Capnp_rpc_lwt.Endpoint.of_flow ~switch (module F) fd in

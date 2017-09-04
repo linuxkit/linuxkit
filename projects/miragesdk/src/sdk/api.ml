@@ -1,1 +1,1 @@
-include Proto.MakeRPC(Capnp.BytesMessage)(Capnp_rpc_lwt)
+include Proto.MakeRPC(Capnp_rpc_lwt)
