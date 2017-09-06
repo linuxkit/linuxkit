@@ -1,7 +1,7 @@
 From 5a81156246d3fbb68c671eab68156260f2c58332 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 16:13:18 +0800
-Subject: [PATCH 14/20] vmbus:  fix hv_percpu_channel_deq/enq race
+Subject: [PATCH 14/21] vmbus:  fix hv_percpu_channel_deq/enq race
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: git@github.com:dcui/linux.git
@@ -242,5 +242,5 @@ index 1024000af956..be43e22ecd66 100644
  	 * Register with the LDM. This will kick off the driver/device
  	 * binding...which will eventually call vmbus_match() and vmbus_probe()
 -- 
-2.13.0
+2.11.1
 

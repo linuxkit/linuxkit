@@ -1,7 +1,7 @@
 From 50dd511f73c22341384c355105ebbd775d986fff Mon Sep 17 00:00:00 2001
 From: Cheng-mean Liu <soccerl@microsoft.com>
 Date: Tue, 11 Jul 2017 16:50:36 -0700
-Subject: [PATCH 19/20] Added vsock transport support to 9pfs
+Subject: [PATCH 19/21] Added vsock transport support to 9pfs
 
 Signed-off-by: Cheng-mean Liu <soccerl@microsoft.com>
 Origin: https://github.com/Microsoft/opengcs/blob/master/kernelconfig/4.11/patch_9pfs_vsock-transport.patch
@@ -147,5 +147,5 @@ index 7bc2208b6cc4..dc34352145df 100644
 +	v9fs_unregister_trans(&p9_vsock_trans);
  }
 -- 
-2.13.0
+2.11.1
 

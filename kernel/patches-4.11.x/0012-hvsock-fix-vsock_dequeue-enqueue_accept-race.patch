@@ -1,7 +1,7 @@
 From b9500355b558a265bcbf1256ed5bda639bec7688 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 19 May 2017 21:49:59 +0800
-Subject: [PATCH 12/20] hvsock: fix vsock_dequeue/enqueue_accept race
+Subject: [PATCH 12/21] hvsock: fix vsock_dequeue/enqueue_accept race
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: git@github.com:dcui/linux.git
@@ -45,5 +45,5 @@ index 6f7f6757ceef..717db396f59e 100644
  	/* The caller will need a reference on the connected socket so we let
  	 * it call sock_put().
 -- 
-2.13.0
+2.11.1
 

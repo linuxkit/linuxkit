@@ -1,7 +1,7 @@
 From a585c8504fefc755a5f482e613fb81217bff35e0 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:23 -0600
-Subject: [PATCH 05/20] vmbus: dynamically enqueue/dequeue a channel on
+Subject: [PATCH 05/21] vmbus: dynamically enqueue/dequeue a channel on
  vmbus_open/close
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -185,5 +185,5 @@ index 970771a5f739..a8bae2caa69f 100644
  
  void vmbus_setevent(struct vmbus_channel *channel);
 -- 
-2.13.0
+2.11.1
 

@@ -1,7 +1,7 @@
 From 24978998cc7847584de70d51741a314441c2f14f Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 7 Jul 2017 09:15:29 +0800
-Subject: [PATCH 18/20] hv-sock: avoid double FINs if shutdown() is called
+Subject: [PATCH 18/21] hv-sock: avoid double FINs if shutdown() is called
 
 The host expects a single FIN.
 
@@ -37,5 +37,5 @@ index b8bf1446ae13..50e4bc822c69 100644
  
  	/* It can't fail: see hvs_channel_writable_bytes(). */
 -- 
-2.13.0
+2.11.1
 

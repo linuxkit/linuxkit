@@ -1,7 +1,7 @@
 From 06e8641dae17f95f8358bd6ac206ba5d68c2d31f Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Tue, 16 May 2017 22:14:03 +0800
-Subject: [PATCH 11/20] hvsock: fix a race in hvs_stream_dequeue()
+Subject: [PATCH 11/21] hvsock: fix a race in hvs_stream_dequeue()
 
 If hv_pkt_iter_next() returns a non-NULL pointer, we must update
 the recv_data_len/data_off info, otherwise the received data will
@@ -109,5 +109,5 @@ index f465b0b662df..30154836acd0 100644
  	case 1:
  		ret = 1;
 -- 
-2.13.0
+2.11.1
 

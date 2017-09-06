@@ -1,7 +1,7 @@
 From c37cb78a5ceb29847b10914eed0df53434528e12 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 21 Jun 2017 22:30:42 +0800
-Subject: [PATCH 16/20] hv-sock: a temporary workaround for the
+Subject: [PATCH 16/21] hv-sock: a temporary workaround for the
  pending_send_size issue
 
 While I'm trying to find out the root cause, I believe this can work
@@ -129,5 +129,5 @@ index 30154836acd0..b8bf1446ae13 100644
  	return 0;
  }
 -- 
-2.13.0
+2.11.1
 

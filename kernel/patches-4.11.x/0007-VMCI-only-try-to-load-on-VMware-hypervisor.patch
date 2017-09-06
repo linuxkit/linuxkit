@@ -1,7 +1,7 @@
 From 8c0a1dd39543ded436035c114379acdbc2b020ad Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:29 -0600
-Subject: [PATCH 07/20] VMCI: only try to load on VMware hypervisor
+Subject: [PATCH 07/21] VMCI: only try to load on VMware hypervisor
 
 Without the patch, vmw_vsock_vmci_transport.ko and vmw_vmci.ko can
 automatically load when an application creates an AF_VSOCK socket.
@@ -60,5 +60,5 @@ index d7eaf1eb11e7..1789ea71ff5d 100644
  	if (vmci_err < VMCI_SUCCESS) {
  		pr_err("Failed to initialize VMCIEvent (result=%d)\n",
 -- 
-2.13.0
+2.11.1
 

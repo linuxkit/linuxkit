@@ -1,7 +1,7 @@
 From fd279095dc63cec1b1aabb2fc7a1efe0c8c220d2 Mon Sep 17 00:00:00 2001
 From: stephen hemminger <stephen@networkplumber.org>
 Date: Mon, 27 Feb 2017 10:26:48 -0800
-Subject: [PATCH 10/20] vmbus: introduce in-place packet iterator
+Subject: [PATCH 10/21] vmbus: introduce in-place packet iterator
 
 This is mostly just a refactoring of previous functions
 (get_pkt_next_raw, put_pkt_raw and commit_rd_index) to make it easier
@@ -366,5 +366,5 @@ index a8bae2caa69f..ba93b7e4a972 100644
  
  #endif /* _HYPERV_H */
 -- 
-2.13.0
+2.11.1
 

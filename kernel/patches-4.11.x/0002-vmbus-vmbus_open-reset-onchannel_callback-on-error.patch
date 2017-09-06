@@ -1,7 +1,7 @@
 From 3bd49e1e1ef7d5ae237d05a4f2198097c659f15d Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:12 -0600
-Subject: [PATCH 02/20] vmbus: vmbus_open(): reset onchannel_callback on error
+Subject: [PATCH 02/21] vmbus: vmbus_open(): reset onchannel_callback on error
 
 No real issue is observed without the patch, but let's add this
 just in case.
@@ -30,5 +30,5 @@ index 321b8833fa6f..628d6fde1887 100644
  }
  EXPORT_SYMBOL_GPL(vmbus_open);
 -- 
-2.13.0
+2.11.1
 

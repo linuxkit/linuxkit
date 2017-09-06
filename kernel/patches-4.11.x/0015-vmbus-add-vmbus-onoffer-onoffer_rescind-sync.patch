@@ -1,7 +1,7 @@
 From c4a8351a7b13a078bb3a8c9d3c9c9ccbebf6120e Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 21:32:00 +0800
-Subject: [PATCH 15/20] vmbus: add vmbus onoffer/onoffer_rescind sync.
+Subject: [PATCH 15/21] vmbus: add vmbus onoffer/onoffer_rescind sync.
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: git@github.com:dcui/linux.git
@@ -115,5 +115,5 @@ index be43e22ecd66..822daa0936c2 100644
  			      vmbus_connection.work_queue,
  			      &context->work);
 -- 
-2.13.0
+2.11.1
 
