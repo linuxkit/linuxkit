@@ -307,3 +307,39 @@ nsenter -m/proc/1/ns/mnt ash
 
 Alternatively, you can add the `kernel-perf` package as stage in a
 multi-stage build to add it to a custom package.
+
+
+## ZFS
+
+The kernel build Makefile has support for building the ZFS kernel
+modules. Note, the modules are currently not distributed as standard
+LinuxKit packages and if you wish to use them you have to compile them
+yourself:
+
+```sh
+cd kernel
+make ORG=<foo> NOTRUST=1 push_zfs_4.9.x # or different kernel version
+```
+
+will build and push a `zfs-kmod-4.9.<version>` image to Docker Hub
+under the `ORG` specified. This package contains the all the standard
+kernel modules from the kernel specified plus the `spl` and `zfs`
+kernel modules, with `depmod` run over them, so they can be
+`modprobe`ed. To use the modules do something like this in your YAML
+file:
+
+```
+kernel:
+  image: linuxkit/kernel:4.9.47
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
+init:
+  - <foo>/zfs-kmod:4.9.47
+  ...
+```
+
+Then, you also need to make sure the Alpine `zfs` utilities are
+available in the container where your want to run `zfs` commands. The
+Alpine `zfs` utilities are available in `linuxkit/alpine` and the
+version of the kernel module should match the version of the
+tools. The container where you run the `zfs` tools might also need
+`CAP_SYS_MODULE` to be able to load the kernel modules.
