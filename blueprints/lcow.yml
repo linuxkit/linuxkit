@@ -1,9 +1,9 @@
 kernel:
-  image: linuxkit/kernel:4.11.12
+  image: linuxkit/kernel:4.11.12-f3fa7c62a28c70ada944121a8579290ad5b8bfb2
   cmdline: "console=ttyS0"
   tar: none
 init:
-  - linuxkit/init-lcow:cd057e6320c5f76f8126430ac7978f54a7d6b5bd
+  - linuxkit/init-lcow:d7a18d314cf0e8a436c9d74242ed9878181ad76d
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
 trust:
   org:
