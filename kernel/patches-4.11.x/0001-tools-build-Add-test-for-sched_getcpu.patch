@@ -1,7 +1,7 @@
 From bb12a92eb84f7303cdf1be8133e59c1ebf50a62b Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 2 Mar 2017 12:55:49 -0300
-Subject: [PATCH 01/20] tools build: Add test for sched_getcpu()
+Subject: [PATCH 01/21] tools build: Add test for sched_getcpu()
 
 Instead of trying to go on adding more ifdef conditions, do a feature
 test and define HAVE_SCHED_GETCPU_SUPPORT instead, then use it to
@@ -145,5 +145,5 @@ index c74708da8571..b2cfa47990dc 100644
  
  int is_printable_array(char *p, unsigned int len);
 -- 
-2.13.0
+2.11.1
 

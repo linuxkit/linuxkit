@@ -1,7 +1,7 @@
 From a25d315ebedd8a3e18da1db4d95d06ea93136fa6 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Sun, 30 Apr 2017 16:21:18 -0700
-Subject: [PATCH 13/20] Drivers: hv: vmbus: Fix rescind handling
+Subject: [PATCH 13/21] Drivers: hv: vmbus: Fix rescind handling
 
 Fix the rescind handling. This patch addresses the following rescind
 scenario that is currently not handled correctly:
@@ -286,5 +286,5 @@ index 8370b9dc6037..1024000af956 100644
  		entry->message_handler(hdr);
  
 -- 
-2.13.0
+2.11.1
 
