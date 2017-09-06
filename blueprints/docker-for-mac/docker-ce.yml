@@ -23,11 +23,8 @@ services:
             "--swarm-default-advertise-addr=eth0",
             "--userland-proxy-path", "/usr/bin/vpnkit-expose-port",
             "--storage-driver", "overlay2" ]
-
-files:
-    - path: /var/config/docker/daemon.json
-      contents: '{ "debug": true }'
-
+    runtime:
+      mkdir: ["/var/lib/docker"]
 trust:
     org:
         - library

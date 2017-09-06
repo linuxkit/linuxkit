@@ -7,6 +7,7 @@ init:
   - linuxkit/init:6d11a1f9d299d3425e78cce80dfba8b236d20412
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
   - linuxkit/containerd:7d97282aebe36040fcdd3378a95562d440d34a9d
+  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
 onboot:
   # support metadata for optional config in /var/config
   - name: metadata
@@ -23,12 +24,6 @@ onboot:
   - name: mount
     image: linuxkit/mount:4fe245efb01384e42622c36302e13e386bbaeb08
     command: ["/usr/bin/mountie", "/var/lib"]
-  # create docker dir on mounted drive if it doesn't exist
-  - name: mkdir-docker
-    image: alpine:3.6
-    binds:
-        - /var/lib:/host_var_lib
-    command: ["sh", "-c", "mkdir -p /host_var_lib/docker"]
   # mount-vpnkit mounts the 9p share used by vpnkit to coordinate port forwarding
   - name: mount-vpnkit
     image: alpine:3.6
