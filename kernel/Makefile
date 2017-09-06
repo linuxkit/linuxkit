@@ -151,6 +151,7 @@ endef
 #
 $(eval $(call kernel,4.12.9,4.12.x,$(EXTRA)))
 $(eval $(call kernel,4.12.9,4.12.x,-dbg))
+$(eval $(call kernel,4.11.12,4.11.x,$(EXTRA)))
 $(eval $(call kernel,4.9.47,4.9.x,$(EXTRA)))
 $(eval $(call kernel,4.9.47,4.9.x,-dbg))
 $(eval $(call kernel,4.4.86,4.4.x,$(EXTRA)))

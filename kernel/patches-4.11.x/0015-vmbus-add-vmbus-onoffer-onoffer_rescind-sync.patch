@@ -1,0 +1,119 @@
+From c4a8351a7b13a078bb3a8c9d3c9c9ccbebf6120e Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Mon, 5 Jun 2017 21:32:00 +0800
+Subject: [PATCH 15/20] vmbus: add vmbus onoffer/onoffer_rescind sync.
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit 1b91aa6d0e745d9765e3d90058928829f0b0bd40)
+---
+ drivers/hv/channel_mgmt.c | 25 +++++++++++++++++++------
+ drivers/hv/hyperv_vmbus.h |  1 +
+ drivers/hv/vmbus_drv.c    |  1 +
+ 3 files changed, 21 insertions(+), 6 deletions(-)
+
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index b9a5a15370c9..52c7e811738f 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -467,6 +467,7 @@ void vmbus_free_channels(void)
+ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ {
+ 	struct vmbus_channel *channel;
++	struct hv_device *device_obj;
+ 	bool fnew = true;
+ 	unsigned long flags;
+ 	u16 dev_type;
+@@ -524,6 +525,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ 		if (channel->sc_creation_callback != NULL)
+ 			channel->sc_creation_callback(newchannel);
+ 		atomic_dec(&vmbus_connection.offer_in_progress);
++		atomic_dec(&vmbus_connection.register_in_progress);
+ 		return;
+ 	}
+ 
+@@ -532,33 +534,36 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ 	 * We need to set the DeviceObject field before calling
+ 	 * vmbus_child_dev_add()
+ 	 */
+-	newchannel->device_obj = vmbus_device_create(
++	device_obj = vmbus_device_create(
+ 		&newchannel->offermsg.offer.if_type,
+ 		&newchannel->offermsg.offer.if_instance,
+ 		newchannel);
+-	if (!newchannel->device_obj)
++	if (!device_obj)
+ 		goto err_deq_chan;
+ 
+-	newchannel->device_obj->device_id = dev_type;
++	device_obj->device_id = dev_type;
+ 	/*
+ 	 * Add the new device to the bus. This will kick off device-driver
+ 	 * binding which eventually invokes the device driver's AddDevice()
+ 	 * method.
+ 	 */
+-	ret = vmbus_device_register(newchannel->device_obj);
++	atomic_dec(&vmbus_connection.offer_in_progress);
++	ret = vmbus_device_register(device_obj);
+ 
+ 	if (ret != 0) {
+ 		pr_err("unable to add child device object (relid %d)\n",
+ 			newchannel->offermsg.child_relid);
+-		kfree(newchannel->device_obj);
++		kfree(device_obj);
+ 		goto err_deq_chan;
+ 	}
++	newchannel->device_obj = device_obj;
++	atomic_dec(&vmbus_connection.register_in_progress);
+ 
+-	atomic_dec(&vmbus_connection.offer_in_progress);
+ 	return;
+ 
+ err_deq_chan:
+ 	atomic_dec(&vmbus_connection.offer_in_progress);
++	atomic_dec(&vmbus_connection.register_in_progress);
+ 	mutex_lock(&vmbus_connection.channel_mutex);
+ 	list_del(&newchannel->listentry);
+ 	mutex_unlock(&vmbus_connection.channel_mutex);
+@@ -889,6 +894,14 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+ 
+ 	vmbus_rescind_cleanup(channel);
+ 
++	while (atomic_read(&vmbus_connection.register_in_progress) != 0) {
++		/*
++		 * We wait here until any channel offer is currently
++		 * being processed.
++		 */
++		msleep(1);
++	}
++
+ 	if (channel->device_obj) {
+ 		if (channel->chn_rescind_callback) {
+ 			channel->chn_rescind_callback(channel);
+diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
+index 23b2bcbd174a..0d22b842a469 100644
+--- a/drivers/hv/hyperv_vmbus.h
++++ b/drivers/hv/hyperv_vmbus.h
+@@ -320,6 +320,7 @@ struct vmbus_connection {
+ 	int connect_cpu;
+ 
+ 	atomic_t offer_in_progress;
++	atomic_t register_in_progress;
+ 
+ 	enum vmbus_connect_state conn_state;
+ 
+diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
+index be43e22ecd66..822daa0936c2 100644
+--- a/drivers/hv/vmbus_drv.c
++++ b/drivers/hv/vmbus_drv.c
+@@ -873,6 +873,7 @@ static void vmbus_dispatch_msg_work(struct work_struct *work)
+ 		flush_workqueue(vmbus_connection.work_queue_rescind);
+ 
+ 		atomic_inc(&vmbus_connection.offer_in_progress);
++		atomic_inc(&vmbus_connection.register_in_progress);
+ 		queue_work_on(vmbus_connection.connect_cpu,
+ 			      vmbus_connection.work_queue,
+ 			      &context->work);
+-- 
+2.13.0
+
