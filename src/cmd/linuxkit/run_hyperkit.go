@@ -41,10 +41,12 @@ func runHyperKit(args []string) {
 	var disks Disks
 	flags.Var(&disks, "disk", "Disk config. [file=]path[,size=1G]")
 	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
-	ipStr := flags.String("ip", "", "IP address for the VM")
+	ipStr := flags.String("ip", "", "Preferred IPv4 address for the VM.")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
 	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
 	networking := flags.String("networking", hyperkitNetworkingDefault, "Networking mode. Valid options are 'default', 'docker-for-mac', 'vpnkit[,socket-path]', 'vmnet' and 'none'. 'docker-for-mac' connects to the network used by Docker for Mac. 'vpnkit' connects to the VPNKit socket specified. If socket-path is omitted a new VPNKit instance will be started and 'vpnkit_eth.sock' will be created in the state directory. 'vmnet' uses the Apple vmnet framework, requires root/sudo. 'none' disables networking.`")
+
+	vpnKitUUID := flags.String("vpnkit-uuid", "", "Optional UUID used to identify the VPNKit connection. Overrides 'uuid.vpnkit' in the state directory.")
 
 	// Boot type; we try to determine automatically
 	uefiBoot := flags.Bool("uefi", false, "Use UEFI boot")
@@ -149,17 +151,22 @@ func runHyperKit(args []string) {
 		isoPaths = append(isoPaths, isoPath)
 	}
 
-	vpnKitKey := ""
-	if *ipStr != "" {
-		// If an IP address was requested construct a "special" UUID
-		// for the VM.
-		if ip := net.ParseIP(*ipStr); len(ip) > 0 {
-			uuid := make([]byte, 16)
-			uuid[12] = ip.To4()[0]
-			uuid[13] = ip.To4()[1]
-			uuid[14] = ip.To4()[2]
-			uuid[15] = ip.To4()[3]
-			vpnKitKey = fmt.Sprintf("%x-%x-%x-%x-%x", uuid[0:4], uuid[4:6], uuid[6:8], uuid[8:10], uuid[10:])
+	// Create UUID for VPNKit or reuse an existing one from state dir. IP addresses are
+	// assigned to the UUID, so to get the same IP we have to store the initial UUID. If
+	// has specified a VPNKit UUID the file is ignored.
+	if *vpnKitUUID == "" {
+		vpnKitUUIDFile := filepath.Join(*state, "uuid.vpnkit")
+		if _, err := os.Stat(vpnKitUUIDFile); os.IsNotExist(err) {
+			*vpnKitUUID = uuid.NewV4().String()
+			if err := ioutil.WriteFile(vpnKitUUIDFile, []byte(*vpnKitUUID), 0600); err != nil {
+				log.Fatalf("Unable to write to %s: %v", vpnKitUUIDFile, err)
+			}
+		} else {
+			uuid, err := ioutil.ReadFile(vpnKitUUIDFile)
+			if err != nil {
+				log.Fatalf("Unable to read VPNKit UUID from %s: %v", vpnKitUUIDFile, err)
+			}
+			*vpnKitUUID = string(uuid)
 		}
 	}
 
@@ -252,12 +259,20 @@ func runHyperKit(args []string) {
 	} else {
 		h.Bootrom = *fw
 	}
-	h.VPNKitKey = vpnKitKey
 	h.UUID = vmUUID
 	h.ISOImages = isoPaths
 	h.VSock = true
 	h.CPUs = *cpus
 	h.Memory = *mem
+
+	h.VPNKitUUID = *vpnKitUUID
+	if *ipStr != "" {
+		if ip := net.ParseIP(*ipStr); len(ip) > 0 && ip.To4() != nil {
+			h.VPNKitPreferredIPv4 = ip.String()
+		} else {
+			log.Fatalf("Unable to parse IPv4 address: %v", *ipStr)
+		}
+	}
 
 	err = h.Run(string(cmdline))
 	if err != nil {
