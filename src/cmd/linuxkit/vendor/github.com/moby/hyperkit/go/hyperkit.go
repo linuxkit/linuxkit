@@ -28,6 +28,7 @@ import (
 	"io"
 	"io/ioutil"
 	"log"
+	"net"
 	"os"
 	"os/exec"
 	"os/user"
@@ -85,8 +86,10 @@ type HyperKit struct {
 	StateDir string `json:"state_dir"`
 	// VPNKitSock is the location of the VPNKit socket used for networking.
 	VPNKitSock string `json:"vpnkit_sock"`
-	// VPNKitKey is a string containing a UUID, it can be used in conjunction with VPNKit to get consistent IP address.
-	VPNKitKey string `json:"vpnkit_key"`
+	// VPNKitUUID is a string containing a UUID, it can be used in conjunction with VPNKit to get consistent IP address.
+	VPNKitUUID string `json:"vpnkit_uuid"`
+	// VPNKitPreferredIPv4 is a string containing an IPv4 address, it can be used to request a specific IP for a UUID from VPNKit.
+	VPNKitPreferredIPv4 string `json:"vpnkit_preferred_ipv4"`
 	// UUID is a string containing a UUID, it sets BIOS DMI UUID for the VM (as found in /sys/class/dmi/id/product_uuid on Linux).
 	UUID string `json:"uuid"`
 	// Disks contains disk images to use/create.
@@ -247,6 +250,11 @@ func (h *HyperKit) execute(cmdline string) error {
 	} else {
 		if _, err = os.Stat(h.Bootrom); os.IsNotExist(err) {
 			return fmt.Errorf("Bootrom %s does not exist", h.Bootrom)
+		}
+	}
+	if h.VPNKitPreferredIPv4 != "" {
+		if ip := net.ParseIP(h.VPNKitPreferredIPv4); ip == nil {
+			return fmt.Errorf("Invalid VPNKit IP: %s", h.VPNKitPreferredIPv4)
 		}
 	}
 
@@ -420,11 +428,15 @@ func (h *HyperKit) buildArgs(cmdline string) {
 	nextSlot := 1
 
 	if h.VPNKitSock != "" {
-		if h.VPNKitKey == "" {
-			a = append(a, "-s", fmt.Sprintf("%d:0,virtio-vpnkit,path=%s", nextSlot, h.VPNKitSock))
-		} else {
-			a = append(a, "-s", fmt.Sprintf("%d:0,virtio-vpnkit,path=%s,uuid=%s", nextSlot, h.VPNKitSock, h.VPNKitKey))
+		var uuid string
+		if h.VPNKitUUID != "" {
+			uuid = fmt.Sprintf(",uuid=%s", h.VPNKitUUID)
 		}
+		var preferredIPv4 string
+		if h.VPNKitPreferredIPv4 != "" {
+			preferredIPv4 = fmt.Sprintf(",preferred_ipv4=%s", h.VPNKitPreferredIPv4)
+		}
+		a = append(a, "-s", fmt.Sprintf("%d:0,virtio-vpnkit,path=%s%s%s", nextSlot, h.VPNKitSock, uuid, preferredIPv4))
 		nextSlot++
 	}
 
