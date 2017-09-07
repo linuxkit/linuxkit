@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:f4f5b333fa1a8433334fcae996d1637173144a72 as alpine
+FROM linuxkit/alpine:1e67b8fdba849ed2f7e8537c13b7f280639623d6 as alpine
 RUN \
   apk add \
   btrfs-progs-dev \
