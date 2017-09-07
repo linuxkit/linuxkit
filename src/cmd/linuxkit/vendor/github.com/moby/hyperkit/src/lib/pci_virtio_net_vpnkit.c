@@ -77,6 +77,8 @@
 #include <xhyve/pci_emul.h>
 #include <xhyve/mevent.h>
 #include <xhyve/virtio.h>
+#include <arpa/inet.h>
+#include <libkern/OSByteOrder.h>
 
 #define WPRINTF(format, ...) printf(format, __VA_ARGS__)
 
@@ -93,13 +95,18 @@ struct msg_init {
 } __packed;
 
 #define CMD_ETHERNET 1
-struct msg_common {
-	uint8_t command;
+#define CMD_PREFERRED_IPV4 8
+
+#define RESP_VIF 1
+#define RESP_DISCONNECT 2
+
+struct cmd_ethernet {
+	char uuid[36];
 } __packed;
 
-struct msg_ethernet {
-	uint8_t command; /* CMD_ETHERNET */
+struct cmd_preferred_ipv4 {
 	char uuid[36];
+	in_addr_t ip;
 } __packed;
 
 struct vif_info {
@@ -108,6 +115,26 @@ struct vif_info {
 	uint8_t mac[6];
 } __packed;
 
+struct disconnect_reason {
+	uint8_t len;
+	char msg[256];
+} __packed;
+
+struct msg_command {
+	uint8_t command;
+	union {
+		struct cmd_ethernet ethernet;
+		struct cmd_preferred_ipv4 preferred_ipv4;
+	};
+} __packed;
+
+struct msg_response {
+	uint8_t response_type;
+	union {
+		struct disconnect_reason disconnect;
+		struct vif_info vif;
+	};
+} __packed;
 
 /*
  * Host capabilities.  Note that we only offer a few of these.
@@ -286,11 +313,11 @@ err:
 /*
  * wire protocol
  */
-static int vpnkit_connect(int fd, const char uuid[36], struct vif_info *vif)
+static int vpnkit_connect(int fd, const char uuid[36], struct vif_info *vif, in_addr_t preferred_ipv4)
 {
 	struct msg_init init_msg = {
 		.magic = { 'V', 'M', 'N', '3', 'T' },
-		.version = 1U,
+		.version = 22U,
 	};
 
 	/* msg.commit is not NULL terminated */
@@ -324,19 +351,47 @@ static int vpnkit_connect(int fd, const char uuid[36], struct vif_info *vif)
 		init_reply.magic[4],
 		init_reply.version, (int)sizeof(init_reply.commit), init_reply.commit);
 
-	struct msg_ethernet cmd_ethernet = {
-		.command = CMD_ETHERNET,
-	};
-	memcpy(cmd_ethernet.uuid, uuid, sizeof(cmd_ethernet.uuid));
+	if (init_reply.version != init_msg.version) { 
+		fprintf(stderr, "virtio-net-vpnkit: protocol version mismatch: version %d requested, got version %d.\n", 
+			init_msg.version,
+			init_reply.version);
+	}
 
-	if (really_write(fd, (uint8_t*)&cmd_ethernet, sizeof(cmd_ethernet)) < 0) {
-		fprintf(stderr, "virtio-net-vpnkit: failed to write ethernet cmd\n");
+	struct msg_command cmd;
+	memset(&cmd, 0, sizeof(cmd));
+
+	if (preferred_ipv4 != 0) {
+		cmd.command = CMD_PREFERRED_IPV4;
+		memcpy(cmd.preferred_ipv4.uuid, uuid, sizeof(cmd.preferred_ipv4.uuid));
+		/* VPNKit uses LE, so swap the IP from network byte order */
+		cmd.preferred_ipv4.ip = OSSwapInt32(preferred_ipv4);
+	} else {
+		/* No preferred IPv4 address, falling back to requesting a dynamic address */
+		cmd.command = CMD_ETHERNET;
+		memcpy(cmd.ethernet.uuid, uuid, sizeof(cmd.ethernet.uuid));
+	}
+
+	if (really_write(fd, (uint8_t*)&cmd, sizeof(cmd)) < 0) {
+		fprintf(stderr, "virtio-net-vpnkit: failed to write command\n");
 		return -1;
 	}
 
-	if (really_read(fd, (uint8_t*)vif, sizeof(*vif)) < 0) {
-		fprintf(stderr, "virtio-net-vpnkit: failed to read vif info\n");
+	struct msg_response reply;
+	if (really_read(fd, (uint8_t*)&reply, sizeof(reply)) < 0) {
+		fprintf(stderr, "virtio-net-vpnkit: failed to read response message\n");
 		return -1;
+	}
+
+	switch (reply.response_type) {
+		case RESP_VIF: 
+			memcpy((uint8_t*)vif, (uint8_t*)&reply.vif, sizeof(*vif));
+			break;
+		case RESP_DISCONNECT:
+			fprintf(stderr, "virtio-net-vpnkit: server disconnected: %*s\n", reply.disconnect.len, reply.disconnect.msg);
+			return -1;
+		default:
+			fprintf(stderr, "virtio-net-vpnkit: unknown response from server: %d\n", reply.response_type);
+			return -1;
 	}
 
 	return 0;
@@ -362,9 +417,11 @@ vpnkit_create(struct pci_vtnet_softc *sc, const char *opts)
 	const char *path = "/var/tmp/com.docker.slirp.socket";
 	char *macfile = NULL;
 	char *tmp = NULL;
+	char *ipv4 = NULL;
 	uuid_t uuid;
 	char uuid_string[37];
 	struct sockaddr_un addr;
+	struct in_addr preferred_ipv4 = { .s_addr = 0 };
 	int fd;
 	struct vpnkit_state *state = malloc(sizeof(struct vpnkit_state));
 	if (!state) abort();
@@ -393,11 +450,16 @@ vpnkit_create(struct pci_vtnet_softc *sc, const char *opts)
 				return 1;
 			}
 			memcpy(&uuid_string[0], &tmp[0], 36);
-			fprintf(stdout, "Interface will have uuid %s\n", tmp);
 			free(tmp);
 			tmp = NULL;
 		} else if (strncmp(opts, "macfile=", 8) == 0) {
 			macfile = copy_up_to_comma(opts + 8);
+		} else if (strncmp(opts, "preferred_ipv4=", 15) == 0) {
+			ipv4 = copy_up_to_comma(opts + 15);
+			if (inet_aton(ipv4, &preferred_ipv4) == 0) {
+				fprintf(stderr, "Unable to parse requested IP %s\n", ipv4);
+				return 1;
+			}
 		} else {
 			fprintf(stderr, "invalid option: %s\r\n", opts);
 			return 1;
@@ -405,6 +467,11 @@ vpnkit_create(struct pci_vtnet_softc *sc, const char *opts)
 		if (! next)
 			break;
 		opts = &next[1];
+	}
+
+	fprintf(stdout, "virtio-net-vpnkit: interface will have uuid %s\n", uuid_string);
+	if (ipv4 != NULL) {
+		fprintf(stdout, "virtio-net-vpnkit: requesting ip %s\n", ipv4);
 	}
 
 	state->vif.max_packet_size = 1500;
@@ -423,7 +490,7 @@ vpnkit_create(struct pci_vtnet_softc *sc, const char *opts)
 			goto err;
 		}
 
-		if (vpnkit_connect(fd, uuid_string, &state->vif) == 0)
+		if (vpnkit_connect(fd, uuid_string, &state->vif, preferred_ipv4.s_addr) == 0)
 			/* success */
 			break;
 
@@ -441,8 +508,8 @@ err:
 	state->fd = fd;
 
 	struct vif_info *info = &state->vif;
-	fprintf(stdout, "Connection established with MAC=%02x:%02x:%02x:%02x:%02x:%02x and MTU %d\n",
-	  info->mac[0], info->mac[1], info->mac[2], info->mac[3], info->mac[4], info->mac[5],
+	fprintf(stdout, "virtio-net-vpnkit: Connection established with MAC=%02x:%02x:%02x:%02x:%02x:%02x and MTU %d\n",
+		info->mac[0], info->mac[1], info->mac[2], info->mac[3], info->mac[4], info->mac[5],
 		(int)info->mtu);
 
 	if (macfile) {
