@@ -1,4 +1,4 @@
-From 5777c274a08f586f5f41e12912377a6ba72049b4 Mon Sep 17 00:00:00 2001
+From fd63c3814328a1c5f48d7da8cc644892018ab7c5 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 26 Jul 2017 12:32:08 -0600
 Subject: [PATCH 13/15] hv_sock: avoid double FINs if shutdown() is called
