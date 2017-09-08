@@ -504,10 +504,8 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 
 	if config.KVM {
 		qemuArgs = append(qemuArgs, "-enable-kvm")
-		// Remove the hardcode of virtual machine type for x86, since we will
-		// support aarch64 in future
 		if config.Arch == "aarch64" {
-			qemuArgs = append(qemuArgs, "-machine", "virt")
+			qemuArgs = append(qemuArgs, "-machine", "virt,gic_version=host")
 		} else {
 			qemuArgs = append(qemuArgs, "-machine", "q35,accel=kvm:tcg")
 		}
