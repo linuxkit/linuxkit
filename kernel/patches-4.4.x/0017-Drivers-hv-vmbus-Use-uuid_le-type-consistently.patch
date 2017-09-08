@@ -1,4 +1,4 @@
-From 1980970b0fe4db8f69880217e84efa2a6ef26e21 Mon Sep 17 00:00:00 2001
+From b902872753aba2396599c6ad478af5003db63fc6 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:43 -0800
 Subject: [PATCH 17/44] Drivers: hv: vmbus: Use uuid_le type consistently
