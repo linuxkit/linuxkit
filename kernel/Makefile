@@ -16,6 +16,7 @@
 ORG?=linuxkit
 IMAGE:=kernel
 IMAGE_PERF:=kernel-perf
+IMAGE_ZFS:=zfs-kmod
 
 # You can specify an extra options for the Makefile. This will:
 # - append a kernel_config$(EXTRA) to the kernel config for your kernel/arch
@@ -118,11 +119,13 @@ push: push_$(2)$(3)
 show-tags: show-tag_$(2)$(3)
 fetch: sources/linux-$(1).tar.xz
 
-ifneq ($(2), 4.4.x)
 # 'docker build' with the FROM image supplied as --build-arg
 # *and* with DOCKER_CONTENT_TRUST=1 currently does not work
 # (https://github.com/moby/moby/issues/34199). So, we pull the image
 # with DCT and then build with DOCKER_CONTENT_TRUST explicitly set to 0.
+
+ifneq ($(2), 4.4.x)
+# perf does not build out of the box for 4.4.x and 4.4.x is not that relevant anymore to work on a fix
 build_perf_$(2)$(3): build_$(2)$(3)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
 		(docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
@@ -141,6 +144,26 @@ push_perf_$(2)$(3): build_perf_$(2)$(3)
 
 build: build_perf_$(2)$(3)
 push: push_perf_$(2)$(3)
+endif
+
+ifneq ($(3), -dbg)
+# ZFS does not compile against -dbg kernels because CONFIG_DEBUG_LOCK_ALLOC
+# is incompatible with CDDL, apparently (this is ./configure check)
+build_zfs_$(2)$(3): build_$(2)$(3)
+	docker pull $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) || \
+		(docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
+		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.zfs \
+			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
+			--no-cache $(LABEL) -t $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) .)
+
+push_zfs_$(2)$(3): build_zfs_$(2)$(3)
+	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+	docker pull $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) || \
+		(docker push $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) && \
+		 docker tag $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_ZFS):$(1)$(3)$(SUFFIX) && \
+		 docker push $(ORG)/$(IMAGE_ZFS):$(1)$(3)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_ZFS):$(1)$(3) $(DOCKER_CONTENT_TRUST))
 endif
 
 endef
