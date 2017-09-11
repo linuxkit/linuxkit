@@ -1,4 +1,4 @@
-From 70d47033e25ba0564d1fd9101e8dc4fadf187c73 Mon Sep 17 00:00:00 2001
+From 5e02dd4ba4ee5d9bb10c29bb2df4197ca0bd967e Mon Sep 17 00:00:00 2001
 From: Ian Campbell <ian.campbell@docker.com>
 Date: Mon, 4 Apr 2016 14:50:10 +0100
 Subject: [PATCH 15/44] VSOCK: Only allow host network namespace to use

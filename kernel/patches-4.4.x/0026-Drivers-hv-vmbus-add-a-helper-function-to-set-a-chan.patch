@@ -1,4 +1,4 @@
-From 0e85a04724946e9bf7f9bc31f6b7ca7f1c30978b Mon Sep 17 00:00:00 2001
+From f09db46611296ddf0b6a1216e913baac16933238 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 27 Jan 2016 22:29:37 -0800
 Subject: [PATCH 26/44] Drivers: hv: vmbus: add a helper function to set a
