@@ -276,7 +276,7 @@ func runQemu(args []string) {
 	var netdevConfig string
 	switch netMode[0] {
 	case qemuNetworkingUser:
-		netdevConfig = "user"
+		netdevConfig = "user,id=t0"
 	case qemuNetworkingTap:
 		if len(netMode) != 2 {
 			log.Fatalf("Not enough arugments for %q networking mode", qemuNetworkingTap)
@@ -284,7 +284,7 @@ func runQemu(args []string) {
 		if len(publishFlags) != 0 {
 			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
 		}
-		netdevConfig = fmt.Sprintf("tap,ifname=%s,script=no,downscript=no", netMode[1])
+		netdevConfig = fmt.Sprintf("tap,id=t0,ifname=%s,script=no,downscript=no", netMode[1])
 	case qemuNetworkingBridge:
 		if len(netMode) != 2 {
 			log.Fatalf("Not enough arugments for %q networking mode", qemuNetworkingBridge)
@@ -292,7 +292,7 @@ func runQemu(args []string) {
 		if len(publishFlags) != 0 {
 			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
 		}
-		netdevConfig = fmt.Sprintf("bridge,br=%s", netMode[1])
+		netdevConfig = fmt.Sprintf("bridge,id=t0,br=%s", netMode[1])
 	case qemuNetworkingNone:
 		if len(publishFlags) != 0 {
 			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
@@ -571,13 +571,14 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	if config.NetdevConfig == "" {
 		qemuArgs = append(qemuArgs, "-net", "none")
 	} else {
-		mac := retrieveMAC(config.StatePath)
-		qemuArgs = append(qemuArgs, "-net", "nic,model=virtio,macaddr="+mac.String())
+		// provide a network device first for the QEMU VM if '-networking' is specified,
+		qemuArgs = append(qemuArgs, "-device", "virtio-net-pci,netdev=t0")
 		forwardings, err := buildQemuForwardings(config.PublishedPorts, config.Containerized)
 		if err != nil {
 			log.Error(err)
 		}
-		qemuArgs = append(qemuArgs, "-net", config.NetdevConfig+forwardings)
+		// we perfer "-netdev" to the "-net" which is an old way to initialize a host nic
+		qemuArgs = append(qemuArgs, "-netdev", config.NetdevConfig+forwardings)
 	}
 
 	if config.GUI != true {
