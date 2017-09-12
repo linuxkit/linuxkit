@@ -2,10 +2,14 @@
 
 set -e
 
-: ${KUBE_PORT_BASE:=2222}
-: ${KUBE_VCPUS:=2}
-: ${KUBE_MEM:=1024}
-: ${KUBE_DISK:=4G}
+: ${KUBE_MASTER_VCPUS:=2}
+: ${KUBE_MASTER_MEM:=1024}
+: ${KUBE_MASTER_DISK:=4G}
+
+: ${KUBE_NODE_VCPUS:=2}
+: ${KUBE_NODE_MEM:=4096}
+: ${KUBE_NODE_DISK:=8G}
+
 : ${KUBE_NETWORKING:=default}
 : ${KUBE_RUN_ARGS:=}
 : ${KUBE_EFI:=}
@@ -19,6 +23,10 @@ if [ $# -eq 0 ] ; then
     img="kube-master"
     data=""
     state="kube-master-state"
+
+    : ${KUBE_VCPUS:=$KUBE_MASTER_VCPUS}
+    : ${KUBE_MEM:=$KUBE_MASTER_MEM}
+    : ${KUBE_DISK:=$KUBE_MASTER_DISK}
 elif [ $# -gt 1 ] ; then
     case $1 in
 	''|*[!0-9]*)
@@ -36,6 +44,10 @@ elif [ $# -gt 1 ] ; then
     shift
     data="${*}"
     state="kube-${name}-state"
+
+    : ${KUBE_VCPUS:=$KUBE_NODE_VCPUS}
+    : ${KUBE_MEM:=$KUBE_NODE_MEM}
+    : ${KUBE_DISK:=$KUBE_NODE_DISK}
 else
     echo "Usage:"
     echo " - Boot master:"
