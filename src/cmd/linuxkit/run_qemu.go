@@ -571,13 +571,12 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	if config.NetdevConfig == "" {
 		qemuArgs = append(qemuArgs, "-net", "none")
 	} else {
-		// provide a network device first for the QEMU VM if '-networking' is specified,
-		qemuArgs = append(qemuArgs, "-device", "virtio-net-pci,netdev=t0")
+		mac := retrieveMAC(config.StatePath)
+		qemuArgs = append(qemuArgs, "-device", "virtio-net-pci,netdev=t0,mac="+mac.String())
 		forwardings, err := buildQemuForwardings(config.PublishedPorts, config.Containerized)
 		if err != nil {
 			log.Error(err)
 		}
-		// we perfer "-netdev" to the "-net" which is an old way to initialize a host nic
 		qemuArgs = append(qemuArgs, "-netdev", config.NetdevConfig+forwardings)
 	}
 
