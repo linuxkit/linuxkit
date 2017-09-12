@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.12.11 Kernel Configuration
+# Linux/arm64 4.12.12 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -105,7 +105,8 @@ CONFIG_BSD_PROCESS_ACCT=y
 CONFIG_BSD_PROCESS_ACCT_V3=y
 CONFIG_TASKSTATS=y
 CONFIG_TASK_DELAY_ACCT=y
-# CONFIG_TASK_XACCT is not set
+CONFIG_TASK_XACCT=y
+CONFIG_TASK_IO_ACCOUNTING=y
 
 #
 # RCU Subsystem
