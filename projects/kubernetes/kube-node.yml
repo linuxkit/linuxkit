@@ -61,6 +61,8 @@ services:
   - name: kubelet
     image: linuxkitprojects/kubernetes:c4a6ae5121df50471ad244b9fc153ff5eb674fb2
 files:
+  - path: /etc/kubernetes
+    symlink: "/var/lib/kubeadm"
   - path: /etc/sysctl.d/01-kubernetes.conf
     contents: 'net.ipv4.ip_forward = 1'
   - path: /opt/cni
