@@ -13,6 +13,8 @@ set -e
 : ${KUBE_NETWORKING:=default}
 : ${KUBE_RUN_ARGS:=}
 : ${KUBE_EFI:=}
+: ${KUBE_MAC:=}
+: ${KUBE_PRESERVE_STATE:=}
 
 [ "$(uname -s)" = "Darwin" ] && KUBE_EFI=1
 
@@ -27,7 +29,7 @@ if [ $# -eq 0 ] ; then
     : ${KUBE_VCPUS:=$KUBE_MASTER_VCPUS}
     : ${KUBE_MEM:=$KUBE_MASTER_MEM}
     : ${KUBE_DISK:=$KUBE_MASTER_DISK}
-elif [ $# -gt 1 ] ; then
+elif [ $# -gt 1 ] || [ $# -eq 1 -a -n "${KUBE_PRESERVE_STATE}" ] ; then
     case $1 in
 	''|*[!0-9]*)
 	    echo "Node number must be a number"
@@ -57,5 +59,11 @@ else
     exit 1
 fi
 set -x
-rm -rf "${state}"
+if [ -z "${KUBE_PRESERVE_STATE}" ] ; then
+    rm -rf "${state}"
+    mkdir "${state}"
+    if [ -n "${KUBE_MAC}" ] ; then
+	echo -n "${KUBE_MAC}" > "${state}"/mac-addr
+    fi
+fi
 linuxkit run ${KUBE_RUN_ARGS} -networking ${KUBE_NETWORKING} -cpus ${KUBE_VCPUS} -mem ${KUBE_MEM} -state "${state}" -disk size=${KUBE_DISK} -data "${data}" ${uefi} "${img}${suffix}"
