@@ -9,6 +9,9 @@ init:
 onboot:
   - name: sysctl
     image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
+    binds:
+     - /etc/sysctl.d/01-kubernetes.conf:/etc/sysctl.d/01-kubernetes.conf
+    readonly: false
   - name: sysfs
     image: linuxkit/sysfs:3ae01a25583ee37a5ff8b09a0e569cb4bd8cf2e9
   - name: dhcpcd
@@ -60,6 +63,8 @@ services:
   - name: kubelet
     image: linuxkitprojects/kubernetes:c4a6ae5121df50471ad244b9fc153ff5eb674fb2
 files:
+  - path: /etc/sysctl.d/01-kubernetes.conf
+    contents: 'net.ipv4.ip_forward = 1'
   - path: /opt/cni
     directory: true
   - path: /etc/cni
