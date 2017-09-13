@@ -45,4 +45,4 @@ WORKDIR /
 ENTRYPOINT ["/usr/bin/kubelet.sh"]
 COPY --from=build /out /
 ENV KUBECONFIG "/etc/kubernetes/admin.conf"
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/etc/resolv.conf:/etc/resolv.conf", "/run:/run", "/var:/var:rshared,rbind", "/var/lib/kubeadm:/etc/kubernetes"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}], "capabilities": ["all"], "rootfsPropagation": "shared", "pid": "host", "runtime": {"mkdir": ["/var/lib/kubeadm", "/var/lib/cni/etc", "/var/lib/cni/opt"]}}'
+LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/etc/resolv.conf:/etc/resolv.conf", "/run:/run", "/var:/var:rshared,rbind", "/var/lib/kubeadm:/etc/kubernetes"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}], "capabilities": ["all"], "rootfsPropagation": "shared", "pid": "host", "runtime": {"mkdir": ["/var/lib/kubeadm", "/var/lib/cni/etc", "/var/lib/cni/opt"], "mounts": [{"type": "bind", "source": "/var/lib/cni/opt", "destination": "/opt/cni", "options": ["rw", "bind"]}, {"type": "bind", "source": "/var/lib/cni/etc", "destination": "/etc/cni", "options": ["rw", "bind"]}]}}'

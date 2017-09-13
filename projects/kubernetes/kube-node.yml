@@ -58,6 +58,10 @@ services:
   - name: kubelet
     image: linuxkitprojects/kubernetes:c4a6ae5121df50471ad244b9fc153ff5eb674fb2
 files:
+  - path: /opt/cni
+    directory: true
+  - path: /etc/cni
+    directory: true
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
     mode: "0600"
