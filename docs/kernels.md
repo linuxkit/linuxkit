@@ -38,6 +38,15 @@ In summary, LinuxKit offers a choice of the following kernels:
 - [linuxkit/kernel-fedora](https://hub.docker.com/r/linuxkit/kernel-fedora/): Selected Fedora kernels.
 
 
+## Loading kernel modules
+
+Most kernel modules are autoloaded with `mdev` but if you need to `modprobe` a module manually you can use the `modprobe` package in the `onboot` section like this:
+```
+  - name: modprobe
+    image: linuxkit/modprobe:<hash>
+    command: ["modprobe", "-a", "iscsi_tcp", "dm_multipath"]
+```
+
 ## Compiling external kernel modules
 
 This section describes how to build external (out-of-tree) kernel
