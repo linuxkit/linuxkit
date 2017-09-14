@@ -1,4 +1,4 @@
-From 849bfb3316d581b22a5c67be40dcb74b9e25f19d Mon Sep 17 00:00:00 2001
+From 7c7818b98fe1d107a54ef5336b6d919d920d5b3a Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 26 Jul 2017 12:32:06 -0600
 Subject: [PATCH 08/15] vsock: fix vsock_dequeue/enqueue_accept race

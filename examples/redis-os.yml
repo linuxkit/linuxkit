@@ -1,7 +1,7 @@
 # Minimal YAML to run a redis server (used at DockerCon'17)
 # connect: nc localhost 6379
 kernel:
-  image: linuxkit/kernel:4.9.49
+  image: linuxkit/kernel:4.9.50
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:851e9c3ad0574d640b733b92fdb26c368d2f7f8f
