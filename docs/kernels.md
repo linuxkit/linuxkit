@@ -330,7 +330,7 @@ file:
 
 ```
 kernel:
-  image: linuxkit/kernel:4.9.49
+  image: linuxkit/kernel:4.9.50
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
   - <foo>/zfs-kmod:4.9.47
