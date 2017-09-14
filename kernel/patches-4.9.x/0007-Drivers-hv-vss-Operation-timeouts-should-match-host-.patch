@@ -1,4 +1,4 @@
-From 3266c525d53ce5ab9b9506e3b5615ad84c8fcaef Mon Sep 17 00:00:00 2001
+From eb6ef98a8a7d7ff793c936ec3aa2994dc78d90be Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:11 -0800
 Subject: [PATCH 07/13] Drivers: hv: vss: Operation timeouts should match host

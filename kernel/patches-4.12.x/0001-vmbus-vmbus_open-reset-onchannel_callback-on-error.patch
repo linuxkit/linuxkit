@@ -1,4 +1,4 @@
-From 39f8854c3df42f891054229688cc797df101436c Mon Sep 17 00:00:00 2001
+From d34b8dad5cbb125d4d0260e439ea0d02cd93b7f8 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 26 Jul 2017 12:31:50 -0600
 Subject: [PATCH 01/15] vmbus: vmbus_open(): reset onchannel_callback on error
