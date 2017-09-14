@@ -1,5 +1,9 @@
 #!/bin/sh
-mount --bind /opt/cni /var/lib/cni/opt
+if [ ! -e /var/lib/cni/.opt.defaults-extracted ] ; then
+    mkdir -p /var/lib/cni/opt/bin
+    tar -xzf /root/cni.tgz -C /var/lib/cni/opt/bin
+    touch /var/lib/cni/.opt.defaults-extracted
+fi
 until kubelet --kubeconfig=/var/lib/kubeadm/kubelet.conf \
 	      --require-kubeconfig=true \
 	      --pod-manifest-path=/var/lib/kubeadm/manifests \
