@@ -38,6 +38,8 @@ services:
   - name: kubelet
     image: linuxkitprojects/kubernetes:b73aacdfaad2167f7b193d9b68f7e52186eb188a
 files:
+  - path: etc/linuxkit.yml
+    metadata: yaml
   - path: /etc/kubernetes
     symlink: "/var/lib/kubeadm"
   - path: /etc/sysctl.d/01-kubernetes.conf
