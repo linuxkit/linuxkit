@@ -1,0 +1,27 @@
+services:
+  - name: docker
+    image: docker:17.07.0-ce-dind
+    capabilities:
+     - all
+    pid: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /dev:/dev
+     - /etc/resolv.conf:/etc/resolv.conf
+     - /lib/modules:/lib/modules
+     - /run:/run
+     - /var:/var:rshared,rbind
+     - /var/lib/kubeadm:/etc/kubernetes
+     - /var/lib/cni/etc:/etc/cni:rshared,rbind
+     - /var/lib/cni/opt:/opt/cni:rshared,rbind
+    rootfsPropagation: shared
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+    runtime:
+      mkdir: ["/var/lib/kubeadm", "/var/lib/cni/etc", "/var/lib/cni/opt"]
+  - name: kubernetes-image-cache-common
+    image: linuxkitprojects/kubernetes-image-cache-common:0d818c5b1a7a0a0aa52c2a52e23de784d7fd5e25
+files:
+  - path: /etc/kubelet.conf
+    contents: ""

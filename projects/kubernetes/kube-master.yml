@@ -35,38 +35,11 @@ services:
     image: linuxkit/openntpd:0d7befc79842849d0b88d6c3b64200e340d7cf67
   - name: sshd
     image: linuxkit/sshd:505a985d7bd7a90f15eca9cb4dc6ec92789d51a0
-  - name: docker
-    image: docker:17.07.0-ce-dind
-    capabilities:
-     - all
-    pid: host
-    mounts:
-     - type: cgroup
-       options: ["rw","nosuid","noexec","nodev","relatime"]
-    binds:
-     - /dev:/dev
-     - /etc/resolv.conf:/etc/resolv.conf
-     - /lib/modules:/lib/modules
-     - /run:/run
-     - /var:/var:rshared,rbind
-     - /var/lib/kubeadm:/etc/kubernetes
-     - /var/lib/cni/etc:/etc/cni:rshared,rbind
-     - /var/lib/cni/opt:/opt/cni:rshared,rbind
-    rootfsPropagation: shared
-    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
-    runtime:
-      mkdir: ["/var/lib/kubeadm", "/var/lib/cni/etc", "/var/lib/cni/opt"]
-  - name: kubernetes-image-cache-common
-    image: linuxkitprojects/kubernetes-image-cache-common:0d818c5b1a7a0a0aa52c2a52e23de784d7fd5e25
-  - name: kubernetes-image-cache-control-plane
-    image: linuxkitprojects/kubernetes-image-cache-control-plane:0d818c5b1a7a0a0aa52c2a52e23de784d7fd5e25
   - name: kubelet
     image: linuxkitprojects/kubernetes:b73aacdfaad2167f7b193d9b68f7e52186eb188a
 files:
   - path: /etc/kubernetes
     symlink: "/var/lib/kubeadm"
-  - path: /etc/kubelet.conf
-    contents: ""
   - path: /etc/sysctl.d/01-kubernetes.conf
     contents: 'net.ipv4.ip_forward = 1'
   - path: /opt/cni

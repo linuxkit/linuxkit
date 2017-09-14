@@ -11,6 +11,11 @@ Build OS images:
 make build-vm-images
 ```
 
+By default this will build images using Docker Engine for execution. To instead use cri-containerd use:
+```
+make build-vm-images KUBE_RUNTIME=cri-containerd
+```
+
 Boot Kubernetes master OS image using `hyperkit` on macOS: or `qemu` on Linux:
 ```
 ./boot.sh
