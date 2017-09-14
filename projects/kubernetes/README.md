@@ -4,8 +4,6 @@ This project aims to demonstrate how one can create minimal and immutable Kubern
 
 Make sure to `cd projects/kubernetes` first.
 
-Edit `kube-master.yml` and add your public SSH key to `files` section.
-
 Build OS images:
 ```
 make build-vm-images

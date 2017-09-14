@@ -14,11 +14,11 @@ push-container-images:
 
 build-vm-images: kube-master.iso kube-node.iso
 
-kube-master.iso: kube-master.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml
-	moby build -name kube-master -format iso-efi -format iso-bios kube-master.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml
+kube-master.iso: kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml
+	moby build -name kube-master -format iso-efi -format iso-bios kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml
 
-kube-node.iso: kube-node.yml $(KUBE_RUNTIME).yml
-	moby build -name kube-node -format iso-efi -format iso-bios kube-node.yml $(KUBE_RUNTIME).yml
+kube-node.iso: kube.yml $(KUBE_RUNTIME).yml
+	moby build -name kube-node -format iso-efi -format iso-bios kube.yml $(KUBE_RUNTIME).yml
 
 clean:
 	rm -f -r \
