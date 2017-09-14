@@ -121,17 +121,21 @@ func start(service, sock, basePath, dumpSpec string) (string, uint32, string, er
 	}
 
 	io := func(id string) (containerd.IO, error) {
-		logfile := filepath.Join("/var/log", service+".log")
-		// We just need this to exist.
-		if err := ioutil.WriteFile(logfile, []byte{}, 0600); err != nil {
-			// if we cannot write to log, discard output
-			logfile = "/dev/null"
+		stdoutFile := filepath.Join("/var/log", service+".out.log")
+		stderrFile := filepath.Join("/var/log", service+".err.log")
+		// We just need this to exist. If we cannot write to the directory,
+		// we'll discard output instead.
+		if err := ioutil.WriteFile(stdoutFile, []byte{}, 0600); err != nil {
+			stdoutFile = "/dev/null"
+		}
+		if err := ioutil.WriteFile(stderrFile, []byte{}, 0600); err != nil {
+			stderrFile = "/dev/null"
 		}
 		return &cio{
 			containerd.IOConfig{
 				Stdin:    "/dev/null",
-				Stdout:   logfile,
-				Stderr:   logfile,
+				Stdout:   stdoutFile,
+				Stderr:   stderrFile,
 				Terminal: false,
 			},
 		}, nil
