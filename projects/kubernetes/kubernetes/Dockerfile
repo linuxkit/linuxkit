@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS build
+FROM linuxkit/alpine:79987c65c66700171c073151c1d3f0372597bec2 AS build
 
 ENV kubernetes_version v1.7.6
 ENV cni_version        v0.6.0
@@ -10,10 +10,14 @@ RUN apk add -U --no-cache \
   && true
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
+#coreutils needed for du -B for disk image checks made by kubelet
+# example: $ du -s -B 1 /var/lib/kubelet/pods/...
+#          du: unrecognized option: B
 RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \
     busybox \
     ca-certificates \
+    coreutils \
     curl \
     ebtables \
     ethtool \
