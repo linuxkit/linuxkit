@@ -1,11 +1,11 @@
-From 87521124dac07e6a31aae1650646e70dfc9c4722 Mon Sep 17 00:00:00 2001
+From 5fe9cf6bd66c8359d51bd36a5bffe9d57b5dec4c Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 16:13:18 +0800
-Subject: [PATCH 10/15] vmbus: fix hv_percpu_channel_deq/enq race
+Subject: [PATCH 11/18] vmbus:  fix hv_percpu_channel_deq/enq race
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: git@github.com:dcui/linux.git
-(cherry picked from commit 8457502df9dd379ddbdfa42a8c9a6421bb3482f1)
+(cherry picked from commit db40d92a09ff6b84b6c47e96d0a8d1cb1f83cd36)
 ---
  drivers/hv/channel_mgmt.c | 32 +++++++++++++++++++++----
  drivers/hv/connection.c   | 11 +++++++++

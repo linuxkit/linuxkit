@@ -1,7 +1,7 @@
-From 1c7e06eb20a24ff9f8ef3058458cb2df485afe8b Mon Sep 17 00:00:00 2001
+From 4460bb325ac6a9c22d452480fce5695c3ed86a76 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
-Date: Wed, 26 Jul 2017 12:31:56 -0600
-Subject: [PATCH 04/15] hv_sock: implements Hyper-V transport for Virtual
+Date: Fri, 5 May 2017 16:57:26 -0600
+Subject: [PATCH 04/18] hv_sock: implements Hyper-V transport for Virtual
  Sockets (AF_VSOCK)
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
@@ -34,9 +34,8 @@ Cc: Stefan Hajnoczi <stefanha@redhat.com>
 Cc: Vitaly Kuznetsov <vkuznets@redhat.com>
 Cc: Cathy Avery <cavery@redhat.com>
 Cc: Rolf Neugebauer <rolf.neugebauer@docker.com>
-Cc: Marcelo Cerri <marcelo.cerri@canonical.com>
 Origin: git@github.com:dcui/linux.git
-(cherry picked from commit ca99361977429c3128fce64dcfe1093e4ab65247)
+(cherry picked from commit b02ea409f1fceeaac6fd971db5d095ecc903de2d)
 ---
  MAINTAINERS                      |   1 +
  net/vmw_vsock/Kconfig            |  12 +

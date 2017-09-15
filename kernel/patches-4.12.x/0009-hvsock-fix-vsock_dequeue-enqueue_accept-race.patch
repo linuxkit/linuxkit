@@ -1,16 +1,11 @@
-From 7c7818b98fe1d107a54ef5336b6d919d920d5b3a Mon Sep 17 00:00:00 2001
+From 7a238699091e5294d43d930e9f9df0d79ba2be28 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
-Date: Wed, 26 Jul 2017 12:32:06 -0600
-Subject: [PATCH 08/15] vsock: fix vsock_dequeue/enqueue_accept race
-
-We should add a lock to protect the concurrent access to the list.
+Date: Fri, 19 May 2017 21:49:59 +0800
+Subject: [PATCH 09/18] hvsock: fix vsock_dequeue/enqueue_accept race
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
-Cc: K. Y. Srinivasan <kys@microsoft.com>
-Cc: Haiyang Zhang <haiyangz@microsoft.com>
-Cc: Stephen Hemminger <sthemmin@microsoft.com>
 Origin: git@github.com:dcui/linux.git
-(cherry picked from commit 719999b4908874178002a7a4850396e111780f59)
+(cherry picked from commit 022c888e809721a67ecd3072e6331cbdaab45536)
 ---
  net/vmw_vsock/af_vsock.c | 7 +++++++
  1 file changed, 7 insertions(+)

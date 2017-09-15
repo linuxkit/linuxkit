@@ -1,7 +1,7 @@
-From f8cbe9d1fd7c7eb028a65b2a2eb0945d056b8522 Mon Sep 17 00:00:00 2001
+From 2b76165d8dceee83252646abcc9a933228e5e82a Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
-Date: Wed, 26 Jul 2017 12:31:58 -0600
-Subject: [PATCH 05/15] VMCI: only try to load on VMware hypervisor
+Date: Fri, 5 May 2017 16:57:29 -0600
+Subject: [PATCH 05/18] VMCI: only try to load on VMware hypervisor
 
 Without the patch, vmw_vsock_vmci_transport.ko and vmw_vmci.ko can
 automatically load when an application creates an AF_VSOCK socket.
@@ -13,7 +13,7 @@ there is a -EBUSY conflict when both vmw_vsock_vmci_transport.ko and
 hv_sock.ko try to call vsock_core_init().
 
 On the other hand, hv_sock.ko can only load on Hyper-V, because it
-depends on hv_vmbus.ko, which detects Hyper-V in hv_acpi_init().
+depends on hv_vmbus.ko, which deteces Hyper-V in hv_acpi_init().
 
 KVM's vsock_virtio_transport doesn't have the issue because it doesn't
 define MODULE_ALIAS_NETPROTO(PF_VSOCK).
@@ -28,7 +28,7 @@ Cc: K. Y. Srinivasan <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
 Origin: git@github.com:dcui/linux.git
-(cherry picked from commit 52d06e92fca7e91c5a774a5491239597f43261a3)
+(cherry picked from commit 27e512021e36c67dd1c773a52b23d71896c80602)
 ---
  drivers/misc/vmw_vmci/vmci_driver.c | 8 ++++++++
  1 file changed, 8 insertions(+)

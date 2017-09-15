@@ -1,14 +1,9 @@
-# We specifically pick 4.11.1 here as newer 4.11.x kernel have some
-# interactions with the current Hyper-V NVDIMM implementation.
-# Specifically, Linux commit 5a3651b4a92c ("ext4: return to starting
-# transaction in ext4_dax_huge_fault()") seems to trigger silent failures
-# when running the Hyper-V container VM.
 kernel:
-  image: linuxkit/kernel:4.11.1-ce8345023d3f2dff16f8edeeca9331b26a199949
+  image: linuxkit/kernel:4.12.13
   cmdline: "console=ttyS0"
   tar: none
 init:
-  - linuxkit/init-lcow:b1f58571eadf48ec46a8265a087f7869a3189b21
+  - linuxkit/init-lcow:b5d156bfc1318a1c7b94320c87d634e5fd0da091
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
 trust:
   org:
