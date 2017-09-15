@@ -1,7 +1,7 @@
-From a021d948658c20f25abb7f4ae5fce42bdbe2869b Mon Sep 17 00:00:00 2001
+From df4d0b9a1259b50b6cbec75465ed9f7d5e192188 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:23 -0600
-Subject: [PATCH 03/15] vmbus: dynamically enqueue/dequeue a channel on
+Subject: [PATCH 03/18] vmbus: dynamically enqueue/dequeue a channel on
  vmbus_open/close
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -23,7 +23,7 @@ Cc: K. Y. Srinivasan <kys@microsoft.com>
 Cc: Haiyang Zhang <haiyangz@microsoft.com>
 Cc: Stephen Hemminger <sthemmin@microsoft.com>
 Origin: git@github.com:dcui/linux.git
-(cherry picked from commit 1df677b35ff010d0def33f5420773015815cf843)
+(cherry picked from commit fdd8e16c855a6c7238c654d7217dcf51c5533307)
 ---
  drivers/hv/channel.c      | 12 +++++++++---
  drivers/hv/channel_mgmt.c | 50 +++++++++++++++++++++--------------------------

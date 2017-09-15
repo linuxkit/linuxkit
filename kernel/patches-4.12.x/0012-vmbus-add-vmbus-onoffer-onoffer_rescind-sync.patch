@@ -1,11 +1,11 @@
-From 5427bcb5e34615568731ff5633e7ab4cf0446a5f Mon Sep 17 00:00:00 2001
+From 3f99e5ffa5d5e3b6517f6e9c5049a7512f39437c Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 21:32:00 +0800
-Subject: [PATCH 11/15] vmbus: add vmbus onoffer/onoffer_rescind sync.
+Subject: [PATCH 12/18] vmbus: add vmbus onoffer/onoffer_rescind sync.
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: git@github.com:dcui/linux.git
-(cherry picked from commit 1b91aa6d0e745d9765e3d90058928829f0b0bd40)
+(cherry picked from commit 0465d97030768485eec5a69a98963e3da7402826)
 ---
  drivers/hv/channel_mgmt.c | 25 +++++++++++++++++++------
  drivers/hv/hyperv_vmbus.h |  1 +
