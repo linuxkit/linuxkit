@@ -13,4 +13,7 @@ ENTRYPOINT []
 CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
+COPY scripts /etc/vmware-tools/scripts
 CMD ["/usr/bin/vmtoolsd"]
+
+LABEL org.mobyproject.config='{"pid": "host", "capabilities": ["CAP_SYS_BOOT"]}'
