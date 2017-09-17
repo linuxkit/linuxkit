@@ -3,7 +3,6 @@
 # LABELS:
 
 set -e
-set -x
 
 # Source libraries. Uncomment if needed/defined
 #. "${RT_LIB}"
@@ -12,15 +11,14 @@ set -x
 NAME=hyperkit-acpi
 
 clean_up() {
-	echo $(pwd)
-	# remove any files, containers, images etc
-	rm -rf "${NAME}"* || true
+	rm -rf ${NAME}-*
 }
 trap clean_up EXIT
 
 moby build -format kernel+initrd -name "${NAME}" test.yml
 [ -f "${NAME}-kernel" ] || exit 1
 [ -f "${NAME}-initrd.img" ] || exit 1
-[ -f "${NAME}-cmdline" ]|| exit 1
+[ -f "${NAME}-cmdline" ] || exit 1
 ./test.exp
+
 exit 0

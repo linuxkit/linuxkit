@@ -11,10 +11,8 @@ set -e
 NAME=qemu-efi
 
 clean_up() {
-	# remove any files, containers, images etc
-	rm -rf ${NAME}* || true
+	rm -rf ${NAME}-*
 }
-
 trap clean_up EXIT
 
 # see https://github.com/linuxkit/linuxkit/issues/1872 this is very flaky in qemu
@@ -30,4 +28,5 @@ fi
 moby build -format iso-efi -name "${NAME}" test.yml
 [ -f "${NAME}-efi.iso" ] || exit 1
 linuxkit run qemu -iso -uefi "${NAME}-efi.iso" | grep -q "Welcome to LinuxKit"
+
 exit 0
