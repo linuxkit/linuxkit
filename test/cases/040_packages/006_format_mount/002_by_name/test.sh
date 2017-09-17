@@ -10,14 +10,13 @@ set -e
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
 NAME=test-format
+DISK=disk.img
 
 clean_up() {
-	find . -depth -iname "${NAME}*" -not -iname "*.yml" -exec rm -rf {} \;
-	rm -rf test.yml || true
+	rm -rf ${NAME}-* ${DISK} test.yml
 }
-
 trap clean_up EXIT
-# Test code goes here
+
 if [ "${RT_OS}" = "osx" ]; then
 	DEVICE="/dev/vda"
 else
@@ -25,8 +24,8 @@ else
 fi
 
 sed -e "s,@DEVICE@,${DEVICE},g" test.yml.in > test.yml
-moby build -name ${NAME} -format kernel+initrd test.yml
-RESULT="$(linuxkit run -disk file=${NAME}1.img,size=512M ${NAME})"
+moby build -format kernel+initrd -name ${NAME} test.yml
+RESULT="$(linuxkit run -disk file=${DISK},size=512M ${NAME})"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
 
