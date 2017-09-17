@@ -8,15 +8,16 @@ set -e
 # Source libraries. Uncomment if needed/defined
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
+NAME=ca-certificates
 
 clean_up() {
-	find . -depth -iname "test-ca-certificates*" -not -iname "*.yml" -exec rm -rf {} \;
+	rm -rf ${NAME}-*
 }
 trap clean_up EXIT
 
 # Test code goes here
-moby build -format kernel+initrd test-ca-certificates.yml
-RESULT="$(linuxkit run test-ca-certificates)"
+moby build -format kernel+initrd -name "${NAME}" test.yml
+RESULT="$(linuxkit run $NAME)"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
 

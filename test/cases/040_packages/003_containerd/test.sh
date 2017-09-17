@@ -9,14 +9,16 @@ set -e
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
+NAME=containerd
+
 clean_up() {
-	find . -depth -iname "test-containerd*" -not -iname "*.yml" -exec rm -rf {} \;
+	rm -rf ${NAME}-*
 }
 trap clean_up EXIT
 
 # Test code goes here
-moby build test-containerd.yml
-RESULT="$(linuxkit run -mem 2048 -disk size=2G test-containerd)"
+moby build -format kernel+initrd -name "${NAME}" test.yml
+RESULT="$(linuxkit run -mem 2048 -disk size=2G ${NAME})"
 echo "${RESULT}" | grep -q "suite PASSED"
 
 exit 0
