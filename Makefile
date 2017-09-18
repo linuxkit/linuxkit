@@ -79,8 +79,9 @@ local: $(LINUXKIT_DEPS) | bin
 bin:
 	mkdir -p $@
 
+.PHONY: install
 install:
-	cp -R ./bin/* $(PREFIX)/bin
+	cp -R ./bin/{moby,linuxkit} $(PREFIX)bin
 
 .PHONY: test
 test:
