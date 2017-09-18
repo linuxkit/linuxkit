@@ -8,6 +8,7 @@ import (
 
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
+	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	log "github.com/sirupsen/logrus"
 )
@@ -35,6 +36,7 @@ func runOpenStack(args []string) {
 	flavorName := flags.String("flavor", defaultOSFlavor, "Instance size (flavor)")
 	instanceName := flags.String("instancename", "", "Name of instance.  Defaults to the name of the image if not specified")
 	networkID := flags.String("network", "", "The ID of the network to attach the instance to")
+	keyName := flags.String("keyname", "", "The name of the SSH keypair to associate with the instance")
 	passwordFlag := flags.String("password", "", "Password for the specified username")
 	projectNameFlag := flags.String("project", "", "Name of the Project (aka Tenant) to be used")
 	userDomainFlag := flags.String("domain", "Default", "Domain name")
@@ -83,12 +85,21 @@ func runOpenStack(args []string) {
 		UUID: *networkID,
 	}
 
-	serverOpts := &servers.CreateOpts{
+	var serverOpts servers.CreateOptsBuilder
+
+	serverOpts = &servers.CreateOpts{
 		FlavorName:    *flavorName,
 		ImageName:     name,
 		Name:          *instanceName,
 		Networks:      []servers.Network{network},
 		ServiceClient: client,
+	}
+
+	if *keyName != "" {
+		serverOpts = &keypairs.CreateOptsExt{
+			CreateOptsBuilder: serverOpts,
+			KeyName:           *keyName,
+		}
 	}
 
 	server, err := servers.Create(client, serverOpts).Extract()
