@@ -4,6 +4,9 @@ if [ ! -e /var/lib/cni/.opt.defaults-extracted ] ; then
     tar -xzf /root/cni.tgz -C /var/lib/cni/opt/bin
     touch /var/lib/cni/.opt.defaults-extracted
 fi
+if [ -e /etc/kubelet.conf ] ; then
+    . /etc/kubelet.conf
+fi
 until kubelet --kubeconfig=/var/lib/kubeadm/kubelet.conf \
 	      --require-kubeconfig=true \
 	      --pod-manifest-path=/var/lib/kubeadm/manifests \
@@ -15,7 +18,7 @@ until kubelet --kubeconfig=/var/lib/kubeadm/kubelet.conf \
 	      --network-plugin=cni \
 	      --cni-conf-dir=/var/lib/cni/etc/net.d \
 	      --cni-bin-dir=/var/lib/cni/opt/bin \
-	      $@; do
+	      $KUBELET_ARGS $@; do
     if [ ! -f /var/config/userdata ] ; then
 	sleep 1
     else
