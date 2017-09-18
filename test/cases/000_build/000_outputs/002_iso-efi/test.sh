@@ -11,14 +11,12 @@ set -e
 NAME=check
 
 clean_up() {
-	# remove any images
-	find . -depth -iname "${NAME}*" -exec rm -rf {} \;
-	rm -f test.yml
+	rm -f ${NAME}*
 }
 
 trap clean_up EXIT
 
 moby build -format iso-efi -name "${NAME}" ../test.yml
-[ -f "${NAME}-efi.iso" ] || exit 1
+[ -f "${NAME}"-efi.iso ] || exit 1
 
 exit 0

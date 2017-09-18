@@ -11,12 +11,12 @@ set -e
 NAME=qemu-iso
 
 clean_up() {
-	rm -rf ${NAME}* || true
+	rm -rf ${NAME}*
 }
-
 trap clean_up EXIT
 
 moby build -format iso-bios -name "${NAME}" test.yml
 [ -f "${NAME}.iso" ] || exit 1
 linuxkit run qemu -iso "${NAME}.iso" | grep -q "Welcome to LinuxKit"
+
 exit 0

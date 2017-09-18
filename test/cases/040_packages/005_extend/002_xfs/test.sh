@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that an XFS partition can be extended
+# SUMMARY: Check that a xfs partition can be extended
 # LABELS:
 # REPEAT:
 
@@ -9,24 +9,23 @@ set -ex
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
-NAME=test-extend-xfs
-DISK=disk0.img
-clean_up() {
-	find . -depth -iname "${NAME}*" -not -iname "*.yml" -exec rm -rf {} \;
-	rm -rf "create*" || true
-	rm -rf ${DISK} || true
-}
+NAME_CREATE=extend-xfs
+NAME_EXTEND=extend-xfs
+DISK=disk.img
 
+clean_up() {
+	rm -rf ${NAME_CREATE}-* ${NAME_EXTEND}-* ${DISK}
+}
 trap clean_up EXIT
 
 # Test code goes here
-moby build --name create -format kernel+initrd test-create.yml
-linuxkit run -disk file=${DISK},format=raw,size=256M create
-[ -f ${DISK} ] || exit 1
+moby build -name "${NAME_CREATE}" -format kernel+initrd test-create.yml
+linuxkit run -disk file="${DISK}",format=raw,size=256M "${NAME_CREATE}"
+[ -f "${DISK}" ] || exit 1
 # osx takes issue with bs=1M
-dd if=/dev/zero bs=1048576 count=256 >> ${DISK}
-moby build -name ${NAME} -format kernel+initrd test.yml
-RESULT="$(linuxkit run -disk file=${DISK} ${NAME})"
+dd if=/dev/zero bs=1048576 count=256 >> "${DISK}"
+moby build -format kernel+initrd -name ${NAME_EXTEND} test.yml
+RESULT="$(linuxkit run -disk file=${DISK} ${NAME_EXTEND})"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
 

@@ -8,17 +8,16 @@ set -e
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
-IMAGE_NAME=docker-for-mac
+NAME=docker-for-mac
 
 clean_up() {
-	# remove any files, containers, images etc
-	rm -rf ${IMAGE_NAME}*
+	rm -f ${NAME}*
 }
 
 trap clean_up EXIT
 
 # Test code goes here
-moby build -name "${IMAGE_NAME}" "${LINUXKIT_BLUEPRINTS_DIR}/${IMAGE_NAME}/base.yml" "${LINUXKIT_BLUEPRINTS_DIR}/${IMAGE_NAME}/docker-ce.yml" 
+moby build -name "${NAME}" "${LINUXKIT_BLUEPRINTS_DIR}/${NAME}/base.yml" "${LINUXKIT_BLUEPRINTS_DIR}/${NAME}/docker-ce.yml"
 
 exit 0
 

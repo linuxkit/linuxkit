@@ -11,13 +11,12 @@ set -e
 NAME=qemu-qcow2
 
 clean_up() {
-	# remove any files, containers, images etc
-	rm -rf ${NAME}* || true
+	rm -rf ${NAME}*
 }
-
 trap clean_up EXIT
 
 moby build -format qcow2 -name "${NAME}" test.yml
 [ -f "${NAME}.qcow2" ] || exit 1
 linuxkit run qemu "${NAME}.qcow2" | grep -q "Welcome to LinuxKit"
+
 exit 0

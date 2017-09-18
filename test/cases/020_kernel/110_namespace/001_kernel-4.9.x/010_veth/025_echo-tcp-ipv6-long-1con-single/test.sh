@@ -9,14 +9,15 @@ set -e
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
+NAME=test-ns
+
 clean_up() {
-    find . -depth -iname "test-ns*" -not -iname "*.yml" -exec rm -rf {} \;
+    rm -rf ${NAME}-*
 }
 trap clean_up EXIT
 
-# Test code goes here
-moby build -format kernel+initrd test-ns.yml
-RESULT="$(linuxkit run -cpus 2 test-ns)"
+moby build -format kernel+initrd -name ${NAME} ../../common.yml test.yml
+RESULT="$(linuxkit run -cpus 2 ${NAME})"
 echo "${RESULT}" | grep -q "suite PASSED"
 
 exit 0

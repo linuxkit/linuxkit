@@ -11,9 +11,7 @@ set -e
 NAME=check
 
 clean_up() {
-	# remove any images
-	find . -depth -iname "${NAME}*" -exec rm -rf {} \;
-	rm -f test.yml
+	rm -f ${NAME}*
 }
 
 trap clean_up EXIT

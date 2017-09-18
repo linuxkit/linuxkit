@@ -12,11 +12,11 @@ set -e
 NAME=test-ctr
 
 clean_up() {
-	find . -depth -iname "test-ctr*" -not -iname "*.yml" -exec rm -rf {} \;
+	rm -rf ${NAME}-*
 }
 trap clean_up EXIT
 
-moby build "${NAME}.yml"
+moby build -format kernel+initrd -name "${NAME}" test.yml
 [ -f "${NAME}-kernel" ] || exit 1
 [ -f "${NAME}-initrd.img" ] || exit 1
 [ -f "${NAME}-cmdline" ]|| exit 1

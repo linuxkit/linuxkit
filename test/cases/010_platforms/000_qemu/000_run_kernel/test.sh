@@ -11,10 +11,8 @@ set -e
 NAME=qemu-kernel
 
 clean_up() {
-	# remove any files, containers, images etc
-	rm -rf ${NAME}* || true
+	rm -rf ${NAME}-*
 }
-
 trap clean_up EXIT
 
 moby build -format kernel+initrd -name "${NAME}" test.yml
@@ -22,4 +20,5 @@ moby build -format kernel+initrd -name "${NAME}" test.yml
 [ -f "${NAME}-initrd.img" ] || exit 1
 [ -f "${NAME}-cmdline" ]|| exit 1
 linuxkit run qemu -kernel "${NAME}" | grep -q "Welcome to LinuxKit"
+
 exit 0

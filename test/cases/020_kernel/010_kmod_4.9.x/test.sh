@@ -9,11 +9,12 @@ set -e
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
-IMAGE_NAME="kmod-test"
+NAME=kmod
+IMAGE_NAME=kmod-test
 
 clean_up() {
 	docker rmi ${IMAGE_NAME} || true
-	find . -depth -iname "kmod*" -not -iname "*.yml" -exec rm -rf {} \;
+	rm -rf ${NAME}-*
 }
 trap clean_up EXIT
 
@@ -23,8 +24,8 @@ docker pull linuxkit/kernel:4.9.50
 docker build -t ${IMAGE_NAME} .
 
 # Build and run a LinuxKit image with kernel module (and test script)
-moby build -format kernel+initrd kmod.yml
-RESULT="$(linuxkit run kmod)"
+moby build -format kernel+initrd -name "${NAME}" test.yml
+RESULT="$(linuxkit run ${NAME})"
 echo "${RESULT}" | grep -q "Hello LinuxKit"
 
 exit 0
