@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
 const defaultNameForStdin = "moby"
@@ -389,8 +390,10 @@ func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 // this allows inserting metadata into a file in the image
 func metadata(m Moby, md string) ([]byte, error) {
 	switch md {
-	case "yaml":
+	case "json":
 		return json.MarshalIndent(m, "", "    ")
+	case "yaml":
+		return yaml.Marshal(m)
 	default:
 		return []byte{}, fmt.Errorf("Unsupported metadata type: %s", md)
 	}

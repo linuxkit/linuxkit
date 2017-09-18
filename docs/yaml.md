@@ -110,7 +110,7 @@ supported here is `"yaml"` which will output the yaml used to generate the image
 file:
 ```
   - path: etc/linuxkit.yml
-    metadata:yaml
+    metadata: yaml
 ```
 
 ## `trust`
