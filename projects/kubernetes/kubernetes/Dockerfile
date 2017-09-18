@@ -30,9 +30,7 @@ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 RUN rmdir /out/var/run && ln -nfs /run /out/var/run
 
-RUN curl -fSL -o /tmp/cni.tgz https://github.com/containernetworking/cni/releases/download/v0.5.2/cni-amd64-${cni_version}.tgz && \
-    mkdir -p /out/opt/cni/bin /out/etc/cni/net.d && \
-    tar -xzf /tmp/cni.tgz -C /out/opt/cni/bin
+RUN curl -fSL -o /out/root/cni.tgz https://github.com/containernetworking/cni/releases/download/v0.5.2/cni-amd64-${cni_version}.tgz
 RUN curl -fSL -o /out/etc/weave.yaml https://cloud.weave.works/k8s/v1.7/net?v=${weave_version} 
 RUN curl -fSL -o /out/usr/bin/kubelet https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubelet && chmod 0755 /out/usr/bin/kubelet
 RUN curl -fSL -o /out/usr/bin/kubeadm https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubeadm && chmod 0755 /out/usr/bin/kubeadm
@@ -47,4 +45,4 @@ WORKDIR /
 ENTRYPOINT ["/usr/bin/kubelet.sh"]
 COPY --from=build /out /
 ENV KUBECONFIG "/etc/kubernetes/admin.conf"
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/etc/resolv.conf:/etc/resolv.conf", "/run:/run", "/var:/var:rshared,rbind", "/var/lib/kubeadm:/etc/kubernetes", "/var/lib/cni/etc:/rootfs/etc/cni:rshared,rbind", "/var/lib/cni/opt:/rootfs/opt/cni:rshared,rbind"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}], "capabilities": ["all"], "rootfsPropagation": "shared", "pid": "host", "runtime": {"mkdir": ["/var/lib/kubeadm", "/var/lib/cni/etc", "/var/lib/cni/opt"]}}'
+LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/etc/resolv.conf:/etc/resolv.conf", "/run:/run:rshared,rbind", "/var:/var:rshared,rbind", "/var/lib/kubeadm:/etc/kubernetes", "/etc/kubelet.conf:/etc/kubelet.conf"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}], "capabilities": ["all"], "rootfsPropagation": "shared", "pid": "host", "runtime": {"mkdir": ["/var/lib/kubeadm", "/var/lib/cni/etc", "/var/lib/cni/opt"], "mounts": [{"type": "bind", "source": "/var/lib/cni/opt", "destination": "/opt/cni", "options": ["rw", "bind"]}, {"type": "bind", "source": "/var/lib/cni/etc", "destination": "/etc/cni", "options": ["rw", "bind"]}]}}'
