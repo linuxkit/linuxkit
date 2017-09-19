@@ -37,7 +37,7 @@ FROM scratch
 
 COPY . ./
 
-ENTRYPOINT ["/sbin/tini", "--", "/bin/rc.init"]
+ENTRYPOINT ["/bin/rc.init"]
 `
 
 // For now this is a constant that we use in init section only to make

@@ -1,8 +1,0 @@
-init:
-  - mobytest/init-container:132e5ee824d41c70ade5fa10071f32170cb9561e
-  - linuxkit/runc:dfc0437161843bc0dfeb334cda7ffd6a18b76bcd
-  - linuxkit/containerd:d136569c66ce041853d762b7032456419e580efe
-  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
-trust:
-  org:
-    - linuxkit
