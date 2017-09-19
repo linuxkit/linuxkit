@@ -33,3 +33,7 @@ dl: $(patsubst %,dl/%.tar,$(COMMON_IMAGES) $(CONTROL_PLANE_IMAGES))
 .PHONY: clean
 clean:
 	rm -rf dl
+
+.PHONY: refresh
+refresh:
+	./mkversions > versions.mk
