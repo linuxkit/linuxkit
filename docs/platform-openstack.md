@@ -1,6 +1,6 @@
 # LinuxKit with OpenStack
 
-LinuxKit interacts with OpenStack through its native APIs and requires access and provides basic support for pushing images and launching virtual instances.
+LinuxKit interacts with OpenStack through its native APIs, providing basic support for pushing images and launching virtual instances.
 
 Supported (tested) versions of the relevant OpenStack APIs are:
 
@@ -64,6 +64,7 @@ linuxkit run openstack \
   -username=admin \
   -password=xxx \
   -project=linuxkit \
+  -keyname=deadline_ed25519 \
   -network c5d02c5f-c625-4539-8aed-1dab3aa85a0a \
   LinuxKitTest
 ```
