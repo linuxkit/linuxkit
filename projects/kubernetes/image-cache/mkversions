@@ -24,7 +24,7 @@ done
 
 oi() {
 	local i="$1"
-	digest=$(docker image inspect "$repo/$i" | jq -r '.[].RepoDigests[0]')
+	digest=$(docker image inspect --format '{{index .RepoDigests 0}}' "$repo/$i")
 	i=$(echo "${i}@${digest#*@}" | sed -e 's/:/\\:/g')
 	echo " \\"
 	echo -n "  ${i}"
