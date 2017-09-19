@@ -1,8 +1,8 @@
 FROM linuxkit/alpine:a120ad6aead3fe583eaa20e9b75a05ac1b3487da AS build
 
-ENV kubernetes_version v1.7.4
-ENV weave_version      v2.0.1
-ENV cni_version        v0.5.2
+ENV kubernetes_version v1.7.6
+ENV weave_version      v2.0.4
+ENV cni_version        v0.6.0
 
 ENV kube_release_artefacts "https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64"
 
@@ -30,7 +30,7 @@ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 RUN rmdir /out/var/run && ln -nfs /run /out/var/run
 
-RUN curl -fSL -o /out/root/cni.tgz https://github.com/containernetworking/cni/releases/download/v0.5.2/cni-amd64-${cni_version}.tgz
+RUN curl -fSL -o /out/root/cni.tgz https://github.com/containernetworking/plugins/releases/download/${cni_version}/cni-plugins-amd64-${cni_version}.tgz
 RUN curl -fSL -o /out/etc/weave.yaml https://cloud.weave.works/k8s/v1.7/net?v=${weave_version} 
 RUN curl -fSL -o /out/usr/bin/kubelet https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubelet && chmod 0755 /out/usr/bin/kubelet
 RUN curl -fSL -o /out/usr/bin/kubeadm https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubeadm && chmod 0755 /out/usr/bin/kubeadm

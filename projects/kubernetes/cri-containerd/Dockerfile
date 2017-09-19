@@ -13,7 +13,7 @@ ENV GOPATH=/go PATH=$PATH:/go/bin
 
 ENV CRI_CONTAINERD_URL https://github.com/kubernetes-incubator/cri-containerd.git
 #ENV CRI_CONTAINERD_BRANCH pull/NNN/head
-ENV CRI_CONTAINERD_COMMIT a8d49402859167a232b094d971e70c2f4b71b8ea
+ENV CRI_CONTAINERD_COMMIT 437131299b805de9d1431300d8054af61fa54a26
 RUN mkdir -p $GOPATH/src/github.com/kubernetes-incubator && \
     cd $GOPATH/src/github.com/kubernetes-incubator && \
     git clone $CRI_CONTAINERD_URL cri-containerd
