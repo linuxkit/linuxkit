@@ -9,6 +9,9 @@ ENV GOPATH=/go PATH=$PATH:/go/bin
 
 COPY cmd /go/src/cmd
 RUN go-compile.sh /go/src/cmd/init
+RUN go-compile.sh /go/src/cmd/rc.init
+# this makes sure that the multi stage build copies as a symlink
+RUN mkdir /tmp/bin && cd /tmp/bin/ && cp /go/bin/rc.init . && ln -s rc.init rc.shutdown
 
 RUN cd /go/src/cmd/service && ./skanky-vendor.sh $GOPATH/src/github.com/containerd/containerd
 RUN go-compile.sh /go/src/cmd/service
@@ -28,8 +31,8 @@ ENTRYPOINT []
 CMD []
 WORKDIR /
 COPY --from=build /go/bin/init /
+COPY --from=build /tmp/bin /bin/
 COPY --from=build /go/bin/service /usr/bin/
 COPY --from=build usermode-helper /sbin/
 COPY --from=mirror /out/ /
 COPY etc etc/
-COPY bin bin/
