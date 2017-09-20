@@ -1,4 +1,4 @@
-From 863597627dc80b37b08c06a8c64a579af91421a4 Mon Sep 17 00:00:00 2001
+From 42c91eb42712932616f9476d24513d76e0448974 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Tue, 16 May 2017 22:14:03 +0800
 Subject: [PATCH 08/18] hvsock: fix a race in hvs_stream_dequeue()

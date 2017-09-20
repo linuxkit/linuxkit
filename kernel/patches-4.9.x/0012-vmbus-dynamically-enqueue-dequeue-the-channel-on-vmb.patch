@@ -1,4 +1,4 @@
-From 483d33290f59d37d0babb4ab05477df6d9b5594b Mon Sep 17 00:00:00 2001
+From 033e007a311474cf1da044b42d1590a63d94db58 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 24 Mar 2017 20:53:18 +0800
 Subject: [PATCH 12/13] vmbus: dynamically enqueue/dequeue the channel on

@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.9.50
+  image: linuxkit/kernel:4.9.51
   cmdline: "console=ttyS1"
 init:
   - linuxkit/init:6fe9d31a53bbd200183bb31edd795305e868d5a7
@@ -22,7 +22,7 @@ services:
   - name: rngd
     image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
   - name: sshd
-    image: linuxkit/sshd:505a985d7bd7a90f15eca9cb4dc6ec92789d51a0
+    image: linuxkit/sshd:d313eea3d9d7fbcbc927d06a6700325725db2a82
 trust:
   org:
     - linuxkit
