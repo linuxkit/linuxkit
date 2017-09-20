@@ -10,7 +10,15 @@ fi
 if [ -e /etc/kubelet.conf ] ; then
     . /etc/kubelet.conf
 fi
-if [ -e /var/config/userdata ] ; then
+if [ -e /var/config/kubeadm/init ] ; then
+    echo "kubelet.sh: init cluster with metadata \"$(cat /var/config/kubeadm/init)\""
+    # This needs to be in the background since it waits for kubelet to start.
+    # We skip printing the token so it is not persisted in the log.
+    kubeadm-init.sh --skip-token-print $(cat /var/config/kubeadm/init) &
+elif [ -e /var/config/kubeadm/join ] ; then
+    echo "kubelet.sh: joining cluster with metadata \"$(cat /var/config/kubeadm/join)\""
+    kubeadm join --skip-preflight-checks $(cat /var/config/kubeadm/join)
+elif [ -e /var/config/userdata ] ; then
     echo "kubelet.sh: joining cluster with metadata \"$(cat /var/config/userdata)\""
     kubeadm join --skip-preflight-checks $(cat /var/config/userdata)
 fi
