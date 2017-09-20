@@ -16,4 +16,4 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY /dhcpcd.conf /usr/ /
 CMD ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf"]
-LABEL org.mobyproject.config='{"binds": ["/run/resolvconf:/etc"], "capabilities": ["CAP_NET_ADMIN", "CAP_NET_BIND_SERVICE", "CAP_NET_RAW"]}'
+LABEL org.mobyproject.config='{"binds": ["/run/resolvconf:/etc"], "capabilities": ["CAP_NET_ADMIN", "CAP_NET_BIND_SERVICE", "CAP_NET_RAW", "CAP_SYS_ADMIN"]}'
