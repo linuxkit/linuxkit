@@ -2,3 +2,5 @@ image-cache/common/*.tar
 image-cache/common/Dockerfile
 image-cache/control-plane/*.tar
 image-cache/control-plane/Dockerfile
+weave.yaml
+network.yaml
