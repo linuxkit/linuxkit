@@ -36,12 +36,14 @@ services:
   - name: sshd
     image: linuxkit/sshd:d313eea3d9d7fbcbc927d06a6700325725db2a82
   - name: kubelet
-    image: linuxkitprojects/kubernetes:8f3f75005ce56b8588b669ce5d7b02c5d705bbd4
+    image: linuxkitprojects/kubernetes:4eba50ea1fae6f881c65429b9c21afadcdeec853
 files:
   - path: etc/linuxkit.yml
     metadata: yaml
   - path: /etc/kubernetes
     symlink: "/var/lib/kubeadm"
+  - path: /etc/kubeadm/kube-system.init/50-network.yaml
+    source: network.yaml
   - path: /etc/sysctl.d/01-kubernetes.conf
     contents: 'net.ipv4.ip_forward = 1'
   - path: /opt/cni

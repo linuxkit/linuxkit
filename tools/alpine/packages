@@ -19,6 +19,7 @@ busybox-initscripts
 ca-certificates
 cdrkit
 cmake
+coreutils
 cryptsetup
 curl
 dhcpcd

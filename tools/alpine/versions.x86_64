@@ -1,4 +1,4 @@
-# linuxkit/alpine:f2f4db272c910d136380781a97e475013fabda8b-amd64
+# linuxkit/alpine:79987c65c66700171c073151c1d3f0372597bec2-amd64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -29,6 +29,7 @@ ca-certificates-20161130-r2
 cdrkit-1.1.11-r2
 celt051-0.5.1.3-r0
 cmake-3.8.1-r0
+coreutils-8.27-r0
 cryptsetup-1.7.5-r0
 cryptsetup-libs-1.7.5-r0
 curl-7.55.0-r0

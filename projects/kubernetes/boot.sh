@@ -23,7 +23,14 @@ suffix=".iso"
 
 if [ $# -eq 0 ] ; then
     img="kube-master"
-    data=""
+    # If $KUBE_MASTER_AUTOINIT is set, including if it is set to ""
+    # then we configure for auto init. If it is completely unset then
+    # we do not.
+    if [ -n "${KUBE_MASTER_AUTOINIT+x}" ] ; then
+	data="{\"kubeadm\": {\"init\": \"${KUBE_MASTER_AUTOINIT}\"} }"
+    else
+	data=""
+    fi
     state="kube-master-state"
 
     : ${KUBE_VCPUS:=$KUBE_MASTER_VCPUS}
@@ -44,7 +51,7 @@ elif [ $# -gt 1 ] || [ $# -eq 1 -a -n "${KUBE_PRESERVE_STATE}" ] ; then
     img="kube-node"
     name="node-${1}"
     shift
-    data="${*}"
+    data="{\"kubeadm\": {\"join\": \"${*}\"} }"
     state="kube-${name}-state"
 
     : ${KUBE_VCPUS:=$KUBE_NODE_VCPUS}
