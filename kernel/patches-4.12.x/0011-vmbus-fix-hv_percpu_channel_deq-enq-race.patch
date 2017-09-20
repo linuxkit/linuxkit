@@ -1,4 +1,4 @@
-From 5fe9cf6bd66c8359d51bd36a5bffe9d57b5dec4c Mon Sep 17 00:00:00 2001
+From 7cca5a76d748d3522239f82d6e0b02dae2513d5b Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 16:13:18 +0800
 Subject: [PATCH 11/18] vmbus:  fix hv_percpu_channel_deq/enq race

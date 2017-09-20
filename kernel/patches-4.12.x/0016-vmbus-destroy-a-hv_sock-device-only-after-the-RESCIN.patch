@@ -1,4 +1,4 @@
-From 8191f7c4947b305af3dc6a5f545b4db0db9fb408 Mon Sep 17 00:00:00 2001
+From 9c999c9259ee29bbd2ed49c81465ea460ff4ea3a Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Tue, 29 Aug 2017 14:23:39 -0700
 Subject: [PATCH 16/18] vmbus: destroy a hv_sock device only after the
