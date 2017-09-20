@@ -1,5 +1,10 @@
 KUBE_RUNTIME ?= docker
 
+WEAVE_VERSION := v2.0.4
+
+INIT_YAML ?=
+INIT_YAML += weave.yaml
+
 all: tag-container-images build-vm-images
 
 tag-container-images:
@@ -14,11 +19,15 @@ push-container-images:
 
 build-vm-images: kube-master.iso kube-node.iso
 
-kube-master.iso: kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml
+# NB cannot use $^ because $(INIT_YAML) is not for consumption by "moby build"
+kube-master.iso: kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml $(INIT_YAML)
 	moby build -name kube-master -format iso-efi -format iso-bios kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml
 
 kube-node.iso: kube.yml $(KUBE_RUNTIME).yml
-	moby build -name kube-node -format iso-efi -format iso-bios kube.yml $(KUBE_RUNTIME).yml
+	moby build -name kube-node -format iso-efi -format iso-bios $^
+
+weave.yaml:
+	curl -L -o $@ https://cloud.weave.works/k8s/v1.7/net?v=$(WEAVE_VERSION)
 
 clean:
 	rm -f -r \
