@@ -24,6 +24,10 @@ onboot:
   - name: mount
     image: linuxkit/mount:4fe245efb01384e42622c36302e13e386bbaeb08
     command: ["/usr/bin/mountie", "/var/lib"]
+  # make a swap file on the mounted disk
+  - name: swap
+    image: linuxkit/swap:3881b1e0fadb7765d2fa85d03563c887ab9335a6
+    command: ["/swap.sh", "--path", "/var/lib/swap", "--size", "1024M"]
   # mount-vpnkit mounts the 9p share used by vpnkit to coordinate port forwarding
   - name: mount-vpnkit
     image: alpine:3.6
