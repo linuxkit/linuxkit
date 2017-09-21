@@ -40,7 +40,7 @@ RUN go get -u github.com/golang/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
-# checkout containerd
+# checkout and compile containerd
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
@@ -50,6 +50,9 @@ RUN mkdir -p $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
   cd $GOPATH/src/github.com/containerd/containerd && \
   git checkout $CONTAINERD_COMMIT
+RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make
+RUN cd $GOPATH/src/github.com/containerd/containerd && \
+  make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
 
 FROM $BASE
 

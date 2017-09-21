@@ -1,18 +1,7 @@
-FROM linuxkit/alpine:1e67b8fdba849ed2f7e8537c13b7f280639623d6 as alpine
-RUN \
-  apk add \
-  btrfs-progs-dev \
-  gcc \
-  git \
-  go \
-  libc-dev \
-  linux-headers \
-  make \
-  tzdata \
-  && true
+FROM linuxkit/alpine:77287352db68b442534c0005edd6ff750c8189f3 as alpine
+RUN apk add tzdata
 
 WORKDIR $GOPATH/src/github.com/containerd/containerd
-RUN make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
 RUN cp bin/containerd bin/ctr bin/containerd-shim /usr/bin/
 
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/020-containerd
