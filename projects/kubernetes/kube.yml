@@ -15,7 +15,7 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:3ae01a25583ee37a5ff8b09a0e569cb4bd8cf2e9
   - name: dhcpcd
-    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
+    image: linuxkit/dhcpcd:d4408777ed6b6e6e562a5d4938fd09804324b33e
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
     image: linuxkit/metadata:da3138079c168e0c5608d8f3853366c113ed91d2

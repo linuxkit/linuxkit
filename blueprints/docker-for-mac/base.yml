@@ -40,7 +40,7 @@ onboot:
         - /var:/host_var
     command: ["sh", "-c", "mv -v /host_var/log /host_var/lib && ln -vs /var/lib/log /host_var/log"]
   - name: dhcpcd
-    image: linuxkit/dhcpcd:f3f5413abb78fae9020e35bd4788fa93df4530b7
+    image: linuxkit/dhcpcd:d4408777ed6b6e6e562a5d4938fd09804324b33e
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   # Enable acpi to shutdown on power events
