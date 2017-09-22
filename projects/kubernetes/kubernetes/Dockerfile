@@ -50,6 +50,7 @@ RUN apk add --no-cache --initdb -p /out \
     iptables \
     libc6-compat \
     musl \
+    openssl \
     socat \
     util-linux \
     && true
