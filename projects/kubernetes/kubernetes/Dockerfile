@@ -1,13 +1,38 @@
-FROM linuxkit/alpine:79987c65c66700171c073151c1d3f0372597bec2 AS build
+FROM linuxkit/alpine:28254e4530703db4caa6b0199a025c30a987dfa1 AS build
 
 ENV kubernetes_version v1.7.6
 ENV cni_version        v0.6.0
 
-ENV kube_release_artefacts "https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64"
-
 RUN apk add -U --no-cache \
+  bash \
+  coreutils \
   curl \
+  findutils \
+  git \
+  go \
+  grep \
+  libc-dev \
+  linux-headers \
+  make \
+  rsync \
   && true
+
+ENV GOPATH=/go PATH=$PATH:/go/bin
+
+ENV KUBERNETES_URL https://github.com/kubernetes/kubernetes.git
+#ENV KUBERNETES_BRANCH pull/NNN/head
+ENV KUBERNETES_COMMIT ${kubernetes_version}
+RUN mkdir -p $GOPATH/src/github.com/kubernetes && \
+    cd $GOPATH/src/github.com/kubernetes && \
+    git clone $KUBERNETES_URL kubernetes
+WORKDIR $GOPATH/src/github.com/kubernetes/kubernetes
+RUN set -e; \
+    if [ -n "$KUBERNETES_BRANCH" ] ; then \
+        git fetch origin "$KUBERNETES_BRANCH"; \
+    fi; \
+    git checkout $KUBERNETES_COMMIT
+
+RUN make WHAT="cmd/kubelet cmd/kubectl cmd/kubeadm"
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 #coreutils needed for du -B for disk image checks made by kubelet
@@ -28,15 +53,17 @@ RUN apk add --no-cache --initdb -p /out \
     socat \
     util-linux \
     && true
+
+RUN cp _output/bin/kubelet /out/usr/bin/kubelet
+RUN cp _output/bin/kubeadm /out/usr/bin/kubeadm
+RUN cp _output/bin/kubectl /out/usr/bin/kubectl
+
 # Remove apk residuals. We have a read-only rootfs, so apk is of no use.
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 RUN rmdir /out/var/run && ln -nfs /run /out/var/run
 
 RUN curl -fSL -o /out/root/cni.tgz https://github.com/containernetworking/plugins/releases/download/${cni_version}/cni-plugins-amd64-${cni_version}.tgz
-RUN curl -fSL -o /out/usr/bin/kubelet https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubelet && chmod 0755 /out/usr/bin/kubelet
-RUN curl -fSL -o /out/usr/bin/kubeadm https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubeadm && chmod 0755 /out/usr/bin/kubeadm
-RUN curl -fSL -o /out/usr/bin/kubectl https://dl.k8s.io/${kubernetes_version}/bin/linux/amd64/kubectl && chmod 0755 /out/usr/bin/kubectl
 
 ADD kubelet.sh /out/usr/bin/kubelet.sh
 ADD kubeadm-init.sh /kubeadm-init.sh
