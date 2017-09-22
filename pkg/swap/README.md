@@ -9,10 +9,10 @@ Normally, unless you are running explicitly in a desktop version, LinuxKit image
 onboot:
   - name: swap
     image: linuxkit/swap:<hash>
-    command: ["swap.sh","--path","/var/external/swap","--size","2G"]
+    command: ["/swap.sh","--path","/var/external/swap","--size","2G"]
 ```
 
-Note that you **nust** mount the following:
+Note that you **must** mount the following:
 
 * `/var` to `/var` so it can place the swapfile in the right location.
 * `/dev` to `/dev` so it can do the right thing for devices
