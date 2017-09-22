@@ -246,11 +246,14 @@ func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
 		}
-		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "tmpfs", Type: "tmpfs", Destination: "/" + tmp})
-		// remount private as nothing else should see the temporary layers
-		runtime.Mounts = append(runtime.Mounts, specs.Mount{Destination: "/" + tmp, Options: []string{"remount", "private"}})
 		overlayOptions := []string{"lowerdir=/" + root, "upperdir=/" + path.Join(tmp, "upper"), "workdir=/" + path.Join(tmp, "work")}
-		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "overlay", Type: "overlay", Destination: "/" + path.Join(prefix, "rootfs"), Options: overlayOptions})
+		runtimeMounts := append(*runtime.Mounts,
+			specs.Mount{Source: "tmpfs", Type: "tmpfs", Destination: "/" + tmp},
+			// remount private as nothing else should see the temporary layers
+			specs.Mount{Destination: "/" + tmp, Options: []string{"remount", "private"}},
+			specs.Mount{Source: "overlay", Type: "overlay", Destination: "/" + path.Join(prefix, "rootfs"), Options: overlayOptions},
+		)
+		runtime.Mounts = &runtimeMounts
 	} else {
 		if foundElsewhere {
 			// we need to make the mountpoint at rootfs
@@ -264,7 +267,8 @@ func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw
 			}
 		}
 		// either bind from another location, or bind from self to make sure it is a mountpoint as runc prefers this
-		runtime.Mounts = append(runtime.Mounts, specs.Mount{Source: "/" + root, Destination: "/" + path.Join(prefix, "rootfs"), Options: []string{"bind"}})
+		runtimeMounts := append(*runtime.Mounts, specs.Mount{Source: "/" + root, Destination: "/" + path.Join(prefix, "rootfs"), Options: []string{"bind"}})
+		runtime.Mounts = &runtimeMounts
 	}
 
 	// write the runtime config

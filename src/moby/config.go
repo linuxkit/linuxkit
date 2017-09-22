@@ -93,21 +93,21 @@ type Image struct {
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
 type Runtime struct {
-	Mounts     []specs.Mount `yaml:"mounts" json:"mounts,omitempty"`
-	Mkdir      []string      `yaml:"mkdir" json:"mkdir,omitempty"`
-	Interfaces []Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
-	BindNS     Namespaces    `yaml:"bindNS" json:"bindNS,omitempty"`
+	Mounts     *[]specs.Mount `yaml:"mounts" json:"mounts,omitempty"`
+	Mkdir      *[]string      `yaml:"mkdir" json:"mkdir,omitempty"`
+	Interfaces *[]Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
+	BindNS     Namespaces     `yaml:"bindNS" json:"bindNS,omitempty"`
 }
 
 // Namespaces is the type for configuring paths to bind namespaces
 type Namespaces struct {
-	Cgroup string `yaml:"cgroup" json:"cgroup,omitempty"`
-	Ipc    string `yaml:"ipc" json:"ipc,omitempty"`
-	Mnt    string `yaml:"mnt" json:"mnt,omitempty"`
-	Net    string `yaml:"net" json:"net,omitempty"`
-	Pid    string `yaml:"pid" json:"pid,omitempty"`
-	User   string `yaml:"user" json:"user,omitempty"`
-	Uts    string `yaml:"uts" json:"uts,omitempty"`
+	Cgroup *string `yaml:"cgroup" json:"cgroup,omitempty"`
+	Ipc    *string `yaml:"ipc" json:"ipc,omitempty"`
+	Mnt    *string `yaml:"mnt" json:"mnt,omitempty"`
+	Net    *string `yaml:"net" json:"net,omitempty"`
+	Pid    *string `yaml:"pid" json:"pid,omitempty"`
+	User   *string `yaml:"user" json:"user,omitempty"`
+	Uts    *string `yaml:"uts" json:"uts,omitempty"`
 }
 
 // Interface is the runtime config for network interfaces
@@ -422,6 +422,17 @@ func assignInterfaceArray(v1, v2 *[]interface{}) []interface{} {
 	return []interface{}{}
 }
 
+// assignRuntimeInterfaceArray does ordered overrides from arrays of Interface structs
+func assignRuntimeInterfaceArray(v1, v2 *[]Interface) []Interface {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return []Interface{}
+}
+
 // assignStrings does ordered overrides from JSON string array pointers
 func assignStrings(v1, v2 *[]string) []string {
 	if v2 != nil {
@@ -477,6 +488,18 @@ func assignString(v1, v2 *string) string {
 	return ""
 }
 
+// assignString does ordered overrides from JSON string pointers
+func assignStringPtr(v1, v2 *string) *string {
+	if v2 != nil {
+		return v2
+	}
+	if v1 != nil {
+		return v1
+	}
+	s := ""
+	return &s
+}
+
 // assignMappings does ordered overrides from UID, GID maps
 func assignMappings(v1, v2 *[]specs.LinuxIDMapping) []specs.LinuxIDMapping {
 	if v2 != nil {
@@ -501,13 +524,30 @@ func assignResources(v1, v2 *specs.LinuxResources) specs.LinuxResources {
 
 // assignRuntime does ordered overrides from Runtime
 func assignRuntime(v1, v2 *Runtime) Runtime {
-	if v2 != nil {
-		return *v2
+	if v1 == nil {
+		v1 = &Runtime{}
 	}
-	if v1 != nil {
-		return *v1
+	if v2 == nil {
+		v2 = &Runtime{}
 	}
-	return Runtime{}
+	runtimeMounts := assignBinds(v1.Mounts, v2.Mounts)
+	runtimeMkdir := assignStrings(v1.Mkdir, v2.Mkdir)
+	runtimeInterfaces := assignRuntimeInterfaceArray(v1.Interfaces, v2.Interfaces)
+	runtime := Runtime{
+		Mounts:     &runtimeMounts,
+		Mkdir:      &runtimeMkdir,
+		Interfaces: &runtimeInterfaces,
+		BindNS: Namespaces{
+			Cgroup: assignStringPtr(v1.BindNS.Cgroup, v2.BindNS.Cgroup),
+			Ipc:    assignStringPtr(v1.BindNS.Ipc, v2.BindNS.Ipc),
+			Mnt:    assignStringPtr(v1.BindNS.Mnt, v2.BindNS.Mnt),
+			Net:    assignStringPtr(v1.BindNS.Net, v2.BindNS.Net),
+			Pid:    assignStringPtr(v1.BindNS.Pid, v2.BindNS.Pid),
+			User:   assignStringPtr(v1.BindNS.User, v2.BindNS.User),
+			Uts:    assignStringPtr(v1.BindNS.Uts, v2.BindNS.Uts),
+		},
+	}
+	return runtime
 }
 
 // assignStringEmpty does ordered overrides if strings are empty, for
