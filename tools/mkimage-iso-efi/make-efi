@@ -2,6 +2,21 @@
 
 set -e
 
+# get the GRUB2 boot file name
+ARCH=`uname -m`
+case $ARCH in
+x86_64)
+  BOOTFILE=BOOTX64.EFI
+  ROOTDEV=/dev/sr0
+  LINUX_ENTRY=linuxefi
+  ;;
+aarch64)
+  BOOTFILE=BOOTAA64.EFI
+  ROOTDEV=/dev/vda
+  LINUX_ENTRY=linux
+  ;;
+esac
+
 mkdir -p /tmp/efi
 cd /tmp/efi
 
@@ -13,39 +28,38 @@ cd /tmp/efi
 [ -t 0 ] || bsdtar xzf -
 
 CMDLINE="$(cat boot/cmdline)"
-# if no root= root device specified, assume /dev/sr0 ie first CD drive
-echo "${CMDLINE}" | grep -q 'root=' || CMDLINE="${CMDLINE} root=/dev/sr0"
+# if no root= root device specified, assume /dev/{sr0, vda} ie first CD drive
+# need to detect the root device automatically in the future
+echo "${CMDLINE}" | grep -q 'root=' || CMDLINE="${CMDLINE} root=${ROOTDEV}"
 rm boot/cmdline
 
-# Create a EFI boot file with kernel. From:
-# https://github.com/haraldh/mkrescue-uefi/blob/master/mkrescue-uefi.sh
-cp /usr/lib/gummiboot/linuxx64.efi.stub .
-echo "${CMDLINE}" > cmdline.txt
+cp /usr/local/share/$BOOTFILE .
 
-objcopy \
-	--add-section .osrel=/etc/os-release --change-section-vma .osrel=0x20000 \
-	--add-section .cmdline=./cmdline.txt --change-section-vma .cmdline=0x30000 \
-	--add-section .linux=./boot/kernel --change-section-vma .linux=0x40000 \
-	./linuxx64.efi.stub \
-	linuxkit.efi
+CFG="set timeout=0
+set gfxpayload=text
+menuentry 'LinuxKit ISO Image' {
+	$LINUX_ENTRY /boot/kernel ${CMDLINE} text
+}
+"
 
-rm cmdline.txt
+mkdir -p EFI/BOOT
+printf "$CFG" > EFI/BOOT/grub.cfg
 
 # create a ISO with a EFI boot partition
 # Stuff it into a FAT filesystem, making it as small as possible.  511KiB
 # headroom seems to be enough; (x+31)/32*32 rounds up to multiple of 32.
-mkfs.vfat -v -C boot/efi.raw \
-        $(( ($(stat -c %s "linuxkit.efi") / 1024 + 511) \
+mkfs.vfat -v -C boot.img \
+        $(( ($(stat -c %s "${BOOTFILE}") / 1024 + 511) \
 		/ 32 * 32 )) > /dev/null
 echo "mtools_skip_check=1" >> /etc/mtools.conf && \
-mmd -i boot/efi.raw ::/EFI
-mmd -i boot/efi.raw ::/EFI/BOOT
-mcopy -i boot/efi.raw linuxkit.efi ::/EFI/BOOT/BOOTX64.EFI
+mmd -i boot.img ::/EFI
+mmd -i boot.img ::/EFI/BOOT
+mcopy -i boot.img $BOOTFILE ::/EFI/BOOT/
 
-rm linuxkit.efi linuxx64.efi.stub
+rm $BOOTFILE
 
 xorriso -as mkisofs \
-	-R -e boot/efi.raw -no-emul-boot -o linuxkit-efi.iso .
+	-R -e boot.img -hide boot.img -hide boot.catalog -no-emul-boot -o linuxkit-efi.iso .
 
 cat linuxkit-efi.iso
 

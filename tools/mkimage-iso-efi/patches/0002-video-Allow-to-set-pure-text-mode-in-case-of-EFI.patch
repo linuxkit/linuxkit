@@ -1,0 +1,33 @@
+From ac7afa666cb2b7b133b6e27bcf22c9cd90a2936a Mon Sep 17 00:00:00 2001
+From: Dennis Chen <dennis.chen@arm.com>
+Date: Wed, 6 Sep 2017 09:06:54 +0000
+Subject: [PATCH] video: Allow to set pure 'text' mode in case of EFI
+
+Current code doesn't accept a pure text mode when booting
+from UEFI firmware on i386 platform, this will result in
+below error message even we already have 'set gfxpayload=text'
+configured: "no suitable video mode found". This often happens
+when we boot a VM which UEFI firmware doesn't include 'suitable'
+video modes.
+
+Signed-off-by: Dennis Chen <dennis.chen@arm.com>
+---
+ grub-core/loader/i386/linux.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/grub-core/loader/i386/linux.c b/grub-core/loader/i386/linux.c
+index 5fdfea3..8cf1086 100644
+--- a/grub-core/loader/i386/linux.c
++++ b/grub-core/loader/i386/linux.c
+@@ -49,7 +49,7 @@ GRUB_MOD_LICENSE ("GPLv3+");
+ #include <grub/efi/efi.h>
+ #define HAS_VGA_TEXT 0
+ #define DEFAULT_VIDEO_MODE "auto"
+-#define ACCEPTS_PURE_TEXT 0
++#define ACCEPTS_PURE_TEXT 1
+ #elif defined (GRUB_MACHINE_IEEE1275)
+ #include <grub/ieee1275/ieee1275.h>
+ #define HAS_VGA_TEXT 0
+-- 
+2.7.4
+
