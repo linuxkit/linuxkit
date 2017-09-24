@@ -359,6 +359,10 @@ func runQemuLocal(config QemuConfig) error {
 	// Check for OVMF firmware before running
 	if config.UEFI {
 		if config.FWPath == "" {
+			// there is no default on mac
+			if runtime.GOOS == "darwin" {
+				return fmt.Errorf("To run qemu with UEFI firmware on macOS, you must specify the path to locally installed OVMF firmware as `--fw <path>`. You can download OVMF from https://sourceforge.net/projects/edk2/files/OVMF/ ")
+			}
 			config.FWPath = defaultFWPath
 		}
 		if _, err := os.Stat(config.FWPath); err != nil {
