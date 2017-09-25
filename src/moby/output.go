@@ -13,7 +13,7 @@ import (
 
 const (
 	bios       = "linuxkit/mkimage-iso-bios:1140a4f96b04d6744160f6e3ae485bf7f7a945a8@sha256:878c7d7162120be1c388fded863eef28908b3ebf1c0751b78193103c10d4f6d1"
-	efi        = "linuxkit/mkimage-iso-efi:5769b978a0ebf56807b557483ebf539e773ecb6a"
+	efi        = "linuxkit/mkimage-iso-efi:f1f9f9da6dc3fc3827e5f6f60057dd0727cee54d"
 	gcp        = "linuxkit/mkimage-gcp:46716b3d3f7aa1a7607a3426fe0ccebc554b14ee@sha256:18d8e0482f65a2481f5b6ba1e7ce77723b246bf13bdb612be5e64df90297940c"
 	vhd        = "linuxkit/mkimage-vhd:a04c8480d41ca9cef6b7710bd45a592220c3acb2@sha256:ba373dc8ae5dc72685dbe4b872d8f588bc68b2114abd8bdc6a74d82a2b62cce3"
 	vmdk       = "linuxkit/mkimage-vmdk:182b541474ca7965c8e8f987389b651859f760da@sha256:99638c5ddb17614f54c6b8e11bd9d49d1dea9d837f38e0f6c1a5f451085d449b"
