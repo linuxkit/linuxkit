@@ -6,6 +6,9 @@ kernel:
 init:
   - linuxkit/init-lcow:877bfca958c836f7e0ba9a6157088905611a08f9
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
+files:
+  - path: etc/linuxkit.yml
+    metadata: yaml
 trust:
   org:
     - linuxkit
