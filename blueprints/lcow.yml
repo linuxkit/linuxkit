@@ -1,5 +1,6 @@
 kernel:
-  image: linuxkit/kernel:4.12.14
+  # XXX Use the content hash as there are several 4.12.14 images on hub
+  image: linuxkit/kernel:4.12.14-c4d19a4de21def5a5134a6f70ef7212c31104bf1
   cmdline: "console=ttyS0"
   tar: none
 init:
