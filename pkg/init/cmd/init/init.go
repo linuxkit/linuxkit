@@ -196,11 +196,7 @@ func copyFS(newRoot string) error {
 	}
 
 	// chdir to "/" to fix up . and ..
-	if err := os.Chdir("/"); err != nil {
-		return err
-	}
-
-	return nil
+	return os.Chdir("/")
 }
 
 func main() {

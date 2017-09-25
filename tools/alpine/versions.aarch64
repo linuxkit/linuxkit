@@ -1,4 +1,4 @@
-# linuxkit/alpine:a662efbaf4226d0ac358cc009ead9a95b3b1dd99-arm64
+# linuxkit/alpine:9500850c8d76563656517ac571215a26444e8c9b-arm64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -52,6 +52,7 @@ expect-5.45-r3
 fakeroot-1.21-r1
 file-5.32-r0
 findmnt-2.28.2-r2
+findutils-4.6.0-r0
 flex-2.6.4-r1
 fortify-headers-0.8-r0
 g++-6.3.0-r4
@@ -69,6 +70,7 @@ gmp-dev-6.1.2-r0
 gnupg-2.1.20-r0
 gnutls-3.5.13-r0
 go-1.8.3-r0
+grep-3.0-r0
 guile-2.0.13-r0
 guile-libs-2.0.13-r0
 gummiboot-48.1-r0
@@ -210,6 +212,7 @@ qemu-system-aarch64-2.8.1-r1
 qemu-system-arm-2.8.1-r1
 qemu-system-x86_64-2.8.1-r1
 readline-6.3.008-r5
+rsync-3.1.2-r5
 scanelf-1.2.2-r0
 sed-4.4-r0
 sfdisk-2.28.2-r2
