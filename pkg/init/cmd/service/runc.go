@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"io/ioutil"
 	"log"
 	"os"
@@ -50,22 +51,78 @@ func runcInit(rootPath string) int {
 			status = 1
 			continue
 		}
+
 		pidfile := filepath.Join(tmpdir, name)
 		cmd := exec.Command(runcBinary, "create", "--bundle", path, "--pid-file", pidfile, name)
-		cmd.Stdout = os.Stdout
-		cmd.Stderr = os.Stderr
-		if err := cmd.Run(); err != nil {
-			log.Printf("Error creating %s: %v", name, err)
+
+		stdoutFile := filepath.Join("/var/log", "onboot-"+name+".out.log")
+
+		stdoutFd, stdoutFdErr := os.OpenFile(stdoutFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		defer stdoutFd.Close()
+
+		var stdoutCopyErr error
+
+		if stdoutFdErr == nil {
+			stdoutIn, _ := cmd.StdoutPipe()
+			stdoutWriter := io.MultiWriter(os.Stdout, stdoutFd)
+			go func() {
+				_, stdoutCopyErr = io.Copy(stdoutWriter, stdoutIn)
+			}()
+		} else {
+			log.Printf("Could not open %s for writing: %v", stdoutFile, stdoutFdErr)
+			cmd.Stdout = os.Stdout
+		}
+
+		stderrFile := filepath.Join("/var/log", "onboot-"+name+".err.log")
+
+		stderrFd, stderrFdErr := os.OpenFile(stderrFile, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+		defer stderrFd.Close()
+
+		var stderrCopyErr error
+
+		if stderrFdErr == nil {
+			stderrIn, _ := cmd.StderrPipe()
+			stderrWriter := io.MultiWriter(os.Stderr, stderrFd)
+			go func() {
+				_, stderrCopyErr = io.Copy(stderrWriter, stderrIn)
+			}()
+		} else {
+			log.Printf("Could not open %s for writing: %v", stderrFile, stderrFdErr)
+			cmd.Stderr = os.Stderr
+		}
+
+		if err := cmd.Start(); err != nil {
+			log.Printf("Error starting %s: %v", name, err)
 			status = 1
 			// skip cleanup on error for debug
 			continue
 		}
+
+		if err := cmd.Wait(); err != nil {
+			log.Printf("Error waiting for completion of %s: %v", name, err)
+			status = 1
+			continue
+		}
+
+		if stdoutFdErr == nil && stdoutCopyErr != nil {
+			log.Printf("Could not stream stdout for %s: %v", name, stdoutCopyErr)
+			status = 1
+			continue
+		}
+
+		if stderrFdErr == nil && stderrCopyErr != nil {
+			log.Printf("Could not stream stderr for %s: %v", name, stderrCopyErr)
+			status = 1
+			continue
+		}
+
 		pf, err := ioutil.ReadFile(pidfile)
 		if err != nil {
 			log.Printf("Cannot read pidfile: %v", err)
 			status = 1
 			continue
 		}
+
 		pid, err := strconv.Atoi(string(pf))
 		if err != nil {
 			log.Printf("Cannot parse pid from pidfile: %v", err)
