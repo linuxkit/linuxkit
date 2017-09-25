@@ -31,6 +31,7 @@ ebtables
 elfutils-dev
 ethtool
 expect
+findutils
 flex
 gcc
 gettext
@@ -39,6 +40,7 @@ git
 gmp-dev
 gnupg
 go
+grep
 gummiboot
 hvtools
 installkernel
@@ -80,6 +82,7 @@ qemu-img
 qemu-ppc64le
 qemu-system-arm
 qemu-system-x86_64
+rsync
 sed
 sfdisk
 sg3_utils
