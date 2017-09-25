@@ -1,10 +1,14 @@
 kernel:
-  image: linuxkit/kernel:4.12.14
+  # XXX Use the content hash as there are several 4.12.14 images on hub
+  image: linuxkit/kernel:4.12.14-c4d19a4de21def5a5134a6f70ef7212c31104bf1
   cmdline: "console=ttyS0"
   tar: none
 init:
-  - linuxkit/init-lcow:b5d156bfc1318a1c7b94320c87d634e5fd0da091
+  - linuxkit/init-lcow:877bfca958c836f7e0ba9a6157088905611a08f9
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
+files:
+  - path: etc/linuxkit.yml
+    metadata: yaml
 trust:
   org:
     - linuxkit

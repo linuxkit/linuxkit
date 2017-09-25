@@ -1,0 +1,86 @@
+From 5dc143f0f2a3cc5f4d9f2d3a9b89e190dcdb7230 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Tue, 19 Sep 2017 20:05:31 -0700
+Subject: [PATCH 16/18] vmbus: hvsock: add proper sync for
+ vmbus_hvsock_device_unregister()
+
+Without the patch, vmbus_hvsock_device_unregister() can destroy the device
+prematurely.
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit b6ffb4393fb266711b37ed056487665d8650f31a)
+---
+ drivers/hv/channel_mgmt.c | 20 ++++++--------------
+ include/linux/hyperv.h    |  2 ++
+ 2 files changed, 8 insertions(+), 14 deletions(-)
+
+diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
+index a12b1eabc15e..1c20d6afae59 100644
+--- a/drivers/hv/channel_mgmt.c
++++ b/drivers/hv/channel_mgmt.c
+@@ -559,6 +559,8 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+ 	newchannel->device_obj = device_obj;
+ 	atomic_dec(&vmbus_connection.register_in_progress);
+ 
++	newchannel->probe_done = true;
++
+ 	return;
+ 
+ err_deq_chan:
+@@ -905,6 +907,8 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+ 	if (channel->device_obj) {
+ 		if (channel->chn_rescind_callback) {
+ 			channel->chn_rescind_callback(channel);
++			channel->rescind_done = true;
++
+ 			return;
+ 		}
+ 		/*
+@@ -938,28 +942,16 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+ 	}
+ }
+ 
+-static void vmbus_stop_rescind_handling_work(struct work_struct *work)
+-{
+-	atomic_inc(&vmbus_connection.offer_in_progress);
+-}
+-
+ void vmbus_hvsock_device_unregister(struct vmbus_channel *channel)
+ {
+ 	struct work_struct work;
+ 
+ 	BUG_ON(!is_hvsock_channel(channel));
+ 
+-	/* Prevent chn_rescind_callback from running in the rescind path */
+-	INIT_WORK(&work, vmbus_stop_rescind_handling_work);
+-	queue_work_on(vmbus_connection.connect_cpu,
+-		      vmbus_connection.work_queue_rescind, &work);
+-	flush_work(&work);
++	while (!READ_ONCE(channel->probe_done) || !READ_ONCE(channel->rescind_done))
++		msleep(1);
+ 
+-	channel->rescind = true;
+ 	vmbus_device_unregister(channel->device_obj);
+-
+-	/* Unblock the rescind handling */
+-	atomic_dec(&vmbus_connection.offer_in_progress);
+ }
+ EXPORT_SYMBOL_GPL(vmbus_hvsock_device_unregister);
+ 
+diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
+index 511d47e3ee9d..5676f2a16531 100644
+--- a/include/linux/hyperv.h
++++ b/include/linux/hyperv.h
+@@ -896,6 +896,8 @@ struct vmbus_channel {
+ 	 */
+ 	enum hv_numa_policy affinity_policy;
+ 
++	bool probe_done;
++	bool rescind_done;
+ };
+ 
+ static inline bool is_hvsock_channel(const struct vmbus_channel *c)
+-- 
+2.14.1
+
