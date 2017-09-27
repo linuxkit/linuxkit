@@ -1,4 +1,4 @@
-# linuxkit/alpine:28254e4530703db4caa6b0199a025c30a987dfa1-amd64
+# linuxkit/alpine:a94acee63dc1d0bd5cd5006d66514f62373650f2-amd64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -34,6 +34,8 @@ cryptsetup-1.7.5-r0
 cryptsetup-libs-1.7.5-r0
 curl-7.55.0-r0
 db-5.3.28-r0
+dbus-1.10.14-r0
+dbus-libs-1.10.14-r0
 device-mapper-libs-2.02.168-r3
 dhcpcd-6.11.5-r1
 diffutils-3.5-r0
@@ -139,6 +141,7 @@ libmount-2.28.2-r2
 libmspack-0.5_alpha-r1
 libnfs-1.11.0-r0
 libnftnl-libs-1.0.7-r0
+libnl3-3.2.28-r0
 libogg-1.3.2-r1
 libpcap-1.8.1-r0
 libpciaccess-0.13.4-r1
@@ -205,6 +208,7 @@ p11-kit-0.23.2-r1
 patch-2.7.5-r1
 pax-utils-1.2.2-r0
 pcre-8.41-r0
+pcsc-lite-libs-1.8.21-r0
 perl-5.24.1-r2
 pinentry-1.0.0-r0
 pixman-0.34.0-r0
@@ -251,6 +255,8 @@ vde2-libs-2.3.2-r7
 vim-8.0.0595-r0
 wayland-1.13.0-r0
 wireguard-tools-0.0.20170907-r0
+wireless-tools-30_pre9-r0
+wpa_supplicant-2.6-r3
 xfsprogs-4.5.0-r0
 xfsprogs-extra-4.5.0-r0
 xfsprogs-libs-4.5.0-r0
