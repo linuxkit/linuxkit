@@ -99,6 +99,8 @@ tzdata
 util-linux
 util-linux-dev
 vim
+wireless-tools
+wpa_supplicant
 xfsprogs
 xfsprogs-extra
 xorriso
