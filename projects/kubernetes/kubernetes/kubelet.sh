@@ -49,4 +49,5 @@ exec kubelet --kubeconfig=${conf} \
 	      --network-plugin=cni \
 	      --cni-conf-dir=/var/lib/cni/etc/net.d \
 	      --cni-bin-dir=/var/lib/cni/opt/bin \
+	      --cadvisor-port=0 \
 	      $KUBELET_ARGS $@
