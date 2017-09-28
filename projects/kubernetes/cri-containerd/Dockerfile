@@ -7,13 +7,15 @@ RUN \
   git \
   go \
   libc-dev \
+  libseccomp-dev \
+  linux-headers \
   make \
   && true
 ENV GOPATH=/go PATH=$PATH:/go/bin
 
 ENV CRI_CONTAINERD_URL https://github.com/kubernetes-incubator/cri-containerd.git
 #ENV CRI_CONTAINERD_BRANCH pull/NNN/head
-ENV CRI_CONTAINERD_COMMIT a2dbc6ec1ce63fe8c54543c04df0a1a45abdd989
+ENV CRI_CONTAINERD_COMMIT 0e6e59348122e86842bcd93c75c1d4a264ca1288
 RUN mkdir -p $GOPATH/src/github.com/kubernetes-incubator && \
     cd $GOPATH/src/github.com/kubernetes-incubator && \
     git clone $CRI_CONTAINERD_URL cri-containerd
@@ -23,7 +25,7 @@ RUN set -e; \
         git fetch origin "$CRI_CONTAINERD_BRANCH"; \
     fi; \
     git checkout $CRI_CONTAINERD_COMMIT
-RUN make static-binaries
+RUN make static-binaries BUILD_TAGS="seccomp"
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 # util-linux because a full ns-enter is required.
@@ -46,4 +48,4 @@ FROM scratch
 WORKDIR /
 ENTRYPOINT ["cri-containerd", "-v", "2", "--alsologtostderr", "--network-bin-dir", "/var/lib/cni/opt/bin", "--network-conf-dir", "/var/lib/cni/etc/net.d"]
 COPY --from=build /out /
-LABEL org.mobyproject.config='{"binds": ["/etc/resolv.conf:/etc/resolv.conf", "/run:/run:rshared,rbind", "/tmp:/tmp", "/var:/var:rshared,rbind", "/var/lib/kubeadm:/etc/kubernetes", "/var/lib/cni/etc:/etc/cni:rshared,rbind", "/var/lib/cni/opt:/opt/cni:rshared,rbind", "/run/containerd/containerd.sock:/run/containerd/containerd.sock"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}], "capabilities": ["all"], "rootfsPropagation": "shared", "pid": "host", "runtime": {"mkdir": ["/var/lib/kubeadm", "/var/lib/cni/etc/net.d", "/var/lib/cni/opt"]}}'
+LABEL org.mobyproject.config='{"binds": ["/etc/resolv.conf:/etc/resolv.conf", "/run:/run:rshared,rbind", "/dev:/dev", "/tmp:/tmp", "/var:/var:rshared,rbind", "/var/lib/kubeadm:/etc/kubernetes", "/var/lib/cni/etc:/etc/cni:rshared,rbind", "/var/lib/cni/opt:/opt/cni:rshared,rbind", "/run/containerd/containerd.sock:/run/containerd/containerd.sock"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}], "capabilities": ["all"], "rootfsPropagation": "shared", "pid": "host", "runtime": {"mkdir": ["/var/lib/kubeadm", "/var/lib/cni/etc/net.d", "/var/lib/cni/opt"]}}'

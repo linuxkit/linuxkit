@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 )
@@ -114,6 +115,84 @@ func findFirst(drives []string) (string, error) {
 	return first, nil
 }
 
+func makeDevLinks() error {
+	rex := regexp.MustCompile(`([A-Z]+)=("(?:\\.|[^"])*") ?`)
+
+	byLabel := "/dev/disk/by-label"
+	byUUID := "/dev/disk/by-uuid"
+	for _, p := range []string{byLabel, byUUID} {
+		err := os.MkdirAll(p, 0755)
+		if err != nil {
+			return err
+		}
+	}
+
+	devs, err := ioutil.ReadDir("/sys/class/block")
+	if err != nil {
+		return err
+	}
+	for _, dev := range devs {
+		name := dev.Name()
+		devpath := filepath.Join("/dev", name)
+		outb, err := exec.Command("blkid", devpath).CombinedOutput()
+		if err != nil {
+			log.Printf("Unable to get blkid for %s: %v", devpath, err)
+			continue
+		}
+		out := string(outb)
+		if out == "" {
+			continue
+		}
+		prefix := devpath + ": "
+		if !strings.HasPrefix(out, prefix) {
+			log.Printf("Malformed blkid for %s: %s", name, out)
+			continue
+		}
+		out = strings.TrimPrefix(out, prefix)
+
+		for _, match := range rex.FindAllStringSubmatch(out, -1) {
+			key := match[1]
+
+			val, err := strconv.Unquote(match[2])
+			if err != nil {
+				log.Printf("Failed to parse: %s\n", match[0])
+				continue
+			}
+
+			switch key {
+			case "LABEL":
+				// This is not currently handled
+				// because for compatibility we would
+				// need to encode val according to
+				// blkid_encode_string which hex
+				// escapes certain chacters as \xXX.
+				//
+				// See:
+				// https://github.com/systemd/systemd/blob/8d8ce9e2cd066e90c17e2d1eb1882defabb1fa63/src/udev/udev-builtin-blkid.c#L61..L66
+				// https://www.kernel.org/pub/linux/utils/util-linux/v2.21/libblkid-docs/libblkid-Encoding-utils.html
+			case "UUID":
+				// Strictly the value should be
+				// encoded here as with "LABEL" but we
+				// take the chance that a string UUID
+				// is unlikely to contain any unsafe
+				// characters.
+				sympath := filepath.Join(byUUID, val)
+				// udev makes these relative links, copy that behaviour.
+				tgtpath := filepath.Join("..", "..", name)
+				if err := os.Symlink(tgtpath, sympath); err != nil {
+					log.Printf("Failed to create %q: %v", err)
+					continue
+				}
+			case "TYPE":
+				// uninteresting
+			default:
+				log.Printf("unused %q blkid property %q", name, key, match[0])
+			}
+		}
+	}
+	return nil
+}
+
 // return a list of all available drives
 func findDrives() []string {
 	driveKeys := []string{}
@@ -189,4 +268,9 @@ func main() {
 	if err := mount(deviceVar, mountpoint); err != nil {
 		log.Fatal(err)
 	}
+
+	if err := makeDevLinks(); err != nil {
+		log.Printf("Failed to make /dev/ links for: %v", err)
+	}
+
 }
