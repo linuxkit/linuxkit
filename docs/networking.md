@@ -1,9 +1,30 @@
 # Networking
 
-While the common pattern of using LinuxKit inside the virtualized environment
-doesn't usually bring any network connectivity issues, they still may occur.
-Moreover, LinuxKit may be used on the real hardware, and in that case the
-network setup could be a major part of the getting the image run.
+By default, linuxkit recognizes network devices but does not configure them.
+You must provide either static configuration or use dhcpcd (onboot or as a service)
+to get an IP.
+
+The normal (and simplest) use-case is just including dhcpcd into the onboot section,
+this will cause dhcpcd to startup *once* and assign an IP:
+```
+onboot:
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:<hash>
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+```
+
+The alternative method is to make it a service. This ensures dhcpcd catches any updates,
+but may cause issues with services that expect an IP address on startup,
+since service launch order is *not* guaranteed.
+
+Similarly, using WiFi requires wpa_supplicant in addition to dhcpd.
+
+Finally, if you require any specialized firmware or device drivers for your network card,
+you may need to load it.
+
+While the common setup of LinuxKit doesn't usually bring any network connectivity issues,
+they still may occur. Moreover, LinuxKit may be used on the real hardware,
+and in that case the network setup could be a major part of the getting the image run.
 
 ## General Steps
 
@@ -111,46 +132,3 @@ services:
 ```
 
 You may want to use a configuration file too - the sample above provides just basic functionality.
-
-## Sample linuxkit.yml
-
-At the end, you will have `linuxkit.yml` like this for the Wi-Fi configuration:
-```
-kernel:
-  image: <custom kernel>
-  cmdline: "console=tty0"
-init:
-  - linuxkit/init:<hash>
-  - linuxkit/runc:<hash>
-  - linuxkit/containerd:<hash>
-onboot:
-  - name: modprobe
-    image: linuxkit/modprobe:<hash>
-    command: ["modprobe", "<driver>"]
-services:
-  - name: wpa_supplicant
-    image: linuxkit/wpa_supplicant:<hash>
-    binds:
-     - /etc/wpa_supplicant:/etc/wpa_supplicant
-    command: ["/sbin/wpa_supplicant", "-i", "wlan0", "-c", "/etc/wpa_supplicant/wpa_supplicant.conf"]
-  - name: dhcpcd
-    image: linuxkit/dhcpcd:<hash>
-    command: ["/sbin/dhcpcd", "wlan0"]
-  - name: getty
-    image: linuxkit/getty:<hash>
-    env:
-     - INSECURE=true
-files:
-files:
-  - path: /lib/firmware/<firmware>
-    source: <firmware>
-  - path: etc/wpa_supplicant/wpa_supplicant.conf
-    contents: |
-      network={
-        ssid="<ssid>"
-        psk="<password>"
-      }
-trust:
-  org:
-    - linuxkit
-```
