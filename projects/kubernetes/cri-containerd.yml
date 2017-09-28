@@ -2,6 +2,6 @@ services:
   - name: cri-containerd
     image: linuxkitprojects/cri-containerd:da520622a5cecb07044ef76b0b84102807527fb5
 files:
-  - path: /etc/kubelet.conf
+  - path: /etc/kubelet.sh.conf
     contents: |
       KUBELET_ARGS="--container-runtime=remote --container-runtime-endpoint=unix:///var/run/cri-containerd.sock"
