@@ -7,8 +7,8 @@ if [ ! -e /var/lib/cni/.opt.defaults-extracted ] ; then
     tar -xzf /root/cni.tgz -C /var/lib/cni/opt/bin
     touch /var/lib/cni/.opt.defaults-extracted
 fi
-if [ -e /etc/kubelet.conf ] ; then
-    . /etc/kubelet.conf
+if [ -e /etc/kubelet.sh.conf ] ; then
+    . /etc/kubelet.sh.conf
 fi
 if [ -e /var/config/kubeadm/init ] ; then
     echo "kubelet.sh: init cluster with metadata \"$(cat /var/config/kubeadm/init)\""
