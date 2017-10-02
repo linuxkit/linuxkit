@@ -1,4 +1,4 @@
-# linuxkit/alpine:8517600ba827ecea0849e3e0d7eb61d9a4b518be-arm64
+# linuxkit/alpine:0b37067e4bdd813841c212b9cf28303751a21871-arm64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -16,6 +16,7 @@ binutils-2.28-r2
 binutils-dev-2.28-r2
 binutils-libs-2.28-r2
 bison-3.0.4-r0
+blkid-2.28.2-r2
 bsd-compat-headers-0.7.1-r0
 btrfs-progs-4.10.2-r0
 btrfs-progs-dev-4.10.2-r0
@@ -247,7 +248,7 @@ util-linux-dev-2.28.2-r2
 vde2-libs-2.3.2-r7
 vim-8.0.0595-r0
 wayland-1.13.0-r0
-wireguard-tools-0.0.20170918-r0
+wireguard-tools-0.0.20171001-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r3
 xfsprogs-4.5.0-r0
