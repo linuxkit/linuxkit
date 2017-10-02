@@ -10,7 +10,12 @@ fi
 if [ -e /etc/kubelet.sh.conf ] ; then
     . /etc/kubelet.sh.conf
 fi
-if [ -e /var/config/kubeadm/init ] ; then
+
+conf=/var/lib/kubeadm/kubelet.conf
+
+if [ -f "${conf}" ] ; then
+    echo "kubelet.sh: kubelet already configured"
+elif [ -e /var/config/kubeadm/init ] ; then
     echo "kubelet.sh: init cluster with metadata \"$(cat /var/config/kubeadm/init)\""
     # This needs to be in the background since it waits for kubelet to start.
     # We skip printing the token so it is not persisted in the log.
@@ -22,8 +27,6 @@ elif [ -e /var/config/userdata ] ; then
     echo "kubelet.sh: joining cluster with metadata \"$(cat /var/config/userdata)\""
     kubeadm join --skip-preflight-checks $(cat /var/config/userdata)
 fi
-
-conf=/var/lib/kubeadm/kubelet.conf
 
 echo "kubelet.sh: waiting for ${conf}"
 # TODO(ijc) is there a race between kubeadm creating this file and
