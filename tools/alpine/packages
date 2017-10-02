@@ -18,6 +18,7 @@ build-base
 busybox-initscripts
 ca-certificates
 cdrkit
+cifs-utils
 cmake
 coreutils
 cryptsetup
