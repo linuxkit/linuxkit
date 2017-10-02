@@ -11,7 +11,7 @@ if [ -e /etc/kubelet.sh.conf ] ; then
     . /etc/kubelet.sh.conf
 fi
 
-conf=/var/lib/kubeadm/kubelet.conf
+conf=/etc/kubernetes/kubelet.conf
 
 if [ -f "${conf}" ] ; then
     echo "kubelet.sh: kubelet already configured"
@@ -43,7 +43,7 @@ echo "kubelet.sh: ${conf} has arrived" 2>&1
 
 exec kubelet --kubeconfig=${conf} \
 	      --require-kubeconfig=true \
-	      --pod-manifest-path=/var/lib/kubeadm/manifests \
+	      --pod-manifest-path=/etc/kubernetes/manifests \
 	      --allow-privileged=true \
 	      --cluster-dns=10.96.0.10 \
 	      --cluster-domain=cluster.local \
