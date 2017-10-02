@@ -29,7 +29,7 @@ network.yaml: $(NETWORK).yaml
 	ln -nf $< $@
 
 weave-%.yaml:
-	curl -L -o $@ https://cloud.weave.works/k8s/v1.7/net?v=$*
+	curl -L -o $@ https://cloud.weave.works/k8s/v1.8/net?v=$*
 
 clean:
 	rm -f -r \
