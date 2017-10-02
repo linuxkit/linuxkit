@@ -1,7 +1,7 @@
-From 50484ef9bc6ade9f9cd6ed2900a63e754b7ed1a0 Mon Sep 17 00:00:00 2001
+From e16c7250e59620a80d69bc09fa1f27b172ec36f8 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 18:52:02 -0600
-Subject: [PATCH 07/18] tools: hv_sock: 2 simple test cases.
+Subject: [PATCH 07/17] tools: hv_sock: 2 simple test cases.
 
 Please read this document first:
 https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/user-guide/make-integration-service

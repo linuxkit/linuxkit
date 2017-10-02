@@ -1,7 +1,7 @@
-From 0f10dde0988e2cac2d8872bf99c71334a5841598 Mon Sep 17 00:00:00 2001
+From 93ac962f7611de9759ff2f0697ca40725aa979f8 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:20 -0600
-Subject: [PATCH 02/18] vmbus: remove "goto error_clean_msglist" in
+Subject: [PATCH 02/17] vmbus: remove "goto error_clean_msglist" in
  vmbus_open()
 
 This is just a cleanup patch to simplify the code a little.
@@ -18,7 +18,7 @@ Origin: git@github.com:dcui/linux.git
  1 file changed, 7 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 6ef18e9e3eca..ee1e87eec16f 100644
+index 6e172cdf42f7..42498ecd0f02 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
 @@ -180,17 +180,18 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,

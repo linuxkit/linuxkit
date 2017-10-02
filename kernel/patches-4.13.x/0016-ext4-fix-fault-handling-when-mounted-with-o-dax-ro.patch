@@ -1,7 +1,7 @@
-From 33f5b46c4e0e21b17a41dcfd181c95d9997b4436 Mon Sep 17 00:00:00 2001
+From 89a6593084790629c889a4d7f0f3f13750012ae8 Mon Sep 17 00:00:00 2001
 From: Randy Dodgen <dodgen@google.com>
 Date: Thu, 24 Aug 2017 15:26:01 -0400
-Subject: [PATCH 17/18] ext4: fix fault handling when mounted with -o dax,ro
+Subject: [PATCH 16/17] ext4: fix fault handling when mounted with -o dax,ro
 
 If an ext4 filesystem is mounted with both the DAX and read-only
 options, executables on that filesystem will fail to start (claiming
@@ -31,10 +31,10 @@ Origin: https://github.com/torvalds/linux
  1 file changed, 14 insertions(+), 1 deletion(-)
 
 diff --git a/fs/ext4/file.c b/fs/ext4/file.c
-index 407fc5aa32a7..d8b9cb1109aa 100644
+index 86ea1d92839a..197653ea6041 100644
 --- a/fs/ext4/file.c
 +++ b/fs/ext4/file.c
-@@ -260,7 +260,20 @@ static int ext4_dax_huge_fault(struct vm_fault *vmf,
+@@ -279,7 +279,20 @@ static int ext4_dax_huge_fault(struct vm_fault *vmf,
  	handle_t *handle = NULL;
  	struct inode *inode = file_inode(vmf->vma->vm_file);
  	struct super_block *sb = inode->i_sb;

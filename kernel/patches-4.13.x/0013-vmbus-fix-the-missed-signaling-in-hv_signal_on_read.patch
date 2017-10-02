@@ -1,7 +1,7 @@
-From d3d264cd90f9fd4fff74d6cbacb5b64a09964811 Mon Sep 17 00:00:00 2001
+From 34af6a23dba87ebfc4654a256614da2caf565b8c Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 28 Jun 2017 23:50:38 +0800
-Subject: [PATCH 14/18] vmbus: fix the missed signaling in hv_signal_on_read()
+Subject: [PATCH 13/17] vmbus: fix the missed signaling in hv_signal_on_read()
 
 There is an off-by-one bug here, which can cause host-to-guest write to stall.
 
@@ -19,10 +19,10 @@ Origin: git@github.com:dcui/linux.git
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index b6975010e798..511d47e3ee9d 100644
+index f5d3e8c01401..cc28cd20256f 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -1518,11 +1518,11 @@ static inline  void hv_signal_on_read(struct vmbus_channel *channel)
+@@ -1517,11 +1517,11 @@ static inline  void hv_signal_on_read(struct vmbus_channel *channel)
  
  	cur_write_sz = hv_get_bytes_to_write(rbi);
  

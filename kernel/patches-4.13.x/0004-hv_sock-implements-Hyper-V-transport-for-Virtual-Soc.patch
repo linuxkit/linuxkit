@@ -1,7 +1,7 @@
-From d8721bf7ff95eca665175a735ade87ead94ebe4f Mon Sep 17 00:00:00 2001
+From e3e97eb80152a7c838a9e7e8f43def045804b095 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:26 -0600
-Subject: [PATCH 04/18] hv_sock: implements Hyper-V transport for Virtual
+Subject: [PATCH 04/17] hv_sock: implements Hyper-V transport for Virtual
  Sockets (AF_VSOCK)
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
@@ -45,10 +45,10 @@ Origin: git@github.com:dcui/linux.git
  create mode 100644 net/vmw_vsock/hyperv_transport.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 767e9d202adf..db1209547aa4 100644
+index 1c3feffb1c1c..6b8572bac997 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
-@@ -6178,6 +6178,7 @@ F:	drivers/net/hyperv/
+@@ -6269,6 +6269,7 @@ F:	drivers/net/hyperv/
  F:	drivers/scsi/storvsc_drv.c
  F:	drivers/uio/uio_hv_generic.c
  F:	drivers/video/fbdev/hyperv_fb.c

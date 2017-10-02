@@ -1,7 +1,7 @@
-From cf55ec1e609456fc2a21d6c66f0419d03975462f Mon Sep 17 00:00:00 2001
+From 962c7f190b5cc925205ba102642d8e4f4e37e874 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 21:32:00 +0800
-Subject: [PATCH 12/18] vmbus: add vmbus onoffer/onoffer_rescind sync.
+Subject: [PATCH 11/17] vmbus: add vmbus onoffer/onoffer_rescind sync.
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: git@github.com:dcui/linux.git
@@ -13,10 +13,10 @@ Origin: git@github.com:dcui/linux.git
  3 files changed, 21 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 19ad79099492..a12b1eabc15e 100644
+index 117157c8e284..c524ca967d8f 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -467,6 +467,7 @@ void vmbus_free_channels(void)
+@@ -466,6 +466,7 @@ void vmbus_free_channels(void)
  static void vmbus_process_offer(struct vmbus_channel *newchannel)
  {
  	struct vmbus_channel *channel;
@@ -24,7 +24,7 @@ index 19ad79099492..a12b1eabc15e 100644
  	bool fnew = true;
  	unsigned long flags;
  	u16 dev_type;
-@@ -524,6 +525,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -523,6 +524,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  		if (channel->sc_creation_callback != NULL)
  			channel->sc_creation_callback(newchannel);
  		atomic_dec(&vmbus_connection.offer_in_progress);
@@ -32,7 +32,7 @@ index 19ad79099492..a12b1eabc15e 100644
  		return;
  	}
  
-@@ -532,33 +534,36 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -531,33 +533,36 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  	 * We need to set the DeviceObject field before calling
  	 * vmbus_child_dev_add()
  	 */
@@ -75,7 +75,7 @@ index 19ad79099492..a12b1eabc15e 100644
  	mutex_lock(&vmbus_connection.channel_mutex);
  	list_del(&newchannel->listentry);
  	mutex_unlock(&vmbus_connection.channel_mutex);
-@@ -889,6 +894,14 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -888,6 +893,14 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  
  	vmbus_rescind_cleanup(channel);
  
@@ -91,7 +91,7 @@ index 19ad79099492..a12b1eabc15e 100644
  		if (channel->chn_rescind_callback) {
  			channel->chn_rescind_callback(channel);
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 7b8603a00555..30ae1d291527 100644
+index 80270384053e..5b8234994155 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -309,6 +309,7 @@ struct vmbus_connection {
@@ -103,10 +103,10 @@ index 7b8603a00555..30ae1d291527 100644
  	enum vmbus_connect_state conn_state;
  
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index fd221cffeb4d..fc6a5893d54c 100644
+index fb50edf6ad17..1647f534a1bf 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -871,6 +871,7 @@ static void vmbus_dispatch_msg_work(struct work_struct *work)
+@@ -840,6 +840,7 @@ static void vmbus_dispatch_msg_work(struct work_struct *work)
  		flush_workqueue(vmbus_connection.work_queue_rescind);
  
  		atomic_inc(&vmbus_connection.offer_in_progress);

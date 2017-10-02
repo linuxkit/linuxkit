@@ -1,7 +1,7 @@
-From 7cca5a76d748d3522239f82d6e0b02dae2513d5b Mon Sep 17 00:00:00 2001
+From defed6c02a8011530d57343ac76af671be1a20e6 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Mon, 5 Jun 2017 16:13:18 +0800
-Subject: [PATCH 11/18] vmbus:  fix hv_percpu_channel_deq/enq race
+Subject: [PATCH 10/17] vmbus: fix hv_percpu_channel_deq/enq race
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: git@github.com:dcui/linux.git
@@ -14,10 +14,10 @@ Origin: git@github.com:dcui/linux.git
  4 files changed, 95 insertions(+), 8 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index f5296548cdc9..19ad79099492 100644
+index 1afa7a699dd2..117157c8e284 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -365,11 +365,16 @@ static void percpu_channel_enq(void *arg)
+@@ -364,11 +364,16 @@ static void percpu_channel_enq(void *arg)
  
  void hv_percpu_channel_enq(struct vmbus_channel *channel)
  {
@@ -35,7 +35,7 @@ index f5296548cdc9..19ad79099492 100644
  
  	put_cpu();
  }
-@@ -383,11 +388,16 @@ static void percpu_channel_deq(void *arg)
+@@ -382,11 +387,16 @@ static void percpu_channel_deq(void *arg)
  
  void hv_percpu_channel_deq(struct vmbus_channel *channel)
  {
@@ -53,7 +53,7 @@ index f5296548cdc9..19ad79099492 100644
  
  	put_cpu();
  }
-@@ -495,7 +505,6 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -494,7 +504,6 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  			channel->num_sc++;
  			spin_unlock_irqrestore(&channel->lock, flags);
  		} else {
@@ -61,7 +61,7 @@ index f5296548cdc9..19ad79099492 100644
  			goto err_free_chan;
  		}
  	}
-@@ -549,6 +558,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -548,6 +557,7 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  	return;
  
  err_deq_chan:
@@ -69,7 +69,7 @@ index f5296548cdc9..19ad79099492 100644
  	mutex_lock(&vmbus_connection.channel_mutex);
  	list_del(&newchannel->listentry);
  	mutex_unlock(&vmbus_connection.channel_mutex);
-@@ -915,16 +925,28 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -914,16 +924,28 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  	}
  }
  
@@ -101,7 +101,7 @@ index f5296548cdc9..19ad79099492 100644
  EXPORT_SYMBOL_GPL(vmbus_hvsock_device_unregister);
  
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index b78ee787def0..d2c4d61ff7d3 100644
+index 59c11ff90d12..a79b615b2d98 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
 @@ -156,6 +156,12 @@ int vmbus_connect(void)
@@ -130,7 +130,7 @@ index b78ee787def0..d2c4d61ff7d3 100644
  		drain_workqueue(vmbus_connection.work_queue);
  		destroy_workqueue(vmbus_connection.work_queue);
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 8ce4ae1c78d0..7b8603a00555 100644
+index 1b6a5e0dfa75..80270384053e 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -339,6 +339,7 @@ struct vmbus_connection {
@@ -142,10 +142,10 @@ index 8ce4ae1c78d0..7b8603a00555 100644
  
  
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 59bb3efa6e10..fd221cffeb4d 100644
+index ed84e96715a0..fb50edf6ad17 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -837,6 +837,52 @@ static void vmbus_onmessage_work(struct work_struct *work)
+@@ -806,6 +806,52 @@ static void vmbus_onmessage_work(struct work_struct *work)
  	kfree(ctx);
  }
  
@@ -198,7 +198,7 @@ index 59bb3efa6e10..fd221cffeb4d 100644
  static void hv_process_timer_expiration(struct hv_message *msg,
  					struct hv_per_cpu_context *hv_cpu)
  {
-@@ -876,9 +922,10 @@ void vmbus_on_msg_dpc(unsigned long data)
+@@ -845,9 +891,10 @@ void vmbus_on_msg_dpc(unsigned long data)
  		if (ctx == NULL)
  			return;
  
@@ -210,7 +210,7 @@ index 59bb3efa6e10..fd221cffeb4d 100644
  		/*
  		 * The host can generate a rescind message while we
  		 * may still be handling the original offer. We deal with
-@@ -891,8 +938,9 @@ void vmbus_on_msg_dpc(unsigned long data)
+@@ -860,8 +907,9 @@ void vmbus_on_msg_dpc(unsigned long data)
  			 * If we are handling the rescind message;
  			 * schedule the work on the global work queue.
  			 */
@@ -222,7 +222,7 @@ index 59bb3efa6e10..fd221cffeb4d 100644
  			break;
  
  		case CHANNELMSG_OFFERCHANNEL:
-@@ -905,6 +953,9 @@ void vmbus_on_msg_dpc(unsigned long data)
+@@ -874,6 +922,9 @@ void vmbus_on_msg_dpc(unsigned long data)
  		default:
  			queue_work(vmbus_connection.work_queue, &ctx->work);
  		}
@@ -232,7 +232,7 @@ index 59bb3efa6e10..fd221cffeb4d 100644
  	} else
  		entry->message_handler(hdr);
  
-@@ -1202,6 +1253,8 @@ int vmbus_device_register(struct hv_device *child_device_obj)
+@@ -1171,6 +1222,8 @@ int vmbus_device_register(struct hv_device *child_device_obj)
  	child_device_obj->device.parent = &hv_acpi_dev->dev;
  	child_device_obj->device.release = vmbus_device_release;
  

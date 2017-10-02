@@ -1,7 +1,7 @@
-From 802ab46179cf3c804bdb4f01f70e7d179fde11a8 Mon Sep 17 00:00:00 2001
+From 1f778801debf63d90361b12134933f83b8c5c0ba Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 21 Jun 2017 22:30:42 +0800
-Subject: [PATCH 13/18] hv-sock: a temporary workaround for the
+Subject: [PATCH 12/17] hv-sock: a temporary workaround for the
  pending_send_size issue
 
 While I'm trying to find out the root cause, I believe this can work

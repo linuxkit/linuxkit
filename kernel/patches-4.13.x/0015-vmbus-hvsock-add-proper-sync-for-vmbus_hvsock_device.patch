@@ -1,7 +1,7 @@
-From 5dc143f0f2a3cc5f4d9f2d3a9b89e190dcdb7230 Mon Sep 17 00:00:00 2001
+From 13e0bf738c0b4a202a72f6b73aacd75f7109e293 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Tue, 19 Sep 2017 20:05:31 -0700
-Subject: [PATCH 16/18] vmbus: hvsock: add proper sync for
+Subject: [PATCH 15/17] vmbus: hvsock: add proper sync for
  vmbus_hvsock_device_unregister()
 
 Without the patch, vmbus_hvsock_device_unregister() can destroy the device
@@ -16,10 +16,10 @@ Origin: git@github.com:dcui/linux.git
  2 files changed, 8 insertions(+), 14 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index a12b1eabc15e..1c20d6afae59 100644
+index c524ca967d8f..7437385738ac 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -559,6 +559,8 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
+@@ -558,6 +558,8 @@ static void vmbus_process_offer(struct vmbus_channel *newchannel)
  	newchannel->device_obj = device_obj;
  	atomic_dec(&vmbus_connection.register_in_progress);
  
@@ -28,7 +28,7 @@ index a12b1eabc15e..1c20d6afae59 100644
  	return;
  
  err_deq_chan:
-@@ -905,6 +907,8 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -904,6 +906,8 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  	if (channel->device_obj) {
  		if (channel->chn_rescind_callback) {
  			channel->chn_rescind_callback(channel);
@@ -37,7 +37,7 @@ index a12b1eabc15e..1c20d6afae59 100644
  			return;
  		}
  		/*
-@@ -938,28 +942,16 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -937,28 +941,16 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  	}
  }
  
@@ -69,10 +69,10 @@ index a12b1eabc15e..1c20d6afae59 100644
  EXPORT_SYMBOL_GPL(vmbus_hvsock_device_unregister);
  
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 511d47e3ee9d..5676f2a16531 100644
+index cc28cd20256f..28d8cd3655ce 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
-@@ -896,6 +896,8 @@ struct vmbus_channel {
+@@ -895,6 +895,8 @@ struct vmbus_channel {
  	 */
  	enum hv_numa_policy affinity_policy;
  
