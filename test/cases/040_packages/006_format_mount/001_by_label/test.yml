@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
 onboot:
   - name: format
-    image: linuxkit/format:158d992b7bf7ab984100c697d7e72161ea7d7382
+    image: linuxkit/format:f180a74d878c8c0c86f6208f9311474c91452a79
     command: ["/usr/bin/format", "-label", "docker"]
   - name: mount
     image: linuxkit/mount:96ac4d32d340ac6e4ddfbf506fa3a497d23649da
