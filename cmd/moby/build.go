@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 
@@ -72,7 +71,6 @@ func build(args []string) {
 	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
-	buildHyperkit := buildCmd.Bool("hyperkit", runtime.GOOS == "darwin", "Use hyperkit for LinuxKit based builds where possible")
 	buildCmd.Var(&buildFormats, "format", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
 
 	if err := buildCmd.Parse(args); err != nil {
@@ -231,7 +229,7 @@ func build(args []string) {
 	if outputFile == nil {
 		image := buf.Bytes()
 		log.Infof("Create outputs:")
-		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, *buildHyperkit)
+		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size)
 		if err != nil {
 			log.Fatalf("Error writing outputs: %v", err)
 		}
