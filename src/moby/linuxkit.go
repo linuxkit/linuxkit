@@ -89,7 +89,7 @@ func writeKernelInitrd(filename string, kernel []byte, initrd []byte, cmdline st
 	return nil
 }
 
-func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte, cmdline string, size int, hyperkit bool) error {
+func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte, cmdline string, size int) error {
 	log.Debugf("output linuxkit generated img: %s %s size %d", format, filename, size)
 
 	tmp, err := ioutil.TempDir(filepath.Join(MobyDir, "tmp"), "moby")
@@ -128,14 +128,6 @@ func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte
 		return fmt.Errorf("Cannot find linuxkit executable, needed to build %s output type: %v", format, err)
 	}
 	commandLine := []string{"-q", "run", "qemu", "-disk", fmt.Sprintf("%s,size=%s,format=%s", filename, sizeString, format), "-disk", fmt.Sprintf("%s,format=raw", tardisk), "-kernel", imageFilename("mkimage")}
-	if hyperkit && format == "raw" {
-		state, err := ioutil.TempDir("", "s")
-		if err != nil {
-			return err
-		}
-		defer os.RemoveAll(state)
-		commandLine = []string{"-q", "run", "hyperkit", "-state", state, "-disk", fmt.Sprintf("%s,size=%s,format=%s", filename, sizeString, format), "-disk", fmt.Sprintf("%s,format=raw", tardisk), imageFilename("mkimage")}
-	}
 	log.Debugf("run %s: %v", linuxkit, commandLine)
 	cmd := exec.Command(linuxkit, commandLine...)
 	cmd.Stderr = os.Stderr

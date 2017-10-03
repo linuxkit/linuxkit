@@ -20,8 +20,8 @@ const (
 	dynamicvhd = "linuxkit/mkimage-dynamic-vhd:a652b15c281499ecefa6a7a47d0f9c56d70ab208@sha256:10e2a9179d48934c864639df895a6efdee34c2865eb574934398209625b297ff"
 )
 
-var outFuns = map[string]func(string, []byte, int, bool) error{
-	"kernel+initrd": func(base string, image []byte, size int, hyperkit bool) error {
+var outFuns = map[string]func(string, []byte, int) error{
+	"kernel+initrd": func(base string, image []byte, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -32,34 +32,34 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		return nil
 	},
-	"iso-bios": func(base string, image []byte, size int, hyperkit bool) error {
+	"iso-bios": func(base string, image []byte, size int) error {
 		err := outputIso(bios, base+".iso", image)
 		if err != nil {
 			return fmt.Errorf("Error writing iso-bios output: %v", err)
 		}
 		return nil
 	},
-	"iso-efi": func(base string, image []byte, size int, hyperkit bool) error {
+	"iso-efi": func(base string, image []byte, size int) error {
 		err := outputIso(efi, base+"-efi.iso", image)
 		if err != nil {
 			return fmt.Errorf("Error writing iso-efi output: %v", err)
 		}
 		return nil
 	},
-	"raw": func(base string, image []byte, size int, hyperkit bool) error {
+	"raw": func(base string, image []byte, size int) error {
 		filename := base + ".raw"
 		log.Infof("  %s", filename)
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
 		}
-		err = outputLinuxKit("raw", filename, kernel, initrd, cmdline, size, hyperkit)
+		err = outputLinuxKit("raw", filename, kernel, initrd, cmdline, size)
 		if err != nil {
 			return fmt.Errorf("Error writing raw output: %v", err)
 		}
 		return nil
 	},
-	"gcp": func(base string, image []byte, size int, hyperkit bool) error {
+	"gcp": func(base string, image []byte, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -70,20 +70,20 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		return nil
 	},
-	"qcow2": func(base string, image []byte, size int, hyperkit bool) error {
+	"qcow2": func(base string, image []byte, size int) error {
 		filename := base + ".qcow2"
 		log.Infof("  %s", filename)
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
 		}
-		err = outputLinuxKit("qcow2", filename, kernel, initrd, cmdline, size, hyperkit)
+		err = outputLinuxKit("qcow2", filename, kernel, initrd, cmdline, size)
 		if err != nil {
 			return fmt.Errorf("Error writing qcow2 output: %v", err)
 		}
 		return nil
 	},
-	"vhd": func(base string, image []byte, size int, hyperkit bool) error {
+	"vhd": func(base string, image []byte, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -94,7 +94,7 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		return nil
 	},
-	"dynamic-vhd": func(base string, image []byte, size int, hyperkit bool) error {
+	"dynamic-vhd": func(base string, image []byte, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -105,7 +105,7 @@ var outFuns = map[string]func(string, []byte, int, bool) error{
 		}
 		return nil
 	},
-	"vmdk": func(base string, image []byte, size int, hyperkit bool) error {
+	"vmdk": func(base string, image []byte, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -151,7 +151,7 @@ func ValidateFormats(formats []string) error {
 }
 
 // Formats generates all the specified output formats
-func Formats(base string, image []byte, formats []string, size int, hyperkit bool) error {
+func Formats(base string, image []byte, formats []string, size int) error {
 	log.Debugf("format: %v %s", formats, base)
 
 	err := ValidateFormats(formats)
@@ -160,7 +160,7 @@ func Formats(base string, image []byte, formats []string, size int, hyperkit boo
 	}
 	for _, o := range formats {
 		f := outFuns[o]
-		err := f(base, image, size, hyperkit)
+		err := f(base, image, size)
 		if err != nil {
 			return err
 		}
