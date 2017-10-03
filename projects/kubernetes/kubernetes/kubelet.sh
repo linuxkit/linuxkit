@@ -11,9 +11,9 @@ if [ -e /etc/kubelet.sh.conf ] ; then
     . /etc/kubelet.sh.conf
 fi
 
-conf=/etc/kubernetes/kubelet.conf
+await=/etc/kubernetes/kubelet.conf
 
-if [ -f "${conf}" ] ; then
+if [ -f "/etc/kubernetes/kubelet.conf" ] ; then
     echo "kubelet.sh: kubelet already configured"
 elif [ -e /var/config/kubeadm/init ] ; then
     echo "kubelet.sh: init cluster with metadata \"$(cat /var/config/kubeadm/init)\""
@@ -23,26 +23,30 @@ elif [ -e /var/config/kubeadm/init ] ; then
 elif [ -e /var/config/kubeadm/join ] ; then
     echo "kubelet.sh: joining cluster with metadata \"$(cat /var/config/kubeadm/join)\""
     kubeadm join --skip-preflight-checks $(cat /var/config/kubeadm/join)
+    await=/etc/kubernetes/bootstrap-kubelet.conf
 elif [ -e /var/config/userdata ] ; then
     echo "kubelet.sh: joining cluster with metadata \"$(cat /var/config/userdata)\""
     kubeadm join --skip-preflight-checks $(cat /var/config/userdata)
+    await=/etc/kubernetes/bootstrap-kubelet.conf
 fi
 
-echo "kubelet.sh: waiting for ${conf}"
+echo "kubelet.sh: waiting for ${await}"
 # TODO(ijc) is there a race between kubeadm creating this file and
 # finishing the write where we might be able to fall through and
 # start kubelet with an incomplete configuration file? I've tried
 # to provoke such a race without success. An explicit
 # synchronisation barrier or changing kubeadm to write
 # kubelet.conf atomically might be good in any case.
-until [ -f "${conf}" ] ; do
+until [ -f "${await}" ] ; do
     sleep 1
 done
 
-echo "kubelet.sh: ${conf} has arrived" 2>&1
+echo "kubelet.sh: ${await} has arrived" 2>&1
 
-exec kubelet --kubeconfig=${conf} \
-	      --require-kubeconfig=true \
+mkdir -p /etc/kubernetes/manifests
+
+exec kubelet --kubeconfig=/etc/kubernetes/kubelet.conf \
+	      --bootstrap-kubeconfig=/etc/kubernetes/bootstrap-kubelet.conf \
 	      --pod-manifest-path=/etc/kubernetes/manifests \
 	      --allow-privileged=true \
 	      --cluster-dns=10.96.0.10 \
