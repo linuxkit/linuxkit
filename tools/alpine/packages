@@ -11,6 +11,7 @@ bc
 binutils
 binutils-dev
 bison
+blkid
 bsd-compat-headers
 btrfs-progs
 btrfs-progs-dev
