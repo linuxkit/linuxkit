@@ -42,6 +42,8 @@ files:
     metadata: yaml
   - path: /etc/kubernetes
     symlink: "/var/lib/kubeadm"
+  - path: /usr/libexec/kubernetes/kubelet-plugins
+    symlink: "/var/lib/kubelet-plugins"
   - path: /etc/kubeadm/kube-system.init/50-network.yaml
     source: network.yaml
   - path: /etc/sysctl.d/01-kubernetes.conf
