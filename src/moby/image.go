@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/containerd/containerd/reference"
 	"github.com/opencontainers/runtime-spec/specs-go"
 )
 
@@ -81,8 +82,8 @@ func tarPrefix(path string, tw tarWriter) error {
 }
 
 // ImageTar takes a Docker image and outputs it to a tar stream
-func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv string) error {
-	log.Debugf("image tar: %s %s", image, prefix)
+func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull bool, resolv string) error {
+	log.Debugf("image tar: %s %s", ref, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != byte('/') {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
 	}
@@ -93,25 +94,25 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 	}
 
 	if pull || trust {
-		err := dockerPull(image, pull, trust)
+		err := dockerPull(ref, pull, trust)
 		if err != nil {
-			return fmt.Errorf("Could not pull image %s: %v", image, err)
+			return fmt.Errorf("Could not pull image %s: %v", ref, err)
 		}
 	}
-	container, err := dockerCreate(image)
+	container, err := dockerCreate(ref.String())
 	if err != nil {
 		// if the image wasn't found, pull it down.  Bail on other errors.
 		if strings.Contains(err.Error(), "No such image") {
-			err := dockerPull(image, true, trust)
+			err := dockerPull(ref, true, trust)
 			if err != nil {
-				return fmt.Errorf("Could not pull image %s: %v", image, err)
+				return fmt.Errorf("Could not pull image %s: %v", ref, err)
 			}
-			container, err = dockerCreate(image)
+			container, err = dockerCreate(ref.String())
 			if err != nil {
-				return fmt.Errorf("Failed to docker create image %s: %v", image, err)
+				return fmt.Errorf("Failed to docker create image %s: %v", ref, err)
 			}
 		} else {
-			return fmt.Errorf("Failed to create docker image %s: %v", image, err)
+			return fmt.Errorf("Failed to create docker image %s: %v", ref, err)
 		}
 	}
 	contents, err := dockerExport(container)
@@ -137,7 +138,7 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 			return err
 		}
 		if exclude[hdr.Name] {
-			log.Debugf("image tar: %s %s exclude %s", image, prefix, hdr.Name)
+			log.Debugf("image tar: %s %s exclude %s", ref, prefix, hdr.Name)
 			_, err = io.Copy(ioutil.Discard, tr)
 			if err != nil {
 				return err
@@ -147,7 +148,7 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 				contents := replace[hdr.Name]
 				hdr.Size = int64(len(contents))
 				hdr.Name = prefix + hdr.Name
-				log.Debugf("image tar: %s %s add %s", image, prefix, hdr.Name)
+				log.Debugf("image tar: %s %s add %s", ref, prefix, hdr.Name)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
 				}
@@ -162,7 +163,7 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 				hdr.Size = 0
 				hdr.Typeflag = tar.TypeSymlink
 				hdr.Linkname = resolv
-				log.Debugf("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", image, prefix, resolv)
+				log.Debugf("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", ref, prefix, resolv)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
 				}
@@ -172,7 +173,7 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 				return err
 			}
 		} else {
-			log.Debugf("image tar: %s %s add %s", image, prefix, hdr.Name)
+			log.Debugf("image tar: %s %s add %s", ref, prefix, hdr.Name)
 			hdr.Name = prefix + hdr.Name
 			if hdr.Typeflag == tar.TypeLink {
 				// hard links are referenced by full path so need to be adjusted
@@ -191,7 +192,7 @@ func ImageTar(image, prefix string, tw tarWriter, trust bool, pull bool, resolv 
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string) error {
+func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string) error {
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
 	rootExtract := "rootfs"
 	if !readonly {
@@ -200,17 +201,17 @@ func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw
 
 	// See if we have extracted this image previously
 	root := path.Join(prefix, rootExtract)
-	var foundElsewhere = dupMap[image] != ""
+	var foundElsewhere = dupMap[ref.String()] != ""
 	if !foundElsewhere {
-		if err := ImageTar(image, root+"/", tw, trust, pull, ""); err != nil {
+		if err := ImageTar(ref, root+"/", tw, trust, pull, ""); err != nil {
 			return err
 		}
-		dupMap[image] = root
+		dupMap[ref.String()] = root
 	} else {
 		if err := tarPrefix(prefix+"/", tw); err != nil {
 			return err
 		}
-		root = dupMap[image]
+		root = dupMap[ref.String()]
 	}
 
 	hdr := &tar.Header{
@@ -274,7 +275,7 @@ func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw
 	// write the runtime config
 	runtimeConfig, err := json.MarshalIndent(runtime, "", "    ")
 	if err != nil {
-		return fmt.Errorf("Failed to create runtime config for %s: %v", image, err)
+		return fmt.Errorf("Failed to create runtime config for %s: %v", ref, err)
 	}
 
 	hdr = &tar.Header{
@@ -290,7 +291,7 @@ func ImageBundle(prefix string, image string, config []byte, runtime Runtime, tw
 		return err
 	}
 
-	log.Debugf("image bundle: %s %s cfg: %s runtime: %s", prefix, image, string(config), string(runtimeConfig))
+	log.Debugf("image bundle: %s %s cfg: %s runtime: %s", prefix, ref, string(config), string(runtimeConfig))
 
 	return nil
 }

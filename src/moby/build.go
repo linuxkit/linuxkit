@@ -134,7 +134,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, image.Image, config, runtime, iw, useTrust, pull, readonly, dupMap)
+	err = ImageBundle(path, image.ref, config, runtime, iw, useTrust, pull, readonly, dupMap)
 	if err != nil {
 		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 	}
@@ -171,11 +171,11 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	// deduplicate containers with the same image
 	dupMap := map[string]string{}
 
-	if m.Kernel.Image != "" {
+	if m.Kernel.ref != nil {
 		// get kernel and initrd tarball from container
-		log.Infof("Extract kernel image: %s", m.Kernel.Image)
+		log.Infof("Extract kernel image: %s", m.Kernel.ref)
 		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar)
-		err := ImageTar(m.Kernel.Image, "", kf, enforceContentTrust(m.Kernel.Image, &m.Trust), pull, "")
+		err := ImageTar(m.Kernel.ref, "", kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "")
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
 		}
@@ -189,9 +189,8 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	if len(m.Init) != 0 {
 		log.Infof("Add init containers:")
 	}
-	for _, ii := range m.Init {
-		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", iw, enforceContentTrust(ii, &m.Trust), pull, resolvconfSymlink)
+	for _, ii := range m.initRefs {
+		err := ImageTar(ii, "", iw, enforceContentTrust(ii.String(), &m.Trust), pull, resolvconfSymlink)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}

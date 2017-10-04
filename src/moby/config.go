@@ -351,7 +351,7 @@ func ConfigToOCI(image *Image, trust bool, idMap map[string]uint32) (specs.Spec,
 	if err != nil {
 		return specs.Spec{}, Runtime{}, err
 	}
-	inspect, err := dockerInspectImage(cli, image.Image, trust)
+	inspect, err := dockerInspectImage(cli, image.ref, trust)
 	if err != nil {
 		return specs.Spec{}, Runtime{}, err
 	}
