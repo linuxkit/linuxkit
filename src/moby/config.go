@@ -197,6 +197,31 @@ func extractReferences(m *Moby) error {
 	return nil
 }
 
+func updateImages(m *Moby) error {
+	if m.Kernel.ref != nil {
+		m.Kernel.Image = m.Kernel.ref.String()
+	}
+	for i, ii := range m.initRefs {
+		m.Init[i] = ii.String()
+	}
+	for _, image := range m.Onboot {
+		if image.ref != nil {
+			image.Image = image.ref.String()
+		}
+	}
+	for _, image := range m.Onshutdown {
+		if image.ref != nil {
+			image.Image = image.ref.String()
+		}
+	}
+	for _, image := range m.Services {
+		if image.ref != nil {
+			image.Image = image.ref.String()
+		}
+	}
+	return nil
+}
+
 // NewConfig parses a config file
 func NewConfig(config []byte) (Moby, error) {
 	m := Moby{}

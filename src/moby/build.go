@@ -388,6 +388,8 @@ func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 
 // this allows inserting metadata into a file in the image
 func metadata(m Moby, md string) ([]byte, error) {
+	// Make sure the Image strings are update to date with the refs
+	updateImages(&m)
 	switch md {
 	case "json":
 		return json.MarshalIndent(m, "", "    ")
