@@ -5,6 +5,7 @@ set -e
 : ${KUBE_MASTER_VCPUS:=2}
 : ${KUBE_MASTER_MEM:=1024}
 : ${KUBE_MASTER_DISK:=4G}
+: ${KUBE_MASTER_UNTAINT:=n}
 
 : ${KUBE_NODE_VCPUS:=2}
 : ${KUBE_NODE_MEM:=4096}
@@ -27,10 +28,16 @@ if [ $# -eq 0 ] ; then
     # then we configure for auto init. If it is completely unset then
     # we do not.
     if [ -n "${KUBE_MASTER_AUTOINIT+x}" ] ; then
-	data="{\"kubeadm\": {\"init\": \"${KUBE_MASTER_AUTOINIT}\"} }"
-    else
-	data=""
+	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"init\": \"${KUBE_MASTER_AUTOINIT}\""
     fi
+    if [ "${KUBE_MASTER_UNTAINT}" = "y" ] ; then
+	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"untaint-master\": \"\""
+    fi
+
+    if [ -n "${kubeadm_data}" ] ; then
+	data="{ \"kubeadm\": { ${kubeadm_data} } }"
+    fi
+
     state="kube-master-state"
 
     : ${KUBE_VCPUS:=$KUBE_MASTER_VCPUS}
