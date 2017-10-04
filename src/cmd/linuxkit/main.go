@@ -42,6 +42,7 @@ func main() {
 		fmt.Printf("USAGE: %s [options] COMMAND\n\n", filepath.Base(os.Args[0]))
 		fmt.Printf("Commands:\n")
 		fmt.Printf("  metadata    Metadata utilities\n")
+		fmt.Printf("  pkg         Package building\n")
 		fmt.Printf("  push        Push a VM image to a cloud or image store\n")
 		fmt.Printf("  run         Run a VM image on a local hypervisor or remote cloud\n")
 		fmt.Printf("  version     Print version information\n")
@@ -82,6 +83,8 @@ func main() {
 	switch args[0] {
 	case "metadata":
 		metadata(args[1:])
+	case "pkg":
+		pkg(args[1:])
 	case "push":
 		push(args[1:])
 	case "run":

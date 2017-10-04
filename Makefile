@@ -1,5 +1,5 @@
 .PHONY: default all
-default: bin/moby bin/linuxkit bin/rtf
+default: bin/moby bin/linuxkit bin/rtf bin/linuxkit-push-manifest
 all: default
 
 VERSION="0.0" # dummy for now
@@ -19,6 +19,9 @@ CROSS+=-e GOARCH=$(GOARCH)
 endif
 
 PREFIX?=/usr/local/
+
+bin/linuxkit-push-manifest: scripts/push-manifest.sh | bin
+	cp $< $@
 
 MOBY_REPO=https://github.com/moby/tool.git
 MOBY_COMMIT=177969dc4a0fb843f635e45ab8e87d2cd2c531cd
@@ -53,14 +56,14 @@ bin/manifest-tool: tmp_mt_bin.tar | bin
 tmp_mt_bin.tar: Makefile
 	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/estesp/manifest-tool --clone $(MT_REPO) --commit $(MT_COMMIT) --package github.com/estesp/manifest-tool --ldflags "-X main.gitCommit=$(MT_COMMIT)" -o bin/manifest-tool > $@
 
-LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) Makefile src/cmd/linuxkit/vendor.conf
+LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) $(wildcard src/cmd/linuxkit/*/*.go) Makefile src/cmd/linuxkit/vendor.conf
 bin/linuxkit: tmp_linuxkit_bin.tar
 	tar xf $<
 	rm $<
 	touch $@
 
 tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
-	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o bin/linuxkit > $@
+	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o bin/linuxkit > $@
 
 .PHONY: test-cross
 test-cross:

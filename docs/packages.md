@@ -11,6 +11,22 @@ All LinuxKit packages are:
 - Derived from well-known (and signed) sources for repeatable builds.
 - Build with multi-stage builds to minimise their size.
 
+## Package source
+
+A package source consists of a directory containing two files:
+
+- `build.yml`: contains metadata associated with the package
+- `Dockerfile`: contains the steps to build the package.
+
+`build.yml` contains the following fields:
+
+- `image` _(string)_: *(mandatory)* The name of the image to build
+- `org` _(string)_: The hub/registry organisation to which this package belongs
+- `arches` _(list of string)_: The architectures which this package should be built for (valid entries are `GOARCH` names)
+- `gitrepo` _(string)_: The git repository where the package source is kept.
+- `network` _(bool)_: Allow network access during the package build (default: no)
+- `trust` _(bool)_: Enable Docker content trust for this package (default: yes)
+- `cache` _(bool)_: Enable build cache for this package (default: yes)
 
 ## Building packages
 
@@ -24,6 +40,8 @@ Before you can build packages you need:
   bin/manifest-tool`, or `go get github.com:estesp/manifest-tool`, or
   via the LinuxKit homebrew tap with `brew install --HEAD
   manifest-tool`. `manifest-tool` must be in your path.
+- The LinuxKit tools `linuxkit` and `linuxkit-push-manifest` which
+  must be in your path.
 
 Further, when building packages you need to be logged into hub with
 `docker login` as some of the tooling extracts your hub credentials
@@ -43,8 +61,12 @@ they can't be build in parallel.
 To build a package on an architecture:
 
 ```
-DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE="<passphrase>" make
+DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE="<passphrase>" linuxkit pkg push «path-to-package»
 ```
+
+`«path-to-package»` is the path to the package's source directory
+(containing `build.yml` and `Dockerfile`). It can be `.` if the
+package is in the current directory.
 
 **Note:** You *must* be logged into hub (`docker login`) and the
 passphrase for the key *must* be supplied as an environment
@@ -68,10 +90,10 @@ architecture. The YAML files should consume the package as:
 Since it is not very good to have your passphrase in the clear (or
 even stashed in your shell history), we recommend using a password
 manager with a CLI interface, such as LastPass or `pass`. You can then
-invoke `make` like this (for LastPass):
+invoke the build like this (for LastPass):
 
 ```
-DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=$(lpass show <key> --password) make
+DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=$(lpass show <key> --password) linuxkit pkg push «path-to-package»
 ```
 
 ### Build packages as a developer
@@ -81,7 +103,7 @@ override the hub organisation used. You may also want to disable
 signing while developing. A typical example would be:
 
 ```
-make ORG=wombat NOTRUST=1 tag
+linuxkit pkg build -org=wombat -trust=0 «path-to-package»
 ```
 
 This will create a local image: `wombat/<image>:<hash>-<arch>` which
@@ -90,7 +112,7 @@ on other systems you can push the image to your hub account and pull
 from a different system by issuing:
 
 ```
-make ORG=wombat NOTRUST=1 push
+linuxkit pkg build -org=wombat -trust=0 push
 ```
 
 This will push both `wombat/<image>:<hash>-<arch>` and
@@ -100,7 +122,7 @@ Finally, if you are tired of the long hashes you can override the hash
 with:
 
 ```
-make ORG=wombat NOTRUST=1 HASH=foo push
+linuxkit pkg build -org=wombat -trust=0 -hash=foo push
 ```
 
 and this will create `wombat/<image>:foo-<arch>` and

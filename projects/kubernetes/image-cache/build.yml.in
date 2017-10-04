@@ -1,0 +1,5 @@
+org: linuxkitprojects
+image: kubernetes-image-cache-@@CACHE@@
+trust: false
+arches:
+  - amd64
