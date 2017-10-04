@@ -32,6 +32,16 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
+	"tar-kernel-initrd": func(base string, image []byte, size int) error {
+		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		if err := outputKernelInitrdTarball(base, kernel, initrd, cmdline); err != nil {
+			return fmt.Errorf("Error writing kernel+initrd tarball output: %v", err)
+		}
+		return nil
+	},
 	"iso-bios": func(base string, image []byte, size int) error {
 		err := outputIso(bios, base+".iso", image)
 		if err != nil {
@@ -292,4 +302,49 @@ func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline strin
 		return err
 	}
 	return nil
+}
+
+func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdline string) error {
+	log.Debugf("output kernel/initrd tarball: %s %s", base, cmdline)
+	log.Infof("  %s", base+"-initrd.tar")
+	f, err := os.Create(base + "-initrd.tar")
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	tw := tar.NewWriter(f)
+	hdr := &tar.Header{
+		Name: "kernel",
+		Mode: 0644,
+		Size: int64(len(kernel)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return err
+	}
+	if _, err := tw.Write(kernel); err != nil {
+		return err
+	}
+	hdr = &tar.Header{
+		Name: "initrd.img",
+		Mode: 0644,
+		Size: int64(len(initrd)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return err
+	}
+	if _, err := tw.Write(initrd); err != nil {
+		return err
+	}
+	hdr = &tar.Header{
+		Name: "cmdline",
+		Mode: 0644,
+		Size: int64(len(cmdline)),
+	}
+	if err := tw.WriteHeader(hdr); err != nil {
+		return err
+	}
+	if _, err := tw.Write([]byte(cmdline)); err != nil {
+		return err
+	}
+	return tw.Close()
 }
