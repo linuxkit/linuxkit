@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/containerd/containerd/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/opencontainers/runtime-spec/specs-go"
@@ -25,6 +26,8 @@ type Moby struct {
 	Services   []*Image     `yaml:"services" json:"services"`
 	Trust      TrustConfig  `yaml:"trust" json:"trust,omitempty"`
 	Files      []File       `yaml:"files" json:"files"`
+
+	initRefs []*reference.Spec
 }
 
 // KernelConfig is the type of the config for a kernel
@@ -33,6 +36,8 @@ type KernelConfig struct {
 	Cmdline string  `yaml:"cmdline" json:"cmdline,omitempty"`
 	Binary  string  `yaml:"binary" json:"binary,omitempty"`
 	Tar     *string `yaml:"tar" json:"tar,omitempty"`
+
+	ref *reference.Spec
 }
 
 // TrustConfig is the type of a content trust config
@@ -89,6 +94,8 @@ type Image struct {
 	UIDMappings       *[]specs.LinuxIDMapping `yaml:"uidMappings" json:"uidMappings,omitempty"`
 	GIDMappings       *[]specs.LinuxIDMapping `yaml:"gidMappings" json:"gidMappings,omitempty"`
 	Runtime           *Runtime                `yaml:"runtime" json:"runtime,omitempty"`
+
+	ref *reference.Spec
 }
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
@@ -151,6 +158,45 @@ func uniqueServices(m Moby) error {
 	return nil
 }
 
+func extractReferences(m *Moby) error {
+	if m.Kernel.Image != "" {
+		r, err := reference.Parse(m.Kernel.Image)
+		if err != nil {
+			return fmt.Errorf("extract kernel image reference: %v", err)
+		}
+		m.Kernel.ref = &r
+	}
+	for _, ii := range m.Init {
+		r, err := reference.Parse(ii)
+		if err != nil {
+			return fmt.Errorf("extract on boot image reference: %v", err)
+		}
+		m.initRefs = append(m.initRefs, &r)
+	}
+	for _, image := range m.Onboot {
+		r, err := reference.Parse(image.Image)
+		if err != nil {
+			return fmt.Errorf("extract on boot image reference: %v", err)
+		}
+		image.ref = &r
+	}
+	for _, image := range m.Onshutdown {
+		r, err := reference.Parse(image.Image)
+		if err != nil {
+			return fmt.Errorf("extract on shutdown image reference: %v", err)
+		}
+		image.ref = &r
+	}
+	for _, image := range m.Services {
+		r, err := reference.Parse(image.Image)
+		if err != nil {
+			return fmt.Errorf("extract service image reference: %v", err)
+		}
+		image.ref = &r
+	}
+	return nil
+}
+
 // NewConfig parses a config file
 func NewConfig(config []byte) (Moby, error) {
 	m := Moby{}
@@ -190,6 +236,10 @@ func NewConfig(config []byte) (Moby, error) {
 		return m, err
 	}
 
+	if err := extractReferences(&m); err != nil {
+		return m, err
+	}
+
 	return m, nil
 }
 
@@ -208,6 +258,9 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	if m1.Kernel.Tar != nil {
 		moby.Kernel.Tar = m1.Kernel.Tar
 	}
+	if m1.Kernel.ref != nil {
+		moby.Kernel.ref = m1.Kernel.ref
+	}
 	moby.Init = append(moby.Init, m1.Init...)
 	moby.Onboot = append(moby.Onboot, m1.Onboot...)
 	moby.Onshutdown = append(moby.Onshutdown, m1.Onshutdown...)
@@ -215,6 +268,7 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby.Files = append(moby.Files, m1.Files...)
 	moby.Trust.Image = append(moby.Trust.Image, m1.Trust.Image...)
 	moby.Trust.Org = append(moby.Trust.Org, m1.Trust.Org...)
+	moby.initRefs = append(moby.initRefs, m1.initRefs...)
 
 	if err := uniqueServices(moby); err != nil {
 		return moby, err
@@ -297,7 +351,6 @@ func ConfigToOCI(image *Image, trust bool, idMap map[string]uint32) (specs.Spec,
 	if err != nil {
 		return specs.Spec{}, Runtime{}, err
 	}
-
 	inspect, err := dockerInspectImage(cli, image.Image, trust)
 	if err != nil {
 		return specs.Spec{}, Runtime{}, err
