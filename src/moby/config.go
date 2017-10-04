@@ -20,9 +20,9 @@ import (
 type Moby struct {
 	Kernel     KernelConfig `kernel:"cmdline" json:"kernel,omitempty"`
 	Init       []string     `init:"cmdline" json:"init"`
-	Onboot     []Image      `yaml:"onboot" json:"onboot"`
-	Onshutdown []Image      `yaml:"onshutdown" json:"onshutdown"`
-	Services   []Image      `yaml:"services" json:"services"`
+	Onboot     []*Image     `yaml:"onboot" json:"onboot"`
+	Onshutdown []*Image     `yaml:"onshutdown" json:"onshutdown"`
+	Services   []*Image     `yaml:"services" json:"services"`
 	Trust      TrustConfig  `yaml:"trust" json:"trust,omitempty"`
 	Files      []File       `yaml:"files" json:"files"`
 }
@@ -290,7 +290,7 @@ func NewImage(config []byte) (Image, error) {
 }
 
 // ConfigToOCI converts a config specification to an OCI config file and a runtime config
-func ConfigToOCI(image Image, trust bool, idMap map[string]uint32) (specs.Spec, Runtime, error) {
+func ConfigToOCI(image *Image, trust bool, idMap map[string]uint32) (specs.Spec, Runtime, error) {
 
 	// TODO pass through same docker client to all functions
 	cli, err := dockerClient()
@@ -649,7 +649,7 @@ func idNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
 }
 
 // ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
-func ConfigInspectToOCI(yaml Image, inspect types.ImageInspect, idMap map[string]uint32) (specs.Spec, Runtime, error) {
+func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[string]uint32) (specs.Spec, Runtime, error) {
 	oci := specs.Spec{}
 	runtime := Runtime{}
 

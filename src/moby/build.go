@@ -121,7 +121,7 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 	return false
 }
 
-func outputImage(image Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer) error {
+func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer) error {
 	log.Infof("  Create OCI config for %s", image.Image)
 	useTrust := enforceContentTrust(image.Image, &m.Trust)
 	oci, runtime, err := ConfigToOCI(image, useTrust, idMap)
