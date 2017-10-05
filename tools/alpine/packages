@@ -69,6 +69,7 @@ mtools
 multipath-tools
 musl-dev
 ncurses-dev
+nfs-utils
 open-iscsi
 openntpd
 openrc
