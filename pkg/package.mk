@@ -107,7 +107,7 @@ forcepush-y: forcetag-y check-dirty
 	docker push $(TAG)$(SUFFIX)
 	$(PUSH_MANIFEST) $(TAG) $(DOCKER_CONTENT_TRUST)
 ifneq ($(RELEASE),)
-	docker tag $(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(RELEASE)
+	docker tag $(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
 	docker push $(ORG)/$(IMAGE):$(RELEASE)$(SUFFIX)
 	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(RELEASE) $(DOCKER_CONTENT_TRUST)
 endif
