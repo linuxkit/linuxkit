@@ -1,4 +1,4 @@
-# linuxkit/alpine:d1778ee29f11475548f0e861f57005a84e82ba4e-amd64
+# linuxkit/alpine:9f300a4de4fcd75efedd126f4e5fad1bd4c031d2-amd64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -22,7 +22,7 @@ btrfs-progs-4.10.2-r0
 btrfs-progs-dev-4.10.2-r0
 btrfs-progs-libs-4.10.2-r0
 build-base-0.5-r0
-busybox-1.26.2-r6
+busybox-1.26.2-r7
 busybox-initscripts-3.1-r1
 bzip2-1.0.6-r5
 ca-certificates-20161130-r2
@@ -33,7 +33,7 @@ cmake-3.8.1-r0
 coreutils-8.27-r0
 cryptsetup-1.7.5-r0
 cryptsetup-libs-1.7.5-r0
-curl-7.55.0-r0
+curl-7.56.0-r0
 db-5.3.28-r0
 dbus-1.10.14-r0
 dbus-libs-1.10.14-r0
@@ -114,12 +114,13 @@ libcap-ng-0.7.8-r0
 libcap-ng-dev-0.7.8-r0
 libcom_err-1.43.4-r0
 libcrypto1.0-1.0.2k-r0
-libcurl-7.55.0-r0
+libcurl-7.56.0-r0
 libdrm-2.4.80-r0
 libedit-20170329.3.1-r2
 libelf-0.8.13-r2
 libelf-dev-0.8.13-r2
 libepoxy-1.4.1-r0
+libevent-2.1.8-r1
 libexecinfo-1.1-r0
 libexecinfo-dev-1.1-r0
 libfdisk-2.28.2-r2
@@ -141,6 +142,7 @@ libmnl-1.0.4-r0
 libmount-2.28.2-r2
 libmspack-0.5_alpha-r1
 libnfs-1.11.0-r0
+libnfsidmap-0.25-r1
 libnftnl-libs-1.0.7-r0
 libnl3-3.2.28-r0
 libogg-1.3.2-r1
@@ -193,6 +195,7 @@ ncurses-libs-6.0-r8
 ncurses-terminfo-6.0-r8
 ncurses-terminfo-base-6.0-r8
 nettle-3.3-r0
+nfs-utils-1.3.4-r1
 npth-1.2-r0
 oniguruma-6.3.0-r0
 open-iscsi-2.0.873-r6
@@ -215,7 +218,7 @@ pinentry-1.0.0-r0
 pixman-0.34.0-r0
 pkgconf-1.3.7-r0
 popt-1.16-r6
-python3-3.6.1-r2
+python3-3.6.1-r3
 qemu-2.8.1-r1
 qemu-aarch64-2.8.1-r1
 qemu-arm-2.8.1-r1
@@ -225,6 +228,7 @@ qemu-ppc64le-2.8.1-r1
 qemu-system-arm-2.8.1-r1
 qemu-system-x86_64-2.8.1-r1
 readline-6.3.008-r5
+rpcbind-0.2.3-r3
 rsync-3.1.2-r5
 scanelf-1.2.2-r0
 sed-4.4-r0
@@ -236,7 +240,7 @@ slang-dev-2.3.1-r0
 snappy-1.1.4-r1
 socat-1.7.3.2-r1
 spice-server-0.13.3-r2
-sqlite-libs-3.18.0-r0
+sqlite-libs-3.20.1-r0
 squashfs-tools-4.3-r3
 strace-4.16-r1
 sudo-1.8.19_p2-r0
