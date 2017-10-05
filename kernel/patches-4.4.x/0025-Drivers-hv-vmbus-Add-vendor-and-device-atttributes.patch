@@ -1,4 +1,4 @@
-From df49a00b07eab382c1520391cac98aca9ed63af4 Mon Sep 17 00:00:00 2001
+From c6b578ddb80fba899db9a5f2d814a7f315a4cd25 Mon Sep 17 00:00:00 2001
 From: "K. Y. Srinivasan" <kys@microsoft.com>
 Date: Fri, 25 Dec 2015 20:00:30 -0800
 Subject: [PATCH 25/44] Drivers: hv: vmbus: Add vendor and device atttributes

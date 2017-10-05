@@ -1,4 +1,4 @@
-From 60559e83a8dd1f8841893d3386c0620e6b42e074 Mon Sep 17 00:00:00 2001
+From d41cd2613b5c4af32f172ad0349cade4f865e3ee Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 13 Oct 2016 17:12:35 -0300
 Subject: [PATCH 02/13] perf jit: Avoid returning garbage for a ret variable

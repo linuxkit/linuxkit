@@ -1,4 +1,4 @@
-From 48e75988ea20a523065ec0e36019bac87f1ed15f Mon Sep 17 00:00:00 2001
+From 6fd3b99dcf4b74134b8a5bdcbeeec61a3866b9f6 Mon Sep 17 00:00:00 2001
 From: Jake Oshins <jakeo@microsoft.com>
 Date: Mon, 14 Dec 2015 16:01:41 -0800
 Subject: [PATCH 16/44] drivers:hv: Define the channel type for Hyper-V PCI
