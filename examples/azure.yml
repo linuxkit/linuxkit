@@ -15,7 +15,7 @@ services:
   - name: dhcpcd
     image: linuxkit/dhcpcd:d4408777ed6b6e6e562a5d4938fd09804324b33e
   - name: sshd
-    image: linuxkit/sshd:d313eea3d9d7fbcbc927d06a6700325725db2a82
+    image: linuxkit/sshd:361e9d03f96ef5f22e61c69280ffb9291bde746f
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub

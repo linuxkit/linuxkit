@@ -26,7 +26,7 @@ onboot:
     command: ["/usr/bin/mountie", "/var/lib/"]
 services:
   - name: getty
-    image: linuxkit/getty:bf6872ce0a9f3ab519b3e502cc41ba3958bda2a6
+    image: linuxkit/getty:a19851531487b7bfbe45dcf77e3309c127cc78a6
     env:
      - INSECURE=true
   - name: rngd
@@ -34,7 +34,7 @@ services:
   - name: ntpd
     image: linuxkit/openntpd:0d7befc79842849d0b88d6c3b64200e340d7cf67
   - name: sshd
-    image: linuxkit/sshd:d313eea3d9d7fbcbc927d06a6700325725db2a82
+    image: linuxkit/sshd:361e9d03f96ef5f22e61c69280ffb9291bde746f
   - name: kubelet
     image: linuxkitprojects/kubernetes:2a42ca12c52a756ffd83ec014f2b396891880e4a
 files:

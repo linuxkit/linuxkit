@@ -28,9 +28,9 @@ onboot:
      - /lib:/lib     # for ifconfig
 services:
   - name: sshd
-    image: linuxkit/sshd:d313eea3d9d7fbcbc927d06a6700325725db2a82
+    image: linuxkit/sshd:361e9d03f96ef5f22e61c69280ffb9291bde746f
   - name: getty
-    image: linuxkit/getty:bf6872ce0a9f3ab519b3e502cc41ba3958bda2a6
+    image: linuxkit/getty:a19851531487b7bfbe45dcf77e3309c127cc78a6
     env:
      - INSECURE=true
 files:

@@ -11,7 +11,7 @@ onboot:
     image: linuxkit/dhcpcd:d4408777ed6b6e6e562a5d4938fd09804324b33e
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: wg0
-    image: linuxkit/ip:adedf00ca91ed0ed91a40aa76ce23309b32fcb47
+    image: linuxkit/ip:bdc10950043419d4eb19a10c3122e12ee472d465
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -24,7 +24,7 @@ onboot:
       bindNS:
           net: /run/netns/wg0
   - name: wg1
-    image: linuxkit/ip:adedf00ca91ed0ed91a40aa76ce23309b32fcb47
+    image: linuxkit/ip:bdc10950043419d4eb19a10c3122e12ee472d465
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
