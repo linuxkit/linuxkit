@@ -3,7 +3,7 @@
 # In the last stage, it creates a package, which can be used for
 # testing.
 
-FROM linuxkit/kernel:4.9.52 AS ksrc
+FROM linuxkit/kernel:4.9.53 AS ksrc
 
 # Extract headers and compile module
 FROM linuxkit/alpine:f4f5b333fa1a8433334fcae996d1637173144a72 AS build
