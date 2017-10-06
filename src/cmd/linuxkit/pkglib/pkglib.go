@@ -11,13 +11,13 @@ import (
 
 // Containers fields settable in the build.yml
 type pkgInfo struct {
-	Image   string   `yaml:"image"`
-	Org     string   `yaml:"org"`
-	Arches  []string `yaml:"arches"`
-	GitRepo string   `yaml:"gitrepo"` // ??
-	Network bool     `yaml:"network"`
-	Trust   bool     `yaml:"trust"`
-	Cache   bool     `yaml:"cache"`
+	Image               string   `yaml:"image"`
+	Org                 string   `yaml:"org"`
+	Arches              []string `yaml:"arches"`
+	GitRepo             string   `yaml:"gitrepo"` // ??
+	Network             bool     `yaml:"network"`
+	DisableContentTrust bool     `yaml:"disable-content-trust"`
+	DisableCache        bool     `yaml:"disable-cache"`
 }
 
 // Pkg encapsulates information about a package's source
@@ -42,12 +42,12 @@ type Pkg struct {
 func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// Defaults
 	pi := pkgInfo{
-		Org:     "linuxkit",
-		Arches:  []string{"amd64", "arm64"},
-		GitRepo: "https://github.com/linuxkit/linuxkit",
-		Network: false,
-		Trust:   true,
-		Cache:   true,
+		Org:                 "linuxkit",
+		Arches:              []string{"amd64", "arm64"},
+		GitRepo:             "https://github.com/linuxkit/linuxkit",
+		Network:             false,
+		DisableContentTrust: false,
+		DisableCache:        false,
 	}
 
 	// TODO(ijc) look for "$(git rev-parse --show-toplevel)/.build-defaults.yml"?
@@ -55,11 +55,15 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// Ideally want to look at every directory from root to `pkg`
 	// for this file but might be tricky to arrange ordering-wise.
 
-	// These override fields in pi below
-	argCache := fs.Bool("cache", pi.Cache, "Disable build cache")
+	// These override fields in pi below, bools are in both forms to allow user overrides in either direction
+	argDisableCache := fs.Bool("disable-cache", pi.DisableCache, "Disable build cache")
+	argEnableCache := fs.Bool("enable-cache", !pi.DisableCache, "Enable build cache")
+	argDisableContentTrust := fs.Bool("disable-content-trust", pi.DisableContentTrust, "Enable content trust")
+	argEnableContentTrust := fs.Bool("enable-content-trust", !pi.DisableContentTrust, "Enable content trust")
+	argNoNetwork := fs.Bool("nonetwork", !pi.Network, "Disallow network use during build")
 	argNetwork := fs.Bool("network", pi.Network, "Allow network use during build")
+
 	argOrg := fs.String("org", pi.Org, "Override the hub org")
-	argTrust := fs.Bool("trust", pi.Trust, "Disable content trust")
 
 	// Other arguments
 	var buildYML, hash, hashCommit, hashPath string
@@ -115,14 +119,20 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// set.
 	fs.Visit(func(f *flag.Flag) {
 		switch f.Name {
-		case "cache":
-			pi.Cache = *argCache
+		case "disable-cache":
+			pi.DisableCache = *argDisableCache
+		case "enable-cache":
+			pi.DisableCache = !*argEnableCache
+		case "disable-content-trust":
+			pi.DisableContentTrust = *argDisableContentTrust
+		case "enable-content-trust":
+			pi.DisableContentTrust = !*argEnableContentTrust
 		case "network":
 			pi.Network = *argNetwork
+		case "nonetwork":
+			pi.Network = !*argNoNetwork
 		case "org":
 			pi.Org = *argOrg
-		case "trust":
-			pi.Trust = *argTrust
 		}
 	})
 
@@ -145,8 +155,8 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		arches:     pi.Arches,
 		gitRepo:    pi.GitRepo,
 		network:    pi.Network,
-		trust:      pi.Trust,
-		cache:      pi.Cache,
+		trust:      !pi.DisableContentTrust,
+		cache:      !pi.DisableCache,
 		dirty:      dirty,
 		pkgPath:    pkgPath,
 	}, nil

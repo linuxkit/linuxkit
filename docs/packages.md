@@ -25,8 +25,8 @@ A package source consists of a directory containing at least two files:
 - `arches` _(list of string)_: The architectures which this package should be built for (valid entries are `GOARCH` names)
 - `gitrepo` _(string)_: The git repository where the package source is kept.
 - `network` _(bool)_: Allow network access during the package build (default: no)
-- `trust` _(bool)_: Enable Docker content trust for this package (default: yes)
-- `cache` _(bool)_: Enable build cache for this package (default: yes)
+- `disable-content-trust` _(bool)_: Disable Docker content trust for this package (default: no)
+- `disable-cache` _(bool)_: Disable build cache for this package (default: no)
 
 ## Building packages
 
@@ -103,7 +103,7 @@ override the hub organisation used. You may also want to disable
 signing while developing. A typical example would be:
 
 ```
-linuxkit pkg build -org=wombat -trust=0 «path-to-package»
+linuxkit pkg build -org=wombat -disable-content-trust «path-to-package»
 ```
 
 This will create a local image: `wombat/<image>:<hash>-<arch>` which
@@ -112,7 +112,7 @@ on other systems you can push the image to your hub account and pull
 from a different system by issuing:
 
 ```
-linuxkit pkg build -org=wombat -trust=0 push
+linuxkit pkg build -org=wombat -disable-content-trust push
 ```
 
 This will push both `wombat/<image>:<hash>-<arch>` and
@@ -122,7 +122,7 @@ Finally, if you are tired of the long hashes you can override the hash
 with:
 
 ```
-linuxkit pkg build -org=wombat -trust=0 -hash=foo push
+linuxkit pkg build -org=wombat -disable-content-trust -hash=foo push
 ```
 
 and this will create `wombat/<image>:foo-<arch>` and
