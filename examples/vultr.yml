@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.9.52
+  image: linuxkit/kernel:4.9.53
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:7804129bd06218b72c298139a25698a748d253c6
@@ -16,13 +16,13 @@ onboot:
     image: linuxkit/metadata:da3138079c168e0c5608d8f3853366c113ed91d2
 services:
   - name: getty
-    image: linuxkit/getty:bf6872ce0a9f3ab519b3e502cc41ba3958bda2a6
+    image: linuxkit/getty:a19851531487b7bfbe45dcf77e3309c127cc78a6
     env:
      - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
   - name: sshd
-    image: linuxkit/sshd:d313eea3d9d7fbcbc927d06a6700325725db2a82
+    image: linuxkit/sshd:361e9d03f96ef5f22e61c69280ffb9291bde746f
     binds:
      - /var/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx

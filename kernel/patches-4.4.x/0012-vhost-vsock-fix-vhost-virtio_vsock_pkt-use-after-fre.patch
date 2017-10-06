@@ -1,4 +1,4 @@
-From b1742c457cb3743b9e0eda712566e070726d5e97 Mon Sep 17 00:00:00 2001
+From d3d7006d1efaddcba0eef47cef7fbc4be564db89 Mon Sep 17 00:00:00 2001
 From: Stefan Hajnoczi <stefanha@redhat.com>
 Date: Thu, 4 Aug 2016 14:52:53 +0100
 Subject: [PATCH 12/44] vhost/vsock: fix vhost virtio_vsock_pkt use-after-free

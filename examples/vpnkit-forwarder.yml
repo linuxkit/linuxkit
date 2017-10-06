@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.9.52
+  image: linuxkit/kernel:4.9.53
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:7804129bd06218b72c298139a25698a748d253c6
@@ -19,7 +19,7 @@ onboot:
     command: ["sh", "-c", "mkdir /host_var/vpnkit && mount -v -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /host_var/vpnkit"]
 services:
   - name: sshd
-    image: linuxkit/sshd:d313eea3d9d7fbcbc927d06a6700325725db2a82
+    image: linuxkit/sshd:361e9d03f96ef5f22e61c69280ffb9291bde746f
   - name: vpnkit-forwarder
     image: linuxkit/vpnkit-forwarder:42d80758e3b6a9f58cdfd25e53c775eebe951669
     binds:
