@@ -19,7 +19,7 @@ func pkgShowTag(args []string) {
 		flags.PrintDefaults()
 	}
 
-	ps, err := pkglib.NewFromCLI(flags, args)
+	ps, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)

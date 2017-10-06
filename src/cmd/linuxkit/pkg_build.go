@@ -21,7 +21,7 @@ func pkgBuild(args []string) {
 
 	force := flags.Bool("force", false, "Force rebuild")
 
-	ps, err := pkglib.NewFromCLI(flags, args)
+	ps, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)

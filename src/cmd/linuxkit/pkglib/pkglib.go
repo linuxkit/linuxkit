@@ -39,7 +39,7 @@ type Pkg struct {
 }
 
 // NewFromCLI creates a Pkg from a set of CLI arguments. Calls fs.Parse()
-func NewFromCLI(fs *flag.FlagSet, args []string) (Pkg, error) {
+func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// Defaults
 	pi := pkgInfo{
 		Org:     "linuxkit",
