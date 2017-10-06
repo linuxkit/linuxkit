@@ -13,7 +13,7 @@ All LinuxKit packages are:
 
 ## Package source
 
-A package source consists of a directory containing two files:
+A package source consists of a directory containing at least two files:
 
 - `build.yml`: contains metadata associated with the package
 - `Dockerfile`: contains the steps to build the package.
@@ -65,8 +65,8 @@ DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE="<passphrase>" linuxkit pkg push «pa
 ```
 
 `«path-to-package»` is the path to the package's source directory
-(containing `build.yml` and `Dockerfile`). It can be `.` if the
-package is in the current directory.
+(containing at least `build.yml` and `Dockerfile`). It can be `.` if
+the package is in the current directory.
 
 **Note:** You *must* be logged into hub (`docker login`) and the
 passphrase for the key *must* be supplied as an environment
