@@ -1,4 +1,4 @@
-package pkgsrc
+package pkglib
 
 import (
 	"fmt"
@@ -31,7 +31,7 @@ func WithBuildPush() BuildOpt {
 }
 
 // Build builds the package
-func (ps PkgSrc) Build(bos ...BuildOpt) error {
+func (ps Pkg) Build(bos ...BuildOpt) error {
 	var bo buildOpts
 	for _, fn := range bos {
 		if err := fn(&bo); err != nil {

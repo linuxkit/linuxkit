@@ -1,4 +1,4 @@
-package pkgsrc
+package pkglib
 
 import (
 	"flag"
@@ -20,8 +20,8 @@ type pkgInfo struct {
 	Cache   bool     `yaml:"cache"`
 }
 
-// PkgSrc encapsulates information about a package's source
-type PkgSrc struct {
+// Pkg encapsulates information about a package's source
+type Pkg struct {
 	// These correspond to pkgInfo fields
 	image   string
 	org     string
@@ -38,8 +38,8 @@ type PkgSrc struct {
 	commitHash string
 }
 
-// NewFromCLI creates a PkgSrc from a set of CLI arguments. Calls fs.Parse()
-func NewFromCLI(fs *flag.FlagSet, args []string) (PkgSrc, error) {
+// NewFromCLI creates a Pkg from a set of CLI arguments. Calls fs.Parse()
+func NewFromCLI(fs *flag.FlagSet, args []string) (Pkg, error) {
 	// Defaults
 	pi := pkgInfo{
 		Org:     "linuxkit",
@@ -71,16 +71,16 @@ func NewFromCLI(fs *flag.FlagSet, args []string) (PkgSrc, error) {
 	fs.Parse(args)
 
 	if fs.NArg() < 1 {
-		return PkgSrc{}, fmt.Errorf("A pkg directory is required")
+		return Pkg{}, fmt.Errorf("A pkg directory is required")
 	}
 	if fs.NArg() > 1 {
-		return PkgSrc{}, fmt.Errorf("Unknown extra arguments given: %s", fs.Args()[1:])
+		return Pkg{}, fmt.Errorf("Unknown extra arguments given: %s", fs.Args()[1:])
 	}
 
 	pkg := fs.Arg(0)
 	pkgPath, err := filepath.Abs(pkg)
 	if err != nil {
-		return PkgSrc{}, err
+		return Pkg{}, err
 	}
 
 	if hashPath == "" {
@@ -88,11 +88,11 @@ func NewFromCLI(fs *flag.FlagSet, args []string) (PkgSrc, error) {
 	} else {
 		hashPath, err = filepath.Abs(hashPath)
 		if err != nil {
-			return PkgSrc{}, err
+			return Pkg{}, err
 		}
 
 		if !strings.HasPrefix(pkgPath, hashPath) {
-			return PkgSrc{}, fmt.Errorf("Hash path is not a prefix of the package path")
+			return Pkg{}, fmt.Errorf("Hash path is not a prefix of the package path")
 		}
 
 		// TODO(ijc) pkgPath and hashPath really ought to be in the same git tree too...
@@ -100,14 +100,14 @@ func NewFromCLI(fs *flag.FlagSet, args []string) (PkgSrc, error) {
 
 	b, err := ioutil.ReadFile(filepath.Join(pkgPath, buildYML))
 	if err != nil {
-		return PkgSrc{}, err
+		return Pkg{}, err
 	}
 	if err := yaml.Unmarshal(b, &pi); err != nil {
-		return PkgSrc{}, err
+		return Pkg{}, err
 	}
 
 	if pi.Image == "" {
-		return PkgSrc{}, fmt.Errorf("Image field is required")
+		return Pkg{}, fmt.Errorf("Image field is required")
 	}
 
 	// Go's flag package provides no way to see if a flag was set
@@ -128,16 +128,16 @@ func NewFromCLI(fs *flag.FlagSet, args []string) (PkgSrc, error) {
 
 	if hash == "" {
 		if hash, err = gitTreeHash(hashPath, hashCommit); err != nil {
-			return PkgSrc{}, err
+			return Pkg{}, err
 		}
 	}
 
 	dirty, err := gitIsDirty(hashPath, hashCommit)
 	if err != nil {
-		return PkgSrc{}, err
+		return Pkg{}, err
 	}
 
-	return PkgSrc{
+	return Pkg{
 		image:      pi.Image,
 		org:        pi.Org,
 		hash:       hash,
@@ -153,12 +153,12 @@ func NewFromCLI(fs *flag.FlagSet, args []string) (PkgSrc, error) {
 }
 
 // Hash returns the hash of the package
-func (ps PkgSrc) Hash() string {
+func (ps Pkg) Hash() string {
 	return ps.hash
 }
 
 // ReleaseTag returns the tag to use for a particular release of the package
-func (ps PkgSrc) ReleaseTag(release string) (string, error) {
+func (ps Pkg) ReleaseTag(release string) (string, error) {
 	if release == "" {
 		return "", fmt.Errorf("A release tag is required")
 	}
@@ -170,7 +170,7 @@ func (ps PkgSrc) ReleaseTag(release string) (string, error) {
 }
 
 // Tag returns the tag to use for the package
-func (ps PkgSrc) Tag() string {
+func (ps Pkg) Tag() string {
 	tag := ps.org + "/" + ps.image + ":" + ps.hash
 	if ps.dirty {
 		tag += "-dirty"
@@ -178,7 +178,7 @@ func (ps PkgSrc) Tag() string {
 	return tag
 }
 
-func (ps PkgSrc) archSupported(want string) bool {
+func (ps Pkg) archSupported(want string) bool {
 	for _, supp := range ps.arches {
 		if supp == want {
 			return true
@@ -187,7 +187,7 @@ func (ps PkgSrc) archSupported(want string) bool {
 	return false
 }
 
-func (ps PkgSrc) cleanForBuild() error {
+func (ps Pkg) cleanForBuild() error {
 	if ps.commitHash != "HEAD" {
 		return fmt.Errorf("Cannot build from commit hash != HEAD")
 	}

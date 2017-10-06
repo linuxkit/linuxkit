@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkgsrc"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkglib"
 )
 
 func pkgBuild(args []string) {
@@ -21,15 +21,15 @@ func pkgBuild(args []string) {
 
 	force := flags.Bool("force", false, "Force rebuild")
 
-	ps, err := pkgsrc.NewFromCLI(flags, args)
+	ps, err := pkglib.NewFromCLI(flags, args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 
-	var opts []pkgsrc.BuildOpt
+	var opts []pkglib.BuildOpt
 	if *force {
-		opts = append(opts, pkgsrc.WithBuildForce())
+		opts = append(opts, pkglib.WithBuildForce())
 	}
 	if err := ps.Build(opts...); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)

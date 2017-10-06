@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkgsrc"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkglib"
 )
 
 func pkgShowTag(args []string) {
@@ -19,7 +19,7 @@ func pkgShowTag(args []string) {
 		flags.PrintDefaults()
 	}
 
-	ps, err := pkgsrc.NewFromCLI(flags, args)
+	ps, err := pkglib.NewFromCLI(flags, args)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)

@@ -1,4 +1,4 @@
-package pkgsrc
+package pkglib
 
 // Thin wrappers around Docker CLI invocations
 
