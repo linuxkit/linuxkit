@@ -23,6 +23,14 @@ func newDockerRunner(dct, cache bool) dockerRunner {
 	return dockerRunner{dct: dct, cache: cache}
 }
 
+func isExecErrNotFound(err error) bool {
+	eerr, ok := err.(*exec.Error)
+	if !ok {
+		return false
+	}
+	return eerr.Err == exec.ErrNotFound
+}
+
 func (dr dockerRunner) command(args ...string) error {
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
@@ -38,7 +46,11 @@ func (dr dockerRunner) command(args ...string) error {
 		}
 		fmt.Fprintf(os.Stderr, "+ %s%v\n", dct, cmd.Args)
 	}
-	return cmd.Run()
+	err := cmd.Run()
+	if isExecErrNotFound(err) {
+		return fmt.Errorf("linuxkit pkg requires docker to be installed")
+	}
+	return err
 }
 
 func (dr dockerRunner) pull(img string) (bool, error) {
