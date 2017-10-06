@@ -1,5 +1,5 @@
 .PHONY: default all
-default: bin/moby bin/linuxkit bin/rtf bin/linuxkit-push-manifest
+default: bin/moby bin/linuxkit bin/rtf
 all: default
 
 VERSION="0.0" # dummy for now
@@ -19,9 +19,6 @@ CROSS+=-e GOARCH=$(GOARCH)
 endif
 
 PREFIX?=/usr/local/
-
-bin/linuxkit-push-manifest: scripts/push-manifest.sh | bin
-	cp $< $@
 
 MOBY_REPO=https://github.com/moby/tool.git
 MOBY_COMMIT=177969dc4a0fb843f635e45ab8e87d2cd2c531cd

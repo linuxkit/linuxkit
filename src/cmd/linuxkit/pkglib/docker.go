@@ -2,6 +2,8 @@ package pkglib
 
 // Thin wrappers around Docker CLI invocations
 
+//go:generate ./gen
+
 import (
 	"fmt"
 	"os"
@@ -66,7 +68,7 @@ func (dr dockerRunner) pushWithManifest(img, suffix string) error {
 		dctArg = "1"
 	}
 
-	cmd := exec.Command("linuxkit-push-manifest", img, dctArg)
+	cmd := exec.Command("/bin/sh", "-c", manifestPushScript, "manifest-push-script", img, dctArg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if debugDockerCommands {
