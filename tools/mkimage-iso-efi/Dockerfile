@@ -35,7 +35,6 @@ RUN mkdir /grub-lib && \
   ./configure --libdir=/grub-lib --with-platform=efi CFLAGS="-Os -Wno-unused-value" && \
   make -j "$(getconf _NPROCESSORS_ONLN)" && \
   make install && \
-# create the grub core image
   case $(uname -m) in \
   x86_64) \
     ./grub-mkimage -O x86_64-efi -d /grub-lib/grub/x86_64-efi -o /grub-lib/BOOTX64.EFI -p /EFI/BOOT ${GRUB_MODULES} linuxefi; \
@@ -52,7 +51,6 @@ RUN \
   apk add --no-cache \
   dosfstools \
   libarchive-tools \
-  binutils \
   mtools \
   xorriso \
   && true
