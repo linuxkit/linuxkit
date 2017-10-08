@@ -10,11 +10,6 @@ import (
 	"time"
 )
 
-const (
-	userDataURL = "http://169.254.169.254/latest/user-data"
-	metaDataURL = "http://169.254.169.254/latest/meta-data/"
-)
-
 // ProviderAWS is the type implementing the Provider interface for AWS
 type ProviderAWS struct {
 }
