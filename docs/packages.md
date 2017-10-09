@@ -40,8 +40,7 @@ Before you can build packages you need:
   bin/manifest-tool`, or `go get github.com:estesp/manifest-tool`, or
   via the LinuxKit homebrew tap with `brew install --HEAD
   manifest-tool`. `manifest-tool` must be in your path.
-- The LinuxKit tools `linuxkit` and `linuxkit-push-manifest` which
-  must be in your path.
+- The LinuxKit tool `linuxkit` which must be in your path.
 
 Further, when building packages you need to be logged into hub with
 `docker login` as some of the tooling extracts your hub credentials
