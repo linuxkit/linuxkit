@@ -1,5 +1,5 @@
 DIRS = $(dir $(shell find . -maxdepth 2 -mindepth 2 -type f -name build.yml))
-.PHONY: push forcepush tag forcetag show-tag clean
+.PHONY: push forcepush build forcebuild show-tag clean
 
 push:
 	@set -e; for d in $(DIRS); do linuxkit pkg push "$$d"; done
@@ -7,10 +7,10 @@ push:
 forcepush:
 	@set -e; for d in $(DIRS); do linuxkit pkg push --force "$$d"; done
 
-tag:
+build:
 	@set -e; for d in $(DIRS); do linuxkit pkg build "$$d"; done
 
-forcetag:
+forcebuild:
 	@set -e; for d in $(DIRS); do linuxkit pkg build --force "$$d"; done
 
 show-tag:

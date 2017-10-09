@@ -1,4 +1,4 @@
-.PHONY: tag push
+.PHONY: build push
 
 IMAGE=guestfs
 
@@ -18,7 +18,7 @@ push: hash iid
 		 docker push linuxkit/$(IMAGE):$(shell cat hash))
 	rm -f iid
 
-tag: hash iid
+build: hash iid
 	docker pull linuxkit/$(IMAGE):$(shell cat hash) || \
 		docker tag $(shell cat iid) linuxkit/$(IMAGE):$(shell cat hash)
 	rm -f iid

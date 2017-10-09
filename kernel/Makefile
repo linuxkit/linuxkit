@@ -63,7 +63,7 @@ endif
 
 KERNEL_VERSIONS=
 
-.PHONY: check tag push
+.PHONY: check build push
 # Targets:
 # fetch: Downloads the kernel sources into ./sources
 # build: Builds all kernels

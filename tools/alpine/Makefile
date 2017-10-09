@@ -1,4 +1,4 @@
-.PHONY: tag push
+.PHONY: build push
 
 ORG?=linuxkit
 IMAGE=alpine
@@ -61,7 +61,7 @@ push: hash iid versions.$(ARCH)
 	./push-manifest.sh $(ORG) $(IMAGE)
 	rm -f iid
 
-tag: hash iid versions.$(ARCH)
+build: hash iid versions.$(ARCH)
 	docker pull $(ORG)/$(IMAGE):$(shell cat hash) || \
 		docker tag $(shell cat iid) $(ORG)/$(IMAGE):$(shell cat hash)
 	rm -f iid

@@ -94,19 +94,19 @@ ci: test-cross
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
-	$(MAKE) -C pkg tag
+	$(MAKE) -C pkg build
 
 ci-tag: test-cross
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test all
-	$(MAKE) -C pkg tag
+	$(MAKE) -C pkg build
 
 ci-pr: test-cross
 	$(MAKE)
 	$(MAKE) install
 	$(MAKE) -C test pr
-	$(MAKE) -C pkg tag
+	$(MAKE) -C pkg build
 
 .PHONY: clean
 clean:
