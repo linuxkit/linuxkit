@@ -1,0 +1,4 @@
+image: test-virtsock
+network: true
+arches:
+  - amd64

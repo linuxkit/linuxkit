@@ -1,0 +1,4 @@
+image: test-docker-bench
+network: true
+arches:
+  - amd64

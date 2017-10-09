@@ -1,0 +1,4 @@
+image: test-ltp
+network: true
+arches:
+  - amd64
