@@ -31,7 +31,7 @@ func WithBuildPush() BuildOpt {
 }
 
 // Build builds the package
-func (ps Pkg) Build(bos ...BuildOpt) error {
+func (p Pkg) Build(bos ...BuildOpt) error {
 	var bo buildOpts
 	for _, fn := range bos {
 		if err := fn(&bo); err != nil {
@@ -39,16 +39,16 @@ func (ps Pkg) Build(bos ...BuildOpt) error {
 		}
 	}
 
-	if _, ok := os.LookupEnv("DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"); !ok && ps.trust && bo.push {
+	if _, ok := os.LookupEnv("DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"); !ok && p.trust && bo.push {
 		return fmt.Errorf("Pushing with trust enabled requires $DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE to be set")
 	}
 
 	arch := runtime.GOARCH
 
-	if !ps.archSupported(arch) {
+	if !p.archSupported(arch) {
 		return fmt.Errorf("Arch %s not supported by this package", arch)
 	}
-	if err := ps.cleanForBuild(); err != nil {
+	if err := p.cleanForBuild(); err != nil {
 		return err
 	}
 
@@ -65,10 +65,10 @@ func (ps Pkg) Build(bos ...BuildOpt) error {
 		return err
 	}
 
-	d := newDockerRunner(ps.trust, ps.cache)
+	d := newDockerRunner(p.trust, p.cache)
 
 	if !bo.force {
-		ok, err := d.pull(ps.Tag() + suffix)
+		ok, err := d.pull(p.Tag() + suffix)
 		if err != nil {
 			return err
 		}
@@ -80,10 +80,10 @@ func (ps Pkg) Build(bos ...BuildOpt) error {
 
 	var args []string
 
-	if ps.gitRepo != "" {
-		args = append(args, "--label", "org.opencontainers.image.source="+ps.gitRepo)
+	if p.gitRepo != "" {
+		args = append(args, "--label", "org.opencontainers.image.source="+p.gitRepo)
 	}
-	if !ps.dirty {
+	if !p.dirty {
 		commit, err := gitCommitHash("HEAD")
 		if err != nil {
 			return err
@@ -91,11 +91,11 @@ func (ps Pkg) Build(bos ...BuildOpt) error {
 		args = append(args, "--label", "org.opencontainers.image.revision="+commit)
 	}
 
-	if !ps.network {
+	if !p.network {
 		args = append(args, "--network=none")
 	}
 
-	if err := d.build(ps.Tag()+suffix, ps.pkgPath, args...); err != nil {
+	if err := d.build(p.Tag()+suffix, p.pkgPath, args...); err != nil {
 		return err
 	}
 
@@ -104,7 +104,7 @@ func (ps Pkg) Build(bos ...BuildOpt) error {
 		return nil
 	}
 
-	if ps.dirty {
+	if p.dirty {
 		return fmt.Errorf("build complete, refusing to push dirty package")
 	}
 
@@ -114,7 +114,7 @@ func (ps Pkg) Build(bos ...BuildOpt) error {
 	// matters given we do either pull or build above in the
 	// !force case.
 
-	if err := d.pushWithManifest(ps.Tag(), suffix); err != nil {
+	if err := d.pushWithManifest(p.Tag(), suffix); err != nil {
 		return err
 	}
 
@@ -123,12 +123,12 @@ func (ps Pkg) Build(bos ...BuildOpt) error {
 		return nil
 	}
 
-	relTag, err := ps.ReleaseTag(release)
+	relTag, err := p.ReleaseTag(release)
 	if err != nil {
 		return err
 	}
 
-	if err := d.tag(ps.Tag()+suffix, relTag+suffix); err != nil {
+	if err := d.tag(p.Tag()+suffix, relTag+suffix); err != nil {
 		return err
 	}
 

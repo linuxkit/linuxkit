@@ -163,33 +163,33 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 }
 
 // Hash returns the hash of the package
-func (ps Pkg) Hash() string {
-	return ps.hash
+func (p Pkg) Hash() string {
+	return p.hash
 }
 
 // ReleaseTag returns the tag to use for a particular release of the package
-func (ps Pkg) ReleaseTag(release string) (string, error) {
+func (p Pkg) ReleaseTag(release string) (string, error) {
 	if release == "" {
 		return "", fmt.Errorf("A release tag is required")
 	}
-	if ps.dirty {
+	if p.dirty {
 		return "", fmt.Errorf("Cannot release a dirty package")
 	}
-	tag := ps.org + "/" + ps.image + ":" + release
+	tag := p.org + "/" + p.image + ":" + release
 	return tag, nil
 }
 
 // Tag returns the tag to use for the package
-func (ps Pkg) Tag() string {
-	tag := ps.org + "/" + ps.image + ":" + ps.hash
-	if ps.dirty {
+func (p Pkg) Tag() string {
+	tag := p.org + "/" + p.image + ":" + p.hash
+	if p.dirty {
 		tag += "-dirty"
 	}
 	return tag
 }
 
-func (ps Pkg) archSupported(want string) bool {
-	for _, supp := range ps.arches {
+func (p Pkg) archSupported(want string) bool {
+	for _, supp := range p.arches {
 		if supp == want {
 			return true
 		}
@@ -197,8 +197,8 @@ func (ps Pkg) archSupported(want string) bool {
 	return false
 }
 
-func (ps Pkg) cleanForBuild() error {
-	if ps.commitHash != "HEAD" {
+func (p Pkg) cleanForBuild() error {
+	if p.commitHash != "HEAD" {
 		return fmt.Errorf("Cannot build from commit hash != HEAD")
 	}
 	return nil

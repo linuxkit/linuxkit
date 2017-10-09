@@ -21,7 +21,7 @@ func pkgPush(args []string) {
 
 	force := flags.Bool("force", false, "Force rebuild")
 
-	ps, err := pkglib.NewFromCLI(flags, args...)
+	p, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
@@ -33,7 +33,7 @@ func pkgPush(args []string) {
 		opts = append(opts, pkglib.WithBuildForce())
 	}
 
-	if err := ps.Build(opts...); err != nil {
+	if err := p.Build(opts...); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
