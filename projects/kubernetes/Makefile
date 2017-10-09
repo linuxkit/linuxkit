@@ -7,13 +7,13 @@ INIT_YAML += network.yaml
 all: tag-container-images build-vm-images
 
 tag-container-images:
-	$(MAKE) -C kubernetes tag
+	linuxkit pkg build kubernetes
 
 tag-cache-images:
 	$(MAKE) -C image-cache tag
 
 push-container-images:
-	$(MAKE) -C kubernetes push
+	linuxkit pkg push kubernetes
 	$(MAKE) -C image-cache push
 
 build-vm-images: kube-master.iso kube-node.iso

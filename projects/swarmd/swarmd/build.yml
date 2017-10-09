@@ -1,0 +1,4 @@
+org: linuxkitprojects
+image: swarmd
+network: true
+disable-content-trust: true
