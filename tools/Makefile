@@ -1,10 +1,19 @@
 DIRS = $(shell find . -maxdepth 1 -mindepth 1 -type d)
-.PHONY: clean dirs $(DIRS)
+.PHONY: push forcepush tag forcetag show-tag clean
 
-push: $(DIRS)
+push:
+	@set -e; for d in $(DIRS); do make -C "$$d" push; done
 
-$(DIRS):
-	$(MAKE) -C $@
+forcepush:
+	@set -e; for d in $(DIRS); do make -C "$$d" forcepush; done
+
+tag:
+	@set -e; for d in $(DIRS); do make -C "$$d" tag; done
+
+forcetag:
+	@set -e; for d in $(DIRS); do make -C "$$d" forcetag; done
+
+show-tag:
+	@set -e; for d in $(DIRS); do make -C "$$d" show-tag; done
 
 clean:
-	rm -f hash
