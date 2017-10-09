@@ -20,7 +20,7 @@ onboot:
     image: linuxkit/mount:96ac4d32d340ac6e4ddfbf506fa3a497d23649da
     command: ["/usr/bin/mountie", "/var/lib/swarmd"]
   - name: metadata
-    image: linuxkit/metadata:da3138079c168e0c5608d8f3853366c113ed91d2
+    image: linuxkit/metadata:52a3d36ed158357125f3a998f9d03784eb0636d3
 services:
   - name: getty
     image: linuxkit/getty:a19851531487b7bfbe45dcf77e3309c127cc78a6
