@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	log "github.com/Sirupsen/logrus"
+	"github.com/containerd/containerd/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -97,18 +98,18 @@ func dockerRm(container string) error {
 	return nil
 }
 
-func dockerPull(image string, forcePull, trustedPull bool) error {
-	log.Debugf("docker pull: %s", image)
+func dockerPull(ref *reference.Spec, forcePull, trustedPull bool) error {
+	log.Debugf("docker pull: %s", ref)
 	cli, err := dockerClient()
 	if err != nil {
 		return errors.New("could not initialize Docker API client")
 	}
 
 	if trustedPull {
-		log.Debugf("pulling %s with content trust", image)
-		trustedImg, err := TrustedReference(image)
+		log.Debugf("pulling %s with content trust", ref)
+		trustedImg, err := TrustedReference(ref.String())
 		if err != nil {
-			return fmt.Errorf("Trusted pull for %s failed: %v", image, err)
+			return fmt.Errorf("Trusted pull for %s failed: %v", ref, err)
 		}
 
 		// tag the image on a best-effort basis after pulling with content trust,
@@ -117,10 +118,15 @@ func dockerPull(image string, forcePull, trustedPull bool) error {
 			if err := cli.ImageTag(context.Background(), src, dst); err != nil {
 				log.Debugf("could not tag trusted image %s to %s", src, dst)
 			}
-		}(trustedImg.String(), image)
+		}(trustedImg.String(), ref.String())
 
 		log.Debugf("successfully verified trusted reference %s from notary", trustedImg.String())
-		image = trustedImg.String()
+		trustedSpec, err := reference.Parse(trustedImg.String())
+		if err != nil {
+			return fmt.Errorf("failed to convert trusted img %s to Spec: %v", trustedImg, err)
+		}
+		ref.Locator = trustedSpec.Locator
+		ref.Object = trustedSpec.Object
 
 		imageSearchArg := filters.NewArgs()
 		imageSearchArg.Add("reference", trustedImg.String())
@@ -130,8 +136,8 @@ func dockerPull(image string, forcePull, trustedPull bool) error {
 		}
 	}
 
-	log.Infof("Pull image: %s", image)
-	r, err := cli.ImagePull(context.Background(), image, types.ImagePullOptions{})
+	log.Infof("Pull image: %s", ref)
+	r, err := cli.ImagePull(context.Background(), ref.String(), types.ImagePullOptions{})
 	if err != nil {
 		return err
 	}
@@ -140,7 +146,7 @@ func dockerPull(image string, forcePull, trustedPull bool) error {
 	if err != nil {
 		return err
 	}
-	log.Debugf("docker pull: %s...Done", image)
+	log.Debugf("docker pull: %s...Done", ref)
 	return nil
 }
 
@@ -153,17 +159,17 @@ func dockerClient() (*client.Client, error) {
 	return client.NewEnvClient()
 }
 
-func dockerInspectImage(cli *client.Client, image string, trustedPull bool) (types.ImageInspect, error) {
-	log.Debugf("docker inspect image: %s", image)
+func dockerInspectImage(cli *client.Client, ref *reference.Spec, trustedPull bool) (types.ImageInspect, error) {
+	log.Debugf("docker inspect image: %s", ref)
 
-	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), image)
+	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), ref.String())
 	if err != nil {
 		if client.IsErrImageNotFound(err) {
-			pullErr := dockerPull(image, true, trustedPull)
+			pullErr := dockerPull(ref, true, trustedPull)
 			if pullErr != nil {
 				return types.ImageInspect{}, pullErr
 			}
-			inspect, _, err = cli.ImageInspectWithRaw(context.Background(), image)
+			inspect, _, err = cli.ImageInspectWithRaw(context.Background(), ref.String())
 			if err != nil {
 				return types.ImageInspect{}, err
 			}
@@ -172,7 +178,7 @@ func dockerInspectImage(cli *client.Client, image string, trustedPull bool) (typ
 		}
 	}
 
-	log.Debugf("docker inspect image: %s...Done", image)
+	log.Debugf("docker inspect image: %s...Done", ref)
 
 	return inspect, nil
 }
