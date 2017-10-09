@@ -1,0 +1,11 @@
+#!/bin/sh
+set -e
+(
+    echo package pkglib
+    echo
+    echo const manifestPushScript = \`
+    # TODO(ijc) once everything is ported this script can move to this source directory
+    cat ../../../../scripts/push-manifest.sh
+    echo \`
+) > manifest_push_script.go.new
+mv manifest_push_script.go.new manifest_push_script.go

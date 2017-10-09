@@ -1,11 +1,22 @@
-ORG?=linuxkitprojects
-IMAGE=kubernetes-image-cache-$(CACHE)
-NOTRUST=1
-SOURCE=$(BUILDDIR)
-DEPS=$(BUILDDIR)/Dockerfile
-ARCHES=x86_64
+$(BUILDDIR)/build.yml: build.yml.in
+	@sed -e 's/@@CACHE@@/$(CACHE)/g' < $< > $@
 
 $(BUILDDIR)/Dockerfile: Dockerfile
-	cp $< $@
+	@cp $< $@
 
-include ../../../pkg/package.mk
+.PHONY: push forcepush tag forcetag show-tag
+
+push: $(BUILDDIR)/build.yml $(BUILDDIR)/Dockerfile
+	linuxkit pkg push -hash-path . $(BUILDDIR)
+
+forcepush: $(BUILDDIR)/build.yml $(BUILDDIR)/Dockerfile
+	linuxkit pkg push -force -hash-path . $(BUILDDIR)
+
+tag: $(BUILDDIR)/build.yml $(BUILDDIR)/Dockerfile
+	linuxkit pkg build -hash-path . $(BUILDDIR)
+
+forcetag: $(BUILDDIR)/build.yml $(BUILDDIR)/Dockerfile
+	linuxkit pkg build --force -hash-path . $(BUILDDIR)
+
+show-tag: $(BUILDDIR)/build.yml $(BUILDDIR)/Dockerfile
+	@linuxkit pkg show-tag -hash-path . $(BUILDDIR)
