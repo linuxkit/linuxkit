@@ -1,0 +1,4 @@
+image: vpnkit-forwarder
+network: true
+arches:
+  - amd64
