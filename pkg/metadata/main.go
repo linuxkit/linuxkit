@@ -19,6 +19,10 @@ const (
 
 	// SSH is the path where sshd configuration from the provider is stored
 	SSH = "ssh"
+
+	// Standard AWS-compatible Metadata URLs
+	userDataURL = "http://169.254.169.254/latest/user-data"
+	metaDataURL = "http://169.254.169.254/latest/meta-data"
 )
 
 // Provider is a generic interface for metadata/userdata providers.
@@ -41,7 +45,7 @@ var netProviders []Provider
 var cdromProviders []Provider
 
 func main() {
-	providers := []string{"aws", "gcp", "vultr", "packet", "cdrom"}
+	providers := []string{"aws", "gcp", "openstack", "vultr", "packet", "cdrom"}
 	if len(os.Args) > 1 {
 		providers = os.Args[1:]
 	}
@@ -51,6 +55,8 @@ func main() {
 			netProviders = append(netProviders, NewAWS())
 		case "gcp":
 			netProviders = append(netProviders, NewGCP())
+		case "openstack":
+			netProviders = append(netProviders, NewOpenstack())
 		case "packet":
 			netProviders = append(netProviders, NewPacket())
 		case "vultr":
