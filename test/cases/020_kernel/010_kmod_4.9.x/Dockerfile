@@ -6,7 +6,7 @@
 FROM linuxkit/kernel:4.9.53 AS ksrc
 
 # Extract headers and compile module
-FROM linuxkit/alpine:f4f5b333fa1a8433334fcae996d1637173144a72 AS build
+FROM linuxkit/alpine:ad35b6ddbc70faa07e59a9d7dee7707c08122e8d AS build
 RUN apk add build-base
 
 COPY --from=ksrc /kernel-dev.tar /

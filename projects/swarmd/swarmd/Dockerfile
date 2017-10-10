@@ -2,7 +2,7 @@ FROM weaveworks/weave:2.0.1@sha256:2d70caac7db33365482cc923d40ff8d3ec1238ae7fe06
 
 # Nothing to do in here, just for COPY --from=weave below
 
-FROM linuxkit/alpine:9bcf61f605ef0ce36cc94d59b8eac307862de6e1 AS build
+FROM linuxkit/alpine:ad35b6ddbc70faa07e59a9d7dee7707c08122e8d AS build
 
 RUN \
   apk update && apk upgrade && \
