@@ -1,3 +1,4 @@
 image: mkimage-iso-bios
+disable-content-trust: true
 arches:
   - amd64
