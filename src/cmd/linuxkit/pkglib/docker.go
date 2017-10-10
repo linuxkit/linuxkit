@@ -42,7 +42,7 @@ func (dr dockerRunner) command(args ...string) error {
 	if debugDockerCommands {
 		var dct string
 		if dr.dct {
-			dct = " " + dctEnableEnv
+			dct = dctEnableEnv + " "
 		}
 		fmt.Fprintf(os.Stderr, "+ %s%v\n", dct, cmd.Args)
 	}
@@ -75,7 +75,7 @@ func (dr dockerRunner) pushWithManifest(img, suffix string) error {
 		return err
 	}
 
-	dctArg := "0"
+	var dctArg string
 	if dr.dct {
 		dctArg = "1"
 	}

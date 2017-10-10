@@ -2,12 +2,12 @@ kernel:
   image: linuxkit/kernel:4.9.53
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:7804129bd06218b72c298139a25698a748d253c6
-  - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
-  - linuxkit/containerd:417f83f7b8dc1fa36acf90effe44f99c7397480a
+  - linuxkit/init:98e95fb67e8afcf02c09ba927e4b357fec42977a
+  - linuxkit/runc:991ef358ad8fc1111d64f4d8071f2009cc561f6a
+  - linuxkit/containerd:eaf0d615cfceb9d854408dd3c80429ee8ac4d051
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
+    image: linuxkit/sysctl:53f0c724919e8f76ea06c44ee703330290b22669
   - name: dhcp-client
     image: miragesdk/dhcp-client:22aa9d527820534295a8cd59901c0c5197af6585
     net: host
@@ -30,7 +30,7 @@ services:
   - name: sshd
     image: linuxkit/sshd:361e9d03f96ef5f22e61c69280ffb9291bde746f
   - name: getty
-    image: linuxkit/getty:a19851531487b7bfbe45dcf77e3309c127cc78a6
+    image: linuxkit/getty:7abaf7b276c59f80891d92e9279e3e3ee8e2f512
     env:
      - INSECURE=true
 files:

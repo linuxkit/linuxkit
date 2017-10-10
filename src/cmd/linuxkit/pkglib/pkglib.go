@@ -67,10 +67,12 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 
 	// Other arguments
 	var buildYML, hash, hashCommit, hashPath string
+	var dirty bool
 	fs.StringVar(&buildYML, "build-yml", "build.yml", "Override the name of the yml file")
 	fs.StringVar(&hash, "hash", "", "Override the image hash (default is to query git for the package's tree-sh)")
 	fs.StringVar(&hashCommit, "hash-commit", "HEAD", "Override the git commit to use for the hash")
 	fs.StringVar(&hashPath, "hash-path", "", "Override the directory to use for the image hash, must be a parent of the package dir (default is to use the package dir)")
+	fs.BoolVar(&dirty, "force-dirty", false, "Force the pkg to be considered dirty")
 
 	fs.Parse(args)
 
@@ -142,10 +144,12 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		}
 	}
 
-	dirty, err := gitIsDirty(hashPath, hashCommit)
+	gitDirty, err := gitIsDirty(hashPath, hashCommit)
 	if err != nil {
 		return Pkg{}, err
 	}
+
+	dirty = dirty || gitDirty
 
 	return Pkg{
 		image:      pi.Image,

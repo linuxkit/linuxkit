@@ -1,0 +1,4 @@
+image: host-timesync-daemon
+network: true
+arches:
+  - amd64

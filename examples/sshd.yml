@@ -2,27 +2,27 @@ kernel:
   image: linuxkit/kernel:4.9.53
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:7804129bd06218b72c298139a25698a748d253c6
-  - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
-  - linuxkit/containerd:417f83f7b8dc1fa36acf90effe44f99c7397480a
-  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
+  - linuxkit/init:98e95fb67e8afcf02c09ba927e4b357fec42977a
+  - linuxkit/runc:991ef358ad8fc1111d64f4d8071f2009cc561f6a
+  - linuxkit/containerd:eaf0d615cfceb9d854408dd3c80429ee8ac4d051
+  - linuxkit/ca-certificates:ea3c4c120f929f4f07ac8535d75933365b5e9582
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
+    image: linuxkit/sysctl:53f0c724919e8f76ea06c44ee703330290b22669
   - name: rngd1
-    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
+    image: linuxkit/rngd:719e087b06dd14c29acd23fa07cccd036bbab4db
     command: ["/sbin/rngd", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:a19851531487b7bfbe45dcf77e3309c127cc78a6
+    image: linuxkit/getty:7abaf7b276c59f80891d92e9279e3e3ee8e2f512
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
+    image: linuxkit/rngd:719e087b06dd14c29acd23fa07cccd036bbab4db
   - name: dhcpcd
-    image: linuxkit/dhcpcd:d4408777ed6b6e6e562a5d4938fd09804324b33e
+    image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
   - name: sshd
-    image: linuxkit/sshd:361e9d03f96ef5f22e61c69280ffb9291bde746f
+    image: linuxkit/sshd:4a2fc7be31fa57dcade391de6173e0af55296e7f
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub

@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:87a0cd10449d72f374f950004467737dbf440630 AS build
+FROM linuxkit/alpine:ad35b6ddbc70faa07e59a9d7dee7707c08122e8d AS build
 
 RUN apk add --no-cache go musl-dev git build-base
 ENV GOPATH=/go PATH=$PATH:/go/bin 

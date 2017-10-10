@@ -1,0 +1,4 @@
+image: test-ns
+network: true
+arches:
+  - amd64

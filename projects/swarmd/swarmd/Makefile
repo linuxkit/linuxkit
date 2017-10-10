@@ -1,6 +1,0 @@
-ORG?=linuxkitprojects
-IMAGE=swarmd
-NETWORK=1
-NOTRUST=1
-
-include ../../../pkg/package.mk

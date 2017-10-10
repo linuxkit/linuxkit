@@ -4,16 +4,16 @@ NETWORK ?= weave-v2.0.4
 INIT_YAML ?=
 INIT_YAML += network.yaml
 
-all: tag-container-images build-vm-images
+all: build-container-images build-vm-images
 
-tag-container-images:
-	$(MAKE) -C kubernetes tag
+build-container-images:
+	linuxkit pkg build kubernetes
 
-tag-cache-images:
-	$(MAKE) -C image-cache tag
+build-cache-images:
+	$(MAKE) -C image-cache build
 
 push-container-images:
-	$(MAKE) -C kubernetes push
+	linuxkit pkg push kubernetes
 	$(MAKE) -C image-cache push
 
 build-vm-images: kube-master.iso kube-node.iso

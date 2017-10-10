@@ -1,0 +1,4 @@
+image: vsudd
+network: true
+arches:
+  - amd64

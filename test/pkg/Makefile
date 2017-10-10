@@ -1,16 +1,19 @@
-DIRS = $(shell find . -maxdepth 1 -mindepth 1 -type d)
-.PHONY: clean dirs $(DIRS)
+DIRS = $(dir $(shell find . -maxdepth 2 -mindepth 2 -type f -name build.yml))
+.PHONY: push forcepush build forcebuild show-tag clean
 
 push:
-	@set -e; for d in $(DIRS); do make -C "$$d"; done
+	@set -e; for d in $(DIRS); do linuxkit pkg push "$$d"; done
 
-tag:
-	@set -e; for d in $(DIRS); do make -C "$$d" tag; done
+forcepush:
+	@set -e; for d in $(DIRS); do linuxkit pkg push --force "$$d"; done
 
-forcetag:
-	@set -e; for d in $(DIRS); do make -C "$$d" forcetag; done
+build:
+	@set -e; for d in $(DIRS); do linuxkit pkg build "$$d"; done
+
+forcebuild:
+	@set -e; for d in $(DIRS); do linuxkit pkg build --force "$$d"; done
 
 show-tag:
-	@set -e; for d in $(DIRS); do make -C "$$d" show-tag; done
+	@set -e; for d in $(DIRS); do linuxkit pkg show-tag "$$d"; done
 
-clean: ;
+clean:
