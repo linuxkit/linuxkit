@@ -27,6 +27,8 @@ func pkgBuild(args []string) {
 		os.Exit(1)
 	}
 
+	fmt.Printf("Building %q\n", p.Tag())
+
 	var opts []pkglib.BuildOpt
 	if *force {
 		opts = append(opts, pkglib.WithBuildForce())
