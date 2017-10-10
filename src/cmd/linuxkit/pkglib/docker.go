@@ -75,7 +75,7 @@ func (dr dockerRunner) pushWithManifest(img, suffix string) error {
 		return err
 	}
 
-	dctArg := "0"
+	var dctArg string
 	if dr.dct {
 		dctArg = "1"
 	}
