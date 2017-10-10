@@ -13,7 +13,7 @@ func pkgPush(args []string) {
 	flags := flag.NewFlagSet("pkg push", flag.ExitOnError)
 	flags.Usage = func() {
 		invoked := filepath.Base(os.Args[0])
-		fmt.Fprintf(os.Stderr, "USAGE: %s pkg build [options] path\n\n", invoked)
+		fmt.Fprintf(os.Stderr, "USAGE: %s pkg push [options] path\n\n", invoked)
 		fmt.Fprintf(os.Stderr, "'path' specifies the path to the package source directory.\n")
 		fmt.Fprintf(os.Stderr, "\n")
 		flags.PrintDefaults()
