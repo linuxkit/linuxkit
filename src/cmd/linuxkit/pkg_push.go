@@ -20,6 +20,7 @@ func pkgPush(args []string) {
 	}
 
 	force := flags.Bool("force", false, "Force rebuild")
+	release := flags.String("release", "", "Release the given version")
 
 	p, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
@@ -32,7 +33,9 @@ func pkgPush(args []string) {
 	if *force {
 		opts = append(opts, pkglib.WithBuildForce())
 	}
-
+	if *release != "" {
+		opts = append(opts, pkglib.WithRelease(*release))
+	}
 	if err := p.Build(opts...); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
