@@ -46,7 +46,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	arch := runtime.GOARCH
 
 	if !p.archSupported(arch) {
-		return fmt.Errorf("Arch %s not supported by this package", arch)
+		fmt.Printf("Arch %s not supported by this package, skipping build.\n", arch)
+		return nil
 	}
 	if err := p.cleanForBuild(); err != nil {
 		return err
