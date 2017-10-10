@@ -2,41 +2,41 @@ kernel:
   image: linuxkit/kernel:4.9.53
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:7804129bd06218b72c298139a25698a748d253c6
-  - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
-  - linuxkit/containerd:417f83f7b8dc1fa36acf90effe44f99c7397480a
-  - linuxkit/ca-certificates:e44b0a66df5a102c0e220f0066b0d904710dcb10
+  - linuxkit/init:98e95fb67e8afcf02c09ba927e4b357fec42977a
+  - linuxkit/runc:991ef358ad8fc1111d64f4d8071f2009cc561f6a
+  - linuxkit/containerd:eaf0d615cfceb9d854408dd3c80429ee8ac4d051
+  - linuxkit/ca-certificates:ea3c4c120f929f4f07ac8535d75933365b5e9582
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
+    image: linuxkit/sysctl:53f0c724919e8f76ea06c44ee703330290b22669
     binds:
      - /etc/sysctl.d/01-kubernetes.conf:/etc/sysctl.d/01-kubernetes.conf
     readonly: false
   - name: sysfs
-    image: linuxkit/sysfs:3ae01a25583ee37a5ff8b09a0e569cb4bd8cf2e9
+    image: linuxkit/sysfs:7ff47034ed61c8e4c7ca5b8992056c66c6f39df8
   - name: dhcpcd
-    image: linuxkit/dhcpcd:d4408777ed6b6e6e562a5d4938fd09804324b33e
+    image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:52a3d36ed158357125f3a998f9d03784eb0636d3
+    image: linuxkit/metadata:4920d2b7f987c4cf67c5472308b0badcdfac4b2b
   - name: format
-    image: linuxkit/format:f180a74d878c8c0c86f6208f9311474c91452a79
+    image: linuxkit/format:e7f06bd9bb96b663f8aab7d648a5dfc3ed7785fc
   - name: mounts
-    image: linuxkit/mount:96ac4d32d340ac6e4ddfbf506fa3a497d23649da
+    image: linuxkit/mount:80c6aeef04260eaa7c74a93594ea7c5a4ab2808e
     command: ["/usr/bin/mountie", "/var/lib/"]
 services:
   - name: getty
-    image: linuxkit/getty:a19851531487b7bfbe45dcf77e3309c127cc78a6
+    image: linuxkit/getty:7abaf7b276c59f80891d92e9279e3e3ee8e2f512
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:558e86a36242bb74353bc9287b715ddb8567357e
+    image: linuxkit/rngd:719e087b06dd14c29acd23fa07cccd036bbab4db
   - name: ntpd
-    image: linuxkit/openntpd:0d7befc79842849d0b88d6c3b64200e340d7cf67
+    image: linuxkit/openntpd:8d32daf90ecf70b7e185cb7a2db53b4c539d371c
   - name: sshd
-    image: linuxkit/sshd:361e9d03f96ef5f22e61c69280ffb9291bde746f
+    image: linuxkit/sshd:4a2fc7be31fa57dcade391de6173e0af55296e7f
   - name: kubelet
-    image: linuxkitprojects/kubernetes:2a42ca12c52a756ffd83ec014f2b396891880e4a
+    image: linuxkitprojects/kubernetes:6ec18b4e75dcf17c47887ece1848b63ddbe10230
 files:
   - path: etc/linuxkit.yml
     metadata: yaml

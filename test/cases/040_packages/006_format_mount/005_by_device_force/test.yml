@@ -2,23 +2,23 @@ kernel:
   image: linuxkit/kernel:4.9.51
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:6fe9d31a53bbd200183bb31edd795305e868d5a7
-  - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
+  - linuxkit/init:98e95fb67e8afcf02c09ba927e4b357fec42977a
+  - linuxkit/runc:991ef358ad8fc1111d64f4d8071f2009cc561f6a
 onboot:
   - name: format
-    image: linuxkit/format:f180a74d878c8c0c86f6208f9311474c91452a79
+    image: linuxkit/format:e7f06bd9bb96b663f8aab7d648a5dfc3ed7785fc
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sda"]
   - name: format
-    image: linuxkit/format:f180a74d878c8c0c86f6208f9311474c91452a79
+    image: linuxkit/format:e7f06bd9bb96b663f8aab7d648a5dfc3ed7785fc
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sdb"]
   - name: format
-    image: linuxkit/format:f180a74d878c8c0c86f6208f9311474c91452a79
+    image: linuxkit/format:e7f06bd9bb96b663f8aab7d648a5dfc3ed7785fc
     command: ["/usr/bin/format", "-verbose", "-type", "xfs", "/dev/sda"]
   - name: format
-    image: linuxkit/format:f180a74d878c8c0c86f6208f9311474c91452a79
+    image: linuxkit/format:e7f06bd9bb96b663f8aab7d648a5dfc3ed7785fc
     command: ["/usr/bin/format", "-verbose", "-force", "-type", "xfs", "/dev/sdb"]
   - name: test
-    image: linuxkit/format:f180a74d878c8c0c86f6208f9311474c91452a79
+    image: linuxkit/format:e7f06bd9bb96b663f8aab7d648a5dfc3ed7785fc
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
@@ -26,7 +26,7 @@ onboot:
       - CAP_SYS_ADMIN
       - CAP_MKNOD
   - name: poweroff
-    image: linuxkit/poweroff:1e9876c682c74d0602b7647c628bb0875fb13998
+    image: linuxkit/poweroff:ffd3f539a6f4e67d4cd4ff36503636de35edd7b2
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh
