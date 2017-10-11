@@ -112,6 +112,7 @@ RUN curl -sSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
 
 # Modules
 RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
+    make INSTALL_MOD_PATH=/tmp/kernel-modules firmware_install && \
     make INSTALL_MOD_PATH=/tmp/kernel-modules M="/wireguard" modules_install && \
     ( DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
       cd /tmp/kernel-modules/lib/modules/$DVER && \
