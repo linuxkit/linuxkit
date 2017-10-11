@@ -11,6 +11,7 @@ services:
      - type: cgroup
        options: ["rw","nosuid","noexec","nodev","relatime"]
     binds:
+     - /etc/resolv.conf:/etc/resolv.conf
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
      - /var/vpnkit:/port # vpnkit control 9p mount
