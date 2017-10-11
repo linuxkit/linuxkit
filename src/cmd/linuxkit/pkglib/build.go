@@ -7,8 +7,9 @@ import (
 )
 
 type buildOpts struct {
-	force bool
-	push  bool
+	force   bool
+	push    bool
+	release string
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -26,6 +27,14 @@ func WithBuildForce() BuildOpt {
 func WithBuildPush() BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.push = true
+		return nil
+	}
+}
+
+// WithRelease releases as the given version after push
+func WithRelease(r string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.release = r
 		return nil
 	}
 }
@@ -61,9 +70,16 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return fmt.Errorf("Unknown arch %q", arch)
 	}
 
-	release, err := gitCommitTag("HEAD")
-	if err != nil {
-		return err
+	if bo.release == "" {
+		r, err := gitCommitTag("HEAD")
+		if err != nil {
+			return err
+		}
+		bo.release = r
+	}
+
+	if bo.release != "" && !bo.push {
+		return fmt.Errorf("Cannot release %q if not pushing", bo.release)
 	}
 
 	d := newDockerRunner(p.trust, p.cache)
@@ -119,12 +135,12 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return err
 	}
 
-	if release == "" {
+	if bo.release == "" {
 		fmt.Printf("Build and push complete, not releasing, all done.\n")
 		return nil
 	}
 
-	relTag, err := p.ReleaseTag(release)
+	relTag, err := p.ReleaseTag(bo.release)
 	if err != nil {
 		return err
 	}
@@ -137,7 +153,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return err
 	}
 
-	fmt.Printf("Build, push and release complete, all done.\n")
+	fmt.Printf("Build, push and release of %q complete, all done.\n", bo.release)
 
 	return nil
 }
