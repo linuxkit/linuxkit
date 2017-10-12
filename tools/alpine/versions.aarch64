@@ -1,4 +1,4 @@
-# linuxkit/alpine:ad35b6ddbc70faa07e59a9d7dee7707c08122e8d-arm64
+# linuxkit/alpine:d5f568a60d76990407d15fb128fc9d53e363fcee-arm64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -184,10 +184,10 @@ multipath-tools-0.7.1-r1
 musl-1.1.16-r13
 musl-dev-1.1.16-r13
 musl-utils-1.1.16-r13
-ncurses-dev-6.0-r8
-ncurses-libs-6.0-r8
-ncurses-terminfo-6.0-r8
-ncurses-terminfo-base-6.0-r8
+ncurses-dev-6.0_p20170930-r0
+ncurses-libs-6.0_p20170930-r0
+ncurses-terminfo-6.0_p20170930-r0
+ncurses-terminfo-base-6.0_p20170930-r0
 nettle-3.3-r0
 nfs-utils-1.3.4-r1
 npth-1.2-r0
@@ -205,7 +205,7 @@ patch-2.7.5-r1
 pax-utils-1.2.2-r0
 pcre-8.41-r0
 pcsc-lite-libs-1.8.21-r0
-perl-5.24.1-r2
+perl-5.24.3-r1
 pinentry-1.0.0-r0
 pixman-0.34.0-r0
 pkgconf-1.3.7-r0
