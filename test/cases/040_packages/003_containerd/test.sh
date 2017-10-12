@@ -1,6 +1,8 @@
 #!/bin/sh
 # SUMMARY: Run containerd test
-# LABELS:
+# skipping while status of go 1.8 support in containerd is unsure
+# https://github.com/containerd/containerd/issues/1632
+# LABELS: skip
 # REPEAT:
 
 set -e
