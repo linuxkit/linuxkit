@@ -1,4 +1,4 @@
-# linuxkit/alpine:d5f568a60d76990407d15fb128fc9d53e363fcee-arm64
+# linuxkit/alpine:d316ab2d54f92b96cde13cff90ead9bc307d9936-arm64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -74,6 +74,7 @@ gmp-dev-6.1.2-r0
 gnupg-2.1.20-r0
 gnutls-3.5.13-r0
 go-1.8.3-r0
+go-1.9.1-r0
 grep-3.0-r0
 guile-2.0.13-r0
 guile-libs-2.0.13-r0
@@ -252,7 +253,7 @@ util-linux-dev-2.28.2-r2
 vde2-libs-2.3.2-r7
 vim-8.0.0595-r0
 wayland-1.13.0-r0
-wireguard-tools-0.0.20171005-r0
+wireguard-tools-0.0.20171011-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r3
 xfsprogs-4.5.0-r0

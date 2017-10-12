@@ -1,5 +1,5 @@
 # We need the `fstrim` binary:
-FROM linuxkit/alpine:ad35b6ddbc70faa07e59a9d7dee7707c08122e8d AS mirror
+FROM linuxkit/alpine:6211ec0252873c9ff9604101fb256353f5a3832a AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \

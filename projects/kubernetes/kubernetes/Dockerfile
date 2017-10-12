@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:ad35b6ddbc70faa07e59a9d7dee7707c08122e8d AS build
+FROM linuxkit/alpine:6211ec0252873c9ff9604101fb256353f5a3832a AS build
 
 ENV kubernetes_version v1.8.0
 ENV cni_version        v0.6.0

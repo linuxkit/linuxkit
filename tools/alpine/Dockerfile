@@ -16,6 +16,9 @@ RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
 # add the tools for WireGuard, since the kernel module is now included, but from edge/testing
 RUN apk fetch --recursive -o /mirror/$(uname -m) -X http://dl-cdn.alpinelinux.org/alpine/edge/testing -U wireguard-tools
 
+# containerd requires go 1.9 which is only in edge
+RUN apk fetch --recursive -o /mirror/$(uname -m) -X http://dl-cdn.alpinelinux.org/alpine/edge/community -U go
+
 # install abuild for signing
 RUN apk add --no-cache abuild
 

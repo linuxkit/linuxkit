@@ -2,18 +2,18 @@ kernel:
   image: linuxkit/kernel:4.9.54
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:9d1b4ebe1bc8d9e52147c440efa16f2d8677d967
-  - linuxkit/runc:1f0edd2e25046389eb556551b99424cff86398c8
-  - linuxkit/containerd:097c6989255068b563e6e6f7b46a866ae4a3bc82
+  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
+  - linuxkit/runc:52f92cb577879ce4cfe4e89be2d63af82523fc92
+  - linuxkit/containerd:ed8e8f92e24dd4b94260cf147594ae3fd13a2182
   - linuxkit/ca-certificates:ea3c4c120f929f4f07ac8535d75933365b5e9582
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:53f0c724919e8f76ea06c44ee703330290b22669
+    image: linuxkit/sysctl:1644bf07edbcaf5ce0bb764fa925b544183547f9
   - name: dhcpcd
     image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: wg0
-    image: linuxkit/ip:7a82871df06767cfe26a04d0ed6bee1031ba5d04
+    image: linuxkit/ip:30fa3497a42cf941301c1e9cde09b3d68f01b847
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -26,7 +26,7 @@ onboot:
       bindNS:
           net: /run/netns/wg0
   - name: wg1
-    image: linuxkit/ip:7a82871df06767cfe26a04d0ed6bee1031ba5d04
+    image: linuxkit/ip:30fa3497a42cf941301c1e9cde09b3d68f01b847
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -45,7 +45,7 @@ services:
      - INSECURE=true
     net: /run/netns/wg1
   - name: rngd
-    image: linuxkit/rngd:719e087b06dd14c29acd23fa07cccd036bbab4db
+    image: linuxkit/rngd:45ed7759dd927f4cce3863073ea2e0da1d52a427
   - name: nginx
     image: nginx:alpine
     net: /run/netns/wg0
