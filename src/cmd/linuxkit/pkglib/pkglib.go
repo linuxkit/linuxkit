@@ -138,18 +138,22 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		}
 	})
 
-	if hash == "" {
-		if hash, err = gitTreeHash(hashPath, hashCommit); err != nil {
-			return Pkg{}, err
-		}
-	}
-
 	gitDirty, err := gitIsDirty(hashPath, hashCommit)
 	if err != nil {
 		return Pkg{}, err
 	}
 
 	dirty = dirty || gitDirty
+
+	if hash == "" {
+		if hash, err = gitTreeHash(hashPath, hashCommit); err != nil {
+			return Pkg{}, err
+		}
+
+		if dirty {
+			hash += "-dirty"
+		}
+	}
 
 	return Pkg{
 		image:      pi.Image,
@@ -185,11 +189,7 @@ func (p Pkg) ReleaseTag(release string) (string, error) {
 
 // Tag returns the tag to use for the package
 func (p Pkg) Tag() string {
-	tag := p.org + "/" + p.image + ":" + p.hash
-	if p.dirty {
-		tag += "-dirty"
-	}
-	return tag
+	return p.org + "/" + p.image + ":" + p.hash
 }
 
 func (p Pkg) archSupported(want string) bool {

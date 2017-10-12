@@ -117,6 +117,10 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	if !bo.push {
+		if err := d.tag(p.Tag()+suffix, p.Tag()); err != nil {
+			return err
+		}
+
 		fmt.Printf("Build complete, not pushing, all done.\n")
 		return nil
 	}

@@ -71,6 +71,7 @@ func (dr dockerRunner) push(img string) error {
 }
 
 func (dr dockerRunner) pushWithManifest(img, suffix string) error {
+	fmt.Printf("Pushing %s\n", img+suffix)
 	if err := dr.push(img + suffix); err != nil {
 		return err
 	}
@@ -80,6 +81,7 @@ func (dr dockerRunner) pushWithManifest(img, suffix string) error {
 		dctArg = "1"
 	}
 
+	fmt.Printf("Pushing %s to manifest %s\n", img+suffix, img)
 	cmd := exec.Command("/bin/sh", "-c", manifestPushScript, "manifest-push-script", img, dctArg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
@@ -90,6 +92,7 @@ func (dr dockerRunner) pushWithManifest(img, suffix string) error {
 }
 
 func (dr dockerRunner) tag(ref, tag string) error {
+	fmt.Printf("Tagging %s as %s\n", ref, tag)
 	return dr.command("tag", ref, tag)
 }
 
