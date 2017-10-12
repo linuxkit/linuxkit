@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:90aa5d87063049827de536371016bc02138a8f59 AS build
+FROM linuxkit/alpine:6211ec0252873c9ff9604101fb256353f5a3832a AS build
 RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev git linux-headers
 
 ADD usermode-helper.c ./
