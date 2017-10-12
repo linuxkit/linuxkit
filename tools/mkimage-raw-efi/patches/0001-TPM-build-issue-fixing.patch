@@ -1,0 +1,72 @@
+From 617b08377dbaa9ea3876b5585fe0ba36286fbed6 Mon Sep 17 00:00:00 2001
+From: Dennis Chen <dennis.chen@arm.com>
+Date: Thu, 17 Aug 2017 05:47:55 +0000
+Subject: [PATCH] TPM: build issue fixing
+
+Fix the build issue on arm64 and amd64.
+
+Signed-off-by: Dennis Chen <dennis.chen@arm.com>
+---
+ grub-core/kern/efi/tpm.c | 12 ++++++------
+ include/grub/efi/tpm.h   |  4 ++--
+ 2 files changed, 8 insertions(+), 8 deletions(-)
+
+diff --git a/grub-core/kern/efi/tpm.c b/grub-core/kern/efi/tpm.c
+index c9fb3c1..ed40f98 100644
+--- a/grub-core/kern/efi/tpm.c
++++ b/grub-core/kern/efi/tpm.c
+@@ -175,7 +175,7 @@ grub_tpm1_log_event(grub_efi_handle_t tpm_handle, unsigned char *buf,
+ 		    grub_size_t size, grub_uint8_t pcr,
+ 		    const char *description)
+ {
+-  Event *event;
++  TCG_PCR_EVENT *event;
+   grub_efi_status_t status;
+   grub_efi_tpm_protocol_t *tpm;
+   grub_efi_physical_address_t lastevent;
+@@ -188,15 +188,15 @@ grub_tpm1_log_event(grub_efi_handle_t tpm_handle, unsigned char *buf,
+   if (!grub_tpm_present(tpm))
+     return 0;
+ 
+-  event = grub_zalloc(sizeof (Event) + grub_strlen(description) + 1);
++  event = grub_zalloc(sizeof (TCG_PCR_EVENT) + grub_strlen(description) + 1);
+   if (!event)
+     return grub_error (GRUB_ERR_OUT_OF_MEMORY,
+ 		       N_("cannot allocate TPM event buffer"));
+ 
+-  event->pcrindex = pcr;
+-  event->eventtype = EV_IPL;
+-  event->eventsize = grub_strlen(description) + 1;
+-  grub_memcpy(event->event, description, event->eventsize);
++  event->PCRIndex = pcr;
++  event->EventType = EV_IPL;
++  event->EventSize = grub_strlen(description) + 1;
++  grub_memcpy(event->Event, description, event->EventSize);
+ 
+   algorithm = TCG_ALG_SHA;
+   status = efi_call_7 (tpm->log_extend_event, tpm, buf, (grub_uint64_t) size,
+diff --git a/include/grub/efi/tpm.h b/include/grub/efi/tpm.h
+index e2aff4a..fb3bb0e 100644
+--- a/include/grub/efi/tpm.h
++++ b/include/grub/efi/tpm.h
+@@ -69,7 +69,7 @@ struct grub_efi_tpm_protocol
+ 					    grub_efi_uint32_t TpmOutputParameterBlockSize,
+ 					    grub_efi_uint8_t *TpmOutputParameterBlock);
+   grub_efi_status_t (*log_extend_event) (struct grub_efi_tpm_protocol *this,
+-					 grub_efi_physical_address_t HashData,
++					 grub_efi_uint8_t *HashData,
+ 					 grub_efi_uint64_t HashDataLen,
+ 					 grub_efi_uint32_t AlgorithmId,
+ 					 TCG_PCR_EVENT *TCGLogData,
+@@ -129,7 +129,7 @@ struct grub_efi_tpm2_protocol
+ 				      grub_efi_boolean_t *EventLogTruncated);
+   grub_efi_status_t (*hash_log_extend_event) (struct grub_efi_tpm2_protocol *this,
+ 					      grub_efi_uint64_t Flags,
+-					      grub_efi_physical_address_t *DataToHash,
++					      grub_efi_uint8_t *DataToHash,
+ 					      grub_efi_uint64_t DataToHashLen,
+ 					      EFI_TCG2_EVENT *EfiTcgEvent);
+   grub_efi_status_t (*submit_command) (struct grub_efi_tpm2_protocol *this,
+-- 
+2.7.4
+
