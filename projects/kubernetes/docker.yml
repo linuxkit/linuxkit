@@ -10,6 +10,7 @@ services:
     binds:
      - /dev:/dev
      - /etc/resolv.conf:/etc/resolv.conf
+     - /etc/os-release:/etc/os-release
      - /lib/modules:/lib/modules
      - /run:/run
      - /var:/var:rshared,rbind
