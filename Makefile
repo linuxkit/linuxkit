@@ -72,9 +72,20 @@ test-cross:
 	$(MAKE) -j 3 GOOS=linux tmp_moby_bin.tar tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
 
+.PHONY: local-check local-build local-test local
+local-check: $(LINUXKIT_DEPS)
+	@echo gofmt... && gofmt -s -l $(filter %.go,$(LINUXKIT_DEPS))
+	@echo govet... && go tool vet -printf=false $(filter %.go,$(LINUXKIT_DEPS))
+	@echo golint... && set -e ; for i in $(filter %.go,$(LINUXKIT_DEPS)); do golint $$i ; done
+	@echo ineffassign... && ineffassign  $(filter %.go,$(LINUXKIT_DEPS))
 
-local: $(LINUXKIT_DEPS) | bin
+local-build: $(LINUXKIT_DEPS) | bin
 	go build -o bin/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
+
+local-test: $(LINUXKIT_DEPS)
+	go test $(shell go list github.com/linuxkit/linuxkit/src/cmd/linuxkit/... | grep -v ^github.com/linuxkit/linuxkit/src/cmd/linuxkit/vendor/)
+
+local: local-check local-build local-test
 
 bin:
 	mkdir -p $@
