@@ -42,6 +42,9 @@ files:
     metadata: yaml
   - path: /etc/kubernetes
     symlink: "/var/lib/kubeadm"
+  - path: /etc/os-release
+    contents: |
+      PRETTY_NAME="LinuxKit Kubernetes Project"
   - path: /usr/libexec/kubernetes/kubelet-plugins
     symlink: "/var/lib/kubelet-plugins"
   - path: /etc/kubeadm/kube-system.init/50-network.yaml
