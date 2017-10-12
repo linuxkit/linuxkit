@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:4.9.38
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:98e95fb67e8afcf02c09ba927e4b357fec42977a
-  - linuxkit/runc:991ef358ad8fc1111d64f4d8071f2009cc561f6a
+  - linuxkit/init:9d1b4ebe1bc8d9e52147c440efa16f2d8677d967
+  - linuxkit/runc:1f0edd2e25046389eb556551b99424cff86398c8
 onboot:
   - name: format
     image: linuxkit/format:e7f06bd9bb96b663f8aab7d648a5dfc3ed7785fc
