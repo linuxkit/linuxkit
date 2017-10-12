@@ -2,13 +2,13 @@ kernel:
   image: mobylinux/kernel:4.9.x
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:9d1b4ebe1bc8d9e52147c440efa16f2d8677d967
+  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
   - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
   - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:53f0c724919e8f76ea06c44ee703330290b22669
+    image: linuxkit/sysctl:1644bf07edbcaf5ce0bb764fa925b544183547f9
   - name: dhcpcd
     image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]

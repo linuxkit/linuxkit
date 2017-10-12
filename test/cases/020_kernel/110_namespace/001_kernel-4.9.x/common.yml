@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:4.9.54
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:9d1b4ebe1bc8d9e52147c440efa16f2d8677d967
-  - linuxkit/runc:1f0edd2e25046389eb556551b99424cff86398c8
+  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
+  - linuxkit/runc:52f92cb577879ce4cfe4e89be2d63af82523fc92
 trust:
   org:
     - linuxkit

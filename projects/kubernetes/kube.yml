@@ -2,27 +2,27 @@ kernel:
   image: linuxkit/kernel:4.9.54
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:9d1b4ebe1bc8d9e52147c440efa16f2d8677d967
-  - linuxkit/runc:1f0edd2e25046389eb556551b99424cff86398c8
-  - linuxkit/containerd:097c6989255068b563e6e6f7b46a866ae4a3bc82
+  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
+  - linuxkit/runc:52f92cb577879ce4cfe4e89be2d63af82523fc92
+  - linuxkit/containerd:ed8e8f92e24dd4b94260cf147594ae3fd13a2182
   - linuxkit/ca-certificates:ea3c4c120f929f4f07ac8535d75933365b5e9582
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:53f0c724919e8f76ea06c44ee703330290b22669
+    image: linuxkit/sysctl:1644bf07edbcaf5ce0bb764fa925b544183547f9
     binds:
      - /etc/sysctl.d/01-kubernetes.conf:/etc/sysctl.d/01-kubernetes.conf
     readonly: false
   - name: sysfs
-    image: linuxkit/sysfs:7ff47034ed61c8e4c7ca5b8992056c66c6f39df8
+    image: linuxkit/sysfs:a844eb2ac09df07f5eda89d5588d76bf8d96cfca
   - name: dhcpcd
     image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:4920d2b7f987c4cf67c5472308b0badcdfac4b2b
+    image: linuxkit/metadata:4c588dba73ae7bec6f873130f715ba44082c4278
   - name: format
-    image: linuxkit/format:e7f06bd9bb96b663f8aab7d648a5dfc3ed7785fc
+    image: linuxkit/format:be811ded880af37a916f23bc9ddb274026ccc514
   - name: mounts
-    image: linuxkit/mount:80c6aeef04260eaa7c74a93594ea7c5a4ab2808e
+    image: linuxkit/mount:ef2e2106212b2d333b548821191f04da984ef48f
     command: ["/usr/bin/mountie", "/var/lib/"]
 services:
   - name: getty
@@ -30,13 +30,13 @@ services:
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:719e087b06dd14c29acd23fa07cccd036bbab4db
+    image: linuxkit/rngd:45ed7759dd927f4cce3863073ea2e0da1d52a427
   - name: ntpd
     image: linuxkit/openntpd:8d32daf90ecf70b7e185cb7a2db53b4c539d371c
   - name: sshd
     image: linuxkit/sshd:4a2fc7be31fa57dcade391de6173e0af55296e7f
   - name: kubelet
-    image: linuxkitprojects/kubernetes:f35e9c9879bb7d178f2148a91e4c5d5e812ecade
+    image: linuxkitprojects/kubernetes:718c9c7a47c518622d41ec0e8afeeacda3a363d6
 files:
   - path: etc/linuxkit.yml
     metadata: yaml
