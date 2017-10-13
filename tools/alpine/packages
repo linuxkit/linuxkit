@@ -27,6 +27,7 @@ curl
 dhcpcd
 diffutils
 dosfstools
+dtc
 e2fsprogs
 e2fsprogs-extra
 ebtables
