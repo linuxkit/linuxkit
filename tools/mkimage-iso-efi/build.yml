@@ -1,3 +1,2 @@
 image: mkimage-iso-efi
-disable-content-trust: true
 network: true
