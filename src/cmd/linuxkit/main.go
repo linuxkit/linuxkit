@@ -3,11 +3,26 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
+
+// GlobalConfig is the global tool configuration
+type GlobalConfig struct {
+	Pkg PkgConfig `yaml:"pkg"`
+}
+
+// PkgConfig is the config specific to the `pkg` subcommand
+type PkgConfig struct {
+	// ContentTrustCommand is passed to `sh -c` and the stdout
+	// (including whitespace and \n) is set as the content trust
+	// passphrase. Can be used to execute a password manager.
+	ContentTrustCommand string `yaml:"content-trust-passphrase-command"`
+}
 
 var (
 	defaultLogFormatter = &log.TextFormatter{}
@@ -17,6 +32,9 @@ var (
 
 	// GitCommit hash, set at compile time
 	GitCommit = "unknown"
+
+	// Config is the global tool configuration
+	Config = GlobalConfig{}
 )
 
 // infoFormatter overrides the default format for Info() log events to
@@ -37,6 +55,22 @@ func version() {
 	os.Exit(0)
 }
 
+func readConfig() {
+	cfgPath := filepath.Join(os.Getenv("HOME"), ".moby", "linuxkit", "config.yml")
+	cfgBytes, err := ioutil.ReadFile(cfgPath)
+	if err != nil {
+		if os.IsNotExist(err) {
+			return
+		}
+		fmt.Printf("Failed to read %q\n", cfgPath)
+		os.Exit(1)
+	}
+	if err := yaml.Unmarshal(cfgBytes, &Config); err != nil {
+		fmt.Printf("Failed to parse %q\n", cfgPath)
+		os.Exit(1)
+	}
+}
+
 func main() {
 	flag.Usage = func() {
 		fmt.Printf("USAGE: %s [options] COMMAND\n\n", filepath.Base(os.Args[0]))
@@ -55,6 +89,8 @@ func main() {
 	}
 	flagQuiet := flag.Bool("q", false, "Quiet execution")
 	flagVerbose := flag.Bool("v", false, "Verbose execution")
+
+	readConfig()
 
 	// Set up logging
 	log.SetFormatter(new(infoFormatter))
