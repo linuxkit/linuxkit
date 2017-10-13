@@ -28,7 +28,7 @@ func dockerRun(input io.Reader, output io.Writer, args ...string) error {
 	if err != nil {
 		return errors.New("Docker does not seem to be installed")
 	}
-	args = append([]string{"run", "--rm", "-i"}, args...)
+	args = append([]string{"run", "--network=none", "--rm", "-i"}, args...)
 	cmd := exec.Command(docker, args...)
 	cmd.Stdin = input
 	cmd.Stdout = output
