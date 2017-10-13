@@ -237,6 +237,10 @@ binds:
  - /var:/some/var/path
 ```
 
+Please note that `binds` doesn't **add** the mount points, but **replaces** them.
+You can examine the `Dockerfile` of the component (in particular, `binds` value of
+`org.mobyproject.config` label) to get the list of the existing binds.
+
 However, in some circumstances you will need additional options. These options are used primarily if you intend to make changes to mount points _from within your container_ that should be visible from outside the container, e.g., if you intend to mount an external disk from inside the container but have it be visible outside.
 
 In order for new mounts from within a container to be propagated, you must set the following on the container:
