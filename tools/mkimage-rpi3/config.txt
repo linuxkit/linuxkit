@@ -1,0 +1,5 @@
+avoid_warnings=2
+# 64bit mode, serial and kernel
+arm_control=0x200
+enable_uart=1
+kernel=u-boot.bin

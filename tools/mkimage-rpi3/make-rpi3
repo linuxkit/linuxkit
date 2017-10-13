@@ -1,0 +1,29 @@
+#!/bin/sh
+
+set -e
+
+# input is a tarball on stdin with kernel, dtbs and cmdline in /boot
+# output is an tar to be extracted onto a SD card
+
+mkdir -p /files 
+cd /files
+
+# extract. BSD tar auto recognises compression
+[ -t 0 ] || bsdtar xzf -
+
+cd /
+
+# copy/convert files 
+cp /files/boot/dtb/broadcom/bcm2837-rpi-3-b.dtb /boot
+/bin/mkimage -A arm64 -O linux -T kernel -C gzip -a 0x80000 -e 0x80000 \
+             -d /files/boot/kernel /boot/kernel.uimg >> /boot/uboot.log
+/bin/mkimage -A arm64 -O linux -T script -C none -a 0x00000000 -e 0x00000000 -n RPi3 \
+             -d /boot/boot.script /boot/boot.scr  >> /boot/uboot.log
+
+# build an initrd and convert it
+rm -rf /files/boot
+cd /files && find . | cpio -o -H newc | gzip > /initrd.img
+/bin/mkimage -A arm64 -O linux -T ramdisk -d /initrd.img /boot/initrd.uimg  >> /boot/uboot.log
+
+# now everything is setup in /boot just need to tar it
+cd /boot && tar cf - .
