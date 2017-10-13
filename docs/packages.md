@@ -94,6 +94,11 @@ invoke the build like this (for LastPass):
 ```
 DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=$(lpass show <key> --password) linuxkit pkg push «path-to-package»
 ```
+or alternatively you may add the command to `~/.moby/linuxkit/config.yml` e.g.:
+```
+pkg:
+  content-trust-passphrase-command: "lpass show <key> --password"
+```
 
 ### Build packages as a developer
 
