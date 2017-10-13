@@ -28,6 +28,10 @@ func pkgPush(args []string) {
 		os.Exit(1)
 	}
 
+	if p.TrustEnabled() {
+		setupContentTrustPassphrase()
+	}
+
 	fmt.Printf("Building and pushing %q\n", p.Tag())
 
 	var opts []pkglib.BuildOpt
