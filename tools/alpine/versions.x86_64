@@ -1,4 +1,4 @@
-# linuxkit/alpine:6211ec0252873c9ff9604101fb256353f5a3832a-amd64
+# linuxkit/alpine:b3f8da6c6f02440ee9c4c72bbf4dabdf500b1d8c-amd64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -41,6 +41,7 @@ device-mapper-libs-2.02.168-r3
 dhcpcd-6.11.5-r1
 diffutils-3.5-r0
 dosfstools-4.1-r1
+dtc-1.4.4-r0
 e2fsprogs-1.43.4-r0
 e2fsprogs-dev-1.43.4-r0
 e2fsprogs-extra-1.43.4-r0
