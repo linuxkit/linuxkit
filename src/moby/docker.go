@@ -22,16 +22,20 @@ import (
 	"golang.org/x/net/context"
 )
 
-func dockerRun(input io.Reader, output io.Writer, args ...string) error {
+func dockerRun(input io.Reader, output io.Writer, trust bool, args ...string) error {
 	log.Debugf("docker run (input): %s", strings.Join(args, " "))
 	docker, err := exec.LookPath("docker")
 	if err != nil {
 		return errors.New("Docker does not seem to be installed")
 	}
-	args = append([]string{"run", "--rm", "-i"}, args...)
+	args = append([]string{"run", "--network=none", "--rm", "-i"}, args...)
 	cmd := exec.Command(docker, args...)
 	cmd.Stdin = input
 	cmd.Stdout = output
+	cmd.Env = os.Environ()
+	if trust {
+		cmd.Env = append(cmd.Env, "DOCKER_CONTENT_TRUST=1")
+	}
 
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {

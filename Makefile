@@ -3,7 +3,7 @@ GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
 default: moby
 
-DEPS=$(wildcard cmd/moby/*.go) Makefile
+DEPS=$(wildcard cmd/moby/*.go src/moby/*.go src/initrd/*.go src/pad4/*.go) vendor.conf Makefile
 PREFIX?=/usr/local
 
 GOLINT:=$(shell command -v golint 2> /dev/null)

@@ -12,12 +12,12 @@ import (
 )
 
 const (
-	bios       = "linuxkit/mkimage-iso-bios:1140a4f96b04d6744160f6e3ae485bf7f7a945a8@sha256:878c7d7162120be1c388fded863eef28908b3ebf1c0751b78193103c10d4f6d1"
-	efi        = "linuxkit/mkimage-iso-efi:f1f9f9da6dc3fc3827e5f6f60057dd0727cee54d"
-	gcp        = "linuxkit/mkimage-gcp:46716b3d3f7aa1a7607a3426fe0ccebc554b14ee@sha256:18d8e0482f65a2481f5b6ba1e7ce77723b246bf13bdb612be5e64df90297940c"
-	vhd        = "linuxkit/mkimage-vhd:a04c8480d41ca9cef6b7710bd45a592220c3acb2@sha256:ba373dc8ae5dc72685dbe4b872d8f588bc68b2114abd8bdc6a74d82a2b62cce3"
-	vmdk       = "linuxkit/mkimage-vmdk:182b541474ca7965c8e8f987389b651859f760da@sha256:99638c5ddb17614f54c6b8e11bd9d49d1dea9d837f38e0f6c1a5f451085d449b"
-	dynamicvhd = "linuxkit/mkimage-dynamic-vhd:a652b15c281499ecefa6a7a47d0f9c56d70ab208@sha256:10e2a9179d48934c864639df895a6efdee34c2865eb574934398209625b297ff"
+	bios       = "linuxkit/mkimage-iso-bios:65b051322578cb0c2a4f16253b20f7d2797a502"
+	efi        = "linuxkit/mkimage-iso-efi:dc12bc6827f84334b02d1c70599acf80b840c126"
+	gcp        = "linuxkit/mkimage-gcp:d1883809d212ce048f60beb0308a4d2b14c256af"
+	vhd        = "linuxkit/mkimage-vhd:2a31f2bc91c1d247160570bd17868075e6c0009a"
+	vmdk       = "linuxkit/mkimage-vmdk:df02a4fabd87a82209fbbacebde58c4440d2daf0"
+	dynamicvhd = "linuxkit/mkimage-dynamic-vhd:8553167d10c3e8d8603b2566d01bdc0cf5908fa5"
 )
 
 var outFuns = map[string]func(string, []byte, int) error{
@@ -253,7 +253,7 @@ func outputImg(image, filename string, kernel []byte, initrd []byte, cmdline str
 		return err
 	}
 	defer output.Close()
-	return dockerRun(buf, output, image, cmdline)
+	return dockerRun(buf, output, true, image, cmdline)
 }
 
 // this should replace the other version for types that can specify a size
@@ -270,9 +270,9 @@ func outputImgSize(image, filename string, kernel []byte, initrd []byte, cmdline
 	}
 	defer output.Close()
 	if size == 0 {
-		return dockerRun(buf, output, image)
+		return dockerRun(buf, output, true, image)
 	}
-	return dockerRun(buf, output, image, fmt.Sprintf("%dM", size))
+	return dockerRun(buf, output, true, image, fmt.Sprintf("%dM", size))
 }
 
 func outputIso(image, filename string, filesystem []byte) error {
@@ -283,7 +283,7 @@ func outputIso(image, filename string, filesystem []byte) error {
 		return err
 	}
 	defer output.Close()
-	return dockerRun(bytes.NewBuffer(filesystem), output, image)
+	return dockerRun(bytes.NewBuffer(filesystem), output, true, image)
 }
 
 func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline string) error {
