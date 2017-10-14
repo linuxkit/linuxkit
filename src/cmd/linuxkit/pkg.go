@@ -20,7 +20,7 @@ func pkgUsage() {
 	fmt.Printf("See '%s pkg [command] --help' for details.\n\n", invoked)
 }
 
-func setupContentTrust() {
+func setupContentTrustPassphrase() {
 	// If it is already set there is nothing to do.
 	if _, ok := os.LookupEnv("DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"); ok {
 		return
@@ -48,8 +48,6 @@ func pkg(args []string) {
 		pkgUsage()
 		os.Exit(1)
 	}
-
-	setupContentTrust()
 
 	switch args[0] {
 	case "build":

@@ -192,6 +192,11 @@ func (p Pkg) Tag() string {
 	return p.org + "/" + p.image + ":" + p.hash
 }
 
+// TrustEnabled returns true if trust is enabled
+func (p Pkg) TrustEnabled() bool {
+	return p.trust
+}
+
 func (p Pkg) archSupported(want string) bool {
 	for _, supp := range p.arches {
 		if supp == want {
