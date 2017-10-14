@@ -174,8 +174,8 @@ endef
 #
 $(eval $(call kernel,4.13.5,4.13.x,$(EXTRA)))
 $(eval $(call kernel,4.13.5,4.13.x,-dbg))
-$(eval $(call kernel,4.9.54,4.9.x,$(EXTRA)))
-$(eval $(call kernel,4.9.54,4.9.x,-dbg))
+$(eval $(call kernel,4.9.55,4.9.x,$(EXTRA)))
+$(eval $(call kernel,4.9.55,4.9.x,-dbg))
 $(eval $(call kernel,4.4.91,4.4.x,$(EXTRA)))
 
 # Target for kernel config

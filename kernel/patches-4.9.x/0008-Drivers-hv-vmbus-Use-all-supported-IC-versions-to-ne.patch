@@ -1,4 +1,4 @@
-From c2aa56946189ede4b7bef8774240e27b966a1264 Mon Sep 17 00:00:00 2001
+From afea085a5358ebb992cd9dcd21833331ca1c2d05 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 08/13] Drivers: hv: vmbus: Use all supported IC versions to
@@ -162,7 +162,7 @@ index 8df02f3ca0b2..e7949b64bfbc 100644
  	negop->icversion_data[0].minor = icframe_minor;
  	negop->icversion_data[1].major = icmsg_major;
 diff --git a/drivers/hv/hv_fcopy.c b/drivers/hv/hv_fcopy.c
-index e47d8c9db03a..0a315e6aa589 100644
+index 75126e4e3f05..0713c6aaa33a 100644
 --- a/drivers/hv/hv_fcopy.c
 +++ b/drivers/hv/hv_fcopy.c
 @@ -31,6 +31,16 @@
@@ -182,7 +182,7 @@ index e47d8c9db03a..0a315e6aa589 100644
  /*
   * Global state maintained for transaction that is being processed.
   * For a class of integration services, including the "file copy service",
-@@ -228,8 +238,6 @@ void hv_fcopy_onchannelcallback(void *context)
+@@ -232,8 +242,6 @@ void hv_fcopy_onchannelcallback(void *context)
  	u64 requestid;
  	struct hv_fcopy_hdr *fcopy_msg;
  	struct icmsg_hdr *icmsghdr;
@@ -191,7 +191,7 @@ index e47d8c9db03a..0a315e6aa589 100644
  	int fcopy_srv_version;
  
  	if (fcopy_transaction.state > HVUTIL_READY)
-@@ -243,10 +251,10 @@ void hv_fcopy_onchannelcallback(void *context)
+@@ -247,10 +255,10 @@ void hv_fcopy_onchannelcallback(void *context)
  	icmsghdr = (struct icmsg_hdr *)&recv_buffer[
  			sizeof(struct vmbuspipe_hdr)];
  	if (icmsghdr->icmsgtype == ICMSGTYPE_NEGOTIATE) {
