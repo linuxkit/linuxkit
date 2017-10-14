@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"runtime"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/moby/tool/src/initrd"
@@ -18,6 +19,7 @@ const (
 	vhd        = "linuxkit/mkimage-vhd:2a31f2bc91c1d247160570bd17868075e6c0009a"
 	vmdk       = "linuxkit/mkimage-vmdk:df02a4fabd87a82209fbbacebde58c4440d2daf0"
 	dynamicvhd = "linuxkit/mkimage-dynamic-vhd:8553167d10c3e8d8603b2566d01bdc0cf5908fa5"
+	rpi3       = "linuxkit/mkimage-rpi3:0735656fff247ca978135e3aeb62864adc612180"
 )
 
 var outFuns = map[string]func(string, []byte, int) error{
@@ -123,6 +125,16 @@ var outFuns = map[string]func(string, []byte, int) error{
 		err = outputImg(vmdk, base+".vmdk", kernel, initrd, cmdline)
 		if err != nil {
 			return fmt.Errorf("Error writing vmdk output: %v", err)
+		}
+		return nil
+	},
+	"rpi3": func(base string, image []byte, size int) error {
+		if runtime.GOARCH != "arm64" {
+			return fmt.Errorf("Raspberry Pi output currently only supported on arm64")
+		}
+		err := outputRPi3(rpi3, base+".tar", image)
+		if err != nil {
+			return fmt.Errorf("Error writing rpi3 output: %v", err)
 		}
 		return nil
 	},
@@ -277,6 +289,17 @@ func outputImgSize(image, filename string, kernel []byte, initrd []byte, cmdline
 
 func outputIso(image, filename string, filesystem []byte) error {
 	log.Debugf("output ISO: %s %s", image, filename)
+	log.Infof("  %s", filename)
+	output, err := os.Create(filename)
+	if err != nil {
+		return err
+	}
+	defer output.Close()
+	return dockerRun(bytes.NewBuffer(filesystem), output, true, image)
+}
+
+func outputRPi3(image, filename string, filesystem []byte) error {
+	log.Debugf("output RPi3: %s %s", image, filename)
 	log.Infof("  %s", filename)
 	output, err := os.Create(filename)
 	if err != nil {
