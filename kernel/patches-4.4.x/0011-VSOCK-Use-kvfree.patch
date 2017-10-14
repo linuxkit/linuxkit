@@ -1,4 +1,4 @@
-From 86c0d5452c7c835065cf40949d39684ce558776a Mon Sep 17 00:00:00 2001
+From 1047f5e89fec6c09e4174acb5561782954f2fc4b Mon Sep 17 00:00:00 2001
 From: Wei Yongjun <weiyj.lk@gmail.com>
 Date: Tue, 2 Aug 2016 13:50:42 +0000
 Subject: [PATCH 11/44] VSOCK: Use kvfree()
