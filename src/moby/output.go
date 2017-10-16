@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	bios       = "linuxkit/mkimage-iso-bios:65b051322578cb0c2a4f16253b20f7d2797a502"
+	bios       = "linuxkit/mkimage-iso-bios:165b051322578cb0c2a4f16253b20f7d2797a502"
 	efi        = "linuxkit/mkimage-iso-efi:dc12bc6827f84334b02d1c70599acf80b840c126"
 	gcp        = "linuxkit/mkimage-gcp:d1883809d212ce048f60beb0308a4d2b14c256af"
 	vhd        = "linuxkit/mkimage-vhd:2a31f2bc91c1d247160570bd17868075e6c0009a"
