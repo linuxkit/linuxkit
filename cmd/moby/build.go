@@ -25,7 +25,7 @@ func (f *formatList) String() string {
 }
 
 func (f *formatList) Set(value string) error {
-	// allow comma seperated options or multiple options
+	// allow comma separated options or multiple options
 	for _, cs := range strings.Split(value, ",") {
 		*f = append(*f, cs)
 	}

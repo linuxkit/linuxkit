@@ -4,6 +4,7 @@
   "Sort": ["linter", "severity", "path", "line"],
   "EnableGC": true,
   "WarnUnmatchedDirective": true,
+  "Exclude": ["parameter .* always receives"],
 
   "DisableAll": true,
   "Enable": [

@@ -246,11 +246,7 @@ func tarInitrdKernel(kernel, initrd []byte, cmdline string) (*bytes.Buffer, erro
 	if err != nil {
 		return buf, err
 	}
-	err = tw.Close()
-	if err != nil {
-		return buf, err
-	}
-	return buf, nil
+	return buf, tw.Close()
 }
 
 func outputImg(image, filename string, kernel []byte, initrd []byte, cmdline string) error {
@@ -266,25 +262,6 @@ func outputImg(image, filename string, kernel []byte, initrd []byte, cmdline str
 	}
 	defer output.Close()
 	return dockerRun(buf, output, true, image, cmdline)
-}
-
-// this should replace the other version for types that can specify a size
-func outputImgSize(image, filename string, kernel []byte, initrd []byte, cmdline string, size int) error {
-	log.Debugf("output img: %s %s size %d", image, filename, size)
-	log.Infof("  %s", filename)
-	buf, err := tarInitrdKernel(kernel, initrd, cmdline)
-	if err != nil {
-		return err
-	}
-	output, err := os.Create(filename)
-	if err != nil {
-		return err
-	}
-	defer output.Close()
-	if size == 0 {
-		return dockerRun(buf, output, true, image)
-	}
-	return dockerRun(buf, output, true, image, fmt.Sprintf("%dM", size))
 }
 
 func outputIso(image, filename string, filesystem []byte) error {
@@ -320,11 +297,7 @@ func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline strin
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(base+"-cmdline", []byte(cmdline), os.FileMode(0644))
-	if err != nil {
-		return err
-	}
-	return nil
+	return ioutil.WriteFile(base+"-cmdline", []byte(cmdline), os.FileMode(0644))
 }
 
 func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdline string) error {

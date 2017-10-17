@@ -65,12 +65,7 @@ func ensureLinuxkitImage(name string) error {
 	if err != nil {
 		return fmt.Errorf("Error converting to initrd: %v", err)
 	}
-	err = writeKernelInitrd(filename, kernel, initrd, cmdline)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return writeKernelInitrd(filename, kernel, initrd, cmdline)
 }
 
 func writeKernelInitrd(filename string, kernel []byte, initrd []byte, cmdline string) error {
@@ -82,11 +77,7 @@ func writeKernelInitrd(filename string, kernel []byte, initrd []byte, cmdline st
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filename+"-cmdline", []byte(cmdline), 0600)
-	if err != nil {
-		return err
-	}
-	return nil
+	return ioutil.WriteFile(filename+"-cmdline", []byte(cmdline), 0600)
 }
 
 func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte, cmdline string, size int) error {
@@ -127,13 +118,14 @@ func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte
 	if err != nil {
 		return fmt.Errorf("Cannot find linuxkit executable, needed to build %s output type: %v", format, err)
 	}
-	commandLine := []string{"-q", "run", "qemu", "-disk", fmt.Sprintf("%s,size=%s,format=%s", filename, sizeString, format), "-disk", fmt.Sprintf("%s,format=raw", tardisk), "-kernel", imageFilename("mkimage")}
+	commandLine := []string{
+		"-q", "run", "qemu",
+		"-disk", fmt.Sprintf("%s,size=%s,format=%s", filename, sizeString, format),
+		"-disk", fmt.Sprintf("%s,format=raw", tardisk),
+		"-kernel", imageFilename("mkimage"),
+	}
 	log.Debugf("run %s: %v", linuxkit, commandLine)
 	cmd := exec.Command(linuxkit, commandLine...)
 	cmd.Stderr = os.Stderr
-	err = cmd.Run()
-	if err != nil {
-		return err
-	}
-	return nil
+	return cmd.Run()
 }

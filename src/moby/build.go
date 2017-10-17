@@ -18,8 +18,6 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
-const defaultNameForStdin = "moby"
-
 var streamable = map[string]bool{
 	"docker": true,
 	"tar":    true,
