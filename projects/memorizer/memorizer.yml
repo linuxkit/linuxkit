@@ -1,8 +1,8 @@
 kernel:
-  image: "linuxkitprojects/kernel-memorizer:4.10_dbg-17e2eee03ab59f8df8a9c10ace003a84aec2f540"
-  cmdline: "console=ttyS0 page_poison=1"
+  image: "linuxkitprojects/kernel-memorizer:4.10_dbg-17e2eee03ab59f8df8a9c10ace003a84aec2f540-dirty"
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:059b2bb4b6efa5c58cf53fed4d0ea863521959fc
+  - linuxkit/init:438d377802498afb3a6ed2a86175ab4beb07a31a
   - linuxkit/runc:a1b564248a0d0b118c11e61db9f84ecf41dd2d2a
   - linuxkit/containerd:8e4aa6c09e9bceee8300a315c23e0333e187f5fa
 onboot:

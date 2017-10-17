@@ -62,7 +62,7 @@ echo 1 > /sys/kernel/debug/memorizer_log_access
 tar zcf something.tar.gz /somedir &
 ssh u@h:/somefile 
 ...
-# Disable access logging
+# Disable access loggin
 echo 0 > /sys/kernel/debug/memorizer/memorizer_log_access
 # Disable memorizer object tracking: isn't necessary but will reduce noise
 echo 0 > /sys/kernel/debug/memorizer/memorizer_enabled

@@ -1,0 +1,4289 @@
+diff --git a/Documentation/memorizer.txt b/Documentation/memorizer.txt
+new file mode 100644
+index 000000000000..03a4889d62ff
+--- /dev/null
++++ b/Documentation/memorizer.txt
+@@ -0,0 +1,92 @@
++             
++             +--------------------------------------------------+
++             | Memorizer: Kernel Memory Access Patterns (KMAPs) |
++             +--------------------------------------------------+
++
++Introduction
++============
++
++Memorizer is a tool to record information about access to kernel objects:
++specifically, it counts memory accesses from distinct IP addresses in the
++kernel source and also the PID that accessed, thereby providing spatial and
++temporal dimensions.
++
++Interface via debugfs
++=====================
++
++The tool has a very simple interface at the moment. It can:
++
++- Print out some statistics about memory allocations and memory accesses
++- Control enable/disable of memory object allocation tracking and memory access
++  tracing
++- Print the KMAP using the debugfs file system
++
++Enable object allocation tracking:
++```bash
++echo 1 > /sys/kernel/debug/memorizer/memorizer_enabled
++```
++
++Enable object access tracking:
++```bash
++echo 1 > /sys/kernel/debug/memorizer/memorizer_log_access
++```
++
++Show allocation statistics:
++```bash
++cat /sys/kernel/debug/memorizer/show_stats
++```
++
++Clear free'd objects:
++```bash
++echo 1 > /sys/kernel/debug/memorizer/clear_object_list
++```
++    
++Using Memorizer to Collect KMAPs
++================================
++
++Memorizer lacks push style logging and clearing of the object lists, therefore
++it has the propensity of overflowing memory. The only way to manage the log and
++current set of objects is to manually clear and print the KMAPs.
++
++Therefore, a typical run using memorizer to create KMAPs includes:
++
++```bash
++# mount the debugfs filesystem if it isn't already
++mount -t debugfs nodev /sys/kernel/debug
++# clear free objects: the current system traces from boot with a lot of
++# uninteresting data
++echo 1 > /sys/kernel/debug/clear_object_list
++# enable memorizer object access tracking, which by default is off
++echo 1 > /sys/kernel/debug/memorizer_log_access
++# Now run whatever test
++tar zcf something.tar.gz /somedir &
++ssh u@h:/somefile 
++...
++# Disable access loggin
++echo 0 > /sys/kernel/debug/memorizer/memorizer_log_access
++# Disable memorizer object tracking: isn't necessary but will reduce noise
++echo 0 > /sys/kernel/debug/memorizer/memorizer_enabled
++# Cat the results: make sure to pipe to something
++cat /sys/kernel/debug/memorizer/kmap > test.kmap
++```
++
++Output Format
++=============
++
++Memorizer outputs data as text, which may change if space is a problem. The
++format of the kmap file is as follows:
++
++alloc_ip,pid,obj_va_ptr,size,alloc_jiffies,free_jiffies,free_ip,executable
++  access_ip,access_pid,write_count,read_count
++  access_ip,access_pid,write_count,read_count
++  access_ip,access_pid,write_count,read_count
++    ...
++    ...
++
++There are a few special error codes: 
++
++    - Not all free_ip's could be obtained correctly and therefore some of these
++      will be 0.
++    - There is a bug where we insert into the live object map over another
++      allocation, this implies that we are missing a free. So for now we mark
++      the free_ip as 0xDEADBEEF.
+diff --git a/include/linux/memorizer.h b/include/linux/memorizer.h
+new file mode 100644
+index 000000000000..7626ded1c208
+--- /dev/null
++++ b/include/linux/memorizer.h
+@@ -0,0 +1,120 @@
++/*===-- LICENSE ------------------------------------------------------------===
++ * 
++ * University of Illinois/NCSA Open Source License 
++ *
++ * Copyright (C) 2015, The Board of Trustees of the University of Illinois.
++ * All rights reserved. 
++ *
++ * Developed by: 
++ *
++ *    Research Group of Professor Vikram Adve in the Department of Computer
++ *    Science The University of Illinois at Urbana-Champaign
++ *    http://web.engr.illinois.edu/~vadve/Home.html
++ *
++ * Copyright (c) 2015, Nathan Dautenhahn
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the Software), to deal
++ * with the Software without restriction, including without limitation the
++ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
++ * sell copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions: 
++ *
++ * Redistributions of source code must retain the above copyright notice, this
++ * list of conditions and the following disclaimers. 
++ *
++ * Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimers in the documentation
++ * and/or other materials provided with the distribution.  Neither the names of
++ * Nathan Dautenhahn or the University of Illinois, nor the names of its
++ * contributors may be used to endorse or promote products derived from this
++ * Software without specific prior written permission. 
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH
++ * THE SOFTWARE. 
++ *
++ *===------------------------------------------------------------------------===
++ *
++ *       Filename:  memorizer.h
++ *
++ *    Description:  Memorizer records data for kernel object lifetime analysis. 
++ *
++ *===------------------------------------------------------------------------===
++ */
++
++#ifndef _LINUX_MEMORIZER_H
++#define _LINUX_MEMORIZER_H
++
++#include <linux/types.h>
++
++#ifdef CONFIG_MEMORIZER /*----------- !CONFIG_MEMORIZER -------------------- */
++
++/* Init and Misc */
++void __init memorizer_init(void);
++int memorizer_init_from_driver(void);
++
++/* Memorize access */
++void memorizer_mem_access(uintptr_t addr, size_t size, bool write, uintptr_t ip);
++
++/* Allocation memorization */
++void memorizer_kmalloc(unsigned long call_site, const void *ptr, size_t
++		      bytes_req, size_t bytes_alloc, gfp_t gfp_flags);
++void memorizer_kmalloc_node(unsigned long call_site, const void *ptr, size_t
++			   bytes_req, size_t bytes_alloc, gfp_t gfp_flags, int
++			   node);
++void memorizer_kfree(unsigned long call_site, const void *ptr);
++void memorizer_alloc_pages(unsigned long call_site, struct page *page, unsigned
++			   int order);
++void memorizer_free_pages(unsigned long call_site, struct page *page, unsigned
++			  int order);
++
++void memorizer_kmem_cache_alloc(unsigned long call_site, const void *ptr, size_t
++				bytes_req, size_t bytes_alloc, gfp_t gfp_flags);
++void memorizer_kmem_cache_alloc_node (unsigned long call_site, const void *ptr,
++				      size_t bytes_req, size_t bytes_alloc,
++				      gfp_t gfp_flags, int node);
++void memorizer_kmem_cache_free(unsigned long call_site, const void *ptr);
++void memorizer_register_global(const void *ptr, size_t size);
++
++
++void memorizer_fork(struct task_struct *p, long nr);
++
++void switchBuffer(void);
++
++
++
++/* Temporary Debug and test code */
++int __memorizer_get_opsx(void);
++int __memorizer_get_allocs(void);
++void __memorizer_print_events(unsigned int num_events);
++
++#else /*----------- !CONFIG_MEMORIZER ------------------------- */
++
++static inline void __init memorizer_init(void) {}
++static inline void memorizer_init_from_driver(void) {}
++static inline void memorizer_mem_access(uintptr_t addr, size_t size, bool write, uintptr_t ip) {}
++static inline void __memorizer_get_opsx(void) {}
++static inline void __memorizer_print_events(unsigned int num_events) {}
++static inline void memorizer_kmalloc(unsigned long call_site, const void *ptr, size_t bytes_req, size_t bytes_alloc, gfp_t gfp_flags) {}
++static inline void memorizer_kmalloc_node(unsigned long call_site, const void *ptr, size_t bytes_req, size_t bytes_alloc, gfp_t gfp_flags, int node) {}
++static inline void memorizer_kfree(unsigned long call_site, const void *ptr) {}
++static inline void memorizer_alloc_pages(unsigned long call_site, struct page *page, unsigned int order) {}
++static inline void memorizer_free_pages(unsigned long call_site, struct page *page, unsigned int order) {}
++static inline void memorizer_kmem_cache_alloc(unsigned long call_site, const void *ptr, size_t bytes_req, size_t bytes_alloc, gfp_t gfp_flags) {}
++static inline void memorizer_kmem_cache_alloc_node (unsigned long call_site, const void *ptr, size_t bytes_req, size_t bytes_alloc, gfp_t gfp_flags, int node) {}
++static inline void memorizer_kmem_cache_free(unsigned long call_site, const void *ptr) {}
++static inline void memorizer_register_global(const void *ptr, size_t size) {}
++
++static inline void memorizer_fork(struct task_struct *p, long nr) {}
++=======
++void switchBuffer() {}
++
++#endif /* CONFIG_MEMORIZER */
++
++#endif /* __MEMORIZER_H_ */
++
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index ad3ec9ec61f7..125a9d56dca9 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1938,6 +1938,9 @@ struct task_struct {
+ #ifdef CONFIG_KASAN
+ 	unsigned int kasan_depth;
+ #endif
++#ifdef CONFIG_MEMORIZER
++	unsigned long memorizer_recursion;
++#endif
+ #ifdef CONFIG_FUNCTION_GRAPH_TRACER
+ 	/* Index of current stored address in ret_stack */
+ 	int curr_ret_stack;
+diff --git a/include/linux/slab.h b/include/linux/slab.h
+index 4c5363566815..6ee207d3c27f 100644
+--- a/include/linux/slab.h
++++ b/include/linux/slab.h
+@@ -116,6 +116,7 @@
+ 
+ #include <linux/kmemleak.h>
+ #include <linux/kasan.h>
++#include <linux/memorizer.h>
+ 
+ struct mem_cgroup;
+ /*
+diff --git a/init/main.c b/init/main.c
+index b0c9d6facef9..d8ba795cd1bd 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -56,6 +56,7 @@
+ #include <linux/debugobjects.h>
+ #include <linux/lockdep.h>
+ #include <linux/kmemleak.h>
++#include <linux/memorizer.h>
+ #include <linux/pid_namespace.h>
+ #include <linux/device.h>
+ #include <linux/kthread.h>
+@@ -566,6 +567,7 @@ asmlinkage __visible void __init start_kernel(void)
+ 
+ 	/* trace_printk() and trace points may be used after this */
+ 	trace_init();
++	memorizer_init();
+ 
+ 	context_tracking_init();
+ 	radix_tree_init();
+diff --git a/kernel/fork.c b/kernel/fork.c
+index 11c5c8ab827c..2c71ec6e21b8 100644
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -76,6 +76,7 @@
+ #include <linux/compiler.h>
+ #include <linux/sysctl.h>
+ #include <linux/kcov.h>
++#include <linux/memorizer.h>
+ 
+ #include <asm/pgtable.h>
+ #include <asm/pgalloc.h>
+@@ -1979,6 +1980,9 @@ long _do_fork(unsigned long clone_flags,
+ 	} else {
+ 		nr = PTR_ERR(p);
+ 	}
++
++	memorizer_fork(p,nr);
++
+ 	return nr;
+ }
+ 
+diff --git a/lib/Kconfig.debug b/lib/Kconfig.debug
+index eb9e9a7870fa..066a0313f84c 100644
+--- a/lib/Kconfig.debug
++++ b/lib/Kconfig.debug
+@@ -716,6 +716,15 @@ source "lib/Kconfig.kmemcheck"
+ 
+ source "lib/Kconfig.kasan"
+ 
++config MEMORIZER
++	bool "Memorizer: kernel object lifetime access tracing"
++	depends on KASAN 
++        help 
++          Enables memory allocation and tracing tool that combines compiler
++          instrumentation on all loads/stores with embedded hooks for
++          allocations to track lifetime access patterns for kernel memory
++          objects. 
++
+ endmenu # "Memory Debugging"
+ 
+ config ARCH_HAS_KCOV
+diff --git a/lib/test_kasan.c b/lib/test_kasan.c
+index fbdf87920093..8047d9216941 100644
+--- a/lib/test_kasan.c
++++ b/lib/test_kasan.c
+@@ -19,6 +19,8 @@
+ #include <linux/string.h>
+ #include <linux/uaccess.h>
+ #include <linux/module.h>
++#include <linux/kasan.h>
++#include <linux/memorizer.h>
+ 
+ /*
+  * Note: test functions are marked noinline so that their names appear in
+@@ -441,6 +443,7 @@ static noinline void __init use_after_scope_test(void)
+ 
+ static int __init kmalloc_tests_init(void)
+ {
++#if 0
+ 	kmalloc_oob_right();
+ 	kmalloc_oob_left();
+ 	kmalloc_node_oob_right();
+@@ -465,6 +468,10 @@ static int __init kmalloc_tests_init(void)
+ 	ksize_unpoisons_memory();
+ 	copy_user_test();
+ 	use_after_scope_test();
++#endif
++	memorizer_init_from_driver();
++	__memorizer_print_events(10);
++	/* error statement will unload the module for fast extra checking */
+ 	return -EAGAIN;
+ }
+ 
+diff --git a/mm/Makefile b/mm/Makefile
+index 295bd7a9f76b..3e645e7caa3d 100644
+--- a/mm/Makefile
++++ b/mm/Makefile
+@@ -69,6 +69,7 @@ obj-$(CONFIG_SLAB) += slab.o
+ obj-$(CONFIG_SLUB) += slub.o
+ obj-$(CONFIG_KMEMCHECK) += kmemcheck.o
+ obj-$(CONFIG_KASAN)	+= kasan/
++obj-$(CONFIG_MEMORIZER)	+= memorizer/
+ obj-$(CONFIG_FAILSLAB) += failslab.o
+ obj-$(CONFIG_MEMORY_HOTPLUG) += memory_hotplug.o
+ obj-$(CONFIG_MEMTEST)		+= memtest.o
+diff --git a/mm/kasan/kasan.c b/mm/kasan/kasan.c
+index b2a0cff2bb35..24a3e64e855b 100644
+--- a/mm/kasan/kasan.c
++++ b/mm/kasan/kasan.c
+@@ -35,6 +35,7 @@
+ #include <linux/types.h>
+ #include <linux/vmalloc.h>
+ #include <linux/bug.h>
++#include <linux/memorizer.h>
+ 
+ #include "kasan.h"
+ #include "../slab.h"
+@@ -364,6 +365,7 @@ void kasan_alloc_pages(struct page *page, unsigned int order)
+ {
+ 	if (likely(!PageHighMem(page)))
+ 		kasan_unpoison_shadow(page_address(page), PAGE_SIZE << order);
++	//memorizer_alloc_pages(page,order);
+ }
+ 
+ void kasan_free_pages(struct page *page, unsigned int order)
+@@ -372,6 +374,7 @@ void kasan_free_pages(struct page *page, unsigned int order)
+ 		kasan_poison_shadow(page_address(page),
+ 				PAGE_SIZE << order,
+ 				KASAN_FREE_PAGE);
++	//memorizer_free_pages(page,order);
+ }
+ 
+ /*
+@@ -554,6 +557,7 @@ static void kasan_poison_slab_free(struct kmem_cache *cache, void *object)
+ 		return;
+ 
+ 	kasan_poison_shadow(object, rounded_up_size, KASAN_KMALLOC_FREE);
++	//memorizer_kfree(object, cache->object_size);
+ }
+ 
+ bool kasan_slab_free(struct kmem_cache *cache, void *object)
+@@ -601,6 +605,7 @@ void kasan_kmalloc(struct kmem_cache *cache, const void *object, size_t size,
+ 	kasan_poison_shadow((void *)redzone_start, redzone_end - redzone_start,
+ 		KASAN_KMALLOC_REDZONE);
+ 
++	//memorizer_alloc(object, cache->object_size);
+ 	if (cache->flags & SLAB_KASAN)
+ 		set_track(&get_alloc_info(cache, object)->alloc_track, flags);
+ }
+@@ -626,6 +631,7 @@ void kasan_kmalloc_large(const void *ptr, size_t size, gfp_t flags)
+ 	kasan_unpoison_shadow(ptr, size);
+ 	kasan_poison_shadow((void *)redzone_start, redzone_end - redzone_start,
+ 		KASAN_PAGE_REDZONE);
++	//memorizer_alloc(ptr, size);
+ }
+ 
+ void kasan_krealloc(const void *object, size_t size, gfp_t flags)
+@@ -662,6 +668,7 @@ void kasan_kfree_large(const void *ptr)
+ 
+ 	kasan_poison_shadow(ptr, PAGE_SIZE << compound_order(page),
+ 			KASAN_FREE_PAGE);
++	//memorizer_kfree(ptr);
+ }
+ 
+ int kasan_module_alloc(void *addr, size_t size)
+@@ -707,6 +714,8 @@ static void register_global(struct kasan_global *global)
+ 	kasan_poison_shadow(global->beg + aligned_size,
+ 		global->size_with_redzone - aligned_size,
+ 		KASAN_GLOBAL_REDZONE);
++
++	memorizer_register_global(global->beg, global->size);
+ }
+ 
+ void __asan_register_globals(struct kasan_global *globals, size_t size)
+@@ -723,9 +732,13 @@ void __asan_unregister_globals(struct kasan_global *globals, size_t size)
+ }
+ EXPORT_SYMBOL(__asan_unregister_globals);
+ 
+-#define DEFINE_ASAN_LOAD_STORE(size)					\
++// This is the original ASAN definition, but for quick prototyping in memorizer
++// I have simply created an optimized one that doesn't do any of the ASAN
++// checks
++#define DEFINE_ASAN_LOAD_STORE_ORIG(size)					\
+ 	void __asan_load##size(unsigned long addr)			\
+ 	{								\
++		memorizer_mem_access(addr, size, false, _RET_IP_);	\
+ 		check_memory_region_inline(addr, size, false, _RET_IP_);\
+ 	}								\
+ 	EXPORT_SYMBOL(__asan_load##size);				\
+@@ -734,6 +747,7 @@ EXPORT_SYMBOL(__asan_unregister_globals);
+ 	EXPORT_SYMBOL(__asan_load##size##_noabort);			\
+ 	void __asan_store##size(unsigned long addr)			\
+ 	{								\
++		memorizer_mem_access(addr, size, true, _RET_IP_);	\
+ 		check_memory_region_inline(addr, size, true, _RET_IP_);	\
+ 	}								\
+ 	EXPORT_SYMBOL(__asan_store##size);				\
+@@ -741,6 +755,24 @@ EXPORT_SYMBOL(__asan_unregister_globals);
+ 	void __asan_store##size##_noabort(unsigned long);		\
+ 	EXPORT_SYMBOL(__asan_store##size##_noabort)
+ 
++#define DEFINE_ASAN_LOAD_STORE(size)					\
++	void __asan_load##size(unsigned long addr)			\
++	{								\
++		memorizer_mem_access(addr, size, false, _RET_IP_);	\
++	}								\
++	EXPORT_SYMBOL(__asan_load##size);				\
++	__alias(__asan_load##size)					\
++	void __asan_load##size##_noabort(unsigned long);		\
++	EXPORT_SYMBOL(__asan_load##size##_noabort);			\
++	void __asan_store##size(unsigned long addr)			\
++	{								\
++		memorizer_mem_access(addr, size, true, _RET_IP_);	\
++	}								\
++	EXPORT_SYMBOL(__asan_store##size);				\
++	__alias(__asan_store##size)					\
++	void __asan_store##size##_noabort(unsigned long);		\
++	EXPORT_SYMBOL(__asan_store##size##_noabort)
++
+ DEFINE_ASAN_LOAD_STORE(1);
+ DEFINE_ASAN_LOAD_STORE(2);
+ DEFINE_ASAN_LOAD_STORE(4);
+@@ -749,7 +781,8 @@ DEFINE_ASAN_LOAD_STORE(16);
+ 
+ void __asan_loadN(unsigned long addr, size_t size)
+ {
+-	check_memory_region(addr, size, false, _RET_IP_);
++	//check_memory_region(addr, size, false);
++	memorizer_mem_access(addr, size, false, _RET_IP_);
+ }
+ EXPORT_SYMBOL(__asan_loadN);
+ 
+@@ -759,7 +792,8 @@ EXPORT_SYMBOL(__asan_loadN_noabort);
+ 
+ void __asan_storeN(unsigned long addr, size_t size)
+ {
+-	check_memory_region(addr, size, true, _RET_IP_);
++	//check_memory_region(addr, size, true);
++	memorizer_mem_access(addr, size, true, _RET_IP_);
+ }
+ EXPORT_SYMBOL(__asan_storeN);
+ 
+diff --git a/mm/memorizer/Makefile b/mm/memorizer/Makefile
+new file mode 100644
+index 000000000000..cf2b8a007971
+--- /dev/null
++++ b/mm/memorizer/Makefile
+@@ -0,0 +1,10 @@
++KASAN_SANITIZE := n
++
++CFLAGS_REMOVE_memorizer.o = -pg
++# Function splitter causes unnecessary splits in __asan_load1/__asan_store1
++# see: https://gcc.gnu.org/bugzilla/show_bug.cgi?id=63533
++#
++# FIXME NDD: These flags were copied from kasan, I'm not sure if they are needed. 
++CFLAGS_memorizer.o := $(call cc-option, -fno-conserve-stack -fno-stack-protector)
++
++obj-y := memorizer.o kobj_metadata.o
+diff --git a/mm/memorizer/event_structs.h b/mm/memorizer/event_structs.h
+new file mode 100644
+index 000000000000..30e8d3a5617f
+--- /dev/null
++++ b/mm/memorizer/event_structs.h
+@@ -0,0 +1,66 @@
++/* This file describes the structs to be used to describe the events happening inside the kernel:
++ * 1. ALLOCATIONS
++ * 2. DEALLOCATIONS
++ * 3. ACCESSES
++ * These will be used to create stateless logs for Memorizer 2.0
++ * */
++
++#include <linux/sched.h>
++
++/* Event and Access type  enumerations */
++enum EventType {Memorizer_Mem_Alloc = 0xaa, Memorizer_Mem_Free = 0xbb, Memorizer_Mem_Read = 0xcc, Memorizer_Mem_Write = 0xdd, Memorizer_Fork = 0xee};
++enum AccessType {Memorizer_READ=0,Memorizer_WRITE};
++
++struct memorizer_kernel_event {
++	enum EventType event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	uintptr_t	src_pa_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++	enum		AccessType access_type;
++	char		comm[TASK_COMM_LEN];
++	char		funcstr[KSYM_NAME_LEN];
++
++};
++
++
++// TODO: Different Structs for Allocs, Frees and Accesses
++struct memorizer_kernel_alloc {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	uintptr_t	src_pa_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++	char		comm[TASK_COMM_LEN];
++	char		funcstr[KSYM_NAME_LEN];
++};
++
++struct memorizer_kernel_free {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++};
++
++struct memorizer_kernel_access {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++};
++
++struct memorizer_kernel_fork {
++	char		event_type;
++	long		pid;
++	char		comm[TASK_COMM_LEN];
++};
++
++
++
+diff --git a/mm/memorizer/kobj_metadata.c b/mm/memorizer/kobj_metadata.c
+new file mode 100644
+index 000000000000..e3a1a26b43fb
+--- /dev/null
++++ b/mm/memorizer/kobj_metadata.c
+@@ -0,0 +1,336 @@
++/*===-- LICENSE ------------------------------------------------------------===
++ * 
++ * University of Illinois/NCSA Open Source License 
++ *
++ * Copyright (C) 2016, The Board of Trustees of the University of Illinois.
++ * All rights reserved. 
++ *
++ * Developed by: 
++ *
++ *    Research Group of Professor Vikram Adve in the Department of Computer
++ *    Science The University of Illinois at Urbana-Champaign
++ *    http://web.engr.illinois.edu/~vadve/Home.html
++ *
++ * Copyright (c) 2016, Nathan Dautenhahn
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the Software), to deal
++ * with the Software without restriction, including without limitation the
++ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
++ * sell copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions: 
++ *
++ * Redistributions of source code must retain the above copyright notice, this
++ * list of conditions and the following disclaimers. 
++ *
++ * Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimers in the documentation
++ * and/or other materials provided with the distribution.  Neither the names of
++ * Nathan Dautenhahn or the University of Illinois, nor the names of its
++ * contributors may be used to endorse or promote products derived from this
++ * Software without specific prior written permission. 
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH
++ * THE SOFTWARE. 
++ *
++ *===-----------------------------------------------------------------------===
++ *
++ *       Filename:  kobj_metadata.c
++ *
++ *    Description:  Metadata tracking for all kobject allocations. Includes
++ *		    types for metadata as well as data structure
++ *		    implementations.
++ *
++ *===-----------------------------------------------------------------------===
++ */
++
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
++
++#include <linux/gfp.h>
++#include <linux/slab.h>
++#include <linux/jiffies.h>
++
++#include "kobj_metadata.h"
++
++/* allocate table and add to the dir */
++extern unsigned long __get_free_pages(gfp_t gfp_mask, unsigned int order);
++extern void *alloc_pages_exact(size_t size, gfp_t gfp_mask);
++extern void __print_memorizer_kobj(struct memorizer_kobj * kobj, char * title);
++
++/* RW Spinlock for access to rb tree */
++DEFINE_RWLOCK(lookup_tbl_rw_lock);
++
++static struct lt_l3_tbl kobj_l3_tbl;
++
++/**
++ * tbl_get_l1_entry() --- get the l1 entry
++ * @va:	The virtual address to lookup
++ *
++ * Typical table walk starting from top to bottom. 
++ *
++ * Return: the return value is a pointer to the entry in the table, which means
++ * it is a double pointer to the object pointed to by the region. To simplify
++ * lookup and setting this returns a double pointer so access to both the entry
++ * and the object in the entry can easily be obtained.
++ */
++static struct memorizer_kobj **tbl_get_l1_entry(uint64_t va)
++{
++	struct memorizer_kobj **l1e;
++	struct lt_l1_tbl **l2e;
++	struct lt_l2_tbl **l3e;
++
++	/* Do the lookup starting from the top */
++	l3e = lt_l3_entry(&kobj_l3_tbl, va);
++	if(!*l3e)
++		return NULL;
++	l2e = lt_l2_entry(*l3e, va);
++	if(!*l2e)
++		return NULL;
++	l1e = lt_l1_entry(*l2e, va);
++	if(!*l1e)
++		return NULL;
++	return l1e;
++}
++
++/**
++ * l1_alloc() --- allocate an l1 table
++ */
++static struct lt_l1_tbl * l1_alloc(void)
++{
++	struct lt_l1_tbl *l1_tbl;
++	int i = 0;
++
++	l1_tbl = alloc_pages_exact(sizeof(struct lt_l1_tbl), GFP_ATOMIC);
++
++	if(!l1_tbl)
++		panic("Failed to allocate table for memorizer kobj\n");
++
++	/* Zero out the memory */
++	for(i = 0; i < LT_L1_ENTRIES; ++i)
++		l1_tbl->kobj_ptrs[i] = 0;
++
++	return l1_tbl;
++}
++
++/** 
++ * l2_alloc() - alloc level 2 table
++ */
++static struct lt_l2_tbl * l2_alloc(void)
++{
++	struct lt_l2_tbl *l2_tbl;
++	int i = 0;
++
++	l2_tbl = alloc_pages_exact(sizeof(struct lt_l2_tbl), GFP_ATOMIC);
++
++	if(!l2_tbl)
++		panic("Failed to allocate table for memorizer kobj\n");
++
++	/* Zero out the memory */
++	for(i = 0; i < LT_L2_ENTRIES; ++i)
++		l2_tbl->l1_tbls[i] = 0;
++
++	return l2_tbl;
++}
++
++/**
++ * l2_entry_may_alloc() - get the l2 entry and alloc if needed
++ * @l2_tbl:	pointer to the l2 table to look into
++ * @va:		Pointer of the va to index into the table
++ *
++ * Check if the l1 table exists, if not allocate. Lock this update so that we
++ * don't get double allocations for the entry.
++ */
++static struct lt_l1_tbl **l2_entry_may_alloc(struct lt_l2_tbl *l2_tbl, uintptr_t
++					     va)
++{
++	unsigned long flags;
++	struct lt_l1_tbl **l2e;
++	write_lock_irqsave(&lookup_tbl_rw_lock, flags);
++	l2e = lt_l2_entry(l2_tbl, va);
++	if(unlikely(!*l2e))
++		*l2e = l1_alloc();
++	write_unlock_irqrestore(&lookup_tbl_rw_lock, flags);
++	return l2e;
++}
++
++/**
++ * l3_entry_may_alloc() - get the l3 entry and alloc if needed
++ * @va:		Pointer of the va to index into the table
++ *
++ * Check if the l2 table exists, if not allocate. Lock this update so that we
++ * don't get double allocations for the entry.
++ */
++static struct lt_l2_tbl **l3_entry_may_alloc(uintptr_t va)
++{
++	unsigned long flags;
++	struct lt_l2_tbl **l3e;
++	write_lock_irqsave(&lookup_tbl_rw_lock, flags);
++	l3e = lt_l3_entry(&kobj_l3_tbl, va);
++	if(unlikely(!*l3e))
++		*l3e = l2_alloc();
++	write_unlock_irqrestore(&lookup_tbl_rw_lock, flags);
++	return l3e;
++}
++
++/**
++ * lt_remove_kobj() --- remove object from the table
++ * @va: pointer to the beginning of the object
++ *
++ * This code assumes that it will only ever get a remove from the beginning of
++ * the kobj. TODO: check the beginning of the kobj to make sure.
++ *
++ * Return: the object at the location that was removed. 
++ */
++struct memorizer_kobj * lt_remove_kobj(uintptr_t va)
++{
++	struct memorizer_kobj **l1e, *kobj;
++	uintptr_t kobjend;
++
++	/* 
++	 * Get the l1 entry for the va, if there is not entry then we not only
++	 * haven't tracked the object, but we also haven't allocated a l1 page
++	 * for the particular address
++	 */
++	l1e = tbl_get_l1_entry(va);
++	if(!l1e)
++		return NULL;
++
++	kobj = *l1e;
++
++	/* 
++	 * get the beginning VA entry for this object in case we called free
++	 * from within the object at some offset 
++	 */
++	//kobj = tbl_get_l1_entry(va);
++
++	if(kobj){
++		/* For each byte in the object set the l1 entry to NULL */
++		kobjend = kobj->va_ptr + kobj->size;
++		while(va<kobjend){
++			/* TODO Optimize this: can just use the indices on the l1
++			 * tbl instead of getting the entry from the top each
++			 * time.
++			 */
++			l1e = tbl_get_l1_entry(va);
++			if(l1e)
++				*l1e = NULL;
++			va += 1;
++		}
++	}
++	return kobj;
++}
++
++inline struct memorizer_kobj * lt_get_kobj(uintptr_t va)
++{
++	struct memorizer_kobj **l1e = tbl_get_l1_entry(va);
++	if(l1e)
++		return *l1e;
++	else
++		return NULL;
++}
++
++/* 
++ * handle_overalpping_insert() -- hanlde the overlapping insert case
++ * @va:		the virtual address that is currently not vacant
++ * @l1e:	the l1 entry pointer for the va
++ *
++ * There is some missing free's currently, it isn't clear what is causing them;
++ * however, if we assume objects are allocated before use then the most recent
++ * allocation will be viable for any writes to these regions so we remove the
++ * previous entry and set up its free times with a special code denoting it was
++ * evicted from the table in an erroneous fasion.
++ */
++static void handle_overlapping_insert(uintptr_t va, struct memorizer_kobj **l1e)
++{
++	unsigned long flags;
++	struct memorizer_kobj *obj = lt_remove_kobj(va);
++	//pr_err("Inserting 0x%lx into lookup table"
++	//       " (overlaps existing) removing\n", va);
++	/* 
++	 * Note we don't need to free because the object
++	 * is in the free list and will get expunged
++	 * later.
++	 */
++	write_lock_irqsave(&obj->rwlock, flags);
++	obj->free_jiffies = jiffies;
++	obj->free_ip = 0xDEADBEEF;
++	write_unlock_irqrestore(&obj->rwlock, flags);
++#if 0 // Debug code
++	__print_memorizer_kobj(*l1e, "Orig Kobj:");
++	__print_memorizer_kobj(kobj, "New Kobj:");
++	pr_info("L3 Entry Index: %p\n",
++		lt_l3_tbl_index(va));
++	pr_info("L2 Entry Index: %p\n",
++		lt_l2_tbl_index(va));
++	pr_info("L1 Entry Index: %p\n",
++		lt_l1_tbl_index(va));
++#endif
++}
++
++/**
++ * lt_insert_kobj() - insert kobject into the lookup table
++ * @kobj:	pointer to the kobj to insert
++ *
++ * For each virtual address in the range of the kobj allocation set the l1 table
++ * entry mapping for the virtual address to the kobj pointer. The function
++ * starts by getting the l2 table from the global l3 table. If it doesn't exist
++ * then allocates the table. The same goes for looking up the l1 table for the
++ * given va. Once the particular l1 table is obtained for the start va of the
++ * object, iterate through the table setting each entry of the object to the
++ * given kobj pointer. 
++ */
++int lt_insert_kobj(struct memorizer_kobj *kobj)
++{
++	struct lt_l1_tbl **l2e;
++	struct lt_l2_tbl **l3e;
++	uint64_t l1_i = 0;
++	uintptr_t va = kobj->va_ptr;
++	uintptr_t kobjend = kobj->va_ptr + kobj->size;
++
++	while(va < kobjend)
++	{
++		/* Pointer to the l3 entry for va and alloc if needed */
++		l3e = l3_entry_may_alloc(va);
++
++		/* Pointer to the l2 entry for va and alloc if needed */
++		l2e = l2_entry_may_alloc(*l3e, va);
++
++		/* 
++		 * Get the index for this va for boundary on this l1 table;
++		 * however, TODO, this might not be needed as our table indices
++		 * are page aligned and it might be unlikely allocations are
++		 * page aligned and will not traverse the boundary of an l1
++		 * table. Note taht I have not tested this condition yet. 
++		 */
++		l1_i = lt_l1_tbl_index(va);
++
++		while(l1_i < LT_L1_ENTRIES && va < kobjend)
++		{
++			/* get the pointer to the l1_entry for this va byte */
++			struct memorizer_kobj **l1e = lt_l1_entry(*l2e,va);
++
++			/* If it is not null then we are double allocating */
++			if(*l1e)
++				handle_overlapping_insert(va, l1e);
++
++			/* insert the object pointer in the table for byte va */
++			*l1e = kobj;
++
++			/* Track the end of the table and the object tracking */
++			va += 1;
++			++l1_i;
++		}
++	}
++	return 0;
++}
++
++void __init lt_init(void)
++{
++	/* Zero the page dir contents */
++	memset(&kobj_l3_tbl, 0, sizeof(kobj_l3_tbl));
++}
+diff --git a/mm/memorizer/kobj_metadata.h b/mm/memorizer/kobj_metadata.h
+new file mode 100644
+index 000000000000..9b4ef9f97c9d
+--- /dev/null
++++ b/mm/memorizer/kobj_metadata.h
+@@ -0,0 +1,180 @@
++/*===-- LICENSE ------------------------------------------------------------===
++ * 
++ * University of Illinois/NCSA Open Source License 
++ *
++ * Copyright (C) 2016, The Board of Trustees of the University of Illinois.
++ * All rights reserved. 
++ *
++ * Developed by: 
++ *
++ *    Research Group of Professor Vikram Adve in the Department of Computer
++ *    Science The University of Illinois at Urbana-Champaign
++ *    http://web.engr.illinois.edu/~vadve/Home.html
++ *
++ * Copyright (c) 2016, Nathan Dautenhahn
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the Software), to deal
++ * with the Software without restriction, including without limitation the
++ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
++ * sell copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions: 
++ *
++ * Redistributions of source code must retain the above copyright notice, this
++ * list of conditions and the following disclaimers. 
++ *
++ * Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimers in the documentation
++ * and/or other materials provided with the distribution.  Neither the names of
++ * Nathan Dautenhahn or the University of Illinois, nor the names of its
++ * contributors may be used to endorse or promote products derived from this
++ * Software without specific prior written permission. 
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH
++ * THE SOFTWARE. 
++ *
++ *===-----------------------------------------------------------------------===
++ *
++ *       Filename:  kobj_metadata.h
++ *
++ *    Description:  Header file for metadata tracking functionality.
++ *
++ *===-----------------------------------------------------------------------===
++ */
++
++#ifndef __KOBJ_METADATA_H_
++#define __KOBJ_METADATA_H_
++
++#include <linux/kallsyms.h>
++#include <linux/rbtree.h>
++#include <linux/rwlock.h>
++#include <linux/sched.h>
++
++/** 
++ * struct memorizer_kobj - metadata for kernel objects 
++ * @rb_node:		the red-black tree relations
++ * @alloc_ip:		instruction that allocated the object
++ * @va_ptr:		Virtual address of the beginning of the object
++ * @pa_ptr:		Physical address of the beginning of object
++ * @size:		Size of the object
++ * @jiffies:		Time stamp of creation
++ * @pid:		PID of the current task
++ * @comm:		Executable name
++ * @kobj_list:		List of all objects allocated
++ * @access_counts:	List of memory access count structures
++ *
++ * This data structure captures the details of allocated objects
++ */
++struct memorizer_kobj {
++	struct rb_node	rb_node;
++	rwlock_t	rwlock;
++	long		obj_id;
++	uintptr_t	alloc_ip;
++	uintptr_t	free_ip;
++	uintptr_t	va_ptr;
++	uintptr_t	pa_ptr;
++	size_t		size;
++	unsigned long	alloc_jiffies;
++	unsigned long	free_jiffies;
++	pid_t		pid;
++	char		comm[TASK_COMM_LEN];
++	char		funcstr[KSYM_NAME_LEN];
++	bool		printed;
++	//char		*modsymb[KSYM_NAME_LEN];
++	struct list_head	object_list;
++	struct list_head	access_counts;
++};
++
++/*
++ * Kernel virtual addresses start at ffff880000000000 - ffffc7ffffffffff (=64
++ * TB) direct mapping of all phys. memory --- see
++ * Documentation/x86/x86_64/mm.txt. This means bit 43 is always set, which means
++ * we can remove all bytes where it is unset: TODO Optimization.
++ *
++ *  63             47 46           32 31            16 15             0
++ * +-----------------+---*-----------+----------------+---------------+
++ * |      ---        |       L3      |       L2       |       L1      |
++ * +-----------------+---------------+----------------+---------------+
++ *
++ * The lookup table maps each byte of allocatable virtual address space to a
++ * pointer to kernel object metadata--> 8 byte pointer.
++ *
++ * I tried to do a 2 level table, but it was too big. Given knowledge about
++ * where the allocator services VAs from we could reduce this size a lot.
++ *
++ */
++#define LT_L1_SHIFT		16
++#define LT_L1_ENTRIES		(_AC(1,UL) << LT_L1_SHIFT)
++#define LT_L1_ENTRY_SIZE	(sizeof(void *))
++#define LT_L1_SIZE		(LT_L1_ENTRIES * LT_L1_ENTRY_SIZE)
++
++#define LT_L2_SHIFT		32
++#define LT_L2_ENTRIES		(_AC(1,UL) << (LT_L2_SHIFT - LT_L1_SHIFT))
++#define LT_L2_ENTRY_SIZE	(sizeof(void *))
++#define LT_L2_SIZE		(LT_L2_ENTRIES * LT_L2_ENTRY_SIZE)
++
++#define LT_L3_SHIFT		47
++#define LT_L3_ENTRIES		(_AC(1,UL) << (LT_L3_SHIFT - LT_L2_SHIFT))
++#define LT_L3_ENTRY_SIZE	(sizeof(void *))
++#define LT_L3_SIZE		(LT_L3_ENTRIES * LT_L3_ENTRY_SIZE)
++
++//==-- Table data structures -----------------------------------------------==//
++
++/*
++ * Each structure contains an array of pointers to the next level of the lookup.
++ * So the lowest level L1 has an array of pointers to the kobjects, L2 has an
++ * array of pointers to structs of type l2_tbl.
++ */
++struct lt_l1_tbl {
++	struct memorizer_kobj *kobj_ptrs[LT_L1_ENTRIES];
++};
++
++struct lt_l2_tbl {
++	struct lt_l1_tbl *l1_tbls[LT_L2_ENTRIES];
++};
++
++struct lt_l3_tbl {
++	struct lt_l2_tbl *l2_tbls[LT_L3_ENTRIES];
++};
++
++#define lt_l1_tbl_index(va)	(va & (LT_L1_ENTRIES - 1))
++#define lt_l2_tbl_index(va)	((va >> LT_L1_SHIFT) & (LT_L2_ENTRIES - 1))
++#define lt_l3_tbl_index(va)	((va >> LT_L2_SHIFT) & (LT_L3_ENTRIES - 1))
++
++/*
++ * lt_l*_entry() --- get the table entry associated with the virtual address
++ *
++ * This uses ** because the value returned is a pointer to the table entry, but
++ * also can be dereferenced to point to the next level down.
++ */
++static inline struct memorizer_kobj **lt_l1_entry(struct lt_l1_tbl *l1_tbl,
++						  uintptr_t va)
++{
++	return &(l1_tbl->kobj_ptrs[lt_l1_tbl_index(va)]);
++}
++
++static inline struct lt_l1_tbl **lt_l2_entry(struct lt_l2_tbl *l2_tbl, uintptr_t
++					     va)
++{
++	return &l2_tbl->l1_tbls[lt_l2_tbl_index(va)];
++}
++
++static inline struct lt_l2_tbl **lt_l3_entry(struct lt_l3_tbl *l3_tbl, uintptr_t
++					     va)
++{
++	return &l3_tbl->l2_tbls[lt_l3_tbl_index(va)];
++}
++
++//==-- External Interface -------------------------------------------------==//
++void lt_init(void);
++int lt_insert_kobj(struct memorizer_kobj *kobj);
++struct memorizer_kobj * lt_remove_kobj(uintptr_t va);
++struct memorizer_kobj * lt_get_kobj(uintptr_t va);
++
++#endif /* __KOBJ_METADATA_H_ */
++
+diff --git a/mm/memorizer/memorizer.c b/mm/memorizer/memorizer.c
+new file mode 100644
+index 000000000000..a7e5bc49d4fb
+--- /dev/null
++++ b/mm/memorizer/memorizer.c
+@@ -0,0 +1,2018 @@
++/*===-- LICENSE ------------------------------------------------------------===
++ * 
++ * University of Illinois/NCSA Open Source License 
++ *
++ * Copyright (C) 2015, The Board of Trustees of the University of Illinois.
++ * All rights reserved. 
++ *
++ * Developed by: 
++ *
++ *    Research Group of Professor Vikram Adve in the Department of Computer
++ *    Science The University of Illinois at Urbana-Champaign
++ *    http://web.engr.illinois.edu/~vadve/Home.html
++ *
++ * Copyright (c) 2015, Nathan Dautenhahn
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the Software), to deal
++ * with the Software without restriction, including without limitation the
++ * rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
++ * sell copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions: 
++ *
++ * Redistributions of source code must retain the above copyright notice, this
++ * list of conditions and the following disclaimers. 
++ *
++ * Redistributions in binary form must reproduce the above copyright notice,
++ * this list of conditions and the following disclaimers in the documentation
++ * and/or other materials provided with the distribution.  Neither the names of
++ * Nathan Dautenhahn or the University of Illinois, nor the names of its
++ * contributors may be used to endorse or promote products derived from this
++ * Software without specific prior written permission. 
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.  IN NO EVENT SHALL THE
++ * CONTRIBUTORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS WITH
++ * THE SOFTWARE.
++ *
++ *===-----------------------------------------------------------------------===
++ *
++ *       Filename:  memorizer.c
++ *
++ *    Description:  Memorizer is a memory tracing tool. It hooks into KASAN
++ *		    events to record object allocation/frees and all
++ *		    loads/stores. 
++ *
++ *===-----------------------------------------------------------------------===
++ *
++ * Locking:  
++ *
++ *	Memorizer has two global and a percpu data structure:
++ *	
++ *		- global rbtree of active kernel objects - queue for holding
++ *		  free'd objects that haven't logged - A percpu event queue to
++ *		  track memory access events
++ *		    
++ *     Therefore, we have the following locks:
++ *
++ *		- active_kobj_rbtree_spinlock: 
++ *		
++ *			The insert routine is generic to any kobj_rbtree and
++ *			therefore is only provided in an unlocked variant
++ *			currently. The code must take this lock prior to
++ *			inserting into the rbtree.  
++ * 
++ *		- object_list_spinlock: 
++ *			
++ *			Lock for the list of all objects. This list is added to
++ *			on each kobj free. On log this queue should collect any
++ *			queued writes in the local PerCPU access queues and then
++ *			remove it from the list.
++ *
++ *		- memorizer_kobj.rwlock: 
++ *
++ *			RW spinlock for access to object internals. 
++ * 
++ * Re-Entrance:
++ *
++ *	This system hooks all memory reads/writes and object allocation,
++ *	therefore any external function called will re-enter via ld/st
++ *	instrumentation as well as from allocations. So to avoid this we must be
++ *	very careful about any external functions called to ensure correct
++ *	behavior. This is particulary critical of the memorize access function.
++ *	The others can call external, but note that the memory ld/st as a
++ *	response to that call will be recorded. 
++ *
++ *===-----------------------------------------------------------------------===
++ */
++
++#define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
++
++#include <linux/bug.h>
++#include <linux/cpumask.h>
++#include <linux/debugfs.h>
++#include <linux/err.h>
++#include <linux/export.h>
++#include <linux/jiffies.h>
++#include <linux/kallsyms.h>
++#include <linux/kernel.h>
++#include <linux/memorizer.h>
++#include <linux/module.h>
++#include <linux/mm.h>
++#include <linux/preempt.h>
++#include <linux/printk.h>
++#include <linux/rbtree.h>
++#include <linux/rwlock.h>
++#include <linux/sched.h>
++#include <linux/seq_file.h>
++#include <linux/slab.h>
++#include <linux/stat.h>
++#include <linux/string.h>
++#include <linux/smp.h>
++#include <linux/workqueue.h>
++#include <asm/atomic.h>
++#include <asm/percpu.h>
++#include <linux/relay.h>
++#include <asm-generic/bug.h>
++#include <linux/cdev.h>
++#include <linux/vmalloc.h>
++#include "kobj_metadata.h"
++#include <linux/fs.h>
++#include "event_structs.h" 
++#include <linux/sched.h>
++#include <linux/bootmem.h>
++
++//==-- Debugging and print information ------------------------------------==//
++#define MEMORIZER_DEBUG		1
++#define FIXME			0
++
++#define MEMORIZER_STATS		1
++
++//==-- Prototype Declarations ---------------------------------------------==//
++static struct memorizer_kobj * unlocked_lookup_kobj_rbtree(uintptr_t kobj_ptr,
++							   struct rb_root *
++							   kobj_rbtree_root);
++//==-- Data types and structs for building maps ---------------------------==//
++
++/* Size of the memory access recording worklist arrays */
++#define MEM_ACC_L_SIZE 1
++
++/* Defining the maximum length for the event lists along with variables for character device driver */
++// NB refers to the number of buffers being vmalloced
++#define ML 500000
++#define NB 16
++
++#define BUFF_MUTEX_LOCK { \
++		while(*buff_mutex)\
++		yield(); \
++		*buff_mutex = *buff_mutex + 1;\
++	}
++
++#define BUFF_MUTEX_UNLOCK {*buff_mutex = *buff_mutex - 1;}
++
++
++#define BUFF_FILL_SET {*buff_fill = 1;}
++
++
++static dev_t *dev[NB];
++static struct cdev *cd[NB];
++static void *pages1;
++static void *pages2;
++static char *buff_end;
++static char *buff_start;
++static char *buff_write_end;
++static char *buff_fill;
++static char *buff_mutex;
++static unsigned int *buff_free_size;
++static bool buff_init = false;
++static unsigned int curBuff = 0;
++static char *buffList[NB];
++
++
++static dev_t *dev1;
++static dev_t *dev2;
++static struct cdev *cd1;
++static struct cdev *cd2;
++
++
++
++/* Types for events */
++//enum AccessType {Memorizer_READ=0,Memorizer_WRITE};
++
++
++
++
++/**
++ * struct memorizer_mem_access - structure to capture all memory related events
++ * @access_type: type of event
++ * @src_ip:	 virtual address of the invoking instruction
++ * @access_addr: starting address of the operation
++ * @access_size: size of the access: for wr/rd size, allocation length
++ * @jiffies:	 timestamp
++ * @pid:	 PID of invoking task
++ * @comm:	 String of executable
++ */
++struct memorizer_mem_access {
++	enum AccessType access_type;
++	uintptr_t src_ip;
++	uintptr_t access_addr;		/* The location being accessed */
++	uint64_t access_size;		/* events can be allocs or memcpy */
++	unsigned long jiffies;		/* creation timestamp */
++	pid_t pid;			/* pid of the current task */
++	char comm[TASK_COMM_LEN];	/* executable name */
++}cdList[NB];
++
++struct memorizer_cdev {
++	char idx;
++	struct cdev charDev;
++};
++
++/**
++ * mem_access_wlists - This struct contains work queues holding accesses
++ *
++ * Size Calculation for memorizer_mem_access:
++ *	(1+64+64+64+64+32+256)*100000 = 54.5Mb
++ */
++struct mem_access_worklists {
++	struct memorizer_mem_access wls[2][MEM_ACC_L_SIZE];
++	size_t selector;
++	long head;
++	long tail;
++};
++
++/**
++ * access_counts - track reads/writes from single source IP
++ */
++ struct access_from_counts {
++	 struct list_head list;
++	 uintptr_t ip;
++	 pid_t pid;
++	 uint64_t writes;
++	 uint64_t reads;
++ };
++
++
++
++/*
++ * switchBuffer - switches the the buffer being written to, when the buffer is full
++ */
++void __always_inline switchBuffer()
++{	
++	pr_info("Switching to Buffer %d\n",curBuff);
++
++
++	buff_end = (char *)buffList[curBuff] + ML*4096-1;
++	buff_write_end = (char *)buffList[curBuff];
++	
++	buff_fill = buff_write_end;
++	buff_write_end = buff_write_end + 1;
++	buff_mutex = buff_write_end;
++	buff_write_end = buff_write_end + 1;
++		
++	buff_free_size = (unsigned int *)buff_write_end;
++	buff_write_end = buff_write_end + sizeof(unsigned int);
++	
++	buff_start = buff_write_end;
++	
++
++}
++
++
++
++
++/**
++ * struct code_region - simple struct to capture begin and end of a code region
++ */
++struct code_region {
++	uintptr_t b;
++	uintptr_t e;
++};
++
++struct code_region audit_code_region = {
++	.b = 0xffffffff81158b30,
++	.e = 0xffffffff8116b550
++};
++
++struct code_region selinux = {
++	.b = 0xffffffff81475450,
++	.e = 0xffffffff814a3000
++};
++
++
++struct code_region crypto_code_region = {
++	.b = 0xffffffff814a3000,
++	.e = 0xffffffff814cee00
++};
++
++
++
++/* TODO make this dynamically allocated based upon free memory */
++//DEFINE_PER_CPU(struct mem_access_worklists, mem_access_wls = {.selector = 0, .head = 0, .tail = 0 });
++DEFINE_PER_CPU(struct mem_access_worklists, mem_access_wls);
++
++/* flag to keep track of whether or not to track writes */
++//static bool memorizer_enabled = false;
++static bool memorizer_enabled = false;
++//module_param(memorizer_enabled, bool, 0644);
++
++/* flag enable/disable memory access logging */
++static bool memorizer_log_access = false;
++//module_param(memorizer_log_access, bool, 0644);
++
++/* flag enable/disable printing of live objects */
++static bool print_live_obj = false;
++static bool test_obj = false;
++
++/* object cache for memorizer kobjects */
++static struct kmem_cache *kobj_cache;
++
++/* object cache for access count objects */
++static struct kmem_cache *access_from_counts_cache;
++
++/* Object Cache for Serialized KObjects to be printed out to the RelayFS */
++//static struct kmem_cache *kobj_serial_cache = kmem_cache_create("Serial", sizeof(struct memorizer_kobj), 0, SLAB_PANIC,  NULL);
++
++/* active kobj metadata rb tree */
++static struct rb_root active_kobj_rbtree_root = RB_ROOT;
++
++/* full list of freed kobjs */
++static LIST_HEAD(object_list);
++
++/* global object id reference counter */
++static atomic_long_t global_kobj_id_count = ATOMIC_INIT(0);
++
++//==-- Locks --=//
++/* RW Spinlock for access to rb tree */
++DEFINE_RWLOCK(active_kobj_rbtree_spinlock);
++
++/* RW Spinlock for access to freed kobject list */
++DEFINE_RWLOCK(object_list_spinlock);
++
++/* mask to apply to memorizer allocations TODO: verify the list */
++#define gfp_memorizer_mask(gfp)	(((gfp) & (		\
++					 | GFP_ATOMIC		\
++					 | __GFP_NOACCOUNT))	\
++					 | __GFP_NORETRY	\
++					 | __GFP_NOMEMALLOC	\
++					 | __GFP_NOWARN		\
++					 | __GFP_NOTRACK	\
++				 )
++
++/**
++ * __memorizer_enter() - increment recursion counter for entry into memorizer
++ *
++ * The primary goal of this is to stop recursive handling of events. Memorizer
++ * by design tracks two types of events: allocations and accesses. Effectively,
++ * while tracking either type we do not want to re-enter and track memorizer
++ * events that are sources from within memorizer. Yes this means we may not
++ * track legitimate access of some types, but these are caused by memorizer and
++ * we want to ignore them. 
++ */
++static inline void __memorizer_enter(void)
++{
++	++current->memorizer_recursion;
++}
++
++static inline void __memorizer_exit(void)
++{
++	--current->memorizer_recursion;
++}
++
++/**
++ * in_memorizer() - check if this thread has already entered memorizer
++ */
++static inline bool in_memorizer(void)
++{
++	return current->memorizer_recursion;
++}
++
++//==-- Debug and Stats Output Code --==//
++static atomic_long_t memorizer_num_untracked_accesses = ATOMIC_INIT(0);
++static atomic_long_t memorizer_caused_accesses = ATOMIC_INIT(0);
++static atomic_long_t memorizer_num_accesses = ATOMIC_INIT(0);
++static atomic_long_t stats_num_allocs_while_disabled = ATOMIC_INIT(0);
++static atomic_long_t memorizer_num_tracked_allocs = ATOMIC_INIT(0);
++static atomic_long_t stats_num_page_allocs = ATOMIC_INIT(0);
++static atomic_long_t stats_num_globals = ATOMIC_INIT(0);
++static atomic_long_t stats_num_induced_allocs = ATOMIC_INIT(0);
++static atomic_long_t stats_live_objs = ATOMIC_INIT(0);
++
++/**
++ * __print_memorizer_kobj() - print out the object for debuggin
++ *
++ * Grab reader lock if you want to  make sure things don't get modified while we
++ * are printing
++ */
++void __print_memorizer_kobj(struct memorizer_kobj * kobj, char * title)
++{
++	struct list_head * listptr;
++	struct access_from_counts *entry;
++
++	pr_info("%s: \n", title);
++	pr_info("\tkobj_id:	%ld\n", kobj->obj_id);
++	//pr_info("\talloc_mod:	%s\n", *kobj->modsymb);
++	pr_info("\talloc_func:	%s\n", kobj->funcstr);
++	pr_info("\talloc_ip:	0x%p\n", (void*) kobj->alloc_ip);
++	pr_info("\tfree_ip:	0x%p\n", (void*) kobj->free_ip);
++	pr_info("\tva:		0x%p\n", (void*) kobj->va_ptr);
++	pr_info("\tpa:		0x%p\n", (void*) kobj->pa_ptr);
++	pr_info("\tsize:	%lu\n", kobj->size);
++	pr_info("\talloc jiffies: %lu\n", kobj->alloc_jiffies);
++	pr_info("\tfree jiffies:  %lu\n", kobj->free_jiffies);
++	pr_info("\tpid: %d\n", kobj->pid);
++	pr_info("\texecutable: %s\n", kobj->comm);
++	list_for_each(listptr, &(kobj->access_counts)){
++		entry = list_entry(listptr, struct access_from_counts, list);
++		pr_info("\t  Access IP: %p, PID: %d, Writes: %llu, Reads: %llu\n",
++			(void *) entry->ip, entry->pid,
++			(unsigned long long) entry->writes,
++			(unsigned long long) entry->reads);
++	}
++}
++EXPORT_SYMBOL(__print_memorizer_kobj);
++
++/**
++ * read_locking_print_memorizer_kobj() - grap the reader spinlock then print
++ */
++static void read_locking_print_memorizer_kobj(struct memorizer_kobj * kobj, char
++					      * title)
++{
++	unsigned long flags;
++	read_lock_irqsave(&kobj->rwlock, flags);
++	__print_memorizer_kobj(kobj, title);
++	read_unlock_irqrestore(&kobj->rwlock, flags);
++}
++
++/**
++ * __print_rb_tree() - print the tree
++ */
++static void __print_active_rb_tree(struct rb_node * rb)
++{
++	struct memorizer_kobj * kobj;
++	if(rb){
++		kobj = rb_entry(rb, struct memorizer_kobj, rb_node);
++		read_locking_print_memorizer_kobj(kobj,"Kernel Object");
++		if(kobj->rb_node.rb_left)
++			__print_active_rb_tree(kobj->rb_node.rb_left);
++		if(kobj->rb_node.rb_right)
++			__print_active_rb_tree(kobj->rb_node.rb_right);
++	}
++}
++
++/**
++ * access_degree() - for the specified access type count the degree of access
++ */
++void access_degree(struct list_head * acl, unsigned int * write_deg,
++		   unsigned int * read_deg)
++{
++	struct list_head * listptr;
++	struct access_from_counts * ac;
++	/* For each ld/st in the access counts entry add 1 */
++	list_for_each(listptr, acl) {
++		ac = list_entry(listptr, struct access_from_counts, list);
++		/* if the ac has at least one write then it counts */
++		if(ac->writes > 0)
++			*write_deg += 1;
++		if(ac->reads > 0)
++			*read_deg += 1;
++	}
++}
++
++/**
++ * __print_rb_tree() - print the tree
++ */
++static void print_rb_tree_access_counts(struct rb_node * rb)
++{
++	struct memorizer_kobj * kobj;
++	if(rb){
++		kobj = rb_entry(rb, struct memorizer_kobj, rb_node);
++
++		unsigned int write_deg = 0, read_deg = 0;
++
++		access_degree(&kobj->access_counts, &write_deg, &read_deg);
++
++		pr_info("%s %d %s %u %u\n", kobj->funcstr, kobj->pid, kobj->comm,
++			write_deg, read_deg);
++
++		if(kobj->rb_node.rb_left)
++			print_rb_tree_access_counts(kobj->rb_node.rb_left);
++		if(kobj->rb_node.rb_right)
++			print_rb_tree_access_counts(kobj->rb_node.rb_right);
++	}
++}
++
++/**
++ */
++static void print_pdf_table(void)
++{
++	unsigned long flags;
++
++	/* calculate stats and print the free'd objects */
++	struct list_head *p;
++	struct memorizer_kobj *kobj;
++
++	read_lock_irqsave(&object_list_spinlock, flags);
++
++	list_for_each(p, &object_list){
++		unsigned int write_deg = 0, read_deg = 0;
++
++		kobj = list_entry(p, struct memorizer_kobj, object_list);
++
++		access_degree(&kobj->access_counts, &write_deg, &read_deg);
++
++		pr_info("%s %d %s %u %u\n", kobj->funcstr, kobj->pid, kobj->comm,
++			write_deg, read_deg);
++
++	}
++	read_unlock_irqrestore(&object_list_spinlock, flags);
++
++	/* same for live objects */
++	print_rb_tree_access_counts(active_kobj_rbtree_root.rb_node);
++}
++
++/**
++ * print_stats() - print global stats from memorizer 
++ */
++static void print_stats(void)
++{
++	pr_info("------- Memory Accesses -------\n");
++	pr_info("    Tracked:			\t%16ld\n",
++		atomic_long_read(&memorizer_num_accesses) -
++		atomic_long_read(&memorizer_num_untracked_accesses) -
++		atomic_long_read(&memorizer_caused_accesses)
++		);
++	pr_info("    Not-tracked:		\t%16ld\n",
++		atomic_long_read(&memorizer_num_untracked_accesses));
++	pr_info("    Memorizer-Induced:		%16ld\n",
++		atomic_long_read(&memorizer_caused_accesses));
++	pr_info("    Total:			\t%16ld\n",
++		atomic_long_read(&memorizer_num_accesses));
++	pr_info("------- Memory Allocations -------\n");
++	pr_info("    Tracked (globals,cache,kmalloc):	%16ld\n",
++		atomic_long_read(&memorizer_num_tracked_allocs));
++	pr_info("    Untracked (memorizer disabled):	%16ld\n",
++		atomic_long_read(&stats_num_allocs_while_disabled));
++	pr_info("    Memorizer induced:			%16ld\n",
++		atomic_long_read(&stats_num_induced_allocs));
++	pr_info("    Page Alloc (total):		%16ld\n",
++		atomic_long_read(&stats_num_page_allocs));
++	pr_info("    Global Var (total):		%16ld\n",
++		atomic_long_read(&stats_num_globals));
++	pr_info("    Live Objects:			%16ld\n",
++		atomic_long_read(&stats_live_objs));
++}
++
++/**
++ * __memorizer_print_events - print the last num events
++ * @num_events:		The total number of events to print
++ *
++ * Simple print assuming an array log. Only tricky thing is to wrap around the
++ * circular buffer when hitting the end or printing the last set of events if
++ * some of them are at the end of the linear buffer. 
++ */
++void __memorizer_print_events(unsigned int num_events)
++{
++	int i, e, log_index;
++	struct mem_access_worklists * ma_wls;
++	struct memorizer_mem_access *mal, *ma; /* mal is the list ma is the
++						  instance */
++	__memorizer_enter();
++
++	print_stats();
++
++	/* Get data structure for the worklists and init the iterators */
++	ma_wls = &get_cpu_var(mem_access_wls);
++	mal = (struct memorizer_mem_access*) &(ma_wls->wls[ma_wls->selector]);
++	log_index = ma_wls->head;
++
++	pr_info("WLS State: selector = %lu, head = %ld, tail = %ld",
++		ma_wls->selector, ma_wls->head, ma_wls->tail);
++
++	/* 
++	 * If we are at the front of the list then allow wrap back, note that
++	 * this will print garbage if this function is called without having
++	 * wrapped.
++	 */
++	if((log_index - num_events) > 0)
++		i = log_index - num_events;
++	else
++		i = MEM_ACC_L_SIZE - 1 - (num_events - log_index + 1);
++
++	for(e = 0; e < num_events; e++)
++	{
++		char *type_str[10];
++		ma = &mal[i];
++		pr_info("access from IP 0x%p at addr 0x%p\n", (void *)
++			ma->src_ip, (void *) ma->access_addr);
++		switch(ma->access_type){
++		case Memorizer_READ:
++			*type_str = "Read\0";
++			break;
++		case Memorizer_WRITE:
++			*type_str = "Write\0";
++			break;
++		default:
++			pr_info("Unmatched event type\n");
++			*type_str = "Unknown\0";
++		}
++		pr_info("%s of size %lu by task %s/%d\n", *type_str,
++			(unsigned long) ma->access_size, ma->comm, ma->pid);
++		if(++i >= MEM_ACC_L_SIZE)
++			i = 0;
++	}
++	put_cpu_var(mem_access_wls);
++
++	__memorizer_exit();
++}
++EXPORT_SYMBOL(__memorizer_print_events);
++
++
++/**
++ * dump_object_list() - print out the list of free'd objects
++ */
++static void dump_object_list(void)
++{
++	unsigned long flags;
++	struct list_head *p;
++	struct memorizer_kobj *kobj;
++	read_lock_irqsave(&object_list_spinlock, flags);
++	list_for_each(p, &object_list){
++		kobj = list_entry(p, struct memorizer_kobj, object_list);
++		read_locking_print_memorizer_kobj(kobj, "Dump Free'd kobj");
++	}
++	read_unlock_irqrestore(&object_list_spinlock, flags);
++}
++
++//----
++//==-- Memorizer Access Processing ----------------------------------------==//
++//----
++
++/**
++ * init_access_counts_object() - initialize data for the object
++ * @afc:	object to init 
++ * @ip:		ip of access
++ */
++static inline void
++init_access_counts_object(struct access_from_counts *afc, uint64_t ip, pid_t
++			  pid)
++{
++	memset(afc, 0, sizeof(struct access_from_counts));
++	afc->ip = ip;
++	afc->pid = pid;
++}
++
++/**
++ * alloc_new_and_init_access_counts() - allocate a new access count and init
++ * @ip:		the access from value
++ */
++static inline struct access_from_counts *
++alloc_and_init_access_counts(uint64_t ip, pid_t pid)
++{
++	struct access_from_counts * afc = NULL;
++	afc = kmem_cache_alloc(access_from_counts_cache, GFP_ATOMIC);
++	if(afc)
++		init_access_counts_object(afc, ip, pid);
++	return afc;
++}
++
++
++
++/**
++ * access_from_counts - search kobj's access_from for an entry from src_ip
++ * @src_ip:	the ip to search for
++ * @kobj:	the object to search within
++ *
++ * This function does not do any locking and therefore assumes the caller will
++ * already have at least a reader lock. This is a big aggregate function, but
++ * given that it will occur a lot we will be searching the list for a given
++ * object, therefore we can easily do insertion if we don't find it, keeping a
++ * linearly monotonic sorted list.
++ *
++ * Here we insert a new entry for each (ip,threadid) tuple. 
++ */
++static inline struct access_from_counts *
++unlckd_insert_get_access_counts(uint64_t src_ip, pid_t pid, struct
++				memorizer_kobj *kobj)
++{
++	struct list_head * listptr;
++	struct access_from_counts *entry;
++	struct access_from_counts * afc = NULL;
++	list_for_each(listptr, &(kobj->access_counts)){
++		entry = list_entry(listptr, struct access_from_counts, list);
++		if(src_ip == entry->ip){
++			if(pid == entry->pid)
++				return entry;
++			else if(pid < entry->pid)
++				break;
++		} else if(src_ip < entry->ip){
++			break;
++		}
++	}
++	/* allocate the new one and initialize the count none in list */
++	afc = alloc_and_init_access_counts(src_ip, pid);
++	if(afc)
++		list_add_tail(&(afc->list), listptr);
++	return afc;
++}
++
++/**
++ * update_kobj_access() - find and update the object information
++ * @memorizer_mem_access:	The access to account for
++ *
++ * Find the object associated with this memory write, search for the src ip in
++ * the access structures, incr if found or alloc and add new if not.
++ *
++ * Executes from the context of memorizer_mem_access and therefore we are
++ * already operating with interrupts off and preemption disabled, and thus we
++ * cannot sleep.
++ */
++static inline int find_and_update_kobj_access(struct memorizer_mem_access *ma)
++{
++	struct memorizer_kobj *kobj = NULL;
++	struct access_from_counts *afc = NULL;
++
++	/* Get the kernel object associated with this VA */
++	kobj = lt_get_kobj(ma->access_addr);
++
++	if(!kobj){
++		atomic_long_inc(&memorizer_num_untracked_accesses);
++		return -1;
++	}
++
++	/* Grab the object lock here */
++	write_lock(&kobj->rwlock);
++
++	/* Search access queue to the entry associated with src_ip */
++	afc = unlckd_insert_get_access_counts(ma->src_ip, ma->pid, kobj);
++
++	/* increment the counter associated with the access type */
++	if(afc)
++		ma->access_type ? ++afc->writes : ++afc->reads;
++
++	write_unlock(&kobj->rwlock);
++	return afc ? 0 : -1;
++}
++
++/**
++ * drain_and_process_access_queue() - remove entries from the queue and do stats
++ * @mawls:	the percpu wl struct to drain
++ *
++ * While the list is not empty take the top element and update the kobj it
++ * accessed. Note that the kobj for this could be not found so we just ignore it
++ * and move on if the update function failed.
++ */
++static inline void drain_and_process_access_queue(struct mem_access_worklists *
++						  ma_wls)
++{
++	while(ma_wls->head >= 0){
++		//pr_info("Head: %ld", ma_wls->head);
++		find_and_update_kobj_access(
++			    &(ma_wls->wls[ma_wls->selector][ma_wls->head])
++			     );
++		--ma_wls->head;
++	}
++}
++
++//==-- Memorizer memory access tracking -----------------------------------==//
++
++/**
++ * set_comm_and_pid - Find the execution context of the ld/st
++ *
++ * Set the pid and the task name. These are together because we want to optimize
++ * the number of branches in this to make it faster.
++ */
++static inline void set_comm_and_pid(struct memorizer_mem_access *ma)
++{
++	char *comm;
++	char *hardirq = "hardirq";
++	char *softirq = "softirq";
++
++	/* task information */
++	if (unlikely(in_irq())) {
++		ma->pid = 0;
++		comm = hardirq;
++	} else if (unlikely(in_softirq())) {
++		ma->pid = 0;
++		comm = softirq;
++	} else {
++		ma->pid = task_pid_nr(current);
++		/*
++		 * There is a small chance of a race with set_task_comm(),
++		 * however using get_task_comm() here may cause locking
++		 * dependency issues with current->alloc_lock. In the worst
++		 * case, the command line is not correct.
++		 */
++		comm = current->comm;
++	}
++#if 0 /* TODO: this is to make the testing faster */
++	int i;
++	for(i=0; i<sizeof(comm); i++)
++		ma->comm[i] = comm[i];
++	ma->comm[i] = '\0';
++#endif
++}
++
++/**
++ * memorizer_mem_access() - record associated data with the load or store
++ * @addr:	The virtual address being accessed
++ * @size:	The number of bits for the load/store
++ * @write:	True if the memory access is a write (store)
++ * @ip:		IP of the invocing instruction
++ *
++ * Memorize, ie. log, the particular data access by inserting it into a percpu
++ * queue. 
++ */
++void __always_inline memorizer_mem_access(uintptr_t addr, size_t size, bool
++					  write, uintptr_t ip)
++{
++
++	unsigned long flags;
++
++	struct memorizer_kernel_access mke;
++	struct memorizer_kernel_access *mke_ptr;
++	
++	
++
++
++#if MEMORIZER_STATS // Stats take time per access
++	atomic_long_inc(&memorizer_num_accesses);
++
++	//if(!(lt_get_kobj(addr))){
++	//	atomic_long_inc(&memorizer_num_untracked_accesses);
++	//	return;
++	//}
++
++	if(!memorizer_log_access){
++		atomic_long_inc(&memorizer_num_untracked_accesses);
++		return;
++	}
++
++	/* Try to grab the lock and if not just returns */
++	if(in_memorizer()){
++		atomic_long_inc(&memorizer_caused_accesses);
++		return;
++	}
++#else
++	//if(!(lt_get_kobj(addr)))
++	//	return;
++	if(!memorizer_log_access)
++		return;
++	if(in_memorizer())
++		return;
++#endif
++	if(!strcmp(current->comm,"userApp"))
++		return;
++
++	
++	__memorizer_enter();
++
++
++
++	if(buff_init)
++	{
++
++
++		
++		while(*buff_fill)
++		{
++			curBuff = (curBuff + 1)%NB;
++			pr_info("Trying Buffer %u\n",curBuff);
++			switchBuffer();
++		}
++		
++
++		local_irq_save(flags);
++
++		if(write)
++			mke.event_type = Memorizer_Mem_Write;
++		else
++			mke.event_type = Memorizer_Mem_Read;
++
++		mke.pid = task_pid_nr(current);
++		mke.event_size = size;
++		mke.event_ip = ip;
++		mke.src_va_ptr = addr;
++		mke.event_jiffies = jiffies;
++		
++		
++		mke_ptr = (struct memorizer_kernel_access *)buff_write_end;
++		*mke_ptr = mke;
++		buff_write_end = buff_write_end + sizeof(struct memorizer_kernel_access);
++		*buff_free_size = *buff_free_size - sizeof(struct memorizer_kernel_access);
++
++		//Check after writing the event to the buffer if there is any more space for the next entry to go in - Need to choose the struct with the biggest size for this otherwise it may lead to a problem wherein the write pointer still points to the end of the buffer and there is another event ready to be written which might be bigger than the size of the struct that could have reset the pointer 
++		if(*buff_free_size < sizeof(struct memorizer_kernel_event))
++		{
++
++			pr_info("Current Buffer Full, Setting the fill bit\n");
++			*buff_fill = 1;
++			buff_write_end = buff_start;
++		}
++
++		
++		local_irq_restore(flags);
++	
++	
++	
++		//*buff_end = (unsigned long long)0xbb;
++	}
++	//}
++
++
++	__memorizer_exit();
++}
++
++
++
++
++
++void __always_inline memorizer_fork(struct task_struct *p, long nr){
++	
++	struct memorizer_kernel_fork mke;
++	struct memorizer_kernel_fork *mke_ptr;
++
++	unsigned long flags;
++	if(!strcmp(current->comm,"userApp"))
++			return;
++
++
++	__memorizer_enter();
++
++	if(buff_init)
++	{
++		while(*buff_fill)
++		{
++			curBuff = (curBuff + 1)%NB;
++			switchBuffer();
++		}
++
++
++		
++		local_irq_save(flags);
++		mke.event_type = Memorizer_Fork;
++		if (in_irq()) {
++			mke.pid = 0;
++			strncpy(mke.comm, "hardirq", sizeof(mke.comm));
++		} else if (in_softirq()) {
++			mke.pid = 0;
++			strncpy(mke.comm, "softirq", sizeof(mke.comm));
++		} else {
++			mke.pid = nr;
++		/*
++		 * There is a small chance of a race with set_task_comm(),
++		 * however using get_task_comm() here may cause locking
++		 * dependency issues with current->alloc_lock. In the worst
++		 *	 case, the command line is not correct.
++		 */
++		strncpy(mke.comm, p->comm, sizeof(mke.comm));
++		}
++	
++		mke_ptr = (struct memorizer_kernel_fork *)buff_write_end;
++		*mke_ptr = mke;
++		buff_write_end = buff_write_end +sizeof(struct memorizer_kernel_fork);	
++		*buff_free_size = *buff_free_size - sizeof(struct memorizer_kernel_fork);
++		
++		
++		if(*buff_free_size < sizeof(struct memorizer_kernel_event))
++		{
++
++			*buff_fill = 1;
++			buff_write_end = buff_start;
++		}
++
++
++
++		local_irq_restore(flags);
++	}
++
++
++
++
++	__memorizer_exit();
++
++
++
++}
++
++
++//==-- Memorizer kernel object tracking -----------------------------------==//
++
++/**
++ * init_kobj() - Initalize the metadata to track the recent allocation
++ */
++static void init_kobj(struct memorizer_kobj * kobj, uintptr_t call_site,
++		      uintptr_t ptr_to_kobj, size_t bytes_alloc)
++{
++	rwlock_init(&kobj->rwlock);
++
++	if(atomic_long_inc_and_test(&global_kobj_id_count)){
++		pr_warn("Global kernel object counter overlapped...");
++	}
++
++	/* Zero out the whole object including the comm */
++	memset(kobj, 0, sizeof(struct memorizer_kobj));
++	kobj->alloc_ip = call_site;
++	kobj->va_ptr = ptr_to_kobj;
++	kobj->pa_ptr = __pa(ptr_to_kobj);
++	kobj->size = bytes_alloc;
++	kobj->alloc_jiffies = jiffies;
++	kobj->free_jiffies = 0;
++	kobj->free_ip = 0;
++	kobj->obj_id = atomic_long_read(&global_kobj_id_count);
++	kobj->printed = false;
++	INIT_LIST_HEAD(&kobj->access_counts);
++	INIT_LIST_HEAD(&kobj->object_list);
++	/* Some of the call sites are not tracked correctly so don't try */
++	if(call_site)
++		kallsyms_lookup((unsigned long) call_site, NULL, NULL,
++				//&(kobj->modsymb), kobj->funcstr);
++				NULL, kobj->funcstr);
++	/* task information */
++	if (in_irq()) {
++		kobj->pid = 0;
++		strncpy(kobj->comm, "hardirq", sizeof(kobj->comm));
++	} else if (in_softirq()) {
++		kobj->pid = 0;
++		strncpy(kobj->comm, "softirq", sizeof(kobj->comm));
++	} else {
++		kobj->pid = current->pid;
++		/*
++		 * There is a small chance of a race with set_task_comm(),
++		 * however using get_task_comm() here may cause locking
++		 * dependency issues with current->alloc_lock. In the worst
++		 * case, the command line is not correct.
++		 */
++		strncpy(kobj->comm, current->comm, sizeof(kobj->comm));
++	}
++
++#if MEMORIZER_DEBUG >= 5
++	__print_memorizer_kobj(kobj, "Allocated and initalized kobj");
++#endif
++}
++
++/**
++ * free_access_from_entry() --- free the entry from the kmem_cache
++ */
++static void free_access_from_entry(struct access_from_counts *afc)
++{
++	kmem_cache_free(access_from_counts_cache, afc);
++}
++
++/**
++ * free_access_from_list() --- for each element remove from list and free
++ */
++static void free_access_from_list(struct list_head *afc_lh)
++{
++	struct access_from_counts *afc;
++	struct list_head *p;
++	struct list_head *tmp;
++	list_for_each_safe(p, tmp, afc_lh)
++	{
++		afc = list_entry(p, struct access_from_counts, list);
++		list_del(&afc->list);
++		free_access_from_entry(afc);
++	}
++}
++
++/**
++ * free_kobj() --- free the kobj from the kmem_cache
++ * @kobj:	The memorizer kernel object metadata
++ *
++ * FIXME: there might be a small race here between the write unlock and the
++ * kmem_cache_free. If another thread is trying to read the kobj and is waiting
++ * for the lock, then it could get it. I suppose the whole *free_kobj operation
++ * needs to be atomic, which might be proivded by locking the list in general.
++ */
++static void free_kobj(struct memorizer_kobj * kobj)
++{
++	write_lock(&kobj->rwlock);
++	free_access_from_list(&kobj->access_counts);
++	write_unlock(&kobj->rwlock);
++	kmem_cache_free(kobj_cache, kobj);
++}
++
++
++/**
++ * clear_free_list() --- remove entries from free list and free kobjs
++ */
++static void clear_object_list(void)
++{
++	struct memorizer_kobj *kobj;
++	struct list_head *p;
++	struct list_head *tmp;
++	unsigned long flags;
++	pr_info("Clearing the free'd kernel objects\n");
++	__memorizer_enter();
++	write_lock_irqsave(&object_list_spinlock, flags);
++	list_for_each_safe(p, tmp, &object_list)
++	{
++		kobj = list_entry(p, struct memorizer_kobj, object_list);
++		/* If free_jiffies is 0 then this object is live */
++		if(kobj->free_jiffies > 0) {
++			/* remove the kobj from the free-list */
++			list_del(&kobj->object_list);
++			/* Free the object data */
++			free_kobj(kobj);
++		}
++	}
++	write_unlock_irqrestore(&object_list_spinlock, flags);
++	__memorizer_exit();
++}
++
++/**
++ * clear_printed_objects() --- remove entries from free list and free kobjs
++ */
++static void clear_printed_objects(void)
++{
++	struct memorizer_kobj *kobj;
++	struct list_head *p;
++	struct list_head *tmp;
++	unsigned long flags;
++	pr_info("Clearing the free'd and printed kernel objects\n");
++	__memorizer_enter();
++	list_for_each_safe(p, tmp, &object_list)
++	{
++		kobj = list_entry(p, struct memorizer_kobj, object_list);
++		/* If free_jiffies is 0 then this object is live */
++		if(kobj->free_jiffies > 0 && kobj->printed) {
++			/* remove the kobj from the free-list */
++			list_del(&kobj->object_list);
++			/* Free the object data */
++			free_kobj(kobj);
++		}
++	}
++	__memorizer_exit();
++}
++
++/**
++ * add_kobj_to_rb_tree - add the object to the tree
++ * @kobj:	Pointer to the object to add to the tree
++ *
++ * Standard rb tree insert. The key is the range. So if the object is allocated
++ * < than the active node's region then traverse left, if greater than traverse
++ * right, and if not that means we have an overlap and have a problem in
++ * overlapping allocations. 
++ */
++static struct memorizer_kobj * unlocked_insert_kobj_rbtree(struct memorizer_kobj
++							   *kobj, struct rb_root
++							   *kobj_rbtree_root)
++{
++	struct memorizer_kobj *parent;
++	struct rb_node **link;
++	struct rb_node *rb_parent = NULL;
++
++	link = &(kobj_rbtree_root->rb_node);
++	while (*link) {
++		rb_parent = *link;
++		parent = rb_entry(rb_parent, struct memorizer_kobj, rb_node);
++		if (kobj->va_ptr + kobj->size <= parent->va_ptr)
++		{
++			link = &parent->rb_node.rb_left;
++		}
++		else if (parent->va_ptr + parent->size <= kobj->va_ptr)
++		{
++			link = &parent->rb_node.rb_right;
++		}
++		else
++		{
++			pr_err("Cannot insert 0x%lx into the object search tree"
++			       " (overlaps existing)\n", kobj->va_ptr);
++			__print_memorizer_kobj(parent, "");
++			kmem_cache_free(kobj_cache, kobj);
++			kobj = NULL;
++			break;
++		}
++	}
++	if(likely(kobj != NULL)){
++		rb_link_node(&kobj->rb_node, rb_parent, link);
++		rb_insert_color(&kobj->rb_node, kobj_rbtree_root);
++	}
++	return kobj;
++}
++
++/**
++ * search_kobj_from_rbtree() - lookup the kobj from the tree
++ * @kobj_ptr:	The ptr to find the active for 
++ * @rbtree:	The rbtree to lookup in
++ *
++ * This function searches for the memorizer_kobj associated with the passed in
++ * pointer in the passed in kobj_rbtree. Since this is a reading on the rbtree
++ * we assume that the particular tree being accessed has had it's lock acquired
++ * properly already.
++ */
++static struct memorizer_kobj * unlocked_lookup_kobj_rbtree(uintptr_t kobj_ptr,
++							   struct rb_root *
++							   kobj_rbtree_root)
++{
++	struct rb_node *rb = kobj_rbtree_root->rb_node;
++
++	while (rb) {
++		struct memorizer_kobj * kobj =
++			rb_entry(rb, struct memorizer_kobj, rb_node);
++		/* Check if our pointer is less than the current node's ptr */
++		if (kobj_ptr < kobj->va_ptr)
++			rb = kobj->rb_node.rb_left;
++		/* Check if our pointer is greater than the current node's ptr */
++		else if (kobj_ptr >= (kobj->va_ptr + kobj->size))
++			rb = kobj->rb_node.rb_right;
++		/* At this point we have found the node because rb != null */
++		else
++			return kobj;
++	}
++	return NULL;
++}
++
++/**
++ * memorizer_free_kobj - move the specified objec to free list
++ * @call_site:	Call site requesting the original free
++ * @ptr:	Address of the object to be freed
++ *
++ * Algorithm: 
++ *	1) find the object in the rbtree
++ *	2) add the object to the memorizer process kobj queue
++ *	3) remove the object from the rbtree
++ *
++ * Maybe TODO: Do some processing here as opposed to later? This depends on when
++ * we want to add our filtering.
++ * 0xvv
++ */
++void static memorizer_free_kobj(uintptr_t call_site, uintptr_t kobj_ptr)
++{
++
++	struct memorizer_kobj *kobj;
++	struct memorizer_kernel_free mke;
++	struct memorizer_kernel_free *mke_ptr;
++	unsigned long flags;
++
++	if(!strcmp(current->comm,"userApp"))
++			return;
++
++
++	__memorizer_enter();
++
++	if(buff_init)
++	{
++
++		while(*buff_fill)
++		{
++			curBuff = (curBuff + 1)%NB;
++			switchBuffer();
++		}		
++
++
++
++		local_irq_save(flags);
++		// Set up the event Struct and Dump it to the Buffer
++		mke.event_type = Memorizer_Mem_Free;
++		mke.pid = task_pid_nr(current);
++		mke.src_va_ptr = call_site;
++		mke.event_ip = kobj_ptr;
++		mke.event_jiffies = jiffies;
++	
++		mke_ptr = (struct memorizer_kernel_free *)buff_write_end;
++		*mke_ptr = mke;
++		buff_write_end = buff_write_end + sizeof(struct memorizer_kernel_free);
++		*buff_free_size = *buff_free_size - sizeof(struct memorizer_kernel_free);
++
++		if(*buff_free_size < sizeof(struct memorizer_kernel_event))
++		{
++			*buff_fill = 1;
++			buff_write_end = buff_start;
++		}
++	
++
++		local_irq_restore(flags);
++	}
++//	}
++		
++	__memorizer_exit();
++	
++}
++
++/**
++ * free_kobj_kmem_cache() - free the object from the kmem_cache
++ * @kobj:	The kernel object metadata to free
++ * @kmemcache:	The cache to free from
++ */
++
++/**
++ * memorizer_alloc() - record allocation event
++ * @object:	Pointer to the beginning of hte object
++ * @size:	Size of the object
++ *
++ * Track the allocation and add the object to the set of active object tree.
++ */
++static void inline __memorizer_kmalloc(unsigned long call_site, const void *ptr,
++				       size_t bytes_req, size_t bytes_alloc,
++				       gfp_t gfp_flags)
++{
++
++
++	unsigned long flags;
++	struct memorizer_kobj *kobj;
++	struct memorizer_kobj *kobj_ptr;
++	struct memorizer_kernel_alloc mke;
++	struct memorizer_kernel_alloc *mke_ptr;
++
++
++	
++	if(unlikely(ptr==NULL) || unlikely(IS_ERR(ptr)))
++		return;
++
++	if(unlikely(!memorizer_enabled)) {
++		atomic_long_inc(&stats_num_allocs_while_disabled);
++		return;
++	}
++
++	if(in_memorizer()) {
++		atomic_long_inc(&stats_num_induced_allocs);
++		return;
++	}
++
++
++
++
++#if 0 // Prototype for filtering: static though so leave off
++	if(call_site < selinux.b || call_site >= crypto_code_region.e)
++		return;
++#endif
++
++	if(!strcmp(current->comm,"userApp"))
++		 return;
++
++	__memorizer_enter();
++
++
++	//kobj = kmem_cache_alloc(kobj_cache, gfp_flags | GFP_ATOMIC);
++	//if(!kobj){
++	//	pr_info("Cannot allocate a memorizer_kobj structure\n");
++	//}
++
++	//init_kobj(kobj, (uintptr_t) call_site, (uintptr_t) ptr, bytes_alloc);
++	
++	/* Grab the writer lock for the object_list */
++	
++	if(buff_init)
++	{
++
++
++
++		
++		while(*buff_fill)
++		{
++			curBuff = (curBuff + 1)%NB;
++			switchBuffer();
++		}		
++
++		local_irq_save(flags);
++
++		mke.event_type = Memorizer_Mem_Alloc;
++		mke.event_ip = call_site;
++		mke.src_va_ptr = (uintptr_t)ptr;
++		mke.src_pa_ptr = __pa((uintptr_t)ptr);
++		mke.event_size = bytes_alloc;
++		mke.event_jiffies = jiffies;
++		/* Some of the call sites are not tracked correctly so don't try */
++		if(call_site)
++			kallsyms_lookup((unsigned long) call_site, NULL, NULL,
++				//&(kobj->modsymb), kobj->funcstr);
++				NULL, mke.funcstr);
++		/* task information */
++		if (in_irq()) {
++			mke.pid = 0;
++			strncpy(mke.comm, "hardirq", sizeof(mke.comm));
++		} else if (in_softirq()) {
++			mke.pid = 0;
++			strncpy(mke.comm, "softirq", sizeof(mke.comm));
++		} else {
++			mke.pid = current->pid;
++		/*
++		 * There is a small chance of a race with set_task_comm(),
++		 * however using get_task_comm() here may cause locking
++		 * dependency issues with current->alloc_lock. In the worst
++		 *	 case, the command line is not correct.
++		 */
++		strncpy(mke.comm, current->comm, sizeof(mke.comm));
++		}
++
++	
++		mke_ptr = (struct memorizer_kernel_alloc *)buff_write_end;
++		*mke_ptr = mke;
++		buff_write_end = buff_write_end + sizeof(struct memorizer_kernel_alloc);
++		*buff_free_size = *buff_free_size - sizeof(struct memorizer_kernel_alloc);
++
++		if(*buff_free_size < sizeof(struct memorizer_kernel_event))
++		{
++			*buff_fill = 1;
++			buff_write_end = buff_start;
++		}
++		local_irq_restore(flags);
++	}
++	else
++	{
++		atomic_long_inc(&stats_num_allocs_while_disabled);
++	}
++
++
++
++
++		
++	
++
++	//*buff_end = (unsigned long long)0xaa;
++	
++	atomic_long_inc(&stats_live_objs);
++	__memorizer_exit();
++}
++
++/*** HOOKS similar to the kmem points ***/
++void memorizer_kmalloc(unsigned long call_site, const void *ptr, size_t
++		      bytes_req, size_t bytes_alloc, gfp_t gfp_flags)
++{
++	__memorizer_kmalloc(call_site, ptr, bytes_req, bytes_alloc, gfp_flags);
++}
++
++void memorizer_kmalloc_node(unsigned long call_site, const void *ptr, size_t
++			   bytes_req, size_t bytes_alloc, gfp_t gfp_flags, int
++			   node)
++{
++	__memorizer_kmalloc(call_site, ptr, bytes_req, bytes_alloc, gfp_flags);
++}
++
++void memorizer_kfree(unsigned long call_site, const void *ptr)
++{
++	/* 
++	 * Condition for ensuring free is from online cpu: see trace point
++	 * condition from include/trace/events/kmem.h for reason
++	 */
++	if(unlikely(!cpu_online(raw_smp_processor_id())) || !memorizer_enabled){
++		return;
++	}
++	__memorizer_enter();
++	memorizer_free_kobj((uintptr_t) call_site, (uintptr_t) ptr);
++	__memorizer_exit();
++}
++
++void memorizer_kmem_cache_alloc(unsigned long call_site, const void *ptr, size_t
++				bytes_req, size_t bytes_alloc, gfp_t gfp_flags)
++{
++	__memorizer_kmalloc(call_site, ptr, bytes_req, bytes_alloc, gfp_flags);
++}
++
++void memorizer_kmem_cache_alloc_node (unsigned long call_site, const void *ptr,
++				      size_t bytes_req, size_t bytes_alloc,
++				      gfp_t gfp_flags, int node)
++{
++	__memorizer_kmalloc(call_site, ptr, bytes_req, bytes_alloc, gfp_flags);
++}
++
++void memorizer_kmem_cache_free(unsigned long call_site, const void *ptr)
++{
++	/* 
++	 * Condition for ensuring free is from online cpu: see trace point
++	 * condition from include/trace/events/kmem.h for reason
++	 */
++	if(unlikely(!cpu_online(raw_smp_processor_id())) || !memorizer_enabled){
++		return;
++	}
++	__memorizer_enter();
++	memorizer_free_kobj((uintptr_t) call_site, (uintptr_t) ptr);
++	__memorizer_exit();
++}
++
++
++void memorizer_alloc_pages(unsigned long call_site, struct page *page, unsigned
++			   int order)
++{
++	atomic_long_inc(&stats_num_page_allocs);
++	//__memorizer_kmalloc(call_site, page_address(page),
++			    //(uintptr_t) (PAGE_SIZE << order),
++			    //(uintptr_t) (PAGE_SIZE << order), 0);
++}
++
++void memorizer_free_pages(unsigned long call_site, struct page *page, unsigned
++			  int order)
++{
++	/* 
++	 * Condition for ensuring free is from online cpu: see trace point
++	 * condition from include/trace/events/kmem.h for reason
++	 */
++	if(unlikely(!cpu_online(raw_smp_processor_id())) || !memorizer_enabled){
++		return;
++	}
++	__memorizer_enter();
++	memorizer_free_kobj((uintptr_t) call_site, (uintptr_t)
++			       page_address(page));
++	__memorizer_exit();
++}
++
++void memorizer_register_global(const void *ptr, size_t size)
++{
++	atomic_long_inc(&stats_num_globals);
++	__memorizer_kmalloc(0, ptr, size, size, 0);
++}
++
++//==-- Memorizer Data Export ----------------------------------------------==//
++static unsigned long seq_flags;
++static bool sequence_done = false;
++extern struct list_head *seq_list_start(struct list_head *head, loff_t pos);
++extern struct list_head *seq_list_next(void *v, struct list_head *head, loff_t
++				       *ppos);
++
++/*
++ * kmap_seq_start() --- get the head of the free'd kobj list
++ *
++ * Grab the lock here and give back on close. There is an interesting problem
++ * here in that when the data gets to the page size limit for printing, the
++ * sequence file closes the file and opens up again by coming to the start
++ * location having processed a subset of the list already. The problem with this
++ * is that without having __memorizer_enter() it will add objects to the list
++ * between the calls to show and next opening the potential for an infinite
++ * loop. It also adds elements in between start and stop operations. 
++ *
++ * For some reason the start is called every time after a *stop*, which allows
++ * more entries to be added to the list thus requiring the extra sequence_done
++ * flag that I added to detect the end of the list. So we add this flag so that
++ * any entries added after won't make the sequence continue forever in an
++ * infinite loop.
++ */
++static void *kmap_seq_start(struct seq_file *seq, loff_t *pos)
++{
++	__memorizer_enter();
++	write_lock_irqsave(&object_list_spinlock, seq_flags);
++
++	if(list_empty(&object_list))
++		return NULL;
++
++	if(*pos == 0){
++		sequence_done = false;
++		return object_list.next;
++	}
++
++	/* 
++	 * Second call back even after return NULL to stop. This must occur
++	 * after the check to (*pos == 0) otherwise it won't continue after the
++	 * first time a read is executed in userspace. The specs didn't mention
++	 * this but my experiments showed its occurrence. 
++	 */
++	if(sequence_done == true)
++		return NULL;
++
++	return seq_list_start(&object_list, *pos);
++}
++
++/*
++ * kmap_seq_next() --- move the head pointer in the list or return null
++ */
++static void *kmap_seq_next(struct seq_file *seq, void *v, loff_t *pos)
++{
++	return seq_list_next(v, &object_list, pos);
++}
++
++/*
++ * kmap_seq_show() - print out the object including access info
++ */
++static int kmap_seq_show(struct seq_file *seq, void *v)
++{
++	struct access_from_counts *afc;
++	struct memorizer_kobj *kobj = list_entry(v, struct memorizer_kobj,
++						 object_list);
++	read_lock(&kobj->rwlock);
++	/* If free_jiffies is 0 then this object is live */
++	if(!print_live_obj && kobj->free_jiffies == 0) {
++		read_unlock(&kobj->rwlock);
++		return 0;
++	}
++	kobj->printed = true;
++	/* Print object allocation info */
++	seq_printf(seq,"%p,%d,%p,%lu,%lu,%lu,%p,%s\n",
++		   (void*) kobj->alloc_ip, kobj->pid, (void*) kobj->va_ptr,
++		   kobj->size, kobj->alloc_jiffies, kobj->free_jiffies, (void*)
++		   kobj->free_ip, kobj->comm);
++
++	/* print each access IP with counts and remove from list */
++	list_for_each_entry(afc, &kobj->access_counts, list)
++	{
++		seq_printf(seq, "  %p,%d,%llu,%llu\n",
++			   (void *) afc->ip, afc->pid,
++			   (unsigned long long) afc->writes,
++			   (unsigned long long) afc->reads);
++	}
++
++	read_unlock(&kobj->rwlock);
++	return 0;
++}
++
++/*
++ * kmap_seq_stop() --- clean up on sequence file stopping
++ *
++ * Must release locks and ensure that we can re-enter. Also must set the
++ * sequence_done flag to avoid an infinit loop, which is required so that we
++ * guarantee completions without reentering due to extra allocations between
++ * this invocation of stop and the start that happens.
++ */
++static void kmap_seq_stop(struct seq_file *seq, void *v)
++{
++	if(!v)
++		sequence_done = true;
++	write_unlock_irqrestore(&object_list_spinlock, seq_flags);
++	__memorizer_exit();
++}
++
++static const struct seq_operations kmap_seq_ops = {
++	.start = kmap_seq_start,
++	.next  = kmap_seq_next,
++	.stop  = kmap_seq_stop,
++	.show  = kmap_seq_show,
++};
++
++static int kmap_open(struct inode *inode, struct file *file)
++{
++	return seq_open(file, &kmap_seq_ops);
++}
++
++static ssize_t kmap_write(struct file *file, const char __user *user_buf,
++			       size_t size, loff_t *ppos)
++{
++#if 0
++	char buf[64];
++	int buf_size;
++	int ret;
++
++	buf_size = min(size, (sizeof(buf) - 1));
++	if (strncpy_from_user(buf, user_buf, buf_size) < 0)
++		return -EFAULT;
++	buf[buf_size] = 0;
++
++	if (strncmp(buf, "clear", 5) == 0) {
++		if (kmemleak_enabled)
++			kmemleak_clear();
++		else
++			__kmemleak_do_cleanup();
++		goto out;
++	}
++#endif
++
++	return 0;
++}
++
++static const struct file_operations kmap_fops = {
++	.owner		= THIS_MODULE,
++	.open		= kmap_open,
++	.write		= kmap_write,
++	.read		= seq_read,
++	.llseek		= seq_lseek,
++	.release	= seq_release,
++};
++
++/* 
++ * clear_free_list_write() - call the function to clear the free'd kobjs
++ */
++static ssize_t clear_object_list_write(struct file *file, const char __user
++				   *user_buf, size_t size, loff_t *ppos)
++{
++	clear_object_list();
++	*ppos += size;
++	return size;
++}
++
++static const struct file_operations clear_object_list_fops = {
++	.owner		= THIS_MODULE,
++	.write		= clear_object_list_write,
++};
++
++/* 
++ * clear_printed_free_list_write() - call the function to clear the printed free'd kobjs
++ */
++static ssize_t clear_printed_list_write(struct file *file, const char __user
++				   *user_buf, size_t size, loff_t *ppos)
++{
++	clear_printed_objects();
++	*ppos += size;
++	return size;
++}
++
++static const struct file_operations clear_printed_list_fops = {
++	.owner		= THIS_MODULE,
++	.write		= clear_printed_list_write,
++};
++
++static int stats_seq_show(struct seq_file *seq, void *v)
++{
++	seq_printf(seq,"------- Memory Accesses -------\n");
++	seq_printf(seq,"    Tracked:			\t%16ld\n",
++		atomic_long_read(&memorizer_num_accesses) -
++		atomic_long_read(&memorizer_num_untracked_accesses) -
++		atomic_long_read(&memorizer_caused_accesses)
++		);
++	seq_printf(seq,"    Not-tracked:		\t%16ld\n",
++		atomic_long_read(&memorizer_num_untracked_accesses));
++	seq_printf(seq,"    Memorizer-Induced:		\t%16ld\n",
++		atomic_long_read(&memorizer_caused_accesses));
++	seq_printf(seq,"    Total:			\t%16ld\n",
++		atomic_long_read(&memorizer_num_accesses));
++	seq_printf(seq,"------- Memory Allocations -------\n");
++	seq_printf(seq,"    Tracked (globals,cache,kmalloc):	%16ld\n",
++		atomic_long_read(&memorizer_num_tracked_allocs));
++	seq_printf(seq,"    Untracked (memorizer disabled):	%16ld\n",
++		atomic_long_read(&stats_num_allocs_while_disabled));
++	seq_printf(seq,"    Memorizer induced:			%16ld\n",
++		atomic_long_read(&stats_num_induced_allocs));
++	seq_printf(seq,"    Page Alloc (total):			%16ld\n",
++		atomic_long_read(&stats_num_page_allocs));
++	seq_printf(seq,"    Global Var (total):			%16ld\n",
++		atomic_long_read(&stats_num_globals));
++	seq_printf(seq,"    Live Objects:			%16ld\n",
++		atomic_long_read(&stats_live_objs));
++	return 0;
++}
++
++static int show_stats_open(struct inode *inode, struct file *file)
++{
++	return single_open(file, &stats_seq_show, NULL);
++}
++
++static const struct file_operations show_stats_fops = {
++	.owner		= THIS_MODULE,
++	.open		= show_stats_open,
++	.read		= seq_read,
++	.llseek		= seq_lseek,
++	.release	= single_release,
++};
++
++//==-- Memorizer Initializtion --------------------------------------------==//
++
++/**
++ * create_obj_kmem_cache() - create the kernel object kmem_cache
++ */
++static void create_obj_kmem_cache(void)
++{
++	/* TODO: Investigate these flags SLAB_TRACE | SLAB_NOLEAKTRACE */
++	kobj_cache = KMEM_CACHE(memorizer_kobj, SLAB_PANIC);
++}
++
++/**
++ * create_access_counts_kmem_cache() - create the kmem_cache for access_counts
++ */
++static void create_access_counts_kmem_cache(void)
++{
++	/* TODO: Investigate these flags SLAB_TRACE | SLAB_NOLEAKTRACE */
++	access_from_counts_cache = KMEM_CACHE(access_from_counts, SLAB_PANIC);
++	pr_info("Just created kmem_cache for access_from_counts\n");
++}
++
++
++static int create_buffers(void)
++{
++	int i;
++	unsigned int *temp_size;
++	for(i=0;i<NB;i++)
++	{
++		buffList[i] = (char *)vmalloc(ML*4096);
++		if(!buffList[i])
++			return 0;
++
++		memset(buffList[i],0,ML*4096);
++		temp_size = (unsigned int *)(buffList[i]+2);
++		*temp_size = ML*4096 - 6;
++
++
++	}
++	return 1;
++}
++
++
++/**
++ * init_mem_access_wl - initialize the percpu data structures
++ *
++ * Init all the values to 0 for the selector, head, and tail
++ */
++static void init_mem_access_wls(void)
++{
++	struct mem_access_worklists * wls;
++	size_t cpu;
++	for_each_possible_cpu(cpu){
++		wls = &per_cpu(mem_access_wls, cpu);
++		wls->selector = 0;
++		wls->head = -1;
++		wls->tail = 0;
++	}
++}
++
++
++
++/* Fops and Callbacks for char_driver */
++
++static int char_open(struct inode *inode, struct file* file){
++	   return 0;
++};
++
++static int char_close(struct inode *inode, struct file* file){
++	   return 0;
++};
++
++static int char_mmap(struct file *file, struct vm_area_struct * vm_struct){
++	__memorizer_enter();
++	unsigned long pfn;
++	int i = 0;
++	int bufNum = 252-imajor(file->f_inode);
++	for(i=0; i<ML;i++)
++	{
++		pfn = vmalloc_to_pfn(buffList[bufNum]+i*PAGE_SIZE);
++		remap_pfn_range(vm_struct, vm_struct->vm_start+i*PAGE_SIZE, pfn, PAGE_SIZE, PAGE_SHARED);
++	}
++	__memorizer_exit();
++	return 0;
++
++};
++
++
++
++
++static const struct file_operations char_driver={
++	.owner = THIS_MODULE,
++	.open = char_open,
++	.release = char_close,
++	.mmap = char_mmap,
++};
++
++
++static int create_char_devs(void)
++{
++	int i = 0;
++	for (i = 0; i<NB; i++)
++	{
++		dev[i] = kmalloc(sizeof(dev_t), GFP_KERNEL);
++		cd[i] = kmalloc(sizeof(struct cdev), GFP_KERNEL);
++
++		char devName[12];
++		sprintf(devName,"char_dev%u",i);
++		pr_info("%s\n",devName);
++
++		if(alloc_chrdev_region(dev[i],0,1,devName)<0)
++		{
++			pr_warning("Something Went Wrong with allocating char device\n");
++		}
++		else
++		{
++			pr_info("Allocated Region for char device\n");
++		}
++		cdev_init(cd[i],&char_driver);
++		if(cdev_add(cd[i], *dev[i], 1)<0)
++		{
++			pr_warning("Couldn't add the char device\n");
++		}
++		else
++		{
++			pr_info("Added the char device\n");
++		}
++
++
++	}
++}
++
++
++
++
++
++/**
++ * memorizer_init() - initialize memorizer state
++ *
++ * Set enable flag to true which enables tracking for memory access and object
++ * allocation. Allocate the object cache as well.
++ */
++void __init memorizer_init(void)
++{
++	unsigned long flags;
++
++	__memorizer_enter();
++	init_mem_access_wls();
++	
++
++	create_obj_kmem_cache();
++	create_access_counts_kmem_cache();
++
++	lt_init();
++	local_irq_save(flags);
++	memorizer_enabled = true;
++	memorizer_log_access = false;
++	print_live_obj = false;
++	local_irq_restore(flags);
++	__memorizer_exit();
++}
++
++/*
++ * Late initialization function.
++ */
++static int memorizer_late_init(void)
++{
++	unsigned long flags;
++	struct dentry *dentry, *dentryMemDir;
++
++	__memorizer_enter();
++
++	dentryMemDir = debugfs_create_dir("memorizer", NULL);
++	if (!dentryMemDir)
++		pr_warning("Failed to create debugfs memorizer dir\n");
++	dentry = debugfs_create_file("kmap", S_IRUGO, dentryMemDir,
++				     NULL, &kmap_fops);
++	if (!dentry)
++		pr_warning("Failed to create debugfs kmap file\n");
++	dentry = debugfs_create_file("show_stats", S_IRUGO, dentryMemDir,
++				     NULL, &show_stats_fops);
++	if (!dentry)
++		pr_warning("Failed to create debugfs show stats\n");
++	dentry = debugfs_create_file("clear_object_list", S_IWUGO, dentryMemDir,
++				     NULL, &clear_object_list_fops);
++	if (!dentry)
++		pr_warning("Failed to create debugfs clear_object_list\n");
++	dentry = debugfs_create_file("clear_printed_list", S_IWUGO, dentryMemDir,
++				     NULL, &clear_printed_list_fops);
++	if (!dentry)
++		pr_warning("Failed to create debugfs clear_printed_list\n");
++	dentry = debugfs_create_bool("memorizer_enabled", S_IRUGO|S_IWUGO,
++				     dentryMemDir, &memorizer_enabled);
++	if (!dentry)
++		pr_warning("Failed to create debugfs memorizer_enabled\n");
++	dentry = debugfs_create_bool("memorizer_log_access", S_IRUGO|S_IWUGO,
++				     dentryMemDir, &memorizer_log_access);
++	if (!dentry)
++		pr_warning("Failed to create debugfs memorizer_log_access\n");
++	dentry = debugfs_create_bool("print_live_obj", S_IRUGO | S_IWUGO,
++				     dentryMemDir, &print_live_obj);
++
++	if (!dentry)
++		pr_warning("Failed to create debugfs print_live_obj\n");
++
++
++	dentry = debugfs_create_bool("test_bool_object", S_IRUGO | S_IWUGO,
++				     dentryMemDir, &test_obj);
++	if (!dentry)
++		pr_warning("Failed to create test bool object\n");
++	
++
++	if(create_buffers())
++		pr_info("Allocated all the buffers");
++	else
++		pr_info("Couldn't allocate the buffers");
++
++
++	switchBuffer();
++
++	create_char_devs();
++
++	pr_info("%u",(*buff_free_size)*NB);
++
++	buff_init = true;
++
++	
++
++
++	
++		
++	local_irq_save(flags);
++	memorizer_enabled = true;
++	memorizer_log_access = false;
++	print_live_obj = false;
++	local_irq_restore(flags);
++
++	pr_info("Memorizer initialized\n");
++
++	pr_info("Size of memorizer_kobj:%d\n",sizeof(struct memorizer_kobj));
++
++	
++
++
++	print_stats();
++	//__memorizer_print_events(10);
++	//dump_object_list();
++	//__print_active_rb_tree(active_kobj_rbtree_root.rb_node);
++	//print_pdf_table();
++
++	__memorizer_exit();
++
++	return 0;
++}
++late_initcall(memorizer_late_init);
++
++/**
++ * init_from_driver() - Initialize memorizer from a driver
++ *
++ * The primary focus of this funciton is to allow for very late enable and init
++ */
++int memorizer_init_from_driver(void)
++{
++	unsigned long flags;
++
++	__memorizer_enter();
++
++	pr_info("Running test from driver...");
++
++	local_irq_save(flags);
++	memorizer_enabled = true;
++	memorizer_log_access = true;
++	local_irq_restore(flags);
++
++	print_stats();
++
++#if MEMORIZER_DEBUG >= 5
++	//read_lock_irqsave(&active_kobj_rbtree_spinlock, flags);
++
++	pr_info("The free'd Kobj list");
++	dump_object_list();
++
++	pr_info("The live kernel object tree now:");
++	__print_active_rb_tree(active_kobj_rbtree_root.rb_node);
++
++	//read_unlock_irqrestore(&active_kobj_rbtree_spinlock, flags);
++#endif
++
++	print_stats();
++
++	__memorizer_exit();
++	return 0;
++}
++EXPORT_SYMBOL(memorizer_init_from_driver);
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index f3e0c69a97b7..67ed8b5ff751 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -1045,6 +1045,7 @@ static __always_inline bool free_pages_prepare(struct page *page,
+ 	kernel_poison_pages(page, 1 << order, 0);
+ 	kernel_map_pages(page, 1 << order, 0);
+ 	kasan_free_pages(page, order);
++	memorizer_free_pages(0, page, order);
+ 
+ 	return true;
+ }
+@@ -3859,6 +3860,8 @@ __alloc_pages_nodemask(gfp_t gfp_mask, unsigned int order,
+ 
+ 	trace_mm_page_alloc(page, order, alloc_mask, ac.migratetype);
+ 
++	memorizer_alloc_pages(_RET_IP_, page, order);
++
+ 	return page;
+ }
+ EXPORT_SYMBOL(__alloc_pages_nodemask);
+diff --git a/mm/slab_common.c b/mm/slab_common.c
+index ae323841adb1..58a2de1404e9 100644
+--- a/mm/slab_common.c
++++ b/mm/slab_common.c
+@@ -1054,6 +1054,7 @@ void *kmalloc_order_trace(size_t size, gfp_t flags, unsigned int order)
+ {
+ 	void *ret = kmalloc_order(size, flags, order);
+ 	trace_kmalloc(_RET_IP_, ret, size, PAGE_SIZE << order, flags);
++	memorizer_kmalloc(_RET_IP_, ret, size, PAGE_SIZE << order, flags);
+ 	return ret;
+ }
+ EXPORT_SYMBOL(kmalloc_order_trace);
+diff --git a/mm/slub.c b/mm/slub.c
+index 7ec0a965c6a3..7c5be9c81263 100644
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -2729,6 +2729,8 @@ void *kmem_cache_alloc(struct kmem_cache *s, gfp_t gfpflags)
+ 
+ 	trace_kmem_cache_alloc(_RET_IP_, ret, s->object_size,
+ 				s->size, gfpflags);
++	memorizer_kmem_cache_alloc(_RET_IP_, ret, s->object_size, s->size,
++				   gfpflags);
+ 
+ 	return ret;
+ }
+@@ -2739,6 +2741,7 @@ void *kmem_cache_alloc_trace(struct kmem_cache *s, gfp_t gfpflags, size_t size)
+ {
+ 	void *ret = slab_alloc(s, gfpflags, _RET_IP_);
+ 	trace_kmalloc(_RET_IP_, ret, size, s->size, gfpflags);
++	memorizer_kmalloc(_RET_IP_, ret, size, s->size, gfpflags);
+ 	kasan_kmalloc(s, ret, size, gfpflags);
+ 	return ret;
+ }
+@@ -2752,6 +2755,8 @@ void *kmem_cache_alloc_node(struct kmem_cache *s, gfp_t gfpflags, int node)
+ 
+ 	trace_kmem_cache_alloc_node(_RET_IP_, ret,
+ 				    s->object_size, s->size, gfpflags, node);
++	memorizer_kmem_cache_alloc_node(_RET_IP_, ret,
++				    s->object_size, s->size, gfpflags, node);
+ 
+ 	return ret;
+ }
+@@ -2766,7 +2771,8 @@ void *kmem_cache_alloc_node_trace(struct kmem_cache *s,
+ 
+ 	trace_kmalloc_node(_RET_IP_, ret,
+ 			   size, s->size, gfpflags, node);
+-
++	memorizer_kmalloc_node(_RET_IP_, ret,
++			   size, s->size, gfpflags, node);
+ 	kasan_kmalloc(s, ret, size, gfpflags);
+ 	return ret;
+ }
+@@ -2979,6 +2985,7 @@ void kmem_cache_free(struct kmem_cache *s, void *x)
+ 		return;
+ 	slab_free(s, virt_to_head_page(x), x, NULL, 1, _RET_IP_);
+ 	trace_kmem_cache_free(_RET_IP_, x);
++	memorizer_kmem_cache_free(_RET_IP_, x);
+ }
+ EXPORT_SYMBOL(kmem_cache_free);
+ 
+@@ -3737,6 +3744,7 @@ void *__kmalloc(size_t size, gfp_t flags)
+ 	ret = slab_alloc(s, flags, _RET_IP_);
+ 
+ 	trace_kmalloc(_RET_IP_, ret, size, s->size, flags);
++	memorizer_kmalloc(_RET_IP_, ret, size, s->size, flags);
+ 
+ 	kasan_kmalloc(s, ret, size, flags);
+ 
+@@ -3770,6 +3778,9 @@ void *__kmalloc_node(size_t size, gfp_t flags, int node)
+ 		trace_kmalloc_node(_RET_IP_, ret,
+ 				   size, PAGE_SIZE << get_order(size),
+ 				   flags, node);
++		memorizer_kmalloc_node(_RET_IP_, ret,
++				   size, PAGE_SIZE << get_order(size),
++				   flags, node);
+ 
+ 		return ret;
+ 	}
+@@ -3782,6 +3793,7 @@ void *__kmalloc_node(size_t size, gfp_t flags, int node)
+ 	ret = slab_alloc_node(s, flags, node, _RET_IP_);
+ 
+ 	trace_kmalloc_node(_RET_IP_, ret, size, s->size, flags, node);
++	memorizer_kmalloc_node(_RET_IP_, ret, size, s->size, flags, node);
+ 
+ 	kasan_kmalloc(s, ret, size, flags);
+ 
+@@ -3864,6 +3876,7 @@ void kfree(const void *x)
+ 	void *object = (void *)x;
+ 
+ 	trace_kfree(_RET_IP_, x);
++	memorizer_kfree(_RET_IP_, x);
+ 
+ 	if (unlikely(ZERO_OR_NULL_PTR(x)))
+ 		return;
+@@ -4233,6 +4246,7 @@ void *__kmalloc_track_caller(size_t size, gfp_t gfpflags, unsigned long caller)
+ 
+ 	/* Honor the call site pointer we received. */
+ 	trace_kmalloc(caller, ret, size, s->size, gfpflags);
++	memorizer_kmalloc(caller, ret, size, s->size, gfpflags);
+ 
+ 	return ret;
+ }
+@@ -4250,6 +4264,9 @@ void *__kmalloc_node_track_caller(size_t size, gfp_t gfpflags,
+ 		trace_kmalloc_node(caller, ret,
+ 				   size, PAGE_SIZE << get_order(size),
+ 				   gfpflags, node);
++		memorizer_kmalloc_node(caller, ret,
++				   size, PAGE_SIZE << get_order(size),
++				   gfpflags, node);
+ 
+ 		return ret;
+ 	}
+@@ -4263,6 +4280,7 @@ void *__kmalloc_node_track_caller(size_t size, gfp_t gfpflags,
+ 
+ 	/* Honor the call site pointer we received. */
+ 	trace_kmalloc_node(caller, ret, size, s->size, gfpflags, node);
++	memorizer_kmalloc_node(caller, ret, size, s->size, gfpflags, node);
+ 
+ 	return ret;
+ }
+diff --git a/scripts/cp_test.sh b/scripts/cp_test.sh
+new file mode 100755
+index 000000000000..34494f0d76bd
+--- /dev/null
++++ b/scripts/cp_test.sh
+@@ -0,0 +1,18 @@
++#!/bin/sh
++
++cd /sys/kernel/debug/memorizer
++echo 1 > clear_object_list
++echo 1 > clear_printed_list
++echo 1 > memorizer_enabled
++echo 1 > memorizer_log_access
++
++cd /root
++
++
++cp -R /mnt/host/src/repos/linuxkit /root
++echo "Done Copying"
++cd /sys/kernel/debug/memorizer
++echo 0 > memorizer_log_access
++echo 0 > memorizer_enabled
++
++cd /root
+diff --git a/scripts/event_structs.h b/scripts/event_structs.h
+new file mode 100644
+index 000000000000..a27a3bda3e5b
+--- /dev/null
++++ b/scripts/event_structs.h
+@@ -0,0 +1,63 @@
++/*
++ * 1. ALLOCATIONS
++ * 2. DEALLOCATIONS
++ * 3. ACCESSES
++ * These will be used to create stateless logs for Memorizer 2.0
++ * */
++
++#include <linux/sched.h>
++
++/* Event and Access type  enumerations */
++enum EventType {Memorizer_Mem_Alloc = 0xaa, Memorizer_Mem_Free = 0xbb, Memorizer_Mem_Read = 0xcc, Memorizer_Mem_Write = 0xdd, Memorizer_Fork = 0xee};
++enum AccessType {Memorizer_READ=0,Memorizer_WRITE};
++
++struct memorizer_kernel_event {
++	enum EventType event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	uintptr_t	src_pa_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++	enum		AccessType access_type;
++	char		comm[16];
++	char		funcstr[128];
++
++			
++};
++
++struct memorizer_kernel_alloc {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	uintptr_t	src_pa_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++	char		comm[16];
++	char		funcstr[128];
++};
++
++struct memorizer_kernel_free {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++};
++
++struct memorizer_kernel_access {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++};
++
++struct memorizer_kernel_fork {
++	char		event_type;
++	long		pid;
++	char		comm[16];
++};
++
+diff --git a/scripts/memorizer/README.txt b/scripts/memorizer/README.txt
+new file mode 100644
+index 000000000000..3931b391ba96
+--- /dev/null
++++ b/scripts/memorizer/README.txt
+@@ -0,0 +1,50 @@
++Files: memorizer.py, test_memorizer.py
++
++Dependencies:
++In order to run the test_memorizer w/ linux test suite, you must 
++wget the latest version from the ltp github repo and set it up.
++Ex:
++wget https://github.com/linux-test-project/ltp/releases/download/20170116/ltp-full-20170116.tar.bz2
++tar xvfj ltp-full-20170116.tar.bz2
++# cd into the untarred dir
++./configure
++make
++sudo make install
++
++Good documentation / examples: http://ltp.sourceforge.net/documentation/how-to/ltp.php
++
++memorizer.py: accepts processes to run in quotes. 
++Ex: python memorizer.py "ls" "mkdir dir"
++In order to run the script, you must have your user be in the 
++memorizer group, which you should setup if not.
++How-to: sudo groupadd memorizer; sudo usermod -aG memorizer <user>
++You will be queried to enter your pw in order to set group 
++permissions on the /sys/kernel/debug dirs which include ftrace
++and memorizer.
++
++test_memorizer.py: accepts either -e, -m, or -h flags.
++Ex: python test_memorizer.py -e
++*All modes will run the setup/cleanup checks to ensure all virtual nodes
++are being set correctly.
++-e: Runs ls, wget, and tar sequentially.
++-m: Runs the linux test suite and saves a human-readable log to 
++/opt/ltp/results/ltp.log
++-h: runs both -e and -m
++As with the memorizer.py, you will need your user to be in the
++memorizer group.  Additionally, you will be queried to enter your
++pw in order to set group permissions on the /opt/ltp dirs.
++
++
++
++===============
++ MEMORIZER 2.0
++===============
++In order to test the new Memorizer with the busybox userland initramfs image, since the system is completely barebones, the environment needs to be set up.
++
++
++./setup_env.sh : Sets up the environment
++./userApp c: Prints the number of remaining bytes in the buffer
++./userApp p: Prints the buffer. Currently, it only prints the first 100 entries in the buffer
++./cp_test: Performs a test and copies the linuxkit directory to the root directory. Initializes the memorizer before the test and disables it afterwards.
++./enable_memorizer: Enables the memorizer and access logging
++./disable_memorizer: Disables the memorier and access logging
+diff --git a/scripts/memorizer/cp_test.sh b/scripts/memorizer/cp_test.sh
+new file mode 100755
+index 000000000000..ef0f6324c4f4
+--- /dev/null
++++ b/scripts/memorizer/cp_test.sh
+@@ -0,0 +1,19 @@
++#!/bin/sh
++
++cd /sys/kernel/debug/memorizer
++echo 1 > clear_object_list
++echo 1 > clear_printed_list
++echo 1 > memorizer_enabled
++echo 1 > memorizer_log_access
++
++cd /root
++
++
++cp -R /mnt/host/src/repos/linuxkit /root
++echo "Done Copying"
++cd /sys/kernel/debug/memorizer
++echo 0 > memorizer_log_access
++echo 0 > memorizer_enabled
++
++cd /root
++./userApp p > outputMap
+diff --git a/scripts/memorizer/disable_memorizer.sh b/scripts/memorizer/disable_memorizer.sh
+new file mode 100755
+index 000000000000..2bcbcb104fb6
+--- /dev/null
++++ b/scripts/memorizer/disable_memorizer.sh
+@@ -0,0 +1,7 @@
++!#/bin/sh
++
++cd /sys/kernel/debug/memorizer
++echo 0 > memorizer_log_accesses
++echo 0 > memorizer_enabled
++
++
+diff --git a/scripts/memorizer/enable_memorizer.sh b/scripts/memorizer/enable_memorizer.sh
+new file mode 100755
+index 000000000000..cf6001cf655b
+--- /dev/null
++++ b/scripts/memorizer/enable_memorizer.sh
+@@ -0,0 +1,6 @@
++#!/bin/sh
++cd /sys/kernel/debug/memorizer
++echo 1 > clear_object_list
++echo 1 > clear_printed_list
++echo 1 > memorizer_enabled
++echo 1 > memorizer_log_access
+diff --git a/scripts/memorizer/event_structs.h b/scripts/memorizer/event_structs.h
+new file mode 100644
+index 000000000000..cb3698d99822
+--- /dev/null
++++ b/scripts/memorizer/event_structs.h
+@@ -0,0 +1,62 @@
++/* This file describes the structs to be used to describe the events happening inside the kernel:
++ * 1. ALLOCATIONS
++ * 2. DEALLOCATIONS
++ * 3. ACCESSES
++ * These will be used to create stateless logs for Memorizer 2.0
++ * */
++
++#include <linux/sched.h>
++
++/* Event and Access type  enumerations */
++enum EventType {Memorizer_Mem_Alloc = 0xaa, Memorizer_Mem_Free = 0xbb, Memorizer_Mem_Access = 0xcc};
++enum AccessType {Memorizer_READ=0,Memorizer_WRITE};
++
++struct memorizer_kernel_event {
++	enum EventType event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	uintptr_t	src_pa_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++	enum		AccessType access_type;
++	char		comm[16];
++	char		funcstr[128];
++
++			
++};
++
++struct memorizer_kernel_alloc {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	uintptr_t	src_pa_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++	char		comm[16];
++	char		funcstr[128];
++};
++
++struct memorizer_kernel_free {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++};
++
++struct memorizer_kernel_access {
++	char		event_type;
++	uintptr_t	event_ip;
++	uintptr_t	src_va_ptr;
++	size_t		event_size;
++	unsigned long	event_jiffies;
++	pid_t		pid;
++};
++
++struct memorizer_kernel_fork {
++	char		event_type;
++	long		pid;
++	char		comm[16];
++};
+diff --git a/scripts/memorizer/memorizer.py b/scripts/memorizer/memorizer.py
+new file mode 100755
+index 000000000000..9e0f212275fc
+--- /dev/null
++++ b/scripts/memorizer/memorizer.py
+@@ -0,0 +1,152 @@
++import sys,threading,os,subprocess,operator,time
++
++mem_path = "/sys/kernel/debug/memorizer/"
++directory = ""
++completed = False
++
++def worker(cmd):
++  ret = os.system(cmd)    
++  if(ret != 0):
++    print "Failed attempt on: " + cmd
++    exit(1)
++
++def basic_cleanup():
++  print "Basic tests completed. Now cleaning up."
++  ret = os.system("rm UPennlogo2.jpg")
++        
++def memManager():
++  while(not completed):
++    stats = subprocess.check_output(["free"])
++    stats_list = stats.split()
++    total_mem = float(stats_list[7])
++    used_mem = float(stats_list[8])
++    memory_usage = used_mem / total_mem
++    if(memory_usage > 0.8):
++      ret = os.system("cat " + mem_path + "kmap >> " + directory + "test.kmap")
++      if ret != 0:
++        print "Failed to append kmap to temp file"
++        exit(1)
++      ret = os.system("echo 1 > " + mem_path + "clear_printed_list")
++      if ret != 0:
++        print "Failed to clear printed list"
++        exit(1)
++    time.sleep(2)
++            
++def startup():
++  ret = os.system("sudo chgrp -R memorizer /opt/")
++  if ret != 0:
++    print "Failed to change group permissions of /opt/"
++    exit(1)
++  os.system("sudo chmod -R g+wrx /opt/")
++  if ret != 0:
++    print "Failed to grant wrx permissions to /opt/"
++    exit(1)
++  # Setup group permissions to ftrace & memorizer directories
++  ret = os.system("sudo chgrp -R memorizer /sys/kernel/debug/")
++  if ret != 0:
++    print "Failed to change memorizer group permissions to /sys/kernel/debug/"
++    exit(1)
++  ret = os.system("sudo chmod -R g+wrx /sys/kernel/debug/")
++  if ret != 0:
++    print "Failed to grant wrx persmissions to /sys/kernel/debug/"
++    exit(1)
++  # Memorizer Startup
++  ret = os.system("echo 1 > " + mem_path + "clear_object_list")
++  if ret != 0:
++    print "Failed to clear object list"
++    exit(1)
++  ret = os.system("echo 0 > " + mem_path + "print_live_obj")
++  if ret != 0:
++    print "Failed to disable live object dumping"
++    exit(1)
++  ret = os.system("echo 1 > " + mem_path + "memorizer_enabled")
++  if ret != 0:
++    print "Failed to enable memorizer object allocation tracking"
++    exit(1)
++  ret = os.system("echo 1 > " + mem_path + "memorizer_log_access")
++  if ret != 0:
++    print "Failed to enable memorizer object access tracking"
++    exit(1)
++
++def cleanup():
++  # Memorizer cleanup
++  ret = os.system("echo 0 > " + mem_path + "memorizer_log_access")
++  if ret != 0:
++    print "Failed to disable memorizer object access tracking"
++    exit(1)
++  ret = os.system("echo 0 > " + mem_path + "memorizer_enabled")
++  if ret != 0:
++    print "Failed to disable memorizer object allocation tracking"
++    exit(1)
++  # Print stats
++  ret = os.system("cat " + mem_path + "show_stats")
++  if ret != 0:
++    print "Failed to display memorizer stats"
++    exit(1)
++  ret = os.system("echo 1 > " + mem_path + "print_live_obj")
++  if ret != 0:
++    print "Failed to enable live object dumping"
++    exit(1)
++  # Make local copies of outputs
++  ret = os.system("cat " + mem_path + "kmap >> " +directory+ "test.kmap")
++  if ret != 0:
++    print "Failed to copy live and freed objs to kmap"
++    exit(1)
++  ret = os.system("echo 1 > " + mem_path + "clear_object_list")
++  if ret != 0:
++    print "Failed to clear all freed objects in obj list"
++    exit(1)
++
++def main(argv):
++  global completed
++  global directory
++  if len(sys.argv) == 1:
++    print "Invalid/missing arg. Please enter -e for basic tests, -m for ltp tests, and/or specify a full process to run in quotes. Specify path using the -p <path> otherwise default to ."
++    return
++  startup()
++  processes = []
++  easy_processes = False
++  next_arg = False
++  for arg in argv:
++    if next_arg: 
++      next_arg = False
++      directory = str(arg) + "/"
++    elif arg == '-p':
++      next_arg = True
++    #User wants to run ltp
++    elif arg == '-m':
++      print "Performing ltp tests" 
++      processes.append("/opt/ltp/runltp -p -l ltp.log")
++      print "See /opt/ltp/results/ltp.log for ltp results"
++    #User wants to run wget,ls,etc.
++    elif arg == '-e':
++      easy_processes = True
++      print "Performing basic ls test"
++      processes.append("ls")
++      print "Performing wget test"
++      processes.append("wget http://www.sas.upenn.edu/~egme/UPennlogo2.jpg")
++  print "Attempting to remove any existing kmaps in the specified path"
++  os.system("rm " + directory + "test.kmap")
++  print "Startup completed. Generating threads."
++  manager = threading.Thread(target=memManager, args=())
++  manager.start()
++  threads = []
++  for process in processes:
++    try:
++      t = threading.Thread(target=worker, args=(process,))
++      threads.append(t)
++      t.start()
++    except:
++      print "Error: unable to start thread"
++  for thr in threads:
++    thr.join()
++  completed = True
++  manager.join()
++  print "Threads ran to completion. Cleaning up."
++  basic_cleanup()
++  cleanup()
++  print "Cleanup successful."
++  return 0
++
++if __name__ == "__main__":
++  main(sys.argv)
+diff --git a/scripts/memorizer/setup_env.sh b/scripts/memorizer/setup_env.sh
+new file mode 100755
+index 000000000000..cc603d047d5f
+--- /dev/null
++++ b/scripts/memorizer/setup_env.sh
+@@ -0,0 +1,11 @@
++#!/bin/sh
++
++mount -t debugfs nodev /sys/kernel/debug
++mknod /dev/null c 1 3
++cp cp_test.sh /root
++cp userApp /root
++cp enable_memorizer.sh /root
++cp disable_memorizer.sh /root
++cd /root && mknod node c 252 0
++
++
+diff --git a/scripts/memorizer/userApp b/scripts/memorizer/userApp
+new file mode 100755
+index 000000000000..a30326650e04
+Binary files /dev/null and b/scripts/memorizer/userApp differ
+diff --git a/scripts/memorizer/userApp.c b/scripts/memorizer/userApp.c
+new file mode 100644
+index 000000000000..70e59257e3f7
+--- /dev/null
++++ b/scripts/memorizer/userApp.c
+@@ -0,0 +1,237 @@
++#include <stdio.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++#include <stdio.h>
++#include <unistd.h>
++#include <sys/mman.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <stdlib.h>
++#include <stdint.h>
++#include <inttypes.h>
++#include "event_structs.h"
++
++
++#define ML 400000  // The size of profiler buffer (Unit: memory page)
++
++#define BUFF_MUTEX_LOCK { \
++		while(*buff_mutex); \
++		*buff_mutex = *buff_mutex + 1;\
++	}
++
++#define BUFF_MUTEX_UNLOCK {*buff_mutex = *buff_mutex - 1;}
++
++#define BUFF_FILL_RESET {*buff_fill = 0;}
++
++
++
++static int buf_fd = -1;
++static int buf_len;
++struct stat s ;
++char *buf;
++char *buff_end;
++char *buff_fill;
++struct memorizer_kernel_event *mke_ptr;
++unsigned int *buff_free_size; 
++
++
++
++// This function opens a character device (which is pointed by a file named as fname) and performs the mmap() operation. If the operations are successful, the base address of memory mapped buffer is returned. Otherwise, a NULL pointer is returned.
++void *buf_init(char *fname)
++{
++	unsigned int *kadr;
++
++	if(buf_fd == -1){
++	buf_len = ML * getpagesize();
++	if ((buf_fd=open(fname, O_RDWR|O_SYNC))<0){
++	          printf("File open error. %s\n", fname);
++	          return NULL;
++		}
++	}
++	kadr = mmap(0, buf_len, PROT_READ|PROT_WRITE, MAP_SHARED, buf_fd, 0);
++	if (kadr == MAP_FAILED){
++		printf("Buf file open error.\n");
++		return NULL;
++		}
++	return kadr;
++}
++
++// This function closes the opened character device file
++void buf_exit()
++{
++	if(buf_fd!=-1){
++		close(buf_fd);
++		buf_fd = -1;
++	}
++}
++
++void printAllocHex()
++{
++	struct memorizer_kernel_alloc *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_alloc *)buf;
++	printf("aa, ");
++	printf("%llx, ",(unsigned long long)mke_ptr->event_ip);
++	printf("%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	printf("%llx, ",(unsigned long long)mke_ptr->src_pa_ptr);
++	printf("%x, ",mke_ptr->event_size);
++	printf("%lx, ",mke_ptr->event_jiffies);	
++	printf("%x, ",mke_ptr->pid);
++	printf("%s, ",mke_ptr->comm);
++	printf("%s\n",mke_ptr->funcstr);
++	buf = buf + sizeof(struct memorizer_kernel_alloc);
++}
++
++void printAlloc()
++{
++	struct memorizer_kernel_alloc *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_alloc *)buf;
++	printf("Alloc: ");
++	printf("%llx, ",(unsigned long long)mke_ptr->event_ip);
++	printf("%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	printf("%llx, ",(unsigned long long)mke_ptr->src_pa_ptr);
++	printf("%u, ",mke_ptr->event_size);
++	printf("%lu, ",mke_ptr->event_jiffies);	
++	printf("%u, ",mke_ptr->pid);
++	printf("%s, ",mke_ptr->comm);
++	printf("%s\n",mke_ptr->funcstr);
++	buf = buf + sizeof(struct memorizer_kernel_alloc);
++}
++
++
++void printFreeHex()
++{
++	struct memorizer_kernel_free *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_free *)buf;
++	printf("0xbb, ");
++	printf("%llx, ",(unsigned long long)mke_ptr->event_ip);
++	printf("%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	printf("%lx, ",mke_ptr->event_jiffies);	
++	printf("%x\n",mke_ptr->pid);
++	buf = buf + sizeof(struct memorizer_kernel_free);
++}
++
++void printFree()
++{
++	struct memorizer_kernel_free *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_free *)buf;
++	printf("Free: ");
++	printf("%llx, ",(unsigned long long)mke_ptr->event_ip);
++	printf("%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	printf("%lu, ",mke_ptr->event_jiffies);	
++	printf("%u\n",mke_ptr->pid);
++	buf = buf + sizeof(struct memorizer_kernel_free);
++}
++
++void printAccessHex(char type)
++{
++	struct memorizer_kernel_access *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_access *)buf;
++	if(type=='r')
++		printf("0xcc, ");
++	else
++		printf("0xdd, ");
++	printf("%llx, ",(unsigned long long)mke_ptr->event_ip);
++	printf("%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	printf("%x, ",mke_ptr->event_size);
++	printf("%lx, ",mke_ptr->event_jiffies);	
++	printf("%x\n",mke_ptr->pid);
++	buf = buf + sizeof(struct memorizer_kernel_access);
++}
++
++
++void printAccess(char type)
++{
++	struct memorizer_kernel_access *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_access *)buf;
++	if(type=='r')
++		printf("Read: ");
++	else
++		printf("Write: ");
++	printf("%llx, ",(unsigned long long)mke_ptr->event_ip);
++	printf("%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	printf("%u, ",mke_ptr->event_size);
++	printf("%lu, ",mke_ptr->event_jiffies);	
++	printf("%u\n",mke_ptr->pid);
++	buf = buf + sizeof(struct memorizer_kernel_access);
++}
++
++void printFork()
++{
++	struct memorizer_kernel_fork *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_fork *)buf;
++	printf("Fork: ");
++	printf("%ld, ",mke_ptr->pid);
++	printf("%s\n",mke_ptr->comm);
++	buf = buf + sizeof(struct memorizer_kernel_fork);
++
++}
++
++int main (int argc, char *argv[])
++{
++	if(argc != 2)
++	{
++		printf("Incorrect number of Command Line Arguments!\n");
++		return 0;
++	}
++
++	// Open the Character Device and MMap 
++	buf = buf_init("node");
++	if(!buf)
++		return -1;
++
++	//Read and count the MMaped data entries
++	buff_end = (buf + ML*getpagesize()) - 1;
++	buff_fill = buf;
++	buf++;
++	buff_free_size = (unsigned int *)buf;
++	buf = buf + sizeof(unsigned int);
++
++	mke_ptr = (struct memorizer_kernel_event *)buf;
++	if(*argv[1]=='c')
++	{
++		printf("Remaining Bytes: ");
++		printf("%u",*buff_free_size);
++	}
++	else if(*argv[1]=='p')
++	{
++	
++		//TODO: Call different functions for different events
++		while(*buf!=0)
++		{
++			if(*buf == 0xffffffaa)
++				printAlloc();
++			else if (*buf == 0xffffffbb)
++				printFree();
++			else if(*buf == 0xffffffcc)
++				printAccess('r');
++			else if(*buf == 0xffffffdd)
++				printAccess('w');
++			else if(*buf == 0xffffffee)
++				printFork();
++
++		}	
++
++	}
++	else if(*argv[1]=='h')
++	{
++	
++		//TODO: Call different functions for different events
++		while(*buf!=0)
++		{
++			if(*buf == 0xffffffaa)
++				printAllocHex();
++			else if (*buf == 0xffffffbb)
++				printFreeHex();
++			else if(*buf == 0xffffffcc)
++				printAccessHex('r');
++			else if(*buf == 0xffffffdd)
++				printAccessHex('w');
++		}	
++
++	}	
++	buf_exit();
++	
++	return 0;
++}
++
+diff --git a/scripts/userApp b/scripts/userApp
+new file mode 100755
+index 000000000000..5d4afb3f8113
+Binary files /dev/null and b/scripts/userApp differ
+diff --git a/scripts/userApp.c b/scripts/userApp.c
+new file mode 100644
+index 000000000000..7a899906b58e
+--- /dev/null
++++ b/scripts/userApp.c
+@@ -0,0 +1,316 @@
++#define _GNU_SOURCE 
++#include <stdio.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++#include <stdio.h>
++#include <unistd.h>
++#include <sys/mman.h>
++#include <sys/types.h>
++#include <sys/stat.h>
++#include <fcntl.h>
++#include <stdlib.h>
++#include <stdint.h>
++#include <inttypes.h>
++#include "event_structs.h"
++#include <pthread.h>
++
++
++#define ML 500000  // The size of profiler buffer (Unit: memory page)
++#define NB 16
++#define BUFF_MUTEX_LOCK { \
++		while(*buff_mutex)\
++		*buff_mutex = *buff_mutex + 1;\
++	}
++
++#define BUFF_MUTEX_UNLOCK {*buff_mutex = *buff_mutex - 1;}
++
++#define BUFF_FILL_RESET {*buff_fill = 0;}
++
++
++
++static int buff_fd_list[NB];
++static int buf_len;
++struct stat s ;
++char *buffList[NB];
++char *buf;
++char *buff_end;
++char *buff_start;
++char *buff_fill;
++char *buff_mutex;
++struct memorizer_kernel_event *mke_ptr;
++unsigned int *buff_free_size; 
++char *stringBase;
++unsigned int idx;
++char outputFileName[30];
++FILE *fp;
++unsigned int curBuff = 0;
++
++
++/*
++ * switchBuffer - switches the the buffer being written to, when the buffer is full
++ */
++void switchBuffer()
++{
++		buf = (char *)buffList[curBuff];
++	
++		buff_fill = buf;
++		buf = buf + 1;
++	
++		buff_mutex = buf;
++		buf = buf + 1;
++	
++	
++		buff_free_size = (unsigned int *)buf;
++		buf = buf + sizeof(unsigned int);
++	
++
++		buff_start = buf;
++	
++
++}
++
++
++
++
++
++
++
++
++// This function opens a character device (which is pointed by a file named as fname) and performs the mmap() operation. If the operations are successful, the base address of memory mapped buffer is returned. Otherwise, a NULL pointer is returned.
++void *buf_init(char *fname,int *buf_fd)
++{
++	unsigned int *kadr;
++
++	buf_len = ML * getpagesize();
++	if ((*buf_fd=open(fname, O_RDWR|O_SYNC))<0){
++	          printf("File open error. %s\n", fname);
++	          return NULL;
++	}
++	kadr = mmap(0, buf_len, PROT_READ|PROT_WRITE, MAP_SHARED, *buf_fd, 0);
++	if (kadr == MAP_FAILED){
++		printf("Buf file open error.\n");
++		return NULL;
++		}
++	return kadr;
++}
++
++// This function closes the opened character device file
++void buf_exit(int buf_fd)
++{
++	if(buf_fd!=-1){
++		close(buf_fd);
++		buf_fd = -1;
++	}
++}
++
++void printAllocHex()
++{
++	struct memorizer_kernel_alloc *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_alloc *)buf;
++	fprintf(fp,"aa, ");
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->event_ip);
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->src_pa_ptr);
++	fprintf(fp,"%x, ",mke_ptr->event_size);
++	fprintf(fp,"%lx, ",mke_ptr->event_jiffies);	
++	fprintf(fp,"%x, ",mke_ptr->pid);
++	fprintf(fp,"%s, ",mke_ptr->comm);
++	fprintf(fp,"%s\n",mke_ptr->funcstr);
++	buf = buf + sizeof(struct memorizer_kernel_alloc);
++//	fprintf(stderr, "before 1 incrementing = %u\n", *buff_free_size);
++//	*buff_free_size = *buff_free_size + sizeof(struct memorizer_kernel_alloc);
++//	fprintf(stderr, "after 1 incrementing = %u\n", *buff_free_size);
++}
++
++void printAlloc()
++{
++	struct memorizer_kernel_alloc *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_alloc *)buf;
++	fprintf(fp,"Alloc: ");
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->event_ip);
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->src_pa_ptr);
++	fprintf(fp,"%u, ",mke_ptr->event_size);
++	fprintf(fp,"%lu, ",mke_ptr->event_jiffies);	
++	fprintf(fp,"%u, ",mke_ptr->pid);
++	fprintf(fp,"%s, ",mke_ptr->comm);
++	fprintf(fp,"%s\n",mke_ptr->funcstr);
++	buf = buf + sizeof(struct memorizer_kernel_alloc);
++//	fprintf(stderr, "before 2 incrementing = %u\n", *buff_free_size);
++//	*buff_free_size = *buff_free_size + sizeof(struct memorizer_kernel_alloc);
++//	fprintf(stderr, "after 2 incrementing = %u\n", *buff_free_size);
++}
++
++
++void printFreeHex()
++{
++	struct memorizer_kernel_free *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_free *)buf;
++	fprintf(fp,"0xbb, ");
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->event_ip);
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	fprintf(fp,"%lx, ",mke_ptr->event_jiffies);	
++	fprintf(fp,"%x\n",mke_ptr->pid);
++	buf = buf + sizeof(struct memorizer_kernel_free);
++//	fprintf(stderr, "before 3 incrementing = %u\n", *buff_free_size);
++//	*buff_free_size = *buff_free_size + sizeof(struct memorizer_kernel_free);
++//	fprintf(stderr, "after 3 incrementing = %u\n", *buff_free_size);
++}
++
++void printFree()
++{
++	struct memorizer_kernel_free *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_free *)buf;
++	fprintf(fp,"Free: ");
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->event_ip);
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	fprintf(fp,"%lu, ",mke_ptr->event_jiffies);	
++	fprintf(fp,"%u\n",mke_ptr->pid);
++	buf = buf + sizeof(struct memorizer_kernel_free);
++//	fprintf(stderr, "before 4 incrementing = %u\n", *buff_free_size);
++//	*buff_free_size = *buff_free_size + sizeof(struct memorizer_kernel_free);
++//	fprintf(stderr, "after 4 incrementing = %u\n", *buff_free_size);
++}
++
++void printAccessHex(char type)
++{
++	struct memorizer_kernel_access *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_access *)buf;
++	if(type=='r')
++		fprintf(fp,"0xcc, ");
++	else
++		fprintf(fp,"0xdd, ");
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->event_ip);
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	fprintf(fp,"%x, ",mke_ptr->event_size);
++	fprintf(fp,"%lx, ",mke_ptr->event_jiffies);	
++	fprintf(fp,"%x\n",mke_ptr->pid);
++	buf = buf + sizeof(struct memorizer_kernel_access);
++//	fprintf(stderr, "before 5 incrementing = %u\n", *buff_free_size);
++//	*buff_free_size = *buff_free_size + sizeof(struct memorizer_kernel_access);
++//	fprintf(stderr, "after 5 incrementing = %u\n", *buff_free_size);
++}
++
++
++void printAccess(char type)
++{
++	struct memorizer_kernel_access *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_access *)buf;
++	if(type=='r')
++		fprintf(fp,"Read: ");
++	else
++		fprintf(fp,"Write: ");
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->event_ip);
++	fprintf(fp,"%llx, ",(unsigned long long)mke_ptr->src_va_ptr);
++	fprintf(fp,"%u, ",mke_ptr->event_size);
++	fprintf(fp,"%lu, ",mke_ptr->event_jiffies);	
++	fprintf(fp,"%u\n",mke_ptr->pid);
++	buf = buf + sizeof(struct memorizer_kernel_access);
++//	fprintf(stderr, "before 6 incrementing = %u\n", *buff_free_size);
++//	*buff_free_size = *buff_free_size + sizeof(struct memorizer_kernel_access);
++//	fprintf(stderr, "after 6 incrementing = %u\n", *buff_free_size);
++}
++
++void printFork()
++{
++	struct memorizer_kernel_fork *mke_ptr;
++	mke_ptr = (struct memorizer_kernel_fork *)buf;
++	fprintf(fp,"Fork: ");
++	fprintf(fp,"%ld, ",mke_ptr->pid);
++	fprintf(fp,"%s\n",mke_ptr->comm);
++	buf = buf + sizeof(struct memorizer_kernel_fork);
++//	fprintf(stderr, "before 7 incrementing = %u\n", *buff_free_size);
++//	*buff_free_size = *buff_free_size + sizeof(struct memorizer_kernel_fork);
++//	fprintf(stderr, "after 7 incrementing = %u\n", *buff_free_size);
++}
++
++int main (int argc, char *argv[])
++{
++	unsigned int i;
++	char devName[12];
++	if(argc != 2)
++	{
++		printf("Incorrect number of Command Line Arguments!\n");
++		return 0;
++	}
++
++
++	for(i = 0;i<NB;i++)
++	{
++		sprintf(devName,"node%u",i);
++		buffList[i] = buf_init(devName,&buff_fd_list[i]);
++		if(!buff_fd_list[i])
++			return -1;
++	}
++	// Open the Character Device and MMap 
++
++	switchBuffer();
++	
++	printf("Choosing inital buffer\n");
++
++
++	if(*argv[1]=='c')
++	{
++		printf("Remaining Bytes: ");
++		printf("%u\n",*buff_free_size);
++	}
++	else if(*argv[1]=='p')
++	{
++
++		while(1)
++		{
++			
++			
++			//We Don't want the memorizer tracking us clearing out the buffer from userspace
++			if(!*buff_fill)
++			{
++				curBuff = (curBuff + 1)%NB;
++				continue;
++			}
++			
++			printf("Userspace: Buffer Full! Now Clearing Buffer %d\n",curBuff);
++
++			
++			sprintf(outputFileName,"ouput%d",idx);
++			fp = fopen(outputFileName,"w+");
++
++
++			//printf("Acquired the Lock\n");
++			while(*buf!=0)
++			{
++				if(*buf == 0xffffffaa)
++					printAlloc();
++				else if (*buf == 0xffffffbb)
++					printFree();
++				else if(*buf == 0xffffffcc)
++					printAccess('r');
++				else if(*buf == 0xffffffdd)
++					printAccess('w');
++				else if(*buf == 0xffffffee)
++					printFork();
++				idx++;
++			}
++			*buff_free_size = (4096 * ML) - 6; 
++			*buff_fill = 0;
++			printf("Done Printing\n");
++
++			fclose(fp);
++			printf("Closed the File Pointer\n");
++	
++			idx++;
++
++		}
++			
++	}
++	for(i = 0;i<NB;i++)
++	{
++		buf_exit(buff_fd_list[i]);
++	
++	}
++
++
++	
++	return 0;
++}
++
++
