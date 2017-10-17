@@ -1,0 +1,26 @@
+{
+  "Vendor": true,
+  "Deadline": "2m",
+  "Sort": ["linter", "severity", "path", "line"],
+  "EnableGC": true,
+  "WarnUnmatchedDirective": true,
+
+  "DisableAll": true,
+  "Enable": [
+    "deadcode",
+    "gofmt",
+    "goimports",
+    "golint",
+    "gosimple",
+    "ineffassign",
+    "interfacer",
+    "lll",
+    "misspell",
+    "unconvert",
+    "unparam",
+    "unused",
+    "vet"
+  ],
+
+  "LineLength": 160
+}

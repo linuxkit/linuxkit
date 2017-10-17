@@ -7,8 +7,29 @@ jobs:
     working_directory: $GOPATH/src/github.com/moby/tool
     steps:
       - checkout
-      - run: go get github.com/golang/lint/golint
-      - run: go get github.com/gordonklaus/ineffassign
-      - run: cd $GOPATH/src/github.com/moby/tool && make test
-      - run: cd $GOPATH/src/github.com/moby/tool && make clean && make GOOS=darwin lint moby
-      - run: cd $GOPATH/src/github.com/moby/tool && make clean && make GOOS=windows lint moby
+      - run:
+          name: "Lint"
+          command: |
+            GOMETALINTER_SHA=7f9672e7ea538b8682e83395d50b12f09bb17b91
+            go get -d github.com/alecthomas/gometalinter
+            cd $GOPATH/src/github.com/alecthomas/gometalinter
+            git checkout -q "$GOMETALINTER_SHA"
+            go build -v -o $GOPATH/bin/gometalinter .
+            export PATH=$GOPATH/bin:$PATH
+            gometalinter --install
+            cd $GOPATH/src/github.com/moby/tool
+            make lint
+      - run:
+          name: "Test"
+          command: |
+            cd $GOPATH/src/github.com/moby/tool
+            make test
+      - run:
+          name: "Build"
+          command: |
+            cd $GOPATH/src/github.com/moby/tool
+            make GOOS=darwin  dist/moby-darwin
+            make GOOS=windows dist/moby-windows
+            make GOOS=linux   dist/moby-linux
+      - store_artifacts:
+          path: ./dist
