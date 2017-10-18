@@ -37,8 +37,8 @@ ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VE
 ENV KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/v4.x/sha256sums.asc
 ENV KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.sign
 
-ENV WIREGUARD_VERSION=0.0.20171011
-ENV WIREGUARD_SHA256=e2e44ff658743507bca0f6b443c2f85aacc48d507ba2dcd4812717145df10b96
+ENV WIREGUARD_VERSION=0.0.20171017
+ENV WIREGUARD_SHA256=57b79a62874d9b99659a744513d4f6f9d88cb772deaa99e485b6fed3004a35cd
 ENV WIREGUARD_URL=https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${WIREGUARD_VERSION}.tar.xz
 
 # PGP keys: 589DA6B1 (greg@kroah.com) & 6092693E (autosigner@kernel.org) & 00411886 (torvalds@linux-foundation.org)
