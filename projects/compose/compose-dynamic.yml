@@ -36,19 +36,19 @@ services:
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
      - /var/run:/var/run
-     - /var/html:/var/html
+     - /etc/html:/var/html
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: compose
     image: linuxkitprojects/compose:0535e78608f57702745dfd56fbe78d28d237e469
     binds:
      - /var/run:/var/run
-     - /var/compose:/compose
+     - /etc/compose:/compose
 files:
-  - path: var/html/a/index.html
+  - path: etc/html/a/index.html
     source: html-a.html
-  - path: var/html/b/index.html
+  - path: etc/html/b/index.html
     source: html-b.html
-  - path: var/compose/docker-compose.yml
+  - path: etc/compose/docker-compose.yml
     source: docker-compose.yml
 trust:
   org:
