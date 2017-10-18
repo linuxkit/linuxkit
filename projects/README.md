@@ -26,6 +26,7 @@ If you want to create a project, please submit a pull request to create a new di
   namespaces
 - [Memorizer](memorizer/) is a tool to trace intra-kernel
   memory operations. 
+  [Kubernetes](kubernetes/) demonstrate how one can create minimal and immutable Kubernetes OS images with LinuxKit.
 
 ## Current projects not yet documented
 - VMWare support (VMWare)
