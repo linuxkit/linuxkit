@@ -1,8 +1,13 @@
 package main
 
 import (
+	"crypto/tls"
+	"crypto/x509"
+	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -21,7 +26,31 @@ const (
 	passwordVar     = "OS_PASSWORD"
 	projectNameVar  = "OS_PROJECT_NAME"
 	userDomainVar   = "OS_USER_DOMAIN_NAME"
+	cacertVar       = "OS_CACERT"
+	insecureVar     = "OS_INSECURE"
 )
+
+func openstackHTTPClient(cacert string, insecure bool) (http.Client, error) {
+	if cacert == "" {
+		return http.Client{}, nil
+	}
+
+	caCertPool := x509.NewCertPool()
+	caCert, err := ioutil.ReadFile(cacert)
+	if err != nil {
+		return http.Client{}, errors.New("Can't read certificate file")
+	}
+	caCertPool.AppendCertsFromPEM(caCert)
+
+	tlsConfig := &tls.Config{
+		RootCAs:            caCertPool,
+		InsecureSkipVerify: insecure,
+	}
+	tlsConfig.BuildNameToCertificate()
+	transport := &http.Transport{TLSClientConfig: tlsConfig}
+
+	return http.Client{Transport: transport}, nil
+}
 
 func runOpenStack(args []string) {
 	flags := flag.NewFlagSet("openstack", flag.ExitOnError)
@@ -43,6 +72,8 @@ func runOpenStack(args []string) {
 	projectNameFlag := flags.String("project", "", "Name of the Project (aka Tenant) to be used")
 	userDomainFlag := flags.String("domain", "Default", "Domain name")
 	usernameFlag := flags.String("username", "", "Username with permissions to create an instance")
+	cacertFlag := flags.String("cacert", "", "CA certificate bundle file")
+	insecureFlag := flags.Bool("insecure", false, "Disable server certificate verification")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -65,6 +96,8 @@ func runOpenStack(args []string) {
 	projectName := getStringValue(projectNameVar, *projectNameFlag, "")
 	userDomain := getStringValue(userDomainVar, *userDomainFlag, "")
 	username := getStringValue(usernameVar, *usernameFlag, "")
+	cacert := getStringValue(cacertVar, *cacertFlag, "")
+	insecure := getBoolValue(insecureVar, *insecureFlag)
 
 	authOpts := gophercloud.AuthOptions{
 		DomainName:       userDomain,
@@ -73,9 +106,20 @@ func runOpenStack(args []string) {
 		TenantName:       projectName,
 		Username:         username,
 	}
-	provider, err := openstack.AuthenticatedClient(authOpts)
+
+	provider, err := openstack.NewClient(authOpts.IdentityEndpoint)
 	if err != nil {
-		log.Fatalf("Failed to authenticate")
+		log.Fatalf("Failed to connect to OpenStack: %s", err)
+	}
+
+	provider.HTTPClient, err = openstackHTTPClient(cacert, insecure)
+	if err != nil {
+		log.Fatalf("Failed to authenticate with OpenStack: %s", err)
+	}
+
+	err = openstack.Authenticate(provider, authOpts)
+	if err != nil {
+		log.Fatalf("Failed to authenticate with OpenStack: %s", err)
 	}
 
 	client, err := openstack.NewComputeV2(provider, gophercloud.EndpointOpts{})
