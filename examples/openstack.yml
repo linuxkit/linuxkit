@@ -1,0 +1,36 @@
+kernel:
+  image: linuxkit/kernel:4.9.54
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
+  - linuxkit/runc:52f92cb577879ce4cfe4e89be2d63af82523fc92
+  - linuxkit/containerd:ed8e8f92e24dd4b94260cf147594ae3fd13a2182
+  - linuxkit/ca-certificates:ea3c4c120f929f4f07ac8535d75933365b5e9582
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:154913b72c6f1f33eb408609fca9963628e8c051
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:d4408777ed6b6e6e562a5d4938fd09804324b33e
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: metadata
+    image: linuxkit/metadata:4c588dba73ae7bec6f873130f715ba44082c4278
+    command: ["/usr/bin/metadata", "openstack"]
+services:
+  - name: rngd
+    image: linuxkit/rngd:45ed7759dd927f4cce3863073ea2e0da1d52a427
+  - name: sshd
+    image: linuxkit/sshd:4a2fc7be31fa57dcade391de6173e0af55296e7f
+    binds:
+     - /var/config/ssh/authorized_keys:/root/.ssh/authorized_keys
+  - name: nginx
+    image: nginx:alpine
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+trust:
+  org:
+    - linuxkit
+    - library

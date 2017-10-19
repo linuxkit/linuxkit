@@ -22,7 +22,7 @@ const (
 
 	// Standard AWS-compatible Metadata URLs
 	userDataURL = "http://169.254.169.254/latest/user-data"
-	metaDataURL = "http://169.254.169.254/latest/meta-data"
+	metaDataURL = "http://169.254.169.254/latest/meta-data/"
 )
 
 // Provider is a generic interface for metadata/userdata providers.
