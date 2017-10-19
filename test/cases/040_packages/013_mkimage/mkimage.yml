@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:52f92cb577879ce4cfe4e89be2d63af82523fc92
 onboot:
   - name: mkimage
-    image: linuxkit/mkimage:13b6efeefd97fed9043c9cd3a8fe1fe7ad1cda12
+    image: linuxkit/mkimage-aws:9f3e0e3282a12dbf29bd04a0706e3601e524f0c4
   - name: poweroff
     image: linuxkit/poweroff:ffd3f539a6f4e67d4cd4ff36503636de35edd7b2
 trust:

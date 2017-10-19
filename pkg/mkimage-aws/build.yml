@@ -1,0 +1,2 @@
+image: mkimage-aws
+arches: ["amd64"]
