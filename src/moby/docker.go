@@ -22,20 +22,33 @@ import (
 	"golang.org/x/net/context"
 )
 
-func dockerRun(input io.Reader, output io.Writer, trust bool, args ...string) error {
+func dockerRun(input io.Reader, output io.Writer, trust bool, img string, args ...string) error {
 	log.Debugf("docker run (input): %s", strings.Join(args, " "))
 	docker, err := exec.LookPath("docker")
 	if err != nil {
 		return errors.New("Docker does not seem to be installed")
 	}
-	args = append([]string{"run", "--network=none", "--rm", "-i"}, args...)
+
+	env := os.Environ()
+	if trust {
+		env = append(env, "DOCKER_CONTENT_TRUST=1")
+	}
+
+	// Pull first to avoid https://github.com/docker/cli/issues/631
+	pull := exec.Command(docker, "pull", img)
+	pull.Env = env
+	if err := pull.Run(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			return fmt.Errorf("docker pull failed: %v output:\n%s", err, exitError.Stderr)
+		}
+		return err
+	}
+
+	args = append([]string{"run", "--network=none", "--rm", "-i", img}, args...)
 	cmd := exec.Command(docker, args...)
 	cmd.Stdin = input
 	cmd.Stdout = output
-	cmd.Env = os.Environ()
-	if trust {
-		cmd.Env = append(cmd.Env, "DOCKER_CONTENT_TRUST=1")
-	}
+	cmd.Env = env
 
 	if err := cmd.Run(); err != nil {
 		if exitError, ok := err.(*exec.ExitError); ok {
