@@ -36,6 +36,7 @@ type Pkg struct {
 	hash       string
 	dirty      bool
 	commitHash string
+	git        *git
 }
 
 // NewFromCLI creates a Pkg from a set of CLI arguments. Calls fs.Parse()
@@ -138,7 +139,9 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		}
 	})
 
-	gitDirty, err := gitIsDirty(hashPath, hashCommit)
+	git := newGit(pkgPath)
+
+	gitDirty, err := git.isDirty(hashPath, hashCommit)
 	if err != nil {
 		return Pkg{}, err
 	}
@@ -146,7 +149,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	dirty = dirty || gitDirty
 
 	if hash == "" {
-		if hash, err = gitTreeHash(hashPath, hashCommit); err != nil {
+		if hash, err = git.treeHash(hashPath, hashCommit); err != nil {
 			return Pkg{}, err
 		}
 
@@ -167,6 +170,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		cache:      !pi.DisableCache,
 		dirty:      dirty,
 		pkgPath:    pkgPath,
+		git:        git,
 	}, nil
 }
 

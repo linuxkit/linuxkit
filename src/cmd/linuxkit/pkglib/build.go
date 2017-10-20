@@ -71,7 +71,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	if bo.release == "" {
-		r, err := gitCommitTag("HEAD")
+		r, err := p.git.commitTag("HEAD")
 		if err != nil {
 			return err
 		}
@@ -101,7 +101,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		args = append(args, "--label", "org.opencontainers.image.source="+p.gitRepo)
 	}
 	if !p.dirty {
-		commit, err := gitCommitHash("HEAD")
+		commit, err := p.git.commitHash("HEAD")
 		if err != nil {
 			return err
 		}

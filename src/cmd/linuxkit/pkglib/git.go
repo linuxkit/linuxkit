@@ -19,8 +19,20 @@ func init() {
 	treeHashRe = regexp.MustCompile("^[0-7]{6} [^ ]+ ([0-9a-f]{40})\t.+\n$")
 }
 
-func gitCommandStdout(args ...string) (string, error) {
-	cmd := exec.Command("git", args...)
+type git struct {
+	dir string
+}
+
+func newGit(dir string) *git {
+	return &git{dir}
+}
+
+func (g git) mkCmd(args ...string) *exec.Cmd {
+	return exec.Command("git", append([]string{"-C", g.dir}, args...)...)
+}
+
+func (g git) commandStdout(args ...string) (string, error) {
+	cmd := g.mkCmd(args...)
 	cmd.Stderr = os.Stderr
 
 	if debugGitCommands {
@@ -33,8 +45,8 @@ func gitCommandStdout(args ...string) (string, error) {
 	return string(out), nil
 }
 
-func gitCommand(args ...string) error {
-	cmd := exec.Command("git", args...)
+func (g git) command(args ...string) error {
+	cmd := g.mkCmd(args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if debugGitCommands {
@@ -43,8 +55,8 @@ func gitCommand(args ...string) error {
 	return cmd.Run()
 }
 
-func gitTreeHash(pkg, commit string) (string, error) {
-	out, err := gitCommandStdout("ls-tree", "--full-tree", commit, "--", pkg)
+func (g git) treeHash(pkg, commit string) (string, error) {
+	out, err := g.commandStdout("ls-tree", "--full-tree", commit, "--", pkg)
 	if err != nil {
 		return "", err
 	}
@@ -57,8 +69,8 @@ func gitTreeHash(pkg, commit string) (string, error) {
 	return matches[1], nil
 }
 
-func gitCommitHash(commit string) (string, error) {
-	out, err := gitCommandStdout("rev-parse", commit)
+func (g git) commitHash(commit string) (string, error) {
+	out, err := g.commandStdout("rev-parse", commit)
 	if err != nil {
 		return "", err
 	}
@@ -66,8 +78,8 @@ func gitCommitHash(commit string) (string, error) {
 	return strings.TrimSpace(out), nil
 }
 
-func gitCommitTag(commit string) (string, error) {
-	out, err := gitCommandStdout("tag", "-l", "--points-at", commit)
+func (g git) commitTag(commit string) (string, error) {
+	out, err := g.commandStdout("tag", "-l", "--points-at", commit)
 	if err != nil {
 		return "", err
 	}
@@ -75,7 +87,7 @@ func gitCommitTag(commit string) (string, error) {
 	return strings.TrimSpace(out), nil
 }
 
-func gitIsDirty(pkg, commit string) (bool, error) {
+func (g git) isDirty(pkg, commit string) (bool, error) {
 	// If it isn't HEAD it can't be dirty
 	if commit != "HEAD" {
 		return false, nil
@@ -86,11 +98,11 @@ func gitIsDirty(pkg, commit string) (bool, error) {
 	// because `git diff-index` only uses the `lstat` result and
 	// not the actual file contents. Running `git update-index
 	// --refresh` updates the cache.
-	if err := gitCommand("update-index", "-q", "--refresh"); err != nil {
+	if err := g.command("update-index", "-q", "--refresh"); err != nil {
 		return false, err
 	}
 
-	err := gitCommand("diff-index", "--quiet", commit, "--", pkg)
+	err := g.command("diff-index", "--quiet", commit, "--", pkg)
 	if err == nil {
 		return false, nil
 	}
