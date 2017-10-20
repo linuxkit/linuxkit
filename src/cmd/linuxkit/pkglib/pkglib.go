@@ -198,11 +198,11 @@ func (p Pkg) ReleaseTag(release string) (string, error) {
 
 // Tag returns the tag to use for the package
 func (p Pkg) Tag() string {
-	r := p.org + "/" + p.image
-	if p.hash != "" {
-		r += ":" + p.hash
+	t := p.hash
+	if t == "" {
+		t = "latest"
 	}
-	return r
+	return p.org + "/" + p.image + ":" + t
 }
 
 // TrustEnabled returns true if trust is enabled
