@@ -4,6 +4,7 @@ package pkglib
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"regexp"
@@ -31,9 +32,9 @@ func (g git) mkCmd(args ...string) *exec.Cmd {
 	return exec.Command("git", append([]string{"-C", g.dir}, args...)...)
 }
 
-func (g git) commandStdout(args ...string) (string, error) {
+func (g git) commandStdout(stderr io.Writer, args ...string) (string, error) {
 	cmd := g.mkCmd(args...)
-	cmd.Stderr = os.Stderr
+	cmd.Stderr = stderr
 
 	if debugGitCommands {
 		fmt.Fprintf(os.Stderr, "+ %v\n", cmd.Args)
@@ -56,7 +57,7 @@ func (g git) command(args ...string) error {
 }
 
 func (g git) treeHash(pkg, commit string) (string, error) {
-	out, err := g.commandStdout("ls-tree", "--full-tree", commit, "--", pkg)
+	out, err := g.commandStdout(os.Stderr, "ls-tree", "--full-tree", commit, "--", pkg)
 	if err != nil {
 		return "", err
 	}
@@ -70,7 +71,7 @@ func (g git) treeHash(pkg, commit string) (string, error) {
 }
 
 func (g git) commitHash(commit string) (string, error) {
-	out, err := g.commandStdout("rev-parse", commit)
+	out, err := g.commandStdout(os.Stderr, "rev-parse", commit)
 	if err != nil {
 		return "", err
 	}
@@ -79,7 +80,7 @@ func (g git) commitHash(commit string) (string, error) {
 }
 
 func (g git) commitTag(commit string) (string, error) {
-	out, err := g.commandStdout("tag", "-l", "--points-at", commit)
+	out, err := g.commandStdout(os.Stderr, "tag", "-l", "--points-at", commit)
 	if err != nil {
 		return "", err
 	}
