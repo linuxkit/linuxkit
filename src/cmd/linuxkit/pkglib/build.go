@@ -70,8 +70,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return fmt.Errorf("Unknown arch %q", arch)
 	}
 
-	if bo.release == "" {
-		r, err := gitCommitTag("HEAD")
+	if p.git != nil && bo.release == "" {
+		r, err := p.git.commitTag("HEAD")
 		if err != nil {
 			return err
 		}
@@ -97,11 +97,11 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	var args []string
 
-	if p.gitRepo != "" {
+	if p.git != nil && p.gitRepo != "" {
 		args = append(args, "--label", "org.opencontainers.image.source="+p.gitRepo)
 	}
-	if !p.dirty {
-		commit, err := gitCommitHash("HEAD")
+	if p.git != nil && !p.dirty {
+		commit, err := p.git.commitHash("HEAD")
 		if err != nil {
 			return err
 		}

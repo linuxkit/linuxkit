@@ -36,6 +36,7 @@ type Pkg struct {
 	hash       string
 	dirty      bool
 	commitHash string
+	git        *git
 }
 
 // NewFromCLI creates a Pkg from a set of CLI arguments. Calls fs.Parse()
@@ -138,20 +139,27 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		}
 	})
 
-	gitDirty, err := gitIsDirty(hashPath, hashCommit)
+	git, err := newGit(pkgPath)
 	if err != nil {
 		return Pkg{}, err
 	}
 
-	dirty = dirty || gitDirty
-
-	if hash == "" {
-		if hash, err = gitTreeHash(hashPath, hashCommit); err != nil {
+	if git != nil {
+		gitDirty, err := git.isDirty(hashPath, hashCommit)
+		if err != nil {
 			return Pkg{}, err
 		}
 
-		if dirty {
-			hash += "-dirty"
+		dirty = dirty || gitDirty
+
+		if hash == "" {
+			if hash, err = git.treeHash(hashPath, hashCommit); err != nil {
+				return Pkg{}, err
+			}
+
+			if dirty {
+				hash += "-dirty"
+			}
 		}
 	}
 
@@ -167,6 +175,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		cache:      !pi.DisableCache,
 		dirty:      dirty,
 		pkgPath:    pkgPath,
+		git:        git,
 	}, nil
 }
 
@@ -189,7 +198,11 @@ func (p Pkg) ReleaseTag(release string) (string, error) {
 
 // Tag returns the tag to use for the package
 func (p Pkg) Tag() string {
-	return p.org + "/" + p.image + ":" + p.hash
+	t := p.hash
+	if t == "" {
+		t = "latest"
+	}
+	return p.org + "/" + p.image + ":" + t
 }
 
 // TrustEnabled returns true if trust is enabled
