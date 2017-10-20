@@ -24,8 +24,19 @@ type git struct {
 	dir string
 }
 
-func newGit(dir string) *git {
-	return &git{dir}
+// Returns git==nil and no error if the path is not within a git repository
+func newGit(dir string) (*git, error) {
+	g := &git{dir}
+
+	// Check if dir really is within a git directory
+	ok, err := g.isWorkTree(dir)
+	if err != nil {
+		return nil, err
+	}
+	if !ok {
+		return nil, nil
+	}
+	return g, nil
 }
 
 func (g git) mkCmd(args ...string) *exec.Cmd {
@@ -54,6 +65,25 @@ func (g git) command(args ...string) error {
 		fmt.Fprintf(os.Stderr, "+ %v\n", cmd.Args)
 	}
 	return cmd.Run()
+}
+
+func (g git) isWorkTree(pkg string) (bool, error) {
+	tf, err := g.commandStdout(nil, "rev-parse", "--is-inside-work-tree")
+	if err != nil {
+		// If we executed git ok but it errored then that's because this isn't a git repo
+		if _, ok := err.(*exec.ExitError); ok {
+			return false, nil
+		}
+		return false, err
+	}
+
+	tf = strings.TrimSpace(tf)
+
+	if tf == "true" {
+		return true, nil
+	}
+
+	return false, fmt.Errorf("unexpected output from git rev-parse --is-inside-work-tree: %s", tf)
 }
 
 func (g git) treeHash(pkg, commit string) (string, error) {

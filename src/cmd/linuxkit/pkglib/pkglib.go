@@ -139,22 +139,27 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		}
 	})
 
-	git := newGit(pkgPath)
-
-	gitDirty, err := git.isDirty(hashPath, hashCommit)
+	git, err := newGit(pkgPath)
 	if err != nil {
 		return Pkg{}, err
 	}
 
-	dirty = dirty || gitDirty
-
-	if hash == "" {
-		if hash, err = git.treeHash(hashPath, hashCommit); err != nil {
+	if git != nil {
+		gitDirty, err := git.isDirty(hashPath, hashCommit)
+		if err != nil {
 			return Pkg{}, err
 		}
 
-		if dirty {
-			hash += "-dirty"
+		dirty = dirty || gitDirty
+
+		if hash == "" {
+			if hash, err = git.treeHash(hashPath, hashCommit); err != nil {
+				return Pkg{}, err
+			}
+
+			if dirty {
+				hash += "-dirty"
+			}
 		}
 	}
 
@@ -193,7 +198,11 @@ func (p Pkg) ReleaseTag(release string) (string, error) {
 
 // Tag returns the tag to use for the package
 func (p Pkg) Tag() string {
-	return p.org + "/" + p.image + ":" + p.hash
+	r := p.org + "/" + p.image
+	if p.hash != "" {
+		r += ":" + p.hash
+	}
+	return r
 }
 
 // TrustEnabled returns true if trust is enabled
