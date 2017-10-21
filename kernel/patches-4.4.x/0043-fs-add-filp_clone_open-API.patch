@@ -1,4 +1,4 @@
-From 5bdb96b09825d6357ef664bdde7d912467184d51 Mon Sep 17 00:00:00 2001
+From eaf798827fd58aa7d7270f9702883207fcbbf4f2 Mon Sep 17 00:00:00 2001
 From: James Bottomley <James.Bottomley@HansenPartnership.com>
 Date: Wed, 17 Feb 2016 16:49:38 -0800
 Subject: [PATCH 43/44] fs: add filp_clone_open API

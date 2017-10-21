@@ -110,7 +110,7 @@ RUN curl -sSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
     tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "WireGuard-${WIREGUARD_VERSION}/src" && \
     make -j "$(getconf _NPROCESSORS_ONLN)" M="/wireguard" modules
 
-# Modules
+# Modules and Device Tree binaries
 RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     make INSTALL_MOD_PATH=/tmp/kernel-modules firmware_install && \
     make INSTALL_MOD_PATH=/tmp/kernel-modules M="/wireguard" modules_install && \
@@ -118,7 +118,12 @@ RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
       cd /tmp/kernel-modules/lib/modules/$DVER && \
       rm build source && \
       ln -s /usr/src/linux-headers-$DVER build ) && \
-    ( cd /tmp/kernel-modules && tar cf /out/kernel.tar lib )
+    case $(uname -m) in \
+    aarch64) \
+        make INSTALL_DTBS_PATH=/tmp/kernel-modules/boot/dtb dtbs_install; \
+        ;; \
+    esac && \
+    ( cd /tmp/kernel-modules && tar cf /out/kernel.tar . )
 
 # Headers (userspace API)
 RUN mkdir -p /tmp/kernel-headers/usr && \

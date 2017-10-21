@@ -1,0 +1,9 @@
+setenv bootargs "dwc_otg.lpm_enable=0 earlyprintk console=tty1 console=ttyS0,115200 root=/dev/ram0 rw"
+setenv dtbfile bcm2837-rpi-3-b.dtb
+setenv machid 0x00000c42
+saveenv
+
+fatload mmc 0:1 ${kernel_addr_r} kernel.uimg
+fatload mmc 0:1 ${fdt_addr_r} ${dtbfile}
+fatload mmc 0:1 ${ramdisk_addr_r} initrd.uimg
+bootm ${kernel_addr_r} ${ramdisk_addr_r} ${fdt_addr_r}

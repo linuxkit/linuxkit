@@ -1,4 +1,4 @@
-From 6956c0e80e2acba1b1acd3a0ce085a6b12686215 Mon Sep 17 00:00:00 2001
+From 34379e682d26011f993a2121ed833699eb413873 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:18 -0700
 Subject: [PATCH 09/13] Drivers: hv: Log the negotiated IC versions.
@@ -18,10 +18,10 @@ Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
  4 files changed, 23 insertions(+), 9 deletions(-)
 
 diff --git a/drivers/hv/hv_fcopy.c b/drivers/hv/hv_fcopy.c
-index 0a315e6aa589..9aee6014339d 100644
+index 0713c6aaa33a..94f4f090ceea 100644
 --- a/drivers/hv/hv_fcopy.c
 +++ b/drivers/hv/hv_fcopy.c
-@@ -251,10 +251,15 @@ void hv_fcopy_onchannelcallback(void *context)
+@@ -255,10 +255,15 @@ void hv_fcopy_onchannelcallback(void *context)
  	icmsghdr = (struct icmsg_hdr *)&recv_buffer[
  			sizeof(struct vmbuspipe_hdr)];
  	if (icmsghdr->icmsgtype == ICMSGTYPE_NEGOTIATE) {

@@ -1,0 +1,11 @@
+diff --git a/include/configs/rpi.h b/include/configs/rpi.h
+index c499b45..1faae3c 100644
+--- a/include/configs/rpi.h
++++ b/include/configs/rpi.h
+@@ -161,4 +161,6 @@
+ 	BOOTENV
+ 
+ 
++#define CONFIG_SYS_BOOTM_LEN (64 * 1024 * 1024)
++
+ #endif

@@ -1,7 +1,7 @@
-From f9e403624b67fbf283205ed1709066723289996c Mon Sep 17 00:00:00 2001
+From 1f090eed1aaf9f1181e45a338b99878c6e494996 Mon Sep 17 00:00:00 2001
 From: Randy Dodgen <dodgen@google.com>
 Date: Thu, 24 Aug 2017 15:26:01 -0400
-Subject: [PATCH 16/17] ext4: fix fault handling when mounted with -o dax,ro
+Subject: [PATCH 13/14] ext4: fix fault handling when mounted with -o dax,ro
 
 If an ext4 filesystem is mounted with both the DAX and read-only
 options, executables on that filesystem will fail to start (claiming
