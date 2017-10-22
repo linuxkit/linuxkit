@@ -172,11 +172,11 @@ endef
 # Build Targets
 # Debug targets only for latest stable and LTS stable
 #
-$(eval $(call kernel,4.13.8,4.13.x,$(EXTRA)))
-$(eval $(call kernel,4.13.8,4.13.x,-dbg))
-$(eval $(call kernel,4.9.57,4.9.x,$(EXTRA)))
-$(eval $(call kernel,4.9.57,4.9.x,-dbg))
-$(eval $(call kernel,4.4.93,4.4.x,$(EXTRA)))
+$(eval $(call kernel,4.13.9,4.13.x,$(EXTRA)))
+$(eval $(call kernel,4.13.9,4.13.x,-dbg))
+$(eval $(call kernel,4.9.58,4.9.x,$(EXTRA)))
+$(eval $(call kernel,4.9.58,4.9.x,-dbg))
+$(eval $(call kernel,4.4.94,4.4.x,$(EXTRA)))
 
 # Target for kernel config
 kconfig: | sources

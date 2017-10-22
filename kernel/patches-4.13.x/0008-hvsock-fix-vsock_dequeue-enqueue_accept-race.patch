@@ -1,7 +1,7 @@
-From 49dd71766ef1675b56ec02ff42e222308edd8a52 Mon Sep 17 00:00:00 2001
+From 2cf5773ab1091bc4e575ba1e8d861ae89bdf1f9e Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 19 May 2017 21:49:59 +0800
-Subject: [PATCH 09/14] hvsock: fix vsock_dequeue/enqueue_accept race
+Subject: [PATCH 08/12] hvsock: fix vsock_dequeue/enqueue_accept race
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
 Origin: git@github.com:dcui/linux.git

@@ -1,7 +1,7 @@
-From 09654d1ebca935056e36d651d10effed156651e3 Mon Sep 17 00:00:00 2001
+From 2d199886c8f5b1aaaf0beef6e4f14a871f98d834 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:26 -0600
-Subject: [PATCH 04/14] hv_sock: implements Hyper-V transport for Virtual
+Subject: [PATCH 03/12] hv_sock: implements Hyper-V transport for Virtual
  Sockets (AF_VSOCK)
 
 Hyper-V Sockets (hv_sock) supplies a byte-stream based communication
