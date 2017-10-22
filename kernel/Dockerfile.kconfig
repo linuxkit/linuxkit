@@ -32,8 +32,8 @@ RUN for VERSION in ${KERNEL_VERSIONS}; do \
                    patch -p1 < "$patch"; \
                done; \
             fi && \
-        mv /kernel_config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
-        mv /kernel_config-${SERIES}-aarch64 arch/arm64/configs/defconfig; \
+        mv /config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
+        mv /config-${SERIES}-aarch64 arch/arm64/configs/defconfig; \
     done
 
 ENTRYPOINT ["/bin/sh"]

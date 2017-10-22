@@ -78,13 +78,13 @@ RUN case $(uname -m) in \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
         ;; \
     esac  && \
-    cp /kernel_config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
+    cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
     if [ -n "${EXTRA}" ]; then \
         sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}\"/" ${KERNEL_DEF_CONF}; \
         if [ "${EXTRA}" = "-dbg" ]; then \
             sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
         fi && \
-        cat /kernel_config${EXTRA} >> ${KERNEL_DEF_CONF}; \
+        cat /config${EXTRA} >> ${KERNEL_DEF_CONF}; \
     fi && \
     make defconfig && \
     make oldconfig && \
