@@ -1,4 +1,4 @@
-From 8b8cd3d7e407fcd39648cea2fe030f4c2e505855 Mon Sep 17 00:00:00 2001
+From 23077b5178371414d69c8ffa6ac6ba3f262c7bcc Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 19 May 2017 21:49:59 +0800
 Subject: [PATCH 09/14] hvsock: fix vsock_dequeue/enqueue_accept race
@@ -45,5 +45,5 @@ index dfc8c51e4d74..b7b2c66d91fd 100644
  	/* The caller will need a reference on the connected socket so we let
  	 * it call sock_put().
 -- 
-2.14.1
+2.11.1
 

@@ -1,4 +1,4 @@
-From 31695355b51ff9351e1beb1d334a3eeb996896f4 Mon Sep 17 00:00:00 2001
+From 276df3d16941a166c4f5861c13a94b72653b1a98 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:35 -0600
 Subject: [PATCH 06/14] hv_sock: add the support of auto-loading
@@ -26,5 +26,5 @@ index fd89bf357617..f465b0b662df 100644
  MODULE_LICENSE("GPL");
 +MODULE_ALIAS_NETPROTO(PF_VSOCK);
 -- 
-2.14.1
+2.11.1
 

@@ -1,4 +1,4 @@
-From d8592f2252894b71e4494f0ff88e44b6bcea3dca Mon Sep 17 00:00:00 2001
+From 61521024303e5db17a02ff1dface2e8bbd09a124 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 7 Jul 2017 09:15:29 +0800
 Subject: [PATCH 12/14] hv-sock: avoid double FINs if shutdown() is called
@@ -37,5 +37,5 @@ index b8bf1446ae13..50e4bc822c69 100644
  
  	/* It can't fail: see hvs_channel_writable_bytes(). */
 -- 
-2.14.1
+2.11.1
 
