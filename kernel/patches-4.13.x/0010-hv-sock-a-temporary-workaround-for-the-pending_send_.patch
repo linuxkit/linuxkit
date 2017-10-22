@@ -1,4 +1,4 @@
-From 7bd189513f67317fde01c6504572869b79662d2a Mon Sep 17 00:00:00 2001
+From 3c6e2fa8d4013801a2721048b106aedc077e47cd Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 21 Jun 2017 22:30:42 +0800
 Subject: [PATCH 10/14] hv-sock: a temporary workaround for the
