@@ -1,2 +1,2 @@
 **/vendor/** linguist-vendored
-kernel/*.x linguist-language=text
+kernel/config-* linguist-language=text

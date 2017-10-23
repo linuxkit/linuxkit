@@ -1,4 +1,4 @@
-From b29fe48363585d8c4d96a979d43482a67dd1481f Mon Sep 17 00:00:00 2001
+From 07cc90bf689d8d1446f19af31f419e96b6aae8d1 Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 2 Mar 2017 12:55:49 -0300
 Subject: [PATCH 01/13] tools build: Add test for sched_getcpu()
@@ -146,5 +146,5 @@ index 43899e0d6fa1..c3b180254f91 100644
  
  int is_printable_array(char *p, unsigned int len);
 -- 
-2.14.1
+2.11.1
 

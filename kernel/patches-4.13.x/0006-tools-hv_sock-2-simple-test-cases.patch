@@ -1,0 +1,430 @@
+From 0e575b9966945fb1132bd13c7a3c69330c14166e Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Fri, 5 May 2017 18:52:02 -0600
+Subject: [PATCH 06/12] tools: hv_sock: 2 simple test cases.
+
+Please read this document first:
+https://docs.microsoft.com/en-us/virtualization/hyper-v-on-windows/user-guide/make-integration-service
+
+And you may want to have a look at
+https://github.com/dcui/linux/commit/691aff936c0fa6fc24e2662c0e8cc6ab65509600#diff-2cf9109d84c1ba75b09e40090f4a2176R100
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit e015b0a767dcab79b8b8361516f3f4322cdc90a7)
+---
+ tools/hv/hv_sock/test-001/client_in_vm.c   |  38 +++++++++
+ tools/hv/hv_sock/test-001/server_on_host.c | 128 +++++++++++++++++++++++++++++
+ tools/hv/hv_sock/test-002/client_on_host.c | 127 ++++++++++++++++++++++++++++
+ tools/hv/hv_sock/test-002/server_in_vm.c   |  85 +++++++++++++++++++
+ 4 files changed, 378 insertions(+)
+ create mode 100644 tools/hv/hv_sock/test-001/client_in_vm.c
+ create mode 100644 tools/hv/hv_sock/test-001/server_on_host.c
+ create mode 100644 tools/hv/hv_sock/test-002/client_on_host.c
+ create mode 100644 tools/hv/hv_sock/test-002/server_in_vm.c
+
+diff --git a/tools/hv/hv_sock/test-001/client_in_vm.c b/tools/hv/hv_sock/test-001/client_in_vm.c
+new file mode 100644
+index 000000000000..2e2371b13fa7
+--- /dev/null
++++ b/tools/hv/hv_sock/test-001/client_in_vm.c
+@@ -0,0 +1,38 @@
++/* The program runs in Linux VM. */
++
++#include <stdio.h>
++#include <unistd.h>
++#include <sys/socket.h>
++#include <linux/vm_sockets.h>
++
++int main()
++{
++	int fd;
++
++	struct sockaddr_vm sa = {
++		.svm_family = AF_VSOCK,
++		.svm_reserved1 = 0,
++		.svm_cid = VMADDR_CID_ANY,
++	};
++
++	/* Connecting to the host's 00000808-facb-11e6-bd58-64006a7986d3 */
++	sa.svm_port = 0x808;
++
++	fd = socket(AF_VSOCK, SOCK_STREAM, 0);
++	if (fd < 0) {
++		perror("socket");
++		return -1;
++	}
++
++	if (connect(fd, (struct sockaddr*)&sa, sizeof(sa)) != 0) {
++		perror("connect");
++		return -1;
++	}
++
++	printf("Connected to the host.\n");
++
++	close(fd);
++	printf("Closed the connection.\n");
++
++	return 0;
++}
+diff --git a/tools/hv/hv_sock/test-001/server_on_host.c b/tools/hv/hv_sock/test-001/server_on_host.c
+new file mode 100644
+index 000000000000..22c48e8d3789
+--- /dev/null
++++ b/tools/hv/hv_sock/test-001/server_on_host.c
+@@ -0,0 +1,128 @@
++/* The program runs on Windows 10 or Windows Server 2016 host or newer. */
++
++#include <stdio.h>
++#include <stdint.h>
++#include <winsock2.h>
++#include <ws2def.h>
++#include <initguid.h>
++
++#pragma comment(lib, "ws2_32.lib")
++
++#ifndef AF_HYPERV
++#define AF_HYPERV 34
++#define HV_PROTOCOL_RAW 1
++
++typedef struct _SOCKADDR_HV
++{
++	ADDRESS_FAMILY Family;
++	USHORT Reserved;
++	GUID VmId;
++	GUID ServiceId;
++} SOCKADDR_HV, *PSOCKADDR_HV;
++
++DEFINE_GUID(HV_GUID_SELF, 0x00000000, 0x0000, 0x0000,
++			0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
++#endif /* AF_HYPERV */
++
++#define VMADDR_PORT_ANY 0xFFFFFFFF
++
++/* 00000000-facb-11e6-bd58-64006a7986d3 */
++DEFINE_GUID(HVSOCK_LINUX_TEMPLATE, 0x00000000, 0xfacb, 0x11e6,
++			0xbd, 0x58, 0x64, 0x00, 0x6a, 0x79, 0x86, 0xd3);
++
++static const GUID VsockServiceIdTemplate = HVSOCK_LINUX_TEMPLATE;
++
++bool TryConvertVsockPortToServiceId(uint32_t port, GUID *serviceId)
++{
++	if (port == VMADDR_PORT_ANY)
++		return false;
++
++	*serviceId = VsockServiceIdTemplate;
++	serviceId->Data1 = port;
++	return true;
++}
++
++bool TryConvertServiceIdToVsockPort(const GUID *serviceId, uint32_t *port)
++{
++	if (memcmp(&serviceId->Data2, &VsockServiceIdTemplate.Data2,
++		sizeof(GUID) - sizeof(uint32_t)) != 0 ||
++		serviceId->Data1 == VMADDR_PORT_ANY) {
++		return false;
++	}
++
++	*port = serviceId->Data1;
++	return true;
++}
++
++int CreateListenSocket(uint32_t port, SOCKET *result_fd)
++{
++	SOCKADDR_HV localAddr;
++	SOCKET fd;
++	int ret;
++
++	fd = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
++	if (fd == INVALID_SOCKET) {
++		printf("socket() failed: error = %d\n", WSAGetLastError());
++		return -1;
++	}
++
++	memset(&localAddr, 0, sizeof(SOCKADDR_HV));
++	localAddr.Family = AF_HYPERV;
++	localAddr.VmId = HV_GUID_SELF;
++	TryConvertVsockPortToServiceId(port, &localAddr.ServiceId);
++
++	ret = bind(fd, (SOCKADDR *)&localAddr, sizeof(SOCKADDR_HV));
++	if (ret == SOCKET_ERROR) {
++		printf("bind() failed: error = %d\n", WSAGetLastError());
++		goto err;
++	}
++
++	ret = listen(fd, 10);
++	if (ret == SOCKET_ERROR) {
++		printf("listen() failed: error = %d\n", WSAGetLastError());
++		goto err;
++	}
++
++	*result_fd = fd;
++	printf("Listening on fd = 0x%d, local port = 0x%x\n", fd, port);
++	return 0;
++err:
++	closesocket(fd);
++	return -1;
++}
++
++int main()
++{
++	WSADATA wsaData;
++	SOCKADDR_HV remoteAddr;
++	int remoteAddrLen;
++	SOCKET fd;
++	SOCKET children[100];
++	int i, ret;
++
++	// Initialize Winsock
++	ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
++	if (ret != NO_ERROR) {
++		printf("WSAStartup() failed with error: %d\n", ret);
++		return -1;
++	}
++
++	// We'll listen on 00000808-facb-11e6-bd58-64006a7986d3
++	if (CreateListenSocket(0x808, &fd) < 0) {
++		printf("failed to listen!\n");
++		ret = -1;
++		goto out;
++	}
++
++	for (i = 0; i < ARRAYSIZE(children); i++) {
++		remoteAddrLen = sizeof(SOCKADDR_HV);
++		children[i] = accept(fd, (sockaddr *)&remoteAddr, &remoteAddrLen);
++		closesocket(children[i]);
++		printf("Got a connection and closed it.\n");
++	}
++
++	closesocket(fd);
++out:
++	WSACleanup();
++	return ret;
++}
+diff --git a/tools/hv/hv_sock/test-002/client_on_host.c b/tools/hv/hv_sock/test-002/client_on_host.c
+new file mode 100644
+index 000000000000..ed5ae99fbfba
+--- /dev/null
++++ b/tools/hv/hv_sock/test-002/client_on_host.c
+@@ -0,0 +1,127 @@
++/* The program runs on Windows 10 or Windows Server 2016 host or newer. */
++
++#include <stdio.h>
++#include <stdint.h>
++#include <winsock2.h>
++#include <ws2def.h>
++#include <initguid.h>
++#include <rpc.h> /* for UuidFromStringA() */
++#pragma comment(lib, "ws2_32.lib")
++#pragma comment(lib, "rpcrt4.lib")
++
++#ifndef AF_HYPERV
++#define AF_HYPERV 34
++#define HV_PROTOCOL_RAW 1
++
++typedef struct _SOCKADDR_HV
++{
++	ADDRESS_FAMILY Family;
++	USHORT Reserved;
++	GUID VmId;
++	GUID ServiceId;
++}SOCKADDR_HV, *PSOCKADDR_HV;
++
++DEFINE_GUID(HV_GUID_SELF, 0x00000000, 0x0000, 0x0000,
++	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
++#endif /* AF_HYPERV */
++
++#define VMADDR_PORT_ANY 0xFFFFFFFF
++
++/* 00000000-facb-11e6-bd58-64006a7986d3 */
++DEFINE_GUID(HVSOCK_LINUX_TEMPLATE, 0x00000000, 0xfacb, 0x11e6,
++	0xbd, 0x58, 0x64, 0x00, 0x6a, 0x79, 0x86, 0xd3);
++
++static const GUID VsockServiceIdTemplate = HVSOCK_LINUX_TEMPLATE;
++
++bool TryConvertVsockPortToServiceId(uint32_t port, GUID *serviceId)
++{
++	if (port == VMADDR_PORT_ANY)
++		return false;
++
++	*serviceId = VsockServiceIdTemplate;
++	serviceId->Data1 = port;
++	return true;
++}
++
++bool TryConvertServiceIdToVsockPort(const GUID *serviceId, uint32_t *port)
++{
++	if (memcmp(&serviceId->Data2, &VsockServiceIdTemplate.Data2,
++		sizeof(GUID) - sizeof(uint32_t)) != 0 ||
++		serviceId->Data1 == VMADDR_PORT_ANY) {
++		return false;
++	}
++
++	*port = serviceId->Data1;
++	return true;
++}
++
++int ConnectToVM(const SOCKADDR_HV *remoteAddr, SOCKET *result_fd)
++{
++	SOCKADDR_HV localAddr;
++	SOCKET fd;
++	uint32_t port;
++	int ret;
++
++	fd = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
++	if (fd == INVALID_SOCKET) {
++		printf("socket() failed with error: %d\n", WSAGetLastError());
++		return -1;
++	}
++
++	ret = connect(fd, (SOCKADDR *)remoteAddr, sizeof(SOCKADDR_HV));
++	if (ret == SOCKET_ERROR) {
++		printf("connect() failed: error = %d\n", WSAGetLastError());
++		closesocket(fd);
++		return -1;
++	}
++
++	*result_fd = fd;
++	printf("Connected to the VM: fd = 0x%x\n", fd);
++	return 0;
++}
++
++int main()
++{
++	const char *msg = "***Hello! This message is from the host!***\n";
++	WSADATA wsaData;
++	SOCKADDR_HV remoteAddr;
++	SOCKET fd;
++	int ret;
++
++	// Initialize Winsock
++	ret = WSAStartup(MAKEWORD(2, 2), &wsaData);
++	if (ret != NO_ERROR) {
++		printf("WSAStartup() failed with error: %d\n", ret);
++		return -1;
++	}
++
++	memset(&remoteAddr, 0, sizeof(SOCKADDR_HV));
++	remoteAddr.Family = AF_HYPERV;
++
++	// The Linux VM is listening in Vsock port 0x2017
++	TryConvertVsockPortToServiceId(0x2017, &remoteAddr.ServiceId);
++
++	// This is the "remote" VM's VMID got by the PowerShell command
++	// "Get-VM -Name <the_VM_name> | ft id".
++	//
++	// Change it for your own VM.
++	if (UuidFromStringA((RPC_CSTR)"c2624c46-1212-484a-8e28-83dd15fef815",
++		&remoteAddr.VmId) != RPC_S_OK) {
++		printf("Failed to parse the remote VMID: %d\n", GetLastError());
++		ret = -1;
++		goto out;
++	}
++
++	if (ConnectToVM(&remoteAddr, &fd) < 0) {
++		printf("Failed to connect to the VM!\n");
++		ret = -1;
++		goto out;
++	}
++	ret = send(fd, msg, strlen(msg), 0);
++	printf("Sent a msg to the VM: msg_len = %d.\nExited.\n", ret);
++
++	closesocket(fd);
++out:
++	WSACleanup();
++	return ret;
++}
+diff --git a/tools/hv/hv_sock/test-002/server_in_vm.c b/tools/hv/hv_sock/test-002/server_in_vm.c
+new file mode 100644
+index 000000000000..fb4370c53152
+--- /dev/null
++++ b/tools/hv/hv_sock/test-002/server_in_vm.c
+@@ -0,0 +1,85 @@
++/* The program runs in Linux VM. */
++
++#include <stdio.h>
++#include <string.h>
++#include <stdlib.h>
++#include <stdbool.h>
++#include <unistd.h>
++#include <fcntl.h>
++#include <sys/types.h>
++#include <sys/socket.h>
++#include <sys/select.h>
++#include <netdb.h>
++#include <linux/vm_sockets.h>
++
++int main()
++{
++	uint32_t port = 0x2017;
++
++	int listen_fd;
++	int client_fd;
++
++	struct sockaddr_vm sa_listen = {
++		.svm_family = AF_VSOCK,
++		.svm_reserved1 = 0,
++		.svm_cid = VMADDR_CID_ANY,
++	};
++
++	struct sockaddr_vm sa_client;
++	socklen_t socklen_client;
++
++	char buf[4096];
++	int len;
++
++	/* We'll listen on 00002017-facb-11e6-bd58-64006a7986d3 */
++	sa_listen.svm_port = port;
++
++	listen_fd = socket(AF_VSOCK, SOCK_STREAM, 0);
++	if (listen_fd < 0) {
++		perror("socket()");
++		exit(-1);
++	}
++
++	if (bind(listen_fd, (struct sockaddr *)&sa_listen,
++		 sizeof(sa_listen)) != 0) {
++		perror("bind()");
++		goto err;
++	}
++
++	if (listen(listen_fd, 10) != 0) {
++		perror("listen()");
++		goto err;
++	}
++
++	printf("Listening on port 0x%x...\n", port);
++
++	socklen_client = sizeof(sa_client);
++	client_fd = accept(listen_fd, (struct sockaddr*)&sa_client,
++			   &socklen_client);
++	if (client_fd < 0) {
++		perror("accept()");
++		goto err;
++	}
++
++	printf("Got a connection from the host: cid=0x%x, port=0x%x.\n",
++		sa_client.svm_cid, sa_client.svm_port);
++
++	do {
++		printf("Reading data from the connection...\n");
++		len = read(client_fd, buf, sizeof(buf));
++		if (len > 0) {
++			printf("Read %d bytes:\n", len);
++			fflush(stdout);
++			write(STDOUT_FILENO, buf, len);
++		}
++	} while (len > 0);
++
++	printf("The other end closed the connection.\n");
++
++	close(client_fd);
++	close(listen_fd);
++	return 0;
++err:
++	close(listen_fd);
++	return -1;
++}
+-- 
+2.11.1
+

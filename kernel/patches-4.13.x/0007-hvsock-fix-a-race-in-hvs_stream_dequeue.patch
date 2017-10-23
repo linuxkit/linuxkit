@@ -1,0 +1,113 @@
+From b5b86d3b2b25b051b4cef6d2a3be970726111da1 Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Tue, 16 May 2017 22:14:03 +0800
+Subject: [PATCH 07/12] hvsock: fix a race in hvs_stream_dequeue()
+
+If hv_pkt_iter_next() returns a non-NULL pointer, we must update
+the recv_data_len/data_off info, otherwise the received data will
+be silently dropped, and let's fix hvs_stream_has_data() accordingly.
+
+Thank Rolf for finding this!
+
+Reported-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit b9cc90e62104bd001b05d897f84cb7d30d1780bb)
+---
+ net/vmw_vsock/hyperv_transport.c | 50 +++++++++++++++++++++++++++++-----------
+ 1 file changed, 36 insertions(+), 14 deletions(-)
+
+diff --git a/net/vmw_vsock/hyperv_transport.c b/net/vmw_vsock/hyperv_transport.c
+index f465b0b662df..30154836acd0 100644
+--- a/net/vmw_vsock/hyperv_transport.c
++++ b/net/vmw_vsock/hyperv_transport.c
+@@ -476,13 +476,33 @@ static bool hvs_dgram_allow(u32 cid, u32 port)
+ 	return false;
+ }
+ 
++static int hvs_update_recv_data(struct hvsock *hvs)
++{
++	struct hvs_recv_buf *recv_buf;
++	u32 payload_len;
++
++	recv_buf = (struct hvs_recv_buf *)(hvs->recv_desc + 1);
++	payload_len = recv_buf->hdr.data_size;
++
++	if (payload_len > HVS_MTU_SIZE)
++		return -EIO;
++
++	if (payload_len == 0)
++		hvs->vsk->peer_shutdown |= SEND_SHUTDOWN;
++
++	hvs->recv_data_len = payload_len;
++	hvs->recv_data_off = 0;
++
++	return 0;
++}
++
+ static ssize_t hvs_stream_dequeue(struct vsock_sock *vsk, struct msghdr *msg,
+ 				  size_t len, int flags)
+ {
+ 	struct hvsock *hvs = vsk->trans;
+ 	bool need_refill = !hvs->recv_desc;
+ 	struct hvs_recv_buf *recv_buf;
+-	u32 payload_len, to_read;
++	u32 to_read;
+ 	int ret;
+ 
+ 	if (flags & MSG_PEEK)
+@@ -490,29 +510,28 @@ static ssize_t hvs_stream_dequeue(struct vsock_sock *vsk, struct msghdr *msg,
+ 
+ 	if (need_refill) {
+ 		hvs->recv_desc = hv_pkt_iter_first(hvs->chan);
+-		recv_buf = (struct hvs_recv_buf *)(hvs->recv_desc + 1);
+-
+-		payload_len = recv_buf->hdr.data_size;
+-		if (payload_len == 0 || payload_len > HVS_MTU_SIZE)
+-			return -EIO;
+-
+-		hvs->recv_data_len = payload_len;
+-		hvs->recv_data_off = 0;
+-	} else {
+-		recv_buf = (struct hvs_recv_buf *)(hvs->recv_desc + 1);
++		ret = hvs_update_recv_data(hvs);
++		if (ret)
++			return ret;
+ 	}
+ 
++	recv_buf = (struct hvs_recv_buf *)(hvs->recv_desc + 1);
+ 	to_read = min_t(u32, len, hvs->recv_data_len);
+ 	ret = memcpy_to_msg(msg, recv_buf->data + hvs->recv_data_off, to_read);
+ 	if (ret != 0)
+ 		return ret;
+ 
+ 	hvs->recv_data_len -= to_read;
+-
+-	if (hvs->recv_data_len == 0)
++	if (hvs->recv_data_len == 0) {
+ 		hvs->recv_desc = hv_pkt_iter_next(hvs->chan, hvs->recv_desc);
+-	else
++		if (hvs->recv_desc) {
++			ret = hvs_update_recv_data(hvs);
++			if (ret)
++				return ret;
++		}
++	} else {
+ 		hvs->recv_data_off += to_read;
++	}
+ 
+ 	return to_read;
+ }
+@@ -554,6 +573,9 @@ static s64 hvs_stream_has_data(struct vsock_sock *vsk)
+ 	struct hvsock *hvs = vsk->trans;
+ 	s64 ret;
+ 
++	if (hvs->recv_data_len > 0)
++		return 1;
++
+ 	switch (hvs_channel_readable_payload(hvs->chan)) {
+ 	case 1:
+ 		ret = 1;
+-- 
+2.11.1
+

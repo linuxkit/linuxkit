@@ -10,8 +10,6 @@ RUN apk add \
 
 ARG KERNEL_VERSIONS
 
-# There is no simple way to copy directories with wild cards as needed
-# for patches-*. Copy the entire dir instead.
 COPY / /
 
 # Unpack kernels (download if not present)
@@ -27,12 +25,15 @@ RUN for VERSION in ${KERNEL_VERSIONS}; do \
         SERIES=${VERSION%.*}.x && \
         echo "Patching $VERSION" && \
         cd /linux-${VERSION} && \
-        set -e && for patch in /patches-${SERIES}/*.patch; do \
-            echo "Applying $patch" && \
-            patch -p1 < "$patch"; \
-        done && \
-        mv /kernel_config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
-        mv /kernel_config-${SERIES}-aarch64 arch/arm64/configs/defconfig; \
+        set -e && \
+            if [ -d /patches-${KERNEL_SERIES} ]; then \
+               for patch in /patches-${SERIES}/*.patch; do \
+                   echo "Applying $patch" && \
+                   patch -p1 < "$patch"; \
+               done; \
+            fi && \
+        mv /config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
+        mv /config-${SERIES}-aarch64 arch/arm64/configs/defconfig; \
     done
 
 ENTRYPOINT ["/bin/sh"]

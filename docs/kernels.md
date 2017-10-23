@@ -87,7 +87,7 @@ contains an example for the configuration.
 Each series of kernels has a config file dedicated to it
 in [../kernel/](../kernel),
 e.g.
-[kernel.config-4.9.x-x86_64](../kernel/kernel_config-4.9.x-x86_64),
+[config-4.9.x-x86_64](../kernel/config-4.9.x-x86_64),
 which is applied during the kernel build process.
 
 If you need to modify the kernel config, `make kconfig` in
@@ -122,7 +122,7 @@ architectures to a minimum, so if you make changes to one
 configuration also try to apply it to the others. The script [kconfig-split.py](../scripts/kconfig-split.py) can be used to compare kernel config files. For example:
 
 ```sh
-../scripts/kconfig-split.py kernel_config-4.9.x-aarch64 kernel_config-4.9.x-x86_64
+../scripts/kconfig-split.py config-4.9.x-aarch64 config-4.9.x-x86_64
 ```
 
 creates a file with the common and the x86_64 and arm64 specific
@@ -165,7 +165,7 @@ The kernel build system has some provision to allow local
 customisation to the build.
 
 If you want to override/add some kernel config options, you can add a
-file called `kernel_config-foo` and then invoke the build with `make
+file called `config-foo` and then invoke the build with `make
 EXTRA=-foo build_4.9.x-foo` and this will build an image with the
 additional kernel config options enabled.
 
@@ -339,7 +339,7 @@ file:
 
 ```
 kernel:
-  image: linuxkit/kernel:4.9.56
+  image: linuxkit/kernel:4.9.58
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
   - <foo>/zfs-kmod:4.9.47

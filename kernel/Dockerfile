@@ -41,11 +41,13 @@ ENV WIREGUARD_VERSION=0.0.20171017
 ENV WIREGUARD_SHA256=57b79a62874d9b99659a744513d4f6f9d88cb772deaa99e485b6fed3004a35cd
 ENV WIREGUARD_URL=https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${WIREGUARD_VERSION}.tar.xz
 
-# PGP keys: 589DA6B1 (greg@kroah.com) & 6092693E (autosigner@kernel.org) & 00411886 (torvalds@linux-foundation.org)
-COPY keys.asc keys.asc
+# We copy the entire directory. This copies some unneeded files, but
+# allows us to check for the existence /patches-${KERNEL_SERIES} to
+# build kernels without patches.
+COPY / /
 
 # Download and verify kernel
-COPY sources/ /
+# PGP keys: 589DA6B1 (greg@kroah.com) & 6092693E (autosigner@kernel.org) & 00411886 (torvalds@linux-foundation.org)
 RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 -q --import keys.asc && \
     gpg2 --verify sha256sums.asc && \
@@ -57,17 +59,17 @@ RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
-# Apply local patches
-COPY patches-${KERNEL_SERIES} /patches
+# Apply local patches if present
 WORKDIR /linux
-RUN set -e && for patch in /patches/*.patch; do \
-        echo "Applying $patch"; \
-        patch -p1 < "$patch"; \
-    done
+RUN set -e && \
+    if [ -d /patches-${KERNEL_SERIES} ]; then \
+        for patch in /patches-${KERNEL_SERIES}/*.patch; do \
+            echo "Applying $patch"; \
+            patch -p1 < "$patch"; \
+        done; \
+    fi
 
 # Kernel config
-COPY kernel_config* /linux/
-
 RUN case $(uname -m) in \
     x86_64) \
         KERNEL_DEF_CONF=/linux/arch/x86/configs/x86_64_defconfig; \
@@ -76,15 +78,14 @@ RUN case $(uname -m) in \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
         ;; \
     esac  && \
-    cp /linux/kernel_config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
+    cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
     if [ -n "${EXTRA}" ]; then \
         sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}\"/" ${KERNEL_DEF_CONF}; \
         if [ "${EXTRA}" = "-dbg" ]; then \
             sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
         fi && \
-        cat /linux/kernel_config${EXTRA} >> ${KERNEL_DEF_CONF}; \
+        cat /config${EXTRA} >> ${KERNEL_DEF_CONF}; \
     fi && \
-    rm /linux/kernel_config* && \
     make defconfig && \
     make oldconfig && \
     if [ -z "${EXTRA}" ]; then diff .config ${KERNEL_DEF_CONF}; fi

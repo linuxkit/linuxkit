@@ -1,0 +1,41 @@
+From a0be18ac0d4976c54d4c4359a4d0289cf88bbf4c Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Fri, 7 Jul 2017 09:15:29 +0800
+Subject: [PATCH 10/12] hv-sock: avoid double FINs if shutdown() is called
+
+The host expects a single FIN.
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit f315dfcf9c3b4b32f43a21664762cbacd8f05d6a)
+---
+ net/vmw_vsock/hyperv_transport.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
+
+diff --git a/net/vmw_vsock/hyperv_transport.c b/net/vmw_vsock/hyperv_transport.c
+index b8bf1446ae13..50e4bc822c69 100644
+--- a/net/vmw_vsock/hyperv_transport.c
++++ b/net/vmw_vsock/hyperv_transport.c
+@@ -95,6 +95,9 @@ struct hvsock {
+ 	u32 recv_data_len;
+ 	/* The offset of the payload */
+ 	u32 recv_data_off;
++
++	/* Have we sent the zero-length packet (FIN)? */
++	unsigned long fin_sent;
+ };
+ 
+ /* In the VM, we support Hyper-V Sockets with AF_VSOCK, and the endpoint is
+@@ -425,6 +428,9 @@ static int hvs_shutdown(struct vsock_sock *vsk, int mode)
+ 
+ 	hvs = vsk->trans;
+ 
++	if (test_and_set_bit(0, &hvs->fin_sent))
++		return 0;
++
+ 	send_buf = (struct hvs_send_buf *)&hdr;
+ 
+ 	/* It can't fail: see hvs_channel_writable_bytes(). */
+-- 
+2.11.1
+

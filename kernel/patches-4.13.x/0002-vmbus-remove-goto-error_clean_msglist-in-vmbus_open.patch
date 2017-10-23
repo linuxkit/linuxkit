@@ -1,7 +1,7 @@
-From 443c87acb6c5a538e3e3065fced1e3e5a5c0aae3 Mon Sep 17 00:00:00 2001
+From 9d372844cc64ec8921879c81beab83eeb4f8a05f Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:20 -0600
-Subject: [PATCH 02/14] vmbus: remove "goto error_clean_msglist" in
+Subject: [PATCH 02/12] vmbus: remove "goto error_clean_msglist" in
  vmbus_open()
 
 This is just a cleanup patch to simplify the code a little.
@@ -18,10 +18,10 @@ Origin: git@github.com:dcui/linux.git
  1 file changed, 7 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 6e172cdf42f7..42498ecd0f02 100644
+index 4775616ec87f..033100a1cd59 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -180,17 +180,18 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+@@ -185,17 +185,18 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
  	ret = vmbus_post_msg(open_msg,
  			     sizeof(struct vmbus_channel_open_channel), true);
  
@@ -46,7 +46,7 @@ index 6e172cdf42f7..42498ecd0f02 100644
  	if (newchannel->rescind) {
  		err = -ENODEV;
  		goto error_free_gpadl;
-@@ -205,11 +206,6 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+@@ -210,11 +211,6 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
  	kfree(open_info);
  	return 0;
  
@@ -59,5 +59,5 @@ index 6e172cdf42f7..42498ecd0f02 100644
  	vmbus_teardown_gpadl(newchannel, newchannel->ringbuffer_gpadlhandle);
  	kfree(open_info);
 -- 
-2.14.1
+2.11.1
 

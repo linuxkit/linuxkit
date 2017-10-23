@@ -19,7 +19,7 @@ IMAGE_PERF:=kernel-perf
 IMAGE_ZFS:=zfs-kmod
 
 # You can specify an extra options for the Makefile. This will:
-# - append a kernel_config$(EXTRA) to the kernel config for your kernel/arch
+# - append a config$(EXTRA) to the kernel config for your kernel/arch
 # - append $(EXTRA) to the CONFIG_LOCALVERSION of your kernel
 EXTRA?=
 
@@ -93,7 +93,7 @@ sources/linux-$(1).tar.xz: Makefile | sources
 KERNEL_VERSIONS+=$(1)
 endif
 
-build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard kernel_config-$(2)*) kernel_config-dbg | sources
+build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
@@ -172,11 +172,11 @@ endef
 # Build Targets
 # Debug targets only for latest stable and LTS stable
 #
-$(eval $(call kernel,4.13.6,4.13.x,$(EXTRA)))
-$(eval $(call kernel,4.13.6,4.13.x,-dbg))
-$(eval $(call kernel,4.9.56,4.9.x,$(EXTRA)))
-$(eval $(call kernel,4.9.56,4.9.x,-dbg))
-$(eval $(call kernel,4.4.92,4.4.x,$(EXTRA)))
+$(eval $(call kernel,4.13.9,4.13.x,$(EXTRA)))
+$(eval $(call kernel,4.13.9,4.13.x,-dbg))
+$(eval $(call kernel,4.9.58,4.9.x,$(EXTRA)))
+$(eval $(call kernel,4.9.58,4.9.x,-dbg))
+$(eval $(call kernel,4.4.94,4.4.x,$(EXTRA)))
 
 # Target for kernel config
 kconfig: | sources

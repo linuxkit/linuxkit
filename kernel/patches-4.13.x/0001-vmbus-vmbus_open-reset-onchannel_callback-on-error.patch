@@ -1,7 +1,7 @@
-From 88649f9b578f9d4a00f624e18c0524440ce97a0b Mon Sep 17 00:00:00 2001
+From 255a4eb6b920f42018f05235f525b8c72624df62 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:12 -0600
-Subject: [PATCH 01/14] vmbus: vmbus_open(): reset onchannel_callback on error
+Subject: [PATCH 01/12] vmbus: vmbus_open(): reset onchannel_callback on error
 
 No real issue is observed without the patch, but let's add this
 just in case.
@@ -17,10 +17,10 @@ Origin: git@github.com:dcui/linux.git
  1 file changed, 2 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index e57cc40cb768..6e172cdf42f7 100644
+index be3fccab07fe..4775616ec87f 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -220,6 +220,8 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
+@@ -225,6 +225,8 @@ int vmbus_open(struct vmbus_channel *newchannel, u32 send_ringbuffer_size,
  		     get_order(send_ringbuffer_size + recv_ringbuffer_size));
  error_set_chnstate:
  	newchannel->state = CHANNEL_OPEN_STATE;
@@ -30,5 +30,5 @@ index e57cc40cb768..6e172cdf42f7 100644
  }
  EXPORT_SYMBOL_GPL(vmbus_open);
 -- 
-2.14.1
+2.11.1
 

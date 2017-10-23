@@ -1,0 +1,49 @@
+From 2cf5773ab1091bc4e575ba1e8d861ae89bdf1f9e Mon Sep 17 00:00:00 2001
+From: Dexuan Cui <decui@microsoft.com>
+Date: Fri, 19 May 2017 21:49:59 +0800
+Subject: [PATCH 08/12] hvsock: fix vsock_dequeue/enqueue_accept race
+
+Signed-off-by: Dexuan Cui <decui@microsoft.com>
+Origin: git@github.com:dcui/linux.git
+(cherry picked from commit 022c888e809721a67ecd3072e6331cbdaab45536)
+---
+ net/vmw_vsock/af_vsock.c | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/net/vmw_vsock/af_vsock.c b/net/vmw_vsock/af_vsock.c
+index dfc8c51e4d74..b7b2c66d91fd 100644
+--- a/net/vmw_vsock/af_vsock.c
++++ b/net/vmw_vsock/af_vsock.c
+@@ -126,6 +126,7 @@ static struct proto vsock_proto = {
+ 
+ static const struct vsock_transport *transport;
+ static DEFINE_MUTEX(vsock_register_mutex);
++static DEFINE_SPINLOCK(vsock_accept_queue_lock);
+ 
+ /**** EXPORTS ****/
+ 
+@@ -406,7 +407,10 @@ void vsock_enqueue_accept(struct sock *listener, struct sock *connected)
+ 
+ 	sock_hold(connected);
+ 	sock_hold(listener);
++
++	spin_lock(&vsock_accept_queue_lock);
+ 	list_add_tail(&vconnected->accept_queue, &vlistener->accept_queue);
++	spin_unlock(&vsock_accept_queue_lock);
+ }
+ EXPORT_SYMBOL_GPL(vsock_enqueue_accept);
+ 
+@@ -423,7 +427,10 @@ static struct sock *vsock_dequeue_accept(struct sock *listener)
+ 	vconnected = list_entry(vlistener->accept_queue.next,
+ 				struct vsock_sock, accept_queue);
+ 
++	spin_lock(&vsock_accept_queue_lock);
+ 	list_del_init(&vconnected->accept_queue);
++	spin_unlock(&vsock_accept_queue_lock);
++
+ 	sock_put(listener);
+ 	/* The caller will need a reference on the connected socket so we let
+ 	 * it call sock_put().
+-- 
+2.11.1
+
