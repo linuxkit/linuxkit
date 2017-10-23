@@ -1,3 +1,3 @@
 services:
   - name: kubernetes-image-cache-control-plane
-    image: linuxkitprojects/kubernetes-image-cache-control-plane:05c261ef24054839a94bdf25d48bff7cc7161bae
+    image: linuxkitprojects/kubernetes-image-cache-control-plane:b06b6eb0b97026b2cbe8521509477c55471a7ca0
