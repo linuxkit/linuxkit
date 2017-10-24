@@ -2,17 +2,17 @@ kernel:
   image: linuxkit/kernel:4.9.x
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
-  - linuxkit/runc:52f92cb577879ce4cfe4e89be2d63af82523fc92
-  - linuxkit/containerd:ed8e8f92e24dd4b94260cf147594ae3fd13a2182
-  - linuxkit/ca-certificates:ea3c4c120f929f4f07ac8535d75933365b5e9582
+  - linuxkit/init:42a92119e1ca10380e0d33e26c0cbcf85b9b3558
+  - linuxkit/runc:817fdc592eac6cb7804fa1721a43a7f6e23fb50f
+  - linuxkit/containerd:82be2bbb7cf83bab161ffe2a64624ba1107725ff
+  - linuxkit/ca-certificates:af4880e78edc28743f7c5e262678c67c6add4c26
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
+    image: linuxkit/dhcpcd:48831507404049660b960e4055f544917d90378e
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:7abaf7b276c59f80891d92e9279e3e3ee8e2f512
+    image: linuxkit/getty:626ccc8e1766c40447f29a790d3a7cfff126f2a2
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)

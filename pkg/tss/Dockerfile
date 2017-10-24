@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:ad35b6ddbc70faa07e59a9d7dee7707c08122e8d AS build
+FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS build
 
 ENV TROUSERS_COMMIT de57f069ef2297d6a6b3a0353e217a5a2f66e444
 ENV TPM_TOOLS_COMMIT bdf9f1bc8f63cd6fc370c2deb58d03ac55079e84

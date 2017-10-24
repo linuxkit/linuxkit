@@ -5,7 +5,7 @@ all: default
 VERSION="0.0" # dummy for now
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=linuxkit/go-compile:758282e180b4bcc7259f77edd22c46b890be2549
+GO_COMPILE=linuxkit/go-compile:fb53f01a669de5e91ec855b4f67a57b514b4f6ed
 
 MOBY?=bin/moby
 LINUXKIT?=bin/linuxkit

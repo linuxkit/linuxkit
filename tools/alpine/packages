@@ -12,6 +12,7 @@ binutils
 binutils-dev
 bison
 blkid
+bridge-utils
 bsd-compat-headers
 btrfs-progs
 btrfs-progs-dev
@@ -50,6 +51,7 @@ installkernel
 iperf3
 iproute2
 iptables
+ipvsadm
 jq
 kmod
 libarchive-tools

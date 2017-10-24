@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:6211ec0252873c9ff9604101fb256353f5a3832a AS mirror
+FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS mirror
 
 RUN apk add --no-cache go gcc musl-dev linux-headers
 ENV GOPATH=/go PATH=$PATH:/go/bin
