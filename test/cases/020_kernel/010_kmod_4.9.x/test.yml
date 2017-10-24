@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:4.9.58
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
-  - linuxkit/runc:52f92cb577879ce4cfe4e89be2d63af82523fc92
+  - linuxkit/init:42a92119e1ca10380e0d33e26c0cbcf85b9b3558
+  - linuxkit/runc:817fdc592eac6cb7804fa1721a43a7f6e23fb50f
 onboot:
   - name: check
     image: kmod-test

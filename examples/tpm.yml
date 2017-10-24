@@ -2,25 +2,25 @@ kernel:
   image: linuxkit/kernel:4.9.38
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
-  - linuxkit/runc:52f92cb577879ce4cfe4e89be2d63af82523fc92
-  - linuxkit/containerd:ed8e8f92e24dd4b94260cf147594ae3fd13a2182
-  - linuxkit/ca-certificates:ea3c4c120f929f4f07ac8535d75933365b5e9582
+  - linuxkit/init:42a92119e1ca10380e0d33e26c0cbcf85b9b3558
+  - linuxkit/runc:817fdc592eac6cb7804fa1721a43a7f6e23fb50f
+  - linuxkit/containerd:82be2bbb7cf83bab161ffe2a64624ba1107725ff
+  - linuxkit/ca-certificates:af4880e78edc28743f7c5e262678c67c6add4c26
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:1644bf07edbcaf5ce0bb764fa925b544183547f9
+    image: linuxkit/sysctl:a9ad57ed738a31ea9380cd73236866c312b35489
   - name: dhcpcd
-    image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
+    image: linuxkit/dhcpcd:48831507404049660b960e4055f544917d90378e
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:7abaf7b276c59f80891d92e9279e3e3ee8e2f512
+    image: linuxkit/getty:626ccc8e1766c40447f29a790d3a7cfff126f2a2
     env:
      - INSECURE=true
   - name: tss
-    image: linuxkit/tss:2c29b212733e90fbbd7aeaf032cadc044dbc7fe4
+    image: linuxkit/tss:8bf8e058ad1195be631bcaac126c6d396d03edd9
   - name: rngd
-    image: linuxkit/rngd:45ed7759dd927f4cce3863073ea2e0da1d52a427
+    image: linuxkit/rngd:842e5e8ece7934f0cab9fd0027b595ff3471e5b9
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)
