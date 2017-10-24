@@ -11,7 +11,7 @@ onboot:
     binds:
      - /etc/ltp/baseline:/etc/ltp/baseline
   - name: poweroff
-    image: linuxkit/poweroff:ffd3f539a6f4e67d4cd4ff36503636de35edd7b2
+    image: linuxkit/poweroff:280bd01daa8776fbe1f4d912977f1886b8374834
 files:
   - path: /etc/ltp/baseline
     contents: "100"
