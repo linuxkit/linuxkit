@@ -36,7 +36,7 @@ services:
   - name: sshd
     image: linuxkit/sshd:f55ec010619e19178d5daecb4e595e84ecbf7d67
   - name: kubelet
-    image: linuxkitprojects/kubernetes:be292678cf385309de7c5e578b31a7d2c78e7578
+    image: linuxkitprojects/kubernetes:d6caf404753aa1d72ad96ff149ea5edc7c24be8f
 files:
   - path: etc/linuxkit.yml
     metadata: yaml

@@ -45,7 +45,7 @@ services:
       - /var:/var
       - /var/lib/swarmd:/weavedb
   - name: swarmd
-    image: linuxkitprojects/swarmd:668f9f78502d4069841552219845dc57dc846492
+    image: linuxkitprojects/swarmd:8c034e2862d3a0fce1e445511a69c4330a1d4dd5
     command: ["/usr/bin/swarmd", "--containerd-addr=/run/containerd/containerd.sock", "--log-level=debug", "--state-dir=/var/lib/swarmd"]
     capabilities:
      - all
