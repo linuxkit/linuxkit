@@ -415,6 +415,12 @@ func setVirtualMachineParameters(storageAccountName string, networkInterfaceID, 
 					},
 				},
 			},
+			DiagnosticsProfile: &compute.DiagnosticsProfile{
+				BootDiagnostics: &compute.BootDiagnostics{
+					Enabled:    to.BoolPtr(true),
+					StorageURI: to.StringPtr(fmt.Sprintf("https://%s.blob.core.windows.net", storageAccountName)),
+				},
+			},
 		},
 	}
 }
