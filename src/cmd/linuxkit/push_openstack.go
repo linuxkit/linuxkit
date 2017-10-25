@@ -121,5 +121,6 @@ func createOpenStackImage(filePath string, imageName string, provider *gopherclo
 		log.Fatalf("Error uploading image, status is %s", validImage.Status)
 	} else {
 		log.Infof("Image uploaded successfully!")
+		fmt.Println(image.ID)
 	}
 }
