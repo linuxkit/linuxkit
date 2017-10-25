@@ -6,6 +6,10 @@ RUN apk add --no-cache --initdb -p /out \
     bash \
     busybox \
     iproute2 \
+    iptables \
+    ebtables \
+    ipvsadm \
+    bridge-utils \
     musl \
     wireguard-tools
 
