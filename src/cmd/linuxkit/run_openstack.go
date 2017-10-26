@@ -108,7 +108,7 @@ func runOpenStack(args []string) {
 	}
 
 	servers.WaitForStatus(client, server.ID, "ACTIVE", 600)
-	log.Info("Server created, UUID is %s", server.ID)
+	log.Infof("Server created, UUID is %s", server.ID)
 	fmt.Println(server.ID)
 
 }
