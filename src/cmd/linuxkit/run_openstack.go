@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/gophercloud/gophercloud"
 	"github.com/gophercloud/gophercloud/openstack"
@@ -36,6 +37,7 @@ func runOpenStack(args []string) {
 	flavorName := flags.String("flavor", defaultOSFlavor, "Instance size (flavor)")
 	instanceName := flags.String("instancename", "", "Name of instance.  Defaults to the name of the image if not specified")
 	networkID := flags.String("network", "", "The ID of the network to attach the instance to")
+	secGroups := flags.String("sec-groups", "", "Security Group names separated by comma")
 	keyName := flags.String("keyname", "", "The name of the SSH keypair to associate with the instance")
 	passwordFlag := flags.String("password", "", "Password for the specified username")
 	projectNameFlag := flags.String("project", "", "Name of the Project (aka Tenant) to be used")
@@ -88,11 +90,12 @@ func runOpenStack(args []string) {
 	var serverOpts servers.CreateOptsBuilder
 
 	serverOpts = &servers.CreateOpts{
-		FlavorName:    *flavorName,
-		ImageName:     name,
-		Name:          *instanceName,
-		Networks:      []servers.Network{network},
-		ServiceClient: client,
+		FlavorName:     *flavorName,
+		ImageName:      name,
+		Name:           *instanceName,
+		Networks:       []servers.Network{network},
+		ServiceClient:  client,
+		SecurityGroups: strings.Split(*secGroups, ","),
 	}
 
 	if *keyName != "" {
