@@ -65,6 +65,7 @@ linuxkit run openstack \
   -password=xxx \
   -project=linuxkit \
   -keyname=deadline_ed25519 \
+  -sec-groups=allow_ssh,nginx \
   -network c5d02c5f-c625-4539-8aed-1dab3aa85a0a \
   LinuxKitTest
 ```
