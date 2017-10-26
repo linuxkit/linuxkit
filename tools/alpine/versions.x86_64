@@ -1,4 +1,4 @@
-# linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213-amd64
+# linuxkit/alpine:69019e422ef1185138e24e49d24330aab7002b74-amd64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -12,9 +12,9 @@ autoconf-2.69-r0
 automake-1.15.1-r0
 bash-4.3.48-r1
 bc-1.06.95-r2
-binutils-2.28-r2
-binutils-dev-2.28-r2
-binutils-libs-2.28-r2
+binutils-2.28-r3
+binutils-dev-2.28-r3
+binutils-libs-2.28-r3
 bison-3.0.4-r0
 blkid-2.28.2-r2
 bridge-utils-1.6-r0
@@ -34,7 +34,7 @@ cmake-3.8.1-r0
 coreutils-8.27-r0
 cryptsetup-1.7.5-r0
 cryptsetup-libs-1.7.5-r0
-curl-7.56.0-r0
+curl-7.56.1-r0
 db-5.3.28-r0
 dbus-1.10.14-r0
 dbus-libs-1.10.14-r0
@@ -76,8 +76,8 @@ gmp-6.1.2-r0
 gmp-dev-6.1.2-r0
 gnupg-2.1.20-r0
 gnutls-3.5.13-r0
-go-1.8.3-r0
-go-1.9.1-r0
+go-1.8.4-r0
+go-1.9.2-r0
 grep-3.0-r0
 guile-2.0.13-r0
 guile-libs-2.0.13-r0
@@ -118,7 +118,7 @@ libcap-ng-0.7.8-r0
 libcap-ng-dev-0.7.8-r0
 libcom_err-1.43.4-r0
 libcrypto1.0-1.0.2k-r0
-libcurl-7.56.0-r0
+libcurl-7.56.1-r0
 libdrm-2.4.80-r0
 libedit-20170329.3.1-r2
 libelf-0.8.13-r2

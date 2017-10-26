@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS build
+FROM linuxkit/alpine:69019e422ef1185138e24e49d24330aab7002b74 AS build
 
 RUN \
   apk add \
@@ -15,7 +15,7 @@ ENV GOPATH=/go PATH=$PATH:/go/bin
 
 ENV CRI_CONTAINERD_URL https://github.com/kubernetes-incubator/cri-containerd.git
 #ENV CRI_CONTAINERD_BRANCH pull/NNN/head
-ENV CRI_CONTAINERD_COMMIT v1.0.0-alpha.0
+ENV CRI_CONTAINERD_COMMIT a7c48f2f3f4eb307e98e58ee9d9f12fc7728a596
 RUN mkdir -p $GOPATH/src/github.com/kubernetes-incubator && \
     cd $GOPATH/src/github.com/kubernetes-incubator && \
     git clone $CRI_CONTAINERD_URL cri-containerd
@@ -37,6 +37,7 @@ RUN apk add --no-cache --initdb -p /out \
     busybox \
     ca-certificates \
     iptables \
+    socat \
     util-linux \
     && true
 # Remove apk residuals. We have a read-only rootfs, so apk is of no use.

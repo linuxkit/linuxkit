@@ -47,7 +47,7 @@ RUN go get -u github.com/LK4D4/vndr
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.0.0-beta.2
+ENV CONTAINERD_COMMIT=f2ae8a020a985a8d9862c9eb5ab66902c2888361
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
