@@ -15,7 +15,8 @@ In practice this means LinuxKit tracks new kernel releases very closely, and als
 kernel configuration from the [Kernel Self Protection Project](https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project)
 and elsewhere.
 
-The LinuxKit project maintainers are actively collaborating with KSPP and it is an established [priority for the project](../projects/kspp/roadmap.md).
+The LinuxKit project maintainers are actively collaborating with KSPP and it is an established
+[priority for the project](../projects/kspp/README.md#roadmap).
 
 The LinuxKit kernel is intended to be identical to the upstream kernel - We only intend to carry patches that are on track
 to be upstreamed, or fix regressions or bugs and that we will upstream.
@@ -97,7 +98,7 @@ paradigms and strategies for securing the Linux kernel - allowing them to be use
 critical mass before eventually being upstreamed.
 
 In this spirit, the [`/projects`](../projects) subdirectory houses a number of such projects. At this time, these include:
-- [WireGuard](../projects/wireguard/roadmap.md): a modern and minimal VPN implemented with the state-of-the-art cryptography
+- [WireGuard](./wireguard.md#roadmap): a modern and minimal VPN implemented with the state-of-the-art cryptography
 like the [Noise protocol framework](http://www.noiseprotocol.org/)
 - [okernel](../projects/okernel/README.md): a mechanism to split the kernel into inner and outer subkernels with different trust properties
 
