@@ -1,7 +1,7 @@
-From 162dd9275b4ce7ffe7e7e0d3dcdb9662a189309c Mon Sep 17 00:00:00 2001
+From f6b40f0b7dbd32da19cd00f03aae30dd41b28186 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
-Subject: [PATCH 08/13] Drivers: hv: vmbus: Use all supported IC versions to
+Subject: [PATCH 08/12] Drivers: hv: vmbus: Use all supported IC versions to
  negotiate
 
 Previously, we were assuming that each IC protocol version was tied to a
@@ -470,7 +470,7 @@ index e7707747f56d..f3797c07be10 100644
  			srv->util_cb, dev->channel);
  	if (ret)
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 489ad74c1e6e..956acfc93487 100644
+index c9af8369b4f7..7df9eb8f0cf7 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1453,9 +1453,10 @@ struct hyperv_service_callback {
