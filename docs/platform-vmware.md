@@ -21,7 +21,7 @@ Supported (Tested) versions:
 ## Run
 ### VMware Workstation/Fusion
 The backend `vmware` currently supports the booting of a `.vmdk` file that is
-created through the `moby build -o vmdk` command and is typically called with
+created through the `moby build -format vmdk` command and is typically called with
 `linuxkit run vmware <args> ./path`.
 
 The WS/Fusion backend will construct a config version 8 (Hardware version 12)
