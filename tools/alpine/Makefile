@@ -27,15 +27,12 @@ endif
 
 ARCH := $(shell uname -m)
 ifeq ($(ARCH), x86_64)
-BASE=alpine:3.6
 DEPS += packages.x86_64
 SUFFIX=-amd64
 endif
 ifeq ($(ARCH), aarch64)
-BASE=arm64v8/alpine:3.6
 DEPS += packages.aarch64
 SUFFIX=-arm64
-DOCKER_CONTENT_PULL=0
 endif
 
 default: push
@@ -44,8 +41,7 @@ show-tag:
 	@sed -n -e '1s/# \(.*\/.*:[0-9a-f]\{40\}\)/\1/p;q' versions.$(ARCH)
 
 iid: Dockerfile Makefile $(DEPS)
-	DOCKER_CONTENT_TRUST=$(DOCKER_CONTENT_PULL) docker pull $(BASE)
-	DOCKER_CONTENT_TRUST=0 docker build --no-cache --build-arg BASE=$(BASE) --iidfile iid .
+	DOCKER_CONTENT_TRUST=1 docker build --no-cache --iidfile iid .
 
 hash: Makefile iid
 	docker run --rm $(shell cat iid) sh -c 'echo Dockerfile /lib/apk/db/installed $$(find /mirror -name '*.apk' -type f) $$(find /go/bin -type f) | xargs cat | sha1sum' | sed 's/ .*//' | sed 's/$$/$(SUFFIX)/'> $@
