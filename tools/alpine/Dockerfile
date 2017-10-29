@@ -1,5 +1,4 @@
-ARG BASE=alpine:3.6
-FROM $BASE AS mirror
+FROM alpine:3.6 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -57,7 +56,7 @@ RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make
 RUN cd $GOPATH/src/github.com/containerd/containerd && \
   make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
 
-FROM $BASE
+FROM alpine:3.6
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
