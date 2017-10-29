@@ -1,7 +1,7 @@
-From 2981fbdae254370cd9ccc4a344568300e0c59c7a Mon Sep 17 00:00:00 2001
+From e46408349d038b9426dbfbb40f86b67583c3d24c Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 24 Mar 2017 20:53:18 +0800
-Subject: [PATCH 12/13] vmbus: dynamically enqueue/dequeue the channel on
+Subject: [PATCH 12/12] vmbus: dynamically enqueue/dequeue the channel on
  vmbus_open/close
 
 Signed-off-by: Dexuan Cui <decui@microsoft.com>
@@ -159,7 +159,7 @@ index 2fe024e86209..b2bdcfb49144 100644
  
  err_free_chan:
 diff --git a/include/linux/hyperv.h b/include/linux/hyperv.h
-index 956acfc93487..9ee292b28e41 100644
+index 7df9eb8f0cf7..a87757cf277b 100644
 --- a/include/linux/hyperv.h
 +++ b/include/linux/hyperv.h
 @@ -1461,6 +1461,9 @@ extern bool vmbus_prep_negotiate_resp(struct icmsg_hdr *icmsghdrp, u8 *buf,
