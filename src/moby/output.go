@@ -62,6 +62,9 @@ var outFuns = map[string]func(string, []byte, int) error{
 	},
 	"raw-bios": func(base string, image []byte, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
 		err = outputImg(rawBios, base+"-bios.img", kernel, initrd, cmdline)
 		if err != nil {
 			return fmt.Errorf("Error writing raw-bios output: %v", err)
@@ -70,6 +73,9 @@ var outFuns = map[string]func(string, []byte, int) error{
 	},
 	"raw-efi": func(base string, image []byte, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
 		err = outputImg(rawEfi, base+"-efi.img", kernel, initrd, cmdline)
 		if err != nil {
 			return fmt.Errorf("Error writing raw-efi output: %v", err)
