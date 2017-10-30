@@ -13,6 +13,14 @@ dist/moby dist/moby-$(GOOS): $(DEPS)
 		--ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" \
 		-o $@ ./cmd/moby
 
+.PHONY: nogopath
+nogopath:
+	rm -rf src/github.com
+	mkdir -p src/github.com/moby
+	ln -s $(CURDIR) $(CURDIR)/src/github.com/moby/tool
+	cd src/github.com/moby/tool && GOPATH=$(CURDIR) $(MAKE) dist/moby
+	rm -rf src/github.com
+
 .PHONY: lint
 lint:
 ifndef GOMETALINTER
@@ -35,4 +43,4 @@ install: dist/moby
 
 .PHONY: clean
 clean:
-	rm -rf dist
+	rm -rf dist src/github.com
