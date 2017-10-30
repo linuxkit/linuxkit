@@ -13,7 +13,7 @@ KERNEL_VERSION=$(KERNEL)
 IMAGE_VERSION=$(KERNEL_VERSION)
 LATEST=0
 else
-$(error Error, valid okernel kernel versions begin with "ok-")
+$(error Error, please specify a valid okernel kernel version beginning with "ok-")
 endif
 else
 KERNEL_VERSION=linux-okernel
@@ -38,7 +38,7 @@ endif
 
 .PHONY: image push tag kvmod
 image: $(DEPS)
-	BUILD=$$( tar cf - $^ | docker build -f $< $(PROXY_ARG) --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q -t $(IMAGE):build - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > build_info
+	BUILD=$$( tar cf - $^ | docker build --no-cache -f $< $(PROXY_ARG) --build-arg DEBUG=$(DEBUG) --build-arg KERNEL_VERSION=$(KERNEL_VERSION) -q -t $(IMAGE):build - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && echo "$$BUILD" > build_info
 
 
 default: tag
