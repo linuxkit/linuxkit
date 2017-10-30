@@ -6,11 +6,7 @@ init:
   - linuxkit/runc:817fdc592eac6cb7804fa1721a43a7f6e23fb50f
 onboot:
   - name: modprobe
-    image: alpine:3.6
-    capabilities: [all]
-    binds:
-      - /lib/modules:/lib/modules
-      - /sys:/sys
+    image: linuxkit/modprobe:2d153653d1111877a8f53704ef85063a44182ade
     command: ["modprobe", "btrfs"]
   - name: format
     image: linuxkit/format:10e75e78e1f134d310c62e9a0352df1c67b0dd81
