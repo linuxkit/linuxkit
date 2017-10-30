@@ -35,4 +35,4 @@ install: dist/moby
 
 .PHONY: clean
 clean:
-	rm -f dist
+	rm -rf dist
