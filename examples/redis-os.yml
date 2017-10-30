@@ -17,7 +17,7 @@ services:
     env:
      - INSECURE=true
   - name: redis
-    image: redis:3.0.7-alpine
+    image: redis:4.0-alpine
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN
@@ -28,5 +28,4 @@ services:
 trust:
   org:
     - linuxkit
-  image:
-    - redis:3.0.7-alpine
+    - library
