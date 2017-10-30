@@ -31,6 +31,8 @@ func pushOpenstack(args []string) {
 	projectNameFlag := flags.String("project", "", "Name of the Project (aka Tenant) to be used")
 	userDomainFlag := flags.String("domain", "Default", "Domain name")
 	usernameFlag := flags.String("username", "", "Username with permissions to upload image")
+	cacertFlag := flags.String("cacert", "", "CA certificate bundle file")
+	insecureFlag := flags.Bool("insecure", false, "Disable server certificate verification")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -51,6 +53,8 @@ func pushOpenstack(args []string) {
 	projectName := getStringValue(projectNameVar, *projectNameFlag, "")
 	userDomain := getStringValue(userDomainVar, *userDomainFlag, "")
 	username := getStringValue(usernameVar, *usernameFlag, "")
+	cacert := getStringValue(cacertVar, *cacertFlag, "")
+	insecure := getBoolValue(insecureVar, *insecureFlag)
 
 	authOpts := gophercloud.AuthOptions{
 		DomainName:       userDomain,
@@ -59,9 +63,20 @@ func pushOpenstack(args []string) {
 		TenantName:       projectName,
 		Username:         username,
 	}
-	provider, err := openstack.AuthenticatedClient(authOpts)
+
+	provider, err := openstack.NewClient(authOpts.IdentityEndpoint)
 	if err != nil {
-		log.Fatalf("Failed to authenticate")
+		log.Fatalf("Failed to connect to OpenStack: %s", err)
+	}
+
+	provider.HTTPClient, err = openstackHTTPClient(cacert, insecure)
+	if err != nil {
+		log.Fatalf("Failed to authenticate with OpenStack: %s", err)
+	}
+
+	err = openstack.Authenticate(provider, authOpts)
+	if err != nil {
+		log.Fatalf("Failed to authenticate with OpenStack: %s", err)
 	}
 
 	createOpenStackImage(filePath, *imageName, provider)
@@ -93,7 +108,7 @@ func createOpenStackImage(filePath string, imageName string, provider *gopherclo
 
 	client, err := openstack.NewImageServiceV2(provider, gophercloud.EndpointOpts{})
 	if err != nil {
-		log.Fatalf("Unable to create Image V2 client")
+		log.Fatalf("Unable to create Image V2 client: %s", err)
 	}
 	imageOpts := images.CreateOpts{
 		Name:            imageName,
@@ -102,12 +117,12 @@ func createOpenStackImage(filePath string, imageName string, provider *gopherclo
 	}
 	image, err := images.Create(client, imageOpts).Extract()
 	if err != nil {
-		log.Fatalf("Error creating image")
+		log.Fatalf("Error creating image: %s", err)
 	}
 
 	f, err := os.Open(filePath)
 	if err != nil {
-		panic(err)
+		log.Fatalf("Can't read image file: %s", err)
 	}
 	defer f.Close()
 

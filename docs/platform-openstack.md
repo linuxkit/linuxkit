@@ -19,6 +19,8 @@ OS_PASSWORD="xxx"
 OS_TENANT_NAME="linuxkit"
 OS_AUTH_URL="https://keystone.com:5000/v3"
 OS_USER_DOMAIN_NAME=default
+OS_CACERT=/path/to/cacert.pem
+OS_INSECURE=false
 ```
 
 ## Push
