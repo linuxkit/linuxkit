@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that qcow2 image boots in qemu
+# SUMMARY: Check that qcow2 output format is generated
 # LABELS:
 
 set -e
@@ -8,15 +8,15 @@ set -e
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
-NAME=qemu-qcow2
+NAME=check
 
 clean_up() {
-	rm -rf ${NAME}*
+	rm -f ${NAME}*
 }
+
 trap clean_up EXIT
 
-moby build -format qcow2 -name "${NAME}" test.yml
+moby build -format qcow2-bios -name "${NAME}" ../test.yml
 [ -f "${NAME}.qcow2" ] || exit 1
-linuxkit run qemu "${NAME}.qcow2" | grep -q "Welcome to LinuxKit"
 
 exit 0

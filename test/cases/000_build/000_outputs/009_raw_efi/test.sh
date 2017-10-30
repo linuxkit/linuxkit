@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that qcow2 output format is generated
+# SUMMARY: Check that raw output format is generated
 # LABELS:
 
 set -e
@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -format qcow2 -name "${NAME}" ../test.yml
-[ -f "${NAME}.qcow2" ] || exit 1
+moby build -format raw-efi -name "${NAME}" ../test.yml
+[ -f "${NAME}-efi.img" ] || exit 1
 
 exit 0

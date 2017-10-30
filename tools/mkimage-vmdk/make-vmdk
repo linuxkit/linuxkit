@@ -40,7 +40,7 @@ cd ..
 tar cf files.tar -C files .
 
 # Disk is created in qcow format, testing needed to see if raw->vmdk conversion makes any efficency gains
-virt-make-fs --size=1G --type=ext4 --partition files.tar --format=qcow2 disk.qcow
+virt-make-fs --size=1G --type=ext4 --partition files.tar --format=qcow2-bios disk.qcow
 
 guestfish -a disk.qcow -m /dev/sda1 <<EOF
   upload /usr/lib/SYSLINUX/mbr.bin /mbr.bin
