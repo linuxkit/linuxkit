@@ -188,6 +188,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 		log.Infof("Add init containers:")
 	}
 	for _, ii := range m.initRefs {
+		log.Infof("Process init image: %s", ii)
 		err := ImageTar(ii, "", iw, enforceContentTrust(ii.String(), &m.Trust), pull, resolvconfSymlink)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
