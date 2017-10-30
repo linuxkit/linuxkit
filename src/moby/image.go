@@ -192,7 +192,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string) error {
+func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string) error { // nolint: lll
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
 	rootExtract := "rootfs"
 	if !readonly {

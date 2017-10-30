@@ -197,7 +197,7 @@ func extractReferences(m *Moby) error {
 	return nil
 }
 
-func updateImages(m *Moby) error {
+func updateImages(m *Moby) {
 	if m.Kernel.ref != nil {
 		m.Kernel.Image = m.Kernel.ref.String()
 	}
@@ -219,7 +219,6 @@ func updateImages(m *Moby) error {
 			image.Image = image.ref.String()
 		}
 	}
-	return nil
 }
 
 // NewConfig parses a config file
@@ -295,11 +294,7 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby.Trust.Org = append(moby.Trust.Org, m1.Trust.Org...)
 	moby.initRefs = append(moby.initRefs, m1.initRefs...)
 
-	if err := uniqueServices(moby); err != nil {
-		return moby, err
-	}
-
-	return moby, nil
+	return moby, uniqueServices(moby)
 }
 
 // NewImage validates an parses yaml or json for a Image
@@ -433,17 +428,6 @@ func assignBool(v1, v2 *bool) bool {
 	return false
 }
 
-// assignBoolPtr does ordered overrides from JSON bool pointers
-func assignBoolPtr(v1, v2 *bool) *bool {
-	if v2 != nil {
-		return v2
-	}
-	if v1 != nil {
-		return v1
-	}
-	return nil
-}
-
 // assignIntPtr does ordered overrides from JSON int pointers
 func assignIntPtr(v1, v2 *int) *int {
 	if v2 != nil {
@@ -453,28 +437,6 @@ func assignIntPtr(v1, v2 *int) *int {
 		return v1
 	}
 	return nil
-}
-
-// assignUint32 does ordered overrides from JSON uint32 pointers
-func assignUint32(v1, v2 *uint32) uint32 {
-	if v2 != nil {
-		return *v2
-	}
-	if v1 != nil {
-		return *v1
-	}
-	return 0
-}
-
-// assignUint32Array does ordered overrides from JSON uint32 array pointers
-func assignUint32Array(v1, v2 *[]uint32) []uint32 {
-	if v2 != nil {
-		return *v2
-	}
-	if v1 != nil {
-		return *v1
-	}
-	return []uint32{}
 }
 
 // assignInterface does ordered overrides from Go interfaces

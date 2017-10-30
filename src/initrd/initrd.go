@@ -55,7 +55,7 @@ func typeconv(thdr *tar.Header) int64 {
 	}
 }
 
-func copyTarEntry(w *Writer, thdr *tar.Header, r *tar.Reader) (written int64, err error) {
+func copyTarEntry(w *Writer, thdr *tar.Header, r io.Reader) (written int64, err error) {
 	tp := typeconv(thdr)
 	if tp == -1 {
 		return written, errors.New("cannot convert tar file")
