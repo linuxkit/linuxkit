@@ -45,8 +45,8 @@ Once you have built the tool, use
 ```
 moby build linuxkit.yml
 ```
-to build the example configuration. You can also specify different output formats, eg `moby build -format raw linuxkit.yml` to
-output a raw bootable disk image. See `moby build -help` for more information.
+to build the example configuration. You can also specify different output formats, eg `moby build -format raw-bios linuxkit.yml` to
+output a raw BIOS bootable disk image, or `moby build -format iso-efi linuxkit.yml` to output an EFI bootable ISO image. See `moby build -help` for more information.
 
 ### Booting and Testing
 
