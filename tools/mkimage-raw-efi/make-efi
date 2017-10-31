@@ -76,7 +76,7 @@ ESP_FILE_SIZE=$(( $KERNEL_FILE_SIZE + $INITRD_FILE_SIZE + $EFI_FILE_SIZE + $ESP_
 # we will round up to the nearest multiple of 2048 blocks
 # since each block is 512 bytes, we want the size to be a multiple of
 # 2048 blocks * 512 bytes = 1048576 bytes = 1024KB
-ESP_FILE_SIZE_KB=$(( ( ($ESP_FILE_SIZE+1024) / 1024 ) / 1024 * 1024 ))
+ESP_FILE_SIZE_KB=$(( ( ( ($ESP_FILE_SIZE+1024-1) / 1024 ) + 1024-1) / 1024 * 1024 ))
 # and for sectors
 ESP_FILE_SIZE_SECTORS=$(( $ESP_FILE_SIZE_KB * 2 ))
 
