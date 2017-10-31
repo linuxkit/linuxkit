@@ -59,7 +59,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// These override fields in pi below, bools are in both forms to allow user overrides in either direction
 	argDisableCache := fs.Bool("disable-cache", pi.DisableCache, "Disable build cache")
 	argEnableCache := fs.Bool("enable-cache", !pi.DisableCache, "Enable build cache")
-	argDisableContentTrust := fs.Bool("disable-content-trust", pi.DisableContentTrust, "Enable content trust")
+	argDisableContentTrust := fs.Bool("disable-content-trust", pi.DisableContentTrust, "Disable content trust")
 	argEnableContentTrust := fs.Bool("enable-content-trust", !pi.DisableContentTrust, "Enable content trust")
 	argNoNetwork := fs.Bool("nonetwork", !pi.Network, "Disallow network use during build")
 	argNetwork := fs.Bool("network", pi.Network, "Allow network use during build")
