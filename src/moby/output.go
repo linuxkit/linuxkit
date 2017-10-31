@@ -15,8 +15,8 @@ import (
 const (
 	isoBios    = "linuxkit/mkimage-iso-bios:165b051322578cb0c2a4f16253b20f7d2797a502"
 	isoEfi     = "linuxkit/mkimage-iso-efi:dc12bc6827f84334b02d1c70599acf80b840c126"
-	rawBios    = "linuxkit/mkimage-raw-bios:58e4f6cc12c9b34d7aaeba323c7bca0b30ba43cb"
-	rawEfi     = "linuxkit/mkimage-raw-efi:fcd94e494396e314a9d24be7e1379ccc8eb380e0"
+	rawBios    = "linuxkit/mkimage-raw-bios:eac4dcb78f837618e7e009060146977c2adabe19"
+	rawEfi     = "linuxkit/mkimage-raw-efi:f2bae7a502598d6b78c2f0b6de77f207df27add7"
 	gcp        = "linuxkit/mkimage-gcp:d1883809d212ce048f60beb0308a4d2b14c256af"
 	vhd        = "linuxkit/mkimage-vhd:2a31f2bc91c1d247160570bd17868075e6c0009a"
 	vmdk       = "linuxkit/mkimage-vmdk:df02a4fabd87a82209fbbacebde58c4440d2daf0"
@@ -165,8 +165,8 @@ var outFuns = map[string]func(string, []byte, int) error{
 }
 
 var prereq = map[string]string{
-	"raw":   "mkimage",
-	"qcow2": "mkimage",
+	"aws":        "mkimage",
+	"qcow2-bios": "mkimage",
 }
 
 func ensurePrereq(out string) error {
