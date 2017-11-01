@@ -1,6 +1,6 @@
 services:
   - name: docker
-    image: docker:17.07.0-ce-dind
+    image: docker:17.10.0-ce-dind
     capabilities:
      - all
     pid: host
