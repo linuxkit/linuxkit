@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
+	log "github.com/sirupsen/logrus"
 )
 
 var linuxkitYaml = map[string]string{"mkimage": `

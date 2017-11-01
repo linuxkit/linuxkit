@@ -15,20 +15,20 @@ import (
 	"strings"
 	"time"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/docker/distribution/reference"
 	"github.com/docker/distribution/registry/client/auth"
 	"github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/docker/distribution/registry/client/transport"
-	notaryClient "github.com/docker/notary/client"
-	"github.com/docker/notary/trustpinning"
-	"github.com/docker/notary/tuf/data"
 	"github.com/opencontainers/go-digest"
+	log "github.com/sirupsen/logrus"
+	notaryClient "github.com/theupdateframework/notary/client"
+	"github.com/theupdateframework/notary/trustpinning"
+	"github.com/theupdateframework/notary/tuf/data"
 )
 
 var (
 	// ReleasesRole is the role named "releases"
-	ReleasesRole = path.Join(data.CanonicalTargetsRole, "releases")
+	ReleasesRole = data.RoleName(path.Join(data.CanonicalTargetsRole.String(), "releases"))
 )
 
 // TrustedReference parses an image string, and does a notary lookup to verify and retrieve the signed digest reference
@@ -69,9 +69,9 @@ func TrustedReference(image string) (reference.Reference, error) {
 		rt = nil
 	}
 
-	nRepo, err := notaryClient.NewNotaryRepository(
+	nRepo, err := notaryClient.NewFileCachedRepository(
 		trustDirectory(),
-		gun,
+		data.GUN(gun),
 		server,
 		rt,
 		nil,

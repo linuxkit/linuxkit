@@ -12,7 +12,6 @@ import (
 	"time"
 
 	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/pkg/tlsconfig"
 	"github.com/docker/go-connections/sockets"
 	"github.com/pkg/errors"
 	"golang.org/x/net/context"
@@ -71,7 +70,7 @@ func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Con
 	timeout := dialer.Timeout
 
 	if !dialer.Deadline.IsZero() {
-		deadlineTimeout := dialer.Deadline.Sub(time.Now())
+		deadlineTimeout := time.Until(dialer.Deadline)
 		if timeout == 0 || deadlineTimeout < timeout {
 			timeout = deadlineTimeout
 		}
@@ -115,7 +114,7 @@ func tlsDialWithDialer(dialer *net.Dialer, network, addr string, config *tls.Con
 	// from the hostname we're connecting to.
 	if config.ServerName == "" {
 		// Make a copy to avoid polluting argument or default.
-		config = tlsconfig.Clone(config)
+		config = tlsConfigClone(config)
 		config.ServerName = hostname
 	}
 
@@ -177,12 +176,14 @@ func (cli *Client) setupHijackConn(req *http.Request, proto string) (net.Conn, e
 
 	// Server hijacks the connection, error 'connection closed' expected
 	resp, err := clientconn.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusSwitchingProtocols {
-		resp.Body.Close()
-		return nil, fmt.Errorf("unable to upgrade to %s, received %d", proto, resp.StatusCode)
+	if err != httputil.ErrPersistEOF {
+		if err != nil {
+			return nil, err
+		}
+		if resp.StatusCode != http.StatusSwitchingProtocols {
+			resp.Body.Close()
+			return nil, fmt.Errorf("unable to upgrade to %s, received %d", proto, resp.StatusCode)
+		}
 	}
 
 	c, br := clientconn.Hijack()

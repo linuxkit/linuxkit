@@ -8,8 +8,8 @@ import (
 	"os"
 	"runtime"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/moby/tool/src/initrd"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

@@ -35,7 +35,7 @@ test: dist/moby
 	rm dist/moby test.tar
 
 .PHONY: all
-all: lint test moby
+all: lint test dist/moby
 
 .PHONY: install
 install: dist/moby
