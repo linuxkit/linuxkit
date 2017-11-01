@@ -10,9 +10,9 @@ import (
 	"path"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/containerd/containerd/reference"
 	"github.com/opencontainers/runtime-spec/specs-go"
+	log "github.com/sirupsen/logrus"
 )
 
 type tarWriter interface {

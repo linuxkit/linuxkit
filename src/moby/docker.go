@@ -13,12 +13,12 @@ import (
 	"os/exec"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/containerd/containerd/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	log "github.com/sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
@@ -181,7 +181,7 @@ func dockerInspectImage(cli *client.Client, ref *reference.Spec, trustedPull boo
 
 	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), ref.String())
 	if err != nil {
-		if client.IsErrImageNotFound(err) {
+		if client.IsErrNotFound(err) {
 			pullErr := dockerPull(ref, true, trustedPull)
 			if pullErr != nil {
 				return types.ImageInspect{}, pullErr

@@ -12,8 +12,8 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/moby/tool/src/moby"
+	log "github.com/sirupsen/logrus"
 )
 
 const defaultNameForStdin = "moby"
@@ -176,7 +176,7 @@ func build(args []string) {
 			buffer := new(bytes.Buffer)
 			response, err := http.Get(arg)
 			if err != nil {
-				log.Fatal("Cannot fetch remote yaml file: %v", err)
+				log.Fatalf("Cannot fetch remote yaml file: %v", err)
 			}
 			defer response.Body.Close()
 			_, err = io.Copy(buffer, response.Body)

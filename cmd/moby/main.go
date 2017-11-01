@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	log "github.com/Sirupsen/logrus"
 	"github.com/moby/tool/src/moby"
+	log "github.com/sirupsen/logrus"
 )
 
 var (
