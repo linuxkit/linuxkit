@@ -10,6 +10,7 @@ RUN \
   libseccomp-dev \
   linux-headers \
   make \
+  socat \
   && true
 ENV GOPATH=/go PATH=$PATH:/go/bin
 
