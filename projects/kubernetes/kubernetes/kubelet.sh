@@ -59,4 +59,5 @@ exec kubelet --kubeconfig=/etc/kubernetes/kubelet.conf \
 	      --cni-conf-dir=/var/lib/cni/etc/net.d \
 	      --cni-bin-dir=/var/lib/cni/opt/bin \
 	      --cadvisor-port=0 \
+	      --fail-swap-on=false \
 	      $KUBELET_ARGS $@
