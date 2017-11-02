@@ -85,7 +85,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	d := newDockerRunner(p.trust, p.cache)
 
 	if !bo.force {
-		ok, err := d.pull(p.Tag() + suffix)
+		ok, err := d.pull(p.Tag())
 		if err != nil {
 			return err
 		}
