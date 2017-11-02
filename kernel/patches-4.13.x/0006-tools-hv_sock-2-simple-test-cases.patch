@@ -1,4 +1,4 @@
-From 9ba95ab3f8b0ecb2b603cdbd4a91ea2e706e3b15 Mon Sep 17 00:00:00 2001
+From bd7602a121fa1a8b5f73e5724c583524ee7feb76 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 18:52:02 -0600
 Subject: [PATCH 06/12] tools: hv_sock: 2 simple test cases.
@@ -426,5 +426,5 @@ index 000000000000..fb4370c53152
 +	return -1;
 +}
 -- 
-2.11.1
+2.14.1
 
