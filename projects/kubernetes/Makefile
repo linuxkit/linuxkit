@@ -1,5 +1,5 @@
 KUBE_RUNTIME ?= docker
-NETWORK ?= weave-v2.0.5
+KUBE_NETWORK ?= weave-v2.0.5
 
 INIT_YAML ?=
 INIT_YAML += network.yaml
@@ -25,7 +25,7 @@ kube-master.iso: kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml $(INIT_
 kube-node.iso: kube.yml $(KUBE_RUNTIME).yml
 	moby build -name kube-node -format iso-efi -format iso-bios $^
 
-network.yaml: $(NETWORK).yaml
+network.yaml: $(KUBE_NETWORK).yaml
 	ln -nf $< $@
 
 weave-%.yaml:
