@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS mirror
+FROM linuxkit/alpine:0fb5b5e7952d22eeae57607493168e679a4a0c0a AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
