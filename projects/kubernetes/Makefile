@@ -1,5 +1,5 @@
 KUBE_RUNTIME ?= docker
-NETWORK ?= weave-v2.0.4
+NETWORK ?= weave-v2.0.5
 
 INIT_YAML ?=
 INIT_YAML += network.yaml
