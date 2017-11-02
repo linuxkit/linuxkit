@@ -1,6 +1,6 @@
 FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS build
 
-ENV kubernetes_version v1.8.1
+ENV kubernetes_version v1.8.2
 ENV cni_version        v0.6.0
 
 RUN apk add -U --no-cache \
