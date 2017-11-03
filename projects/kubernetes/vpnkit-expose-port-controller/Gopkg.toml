@@ -1,0 +1,15 @@
+[[constraint]]
+  name = "github.com/ghodss/yaml"
+  version = "1.0.0"
+
+[[constraint]]
+  name = "k8s.io/api"
+  branch = "release-1.8"
+
+[[constraint]]
+  name = "k8s.io/apimachinery"
+  branch = "release-1.8"
+
+[[constraint]]
+  name = "k8s.io/client-go"
+  branch = "master"
