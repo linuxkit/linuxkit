@@ -67,8 +67,12 @@ func init() {
 		defaultArch = "aarch64"
 	case "amd64":
 		defaultArch = "x86_64"
+	case "s390x":
+		defaultArch = "s390x"
 	}
 	switch {
+	case runtime.GOARCH == "s390x":
+		defaultAccel = "kvm"
 	case haveKVM():
 		defaultAccel = "kvm:tcg"
 	case runtime.GOOS == "darwin":
@@ -156,7 +160,7 @@ func runQemu(args []string) {
 
 	// VM configuration
 	accel := flags.String("accel", defaultAccel, "Choose acceleration mode. Use 'tcg' to disable it.")
-	arch := flags.String("arch", defaultArch, "Type of architecture to use, e.g. x86_64, aarch64")
+	arch := flags.String("arch", defaultArch, "Type of architecture to use, e.g. x86_64, aarch64, s390x")
 	cpus := flags.String("cpus", "1", "Number of CPUs")
 	mem := flags.String("mem", "1024", "Amount of memory in MB")
 
@@ -511,6 +515,8 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	// goArch is the GOARCH equivalent of config.Arch
 	var goArch string
 	switch config.Arch {
+	case "s390x":
+		goArch = "s390x"
 	case "aarch64":
 		goArch = "arm64"
 	case "x86_64":
@@ -525,15 +531,21 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	}
 
 	if config.Accel != "" {
-		if config.Arch == "aarch64" {
+		switch config.Arch {
+		case "s390x":
+			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("s390-ccw-virtio,accel=%s", config.Accel))
+		case "aarch64":
 			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("virt,gic_version=host,accel=%s", config.Accel))
-		} else {
+		default:
 			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("q35,accel=%s", config.Accel))
 		}
 	} else {
-		if config.Arch == "aarch64" {
+		switch config.Arch {
+		case "s390x":
+			qemuArgs = append(qemuArgs, "-machine", "s390-ccw-virtio")
+		case "aarch64":
 			qemuArgs = append(qemuArgs, "-machine", "virt")
-		} else {
+		default:
 			qemuArgs = append(qemuArgs, "-machine", "q35")
 		}
 	}
@@ -542,8 +554,11 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	if runtime.GOOS == "linux" {
 		rng = rng + ",filename=/dev/urandom"
 	}
-	qemuArgs = append(qemuArgs, "-object", rng, "-device", "virtio-rng-pci,rng=rng0")
-
+	if config.Arch == "s390x" {
+		qemuArgs = append(qemuArgs, "-object", rng, "-device", "virtio-rng-ccw,rng=rng0")
+	} else {
+		qemuArgs = append(qemuArgs, "-object", rng, "-device", "virtio-rng-pci,rng=rng0")
+	}
 	var lastDisk int
 	for i, d := range config.Disks {
 		index := i
@@ -570,7 +585,13 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	for i, p := range config.ISOImages {
 		if i == 0 {
 			// This is hdc/CDROM which is skipped by the disk loop above
-			qemuArgs = append(qemuArgs, "-cdrom", p)
+			if runtime.GOARCH == "s390x" {
+				qemuArgs = append(qemuArgs, "-device", "virtio-scsi-ccw")
+				qemuArgs = append(qemuArgs, "-device", "scsi-cd,drive=cd1")
+				qemuArgs = append(qemuArgs, "-drive", "file="+p+",format=raw,if=none,id=cd1")
+			} else {
+				qemuArgs = append(qemuArgs, "-cdrom", p)
+			}
 		} else {
 			index := lastDisk + i
 			qemuArgs = append(qemuArgs, "-drive", "file="+p+",index="+strconv.Itoa(index)+",media=cdrom")
@@ -599,7 +620,11 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		qemuArgs = append(qemuArgs, "-net", "none")
 	} else {
 		mac := retrieveMAC(config.StatePath)
-		qemuArgs = append(qemuArgs, "-device", "virtio-net-pci,netdev=t0,mac="+mac.String())
+		if config.Arch == "s390x" {
+			qemuArgs = append(qemuArgs, "-device", "virtio-net-ccw,netdev=t0,mac="+mac.String())
+		} else {
+			qemuArgs = append(qemuArgs, "-device", "virtio-net-pci,netdev=t0,mac="+mac.String())
+		}
 		forwardings, err := buildQemuForwardings(config.PublishedPorts, config.Containerized)
 		if err != nil {
 			log.Error(err)
