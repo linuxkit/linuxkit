@@ -16,6 +16,7 @@ Daniel Nephin <dnephin@gmail.com>
 Dave Freitag <dcfreita@us.ibm.com>
 Dave Tucker <dt@docker.com>
 David Gageot <david.gageot@docker.com>
+David Protasowski <dprotaso@gmail.com>
 David Scott <dave.scott@docker.com>
 David Sheets <david.sheets@docker.com>
 Dennis Chen <dennis.chen@arm.com>
@@ -31,6 +32,7 @@ Ilya Dmitrichenko <errordeveloper@gmail.com>
 Isaac Rodman <isaac@eyz.us>
 Istvan <l1x@users.noreply.github.com>
 Jason A. Donenfeld <Jason@zx2c4.com>
+Jeff Wu <jeff.wu.junfei@gmail.com>
 Jeffrey Hogan <jeff.hogan1@gmail.com>
 Jeremy Yallop <yallop@docker.com>
 Jes Ferrier <jes.ferrier@gmail.com>
@@ -45,8 +47,10 @@ Lorenzo Fontana <lo@linux.com>
 Luke Hodkinson <furious.luke@gmail.com>
 Madhu Venugopal <madhu@docker.com>
 Magnus Skjegstad <magnus.skjegstad@docker.com>
+Marco Mariani <marco.mariani@alterway.fr>
 Marcus van Dam <marcus@marcusvandam.nl>
 marten <marten.cassel@gmail.com>
+Mathieu Pasquet <mathieu.pasquet@alterway.fr>
 Matt Bajor <matt.bajor@workday.com>
 Matt Bentley <matt.bentley@docker.com>
 Matt Johnson <matjohn2@cisco.com>
@@ -58,6 +62,7 @@ Nathan Dautenhahn <ndd@seas.upenn.edu>
 Nathan LeClaire <nathan.leclaire@docker.com>
 Nick Jones <nick@dischord.org>
 Nico Di Rocco <dirocco.nico@gmail.com>
+Olaf Flebbe <of@oflebbe.de>
 Phil Estes <estesp@linux.vnet.ibm.com>
 Radu Matei <matei.radu94@gmail.com>
 Richard Mortier <mort@cantab.net>
@@ -68,8 +73,10 @@ Ryoga Saito <proelbtn@gmail.com>
 Sebastiaan van Stijn <sebastiaan.vanstijn@docker.com>
 Simon Ferquel <simon.ferquel@docker.com>
 solidnerd <niclas@mietz.io>
+Sotiris Salloumis <sotiris.salloumis@gmail.com>
 Stefan Bourlon <stefan.bourlon@ca.com>
 Theo Koulouris <theo.koulouris@hpe.com>
+Thomas Conte <thomas@conte.com>
 Thomas Gazagnaire <thomas.gazagnaire@docker.com>
 Thomas Leonard <thomas.leonard@docker.com>
 Thomas Shaw <tomwillfixit@users.noreply.github.com>
