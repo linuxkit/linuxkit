@@ -10,9 +10,8 @@ import (
 )
 
 const (
-	defaultZone     = "europe-west1-d"
-	defaultMachine  = "g1-small"
-	defaultDiskSize = 1
+	defaultZone    = "europe-west1-d"
+	defaultMachine = "g1-small"
 	// Environment variables. Some are non-standard
 	zoneVar    = "CLOUDSDK_COMPUTE_ZONE"
 	machineVar = "CLOUDSDK_COMPUTE_MACHINE" // non-standard

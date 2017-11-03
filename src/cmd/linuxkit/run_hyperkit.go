@@ -62,7 +62,7 @@ func runHyperKit(args []string) {
 	}
 	remArgs := flags.Args()
 	if len(remArgs) == 0 {
-		fmt.Println("Please specify the prefix to the image to boot\n")
+		fmt.Println("Please specify the prefix to the image to boot")
 		flags.Usage()
 		os.Exit(1)
 	}

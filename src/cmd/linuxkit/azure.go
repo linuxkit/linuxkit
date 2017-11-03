@@ -34,7 +34,6 @@ const (
 
 	defaultVirtualNetworkAddressPrefix = "10.0.0.0/16"
 	defaultSubnetAddressPrefix         = "10.0.0.0/24"
-	defaultRegion                      = "westeurope"
 
 	// These values are only provided so the deployment gets validated
 	// Since there is currently no Azure Linux Agent, these values
@@ -91,19 +90,6 @@ func initializeAzureClients(subscriptionID, tenantID, clientID, clientSecret str
 	virtualMachinesClient = compute.NewVirtualMachinesClient(subscriptionID)
 	virtualMachinesClient.Authorizer = autorest.NewBearerAuthorizer(token)
 
-}
-
-func getOrCreateResourceGroup(resourceGroupName, location string) *resources.Group {
-	var resourceGroup resources.Group
-	resourceGroup, err := groupsClient.Get(resourceGroupName)
-	if err != nil {
-		log.Fatalf("Error in getting resource group: %v", err)
-	}
-	if &resourceGroup != nil {
-		return &resourceGroup
-	}
-
-	return createResourceGroup(resourceGroupName, location)
 }
 
 func createResourceGroup(resourceGroupName, location string) *resources.Group {

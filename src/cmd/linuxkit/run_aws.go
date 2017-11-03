@@ -155,7 +155,7 @@ func runAWS(args []string) {
 		}
 	}
 
-	log.Warnf("AWS doesn't stream serial console output.\n Please use the AWS Management Console to obtain this output \n Console ouput will be displayed when the instance has been stopped.")
+	log.Warnf("AWS doesn't stream serial console output.\n Please use the AWS Management Console to obtain this output \n Console output will be displayed when the instance has been stopped.")
 	log.Warn("Waiting for instance to stop...")
 
 	if err = compute.WaitUntilInstanceStopped(instanceFilter); err != nil {

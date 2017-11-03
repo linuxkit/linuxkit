@@ -38,7 +38,7 @@ func runHyperV(args []string) {
 	}
 	remArgs := flags.Args()
 	if len(remArgs) == 0 {
-		fmt.Println("Please specify the path to the ISO image to boot\n")
+		fmt.Println("Please specify the path to the ISO image to boot")
 		flags.Usage()
 		os.Exit(1)
 	}
@@ -223,7 +223,7 @@ func hypervChecks() {
 
 	out, _, err = poshCmd("@(Get-Command Get-VM).ModuleName")
 	if err != nil {
-		log.Fatalf("Check for Hyper-V powershell modules failed: %v")
+		log.Fatalf("Check for Hyper-V powershell modules failed: %v", err)
 	}
 	res = splitLines(out)
 	if res[0] != "Hyper-V" {
