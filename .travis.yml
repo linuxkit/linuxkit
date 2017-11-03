@@ -2,7 +2,6 @@ language: go
 
 go:
   - 1.9.x
-  - master
 
 env:
   - TRAVIS_GOOS=linux
