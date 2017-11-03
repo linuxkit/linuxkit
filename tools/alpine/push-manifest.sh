@@ -19,6 +19,7 @@ IMAGE=$2
 
 IMG_X86_64=$(head -1 versions.x86_64 | sed 's,[#| ]*,,')
 IMG_ARM64=$(head -1 versions.aarch64 | sed 's,[#| ]*,,')
+IMG_s390x=$(head -1 versions.s390x | sed 's,[#| ]*,,')
 # Extract the TAG from the x86_64 name and build the manifest target name
 TAG=$(echo "$IMG_X86_64" | sed 's,\-.*$,,' | cut -d':' -f2)
 TARGET="$ORG/$IMAGE:$TAG"
@@ -34,6 +35,10 @@ manifests:
   - image: $IMG_X86_64
     platform:
       architecture: amd64
+      os: linux
+  - image: $IMG_s390x
+    platform:
+      architecture: s390x
       os: linux
 EOF
 
