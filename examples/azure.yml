@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.9.59
+  image: linuxkit/kernel:4.9.60
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:42a92119e1ca10380e0d33e26c0cbcf85b9b3558
@@ -15,7 +15,7 @@ services:
   - name: dhcpcd
     image: linuxkit/dhcpcd:48831507404049660b960e4055f544917d90378e
   - name: sshd
-    image: linuxkit/sshd:f55ec010619e19178d5daecb4e595e84ecbf7d67
+    image: linuxkit/sshd:b7f21ef1b13300a994e35eac3644e4f84f0ada8a
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub

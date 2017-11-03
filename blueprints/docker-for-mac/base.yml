@@ -1,6 +1,6 @@
 # This is a blueprint for building the open source components of Docker for Mac
 kernel:
-  image: linuxkit/kernel:4.9.59
+  image: linuxkit/kernel:4.9.60
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/vpnkit-expose-port:15c56c57ac9a7adeec20b34f36f2bc165c347679 # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
@@ -52,7 +52,7 @@ services:
     image: linuxkit/acpid:168f871c7211c9d5e96002d53cb497b26e2d622b
   # Enable getty for easier debugging
   - name: getty
-    image: linuxkit/getty:626ccc8e1766c40447f29a790d3a7cfff126f2a2
+    image: linuxkit/getty:6af22c32c98536a79230eef000e9abd06b037faa
     env:
         - INSECURE=true
   # Run ntpd to keep time synchronised in the VM

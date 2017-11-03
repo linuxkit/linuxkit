@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.9.59
+  image: linuxkit/kernel:4.9.60
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:42a92119e1ca10380e0d33e26c0cbcf85b9b3558
@@ -13,7 +13,7 @@ onboot:
     image: linuxkit/dhcpcd:48831507404049660b960e4055f544917d90378e
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: wg0
-    image: linuxkit/ip:54971b6664cb7b52912e909a8f6a45e5a5c94506
+    image: linuxkit/ip:e6f92b663e004be58c5d1fb43830d9155d625d28
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -26,7 +26,7 @@ onboot:
       bindNS:
           net: /run/netns/wg0
   - name: wg1
-    image: linuxkit/ip:54971b6664cb7b52912e909a8f6a45e5a5c94506
+    image: linuxkit/ip:e6f92b663e004be58c5d1fb43830d9155d625d28
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -40,7 +40,7 @@ onboot:
           net: /run/netns/wg1
 services:
   - name: getty
-    image: linuxkit/getty:626ccc8e1766c40447f29a790d3a7cfff126f2a2
+    image: linuxkit/getty:6af22c32c98536a79230eef000e9abd06b037faa
     env:
      - INSECURE=true
     net: /run/netns/wg1

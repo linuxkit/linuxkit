@@ -1,4 +1,4 @@
-From 72c2a4fa0f4b0189299ebbbd832f3d3c9b099ff1 Mon Sep 17 00:00:00 2001
+From 7471603c7d3cd40047450df595f3f0d7825079c8 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 21 Jun 2017 22:30:42 +0800
 Subject: [PATCH 09/12] hv-sock: a temporary workaround for the
@@ -129,5 +129,5 @@ index 30154836acd0..b8bf1446ae13 100644
  	return 0;
  }
 -- 
-2.11.1
+2.14.1
 
