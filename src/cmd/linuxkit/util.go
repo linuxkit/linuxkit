@@ -113,7 +113,7 @@ func splitLines(in string) []string {
 }
 
 // This function parses the "size" parameter of a disk specification
-// and returns the size in MB. The "size" paramter defaults to GB, but
+// and returns the size in MB. The "size" parameter defaults to GB, but
 // the unit can be explicitly set with either a G (for GB) or M (for
 // MB). It returns the disk size in MB.
 func getDiskSizeMB(s string) (int, error) {

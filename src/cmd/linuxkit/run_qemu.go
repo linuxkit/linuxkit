@@ -279,7 +279,7 @@ func runQemu(args []string) {
 		netdevConfig = "user,id=t0"
 	case qemuNetworkingTap:
 		if len(netMode) != 2 {
-			log.Fatalf("Not enough arugments for %q networking mode", qemuNetworkingTap)
+			log.Fatalf("Not enough arguments for %q networking mode", qemuNetworkingTap)
 		}
 		if len(publishFlags) != 0 {
 			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
@@ -287,7 +287,7 @@ func runQemu(args []string) {
 		netdevConfig = fmt.Sprintf("tap,id=t0,ifname=%s,script=no,downscript=no", netMode[1])
 	case qemuNetworkingBridge:
 		if len(netMode) != 2 {
-			log.Fatalf("Not enough arugments for %q networking mode", qemuNetworkingBridge)
+			log.Fatalf("Not enough arguments for %q networking mode", qemuNetworkingBridge)
 		}
 		if len(publishFlags) != 0 {
 			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
