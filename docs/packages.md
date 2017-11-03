@@ -29,6 +29,7 @@ A package source consists of a directory containing at least two files:
 - `network` _(bool)_: Allow network access during the package build (default: no)
 - `disable-content-trust` _(bool)_: Disable Docker content trust for this package (default: no)
 - `disable-cache` _(bool)_: Disable build cache for this package (default: no)
+- `config`: _(struct `github.com/moby/tool/src/moby.ImageConfig`)_: Image configuration, marshalled to JSON and added as `org.mobyproject.config` label on image (default: no label)
 
 ## Building packages
 

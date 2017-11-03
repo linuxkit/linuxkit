@@ -62,8 +62,14 @@ type File struct {
 
 // Image is the type of an image config
 type Image struct {
-	Name              string                  `yaml:"name" json:"name"`
-	Image             string                  `yaml:"image" json:"image"`
+	Name        string `yaml:"name" json:"name"`
+	Image       string `yaml:"image" json:"image"`
+	ImageConfig `yaml:",inline"`
+}
+
+// ImageConfig is the configuration part of Image, it is the subset
+// which is valid in a "org.mobyproject.config" label on an image.
+type ImageConfig struct {
 	Capabilities      *[]string               `yaml:"capabilities" json:"capabilities,omitempty"`
 	Ambient           *[]string               `yaml:"ambient" json:"ambient,omitempty"`
 	Mounts            *[]specs.Mount          `yaml:"mounts" json:"mounts,omitempty"`

@@ -1,6 +1,7 @@
 package pkglib
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"runtime"
@@ -120,6 +121,15 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 		if !p.network {
 			args = append(args, "--network=none")
+		}
+
+		if p.config != nil {
+			b, err := json.Marshal(*p.config)
+			if err != nil {
+				return err
+			}
+
+			args = append(args, "--label=org.mobyproject.config="+string(b))
 		}
 
 		if err := d.build(p.Tag()+suffix, p.pkgPath, args...); err != nil {
