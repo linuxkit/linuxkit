@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -68,12 +69,13 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 
 	// Other arguments
 	var buildYML, hash, hashCommit, hashPath string
-	var dirty bool
+	var dirty, devMode bool
 	fs.StringVar(&buildYML, "build-yml", "build.yml", "Override the name of the yml file")
 	fs.StringVar(&hash, "hash", "", "Override the image hash (default is to query git for the package's tree-sh)")
 	fs.StringVar(&hashCommit, "hash-commit", "HEAD", "Override the git commit to use for the hash")
 	fs.StringVar(&hashPath, "hash-path", "", "Override the directory to use for the image hash, must be a parent of the package dir (default is to use the package dir)")
 	fs.BoolVar(&dirty, "force-dirty", false, "Force the pkg to be considered dirty")
+	fs.BoolVar(&devMode, "dev", false, "Force org and hash to $USER and \"dev\" respectively")
 
 	fs.Parse(args)
 
@@ -88,6 +90,16 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	pkgPath, err := filepath.Abs(pkg)
 	if err != nil {
 		return Pkg{}, err
+	}
+
+	if devMode {
+		// If --org is also used then this will be overwritten
+		// by argOrg when we iterate over the provided options
+		// in the fs.Visit block below.
+		pi.Org = os.Getenv("USER")
+		if hash == "" {
+			hash = "dev"
+		}
 	}
 
 	if hashPath == "" {
