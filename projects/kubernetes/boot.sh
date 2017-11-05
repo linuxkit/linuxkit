@@ -15,7 +15,7 @@ set -e
 : ${KUBE_RUN_ARGS:=}
 : ${KUBE_EFI:=}
 : ${KUBE_MAC:=}
-: ${KUBE_PRESERVE_STATE:=}
+: ${KUBE_CLEAR_STATE:=}
 
 [ "$(uname -s)" = "Darwin" ] && KUBE_EFI=1
 
@@ -43,7 +43,7 @@ if [ $# -eq 0 ] ; then
     : ${KUBE_VCPUS:=$KUBE_MASTER_VCPUS}
     : ${KUBE_MEM:=$KUBE_MASTER_MEM}
     : ${KUBE_DISK:=$KUBE_MASTER_DISK}
-elif [ $# -gt 1 ] || [ $# -eq 1 -a -n "${KUBE_PRESERVE_STATE}" ] ; then
+elif [ $# -ge 1 ] ; then
     case $1 in
 	''|*[!0-9]*)
 	    echo "Node number must be a number"
@@ -58,7 +58,11 @@ elif [ $# -gt 1 ] || [ $# -eq 1 -a -n "${KUBE_PRESERVE_STATE}" ] ; then
     img="kube-node"
     name="node-${1}"
     shift
-    data="{\"kubeadm\": {\"join\": \"${*}\"} }"
+
+    if [ $# -ge 1 ] ; then
+    	data="{\"kubeadm\": {\"join\": \"${*}\"} }"
+    fi
+
     state="kube-${name}-state"
 
     : ${KUBE_VCPUS:=$KUBE_NODE_VCPUS}
@@ -73,7 +77,7 @@ else
     exit 1
 fi
 set -x
-if [ -z "${KUBE_PRESERVE_STATE}" ] ; then
+if [ -n "${KUBE_CLEAR_STATE}" ] ; then
     rm -rf "${state}"
     mkdir "${state}"
     if [ -n "${KUBE_MAC}" ] ; then

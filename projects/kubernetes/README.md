@@ -18,6 +18,10 @@ Boot Kubernetes master OS image using `hyperkit` on macOS: or `qemu` on Linux:
 ```
 ./boot.sh
 ```
+or, to automatically initialise the cluster upon boot with no additional options
+```
+KUBE_MASTER_AUTOINIT="" ./boot.sh
+```
 
 Get IP address of the master:
 ```
@@ -29,7 +33,7 @@ Login to the kubelet container:
 ./ssh_into_kubelet.sh <master-ip>
 ```
 
-Manually initialise master with `kubeadm`:
+Manually initialise master with `kubeadm` if booted without `KUBE_MASTER_AUTOINIT`:
 ```
 kubeadm-init.sh
 ```
