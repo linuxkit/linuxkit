@@ -199,9 +199,9 @@ func vCenterConnect(ctx context.Context, newVM vmConfig) (*govmomi.Client, *obje
 		log.Fatalln("Error locating default datacenter folder")
 	}
 
-	// Check if network connectivity is requested
+	// This code is shared between Push/Run, a network isn't needed for Pushing an image
 	var net object.NetworkReference
-	if *newVM.networkName != "" {
+	if newVM.networkName != nil && *newVM.networkName != "" {
 		net, err = f.NetworkOrDefault(ctx, *newVM.networkName)
 		if err != nil {
 			log.Fatalf("Network [%s], could not be found", *newVM.networkName)
