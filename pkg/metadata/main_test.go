@@ -45,6 +45,45 @@ func TestWriteConfig(t *testing.T) {
 	assertContent(t, path.Join(basePath, "foo", "baz"), "bar")
 }
 
+func TestWriteHostname(t *testing.T) {
+	basePath, err := ioutil.TempDir(os.TempDir(), "metadata")
+	if err != nil {
+		t.Fatalf("can't make a temp rootdir %v", err)
+	}
+	defer os.RemoveAll(basePath)
+
+	if err := processUserData(basePath, []byte(`{"hostname":"foobar"}`)); err != nil {
+		t.Fatalf("fail to process json %v", err)
+	}
+
+	assertContent(t, path.Join(basePath, "hostname"), "foobar")
+}
+
+func TestDeepTree(t *testing.T) {
+	basePath, err := ioutil.TempDir("", "metadata")
+	if err != nil {
+		t.Fatalf("can't make a temp rootdir %v", err)
+	}
+	defer os.RemoveAll(basePath)
+
+	json := `{
+		"level1": {
+			"level2": {
+				"other": "property",
+				"level3": {
+					"level4": "depth4"
+				}
+			}
+		}
+	}`
+	if err := processUserData(basePath, []byte(json)); err != nil {
+		t.Fatalf("fail to process json %v", err)
+	}
+
+	assertContent(t, path.Join(basePath, "level1", "level2", "level3", "level4"), "depth4")
+	assertContent(t, path.Join(basePath, "level1", "level2", "other"), "property")
+}
+
 func assertContent(t *testing.T, path, expected string) {
 	file, err := ioutil.ReadFile(path)
 	if err != nil {

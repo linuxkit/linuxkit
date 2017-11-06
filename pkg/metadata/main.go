@@ -154,55 +154,44 @@ func processUserData(basePath string, data []byte) error {
 		// This is not an error
 		return nil
 	}
-	cm, ok := fd.(map[string]interface{})
-	if !ok {
-		log.Printf("Could convert JSON to desired format: %s", fd)
-		return nil
-	}
-	for d, val := range cm {
-		dir := path.Join(basePath, d)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			log.Printf("Failed to create %s: %s", dir, err)
-			continue
-		}
-		files, ok := val.(map[string]interface{})
-		if !ok {
-			log.Printf("Could convert JSON for files: %s", val)
-			continue
-		}
-		for f, i := range files {
-			p := uint64(0644)
-			var c string
 
-			switch fi := i.(type) {
-			case map[string]interface{}:
-				if _, ok := fi["perm"]; !ok {
-					log.Printf("No permission provided %s", f)
-					continue
-				}
-				if _, ok := fi["content"]; !ok {
-					log.Printf("No content provided %s", f)
-					continue
-				}
-				c = fi["content"].(string)
-				if p, err = strconv.ParseUint(fi["perm"].(string), 8, 32); err != nil {
-					log.Printf("Failed to parse permission %s: %s", fi, err)
-					continue
-				}
-			case string:
-				c = fi
-			default:
-				log.Printf("Couldn't convert JSON for items: %s", i)
-				continue
-			}
-
-			if err := ioutil.WriteFile(path.Join(dir, f), []byte(c), os.FileMode(p)); err != nil {
-				log.Printf("Failed to write %s/%s: %s", dir, f, err)
-				continue
-
-			}
-		}
-	}
-
+	writeConfigFiles(basePath, fd)
 	return nil
+}
+
+func writeConfigFiles(dir string, input interface{}) {
+	switch json := input.(type) {
+	case map[string]interface{}:
+		if isFile(json) {
+			perm, err := strconv.ParseUint(json["perm"].(string), 8, 32)
+			if err != nil {
+				log.Printf("Failed to parse permission %s: %s", json, err)
+				return
+			}
+			if err := ioutil.WriteFile(dir, []byte(json["content"].(string)), os.FileMode(perm)); err != nil {
+				log.Printf("Failed to write %s: %s", dir, err)
+				return
+			}
+		} else {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				log.Printf("Failed to create %s: %s", dir, err)
+				return
+			}
+			for subpath, subtree := range json {
+				writeConfigFiles(path.Join(dir, subpath), subtree)
+			}
+		}
+	case string:
+		if err := ioutil.WriteFile(dir, []byte(json), os.FileMode(0644)); err != nil {
+			log.Printf("Failed to write %s: %s", dir, err)
+		}
+	default:
+		log.Printf("Couldn't convert JSON for items: %s", input)
+	}
+}
+
+func isFile(json map[string]interface{}) bool {
+	_, perm := json["perm"]
+	_, content := json["content"]
+	return perm && content
 }
