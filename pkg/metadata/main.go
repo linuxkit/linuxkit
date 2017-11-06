@@ -111,7 +111,7 @@ func main() {
 	}
 
 	if userdata != nil {
-		if err := processUserData(userdata); err != nil {
+		if err := processUserData(ConfigPath, userdata); err != nil {
 			log.Printf("Could not extract user data: %s", err)
 		}
 	}
@@ -139,9 +139,9 @@ func main() {
 //        }
 // }
 // Will create foobar/foo with mode 0644 and content "hello"
-func processUserData(data []byte) error {
+func processUserData(basePath string, data []byte) error {
 	// Always write the raw data to a file
-	err := ioutil.WriteFile(path.Join(ConfigPath, "userdata"), data, 0644)
+	err := ioutil.WriteFile(path.Join(basePath, "userdata"), data, 0644)
 	if err != nil {
 		log.Printf("Could not write userdata: %s", err)
 		return err
@@ -160,7 +160,7 @@ func processUserData(data []byte) error {
 		return nil
 	}
 	for d, val := range cm {
-		dir := path.Join(ConfigPath, d)
+		dir := path.Join(basePath, d)
 		if err := os.MkdirAll(dir, 0755); err != nil {
 			log.Printf("Failed to create %s: %s", dir, err)
 			continue
