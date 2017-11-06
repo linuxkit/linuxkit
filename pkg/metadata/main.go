@@ -111,7 +111,7 @@ func main() {
 	}
 
 	if userdata != nil {
-		if err := processUserData(userdata); err != nil {
+		if err := processUserData(ConfigPath, userdata); err != nil {
 			log.Printf("Could not extract user data: %s", err)
 		}
 	}
@@ -139,70 +139,82 @@ func main() {
 //        }
 // }
 // Will create foobar/foo with mode 0644 and content "hello"
-func processUserData(data []byte) error {
+func processUserData(basePath string, data []byte) error {
 	// Always write the raw data to a file
-	err := ioutil.WriteFile(path.Join(ConfigPath, "userdata"), data, 0644)
+	err := ioutil.WriteFile(path.Join(basePath, "userdata"), data, 0644)
 	if err != nil {
 		log.Printf("Could not write userdata: %s", err)
 		return err
 	}
 
-	var fd interface{}
-	if err := json.Unmarshal(data, &fd); err != nil {
+	var root ConfigFile
+	if err := json.Unmarshal(data, &root); err != nil {
 		// Userdata is no JSON, presumably...
 		log.Printf("Could not unmarshall userdata: %s", err)
 		// This is not an error
 		return nil
 	}
-	cm, ok := fd.(map[string]interface{})
-	if !ok {
-		log.Printf("Could convert JSON to desired format: %s", fd)
-		return nil
+
+	for dir, entry := range root {
+		writeConfigFiles(path.Join(basePath, dir), entry)
 	}
-	for d, val := range cm {
-		dir := path.Join(ConfigPath, d)
-		if err := os.MkdirAll(dir, 0755); err != nil {
-			log.Printf("Failed to create %s: %s", dir, err)
-			continue
-		}
-		files, ok := val.(map[string]interface{})
-		if !ok {
-			log.Printf("Could convert JSON for files: %s", val)
-			continue
-		}
-		for f, i := range files {
-			p := uint64(0644)
-			var c string
-
-			switch fi := i.(type) {
-			case map[string]interface{}:
-				if _, ok := fi["perm"]; !ok {
-					log.Printf("No permission provided %s", f)
-					continue
-				}
-				if _, ok := fi["content"]; !ok {
-					log.Printf("No content provided %s", f)
-					continue
-				}
-				c = fi["content"].(string)
-				if p, err = strconv.ParseUint(fi["perm"].(string), 8, 32); err != nil {
-					log.Printf("Failed to parse permission %s: %s", fi, err)
-					continue
-				}
-			case string:
-				c = fi
-			default:
-				log.Printf("Couldn't convert JSON for items: %s", i)
-				continue
-			}
-
-			if err := ioutil.WriteFile(path.Join(dir, f), []byte(c), os.FileMode(p)); err != nil {
-				log.Printf("Failed to write %s/%s: %s", dir, f, err)
-				continue
-
-			}
-		}
-	}
-
 	return nil
+}
+
+func writeConfigFiles(target string, current Entry) {
+	if isFile(current) {
+		filemode, err := parseFileMode(current.Perm, 0644)
+		if err != nil {
+			log.Printf("Failed to parse permission %s: %s", current, err)
+			return
+		}
+		if err := ioutil.WriteFile(target, []byte(*current.Content), filemode); err != nil {
+			log.Printf("Failed to write %s: %s", target, err)
+			return
+		}
+	} else if isDirectory(current) {
+		filemode, err := parseFileMode(current.Perm, 0755)
+		if err != nil {
+			log.Printf("Failed to parse permission %s: %s", current, err)
+			return
+		}
+		if err := os.MkdirAll(target, filemode); err != nil {
+			log.Printf("Failed to create %s: %s", target, err)
+			return
+		}
+		for dir, entry := range current.Entries {
+			writeConfigFiles(path.Join(target, dir), entry)
+		}
+	} else {
+		log.Printf("%s is invalid", target)
+	}
+}
+
+func isFile(json Entry) bool {
+	return json.Content != nil && json.Entries == nil
+}
+
+func isDirectory(json Entry) bool {
+	return json.Content == nil && json.Entries != nil
+}
+
+func parseFileMode(input string, defaultMode os.FileMode) (os.FileMode, error) {
+	if input != "" {
+		perm, err := strconv.ParseUint(input, 8, 32)
+		if err != nil {
+			return 0, err
+		}
+		return os.FileMode(perm), nil
+	}
+	return defaultMode, nil
+}
+
+// ConfigFile represents the configuration file
+type ConfigFile map[string]Entry
+
+// Entry represents either a directory or a file
+type Entry struct {
+	Perm    string           `json:"perm,omitempty"`
+	Content *string          `json:"content,omitempty"`
+	Entries map[string]Entry `json:"entries,omitempty"`
 }
