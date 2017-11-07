@@ -72,6 +72,14 @@ test-cross:
 	$(MAKE) -j 3 GOOS=linux tmp_moby_bin.tar tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
 
+ifeq ($(GOARCH)-$(GOOS),amd64-linux)
+LOCAL_BUILDMODE?=pie
+endif
+LOCAL_BUILDMODE?=default
+
+LOCAL_LDFLAGS += -s -w -extldflags \"-static\" -X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)
+LOCAL_TARGET ?= bin/linuxkit
+
 .PHONY: local-check local-build local-test local
 local-check: $(LINUXKIT_DEPS)
 	@echo gofmt... && o=$$(gofmt -s -l $(filter %.go,$(LINUXKIT_DEPS))) && if [ -n "$$o" ] ; then echo $$o ; exit 1 ; fi
@@ -80,7 +88,7 @@ local-check: $(LINUXKIT_DEPS)
 	@echo ineffassign... && ineffassign  $(filter %.go,$(LINUXKIT_DEPS))
 
 local-build: $(LINUXKIT_DEPS) | bin
-	go build -o bin/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
+	go build -o $(LOCAL_TARGET) --buildmode $(LOCAL_BUILDMODE) --ldflags "$(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
 
 local-test: $(LINUXKIT_DEPS)
 	go test $(shell go list github.com/linuxkit/linuxkit/src/cmd/linuxkit/... | grep -v ^github.com/linuxkit/linuxkit/src/cmd/linuxkit/vendor/)
