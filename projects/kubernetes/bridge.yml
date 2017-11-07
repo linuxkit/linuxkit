@@ -1,0 +1,8 @@
+onboot:
+  - name: bridge
+    image: busybox:latest
+    command: ["/bin/sh", "-c", "set -ex; echo '{\"cniVersion\":\"0.3.1\",\"name\":\"default\",\"plugins\":[{\"type\":\"bridge\",\"bridge\":\"cni0\",\"isDefaultGateway\":true,\"ipMasq\":false,\"hairpinMode\":true,\"ipam\":{\"type\":\"host-local\",\"subnet\":\"10.1.0.0/16\",\"gateway\":\"10.1.0.1\"},\"dns\":{\"nameservers\":[\"10.1.0.1\"]}},{\"type\":\"portmap\",\"capabilities\":{\"portMappings\":true},\"snat\":true}]}' > /var/lib/cni/etc/net.d/10-default.conflist; echo '{\"cniVersion\":\"0.2.0\",\"type\":\"loopback\"}' > /var/lib/cni/etc/net.d/99-loopback.conf"]
+    runtime:
+      mkdir: ["/var/lib/cni/etc/net.d"]
+    binds:
+      - /var/lib:/var/lib
