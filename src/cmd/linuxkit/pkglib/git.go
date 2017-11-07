@@ -9,9 +9,9 @@ import (
 	"os/exec"
 	"regexp"
 	"strings"
-)
 
-const debugGitCommands = false
+	log "github.com/sirupsen/logrus"
+)
 
 // 040000 tree 7804129bd06218b72c298139a25698a748d253c6\tpkg/init
 var treeHashRe *regexp.Regexp
@@ -46,10 +46,8 @@ func (g git) mkCmd(args ...string) *exec.Cmd {
 func (g git) commandStdout(stderr io.Writer, args ...string) (string, error) {
 	cmd := g.mkCmd(args...)
 	cmd.Stderr = stderr
+	log.Debugf("Executing: %v", cmd.Args)
 
-	if debugGitCommands {
-		fmt.Fprintf(os.Stderr, "+ %v\n", cmd.Args)
-	}
 	out, err := cmd.Output()
 	if err != nil {
 		return "", err
@@ -61,9 +59,8 @@ func (g git) command(args ...string) error {
 	cmd := g.mkCmd(args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if debugGitCommands {
-		fmt.Fprintf(os.Stderr, "+ %v\n", cmd.Args)
-	}
+	log.Debugf("Executing: %v", cmd.Args)
+
 	return cmd.Run()
 }
 
