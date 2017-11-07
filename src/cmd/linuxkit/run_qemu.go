@@ -491,7 +491,6 @@ func runQemuContainer(config QemuConfig) error {
 func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	// Iterate through the flags and build arguments
 	var qemuArgs []string
-	qemuArgs = append(qemuArgs, "-device", "virtio-rng-pci")
 	qemuArgs = append(qemuArgs, "-smp", config.CPUs)
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
 	qemuArgs = append(qemuArgs, "-uuid", config.UUID.String())
