@@ -8,9 +8,9 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
-)
 
-const debugDockerCommands = false
+	log "github.com/sirupsen/logrus"
+)
 
 const dctEnableEnv = "DOCKER_CONTENT_TRUST=1"
 
@@ -36,16 +36,15 @@ func (dr dockerRunner) command(args ...string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = os.Environ()
+
+	dct := ""
 	if dr.dct {
 		cmd.Env = append(cmd.Env, dctEnableEnv)
+		dct = dctEnableEnv + " "
 	}
-	if debugDockerCommands {
-		var dct string
-		if dr.dct {
-			dct = dctEnableEnv + " "
-		}
-		fmt.Fprintf(os.Stderr, "+ %s%v\n", dct, cmd.Args)
-	}
+
+	log.Debugf("Executing: %s%v", dct, cmd.Args)
+
 	err := cmd.Run()
 	if isExecErrNotFound(err) {
 		return fmt.Errorf("linuxkit pkg requires docker to be installed")
@@ -85,9 +84,8 @@ func (dr dockerRunner) pushWithManifest(img, suffix string) error {
 	cmd := exec.Command("/bin/sh", "-c", manifestPushScript, "manifest-push-script", img, dctArg)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
-	if debugDockerCommands {
-		fmt.Fprintf(os.Stderr, "+ %v\n", cmd.Args)
-	}
+	log.Debugf("Executing: %v", cmd.Args)
+
 	return cmd.Run()
 }
 
