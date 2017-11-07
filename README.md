@@ -66,6 +66,9 @@ Currently supported platforms are:
   - [Microsoft Azure](docs/platform-azure.md)
   - [OpenStack](docs/platform-openstack.md)
   - [packet.net](docs/platform-packet.md)
+- Baremetal:
+  - x86 and arm64 servers on [packet.net](docs/platform-packet.md)
+  - [Raspberry Pi Model 3b](docs/platform-rpi3.md)
 
 
 #### Running the Tests
