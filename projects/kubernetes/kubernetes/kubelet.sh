@@ -2,13 +2,23 @@
 # Kubelet outputs only to stderr, so arrange for everything we do to go there too
 exec 1>&2
 
+if [ -e /etc/kubelet.sh.conf ] ; then
+    . /etc/kubelet.sh.conf
+fi
+
+if [ -f /var/config/kubelet/disabled ] ; then
+    echo "kubelet.sh: /var/config/kubelet/disabled file is present, exiting"
+    exit 0
+fi
+if [ -n "$KUBELET_DISABLED" ] ; then
+    echo "kubelet.sh: KUBELET_DISABLED environ variable is set, exiting"
+    exit 0
+fi
+
 if [ ! -e /var/lib/cni/.opt.defaults-extracted ] ; then
     mkdir -p /var/lib/cni/opt/bin
     tar -xzf /root/cni.tgz -C /var/lib/cni/opt/bin
     touch /var/lib/cni/.opt.defaults-extracted
-fi
-if [ -e /etc/kubelet.sh.conf ] ; then
-    . /etc/kubelet.sh.conf
 fi
 
 await=/etc/kubernetes/kubelet.conf
