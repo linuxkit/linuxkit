@@ -618,17 +618,6 @@ func discoverBackend(config QemuConfig) QemuConfig {
 	return config
 }
 
-type multipleFlag []string
-
-func (f *multipleFlag) String() string {
-	return "A multiple flag is a type of flag that can be repeated any number of times"
-}
-
-func (f *multipleFlag) Set(value string) error {
-	*f = append(*f, value)
-	return nil
-}
-
 func buildQemuForwardings(publishFlags multipleFlag, containerized bool) (string, error) {
 	if len(publishFlags) == 0 {
 		return "", nil

@@ -8,6 +8,18 @@ import (
 	"strings"
 )
 
+// Handle flags with multiple occurrences
+type multipleFlag []string
+
+func (f *multipleFlag) String() string {
+	return "A multiple flag is a type of flag that can be repeated any number of times"
+}
+
+func (f *multipleFlag) Set(value string) error {
+	*f = append(*f, value)
+	return nil
+}
+
 func getStringValue(envKey string, flagVal string, defaultVal string) string {
 	var res string
 
