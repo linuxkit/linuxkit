@@ -640,13 +640,13 @@ func buildQemuForwardings(publishFlags multipleFlag, containerized bool) (string
 			return "", err
 		}
 
-		hostPort := p.host
-		guestPort := p.guest
+		hostPort := p.Host
+		guestPort := p.Guest
 
 		if containerized {
 			hostPort = guestPort
 		}
-		forwardings = fmt.Sprintf("%s,hostfwd=%s::%d-:%d", forwardings, p.protocol, hostPort, guestPort)
+		forwardings = fmt.Sprintf("%s,hostfwd=%s::%d-:%d", forwardings, p.Protocol, hostPort, guestPort)
 	}
 
 	return forwardings, nil
@@ -659,7 +659,7 @@ func buildDockerForwardings(publishedPorts []string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
-		pmap = append(pmap, "-p", fmt.Sprintf("%d:%d/%s", s.host, s.guest, s.protocol))
+		pmap = append(pmap, "-p", fmt.Sprintf("%d:%d/%s", s.Host, s.Guest, s.Protocol))
 	}
 	return pmap, nil
 }
