@@ -191,3 +191,55 @@ func (l *Disks) Set(value string) error {
 	*l = append(*l, d)
 	return nil
 }
+
+// PublishedPort is used by some backends to expose a VMs port on the host
+type PublishedPort struct {
+	guest    int
+	host     int
+	protocol string
+}
+
+// NewPublishedPort parses a string of the form <host>:<guest>[/<tcp|udp>] and returns a PublishedPort structure
+func NewPublishedPort(publish string) (PublishedPort, error) {
+	p := PublishedPort{}
+	slice := strings.Split(publish, ":")
+
+	if len(slice) < 2 {
+		return p, fmt.Errorf("Unable to parse the ports to be published, should be in format <host>:<guest> or <host>:<guest>/<tcp|udp>")
+	}
+
+	hostPort, err := strconv.Atoi(slice[0])
+
+	if err != nil {
+		return p, fmt.Errorf("The provided hostPort can't be converted to int")
+	}
+
+	right := strings.Split(slice[1], "/")
+
+	protocol := "tcp"
+	if len(right) == 2 {
+		protocol = strings.TrimSpace(strings.ToLower(right[1]))
+	}
+
+	if protocol != "tcp" && protocol != "udp" {
+		return p, fmt.Errorf("Provided protocol is not valid, valid options are: udp and tcp")
+	}
+	guestPort, err := strconv.Atoi(right[0])
+
+	if err != nil {
+		return p, fmt.Errorf("The provided guestPort can't be converted to int")
+	}
+
+	if hostPort < 1 || hostPort > 65535 {
+		return p, fmt.Errorf("Invalid hostPort: %d", hostPort)
+	}
+
+	if guestPort < 1 || guestPort > 65535 {
+		return p, fmt.Errorf("Invalid guestPort: %d", guestPort)
+	}
+
+	p.guest = guestPort
+	p.host = hostPort
+	p.protocol = protocol
+	return p, nil
+}
