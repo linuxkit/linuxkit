@@ -13,7 +13,7 @@ onboot:
     image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:52a3d36ed158357125f3a998f9d03784eb0636d3
+    image: linuxkit/metadata:087a5cb4314ca7f02e61931d2ae0982f9dfae88b
 services:
   - name: rngd
     image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9
