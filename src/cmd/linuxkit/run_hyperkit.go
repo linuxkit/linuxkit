@@ -48,7 +48,7 @@ func runHyperKit(args []string) {
 	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
 	networking := flags.String("networking", hyperkitNetworkingDefault, "Networking mode. Valid options are 'default', 'docker-for-mac', 'vpnkit[,eth-socket-path[,port-socket-path]]', 'vmnet' and 'none'. 'docker-for-mac' connects to the network used by Docker for Mac. 'vpnkit' connects to the VPNKit socket(s) specified. If no socket path is provided a new VPNKit instance will be started and 'vpnkit_eth.sock' and 'vpnkit_port.sock' will be created in the state directory. 'port-socket-path' is only needed if you want to publish ports on localhost using an existing VPNKit instance. 'vmnet' uses the Apple vmnet framework, requires root/sudo. 'none' disables networking.`")
 
-	vpnkitUUID := flags.String("vpnkit-uuid", "", "Optional UUID used to identify the VPNKit connection. Overrides 'uuid.vpnkit' in the state directory.")
+	vpnkitUUID := flags.String("vpnkit-uuid", "", "Optional UUID used to identify the VPNKit connection. Overrides 'vpnkit.uuid' in the state directory.")
 	publishFlags := multipleFlag{}
 	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
 
@@ -159,7 +159,7 @@ func runHyperKit(args []string) {
 	// assigned to the UUID, so to get the same IP we have to store the initial UUID. If
 	// has specified a VPNKit UUID the file is ignored.
 	if *vpnkitUUID == "" {
-		vpnkitUUIDFile := filepath.Join(*state, "uuid.vpnkit")
+		vpnkitUUIDFile := filepath.Join(*state, "vpnkit.uuid")
 		if _, err := os.Stat(vpnkitUUIDFile); os.IsNotExist(err) {
 			*vpnkitUUID = uuid.New().String()
 			if err := ioutil.WriteFile(vpnkitUUIDFile, []byte(*vpnkitUUID), 0600); err != nil {
