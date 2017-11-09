@@ -1,4 +1,4 @@
-# linuxkit/alpine:ae5646c043bb48cee3fa428714ee27dda2f57812-arm64
+# linuxkit/alpine:941b953167b50becb3b34992df9cd9791edb1a08-arm64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -114,7 +114,7 @@ libcap-2.25-r1
 libcap-ng-0.7.8-r0
 libcap-ng-dev-0.7.8-r0
 libcom_err-1.43.4-r0
-libcrypto1.0-1.0.2k-r0
+libcrypto1.0-1.0.2m-r0
 libcurl-7.56.1-r0
 libdrm-2.4.80-r0
 libedit-20170329.3.1-r2
@@ -159,7 +159,7 @@ libseccomp-2.3.2-r0
 libseccomp-dev-2.3.2-r0
 libsmartcols-2.28.2-r2
 libssh2-1.8.0-r1
-libssl1.0-1.0.2k-r0
+libssl1.0-1.0.2m-r0
 libstdc++-6.3.0-r4
 libtasn1-4.10-r2
 libtirpc-1.0.1-r1
@@ -202,8 +202,8 @@ openntpd-6.0_p1-r3
 openrc-0.24.1-r2
 openssh-keygen-7.5_p1-r1
 openssh-server-7.5_p1-r1
-openssl-1.0.2k-r0
-openssl-dev-1.0.2k-r0
+openssl-1.0.2m-r0
+openssl-dev-1.0.2m-r0
 opus-1.1.4-r0
 p11-kit-0.23.2-r1
 patch-2.7.5-r1

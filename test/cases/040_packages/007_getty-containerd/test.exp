@@ -40,22 +40,22 @@ expect {
 
 expect {
     timeout {
-        puts "FAILED ctr pull"
+        puts "FAILED ctr images pull"
         exec kill -9 $pid
         exit 1
     }
     $prompt {
-	send "ctr pull $image\n"
+	send "ctr images pull $image\n"
     }
 }
 expect {
     timeout {
-        puts "FAILED ctr pull"
+        puts "FAILED ctr images pull"
         exec kill -9 $pid
         exit 1
     }
     $prompt {
-	puts "SUCCESS ctr pull"
+	puts "SUCCESS ctr images pull"
 	send "ctr run -t $image test\n"
     }
 }
