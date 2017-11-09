@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:42a92119e1ca10380e0d33e26c0cbcf85b9b3558
   - linuxkit/runc:817fdc592eac6cb7804fa1721a43a7f6e23fb50f
-  - linuxkit/containerd:82be2bbb7cf83bab161ffe2a64624ba1107725ff
+  - linuxkit/containerd:bfb61cc1d26c39cd4b2bc08f7a9963fefa0ef3bf
   - linuxkit/ca-certificates:af4880e78edc28743f7c5e262678c67c6add4c26
 onboot:
   - name: dhcpcd
@@ -18,7 +18,7 @@ onboot:
     image: linuxkit/mount:41685ecc8039643948e5dff46e17584753469a7a
     command: ["/usr/bin/mountie", "/var/lib"]
   - name: test
-    image: linuxkit/test-containerd:9fdfba5efad713b869389f10ee860a11757f9bf2
+    image: linuxkit/test-containerd:a2384bb503c16b791986710a2636c4640bfdb31e
   - name: poweroff
     image: linuxkit/poweroff:280bd01daa8776fbe1f4d912977f1886b8374834
 trust:
