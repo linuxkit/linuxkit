@@ -62,29 +62,40 @@ this option palatable, and provide alternative options to access the
 VMs over the network below.
 
 
-### Accessing services
+### Accessing network services
 
-The simplest way to access networking services exposed by a LinuxKit VM is to use a Docker for Mac container.
+`hyperkit` offers a number of ways for accessing network services
+running inside the LinuxKit VM from the host. These depend on the
+networking mode selected via `-networking`. The default mode is
+`docker-for-mac` where the same VPNkit instance is shared between
+LinuxKit VMs and the VM running as part of Docker for Mac.
 
-For example, to access an ssh server in a LinuxKit VM, create a ssh client container from:
+
+#### Access from the Docker for Mac VM (`-networking docker-for-mac`)
+
+The simplest way to access networking services exposed by a LinuxKit
+VM is to use a Docker for Mac container. For example, to access an ssh
+server in a LinuxKit VM, create a ssh client container from:
+
 ```
 FROM alpine:edge
 RUN apk add --no-cache openssh-client
 ```
+
 and then run
+
 ```
 docker build -t ssh .
 docker run --rm -ti -v ~/.ssh:/root/.ssh  ssh ssh <IP address of VM>
 ```
 
-### Forwarding ports to the host
+#### Forwarding ports with `socat`  (`-networking docker-for-mac`)
 
-Ports can be forwarded to the host using a container with `socat` or with VPNKit which comes with Docker for Mac.
+A `socat` container on Docker for Mac can be used to proxy between the
+LinuxKit VM's ports and localhost.  For example, to expose the redis
+port from the [RedisOS example](../examples/redis-os.yml), use this
+Dockerfile:
 
-#### Port forwarding with `socat`
-A `socat` container can be used to proxy between the LinuxKit VM's ports and
-localhost.  For example, to expose the redis port from the [RedisOS
-example](../examples/redis-os.yml), use this Dockerfile:
 ```
 FROM alpine:edge
 RUN apk add --no-cache socat
@@ -96,29 +107,57 @@ docker build -t socat .
 docker run --rm -t -d -p 6379:6379 socat tcp-listen:6379,reuseaddr,fork tcp:<IP address of VM>:6379
 ```
 
-#### Port forwarding with VPNKit
+#### Port forwarding with VPNKit (`-networking docker-for-mac`)
 
-VPNKit has the general tooling to expose any guest VM port on the host (just
-like it does with containers in Docker for Mac). To enable forwarding, a
-`vpnkit-forwarder` container must be running in the VM. The VM also has to be
-booted with `linuxkit run hyperkit -networking=vpnkit`.
+There is **experimental** support for exposing selected ports of the
+guest on `localhost` using the `-publish` command line option. For
+example, using `-publish 2222:22/tcp` exposes the guest TCP port 22 on
+localhost on port 2222. Multiple `-publish` options can be
+specified. For example, the image build from the [`sshd
+example`](../examples/sshd.yml) can be started with:
 
-VPNKit uses a 9P mount in `/port` for coordination between the components.
-Port forwarding can be manually set up by creating new directories in `/port`
-or by using the `vpnkit-expose-port` tool. More details about the forwarding
-mechanism is available in the [VPNKit
+```
+linuxkit run -publish 2222:22/tcp sshd
+```
+
+and then you can log into the LinuxKit VM with `ssh -p 2222
+root@localhost`.
+
+Note, this mode is **experimental** and may cause the VPNKit instance
+shared with Docker for Mac being confused about which ports are
+currently in use, in particular if the LinuxKit VM does not exit
+gracefully. This can typically be fixed by restarting Docker for Mac.
+
+
+#### Port forwarding with VPNKit (`-networking vpnkit`)
+
+An alternative to the previous method is to start your own copy of
+`vpnkit` (or connect to an already running instance). This can be done
+using the `-networking vpnkit` command line option.
+
+VPNKit uses a 9P mount in `/port` for coordination between
+components. The first VM on a VPNKit instance currently needs mount
+the 9P filesystem and also needs to run the `vpnkit-forwarder` service
+to enable port forwarding to localhost.  A full example with `vpnkit`
+forwarding of `sshd` is available in
+[examples/vpnkit-forwarder.yml](/examples/vpnkit-forwarder.yml).
+
+To run this example with its own instance of VPNKit, use:
+
+```
+linuxkit run -networking vpnkit -publish 2222:22/tcp vpnkit-forwarder
+```
+
+You can then access it via:
+
+```
+ssh -p 2222 root@localhost
+```
+
+More details about the VPNKit forwarding mechanism is available in the
+[VPNKit
 documentation](https://github.com/moby/vpnkit/blob/master/docs/ports.md#signalling-from-the-vm-to-the-host).
 
-To get started, the easiest solution at the moment is to use the
-`vpnkit-expose-port` command to tell the forwarder and `vpnkit` which ports to
-forward. This process requires fewer privileges than `vpnkit-forwarder` and can
-be run in a container without networking.
-
-A full example with `vpnkit` forwarding of `sshd` is available in [examples/vpnkit-forwarder.yml](/examples/vpnkit-forwarder.yml).
-
-After building and running the example you should be able to connect to ssh on port 22 on
-localhost. The port can also be exposed externally by changing the host IP in
-the example to 0.0.0.0.
 
 ## Integration services and Metadata
 
