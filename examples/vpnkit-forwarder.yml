@@ -26,14 +26,6 @@ services:
         - /var/vpnkit:/port
     net: host
     command: ["/vpnkit-forwarder"]
-  - name: vpnkit-expose-port
-    image: linuxkit/vpnkit-forwarder:c7e61d9250de0b21455dc5c8bb885bd8faa31621
-    net: none
-    binds:
-        - /var/vpnkit:/port
-    command: ["/vpnkit-expose-port","-i",
-              "-host-ip","127.0.0.1","-host-port","22",
-              "-container-ip","127.0.0.1","-container-port","22","-no-local-ip"]
 
 files:
   - path: root/.ssh/authorized_keys
