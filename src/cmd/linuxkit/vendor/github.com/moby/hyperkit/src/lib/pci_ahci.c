@@ -797,7 +797,15 @@ next:
 	done += 8;
 	if (elen == 0) {
 		if (done >= len) {
-			ahci_write_fis_d2h(p, slot, cfis, ATA_S_READY | ATA_S_DSC);
+			if (ncq) {
+					if (first)
+							ahci_write_fis_d2h_ncq(p, slot);
+					ahci_write_fis_sdb(p, slot, cfis,
+						ATA_S_READY | ATA_S_DSC);
+			} else {
+					ahci_write_fis_d2h(p, slot, cfis,
+						ATA_S_READY | ATA_S_DSC);
+			}
 			p->pending &= ~(1 << slot);
 			ahci_check_stopped(p);
 			if (!first)
@@ -977,6 +985,7 @@ handle_identify(struct ahci_port *p, int slot, uint8_t *cfis)
 		buf[88] = 0x7f;
 		if (p->xfermode & ATA_UDMA0)
 			buf[88] |= (1 << ((p->xfermode & 7) + 8));
+		buf[93] = (1 | 1 <<14);
 		buf[100] = (uint16_t) sectors;
 		buf[101] = (uint16_t) (sectors >> 16);
 		buf[102] = (uint16_t) (sectors >> 32);
@@ -1725,7 +1734,7 @@ ahci_handle_cmd(struct ahci_port *p, int slot, uint8_t *cfis)
 	case ATA_SEND_FPDMA_QUEUED:
 		if ((cfis[13] & 0x1f) == ATA_SFPDMA_DSM &&
 		    cfis[17] == 0 && cfis[16] == ATA_DSM_TRIM &&
-		    cfis[11] == 0 && cfis[13] == 1) {
+		    cfis[11] == 0 && cfis[3] == 1) {
 			ahci_handle_dsm_trim(p, slot, cfis, 0);
 			break;
 		}
