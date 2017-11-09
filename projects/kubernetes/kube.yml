@@ -47,8 +47,8 @@ files:
       PRETTY_NAME="LinuxKit Kubernetes Project"
   - path: /usr/libexec/kubernetes/kubelet-plugins
     symlink: "/var/lib/kubelet-plugins"
-  - path: /etc/kubeadm/kube-system.init/50-network.yaml
-    source: network.yaml
+  - path: /etc/kubeadm/
+    directory: true
   - path: /etc/sysctl.d/01-kubernetes.conf
     contents: 'net.ipv4.ip_forward = 1'
   - path: /opt/cni

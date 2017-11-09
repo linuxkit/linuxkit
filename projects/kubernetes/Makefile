@@ -1,8 +1,7 @@
 KUBE_RUNTIME ?= docker
-KUBE_NETWORK ?= weave-v2.0.5
+KUBE_NETWORK ?= weave
 
-INIT_YAML ?=
-INIT_YAML += network.yaml
+KUBE_NETWORK_WEAVE ?= v2.0.5
 
 ifeq ($(shell uname -s),"Darwin")
 KUBE_FORMATS ?= iso-efi
@@ -25,21 +24,19 @@ push-container-images:
 
 build-vm-images: kube-master.iso kube-node.iso
 
-# NB cannot use $^ because $(INIT_YAML) is not for consumption by "moby build"
-kube-master.iso: kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml $(INIT_YAML)
-	moby build -name kube-master $(KUBE_FORMAT_ARGS) kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml
+kube-master.iso: kube.yml $(KUBE_RUNTIME).yml $(KUBE_RUNTIME)-master.yml $(KUBE_NETWORK).yml
+	moby build -name kube-master $(KUBE_FORMAT_ARGS) $^
 
-kube-node.iso: kube.yml $(KUBE_RUNTIME).yml
+kube-node.iso: kube.yml $(KUBE_RUNTIME).yml $(KUBE_NETWORK).yml
 	moby build -name kube-node $(KUBE_FORMAT_ARGS) $^
 
-network.yaml: $(KUBE_NETWORK).yaml
-	ln -nf $< $@
+weave.yml: kube-weave.yaml
 
-weave-%.yaml:
-	curl -L -o $@ https://cloud.weave.works/k8s/v1.8/net?v=$*
+kube-weave.yaml:
+	curl -L -o $@ https://cloud.weave.works/k8s/v1.8/net?v=$(KUBE_NETWORK_WEAVE)
 
 clean:
 	rm -f -r \
 	  kube-*-kernel kube-*-cmdline kube-*-state kube-*-initrd.img *.iso \
-	  weave-*.yaml network.yaml
+	  kube-weave.yaml
 	$(MAKE) -C image-cache clean
