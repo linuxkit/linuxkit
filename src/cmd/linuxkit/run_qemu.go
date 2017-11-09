@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -164,7 +164,7 @@ func runQemu(args []string) {
 	qemuContainerized := flags.Bool("containerized", false, "Run qemu in a container")
 
 	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
-	vmUUID := uuid.NewV4()
+	vmUUID := uuid.New()
 
 	// Networking
 	networking := flags.String("networking", qemuNetworkingDefault, "Networking mode. Valid options are 'default', 'user', 'bridge[,name]', tap[,name] and 'none'. 'user' uses QEMUs userspace networking. 'bridge' connects to a preexisting bridge. 'tap' uses a prexisting tap device. 'none' disables networking.`")
