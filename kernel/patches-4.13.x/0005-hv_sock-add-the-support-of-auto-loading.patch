@@ -1,4 +1,4 @@
-From ceddb6362cdf6c7603519796765a637273492957 Mon Sep 17 00:00:00 2001
+From 7e65ab4c0560dc9ac97f4649f4d2a0314669136e Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:35 -0600
 Subject: [PATCH 05/12] hv_sock: add the support of auto-loading
