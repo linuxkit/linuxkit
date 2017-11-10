@@ -97,8 +97,19 @@ storage.  We are working on adding persistent storage support on Packet.
 
 ## Networking
 
+On the baremetal type 2a system (arm64 Cavium Thunder X) the network device driver does not get autoloaded by `mdev`. Please add:
+
+```
+  - name: modprobe
+    image: linuxkit/modprobe:<hash>
+    command: ["modprobe", "nicvf"]
+```
+
+to your YAML files before any containers requiring the network to be up, e.g., the `dhcpcd` container.
+
 Some Packet server types have bonded networks; the current code does
 not support that.
+
 
 ## Integration services and Metadata
 
