@@ -92,16 +92,6 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		return Pkg{}, err
 	}
 
-	if devMode {
-		// If --org is also used then this will be overwritten
-		// by argOrg when we iterate over the provided options
-		// in the fs.Visit block below.
-		pi.Org = os.Getenv("USER")
-		if hash == "" {
-			hash = "dev"
-		}
-	}
-
 	if hashPath == "" {
 		hashPath = pkgPath
 	} else {
@@ -127,6 +117,16 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 
 	if pi.Image == "" {
 		return Pkg{}, fmt.Errorf("Image field is required")
+	}
+
+	if devMode {
+		// If --org is also used then this will be overwritten
+		// by argOrg when we iterate over the provided options
+		// in the fs.Visit block below.
+		pi.Org = os.Getenv("USER")
+		if hash == "" {
+			hash = "dev"
+		}
 	}
 
 	// Go's flag package provides no way to see if a flag was set
