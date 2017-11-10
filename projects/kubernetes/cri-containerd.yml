@@ -1,6 +1,6 @@
 services:
   - name: cri-containerd
-    image: linuxkitprojects/cri-containerd:7059f247c4135c75722047a2ce2fe6119a0e1681
+    image: linuxkitprojects/cri-containerd:72863deaa81a749fe8ff72bd69f863bab719aa06
 files:
   - path: /etc/kubelet.sh.conf
     contents: |

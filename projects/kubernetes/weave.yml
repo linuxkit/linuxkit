@@ -1,0 +1,3 @@
+files:
+  - path: /etc/kubeadm/kube-system.init/50-weave.yaml
+    source: weave-sa.yaml
