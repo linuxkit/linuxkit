@@ -395,11 +395,7 @@ func CreateDiskImage(location string, sizeMB int) error {
 	}
 	defer f.Close()
 
-	buf := make([]byte, 1048676)
-	for i := 0; i < sizeMB; i++ {
-		f.Write(buf)
-	}
-	return nil
+	return f.Truncate(int64(sizeMB) * int64(1024) * int64(1024))
 }
 
 func intArrayToString(i []int, sep string) string {

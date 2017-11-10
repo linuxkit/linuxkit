@@ -13,7 +13,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/satori/go.uuid"
+	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -164,7 +164,7 @@ func runQemu(args []string) {
 	qemuContainerized := flags.Bool("containerized", false, "Run qemu in a container")
 
 	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
-	vmUUID := uuid.NewV4()
+	vmUUID := uuid.New()
 
 	// Networking
 	networking := flags.String("networking", qemuNetworkingDefault, "Networking mode. Valid options are 'default', 'user', 'bridge[,name]', tap[,name] and 'none'. 'user' uses QEMUs userspace networking. 'bridge' connects to a preexisting bridge. 'tap' uses a prexisting tap device. 'none' disables networking.`")
@@ -618,85 +618,24 @@ func discoverBackend(config QemuConfig) QemuConfig {
 	return config
 }
 
-type multipleFlag []string
-
-type publishedPorts struct {
-	guest    int
-	host     int
-	protocol string
-}
-
-func (f *multipleFlag) String() string {
-	return "A multiple flag is a type of flag that can be repeated any number of times"
-}
-
-func (f *multipleFlag) Set(value string) error {
-	*f = append(*f, value)
-	return nil
-}
-
-func splitPublish(publish string) (publishedPorts, error) {
-	p := publishedPorts{}
-	slice := strings.Split(publish, ":")
-
-	if len(slice) < 2 {
-		return p, fmt.Errorf("Unable to parse the ports to be published, should be in format <host>:<guest> or <host>:<guest>/<tcp|udp>")
-	}
-
-	hostPort, err := strconv.Atoi(slice[0])
-
-	if err != nil {
-		return p, fmt.Errorf("The provided hostPort can't be converted to int")
-	}
-
-	right := strings.Split(slice[1], "/")
-
-	protocol := "tcp"
-	if len(right) == 2 {
-		protocol = strings.TrimSpace(strings.ToLower(right[1]))
-	}
-
-	if protocol != "tcp" && protocol != "udp" {
-		return p, fmt.Errorf("Provided protocol is not valid, valid options are: udp and tcp")
-	}
-	guestPort, err := strconv.Atoi(right[0])
-
-	if err != nil {
-		return p, fmt.Errorf("The provided guestPort can't be converted to int")
-	}
-
-	if hostPort < 1 || hostPort > 65535 {
-		return p, fmt.Errorf("Invalid hostPort: %d", hostPort)
-	}
-
-	if guestPort < 1 || guestPort > 65535 {
-		return p, fmt.Errorf("Invalid guestPort: %d", guestPort)
-	}
-
-	p.guest = guestPort
-	p.host = hostPort
-	p.protocol = protocol
-	return p, nil
-}
-
 func buildQemuForwardings(publishFlags multipleFlag, containerized bool) (string, error) {
 	if len(publishFlags) == 0 {
 		return "", nil
 	}
 	var forwardings string
 	for _, publish := range publishFlags {
-		p, err := splitPublish(publish)
+		p, err := NewPublishedPort(publish)
 		if err != nil {
 			return "", err
 		}
 
-		hostPort := p.host
-		guestPort := p.guest
+		hostPort := p.Host
+		guestPort := p.Guest
 
 		if containerized {
 			hostPort = guestPort
 		}
-		forwardings = fmt.Sprintf("%s,hostfwd=%s::%d-:%d", forwardings, p.protocol, hostPort, guestPort)
+		forwardings = fmt.Sprintf("%s,hostfwd=%s::%d-:%d", forwardings, p.Protocol, hostPort, guestPort)
 	}
 
 	return forwardings, nil
@@ -705,11 +644,11 @@ func buildQemuForwardings(publishFlags multipleFlag, containerized bool) (string
 func buildDockerForwardings(publishedPorts []string) ([]string, error) {
 	pmap := []string{}
 	for _, port := range publishedPorts {
-		s, err := splitPublish(port)
+		s, err := NewPublishedPort(port)
 		if err != nil {
 			return nil, err
 		}
-		pmap = append(pmap, "-p", fmt.Sprintf("%d:%d/%s", s.host, s.guest, s.protocol))
+		pmap = append(pmap, "-p", fmt.Sprintf("%d:%d/%s", s.Host, s.Guest, s.Protocol))
 	}
 	return pmap, nil
 }
