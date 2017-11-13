@@ -7,10 +7,10 @@ the official LinuxKit kernels is at
 [linuxkit/kernels](https://hub.docker.com/r/linuxkit/kernel/).
 
 The LinuxKit kernels are based on the latest stable releases and are
-updated frequently to include bug and security fixes.  For some
+updated frequently to include bug and security fixes. For some
 kernels we do carry additional patches, which are mostly back-ported
 fixes from newer kernels. The full kernel source with patches can be
-found on [github](https://github.com/linuxkit/linux). Each kernel
+found on [GitHub](https://github.com/linuxkit/linux). Each kernel
 image is tagged with the full kernel version (e.g.,
 `linuxkit/kernel:4.9.33`) and with the full kernel version plus the
 hash of the files it was created from (git tree hash of the `./kernel`
@@ -24,7 +24,7 @@ the kernel packages.
 
 In addition to the official kernel images, LinuxKit offers the ability
 to build bootable Linux images with kernels from various
-distributions. We mostly offer this mostly for testing
+distributions. We offer this mostly for testing
 purposes. "Foreign" kernel images are created by re-packing the native
 kernel packages into hub images. The hub images are typically tagged
 with the kernel version.
@@ -36,7 +36,6 @@ In summary, LinuxKit offers a choice of the following kernels:
 - [linuxkit/kernel-debian](https://hub.docker.com/r/linuxkit/kernel-debian/): Selected Debian kernels.
 - [linuxkit/kernel-centos](https://hub.docker.com/r/linuxkit/kernel-centos/): Selected CentOS kernels.
 - [linuxkit/kernel-fedora](https://hub.docker.com/r/linuxkit/kernel-fedora/): Selected Fedora kernels.
-
 
 ## Loading kernel modules
 
@@ -80,7 +79,6 @@ stage and performs a `insmod` as the entry point. You can add this
 package to the `onboot` section in your YAML
 file. [kmod.yml](../test/cases/020_kernel/010_kmod_4.9.x/kmod.yml)
 contains an example for the configuration.
-
 
 ## Modifying the kernel config
 
@@ -172,7 +170,6 @@ additional kernel config options enabled.
 If you want additional patches being applied, just copy them to the
 `patches-4.X.x` and the build process will pick them up.
 
-
 ## Working with Linux kernel patches for LinuxKit
 
 We may apply patches to the Linux kernel used in LinuxKit, primarily to
@@ -201,7 +198,6 @@ If you want to add or remove patches currently used, please also ping
 ensure that patches are carried forward if we update the kernel in the
 future.
 
-
 ### Preparation
 
 Patches are applied to point releases of the linux stable tree. You
@@ -224,7 +220,6 @@ LINUXSRC=~/src/linuxkit/linux
 ```
 
 to refer to the location of the LinuxKit and Linux kernel trees.
-
 
 ### Updating the patches to a new kernel version
 
@@ -265,7 +260,6 @@ git rebase --onto ${NEWTAG} ${NEWTAG} ${NEWTAG}-linuxkit
 
 Again, resolve any conflicts as described above.
 
-
 ### Adding/Removing patches
 
 If you want to add or remove patches make sure you have an up-to-date
@@ -297,7 +291,6 @@ git format-patch -o $KITSRC/kernel/patches-4.9.x v4.9.15..HEAD
 
 Then, create a PR for LinuxKit.
 
-
 ## Using `perf`
 
 The `kernel-perf` package contains a statically linked `perf` binary
@@ -316,7 +309,6 @@ nsenter -m/proc/1/ns/mnt ash
 
 Alternatively, you can add the `kernel-perf` package as stage in a
 multi-stage build to add it to a custom package.
-
 
 ## ZFS
 
