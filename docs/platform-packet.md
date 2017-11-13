@@ -29,6 +29,11 @@ device ID on subsequent `linuxkit run` invocations to re-use an
 existing machine. These subsequent runs will update the iPXE data so
 you can boot alternative kernels on an existing machine.
 
+There is an example YAML file for [x86_64](../examples/packet.yml) and
+an additional YAML for [arm64](../examples/packet.arm64.yml) servers
+which provide both access to the serial console and via ssh and
+configures bonding for network devices via metadata (if supported).
+
 **Note**: The update of the iPXE configuration sometimes may take some
 time and the first boot may fail. Hitting return on the console to
 retry the boot typically fixes this.
@@ -46,22 +51,31 @@ If you don't have a public HTTP server at hand, you can use the
 be run on another Packet machine or be made accessible with tools
 like [ngrok](https://ngrok.com/).
 
-For example, to boot the toplevel [linuxkit.yml](../linuxkit.yml)
-example with a local HTTP server:
+For example, to boot the [example](../examples/packet.net)
+with a local HTTP server:
 
 ```sh
-moby build linuxkit.yml
+moby build packet.yml
 # run the web server
 # run 'ngrok http 8080' in another window
-PACKET_API_KEY=<API key> linuxkit run packet -serve :8080 -base-url http://9b828514.ngrok.io -project-id <Project ID> linuxkit
+PACKET_API_KEY=<API key> PACKET_PROJECT_ID=<Project ID> \
+linuxkit run packet -serve :8080 -base-url <ngrok url> packet
 ```
 
-To boot a `arm64` kernel on a Type 2a machine (`-machine
-baremetal_2a`) you currently need to un-compress both the kernel and
+To boot a `arm64` image for Type 2a machine (`-machine
+baremetal_2a`) you currently need build using `moby build packet.yml packet.arm64.yml` and then un-compress both the kernel and
 the initrd before booting, e.g:
+
+```sh
+mv packet-initrd.img packet-initrd.img.gz && gzip -d packet-initrd.img.gz
+mv packet-kernel packet-kernel.gz && gzip -d packet-kernel.gz
 ```
-mv linuxkit-initrd.img linuxkit-initrd.img.gz && gzip -d linuxkit-initrd.img.gz
-mv linuxkit-kernel.img linuxkit-kernel.img.gz && gzip -d linuxkit-kernel.img.gz
+
+The LinuxKit image can then be booted with:
+
+```sh
+PACKET_API_KEY=<API key> PACKET_PROJECT_ID=<Project ID> \
+linuxkit run packet -machine baremetal_2a  -serve :8080 -base-url -base-url <ngrok url> packet
 ```
 
 **Note**: It may take several minutes to deploy a new server. If you

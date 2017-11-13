@@ -1,6 +1,6 @@
 kernel:
   image: linuxkit/kernel:4.9.61
-  cmdline: "console=ttyS1"
+  cmdline: "console=ttyS1 console=ttyAMA0"
 init:
   - linuxkit/init:42a92119e1ca10380e0d33e26c0cbcf85b9b3558
   - linuxkit/runc:817fdc592eac6cb7804fa1721a43a7f6e23fb50f
@@ -21,6 +21,10 @@ onboot:
 services:
   - name: rngd
     image: linuxkit/rngd:842e5e8ece7934f0cab9fd0027b595ff3471e5b9
+  - name: getty
+    image: linuxkit/getty:6af22c32c98536a79230eef000e9abd06b037faa
+    env:
+     - INSECURE=true
   - name: sshd
     image: linuxkit/sshd:b7f21ef1b13300a994e35eac3644e4f84f0ada8a
 trust:
