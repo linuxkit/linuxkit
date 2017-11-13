@@ -107,8 +107,8 @@ On the baremetal type 2a system (arm64 Cavium Thunder X) the network device driv
 
 to your YAML files before any containers requiring the network to be up, e.g., the `dhcpcd` container.
 
-Some Packet server types have bonded networks; the current code does
-not support that.
+Some Packet server types have bonded networks; the `metadata` package has support for setting
+these up, and also for adding additional IP addresses.
 
 
 ## Integration services and Metadata
