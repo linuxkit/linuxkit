@@ -10,7 +10,13 @@ if [ -f /etc/kubeadm/kubeadm.yaml ]; then
 else
     kubeadm init --skip-preflight-checks --kubernetes-version @KUBERNETES_VERSION@ $@
 fi
-for i in /etc/kubeadm/kube-system.init/*.yaml ; do
+
+if [ -d /var/config/cni/etc/net.d ]; then
+  cp /var/config/cni/etc/net.d/* /var/lib/cni/etc/net.d/
+fi
+# sorting by basename relies on the dirnames having the same number of directories
+YAML=$(ls -1 /var/config/kube-system.init/*.yaml /etc/kubeadm/kube-system.init/*.yaml 2>/dev/null | sort --field-separator=/ --key=5)
+for i in ${YAML}; do
     n=$(basename "$i")
     if [ -e "$i" ] ; then
 	if [ ! -s "$i" ] ; then # ignore zero sized files
