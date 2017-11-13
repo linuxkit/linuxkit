@@ -113,6 +113,8 @@ file:
     metadata: yaml
 ```
 
+Because a `tmpfs` is mounted onto `/var`, `/run`, and `/tmp` by default, the `tmpfs` mounts will shadow anything specified in `files` section for those directories.
+
 ## `trust`
 
 The `trust` section specifies which build components are to be cryptographically verified with
