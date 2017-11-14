@@ -14,9 +14,9 @@ import (
 
 const (
 	isoBios    = "linuxkit/mkimage-iso-bios:165b051322578cb0c2a4f16253b20f7d2797a502"
-	isoEfi     = "linuxkit/mkimage-iso-efi:dc12bc6827f84334b02d1c70599acf80b840c126"
+	isoEfi     = "linuxkit/mkimage-iso-efi:43592c9b316b036338c4db9f90aada37b48415dc"
 	rawBios    = "linuxkit/mkimage-raw-bios:eac4dcb78f837618e7e009060146977c2adabe19"
-	rawEfi     = "linuxkit/mkimage-raw-efi:f2bae7a502598d6b78c2f0b6de77f207df27add7"
+	rawEfi     = "linuxkit/mkimage-raw-efi:167441e223c1c131dac349deb67966d400066e04"
 	gcp        = "linuxkit/mkimage-gcp:d1883809d212ce048f60beb0308a4d2b14c256af"
 	vhd        = "linuxkit/mkimage-vhd:2a31f2bc91c1d247160570bd17868075e6c0009a"
 	vmdk       = "linuxkit/mkimage-vmdk:df02a4fabd87a82209fbbacebde58c4440d2daf0"
