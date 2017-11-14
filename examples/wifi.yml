@@ -1,0 +1,37 @@
+kernel:
+  image: <custom kernel>
+  cmdline: "console=tty0"
+init:
+  - linuxkit/init:<hash>
+  - linuxkit/runc:<hash>
+  - linuxkit/containerd:<hash>
+onboot:
+  - name: modprobe
+    image: linuxkit/modprobe:<hash>
+    command: ["modprobe", "<driver>"]
+services:
+  - name: wpa_supplicant
+    image: linuxkit/wpa_supplicant:<hash>
+    binds:
+     - /etc/wpa_supplicant:/etc/wpa_supplicant
+    command: ["/sbin/wpa_supplicant", "-i", "wlan0", "-c", "/etc/wpa_supplicant/wpa_supplicant.conf"]
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:<hash>
+    command: ["/sbin/dhcpcd", "wlan0"]
+  - name: getty
+    image: linuxkit/getty:<hash>
+    env:
+     - INSECURE=true
+files:
+files:
+  - path: /lib/firmware/<firmware>
+    source: <firmware>
+  - path: etc/wpa_supplicant/wpa_supplicant.conf
+    contents: |
+      network={
+        ssid="<ssid>"
+        psk="<password>"
+      }
+trust:
+  org:
+    - linuxkit
