@@ -57,6 +57,9 @@ func runHyperKit(args []string) {
 	isoBoot := flags.Bool("iso", false, "Boot image is an ISO")
 	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
+	// Hyperkit settings
+	consoleToFile := flags.Bool("console-file", false, "Output the console to a tty file")
+
 	// Paths and settings for UEFI firmware
 	// Note, the default uses the firmware shipped with Docker for Mac
 	fw := flags.String("fw", "/Applications/Docker.app/Contents/Resources/uefi/UEFI.fd", "Path to OVMF firmware for UEFI boot")
@@ -195,6 +198,10 @@ func runHyperKit(args []string) {
 	h, err := hyperkit.New(*hyperkitPath, "", *state)
 	if err != nil {
 		log.Fatalln("Error creating hyperkit: ", err)
+	}
+
+	if *consoleToFile {
+		h.Console = hyperkit.ConsoleFile
 	}
 
 	for i, d := range disks {
