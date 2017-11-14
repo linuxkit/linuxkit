@@ -37,6 +37,7 @@ In summary, LinuxKit offers a choice of the following kernels:
 - [linuxkit/kernel-centos](https://hub.docker.com/r/linuxkit/kernel-centos/): Selected CentOS kernels.
 - [linuxkit/kernel-fedora](https://hub.docker.com/r/linuxkit/kernel-fedora/): Selected Fedora kernels.
 
+
 ## Loading kernel modules
 
 Most kernel modules are autoloaded with `mdev` but if you need to `modprobe` a module manually you can use the `modprobe` package in the `onboot` section like this:
@@ -45,6 +46,7 @@ Most kernel modules are autoloaded with `mdev` but if you need to `modprobe` a m
     image: linuxkit/modprobe:<hash>
     command: ["modprobe", "-a", "iscsi_tcp", "dm_multipath"]
 ```
+
 
 ## Compiling external kernel modules
 
@@ -79,6 +81,7 @@ stage and performs a `insmod` as the entry point. You can add this
 package to the `onboot` section in your YAML
 file. [kmod.yml](../test/cases/020_kernel/010_kmod_4.9.x/kmod.yml)
 contains an example for the configuration.
+
 
 ## Modifying the kernel config
 
@@ -115,6 +118,7 @@ make ARCH=arm64 defconfig
 make ARCH=arm64 oldconfig # or menuconfig
 ```
 
+
 **Note**: We try to keep the differences between kernel versions and
 architectures to a minimum, so if you make changes to one
 configuration also try to apply it to the others. The script [kconfig-split.py](../scripts/kconfig-split.py) can be used to compare kernel config files. For example:
@@ -125,6 +129,7 @@ configuration also try to apply it to the others. The script [kconfig-split.py](
 
 creates a file with the common and the x86_64 and arm64 specific
 config options for the 4.9.x kernel series.
+
 
 ## Building and using custom kernels
 
@@ -170,6 +175,7 @@ additional kernel config options enabled.
 If you want additional patches being applied, just copy them to the
 `patches-4.X.x` and the build process will pick them up.
 
+
 ## Working with Linux kernel patches for LinuxKit
 
 We may apply patches to the Linux kernel used in LinuxKit, primarily to
@@ -198,6 +204,7 @@ If you want to add or remove patches currently used, please also ping
 ensure that patches are carried forward if we update the kernel in the
 future.
 
+
 ### Preparation
 
 Patches are applied to point releases of the linux stable tree. You
@@ -220,6 +227,7 @@ LINUXSRC=~/src/linuxkit/linux
 ```
 
 to refer to the location of the LinuxKit and Linux kernel trees.
+
 
 ### Updating the patches to a new kernel version
 
@@ -260,6 +268,7 @@ git rebase --onto ${NEWTAG} ${NEWTAG} ${NEWTAG}-linuxkit
 
 Again, resolve any conflicts as described above.
 
+
 ### Adding/Removing patches
 
 If you want to add or remove patches make sure you have an up-to-date
@@ -278,6 +287,7 @@ DCO lines, e.g.:
 Origin: https://patchwork.ozlabs.org/patch/622404/
 ```
 
+
 ### Export patches to LinuxKit
 
 To export patches to LinuxKit, you should use `git format-patch` from
@@ -290,6 +300,7 @@ git format-patch -o $KITSRC/kernel/patches-4.9.x v4.9.15..HEAD
 ```
 
 Then, create a PR for LinuxKit.
+
 
 ## Using `perf`
 
@@ -309,6 +320,7 @@ nsenter -m/proc/1/ns/mnt ash
 
 Alternatively, you can add the `kernel-perf` package as stage in a
 multi-stage build to add it to a custom package.
+
 
 ## ZFS
 
