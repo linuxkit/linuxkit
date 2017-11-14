@@ -27,6 +27,11 @@ services:
      - INSECURE=true
   - name: sshd
     image: linuxkit/sshd:b7f21ef1b13300a994e35eac3644e4f84f0ada8a
+files:
+  - path: root/.ssh/authorized_keys
+    source: ~/.ssh/id_rsa.pub
+    mode: "0600"
+    optional: true
 trust:
   org:
     - linuxkit
