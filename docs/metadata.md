@@ -22,19 +22,25 @@ directories to be created and the directories are populated with files.
 For example, the following userdata file:
 ```JSON
 {
-    "ssh" : {
-        "sshd_config" : {
-            "perm" : "0600",
-            "content": "PermitRootLogin yes\nPasswordAuthentication no"
-        }
-    },
-    "foo" : {
-        "bar" : "foobar",
-        "baz" : {
-            "perm": "0600",
-            "content": "bar"
-        }
+  "ssh": {
+    "entries": {
+      "sshd_config": {
+        "perm": "0600",
+        "content": "PermitRootLogin yes\nPasswordAuthentication no"
+      }
     }
+  },
+  "foo": {
+    "entries": {
+      "bar": {
+        "content": "foobar"
+      },
+      "baz": {
+        "perm": "0600",
+        "content": "bar"
+      }
+    }
+  }
 }
 ```
 will generate the following files:
@@ -44,16 +50,15 @@ will generate the following files:
 /var/config/foo/baz
 ```
 
-Each file can either be:
+The JSON file consists of a map from `name` to an entry object. Each entry object has the following fields:
+- `content`: if present then the entry is a file. The value is a string containing the desired contents of the file.
+- `entries`: if present then the entry is a directory. The value is a map from `name` to entry objects.
+- `perm`: the permissions to create the file with.
 
-- a simple string (as for `foo/bar` above) in which case the file will
-  be created with the given contents and read/write (but not execute)
-  permissions for user and read permissions for group and everyone else (in octal format `0644`).
-- a map (as for `ssh/sshd_config` and `foo/baz` above) with the
-  following mandatory keys:
-  - `content`: the contents of the file.
-  - `perm`: the permissions to create the file with.
-
+The `content` and `entries` fields are mutually exclusive, it is an error to include both, 
+one or the other _must_ be present. 
+The file or directory's name in each case is the same as the key which referred to that entry.
+ 
 This hierarchy can then be used by individual containers, who can bind
 mount the config sub-directory into their namespace where it is
 needed.
