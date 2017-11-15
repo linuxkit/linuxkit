@@ -13,13 +13,13 @@ KUBE_FORMAT_ARGS := $(patsubst %,-format %,$(KUBE_FORMATS))
 all: build-container-images build-vm-images
 
 build-container-images:
-	linuxkit pkg build kubernetes
+	linuxkit pkg build kubelet
 
 build-cache-images:
 	$(MAKE) -C image-cache build
 
 push-container-images:
-	linuxkit pkg push kubernetes
+	linuxkit pkg push kubelet
 	$(MAKE) -C image-cache push
 
 build-vm-images: kube-master.iso kube-node.iso

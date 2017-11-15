@@ -28,14 +28,10 @@ if [ $# -eq 0 ] ; then
     # then we configure for auto init. If it is completely unset then
     # we do not.
     if [ -n "${KUBE_MASTER_AUTOINIT+x}" ] ; then
-	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"init\": \"${KUBE_MASTER_AUTOINIT}\""
+	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"init\": { \"content\": \"${KUBE_MASTER_AUTOINIT}\" }"
     fi
     if [ "${KUBE_MASTER_UNTAINT}" = "y" ] ; then
-	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"untaint-master\": \"\""
-    fi
-
-    if [ -n "${kubeadm_data}" ] ; then
-	data="{ \"kubeadm\": { ${kubeadm_data} } }"
+	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"untaint-master\": { \"content\": \"\" }"
     fi
 
     state="kube-master-state"
@@ -60,7 +56,7 @@ elif [ $# -ge 1 ] ; then
     shift
 
     if [ $# -ge 1 ] ; then
-    	data="{\"kubeadm\": {\"join\": \"${*}\"} }"
+	kubeadm_data="\"join\": { \"content\": \"${*}\" }"
     fi
 
     state="kube-${name}-state"
@@ -76,6 +72,7 @@ else
     echo "   ${0} <node> <join_args>"
     exit 1
 fi
+
 set -x
 if [ -n "${KUBE_CLEAR_STATE}" ] ; then
     rm -rf "${state}"
@@ -84,4 +81,10 @@ if [ -n "${KUBE_CLEAR_STATE}" ] ; then
 	echo -n "${KUBE_MAC}" > "${state}"/mac-addr
     fi
 fi
-linuxkit run ${KUBE_RUN_ARGS} -networking ${KUBE_NETWORKING} -cpus ${KUBE_VCPUS} -mem ${KUBE_MEM} -state "${state}" -disk size=${KUBE_DISK} -data "${data}" ${uefi} "${img}${suffix}"
+
+touch $state/metadata.json
+if [ -n "${kubeadm_data}" ] ; then
+    echo "{  \"kubeadm\": { \"entries\": { ${kubeadm_data} } } }" > $state/metadata.json
+fi
+
+linuxkit run ${KUBE_RUN_ARGS} -networking ${KUBE_NETWORKING} -cpus ${KUBE_VCPUS} -mem ${KUBE_MEM} -state "${state}" -disk size=${KUBE_DISK} -data $state/metadata.json ${uefi} "${img}${suffix}"
