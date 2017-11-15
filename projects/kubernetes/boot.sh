@@ -73,10 +73,6 @@ else
     exit 1
 fi
 
-if [ -n "${kubeadm_data}" ] ; then
-    data="{  \"kubeadm\": { \"entries\": { ${kubeadm_data} } } }"
-fi
-
 set -x
 if [ -n "${KUBE_CLEAR_STATE}" ] ; then
     rm -rf "${state}"
@@ -85,4 +81,10 @@ if [ -n "${KUBE_CLEAR_STATE}" ] ; then
 	echo -n "${KUBE_MAC}" > "${state}"/mac-addr
     fi
 fi
-linuxkit run ${KUBE_RUN_ARGS} -networking ${KUBE_NETWORKING} -cpus ${KUBE_VCPUS} -mem ${KUBE_MEM} -state "${state}" -disk size=${KUBE_DISK} -data "${data}" ${uefi} "${img}${suffix}"
+
+touch $state/metadata.json
+if [ -n "${kubeadm_data}" ] ; then
+    echo "{  \"kubeadm\": { \"entries\": { ${kubeadm_data} } } }" > $state/metadata.json
+fi
+
+linuxkit run ${KUBE_RUN_ARGS} -networking ${KUBE_NETWORKING} -cpus ${KUBE_VCPUS} -mem ${KUBE_MEM} -state "${state}" -disk size=${KUBE_DISK} -data $state/metadata.json ${uefi} "${img}${suffix}"
