@@ -3,10 +3,11 @@ KUBE_NETWORK ?= weave
 
 KUBE_NETWORK_WEAVE ?= v2.0.5
 
-ifeq ($(shell uname -s),"Darwin")
+ifeq ($(shell uname -s),Darwin)
 KUBE_FORMATS ?= iso-efi
-endif
+else
 KUBE_FORMATS ?= iso-bios
+endif
 
 KUBE_FORMAT_ARGS := $(patsubst %,-format %,$(KUBE_FORMATS))
 
