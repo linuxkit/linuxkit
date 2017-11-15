@@ -15,6 +15,14 @@ start_getty() {
 	term="linux"
 	[ "$speed" = "$1" ] && speed=115200
 
+	# did we already process this tty?
+	if $(echo "${PROCESSEDTTY}" | grep -q -w "$tty"); then
+		echo "getty: already processed tty for $tty, not starting twice" | tee /dev/console
+		return
+	fi
+	# now indicate that we are processing it
+	PROCESSEDTTY="${PROCESSEDTTY} ${tty}"
+
 	# does the device even exist?
 	if [ ! -c /dev/$tty ]; then
 		echo "getty: cmdline has console=$tty but /dev/$tty is not a character device; not starting getty for $tty" | tee /dev/console
@@ -44,6 +52,7 @@ start_getty() {
 		echo "getty: cmdline has console=$tty but does not exist in $securetty; will not be able to log in as root on this tty $tty." | tee /dev/$tty
 	fi
 	# respawn forever
+	echo "getty: starting getty for $tty"  | tee /dev/$tty
 	infinite_loop setsid.getty -w /sbin/agetty $loginargs $line $speed $tty $term &
 }
 
@@ -54,6 +63,8 @@ if [ -z "$INITGETTY" ]; then
 export PS1="(ns: getty) $PS1"
 EOF
 fi
+
+PROCESSEDTTY=
 
 # check if we have /etc/getty.shadow
 ROOTSHADOW=/hostroot/etc/getty.shadow
