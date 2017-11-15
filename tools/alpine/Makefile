@@ -4,25 +4,10 @@ ORG?=linuxkit
 IMAGE=alpine
 DEPS=packages
 
-# The logic for content trust is a bit convoluted because:
-# - The arm64 base image is currently not signed so we need to pull it
-#   with content trust disabled. This is controlled by
-#   DOCKER_CONTENT_PULL.
-# - 'docker build' with the FROM image supplied as environment
-#   variable *and* with DOCKER_CONTENT_TRUST=1 currently does not work
-#   (https://github.com/moby/moby/issues/34199). We therefor build
-#   with DOCKER_CONTENT_TRUST explicitly set to 0. However, we pull
-#   the base image just before with content trust enabled (if
-#   supported, see above).
-# - By default we always pull and push the linuxkit/alpine image with
-#   content trust, unless explicitly disabled with NOTRUST. Once the
-#   above issues are resolved, this will be the only mechanism to control
-#   content trust.
-ifdef NOTRUST
-DOCKER_CONTENT_PULL=0
-else
-DOCKER_CONTENT_PULL=1
+ifeq ($(DOCKER_CONTENT_TRUST),)
+ifndef NOTRUST
 export DOCKER_CONTENT_TRUST=1
+endif
 endif
 
 ARCH := $(shell uname -m)
@@ -41,7 +26,7 @@ show-tag:
 	@sed -n -e '1s/# \(.*\/.*:[0-9a-f]\{40\}\)/\1/p;q' versions.$(ARCH)
 
 iid: Dockerfile Makefile $(DEPS)
-	DOCKER_CONTENT_TRUST=1 docker build --no-cache --iidfile iid .
+	docker build --no-cache --iidfile iid .
 
 hash: Makefile iid
 	docker run --rm $(shell cat iid) sh -c 'echo Dockerfile /lib/apk/db/installed $$(find /mirror -name '*.apk' -type f) $$(find /go/bin -type f) | xargs cat | sha1sum' | sed 's/ .*//' | sed 's/$$/$(SUFFIX)/'> $@
