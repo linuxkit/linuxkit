@@ -20,7 +20,7 @@ set -e
 [ "$(uname -s)" = "Darwin" ] && KUBE_EFI=1
 
 suffix=".iso"
-[ -n "${KUBE_EFI}" ] && suffix="-efi.iso" && uefi="--uefi"
+[ -n "${KUBE_EFI}" ] && uefi="--uefi"
 
 if [ $# -eq 0 ] ; then
     img="kube-master"
