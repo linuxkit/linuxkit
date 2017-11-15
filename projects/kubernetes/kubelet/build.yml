@@ -1,5 +1,5 @@
 org: linuxkitprojects
-image: kubernetes
+image: kubelet
 network: true
 disable-content-trust: true
 arches:
