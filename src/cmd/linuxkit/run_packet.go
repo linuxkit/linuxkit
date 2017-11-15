@@ -14,6 +14,7 @@ import (
 	"os/user"
 	"path"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/packethost/packngo"
@@ -129,7 +130,12 @@ func runPacket(args []string) {
 	userData += "dhcp\n"
 	userData += fmt.Sprintf("set base-url %s\n", url)
 	if *machineFlag != "baremetal_2a" {
-		userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro serial console=ttyS1,115200 %s\n", cmdline)
+		var tty string
+		// x86_64 Packet machines have console on non standard ttyS1 which is not in most examples
+		if !strings.Contains(cmdline, "console=ttyS1") {
+			tty = "console=ttyS1,115200"
+		}
+		userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro serial %s %s\n", tty, cmdline)
 		userData += fmt.Sprintf("kernel ${base-url}/%s-kernel ${kernel-params}\n", name)
 		userData += fmt.Sprintf("initrd ${base-url}/%s-initrd.img\n", name)
 	} else {
