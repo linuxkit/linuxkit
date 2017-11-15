@@ -28,10 +28,10 @@ if [ $# -eq 0 ] ; then
     # then we configure for auto init. If it is completely unset then
     # we do not.
     if [ -n "${KUBE_MASTER_AUTOINIT+x}" ] ; then
-	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"init\": \"${KUBE_MASTER_AUTOINIT}\""
+	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"init\": { \"content\": \"${KUBE_MASTER_AUTOINIT}\" }"
     fi
     if [ "${KUBE_MASTER_UNTAINT}" = "y" ] ; then
-	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"untaint-master\": \"\""
+	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"untaint-master\": { \"content\": \"\" }"
     fi
 
     state="kube-master-state"
@@ -56,7 +56,7 @@ elif [ $# -ge 1 ] ; then
     shift
 
     if [ $# -ge 1 ] ; then
-	kubeadm_data="\"join\": \"${*}\""
+	kubeadm_data="\"join\": { \"content\": \"${*}\" }"
     fi
 
     state="kube-${name}-state"
@@ -74,7 +74,7 @@ else
 fi
 
 if [ -n "${kubeadm_data}" ] ; then
-    data="{ \"kubeadm\": { ${kubeadm_data} } }"
+    data="{  \"kubeadm\": { \"entries\": { ${kubeadm_data} } } }"
 fi
 
 set -x
