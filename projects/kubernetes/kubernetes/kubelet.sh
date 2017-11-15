@@ -21,6 +21,11 @@ if [ ! -e /var/lib/cni/.opt.defaults-extracted ] ; then
     touch /var/lib/cni/.opt.defaults-extracted
 fi
 
+if [ -d /var/config/cni/etc/net.d ]; then
+    mkdir -p /var/lib/cni/etc/net.d
+    cp /var/config/cni/etc/net.d/* /var/lib/cni/etc/net.d/
+fi
+
 await=/etc/kubernetes/kubelet.conf
 
 if [ -f "/etc/kubernetes/kubelet.conf" ] ; then
