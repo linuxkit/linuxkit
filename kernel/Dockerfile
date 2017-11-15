@@ -37,11 +37,9 @@ ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VE
 ENV KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/v4.x/sha256sums.asc
 ENV KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.sign
 
-ENV WIREGUARD_VERSION=0.0.20171101
-ENV WIREGUARD_SHA256=096b6482a65e566c7bf8c059f5ee6aadb2de565b04b6d810c685f1c377540325
+ENV WIREGUARD_VERSION=0.0.20171111
+ENV WIREGUARD_SHA256=d9347786a9406ac276d86321ca64aadb1f0639cb0582c6e0519c634cf6e81157
 ENV WIREGUARD_URL=https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${WIREGUARD_VERSION}.tar.xz
-# XXX REMOVE FOR NEXT RELEASE
-ENV WIREGUARD_PATCH=https://git.zx2c4.com/WireGuard/patch/?id=cc310a5dd1899417971e993d61d1230b14fe4f87
 
 # We copy the entire directory. This copies some unneeded files, but
 # allows us to check for the existence /patches-${KERNEL_SERIES} to
@@ -111,8 +109,6 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
 RUN curl -sSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
     echo "${WIREGUARD_SHA256}  /wireguard.tar.xz" | sha256sum -c - && \
     tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "WireGuard-${WIREGUARD_VERSION}/src" && \
-    curl -sSL -o /wireguard.patch "${WIREGUARD_PATCH}" && \
-    (cd /wireguard &&  patch -p 2 < /wireguard.patch) && \
     make -j "$(getconf _NPROCESSORS_ONLN)" M="/wireguard" modules
 
 # Modules and Device Tree binaries
