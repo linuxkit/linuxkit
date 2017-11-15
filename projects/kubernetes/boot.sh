@@ -34,10 +34,6 @@ if [ $# -eq 0 ] ; then
 	kubeadm_data="${kubeadm_data+$kubeadm_data, }\"untaint-master\": \"\""
     fi
 
-    if [ -n "${kubeadm_data}" ] ; then
-	data="{ \"kubeadm\": { ${kubeadm_data} } }"
-    fi
-
     state="kube-master-state"
 
     : ${KUBE_VCPUS:=$KUBE_MASTER_VCPUS}
@@ -60,7 +56,7 @@ elif [ $# -ge 1 ] ; then
     shift
 
     if [ $# -ge 1 ] ; then
-    	data="{\"kubeadm\": {\"join\": \"${*}\"} }"
+	kubeadm_data="\"join\": \"${*}\""
     fi
 
     state="kube-${name}-state"
@@ -76,6 +72,11 @@ else
     echo "   ${0} <node> <join_args>"
     exit 1
 fi
+
+if [ -n "${kubeadm_data}" ] ; then
+    data="{ \"kubeadm\": { ${kubeadm_data} } }"
+fi
+
 set -x
 if [ -n "${KUBE_CLEAR_STATE}" ] ; then
     rm -rf "${state}"
