@@ -100,13 +100,15 @@ func refreshDevicesAndWaitFor(awaitedDevice string) error {
 	exec.Command("mdev", "-s").Run()
 
 	// wait for device
-	var done bool
+	var (
+		done bool
+		err  error
+		stat os.FileInfo
+	)
+
 	for i := 0; i < timeout; i++ {
-		stat, err := os.Stat(awaitedDevice)
-		if err != nil {
-			return err
-		}
-		if isBlockDevice(&stat) {
+		stat, err = os.Stat(awaitedDevice)
+		if err == nil && isBlockDevice(&stat) {
 			done = true
 			break
 		}
@@ -114,7 +116,11 @@ func refreshDevicesAndWaitFor(awaitedDevice string) error {
 		exec.Command("mdev", "-s").Run()
 	}
 	if !done {
-		return fmt.Errorf("Error waiting for device %s", awaitedDevice)
+		var statMsg string
+		if err != nil {
+			statMsg = fmt.Sprintf(" - stat returned: %v", err)
+		}
+		return fmt.Errorf("Failed to find block device %s%s", awaitedDevice, statMsg)
 	}
 	// even after the device appears we still have a race
 	time.Sleep(1 * time.Second)
