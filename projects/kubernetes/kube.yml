@@ -20,7 +20,7 @@ onboot:
   - name: metadata
     image: linuxkit/metadata:026aca5c08c22589a7e319f79449bef2c65f04c5
   - name: format
-    image: linuxkit/format:10e75e78e1f134d310c62e9a0352df1c67b0dd81
+    image: linuxkit/format:6b46d0450082f397177da36be6b4d74d93eacd1e
   - name: mounts
     image: linuxkit/mount:41685ecc8039643948e5dff46e17584753469a7a
     command: ["/usr/bin/mountie", "/var/lib/"]
