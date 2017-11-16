@@ -5,7 +5,7 @@ jobs:
       image: circleci/classic:201710-02
     environment:
       GOPATH: /home/circleci/.go_workspace
-    working_directory: $GOPATH/src/github.com/moby/tool
+    working_directory: /home/circleci/.go_workspace/src/github.com/moby/tool
     steps:
       - checkout
       - run:
