@@ -35,3 +35,4 @@ jobs:
             make GOOS=linux   dist/moby-linux
       - store_artifacts:
           path: ./dist
+          destination: .
