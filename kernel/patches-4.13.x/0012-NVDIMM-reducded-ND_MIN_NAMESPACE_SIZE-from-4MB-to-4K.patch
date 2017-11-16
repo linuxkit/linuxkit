@@ -1,4 +1,4 @@
-From 8d1b4f7093e712e4dbe7d82cc91830b3b87f1c8c Mon Sep 17 00:00:00 2001
+From 03ef1166593af9b9a9e36875ea2cab95076fe497 Mon Sep 17 00:00:00 2001
 From: Cheng-mean Liu <soccerl@microsoft.com>
 Date: Tue, 11 Jul 2017 16:58:26 -0700
 Subject: [PATCH 12/12] NVDIMM: reducded ND_MIN_NAMESPACE_SIZE from 4MB to 4KB

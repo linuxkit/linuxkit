@@ -1,4 +1,4 @@
-From 8c2a03e9e65631bb45180220cdb7ce94b0fdfd37 Mon Sep 17 00:00:00 2001
+From 23b672dd198b20112e33577f99f9371923377fac Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 18:52:02 -0600
 Subject: [PATCH 06/12] tools: hv_sock: 2 simple test cases.
