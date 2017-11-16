@@ -82,6 +82,7 @@ if [ -n "${KUBE_CLEAR_STATE}" ] ; then
     fi
 fi
 
+mkdir -p "${state}"
 touch $state/metadata.json
 if [ -n "${kubeadm_data}" ] ; then
     echo "{  \"kubeadm\": { \"entries\": { ${kubeadm_data} } } }" > $state/metadata.json
