@@ -33,6 +33,7 @@ jobs:
             make GOOS=darwin  dist/moby-darwin
             make GOOS=windows dist/moby-windows
             make GOOS=linux   dist/moby-linux
+            cd dist && sha256sum moby-* > SHA256SUM
       - store_artifacts:
           path: ./dist
           destination: .
