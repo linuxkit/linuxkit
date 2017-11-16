@@ -183,6 +183,7 @@ permissions issues in use.
 
 In addition to the parts of the specification above used to generate the OCI spec, there is a `runtime` section in the image specification
 which specifies some actions to take place when the container is being started.
+- `cgroups` takes a list of cgroups that will be created before the container is run.
 - `mounts` takes a list of mount specifications (`source`, `destination`, `type`, `options`) and mounts them in the root namespace before the container is created. It will
   try to make any missing destination directories.
 - `mkdir` takes a list of directories to create at runtime, in the root mount namespace. These are created before the container is started, so they can be used to create
