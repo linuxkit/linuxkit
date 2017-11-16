@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:1b0741d07949c0acc444cd6a04ee7f833443579d
 onboot:
   - name: format
-    image: linuxkit/format:10e75e78e1f134d310c62e9a0352df1c67b0dd81
+    image: linuxkit/format:6b46d0450082f397177da36be6b4d74d93eacd1e
     command: ["/usr/bin/format", "-type", "xfs" ]
   - name: mount
     image: linuxkit/mount:41685ecc8039643948e5dff46e17584753469a7a
