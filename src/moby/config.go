@@ -100,6 +100,7 @@ type Image struct {
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
 type Runtime struct {
+	Cgroups    *[]string      `yaml:"cgroups" json:"cgroups,omitempty"`
 	Mounts     *[]specs.Mount `yaml:"mounts" json:"mounts,omitempty"`
 	Mkdir      *[]string      `yaml:"mkdir" json:"mkdir,omitempty"`
 	Interfaces *[]Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
@@ -570,10 +571,12 @@ func assignRuntime(v1, v2 *Runtime) Runtime {
 	if v2 == nil {
 		v2 = &Runtime{}
 	}
+	runtimeCgroups := assignStrings(v1.Cgroups, v2.Cgroups)
 	runtimeMounts := assignBinds(v1.Mounts, v2.Mounts)
 	runtimeMkdir := assignStrings(v1.Mkdir, v2.Mkdir)
 	runtimeInterfaces := assignRuntimeInterfaceArray(v1.Interfaces, v2.Interfaces)
 	runtime := Runtime{
+		Cgroups:    &runtimeCgroups,
 		Mounts:     &runtimeMounts,
 		Mkdir:      &runtimeMkdir,
 		Interfaces: &runtimeInterfaces,

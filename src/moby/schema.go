@@ -239,6 +239,7 @@ var schema = string(`
       "type": "object",
       "additionalProperties": false,
       "properties": {
+        "cgroups": {"$ref": "#/definitions/strings"},
         "mounts": {"$ref": "#/definitions/mounts"},
         "mkdir": {"$ref": "#/definitions/strings"},
         "interfaces": {"$ref": "#/definitions/interfaces"},
