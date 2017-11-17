@@ -15,7 +15,7 @@ services:
   - name: dhcpcd
     image: linuxkit/dhcpcd:48831507404049660b960e4055f544917d90378e
   - name: node_exporter
-    image: linuxkit/node_exporter:a058fe1c6a4440a9689022a9fd7cffdcfd56d52c
+    image: linuxkit/node_exporter:1239aef345141a7e6a587a144f4b12aa54d0b1f1
 trust:
   org:
     - linuxkit
