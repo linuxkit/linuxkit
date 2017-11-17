@@ -14,15 +14,11 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const (
-	wgPath      = "/usr/bin/wg"
-	nsenterPath = "/usr/bin/nsenter-net"
-)
-
 // Note these definitions are from moby/tool/src/moby/config.go and should be kept in sync
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
 type Runtime struct {
+	Cgroups    []string      `yaml:"cgroups" json:"cgroups,omitempty"`
 	Mounts     []specs.Mount `yaml:"mounts" json:"mounts,omitempty"`
 	Mkdir      []string      `yaml:"mkdir" json:"mkdir,omitempty"`
 	Interfaces []Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
@@ -122,7 +118,27 @@ func parseMountOptions(options []string) (int, string) {
 	return flag, strings.Join(data, ",")
 }
 
-// prepareFilesystem sets up the mounts, before the container is created
+// newCgroup creates a cgroup (ie directory) under all directories in /sys/fs/cgroup
+// we could use github.com/containerd/cgroups but it has a lot of deps and this is just a sugary mkdir
+func newCgroup(cgroup string) error {
+	dirs, err := ioutil.ReadDir("/sys/fs/cgroup")
+	if err != nil {
+		return err
+	}
+
+	for _, dir := range dirs {
+		if !dir.IsDir() {
+			continue
+		}
+		if err := os.MkdirAll(filepath.Join("/sys/fs/cgroup", dir.Name(), cgroup), 0755); err != nil {
+			log.Printf("cgroup error: %v", err)
+		}
+	}
+
+	return nil
+}
+
+// prepareFilesystem sets up the mounts and cgroups, before the container is created
 func prepareFilesystem(path string, runtime Runtime) error {
 	// execute the runtime config that should be done up front
 	// we execute Mounts before Mkdir so you can make a directory under a mount
@@ -154,6 +170,13 @@ func prepareFilesystem(path string, runtime Runtime) error {
 		err := os.MkdirAll(dir, mode)
 		if err != nil {
 			return fmt.Errorf("Cannot create directory %s: %v", dir, err)
+		}
+	}
+
+	for _, cgroup := range runtime.Cgroups {
+		// currently no way to specify resource limits on new cgroups at creation time
+		if err := newCgroup(cgroup); err != nil {
+			return fmt.Errorf("Cannot create cgroup %s: %v", cgroup, err)
 		}
 	}
 
