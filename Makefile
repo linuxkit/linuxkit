@@ -9,7 +9,7 @@ PREFIX?=/usr/local
 GOMETALINTER:=$(shell command -v gometalinter 2> /dev/null)
 
 dist/moby dist/moby-$(GOOS): $(DEPS)
-	go build \
+	CGO_ENABLED=0 go build \
 		--ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" \
 		-o $@ ./cmd/moby
 
