@@ -53,3 +53,4 @@ jobs:
           command: cd bin && sha256sum linuxkit-*-* > SHA256SUM
       - store_artifacts:
           path: ./bin
+          destination: .
