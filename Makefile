@@ -32,7 +32,7 @@ test: dist/moby
 	@go test $(shell go list ./... | grep -vE '/vendor/')
 	# test build
 	dist/moby build -format tar test/test.yml
-	rm dist/moby test.tar
+	rm test.tar
 
 .PHONY: all
 all: lint test dist/moby
