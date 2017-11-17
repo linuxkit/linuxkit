@@ -1,3 +1,0 @@
-services:
-  - name: kubernetes-docker-image-cache-control-plane
-    image: linuxkitprojects/kubernetes-docker-image-cache-control-plane:02d28e234458f29277f175e68fdca028403b3ed8

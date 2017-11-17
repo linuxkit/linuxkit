@@ -1,6 +1,0 @@
-org: linuxkitprojects
-image: cri-containerd
-network: true
-disable-content-trust: true
-arches:
-  - amd64
