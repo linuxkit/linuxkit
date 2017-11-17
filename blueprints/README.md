@@ -45,12 +45,5 @@ CONTAINER ID        IMAGE               COMMAND             CREATED             
 
 ### Linux Containers On Windows (LCOW)
 
-The [LCOW](./lcow.yml) file contains the blueprint for building a
-minimal Linux kernel and initrd for Linux Containers on
-Windows. Invoke it with `moby build lcow.yml` and you get a
-`lcow-kernel` and `lcow-initrd.img`. Rename `lcow-kernel` to
-`bootx64.efi` and `lcow-initrd.img` to `initrd.img` and then
-follow
-[these instructions](https://github.com/moby/moby/issues/33850). The
-process for creating the image is
-documented [here](https://github.com/Microsoft/opengcs).
+The LCOW blueprint has moved to [its own
+repository](https://github.com/linuxkit/lcow).

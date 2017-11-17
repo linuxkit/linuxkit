@@ -1,4 +1,0 @@
-image: init-lcow
-network: true
-arches:
-  - amd64
