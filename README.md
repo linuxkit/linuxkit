@@ -13,6 +13,10 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 - Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) or similar tools
 - Includes a set of longer-term collaborative projects in various stages of development to innovate on kernel and userspace changes, particularly around security
 
+## Subprojects
+
+- [LinuxKit kubernetes](https://github.com/linuxkit/kubernetes) aims to build minimal and immutable Kubernetes images. (previously `projects/kubernetes` in this repository).
+
 ## Getting Started
 
 ### Build the `moby` and `linuxkit` tools

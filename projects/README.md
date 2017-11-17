@@ -26,7 +26,6 @@ If you want to create a project, please submit a pull request to create a new di
   namespaces
 - [Memorizer](memorizer/) is a tool to trace intra-kernel
   memory operations.
-- [Kubernetes](kubernetes/) demonstrate how one can create minimal and immutable Kubernetes OS images with LinuxKit.
 
 ## Current projects not yet documented
 - VMWare support (VMWare)
@@ -36,3 +35,4 @@ If you want to create a project, please submit a pull request to create a new di
 
 - `aws/`: AWS support was merged into mainline in #1964.
 - `wireguard/`: [WireGuard](https://www.wireguard.com/) is now part of the default LinuxKit kernel and package set.
+- `kubernetes/`: Has been moved to https://github.com/linuxkit/kubernetes.
