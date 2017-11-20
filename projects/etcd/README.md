@@ -60,7 +60,7 @@ network.
 
 We create a number of local packages, not pulled from Hub. To build them, invoke `./build-pkg.sh` in the `./pkg` directory.
 
-Then build the various YAML files using the `moby` tool and package/upload them to Google Cloud using the `linuxkit` tool.
+Then build the various YAML files using the `linuxkit` tool and package/upload them to Google Cloud using the `linuxkit` tool.
 
 ## InfraKit cluster setup
 
@@ -85,7 +85,7 @@ docker run --rm -ti etcd.local etcdctl member list
 docker run --rm -ti etcd.local etcdctl cluster-health
 ```
 
-You can perform rolling updates, by for example, switching the kernel version in `etcd.yml`, build a new moby, e.g., `linuxkit build -name etcd-4.10 etcd`, update `infrakit.json`, and then commit the new configuration to InfraKit: `infrakit group commit infrakit.json`.
+You can perform rolling updates, by for example, switching the kernel version in `etcd.yml`, build a new LinuxKit, e.g., `linuxkit build -name etcd-4.10 etcd`, update `infrakit.json`, and then commit the new configuration to InfraKit: `infrakit group commit infrakit.json`.
 
 
 ## Infrakit GCP setup

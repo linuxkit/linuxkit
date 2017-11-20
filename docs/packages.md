@@ -1,7 +1,7 @@
 # LinuxKit packages
 
-A LinuxKit package is a container image which can be used by the `moby`
-tool to assemble a bootable Linux image. The LinuxKit project has a
+A LinuxKit package is a container image which can be used
+to assemble a bootable Linux image. The LinuxKit project has a
 number of [core packages](../pkg), but users can create their own
 packages, as it's very easy. Packages are the unit of customisation
 in a LinuxKit-based project, if you know how to build a container,
