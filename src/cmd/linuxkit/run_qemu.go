@@ -225,7 +225,7 @@ func runQemu(args []string) {
 
 	if *data != "" {
 		var d []byte
-		if _, err := os.Stat(*data); os.IsNotExist(err) {
+		if stat, _ := os.Stat(*data); stat == nil {
 			d = []byte(*data)
 		} else {
 			d, err = ioutil.ReadFile(*data)
