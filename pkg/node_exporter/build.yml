@@ -1,0 +1,2 @@
+image: node_exporter
+network: true
