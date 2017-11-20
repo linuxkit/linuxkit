@@ -174,10 +174,10 @@ endef
 #
 $(eval $(call kernel,4.14,4.14.x,$(EXTRA)))
 $(eval $(call kernel,4.14,4.14.x,-dbg))
-$(eval $(call kernel,4.13.13,4.13.x,$(EXTRA)))
-$(eval $(call kernel,4.9.62,4.9.x,$(EXTRA)))
-$(eval $(call kernel,4.9.62,4.9.x,-dbg))
-$(eval $(call kernel,4.4.98,4.4.x,$(EXTRA)))
+$(eval $(call kernel,4.13.14,4.13.x,$(EXTRA)))
+$(eval $(call kernel,4.9.63,4.9.x,$(EXTRA)))
+$(eval $(call kernel,4.9.63,4.9.x,-dbg))
+$(eval $(call kernel,4.4.99,4.4.x,$(EXTRA)))
 
 # Target for kernel config
 kconfig: | sources

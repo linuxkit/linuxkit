@@ -1,4 +1,4 @@
-From 3e99b1aae367a0978feff895ea1745c27e942fb5 Mon Sep 17 00:00:00 2001
+From d72dc9c712111da81e7d64a012bacc2ec09c942e Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Wed, 29 Mar 2017 18:37:10 +0800
 Subject: [PATCH 11/12] vmbus: remove "goto error_clean_msglist" in

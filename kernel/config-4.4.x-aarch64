@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.4.98 Kernel Configuration
+# Linux/arm64 4.4.99 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
