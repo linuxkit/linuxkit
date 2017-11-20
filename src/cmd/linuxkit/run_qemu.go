@@ -223,22 +223,11 @@ func runQemu(args []string) {
 		isoPaths = append(isoPaths, path)
 	}
 
-	if *data != "" {
-		var d []byte
-		if _, err := os.Stat(*data); os.IsNotExist(err) {
-			d = []byte(*data)
-		} else {
-			d, err = ioutil.ReadFile(*data)
-			if err != nil {
-				log.Fatalf("Cannot read user data: %v", err)
-			}
-		}
-		isoPath := filepath.Join(*state, "data.iso")
-		if err := WriteMetadataISO(isoPath, d); err != nil {
-			log.Fatalf("Cannot write user data ISO: %v", err)
-		}
-		isoPaths = append(isoPaths, isoPath)
+	metadataPaths, err := CreateMetadataISO(*state, *data)
+	if err != nil {
+		log.Fatalf("%v", err)
 	}
+	isoPaths = append(isoPaths, metadataPaths...)
 
 	for i, d := range disks {
 		id := ""

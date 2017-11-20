@@ -141,22 +141,11 @@ func runHyperKit(args []string) {
 		log.Fatalf("Could not create state directory: %v", err)
 	}
 
-	if *data != "" {
-		var d []byte
-		if _, err := os.Stat(*data); os.IsNotExist(err) {
-			d = []byte(*data)
-		} else {
-			d, err = ioutil.ReadFile(*data)
-			if err != nil {
-				log.Fatalf("Cannot read user data: %v", err)
-			}
-		}
-		isoPath := filepath.Join(*state, "data.iso")
-		if err := WriteMetadataISO(isoPath, d); err != nil {
-			log.Fatalf("Cannot write user data ISO: %v", err)
-		}
-		isoPaths = append(isoPaths, isoPath)
+	metadataPaths, err := CreateMetadataISO(*state, *data)
+	if err != nil {
+		log.Fatalf("%v", err)
 	}
+	isoPaths = append(isoPaths, metadataPaths...)
 
 	// Create UUID for VPNKit or reuse an existing one from state dir. IP addresses are
 	// assigned to the UUID, so to get the same IP we have to store the initial UUID. If

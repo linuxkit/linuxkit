@@ -3,7 +3,9 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 )
@@ -251,4 +253,28 @@ func NewPublishedPort(publish string) (PublishedPort, error) {
 	p.Host = uint16(hostPort)
 	p.Protocol = protocol
 	return p, nil
+}
+
+// CreateMetadataISO writes the provided meta data to an iso file in the given state directory
+func CreateMetadataISO(state, data string) ([]string, error) {
+	if data == "" {
+		return []string{}, nil
+	}
+
+	var d []byte
+	if st, err := os.Stat(data); os.IsNotExist(err) {
+		d = []byte(data)
+	} else if st.Size() == 0 {
+		return []string{}, nil
+	} else {
+		d, err = ioutil.ReadFile(data)
+		if err != nil {
+			return nil, fmt.Errorf("Cannot read user data: %v", err)
+		}
+	}
+	isoPath := filepath.Join(state, "data.iso")
+	if err := WriteMetadataISO(isoPath, d); err != nil {
+		return nil, fmt.Errorf("Cannot write user data ISO: %v", err)
+	}
+	return []string{isoPath}, nil
 }
