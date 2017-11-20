@@ -1,4 +1,4 @@
-See [../docs/kernel-patches.md](../docs/kernels.md) for more
+See [../docs/kernels.md](../docs/kernels.md) for more
 information on kernel builds.
 
 To build with various debug options enabled, build the kernel with
