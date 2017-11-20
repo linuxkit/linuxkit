@@ -57,11 +57,15 @@ func Fchmodat(dirfd int, path string, mode uint32, flags int) (err error) {
 
 // IoctlSetInt performs an ioctl operation which sets an integer value
 // on fd, using the specified request number.
-func IoctlSetInt(fd int, req uint, value int) (err error) {
+func IoctlSetInt(fd int, req uint, value int) error {
 	return ioctl(fd, req, uintptr(value))
 }
 
-func IoctlSetTermios(fd int, req uint, value *Termios) (err error) {
+func IoctlSetWinsize(fd int, req uint, value *Winsize) error {
+	return ioctl(fd, req, uintptr(unsafe.Pointer(value)))
+}
+
+func IoctlSetTermios(fd int, req uint, value *Termios) error {
 	return ioctl(fd, req, uintptr(unsafe.Pointer(value)))
 }
 
@@ -71,6 +75,12 @@ func IoctlGetInt(fd int, req uint) (int, error) {
 	var value int
 	err := ioctl(fd, req, uintptr(unsafe.Pointer(&value)))
 	return value, err
+}
+
+func IoctlGetWinsize(fd int, req uint) (*Winsize, error) {
+	var value Winsize
+	err := ioctl(fd, req, uintptr(unsafe.Pointer(&value)))
+	return &value, err
 }
 
 func IoctlGetTermios(fd int, req uint) (*Termios, error) {
@@ -245,7 +255,7 @@ func Getgroups() (gids []int, err error) {
 		return nil, nil
 	}
 
-	// Sanity check group count.  Max is 1<<16 on Linux.
+	// Sanity check group count. Max is 1<<16 on Linux.
 	if n < 0 || n > 1<<20 {
 		return nil, EINVAL
 	}
@@ -280,8 +290,8 @@ type WaitStatus uint32
 // 0x7F (stopped), or a signal number that caused an exit.
 // The 0x80 bit is whether there was a core dump.
 // An extra number (exit code, signal causing a stop)
-// is in the high bits.  At least that's the idea.
-// There are various irregularities.  For example, the
+// is in the high bits. At least that's the idea.
+// There are various irregularities. For example, the
 // "continued" status is 0xFFFF, distinguishing itself
 // from stopped via the core dump bit.
 
@@ -342,8 +352,12 @@ func Wait4(pid int, wstatus *WaitStatus, options int, rusage *Rusage) (wpid int,
 	return
 }
 
-func Mkfifo(path string, mode uint32) (err error) {
+func Mkfifo(path string, mode uint32) error {
 	return Mknod(path, mode|S_IFIFO, 0)
+}
+
+func Mkfifoat(dirfd int, path string, mode uint32) error {
+	return Mknodat(dirfd, path, mode|S_IFIFO, 0)
 }
 
 func (sa *SockaddrInet4) sockaddr() (unsafe.Pointer, _Socklen, error) {
@@ -912,17 +926,22 @@ func Recvmsg(fd int, p, oob []byte, flags int) (n, oobn int, recvflags int, from
 	msg.Namelen = uint32(SizeofSockaddrAny)
 	var iov Iovec
 	if len(p) > 0 {
-		iov.Base = (*byte)(unsafe.Pointer(&p[0]))
+		iov.Base = &p[0]
 		iov.SetLen(len(p))
 	}
 	var dummy byte
 	if len(oob) > 0 {
+		var sockType int
+		sockType, err = GetsockoptInt(fd, SOL_SOCKET, SO_TYPE)
+		if err != nil {
+			return
+		}
 		// receive at least one normal byte
-		if len(p) == 0 {
+		if sockType != SOCK_DGRAM && len(p) == 0 {
 			iov.Base = &dummy
 			iov.SetLen(1)
 		}
-		msg.Control = (*byte)(unsafe.Pointer(&oob[0]))
+		msg.Control = &oob[0]
 		msg.SetControllen(len(oob))
 	}
 	msg.Iov = &iov
@@ -955,21 +974,26 @@ func SendmsgN(fd int, p, oob []byte, to Sockaddr, flags int) (n int, err error) 
 		}
 	}
 	var msg Msghdr
-	msg.Name = (*byte)(unsafe.Pointer(ptr))
+	msg.Name = (*byte)(ptr)
 	msg.Namelen = uint32(salen)
 	var iov Iovec
 	if len(p) > 0 {
-		iov.Base = (*byte)(unsafe.Pointer(&p[0]))
+		iov.Base = &p[0]
 		iov.SetLen(len(p))
 	}
 	var dummy byte
 	if len(oob) > 0 {
+		var sockType int
+		sockType, err = GetsockoptInt(fd, SOL_SOCKET, SO_TYPE)
+		if err != nil {
+			return 0, err
+		}
 		// send at least one normal byte
-		if len(p) == 0 {
+		if sockType != SOCK_DGRAM && len(p) == 0 {
 			iov.Base = &dummy
 			iov.SetLen(1)
 		}
-		msg.Control = (*byte)(unsafe.Pointer(&oob[0]))
+		msg.Control = &oob[0]
 		msg.SetControllen(len(oob))
 	}
 	msg.Iov = &iov
@@ -999,7 +1023,7 @@ func ptracePeek(req int, pid int, addr uintptr, out []byte) (count int, err erro
 
 	var buf [sizeofPtr]byte
 
-	// Leading edge.  PEEKTEXT/PEEKDATA don't require aligned
+	// Leading edge. PEEKTEXT/PEEKDATA don't require aligned
 	// access (PEEKUSER warns that it might), but if we don't
 	// align our reads, we might straddle an unmapped page
 	// boundary and not get the bytes leading up to the page
@@ -1238,6 +1262,7 @@ func Getpgrp() (pid int) {
 //sys	PivotRoot(newroot string, putold string) (err error) = SYS_PIVOT_ROOT
 //sysnb prlimit(pid int, resource int, newlimit *Rlimit, old *Rlimit) (err error) = SYS_PRLIMIT64
 //sys   Prctl(option int, arg2 uintptr, arg3 uintptr, arg4 uintptr, arg5 uintptr) (err error)
+//sys	Pselect(nfd int, r *FdSet, w *FdSet, e *FdSet, timeout *Timespec, sigmask *Sigset_t) (n int, err error) = SYS_PSELECT6
 //sys	read(fd int, p []byte) (n int, err error)
 //sys	Removexattr(path string, attr string) (err error)
 //sys	Renameat(olddirfd int, oldpath string, newdirfd int, newpath string) (err error)
@@ -1265,6 +1290,7 @@ func Setgid(uid int) (err error) {
 //sys	Setpriority(which int, who int, prio int) (err error)
 //sys	Setxattr(path string, attr string, data []byte, flags int) (err error)
 //sys	Sync()
+//sys	Syncfs(fd int) (err error)
 //sysnb	Sysinfo(info *Sysinfo_t) (err error)
 //sys	Tee(rfd int, wfd int, len int, flags int) (n int64, err error)
 //sysnb	Tgkill(tgid int, tid int, sig syscall.Signal) (err error)
@@ -1299,8 +1325,9 @@ func Munmap(b []byte) (err error) {
 //sys	Madvise(b []byte, advice int) (err error)
 //sys	Mprotect(b []byte, prot int) (err error)
 //sys	Mlock(b []byte) (err error)
-//sys	Munlock(b []byte) (err error)
 //sys	Mlockall(flags int) (err error)
+//sys	Msync(b []byte, flags int) (err error)
+//sys	Munlock(b []byte) (err error)
 //sys	Munlockall() (err error)
 
 // Vmsplice splices user pages from a slice of Iovecs into a pipe specified by fd,
@@ -1368,7 +1395,6 @@ func Vmsplice(fd int, iovs []Iovec, flags int) (int, error) {
 // ModifyLdt
 // Mount
 // MovePages
-// Mprotect
 // MqGetsetattr
 // MqNotify
 // MqOpen
@@ -1380,7 +1406,6 @@ func Vmsplice(fd int, iovs []Iovec, flags int) (int, error) {
 // Msgget
 // Msgrcv
 // Msgsnd
-// Msync
 // Newfstatat
 // Nfsservctl
 // Personality
