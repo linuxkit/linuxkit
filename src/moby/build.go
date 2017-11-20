@@ -142,7 +142,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 // Build performs the actual build process
 func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	if MobyDir == "" {
-		return fmt.Errorf("MobyDir for temporary storage not set")
+		MobyDir = defaultMobyConfigDir()
 	}
 
 	iw := tar.NewWriter(w)
