@@ -262,8 +262,10 @@ func CreateMetadataISO(state, data string) ([]string, error) {
 	}
 
 	var d []byte
-	if _, err := os.Stat(data); os.IsNotExist(err) {
+	if st, err := os.Stat(data); os.IsNotExist(err) {
 		d = []byte(data)
+	} else if st.Size() == 0 {
+		return []string{}, nil
 	} else {
 		d, err = ioutil.ReadFile(data)
 		if err != nil {
