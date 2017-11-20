@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
 	"strings"
 
 	"github.com/moby/tool/src/moby"
@@ -30,27 +29,6 @@ func (f *formatList) Set(value string) error {
 		*f = append(*f, cs)
 	}
 	return nil
-}
-
-// Parse a string which is either a number in MB, or a number with
-// either M (for Megabytes) or G (for GigaBytes) as a suffix and
-// returns the number in MB. Return 0 if string is empty.
-func getDiskSizeMB(s string) (int, error) {
-	if s == "" {
-		return 0, nil
-	}
-	sz := len(s)
-	if strings.HasSuffix(s, "G") {
-		i, err := strconv.Atoi(s[:sz-1])
-		if err != nil {
-			return 0, err
-		}
-		return i * 1024, nil
-	}
-	if strings.HasSuffix(s, "M") {
-		s = s[:sz-1]
-	}
-	return strconv.Atoi(s)
 }
 
 // Process the build arguments and execute build
