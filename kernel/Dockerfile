@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS kernel-build
+FROM linuxkit/alpine:585174df463ba33e6c0e2050a29a0d9e942d56cb AS kernel-build
 RUN apk add \
     argp-standalone \
     automake \
@@ -18,6 +18,8 @@ RUN apk add \
     libelf-dev \
     libressl-dev \
     linux-headers \
+    mpc1-dev \
+    mpfr-dev \
     ncurses-dev \
     sed \
     squashfs-tools \
