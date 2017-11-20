@@ -26,7 +26,7 @@ qemu-lite: docker_image $(KERNEL_FILE) $(CMDLINE_FILE)
 		bash
 
 $(KERNEL_FILE):
-	$(MKFILE_DIR)/../../../bin/moby build $(MKFILE_DIR)/../clear-containers.yml
+	$(MKFILE_DIR)/../../../bin/linuxkit build $(MKFILE_DIR)/../clear-containers.yml
 
 push: docker_image
 	docker push clearcontainers/$(IMAGE)

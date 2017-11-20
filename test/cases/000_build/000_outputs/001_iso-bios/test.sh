@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -format iso-bios -name "${NAME}" ../test.yml
+linuxkit build -format iso-bios -name "${NAME}" ../test.yml
 [ -f "${NAME}.iso" ] || exit 1
 
 exit 0

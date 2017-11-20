@@ -67,7 +67,7 @@ To generate the kernel image called `clear-containers-bzImage`, enter the
 following command:
 
 ```
-./bin/moby build ./projects/clear-containers/clear-containers.yml
+./bin/linuxkit build ./projects/clear-containers/clear-containers.yml
 ```
 
 3. Test kernel

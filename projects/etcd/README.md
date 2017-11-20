@@ -85,7 +85,7 @@ docker run --rm -ti etcd.local etcdctl member list
 docker run --rm -ti etcd.local etcdctl cluster-health
 ```
 
-You can perform rolling updates, by for example, switching the kernel version in `etcd.yml`, build a new moby, e.g., `moby build -name etcd-4.10 etcd`, update `infrakit.json`, and then commit the new configuration to InfraKit: `infrakit group commit infrakit.json`.
+You can perform rolling updates, by for example, switching the kernel version in `etcd.yml`, build a new moby, e.g., `linuxkit build -name etcd-4.10 etcd`, update `infrakit.json`, and then commit the new configuration to InfraKit: `infrakit group commit infrakit.json`.
 
 
 ## Infrakit GCP setup

@@ -55,7 +55,7 @@ For example, to boot the [example](../examples/packet.net)
 with a local HTTP server:
 
 ```sh
-moby build packet.yml
+linuxkit build packet.yml
 # run the web server
 # run 'ngrok http 8080' in another window
 PACKET_API_KEY=<API key> PACKET_PROJECT_ID=<Project ID> \
@@ -63,7 +63,7 @@ linuxkit run packet -serve :8080 -base-url <ngrok url> packet
 ```
 
 To boot a `arm64` image for Type 2a machine (`-machine
-baremetal_2a`) you currently need build using `moby build packet.yml packet.arm64.yml` and then un-compress both the kernel and
+baremetal_2a`) you currently need build using `linuxkit build packet.yml packet.arm64.yml` and then un-compress both the kernel and
 the initrd before booting, e.g:
 
 ```sh

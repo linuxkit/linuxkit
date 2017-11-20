@@ -47,14 +47,14 @@ Build requirements from source:
 Once you have built the tool, use
 
 ```
-moby build linuxkit.yml
+linuxkit build linuxkit.yml
 ```
-to build the example configuration. You can also specify different output formats, eg `moby build -format raw-bios linuxkit.yml` to
-output a raw BIOS bootable disk image, or `moby build -format iso-efi linuxkit.yml` to output an EFI bootable ISO image. See `moby build -help` for more information.
+to build the example configuration. You can also specify different output formats, eg `linuxkit build -format raw-bios linuxkit.yml` to
+output a raw BIOS bootable disk image, or `linuxkit build -format iso-efi linuxkit.yml` to output an EFI bootable ISO image. See `linuxkit build -help` for more information.
 
 ### Booting and Testing
 
-You can use `linuxkit run <name>` or `linuxkit run <name>.<format>` to execute the image you created with `moby build <name>.yml`.
+You can use `linuxkit run <name>` or `linuxkit run <name>.<format>` to execute the image you created with `linuxkit build <name>.yml`.
 This will use a suitable backend for your platform or you can choose one, for example VMWare.
 See `linuxkit run --help`.
 
@@ -105,11 +105,11 @@ rtf -x run linuxkit.examples
 
 ## Building your own customised image
 
-To customise, copy or modify the [`linuxkit.yml`](linuxkit.yml) to your own `file.yml` or use one of the [examples](examples/) and then run `moby build file.yml` to
+To customise, copy or modify the [`linuxkit.yml`](linuxkit.yml) to your own `file.yml` or use one of the [examples](examples/) and then run `linuxkit build file.yml` to
 generate its specified output. You can run the output with `linuxkit run file`.
 
 The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. You can specify the type
-of artifact to build with the `moby` tool eg `moby build -format vhd linuxkit.yml`.
+of artifact to build with the `moby` tool eg `linuxkit build -format vhd linuxkit.yml`.
 
 If you want to build your own packages, see this [document](docs/packages.md).
 

@@ -22,11 +22,11 @@ push: tag
 
 dynamic:
 	mkdir -p dist
-	moby build -name compose-dynamic -dir dist/ compose-dynamic.yml
+	linuxkit build -name compose-dynamic -dir dist/ compose-dynamic.yml
 
 static: cache-images
 	mkdir -p dist
-	moby build -name compose-static -dir dist/ compose-static.yml
+	linuxkit build -name compose-static -dir dist/ compose-static.yml
 
 run-dynamic:
 	linuxkit run dist/compose-dynamic

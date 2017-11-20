@@ -17,7 +17,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-moby build -name "${NAME}" "${LINUXKIT_BLUEPRINTS_DIR}/${NAME}/base.yml" "${LINUXKIT_BLUEPRINTS_DIR}/${NAME}/docker-ce.yml"
+linuxkit build -name "${NAME}" "${LINUXKIT_BLUEPRINTS_DIR}/${NAME}/base.yml" "${LINUXKIT_BLUEPRINTS_DIR}/${NAME}/docker-ce.yml"
 
 exit 0
 
