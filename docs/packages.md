@@ -1,15 +1,17 @@
 # LinuxKit packages
 
-LinuxKit packages a container images which are pull using the `moby`
-tool and assembled into bootable Linux images. LinuxKit comes with a
-number of [packages](../pkg) which are core part of LinuxKit, but
-users can add their own packages to the YAML files.
+A LinuxKit package is a container image which can be used by the `moby`
+tool to assemble a bootable Linux image. The LinuxKit project has a
+number of [core packages](../pkg), but users can create their own
+packages, as it's very easy. Packages are the unit of customisation
+in a LinuxKit-based project, if you know how to build a container,
+you should be able to build a LinuxKit package.
 
 All LinuxKit packages are:
 - Signed with Docker Content Trust.
-- Multi-arch manifests to work on multiple architectures.
+- Enabled with multi-arch manifests to work on multiple architectures.
 - Derived from well-known (and signed) sources for repeatable builds.
-- Build with multi-stage builds to minimise their size.
+- Built with multi-stage builds to minimise their size.
 
 ## Package source
 
