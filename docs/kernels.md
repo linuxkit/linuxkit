@@ -7,10 +7,10 @@ the official LinuxKit kernels is at
 [linuxkit/kernels](https://hub.docker.com/r/linuxkit/kernel/).
 
 The LinuxKit kernels are based on the latest stable releases and are
-updated frequently to include bug and security fixes.  For some
+updated frequently to include bug and security fixes. For some
 kernels we do carry additional patches, which are mostly back-ported
 fixes from newer kernels. The full kernel source with patches can be
-found on [github](https://github.com/linuxkit/linux). Each kernel
+found on [GitHub](https://github.com/linuxkit/linux). Each kernel
 image is tagged with the full kernel version (e.g.,
 `linuxkit/kernel:4.9.33`) and with the full kernel version plus the
 hash of the files it was created from (git tree hash of the `./kernel`
@@ -24,7 +24,7 @@ the kernel packages.
 
 In addition to the official kernel images, LinuxKit offers the ability
 to build bootable Linux images with kernels from various
-distributions. We mostly offer this mostly for testing
+distributions. We offer this mostly for testing
 purposes. "Foreign" kernel images are created by re-packing the native
 kernel packages into hub images. The hub images are typically tagged
 with the kernel version.
@@ -46,6 +46,7 @@ Most kernel modules are autoloaded with `mdev` but if you need to `modprobe` a m
     image: linuxkit/modprobe:<hash>
     command: ["modprobe", "-a", "iscsi_tcp", "dm_multipath"]
 ```
+
 
 ## Compiling external kernel modules
 
@@ -117,6 +118,7 @@ make ARCH=arm64 defconfig
 make ARCH=arm64 oldconfig # or menuconfig
 ```
 
+
 **Note**: We try to keep the differences between kernel versions and
 architectures to a minimum, so if you make changes to one
 configuration also try to apply it to the others. The script [kconfig-split.py](../scripts/kconfig-split.py) can be used to compare kernel config files. For example:
@@ -127,6 +129,7 @@ configuration also try to apply it to the others. The script [kconfig-split.py](
 
 creates a file with the common and the x86_64 and arm64 specific
 config options for the 4.9.x kernel series.
+
 
 ## Building and using custom kernels
 
@@ -283,6 +286,7 @@ DCO lines, e.g.:
 ```
 Origin: https://patchwork.ozlabs.org/patch/622404/
 ```
+
 
 ### Export patches to LinuxKit
 
