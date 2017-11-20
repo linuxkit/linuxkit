@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path"
+	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -143,6 +144,11 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	if MobyDir == "" {
 		MobyDir = defaultMobyConfigDir()
+	}
+
+	// create tmp dir in case needed
+	if err := os.MkdirAll(filepath.Join(MobyDir, "tmp"), 0755); err != nil {
+		return err
 	}
 
 	iw := tar.NewWriter(w)
