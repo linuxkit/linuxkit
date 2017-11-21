@@ -44,7 +44,7 @@ jobs:
           environment:
             GOOS: windows
             GOARCH: amd64
-          command: make LOCAL_TARGET=bin/linuxkit-$GOOS-$GOARCH local-build
+          command: make LOCAL_TARGET=bin/linuxkit-$GOOS-$GOARCH.exe local-build
       - run:
           name: Test
           command: make local-test
