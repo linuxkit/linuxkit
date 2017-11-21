@@ -27,7 +27,7 @@ An initial blueprint for the open source components of Docker for Mac is availab
 To build it with the latest Docker CE:
 
 ```
-$ moby build -name docker-for-mac base.yml docker-ce.yml
+$ linuxkit build -name docker-for-mac base.yml docker-ce.yml
 ```
 
 To run the VM with a 4G disk:

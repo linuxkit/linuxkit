@@ -5,7 +5,7 @@ The client, to be run on the host as per this [README](https://github.com/rneuge
 
 ## How to use (on Windows)
 
-- Build the images: `moby build tests/cases/test-virtsock-server.yml`
+- Build the images: `linuxkit build tests/cases/test-virtsock-server.yml`
 - Copy the `test-virtsock-server.iso` to a Windows system
 - Create a Type 1 Hyper-V VM (called `virtsock`).
   - No Disk or network required

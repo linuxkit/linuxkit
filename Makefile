@@ -1,5 +1,5 @@
 .PHONY: default all
-default: bin/moby bin/linuxkit bin/rtf
+default: bin/linuxkit bin/rtf
 all: default
 
 VERSION="0.0" # dummy for now
@@ -7,7 +7,6 @@ GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
 GO_COMPILE=linuxkit/go-compile:fb53f01a669de5e91ec855b4f67a57b514b4f6ed
 
-MOBY?=bin/moby
 LINUXKIT?=bin/linuxkit
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 GOARCH?=amd64
@@ -19,17 +18,6 @@ CROSS+=-e GOARCH=$(GOARCH)
 endif
 
 PREFIX?=/usr/local/
-
-MOBY_REPO=https://github.com/moby/tool.git
-MOBY_COMMIT=eceb6d11f8685f9da3660683d769659e3688457b
-MOBY_VERSION=0.0
-bin/moby: tmp_moby_bin.tar | bin
-	tar xf $<
-	rm $<
-	touch $@
-
-tmp_moby_bin.tar: Makefile
-	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/moby/tool --clone $(MOBY_REPO) --commit $(MOBY_COMMIT) --package github.com/moby/tool/cmd/moby --ldflags "-X main.GitCommit=$(MOBY_COMMIT) -X main.Version=$(MOBY_VERSION)" -o bin/moby > $@
 
 RTF_COMMIT=3e8ed35ca934259cb644c2492bf9b181954a07e1
 RTF_CMD=github.com/linuxkit/rtf/cmd
@@ -65,11 +53,11 @@ tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
 .PHONY: test-cross
 test-cross:
 	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=darwin tmp_moby_bin.tar tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) -j 3 GOOS=darwin tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=windows tmp_moby_bin.tar tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) -j 3 GOOS=windows tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=linux tmp_moby_bin.tar tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
+	$(MAKE) -j 3 GOOS=linux tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
 
 ifeq ($(GOARCH)-$(GOOS),amd64-linux)

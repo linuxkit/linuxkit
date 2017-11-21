@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-moby build -format raw-efi -name "${NAME}" ../test.yml
+linuxkit build -format raw-efi -name "${NAME}" ../test.yml
 [ -f "${NAME}-efi.img" ] || exit 1
 
 exit 0

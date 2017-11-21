@@ -17,7 +17,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-moby build "${LINUXKIT_EXAMPLES_DIR}/${NAME}.yml" 
+linuxkit build "${LINUXKIT_EXAMPLES_DIR}/${NAME}.yml" 
 
 exit 0
 

@@ -22,7 +22,7 @@ build. See the [`kernel`](./kernels.md) documentation for details.
 
 We use the mainline Linux kernels for the Raspberry Pi and it is
 booted via [`uboot`](https://www.denx.de/wiki/U-Boot). The `moby`
-tool, via `moby build -format rpi3 <YAML>`, currently produces a `tar`
+tool, via `linuxkit build -format rpi3 <YAML>`, currently produces a `tar`
 archive which can be extracted onto a FAT32 formatted SD card to boot
 your Raspberry Pi.
 

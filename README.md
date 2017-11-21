@@ -19,21 +19,19 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 
 ## Getting Started
 
-### Build the `moby` and `linuxkit` tools
+### Build the `linuxkit` tool
 
-LinuxKit uses the `moby` tool for image builds, and the `linuxkit` tool for pushing and running VM images.
+LinuxKit uses the `linuxkit` tool for building, pushing and running VM images.
 
-Simple build instructions: use `make` to build. This will build the tools in `bin/`. Add this
+Simple build instructions: use `make` to build. This will build the tool in `bin/`. Add this
 to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/* /usr/local/bin/`. Or you can use `sudo make install`.
 
-If you already have `go` installed you can use `go get -u github.com/moby/tool/cmd/moby` to install
-the `moby` build tool, and `go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit` to install the `linuxkit` tool.
+If you already have `go` installed you can use `go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit` to install the `linuxkit` tool.
 
 On MacOS there is a `brew tap` available. Detailed instructions are at [linuxkit/homebrew-linuxkit](https://github.com/linuxkit/homebrew-linuxkit),
 the short summary is
 ```
 brew tap linuxkit/linuxkit
-brew install --HEAD moby
 brew install --HEAD linuxkit
 ```
 
@@ -47,14 +45,14 @@ Build requirements from source:
 Once you have built the tool, use
 
 ```
-moby build linuxkit.yml
+linuxkit build linuxkit.yml
 ```
-to build the example configuration. You can also specify different output formats, eg `moby build -format raw-bios linuxkit.yml` to
-output a raw BIOS bootable disk image, or `moby build -format iso-efi linuxkit.yml` to output an EFI bootable ISO image. See `moby build -help` for more information.
+to build the example configuration. You can also specify different output formats, eg `linuxkit build -format raw-bios linuxkit.yml` to
+output a raw BIOS bootable disk image, or `linuxkit build -format iso-efi linuxkit.yml` to output an EFI bootable ISO image. See `linuxkit build -help` for more information.
 
 ### Booting and Testing
 
-You can use `linuxkit run <name>` or `linuxkit run <name>.<format>` to execute the image you created with `moby build <name>.yml`.
+You can use `linuxkit run <name>` or `linuxkit run <name>.<format>` to execute the image you created with `linuxkit build <name>.yml`.
 This will use a suitable backend for your platform or you can choose one, for example VMWare.
 See `linuxkit run --help`.
 
@@ -105,11 +103,11 @@ rtf -x run linuxkit.examples
 
 ## Building your own customised image
 
-To customise, copy or modify the [`linuxkit.yml`](linuxkit.yml) to your own `file.yml` or use one of the [examples](examples/) and then run `moby build file.yml` to
+To customise, copy or modify the [`linuxkit.yml`](linuxkit.yml) to your own `file.yml` or use one of the [examples](examples/) and then run `linuxkit build file.yml` to
 generate its specified output. You can run the output with `linuxkit run file`.
 
 The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. You can specify the type
-of artifact to build with the `moby` tool eg `moby build -format vhd linuxkit.yml`.
+of artifact to build with the `moby` tool eg `linuxkit build -format vhd linuxkit.yml`.
 
 If you want to build your own packages, see this [document](docs/packages.md).
 

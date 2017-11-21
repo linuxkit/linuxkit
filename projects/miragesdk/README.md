@@ -50,7 +50,7 @@ the hardware support is available.
   development directions.
 
 - We are also packaging up the Alpine `dhcpcd` with the same configuration conventions
-  as the MirageSDK replacement, so that they can swapped in a `moby build` with a single
+  as the MirageSDK replacement, so that they can swapped in a `linuxkit build` with a single
   line change in the YAML file.
 
 - We will engage external reviewers on the security architecture once we have the first
@@ -63,6 +63,6 @@ the hardware support is available.
 # Getting Started
 
 ```
-../../bin/moby build examples/mirage-dhcp.yml`
+../../bin/linuxkit build examples/mirage-dhcp.yml`
 ../../bin/linuxkit run mirage-dhcp
 ```

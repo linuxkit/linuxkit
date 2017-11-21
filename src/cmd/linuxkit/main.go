@@ -75,6 +75,7 @@ func main() {
 	flag.Usage = func() {
 		fmt.Printf("USAGE: %s [options] COMMAND\n\n", filepath.Base(os.Args[0]))
 		fmt.Printf("Commands:\n")
+		fmt.Printf("  build       Build an image from a YAML file\n")
 		fmt.Printf("  metadata    Metadata utilities\n")
 		fmt.Printf("  pkg         Package building\n")
 		fmt.Printf("  push        Push a VM image to a cloud or image store\n")
@@ -117,6 +118,8 @@ func main() {
 	}
 
 	switch args[0] {
+	case "build":
+		build(args[1:])
 	case "metadata":
 		metadata(args[1:])
 	case "pkg":

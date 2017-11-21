@@ -78,6 +78,6 @@ An example yml file is included in [examples/swap.yml](../../examples/swap.yml).
 The sample command to run the enclosed is:
 
 ```
-moby build swap.yml
+linuxkit build swap.yml
 linuxkit run -disk size=4G swap
 ```

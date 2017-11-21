@@ -2,7 +2,7 @@
 
 This is a quick guide to running VMs based on LinuxKit images on Azure. Please note that these images currently do not include the [Azure Linux Agent](https://github.com/Azure/WALinuxAgent). As a result, after creating the VM, the portal will report that the creation failed. If you created the VHD properly, you will still be able to SSH into the machine.
 
-When running `linuxkit run azure`, the image you created using `moby build` will be uploaded to Azure in a resource group, and a VM will be created, along with the necessary resources (virtual network, subnet, storage account, network security group, public IP address).
+When running `linuxkit run azure`, the image you created using `linuxkit build` will be uploaded to Azure in a resource group, and a VM will be created, along with the necessary resources (virtual network, subnet, storage account, network security group, public IP address).
 
 Since Azure does not offer access to the serial output of the VM, you need to have SSH access to the machine in order to attach to it. Please see the example below.
 
@@ -23,7 +23,7 @@ here](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-gro
 
 ## Build an image
 
-Create a new `azure.yml` file [based on the Azure example](../examples/azure.yml), generate a new SSH key and add it in the `yml`, then `moby build -format vhd azure.yml`.
+Create a new `azure.yml` file [based on the Azure example](../examples/azure.yml), generate a new SSH key and add it in the `yml`, then `linuxkit build -format vhd azure.yml`.
 
 
 This will output a `azure.vhd` image.

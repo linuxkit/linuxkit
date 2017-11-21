@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: LinuxKit tests for 'moby build'
+# SUMMARY: LinuxKit tests for 'linuxkit build'
 # LABELS:
 
 group_init() {

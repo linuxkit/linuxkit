@@ -21,7 +21,7 @@ Supported (Tested) versions:
 ## Run
 ### VMware Workstation/Fusion
 The backend `vmware` currently supports the booting of a `.vmdk` file that is
-created through the `moby build -format vmdk` command and is typically called with
+created through the `linuxkit build -format vmdk` command and is typically called with
 `linuxkit run vmware <args> ./path`.
 
 The WS/Fusion backend will construct a config version 8 (Hardware version 12)
@@ -30,7 +30,7 @@ use the `vmrun` utility to start the virtual machine.
 
 ### VMware vSphere/vCenter
 The backend `vsphere` currently supports booting through an `iso` file that is
-created through the `moby build -o iso-bios` and is started with `linuxkit run
+created through the `linuxkit build -o iso-bios` and is started with `linuxkit run
 vcenter <args> ./path`.
 
 The vSphere/vCenter backend requires a user to have `pushed` a linuxkit `iso` to
