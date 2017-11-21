@@ -1,5 +1,7 @@
 # LinuxKit
 
+[![CircleCI](https://circleci.com/gh/linuxkit/linuxkit.svg?style=svg)](https://circleci.com/gh/linuxkit/linuxkit)
+
 LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 
 - Secure defaults without compromising usability
