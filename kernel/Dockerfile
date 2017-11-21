@@ -142,7 +142,8 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
            -path './arch/*/include' -prune -o \
            -path './scripts/*' -prune -o \
            -type f \( -name 'Makefile*' -o -name 'Kconfig*' -o -name 'Kbuild*' -o \
-                      -name '*.lds' -o -name '*.pl' -o -name '*.sh' \) | \
+                      -name '*.lds' -o -name '*.pl' -o -name '*.sh' -o \
+                      -name 'objtool' -o -name 'fixdep' -o -name 'randomize_layout_seed.h' \) | \
          tar cf - -T - | (cd $dir; tar xf -) && \
     ( cd /tmp && tar cf /out/kernel-dev.tar usr/src )
 
