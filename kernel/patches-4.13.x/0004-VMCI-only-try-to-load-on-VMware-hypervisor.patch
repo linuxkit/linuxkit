@@ -1,4 +1,4 @@
-From ba91e50f4a7e633e10189d232e54209ca5e3c2e3 Mon Sep 17 00:00:00 2001
+From b39f12ccedb637382d102712b5b59ad989186db5 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 5 May 2017 16:57:29 -0600
 Subject: [PATCH 04/12] VMCI: only try to load on VMware hypervisor
