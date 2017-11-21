@@ -65,7 +65,7 @@ needed.
 
 # Metadata image creation
 
-Run `linuxkit run` backends accept a `--data=STRING` option which will
+Run `linuxkit run` backends accept a `-data=STRING` option which will
 cause the given string to be passed to the VM in a platform specific
 manner to be picked up by the `pkg/metadata` component.
 
