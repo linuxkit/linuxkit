@@ -68,6 +68,8 @@ libunwind-dev
 linux-headers
 lsscsi
 make
+mpc1-dev
+mpfr-dev
 mtools
 multipath-tools
 musl-dev

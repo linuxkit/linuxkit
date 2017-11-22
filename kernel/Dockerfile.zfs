@@ -1,6 +1,6 @@
 ARG IMAGE
 FROM ${IMAGE} AS ksrc
-FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS build
+FROM linuxkit/alpine:585174df463ba33e6c0e2050a29a0d9e942d56cb AS build
 RUN apk add \
     attr-dev \
     autoconf \
@@ -10,6 +10,8 @@ RUN apk add \
     git \
     libtirpc-dev \
     libtool \
+    mpc1-dev \
+    mpfr-dev \
     util-linux-dev \
     zlib-dev
 

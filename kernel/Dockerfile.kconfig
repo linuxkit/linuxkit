@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS kernel-build
+FROM linuxkit/alpine:585174df463ba33e6c0e2050a29a0d9e942d56cb AS kernel-build
 RUN apk add \
     argp-standalone \
     build-base \
@@ -13,7 +13,8 @@ ARG KERNEL_VERSIONS
 COPY / /
 
 # Unpack kernels (download if not present)
-RUN set -e && for VERSION in ${KERNEL_VERSIONS}; do \
+RUN set -e && \
+    for VERSION in ${KERNEL_VERSIONS}; do \
         echo "Downloading/Unpacking $VERSION" && \
         KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${VERSION}.tar.xz && \
         [ -f sources/linux-${VERSION}.tar.xz ] || curl -fSLo sources/linux-${VERSION}.tar.xz ${KERNEL_SOURCE} && \
@@ -21,12 +22,12 @@ RUN set -e && for VERSION in ${KERNEL_VERSIONS}; do \
     done
 
 # Apply patches to all kernels and move config files into place
-RUN for VERSION in ${KERNEL_VERSIONS}; do \
+RUN set -e && \
+    for VERSION in ${KERNEL_VERSIONS}; do \
         SERIES=${VERSION%.*}.x && \
-        echo "Patching $VERSION" && \
+        echo "Patching $VERSION $SERIES" && \
         cd /linux-${VERSION} && \
-        set -e && \
-            if [ -d /patches-${KERNEL_SERIES} ]; then \
+            if [ -d /patches-${SERIES} ]; then \
                for patch in /patches-${SERIES}/*.patch; do \
                    echo "Applying $patch" && \
                    patch -p1 < "$patch"; \
