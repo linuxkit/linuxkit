@@ -1,0 +1,59 @@
+kernel:
+  image: linuxkit/kernel:4.9.62
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:42a92119e1ca10380e0d33e26c0cbcf85b9b3558
+  - linuxkit/runc:1b0741d07949c0acc444cd6a04ee7f833443579d
+  - linuxkit/containerd:bfb61cc1d26c39cd4b2bc08f7a9963fefa0ef3bf
+  - linuxkit/ca-certificates:af4880e78edc28743f7c5e262678c67c6add4c26
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:a9ad57ed738a31ea9380cd73236866c312b35489
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:48831507404049660b960e4055f544917d90378e
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: sysfs
+    image: linuxkit/sysfs:5367b46211882278b84a9e8048855ca5df65beda
+  - name: format
+    image: linuxkit/format:6b46d0450082f397177da36be6b4d74d93eacd1e
+  - name: mount
+    image: linuxkit/mount:41685ecc8039643948e5dff46e17584753469a7a
+    command: ["/usr/bin/mountie", "/var/lib/docker"]
+
+services:
+  - name: getty
+    image: linuxkit/getty:6af22c32c98536a79230eef000e9abd06b037faa
+    env:
+      - INSECURE=true
+  - name: rngd
+    image: linuxkit/rngd:842e5e8ece7934f0cab9fd0027b595ff3471e5b9
+  - name: ntpd
+    image: linuxkit/openntpd:07a80c3e3e816658318ac027e1253ff9a228b8de
+
+  - name: docker
+    image: docker:17.10.0-ce-dind
+    capabilities:
+      - all
+    net: host
+    mounts:
+      - type: cgroup
+        options: ["rw", "nosuid", "noexec", "nodev", "relatime"]
+    binds:
+      - /etc/resolv.conf:/etc/resolv.conf
+      - /var/lib/docker:/var/lib/docker
+      - /var/run:/var/run
+      - /lib/modules:/lib/modules
+      - /etc/docker/daemon.json:/etc/docker/daemon.json
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+  - name: cadvisor
+    image: linuxkit/cadvisor:42264edeebe7f76272ff691854ec592b7e5ae536
+files:
+  - path: var/lib/docker
+    directory: true
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true, "hosts": ["unix:///var/run/docker.sock"]}'
+    mode: "0644"
+trust:
+  org:
+    - linuxkit
+    - library
