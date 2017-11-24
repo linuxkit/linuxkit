@@ -7,13 +7,22 @@ import (
 )
 
 type buildOpts struct {
-	force   bool
-	push    bool
-	release string
+	skipBuild bool
+	force     bool
+	push      bool
+	release   string
 }
 
 // BuildOpt allows callers to specify options to Build
 type BuildOpt func(bo *buildOpts) error
+
+// WithBuildSkip skips the actual build and only pushes/releases (if configured)
+func WithBuildSkip() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.skipBuild = true
+		return nil
+	}
+}
 
 // WithBuildForce forces a build even if an image already exists
 func WithBuildForce() BuildOpt {
@@ -95,34 +104,36 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		fmt.Println("No image pulled, continuing with build")
 	}
 
-	var args []string
+	if !bo.skipBuild {
+		var args []string
 
-	if p.git != nil && p.gitRepo != "" {
-		args = append(args, "--label", "org.opencontainers.image.source="+p.gitRepo)
-	}
-	if p.git != nil && !p.dirty {
-		commit, err := p.git.commitHash("HEAD")
-		if err != nil {
-			return err
+		if p.git != nil && p.gitRepo != "" {
+			args = append(args, "--label", "org.opencontainers.image.source="+p.gitRepo)
 		}
-		args = append(args, "--label", "org.opencontainers.image.revision="+commit)
-	}
+		if p.git != nil && !p.dirty {
+			commit, err := p.git.commitHash("HEAD")
+			if err != nil {
+				return err
+			}
+			args = append(args, "--label", "org.opencontainers.image.revision="+commit)
+		}
 
-	if !p.network {
-		args = append(args, "--network=none")
-	}
+		if !p.network {
+			args = append(args, "--network=none")
+		}
 
-	if err := d.build(p.Tag()+suffix, p.pkgPath, args...); err != nil {
-		return err
-	}
-
-	if !bo.push {
-		if err := d.tag(p.Tag()+suffix, p.Tag()); err != nil {
+		if err := d.build(p.Tag()+suffix, p.pkgPath, args...); err != nil {
 			return err
 		}
 
-		fmt.Printf("Build complete, not pushing, all done.\n")
-		return nil
+		if !bo.push {
+			if err := d.tag(p.Tag()+suffix, p.Tag()); err != nil {
+				return err
+			}
+
+			fmt.Printf("Build complete, not pushing, all done.\n")
+			return nil
+		}
 	}
 
 	if p.dirty {

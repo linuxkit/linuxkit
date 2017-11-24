@@ -21,6 +21,7 @@ func pkgPush(args []string) {
 
 	force := flags.Bool("force", false, "Force rebuild")
 	release := flags.String("release", "", "Release the given version")
+	nobuild := flags.Bool("nobuild", false, "Skip the build")
 
 	p, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
@@ -32,16 +33,24 @@ func pkgPush(args []string) {
 		setupContentTrustPassphrase()
 	}
 
-	fmt.Printf("Building and pushing %q\n", p.Tag())
-
 	var opts []pkglib.BuildOpt
 	opts = append(opts, pkglib.WithBuildPush())
 	if *force {
 		opts = append(opts, pkglib.WithBuildForce())
 	}
+	if *nobuild {
+		opts = append(opts, pkglib.WithBuildSkip())
+	}
 	if *release != "" {
 		opts = append(opts, pkglib.WithRelease(*release))
 	}
+
+	if *nobuild {
+		fmt.Printf("Pushing %q without building\n", p.Tag())
+	} else {
+		fmt.Printf("Building and pushing %q\n", p.Tag())
+	}
+
 	if err := p.Build(opts...); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
