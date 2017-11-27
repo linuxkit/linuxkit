@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.14.1 Kernel Configuration
+# Linux/arm64 4.14.2 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -2806,7 +2806,6 @@ CONFIG_HID_GENERIC=y
 # CONFIG_HID_CHERRY is not set
 # CONFIG_HID_CHICONY is not set
 # CONFIG_HID_CMEDIA is not set
-# CONFIG_HID_CP2112 is not set
 # CONFIG_HID_CYPRESS is not set
 # CONFIG_HID_DRAGONRISE is not set
 # CONFIG_HID_EMS_FF is not set
