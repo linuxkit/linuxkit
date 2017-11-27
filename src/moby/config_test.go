@@ -9,7 +9,7 @@ import (
 	"github.com/docker/docker/api/types/container"
 )
 
-func setupInspect(t *testing.T, label Image) types.ImageInspect {
+func setupInspect(t *testing.T, label ImageConfig) types.ImageInspect {
 	var inspect types.ImageInspect
 	var config container.Config
 
@@ -30,14 +30,16 @@ func TestOverrides(t *testing.T) {
 	var yamlCaps = []string{"CAP_SYS_ADMIN"}
 
 	var yaml = Image{
-		Name:         "test",
-		Image:        "testimage",
-		Capabilities: &yamlCaps,
+		Name:  "test",
+		Image: "testimage",
+		ImageConfig: ImageConfig{
+			Capabilities: &yamlCaps,
+		},
 	}
 
 	var labelCaps = []string{"CAP_SYS_CHROOT"}
 
-	var label = Image{
+	var label = ImageConfig{
 		Capabilities: &labelCaps,
 		Cwd:          "/label/directory",
 	}
@@ -66,7 +68,7 @@ func TestInvalidCap(t *testing.T) {
 	}
 
 	labelCaps := []string{"NOT_A_CAP"}
-	var label = Image{
+	var label = ImageConfig{
 		Capabilities: &labelCaps,
 	}
 
@@ -87,11 +89,13 @@ func TestIdMap(t *testing.T) {
 	yaml := Image{
 		Name:  "test",
 		Image: "testimage",
-		UID:   &uid,
-		GID:   &gid,
+		ImageConfig: ImageConfig{
+			UID: &uid,
+			GID: &gid,
+		},
 	}
 
-	var label = Image{}
+	var label = ImageConfig{}
 
 	inspect := setupInspect(t, label)
 
