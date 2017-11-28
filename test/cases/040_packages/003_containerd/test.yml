@@ -11,7 +11,7 @@ onboot:
     image: linuxkit/dhcpcd:48831507404049660b960e4055f544917d90378e
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:a9ad57ed738a31ea9380cd73236866c312b35489
+    image: linuxkit/sysctl:efe693534bb623007f94a2e3ff4a9fd6ead75aa1
   - name: format
     image: linuxkit/format:6b46d0450082f397177da36be6b4d74d93eacd1e
   - name: mount
