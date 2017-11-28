@@ -13,4 +13,3 @@ WORKDIR /
 COPY --from=mirror /go/bin/sysctl /usr/bin/sysctl
 COPY etc/ /etc/
 CMD ["/usr/bin/sysctl"]
-LABEL org.mobyproject.config='{"pid": "host", "readonly": true, "capabilities": ["CAP_SYS_ADMIN"]}'

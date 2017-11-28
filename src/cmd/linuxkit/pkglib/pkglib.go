@@ -8,17 +8,20 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/moby/tool/src/moby"
 )
 
 // Containers fields settable in the build.yml
 type pkgInfo struct {
-	Image               string   `yaml:"image"`
-	Org                 string   `yaml:"org"`
-	Arches              []string `yaml:"arches"`
-	GitRepo             string   `yaml:"gitrepo"` // ??
-	Network             bool     `yaml:"network"`
-	DisableContentTrust bool     `yaml:"disable-content-trust"`
-	DisableCache        bool     `yaml:"disable-cache"`
+	Image               string            `yaml:"image"`
+	Org                 string            `yaml:"org"`
+	Arches              []string          `yaml:"arches"`
+	GitRepo             string            `yaml:"gitrepo"` // ??
+	Network             bool              `yaml:"network"`
+	DisableContentTrust bool              `yaml:"disable-content-trust"`
+	DisableCache        bool              `yaml:"disable-cache"`
+	Config              *moby.ImageConfig `yaml:"config"`
 }
 
 // Pkg encapsulates information about a package's source
@@ -31,6 +34,7 @@ type Pkg struct {
 	network bool
 	trust   bool
 	cache   bool
+	config  *moby.ImageConfig
 
 	// Internal state
 	pkgPath    string
@@ -185,6 +189,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		network:    pi.Network,
 		trust:      !pi.DisableContentTrust,
 		cache:      !pi.DisableCache,
+		config:     pi.Config,
 		dirty:      dirty,
 		pkgPath:    pkgPath,
 		git:        git,

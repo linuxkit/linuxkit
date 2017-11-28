@@ -11,7 +11,7 @@ onboot:
     image: linuxkit/rngd:842e5e8ece7934f0cab9fd0027b595ff3471e5b9
     command: ["/sbin/rngd", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:a9ad57ed738a31ea9380cd73236866c312b35489
+    image: linuxkit/sysctl:efe693534bb623007f94a2e3ff4a9fd6ead75aa1
   - name: dhcpcd
     image: linuxkit/dhcpcd:48831507404049660b960e4055f544917d90378e
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
