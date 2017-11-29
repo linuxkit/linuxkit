@@ -1,3 +1,5 @@
+.DELETE_ON_ERROR:
+
 .PHONY: default all
 default: bin/linuxkit bin/rtf
 all: default
