@@ -30,6 +30,8 @@ func pushAWS(args []string) {
 	timeoutFlag := flags.Int("timeout", 0, "Upload timeout in seconds")
 	bucketFlag := flags.String("bucket", "", "S3 Bucket to upload to. *Required*")
 	nameFlag := flags.String("img-name", "", "Overrides the name used to identify the file in Amazon S3 and the VM image. Defaults to the base of 'path' with the file extension removed.")
+	enaFlag := flags.Bool("ena", false, "Enable ENA networking")
+	sriovNetFlag := flags.String("sriov", "", "SRIOV network support, set to 'simple' to enable 82599 VF networking")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -158,6 +160,8 @@ func pushAWS(args []string) {
 		Description:        aws.String(fmt.Sprintf("LinuxKit: %s image", name)),
 		RootDeviceName:     aws.String("/dev/sda1"),
 		VirtualizationType: aws.String("hvm"),
+		EnaSupport:         enaFlag,
+		SriovNetSupport:    sriovNetFlag,
 	}
 	log.Debugf("RegisterImage:\n%v", regParams)
 	regResp, err := compute.RegisterImage(regParams)
