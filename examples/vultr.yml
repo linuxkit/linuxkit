@@ -33,6 +33,8 @@ services:
      - CAP_SETUID
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
+    binds:
+     - /etc/resolv.conf:/etc/resolv.conf
 trust:
   org:
     - linuxkit
