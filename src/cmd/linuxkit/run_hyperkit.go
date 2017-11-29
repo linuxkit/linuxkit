@@ -219,7 +219,7 @@ func runHyperKit(args []string) {
 		dflt := hyperkitNetworkingDefault
 		networking = &dflt
 	}
-	netMode := strings.SplitN(*networking, ",", 2)
+	netMode := strings.SplitN(*networking, ",", 3)
 	switch netMode[0] {
 	case hyperkitNetworkingDockerForMac:
 		h.VPNKitSock = filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/s50")
