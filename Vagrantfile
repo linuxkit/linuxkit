@@ -8,10 +8,10 @@ Vagrant.configure("2") do |config|
 	config.vm.synced_folder ".", "/vagrant", disabled: true
 
 	config.vm.provision "shell", inline: <<-SHELL
-		apt-get update
-		DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
+		# apt-get update
+		# DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 		snap install --classic go
-		apt-get clean
+		# apt-get clean
 	SHELL
 
 	config.vm.provision "docker"
