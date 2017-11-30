@@ -44,13 +44,17 @@ var disableRdseed = flag.Bool("disable-rdseed", false, "Disable use of RDSEED")
 
 var hasRdrand, hasRdseed bool
 
-func initRand() bool {
+func initDRNG(ctx *rng) bool {
 	hasRdrand = C.hasrdrand() == 1 && !*disableRdrand
 	hasRdseed = C.hasrdseed() == 1 && !*disableRdseed
-	return hasRdrand || hasRdseed
+	b := hasRdrand || hasRdseed
+	if b == false {
+		ctx.disabled = true
+	}
+	return b
 }
 
-func rand() (uint64, error) {
+func readDRNG(_ *rng) (uint64, error) {
 	var x C.uint64_t
 	// prefer rdseed as that is correct seed
 	if hasRdseed && C.rdseed(&x) == 1 && !*disableRdseed {

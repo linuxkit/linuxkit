@@ -6,6 +6,8 @@ package main
 import "C"
 
 import (
+	"encoding/binary"
+	"errors"
 	"flag"
 	"log"
 	"os"
@@ -14,7 +16,74 @@ import (
 	"golang.org/x/sys/unix"
 )
 
+type rng struct {
+	rngName  string
+	rngDev   string
+	disabled bool
+	rngInit  xinit
+	rngRead  xread
+}
+
+type xinit func(ctx *rng) bool
+type xread func(ctx *rng) (uint64, error)
+
+// Check if hardware RNG device is valid
+func initEntropySource(ctx *rng) bool {
+	f, err := os.Open(ctx.rngDev)
+	defer f.Close()
+	if err != nil {
+		ctx.disabled = true
+		return false
+	}
+
+	// Try to read some data from the entropy source. If it doesn't
+	// return an error, assume it's ok to use
+	buf := make([]byte, 16)
+	n, err := f.Read(buf)
+	if err != nil || n != 16 {
+		ctx.disabled = true
+		return false
+	}
+
+	return true
+}
+
+// Read entropy from the hardware RNG device
+func readHwRNG(ctx *rng) (uint64, error) {
+	f, err := os.Open(ctx.rngDev)
+	defer f.Close()
+	if err != nil {
+		return 0, err
+	}
+	buf := make([]byte, 8)
+	_, err = f.Read(buf)
+	if err != nil {
+		return 0, err
+	}
+
+	r := binary.LittleEndian.Uint64(buf)
+
+	return r, nil
+}
+
+var entropySources = []rng{
+	// Hardware RNG device
+	{
+		rngName: "Hardware RNG Device",
+		rngDev:  "/dev/hwrng",
+		rngInit: initEntropySource,
+		rngRead: readHwRNG,
+	},
+	// RNG instruction support
+	{
+		rngName: "Instruction RNG",
+		rngInit: initDRNG, // Arch specific
+		rngRead: readDRNG, // Arch specific
+	},
+}
+
 func main() {
+	var entSource bool
 	oneshot := flag.Bool("1", false, "Enable oneshot mode")
 	flag.Parse()
 
@@ -23,8 +92,12 @@ func main() {
 		timeout = 0
 	}
 
-	supported := initRand()
-	if !supported {
+	for _, e := range entropySources {
+		if e.rngInit != nil && e.rngInit(&e) {
+			entSource = true
+		}
+	}
+	if entSource == false {
 		log.Fatalf("No random source available")
 	}
 
@@ -81,16 +154,33 @@ type randInfo struct {
 }
 
 func writeEntropy(random *os.File) (int, error) {
-	r, err := rand()
-	if err != nil {
-		// assume can fail occasionally
-		return 0, nil
+	var i int
+	var r uint64
+	var err error
+	var ret uintptr
+	for _, e := range entropySources {
+		if e.disabled {
+			continue
+		}
+		if e.rngRead != nil {
+			r, err = e.rngRead(&e)
+			if err != nil {
+				continue
+			}
+		}
+
+		const entropy = 64 // they are good random numbers, Brent
+		info := randInfo{entropy, 8, r}
+		ret, _, _ = unix.Syscall(unix.SYS_IOCTL, uintptr(random.Fd()), uintptr(C.rndaddentropy), uintptr(unsafe.Pointer(&info)))
+		if ret == 0 {
+			i += 8
+		} else {
+			continue
+		}
 	}
-	const entropy = 64 // they are good random numbers, Brent
-	info := randInfo{entropy, 8, r}
-	ret, _, err := unix.Syscall(unix.SYS_IOCTL, uintptr(random.Fd()), uintptr(C.rndaddentropy), uintptr(unsafe.Pointer(&info)))
-	if ret == 0 {
-		return 8, nil
+	if i == 0 {
+		return 0, errors.New("No entropy added")
 	}
-	return 0, err
+
+	return i, nil
 }
