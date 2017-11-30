@@ -18,7 +18,7 @@ Vagrant.configure("2") do |config|
 
 	config.vm.provision "shell", privileged: false, inline: <<-SHELL
 		go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit
-		echo "export PATH=${PATH}:/home/`whoami`/go/bin" >> ~/.bashrc
+		echo "export PATH=${PATH}:${HOME}/go/bin" >> ~/.bashrc
 	SHELL
 
 	%w(vmware_fusion vmware_workstation vmware_appcatalyst).each do |provider|
