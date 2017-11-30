@@ -5,8 +5,6 @@
 Vagrant.configure("2") do |config|
 	config.vm.box = "bento/ubuntu-16.04"
 
-	config.vm.synced_folder ".", "/vagrant", disabled: true
-
 	config.vm.provision "shell", inline: <<-SHELL
 		# apt-get update
 		# DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
@@ -17,7 +15,11 @@ Vagrant.configure("2") do |config|
 	config.vm.provision "docker"
 
 	config.vm.provision "shell", privileged: false, inline: <<-SHELL
-		go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit
+		mkdir -p ~/go/src/github.com/linuxkit/
+		ln -s /vagrant ~/go/src/github.com/linuxkit/linuxkit
+		cd ~/go/src/github.com/linuxkit/linuxkit/src/cmd/linuxkit
+		go get -d
+		go install
 		echo "export PATH=${PATH}:${HOME}/go/bin" >> ~/.bashrc
 	SHELL
 
