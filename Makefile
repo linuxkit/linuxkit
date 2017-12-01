@@ -50,7 +50,7 @@ bin/linuxkit: tmp_linuxkit_bin.tar
 	touch $@
 
 tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
-	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)" -o bin/linuxkit > $@
+	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)" -o bin/linuxkit > $@
 
 .PHONY: test-cross
 test-cross:
@@ -67,7 +67,7 @@ LOCAL_BUILDMODE?=pie
 endif
 LOCAL_BUILDMODE?=default
 
-LOCAL_LDFLAGS += -s -w -extldflags \"-static\" -X main.GitCommit=$(GIT_COMMIT) -X main.Version=$(VERSION)
+LOCAL_LDFLAGS += -s -w -extldflags \"-static\" -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)
 LOCAL_TARGET ?= bin/linuxkit
 
 .PHONY: local-check local-build local-test local

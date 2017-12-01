@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"runtime"
+
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 )
 
 type buildOpts struct {
@@ -131,6 +133,9 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 			args = append(args, "--label=org.mobyproject.config="+string(b))
 		}
+
+		args = append(args, "--label=org.mobyproject.linuxkit.version="+version.Version)
+		args = append(args, "--label=org.mobyproject.linuxkit.revision="+version.GitCommit)
 
 		if err := d.build(p.Tag()+suffix, p.pkgPath, args...); err != nil {
 			return err
