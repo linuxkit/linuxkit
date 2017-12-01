@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 
 	"github.com/containerd/containerd"
+	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
@@ -55,21 +56,21 @@ func startCmd(args []string) {
 	log.Debugf("Started %s pid %d", id, pid)
 }
 
-type cio struct {
-	config containerd.IOConfig
+type logio struct {
+	config cio.Config
 }
 
-func (c *cio) Config() containerd.IOConfig {
+func (c *logio) Config() cio.Config {
 	return c.config
 }
 
-func (c *cio) Cancel() {
+func (c *logio) Cancel() {
 }
 
-func (c *cio) Wait() {
+func (c *logio) Wait() {
 }
 
-func (c *cio) Close() error {
+func (c *logio) Close() error {
 	return nil
 }
 
@@ -120,7 +121,7 @@ func start(service, sock, basePath, dumpSpec string) (string, uint32, string, er
 		return "", 0, "failed to create container", err
 	}
 
-	io := func(id string) (containerd.IO, error) {
+	io := func(id string) (cio.IO, error) {
 		stdoutFile := filepath.Join("/var/log", service+".out.log")
 		stderrFile := filepath.Join("/var/log", service+".err.log")
 		// We just need this to exist. If we cannot write to the directory,
@@ -131,8 +132,8 @@ func start(service, sock, basePath, dumpSpec string) (string, uint32, string, er
 		if err := ioutil.WriteFile(stderrFile, []byte{}, 0600); err != nil {
 			stderrFile = "/dev/null"
 		}
-		return &cio{
-			containerd.IOConfig{
+		return &logio{
+			cio.Config{
 				Stdin:    "/dev/null",
 				Stdout:   stdoutFile,
 				Stderr:   stderrFile,
