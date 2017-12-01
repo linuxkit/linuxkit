@@ -7,6 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
+
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -27,12 +29,6 @@ type PkgConfig struct {
 var (
 	defaultLogFormatter = &log.TextFormatter{}
 
-	// Version is the human-readable version
-	Version = "unknown"
-
-	// GitCommit hash, set at compile time
-	GitCommit = "unknown"
-
 	// Config is the global tool configuration
 	Config = GlobalConfig{}
 )
@@ -49,9 +45,9 @@ func (f *infoFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return defaultLogFormatter.Format(entry)
 }
 
-func version() {
-	fmt.Printf("%s version %s\n", filepath.Base(os.Args[0]), Version)
-	fmt.Printf("commit: %s\n", GitCommit)
+func printVersion() {
+	fmt.Printf("%s version %s\n", filepath.Base(os.Args[0]), version.Version)
+	fmt.Printf("commit: %s\n", version.GitCommit)
 	os.Exit(0)
 }
 
@@ -129,7 +125,7 @@ func main() {
 	case "run":
 		run(args[1:])
 	case "version":
-		version()
+		printVersion()
 	case "help":
 		flag.Usage()
 	default:
