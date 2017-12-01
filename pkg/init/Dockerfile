@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:7d79062909882186e881aad263668d66e6df2a28 AS build
+FROM linuxkit/alpine:a99d4f10971f30b20688b4a4c40763150b9e4355 AS build
 RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev git linux-headers
 
 ADD usermode-helper.c ./
@@ -16,7 +16,7 @@ RUN mkdir /tmp/bin && cd /tmp/bin/ && cp /go/bin/rc.init . && ln -s rc.init rc.s
 RUN cd /go/src/cmd/service && ./skanky-vendor.sh $GOPATH/src/github.com/containerd/containerd
 RUN go-compile.sh /go/src/cmd/service
 
-FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS mirror
+FROM linuxkit/alpine:a99d4f10971f30b20688b4a4c40763150b9e4355 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
 
