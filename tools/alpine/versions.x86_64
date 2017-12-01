@@ -1,4 +1,4 @@
-# linuxkit/alpine:585174df463ba33e6c0e2050a29a0d9e942d56cb-amd64
+# linuxkit/alpine:a99d4f10971f30b20688b4a4c40763150b9e4355-amd64
 # automatically generated list of installed packages
 abuild-3.0.0_rc2-r8
 alpine-baselayout-3.0.4-r0
@@ -23,7 +23,7 @@ btrfs-progs-4.10.2-r0
 btrfs-progs-dev-4.10.2-r0
 btrfs-progs-libs-4.10.2-r0
 build-base-0.5-r0
-busybox-1.26.2-r7
+busybox-1.26.2-r9
 busybox-initscripts-3.1-r1
 bzip2-1.0.6-r5
 ca-certificates-20161130-r2
@@ -267,7 +267,7 @@ util-linux-dev-2.28.2-r2
 vde2-libs-2.3.2-r7
 vim-8.0.0595-r0
 wayland-1.13.0-r0
-wireguard-tools-0.0.20171111-r0
+wireguard-tools-0.0.20171127-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r4
 xfsprogs-4.5.0-r0

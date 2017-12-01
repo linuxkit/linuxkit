@@ -46,7 +46,7 @@ RUN go get -u github.com/LK4D4/vndr
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.0.0-beta.3
+ENV CONTAINERD_COMMIT=v1.0.0-rc.0
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
@@ -54,7 +54,7 @@ RUN mkdir -p $GOPATH/src/github.com/containerd && \
   git checkout $CONTAINERD_COMMIT
 RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make
 RUN cd $GOPATH/src/github.com/containerd/containerd && \
-  make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS="-extldflags \\\"-fno-PIC -static\\\""
+  make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILD_TAGS="static_build"
 
 FROM alpine:3.6
 
