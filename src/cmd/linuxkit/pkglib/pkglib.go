@@ -37,7 +37,7 @@ type Pkg struct {
 	config  *moby.ImageConfig
 
 	// Internal state
-	pkgPath    string
+	path       string
 	hash       string
 	dirty      bool
 	commitHash string
@@ -191,7 +191,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		cache:      !pi.DisableCache,
 		config:     pi.Config,
 		dirty:      dirty,
-		pkgPath:    pkgPath,
+		path:       pkgPath,
 		git:        git,
 	}, nil
 }

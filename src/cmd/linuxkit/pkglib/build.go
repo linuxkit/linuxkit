@@ -137,7 +137,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		args = append(args, "--label=org.mobyproject.linuxkit.version="+version.Version)
 		args = append(args, "--label=org.mobyproject.linuxkit.revision="+version.GitCommit)
 
-		if err := d.build(p.Tag()+suffix, p.pkgPath, args...); err != nil {
+		if err := d.build(p.Tag()+suffix, p.path, args...); err != nil {
 			return err
 		}
 
