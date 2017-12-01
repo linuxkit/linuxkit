@@ -12,7 +12,7 @@ import (
 	"github.com/moby/tool/src/moby"
 )
 
-// Containers fields settable in the build.yml
+// Contains fields settable in the build.yml
 type pkgInfo struct {
 	Image               string            `yaml:"image"`
 	Org                 string            `yaml:"org"`
@@ -22,19 +22,28 @@ type pkgInfo struct {
 	DisableContentTrust bool              `yaml:"disable-content-trust"`
 	DisableCache        bool              `yaml:"disable-cache"`
 	Config              *moby.ImageConfig `yaml:"config"`
+	Depends             struct {
+		DockerImages struct {
+			TargetDir string   `yaml:"target-dir"`
+			Target    string   `yaml:"target"`
+			FromFile  string   `yaml:"from-file"`
+			List      []string `yaml:"list"`
+		} `yaml:"docker-images"`
+	} `yaml:"depends"`
 }
 
 // Pkg encapsulates information about a package's source
 type Pkg struct {
 	// These correspond to pkgInfo fields
-	image   string
-	org     string
-	arches  []string
-	gitRepo string
-	network bool
-	trust   bool
-	cache   bool
-	config  *moby.ImageConfig
+	image         string
+	org           string
+	arches        []string
+	gitRepo       string
+	network       bool
+	trust         bool
+	cache         bool
+	config        *moby.ImageConfig
+	dockerDepends dockerDepends
 
 	// Internal state
 	path       string
@@ -123,6 +132,11 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		return Pkg{}, fmt.Errorf("Image field is required")
 	}
 
+	dockerDepends, err := newDockerDepends(pkgPath, &pi)
+	if err != nil {
+		return Pkg{}, err
+	}
+
 	if devMode {
 		// If --org is also used then this will be overwritten
 		// by argOrg when we iterate over the provided options
@@ -180,19 +194,20 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	}
 
 	return Pkg{
-		image:      pi.Image,
-		org:        pi.Org,
-		hash:       hash,
-		commitHash: hashCommit,
-		arches:     pi.Arches,
-		gitRepo:    pi.GitRepo,
-		network:    pi.Network,
-		trust:      !pi.DisableContentTrust,
-		cache:      !pi.DisableCache,
-		config:     pi.Config,
-		dirty:      dirty,
-		path:       pkgPath,
-		git:        git,
+		image:         pi.Image,
+		org:           pi.Org,
+		hash:          hash,
+		commitHash:    hashCommit,
+		arches:        pi.Arches,
+		gitRepo:       pi.GitRepo,
+		network:       pi.Network,
+		trust:         !pi.DisableContentTrust,
+		cache:         !pi.DisableCache,
+		config:        pi.Config,
+		dockerDepends: dockerDepends,
+		dirty:         dirty,
+		path:          pkgPath,
+		git:           git,
 	}, nil
 }
 
@@ -241,4 +256,30 @@ func (p Pkg) cleanForBuild() error {
 		return fmt.Errorf("Cannot build from commit hash != HEAD")
 	}
 	return nil
+}
+
+// Expands path from relative to abs against base, ensuring the result is within base, but is not base itself. Field is the fieldname, to be used for constructing the error.
+func makeAbsSubpath(field, base, path string) (string, error) {
+	if path == "" {
+		return "", nil
+	}
+
+	if filepath.IsAbs(path) {
+		return "", fmt.Errorf("%s must be relative to package directory", field)
+	}
+
+	p, err := filepath.Abs(filepath.Join(base, path))
+	if err != nil {
+		return "", err
+	}
+
+	if p == base {
+		return "", fmt.Errorf("%s must not be exactly the package directory", field)
+	}
+
+	if !filepath.HasPrefix(p, base) {
+		return "", fmt.Errorf("%s must be within package directory", field)
+	}
+
+	return p, nil
 }

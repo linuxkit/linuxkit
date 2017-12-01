@@ -110,6 +110,10 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if !bo.skipBuild {
 		var args []string
 
+		if err := p.dockerDepends.Do(d); err != nil {
+			return err
+		}
+
 		if p.git != nil && p.gitRepo != "" {
 			args = append(args, "--label", "org.opencontainers.image.source="+p.gitRepo)
 		}

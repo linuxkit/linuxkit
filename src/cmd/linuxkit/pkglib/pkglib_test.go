@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -84,4 +85,64 @@ func TestCache(t *testing.T) {
 
 func TestContentTrust(t *testing.T) {
 	testBool(t, "disable-content-trust", true, "-enable-content-trust", "-disable-content-trust", func(p Pkg) bool { return p.trust })
+}
+
+func testBadBuildYML(t *testing.T, build, expect string) {
+	cwd, err := os.Getwd()
+	require.NoError(t, err)
+
+	tmpDir := filepath.Join(cwd, t.Name())
+	err = os.Mkdir(tmpDir, 0755)
+	require.NoError(t, err)
+	defer os.RemoveAll(tmpDir)
+
+	pkgDir := dummyPackage(t, tmpDir, build)
+	flags := flag.NewFlagSet(t.Name(), flag.ExitOnError)
+	args := []string{"-hash-path=" + cwd, pkgDir}
+	_, err = NewFromCLI(flags, args...)
+	require.Error(t, err)
+	assert.Regexp(t, regexp.MustCompile(expect), err.Error())
+}
+
+func TestDependsImageNoDigest(t *testing.T) {
+	testBadBuildYML(t, `
+image: dummy
+depends:
+  docker-images:
+    target-dir: dl
+    list:
+      - docker.io/library/nginx:latest
+`, `image ".*" lacks a digest`)
+}
+
+func TestDependsImageBadDigest(t *testing.T) {
+	testBadBuildYML(t, `
+image: dummy
+depends:
+  docker-images:
+    target-dir: dl
+    list:
+      - docker.io/library/nginx:latest@sha256:invalid
+`, `unable to validate digest in ".*"`)
+}
+
+func TestDependsImageBothTargets(t *testing.T) {
+	testBadBuildYML(t, `
+image: dummy
+depends:
+  docker-images:
+    target: foo.tar
+    target-dir: dl
+`, `"depends.images.target" and "depends.images.target-dir" are mutually exclusive`)
+}
+
+func TestDependsImageBothLists(t *testing.T) {
+	testBadBuildYML(t, `
+image: dummy
+depends:
+  docker-images:
+    from-file: images.lst
+    list:
+      - one
+`, `"depends.images.list" and "depends.images.from-file" are mutually exclusive`)
 }

@@ -103,3 +103,8 @@ func (dr dockerRunner) build(tag, pkg string, opts ...string) error {
 	args = append(args, "-t", tag, pkg)
 	return dr.command(args...)
 }
+
+func (dr dockerRunner) save(tgt string, refs ...string) error {
+	args := append([]string{"image", "save", "-o", tgt}, refs...)
+	return dr.command(args...)
+}
