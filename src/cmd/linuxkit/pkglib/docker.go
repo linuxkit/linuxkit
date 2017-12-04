@@ -53,7 +53,7 @@ func (dr dockerRunner) command(args ...string) error {
 }
 
 func (dr dockerRunner) pull(img string) (bool, error) {
-	err := dr.command("pull", img)
+	err := dr.command("image", "pull", img)
 	if err == nil {
 		return true, nil
 	}
@@ -66,7 +66,7 @@ func (dr dockerRunner) pull(img string) (bool, error) {
 }
 
 func (dr dockerRunner) push(img string) error {
-	return dr.command("push", img)
+	return dr.command("image", "push", img)
 }
 
 func (dr dockerRunner) pushWithManifest(img, suffix string) error {
@@ -91,7 +91,7 @@ func (dr dockerRunner) pushWithManifest(img, suffix string) error {
 
 func (dr dockerRunner) tag(ref, tag string) error {
 	fmt.Printf("Tagging %s as %s\n", ref, tag)
-	return dr.command("tag", ref, tag)
+	return dr.command("image", "tag", ref, tag)
 }
 
 func (dr dockerRunner) build(tag, pkg string, opts ...string) error {
