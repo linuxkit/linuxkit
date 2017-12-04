@@ -28,6 +28,12 @@ const (
 
 // Process the run arguments and execute run
 func runHyperKit(args []string) {
+	defer func() {
+		if r := recover(); r != nil {
+			os.Exit(1)
+		}
+	}()
+
 	flags := flag.NewFlagSet("hyperkit", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
 	flags.Usage = func() {
@@ -65,7 +71,7 @@ func runHyperKit(args []string) {
 	fw := flags.String("fw", "/Applications/Docker.app/Contents/Resources/uefi/UEFI.fd", "Path to OVMF firmware for UEFI boot")
 
 	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
+		log.Panic("Unable to parse args")
 	}
 	remArgs := flags.Args()
 	if len(remArgs) == 0 {
@@ -100,37 +106,37 @@ func runHyperKit(args []string) {
 
 	switch {
 	case *kernelBoot && *isoBoot:
-		log.Fatalf("Cannot specify both kernel and ISO boot together")
+		log.Panicf("Cannot specify both kernel and ISO boot together")
 	case *kernelBoot:
 		if !statKernel {
-			log.Fatalf("Cannot find kernel file (%s): %v", path+"-kernel", err)
+			log.Panicf("Cannot find kernel file (%s): %v", path+"-kernel", err)
 		}
 		_, err = os.Stat(path + "-initrd.img")
 		statInitrd := err == nil
 		if !statInitrd {
-			log.Fatalf("Cannot find initrd file (%s): %v", path+"-initrd.img", err)
+			log.Panicf("Cannot find initrd file (%s): %v", path+"-initrd.img", err)
 		}
 	case *isoBoot:
 		if !stat {
-			log.Fatalf("Cannot find ISO to boot")
+			log.Panicf("Cannot find ISO to boot")
 		}
 		prefix = strings.TrimSuffix(path, ".iso")
 		// hyperkit only supports UEFI ISO boot at present
 		if !*uefiBoot {
-			log.Fatalf("Hyperkit requires --uefi to be set to boot an ISO")
+			log.Panicf("Hyperkit requires --uefi to be set to boot an ISO")
 		}
 		isoPaths = append(isoPaths, path)
 	default:
 		if !stat {
-			log.Fatalf("Cannot find file %s to boot", path)
+			log.Panicf("Cannot find file %s to boot", path)
 		}
-		log.Fatalf("Unrecognised boot type, please specify on command line")
+		log.Panicf("Unrecognised boot type, please specify on command line")
 	}
 
 	if *uefiBoot {
 		_, err := os.Stat(*fw)
 		if err != nil {
-			log.Fatalf("Cannot open UEFI firmware file (%s): %v", *fw, err)
+			log.Panicf("Cannot open UEFI firmware file (%s): %v", *fw, err)
 		}
 	}
 
@@ -138,12 +144,12 @@ func runHyperKit(args []string) {
 		*state = prefix + "-state"
 	}
 	if err := os.MkdirAll(*state, 0755); err != nil {
-		log.Fatalf("Could not create state directory: %v", err)
+		log.Panicf("Could not create state directory: %v", err)
 	}
 
 	metadataPaths, err := CreateMetadataISO(*state, *data)
 	if err != nil {
-		log.Fatalf("%v", err)
+		log.Panicf("%v", err)
 	}
 	isoPaths = append(isoPaths, metadataPaths...)
 
@@ -155,15 +161,15 @@ func runHyperKit(args []string) {
 		if _, err := os.Stat(vpnkitUUIDFile); os.IsNotExist(err) {
 			*vpnkitUUID = uuid.New().String()
 			if err := ioutil.WriteFile(vpnkitUUIDFile, []byte(*vpnkitUUID), 0600); err != nil {
-				log.Fatalf("Unable to write to %s: %v", vpnkitUUIDFile, err)
+				log.Panicf("Unable to write to %s: %v", vpnkitUUIDFile, err)
 			}
 		} else {
 			uuidBytes, err := ioutil.ReadFile(vpnkitUUIDFile)
 			if err != nil {
-				log.Fatalf("Unable to read VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
+				log.Panicf("Unable to read VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
 			}
 			if tmp, err := uuid.ParseBytes(uuidBytes); err != nil {
-				log.Fatalf("Unable to parse VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
+				log.Panicf("Unable to parse VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
 			} else {
 				*vpnkitUUID = tmp.String()
 			}
@@ -179,14 +185,14 @@ func runHyperKit(args []string) {
 	if *kernelBoot {
 		cmdline, err = ioutil.ReadFile(prefix + "-cmdline")
 		if err != nil {
-			log.Fatalf("Cannot open cmdline file: %v", err)
+			log.Panicf("Cannot open cmdline file: %v", err)
 		}
 	}
 
 	// Create new HyperKit instance (w/o networking for now)
 	h, err := hyperkit.New(*hyperkitPath, "", *state)
 	if err != nil {
-		log.Fatalln("Error creating hyperkit: ", err)
+		log.Panicln("Error creating hyperkit: ", err)
 	}
 
 	if *consoleToFile {
@@ -202,14 +208,14 @@ func runHyperKit(args []string) {
 			d.Path = filepath.Join(*state, "disk"+id+".img")
 		}
 		if d.Path == "" {
-			log.Fatalf("disk specified with no size or name")
+			log.Panicf("disk specified with no size or name")
 		}
 		hd := hyperkit.DiskConfig{Path: d.Path, Size: d.Size}
 		h.Disks = append(h.Disks, hd)
 	}
 
 	if h.VSockPorts, err = stringToIntArray(*vsockports, ","); err != nil {
-		log.Fatalln("Unable to parse vsock-ports: ", err)
+		log.Panicln("Unable to parse vsock-ports: ", err)
 	}
 
 	// Select network mode
@@ -238,7 +244,7 @@ func runHyperKit(args []string) {
 			vsockSocket := filepath.Join(*state, "connect")
 			vpnkitProcess, err = launchVPNKit(h.VPNKitSock, vsockSocket, vpnkitPortSocket)
 			if err != nil {
-				log.Fatalln("Unable to start vpnkit: ", err)
+				log.Panicln("Unable to start vpnkit: ", err)
 			}
 			defer func() {
 				if vpnkitProcess != nil {
@@ -259,7 +265,7 @@ func runHyperKit(args []string) {
 	case hyperkitNetworkingNone:
 		h.VPNKitSock = ""
 	default:
-		log.Fatalf("Invalid networking mode: %s", netMode[0])
+		log.Panicf("Invalid networking mode: %s", netMode[0])
 	}
 
 	if *kernelBoot {
@@ -279,7 +285,7 @@ func runHyperKit(args []string) {
 		if ip := net.ParseIP(*ipStr); len(ip) > 0 && ip.To4() != nil {
 			h.VPNKitPreferredIPv4 = ip.String()
 		} else {
-			log.Fatalf("Unable to parse IPv4 address: %v", *ipStr)
+			log.Panicf("Unable to parse IPv4 address: %v", *ipStr)
 		}
 	}
 
@@ -288,21 +294,21 @@ func runHyperKit(args []string) {
 		switch netMode[0] {
 		case hyperkitNetworkingDockerForMac, hyperkitNetworkingVPNKit:
 			if vpnkitPortSocket == "" {
-				log.Fatalf("The VPNKit Port socket path is required to publish ports")
+				log.Panicf("The VPNKit Port socket path is required to publish ports")
 			}
 			f, err := vpnkitPublishPorts(h, publishFlags, vpnkitPortSocket)
 			if err != nil {
-				log.Fatalf("Publish ports failed with: %v", err)
+				log.Panicf("Publish ports failed with: %v", err)
 			}
 			defer f()
 		default:
-			log.Fatalf("Port publishing requires %q or %q networking mode", hyperkitNetworkingDockerForMac, hyperkitNetworkingVPNKit)
+			log.Panicf("Port publishing requires %q or %q networking mode", hyperkitNetworkingDockerForMac, hyperkitNetworkingVPNKit)
 		}
 	}
 
 	err = h.Run(string(cmdline))
 	if err != nil {
-		log.Fatalf("Cannot run hyperkit: %v", err)
+		log.Panicf("Cannot run hyperkit: %v", err)
 	}
 }
 
