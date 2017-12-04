@@ -110,6 +110,10 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if !bo.skipBuild {
 		var args []string
 
+		if err := p.dockerDepends.Do(d); err != nil {
+			return err
+		}
+
 		if p.git != nil && p.gitRepo != "" {
 			args = append(args, "--label", "org.opencontainers.image.source="+p.gitRepo)
 		}
@@ -137,7 +141,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		args = append(args, "--label=org.mobyproject.linuxkit.version="+version.Version)
 		args = append(args, "--label=org.mobyproject.linuxkit.revision="+version.GitCommit)
 
-		if err := d.build(p.Tag()+suffix, p.pkgPath, args...); err != nil {
+		if err := d.build(p.Tag()+suffix, p.path, args...); err != nil {
 			return err
 		}
 
