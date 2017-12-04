@@ -6,10 +6,7 @@ Vagrant.configure("2") do |config|
 	config.vm.box = "bento/ubuntu-16.04"
 
 	config.vm.provision "shell", inline: <<-SHELL
-		# apt-get update
-		# DEBIAN_FRONTEND=noninteractive apt-get -y upgrade
 		snap install --classic go
-		# apt-get clean
 	SHELL
 
 	config.vm.provision "docker"
