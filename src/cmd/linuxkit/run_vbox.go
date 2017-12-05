@@ -200,6 +200,11 @@ func runVbox(args []string) {
 		log.Fatalf("modifyvm --nic error: %v\n%s", err, out)
 	}
 
+	_, out, err = manage(vboxmanage, "modifyvm", name, "--cableconnected1", "on")
+	if err != nil {
+		log.Fatalf("modifyvm --cableconnected error: %v\n%s", err, out)
+	}
+
 	// create socket
 	_ = os.Remove(consolePath)
 	ln, err := net.Listen("unix", consolePath)
