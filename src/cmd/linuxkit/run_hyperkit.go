@@ -291,6 +291,7 @@ func runHyperKit(args []string) {
 				log.Fatalf("Publish ports failed with: %v", err)
 			}
 			defer f()
+			log.RegisterExitHandler(f)
 		default:
 			log.Fatalf("Port publishing requires %q or %q networking mode", hyperkitNetworkingDockerForMac, hyperkitNetworkingVPNKit)
 		}
