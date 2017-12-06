@@ -49,6 +49,7 @@ func runHyperKit(args []string) {
 	networking := flags.String("networking", hyperkitNetworkingDefault, "Networking mode. Valid options are 'default', 'docker-for-mac', 'vpnkit[,eth-socket-path[,port-socket-path]]', 'vmnet' and 'none'. 'docker-for-mac' connects to the network used by Docker for Mac. 'vpnkit' connects to the VPNKit socket(s) specified. If no socket path is provided a new VPNKit instance will be started and 'vpnkit_eth.sock' and 'vpnkit_port.sock' will be created in the state directory. 'port-socket-path' is only needed if you want to publish ports on localhost using an existing VPNKit instance. 'vmnet' uses the Apple vmnet framework, requires root/sudo. 'none' disables networking.`")
 
 	vpnkitUUID := flags.String("vpnkit-uuid", "", "Optional UUID used to identify the VPNKit connection. Overrides 'vpnkit.uuid' in the state directory.")
+	vpnkitPath := flags.String("vpnkit", "", "Path to vpnkit binary")
 	publishFlags := multipleFlag{}
 	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
 
@@ -236,7 +237,7 @@ func runHyperKit(args []string) {
 			h.VPNKitSock = filepath.Join(*state, "vpnkit_eth.sock")
 			vpnkitPortSocket = filepath.Join(*state, "vpnkit_port.sock")
 			vsockSocket := filepath.Join(*state, "connect")
-			vpnkitProcess, err = launchVPNKit(h.VPNKitSock, vsockSocket, vpnkitPortSocket)
+			vpnkitProcess, err = launchVPNKit(*vpnkitPath, h.VPNKitSock, vsockSocket, vpnkitPortSocket)
 			if err != nil {
 				log.Fatalln("Unable to start vpnkit: ", err)
 			}
@@ -323,12 +324,14 @@ func createListenSocket(path string) (*os.File, error) {
 // launchVPNKit starts a new instance of VPNKit. Ethernet socket and port socket
 // will be created and passed to VPNKit. The VSOCK socket should be created
 // by HyperKit when it starts.
-func launchVPNKit(etherSock string, vsockSock string, portSock string) (*os.Process, error) {
+func launchVPNKit(vpnkitPath, etherSock, vsockSock, portSock string) (*os.Process, error) {
 	var err error
 
-	vpnkitPath, err := exec.LookPath("vpnkit")
-	if err != nil {
-		return nil, fmt.Errorf("Unable to find vpnkit binary")
+	if vpnkitPath == "" {
+		vpnkitPath, err = exec.LookPath("vpnkit")
+		if err != nil {
+			return nil, fmt.Errorf("Unable to find vpnkit binary")
+		}
 	}
 
 	etherFile, err := createListenSocket(etherSock)
