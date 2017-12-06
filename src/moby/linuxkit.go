@@ -1,7 +1,6 @@
 package moby
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -58,9 +57,21 @@ func ensureLinuxkitImage(name string) error {
 		return err
 	}
 	// TODO pass through --pull to here
-	buf := new(bytes.Buffer)
-	Build(m, buf, false, "")
-	image := buf.Bytes()
+	tf, err := ioutil.TempFile("", "")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tf.Name())
+	Build(m, tf, false, "")
+	if err := tf.Close(); err != nil {
+		return err
+	}
+
+	image, err := os.Open(tf.Name())
+	if err != nil {
+		return err
+	}
+	defer image.Close()
 	kernel, initrd, cmdline, err := tarToInitrd(image)
 	if err != nil {
 		return fmt.Errorf("Error converting to initrd: %v", err)

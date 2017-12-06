@@ -185,14 +185,18 @@ func build(args []string) {
 		m.Trust = moby.TrustConfig{}
 	}
 
-	var buf *bytes.Buffer
+	var tf *os.File
 	var w io.Writer
 	if outputFile != nil {
 		w = outputFile
 	} else {
-		buf = new(bytes.Buffer)
-		w = buf
+		if tf, err = ioutil.TempFile("", ""); err != nil {
+			log.Fatalf("Error creating tempfile: %v", err)
+		}
+		defer os.Remove(tf.Name())
+		w = tf
 	}
+
 	// this is a weird interface, but currently only streamable types can have additional files
 	// need to split up the base tarball outputs from the secondary stages
 	var tp string
@@ -205,7 +209,11 @@ func build(args []string) {
 	}
 
 	if outputFile == nil {
-		image := buf.Bytes()
+		image := tf.Name()
+		if err := tf.Close(); err != nil {
+			log.Fatalf("Error closing tempfile: %v", err)
+		}
+
 		log.Infof("Create outputs:")
 		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size)
 		if err != nil {
