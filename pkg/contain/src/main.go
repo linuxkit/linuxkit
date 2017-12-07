@@ -20,18 +20,20 @@ type connection struct {
 }
 
 func main() {
+	if len(os.Args) < 2 {
+		log.Errorln(errors.New("not enough arguments"))
+		os.Exit(1)
+	}
 	log.SetLevel(log.DebugLevel)
-	err := parse(os.Args[1:])
+	err := start(os.Args[1:])
 	if err != nil {
 		log.Errorln(err.Error())
+		os.Exit(1)
 	}
 	log.Infoln("end")
 }
 
-func parse(args []string) error {
-	if len(os.Args) < 1 {
-		return errors.New("not enough arguments")
-	}
+func start(args []string) error {
 	log.Infoln("parsing configfile:", configFile)
 	mounterConfig, err := loadConfig(configFile)
 	if err != nil {
