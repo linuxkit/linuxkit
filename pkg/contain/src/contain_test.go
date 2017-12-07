@@ -3,20 +3,23 @@ package main
 import (
 	"context"
 	"flag"
+	"os"
 	"os/exec"
 	"testing"
 	"time"
 
+	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
 
+const daemonCommand = "containerd"
+
 var (
-	daemonCommand = "containerd"
-	daemonState   = "/run/containerd"
-	daemonRoot    = "var/lib/containerd"
-	daemonAddress = "/containerd.sock"
-	con           *connection
-	config        = &ContainConfig{
+	daemonState string
+	daemonRoot  string
+	noDaemon    bool
+	con         *connection
+	config      = &ContainConfig{
 		Namespace: "contain-test",
 		Socket:    "/containerd.sock",
 		HostMountContainer: []Contain{
@@ -32,24 +35,21 @@ var (
 )
 
 func init() {
-	flag.StringVar(&daemonAddress, "address", daemonAddress, "The address to the containerd socket for use in the tests")
+	flag.StringVar(&config.Socket, "address", config.Socket, "The address to the containerd socket for use in the tests")
 	flag.StringVar(&daemonState, "state", daemonState, "")
+	flag.BoolVar(&noDaemon, "no-daemon", false, "Do not start a dedicated daemon for the tests")
 	flag.StringVar(&daemonRoot, "root", daemonRoot, "")
 	flag.Parse()
 }
 
 func TestMain(m *testing.M) {
+	shutdown := func() {}
 	var err error
-	log.Infoln("starting daemon")
-	cmd := exec.CommandContext(
-		context.Background(),
-		daemonCommand,
-		"--address", daemonAddress,
-		"--log-level", "debug")
-	if err := cmd.Start(); err != nil {
-		cmd.Wait()
-		log.Errorln("failed to start daemon")
-		return
+	if stat, _ := os.Stat(config.Socket); stat == nil && !noDaemon {
+		shutdown, err = setupContainerd()
+		if err != nil {
+			log.Errorln(err)
+		}
 	}
 
 	con, err = setup(config)
@@ -60,24 +60,43 @@ func TestMain(m *testing.M) {
 
 	log.Infoln("starting tests")
 	m.Run()
-	log.Infoln("shutdown containerd")
-	done := make(chan error, 1)
-	go func() {
-		done <- cmd.Wait()
-	}()
-	select {
-	case <-time.After(5 * time.Second):
-		if err := cmd.Process.Kill(); err != nil {
-			log.Fatal("failed to kill: ", err)
-		}
-		log.Println("containerd killed as timeout reached")
-	case err := <-done:
-		if err != nil {
-			log.Printf("containerd done with error = %v", err)
-		} else {
-			log.Print("containerd done gracefully without error")
-		}
+
+	shutdown()
+}
+
+func setupContainerd() (func(), error) {
+	log.Infoln("starting daemon")
+	cmd := exec.CommandContext(
+		context.Background(),
+		daemonCommand,
+		"--address", config.Socket,
+		"--log-level", "debug")
+	if err := cmd.Start(); err != nil {
+		cmd.Wait()
+		return func() {}, errors.New("failed to start daemon")
 	}
+
+	return func() {
+		log.Infoln("shutdown containerd")
+		done := make(chan error, 1)
+		go func() {
+			done <- cmd.Wait()
+		}()
+		select {
+		case <-time.After(5 * time.Second):
+			if err := cmd.Process.Kill(); err != nil {
+				log.Fatal("failed to kill: ", err)
+			}
+			log.Println("containerd killed as timeout reached")
+			os.Remove(config.Socket)
+		case err := <-done:
+			if err != nil {
+				log.Printf("containerd done with error = %v", err)
+			} else {
+				log.Print("containerd done gracefully without error")
+			}
+		}
+	}, nil
 }
 
 func Test_Execute(t *testing.T) {
