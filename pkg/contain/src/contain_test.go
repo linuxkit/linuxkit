@@ -20,17 +20,9 @@ var (
 	noDaemon    bool
 	con         *connection
 	config      = &ContainConfig{
-		Namespace: "contain-test",
-		Socket:    "/containerd.sock",
-		HostMountContainer: []Contain{
-			Contain{
-				Command:     []string{"ls"},
-				Name:        "test",
-				Image:       "docker.io/library/alpine:latest",
-				Source:      "/etc",
-				Destination: "/mnt",
-			},
-		},
+		Namespace:          "contain-test",
+		Socket:             "/containerd.sock",
+		HostMountContainer: []Contain{},
 	}
 )
 
@@ -111,13 +103,33 @@ func Test_Execute(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "tester",
+			name: "Check existing config",
 			args: args{
-				args:    []string{"ls"},
-				mounter: config.HostMountContainer[0],
-				con:     con,
+				args: []string{"ls"},
+				mounter: Contain{
+					Command:     []string{"ls"},
+					Name:        "existing",
+					Image:       "docker.io/library/alpine:latest",
+					Source:      "/etc",
+					Destination: "/mnt",
+				},
+				con: con,
 			},
 			wantErr: false,
+		}, {
+			name: "Check non-existing config",
+			args: args{
+				args: []string{"nothing"},
+				mounter: Contain{
+					Command:     []string{"ls"},
+					Name:        "non-existing",
+					Image:       "docker.io/library/alpine:latest",
+					Source:      "/etc",
+					Destination: "/mnt",
+				},
+				con: con,
+			},
+			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
