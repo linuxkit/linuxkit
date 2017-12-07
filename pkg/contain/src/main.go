@@ -21,7 +21,7 @@ type connection struct {
 
 func main() {
 	log.SetLevel(log.DebugLevel)
-	err := parse(os.Args)
+	err := parse(os.Args[1:])
 	if err != nil {
 		log.Errorln(err.Error())
 	}
