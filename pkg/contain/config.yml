@@ -1,7 +1,7 @@
 namespace: contain
 socket: /containerd.sock
 configs:
-  - command: ls
+  - command: ["ls"]
     name: alpine
     image: docker.io/library/alpine:edge
     source: /etc
