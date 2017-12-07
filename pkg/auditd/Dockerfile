@@ -8,7 +8,7 @@ FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS mirror
 COPY --from=build /home/builder/*apk /
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
-RUN apk add --initdb -p /out alpine-baselayout tini
+RUN apk add --initdb -p /out alpine-baselayout busybox tini
 RUN apk add --allow-untrusted -p /out /*apk
 
 # Remove apk residuals. We have a read-only rootfs, so apk is of no use.
