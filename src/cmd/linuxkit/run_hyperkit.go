@@ -241,14 +241,10 @@ func runHyperKit(args []string) {
 			if err != nil {
 				log.Fatalln("Unable to start vpnkit: ", err)
 			}
-			defer func() {
-				if vpnkitProcess != nil {
-					err := vpnkitProcess.Kill()
-					if err != nil {
-						log.Println(err)
-					}
-				}
-			}()
+			defer shutdownVPNKit(vpnkitProcess)
+			log.RegisterExitHandler(func() {
+				shutdownVPNKit(vpnkitProcess)
+			})
 			// The guest will use this 9P mount to configure which ports to forward
 			h.Sockets9P = []hyperkit.Socket9P{{Path: vpnkitPortSocket, Tag: "port"}}
 			// VSOCK port 62373 is used to pass traffic from host->guest
@@ -296,6 +292,7 @@ func runHyperKit(args []string) {
 				log.Fatalf("Publish ports failed with: %v", err)
 			}
 			defer f()
+			log.RegisterExitHandler(f)
 		default:
 			log.Fatalf("Port publishing requires %q or %q networking mode", hyperkitNetworkingDockerForMac, hyperkitNetworkingVPNKit)
 		}
@@ -304,6 +301,16 @@ func runHyperKit(args []string) {
 	err = h.Run(string(cmdline))
 	if err != nil {
 		log.Fatalf("Cannot run hyperkit: %v", err)
+	}
+}
+
+func shutdownVPNKit(process *os.Process) {
+	if process == nil {
+		return
+	}
+
+	if err := process.Kill(); err != nil {
+		log.Println(err)
 	}
 }
 
