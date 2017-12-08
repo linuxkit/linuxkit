@@ -27,26 +27,6 @@ services:
      - CAP_SETUID
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
-files:
-  - path: etc/containerd/config.toml
-    contents: |
-      state = "/run/containerd"
-      root = "/var/lib/containerd"
-      snapshotter = "io.containerd.snapshotter.v1.overlayfs"
-      differ = "io.containerd.differ.v1.base-diff"
-      subreaper = false
-
-      [grpc]
-      address = "/run/containerd/containerd.sock"
-      uid = 0
-      gid = 0
-
-      [debug]
-      address = "/run/containerd/debug.sock"
-      level = "info"
-
-      [metrics]
-      address = ":13337"
 trust:
   org:
     - linuxkit
