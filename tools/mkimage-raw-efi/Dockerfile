@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS grub-build
+FROM linuxkit/alpine:d307c8a386fa3f32cddda9409b9687e191cdd6f1 AS grub-build
 
 RUN apk add \
   automake \
@@ -40,7 +40,7 @@ RUN mkdir /grub-lib && \
     ;; \
   esac
 
-FROM linuxkit/alpine:07f7d136e427dc68154cd5edbb2b9576f9ac5213 AS make-img
+FROM linuxkit/alpine:d307c8a386fa3f32cddda9409b9687e191cdd6f1 AS make-img
 
 RUN \
   apk update && apk upgrade && \

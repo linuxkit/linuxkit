@@ -1,4 +1,4 @@
-FROM alpine:3.6 AS mirror
+FROM alpine:3.7 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -14,9 +14,6 @@ RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
 
 # add the tools for WireGuard, since the kernel module is now included, but from edge/testing
 RUN apk fetch --recursive -o /mirror/$(uname -m) -X http://dl-cdn.alpinelinux.org/alpine/edge/testing -U wireguard-tools
-
-# containerd requires go 1.9 which is only in edge
-RUN apk fetch --recursive -o /mirror/$(uname -m) -X http://dl-cdn.alpinelinux.org/alpine/edge/community -U go
 
 # install abuild for signing
 RUN apk add --no-cache abuild
@@ -56,7 +53,7 @@ RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make
 RUN cd $GOPATH/src/github.com/containerd/containerd && \
   make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILD_TAGS="static_build"
 
-FROM alpine:3.6
+FROM alpine:3.7
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
