@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:0fb5b5e7952d22eeae57607493168e679a4a0c0a AS mirror
+FROM linuxkit/alpine:d307c8a386fa3f32cddda9409b9687e191cdd6f1 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add curl
 RUN apk add --no-cache --initdb -p /out \
