@@ -2,18 +2,18 @@ kernel:
   image: mobylinux/kernel:4.9.x
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:6b3755e47f00d6027321d3fca99a19af6504be75
+  - linuxkit/init:9250948d0de494df8a811edb3242b4584057cfe4
   - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
   - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:1644bf07edbcaf5ce0bb764fa925b544183547f9
+    image: linuxkit/sysctl:ce3bde5118a41092f1b7048c85d14fb35237ed45
   - name: dhcpcd
-    image: linuxkit/dhcpcd:aa685261ceb2557990dcfe9dd8824c6b9ec416e2
+    image: linuxkit/dhcpcd:0d59a6cc03412289ef4313f2491ec666c1715cc9
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:026aca5c08c22589a7e319f79449bef2c65f04c5
+    image: linuxkit/metadata:2af15c9f4b0e73515c219b7cc14e6e65e1d4fd6d
 services:
   - name: rngd
     image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9

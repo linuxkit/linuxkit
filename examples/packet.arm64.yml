@@ -1,4 +1,4 @@
 onboot:
   - name: modprobe
-    image: linuxkit/modprobe:2d153653d1111877a8f53704ef85063a44182ade
+    image: linuxkit/modprobe:1a192d168adadec47afa860e3fc874fbc2a823ff
     command: ["modprobe", "nicvf"]
