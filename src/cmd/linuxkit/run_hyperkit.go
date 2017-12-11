@@ -205,7 +205,12 @@ func runHyperKit(args []string) {
 		if d.Path == "" {
 			log.Fatalf("disk specified with no size or name")
 		}
-		hd := hyperkit.DiskConfig{Path: d.Path, Size: d.Size}
+		hd := hyperkit.DiskConfig{
+			Path:   d.Path,
+			Size:   d.Size,
+			Driver: d.Driver,
+			Format: d.Format,
+		}
 		h.Disks = append(h.Disks, hd)
 	}
 

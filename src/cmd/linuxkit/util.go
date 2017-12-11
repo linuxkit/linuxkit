@@ -166,6 +166,7 @@ type DiskConfig struct {
 	Path   string
 	Size   int
 	Format string
+	Driver string
 }
 
 // Disks is the type for a list of DiskConfig
@@ -179,6 +180,31 @@ func (l *Disks) String() string {
 func (l *Disks) Set(value string) error {
 	d := DiskConfig{}
 	s := strings.Split(value, ",")
+
+	// some hyperkit values have commas so we
+	// undo the split by merging unknown DiskConfig
+	// properties into the previous value.
+	// this lets us handle: format=qcow,qcow-config=...
+	for i, p := range s {
+		if i == 0 {
+			continue
+		}
+
+		c := strings.SplitN(p, "=", 2)
+		switch len(c) {
+		case 2:
+			switch c[0] {
+			case "file":
+			case "size":
+			case "format":
+			case "driver":
+			default:
+				s[i-1] += "," + s[i]
+				s = append(s[:i], s[i+1:]...)
+			}
+		}
+	}
+
 	for _, p := range s {
 		c := strings.SplitN(p, "=", 2)
 		switch len(c) {
@@ -197,6 +223,8 @@ func (l *Disks) Set(value string) error {
 				d.Size = size
 			case "format":
 				d.Format = c[1]
+			case "driver":
+				d.Driver = c[1]
 			default:
 				return fmt.Errorf("Unknown disk config: %s", c[0])
 			}
