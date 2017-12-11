@@ -1,6 +1,6 @@
 kernel:
   image: linuxkit/kernel:4.9.51
-  cmdline: "console=ttyS0"
+  cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:9250948d0de494df8a811edb3242b4584057cfe4
   - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023

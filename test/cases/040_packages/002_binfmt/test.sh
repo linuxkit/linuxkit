@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that the binfmt package works
-# LABELS:
+# LABELS: amd64
 # REPEAT:
 
 set -e

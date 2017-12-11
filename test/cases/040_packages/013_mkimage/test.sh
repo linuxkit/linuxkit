@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Test the mkimage container by using it to build a bootable qcow2
-# LABELS:
+# LABELS: amd64
 # REPEAT:
 
 set -e

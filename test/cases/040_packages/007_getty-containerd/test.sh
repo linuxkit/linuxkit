@@ -1,6 +1,7 @@
 #!/bin/sh
 # SUMMARY: Check that ctr can run containers
-# LABELS:
+# Test is amd64 specific
+# LABELS: amd64
 # REPEAT:
 
 set -e
