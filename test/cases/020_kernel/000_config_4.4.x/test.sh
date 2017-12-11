@@ -1,6 +1,7 @@
 #!/bin/sh
 # SUMMARY: Sanity check on the kernel config file
-# LABELS:
+# disabled for arm64: https://github.com/linuxkit/linuxkit/issues/2807
+# LABELS: amd64
 # REPEAT:
 
 set -e
