@@ -8,7 +8,7 @@ onboot:
   - name: binfmt
     image: linuxkit/binfmt:4b1d7a8dab03c09855fb4b6060a42b2294674b47
   - name: test
-    image: alpine:3.6
+    image: alpine:3.7
     binds:
       - /check.sh:/check.sh
       - /proc/sys/fs/binfmt_misc:/binfmt_misc
@@ -23,4 +23,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.6
+    - alpine:3.7

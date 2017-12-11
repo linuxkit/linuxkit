@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023
 onboot:
   - name: test
-    image: alpine:3.6
+    image: alpine:3.7
     readonly: true
     binds:
       - /check.sh:/check.sh

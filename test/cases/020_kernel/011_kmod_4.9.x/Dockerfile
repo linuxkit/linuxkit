@@ -17,7 +17,7 @@ COPY ./src/* ./
 RUN make all
 
 # Package
-FROM alpine:3.5
+FROM alpine:3.7
 COPY --from=build /kmod/hello_world.ko /
 COPY check.sh /check.sh
 ENTRYPOINT ["/bin/sh", "/check.sh"]
