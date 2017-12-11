@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that gcp output format is generated
-# LABELS:
+# LABELS: amd64
 
 set -e
 
