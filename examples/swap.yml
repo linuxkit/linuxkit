@@ -29,16 +29,6 @@ services:
      - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:94e01a4b16fadb053455cdc2269c4eb0b39199cd
-  - name: nginx
-    image: nginx:alpine
-    capabilities:
-     - CAP_NET_BIND_SERVICE
-     - CAP_CHOWN
-     - CAP_SETUID
-     - CAP_SETGID
-     - CAP_DAC_OVERRIDE
-    binds:
-     - /etc/resolv.conf:/etc/resolv.conf
 trust:
   org:
     - linuxkit
