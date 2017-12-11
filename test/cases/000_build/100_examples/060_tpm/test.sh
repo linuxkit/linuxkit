@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Test the tpm example
-# LABELS:
+# LABELS: amd64
 
 set -e
 

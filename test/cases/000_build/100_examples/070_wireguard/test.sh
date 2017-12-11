@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Test the wireguard example
-# LABELS:
+# LABELS: amd64
 
 set -e
 
