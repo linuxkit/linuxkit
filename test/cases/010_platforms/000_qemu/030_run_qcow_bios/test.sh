@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that qcow2 image boots in qemu
-# LABELS:
+# LABELS: amd64
 
 set -e
 
