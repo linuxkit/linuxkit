@@ -30,7 +30,7 @@ onboot:
     command: ["/swap.sh", "--path", "/var/lib/swap", "--size", "1024M"]
   # mount-vpnkit mounts the 9p share used by vpnkit to coordinate port forwarding
   - name: mount-vpnkit
-    image: alpine:3.6
+    image: alpine:3.7
     binds:
         - /var/:/host_var:rbind,rshared
     capabilities:
@@ -39,7 +39,7 @@ onboot:
     command: ["sh", "-c", "mkdir -p /host_var/vpnkit/port && mount -v -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /host_var/vpnkit"]
   # move logs to the mounted disk (this is a temporary fix until we can limit the log sizes)
   - name: move-logs
-    image: alpine:3.6
+    image: alpine:3.7
     binds:
         - /var:/host_var
     command: ["sh", "-c", "mv -v /host_var/log /host_var/lib && ln -vs /var/lib/log /host_var/log"]
