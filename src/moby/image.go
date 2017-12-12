@@ -119,6 +119,8 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 	if err != nil {
 		return fmt.Errorf("Failed to docker export container from container %s: %v", container, err)
 	}
+	defer contents.Close()
+
 	err = dockerRm(container)
 	if err != nil {
 		return fmt.Errorf("Failed to docker rm container %s: %v", container, err)
@@ -126,8 +128,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 
 	// now we need to filter out some files from the resulting tar archive
 
-	r := bytes.NewReader(contents)
-	tr := tar.NewReader(r)
+	tr := tar.NewReader(contents)
 
 	for {
 		hdr, err := tr.Next()

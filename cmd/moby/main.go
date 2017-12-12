@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
+	"runtime/pprof"
 
 	"github.com/moby/tool/src/moby"
 	log "github.com/sirupsen/logrus"
@@ -60,6 +62,8 @@ func main() {
 	}
 	flagQuiet := flag.Bool("q", false, "Quiet execution")
 	flagVerbose := flag.Bool("v", false, "Verbose execution")
+	flagCPUProfile := flag.String("cpuprofile", "", "write cpu profile to `file`")
+	flagMemProfile := flag.String("memprofile", "", "write mem profile to `file`")
 
 	// config and cache directory
 	flagConfigDir := flag.String("config", defaultMobyConfigDir(), "Configuration directory")
@@ -101,6 +105,17 @@ func main() {
 	}
 	moby.MobyDir = mobyDir
 
+	if *flagCPUProfile != "" {
+		f, err := os.Create(*flagCPUProfile)
+		if err != nil {
+			log.Fatal("could not create CPU profile: ", err)
+		}
+		if err := pprof.StartCPUProfile(f); err != nil {
+			log.Fatal("could not start CPU profile: ", err)
+		}
+		defer pprof.StopCPUProfile()
+	}
+
 	switch args[0] {
 	case "build":
 		build(args[1:])
@@ -112,5 +127,17 @@ func main() {
 		fmt.Printf("%q is not valid command.\n\n", args[0])
 		flag.Usage()
 		os.Exit(1)
+	}
+
+	if *flagMemProfile != "" {
+		f, err := os.Create(*flagMemProfile)
+		if err != nil {
+			log.Fatal("could not create memory profile: ", err)
+		}
+		runtime.GC() // get up-to-date statistics
+		if err := pprof.WriteHeapProfile(f); err != nil {
+			log.Fatal("could not write memory profile: ", err)
+		}
+		f.Close()
 	}
 }

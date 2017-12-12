@@ -4,7 +4,6 @@ package moby
 // and also using the Docker API not shelling out
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -81,25 +80,18 @@ func dockerCreate(image string) (string, error) {
 	return respBody.ID, nil
 }
 
-func dockerExport(container string) ([]byte, error) {
+func dockerExport(container string) (io.ReadCloser, error) {
 	log.Debugf("docker export: %s", container)
 	cli, err := dockerClient()
 	if err != nil {
-		return []byte{}, errors.New("could not initialize Docker API client")
+		return nil, errors.New("could not initialize Docker API client")
 	}
 	responseBody, err := cli.ContainerExport(context.Background(), container)
 	if err != nil {
-		return []byte{}, err
-	}
-	defer responseBody.Close()
-
-	output := bytes.NewBuffer(nil)
-	_, err = io.Copy(output, responseBody)
-	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
-	return output.Bytes(), nil
+	return responseBody, err
 }
 
 func dockerRm(container string) error {
