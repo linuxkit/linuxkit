@@ -13,7 +13,6 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/errdefs"
-	"github.com/containerd/containerd/namespaces"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
 )
@@ -52,7 +51,7 @@ func cleanupTask(ctx context.Context, ctr containerd.Container) error {
 	}
 }
 
-func systemInitCmd(args []string) {
+func systemInitCmd(ctx context.Context, args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("system-init", flag.ExitOnError)
 	flags.Usage = func() {
@@ -108,8 +107,6 @@ func systemInitCmd(args []string) {
 		log.WithError(err).Fatal("creating containerd client")
 	}
 
-	ctx := namespaces.WithNamespace(context.Background(), "default")
-
 	ctrs, err := client.Containers(ctx)
 	if err != nil {
 		log.WithError(err).Fatal("listing containers")
@@ -140,7 +137,7 @@ func systemInitCmd(args []string) {
 		return
 	}
 	for _, file := range files {
-		if id, pid, msg, err := start(file.Name(), *sock, *path, ""); err != nil {
+		if id, pid, msg, err := start(ctx, file.Name(), *sock, *path, ""); err != nil {
 			log.WithError(err).Error(msg)
 		} else {
 			log.Debugf("Started %s pid %d", id, pid)

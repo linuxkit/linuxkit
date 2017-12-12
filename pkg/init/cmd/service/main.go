@@ -1,22 +1,25 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/containerd/containerd/namespaces"
 	log "github.com/sirupsen/logrus"
 )
 
 const (
-	defaultSocket     = "/run/containerd/containerd.sock"
-	defaultPath       = "/containers/services"
-	defaultContainerd = "/usr/bin/containerd"
-	installPath       = "/usr/bin/service"
-	onbootPath        = "/containers/onboot"
-	shutdownPath      = "/containers/onshutdown"
+	defaultSocket              = "/run/containerd/containerd.sock"
+	defaultPath                = "/containers/services"
+	defaultContainerd          = "/usr/bin/containerd"
+	installPath                = "/usr/bin/service"
+	onbootPath                 = "/containers/onboot"
+	shutdownPath               = "/containers/onshutdown"
+	defaultContainerdNamespace = "services.linuxkit"
 )
 
 var (
@@ -48,8 +51,12 @@ func main() {
 		fmt.Printf("Options:\n")
 		flag.PrintDefaults()
 	}
-	flagQuiet := flag.Bool("q", false, "Quiet execution")
-	flagVerbose := flag.Bool("v", false, "Verbose execution")
+	var (
+		ctx                     = context.Background()
+		flagQuiet               = flag.Bool("q", false, "Quiet execution")
+		flagVerbose             = flag.Bool("v", false, "Verbose execution")
+		flagContainerdNamespace = flag.String("containerd-namespace", defaultContainerdNamespace, "containerd namespace to use with services")
+	)
 
 	// Set up logging
 	log.SetFormatter(new(infoFormatter))
@@ -68,6 +75,8 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
+	ctx = namespaces.WithNamespace(ctx, *flagContainerdNamespace)
+
 	args := flag.Args()
 	if len(args) < 1 {
 		// check if called form startup scripts
@@ -78,16 +87,16 @@ func main() {
 		case strings.Contains(command, "onshutdown"):
 			os.Exit(runcInit(shutdownPath))
 		case strings.Contains(command, "containerd"):
-			systemInitCmd([]string{})
+			systemInitCmd(ctx, []string{})
 			os.Exit(0)
 		}
 	}
 
 	switch args[0] {
 	case "start":
-		startCmd(args[1:])
+		startCmd(ctx, args[1:])
 	case "system-init":
-		systemInitCmd(args[1:])
+		systemInitCmd(ctx, args[1:])
 	default:
 		fmt.Printf("%q is not valid command.\n\n", args[0])
 		flag.Usage()
