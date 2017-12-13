@@ -1,6 +1,7 @@
 #!/bin/sh
 # SUMMARY: Check that a formatted disk can be mounted by name
-# LABELS:
+# Disabled on arm64: https://github.com/linuxkit/linuxkit/issues/2808
+# LABELS: amd64
 # REPEAT:
 
 set -e

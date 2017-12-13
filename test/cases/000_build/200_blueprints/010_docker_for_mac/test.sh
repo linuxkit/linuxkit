@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Test the Docker for Mac blueprint
-# LABELS:
+# LABELS: amd64
 
 set -e
 

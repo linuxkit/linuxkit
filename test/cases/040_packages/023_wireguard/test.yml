@@ -1,6 +1,6 @@
 kernel:
   image: linuxkit/kernel:4.9.68
-  cmdline: "console=ttyS0"
+  cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:9250948d0de494df8a811edb3242b4584057cfe4
   - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023
@@ -38,14 +38,15 @@ onboot:
           net: /run/netns/wg1
 onshutdown:
   - name: test2
-    image: alpine:3.6
+    image: alpine:3.7
     binds:
       - /tmp:/tmp
       - /check.sh:/check.sh
     command: ["sh", "./check.sh", "shutdown"]
 services:
+  # We use the non-alpine variant here because it is available as multi-arch
   - name: nginx
-    image: nginx:alpine
+    image: nginx:1.13.7
     net: /run/netns/wg0
     capabilities:
      - CAP_NET_BIND_SERVICE
@@ -54,7 +55,7 @@ services:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
   - name: test
-    image: alpine:3.6
+    image: alpine:3.7
     net: /run/netns/wg1
     pid: host
     capabilities:

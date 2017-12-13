@@ -1,6 +1,6 @@
 #!/bin/sh
-# SUMMARY: Check that raw output format is generated
-# LABELS:
+# SUMMARY: Check that gcp output format is generated
+# LABELS: amd64
 
 set -e
 
@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format raw-bios -name "${NAME}" ../test.yml
-[ -f "${NAME}-bios.img" ] || exit 1
+linuxkit build -format gcp -name "${NAME}" ../test.yml
+[ -f "${NAME}.img.tar.gz" ] || exit 1
 
 exit 0

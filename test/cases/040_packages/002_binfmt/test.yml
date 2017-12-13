@@ -1,6 +1,6 @@
 kernel:
   image: linuxkit/kernel:4.9.68
-  cmdline: "console=ttyS0 page_poison=1"
+  cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:9250948d0de494df8a811edb3242b4584057cfe4
   - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023
@@ -8,7 +8,7 @@ onboot:
   - name: binfmt
     image: linuxkit/binfmt:4b1d7a8dab03c09855fb4b6060a42b2294674b47
   - name: test
-    image: alpine:3.6
+    image: alpine:3.7
     binds:
       - /check.sh:/check.sh
       - /proc/sys/fs/binfmt_misc:/binfmt_misc
@@ -23,4 +23,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.6
+    - alpine:3.7

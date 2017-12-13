@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that raw output format is generated
-# LABELS:
+# LABELS: amd64
 
 set -e
 
@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format aws -name "${NAME}" ../test.yml
-[ -f "${NAME}.raw" ] || exit 1
+linuxkit build -format raw-bios -name "${NAME}" ../test.yml
+[ -f "${NAME}-bios.img" ] || exit 1
 
 exit 0

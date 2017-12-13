@@ -1,6 +1,6 @@
 #!/bin/sh
-# SUMMARY: Check that qcow2 output format is generated
-# LABELS:
+# SUMMARY: Check that vmdk output format is generated
+# LABELS: amd64
 
 set -e
 
@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format qcow2-bios -name "${NAME}" ../test.yml
-[ -f "${NAME}.qcow2" ] || exit 1
+linuxkit build -format vmdk -name "${NAME}" ../test.yml
+[ -f "${NAME}.vmdk" ] || exit 1
 
 exit 0

@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that legacy BIOS ISO boots in qemu
-# LABELS:
+# LABELS: amd64
 
 set -e
 

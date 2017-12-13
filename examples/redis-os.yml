@@ -16,8 +16,10 @@ services:
     image: linuxkit/getty:22e27189b6b354e1d5d38fc0536a5af3f2adb79f
     env:
      - INSECURE=true
+  # Currently redis:4.0.6-alpine has trust issue with multi-arch
+  # https://github.com/docker-library/official-images/issues/3794
   - name: redis
-    image: redis:4.0-alpine
+    image: redis:4.0.5-alpine
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN
