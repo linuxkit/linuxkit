@@ -82,7 +82,7 @@ func tarPrefix(path string, tw tarWriter) error {
 }
 
 // ImageTar takes a Docker image and outputs it to a tar stream
-func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull bool, resolv string) error {
+func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull bool, resolv string) (e error) {
 	log.Debugf("image tar: %s %s", ref, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != byte('/') {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
@@ -119,15 +119,17 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 	if err != nil {
 		return fmt.Errorf("Failed to docker export container from container %s: %v", container, err)
 	}
-	err = dockerRm(container)
-	if err != nil {
-		return fmt.Errorf("Failed to docker rm container %s: %v", container, err)
-	}
+	defer func() {
+		contents.Close()
+
+		if err := dockerRm(container); e == nil && err != nil {
+			e = fmt.Errorf("Failed to docker rm container %s: %v", container, err)
+		}
+	}()
 
 	// now we need to filter out some files from the resulting tar archive
 
-	r := bytes.NewReader(contents)
-	tr := tar.NewReader(r)
+	tr := tar.NewReader(contents)
 
 	for {
 		hdr, err := tr.Next()

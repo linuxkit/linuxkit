@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"runtime"
@@ -24,8 +25,8 @@ const (
 	rpi3       = "linuxkit/mkimage-rpi3:0735656fff247ca978135e3aeb62864adc612180"
 )
 
-var outFuns = map[string]func(string, []byte, int) error{
-	"kernel+initrd": func(base string, image []byte, size int) error {
+var outFuns = map[string]func(string, io.Reader, int) error{
+	"kernel+initrd": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -36,7 +37,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"tar-kernel-initrd": func(base string, image []byte, size int) error {
+	"tar-kernel-initrd": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -46,21 +47,21 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"iso-bios": func(base string, image []byte, size int) error {
+	"iso-bios": func(base string, image io.Reader, size int) error {
 		err := outputIso(isoBios, base+".iso", image)
 		if err != nil {
 			return fmt.Errorf("Error writing iso-bios output: %v", err)
 		}
 		return nil
 	},
-	"iso-efi": func(base string, image []byte, size int) error {
+	"iso-efi": func(base string, image io.Reader, size int) error {
 		err := outputIso(isoEfi, base+"-efi.iso", image)
 		if err != nil {
 			return fmt.Errorf("Error writing iso-efi output: %v", err)
 		}
 		return nil
 	},
-	"raw-bios": func(base string, image []byte, size int) error {
+	"raw-bios": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -71,7 +72,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"raw-efi": func(base string, image []byte, size int) error {
+	"raw-efi": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -82,7 +83,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"aws": func(base string, image []byte, size int) error {
+	"aws": func(base string, image io.Reader, size int) error {
 		filename := base + ".raw"
 		log.Infof("  %s", filename)
 		kernel, initrd, cmdline, err := tarToInitrd(image)
@@ -95,7 +96,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"gcp": func(base string, image []byte, size int) error {
+	"gcp": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -106,7 +107,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"qcow2-bios": func(base string, image []byte, size int) error {
+	"qcow2-bios": func(base string, image io.Reader, size int) error {
 		filename := base + ".qcow2"
 		log.Infof("  %s", filename)
 		kernel, initrd, cmdline, err := tarToInitrd(image)
@@ -119,7 +120,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"vhd": func(base string, image []byte, size int) error {
+	"vhd": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -130,7 +131,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"dynamic-vhd": func(base string, image []byte, size int) error {
+	"dynamic-vhd": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -141,7 +142,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"vmdk": func(base string, image []byte, size int) error {
+	"vmdk": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
@@ -152,7 +153,7 @@ var outFuns = map[string]func(string, []byte, int) error{
 		}
 		return nil
 	},
-	"rpi3": func(base string, image []byte, size int) error {
+	"rpi3": func(base string, image io.Reader, size int) error {
 		if runtime.GOARCH != "arm64" {
 			return fmt.Errorf("Raspberry Pi output currently only supported on arm64")
 		}
@@ -197,7 +198,7 @@ func ValidateFormats(formats []string) error {
 }
 
 // Formats generates all the specified output formats
-func Formats(base string, image []byte, formats []string, size int) error {
+func Formats(base string, image string, formats []string, size int) error {
 	log.Debugf("format: %v %s", formats, base)
 
 	err := ValidateFormats(formats)
@@ -205,9 +206,13 @@ func Formats(base string, image []byte, formats []string, size int) error {
 		return err
 	}
 	for _, o := range formats {
-		f := outFuns[o]
-		err := f(base, image, size)
+		ir, err := os.Open(image)
 		if err != nil {
+			return err
+		}
+		defer ir.Close()
+		f := outFuns[o]
+		if err := f(base, ir, size); err != nil {
 			return err
 		}
 	}
@@ -215,10 +220,9 @@ func Formats(base string, image []byte, formats []string, size int) error {
 	return nil
 }
 
-func tarToInitrd(image []byte) ([]byte, []byte, string, error) {
+func tarToInitrd(r io.Reader) ([]byte, []byte, string, error) {
 	w := new(bytes.Buffer)
 	iw := initrd.NewWriter(w)
-	r := bytes.NewReader(image)
 	tr := tar.NewReader(r)
 	kernel, cmdline, err := initrd.CopySplitTar(iw, tr)
 	if err != nil {
@@ -288,7 +292,7 @@ func outputImg(image, filename string, kernel []byte, initrd []byte, cmdline str
 	return dockerRun(buf, output, true, image, cmdline)
 }
 
-func outputIso(image, filename string, filesystem []byte) error {
+func outputIso(image, filename string, filesystem io.Reader) error {
 	log.Debugf("output ISO: %s %s", image, filename)
 	log.Infof("  %s", filename)
 	output, err := os.Create(filename)
@@ -296,10 +300,10 @@ func outputIso(image, filename string, filesystem []byte) error {
 		return err
 	}
 	defer output.Close()
-	return dockerRun(bytes.NewBuffer(filesystem), output, true, image)
+	return dockerRun(filesystem, output, true, image)
 }
 
-func outputRPi3(image, filename string, filesystem []byte) error {
+func outputRPi3(image, filename string, filesystem io.Reader) error {
 	log.Debugf("output RPi3: %s %s", image, filename)
 	log.Infof("  %s", filename)
 	output, err := os.Create(filename)
@@ -307,7 +311,7 @@ func outputRPi3(image, filename string, filesystem []byte) error {
 		return err
 	}
 	defer output.Close()
-	return dockerRun(bytes.NewBuffer(filesystem), output, true, image)
+	return dockerRun(filesystem, output, true, image)
 }
 
 func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline string) error {
