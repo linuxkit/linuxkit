@@ -1,0 +1,34 @@
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+
+Vagrant.configure("2") do |config|
+	config.vm.box = "bento/ubuntu-16.04"
+
+	config.vm.synced_folder ".", "/vagrant", disabled: true
+	config.vm.synced_folder "../", "/vagrant"
+
+	config.vm.provision "shell", inline: <<-SHELL
+		snap install --classic go
+	SHELL
+
+	config.vm.provision "docker"
+	config.vm.provision "shell", inline: "ps aux | grep 'sshd:' | awk '{print $2}' | xargs kill"
+
+	config.vm.provision "shell", privileged: false, inline: <<-SHELL
+		mkdir -p ~/go/src/github.com/linuxkit/
+		ln -s /vagrant ~/go/src/github.com/linuxkit/linuxkit
+		cd ~/go/src/github.com/linuxkit/linuxkit
+		make all
+		sudo make install
+	SHELL
+
+	%w(vmware_fusion vmware_workstation vmware_appcatalyst).each do |provider|
+		config.vm.provider provider do |v|
+			v.vmx["vhv.enable"] = "TRUE"
+			v.vmx['ethernet0.virtualDev'] = 'vmxnet3'
+		end
+	end
+
+	config.vm.provider "virtualbox"
+	config.vm.provider "hyperv"
+end
