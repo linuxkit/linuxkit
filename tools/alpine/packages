@@ -4,6 +4,7 @@ alpine-keys
 apk-tools
 argp-standalone
 attr-dev
+audit
 autoconf
 automake
 bash

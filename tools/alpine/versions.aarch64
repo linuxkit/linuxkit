@@ -1,13 +1,15 @@
-# linuxkit/alpine:dd9b3a4d8c6c7a21b8457aa3017d06eb97ed731c-arm64
+# linuxkit/alpine:9d29dc154440859d729ba864ffd67bb4c90e630d-arm64
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
 alpine-keys-2.1-r1
 alsa-lib-1.1.4.1-r2
-apk-tools-2.8.1-r1
+apk-tools-2.8.1-r2
 argp-standalone-1.3-r2
 attr-2.4.47-r6
 attr-dev-2.4.47-r6
+audit-2.7.7-r1
+audit-libs-2.7.7-r1
 autoconf-2.69-r0
 automake-1.15.1-r0
 bash-4.4.12-r2
@@ -23,7 +25,7 @@ btrfs-progs-4.13.2-r0
 btrfs-progs-dev-4.13.2-r0
 btrfs-progs-libs-4.13.2-r0
 build-base-0.5-r0
-busybox-1.27.2-r6
+busybox-1.27.2-r7
 busybox-initscripts-3.1-r2
 bzip2-1.0.6-r6
 ca-certificates-20171114-r0
@@ -264,7 +266,7 @@ vim-8.0.1359-r0
 wayland-libs-client-1.14.0-r2
 wayland-libs-cursor-1.14.0-r2
 wayland-libs-server-1.14.0-r2
-wireguard-tools-0.0.20171127-r0
+wireguard-tools-0.0.20171211-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r8
 xfsprogs-4.14.0-r0
