@@ -25,5 +25,3 @@ COPY audit.rules /etc/audit
 COPY runaudit.sh /usr/bin
 
 CMD ["/sbin/tini", "/usr/bin/runaudit.sh"]
-
-LABEL org.mobyproject.config='{"pid": "host", "binds": ["/var/log:/var/log"], "capabilities": ["CAP_AUDIT_CONTROL", "CAP_AUDIT_READ", "CAP_AUDIT_WRITE", "CAP_SYS_NICE"]}'
