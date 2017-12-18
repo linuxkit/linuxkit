@@ -102,6 +102,14 @@ build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config
 			$(LABELS) \
 			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) .
 
+forcebuild_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
+	docker build \
+		--build-arg KERNEL_VERSION=$(1) \
+		--build-arg KERNEL_SERIES=$(2) \
+		--build-arg EXTRA=$(3) \
+		$(LABELS) \
+		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) .
+
 push_$(2)$(3): build_$(2)$(3)
 	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
@@ -111,11 +119,21 @@ push_$(2)$(3): build_$(2)$(3)
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3) $(DOCKER_CONTENT_TRUST))
 
+forcepush_$(2)$(3): forcebuild_$(2)$(3)
+	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+	docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
+	 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
+	 docker push $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
+	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3) $(DOCKER_CONTENT_TRUST)
+
 show-tag_$(2)$(3):
 	@echo $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)
 
 build: build_$(2)$(3)
+forcebuild: forcebuild_$(2)$(3)
 push: push_$(2)$(3)
+forcepush: forcepush_$(2)$(3)
 show-tags: show-tag_$(2)$(3)
 fetch: sources/linux-$(1).tar.xz
 
@@ -133,6 +151,11 @@ build_perf_$(2)$(3): build_$(2)$(3)
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
 			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) .
 
+forcebuild_perf_$(2)$(3): build_$(2)$(3)
+	 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
+		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
+		--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) .
+
 push_perf_$(2)$(3): build_perf_$(2)$(3)
 	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
@@ -142,8 +165,18 @@ push_perf_$(2)$(3): build_perf_$(2)$(3)
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3) $(DOCKER_CONTENT_TRUST))
 
+forcepush_perf_$(2)$(3): forcebuild_perf_$(2)$(3)
+	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) && \
+	docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
+	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3) $(DOCKER_CONTENT_TRUST)
+
 build: build_perf_$(2)$(3)
+forcebuild: forcebuild_perf_$(2)$(3)
 push: push_perf_$(2)$(3)
+forcepush: forcepush_perf_$(2)$(3)
 endif
 
 ifneq ($(3), -dbg)
