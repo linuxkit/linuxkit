@@ -1,7 +1,6 @@
 package moby
 
 import (
-	"bytes"
 	"crypto/sha256"
 	"fmt"
 	"io"
@@ -18,13 +17,13 @@ kernel:
   image: linuxkit/kernel:4.9.39
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:9250948d0de494df8a811edb3242b4584057cfe4
-  - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023
+  - linuxkit/init:00ab58c9681a0bf42b2e35134c1ccf1591ebb64d
+  - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
 onboot:
   - name: mkimage
-    image: linuxkit/mkimage:e439d6108466186948ca7ea2a293fc6c1d1183fa
+    image: linuxkit/mkimage:a63b8ee4c5de335afc32ba850e0af319b25b96c0
   - name: poweroff
-    image: linuxkit/poweroff:bccfe1cb04fc7bb9f03613d2314f38abd2620f29
+    image: linuxkit/poweroff:3845c4d64d47a1ea367806be5547e44594b0fa91
 trust:
   org:
     - linuxkit
@@ -58,9 +57,21 @@ func ensureLinuxkitImage(name string) error {
 		return err
 	}
 	// TODO pass through --pull to here
-	buf := new(bytes.Buffer)
-	Build(m, buf, false, "")
-	image := buf.Bytes()
+	tf, err := ioutil.TempFile("", "")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tf.Name())
+	Build(m, tf, false, "")
+	if err := tf.Close(); err != nil {
+		return err
+	}
+
+	image, err := os.Open(tf.Name())
+	if err != nil {
+		return err
+	}
+	defer image.Close()
 	kernel, initrd, cmdline, err := tarToInitrd(image)
 	if err != nil {
 		return fmt.Errorf("Error converting to initrd: %v", err)
