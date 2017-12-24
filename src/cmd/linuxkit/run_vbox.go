@@ -29,6 +29,9 @@ func runVbox(args []string) {
 		fmt.Printf("\n")
 	}
 
+	// Display flags
+	enableGUI := flags.Bool("gui", false, "Show the VM GUI")
+
 	// vbox options
 	vboxmanageFlag := flags.String("vboxmanage", "VBoxManage", "VBoxManage binary to use")
 	keep := flags.Bool("keep", false, "Keep the VM after finishing")
@@ -212,7 +215,14 @@ func runVbox(args []string) {
 		log.Fatalf("Cannot listen on console socket %s: %v", consolePath, err)
 	}
 
-	_, out, err = manage(vboxmanage, "startvm", name, "--type", "headless")
+	var vmType string
+	if *enableGUI {
+		vmType = "gui"
+	} else {
+		vmType = "headless"
+	}
+
+	_, out, err = manage(vboxmanage, "startvm", name, "--type", vmType)
 	if err != nil {
 		log.Fatalf("startvm error: %v\n%s", err, out)
 	}
