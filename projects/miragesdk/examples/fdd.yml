@@ -9,7 +9,7 @@ init:
   - samoht/fdd
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:ce3bde5118a41092f1b7048c85d14fb35237ed45
+    image: linuxkit/sysctl:db575765635dab6dd1164fce5a39782e0f646b84
 services:
   - name: getty
     image: linuxkit/getty:22e27189b6b354e1d5d38fc0536a5af3f2adb79f

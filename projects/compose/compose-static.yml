@@ -8,7 +8,7 @@ init:
   - linuxkit/ca-certificates:de21b84d9b055ad9dcecc57965b654a7a24ef8e0
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:ce3bde5118a41092f1b7048c85d14fb35237ed45
+    image: linuxkit/sysctl:db575765635dab6dd1164fce5a39782e0f646b84
   - name: sysfs
     image: linuxkit/sysfs:1284b4a7061a5cc426425f0fb00748192505a05f
   - name: dhcpcd
