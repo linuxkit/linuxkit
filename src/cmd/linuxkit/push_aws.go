@@ -48,6 +48,9 @@ func pushAWS(args []string) {
 	timeout := getIntValue(timeoutVar, *timeoutFlag, 600)
 	bucket := getStringValue(bucketVar, *bucketFlag, "")
 	name := getStringValue(nameVar, *nameFlag, "")
+	if *sriovNetFlag == "" {
+		sriovNetFlag = nil
+	}
 
 	sess := session.Must(session.NewSession())
 	storage := s3.New(sess)
