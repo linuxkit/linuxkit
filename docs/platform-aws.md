@@ -27,6 +27,9 @@ $ linuxkit build -format aws examples/aws.yml
 
 ## Push image
 
+Before you do this you need to create a `vmimport` service role as explained in
+[the VM import documentation](http://docs.aws.amazon.com/vm-import/latest/userguide/vmimport-image-import.html).
+
 Do `linuxkit push aws -bucket bucketname aws.raw` to upload it to the
 specified bucket, and create a bootable image from the stored image.
 
