@@ -1,4 +1,4 @@
-From 2cfda6eac2e1597529c8047ddc81b2f9acb8521d Mon Sep 17 00:00:00 2001
+From 5371f45540aeac631924e9bab7d6495208f50786 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:11 -0800
 Subject: [PATCH 07/12] Drivers: hv: vss: Operation timeouts should match host
@@ -18,7 +18,7 @@ Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
  1 file changed, 6 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
-index b1446d51ef45..4e543dbb731a 100644
+index 5c95ba1e2ecf..eee238cc60bd 100644
 --- a/drivers/hv/hv_snapshot.c
 +++ b/drivers/hv/hv_snapshot.c
 @@ -31,7 +31,10 @@
@@ -33,7 +33,7 @@ index b1446d51ef45..4e543dbb731a 100644
  
  /*
   * Global state maintained for transaction that is being processed. For a class
-@@ -187,7 +190,8 @@ static void vss_send_op(void)
+@@ -186,7 +189,8 @@ static void vss_send_op(void)
  
  	vss_transaction.state = HVUTIL_USERSPACE_REQ;
  
