@@ -1,4 +1,4 @@
-From 919ed3a9c042a7fd014110aa6ec9b0b4dfedb749 Mon Sep 17 00:00:00 2001
+From e72a9a9a2a09598a7af546942e91f366677da501 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:18 -0700
 Subject: [PATCH 09/12] Drivers: hv: Log the negotiated IC versions.
@@ -18,10 +18,10 @@ Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
  4 files changed, 23 insertions(+), 9 deletions(-)
 
 diff --git a/drivers/hv/hv_fcopy.c b/drivers/hv/hv_fcopy.c
-index 0713c6aaa33a..94f4f090ceea 100644
+index f1e0d0358206..e0ce0753c568 100644
 --- a/drivers/hv/hv_fcopy.c
 +++ b/drivers/hv/hv_fcopy.c
-@@ -255,10 +255,15 @@ void hv_fcopy_onchannelcallback(void *context)
+@@ -254,10 +254,15 @@ void hv_fcopy_onchannelcallback(void *context)
  	icmsghdr = (struct icmsg_hdr *)&recv_buffer[
  			sizeof(struct vmbuspipe_hdr)];
  	if (icmsghdr->icmsgtype == ICMSGTYPE_NEGOTIATE) {
@@ -40,10 +40,10 @@ index 0713c6aaa33a..94f4f090ceea 100644
  		fcopy_msg = (struct hv_fcopy_hdr *)&recv_buffer[
  				sizeof(struct vmbuspipe_hdr) +
 diff --git a/drivers/hv/hv_kvp.c b/drivers/hv/hv_kvp.c
-index 2cc670442f6c..de263712e247 100644
+index 70c28b8806de..a1adfe2cfb34 100644
 --- a/drivers/hv/hv_kvp.c
 +++ b/drivers/hv/hv_kvp.c
-@@ -651,10 +651,14 @@ void hv_kvp_onchannelcallback(void *context)
+@@ -650,10 +650,14 @@ void hv_kvp_onchannelcallback(void *context)
  			sizeof(struct vmbuspipe_hdr)];
  
  		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
@@ -61,10 +61,10 @@ index 2cc670442f6c..de263712e247 100644
  			kvp_msg = (struct hv_kvp_msg *)&recv_buffer[
  				sizeof(struct vmbuspipe_hdr) +
 diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
-index d14f10b924a0..bcc03f0748d6 100644
+index 8e62bf7f6265..e659d1b94a57 100644
 --- a/drivers/hv/hv_snapshot.c
 +++ b/drivers/hv/hv_snapshot.c
-@@ -304,7 +304,7 @@ void hv_vss_onchannelcallback(void *context)
+@@ -303,7 +303,7 @@ void hv_vss_onchannelcallback(void *context)
  	u32 recvlen;
  	u64 requestid;
  	struct hv_vss_msg *vss_msg;
@@ -73,7 +73,7 @@ index d14f10b924a0..bcc03f0748d6 100644
  
  	struct icmsg_hdr *icmsghdrp;
  
-@@ -319,10 +319,15 @@ void hv_vss_onchannelcallback(void *context)
+@@ -318,10 +318,15 @@ void hv_vss_onchannelcallback(void *context)
  			sizeof(struct vmbuspipe_hdr)];
  
  		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {

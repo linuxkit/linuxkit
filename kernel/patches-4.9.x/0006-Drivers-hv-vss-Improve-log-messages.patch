@@ -1,4 +1,4 @@
-From 596d4b9ad2b8a1a14de8dd71b11c30fb9ee476b6 Mon Sep 17 00:00:00 2001
+From 6403a3c97ce40d1ad9e3107a54378399f077b1eb Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:10 -0800
 Subject: [PATCH 06/12] Drivers: hv: vss: Improve log messages.
@@ -16,10 +16,10 @@ Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
  1 file changed, 19 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
-index a76e3db0d01f..b1446d51ef45 100644
+index a6707133c297..5c95ba1e2ecf 100644
 --- a/drivers/hv/hv_snapshot.c
 +++ b/drivers/hv/hv_snapshot.c
-@@ -121,7 +121,7 @@ static int vss_handle_handshake(struct hv_vss_msg *vss_msg)
+@@ -120,7 +120,7 @@ static int vss_handle_handshake(struct hv_vss_msg *vss_msg)
  	default:
  		return -EINVAL;
  	}
@@ -28,7 +28,7 @@ index a76e3db0d01f..b1446d51ef45 100644
  	return 0;
  }
  
-@@ -129,8 +129,10 @@ static int vss_on_msg(void *msg, int len)
+@@ -128,8 +128,10 @@ static int vss_on_msg(void *msg, int len)
  {
  	struct hv_vss_msg *vss_msg = (struct hv_vss_msg *)msg;
  
@@ -40,7 +40,7 @@ index a76e3db0d01f..b1446d51ef45 100644
  
  	if (vss_msg->vss_hdr.operation == VSS_OP_REGISTER ||
  	    vss_msg->vss_hdr.operation == VSS_OP_REGISTER1) {
-@@ -138,8 +140,11 @@ static int vss_on_msg(void *msg, int len)
+@@ -137,8 +139,11 @@ static int vss_on_msg(void *msg, int len)
  		 * Don't process registration messages if we're in the middle
  		 * of a transaction processing.
  		 */
@@ -53,7 +53,7 @@ index a76e3db0d01f..b1446d51ef45 100644
  		return vss_handle_handshake(vss_msg);
  	} else if (vss_transaction.state == HVUTIL_USERSPACE_REQ) {
  		vss_transaction.state = HVUTIL_USERSPACE_RECV;
-@@ -156,7 +161,7 @@ static int vss_on_msg(void *msg, int len)
+@@ -155,7 +160,7 @@ static int vss_on_msg(void *msg, int len)
  		}
  	} else {
  		/* This is a spurious call! */
@@ -62,7 +62,7 @@ index a76e3db0d01f..b1446d51ef45 100644
  		return -EINVAL;
  	}
  	return 0;
-@@ -169,8 +174,10 @@ static void vss_send_op(void)
+@@ -168,8 +173,10 @@ static void vss_send_op(void)
  	struct hv_vss_msg *vss_msg;
  
  	/* The transaction state is wrong. */
@@ -74,7 +74,7 @@ index a76e3db0d01f..b1446d51ef45 100644
  
  	vss_msg = kzalloc(sizeof(*vss_msg), GFP_KERNEL);
  	if (!vss_msg)
-@@ -211,9 +218,13 @@ static void vss_handle_request(struct work_struct *dummy)
+@@ -210,9 +217,13 @@ static void vss_handle_request(struct work_struct *dummy)
  	case VSS_OP_HOT_BACKUP:
  		if (vss_transaction.state < HVUTIL_READY) {
  			/* Userspace is not registered yet */
@@ -88,7 +88,7 @@ index a76e3db0d01f..b1446d51ef45 100644
  		vss_transaction.state = HVUTIL_HOSTMSG_RECEIVED;
  		vss_send_op();
  		return;
-@@ -356,8 +367,10 @@ hv_vss_init(struct hv_util_service *srv)
+@@ -353,8 +364,10 @@ hv_vss_init(struct hv_util_service *srv)
  
  	hvt = hvutil_transport_init(vss_devname, CN_VSS_IDX, CN_VSS_VAL,
  				    vss_on_msg, vss_on_reset);

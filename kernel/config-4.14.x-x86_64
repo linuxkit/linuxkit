@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.14.7 Kernel Configuration
+# Linux/x86 4.14.9 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -3838,9 +3838,9 @@ CONFIG_OPTIMIZE_INLINING=y
 # CONFIG_DEBUG_NMI_SELFTEST is not set
 CONFIG_X86_DEBUG_FPU=y
 # CONFIG_PUNIT_ATOM_DEBUG is not set
-# CONFIG_FRAME_POINTER_UNWINDER is not set
-CONFIG_ORC_UNWINDER=y
-# CONFIG_GUESS_UNWINDER is not set
+CONFIG_UNWINDER_ORC=y
+# CONFIG_UNWINDER_FRAME_POINTER is not set
+# CONFIG_UNWINDER_GUESS is not set
 
 #
 # Security options

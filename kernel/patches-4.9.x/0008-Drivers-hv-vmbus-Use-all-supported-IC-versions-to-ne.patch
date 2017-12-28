@@ -1,4 +1,4 @@
-From ce256433a38cddf67f26bb0003bf2508b519388a Mon Sep 17 00:00:00 2001
+From 60de5664e76c4e7fe593c9a9386c776be101899b Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 08/12] Drivers: hv: vmbus: Use all supported IC versions to
@@ -162,7 +162,7 @@ index 8df02f3ca0b2..e7949b64bfbc 100644
  	negop->icversion_data[0].minor = icframe_minor;
  	negop->icversion_data[1].major = icmsg_major;
 diff --git a/drivers/hv/hv_fcopy.c b/drivers/hv/hv_fcopy.c
-index 75126e4e3f05..0713c6aaa33a 100644
+index 44420073edda..f1e0d0358206 100644
 --- a/drivers/hv/hv_fcopy.c
 +++ b/drivers/hv/hv_fcopy.c
 @@ -31,6 +31,16 @@
@@ -182,7 +182,7 @@ index 75126e4e3f05..0713c6aaa33a 100644
  /*
   * Global state maintained for transaction that is being processed.
   * For a class of integration services, including the "file copy service",
-@@ -232,8 +242,6 @@ void hv_fcopy_onchannelcallback(void *context)
+@@ -231,8 +241,6 @@ void hv_fcopy_onchannelcallback(void *context)
  	u64 requestid;
  	struct hv_fcopy_hdr *fcopy_msg;
  	struct icmsg_hdr *icmsghdr;
@@ -191,7 +191,7 @@ index 75126e4e3f05..0713c6aaa33a 100644
  	int fcopy_srv_version;
  
  	if (fcopy_transaction.state > HVUTIL_READY)
-@@ -247,10 +255,10 @@ void hv_fcopy_onchannelcallback(void *context)
+@@ -246,10 +254,10 @@ void hv_fcopy_onchannelcallback(void *context)
  	icmsghdr = (struct icmsg_hdr *)&recv_buffer[
  			sizeof(struct vmbuspipe_hdr)];
  	if (icmsghdr->icmsgtype == ICMSGTYPE_NEGOTIATE) {
@@ -207,7 +207,7 @@ index 75126e4e3f05..0713c6aaa33a 100644
  		fcopy_msg = (struct hv_fcopy_hdr *)&recv_buffer[
  				sizeof(struct vmbuspipe_hdr) +
 diff --git a/drivers/hv/hv_kvp.c b/drivers/hv/hv_kvp.c
-index 3abfc5983c97..2cc670442f6c 100644
+index 5e1fdc8d32ab..70c28b8806de 100644
 --- a/drivers/hv/hv_kvp.c
 +++ b/drivers/hv/hv_kvp.c
 @@ -46,6 +46,19 @@
@@ -230,7 +230,7 @@ index 3abfc5983c97..2cc670442f6c 100644
  /*
   * Global state maintained for transaction that is being processed. For a class
   * of integration services, including the "KVP service", the specified protocol
-@@ -610,8 +623,6 @@ void hv_kvp_onchannelcallback(void *context)
+@@ -609,8 +622,6 @@ void hv_kvp_onchannelcallback(void *context)
  	struct hv_kvp_msg *kvp_msg;
  
  	struct icmsg_hdr *icmsghdrp;
@@ -239,7 +239,7 @@ index 3abfc5983c97..2cc670442f6c 100644
  	int kvp_srv_version;
  	static enum {NEGO_NOT_STARTED,
  		     NEGO_IN_PROGRESS,
-@@ -640,28 +651,10 @@ void hv_kvp_onchannelcallback(void *context)
+@@ -639,28 +650,10 @@ void hv_kvp_onchannelcallback(void *context)
  			sizeof(struct vmbuspipe_hdr)];
  
  		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
@@ -273,7 +273,7 @@ index 3abfc5983c97..2cc670442f6c 100644
  			kvp_msg = (struct hv_kvp_msg *)&recv_buffer[
  				sizeof(struct vmbuspipe_hdr) +
 diff --git a/drivers/hv/hv_snapshot.c b/drivers/hv/hv_snapshot.c
-index 4e543dbb731a..d14f10b924a0 100644
+index eee238cc60bd..8e62bf7f6265 100644
 --- a/drivers/hv/hv_snapshot.c
 +++ b/drivers/hv/hv_snapshot.c
 @@ -31,6 +31,16 @@
@@ -293,7 +293,7 @@ index 4e543dbb731a..d14f10b924a0 100644
  /*
   * Timeout values are based on expecations from host
   */
-@@ -297,7 +307,6 @@ void hv_vss_onchannelcallback(void *context)
+@@ -296,7 +306,6 @@ void hv_vss_onchannelcallback(void *context)
  
  
  	struct icmsg_hdr *icmsghdrp;
@@ -301,7 +301,7 @@ index 4e543dbb731a..d14f10b924a0 100644
  
  	if (vss_transaction.state > HVUTIL_READY)
  		return;
-@@ -310,9 +319,10 @@ void hv_vss_onchannelcallback(void *context)
+@@ -309,9 +318,10 @@ void hv_vss_onchannelcallback(void *context)
  			sizeof(struct vmbuspipe_hdr)];
  
  		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
