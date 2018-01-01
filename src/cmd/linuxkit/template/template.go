@@ -129,16 +129,16 @@ func walkRepo(repo string, imageTemplates *[]imageTemplate) ([]Substitution, err
 	return subs, err
 }
 
-func substitute(imageString imageTemplate, path string, p pkglib.Pkg) (Substitution, error) {
+func substitute(template imageTemplate, path string, p pkglib.Pkg) (Substitution, error) {
 	hash := p.Hash()
 
 	if hash == "" {
-		return Substitution{}, errors.New("could not retrieve hash for " + *imageString.value)
+		return Substitution{}, errors.New("could not retrieve hash for " + *template.value)
 	}
 
-	old := *imageString.value
-	*imageString.value = fmt.Sprintf("%v/%v:%v", imageString.repo, imageString.name, hash)
-	return Substitution{Template: old, Source: path, Result: *imageString.value}, nil
+	old := *template.value
+	*template.value = fmt.Sprintf("%v/%v:%v", template.repo, template.name, hash)
+	return Substitution{Template: old, Source: path, Result: *template.value}, nil
 }
 
 func getImageTemplates(m *moby.Moby) []imageTemplate {
