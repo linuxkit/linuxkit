@@ -1,12 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -141,44 +139,7 @@ func build(args []string) {
 		log.Fatalf("Unable to parse disk size: %v", err)
 	}
 
-	var m moby.Moby
-	for _, arg := range remArgs {
-		var config []byte
-		if conf := arg; conf == "-" {
-			var err error
-			config, err = ioutil.ReadAll(os.Stdin)
-			if err != nil {
-				log.Fatalf("Cannot read stdin: %v", err)
-			}
-		} else if strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "https://") {
-			buffer := new(bytes.Buffer)
-			response, err := http.Get(arg)
-			if err != nil {
-				log.Fatalf("Cannot fetch remote yaml file: %v", err)
-			}
-			defer response.Body.Close()
-			_, err = io.Copy(buffer, response.Body)
-			if err != nil {
-				log.Fatalf("Error reading http body: %v", err)
-			}
-			config = buffer.Bytes()
-		} else {
-			var err error
-			config, err = ioutil.ReadFile(conf)
-			if err != nil {
-				log.Fatalf("Cannot open config file: %v", err)
-			}
-		}
-
-		c, err := moby.NewConfig(config)
-		if err != nil {
-			log.Fatalf("Invalid config: %v", err)
-		}
-		m, err = moby.AppendConfig(m, c)
-		if err != nil {
-			log.Fatalf("Cannot append config files: %v", err)
-		}
-	}
+	m := GetMoby(remArgs)
 
 	if *buildDisableTrust {
 		log.Debugf("Disabling content trust checks for this build")

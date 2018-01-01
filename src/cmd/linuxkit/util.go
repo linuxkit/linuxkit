@@ -2,12 +2,18 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
+
+	"github.com/moby/tool/src/moby"
+	log "github.com/sirupsen/logrus"
 )
 
 // Handle flags with multiple occurrences
@@ -277,4 +283,47 @@ func CreateMetadataISO(state, data string) ([]string, error) {
 		return nil, fmt.Errorf("Cannot write user data ISO: %v", err)
 	}
 	return []string{isoPath}, nil
+}
+
+// GetMoby creates a moby structure from stdin and/or http and file args
+func GetMoby(remArgs []string) moby.Moby {
+	var m moby.Moby
+	for _, arg := range remArgs {
+		var config []byte
+		if conf := arg; conf == "-" {
+			var err error
+			config, err = ioutil.ReadAll(os.Stdin)
+			if err != nil {
+				log.Fatalf("Cannot read stdin: %v", err)
+			}
+		} else if strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "https://") {
+			buffer := new(bytes.Buffer)
+			response, err := http.Get(arg)
+			if err != nil {
+				log.Fatalf("Cannot fetch remote yaml file: %v", err)
+			}
+			defer response.Body.Close()
+			_, err = io.Copy(buffer, response.Body)
+			if err != nil {
+				log.Fatalf("Error reading http body: %v", err)
+			}
+			config = buffer.Bytes()
+		} else {
+			var err error
+			config, err = ioutil.ReadFile(conf)
+			if err != nil {
+				log.Fatalf("Cannot open config file: %v", err)
+			}
+		}
+
+		c, err := moby.NewConfig(config)
+		if err != nil {
+			log.Fatalf("Invalid config: %v", err)
+		}
+		m, err = moby.AppendConfig(m, c)
+		if err != nil {
+			log.Fatalf("Cannot append config files: %v", err)
+		}
+	}
+	return m
 }
