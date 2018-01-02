@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:db575765635dab6dd1164fce5a39782e0f646b84
+    image: linuxkit/sysctl:4c1ef93bb5eb1a877318db4b2daa6768ed002e21
   - name: test
     image: alpine:3.7
     net: host
