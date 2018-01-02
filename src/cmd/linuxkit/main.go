@@ -15,7 +15,8 @@ import (
 
 // GlobalConfig is the global tool configuration
 type GlobalConfig struct {
-	Pkg PkgConfig `yaml:"pkg"`
+	Pkg   PkgConfig    `yaml:"pkg"`
+	Repos []RepoConfig `yaml:"repos"`
 }
 
 // PkgConfig is the config specific to the `pkg` subcommand
@@ -24,6 +25,11 @@ type PkgConfig struct {
 	// (including whitespace and \n) is set as the content trust
 	// passphrase. Can be used to execute a password manager.
 	ContentTrustCommand string `yaml:"content-trust-passphrase-command"`
+}
+
+// RepoConfig describes a dir that contains dirs with a `build.yml`
+type RepoConfig struct {
+	Path string `yaml:"path"`
 }
 
 var (
