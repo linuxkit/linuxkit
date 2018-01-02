@@ -22,17 +22,19 @@ func init() {
 }
 
 func sysctl(line []byte) error {
+	sysctlLineTrimmed := strings.TrimSpace(string(line[:]))
+	// skip any commented lines
+	if len(sysctlLineTrimmed) >= 1 && (sysctlLineTrimmed[:1] == "#" || sysctlLineTrimmed[:1] == ";") {
+		return nil
+	}
 	// parse line into a string of expected form X.Y.Z=VALUE
-	sysctlLineKV := strings.Split(string(line[:]), "=")
+	sysctlLineKV := strings.Split(sysctlLineTrimmed, "=")
 	if len(sysctlLineKV) != 2 {
-		if len(sysctlLineKV) >= 1 && len(sysctlLineKV[0]) >= 1 && strings.Trim(sysctlLineKV[0], " ")[:1] == "#" {
-			return nil
-		}
-		return fmt.Errorf("Cannot parse %s", string(line))
+		return fmt.Errorf("Cannot parse %s", sysctlLineTrimmed)
 	}
 	// trim any extra whitespace
-	sysctlSetting, sysctlValue := strings.Trim(sysctlLineKV[0], " "), strings.Trim(sysctlLineKV[1], " ")
-	sysctlFile := filepath.Join(sysctlDir, filepath.Join(strings.Split(sysctlSetting, ".")...))
+	sysctlSetting, sysctlValue := strings.TrimSpace(sysctlLineKV[0]), strings.TrimSpace(sysctlLineKV[1])
+	sysctlFile := filepath.Join(sysctlDir, filepath.Join(strings.FieldsFunc(sysctlSetting, splitKv)...))
 	file, err := os.OpenFile(sysctlFile, os.O_WRONLY, 0)
 	if err != nil {
 		return fmt.Errorf("Cannot open %s: %s", sysctlFile, err)
@@ -43,6 +45,10 @@ func sysctl(line []byte) error {
 		return fmt.Errorf("Cannot write to %s: %s", sysctlFile, err)
 	}
 	return nil
+}
+
+func splitKv(r rune) bool {
+	return r == '.' || r == '/'
 }
 
 func main() {
@@ -65,7 +71,7 @@ func main() {
 			}
 			err = sysctl(line)
 			if err != nil {
-				log.Fatal(err)
+				log.Println(fmt.Errorf("WARN: %v", err))
 			}
 		}
 	}
