@@ -19,12 +19,12 @@ import (
 
 // Moby is the type of a Moby config file
 type Moby struct {
-	Kernel     KernelConfig `kernel:"cmdline" json:"kernel,omitempty"`
+	Kernel     KernelConfig `kernel:"cmdline,omitempty" json:"kernel,omitempty"`
 	Init       []string     `init:"cmdline" json:"init"`
 	Onboot     []*Image     `yaml:"onboot" json:"onboot"`
 	Onshutdown []*Image     `yaml:"onshutdown" json:"onshutdown"`
 	Services   []*Image     `yaml:"services" json:"services"`
-	Trust      TrustConfig  `yaml:"trust" json:"trust,omitempty"`
+	Trust      TrustConfig  `yaml:"trust,omitempty" json:"trust,omitempty"`
 	Files      []File       `yaml:"files" json:"files"`
 
 	initRefs []*reference.Spec
@@ -33,31 +33,31 @@ type Moby struct {
 // KernelConfig is the type of the config for a kernel
 type KernelConfig struct {
 	Image   string  `yaml:"image" json:"image"`
-	Cmdline string  `yaml:"cmdline" json:"cmdline,omitempty"`
-	Binary  string  `yaml:"binary" json:"binary,omitempty"`
-	Tar     *string `yaml:"tar" json:"tar,omitempty"`
+	Cmdline string  `yaml:"cmdline,omitempty" json:"cmdline,omitempty"`
+	Binary  string  `yaml:"binary,omitempty" json:"binary,omitempty"`
+	Tar     *string `yaml:"tar,omitempty" json:"tar,omitempty"`
 
 	ref *reference.Spec
 }
 
 // TrustConfig is the type of a content trust config
 type TrustConfig struct {
-	Image []string `yaml:"image" json:"image,omitempty"`
-	Org   []string `yaml:"org" json:"org,omitempty"`
+	Image []string `yaml:"image,omitempty" json:"image,omitempty"`
+	Org   []string `yaml:"org,omitempty" json:"org,omitempty"`
 }
 
 // File is the type of a file specification
 type File struct {
 	Path      string      `yaml:"path" json:"path"`
 	Directory bool        `yaml:"directory" json:"directory"`
-	Symlink   string      `yaml:"symlink" json:"symlink,omitempty"`
-	Contents  *string     `yaml:"contents" json:"contents,omitempty"`
-	Source    string      `yaml:"source" json:"source,omitempty"`
-	Metadata  string      `yaml:"metadata" json:"metadata,omitempty"`
+	Symlink   string      `yaml:"symlink,omitempty" json:"symlink,omitempty"`
+	Contents  *string     `yaml:"contents,omitempty" json:"contents,omitempty"`
+	Source    string      `yaml:"source,omitempty" json:"source,omitempty"`
+	Metadata  string      `yaml:"metadata,omitempty" json:"metadata,omitempty"`
 	Optional  bool        `yaml:"optional" json:"optional"`
-	Mode      string      `yaml:"mode" json:"mode,omitempty"`
-	UID       interface{} `yaml:"uid" json:"uid,omitempty"`
-	GID       interface{} `yaml:"gid" json:"gid,omitempty"`
+	Mode      string      `yaml:"mode,omitempty" json:"mode,omitempty"`
+	UID       interface{} `yaml:"uid,omitempty" json:"uid,omitempty"`
+	GID       interface{} `yaml:"gid,omitempty" json:"gid,omitempty"`
 }
 
 // Image is the type of an image config
@@ -70,65 +70,65 @@ type Image struct {
 // ImageConfig is the configuration part of Image, it is the subset
 // which is valid in a "org.mobyproject.config" label on an image.
 type ImageConfig struct {
-	Capabilities      *[]string               `yaml:"capabilities" json:"capabilities,omitempty"`
-	Ambient           *[]string               `yaml:"ambient" json:"ambient,omitempty"`
-	Mounts            *[]specs.Mount          `yaml:"mounts" json:"mounts,omitempty"`
-	Binds             *[]string               `yaml:"binds" json:"binds,omitempty"`
-	Tmpfs             *[]string               `yaml:"tmpfs" json:"tmpfs,omitempty"`
-	Command           *[]string               `yaml:"command" json:"command,omitempty"`
-	Env               *[]string               `yaml:"env" json:"env,omitempty"`
-	Cwd               string                  `yaml:"cwd" json:"cwd,omitempty"`
-	Net               string                  `yaml:"net" json:"net,omitempty"`
-	Pid               string                  `yaml:"pid" json:"pid,omitempty"`
-	Ipc               string                  `yaml:"ipc" json:"ipc,omitempty"`
-	Uts               string                  `yaml:"uts" json:"uts,omitempty"`
-	Userns            string                  `yaml:"userns" json:"userns,omitempty"`
-	Hostname          string                  `yaml:"hostname" json:"hostname,omitempty"`
-	Readonly          *bool                   `yaml:"readonly" json:"readonly,omitempty"`
-	MaskedPaths       *[]string               `yaml:"maskedPaths" json:"maskedPaths,omitempty"`
-	ReadonlyPaths     *[]string               `yaml:"readonlyPaths" json:"readonlyPaths,omitempty"`
-	UID               *interface{}            `yaml:"uid" json:"uid,omitempty"`
-	GID               *interface{}            `yaml:"gid" json:"gid,omitempty"`
-	AdditionalGids    *[]interface{}          `yaml:"additionalGids" json:"additionalGids,omitempty"`
-	NoNewPrivileges   *bool                   `yaml:"noNewPrivileges" json:"noNewPrivileges,omitempty"`
-	OOMScoreAdj       *int                    `yaml:"oomScoreAdj" json:"oomScoreAdj,omitempty"`
-	RootfsPropagation *string                 `yaml:"rootfsPropagation" json:"rootfsPropagation,omitempty"`
-	CgroupsPath       *string                 `yaml:"cgroupsPath" json:"cgroupsPath,omitempty"`
-	Resources         *specs.LinuxResources   `yaml:"resources" json:"resources,omitempty"`
-	Sysctl            *map[string]string      `yaml:"sysctl" json:"sysctl,omitempty"`
-	Rlimits           *[]string               `yaml:"rlimits" json:"rlimits,omitempty"`
-	UIDMappings       *[]specs.LinuxIDMapping `yaml:"uidMappings" json:"uidMappings,omitempty"`
-	GIDMappings       *[]specs.LinuxIDMapping `yaml:"gidMappings" json:"gidMappings,omitempty"`
-	Runtime           *Runtime                `yaml:"runtime" json:"runtime,omitempty"`
+	Capabilities      *[]string               `yaml:"capabilities,omitempty" json:"capabilities,omitempty"`
+	Ambient           *[]string               `yaml:"ambient,omitempty" json:"ambient,omitempty"`
+	Mounts            *[]specs.Mount          `yaml:"mounts,omitempty" json:"mounts,omitempty"`
+	Binds             *[]string               `yaml:"binds,omitempty" json:"binds,omitempty"`
+	Tmpfs             *[]string               `yaml:"tmpfs,omitempty" json:"tmpfs,omitempty"`
+	Command           *[]string               `yaml:"command,omitempty" json:"command,omitempty"`
+	Env               *[]string               `yaml:"env,omitempty" json:"env,omitempty"`
+	Cwd               string                  `yaml:"cwd,omitempty" json:"cwd,omitempty"`
+	Net               string                  `yaml:"net,omitempty" json:"net,omitempty"`
+	Pid               string                  `yaml:"pid,omitempty" json:"pid,omitempty"`
+	Ipc               string                  `yaml:"ipc,omitempty" json:"ipc,omitempty"`
+	Uts               string                  `yaml:"uts,omitempty" json:"uts,omitempty"`
+	Userns            string                  `yaml:"userns,omitempty" json:"userns,omitempty"`
+	Hostname          string                  `yaml:"hostname,omitempty" json:"hostname,omitempty"`
+	Readonly          *bool                   `yaml:"readonly,omitempty" json:"readonly,omitempty"`
+	MaskedPaths       *[]string               `yaml:"maskedPaths,omitempty" json:"maskedPaths,omitempty"`
+	ReadonlyPaths     *[]string               `yaml:"readonlyPaths,omitempty" json:"readonlyPaths,omitempty"`
+	UID               *interface{}            `yaml:"uid,omitempty" json:"uid,omitempty"`
+	GID               *interface{}            `yaml:"gid,omitempty" json:"gid,omitempty"`
+	AdditionalGids    *[]interface{}          `yaml:"additionalGids,omitempty" json:"additionalGids,omitempty"`
+	NoNewPrivileges   *bool                   `yaml:"noNewPrivileges,omitempty" json:"noNewPrivileges,omitempty"`
+	OOMScoreAdj       *int                    `yaml:"oomScoreAdj,omitempty" json:"oomScoreAdj,omitempty"`
+	RootfsPropagation *string                 `yaml:"rootfsPropagation,omitempty" json:"rootfsPropagation,omitempty"`
+	CgroupsPath       *string                 `yaml:"cgroupsPath,omitempty" json:"cgroupsPath,omitempty"`
+	Resources         *specs.LinuxResources   `yaml:"resources,omitempty" json:"resources,omitempty"`
+	Sysctl            *map[string]string      `yaml:"sysctl,omitempty" json:"sysctl,omitempty"`
+	Rlimits           *[]string               `yaml:"rlimits,omitempty" json:"rlimits,omitempty"`
+	UIDMappings       *[]specs.LinuxIDMapping `yaml:"uidMappings,omitempty" json:"uidMappings,omitempty"`
+	GIDMappings       *[]specs.LinuxIDMapping `yaml:"gidMappings,omitempty" json:"gidMappings,omitempty"`
+	Runtime           *Runtime                `yaml:"runtime,omitempty" json:"runtime,omitempty"`
 
 	ref *reference.Spec
 }
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
 type Runtime struct {
-	Cgroups    *[]string      `yaml:"cgroups" json:"cgroups,omitempty"`
-	Mounts     *[]specs.Mount `yaml:"mounts" json:"mounts,omitempty"`
-	Mkdir      *[]string      `yaml:"mkdir" json:"mkdir,omitempty"`
-	Interfaces *[]Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
-	BindNS     Namespaces     `yaml:"bindNS" json:"bindNS,omitempty"`
+	Cgroups    *[]string      `yaml:"cgroups,omitempty" json:"cgroups,omitempty"`
+	Mounts     *[]specs.Mount `yaml:"mounts,omitempty" json:"mounts,omitempty"`
+	Mkdir      *[]string      `yaml:"mkdir,omitempty" json:"mkdir,omitempty"`
+	Interfaces *[]Interface   `yaml:"interfaces,omitempty,omitempty" json:"interfaces,omitempty"`
+	BindNS     Namespaces     `yaml:"bindNS,omitempty" json:"bindNS,omitempty"`
 }
 
 // Namespaces is the type for configuring paths to bind namespaces
 type Namespaces struct {
-	Cgroup *string `yaml:"cgroup" json:"cgroup,omitempty"`
-	Ipc    *string `yaml:"ipc" json:"ipc,omitempty"`
-	Mnt    *string `yaml:"mnt" json:"mnt,omitempty"`
-	Net    *string `yaml:"net" json:"net,omitempty"`
-	Pid    *string `yaml:"pid" json:"pid,omitempty"`
-	User   *string `yaml:"user" json:"user,omitempty"`
-	Uts    *string `yaml:"uts" json:"uts,omitempty"`
+	Cgroup *string `yaml:"cgroup,omitempty" json:"cgroup,omitempty"`
+	Ipc    *string `yaml:"ipc,omitempty" json:"ipc,omitempty"`
+	Mnt    *string `yaml:"mnt,omitempty" json:"mnt,omitempty"`
+	Net    *string `yaml:"net,omitempty" json:"net,omitempty"`
+	Pid    *string `yaml:"pid,omitempty" json:"pid,omitempty"`
+	User   *string `yaml:"user,omitempty" json:"user,omitempty"`
+	Uts    *string `yaml:"uts,omitempty" json:"uts,omitempty"`
 }
 
 // Interface is the runtime config for network interfaces
 type Interface struct {
-	Name         string `yaml:"name" json:"name,omitempty"`
-	Add          string `yaml:"add" json:"add,omitempty"`
-	Peer         string `yaml:"peer" json:"peer,omitempty"`
+	Name         string `yaml:"name,omitempty" json:"name,omitempty"`
+	Add          string `yaml:"add,omitempty" json:"add,omitempty"`
+	Peer         string `yaml:"peer,omitempty" json:"peer,omitempty"`
 	CreateInRoot bool   `yaml:"createInRoot" json:"createInRoot"`
 }
 
@@ -702,9 +702,9 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 	oci := specs.Spec{}
 	runtime := Runtime{}
 
-	var inspectConfig container.Config
+	inspectConfig := &container.Config{}
 	if inspect.Config != nil {
-		inspectConfig = *inspect.Config
+		inspectConfig = inspect.Config
 	}
 
 	// look for org.mobyproject.config label
@@ -721,7 +721,7 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 	// command, env and cwd can be taken from image, as they are commonly specified in Dockerfile
 
 	// TODO we could handle entrypoint and cmd independently more like Docker
-	inspectCommand := append(inspectConfig.Entrypoint, inspect.Config.Cmd...)
+	inspectCommand := append(inspectConfig.Entrypoint, inspectConfig.Cmd...)
 	args := assignStrings3(inspectCommand, label.Command, yaml.Command)
 
 	env := assignStrings3(inspectConfig.Env, label.Env, yaml.Env)
