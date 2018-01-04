@@ -702,9 +702,9 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 	oci := specs.Spec{}
 	runtime := Runtime{}
 
-	var inspectConfig container.Config
+	inspectConfig := &container.Config{}
 	if inspect.Config != nil {
-		inspectConfig = *inspect.Config
+		inspectConfig = inspect.Config
 	}
 
 	// look for org.mobyproject.config label
@@ -721,7 +721,7 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 	// command, env and cwd can be taken from image, as they are commonly specified in Dockerfile
 
 	// TODO we could handle entrypoint and cmd independently more like Docker
-	inspectCommand := append(inspectConfig.Entrypoint, inspect.Config.Cmd...)
+	inspectCommand := append(inspectConfig.Entrypoint, inspectConfig.Cmd...)
 	args := assignStrings3(inspectCommand, label.Command, yaml.Command)
 
 	env := assignStrings3(inspectConfig.Env, label.Env, yaml.Env)
