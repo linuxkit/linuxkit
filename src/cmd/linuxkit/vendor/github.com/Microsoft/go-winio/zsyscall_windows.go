@@ -53,6 +53,7 @@ var (
 	procGetNamedPipeInfo                                     = modkernel32.NewProc("GetNamedPipeInfo")
 	procGetNamedPipeHandleStateW                             = modkernel32.NewProc("GetNamedPipeHandleStateW")
 	procLocalAlloc                                           = modkernel32.NewProc("LocalAlloc")
+	procRtlCopyMemory                                        = modkernel32.NewProc("RtlCopyMemory")
 	procLookupAccountNameW                                   = modadvapi32.NewProc("LookupAccountNameW")
 	procConvertSidToStringSidW                               = modadvapi32.NewProc("ConvertSidToStringSidW")
 	procConvertStringSecurityDescriptorToSecurityDescriptorW = modadvapi32.NewProc("ConvertStringSecurityDescriptorToSecurityDescriptorW")
@@ -140,7 +141,7 @@ func connectNamedPipe(pipe syscall.Handle, o *syscall.Overlapped) (err error) {
 	return
 }
 
-func createNamedPipe(name string, flags uint32, pipeMode uint32, maxInstances uint32, outSize uint32, inSize uint32, defaultTimeout uint32, sa *syscall.SecurityAttributes) (handle syscall.Handle, err error) {
+func createNamedPipe(name string, flags uint32, pipeMode uint32, maxInstances uint32, outSize uint32, inSize uint32, defaultTimeout uint32, sa *securityAttributes) (handle syscall.Handle, err error) {
 	var _p0 *uint16
 	_p0, err = syscall.UTF16PtrFromString(name)
 	if err != nil {
@@ -149,7 +150,7 @@ func createNamedPipe(name string, flags uint32, pipeMode uint32, maxInstances ui
 	return _createNamedPipe(_p0, flags, pipeMode, maxInstances, outSize, inSize, defaultTimeout, sa)
 }
 
-func _createNamedPipe(name *uint16, flags uint32, pipeMode uint32, maxInstances uint32, outSize uint32, inSize uint32, defaultTimeout uint32, sa *syscall.SecurityAttributes) (handle syscall.Handle, err error) {
+func _createNamedPipe(name *uint16, flags uint32, pipeMode uint32, maxInstances uint32, outSize uint32, inSize uint32, defaultTimeout uint32, sa *securityAttributes) (handle syscall.Handle, err error) {
 	r0, _, e1 := syscall.Syscall9(procCreateNamedPipeW.Addr(), 8, uintptr(unsafe.Pointer(name)), uintptr(flags), uintptr(pipeMode), uintptr(maxInstances), uintptr(outSize), uintptr(inSize), uintptr(defaultTimeout), uintptr(unsafe.Pointer(sa)), 0)
 	handle = syscall.Handle(r0)
 	if handle == syscall.InvalidHandle {
@@ -162,7 +163,7 @@ func _createNamedPipe(name *uint16, flags uint32, pipeMode uint32, maxInstances 
 	return
 }
 
-func createFile(name string, access uint32, mode uint32, sa *syscall.SecurityAttributes, createmode uint32, attrs uint32, templatefile syscall.Handle) (handle syscall.Handle, err error) {
+func createFile(name string, access uint32, mode uint32, sa *securityAttributes, createmode uint32, attrs uint32, templatefile syscall.Handle) (handle syscall.Handle, err error) {
 	var _p0 *uint16
 	_p0, err = syscall.UTF16PtrFromString(name)
 	if err != nil {
@@ -171,7 +172,7 @@ func createFile(name string, access uint32, mode uint32, sa *syscall.SecurityAtt
 	return _createFile(_p0, access, mode, sa, createmode, attrs, templatefile)
 }
 
-func _createFile(name *uint16, access uint32, mode uint32, sa *syscall.SecurityAttributes, createmode uint32, attrs uint32, templatefile syscall.Handle) (handle syscall.Handle, err error) {
+func _createFile(name *uint16, access uint32, mode uint32, sa *securityAttributes, createmode uint32, attrs uint32, templatefile syscall.Handle) (handle syscall.Handle, err error) {
 	r0, _, e1 := syscall.Syscall9(procCreateFileW.Addr(), 7, uintptr(unsafe.Pointer(name)), uintptr(access), uintptr(mode), uintptr(unsafe.Pointer(sa)), uintptr(createmode), uintptr(attrs), uintptr(templatefile), 0, 0)
 	handle = syscall.Handle(r0)
 	if handle == syscall.InvalidHandle {
@@ -232,6 +233,11 @@ func getNamedPipeHandleState(pipe syscall.Handle, state *uint32, curInstances *u
 func localAlloc(uFlags uint32, length uint32) (ptr uintptr) {
 	r0, _, _ := syscall.Syscall(procLocalAlloc.Addr(), 2, uintptr(uFlags), uintptr(length), 0)
 	ptr = uintptr(r0)
+	return
+}
+
+func copyMemory(dst uintptr, src uintptr, length uint32) {
+	syscall.Syscall(procRtlCopyMemory.Addr(), 3, uintptr(dst), uintptr(src), uintptr(length))
 	return
 }
 
