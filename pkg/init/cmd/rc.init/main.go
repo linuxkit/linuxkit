@@ -411,13 +411,9 @@ func doShutdown(action string) {
 	unmountAll()
 	switch action {
 	case "poweroff":
-		// TODO use syscall
-		cmd := exec.Command("/sbin/poweroff", "-f")
-		_ = cmd.Run()
+		_ = unix.Reboot(unix.LINUX_REBOOT_CMD_POWER_OFF)
 	case "reboot":
-		// TODO use syscall
-		cmd := exec.Command("/sbin/reboot", "-f")
-		_ = cmd.Run()
+		_ = unix.Reboot(unix.LINUX_REBOOT_CMD_RESTART)
 	}
 	// if this failed, init will try again
 	os.Exit(0)
