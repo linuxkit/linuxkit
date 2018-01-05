@@ -22,20 +22,10 @@ containing the `perf` utility for debugging and performance tracing.
 The perf package is called `kernel-perf` and is tagged the same way as
 the kernel packages.
 
-In addition to the official kernel images, LinuxKit offers the ability
-to build bootable Linux images with kernels from various
-distributions. We mostly offer this mostly for testing
-purposes. "Foreign" kernel images are created by re-packing the native
-kernel packages into hub images. The hub images are typically tagged
-with the kernel version.
-
-In summary, LinuxKit offers a choice of the following kernels:
-- [linuxkit/kernel](https://hub.docker.com/r/linuxkit/kernel/): Official LinuxKit kernels.
-- [linuxkit/kernel-mainline](https://hub.docker.com/r/linuxkit/kernel-mainline/): Mainline [kernel.org](http://kernel.org) kernels from the [Ubuntu Mainline PPA](http://kernel.ubuntu.com/~kernel-ppa/mainline/).
-- [linuxkit/kernel-ubuntu](https://hub.docker.com/r/linuxkit/kernel-ubuntu/): Selected Ubuntu kernels.
-- [linuxkit/kernel-debian](https://hub.docker.com/r/linuxkit/kernel-debian/): Selected Debian kernels.
-- [linuxkit/kernel-centos](https://hub.docker.com/r/linuxkit/kernel-centos/): Selected CentOS kernels.
-- [linuxkit/kernel-fedora](https://hub.docker.com/r/linuxkit/kernel-fedora/): Selected Fedora kernels.
+In addition to the official images, there are also some
+[scripts](../scripts/kernels) which repackage kernels packages from
+some Linux distributions into LinuxKit kernel packages. These are
+mostly provided for testing purposes.
 
 
 ## Loading kernel modules
