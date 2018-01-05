@@ -1,2 +1,0 @@
-FROM prom/prometheus
-ADD etc/prometheus-local.yml /etc/prometheus/prometheus.yml
