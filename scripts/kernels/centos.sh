@@ -1,47 +1,25 @@
 #! /bin/sh
 
-REPO="linuxkit/kernel-centos"
-BASE_URL=http://mirror.centos.org/centos/
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <org/repo> <base url> <kernel version>"
+    echo
+    echo "Example:"
+    echo "$0 foobar/kernel-centos http://mirror.centos.org/centos/7/os/x86_64/Packages 3.10.0-693.el7"
+    echo
+    echo "This will create a local LinuxKit kernel package:"
+    echo "foobar/kernel-centos:3.10.0-693.el7"
+    echo "which you can then push to hub or just use locally"
+    exit 1
+fi
 
-TAGS=$(curl --silent -f -lSL https://registry.hub.docker.com/v1/repositories/${REPO}/tags)
+REPO=$1
+URL=$2
+VER=$3
+ARCH=x86_64
 
-LINKS=$(curl -s ${BASE_URL}/ | sed -n 's/.*href="\([^"]*\).*/\1/p')
-# Just get names for Centos 7
-RELEASES=$(echo $LINKS | grep -o "7\.[^ ]*")
-RELEASES="7/ $RELEASES"
+KERNEL_RPM="$URL/kernel-$VER.$ARCH.rpm"
+HEADERS_RPM="$URL/kernel-headers-$VER.$ARCH.rpm"
 
-# Add updates
-URLS=""
-for RELEASE in $RELEASES; do
-    URLS="$URLS ${BASE_URL}/${RELEASE}/os/x86_64/Packages/"
-done
-URLS="$URLS ${BASE_URL}/7/updates/x86_64/Packages/"
+RPM_URLS="$KERNEL_RPM $HEADERS_RPM"
 
-for URL in $URLS; do
-    PACKAGES=$(curl -s ${URL}/ | sed -n 's/.*href="\([^"]*\).*/\1/p')
-
-    KERNEL_RPMS=$(echo $PACKAGES | \
-        grep -o "kernel-[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9]\+\.[^ ]\+\.rpm")
-    for KERNEL_RPM in $KERNEL_RPMS; do
-        RPM_URLS="${URL}/${KERNEL_RPM}"
-
-        VERSION=$(echo $KERNEL_RPM | \
-                      grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9\.]\+\.el[0-9]\+")
-
-        if echo $TAGS | grep -q "\"${VERSION}\""; then
-            echo "${REPO}:${VERSION} exists"
-            continue
-        fi
-
-        # Don't pull in the headers. This is mostly for testing
-        # HEADERS_RPM="kernel-headers-${VERSION}.x86_64.rpm"
-        # RPM_URLS="${RPM_URLS} ${URL}/${HEADERS_RPM}"
-
-        docker build -t ${REPO}:${VERSION} -f Dockerfile.rpm --no-cache \
-               --build-arg RPM_URLS="${RPM_URLS}" . &&
-            DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
-
-        docker rmi ${REPO}:${VERSION}
-        docker system prune -f
-    done
-done
+docker build -t "$REPO:$VER" -f Dockerfile.rpm --no-cache --build-arg RPM_URLS="$RPM_URLS" .

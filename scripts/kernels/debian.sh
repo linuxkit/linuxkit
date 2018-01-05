@@ -1,32 +1,30 @@
 #! /bin/sh
 
-REPO="linuxkit/kernel-debian"
-BASE_URL=http://mirrors.kernel.org/debian/pool/main/l/linux/
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <org/repo> <ABI version> <kernel version>"
+    echo
+    echo "Example:"
+    echo "$0 foobar/kernel-debian 4.14.0-2 4.14.7-1"
+    echo
+    echo "This will create a local LinuxKit kernel package:"
+    echo "foobar/kernel-debian:4.14.7-1"
+    echo "which you can then push to hub or just use locally"
+    exit 1
+fi
 
-TAGS=$(curl --silent -f -lSL https://registry.hub.docker.com/v1/repositories/${REPO}/tags)
+# List all available kernels with:
+# curl -s http://mirrors.kernel.org/debian/pool/main/l/linux/ | sed -n 's/.*href="\([^"]*\).*/\1/p' | grep -o "linux-image-[0-9]\.[0-9]\+\.[0-9]\+-[0-9]\+-amd64[^ ]\+_amd64\.deb
 
+REPO=$1
+VER1=$2
+VER2=$3
+URL=http://mirrors.kernel.org/debian/pool/main/l/linux
 ARCH=amd64
-LINKS=$(curl -s ${BASE_URL}/ | sed -n 's/.*href="\([^"]*\).*/\1/p')
-# Just get names for 4.x kernels
-KERNELS=$(echo $LINKS | \
-    grep -o "linux-image-4\.[0-9]\+\.[0-9]\+-[0-9]\+-${ARCH}[^ ]\+_${ARCH}\.deb")
 
-for KERN_DEB in $KERNELS; do
-    VERSION=$(echo $KERN_DEB | \
-        grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9]\+" | head -1)
+KERNEL_DEB="${URL}/linux-image-${VER1}-${ARCH}_${VER2}_${ARCH}.deb"
+HEADERS_DEB="${URL}/linux-headers-${VER1}-${ARCH}_${VER2}_${ARCH}.deb"
+HEADERS_ALL_DEB="${URL}/linux-headers-${VER1}-all_${VER2}_${ARCH}.deb"
 
-    if echo $TAGS | grep -q "\"${VERSION}\""; then
-        echo "${REPO}:${VERSION} exists"
-        continue
-    fi
+DEB_URLS="${KERNEL_DEB} ${HEADERS_DEB} ${HEADERS_ALL_DEB}"
 
-    URLS="${BASE_URL}/${KERN_DEB}"
-
-    # Doesn't exist build and push
-    docker build -t ${REPO}:${VERSION} -f Dockerfile.deb --no-cache \
-           --build-arg DEB_URLS="${URLS}" . &&
-        DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
-
-    docker rmi ${REPO}:${VERSION}
-    docker system prune -f
-done
+docker build -t "${REPO}:${VER2}" -f Dockerfile.deb --no-cache --build-arg DEB_URLS="${DEB_URLS}" .

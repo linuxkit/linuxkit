@@ -1,55 +1,28 @@
 #! /bin/sh
 
-REPO="linuxkit/kernel-fedora"
-BASE_URL=http://mirrors.kernel.org/fedora/
+if [ "$#" -ne 3 ]; then
+    echo "Usage: $0 <org/repo> <base url> <kernel version>"
+    echo
+    echo "Example:"
+    echo "$0 foobar/kernel-fedora http://mirrors.kernel.org/fedora/releases/27/Everything/x86_64/os/Packages/k/ 4.13.9-300.fc27"
+    echo
+    echo "This will create a local LinuxKit kernel package:"
+    echo "foobar/kernel-fedora:4.13.9-300.fc27"
+    echo "which you can then push to hub or just use locally"
+    exit 1
+fi
 
-TAGS=$(curl --silent -f -lSL https://registry.hub.docker.com/v1/repositories/${REPO}/tags)
-
-LINKS=$(curl -s ${BASE_URL}/releases/ | sed -n 's/.*href="\([^"]*\).*/\1/p')
-# Just get releases 20+
-RELEASES=$(echo $LINKS | grep -o "2[0-9]")
-
+REPO=$1
+URL=$2
+VER=$3
 ARCH=x86_64
-URLS=""
-for RELEASE in $RELEASES; do
-    URLS="$URLS ${BASE_URL}/releases/${RELEASE}/Everything/${ARCH}/os/Packages/k/"
-    URLS="$URLS ${BASE_URL}/updates/${RELEASE}/${ARCH}/k/"
-done
 
-for URL in $URLS; do
-    PACKAGES=$(curl -s ${URL}/ | sed -n 's/.*href="\([^"]*\).*/\1/p')
+KERNEL_RPM="$URL/kernel-$VER.$ARCH.rpm"
+CORE_RPM="$URL/kernel-core-$VER.$ARCH.rpm"
+MOD_RPM="$URL/kernel-modules-$VER.$ARCH.rpm"
+MOD_EXTRA_RPM="$URL/kernel-modules-extra-$VER.$ARCH.rpm"
+HEADERS_RPM="$URL/kernel-headers-$VER.$ARCH.rpm"
 
-    KERNEL_RPMS=$(echo $PACKAGES | \
-        grep -o "kernel-[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9]\+\.[^ ]\+\.rpm")
-    for KERNEL_RPM in $KERNEL_RPMS; do
-        RPM_URLS="${URL}/${KERNEL_RPM}"
+RPM_URLS="$KERNEL_RPM $CORE_RPM $MOD_RPM $MOD_EXTRA_RPM $HEADERS_RPM"
 
-        VERSION=$(echo $KERNEL_RPM | \
-                      grep -o "[0-9]\+\.[0-9]\+\.[0-9]\+-[0-9\.]\+\.fc[0-9]\+")
-
-        if echo $TAGS | grep -q "\"${VERSION}\""; then
-            echo "${REPO}:${VERSION} exists"
-            continue
-        fi
-
-        CORE_RPM="kernel-core-${VERSION}.${ARCH}.rpm"
-        RPM_URLS="${RPM_URLS} ${URL}/${CORE_RPM}"
-
-        MOD_RPM="kernel-modules-${VERSION}.${ARCH}.rpm"
-        RPM_URLS="${RPM_URLS} ${URL}/${MOD_RPM}"
-
-        MOD_EXTRA_RPM="kernel-modules-extra-${VERSION}.${ARCH}.rpm"
-        RPM_URLS="${RPM_URLS} ${URL}/${MOD_EXTRA_RPM}"
-
-        # Don't pull in the headers. This is mostly for testing
-        # HEADERS_RPM="kernel-headers-${VERSION}.x86_64.rpm"
-        # RPM_URLS="${RPM_URLS} ${URL}/${HEADERS_RPM}"
-
-        docker build -t ${REPO}:${VERSION} -f Dockerfile.rpm --no-cache \
-               --build-arg RPM_URLS="${RPM_URLS}" . &&
-            DOCKER_CONTENT_TRUST=1 docker push ${REPO}:${VERSION}
-
-        docker rmi ${REPO}:${VERSION}
-        docker system prune -f
-    done
-done
+docker build -t "$REPO:$VER" -f Dockerfile.rpm --no-cache --build-arg RPM_URLS="$RPM_URLS" .
