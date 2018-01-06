@@ -2,6 +2,8 @@
 
 [![CircleCI](https://circleci.com/gh/linuxkit/linuxkit.svg?style=svg)](https://circleci.com/gh/linuxkit/linuxkit)
 
+**Security Update 06/01/2018: All LinuxKit `x86_64` kernels now have KPTI enabled by default. This protects against [Meltdown](https://meltdownattack.com/meltdown.pdf). Defences against [Spectre](https://spectreattack.com/spectre.pdf) are work in progress upstream. All kernels also contain the fix in the eBPF verifier used in some of the exploits. The `arm64` kernels are not yet fixed. See [Greg KH's blogpost](http://kroah.com/log/blog/2018/01/06/meltdown-status/) for details.**
+
 LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 
 - Secure defaults without compromising usability
