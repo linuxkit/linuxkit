@@ -1,7 +1,7 @@
 # FIXME: This should use the minimal example
 # We continue to use the kernel-config-test as CI is currently expecting to see a success message
 kernel:
-  image: linuxkit/kernel:4.9.74
+  image: linuxkit/kernel:4.9.75
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:5a577d070817b4f17821657823082651baafd4ed
