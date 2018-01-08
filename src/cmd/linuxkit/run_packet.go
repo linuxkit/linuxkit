@@ -122,31 +122,7 @@ func runPacket(args []string) {
 		}()
 	}
 
-	// Build the iPXE script
-	// Note, we *append* the <prefix>-cmdline. iXPE booting will
-	// need the first set of "kernel-params" and we don't want to
-	// require these to be added to every YAML file.
-	userData := "#!ipxe\n\n"
-	userData += "dhcp\n"
-	userData += fmt.Sprintf("set base-url %s\n", url)
-	if *machineFlag != "baremetal_2a" {
-		var tty string
-		// x86_64 Packet machines have console on non standard ttyS1 which is not in most examples
-		if !strings.Contains(cmdline, "console=ttyS1") {
-			tty = "console=ttyS1,115200"
-		}
-		userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro serial %s %s\n", tty, cmdline)
-		userData += fmt.Sprintf("kernel ${base-url}/%s-kernel ${kernel-params}\n", name)
-		userData += fmt.Sprintf("initrd ${base-url}/%s-initrd.img\n", name)
-	} else {
-		// With EFI boot need to specify the initrd and root dev explicitly. See:
-		// http://ipxe.org/appnote/debian_preseed
-		// http://forum.ipxe.org/showthread.php?tid=7589
-		userData += fmt.Sprintf("initrd --name initrd ${base-url}/%s-initrd.img\n", name)
-		userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro %s\n", cmdline)
-		userData += fmt.Sprintf("kernel ${base-url}/%s-kernel initrd=initrd root=/dev/ram0 ${kernel-params}\n", name)
-	}
-	userData += "boot"
+	userData := packetIPXEScript(name, url, cmdline, packetMachineToArch(*machineFlag))
 	log.Debugf("Using userData of:\n%s\n", userData)
 
 	// Make sure the URL works
@@ -252,6 +228,45 @@ func runPacket(args []string) {
 			log.Fatalf("Unable to delete device: %v", err)
 		}
 	}
+}
+
+// Convert machine type to architecture
+func packetMachineToArch(machine string) string {
+	switch machine {
+	case "baremetal_2a", "baremetal_2a2":
+		return "aarch64"
+	default:
+		return "x86_64"
+	}
+}
+
+// Build the iPXE script for packet machines
+func packetIPXEScript(name, baseURL, cmdline, arch string) string {
+	// Note, we *append* the <prefix>-cmdline. iXPE booting will
+	// need the first set of "kernel-params" and we don't want to
+	// require these to be added to every YAML file.
+	script := "#!ipxe\n\n"
+	script += "dhcp\n"
+	script += fmt.Sprintf("set base-url %s\n", baseURL)
+	if arch != "aarch64" {
+		var tty string
+		// x86_64 Packet machines have console on non standard ttyS1 which is not in most examples
+		if !strings.Contains(cmdline, "console=ttyS1") {
+			tty = "console=ttyS1,115200"
+		}
+		script += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro serial %s %s\n", tty, cmdline)
+		script += fmt.Sprintf("kernel ${base-url}/%s-kernel ${kernel-params}\n", name)
+		script += fmt.Sprintf("initrd ${base-url}/%s-initrd.img\n", name)
+	} else {
+		// With EFI boot need to specify the initrd and root dev explicitly. See:
+		// http://ipxe.org/appnote/debian_preseed
+		// http://forum.ipxe.org/showthread.php?tid=7589
+		script += fmt.Sprintf("initrd --name initrd ${base-url}/%s-initrd.img\n", name)
+		script += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro %s\n", cmdline)
+		script += fmt.Sprintf("kernel ${base-url}/%s-kernel initrd=initrd root=/dev/ram0 ${kernel-params}\n", name)
+	}
+	script += "boot"
+	return script
 }
 
 // validateHTTPURL does a sanity check that a URL returns a 200 or 300 response
