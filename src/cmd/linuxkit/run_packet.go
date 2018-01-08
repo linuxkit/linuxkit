@@ -152,8 +152,13 @@ func runPacket(args []string) {
 	// Make sure the URL works
 	initrdURL := fmt.Sprintf("%s/%s-initrd.img", url, name)
 	kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
-	validateHTTPURL(kernelURL)
-	validateHTTPURL(initrdURL)
+	log.Infof("Validating URls: %s %s", initrdURL, kernelURL)
+	if err := validateHTTPURL(kernelURL); err != nil {
+		log.Fatalf("Invalid kernel URL %s: %v", kernelURL, err)
+	}
+	if err := validateHTTPURL(initrdURL); err != nil {
+		log.Fatalf("Invalid initrd URL %s: %v", initrdURL, err)
+	}
 
 	client := packngo.NewClient("", apiKey, nil)
 	tags := []string{}
@@ -214,7 +219,7 @@ func runPacket(args []string) {
 	sshHost := "sos." + dev.Facility.Code + ".packet.net"
 	if *consoleFlag {
 		// Connect to the serial console
-		if err := sshSOS(dev.ID, sshHost); err != nil {
+		if err := packetSOS(dev.ID, sshHost); err != nil {
 			log.Fatal(err)
 		}
 	} else {
@@ -250,19 +255,18 @@ func runPacket(args []string) {
 }
 
 // validateHTTPURL does a sanity check that a URL returns a 200 or 300 response
-func validateHTTPURL(url string) {
-	log.Infof("Validating URL: %s", url)
+func validateHTTPURL(url string) error {
 	resp, err := http.Head(url)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 	if resp.StatusCode >= 400 {
-		log.Fatal("Got a non 200- or 300- HTTP response code: %s", resp)
+		return fmt.Errorf("Got a non 200- or 300- HTTP response code: %s", resp)
 	}
-	log.Debugf("OK: %d response code", resp.StatusCode)
+	return nil
 }
 
-func sshSOS(user, host string) error {
+func packetSOS(user, host string) error {
 	log.Debugf("console: ssh %s@%s", user, host)
 
 	hostKey, err := sshHostKey(host)
