@@ -12,6 +12,9 @@ import (
 	"github.com/moby/tool/src/moby"
 )
 
+//PkgConfFile is the default name of a pkg configuration
+const pkgConfFile = "build.yml"
+
 // Contains fields settable in the build.yml
 type pkgInfo struct {
 	Image               string            `yaml:"image"`
@@ -83,7 +86,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// Other arguments
 	var buildYML, hash, hashCommit, hashPath string
 	var dirty, devMode bool
-	fs.StringVar(&buildYML, "build-yml", "build.yml", "Override the name of the yml file")
+	fs.StringVar(&buildYML, "build-yml", pkgConfFile, "Override the name of the yml file")
 	fs.StringVar(&hash, "hash", "", "Override the image hash (default is to query git for the package's tree-sh)")
 	fs.StringVar(&hashCommit, "hash-commit", "HEAD", "Override the git commit to use for the hash")
 	fs.StringVar(&hashPath, "hash-path", "", "Override the directory to use for the image hash, must be a parent of the package dir (default is to use the package dir)")
