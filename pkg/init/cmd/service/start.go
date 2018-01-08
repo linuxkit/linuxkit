@@ -11,12 +11,11 @@ import (
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
-	"github.com/containerd/containerd/namespaces"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 )
 
-func startCmd(args []string) {
+func startCmd(ctx context.Context, args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("start", flag.ExitOnError)
 	flags.Usage = func() {
@@ -48,7 +47,7 @@ func startCmd(args []string) {
 		"service": service,
 	})
 
-	id, pid, msg, err := start(service, *sock, *path, *dumpSpec)
+	id, pid, msg, err := start(ctx, service, *sock, *path, *dumpSpec)
 	if err != nil {
 		log.WithError(err).Fatal(msg)
 	}
@@ -74,7 +73,7 @@ func (c *logio) Close() error {
 	return nil
 }
 
-func start(service, sock, basePath, dumpSpec string) (string, uint32, string, error) {
+func start(ctx context.Context, service, sock, basePath, dumpSpec string) (string, uint32, string, error) {
 	path := filepath.Join(basePath, service)
 
 	runtimeConfig := getRuntimeConfig(path)
@@ -89,8 +88,6 @@ func start(service, sock, basePath, dumpSpec string) (string, uint32, string, er
 	if err != nil {
 		return "", 0, "creating containerd client", err
 	}
-
-	ctx := namespaces.WithNamespace(context.Background(), "default")
 
 	var spec *specs.Spec
 	specf, err := os.Open(filepath.Join(path, "config.json"))

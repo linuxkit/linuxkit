@@ -2,7 +2,7 @@ kernel:
   image: mobylinux/kernel-landlock:4.9.x
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:5a577d070817b4f17821657823082651baafd4ed
+  - linuxkit/init:fb1e34662dc92a45f8e92c91adbee094e22feb55
   - mobylinux/runc:b0fb122e10dbb7e4e45115177a61a3f8d68c19a9
   - mobylinux/containerd:18eaf72f3f4f9a9f29ca1951f66df701f873060b
   - mobylinux/ca-certificates:eabc5a6e59f05aa91529d80e9a595b85b046f935
