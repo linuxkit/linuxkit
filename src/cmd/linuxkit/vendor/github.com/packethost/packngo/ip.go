@@ -1,110 +1,71 @@
 package packngo
 
-import "fmt"
+import (
+	"fmt"
+)
 
 const ipBasePath = "/ips"
 
-// IPService interface defines available IP methods
-type IPService interface {
-	Assign(deviceID string, assignRequest *IPAddressAssignRequest) (*IPAddress, *Response, error)
-	Unassign(ipAddressID string) (*Response, error)
-	Get(ipAddressID string) (*IPAddress, *Response, error)
+// DeviceIPService handles assignment of addresses from reserved blocks to instances in a project.
+type DeviceIPService interface {
+	Assign(deviceID string, assignRequest *AddressStruct) (*IPAddressAssignment, *Response, error)
+	Unassign(assignmentID string) (*Response, error)
+	Get(assignmentID string) (*IPAddressAssignment, *Response, error)
 }
 
-// IPAddress represents a ip address
-type IPAddress struct {
-	ID            string            `json:"id"`
-	Address       string            `json:"address"`
-	Gateway       string            `json:"gateway"`
-	Network       string            `json:"network"`
-	AddressFamily int               `json:"address_family"`
-	Netmask       string            `json:"netmask"`
-	Public        bool              `json:"public"`
-	Cidr          int               `json:"cidr"`
-	AssignedTo    map[string]string `json:"assigned_to"`
-	Created       string            `json:"created_at,omitempty"`
-	Updated       string            `json:"updated_at,omitempty"`
-	Href          string            `json:"href"`
-	Facility      Facility          `json:"facility,omitempty"`
-}
-
-// IPAddressAssignRequest represents the body if a ip assign request
-type IPAddressAssignRequest struct {
-	Address string `json:"address"`
-}
-
-func (i IPAddress) String() string {
-	return Stringify(i)
-}
-
-// IPServiceOp implements IPService
-type IPServiceOp struct {
-	client *Client
-}
-
-// Get returns IpAddress by ID
-func (i *IPServiceOp) Get(ipAddressID string) (*IPAddress, *Response, error) {
-	path := fmt.Sprintf("%s/%s", ipBasePath, ipAddressID)
-
-	req, err := i.client.NewRequest("GET", path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	ip := new(IPAddress)
-	resp, err := i.client.Do(req, ip)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return ip, resp, err
-}
-
-// Unassign unassigns an IP address record. This will remove the relationship between an IP
-// and the device and will make the IP address available to be assigned to another device.
-func (i *IPServiceOp) Unassign(ipAddressID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", ipBasePath, ipAddressID)
-
-	req, err := i.client.NewRequest("DELETE", path, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := i.client.Do(req, nil)
-	return resp, err
-}
-
-// Assign assigns an IP address to a device. The IP address must be in one of the IP ranges assigned to the device’s project.
-func (i *IPServiceOp) Assign(deviceID string, assignRequest *IPAddressAssignRequest) (*IPAddress, *Response, error) {
-	path := fmt.Sprintf("%s/%s%s", deviceBasePath, deviceID, ipBasePath)
-
-	req, err := i.client.NewRequest("POST", path, assignRequest)
-
-	ip := new(IPAddress)
-	resp, err := i.client.Do(req, ip)
-	if err != nil {
-		return nil, resp, err
-	}
-
-	return ip, resp, err
-}
-
-// IP RESERVATIONS API
-
-// IPReservationService interface defines available IPReservation methods
-type IPReservationService interface {
-	List(projectID string) ([]IPReservation, *Response, error)
-	RequestMore(projectID string, ipReservationReq *IPReservationRequest) (*IPReservation, *Response, error)
-	Get(ipReservationID string) (*IPReservation, *Response, error)
+// ProjectIPService handles reservation of IP address blocks for a project.
+type ProjectIPService interface {
+	Get(reservationID string) (*IPAddressReservation, *Response, error)
+	List(projectID string) ([]IPAddressReservation, *Response, error)
+	Request(projectID string, ipReservationReq *IPReservationRequest) (*IPAddressReservation, *Response, error)
 	Remove(ipReservationID string) (*Response, error)
+	AvailableAddresses(ipReservationID string, r *AvailableRequest) ([]string, *Response, error)
 }
 
-// IPReservationServiceOp implements the IPReservationService interface
-type IPReservationServiceOp struct {
-	client *Client
+type ipAddressCommon struct {
+	ID            string `json:"id"`
+	Address       string `json:"address"`
+	Gateway       string `json:"gateway"`
+	Network       string `json:"network"`
+	AddressFamily int    `json:"address_family"`
+	Netmask       string `json:"netmask"`
+	Public        bool   `json:"public"`
+	CIDR          int    `json:"cidr"`
+	Created       string `json:"created_at,omitempty"`
+	Updated       string `json:"updated_at,omitempty"`
+	Href          string `json:"href"`
+	Management    bool   `json:"management"`
+	Manageable    bool   `json:"manageable"`
+	Project       Href   `json:"project"`
 }
 
-// IPReservationRequest represents the body of a reservation request
+// IPAddressReservation is created when user sends IP reservation request for a project (considering it's within quota).
+type IPAddressReservation struct {
+	ipAddressCommon
+	Assignments []Href   `json:"assignments"`
+	Facility    Facility `json:"facility,omitempty"`
+	Available   string   `json:"available"`
+	Addon       bool     `json:"addon"`
+	Bill        bool     `json:"bill"`
+}
+
+// AvailableResponse is a type for listing of available addresses from a reserved block.
+type AvailableResponse struct {
+	Available []string `json:"available"`
+}
+
+// AvailableRequest is a type for listing available addresses from a reserved block.
+type AvailableRequest struct {
+	CIDR int `json:"cidr"`
+}
+
+// IPAddressAssignment is created when an IP address from reservation block is assigned to a device.
+type IPAddressAssignment struct {
+	ipAddressCommon
+	AssignedTo Href `json:"assigned_to"`
+}
+
+// IPReservationRequest represents the body of a reservation request.
 type IPReservationRequest struct {
 	Type     string `json:"type"`
 	Quantity int    `json:"quantity"`
@@ -112,95 +73,122 @@ type IPReservationRequest struct {
 	Facility string `json:"facility"`
 }
 
-// IPReservation represent an IP reservation for a single project
-type IPReservation struct {
-	ID            string              `json:"id"`
-	Network       string              `json:"network"`
-	Address       string              `json:"address"`
-	AddressFamily int                 `json:"address_family"`
-	Netmask       string              `json:"netmask"`
-	Public        bool                `json:"public"`
-	Cidr          int                 `json:"cidr"`
-	Management    bool                `json:"management"`
-	Manageable    bool                `json:"manageable"`
-	Addon         bool                `json:"addon"`
-	Bill          bool                `json:"bill"`
-	Assignments   []map[string]string `json:"assignments"`
-	Created       string              `json:"created_at,omitempty"`
-	Updated       string              `json:"updated_at,omitempty"`
-	Href          string              `json:"href"`
-	Facility      Facility            `json:"facility,omitempty"`
+// AddressStruct is a helper type for request/response with dict like {"address": ... }
+type AddressStruct struct {
+	Address string `json:"address"`
 }
 
-type ipReservationRoot struct {
-	IPReservations []IPReservation `json:"ip_addresses"`
+func deleteFromIP(client *Client, resourceID string) (*Response, error) {
+	path := fmt.Sprintf("%s/%s", ipBasePath, resourceID)
+
+	return client.DoRequest("DELETE", path, nil, nil)
+}
+
+func (i IPAddressReservation) String() string {
+	return Stringify(i)
+}
+
+func (i IPAddressAssignment) String() string {
+	return Stringify(i)
+}
+
+// DeviceIPServiceOp is interface for IP-address assignment methods.
+type DeviceIPServiceOp struct {
+	client *Client
+}
+
+// Unassign unassigns an IP address from the device to which it is currently assigned.
+// This will remove the relationship between an IP and the device and will make the IP
+// address available to be assigned to another device.
+func (i *DeviceIPServiceOp) Unassign(assignmentID string) (*Response, error) {
+	return deleteFromIP(i.client, assignmentID)
+}
+
+// Assign assigns an IP address to a device.
+// The IP address must be in one of the IP ranges assigned to the device’s project.
+func (i *DeviceIPServiceOp) Assign(deviceID string, assignRequest *AddressStruct) (*IPAddressAssignment, *Response, error) {
+	path := fmt.Sprintf("%s/%s%s", deviceBasePath, deviceID, ipBasePath)
+	ipa := new(IPAddressAssignment)
+
+	resp, err := i.client.DoRequest("POST", path, assignRequest, ipa)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return ipa, resp, err
+}
+
+// Get returns assignment by ID.
+func (i *DeviceIPServiceOp) Get(assignmentID string) (*IPAddressAssignment, *Response, error) {
+	path := fmt.Sprintf("%s/%s", ipBasePath, assignmentID)
+	ipa := new(IPAddressAssignment)
+
+	resp, err := i.client.DoRequest("GET", path, nil, ipa)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return ipa, resp, err
+}
+
+// ProjectIPServiceOp is interface for IP assignment methods.
+type ProjectIPServiceOp struct {
+	client *Client
+}
+
+// Get returns reservation by ID.
+func (i *ProjectIPServiceOp) Get(reservationID string) (*IPAddressReservation, *Response, error) {
+	path := fmt.Sprintf("%s/%s", ipBasePath, reservationID)
+	ipr := new(IPAddressReservation)
+
+	resp, err := i.client.DoRequest("GET", path, nil, ipr)
+	if err != nil {
+		return nil, resp, err
+	}
+
+	return ipr, resp, err
 }
 
 // List provides a list of IP resevations for a single project.
-func (i *IPReservationServiceOp) List(projectID string) ([]IPReservation, *Response, error) {
+func (i *ProjectIPServiceOp) List(projectID string) ([]IPAddressReservation, *Response, error) {
 	path := fmt.Sprintf("%s/%s%s", projectBasePath, projectID, ipBasePath)
+	reservations := new(struct {
+		Reservations []IPAddressReservation `json:"ip_addresses"`
+	})
 
-	req, err := i.client.NewRequest("GET", path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	reservations := new(ipReservationRoot)
-	resp, err := i.client.Do(req, reservations)
+	resp, err := i.client.DoRequest("GET", path, nil, reservations)
 	if err != nil {
 		return nil, resp, err
 	}
-	return reservations.IPReservations, resp, err
+	return reservations.Reservations, resp, nil
 }
 
-// RequestMore requests more IP space for a project in order to have additional IP addresses to assign to devices
-func (i *IPReservationServiceOp) RequestMore(projectID string, ipReservationReq *IPReservationRequest) (*IPReservation, *Response, error) {
+// Request requests more IP space for a project in order to have additional IP addresses to assign to devices.
+func (i *ProjectIPServiceOp) Request(projectID string, ipReservationReq *IPReservationRequest) (*IPAddressReservation, *Response, error) {
 	path := fmt.Sprintf("%s/%s%s", projectBasePath, projectID, ipBasePath)
+	ipr := new(IPAddressReservation)
 
-	req, err := i.client.NewRequest("POST", path, &ipReservationReq)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	ip := new(IPReservation)
-	resp, err := i.client.Do(req, ip)
+	resp, err := i.client.DoRequest("POST", path, ipReservationReq, ipr)
 	if err != nil {
 		return nil, resp, err
 	}
-	return ip, resp, err
-}
-
-// Get returns a single IP reservation object
-func (i *IPReservationServiceOp) Get(ipReservationID string) (*IPReservation, *Response, error) {
-	path := fmt.Sprintf("%s/%s", ipBasePath, ipReservationID)
-
-	req, err := i.client.NewRequest("GET", path, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	reservation := new(IPReservation)
-	resp, err := i.client.Do(req, reservation)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return reservation, resp, err
+	return ipr, resp, err
 }
 
 // Remove removes an IP reservation from the project.
-func (i *IPReservationServiceOp) Remove(ipReservationID string) (*Response, error) {
-	path := fmt.Sprintf("%s/%s", ipBasePath, ipReservationID)
+func (i *ProjectIPServiceOp) Remove(ipReservationID string) (*Response, error) {
+	return deleteFromIP(i.client, ipReservationID)
+}
 
-	req, err := i.client.NewRequest("DELETE", path, nil)
+// AvailableAddresses lists addresses available from a reserved block
+func (i *ProjectIPServiceOp) AvailableAddresses(ipReservationID string, r *AvailableRequest) ([]string, *Response, error) {
+	path := fmt.Sprintf("%s/%s/available", ipBasePath, ipReservationID)
+	ar := new(AvailableResponse)
+
+	resp, err := i.client.DoRequest("GET", path, r, ar)
 	if err != nil {
-		return nil, err
+		return nil, resp, err
 	}
+	return ar.Available, resp, nil
 
-	resp, err := i.client.Do(req, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, err
 }

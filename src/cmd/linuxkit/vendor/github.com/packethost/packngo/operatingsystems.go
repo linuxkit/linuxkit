@@ -30,13 +30,9 @@ type OSServiceOp struct {
 
 // List returns all available operating systems
 func (s *OSServiceOp) List() ([]OS, *Response, error) {
-	req, err := s.client.NewRequest("GET", osBasePath, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	root := new(osRoot)
-	resp, err := s.client.Do(req, root)
+
+	resp, err := s.client.DoRequest("GET", osBasePath, nil, root)
 	if err != nil {
 		return nil, resp, err
 	}

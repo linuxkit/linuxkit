@@ -26,13 +26,9 @@ type EmailServiceOp struct {
 
 // Get retrieves an email by id
 func (s *EmailServiceOp) Get(emailID string) (*Email, *Response, error) {
-	req, err := s.client.NewRequest("GET", emailBasePath, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	email := new(Email)
-	resp, err := s.client.Do(req, email)
+
+	resp, err := s.client.DoRequest("GET", emailBasePath, nil, email)
 	if err != nil {
 		return nil, resp, err
 	}
