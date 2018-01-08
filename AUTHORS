@@ -9,6 +9,7 @@ Anil Madhavapeddy <anil.madhavapeddy@docker.com>
 Avi Deitcher <avi@deitcher.net>
 Bill Kerr <bill@generalbill.com>
 Carlton-Semple <carlton.semple@ibm.com>
+Damiano Donati <damiano.donati@gmail.com>
 Dan Finneran <dan@thebsdbox.co.uk>
 Daniel Caminada <daniel.caminada@ergon.ch>
 Daniel Hiltgen <daniel.hiltgen@docker.com>
@@ -16,6 +17,7 @@ Daniel Nephin <dnephin@gmail.com>
 Dave Freitag <dcfreita@us.ibm.com>
 Dave Tucker <dt@docker.com>
 David Gageot <david.gageot@docker.com>
+David Manouchehri <david.manouchehri@riseup.net>
 David Protasowski <dprotaso@gmail.com>
 David Scott <dave.scott@docker.com>
 David Sheets <david.sheets@docker.com>
@@ -72,11 +74,14 @@ Richard Mortier <mort@cantab.net>
 Riyaz Faizullabhoy <riyaz.faizullabhoy@docker.com>
 Robb Kistler <robb.kistler@docker.com>
 Rolf Neugebauer <rolf.neugebauer@docker.com>
+Rui Lopes <rgl@ruilopes.com>
 Ryoga Saito <proelbtn@gmail.com>
 Sebastiaan van Stijn <sebastiaan.vanstijn@docker.com>
 Simon Ferquel <simon.ferquel@docker.com>
 Sotiris Salloumis <sotiris.salloumis@gmail.com>
 Stefan Bourlon <stefan.bourlon@ca.com>
+Stephen J Day <stephen.day@docker.com>
+Steve Hiehn <shiehn@pivotal.io>
 Theo Koulouris <theo.koulouris@hpe.com>
 Thomas Conte <thomas@conte.com>
 Thomas Gazagnaire <thomas.gazagnaire@docker.com>
@@ -84,7 +89,9 @@ Thomas Leonard <thomas.leonard@docker.com>
 Thomas Shaw <tomwillfixit@users.noreply.github.com>
 Tiago Pires <tandrepires@gmail.com>
 Tim Potter <tpot@hpe.com>
+Tobias Klauser <tklauser@distanz.ch>
 Tycho Andersen <tycho@docker.com>
 Vincent Demeester <Vincent.Demeester@docker.com>
 w9n <w9ncontact@gmail.com>
 Zachery Hostens <zacheryph@gmail.com>
+zlim <zlim.lnx@gmail.com>
