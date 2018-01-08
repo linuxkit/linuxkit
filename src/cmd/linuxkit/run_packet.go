@@ -113,7 +113,7 @@ func runPacket(args []string) {
 	var httpServer *http.Server
 	if *serveFlag != "" {
 		fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
-		httpServer = &http.Server{Addr: ":8080", Handler: http.FileServer(fs)}
+		httpServer = &http.Server{Addr: *serveFlag, Handler: http.FileServer(fs)}
 		go func() {
 			log.Debugf("Listening on http://%s\n", *serveFlag)
 			if err := httpServer.ListenAndServe(); err != nil {
