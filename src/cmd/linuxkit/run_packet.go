@@ -172,7 +172,7 @@ func runPacket(args []string) {
 		log.Debugf("%s\n", string(b))
 
 		req := packngo.DeviceUpdateRequest{
-			HostName:  hostname,
+			Hostname:  hostname,
 			UserData:  userData,
 			Locked:    dev.Locked,
 			Tags:      dev.Tags,
@@ -188,7 +188,7 @@ func runPacket(args []string) {
 	} else {
 		// Create a new device
 		req := packngo.DeviceCreateRequest{
-			HostName:     hostname,
+			Hostname:     hostname,
 			Plan:         plan,
 			Facility:     facility,
 			OS:           osType,
