@@ -56,10 +56,80 @@ type Pkg struct {
 	git        *git
 }
 
-// NewFromCLI creates a Pkg from a set of CLI arguments. Calls fs.Parse()
-func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
-	// Defaults
-	pi := pkgInfo{
+func (p *Pkg) setCommit(hashCommit, hashPath string) error {
+	git, err := newGit(p.path)
+	if err != nil {
+		return err
+	}
+
+	dirty, err := git.isDirty(hashPath, hashCommit)
+	if err != nil {
+		return err
+	}
+
+	hash, err := git.treeHash(hashPath, hashCommit)
+	if err != nil {
+		return err
+	}
+
+	p.commitHash = hashCommit
+	p.hash = hash
+
+	if dirty {
+		p.hash += "-dirty"
+	}
+	return nil
+}
+
+// New creates a Pkg from a PkgInfo
+func New(path string) (Pkg, error) {
+	b, err := ioutil.ReadFile(filepath.Join(path, pkgConfFile))
+	if err != nil {
+		return Pkg{}, err
+	}
+
+	var pi pkgInfo
+	if err := yaml.Unmarshal(b, &pi); err != nil {
+		return Pkg{}, err
+	}
+
+	pkg, err := newFromInfo(pi, path)
+	if err != nil {
+		return Pkg{}, err
+	}
+
+	err = pkg.setCommit("HEAD", path)
+	return pkg, err
+}
+
+func newFromInfo(pi pkgInfo, pkgPath string) (Pkg, error) {
+
+	if pi.Image == "" {
+		return Pkg{}, fmt.Errorf("Image field is required")
+	}
+
+	dockerDepends, err := newDockerDepends(pkgPath, &pi)
+	if err != nil {
+		return Pkg{}, err
+	}
+
+	pkg := Pkg{
+		image:         pi.Image,
+		org:           pi.Org,
+		arches:        pi.Arches,
+		gitRepo:       pi.GitRepo,
+		network:       pi.Network,
+		trust:         !pi.DisableContentTrust,
+		cache:         !pi.DisableCache,
+		config:        pi.Config,
+		dockerDepends: dockerDepends,
+		path:          pkgPath,
+	}
+	return pkg, nil
+}
+
+func defaultPkgInfo() pkgInfo {
+	return pkgInfo{
 		Org:                 "linuxkit",
 		Arches:              []string{"amd64", "arm64"},
 		GitRepo:             "https://github.com/linuxkit/linuxkit",
@@ -67,6 +137,11 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		DisableContentTrust: false,
 		DisableCache:        false,
 	}
+}
+
+// NewFromCLI creates a Pkg from a set of CLI arguments. Calls fs.Parse()
+func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
+	pi := defaultPkgInfo()
 
 	// TODO(ijc) look for "$(git rev-parse --show-toplevel)/.build-defaults.yml"?
 
@@ -130,26 +205,6 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	if err := yaml.Unmarshal(b, &pi); err != nil {
 		return Pkg{}, err
 	}
-
-	if pi.Image == "" {
-		return Pkg{}, fmt.Errorf("Image field is required")
-	}
-
-	dockerDepends, err := newDockerDepends(pkgPath, &pi)
-	if err != nil {
-		return Pkg{}, err
-	}
-
-	if devMode {
-		// If --org is also used then this will be overwritten
-		// by argOrg when we iterate over the provided options
-		// in the fs.Visit block below.
-		pi.Org = os.Getenv("USER")
-		if hash == "" {
-			hash = "dev"
-		}
-	}
-
 	// Go's flag package provides no way to see if a flag was set
 	// apart from Visit which iterates over only those which were
 	// set.
@@ -172,46 +227,32 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		}
 	})
 
-	git, err := newGit(pkgPath)
+	if devMode {
+		// If --org is also used then this will be overwritten
+		// by argOrg when we iterate over the provided options
+		// in the fs.Visit block below.
+		pi.Org = os.Getenv("USER")
+		if hash == "" {
+			hash = "dev"
+		}
+	}
+
+	p, err := newFromInfo(pi, pkgPath)
 	if err != nil {
 		return Pkg{}, err
 	}
 
-	if git != nil {
-		gitDirty, err := git.isDirty(hashPath, hashCommit)
-		if err != nil {
-			return Pkg{}, err
+	if hash == "" {
+		if hashPath == "" {
+			err = p.setCommit(hashCommit, p.path)
+		} else {
+			err = p.setCommit(hashCommit, hashPath)
 		}
-
-		dirty = dirty || gitDirty
-
-		if hash == "" {
-			if hash, err = git.treeHash(hashPath, hashCommit); err != nil {
-				return Pkg{}, err
-			}
-
-			if dirty {
-				hash += "-dirty"
-			}
-		}
+	} else {
+		p.hash = hash
 	}
 
-	return Pkg{
-		image:         pi.Image,
-		org:           pi.Org,
-		hash:          hash,
-		commitHash:    hashCommit,
-		arches:        pi.Arches,
-		gitRepo:       pi.GitRepo,
-		network:       pi.Network,
-		trust:         !pi.DisableContentTrust,
-		cache:         !pi.DisableCache,
-		config:        pi.Config,
-		dockerDepends: dockerDepends,
-		dirty:         dirty,
-		path:          pkgPath,
-		git:           git,
-	}, nil
+	return p, err
 }
 
 // Hash returns the hash of the package
