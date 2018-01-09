@@ -44,6 +44,19 @@ Build requirements from source:
 - Docker
 - optionally `qemu`
 
+### Baking templates
+```
+linuxkit bake example/linuxkit_template.yml > linuxkit.yml
+```
+
+This will replace the `<latest>` tag in all image fields with the current git subtree hash of its source directory. A source directory is a dir with a `build.yml` in it. The location of the source directories is either defined by parameter `--pkgroot path` or in the global config, e.g.:
+
+```
+repos:
+    - path: /go/src/github.com/linuxkit/linuxkit/pkg
+    - path: /go/src/github.com/kubernetes/kubernetes/pkg
+```
+
 ### Building images
 
 Once you have built the tool, use
