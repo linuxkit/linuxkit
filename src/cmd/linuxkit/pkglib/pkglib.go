@@ -272,6 +272,11 @@ func (p Pkg) ReleaseTag(release string) (string, error) {
 	return tag, nil
 }
 
+// Image returns the image name of the pkg
+func (p Pkg) Image() string {
+	return p.image
+}
+
 // Tag returns the tag to use for the package
 func (p Pkg) Tag() string {
 	t := p.hash
