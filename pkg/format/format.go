@@ -171,7 +171,15 @@ func format(d, label, fsType string, forced bool) error {
 		return fmt.Errorf("Error running blockdev: %v", err)
 	}
 
-	partition := fmt.Sprintf("%s1", d)
+	var partition string
+	// check if last char is numeric in case of nvme
+	c := d[len(d)-1]
+	if c > '0' && c < '9' {
+		partition = fmt.Sprintf("%sp1", d)
+	} else {
+		partition = fmt.Sprintf("%s1", d)
+	}
+
 	if err := refreshDevicesAndWaitFor(partition); err != nil {
 		return err
 	}
