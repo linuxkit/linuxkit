@@ -2,13 +2,13 @@ package main
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strconv"
 
 	"github.com/containerd/containerd/sys"
+	log "github.com/sirupsen/logrus"
 )
 
 const (

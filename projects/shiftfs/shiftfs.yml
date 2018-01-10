@@ -2,7 +2,7 @@ kernel:
   image: linuxkitprojects/kernel-shiftfs:4.11.4-881a041fc14bd95814cf140b5e98d97dd65160b5
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:fb1e34662dc92a45f8e92c91adbee094e22feb55
+  - linuxkit/init:6992bd1308bdfd8af5a74aba293bb53e99b482bd
   - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023
   - linuxkit/containerd:e58a382c33bb509ba3e0e8170dfaa5a100504c5b
   - linuxkit/ca-certificates:de21b84d9b055ad9dcecc57965b654a7a24ef8e0
