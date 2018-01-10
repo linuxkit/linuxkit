@@ -40,11 +40,17 @@ retry the boot typically fixes this.
 
 ## Boot
 
-LinuxKit on Packet boots the `kernel+initrd` output from moby
-via
-[iPXE](https://help.packet.net/technical/infrastructure/custom-ipxe). iPXE
-booting requires a HTTP server on which you can store your images. The
-`-base-url` option specifies the URL to the HTTP server.
+LinuxKit on Packet boots the `kernel+initrd` output from moby via
+[iPXE](https://help.packet.net/technical/infrastructure/custom-ipxe)
+which also requires a iPXE script. iPXE booting requires a HTTP server
+on which you can store your images. The `-base-url` option specifies
+the URL to a HTTP server from which `<name>-kernel`,
+`<name>-initrd.img`, and `<name>-packet.ipxe` can be downloaded during
+boot.
+
+If you have your own HTTP server, you can use `linuxkit push packet`
+to create the files (including the iPXE script) you need to make
+available.
 
 If you don't have a public HTTP server at hand, you can use the
 `-serve` option. This will create a local HTTP server which can either
@@ -62,9 +68,10 @@ PACKET_API_KEY=<API key> PACKET_PROJECT_ID=<Project ID> \
 linuxkit run packet -serve :8080 -base-url <ngrok url> packet
 ```
 
-To boot a `arm64` image for Type 2a machine (`-machine
-baremetal_2a`) you currently need build using `linuxkit build packet.yml packet.arm64.yml` and then un-compress both the kernel and
-the initrd before booting, e.g:
+To boot a `arm64` image for Type 2a machine (`-machine baremetal_2a`)
+you currently need to build using `linuxkit build packet.yml
+packet.arm64.yml` and then un-compress both the kernel and the initrd
+before booting, e.g:
 
 ```sh
 mv packet-initrd.img packet-initrd.img.gz && gzip -d packet-initrd.img.gz
@@ -78,10 +85,14 @@ PACKET_API_KEY=<API key> PACKET_PROJECT_ID=<Project ID> \
 linuxkit run packet -machine baremetal_2a  -serve :8080 -base-url -base-url <ngrok url> packet
 ```
 
+Alternatively, `linuxkit push packet` will uncompress the kernel and
+initrd images on arm machines (or explicitly via the `-decompress`
+flag. There is also a `linuxkit serve` command which will start a
+local HTTP server serving the specified directory.
+
 **Note**: It may take several minutes to deploy a new server. If you
 are attached to the console, you should see the BIOS and the boot
 messages.
-
 
 
 ## Console
