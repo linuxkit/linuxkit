@@ -143,6 +143,7 @@ func prepareFilesystem(path string, runtime Runtime) error {
 	// execute the runtime config that should be done up front
 	// we execute Mounts before Mkdir so you can make a directory under a mount
 	// but we do mkdir of the destination path in case missing
+	rootfs := filepath.Join(path, "rootfs")
 	for _, mount := range runtime.Mounts {
 		const mode os.FileMode = 0755
 		err := os.MkdirAll(mount.Destination, mode)
@@ -167,6 +168,10 @@ func prepareFilesystem(path string, runtime Runtime) error {
 	for _, dir := range runtime.Mkdir {
 		// in future we may need to change the structure to set mode, ownership
 		const mode os.FileMode = 0755
+		// relative paths are relative to rootfs of container
+		if !filepath.IsAbs(dir) {
+			dir = filepath.Join(rootfs, dir)
+		}
 		err := os.MkdirAll(dir, mode)
 		if err != nil {
 			return fmt.Errorf("Cannot create directory %s: %v", dir, err)
