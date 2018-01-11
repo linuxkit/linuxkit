@@ -229,6 +229,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 		return err
 	}
 
+	var rootfsMounts []specs.Mount
 	if !readonly {
 		// add a tmp directory to be used as a mount point for tmpfs for upper, work
 		tmp := path.Join(prefix, "tmp")
@@ -250,13 +251,12 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			return err
 		}
 		overlayOptions := []string{"lowerdir=/" + root, "upperdir=/" + path.Join(tmp, "upper"), "workdir=/" + path.Join(tmp, "work")}
-		runtimeMounts := append(*runtime.Mounts,
-			specs.Mount{Source: "tmpfs", Type: "tmpfs", Destination: "/" + tmp},
+		rootfsMounts = []specs.Mount{
+			{Source: "tmpfs", Type: "tmpfs", Destination: "/" + tmp},
 			// remount private as nothing else should see the temporary layers
-			specs.Mount{Destination: "/" + tmp, Options: []string{"remount", "private"}},
-			specs.Mount{Source: "overlay", Type: "overlay", Destination: "/" + path.Join(prefix, "rootfs"), Options: overlayOptions},
-		)
-		runtime.Mounts = &runtimeMounts
+			{Destination: "/" + tmp, Options: []string{"remount", "private"}},
+			{Source: "overlay", Type: "overlay", Destination: "/" + path.Join(prefix, "rootfs"), Options: overlayOptions},
+		}
 	} else {
 		if foundElsewhere {
 			// we need to make the mountpoint at rootfs
@@ -270,9 +270,14 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			}
 		}
 		// either bind from another location, or bind from self to make sure it is a mountpoint as runc prefers this
-		runtimeMounts := append(*runtime.Mounts, specs.Mount{Source: "/" + root, Destination: "/" + path.Join(prefix, "rootfs"), Options: []string{"bind"}})
-		runtime.Mounts = &runtimeMounts
+		rootfsMounts = []specs.Mount{
+			{Source: "/" + root, Destination: "/" + path.Join(prefix, "rootfs"), Options: []string{"bind"}},
+		}
 	}
+
+	// Prepend the rootfs onto the user specified mounts.
+	runtimeMounts := append(rootfsMounts, *runtime.Mounts...)
+	runtime.Mounts = &runtimeMounts
 
 	// write the runtime config
 	runtimeConfig, err := json.MarshalIndent(runtime, "", "    ")

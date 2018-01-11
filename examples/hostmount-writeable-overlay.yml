@@ -1,6 +1,6 @@
 kernel:
   image: linuxkit/kernel:4.9.76
-  cmdline: "console=ttyS0"
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:81fc00e879cf56fa6f058f6c891b012bc867de7f
   - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023
@@ -12,19 +12,25 @@ onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:0d59a6cc03412289ef4313f2491ec666c1715cc9
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
-  - name: metadata
-    image: linuxkit/metadata:2af15c9f4b0e73515c219b7cc14e6e65e1d4fd6d
+onshutdown:
+  - name: shutdown
+    image: busybox:latest
+    command: ["/bin/echo", "so long and thanks for all the fish"]
 services:
   - name: getty
     image: linuxkit/getty:22e27189b6b354e1d5d38fc0536a5af3f2adb79f
     env:
      - INSECURE=true
+    runtime:
+      mounts:
+        # Makes a writeable (but private and non-persistent) mount of the
+        # host etc into the container.
+        - type: overlay
+          source: overlay
+          destination: writeable-host-etc
+          options: ["rw", "lowerdir=/etc", "upperdir=/run/hostetc/upper", "workdir=/run/hostetc/work"]
   - name: rngd
     image: linuxkit/rngd:94e01a4b16fadb053455cdc2269c4eb0b39199cd
-  - name: sshd
-    image: linuxkit/sshd:ac5e8364e2e9aa8717a3295c51eb60b8c57373d5
-    binds:
-     - /var/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx
     image: nginx:alpine
     capabilities:
