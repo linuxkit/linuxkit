@@ -144,11 +144,20 @@ func prepareFilesystem(path string, runtime Runtime) error {
 	// we execute Mounts before Mkdir so you can make a directory under a mount
 	// but we do mkdir of the destination path in case missing
 	rootfs := filepath.Join(path, "rootfs")
+	makeAbsolute := func(dir string) string {
+		if filepath.IsAbs(dir) {
+			return dir
+		}
+		// relative paths are relative to rootfs of container
+		return filepath.Join(rootfs, dir)
+	}
+
 	for _, mount := range runtime.Mounts {
 		const mode os.FileMode = 0755
-		err := os.MkdirAll(mount.Destination, mode)
+		dir := makeAbsolute(mount.Destination)
+		err := os.MkdirAll(dir, mode)
 		if err != nil {
-			return fmt.Errorf("Cannot create directory for mount destination %s: %v", mount.Destination, err)
+			return fmt.Errorf("Cannot create directory for mount destination %s: %v", dir, err)
 		}
 		// also mkdir upper and work directories on overlay
 		for _, o := range mount.Options {
@@ -161,17 +170,14 @@ func prepareFilesystem(path string, runtime Runtime) error {
 			}
 		}
 		opts, data := parseMountOptions(mount.Options)
-		if err := unix.Mount(mount.Source, mount.Destination, mount.Type, uintptr(opts), data); err != nil {
+		if err := unix.Mount(mount.Source, dir, mount.Type, uintptr(opts), data); err != nil {
 			return fmt.Errorf("Failed to mount %s: %v", mount.Source, err)
 		}
 	}
 	for _, dir := range runtime.Mkdir {
 		// in future we may need to change the structure to set mode, ownership
 		const mode os.FileMode = 0755
-		// relative paths are relative to rootfs of container
-		if !filepath.IsAbs(dir) {
-			dir = filepath.Join(rootfs, dir)
-		}
+		dir = makeAbsolute(dir)
 		err := os.MkdirAll(dir, mode)
 		if err != nil {
 			return fmt.Errorf("Cannot create directory %s: %v", dir, err)
