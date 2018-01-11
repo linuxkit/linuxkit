@@ -76,6 +76,7 @@ func main() {
 		fmt.Printf("  pkg         Package building\n")
 		fmt.Printf("  push        Push a VM image to a cloud or image store\n")
 		fmt.Printf("  run         Run a VM image on a local hypervisor or remote cloud\n")
+		fmt.Printf("  serve       Run a local http server (for iPXE booting)\n")
 		fmt.Printf("  version     Print version information\n")
 		fmt.Printf("  help        Print this message\n")
 		fmt.Printf("\n")
@@ -124,6 +125,8 @@ func main() {
 		push(args[1:])
 	case "run":
 		run(args[1:])
+	case "serve":
+		serve(args[1:])
 	case "version":
 		printVersion()
 	case "help":

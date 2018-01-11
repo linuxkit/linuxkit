@@ -56,7 +56,7 @@ func runPacket(args []string) {
 		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
-	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel and initrd are served from (or "+packetBaseURL+")")
+	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+packetBaseURL+")")
 	zoneFlag := flags.String("zone", packetDefaultZone, "Packet Zone (or "+packetZoneVar+")")
 	machineFlag := flags.String("machine", packetDefaultMachine, "Packet Machine Type (or "+packetMachineVar+")")
 	apiKeyFlag := flags.String("api-key", "", "Packet API key (or "+packetAPIKeyVar+")")
@@ -80,7 +80,7 @@ func runPacket(args []string) {
 
 	url := getStringValue(packetBaseURL, *baseURLFlag, "")
 	if url == "" {
-		log.Fatal("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel and <url>/%s-initrd.img")
+		log.Fatal("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-packet.ipxe")
 	}
 	facility := getStringValue(packetZoneVar, *zoneFlag, "")
 	plan := getStringValue(packetMachineVar, *machineFlag, defaultMachine)
@@ -101,19 +101,31 @@ func runPacket(args []string) {
 		log.Fatalf("Combination of keep=%t and console=%t makes little sense", *keepFlag, *consoleFlag)
 	}
 
-	// Read kernel command line
-	var cmdline string
-	if c, err := ioutil.ReadFile(prefix + "-cmdline"); err != nil {
-		log.Fatalf("Cannot open cmdline file: %v", err)
-	} else {
-		cmdline = string(c)
-	}
+	ipxeScriptName := fmt.Sprintf("%s-packet.ipxe", name)
 
 	// Serve files with a local http server
 	var httpServer *http.Server
 	if *serveFlag != "" {
+		// Read kernel command line
+		var cmdline string
+		if c, err := ioutil.ReadFile(prefix + "-cmdline"); err != nil {
+			log.Fatalf("Cannot open cmdline file: %v", err)
+		} else {
+			cmdline = string(c)
+		}
+
+		ipxeScript := packetIPXEScript(name, url, cmdline, packetMachineToArch(*machineFlag))
+		log.Debugf("Using iPXE script:\n%s\n", ipxeScript)
+
+		// Two handlers, one for the iPXE script and one for the kernel/initrd files
+		mux := http.NewServeMux()
+		mux.HandleFunc(fmt.Sprintf("/%s", ipxeScriptName),
+			func(w http.ResponseWriter, r *http.Request) {
+				fmt.Fprintf(w, ipxeScript)
+			})
 		fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
-		httpServer = &http.Server{Addr: ":8080", Handler: http.FileServer(fs)}
+		mux.Handle("/", http.FileServer(fs))
+		httpServer = &http.Server{Addr: *serveFlag, Handler: mux}
 		go func() {
 			log.Debugf("Listening on http://%s\n", *serveFlag)
 			if err := httpServer.ListenAndServe(); err != nil {
@@ -122,38 +134,22 @@ func runPacket(args []string) {
 		}()
 	}
 
-	// Build the iPXE script
-	// Note, we *append* the <prefix>-cmdline. iXPE booting will
-	// need the first set of "kernel-params" and we don't want to
-	// require these to be added to every YAML file.
-	userData := "#!ipxe\n\n"
-	userData += "dhcp\n"
-	userData += fmt.Sprintf("set base-url %s\n", url)
-	if *machineFlag != "baremetal_2a" {
-		var tty string
-		// x86_64 Packet machines have console on non standard ttyS1 which is not in most examples
-		if !strings.Contains(cmdline, "console=ttyS1") {
-			tty = "console=ttyS1,115200"
-		}
-		userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro serial %s %s\n", tty, cmdline)
-		userData += fmt.Sprintf("kernel ${base-url}/%s-kernel ${kernel-params}\n", name)
-		userData += fmt.Sprintf("initrd ${base-url}/%s-initrd.img\n", name)
-	} else {
-		// With EFI boot need to specify the initrd and root dev explicitly. See:
-		// http://ipxe.org/appnote/debian_preseed
-		// http://forum.ipxe.org/showthread.php?tid=7589
-		userData += fmt.Sprintf("initrd --name initrd ${base-url}/%s-initrd.img\n", name)
-		userData += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro %s\n", cmdline)
-		userData += fmt.Sprintf("kernel ${base-url}/%s-kernel initrd=initrd root=/dev/ram0 ${kernel-params}\n", name)
-	}
-	userData += "boot"
-	log.Debugf("Using userData of:\n%s\n", userData)
-
-	// Make sure the URL works
+	// Make sure the URLs work
+	ipxeURL := fmt.Sprintf("%s/%s", url, ipxeScriptName)
 	initrdURL := fmt.Sprintf("%s/%s-initrd.img", url, name)
 	kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
-	validateHTTPURL(kernelURL)
-	validateHTTPURL(initrdURL)
+	log.Infof("Validating URL: %s", ipxeURL)
+	if err := validateHTTPURL(ipxeURL); err != nil {
+		log.Fatalf("Invalid iPXE URL %s: %v", ipxeURL, err)
+	}
+	log.Infof("Validating URL: %s", kernelURL)
+	if err := validateHTTPURL(kernelURL); err != nil {
+		log.Fatalf("Invalid kernel URL %s: %v", kernelURL, err)
+	}
+	log.Infof("Validating URL: %s", initrdURL)
+	if err := validateHTTPURL(initrdURL); err != nil {
+		log.Fatalf("Invalid initrd URL %s: %v", initrdURL, err)
+	}
 
 	client := packngo.NewClient("", apiKey, nil)
 	tags := []string{}
@@ -172,11 +168,11 @@ func runPacket(args []string) {
 		log.Debugf("%s\n", string(b))
 
 		req := packngo.DeviceUpdateRequest{
-			HostName:  hostname,
-			UserData:  userData,
-			Locked:    dev.Locked,
-			Tags:      dev.Tags,
-			AlwaysPXE: *alwaysPXE,
+			Hostname:      hostname,
+			Locked:        dev.Locked,
+			Tags:          dev.Tags,
+			IPXEScriptURL: ipxeURL,
+			AlwaysPXE:     *alwaysPXE,
 		}
 		dev, _, err = client.Devices.Update(*deviceFlag, &req)
 		if err != nil {
@@ -188,15 +184,15 @@ func runPacket(args []string) {
 	} else {
 		// Create a new device
 		req := packngo.DeviceCreateRequest{
-			HostName:     hostname,
-			Plan:         plan,
-			Facility:     facility,
-			OS:           osType,
-			BillingCycle: billing,
-			ProjectID:    projectID,
-			UserData:     userData,
-			Tags:         tags,
-			AlwaysPXE:    *alwaysPXE,
+			Hostname:      hostname,
+			Plan:          plan,
+			Facility:      facility,
+			OS:            osType,
+			BillingCycle:  billing,
+			ProjectID:     projectID,
+			Tags:          tags,
+			IPXEScriptURL: ipxeURL,
+			AlwaysPXE:     *alwaysPXE,
 		}
 		dev, _, err = client.Devices.Create(&req)
 		if err != nil {
@@ -214,7 +210,7 @@ func runPacket(args []string) {
 	sshHost := "sos." + dev.Facility.Code + ".packet.net"
 	if *consoleFlag {
 		// Connect to the serial console
-		if err := sshSOS(dev.ID, sshHost); err != nil {
+		if err := packetSOS(dev.ID, sshHost); err != nil {
 			log.Fatal(err)
 		}
 	} else {
@@ -249,20 +245,58 @@ func runPacket(args []string) {
 	}
 }
 
-// validateHTTPURL does a sanity check that a URL returns a 200 or 300 response
-func validateHTTPURL(url string) {
-	log.Infof("Validating URL: %s", url)
-	resp, err := http.Head(url)
-	if err != nil {
-		log.Fatal(err)
+// Convert machine type to architecture
+func packetMachineToArch(machine string) string {
+	switch machine {
+	case "baremetal_2a", "baremetal_2a2":
+		return "aarch64"
+	default:
+		return "x86_64"
 	}
-	if resp.StatusCode >= 400 {
-		log.Fatal("Got a non 200- or 300- HTTP response code: %s", resp)
-	}
-	log.Debugf("OK: %d response code", resp.StatusCode)
 }
 
-func sshSOS(user, host string) error {
+// Build the iPXE script for packet machines
+func packetIPXEScript(name, baseURL, cmdline, arch string) string {
+	// Note, we *append* the <prefix>-cmdline. iXPE booting will
+	// need the first set of "kernel-params" and we don't want to
+	// require these to be added to every YAML file.
+	script := "#!ipxe\n\n"
+	script += "dhcp\n"
+	script += fmt.Sprintf("set base-url %s\n", baseURL)
+	if arch != "aarch64" {
+		var tty string
+		// x86_64 Packet machines have console on non standard ttyS1 which is not in most examples
+		if !strings.Contains(cmdline, "console=ttyS1") {
+			tty = "console=ttyS1,115200"
+		}
+		script += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro serial %s %s\n", tty, cmdline)
+		script += fmt.Sprintf("kernel ${base-url}/%s-kernel ${kernel-params}\n", name)
+		script += fmt.Sprintf("initrd ${base-url}/%s-initrd.img\n", name)
+	} else {
+		// With EFI boot need to specify the initrd and root dev explicitly. See:
+		// http://ipxe.org/appnote/debian_preseed
+		// http://forum.ipxe.org/showthread.php?tid=7589
+		script += fmt.Sprintf("initrd --name initrd ${base-url}/%s-initrd.img\n", name)
+		script += fmt.Sprintf("set kernel-params ip=dhcp nomodeset ro %s\n", cmdline)
+		script += fmt.Sprintf("kernel ${base-url}/%s-kernel initrd=initrd root=/dev/ram0 ${kernel-params}\n", name)
+	}
+	script += "boot"
+	return script
+}
+
+// validateHTTPURL does a sanity check that a URL returns a 200 or 300 response
+func validateHTTPURL(url string) error {
+	resp, err := http.Head(url)
+	if err != nil {
+		return err
+	}
+	if resp.StatusCode >= 400 {
+		return fmt.Errorf("Got a non 200- or 300- HTTP response code: %s", resp)
+	}
+	return nil
+}
+
+func packetSOS(user, host string) error {
 	log.Debugf("console: ssh %s@%s", user, host)
 
 	hostKey, err := sshHostKey(host)

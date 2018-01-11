@@ -41,13 +41,9 @@ type FacilityServiceOp struct {
 
 // List returns all available Packet facilities
 func (s *FacilityServiceOp) List() ([]Facility, *Response, error) {
-	req, err := s.client.NewRequest("GET", facilityBasePath, nil)
-	if err != nil {
-		return nil, nil, err
-	}
-
 	root := new(facilityRoot)
-	resp, err := s.client.Do(req, root)
+
+	resp, err := s.client.DoRequest("GET", facilityBasePath, nil, root)
 	if err != nil {
 		return nil, resp, err
 	}
