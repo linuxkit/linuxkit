@@ -6,19 +6,19 @@ init:
   - linuxkit/runc:abc3f292653e64a2fd488e9675ace19a55ec7023
 onboot:
   - name: format
-    image: linuxkit/format:e945016ec780a788a71dcddc81497d54d3b14bc7
+    image: linuxkit/format:5a1140cb65e733f26de727fa684fef1326e9d5ab
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sda"]
   - name: format
-    image: linuxkit/format:e945016ec780a788a71dcddc81497d54d3b14bc7
+    image: linuxkit/format:5a1140cb65e733f26de727fa684fef1326e9d5ab
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sdb"]
   - name: format
-    image: linuxkit/format:e945016ec780a788a71dcddc81497d54d3b14bc7
+    image: linuxkit/format:5a1140cb65e733f26de727fa684fef1326e9d5ab
     command: ["/usr/bin/format", "-verbose", "-type", "xfs", "/dev/sda"]
   - name: format
-    image: linuxkit/format:e945016ec780a788a71dcddc81497d54d3b14bc7
+    image: linuxkit/format:5a1140cb65e733f26de727fa684fef1326e9d5ab
     command: ["/usr/bin/format", "-verbose", "-force", "-type", "xfs", "/dev/sdb"]
   - name: test
-    image: linuxkit/format:e945016ec780a788a71dcddc81497d54d3b14bc7
+    image: linuxkit/format:5a1140cb65e733f26de727fa684fef1326e9d5ab
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
