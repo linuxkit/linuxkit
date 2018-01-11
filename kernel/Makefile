@@ -85,6 +85,9 @@ sources:
 # to the global targets
 # Set $3 to "-dbg", to build debug kernels. This defines targets like
 # build_4.9.x-dbg and adds "-dbg" to the hub image name.
+# Set $3 to "-rt", to build Preempt-RT kernels. This defines targets like
+# build_4.14.x-rt and adds "-rt" to the hub image name.
+# Set $3 to "-rt-dbg" to build debug Preempt-RT kernel, or "-std-dbg" to build debug standard kernel.
 define kernel
 
 ifeq ($(3),)
@@ -96,7 +99,8 @@ endif
 build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
 		docker build \
-			--build-arg KERNEL_VERSION=$(1) \
+			--build-arg KERNEL_MAJOR_VERSION=`echo $(1) | cut -d \. -f 1-2`\
+			--build-arg KERNEL_MINOR_VERSION=`echo $(1) | cut -d \. -f 3` \
 			--build-arg KERNEL_SERIES=$(2) \
 			--build-arg EXTRA=$(3) \
 			$(LABELS) \
@@ -104,7 +108,8 @@ build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config
 
 forcebuild_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
 	docker build \
-		--build-arg KERNEL_VERSION=$(1) \
+		--build-arg KERNEL_MAJOR_VERSION=`echo $(1) | cut -d \. -f 1-2`\
+		--build-arg KERNEL_MINOR_VERSION=`echo $(1) | cut -d \. -f 3` \
 		--build-arg KERNEL_SERIES=$(2) \
 		--build-arg EXTRA=$(3) \
 		$(LABELS) \
@@ -205,7 +210,11 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 $(eval $(call kernel,4.14.13,4.14.x,$(EXTRA)))
+$(eval $(call kernel,4.14.13,4.14.x,-std))
 $(eval $(call kernel,4.14.13,4.14.x,-dbg))
+$(eval $(call kernel,4.14.13,4.14.x,-std-dbg))
+$(eval $(call kernel,4.14.12,4.14.x,-rt))
+$(eval $(call kernel,4.14.12,4.14.x,-rt-dbg))
 $(eval $(call kernel,4.9.76,4.9.x,$(EXTRA)))
 $(eval $(call kernel,4.9.76,4.9.x,-dbg))
 $(eval $(call kernel,4.4.111,4.4.x,$(EXTRA)))
