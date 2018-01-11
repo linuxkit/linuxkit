@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"math/rand"
 	"net/url"
 	"os"
 	"path"
@@ -208,10 +209,21 @@ func vCenterConnect(ctx context.Context, newVM vmConfig) (*govmomi.Client, *obje
 		}
 	}
 
-	// Set the host that the VM will be created on
-	hs, err := f.HostSystemOrDefault(ctx, *newVM.vSphereHost)
-	if err != nil {
-		log.Fatalf("vSphere host [%s], could not be found", *newVM.vSphereHost)
+	// Check to see if a host has been specified
+	var hs *object.HostSystem
+	if *newVM.vSphereHost != "" {
+		// Find the selected host
+		hs, err = f.HostSystem(ctx, *newVM.vSphereHost)
+		if err != nil {
+			log.Fatalf("vSphere host [%s], could not be found", *newVM.vSphereHost)
+		}
+	} else {
+		allHosts, err := f.HostSystemList(ctx, "*/*")
+		if err != nil || len(allHosts) == 0 {
+			log.Fatalf("No vSphere hosts could be found on vCenter server")
+		}
+		// Select a host from the list off all available hosts at random
+		hs = allHosts[rand.Int()%len(allHosts)]
 	}
 
 	var rp *object.ResourcePool
