@@ -1,0 +1,29 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 7 Sep 2017 12:38:47 +0200
+Subject: locking/rtmutex: don't drop the wait_lock twice
+
+Since the futex rework, __rt_mutex_start_proxy_lock() does no longer
+acquire the wait_lock so it must not drop it. Otherwise the lock is not
+only unlocked twice but also the preemption counter is underflown.
+
+It is okay to remove that line because this function does not disable
+interrupts nor does it acquire the ->wait_lock. The caller does this so it is
+wrong do it here (after the futex rework).
+
+Cc: stable-rt@vger.kernel.org #v4.9.18-rt14+
+Reported-by: Gusenleitner Klaus <gus@keba.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/locking/rtmutex.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/kernel/locking/rtmutex.c
++++ b/kernel/locking/rtmutex.c
+@@ -1765,7 +1765,6 @@ int __rt_mutex_start_proxy_lock(struct r
+ 	raw_spin_lock(&task->pi_lock);
+ 	if (task->pi_blocked_on) {
+ 		raw_spin_unlock(&task->pi_lock);
+-		raw_spin_unlock_irq(&lock->wait_lock);
+ 		return -EAGAIN;
+ 	}
+ 	task->pi_blocked_on = PI_REQUEUE_INPROGRESS;

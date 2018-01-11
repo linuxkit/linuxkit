@@ -1,0 +1,47 @@
+Subject: tty/serial/pl011: Make the locking work on RT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 08 Jan 2013 21:36:51 +0100
+
+The lock is a sleeping lock and local_irq_save() is not the optimsation
+we are looking for. Redo it to make it work on -RT and non-RT.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/tty/serial/amba-pl011.c |   15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+--- a/drivers/tty/serial/amba-pl011.c
++++ b/drivers/tty/serial/amba-pl011.c
+@@ -2220,13 +2220,19 @@ pl011_console_write(struct console *co,
+ 
+ 	clk_enable(uap->clk);
+ 
+-	local_irq_save(flags);
++	/*
++	 * local_irq_save(flags);
++	 *
++	 * This local_irq_save() is nonsense. If we come in via sysrq
++	 * handling then interrupts are already disabled. Aside of
++	 * that the port.sysrq check is racy on SMP regardless.
++	*/
+ 	if (uap->port.sysrq)
+ 		locked = 0;
+ 	else if (oops_in_progress)
+-		locked = spin_trylock(&uap->port.lock);
++		locked = spin_trylock_irqsave(&uap->port.lock, flags);
+ 	else
+-		spin_lock(&uap->port.lock);
++		spin_lock_irqsave(&uap->port.lock, flags);
+ 
+ 	/*
+ 	 *	First save the CR then disable the interrupts
+@@ -2252,8 +2258,7 @@ pl011_console_write(struct console *co,
+ 		pl011_write(old_cr, uap, REG_CR);
+ 
+ 	if (locked)
+-		spin_unlock(&uap->port.lock);
+-	local_irq_restore(flags);
++		spin_unlock_irqrestore(&uap->port.lock, flags);
+ 
+ 	clk_disable(uap->clk);
+ }

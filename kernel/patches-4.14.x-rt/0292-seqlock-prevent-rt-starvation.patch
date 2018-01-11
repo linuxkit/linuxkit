@@ -1,0 +1,187 @@
+Subject: seqlock: Prevent rt starvation
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 22 Feb 2012 12:03:30 +0100
+
+If a low prio writer gets preempted while holding the seqlock write
+locked, a high prio reader spins forever on RT.
+
+To prevent this let the reader grab the spinlock, so it blocks and
+eventually boosts the writer. This way the writer can proceed and
+endless spinning is prevented.
+
+For seqcount writers we disable preemption over the update code
+path. Thanks to Al Viro for distangling some VFS code to make that
+possible.
+
+Nicholas Mc Guire:
+- spin_lock+unlock => spin_unlock_wait
+- __write_seqcount_begin => __raw_write_seqcount_begin
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+
+---
+ include/linux/seqlock.h |   56 +++++++++++++++++++++++++++++++++++++-----------
+ include/net/neighbour.h |    6 ++---
+ 2 files changed, 47 insertions(+), 15 deletions(-)
+
+--- a/include/linux/seqlock.h
++++ b/include/linux/seqlock.h
+@@ -221,20 +221,30 @@ static inline int read_seqcount_retry(co
+ 	return __read_seqcount_retry(s, start);
+ }
+ 
+-
+-
+-static inline void raw_write_seqcount_begin(seqcount_t *s)
++static inline void __raw_write_seqcount_begin(seqcount_t *s)
+ {
+ 	s->sequence++;
+ 	smp_wmb();
+ }
+ 
+-static inline void raw_write_seqcount_end(seqcount_t *s)
++static inline void raw_write_seqcount_begin(seqcount_t *s)
++{
++	preempt_disable_rt();
++	__raw_write_seqcount_begin(s);
++}
++
++static inline void __raw_write_seqcount_end(seqcount_t *s)
+ {
+ 	smp_wmb();
+ 	s->sequence++;
+ }
+ 
++static inline void raw_write_seqcount_end(seqcount_t *s)
++{
++	__raw_write_seqcount_end(s);
++	preempt_enable_rt();
++}
++
+ /**
+  * raw_write_seqcount_barrier - do a seq write barrier
+  * @s: pointer to seqcount_t
+@@ -429,10 +439,32 @@ typedef struct {
+ /*
+  * Read side functions for starting and finalizing a read side section.
+  */
++#ifndef CONFIG_PREEMPT_RT_FULL
+ static inline unsigned read_seqbegin(const seqlock_t *sl)
+ {
+ 	return read_seqcount_begin(&sl->seqcount);
+ }
++#else
++/*
++ * Starvation safe read side for RT
++ */
++static inline unsigned read_seqbegin(seqlock_t *sl)
++{
++	unsigned ret;
++
++repeat:
++	ret = ACCESS_ONCE(sl->seqcount.sequence);
++	if (unlikely(ret & 1)) {
++		/*
++		 * Take the lock and let the writer proceed (i.e. evtl
++		 * boost it), otherwise we could loop here forever.
++		 */
++		spin_unlock_wait(&sl->lock);
++		goto repeat;
++	}
++	return ret;
++}
++#endif
+ 
+ static inline unsigned read_seqretry(const seqlock_t *sl, unsigned start)
+ {
+@@ -447,36 +479,36 @@ static inline unsigned read_seqretry(con
+ static inline void write_seqlock(seqlock_t *sl)
+ {
+ 	spin_lock(&sl->lock);
+-	write_seqcount_begin(&sl->seqcount);
++	__raw_write_seqcount_begin(&sl->seqcount);
+ }
+ 
+ static inline void write_sequnlock(seqlock_t *sl)
+ {
+-	write_seqcount_end(&sl->seqcount);
++	__raw_write_seqcount_end(&sl->seqcount);
+ 	spin_unlock(&sl->lock);
+ }
+ 
+ static inline void write_seqlock_bh(seqlock_t *sl)
+ {
+ 	spin_lock_bh(&sl->lock);
+-	write_seqcount_begin(&sl->seqcount);
++	__raw_write_seqcount_begin(&sl->seqcount);
+ }
+ 
+ static inline void write_sequnlock_bh(seqlock_t *sl)
+ {
+-	write_seqcount_end(&sl->seqcount);
++	__raw_write_seqcount_end(&sl->seqcount);
+ 	spin_unlock_bh(&sl->lock);
+ }
+ 
+ static inline void write_seqlock_irq(seqlock_t *sl)
+ {
+ 	spin_lock_irq(&sl->lock);
+-	write_seqcount_begin(&sl->seqcount);
++	__raw_write_seqcount_begin(&sl->seqcount);
+ }
+ 
+ static inline void write_sequnlock_irq(seqlock_t *sl)
+ {
+-	write_seqcount_end(&sl->seqcount);
++	__raw_write_seqcount_end(&sl->seqcount);
+ 	spin_unlock_irq(&sl->lock);
+ }
+ 
+@@ -485,7 +517,7 @@ static inline unsigned long __write_seql
+ 	unsigned long flags;
+ 
+ 	spin_lock_irqsave(&sl->lock, flags);
+-	write_seqcount_begin(&sl->seqcount);
++	__raw_write_seqcount_begin(&sl->seqcount);
+ 	return flags;
+ }
+ 
+@@ -495,7 +527,7 @@ static inline unsigned long __write_seql
+ static inline void
+ write_sequnlock_irqrestore(seqlock_t *sl, unsigned long flags)
+ {
+-	write_seqcount_end(&sl->seqcount);
++	__raw_write_seqcount_end(&sl->seqcount);
+ 	spin_unlock_irqrestore(&sl->lock, flags);
+ }
+ 
+--- a/include/net/neighbour.h
++++ b/include/net/neighbour.h
+@@ -450,7 +450,7 @@ static inline int neigh_hh_bridge(struct
+ }
+ #endif
+ 
+-static inline int neigh_hh_output(const struct hh_cache *hh, struct sk_buff *skb)
++static inline int neigh_hh_output(struct hh_cache *hh, struct sk_buff *skb)
+ {
+ 	unsigned int seq;
+ 	unsigned int hh_len;
+@@ -474,7 +474,7 @@ static inline int neigh_hh_output(const
+ 
+ static inline int neigh_output(struct neighbour *n, struct sk_buff *skb)
+ {
+-	const struct hh_cache *hh = &n->hh;
++	struct hh_cache *hh = &n->hh;
+ 
+ 	if ((n->nud_state & NUD_CONNECTED) && hh->hh_len)
+ 		return neigh_hh_output(hh, skb);
+@@ -515,7 +515,7 @@ struct neighbour_cb {
+ 
+ #define NEIGH_CB(skb)	((struct neighbour_cb *)(skb)->cb)
+ 
+-static inline void neigh_ha_snapshot(char *dst, const struct neighbour *n,
++static inline void neigh_ha_snapshot(char *dst, struct neighbour *n,
+ 				     const struct net_device *dev)
+ {
+ 	unsigned int seq;

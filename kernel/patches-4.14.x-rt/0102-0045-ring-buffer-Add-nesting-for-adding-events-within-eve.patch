@@ -1,0 +1,119 @@
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Wed, 7 Feb 2018 17:26:32 -0500
+Subject: [PATCH 45/48] ring-buffer: Add nesting for adding events within
+ events
+
+The ring-buffer code has recusion protection in case tracing ends up tracing
+itself, the ring-buffer will detect that it was called at the same context
+(normal, softirq, interrupt or NMI), and not continue to record the event.
+
+With the histogram synthetic events, they are called while tracing another
+event at the same context. The recusion protection triggers because it
+detects tracing at the same context and stops it.
+
+Add ring_buffer_nest_start() and ring_buffer_nest_end() that will notify the
+ring buffer that a trace is about to happen within another trace and that it
+is intended, and not to trigger the recursion blocking.
+
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit f932ff1d98c482716b4b71a5d76b2aa3d65f66f0)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/ring_buffer.h |    3 ++
+ kernel/trace/ring_buffer.c  |   57 +++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 57 insertions(+), 3 deletions(-)
+
+--- a/include/linux/ring_buffer.h
++++ b/include/linux/ring_buffer.h
+@@ -120,6 +120,9 @@ int ring_buffer_unlock_commit(struct rin
+ int ring_buffer_write(struct ring_buffer *buffer,
+ 		      unsigned long length, void *data);
+ 
++void ring_buffer_nest_start(struct ring_buffer *buffer);
++void ring_buffer_nest_end(struct ring_buffer *buffer);
++
+ struct ring_buffer_event *
+ ring_buffer_peek(struct ring_buffer *buffer, int cpu, u64 *ts,
+ 		 unsigned long *lost_events);
+--- a/kernel/trace/ring_buffer.c
++++ b/kernel/trace/ring_buffer.c
+@@ -478,6 +478,7 @@ struct ring_buffer_per_cpu {
+ 	struct buffer_page		*reader_page;
+ 	unsigned long			lost_events;
+ 	unsigned long			last_overrun;
++	unsigned long			nest;
+ 	local_t				entries_bytes;
+ 	local_t				entries;
+ 	local_t				overrun;
+@@ -2632,10 +2633,10 @@ trace_recursive_lock(struct ring_buffer_
+ 		bit = pc & NMI_MASK ? RB_CTX_NMI :
+ 			pc & HARDIRQ_MASK ? RB_CTX_IRQ : RB_CTX_SOFTIRQ;
+ 
+-	if (unlikely(val & (1 << bit)))
++	if (unlikely(val & (1 << (bit + cpu_buffer->nest))))
+ 		return 1;
+ 
+-	val |= (1 << bit);
++	val |= (1 << (bit + cpu_buffer->nest));
+ 	cpu_buffer->current_context = val;
+ 
+ 	return 0;
+@@ -2644,7 +2645,57 @@ trace_recursive_lock(struct ring_buffer_
+ static __always_inline void
+ trace_recursive_unlock(struct ring_buffer_per_cpu *cpu_buffer)
+ {
+-	cpu_buffer->current_context &= cpu_buffer->current_context - 1;
++	cpu_buffer->current_context &=
++		cpu_buffer->current_context - (1 << cpu_buffer->nest);
++}
++
++/* The recursive locking above uses 4 bits */
++#define NESTED_BITS 4
++
++/**
++ * ring_buffer_nest_start - Allow to trace while nested
++ * @buffer: The ring buffer to modify
++ *
++ * The ring buffer has a safty mechanism to prevent recursion.
++ * But there may be a case where a trace needs to be done while
++ * tracing something else. In this case, calling this function
++ * will allow this function to nest within a currently active
++ * ring_buffer_lock_reserve().
++ *
++ * Call this function before calling another ring_buffer_lock_reserve() and
++ * call ring_buffer_nest_end() after the nested ring_buffer_unlock_commit().
++ */
++void ring_buffer_nest_start(struct ring_buffer *buffer)
++{
++	struct ring_buffer_per_cpu *cpu_buffer;
++	int cpu;
++
++	/* Enabled by ring_buffer_nest_end() */
++	preempt_disable_notrace();
++	cpu = raw_smp_processor_id();
++	cpu_buffer = buffer->buffers[cpu];
++	/* This is the shift value for the above recusive locking */
++	cpu_buffer->nest += NESTED_BITS;
++}
++
++/**
++ * ring_buffer_nest_end - Allow to trace while nested
++ * @buffer: The ring buffer to modify
++ *
++ * Must be called after ring_buffer_nest_start() and after the
++ * ring_buffer_unlock_commit().
++ */
++void ring_buffer_nest_end(struct ring_buffer *buffer)
++{
++	struct ring_buffer_per_cpu *cpu_buffer;
++	int cpu;
++
++	/* disabled by ring_buffer_nest_start() */
++	cpu = raw_smp_processor_id();
++	cpu_buffer = buffer->buffers[cpu];
++	/* This is the shift value for the above recusive locking */
++	cpu_buffer->nest -= NESTED_BITS;
++	preempt_enable_notrace();
+ }
+ 
+ /**

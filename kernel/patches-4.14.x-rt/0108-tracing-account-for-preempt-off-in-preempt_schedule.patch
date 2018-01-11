@@ -1,0 +1,46 @@
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Thu, 29 Sep 2011 12:24:30 -0500
+Subject: tracing: Account for preempt off in preempt_schedule()
+
+The preempt_schedule() uses the preempt_disable_notrace() version
+because it can cause infinite recursion by the function tracer as
+the function tracer uses preempt_enable_notrace() which may call
+back into the preempt_schedule() code as the NEED_RESCHED is still
+set and the PREEMPT_ACTIVE has not been set yet.
+
+See commit: d1f74e20b5b064a130cd0743a256c2d3cfe84010 that made this
+change.
+
+The preemptoff and preemptirqsoff latency tracers require the first
+and last preempt count modifiers to enable tracing. But this skips
+the checks. Since we can not convert them back to the non notrace
+version, we can use the idle() hooks for the latency tracers here.
+That is, the start/stop_critical_timings() works well to manually
+start and stop the latency tracer for preempt off timings.
+
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Clark Williams <williams@redhat.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ kernel/sched/core.c |    9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -3604,7 +3604,16 @@ asmlinkage __visible void __sched notrac
+ 		 * an infinite recursion.
+ 		 */
+ 		prev_ctx = exception_enter();
++		/*
++		 * The add/subtract must not be traced by the function
++		 * tracer. But we still want to account for the
++		 * preempt off latency tracer. Since the _notrace versions
++		 * of add/subtract skip the accounting for latency tracer
++		 * we must force it manually.
++		 */
++		start_critical_timings();
+ 		__schedule(true);
++		stop_critical_timings();
+ 		exception_exit(prev_ctx);
+ 
+ 		preempt_latency_stop(1);

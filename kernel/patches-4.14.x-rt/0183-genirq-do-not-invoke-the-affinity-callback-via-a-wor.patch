@@ -1,0 +1,121 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 21 Aug 2013 17:48:46 +0200
+Subject: genirq: Do not invoke the affinity callback via a workqueue on RT
+
+Joe Korty reported, that __irq_set_affinity_locked() schedules a
+workqueue while holding a rawlock which results in a might_sleep()
+warning.
+This patch uses swork_queue() instead.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/interrupt.h |    6 ++++++
+ kernel/irq/manage.c       |   43 ++++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 46 insertions(+), 3 deletions(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -15,6 +15,7 @@
+ #include <linux/hrtimer.h>
+ #include <linux/kref.h>
+ #include <linux/workqueue.h>
++#include <linux/swork.h>
+ 
+ #include <linux/atomic.h>
+ #include <asm/ptrace.h>
+@@ -227,6 +228,7 @@ extern void resume_device_irqs(void);
+  * struct irq_affinity_notify - context for notification of IRQ affinity changes
+  * @irq:		Interrupt to which notification applies
+  * @kref:		Reference count, for internal use
++ * @swork:		Swork item, for internal use
+  * @work:		Work item, for internal use
+  * @notify:		Function to be called on change.  This will be
+  *			called in process context.
+@@ -238,7 +240,11 @@ extern void resume_device_irqs(void);
+ struct irq_affinity_notify {
+ 	unsigned int irq;
+ 	struct kref kref;
++#ifdef CONFIG_PREEMPT_RT_BASE
++	struct swork_event swork;
++#else
+ 	struct work_struct work;
++#endif
+ 	void (*notify)(struct irq_affinity_notify *, const cpumask_t *mask);
+ 	void (*release)(struct kref *ref);
+ };
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -226,7 +226,12 @@ int irq_set_affinity_locked(struct irq_d
+ 
+ 	if (desc->affinity_notify) {
+ 		kref_get(&desc->affinity_notify->kref);
++
++#ifdef CONFIG_PREEMPT_RT_BASE
++		swork_queue(&desc->affinity_notify->swork);
++#else
+ 		schedule_work(&desc->affinity_notify->work);
++#endif
+ 	}
+ 	irqd_set(data, IRQD_AFFINITY_SET);
+ 
+@@ -264,10 +269,8 @@ int irq_set_affinity_hint(unsigned int i
+ }
+ EXPORT_SYMBOL_GPL(irq_set_affinity_hint);
+ 
+-static void irq_affinity_notify(struct work_struct *work)
++static void _irq_affinity_notify(struct irq_affinity_notify *notify)
+ {
+-	struct irq_affinity_notify *notify =
+-		container_of(work, struct irq_affinity_notify, work);
+ 	struct irq_desc *desc = irq_to_desc(notify->irq);
+ 	cpumask_var_t cpumask;
+ 	unsigned long flags;
+@@ -289,6 +292,35 @@ static void irq_affinity_notify(struct w
+ 	kref_put(&notify->kref, notify->release);
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT_BASE
++static void init_helper_thread(void)
++{
++	static int init_sworker_once;
++
++	if (init_sworker_once)
++		return;
++	if (WARN_ON(swork_get()))
++		return;
++	init_sworker_once = 1;
++}
++
++static void irq_affinity_notify(struct swork_event *swork)
++{
++	struct irq_affinity_notify *notify =
++		container_of(swork, struct irq_affinity_notify, swork);
++	_irq_affinity_notify(notify);
++}
++
++#else
++
++static void irq_affinity_notify(struct work_struct *work)
++{
++	struct irq_affinity_notify *notify =
++		container_of(work, struct irq_affinity_notify, work);
++	_irq_affinity_notify(notify);
++}
++#endif
++
+ /**
+  *	irq_set_affinity_notifier - control notification of IRQ affinity changes
+  *	@irq:		Interrupt for which to enable/disable notification
+@@ -317,7 +349,12 @@ irq_set_affinity_notifier(unsigned int i
+ 	if (notify) {
+ 		notify->irq = irq;
+ 		kref_init(&notify->kref);
++#ifdef CONFIG_PREEMPT_RT_BASE
++		INIT_SWORK(&notify->swork, irq_affinity_notify);
++		init_helper_thread();
++#else
+ 		INIT_WORK(&notify->work, irq_affinity_notify);
++#endif
+ 	}
+ 
+ 	raw_spin_lock_irqsave(&desc->lock, flags);

@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 16 Nov 2017 16:48:48 +0100
+Subject: [PATCH] locking/rtmutex: re-init the wait_lock in
+ rt_mutex_init_proxy_locked()
+
+We could provide a key-class for the lockdep (and fixup all callers) or
+move the init to all callers (like it was) in order to avoid lockdep
+seeing a double-lock of the wait_lock.
+
+Reported-by: Fernando Lopez-Lezcano <nando@ccrma.Stanford.EDU>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/locking/rtmutex.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/kernel/locking/rtmutex.c
++++ b/kernel/locking/rtmutex.c
+@@ -2272,6 +2272,14 @@ void rt_mutex_init_proxy_locked(struct r
+ 				struct task_struct *proxy_owner)
+ {
+ 	__rt_mutex_init(lock, NULL, NULL);
++#ifdef CONFIG_DEBUG_SPINLOCK
++	/*
++	 * get another key class for the wait_lock. LOCK_PI and UNLOCK_PI is
++	 * holding the ->wait_lock of the proxy_lock while unlocking a sleeping
++	 * lock.
++	 */
++	raw_spin_lock_init(&lock->wait_lock);
++#endif
+ 	debug_rt_mutex_proxy_lock(lock, proxy_owner);
+ 	rt_mutex_set_owner(lock, proxy_owner);
+ }

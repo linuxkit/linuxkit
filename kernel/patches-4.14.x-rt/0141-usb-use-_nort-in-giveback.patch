@@ -1,0 +1,57 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 8 Nov 2013 17:34:54 +0100
+Subject: usb: Use _nort in giveback function
+
+Since commit 94dfd7ed ("USB: HCD: support giveback of URB in tasklet
+context") I see
+
+|BUG: sleeping function called from invalid context at kernel/rtmutex.c:673
+|in_atomic(): 0, irqs_disabled(): 1, pid: 109, name: irq/11-uhci_hcd
+|no locks held by irq/11-uhci_hcd/109.
+|irq event stamp: 440
+|hardirqs last  enabled at (439): [<ffffffff816a7555>] _raw_spin_unlock_irqrestore+0x75/0x90
+|hardirqs last disabled at (440): [<ffffffff81514906>] __usb_hcd_giveback_urb+0x46/0xc0
+|softirqs last  enabled at (0): [<ffffffff81081821>] copy_process.part.52+0x511/0x1510
+|softirqs last disabled at (0): [<          (null)>]           (null)
+|CPU: 3 PID: 109 Comm: irq/11-uhci_hcd Not tainted 3.12.0-rt0-rc1+ #13
+|Hardware name: Bochs Bochs, BIOS Bochs 01/01/2011
+| 0000000000000000 ffff8800db9ffbe0 ffffffff8169f064 0000000000000000
+| ffff8800db9ffbf8 ffffffff810b2122 ffff88020f03e888 ffff8800db9ffc18
+| ffffffff816a6944 ffffffff810b5748 ffff88020f03c000 ffff8800db9ffc50
+|Call Trace:
+| [<ffffffff8169f064>] dump_stack+0x4e/0x8f
+| [<ffffffff810b2122>] __might_sleep+0x112/0x190
+| [<ffffffff816a6944>] rt_spin_lock+0x24/0x60
+| [<ffffffff8158435b>] hid_ctrl+0x3b/0x190
+| [<ffffffff8151490f>] __usb_hcd_giveback_urb+0x4f/0xc0
+| [<ffffffff81514aaf>] usb_hcd_giveback_urb+0x3f/0x140
+| [<ffffffff815346af>] uhci_giveback_urb+0xaf/0x280
+| [<ffffffff8153666a>] uhci_scan_schedule+0x47a/0xb10
+| [<ffffffff81537336>] uhci_irq+0xa6/0x1a0
+| [<ffffffff81513c48>] usb_hcd_irq+0x28/0x40
+| [<ffffffff810c8ba3>] irq_forced_thread_fn+0x23/0x70
+| [<ffffffff810c918f>] irq_thread+0x10f/0x150
+| [<ffffffff810a6fad>] kthread+0xcd/0xe0
+| [<ffffffff816a842c>] ret_from_fork+0x7c/0xb0
+
+on -RT we run threaded so no need to disable interrupts.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/usb/core/hcd.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/usb/core/hcd.c
++++ b/drivers/usb/core/hcd.c
+@@ -1775,9 +1775,9 @@ static void __usb_hcd_giveback_urb(struc
+ 	 * and no one may trigger the above deadlock situation when
+ 	 * running complete() in tasklet.
+ 	 */
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	urb->complete(urb);
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ 
+ 	usb_anchor_resume_wakeups(anchor);
+ 	atomic_dec(&urb->use_count);

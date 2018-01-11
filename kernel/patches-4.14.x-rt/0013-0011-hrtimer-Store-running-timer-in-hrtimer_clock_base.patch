@@ -1,0 +1,191 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:00 +0100
+Subject: [PATCH 11/29] hrtimer: Store running timer in hrtimer_clock_base
+
+The pointer to the currently running timer is stored in hrtimer_cpu_base
+before the base lock is dropped and the callback is invoked.
+
+This results in two levels of indirections and the upcoming support for
+softirq based hrtimer requires splitting the "running" storage into soft
+and hard irq context expiry.
+
+Storing both in the cpu base would require conditionals in all code paths
+accessing that information.
+
+It's possible to have a per clock base sequence count and running pointer
+without changing the semantics of the related mechanisms because the timer
+base pointer cannot be changed while a timer is running the callback.
+
+Unfortunately this makes cpu_clock base larger than 32 bytes on 32bit
+kernels. Instead of having huge gaps due to alignment, remove the alignment
+and let the compiler pack cpu base for 32bit. The resulting cache access
+patterns are fortunately not really different from the current
+behaviour. On 64bit kernels the 64byte alignment stays and the behaviour is
+unchanged. This was determined by analyzing the resulting layout and
+looking at the number of cache lines involved for the frequently used
+clocks.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/hrtimer.h |   20 +++++++++-----------
+ kernel/time/hrtimer.c   |   28 +++++++++++++---------------
+ 2 files changed, 22 insertions(+), 26 deletions(-)
+
+--- a/include/linux/hrtimer.h
++++ b/include/linux/hrtimer.h
+@@ -118,9 +118,9 @@ struct hrtimer_sleeper {
+ };
+ 
+ #ifdef CONFIG_64BIT
+-# define HRTIMER_CLOCK_BASE_ALIGN	64
++# define __hrtimer_clock_base_align	____cacheline_aligned
+ #else
+-# define HRTIMER_CLOCK_BASE_ALIGN	32
++# define __hrtimer_clock_base_align
+ #endif
+ 
+ /**
+@@ -129,18 +129,22 @@ struct hrtimer_sleeper {
+  * @index:		clock type index for per_cpu support when moving a
+  *			timer to a base on another cpu.
+  * @clockid:		clock id for per_cpu support
++ * @seq:		seqcount around __run_hrtimer
++ * @running:		pointer to the currently running hrtimer
+  * @active:		red black tree root node for the active timers
+  * @get_time:		function to retrieve the current time of the clock
+  * @offset:		offset of this clock to the monotonic base
+  */
+ struct hrtimer_clock_base {
+ 	struct hrtimer_cpu_base	*cpu_base;
+-	int			index;
++	unsigned int		index;
+ 	clockid_t		clockid;
++	seqcount_t		seq;
++	struct hrtimer		*running;
+ 	struct timerqueue_head	active;
+ 	ktime_t			(*get_time)(void);
+ 	ktime_t			offset;
+-} __attribute__((__aligned__(HRTIMER_CLOCK_BASE_ALIGN)));
++} __hrtimer_clock_base_align;
+ 
+ enum  hrtimer_base_type {
+ 	HRTIMER_BASE_MONOTONIC,
+@@ -154,8 +158,6 @@ enum  hrtimer_base_type {
+  * struct hrtimer_cpu_base - the per cpu clock bases
+  * @lock:		lock protecting the base and associated clock bases
+  *			and timers
+- * @seq:		seqcount around __run_hrtimer
+- * @running:		pointer to the currently running hrtimer
+  * @cpu:		cpu number
+  * @active_bases:	Bitfield to mark bases with active timers
+  * @clock_was_set_seq:	Sequence counter of clock was set events
+@@ -177,8 +179,6 @@ enum  hrtimer_base_type {
+  */
+ struct hrtimer_cpu_base {
+ 	raw_spinlock_t			lock;
+-	seqcount_t			seq;
+-	struct hrtimer			*running;
+ 	unsigned int			cpu;
+ 	unsigned int			active_bases;
+ 	unsigned int			clock_was_set_seq;
+@@ -198,8 +198,6 @@ struct hrtimer_cpu_base {
+ 
+ static inline void hrtimer_set_expires(struct hrtimer *timer, ktime_t time)
+ {
+-	BUILD_BUG_ON(sizeof(struct hrtimer_clock_base) > HRTIMER_CLOCK_BASE_ALIGN);
+-
+ 	timer->node.expires = time;
+ 	timer->_softexpires = time;
+ }
+@@ -424,7 +422,7 @@ static inline int hrtimer_is_queued(stru
+  */
+ static inline int hrtimer_callback_running(struct hrtimer *timer)
+ {
+-	return timer->base->cpu_base->running == timer;
++	return timer->base->running == timer;
+ }
+ 
+ /* Forward a hrtimer so it expires after now: */
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -70,7 +70,6 @@
+ DEFINE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases) =
+ {
+ 	.lock = __RAW_SPIN_LOCK_UNLOCKED(hrtimer_bases.lock),
+-	.seq = SEQCNT_ZERO(hrtimer_bases.seq),
+ 	.clock_base =
+ 	{
+ 		{
+@@ -118,7 +117,6 @@ static const int hrtimer_clock_to_base_t
+  * timer->base->cpu_base
+  */
+ static struct hrtimer_cpu_base migration_cpu_base = {
+-	.seq = SEQCNT_ZERO(migration_cpu_base),
+ 	.clock_base = { { .cpu_base = &migration_cpu_base, }, },
+ };
+ 
+@@ -1152,19 +1150,19 @@ EXPORT_SYMBOL_GPL(hrtimer_init);
+  */
+ bool hrtimer_active(const struct hrtimer *timer)
+ {
+-	struct hrtimer_cpu_base *cpu_base;
++	struct hrtimer_clock_base *base;
+ 	unsigned int seq;
+ 
+ 	do {
+-		cpu_base = READ_ONCE(timer->base->cpu_base);
+-		seq = raw_read_seqcount_begin(&cpu_base->seq);
++		base = READ_ONCE(timer->base);
++		seq = raw_read_seqcount_begin(&base->seq);
+ 
+ 		if (timer->state != HRTIMER_STATE_INACTIVE ||
+-		    cpu_base->running == timer)
++		    base->running == timer)
+ 			return true;
+ 
+-	} while (read_seqcount_retry(&cpu_base->seq, seq) ||
+-		 cpu_base != READ_ONCE(timer->base->cpu_base));
++	} while (read_seqcount_retry(&base->seq, seq) ||
++		 base != READ_ONCE(timer->base));
+ 
+ 	return false;
+ }
+@@ -1198,16 +1196,16 @@ static void __run_hrtimer(struct hrtimer
+ 	lockdep_assert_held(&cpu_base->lock);
+ 
+ 	debug_deactivate(timer);
+-	cpu_base->running = timer;
++	base->running = timer;
+ 
+ 	/*
+ 	 * Separate the ->running assignment from the ->state assignment.
+ 	 *
+ 	 * As with a regular write barrier, this ensures the read side in
+-	 * hrtimer_active() cannot observe cpu_base->running == NULL &&
++	 * hrtimer_active() cannot observe base->running == NULL &&
+ 	 * timer->state == INACTIVE.
+ 	 */
+-	raw_write_seqcount_barrier(&cpu_base->seq);
++	raw_write_seqcount_barrier(&base->seq);
+ 
+ 	__remove_hrtimer(timer, base, HRTIMER_STATE_INACTIVE, 0);
+ 	fn = timer->function;
+@@ -1248,13 +1246,13 @@ static void __run_hrtimer(struct hrtimer
+ 	 * Separate the ->running assignment from the ->state assignment.
+ 	 *
+ 	 * As with a regular write barrier, this ensures the read side in
+-	 * hrtimer_active() cannot observe cpu_base->running == NULL &&
++	 * hrtimer_active() cannot observe base->running.timer == NULL &&
+ 	 * timer->state == INACTIVE.
+ 	 */
+-	raw_write_seqcount_barrier(&cpu_base->seq);
++	raw_write_seqcount_barrier(&base->seq);
+ 
+-	WARN_ON_ONCE(cpu_base->running != timer);
+-	cpu_base->running = NULL;
++	WARN_ON_ONCE(base->running != timer);
++	base->running = NULL;
+ }
+ 
+ static void __hrtimer_run_queues(struct hrtimer_cpu_base *cpu_base, ktime_t now)

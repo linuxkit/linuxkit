@@ -1,0 +1,35 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:03 +0100
+Subject: [PATCH 14/29] hrtimer: Use accesor functions instead of direct access
+
+__hrtimer_hres_active() is now available unconditionally. Replace the
+direct access to hrtimer_cpu_base.hres_active.
+
+No functional change.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -564,7 +564,7 @@ hrtimer_force_reprogram(struct hrtimer_c
+ {
+ 	ktime_t expires_next;
+ 
+-	if (!cpu_base->hres_active)
++	if (!__hrtimer_hres_active(cpu_base))
+ 		return;
+ 
+ 	expires_next = __hrtimer_get_next_event(cpu_base);
+@@ -675,7 +675,7 @@ static void retrigger_next_event(void *a
+ {
+ 	struct hrtimer_cpu_base *base = this_cpu_ptr(&hrtimer_bases);
+ 
+-	if (!base->hres_active)
++	if (!__hrtimer_hres_active(base))
+ 		return;
+ 
+ 	raw_spin_lock(&base->lock);

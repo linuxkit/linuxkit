@@ -1,0 +1,90 @@
+Subject: hotplug: Lightweight get online cpus
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 15 Jun 2011 12:36:06 +0200
+
+get_online_cpus() is a heavy weight function which involves a global
+mutex. migrate_disable() wants a simpler construct which prevents only
+a CPU from going doing while a task is in a migrate disabled section.
+
+Implement a per cpu lockless mechanism, which serializes only in the
+real unplug case on a global mutex. That serialization affects only
+tasks on the cpu which should be brought down.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/cpu.h |    5 +++++
+ kernel/cpu.c        |   15 +++++++++++++++
+ kernel/sched/core.c |    4 ++++
+ 3 files changed, 24 insertions(+)
+
+--- a/include/linux/cpu.h
++++ b/include/linux/cpu.h
+@@ -116,6 +116,8 @@ extern void cpu_hotplug_disable(void);
+ extern void cpu_hotplug_enable(void);
+ void clear_tasks_mm_cpumask(int cpu);
+ int cpu_down(unsigned int cpu);
++extern void pin_current_cpu(void);
++extern void unpin_current_cpu(void);
+ 
+ #else /* CONFIG_HOTPLUG_CPU */
+ 
+@@ -126,6 +128,9 @@ static inline void cpus_read_unlock(void
+ static inline void lockdep_assert_cpus_held(void) { }
+ static inline void cpu_hotplug_disable(void) { }
+ static inline void cpu_hotplug_enable(void) { }
++static inline void pin_current_cpu(void) { }
++static inline void unpin_current_cpu(void) { }
++
+ #endif	/* !CONFIG_HOTPLUG_CPU */
+ 
+ /* Wrappers which go away once all code is converted */
+--- a/kernel/cpu.c
++++ b/kernel/cpu.c
+@@ -286,6 +286,21 @@ static int cpu_hotplug_disabled;
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
+ 
++/**
++ * pin_current_cpu - Prevent the current cpu from being unplugged
++ */
++void pin_current_cpu(void)
++{
++
++}
++
++/**
++ * unpin_current_cpu - Allow unplug of current cpu
++ */
++void unpin_current_cpu(void)
++{
++}
++
+ DEFINE_STATIC_PERCPU_RWSEM(cpu_hotplug_lock);
+ 
+ void cpus_read_lock(void)
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -6914,6 +6914,7 @@ void migrate_disable(void)
+ 	}
+ 
+ 	preempt_disable();
++	pin_current_cpu();
+ 
+ 	migrate_disable_update_cpus_allowed(p);
+ 	p->migrate_disable = 1;
+@@ -6979,12 +6980,15 @@ void migrate_enable(void)
+ 			arg.task = p;
+ 			arg.dest_cpu = dest_cpu;
+ 
++			unpin_current_cpu();
+ 			preempt_enable();
+ 			stop_one_cpu(task_cpu(p), migration_cpu_stop, &arg);
+ 			tlb_migrate_finish(p->mm);
++
+ 			return;
+ 		}
+ 	}
++	unpin_current_cpu();
+ 	preempt_enable();
+ }
+ EXPORT_SYMBOL(migrate_enable);

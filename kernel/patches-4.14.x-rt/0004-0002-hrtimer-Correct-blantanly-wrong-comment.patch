@@ -1,0 +1,36 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 20 Dec 2017 17:12:51 +0100
+Subject: [PATCH 02/29] hrtimer: Correct blantanly wrong comment
+
+The protection of a hrtimer which runs its callback against migration to a
+different CPU has nothing to do with hard interrupt context.
+
+The protection against migration of a hrtimer running the expiry callback
+is the pointer in the cpu_base which holds a pointer to the currently
+running timer. This pointer is evaluated in the code which potentially
+switches the timer base and makes sure it's kept on the CPU on which the
+callback is running.
+
+Reported-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -1199,9 +1199,9 @@ static void __run_hrtimer(struct hrtimer
+ 		timer->is_rel = false;
+ 
+ 	/*
+-	 * Because we run timers from hardirq context, there is no chance
+-	 * they get migrated to another cpu, therefore its safe to unlock
+-	 * the timer base.
++	 * The timer is marked as running in the cpu base, so it is
++	 * protected against migration to a different CPU even if the lock
++	 * is dropped.
+ 	 */
+ 	raw_spin_unlock(&cpu_base->lock);
+ 	trace_hrtimer_expire_entry(timer, now);

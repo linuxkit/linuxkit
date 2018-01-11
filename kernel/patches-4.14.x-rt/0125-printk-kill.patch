@@ -1,0 +1,163 @@
+Subject: printk: Add a printk kill switch
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 22 Jul 2011 17:58:40 +0200
+
+Add a prinkt-kill-switch. This is used from (NMI) watchdog to ensure that
+it does not dead-lock with the early printk code.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/printk.h |    2 +
+ kernel/printk/printk.c |   79 ++++++++++++++++++++++++++++++++++++-------------
+ kernel/watchdog_hld.c  |   10 ++++++
+ 3 files changed, 71 insertions(+), 20 deletions(-)
+
+--- a/include/linux/printk.h
++++ b/include/linux/printk.h
+@@ -142,9 +142,11 @@ struct va_format {
+ #ifdef CONFIG_EARLY_PRINTK
+ extern asmlinkage __printf(1, 2)
+ void early_printk(const char *fmt, ...);
++extern void printk_kill(void);
+ #else
+ static inline __printf(1, 2) __cold
+ void early_printk(const char *s, ...) { }
++static inline void printk_kill(void) { }
+ #endif
+ 
+ #ifdef CONFIG_PRINTK_NMI
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -400,6 +400,58 @@ DEFINE_RAW_SPINLOCK(logbuf_lock);
+ 		printk_safe_exit_irqrestore(flags);	\
+ 	} while (0)
+ 
++#ifdef CONFIG_EARLY_PRINTK
++struct console *early_console;
++
++static void early_vprintk(const char *fmt, va_list ap)
++{
++	if (early_console) {
++		char buf[512];
++		int n = vscnprintf(buf, sizeof(buf), fmt, ap);
++
++		early_console->write(early_console, buf, n);
++	}
++}
++
++asmlinkage void early_printk(const char *fmt, ...)
++{
++	va_list ap;
++
++	va_start(ap, fmt);
++	early_vprintk(fmt, ap);
++	va_end(ap);
++}
++
++/*
++ * This is independent of any log levels - a global
++ * kill switch that turns off all of printk.
++ *
++ * Used by the NMI watchdog if early-printk is enabled.
++ */
++static bool __read_mostly printk_killswitch;
++
++void printk_kill(void)
++{
++	printk_killswitch = true;
++}
++
++#ifdef CONFIG_PRINTK
++static int forced_early_printk(const char *fmt, va_list ap)
++{
++	if (!printk_killswitch)
++		return 0;
++	early_vprintk(fmt, ap);
++	return 1;
++}
++#endif
++
++#else
++static inline int forced_early_printk(const char *fmt, va_list ap)
++{
++	return 0;
++}
++#endif
++
+ #ifdef CONFIG_PRINTK
+ DECLARE_WAIT_QUEUE_HEAD(log_wait);
+ /* the next printk record to read by syslog(READ) or /proc/kmsg */
+@@ -1692,6 +1744,13 @@ asmlinkage int vprintk_emit(int facility
+ 	int printed_len;
+ 	bool in_sched = false;
+ 
++	/*
++	 * Fall back to early_printk if a debugging subsystem has
++	 * killed printk output
++	 */
++	if (unlikely(forced_early_printk(fmt, args)))
++		return 1;
++
+ 	if (level == LOGLEVEL_SCHED) {
+ 		level = LOGLEVEL_DEFAULT;
+ 		in_sched = true;
+@@ -1863,26 +1922,6 @@ static bool suppress_message_printing(in
+ 
+ #endif /* CONFIG_PRINTK */
+ 
+-#ifdef CONFIG_EARLY_PRINTK
+-struct console *early_console;
+-
+-asmlinkage __visible void early_printk(const char *fmt, ...)
+-{
+-	va_list ap;
+-	char buf[512];
+-	int n;
+-
+-	if (!early_console)
+-		return;
+-
+-	va_start(ap, fmt);
+-	n = vscnprintf(buf, sizeof(buf), fmt, ap);
+-	va_end(ap);
+-
+-	early_console->write(early_console, buf, n);
+-}
+-#endif
+-
+ static int __add_preferred_console(char *name, int idx, char *options,
+ 				   char *brl_options)
+ {
+--- a/kernel/watchdog_hld.c
++++ b/kernel/watchdog_hld.c
+@@ -24,6 +24,8 @@ static DEFINE_PER_CPU(bool, hard_watchdo
+ static DEFINE_PER_CPU(bool, watchdog_nmi_touch);
+ static DEFINE_PER_CPU(struct perf_event *, watchdog_ev);
+ static DEFINE_PER_CPU(struct perf_event *, dead_event);
++static DEFINE_RAW_SPINLOCK(watchdog_output_lock);
++
+ static struct cpumask dead_events_mask;
+ 
+ static unsigned long hardlockup_allcpu_dumped;
+@@ -134,6 +136,13 @@ static void watchdog_overflow_callback(s
+ 		/* only print hardlockups once */
+ 		if (__this_cpu_read(hard_watchdog_warn) == true)
+ 			return;
++		/*
++		 * If early-printk is enabled then make sure we do not
++		 * lock up in printk() and kill console logging:
++		 */
++		printk_kill();
++
++		raw_spin_lock(&watchdog_output_lock);
+ 
+ 		pr_emerg("Watchdog detected hard LOCKUP on cpu %d", this_cpu);
+ 		print_modules();
+@@ -151,6 +160,7 @@ static void watchdog_overflow_callback(s
+ 				!test_and_set_bit(0, &hardlockup_allcpu_dumped))
+ 			trigger_allbutself_cpu_backtrace();
+ 
++		raw_spin_unlock(&watchdog_output_lock);
+ 		if (hardlockup_panic)
+ 			nmi_panic(regs, "Hard LOCKUP");
+ 

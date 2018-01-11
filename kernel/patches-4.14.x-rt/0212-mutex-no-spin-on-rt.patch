@@ -1,0 +1,28 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 17 Jul 2011 21:51:45 +0200
+Subject: locking: Disable spin on owner for RT
+
+Drop spin on owner for mutex / rwsem. We are most likely not using it
+but…
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ kernel/Kconfig.locks |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/kernel/Kconfig.locks
++++ b/kernel/Kconfig.locks
+@@ -225,11 +225,11 @@ config ARCH_SUPPORTS_ATOMIC_RMW
+ 
+ config MUTEX_SPIN_ON_OWNER
+ 	def_bool y
+-	depends on SMP && ARCH_SUPPORTS_ATOMIC_RMW
++	depends on SMP && ARCH_SUPPORTS_ATOMIC_RMW && !PREEMPT_RT_FULL
+ 
+ config RWSEM_SPIN_ON_OWNER
+        def_bool y
+-       depends on SMP && RWSEM_XCHGADD_ALGORITHM && ARCH_SUPPORTS_ATOMIC_RMW
++       depends on SMP && RWSEM_XCHGADD_ALGORITHM && ARCH_SUPPORTS_ATOMIC_RMW && !PREEMPT_RT_FULL
+ 
+ config LOCK_SPIN_ON_OWNER
+        def_bool y

@@ -1,0 +1,352 @@
+Subject: completion: Use simple wait queues
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 11 Jan 2013 11:23:51 +0100
+
+Completions have no long lasting callbacks and therefor do not need
+the complex waitqueue variant. Use simple waitqueues which reduces the
+contention on the waitqueue lock.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/net/wireless/intersil/orinoco/orinoco_usb.c |    2 -
+ drivers/usb/gadget/function/f_fs.c                  |    2 -
+ drivers/usb/gadget/legacy/inode.c                   |    4 +-
+ include/linux/completion.h                          |   10 ++---
+ include/linux/suspend.h                             |    6 +++
+ include/linux/swait.h                               |    1 
+ kernel/power/hibernate.c                            |    7 ++++
+ kernel/power/suspend.c                              |    4 ++
+ kernel/sched/completion.c                           |   34 ++++++++++----------
+ kernel/sched/core.c                                 |   10 ++++-
+ kernel/sched/swait.c                                |   20 +++++++++++
+ 11 files changed, 72 insertions(+), 28 deletions(-)
+
+--- a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
++++ b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
+@@ -697,7 +697,7 @@ static void ezusb_req_ctx_wait(struct ez
+ 			while (!ctx->done.done && msecs--)
+ 				udelay(1000);
+ 		} else {
+-			wait_event_interruptible(ctx->done.wait,
++			swait_event_interruptible(ctx->done.wait,
+ 						 ctx->done.done);
+ 		}
+ 		break;
+--- a/drivers/usb/gadget/function/f_fs.c
++++ b/drivers/usb/gadget/function/f_fs.c
+@@ -1610,7 +1610,7 @@ static void ffs_data_put(struct ffs_data
+ 		pr_info("%s(): freeing\n", __func__);
+ 		ffs_data_clear(ffs);
+ 		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
+-		       waitqueue_active(&ffs->ep0req_completion.wait) ||
++		       swait_active(&ffs->ep0req_completion.wait) ||
+ 		       waitqueue_active(&ffs->wait));
+ 		destroy_workqueue(ffs->io_completion_wq);
+ 		kfree(ffs->dev_name);
+--- a/drivers/usb/gadget/legacy/inode.c
++++ b/drivers/usb/gadget/legacy/inode.c
+@@ -347,7 +347,7 @@ ep_io (struct ep_data *epdata, void *buf
+ 	spin_unlock_irq (&epdata->dev->lock);
+ 
+ 	if (likely (value == 0)) {
+-		value = wait_event_interruptible (done.wait, done.done);
++		value = swait_event_interruptible (done.wait, done.done);
+ 		if (value != 0) {
+ 			spin_lock_irq (&epdata->dev->lock);
+ 			if (likely (epdata->ep != NULL)) {
+@@ -356,7 +356,7 @@ ep_io (struct ep_data *epdata, void *buf
+ 				usb_ep_dequeue (epdata->ep, epdata->req);
+ 				spin_unlock_irq (&epdata->dev->lock);
+ 
+-				wait_event (done.wait, done.done);
++				swait_event (done.wait, done.done);
+ 				if (epdata->status == -ECONNRESET)
+ 					epdata->status = -EINTR;
+ 			} else {
+--- a/include/linux/completion.h
++++ b/include/linux/completion.h
+@@ -9,7 +9,7 @@
+  * See kernel/sched/completion.c for details.
+  */
+ 
+-#include <linux/wait.h>
++#include <linux/swait.h>
+ #ifdef CONFIG_LOCKDEP_COMPLETIONS
+ #include <linux/lockdep.h>
+ #endif
+@@ -28,7 +28,7 @@
+  */
+ struct completion {
+ 	unsigned int done;
+-	wait_queue_head_t wait;
++	struct swait_queue_head wait;
+ #ifdef CONFIG_LOCKDEP_COMPLETIONS
+ 	struct lockdep_map_cross map;
+ #endif
+@@ -67,11 +67,11 @@ static inline void complete_release_comm
+ 
+ #ifdef CONFIG_LOCKDEP_COMPLETIONS
+ #define COMPLETION_INITIALIZER(work) \
+-	{ 0, __WAIT_QUEUE_HEAD_INITIALIZER((work).wait), \
++	{ 0, __SWAIT_QUEUE_HEAD_INITIALIZER((work).wait), \
+ 	STATIC_CROSS_LOCKDEP_MAP_INIT("(complete)" #work, &(work)) }
+ #else
+ #define COMPLETION_INITIALIZER(work) \
+-	{ 0, __WAIT_QUEUE_HEAD_INITIALIZER((work).wait) }
++	{ 0, __SWAIT_QUEUE_HEAD_INITIALIZER((work).wait) }
+ #endif
+ 
+ #define COMPLETION_INITIALIZER_ONSTACK(work) \
+@@ -117,7 +117,7 @@ static inline void complete_release_comm
+ static inline void __init_completion(struct completion *x)
+ {
+ 	x->done = 0;
+-	init_waitqueue_head(&x->wait);
++	init_swait_queue_head(&x->wait);
+ }
+ 
+ /**
+--- a/include/linux/suspend.h
++++ b/include/linux/suspend.h
+@@ -196,6 +196,12 @@ struct platform_s2idle_ops {
+ 	void (*end)(void);
+ };
+ 
++#if defined(CONFIG_SUSPEND) || defined(CONFIG_HIBERNATION)
++extern bool pm_in_action;
++#else
++# define pm_in_action false
++#endif
++
+ #ifdef CONFIG_SUSPEND
+ extern suspend_state_t mem_sleep_current;
+ extern suspend_state_t mem_sleep_default;
+--- a/include/linux/swait.h
++++ b/include/linux/swait.h
+@@ -148,6 +148,7 @@ static inline bool swq_has_sleeper(struc
+ extern void swake_up(struct swait_queue_head *q);
+ extern void swake_up_all(struct swait_queue_head *q);
+ extern void swake_up_locked(struct swait_queue_head *q);
++extern void swake_up_all_locked(struct swait_queue_head *q);
+ 
+ extern void __prepare_to_swait(struct swait_queue_head *q, struct swait_queue *wait);
+ extern void prepare_to_swait(struct swait_queue_head *q, struct swait_queue *wait, int state);
+--- a/kernel/power/hibernate.c
++++ b/kernel/power/hibernate.c
+@@ -679,6 +679,10 @@ static int load_image_and_restore(void)
+ 	return error;
+ }
+ 
++#ifndef CONFIG_SUSPEND
++bool pm_in_action;
++#endif
++
+ /**
+  * hibernate - Carry out system hibernation, including saving the image.
+  */
+@@ -692,6 +696,8 @@ int hibernate(void)
+ 		return -EPERM;
+ 	}
+ 
++	pm_in_action = true;
++
+ 	lock_system_sleep();
+ 	/* The snapshot device should not be opened while we're running */
+ 	if (!atomic_add_unless(&snapshot_device_available, -1, 0)) {
+@@ -770,6 +776,7 @@ int hibernate(void)
+ 	atomic_inc(&snapshot_device_available);
+  Unlock:
+ 	unlock_system_sleep();
++	pm_in_action = false;
+ 	pr_info("hibernation exit\n");
+ 
+ 	return error;
+--- a/kernel/power/suspend.c
++++ b/kernel/power/suspend.c
+@@ -593,6 +593,8 @@ static int enter_state(suspend_state_t s
+ 	return error;
+ }
+ 
++bool pm_in_action;
++
+ /**
+  * pm_suspend - Externally visible function for suspending the system.
+  * @state: System sleep state to enter.
+@@ -607,6 +609,7 @@ int pm_suspend(suspend_state_t state)
+ 	if (state <= PM_SUSPEND_ON || state >= PM_SUSPEND_MAX)
+ 		return -EINVAL;
+ 
++	pm_in_action = true;
+ 	pr_info("suspend entry (%s)\n", mem_sleep_labels[state]);
+ 	error = enter_state(state);
+ 	if (error) {
+@@ -616,6 +619,7 @@ int pm_suspend(suspend_state_t state)
+ 		suspend_stats.success++;
+ 	}
+ 	pr_info("suspend exit\n");
++	pm_in_action = false;
+ 	return error;
+ }
+ EXPORT_SYMBOL(pm_suspend);
+--- a/kernel/sched/completion.c
++++ b/kernel/sched/completion.c
+@@ -32,7 +32,7 @@ void complete(struct completion *x)
+ {
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(&x->wait.lock, flags);
++	raw_spin_lock_irqsave(&x->wait.lock, flags);
+ 
+ 	/*
+ 	 * Perform commit of crossrelease here.
+@@ -41,8 +41,8 @@ void complete(struct completion *x)
+ 
+ 	if (x->done != UINT_MAX)
+ 		x->done++;
+-	__wake_up_locked(&x->wait, TASK_NORMAL, 1);
+-	spin_unlock_irqrestore(&x->wait.lock, flags);
++	swake_up_locked(&x->wait);
++	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
+ }
+ EXPORT_SYMBOL(complete);
+ 
+@@ -66,10 +66,10 @@ void complete_all(struct completion *x)
+ {
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(&x->wait.lock, flags);
++	raw_spin_lock_irqsave(&x->wait.lock, flags);
+ 	x->done = UINT_MAX;
+-	__wake_up_locked(&x->wait, TASK_NORMAL, 0);
+-	spin_unlock_irqrestore(&x->wait.lock, flags);
++	swake_up_all_locked(&x->wait);
++	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
+ }
+ EXPORT_SYMBOL(complete_all);
+ 
+@@ -78,20 +78,20 @@ do_wait_for_common(struct completion *x,
+ 		   long (*action)(long), long timeout, int state)
+ {
+ 	if (!x->done) {
+-		DECLARE_WAITQUEUE(wait, current);
++		DECLARE_SWAITQUEUE(wait);
+ 
+-		__add_wait_queue_entry_tail_exclusive(&x->wait, &wait);
++		__prepare_to_swait(&x->wait, &wait);
+ 		do {
+ 			if (signal_pending_state(state, current)) {
+ 				timeout = -ERESTARTSYS;
+ 				break;
+ 			}
+ 			__set_current_state(state);
+-			spin_unlock_irq(&x->wait.lock);
++			raw_spin_unlock_irq(&x->wait.lock);
+ 			timeout = action(timeout);
+-			spin_lock_irq(&x->wait.lock);
++			raw_spin_lock_irq(&x->wait.lock);
+ 		} while (!x->done && timeout);
+-		__remove_wait_queue(&x->wait, &wait);
++		__finish_swait(&x->wait, &wait);
+ 		if (!x->done)
+ 			return timeout;
+ 	}
+@@ -108,9 +108,9 @@ static inline long __sched
+ 
+ 	complete_acquire(x);
+ 
+-	spin_lock_irq(&x->wait.lock);
++	raw_spin_lock_irq(&x->wait.lock);
+ 	timeout = do_wait_for_common(x, action, timeout, state);
+-	spin_unlock_irq(&x->wait.lock);
++	raw_spin_unlock_irq(&x->wait.lock);
+ 
+ 	complete_release(x);
+ 
+@@ -299,12 +299,12 @@ bool try_wait_for_completion(struct comp
+ 	if (!READ_ONCE(x->done))
+ 		return 0;
+ 
+-	spin_lock_irqsave(&x->wait.lock, flags);
++	raw_spin_lock_irqsave(&x->wait.lock, flags);
+ 	if (!x->done)
+ 		ret = 0;
+ 	else if (x->done != UINT_MAX)
+ 		x->done--;
+-	spin_unlock_irqrestore(&x->wait.lock, flags);
++	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
+ 	return ret;
+ }
+ EXPORT_SYMBOL(try_wait_for_completion);
+@@ -330,8 +330,8 @@ bool completion_done(struct completion *
+ 	 * otherwise we can end up freeing the completion before complete()
+ 	 * is done referencing it.
+ 	 */
+-	spin_lock_irqsave(&x->wait.lock, flags);
+-	spin_unlock_irqrestore(&x->wait.lock, flags);
++	raw_spin_lock_irqsave(&x->wait.lock, flags);
++	raw_spin_unlock_irqrestore(&x->wait.lock, flags);
+ 	return true;
+ }
+ EXPORT_SYMBOL(completion_done);
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -6816,7 +6816,10 @@ void migrate_disable(void)
+ 		return;
+ 	}
+ #ifdef CONFIG_SCHED_DEBUG
+-	WARN_ON_ONCE(p->migrate_disable_atomic);
++	if (unlikely(p->migrate_disable_atomic)) {
++		tracing_off();
++		WARN_ON_ONCE(1);
++	}
+ #endif
+ 
+ 	if (p->migrate_disable) {
+@@ -6846,7 +6849,10 @@ void migrate_enable(void)
+ 	}
+ 
+ #ifdef CONFIG_SCHED_DEBUG
+-	WARN_ON_ONCE(p->migrate_disable_atomic);
++	if (unlikely(p->migrate_disable_atomic)) {
++		tracing_off();
++		WARN_ON_ONCE(1);
++	}
+ #endif
+ 
+ 	WARN_ON_ONCE(p->migrate_disable <= 0);
+--- a/kernel/sched/swait.c
++++ b/kernel/sched/swait.c
+@@ -1,6 +1,7 @@
+ // SPDX-License-Identifier: GPL-2.0
+ #include <linux/sched/signal.h>
+ #include <linux/swait.h>
++#include <linux/suspend.h>
+ 
+ void __init_swait_queue_head(struct swait_queue_head *q, const char *name,
+ 			     struct lock_class_key *key)
+@@ -30,6 +31,25 @@ void swake_up_locked(struct swait_queue_
+ }
+ EXPORT_SYMBOL(swake_up_locked);
+ 
++void swake_up_all_locked(struct swait_queue_head *q)
++{
++	struct swait_queue *curr;
++	int wakes = 0;
++
++	while (!list_empty(&q->task_list)) {
++
++		curr = list_first_entry(&q->task_list, typeof(*curr),
++					task_list);
++		wake_up_process(curr->task);
++		list_del_init(&curr->task_list);
++		wakes++;
++	}
++	if (pm_in_action)
++		return;
++	WARN(wakes > 2, "complete_all() with %d waiters\n", wakes);
++}
++EXPORT_SYMBOL(swake_up_all_locked);
++
+ void swake_up(struct swait_queue_head *q)
+ {
+ 	unsigned long flags;

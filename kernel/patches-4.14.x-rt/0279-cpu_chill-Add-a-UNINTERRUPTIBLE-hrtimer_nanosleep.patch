@@ -1,0 +1,102 @@
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Tue, 4 Mar 2014 12:28:32 -0500
+Subject: cpu_chill: Add a UNINTERRUPTIBLE hrtimer_nanosleep
+
+We hit another bug that was caused by switching cpu_chill() from
+msleep() to hrtimer_nanosleep().
+
+This time it is a livelock. The problem is that hrtimer_nanosleep()
+calls schedule with the state == TASK_INTERRUPTIBLE. But these means
+that if a signal is pending, the scheduler wont schedule, and will
+simply change the current task state back to TASK_RUNNING. This
+nullifies the whole point of cpu_chill() in the first place. That is,
+if a task is spinning on a try_lock() and it preempted the owner of the
+lock, if it has a signal pending, it will never give up the CPU to let
+the owner of the lock run.
+
+I made a static function __hrtimer_nanosleep() that takes a fifth
+parameter "state", which determines the task state of that the
+nanosleep() will be in. The normal hrtimer_nanosleep() will act the
+same, but cpu_chill() will call the __hrtimer_nanosleep() directly with
+the TASK_UNINTERRUPTIBLE state.
+
+cpu_chill() only cares that the first sleep happens, and does not care
+about the state of the restart schedule (in hrtimer_nanosleep_restart).
+
+
+Reported-by: Ulrich Obergfell <uobergfe@redhat.com>
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |   24 +++++++++++++++++-------
+ 1 file changed, 17 insertions(+), 7 deletions(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -1742,12 +1742,13 @@ int nanosleep_copyout(struct restart_blo
+ 	return -ERESTART_RESTARTBLOCK;
+ }
+ 
+-static int __sched do_nanosleep(struct hrtimer_sleeper *t, enum hrtimer_mode mode)
++static int __sched do_nanosleep(struct hrtimer_sleeper *t, enum hrtimer_mode mode,
++				unsigned long state)
+ {
+ 	struct restart_block *restart;
+ 
+ 	do {
+-		set_current_state(TASK_INTERRUPTIBLE);
++		set_current_state(state);
+ 		hrtimer_start_expires(&t->timer, mode);
+ 
+ 		if (likely(t->task))
+@@ -1785,13 +1786,15 @@ static long __sched hrtimer_nanosleep_re
+ 	hrtimer_init_sleeper_on_stack(&t, restart->nanosleep.clockid,
+ 				      HRTIMER_MODE_ABS, current);
+ 	hrtimer_set_expires_tv64(&t.timer, restart->nanosleep.expires);
+-	ret = do_nanosleep(&t, HRTIMER_MODE_ABS);
++	/* cpu_chill() does not care about restart state. */
++	ret = do_nanosleep(&t, HRTIMER_MODE_ABS, TASK_INTERRUPTIBLE);
+ 	destroy_hrtimer_on_stack(&t.timer);
+ 	return ret;
+ }
+ 
+-long hrtimer_nanosleep(const struct timespec64 *rqtp,
+-		       const enum hrtimer_mode mode, const clockid_t clockid)
++static long __hrtimer_nanosleep(const struct timespec64 *rqtp,
++				const enum hrtimer_mode mode, const clockid_t clockid,
++				unsigned long state)
+ {
+ 	struct restart_block *restart;
+ 	struct hrtimer_sleeper t;
+@@ -1804,7 +1807,7 @@ long hrtimer_nanosleep(const struct time
+ 
+ 	hrtimer_init_sleeper_on_stack(&t, clockid, mode, current);
+ 	hrtimer_set_expires_range_ns(&t.timer, timespec64_to_ktime(*rqtp), slack);
+-	ret = do_nanosleep(&t, mode);
++	ret = do_nanosleep(&t, mode, state);
+ 	if (ret != -ERESTART_RESTARTBLOCK)
+ 		goto out;
+ 
+@@ -1823,6 +1826,12 @@ long hrtimer_nanosleep(const struct time
+ 	return ret;
+ }
+ 
++long hrtimer_nanosleep(const struct timespec64 *rqtp,
++		       const enum hrtimer_mode mode, const clockid_t clockid)
++{
++	return __hrtimer_nanosleep(rqtp, mode, clockid, TASK_INTERRUPTIBLE);
++}
++
+ SYSCALL_DEFINE2(nanosleep, struct timespec __user *, rqtp,
+ 		struct timespec __user *, rmtp)
+ {
+@@ -1870,7 +1879,8 @@ void cpu_chill(void)
+ 	unsigned int freeze_flag = current->flags & PF_NOFREEZE;
+ 
+ 	current->flags |= PF_NOFREEZE;
+-	hrtimer_nanosleep(&tu, HRTIMER_MODE_REL_HARD, CLOCK_MONOTONIC);
++	__hrtimer_nanosleep(&tu, HRTIMER_MODE_REL_HARD, CLOCK_MONOTONIC,
++			    TASK_UNINTERRUPTIBLE);
+ 	if (!freeze_flag)
+ 		current->flags &= ~PF_NOFREEZE;
+ }

@@ -1,0 +1,47 @@
+Subject: slub: Enable irqs for __GFP_WAIT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 09 Jan 2013 12:08:15 +0100
+
+SYSTEM_RUNNING might be too late for enabling interrupts. Allocations
+with GFP_WAIT can happen before that. So use this as an indicator.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ mm/slub.c |   13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -1572,14 +1572,17 @@ static struct page *allocate_slab(struct
+ 	void *start, *p;
+ 	int idx, order;
+ 	bool shuffle;
++	bool enableirqs = false;
+ 
+ 	flags &= gfp_allowed_mask;
+ 
++	if (gfpflags_allow_blocking(flags))
++		enableirqs = true;
+ #ifdef CONFIG_PREEMPT_RT_FULL
+ 	if (system_state > SYSTEM_BOOTING)
+-#else
+-	if (gfpflags_allow_blocking(flags))
++		enableirqs = true;
+ #endif
++	if (enableirqs)
+ 		local_irq_enable();
+ 
+ 	flags |= s->allocflags;
+@@ -1654,11 +1657,7 @@ static struct page *allocate_slab(struct
+ 	page->frozen = 1;
+ 
+ out:
+-#ifdef CONFIG_PREEMPT_RT_FULL
+-	if (system_state > SYSTEM_BOOTING)
+-#else
+-	if (gfpflags_allow_blocking(flags))
+-#endif
++	if (enableirqs)
+ 		local_irq_disable();
+ 	if (!page)
+ 		return NULL;

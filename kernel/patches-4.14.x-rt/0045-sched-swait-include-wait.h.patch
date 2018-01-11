@@ -1,0 +1,35 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 4 Dec 2017 13:11:10 +0100
+Subject: [PATCH] sched/swait: include wait.h
+
+kbuild bot reported against an intermediate RT patch that the build
+fails with:
+
+>    In file included from include/linux/completion.h:12:0,
+>                     from include/linux/rcupdate_wait.h:10,
+>                     from kernel/rcu/srcutiny.c:27:
+>    kernel/rcu/srcutiny.c: In function 'srcu_drive_gp':
+> >> include/linux/swait.h:172:7: error: implicit declaration of function '___wait_is_interruptible'; did you mean '__swait_event_interruptible'?
+>       if (___wait_is_interruptible(state) && __int) {  \
+
+That error vanishes a few patches later (in the RT queue) because wait.h
+is then pulled in by other means. It does not seem to surface on !RT.
+I think that swait should include a header file for a function/macro
+(___wait_is_interruptible()) it is using.
+
+Reported-by: kbuild test robot <fengguang.wu@intel.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/swait.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/linux/swait.h
++++ b/include/linux/swait.h
+@@ -5,6 +5,7 @@
+ #include <linux/list.h>
+ #include <linux/stddef.h>
+ #include <linux/spinlock.h>
++#include <linux/wait.h>
+ #include <asm/current.h>
+ 
+ /*

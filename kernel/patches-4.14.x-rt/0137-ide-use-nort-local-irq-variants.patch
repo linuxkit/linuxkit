@@ -1,0 +1,169 @@
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 3 Jul 2009 08:30:16 -0500
+Subject: ide: Do not disable interrupts for PREEMPT-RT
+
+Use the local_irq_*_nort variants.
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ drivers/ide/alim15x3.c     |    4 ++--
+ drivers/ide/hpt366.c       |    4 ++--
+ drivers/ide/ide-io-std.c   |    8 ++++----
+ drivers/ide/ide-io.c       |    2 +-
+ drivers/ide/ide-iops.c     |    4 ++--
+ drivers/ide/ide-probe.c    |    4 ++--
+ drivers/ide/ide-taskfile.c |    6 +++---
+ 7 files changed, 16 insertions(+), 16 deletions(-)
+
+--- a/drivers/ide/alim15x3.c
++++ b/drivers/ide/alim15x3.c
+@@ -234,7 +234,7 @@ static int init_chipset_ali15x3(struct p
+ 
+ 	isa_dev = pci_get_device(PCI_VENDOR_ID_AL, PCI_DEVICE_ID_AL_M1533, NULL);
+ 
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 
+ 	if (m5229_revision < 0xC2) {
+ 		/*
+@@ -325,7 +325,7 @@ static int init_chipset_ali15x3(struct p
+ 	}
+ 	pci_dev_put(north);
+ 	pci_dev_put(isa_dev);
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ 	return 0;
+ }
+ 
+--- a/drivers/ide/hpt366.c
++++ b/drivers/ide/hpt366.c
+@@ -1236,7 +1236,7 @@ static int init_dma_hpt366(ide_hwif_t *h
+ 
+ 	dma_old = inb(base + 2);
+ 
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 
+ 	dma_new = dma_old;
+ 	pci_read_config_byte(dev, hwif->channel ? 0x4b : 0x43, &masterdma);
+@@ -1247,7 +1247,7 @@ static int init_dma_hpt366(ide_hwif_t *h
+ 	if (dma_new != dma_old)
+ 		outb(dma_new, base + 2);
+ 
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ 
+ 	printk(KERN_INFO "    %s: BM-DMA at 0x%04lx-0x%04lx\n",
+ 			 hwif->name, base, base + 7);
+--- a/drivers/ide/ide-io-std.c
++++ b/drivers/ide/ide-io-std.c
+@@ -175,7 +175,7 @@ void ide_input_data(ide_drive_t *drive,
+ 		unsigned long uninitialized_var(flags);
+ 
+ 		if ((io_32bit & 2) && !mmio) {
+-			local_irq_save(flags);
++			local_irq_save_nort(flags);
+ 			ata_vlb_sync(io_ports->nsect_addr);
+ 		}
+ 
+@@ -186,7 +186,7 @@ void ide_input_data(ide_drive_t *drive,
+ 			insl(data_addr, buf, words);
+ 
+ 		if ((io_32bit & 2) && !mmio)
+-			local_irq_restore(flags);
++			local_irq_restore_nort(flags);
+ 
+ 		if (((len + 1) & 3) < 2)
+ 			return;
+@@ -219,7 +219,7 @@ void ide_output_data(ide_drive_t *drive,
+ 		unsigned long uninitialized_var(flags);
+ 
+ 		if ((io_32bit & 2) && !mmio) {
+-			local_irq_save(flags);
++			local_irq_save_nort(flags);
+ 			ata_vlb_sync(io_ports->nsect_addr);
+ 		}
+ 
+@@ -230,7 +230,7 @@ void ide_output_data(ide_drive_t *drive,
+ 			outsl(data_addr, buf, words);
+ 
+ 		if ((io_32bit & 2) && !mmio)
+-			local_irq_restore(flags);
++			local_irq_restore_nort(flags);
+ 
+ 		if (((len + 1) & 3) < 2)
+ 			return;
+--- a/drivers/ide/ide-io.c
++++ b/drivers/ide/ide-io.c
+@@ -660,7 +660,7 @@ void ide_timer_expiry (unsigned long dat
+ 		/* disable_irq_nosync ?? */
+ 		disable_irq(hwif->irq);
+ 		/* local CPU only, as if we were handling an interrupt */
+-		local_irq_disable();
++		local_irq_disable_nort();
+ 		if (hwif->polling) {
+ 			startstop = handler(drive);
+ 		} else if (drive_is_ready(drive)) {
+--- a/drivers/ide/ide-iops.c
++++ b/drivers/ide/ide-iops.c
+@@ -129,12 +129,12 @@ int __ide_wait_stat(ide_drive_t *drive,
+ 				if ((stat & ATA_BUSY) == 0)
+ 					break;
+ 
+-				local_irq_restore(flags);
++				local_irq_restore_nort(flags);
+ 				*rstat = stat;
+ 				return -EBUSY;
+ 			}
+ 		}
+-		local_irq_restore(flags);
++		local_irq_restore_nort(flags);
+ 	}
+ 	/*
+ 	 * Allow status to settle, then read it again.
+--- a/drivers/ide/ide-probe.c
++++ b/drivers/ide/ide-probe.c
+@@ -196,10 +196,10 @@ static void do_identify(ide_drive_t *dri
+ 	int bswap = 1;
+ 
+ 	/* local CPU only; some systems need this */
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	/* read 512 bytes of id info */
+ 	hwif->tp_ops->input_data(drive, NULL, id, SECTOR_SIZE);
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ 
+ 	drive->dev_flags |= IDE_DFLAG_ID_READ;
+ #ifdef DEBUG
+--- a/drivers/ide/ide-taskfile.c
++++ b/drivers/ide/ide-taskfile.c
+@@ -251,7 +251,7 @@ void ide_pio_bytes(ide_drive_t *drive, s
+ 
+ 		page_is_high = PageHighMem(page);
+ 		if (page_is_high)
+-			local_irq_save(flags);
++			local_irq_save_nort(flags);
+ 
+ 		buf = kmap_atomic(page) + offset;
+ 
+@@ -272,7 +272,7 @@ void ide_pio_bytes(ide_drive_t *drive, s
+ 		kunmap_atomic(buf);
+ 
+ 		if (page_is_high)
+-			local_irq_restore(flags);
++			local_irq_restore_nort(flags);
+ 
+ 		len -= nr_bytes;
+ 	}
+@@ -415,7 +415,7 @@ static ide_startstop_t pre_task_out_intr
+ 	}
+ 
+ 	if ((drive->dev_flags & IDE_DFLAG_UNMASK) == 0)
+-		local_irq_disable();
++		local_irq_disable_nort();
+ 
+ 	ide_set_handler(drive, &task_pio_intr, WAIT_WORSTCASE);
+ 

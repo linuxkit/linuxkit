@@ -1,0 +1,100 @@
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Wed, 22 Nov 2017 07:31:19 -0500
+Subject: [PATCH] Revert "memcontrol: Prevent scheduling while atomic in cgroup
+ code"
+
+The commit "memcontrol: Prevent scheduling while atomic in cgroup code"
+fixed this issue:
+
+       refill_stock()
+          get_cpu_var()
+          drain_stock()
+             res_counter_uncharge()
+                res_counter_uncharge_until()
+                   spin_lock() <== boom
+
+But commit 3e32cb2e0a12b ("mm: memcontrol: lockless page counters") replaced
+the calls to res_counter_uncharge() in drain_stock() to the lockless
+function page_counter_uncharge(). There is no more spin lock there and no
+more reason to have that local lock.
+
+Cc: <stable-rt@vger.kernel.org>
+Reported-by: Haiyang HY1 Tan <tanhy1@lenovo.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+[bigeasy: That upstream commit appeared in v3.19 and the patch in
+  question in v3.18.7-rt2 and v3.18 seems still to be maintained. So I
+  guess that v3.18 would need the locallocks that we are about to remove
+  here. I am not sure if any earlier versions have the patch
+  backported.
+  The stable tag here is because Haiyang reported (and debugged) a crash
+  in 4.4-RT with this patch applied (which has get_cpu_light() instead
+  the locallocks it gained in v4.9-RT).
+  https://lkml.kernel.org/r/05AA4EC5C6EC1D48BE2CDCFF3AE0B8A637F78A15@CNMAILEX04.lenovo.com
+]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/memcontrol.c |   13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
+
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -1723,7 +1723,6 @@ struct memcg_stock_pcp {
+ #define FLUSHING_CACHED_CHARGE	0
+ };
+ static DEFINE_PER_CPU(struct memcg_stock_pcp, memcg_stock);
+-static DEFINE_LOCAL_IRQ_LOCK(memcg_stock_ll);
+ static DEFINE_MUTEX(percpu_charge_mutex);
+ 
+ /**
+@@ -1746,7 +1745,7 @@ static bool consume_stock(struct mem_cgr
+ 	if (nr_pages > CHARGE_BATCH)
+ 		return ret;
+ 
+-	local_lock_irqsave(memcg_stock_ll, flags);
++	local_irq_save(flags);
+ 
+ 	stock = this_cpu_ptr(&memcg_stock);
+ 	if (memcg == stock->cached && stock->nr_pages >= nr_pages) {
+@@ -1754,7 +1753,7 @@ static bool consume_stock(struct mem_cgr
+ 		ret = true;
+ 	}
+ 
+-	local_unlock_irqrestore(memcg_stock_ll, flags);
++	local_irq_restore(flags);
+ 
+ 	return ret;
+ }
+@@ -1785,13 +1784,13 @@ static void drain_local_stock(struct wor
+ 	 * The only protection from memory hotplug vs. drain_stock races is
+ 	 * that we always operate on local CPU stock here with IRQ disabled
+ 	 */
+-	local_lock_irqsave(memcg_stock_ll, flags);
++	local_irq_save(flags);
+ 
+ 	stock = this_cpu_ptr(&memcg_stock);
+ 	drain_stock(stock);
+ 	clear_bit(FLUSHING_CACHED_CHARGE, &stock->flags);
+ 
+-	local_unlock_irqrestore(memcg_stock_ll, flags);
++	local_irq_restore(flags);
+ }
+ 
+ /*
+@@ -1803,7 +1802,7 @@ static void refill_stock(struct mem_cgro
+ 	struct memcg_stock_pcp *stock;
+ 	unsigned long flags;
+ 
+-	local_lock_irqsave(memcg_stock_ll, flags);
++	local_irq_save(flags);
+ 
+ 	stock = this_cpu_ptr(&memcg_stock);
+ 	if (stock->cached != memcg) { /* reset if necessary */
+@@ -1815,7 +1814,7 @@ static void refill_stock(struct mem_cgro
+ 	if (stock->nr_pages > CHARGE_BATCH)
+ 		drain_stock(stock);
+ 
+-	local_unlock_irqrestore(memcg_stock_ll, flags);
++	local_irq_restore(flags);
+ }
+ 
+ /*

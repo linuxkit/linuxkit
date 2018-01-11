@@ -1,0 +1,125 @@
+Subject: x86/mce: use swait queue for mce wakeups
+From: Steven Rostedt <rostedt@goodmis.org>
+Date:	Fri, 27 Feb 2015 15:20:37 +0100
+
+We had a customer report a lockup on a 3.0-rt kernel that had the
+following backtrace:
+
+[ffff88107fca3e80] rt_spin_lock_slowlock at ffffffff81499113
+[ffff88107fca3f40] rt_spin_lock at ffffffff81499a56
+[ffff88107fca3f50] __wake_up at ffffffff81043379
+[ffff88107fca3f80] mce_notify_irq at ffffffff81017328
+[ffff88107fca3f90] intel_threshold_interrupt at ffffffff81019508
+[ffff88107fca3fa0] smp_threshold_interrupt at ffffffff81019fc1
+[ffff88107fca3fb0] threshold_interrupt at ffffffff814a1853
+
+It actually bugged because the lock was taken by the same owner that
+already had that lock. What happened was the thread that was setting
+itself on a wait queue had the lock when an MCE triggered. The MCE
+interrupt does a wake up on its wait list and grabs the same lock.
+
+NOTE: THIS IS NOT A BUG ON MAINLINE
+
+Sorry for yelling, but as I Cc'd mainline maintainers I want them to
+know that this is an PREEMPT_RT bug only. I only Cc'd them for advice.
+
+On PREEMPT_RT the wait queue locks are converted from normal
+"spin_locks" into an rt_mutex (see the rt_spin_lock_slowlock above).
+These are not to be taken by hard interrupt context. This usually isn't
+a problem as most all interrupts in PREEMPT_RT are converted into
+schedulable threads. Unfortunately that's not the case with the MCE irq.
+
+As wait queue locks are notorious for long hold times, we can not
+convert them to raw_spin_locks without causing issues with -rt. But
+Thomas has created a "simple-wait" structure that uses raw spin locks
+which may have been a good fit.
+
+Unfortunately, wait queues are not the only issue, as the mce_notify_irq
+also does a schedule_work(), which grabs the workqueue spin locks that
+have the exact same issue.
+
+Thus, this patch I'm proposing is to move the actual work of the MCE
+interrupt into a helper thread that gets woken up on the MCE interrupt
+and does the work in a schedulable context.
+
+NOTE: THIS PATCH ONLY CHANGES THE BEHAVIOR WHEN PREEMPT_RT IS SET
+
+Oops, sorry for yelling again, but I want to stress that I keep the same
+behavior of mainline when PREEMPT_RT is not set. Thus, this only changes
+the MCE behavior when PREEMPT_RT is configured.
+
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+[bigeasy@linutronix: make mce_notify_work() a proper prototype, use
+		     kthread_run()]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[wagi: use work-simple framework to defer work to a kthread]
+Signed-off-by: Daniel Wagner <daniel.wagner@bmw-carit.de>
+---
+ arch/x86/kernel/cpu/mcheck/dev-mcelog.c |   37 +++++++++++++++++++++++++++++---
+ 1 file changed, 34 insertions(+), 3 deletions(-)
+
+--- a/arch/x86/kernel/cpu/mcheck/dev-mcelog.c
++++ b/arch/x86/kernel/cpu/mcheck/dev-mcelog.c
+@@ -14,6 +14,7 @@
+ #include <linux/slab.h>
+ #include <linux/kmod.h>
+ #include <linux/poll.h>
++#include <linux/swork.h>
+ 
+ #include "mce-internal.h"
+ 
+@@ -86,13 +87,43 @@ static void mce_do_trigger(struct work_s
+ 
+ static DECLARE_WORK(mce_trigger_work, mce_do_trigger);
+ 
+-
+-void mce_work_trigger(void)
++static void __mce_work_trigger(struct swork_event *event)
+ {
+ 	if (mce_helper[0])
+ 		schedule_work(&mce_trigger_work);
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++static bool notify_work_ready __read_mostly;
++static struct swork_event notify_work;
++
++static int mce_notify_work_init(void)
++{
++	int err;
++
++	err = swork_get();
++	if (err)
++		return err;
++
++	INIT_SWORK(&notify_work, __mce_work_trigger);
++	notify_work_ready = true;
++	return 0;
++}
++
++void mce_work_trigger(void)
++{
++	if (notify_work_ready)
++		swork_queue(&notify_work);
++}
++
++#else
++void mce_work_trigger(void)
++{
++	__mce_work_trigger(NULL);
++}
++static inline int mce_notify_work_init(void) { return 0; }
++#endif
++
+ static ssize_t
+ show_trigger(struct device *s, struct device_attribute *attr, char *buf)
+ {
+@@ -356,7 +387,7 @@ static __init int dev_mcelog_init_device
+ 
+ 		return err;
+ 	}
+-
++	mce_notify_work_init();
+ 	mce_register_decode_chain(&dev_mcelog_nb);
+ 	return 0;
+ }

@@ -1,0 +1,60 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:12:54 +0100
+Subject: [PATCH 05/29] hrtimer: Fix hrtimer function description
+
+The hrtimer_start[_range_ns]() starts a timer reliable on this CPU only
+when HRTIMER_MODE_PINNED is set. Furthermore the HRTIMER_MODE_PINNED mode
+is not considered, when a hrtimer is initialized.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/hrtimer.h |    6 +++---
+ kernel/time/hrtimer.c   |    9 +++++----
+ 2 files changed, 8 insertions(+), 7 deletions(-)
+
+--- a/include/linux/hrtimer.h
++++ b/include/linux/hrtimer.h
+@@ -361,11 +361,11 @@ extern void hrtimer_start_range_ns(struc
+ 				   u64 range_ns, const enum hrtimer_mode mode);
+ 
+ /**
+- * hrtimer_start - (re)start an hrtimer on the current CPU
++ * hrtimer_start - (re)start an hrtimer
+  * @timer:	the timer to be added
+  * @tim:	expiry time
+- * @mode:	expiry mode: absolute (HRTIMER_MODE_ABS) or
+- *		relative (HRTIMER_MODE_REL)
++ * @mode:	timer mode: absolute (HRTIMER_MODE_ABS) or
++ *		relative (HRTIMER_MODE_REL), and pinned (HRTIMER_MODE_PINNED)
+  */
+ static inline void hrtimer_start(struct hrtimer *timer, ktime_t tim,
+ 				 const enum hrtimer_mode mode)
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -928,12 +928,12 @@ static inline ktime_t hrtimer_update_low
+ }
+ 
+ /**
+- * hrtimer_start_range_ns - (re)start an hrtimer on the current CPU
++ * hrtimer_start_range_ns - (re)start an hrtimer
+  * @timer:	the timer to be added
+  * @tim:	expiry time
+  * @delta_ns:	"slack" range for the timer
+- * @mode:	expiry mode: absolute (HRTIMER_MODE_ABS) or
+- *		relative (HRTIMER_MODE_REL)
++ * @mode:	timer mode: absolute (HRTIMER_MODE_ABS) or
++ *		relative (HRTIMER_MODE_REL), and pinned (HRTIMER_MODE_PINNED)
+  */
+ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
+ 			    u64 delta_ns, const enum hrtimer_mode mode)
+@@ -1111,7 +1111,8 @@ static void __hrtimer_init(struct hrtime
+  * hrtimer_init - initialize a timer to the given clock
+  * @timer:	the timer to be initialized
+  * @clock_id:	the clock to be used
+- * @mode:	timer mode abs/rel
++ * @mode:	timer mode: absolute (HRTIMER_MODE_ABS) or
++ *		relative (HRTIMER_MODE_REL); pinned is not considered here!
+  */
+ void hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
+ 		  enum hrtimer_mode mode)

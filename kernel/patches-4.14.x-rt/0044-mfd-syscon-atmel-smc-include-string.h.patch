@@ -1,0 +1,22 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 4 Oct 2017 09:55:58 +0200
+Subject: [PATCH] mfd: syscon: atmel-smc: include string.h
+
+The string.h header file is needed for the memset() definition. The RT
+build fails because it is not pulled in via other header files.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/mfd/atmel-smc.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/mfd/atmel-smc.c
++++ b/drivers/mfd/atmel-smc.c
+@@ -12,6 +12,7 @@
+  */
+ 
+ #include <linux/mfd/syscon/atmel-smc.h>
++#include <linux/string.h>
+ 
+ /**
+  * atmel_smc_cs_conf_init - initialize a SMC CS conf

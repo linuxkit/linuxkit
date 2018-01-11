@@ -1,0 +1,105 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:07 +0100
+Subject: [PATCH 18/29] hrtimer: Make hrtimer_force_reprogramm()
+ unconditionally available
+
+hrtimer_force_reprogram() needs to be available unconditionally for softirq
+based hrtimers. Move the function and all required struct members out of
+the CONFIG_HIGH_RES_TIMERS #ifdef.
+
+There is no functional change because hrtimer_force_reprogram() is only
+invoked when hrtimer_cpu_base.hres_active is true and
+CONFIG_HIGH_RES_TIMERS=y.
+
+Making it unconditional increases the text size for the
+CONFIG_HIGH_RES_TIMERS=n case slightly, but avoids replication of that code
+for the upcoming softirq based hrtimers support. Most of the code gets
+eliminated in the CONFIG_HIGH_RES_TIMERS=n case by the compiler.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |   58 ++++++++++++++++++++++++--------------------------
+ 1 file changed, 28 insertions(+), 30 deletions(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -513,34 +513,6 @@ static inline int hrtimer_hres_active(vo
+ 	return __hrtimer_hres_active(this_cpu_ptr(&hrtimer_bases));
+ }
+ 
+-/* High resolution timer related functions */
+-#ifdef CONFIG_HIGH_RES_TIMERS
+-
+-/*
+- * High resolution timer enabled ?
+- */
+-static bool hrtimer_hres_enabled __read_mostly  = true;
+-unsigned int hrtimer_resolution __read_mostly = LOW_RES_NSEC;
+-EXPORT_SYMBOL_GPL(hrtimer_resolution);
+-
+-/*
+- * Enable / Disable high resolution mode
+- */
+-static int __init setup_hrtimer_hres(char *str)
+-{
+-	return (kstrtobool(str, &hrtimer_hres_enabled) == 0);
+-}
+-
+-__setup("highres=", setup_hrtimer_hres);
+-
+-/*
+- * hrtimer_high_res_enabled - query, if the highres mode is enabled
+- */
+-static inline int hrtimer_is_hres_enabled(void)
+-{
+-	return hrtimer_hres_enabled;
+-}
+-
+ /*
+  * Reprogram the event source with checking both queues for the
+  * next event
+@@ -581,6 +553,34 @@ hrtimer_force_reprogram(struct hrtimer_c
+ 	tick_program_event(cpu_base->expires_next, 1);
+ }
+ 
++/* High resolution timer related functions */
++#ifdef CONFIG_HIGH_RES_TIMERS
++
++/*
++ * High resolution timer enabled ?
++ */
++static bool hrtimer_hres_enabled __read_mostly  = true;
++unsigned int hrtimer_resolution __read_mostly = LOW_RES_NSEC;
++EXPORT_SYMBOL_GPL(hrtimer_resolution);
++
++/*
++ * Enable / Disable high resolution mode
++ */
++static int __init setup_hrtimer_hres(char *str)
++{
++	return (kstrtobool(str, &hrtimer_hres_enabled) == 0);
++}
++
++__setup("highres=", setup_hrtimer_hres);
++
++/*
++ * hrtimer_high_res_enabled - query, if the highres mode is enabled
++ */
++static inline int hrtimer_is_hres_enabled(void)
++{
++	return hrtimer_hres_enabled;
++}
++
+ /*
+  * Retrigger next event is called after clock was set
+  *
+@@ -639,8 +639,6 @@ void clock_was_set_delayed(void)
+ 
+ static inline int hrtimer_is_hres_enabled(void) { return 0; }
+ static inline void hrtimer_switch_to_hres(void) { }
+-static inline void
+-hrtimer_force_reprogram(struct hrtimer_cpu_base *base, int skip_equal) { }
+ static inline void retrigger_next_event(void *arg) { }
+ 
+ #endif /* CONFIG_HIGH_RES_TIMERS */

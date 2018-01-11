@@ -1,0 +1,25 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 23 Nov 2017 17:51:51 +0100
+Subject: [PATCH] Revert "fs: jbd2: pull your plug when waiting for space"
+
+This reverts commit "fs: jbd2: pull your plug when waiting for space".
+This was a duct-tape fix which shouldn't be needed since commit
+"locking/rt-mutex: fix deadlock in device mapper / block-IO".
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/jbd2/checkpoint.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/fs/jbd2/checkpoint.c
++++ b/fs/jbd2/checkpoint.c
+@@ -116,8 +116,6 @@ void __jbd2_log_wait_for_space(journal_t
+ 	nblocks = jbd2_space_needed(journal);
+ 	while (jbd2_log_space_left(journal) < nblocks) {
+ 		write_unlock(&journal->j_state_lock);
+-		if (current->plug)
+-			io_schedule();
+ 		mutex_lock(&journal->j_checkpoint_mutex);
+ 
+ 		/*

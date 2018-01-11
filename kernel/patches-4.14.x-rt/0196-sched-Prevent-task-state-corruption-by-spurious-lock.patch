@@ -1,0 +1,77 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 6 Jun 2017 14:20:37 +0200
+Subject: sched: Prevent task state corruption by spurious lock wakeup
+
+Mathias and others reported GDB failures on RT.
+
+The following scenario leads to task state corruption:
+
+CPU0						CPU1
+
+T1->state = TASK_XXX;
+spin_lock(&lock)
+  rt_spin_lock_slowlock(&lock->rtmutex)
+    raw_spin_lock(&rtm->wait_lock);
+    T1->saved_state = current->state;
+    T1->state = TASK_UNINTERRUPTIBLE;
+						spin_unlock(&lock)
+    task_blocks_on_rt_mutex(rtm)  		  rt_spin_lock_slowunlock(&lock->rtmutex)
+      queue_waiter(rtm)				    raw_spin_lock(&rtm->wait_lock);
+      pi_chain_walk(rtm)
+        raw_spin_unlock(&rtm->wait_lock);
+						    wake_top_waiter(T1)
+
+      raw_spin_lock(&rtm->wait_lock);
+
+    for (;;) {
+      if (__try_to_take_rt_mutex())  <- Succeeds
+        break;
+      ...
+    }
+
+    T1->state = T1->saved_state;
+						     try_to_wake_up(T1)
+						       ttwu_do_wakeup(T1)
+						         T1->state = TASK_RUNNING;
+
+In most cases this is harmless because waiting for some event, which is the
+usual reason for TASK_[UN]INTERRUPTIBLE has to be safe against other forms
+of spurious wakeups anyway.
+
+But in case of TASK_TRACED this is actually fatal, because the task loses
+the TASK_TRACED state. In consequence it fails to consume SIGSTOP which was
+sent from the debugger and actually delivers SIGSTOP to the task which
+breaks the ptrace mechanics and brings the debugger into an unexpected
+state.
+
+The TASK_TRACED state should prevent getting there due to the state
+matching logic in try_to_wake_up(). But that's not true because
+wake_up_lock_sleeper() uses TASK_ALL as state mask. That's bogus because
+lock sleepers always use TASK_UNINTERRUPTIBLE, so the wakeup should use
+that as well.
+
+The cure is way simpler as figuring it out:
+
+Change the mask used in wake_up_lock_sleeper() from TASK_ALL to
+TASK_UNINTERRUPTIBLE.
+
+Cc: stable-rt@vger.kernel.org
+Reported-by: Mathias Koehrer <mathias.koehrer@etas.com>
+Reported-by: David Hauck <davidh@netacquire.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/sched/core.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -2206,7 +2206,7 @@ EXPORT_SYMBOL(wake_up_process);
+  */
+ int wake_up_lock_sleeper(struct task_struct *p)
+ {
+-	return try_to_wake_up(p, TASK_ALL, WF_LOCK_SLEEPER);
++	return try_to_wake_up(p, TASK_UNINTERRUPTIBLE, WF_LOCK_SLEEPER);
+ }
+ 
+ int wake_up_state(struct task_struct *p, unsigned int state)

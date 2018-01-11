@@ -1,0 +1,42 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 1 Mar 2013 11:17:42 +0100
+Subject: futex: Ensure lock/unlock symetry versus pi_lock and hash bucket lock
+
+In exit_pi_state_list() we have the following locking construct:
+
+   spin_lock(&hb->lock);
+   raw_spin_lock_irq(&curr->pi_lock);
+
+   ...
+   spin_unlock(&hb->lock);
+
+In !RT this works, but on RT the migrate_enable() function which is
+called from spin_unlock() sees atomic context due to the held pi_lock
+and just decrements the migrate_disable_atomic counter of the
+task. Now the next call to migrate_disable() sees the counter being
+negative and issues a warning. That check should be in
+migrate_enable() already.
+
+Fix this by dropping pi_lock before unlocking hb->lock and reaquire
+pi_lock after that again. This is safe as the loop code reevaluates
+head again under the pi_lock.
+
+Reported-by: Yong Zhang <yong.zhang@windriver.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/futex.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -936,7 +936,9 @@ void exit_pi_state_list(struct task_stru
+ 		if (head->next != next) {
+ 			/* retain curr->pi_lock for the loop invariant */
+ 			raw_spin_unlock(&pi_state->pi_mutex.wait_lock);
++			raw_spin_unlock_irq(&curr->pi_lock);
+ 			spin_unlock(&hb->lock);
++			raw_spin_lock_irq(&curr->pi_lock);
+ 			put_pi_state(pi_state);
+ 			continue;
+ 		}

@@ -1,0 +1,26 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 21 Oct 2016 10:54:50 +0200
+Subject: [PATCH] rxrpc: remove unused static variables
+
+The rxrpc_security_methods and rxrpc_security_sem user has been removed
+in 648af7fca159 ("rxrpc: Absorb the rxkad security module"). This was
+noticed by kbuild test robot for the -RT tree but is also true for !RT.
+
+Reported-by: kbuild test robot <fengguang.wu@intel.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ net/rxrpc/security.c |    3 ---
+ 1 file changed, 3 deletions(-)
+
+--- a/net/rxrpc/security.c
++++ b/net/rxrpc/security.c
+@@ -19,9 +19,6 @@
+ #include <keys/rxrpc-type.h>
+ #include "ar-internal.h"
+ 
+-static LIST_HEAD(rxrpc_security_methods);
+-static DECLARE_RWSEM(rxrpc_security_sem);
+-
+ static const struct rxrpc_security *rxrpc_security_types[] = {
+ 	[RXRPC_SECURITY_NONE]	= &rxrpc_no_security,
+ #ifdef CONFIG_RXKAD

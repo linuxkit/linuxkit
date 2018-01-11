@@ -1,0 +1,132 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 01 Jul 2013 11:02:42 +0200
+Subject: workqueue: Prevent workqueue versus ata-piix livelock
+
+An Intel i7 system regularly detected rcu_preempt stalls after the kernel
+was upgraded from 3.6-rt to 3.8-rt. When the stall happened, disk I/O was no
+longer possible, unless the system was restarted.
+
+The kernel message was:
+INFO: rcu_preempt self-detected stall on CPU { 6}
+[..]
+NMI backtrace for cpu 6
+CPU 6
+Pid: 119, comm: irq/19-ata_piix Not tainted 3.8.13-rt13 #11 Shuttle Inc. SX58/SX58
+RIP: 0010:[<ffffffff8124ca60>]  [<ffffffff8124ca60>] ip_compute_csum+0x30/0x30
+RSP: 0018:ffff880333303cb0  EFLAGS: 00000002
+RAX: 0000000000000006 RBX: 00000000000003e9 RCX: 0000000000000034
+RDX: 0000000000000000 RSI: ffffffff81aa16d0 RDI: 0000000000000001
+RBP: ffff880333303ce8 R08: ffffffff81aa16d0 R09: ffffffff81c1b8cc
+R10: 0000000000000000 R11: 0000000000000000 R12: 000000000005161f
+R13: 0000000000000006 R14: ffffffff81aa16d0 R15: 0000000000000002
+FS:  0000000000000000(0000) GS:ffff880333300000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+CR2: 0000003c1b2bb420 CR3: 0000000001a0f000 CR4: 00000000000007e0
+DR0: 0000000000000000 DR1: 0000000000000000 DR2: 0000000000000000
+DR3: 0000000000000000 DR6: 00000000ffff0ff0 DR7: 0000000000000400
+Process irq/19-ata_piix (pid: 119, threadinfo ffff88032d88a000, task ffff88032df80000)
+Stack:
+ffffffff8124cb32 000000000005161e 00000000000003e9 0000000000001000
+0000000000009022 ffffffff81aa16d0 0000000000000002 ffff880333303cf8
+ffffffff8124caa9 ffff880333303d08 ffffffff8124cad2 ffff880333303d28
+Call Trace:
+<IRQ>
+[<ffffffff8124cb32>] ? delay_tsc+0x33/0xe3
+[<ffffffff8124caa9>] __delay+0xf/0x11
+[<ffffffff8124cad2>] __const_udelay+0x27/0x29
+[<ffffffff8102d1fa>] native_safe_apic_wait_icr_idle+0x39/0x45
+[<ffffffff8102dc9b>] __default_send_IPI_dest_field.constprop.0+0x1e/0x58
+[<ffffffff8102dd1e>] default_send_IPI_mask_sequence_phys+0x49/0x7d
+[<ffffffff81030326>] physflat_send_IPI_all+0x17/0x19
+[<ffffffff8102de53>] arch_trigger_all_cpu_backtrace+0x50/0x79
+[<ffffffff810b21d0>] rcu_check_callbacks+0x1cb/0x568
+[<ffffffff81048c9c>] ? raise_softirq+0x2e/0x35
+[<ffffffff81086be0>] ? tick_sched_do_timer+0x38/0x38
+[<ffffffff8104f653>] update_process_times+0x44/0x55
+[<ffffffff81086866>] tick_sched_handle+0x4a/0x59
+[<ffffffff81086c1c>] tick_sched_timer+0x3c/0x5b
+[<ffffffff81062845>] __run_hrtimer+0x9b/0x158
+[<ffffffff810631d8>] hrtimer_interrupt+0x172/0x2aa
+[<ffffffff8102d498>] smp_apic_timer_interrupt+0x76/0x89
+[<ffffffff814d881d>] apic_timer_interrupt+0x6d/0x80
+<EOI>
+[<ffffffff81057cd2>] ? __local_lock_irqsave+0x17/0x4a
+[<ffffffff81059336>] try_to_grab_pending+0x42/0x17e
+[<ffffffff8105a699>] mod_delayed_work_on+0x32/0x88
+[<ffffffff8105a70b>] mod_delayed_work+0x1c/0x1e
+[<ffffffff8122ae84>] blk_run_queue_async+0x37/0x39
+[<ffffffff81230985>] flush_end_io+0xf1/0x107
+[<ffffffff8122e0da>] blk_finish_request+0x21e/0x264
+[<ffffffff8122e162>] blk_end_bidi_request+0x42/0x60
+[<ffffffff8122e1ba>] blk_end_request+0x10/0x12
+[<ffffffff8132de46>] scsi_io_completion+0x1bf/0x492
+[<ffffffff81335cec>] ? sd_done+0x298/0x2ef
+[<ffffffff81325a02>] scsi_finish_command+0xe9/0xf2
+[<ffffffff8132dbcb>] scsi_softirq_done+0x106/0x10f
+[<ffffffff812333d3>] blk_done_softirq+0x77/0x87
+[<ffffffff8104826f>] do_current_softirqs+0x172/0x2e1
+[<ffffffff810aa820>] ? irq_thread_fn+0x3a/0x3a
+[<ffffffff81048466>] local_bh_enable+0x43/0x72
+[<ffffffff810aa866>] irq_forced_thread_fn+0x46/0x52
+[<ffffffff810ab089>] irq_thread+0x8c/0x17c
+[<ffffffff810ab179>] ? irq_thread+0x17c/0x17c
+[<ffffffff810aaffd>] ? wake_threads_waitq+0x44/0x44
+[<ffffffff8105eb18>] kthread+0x8d/0x95
+[<ffffffff8105ea8b>] ? __kthread_parkme+0x65/0x65
+[<ffffffff814d7b7c>] ret_from_fork+0x7c/0xb0
+[<ffffffff8105ea8b>] ? __kthread_parkme+0x65/0x65
+
+The state of softirqd of this CPU at the time of the crash was:
+ksoftirqd/6     R  running task        0    53      2 0x00000000
+ffff88032fc39d18 0000000000000046 ffff88033330c4c0 ffff8803303f4710
+ffff88032fc39fd8 ffff88032fc39fd8 0000000000000000 0000000000062500
+ffff88032df88000 ffff8803303f4710 0000000000000000 ffff88032fc38000
+Call Trace:
+[<ffffffff8105a3ae>] ? __queue_work+0x27c/0x27c
+[<ffffffff814d178c>] preempt_schedule+0x61/0x76
+[<ffffffff8106cccf>] migrate_enable+0xe5/0x1df
+[<ffffffff8105a3ae>] ? __queue_work+0x27c/0x27c
+[<ffffffff8104ef52>] run_timer_softirq+0x161/0x1d6
+[<ffffffff8104826f>] do_current_softirqs+0x172/0x2e1
+[<ffffffff8104840b>] run_ksoftirqd+0x2d/0x45
+[<ffffffff8106658a>] smpboot_thread_fn+0x2ea/0x308
+[<ffffffff810662a0>] ? test_ti_thread_flag+0xc/0xc
+[<ffffffff810662a0>] ? test_ti_thread_flag+0xc/0xc
+[<ffffffff8105eb18>] kthread+0x8d/0x95
+[<ffffffff8105ea8b>] ? __kthread_parkme+0x65/0x65
+[<ffffffff814d7afc>] ret_from_fork+0x7c/0xb0
+[<ffffffff8105ea8b>] ? __kthread_parkme+0x65/0x65
+
+Apparently, the softirq demon and the ata_piix IRQ handler were waiting
+for each other to finish ending up in a livelock. After the below patch
+was applied, the system no longer crashes.
+
+Reported-by: Carsten Emde <C.Emde@osadl.org>
+Proposed-by: Thomas Gleixner <tglx@linutronix.de>
+Tested by: Carsten Emde <C.Emde@osadl.org>
+Signed-off-by: Carsten Emde <C.Emde@osadl.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/workqueue.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -50,6 +50,7 @@
+ #include <linux/uaccess.h>
+ #include <linux/nmi.h>
+ #include <linux/locallock.h>
++#include <linux/delay.h>
+ 
+ #include "workqueue_internal.h"
+ 
+@@ -1283,7 +1284,7 @@ static int try_to_grab_pending(struct wo
+ 	local_unlock_irqrestore(pendingb_lock, *flags);
+ 	if (work_is_canceling(work))
+ 		return -ENOENT;
+-	cpu_relax();
++	cpu_chill();
+ 	return -EAGAIN;
+ }
+ 

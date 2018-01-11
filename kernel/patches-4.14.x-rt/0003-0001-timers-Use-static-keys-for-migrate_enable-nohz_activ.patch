@@ -1,0 +1,272 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 20 Dec 2017 17:12:50 +0100
+Subject: [PATCH 01/29] timers: Use static keys for migrate_enable/nohz_active
+
+The members migrate_enable and nohz_active in the timer/hrtimer per CPU
+bases have been introduced to avoid accessing global variables for these
+decisions.
+
+Still that results in a (cache hot) load and conditional branch, which can
+be avoided by using static keys.
+
+Implement it with static keys and optimize for the most critical case of
+high performance networking which tends to disable the timer migration
+functionality.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/hrtimer.h     |    4 --
+ kernel/time/hrtimer.c       |   17 ++-------
+ kernel/time/tick-internal.h |   19 ++++++----
+ kernel/time/tick-sched.c    |    2 -
+ kernel/time/timer.c         |   83 ++++++++++++++++++++++----------------------
+ 5 files changed, 61 insertions(+), 64 deletions(-)
+
+--- a/include/linux/hrtimer.h
++++ b/include/linux/hrtimer.h
+@@ -153,8 +153,6 @@ enum  hrtimer_base_type {
+  * @cpu:		cpu number
+  * @active_bases:	Bitfield to mark bases with active timers
+  * @clock_was_set_seq:	Sequence counter of clock was set events
+- * @migration_enabled:	The migration of hrtimers to other cpus is enabled
+- * @nohz_active:	The nohz functionality is enabled
+  * @expires_next:	absolute time of the next event which was scheduled
+  *			via clock_set_next_event()
+  * @next_timer:		Pointer to the first expiring timer
+@@ -178,8 +176,6 @@ struct hrtimer_cpu_base {
+ 	unsigned int			cpu;
+ 	unsigned int			active_bases;
+ 	unsigned int			clock_was_set_seq;
+-	bool				migration_enabled;
+-	bool				nohz_active;
+ #ifdef CONFIG_HIGH_RES_TIMERS
+ 	unsigned int			in_hrtirq	: 1,
+ 					hres_active	: 1,
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -178,23 +178,16 @@ hrtimer_check_target(struct hrtimer *tim
+ #endif
+ }
+ 
+-#ifdef CONFIG_NO_HZ_COMMON
+-static inline
+-struct hrtimer_cpu_base *get_target_base(struct hrtimer_cpu_base *base,
+-					 int pinned)
+-{
+-	if (pinned || !base->migration_enabled)
+-		return base;
+-	return &per_cpu(hrtimer_bases, get_nohz_timer_target());
+-}
+-#else
+ static inline
+ struct hrtimer_cpu_base *get_target_base(struct hrtimer_cpu_base *base,
+ 					 int pinned)
+ {
++#if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
++	if (static_branch_unlikely(&timers_migration_enabled) && !pinned)
++		return &per_cpu(hrtimer_bases, get_nohz_timer_target());
++#endif
+ 	return base;
+ }
+-#endif
+ 
+ /*
+  * We switch the timer base to a power-optimized selected CPU target,
+@@ -973,7 +966,7 @@ void hrtimer_start_range_ns(struct hrtim
+ 		 * Kick to reschedule the next tick to handle the new timer
+ 		 * on dynticks target.
+ 		 */
+-		if (new_base->cpu_base->nohz_active)
++		if (is_timers_nohz_active())
+ 			wake_up_nohz_cpu(new_base->cpu_base->cpu);
+ 	} else {
+ 		hrtimer_reprogram(timer, new_base);
+--- a/kernel/time/tick-internal.h
++++ b/kernel/time/tick-internal.h
+@@ -150,14 +150,19 @@ static inline void tick_nohz_init(void)
+ 
+ #ifdef CONFIG_NO_HZ_COMMON
+ extern unsigned long tick_nohz_active;
+-#else
++extern void timers_update_nohz(void);
++extern struct static_key_false timers_nohz_active;
++static inline bool is_timers_nohz_active(void)
++{
++	return static_branch_unlikely(&timers_nohz_active);
++}
++# ifdef CONFIG_SMP
++extern struct static_key_false timers_migration_enabled;
++# endif
++#else /* CONFIG_NO_HZ_COMMON */
++static inline void timers_update_nohz(void) { }
+ #define tick_nohz_active (0)
+-#endif
+-
+-#if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
+-extern void timers_update_migration(bool update_nohz);
+-#else
+-static inline void timers_update_migration(bool update_nohz) { }
++static inline bool is_timers_nohz_active(void) { return false; }
+ #endif
+ 
+ DECLARE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases);
+--- a/kernel/time/tick-sched.c
++++ b/kernel/time/tick-sched.c
+@@ -1131,7 +1131,7 @@ static inline void tick_nohz_activate(st
+ 	ts->nohz_mode = mode;
+ 	/* One update is enough */
+ 	if (!test_and_set_bit(0, &tick_nohz_active))
+-		timers_update_migration(true);
++		timers_update_nohz();
+ }
+ 
+ /**
+--- a/kernel/time/timer.c
++++ b/kernel/time/timer.c
+@@ -200,8 +200,6 @@ struct timer_base {
+ 	unsigned long		clk;
+ 	unsigned long		next_expiry;
+ 	unsigned int		cpu;
+-	bool			migration_enabled;
+-	bool			nohz_active;
+ 	bool			is_idle;
+ 	bool			must_forward_clk;
+ 	DECLARE_BITMAP(pending_map, WHEEL_SIZE);
+@@ -210,45 +208,59 @@ struct timer_base {
+ 
+ static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);
+ 
+-#if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
++#ifdef CONFIG_NO_HZ_COMMON
++
++DEFINE_STATIC_KEY_FALSE(timers_nohz_active);
++static DEFINE_MUTEX(timer_keys_mutex);
++
++static void timer_update_keys(struct work_struct *work);
++static DECLARE_WORK(timer_update_work, timer_update_keys);
++
++#ifdef CONFIG_SMP
+ unsigned int sysctl_timer_migration = 1;
+ 
+-void timers_update_migration(bool update_nohz)
++DEFINE_STATIC_KEY_FALSE(timers_migration_enabled);
++
++static void timers_update_migration(void)
+ {
+ 	bool on = sysctl_timer_migration && tick_nohz_active;
+-	unsigned int cpu;
+ 
+-	/* Avoid the loop, if nothing to update */
+-	if (this_cpu_read(timer_bases[BASE_STD].migration_enabled) == on)
+-		return;
++	if (on)
++		static_branch_enable(&timers_migration_enabled);
++	else
++		static_branch_disable(&timers_migration_enabled);
++}
++#else
++static inline void timers_update_migration(void) { }
++#endif /* !CONFIG_SMP */
+ 
+-	for_each_possible_cpu(cpu) {
+-		per_cpu(timer_bases[BASE_STD].migration_enabled, cpu) = on;
+-		per_cpu(timer_bases[BASE_DEF].migration_enabled, cpu) = on;
+-		per_cpu(hrtimer_bases.migration_enabled, cpu) = on;
+-		if (!update_nohz)
+-			continue;
+-		per_cpu(timer_bases[BASE_STD].nohz_active, cpu) = true;
+-		per_cpu(timer_bases[BASE_DEF].nohz_active, cpu) = true;
+-		per_cpu(hrtimer_bases.nohz_active, cpu) = true;
+-	}
++static void timer_update_keys(struct work_struct *work)
++{
++	mutex_lock(&timer_keys_mutex);
++	timers_update_migration();
++	static_branch_enable(&timers_nohz_active);
++	mutex_unlock(&timer_keys_mutex);
++}
++
++void timers_update_nohz(void)
++{
++	schedule_work(&timer_update_work);
+ }
+ 
+ int timer_migration_handler(struct ctl_table *table, int write,
+ 			    void __user *buffer, size_t *lenp,
+ 			    loff_t *ppos)
+ {
+-	static DEFINE_MUTEX(mutex);
+ 	int ret;
+ 
+-	mutex_lock(&mutex);
++	mutex_lock(&timer_keys_mutex);
+ 	ret = proc_dointvec_minmax(table, write, buffer, lenp, ppos);
+ 	if (!ret && write)
+-		timers_update_migration(false);
+-	mutex_unlock(&mutex);
++		timers_update_migration();
++	mutex_unlock(&timer_keys_mutex);
+ 	return ret;
+ }
+-#endif
++#endif /* NO_HZ_COMMON */
+ 
+ static unsigned long round_jiffies_common(unsigned long j, int cpu,
+ 		bool force_up)
+@@ -534,7 +546,7 @@ static void
+ static void
+ trigger_dyntick_cpu(struct timer_base *base, struct timer_list *timer)
+ {
+-	if (!IS_ENABLED(CONFIG_NO_HZ_COMMON) || !base->nohz_active)
++	if (!is_timers_nohz_active())
+ 		return;
+ 
+ 	/*
+@@ -840,21 +852,20 @@ static inline struct timer_base *get_tim
+ 	return get_timer_cpu_base(tflags, tflags & TIMER_CPUMASK);
+ }
+ 
+-#ifdef CONFIG_NO_HZ_COMMON
+ static inline struct timer_base *
+ get_target_base(struct timer_base *base, unsigned tflags)
+ {
+-#ifdef CONFIG_SMP
+-	if ((tflags & TIMER_PINNED) || !base->migration_enabled)
+-		return get_timer_this_cpu_base(tflags);
+-	return get_timer_cpu_base(tflags, get_nohz_timer_target());
+-#else
+-	return get_timer_this_cpu_base(tflags);
++#if defined(CONFIG_SMP) && defined(CONFIG_NO_HZ_COMMON)
++	if (static_branch_unlikely(&timers_migration_enabled) &&
++	    !(tflags & TIMER_PINNED))
++		return get_timer_cpu_base(tflags, get_nohz_timer_target());
+ #endif
++	return get_timer_this_cpu_base(tflags);
+ }
+ 
+ static inline void forward_timer_base(struct timer_base *base)
+ {
++#ifdef CONFIG_NO_HZ_COMMON
+ 	unsigned long jnow;
+ 
+ 	/*
+@@ -878,16 +889,8 @@ static inline void forward_timer_base(st
+ 		base->clk = jnow;
+ 	else
+ 		base->clk = base->next_expiry;
+-}
+-#else
+-static inline struct timer_base *
+-get_target_base(struct timer_base *base, unsigned tflags)
+-{
+-	return get_timer_this_cpu_base(tflags);
+-}
+-
+-static inline void forward_timer_base(struct timer_base *base) { }
+ #endif
++}
+ 
+ 
+ /*

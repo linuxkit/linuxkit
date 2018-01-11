@@ -1,0 +1,35 @@
+Subject: jump-label: disable if stop_machine() is used
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 08 Jul 2015 17:14:48 +0200
+
+Some architectures are using stop_machine() while switching the opcode which
+leads to latency spikes.
+The architectures which use stop_machine() atm:
+- ARM stop machine
+- s390 stop machine
+
+The architecures which use other sorcery:
+- MIPS
+- X86
+- powerpc
+- sparc
+- arm64
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[bigeasy: only ARM for now]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/arm/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -45,7 +45,7 @@ config ARM
+ 	select HARDIRQS_SW_RESEND
+ 	select HAVE_ARCH_AUDITSYSCALL if (AEABI && !OABI_COMPAT)
+ 	select HAVE_ARCH_BITREVERSE if (CPU_32v7M || CPU_32v7) && !CPU_32v6
+-	select HAVE_ARCH_JUMP_LABEL if !XIP_KERNEL && !CPU_ENDIAN_BE32 && MMU
++	select HAVE_ARCH_JUMP_LABEL if !XIP_KERNEL && !CPU_ENDIAN_BE32 && MMU && !PREEMPT_RT_BASE
+ 	select HAVE_ARCH_KGDB if !CPU_ENDIAN_BE32 && MMU
+ 	select HAVE_ARCH_MMAP_RND_BITS if MMU
+ 	select HAVE_ARCH_SECCOMP_FILTER if (AEABI && !OABI_COMPAT)

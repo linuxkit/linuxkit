@@ -1,0 +1,51 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 13 Sep 2017 12:32:34 +0200
+Subject: [PATCH] fs/dcache: bringt back explicit INIT_HLIST_BL_HEAD init
+
+Commit 3d375d78593c ("mm: update callers to use HASH_ZERO flag") removed
+INIT_HLIST_BL_HEAD and uses the ZERO flag instead for the init. However
+on RT we have also a spinlock which needs an init call so we can't use
+that.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/dcache.c |   10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -3578,6 +3578,8 @@ static int __init set_dhash_entries(char
+ 
+ static void __init dcache_init_early(void)
+ {
++	unsigned int loop;
++
+ 	/* If hashes are distributed across NUMA nodes, defer
+ 	 * hash allocation until vmalloc space is available.
+ 	 */
+@@ -3594,10 +3596,14 @@ static void __init dcache_init_early(voi
+ 					&d_hash_mask,
+ 					0,
+ 					0);
++
++	for (loop = 0; loop < (1U << d_hash_shift); loop++)
++		INIT_HLIST_BL_HEAD(dentry_hashtable + loop);
+ }
+ 
+ static void __init dcache_init(void)
+ {
++	unsigned int loop;
+ 	/*
+ 	 * A constructor could be added for stable state like the lists,
+ 	 * but it is probably not worth it because of the cache nature
+@@ -3620,6 +3626,10 @@ static void __init dcache_init(void)
+ 					&d_hash_mask,
+ 					0,
+ 					0);
++
++	for (loop = 0; loop < (1U << d_hash_shift); loop++)
++		INIT_HLIST_BL_HEAD(dentry_hashtable + loop);
++
+ }
+ 
+ /* SLAB cache for __getname() consumers */

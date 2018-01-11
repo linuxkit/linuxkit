@@ -1,0 +1,25 @@
+Subject: debugobjects: Make RT aware
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 17 Jul 2011 21:41:35 +0200
+
+Avoid filling the pool / allocating memory with irqs off().
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ lib/debugobjects.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/lib/debugobjects.c
++++ b/lib/debugobjects.c
+@@ -336,7 +336,10 @@ static void
+ 	struct debug_obj *obj;
+ 	unsigned long flags;
+ 
+-	fill_pool();
++#ifdef CONFIG_PREEMPT_RT_FULL
++	if (preempt_count() == 0 && !irqs_disabled())
++#endif
++		fill_pool();
+ 
+ 	db = get_bucket((unsigned long) addr);
+ 

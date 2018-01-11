@@ -1,0 +1,49 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:11 +0100
+Subject: [PATCH 22/29] hrtimer: Remove base argument from hrtimer_reprogram()
+
+hrtimer_reprogram() must have access to the hrtimer_clock_base of the new
+first expiring timer to access hrtimer_clock_base.offset for adjusting the
+expiry time to CLOCK_MONOTONIC. This is required to evaluate whether the
+new left most timer in the hrtimer_clock_base is the first expiring timer
+of all clock bases in a hrtimer_cpu_base.
+
+The only user of hrtimer_reprogram() is hrtimer_start_range_ns(), which has
+a pointer to hrtimer_clock_base already and hands it in as an argument. But
+hrtimer_start_range_ns() will be split for the upcoming support for softirq
+based hrtimers to avoid code duplication and will lose the direct access to
+the clock base pointer.
+
+Instead of handing in timer and timer->base as an argument remove the base
+argument from hrtimer_reprogram() and retrieve the clock base internally.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -650,10 +650,10 @@ static inline void retrigger_next_event(
+  *
+  * Called with interrupts disabled and base->cpu_base.lock held
+  */
+-static void hrtimer_reprogram(struct hrtimer *timer,
+-			      struct hrtimer_clock_base *base)
++static void hrtimer_reprogram(struct hrtimer *timer)
+ {
+ 	struct hrtimer_cpu_base *cpu_base = this_cpu_ptr(&hrtimer_bases);
++	struct hrtimer_clock_base *base = timer->base;
+ 	ktime_t expires = ktime_sub(hrtimer_get_expires(timer), base->offset);
+ 
+ 	WARN_ON_ONCE(hrtimer_get_expires_tv64(timer) < 0);
+@@ -943,7 +943,7 @@ void hrtimer_start_range_ns(struct hrtim
+ 	if (!leftmost)
+ 		goto unlock;
+ 
+-	hrtimer_reprogram(timer, new_base);
++	hrtimer_reprogram(timer);
+ unlock:
+ 	unlock_hrtimer_base(timer, &flags);
+ }

@@ -1,0 +1,186 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:06 +0100
+Subject: [PATCH 17/29] hrtimer: Make hrtimer_reprogramm() unconditional
+
+hrtimer_reprogram() needs to be available unconditionally for softirq based
+hrtimers. Move the function and all required struct members out of the
+CONFIG_HIGH_RES_TIMERS #ifdef.
+
+There is no functional change because hrtimer_reprogram() is only invoked
+when hrtimer_cpu_base.hres_active is true. Making it unconditional
+increases the text size for the CONFIG_HIGH_RES_TIMERS=n case, but avoids
+replication of that code for the upcoming softirq based hrtimers support.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/hrtimer.h |    6 +-
+ kernel/time/hrtimer.c   |  129 +++++++++++++++++++++++-------------------------
+ 2 files changed, 65 insertions(+), 70 deletions(-)
+
+--- a/include/linux/hrtimer.h
++++ b/include/linux/hrtimer.h
+@@ -182,10 +182,10 @@ struct hrtimer_cpu_base {
+ 	unsigned int			cpu;
+ 	unsigned int			active_bases;
+ 	unsigned int			clock_was_set_seq;
+-	unsigned int			hres_active	: 1;
+-#ifdef CONFIG_HIGH_RES_TIMERS
+-	unsigned int			in_hrtirq	: 1,
++	unsigned int			hres_active	: 1,
++					in_hrtirq	: 1,
+ 					hang_detected	: 1;
++#ifdef CONFIG_HIGH_RES_TIMERS
+ 	unsigned int			nr_events;
+ 	unsigned short			nr_retries;
+ 	unsigned short			nr_hangs;
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -582,68 +582,6 @@ hrtimer_force_reprogram(struct hrtimer_c
+ }
+ 
+ /*
+- * When a timer is enqueued and expires earlier than the already enqueued
+- * timers, we have to check, whether it expires earlier than the timer for
+- * which the clock event device was armed.
+- *
+- * Called with interrupts disabled and base->cpu_base.lock held
+- */
+-static void hrtimer_reprogram(struct hrtimer *timer,
+-			      struct hrtimer_clock_base *base)
+-{
+-	struct hrtimer_cpu_base *cpu_base = this_cpu_ptr(&hrtimer_bases);
+-	ktime_t expires = ktime_sub(hrtimer_get_expires(timer), base->offset);
+-
+-	WARN_ON_ONCE(hrtimer_get_expires_tv64(timer) < 0);
+-
+-	/*
+-	 * If the timer is not on the current cpu, we cannot reprogram
+-	 * the other cpus clock event device.
+-	 */
+-	if (base->cpu_base != cpu_base)
+-		return;
+-
+-	/*
+-	 * If the hrtimer interrupt is running, then it will
+-	 * reevaluate the clock bases and reprogram the clock event
+-	 * device. The callbacks are always executed in hard interrupt
+-	 * context so we don't need an extra check for a running
+-	 * callback.
+-	 */
+-	if (cpu_base->in_hrtirq)
+-		return;
+-
+-	/*
+-	 * CLOCK_REALTIME timer might be requested with an absolute
+-	 * expiry time which is less than base->offset. Set it to 0.
+-	 */
+-	if (expires < 0)
+-		expires = 0;
+-
+-	if (expires >= cpu_base->expires_next)
+-		return;
+-
+-	/* Update the pointer to the next expiring timer */
+-	cpu_base->next_timer = timer;
+-
+-	/*
+-	 * If a hang was detected in the last timer interrupt then we
+-	 * do not schedule a timer which is earlier than the expiry
+-	 * which we enforced in the hang detection. We want the system
+-	 * to make progress.
+-	 */
+-	if (cpu_base->hang_detected)
+-		return;
+-
+-	/*
+-	 * Program the timer hardware. We enforce the expiry for
+-	 * events which are already in the past.
+-	 */
+-	cpu_base->expires_next = expires;
+-	tick_program_event(expires, 1);
+-}
+-
+-/*
+  * Retrigger next event is called after clock was set
+  *
+  * Called with interrupts disabled via on_each_cpu()
+@@ -703,16 +641,73 @@ static inline int hrtimer_is_hres_enable
+ static inline void hrtimer_switch_to_hres(void) { }
+ static inline void
+ hrtimer_force_reprogram(struct hrtimer_cpu_base *base, int skip_equal) { }
+-static inline int hrtimer_reprogram(struct hrtimer *timer,
+-				    struct hrtimer_clock_base *base)
+-{
+-	return 0;
+-}
+ static inline void retrigger_next_event(void *arg) { }
+ 
+ #endif /* CONFIG_HIGH_RES_TIMERS */
+ 
+ /*
++ * When a timer is enqueued and expires earlier than the already enqueued
++ * timers, we have to check, whether it expires earlier than the timer for
++ * which the clock event device was armed.
++ *
++ * Called with interrupts disabled and base->cpu_base.lock held
++ */
++static void hrtimer_reprogram(struct hrtimer *timer,
++			      struct hrtimer_clock_base *base)
++{
++	struct hrtimer_cpu_base *cpu_base = this_cpu_ptr(&hrtimer_bases);
++	ktime_t expires = ktime_sub(hrtimer_get_expires(timer), base->offset);
++
++	WARN_ON_ONCE(hrtimer_get_expires_tv64(timer) < 0);
++
++	/*
++	 * If the timer is not on the current cpu, we cannot reprogram
++	 * the other cpus clock event device.
++	 */
++	if (base->cpu_base != cpu_base)
++		return;
++
++	/*
++	 * If the hrtimer interrupt is running, then it will
++	 * reevaluate the clock bases and reprogram the clock event
++	 * device. The callbacks are always executed in hard interrupt
++	 * context so we don't need an extra check for a running
++	 * callback.
++	 */
++	if (cpu_base->in_hrtirq)
++		return;
++
++	/*
++	 * CLOCK_REALTIME timer might be requested with an absolute
++	 * expiry time which is less than base->offset. Set it to 0.
++	 */
++	if (expires < 0)
++		expires = 0;
++
++	if (expires >= cpu_base->expires_next)
++		return;
++
++	/* Update the pointer to the next expiring timer */
++	cpu_base->next_timer = timer;
++
++	/*
++	 * If a hang was detected in the last timer interrupt then we
++	 * do not schedule a timer which is earlier than the expiry
++	 * which we enforced in the hang detection. We want the system
++	 * to make progress.
++	 */
++	if (cpu_base->hang_detected)
++		return;
++
++	/*
++	 * Program the timer hardware. We enforce the expiry for
++	 * events which are already in the past.
++	 */
++	cpu_base->expires_next = expires;
++	tick_program_event(expires, 1);
++}
++
++/*
+  * Clock realtime was set
+  *
+  * Change the offset of the realtime clock vs. the monotonic

@@ -1,0 +1,23 @@
+Subject: arm64/xen: Make XEN depend on !RT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 12 Oct 2015 11:18:40 +0200
+
+It's not ready and probably never will be, unless xen folks have a
+look at it.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/arm64/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -774,7 +774,7 @@ config XEN_DOM0
+ 
+ config XEN
+ 	bool "Xen guest support on ARM64"
+-	depends on ARM64 && OF
++	depends on ARM64 && OF && !PREEMPT_RT_FULL
+ 	select SWIOTLB_XEN
+ 	select PARAVIRT
+ 	help

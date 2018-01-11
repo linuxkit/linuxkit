@@ -1,0 +1,272 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed Jun 22 19:47:03 2011 +0200
+Subject: sched: Distangle worker accounting from rqlock
+    
+The worker accounting for cpu bound workers is plugged into the core
+scheduler code and the wakeup code. This is not a hard requirement and
+can be avoided by keeping track of the state in the workqueue code
+itself.
+    
+Keep track of the sleeping state in the worker itself and call the
+notifier before entering the core scheduler. There might be false
+positives when the task is woken between that call and actually
+scheduling, but that's not really different from scheduling and being
+woken immediately after switching away. There is also no harm from
+updating nr_running when the task returns from scheduling instead of
+accounting it in the wakeup code.
+    
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Tejun Heo <tj@kernel.org>
+Cc: Jens Axboe <axboe@kernel.dk>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Link: http://lkml.kernel.org/r/20110622174919.135236139@linutronix.de
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ kernel/sched/core.c         |   84 +++++++-------------------------------------
+ kernel/workqueue.c          |   52 ++++++++++++---------------
+ kernel/workqueue_internal.h |    5 +-
+ 3 files changed, 41 insertions(+), 100 deletions(-)
+
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -1715,10 +1715,6 @@ static inline void ttwu_activate(struct
+ {
+ 	activate_task(rq, p, en_flags);
+ 	p->on_rq = TASK_ON_RQ_QUEUED;
+-
+-	/* If a worker is waking up, notify the workqueue: */
+-	if (p->flags & PF_WQ_WORKER)
+-		wq_worker_waking_up(p, cpu_of(rq));
+ }
+ 
+ /*
+@@ -2159,56 +2155,6 @@ try_to_wake_up(struct task_struct *p, un
+ }
+ 
+ /**
+- * try_to_wake_up_local - try to wake up a local task with rq lock held
+- * @p: the thread to be awakened
+- * @rf: request-queue flags for pinning
+- *
+- * Put @p on the run-queue if it's not already there. The caller must
+- * ensure that this_rq() is locked, @p is bound to this_rq() and not
+- * the current task.
+- */
+-static void try_to_wake_up_local(struct task_struct *p, struct rq_flags *rf)
+-{
+-	struct rq *rq = task_rq(p);
+-
+-	if (WARN_ON_ONCE(rq != this_rq()) ||
+-	    WARN_ON_ONCE(p == current))
+-		return;
+-
+-	lockdep_assert_held(&rq->lock);
+-
+-	if (!raw_spin_trylock(&p->pi_lock)) {
+-		/*
+-		 * This is OK, because current is on_cpu, which avoids it being
+-		 * picked for load-balance and preemption/IRQs are still
+-		 * disabled avoiding further scheduler activity on it and we've
+-		 * not yet picked a replacement task.
+-		 */
+-		rq_unlock(rq, rf);
+-		raw_spin_lock(&p->pi_lock);
+-		rq_relock(rq, rf);
+-	}
+-
+-	if (!(p->state & TASK_NORMAL))
+-		goto out;
+-
+-	trace_sched_waking(p);
+-
+-	if (!task_on_rq_queued(p)) {
+-		if (p->in_iowait) {
+-			delayacct_blkio_end(p);
+-			atomic_dec(&rq->nr_iowait);
+-		}
+-		ttwu_activate(rq, p, ENQUEUE_WAKEUP | ENQUEUE_NOCLOCK);
+-	}
+-
+-	ttwu_do_wakeup(rq, p, 0, rf);
+-	ttwu_stat(p, smp_processor_id(), 0);
+-out:
+-	raw_spin_unlock(&p->pi_lock);
+-}
+-
+-/**
+  * wake_up_process - Wake up a specific process
+  * @p: The process to be woken up.
+  *
+@@ -3409,21 +3355,6 @@ static void __sched notrace __schedule(b
+ 				atomic_inc(&rq->nr_iowait);
+ 				delayacct_blkio_start();
+ 			}
+-
+-			/*
+-			 * If a worker went to sleep, notify and ask workqueue
+-			 * whether it wants to wake up a task to maintain
+-			 * concurrency.
+-			 * Only call wake up if prev isn't blocked on a sleeping
+-			 * spin lock.
+-			 */
+-			if (prev->flags & PF_WQ_WORKER && !prev->saved_state) {
+-				struct task_struct *to_wakeup;
+-
+-				to_wakeup = wq_worker_sleeping(prev);
+-				if (to_wakeup)
+-					try_to_wake_up_local(to_wakeup, &rf);
+-			}
+ 		}
+ 		switch_count = &prev->nvcsw;
+ 	}
+@@ -3499,6 +3430,14 @@ static inline void sched_submit_work(str
+ {
+ 	if (!tsk->state || tsk_is_pi_blocked(tsk))
+ 		return;
++
++	/*
++	 * If a worker went to sleep, notify and ask workqueue whether
++	 * it wants to wake up a task to maintain concurrency.
++	 */
++	if (tsk->flags & PF_WQ_WORKER)
++		wq_worker_sleeping(tsk);
++
+ 	/*
+ 	 * If we are going to sleep and we have plugged IO queued,
+ 	 * make sure to submit it to avoid deadlocks.
+@@ -3507,6 +3446,12 @@ static inline void sched_submit_work(str
+ 		blk_schedule_flush_plug(tsk);
+ }
+ 
++static void sched_update_worker(struct task_struct *tsk)
++{
++	if (tsk->flags & PF_WQ_WORKER)
++		wq_worker_running(tsk);
++}
++
+ asmlinkage __visible void __sched schedule(void)
+ {
+ 	struct task_struct *tsk = current;
+@@ -3517,6 +3462,7 @@ asmlinkage __visible void __sched schedu
+ 		__schedule(false);
+ 		sched_preempt_enable_no_resched();
+ 	} while (need_resched());
++	sched_update_worker(tsk);
+ }
+ EXPORT_SYMBOL(schedule);
+ 
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -845,43 +845,32 @@ static void wake_up_worker(struct worker
+ }
+ 
+ /**
+- * wq_worker_waking_up - a worker is waking up
++ * wq_worker_running - a worker is running again
+  * @task: task waking up
+- * @cpu: CPU @task is waking up to
+  *
+- * This function is called during try_to_wake_up() when a worker is
+- * being awoken.
+- *
+- * CONTEXT:
+- * spin_lock_irq(rq->lock)
++ * This function is called when a worker returns from schedule()
+  */
+-void wq_worker_waking_up(struct task_struct *task, int cpu)
++void wq_worker_running(struct task_struct *task)
+ {
+ 	struct worker *worker = kthread_data(task);
+ 
+-	if (!(worker->flags & WORKER_NOT_RUNNING)) {
+-		WARN_ON_ONCE(worker->pool->cpu != cpu);
++	if (!worker->sleeping)
++		return;
++	if (!(worker->flags & WORKER_NOT_RUNNING))
+ 		atomic_inc(&worker->pool->nr_running);
+-	}
++	worker->sleeping = 0;
+ }
+ 
+ /**
+  * wq_worker_sleeping - a worker is going to sleep
+  * @task: task going to sleep
+  *
+- * This function is called during schedule() when a busy worker is
+- * going to sleep.  Worker on the same cpu can be woken up by
+- * returning pointer to its task.
+- *
+- * CONTEXT:
+- * spin_lock_irq(rq->lock)
+- *
+- * Return:
+- * Worker task on @cpu to wake up, %NULL if none.
++ * This function is called from schedule() when a busy worker is
++ * going to sleep.
+  */
+-struct task_struct *wq_worker_sleeping(struct task_struct *task)
++void wq_worker_sleeping(struct task_struct *task)
+ {
+-	struct worker *worker = kthread_data(task), *to_wakeup = NULL;
++	struct worker *next, *worker = kthread_data(task);
+ 	struct worker_pool *pool;
+ 
+ 	/*
+@@ -890,13 +879,15 @@ struct task_struct *wq_worker_sleeping(s
+ 	 * checking NOT_RUNNING.
+ 	 */
+ 	if (worker->flags & WORKER_NOT_RUNNING)
+-		return NULL;
++		return;
+ 
+ 	pool = worker->pool;
+ 
+-	/* this can only happen on the local cpu */
+-	if (WARN_ON_ONCE(pool->cpu != raw_smp_processor_id()))
+-		return NULL;
++	if (WARN_ON_ONCE(worker->sleeping))
++		return;
++
++	worker->sleeping = 1;
++	spin_lock_irq(&pool->lock);
+ 
+ 	/*
+ 	 * The counterpart of the following dec_and_test, implied mb,
+@@ -910,9 +901,12 @@ struct task_struct *wq_worker_sleeping(s
+ 	 * lock is safe.
+ 	 */
+ 	if (atomic_dec_and_test(&pool->nr_running) &&
+-	    !list_empty(&pool->worklist))
+-		to_wakeup = first_idle_worker(pool);
+-	return to_wakeup ? to_wakeup->task : NULL;
++	    !list_empty(&pool->worklist)) {
++		next = first_idle_worker(pool);
++		if (next)
++			wake_up_process(next->task);
++	}
++	spin_unlock_irq(&pool->lock);
+ }
+ 
+ /**
+--- a/kernel/workqueue_internal.h
++++ b/kernel/workqueue_internal.h
+@@ -45,6 +45,7 @@ struct worker {
+ 	unsigned long		last_active;	/* L: last active timestamp */
+ 	unsigned int		flags;		/* X: flags */
+ 	int			id;		/* I: worker id */
++	int			sleeping;	/* None */
+ 
+ 	/*
+ 	 * Opaque string set with work_set_desc().  Printed out with task
+@@ -70,7 +71,7 @@ static inline struct worker *current_wq_
+  * Scheduler hooks for concurrency managed workqueue.  Only to be used from
+  * sched/core.c and workqueue.c.
+  */
+-void wq_worker_waking_up(struct task_struct *task, int cpu);
+-struct task_struct *wq_worker_sleeping(struct task_struct *task);
++void wq_worker_running(struct task_struct *task);
++void wq_worker_sleeping(struct task_struct *task);
+ 
+ #endif /* _KERNEL_WORKQUEUE_INTERNAL_H */

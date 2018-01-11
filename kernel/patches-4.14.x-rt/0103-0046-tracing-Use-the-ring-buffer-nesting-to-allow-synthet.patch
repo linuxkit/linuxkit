@@ -1,0 +1,54 @@
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Wed, 7 Feb 2018 17:29:46 -0500
+Subject: [PATCH 46/48] tracing: Use the ring-buffer nesting to allow synthetic
+ events to be traced
+
+Synthetic events can be done within the recording of other events. Notify
+the ring buffer via ring_buffer_nest_start() and ring_buffer_nest_end() that
+this is intended and not to block it due to its recursion protection.
+
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit 92c571543120ffed5e725f5b57b9de0b535e9d0a)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace_events_hist.c |   12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
+
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -640,6 +640,7 @@ static notrace void trace_event_raw_even
+ 	struct trace_event_file *trace_file = __data;
+ 	struct synth_trace_event *entry;
+ 	struct trace_event_buffer fbuffer;
++	struct ring_buffer *buffer;
+ 	struct synth_event *event;
+ 	unsigned int i, n_u64;
+ 	int fields_size = 0;
+@@ -651,10 +652,17 @@ static notrace void trace_event_raw_even
+ 
+ 	fields_size = event->n_u64 * sizeof(u64);
+ 
++	/*
++	 * Avoid ring buffer recursion detection, as this event
++	 * is being performed within another event.
++	 */
++	buffer = trace_file->tr->trace_buffer.buffer;
++	ring_buffer_nest_start(buffer);
++
+ 	entry = trace_event_buffer_reserve(&fbuffer, trace_file,
+ 					   sizeof(*entry) + fields_size);
+ 	if (!entry)
+-		return;
++		goto out;
+ 
+ 	for (i = 0, n_u64 = 0; i < event->n_fields; i++) {
+ 		if (event->fields[i]->is_string) {
+@@ -670,6 +678,8 @@ static notrace void trace_event_raw_even
+ 	}
+ 
+ 	trace_event_buffer_commit(&fbuffer);
++out:
++	ring_buffer_nest_end(buffer);
+ }
+ 
+ static void free_synth_event_print_fmt(struct trace_event_call *call)

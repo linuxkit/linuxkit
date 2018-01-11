@@ -1,0 +1,48 @@
+Subject: genirq: Force interrupt thread on RT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 03 Apr 2011 11:57:29 +0200
+
+Force threaded_irqs and optimize the code (force_irqthreads) in regard
+to this.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/interrupt.h |    6 +++++-
+ kernel/irq/manage.c       |    2 ++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -429,9 +429,13 @@ extern int irq_set_irqchip_state(unsigne
+ 				 bool state);
+ 
+ #ifdef CONFIG_IRQ_FORCED_THREADING
++# ifndef CONFIG_PREEMPT_RT_BASE
+ extern bool force_irqthreads;
++# else
++#  define force_irqthreads	(true)
++# endif
+ #else
+-#define force_irqthreads	(0)
++#define force_irqthreads	(false)
+ #endif
+ 
+ #ifndef __ARCH_SET_SOFTIRQ_PENDING
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -24,6 +24,7 @@
+ #include "internals.h"
+ 
+ #ifdef CONFIG_IRQ_FORCED_THREADING
++# ifndef CONFIG_PREEMPT_RT_BASE
+ __read_mostly bool force_irqthreads;
+ 
+ static int __init setup_forced_irqthreads(char *arg)
+@@ -32,6 +33,7 @@ static int __init setup_forced_irqthread
+ 	return 0;
+ }
+ early_param("threadirqs", setup_forced_irqthreads);
++# endif
+ #endif
+ 
+ static void __synchronize_hardirq(struct irq_desc *desc)

@@ -1,0 +1,108 @@
+Subject: rcu: Make ksoftirqd do RCU quiescent states
+From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Date: Wed, 5 Oct 2011 11:45:18 -0700
+
+Implementing RCU-bh in terms of RCU-preempt makes the system vulnerable
+to network-based denial-of-service attacks.  This patch therefore
+makes __do_softirq() invoke rcu_bh_qs(), but only when __do_softirq()
+is running in ksoftirqd context.  A wrapper layer in interposed so that
+other calls to __do_softirq() avoid invoking rcu_bh_qs().  The underlying
+function __do_softirq_common() does the actual work.
+
+The reason that rcu_bh_qs() is bad in these non-ksoftirqd contexts is
+that there might be a local_bh_enable() inside an RCU-preempt read-side
+critical section.  This local_bh_enable() can invoke __do_softirq()
+directly, so if __do_softirq() were to invoke rcu_bh_qs() (which just
+calls rcu_preempt_qs() in the PREEMPT_RT_FULL case), there would be
+an illegal RCU-preempt quiescent state in the middle of an RCU-preempt
+read-side critical section.  Therefore, quiescent states can only happen
+in cases where __do_softirq() is invoked directly from ksoftirqd.
+
+Signed-off-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Link: http://lkml.kernel.org/r/20111005184518.GA21601@linux.vnet.ibm.com
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ include/linux/rcupdate.h |    4 ----
+ kernel/rcu/tree.c        |    9 ++++++++-
+ kernel/rcu/tree_plugin.h |    8 +++++++-
+ 3 files changed, 15 insertions(+), 6 deletions(-)
+
+--- a/include/linux/rcupdate.h
++++ b/include/linux/rcupdate.h
+@@ -117,11 +117,7 @@ static inline int rcu_preempt_depth(void
+ void rcu_init(void);
+ extern int rcu_scheduler_active __read_mostly;
+ void rcu_sched_qs(void);
+-#ifdef CONFIG_PREEMPT_RT_FULL
+-static inline void rcu_bh_qs(void) { }
+-#else
+ void rcu_bh_qs(void);
+-#endif
+ void rcu_check_callbacks(int user);
+ void rcu_report_dead(unsigned int cpu);
+ void rcu_cpu_starting(unsigned int cpu);
+--- a/kernel/rcu/tree.c
++++ b/kernel/rcu/tree.c
+@@ -243,7 +243,14 @@ void rcu_sched_qs(void)
+ 			   this_cpu_ptr(&rcu_sched_data), true);
+ }
+ 
+-#ifndef CONFIG_PREEMPT_RT_FULL
++#ifdef CONFIG_PREEMPT_RT_FULL
++static void rcu_preempt_qs(void);
++
++void rcu_bh_qs(void)
++{
++	rcu_preempt_qs();
++}
++#else
+ void rcu_bh_qs(void)
+ {
+ 	RCU_LOCKDEP_WARN(preemptible(), "rcu_bh_qs() invoked with preemption enabled!!!");
+--- a/kernel/rcu/tree_plugin.h
++++ b/kernel/rcu/tree_plugin.h
+@@ -29,6 +29,7 @@
+ #include <linux/oom.h>
+ #include <linux/sched/debug.h>
+ #include <linux/smpboot.h>
++#include <linux/jiffies.h>
+ #include <uapi/linux/sched/types.h>
+ #include "../time/tick-internal.h"
+ #include "../locking/rtmutex_common.h"
+@@ -1299,7 +1300,7 @@ static void rcu_prepare_kthreads(int cpu
+ 
+ #endif /* #else #ifdef CONFIG_RCU_BOOST */
+ 
+-#if !defined(CONFIG_RCU_FAST_NO_HZ)
++#if !defined(CONFIG_RCU_FAST_NO_HZ) || defined(CONFIG_PREEMPT_RT_FULL)
+ 
+ /*
+  * Check to see if any future RCU-related work will need to be done
+@@ -1315,7 +1316,9 @@ int rcu_needs_cpu(u64 basemono, u64 *nex
+ 	*nextevt = KTIME_MAX;
+ 	return rcu_cpu_has_callbacks(NULL);
+ }
++#endif /* !defined(CONFIG_RCU_FAST_NO_HZ) || defined(CONFIG_PREEMPT_RT_FULL) */
+ 
++#if !defined(CONFIG_RCU_FAST_NO_HZ)
+ /*
+  * Because we do not have RCU_FAST_NO_HZ, don't bother cleaning up
+  * after it.
+@@ -1411,6 +1414,8 @@ static bool __maybe_unused rcu_try_advan
+ 	return cbs_ready;
+ }
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
++
+ /*
+  * Allow the CPU to enter dyntick-idle mode unless it has callbacks ready
+  * to invoke.  If the CPU has callbacks, try to advance them.  Tell the
+@@ -1453,6 +1458,7 @@ int rcu_needs_cpu(u64 basemono, u64 *nex
+ 	*nextevt = basemono + dj * TICK_NSEC;
+ 	return 0;
+ }
++#endif /* #ifndef CONFIG_PREEMPT_RT_FULL */
+ 
+ /*
+  * Prepare a CPU for idle from an RCU perspective.  The first major task

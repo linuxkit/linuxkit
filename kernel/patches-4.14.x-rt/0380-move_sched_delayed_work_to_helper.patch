@@ -1,0 +1,72 @@
+Date: Wed, 26 Jun 2013 15:28:11 -0400
+From: Steven Rostedt <rostedt@goodmis.org>
+Subject: rt,ntp: Move call to schedule_delayed_work() to helper thread
+
+The ntp code for notify_cmos_timer() is called from a hard interrupt
+context. schedule_delayed_work() under PREEMPT_RT_FULL calls spinlocks
+that have been converted to mutexes, thus calling schedule_delayed_work()
+from interrupt is not safe.
+
+Add a helper thread that does the call to schedule_delayed_work and wake
+up that thread instead of calling schedule_delayed_work() directly.
+This is only for CONFIG_PREEMPT_RT_FULL, otherwise the code still calls
+schedule_delayed_work() directly in irq context.
+
+Note: There's a few places in the kernel that do this. Perhaps the RT
+code should have a dedicated thread that does the checks. Just register
+a notifier on boot up for your check and wake up the thread when
+needed. This will be a todo.
+
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+[bigeasy: use swork_queue() instead a helper thread]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/ntp.c |   26 ++++++++++++++++++++++++++
+ 1 file changed, 26 insertions(+)
+
+--- a/kernel/time/ntp.c
++++ b/kernel/time/ntp.c
+@@ -18,6 +18,7 @@
+ #include <linux/module.h>
+ #include <linux/rtc.h>
+ #include <linux/math64.h>
++#include <linux/swork.h>
+ 
+ #include "ntp_internal.h"
+ #include "timekeeping_internal.h"
+@@ -569,10 +570,35 @@ static void sync_cmos_clock(struct work_
+ 			   &sync_cmos_work, timespec64_to_jiffies(&next));
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++
++static void run_clock_set_delay(struct swork_event *event)
++{
++	queue_delayed_work(system_power_efficient_wq, &sync_cmos_work, 0);
++}
++
++static struct swork_event ntp_cmos_swork;
++
++void ntp_notify_cmos_timer(void)
++{
++	swork_queue(&ntp_cmos_swork);
++}
++
++static __init int create_cmos_delay_thread(void)
++{
++	WARN_ON(swork_get());
++	INIT_SWORK(&ntp_cmos_swork, run_clock_set_delay);
++	return 0;
++}
++early_initcall(create_cmos_delay_thread);
++
++#else
++
+ void ntp_notify_cmos_timer(void)
+ {
+ 	queue_delayed_work(system_power_efficient_wq, &sync_cmos_work, 0);
+ }
++#endif /* CONFIG_PREEMPT_RT_FULL */
+ 
+ #else
+ void ntp_notify_cmos_timer(void) { }

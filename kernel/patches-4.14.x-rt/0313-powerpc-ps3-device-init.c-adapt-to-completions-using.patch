@@ -1,0 +1,31 @@
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Sun, 31 May 2015 14:44:42 -0400
+Subject: powerpc: ps3/device-init.c - adapt to completions using swait vs wait
+
+To fix:
+
+  cc1: warnings being treated as errors
+  arch/powerpc/platforms/ps3/device-init.c: In function 'ps3_notification_read_write':
+  arch/powerpc/platforms/ps3/device-init.c:755:2: error: passing argument 1 of 'prepare_to_wait_event' from incompatible pointer type
+  arch/powerpc/platforms/ps3/device-init.c:755:2: error: passing argument 1 of 'abort_exclusive_wait' from incompatible pointer type
+  arch/powerpc/platforms/ps3/device-init.c:755:2: error: passing argument 1 of 'finish_wait' from incompatible pointer type
+  arch/powerpc/platforms/ps3/device-init.o] Error 1
+  make[3]: *** Waiting for unfinished jobs....
+
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/powerpc/platforms/ps3/device-init.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/powerpc/platforms/ps3/device-init.c
++++ b/arch/powerpc/platforms/ps3/device-init.c
+@@ -752,7 +752,7 @@ static int ps3_notification_read_write(s
+ 	}
+ 	pr_debug("%s:%u: notification %s issued\n", __func__, __LINE__, op);
+ 
+-	res = wait_event_interruptible(dev->done.wait,
++	res = swait_event_interruptible(dev->done.wait,
+ 				       dev->done.done || kthread_should_stop());
+ 	if (kthread_should_stop())
+ 		res = -EINTR;

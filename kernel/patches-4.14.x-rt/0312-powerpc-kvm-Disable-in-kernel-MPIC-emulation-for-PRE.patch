@@ -1,0 +1,37 @@
+From: Bogdan Purcareata <bogdan.purcareata@freescale.com>
+Date: Fri, 24 Apr 2015 15:53:13 +0000
+Subject: powerpc/kvm: Disable in-kernel MPIC emulation for PREEMPT_RT_FULL
+
+While converting the openpic emulation code to use a raw_spinlock_t enables
+guests to run on RT, there's still a performance issue. For interrupts sent in
+directed delivery mode with a multiple CPU mask, the emulated openpic will loop
+through all of the VCPUs, and for each VCPUs, it call IRQ_check, which will loop
+through all the pending interrupts for that VCPU. This is done while holding the
+raw_lock, meaning that in all this time the interrupts and preemption are
+disabled on the host Linux. A malicious user app can max both these number and
+cause a DoS.
+
+This temporary fix is sent for two reasons. First is so that users who want to
+use the in-kernel MPIC emulation are aware of the potential latencies, thus
+making sure that the hardware MPIC and their usage scenario does not involve
+interrupts sent in directed delivery mode, and the number of possible pending
+interrupts is kept small. Secondly, this should incentivize the development of a
+proper openpic emulation that would be better suited for RT.
+
+Acked-by: Scott Wood <scottwood@freescale.com>
+Signed-off-by: Bogdan Purcareata <bogdan.purcareata@freescale.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/powerpc/kvm/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/arch/powerpc/kvm/Kconfig
++++ b/arch/powerpc/kvm/Kconfig
+@@ -177,6 +177,7 @@ config KVM_E500MC
+ config KVM_MPIC
+ 	bool "KVM in-kernel MPIC emulation"
+ 	depends on KVM && E500
++	depends on !PREEMPT_RT_FULL
+ 	select HAVE_KVM_IRQCHIP
+ 	select HAVE_KVM_IRQFD
+ 	select HAVE_KVM_IRQ_ROUTING

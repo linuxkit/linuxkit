@@ -1,0 +1,39 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 22 Dec 2017 15:51:15 +0100
+Subject: [PATCH 4/4] timerqueue: Document return values of
+ timerqueue_add/del()
+
+The return values of timerqueue_add/del() are not documented in the kernel doc
+comment. Add proper documentation.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: rt@linutronix.de
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ lib/timerqueue.c |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/lib/timerqueue.c
++++ b/lib/timerqueue.c
+@@ -33,8 +33,9 @@
+  * @head: head of timerqueue
+  * @node: timer node to be added
+  *
+- * Adds the timer node to the timerqueue, sorted by the
+- * node's expires value.
++ * Adds the timer node to the timerqueue, sorted by the node's expires
++ * value. Returns true if the newly added timer is the first expiring timer in
++ * the queue.
+  */
+ bool timerqueue_add(struct timerqueue_head *head, struct timerqueue_node *node)
+ {
+@@ -70,7 +71,8 @@ EXPORT_SYMBOL_GPL(timerqueue_add);
+  * @head: head of timerqueue
+  * @node: timer node to be removed
+  *
+- * Removes the timer node from the timerqueue.
++ * Removes the timer node from the timerqueue. Returns true if the queue is
++ * not empty after the remove.
+  */
+ bool timerqueue_del(struct timerqueue_head *head, struct timerqueue_node *node)
+ {

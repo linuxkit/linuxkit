@@ -1,0 +1,48 @@
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Fri, 3 Jul 2009 08:30:00 -0500
+Subject: drivers/net: vortex fix locking issues
+
+Argh, cut and paste wasn't enough...
+
+Use this patch instead.  It needs an irq disable.  But, believe it or not,
+on SMP this is actually better.  If the irq is shared (as it is in Mark's
+case), we don't stop the irq of other devices from being handled on
+another CPU (unfortunately for Mark, he pinned all interrupts to one CPU).
+
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+ drivers/net/ethernet/3com/3c59x.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+
+--- a/drivers/net/ethernet/3com/3c59x.c
++++ b/drivers/net/ethernet/3com/3c59x.c
+@@ -842,9 +842,9 @@ static void poll_vortex(struct net_devic
+ {
+ 	struct vortex_private *vp = netdev_priv(dev);
+ 	unsigned long flags;
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	(vp->full_bus_master_rx ? boomerang_interrupt:vortex_interrupt)(dev->irq,dev);
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ }
+ #endif
+ 
+@@ -1908,12 +1908,12 @@ static void vortex_tx_timeout(struct net
+ 			 * Block interrupts because vortex_interrupt does a bare spin_lock()
+ 			 */
+ 			unsigned long flags;
+-			local_irq_save(flags);
++			local_irq_save_nort(flags);
+ 			if (vp->full_bus_master_tx)
+ 				boomerang_interrupt(dev->irq, dev);
+ 			else
+ 				vortex_interrupt(dev->irq, dev);
+-			local_irq_restore(flags);
++			local_irq_restore_nort(flags);
+ 		}
+ 	}
+ 

@@ -1,0 +1,272 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 14 Sep 2016 17:36:35 +0200
+Subject: [PATCH] net/Qdisc: use a seqlock instead seqcount
+
+The seqcount disables preemption on -RT while it is held which can't
+remove. Also we don't want the reader to spin for ages if the writer is
+scheduled out. The seqlock on the other hand will serialize / sleep on
+the lock while writer is active.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/seqlock.h    |    9 +++++++++
+ include/net/gen_stats.h    |    9 +++++----
+ include/net/net_seq_lock.h |   15 +++++++++++++++
+ include/net/sch_generic.h  |   21 ++++++++++++++++++---
+ net/core/gen_estimator.c   |    6 +++---
+ net/core/gen_stats.c       |    8 ++++----
+ net/sched/sch_api.c        |    2 +-
+ net/sched/sch_generic.c    |   12 ++++++++++++
+ 8 files changed, 67 insertions(+), 15 deletions(-)
+ create mode 100644 include/net/net_seq_lock.h
+
+--- a/include/linux/seqlock.h
++++ b/include/linux/seqlock.h
+@@ -482,6 +482,15 @@ static inline void write_seqlock(seqlock
+ 	__raw_write_seqcount_begin(&sl->seqcount);
+ }
+ 
++static inline int try_write_seqlock(seqlock_t *sl)
++{
++	if (spin_trylock(&sl->lock)) {
++		__raw_write_seqcount_begin(&sl->seqcount);
++		return 1;
++	}
++	return 0;
++}
++
+ static inline void write_sequnlock(seqlock_t *sl)
+ {
+ 	__raw_write_seqcount_end(&sl->seqcount);
+--- a/include/net/gen_stats.h
++++ b/include/net/gen_stats.h
+@@ -6,6 +6,7 @@
+ #include <linux/socket.h>
+ #include <linux/rtnetlink.h>
+ #include <linux/pkt_sched.h>
++#include <net/net_seq_lock.h>
+ 
+ struct gnet_stats_basic_cpu {
+ 	struct gnet_stats_basic_packed bstats;
+@@ -36,11 +37,11 @@ int gnet_stats_start_copy_compat(struct
+ 				 spinlock_t *lock, struct gnet_dump *d,
+ 				 int padattr);
+ 
+-int gnet_stats_copy_basic(const seqcount_t *running,
++int gnet_stats_copy_basic(net_seqlock_t *running,
+ 			  struct gnet_dump *d,
+ 			  struct gnet_stats_basic_cpu __percpu *cpu,
+ 			  struct gnet_stats_basic_packed *b);
+-void __gnet_stats_copy_basic(const seqcount_t *running,
++void __gnet_stats_copy_basic(net_seqlock_t *running,
+ 			     struct gnet_stats_basic_packed *bstats,
+ 			     struct gnet_stats_basic_cpu __percpu *cpu,
+ 			     struct gnet_stats_basic_packed *b);
+@@ -57,13 +58,13 @@ int gen_new_estimator(struct gnet_stats_
+ 		      struct gnet_stats_basic_cpu __percpu *cpu_bstats,
+ 		      struct net_rate_estimator __rcu **rate_est,
+ 		      spinlock_t *stats_lock,
+-		      seqcount_t *running, struct nlattr *opt);
++		      net_seqlock_t *running, struct nlattr *opt);
+ void gen_kill_estimator(struct net_rate_estimator __rcu **ptr);
+ int gen_replace_estimator(struct gnet_stats_basic_packed *bstats,
+ 			  struct gnet_stats_basic_cpu __percpu *cpu_bstats,
+ 			  struct net_rate_estimator __rcu **ptr,
+ 			  spinlock_t *stats_lock,
+-			  seqcount_t *running, struct nlattr *opt);
++			  net_seqlock_t *running, struct nlattr *opt);
+ bool gen_estimator_active(struct net_rate_estimator __rcu **ptr);
+ bool gen_estimator_read(struct net_rate_estimator __rcu **ptr,
+ 			struct gnet_stats_rate_est64 *sample);
+--- /dev/null
++++ b/include/net/net_seq_lock.h
+@@ -0,0 +1,15 @@
++#ifndef __NET_NET_SEQ_LOCK_H__
++#define __NET_NET_SEQ_LOCK_H__
++
++#ifdef CONFIG_PREEMPT_RT_BASE
++# define net_seqlock_t			seqlock_t
++# define net_seq_begin(__r)		read_seqbegin(__r)
++# define net_seq_retry(__r, __s)	read_seqretry(__r, __s)
++
++#else
++# define net_seqlock_t			seqcount_t
++# define net_seq_begin(__r)		read_seqcount_begin(__r)
++# define net_seq_retry(__r, __s)	read_seqcount_retry(__r, __s)
++#endif
++
++#endif
+--- a/include/net/sch_generic.h
++++ b/include/net/sch_generic.h
+@@ -10,6 +10,7 @@
+ #include <linux/percpu.h>
+ #include <linux/dynamic_queue_limits.h>
+ #include <linux/list.h>
++#include <net/net_seq_lock.h>
+ #include <linux/refcount.h>
+ #include <linux/workqueue.h>
+ #include <net/gen_stats.h>
+@@ -90,7 +91,7 @@ struct Qdisc {
+ 	struct sk_buff		*gso_skb ____cacheline_aligned_in_smp;
+ 	struct qdisc_skb_head	q;
+ 	struct gnet_stats_basic_packed bstats;
+-	seqcount_t		running;
++	net_seqlock_t		running;
+ 	struct gnet_stats_queue	qstats;
+ 	unsigned long		state;
+ 	struct Qdisc            *next_sched;
+@@ -109,13 +110,22 @@ static inline void qdisc_refcount_inc(st
+ 	refcount_inc(&qdisc->refcnt);
+ }
+ 
+-static inline bool qdisc_is_running(const struct Qdisc *qdisc)
++static inline bool qdisc_is_running(struct Qdisc *qdisc)
+ {
++#ifdef CONFIG_PREEMPT_RT_BASE
++	return spin_is_locked(&qdisc->running.lock) ? true : false;
++#else
+ 	return (raw_read_seqcount(&qdisc->running) & 1) ? true : false;
++#endif
+ }
+ 
+ static inline bool qdisc_run_begin(struct Qdisc *qdisc)
+ {
++#ifdef CONFIG_PREEMPT_RT_BASE
++	if (try_write_seqlock(&qdisc->running))
++		return true;
++	return false;
++#else
+ 	if (qdisc_is_running(qdisc))
+ 		return false;
+ 	/* Variant of write_seqcount_begin() telling lockdep a trylock
+@@ -124,11 +134,16 @@ static inline bool qdisc_run_begin(struc
+ 	raw_write_seqcount_begin(&qdisc->running);
+ 	seqcount_acquire(&qdisc->running.dep_map, 0, 1, _RET_IP_);
+ 	return true;
++#endif
+ }
+ 
+ static inline void qdisc_run_end(struct Qdisc *qdisc)
+ {
++#ifdef CONFIG_PREEMPT_RT_BASE
++	write_sequnlock(&qdisc->running);
++#else
+ 	write_seqcount_end(&qdisc->running);
++#endif
+ }
+ 
+ static inline bool qdisc_may_bulk(const struct Qdisc *qdisc)
+@@ -338,7 +353,7 @@ static inline spinlock_t *qdisc_root_sle
+ 	return qdisc_lock(root);
+ }
+ 
+-static inline seqcount_t *qdisc_root_sleeping_running(const struct Qdisc *qdisc)
++static inline net_seqlock_t *qdisc_root_sleeping_running(const struct Qdisc *qdisc)
+ {
+ 	struct Qdisc *root = qdisc_root_sleeping(qdisc);
+ 
+--- a/net/core/gen_estimator.c
++++ b/net/core/gen_estimator.c
+@@ -46,7 +46,7 @@
+ struct net_rate_estimator {
+ 	struct gnet_stats_basic_packed	*bstats;
+ 	spinlock_t		*stats_lock;
+-	seqcount_t		*running;
++	net_seqlock_t		*running;
+ 	struct gnet_stats_basic_cpu __percpu *cpu_bstats;
+ 	u8			ewma_log;
+ 	u8			intvl_log; /* period : (250ms << intvl_log) */
+@@ -128,7 +128,7 @@ int gen_new_estimator(struct gnet_stats_
+ 		      struct gnet_stats_basic_cpu __percpu *cpu_bstats,
+ 		      struct net_rate_estimator __rcu **rate_est,
+ 		      spinlock_t *stats_lock,
+-		      seqcount_t *running,
++		      net_seqlock_t *running,
+ 		      struct nlattr *opt)
+ {
+ 	struct gnet_estimator *parm = nla_data(opt);
+@@ -217,7 +217,7 @@ int gen_replace_estimator(struct gnet_st
+ 			  struct gnet_stats_basic_cpu __percpu *cpu_bstats,
+ 			  struct net_rate_estimator __rcu **rate_est,
+ 			  spinlock_t *stats_lock,
+-			  seqcount_t *running, struct nlattr *opt)
++			  net_seqlock_t *running, struct nlattr *opt)
+ {
+ 	return gen_new_estimator(bstats, cpu_bstats, rate_est,
+ 				 stats_lock, running, opt);
+--- a/net/core/gen_stats.c
++++ b/net/core/gen_stats.c
+@@ -130,7 +130,7 @@ static void
+ }
+ 
+ void
+-__gnet_stats_copy_basic(const seqcount_t *running,
++__gnet_stats_copy_basic(net_seqlock_t *running,
+ 			struct gnet_stats_basic_packed *bstats,
+ 			struct gnet_stats_basic_cpu __percpu *cpu,
+ 			struct gnet_stats_basic_packed *b)
+@@ -143,10 +143,10 @@ void
+ 	}
+ 	do {
+ 		if (running)
+-			seq = read_seqcount_begin(running);
++			seq = net_seq_begin(running);
+ 		bstats->bytes = b->bytes;
+ 		bstats->packets = b->packets;
+-	} while (running && read_seqcount_retry(running, seq));
++	} while (running && net_seq_retry(running, seq));
+ }
+ EXPORT_SYMBOL(__gnet_stats_copy_basic);
+ 
+@@ -164,7 +164,7 @@ EXPORT_SYMBOL(__gnet_stats_copy_basic);
+  * if the room in the socket buffer was not sufficient.
+  */
+ int
+-gnet_stats_copy_basic(const seqcount_t *running,
++gnet_stats_copy_basic(net_seqlock_t *running,
+ 		      struct gnet_dump *d,
+ 		      struct gnet_stats_basic_cpu __percpu *cpu,
+ 		      struct gnet_stats_basic_packed *b)
+--- a/net/sched/sch_api.c
++++ b/net/sched/sch_api.c
+@@ -1081,7 +1081,7 @@ static struct Qdisc *qdisc_create(struct
+ 			rcu_assign_pointer(sch->stab, stab);
+ 		}
+ 		if (tca[TCA_RATE]) {
+-			seqcount_t *running;
++			net_seqlock_t *running;
+ 
+ 			err = -EOPNOTSUPP;
+ 			if (sch->flags & TCQ_F_MQROOT)
+--- a/net/sched/sch_generic.c
++++ b/net/sched/sch_generic.c
+@@ -429,7 +429,11 @@ struct Qdisc noop_qdisc = {
+ 	.ops		=	&noop_qdisc_ops,
+ 	.q.lock		=	__SPIN_LOCK_UNLOCKED(noop_qdisc.q.lock),
+ 	.dev_queue	=	&noop_netdev_queue,
++#ifdef CONFIG_PREEMPT_RT_BASE
++	.running	=	__SEQLOCK_UNLOCKED(noop_qdisc.running),
++#else
+ 	.running	=	SEQCNT_ZERO(noop_qdisc.running),
++#endif
+ 	.busylock	=	__SPIN_LOCK_UNLOCKED(noop_qdisc.busylock),
+ };
+ EXPORT_SYMBOL(noop_qdisc);
+@@ -628,9 +632,17 @@ struct Qdisc *qdisc_alloc(struct netdev_
+ 	lockdep_set_class(&sch->busylock,
+ 			  dev->qdisc_tx_busylock ?: &qdisc_tx_busylock);
+ 
++#ifdef CONFIG_PREEMPT_RT_BASE
++	seqlock_init(&sch->running);
++	lockdep_set_class(&sch->running.seqcount,
++			  dev->qdisc_running_key ?: &qdisc_running_key);
++	lockdep_set_class(&sch->running.lock,
++			  dev->qdisc_running_key ?: &qdisc_running_key);
++#else
+ 	seqcount_init(&sch->running);
+ 	lockdep_set_class(&sch->running,
+ 			  dev->qdisc_running_key ?: &qdisc_running_key);
++#endif
+ 
+ 	sch->ops = ops;
+ 	sch->enqueue = ops->enqueue;

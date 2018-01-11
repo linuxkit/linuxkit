@@ -1,0 +1,27 @@
+From: Allen Pais <allen.pais@oracle.com>
+Date: Fri, 13 Dec 2013 09:44:41 +0530
+Subject: sparc64: use generic rwsem spinlocks rt
+
+Signed-off-by: Allen Pais <allen.pais@oracle.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/sparc/Kconfig |    6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/arch/sparc/Kconfig
++++ b/arch/sparc/Kconfig
+@@ -206,12 +206,10 @@ config NR_CPUS
+ source kernel/Kconfig.hz
+ 
+ config RWSEM_GENERIC_SPINLOCK
+-	bool
+-	default y if SPARC32
++	def_bool PREEMPT_RT_FULL
+ 
+ config RWSEM_XCHGADD_ALGORITHM
+-	bool
+-	default y if SPARC64
++	def_bool !RWSEM_GENERIC_SPINLOCK && !PREEMPT_RT_FULL
+ 
+ config GENERIC_HWEIGHT
+ 	bool

@@ -1,0 +1,67 @@
+Subject: cpumask: Disable CONFIG_CPUMASK_OFFSTACK for RT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 14 Dec 2011 01:03:49 +0100
+
+There are "valid" GFP_ATOMIC allocations such as
+
+|BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:931
+|in_atomic(): 1, irqs_disabled(): 0, pid: 2130, name: tar
+|1 lock held by tar/2130:
+| #0:  (&mm->mmap_sem){++++++}, at: [<ffffffff811d4e89>] SyS_brk+0x39/0x190
+|Preemption disabled at:[<ffffffff81063048>] flush_tlb_mm_range+0x28/0x350
+|
+|CPU: 1 PID: 2130 Comm: tar Tainted: G        W       4.8.2-rt2+ #747
+|Call Trace:
+| [<ffffffff814d52dc>] dump_stack+0x86/0xca
+| [<ffffffff810a26fb>] ___might_sleep+0x14b/0x240
+| [<ffffffff819bc1d4>] rt_spin_lock+0x24/0x60
+| [<ffffffff81194fba>] get_page_from_freelist+0x83a/0x11b0
+| [<ffffffff81195e8b>] __alloc_pages_nodemask+0x15b/0x1190
+| [<ffffffff811f0b81>] alloc_pages_current+0xa1/0x1f0
+| [<ffffffff811f7df5>] new_slab+0x3e5/0x690
+| [<ffffffff811fb0d5>] ___slab_alloc+0x495/0x660
+| [<ffffffff811fb311>] __slab_alloc.isra.79+0x71/0xc0
+| [<ffffffff811fb447>] __kmalloc_node+0xe7/0x240
+| [<ffffffff814d4ee0>] alloc_cpumask_var_node+0x20/0x50
+| [<ffffffff814d4f3e>] alloc_cpumask_var+0xe/0x10
+| [<ffffffff810430c1>] native_send_call_func_ipi+0x21/0x130
+| [<ffffffff8111c13f>] smp_call_function_many+0x22f/0x370
+| [<ffffffff81062b64>] native_flush_tlb_others+0x1a4/0x3a0
+| [<ffffffff8106309b>] flush_tlb_mm_range+0x7b/0x350
+| [<ffffffff811c88e2>] tlb_flush_mmu_tlbonly+0x62/0xd0
+| [<ffffffff811c9af4>] tlb_finish_mmu+0x14/0x50
+| [<ffffffff811d1c84>] unmap_region+0xe4/0x110
+| [<ffffffff811d3db3>] do_munmap+0x293/0x470
+| [<ffffffff811d4f8c>] SyS_brk+0x13c/0x190
+| [<ffffffff810032e2>] do_fast_syscall_32+0xb2/0x2f0
+| [<ffffffff819be181>] entry_SYSENTER_compat+0x51/0x60
+
+which forbid allocations at run-time.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/x86/Kconfig |    2 +-
+ lib/Kconfig      |    1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -934,7 +934,7 @@ config IOMMU_HELPER
+ config MAXSMP
+ 	bool "Enable Maximum number of SMP Processors and NUMA Nodes"
+ 	depends on X86_64 && SMP && DEBUG_KERNEL
+-	select CPUMASK_OFFSTACK
++	select CPUMASK_OFFSTACK if !PREEMPT_RT_FULL
+ 	---help---
+ 	  Enable maximum number of CPUS and NUMA Nodes for this architecture.
+ 	  If unsure, say N.
+--- a/lib/Kconfig
++++ b/lib/Kconfig
+@@ -428,6 +428,7 @@ config CHECK_SIGNATURE
+ 
+ config CPUMASK_OFFSTACK
+ 	bool "Force CPU masks off stack" if DEBUG_PER_CPU_MAPS
++	depends on !PREEMPT_RT_FULL
+ 	help
+ 	  Use dynamic allocation for cpumask_var_t, instead of putting
+ 	  them on the stack.  This is a bit more expensive, but avoids

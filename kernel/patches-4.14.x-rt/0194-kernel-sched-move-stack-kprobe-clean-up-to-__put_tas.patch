@@ -1,0 +1,60 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 21 Nov 2016 19:31:08 +0100
+Subject: [PATCH] kernel/sched: move stack + kprobe clean up to
+ __put_task_struct()
+
+There is no need to free the stack before the task struct. This also
+comes handy on -RT because we can't free memory in preempt disabled
+region.
+
+Cc: stable-rt@vger.kernel.org #for kprobe_flush_task()
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/fork.c       |   10 ++++++++++
+ kernel/sched/core.c |    9 ---------
+ 2 files changed, 10 insertions(+), 9 deletions(-)
+
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -40,6 +40,7 @@
+ #include <linux/hmm.h>
+ #include <linux/fs.h>
+ #include <linux/mm.h>
++#include <linux/kprobes.h>
+ #include <linux/vmacache.h>
+ #include <linux/nsproxy.h>
+ #include <linux/capability.h>
+@@ -417,6 +418,15 @@ void __put_task_struct(struct task_struc
+ 	WARN_ON(atomic_read(&tsk->usage));
+ 	WARN_ON(tsk == current);
+ 
++	/*
++	 * Remove function-return probe instances associated with this
++	 * task and put them back on the free list.
++	 */
++	kprobe_flush_task(tsk);
++
++	/* Task is done with its stack. */
++	put_task_stack(tsk);
++
+ 	cgroup_free(tsk);
+ 	task_numa_free(tsk);
+ 	security_task_free(tsk);
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -2705,15 +2705,6 @@ static struct rq *finish_task_switch(str
+ 		if (prev->sched_class->task_dead)
+ 			prev->sched_class->task_dead(prev);
+ 
+-		/*
+-		 * Remove function-return probe instances associated with this
+-		 * task and put them back on the free list.
+-		 */
+-		kprobe_flush_task(prev);
+-
+-		/* Task is done with its stack. */
+-		put_task_stack(prev);
+-
+ 		put_task_struct(prev);
+ 	}
+ 

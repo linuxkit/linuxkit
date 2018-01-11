@@ -1,0 +1,49 @@
+From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
+Date: Tue, 19 Sep 2017 15:36:42 -0700
+Subject: [PATCH] rcu: Suppress lockdep false-positive ->boost_mtx complaints
+
+Upstream commit bcda31a2659497df39d6bedfbdf17498b4f4ac89
+
+RCU priority boosting uses rt_mutex_init_proxy_locked() to initialize an
+rt_mutex structure in locked state held by some other task.  When that
+other task releases it, lockdep complains (quite accurately, but a bit
+uselessly) that the other task never acquired it.  This complaint can
+suppress other, more helpful, lockdep complaints, and in any case it is
+a false positive.
+
+This commit therefore switches from rt_mutex_unlock() to
+rt_mutex_futex_unlock(), thereby avoiding the lockdep annotations.
+Of course, if lockdep ever learns about rt_mutex_init_proxy_locked(),
+addtional adjustments will be required.
+
+Suggested-by: Peter Zijlstra <peterz@infradead.org>
+Signed-off-by: Paul E. McKenney <paulmck@linux.vnet.ibm.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/rcu/tree_plugin.h |    5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/kernel/rcu/tree_plugin.h
++++ b/kernel/rcu/tree_plugin.h
+@@ -31,11 +31,10 @@
+ #include <linux/smpboot.h>
+ #include <uapi/linux/sched/types.h>
+ #include "../time/tick-internal.h"
++#include "../locking/rtmutex_common.h"
+ 
+ #ifdef CONFIG_RCU_BOOST
+ 
+-#include "../locking/rtmutex_common.h"
+-
+ /*
+  * Control variables for per-CPU and per-rcu_node kthreads.  These
+  * handle all flavors of RCU.
+@@ -530,7 +529,7 @@ void rcu_read_unlock_special(struct task
+ 
+ 		/* Unboost if we were boosted. */
+ 		if (IS_ENABLED(CONFIG_RCU_BOOST) && drop_boost_mutex)
+-			rt_mutex_unlock(&rnp->boost_mtx);
++			rt_mutex_futex_unlock(&rnp->boost_mtx);
+ 
+ 		/*
+ 		 * If this was the last task on the expedited lists,

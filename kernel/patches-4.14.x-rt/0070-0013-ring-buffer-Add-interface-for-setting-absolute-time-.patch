@@ -1,0 +1,132 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Mon, 15 Jan 2018 20:51:39 -0600
+Subject: [PATCH 13/48] ring-buffer: Add interface for setting absolute time
+ stamps
+
+Define a new function, tracing_set_time_stamp_abs(), which can be used
+to enable or disable the use of absolute timestamps rather than time
+deltas for a trace array.
+
+Only the interface is added here; a subsequent patch will add the
+underlying implementation.
+
+Link: http://lkml.kernel.org/r/ce96119de44c7fe0ee44786d15254e9b493040d3.1516069914.git.tom.zanussi@linux.intel.com
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Baohong Liu <baohong.liu@intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit 22753475c5232cd6f024746d6a6696a4dd2683ab)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/ring_buffer.h |    2 ++
+ kernel/trace/ring_buffer.c  |   11 +++++++++++
+ kernel/trace/trace.c        |   33 ++++++++++++++++++++++++++++++++-
+ kernel/trace/trace.h        |    3 +++
+ 4 files changed, 48 insertions(+), 1 deletion(-)
+
+--- a/include/linux/ring_buffer.h
++++ b/include/linux/ring_buffer.h
+@@ -181,6 +181,8 @@ void ring_buffer_normalize_time_stamp(st
+ 				      int cpu, u64 *ts);
+ void ring_buffer_set_clock(struct ring_buffer *buffer,
+ 			   u64 (*clock)(void));
++void ring_buffer_set_time_stamp_abs(struct ring_buffer *buffer, bool abs);
++bool ring_buffer_time_stamp_abs(struct ring_buffer *buffer);
+ 
+ size_t ring_buffer_page_len(void *page);
+ 
+--- a/kernel/trace/ring_buffer.c
++++ b/kernel/trace/ring_buffer.c
+@@ -489,6 +489,7 @@ struct ring_buffer {
+ 	u64				(*clock)(void);
+ 
+ 	struct rb_irq_work		irq_work;
++	bool				time_stamp_abs;
+ };
+ 
+ struct ring_buffer_iter {
+@@ -1383,6 +1384,16 @@ void ring_buffer_set_clock(struct ring_b
+ 	buffer->clock = clock;
+ }
+ 
++void ring_buffer_set_time_stamp_abs(struct ring_buffer *buffer, bool abs)
++{
++	buffer->time_stamp_abs = abs;
++}
++
++bool ring_buffer_time_stamp_abs(struct ring_buffer *buffer)
++{
++	return buffer->time_stamp_abs;
++}
++
+ static void rb_reset_cpu(struct ring_buffer_per_cpu *cpu_buffer);
+ 
+ static inline unsigned long rb_page_entries(struct buffer_page *bpage)
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -2269,7 +2269,7 @@ trace_event_buffer_lock_reserve(struct r
+ 
+ 	*current_rb = trace_file->tr->trace_buffer.buffer;
+ 
+-	if ((trace_file->flags &
++	if (!ring_buffer_time_stamp_abs(*current_rb) && (trace_file->flags &
+ 	     (EVENT_FILE_FL_SOFT_DISABLED | EVENT_FILE_FL_FILTERED)) &&
+ 	    (entry = this_cpu_read(trace_buffered_event))) {
+ 		/* Try to use the per cpu buffer first */
+@@ -6286,6 +6286,37 @@ static int tracing_clock_open(struct ino
+ 
+ 	return ret;
+ }
++
++int tracing_set_time_stamp_abs(struct trace_array *tr, bool abs)
++{
++	int ret = 0;
++
++	mutex_lock(&trace_types_lock);
++
++	if (abs && tr->time_stamp_abs_ref++)
++		goto out;
++
++	if (!abs) {
++		if (WARN_ON_ONCE(!tr->time_stamp_abs_ref)) {
++			ret = -EINVAL;
++			goto out;
++		}
++
++		if (--tr->time_stamp_abs_ref)
++			goto out;
++	}
++
++	ring_buffer_set_time_stamp_abs(tr->trace_buffer.buffer, abs);
++
++#ifdef CONFIG_TRACER_MAX_TRACE
++	if (tr->max_buffer.buffer)
++		ring_buffer_set_time_stamp_abs(tr->max_buffer.buffer, abs);
++#endif
++ out:
++	mutex_unlock(&trace_types_lock);
++
++	return ret;
++}
+ 
+ struct ftrace_buffer_info {
+ 	struct trace_iterator	iter;
+--- a/kernel/trace/trace.h
++++ b/kernel/trace/trace.h
+@@ -273,6 +273,7 @@ struct trace_array {
+ 	/* function tracing enabled */
+ 	int			function_enabled;
+ #endif
++	int			time_stamp_abs_ref;
+ };
+ 
+ enum {
+@@ -286,6 +287,8 @@ extern struct mutex trace_types_lock;
+ extern int trace_array_get(struct trace_array *tr);
+ extern void trace_array_put(struct trace_array *tr);
+ 
++extern int tracing_set_time_stamp_abs(struct trace_array *tr, bool abs);
++
+ /*
+  * The global tracer (top) should be the first trace array added,
+  * but we check the flag anyway.

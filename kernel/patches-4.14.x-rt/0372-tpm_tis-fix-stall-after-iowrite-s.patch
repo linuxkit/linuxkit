@@ -1,0 +1,77 @@
+From: Haris Okanovic <haris.okanovic@ni.com>
+Date: Tue, 15 Aug 2017 15:13:08 -0500
+Subject: [PATCH] tpm_tis: fix stall after iowrite*()s
+
+ioread8() operations to TPM MMIO addresses can stall the cpu when
+immediately following a sequence of iowrite*()'s to the same region.
+
+For example, cyclitest measures ~400us latency spikes when a non-RT
+usermode application communicates with an SPI-based TPM chip (Intel Atom
+E3940 system, PREEMPT_RT_FULL kernel). The spikes are caused by a
+stalling ioread8() operation following a sequence of 30+ iowrite8()s to
+the same address. I believe this happens because the write sequence is
+buffered (in cpu or somewhere along the bus), and gets flushed on the
+first LOAD instruction (ioread*()) that follows.
+
+The enclosed change appears to fix this issue: read the TPM chip's
+access register (status code) after every iowrite*() operation to
+amortize the cost of flushing data to chip across multiple instructions.
+
+Signed-off-by: Haris Okanovic <haris.okanovic@ni.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/char/tpm/tpm_tis.c |   29 +++++++++++++++++++++++++++--
+ 1 file changed, 27 insertions(+), 2 deletions(-)
+
+--- a/drivers/char/tpm/tpm_tis.c
++++ b/drivers/char/tpm/tpm_tis.c
+@@ -52,6 +52,31 @@ static inline struct tpm_tis_tcg_phy *to
+ 	return container_of(data, struct tpm_tis_tcg_phy, priv);
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++/*
++ * Flushes previous write operations to chip so that a subsequent
++ * ioread*()s won't stall a cpu.
++ */
++static inline void tpm_tis_flush(void __iomem *iobase)
++{
++	ioread8(iobase + TPM_ACCESS(0));
++}
++#else
++#define tpm_tis_flush(iobase) do { } while (0)
++#endif
++
++static inline void tpm_tis_iowrite8(u8 b, void __iomem *iobase, u32 addr)
++{
++	iowrite8(b, iobase + addr);
++	tpm_tis_flush(iobase);
++}
++
++static inline void tpm_tis_iowrite32(u32 b, void __iomem *iobase, u32 addr)
++{
++	iowrite32(b, iobase + addr);
++	tpm_tis_flush(iobase);
++}
++
+ static bool interrupts = true;
+ module_param(interrupts, bool, 0444);
+ MODULE_PARM_DESC(interrupts, "Enable interrupts");
+@@ -230,7 +255,7 @@ static int tpm_tcg_write_bytes(struct tp
+ 	tpm_platform_begin_xfer();
+ 
+ 	while (len--)
+-		iowrite8(*value++, phy->iobase + addr);
++		tpm_tis_iowrite8(*value++, phy->iobase, addr);
+ 
+ 	tpm_platform_end_xfer();
+ 
+@@ -269,7 +294,7 @@ static int tpm_tcg_write32(struct tpm_ti
+ 
+ 	tpm_platform_begin_xfer();
+ 
+-	iowrite32(value, phy->iobase + addr);
++	tpm_tis_iowrite32(value, phy->iobase, addr);
+ 
+ 	tpm_platform_end_xfer();
+ 

@@ -1,0 +1,68 @@
+Subject: ARM: Initialize split page table locks for vector page
+From: Frank Rowand <frank.rowand@am.sony.com>
+Date: Sat, 1 Oct 2011 18:58:13 -0700
+
+Without this patch, ARM can not use SPLIT_PTLOCK_CPUS if
+PREEMPT_RT_FULL=y because vectors_user_mapping() creates a
+VM_ALWAYSDUMP mapping of the vector page (address 0xffff0000), but no
+ptl->lock has been allocated for the page.  An attempt to coredump
+that page will result in a kernel NULL pointer dereference when
+follow_page() attempts to lock the page.
+
+The call tree to the NULL pointer dereference is:
+
+   do_notify_resume()
+      get_signal_to_deliver()
+         do_coredump()
+            elf_core_dump()
+               get_dump_page()
+                  __get_user_pages()
+                     follow_page()
+                        pte_offset_map_lock() <----- a #define
+                           ...
+                              rt_spin_lock()
+
+The underlying problem is exposed by mm-shrink-the-page-frame-to-rt-size.patch.
+
+Signed-off-by: Frank Rowand <frank.rowand@am.sony.com>
+Cc: Frank <Frank_Rowand@sonyusa.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Link: http://lkml.kernel.org/r/4E87C535.2030907@am.sony.com
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/arm/kernel/process.c |   24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- a/arch/arm/kernel/process.c
++++ b/arch/arm/kernel/process.c
+@@ -325,6 +325,30 @@ unsigned long arch_randomize_brk(struct
+ }
+ 
+ #ifdef CONFIG_MMU
++/*
++ * CONFIG_SPLIT_PTLOCK_CPUS results in a page->ptl lock.  If the lock is not
++ * initialized by pgtable_page_ctor() then a coredump of the vector page will
++ * fail.
++ */
++static int __init vectors_user_mapping_init_page(void)
++{
++	struct page *page;
++	unsigned long addr = 0xffff0000;
++	pgd_t *pgd;
++	pud_t *pud;
++	pmd_t *pmd;
++
++	pgd = pgd_offset_k(addr);
++	pud = pud_offset(pgd, addr);
++	pmd = pmd_offset(pud, addr);
++	page = pmd_page(*(pmd));
++
++	pgtable_page_ctor(page);
++
++	return 0;
++}
++late_initcall(vectors_user_mapping_init_page);
++
+ #ifdef CONFIG_KUSER_HELPERS
+ /*
+  * The vectors page is always readable from user space for the

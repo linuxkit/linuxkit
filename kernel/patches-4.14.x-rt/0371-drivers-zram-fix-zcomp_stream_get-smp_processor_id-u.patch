@@ -1,0 +1,37 @@
+From: Mike Galbraith <efault@gmx.de>
+Date: Wed, 23 Aug 2017 11:57:29 +0200
+Subject: [PATCH] drivers/zram: fix zcomp_stream_get() smp_processor_id() use
+ in preemptible code
+
+Use get_local_ptr() instead this_cpu_ptr() to avoid a warning regarding
+smp_processor_id() in preemptible code.
+raw_cpu_ptr() would be fine, too because the per-CPU data structure is
+protected with a spin lock so it does not matter much if we take the
+other one.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Mike Galbraith <efault@gmx.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/block/zram/zcomp.c |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/block/zram/zcomp.c
++++ b/drivers/block/zram/zcomp.c
+@@ -118,7 +118,7 @@ struct zcomp_strm *zcomp_stream_get(stru
+ {
+ 	struct zcomp_strm *zstrm;
+ 
+-	zstrm = *this_cpu_ptr(comp->stream);
++	zstrm = *get_local_ptr(comp->stream);
+ 	spin_lock(&zstrm->zcomp_lock);
+ 	return zstrm;
+ }
+@@ -129,6 +129,7 @@ void zcomp_stream_put(struct zcomp *comp
+ 
+ 	zstrm = *this_cpu_ptr(comp->stream);
+ 	spin_unlock(&zstrm->zcomp_lock);
++	put_local_ptr(zstrm);
+ }
+ 
+ int zcomp_compress(struct zcomp_strm *zstrm,

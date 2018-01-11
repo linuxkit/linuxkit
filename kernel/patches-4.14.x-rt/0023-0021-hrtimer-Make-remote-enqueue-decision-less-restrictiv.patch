@@ -1,0 +1,31 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:10 +0100
+Subject: [PATCH 21/29] hrtimer: Make remote enqueue decision less restrictive
+
+The current decision whether a timer can be queued on a remote CPU checks
+for timer->expiry <= remote_cpu_base.expires_next.
+
+This is too restrictive because a timer with the same expiry time as an
+existing timer will be enqueued on right-hand size of the existing timer
+inside the rbtree, i.e. behind the first expiring timer.
+
+So its safe to allow enqueuing timers with the same expiry time as the
+first expiring timer on a remote CPU base.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -168,7 +168,7 @@ hrtimer_check_target(struct hrtimer *tim
+ 	ktime_t expires;
+ 
+ 	expires = ktime_sub(hrtimer_get_expires(timer), new_base->offset);
+-	return expires <= new_base->cpu_base->expires_next;
++	return expires < new_base->cpu_base->expires_next;
+ }
+ 
+ static inline

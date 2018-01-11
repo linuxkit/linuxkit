@@ -1,0 +1,69 @@
+From: Mike Galbraith <umgwanakikbuti@gmail.com>
+Date: Wed, 18 Feb 2015 15:09:23 +0100
+Subject: snd/pcm: fix snd_pcm_stream_lock*() irqs_disabled() splats
+
+Locking functions previously using read_lock_irq()/read_lock_irqsave() were
+changed to local_irq_disable/save(), leading to gripes.  Use nort variants.
+
+|BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:915
+|in_atomic(): 0, irqs_disabled(): 1, pid: 5947, name: alsa-sink-ALC88
+|CPU: 5 PID: 5947 Comm: alsa-sink-ALC88 Not tainted 3.18.7-rt1 #9
+|Hardware name: MEDION MS-7848/MS-7848, BIOS M7848W08.404 11/06/2014
+| ffff880409316240 ffff88040866fa38 ffffffff815bdeb5 0000000000000002
+| 0000000000000000 ffff88040866fa58 ffffffff81073c86 ffffffffa03b2640
+| ffff88040239ec00 ffff88040866fa78 ffffffff815c3d34 ffffffffa03b2640
+|Call Trace:
+| [<ffffffff815bdeb5>] dump_stack+0x4f/0x9e
+| [<ffffffff81073c86>] __might_sleep+0xe6/0x150
+| [<ffffffff815c3d34>] __rt_spin_lock+0x24/0x50
+| [<ffffffff815c4044>] rt_read_lock+0x34/0x40
+| [<ffffffffa03a2979>] snd_pcm_stream_lock+0x29/0x70 [snd_pcm]
+| [<ffffffffa03a355d>] snd_pcm_playback_poll+0x5d/0x120 [snd_pcm]
+| [<ffffffff811937a2>] do_sys_poll+0x322/0x5b0
+| [<ffffffff81193d48>] SyS_ppoll+0x1a8/0x1c0
+| [<ffffffff815c4556>] system_call_fastpath+0x16/0x1b
+
+Signed-off-by: Mike Galbraith <umgwanakikbuti@gmail.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ sound/core/pcm_native.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/sound/core/pcm_native.c
++++ b/sound/core/pcm_native.c
+@@ -148,7 +148,7 @@ EXPORT_SYMBOL_GPL(snd_pcm_stream_unlock)
+ void snd_pcm_stream_lock_irq(struct snd_pcm_substream *substream)
+ {
+ 	if (!substream->pcm->nonatomic)
+-		local_irq_disable();
++		local_irq_disable_nort();
+ 	snd_pcm_stream_lock(substream);
+ }
+ EXPORT_SYMBOL_GPL(snd_pcm_stream_lock_irq);
+@@ -163,7 +163,7 @@ void snd_pcm_stream_unlock_irq(struct sn
+ {
+ 	snd_pcm_stream_unlock(substream);
+ 	if (!substream->pcm->nonatomic)
+-		local_irq_enable();
++		local_irq_enable_nort();
+ }
+ EXPORT_SYMBOL_GPL(snd_pcm_stream_unlock_irq);
+ 
+@@ -171,7 +171,7 @@ unsigned long _snd_pcm_stream_lock_irqsa
+ {
+ 	unsigned long flags = 0;
+ 	if (!substream->pcm->nonatomic)
+-		local_irq_save(flags);
++		local_irq_save_nort(flags);
+ 	snd_pcm_stream_lock(substream);
+ 	return flags;
+ }
+@@ -189,7 +189,7 @@ void snd_pcm_stream_unlock_irqrestore(st
+ {
+ 	snd_pcm_stream_unlock(substream);
+ 	if (!substream->pcm->nonatomic)
+-		local_irq_restore(flags);
++		local_irq_restore_nort(flags);
+ }
+ EXPORT_SYMBOL_GPL(snd_pcm_stream_unlock_irqrestore);
+ 

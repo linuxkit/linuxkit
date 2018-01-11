@@ -1,0 +1,27 @@
+Subject: mm: page_alloc: Use local_lock_on() instead of plain spinlock
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 27 Sep 2012 11:11:46 +0200
+
+The plain spinlock while sufficient does not update the local_lock
+internals. Use a proper local_lock function instead to ease debugging.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ mm/page_alloc.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -292,9 +292,9 @@ static DEFINE_LOCAL_IRQ_LOCK(pa_lock);
+ 
+ #ifdef CONFIG_PREEMPT_RT_BASE
+ # define cpu_lock_irqsave(cpu, flags)		\
+-	spin_lock_irqsave(&per_cpu(pa_lock, cpu).lock, flags)
++	local_lock_irqsave_on(pa_lock, flags, cpu)
+ # define cpu_unlock_irqrestore(cpu, flags)	\
+-	spin_unlock_irqrestore(&per_cpu(pa_lock, cpu).lock, flags)
++	local_unlock_irqrestore_on(pa_lock, flags, cpu)
+ #else
+ # define cpu_lock_irqsave(cpu, flags)		local_irq_save(flags)
+ # define cpu_unlock_irqrestore(cpu, flags)	local_irq_restore(flags)

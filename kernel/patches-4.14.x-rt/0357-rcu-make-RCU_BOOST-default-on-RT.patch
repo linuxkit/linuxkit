@@ -1,0 +1,34 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 21 Mar 2014 20:19:05 +0100
+Subject: rcu: make RCU_BOOST default on RT
+
+Since it is no longer invoked from the softirq people run into OOM more
+often if the priority of the RCU thread is too low. Making boosting
+default on RT should help in those case and it can be switched off if
+someone knows better.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/rcu/Kconfig |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/kernel/rcu/Kconfig
++++ b/kernel/rcu/Kconfig
+@@ -36,7 +36,7 @@ config TINY_RCU
+ 
+ config RCU_EXPERT
+ 	bool "Make expert-level adjustments to RCU configuration"
+-	default n
++	default y if PREEMPT_RT_FULL
+ 	help
+ 	  This option needs to be enabled if you wish to make
+ 	  expert-level adjustments to RCU configuration.  By default,
+@@ -191,7 +191,7 @@ config RCU_FAST_NO_HZ
+ config RCU_BOOST
+ 	bool "Enable RCU priority boosting"
+ 	depends on RT_MUTEXES && PREEMPT_RCU && RCU_EXPERT
+-	default n
++	default y if PREEMPT_RT_FULL
+ 	help
+ 	  This option boosts the priority of preempted RCU readers that
+ 	  block the current preemptible RCU grace period for too long.

@@ -1,0 +1,40 @@
+Subject: mm: rt: Fix generic kmap_atomic for RT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sat, 19 Sep 2015 10:15:00 +0200
+
+The update to 4.1 brought in the mainline variant of the pagefault
+disable distangling from preempt count. That introduced a
+preempt_disable/enable pair in the generic kmap_atomic/kunmap_atomic
+implementations which got not converted to the _nort() variant.
+
+That results in massive 'scheduling while atomic/sleeping function
+called from invalid context' splats.
+
+Fix that up.
+
+Reported-and-tested-by: Juergen Borleis <jbe@pengutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/highmem.h |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/include/linux/highmem.h
++++ b/include/linux/highmem.h
+@@ -66,7 +66,7 @@ static inline void kunmap(struct page *p
+ 
+ static inline void *kmap_atomic(struct page *page)
+ {
+-	preempt_disable();
++	preempt_disable_nort();
+ 	pagefault_disable();
+ 	return page_address(page);
+ }
+@@ -75,7 +75,7 @@ static inline void *kmap_atomic(struct p
+ static inline void __kunmap_atomic(void *addr)
+ {
+ 	pagefault_enable();
+-	preempt_enable();
++	preempt_enable_nort();
+ }
+ 
+ #define kmap_atomic_pfn(pfn)	kmap_atomic(pfn_to_page(pfn))

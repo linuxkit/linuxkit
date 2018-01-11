@@ -1,0 +1,47 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 15 Apr 2015 19:00:47 +0200
+Subject: slub: Disable SLUB_CPU_PARTIAL
+
+|BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:915
+|in_atomic(): 1, irqs_disabled(): 0, pid: 87, name: rcuop/7
+|1 lock held by rcuop/7/87:
+| #0:  (rcu_callback){......}, at: [<ffffffff8112c76a>] rcu_nocb_kthread+0x1ca/0x5d0
+|Preemption disabled at:[<ffffffff811eebd9>] put_cpu_partial+0x29/0x220
+|
+|CPU: 0 PID: 87 Comm: rcuop/7 Tainted: G        W       4.0.0-rt0+ #477
+|Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.7.5-20140531_083030-gandalf 04/01/2014
+| 000000000007a9fc ffff88013987baf8 ffffffff817441c7 0000000000000007
+| 0000000000000000 ffff88013987bb18 ffffffff810eee51 0000000000000000
+| ffff88013fc10200 ffff88013987bb48 ffffffff8174a1c4 000000000007a9fc
+|Call Trace:
+| [<ffffffff817441c7>] dump_stack+0x4f/0x90
+| [<ffffffff810eee51>] ___might_sleep+0x121/0x1b0
+| [<ffffffff8174a1c4>] rt_spin_lock+0x24/0x60
+| [<ffffffff811a689a>] __free_pages_ok+0xaa/0x540
+| [<ffffffff811a729d>] __free_pages+0x1d/0x30
+| [<ffffffff811eddd5>] __free_slab+0xc5/0x1e0
+| [<ffffffff811edf46>] free_delayed+0x56/0x70
+| [<ffffffff811eecfd>] put_cpu_partial+0x14d/0x220
+| [<ffffffff811efc98>] __slab_free+0x158/0x2c0
+| [<ffffffff811f0021>] kmem_cache_free+0x221/0x2d0
+| [<ffffffff81204d0c>] file_free_rcu+0x2c/0x40
+| [<ffffffff8112c7e3>] rcu_nocb_kthread+0x243/0x5d0
+| [<ffffffff810e951c>] kthread+0xfc/0x120
+| [<ffffffff8174abc8>] ret_from_fork+0x58/0x90
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ init/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1596,7 +1596,7 @@ config SLAB_FREELIST_HARDENED
+ 
+ config SLUB_CPU_PARTIAL
+ 	default y
+-	depends on SLUB && SMP
++	depends on SLUB && SMP && !PREEMPT_RT_FULL
+ 	bool "SLUB per cpu partial cache"
+ 	help
+ 	  Per cpu partial caches accellerate objects allocation and freeing

@@ -1,0 +1,34 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 30 Mar 2016 13:36:29 +0200
+Subject: [PATCH] net: dev: always take qdisc's busylock in __dev_xmit_skb()
+
+The root-lock is dropped before dev_hard_start_xmit() is invoked and after
+setting the __QDISC___STATE_RUNNING bit. If this task is now pushed away
+by a task with a higher priority then the task with the higher priority
+won't be able to submit packets to the NIC directly instead they will be
+enqueued into the Qdisc. The NIC will remain idle until the task(s) with
+higher priority leave the CPU and the task with lower priority gets back
+and finishes the job.
+
+If we take always the busylock we ensure that the RT task can boost the
+low-prio task and submit the packet.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ net/core/dev.c |    4 ++++
+ 1 file changed, 4 insertions(+)
+
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -3170,7 +3170,11 @@ static inline int __dev_xmit_skb(struct
+ 	 * This permits qdisc->running owner to get the lock more
+ 	 * often and dequeue packets faster.
+ 	 */
++#ifdef CONFIG_PREEMPT_RT_FULL
++	contended = true;
++#else
+ 	contended = qdisc_is_running(q);
++#endif
+ 	if (unlikely(contended))
+ 		spin_lock(&q->busylock);
+ 
