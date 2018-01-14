@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:d307c8a386fa3f32cddda9409b9687e191cdd6f1 AS kernel-build
+FROM linuxkit/alpine:34518265c6cb63ff02074549cc5b64bef40c336f AS kernel-build
 RUN apk add \
     argp-standalone \
     automake \
@@ -156,6 +156,18 @@ RUN if [ "${KERNEL_SERIES}" != "4.4.x" ]; then \
        strip /build/perf/perf && \
        cp /build/perf/perf /out; \
      fi
+
+# Download Intel ucode and create a CPIO archive for it
+ENV UCODE_URL=https://downloadmirror.intel.com/27431/eng/microcode-20180108.tgz
+RUN set -e && \
+    if [ $(uname -m) == x86_64 ]; then \
+        cd /ucode && \
+        curl -sSL -o microcode.tar.gz ${UCODE_URL} && \
+        md5sum -c intel-ucode-md5sums && \
+        tar xf microcode.tar.gz && \
+        iucode_tool --normal-earlyfw --write-earlyfw=/out/intel-ucode.cpio ./intel-ucode && \
+        cp intel-ucode-license.txt /out; \
+    fi
 
 FROM scratch
 ENTRYPOINT []

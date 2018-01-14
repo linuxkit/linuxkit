@@ -53,6 +53,26 @@ RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make
 RUN cd $GOPATH/src/github.com/containerd/containerd && \
   make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILD_TAGS="static_build"
 
+# Checkout and compile iucode-tool for Intel CPU microcode
+# On non-x86_64 create a dummy file to copy below.
+ENV IUCODE_REPO=https://gitlab.com/iucode-tool/iucode-tool
+ENV IUCODE_COMMIT=v2.2
+WORKDIR /
+ADD iucode-tool.patch /
+RUN set -e && \
+    mkdir /iucode_tool && \
+    if [ $(uname -m) = "x86_64" ]; then \
+        apk add --no-cache automake autoconf argp-standalone git gcc make musl-dev patch && \
+        git clone ${IUCODE_REPO} && \
+        cd /iucode-tool && \
+        git checkout ${IUCODE_COMMIT} && \
+        patch -p 1 < /iucode-tool.patch && \
+        ./autogen.sh && \
+        ./configure && \
+        make && \
+        cp iucode_tool /iucode_tool; \
+    fi
+
 FROM alpine:3.7
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
@@ -62,6 +82,7 @@ COPY --from=mirror /mirror /mirror/
 COPY --from=mirror /go/bin /go/bin/
 COPY --from=mirror /Dockerfile /Dockerfile
 COPY --from=mirror /go/src/github.com/containerd/containerd /go/src/github.com/containerd/containerd/
+COPY --from=mirror /iucode_tool /usr/bin/
 
 RUN apk update && apk upgrade -a
 

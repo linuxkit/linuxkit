@@ -1,0 +1,12 @@
+diff --git a/iucode_tool.c b/iucode_tool.c
+index 460087c..8825ed6 100644
+--- a/iucode_tool.c
++++ b/iucode_tool.c
+@@ -31,6 +31,7 @@
+ #include <dirent.h>
+ #include <time.h>
+ #include <cpuid.h>
++#include <limits.h>
+ 
+ #include "intel_microcode.h"
+ 
