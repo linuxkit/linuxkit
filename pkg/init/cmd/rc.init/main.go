@@ -281,7 +281,7 @@ func rlimit(resource int, cur, max uint64) {
 	lim := unix.Rlimit{Cur: cur, Max: max}
 	err := unix.Setrlimit(resource, &lim)
 	if err != nil {
-		log.Printf("Failed to set rlimit %s: %v", resource, err)
+		log.Printf("Failed to set rlimit %d: %v", resource, err)
 	}
 }
 
