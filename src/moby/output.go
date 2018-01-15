@@ -39,12 +39,11 @@ var outFuns = map[string]func(string, io.Reader, int) error{
 		return nil
 	},
 	"tar-kernel-initrd": func(base string, image io.Reader, size int) error {
-		kernel, initrd, cmdline, _, err := tarToInitrd(image)
+		kernel, initrd, cmdline, ucode, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
 		}
-		// TODO: Handle ucode
-		if err := outputKernelInitrdTarball(base, kernel, initrd, cmdline); err != nil {
+		if err := outputKernelInitrdTarball(base, kernel, initrd, cmdline, ucode); err != nil {
 			return fmt.Errorf("Error writing kernel+initrd tarball output: %v", err)
 		}
 		return nil
@@ -332,7 +331,7 @@ func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline strin
 	return ioutil.WriteFile(base+"-cmdline", []byte(cmdline), os.FileMode(0644))
 }
 
-func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdline string) error {
+func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdline string, ucode []byte) error {
 	log.Debugf("output kernel/initrd tarball: %s %s", base, cmdline)
 	log.Infof("  %s", base+"-initrd.tar")
 	f, err := os.Create(base + "-initrd.tar")
@@ -373,6 +372,19 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	}
 	if _, err := tw.Write([]byte(cmdline)); err != nil {
 		return err
+	}
+	if len(ucode) != 0 {
+		hdr := &tar.Header{
+			Name: "ucode.cpio",
+			Mode: 0644,
+			Size: int64(len(ucode)),
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if _, err := tw.Write(ucode); err != nil {
+			return err
+		}
 	}
 	return tw.Close()
 }
