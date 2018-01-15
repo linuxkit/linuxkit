@@ -72,7 +72,7 @@ func ensureLinuxkitImage(name string) error {
 		return err
 	}
 	defer image.Close()
-	kernel, initrd, cmdline, err := tarToInitrd(image)
+	kernel, initrd, cmdline, _, err := tarToInitrd(image)
 	if err != nil {
 		return fmt.Errorf("Error converting to initrd: %v", err)
 	}

@@ -36,6 +36,7 @@ type KernelConfig struct {
 	Cmdline string  `yaml:"cmdline,omitempty" json:"cmdline,omitempty"`
 	Binary  string  `yaml:"binary,omitempty" json:"binary,omitempty"`
 	Tar     *string `yaml:"tar,omitempty" json:"tar,omitempty"`
+	UCode   *string `yaml:"ucode,omitempty" json:"ucode,omitempty"`
 
 	ref *reference.Spec
 }
@@ -288,6 +289,9 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	}
 	if m1.Kernel.Tar != nil {
 		moby.Kernel.Tar = m1.Kernel.Tar
+	}
+	if m1.Kernel.UCode != nil {
+		moby.Kernel.UCode = m1.Kernel.UCode
 	}
 	if m1.Kernel.ref != nil {
 		moby.Kernel.ref = m1.Kernel.ref

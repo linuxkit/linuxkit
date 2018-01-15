@@ -47,6 +47,10 @@ contain a kernel modules directory. `cmdline` specifies the kernel command line 
 To override the names, you can specify the kernel image name with `binary: bzImage` and the tar image
 with `tar: kernel.tar` or the empty string or `none` if you do not want to use a tarball at all.
 
+Kernel packages may also contain a cpio archive containing CPU microcode which needs prepending to
+the initrd. To select this option, recommended when booting on bare metal, add `ucode: intel-ucode.cpio`
+to the kernel section.
+
 ## `init`
 
 The `init` section is a list of images that are used for the `init` system and are unpacked directly
