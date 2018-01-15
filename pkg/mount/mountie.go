@@ -180,13 +180,13 @@ func makeDevLinks() error {
 				// udev makes these relative links, copy that behaviour.
 				tgtpath := filepath.Join("..", "..", name)
 				if err := os.Symlink(tgtpath, sympath); err != nil {
-					log.Printf("Failed to create %q: %v", err)
+					log.Printf("Failed to create %q: %v", sympath, err)
 					continue
 				}
 			case "TYPE":
 				// uninteresting
 			default:
-				log.Printf("unused %q blkid property %q", name, key, match[0])
+				log.Printf("unused %q blkid property %q in %q", name, key, match[0])
 			}
 		}
 	}
