@@ -110,13 +110,13 @@ func CopyTar(w *Writer, r *tar.Reader) (written int64, err error) {
 	}
 }
 
-// CopySplitTar copies a tar stream into an initrd, but splits out kernel and cmdline
-func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, err error) {
+// CopySplitTar copies a tar stream into an initrd, but splits out kernel, cmdline, and ucode
+func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, ucode []byte, err error) {
 	for {
 		var thdr *tar.Header
 		thdr, err = r.Next()
 		if err == io.EOF {
-			return kernel, cmdline, nil
+			return kernel, cmdline, ucode, nil
 		}
 		if err != nil {
 			return
@@ -134,6 +134,11 @@ func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, err 
 				return
 			}
 			cmdline = string(buf)
+		case "boot/ucode.cpio":
+			ucode, err = ioutil.ReadAll(r)
+			if err != nil {
+				return
+			}
 		case "boot":
 			// skip this entry
 		default:

@@ -13,7 +13,8 @@ var schema = string(`
         "image": {"type": "string"},
         "cmdline": {"type": "string"},
         "binary": {"type": "string"},
-        "tar": {"type": "string"}
+        "tar": {"type": "string"},
+        "ucode": {"type": "string"}
       }
     },
     "file": {
