@@ -291,7 +291,7 @@ func validateHTTPURL(url string) error {
 		return err
 	}
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("Got a non 200- or 300- HTTP response code: %s", resp)
+		return fmt.Errorf("Got a non 200- or 300- HTTP response code: %s", resp.Status)
 	}
 	return nil
 }
