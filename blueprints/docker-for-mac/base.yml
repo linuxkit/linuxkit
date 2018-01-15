@@ -9,7 +9,7 @@ init:
   - linuxkit/containerd:1b6b8a5884e17b26e2725cb82c436841070fca95
   - linuxkit/ca-certificates:de21b84d9b055ad9dcecc57965b654a7a24ef8e0
 onboot:
-  # support metadata for optional config in /var/config
+  # support metadata for optional config in /run/config
   - name: metadata
     image: linuxkit/metadata:2af15c9f4b0e73515c219b7cc14e6e65e1d4fd6d
   - name: sysctl

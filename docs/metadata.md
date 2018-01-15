@@ -12,11 +12,11 @@ instances before launch (it is immutable in most providers).
 The [metadata package](../pkg/metadata/) handles both metadata and
 userdata for a number of providers (see below).  It abstracts over
 the provider differences by exposing both metadata and userdata in
-a directory hierarchy under `/var/config`.  For example, sshd config
-files from the metadata are placed under `/var/config/ssh`.
+a directory hierarchy under `/run/config`.  For example, sshd config
+files from the metadata are placed under `/run/config/ssh`.
 
 Userdata is assumed to be a single string and the contents will be
-stored under `/var/config/userdata`.  If userdata is a JSON file, the
+stored under `/run/config/userdata`.  If userdata is a JSON file, the
 contents will be further processed, where different keys cause
 directories to be created and the directories are populated with files.
 For example, the following userdata file:
@@ -45,9 +45,9 @@ For example, the following userdata file:
 ```
 will generate the following files:
 ```
-/var/config/ssh/sshd_config
-/var/config/foo/bar
-/var/config/foo/baz
+/run/config/ssh/sshd_config
+/run/config/foo/bar
+/run/config/foo/baz
 ```
 
 The JSON file consists of a map from `name` to an entry object. Each entry object has the following fields:
@@ -83,20 +83,20 @@ Below is a list of supported providers and notes on what is supported. We will a
 GCP metadata is reached via a well known URL
 (`http://metadata.google.internal/`) and currently
 we extract the hostname and populate the
-`/var/config/ssh/authorized_keys` from metadata. In the future we'll
+`/run/config/ssh/authorized_keys` from metadata. In the future we'll
 add more complete SSH support.
 
 GCP userdata is extracted from `/computeMetadata/v1/instance/attributes/userdata`
-and made available in `/var/config/userdata`.
+and made available in `/run/config/userdata`.
 
 ## AWS
 
 AWS metadata is reached via the following URL
 (`http://169.254.169.254/latest/meta-data/`) and currently we extract the
-hostname and populate the `/var/config/ssh/authorized_keys` from metadata.
+hostname and populate the `/run/config/ssh/authorized_keys` from metadata.
 
 AWS userdata is extracted from `http://169.254.169.254/latest/user-data` and
-and made available in `/var/config/userdata`.
+and made available in `/run/config/userdata`.
 
 
 ## HyperKit

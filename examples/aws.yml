@@ -20,7 +20,7 @@ services:
   - name: sshd
     image: linuxkit/sshd:ac5e8364e2e9aa8717a3295c51eb60b8c57373d5
     binds:
-     - /var/config/ssh/authorized_keys:/root/.ssh/authorized_keys
+     - /run/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx
     image: nginx:alpine
     capabilities:
