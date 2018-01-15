@@ -1,6 +1,7 @@
 kernel:
   image: linuxkit/kernel:4.9.76
-  cmdline: "console=ttyS1 console=ttyAMA0"
+  cmdline: console=ttyS1
+  ucode: intel-ucode.cpio
 init:
   - linuxkit/init:f7a3d03face99e933626533a3381ae4476fbc8de
   - linuxkit/runc:7b15b00b4e3507d62e3ed8d44dfe650561cd35ff
