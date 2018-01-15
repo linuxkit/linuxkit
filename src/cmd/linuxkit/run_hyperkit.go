@@ -42,7 +42,13 @@ func runHyperKit(args []string) {
 	mem := flags.Int("mem", 1024, "Amount of memory in MB")
 	var disks Disks
 	flags.Var(&disks, "disk", "Disk config. [file=]path[,size=1G]")
-	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
+	data := flags.String("data", "", "String of metadata to pass to VM; error to specify both -data and -data-file")
+	dataPath := flags.String("data-file", "", "Path to file containing metadata to pass to VM; error to specify both -data and -data-file")
+
+	if *data != "" && *dataPath != "" {
+		log.Fatal("Cannot specify both -data and -data-file")
+	}
+
 	ipStr := flags.String("ip", "", "Preferred IPv4 address for the VM.")
 	state := flags.String("state", "", "Path to directory to keep VM state in")
 	vsockports := flags.String("vsock-ports", "", "List of vsock ports to forward from the guest on startup (comma separated). A unix domain socket for each port will be created in the state directory")
@@ -142,7 +148,7 @@ func runHyperKit(args []string) {
 		log.Fatalf("Could not create state directory: %v", err)
 	}
 
-	metadataPaths, err := CreateMetadataISO(*state, *data)
+	metadataPaths, err := CreateMetadataISO(*state, *data, *dataPath)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

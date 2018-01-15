@@ -33,7 +33,7 @@ $ linuxkit build -name docker-for-mac base.yml docker-ce.yml
 To run the VM with a 4G disk:
 
 ```
-linuxkit run hyperkit -networking=vpnkit -vsock-ports=2376 -disk size=4096M -data ./metadata.json docker-for-mac
+linuxkit run hyperkit -networking=vpnkit -vsock-ports=2376 -disk size=4096M -data-file ./metadata.json docker-for-mac
 ```
 
 In another terminal you should now be able to access docker via the socket `guest.00000947` in the state directory (`docker-for-mac-state/` by default):

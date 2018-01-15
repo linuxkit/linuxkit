@@ -55,19 +55,22 @@ The JSON file consists of a map from `name` to an entry object. Each entry objec
 - `entries`: if present then the entry is a directory. The value is a map from `name` to entry objects.
 - `perm`: the permissions to create the file with.
 
-The `content` and `entries` fields are mutually exclusive, it is an error to include both, 
-one or the other _must_ be present. 
+The `content` and `entries` fields are mutually exclusive, it is an error to include both,
+one or the other _must_ be present.
 The file or directory's name in each case is the same as the key which referred to that entry.
- 
+
 This hierarchy can then be used by individual containers, who can bind
 mount the config sub-directory into their namespace where it is
 needed.
 
 # Metadata image creation
 
-Run `linuxkit run` backends accept a `-data=STRING` option which will
-cause the given string to be passed to the VM in a platform specific
-manner to be picked up by the `pkg/metadata` component.
+`linuxkit run` backends accept two options to pass metadata to the VM in a platform specific
+manner to be picked up by the `pkg/metadata` component:
+
+* `-data=STRING` will cause the given `STRING` to be passed to the VM
+* `-data-file=PATH` will cause the contents of the file at `PATH` to be passed to the VM
+
 
 Alternatively `linuxkit metadata create meta.iso STRING` will produce
 a correctly formatted ISO image which can be passed to a VM as a CDROM
