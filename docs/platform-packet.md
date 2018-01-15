@@ -34,6 +34,13 @@ an additional YAML for [arm64](../examples/packet.arm64.yml) servers
 which provide both access to the serial console and via ssh and
 configures bonding for network devices via metadata (if supported).
 
+For x86_64 builds for Intel servers we strongly recommend adding
+`ucode: intel-ucode.cpio` to the kernel section in the YAML. This
+updates the Intel CPU microcode to the latest by prepending it to the
+generated initrd file. The `ucode` entry is only recommended when
+booting on baremetal. It should be omitted (but is harmless) when
+building images to boot in VMs.
+
 **Note**: The update of the iPXE configuration sometimes may take some
 time and the first boot may fail. Hitting return on the console to
 retry the boot typically fixes this.
