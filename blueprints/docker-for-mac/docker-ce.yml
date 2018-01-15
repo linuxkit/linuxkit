@@ -1,7 +1,7 @@
 services:
   # Run dockerd with the vpnkit userland proxy from the vpnkit-forwarder container.
   # Bind mounts /var/run to allow vsudd to connect to docker.sock, /var/vpnkit
-  # for vpnkit coordination and /var/config/docker for the configuration file.
+  # for vpnkit coordination and /run/config/docker for the configuration file.
   - name: docker-dfm
     image: docker:17.07.0-ce-dind
     capabilities:
@@ -16,7 +16,7 @@ services:
      - /lib/modules:/lib/modules
      - /var/vpnkit:/port # vpnkit control 9p mount
      - /var/run:/var/run
-     - /var/config/docker:/var/config/docker
+     - /run/config/docker:/var/config/docker
      - /usr/bin/vpnkit-expose-port:/usr/bin/vpnkit-expose-port # userland proxy
      - /usr/bin/vpnkit-iptables-wrapper:/usr/bin/iptables # iptables wrapper 
     command: [ "/usr/local/bin/docker-init", "/usr/local/bin/dockerd", "--",
