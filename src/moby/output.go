@@ -27,12 +27,11 @@ const (
 
 var outFuns = map[string]func(string, io.Reader, int) error{
 	"kernel+initrd": func(base string, image io.Reader, size int) error {
-		kernel, initrd, cmdline, _, err := tarToInitrd(image)
+		kernel, initrd, cmdline, ucode, err := tarToInitrd(image)
 		if err != nil {
 			return fmt.Errorf("Error converting to initrd: %v", err)
 		}
-		// TODO: Handle ucode
-		err = outputKernelInitrd(base, kernel, initrd, cmdline)
+		err = outputKernelInitrd(base, kernel, initrd, cmdline, ucode)
 		if err != nil {
 			return fmt.Errorf("Error writing kernel+initrd output: %v", err)
 		}
@@ -317,15 +316,29 @@ func outputRPi3(image, filename string, filesystem io.Reader) error {
 	return dockerRun(filesystem, output, true, image)
 }
 
-func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline string) error {
+func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline string, ucode []byte) error {
 	log.Debugf("output kernel/initrd: %s %s", base, cmdline)
-	log.Infof("  %s %s %s", base+"-kernel", base+"-initrd.img", base+"-cmdline")
-	err := ioutil.WriteFile(base+"-initrd.img", initrd, os.FileMode(0644))
-	if err != nil {
-		return err
+
+	if len(ucode) != 0 {
+		log.Infof("  %s ucode+%s %s", base+"-kernel", base+"-initrd.img", base+"-cmdline")
+		if err := ioutil.WriteFile(base+"-initrd.img", ucode, os.FileMode(0644)); err != nil {
+			return err
+		}
+		f, err := os.OpenFile(base+"-initrd.img", os.O_APPEND|os.O_WRONLY, 0644)
+		if err != nil {
+			return err
+		}
+		defer f.Close()
+		if _, err = f.Write(initrd); err != nil {
+			return err
+		}
+	} else {
+		log.Infof("  %s %s %s", base+"-kernel", base+"-initrd.img", base+"-cmdline")
+		if err := ioutil.WriteFile(base+"-initrd.img", initrd, os.FileMode(0644)); err != nil {
+			return err
+		}
 	}
-	err = ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644))
-	if err != nil {
+	if err := ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
 		return err
 	}
 	return ioutil.WriteFile(base+"-cmdline", []byte(cmdline), os.FileMode(0644))
