@@ -148,7 +148,12 @@ func runQemu(args []string) {
 	// Paths and settings for disks
 	var disks Disks
 	flags.Var(&disks, "disk", "Disk config, may be repeated. [file=]path[,size=1G][,format=qcow2]")
-	data := flags.String("data", "", "Metadata to pass to VM (either a path to a file or a string)")
+	data := flags.String("data", "", "String of metadata to pass to VM; error to specify both -data and -data-file")
+	dataPath := flags.String("data-file", "", "Path to file containing metadata to pass to VM; error to specify both -data and -data-file")
+
+	if *data != "" && *dataPath != "" {
+		log.Fatal("Cannot specify both -data and -data-file")
+	}
 
 	// Paths and settings for UEFI firware
 	// Note, we do not use defaultFWPath here as we have a special case for containerised execution
@@ -223,7 +228,7 @@ func runQemu(args []string) {
 		isoPaths = append(isoPaths, path)
 	}
 
-	metadataPaths, err := CreateMetadataISO(*state, *data)
+	metadataPaths, err := CreateMetadataISO(*state, *data, *dataPath)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

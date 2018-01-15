@@ -166,7 +166,7 @@ there are a number of packages, such as `vsudd`, which enable
 tighter integration of the VM with the host (see below).
 
 The HyperKit backend also allows passing custom userdata into the
-[metadata package](./metadata.md) using the `-data` command-line
+[metadata package](./metadata.md) using either the `-data` or `-data-file` command-line
 option. This attaches a CD device with the data on.
 
 
