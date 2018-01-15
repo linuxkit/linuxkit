@@ -1,1 +1,15 @@
 image: metadata
+config:
+  binds:
+    - /dev:/dev
+    - /var:/var
+    - /run:/run
+    - /sys:/sys
+    - /etc/resolv.conf:/etc/resolv.conf
+    - /etc/ssl/certs:/etc/ssl/certs
+  tmpfs:
+    - /tmp
+  readonly: true
+  capabilities:
+    - CAP_SYS_ADMIN
+    - CAP_NET_ADMIN
