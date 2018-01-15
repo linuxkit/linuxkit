@@ -176,9 +176,9 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	dupMap := map[string]string{}
 
 	if m.Kernel.ref != nil {
-		// get kernel and initrd tarball from container
+		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
-		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar)
+		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode)
 		err := ImageTar(m.Kernel.ref, "", kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "")
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
@@ -259,13 +259,15 @@ type kernelFilter struct {
 	cmdline     string
 	kernel      string
 	tar         string
+	ucode       string
 	discard     bool
 	foundKernel bool
 	foundKTar   bool
+	foundUCode  bool
 }
 
-func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar *string) *kernelFilter {
-	tarName, kernelName := "kernel.tar", "kernel"
+func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar, ucode *string) *kernelFilter {
+	tarName, kernelName, ucodeName := "kernel.tar", "kernel", ""
 	if tar != nil {
 		tarName = *tar
 		if tarName == "none" {
@@ -275,7 +277,10 @@ func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar *string)
 	if kernel != "" {
 		kernelName = kernel
 	}
-	return &kernelFilter{tw: tw, cmdline: cmdline, kernel: kernelName, tar: tarName}
+	if ucode != nil {
+		ucodeName = *ucode
+	}
+	return &kernelFilter{tw: tw, cmdline: cmdline, kernel: kernelName, tar: tarName, ucode: ucodeName}
 }
 
 func (k *kernelFilter) finishTar() error {
@@ -329,16 +334,19 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		}
 		k.foundKernel = true
 		k.discard = false
-		whdr := &tar.Header{
-			Name:     "boot",
-			Mode:     0755,
-			Typeflag: tar.TypeDir,
-		}
-		if err := tw.WriteHeader(whdr); err != nil {
-			return err
+		// If we handled the ucode, /boot already exist.
+		if !k.foundUCode {
+			whdr := &tar.Header{
+				Name:     "boot",
+				Mode:     0755,
+				Typeflag: tar.TypeDir,
+			}
+			if err := tw.WriteHeader(whdr); err != nil {
+				return err
+			}
 		}
 		// add the cmdline in /boot/cmdline
-		whdr = &tar.Header{
+		whdr := &tar.Header{
 			Name: "boot/cmdline",
 			Mode: 0644,
 			Size: int64(len(k.cmdline)),
@@ -363,6 +371,28 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		k.foundKTar = true
 		k.discard = false
 		k.buffer = new(bytes.Buffer)
+	case k.ucode:
+		k.foundUCode = true
+		k.discard = false
+		// If we handled the kernel, /boot already exist.
+		if !k.foundKernel {
+			whdr := &tar.Header{
+				Name:     "boot",
+				Mode:     0755,
+				Typeflag: tar.TypeDir,
+			}
+			if err := tw.WriteHeader(whdr); err != nil {
+				return err
+			}
+		}
+		whdr := &tar.Header{
+			Name: "boot/ucode.cpio",
+			Mode: hdr.Mode,
+			Size: hdr.Size,
+		}
+		if err := tw.WriteHeader(whdr); err != nil {
+			return err
+		}
 	default:
 		k.discard = true
 	}
