@@ -4,7 +4,7 @@ kernel:
   image: linuxkit/kernel:4.9.76
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:7c405a03c8467b3aa7999d2a729aeb5d3fa7dae5
+  - linuxkit/init:f7a3d03face99e933626533a3381ae4476fbc8de
   - linuxkit/runc:7b15b00b4e3507d62e3ed8d44dfe650561cd35ff
   - linuxkit/containerd:1b6b8a5884e17b26e2725cb82c436841070fca95
 onboot:
