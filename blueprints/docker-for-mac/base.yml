@@ -4,14 +4,14 @@ kernel:
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/vpnkit-expose-port:728e5fe9e6b818d9825b28826b929ae75a386e9e # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
-  - linuxkit/init:7c405a03c8467b3aa7999d2a729aeb5d3fa7dae5
+  - linuxkit/init:f7a3d03face99e933626533a3381ae4476fbc8de
   - linuxkit/runc:7b15b00b4e3507d62e3ed8d44dfe650561cd35ff
   - linuxkit/containerd:1b6b8a5884e17b26e2725cb82c436841070fca95
   - linuxkit/ca-certificates:de21b84d9b055ad9dcecc57965b654a7a24ef8e0
 onboot:
   # support metadata for optional config in /run/config
   - name: metadata
-    image: linuxkit/metadata:2af15c9f4b0e73515c219b7cc14e6e65e1d4fd6d
+    image: linuxkit/metadata:8e45cb18b0cb309a6aff514dd1be1ac6b5f59f06
   - name: sysctl
     image: linuxkit/sysctl:4c1ef93bb5eb1a877318db4b2daa6768ed002e21
   - name: sysfs
@@ -22,7 +22,7 @@ onboot:
   - name: format
     image: linuxkit/format:5a1140cb65e733f26de727fa684fef1326e9d5ab
   - name: mount
-    image: linuxkit/mount:b346ec277b7074e5c9986128a879c10a1d18742b
+    image: linuxkit/mount:3c37d46558c794e8535daa805e7037cb8e82c141
     command: ["/usr/bin/mountie", "/var/lib"]
   # make a swap file on the mounted disk
   - name: swap
