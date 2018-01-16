@@ -7,6 +7,7 @@ init:
   - linuxkit/runc:7b15b00b4e3507d62e3ed8d44dfe650561cd35ff
   - linuxkit/containerd:1b6b8a5884e17b26e2725cb82c436841070fca95
   - linuxkit/ca-certificates:de21b84d9b055ad9dcecc57965b654a7a24ef8e0
+  - linuxkit/firmware:8fc7d7702589b67e5b1aa72bb61cc72b47a048aa
 onboot:
   - name: rngd1
     image: linuxkit/rngd:94e01a4b16fadb053455cdc2269c4eb0b39199cd
