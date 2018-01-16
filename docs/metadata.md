@@ -104,6 +104,6 @@ and made available in `/run/config/userdata`.
 
 ## HyperKit
 
-HyperKit does not distiguish metadata and userdata, it's simply
+HyperKit does not distinguish metadata and userdata, it's simply
 refered to as data, which is passed to the VM as a disk image
 in ISO9660 format.
