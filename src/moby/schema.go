@@ -49,6 +49,10 @@ var schema = string(`
         "type": "array",
         "items": {"type": "string"}
     },
+    "mapstring": {
+        "type": "object",
+        "additionalProperties": {"type": "string"}
+    },
     "mount": {
       "type": "object",
       "additionalProperties": false,
@@ -282,13 +286,11 @@ var schema = string(`
         "rootfsPropagation": {"type": "string"},
         "cgroupsPath": {"type": "string"},
         "resources": {"$ref": "#/definitions/resources"},
-        "sysctl": {
-            "type": "array",
-            "items": { "$ref": "#/definitions/strings" }
-        },
+        "sysctl": { "$ref": "#/definitions/mapstring" },
         "rlimits": { "$ref": "#/definitions/strings" },
         "uidMappings": { "$ref": "#/definitions/idmappings" },
         "gidMappings": { "$ref": "#/definitions/idmappings" },
+        "annotations": { "$ref": "#/definitions/mapstring" },
         "runtime": {"$ref": "#/definitions/runtime"}
       }
     },

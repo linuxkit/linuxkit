@@ -181,8 +181,9 @@ bind mounted into a container.
 - `rootfsPropagation` sets the rootfs propagation, eg `shared`, `slave` or (default) `private`.
 - `cgroupsPath` sets the path for cgroups.
 - `resources` sets cgroup resource limits as per the OCI spec.
-- `sysctl` sets a list of `sysctl` key value pairs that are set inside the container namespace.
+- `sysctl` sets a map of `sysctl` key value pairs that are set inside the container namespace.
 - `rmlimits` sets a list of `rlimit` values in the form `name,soft,hard`, eg `nofile,100,200`. You can use `unlimited` as a value too.
+- `annotations` sets a map of key value pairs as OCI metadata.
 
 There are experimental `userns`, `uidMappings` and `gidMappings` options for user namespaces but these are not yet supported, and may have
 permissions issues in use.
