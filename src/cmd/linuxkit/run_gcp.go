@@ -43,6 +43,7 @@ func runGcp(args []string) {
 	flags.Var(&disks, "disk", "Disk config, may be repeated. [file=]diskName[,size=1G]")
 
 	skipCleanup := flags.Bool("skip-cleanup", false, "Don't remove images or VMs")
+	nestedVirt := flags.Bool("nested-virt", false, "Enabled nested virtualization")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -66,7 +67,7 @@ func runGcp(args []string) {
 		log.Fatalf("Unable to connect to GCP")
 	}
 
-	if err = client.CreateInstance(name, name, zone, machine, disks, true); err != nil {
+	if err = client.CreateInstance(name, name, zone, machine, disks, *nestedVirt, true); err != nil {
 		log.Fatal(err)
 	}
 

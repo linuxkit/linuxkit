@@ -75,3 +75,14 @@ the serial port.
 ```
 linuxkit run gcp -project myproject-1234 myprefix
 ```
+
+## Nested Virtualization
+
+Google Cloud offers [Nested
+Virtualization](https://cloud.google.com/compute/docs/instances/enable-nested-virtualization-vm-instances)
+as a beta feature. `linuxkit` supports this by pushing the image with
+`linuxkit push gcp -nested-virt <other options>` and `linuxkit run gcp
+-nested-virt <other options>`. The `push` sets the appropriate license
+on the image while the `run` argument ensures that the CPU is at least
+Haswell or newer.
+

@@ -25,6 +25,7 @@ func pushGcp(args []string) {
 	publicFlag := flags.Bool("public", false, "Select if file on GCS should be public. *Optional*")
 	familyFlag := flags.String("family", "", "GCP Image Family. A group of images where the family name points to the most recent image. *Optional*")
 	nameFlag := flags.String("img-name", "", "Overrides the name used to identify the file in Google Storage and the VM image. Defaults to the base of 'path' with the '.img.tar.gz' suffix removed")
+	nestedVirt := flags.Bool("nested-virt", false, "Enabled nested virtualization for the image")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -64,7 +65,7 @@ func pushGcp(args []string) {
 	if err != nil {
 		log.Fatalf("Error copying to Google Storage: %v", err)
 	}
-	err = client.CreateImage(name, "https://storage.googleapis.com/"+bucket+"/"+name+suffix, family, true)
+	err = client.CreateImage(name, "https://storage.googleapis.com/"+bucket+"/"+name+suffix, family, *nestedVirt, true)
 	if err != nil {
 		log.Fatalf("Error creating Google Compute Image: %v", err)
 	}
