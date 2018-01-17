@@ -123,7 +123,7 @@ func (g GCPClient) UploadFile(src, dst, bucketName string, public bool) error {
 }
 
 // CreateImage creates a GCP image using the a source from Google Storage
-func (g GCPClient) CreateImage(name, storageURL, family string, replace bool) error {
+func (g GCPClient) CreateImage(name, storageURL, family string, nested, replace bool) error {
 	if replace {
 		if err := g.DeleteImage(name); err != nil {
 			return err
@@ -140,6 +140,10 @@ func (g GCPClient) CreateImage(name, storageURL, family string, replace bool) er
 
 	if family != "" {
 		imgObj.Family = family
+	}
+
+	if nested {
+		imgObj.Licenses = []string{"projects/vm-options/global/licenses/enable-vmx"}
 	}
 
 	op, err := g.compute.Images.Insert(g.projectName, imgObj).Do()
@@ -178,7 +182,7 @@ func (g GCPClient) DeleteImage(name string) error {
 }
 
 // CreateInstance creates and starts an instance on GCP
-func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, replace bool) error {
+func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, nested, replace bool) error {
 	if replace {
 		if err := g.DeleteInstance(name, zone, true); err != nil {
 			return err
@@ -260,6 +264,11 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 				},
 			},
 		},
+	}
+
+	if nested {
+		// TODO(rn): We could/should check here if the image has nested virt enabled
+		instanceObj.MinCpuPlatform = "Intel Haswell"
 	}
 
 	// Don't wait for operation to complete!
