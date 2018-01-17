@@ -28,6 +28,7 @@ ifndef GOMETALINTER
 endif
 	gometalinter --config gometalinter.json ./...
 
+.PHONY: test
 test: dist/moby
 	@go test $(shell go list ./... | grep -vE '/vendor/')
 	# test build

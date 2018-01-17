@@ -70,6 +70,7 @@ type Image struct {
 
 // ImageConfig is the configuration part of Image, it is the subset
 // which is valid in a "org.mobyproject.config" label on an image.
+// Everything except Runtime and ref is used to build the OCI spec
 type ImageConfig struct {
 	Capabilities      *[]string               `yaml:"capabilities,omitempty" json:"capabilities,omitempty"`
 	Ambient           *[]string               `yaml:"ambient,omitempty" json:"ambient,omitempty"`
@@ -100,7 +101,9 @@ type ImageConfig struct {
 	Rlimits           *[]string               `yaml:"rlimits,omitempty" json:"rlimits,omitempty"`
 	UIDMappings       *[]specs.LinuxIDMapping `yaml:"uidMappings,omitempty" json:"uidMappings,omitempty"`
 	GIDMappings       *[]specs.LinuxIDMapping `yaml:"gidMappings,omitempty" json:"gidMappings,omitempty"`
-	Runtime           *Runtime                `yaml:"runtime,omitempty" json:"runtime,omitempty"`
+	Annotations       *map[string]string      `yaml:"annotations,omitempty" json:"annotations,omitempty"`
+
+	Runtime *Runtime `yaml:"runtime,omitempty" json:"runtime,omitempty"`
 
 	ref *reference.Spec
 }
@@ -1025,6 +1028,7 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 
 	oci.Hostname = assignStringEmpty(label.Hostname, yaml.Hostname)
 	oci.Mounts = mountList
+	oci.Annotations = assignMaps(label.Annotations, yaml.Annotations)
 
 	resources := assignResources(label.Resources, yaml.Resources)
 

@@ -36,6 +36,9 @@ services:
           access: rwm
       pids:
         limit: 10
+    annotations:
+      annotate: this
+      org.opencontainers.example: "reserved annotation"
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
