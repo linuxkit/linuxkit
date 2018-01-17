@@ -2,7 +2,24 @@
 
 [![CircleCI](https://circleci.com/gh/linuxkit/linuxkit.svg?style=svg)](https://circleci.com/gh/linuxkit/linuxkit)
 
-**Security Update 06/01/2018: All LinuxKit `x86_64` kernels now have KPTI enabled by default. This protects against [Meltdown](https://meltdownattack.com/meltdown.pdf). Defences against [Spectre](https://spectreattack.com/spectre.pdf) are work in progress upstream. All kernels also contain the fix in the eBPF verifier used in some of the exploits. The `arm64` kernels are not yet fixed. See [Greg KH's blogpost](http://kroah.com/log/blog/2018/01/06/meltdown-status/) for details.**
+**Security Update 17/01/2018: All current LinuxKit `x86_64` kernels
+have KPTI/KAISER enabled by default. This protects against
+[Meltdown](https://meltdownattack.com/meltdown.pdf). Defences against
+[Spectre](https://spectreattack.com/spectre.pdf) are work in progress
+upstream and some have been incorporated into 4.14.14/4.9.77 onwards
+but work is still ongoing. The kernels 4.14.14/4.9.77 onwards also
+include various eBPF and KVM fixes to mitigate some aspects of
+Spectre.  The `arm64` kernels are not yet fixed. See [Greg KH's
+excellent
+blogpost](http://kroah.com/log/blog/2018/01/06/meltdown-status/) and
+this [LWN.net
+article](https://lwn.net/SubscriberLink/744287/1fc3c18173f732e7/) for
+details.**
+
+**If you run LinuxKit kernels on x86 baremetal we also strongly
+recommend to add `ucode: intel-ucode.cpio` to the kernel section of
+your YAML if you are using Intel CPUs and `linuxkit/firmware:<hash>` if
+you are using AMD CPUs.**
 
 LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 
