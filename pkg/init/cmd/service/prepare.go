@@ -23,6 +23,7 @@ type Runtime struct {
 	Mkdir      []string      `yaml:"mkdir" json:"mkdir,omitempty"`
 	Interfaces []Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
 	BindNS     Namespaces    `yaml:"bindNS" json:"bindNS,omitempty"`
+	Namespace  string        `yaml:"namespace,omitempty" json:"namespace,omitempty"`
 }
 
 // Namespaces is the type for configuring paths to bind namespaces
