@@ -202,6 +202,7 @@ which specifies some actions to take place when the container is being started.
   - `peer` specifies the name of the other end when creating a `veth` interface. This end will remain in the root namespace, where it can be attached to a bridge. Specifying this implies `add: veth`.
 - `bindNS` specifies a namespace type and a path where the namespace from the container being created will be bound. This allows a namespace to be set up in an `onboot` container, and then
   using `net: path` for a `service` container to use that network namespace later.
+- `namespace` overrides the LinuxKit default containerd namespace to put the container in; only applicable to services.
 
 An example of using the `runtime` config to configure a network namespace with `wireguard` and then run `nginx` in that namespace is shown below:
 ```

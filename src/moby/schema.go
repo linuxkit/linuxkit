@@ -248,7 +248,8 @@ var schema = string(`
         "mounts": {"$ref": "#/definitions/mounts"},
         "mkdir": {"$ref": "#/definitions/strings"},
         "interfaces": {"$ref": "#/definitions/interfaces"},
-        "bindNS": {"$ref": "#/definitions/namespaces"}
+        "bindNS": {"$ref": "#/definitions/namespaces"},
+        "namespace": {"type": "string"}
       }
     },
     "image": {

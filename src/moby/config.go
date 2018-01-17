@@ -115,6 +115,7 @@ type Runtime struct {
 	Mkdir      *[]string      `yaml:"mkdir,omitempty" json:"mkdir,omitempty"`
 	Interfaces *[]Interface   `yaml:"interfaces,omitempty,omitempty" json:"interfaces,omitempty"`
 	BindNS     Namespaces     `yaml:"bindNS,omitempty" json:"bindNS,omitempty"`
+	Namespace  *string        `yaml:"namespace,omitempty" json:"namespace,omitempty"`
 }
 
 // Namespaces is the type for configuring paths to bind namespaces
@@ -588,6 +589,7 @@ func assignRuntime(v1, v2 *Runtime) Runtime {
 	runtimeMounts := assignBinds(v1.Mounts, v2.Mounts)
 	runtimeMkdir := assignStrings(v1.Mkdir, v2.Mkdir)
 	runtimeInterfaces := assignRuntimeInterfaceArray(v1.Interfaces, v2.Interfaces)
+	runtimeNamespace := assignString(v1.Namespace, v2.Namespace)
 	runtime := Runtime{
 		Cgroups:    &runtimeCgroups,
 		Mounts:     &runtimeMounts,
@@ -602,6 +604,7 @@ func assignRuntime(v1, v2 *Runtime) Runtime {
 			User:   assignStringPtr(v1.BindNS.User, v2.BindNS.User),
 			Uts:    assignStringPtr(v1.BindNS.Uts, v2.BindNS.Uts),
 		},
+		Namespace: &runtimeNamespace,
 	}
 	return runtime
 }
