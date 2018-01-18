@@ -4,9 +4,9 @@ kernel:
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/vpnkit-expose-port:728e5fe9e6b818d9825b28826b929ae75a386e9e # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
-  - linuxkit/init:f7a3d03face99e933626533a3381ae4476fbc8de
+  - linuxkit/init:372329736f90cafad41008b5b8f1e7d957e5e6a0
   - linuxkit/runc:7b15b00b4e3507d62e3ed8d44dfe650561cd35ff
-  - linuxkit/containerd:1b6b8a5884e17b26e2725cb82c436841070fca95
+  - linuxkit/containerd:78706a05d00a7385ff2b6b7db280041338e4b34a
   - linuxkit/ca-certificates:de21b84d9b055ad9dcecc57965b654a7a24ef8e0
 onboot:
   # support metadata for optional config in /run/config
