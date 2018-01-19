@@ -1,4 +1,4 @@
-# This is a blueprint for building the open source components of Docker for Mac
+# This is an example for building the open source components of Docker for Mac
 kernel:
   image: linuxkit/kernel:4.9.77
   cmdline: "console=ttyS0 page_poison=1"
@@ -79,7 +79,35 @@ services:
   # When the host resumes from sleep, force a clock resync
   - name: host-timesync-daemon
     image: linuxkit/host-timesync-daemon:085e1910de6f311f96a823eaa10ffd6d92ec9679
+  # Run dockerd with the vpnkit userland proxy from the vpnkit-forwarder container.
+  # Bind mounts /var/run to allow vsudd to connect to docker.sock, /var/vpnkit
+  # for vpnkit coordination and /run/config/docker for the configuration file.
+  - name: docker-dfm
+    image: docker:17.07.0-ce-dind
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /etc/resolv.conf:/etc/resolv.conf
+     - /var/lib/docker:/var/lib/docker
+     - /lib/modules:/lib/modules
+     - /var/vpnkit:/port # vpnkit control 9p mount
+     - /var/run:/var/run
+     - /run/config/docker:/var/config/docker
+     - /usr/bin/vpnkit-expose-port:/usr/bin/vpnkit-expose-port # userland proxy
+     - /usr/bin/vpnkit-iptables-wrapper:/usr/bin/iptables # iptables wrapper
+    command: [ "/usr/local/bin/docker-init", "/usr/local/bin/dockerd", "--",
+            "--config-file", "/var/config/docker/daemon.json",
+            "--swarm-default-advertise-addr=eth0",
+            "--userland-proxy-path", "/usr/bin/vpnkit-expose-port",
+            "--storage-driver", "overlay2" ]
+    runtime:
+      mkdir: ["/var/lib/docker"]
 
 trust:
     org:
         - linuxkit
+        - library

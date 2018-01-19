@@ -23,8 +23,8 @@ The perf package is called `kernel-perf` and is tagged the same way as
 the kernel packages.
 
 In addition to the official images, there are also some
-[scripts](../scripts/kernels) which repackage kernels packages from
-some Linux distributions into LinuxKit kernel packages. These are
+[scripts](../contrib/foreign-kernels) which repackage kernels packages
+from some Linux distributions into LinuxKit kernel packages. These are
 mostly provided for testing purposes.
 
 

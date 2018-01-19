@@ -35,7 +35,7 @@ supported and the disks are in raw format.
 HyperKit sends an ACPI power event when it receives SIGTERM to allow the VM to
 shut down properly. The VM has to be able to receive ACPI events to initiate the
 shutdown.  This is provided by the [`acpid` package](../pkg/acpid). An example
-is available in the [Docker for Mac blueprint](../blueprints/docker-for-mac/base.yml).
+is available in the [Docker for Mac example](../examples/docker-for-mac.yml).
 
 ## Networking
 
@@ -177,7 +177,7 @@ domain socket inside the VM to the host via virtio or Hyper-V sockets.
 With HyperKit, the virtio sockets can be exposed as unix domain
 sockets on the host, enabling access to other daemons, like
 `containerd` and `dockerd`, from the host.  An example configuration
-file is available in [examples/vsudd.yml](/examples/vsudd.yml).
+file is available in [examples/vsudd-containerd.yml](/examples/vsudd-containerd.yml).
 
 After building the example, run it with `linuxkit run hyperkit
 -vsock-ports 2374 vsudd`. This will create a unix domain socket in the state directory that maps to the `containerd` control socket. The socket is called `guest.00000946`.
