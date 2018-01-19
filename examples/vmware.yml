@@ -8,7 +8,7 @@ init:
   - linuxkit/ca-certificates:de21b84d9b055ad9dcecc57965b654a7a24ef8e0
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:4c1ef93bb5eb1a877318db4b2daa6768ed002e21
+    image: linuxkit/sysctl:4d6cdb119b1e6b0606b35a2f6b28edf5088beb12
 services:
   - name: getty
     image: linuxkit/getty:22e27189b6b354e1d5d38fc0536a5af3f2adb79f
