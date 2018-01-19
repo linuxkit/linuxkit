@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Test the Docker for Mac blueprint
+# SUMMARY: Test the Docker for Mac example
 # LABELS: amd64
 
 set -e
@@ -17,7 +17,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-linuxkit build -name "${NAME}" "${LINUXKIT_BLUEPRINTS_DIR}/${NAME}/base.yml" "${LINUXKIT_BLUEPRINTS_DIR}/${NAME}/docker-ce.yml"
+linuxkit build "${LINUXKIT_EXAMPLES_DIR}/${NAME}.yml"
 
 exit 0
 
