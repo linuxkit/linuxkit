@@ -35,7 +35,7 @@ supported and the disks are in raw format.
 HyperKit sends an ACPI power event when it receives SIGTERM to allow the VM to
 shut down properly. The VM has to be able to receive ACPI events to initiate the
 shutdown.  This is provided by the [`acpid` package](../pkg/acpid). An example
-is available in the [Docker for Mac blueprint](../blueprints/docker-for-mac/base.yml).
+is available in the [Docker for Mac example](../examples/docker-for-mac.yml).
 
 ## Networking
 
