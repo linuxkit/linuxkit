@@ -26,6 +26,10 @@ const (
 	hyperkitNetworkingDefault             = hyperkitNetworkingDockerForMac
 )
 
+func init() {
+	hyperkit.SetLogger(log.StandardLogger())
+}
+
 // Process the run arguments and execute run
 func runHyperKit(args []string) {
 	flags := flag.NewFlagSet("hyperkit", flag.ExitOnError)
@@ -206,12 +210,15 @@ func runHyperKit(args []string) {
 			id = strconv.Itoa(i)
 		}
 		if d.Size != 0 && d.Path == "" {
-			d.Path = filepath.Join(*state, "disk"+id+".img")
+			d.Path = filepath.Join(*state, "disk"+id+".raw")
 		}
 		if d.Path == "" {
 			log.Fatalf("disk specified with no size or name")
 		}
-		hd := hyperkit.DiskConfig{Path: d.Path, Size: d.Size}
+		hd, err := hyperkit.NewDisk(d.Path, d.Size)
+		if err != nil {
+			log.Fatalf("NewDisk failed: %v", err)
+		}
 		h.Disks = append(h.Disks, hd)
 	}
 
