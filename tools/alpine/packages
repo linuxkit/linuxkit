@@ -83,6 +83,7 @@ openssh-server
 openssl
 openssl-dev
 patch
+pigz
 python3
 qemu-aarch64
 qemu-arm
