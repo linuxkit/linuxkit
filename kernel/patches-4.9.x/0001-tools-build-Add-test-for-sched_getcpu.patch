@@ -1,4 +1,4 @@
-From b03fcf118aab45e91021a03fb071c6f8939a24d1 Mon Sep 17 00:00:00 2001
+From 6609c1c5a06527da79adb9482d8a101bd2163970 Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 2 Mar 2017 12:55:49 -0300
 Subject: [PATCH 01/12] tools build: Add test for sched_getcpu()
@@ -101,7 +101,7 @@ index 000000000000..c4a148dd7104
 +	return sched_getcpu();
 +}
 diff --git a/tools/perf/Makefile.config b/tools/perf/Makefile.config
-index cffdd9cf3ebf..a33f737329ae 100644
+index ff375310efe4..07c12686bcd1 100644
 --- a/tools/perf/Makefile.config
 +++ b/tools/perf/Makefile.config
 @@ -296,6 +296,10 @@ ifdef NO_DWARF
@@ -146,5 +146,5 @@ index 43899e0d6fa1..c3b180254f91 100644
  
  int is_printable_array(char *p, unsigned int len);
 -- 
-2.15.0
+2.16.0
 
