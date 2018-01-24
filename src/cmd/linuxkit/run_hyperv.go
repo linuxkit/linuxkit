@@ -31,7 +31,7 @@ func runHyperV(args []string) {
 	var disks Disks
 	flags.Var(&disks, "disk", "Disk config. [file=]path[,size=1G]")
 
-	switchName := flags.String("switch", "", "Which Hyper-V switch to attache the VM to. If left empty, the first external switch found is used.")
+	switchName := flags.String("switch", "", "Which Hyper-V switch to attache the VM to. If left empty, either 'Default Switch' or the first external switch found is used.")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -235,14 +235,20 @@ func hypervChecks() {
 // or find the first external switch.
 func hypervGetSwitch(name string) (string, error) {
 	if name != "" {
-		_, _, err := poshCmd("Get-VMSwitch", name)
-		if err != nil {
+		if _, _, err := poshCmd("Get-VMSwitch", name); err != nil {
 			return "", fmt.Errorf("Could not find switch %s: %v", name, err)
 		}
 		return name, nil
 	}
 
-	out, _, err := poshCmd("get-vmswitch | Format-Table -Property Name, SwitchType -HideTableHeaders")
+	// The Windows 10 Fall Creators Update adds a new 'Default
+	// Switch'. Check if it is present and if so, use it.
+	name = "Default Switch"
+	if _, _, err := poshCmd("Get-VMSwitch", name); err == nil {
+		return name, nil
+	}
+
+	out, _, err := poshCmd("Get-VMSwitch | Format-Table -Property Name, SwitchType -HideTableHeaders")
 	if err != nil {
 		return "", fmt.Errorf("Could not get list of switches: %v", err)
 	}
@@ -251,12 +257,12 @@ func hypervGetSwitch(name string) (string, error) {
 		if len(s) == 0 {
 			continue
 		}
-		t := strings.SplitN(s, " ", 2)
+		t := strings.Split(s, " ")
 		if len(t) < 2 {
 			continue
 		}
-		if strings.Contains(t[1], "External") {
-			return strings.Trim(t[0], " "), nil
+		if strings.Contains(t[len(t)-1:][0], "External") {
+			return strings.Join(t[:len(t)-1], " "), nil
 		}
 	}
 	return "", fmt.Errorf("Could not find an external switch")
