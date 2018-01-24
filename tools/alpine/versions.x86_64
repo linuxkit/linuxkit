@@ -1,4 +1,4 @@
-# linuxkit/alpine:437d97f845da9370354d4543ccb92452ba974dd0-amd64
+# linuxkit/alpine:cba395fbc278daee841106801aba1e1bd7e0f2f7-amd64
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
@@ -198,10 +198,10 @@ multipath-tools-0.7.4-r0
 musl-1.1.18-r2
 musl-dev-1.1.18-r2
 musl-utils-1.1.18-r2
-ncurses-dev-6.0_p20170930-r0
-ncurses-libs-6.0_p20170930-r0
-ncurses-terminfo-6.0_p20170930-r0
-ncurses-terminfo-base-6.0_p20170930-r0
+ncurses-dev-6.0_p20171125-r0
+ncurses-libs-6.0_p20171125-r0
+ncurses-terminfo-6.0_p20171125-r0
+ncurses-terminfo-base-6.0_p20171125-r0
 nettle-3.3-r0
 nfs-utils-2.1.1-r4
 npth-1.5-r1
@@ -225,6 +225,7 @@ pcre-8.41-r1
 pcre2-10.30-r0
 pcsc-lite-libs-1.8.22-r0
 perl-5.26.1-r1
+pigz-2.3.4-r2
 pinentry-1.0.0-r0
 pixman-0.34.0-r3
 pkgconf-1.3.10-r0
@@ -274,7 +275,7 @@ vim-8.0.1359-r0
 wayland-libs-client-1.14.0-r2
 wayland-libs-cursor-1.14.0-r2
 wayland-libs-server-1.14.0-r2
-wireguard-tools-0.0.20171221-r0
+wireguard-tools-0.0.20180118-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r8
 xfsprogs-4.14.0-r0
