@@ -1,5 +1,4 @@
-# linuxkit/guestfs:aecc40bf84ce4f4238e06934c46d7cc570a39eed
-FROM linuxkit/guestfs@sha256:62e810869e83dabe04af7ac8fcd81d9f177d986a3424dcb9c4eb5439993c962f
+FROM linuxkit/guestfs:a4067f4bd5b81548195a35c71638a3d857415817
 
 COPY . .
 
