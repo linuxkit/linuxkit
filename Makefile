@@ -4,7 +4,7 @@
 default: bin/linuxkit bin/rtf
 all: default
 
-VERSION="v0.2"
+VERSION="v0.2+"
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
 GO_COMPILE=linuxkit/go-compile:8235f703735672509a16fb626d25c6ffb0d1c21d
