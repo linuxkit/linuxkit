@@ -28,7 +28,7 @@ docker run -it --rm \
 -v $(pwd):/go/src/github.com/linuxkit/linuxkit \
 -w /go/src/github.com/linuxkit/linuxkit/src/cmd/linuxkit \
 --entrypoint /go/bin/vndr \
-linuxkit/go-compile:bb0c6ae2f12a1b55df24ebce2067784a931285df
+linuxkit/go-compile:8235f703735672509a16fb626d25c6ffb0d1c21d
 ```
 
 To update a single dependency:
@@ -38,7 +38,7 @@ docker run -it --rm \
 -v $(pwd):/go/src/github.com/linuxkit/linuxkit \
 -w /go/src/github.com/linuxkit/linuxkit/src/cmd/linuxkit \
 --entrypoint /go/bin/vndr \
-linuxkit/go-compile:bb0c6ae2f12a1b55df24ebce2067784a931285df
+linuxkit/go-compile:8235f703735672509a16fb626d25c6ffb0d1c21d
 github.com/docker/docker
 ```
 

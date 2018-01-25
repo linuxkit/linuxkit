@@ -2,33 +2,33 @@ kernel:
   image: linuxkit/kernel:4.9.78
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:be8756f0a6005279d2409a8790b4dd8b2ac11df9
-  - linuxkit/runc:7b15b00b4e3507d62e3ed8d44dfe650561cd35ff
-  - linuxkit/containerd:78706a05d00a7385ff2b6b7db280041338e4b34a
-  - linuxkit/ca-certificates:de21b84d9b055ad9dcecc57965b654a7a24ef8e0
+  - linuxkit/init:v0.2
+  - linuxkit/runc:v0.2
+  - linuxkit/containerd:v0.2
+  - linuxkit/ca-certificates:v0.2
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:4d6cdb119b1e6b0606b35a2f6b28edf5088beb12
+    image: linuxkit/sysctl:v0.2
   - name: dhcpcd
-    image: linuxkit/dhcpcd:0d59a6cc03412289ef4313f2491ec666c1715cc9
+    image: linuxkit/dhcpcd:v0.2
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:5a1140cb65e733f26de727fa684fef1326e9d5ab
+    image: linuxkit/format:v0.2
   - name: mount
-    image: linuxkit/mount:3c37d46558c794e8535daa805e7037cb8e82c141
+    image: linuxkit/mount:v0.2
     command: ["/usr/bin/mountie", "/var/external"]
   - name: swap
-    image: linuxkit/swap:b3d5db11b14168874a01b5ea4398186321be836f
+    image: linuxkit/swap:v0.2
     # to use unencrypted swap, use:
     # command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G"]
     command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]
 services:
   - name: getty
-    image: linuxkit/getty:22e27189b6b354e1d5d38fc0536a5af3f2adb79f
+    image: linuxkit/getty:v0.2
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:94e01a4b16fadb053455cdc2269c4eb0b39199cd
+    image: linuxkit/rngd:v0.2
 trust:
   org:
     - linuxkit

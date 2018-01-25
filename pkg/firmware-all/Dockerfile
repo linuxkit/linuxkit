@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:34518265c6cb63ff02074549cc5b64bef40c336f AS build
+FROM linuxkit/alpine:cba395fbc278daee841106801aba1e1bd7e0f2f7 AS build
 RUN apk add --no-cache git
 
 # Make sure you also update the FW_COMMIT in ../firmware/Dockerfile

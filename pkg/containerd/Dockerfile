@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:437d97f845da9370354d4543ccb92452ba974dd0 as alpine
+FROM linuxkit/alpine:cba395fbc278daee841106801aba1e1bd7e0f2f7 as alpine
 RUN apk add tzdata
 
 WORKDIR $GOPATH/src/github.com/containerd/containerd
