@@ -21,7 +21,7 @@ init:
   - linuxkit/runc:f5960b83a8766ae083efc744fa63dbf877450e4f
 onboot:
   - name: mkimage
-    image: linuxkit/mkimage:a63b8ee4c5de335afc32ba850e0af319b25b96c0
+    image: linuxkit/mkimage:50bde8b00eb82e08f12dd9cc29f36c77f5638426
   - name: poweroff
     image: linuxkit/poweroff:3845c4d64d47a1ea367806be5547e44594b0fa91
 trust:
