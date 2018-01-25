@@ -14,15 +14,15 @@ import (
 )
 
 const (
-	isoBios    = "linuxkit/mkimage-iso-bios:165b051322578cb0c2a4f16253b20f7d2797a502"
-	isoEfi     = "linuxkit/mkimage-iso-efi:43592c9b316b036338c4db9f90aada37b48415dc"
-	rawBios    = "linuxkit/mkimage-raw-bios:eac4dcb78f837618e7e009060146977c2adabe19"
-	rawEfi     = "linuxkit/mkimage-raw-efi:167441e223c1c131dac349deb67966d400066e04"
-	gcp        = "linuxkit/mkimage-gcp:d1883809d212ce048f60beb0308a4d2b14c256af"
-	vhd        = "linuxkit/mkimage-vhd:2a31f2bc91c1d247160570bd17868075e6c0009a"
-	vmdk       = "linuxkit/mkimage-vmdk:df02a4fabd87a82209fbbacebde58c4440d2daf0"
-	dynamicvhd = "linuxkit/mkimage-dynamic-vhd:8553167d10c3e8d8603b2566d01bdc0cf5908fa5"
-	rpi3       = "linuxkit/mkimage-rpi3:0735656fff247ca978135e3aeb62864adc612180"
+	isoBios    = "linuxkit/mkimage-iso-bios:3315508388e62f7a599fa5c2d5318e78017ef553"
+	isoEfi     = "linuxkit/mkimage-iso-efi:6afada67184c7f68add9562375c662a4559eaa18"
+	rawBios    = "linuxkit/mkimage-raw-bios:31e7ef4ed982bad6ab9ff1f1185514492c325571"
+	rawEfi     = "linuxkit/mkimage-raw-efi:82db3af46d299be160590fb1633bbfebc891a927"
+	gcp        = "linuxkit/mkimage-gcp:df4f46fbcabcfef84af2ff34ff1ef7e7673bc329"
+	vhd        = "linuxkit/mkimage-vhd:796acfc515c22afb8f32d6b5c4bdd456b7f79d8c"
+	vmdk       = "linuxkit/mkimage-vmdk:a72b81b7f1748d24bf24a1ab759d4ade4d74fe69"
+	dynamicvhd = "linuxkit/mkimage-dynamic-vhd:8bc80f9e4bc55e7ea500c40d6b53cf493e3ee454"
+	rpi3       = "linuxkit/mkimage-rpi3:553c6c2d13b7d54f6b73b3b0c1c15f2e47ffb0df"
 )
 
 var outFuns = map[string]func(string, io.Reader, int) error{
