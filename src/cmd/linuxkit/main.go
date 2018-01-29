@@ -47,7 +47,9 @@ func (f *infoFormatter) Format(entry *log.Entry) ([]byte, error) {
 
 func printVersion() {
 	fmt.Printf("%s version %s\n", filepath.Base(os.Args[0]), version.Version)
-	fmt.Printf("commit: %s\n", version.GitCommit)
+	if version.GitCommit != "" {
+		fmt.Printf("commit: %s\n", version.GitCommit)
+	}
 	os.Exit(0)
 }
 
