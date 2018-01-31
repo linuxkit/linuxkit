@@ -84,7 +84,21 @@ func (g git) isWorkTree(pkg string) (bool, error) {
 }
 
 func (g git) treeHash(pkg, commit string) (string, error) {
-	out, err := g.commandStdout(os.Stderr, "ls-tree", "--full-tree", commit, "--", pkg)
+	// we have to check if pkg is at the top level of the git tree,
+	// if that's the case we need to use tree hash from the commit itself
+	out, err := g.commandStdout(nil, "rev-parse", "--prefix", pkg, "--show-toplevel")
+	if err != nil {
+		return "", err
+	}
+	if strings.TrimSpace(out) == pkg {
+		out, err = g.commandStdout(nil, "show", "--format=%T", "-s", commit)
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimSpace(out), nil
+	}
+
+	out, err = g.commandStdout(os.Stderr, "ls-tree", "--full-tree", commit, "--", pkg)
 	if err != nil {
 		return "", err
 	}
