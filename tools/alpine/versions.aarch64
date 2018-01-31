@@ -1,4 +1,4 @@
-# linuxkit/alpine:4da19976a059bc710eeff8d8daa8a2d3a48b851b-arm64
+# linuxkit/alpine:7c82197bb5138e34a0f6a387c0fc52e123e599ab-arm64
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
@@ -25,7 +25,7 @@ btrfs-progs-4.13.2-r0
 btrfs-progs-dev-4.13.2-r0
 btrfs-progs-libs-4.13.2-r0
 build-base-0.5-r0
-busybox-1.27.2-r7
+busybox-1.27.2-r8
 busybox-initscripts-3.1-r2
 bzip2-1.0.6-r6
 ca-certificates-20171114-r0

@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:4.9.x
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:v0.2
-  - linuxkit/runc:v0.2
-  - linuxkit/containerd:v0.2
+  - linuxkit/init:e650be6c21ef9ecb33534858fc63fb8bc5028c6e
+  - linuxkit/runc:52ecfdef1ae051e7fd5ac5f1d0b7dd859adff015
+  - linuxkit/containerd:f5c339dfc54645eeb8c635b77f62b05a8b3a4db6
   - linuxkit/ca-certificates:v0.2
 onboot:
   - name: dhcpcd
