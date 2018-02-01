@@ -167,6 +167,7 @@ func runQemu(args []string) {
 
 	// Backend configuration
 	qemuContainerized := flags.Bool("containerized", false, "Run qemu in a container")
+	qemuCmd := flags.String("qemu", "", "Path to the qemu binary (otherwise look in $PATH)")
 
 	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
 	vmUUID := uuid.New()
@@ -311,6 +312,7 @@ func runQemu(args []string) {
 		Memory:         *mem,
 		KVM:            *enableKVM,
 		Containerized:  *qemuContainerized,
+		QemuBinPath:    *qemuCmd,
 		PublishedPorts: publishFlags,
 		NetdevConfig:   netdevConfig,
 		UUID:           vmUUID,
@@ -591,6 +593,13 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 }
 
 func discoverBackend(config QemuConfig) QemuConfig {
+	if config.QemuImgPath != "" && config.Containerized {
+		log.Fatal("-qemu and -containerized can't be used together.")
+	}
+	if config.QemuImgPath != "" {
+		return config
+	}
+
 	qemuBinPath := "qemu-system-" + config.Arch
 	qemuImgPath := "qemu-img"
 
