@@ -38,7 +38,7 @@ type QemuConfig struct {
 	Arch           string
 	CPUs           string
 	Memory         string
-	KVM            bool
+	Accel          string
 	Containerized  bool
 	QemuBinPath    string
 	QemuImgPath    string
@@ -56,7 +56,8 @@ const (
 )
 
 var (
-	defaultArch string
+	defaultArch  string
+	defaultAccel string
 )
 
 func init() {
@@ -66,24 +67,17 @@ func init() {
 	case "amd64":
 		defaultArch = "x86_64"
 	}
+	switch {
+	case haveKVM():
+		defaultAccel = "kvm:tcg"
+	case runtime.GOOS == "darwin":
+		defaultAccel = "hvf:tcg"
+	}
 }
 
 func haveKVM() bool {
 	_, err := os.Stat("/dev/kvm")
 	return !os.IsNotExist(err)
-}
-
-func envOverrideBool(env string, b *bool) {
-	val := os.Getenv(env)
-	if val == "" {
-		return
-	}
-
-	var err error
-	*b, err = strconv.ParseBool(val)
-	if err != nil {
-		log.Fatal("Unable to parse %q=%q as a boolean", env, val)
-	}
 }
 
 func retrieveMAC(statePath string) net.HardwareAddr {
@@ -160,13 +154,14 @@ func runQemu(args []string) {
 	fw := flags.String("fw", "", "Path to OVMF firmware for UEFI boot")
 
 	// VM configuration
-	enableKVM := flags.Bool("kvm", haveKVM(), "Enable KVM acceleration")
+	accel := flags.String("accel", defaultAccel, "Choose acceleration mode. Use 'tcg' to disable it.")
 	arch := flags.String("arch", defaultArch, "Type of architecture to use, e.g. x86_64, aarch64")
 	cpus := flags.String("cpus", "1", "Number of CPUs")
 	mem := flags.String("mem", "1024", "Amount of memory in MB")
 
 	// Backend configuration
 	qemuContainerized := flags.Bool("containerized", false, "Run qemu in a container")
+	qemuCmd := flags.String("qemu", "", "Path to the qemu binary (otherwise look in $PATH)")
 
 	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
 	vmUUID := uuid.New()
@@ -184,8 +179,8 @@ func runQemu(args []string) {
 
 	// These envvars override the corresponding command line
 	// options. So this must remain after the `flags.Parse` above.
-	envOverrideBool("LINUXKIT_QEMU_KVM", enableKVM)
-	envOverrideBool("LINUXKIT_QEMU_CONTAINERIZED", qemuContainerized)
+	*accel = getStringValue("LINUXKIT_QEMU_ACCEL", *accel, "")
+	*qemuContainerized = getBoolValue("LINUXKIT_QEMU_CONTAINERIZED", *qemuContainerized)
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the path to the image to boot")
@@ -309,8 +304,9 @@ func runQemu(args []string) {
 		Arch:           *arch,
 		CPUs:           *cpus,
 		Memory:         *mem,
-		KVM:            *enableKVM,
+		Accel:          *accel,
 		Containerized:  *qemuContainerized,
+		QemuBinPath:    *qemuCmd,
 		PublishedPorts: publishFlags,
 		NetdevConfig:   netdevConfig,
 		UUID:           vmUUID,
@@ -427,7 +423,7 @@ func runQemuContainer(config QemuConfig) error {
 		dockerArgs = append(dockerArgs, "--tty")
 	}
 
-	if config.KVM {
+	if strings.Contains(config.Accel, "kvm") {
 		dockerArgs = append(dockerArgs, "--device", "/dev/kvm")
 	}
 
@@ -489,6 +485,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	qemuArgs = append(qemuArgs, "-m", config.Memory)
 	qemuArgs = append(qemuArgs, "-uuid", config.UUID.String())
 	qemuArgs = append(qemuArgs, "-pidfile", filepath.Join(config.StatePath, "qemu.pid"))
+
 	// Need to specify the vcpu type when running qemu on arm64 platform, for security reason,
 	// the vcpu should be "host" instead of other names such as "cortex-a53"...
 	if config.Arch == "aarch64" {
@@ -499,12 +496,27 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		}
 	}
 
-	if config.KVM {
-		qemuArgs = append(qemuArgs, "-enable-kvm")
+	// goArch is the GOARCH equivalent of config.Arch
+	var goArch string
+	switch config.Arch {
+	case "aarch64":
+		goArch = "arm64"
+	case "x86_64":
+		goArch = "amd64"
+	default:
+		log.Fatalf("%s is an unsupported architecture.")
+	}
+
+	if goArch != runtime.GOARCH {
+		log.Infof("Disable acceleration as %s != %s", config.Arch, runtime.GOARCH)
+		config.Accel = ""
+	}
+
+	if config.Accel != "" {
 		if config.Arch == "aarch64" {
-			qemuArgs = append(qemuArgs, "-machine", "virt,gic_version=host")
+			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("virt,gic_version=host,accel=%s", config.Accel))
 		} else {
-			qemuArgs = append(qemuArgs, "-machine", "q35,accel=kvm:tcg")
+			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("q35,accel=%s", config.Accel))
 		}
 	} else {
 		if config.Arch == "aarch64" {
@@ -591,6 +603,13 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 }
 
 func discoverBackend(config QemuConfig) QemuConfig {
+	if config.QemuImgPath != "" && config.Containerized {
+		log.Fatal("-qemu and -containerized can't be used together.")
+	}
+	if config.QemuImgPath != "" {
+		return config
+	}
+
 	qemuBinPath := "qemu-system-" + config.Arch
 	qemuImgPath := "qemu-img"
 
