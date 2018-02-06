@@ -1,4 +1,4 @@
-From 6b7e072829a8b4e8b3c19f01138998a5d74558cf Mon Sep 17 00:00:00 2001
+From d2a1904b00892fbaa2c679f11b3ecaaafd33af58 Mon Sep 17 00:00:00 2001
 From: Rolf Neugebauer <rolf.neugebauer@gmail.com>
 Date: Tue, 6 Feb 2018 13:02:57 +0000
 Subject: [PATCH] x86/microcode/intel: Avoid division by zero
