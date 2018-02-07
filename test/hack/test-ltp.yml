@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.9.79
+  image: linuxkit/kernel:4.9.80
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:6061875ba11fd9c563fda6234b103ed9997ff782
@@ -16,8 +16,5 @@ files:
   - path: /etc/ltp/baseline
     contents: "100"
 trust:
-  image:
-    - linuxkit/kernel
-    - linuxkit/init
-    - linuxkit/runc
-    - linuxkit/containerd
+  org:
+    - linuxkit
