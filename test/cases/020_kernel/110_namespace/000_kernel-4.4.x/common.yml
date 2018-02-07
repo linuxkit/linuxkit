@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.4.114
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e650be6c21ef9ecb33534858fc63fb8bc5028c6e
+  - linuxkit/init:6061875ba11fd9c563fda6234b103ed9997ff782
   - linuxkit/runc:52ecfdef1ae051e7fd5ac5f1d0b7dd859adff015
 trust:
   org:
