@@ -21,6 +21,7 @@ RUN apk add \
     mpc1-dev \
     mpfr-dev \
     ncurses-dev \
+    patch \
     sed \
     squashfs-tools \
     tar \
@@ -67,7 +68,7 @@ RUN set -e && \
     if [ -d /patches-${KERNEL_SERIES} ]; then \
         for patch in /patches-${KERNEL_SERIES}/*.patch; do \
             echo "Applying $patch"; \
-            patch -p1 < "$patch"; \
+            patch -t -F0 -N -u -p1 < "$patch"; \
         done; \
     fi
 
