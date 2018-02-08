@@ -41,6 +41,11 @@ echo $UNZIPPED_CONFIG | grep -q CONFIG_PANIC_ON_OOPS=y || fail "CONFIG_PANIC_ON_
 echo $UNZIPPED_CONFIG | grep -q CONFIG_SYN_COOKIES=y || fail "CONFIG_SYN_COOKIES=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_LEGACY_VSYSCALL_NONE=y || fail "CONFIG_LEGACY_VSYSCALL_NONE=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_RANDOMIZE_BASE=y || fail "CONFIG_RANDOMIZE_BASE=y"
+echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_TABLE_ISOLATION=y || fail "CONFIG_PAGE_TABLE_ISOLATION=y"
+echo $UNZIPPED_CONFIG | grep -q CONFIG_RETPOLINE=y || fail "CONFIG_RETPOLINE=y"
+echo $UNZIPPED_CONFIG | grep -q CONFIG_GENERIC_CPU_VULNERABILITIES=y || fail "CONFIG_GENERIC_CPU_VULNERABILITIES=y"
+echo $UNZIPPED_CONFIG | grep -q CONFIG_BPF_JIT_ALWAYS_ON=y || fail "CONFIG_BPF_JIT_ALWAYS_ON=y"
+
 
 # Conditional on kernel version
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 5 ]; then
@@ -86,6 +91,7 @@ echo $UNZIPPED_CONFIG | grep -q 'CONFIG_HIBERNATION is not set' || fail "CONFIG_
 echo $UNZIPPED_CONFIG | grep -q 'CONFIG_LEGACY_PTYS is not set' || fail "CONFIG_LEGACY_PTYS is not set"
 echo $UNZIPPED_CONFIG | grep -q 'CONFIG_X86_X32 is not set' || fail "CONFIG_X86_X32 is not set"
 echo $UNZIPPED_CONFIG | grep -q 'CONFIG_MODIFY_LDT_SYSCALL is not set' || fail "CONFIG_MODIFY_LDT_SYSCALL is not set"
+echo $UNZIPPED_CONFIG | grep -q 'CONFIG_SCSI_PROC_FS is not set' || fail "CONFIG_SCSI_PROC_FS is not set"
 
 # modprobe
 for mod in \
