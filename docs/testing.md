@@ -12,7 +12,7 @@ To run the test suite:
 
 ```
 cd test
-rtf -x run
+rtf -v run -x
 ```
 
 This will run the tests and put the results in a the `_results` directory!
@@ -21,7 +21,7 @@ Run control is handled using labels and with pattern matching.
 To run add a label you may use:
 
 ```
-rtf -x -l slow run
+rtf -v -l slow run -x
 ```
 
 You can list the tests which will be run using:
@@ -35,7 +35,7 @@ Some tests may be marked as `SKIP` and `LABELS` column will typically provide an
 To run tests that match the pattern `linuxkit.build` you would use the following command:
 
 ```
-rtf -x run linuxkit.build
+rtf -v run -x linuxkit.build
 ```
 
 ### Writing new tests
