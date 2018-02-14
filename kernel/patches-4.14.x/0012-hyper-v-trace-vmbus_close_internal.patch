@@ -1,0 +1,58 @@
+From 2398d2a0e00a57022e2b43bb248ad8262ba63649 Mon Sep 17 00:00:00 2001
+From: Vitaly Kuznetsov <vkuznets@redhat.com>
+Date: Sun, 29 Oct 2017 12:21:10 -0700
+Subject: [PATCH 12/18] hyper-v: trace vmbus_close_internal()
+
+Add tracepoint to CHANNELMSG_CLOSECHANNEL sender.
+
+Signed-off-by: Vitaly Kuznetsov <vkuznets@redhat.com>
+Signed-off-by: K. Y. Srinivasan <kys@microsoft.com>
+Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 633b005df0dff555c0d4f22b5f1f8b04dba67ac5)
+---
+ drivers/hv/channel.c  |  2 ++
+ drivers/hv/hv_trace.h | 15 +++++++++++++++
+ 2 files changed, 17 insertions(+)
+
+diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
+index b562a7fb4c42..70babce00ddc 100644
+--- a/drivers/hv/channel.c
++++ b/drivers/hv/channel.c
+@@ -591,6 +591,8 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+ 	ret = vmbus_post_msg(msg, sizeof(struct vmbus_channel_close_channel),
+ 			     true);
+ 
++	trace_vmbus_close_internal(msg, ret);
++
+ 	if (ret) {
+ 		pr_err("Close failed: close post msg return is %d\n", ret);
+ 		/*
+diff --git a/drivers/hv/hv_trace.h b/drivers/hv/hv_trace.h
+index 38fedb803bd8..302bd4e964f0 100644
+--- a/drivers/hv/hv_trace.h
++++ b/drivers/hv/hv_trace.h
+@@ -157,6 +157,21 @@ TRACE_EVENT(vmbus_open,
+ 		    )
+ 	);
+ 
++TRACE_EVENT(vmbus_close_internal,
++	    TP_PROTO(const struct vmbus_channel_close_channel *msg, int ret),
++	    TP_ARGS(msg, ret),
++	    TP_STRUCT__entry(
++		    __field(u32, child_relid)
++		    __field(int, ret)
++		    ),
++	    TP_fast_assign(
++		    __entry->child_relid = msg->child_relid;
++		    __entry->ret = ret;
++		    ),
++	    TP_printk("sending child_relid 0x%x, ret %d", __entry->child_relid,
++		    __entry->ret)
++	);
++
+ #undef TRACE_INCLUDE_PATH
+ #define TRACE_INCLUDE_PATH .
+ #undef TRACE_INCLUDE_FILE
+-- 
+2.16.0
+
