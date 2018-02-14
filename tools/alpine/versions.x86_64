@@ -1,4 +1,4 @@
-# linuxkit/alpine:44f2830176cdac956076e32b38a846bd163223c1-amd64
+# linuxkit/alpine:b1a36f0dd41e60142dd84dab7cd333ce7da1d1f8-amd64
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
@@ -12,7 +12,7 @@ audit-2.7.7-r1
 audit-libs-2.7.7-r1
 autoconf-2.69-r0
 automake-1.15.1-r0
-bash-4.4.12-r2
+bash-4.4.19-r1
 bc-1.07.1-r0
 binutils-2.28-r3
 binutils-dev-2.28-r3
@@ -36,7 +36,7 @@ cmake-3.9.5-r0
 coreutils-8.28-r0
 cryptsetup-1.7.5-r1
 cryptsetup-libs-1.7.5-r1
-curl-7.57.0-r0
+curl-7.58.0-r0
 db-5.3.28-r0
 dbus-libs-1.10.24-r0
 device-mapper-libs-2.02.175-r0
@@ -113,13 +113,13 @@ libburn-1.4.8-r0
 libbz2-1.0.6-r6
 libc-dev-0.7.1-r0
 libc-utils-0.7.1-r0
-libc6-compat-1.1.18-r2
+libc6-compat-1.1.18-r3
 libcap-2.25-r1
 libcap-ng-0.7.8-r1
 libcap-ng-dev-0.7.8-r1
 libcom_err-1.43.7-r0
 libcrypto1.0-1.0.2n-r0
-libcurl-7.57.0-r0
+libcurl-7.58.0-r0
 libdrm-2.4.88-r0
 libedit-20170329.3.1-r3
 libelf-0.8.13-r3
@@ -195,9 +195,9 @@ mpfr-dev-3.1.5-r1
 mpfr3-3.1.5-r1
 mtools-4.0.18-r2
 multipath-tools-0.7.4-r0
-musl-1.1.18-r2
-musl-dev-1.1.18-r2
-musl-utils-1.1.18-r2
+musl-1.1.18-r3
+musl-dev-1.1.18-r3
+musl-utils-1.1.18-r3
 ncurses-dev-6.0_p20171125-r0
 ncurses-libs-6.0_p20171125-r0
 ncurses-terminfo-6.0_p20171125-r0
