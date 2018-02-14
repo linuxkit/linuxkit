@@ -43,7 +43,7 @@ ltp: $(LINUXKIT) test-ltp.img.tar.gz
 ### ------
 
 test: gcp-hack
-	@rtf -l build -x run
+	@rtf -l build -v run -x
 
 test-pr: gcp-hack
-	@rtf -l build -x run
+	@rtf -l build -v run -x

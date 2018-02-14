@@ -21,7 +21,7 @@ endif
 
 PREFIX?=/usr/local/
 
-RTF_COMMIT=3e8ed35ca934259cb644c2492bf9b181954a07e1
+RTF_COMMIT=f2409214ca3b719567aa15bb7b363f24876a4d98
 RTF_CMD=github.com/linuxkit/rtf/cmd
 RTF_VERSION=0.0
 bin/rtf: tmp_rtf_bin.tar | bin
