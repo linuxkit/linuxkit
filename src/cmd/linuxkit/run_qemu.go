@@ -40,6 +40,7 @@ type QemuConfig struct {
 	Memory         string
 	Accel          string
 	Containerized  bool
+	Detached       bool
 	QemuBinPath    string
 	QemuImgPath    string
 	PublishedPorts []string
@@ -162,6 +163,7 @@ func runQemu(args []string) {
 	// Backend configuration
 	qemuContainerized := flags.Bool("containerized", false, "Run qemu in a container")
 	qemuCmd := flags.String("qemu", "", "Path to the qemu binary (otherwise look in $PATH)")
+	qemuDetached := flags.Bool("detached", false, "Set qemu container to run in the background")
 
 	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
 	vmUUID := uuid.New()
@@ -306,6 +308,7 @@ func runQemu(args []string) {
 		Memory:         *mem,
 		Accel:          *accel,
 		Containerized:  *qemuContainerized,
+		Detached:       *qemuDetached,
 		QemuBinPath:    *qemuCmd,
 		PublishedPorts: publishFlags,
 		NetdevConfig:   netdevConfig,
@@ -425,6 +428,10 @@ func runQemuContainer(config QemuConfig) error {
 
 	if strings.Contains(config.Accel, "kvm") {
 		dockerArgs = append(dockerArgs, "--device", "/dev/kvm")
+	}
+
+	if config.Detached == true {
+		dockerArgs = append(dockerArgs, "-d")
 	}
 
 	if config.PublishedPorts != nil && len(config.PublishedPorts) > 0 {
