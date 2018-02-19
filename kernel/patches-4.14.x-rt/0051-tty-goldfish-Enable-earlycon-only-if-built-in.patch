@@ -1,0 +1,65 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 29 Nov 2017 16:32:20 +0100
+Subject: [PATCH] tty: goldfish: Enable 'earlycon' only if built-in
+
+Commit 3840ed9548f7 ("tty: goldfish: Implement support for kernel
+'earlycon' parameter") breaks an allmodconfig config on x86:
+|  LD      vmlinux.o
+|  MODPOST vmlinux.o
+|drivers/tty/serial/earlycon.o: In function `parse_options':
+|drivers/tty/serial/earlycon.c:97: undefined reference to `uart_parse_earlycon'
+|Makefile:1005: recipe for target 'vmlinux' failed
+
+earlycon.c::parse_options() invokes uart_parse_earlycon() from serial_core.c
+which is compiled=m because GOLDFISH_TTY itself (and most others) are =m.
+To avoid that, I'm adding the _CONSOLE config option which is selected if the
+GOLDFISH module itself is =y since it doesn't need the early bits for the =m
+case (other drivers do the same dance).
+The alternative would be to move uart_parse_earlycon() from
+serial_core.c to earlycon.c (we don't have that many users of that
+function).
+
+Fixes: 3840ed9548f7 ("tty: goldfish: Implement support for kernel
+       'earlycon' parameter")
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/tty/Kconfig    |    6 +++++-
+ drivers/tty/goldfish.c |    2 ++
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/tty/Kconfig
++++ b/drivers/tty/Kconfig
+@@ -394,10 +394,14 @@ config GOLDFISH_TTY
+ 	depends on GOLDFISH
+ 	select SERIAL_CORE
+ 	select SERIAL_CORE_CONSOLE
+-	select SERIAL_EARLYCON
+ 	help
+ 	  Console and system TTY driver for the Goldfish virtual platform.
+ 
++config GOLDFISH_TTY_EARLY_CONSOLE
++	bool
++	default y if GOLDFISH_TTY=y
++	select SERIAL_EARLYCON
++
+ config DA_TTY
+ 	bool "DA TTY"
+ 	depends on METAG_DA
+--- a/drivers/tty/goldfish.c
++++ b/drivers/tty/goldfish.c
+@@ -442,6 +442,7 @@ static int goldfish_tty_remove(struct pl
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_GOLDFISH_TTY_EARLY_CONSOLE
+ static void gf_early_console_putchar(struct uart_port *port, int ch)
+ {
+ 	__raw_writel(ch, port->membase);
+@@ -465,6 +466,7 @@ static int __init gf_earlycon_setup(stru
+ }
+ 
+ OF_EARLYCON_DECLARE(early_gf_tty, "google,goldfish-tty", gf_earlycon_setup);
++#endif
+ 
+ static const struct of_device_id goldfish_tty_of_match[] = {
+ 	{ .compatible = "google,goldfish-tty", },

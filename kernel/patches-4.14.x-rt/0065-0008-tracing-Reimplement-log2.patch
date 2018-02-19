@@ -1,0 +1,118 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Fri, 22 Sep 2017 14:58:23 -0500
+Subject: [PATCH 08/48] tracing: Reimplement log2
+
+log2 as currently implemented applies only to u64 trace_event_field
+derived fields, and assumes that anything it's applied to is a u64
+field.
+
+To prepare for synthetic fields like latencies, log2 should be
+applicable to those as well, so take the opportunity now to fix the
+current problems as well as expand to more general uses.
+
+log2 should be thought of as a chaining function rather than a field
+type.  To enable this as well as possible future function
+implementations, add a hist_field operand array into the hist_field
+definition for this purpose, and make use of it to implement the log2
+'function'.
+
+Link: http://lkml.kernel.org/r/b47f93fc0b87b36eccf716b0c018f3a71e1f1111.1506105045.git.tom.zanussi@linux.intel.com
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit 5819eaddf35b24d628ddfa4fbb5f8d4026e44b96)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace_events_hist.c |   31 +++++++++++++++++++++++++++----
+ 1 file changed, 27 insertions(+), 4 deletions(-)
+
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -28,12 +28,16 @@ struct hist_field;
+ 
+ typedef u64 (*hist_field_fn_t) (struct hist_field *field, void *event);
+ 
++#define HIST_FIELD_OPERANDS_MAX	2
++
+ struct hist_field {
+ 	struct ftrace_event_field	*field;
+ 	unsigned long			flags;
+ 	hist_field_fn_t			fn;
+ 	unsigned int			size;
+ 	unsigned int			offset;
++	unsigned int                    is_signed;
++	struct hist_field		*operands[HIST_FIELD_OPERANDS_MAX];
+ };
+ 
+ static u64 hist_field_none(struct hist_field *field, void *event)
+@@ -71,7 +75,9 @@ static u64 hist_field_pstring(struct his
+ 
+ static u64 hist_field_log2(struct hist_field *hist_field, void *event)
+ {
+-	u64 val = *(u64 *)(event + hist_field->field->offset);
++	struct hist_field *operand = hist_field->operands[0];
++
++	u64 val = operand->fn(operand, event);
+ 
+ 	return (u64) ilog2(roundup_pow_of_two(val));
+ }
+@@ -156,6 +162,8 @@ static const char *hist_field_name(struc
+ 
+ 	if (field->field)
+ 		field_name = field->field->name;
++	else if (field->flags & HIST_FIELD_FL_LOG2)
++		field_name = hist_field_name(field->operands[0], ++level);
+ 
+ 	if (field_name == NULL)
+ 		field_name = "";
+@@ -357,8 +365,20 @@ static const struct tracing_map_ops hist
+ 	.elt_init	= hist_trigger_elt_comm_init,
+ };
+ 
+-static void destroy_hist_field(struct hist_field *hist_field)
++static void destroy_hist_field(struct hist_field *hist_field,
++			       unsigned int level)
+ {
++	unsigned int i;
++
++	if (level > 2)
++		return;
++
++	if (!hist_field)
++		return;
++
++	for (i = 0; i < HIST_FIELD_OPERANDS_MAX; i++)
++		destroy_hist_field(hist_field->operands[i], level + 1);
++
+ 	kfree(hist_field);
+ }
+ 
+@@ -385,7 +405,10 @@ static struct hist_field *create_hist_fi
+ 	}
+ 
+ 	if (flags & HIST_FIELD_FL_LOG2) {
++		unsigned long fl = flags & ~HIST_FIELD_FL_LOG2;
+ 		hist_field->fn = hist_field_log2;
++		hist_field->operands[0] = create_hist_field(field, fl);
++		hist_field->size = hist_field->operands[0]->size;
+ 		goto out;
+ 	}
+ 
+@@ -405,7 +428,7 @@ static struct hist_field *create_hist_fi
+ 		hist_field->fn = select_value_fn(field->size,
+ 						 field->is_signed);
+ 		if (!hist_field->fn) {
+-			destroy_hist_field(hist_field);
++			destroy_hist_field(hist_field, 0);
+ 			return NULL;
+ 		}
+ 	}
+@@ -422,7 +445,7 @@ static void destroy_hist_fields(struct h
+ 
+ 	for (i = 0; i < TRACING_MAP_FIELDS_MAX; i++) {
+ 		if (hist_data->fields[i]) {
+-			destroy_hist_field(hist_data->fields[i]);
++			destroy_hist_field(hist_data->fields[i], 0);
+ 			hist_data->fields[i] = NULL;
+ 		}
+ 	}

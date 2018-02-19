@@ -1,0 +1,34 @@
+Subject: sched: ttwu: Return success when only changing the saved_state value
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 13 Dec 2011 21:42:19 +0100
+
+When a task blocks on a rt lock, it saves the current state in
+p->saved_state, so a lock related wake up will not destroy the
+original state.
+
+When a real wakeup happens, while the task is running due to a lock
+wakeup already, we update p->saved_state to TASK_RUNNING, but we do
+not return success, which might cause another wakeup in the waitqueue
+code and the task remains in the waitqueue list. Return success in
+that case as well.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ kernel/sched/core.c |    4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -2022,8 +2022,10 @@ try_to_wake_up(struct task_struct *p, un
+ 		 * if the wakeup condition is true.
+ 		 */
+ 		if (!(wake_flags & WF_LOCK_SLEEPER)) {
+-			if (p->saved_state & state)
++			if (p->saved_state & state) {
+ 				p->saved_state = TASK_RUNNING;
++				success = 1;
++			}
+ 		}
+ 		goto out;
+ 	}

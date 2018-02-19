@@ -1,0 +1,45 @@
+From: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Date: Thu, 17 Mar 2016 21:09:43 +0100
+Subject: [PATCH] clockevents/drivers/timer-atmel-pit: fix double free_irq
+
+clockevents_exchange_device() changes the state from detached to shutdown
+and so at that point the IRQ has not yet been requested.
+
+Acked-by: Nicolas Ferre <nicolas.ferre@atmel.com>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@free-electrons.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/clocksource/timer-atmel-pit.c |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/drivers/clocksource/timer-atmel-pit.c
++++ b/drivers/clocksource/timer-atmel-pit.c
+@@ -46,6 +46,7 @@ struct pit_data {
+ 	u32		cycle;
+ 	u32		cnt;
+ 	unsigned int	irq;
++	bool		irq_requested;
+ 	struct clk	*mck;
+ };
+ 
+@@ -96,7 +97,10 @@ static int pit_clkevt_shutdown(struct cl
+ 
+ 	/* disable irq, leaving the clocksource active */
+ 	pit_write(data->base, AT91_PIT_MR, (data->cycle - 1) | AT91_PIT_PITEN);
+-	free_irq(data->irq, data);
++	if (data->irq_requested) {
++		free_irq(data->irq, data);
++		data->irq_requested = false;
++	}
+ 	return 0;
+ }
+ 
+@@ -115,6 +119,8 @@ static int pit_clkevt_set_periodic(struc
+ 	if (ret)
+ 		panic(pr_fmt("Unable to setup IRQ\n"));
+ 
++	data->irq_requested = true;
++
+ 	/* update clocksource counter */
+ 	data->cnt += data->cycle * PIT_PICNT(pit_read(data->base, AT91_PIT_PIVR));
+ 	pit_write(data->base, AT91_PIT_MR,

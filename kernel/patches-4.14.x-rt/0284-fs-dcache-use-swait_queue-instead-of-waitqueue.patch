@@ -1,0 +1,214 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 14 Sep 2016 14:35:49 +0200
+Subject: [PATCH] fs/dcache: use swait_queue instead of waitqueue
+
+__d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
+which disables preemption. As a workaround convert it to swait.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/cifs/readdir.c       |    2 +-
+ fs/dcache.c             |   27 +++++++++++++++------------
+ fs/fuse/dir.c           |    2 +-
+ fs/namei.c              |    4 ++--
+ fs/nfs/dir.c            |    4 ++--
+ fs/nfs/unlink.c         |    4 ++--
+ fs/proc/base.c          |    2 +-
+ fs/proc/proc_sysctl.c   |    2 +-
+ include/linux/dcache.h  |    4 ++--
+ include/linux/nfs_xdr.h |    2 +-
+ kernel/sched/swait.c    |    1 +
+ 11 files changed, 29 insertions(+), 25 deletions(-)
+
+--- a/fs/cifs/readdir.c
++++ b/fs/cifs/readdir.c
+@@ -80,7 +80,7 @@ cifs_prime_dcache(struct dentry *parent,
+ 	struct inode *inode;
+ 	struct super_block *sb = parent->d_sb;
+ 	struct cifs_sb_info *cifs_sb = CIFS_SB(sb);
+-	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
++	DECLARE_SWAIT_QUEUE_HEAD_ONSTACK(wq);
+ 
+ 	cifs_dbg(FYI, "%s: for %s\n", __func__, name->name);
+ 
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -2434,21 +2434,24 @@ static inline void end_dir_add(struct in
+ 
+ static void d_wait_lookup(struct dentry *dentry)
+ {
+-	if (d_in_lookup(dentry)) {
+-		DECLARE_WAITQUEUE(wait, current);
+-		add_wait_queue(dentry->d_wait, &wait);
+-		do {
+-			set_current_state(TASK_UNINTERRUPTIBLE);
+-			spin_unlock(&dentry->d_lock);
+-			schedule();
+-			spin_lock(&dentry->d_lock);
+-		} while (d_in_lookup(dentry));
+-	}
++	struct swait_queue __wait;
++
++	if (!d_in_lookup(dentry))
++		return;
++
++	INIT_LIST_HEAD(&__wait.task_list);
++	do {
++		prepare_to_swait(dentry->d_wait, &__wait, TASK_UNINTERRUPTIBLE);
++		spin_unlock(&dentry->d_lock);
++		schedule();
++		spin_lock(&dentry->d_lock);
++	} while (d_in_lookup(dentry));
++	finish_swait(dentry->d_wait, &__wait);
+ }
+ 
+ struct dentry *d_alloc_parallel(struct dentry *parent,
+ 				const struct qstr *name,
+-				wait_queue_head_t *wq)
++				struct swait_queue_head *wq)
+ {
+ 	unsigned int hash = name->hash;
+ 	struct hlist_bl_head *b = in_lookup_hash(parent, hash);
+@@ -2557,7 +2560,7 @@ void __d_lookup_done(struct dentry *dent
+ 	hlist_bl_lock(b);
+ 	dentry->d_flags &= ~DCACHE_PAR_LOOKUP;
+ 	__hlist_bl_del(&dentry->d_u.d_in_lookup_hash);
+-	wake_up_all(dentry->d_wait);
++	swake_up_all(dentry->d_wait);
+ 	dentry->d_wait = NULL;
+ 	hlist_bl_unlock(b);
+ 	INIT_HLIST_NODE(&dentry->d_u.d_alias);
+--- a/fs/fuse/dir.c
++++ b/fs/fuse/dir.c
+@@ -1187,7 +1187,7 @@ static int fuse_direntplus_link(struct f
+ 	struct inode *dir = d_inode(parent);
+ 	struct fuse_conn *fc;
+ 	struct inode *inode;
+-	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
++	DECLARE_SWAIT_QUEUE_HEAD_ONSTACK(wq);
+ 
+ 	if (!o->nodeid) {
+ 		/*
+--- a/fs/namei.c
++++ b/fs/namei.c
+@@ -1628,7 +1628,7 @@ static struct dentry *lookup_slow(const
+ {
+ 	struct dentry *dentry = ERR_PTR(-ENOENT), *old;
+ 	struct inode *inode = dir->d_inode;
+-	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
++	DECLARE_SWAIT_QUEUE_HEAD_ONSTACK(wq);
+ 
+ 	inode_lock_shared(inode);
+ 	/* Don't go there if it's already dead */
+@@ -3101,7 +3101,7 @@ static int lookup_open(struct nameidata
+ 	struct dentry *dentry;
+ 	int error, create_error = 0;
+ 	umode_t mode = op->mode;
+-	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
++	DECLARE_SWAIT_QUEUE_HEAD_ONSTACK(wq);
+ 
+ 	if (unlikely(IS_DEADDIR(dir_inode)))
+ 		return -ENOENT;
+--- a/fs/nfs/dir.c
++++ b/fs/nfs/dir.c
+@@ -452,7 +452,7 @@ static
+ void nfs_prime_dcache(struct dentry *parent, struct nfs_entry *entry)
+ {
+ 	struct qstr filename = QSTR_INIT(entry->name, entry->len);
+-	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
++	DECLARE_SWAIT_QUEUE_HEAD_ONSTACK(wq);
+ 	struct dentry *dentry;
+ 	struct dentry *alias;
+ 	struct inode *dir = d_inode(parent);
+@@ -1443,7 +1443,7 @@ int nfs_atomic_open(struct inode *dir, s
+ 		    struct file *file, unsigned open_flags,
+ 		    umode_t mode, int *opened)
+ {
+-	DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
++	DECLARE_SWAIT_QUEUE_HEAD_ONSTACK(wq);
+ 	struct nfs_open_context *ctx;
+ 	struct dentry *res;
+ 	struct iattr attr = { .ia_valid = ATTR_OPEN };
+--- a/fs/nfs/unlink.c
++++ b/fs/nfs/unlink.c
+@@ -13,7 +13,7 @@
+ #include <linux/sunrpc/clnt.h>
+ #include <linux/nfs_fs.h>
+ #include <linux/sched.h>
+-#include <linux/wait.h>
++#include <linux/swait.h>
+ #include <linux/namei.h>
+ #include <linux/fsnotify.h>
+ 
+@@ -206,7 +206,7 @@ nfs_async_unlink(struct dentry *dentry,
+ 		goto out_free_name;
+ 	}
+ 	data->res.dir_attr = &data->dir_attr;
+-	init_waitqueue_head(&data->wq);
++	init_swait_queue_head(&data->wq);
+ 
+ 	status = -EBUSY;
+ 	spin_lock(&dentry->d_lock);
+--- a/fs/proc/base.c
++++ b/fs/proc/base.c
+@@ -1878,7 +1878,7 @@ bool proc_fill_cache(struct file *file,
+ 
+ 	child = d_hash_and_lookup(dir, &qname);
+ 	if (!child) {
+-		DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
++		DECLARE_SWAIT_QUEUE_HEAD_ONSTACK(wq);
+ 		child = d_alloc_parallel(dir, &qname, &wq);
+ 		if (IS_ERR(child))
+ 			goto end_instantiate;
+--- a/fs/proc/proc_sysctl.c
++++ b/fs/proc/proc_sysctl.c
+@@ -679,7 +679,7 @@ static bool proc_sys_fill_cache(struct f
+ 
+ 	child = d_lookup(dir, &qname);
+ 	if (!child) {
+-		DECLARE_WAIT_QUEUE_HEAD_ONSTACK(wq);
++		DECLARE_SWAIT_QUEUE_HEAD_ONSTACK(wq);
+ 		child = d_alloc_parallel(dir, &qname, &wq);
+ 		if (IS_ERR(child))
+ 			return false;
+--- a/include/linux/dcache.h
++++ b/include/linux/dcache.h
+@@ -107,7 +107,7 @@ struct dentry {
+ 
+ 	union {
+ 		struct list_head d_lru;		/* LRU list */
+-		wait_queue_head_t *d_wait;	/* in-lookup ones only */
++		struct swait_queue_head *d_wait;	/* in-lookup ones only */
+ 	};
+ 	struct list_head d_child;	/* child of parent list */
+ 	struct list_head d_subdirs;	/* our children */
+@@ -237,7 +237,7 @@ extern void d_set_d_op(struct dentry *de
+ extern struct dentry * d_alloc(struct dentry *, const struct qstr *);
+ extern struct dentry * d_alloc_pseudo(struct super_block *, const struct qstr *);
+ extern struct dentry * d_alloc_parallel(struct dentry *, const struct qstr *,
+-					wait_queue_head_t *);
++					struct swait_queue_head *);
+ extern struct dentry * d_splice_alias(struct inode *, struct dentry *);
+ extern struct dentry * d_add_ci(struct dentry *, struct inode *, struct qstr *);
+ extern struct dentry * d_exact_alias(struct dentry *, struct inode *);
+--- a/include/linux/nfs_xdr.h
++++ b/include/linux/nfs_xdr.h
+@@ -1530,7 +1530,7 @@ struct nfs_unlinkdata {
+ 	struct nfs_removeargs args;
+ 	struct nfs_removeres res;
+ 	struct dentry *dentry;
+-	wait_queue_head_t wq;
++	struct swait_queue_head wq;
+ 	struct rpc_cred	*cred;
+ 	struct nfs_fattr dir_attr;
+ 	long timeout;
+--- a/kernel/sched/swait.c
++++ b/kernel/sched/swait.c
+@@ -69,6 +69,7 @@ void swake_up_all(struct swait_queue_hea
+ 	struct swait_queue *curr;
+ 	LIST_HEAD(tmp);
+ 
++	WARN_ON(irqs_disabled());
+ 	raw_spin_lock_irq(&q->lock);
+ 	list_splice_init(&q->task_list, &tmp);
+ 	while (!list_empty(&tmp)) {

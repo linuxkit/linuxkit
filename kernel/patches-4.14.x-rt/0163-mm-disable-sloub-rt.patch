@@ -1,0 +1,31 @@
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 3 Jul 2009 08:44:03 -0500
+Subject: mm: Allow only slub on RT
+
+Disable SLAB and SLOB on -RT. Only SLUB is adopted to -RT needs.
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ init/Kconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1533,6 +1533,7 @@ choice
+ 
+ config SLAB
+ 	bool "SLAB"
++	depends on !PREEMPT_RT_FULL
+ 	select HAVE_HARDENED_USERCOPY_ALLOCATOR
+ 	help
+ 	  The regular slab allocator that is established and known to work
+@@ -1553,6 +1554,7 @@ config SLUB
+ config SLOB
+ 	depends on EXPERT
+ 	bool "SLOB (Simple Allocator)"
++	depends on !PREEMPT_RT_FULL
+ 	help
+ 	   SLOB replaces the stock allocator with a drastically simpler
+ 	   allocator. SLOB is generally more space efficient but

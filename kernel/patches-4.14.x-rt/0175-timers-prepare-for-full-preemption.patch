@@ -1,0 +1,166 @@
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 3 Jul 2009 08:29:34 -0500
+Subject: timers: Prepare for full preemption
+
+When softirqs can be preempted we need to make sure that cancelling
+the timer from the active thread can not deadlock vs. a running timer
+callback. Add a waitqueue to resolve that.
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ include/linux/timer.h |    2 +-
+ kernel/sched/core.c   |    9 +++++++--
+ kernel/time/timer.c   |   45 +++++++++++++++++++++++++++++++++++++++++----
+ 3 files changed, 49 insertions(+), 7 deletions(-)
+
+--- a/include/linux/timer.h
++++ b/include/linux/timer.h
+@@ -213,7 +213,7 @@ extern void add_timer(struct timer_list
+ 
+ extern int try_to_del_timer_sync(struct timer_list *timer);
+ 
+-#ifdef CONFIG_SMP
++#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT_FULL)
+   extern int del_timer_sync(struct timer_list *timer);
+ #else
+ # define del_timer_sync(t)		del_timer(t)
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -522,11 +522,14 @@ void resched_cpu(int cpu)
+  */
+ int get_nohz_timer_target(void)
+ {
+-	int i, cpu = smp_processor_id();
++	int i, cpu;
+ 	struct sched_domain *sd;
+ 
++	preempt_disable_rt();
++	cpu = smp_processor_id();
++
+ 	if (!idle_cpu(cpu) && is_housekeeping_cpu(cpu))
+-		return cpu;
++		goto preempt_en_rt;
+ 
+ 	rcu_read_lock();
+ 	for_each_domain(cpu, sd) {
+@@ -545,6 +548,8 @@ int get_nohz_timer_target(void)
+ 		cpu = housekeeping_any_cpu();
+ unlock:
+ 	rcu_read_unlock();
++preempt_en_rt:
++	preempt_enable_rt();
+ 	return cpu;
+ }
+ 
+--- a/kernel/time/timer.c
++++ b/kernel/time/timer.c
+@@ -44,6 +44,7 @@
+ #include <linux/sched/debug.h>
+ #include <linux/slab.h>
+ #include <linux/compat.h>
++#include <linux/swait.h>
+ 
+ #include <linux/uaccess.h>
+ #include <asm/unistd.h>
+@@ -197,6 +198,9 @@ EXPORT_SYMBOL(jiffies_64);
+ struct timer_base {
+ 	raw_spinlock_t		lock;
+ 	struct timer_list	*running_timer;
++#ifdef CONFIG_PREEMPT_RT_FULL
++	struct swait_queue_head	wait_for_running_timer;
++#endif
+ 	unsigned long		clk;
+ 	unsigned long		next_expiry;
+ 	unsigned int		cpu;
+@@ -1140,6 +1144,33 @@ void add_timer_on(struct timer_list *tim
+ }
+ EXPORT_SYMBOL_GPL(add_timer_on);
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++/*
++ * Wait for a running timer
++ */
++static void wait_for_running_timer(struct timer_list *timer)
++{
++	struct timer_base *base;
++	u32 tf = timer->flags;
++
++	if (tf & TIMER_MIGRATING)
++		return;
++
++	base = get_timer_base(tf);
++	swait_event(base->wait_for_running_timer,
++		    base->running_timer != timer);
++}
++
++# define wakeup_timer_waiters(b)	swake_up_all(&(b)->wait_for_running_timer)
++#else
++static inline void wait_for_running_timer(struct timer_list *timer)
++{
++	cpu_relax();
++}
++
++# define wakeup_timer_waiters(b)	do { } while (0)
++#endif
++
+ /**
+  * del_timer - deactivate a timer.
+  * @timer: the timer to be deactivated
+@@ -1195,7 +1226,7 @@ int try_to_del_timer_sync(struct timer_l
+ }
+ EXPORT_SYMBOL(try_to_del_timer_sync);
+ 
+-#ifdef CONFIG_SMP
++#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT_FULL)
+ /**
+  * del_timer_sync - deactivate a timer and wait for the handler to finish.
+  * @timer: the timer to be deactivated
+@@ -1255,7 +1286,7 @@ int del_timer_sync(struct timer_list *ti
+ 		int ret = try_to_del_timer_sync(timer);
+ 		if (ret >= 0)
+ 			return ret;
+-		cpu_relax();
++		wait_for_running_timer(timer);
+ 	}
+ }
+ EXPORT_SYMBOL(del_timer_sync);
+@@ -1319,13 +1350,16 @@ static void expire_timers(struct timer_b
+ 		fn = timer->function;
+ 		data = timer->data;
+ 
+-		if (timer->flags & TIMER_IRQSAFE) {
++		if (!IS_ENABLED(CONFIG_PREEMPT_RT_FULL) &&
++		    timer->flags & TIMER_IRQSAFE) {
+ 			raw_spin_unlock(&base->lock);
+ 			call_timer_fn(timer, fn, data);
++			base->running_timer = NULL;
+ 			raw_spin_lock(&base->lock);
+ 		} else {
+ 			raw_spin_unlock_irq(&base->lock);
+ 			call_timer_fn(timer, fn, data);
++			base->running_timer = NULL;
+ 			raw_spin_lock_irq(&base->lock);
+ 		}
+ 	}
+@@ -1627,8 +1661,8 @@ static inline void __run_timers(struct t
+ 		while (levels--)
+ 			expire_timers(base, heads + levels);
+ 	}
+-	base->running_timer = NULL;
+ 	raw_spin_unlock_irq(&base->lock);
++	wakeup_timer_waiters(base);
+ }
+ 
+ /*
+@@ -1868,6 +1902,9 @@ static void __init init_timer_cpu(int cp
+ 		base->cpu = cpu;
+ 		raw_spin_lock_init(&base->lock);
+ 		base->clk = jiffies;
++#ifdef CONFIG_PREEMPT_RT_FULL
++		init_swait_queue_head(&base->wait_for_running_timer);
++#endif
+ 	}
+ }
+ 

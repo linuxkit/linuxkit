@@ -1,0 +1,31 @@
+Subject: signal: Revert ptrace preempt magic
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 21 Sep 2011 19:57:12 +0200
+
+Upstream commit '53da1d9456fe7f8 fix ptrace slowness' is nothing more
+than a bandaid around the ptrace design trainwreck. It's not a
+correctness issue, it's merily a cosmetic bandaid.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ kernel/signal.c |    8 --------
+ 1 file changed, 8 deletions(-)
+
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -1876,15 +1876,7 @@ static void ptrace_stop(int exit_code, i
+ 		if (gstop_done && ptrace_reparented(current))
+ 			do_notify_parent_cldstop(current, false, why);
+ 
+-		/*
+-		 * Don't want to allow preemption here, because
+-		 * sys_ptrace() needs this task to be inactive.
+-		 *
+-		 * XXX: implement read_unlock_no_resched().
+-		 */
+-		preempt_disable();
+ 		read_unlock(&tasklist_lock);
+-		preempt_enable_no_resched();
+ 		freezable_schedule();
+ 	} else {
+ 		/*

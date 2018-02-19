@@ -1,0 +1,30 @@
+Subject: x86: kvm Require const tsc for RT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 06 Nov 2011 12:26:18 +0100
+
+Non constant TSC is a nightmare on bare metal already, but with
+virtualization it becomes a complete disaster because the workarounds
+are horrible latency wise. That's also a preliminary for running RT in
+a guest on top of a RT host.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/x86/kvm/x86.c |    7 +++++++
+ 1 file changed, 7 insertions(+)
+
+--- a/arch/x86/kvm/x86.c
++++ b/arch/x86/kvm/x86.c
+@@ -6142,6 +6142,13 @@ int kvm_arch_init(void *opaque)
+ 		goto out;
+ 	}
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++	if (!boot_cpu_has(X86_FEATURE_CONSTANT_TSC)) {
++		printk(KERN_ERR "RT requires X86_FEATURE_CONSTANT_TSC\n");
++		return -EOPNOTSUPP;
++	}
++#endif
++
+ 	r = kvm_mmu_module_init();
+ 	if (r)
+ 		goto out_free_percpu;

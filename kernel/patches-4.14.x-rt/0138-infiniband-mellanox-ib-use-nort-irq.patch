@@ -1,0 +1,40 @@
+From: Sven-Thorsten Dietrich <sdietrich@novell.com>
+Date: Fri, 3 Jul 2009 08:30:35 -0500
+Subject: infiniband: Mellanox IB driver patch use _nort() primitives
+
+Fixes in_atomic stack-dump, when Mellanox module is loaded into the RT
+Kernel.
+
+Michael S. Tsirkin <mst@dev.mellanox.co.il> sayeth:
+"Basically, if you just make spin_lock_irqsave (and spin_lock_irq) not disable
+interrupts for non-raw spinlocks, I think all of infiniband will be fine without
+changes."
+
+Signed-off-by: Sven-Thorsten Dietrich <sven@thebigcorporation.com>
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ drivers/infiniband/ulp/ipoib/ipoib_multicast.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/infiniband/ulp/ipoib/ipoib_multicast.c
++++ b/drivers/infiniband/ulp/ipoib/ipoib_multicast.c
+@@ -895,7 +895,7 @@ void ipoib_mcast_restart_task(struct wor
+ 
+ 	ipoib_dbg_mcast(priv, "restarting multicast task\n");
+ 
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	netif_addr_lock(dev);
+ 	spin_lock(&priv->lock);
+ 
+@@ -977,7 +977,7 @@ void ipoib_mcast_restart_task(struct wor
+ 
+ 	spin_unlock(&priv->lock);
+ 	netif_addr_unlock(dev);
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ 
+ 	ipoib_mcast_remove_list(&remove_list);
+ 

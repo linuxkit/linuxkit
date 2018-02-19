@@ -1,0 +1,43 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Mon, 15 Jan 2018 20:52:07 -0600
+Subject: [PATCH 41/48] tracing: Make tracing_set_clock() non-static
+
+Allow tracing code outside of trace.c to access tracing_set_clock().
+
+Some applications may require a particular clock in order to function
+properly, such as latency calculations.
+
+Also, add an accessor returning the current clock string.
+
+Link: http://lkml.kernel.org/r/6d1c53e9ee2163f54e1849f5376573f54f0e6009.1516069914.git.tom.zanussi@linux.intel.com
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit f8913a56885a33eda24452c1839102c305bf7df5)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace.c |    2 +-
+ kernel/trace/trace.h |    1 +
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -6219,7 +6219,7 @@ static int tracing_clock_show(struct seq
+ 	return 0;
+ }
+ 
+-static int tracing_set_clock(struct trace_array *tr, const char *clockstr)
++int tracing_set_clock(struct trace_array *tr, const char *clockstr)
+ {
+ 	int i;
+ 
+--- a/kernel/trace/trace.h
++++ b/kernel/trace/trace.h
+@@ -289,6 +289,7 @@ extern int trace_array_get(struct trace_
+ extern void trace_array_put(struct trace_array *tr);
+ 
+ extern int tracing_set_time_stamp_abs(struct trace_array *tr, bool abs);
++extern int tracing_set_clock(struct trace_array *tr, const char *clockstr);
+ 
+ extern bool trace_clock_in_ns(struct trace_array *tr);
+ 

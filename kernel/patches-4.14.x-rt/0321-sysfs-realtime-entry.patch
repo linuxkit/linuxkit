@@ -1,0 +1,47 @@
+Subject: sysfs: Add /sys/kernel/realtime entry
+From: Clark Williams <williams@redhat.com>
+Date: Sat Jul 30 21:55:53 2011 -0500
+
+Add a /sys/kernel entry to indicate that the kernel is a
+realtime kernel.
+
+Clark says that he needs this for udev rules, udev needs to evaluate
+if its a PREEMPT_RT kernel a few thousand times and parsing uname
+output is too slow or so.
+
+Are there better solutions? Should it exist and return 0 on !-rt?
+
+Signed-off-by: Clark Williams <williams@redhat.com>
+Signed-off-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
+---
+ kernel/ksysfs.c |   12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+--- a/kernel/ksysfs.c
++++ b/kernel/ksysfs.c
+@@ -140,6 +140,15 @@ KERNEL_ATTR_RO(vmcoreinfo);
+ 
+ #endif /* CONFIG_CRASH_CORE */
+ 
++#if defined(CONFIG_PREEMPT_RT_FULL)
++static ssize_t realtime_show(struct kobject *kobj,
++			     struct kobj_attribute *attr, char *buf)
++{
++	return sprintf(buf, "%d\n", 1);
++}
++KERNEL_ATTR_RO(realtime);
++#endif
++
+ /* whether file capabilities are enabled */
+ static ssize_t fscaps_show(struct kobject *kobj,
+ 				  struct kobj_attribute *attr, char *buf)
+@@ -231,6 +240,9 @@ static struct attribute * kernel_attrs[]
+ 	&rcu_expedited_attr.attr,
+ 	&rcu_normal_attr.attr,
+ #endif
++#ifdef CONFIG_PREEMPT_RT_FULL
++	&realtime_attr.attr,
++#endif
+ 	NULL
+ };
+ 

@@ -1,0 +1,26 @@
+From: Mikulas Patocka <mpatocka@redhat.com>
+Date: Fri, 10 Nov 2017 12:29:34 -0500
+Subject: [PATCH] brd: remove unused brd_mutex
+
+Upstream commit 15f7b41f70ddcca3b555bd0fdc7c8da7466b517e
+
+Remove unused mutex brd_mutex. It is unused since the commit ff26956875c2
+("brd: remove support for BLKFLSBUF").
+
+Signed-off-by: Mikulas Patocka <mpatocka@redhat.com>
+Signed-off-by: Jens Axboe <axboe@kernel.dk>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/block/brd.c |    1 -
+ 1 file changed, 1 deletion(-)
+
+--- a/drivers/block/brd.c
++++ b/drivers/block/brd.c
+@@ -60,7 +60,6 @@ struct brd_device {
+ /*
+  * Look up and return a brd's page for a given sector.
+  */
+-static DEFINE_MUTEX(brd_mutex);
+ static struct page *brd_lookup_page(struct brd_device *brd, sector_t sector)
+ {
+ 	pgoff_t idx;

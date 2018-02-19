@@ -1,0 +1,112 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Mon, 15 Jan 2018 20:51:44 -0600
+Subject: [PATCH 18/48] tracing: Break out hist trigger assignment parsing
+
+This will make it easier to add variables, and makes the parsing code
+cleaner regardless.
+
+Link: http://lkml.kernel.org/r/e574b3291bbe15e35a4dfc87e5395aa715701c98.1516069914.git.tom.zanussi@linux.intel.com
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Rajvi Jingar <rajvi.jingar@intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit 3c1e23def1291b21a2057f883ccc0456418dc5ad)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace_events_hist.c |   72 +++++++++++++++++++++++++++------------
+ 1 file changed, 51 insertions(+), 21 deletions(-)
+
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -251,6 +251,51 @@ static void destroy_hist_trigger_attrs(s
+ 	kfree(attrs);
+ }
+ 
++static int parse_assignment(char *str, struct hist_trigger_attrs *attrs)
++{
++	int ret = 0;
++
++	if ((strncmp(str, "key=", strlen("key=")) == 0) ||
++	    (strncmp(str, "keys=", strlen("keys=")) == 0)) {
++		attrs->keys_str = kstrdup(str, GFP_KERNEL);
++		if (!attrs->keys_str) {
++			ret = -ENOMEM;
++			goto out;
++		}
++	} else if ((strncmp(str, "val=", strlen("val=")) == 0) ||
++		 (strncmp(str, "vals=", strlen("vals=")) == 0) ||
++		 (strncmp(str, "values=", strlen("values=")) == 0)) {
++		attrs->vals_str = kstrdup(str, GFP_KERNEL);
++		if (!attrs->vals_str) {
++			ret = -ENOMEM;
++			goto out;
++		}
++	} else if (strncmp(str, "sort=", strlen("sort=")) == 0) {
++		attrs->sort_key_str = kstrdup(str, GFP_KERNEL);
++		if (!attrs->sort_key_str) {
++			ret = -ENOMEM;
++			goto out;
++		}
++	} else if (strncmp(str, "name=", strlen("name=")) == 0) {
++		attrs->name = kstrdup(str, GFP_KERNEL);
++		if (!attrs->name) {
++			ret = -ENOMEM;
++			goto out;
++		}
++	} else if (strncmp(str, "size=", strlen("size=")) == 0) {
++		int map_bits = parse_map_size(str);
++
++		if (map_bits < 0) {
++			ret = map_bits;
++			goto out;
++		}
++		attrs->map_bits = map_bits;
++	} else
++		ret = -EINVAL;
++ out:
++	return ret;
++}
++
+ static struct hist_trigger_attrs *parse_hist_trigger_attrs(char *trigger_str)
+ {
+ 	struct hist_trigger_attrs *attrs;
+@@ -263,33 +308,18 @@ static struct hist_trigger_attrs *parse_
+ 	while (trigger_str) {
+ 		char *str = strsep(&trigger_str, ":");
+ 
+-		if ((strncmp(str, "key=", strlen("key=")) == 0) ||
+-		    (strncmp(str, "keys=", strlen("keys=")) == 0))
+-			attrs->keys_str = kstrdup(str, GFP_KERNEL);
+-		else if ((strncmp(str, "val=", strlen("val=")) == 0) ||
+-			 (strncmp(str, "vals=", strlen("vals=")) == 0) ||
+-			 (strncmp(str, "values=", strlen("values=")) == 0))
+-			attrs->vals_str = kstrdup(str, GFP_KERNEL);
+-		else if (strncmp(str, "sort=", strlen("sort=")) == 0)
+-			attrs->sort_key_str = kstrdup(str, GFP_KERNEL);
+-		else if (strncmp(str, "name=", strlen("name=")) == 0)
+-			attrs->name = kstrdup(str, GFP_KERNEL);
+-		else if (strcmp(str, "pause") == 0)
++		if (strchr(str, '=')) {
++			ret = parse_assignment(str, attrs);
++			if (ret)
++				goto free;
++		} else if (strcmp(str, "pause") == 0)
+ 			attrs->pause = true;
+ 		else if ((strcmp(str, "cont") == 0) ||
+ 			 (strcmp(str, "continue") == 0))
+ 			attrs->cont = true;
+ 		else if (strcmp(str, "clear") == 0)
+ 			attrs->clear = true;
+-		else if (strncmp(str, "size=", strlen("size=")) == 0) {
+-			int map_bits = parse_map_size(str);
+-
+-			if (map_bits < 0) {
+-				ret = map_bits;
+-				goto free;
+-			}
+-			attrs->map_bits = map_bits;
+-		} else {
++		else {
+ 			ret = -EINVAL;
+ 			goto free;
+ 		}

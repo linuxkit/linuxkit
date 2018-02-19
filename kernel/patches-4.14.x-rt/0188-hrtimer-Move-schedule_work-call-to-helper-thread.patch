@@ -1,0 +1,91 @@
+From: Yang Shi <yang.shi@windriver.com>
+Date: Mon, 16 Sep 2013 14:09:19 -0700
+Subject: hrtimer: Move schedule_work call to helper thread
+
+When run ltp leapsec_timer test, the following call trace is caught:
+
+BUG: sleeping function called from invalid context at kernel/rtmutex.c:659
+in_atomic(): 1, irqs_disabled(): 1, pid: 0, name: swapper/1
+Preemption disabled at:[<ffffffff810857f3>] cpu_startup_entry+0x133/0x310
+
+CPU: 1 PID: 0 Comm: swapper/1 Not tainted 3.10.10-rt3 #2
+Hardware name: Intel Corporation Calpella platform/MATXM-CORE-411-B, BIOS 4.6.3 08/18/2010
+ffffffff81c2f800 ffff880076843e40 ffffffff8169918d ffff880076843e58
+ffffffff8106db31 ffff88007684b4a0 ffff880076843e70 ffffffff8169d9c0
+ffff88007684b4a0 ffff880076843eb0 ffffffff81059da1 0000001876851200
+Call Trace:
+<IRQ>  [<ffffffff8169918d>] dump_stack+0x19/0x1b
+[<ffffffff8106db31>] __might_sleep+0xf1/0x170
+[<ffffffff8169d9c0>] rt_spin_lock+0x20/0x50
+[<ffffffff81059da1>] queue_work_on+0x61/0x100
+[<ffffffff81065aa1>] clock_was_set_delayed+0x21/0x30
+[<ffffffff810883be>] do_timer+0x40e/0x660
+[<ffffffff8108f487>] tick_do_update_jiffies64+0xf7/0x140
+[<ffffffff8108fe42>] tick_check_idle+0x92/0xc0
+[<ffffffff81044327>] irq_enter+0x57/0x70
+[<ffffffff816a040e>] smp_apic_timer_interrupt+0x3e/0x9b
+[<ffffffff8169f80a>] apic_timer_interrupt+0x6a/0x70
+<EOI>  [<ffffffff8155ea1c>] ? cpuidle_enter_state+0x4c/0xc0
+[<ffffffff8155eb68>] cpuidle_idle_call+0xd8/0x2d0
+[<ffffffff8100b59e>] arch_cpu_idle+0xe/0x30
+[<ffffffff8108585e>] cpu_startup_entry+0x19e/0x310
+[<ffffffff8168efa2>] start_secondary+0x1ad/0x1b0
+
+The clock_was_set_delayed is called in hard IRQ handler (timer interrupt), which
+calls schedule_work.
+
+Under PREEMPT_RT_FULL, schedule_work calls spinlocks which could sleep, so it's
+not safe to call schedule_work in interrupt context.
+
+Reference upstream commit b68d61c705ef02384c0538b8d9374545097899ca
+(rt,ntp: Move call to schedule_delayed_work() to helper thread)
+from git://git.kernel.org/pub/scm/linux/kernel/git/rt/linux-stable-rt.git, which
+makes a similar change.
+
+Signed-off-by: Yang Shi <yang.shi@windriver.com>
+[bigeasy: use swork_queue() instead a helper thread]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |   24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -715,6 +715,29 @@ static void hrtimer_switch_to_hres(void)
+ 	retrigger_next_event(NULL);
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++
++static struct swork_event clock_set_delay_work;
++
++static void run_clock_set_delay(struct swork_event *event)
++{
++	clock_was_set();
++}
++
++void clock_was_set_delayed(void)
++{
++	swork_queue(&clock_set_delay_work);
++}
++
++static __init int create_clock_set_delay_thread(void)
++{
++	WARN_ON(swork_get());
++	INIT_SWORK(&clock_set_delay_work, run_clock_set_delay);
++	return 0;
++}
++early_initcall(create_clock_set_delay_thread);
++#else /* PREEMPT_RT_FULL */
++
+ static void clock_was_set_work(struct work_struct *work)
+ {
+ 	clock_was_set();
+@@ -730,6 +753,7 @@ void clock_was_set_delayed(void)
+ {
+ 	schedule_work(&hrtimer_work);
+ }
++#endif
+ 
+ #else
+ 

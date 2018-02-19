@@ -1,0 +1,33 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Mon, 15 Jan 2018 20:52:10 -0600
+Subject: [PATCH 47/48] tracing: Add inter-event blurb to HIST_TRIGGERS config
+ option
+
+So that users know that inter-event tracing is supported as part of
+the HIST_TRIGGERS option, include text to that effect in the help
+text.
+
+Link: http://lkml.kernel.org/r/a38e24231d8d980be636b56d35814570acfd167a.1516069914.git.tom.zanussi@linux.intel.com
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit 02942764c4fd12caeb29868822b7744fa91a9ad0)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/Kconfig |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/kernel/trace/Kconfig
++++ b/kernel/trace/Kconfig
+@@ -585,7 +585,10 @@ config HIST_TRIGGERS
+ 	  event activity as an initial guide for further investigation
+ 	  using more advanced tools.
+ 
+-	  See Documentation/trace/events.txt.
++	  Inter-event tracing of quantities such as latencies is also
++	  supported using hist triggers under this option.
++
++	  See Documentation/trace/histogram.txt.
+ 	  If in doubt, say N.
+ 
+ config MMIOTRACE_TEST

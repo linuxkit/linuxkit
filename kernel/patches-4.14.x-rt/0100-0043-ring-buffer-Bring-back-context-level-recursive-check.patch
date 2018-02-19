@@ -1,0 +1,127 @@
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Mon, 15 Jan 2018 10:47:09 -0500
+Subject: [PATCH 43/48] ring-buffer: Bring back context level recursive checks
+
+Commit 1a149d7d3f45 ("ring-buffer: Rewrite trace_recursive_(un)lock() to be
+simpler") replaced the context level recursion checks with a simple counter.
+This would prevent the ring buffer code from recursively calling itself more
+than the max number of contexts that exist (Normal, softirq, irq, nmi). But
+this change caused a lockup in a specific case, which was during suspend and
+resume using a global clock. Adding a stack dump to see where this occurred,
+the issue was in the trace global clock itself:
+
+  trace_buffer_lock_reserve+0x1c/0x50
+  __trace_graph_entry+0x2d/0x90
+  trace_graph_entry+0xe8/0x200
+  prepare_ftrace_return+0x69/0xc0
+  ftrace_graph_caller+0x78/0xa8
+  queued_spin_lock_slowpath+0x5/0x1d0
+  trace_clock_global+0xb0/0xc0
+  ring_buffer_lock_reserve+0xf9/0x390
+
+The function graph tracer traced queued_spin_lock_slowpath that was called
+by trace_clock_global. This pointed out that the trace_clock_global() is not
+reentrant, as it takes a spin lock. It depended on the ring buffer recursive
+lock from letting that happen.
+
+By removing the context detection and adding just a max number of allowable
+recursions, it allowed the trace_clock_global() to be entered again and try
+to retake the spinlock it already held, causing a deadlock.
+
+Fixes: 1a149d7d3f45 ("ring-buffer: Rewrite trace_recursive_(un)lock() to be simpler")
+Reported-by: David Weinehall <david.weinehall@gmail.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit a0e3a18f4baf8e3754ac1e56f0ade924d0c0c721)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/ring_buffer.c |   64 ++++++++++++++++++++++++++++++++-------------
+ 1 file changed, 46 insertions(+), 18 deletions(-)
+
+--- a/kernel/trace/ring_buffer.c
++++ b/kernel/trace/ring_buffer.c
+@@ -2585,29 +2585,59 @@ rb_wakeups(struct ring_buffer *buffer, s
+  * The lock and unlock are done within a preempt disable section.
+  * The current_context per_cpu variable can only be modified
+  * by the current task between lock and unlock. But it can
+- * be modified more than once via an interrupt. There are four
+- * different contexts that we need to consider.
++ * be modified more than once via an interrupt. To pass this
++ * information from the lock to the unlock without having to
++ * access the 'in_interrupt()' functions again (which do show
++ * a bit of overhead in something as critical as function tracing,
++ * we use a bitmask trick.
+  *
+- *  Normal context.
+- *  SoftIRQ context
+- *  IRQ context
+- *  NMI context
+- *
+- * If for some reason the ring buffer starts to recurse, we
+- * only allow that to happen at most 4 times (one for each
+- * context). If it happens 5 times, then we consider this a
+- * recusive loop and do not let it go further.
++ *  bit 0 =  NMI context
++ *  bit 1 =  IRQ context
++ *  bit 2 =  SoftIRQ context
++ *  bit 3 =  normal context.
++ *
++ * This works because this is the order of contexts that can
++ * preempt other contexts. A SoftIRQ never preempts an IRQ
++ * context.
++ *
++ * When the context is determined, the corresponding bit is
++ * checked and set (if it was set, then a recursion of that context
++ * happened).
++ *
++ * On unlock, we need to clear this bit. To do so, just subtract
++ * 1 from the current_context and AND it to itself.
++ *
++ * (binary)
++ *  101 - 1 = 100
++ *  101 & 100 = 100 (clearing bit zero)
++ *
++ *  1010 - 1 = 1001
++ *  1010 & 1001 = 1000 (clearing bit 1)
++ *
++ * The least significant bit can be cleared this way, and it
++ * just so happens that it is the same bit corresponding to
++ * the current context.
+  */
+ 
+ static __always_inline int
+ trace_recursive_lock(struct ring_buffer_per_cpu *cpu_buffer)
+ {
+-	if (cpu_buffer->current_context >= 4)
++	unsigned int val = cpu_buffer->current_context;
++	unsigned long pc = preempt_count();
++	int bit;
++
++	if (!(pc & (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_OFFSET)))
++		bit = RB_CTX_NORMAL;
++	else
++		bit = pc & NMI_MASK ? RB_CTX_NMI :
++			pc & HARDIRQ_MASK ? RB_CTX_IRQ :
++			pc & SOFTIRQ_OFFSET ? 2 : RB_CTX_SOFTIRQ;
++
++	if (unlikely(val & (1 << bit)))
+ 		return 1;
+ 
+-	cpu_buffer->current_context++;
+-	/* Interrupts must see this update */
+-	barrier();
++	val |= (1 << bit);
++	cpu_buffer->current_context = val;
+ 
+ 	return 0;
+ }
+@@ -2615,9 +2645,7 @@ trace_recursive_lock(struct ring_buffer_
+ static __always_inline void
+ trace_recursive_unlock(struct ring_buffer_per_cpu *cpu_buffer)
+ {
+-	/* Don't let the dec leak out */
+-	barrier();
+-	cpu_buffer->current_context--;
++	cpu_buffer->current_context &= cpu_buffer->current_context - 1;
+ }
+ 
+ /**

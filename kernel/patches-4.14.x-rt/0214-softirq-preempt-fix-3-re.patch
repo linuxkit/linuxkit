@@ -1,0 +1,168 @@
+Subject: softirq: Check preemption after reenabling interrupts
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 13 Nov 2011 17:17:09 +0100 (CET)
+
+raise_softirq_irqoff() disables interrupts and wakes the softirq
+daemon, but after reenabling interrupts there is no preemption check,
+so the execution of the softirq thread might be delayed arbitrarily.
+
+In principle we could add that check to local_irq_enable/restore, but
+that's overkill as the rasie_softirq_irqoff() sections are the only
+ones which show this behaviour.
+
+Reported-by: Carsten Emde <cbe@osadl.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ block/blk-softirq.c     |    3 +++
+ include/linux/preempt.h |    3 +++
+ lib/irq_poll.c          |    5 +++++
+ net/core/dev.c          |    7 +++++++
+ 4 files changed, 18 insertions(+)
+
+--- a/block/blk-softirq.c
++++ b/block/blk-softirq.c
+@@ -53,6 +53,7 @@ static void trigger_softirq(void *data)
+ 		raise_softirq_irqoff(BLOCK_SOFTIRQ);
+ 
+ 	local_irq_restore(flags);
++	preempt_check_resched_rt();
+ }
+ 
+ /*
+@@ -91,6 +92,7 @@ static int blk_softirq_cpu_dead(unsigned
+ 			 this_cpu_ptr(&blk_cpu_done));
+ 	raise_softirq_irqoff(BLOCK_SOFTIRQ);
+ 	local_irq_enable();
++	preempt_check_resched_rt();
+ 
+ 	return 0;
+ }
+@@ -143,6 +145,7 @@ void __blk_complete_request(struct reque
+ 		goto do_local;
+ 
+ 	local_irq_restore(flags);
++	preempt_check_resched_rt();
+ }
+ 
+ /**
+--- a/include/linux/preempt.h
++++ b/include/linux/preempt.h
+@@ -187,8 +187,10 @@ do { \
+ 
+ #ifdef CONFIG_PREEMPT_RT_BASE
+ # define preempt_enable_no_resched() sched_preempt_enable_no_resched()
++# define preempt_check_resched_rt() preempt_check_resched()
+ #else
+ # define preempt_enable_no_resched() preempt_enable()
++# define preempt_check_resched_rt() barrier();
+ #endif
+ 
+ #define preemptible()	(preempt_count() == 0 && !irqs_disabled())
+@@ -275,6 +277,7 @@ do { \
+ #define preempt_disable_notrace()		barrier()
+ #define preempt_enable_no_resched_notrace()	barrier()
+ #define preempt_enable_notrace()		barrier()
++#define preempt_check_resched_rt()		barrier()
+ #define preemptible()				0
+ 
+ #define migrate_disable()			barrier()
+--- a/lib/irq_poll.c
++++ b/lib/irq_poll.c
+@@ -37,6 +37,7 @@ void irq_poll_sched(struct irq_poll *iop
+ 	list_add_tail(&iop->list, this_cpu_ptr(&blk_cpu_iopoll));
+ 	__raise_softirq_irqoff(IRQ_POLL_SOFTIRQ);
+ 	local_irq_restore(flags);
++	preempt_check_resched_rt();
+ }
+ EXPORT_SYMBOL(irq_poll_sched);
+ 
+@@ -72,6 +73,7 @@ void irq_poll_complete(struct irq_poll *
+ 	local_irq_save(flags);
+ 	__irq_poll_complete(iop);
+ 	local_irq_restore(flags);
++	preempt_check_resched_rt();
+ }
+ EXPORT_SYMBOL(irq_poll_complete);
+ 
+@@ -96,6 +98,7 @@ static void __latent_entropy irq_poll_so
+ 		}
+ 
+ 		local_irq_enable();
++		preempt_check_resched_rt();
+ 
+ 		/* Even though interrupts have been re-enabled, this
+ 		 * access is safe because interrupts can only add new
+@@ -133,6 +136,7 @@ static void __latent_entropy irq_poll_so
+ 		__raise_softirq_irqoff(IRQ_POLL_SOFTIRQ);
+ 
+ 	local_irq_enable();
++	preempt_check_resched_rt();
+ }
+ 
+ /**
+@@ -196,6 +200,7 @@ static int irq_poll_cpu_dead(unsigned in
+ 			 this_cpu_ptr(&blk_cpu_iopoll));
+ 	__raise_softirq_irqoff(IRQ_POLL_SOFTIRQ);
+ 	local_irq_enable();
++	preempt_check_resched_rt();
+ 
+ 	return 0;
+ }
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -2431,6 +2431,7 @@ static void __netif_reschedule(struct Qd
+ 	sd->output_queue_tailp = &q->next_sched;
+ 	raise_softirq_irqoff(NET_TX_SOFTIRQ);
+ 	local_irq_restore(flags);
++	preempt_check_resched_rt();
+ }
+ 
+ void __netif_schedule(struct Qdisc *q)
+@@ -2493,6 +2494,7 @@ void __dev_kfree_skb_irq(struct sk_buff
+ 	__this_cpu_write(softnet_data.completion_queue, skb);
+ 	raise_softirq_irqoff(NET_TX_SOFTIRQ);
+ 	local_irq_restore(flags);
++	preempt_check_resched_rt();
+ }
+ EXPORT_SYMBOL(__dev_kfree_skb_irq);
+ 
+@@ -3867,6 +3869,7 @@ static int enqueue_to_backlog(struct sk_
+ 	rps_unlock(sd);
+ 
+ 	local_irq_restore(flags);
++	preempt_check_resched_rt();
+ 
+ 	atomic_long_inc(&skb->dev->rx_dropped);
+ 	kfree_skb(skb);
+@@ -5116,12 +5119,14 @@ static void net_rps_action_and_irq_enabl
+ 		sd->rps_ipi_list = NULL;
+ 
+ 		local_irq_enable();
++		preempt_check_resched_rt();
+ 
+ 		/* Send pending IPI's to kick RPS processing on remote cpus. */
+ 		net_rps_send_ipi(remsd);
+ 	} else
+ #endif
+ 		local_irq_enable();
++	preempt_check_resched_rt();
+ }
+ 
+ static bool sd_has_rps_ipi_waiting(struct softnet_data *sd)
+@@ -5199,6 +5204,7 @@ void __napi_schedule(struct napi_struct
+ 	local_irq_save(flags);
+ 	____napi_schedule(this_cpu_ptr(&softnet_data), n);
+ 	local_irq_restore(flags);
++	preempt_check_resched_rt();
+ }
+ EXPORT_SYMBOL(__napi_schedule);
+ 
+@@ -8403,6 +8409,7 @@ static int dev_cpu_dead(unsigned int old
+ 
+ 	raise_softirq_irqoff(NET_TX_SOFTIRQ);
+ 	local_irq_enable();
++	preempt_check_resched_rt();
+ 
+ #ifdef CONFIG_RPS
+ 	remsd = oldsd->rps_ipi_list;

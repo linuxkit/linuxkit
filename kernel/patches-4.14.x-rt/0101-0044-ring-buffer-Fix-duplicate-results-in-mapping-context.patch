@@ -1,0 +1,36 @@
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Thu, 18 Jan 2018 15:42:09 -0500
+Subject: [PATCH 44/48] ring-buffer: Fix duplicate results in mapping context
+ to bits in recursive lock
+
+In bringing back the context checks, the code checks first if its normal
+(non-interrupt) context, and then for NMI then IRQ then softirq. The final
+check is redundant. Since the if branch is only hit if the context is one of
+NMI, IRQ, or SOFTIRQ, if it's not NMI or IRQ there's no reason to check if
+it is SOFTIRQ. The current code returns the same result even if its not a
+SOFTIRQ. Which is confusing.
+
+  pc & SOFTIRQ_OFFSET ? 2 : RB_CTX_SOFTIRQ
+
+Is redundant as RB_CTX_SOFTIRQ *is* 2!
+
+Fixes: a0e3a18f4baf ("ring-buffer: Bring back context level recursive checks")
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit 0164e0d7e803af3ee1c63770978c728f8778ad01)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/ring_buffer.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/kernel/trace/ring_buffer.c
++++ b/kernel/trace/ring_buffer.c
+@@ -2630,8 +2630,7 @@ trace_recursive_lock(struct ring_buffer_
+ 		bit = RB_CTX_NORMAL;
+ 	else
+ 		bit = pc & NMI_MASK ? RB_CTX_NMI :
+-			pc & HARDIRQ_MASK ? RB_CTX_IRQ :
+-			pc & SOFTIRQ_OFFSET ? 2 : RB_CTX_SOFTIRQ;
++			pc & HARDIRQ_MASK ? RB_CTX_IRQ : RB_CTX_SOFTIRQ;
+ 
+ 	if (unlikely(val & (1 << bit)))
+ 		return 1;

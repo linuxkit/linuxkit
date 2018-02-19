@@ -1,0 +1,51 @@
+Subject: drm,radeon,i915: Use preempt_disable/enable_rt() where recommended
+From: Mike Galbraith <umgwanakikbuti@gmail.com>
+Date: Sat, 27 Feb 2016 08:09:11 +0100
+
+DRM folks identified the spots, so use them.
+
+Signed-off-by: Mike Galbraith <umgwanakikbuti@gmail.com>
+Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Cc: linux-rt-users <linux-rt-users@vger.kernel.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/gpu/drm/i915/i915_irq.c         |    2 ++
+ drivers/gpu/drm/radeon/radeon_display.c |    2 ++
+ 2 files changed, 4 insertions(+)
+
+--- a/drivers/gpu/drm/i915/i915_irq.c
++++ b/drivers/gpu/drm/i915/i915_irq.c
+@@ -867,6 +867,7 @@ static bool i915_get_crtc_scanoutpos(str
+ 	spin_lock_irqsave(&dev_priv->uncore.lock, irqflags);
+ 
+ 	/* preempt_disable_rt() should go right here in PREEMPT_RT patchset. */
++	preempt_disable_rt();
+ 
+ 	/* Get optional system timestamp before query. */
+ 	if (stime)
+@@ -918,6 +919,7 @@ static bool i915_get_crtc_scanoutpos(str
+ 		*etime = ktime_get();
+ 
+ 	/* preempt_enable_rt() should go right here in PREEMPT_RT patchset. */
++	preempt_enable_rt();
+ 
+ 	spin_unlock_irqrestore(&dev_priv->uncore.lock, irqflags);
+ 
+--- a/drivers/gpu/drm/radeon/radeon_display.c
++++ b/drivers/gpu/drm/radeon/radeon_display.c
+@@ -1839,6 +1839,7 @@ int radeon_get_crtc_scanoutpos(struct dr
+ 	struct radeon_device *rdev = dev->dev_private;
+ 
+ 	/* preempt_disable_rt() should go right here in PREEMPT_RT patchset. */
++	preempt_disable_rt();
+ 
+ 	/* Get optional system timestamp before query. */
+ 	if (stime)
+@@ -1931,6 +1932,7 @@ int radeon_get_crtc_scanoutpos(struct dr
+ 		*etime = ktime_get();
+ 
+ 	/* preempt_enable_rt() should go right here in PREEMPT_RT patchset. */
++	preempt_enable_rt();
+ 
+ 	/* Decode into vertical and horizontal scanout position. */
+ 	*vpos = position & 0x1fff;

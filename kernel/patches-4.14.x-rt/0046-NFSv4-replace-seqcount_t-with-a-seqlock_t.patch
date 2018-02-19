@@ -1,0 +1,127 @@
+Date:   Fri, 28 Oct 2016 23:05:11 +0200
+From:   Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+To:     Trond Myklebust <trond.myklebust@primarydata.com>
+Cc:     Anna Schumaker <anna.schumaker@netapp.com>,
+        linux-nfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        tglx@linutronix.de
+Subject: NFSv4: replace seqcount_t with a seqlock_t
+
+The raw_write_seqcount_begin() in nfs4_reclaim_open_state() bugs me
+because it maps to preempt_disable() in -RT which I can't have at this
+point. So I took a look at the code.
+It the lockdep part was removed in commit abbec2da13f0 ("NFS: Use
+raw_write_seqcount_begin/end int nfs4_reclaim_open_state") because
+lockdep complained. The whole seqcount thing was introduced in commit
+c137afabe330 ("NFSv4: Allow the state manager to mark an open_owner as
+being recovered").
+The recovery threads runs only once.
+write_seqlock() does not work on !RT because it disables preemption and it the
+writer side is preemptible (has to remain so despite the fact that it will
+block readers).
+
+Reported-by: kernel test robot <xiaolong.ye@intel.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/nfs/delegation.c |    4 ++--
+ fs/nfs/nfs4_fs.h    |    2 +-
+ fs/nfs/nfs4proc.c   |    4 ++--
+ fs/nfs/nfs4state.c  |   22 ++++++++++++++++------
+ 4 files changed, 21 insertions(+), 11 deletions(-)
+
+--- a/fs/nfs/delegation.c
++++ b/fs/nfs/delegation.c
+@@ -150,11 +150,11 @@ static int nfs_delegation_claim_opens(st
+ 		sp = state->owner;
+ 		/* Block nfs4_proc_unlck */
+ 		mutex_lock(&sp->so_delegreturn_mutex);
+-		seq = raw_seqcount_begin(&sp->so_reclaim_seqcount);
++		seq = read_seqbegin(&sp->so_reclaim_seqlock);
+ 		err = nfs4_open_delegation_recall(ctx, state, stateid, type);
+ 		if (!err)
+ 			err = nfs_delegation_claim_locks(ctx, state, stateid);
+-		if (!err && read_seqcount_retry(&sp->so_reclaim_seqcount, seq))
++		if (!err && read_seqretry(&sp->so_reclaim_seqlock, seq))
+ 			err = -EAGAIN;
+ 		mutex_unlock(&sp->so_delegreturn_mutex);
+ 		put_nfs_open_context(ctx);
+--- a/fs/nfs/nfs4_fs.h
++++ b/fs/nfs/nfs4_fs.h
+@@ -112,7 +112,7 @@ struct nfs4_state_owner {
+ 	unsigned long	     so_flags;
+ 	struct list_head     so_states;
+ 	struct nfs_seqid_counter so_seqid;
+-	seqcount_t	     so_reclaim_seqcount;
++	seqlock_t	     so_reclaim_seqlock;
+ 	struct mutex	     so_delegreturn_mutex;
+ };
+ 
+--- a/fs/nfs/nfs4proc.c
++++ b/fs/nfs/nfs4proc.c
+@@ -2638,7 +2638,7 @@ static int _nfs4_open_and_get_state(stru
+ 	unsigned int seq;
+ 	int ret;
+ 
+-	seq = raw_seqcount_begin(&sp->so_reclaim_seqcount);
++	seq = raw_seqcount_begin(&sp->so_reclaim_seqlock.seqcount);
+ 
+ 	ret = _nfs4_proc_open(opendata);
+ 	if (ret != 0)
+@@ -2676,7 +2676,7 @@ static int _nfs4_open_and_get_state(stru
+ 
+ 	if (d_inode(dentry) == state->inode) {
+ 		nfs_inode_attach_open_context(ctx);
+-		if (read_seqcount_retry(&sp->so_reclaim_seqcount, seq))
++		if (read_seqretry(&sp->so_reclaim_seqlock, seq))
+ 			nfs4_schedule_stateid_recovery(server, state);
+ 	}
+ out:
+--- a/fs/nfs/nfs4state.c
++++ b/fs/nfs/nfs4state.c
+@@ -494,7 +494,7 @@ nfs4_alloc_state_owner(struct nfs_server
+ 	nfs4_init_seqid_counter(&sp->so_seqid);
+ 	atomic_set(&sp->so_count, 1);
+ 	INIT_LIST_HEAD(&sp->so_lru);
+-	seqcount_init(&sp->so_reclaim_seqcount);
++	seqlock_init(&sp->so_reclaim_seqlock);
+ 	mutex_init(&sp->so_delegreturn_mutex);
+ 	return sp;
+ }
+@@ -1516,8 +1516,12 @@ static int nfs4_reclaim_open_state(struc
+ 	 * recovering after a network partition or a reboot from a
+ 	 * server that doesn't support a grace period.
+ 	 */
++#ifdef CONFIG_PREEMPT_RT_FULL
++	write_seqlock(&sp->so_reclaim_seqlock);
++#else
++	write_seqcount_begin(&sp->so_reclaim_seqlock.seqcount);
++#endif
+ 	spin_lock(&sp->so_lock);
+-	raw_write_seqcount_begin(&sp->so_reclaim_seqcount);
+ restart:
+ 	list_for_each_entry(state, &sp->so_states, open_states) {
+ 		if (!test_and_clear_bit(ops->state_flag_bit, &state->flags))
+@@ -1586,14 +1590,20 @@ static int nfs4_reclaim_open_state(struc
+ 		spin_lock(&sp->so_lock);
+ 		goto restart;
+ 	}
+-	raw_write_seqcount_end(&sp->so_reclaim_seqcount);
+ 	spin_unlock(&sp->so_lock);
++#ifdef CONFIG_PREEMPT_RT_FULL
++	write_sequnlock(&sp->so_reclaim_seqlock);
++#else
++	write_seqcount_end(&sp->so_reclaim_seqlock.seqcount);
++#endif
+ 	return 0;
+ out_err:
+ 	nfs4_put_open_state(state);
+-	spin_lock(&sp->so_lock);
+-	raw_write_seqcount_end(&sp->so_reclaim_seqcount);
+-	spin_unlock(&sp->so_lock);
++#ifdef CONFIG_PREEMPT_RT_FULL
++	write_sequnlock(&sp->so_reclaim_seqlock);
++#else
++	write_seqcount_end(&sp->so_reclaim_seqlock.seqcount);
++#endif
+ 	return status;
+ }
+ 

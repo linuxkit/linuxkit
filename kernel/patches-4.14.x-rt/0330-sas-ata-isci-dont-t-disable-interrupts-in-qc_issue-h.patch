@@ -1,0 +1,78 @@
+From: Paul Gortmaker <paul.gortmaker@windriver.com>
+Date: Sat, 14 Feb 2015 11:01:16 -0500
+Subject: sas-ata/isci: dont't disable interrupts in qc_issue handler
+
+On 3.14-rt we see the following trace on Canoe Pass for
+SCSI_ISCI "Intel(R) C600 Series Chipset SAS Controller"
+when the sas qc_issue handler is run:
+
+ BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:905
+ in_atomic(): 0, irqs_disabled(): 1, pid: 432, name: udevd
+ CPU: 11 PID: 432 Comm: udevd Not tainted 3.14.28-rt22 #2
+ Hardware name: Intel Corporation S2600CP/S2600CP, BIOS SE5C600.86B.02.01.0002.082220131453 08/22/2013
+ ffff880fab500000 ffff880fa9f239c0 ffffffff81a2d273 0000000000000000
+ ffff880fa9f239d8 ffffffff8107f023 ffff880faac23dc0 ffff880fa9f239f0
+ ffffffff81a33cc0 ffff880faaeb1400 ffff880fa9f23a40 ffffffff815de891
+ Call Trace:
+ [<ffffffff81a2d273>] dump_stack+0x4e/0x7a
+ [<ffffffff8107f023>] __might_sleep+0xe3/0x160
+ [<ffffffff81a33cc0>] rt_spin_lock+0x20/0x50
+ [<ffffffff815de891>] isci_task_execute_task+0x171/0x2f0  <-----
+ [<ffffffff815cfecb>] sas_ata_qc_issue+0x25b/0x2a0
+ [<ffffffff81606363>] ata_qc_issue+0x1f3/0x370
+ [<ffffffff8160c600>] ? ata_scsi_invalid_field+0x40/0x40
+ [<ffffffff8160c8f5>] ata_scsi_translate+0xa5/0x1b0
+ [<ffffffff8160efc6>] ata_sas_queuecmd+0x86/0x280
+ [<ffffffff815ce446>] sas_queuecommand+0x196/0x230
+ [<ffffffff81081fad>] ? get_parent_ip+0xd/0x50
+ [<ffffffff815b05a4>] scsi_dispatch_cmd+0xb4/0x210
+ [<ffffffff815b7744>] scsi_request_fn+0x314/0x530
+
+and gdb shows:
+
+(gdb) list * isci_task_execute_task+0x171
+0xffffffff815ddfb1 is in isci_task_execute_task (drivers/scsi/isci/task.c:138).
+133             dev_dbg(&ihost->pdev->dev, "%s: num=%d\n", __func__, num);
+134
+135             for_each_sas_task(num, task) {
+136                     enum sci_status status = SCI_FAILURE;
+137
+138                     spin_lock_irqsave(&ihost->scic_lock, flags);    <-----
+139                     idev = isci_lookup_device(task->dev);
+140                     io_ready = isci_device_io_ready(idev, task);
+141                     tag = isci_alloc_tag(ihost);
+142                     spin_unlock_irqrestore(&ihost->scic_lock, flags);
+(gdb)
+
+In addition to the scic_lock, the function also contains locking of
+the task_state_lock -- which is clearly not a candidate for raw lock
+conversion.  As can be seen by the comment nearby, we really should
+be running the qc_issue code with interrupts enabled anyway.
+
+
+Signed-off-by: Paul Gortmaker <paul.gortmaker@windriver.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/scsi/libsas/sas_ata.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/scsi/libsas/sas_ata.c
++++ b/drivers/scsi/libsas/sas_ata.c
+@@ -190,7 +190,7 @@ static unsigned int sas_ata_qc_issue(str
+ 	/* TODO: audit callers to ensure they are ready for qc_issue to
+ 	 * unconditionally re-enable interrupts
+ 	 */
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	spin_unlock(ap->lock);
+ 
+ 	/* If the device fell off, no sense in issuing commands */
+@@ -252,7 +252,7 @@ static unsigned int sas_ata_qc_issue(str
+ 
+  out:
+ 	spin_lock(ap->lock);
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ 	return ret;
+ }
+ 

@@ -1,0 +1,33 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:01 +0100
+Subject: [PATCH 12/29] hrtimer: Make room in struct hrtimer_cpu_base
+
+The upcoming softirq based hrtimers support requires an additional field in
+the hrtimer_cpu_base struct, which would grow the struct size beyond a
+cache line.
+
+The struct members nr_retries and nr_hangs of hrtimer_cpu_base are solely
+used for diagnostic output and have no requirement to be unsigned int.
+
+Make them unsigned short to create room for the new struct member. No
+functional change.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/hrtimer.h |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/include/linux/hrtimer.h
++++ b/include/linux/hrtimer.h
+@@ -189,8 +189,8 @@ struct hrtimer_cpu_base {
+ 	ktime_t				expires_next;
+ 	struct hrtimer			*next_timer;
+ 	unsigned int			nr_events;
+-	unsigned int			nr_retries;
+-	unsigned int			nr_hangs;
++	unsigned short			nr_retries;
++	unsigned short			nr_hangs;
+ 	unsigned int			max_hang_time;
+ #endif
+ 	struct hrtimer_clock_base	clock_base[HRTIMER_MAX_CLOCK_BASES];

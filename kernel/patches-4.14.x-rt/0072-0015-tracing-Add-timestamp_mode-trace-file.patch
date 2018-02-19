@@ -1,0 +1,137 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Mon, 15 Jan 2018 20:51:41 -0600
+Subject: [PATCH 15/48] tracing: Add timestamp_mode trace file
+
+Add a new option flag indicating whether or not the ring buffer is in
+'absolute timestamp' mode.
+
+Currently this is only set/unset by hist triggers that make use of a
+common_timestamp.  As such, there's no reason to make this writeable
+for users - its purpose is only to allow users to determine
+unequivocally whether or not the ring buffer is in that mode (although
+absolute timestamps can coexist with the normal delta timestamps, when
+the ring buffer is in absolute mode, timestamps written while absolute
+mode is in effect take up more space in the buffer, and are not as
+efficient).
+
+Link: http://lkml.kernel.org/r/e8aa7b1cde1cf15014e66545d06ac6ef2ebba456.1516069914.git.tom.zanussi@linux.intel.com
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit 0eba34f9bf5b66217355a6a66054b3194aca123d)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ Documentation/trace/ftrace.txt |   24 ++++++++++++++++++++
+ kernel/trace/trace.c           |   47 +++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 71 insertions(+)
+
+--- a/Documentation/trace/ftrace.txt
++++ b/Documentation/trace/ftrace.txt
+@@ -539,6 +539,30 @@ After mounting tracefs you will have acc
+ 
+ 	See events.txt for more information.
+ 
++  timestamp_mode:
++
++	Certain tracers may change the timestamp mode used when
++	logging trace events into the event buffer.  Events with
++	different modes can coexist within a buffer but the mode in
++	effect when an event is logged determines which timestamp mode
++	is used for that event.  The default timestamp mode is
++	'delta'.
++
++	Usual timestamp modes for tracing:
++
++	  # cat timestamp_mode
++	  [delta] absolute
++
++	  The timestamp mode with the square brackets around it is the
++	  one in effect.
++
++	  delta: Default timestamp mode - timestamp is a delta against
++	         a per-buffer timestamp.
++
++	  absolute: The timestamp is a full timestamp, not a delta
++                 against some other value.  As such it takes up more
++                 space and is less efficient.
++
+   hwlat_detector:
+ 
+ 	Directory for the Hardware Latency Detector.
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -4520,6 +4520,9 @@ static const char readme_msg[] =
+ #ifdef CONFIG_X86_64
+ 	"     x86-tsc:   TSC cycle counter\n"
+ #endif
++	"\n  timestamp_mode\t-view the mode used to timestamp events\n"
++	"       delta:   Delta difference against a buffer-wide timestamp\n"
++	"    absolute:   Absolute (standalone) timestamp\n"
+ 	"\n  trace_marker\t\t- Writes into this file writes into the kernel buffer\n"
+ 	"\n  trace_marker_raw\t\t- Writes into this file writes binary data into the kernel buffer\n"
+ 	"  tracing_cpumask\t- Limit which CPUs to trace\n"
+@@ -6287,6 +6290,40 @@ static int tracing_clock_open(struct ino
+ 	return ret;
+ }
+ 
++static int tracing_time_stamp_mode_show(struct seq_file *m, void *v)
++{
++	struct trace_array *tr = m->private;
++
++	mutex_lock(&trace_types_lock);
++
++	if (ring_buffer_time_stamp_abs(tr->trace_buffer.buffer))
++		seq_puts(m, "delta [absolute]\n");
++	else
++		seq_puts(m, "[delta] absolute\n");
++
++	mutex_unlock(&trace_types_lock);
++
++	return 0;
++}
++
++static int tracing_time_stamp_mode_open(struct inode *inode, struct file *file)
++{
++	struct trace_array *tr = inode->i_private;
++	int ret;
++
++	if (tracing_disabled)
++		return -ENODEV;
++
++	if (trace_array_get(tr))
++		return -ENODEV;
++
++	ret = single_open(file, tracing_time_stamp_mode_show, inode->i_private);
++	if (ret < 0)
++		trace_array_put(tr);
++
++	return ret;
++}
++
+ int tracing_set_time_stamp_abs(struct trace_array *tr, bool abs)
+ {
+ 	int ret = 0;
+@@ -6565,6 +6602,13 @@ static const struct file_operations trac
+ 	.write		= tracing_clock_write,
+ };
+ 
++static const struct file_operations trace_time_stamp_mode_fops = {
++	.open		= tracing_time_stamp_mode_open,
++	.read		= seq_read,
++	.llseek		= seq_lseek,
++	.release	= tracing_single_release_tr,
++};
++
+ #ifdef CONFIG_TRACER_SNAPSHOT
+ static const struct file_operations snapshot_fops = {
+ 	.open		= tracing_snapshot_open,
+@@ -7887,6 +7931,9 @@ init_tracer_tracefs(struct trace_array *
+ 	trace_create_file("tracing_on", 0644, d_tracer,
+ 			  tr, &rb_simple_fops);
+ 
++	trace_create_file("timestamp_mode", 0444, d_tracer, tr,
++			  &trace_time_stamp_mode_fops);
++
+ 	create_trace_options_dir(tr);
+ 
+ #if defined(CONFIG_TRACER_MAX_TRACE) || defined(CONFIG_HWLAT_TRACER)

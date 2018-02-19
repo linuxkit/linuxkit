@@ -1,0 +1,39 @@
+Subject: mmci: Remove bogus local_irq_save()
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 09 Jan 2013 12:11:12 +0100
+
+On !RT interrupt runs with interrupts disabled. On RT it's in a
+thread, so no need to disable interrupts at all.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/mmc/host/mmci.c |    5 -----
+ 1 file changed, 5 deletions(-)
+
+--- a/drivers/mmc/host/mmci.c
++++ b/drivers/mmc/host/mmci.c
+@@ -1200,15 +1200,12 @@ static irqreturn_t mmci_pio_irq(int irq,
+ 	struct sg_mapping_iter *sg_miter = &host->sg_miter;
+ 	struct variant_data *variant = host->variant;
+ 	void __iomem *base = host->base;
+-	unsigned long flags;
+ 	u32 status;
+ 
+ 	status = readl(base + MMCISTATUS);
+ 
+ 	dev_dbg(mmc_dev(host->mmc), "irq1 (pio) %08x\n", status);
+ 
+-	local_irq_save(flags);
+-
+ 	do {
+ 		unsigned int remain, len;
+ 		char *buffer;
+@@ -1248,8 +1245,6 @@ static irqreturn_t mmci_pio_irq(int irq,
+ 
+ 	sg_miter_stop(sg_miter);
+ 
+-	local_irq_restore(flags);
+-
+ 	/*
+ 	 * If we have less than the fifo 'half-full' threshold to transfer,
+ 	 * trigger a PIO interrupt as soon as any data is available.

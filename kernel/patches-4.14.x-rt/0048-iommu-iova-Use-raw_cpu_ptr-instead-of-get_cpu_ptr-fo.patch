@@ -1,0 +1,42 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 21 Sep 2017 17:21:40 +0200
+Subject: [PATCH] iommu/iova: Use raw_cpu_ptr() instead of get_cpu_ptr() for
+ ->fq
+
+get_cpu_ptr() disabled preemption and returns the ->fq object of the
+current CPU. raw_cpu_ptr() does the same except that it not disable
+preemption which means the scheduler can move it to another CPU after it
+obtained the per-CPU object.
+In this case this is not bad because the data structure itself is
+protected with a spin_lock. This change shouldn't matter however on RT
+it does because the sleeping lock can't be accessed with disabled
+preemption.
+
+Cc: Joerg Roedel <joro@8bytes.org>
+Cc: iommu@lists.linux-foundation.org
+Reported-by: vinadhy@gmail.com
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/iommu/iova.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/drivers/iommu/iova.c
++++ b/drivers/iommu/iova.c
+@@ -570,7 +570,7 @@ void queue_iova(struct iova_domain *iova
+ 		unsigned long pfn, unsigned long pages,
+ 		unsigned long data)
+ {
+-	struct iova_fq *fq = get_cpu_ptr(iovad->fq);
++	struct iova_fq *fq = raw_cpu_ptr(iovad->fq);
+ 	unsigned long flags;
+ 	unsigned idx;
+ 
+@@ -600,8 +600,6 @@ void queue_iova(struct iova_domain *iova
+ 	if (atomic_cmpxchg(&iovad->fq_timer_on, 0, 1) == 0)
+ 		mod_timer(&iovad->fq_timer,
+ 			  jiffies + msecs_to_jiffies(IOVA_FQ_TIMEOUT));
+-
+-	put_cpu_ptr(iovad->fq);
+ }
+ EXPORT_SYMBOL_GPL(queue_iova);
+ 

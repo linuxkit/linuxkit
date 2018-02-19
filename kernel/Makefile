@@ -23,6 +23,11 @@ IMAGE_ZFS:=zfs-kmod
 # - append $(EXTRA) to the CONFIG_LOCALVERSION of your kernel
 EXTRA?=
 
+# You can enable debug options for the Makefile. This will:
+# - append a config-dbg to the kernel config for your kernel/arch
+# - append -dbg to the CONFIG_LOCALVERSION of your kernel
+DEBUG?=
+
 ifeq ($(HASH),)
 HASH_COMMIT?=HEAD # Setting this is only really useful with the show-tag target
 HASH?=$(shell git ls-tree --full-tree $(HASH_COMMIT) -- $(CURDIR) | awk '{print $$3}')
@@ -79,107 +84,112 @@ sources:
 # Arguments:
 # $1: Full kernel version, e.g., 4.9.22
 # $2: Kernel "series", e.g., 4.9.x
-# $3: Build a debug kernel (used as suffix for image)
+# $3: Build a specific kernel like -rt: Preempt-RT (used as suffix for image)
 # This defines targets like:
 # build_4.9.x and  push_4.9.x and adds them as dependencies
 # to the global targets
-# Set $3 to "-dbg", to build debug kernels. This defines targets like
+# Set $3 to "-rt", to build Preempt-RT kernels. This defines targets like
+# build_4.14.x-rt and adds "-rt" to the hub image name.
+# Set $4 to "-dbg", to build debug kernels. This defines targets like
 # build_4.9.x-dbg and adds "-dbg" to the hub image name.
+# Set $3 to "-rt" and $4 to "-dbg" to build debug Preempt-RT kernel.
 define kernel
 
-ifeq ($(3),)
+ifeq ($(4),)
 sources/linux-$(1).tar.xz: Makefile | sources
 	curl -fsSLo sources/linux-$(1).tar.xz https://www.kernel.org/pub/linux/kernel/v4.x/linux-$(1).tar.xz 
 KERNEL_VERSIONS+=$(1)
 endif
 
-build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
+build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
 			--build-arg KERNEL_SERIES=$(2) \
 			--build-arg EXTRA=$(3) \
+			--build-arg DEBUG=$(4) \
 			$(LABELS) \
-			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) .
+			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
-forcebuild_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
+forcebuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
 	docker build \
 		--build-arg KERNEL_VERSION=$(1) \
 		--build-arg KERNEL_SERIES=$(2) \
 		--build-arg EXTRA=$(3) \
+		--build-arg DEBUG=$(4) \
 		$(LABELS) \
-		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) .
+		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
-push_$(2)$(3): build_$(2)$(3)
+push_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) || \
-		(docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
-		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
-		 docker push $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3) $(DOCKER_CONTENT_TRUST))
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
+		(docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
+		 docker tag $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
+		 docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
 
-forcepush_$(2)$(3): forcebuild_$(2)$(3)
+forcepush_$(2)$(3)$(4): forcebuild_$(2)$(3)$(4)
 	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) && \
-	 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
-	 docker push $(ORG)/$(IMAGE):$(1)$(3)$(SUFFIX) && \
-	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3) $(DOCKER_CONTENT_TRUST)
+	docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
+	 docker tag $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
+	 docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
+	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
 
-show-tag_$(2)$(3):
-	@echo $(ORG)/$(IMAGE):$(1)$(3)-$(TAG)
+show-tag_$(2)$(3)$(4):
+	@echo $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)
 
-build: build_$(2)$(3)
-forcebuild: forcebuild_$(2)$(3)
-push: push_$(2)$(3)
-forcepush: forcepush_$(2)$(3)
-show-tags: show-tag_$(2)$(3)
+build: build_$(2)$(3)$(4)
+forcebuild: forcebuild_$(2)$(3)$(4)
+push: push_$(2)$(3)$(4)
+forcepush: forcepush_$(2)$(3)$(4)
+show-tags: show-tag_$(2)$(3)$(4)
 fetch: sources/linux-$(1).tar.xz
 
 # 'docker build' with the FROM image supplied as --build-arg
 # *and* with DOCKER_CONTENT_TRUST=1 currently does not work
 # (https://github.com/moby/moby/issues/34199). So, we pull the image
-# with DCT as part of the dependency on build_$(2)$(3) and then build 
+# with DCT as part of the dependency on build_$(2)$(3)$(4) and then build
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
 ifneq ($(2), 4.4.x)
 # perf does not build out of the box for 4.4.x and 4.4.x is not that relevant anymore to work on a fix
-build_perf_$(2)$(3): build_$(2)$(3)
-	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
+build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
+	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
-			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
-			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) .
+			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
-forcebuild_perf_$(2)$(3): build_$(2)$(3)
+forcebuild_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
-		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
-		--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) .
+		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+		--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
-push_perf_$(2)$(3): build_perf_$(2)$(3)
+push_perf_$(2)$(3)$(4): build_perf_$(2)$(3)$(4)
 	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) || \
-		(docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) && \
-		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
-		 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3) $(DOCKER_CONTENT_TRUST))
+	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
+		(docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
+		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
+		 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
 
-forcepush_perf_$(2)$(3): forcebuild_perf_$(2)$(3)
+forcepush_perf_$(2)$(3)$(4): forcebuild_perf_$(2)$(3)$(4)
 	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) && \
-	docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
-	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(SUFFIX) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3) $(DOCKER_CONTENT_TRUST)
+	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
+	docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
+	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
 
-build: build_perf_$(2)$(3)
-forcebuild: forcebuild_perf_$(2)$(3)
-push: push_perf_$(2)$(3)
-forcepush: forcepush_perf_$(2)$(3)
+build: build_perf_$(2)$(3)$(4)
+forcebuild: forcebuild_perf_$(2)$(3)$(4)
+push: push_perf_$(2)$(3)$(4)
+forcepush: forcepush_perf_$(2)$(3)$(4)
 endif
 
-ifneq ($(3), -dbg)
+ifeq ($(4),)
 # ZFS does not compile against -dbg kernels because CONFIG_DEBUG_LOCK_ALLOC
 # is incompatible with CDDL, apparently (this is ./configure check)
 build_zfs_$(2)$(3): build_$(2)$(3)
@@ -204,12 +214,14 @@ endef
 # Build Targets
 # Debug targets only for latest stable and LTS stable
 #
-$(eval $(call kernel,4.15.3,4.15.x,$(EXTRA)))
-$(eval $(call kernel,4.14.19,4.14.x,$(EXTRA)))
-$(eval $(call kernel,4.14.19,4.14.x,-dbg))
-$(eval $(call kernel,4.9.81,4.9.x,$(EXTRA)))
-$(eval $(call kernel,4.9.81,4.9.x,-dbg))
-$(eval $(call kernel,4.4.115,4.4.x,$(EXTRA)))
+$(eval $(call kernel,4.15.3,4.15.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.19,4.14.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.19,4.14.x,,-dbg))
+$(eval $(call kernel,4.14.18,4.14.x,-rt,))
+$(eval $(call kernel,4.14.18,4.14.x,-rt,-dbg))
+$(eval $(call kernel,4.9.81,4.9.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.9.81,4.9.x,,-dbg))
+$(eval $(call kernel,4.4.115,4.4.x,$(EXTRA),$(DEBUG)))
 
 # Target for kernel config
 kconfig: | sources

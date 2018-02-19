@@ -1,0 +1,46 @@
+Subject: iommu/amd: Use WARN_ON_NORT in __attach_device()
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sat, 27 Feb 2016 10:22:23 +0100
+
+RT does not disable interrupts here, but the protection is still
+correct. Fixup the WARN_ON so it won't yell on RT.
+
+Note: This WARN_ON is bogus anyway. The real thing this needs to check is that
+amd_iommu_devtable_lock is held.
+
+Reported-by: DIXLOR <dixlor@gmail.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/iommu/amd_iommu.c |   12 ++++++------
+ 1 file changed, 6 insertions(+), 6 deletions(-)
+
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -1944,10 +1944,10 @@ static int __attach_device(struct iommu_
+ 	int ret;
+ 
+ 	/*
+-	 * Must be called with IRQs disabled. Warn here to detect early
+-	 * when its not.
++	 * Must be called with IRQs disabled on a non RT kernel. Warn here to
++	 * detect early when its not.
+ 	 */
+-	WARN_ON(!irqs_disabled());
++	WARN_ON_NONRT(!irqs_disabled());
+ 
+ 	/* lock domain */
+ 	spin_lock(&domain->lock);
+@@ -2115,10 +2115,10 @@ static void __detach_device(struct iommu
+ 	struct protection_domain *domain;
+ 
+ 	/*
+-	 * Must be called with IRQs disabled. Warn here to detect early
+-	 * when its not.
++	 * Must be called with IRQs disabled on a non RT kernel. Warn here to
++	 * detect early when its not.
+ 	 */
+-	WARN_ON(!irqs_disabled());
++	WARN_ON_NONRT(!irqs_disabled());
+ 
+ 	if (WARN_ON(!dev_data->domain))
+ 		return;

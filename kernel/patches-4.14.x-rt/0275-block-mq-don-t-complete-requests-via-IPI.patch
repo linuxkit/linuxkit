@@ -1,0 +1,106 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 29 Jan 2015 15:10:08 +0100
+Subject: block/mq: don't complete requests via IPI
+
+The IPI runs in hardirq context and there are sleeping locks. This patch
+moves the completion into a workqueue.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ block/blk-core.c       |    3 +++
+ block/blk-mq.c         |   23 +++++++++++++++++++++++
+ include/linux/blk-mq.h |    2 +-
+ include/linux/blkdev.h |    3 +++
+ 4 files changed, 30 insertions(+), 1 deletion(-)
+
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -116,6 +116,9 @@ void blk_rq_init(struct request_queue *q
+ 
+ 	INIT_LIST_HEAD(&rq->queuelist);
+ 	INIT_LIST_HEAD(&rq->timeout_list);
++#ifdef CONFIG_PREEMPT_RT_FULL
++	INIT_WORK(&rq->work, __blk_mq_complete_request_remote_work);
++#endif
+ 	rq->cpu = -1;
+ 	rq->q = q;
+ 	rq->__sector = (sector_t) -1;
+--- a/block/blk-mq.c
++++ b/block/blk-mq.c
+@@ -318,6 +318,9 @@ static struct request *blk_mq_rq_ctx_ini
+ 	/* tag was already set */
+ 	rq->extra_len = 0;
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++	INIT_WORK(&rq->work, __blk_mq_complete_request_remote_work);
++#endif
+ 	INIT_LIST_HEAD(&rq->timeout_list);
+ 	rq->timeout = 0;
+ 
+@@ -512,12 +515,24 @@ void blk_mq_end_request(struct request *
+ }
+ EXPORT_SYMBOL(blk_mq_end_request);
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++
++void __blk_mq_complete_request_remote_work(struct work_struct *work)
++{
++	struct request *rq = container_of(work, struct request, work);
++
++	rq->q->softirq_done_fn(rq);
++}
++
++#else
++
+ static void __blk_mq_complete_request_remote(void *data)
+ {
+ 	struct request *rq = data;
+ 
+ 	rq->q->softirq_done_fn(rq);
+ }
++#endif
+ 
+ static void __blk_mq_complete_request(struct request *rq)
+ {
+@@ -542,10 +557,18 @@ static void __blk_mq_complete_request(st
+ 		shared = cpus_share_cache(cpu, ctx->cpu);
+ 
+ 	if (cpu != ctx->cpu && !shared && cpu_online(ctx->cpu)) {
++#ifdef CONFIG_PREEMPT_RT_FULL
++		/*
++		 * We could force QUEUE_FLAG_SAME_FORCE then we would not get in
++		 * here. But we could try to invoke it one the CPU like this.
++		 */
++		schedule_work_on(ctx->cpu, &rq->work);
++#else
+ 		rq->csd.func = __blk_mq_complete_request_remote;
+ 		rq->csd.info = rq;
+ 		rq->csd.flags = 0;
+ 		smp_call_function_single_async(ctx->cpu, &rq->csd);
++#endif
+ 	} else {
+ 		rq->q->softirq_done_fn(rq);
+ 	}
+--- a/include/linux/blk-mq.h
++++ b/include/linux/blk-mq.h
+@@ -226,7 +226,7 @@ static inline u16 blk_mq_unique_tag_to_t
+ 	return unique_tag & BLK_MQ_UNIQUE_TAG_MASK;
+ }
+ 
+-
++void __blk_mq_complete_request_remote_work(struct work_struct *work);
+ int blk_mq_request_started(struct request *rq);
+ void blk_mq_start_request(struct request *rq);
+ void blk_mq_end_request(struct request *rq, blk_status_t error);
+--- a/include/linux/blkdev.h
++++ b/include/linux/blkdev.h
+@@ -134,6 +134,9 @@ typedef __u32 __bitwise req_flags_t;
+  */
+ struct request {
+ 	struct list_head queuelist;
++#ifdef CONFIG_PREEMPT_RT_FULL
++	struct work_struct work;
++#endif
+ 	union {
+ 		struct __call_single_data csd;
+ 		u64 fifo_time;

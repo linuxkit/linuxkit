@@ -1,0 +1,28 @@
+Subject: sched: Disable CONFIG_RT_GROUP_SCHED on RT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 18 Jul 2011 17:03:52 +0200
+
+Carsten reported problems when running:
+
+  taskset 01 chrt -f 1 sleep 1
+
+from within rc.local on a F15 machine. The task stays running and
+never gets on the run queue because some of the run queues have
+rt_throttled=1 which does not go away. Works nice from a ssh login
+shell. Disabling CONFIG_RT_GROUP_SCHED solves that as well.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ init/Kconfig |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -744,6 +744,7 @@ config CFS_BANDWIDTH
+ config RT_GROUP_SCHED
+ 	bool "Group scheduling for SCHED_RR/FIFO"
+ 	depends on CGROUP_SCHED
++	depends on !PREEMPT_RT_FULL
+ 	default n
+ 	help
+ 	  This feature lets you explicitly allocate real CPU bandwidth

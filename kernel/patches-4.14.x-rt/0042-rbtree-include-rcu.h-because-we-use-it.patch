@@ -1,0 +1,35 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 14 Sep 2016 11:52:17 +0200
+Subject: rbtree: include rcu.h because we use it
+
+Since commit c1adf20052d8 ("Introduce rb_replace_node_rcu()")
+rbtree_augmented.h uses RCU related data structures but does not include
+them. It works as long as gets somehow included before that and fails
+otherwise.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/rbtree_augmented.h |    1 +
+ include/linux/rbtree_latch.h     |    1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/include/linux/rbtree_augmented.h
++++ b/include/linux/rbtree_augmented.h
+@@ -26,6 +26,7 @@
+ 
+ #include <linux/compiler.h>
+ #include <linux/rbtree.h>
++#include <linux/rcupdate.h>
+ 
+ /*
+  * Please note - only struct rb_augment_callbacks and the prototypes for
+--- a/include/linux/rbtree_latch.h
++++ b/include/linux/rbtree_latch.h
+@@ -35,6 +35,7 @@
+ 
+ #include <linux/rbtree.h>
+ #include <linux/seqlock.h>
++#include <linux/rcupdate.h>
+ 
+ struct latch_tree_node {
+ 	struct rb_node node[2];

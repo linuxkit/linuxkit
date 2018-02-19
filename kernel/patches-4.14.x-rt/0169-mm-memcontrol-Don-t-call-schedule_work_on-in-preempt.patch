@@ -1,0 +1,68 @@
+From: Yang Shi <yang.shi@windriver.com>
+Subject: mm/memcontrol: Don't call schedule_work_on in preemption disabled context
+Date: Wed, 30 Oct 2013 11:48:33 -0700
+
+The following trace is triggered when running ltp oom test cases:
+
+BUG: sleeping function called from invalid context at kernel/rtmutex.c:659
+in_atomic(): 1, irqs_disabled(): 0, pid: 17188, name: oom03
+Preemption disabled at:[<ffffffff8112ba70>] mem_cgroup_reclaim+0x90/0xe0
+
+CPU: 2 PID: 17188 Comm: oom03 Not tainted 3.10.10-rt3 #2
+Hardware name: Intel Corporation Calpella platform/MATXM-CORE-411-B, BIOS 4.6.3 08/18/2010
+ffff88007684d730 ffff880070df9b58 ffffffff8169918d ffff880070df9b70
+ffffffff8106db31 ffff88007688b4a0 ffff880070df9b88 ffffffff8169d9c0
+ffff88007688b4a0 ffff880070df9bc8 ffffffff81059da1 0000000170df9bb0
+Call Trace:
+[<ffffffff8169918d>] dump_stack+0x19/0x1b
+[<ffffffff8106db31>] __might_sleep+0xf1/0x170
+[<ffffffff8169d9c0>] rt_spin_lock+0x20/0x50
+[<ffffffff81059da1>] queue_work_on+0x61/0x100
+[<ffffffff8112b361>] drain_all_stock+0xe1/0x1c0
+[<ffffffff8112ba70>] mem_cgroup_reclaim+0x90/0xe0
+[<ffffffff8112beda>] __mem_cgroup_try_charge+0x41a/0xc40
+[<ffffffff810f1c91>] ? release_pages+0x1b1/0x1f0
+[<ffffffff8106f200>] ? sched_exec+0x40/0xb0
+[<ffffffff8112cc87>] mem_cgroup_charge_common+0x37/0x70
+[<ffffffff8112e2c6>] mem_cgroup_newpage_charge+0x26/0x30
+[<ffffffff8110af68>] handle_pte_fault+0x618/0x840
+[<ffffffff8103ecf6>] ? unpin_current_cpu+0x16/0x70
+[<ffffffff81070f94>] ? migrate_enable+0xd4/0x200
+[<ffffffff8110cde5>] handle_mm_fault+0x145/0x1e0
+[<ffffffff810301e1>] __do_page_fault+0x1a1/0x4c0
+[<ffffffff8169c9eb>] ? preempt_schedule_irq+0x4b/0x70
+[<ffffffff8169e3b7>] ? retint_kernel+0x37/0x40
+[<ffffffff8103053e>] do_page_fault+0xe/0x10
+[<ffffffff8169e4c2>] page_fault+0x22/0x30
+
+So, to prevent schedule_work_on from being called in preempt disabled context,
+replace the pair of get/put_cpu() to get/put_cpu_light().
+
+
+Signed-off-by: Yang Shi <yang.shi@windriver.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+
+ mm/memcontrol.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -1831,7 +1831,7 @@ static void drain_all_stock(struct mem_c
+ 	 * as well as workers from this path always operate on the local
+ 	 * per-cpu data. CPU up doesn't touch memcg_stock at all.
+ 	 */
+-	curcpu = get_cpu();
++	curcpu = get_cpu_light();
+ 	for_each_online_cpu(cpu) {
+ 		struct memcg_stock_pcp *stock = &per_cpu(memcg_stock, cpu);
+ 		struct mem_cgroup *memcg;
+@@ -1851,7 +1851,7 @@ static void drain_all_stock(struct mem_c
+ 		}
+ 		css_put(&memcg->css);
+ 	}
+-	put_cpu();
++	put_cpu_light();
+ 	mutex_unlock(&percpu_charge_mutex);
+ }
+ 

@@ -35,6 +35,7 @@ RUN [ $(uname -m) == x86_64 ] && apk add libunwind-dev || true
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
 ARG EXTRA
+ARG DEBUG
 
 ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
 ENV KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/v4.x/sha256sums.asc
@@ -62,8 +63,18 @@ RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
-# Apply local patches if present
 WORKDIR /linux
+# Apply local specific patches if present
+RUN set -e && \
+    if [ -n "${EXTRA}" ] && [ -d /patches-${KERNEL_SERIES}${EXTRA} ]; then \
+	echo "Patching ${EXTRA} kernel"; \
+	for patch in /patches-${KERNEL_SERIES}${EXTRA}/*.patch; do \
+            echo "Applying $patch"; \
+            patch -t -F0 -N -u -p1 < "$patch"; \
+	done; \
+    fi
+
+# Apply local common patches if present
 RUN set -e && \
     if [ -d /patches-${KERNEL_SERIES} ]; then \
         for patch in /patches-${KERNEL_SERIES}/*.patch; do \
@@ -82,16 +93,17 @@ RUN case $(uname -m) in \
         ;; \
     esac  && \
     cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
-    if [ -n "${EXTRA}" ]; then \
-        sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}\"/" ${KERNEL_DEF_CONF}; \
-        if [ "${EXTRA}" = "-dbg" ]; then \
-            sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
-        fi && \
-        cat /config${EXTRA} >> ${KERNEL_DEF_CONF}; \
+    if [ -n "${EXTRA}" ] && [ -f "/config-${KERNEL_SERIES}-$(uname -m)${EXTRA}" ]; then \
+        cat /config-${KERNEL_SERIES}-$(uname -m)${EXTRA} >> ${KERNEL_DEF_CONF}; \
+    fi; \
+    sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}${DEBUG}\"/" ${KERNEL_DEF_CONF}; \
+    if [ -n "${DEBUG}" ]; then \
+        sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
+        cat /config${DEBUG} >> ${KERNEL_DEF_CONF}; \
     fi && \
     make defconfig && \
     make oldconfig && \
-    if [ -z "${EXTRA}" ]; then diff .config ${KERNEL_DEF_CONF}; fi
+    if [ -z "${EXTRA}" ] && [ -z "${DEBUG}" ]; then diff .config ${KERNEL_DEF_CONF}; fi
 
 RUN mkdir /out
 
@@ -106,7 +118,7 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
         ;; \
     esac && \
     cp System.map /out && \
-    ([ "${EXTRA}" = "-dbg" ] && cp vmlinux /out || true)
+    ([ -n "${DEBUG}" ] && cp vmlinux /out || true)
 
 # WireGuard
 RUN curl -sSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \

@@ -1,0 +1,86 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 13 Feb 2015 15:52:24 +0100
+Subject: cgroups: use simple wait in css_release()
+
+To avoid:
+|BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
+|in_atomic(): 1, irqs_disabled(): 0, pid: 92, name: rcuc/11
+|2 locks held by rcuc/11/92:
+| #0:  (rcu_callback){......}, at: [<ffffffff810e037e>] rcu_cpu_kthread+0x3de/0x940
+| #1:  (rcu_read_lock_sched){......}, at: [<ffffffff81328390>] percpu_ref_call_confirm_rcu+0x0/0xd0
+|Preemption disabled at:[<ffffffff813284e2>] percpu_ref_switch_to_atomic_rcu+0x82/0xc0
+|CPU: 11 PID: 92 Comm: rcuc/11 Not tainted 3.18.7-rt0+ #1
+| ffff8802398cdf80 ffff880235f0bc28 ffffffff815b3a12 0000000000000000
+| 0000000000000000 ffff880235f0bc48 ffffffff8109aa16 0000000000000000
+| ffff8802398cdf80 ffff880235f0bc78 ffffffff815b8dd4 000000000000df80
+|Call Trace:
+| [<ffffffff815b3a12>] dump_stack+0x4f/0x7c
+| [<ffffffff8109aa16>] __might_sleep+0x116/0x190
+| [<ffffffff815b8dd4>] rt_spin_lock+0x24/0x60
+| [<ffffffff8108d2cd>] queue_work_on+0x6d/0x1d0
+| [<ffffffff8110c881>] css_release+0x81/0x90
+| [<ffffffff8132844e>] percpu_ref_call_confirm_rcu+0xbe/0xd0
+| [<ffffffff813284e2>] percpu_ref_switch_to_atomic_rcu+0x82/0xc0
+| [<ffffffff810e03e5>] rcu_cpu_kthread+0x445/0x940
+| [<ffffffff81098a2d>] smpboot_thread_fn+0x18d/0x2d0
+| [<ffffffff810948d8>] kthread+0xe8/0x100
+| [<ffffffff815b9c3c>] ret_from_fork+0x7c/0xb0
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/cgroup-defs.h |    2 ++
+ kernel/cgroup/cgroup.c      |    9 +++++----
+ 2 files changed, 7 insertions(+), 4 deletions(-)
+
+--- a/include/linux/cgroup-defs.h
++++ b/include/linux/cgroup-defs.h
+@@ -19,6 +19,7 @@
+ #include <linux/percpu-rwsem.h>
+ #include <linux/workqueue.h>
+ #include <linux/bpf-cgroup.h>
++#include <linux/swork.h>
+ 
+ #ifdef CONFIG_CGROUPS
+ 
+@@ -152,6 +153,7 @@ struct cgroup_subsys_state {
+ 	/* percpu_ref killing and RCU release */
+ 	struct rcu_head rcu_head;
+ 	struct work_struct destroy_work;
++	struct swork_event destroy_swork;
+ 
+ 	/*
+ 	 * PI: the parent css.	Placed here for cache proximity to following
+--- a/kernel/cgroup/cgroup.c
++++ b/kernel/cgroup/cgroup.c
+@@ -4498,10 +4498,10 @@ static void css_free_rcu_fn(struct rcu_h
+ 	queue_work(cgroup_destroy_wq, &css->destroy_work);
+ }
+ 
+-static void css_release_work_fn(struct work_struct *work)
++static void css_release_work_fn(struct swork_event *sev)
+ {
+ 	struct cgroup_subsys_state *css =
+-		container_of(work, struct cgroup_subsys_state, destroy_work);
++		container_of(sev, struct cgroup_subsys_state, destroy_swork);
+ 	struct cgroup_subsys *ss = css->ss;
+ 	struct cgroup *cgrp = css->cgroup;
+ 
+@@ -4552,8 +4552,8 @@ static void css_release(struct percpu_re
+ 	struct cgroup_subsys_state *css =
+ 		container_of(ref, struct cgroup_subsys_state, refcnt);
+ 
+-	INIT_WORK(&css->destroy_work, css_release_work_fn);
+-	queue_work(cgroup_destroy_wq, &css->destroy_work);
++	INIT_SWORK(&css->destroy_swork, css_release_work_fn);
++	swork_queue(&css->destroy_swork);
+ }
+ 
+ static void init_and_link_css(struct cgroup_subsys_state *css,
+@@ -5259,6 +5259,7 @@ static int __init cgroup_wq_init(void)
+ 	 */
+ 	cgroup_destroy_wq = alloc_workqueue("cgroup_destroy", 0, 1);
+ 	BUG_ON(!cgroup_destroy_wq);
++	BUG_ON(swork_get());
+ 	return 0;
+ }
+ core_initcall(cgroup_wq_init);

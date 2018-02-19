@@ -1,0 +1,77 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Mon, 15 Jan 2018 20:51:51 -0600
+Subject: [PATCH 25/48] tracing: Move get_hist_field_flags()
+
+Move get_hist_field_flags() to make it more easily accessible for new
+code (and keep the move separate from new functionality).
+
+Link: http://lkml.kernel.org/r/32470f0a7047ec7a6e84ba5ec89d6142cc6ede7d.1516069914.git.tom.zanussi@linux.intel.com
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit fde3bce553d359c01beb9a6fce4013b65076aff3)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace_events_hist.c |   44 +++++++++++++++++++--------------------
+ 1 file changed, 22 insertions(+), 22 deletions(-)
+
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -497,6 +497,28 @@ static const struct tracing_map_ops hist
+ 	.elt_init	= hist_trigger_elt_comm_init,
+ };
+ 
++static const char *get_hist_field_flags(struct hist_field *hist_field)
++{
++	const char *flags_str = NULL;
++
++	if (hist_field->flags & HIST_FIELD_FL_HEX)
++		flags_str = "hex";
++	else if (hist_field->flags & HIST_FIELD_FL_SYM)
++		flags_str = "sym";
++	else if (hist_field->flags & HIST_FIELD_FL_SYM_OFFSET)
++		flags_str = "sym-offset";
++	else if (hist_field->flags & HIST_FIELD_FL_EXECNAME)
++		flags_str = "execname";
++	else if (hist_field->flags & HIST_FIELD_FL_SYSCALL)
++		flags_str = "syscall";
++	else if (hist_field->flags & HIST_FIELD_FL_LOG2)
++		flags_str = "log2";
++	else if (hist_field->flags & HIST_FIELD_FL_TIMESTAMP_USECS)
++		flags_str = "usecs";
++
++	return flags_str;
++}
++
+ static void destroy_hist_field(struct hist_field *hist_field,
+ 			       unsigned int level)
+ {
+@@ -1497,28 +1519,6 @@ const struct file_operations event_hist_
+ 	.release = single_release,
+ };
+ 
+-static const char *get_hist_field_flags(struct hist_field *hist_field)
+-{
+-	const char *flags_str = NULL;
+-
+-	if (hist_field->flags & HIST_FIELD_FL_HEX)
+-		flags_str = "hex";
+-	else if (hist_field->flags & HIST_FIELD_FL_SYM)
+-		flags_str = "sym";
+-	else if (hist_field->flags & HIST_FIELD_FL_SYM_OFFSET)
+-		flags_str = "sym-offset";
+-	else if (hist_field->flags & HIST_FIELD_FL_EXECNAME)
+-		flags_str = "execname";
+-	else if (hist_field->flags & HIST_FIELD_FL_SYSCALL)
+-		flags_str = "syscall";
+-	else if (hist_field->flags & HIST_FIELD_FL_LOG2)
+-		flags_str = "log2";
+-	else if (hist_field->flags & HIST_FIELD_FL_TIMESTAMP_USECS)
+-		flags_str = "usecs";
+-
+-	return flags_str;
+-}
+-
+ static void hist_field_print(struct seq_file *m, struct hist_field *hist_field)
+ {
+ 	const char *field_name = hist_field_name(hist_field, 0);

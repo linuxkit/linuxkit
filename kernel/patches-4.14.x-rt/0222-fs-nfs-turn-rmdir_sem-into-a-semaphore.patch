@@ -1,0 +1,138 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 15 Sep 2016 10:51:27 +0200
+Subject: [PATCH] fs/nfs: turn rmdir_sem into a semaphore
+
+The RW semaphore had a reader side which used the _non_owner version
+because it most likely took the reader lock in one thread and released it
+in another which would cause lockdep to complain if the "regular"
+version was used.
+On -RT we need the owner because the rw lock is turned into a rtmutex.
+The semaphores on the hand are "plain simple" and should work as
+expected. We can't have multiple readers but on -RT we don't allow
+multiple readers anyway so that is not a loss.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/nfs/dir.c           |    8 ++++++++
+ fs/nfs/inode.c         |    4 ++++
+ fs/nfs/unlink.c        |   31 +++++++++++++++++++++++++++----
+ include/linux/nfs_fs.h |    4 ++++
+ 4 files changed, 43 insertions(+), 4 deletions(-)
+
+--- a/fs/nfs/dir.c
++++ b/fs/nfs/dir.c
+@@ -1763,7 +1763,11 @@ int nfs_rmdir(struct inode *dir, struct
+ 
+ 	trace_nfs_rmdir_enter(dir, dentry);
+ 	if (d_really_is_positive(dentry)) {
++#ifdef CONFIG_PREEMPT_RT_BASE
++		down(&NFS_I(d_inode(dentry))->rmdir_sem);
++#else
+ 		down_write(&NFS_I(d_inode(dentry))->rmdir_sem);
++#endif
+ 		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
+ 		/* Ensure the VFS deletes this inode */
+ 		switch (error) {
+@@ -1773,7 +1777,11 @@ int nfs_rmdir(struct inode *dir, struct
+ 		case -ENOENT:
+ 			nfs_dentry_handle_enoent(dentry);
+ 		}
++#ifdef CONFIG_PREEMPT_RT_BASE
++		up(&NFS_I(d_inode(dentry))->rmdir_sem);
++#else
+ 		up_write(&NFS_I(d_inode(dentry))->rmdir_sem);
++#endif
+ 	} else
+ 		error = NFS_PROTO(dir)->rmdir(dir, &dentry->d_name);
+ 	trace_nfs_rmdir_exit(dir, dentry, error);
+--- a/fs/nfs/inode.c
++++ b/fs/nfs/inode.c
+@@ -2014,7 +2014,11 @@ static void init_once(void *foo)
+ 	atomic_long_set(&nfsi->nrequests, 0);
+ 	atomic_long_set(&nfsi->commit_info.ncommit, 0);
+ 	atomic_set(&nfsi->commit_info.rpcs_out, 0);
++#ifdef CONFIG_PREEMPT_RT_BASE
++	sema_init(&nfsi->rmdir_sem, 1);
++#else
+ 	init_rwsem(&nfsi->rmdir_sem);
++#endif
+ 	mutex_init(&nfsi->commit_mutex);
+ 	nfs4_init_once(nfsi);
+ }
+--- a/fs/nfs/unlink.c
++++ b/fs/nfs/unlink.c
+@@ -52,6 +52,29 @@ static void nfs_async_unlink_done(struct
+ 		rpc_restart_call_prepare(task);
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT_BASE
++static void nfs_down_anon(struct semaphore *sema)
++{
++	down(sema);
++}
++
++static void nfs_up_anon(struct semaphore *sema)
++{
++	up(sema);
++}
++
++#else
++static void nfs_down_anon(struct rw_semaphore *rwsem)
++{
++	down_read_non_owner(rwsem);
++}
++
++static void nfs_up_anon(struct rw_semaphore *rwsem)
++{
++	up_read_non_owner(rwsem);
++}
++#endif
++
+ /**
+  * nfs_async_unlink_release - Release the sillydelete data.
+  * @task: rpc_task of the sillydelete
+@@ -65,7 +88,7 @@ static void nfs_async_unlink_release(voi
+ 	struct dentry *dentry = data->dentry;
+ 	struct super_block *sb = dentry->d_sb;
+ 
+-	up_read_non_owner(&NFS_I(d_inode(dentry->d_parent))->rmdir_sem);
++	nfs_up_anon(&NFS_I(d_inode(dentry->d_parent))->rmdir_sem);
+ 	d_lookup_done(dentry);
+ 	nfs_free_unlinkdata(data);
+ 	dput(dentry);
+@@ -118,10 +141,10 @@ static int nfs_call_unlink(struct dentry
+ 	struct inode *dir = d_inode(dentry->d_parent);
+ 	struct dentry *alias;
+ 
+-	down_read_non_owner(&NFS_I(dir)->rmdir_sem);
++	nfs_down_anon(&NFS_I(dir)->rmdir_sem);
+ 	alias = d_alloc_parallel(dentry->d_parent, &data->args.name, &data->wq);
+ 	if (IS_ERR(alias)) {
+-		up_read_non_owner(&NFS_I(dir)->rmdir_sem);
++		nfs_up_anon(&NFS_I(dir)->rmdir_sem);
+ 		return 0;
+ 	}
+ 	if (!d_in_lookup(alias)) {
+@@ -143,7 +166,7 @@ static int nfs_call_unlink(struct dentry
+ 			ret = 0;
+ 		spin_unlock(&alias->d_lock);
+ 		dput(alias);
+-		up_read_non_owner(&NFS_I(dir)->rmdir_sem);
++		nfs_up_anon(&NFS_I(dir)->rmdir_sem);
+ 		/*
+ 		 * If we'd displaced old cached devname, free it.  At that
+ 		 * point dentry is definitely not a root, so we won't need
+--- a/include/linux/nfs_fs.h
++++ b/include/linux/nfs_fs.h
+@@ -162,7 +162,11 @@ struct nfs_inode {
+ 
+ 	/* Readers: in-flight sillydelete RPC calls */
+ 	/* Writers: rmdir */
++#ifdef CONFIG_PREEMPT_RT_BASE
++	struct semaphore        rmdir_sem;
++#else
+ 	struct rw_semaphore	rmdir_sem;
++#endif
+ 	struct mutex		commit_mutex;
+ 
+ #if IS_ENABLED(CONFIG_NFS_V4)

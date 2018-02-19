@@ -1,0 +1,76 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 21 Mar 2013 19:01:05 +0100
+Subject: printk: Drop the logbuf_lock more often
+
+The lock is hold with irgs off. The latency drops 500us+ on my arm bugs
+with a "full" buffer after executing "dmesg" on the shell.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/printk/printk.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -1407,6 +1407,8 @@ static int syslog_print_all(char __user
+ {
+ 	char *text;
+ 	int len = 0;
++	int attempts = 0;
++	int num_msg;
+ 
+ 	text = kmalloc(LOG_LINE_MAX + PREFIX_MAX, GFP_KERNEL);
+ 	if (!text)
+@@ -1418,6 +1420,14 @@ static int syslog_print_all(char __user
+ 		u64 seq;
+ 		u32 idx;
+ 
++try_again:
++		attempts++;
++		if (attempts > 10) {
++			len = -EBUSY;
++			goto out;
++		}
++		num_msg = 0;
++
+ 		/*
+ 		 * Find first record that fits, including all following records,
+ 		 * into the user-provided buffer for this dump.
+@@ -1430,6 +1440,14 @@ static int syslog_print_all(char __user
+ 			len += msg_print_text(msg, true, NULL, 0);
+ 			idx = log_next(idx);
+ 			seq++;
++			num_msg++;
++			if (num_msg > 5) {
++				num_msg = 0;
++				logbuf_unlock_irq();
++				logbuf_lock_irq();
++				if (clear_seq < log_first_seq)
++					goto try_again;
++			}
+ 		}
+ 
+ 		/* move first record forward until length fits into the buffer */
+@@ -1441,6 +1459,14 @@ static int syslog_print_all(char __user
+ 			len -= msg_print_text(msg, true, NULL, 0);
+ 			idx = log_next(idx);
+ 			seq++;
++			num_msg++;
++			if (num_msg > 5) {
++				num_msg = 0;
++				logbuf_unlock_irq();
++				logbuf_lock_irq();
++				if (clear_seq < log_first_seq)
++					goto try_again;
++			}
+ 		}
+ 
+ 		/* last message fitting into this dump */
+@@ -1479,6 +1505,7 @@ static int syslog_print_all(char __user
+ 		clear_seq = log_next_seq;
+ 		clear_idx = log_next_idx;
+ 	}
++out:
+ 	logbuf_unlock_irq();
+ 
+ 	kfree(text);

@@ -1,0 +1,107 @@
+Subject: fs: dcache: Use cpu_chill() in trylock loops
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 07 Mar 2012 21:00:34 +0100
+
+Retry loops on RT might loop forever when the modifying side was
+preempted. Use cpu_chill() instead of cpu_relax() to let the system
+make progress.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ fs/autofs4/autofs_i.h |    1 +
+ fs/autofs4/expire.c   |    2 +-
+ fs/dcache.c           |   20 ++++++++++++++++----
+ fs/namespace.c        |    3 ++-
+ 4 files changed, 20 insertions(+), 6 deletions(-)
+
+--- a/fs/autofs4/autofs_i.h
++++ b/fs/autofs4/autofs_i.h
+@@ -20,6 +20,7 @@
+ #include <linux/sched.h>
+ #include <linux/mount.h>
+ #include <linux/namei.h>
++#include <linux/delay.h>
+ #include <linux/uaccess.h>
+ #include <linux/mutex.h>
+ #include <linux/spinlock.h>
+--- a/fs/autofs4/expire.c
++++ b/fs/autofs4/expire.c
+@@ -148,7 +148,7 @@ static struct dentry *get_next_positive_
+ 			parent = p->d_parent;
+ 			if (!spin_trylock(&parent->d_lock)) {
+ 				spin_unlock(&p->d_lock);
+-				cpu_relax();
++				cpu_chill();
+ 				goto relock;
+ 			}
+ 			spin_unlock(&p->d_lock);
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -19,6 +19,7 @@
+ #include <linux/mm.h>
+ #include <linux/fs.h>
+ #include <linux/fsnotify.h>
++#include <linux/delay.h>
+ #include <linux/slab.h>
+ #include <linux/init.h>
+ #include <linux/hash.h>
+@@ -784,6 +785,8 @@ static inline bool fast_dput(struct dent
+  */
+ void dput(struct dentry *dentry)
+ {
++	struct dentry *parent;
++
+ 	if (unlikely(!dentry))
+ 		return;
+ 
+@@ -820,9 +823,18 @@ void dput(struct dentry *dentry)
+ 	return;
+ 
+ kill_it:
+-	dentry = dentry_kill(dentry);
+-	if (dentry) {
+-		cond_resched();
++	parent = dentry_kill(dentry);
++	if (parent) {
++		int r;
++
++		if (parent == dentry) {
++			/* the task with the highest priority won't schedule */
++			r = cond_resched();
++			if (!r)
++				cpu_chill();
++		} else {
++			dentry = parent;
++		}
+ 		goto repeat;
+ 	}
+ }
+@@ -2360,7 +2372,7 @@ void d_delete(struct dentry * dentry)
+ 	if (dentry->d_lockref.count == 1) {
+ 		if (!spin_trylock(&inode->i_lock)) {
+ 			spin_unlock(&dentry->d_lock);
+-			cpu_relax();
++			cpu_chill();
+ 			goto again;
+ 		}
+ 		dentry->d_flags &= ~DCACHE_CANT_MOUNT;
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -14,6 +14,7 @@
+ #include <linux/mnt_namespace.h>
+ #include <linux/user_namespace.h>
+ #include <linux/namei.h>
++#include <linux/delay.h>
+ #include <linux/security.h>
+ #include <linux/cred.h>
+ #include <linux/idr.h>
+@@ -355,7 +356,7 @@ int __mnt_want_write(struct vfsmount *m)
+ 	smp_mb();
+ 	while (ACCESS_ONCE(mnt->mnt.mnt_flags) & MNT_WRITE_HOLD) {
+ 		preempt_enable();
+-		cpu_relax();
++		cpu_chill();
+ 		preempt_disable();
+ 	}
+ 	/*

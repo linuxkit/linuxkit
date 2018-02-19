@@ -1,0 +1,31 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 17 Feb 2014 17:30:03 +0100
+Subject: fs: jbd2: pull your plug when waiting for space
+
+Two cps in parallel managed to stall the the ext4 fs. It seems that
+journal code is either waiting for locks or sleeping waiting for
+something to happen. This seems similar to what Mike observed on ext3,
+here is his description:
+
+|With an -rt kernel, and a heavy sync IO load, tasks can jam
+|up on journal locks without unplugging, which can lead to
+|terminal IO starvation.  Unplug and schedule when waiting
+|for space.
+
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/jbd2/checkpoint.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/fs/jbd2/checkpoint.c
++++ b/fs/jbd2/checkpoint.c
+@@ -116,6 +116,8 @@ void __jbd2_log_wait_for_space(journal_t
+ 	nblocks = jbd2_space_needed(journal);
+ 	while (jbd2_log_space_left(journal) < nblocks) {
+ 		write_unlock(&journal->j_state_lock);
++		if (current->plug)
++			io_schedule();
+ 		mutex_lock(&journal->j_checkpoint_mutex);
+ 
+ 		/*

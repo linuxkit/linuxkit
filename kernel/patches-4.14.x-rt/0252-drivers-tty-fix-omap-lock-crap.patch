@@ -1,0 +1,42 @@
+Subject: tty/serial/omap: Make the locking RT aware
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 28 Jul 2011 13:32:57 +0200
+
+The lock is a sleeping lock and local_irq_save() is not the
+optimsation we are looking for. Redo it to make it work on -RT and
+non-RT.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/tty/serial/omap-serial.c |   12 ++++--------
+ 1 file changed, 4 insertions(+), 8 deletions(-)
+
+--- a/drivers/tty/serial/omap-serial.c
++++ b/drivers/tty/serial/omap-serial.c
+@@ -1311,13 +1311,10 @@ serial_omap_console_write(struct console
+ 
+ 	pm_runtime_get_sync(up->dev);
+ 
+-	local_irq_save(flags);
+-	if (up->port.sysrq)
+-		locked = 0;
+-	else if (oops_in_progress)
+-		locked = spin_trylock(&up->port.lock);
++	if (up->port.sysrq || oops_in_progress)
++		locked = spin_trylock_irqsave(&up->port.lock, flags);
+ 	else
+-		spin_lock(&up->port.lock);
++		spin_lock_irqsave(&up->port.lock, flags);
+ 
+ 	/*
+ 	 * First save the IER then disable the interrupts
+@@ -1346,8 +1343,7 @@ serial_omap_console_write(struct console
+ 	pm_runtime_mark_last_busy(up->dev);
+ 	pm_runtime_put_autosuspend(up->dev);
+ 	if (locked)
+-		spin_unlock(&up->port.lock);
+-	local_irq_restore(flags);
++		spin_unlock_irqrestore(&up->port.lock, flags);
+ }
+ 
+ static int __init

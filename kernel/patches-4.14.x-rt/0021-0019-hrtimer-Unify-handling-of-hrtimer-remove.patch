@@ -1,0 +1,88 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:08 +0100
+Subject: [PATCH 19/29] hrtimer: Unify handling of hrtimer remove
+
+When the first hrtimer on the current CPU is removed,
+hrtimer_force_reprogram() is invoked but only when
+CONFIG_HIGH_RES_TIMERS=y and hrtimer_cpu_base.hres_active is set.
+
+hrtimer_force_reprogram() updates hrtimer_cpu_base.expires_next and
+reprograms the clock event device. When CONFIG_HIGH_RES_TIMERS=y and
+hrtimer_cpu_base.hres_active is set, a pointless hrtimer interrupt can be
+prevented.
+
+hrtimer_check_target() makes the 'can remote enqueue' decision. As soon as
+hrtimer_check_target() is unconditionally available and
+hrtimer_cpu_base.expires_next is updated by hrtimer_reprogram(),
+hrtimer_force_reprogram() needs to be available unconditionally as well to
+prevent the following scenario with CONFIG_HIGH_RES_TIMERS=n:
+
+- the first hrtimer on this CPU is removed and hrtimer_force_reprogram() is
+  not executed
+
+- CPU goes idle (next timer is calculated and hrtimers are taken into
+  account)
+
+- a hrtimer is enqueued remote on the idle CPU: hrtimer_check_target()
+  compares expiry value and hrtimer_cpu_base.expires_next. The expiry value
+  is after expires_next, so the hrtimer is enqueued. This timer will fire
+  late, if it expires before the effective first hrtimer on this CPU and
+  the comparison was with an outdated expires_next value.
+
+To prevent this scenario, make hrtimer_force_reprogram() unconditional
+except the effective reprogramming part, which gets eliminated by the
+compiler in the CONFIG_HIGH_RES_TIMERS=n case.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |   10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -523,9 +523,6 @@ hrtimer_force_reprogram(struct hrtimer_c
+ {
+ 	ktime_t expires_next;
+ 
+-	if (!__hrtimer_hres_active(cpu_base))
+-		return;
+-
+ 	expires_next = __hrtimer_get_next_event(cpu_base);
+ 
+ 	if (skip_equal && expires_next == cpu_base->expires_next)
+@@ -534,6 +531,9 @@ hrtimer_force_reprogram(struct hrtimer_c
+ 	cpu_base->expires_next = expires_next;
+ 
+ 	/*
++	 * If hres is not active, hardware does not have to be
++	 * reprogrammed yet.
++	 *
+ 	 * If a hang was detected in the last timer interrupt then we
+ 	 * leave the hang delay active in the hardware. We want the
+ 	 * system to make progress. That also prevents the following
+@@ -547,7 +547,7 @@ hrtimer_force_reprogram(struct hrtimer_c
+ 	 * set. So we'd effectivly block all timers until the T2 event
+ 	 * fires.
+ 	 */
+-	if (cpu_base->hang_detected)
++	if (!__hrtimer_hres_active(cpu_base) || cpu_base->hang_detected)
+ 		return;
+ 
+ 	tick_program_event(cpu_base->expires_next, 1);
+@@ -848,7 +848,6 @@ static void __remove_hrtimer(struct hrti
+ 	if (!timerqueue_del(&base->active, &timer->node))
+ 		cpu_base->active_bases &= ~(1 << base->index);
+ 
+-#ifdef CONFIG_HIGH_RES_TIMERS
+ 	/*
+ 	 * Note: If reprogram is false we do not update
+ 	 * cpu_base->next_timer. This happens when we remove the first
+@@ -859,7 +858,6 @@ static void __remove_hrtimer(struct hrti
+ 	 */
+ 	if (reprogram && timer == cpu_base->next_timer)
+ 		hrtimer_force_reprogram(cpu_base, 1);
+-#endif
+ }
+ 
+ /*

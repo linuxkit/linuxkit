@@ -1,0 +1,191 @@
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Thu, 21 Sep 2017 16:22:49 -0400
+Subject: [PATCH 01/48] tracing: Reverse the order of trace_types_lock and
+ event_mutex
+
+In order to make future changes where we need to call
+tracing_set_clock() from within an event command, the order of
+trace_types_lock and event_mutex must be reversed, as the event command
+will hold event_mutex and the trace_types_lock is taken from within
+tracing_set_clock().
+
+Link: http://lkml.kernel.org/r/20170921162249.0dde3dca@gandalf.local.home
+
+Requested-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit 12ecef0cb12102d8c034770173d2d1363cb97d52)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace.c        |    5 +++++
+ kernel/trace/trace_events.c |   31 +++++++++++++++----------------
+ 2 files changed, 20 insertions(+), 16 deletions(-)
+
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -7671,6 +7671,7 @@ static int instance_mkdir(const char *na
+ 	struct trace_array *tr;
+ 	int ret;
+ 
++	mutex_lock(&event_mutex);
+ 	mutex_lock(&trace_types_lock);
+ 
+ 	ret = -EEXIST;
+@@ -7726,6 +7727,7 @@ static int instance_mkdir(const char *na
+ 	list_add(&tr->list, &ftrace_trace_arrays);
+ 
+ 	mutex_unlock(&trace_types_lock);
++	mutex_unlock(&event_mutex);
+ 
+ 	return 0;
+ 
+@@ -7737,6 +7739,7 @@ static int instance_mkdir(const char *na
+ 
+  out_unlock:
+ 	mutex_unlock(&trace_types_lock);
++	mutex_unlock(&event_mutex);
+ 
+ 	return ret;
+ 
+@@ -7749,6 +7752,7 @@ static int instance_rmdir(const char *na
+ 	int ret;
+ 	int i;
+ 
++	mutex_lock(&event_mutex);
+ 	mutex_lock(&trace_types_lock);
+ 
+ 	ret = -ENODEV;
+@@ -7794,6 +7798,7 @@ static int instance_rmdir(const char *na
+ 
+  out_unlock:
+ 	mutex_unlock(&trace_types_lock);
++	mutex_unlock(&event_mutex);
+ 
+ 	return ret;
+ }
+--- a/kernel/trace/trace_events.c
++++ b/kernel/trace/trace_events.c
+@@ -1406,8 +1406,8 @@ static int subsystem_open(struct inode *
+ 		return -ENODEV;
+ 
+ 	/* Make sure the system still exists */
+-	mutex_lock(&trace_types_lock);
+ 	mutex_lock(&event_mutex);
++	mutex_lock(&trace_types_lock);
+ 	list_for_each_entry(tr, &ftrace_trace_arrays, list) {
+ 		list_for_each_entry(dir, &tr->systems, list) {
+ 			if (dir == inode->i_private) {
+@@ -1421,8 +1421,8 @@ static int subsystem_open(struct inode *
+ 		}
+ 	}
+  exit_loop:
+-	mutex_unlock(&event_mutex);
+ 	mutex_unlock(&trace_types_lock);
++	mutex_unlock(&event_mutex);
+ 
+ 	if (!system)
+ 		return -ENODEV;
+@@ -2308,15 +2308,15 @@ static void __add_event_to_tracers(struc
+ int trace_add_event_call(struct trace_event_call *call)
+ {
+ 	int ret;
+-	mutex_lock(&trace_types_lock);
+ 	mutex_lock(&event_mutex);
++	mutex_lock(&trace_types_lock);
+ 
+ 	ret = __register_event(call, NULL);
+ 	if (ret >= 0)
+ 		__add_event_to_tracers(call);
+ 
+-	mutex_unlock(&event_mutex);
+ 	mutex_unlock(&trace_types_lock);
++	mutex_unlock(&event_mutex);
+ 	return ret;
+ }
+ 
+@@ -2370,13 +2370,13 @@ int trace_remove_event_call(struct trace
+ {
+ 	int ret;
+ 
+-	mutex_lock(&trace_types_lock);
+ 	mutex_lock(&event_mutex);
++	mutex_lock(&trace_types_lock);
+ 	down_write(&trace_event_sem);
+ 	ret = probe_remove_event_call(call);
+ 	up_write(&trace_event_sem);
+-	mutex_unlock(&event_mutex);
+ 	mutex_unlock(&trace_types_lock);
++	mutex_unlock(&event_mutex);
+ 
+ 	return ret;
+ }
+@@ -2438,8 +2438,8 @@ static int trace_module_notify(struct no
+ {
+ 	struct module *mod = data;
+ 
+-	mutex_lock(&trace_types_lock);
+ 	mutex_lock(&event_mutex);
++	mutex_lock(&trace_types_lock);
+ 	switch (val) {
+ 	case MODULE_STATE_COMING:
+ 		trace_module_add_events(mod);
+@@ -2448,8 +2448,8 @@ static int trace_module_notify(struct no
+ 		trace_module_remove_events(mod);
+ 		break;
+ 	}
+-	mutex_unlock(&event_mutex);
+ 	mutex_unlock(&trace_types_lock);
++	mutex_unlock(&event_mutex);
+ 
+ 	return 0;
+ }
+@@ -2964,24 +2964,24 @@ create_event_toplevel_files(struct dentr
+  * creates the event hierachry in the @parent/events directory.
+  *
+  * Returns 0 on success.
++ *
++ * Must be called with event_mutex held.
+  */
+ int event_trace_add_tracer(struct dentry *parent, struct trace_array *tr)
+ {
+ 	int ret;
+ 
+-	mutex_lock(&event_mutex);
++	lockdep_assert_held(&event_mutex);
+ 
+ 	ret = create_event_toplevel_files(parent, tr);
+ 	if (ret)
+-		goto out_unlock;
++		goto out;
+ 
+ 	down_write(&trace_event_sem);
+ 	__trace_add_event_dirs(tr);
+ 	up_write(&trace_event_sem);
+ 
+- out_unlock:
+-	mutex_unlock(&event_mutex);
+-
++ out:
+ 	return ret;
+ }
+ 
+@@ -3010,9 +3010,10 @@ early_event_add_tracer(struct dentry *pa
+ 	return ret;
+ }
+ 
++/* Must be called with event_mutex held */
+ int event_trace_del_tracer(struct trace_array *tr)
+ {
+-	mutex_lock(&event_mutex);
++	lockdep_assert_held(&event_mutex);
+ 
+ 	/* Disable any event triggers and associated soft-disabled events */
+ 	clear_event_triggers(tr);
+@@ -3033,8 +3034,6 @@ int event_trace_del_tracer(struct trace_
+ 
+ 	tr->event_dir = NULL;
+ 
+-	mutex_unlock(&event_mutex);
+-
+ 	return 0;
+ }
+ 

@@ -1,0 +1,31 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 30 Nov 2017 16:06:13 +0100
+Subject: [PATCH] drm/i915: properly init lockdep class
+
+The code has an ifdef and uses two functions to either init the bare
+spinlock or init it and set a lock-class. It is possible to do the same
+thing without an ifdef.
+With this patch (in debug case) we first use the "default" lock class
+which is later overwritten to the supplied one. Without lockdep the set
+name/class function vanishes.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/gpu/drm/i915/i915_gem_timeline.c |    5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
+
+--- a/drivers/gpu/drm/i915/i915_gem_timeline.c
++++ b/drivers/gpu/drm/i915/i915_gem_timeline.c
+@@ -33,11 +33,8 @@ static void __intel_timeline_init(struct
+ {
+ 	tl->fence_context = context;
+ 	tl->common = parent;
+-#ifdef CONFIG_DEBUG_SPINLOCK
+-	__raw_spin_lock_init(&tl->lock.rlock, lockname, lockclass);
+-#else
+ 	spin_lock_init(&tl->lock);
+-#endif
++	lockdep_set_class_and_name(&tl->lock, lockclass, lockname);
+ 	init_request_active(&tl->last_request, NULL);
+ 	INIT_LIST_HEAD(&tl->requests);
+ 	i915_syncmap_init(&tl->sync);

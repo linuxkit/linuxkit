@@ -1,0 +1,62 @@
+From: Mike Galbraith <umgwanakikbuti@gmail.com>
+Date: Wed, 18 Feb 2015 16:05:28 +0100
+Subject: sunrpc: Make svc_xprt_do_enqueue() use get_cpu_light()
+
+|BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:915
+|in_atomic(): 1, irqs_disabled(): 0, pid: 3194, name: rpc.nfsd
+|Preemption disabled at:[<ffffffffa06bf0bb>] svc_xprt_received+0x4b/0xc0 [sunrpc]
+|CPU: 6 PID: 3194 Comm: rpc.nfsd Not tainted 3.18.7-rt1 #9
+|Hardware name: MEDION MS-7848/MS-7848, BIOS M7848W08.404 11/06/2014
+| ffff880409630000 ffff8800d9a33c78 ffffffff815bdeb5 0000000000000002
+| 0000000000000000 ffff8800d9a33c98 ffffffff81073c86 ffff880408dd6008
+| ffff880408dd6000 ffff8800d9a33cb8 ffffffff815c3d84 ffff88040b3ac000
+|Call Trace:
+| [<ffffffff815bdeb5>] dump_stack+0x4f/0x9e
+| [<ffffffff81073c86>] __might_sleep+0xe6/0x150
+| [<ffffffff815c3d84>] rt_spin_lock+0x24/0x50
+| [<ffffffffa06beec0>] svc_xprt_do_enqueue+0x80/0x230 [sunrpc]
+| [<ffffffffa06bf0bb>] svc_xprt_received+0x4b/0xc0 [sunrpc]
+| [<ffffffffa06c03ed>] svc_add_new_perm_xprt+0x6d/0x80 [sunrpc]
+| [<ffffffffa06b2693>] svc_addsock+0x143/0x200 [sunrpc]
+| [<ffffffffa072e69c>] write_ports+0x28c/0x340 [nfsd]
+| [<ffffffffa072d2ac>] nfsctl_transaction_write+0x4c/0x80 [nfsd]
+| [<ffffffff8117ee83>] vfs_write+0xb3/0x1d0
+| [<ffffffff8117f889>] SyS_write+0x49/0xb0
+| [<ffffffff815c4556>] system_call_fastpath+0x16/0x1b
+
+
+Signed-off-by: Mike Galbraith <umgwanakikbuti@gmail.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ net/sunrpc/svc_xprt.c |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/net/sunrpc/svc_xprt.c
++++ b/net/sunrpc/svc_xprt.c
+@@ -396,7 +396,7 @@ void svc_xprt_do_enqueue(struct svc_xprt
+ 		goto out;
+ 	}
+ 
+-	cpu = get_cpu();
++	cpu = get_cpu_light();
+ 	pool = svc_pool_for_cpu(xprt->xpt_server, cpu);
+ 
+ 	atomic_long_inc(&pool->sp_stats.packets);
+@@ -432,7 +432,7 @@ void svc_xprt_do_enqueue(struct svc_xprt
+ 
+ 		atomic_long_inc(&pool->sp_stats.threads_woken);
+ 		wake_up_process(rqstp->rq_task);
+-		put_cpu();
++		put_cpu_light();
+ 		goto out;
+ 	}
+ 	rcu_read_unlock();
+@@ -453,7 +453,7 @@ void svc_xprt_do_enqueue(struct svc_xprt
+ 		goto redo_search;
+ 	}
+ 	rqstp = NULL;
+-	put_cpu();
++	put_cpu_light();
+ out:
+ 	trace_svc_xprt_do_enqueue(xprt, rqstp);
+ }

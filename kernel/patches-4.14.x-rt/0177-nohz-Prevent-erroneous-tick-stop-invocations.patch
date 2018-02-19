@@ -1,0 +1,53 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 22 Dec 2017 15:51:13 +0100
+Subject: [PATCH 2/4] nohz: Prevent erroneous tick stop invocations
+
+The conditions in irq_exit() to invoke tick_nohz_irq_exit() are:
+
+  if ((idle_cpu(cpu) && !need_resched()) || tick_nohz_full_cpu(cpu))
+
+This is too permissive in various aspects:
+
+  1) If need_resched() is set, then the tick cannot be stopped whether
+     the CPU is idle or in nohz full mode.
+
+  2) If need_resched() is not set, but softirqs are pending then this is an
+     indication that the softirq code punted and delegated the execution to
+     softirqd. need_resched() is not true because the current interrupted
+     task takes precedence over softirqd.
+
+Invoking tick_nohz_irq_exit() in these cases can cause an endless loop of
+timer interrupts because the timer wheel contains an expired timer, but
+softirqs are not yet executed. So it returns an immediate expiry request,
+which causes the timer to fire immediately again. Lather, rinse and
+repeat....
+
+Prevent that by making the conditions proper and only allow invokation when
+in idle or nohz full mode and neither need_resched() nor
+local_softirq_pending() are set.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[ bigeasy: XXX still needed for RT, to avoid hangup due to pending timer softirq,
+	   keep it RT only ]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/softirq.c |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -381,7 +381,13 @@ static inline void tick_irq_exit(void)
+ 	int cpu = smp_processor_id();
+ 
+ 	/* Make sure that timer wheel updates are propagated */
+-	if ((idle_cpu(cpu) && !need_resched()) || tick_nohz_full_cpu(cpu)) {
++#ifdef CONFIG_PREEMPT_RT_BASE
++	if ((idle_cpu(cpu) || tick_nohz_full_cpu(cpu)) &&
++	    !need_resched() && !local_softirq_pending())
++#else
++	if ((idle_cpu(cpu) && !need_resched()) || tick_nohz_full_cpu(cpu))
++#endif
++	{
+ 		if (!in_interrupt())
+ 			tick_nohz_irq_exit();
+ 	}

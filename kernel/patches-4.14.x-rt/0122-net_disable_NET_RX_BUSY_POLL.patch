@@ -1,0 +1,28 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Sat, 27 May 2017 19:02:06 +0200
+Subject: net/core: disable NET_RX_BUSY_POLL
+
+sk_busy_loop() does preempt_disable() followed by a few operations which can
+take sleeping locks and may get long.
+I _think_ that we could use preempt_disable_nort() (in sk_busy_loop()) instead
+but after a successfull cmpxchg(&napi->state, …) we would gain the ressource
+and could be scheduled out. At this point nobody knows who (which context) owns
+it and so it could take a while until the state is realeased and napi_poll()
+could be invoked again.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ net/Kconfig |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/Kconfig
++++ b/net/Kconfig
+@@ -272,7 +272,7 @@ config CGROUP_NET_CLASSID
+ 
+ config NET_RX_BUSY_POLL
+ 	bool
+-	default y
++	default y if !PREEMPT_RT_FULL
+ 
+ config BQL
+ 	bool

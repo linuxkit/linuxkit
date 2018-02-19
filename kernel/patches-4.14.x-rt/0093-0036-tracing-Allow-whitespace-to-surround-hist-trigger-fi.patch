@@ -1,0 +1,75 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Mon, 15 Jan 2018 20:52:02 -0600
+Subject: [PATCH 36/48] tracing: Allow whitespace to surround hist trigger
+ filter
+
+The existing code only allows for one space before and after the 'if'
+specifying the filter for a hist trigger.  Add code to make that more
+permissive as far as whitespace goes.  Specifically, we want to allow
+spaces in the trigger itself now that we have additional syntax
+(onmatch/onmax) where spaces are more natural e.g. spaces after commas
+in param lists.
+
+Link: http://lkml.kernel.org/r/1053090c3c308d4f431accdeb59dff4b511d4554.1516069914.git.tom.zanussi@linux.intel.com
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+(cherry picked from commit ab257ec0f8eb50c58fafd50b1cb5352553f31ccf)
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace_events_hist.c |   37 ++++++++++++++++++++++++++++++++-----
+ 1 file changed, 32 insertions(+), 5 deletions(-)
+
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -5164,7 +5164,7 @@ static int event_hist_trigger_func(struc
+ 	struct synth_event *se;
+ 	const char *se_name;
+ 	bool remove = false;
+-	char *trigger;
++	char *trigger, *p;
+ 	int ret = 0;
+ 
+ 	if (!param)
+@@ -5173,10 +5173,37 @@ static int event_hist_trigger_func(struc
+ 	if (glob[0] == '!')
+ 		remove = true;
+ 
+-	/* separate the trigger from the filter (k:v [if filter]) */
+-	trigger = strsep(&param, " \t");
+-	if (!trigger)
+-		return -EINVAL;
++	/*
++	 * separate the trigger from the filter (k:v [if filter])
++	 * allowing for whitespace in the trigger
++	 */
++	p = trigger = param;
++	do {
++		p = strstr(p, "if");
++		if (!p)
++			break;
++		if (p == param)
++			return -EINVAL;
++		if (*(p - 1) != ' ' && *(p - 1) != '\t') {
++			p++;
++			continue;
++		}
++		if (p >= param + strlen(param) - strlen("if") - 1)
++			return -EINVAL;
++		if (*(p + strlen("if")) != ' ' && *(p + strlen("if")) != '\t') {
++			p++;
++			continue;
++		}
++		break;
++	} while (p);
++
++	if (!p)
++		param = NULL;
++	else {
++		*(p - 1) = '\0';
++		param = strstrip(p);
++		trigger = strstrip(trigger);
++	}
+ 
+ 	attrs = parse_hist_trigger_attrs(trigger);
+ 	if (IS_ERR(attrs))

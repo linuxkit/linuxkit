@@ -1,0 +1,83 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 11 Oct 2017 17:43:49 +0200
+Subject: apparmor: use a locallock instead preempt_disable()
+
+get_buffers() disables preemption which acts as a lock for the per-CPU
+variable. Since we can't disable preemption here on RT, a local_lock is
+lock is used in order to remain on the same CPU and not to have more
+than one user within the critical section.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ security/apparmor/include/path.h |   21 +++++++++++++++++----
+ security/apparmor/lsm.c          |    2 +-
+ 2 files changed, 18 insertions(+), 5 deletions(-)
+
+--- a/security/apparmor/include/path.h
++++ b/security/apparmor/include/path.h
+@@ -39,9 +39,10 @@ struct aa_buffers {
+ };
+ 
+ #include <linux/percpu.h>
+-#include <linux/preempt.h>
++#include <linux/locallock.h>
+ 
+ DECLARE_PER_CPU(struct aa_buffers, aa_buffers);
++DECLARE_LOCAL_IRQ_LOCK(aa_buffers_lock);
+ 
+ #define COUNT_ARGS(X...) COUNT_ARGS_HELPER(, ##X, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0)
+ #define COUNT_ARGS_HELPER(_0, _1, _2, _3, _4, _5, _6, _7, _8, _9, n, X...) n
+@@ -55,12 +56,24 @@ DECLARE_PER_CPU(struct aa_buffers, aa_bu
+ 
+ #define for_each_cpu_buffer(I) for ((I) = 0; (I) < MAX_PATH_BUFFERS; (I)++)
+ 
+-#ifdef CONFIG_DEBUG_PREEMPT
++#ifdef CONFIG_PREEMPT_RT_BASE
++
++static inline void AA_BUG_PREEMPT_ENABLED(const char *s)
++{
++	struct local_irq_lock *lv;
++
++	lv = this_cpu_ptr(&aa_buffers_lock);
++	WARN_ONCE(lv->owner != current,
++		  "__get_buffer without aa_buffers_lock\n");
++}
++
++#elif defined(CONFIG_DEBUG_PREEMPT)
+ #define AA_BUG_PREEMPT_ENABLED(X) AA_BUG(preempt_count() <= 0, X)
+ #else
+ #define AA_BUG_PREEMPT_ENABLED(X) /* nop */
+ #endif
+ 
++
+ #define __get_buffer(N) ({					\
+ 	struct aa_buffers *__cpu_var; \
+ 	AA_BUG_PREEMPT_ENABLED("__get_buffer without preempt disabled");  \
+@@ -73,14 +86,14 @@ DECLARE_PER_CPU(struct aa_buffers, aa_bu
+ 
+ #define get_buffers(X...)	\
+ do {				\
+-	preempt_disable();	\
++	local_lock(aa_buffers_lock);	\
+ 	__get_buffers(X);	\
+ } while (0)
+ 
+ #define put_buffers(X, Y...)	\
+ do {				\
+ 	__put_buffers(X, Y);	\
+-	preempt_enable();	\
++	local_unlock(aa_buffers_lock);	\
+ } while (0)
+ 
+ #endif /* __AA_PATH_H */
+--- a/security/apparmor/lsm.c
++++ b/security/apparmor/lsm.c
+@@ -44,7 +44,7 @@
+ int apparmor_initialized;
+ 
+ DEFINE_PER_CPU(struct aa_buffers, aa_buffers);
+-
++DEFINE_LOCAL_IRQ_LOCK(aa_buffers_lock);
+ 
+ /*
+  * LSM hook functions

@@ -1,0 +1,41 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 5 Feb 2016 12:17:14 +0100
+Subject: mm: backing-dev: don't disable IRQs in wb_congested_put()
+
+it triggers:
+|BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:930
+|in_atomic(): 0, irqs_disabled(): 1, pid: 12, name: rcuc/0
+|1 lock held by rcuc/0/12:
+| #0:  (rcu_callback){......}, at: [<ffffffff810ce1a6>] rcu_cpu_kthread+0x376/0xb10
+|irq event stamp: 23636
+|hardirqs last  enabled at (23635): [<ffffffff8173524c>] _raw_spin_unlock_irqrestore+0x6c/0x80
+|hardirqs last disabled at (23636): [<ffffffff81173918>] wb_congested_put+0x18/0x90
+| [<ffffffff81735434>] rt_spin_lock+0x24/0x60
+| [<ffffffff810afed2>] atomic_dec_and_spin_lock+0x52/0x90
+| [<ffffffff81173928>] wb_congested_put+0x28/0x90
+| [<ffffffff813b833e>] __blkg_release_rcu+0x5e/0x1e0
+| [<ffffffff813b8367>] ? __blkg_release_rcu+0x87/0x1e0
+| [<ffffffff813b82e0>] ? blkg_conf_finish+0x90/0x90
+| [<ffffffff810ce1e7>] rcu_cpu_kthread+0x3b7/0xb10
+
+due to cgwb_lock beeing taken with spin_lock_irqsave() usually.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/backing-dev.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/mm/backing-dev.c
++++ b/mm/backing-dev.c
+@@ -482,9 +482,9 @@ void wb_congested_put(struct bdi_writeba
+ {
+ 	unsigned long flags;
+ 
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	if (!atomic_dec_and_lock(&congested->refcnt, &cgwb_lock)) {
+-		local_irq_restore(flags);
++		local_irq_restore_nort(flags);
+ 		return;
+ 	}
+ 

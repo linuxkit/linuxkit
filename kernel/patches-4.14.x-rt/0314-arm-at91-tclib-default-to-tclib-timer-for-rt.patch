@@ -1,0 +1,32 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sat, 1 May 2010 18:29:35 +0200
+Subject: ARM: at91: tclib: Default to tclib timer for RT
+
+RT is not too happy about the shared timer interrupt in AT91
+devices. Default to tclib timer for RT.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ drivers/misc/Kconfig |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/drivers/misc/Kconfig
++++ b/drivers/misc/Kconfig
+@@ -54,6 +54,7 @@ config AD525X_DPOT_SPI
+ config ATMEL_TCLIB
+ 	bool "Atmel AT32/AT91 Timer/Counter Library"
+ 	depends on (AVR32 || ARCH_AT91)
++	default y if PREEMPT_RT_FULL
+ 	help
+ 	  Select this if you want a library to allocate the Timer/Counter
+ 	  blocks found on many Atmel processors.  This facilitates using
+@@ -86,7 +87,7 @@ config ATMEL_TCB_CLKSRC_BLOCK
+ config ATMEL_TCB_CLKSRC_USE_SLOW_CLOCK
+ 	bool "TC Block use 32 KiHz clock"
+ 	depends on ATMEL_TCB_CLKSRC
+-	default y
++	default y if !PREEMPT_RT_FULL
+ 	help
+ 	  Select this to use 32 KiHz base clock rate as TC block clock
+ 	  source for clock events.

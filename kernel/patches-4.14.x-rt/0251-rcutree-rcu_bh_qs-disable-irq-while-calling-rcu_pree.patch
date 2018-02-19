@@ -1,0 +1,48 @@
+From: Tiejun Chen <tiejun.chen@windriver.com>
+Date: Wed, 18 Dec 2013 17:51:49 +0800
+Subject: rcutree/rcu_bh_qs: Disable irq while calling rcu_preempt_qs()
+
+Any callers to the function rcu_preempt_qs() must disable irqs in
+order to protect the assignment to ->rcu_read_unlock_special. In
+RT case, rcu_bh_qs() as the wrapper of rcu_preempt_qs() is called
+in some scenarios where irq is enabled, like this path,
+
+do_single_softirq()
+    |
+    + local_irq_enable();
+    + handle_softirq()
+    |    |
+    |    + rcu_bh_qs()
+    |        |
+    |        + rcu_preempt_qs()
+    |
+    + local_irq_disable()
+
+So here we'd better disable irq directly inside of rcu_bh_qs() to
+fix this, otherwise the kernel may be freezable sometimes as
+observed. And especially this way is also kind and safe for the
+potential rcu_bh_qs() usage elsewhere in the future.
+
+
+Signed-off-by: Tiejun Chen <tiejun.chen@windriver.com>
+Signed-off-by: Bin Jiang <bin.jiang@windriver.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/rcu/tree.c |    5 +++++
+ 1 file changed, 5 insertions(+)
+
+--- a/kernel/rcu/tree.c
++++ b/kernel/rcu/tree.c
+@@ -248,7 +248,12 @@ static void rcu_preempt_qs(void);
+ 
+ void rcu_bh_qs(void)
+ {
++	unsigned long flags;
++
++	/* Callers to this function, rcu_preempt_qs(), must disable irqs. */
++	local_irq_save(flags);
+ 	rcu_preempt_qs();
++	local_irq_restore(flags);
+ }
+ #else
+ void rcu_bh_qs(void)

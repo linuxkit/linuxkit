@@ -1,0 +1,73 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 17 Jul 2011 21:56:42 +0200
+Subject: trace: Add migrate-disabled counter to tracing output
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/trace_events.h |    2 ++
+ kernel/trace/trace.c         |    9 ++++++---
+ kernel/trace/trace_events.c  |    2 ++
+ kernel/trace/trace_output.c  |    5 +++++
+ 4 files changed, 15 insertions(+), 3 deletions(-)
+
+--- a/include/linux/trace_events.h
++++ b/include/linux/trace_events.h
+@@ -62,6 +62,8 @@ struct trace_entry {
+ 	unsigned char		flags;
+ 	unsigned char		preempt_count;
+ 	int			pid;
++	unsigned short		migrate_disable;
++	unsigned short		padding;
+ };
+ 
+ #define TRACE_EVENT_TYPE_MAX						\
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -2141,6 +2141,8 @@ tracing_generic_entry_update(struct trac
+ 		((pc & SOFTIRQ_OFFSET) ? TRACE_FLAG_SOFTIRQ : 0) |
+ 		(tif_need_resched() ? TRACE_FLAG_NEED_RESCHED : 0) |
+ 		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
++
++	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
+ }
+ EXPORT_SYMBOL_GPL(tracing_generic_entry_update);
+ 
+@@ -3344,9 +3346,10 @@ static void print_lat_help_header(struct
+ 		    "#                | / _----=> need-resched    \n"
+ 		    "#                || / _---=> hardirq/softirq \n"
+ 		    "#                ||| / _--=> preempt-depth   \n"
+-		    "#                |||| /     delay            \n"
+-		    "#  cmd     pid   ||||| time  |   caller      \n"
+-		    "#     \\   /      |||||  \\    |   /         \n");
++		    "#                |||| / _--=> migrate-disable\n"
++		    "#                ||||| /     delay           \n"
++		    "#  cmd     pid   |||||| time  |   caller     \n"
++		    "#     \\   /      |||||  \\   |   /          \n");
+ }
+ 
+ static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
+--- a/kernel/trace/trace_events.c
++++ b/kernel/trace/trace_events.c
+@@ -187,6 +187,8 @@ static int trace_define_common_fields(vo
+ 	__common_field(unsigned char, flags);
+ 	__common_field(unsigned char, preempt_count);
+ 	__common_field(int, pid);
++	__common_field(unsigned short, migrate_disable);
++	__common_field(unsigned short, padding);
+ 
+ 	return ret;
+ }
+--- a/kernel/trace/trace_output.c
++++ b/kernel/trace/trace_output.c
+@@ -493,6 +493,11 @@ int trace_print_lat_fmt(struct trace_seq
+ 	else
+ 		trace_seq_putc(s, '.');
+ 
++	if (entry->migrate_disable)
++		trace_seq_printf(s, "%x", entry->migrate_disable);
++	else
++		trace_seq_putc(s, '.');
++
+ 	return !trace_seq_has_overflowed(s);
+ }
+ 

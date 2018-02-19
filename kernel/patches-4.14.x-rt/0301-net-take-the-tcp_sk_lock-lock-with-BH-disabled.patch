@@ -1,0 +1,67 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 21 Aug 2017 15:09:13 +0200
+Subject: [PATCH] net: take the tcp_sk_lock lock with BH disabled
+
+Lockdep may complain about an unsafe locking scenario:
+|      CPU0                    CPU1
+|      ----                    ----
+| lock((tcp_sk_lock).lock);
+|                              lock(&per_cpu(local_softirq_locks[i], __cpu).lock);
+|                              lock((tcp_sk_lock).lock);
+| lock(&per_cpu(local_softirq_locks[i], __cpu).lock);
+
+in the call paths:
+	do_current_softirqs -> tcp_v4_send_ack()
+vs
+	tcp_v4_send_reset -> do_current_softirqs().
+
+This should not happen since local_softirq_locks is per CPU. Reversing
+the order makes lockdep happy.
+
+Reported-by: Jacek Konieczny <jajcus@jajcus.net>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ net/ipv4/tcp_ipv4.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/net/ipv4/tcp_ipv4.c
++++ b/net/ipv4/tcp_ipv4.c
+@@ -711,8 +711,8 @@ static void tcp_v4_send_reset(const stru
+ 
+ 	arg.tos = ip_hdr(skb)->tos;
+ 	arg.uid = sock_net_uid(net, sk && sk_fullsock(sk) ? sk : NULL);
+-	local_lock(tcp_sk_lock);
+ 	local_bh_disable();
++	local_lock(tcp_sk_lock);
+ 	ip_send_unicast_reply(*this_cpu_ptr(net->ipv4.tcp_sk),
+ 			      skb, &TCP_SKB_CB(skb)->header.h4.opt,
+ 			      ip_hdr(skb)->saddr, ip_hdr(skb)->daddr,
+@@ -720,8 +720,8 @@ static void tcp_v4_send_reset(const stru
+ 
+ 	__TCP_INC_STATS(net, TCP_MIB_OUTSEGS);
+ 	__TCP_INC_STATS(net, TCP_MIB_OUTRSTS);
+-	local_bh_enable();
+ 	local_unlock(tcp_sk_lock);
++	local_bh_enable();
+ 
+ #ifdef CONFIG_TCP_MD5SIG
+ out:
+@@ -799,16 +799,16 @@ static void tcp_v4_send_ack(const struct
+ 		arg.bound_dev_if = oif;
+ 	arg.tos = tos;
+ 	arg.uid = sock_net_uid(net, sk_fullsock(sk) ? sk : NULL);
+-	local_lock(tcp_sk_lock);
+ 	local_bh_disable();
++	local_lock(tcp_sk_lock);
+ 	ip_send_unicast_reply(*this_cpu_ptr(net->ipv4.tcp_sk),
+ 			      skb, &TCP_SKB_CB(skb)->header.h4.opt,
+ 			      ip_hdr(skb)->saddr, ip_hdr(skb)->daddr,
+ 			      &arg, arg.iov[0].iov_len);
+ 
+ 	__TCP_INC_STATS(net, TCP_MIB_OUTSEGS);
+-	local_bh_enable();
+ 	local_unlock(tcp_sk_lock);
++	local_bh_enable();
+ }
+ 
+ static void tcp_v4_timewait_ack(struct sock *sk, struct sk_buff *skb)

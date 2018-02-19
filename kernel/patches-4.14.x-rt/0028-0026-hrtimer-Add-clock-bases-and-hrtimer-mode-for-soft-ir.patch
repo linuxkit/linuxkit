@@ -1,0 +1,108 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:15 +0100
+Subject: [PATCH 26/29] hrtimer: Add clock bases and hrtimer mode for soft irq
+ context
+
+hrtimer callback functions are always executed in hard interrupt
+context. Users of hrtimer which need their timer function to be executed
+in soft interrupt context, make use of tasklets to get the proper context.
+
+Add additional hrtimer clock bases for timers which must expire in softirq
+context, so the detour via the tasklet can be avoided. This is also
+required for RT, where the majority of hrtimer is moved into softirq
+hrtimer context.
+
+The selection of the expiry mode happens via a mode bit. Introduce
+HRTIMER_MODE_SOFT and the matching combinations with the ABS/REL/PINNED
+bits and update the decoding of hrtimer_mode in tracepoints.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/hrtimer.h      |   14 ++++++++++++++
+ include/trace/events/timer.h |    6 +++++-
+ kernel/time/hrtimer.c        |   20 ++++++++++++++++++++
+ 3 files changed, 39 insertions(+), 1 deletion(-)
+
+--- a/include/linux/hrtimer.h
++++ b/include/linux/hrtimer.h
+@@ -33,14 +33,24 @@ struct hrtimer_cpu_base;
+  * HRTIMER_MODE_REL		- Time value is relative to now
+  * HRTIMER_MODE_PINNED		- Timer is bound to CPU (is only considered
+  *				  when starting the timer)
++ * HRTIMER_MODE_SOFT		- Timer callback function will be executed in
++ *				  soft irq context
+  */
+ enum hrtimer_mode {
+ 	HRTIMER_MODE_ABS	= 0x00,
+ 	HRTIMER_MODE_REL	= 0x01,
+ 	HRTIMER_MODE_PINNED	= 0x02,
++	HRTIMER_MODE_SOFT	= 0x04,
+ 
+ 	HRTIMER_MODE_ABS_PINNED = HRTIMER_MODE_ABS | HRTIMER_MODE_PINNED,
+ 	HRTIMER_MODE_REL_PINNED = HRTIMER_MODE_REL | HRTIMER_MODE_PINNED,
++
++	HRTIMER_MODE_ABS_SOFT	= HRTIMER_MODE_ABS | HRTIMER_MODE_SOFT,
++	HRTIMER_MODE_REL_SOFT	= HRTIMER_MODE_REL | HRTIMER_MODE_SOFT,
++
++	HRTIMER_MODE_ABS_PINNED_SOFT = HRTIMER_MODE_ABS_PINNED | HRTIMER_MODE_SOFT,
++	HRTIMER_MODE_REL_PINNED_SOFT = HRTIMER_MODE_REL_PINNED | HRTIMER_MODE_SOFT,
++
+ };
+ 
+ /*
+@@ -151,6 +161,10 @@ enum  hrtimer_base_type {
+ 	HRTIMER_BASE_REALTIME,
+ 	HRTIMER_BASE_BOOTTIME,
+ 	HRTIMER_BASE_TAI,
++	HRTIMER_BASE_MONOTONIC_SOFT,
++	HRTIMER_BASE_REALTIME_SOFT,
++	HRTIMER_BASE_BOOTTIME_SOFT,
++	HRTIMER_BASE_TAI_SOFT,
+ 	HRTIMER_MAX_CLOCK_BASES,
+ };
+ 
+--- a/include/trace/events/timer.h
++++ b/include/trace/events/timer.h
+@@ -148,7 +148,11 @@ DEFINE_EVENT(timer_class, timer_cancel,
+ 		{ HRTIMER_MODE_ABS,		"ABS"		},	\
+ 		{ HRTIMER_MODE_REL,		"REL"		},	\
+ 		{ HRTIMER_MODE_ABS_PINNED,	"ABS|PINNED"	},	\
+-		{ HRTIMER_MODE_REL_PINNED,	"REL|PINNED"	})
++		{ HRTIMER_MODE_REL_PINNED,	"REL|PINNED"	},	\
++		{ HRTIMER_MODE_ABS_SOFT,	"ABS|SOFT"	},	\
++		{ HRTIMER_MODE_REL_SOFT,	"REL|SOFT"	},	\
++		{ HRTIMER_MODE_ABS_PINNED_SOFT,	"ABS|PINNED|SOFT" },	\
++		{ HRTIMER_MODE_REL_PINNED_SOFT,	"REL|PINNED|SOFT" })
+ 
+ /**
+  * hrtimer_init - called when the hrtimer is initialized
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -92,6 +92,26 @@ DEFINE_PER_CPU(struct hrtimer_cpu_base,
+ 			.clockid = CLOCK_TAI,
+ 			.get_time = &ktime_get_clocktai,
+ 		},
++		{
++			.index = HRTIMER_BASE_MONOTONIC_SOFT,
++			.clockid = CLOCK_MONOTONIC,
++			.get_time = &ktime_get,
++		},
++		{
++			.index = HRTIMER_BASE_REALTIME_SOFT,
++			.clockid = CLOCK_REALTIME,
++			.get_time = &ktime_get_real,
++		},
++		{
++			.index = HRTIMER_BASE_BOOTTIME_SOFT,
++			.clockid = CLOCK_BOOTTIME,
++			.get_time = &ktime_get_boottime,
++		},
++		{
++			.index = HRTIMER_BASE_TAI_SOFT,
++			.clockid = CLOCK_TAI,
++			.get_time = &ktime_get_clocktai,
++		},
+ 	}
+ };
+ 

@@ -1,0 +1,53 @@
+Subject: rt: Provide PREEMPT_RT_BASE config switch
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 17 Jun 2011 12:39:57 +0200
+
+Introduce PREEMPT_RT_BASE which enables parts of
+PREEMPT_RT_FULL. Forces interrupt threading and enables some of the RT
+substitutions for testing.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ kernel/Kconfig.preempt |   19 +++++++++++++++++--
+ 1 file changed, 17 insertions(+), 2 deletions(-)
+
+--- a/kernel/Kconfig.preempt
++++ b/kernel/Kconfig.preempt
+@@ -1,3 +1,10 @@
++config PREEMPT
++	bool
++	select PREEMPT_COUNT
++
++config PREEMPT_RT_BASE
++	bool
++	select PREEMPT
+ 
+ choice
+ 	prompt "Preemption Model"
+@@ -33,9 +40,9 @@ config PREEMPT_VOLUNTARY
+ 
+ 	  Select this if you are building a kernel for a desktop system.
+ 
+-config PREEMPT
++config PREEMPT__LL
+ 	bool "Preemptible Kernel (Low-Latency Desktop)"
+-	select PREEMPT_COUNT
++	select PREEMPT
+ 	select UNINLINE_SPIN_UNLOCK if !ARCH_INLINE_SPIN_UNLOCK
+ 	help
+ 	  This option reduces the latency of the kernel by making
+@@ -52,6 +59,14 @@ config PREEMPT
+ 	  embedded system with latency requirements in the milliseconds
+ 	  range.
+ 
++config PREEMPT_RTB
++	bool "Preemptible Kernel (Basic RT)"
++	select PREEMPT_RT_BASE
++	help
++	  This option is basically the same as (Low-Latency Desktop) but
++	  enables changes which are preliminary for the full preemptible
++	  RT kernel.
++
+ endchoice
+ 
+ config PREEMPT_COUNT

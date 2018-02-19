@@ -1,0 +1,55 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:12:57 +0100
+Subject: [PATCH 08/29] tracing/hrtimer: Take all clock bases and modes into
+ account
+
+So far only CLOCK_MONOTONIC and CLOCK_REALTIME were taken into account as
+well as HRTIMER_MODE_ABS/REL in hrtimer_init tracepoint. The query for
+detecting timer mode ABS or REL is not valid, since the introduction of
+HRTIMER_MODE_PINNED.
+
+HRTIMER_MODE_PINNED is not evaluated in hrtimer_init() call. But for the
+sake of completeness print all given modes.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/trace/events/timer.h |   20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
+
+--- a/include/trace/events/timer.h
++++ b/include/trace/events/timer.h
+@@ -136,6 +136,20 @@ DEFINE_EVENT(timer_class, timer_cancel,
+ 	TP_ARGS(timer)
+ );
+ 
++#define decode_clockid(type)						\
++	__print_symbolic(type,						\
++		{ CLOCK_REALTIME,	"CLOCK_REALTIME"	},	\
++		{ CLOCK_MONOTONIC,	"CLOCK_MONOTONIC"	},	\
++		{ CLOCK_BOOTTIME,	"CLOCK_BOOTTIME"	},	\
++		{ CLOCK_TAI,		"CLOCK_TAI"		})
++
++#define decode_hrtimer_mode(mode)					\
++	__print_symbolic(mode,						\
++		{ HRTIMER_MODE_ABS,		"ABS"		},	\
++		{ HRTIMER_MODE_REL,		"REL"		},	\
++		{ HRTIMER_MODE_ABS_PINNED,	"ABS|PINNED"	},	\
++		{ HRTIMER_MODE_REL_PINNED,	"REL|PINNED"	})
++
+ /**
+  * hrtimer_init - called when the hrtimer is initialized
+  * @hrtimer:	pointer to struct hrtimer
+@@ -162,10 +176,8 @@ TRACE_EVENT(hrtimer_init,
+ 	),
+ 
+ 	TP_printk("hrtimer=%p clockid=%s mode=%s", __entry->hrtimer,
+-		  __entry->clockid == CLOCK_REALTIME ?
+-			"CLOCK_REALTIME" : "CLOCK_MONOTONIC",
+-		  __entry->mode == HRTIMER_MODE_ABS ?
+-			"HRTIMER_MODE_ABS" : "HRTIMER_MODE_REL")
++		  decode_clockid(__entry->clockid),
++		  decode_hrtimer_mode(__entry->mode))
+ );
+ 
+ /**

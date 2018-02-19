@@ -1,0 +1,86 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Sat, 20 May 2017 12:32:23 +0200
+Subject: [PATCH] delayacct: use raw_spinlocks
+
+try_to_wake_up() might invoke delayacct_blkio_end() while holding the
+pi_lock. The lock is only held for a short amount of time so it should
+be safe to make it raw.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/delayacct.h |    2 +-
+ kernel/delayacct.c        |   16 ++++++++--------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+--- a/include/linux/delayacct.h
++++ b/include/linux/delayacct.h
+@@ -29,7 +29,7 @@
+ 
+ #ifdef CONFIG_TASK_DELAY_ACCT
+ struct task_delay_info {
+-	spinlock_t	lock;
++	raw_spinlock_t	lock;
+ 	unsigned int	flags;	/* Private per-task flags */
+ 
+ 	/* For each stat XXX, add following, aligned appropriately
+--- a/kernel/delayacct.c
++++ b/kernel/delayacct.c
+@@ -44,23 +44,23 @@ void __delayacct_tsk_init(struct task_st
+ {
+ 	tsk->delays = kmem_cache_zalloc(delayacct_cache, GFP_KERNEL);
+ 	if (tsk->delays)
+-		spin_lock_init(&tsk->delays->lock);
++		raw_spin_lock_init(&tsk->delays->lock);
+ }
+ 
+ /*
+  * Finish delay accounting for a statistic using its timestamps (@start),
+  * accumalator (@total) and @count
+  */
+-static void delayacct_end(spinlock_t *lock, u64 *start, u64 *total, u32 *count)
++static void delayacct_end(raw_spinlock_t *lock, u64 *start, u64 *total, u32 *count)
+ {
+ 	s64 ns = ktime_get_ns() - *start;
+ 	unsigned long flags;
+ 
+ 	if (ns > 0) {
+-		spin_lock_irqsave(lock, flags);
++		raw_spin_lock_irqsave(lock, flags);
+ 		*total += ns;
+ 		(*count)++;
+-		spin_unlock_irqrestore(lock, flags);
++		raw_spin_unlock_irqrestore(lock, flags);
+ 	}
+ }
+ 
+@@ -127,7 +127,7 @@ int __delayacct_add_tsk(struct taskstats
+ 
+ 	/* zero XXX_total, non-zero XXX_count implies XXX stat overflowed */
+ 
+-	spin_lock_irqsave(&tsk->delays->lock, flags);
++	raw_spin_lock_irqsave(&tsk->delays->lock, flags);
+ 	tmp = d->blkio_delay_total + tsk->delays->blkio_delay;
+ 	d->blkio_delay_total = (tmp < d->blkio_delay_total) ? 0 : tmp;
+ 	tmp = d->swapin_delay_total + tsk->delays->swapin_delay;
+@@ -137,7 +137,7 @@ int __delayacct_add_tsk(struct taskstats
+ 	d->blkio_count += tsk->delays->blkio_count;
+ 	d->swapin_count += tsk->delays->swapin_count;
+ 	d->freepages_count += tsk->delays->freepages_count;
+-	spin_unlock_irqrestore(&tsk->delays->lock, flags);
++	raw_spin_unlock_irqrestore(&tsk->delays->lock, flags);
+ 
+ 	return 0;
+ }
+@@ -147,10 +147,10 @@ int __delayacct_add_tsk(struct taskstats
+ 	__u64 ret;
+ 	unsigned long flags;
+ 
+-	spin_lock_irqsave(&tsk->delays->lock, flags);
++	raw_spin_lock_irqsave(&tsk->delays->lock, flags);
+ 	ret = nsec_to_clock_t(tsk->delays->blkio_delay +
+ 				tsk->delays->swapin_delay);
+-	spin_unlock_irqrestore(&tsk->delays->lock, flags);
++	raw_spin_unlock_irqrestore(&tsk->delays->lock, flags);
+ 	return ret;
+ }
+ 

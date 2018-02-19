@@ -1,0 +1,77 @@
+Subject: irqwork: Move irq safe work to irq context
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 15 Nov 2015 18:40:17 +0100
+
+On architectures where arch_irq_work_has_interrupt() returns false, we
+end up running the irq safe work from the softirq context. That
+results in a potential deadlock in the scheduler irq work which
+expects that function to be called with interrupts disabled.
+
+Split the irq_work_tick() function into a hard and soft variant. Call
+the hard variant from the tick interrupt and add the soft variant to
+the timer softirq.
+
+Reported-and-tested-by: Yanjiang Jin <yanjiang.jin@windriver.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: stable-rt@vger.kernel.org
+---
+ include/linux/irq_work.h |    6 ++++++
+ kernel/irq_work.c        |    9 +++++++++
+ kernel/time/timer.c      |    6 ++----
+ 3 files changed, 17 insertions(+), 4 deletions(-)
+
+--- a/include/linux/irq_work.h
++++ b/include/linux/irq_work.h
+@@ -53,4 +53,10 @@ static inline bool irq_work_needs_cpu(vo
+ static inline void irq_work_run(void) { }
+ #endif
+ 
++#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_PREEMPT_RT_FULL)
++void irq_work_tick_soft(void);
++#else
++static inline void irq_work_tick_soft(void) { }
++#endif
++
+ #endif /* _LINUX_IRQ_WORK_H */
+--- a/kernel/irq_work.c
++++ b/kernel/irq_work.c
+@@ -200,8 +200,17 @@ void irq_work_tick(void)
+ 
+ 	if (!llist_empty(raised) && !arch_irq_work_has_interrupt())
+ 		irq_work_run_list(raised);
++
++	if (!IS_ENABLED(CONFIG_PREEMPT_RT_FULL))
++		irq_work_run_list(this_cpu_ptr(&lazy_list));
++}
++
++#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_PREEMPT_RT_FULL)
++void irq_work_tick_soft(void)
++{
+ 	irq_work_run_list(this_cpu_ptr(&lazy_list));
+ }
++#endif
+ 
+ /*
+  * Synchronize against the irq_work @entry, ensures the entry is not
+--- a/kernel/time/timer.c
++++ b/kernel/time/timer.c
+@@ -1638,7 +1638,7 @@ void update_process_times(int user_tick)
+ 	scheduler_tick();
+ 	run_local_timers();
+ 	rcu_check_callbacks(user_tick);
+-#if defined(CONFIG_IRQ_WORK) && !defined(CONFIG_PREEMPT_RT_FULL)
++#if defined(CONFIG_IRQ_WORK)
+ 	if (in_irq())
+ 		irq_work_tick();
+ #endif
+@@ -1679,9 +1679,7 @@ static __latent_entropy void run_timer_s
+ {
+ 	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
+ 
+-#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_PREEMPT_RT_FULL)
+-	irq_work_tick();
+-#endif
++	irq_work_tick_soft();
+ 	/*
+ 	 * must_forward_clk must be cleared before running timers so that any
+ 	 * timer functions that call mod_timer will not try to forward the

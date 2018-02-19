@@ -1,0 +1,106 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 20 Mar 2013 18:06:20 +0100
+Subject: net: Add a mutex around devnet_rename_seq
+
+On RT write_seqcount_begin() disables preemption and device_rename()
+allocates memory with GFP_KERNEL and grabs later the sysfs_mutex
+mutex. Serialize with a mutex and add use the non preemption disabling
+__write_seqcount_begin().
+
+To avoid writer starvation, let the reader grab the mutex and release
+it when it detects a writer in progress. This keeps the normal case
+(no reader on the fly) fast.
+
+[ tglx: Instead of replacing the seqcount by a mutex, add the mutex ]
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ net/core/dev.c |   34 ++++++++++++++++++++--------------
+ 1 file changed, 20 insertions(+), 14 deletions(-)
+
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -195,6 +195,7 @@ static unsigned int napi_gen_id = NR_CPU
+ static DEFINE_READ_MOSTLY_HASHTABLE(napi_hash, 8);
+ 
+ static seqcount_t devnet_rename_seq;
++static DEFINE_MUTEX(devnet_rename_mutex);
+ 
+ static inline void dev_base_seq_inc(struct net *net)
+ {
+@@ -920,7 +921,8 @@ int netdev_get_name(struct net *net, cha
+ 	strcpy(name, dev->name);
+ 	rcu_read_unlock();
+ 	if (read_seqcount_retry(&devnet_rename_seq, seq)) {
+-		cond_resched();
++		mutex_lock(&devnet_rename_mutex);
++		mutex_unlock(&devnet_rename_mutex);
+ 		goto retry;
+ 	}
+ 
+@@ -1189,20 +1191,17 @@ int dev_change_name(struct net_device *d
+ 	if (dev->flags & IFF_UP)
+ 		return -EBUSY;
+ 
+-	write_seqcount_begin(&devnet_rename_seq);
++	mutex_lock(&devnet_rename_mutex);
++	__raw_write_seqcount_begin(&devnet_rename_seq);
+ 
+-	if (strncmp(newname, dev->name, IFNAMSIZ) == 0) {
+-		write_seqcount_end(&devnet_rename_seq);
+-		return 0;
+-	}
++	if (strncmp(newname, dev->name, IFNAMSIZ) == 0)
++		goto outunlock;
+ 
+ 	memcpy(oldname, dev->name, IFNAMSIZ);
+ 
+ 	err = dev_get_valid_name(net, dev, newname);
+-	if (err < 0) {
+-		write_seqcount_end(&devnet_rename_seq);
+-		return err;
+-	}
++	if (err < 0)
++		goto outunlock;
+ 
+ 	if (oldname[0] && !strchr(oldname, '%'))
+ 		netdev_info(dev, "renamed from %s\n", oldname);
+@@ -1215,11 +1214,12 @@ int dev_change_name(struct net_device *d
+ 	if (ret) {
+ 		memcpy(dev->name, oldname, IFNAMSIZ);
+ 		dev->name_assign_type = old_assign_type;
+-		write_seqcount_end(&devnet_rename_seq);
+-		return ret;
++		err = ret;
++		goto outunlock;
+ 	}
+ 
+-	write_seqcount_end(&devnet_rename_seq);
++	__raw_write_seqcount_end(&devnet_rename_seq);
++	mutex_unlock(&devnet_rename_mutex);
+ 
+ 	netdev_adjacent_rename_links(dev, oldname);
+ 
+@@ -1240,7 +1240,8 @@ int dev_change_name(struct net_device *d
+ 		/* err >= 0 after dev_alloc_name() or stores the first errno */
+ 		if (err >= 0) {
+ 			err = ret;
+-			write_seqcount_begin(&devnet_rename_seq);
++			mutex_lock(&devnet_rename_mutex);
++			__raw_write_seqcount_begin(&devnet_rename_seq);
+ 			memcpy(dev->name, oldname, IFNAMSIZ);
+ 			memcpy(oldname, newname, IFNAMSIZ);
+ 			dev->name_assign_type = old_assign_type;
+@@ -1253,6 +1254,11 @@ int dev_change_name(struct net_device *d
+ 	}
+ 
+ 	return err;
++
++outunlock:
++	__raw_write_seqcount_end(&devnet_rename_seq);
++	mutex_unlock(&devnet_rename_mutex);
++	return err;
+ }
+ 
+ /**

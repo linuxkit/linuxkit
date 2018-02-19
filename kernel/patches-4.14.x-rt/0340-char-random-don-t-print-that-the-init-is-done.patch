@@ -1,0 +1,166 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 30 May 2017 16:39:01 +0200
+Subject: char/random: don't print that the init is done
+
+On RT we run into circular locking with pendingb_lock (workqueue),
+port_lock_key (uart) and the primary_crng (random):
+
+ ======================================================
+ [ INFO: possible circular locking dependency detected ]
+ -------------------------------------------------------
+ irq/4-serial/512 is trying to acquire lock:
+  ((pendingb_lock).lock){+.+...}, at: [<ffffffff8108d48d>] queue_work_on+0x5d/0x190
+
+ but task is already holding lock:
+  (&port_lock_key){+.+...}, at: [<ffffffff815b4bb6>] serial8250_handle_irq.part.27+0x16/0xb0
+
+ which lock already depends on the new lock.
+
+ the existing dependency chain (in reverse order) is:
+
+ -> #3 (&port_lock_key){+.+...}:
+        lock_acquire+0xac/0x240
+        rt_spin_lock+0x46/0x50
+        serial8250_console_write+0x211/0x220
+        univ8250_console_write+0x1c/0x20
+        console_unlock+0x563/0x5c0
+        vprintk_emit+0x277/0x320
+        vprintk_default+0x1a/0x20
+        vprintk_func+0x20/0x80
+        printk+0x3e/0x46
+        crng_fast_load+0xde/0xe0
+        add_interrupt_randomness+0x16c/0x1a0
+        irq_thread+0x15c/0x1e0
+        kthread+0x112/0x150
+        ret_from_fork+0x31/0x40
+
+ -> #2 (primary_crng.lock){+.+...}:
+        lock_acquire+0xac/0x240
+        rt_spin_lock+0x46/0x50
+        _extract_crng+0x39/0xa0
+        extract_crng+0x3a/0x40
+        get_random_u32+0x120/0x190
+        new_slab+0x1d6/0x7c0
+        ___slab_alloc+0x30b/0x6f0
+        __slab_alloc.isra.78+0x6c/0xc0
+        __kmalloc+0x254/0x3a0
+        pcpu_mem_zalloc+0x3a/0x70
+        percpu_init_late+0x4f/0x8a
+        start_kernel+0x1ec/0x3b8
+        x86_64_start_reservations+0x2a/0x2c
+        x86_64_start_kernel+0x13d/0x14c
+        verify_cpu+0x0/0xfc
+
+ -> #1 ((batched_entropy_u32_lock).lock){+.+...}:
+        lock_acquire+0xac/0x240
+        rt_spin_lock__no_mg+0x41/0x50
+        get_random_u32+0x64/0x190
+        new_slab+0x1d6/0x7c0
+        ___slab_alloc+0x30b/0x6f0
+        __slab_alloc.isra.78+0x6c/0xc0
+        kmem_cache_alloc+0x26a/0x370
+        __debug_object_init+0x325/0x460
+        debug_object_activate+0x11c/0x1f0
+        __queue_work+0x2c/0x770
+        queue_work_on+0x12a/0x190
+        serio_queue_event+0xd3/0x140
+        __serio_register_port+0x17e/0x1a0
+        i8042_probe+0x623/0x687
+        platform_drv_probe+0x36/0x90
+        driver_probe_device+0x1f8/0x2e0
+        __driver_attach+0x96/0xa0
+        bus_for_each_dev+0x5d/0x90
+        driver_attach+0x19/0x20
+        bus_add_driver+0x125/0x220
+        driver_register+0x5b/0xd0
+        __platform_driver_probe+0x5b/0x120
+        __platform_create_bundle+0xaa/0xd0
+        i8042_init+0x3f1/0x430
+        do_one_initcall+0x3e/0x180
+        kernel_init_freeable+0x212/0x295
+        kernel_init+0x9/0x100
+        ret_from_fork+0x31/0x40
+
+ -> #0 ((pendingb_lock).lock){+.+...}:
+        __lock_acquire+0x11b4/0x1320
+        lock_acquire+0xac/0x240
+        rt_spin_lock+0x46/0x50
+        queue_work_on+0x5d/0x190
+        tty_flip_buffer_push+0x26/0x30
+        serial8250_rx_chars+0x120/0x1f0
+        serial8250_handle_irq.part.27+0x58/0xb0
+        serial8250_default_handle_irq+0x4b/0x60
+        serial8250_interrupt+0x5f/0xd0
+        irq_forced_thread_fn+0x1e/0x70
+        irq_thread+0x137/0x1e0
+        kthread+0x112/0x150
+        ret_from_fork+0x31/0x40
+
+ other info that might help us debug this:
+
+ Chain exists of:
+   (pendingb_lock).lock --> primary_crng.lock --> &port_lock_key
+
+  Possible unsafe locking scenario:
+
+        CPU0                    CPU1
+        ----                    ----
+   lock(&port_lock_key);
+                                lock(primary_crng.lock);
+                                lock(&port_lock_key);
+   lock((pendingb_lock).lock);
+
+  *** DEADLOCK ***
+
+ 2 locks held by irq/4-serial/512:
+  #0:  (&i->lock){+.+...}, at: [<ffffffff815b0400>] serial8250_interrupt+0x30/0xd0
+  #1:  (&port_lock_key){+.+...}, at: [<ffffffff815b4bb6>] serial8250_handle_irq.part.27+0x16/0xb0
+
+ stack backtrace:
+ CPU: 4 PID: 512 Comm: irq/4-serial Not tainted 4.11.3-rt0+ #101
+ Hardware name: QEMU Standard PC (Q35 + ICH9, 2009), BIOS 1.10.2-1 04/01/2014
+ Call Trace:
+  dump_stack+0x86/0xc1
+  print_circular_bug+0x1be/0x210
+  __lock_acquire+0x11b4/0x1320
+  lock_acquire+0xac/0x240
+  rt_spin_lock+0x46/0x50
+  queue_work_on+0x5d/0x190
+  tty_flip_buffer_push+0x26/0x30
+  serial8250_rx_chars+0x120/0x1f0
+  serial8250_handle_irq.part.27+0x58/0xb0
+  serial8250_default_handle_irq+0x4b/0x60
+  serial8250_interrupt+0x5f/0xd0
+  irq_forced_thread_fn+0x1e/0x70
+  irq_thread+0x137/0x1e0
+  kthread+0x112/0x150
+  ret_from_fork+0x31/0x40
+
+It should work if we delay that printk after dropping the lock but we
+also could skip it.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/char/random.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -809,7 +809,7 @@ static int crng_fast_load(const char *cp
+ 		invalidate_batched_entropy();
+ 		crng_init = 1;
+ 		wake_up_interruptible(&crng_init_wait);
+-		pr_notice("random: fast init done\n");
++		/* pr_notice("random: fast init done\n"); */
+ 	}
+ 	return 1;
+ }
+@@ -848,7 +848,7 @@ static void crng_reseed(struct crng_stat
+ 		crng_init = 2;
+ 		process_random_ready_list();
+ 		wake_up_interruptible(&crng_init_wait);
+-		pr_notice("random: crng init done\n");
++		/* pr_notice("random: crng init done\n"); */
+ 	}
+ }
+ 

@@ -1,0 +1,23 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 3 Jul 2009 08:44:34 -0500
+Subject: mm/scatterlist: Do not disable irqs on RT
+
+For -RT it is enough to keep pagefault disabled (which is currently handled by
+kmap_atomic()).
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ lib/scatterlist.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/lib/scatterlist.c
++++ b/lib/scatterlist.c
+@@ -620,7 +620,7 @@ void sg_miter_stop(struct sg_mapping_ite
+ 			flush_kernel_dcache_page(miter->page);
+ 
+ 		if (miter->__flags & SG_MITER_ATOMIC) {
+-			WARN_ON_ONCE(preemptible());
++			WARN_ON_ONCE(!pagefault_disabled());
+ 			kunmap_atomic(miter->addr);
+ 		} else
+ 			kunmap(miter->page);

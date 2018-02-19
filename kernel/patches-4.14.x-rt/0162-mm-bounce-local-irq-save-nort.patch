@@ -1,0 +1,27 @@
+Subject: mm: bounce: Use local_irq_save_nort
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 09 Jan 2013 10:33:09 +0100
+
+kmap_atomic() is preemptible on RT.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ block/bounce.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/block/bounce.c
++++ b/block/bounce.c
+@@ -66,11 +66,11 @@ static void bounce_copy_vec(struct bio_v
+ 	unsigned long flags;
+ 	unsigned char *vto;
+ 
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	vto = kmap_atomic(to->bv_page);
+ 	memcpy(vto + to->bv_offset, vfrom, to->bv_len);
+ 	kunmap_atomic(vto);
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ }
+ 
+ #else /* CONFIG_HIGHMEM */

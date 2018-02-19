@@ -1,0 +1,47 @@
+Subject: scsi: qla2xxx: Use local_irq_save_nort() in qla2x00_poll
+From: John Kacur <jkacur@redhat.com>
+Date: Fri, 27 Apr 2012 12:48:46 +0200
+
+RT triggers the following:
+
+[   11.307652]  [<ffffffff81077b27>] __might_sleep+0xe7/0x110
+[   11.307663]  [<ffffffff8150e524>] rt_spin_lock+0x24/0x60
+[   11.307670]  [<ffffffff8150da78>] ? rt_spin_lock_slowunlock+0x78/0x90
+[   11.307703]  [<ffffffffa0272d83>] qla24xx_intr_handler+0x63/0x2d0 [qla2xxx]
+[   11.307736]  [<ffffffffa0262307>] qla2x00_poll+0x67/0x90 [qla2xxx]
+
+Function qla2x00_poll does local_irq_save() before calling qla24xx_intr_handler
+which has a spinlock. Since spinlocks are sleepable on rt, it is not allowed
+to call them with interrupts disabled. Therefore we use local_irq_save_nort()
+instead which saves flags without disabling interrupts.
+
+This fix needs to be applied to v3.0-rt, v3.2-rt and v3.4-rt
+
+Suggested-by: Thomas Gleixner
+Signed-off-by: John Kacur <jkacur@redhat.com>
+Cc: Steven Rostedt <rostedt@goodmis.org>
+Cc: David Sommerseth <davids@redhat.com>
+Link: http://lkml.kernel.org/r/1335523726-10024-1-git-send-email-jkacur@redhat.com
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/scsi/qla2xxx/qla_inline.h |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/scsi/qla2xxx/qla_inline.h
++++ b/drivers/scsi/qla2xxx/qla_inline.h
+@@ -59,12 +59,12 @@ qla2x00_poll(struct rsp_que *rsp)
+ {
+ 	unsigned long flags;
+ 	struct qla_hw_data *ha = rsp->hw;
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	if (IS_P3P_TYPE(ha))
+ 		qla82xx_poll(0, rsp);
+ 	else
+ 		ha->isp_ops->intr_handler(0, rsp);
+-	local_irq_restore(flags);
++	local_irq_restore_nort(flags);
+ }
+ 
+ static inline uint8_t *

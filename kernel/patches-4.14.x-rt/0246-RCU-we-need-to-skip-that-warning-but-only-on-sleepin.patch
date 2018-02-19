@@ -1,0 +1,35 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 21 Sep 2017 14:25:13 +0200
+Subject: [PATCH] RCU: we need to skip that warning but only on sleeping
+ locks
+
+This check is okay for upstream. On RT we trigger this while blocking on
+sleeping lock. In this case, it is okay to schedule() within a RCU
+section.
+Since spin_lock() and read_lock() disables migration it should be okay
+to test for this as an indication whether or not a sleeping lock is
+held. The ->pi_blocked_on member won't work becasuse it might also be
+set on regular mutexes.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/rcu/tree_plugin.h |    6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/kernel/rcu/tree_plugin.h
++++ b/kernel/rcu/tree_plugin.h
+@@ -323,9 +323,13 @@ static void rcu_preempt_note_context_swi
+ 	struct task_struct *t = current;
+ 	struct rcu_data *rdp;
+ 	struct rcu_node *rnp;
++	int mg_counter = 0;
+ 
+ 	RCU_LOCKDEP_WARN(!irqs_disabled(), "rcu_preempt_note_context_switch() invoked with interrupts enabled!!!\n");
+-	WARN_ON_ONCE(!preempt && t->rcu_read_lock_nesting > 0);
++#if defined(CONFIG_PREEMPT_COUNT) && defined(CONFIG_SMP)
++	mg_counter = t->migrate_disable;
++#endif
++	WARN_ON_ONCE(!preempt && t->rcu_read_lock_nesting > 0 && !mg_counter);
+ 	if (t->rcu_read_lock_nesting > 0 &&
+ 	    !t->rcu_read_unlock_special.b.blocked) {
+ 

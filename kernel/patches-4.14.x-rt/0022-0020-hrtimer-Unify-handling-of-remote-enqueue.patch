@@ -1,0 +1,148 @@
+From: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Date: Wed, 20 Dec 2017 17:13:09 +0100
+Subject: [PATCH 20/29] hrtimer: Unify handling of remote enqueue
+
+hrtimer_reprogram() is conditionally invoked from hrtimer_start_range_ns()
+when hrtimer_cpu_base.hres_active is true.
+
+In the !hres_active case there is a special condition for the nohz_active
+case:
+
+  If the newly enqueued timer expires before the first expiring timer on a
+  remote CPU then the remote CPU needs to be notified and woken up from a
+  NOHZ idle sleep to take the new first expiring timer into account.
+
+Previous changes have already established the prerequisites to make the
+remote enqueue behaviour the same whether high resolution mode is active or
+not:
+
+  If the to be enqueued timer expires before the first expiring timer on a
+  remote CPU, then it cannot be enqueued there.
+
+This was done for the high resolution mode because there is no way to
+access the remote CPU timer hardware. The same is true for NOHZ, but was
+handled differently by unconditionally enqueuing the timer and waking up
+the remote CPU so it can reprogram its timer. Again there is no compelling
+reason for this difference.
+
+hrtimer_check_target(), which makes the 'can remote enqueue' decision is
+already unconditional, but not yet functional because nothing updates
+hrtimer_cpu_base.expires_next in the !hres_active case.
+
+To unify this the following changes are required:
+
+ 1) Make the store of the new first expiry time unconditonal in
+    hrtimer_reprogram() and check __hrtimer_hres_active() before proceeding
+    to the actual hardware access. This check also lets the compiler
+    eliminate the rest of the function in case of CONFIG_HIGH_RES_TIMERS=n.
+
+ 2) Invoke hrtimer_reprogram() unconditionally from
+    hrtimer_start_range_ns()
+
+ 3) Remove the remote wakeup special case for the !high_res && nohz_active
+    case.
+
+Confine the timers_nohz_active static key to timer.c which is the only user
+now.
+
+Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c       |   18 ++++++------------
+ kernel/time/tick-internal.h |    6 ------
+ kernel/time/timer.c         |    9 ++++++++-
+ 3 files changed, 14 insertions(+), 19 deletions(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -687,21 +687,24 @@ static void hrtimer_reprogram(struct hrt
+ 
+ 	/* Update the pointer to the next expiring timer */
+ 	cpu_base->next_timer = timer;
++	cpu_base->expires_next = expires;
+ 
+ 	/*
++	 * If hres is not active, hardware does not have to be
++	 * programmed yet.
++	 *
+ 	 * If a hang was detected in the last timer interrupt then we
+ 	 * do not schedule a timer which is earlier than the expiry
+ 	 * which we enforced in the hang detection. We want the system
+ 	 * to make progress.
+ 	 */
+-	if (cpu_base->hang_detected)
++	if (!__hrtimer_hres_active(cpu_base) || cpu_base->hang_detected)
+ 		return;
+ 
+ 	/*
+ 	 * Program the timer hardware. We enforce the expiry for
+ 	 * events which are already in the past.
+ 	 */
+-	cpu_base->expires_next = expires;
+ 	tick_program_event(expires, 1);
+ }
+ 
+@@ -940,16 +943,7 @@ void hrtimer_start_range_ns(struct hrtim
+ 	if (!leftmost)
+ 		goto unlock;
+ 
+-	if (!hrtimer_is_hres_active(timer)) {
+-		/*
+-		 * Kick to reschedule the next tick to handle the new timer
+-		 * on dynticks target.
+-		 */
+-		if (is_timers_nohz_active())
+-			wake_up_nohz_cpu(new_base->cpu_base->cpu);
+-	} else {
+-		hrtimer_reprogram(timer, new_base);
+-	}
++	hrtimer_reprogram(timer, new_base);
+ unlock:
+ 	unlock_hrtimer_base(timer, &flags);
+ }
+--- a/kernel/time/tick-internal.h
++++ b/kernel/time/tick-internal.h
+@@ -151,18 +151,12 @@ static inline void tick_nohz_init(void)
+ #ifdef CONFIG_NO_HZ_COMMON
+ extern unsigned long tick_nohz_active;
+ extern void timers_update_nohz(void);
+-extern struct static_key_false timers_nohz_active;
+-static inline bool is_timers_nohz_active(void)
+-{
+-	return static_branch_unlikely(&timers_nohz_active);
+-}
+ # ifdef CONFIG_SMP
+ extern struct static_key_false timers_migration_enabled;
+ # endif
+ #else /* CONFIG_NO_HZ_COMMON */
+ static inline void timers_update_nohz(void) { }
+ #define tick_nohz_active (0)
+-static inline bool is_timers_nohz_active(void) { return false; }
+ #endif
+ 
+ DECLARE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases);
+--- a/kernel/time/timer.c
++++ b/kernel/time/timer.c
+@@ -210,7 +210,7 @@ static DEFINE_PER_CPU(struct timer_base,
+ 
+ #ifdef CONFIG_NO_HZ_COMMON
+ 
+-DEFINE_STATIC_KEY_FALSE(timers_nohz_active);
++static DEFINE_STATIC_KEY_FALSE(timers_nohz_active);
+ static DEFINE_MUTEX(timer_keys_mutex);
+ 
+ static void timer_update_keys(struct work_struct *work);
+@@ -260,6 +260,13 @@ int timer_migration_handler(struct ctl_t
+ 	mutex_unlock(&timer_keys_mutex);
+ 	return ret;
+ }
++
++static inline bool is_timers_nohz_active(void)
++{
++	return static_branch_unlikely(&timers_nohz_active);
++}
++#else
++static inline bool is_timers_nohz_active(void) { return false; }
+ #endif /* NO_HZ_COMMON */
+ 
+ static unsigned long round_jiffies_common(unsigned long j, int cpu,
