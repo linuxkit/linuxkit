@@ -366,6 +366,11 @@ func runQemuLocal(config QemuConfig) error {
 		}
 	}
 
+	// Detached mode is only supported in a container.
+	if config.Detached == true {
+		return fmt.Errorf("Detached mode is only supported when running in a container, not locally")
+	}
+
 	qemuCmd := exec.Command(config.QemuBinPath, args...)
 	// If verbosity is enabled print out the full path/arguments
 	log.Debugf("%v\n", qemuCmd.Args)
