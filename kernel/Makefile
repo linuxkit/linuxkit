@@ -218,9 +218,7 @@ $(eval $(call kernel,4.15.4,4.15.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.20,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.20,4.14.x,,-dbg))
 $(eval $(call kernel,4.14.18,4.14.x,-rt,))
-$(eval $(call kernel,4.14.18,4.14.x,-rt,-dbg))
 $(eval $(call kernel,4.9.82,4.9.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.9.82,4.9.x,,-dbg))
 $(eval $(call kernel,4.4.116,4.4.x,$(EXTRA),$(DEBUG)))
 
 # Target for kernel config
