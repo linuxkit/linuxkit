@@ -47,6 +47,9 @@ endif
 ifeq ($(ARCH),aarch64)
 SUFFIX=-arm64
 endif
+ifeq ($(ARCH),s390x)
+SUFFIX=-s390x
+endif
 
 TAG=$(HASH)$(DIRTY)
 
@@ -216,10 +219,12 @@ endef
 #
 $(eval $(call kernel,4.15.7,4.15.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.23,4.14.x,$(EXTRA),$(DEBUG)))
+
+ifneq ($(ARCH),s390x)
 $(eval $(call kernel,4.14.23,4.14.x,,-dbg))
 $(eval $(call kernel,4.14.18,4.14.x,-rt,))
 $(eval $(call kernel,4.9.85,4.9.x,$(EXTRA),$(DEBUG)))
-
+endif
 ifeq ($(ARCH),x86_64)
 $(eval $(call kernel,4.4.119,4.4.x,$(EXTRA),$(DEBUG)))
 endif
