@@ -28,14 +28,14 @@ RUN set -e && \
         SERIES=${VERSION%.*}.x && \
         echo "Patching $VERSION $SERIES" && \
         cd /linux-${VERSION} && \
-            if [ -d /patches-${SERIES} ]; then \
-               for patch in /patches-${SERIES}/*.patch; do \
-                   echo "Applying $patch" && \
-                   patch -t -F0 -N -u -p1 < "$patch"; \
-               done; \
-            fi && \
-        mv /config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
-        mv /config-${SERIES}-aarch64 arch/arm64/configs/defconfig; \
+        if [ -d /patches-${SERIES} ]; then \
+           for patch in /patches-${SERIES}/*.patch; do \
+               echo "Applying $patch" && \
+               patch -t -F0 -N -u -p1 < "$patch"; \
+           done; \
+        fi && \
+        [ ! -f /config-${SERIES}-x86_64 ] || mv /config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
+        [ ! -f /config-${SERIES}-aarch64 ] || mv /config-${SERIES}-aarch64 arch/arm64/configs/defconfig ; \
     done
 
 ENTRYPOINT ["/bin/sh"]
