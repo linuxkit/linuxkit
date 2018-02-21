@@ -41,10 +41,10 @@ endif
 PUSH_MANIFEST:=$(shell git rev-parse --show-toplevel)/scripts/push-manifest.sh
 
 ARCH := $(shell uname -m)
-ifeq ($(ARCH), x86_64)
+ifeq ($(ARCH),x86_64)
 SUFFIX=-amd64
 endif
-ifeq ($(ARCH), aarch64)
+ifeq ($(ARCH),aarch64)
 SUFFIX=-arm64
 endif
 
@@ -219,7 +219,10 @@ $(eval $(call kernel,4.14.20,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.20,4.14.x,,-dbg))
 $(eval $(call kernel,4.14.18,4.14.x,-rt,))
 $(eval $(call kernel,4.9.82,4.9.x,$(EXTRA),$(DEBUG)))
+
+ifeq ($(ARCH),x86_64)
 $(eval $(call kernel,4.4.116,4.4.x,$(EXTRA),$(DEBUG)))
+endif
 
 # Target for kernel config
 kconfig: | sources
