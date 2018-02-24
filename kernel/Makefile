@@ -214,14 +214,14 @@ endef
 # Build Targets
 # Debug targets only for latest stable and LTS stable
 #
-$(eval $(call kernel,4.15.4,4.15.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.20,4.14.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.20,4.14.x,,-dbg))
+$(eval $(call kernel,4.15.5,4.15.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.21,4.14.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.21,4.14.x,,-dbg))
 $(eval $(call kernel,4.14.18,4.14.x,-rt,))
-$(eval $(call kernel,4.9.82,4.9.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.9.83,4.9.x,$(EXTRA),$(DEBUG)))
 
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,4.4.116,4.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.4.117,4.4.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config
