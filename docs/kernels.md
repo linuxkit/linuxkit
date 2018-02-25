@@ -27,6 +27,11 @@ In addition to the official images, there are also some
 from some Linux distributions into LinuxKit kernel packages. These are
 mostly provided for testing purposes.
 
+Note now linuxkit also embraces Preempt-RT Linux kernel to support more
+use cases for the promising IoT scenarios. All -rt patches are grabbed from
+https://www.kernel.org/pub/linux/kernel/projects/rt/. But so far we just
+enable it over 4.14.x.
+
 
 ## Loading kernel modules
 

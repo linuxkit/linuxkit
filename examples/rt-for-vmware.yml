@@ -1,0 +1,36 @@
+kernel:
+  image: linuxkit/kernel:4.14.18-rt
+  cmdline: "console=tty0"
+init:
+  - linuxkit/init:d899eee3560a40aa3b4bdd67b3bb82703714b2b9
+  - linuxkit/runc:7c39a68490a12cde830e1922f171c451fb08e731
+  - linuxkit/containerd:37e397ebfc6bd5d8e18695b121166ffd0cbfd9f0
+  - linuxkit/ca-certificates:v0.2
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:v0.2
+services:
+  - name: getty
+    image: linuxkit/getty:v0.2
+    env:
+     - INSECURE=true
+  - name: rngd
+    image: linuxkit/rngd:v0.2
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.2
+  - name: open-vm-tools
+    image: linuxkit/open-vm-tools:v0.2
+  - name: nginx
+    image: nginx:1.13.8-alpine
+    capabilities:
+     - CAP_NET_BIND_SERVICE
+     - CAP_CHOWN
+     - CAP_SETUID
+     - CAP_SETGID
+     - CAP_DAC_OVERRIDE
+    binds:
+     - /etc/resolv.conf:/etc/resolv.conf
+trust:
+  org:
+    - linuxkit
+    - library
