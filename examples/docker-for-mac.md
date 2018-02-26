@@ -19,6 +19,21 @@ To run the VM with a 4G disk:
 linuxkit run hyperkit -networking=vpnkit -vsock-ports=2376 -disk size=4096M -data-file ./metadata.json docker-for-mac
 ```
 
+Where the file `./metadata.json` should contain the desired docker daemon
+configuration, for example:
+
+```
+{
+  "docker": {
+    "entries": {
+      "daemon.json": {
+        "content": "{\n  \"debug\" : true,\n  \"experimental\" : true\n}\n"
+      }
+    }
+  }
+}
+```
+
 In another terminal you should now be able to access docker via the
 socket `guest.00000947` in the state directory
 (`docker-for-mac-state/` by default):
