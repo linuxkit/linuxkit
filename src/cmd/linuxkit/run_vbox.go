@@ -52,6 +52,7 @@ func runVbox(args []string) {
 
 	// networking
 	networking := flags.String("networking", "nat", "Networking mode. null|nat|bridged|intnet|hostonly|generic|natnetwork[<devicename>]")
+	bridgeadapter := flags.String("bridgeadapter", "", "Bridge adapter interface to use if networking mode is bridged")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -201,6 +202,12 @@ func runVbox(args []string) {
 	_, out, err = manage(vboxmanage, "modifyvm", name, "--nic1", *networking)
 	if err != nil {
 		log.Fatalf("modifyvm --nic error: %v\n%s", err, out)
+	}
+	if *networking == "bridged" {
+		_, out, err = manage(vboxmanage, "modifyvm", name, "--bridgeadapter1", *bridgeadapter)
+		if err != nil {
+			log.Fatalf("modifyvm --bridgeadapter error: %v\n%s", err, out)
+		}
 	}
 
 	_, out, err = manage(vboxmanage, "modifyvm", name, "--cableconnected1", "on")
