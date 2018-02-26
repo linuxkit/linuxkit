@@ -1,4 +1,4 @@
-From 2e0d996c7ec01a9ebb3c823be22843fcd8646f4e Mon Sep 17 00:00:00 2001
+From 2e724e63f341b5ca630a2d3eec2e5f63b38fae9d Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:10 -0800
 Subject: [PATCH 06/12] Drivers: hv: vss: Improve log messages.

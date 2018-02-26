@@ -1,4 +1,4 @@
-From 9000a561bec11c234f5c8b34ec5619840a1e6d74 Mon Sep 17 00:00:00 2001
+From fa5be7ddf0a4170178c0aea1b4d9297c39fb493f Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:05 -0700
 Subject: [PATCH 07/18] hyper-v: trace vmbus_ongpadl_created()

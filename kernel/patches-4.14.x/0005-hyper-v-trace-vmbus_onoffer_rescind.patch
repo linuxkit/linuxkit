@@ -1,4 +1,4 @@
-From b5eb617651f32cd0041373ae911522f011c5324e Mon Sep 17 00:00:00 2001
+From 7b60ef14c93bb91bf3525743f3695e000923becd Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:03 -0700
 Subject: [PATCH 05/18] hyper-v: trace vmbus_onoffer_rescind()
