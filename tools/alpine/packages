@@ -46,7 +46,6 @@ gmp-dev
 gnupg
 go
 grep
-gummiboot
 hvtools
 installkernel
 iperf3
@@ -65,7 +64,6 @@ libressl-dev
 libseccomp-dev
 libtirpc-dev
 libtool
-libunwind-dev
 linux-headers
 lsscsi
 make

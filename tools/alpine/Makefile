@@ -19,6 +19,10 @@ ifeq ($(ARCH), aarch64)
 DEPS += packages.aarch64
 SUFFIX=-arm64
 endif
+ifeq ($(ARCH), s390x)
+DEPS += packages.s390x
+SUFFIX=-s390x
+endif
 
 default: push
 
