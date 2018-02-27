@@ -48,7 +48,7 @@ esac
 # Push manifest list
 OUT=$(manifest-tool $MT_ARGS push from-args \
                     --ignore-missing \
-                    --platforms linux/amd64,linux/arm64 \
+                    --platforms linux/amd64,linux/arm64,linux/s390x \
                     --template "$TARGET"-ARCH \
                     --target "$TARGET")
 

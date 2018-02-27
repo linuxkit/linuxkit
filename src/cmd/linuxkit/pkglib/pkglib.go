@@ -58,7 +58,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// Defaults
 	pi := pkgInfo{
 		Org:                 "linuxkit",
-		Arches:              []string{"amd64", "arm64"},
+		Arches:              []string{"amd64", "arm64", "s390x"},
 		GitRepo:             "https://github.com/linuxkit/linuxkit",
 		Network:             false,
 		DisableContentTrust: false,

@@ -76,7 +76,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	var suffix string
 	switch arch {
-	case "amd64", "arm64":
+	case "amd64", "arm64", "s390x":
 		suffix = "-" + arch
 	default:
 		return fmt.Errorf("Unknown arch %q", arch)
