@@ -31,6 +31,15 @@ func isExecErrNotFound(err error) bool {
 	return eerr.Err == exec.ErrNotFound
 }
 
+var proxyEnvVars = []string{
+	"http_proxy",
+	"https_proxy",
+	"no_proxy",
+	"HTTP_PROXY",
+	"HTTPS_PROXY",
+	"NO_PROXY",
+}
+
 func (dr dockerRunner) command(args ...string) error {
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
@@ -41,6 +50,17 @@ func (dr dockerRunner) command(args ...string) error {
 	if dr.dct {
 		cmd.Env = append(cmd.Env, dctEnableEnv)
 		dct = dctEnableEnv + " "
+	}
+
+	if args[0] == "build" {
+		buildArgs := []string{}
+		for _, proxyVarName := range proxyEnvVars {
+			if value, ok := os.LookupEnv(proxyVarName); ok {
+				buildArgs = append(buildArgs,
+					[]string{"--build-arg", fmt.Sprintf("%s=%s", proxyVarName, value)}...)
+			}
+		}
+		cmd.Args = append(append(cmd.Args[:2], buildArgs...), cmd.Args[2:]...)
 	}
 
 	log.Debugf("Executing: %s%v", dct, cmd.Args)
