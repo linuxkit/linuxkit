@@ -1,4 +1,4 @@
-From 9fc4c21f6c02f90a7bd84d2fe0d36416355f5d48 Mon Sep 17 00:00:00 2001
+From 0aaae2d8e9d8c304b852314f5494a0ef7260cf63 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:08 -0700
 Subject: [PATCH 10/18] hyper-v: trace vmbus_request_offers()
