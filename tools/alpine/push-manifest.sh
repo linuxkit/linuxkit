@@ -46,7 +46,12 @@ EOF
 # we need them for notary on all platforms.
 case $(uname -s) in
     Darwin)
-        CRED=$(echo "https://index.docker.io/v1/" | /Applications/Docker.app/Contents/Resources/bin/docker-credential-osxkeychain.bin get)
+        # Prior to 2018-03-27 D4M used a .bin suffix on the keychain utility binary name. Support the old name for a while
+        if [ -f /Applications/Docker.app/Contents/Resources/bin/docker-credential-osxkeychain.bin ]; then
+            CRED=$(echo "https://index.docker.io/v1/" | /Applications/Docker.app/Contents/Resources/bin/docker-credential-osxkeychain.bin get)
+        else
+            CRED=$(echo "https://index.docker.io/v1/" | /Applications/Docker.app/Contents/Resources/bin/docker-credential-osxkeychain get)
+        fi    
         USER=$(echo "$CRED" | jq -r '.Username')
         PASS=$(echo "$CRED" | jq -r '.Secret')
         MT_ARGS="--username $USER --password $PASS"
@@ -65,7 +70,7 @@ case $(uname -s) in
 esac
 
 # Push manifest list
-OUT=$(manifest-tool $MT_ARGS push from-spec "$YAML")
+OUT=$(manifest-tool $MT_ARGS push from-spec --ignore-missing "$YAML")
 rm "$YAML"
 echo "$OUT"
 
