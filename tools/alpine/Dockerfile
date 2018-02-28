@@ -12,8 +12,18 @@ RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
    mkdir -p /mirror/$(uname -m) && \
    apk fetch --recursive -o /mirror/$(uname -m) $(apk info; cat /tmp/packages)
 
-# add the tools for WireGuard, since the kernel module is now included, but from edge/testing
-RUN apk fetch --recursive -o /mirror/$(uname -m) -X http://dl-cdn.alpinelinux.org/alpine/edge/testing -U wireguard-tools
+# It's tricky to mix edge/testing packages which sometimes leads to dependency conflicts.
+# wireguard-tools currently is only in edge, so here we build our own package using the
+# APKBUILD file from edge.
+RUN apk add alpine-sdk libmnl-dev curl && \
+    adduser -D builder && \
+    addgroup builder abuild && \
+    mkdir -p /wireguard && \
+    chmod 0777 /wireguard && \
+    cd /wireguard && \
+    curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/testing/wireguard-tools/APKBUILD && \
+    su -c "abuild-keygen -a -n && abuild -r" builder && \
+    cp /home/builder/packages/$(uname -m)/wireguard-tools-[0-9]*.apk /mirror/$(uname -m)
 
 # install abuild for signing
 RUN apk add --no-cache abuild
