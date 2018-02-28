@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:cba395fbc278daee841106801aba1e1bd7e0f2f7 AS kernel-build
+FROM linuxkit/alpine:8ad3a04b70f1e93e6159143e3792e379a9b0519d AS kernel-build
 RUN apk add \
     argp-standalone \
     automake \
