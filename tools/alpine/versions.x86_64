@@ -1,10 +1,10 @@
-# linuxkit/alpine:b1a36f0dd41e60142dd84dab7cd333ce7da1d1f8-amd64
+# linuxkit/alpine:8ad3a04b70f1e93e6159143e3792e379a9b0519d-amd64
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
 alpine-keys-2.1-r1
 alsa-lib-1.1.4.1-r2
-apk-tools-2.8.2-r0
+apk-tools-2.9.1-r0
 argp-standalone-1.3-r2
 attr-2.4.47-r6
 attr-dev-2.4.47-r6
@@ -36,7 +36,7 @@ cmake-3.9.5-r0
 coreutils-8.28-r0
 cryptsetup-1.7.5-r1
 cryptsetup-libs-1.7.5-r1
-curl-7.58.0-r0
+curl-7.58.0-r1
 db-5.3.28-r0
 dbus-libs-1.10.24-r0
 device-mapper-libs-2.02.175-r0
@@ -77,7 +77,7 @@ gmp-6.1.2-r1
 gmp-dev-6.1.2-r1
 gnupg-2.2.3-r0
 gnutls-3.6.1-r0
-go-1.9.2-r1
+go-1.9.4-r0
 grep-3.1-r0
 guile-2.0.14-r0
 guile-libs-2.0.14-r0
@@ -119,7 +119,7 @@ libcap-ng-0.7.8-r1
 libcap-ng-dev-0.7.8-r1
 libcom_err-1.43.7-r0
 libcrypto1.0-1.0.2n-r0
-libcurl-7.58.0-r0
+libcurl-7.58.0-r1
 libdrm-2.4.88-r0
 libedit-20170329.3.1-r3
 libelf-0.8.13-r3
@@ -161,13 +161,13 @@ libressl2.6-libcrypto-2.6.3-r0
 libressl2.6-libssl-2.6.3-r0
 libressl2.6-libtls-2.6.3-r0
 libsasl-2.1.26-r11
-libseccomp-2.3.2-r0
-libseccomp-dev-2.3.2-r0
+libseccomp-2.3.2-r1
+libseccomp-dev-2.3.2-r1
 libsmartcols-2.31-r0
 libssh2-1.8.0-r2
 libssl1.0-1.0.2n-r0
 libstdc++-6.4.0-r5
-libtasn1-4.12-r2
+libtasn1-4.12-r3
 libtirpc-1.0.1-r2
 libtirpc-dev-1.0.1-r2
 libtool-2.4.6-r4
@@ -188,7 +188,7 @@ lzo-2.10-r2
 m4-1.4.18-r0
 make-4.2.1-r0
 mesa-gbm-17.2.4-r1
-mkinitfs-3.2.0-r1
+mkinitfs-3.2.0-r2
 mpc1-1.0.3-r1
 mpc1-dev-1.0.3-r1
 mpfr-dev-3.1.5-r1
@@ -219,7 +219,7 @@ openssl-dev-1.0.2n-r0
 opus-1.2.1-r1
 ovmf-0.0.20170624-r0
 p11-kit-0.23.2-r2
-patch-2.7.5-r1
+patch-2.7.5-r2
 pax-utils-1.2.2-r1
 pcre-8.41-r1
 pcre2-10.30-r0
@@ -231,14 +231,14 @@ pixman-0.34.0-r3
 pkgconf-1.3.10-r0
 popt-1.16-r7
 python3-3.6.3-r9
-qemu-2.10.1-r2
-qemu-aarch64-2.10.1-r2
-qemu-arm-2.10.1-r2
-qemu-guest-agent-2.10.1-r2
-qemu-img-2.10.1-r2
-qemu-ppc64le-2.10.1-r2
-qemu-system-arm-2.10.1-r2
-qemu-system-x86_64-2.10.1-r2
+qemu-2.10.1-r3
+qemu-aarch64-2.10.1-r3
+qemu-arm-2.10.1-r3
+qemu-guest-agent-2.10.1-r3
+qemu-img-2.10.1-r3
+qemu-ppc64le-2.10.1-r3
+qemu-system-arm-2.10.1-r3
+qemu-system-x86_64-2.10.1-r3
 readline-7.0.003-r0
 rhash-libs-1.3.5-r1
 rpcbind-0.2.4-r0
@@ -275,7 +275,7 @@ vim-8.0.1359-r0
 wayland-libs-client-1.14.0-r2
 wayland-libs-cursor-1.14.0-r2
 wayland-libs-server-1.14.0-r2
-wireguard-tools-0.0.20180202-r0
+wireguard-tools-0.0.20180218-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r8
 xfsprogs-4.14.0-r0
