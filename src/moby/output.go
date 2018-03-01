@@ -23,6 +23,7 @@ const (
 	vmdk       = "linuxkit/mkimage-vmdk:deb9018d06dbb9da29464a4320187ce7e4ae1856"
 	dynamicvhd = "linuxkit/mkimage-dynamic-vhd:172fb196713a4aff677b88422026512600b1ca55"
 	rpi3       = "linuxkit/mkimage-rpi3:553c6c2d13b7d54f6b73b3b0c1c15f2e47ffb0df"
+	qcow2Efi   = "linuxkit/mkimage-qcow2-efi:9bc3de981188da099eaf44cc467f5bbb29c13033"
 )
 
 var outFuns = map[string]func(string, io.Reader, int) error{
@@ -105,6 +106,17 @@ var outFuns = map[string]func(string, io.Reader, int) error{
 		err = outputImg(gcp, base+".img.tar.gz", kernel, initrd, cmdline)
 		if err != nil {
 			return fmt.Errorf("Error writing gcp output: %v", err)
+		}
+		return nil
+	},
+	"qcow2-efi": func(base string, image io.Reader, size int) error {
+		kernel, initrd, cmdline, _, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+		err = outputImg(qcow2Efi, base+"-efi.qcow2", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing qcow2 EFI output: %v", err)
 		}
 		return nil
 	},
