@@ -245,6 +245,10 @@ func runHyperKit(args []string) {
 			if len(netMode) > 2 {
 				vpnkitPortSocket = netMode[2]
 			}
+			// The guest will use this 9P mount to configure which ports to forward
+			h.Sockets9P = []hyperkit.Socket9P{{Path: vpnkitPortSocket, Tag: "port"}}
+			// VSOCK port 62373 is used to pass traffic from host->guest
+			h.VSockPorts = append(h.VSockPorts, 62373)
 		} else {
 			// Start new VPNKit instance
 			h.VPNKitSock = filepath.Join(*state, "vpnkit_eth.sock")
