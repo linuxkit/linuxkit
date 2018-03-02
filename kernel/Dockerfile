@@ -91,6 +91,9 @@ RUN case $(uname -m) in \
     aarch64) \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
         ;; \
+    s390x) \
+        KERNEL_DEF_CONF=/linux/arch/s390/defconfig; \
+        ;; \
     esac  && \
     cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
     if [ -n "${EXTRA}" ] && [ -f "/config-${KERNEL_SERIES}-$(uname -m)${EXTRA}" ]; then \
@@ -115,6 +118,9 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
         ;; \
     aarch64) \
         cp arch/arm64/boot/Image.gz /out/kernel; \
+        ;; \
+    s390x) \
+        cp arch/s390/boot/bzImage /out/kernel; \
         ;; \
     esac && \
     cp System.map /out && \
