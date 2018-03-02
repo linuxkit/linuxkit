@@ -83,9 +83,9 @@ func main() {
 		command := os.Args[0]
 		switch {
 		case strings.Contains(command, "onboot"):
-			os.Exit(runcInit(onbootPath))
+			os.Exit(runcInit(onbootPath, "onboot"))
 		case strings.Contains(command, "onshutdown"):
-			os.Exit(runcInit(shutdownPath))
+			os.Exit(runcInit(shutdownPath, "shutdown"))
 		case strings.Contains(command, "containerd"):
 			systemInitCmd(ctx, []string{})
 			os.Exit(0)
