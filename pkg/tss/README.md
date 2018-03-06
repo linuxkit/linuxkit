@@ -22,14 +22,14 @@ services:
 The above will launch `tcsd` listening on localhost only.
 
 #### Docker
-In regular docker or other container environment, start the container in the background. Be sure to map `/dev:/dev` and expose port `30003`.
+In regular docker or other container environment, start the container in the background. Be sure to map `/dev:/dev` and expose port `30003`, and run with the privileged flag set to true. The privileged flag is required to allow the container access to device files on the host.
 
 ```
-docker run -d -v /dev:/dev -p 30003:30003 secureapp/tcsd
+docker run -d -v /dev:/dev --privileged=true -p 30003:30003 linuxkit/tss:{TAG}
 ```
 ### CLI Tools
 To run the CLI tools, just run them:
 
 ```
-docker run -it --rm secureapp/tcsd tpm_nvread
+docker run -it --privileged=true --rm linuxkit/tss:{TAG} tpm_nvread
 ```
