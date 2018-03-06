@@ -28,7 +28,7 @@ services:
   - name: ntpd
     image: linuxkit/openntpd:v0.2
   - name: docker
-    image: docker:17.07.0-ce-dind
+    image: docker:17.09.0-ce-dind
     capabilities:
      - all
     net: host
