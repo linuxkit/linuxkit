@@ -248,17 +248,14 @@ func (tr *Repo) GetDelegationRole(name data.RoleName) (data.DelegationRole, erro
 				}
 				// Check all public key certificates in the role for expiry
 				// Currently we do not reject expired delegation keys but warn if they might expire soon or have already
-				for keyID, pubKey := range delgRole.Keys {
+				for _, pubKey := range delgRole.Keys {
 					certFromKey, err := utils.LoadCertFromPEM(pubKey.Public())
 					if err != nil {
 						continue
 					}
-					if err := utils.ValidateCertificate(certFromKey, true); err != nil {
-						if _, ok := err.(data.ErrCertExpired); !ok {
-							// do not allow other invalid cert errors
-							return err
-						}
-						logrus.Warnf("error with delegation %s key ID %d: %s", delgRole.Name, keyID, err)
+					//Don't check the delegation certificate expiry once added, use the TUF role expiry instead
+					if err := utils.ValidateCertificate(certFromKey, false); err != nil {
+						return err
 					}
 				}
 				foundRole = &delgRole

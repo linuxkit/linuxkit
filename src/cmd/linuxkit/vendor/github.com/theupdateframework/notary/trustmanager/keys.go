@@ -3,6 +3,7 @@ package trustmanager
 import (
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"path/filepath"
@@ -100,8 +101,9 @@ func ImportKeys(from io.Reader, to []Importer, fallbackRole string, fallbackGUN 
 		return err
 	}
 	var (
-		writeTo string
-		toWrite []byte
+		writeTo   string
+		toWrite   []byte
+		errBlocks []string
 	)
 	for block, rest := pem.Decode(data); block != nil; block, rest = pem.Decode(rest) {
 		handleLegacyPath(block)
@@ -110,6 +112,7 @@ func ImportKeys(from io.Reader, to []Importer, fallbackRole string, fallbackGUN 
 		loc, err := checkValidity(block)
 		if err != nil {
 			// already logged in checkValidity
+			errBlocks = append(errBlocks, err.Error())
 			continue
 		}
 
@@ -156,6 +159,9 @@ func ImportKeys(from io.Reader, to []Importer, fallbackRole string, fallbackGUN 
 	}
 	if toWrite != nil { // close out final iteration if there's data left
 		return importToStores(to, writeTo, toWrite)
+	}
+	if len(errBlocks) > 0 {
+		return fmt.Errorf("failed to import all keys: %s", strings.Join(errBlocks, ", "))
 	}
 	return nil
 }
