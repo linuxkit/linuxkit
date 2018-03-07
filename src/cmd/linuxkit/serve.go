@@ -28,6 +28,7 @@ func serve(args []string) {
 	}
 	portFlag := flags.String("port", ":8080", "Local port to serve on")
 	dirFlag := flags.String("directory", ".", "Directory to serve")
+	flags.Parse(args)
 
 	http.Handle("/", http.FileServer(http.Dir(*dirFlag)))
 	log.Fatal(http.ListenAndServe(*portFlag, logRequest(http.DefaultServeMux)))
