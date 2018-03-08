@@ -13,6 +13,18 @@ All LinuxKit packages are:
 - Derived from well-known (and signed) sources for repeatable builds.
 - Built with multi-stage builds to minimise their size.
 
+
+## CI and Package Builds
+When building and merging packages, it is important to note that our CI process builds packages. The targets `make ci` and `make ci-pr` execute `make -C pkg build`. These in turn execute `linuxkit pkg build` for each package under `pkg/`. This in turn will try to pull the image whose tag matches the tree hash or, failing that, to build it.
+
+We do not want the builds to happen with each CI run for two reasons:
+
+1. It is slower to do a package build than to just pull the latest image.
+2. If any of the steps of the build fails, e.g. a `curl` download that depends on an intermittent target, it can cause all of CI to fail.
+
+Thus, if, as a maintainer, you merge any commits into a `pkg/`, even if the change is documentation alone, please do a `linuxkit package push`.
+
+
 ## Package source
 
 A package source consists of a directory containing at least two files:
@@ -138,4 +150,3 @@ linuxkit pkg build -org=wombat -disable-content-trust -hash=foo push
 
 and this will create `wombat/<image>:foo-<arch>` and
 `wombat/<image>:foo` for use in your YAML files.
-
