@@ -231,7 +231,7 @@ $(eval $(call kernel,4.14.23,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.18,4.14.x,-rt,))
 $(eval $(call kernel,4.9.85,4.9.x,$(EXTRA),$(DEBUG)))
 
-else ifneq ($(ARCH),s390x)
+else ifeq ($(ARCH),s390x)
 $(eval $(call kernel,4.15.7,4.15.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.23,4.14.x,$(EXTRA),$(DEBUG)))
 endif
