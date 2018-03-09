@@ -1,7 +1,7 @@
-From 8f991b8ace0f8d5b4ef0af08211b92cb356235c5 Mon Sep 17 00:00:00 2001
+From 78c85990427d825732dc5e464eb09f486cf74948 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:01 -0700
-Subject: [PATCH 03/18] hyper-v: trace vmbus_on_message()
+Subject: [PATCH 03/19] hyper-v: trace vmbus_on_message()
 
 Add tracepoint to vmbus_on_message() which is called when we start
 processing a blocking from work context.

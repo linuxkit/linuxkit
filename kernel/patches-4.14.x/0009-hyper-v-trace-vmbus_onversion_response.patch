@@ -1,7 +1,7 @@
-From 52cba26c8142742185da8400c88458b980c02b78 Mon Sep 17 00:00:00 2001
+From 7d4cfefa0dddaa0893170eed5bdfdc34b83feb2a Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:07 -0700
-Subject: [PATCH 09/18] hyper-v: trace vmbus_onversion_response()
+Subject: [PATCH 09/19] hyper-v: trace vmbus_onversion_response()
 
 Add tracepoint to CHANNELMSG_VERSION_RESPONSE handler.
 
