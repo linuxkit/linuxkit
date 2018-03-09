@@ -219,21 +219,21 @@ endef
 #
 ifeq ($(ARCH),x86_64)
 $(eval $(call kernel,4.15.7,4.15.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.23,4.14.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.23,4.14.x,,-dbg))
+$(eval $(call kernel,4.14.24,4.14.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.24,4.14.x,,-dbg))
 $(eval $(call kernel,4.14.18,4.14.x,-rt,))
-$(eval $(call kernel,4.9.85,4.9.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.4.119,4.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.9.86,4.9.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.4.120,4.4.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
 $(eval $(call kernel,4.15.7,4.15.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.23,4.14.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.24,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.18,4.14.x,-rt,))
-$(eval $(call kernel,4.9.85,4.9.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.9.86,4.9.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),s390x)
 $(eval $(call kernel,4.15.7,4.15.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.23,4.14.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.24,4.14.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config

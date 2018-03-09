@@ -1,7 +1,7 @@
-From abe235e1c642c9f11f47919f267e7e63c03cd75a Mon Sep 17 00:00:00 2001
+From 398d38c415476ed86b6e5b592785080a2da9dd7b Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:16 -0700
-Subject: [PATCH 18/18] hyper-v: trace channel events
+Subject: [PATCH 18/19] hyper-v: trace channel events
 
 Added an additional set of trace points for when channel gets notified
 or signals host.

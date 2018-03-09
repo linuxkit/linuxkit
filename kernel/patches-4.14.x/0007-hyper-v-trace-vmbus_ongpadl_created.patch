@@ -1,7 +1,7 @@
-From ee5b835d406997ed5cb711e191594642e7eefa89 Mon Sep 17 00:00:00 2001
+From c162337f3956a9ae3c8df37e2f3ac22e5cb06dc1 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:05 -0700
-Subject: [PATCH 07/18] hyper-v: trace vmbus_ongpadl_created()
+Subject: [PATCH 07/19] hyper-v: trace vmbus_ongpadl_created()
 
 Add tracepoint to CHANNELMSG_GPADL_CREATED handler.
 
