@@ -1,4 +1,4 @@
-From 1598e38c0770b08c4d6371b670f9ee61a42ec68b Mon Sep 17 00:00:00 2001
+From 5fb71e9ccf2c7d72a06fb04d7a23f6aa604d9413 Mon Sep 17 00:00:00 2001
 From: Christian Borntraeger <borntraeger@de.ibm.com>
 Date: Tue, 12 Dec 2017 09:08:35 +0100
 Subject: [PATCH] serial: forbid 8250 on s390
@@ -13,6 +13,7 @@ Reported-by: Alice Frosi <alice@linux.vnet.ibm.com>
 Signed-off-by: Christian Borntraeger <borntraeger@de.ibm.com>
 Reviewed-by: Hendrik Brueckner <brueckner@linux.vnet.ibm.com>
 Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
+(cherry picked from commit 1598e38c0770b08c4d6371b670f9ee61a42ec68b)
 ---
  drivers/tty/serial/8250/Kconfig | 1 +
  1 file changed, 1 insertion(+)
@@ -30,5 +31,5 @@ index a5c0ef1e7695..16b1496e6105 100644
  	---help---
  	  This selects whether you want to include the driver for the standard
 -- 
-2.13.5
+2.16.0
 
