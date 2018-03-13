@@ -7,7 +7,7 @@ all: default
 VERSION="v0.2+"
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=linuxkit/go-compile:8235f703735672509a16fb626d25c6ffb0d1c21d
+GO_COMPILE=linuxkit/go-compile:7392985c6f55aba61201514174b45ba755fb386e
 
 LINUXKIT?=bin/linuxkit
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
