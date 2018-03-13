@@ -1,1 +1,4 @@
 image: mkimage-dynamic-vhd
+arches:
+  - amd64
+  - arm64

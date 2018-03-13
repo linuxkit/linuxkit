@@ -1,2 +1,3 @@
 image: mkimage-raw-bios
-arches: ["amd64"]
+arches:
+  - amd64
