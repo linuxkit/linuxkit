@@ -95,7 +95,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/net/core/sock.c
 +++ b/net/core/sock.c
-@@ -2762,12 +2762,11 @@ void lock_sock_nested(struct sock *sk, i
+@@ -2759,12 +2759,11 @@ void lock_sock_nested(struct sock *sk, i
  	if (sk->sk_lock.owned)
  		__lock_sock(sk);
  	sk->sk_lock.owned = 1;

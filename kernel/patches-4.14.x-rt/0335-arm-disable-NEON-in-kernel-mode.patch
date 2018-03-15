@@ -115,7 +115,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	select CRYPTO_AES_ARM64
 --- a/arch/arm64/crypto/crc32-ce-glue.c
 +++ b/arch/arm64/crypto/crc32-ce-glue.c
-@@ -206,7 +206,8 @@ static struct shash_alg crc32_pmull_algs
+@@ -208,7 +208,8 @@ static struct shash_alg crc32_pmull_algs
  
  static int __init crc32_pmull_mod_init(void)
  {

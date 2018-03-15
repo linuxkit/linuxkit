@@ -67,7 +67,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  void raise_softirq_irqoff(unsigned int nr)
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5654,7 +5654,7 @@ static __latent_entropy void net_rx_acti
+@@ -5658,7 +5658,7 @@ static __latent_entropy void net_rx_acti
  	list_splice_tail(&repoll, &list);
  	list_splice(&list, &sd->poll_list);
  	if (!list_empty(&sd->poll_list))

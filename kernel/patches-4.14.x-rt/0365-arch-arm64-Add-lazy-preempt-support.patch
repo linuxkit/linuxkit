@@ -67,7 +67,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  				 _TIF_NOHZ)
 --- a/arch/arm64/kernel/asm-offsets.c
 +++ b/arch/arm64/kernel/asm-offsets.c
-@@ -38,6 +38,7 @@ int main(void)
+@@ -39,6 +39,7 @@ int main(void)
    BLANK();
    DEFINE(TSK_TI_FLAGS,		offsetof(struct task_struct, thread_info.flags));
    DEFINE(TSK_TI_PREEMPT,	offsetof(struct task_struct, thread_info.preempt_count));
@@ -77,7 +77,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
    DEFINE(TSK_TI_TTBR0,		offsetof(struct task_struct, thread_info.ttbr0));
 --- a/arch/arm64/kernel/entry.S
 +++ b/arch/arm64/kernel/entry.S
-@@ -570,11 +570,16 @@ ENDPROC(el1_sync)
+@@ -607,11 +607,16 @@ ENDPROC(el1_sync)
  
  #ifdef CONFIG_PREEMPT
  	ldr	w24, [tsk, #TSK_TI_PREEMPT]	// get preempt count
@@ -97,7 +97,7 @@ Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
  #endif
  #ifdef CONFIG_TRACE_IRQFLAGS
  	bl	trace_hardirqs_on
-@@ -588,6 +593,7 @@ ENDPROC(el1_irq)
+@@ -625,6 +630,7 @@ ENDPROC(el1_irq)
  1:	bl	preempt_schedule_irq		// irq en/disable is done inside
  	ldr	x0, [tsk, #TSK_TI_FLAGS]	// get new tasks TI_FLAGS
  	tbnz	x0, #TIF_NEED_RESCHED, 1b	// needs rescheduling?
