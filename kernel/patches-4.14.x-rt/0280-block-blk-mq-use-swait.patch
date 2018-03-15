@@ -45,7 +45,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -785,7 +785,7 @@ int blk_queue_enter(struct request_queue
+@@ -794,7 +794,7 @@ int blk_queue_enter(struct request_queue
  		 */
  		smp_rmb();
  
@@ -54,7 +54,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  				!atomic_read(&q->mq_freeze_depth) ||
  				blk_queue_dying(q));
  		if (blk_queue_dying(q))
-@@ -805,7 +805,7 @@ static void blk_queue_usage_counter_rele
+@@ -814,7 +814,7 @@ static void blk_queue_usage_counter_rele
  	struct request_queue *q =
  		container_of(ref, struct request_queue, q_usage_counter);
  
@@ -63,7 +63,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  static void blk_rq_timed_out_timer(unsigned long data)
-@@ -881,7 +881,7 @@ struct request_queue *blk_alloc_queue_no
+@@ -890,7 +890,7 @@ struct request_queue *blk_alloc_queue_no
  	q->bypass_depth = 1;
  	__set_bit(QUEUE_FLAG_BYPASS, &q->queue_flags);
  

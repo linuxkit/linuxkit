@@ -38,8 +38,8 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 ---
  include/linux/interrupt.h |   33 ++++---
- kernel/softirq.c          |  201 ++++++++++++++++++++++++++++++++--------------
- 2 files changed, 162 insertions(+), 72 deletions(-)
+ kernel/softirq.c          |  193 ++++++++++++++++++++++++++++++++--------------
+ 2 files changed, 157 insertions(+), 69 deletions(-)
 
 --- a/include/linux/interrupt.h
 +++ b/include/linux/interrupt.h
@@ -98,7 +98,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  #define tasklet_unlock_wait(t) do { } while (0)
  #define tasklet_unlock(t) do { } while (0)
  #endif
-@@ -632,12 +642,7 @@ static inline void tasklet_disable(struc
+@@ -617,12 +627,7 @@ static inline void tasklet_disable(struc
  	smp_mb();
  }
  
@@ -172,7 +172,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	local_irq_restore(flags);
  }
  EXPORT_SYMBOL(__tasklet_schedule);
-@@ -484,10 +515,7 @@ void __tasklet_hi_schedule(struct taskle
+@@ -484,50 +515,108 @@ void __tasklet_hi_schedule(struct taskle
  	unsigned long flags;
  
  	local_irq_save(flags);
@@ -184,19 +184,9 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	local_irq_restore(flags);
  }
  EXPORT_SYMBOL(__tasklet_hi_schedule);
-@@ -496,82 +524,122 @@ void __tasklet_hi_schedule_first(struct
- {
- 	BUG_ON(!irqs_disabled());
- 
--	t->next = __this_cpu_read(tasklet_hi_vec.head);
--	__this_cpu_write(tasklet_hi_vec.head, t);
--	__raise_softirq_irqoff(HI_SOFTIRQ);
-+	__tasklet_hi_schedule(t);
- }
- EXPORT_SYMBOL(__tasklet_hi_schedule_first);
  
 -static __latent_entropy void tasklet_action(struct softirq_action *a)
-+void  tasklet_enable(struct tasklet_struct *t)
++void tasklet_enable(struct tasklet_struct *t)
  {
 -	struct tasklet_struct *list;
 +	if (!atomic_dec_and_test(&t->count))
@@ -301,16 +291,14 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	}
  }
  
-+static void tasklet_action(struct softirq_action *a)
++static __latent_entropy void tasklet_action(struct softirq_action *a)
 +{
 +	struct tasklet_struct *list;
 +
 +	local_irq_disable();
-+
 +	list = __this_cpu_read(tasklet_vec.head);
 +	__this_cpu_write(tasklet_vec.head, NULL);
 +	__this_cpu_write(tasklet_vec.tail, this_cpu_ptr(&tasklet_vec.head));
-+
 +	local_irq_enable();
 +
 +	__tasklet_action(a, list);
@@ -319,17 +307,13 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  static __latent_entropy void tasklet_hi_action(struct softirq_action *a)
  {
  	struct tasklet_struct *list;
- 
- 	local_irq_disable();
-+
- 	list = __this_cpu_read(tasklet_hi_vec.head);
- 	__this_cpu_write(tasklet_hi_vec.head, NULL);
+@@ -538,30 +627,7 @@ static __latent_entropy void tasklet_hi_
  	__this_cpu_write(tasklet_hi_vec.tail, this_cpu_ptr(&tasklet_hi_vec.head));
--	local_irq_enable();
--
+ 	local_irq_enable();
+ 
 -	while (list) {
 -		struct tasklet_struct *t = list;
- 
+-
 -		list = list->next;
 -
 -		if (tasklet_trylock(t)) {
@@ -343,8 +327,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 -			}
 -			tasklet_unlock(t);
 -		}
-+	local_irq_enable();
- 
+-
 -		local_irq_disable();
 -		t->next = NULL;
 -		*__this_cpu_read(tasklet_hi_vec.tail) = t;
@@ -356,7 +339,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  }
  
  void tasklet_init(struct tasklet_struct *t,
-@@ -592,7 +660,7 @@ void tasklet_kill(struct tasklet_struct
+@@ -582,7 +648,7 @@ void tasklet_kill(struct tasklet_struct
  
  	while (test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
  		do {
@@ -365,7 +348,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  		} while (test_bit(TASKLET_STATE_SCHED, &t->state));
  	}
  	tasklet_unlock_wait(t);
-@@ -615,6 +683,23 @@ void __init softirq_init(void)
+@@ -656,6 +722,23 @@ void __init softirq_init(void)
  	open_softirq(HI_SOFTIRQ, tasklet_hi_action);
  }
  

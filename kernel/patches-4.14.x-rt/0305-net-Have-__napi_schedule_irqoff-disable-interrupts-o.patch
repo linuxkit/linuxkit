@@ -50,7 +50,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5249,6 +5249,7 @@ bool napi_schedule_prep(struct napi_stru
+@@ -5253,6 +5253,7 @@ bool napi_schedule_prep(struct napi_stru
  }
  EXPORT_SYMBOL(napi_schedule_prep);
  
@@ -58,7 +58,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -5260,6 +5261,7 @@ void __napi_schedule_irqoff(struct napi_
+@@ -5264,6 +5265,7 @@ void __napi_schedule_irqoff(struct napi_
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);

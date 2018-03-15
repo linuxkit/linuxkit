@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:8ad3a04b70f1e93e6159143e3792e379a9b0519d AS kernel-build
+FROM linuxkit/alpine:96ad1eb5ec262b4cd0eef574cdc0b225b502d9ee AS kernel-build
 RUN apk add \
     argp-standalone \
     automake \
@@ -177,7 +177,7 @@ RUN if [ "${KERNEL_SERIES}" != "4.4.x" ]; then \
      fi
 
 # Download Intel ucode and create a CPIO archive for it
-ENV UCODE_URL=https://downloadmirror.intel.com/27337/eng/microcode-20171117.tgz
+ENV UCODE_URL=https://downloadmirror.intel.com/27591/eng/microcode-20180312.tgz
 RUN set -e && \
     if [ $(uname -m) == x86_64 ]; then \
         cd /ucode && \

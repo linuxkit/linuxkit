@@ -12,7 +12,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/arch/arm64/Kconfig
 +++ b/arch/arm64/Kconfig
-@@ -774,7 +774,7 @@ config XEN_DOM0
+@@ -777,7 +777,7 @@ config XEN_DOM0
  
  config XEN
  	bool "Xen guest support on ARM64"
