@@ -1,4 +1,4 @@
-From 85762ddf6cc357c70b6854d8070104bc3e39c0f3 Mon Sep 17 00:00:00 2001
+From 61dd4919cb8dc425fab54b1a4327c953195af1bd Mon Sep 17 00:00:00 2001
 From: Christian Borntraeger <borntraeger@de.ibm.com>
 Date: Tue, 12 Dec 2017 09:08:35 +0100
 Subject: [PATCH] serial: forbid 8250 on s390
