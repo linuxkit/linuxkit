@@ -160,7 +160,7 @@ The kernel build system has some provision to allow local
 customisation to the build.
 
 If you want to override/add some kernel config options, you can add a
-file called `config-foo` and then invoke the build with `make
+file called `config-4.9.x-x86_64-foo` and then invoke the build with `make
 EXTRA=-foo build_4.9.x-foo` and this will build an image with the
 additional kernel config options enabled.
 
