@@ -30,7 +30,7 @@ RUN apk add \
     zlib-dev
 
 # libunwind-dev pkg is missed from arm64 now, below statement will be removed if the pkg is available.
-RUN [ $(uname -m) == x86_64 ] && apk add libunwind-dev || true
+RUN [ $(apk --print-arch) == x86_64 ] && apk add libunwind-dev || true
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
@@ -84,7 +84,7 @@ RUN set -e && \
     fi
 
 # Kernel config
-RUN case $(uname -m) in \
+RUN case $(apk --print-arch) in \
     x86_64) \
         KERNEL_DEF_CONF=/linux/arch/x86/configs/x86_64_defconfig; \
         ;; \
@@ -95,9 +95,9 @@ RUN case $(uname -m) in \
         KERNEL_DEF_CONF=/linux/arch/s390/defconfig; \
         ;; \
     esac  && \
-    cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
-    if [ -n "${EXTRA}" ] && [ -f "/config-${KERNEL_SERIES}-$(uname -m)${EXTRA}" ]; then \
-        cat /config-${KERNEL_SERIES}-$(uname -m)${EXTRA} >> ${KERNEL_DEF_CONF}; \
+    cp /config-${KERNEL_SERIES}-$(apk --print-arch) ${KERNEL_DEF_CONF}; \
+    if [ -n "${EXTRA}" ] && [ -f "/config-${KERNEL_SERIES}-$(apk --print-arch)${EXTRA}" ]; then \
+        cat /config-${KERNEL_SERIES}-$(apk --print-arch)${EXTRA} >> ${KERNEL_DEF_CONF}; \
     fi; \
     sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}${DEBUG}\"/" ${KERNEL_DEF_CONF}; \
     if [ -n "${DEBUG}" ]; then \
@@ -112,7 +112,7 @@ RUN mkdir /out
 
 # Kernel
 RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
-    case $(uname -m) in \
+    case $(apk --print-arch) in \
     x86_64) \
         cp arch/x86_64/boot/bzImage /out/kernel; \
         ;; \
@@ -139,7 +139,7 @@ RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
       cd /tmp/kernel-modules/lib/modules/$DVER && \
       rm build source && \
       ln -s /usr/src/linux-headers-$DVER build ) && \
-    case $(uname -m) in \
+    case $(apk --print-arch) in \
     aarch64) \
         make INSTALL_DTBS_PATH=/tmp/kernel-modules/boot/dtb dtbs_install; \
         ;; \
@@ -179,7 +179,7 @@ RUN if [ "${KERNEL_SERIES}" != "4.4.x" ]; then \
 # Download Intel ucode and create a CPIO archive for it
 ENV UCODE_URL=https://downloadmirror.intel.com/27591/eng/microcode-20180312.tgz
 RUN set -e && \
-    if [ $(uname -m) == x86_64 ]; then \
+    if [ $(apk --print-arch) == x86_64 ]; then \
         cd /ucode && \
         curl -sSL -o microcode.tar.gz ${UCODE_URL} && \
         md5sum -c intel-ucode-md5sums && \
