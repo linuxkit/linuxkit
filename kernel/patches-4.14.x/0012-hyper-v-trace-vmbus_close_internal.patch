@@ -1,7 +1,7 @@
 From e69671031bc85350f16fcc0f73d162758fa9af6b Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:10 -0700
-Subject: [PATCH 12/19] hyper-v: trace vmbus_close_internal()
+Subject: [PATCH 12/21] hyper-v: trace vmbus_close_internal()
 
 Add tracepoint to CHANNELMSG_CLOSECHANNEL sender.
 

@@ -1,7 +1,7 @@
 From 11ba0cc0131faac0d5e1e9ec30a5545156c2e636 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:04 -0700
-Subject: [PATCH 06/19] hyper-v: trace vmbus_onopen_result()
+Subject: [PATCH 06/21] hyper-v: trace vmbus_onopen_result()
 
 Add tracepoint to CHANNELMSG_OPENCHANNEL_RESULT handler.
 

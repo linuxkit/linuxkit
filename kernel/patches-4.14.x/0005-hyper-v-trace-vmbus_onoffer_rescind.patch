@@ -1,7 +1,7 @@
 From 0c6347ab475d34df2815cea98f0ebaa2fe5f6e3b Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:03 -0700
-Subject: [PATCH 05/19] hyper-v: trace vmbus_onoffer_rescind()
+Subject: [PATCH 05/21] hyper-v: trace vmbus_onoffer_rescind()
 
 Add tracepoint to CHANNELMSG_RESCIND_CHANNELOFFER handler.
 

@@ -1,7 +1,7 @@
 From 5023216570a427cf25fb782219054eae334346ed Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:11 -0700
-Subject: [PATCH 13/19] hyper-v: trace vmbus_establish_gpadl()
+Subject: [PATCH 13/21] hyper-v: trace vmbus_establish_gpadl()
 
 Add tracepoint to CHANNELMSG_GPADL_HEADER/CHANNELMSG_GPADL_BODY sender.
 

@@ -1,7 +1,7 @@
 From 03890ec76a01397d8fba82ca606d77873e0504ce Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:14 -0700
-Subject: [PATCH 16/19] hyper-v: trace vmbus_release_relid()
+Subject: [PATCH 16/21] hyper-v: trace vmbus_release_relid()
 
 Add tracepoint to CHANNELMSG_RELID_RELEASED sender.
 
