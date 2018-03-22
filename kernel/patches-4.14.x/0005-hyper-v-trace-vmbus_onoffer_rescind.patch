@@ -1,4 +1,4 @@
-From 2187f51e26e56dc580ac19ccd63b57f368eb2b6a Mon Sep 17 00:00:00 2001
+From 0c6347ab475d34df2815cea98f0ebaa2fe5f6e3b Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:03 -0700
 Subject: [PATCH 05/19] hyper-v: trace vmbus_onoffer_rescind()
@@ -47,5 +47,5 @@ index 488b873b563e..dbbed1d1f327 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.16.0
+2.11.1
 

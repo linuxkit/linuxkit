@@ -1,4 +1,4 @@
-From e7c4b06f8552556f3ef3538257ff631d71e4d691 Mon Sep 17 00:00:00 2001
+From d9d5329a9ecce6afa0fc25a0f560c473ae52de4a Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:13 -0700
 Subject: [PATCH 15/19] hyper-v: trace vmbus_negotiate_version()
@@ -66,5 +66,5 @@ index cd33a52ef27f..f06284d64a8c 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.16.0
+2.11.1
 
