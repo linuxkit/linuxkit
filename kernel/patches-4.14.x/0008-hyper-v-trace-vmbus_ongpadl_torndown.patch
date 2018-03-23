@@ -1,7 +1,7 @@
-From 7f6baef301fc0f4cf6e30484073ea4386575d3e4 Mon Sep 17 00:00:00 2001
+From 92412b339cf3f5aad7a2423349451db5fcfac9fd Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:06 -0700
-Subject: [PATCH 08/19] hyper-v: trace vmbus_ongpadl_torndown()
+Subject: [PATCH 08/21] hyper-v: trace vmbus_ongpadl_torndown()
 
 Add tracepoint to CHANNELMSG_GPADL_TORNDOWN handler.
 
@@ -47,5 +47,5 @@ index 20734b7b341b..84c08cdf7235 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.16.0
+2.11.1
 

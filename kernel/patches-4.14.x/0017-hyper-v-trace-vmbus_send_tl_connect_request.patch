@@ -1,7 +1,7 @@
-From aba183386c58ef438f297c636e9cce2aab466e5d Mon Sep 17 00:00:00 2001
+From 540f25fed2376bfb7e4d2f144c7b453b9eb4660a Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:15 -0700
-Subject: [PATCH 17/19] hyper-v: trace vmbus_send_tl_connect_request()
+Subject: [PATCH 17/21] hyper-v: trace vmbus_send_tl_connect_request()
 
 Add tracepoint to CHANNELMSG_TL_CONNECT_REQUEST sender.
 
@@ -70,5 +70,5 @@ index f0e437c3522f..5382d9630306 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.16.0
+2.11.1
 
