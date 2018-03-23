@@ -1,7 +1,7 @@
 # Make modules from a recentish kernel available
 FROM linuxkit/kernel:4.14.12 AS kernel
 
-FROM linuxkit/alpine:cba395fbc278daee841106801aba1e1bd7e0f2f7 AS build
+FROM linuxkit/alpine:96ad1eb5ec262b4cd0eef574cdc0b225b502d9ee AS build
 RUN apk add --no-cache git kmod
 
 # Clone the firmware repository

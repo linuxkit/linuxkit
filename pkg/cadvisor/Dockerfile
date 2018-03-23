@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:cba395fbc278daee841106801aba1e1bd7e0f2f7 as build
+FROM linuxkit/alpine:96ad1eb5ec262b4cd0eef574cdc0b225b502d9ee as build
 
 RUN apk add --no-cache bash go git musl-dev linux-headers make
 
@@ -16,7 +16,7 @@ RUN go get -d ${GITREPO} \
     && mv cadvisor /usr/bin/
 
 
-FROM linuxkit/alpine:cba395fbc278daee841106801aba1e1bd7e0f2f7 AS mirror
+FROM linuxkit/alpine:96ad1eb5ec262b4cd0eef574cdc0b225b502d9ee AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
