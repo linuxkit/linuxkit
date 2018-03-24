@@ -2,28 +2,28 @@ kernel:
   image: linuxkit/kernel:4.14.29
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:b212cfeb4bb6330e0a7547d8010fe2e8489b677a
-  - linuxkit/runc:7c39a68490a12cde830e1922f171c451fb08e731
-  - linuxkit/containerd:37e397ebfc6bd5d8e18695b121166ffd0cbfd9f0
-  - linuxkit/ca-certificates:v0.2
+  - linuxkit/init:7af4e32f31f04d6c63d457c502d2f69344db7d72
+  - linuxkit/runc:e4b01b68b225d694a60f8b335258bd2144971239
+  - linuxkit/containerd:d03b69c7d23fdae0fec1b6e62a72d362992135df
+  - linuxkit/ca-certificates:04a6dc9e5c901ee128c353f690bd97aeb7d97ae8
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.2
+    image: linuxkit/sysctl:e7106b5e3db64a9ec21eb1479727627ecf52137d
   - name: sysfs
-    image: linuxkit/sysfs:v0.2
+    image: linuxkit/sysfs:f7fc4dfbdc7e09f8aab0063699d9a75932b08c3f
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.2
+    image: linuxkit/dhcpcd:8b23f047ffa4d657a2c7dd465e69cc13721c4165
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:v0.2
+    image: linuxkit/format:a0a0469c74e3c5617d2fdffb6c38e402133fb680
   - name: mount
-    image: linuxkit/mount:v0.2
+    image: linuxkit/mount:03795dccf510edfc14aeb0ab5e87cd9f7da3586a
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: rngd
-    image: linuxkit/rngd:v0.2
+    image: linuxkit/rngd:8bcfb9a90470161a04f25e58407852a3d1ad499a
   - name: ntpd
-    image: linuxkit/openntpd:v0.2
+    image: linuxkit/openntpd:e3cd26ff2974f2d93c88c28efacf69e15bcdb983
   - name: docker
     image: docker:17.07.0-ce-dind
     capabilities:
