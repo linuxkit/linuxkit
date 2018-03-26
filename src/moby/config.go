@@ -785,7 +785,8 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 		}
 		src := parts[0]
 		dest := parts[1]
-		opts := []string{"rw", "rbind", "rprivate"}
+		// default to rshared if not specified
+		opts := []string{"rw", "rbind", "rshared"}
 		if len(parts) == 3 {
 			opts = append(strings.Split(parts[2], ","), "rbind")
 		}
