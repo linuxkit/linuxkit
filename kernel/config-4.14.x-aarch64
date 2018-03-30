@@ -2740,7 +2740,7 @@ CONFIG_FB_DEFERRED_IO=y
 # CONFIG_FB_CYBER2000 is not set
 # CONFIG_FB_ASILIANT is not set
 # CONFIG_FB_IMSTT is not set
-# CONFIG_FB_EFI is not set
+CONFIG_FB_EFI=y
 # CONFIG_FB_OPENCORES is not set
 # CONFIG_FB_S1D13XXX is not set
 # CONFIG_FB_NVIDIA is not set
