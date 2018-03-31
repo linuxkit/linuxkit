@@ -1,6 +1,6 @@
 #!/bin/sh
 # SUMMARY: Sanity check on the kernel config file
-# disabled for arm64: https://github.com/linuxkit/linuxkit/issues/2807
+# disabled for arm64, no 4.4 build
 # LABELS: amd64
 # REPEAT:
 
