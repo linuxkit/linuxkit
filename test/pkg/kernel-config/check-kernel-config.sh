@@ -20,6 +20,7 @@ kernelVersion="$(uname -r)"
 kernelMajor="${kernelVersion%%.*}"
 kernelMinor="${kernelVersion#$kernelMajor.}"
 kernelMinor="${kernelMinor%%.*}"
+arch="$(uname -m)"
 
 # Most tests against https://kernsec.org/wiki/index.php/Kernel_Self_Protection_Project
 # Positive cases
@@ -39,17 +40,11 @@ echo $UNZIPPED_CONFIG | grep -q CONFIG_SECURITY=y || fail "CONFIG_SECURITY=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_SECURITY_YAMA=y || fail "CONFIG_SECURITY_YAMA=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_PANIC_ON_OOPS=y || fail "CONFIG_PANIC_ON_OOPS=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_SYN_COOKIES=y || fail "CONFIG_SYN_COOKIES=y"
-echo $UNZIPPED_CONFIG | grep -q CONFIG_LEGACY_VSYSCALL_NONE=y || fail "CONFIG_LEGACY_VSYSCALL_NONE=y"
-echo $UNZIPPED_CONFIG | grep -q CONFIG_RANDOMIZE_BASE=y || fail "CONFIG_RANDOMIZE_BASE=y"
-echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_TABLE_ISOLATION=y || fail "CONFIG_PAGE_TABLE_ISOLATION=y"
-echo $UNZIPPED_CONFIG | grep -q CONFIG_RETPOLINE=y || fail "CONFIG_RETPOLINE=y"
-echo $UNZIPPED_CONFIG | grep -q CONFIG_GENERIC_CPU_VULNERABILITIES=y || fail "CONFIG_GENERIC_CPU_VULNERABILITIES=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_BPF_JIT_ALWAYS_ON=y || fail "CONFIG_BPF_JIT_ALWAYS_ON=y"
 
 
 # Conditional on kernel version
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 5 ]; then
-  echo $UNZIPPED_CONFIG | grep -q CONFIG_IO_STRICT_DEVMEM=y || fail "CONFIG_IO_STRICT_DEVMEM=y"
   echo $UNZIPPED_CONFIG | grep -q CONFIG_UBSAN=y || fail "CONFIG_UBSAN=y"
 fi
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 7 ]; then
@@ -57,7 +52,23 @@ if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 7 ]; then
 fi
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 8 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_HARDENED_USERCOPY=y || fail "CONFIG_HARDENED_USERCOPY=y"
+fi
+
+# Positive cases conditional on architecture and/or kernel version
+if [ "$arch" = "x86_64" ]; then 
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_LEGACY_VSYSCALL_NONE=y || fail "CONFIG_LEGACY_VSYSCALL_NONE=y"
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_TABLE_ISOLATION=y || fail "CONFIG_PAGE_TABLE_ISOLATION=y"
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_RETPOLINE=y || fail "CONFIG_RETPOLINE=y"
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_GENERIC_CPU_VULNERABILITIES=y || fail "CONFIG_GENERIC_CPU_VULNERABILITIES=y"
+fi
+if [ "$arch" = "x86_64" -a "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 5 ]; then
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_IO_STRICT_DEVMEM=y || fail "CONFIG_IO_STRICT_DEVMEM=y"
+fi
+if [ "$arch" = "x86_64" -a "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 8 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_RANDOMIZE_MEMORY=y || fail "CONFIG_RANDOMIZE_MEMORY=y"
+fi
+if [ "$arch" = "x86_64" ] || [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 5 ]; then
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_RANDOMIZE_BASE=y || fail "CONFIG_RANDOMIZE_BASE=y"
 fi
 
 # poisoning cannot be enabled in 4.4
@@ -82,16 +93,22 @@ if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 11 ]; then
 fi
 
 # Negative cases
-echo $UNZIPPED_CONFIG | grep -q 'CONFIG_ACPI_CUSTOM_METHOD is not set' || fail "CONFIG_ACPI_CUSTOM_METHOD is not set"
 echo $UNZIPPED_CONFIG | grep -q 'CONFIG_COMPAT_BRK is not set' || fail "CONFIG_COMPAT_BRK is not set"
-echo $UNZIPPED_CONFIG | grep -q 'CONFIG_DEVKMEM is not set' || fail "CONFIG_DEVKMEM is not set"
-echo $UNZIPPED_CONFIG | grep -q 'CONFIG_COMPAT_VDSO is not set' || fail "CONFIG_COMPAT_VDSO is not set"
-echo $UNZIPPED_CONFIG | grep -q 'CONFIG_KEXEC is not set' || fail "CONFIG_KEXEC is not set"
-echo $UNZIPPED_CONFIG | grep -q 'CONFIG_HIBERNATION is not set' || fail "CONFIG_HIBERNATION is not set"
-echo $UNZIPPED_CONFIG | grep -q 'CONFIG_LEGACY_PTYS is not set' || fail "CONFIG_LEGACY_PTYS is not set"
-echo $UNZIPPED_CONFIG | grep -q 'CONFIG_X86_X32 is not set' || fail "CONFIG_X86_X32 is not set"
-echo $UNZIPPED_CONFIG | grep -q 'CONFIG_MODIFY_LDT_SYSCALL is not set' || fail "CONFIG_MODIFY_LDT_SYSCALL is not set"
 echo $UNZIPPED_CONFIG | grep -q 'CONFIG_SCSI_PROC_FS is not set' || fail "CONFIG_SCSI_PROC_FS is not set"
+
+# Negative cases conditional on architecture and/or kernel version
+if [ "$arch" = "x86_64" ]; then 
+  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_ACPI_CUSTOM_METHOD is not set' || fail "CONFIG_ACPI_CUSTOM_METHOD is not set"
+  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_DEVKMEM is not set' || fail "CONFIG_DEVKMEM is not set"
+  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_COMPAT_VDSO is not set' || fail "CONFIG_COMPAT_VDSO is not set"
+  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_KEXEC is not set' || fail "CONFIG_KEXEC is not set"
+  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_X86_X32 is not set' || fail "CONFIG_X86_X32 is not set"
+  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_MODIFY_LDT_SYSCALL is not set' || fail "CONFIG_MODIFY_LDT_SYSCALL is not set"
+fi
+if [ "$arch" = "x86_64" ] || [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 5 ]; then
+  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_LEGACY_PTYS is not set' || fail "CONFIG_LEGACY_PTYS is not set"
+  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_HIBERNATION is not set' || fail "CONFIG_HIBERNATION is not set"
+fi
 
 # modprobe
 for mod in \
@@ -140,11 +157,14 @@ udf \
 xfs \
 9p \
 pstore \
-mqueue \
-oprofilefs
+mqueue
 do
 	grep -q "[[:space:]]${fs}\$" /proc/filesystems || fail "${fs} filesystem missing"
 done
+if [ "$arch" = "x86_64" ]; then
+  grep -q "[[:space:]]oprofilefs\$" /proc/filesystems || fail "${fs} filesystem missing"
+fi
+
 
 if [ -z "$FAILED" ]
 then
