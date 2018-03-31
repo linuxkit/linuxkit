@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.4.123 Kernel Configuration
+# Linux/x86 4.4.125 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -2423,7 +2423,7 @@ CONFIG_FB_DEFERRED_IO=y
 # CONFIG_FB_VGA16 is not set
 # CONFIG_FB_UVESA is not set
 CONFIG_FB_VESA=y
-# CONFIG_FB_EFI is not set
+CONFIG_FB_EFI=y
 # CONFIG_FB_N411 is not set
 # CONFIG_FB_HGA is not set
 # CONFIG_FB_OPENCORES is not set
