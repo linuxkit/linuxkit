@@ -1,2 +1,5 @@
 image: test-kernel-config
 network: true
+arches:
+  - amd64
+  - arm64
