@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:4.14.32
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:7af4e32f31f04d6c63d457c502d2f69344db7d72
-  - linuxkit/runc:e4b01b68b225d694a60f8b335258bd2144971239
-  - linuxkit/containerd:d03b69c7d23fdae0fec1b6e62a72d362992135df
+  - linuxkit/init:be60dd1cb15ad39225512b6753304571d8c2fb17
+  - linuxkit/runc:17e8c06e48ac220be79b2476e39b4d7feb905524
+  - linuxkit/containerd:87ea9b027267b26bf5cc2d10a50c3eb9b5017df4
   - linuxkit/ca-certificates:04a6dc9e5c901ee128c353f690bd97aeb7d97ae8
 onboot:
   - name: dhcpcd
@@ -18,7 +18,7 @@ onboot:
     image: linuxkit/mount:03795dccf510edfc14aeb0ab5e87cd9f7da3586a
     command: ["/usr/bin/mountie", "/var/lib"]
   - name: test
-    image: linuxkit/test-containerd:0c99fe453549483a8706b369521393b61ef9c896
+    image: linuxkit/test-containerd:9769b24f2093104dcb837906e3fd6ea34dba55d1
   - name: poweroff
     image: linuxkit/poweroff:f9a0a5e52fd2a97908bda33db2afffafe4a6a67d
 trust:
