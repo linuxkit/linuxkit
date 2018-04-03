@@ -1,4 +1,4 @@
-# linuxkit/alpine:714160cc12b9c890b1de98fa4f7d104987130fa5-arm64
+# linuxkit/alpine:6d019c0ba6b9a9238b5c03ac8a85aecaac217711-arm64
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
@@ -36,7 +36,7 @@ cmake-3.9.5-r0
 coreutils-8.28-r0
 cryptsetup-1.7.5-r1
 cryptsetup-libs-1.7.5-r1
-curl-7.58.0-r1
+curl-7.59.0-r0
 db-5.3.28-r0
 dbus-libs-1.10.24-r0
 device-mapper-libs-2.02.175-r0
@@ -116,7 +116,7 @@ libcap-ng-0.7.8-r1
 libcap-ng-dev-0.7.8-r1
 libcom_err-1.43.7-r0
 libcrypto1.0-1.0.2n-r0
-libcurl-7.58.0-r1
+libcurl-7.59.0-r0
 libdrm-2.4.88-r0
 libedit-20170329.3.1-r3
 libelf-0.8.13-r3
@@ -235,7 +235,7 @@ qemu-system-x86_64-2.10.1-r3
 readline-7.0.003-r0
 rhash-libs-1.3.5-r1
 rpcbind-0.2.4-r0
-rsync-3.1.2-r7
+rsync-3.1.3-r0
 scanelf-1.2.2-r1
 sed-4.4-r1
 sfdisk-2.31-r0
@@ -267,7 +267,7 @@ vim-8.0.1359-r0
 wayland-libs-client-1.14.0-r2
 wayland-libs-cursor-1.14.0-r2
 wayland-libs-server-1.14.0-r2
-wireguard-tools-0.0.20180218-r0
+wireguard-tools-0.0.20180304-r2
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r8
 xfsprogs-4.14.0-r0
