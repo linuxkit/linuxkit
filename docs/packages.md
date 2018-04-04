@@ -72,9 +72,9 @@ should also be set up with signing keys for packages and your signing
 key should have a passphrase, which we call `<passphrase>` throughout.
 
 All official LinuxKit packages are multi-arch manifests and most of
-them are available for amd64 and aarm64. Official images *must* be
-build on both architectures and they must be build *in sequence*, i.e.,
-they can't be build in parallel.
+them are available for `amd64`, `arm64`, and `s390x`. Official images
+*must* be build on both architectures and they must be build *in
+sequence*, i.e., they can't be build in parallel.
 
 To build a package on an architecture:
 
