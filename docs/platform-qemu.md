@@ -4,19 +4,26 @@ The `qemu` backend is the most versatile `run` backend for
 `linuxkit`. It can boot both `x86_64` and `arm64` images, runs on
 macOS and Linux (and possibly Windows), and can boot most types of
 output formats. On Linux, `kvm` acceleration is enabled by default if
-available.
+available. On macOS, `hvf` acceleration (using the Hypervisor
+framework) is used if your `qemu` version supports it (versions
+released after Jan/Feb 2018 should support it). `s390x` is currently
+only supported in `kvm` mode as the emulated `s390x` architecture (aka
+`tcg` mode) does not seem to support several required platform
+features. Further, on `s390x` platforms you need to set
+`vm.allocate_pgste=1` via `sysctl` (or use `echo 1 >
+/proc/sys/vm/allocate_pgste`).
 
 
 ## Boot
 
 By default `linuxkit run qemu` will boot with the host architecture
-(`x86_64` on `x86_64` machines and `aarch64` on `arm64` systems). The
-architecture can be specified with `-arch` and currently accepts
-`x86_64` and `aarch64` as arguments.
+(e.g., `aarch64` on `arm64` systems). The architecture can be
+specified with `-arch` and currently accepts `x86_64`, `aarch64`, and
+`s390x` as arguments.
 
 `linuxkit run qemu` can boot in different types of images:
 
-- `kernel+initrd`: This is the default mode of `linuxkit run qemu` [`x86_64`, `arm64`]
+- `kernel+initrd`: This is the default mode of `linuxkit run qemu` [`x86_64`, `arm64`, `s390x`]
 - `iso-bios`: `linuxkit run qemu -iso <path to iso>` [`x86_64`]
 - `iso-efi`: `linuxkit run qemu -iso -uefi <path to iso>`. This looks in `/usr/share/ovmf/bios.bin` for the EFI firmware by default. Can be overwritten with `-fw`. [`x86_64`, `arm64`]
 - `qcow-bios`: `linuxkit run qemu disk.qcow2` [`x86_64`]

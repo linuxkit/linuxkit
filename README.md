@@ -2,25 +2,6 @@
 
 [![CircleCI](https://circleci.com/gh/linuxkit/linuxkit.svg?style=svg)](https://circleci.com/gh/linuxkit/linuxkit)
 
-**Security Update 17/01/2018: All current LinuxKit `x86_64` kernels
-have KPTI/KAISER enabled by default. This protects against
-[Meltdown](https://meltdownattack.com/meltdown.pdf). Defences against
-[Spectre](https://spectreattack.com/spectre.pdf) are work in progress
-upstream and some have been incorporated into 4.14.14/4.9.77 onwards
-but work is still ongoing. The kernels 4.14.14/4.9.77 onwards also
-include various eBPF and KVM fixes to mitigate some aspects of
-Spectre.  The `arm64` kernels are not yet fixed. See [Greg KH's
-excellent
-blogpost](http://kroah.com/log/blog/2018/01/06/meltdown-status/) and
-this [LWN.net
-article](https://lwn.net/SubscriberLink/744287/1fc3c18173f732e7/) for
-details.**
-
-**If you run LinuxKit kernels on x86 baremetal we also strongly
-recommend to add `ucode: intel-ucode.cpio` to the kernel section of
-your YAML if you are using Intel CPUs and `linuxkit/firmware:<hash>` if
-you are using AMD CPUs.**
-
 LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 
 - Secure defaults without compromising usability
@@ -34,9 +15,15 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 - Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) or similar tools
 - Includes a set of longer-term collaborative projects in various stages of development to innovate on kernel and userspace changes, particularly around security
 
+LinuxKit currently supports the `x86_64`, `arm64`, and `s390x` architectures on a variety of platforms, both as virtual machines and baremetal (see [below](#booting-and-testing) for details.
+
 ## Subprojects
 
 - [LinuxKit kubernetes](https://github.com/linuxkit/kubernetes) aims to build minimal and immutable Kubernetes images. (previously `projects/kubernetes` in this repository).
+- [LinuxKit LCOW](https://github.com/linuxkit/lcow) LinuxKit images and utilities for Microsoft's Linux Containers on Windows.
+- [linux](https://github.com/linuxkit/linux) A copy of the Linux stable tree with branches LinuxKit kernels.
+- [virtsock](https://github.com/linuxkit/virtsock) A `go` library and test utilities for `virtio` and Hyper-V sockets.
+- [rtf](https://github.com/linuxkit/rtf) A regression test framework used for the LinuxKit CI tests (and other projects).
 
 ## Getting Started
 
@@ -75,25 +62,25 @@ Since `linuxkit build` is built around the [Moby tool](https://github.com/moby/t
 
 ### Booting and Testing
 
-You can use `linuxkit run <name>` or `linuxkit run <name>.<format>` to execute the image you created with `linuxkit build <name>.yml`.
-This will use a suitable backend for your platform or you can choose one, for example VMWare.
-See `linuxkit run --help`.
+You can use `linuxkit run <name>` or `linuxkit run <name>.<format>` to
+execute the image you created with `linuxkit build <name>.yml`.  This
+will use a suitable backend for your platform or you can choose one,
+for example VMWare.  See `linuxkit run --help`.
 
 Currently supported platforms are:
 - Local hypervisors
-  - [HyperKit (macOS)](docs/platform-hyperkit.md)
-  - [Hyper-V (Windows)](docs/platform-hyperv.md)
-  - [qemu (macOS, Linux, Windows)](docs/platform-qemu.md)
-  - [VMware (macOS, Windows)](docs/platform-vmware.md)
+  - [HyperKit (macOS)](docs/platform-hyperkit.md) `[x86_64]`
+  - [Hyper-V (Windows)](docs/platform-hyperv.md) `[x86_64]`
+  - [qemu (macOS, Linux, Windows)](docs/platform-qemu.md) `[x86_64, arm64, s390x]`
+  - [VMware (macOS, Windows)](docs/platform-vmware.md) `[x86_64]`
 - Cloud based platforms:
-  - [Amazon Web Services](docs/platform-aws.md)
-  - [Google Cloud](docs/platform-gcp.md)
-  - [Microsoft Azure](docs/platform-azure.md)
-  - [OpenStack](docs/platform-openstack.md)
-  - [packet.net](docs/platform-packet.md)
+  - [Amazon Web Services](docs/platform-aws.md) `[x86_64]`
+  - [Google Cloud](docs/platform-gcp.md) `[x86_64]`
+  - [Microsoft Azure](docs/platform-azure.md) `[x86_64]`
+  - [OpenStack](docs/platform-openstack.md) `[x86_64]`
 - Baremetal:
-  - x86 and arm64 servers on [packet.net](docs/platform-packet.md)
-  - [Raspberry Pi Model 3b](docs/platform-rpi3.md)
+  - [packet.net](docs/platform-packet.md) `[x86_64, arm64]`
+  - [Raspberry Pi Model 3b](docs/platform-rpi3.md)  `[arm64]`
 
 
 #### Running the Tests
