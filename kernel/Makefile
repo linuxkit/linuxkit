@@ -233,7 +233,6 @@ $(eval $(call kernel,4.14.29,4.14.x,-rt,))
 else ifeq ($(ARCH),s390x)
 $(eval $(call kernel,4.15.15,4.15.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.32,4.14.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.29,4.14.x,-rt,))
 endif
 
 # Target for kernel config
