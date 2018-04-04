@@ -20,6 +20,10 @@ LinuxKit currently supports the `x86_64`, `arm64`, and `s390x` architectures on 
 ## Subprojects
 
 - [LinuxKit kubernetes](https://github.com/linuxkit/kubernetes) aims to build minimal and immutable Kubernetes images. (previously `projects/kubernetes` in this repository).
+- [LinuxKit LCOW](https://github.com/linuxkit/lcow) LinuxKit images and utilities for Microsoft's Linux Containers on Windows.
+- [linux](https://github.com/linuxkit/linux) A copy of the Linux stable tree with branches LinuxKit kernels.
+- [virtsock](https://github.com/linuxkit/virtsock) A `go` library and test utilities for `virtio` and Hyper-V sockets.
+- [rtf](https://github.com/linuxkit/rtf) A regression test framework used for the LinuxKit CI tests (and other projects).
 
 ## Getting Started
 
