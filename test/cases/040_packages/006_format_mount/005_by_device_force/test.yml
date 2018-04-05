@@ -2,23 +2,23 @@ kernel:
   image: linuxkit/kernel:4.9.51
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:be60dd1cb15ad39225512b6753304571d8c2fb17
-  - linuxkit/runc:17e8c06e48ac220be79b2476e39b4d7feb905524
+  - linuxkit/init:v0.3
+  - linuxkit/runc:v0.3
 onboot:
   - name: format
-    image: linuxkit/format:a0a0469c74e3c5617d2fdffb6c38e402133fb680
+    image: linuxkit/format:v0.3
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sda"]
   - name: format
-    image: linuxkit/format:a0a0469c74e3c5617d2fdffb6c38e402133fb680
+    image: linuxkit/format:v0.3
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sdb"]
   - name: format
-    image: linuxkit/format:a0a0469c74e3c5617d2fdffb6c38e402133fb680
+    image: linuxkit/format:v0.3
     command: ["/usr/bin/format", "-verbose", "-type", "xfs", "/dev/sda"]
   - name: format
-    image: linuxkit/format:a0a0469c74e3c5617d2fdffb6c38e402133fb680
+    image: linuxkit/format:v0.3
     command: ["/usr/bin/format", "-verbose", "-force", "-type", "xfs", "/dev/sdb"]
   - name: test
-    image: linuxkit/format:a0a0469c74e3c5617d2fdffb6c38e402133fb680
+    image: linuxkit/format:v0.3
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
@@ -26,7 +26,7 @@ onboot:
       - CAP_SYS_ADMIN
       - CAP_MKNOD
   - name: poweroff
-    image: linuxkit/poweroff:f9a0a5e52fd2a97908bda33db2afffafe4a6a67d
+    image: linuxkit/poweroff:5740687bf0a6a0480922c0f59b3a4ca77c866cae
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh

@@ -4,10 +4,10 @@
 default: bin/linuxkit bin/rtf
 all: default
 
-VERSION="v0.2+"
+VERSION="v0.3"
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=linuxkit/go-compile:7392985c6f55aba61201514174b45ba755fb386e
+GO_COMPILE=linuxkit/go-compile:2940a8141d907c2976be15f201f6e9b7c4c1f931
 
 LINUXKIT?=bin/linuxkit
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
