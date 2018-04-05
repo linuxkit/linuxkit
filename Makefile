@@ -62,23 +62,26 @@ test-cross:
 	$(MAKE) -j 3 GOOS=linux tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
 	$(MAKE) clean
 
-ifeq ($(GOARCH)-$(GOOS),amd64-linux)
-LOCAL_BUILDMODE?=pie
-endif
-LOCAL_BUILDMODE?=default
-
-LOCAL_LDFLAGS += -s -w -extldflags \"-static\" -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)
+LOCAL_LDFLAGS += -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)
 LOCAL_TARGET ?= bin/linuxkit
 
-.PHONY: local-check local-build local-test local
+.PHONY: local-check local-build local-test local-static-pie local-static local-dynamic local
 local-check: $(LINUXKIT_DEPS)
 	@echo gofmt... && o=$$(gofmt -s -l $(filter %.go,$(LINUXKIT_DEPS))) && if [ -n "$$o" ] ; then echo $$o ; exit 1 ; fi
 	@echo govet... && go tool vet -printf=false $(filter %.go,$(LINUXKIT_DEPS))
 	@echo golint... && set -e ; for i in $(filter %.go,$(LINUXKIT_DEPS)); do golint $$i ; done
 	@echo ineffassign... && ineffassign  $(filter %.go,$(LINUXKIT_DEPS))
 
-local-build: $(LINUXKIT_DEPS) | bin
-	go build -o $(LOCAL_TARGET) --buildmode $(LOCAL_BUILDMODE) --ldflags "$(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
+local-build: local-static
+
+local-static-pie: $(LINUXKIT_DEPS) | bin
+	CGO_ENABLED=0 go build -o $(LOCAL_TARGET) --buildmode pie --ldflags "-s -w -extldflags \"-static\" $(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
+
+local-static: $(LINUXKIT_DEPS) | bin
+	CGO_ENABLED=0 go build -o $(LOCAL_TARGET) --ldflags "$(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
+
+local-dynamic: $(LINUXKIT_DEPS) | bin
+	go build -o $(LOCAL_TARGET) --ldflags "$(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
 
 local-test: $(LINUXKIT_DEPS)
 	go test $(shell go list github.com/linuxkit/linuxkit/src/cmd/linuxkit/... | grep -v ^github.com/linuxkit/linuxkit/src/cmd/linuxkit/vendor/)
