@@ -1,10 +1,10 @@
-FROM linuxkit/alpine:96ad1eb5ec262b4cd0eef574cdc0b225b502d9ee AS qemu
+FROM linuxkit/alpine:f3cd219615428b2bd943411723eb28875275fae7 AS qemu
 RUN apk add \
     qemu-aarch64 \
     qemu-arm \
     qemu-ppc64le
 
-FROM linuxkit/alpine:96ad1eb5ec262b4cd0eef574cdc0b225b502d9ee AS mirror
+FROM linuxkit/alpine:f3cd219615428b2bd943411723eb28875275fae7 AS mirror
 
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
