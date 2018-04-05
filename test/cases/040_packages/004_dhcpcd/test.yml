@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:4.14.32
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:be60dd1cb15ad39225512b6753304571d8c2fb17
-  - linuxkit/runc:17e8c06e48ac220be79b2476e39b4d7feb905524
+  - linuxkit/init:v0.3
+  - linuxkit/runc:v0.3
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:8b23f047ffa4d657a2c7dd465e69cc13721c4165
+    image: linuxkit/dhcpcd:v0.3
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: test
     image: alpine:3.7

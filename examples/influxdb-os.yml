@@ -2,17 +2,17 @@ kernel:
   image: linuxkit/kernel:4.14.32
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:be60dd1cb15ad39225512b6753304571d8c2fb17
-  - linuxkit/runc:17e8c06e48ac220be79b2476e39b4d7feb905524
-  - linuxkit/containerd:87ea9b027267b26bf5cc2d10a50c3eb9b5017df4
-  - linuxkit/ca-certificates:04a6dc9e5c901ee128c353f690bd97aeb7d97ae8
+  - linuxkit/init:v0.3
+  - linuxkit/runc:v0.3
+  - linuxkit/containerd:v0.3
+  - linuxkit/ca-certificates:v0.3
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:8b23f047ffa4d657a2c7dd465e69cc13721c4165
+    image: linuxkit/dhcpcd:v0.3
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:9e2c184fdd708720d47e663f03ad137c074d4f21
+    image: linuxkit/getty:v0.3
     env:
      - INSECURE=true
   - name: influxdb
