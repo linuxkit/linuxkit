@@ -82,7 +82,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return fmt.Errorf("Unknown arch %q", arch)
 	}
 
-	if p.git != nil && bo.release == "" {
+	if p.git != nil && bo.push && bo.release == "" {
 		r, err := p.git.commitTag("HEAD")
 		if err != nil {
 			return err
