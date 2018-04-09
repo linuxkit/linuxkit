@@ -1,9 +1,11 @@
 FROM linuxkit/alpine:96ad1eb5ec262b4cd0eef574cdc0b225b502d9ee AS kernel-build
 RUN apk add \
     argp-standalone \
+    bison \
     build-base \
     curl \
     diffutils \
+    flex \
     libarchive-tools \
     ncurses-dev \
     patch \

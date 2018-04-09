@@ -27,7 +27,6 @@ arch="$(uname -m)"
 
 echo $UNZIPPED_CONFIG | grep -q CONFIG_BUG=y || fail "CONFIG_BUG=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_KERNEL=y || fail "CONFIG_DEBUG_KERNEL=y"
-echo $UNZIPPED_CONFIG | grep -q CONFIG_CC_STACKPROTECTOR=y || fail "CONFIG_CC_STACKPROTECTOR=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_CC_STACKPROTECTOR_STRONG=y || fail "CONFIG_CC_STACKPROTECTOR_STRONG=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_STRICT_DEVMEM=y || fail "CONFIG_STRICT_DEVMEM=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_SYN_COOKIES=y || fail "CONFIG_SYN_COOKIES=y"
@@ -52,6 +51,10 @@ if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 7 ]; then
 fi
 if [ "$kernelMajor" -ge 4 -a "$kernelMinor" -ge 8 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_HARDENED_USERCOPY=y || fail "CONFIG_HARDENED_USERCOPY=y"
+fi
+# 4.16.x removed this option
+if [ "$kernelMajor" -le 4 -a "$kernelMinor" -le 15 ]; then
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_CC_STACKPROTECTOR=y || fail "CONFIG_CC_STACKPROTECTOR=y"
 fi
 
 # Positive cases conditional on architecture and/or kernel version
