@@ -6,7 +6,9 @@ if [ -f /etc/issue ]; then
 		console=*)
 			fulltty=${opt#console=}
 			tty=${fulltty%,*}
-			cat /etc/issue >> /dev/$tty
+			if [ -c "/dev/$tty" ] ; then
+				cat /etc/issue >> "/dev/$tty"
+			fi
 		esac
 	done
 fi
