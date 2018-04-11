@@ -86,10 +86,6 @@ func X509PublicKeyID(certPubKey data.PublicKey) (string, error) {
 }
 
 func parseLegacyPrivateKey(block *pem.Block, passphrase string) (data.PrivateKey, error) {
-	if notary.FIPSEnabled() {
-		return nil, fmt.Errorf("%s not supported in FIPS mode", block.Type)
-	}
-
 	var privKeyBytes []byte
 	var err error
 	if x509.IsEncryptedPEMBlock(block) {
@@ -146,6 +142,10 @@ func parseLegacyPrivateKey(block *pem.Block, passphrase string) (data.PrivateKey
 // supports PKCS#8 as well as RSA/ECDSA (PKCS#1) only in non-FIPS mode and
 // attempts to decrypt using the passphrase, if encrypted.
 func ParsePEMPrivateKey(pemBytes []byte, passphrase string) (data.PrivateKey, error) {
+	return parsePEMPrivateKey(pemBytes, passphrase, notary.FIPSEnabled())
+}
+
+func parsePEMPrivateKey(pemBytes []byte, passphrase string, fips bool) (data.PrivateKey, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
 		return nil, errors.New("no valid private key found")
@@ -153,6 +153,9 @@ func ParsePEMPrivateKey(pemBytes []byte, passphrase string) (data.PrivateKey, er
 
 	switch block.Type {
 	case "RSA PRIVATE KEY", "EC PRIVATE KEY", "ED25519 PRIVATE KEY":
+		if fips {
+			return nil, fmt.Errorf("%s not supported in FIPS mode", block.Type)
+		}
 		return parseLegacyPrivateKey(block, passphrase)
 	case "ENCRYPTED PRIVATE KEY", "PRIVATE KEY":
 		if passphrase == "" {
@@ -433,6 +436,10 @@ func ED25519ToPrivateKey(privKeyBytes []byte) (data.PrivateKey, error) {
 
 // ExtractPrivateKeyAttributes extracts role and gun values from private key bytes
 func ExtractPrivateKeyAttributes(pemBytes []byte) (data.RoleName, data.GUN, error) {
+	return extractPrivateKeyAttributes(pemBytes, notary.FIPSEnabled())
+}
+
+func extractPrivateKeyAttributes(pemBytes []byte, fips bool) (data.RoleName, data.GUN, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
 		return "", "", errors.New("PEM block is empty")
@@ -440,7 +447,7 @@ func ExtractPrivateKeyAttributes(pemBytes []byte) (data.RoleName, data.GUN, erro
 
 	switch block.Type {
 	case "RSA PRIVATE KEY", "EC PRIVATE KEY", "ED25519 PRIVATE KEY":
-		if notary.FIPSEnabled() {
+		if fips {
 			return "", "", fmt.Errorf("%s not supported in FIPS mode", block.Type)
 		}
 	case "PRIVATE KEY", "ENCRYPTED PRIVATE KEY":

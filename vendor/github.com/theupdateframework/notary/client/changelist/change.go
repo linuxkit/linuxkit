@@ -82,8 +82,8 @@ func (c TUFChange) Content() []byte {
 // unexpected race conditions between humans modifying the same delegation
 type TUFDelegation struct {
 	NewName       data.RoleName `json:"new_name,omitempty"`
-	NewThreshold  int           `json:"threshold, omitempty"`
-	AddKeys       data.KeyList  `json:"add_keys, omitempty"`
+	NewThreshold  int           `json:"threshold,omitempty"`
+	AddKeys       data.KeyList  `json:"add_keys,omitempty"`
 	RemoveKeys    []string      `json:"remove_keys,omitempty"`
 	AddPaths      []string      `json:"add_paths,omitempty"`
 	RemovePaths   []string      `json:"remove_paths,omitempty"`
