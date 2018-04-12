@@ -29,16 +29,16 @@ secure. Once the publisher is ready to make the content available, they can
 push their signed trusted collection to a Notary Server.
 
 Consumers, having acquired the publisher's public key through a secure channel,
-can then communicate with any notary server or (insecure) mirror, relying
+can then communicate with any Notary server or (insecure) mirror, relying
 only on the publisher's key to determine the validity and integrity of the
 received content.
 
 ## Goals
 
-Notary is based on [The Update Framework](https://www.theupdateframework.com/), a secure general design for the problem of software distribution and updates. By using TUF, notary achieves a number of key advantages:
+Notary is based on [The Update Framework](https://www.theupdateframework.com/), a secure general design for the problem of software distribution and updates. By using TUF, Notary achieves a number of key advantages:
 
 * **Survivable Key Compromise**: Content publishers must manage keys in order to sign their content. Signing keys may be compromised or lost so systems must be designed in order to be flexible and recoverable in the case of key compromise. TUF's notion of key roles is utilized to separate responsibilities across a hierarchy of keys such that loss of any particular key (except the root role) by itself is not fatal to the security of the system.
-* **Freshness Guarantees**: Replay attacks are a common problem in designing secure systems, where previously valid payloads are replayed to trick another system. The same problem exists in the software update systems, where old signed can be presented as the most recent. notary makes use of timestamping on publishing so that consumers can know that they are receiving the most up to date content. This is particularly important when dealing with software update where old vulnerable versions could be used to attack users.
+* **Freshness Guarantees**: Replay attacks are a common problem in designing secure systems, where previously valid payloads are replayed to trick another system. The same problem exists in the software update systems, where old signed can be presented as the most recent. Notary makes use of timestamping on publishing so that consumers can know that they are receiving the most up to date content. This is particularly important when dealing with software update where old vulnerable versions could be used to attack users.
 * **Configurable Trust Thresholds**: Oftentimes there are a large number of publishers that are allowed to publish a particular piece of content. For example, open source projects where there are a number of core maintainers. Trust thresholds can be used so that content consumers require a configurable number of signatures on a piece of content in order to trust it. Using thresholds increases security so that loss of individual signing keys doesn't allow publishing of malicious content.
 * **Signing Delegation**: To allow for flexible publishing of trusted collections, a content publisher can delegate part of their collection to another signer. This delegation is represented as signed metadata so that a consumer of the content can verify both the content and the delegation.
 * **Use of Existing Distribution**: Notary's trust guarantees are not tied at all to particular distribution channels from which content is delivered. Therefore, trust can be added to any existing content delivery mechanism.
@@ -55,7 +55,7 @@ Any security vulnerabilities can be reported to security@docker.com.
 # Getting started with the Notary CLI
 
 Get the Notary Client CLI binary from [the official releases page](https://github.com/theupdateframework/notary/releases) or you can [build one yourself](#building-notary).
-The version of Notary server and signer should be greater than or equal to Notary CLI's version to ensure feature compatibility (ex: CLI version 0.2, server/signer version >= 0.2), and all official releases are associated with GitHub tags.
+The version of the Notary server and signer should be greater than or equal to Notary CLI's version to ensure feature compatibility (ex: CLI version 0.2, server/signer version >= 0.2), and all official releases are associated with GitHub tags.
 
 To use the Notary CLI with Docker hub images, have a look at Notary's
 [getting started docs](docs/getting_started.md).
@@ -68,7 +68,7 @@ To use the CLI against a local Notary server rather than against Docker Hub:
 1. Ensure that you have [docker and docker-compose](http://docs.docker.com/compose/install/) installed.
 1. `git clone https://github.com/theupdateframework/notary.git` and from the cloned repository path,
     start up a local Notary server and signer and copy the config file and testing certs to your
-    local notary config directory:
+    local Notary config directory:
 
     ```sh
     $ docker-compose build

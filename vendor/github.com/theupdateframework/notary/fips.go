@@ -1,13 +1,14 @@
 package notary
 
-import "os"
+import (
+	"crypto"
+	// Need to import md5 so can test availability.
+	_ "crypto/md5"
+)
 
-// FIPSEnvVar is the name of the environment variable that is being used to switch
-// between FIPS and non-FIPS mode
-const FIPSEnvVar = "GOFIPS"
-
-// FIPSEnabled returns true if environment variable `GOFIPS` has been set to enable
-// FIPS mode
+// FIPSEnabled returns true if running in FIPS mode.
+// If compiled in FIPS mode the md5 hash function is never available
+// even when imported. This seems to be the best test we have for it.
 func FIPSEnabled() bool {
-	return os.Getenv(FIPSEnvVar) != ""
+	return !crypto.MD5.Available()
 }
