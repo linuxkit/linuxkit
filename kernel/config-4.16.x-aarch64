@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.16.1 Kernel Configuration
+# Linux/arm64 4.16.2 Kernel Configuration
 #
 CONFIG_ARM64=y
 CONFIG_64BIT=y
@@ -1255,7 +1255,8 @@ CONFIG_VIRTIO_VSOCKETS_COMMON=y
 CONFIG_NETLINK_DIAG=y
 CONFIG_MPLS=y
 CONFIG_NET_MPLS_GSO=m
-# CONFIG_MPLS_ROUTING is not set
+CONFIG_MPLS_ROUTING=m
+CONFIG_MPLS_IPTUNNEL=m
 CONFIG_NET_NSH=m
 # CONFIG_HSR is not set
 CONFIG_NET_SWITCHDEV=y

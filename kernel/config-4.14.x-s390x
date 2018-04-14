@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/s390 4.14.33 Kernel Configuration
+# Linux/s390 4.14.34 Kernel Configuration
 #
 CONFIG_MMU=y
 CONFIG_ZONE_DMA=y
@@ -1165,7 +1165,8 @@ CONFIG_VIRTIO_VSOCKETS_COMMON=y
 CONFIG_NETLINK_DIAG=y
 CONFIG_MPLS=y
 CONFIG_NET_MPLS_GSO=m
-# CONFIG_MPLS_ROUTING is not set
+CONFIG_MPLS_ROUTING=m
+CONFIG_MPLS_IPTUNNEL=m
 # CONFIG_NET_NSH is not set
 # CONFIG_HSR is not set
 CONFIG_NET_SWITCHDEV=y
