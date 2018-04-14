@@ -168,8 +168,10 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
-# perf (Don't compile for 4.4.x, it's broken and tedious to fix)
-RUN if [ "${KERNEL_SERIES}" != "4.4.x" ]; then \
+# perf
+# Skip for 4.4.x (the compile is broken and tedious to fix) and 4.9.x (the
+# compile broke with 4.9.94)
+RUN if [ "${KERNEL_SERIES}" != "4.4.x" && "${KERNEL_SERIES}" != "4.9.x" ]; then \
        mkdir -p /build/perf && \
        make -C tools/perf LDFLAGS=-static O=/build/perf && \
        strip /build/perf/perf && \
