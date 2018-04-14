@@ -1,4 +1,4 @@
-From 137e0fdcd2d3814a0a4397ce1613a17a39d71160 Mon Sep 17 00:00:00 2001
+From 21fd7b8d98fbd8234db3a9e93f8076a56962fe38 Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 13 Oct 2016 17:12:35 -0300
 Subject: [PATCH 02/12] perf jit: Avoid returning garbage for a ret variable
@@ -66,5 +66,5 @@ index 95f0884aae02..f3ed3c963c71 100644
  	while ((jr = jit_get_next_entry(jd))) {
  		switch(jr->prefix.id) {
 -- 
-2.16.0
+2.16.3
 
