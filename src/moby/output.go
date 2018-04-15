@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"os"
 	"runtime"
+	"strings"
 
 	"github.com/moby/tool/src/initrd"
 	log "github.com/sirupsen/logrus"
@@ -19,6 +20,7 @@ var (
 		"iso-efi":     "linuxkit/mkimage-iso-efi:343cf1a8ac0aba7d8a1f13b7f45fa0b57ab897dc",
 		"raw-bios":    "linuxkit/mkimage-raw-bios:d90713b2dd610cf9a0f5f9d9095f8bf86f40d5c6",
 		"raw-efi":     "linuxkit/mkimage-raw-efi:8938ffb6014543e557b624a40cce1714f30ce4b6",
+		"squashfs":    "linuxkit/mkimage-squashfs:b44d00b0a336fd32c122ff32bd2b39c36a965135",
 		"gcp":         "linuxkit/mkimage-gcp:e6cdcf859ab06134c0c37a64ed5f886ec8dae1a1",
 		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:787b54906e14a56b9f1da35dcc8e46bd58435285",
 		"vhd":         "linuxkit/mkimage-vhd:3820219e5c350fe8ab2ec6a217272ae82f4b9242",
@@ -96,6 +98,13 @@ var outFuns = map[string]func(string, io.Reader, int) error{
 		err = outputImg(outputImages["raw-efi"], base+"-efi.img", kernel, initrd, cmdline)
 		if err != nil {
 			return fmt.Errorf("Error writing raw-efi output: %v", err)
+		}
+		return nil
+	},
+	"kernel+squashfs": func(base string, image io.Reader, size int) error {
+		err := outputKernelSquashFS(outputImages["squashfs"], base, image)
+		if err != nil {
+			return fmt.Errorf("Error writing kernel+squashfs output: %v", err)
 		}
 		return nil
 	},
@@ -426,4 +435,58 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 		}
 	}
 	return tw.Close()
+}
+
+func outputKernelSquashFS(image, base string, filesystem io.Reader) error {
+	log.Debugf("output kernel/squashfs: %s %s", image, base)
+	log.Infof("  %s-squashfs.img", base)
+
+	tr := tar.NewReader(filesystem)
+	buf := new(bytes.Buffer)
+	rootfs := tar.NewWriter(buf)
+
+	for {
+		var thdr *tar.Header
+		thdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		switch {
+		case thdr.Name == "boot/kernel":
+			kernel, err := ioutil.ReadAll(tr)
+			if err != nil {
+				return err
+			}
+			if err := ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
+				return err
+			}
+		case thdr.Name == "boot/cmdline":
+			cmdline, err := ioutil.ReadAll(tr)
+			if err != nil {
+				return err
+			}
+			if err := ioutil.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
+				return err
+			}
+		case strings.HasPrefix(thdr.Name, "boot/"):
+			// skip the rest of boot/
+		default:
+			rootfs.WriteHeader(thdr)
+			if _, err := io.Copy(rootfs, tr); err != nil {
+				return err
+			}
+		}
+	}
+	rootfs.Close()
+
+	output, err := os.Create(base + "-squashfs.img")
+	if err != nil {
+		return err
+	}
+	defer output.Close()
+
+	return dockerRun(buf, output, true, image)
 }
