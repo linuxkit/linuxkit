@@ -8,10 +8,33 @@ import (
 	"path/filepath"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
+	"github.com/moby/tool/src/moby"
 
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
+
+func init() {
+	// Register LinuxKit images to build outputs with the vendored moby tool.
+	// This allows us to overwrite the hashes locally without having
+	// to re-vendor the 'github.com/moby/tool' when we update 'mkimage-*'
+	imgs := map[string]string{
+		"iso-bios":    "linuxkit/mkimage-iso-bios:9a51dc64a461f1cc50ba05f30a38f73f5227ac03",
+		"iso-efi":     "linuxkit/mkimage-iso-efi:343cf1a8ac0aba7d8a1f13b7f45fa0b57ab897dc",
+		"raw-bios":    "linuxkit/mkimage-raw-bios:d90713b2dd610cf9a0f5f9d9095f8bf86f40d5c6",
+		"raw-efi":     "linuxkit/mkimage-raw-efi:8938ffb6014543e557b624a40cce1714f30ce4b6",
+		"squashfs":    "linuxkit/mkimage-squashfs:b44d00b0a336fd32c122ff32bd2b39c36a965135",
+		"gcp":         "linuxkit/mkimage-gcp:e6cdcf859ab06134c0c37a64ed5f886ec8dae1a1",
+		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:787b54906e14a56b9f1da35dcc8e46bd58435285",
+		"vhd":         "linuxkit/mkimage-vhd:3820219e5c350fe8ab2ec6a217272ae82f4b9242",
+		"dynamic-vhd": "linuxkit/mkimage-dynamic-vhd:743ac9959fe6d3912ebd78b4fd490b117c53f1a6",
+		"vmdk":        "linuxkit/mkimage-vmdk:cee81a3ed9c44ae446ef7ebff8c42c1e77b3e1b5",
+		"rpi3":        "linuxkit/mkimage-rpi3:0f23c4f37cdca99281ca33ac6188e1942fa7a2b8",
+	}
+	if err := moby.UpdateOutputImages(imgs); err != nil {
+		log.Fatalf("Failed to register mkimage-*. %v", err)
+	}
+}
 
 // GlobalConfig is the global tool configuration
 type GlobalConfig struct {
