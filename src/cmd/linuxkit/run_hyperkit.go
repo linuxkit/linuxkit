@@ -66,6 +66,7 @@ func runHyperKit(args []string) {
 	// Boot type; we try to determine automatically
 	uefiBoot := flags.Bool("uefi", false, "Use UEFI boot")
 	isoBoot := flags.Bool("iso", false, "Boot image is an ISO")
+	squashFSBoot := flags.Bool("squashfs", false, "Boot image is a kernel+squashfs+cmdline")
 	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
 	// Hyperkit settings
@@ -87,55 +88,54 @@ func runHyperKit(args []string) {
 	path := remArgs[0]
 	prefix := path
 
-	info, err := os.Stat(path)
-	stat := err == nil
-
-	// ignore a directory
-	if stat && info.Mode().IsDir() {
-		stat = false
-	}
-
-	_, err = os.Stat(path + "-kernel")
+	_, err := os.Stat(path + "-kernel")
 	statKernel := err == nil
 
 	var isoPaths []string
 
-	// try to autodetect boot type if not specified
-	// if the path does not exist, and the kernel does, must be trying to do a kernel boot
-	// if the path does exist and ends in ISO, must be trying ISO boot
-	if !stat && statKernel && !*isoBoot {
-		*kernelBoot = true
-	} else if stat && strings.HasSuffix(path, ".iso") && !*kernelBoot {
-		*isoBoot = true
-	}
-
 	switch {
-	case *kernelBoot && *isoBoot:
-		log.Fatalf("Cannot specify both kernel and ISO boot together")
-	case *kernelBoot:
+	case *squashFSBoot:
+		if *kernelBoot || *isoBoot {
+			log.Fatalf("Please specify only one boot method")
+		}
 		if !statKernel {
-			log.Fatalf("Cannot find kernel file (%s): %v", path+"-kernel", err)
+			log.Fatalf("Booting a SquashFS root filesystem requires a kernel at %s", path+"-kernel")
+		}
+		_, err = os.Stat(path + "-squashfs.img")
+		statSquashFS := err == nil
+		if !statSquashFS {
+			log.Fatalf("Cannot find SquashFS image (%s): %v", path+"-squashfs.img", err)
+		}
+	case *isoBoot:
+		if *kernelBoot {
+			log.Fatalf("Please specify only one boot method")
+		}
+		if !*uefiBoot {
+			log.Fatalf("Hyperkit requires --uefi to be set to boot an ISO")
+		}
+		// We used to auto-detect ISO boot. For backwards compat, append .iso if not present
+		isoPath := path
+		if !strings.HasSuffix(isoPath, ".iso") {
+			isoPath += ".iso"
+		}
+		_, err = os.Stat(isoPath)
+		statISO := err == nil
+		if !statISO {
+			log.Fatalf("Cannot find ISO image (%s): %v", isoPath, err)
+		}
+		prefix = strings.TrimSuffix(path, ".iso")
+		isoPaths = append(isoPaths, isoPath)
+	default:
+		// Default to kernel+initrd
+		if !statKernel {
+			log.Fatalf("Cannot find kernel file: %s", path+"-kernel")
 		}
 		_, err = os.Stat(path + "-initrd.img")
 		statInitrd := err == nil
 		if !statInitrd {
 			log.Fatalf("Cannot find initrd file (%s): %v", path+"-initrd.img", err)
 		}
-	case *isoBoot:
-		if !stat {
-			log.Fatalf("Cannot find ISO to boot")
-		}
-		prefix = strings.TrimSuffix(path, ".iso")
-		// hyperkit only supports UEFI ISO boot at present
-		if !*uefiBoot {
-			log.Fatalf("Hyperkit requires --uefi to be set to boot an ISO")
-		}
-		isoPaths = append(isoPaths, path)
-	default:
-		if !stat {
-			log.Fatalf("Cannot find file %s to boot", path)
-		}
-		log.Fatalf("Unrecognised boot type, please specify on command line")
+		*kernelBoot = true
 	}
 
 	if *uefiBoot {
@@ -186,12 +186,13 @@ func runHyperKit(args []string) {
 	vmUUID := uuid.New().String()
 
 	// Run
-	var cmdline []byte
-	if *kernelBoot {
-		cmdline, err = ioutil.ReadFile(prefix + "-cmdline")
+	var cmdline string
+	if *kernelBoot || *squashFSBoot {
+		cmdlineBytes, err := ioutil.ReadFile(prefix + "-cmdline")
 		if err != nil {
 			log.Fatalf("Cannot open cmdline file: %v", err)
 		}
+		cmdline = string(cmdlineBytes)
 	}
 
 	// Create new HyperKit instance (w/o networking for now)
@@ -202,6 +203,28 @@ func runHyperKit(args []string) {
 
 	if *consoleToFile {
 		h.Console = hyperkit.ConsoleFile
+	}
+
+	h.UUID = vmUUID
+	h.ISOImages = isoPaths
+	h.VSock = true
+	h.CPUs = *cpus
+	h.Memory = *mem
+
+	switch {
+	case *kernelBoot:
+		h.Kernel = prefix + "-kernel"
+		h.Initrd = prefix + "-initrd.img"
+	case *squashFSBoot:
+		h.Kernel = prefix + "-kernel"
+		// Make sure the SquashFS image is the first disk, raw, and virtio
+		var rootDisk hyperkit.RawDisk
+		rootDisk.Path = prefix + "-squashfs.img"
+		rootDisk.Trim = false // This happens to select 'virtio-blk'
+		h.Disks = append(h.Disks, &rootDisk)
+		cmdline = cmdline + " root=/dev/vda"
+	default:
+		h.Bootrom = *fw
 	}
 
 	for i, d := range disks {
@@ -276,18 +299,6 @@ func runHyperKit(args []string) {
 		log.Fatalf("Invalid networking mode: %s", netMode[0])
 	}
 
-	if *kernelBoot {
-		h.Kernel = prefix + "-kernel"
-		h.Initrd = prefix + "-initrd.img"
-	} else {
-		h.Bootrom = *fw
-	}
-	h.UUID = vmUUID
-	h.ISOImages = isoPaths
-	h.VSock = true
-	h.CPUs = *cpus
-	h.Memory = *mem
-
 	h.VPNKitUUID = *vpnkitUUID
 	if *ipStr != "" {
 		if ip := net.ParseIP(*ipStr); len(ip) > 0 && ip.To4() != nil {
@@ -315,7 +326,7 @@ func runHyperKit(args []string) {
 		}
 	}
 
-	err = h.Run(string(cmdline))
+	err = h.Run(cmdline)
 	if err != nil {
 		log.Fatalf("Cannot run hyperkit: %v", err)
 	}
