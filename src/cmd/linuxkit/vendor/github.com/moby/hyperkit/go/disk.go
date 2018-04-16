@@ -65,7 +65,7 @@ func GetDiskFormat(path string) DiskFormat {
 	case ".raw", ".img":
 		return DiskFormatRaw
 	default:
-		log.Debugf("Unknown disk extension %q, will use raw format", path)
+		log.Debugf("hyperkit: Unknown disk extension %q, will use raw format", path)
 		return DiskFormatRaw
 	}
 }
@@ -96,7 +96,7 @@ func NewDisk(spec string, size int) (Disk, error) {
 func exists(d Disk) bool {
 	_, err := os.Stat(d.GetPath())
 	if err != nil && !os.IsNotExist(err) {
-		log.Debugf("cannot stat %q: %v", d, err)
+		log.Debugf("hyperkit: cannot stat %q: %v", d, err)
 	}
 	return err == nil
 }
@@ -114,7 +114,7 @@ func ensure(d Disk) error {
 		return d.resize()
 	}
 	if d.GetSize() < current {
-		log.Errorf("Cannot safely shrink %q from %dMiB to %dMiB", d, current, d.GetSize())
+		log.Errorf("hyperkit: Cannot safely shrink %q from %dMiB to %dMiB", d, current, d.GetSize())
 	}
 	return nil
 }
@@ -199,7 +199,7 @@ func (d *RawDisk) Ensure() error {
 
 // Create a disk.
 func (d *RawDisk) create() error {
-	log.Infof("Create %q", d)
+	log.Infof("hyperkit: Create %q", d)
 	f, err := os.Create(d.Path)
 	if err != nil {
 		return err
@@ -225,7 +225,7 @@ func (d *RawDisk) resize() error {
 	if err != nil {
 		return fmt.Errorf("Cannot resize %q: %v", d, err)
 	}
-	log.Infof("Resize %q from %vMiB to %vMiB", d, s, d.GetSize())
+	log.Infof("hyperkit: Resize %q from %vMiB to %vMiB", d, s, d.GetSize())
 	// APFS exhibits a weird behavior wrt sparse files: we cannot
 	// create (or grow) them "too fast": there's a limit,
 	// apparently related to the available disk space.  However,
@@ -241,7 +241,7 @@ func (d *RawDisk) resize() error {
 			return fmt.Errorf("Cannot resize %q to %vMiB: %v", d, s, err)
 		}
 	}
-	log.Infof("Resized %q to %vMiB", d, d.GetSize())
+	log.Infof("hyperkit: Resized %q to %vMiB", d, d.GetSize())
 	return nil
 }
 
@@ -314,7 +314,7 @@ func (d *QcowDisk) QcowTool(verb string, args ...string) *exec.Cmd {
 func run(cmd *exec.Cmd) (string, error) {
 	buf, err := cmd.CombinedOutput()
 	out := string(buf)
-	log.Debugf("ran %v: out=%q, err=%v", cmd.Args, out, err)
+	log.Debugf("hyperkit: ran %v: out=%q, err=%v", cmd.Args, out, err)
 	return out, err
 }
 
@@ -326,18 +326,18 @@ func (d *QcowDisk) Exists() bool {
 // Ensure creates the disk image if needed, and resizes it if needed.
 func (d *QcowDisk) Ensure() error {
 	if d.Trim {
-		log.Infof("%v: TRIM is enabled; recycling thread will keep %v sectors free and will compact after %v more sectors are free",
+		log.Infof("hyperkit: %v: TRIM is enabled; recycling thread will keep %v sectors free and will compact after %v more sectors are free",
 			d, d.KeepErased, d.CompactAfter)
 	}
 	if d.RuntimeAsserts {
-		log.Warnf("%v: Expensive runtime checks are enabled", d)
+		log.Warnf("hyperkit: %v: Expensive runtime checks are enabled", d)
 	}
 	return ensure(d)
 }
 
 // Create a disk with the given size in MiB
 func (d *QcowDisk) create() error {
-	log.Infof("Create %q", d)
+	log.Infof("hyperkit: Create %q", d)
 	_, err := run(d.QcowTool("create", "--size", fmt.Sprintf("%dMiB", d.Size)))
 	return err
 }
@@ -368,14 +368,14 @@ func (d *QcowDisk) sizeString() string {
 
 // Resize the virtual size of the disk
 func (d *QcowDisk) resize() error {
-	log.Infof("Resize %q from %v to %dMiB", d, d.sizeString(), d.GetSize())
+	log.Infof("hyperkit: Resize %q from %v to %dMiB", d, d.sizeString(), d.GetSize())
 	_, err := run(d.QcowTool("resize", "--size", fmt.Sprintf("%dMiB", d.Size)))
 	return err
 }
 
 // compact the disk to shrink the physical size.
 func (d *QcowDisk) compact() error {
-	log.Infof("Compact: %q... (%v)", d, d.sizeString())
+	log.Infof("hyperkit: Compact: %q... (%v)", d, d.sizeString())
 	cmd := d.QcowTool("compact")
 	if _, err := run(cmd); err != nil {
 		if err.(*exec.ExitError) != nil {
@@ -383,7 +383,7 @@ func (d *QcowDisk) compact() error {
 		}
 		return err
 	}
-	log.Infof("Compact: %q: done (%v)", d, d.sizeString())
+	log.Infof("hyperkit: Compact: %q: done (%v)", d, d.sizeString())
 	return nil
 }
 
@@ -402,14 +402,14 @@ func (d *QcowDisk) check() error {
 // Stop cleans up this disk when we are quitting.
 func (d *QcowDisk) Stop() error {
 	if !d.Trim && d.CompactAfter == 0 {
-		log.Infof("TRIM is enabled but auto-compaction disabled: compacting %q now", d)
+		log.Infof("hyperkit: TRIM is enabled but auto-compaction disabled: compacting %q now", d)
 		if err := d.compact(); err != nil {
 			return fmt.Errorf("Failed to compact %q: %v", d, err)
 		}
 		if err := d.check(); err != nil {
 			return fmt.Errorf("Post-compact disk integrity check of %q failed: %v", d, err)
 		}
-		log.Infof("Post-compact disk integrity check of %q successful", d)
+		log.Infof("hyperkit: Post-compact disk integrity check of %q successful", d)
 	}
 	return nil
 }

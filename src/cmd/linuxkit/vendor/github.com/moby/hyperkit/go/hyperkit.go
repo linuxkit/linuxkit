@@ -44,6 +44,8 @@ const (
 	ConsoleStdio = iota
 	// ConsoleFile configures console to a tty and output to a file
 	ConsoleFile
+	// ConsoleLog configures console to a tty and sends its contents to the logs
+	ConsoleLog
 
 	defaultVPNKitSock = "Library/Containers/com.docker.docker/Data/s50"
 
@@ -117,8 +119,7 @@ type HyperKit struct {
 	// Memory is the amount of megabytes of memory for the VM.
 	Memory int `json:"memory"`
 
-	// Console defines where the console of the VM should be
-	// connected to. ConsoleStdio and ConsoleFile are supported.
+	// Console defines where the console of the VM should be connected to.
 	Console int `json:"console"`
 
 	// Below here are internal members, but they are exported so
@@ -199,11 +200,15 @@ func (h *HyperKit) check() error {
 	log.Debugf("hyperkit: check %#v", h)
 	var err error
 	// Sanity checks on configuration
-	if h.Console == ConsoleFile && h.StateDir == "" {
-		return fmt.Errorf("If ConsoleFile is set, StateDir must be specified")
-	}
-	if h.Console == ConsoleStdio && !isTerminal(os.Stdout) && h.StateDir == "" {
-		return fmt.Errorf("If ConsoleStdio is set but stdio is not a terminal, StateDir must be specified")
+	switch h.Console {
+	case ConsoleFile, ConsoleLog:
+		if h.StateDir == "" {
+			return fmt.Errorf("If ConsoleFile or ConsoleLog is set, StateDir must be specified")
+		}
+	case ConsoleStdio:
+		if !isTerminal(os.Stdout) && h.StateDir == "" {
+			return fmt.Errorf("If ConsoleStdio is set but stdio is not a terminal, StateDir must be specified")
+		}
 	}
 	for _, image := range h.ISOImages {
 		if _, err = os.Stat(image); os.IsNotExist(err) {
@@ -226,8 +231,10 @@ func (h *HyperKit) check() error {
 		if _, err = os.Stat(h.Kernel); os.IsNotExist(err) {
 			return fmt.Errorf("Kernel %s does not exist", h.Kernel)
 		}
-		if _, err = os.Stat(h.Initrd); os.IsNotExist(err) {
-			return fmt.Errorf("initrd %s does not exist", h.Initrd)
+		if h.Initrd != "" {
+			if _, err = os.Stat(h.Initrd); os.IsNotExist(err) {
+				return fmt.Errorf("initrd %s does not exist", h.Initrd)
+			}
 		}
 	} else {
 		if _, err = os.Stat(h.Bootrom); os.IsNotExist(err) {
@@ -420,10 +427,20 @@ func (h *HyperKit) buildArgs(cmdline string) {
 		nextSlot++
 	}
 
-	if h.Console == ConsoleStdio && isTerminal(os.Stdout) {
-		a = append(a, "-l", "com1,stdio")
-	} else if h.StateDir != "" {
-		a = append(a, "-l", fmt.Sprintf("com1,autopty=%s/tty,log=%s/console-ring", h.StateDir, h.StateDir))
+	// -l: LPC device configuration.
+	{
+		cfg := "com1"
+		if h.Console == ConsoleStdio && isTerminal(os.Stdout) {
+			cfg += fmt.Sprintf(",stdio")
+		} else {
+			cfg += fmt.Sprintf(",autopty=%s/tty", h.StateDir)
+		}
+		if h.Console == ConsoleLog {
+			cfg += fmt.Sprintf(",asl")
+		} else {
+			cfg += fmt.Sprintf(",log=%s/console-ring", h.StateDir)
+		}
+		a = append(a, "-l", cfg)
 	}
 
 	if h.Bootrom == "" {
@@ -438,6 +455,22 @@ func (h *HyperKit) buildArgs(cmdline string) {
 	h.CmdLine = h.HyperKit + " " + strings.Join(a, " ")
 	log.Debugf("hyperkit: Arguments: %#v", h.Arguments)
 	log.Debugf("hyperkit: CmdLine: %#v", h.CmdLine)
+}
+
+// openTTY opens the tty files for reading, and returns it.
+func (h *HyperKit) openTTY() *os.File {
+	path := fmt.Sprintf("%s/tty", h.StateDir)
+	for {
+		if res, err := os.OpenFile(path, os.O_RDONLY, 0); err != nil {
+			log.Infof("hyperkit: openTTY: %v, retrying", err)
+			time.Sleep(10 * time.Millisecond)
+		} else {
+			log.Infof("hyperkit: openTTY: got %v", path)
+			saneTerminal(res)
+			setRaw(res)
+			return res
+		}
+	}
 }
 
 // execute forges the command to run hyperkit, runs and returns it.
@@ -469,26 +502,13 @@ func (h *HyperKit) execute() (*exec.Cmd, error) {
 			cmd.Stderr = os.Stderr
 		} else {
 			go func() {
-				ttyPath := fmt.Sprintf("%s/tty", h.StateDir)
-				var tty *os.File
-				for {
-					var err error
-					tty, err = os.OpenFile(ttyPath, os.O_RDONLY, 0)
-					if err == nil {
-						break
-					}
-					time.Sleep(10 * time.Millisecond)
-				}
-				saneTerminal(tty)
-				setRaw(tty)
+				tty := h.openTTY()
+				defer tty.Close()
 				io.Copy(os.Stdout, tty)
-				tty.Close()
 			}()
 		}
 	} else if log != nil {
 		log.Debugf("hyperkit: Redirecting stdout/stderr to logger")
-		stdoutChan := make(chan string)
-		stderrChan := make(chan string)
 		stdout, err := cmd.StdoutPipe()
 		if err != nil {
 			return nil, err
@@ -497,22 +517,8 @@ func (h *HyperKit) execute() (*exec.Cmd, error) {
 		if err != nil {
 			return nil, err
 		}
-		stream(stdout, stdoutChan)
-		stream(stderr, stderrChan)
-
-		done := make(chan struct{})
-		go func() {
-			for {
-				select {
-				case stderrl := <-stderrChan:
-					log.Infof("%s", stderrl)
-				case stdoutl := <-stdoutChan:
-					log.Infof("%s", stdoutl)
-				case <-done:
-					return
-				}
-			}
-		}()
+		go logStream(stdout, "stdout")
+		go logStream(stderr, "stderr")
 	}
 
 	log.Debugf("hyperkit: Starting %#v", cmd)
@@ -546,18 +552,18 @@ func (h *HyperKit) writeState() error {
 	return ioutil.WriteFile(filepath.Join(h.StateDir, jsonFile), []byte(s), 0644)
 }
 
-func stream(r io.ReadCloser, dest chan<- string) {
-	go func() {
-		defer r.Close()
-		reader := bufio.NewReader(r)
-		for {
-			line, err := reader.ReadString('\n')
-			if err != nil {
-				return
-			}
-			dest <- line
+// logStream redirects a file to the logs.
+func logStream(r io.ReadCloser, name string) {
+	defer r.Close()
+	reader := bufio.NewReader(r)
+	for {
+		line, err := reader.ReadString('\n')
+		if err != nil {
+			log.Warnf("hyperkit: failed to read %v: %v", name, err)
+			break
 		}
-	}()
+		log.Infof("hyperkit: %v: %v", name, line)
+	}
 }
 
 // checkHyperKit tries to find and/or validate the path of hyperkit
