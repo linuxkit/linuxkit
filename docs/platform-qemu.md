@@ -24,6 +24,7 @@ specified with `-arch` and currently accepts `x86_64`, `aarch64`, and
 `linuxkit run qemu` can boot in different types of images:
 
 - `kernel+initrd`: This is the default mode of `linuxkit run qemu` [`x86_64`, `arm64`, `s390x`]
+- `kernel+squashfs`: `linuxkit run qemu -squashfs <path to directory>`. This expects a kernel and a squashfs image. [`x86_64`, `arm64`, `s390x`]
 - `iso-bios`: `linuxkit run qemu -iso <path to iso>` [`x86_64`]
 - `iso-efi`: `linuxkit run qemu -iso -uefi <path to iso>`. This looks in `/usr/share/ovmf/bios.bin` for the EFI firmware by default. Can be overwritten with `-fw`. [`x86_64`, `arm64`]
 - `qcow-bios`: `linuxkit run qemu disk.qcow2` [`x86_64`]
@@ -32,6 +33,10 @@ specified with `-arch` and currently accepts `x86_64`, `aarch64`, and
 
 The formats `qcow-efi` and `raw-efi` may also work, but are currently not tested.
 
+The default `kernel+initrd` boot uses a RAM disk for the root
+filesystem. If you have RAM constraints or large images we recommend
+using one of the other methods, such as `kernel+squashfs` or booting
+via a ISO image.
 
 ## Console
 
