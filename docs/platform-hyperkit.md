@@ -12,9 +12,19 @@ Alternatively, you can install HyperKit and VPNKit standalone and use it without
 
 ## Boot
 
-The HyperKit backend currently supports booting the
-`kernel+initrd` output from `moby`, and EFI ISOs using the EFI firmware.
+The HyperKit backend currently supports booting:
+- `kernel+initrd` output from `linuxkit build`.
+- `kernel+squashfs` output from `linuxkit build`.
+- EFI ISOs using the EFI firmware.
 
+You need to select the boot method manually using the command line
+options. The default is `kernel+initrd`. `kernel+squashfs` can be
+selected using `-squashfs` and to boot a ISO with EFI you have to
+specify `-iso -uefi`.
+
+The `kernel+initrd` uses a RAM disk for the root filesystem. If you
+have RAM constraints or large images we recommend using either the
+`kernel+squashfs` or the EFI ISO boot.
 
 ## Console
 

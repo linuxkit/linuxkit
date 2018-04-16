@@ -1,0 +1,22 @@
+#!/bin/sh
+
+set -e
+
+mkdir -p /tmp/rootfs
+cd /tmp/rootfs
+
+# input is a tarball of filesystem on stdin with the root filesytem
+# output is a squashfs image on stdout
+
+# extract. BSD tar auto recognises compression, unlike GNU tar
+# only if stdin is a tty, if so need files volume mounted...
+[ -t 0 ] || bsdtar xzf -
+cd /tmp
+
+# we want everything except the final result to stderr
+(
+    exec 1>&2;
+
+    mksquashfs rootfs ./rootfs.img
+)
+cat rootfs.img

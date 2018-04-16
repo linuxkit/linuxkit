@@ -41,13 +41,14 @@
 #include <assert.h>
 #include <errno.h>
 #include <sys/mman.h>
+#include <xhyve/log.h>
 #include <xhyve/support/ns16550.h>
 #include <xhyve/mevent.h>
 #include <xhyve/uart_emul.h>
 
-#define	COM1_BASE      	0x3F8
+#define	COM1_BASE	0x3F8
 #define COM1_IRQ	4
-#define	COM2_BASE      	0x2F8
+#define	COM2_BASE	0x2F8
 #define COM2_IRQ	3
 
 #define	DEFAULT_RCLK	1843200
@@ -91,7 +92,7 @@ struct fifo {
 struct ttyfd {
 	bool	opened;
 	int	fd;		/* tty device file descriptor */
-	int 	sfd;
+	int	sfd;
 	char *name; /* slave pty name when using autopty*/
 	struct termios tio_orig, tio_new;    /* I/O Terminals */
 };
@@ -121,6 +122,7 @@ struct uart_softc {
 
 	struct ttyfd tty;
 	struct log log;
+	bool	asl;		/* Output to Apple logger. */
 	bool	thre_int_pending;	/* THRE interrupt pending */
 
 	void	*arg;
@@ -427,7 +429,7 @@ uart_write(struct uart_softc *sc, int offset, uint8_t value)
 		}
 	}
 
-        switch (offset) {
+	switch (offset) {
 	case REG_DATA:
 		if (sc->mcr & MCR_LOOPBACK) {
 			if (rxfifo_putchar(sc, value) != 0)
@@ -436,6 +438,8 @@ uart_write(struct uart_softc *sc, int offset, uint8_t value)
 			ttywrite(&sc->tty, value);
 			if (sc->log.ring)
 				ringwrite(&sc->log, value);
+			if (sc->asl)
+				log_put(value);
 		} /* else drop on floor */
 		sc->thre_int_pending = true;
 		break;
@@ -681,15 +685,15 @@ uart_tty_backend(struct uart_softc *sc, const char *backend)
 static char *
 copy_up_to_comma(const char *from)
 {
-        char *comma = strchr(from, ',');
-        char *tmp = NULL;
-        if (comma == NULL) {
-                tmp = strdup(from); /* rest of string */
-        } else {
-                ptrdiff_t length = comma - from;
-                tmp = strndup(from, (size_t)length);
-        }
-        return tmp;
+	char *comma = strchr(from, ',');
+	char *tmp = NULL;
+	if (comma == NULL) {
+		tmp = strdup(from); /* rest of string */
+	} else {
+		ptrdiff_t length = comma - from;
+		tmp = strndup(from, (size_t)length);
+	}
+	return tmp;
 }
 
 int
@@ -773,6 +777,10 @@ uart_set_backend(struct uart_softc *sc, const char *backend, const char *devname
 			if (uart_mapring(sc, logname) == -1) {
 				goto err;
 			}
+		} else if (strcmp("asl", backend) == 0) {
+			sc->asl = true;
+			log_init();
+			retval = 0;
 		} else if (uart_tty_backend(sc, backend) == 0) {
 			retval = 0;
 		} else {

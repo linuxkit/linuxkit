@@ -29,6 +29,7 @@ type QemuConfig struct {
 	Path           string
 	ISOBoot        bool
 	UEFI           bool
+	SquashFS       bool
 	Kernel         bool
 	GUI            bool
 	Disks          Disks
@@ -139,6 +140,7 @@ func runQemu(args []string) {
 	// Boot type; we try to determine automatically
 	uefiBoot := flags.Bool("uefi", false, "Use UEFI boot")
 	isoBoot := flags.Bool("iso", false, "Boot image is an ISO")
+	squashFSBoot := flags.Bool("squashfs", false, "Boot image is a kernel+squashfs+cmdline")
 	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
 	// State flags
@@ -199,12 +201,18 @@ func runQemu(args []string) {
 	_, err := os.Stat(path)
 	stat := err == nil
 
-	// if the path does not exist, must be trying to do a kernel boot
+	// if the path does not exist, must be trying to do a kernel+initrd or kernel+squashfs boot
 	if !stat {
 		_, err = os.Stat(path + "-kernel")
 		statKernel := err == nil
 		if statKernel {
-			*kernelBoot = true
+			_, err = os.Stat(path + "-squashfs.img")
+			statSquashFS := err == nil
+			if statSquashFS {
+				*squashFSBoot = true
+			} else {
+				*kernelBoot = true
+			}
 		}
 		// we will error out later if neither found
 	} else {
@@ -252,13 +260,19 @@ func runQemu(args []string) {
 		disks[i] = d
 	}
 
-	// user not trying to boot off ISO or kernel, so assume booting from a disk image
+	// user not trying to boot off ISO or kernel+initrd, so assume booting from a disk image or kernel+squashfs
 	if !*kernelBoot && !*isoBoot {
-		if _, err := os.Stat(path); err != nil {
-			log.Fatalf("Boot disk image %s does not exist", path)
+		var diskPath string
+		if *squashFSBoot {
+			diskPath = path + "-squashfs.img"
+		} else {
+			if _, err := os.Stat(path); err != nil {
+				log.Fatalf("Boot disk image %s does not exist", path)
+			}
+			diskPath = path
 		}
 		// currently no way to set format, but autodetect probably works
-		d := Disks{DiskConfig{Path: path}}
+		d := Disks{DiskConfig{Path: diskPath}}
 		disks = append(d, disks...)
 	}
 
@@ -301,6 +315,7 @@ func runQemu(args []string) {
 		Path:           path,
 		ISOBoot:        *isoBoot,
 		UEFI:           *uefiBoot,
+		SquashFS:       *squashFSBoot,
 		Kernel:         *kernelBoot,
 		GUI:            *enableGUI,
 		Disks:          disks,
@@ -603,16 +618,28 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	}
 
 	// build kernel boot config from kernel/initrd/cmdline
-	if config.Kernel {
+	switch {
+	case config.Kernel:
 		qemuKernelPath := config.Path + "-kernel"
 		qemuInitrdPath := config.Path + "-initrd.img"
 		qemuArgs = append(qemuArgs, "-kernel", qemuKernelPath)
 		qemuArgs = append(qemuArgs, "-initrd", qemuInitrdPath)
-		cmdlineString, err := ioutil.ReadFile(config.Path + "-cmdline")
+		cmdlineBytes, err := ioutil.ReadFile(config.Path + "-cmdline")
 		if err != nil {
 			log.Errorf("Cannot open cmdline file: %v", err)
 		} else {
-			qemuArgs = append(qemuArgs, "-append", string(cmdlineString))
+			qemuArgs = append(qemuArgs, "-append", string(cmdlineBytes))
+		}
+	case config.SquashFS:
+		qemuKernelPath := config.Path + "-kernel"
+		qemuArgs = append(qemuArgs, "-kernel", qemuKernelPath)
+		cmdlineBytes, err := ioutil.ReadFile(config.Path + "-cmdline")
+		if err != nil {
+			log.Errorf("Cannot open cmdline file: %v", err)
+		} else {
+			cmdline := string(cmdlineBytes)
+			cmdline += " root=/dev/sda"
+			qemuArgs = append(qemuArgs, "-append", cmdline)
 		}
 	}
 

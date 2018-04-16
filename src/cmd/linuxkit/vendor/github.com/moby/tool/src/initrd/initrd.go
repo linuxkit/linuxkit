@@ -8,6 +8,7 @@ import (
 	"io"
 	"io/ioutil"
 	"path/filepath"
+	"strings"
 
 	"github.com/moby/tool/src/pad4"
 	"github.com/surma/gocpio"
@@ -121,26 +122,26 @@ func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, ucod
 		if err != nil {
 			return
 		}
-		switch thdr.Name {
-		case "boot/kernel":
+		switch {
+		case thdr.Name == "boot/kernel":
 			kernel, err = ioutil.ReadAll(r)
 			if err != nil {
 				return
 			}
-		case "boot/cmdline":
+		case thdr.Name == "boot/cmdline":
 			var buf []byte
 			buf, err = ioutil.ReadAll(r)
 			if err != nil {
 				return
 			}
 			cmdline = string(buf)
-		case "boot/ucode.cpio":
+		case thdr.Name == "boot/ucode.cpio":
 			ucode, err = ioutil.ReadAll(r)
 			if err != nil {
 				return
 			}
-		case "boot":
-			// skip this entry
+		case strings.HasPrefix(thdr.Name, "boot/"):
+			// skip the rest of ./boot
 		default:
 			_, err = copyTarEntry(w, thdr, r)
 			if err != nil {

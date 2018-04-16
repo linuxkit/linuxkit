@@ -257,27 +257,40 @@ block_delete(struct blockif_ctxt *bc, off_t offset, off_t len)
 
 		size_t aligned_offset = ALIGNUP(fp_offset, bc->bc_delete_alignment);
 		if (aligned_offset != fp_offset) {
-			size_t len_to_zero = aligned_offset - fp_offset;
-			assert(len_to_zero <= bc->bc_delete_alignment);
-			ssize_t written = pwrite(bc->bc_fd, bc->bc_delete_zero_buf, len_to_zero, (off_t) fp_offset);
+			size_t len_to_zero = MIN(fp_length, aligned_offset - fp_offset);
+			assert(len_to_zero < bc->bc_delete_alignment);
+			ssize_t written = pwrite(bc->bc_fd, bc->bc_delete_zero_buf,
+				len_to_zero, (off_t)fp_offset);
 			if (written == -1) goto out;
 			fp_offset += len_to_zero;
 			fp_length -= len_to_zero;
 		}
 		size_t aligned_length = ALIGNDOWN(fp_length, bc->bc_delete_alignment);
-		if (aligned_length != fp_length) {
-			size_t len_to_zero = fp_length - aligned_length;
-			assert(len_to_zero <= bc->bc_delete_alignment);
-			fp_length -= len_to_zero;
-			ssize_t written = pwrite(bc->bc_fd, bc->bc_delete_zero_buf, len_to_zero, (off_t) (fp_offset + fp_length));
+		if (aligned_length >= bc->bc_delete_alignment) {
+			assert(fp_offset % bc->bc_delete_alignment == 0);
+			struct fpunchhole arg = {
+				.fp_flags = 0,
+				.reserved = 0,
+				.fp_offset = (off_t)fp_offset,
+				.fp_length = (off_t)aligned_length
+			};
+			int punched = fcntl(bc->bc_fd, F_PUNCHHOLE, &arg);
+			if (punched == -1) goto out;
+			fp_offset += aligned_length;
+			fp_length -= aligned_length;
+		}
+		if (fp_length > 0) {
+			assert(fp_length < bc->bc_delete_alignment);
+			assert(fp_offset % bc->bc_delete_alignment == 0);
+			ssize_t written = pwrite(bc->bc_fd, bc->bc_delete_zero_buf,
+				fp_length, (off_t)fp_offset);
 			if (written == -1) goto out;
 		}
-		struct fpunchhole arg = { .fp_flags = 0, .reserved = 0, .fp_offset = (off_t) fp_offset, .fp_length = (off_t) fp_length };
-		ret = fcntl(bc->bc_fd, F_PUNCHHOLE, &arg);
-		goto out;
+		ret = 0;
 	}
-#endif
+#else
 	errno = EOPNOTSUPP;
+#endif
 out:
 	HYPERKIT_BLOCK_DELETE_DONE(offset, ret);
 	return ret;
