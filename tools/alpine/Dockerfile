@@ -43,7 +43,8 @@ RUN mv /etc/apk/repositories /etc/apk/repositories.upstream && echo "/mirror" > 
 
 # add Go validation tools
 COPY go-compile.sh /go/bin/
-RUN apk add --no-cache git go musl-dev
+# containerd v1.1.x requires go1.10 which is currently a separate package in Alpine 3.7
+RUN apk add --no-cache git go1.10 musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
 RUN go get -u github.com/golang/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
@@ -53,13 +54,13 @@ RUN go get -u github.com/LK4D4/vndr
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.0.3
+ENV CONTAINERD_COMMIT=v1.1.0-rc.2
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
   cd $GOPATH/src/github.com/containerd/containerd && \
   git checkout $CONTAINERD_COMMIT
-RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make
+RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make libseccomp-dev
 RUN cd $GOPATH/src/github.com/containerd/containerd && \
   make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILD_TAGS="static_build"
 
