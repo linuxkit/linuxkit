@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/containerd/containerd/sys"
+	"github.com/opencontainers/runc/libcontainer/system"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -49,7 +49,7 @@ func runcInit(rootPath, serviceType string) int {
 	}
 
 	// need to set ourselves as a child subreaper or we cannot wait for runc as reparents to init
-	if err := sys.SetSubreaper(1); err != nil {
+	if err := system.SetSubreaper(1); err != nil {
 		log.Fatalf("Cannot set as subreaper: %v", err)
 	}
 

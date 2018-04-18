@@ -1,7 +1,6 @@
 state = "/run/containerd"
 root = "/var/lib/containerd"
-snapshotter = "io.containerd.snapshotter.v1.overlayfs"
-differ = "io.containerd.differ.v1.base-diff"
+disabled_plugins = ["cri"]
 
 [grpc]
   address = "/run/containerd/containerd.sock"

@@ -2,9 +2,9 @@ kernel:
   image: "linuxkitprojects/kernel-memorizer:4.10_dbg-17e2eee03ab59f8df8a9c10ace003a84aec2f540"
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:v0.3
-  - linuxkit/runc:v0.3
-  - linuxkit/containerd:v0.3
+  - linuxkit/init:d0bf64f4cea42bea71e7d8f8832ba497bb822e89
+  - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
+  - linuxkit/containerd:100d0d046c5061d75ee43e4ac5017a759109cae4
 onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.3

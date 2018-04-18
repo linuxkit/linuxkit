@@ -1,10 +1,12 @@
-FROM linuxkit/alpine:f3cd219615428b2bd943411723eb28875275fae7 as alpine
+FROM linuxkit/alpine:02d7e748614512ea099e8c76254e41bcea03ba8f as alpine
+# containerd v1.1.x requires go1.10 which is currently a separate package in Alpine 3.7
+# Use the same version of go for consistency.
 RUN \
   apk add \
   bash \
   gcc \
   git \
-  go \
+  go1.10 \
   libc-dev \
   libseccomp-dev \
   linux-headers \
