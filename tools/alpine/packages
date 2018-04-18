@@ -53,6 +53,7 @@ iproute2
 iptables
 ipvsadm
 jq
+keyutils
 kmod
 libarchive-tools
 libc-dev
