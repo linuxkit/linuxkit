@@ -1,4 +1,4 @@
-From 2b5d4f39ab18a5b2faeb8bf5b9919a3cbca88ca2 Mon Sep 17 00:00:00 2001
+From df2e6889633ee5cecce2b182957c95202a4d9d0f Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:04 -0700
 Subject: [PATCH 06/21] hyper-v: trace vmbus_onopen_result()
@@ -15,7 +15,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 19 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 54235b32ac82..66aa6b079b2e 100644
+index f6c8da0d0867..3e2753cf1d9e 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -979,6 +979,8 @@ static void vmbus_onopen_result(struct vmbus_channel_message_header *hdr)
