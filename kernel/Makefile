@@ -156,8 +156,8 @@ fetch: sources/linux-$(1).tar.xz
 # with DCT as part of the dependency on build_$(2)$(3)$(4) and then build
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
-ifneq ($(2), 4.4.x)
-# perf does not build out of the box for 4.4.x and 4.4.x is not that relevant anymore to work on a fix
+ifneq ($(2), $(filter $(2),4.4.x 4.9.x))
+# perf does not build out of the box for 4.4.x and 4.9.x
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
