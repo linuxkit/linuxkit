@@ -1,0 +1,170 @@
+From: Scott Wood <swood@redhat.com>
+Date: Sun, 21 Jan 2018 03:28:54 -0600
+Subject: [PATCH 1/3] iommu/amd: Use raw locks on atomic context paths
+
+Upstream commit 27790398c2aed917828dc3c6f81240d57f1584c9
+
+Several functions in this driver are called from atomic context,
+and thus raw locks must be used in order to be safe on PREEMPT_RT.
+
+This includes paths that must wait for command completion, which is
+a potential PREEMPT_RT latency concern but not easily avoidable.
+
+Signed-off-by: Scott Wood <swood@redhat.com>
+Signed-off-by: Joerg Roedel <jroedel@suse.de>
+---
+ drivers/iommu/amd_iommu.c       |   30 +++++++++++++++---------------
+ drivers/iommu/amd_iommu_init.c  |    2 +-
+ drivers/iommu/amd_iommu_types.h |    4 ++--
+ 3 files changed, 18 insertions(+), 18 deletions(-)
+
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -1054,9 +1054,9 @@ static int iommu_queue_command_sync(stru
+ 	unsigned long flags;
+ 	int ret;
+ 
+-	spin_lock_irqsave(&iommu->lock, flags);
++	raw_spin_lock_irqsave(&iommu->lock, flags);
+ 	ret = __iommu_queue_command_sync(iommu, cmd, sync);
+-	spin_unlock_irqrestore(&iommu->lock, flags);
++	raw_spin_unlock_irqrestore(&iommu->lock, flags);
+ 
+ 	return ret;
+ }
+@@ -1082,7 +1082,7 @@ static int iommu_completion_wait(struct
+ 
+ 	build_completion_wait(&cmd, (u64)&iommu->cmd_sem);
+ 
+-	spin_lock_irqsave(&iommu->lock, flags);
++	raw_spin_lock_irqsave(&iommu->lock, flags);
+ 
+ 	iommu->cmd_sem = 0;
+ 
+@@ -1093,7 +1093,7 @@ static int iommu_completion_wait(struct
+ 	ret = wait_on_sem(&iommu->cmd_sem);
+ 
+ out_unlock:
+-	spin_unlock_irqrestore(&iommu->lock, flags);
++	raw_spin_unlock_irqrestore(&iommu->lock, flags);
+ 
+ 	return ret;
+ }
+@@ -3618,7 +3618,7 @@ static struct irq_remap_table *get_irq_t
+ 		goto out_unlock;
+ 
+ 	/* Initialize table spin-lock */
+-	spin_lock_init(&table->lock);
++	raw_spin_lock_init(&table->lock);
+ 
+ 	if (ioapic)
+ 		/* Keep the first 32 indexes free for IOAPIC interrupts */
+@@ -3677,7 +3677,7 @@ static int alloc_irq_index(u16 devid, in
+ 	if (!table)
+ 		return -ENODEV;
+ 
+-	spin_lock_irqsave(&table->lock, flags);
++	raw_spin_lock_irqsave(&table->lock, flags);
+ 
+ 	/* Scan table for free entries */
+ 	for (c = 0, index = table->min_index;
+@@ -3700,7 +3700,7 @@ static int alloc_irq_index(u16 devid, in
+ 	index = -ENOSPC;
+ 
+ out:
+-	spin_unlock_irqrestore(&table->lock, flags);
++	raw_spin_unlock_irqrestore(&table->lock, flags);
+ 
+ 	return index;
+ }
+@@ -3721,7 +3721,7 @@ static int modify_irte_ga(u16 devid, int
+ 	if (!table)
+ 		return -ENOMEM;
+ 
+-	spin_lock_irqsave(&table->lock, flags);
++	raw_spin_lock_irqsave(&table->lock, flags);
+ 
+ 	entry = (struct irte_ga *)table->table;
+ 	entry = &entry[index];
+@@ -3732,7 +3732,7 @@ static int modify_irte_ga(u16 devid, int
+ 	if (data)
+ 		data->ref = entry;
+ 
+-	spin_unlock_irqrestore(&table->lock, flags);
++	raw_spin_unlock_irqrestore(&table->lock, flags);
+ 
+ 	iommu_flush_irt(iommu, devid);
+ 	iommu_completion_wait(iommu);
+@@ -3754,9 +3754,9 @@ static int modify_irte(u16 devid, int in
+ 	if (!table)
+ 		return -ENOMEM;
+ 
+-	spin_lock_irqsave(&table->lock, flags);
++	raw_spin_lock_irqsave(&table->lock, flags);
+ 	table->table[index] = irte->val;
+-	spin_unlock_irqrestore(&table->lock, flags);
++	raw_spin_unlock_irqrestore(&table->lock, flags);
+ 
+ 	iommu_flush_irt(iommu, devid);
+ 	iommu_completion_wait(iommu);
+@@ -3778,9 +3778,9 @@ static void free_irte(u16 devid, int ind
+ 	if (!table)
+ 		return;
+ 
+-	spin_lock_irqsave(&table->lock, flags);
++	raw_spin_lock_irqsave(&table->lock, flags);
+ 	iommu->irte_ops->clear_allocated(table, index);
+-	spin_unlock_irqrestore(&table->lock, flags);
++	raw_spin_unlock_irqrestore(&table->lock, flags);
+ 
+ 	iommu_flush_irt(iommu, devid);
+ 	iommu_completion_wait(iommu);
+@@ -4359,7 +4359,7 @@ int amd_iommu_update_ga(int cpu, bool is
+ 	if (!irt)
+ 		return -ENODEV;
+ 
+-	spin_lock_irqsave(&irt->lock, flags);
++	raw_spin_lock_irqsave(&irt->lock, flags);
+ 
+ 	if (ref->lo.fields_vapic.guest_mode) {
+ 		if (cpu >= 0)
+@@ -4368,7 +4368,7 @@ int amd_iommu_update_ga(int cpu, bool is
+ 		barrier();
+ 	}
+ 
+-	spin_unlock_irqrestore(&irt->lock, flags);
++	raw_spin_unlock_irqrestore(&irt->lock, flags);
+ 
+ 	iommu_flush_irt(iommu, devid);
+ 	iommu_completion_wait(iommu);
+--- a/drivers/iommu/amd_iommu_init.c
++++ b/drivers/iommu/amd_iommu_init.c
+@@ -1474,7 +1474,7 @@ static int __init init_iommu_one(struct
+ {
+ 	int ret;
+ 
+-	spin_lock_init(&iommu->lock);
++	raw_spin_lock_init(&iommu->lock);
+ 
+ 	/* Add IOMMU to internal data structures */
+ 	list_add_tail(&iommu->list, &amd_iommu_list);
+--- a/drivers/iommu/amd_iommu_types.h
++++ b/drivers/iommu/amd_iommu_types.h
+@@ -406,7 +406,7 @@ extern bool amd_iommu_iotlb_sup;
+ #define IRQ_TABLE_ALIGNMENT	128
+ 
+ struct irq_remap_table {
+-	spinlock_t lock;
++	raw_spinlock_t lock;
+ 	unsigned min_index;
+ 	u32 *table;
+ };
+@@ -488,7 +488,7 @@ struct amd_iommu {
+ 	int index;
+ 
+ 	/* locks the accesses to the hardware */
+-	spinlock_t lock;
++	raw_spinlock_t lock;
+ 
+ 	/* Pointer to PCI device of this IOMMU */
+ 	struct pci_dev *dev;

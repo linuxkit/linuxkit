@@ -1,0 +1,66 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 22 Mar 2018 16:22:39 +0100
+Subject: [PATCH 07/10] iommu/amd: Factor out setting the remap table for a
+ devid
+
+Upstream commit 2fcc1e8ac4a8514c64f946178fc36c2e30e56a41
+
+Setting the IRQ remap table for a specific devid (or its alias devid)
+includes three steps. Those three steps are always repeated each time
+this is done.
+Introduce a new helper function, move those steps there and use that
+function instead. The compiler can still decide if it is worth to
+inline.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Joerg Roedel <jroedel@suse.de>
+---
+ drivers/iommu/amd_iommu.c |   23 ++++++++++++-----------
+ 1 file changed, 12 insertions(+), 11 deletions(-)
+
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -3594,6 +3594,14 @@ static struct irq_remap_table *get_irq_t
+ 	return table;
+ }
+ 
++static void set_remap_table_entry(struct amd_iommu *iommu, u16 devid,
++				  struct irq_remap_table *table)
++{
++	irq_lookup_table[devid] = table;
++	set_dte_irq_entry(devid, table);
++	iommu_flush_dte(iommu, devid);
++}
++
+ static struct irq_remap_table *alloc_irq_table(u16 devid)
+ {
+ 	struct irq_remap_table *table = NULL;
+@@ -3614,9 +3622,7 @@ static struct irq_remap_table *alloc_irq
+ 	alias = amd_iommu_alias_table[devid];
+ 	table = irq_lookup_table[alias];
+ 	if (table) {
+-		irq_lookup_table[devid] = table;
+-		set_dte_irq_entry(devid, table);
+-		iommu_flush_dte(iommu, devid);
++		set_remap_table_entry(iommu, devid, table);
+ 		goto out;
+ 	}
+ 
+@@ -3643,14 +3649,9 @@ static struct irq_remap_table *alloc_irq
+ 		       (MAX_IRQS_PER_TABLE * (sizeof(u64) * 2)));
+ 
+ 
+-	irq_lookup_table[devid] = table;
+-	set_dte_irq_entry(devid, table);
+-	iommu_flush_dte(iommu, devid);
+-	if (devid != alias) {
+-		irq_lookup_table[alias] = table;
+-		set_dte_irq_entry(alias, table);
+-		iommu_flush_dte(iommu, alias);
+-	}
++	set_remap_table_entry(iommu, devid, table);
++	if (devid != alias)
++		set_remap_table_entry(iommu, alias, table);
+ 
+ out:
+ 	iommu_completion_wait(iommu);

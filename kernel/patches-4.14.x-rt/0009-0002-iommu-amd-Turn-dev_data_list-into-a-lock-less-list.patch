@@ -1,0 +1,97 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 22 Mar 2018 16:22:34 +0100
+Subject: [PATCH 02/10] iommu/amd: Turn dev_data_list into a lock less list
+
+Upstream commit 779da73273fc4c4c6f41579a95e4fb7880a1720e
+
+alloc_dev_data() adds new items to dev_data_list and search_dev_data()
+is searching for items in this list. Both protect the access to the list
+with a spinlock.
+There is no need to navigate forth and back within the list and there is
+also no deleting of a specific item. This qualifies the list to become a
+lock less list and as part of this, the spinlock can be removed.
+With this change the ordering of those items within the list is changed:
+before the change new items were added to the end of the list, now they
+are added to the front. I don't think it matters but wanted to mention
+it.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Joerg Roedel <jroedel@suse.de>
+---
+ drivers/iommu/amd_iommu.c       |   28 ++++++++++------------------
+ drivers/iommu/amd_iommu_types.h |    2 +-
+ 2 files changed, 11 insertions(+), 19 deletions(-)
+
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -84,8 +84,7 @@
+ static DEFINE_RWLOCK(amd_iommu_devtable_lock);
+ 
+ /* List of all available dev_data structures */
+-static LIST_HEAD(dev_data_list);
+-static DEFINE_SPINLOCK(dev_data_list_lock);
++static LLIST_HEAD(dev_data_list);
+ 
+ LIST_HEAD(ioapic_map);
+ LIST_HEAD(hpet_map);
+@@ -204,40 +203,33 @@ static struct dma_ops_domain* to_dma_ops
+ static struct iommu_dev_data *alloc_dev_data(u16 devid)
+ {
+ 	struct iommu_dev_data *dev_data;
+-	unsigned long flags;
+ 
+ 	dev_data = kzalloc(sizeof(*dev_data), GFP_KERNEL);
+ 	if (!dev_data)
+ 		return NULL;
+ 
+ 	dev_data->devid = devid;
+-
+-	spin_lock_irqsave(&dev_data_list_lock, flags);
+-	list_add_tail(&dev_data->dev_data_list, &dev_data_list);
+-	spin_unlock_irqrestore(&dev_data_list_lock, flags);
+-
+ 	ratelimit_default_init(&dev_data->rs);
+ 
++	llist_add(&dev_data->dev_data_list, &dev_data_list);
+ 	return dev_data;
+ }
+ 
+ static struct iommu_dev_data *search_dev_data(u16 devid)
+ {
+ 	struct iommu_dev_data *dev_data;
+-	unsigned long flags;
++	struct llist_node *node;
++
++	if (llist_empty(&dev_data_list))
++		return NULL;
+ 
+-	spin_lock_irqsave(&dev_data_list_lock, flags);
+-	list_for_each_entry(dev_data, &dev_data_list, dev_data_list) {
++	node = dev_data_list.first;
++	llist_for_each_entry(dev_data, node, dev_data_list) {
+ 		if (dev_data->devid == devid)
+-			goto out_unlock;
++			return dev_data;
+ 	}
+ 
+-	dev_data = NULL;
+-
+-out_unlock:
+-	spin_unlock_irqrestore(&dev_data_list_lock, flags);
+-
+-	return dev_data;
++	return NULL;
+ }
+ 
+ static int __last_alias(struct pci_dev *pdev, u16 alias, void *data)
+--- a/drivers/iommu/amd_iommu_types.h
++++ b/drivers/iommu/amd_iommu_types.h
+@@ -625,7 +625,7 @@ struct devid_map {
+  */
+ struct iommu_dev_data {
+ 	struct list_head list;		  /* For domain->dev_list */
+-	struct list_head dev_data_list;	  /* For global dev_data_list */
++	struct llist_node dev_data_list;  /* For global dev_data_list */
+ 	struct protection_domain *domain; /* Domain the device is bound to */
+ 	u16 devid;			  /* PCI Device ID */
+ 	u16 alias;			  /* Alias Device ID */

@@ -1,0 +1,94 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 22 Mar 2018 16:22:37 +0100
+Subject: [PATCH 05/10] iommu/amd: Remove the special case from
+ alloc_irq_table()
+
+Upstream commit fde65dd3d3096e8f6ecc7bbe544eb91f4220772c
+
+alloc_irq_table() has a special ioapic argument. If set then it will
+pre-allocate / reserve the first 32 indexes. The argument is only once
+true and it would make alloc_irq_table() a little simpler if we would
+extract the special bits to the caller.
+The caller of irq_remapping_alloc() is holding irq_domain_mutex so the
+initialization of iommu->irte_ops->set_allocated() should not race
+against other user.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Joerg Roedel <jroedel@suse.de>
+---
+ drivers/iommu/amd_iommu.c |   34 ++++++++++++++++++++--------------
+ 1 file changed, 20 insertions(+), 14 deletions(-)
+
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -3594,7 +3594,7 @@ static struct irq_remap_table *get_irq_t
+ 	return table;
+ }
+ 
+-static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
++static struct irq_remap_table *alloc_irq_table(u16 devid)
+ {
+ 	struct irq_remap_table *table = NULL;
+ 	struct amd_iommu *iommu;
+@@ -3628,10 +3628,6 @@ static struct irq_remap_table *alloc_irq
+ 	/* Initialize table spin-lock */
+ 	raw_spin_lock_init(&table->lock);
+ 
+-	if (ioapic)
+-		/* Keep the first 32 indexes free for IOAPIC interrupts */
+-		table->min_index = 32;
+-
+ 	table->table = kmem_cache_alloc(amd_iommu_irq_cache, GFP_ATOMIC);
+ 	if (!table->table) {
+ 		kfree(table);
+@@ -3646,12 +3642,6 @@ static struct irq_remap_table *alloc_irq
+ 		memset(table->table, 0,
+ 		       (MAX_IRQS_PER_TABLE * (sizeof(u64) * 2)));
+ 
+-	if (ioapic) {
+-		int i;
+-
+-		for (i = 0; i < 32; ++i)
+-			iommu->irte_ops->set_allocated(table, i);
+-	}
+ 
+ 	irq_lookup_table[devid] = table;
+ 	set_dte_irq_entry(devid, table);
+@@ -3681,7 +3671,7 @@ static int alloc_irq_index(u16 devid, in
+ 	if (!iommu)
+ 		return -ENODEV;
+ 
+-	table = alloc_irq_table(devid, false);
++	table = alloc_irq_table(devid);
+ 	if (!table)
+ 		return -ENODEV;
+ 
+@@ -4100,10 +4090,26 @@ static int irq_remapping_alloc(struct ir
+ 		return ret;
+ 
+ 	if (info->type == X86_IRQ_ALLOC_TYPE_IOAPIC) {
+-		if (alloc_irq_table(devid, true))
++		struct irq_remap_table *table;
++		struct amd_iommu *iommu;
++
++		table = alloc_irq_table(devid);
++		if (table) {
++			if (!table->min_index) {
++				/*
++				 * Keep the first 32 indexes free for IOAPIC
++				 * interrupts.
++				 */
++				table->min_index = 32;
++				iommu = amd_iommu_rlookup_table[devid];
++				for (i = 0; i < 32; ++i)
++					iommu->irte_ops->set_allocated(table, i);
++			}
++			WARN_ON(table->min_index != 32);
+ 			index = info->ioapic_pin;
+-		else
++		} else {
+ 			ret = -ENOMEM;
++		}
+ 	} else {
+ 		index = alloc_irq_index(devid, nr_irqs);
+ 	}
