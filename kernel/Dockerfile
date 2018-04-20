@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:96ad1eb5ec262b4cd0eef574cdc0b225b502d9ee AS kernel-build
+FROM linuxkit/alpine:02d7e748614512ea099e8c76254e41bcea03ba8f AS kernel-build
 RUN apk add \
     argp-standalone \
     automake \
@@ -172,7 +172,7 @@ RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 # perf
 # Skip for 4.4.x (the compile is broken and tedious to fix) and 4.9.x (the
 # compile broke with 4.9.94)
-RUN if [ "${KERNEL_SERIES}" != "4.4.x" && "${KERNEL_SERIES}" != "4.9.x" ]; then \
+RUN if [ "${KERNEL_SERIES}" != "4.4.x" ] && [ "${KERNEL_SERIES}" != "4.9.x" ]; then \
        mkdir -p /build/perf && \
        make -C tools/perf LDFLAGS=-static O=/build/perf && \
        strip /build/perf/perf && \

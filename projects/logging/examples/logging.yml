@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.14.34
+  image: linuxkit/kernel:4.14.35
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
   - linuxkit/init:d0bf64f4cea42bea71e7d8f8832ba497bb822e89 # with runc, logwrite, startmemlogd
