@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 22 Mar 2018 16:22:33 +0100
+Subject: [PATCH 01/10] iommu/amd: Take into account that alloc_dev_data() may
+ return NULL
+
+Upstream commit 39ffe39545cd5cb5b8cee9f0469165cf24dc62c2
+
+find_dev_data() does not check whether the return value alloc_dev_data()
+is NULL. This was okay once because the pointer was returned once as-is.
+Since commit df3f7a6e8e85 ("iommu/amd: Use is_attach_deferred
+call-back") the pointer may be used within find_dev_data() so a NULL
+check is required.
+
+Cc: Baoquan He <bhe@redhat.com>
+Fixes: df3f7a6e8e85 ("iommu/amd: Use is_attach_deferred call-back")
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Joerg Roedel <jroedel@suse.de>
+---
+ drivers/iommu/amd_iommu.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -311,6 +311,8 @@ static struct iommu_dev_data *find_dev_d
+ 
+ 	if (dev_data == NULL) {
+ 		dev_data = alloc_dev_data(devid);
++		if (!dev_data)
++			return NULL;
+ 
+ 		if (translation_pre_enabled(iommu))
+ 			dev_data->defer_attach = true;

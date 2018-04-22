@@ -1,0 +1,50 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 22 Mar 2018 16:22:36 +0100
+Subject: [PATCH 04/10] iommu/amd: Split irq_lookup_table out of the
+ amd_iommu_devtable_lock
+
+Upstream commit ea6166f4b83e9cfba1c18f46a764d50045682fe5
+
+The function get_irq_table() reads/writes irq_lookup_table while holding
+the amd_iommu_devtable_lock. It also modifies
+amd_iommu_dev_table[].data[2].
+set_dte_entry() is using amd_iommu_dev_table[].data[0|1] (under the
+domain->lock) so it should be okay. The access to the iommu is
+serialized with its own (iommu's) lock.
+
+So split out get_irq_table() out of amd_iommu_devtable_lock's lock.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Joerg Roedel <jroedel@suse.de>
+---
+ drivers/iommu/amd_iommu.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -83,6 +83,7 @@
+ 
+ static DEFINE_RWLOCK(amd_iommu_devtable_lock);
+ static DEFINE_SPINLOCK(pd_bitmap_lock);
++static DEFINE_SPINLOCK(iommu_table_lock);
+ 
+ /* List of all available dev_data structures */
+ static LLIST_HEAD(dev_data_list);
+@@ -3600,7 +3601,7 @@ static struct irq_remap_table *alloc_irq
+ 	unsigned long flags;
+ 	u16 alias;
+ 
+-	write_lock_irqsave(&amd_iommu_devtable_lock, flags);
++	spin_lock_irqsave(&iommu_table_lock, flags);
+ 
+ 	iommu = amd_iommu_rlookup_table[devid];
+ 	if (!iommu)
+@@ -3665,7 +3666,7 @@ static struct irq_remap_table *alloc_irq
+ 	iommu_completion_wait(iommu);
+ 
+ out_unlock:
+-	write_unlock_irqrestore(&amd_iommu_devtable_lock, flags);
++	spin_unlock_irqrestore(&iommu_table_lock, flags);
+ 
+ 	return table;
+ }

@@ -1,0 +1,76 @@
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Wed, 28 Mar 2018 15:10:53 -0500
+Subject: [PATCH 1/4] tracing: Fix display of hist trigger expressions
+ containing timestamps
+
+When displaying hist triggers, variable references that have the
+timestamp field flag set are erroneously displayed as common_timestamp
+rather than the variable reference.  Additionally, timestamp
+expressions are displayed in the same way.  Fix this by forcing the
+timestamp flag handling to follow variable reference and expression
+handling.
+
+Before:
+
+  # cat /sys/kernel/debug/tracing/events/sched/sched_switch/trigger
+  hist:keys=next_pid:vals=hitcount:wakeup_lat=common_timestamp.usecs:...
+
+After:
+
+  # cat /sys/kernel/debug/tracing/events/sched/sched_switch/trigger
+  hist:keys=next_pid:vals=hitcount:wakeup_lat=common_timestamp.usecs-$ts0.usecs:...
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace_events_hist.c |   19 +++++--------------
+ 1 file changed, 5 insertions(+), 14 deletions(-)
+
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -1686,8 +1686,6 @@ static const char *hist_field_name(struc
+ 	else if (field->flags & HIST_FIELD_FL_LOG2 ||
+ 		 field->flags & HIST_FIELD_FL_ALIAS)
+ 		field_name = hist_field_name(field->operands[0], ++level);
+-	else if (field->flags & HIST_FIELD_FL_TIMESTAMP)
+-		field_name = "common_timestamp";
+ 	else if (field->flags & HIST_FIELD_FL_CPU)
+ 		field_name = "cpu";
+ 	else if (field->flags & HIST_FIELD_FL_EXPR ||
+@@ -1703,7 +1701,8 @@ static const char *hist_field_name(struc
+ 			field_name = full_name;
+ 		} else
+ 			field_name = field->name;
+-	}
++	} else if (field->flags & HIST_FIELD_FL_TIMESTAMP)
++		field_name = "common_timestamp";
+ 
+ 	if (field_name == NULL)
+ 		field_name = "";
+@@ -4859,23 +4858,15 @@ static void hist_field_print(struct seq_
+ 	if (hist_field->var.name)
+ 		seq_printf(m, "%s=", hist_field->var.name);
+ 
+-	if (hist_field->flags & HIST_FIELD_FL_TIMESTAMP)
+-		seq_puts(m, "common_timestamp");
+-	else if (hist_field->flags & HIST_FIELD_FL_CPU)
++	if (hist_field->flags & HIST_FIELD_FL_CPU)
+ 		seq_puts(m, "cpu");
+ 	else if (field_name) {
+ 		if (hist_field->flags & HIST_FIELD_FL_VAR_REF ||
+ 		    hist_field->flags & HIST_FIELD_FL_ALIAS)
+ 			seq_putc(m, '$');
+ 		seq_printf(m, "%s", field_name);
+-	}
+-
+-	if (hist_field->flags) {
+-		const char *flags_str = get_hist_field_flags(hist_field);
+-
+-		if (flags_str)
+-			seq_printf(m, ".%s", flags_str);
+-	}
++	} else if (hist_field->flags & HIST_FIELD_FL_TIMESTAMP)
++		seq_puts(m, "common_timestamp");
+ }
+ 
+ static int event_hist_trigger_print(struct seq_file *m,

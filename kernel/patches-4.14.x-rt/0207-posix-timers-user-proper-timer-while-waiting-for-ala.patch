@@ -1,0 +1,69 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 28 Mar 2018 10:45:40 +0200
+Subject: [PATCH 2/3] posix-timers: user proper timer while waiting for
+ alarmtimer
+
+On RT the timer can be preempted while running and therefore we wait
+with timer_wait_for_callback() for the timer to complete (instead of
+busy looping).
+The POSIX timer has an hrtimer underneath and this hrtimer is used to
+wait for its completion. The alartimer has also an hrtimer but at a
+different location.
+
+Instead of checking for ->timer_set which is the same for the alarmtimer
+and the "posix-timers" I instead check for ->arm which is only used by
+the "posix-timers". To match the alarmtimer I check for the alarm_clock
+struct.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/posix-timers.c |   30 ++++++++++++++++--------------
+ 1 file changed, 16 insertions(+), 14 deletions(-)
+
+--- a/kernel/time/posix-timers.c
++++ b/kernel/time/posix-timers.c
+@@ -797,20 +797,6 @@ SYSCALL_DEFINE1(timer_getoverrun, timer_
+ 	return overrun;
+ }
+ 
+-/*
+- * Protected by RCU!
+- */
+-static void timer_wait_for_callback(const struct k_clock *kc, struct k_itimer *timr)
+-{
+-#ifdef CONFIG_PREEMPT_RT_FULL
+-	if (kc->timer_set == common_timer_set)
+-		hrtimer_wait_for_timer(&timr->it.real.timer);
+-	else
+-		/* FIXME: Whacky hack for posix-cpu-timers */
+-		schedule_timeout(1);
+-#endif
+-}
+-
+ static void common_hrtimer_arm(struct k_itimer *timr, ktime_t expires,
+ 			       bool absolute, bool sigev_none)
+ {
+@@ -841,6 +827,22 @@ static void common_hrtimer_arm(struct k_
+ 		hrtimer_start_expires(timer, HRTIMER_MODE_ABS);
+ }
+ 
++/*
++ * Protected by RCU!
++ */
++static void timer_wait_for_callback(const struct k_clock *kc, struct k_itimer *timr)
++{
++#ifdef CONFIG_PREEMPT_RT_FULL
++	if (kc->timer_arm == common_hrtimer_arm)
++		hrtimer_wait_for_timer(&timr->it.real.timer);
++	else if (kc == &alarm_clock)
++		hrtimer_wait_for_timer(&timr->it.alarm.alarmtimer.timer);
++	else
++		/* FIXME: Whacky hack for posix-cpu-timers */
++		schedule_timeout(1);
++#endif
++}
++
+ static int common_hrtimer_try_to_cancel(struct k_itimer *timr)
+ {
+ 	return hrtimer_try_to_cancel(&timr->it.real.timer);

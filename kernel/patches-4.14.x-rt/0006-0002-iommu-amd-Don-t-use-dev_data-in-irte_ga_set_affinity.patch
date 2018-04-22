@@ -1,0 +1,31 @@
+From: Scott Wood <swood@redhat.com>
+Date: Sun, 28 Jan 2018 14:22:19 -0600
+Subject: [PATCH 2/3] iommu/amd: Don't use dev_data in irte_ga_set_affinity()
+
+Upstream commit 01ee04badefd296eb7a4430497373be9b7b16783
+
+search_dev_data() acquires a non-raw lock, which can't be done
+from atomic context on PREEMPT_RT.  There is no need to look at
+dev_data because guest_mode should never be set if use_vapic is
+not set.
+
+Signed-off-by: Scott Wood <swood@redhat.com>
+Signed-off-by: Joerg Roedel <jroedel@suse.de>
+---
+ drivers/iommu/amd_iommu.c |    4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/drivers/iommu/amd_iommu.c
++++ b/drivers/iommu/amd_iommu.c
+@@ -3861,10 +3861,8 @@ static void irte_ga_set_affinity(void *e
+ 				 u8 vector, u32 dest_apicid)
+ {
+ 	struct irte_ga *irte = (struct irte_ga *) entry;
+-	struct iommu_dev_data *dev_data = search_dev_data(devid);
+ 
+-	if (!dev_data || !dev_data->use_vapic ||
+-	    !irte->lo.fields_remap.guest_mode) {
++	if (!irte->lo.fields_remap.guest_mode) {
+ 		irte->hi.fields.vector = vector;
+ 		irte->lo.fields_remap.destination = dest_apicid;
+ 		modify_irte_ga(devid, index, irte, NULL);

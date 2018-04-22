@@ -1,0 +1,52 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 28 Mar 2018 11:15:19 +0200
+Subject: [PATCH 3/3] posix-timers: move the rcu head out of the union
+
+On RT the timer can be preempted while running and therefore we wait
+with timer_wait_for_callback() for the timer to complete (instead of
+busy looping). The RCU-readlock is held to ensure that this posix timer
+is not removed while we wait on it.
+If the timer is removed then it invokes call_rcu() with a pointer that
+is shared with the hrtimer because it is part of the same union.
+In order to avoid any possible side effects I am moving the rcu pointer
+out of the union.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/posix-timers.h |    2 +-
+ kernel/time/posix-timers.c   |    4 ++--
+ 2 files changed, 3 insertions(+), 3 deletions(-)
+
+--- a/include/linux/posix-timers.h
++++ b/include/linux/posix-timers.h
+@@ -101,8 +101,8 @@ struct k_itimer {
+ 		struct {
+ 			struct alarm	alarmtimer;
+ 		} alarm;
+-		struct rcu_head		rcu;
+ 	} it;
++	struct rcu_head		rcu;
+ };
+ 
+ void run_posix_cpu_timers(struct task_struct *task);
+--- a/kernel/time/posix-timers.c
++++ b/kernel/time/posix-timers.c
+@@ -471,7 +471,7 @@ static struct k_itimer * alloc_posix_tim
+ 
+ static void k_itimer_rcu_free(struct rcu_head *head)
+ {
+-	struct k_itimer *tmr = container_of(head, struct k_itimer, it.rcu);
++	struct k_itimer *tmr = container_of(head, struct k_itimer, rcu);
+ 
+ 	kmem_cache_free(posix_timers_cache, tmr);
+ }
+@@ -488,7 +488,7 @@ static void release_posix_timer(struct k
+ 	}
+ 	put_pid(tmr->it_pid);
+ 	sigqueue_free(tmr->sigq);
+-	call_rcu(&tmr->it.rcu, k_itimer_rcu_free);
++	call_rcu(&tmr->rcu, k_itimer_rcu_free);
+ }
+ 
+ static int common_timer_create(struct k_itimer *new_timer)
