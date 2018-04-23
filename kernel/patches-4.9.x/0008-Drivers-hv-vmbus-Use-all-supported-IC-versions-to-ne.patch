@@ -1,4 +1,4 @@
-From 66bf5add7020079a45f5adcacd2ed2427e0f02b5 Mon Sep 17 00:00:00 2001
+From 2d295aa2f2a60368220ffe672f45e7a33b166010 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 08/12] Drivers: hv: vmbus: Use all supported IC versions to
@@ -34,7 +34,7 @@ Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
  6 files changed, 154 insertions(+), 106 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 8df02f3ca0b2..e7949b64bfbc 100644
+index d838074e9add..095dd37367de 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -202,33 +202,34 @@ static u16 hv_get_dev_type(const struct vmbus_channel *channel)
@@ -488,5 +488,5 @@ index c9af8369b4f7..7df9eb8f0cf7 100644
  void hv_event_tasklet_disable(struct vmbus_channel *channel);
  void hv_event_tasklet_enable(struct vmbus_channel *channel);
 -- 
-2.16.3
+2.16.0
 
