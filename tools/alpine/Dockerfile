@@ -46,7 +46,9 @@ COPY go-compile.sh /go/bin/
 # containerd v1.1.x requires go1.10 which is currently a separate package in Alpine 3.7
 RUN apk add --no-cache git go1.10 musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
-RUN go get -u github.com/golang/lint/golint
+RUN mkdir -p $GOPATH/src/golang.org/x \
+  && git clone --depth 1 https://github.com/golang/lint.git $GOPATH/src/golang.org/x/lint \
+  && go get -u golang.org/x/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
