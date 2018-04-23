@@ -30,4 +30,3 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build /go/bin/extend usr/bin/extend
 CMD ["/usr/bin/extend"]
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev"], "capabilities": ["CAP_SYS_ADMIN", "CAP_MKNOD"], "net": "new", "ipc": "new"}'

@@ -1,1 +1,10 @@
 image: swap
+config:
+  binds:
+    - /dev:/dev
+    - /var:/var
+  capabilities:
+    - CAP_SYS_ADMIN
+    - CAP_MKNOD
+  net: new
+  ipc: new

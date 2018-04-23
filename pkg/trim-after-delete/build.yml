@@ -1,1 +1,7 @@
 image: trim-after-delete
+config:
+  binds:
+    - /var/run:/var/run
+    - /var/lib/docker:/var/lib/docker
+  capabilities:
+    - CAP_SYS_ADMIN

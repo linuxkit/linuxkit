@@ -23,4 +23,3 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=mirror /go/bin/trim-after-delete /usr/bin/trim-after-delete
 CMD ["/usr/bin/trim-after-delete", "--", "/sbin/fstrim", "/var/lib/docker"]
-LABEL org.mobyproject.config='{"binds": ["/var/run:/var/run", "/var/lib/docker:/var/lib/docker"], "capabilities": ["CAP_SYS_ADMIN"]}'

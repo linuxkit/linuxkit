@@ -30,4 +30,3 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build /go/bin/format usr/bin/format
 CMD ["/usr/bin/format"]
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev"], "capabilities": ["CAP_SYS_ADMIN", "CAP_MKNOD"], "net": "new", "ipc": "new"}'

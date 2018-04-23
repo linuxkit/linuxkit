@@ -2,3 +2,10 @@ image: tss
 network: true
 arches:
   - amd64
+config:
+  pid: host
+  net: host
+  binds:
+    - /dev:/dev
+  capabilities:
+    - all

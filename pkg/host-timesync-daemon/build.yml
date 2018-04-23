@@ -2,3 +2,8 @@ image: host-timesync-daemon
 network: true
 arches:
   - amd64
+config:
+  binds:
+    - /dev/rtc0:/dev/rtc0
+  capabilities:
+    - CAP_SYS_TIME

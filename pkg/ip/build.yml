@@ -1,2 +1,6 @@
 image: ip
 network: true
+config:
+  capabilities:
+    - CAP_NET_ADMIN
+    - CAP_NET_RAW

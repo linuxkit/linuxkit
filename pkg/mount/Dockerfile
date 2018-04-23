@@ -24,4 +24,3 @@ WORKDIR /
 COPY --from=mirror /out/ /
 COPY --from=build /go/bin/mountie usr/bin/mountie
 CMD ["/usr/bin/mountie"]
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev", "/var:/var:rshared,rbind", "/:/hostroot"], "capabilities": ["CAP_SYS_ADMIN"], "rootfsPropagation": "shared", "net": "new", "ipc": "new"}'

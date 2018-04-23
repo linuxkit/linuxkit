@@ -22,4 +22,3 @@ COPY --from=mirror /go/bin/binfmt usr/bin/binfmt
 COPY --from=mirror /binfmt_misc /binfmt_misc/
 COPY etc/binfmt.d/00_linuxkit.conf etc/binfmt.d/00_linuxkit.conf
 CMD ["/usr/bin/binfmt", "-dir", "/etc/binfmt.d/", "-mount", "/binfmt_misc"]
-LABEL org.mobyproject.config='{"binds": ["/proc/sys/fs/binfmt_misc:/binfmt_misc"], "readonly": true, "net": "new", "ipc": "new"}'

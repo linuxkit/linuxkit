@@ -1,3 +1,10 @@
 image: mkimage
 arches:
   - amd64
+config:
+  readonly: true
+  capabilities:
+    - CAP_SYS_ADMIN
+    - CAP_MKNOD
+  binds:
+    - /dev:/dev

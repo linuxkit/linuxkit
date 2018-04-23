@@ -37,4 +37,3 @@ COPY --from=build /usr/bin/cadvisor /usr/bin/cadvisor
 COPY /waitfordocker.sh /usr/bin/waitfordocker.sh
 
 ENTRYPOINT ["/usr/bin/waitfordocker.sh", "/usr/bin/cadvisor", "-logtostderr", "--disable_metrics=disk,tcp,udp"]
-LABEL org.mobyproject.config='{"pid": "host", "binds": ["/var/lib/docker:/var/lib/docker:ro", "/var/run:/var/run", "/sys:/sys:ro", "/etc/resolv.conf:/etc/resolv.conf:ro"], "capabilities": ["all"]}'

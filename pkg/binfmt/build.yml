@@ -1,3 +1,9 @@
 image: binfmt
 arches:
   - amd64
+config:
+  binds:
+  - /proc/sys/fs/binfmt_misc:/binfmt_misc
+  readonly: true
+  net: new
+  ipc: new

@@ -17,6 +17,3 @@ COPY --from=mirror /out/ /
 COPY --from=mirror2 /out/etc/acpi /etc/acpi
 
 CMD ["/sbin/acpid", "-f", "-d"]
-
-LABEL org.mobyproject.config='{"binds": ["/dev:/dev"], "pid": "host"}'
-

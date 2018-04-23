@@ -1,1 +1,9 @@
 image: extend
+config:
+  binds:
+    - /dev:/dev
+  capabilities:
+    - CAP_SYS_ADMIN
+    - CAP_MKNOD
+  net: new
+  ipc: new
