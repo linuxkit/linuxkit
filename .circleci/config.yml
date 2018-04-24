@@ -1,13 +1,14 @@
 version: 2
 jobs:
   build:
-    machine:
-      image: circleci/classic:201710-02
+    docker:
+      - image: circleci/golang:1.10
     environment:
       GOPATH: /home/circleci/.go_workspace
     working_directory: /home/circleci/.go_workspace/src/github.com/moby/tool
     steps:
       - checkout
+      - setup_remote_docker
       - run:
           name: "Lint"
           command: |
