@@ -5,17 +5,17 @@ init:
   - linuxkit/init:d0bf64f4cea42bea71e7d8f8832ba497bb822e89
   - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
   - linuxkit/containerd:100d0d046c5061d75ee43e4ac5017a759109cae4
-  - linuxkit/ca-certificates:v0.3
+  - linuxkit/ca-certificates:fb5c7bf842a330f5b47cdf71f950fe0c85f4a772
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.3
+    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:v0.3
+    image: linuxkit/sysctl:b51c3da02bc2fc9a53f699efc51f650ac17ffac8
   - name: format
-    image: linuxkit/format:v0.3
+    image: linuxkit/format:d24885a226c42a40f7ed44dd3789a6a035254d98
   - name: mount
-    image: linuxkit/mount:v0.3
+    image: linuxkit/mount:763e67d733342281f3bdc55d7208b9c442837afe
     command: ["/usr/bin/mountie", "/var/lib"]
   - name: test
     image: linuxkit/test-containerd:8b99385a8b21b238c0c9db0af102d5b54bbe324e

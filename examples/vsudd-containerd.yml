@@ -7,11 +7,11 @@ init:
   - linuxkit/containerd:100d0d046c5061d75ee43e4ac5017a759109cae4
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.3
+    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: vsudd
-    image: linuxkit/vsudd:v0.3
+    image: linuxkit/vsudd:ef2fd68237c6fc1a3b97b37012ad81bf9643be4b
     binds:
         - /run/containerd/containerd.sock:/run/containerd/containerd.sock
     command: ["/vsudd",

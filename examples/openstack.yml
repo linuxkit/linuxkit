@@ -5,21 +5,21 @@ init:
   - linuxkit/init:d0bf64f4cea42bea71e7d8f8832ba497bb822e89
   - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
   - linuxkit/containerd:100d0d046c5061d75ee43e4ac5017a759109cae4
-  - linuxkit/ca-certificates:v0.3
+  - linuxkit/ca-certificates:fb5c7bf842a330f5b47cdf71f950fe0c85f4a772
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.3
+    image: linuxkit/sysctl:b51c3da02bc2fc9a53f699efc51f650ac17ffac8
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.3
+    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:v0.3
+    image: linuxkit/metadata:be507a0718df8ed6733dfab1d6866672f446e8fd
     command: ["/usr/bin/metadata", "openstack"]
 services:
   - name: rngd
-    image: linuxkit/rngd:v0.3
+    image: linuxkit/rngd:429e1308b8cad9dbe04b7a91fcebec17ee6f7591
   - name: sshd
-    image: linuxkit/sshd:v0.3
+    image: linuxkit/sshd:8f11ee09b101ab7f41c7a6409a8d7a8d49957fbb
     binds:
      - /run/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx

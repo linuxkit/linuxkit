@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:100d0d046c5061d75ee43e4ac5017a759109cae4
 services:
   - name: acpid
-    image: linuxkit/acpid:v0.3
+    image: linuxkit/acpid:6c05004a07f4f9228aec89605d5c72b184695d2a
 trust:
   org:
     - linuxkit

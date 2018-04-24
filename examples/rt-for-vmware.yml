@@ -5,21 +5,21 @@ init:
   - linuxkit/init:d0bf64f4cea42bea71e7d8f8832ba497bb822e89
   - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
   - linuxkit/containerd:100d0d046c5061d75ee43e4ac5017a759109cae4
-  - linuxkit/ca-certificates:v0.3
+  - linuxkit/ca-certificates:fb5c7bf842a330f5b47cdf71f950fe0c85f4a772
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.3
+    image: linuxkit/sysctl:b51c3da02bc2fc9a53f699efc51f650ac17ffac8
 services:
   - name: getty
-    image: linuxkit/getty:v0.3
+    image: linuxkit/getty:b286a610ccbebc45251f3a9df3619d76318e2244
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:v0.3
+    image: linuxkit/rngd:429e1308b8cad9dbe04b7a91fcebec17ee6f7591
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.3
+    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
   - name: open-vm-tools
-    image: linuxkit/open-vm-tools:v0.3
+    image: linuxkit/open-vm-tools:435f47c1a8c004b3626da21eb17fcebcc628714a
   - name: nginx
     image: nginx:1.13.8-alpine
     capabilities:

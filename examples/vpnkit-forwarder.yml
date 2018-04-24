@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:100d0d046c5061d75ee43e4ac5017a759109cae4
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.3
+    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: mount-vpnkit
     image: alpine:3.7
@@ -19,9 +19,9 @@ onboot:
     command: ["sh", "-c", "mkdir /host_var/vpnkit && mount -v -t 9p -o trans=virtio,dfltuid=1001,dfltgid=50,version=9p2000 port /host_var/vpnkit"]
 services:
   - name: sshd
-    image: linuxkit/sshd:v0.3
+    image: linuxkit/sshd:8f11ee09b101ab7f41c7a6409a8d7a8d49957fbb
   - name: vpnkit-forwarder
-    image: linuxkit/vpnkit-forwarder:v0.3
+    image: linuxkit/vpnkit-forwarder:49b506c4dab8789fd42b216c35a4eb1cca503b32
     binds:
         - /var/vpnkit:/port
     net: host

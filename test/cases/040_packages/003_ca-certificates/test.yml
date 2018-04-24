@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:d0bf64f4cea42bea71e7d8f8832ba497bb822e89
   - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
-  - linuxkit/ca-certificates:v0.3
+  - linuxkit/ca-certificates:fb5c7bf842a330f5b47cdf71f950fe0c85f4a772
 onboot:
   - name: test
     image: alpine:3.7
