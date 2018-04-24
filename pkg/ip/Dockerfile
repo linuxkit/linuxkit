@@ -24,4 +24,3 @@ ENTRYPOINT []
 CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
-LABEL org.mobyproject.config='{"capabilities": ["CAP_NET_ADMIN", "CAP_NET_RAW"]}'

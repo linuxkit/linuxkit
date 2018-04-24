@@ -15,4 +15,3 @@ CMD []
 WORKDIR /
 COPY --from=mirror /go/bin/rngd /sbin/rngd
 CMD ["/sbin/rngd"]
-LABEL org.mobyproject.config='{"capabilities": ["CAP_SYS_ADMIN"], "oomScoreAdj": -800, "readonly": true, "net": "new", "ipc": "new"}'

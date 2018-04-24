@@ -1,2 +1,10 @@
 image: node_exporter
 network: true
+config:
+  pid: host
+  binds:
+    - /proc:/host/proc
+    - /sys:/host/sys
+    - /:/rootfs
+  capabilities:
+    - all

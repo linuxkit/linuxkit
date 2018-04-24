@@ -61,4 +61,3 @@ RUN busybox chmod 0644 /etc/passwd /etc/group && \
     busybox rm /bin/busybox /bin/sh
 
 CMD ["/sbin/tcsd","-f"]
-LABEL org.mobyproject.config='{"pid": "host", "net":"host", "binds": ["/dev:/dev"], "capabilities": ["all"]}'

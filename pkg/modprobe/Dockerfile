@@ -10,4 +10,3 @@ ENTRYPOINT []
 CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
-LABEL org.mobyproject.config='{"binds": ["/lib/modules:/lib/modules", "/sys:/sys"], "capabilities": ["CAP_SYS_MODULE"]}'

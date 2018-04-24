@@ -6,13 +6,13 @@ init:
   - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
 onboot:
   - name: modprobe
-    image: linuxkit/modprobe:v0.3
+    image: linuxkit/modprobe:7605d92569d45df9e4a9fe4e12a777d2e7944976
     command: ["modprobe", "btrfs"]
   - name: extend
-    image: linuxkit/extend:v0.3
+    image: linuxkit/extend:d9f58e40ed6f474757da6554dc214a0812f099df
     command: ["/usr/bin/extend", "-type", "btrfs"]
   - name: mount
-    image: linuxkit/mount:v0.3
+    image: linuxkit/mount:763e67d733342281f3bdc55d7208b9c442837afe
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.7

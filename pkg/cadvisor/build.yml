@@ -3,3 +3,12 @@ network: true
 arches:
   - amd64
   - arm64
+config:
+  pid: host
+  binds:
+    - /var/lib/docker:/var/lib/docker:ro
+    - /var/run:/var/run
+    - /sys:/sys:ro
+    - /etc/resolv.conf:/etc/resolv.conf:ro
+  capabilities:
+    - all

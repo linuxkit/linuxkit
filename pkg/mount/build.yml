@@ -1,1 +1,11 @@
 image: mount
+config:
+  binds:
+    - /dev:/dev
+    - /var:/var:rshared,rbind
+    - /:/hostroot
+  capabilities:
+    - CAP_SYS_ADMIN
+  rootfsPropagation: shared
+  net: new
+  ipc: new

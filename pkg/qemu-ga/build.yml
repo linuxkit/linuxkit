@@ -1,1 +1,3 @@
 image: qemu-ga
+config:
+  net: host

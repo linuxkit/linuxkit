@@ -10,4 +10,3 @@ WORKDIR /
 ENTRYPOINT []
 COPY --from=build /out /
 CMD ["/usr/bin/qemu-ga", "-p", "/dev/vport0p1"]
-LABEL org.mobyproject.config='{"net": "host"}'

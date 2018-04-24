@@ -19,4 +19,3 @@ CMD []
 WORKDIR /
 COPY --from=mirror /go/bin/host-timesync-daemon /usr/bin/host-timesync-daemon
 CMD ["/usr/bin/host-timesync-daemon", "-port", "0xf3a4"]
-LABEL org.mobyproject.config='{"binds": [ "/dev/rtc0:/dev/rtc0" ], "capabilities": ["CAP_SYS_TIME"]}'

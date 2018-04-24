@@ -1,1 +1,4 @@
 image: sysfs
+config:
+  net: new
+  ipc: new

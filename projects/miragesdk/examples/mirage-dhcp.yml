@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:100d0d046c5061d75ee43e4ac5017a759109cae4
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.3
+    image: linuxkit/sysctl:b51c3da02bc2fc9a53f699efc51f650ac17ffac8
   - name: dhcp-client
     image: miragesdk/dhcp-client:22aa9d527820534295a8cd59901c0c5197af6585
     net: host
@@ -28,9 +28,9 @@ onboot:
      - /lib:/lib     # for ifconfig
 services:
   - name: sshd
-    image: linuxkit/sshd:v0.3
+    image: linuxkit/sshd:8f11ee09b101ab7f41c7a6409a8d7a8d49957fbb
   - name: getty
-    image: linuxkit/getty:v0.3
+    image: linuxkit/getty:b286a610ccbebc45251f3a9df3619d76318e2244
     env:
      - INSECURE=true
 files:

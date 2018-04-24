@@ -1,3 +1,7 @@
 image: open-vm-tools
 arches:
   - amd64
+config:
+  pid: host
+  capabilities:
+    - CAP_SYS_BOOT
