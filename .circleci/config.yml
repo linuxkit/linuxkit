@@ -3,21 +3,19 @@ jobs:
   build:
     working_directory: /go/src/github.com/linuxkit/linuxkit
     docker:
-      - image: circleci/golang:1.9-stretch
+      - image: linuxkit/alpine:f3cd219615428b2bd943411723eb28875275fae7
     steps:
       - checkout
       - run: mkdir -p ./bin
+      - run:
+          name: Dependencies
+          command: apk add go make git musl-dev
       - run:
           name: Versions
           command: |
             set -x
             go version
             cat /etc/os-release
-      - run:
-          name: Dependencies
-          command: |
-            go get -u github.com/golang/lint/golint
-            go get -u github.com/gordonklaus/ineffassign
       - run:
           name: Lint
           command: make local-check
