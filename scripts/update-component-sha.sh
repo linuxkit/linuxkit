@@ -69,7 +69,7 @@ case "$1" in
 		hash=$3
 		;;
 	    esac
-        git grep -E -l "\b$image:" | xargs sed -i.bak -e "s,$image:[[:xdigit:]]\{40\},$image:$hash,g"
+        git grep -E -l "\b$image:" | xargs sed -i.bak -E -e "s,$image:[[:xdigit:]]{40},$image:$hash,g"
         ;;
     *)
         echo "Unknown mode $1"
