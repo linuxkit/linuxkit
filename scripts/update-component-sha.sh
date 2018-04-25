@@ -56,7 +56,7 @@ case "$1" in
         old=$2
         new=$3
 
-        git grep -w -l "\b$old\b" | xargs sed -i.bak -e "s,$old,$new,g"
+        git grep -w -l "\b$old\b" | grep -v /vendor/ | xargs sed -i.bak -e "s,$old,$new,g"
         ;;
     --image)
 	case $# in
@@ -69,7 +69,7 @@ case "$1" in
 		hash=$3
 		;;
 	    esac
-        git grep -E -l "\b$image:" | xargs sed -i.bak -E -e "s,$image:([[:xdigit:]]{40}|v[0-9\.]+),$image:$hash,g"
+        git grep -E -l "\b$image:" | grep -v /vendor/ | xargs sed -i.bak -E -e "s,$image:([[:xdigit:]]{40}|v[0-9\.]+),$image:$hash,g"
         ;;
     *)
         echo "Unknown mode $1"
