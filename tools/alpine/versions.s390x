@@ -1,4 +1,4 @@
-# linuxkit/alpine:b3cb5e3adbf689ab5f500759d5ba774f279e3adf-s390x
+# linuxkit/alpine:d91bd2b9c9f0303d520ad7249e23afeb7bdf9abc-s390x
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
@@ -91,6 +91,7 @@ isl-0.18-r0
 jansson-2.10-r0
 jq-1.5-r4
 json-c-0.12.1-r1
+keyutils-1.5.10-r0
 keyutils-libs-1.5.10-r0
 kmod-24-r0
 krb5-conf-1.0-r1
@@ -262,7 +263,7 @@ vim-8.0.1359-r0
 wayland-libs-client-1.14.0-r2
 wayland-libs-cursor-1.14.0-r2
 wayland-libs-server-1.14.0-r2
-wireguard-tools-0.0.20180413-r3
+wireguard-tools-0.0.20180420-r3
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r8
 xfsprogs-4.14.0-r0
