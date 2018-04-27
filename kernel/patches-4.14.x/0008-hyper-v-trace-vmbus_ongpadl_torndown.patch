@@ -1,4 +1,4 @@
-From f075231876107607074ad2fd16d47f0354f52fbe Mon Sep 17 00:00:00 2001
+From 8ca33875540e2df850e72d0475cb4ef5bcb99fa7 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:06 -0700
 Subject: [PATCH 08/21] hyper-v: trace vmbus_ongpadl_torndown()

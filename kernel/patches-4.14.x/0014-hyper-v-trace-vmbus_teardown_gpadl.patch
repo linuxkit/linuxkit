@@ -1,4 +1,4 @@
-From 82c4677a943e09de81ce96f9721b05384a5341f1 Mon Sep 17 00:00:00 2001
+From 4f901324eeb759d9dd78faad80cf5e7a16d1b486 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:12 -0700
 Subject: [PATCH 14/21] hyper-v: trace vmbus_teardown_gpadl()

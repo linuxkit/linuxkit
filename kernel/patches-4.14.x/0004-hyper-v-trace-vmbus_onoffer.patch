@@ -1,4 +1,4 @@
-From 21c4f25cbe28abae14333ad251e021f010f4815c Mon Sep 17 00:00:00 2001
+From e3cf40b7c28fe4466ca8ed37aaed4af73c1b8de9 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:02 -0700
 Subject: [PATCH 04/21] hyper-v: trace vmbus_onoffer()
