@@ -171,7 +171,7 @@ RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
 # perf
 # Skip for 4.4.x (the compile is broken and tedious to fix) and 4.9.x (the
-# compile broke with 4.9.95)
+# compile broke with 4.9.96)
 RUN if [ "${KERNEL_SERIES}" != "4.4.x" ] && [ "${KERNEL_SERIES}" != "4.9.x" ]; then \
        mkdir -p /build/perf && \
        make -C tools/perf LDFLAGS=-static O=/build/perf && \
