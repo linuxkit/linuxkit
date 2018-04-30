@@ -46,6 +46,14 @@ partition as `ext4` (or similar), and use it for persistent storage.
 
 **TODO:** Experiment with and document this set up.
 
+To enable and external USB stick as disk, add the following to the
+onboot section in your YAML:
+
+```
+  - name: usb-storage
+    image: linuxkit/modprobe:<hash>
+    command: ["modprobe", "usb_storage"]
+```
 
 ## Networking
 

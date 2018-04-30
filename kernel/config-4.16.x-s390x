@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/s390 4.16.5 Kernel Configuration
+# Linux/s390 4.16.6 Kernel Configuration
 #
 CONFIG_MMU=y
 CONFIG_ZONE_DMA=y
@@ -474,8 +474,11 @@ CONFIG_HZ_250=y
 CONFIG_HZ=250
 CONFIG_SCHED_HRTICK=y
 CONFIG_ARCH_RANDOM=y
-# CONFIG_KERNEL_NOBP is not set
-# CONFIG_EXPOLINE is not set
+CONFIG_KERNEL_NOBP=y
+CONFIG_EXPOLINE=y
+# CONFIG_EXPOLINE_OFF is not set
+# CONFIG_EXPOLINE_MEDIUM is not set
+CONFIG_EXPOLINE_FULL=y
 
 #
 # Memory setup
