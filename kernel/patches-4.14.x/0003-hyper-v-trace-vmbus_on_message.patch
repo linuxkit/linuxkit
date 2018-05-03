@@ -1,4 +1,4 @@
-From 305783a745b17d6da23fa2d89b08d7f90ed443f7 Mon Sep 17 00:00:00 2001
+From cb4c7cd99c407cdda6b6b934738beb1cc1e5c015 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:01 -0700
 Subject: [PATCH 03/21] hyper-v: trace vmbus_on_message()
