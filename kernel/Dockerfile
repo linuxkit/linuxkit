@@ -180,13 +180,14 @@ RUN if [ "${KERNEL_SERIES}" != "4.4.x" ] && [ "${KERNEL_SERIES}" != "4.9.x" ]; t
      fi
 
 # Download Intel ucode and create a CPIO archive for it
-ENV UCODE_URL=https://downloadmirror.intel.com/27591/eng/microcode-20180312.tgz
+ENV UCODE_URL=https://downloadmirror.intel.com/27776/eng/microcode-20180425.tgz
 RUN set -e && \
     if [ $(uname -m) == x86_64 ]; then \
         cd /ucode && \
         curl -sSL -o microcode.tar.gz ${UCODE_URL} && \
         md5sum -c intel-ucode-md5sums && \
         tar xf microcode.tar.gz && \
+        rm -f intel-ucode/list && \
         iucode_tool --normal-earlyfw --write-earlyfw=/out/intel-ucode.cpio ./intel-ucode && \
         cp intel-ucode-license.txt /out; \
     fi
