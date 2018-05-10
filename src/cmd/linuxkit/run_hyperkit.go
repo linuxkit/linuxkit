@@ -259,8 +259,22 @@ func runHyperKit(args []string) {
 	netMode := strings.SplitN(*networking, ",", 3)
 	switch netMode[0] {
 	case hyperkitNetworkingDockerForMac:
-		h.VPNKitSock = filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/s50")
-		vpnkitPortSocket = filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/s51")
+		oldEthSock := filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/s50")
+		oldPortSock := filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/s51")
+		newEthSock := filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/vpnkit.eth.sock")
+		newPortSock := filepath.Join(os.Getenv("HOME"), "Library/Containers/com.docker.docker/Data/vpnkit.port.sock")
+		_, err := os.Stat(oldEthSock)
+		if err == nil {
+			h.VPNKitSock = oldEthSock
+			vpnkitPortSocket = oldPortSock
+		} else {
+			_, err = os.Stat(newEthSock)
+			if err != nil {
+				log.Fatalln("Cannot find Docker for Mac network sockets. Install Docker or use a different network mode.")
+			}
+			h.VPNKitSock = newEthSock
+			vpnkitPortSocket = newPortSock
+		}
 	case hyperkitNetworkingVPNKit:
 		if len(netMode) > 1 {
 			// Socket path specified, try to use existing VPNKit instance
