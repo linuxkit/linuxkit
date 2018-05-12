@@ -114,7 +114,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  DECLARE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases);
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -1131,7 +1131,7 @@ static inline void tick_nohz_activate(st
+@@ -1132,7 +1132,7 @@ static inline void tick_nohz_activate(st
  	ts->nohz_mode = mode;
  	/* One update is enough */
  	if (!test_and_set_bit(0, &tick_nohz_active))

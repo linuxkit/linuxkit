@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/virt/kvm/arm/arm.c
 +++ b/virt/kvm/arm/arm.c
-@@ -646,7 +646,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_v
+@@ -651,7 +651,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_v
  		 * involves poking the GIC, which must be done in a
  		 * non-preemptible context.
  		 */
@@ -31,7 +31,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  		kvm_pmu_flush_hwstate(vcpu);
  
-@@ -683,7 +683,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_v
+@@ -688,7 +688,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_v
  			kvm_pmu_sync_hwstate(vcpu);
  			kvm_timer_sync_hwstate(vcpu);
  			kvm_vgic_sync_hwstate(vcpu);
@@ -40,7 +40,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			continue;
  		}
  
-@@ -738,7 +738,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_v
+@@ -743,7 +743,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_v
  
  		kvm_vgic_sync_hwstate(vcpu);
  

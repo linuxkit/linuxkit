@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/time/alarmtimer.c
 +++ b/kernel/time/alarmtimer.c
-@@ -429,7 +429,7 @@ int alarm_cancel(struct alarm *alarm)
+@@ -436,7 +436,7 @@ int alarm_cancel(struct alarm *alarm)
  		int ret = alarm_try_to_cancel(alarm);
  		if (ret >= 0)
  			return ret;

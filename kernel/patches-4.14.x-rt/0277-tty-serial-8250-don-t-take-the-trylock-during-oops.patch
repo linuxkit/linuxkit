@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/drivers/tty/serial/8250/8250_port.c
 +++ b/drivers/tty/serial/8250/8250_port.c
-@@ -3250,10 +3250,8 @@ void serial8250_console_write(struct uar
+@@ -3224,10 +3224,8 @@ void serial8250_console_write(struct uar
  
  	serial8250_rpm_get(up);
  

@@ -91,7 +91,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/*
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -1626,7 +1626,7 @@ static struct dentry *lookup_slow(const
+@@ -1627,7 +1627,7 @@ static struct dentry *lookup_slow(const
  {
  	struct dentry *dentry = ERR_PTR(-ENOENT), *old;
  	struct inode *inode = dir->d_inode;
@@ -100,7 +100,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	inode_lock_shared(inode);
  	/* Don't go there if it's already dead */
-@@ -3099,7 +3099,7 @@ static int lookup_open(struct nameidata
+@@ -3100,7 +3100,7 @@ static int lookup_open(struct nameidata
  	struct dentry *dentry;
  	int error, create_error = 0;
  	umode_t mode = op->mode;
@@ -151,7 +151,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	spin_lock(&dentry->d_lock);
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -1878,7 +1878,7 @@ bool proc_fill_cache(struct file *file,
+@@ -1880,7 +1880,7 @@ bool proc_fill_cache(struct file *file,
  
  	child = d_hash_and_lookup(dir, &qname);
  	if (!child) {

@@ -24,7 +24,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/trace/ring_buffer.c
 +++ b/kernel/trace/ring_buffer.c
-@@ -2628,8 +2628,7 @@ trace_recursive_lock(struct ring_buffer_
+@@ -2633,8 +2633,7 @@ trace_recursive_lock(struct ring_buffer_
  		bit = RB_CTX_NORMAL;
  	else
  		bit = pc & NMI_MASK ? RB_CTX_NMI :

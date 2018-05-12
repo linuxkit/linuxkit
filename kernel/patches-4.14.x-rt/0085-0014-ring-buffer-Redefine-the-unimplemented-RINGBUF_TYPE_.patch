@@ -147,7 +147,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  /* Flag when events were overwritten */
  #define RB_MISSED_EVENTS	(1 << 31)
  /* Missed count stored at end */
-@@ -2223,12 +2249,15 @@ rb_move_tail(struct ring_buffer_per_cpu
+@@ -2228,12 +2254,15 @@ rb_move_tail(struct ring_buffer_per_cpu
  
  /* Slow path, do not inline */
  static noinline struct ring_buffer_event *
@@ -167,7 +167,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		event->time_delta = delta & TS_MASK;
  		event->array[0] = delta >> TS_SHIFT;
  	} else {
-@@ -2271,7 +2300,9 @@ rb_update_event(struct ring_buffer_per_c
+@@ -2276,7 +2305,9 @@ rb_update_event(struct ring_buffer_per_c
  	 * add it to the start of the resevered space.
  	 */
  	if (unlikely(info->add_timestamp)) {
@@ -178,7 +178,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		length -= RB_LEN_TIME_EXTEND;
  		delta = 0;
  	}
-@@ -2459,7 +2490,7 @@ static __always_inline void rb_end_commi
+@@ -2464,7 +2495,7 @@ static __always_inline void rb_end_commi
  
  static inline void rb_event_discard(struct ring_buffer_event *event)
  {
@@ -187,7 +187,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		event = skip_time_extend(event);
  
  	/* array[0] holds the actual length for the discarded event */
-@@ -2503,10 +2534,11 @@ rb_update_write_stamp(struct ring_buffer
+@@ -2508,10 +2539,11 @@ rb_update_write_stamp(struct ring_buffer
  			cpu_buffer->write_stamp =
  				cpu_buffer->commit_page->page->time_stamp;
  		else if (event->type_len == RINGBUF_TYPE_TIME_EXTEND) {
@@ -202,7 +202,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		} else
  			cpu_buffer->write_stamp += event->time_delta;
  	}
-@@ -2659,7 +2691,7 @@ static struct ring_buffer_event *
+@@ -2664,7 +2696,7 @@ static struct ring_buffer_event *
  	 * If this is the first commit on the page, then it has the same
  	 * timestamp as the page itself.
  	 */
@@ -211,7 +211,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		info->delta = 0;
  
  	/* See if we shot pass the end of this buffer page */
-@@ -2736,8 +2768,11 @@ rb_reserve_next_event(struct ring_buffer
+@@ -2741,8 +2773,11 @@ rb_reserve_next_event(struct ring_buffer
  	/* make sure this diff is calculated here */
  	barrier();
  
@@ -225,7 +225,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		info.delta = diff;
  		if (unlikely(test_time_stamp(info.delta)))
  			rb_handle_timestamp(cpu_buffer, &info);
-@@ -3419,14 +3454,13 @@ rb_update_read_stamp(struct ring_buffer_
+@@ -3424,14 +3459,13 @@ rb_update_read_stamp(struct ring_buffer_
  		return;
  
  	case RINGBUF_TYPE_TIME_EXTEND:
@@ -243,7 +243,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		return;
  
  	case RINGBUF_TYPE_DATA:
-@@ -3450,14 +3484,13 @@ rb_update_iter_read_stamp(struct ring_bu
+@@ -3455,14 +3489,13 @@ rb_update_iter_read_stamp(struct ring_bu
  		return;
  
  	case RINGBUF_TYPE_TIME_EXTEND:
@@ -261,7 +261,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		return;
  
  	case RINGBUF_TYPE_DATA:
-@@ -3681,6 +3714,8 @@ rb_buffer_peek(struct ring_buffer_per_cp
+@@ -3686,6 +3719,8 @@ rb_buffer_peek(struct ring_buffer_per_cp
  	struct buffer_page *reader;
  	int nr_loops = 0;
  
@@ -270,7 +270,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
   again:
  	/*
  	 * We repeat when a time extend is encountered.
-@@ -3717,12 +3752,17 @@ rb_buffer_peek(struct ring_buffer_per_cp
+@@ -3722,12 +3757,17 @@ rb_buffer_peek(struct ring_buffer_per_cp
  		goto again;
  
  	case RINGBUF_TYPE_TIME_STAMP:
@@ -290,7 +290,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  			*ts = cpu_buffer->read_stamp + event->time_delta;
  			ring_buffer_normalize_time_stamp(cpu_buffer->buffer,
  							 cpu_buffer->cpu, ts);
-@@ -3747,6 +3787,9 @@ rb_iter_peek(struct ring_buffer_iter *it
+@@ -3752,6 +3792,9 @@ rb_iter_peek(struct ring_buffer_iter *it
  	struct ring_buffer_event *event;
  	int nr_loops = 0;
  
@@ -300,7 +300,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	cpu_buffer = iter->cpu_buffer;
  	buffer = cpu_buffer->buffer;
  
-@@ -3799,12 +3842,17 @@ rb_iter_peek(struct ring_buffer_iter *it
+@@ -3804,12 +3847,17 @@ rb_iter_peek(struct ring_buffer_iter *it
  		goto again;
  
  	case RINGBUF_TYPE_TIME_STAMP:

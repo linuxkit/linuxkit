@@ -45,7 +45,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	local_t				entries_bytes;
  	local_t				entries;
  	local_t				overrun;
-@@ -2630,10 +2631,10 @@ trace_recursive_lock(struct ring_buffer_
+@@ -2635,10 +2636,10 @@ trace_recursive_lock(struct ring_buffer_
  		bit = pc & NMI_MASK ? RB_CTX_NMI :
  			pc & HARDIRQ_MASK ? RB_CTX_IRQ : RB_CTX_SOFTIRQ;
  
@@ -58,7 +58,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	cpu_buffer->current_context = val;
  
  	return 0;
-@@ -2642,7 +2643,57 @@ trace_recursive_lock(struct ring_buffer_
+@@ -2647,7 +2648,57 @@ trace_recursive_lock(struct ring_buffer_
  static __always_inline void
  trace_recursive_unlock(struct ring_buffer_per_cpu *cpu_buffer)
  {

@@ -45,7 +45,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  };
  
  struct ring_buffer_iter {
-@@ -1382,6 +1383,16 @@ void ring_buffer_set_clock(struct ring_b
+@@ -1387,6 +1388,16 @@ void ring_buffer_set_clock(struct ring_b
  	buffer->clock = clock;
  }
  

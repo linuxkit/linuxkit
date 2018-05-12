@@ -33,7 +33,7 @@ Jason.
  #include <linux/uaccess.h>
  #include <linux/pm_runtime.h>
  #include <linux/ktime.h>
-@@ -3252,6 +3253,8 @@ void serial8250_console_write(struct uar
+@@ -3226,6 +3227,8 @@ void serial8250_console_write(struct uar
  
  	if (port->sysrq || oops_in_progress)
  		locked = 0;

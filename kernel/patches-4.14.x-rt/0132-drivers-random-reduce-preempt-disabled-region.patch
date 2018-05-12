@@ -13,7 +13,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
-@@ -1016,8 +1016,6 @@ static void add_timer_randomness(struct
+@@ -1122,8 +1122,6 @@ static void add_timer_randomness(struct
  	} sample;
  	long delta, delta2, delta3;
  
@@ -22,7 +22,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	sample.jiffies = jiffies;
  	sample.cycles = random_get_entropy();
  	sample.num = num;
-@@ -1058,7 +1056,6 @@ static void add_timer_randomness(struct
+@@ -1164,7 +1162,6 @@ static void add_timer_randomness(struct
  		 */
  		credit_entropy_bits(r, min_t(int, fls(delta>>1), 11));
  	}

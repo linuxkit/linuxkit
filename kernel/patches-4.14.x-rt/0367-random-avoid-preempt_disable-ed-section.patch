@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
-@@ -264,6 +264,7 @@
+@@ -265,6 +265,7 @@
  #include <linux/syscalls.h>
  #include <linux/completion.h>
  #include <linux/uuid.h>
@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  #include <crypto/chacha20.h>
  
  #include <asm/processor.h>
-@@ -2086,6 +2087,7 @@ static rwlock_t batched_entropy_reset_lo
+@@ -2188,6 +2189,7 @@ static rwlock_t batched_entropy_reset_lo
   * at any point prior.
   */
  static DEFINE_PER_CPU(struct batched_entropy, batched_entropy_u64);
@@ -30,7 +30,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  u64 get_random_u64(void)
  {
  	u64 ret;
-@@ -2106,7 +2108,7 @@ u64 get_random_u64(void)
+@@ -2208,7 +2210,7 @@ u64 get_random_u64(void)
  	warn_unseeded_randomness(&previous);
  
  	use_lock = READ_ONCE(crng_init) < 2;
@@ -39,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (use_lock)
  		read_lock_irqsave(&batched_entropy_reset_lock, flags);
  	if (batch->position % ARRAY_SIZE(batch->entropy_u64) == 0) {
-@@ -2116,12 +2118,13 @@ u64 get_random_u64(void)
+@@ -2218,12 +2220,13 @@ u64 get_random_u64(void)
  	ret = batch->entropy_u64[batch->position++];
  	if (use_lock)
  		read_unlock_irqrestore(&batched_entropy_reset_lock, flags);
@@ -54,7 +54,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  u32 get_random_u32(void)
  {
  	u32 ret;
-@@ -2136,7 +2139,7 @@ u32 get_random_u32(void)
+@@ -2238,7 +2241,7 @@ u32 get_random_u32(void)
  	warn_unseeded_randomness(&previous);
  
  	use_lock = READ_ONCE(crng_init) < 2;
@@ -63,7 +63,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	if (use_lock)
  		read_lock_irqsave(&batched_entropy_reset_lock, flags);
  	if (batch->position % ARRAY_SIZE(batch->entropy_u32) == 0) {
-@@ -2146,7 +2149,7 @@ u32 get_random_u32(void)
+@@ -2248,7 +2251,7 @@ u32 get_random_u32(void)
  	ret = batch->entropy_u32[batch->position++];
  	if (use_lock)
  		read_unlock_irqrestore(&batched_entropy_reset_lock, flags);
