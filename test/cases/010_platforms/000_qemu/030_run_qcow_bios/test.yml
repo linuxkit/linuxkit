@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
 onboot:
   - name: poweroff
-    image: linuxkit/poweroff:5740687bf0a6a0480922c0f59b3a4ca77c866cae
+    image: linuxkit/poweroff:d75d94d9603bde9ab95b914deed0d069d05d8b20
     command: ["/bin/sh", "/poweroff.sh", "10"]
 trust:
   org:
