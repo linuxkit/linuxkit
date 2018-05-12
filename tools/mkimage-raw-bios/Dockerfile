@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:f3cd219615428b2bd943411723eb28875275fae7
+FROM linuxkit/alpine:1b05307ae8152e3d38f79e297b0632697a30c65c
 
 RUN \
   apk update && apk upgrade && \
