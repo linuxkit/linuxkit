@@ -2,20 +2,20 @@ kernel:
   image: linuxkit/kernel:4.14.40
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:11929b0007b87384f7372e9265067479c4616586
-  - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
-  - linuxkit/containerd:f197e7cbb2ede4370b75127c76de6f7b2e3d9873
+  - linuxkit/init:v0.4
+  - linuxkit/runc:v0.4
+  - linuxkit/containerd:v0.4
 services:
   - name: getty
-    image: linuxkit/getty:b286a610ccbebc45251f3a9df3619d76318e2244
+    image: linuxkit/getty:v0.4
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:429e1308b8cad9dbe04b7a91fcebec17ee6f7591
+    image: linuxkit/rngd:v0.4
   - name: dhcpcd
-    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
+    image: linuxkit/dhcpcd:v0.4
   - name: node_exporter
-    image: linuxkit/node_exporter:693341bd019aeca0e9a6bf33bdbc5f46aa2bf2a1
+    image: linuxkit/node_exporter:v0.4
 trust:
   org:
     - linuxkit

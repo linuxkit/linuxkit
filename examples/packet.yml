@@ -3,32 +3,32 @@ kernel:
   cmdline: console=ttyS1
   ucode: intel-ucode.cpio
 init:
-  - linuxkit/init:11929b0007b87384f7372e9265067479c4616586
-  - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
-  - linuxkit/containerd:f197e7cbb2ede4370b75127c76de6f7b2e3d9873
-  - linuxkit/ca-certificates:fb5c7bf842a330f5b47cdf71f950fe0c85f4a772
-  - linuxkit/firmware:177575af191cf16e19c4989200e40f11422c3b32
+  - linuxkit/init:v0.4
+  - linuxkit/runc:v0.4
+  - linuxkit/containerd:v0.4
+  - linuxkit/ca-certificates:v0.4
+  - linuxkit/firmware:v0.4
 onboot:
   - name: rngd1
-    image: linuxkit/rngd:429e1308b8cad9dbe04b7a91fcebec17ee6f7591
+    image: linuxkit/rngd:v0.4
     command: ["/sbin/rngd", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:b51c3da02bc2fc9a53f699efc51f650ac17ffac8
+    image: linuxkit/sysctl:v0.4
   - name: dhcpcd
-    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
+    image: linuxkit/dhcpcd:v0.4
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:be507a0718df8ed6733dfab1d6866672f446e8fd
+    image: linuxkit/metadata:v0.4
     command: ["/usr/bin/metadata", "packet"]
 services:
   - name: rngd
-    image: linuxkit/rngd:429e1308b8cad9dbe04b7a91fcebec17ee6f7591
+    image: linuxkit/rngd:v0.4
   - name: getty
-    image: linuxkit/getty:b286a610ccbebc45251f3a9df3619d76318e2244
+    image: linuxkit/getty:v0.4
     env:
      - INSECURE=true
   - name: sshd
-    image: linuxkit/sshd:8f11ee09b101ab7f41c7a6409a8d7a8d49957fbb
+    image: linuxkit/sshd:v0.4
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub

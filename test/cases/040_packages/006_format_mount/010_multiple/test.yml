@@ -2,20 +2,20 @@ kernel:
   image: linuxkit/kernel:4.14.40
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:11929b0007b87384f7372e9265067479c4616586
-  - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
+  - linuxkit/init:v0.4
+  - linuxkit/runc:v0.4
 onboot:
   - name: format
-    image: linuxkit/format:d24885a226c42a40f7ed44dd3789a6a035254d98
+    image: linuxkit/format:v0.4
     command: ["/usr/bin/format", "-label", "docker"]
   - name: format
-    image: linuxkit/format:d24885a226c42a40f7ed44dd3789a6a035254d98
+    image: linuxkit/format:v0.4
     command: ["/usr/bin/format", "-label", "foo"]
   - name: mount
-    image: linuxkit/mount:763e67d733342281f3bdc55d7208b9c442837afe
+    image: linuxkit/mount:v0.4
     command: ["/usr/bin/mountie", "-label", "docker", "/var/lib/docker"]
   - name: mount
-    image: linuxkit/mount:763e67d733342281f3bdc55d7208b9c442837afe
+    image: linuxkit/mount:v0.4
     command: ["/usr/bin/mountie", "-label", "foo", "/var/foo"]
   - name: test
     image: alpine:3.7
