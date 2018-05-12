@@ -34,7 +34,7 @@ fold in:
  #include <linux/jump_label.h>
  
  #include <asm/intel-family.h>
-@@ -1355,7 +1356,7 @@ int memory_failure(unsigned long pfn, in
+@@ -1353,7 +1354,7 @@ int memory_failure(unsigned long pfn, in
  static unsigned long check_interval = INITIAL_CHECK_INTERVAL;
  
  static DEFINE_PER_CPU(unsigned long, mce_next_interval); /* in jiffies */
@@ -43,7 +43,7 @@ fold in:
  
  static unsigned long mce_adjust_timer_default(unsigned long interval)
  {
-@@ -1364,27 +1365,19 @@ static unsigned long mce_adjust_timer_de
+@@ -1362,27 +1363,19 @@ static unsigned long mce_adjust_timer_de
  
  static unsigned long (*mce_adjust_timer)(unsigned long interval) = mce_adjust_timer_default;
  
@@ -77,7 +77,7 @@ fold in:
  	iv = __this_cpu_read(mce_next_interval);
  
  	if (mce_available(this_cpu_ptr(&cpu_info))) {
-@@ -1407,7 +1400,11 @@ static void mce_timer_fn(unsigned long d
+@@ -1405,7 +1398,11 @@ static void mce_timer_fn(unsigned long d
  
  done:
  	__this_cpu_write(mce_next_interval, iv);
@@ -90,7 +90,7 @@ fold in:
  }
  
  /*
-@@ -1415,7 +1412,7 @@ static void mce_timer_fn(unsigned long d
+@@ -1413,7 +1410,7 @@ static void mce_timer_fn(unsigned long d
   */
  void mce_timer_kick(unsigned long interval)
  {
@@ -99,7 +99,7 @@ fold in:
  	unsigned long iv = __this_cpu_read(mce_next_interval);
  
  	__start_timer(t, interval);
-@@ -1430,7 +1427,7 @@ static void mce_timer_delete_all(void)
+@@ -1428,7 +1425,7 @@ static void mce_timer_delete_all(void)
  	int cpu;
  
  	for_each_online_cpu(cpu)
@@ -108,7 +108,7 @@ fold in:
  }
  
  /*
-@@ -1759,7 +1756,7 @@ static void __mcheck_cpu_clear_vendor(st
+@@ -1757,7 +1754,7 @@ static void __mcheck_cpu_clear_vendor(st
  	}
  }
  
@@ -117,7 +117,7 @@ fold in:
  {
  	unsigned long iv = check_interval * HZ;
  
-@@ -1772,18 +1769,19 @@ static void mce_start_timer(struct timer
+@@ -1770,18 +1767,19 @@ static void mce_start_timer(struct timer
  
  static void __mcheck_cpu_setup_timer(void)
  {
@@ -143,7 +143,7 @@ fold in:
  	mce_start_timer(t);
  }
  
-@@ -2302,7 +2300,7 @@ static int mce_cpu_dead(unsigned int cpu
+@@ -2300,7 +2298,7 @@ static int mce_cpu_dead(unsigned int cpu
  
  static int mce_cpu_online(unsigned int cpu)
  {
@@ -152,7 +152,7 @@ fold in:
  	int ret;
  
  	mce_device_create(cpu);
-@@ -2319,10 +2317,10 @@ static int mce_cpu_online(unsigned int c
+@@ -2317,10 +2315,10 @@ static int mce_cpu_online(unsigned int c
  
  static int mce_cpu_pre_down(unsigned int cpu)
  {

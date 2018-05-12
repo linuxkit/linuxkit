@@ -798,7 +798,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  	.thread_comm		= "ksoftirqd/%u",
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
-@@ -910,14 +910,7 @@ static bool can_stop_idle_tick(int cpu,
+@@ -911,14 +911,7 @@ static bool can_stop_idle_tick(int cpu,
  		return false;
  
  	if (unlikely(local_softirq_pending() && cpu_online(cpu))) {

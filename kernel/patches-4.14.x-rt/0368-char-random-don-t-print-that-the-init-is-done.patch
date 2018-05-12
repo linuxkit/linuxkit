@@ -141,12 +141,12 @@ also could skip it.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- drivers/char/random.c |    4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ drivers/char/random.c |    8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
 
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
-@@ -808,7 +808,7 @@ static int crng_fast_load(const char *cp
+@@ -857,7 +857,7 @@ static int crng_fast_load(const char *cp
  		invalidate_batched_entropy();
  		crng_init = 1;
  		wake_up_interruptible(&crng_init_wait);
@@ -155,12 +155,26 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  	}
  	return 1;
  }
-@@ -847,7 +847,7 @@ static void crng_reseed(struct crng_stat
+@@ -942,17 +942,21 @@ static void crng_reseed(struct crng_stat
  		crng_init = 2;
  		process_random_ready_list();
  		wake_up_interruptible(&crng_init_wait);
 -		pr_notice("random: crng init done\n");
 +		/* pr_notice("random: crng init done\n"); */
+ 		if (unseeded_warning.missed) {
++#if 0
+ 			pr_notice("random: %d get_random_xx warning(s) missed "
+ 				  "due to ratelimiting\n",
+ 				  unseeded_warning.missed);
++#endif
+ 			unseeded_warning.missed = 0;
+ 		}
+ 		if (urandom_warning.missed) {
++#if 0
+ 			pr_notice("random: %d urandom warning(s) missed "
+ 				  "due to ratelimiting\n",
+ 				  urandom_warning.missed);
++#endif
+ 			urandom_warning.missed = 0;
+ 		}
  	}
- }
- 

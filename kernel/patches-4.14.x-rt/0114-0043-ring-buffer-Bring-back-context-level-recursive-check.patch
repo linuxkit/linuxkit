@@ -39,7 +39,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 
 --- a/kernel/trace/ring_buffer.c
 +++ b/kernel/trace/ring_buffer.c
-@@ -2583,29 +2583,59 @@ rb_wakeups(struct ring_buffer *buffer, s
+@@ -2588,29 +2588,59 @@ rb_wakeups(struct ring_buffer *buffer, s
   * The lock and unlock are done within a preempt disable section.
   * The current_context per_cpu variable can only be modified
   * by the current task between lock and unlock. But it can
@@ -114,7 +114,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	return 0;
  }
-@@ -2613,9 +2643,7 @@ trace_recursive_lock(struct ring_buffer_
+@@ -2618,9 +2648,7 @@ trace_recursive_lock(struct ring_buffer_
  static __always_inline void
  trace_recursive_unlock(struct ring_buffer_per_cpu *cpu_buffer)
  {
