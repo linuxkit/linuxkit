@@ -1,4 +1,4 @@
-# linuxkit/alpine:90571a1a9059f3bf33ca3431bc5396aa837a47d3-amd64
+# linuxkit/alpine:1b05307ae8152e3d38f79e297b0632697a30c65c-amd64
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
@@ -92,7 +92,7 @@ iptables-1.6.1-r1
 ipvsadm-1.29-r0
 isl-0.18-r0
 jansson-2.10-r0
-jq-1.5-r4
+jq-1.5-r5
 json-c-0.12.1-r1
 keyutils-1.5.10-r0
 keyutils-libs-1.5.10-r0
@@ -190,7 +190,7 @@ lzo-2.10-r2
 m4-1.4.18-r0
 make-4.2.1-r0
 mesa-gbm-17.2.4-r1
-mkinitfs-3.2.0-r2
+mkinitfs-3.2.0-r4
 mpc1-1.0.3-r1
 mpc1-dev-1.0.3-r1
 mpfr-dev-3.1.5-r1
