@@ -2,16 +2,16 @@ kernel:
   image: linuxkit/kernel:4.14.40
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:11929b0007b87384f7372e9265067479c4616586
-  - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
-  - linuxkit/containerd:f197e7cbb2ede4370b75127c76de6f7b2e3d9873
-  - linuxkit/ca-certificates:fb5c7bf842a330f5b47cdf71f950fe0c85f4a772
+  - linuxkit/init:v0.4
+  - linuxkit/runc:v0.4
+  - linuxkit/containerd:v0.4
+  - linuxkit/ca-certificates:v0.4
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
+    image: linuxkit/dhcpcd:v0.4
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: wg0
-    image: linuxkit/ip:baf5dc379104f01356fb7ace881149a67d889e96
+    image: linuxkit/ip:v0.4
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -24,7 +24,7 @@ onboot:
       bindNS:
           net: /run/netns/wg0
   - name: wg1
-    image: linuxkit/ip:baf5dc379104f01356fb7ace881149a67d889e96
+    image: linuxkit/ip:v0.4
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard

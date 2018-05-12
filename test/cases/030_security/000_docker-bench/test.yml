@@ -2,25 +2,25 @@ kernel:
   image: linuxkit/kernel:4.14.40
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:11929b0007b87384f7372e9265067479c4616586
-  - linuxkit/runc:acba8886e4b1318457c711700f695a02fef9493d
-  - linuxkit/containerd:f197e7cbb2ede4370b75127c76de6f7b2e3d9873
-  - linuxkit/ca-certificates:fb5c7bf842a330f5b47cdf71f950fe0c85f4a772
+  - linuxkit/init:v0.4
+  - linuxkit/runc:v0.4
+  - linuxkit/containerd:v0.4
+  - linuxkit/ca-certificates:v0.4
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:b51c3da02bc2fc9a53f699efc51f650ac17ffac8
+    image: linuxkit/sysctl:v0.4
   - name: sysfs
-    image: linuxkit/sysfs:98b340d360541f1e1e62bc30b62ab6a7e3dc9280
+    image: linuxkit/sysfs:v0.4
   - name: format
-    image: linuxkit/format:d24885a226c42a40f7ed44dd3789a6a035254d98
+    image: linuxkit/format:v0.4
   - name: mount
-    image: linuxkit/mount:763e67d733342281f3bdc55d7208b9c442837afe
+    image: linuxkit/mount:v0.4
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: rngd
-    image: linuxkit/rngd:429e1308b8cad9dbe04b7a91fcebec17ee6f7591
+    image: linuxkit/rngd:v0.4
   - name: dhcpcd
-    image: linuxkit/dhcpcd:01069780f536da8eb7745df7478a97253403b63d
+    image: linuxkit/dhcpcd:v0.4
   - name: docker
     image: docker:17.07.0-ce-dind
     capabilities:
@@ -34,7 +34,7 @@ services:
      - /run:/var/run
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: test-docker-bench
-    image: linuxkit/test-docker-bench:395e2f27a1f37b241abc5a04e05a8b087e471c75
+    image: linuxkit/test-docker-bench:574dad10cf0d7ab322ea564bf67dbffcd84e0e35
     ipc: host
     pid: host
     net: host

@@ -19,17 +19,17 @@ func init() {
 	// This allows us to overwrite the hashes locally without having
 	// to re-vendor the 'github.com/moby/tool' when we update 'mkimage-*'
 	imgs := map[string]string{
-		"iso-bios":    "linuxkit/mkimage-iso-bios:9a51dc64a461f1cc50ba05f30a38f73f5227ac03",
-		"iso-efi":     "linuxkit/mkimage-iso-efi:343cf1a8ac0aba7d8a1f13b7f45fa0b57ab897dc",
-		"raw-bios":    "linuxkit/mkimage-raw-bios:d90713b2dd610cf9a0f5f9d9095f8bf86f40d5c6",
-		"raw-efi":     "linuxkit/mkimage-raw-efi:8938ffb6014543e557b624a40cce1714f30ce4b6",
-		"squashfs":    "linuxkit/mkimage-squashfs:b44d00b0a336fd32c122ff32bd2b39c36a965135",
+		"iso-bios":    "linuxkit/mkimage-iso-bios:86981371921813019ea0f12c778b348a9a3d40ed",
+		"iso-efi":     "linuxkit/mkimage-iso-efi:1cebc76eab89254f3e288526890bbc7cddf0ffaf",
+		"raw-bios":    "linuxkit/mkimage-raw-bios:3b1a68b2d652180ccb57ef9d2580af7e7d966d35",
+		"raw-efi":     "linuxkit/mkimage-raw-efi:6743fc2b475dcb7da510ea2b6029dbcaadf94805",
+		"squashfs":    "linuxkit/mkimage-squashfs:99efca8bc93737fcb56880c444b9142a2166a79e",
 		"gcp":         "linuxkit/mkimage-gcp:e6cdcf859ab06134c0c37a64ed5f886ec8dae1a1",
-		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:787b54906e14a56b9f1da35dcc8e46bd58435285",
+		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:2525659ffe71502f4307766c2321075350c3448e",
 		"vhd":         "linuxkit/mkimage-vhd:3820219e5c350fe8ab2ec6a217272ae82f4b9242",
 		"dynamic-vhd": "linuxkit/mkimage-dynamic-vhd:743ac9959fe6d3912ebd78b4fd490b117c53f1a6",
 		"vmdk":        "linuxkit/mkimage-vmdk:cee81a3ed9c44ae446ef7ebff8c42c1e77b3e1b5",
-		"rpi3":        "linuxkit/mkimage-rpi3:0f23c4f37cdca99281ca33ac6188e1942fa7a2b8",
+		"rpi3":        "linuxkit/mkimage-rpi3:0cedb2da51efe25309bef391e5c904cef645b5ea",
 	}
 	if err := moby.UpdateOutputImages(imgs); err != nil {
 		log.Fatalf("Failed to register mkimage-*. %v", err)

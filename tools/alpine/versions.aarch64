@@ -1,4 +1,4 @@
-# linuxkit/alpine:14e0cf6d30dc39993ac7fb97439049e1cd69ccd5-arm64
+# linuxkit/alpine:b962932a2ef2753ee8cc7b97c2b8041557796430-arm64
 # automatically generated list of installed packages
 abuild-3.1.0-r3
 alpine-baselayout-3.0.5-r2
@@ -90,7 +90,7 @@ iptables-1.6.1-r1
 ipvsadm-1.29-r0
 isl-0.18-r0
 jansson-2.10-r0
-jq-1.5-r4
+jq-1.5-r5
 json-c-0.12.1-r1
 keyutils-1.5.10-r0
 keyutils-libs-1.5.10-r0

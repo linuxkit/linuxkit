@@ -3,6 +3,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
+## [v0.4] - 2018-05-12
+### Added
+- Support for v4.16.x kernels.
+- Support for MPLS, USB_STORAGE, and SCTP support in the kernel config.
+- Support for creating and booting from squashfs root filesystems.
+- Super experimental support for crosvm.
+- Support for compiling with go 1.10.
+- Adjusted hyperkit support to be compatible with soon to be released Docker for Mac changes.
+
+### Changed
+- `containerd` updated to v1.1.0.
+- WireGuard updated to 0.0.20180420.
+- Intel CPU microcode update to 20180425.
+
+### Removed
+- Support for v4.15.x. kernels as they have been EOLed.
+- `perf` support for 4.9.x kernels (the compile broke).
+
+
 ## [v0.3] - 2018-04-05
 ### Added
 - Initial `s390x` support.
