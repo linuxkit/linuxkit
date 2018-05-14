@@ -10,12 +10,12 @@ import (
 	"errors"
 )
 
-// No standard RNG on arm64
-
-func initRand() bool {
+// No standard RNG instruction on arm64
+func initDRNG(ctx *rng) bool {
+	ctx.disabled = true
 	return false
 }
 
-func rand() (uint64, error) {
+func readDRNG(_ *rng) (uint64, error) {
 	return 0, errors.New("No randomness available")
 }
