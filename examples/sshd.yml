@@ -28,6 +28,10 @@ files:
     source: ~/.ssh/id_rsa.pub
     mode: "0600"
     optional: true
+  - path: root/.ssh/authorized_keys
+    source: ~/.ssh/id_ed25519.pub
+    mode: "0600"
+    optional: true
 trust:
   org:
     - linuxkit
