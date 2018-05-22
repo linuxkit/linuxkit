@@ -15,7 +15,7 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 - Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) or similar tools
 - Includes a set of longer-term collaborative projects in various stages of development to innovate on kernel and userspace changes, particularly around security
 
-LinuxKit currently supports the `x86_64`, `arm64`, and `s390x` architectures on a variety of platforms, both as virtual machines and baremetal (see [below](#booting-and-testing) for details.
+LinuxKit currently supports the `x86_64`, `arm64`, and `s390x` architectures on a variety of platforms, both as virtual machines and baremetal (see [below](#booting-and-testing) for details).
 
 ## Subprojects
 
