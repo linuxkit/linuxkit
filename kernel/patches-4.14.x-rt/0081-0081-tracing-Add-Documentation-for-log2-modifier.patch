@@ -1,4 +1,4 @@
-From e262dcbfd00fe5c2f193d491609d69cf5ca9abac Mon Sep 17 00:00:00 2001
+From e262dcbfd00fe5c2f193d4.16.10d69cf5ca9abac Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:36 -0600
 Subject: [PATCH 081/414] tracing: Add Documentation for log2 modifier
