@@ -1,4 +1,4 @@
-From af12bcbc53c932acd6ac53b5f6856f6d71e2657d Mon Sep 17 00:00:00 2001
+From e97e7ad3b51fbd7d4820cd3753873178a671e39a Mon Sep 17 00:00:00 2001
 From: Cathy Avery <cavery@redhat.com>
 Date: Tue, 31 Oct 2017 08:52:06 -0400
 Subject: [PATCH 20/21] scsi: storvsc: Allow only one remove lun work item to
@@ -29,7 +29,7 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  1 file changed, 22 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/scsi/storvsc_drv.c b/drivers/scsi/storvsc_drv.c
-index a3e480e7a257..f0ce2193eff7 100644
+index c44de0b4a995..d0f5417ed20a 100644
 --- a/drivers/scsi/storvsc_drv.c
 +++ b/drivers/scsi/storvsc_drv.c
 @@ -486,6 +486,7 @@ struct hv_host_device {

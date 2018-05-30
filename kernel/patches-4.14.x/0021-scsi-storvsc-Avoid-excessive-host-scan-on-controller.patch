@@ -1,4 +1,4 @@
-From f9e039504451fec70000b12e55638cf80132d77b Mon Sep 17 00:00:00 2001
+From 869e66821846ad1f4c2b9dba57f54348f60518cc Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Tue, 31 Oct 2017 14:58:08 -0700
 Subject: [PATCH 21/21] scsi: storvsc: Avoid excessive host scan on controller
@@ -24,7 +24,7 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  1 file changed, 11 insertions(+), 15 deletions(-)
 
 diff --git a/drivers/scsi/storvsc_drv.c b/drivers/scsi/storvsc_drv.c
-index f0ce2193eff7..a892a5020c30 100644
+index d0f5417ed20a..819afb3bfcf4 100644
 --- a/drivers/scsi/storvsc_drv.c
 +++ b/drivers/scsi/storvsc_drv.c
 @@ -487,6 +487,8 @@ struct hv_host_device {
