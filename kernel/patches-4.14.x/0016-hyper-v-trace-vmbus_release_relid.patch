@@ -1,4 +1,4 @@
-From e2bd4febedd7d75d8d04fc2864937d5a5be46337 Mon Sep 17 00:00:00 2001
+From 9a4253c7606521b24e4f4d5646fb6bb67f9a7aa5 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:14 -0700
 Subject: [PATCH 16/21] hyper-v: trace vmbus_release_relid()
