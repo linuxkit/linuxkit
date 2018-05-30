@@ -1,4 +1,4 @@
-From 9d2b97341b438cc5882960f641d31d0f75d0ec32 Mon Sep 17 00:00:00 2001
+From 9cc7a6f8154f3e61c2bf0cf3b509969fb943ff5e Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:11 -0700
 Subject: [PATCH 13/21] hyper-v: trace vmbus_establish_gpadl()
