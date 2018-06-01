@@ -1,6 +1,6 @@
-# linuxkit/alpine:1b05307ae8152e3d38f79e297b0632697a30c65c-amd64
+# linuxkit/alpine:aacd96ba37a981d0ba659fd57316c7140cf59a36-amd64
 # automatically generated list of installed packages
-abuild-3.1.0-r3
+abuild-3.1.0-r4
 alpine-baselayout-3.0.5-r2
 alpine-keys-2.1-r1
 alsa-lib-1.1.4.1-r2
@@ -14,9 +14,9 @@ autoconf-2.69-r0
 automake-1.15.1-r0
 bash-4.4.19-r1
 bc-1.07.1-r0
-binutils-2.28-r3
-binutils-dev-2.28-r3
-binutils-libs-2.28-r3
+binutils-2.30-r1
+binutils-dev-2.30-r1
+binutils-libs-2.30-r1
 bison-3.0.4-r0
 blkid-2.31-r0
 bridge-utils-1.6-r0
@@ -25,7 +25,7 @@ btrfs-progs-4.13.2-r0
 btrfs-progs-dev-4.13.2-r0
 btrfs-progs-libs-4.13.2-r0
 build-base-0.5-r0
-busybox-1.27.2-r8
+busybox-1.27.2-r10
 busybox-initscripts-3.1-r2
 bzip2-1.0.6-r6
 ca-certificates-20171114-r0
@@ -36,7 +36,7 @@ cmake-3.9.5-r0
 coreutils-8.28-r0
 cryptsetup-1.7.5-r1
 cryptsetup-libs-1.7.5-r1
-curl-7.59.0-r0
+curl-7.60.0-r1
 db-5.3.28-r0
 dbus-libs-1.10.24-r0
 device-mapper-libs-2.02.175-r0
@@ -71,7 +71,7 @@ gettext-0.19.8.1-r1
 gettext-asprintf-0.19.8.1-r1
 gettext-dev-0.19.8.1-r1
 gettext-libs-0.19.8.1-r1
-git-2.15.0-r1
+git-2.15.2-r0
 glib-2.54.2-r0
 gmp-6.1.2-r1
 gmp-dev-6.1.2-r1
@@ -121,7 +121,7 @@ libcap-ng-0.7.8-r1
 libcap-ng-dev-0.7.8-r1
 libcom_err-1.43.7-r0
 libcrypto1.0-1.0.2o-r0
-libcurl-7.59.0-r0
+libcurl-7.60.0-r1
 libdrm-2.4.88-r0
 libedit-20170329.3.1-r3
 libelf-0.8.13-r3
@@ -157,11 +157,11 @@ libogg-1.3.3-r1
 libpcap-1.8.1-r1
 libpciaccess-0.13.5-r1
 libpng-1.6.34-r1
-libressl-2.6.3-r0
-libressl-dev-2.6.3-r0
-libressl2.6-libcrypto-2.6.3-r0
-libressl2.6-libssl-2.6.3-r0
-libressl2.6-libtls-2.6.3-r0
+libressl-2.6.4-r2
+libressl-dev-2.6.4-r2
+libressl2.6-libcrypto-2.6.4-r2
+libressl2.6-libssl-2.6.4-r2
+libressl2.6-libtls-2.6.4-r2
 libsasl-2.1.26-r11
 libseccomp-2.3.2-r1
 libseccomp-dev-2.3.2-r1
@@ -255,8 +255,9 @@ slang-dev-2.3.1a-r0
 snappy-1.1.4-r2
 socat-1.7.3.2-r3
 spice-server-0.14.0-r6
-sqlite-libs-3.21.0-r0
+sqlite-libs-3.21.0-r1
 squashfs-tools-4.3-r4
+ssl_client-1.27.2-r10
 strace-4.19-r0
 sudo-1.8.21_p2-r1
 swig-3.0.12-r1
@@ -277,7 +278,7 @@ vim-8.0.1359-r0
 wayland-libs-client-1.14.0-r2
 wayland-libs-cursor-1.14.0-r2
 wayland-libs-server-1.14.0-r2
-wireguard-tools-0.0.20180420-r3
+wireguard-tools-0.0.20180519-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r8
 xfsprogs-4.14.0-r0
