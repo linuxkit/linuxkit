@@ -3,9 +3,9 @@ kernel:
   cmdline: console=ttyS1
   ucode: intel-ucode.cpio
 init:
-  - linuxkit/init:v0.4
+  - linuxkit/init:a14b7ef6115e6d56fe5bf7c40517b9e190dd4dfb
   - linuxkit/runc:v0.4
-  - linuxkit/containerd:v0.4
+  - linuxkit/containerd:72df922e49a363a4ad53d88cd1a8a3ae4d41086f
   - linuxkit/ca-certificates:v0.4
   - linuxkit/firmware:v0.4
 onboot:
