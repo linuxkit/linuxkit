@@ -228,13 +228,11 @@ $(eval $(call kernel,4.4.135,4.4.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
 $(eval $(call kernel,4.17,4.17.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.16.13,4.16.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.47,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.40,4.14.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
 $(eval $(call kernel,4.17,4.17.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.16.13,4.16.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.47,4.14.x,$(EXTRA),$(DEBUG)))
 endif
 
