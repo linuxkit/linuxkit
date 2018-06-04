@@ -1,4 +1,4 @@
-From 64952a8dc4b8b29c331020f6c626092eb0d6c4c2 Mon Sep 17 00:00:00 2001
+From 2bd9efba67777bf3a5ee54597c5fbbd5c74c6d1f Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:15 -0700
 Subject: [PATCH 17/21] hyper-v: trace vmbus_send_tl_connect_request()
