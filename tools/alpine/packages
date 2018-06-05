@@ -98,6 +98,7 @@ sfdisk
 sg3_utils
 sgdisk
 slang-dev
+sntpc
 socat
 squashfs-tools
 strace

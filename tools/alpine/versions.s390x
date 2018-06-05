@@ -1,4 +1,4 @@
-# linuxkit/alpine:355342fa236930ffce85f923bae75e85a2372132-s390x
+# linuxkit/alpine:8c9ca0f61b97867d2680214b99999675c859c8e1-s390x
 # automatically generated list of installed packages
 abuild-3.1.0-r4
 alpine-baselayout-3.0.5-r2
@@ -240,6 +240,7 @@ sgdisk-1.0.3-r0
 slang-2.3.1a-r0
 slang-dev-2.3.1a-r0
 snappy-1.1.4-r2
+sntpc-0.9-r6
 socat-1.7.3.2-r3
 spice-server-0.14.0-r6
 sqlite-libs-3.21.0-r1
