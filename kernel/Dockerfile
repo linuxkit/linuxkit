@@ -132,7 +132,7 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
     ([ -n "${DEBUG}" ] && cp vmlinux /out || true)
 
 # WireGuard
-RUN curl -sSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
+RUN curl -fsSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
     echo "${WIREGUARD_SHA256}  /wireguard.tar.xz" | sha256sum -c - && \
     cp /wireguard.tar.xz /out/src/ && \
     tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "WireGuard-${WIREGUARD_VERSION}/src" && \
@@ -189,7 +189,7 @@ ENV UCODE_URL=https://downloadmirror.intel.com/27776/eng/microcode-20180425.tgz
 RUN set -e && \
     if [ $(uname -m) == x86_64 ]; then \
         cd /ucode && \
-        curl -sSL -o microcode.tar.gz ${UCODE_URL} && \
+        curl -fsSL -o microcode.tar.gz ${UCODE_URL} && \
         md5sum -c intel-ucode-md5sums && \
         tar xf microcode.tar.gz && \
         rm -f intel-ucode/list && \
