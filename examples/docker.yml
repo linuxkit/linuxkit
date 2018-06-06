@@ -18,7 +18,7 @@ onboot:
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: getty
-    image: linuxkit/getty:v0.4
+    image: linuxkit/getty:44730fd0a7c59dbacf5b48b54ba33f551bcf7ef0
     env:
      - INSECURE=true
   - name: rngd

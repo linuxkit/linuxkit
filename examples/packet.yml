@@ -24,11 +24,11 @@ services:
   - name: rngd
     image: linuxkit/rngd:v0.4
   - name: getty
-    image: linuxkit/getty:v0.4
+    image: linuxkit/getty:44730fd0a7c59dbacf5b48b54ba33f551bcf7ef0
     env:
      - INSECURE=true
   - name: sshd
-    image: linuxkit/sshd:v0.4
+    image: linuxkit/sshd:2c7e6e36bd0ffa2b3d950cf9128da89ba3375dbb
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
