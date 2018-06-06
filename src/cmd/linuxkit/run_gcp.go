@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -45,6 +46,13 @@ func runGcp(args []string) {
 	skipCleanup := flags.Bool("skip-cleanup", false, "Don't remove images or VMs")
 	nestedVirt := flags.Bool("nested-virt", false, "Enabled nested virtualization")
 
+	data := flags.String("data", "", "String of metadata to pass to VM; error to specify both -data and -data-file")
+	dataPath := flags.String("data-file", "", "Path to file containing metadata to pass to VM; error to specify both -data and -data-file")
+
+	if *data != "" && *dataPath != "" {
+		log.Fatal("Cannot specify both -data and -data-file")
+	}
+
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
 	}
@@ -57,6 +65,14 @@ func runGcp(args []string) {
 	}
 	name := remArgs[0]
 
+	if *dataPath != "" {
+		dataB, err := ioutil.ReadFile(*dataPath)
+		if err != nil {
+			log.Fatalf("Unable to read metadata file: %v", err)
+		}
+		*data = string(dataB)
+	}
+
 	zone := getStringValue(zoneVar, *zoneFlag, defaultZone)
 	machine := getStringValue(machineVar, *machineFlag, defaultMachine)
 	keys := getStringValue(keysVar, *keysFlag, "")
@@ -67,7 +83,7 @@ func runGcp(args []string) {
 		log.Fatalf("Unable to connect to GCP")
 	}
 
-	if err = client.CreateInstance(name, name, zone, machine, disks, *nestedVirt, true); err != nil {
+	if err = client.CreateInstance(name, name, zone, machine, disks, data, *nestedVirt, true); err != nil {
 		log.Fatal(err)
 	}
 

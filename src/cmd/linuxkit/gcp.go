@@ -182,7 +182,7 @@ func (g GCPClient) DeleteImage(name string) error {
 }
 
 // CreateInstance creates and starts an instance on GCP
-func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, nested, replace bool) error {
+func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, data *string, nested, replace bool) error {
 	if replace {
 		if err := g.DeleteInstance(name, zone, true); err != nil {
 			return err
@@ -261,6 +261,10 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 				{
 					Key:   "ssh-keys",
 					Value: sshKey,
+				},
+				{
+					Key:   "userdata",
+					Value: data,
 				},
 			},
 		},
