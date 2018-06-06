@@ -29,13 +29,14 @@ func runGcp(args []string) {
 	flags := flag.NewFlagSet("gcp", flag.ExitOnError)
 	invoked := filepath.Base(os.Args[0])
 	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run gcp [options] [name]\n\n", invoked)
-		fmt.Printf("'name' specifies either the name of an already uploaded\n")
+		fmt.Printf("USAGE: %s run gcp [options] [image]\n\n", invoked)
+		fmt.Printf("'image' specifies either the name of an already uploaded\n")
 		fmt.Printf("GCP image or the full path to a image file which will be\n")
 		fmt.Printf("uploaded before it is run.\n\n")
 		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
+	name := flags.String("name", "", "Machine name")
 	zoneFlag := flags.String("zone", defaultZone, "GCP Zone")
 	machineFlag := flags.String("machine", defaultMachine, "GCP Machine Type")
 	keysFlag := flags.String("keys", "", "Path to Service Account JSON key file")
@@ -63,7 +64,10 @@ func runGcp(args []string) {
 		flags.Usage()
 		os.Exit(1)
 	}
-	name := remArgs[0]
+	image := remArgs[0]
+	if *name == "" {
+		*name = image
+	}
 
 	if *dataPath != "" {
 		dataB, err := ioutil.ReadFile(*dataPath)
@@ -83,16 +87,16 @@ func runGcp(args []string) {
 		log.Fatalf("Unable to connect to GCP")
 	}
 
-	if err = client.CreateInstance(name, name, zone, machine, disks, data, *nestedVirt, true); err != nil {
+	if err = client.CreateInstance(*name, image, zone, machine, disks, data, *nestedVirt, true); err != nil {
 		log.Fatal(err)
 	}
 
-	if err = client.ConnectToInstanceSerialPort(name, zone); err != nil {
+	if err = client.ConnectToInstanceSerialPort(*name, zone); err != nil {
 		log.Fatal(err)
 	}
 
 	if !*skipCleanup {
-		if err = client.DeleteInstance(name, zone, true); err != nil {
+		if err = client.DeleteInstance(*name, zone, true); err != nil {
 			log.Fatal(err)
 		}
 	}
