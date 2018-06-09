@@ -20,8 +20,8 @@ fi
 # Nginx may not be up immediately as service startup is async
 for s in $(seq 1 10)
 do
-	wget -O - http://192.168.2.1/ && echo "success" > /tmp/ok && halt
+	wget -O - http://192.168.2.1/ && echo "success" > /tmp/ok && poweroff
 	sleep 1
 done
 
-poweroff -f
+poweroff
