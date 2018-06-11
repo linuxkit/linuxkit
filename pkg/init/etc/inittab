@@ -6,4 +6,9 @@
 ::ctrlaltdel:/bin/rc.shutdown reboot
 
 # Stuff to do on shutdown
-::shutdown:/bin/rc.shutdown poweroff
+#
+# Use 'noop' so that rc.shutdown does not attempt to invoke its own shutdown
+# actions.  Instead, it will return after it invokes sync/umount.  This lets
+# init decide which shutdown action to run.  (So that it's possible to correctly
+# handle halt, reboot, or poweroff)
+::shutdown:/bin/rc.shutdown noop
