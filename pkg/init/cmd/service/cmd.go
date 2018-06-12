@@ -16,11 +16,11 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func startCmd(ctx context.Context, args []string) {
+func parseCmd(ctx context.Context, command string, args []string) (*log.Entry, string, string, string, string) {
 	invoked := filepath.Base(os.Args[0])
-	flags := flag.NewFlagSet("start", flag.ExitOnError)
+	flags := flag.NewFlagSet(command, flag.ExitOnError)
 	flags.Usage = func() {
-		fmt.Printf("USAGE: %s start [service]\n\n", invoked)
+		fmt.Printf("USAGE: %s %s [service]\n\n", invoked, command)
 		fmt.Printf("Options:\n")
 		flags.PrintDefaults()
 	}
@@ -43,17 +43,43 @@ func startCmd(ctx context.Context, args []string) {
 
 	service := args[0]
 
-	log.Infof("Starting service: %q", service)
 	log := log.WithFields(log.Fields{
 		"service": service,
 	})
 
-	id, pid, msg, err := start(ctx, service, *sock, *path, *dumpSpec)
+	return log, service, *sock, *path, *dumpSpec
+}
+
+func stopCmd(ctx context.Context, args []string) {
+	log, service, sock, path, _ := parseCmd(ctx, "stop", args)
+
+	log.Infof("Stopping service: %q", service)
+	id, pid, msg, err := stop(ctx, service, sock, path)
+	if err != nil {
+		log.WithError(err).Fatal(msg)
+	}
+
+	log.Debugf("Stopped %s pid %d", id, pid)
+}
+
+func startCmd(ctx context.Context, args []string) {
+	log, service, sock, path, dumpSpec := parseCmd(ctx, "start", args)
+
+	log.Infof("Starting service: %q", service)
+	id, pid, msg, err := start(ctx, service, sock, path, dumpSpec)
 	if err != nil {
 		log.WithError(err).Fatal(msg)
 	}
 
 	log.Debugf("Started %s pid %d", id, pid)
+}
+
+func restartCmd(ctx context.Context, args []string) {
+	// validate arguments with the command as "restart"
+	parseCmd(ctx, "restart", args)
+
+	stopCmd(ctx, args)
+	startCmd(ctx, args)
 }
 
 type logio struct {
@@ -72,6 +98,56 @@ func (c *logio) Wait() {
 
 func (c *logio) Close() error {
 	return nil
+}
+
+func stop(ctx context.Context, service, sock, basePath string) (string, uint32, string, error) {
+	path := filepath.Join(basePath, service)
+
+	runtimeConfig := getRuntimeConfig(path)
+
+	client, err := containerd.New(sock)
+	if err != nil {
+		return "", 0, "creating containerd client", err
+	}
+
+	if runtimeConfig.Namespace != "" {
+		ctx = namespaces.WithNamespace(ctx, runtimeConfig.Namespace)
+	}
+
+	ctr, err := client.LoadContainer(ctx, service)
+	if err != nil {
+		return "", 0, "loading container", err
+	}
+
+	task, err := ctr.Task(ctx, nil)
+	if err != nil {
+		return "", 0, "fetching task", err
+	}
+
+	id := ctr.ID()
+	pid := task.Pid()
+
+	err = task.Kill(ctx, 9)
+	if err != nil {
+		return "", 0, "killing task", err
+	}
+
+	_, err = task.Wait(ctx)
+	if err != nil {
+		return "", 0, "waiting for task to exit", err
+	}
+
+	_, err = task.Delete(ctx)
+	if err != nil {
+		return "", 0, "deleting task", err
+	}
+
+	err = ctr.Delete(ctx)
+	if err != nil {
+		return "", 0, "deleting container", err
+	}
+
+	return id, pid, "", nil
 }
 
 func start(ctx context.Context, service, sock, basePath, dumpSpec string) (string, uint32, string, error) {

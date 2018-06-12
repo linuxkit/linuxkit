@@ -43,7 +43,9 @@ func main() {
 		fmt.Printf("USAGE: %s [options] COMMAND\n\n", filepath.Base(os.Args[0]))
 		fmt.Printf("Commands:\n")
 		fmt.Printf("  system-init Prepare the system at start of day\n")
+		fmt.Printf("  stop        Stop a service\n")
 		fmt.Printf("  start       Start a service\n")
+		fmt.Printf("  restart     Restart a service\n")
 		fmt.Printf("  help        Print this message\n")
 		fmt.Printf("\n")
 		fmt.Printf("Run '%s COMMAND --help' for more information on the command\n", filepath.Base(os.Args[0]))
@@ -92,9 +94,18 @@ func main() {
 		}
 	}
 
+	if len(args) < 1 {
+		flag.Usage()
+		os.Exit(1)
+	}
+
 	switch args[0] {
+	case "stop":
+		stopCmd(ctx, args[1:])
 	case "start":
 		startCmd(ctx, args[1:])
+	case "restart":
+		restartCmd(ctx, args[1:])
 	case "system-init":
 		systemInitCmd(ctx, args[1:])
 	default:
