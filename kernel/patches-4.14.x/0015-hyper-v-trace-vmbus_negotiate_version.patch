@@ -1,4 +1,4 @@
-From 4985970bcb9eb4c05ddc2124836431d10047243c Mon Sep 17 00:00:00 2001
+From dd9888c3894ad70ecabfd8e25b2469b6ccb270b3 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:13 -0700
 Subject: [PATCH 15/21] hyper-v: trace vmbus_negotiate_version()
