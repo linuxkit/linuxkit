@@ -25,6 +25,7 @@ func runUsage() {
 	fmt.Printf("  openstack\n")
 	fmt.Printf("  packet\n")
 	fmt.Printf("  qemu [linux]\n")
+	fmt.Printf("  scaleway\n")
 	fmt.Printf("  vbox\n")
 	fmt.Printf("  vcenter\n")
 	fmt.Printf("  vmware\n")
@@ -62,6 +63,8 @@ func run(args []string) {
 		runPacket(args[1:])
 	case "qemu":
 		runQemu(args[1:])
+	case "scaleway":
+		runScaleway(args[1:])
 	case "vmware":
 		runVMware(args[1:])
 	case "vbox":
