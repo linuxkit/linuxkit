@@ -1,0 +1,29 @@
+kernel:
+  image: linuxkit/kernel:4.14.48
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0 root=/dev/vda"
+init:
+  - linuxkit/init:a14b7ef6115e6d56fe5bf7c40517b9e190dd4dfb
+  - linuxkit/runc:v0.4
+  - linuxkit/containerd:72df922e49a363a4ad53d88cd1a8a3ae4d41086f
+  - linuxkit/ca-certificates:v0.4
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:v0.4
+  - name: rngd1
+    image: linuxkit/rngd:v0.4
+    command: ["/sbin/rngd", "-1"]
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.4
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: metadata
+    image: linuxkit/metadata:v0.4
+services:
+  - name: getty
+    image: linuxkit/getty:44730fd0a7c59dbacf5b48b54ba33f551bcf7ef0
+    env:
+     - INSECURE=true
+  - name: rngd
+    image: linuxkit/rngd:v0.4
+trust:
+  org:
+    - linuxkit
