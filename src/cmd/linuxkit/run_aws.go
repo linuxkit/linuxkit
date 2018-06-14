@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -40,6 +41,10 @@ func runAWS(args []string) {
 	diskSizeFlag := flags.Int("disk-size", 0, "Size of system disk in GB")
 	diskTypeFlag := flags.String("disk-type", defaultAWSDiskType, "AWS Disk Type")
 	zoneFlag := flags.String("zone", defaultAWSZone, "AWS Availability Zone")
+	sgFlag := flags.String("security-group", "", "Security Group ID")
+
+	data := flags.String("data", "", "String of metadata to pass to VM; error to specify both -data and -data-file")
+	dataPath := flags.String("data-file", "", "Path to file containing metadata to pass to VM; error to specify both -data and -data-file")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -52,6 +57,20 @@ func runAWS(args []string) {
 		os.Exit(1)
 	}
 	name := remArgs[0]
+
+	if *data != "" && *dataPath != "" {
+		log.Fatal("Cannot specify both -data and -data-file")
+	}
+
+	if *dataPath != "" {
+		dataB, err := ioutil.ReadFile(*dataPath)
+		if err != nil {
+			log.Fatalf("Unable to read metadata file: %v", err)
+		}
+		*data = string(dataB)
+	}
+	// data must be base64 encoded
+	*data = base64.StdEncoding.EncodeToString([]byte(*data))
 
 	machine := getStringValue(awsMachineVar, *machineFlag, defaultAWSMachine)
 	diskSize := getIntValue(awsDiskSizeVar, *diskSizeFlag, defaultAWSDiskSize)
@@ -91,6 +110,8 @@ func runAWS(args []string) {
 		Placement: &ec2.Placement{
 			AvailabilityZone: aws.String(zone),
 		},
+		SecurityGroupIds: []*string{sgFlag},
+		UserData:         data,
 	}
 	runResult, err := compute.RunInstances(params)
 	if err != nil {
