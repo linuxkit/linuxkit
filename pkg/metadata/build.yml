@@ -13,3 +13,4 @@ config:
   capabilities:
     - CAP_SYS_ADMIN
     - CAP_NET_ADMIN
+    - CAP_NET_BIND_SERVICE
