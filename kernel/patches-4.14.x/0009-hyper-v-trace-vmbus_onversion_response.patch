@@ -1,4 +1,4 @@
-From d72e1a03a6ba17fd7367051d33d693c59bbd49db Mon Sep 17 00:00:00 2001
+From 70edb5992f3042ba141f0e5fbb567746c9d64d87 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:07 -0700
 Subject: [PATCH 09/21] hyper-v: trace vmbus_onversion_response()
