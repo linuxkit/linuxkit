@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:a14b7ef6115e6d56fe5bf7c40517b9e190dd4dfb
   - linuxkit/runc:v0.4
-  - linuxkit/containerd:72df922e49a363a4ad53d88cd1a8a3ae4d41086f
+  - linuxkit/containerd:f2bc1bda1ab18146967fa1a149800aaf14bee81b
   - linuxkit/ca-certificates:v0.4
 onboot:
   - name: sysctl

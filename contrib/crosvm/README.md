@@ -33,9 +33,9 @@ kernel:
   image: linuxkit/kernel:4.9.91
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:eca81db9b072eb431c057bab77797e169295fa1e
+  - linuxkit/init:923355a5ed75f40ee394741829d42bf4b78cce46
   - linuxkit/runc:v0.4
-  - linuxkit/containerd:72df922e49a363a4ad53d88cd1a8a3ae4d41086f
+  - linuxkit/containerd:f2bc1bda1ab18146967fa1a149800aaf14bee81b
 services:
   - name: getty
     image: linuxkit/getty:44730fd0a7c59dbacf5b48b54ba33f551bcf7ef0

@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.9.51
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:eca81db9b072eb431c057bab77797e169295fa1e
+  - linuxkit/init:923355a5ed75f40ee394741829d42bf4b78cce46
   - linuxkit/runc:v0.4
 onboot:
   - name: format
