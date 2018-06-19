@@ -1,4 +1,4 @@
-# linuxkit/alpine:6d3165faaf08e34ed4e21333d4669b5fbdbc2a23-amd64
+# linuxkit/alpine:f43a74d6693a8f11d4016a8fc6dcb87365b71eb6-amd64
 # automatically generated list of installed packages
 abuild-3.1.0-r4
 alpine-baselayout-3.0.5-r2
@@ -25,7 +25,7 @@ btrfs-progs-4.13.2-r0
 btrfs-progs-dev-4.13.2-r0
 btrfs-progs-libs-4.13.2-r0
 build-base-0.5-r0
-busybox-1.27.2-r10
+busybox-1.27.2-r11
 busybox-initscripts-3.1-r2
 bzip2-1.0.6-r6
 ca-certificates-20171114-r0
@@ -75,7 +75,7 @@ git-2.15.2-r0
 glib-2.54.2-r0
 gmp-6.1.2-r1
 gmp-dev-6.1.2-r1
-gnupg-2.2.3-r0
+gnupg-2.2.3-r1
 gnutls-3.6.1-r0
 go-1.9.4-r0
 go1.10-1.10-r0
@@ -157,11 +157,11 @@ libogg-1.3.3-r1
 libpcap-1.8.1-r1
 libpciaccess-0.13.5-r1
 libpng-1.6.34-r1
-libressl-2.6.4-r2
-libressl-dev-2.6.4-r2
-libressl2.6-libcrypto-2.6.4-r2
-libressl2.6-libssl-2.6.4-r2
-libressl2.6-libtls-2.6.4-r2
+libressl-2.6.5-r0
+libressl-dev-2.6.5-r0
+libressl2.6-libcrypto-2.6.5-r0
+libressl2.6-libssl-2.6.5-r0
+libressl2.6-libtls-2.6.5-r0
 libsasl-2.1.26-r11
 libseccomp-2.3.2-r1
 libseccomp-dev-2.3.2-r1
@@ -226,7 +226,7 @@ pax-utils-1.2.2-r1
 pcre-8.41-r1
 pcre2-10.30-r0
 pcsc-lite-libs-1.8.22-r0
-perl-5.26.2-r0
+perl-5.26.2-r1
 pigz-2.3.4-r2
 pinentry-1.0.0-r0
 pixman-0.34.0-r3
@@ -258,7 +258,7 @@ socat-1.7.3.2-r3
 spice-server-0.14.0-r6
 sqlite-libs-3.21.0-r1
 squashfs-tools-4.3-r4
-ssl_client-1.27.2-r10
+ssl_client-1.27.2-r11
 strace-4.19-r0
 sudo-1.8.21_p2-r1
 swig-3.0.12-r1
@@ -279,12 +279,12 @@ vim-8.0.1359-r0
 wayland-libs-client-1.14.0-r2
 wayland-libs-cursor-1.14.0-r2
 wayland-libs-server-1.14.0-r2
-wireguard-tools-0.0.20180519-r0
+wireguard-tools-0.0.20180613-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r8
-xfsprogs-4.14.0-r0
-xfsprogs-extra-4.14.0-r0
-xfsprogs-libs-4.14.0-r0
+xfsprogs-4.14.0-r1
+xfsprogs-extra-4.14.0-r1
+xfsprogs-libs-4.14.0-r1
 xorriso-1.4.8-r0
 xz-5.2.3-r1
 xz-dev-5.2.3-r1
