@@ -1,4 +1,4 @@
-From b1e3daa4f55d58deaf5346b650b297df552a22c3 Mon Sep 17 00:00:00 2001
+From 2d7924da71583ca1feeed323ed83e15de68d7460 Mon Sep 17 00:00:00 2001
 From: Cathy Avery <cavery@redhat.com>
 Date: Tue, 31 Oct 2017 08:52:06 -0400
 Subject: [PATCH 20/21] scsi: storvsc: Allow only one remove lun work item to
@@ -29,7 +29,7 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  1 file changed, 22 insertions(+), 5 deletions(-)
 
 diff --git a/drivers/scsi/storvsc_drv.c b/drivers/scsi/storvsc_drv.c
-index c44de0b4a995..d0f5417ed20a 100644
+index beb585ddc07d..e94f75e25cb1 100644
 --- a/drivers/scsi/storvsc_drv.c
 +++ b/drivers/scsi/storvsc_drv.c
 @@ -486,6 +486,7 @@ struct hv_host_device {
@@ -57,7 +57,7 @@ index c44de0b4a995..d0f5417ed20a 100644
  }
  
  
-@@ -1804,10 +1806,19 @@ static int storvsc_probe(struct hv_device *device,
+@@ -1807,10 +1809,19 @@ static int storvsc_probe(struct hv_device *device,
  	if (stor_device->num_sc != 0)
  		host->nr_hw_queues = stor_device->num_sc + 1;
  
@@ -78,7 +78,7 @@ index c44de0b4a995..d0f5417ed20a 100644
  
  	if (!dev_is_ide) {
  		scsi_scan_host(host);
-@@ -1816,7 +1827,7 @@ static int storvsc_probe(struct hv_device *device,
+@@ -1819,7 +1830,7 @@ static int storvsc_probe(struct hv_device *device,
  			 device->dev_instance.b[4]);
  		ret = scsi_add_device(host, 0, target, 0);
  		if (ret)
@@ -87,7 +87,7 @@ index c44de0b4a995..d0f5417ed20a 100644
  	}
  #if IS_ENABLED(CONFIG_SCSI_FC_ATTRS)
  	if (host->transportt == fc_transport_template) {
-@@ -1827,17 +1838,21 @@ static int storvsc_probe(struct hv_device *device,
+@@ -1830,17 +1841,21 @@ static int storvsc_probe(struct hv_device *device,
  		fc_host_node_name(host) = stor_device->node_name;
  		fc_host_port_name(host) = stor_device->port_name;
  		stor_device->rport = fc_remote_port_add(host, 0, &ids);
@@ -111,7 +111,7 @@ index c44de0b4a995..d0f5417ed20a 100644
  err_out2:
  	/*
  	 * Once we have connected with the host, we would need to
-@@ -1861,6 +1876,7 @@ static int storvsc_remove(struct hv_device *dev)
+@@ -1864,6 +1879,7 @@ static int storvsc_remove(struct hv_device *dev)
  {
  	struct storvsc_device *stor_device = hv_get_drvdata(dev);
  	struct Scsi_Host *host = stor_device->host;
@@ -119,7 +119,7 @@ index c44de0b4a995..d0f5417ed20a 100644
  
  #if IS_ENABLED(CONFIG_SCSI_FC_ATTRS)
  	if (host->transportt == fc_transport_template) {
-@@ -1868,6 +1884,7 @@ static int storvsc_remove(struct hv_device *dev)
+@@ -1871,6 +1887,7 @@ static int storvsc_remove(struct hv_device *dev)
  		fc_remove_host(host);
  	}
  #endif
