@@ -1,9 +1,10 @@
 image: binfmt
+network: true
 arches:
   - amd64
 config:
-  binds:
-  - /proc/sys/fs/binfmt_misc:/binfmt_misc
+  capabilities:
+    - CAP_SYS_ADMIN
   readonly: true
   net: new
   ipc: new

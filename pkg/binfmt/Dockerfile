@@ -1,8 +1,9 @@
-FROM linuxkit/alpine:1b05307ae8152e3d38f79e297b0632697a30c65c AS qemu
-RUN apk add \
-    qemu-aarch64 \
-    qemu-arm \
-    qemu-ppc64le
+# Use Debian stretch until https://bugs.alpinelinux.org/issues/8131 is resolved.
+FROM debian@sha256:de3eac83cd481c04c5d6c7344cd7327625a1d8b2540e82a8231b5675cef0ae5f AS qemu
+RUN apt-get update && apt-get install -y qemu-user-static && \
+    mv /usr/bin/qemu-aarch64-static /usr/bin/qemu-aarch64 && \
+    mv /usr/bin/qemu-arm-static /usr/bin/qemu-arm && \
+    mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le
 
 FROM linuxkit/alpine:1b05307ae8152e3d38f79e297b0632697a30c65c AS mirror
 
@@ -12,13 +13,10 @@ ENV GOPATH=/go PATH=$PATH:/go/bin
 COPY main.go /go/src/binfmt/
 RUN go-compile.sh /go/src/binfmt
 
-RUN mkdir /binfmt_misc
-
 FROM scratch
 ENTRYPOINT []
 WORKDIR /
 COPY --from=qemu usr/bin/qemu-* usr/bin/
 COPY --from=mirror /go/bin/binfmt usr/bin/binfmt
-COPY --from=mirror /binfmt_misc /binfmt_misc/
 COPY etc/binfmt.d/00_linuxkit.conf etc/binfmt.d/00_linuxkit.conf
-CMD ["/usr/bin/binfmt", "-dir", "/etc/binfmt.d/", "-mount", "/binfmt_misc"]
+CMD ["/usr/bin/binfmt"]
