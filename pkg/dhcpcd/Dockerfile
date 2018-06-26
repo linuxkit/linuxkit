@@ -14,5 +14,7 @@ ENTRYPOINT []
 CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
-COPY /dhcpcd.conf /usr/ /
+# put the config file in / because we bind mount /etc to handle resolv.conf symlinks
+COPY /dhcpcd.conf /
+COPY /usr/ /usr/
 CMD ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf"]
