@@ -1,4 +1,4 @@
-From d11cd9ea277c0472256028afba34317c2fffa448 Mon Sep 17 00:00:00 2001
+From d11cd9ea277c0472256028afba34.17.3fffa448 Mon Sep 17 00:00:00 2001
 From: "Wolfgang M. Reimer" <linuxball@gmail.com>
 Date: Tue, 21 Jul 2015 16:20:07 +0200
 Subject: [PATCH 250/414] locking: locktorture: Do NOT include rwlock.h
