@@ -9,8 +9,8 @@ COPY packages* /tmp/
 
 # mirror packages
 RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
-   mkdir -p /mirror/$(uname -m) && \
-   apk fetch --recursive -o /mirror/$(uname -m) $(apk info; cat /tmp/packages)
+   mkdir -p /mirror/$(apk --print-arch) && \
+   apk fetch --recursive -o /mirror/$(apk --print-arch) $(apk info; cat /tmp/packages)
 
 # It's tricky to mix edge/testing packages which sometimes leads to dependency conflicts.
 # wireguard-tools currently is only in edge, so here we build our own package using the
@@ -23,7 +23,7 @@ RUN apk add alpine-sdk libmnl-dev curl && \
     cd /wireguard && \
     curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/testing/wireguard-tools/APKBUILD && \
     su -c "abuild-keygen -a -n && abuild -r" builder && \
-    cp /home/builder/packages/$(uname -m)/wireguard-tools-[0-9]*.apk /mirror/$(uname -m)
+    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch)
 
 # install abuild for signing
 RUN apk add --no-cache abuild
@@ -32,11 +32,11 @@ RUN apk add --no-cache abuild
 RUN abuild-keygen -a -i -n
 
 # index the new repo
-RUN apk index --rewrite-arch $(uname -m) -o /mirror/$(uname -m)/APKINDEX.unsigned.tar.gz /mirror/$(uname -m)/*.apk
+RUN apk index --rewrite-arch $(apk --print-arch) -o /mirror/$(apk --print-arch)/APKINDEX.unsigned.tar.gz /mirror/$(apk --print-arch)/*.apk
 
 # sign the index
-RUN cp /mirror/$(uname -m)/APKINDEX.unsigned.tar.gz /mirror/$(uname -m)/APKINDEX.tar.gz
-RUN abuild-sign /mirror/$(uname -m)/APKINDEX.tar.gz
+RUN cp /mirror/$(apk --print-arch)/APKINDEX.unsigned.tar.gz /mirror/$(apk --print-arch)/APKINDEX.tar.gz
+RUN abuild-sign /mirror/$(apk --print-arch)/APKINDEX.tar.gz
 
 # set this as our repo but keep a copy of the upstream for downstream use
 RUN mv /etc/apk/repositories /etc/apk/repositories.upstream && echo "/mirror" > /etc/apk/repositories && apk update
