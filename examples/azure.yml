@@ -13,7 +13,7 @@ services:
   - name: rngd
     image: linuxkit/rngd:v0.4
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.4
+    image: linuxkit/dhcpcd:1fe0db6b1eb7bcb1e4823e61e08afe6d48af7d16
   - name: sshd
     image: linuxkit/sshd:2c7e6e36bd0ffa2b3d950cf9128da89ba3375dbb
 files:
