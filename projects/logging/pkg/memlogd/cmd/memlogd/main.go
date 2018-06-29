@@ -266,7 +266,10 @@ func main() {
 
 	var connLogFd *net.UnixConn
 	if passedLogFD == -1 { // no fd on command line, use socket path
-		addr := net.UnixAddr{socketLogPath, "unixgram"}
+		addr := net.UnixAddr{
+			Name: socketLogPath,
+			Net:  "unixgram",
+		}
 		if connLogFd, err = net.ListenUnixgram("unixgram", &addr); err != nil {
 			log.Fatal("Unable to open socket: ", err)
 		}
@@ -282,7 +285,10 @@ func main() {
 
 	var connQuery *net.UnixListener
 	if passedQueryFD == -1 { // no fd on command line, use socket path
-		addr := net.UnixAddr{socketQueryPath, "unix"}
+		addr := net.UnixAddr{
+			Name: socketQueryPath,
+			Net:  "unix",
+		}
 		if connQuery, err = net.ListenUnix("unix", &addr); err != nil {
 			log.Fatal("Unable to open socket: ", err)
 		}

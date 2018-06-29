@@ -25,7 +25,10 @@ func main() {
 	flag.BoolVar(&follow, "f", false, "follow log buffer")
 	flag.Parse()
 
-	addr := net.UnixAddr{socketPath, "unix"}
+	addr := net.UnixAddr{
+		Name: socketPath,
+		Net:  "unix",
+	}
 	conn, err := net.DialUnix("unix", nil, &addr)
 	if err != nil {
 		panic(err)
