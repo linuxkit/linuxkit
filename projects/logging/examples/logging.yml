@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:v0.4
   - linuxkit/containerd:27a4c84cc8fab2d5ea04342546ecd20453ec99b3
   - linuxkit/ca-certificates:v0.4
-  - linuxkit/memlogd:9b5834189f598f43c507f6938077113906f51012
+  - linuxkit/memlogd:4c16d6720075bcb2aeb298a8ee2d08d74aa20512
 onboot:
   - name: sysctl
     image: linuxkit/sysctl:v0.4

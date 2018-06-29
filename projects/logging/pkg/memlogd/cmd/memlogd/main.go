@@ -11,6 +11,7 @@ import (
 	"log"
 	"net"
 	"os"
+	"os/exec"
 	"sync"
 	"syscall"
 	"time"
@@ -254,6 +255,7 @@ func main() {
 	var passedLogFD int
 	var linesInBuffer int
 	var lineMaxLength int
+	var daemonize bool
 
 	flag.StringVar(&socketQueryPath, "socket-query", "/var/run/memlogdq.sock", "unix domain socket for responding to log queries. Overridden by -fd-query")
 	flag.StringVar(&socketLogPath, "socket-log", "/var/run/linuxkit-external-logging.sock", "unix domain socket to listen for new fds to add to log. Overridden by -fd-log")
@@ -261,7 +263,7 @@ func main() {
 	flag.IntVar(&passedQueryFD, "fd-query", -1, "an existing SOCK_STREAM for receiving log read requets. Overrides -socket-query.")
 	flag.IntVar(&linesInBuffer, "max-lines", 5000, "Number of log lines to keep in memory")
 	flag.IntVar(&lineMaxLength, "max-line-len", 1024, "Maximum line length recorded. Additional bytes are dropped.")
-
+	flag.BoolVar(&daemonize, "daemonize", false, "Bind sockets and then daemonize.")
 	flag.Parse()
 
 	var connLogFd *net.UnixConn
@@ -301,6 +303,28 @@ func main() {
 		connQuery = f.(*net.UnixListener)
 	}
 	defer connQuery.Close()
+
+	if daemonize {
+		child := exec.Command(os.Args[0],
+			"-fd-log", "3", // connLogFd in ExtraFiles below
+			"-fd-query", "4", // connQuery in ExtraFiles below
+			"-max-lines", fmt.Sprintf("%d", linesInBuffer),
+			"-max-line-len", fmt.Sprintf("%d", lineMaxLength),
+		)
+		connLogFile, err := connLogFd.File()
+		if err != nil {
+			log.Fatalf("The -fd-log cannot be represented as a *File: %s", err)
+		}
+		connQueryFile, err := connQuery.File()
+		if err != nil {
+			log.Fatalf("The -fd-query cannot be represented as a *File: %s", err)
+		}
+		child.ExtraFiles = append(child.ExtraFiles, connLogFile, connQueryFile)
+		if err := child.Start(); err != nil {
+			log.Fatalf("Failed to re-exec: %s", err)
+		}
+		os.Exit(0)
+	}
 
 	logCh := make(chan logEntry)
 	fdMsgChan := make(chan fdMessage)
