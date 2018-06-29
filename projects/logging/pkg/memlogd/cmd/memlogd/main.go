@@ -255,8 +255,8 @@ func main() {
 	var linesInBuffer int
 	var lineMaxLength int
 
-	flag.StringVar(&socketQueryPath, "socket-query", "/tmp/memlogdq.sock", "unix domain socket for responding to log queries. Overridden by -fd-query")
-	flag.StringVar(&socketLogPath, "socket-log", "/tmp/memlogd.sock", "unix domain socket to listen for new fds to add to log. Overridden by -fd-log")
+	flag.StringVar(&socketQueryPath, "socket-query", "/var/run/memlogdq.sock", "unix domain socket for responding to log queries. Overridden by -fd-query")
+	flag.StringVar(&socketLogPath, "socket-log", "/var/run/linuxkit-external-logging.sock", "unix domain socket to listen for new fds to add to log. Overridden by -fd-log")
 	flag.IntVar(&passedLogFD, "fd-log", -1, "an existing SOCK_DGRAM socket for receiving fd's. Overrides -socket-log.")
 	flag.IntVar(&passedQueryFD, "fd-query", -1, "an existing SOCK_STREAM for receiving log read requets. Overrides -socket-query.")
 	flag.IntVar(&linesInBuffer, "max-lines", 5000, "Number of log lines to keep in memory")

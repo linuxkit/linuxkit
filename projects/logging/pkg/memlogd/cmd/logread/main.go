@@ -20,7 +20,7 @@ func main() {
 	var follow bool
 	var dumpFollow bool
 
-	flag.StringVar(&socketPath, "socket", "/tmp/memlogdq.sock", "memlogd log query socket")
+	flag.StringVar(&socketPath, "socket", "/var/run/memlogdq.sock", "memlogd log query socket")
 	flag.BoolVar(&dumpFollow, "F", false, "dump log, then follow")
 	flag.BoolVar(&follow, "f", false, "follow log buffer")
 	flag.Parse()
