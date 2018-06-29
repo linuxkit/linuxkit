@@ -13,7 +13,7 @@ onboot:
     image: linuxkit/rngd:v0.4
     command: ["/sbin/rngd", "-1"]
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.4
+    image: linuxkit/dhcpcd:1fe0db6b1eb7bcb1e4823e61e08afe6d48af7d16
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
     image: linuxkit/metadata:ae402c118338c0285625c0094525eb0a90085a58

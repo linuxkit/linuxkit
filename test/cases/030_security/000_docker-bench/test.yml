@@ -20,7 +20,7 @@ services:
   - name: rngd
     image: linuxkit/rngd:v0.4
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.4
+    image: linuxkit/dhcpcd:1fe0db6b1eb7bcb1e4823e61e08afe6d48af7d16
   - name: docker
     image: docker:17.07.0-ce-dind
     capabilities:
