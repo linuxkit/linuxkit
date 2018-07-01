@@ -1,0 +1,30 @@
+# Simple example of using an external logging service
+kernel:
+  image: linuxkit/kernel:4.14.53
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:4fa16c9045d60732dadb04f5d7f5c18d83c6551e
+  - linuxkit/runc:v0.4
+  - linuxkit/containerd:f2bc1bda1ab18146967fa1a149800aaf14bee81b
+  - linuxkit/ca-certificates:v0.4
+  - linuxkit/memlogd:883f0d46e7d3ae2d787e8acb496da115a4707cbc
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:v0.4
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.4
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+services:
+# Inside the getty type `/proc/1/root/usr/bin/logread -F` to follow the log
+  - name: getty
+    image: linuxkit/getty:44730fd0a7c59dbacf5b48b54ba33f551bcf7ef0
+    env:
+     - INSECURE=true
+# A service which generates log messages for testing
+  - name: write-to-the-logs
+    image: alpine
+    command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); sleep 1; done" ]
+trust:
+  org:
+    - linuxkit
+    - library
