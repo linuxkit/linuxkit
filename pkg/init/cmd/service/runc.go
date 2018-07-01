@@ -62,6 +62,8 @@ func runcInit(rootPath, serviceType string) int {
 		log.Fatalf("Cannot create log directory %s: %v", logDir, err)
 	}
 
+	logger := GetLog(logDir)
+
 	for _, file := range files {
 		name := file.Name()
 		path := filepath.Join(rootPath, name)
@@ -76,23 +78,19 @@ func runcInit(rootPath, serviceType string) int {
 		pidfile := filepath.Join(tmpdir, name)
 		cmd := exec.Command(runcBinary, "create", "--bundle", path, "--pid-file", pidfile, name)
 
-		// stream stdout and stderr to respective files
-		// ideally we want to use io.MultiWriter here, sending one stream to stdout/stderr, another to the files
-		// however, this hangs if we do, due to a runc bug, see https://github.com/opencontainers/runc/issues/1721#issuecomment-366315563
-		// once that is fixed, this can be cleaned up
-		stdoutFile := filepath.Join(logDir, serviceType+"."+name+".out.log")
-		stdout, err := os.OpenFile(stdoutFile, os.O_WRONLY|os.O_CREATE, 0644)
+		stdoutLog := serviceType + "." + name + ".out"
+		stdout, err := logger.Open(stdoutLog)
 		if err != nil {
-			log.Printf("Error opening stdout log file: %v", err)
+			log.Printf("Error opening stdout log connection: %v", err)
 			status = 1
 			continue
 		}
 		defer stdout.Close()
 
-		stderrFile := filepath.Join(logDir, serviceType+"."+name+".err.log")
-		stderr, err := os.OpenFile(stderrFile, os.O_WRONLY|os.O_CREATE, 0644)
+		stderrLog := serviceType + "." + name + ".err"
+		stderr, err := logger.Open(stderrLog)
 		if err != nil {
-			log.Printf("Error opening stderr log file: %v", err)
+			log.Printf("Error opening stderr log connection: %v", err)
 			status = 1
 			continue
 		}
@@ -152,13 +150,11 @@ func runcInit(rootPath, serviceType string) int {
 		cleanup(path)
 		_ = os.Remove(pidfile)
 
-		// dump the log file outputs to os.Stdout/os.Stderr
-		if err = dumpFile(os.Stdout, stdoutFile); err != nil {
-			log.Printf("Error writing stdout of onboot service %s to console: %v", name, err)
-		}
-		if err = dumpFile(os.Stderr, stderrFile); err != nil {
-			log.Printf("Error writing stderr of onboot service %s to console: %v", name, err)
-		}
+		// ideally we want to use io.MultiWriter here, sending one stream to stdout/stderr, another to the log
+		// however, this hangs if we do, due to a runc bug, see https://github.com/opencontainers/runc/issues/1721#issuecomment-366315563
+		// once that is fixed, this can be cleaned up
+		logger.Dump(stdoutLog)
+		logger.Dump(stderrLog)
 	}
 
 	_ = os.RemoveAll(tmpdir)
