@@ -1,16 +1,17 @@
-.DELETE_ON_ERROR:
-
-.PHONY: default all
-default: bin/linuxkit bin/rtf
-all: default
-
 VERSION="v0.4+"
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
 GO_COMPILE=linuxkit/go-compile:a8bffe875268a973ea82e5937b0fb23a5b08cc79
 
+ifeq ($(OS),Windows_NT)
+LINUXKIT?=bin/linuxkit.exe
+RTF?=bin/rtf.exe
+GOOS?=windows
+else
 LINUXKIT?=bin/linuxkit
+RTF?=bin/rtf
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+endif
 GOARCH?=amd64
 ifneq ($(GOOS),linux)
 CROSS+=-e GOOS=$(GOOS)
@@ -21,16 +22,22 @@ endif
 
 PREFIX?=/usr/local/
 
+.DELETE_ON_ERROR:
+
+.PHONY: default all
+default: $(LINUXKIT) $(RTF)
+all: default
+
 RTF_COMMIT=171155c375706f2616f0b9c96afe2240e15d1de1
 RTF_CMD=github.com/linuxkit/rtf/cmd
 RTF_VERSION=0.0
-bin/rtf: tmp_rtf_bin.tar | bin
+$(RTF): tmp_rtf_bin.tar | bin
 	tar xf $<
 	rm $<
 	touch $@
 
 tmp_rtf_bin.tar: Makefile
-	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(RTF_VERSION)" -o bin/rtf > $@
+	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(RTF_VERSION)" -o $(RTF) > $@
 
 # Manifest tool for multi-arch images
 MT_COMMIT=bfbd11963b8e0eb5f6e400afaebeaf39820b4e90
@@ -44,13 +51,13 @@ tmp_mt_bin.tar: Makefile
 	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/estesp/manifest-tool --clone $(MT_REPO) --commit $(MT_COMMIT) --package github.com/estesp/manifest-tool --ldflags "-X main.gitCommit=$(MT_COMMIT)" -o bin/manifest-tool > $@
 
 LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) $(wildcard src/cmd/linuxkit/*/*.go) Makefile src/cmd/linuxkit/vendor.conf
-bin/linuxkit: tmp_linuxkit_bin.tar
+$(LINUXKIT): tmp_linuxkit_bin.tar
 	tar xf $<
 	rm $<
 	touch $@
 
 tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
-	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)" -o bin/linuxkit > $@
+	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)" -o $(LINUXKIT) > $@
 
 .PHONY: test-cross
 test-cross:
@@ -63,7 +70,7 @@ test-cross:
 	$(MAKE) clean
 
 LOCAL_LDFLAGS += -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)
-LOCAL_TARGET ?= bin/linuxkit
+LOCAL_TARGET ?= $(LINUXKIT)
 
 .PHONY: local-check local-build local-test local-static-pie local-static local-dynamic local
 local-check: $(LINUXKIT_DEPS)
