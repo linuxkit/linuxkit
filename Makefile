@@ -10,7 +10,12 @@ GIT_COMMIT=$(shell git rev-list -1 HEAD)
 GO_COMPILE=linuxkit/go-compile:a8bffe875268a973ea82e5937b0fb23a5b08cc79
 
 LINUXKIT?=bin/linuxkit
+
+ifeq ($(OS),Windows_NT)
+GOOS?=windows
+else
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+endif
 GOARCH?=amd64
 ifneq ($(GOOS),linux)
 CROSS+=-e GOOS=$(GOOS)
