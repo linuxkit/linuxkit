@@ -49,9 +49,10 @@ var additions = map[string]addFun{
 	"docker": func(tw *tar.Writer) error {
 		log.Infof("  Adding Dockerfile")
 		hdr := &tar.Header{
-			Name: "Dockerfile",
-			Mode: 0644,
-			Size: int64(len(dockerfile)),
+			Name:   "Dockerfile",
+			Mode:   0644,
+			Size:   int64(len(dockerfile)),
+			Format: tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -340,6 +341,7 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 				Name:     "boot",
 				Mode:     0755,
 				Typeflag: tar.TypeDir,
+				Format:   tar.FormatPAX,
 			}
 			if err := tw.WriteHeader(whdr); err != nil {
 				return err
@@ -347,9 +349,10 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		}
 		// add the cmdline in /boot/cmdline
 		whdr := &tar.Header{
-			Name: "boot/cmdline",
-			Mode: 0644,
-			Size: int64(len(k.cmdline)),
+			Name:   "boot/cmdline",
+			Mode:   0644,
+			Size:   int64(len(k.cmdline)),
+			Format: tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
@@ -360,9 +363,10 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 			return err
 		}
 		whdr = &tar.Header{
-			Name: "boot/kernel",
-			Mode: hdr.Mode,
-			Size: hdr.Size,
+			Name:   "boot/kernel",
+			Mode:   hdr.Mode,
+			Size:   hdr.Size,
+			Format: tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
@@ -380,15 +384,17 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 				Name:     "boot",
 				Mode:     0755,
 				Typeflag: tar.TypeDir,
+				Format:   tar.FormatPAX,
 			}
 			if err := tw.WriteHeader(whdr); err != nil {
 				return err
 			}
 		}
 		whdr := &tar.Header{
-			Name: "boot/ucode.cpio",
-			Mode: hdr.Mode,
-			Size: hdr.Size,
+			Name:   "boot/ucode.cpio",
+			Mode:   hdr.Mode,
+			Size:   hdr.Size,
+			Format: tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
@@ -544,6 +550,7 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 					Mode:     dirMode,
 					Uid:      int(uid),
 					Gid:      int(gid),
+					Format:   tar.FormatPAX,
 				}
 				err := tw.WriteHeader(hdr)
 				if err != nil {
@@ -554,10 +561,11 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 		}
 		addedFiles[f.Path] = true
 		hdr := &tar.Header{
-			Name: f.Path,
-			Mode: mode,
-			Uid:  int(uid),
-			Gid:  int(gid),
+			Name:   f.Path,
+			Mode:   mode,
+			Uid:    int(uid),
+			Gid:    int(gid),
+			Format: tar.FormatPAX,
 		}
 		if f.Directory {
 			if f.Contents != nil {
