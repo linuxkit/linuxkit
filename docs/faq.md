@@ -30,3 +30,49 @@ of dependencies and functionality that we do not need. At present we are using t
 `init` process, and a small set of minimal scripts, but we expect to replace that with a small
 standalone `init` process and a small piece of code to bring up the system containers where the
 real work takes place.
+
+## Console not displaying init or containerd output at boot
+
+If you're not seeing `containerd` logs in the console during boot, make sure that your kernel `cmdline` configuration doesn't list multiple consoles.
+
+`init` and other processes like `containerd` will use the last defined console in the kernel `cmdline`. When using `qemu`, to see the console you need to list `ttyS0` as the last console to properly see the output.
+
+## Troubleshooting containers
+
+Linuxkit runs all services in a specific `containerd` namespace called `services.linuxkit`. To list all the defined containers:
+
+```sh
+(ns: getty) linuxkit-befde23bc535:~# ctr -n services.linuxkit container ls
+CONTAINER               IMAGE    RUNTIME
+getty                   -        io.containerd.runtime.v1.linux
+```
+
+To list all running containers and their status:
+
+```sh
+(ns: getty) linuxkit-befde23bc535:~# ctr -n services.linuxkit task ls
+TASK                    PID    STATUS
+getty                   661    RUNNING
+```
+
+To list all processes running in a container:
+
+```sh
+(ns: getty) linuxkit-befde23bc535:/containers/services/getty# ctr -n services.linuxkit task ps getty
+PID     INFO
+661     &ProcessDetails{ExecID:getty,}
+677     -
+685     -
+686     -
+687     -
+1237    -
+```
+
+To attach a shell to a running container:
+
+```sh
+(ns: getty) linuxkit-befde23bc535:/containers/services/getty# ctr -n services.linuxkit tasks exec --tty --exec-id sh sshd /bin/ash -l
+(ns: sshd) linuxkit-befde23bc535:/#
+```
+
+Containers are defined as OCI bundles in `/containers`.
