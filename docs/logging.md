@@ -42,32 +42,40 @@ network service, a service should be added to the yaml which connects to
 `memlogd` and streams the logs. The example program `logread` in the `memlogd`
 package demonstrates how to do this.
 
-Usage examples:
+### Message format
+
+The format used to read logs is similar to [kmsg](https://www.kernel.org/doc/Documentation/ABI/testing/dev-kmsg):
+```
+<timestamp>,<log>;<body>
+```
+where `<timestamp>` is an RFC3339-formatted timestamp, `<log>` is the name of
+the log (e.g. `docker-ce.out`) and `<body>` is the output. The `<log>` must
+not contain the character `;`.
+
+### Usage examples
 ```
 / # logread -f
-2017-04-15T15:37:37Z memlogd memlogd started
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: waiting for carrier
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: carrier acquired
-2017-04-15T15:37:37Z 002-dhcpcd.stdout DUID 00:01:00:01:20:84:fa:c1:02:50:00:00:00:24
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: IAID 00:00:00:24
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: adding address fe80::84e3:ca52:2590:fe80
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: soliciting an IPv6 router
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: soliciting a DHCP lease
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: offered 192.168.65.37 from 192.168.65.1 `vpnkit'
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: leased 192.168.65.37 for 7199 seconds
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: adding route to 192.168.65.0/24
-2017-04-15T15:37:37Z 002-dhcpcd.stdout eth0: adding default route via 192.168.65.1
-2017-04-15T15:37:37Z 002-dhcpcd.stdout exiting due to oneshot
-2017-04-15T15:37:37Z 002-dhcpcd.stdout dhcpcd exited
-2017-04-15T15:37:37Z rngd.stderr Unable to open file: /dev/tpm0
+2018-07-05T13:22:32Z,memlogd;memlogd started
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: waiting for carrier
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.err;eth0: could not detect a useable init
+ system
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: carrier acquired
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;DUID 00:01:00:01:22:d0:d8:18:02:50:00:00:00:02
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: IAID 00:00:00:02
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: adding address fe80::d33a:3936:
+2ee4:5c8c
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: soliciting an IPv6 router
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: soliciting a DHCP lease
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: offered 192.168.65.4 from 192.1
+68.65.1 `vpnkit'
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: leased 192.168.65.4 for 7200 se
+conds
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: adding route to 192.168.65.0/24
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: adding default route via 192.16
+8.65.1
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;exiting due to oneshot
+2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;dhcpcd exited
 ^C
-/ # logwrite echo testing123
-testing123
-/ # logread | tail -n1
-2017-04-15T15:37:45Z echo.stdout testing123
-/ # echo -en "GET / HTTP/1.0\n\n" | nc localhost 80 > /dev/null
-/ # logread | grep nginx
-2017-04-15T15:42:40Z nginx.stdout 127.0.0.1 - - [15/Apr/2017:15:42:40 +0000] "GET / HTTP/1.0" 200 612 "-" "-" "-"
 ```
 
 Current issues and limitations:

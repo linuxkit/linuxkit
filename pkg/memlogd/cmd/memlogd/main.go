@@ -66,7 +66,7 @@ func logQueryHandler(l *connListener) {
 }
 
 func (msg *logEntry) String() string {
-	return fmt.Sprintf("%s %s %s", msg.time.Format(time.RFC3339), msg.source, msg.msg)
+	return fmt.Sprintf("%s,%s;%s", msg.time.Format(time.RFC3339), msg.source, msg.msg)
 }
 
 func ringBufferHandler(ringSize, chanSize int, logCh chan logEntry, queryMsgChan chan queryMessage) {
@@ -220,6 +220,23 @@ func readLogFromFd(maxLineLen int, fd int, source string, logCh chan logEntry) {
 	}
 }
 
+func loggingRequestHandler(lineMaxLength int, logCh chan logEntry, fdMsgChan chan fdMessage) {
+	for true {
+		select {
+		case msg := <-fdMsgChan: // incoming fd
+			if strings.Contains(msg.name, ";") {
+				// The log message spec bans ";" in the log names
+				doLog(logCh, fmt.Sprintf("ERROR: cannot register log with name '%s' as it contains ;", msg.name))
+				if err := syscall.Close(msg.fd); err != nil {
+					doLog(logCh, fmt.Sprintf("ERROR: failed to close fd: %s", err))
+				}
+				continue
+			}
+			go readLogFromFd(lineMaxLength, msg.fd, msg.name, logCh)
+		}
+	}
+}
+
 func main() {
 	var err error
 
@@ -304,16 +321,14 @@ func main() {
 	fdMsgChan := make(chan fdMessage)
 	queryMsgChan := make(chan queryMessage)
 
+	// receive fds from the logging Unix domain socket and send on fdMsgChan
 	go receiveFdHandler(connLogFd, logCh, fdMsgChan)
+	// receive fds from the querying Unix domain socket and send on queryMsgChan
 	go receiveQueryHandler(connQuery, logCh, queryMsgChan)
+	// process both log messages and queries
 	go ringBufferHandler(linesInBuffer, linesInBuffer, logCh, queryMsgChan)
 
 	doLog(logCh, "memlogd started")
 
-	for true {
-		select {
-		case msg := <-fdMsgChan: // incoming fd
-			go readLogFromFd(lineMaxLength, msg.fd, msg.name, logCh)
-		}
-	}
+	loggingRequestHandler(lineMaxLength, logCh, fdMsgChan)
 }
