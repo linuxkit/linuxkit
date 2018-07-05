@@ -1,4 +1,4 @@
-From c9ecbcbc2eb429cc264da7e631a726cd6b713a20 Mon Sep 17 00:00:00 2001
+From b9805f49b1929c549458932fe494979881cdf4bd Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 2 Mar 2017 12:55:49 -0300
 Subject: [PATCH 01/12] tools build: Add test for sched_getcpu()
