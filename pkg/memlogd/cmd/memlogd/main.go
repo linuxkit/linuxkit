@@ -37,12 +37,12 @@ const (
 )
 
 type queryMessage struct {
-	conn *net.UnixConn
+	conn net.Conn
 	mode logMode
 }
 
 type connListener struct {
-	conn      *net.UnixConn
+	conn      net.Conn
 	cond      *sync.Cond // condition and mutex used to notify listeners of more data
 	buffer    bytes.Buffer
 	err       error
