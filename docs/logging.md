@@ -88,8 +88,6 @@ conds
   socket could be created to keep syslog compatibility, e.g. by using
   https://github.com/mcuadros/go-syslog. Processes that require syslog should
   then be able to log directly to memlogd.
-- Kernel messages not read on startup yet (but can be captured with
-  `logwrite dmesg`)
 - Currently no direct external hooks exposed - but options available that
   could be added. Should also be possible to pipe output to e.g. `oklog`
   from `logread` (https://github.com/oklog/oklog)
