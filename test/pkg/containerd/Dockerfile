@@ -1,9 +1,8 @@
-FROM linuxkit/alpine:e940475e167cda8d95eda4d3b225a35f57a6f67e AS mirror
+FROM linuxkit/alpine:6264e5b39af8eb1da7ffa4c05a7ccc597da01197 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 # btrfs-progfs is required for btrfs test (mkfs.btrfs)
 # util-linux is required for btrfs test (losetup)
 # xfsprogs is required for xfs test (mkfs.xfs)
-# containerd v1.1.x requires go1.10 which is currently a separate package in Alpine 3.7
 RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \
     busybox \
@@ -11,7 +10,7 @@ RUN apk add --no-cache --initdb -p /out \
     btrfs-progs-dev \
     gcc \
     git \
-    go1.10 \
+    go \
     libc-dev \
     linux-headers \
     make \

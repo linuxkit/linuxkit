@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:4.9.111
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:6cc1442112980c889230b6449df09d5b48de6854
-  - linuxkit/runc:v0.4
+  - linuxkit/init:720920b4a1b4dd90c99e8f91d543381798c4c3cb
+  - linuxkit/runc:01b4f0706d999f9065ef44492689e43d0bcd83c5
 onboot:
   - name: check
     image: kmod-test
@@ -13,7 +13,7 @@ onboot:
     capabilities:
      - all
   - name: poweroff
-    image: linuxkit/poweroff:d75d94d9603bde9ab95b914deed0d069d05d8b20
+    image: linuxkit/poweroff:37021954220a932951eca5de5a856865e48cfc00
     command: ["/bin/sh", "/poweroff.sh", "3"]
 trust:
   org:

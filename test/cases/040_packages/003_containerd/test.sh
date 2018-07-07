@@ -1,6 +1,7 @@
 #!/bin/sh
 # SUMMARY: Run containerd test
-# LABELS:
+# disable containerd test because of: https://github.com/containerd/containerd/issues/2447
+# LABELS: disabled
 # REPEAT:
 
 set -e

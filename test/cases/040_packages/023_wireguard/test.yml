@@ -2,16 +2,16 @@ kernel:
   image: linuxkit/kernel:4.14.53
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:6cc1442112980c889230b6449df09d5b48de6854
-  - linuxkit/runc:v0.4
-  - linuxkit/containerd:27a4c84cc8fab2d5ea04342546ecd20453ec99b3
-  - linuxkit/ca-certificates:v0.4
+  - linuxkit/init:720920b4a1b4dd90c99e8f91d543381798c4c3cb
+  - linuxkit/runc:01b4f0706d999f9065ef44492689e43d0bcd83c5
+  - linuxkit/containerd:92c92a485b881b7b589ccc4a6279224931c8cadf
+  - linuxkit/ca-certificates:ce2692e89d2be341b0d3caa0b0aa01b37d5d0694
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:1fe0db6b1eb7bcb1e4823e61e08afe6d48af7d16
+    image: linuxkit/dhcpcd:0aa201ad1a4c134f0ed6ab2cec23602d5ee73d7f
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: wg0
-    image: linuxkit/ip:v0.4
+    image: linuxkit/ip:dd18c95e8add1dde51864d221efc02290a8ee7d0
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -24,7 +24,7 @@ onboot:
       bindNS:
           net: /run/netns/wg0
   - name: wg1
-    image: linuxkit/ip:v0.4
+    image: linuxkit/ip:dd18c95e8add1dde51864d221efc02290a8ee7d0
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -38,7 +38,7 @@ onboot:
           net: /run/netns/wg1
 onshutdown:
   - name: test2
-    image: alpine:3.7
+    image: alpine:3.8
     binds:
       - /tmp:/tmp
       - /check.sh:/check.sh
@@ -55,7 +55,7 @@ services:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
   - name: test
-    image: alpine:3.7
+    image: alpine:3.8
     net: /run/netns/wg1
     pid: host
     capabilities:

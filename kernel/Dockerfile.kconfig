@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:90571a1a9059f3bf33ca3431bc5396aa837a47d3 AS kernel-build
+FROM linuxkit/alpine:6264e5b39af8eb1da7ffa4c05a7ccc597da01197 AS kernel-build
 RUN apk add \
     argp-standalone \
     bison \
