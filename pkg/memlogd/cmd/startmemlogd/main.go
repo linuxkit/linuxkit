@@ -16,8 +16,8 @@ func main() {
 	var memlogdBundle string
 	var pidFile string
 	var detach bool
-	flag.StringVar(&socketLogPath, "socket-log", "/tmp/memlogd.sock", "path to fd logging socket. Created and passed to logging container. Existing socket will be removed.")
-	flag.StringVar(&socketQueryPath, "socket-query", "/tmp/memlogdq.sock", "path to query socket. Created and passed to logging container. Existing socket will be removed.")
+	flag.StringVar(&socketLogPath, "socket-log", "/var/run/linuxkit-external-logging.sock", "path to fd logging socket. Created and passed to logging container. Existing socket will be removed.")
+	flag.StringVar(&socketQueryPath, "socket-query", "/var/run/memlogdq.sock", "path to query socket. Created and passed to logging container. Existing socket will be removed.")
 	flag.StringVar(&memlogdBundle, "bundle", "/containers/init/memlogd", "runc bundle with memlogd")
 	flag.StringVar(&pidFile, "pid-file", "/run/memlogd.pid", "path to pid file")
 	flag.BoolVar(&detach, "detach", true, "detach from subprocess")

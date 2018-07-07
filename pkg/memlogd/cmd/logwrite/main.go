@@ -37,7 +37,7 @@ func main() {
 	var serverSocket string
 	var name string
 
-	flag.StringVar(&serverSocket, "socket", "/tmp/memlogd.sock", "socket to pass fd's to memlogd")
+	flag.StringVar(&serverSocket, "socket", "/var/run/linuxkit-external-logging.sock", "socket to pass fd's to memlogd")
 	flag.StringVar(&name, "n", "", "name of sender, defaults to first argument if left blank")
 	flag.Parse()
 	args := flag.Args()

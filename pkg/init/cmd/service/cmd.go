@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -199,17 +198,11 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 		return "", 0, "failed to create container", err
 	}
 
+	logger := GetLog(varLogDir)
+
 	io := func(id string) (cio.IO, error) {
-		stdoutFile := filepath.Join("/var/log", service+".out.log")
-		stderrFile := filepath.Join("/var/log", service+".err.log")
-		// We just need this to exist. If we cannot write to the directory,
-		// we'll discard output instead.
-		if err := ioutil.WriteFile(stdoutFile, []byte{}, 0600); err != nil {
-			stdoutFile = "/dev/null"
-		}
-		if err := ioutil.WriteFile(stderrFile, []byte{}, 0600); err != nil {
-			stderrFile = "/dev/null"
-		}
+		stdoutFile := logger.Path(service + ".out")
+		stderrFile := logger.Path(service + ".err")
 		return &logio{
 			cio.Config{
 				Stdin:    "/dev/null",
@@ -219,7 +212,6 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 			},
 		}, nil
 	}
-
 	task, err := ctr.NewTask(ctx, io)
 	if err != nil {
 		// Don't bother to destroy the container here.

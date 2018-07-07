@@ -1,9 +1,0 @@
-#!/bin/sh
-
-# bring up containerd
-ulimit -n 1048576
-ulimit -p unlimited
-
-printf "\nStarting containerd\n"
-mkdir -p /var/log
-exec /usr/bin/containerd

@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.14.53
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:0e4af96fecc8f752c80d41c0b7d06570cc1dc6b2
+  - linuxkit/init:6cc1442112980c889230b6449df09d5b48de6854
   - linuxkit/runc:v0.4
   - linuxkit/containerd:27a4c84cc8fab2d5ea04342546ecd20453ec99b3
   - linuxkit/ca-certificates:v0.4
