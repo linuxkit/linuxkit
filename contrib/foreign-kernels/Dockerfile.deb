@@ -1,4 +1,4 @@
-FROM alpine:3.7 AS extract
+FROM alpine:3.8 AS extract
 
 ARG DEB_URLS
 

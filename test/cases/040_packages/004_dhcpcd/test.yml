@@ -9,7 +9,7 @@ onboot:
     image: linuxkit/dhcpcd:0aa201ad1a4c134f0ed6ab2cec23602d5ee73d7f
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: test
-    image: alpine:3.7
+    image: alpine:3.8
     net: host
     binds:
       - /check.sh:/check.sh
@@ -24,4 +24,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.7
+    - alpine:3.8
