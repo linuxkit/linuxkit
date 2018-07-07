@@ -4,10 +4,7 @@ RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev git linux-he
 ADD usermode-helper.c ./
 RUN LDFLAGS=-static CFLAGS=-Werror make usermode-helper
 
-# containerd v1.1.x requires go1.10 which is currently a separate package in
-# Alpine 3.7 Use the same version here for consistency and because we use the
-# containerd client library.
-RUN apk add --no-cache go1.10 musl-dev
+RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
 
 COPY cmd /go/src/cmd
