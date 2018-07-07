@@ -45,7 +45,6 @@ git
 gmp-dev
 gnupg
 go
-go1.10
 grep
 hvtools
 installkernel
