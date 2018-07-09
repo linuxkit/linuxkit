@@ -24,6 +24,10 @@ services:
   - name: write-to-the-logs
     image: alpine
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); sleep 1; done" ]
+  - name: write-and-rotate-logs
+    image: linuxkit/logwrite:7859c102a963828fd9c5aa3837db9600483220c7
+  - name: kmsg
+    image: linuxkit/kmsg:3dfa0d5b4027ecc16089f27fbcffa15d6aa5438e
 trust:
   org:
     - linuxkit

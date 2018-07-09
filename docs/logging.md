@@ -39,8 +39,8 @@ The circular buffer has a fixed size (overridden by the command-line argument
 
 To store the logs somewhere more permanent, for example a disk or a remote
 network service, a service should be added to the yaml which connects to
-`memlogd` and streams the logs. The example program `logread` in the `memlogd`
-package demonstrates how to do this.
+`memlogd` and streams the logs. The `logwrite` service described below shows
+how to do this.
 
 ### Message format
 
@@ -52,33 +52,35 @@ where `<timestamp>` is an RFC3339-formatted timestamp, `<log>` is the name of
 the log (e.g. `docker-ce.out`) and `<body>` is the output. The `<log>` must
 not contain the character `;`.
 
-### Usage examples
+## logwrite: writing logs to disk
+
+The service `pkg/logwrite` connects to `memlogd` and streams the logs to files
+in `/var/log`. The logs are automatically rotated; by default each file has
+a maximum size of 1 MiB and up to 10 files are kept per log. The arguments
+`-max-log-files` and `-max-log-size` can be used to override these defaults.
+
+Here is an example log file:
 ```
-/ # logread -f
-2018-07-05T13:22:32Z,memlogd;memlogd started
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: waiting for carrier
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.err;eth0: could not detect a useable init
- system
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: carrier acquired
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;DUID 00:01:00:01:22:d0:d8:18:02:50:00:00:00:02
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: IAID 00:00:00:02
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: adding address fe80::d33a:3936:
-2ee4:5c8c
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: soliciting an IPv6 router
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: soliciting a DHCP lease
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: offered 192.168.65.4 from 192.1
-68.65.1 `vpnkit'
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: leased 192.168.65.4 for 7200 se
+# cat /var/log/onboot.001-dhcpcd.out 
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: waiting for carrier
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: carrier acquired
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out DUID 00:01:00:01:22:d4:93:05:02:50:00
+:00:00:06
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: IAID 00:00:00:06
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: adding address fe80::f346:56a6:590d:5ea4
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: soliciting an IPv6 router
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: soliciting a DHCP lease
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: offered 192.168.65.8 from 192.168.65.1 `vpnkit'
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: leased 192.168.65.8 for 7200 se
 conds
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: adding route to 192.168.65.0/24
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;eth0: adding default route via 192.16
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: adding route to 192.168.65.0/24
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: adding default route via 192.16
 8.65.1
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;exiting due to oneshot
-2018-07-05T13:22:32Z,onboot.001-dhcpcd.out;dhcpcd exited
-^C
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out exiting due to oneshot
+2018-07-08T09:16:53Z onboot.001-dhcpcd.out dhcpcd exited
 ```
 
-Current issues and limitations:
+## Current issues and limitations:
 
 - No docker logger plugin support yet - it could be nice to add support to
   memlogd, so the docker container logs would also be gathered in one place
@@ -86,8 +88,6 @@ Current issues and limitations:
   socket could be created to keep syslog compatibility, e.g. by using
   https://github.com/mcuadros/go-syslog. Processes that require syslog should
   then be able to log directly to memlogd.
-- Kernel messages not read on startup yet (but can be captured with
-  `logwrite dmesg`)
 - Currently no direct external hooks exposed - but options available that
   could be added. Should also be possible to pipe output to e.g. `oklog`
   from `logread` (https://github.com/oklog/oklog)
