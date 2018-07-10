@@ -2,17 +2,17 @@ kernel:
   image: linuxkit/kernel:4.14.54
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:317b039710f39b0263981cff25cf873043baf561
-  - linuxkit/runc:01b4f0706d999f9065ef44492689e43d0bcd83c5
+  - linuxkit/init:v0.5
+  - linuxkit/runc:v0.5
 onboot:
   - name: modprobe
-    image: linuxkit/modprobe:e1f78caa4c3a64a239ffb23c81622b4104cba5a0
+    image: linuxkit/modprobe:v0.5
     command: ["modprobe", "btrfs"]
   - name: format
-    image: linuxkit/format:c5e3200c3eeaed2652314869c08197098fd1f843
+    image: linuxkit/format:v0.5
     command: ["/usr/bin/format", "-type", "btrfs" ]
   - name: mount
-    image: linuxkit/mount:6b25743397b520924de11f96e3eeb613aa04a507
+    image: linuxkit/mount:v0.5
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.8
@@ -20,7 +20,7 @@ onboot:
       - /var/lib/docker:/var/lib/docker
     command: ["touch", "/var/lib/docker/bar"]
   - name: poweroff
-    image: linuxkit/poweroff:37021954220a932951eca5de5a856865e48cfc00
+    image: linuxkit/poweroff:2687ed712690766b8156a77ac600005b532d2c7d
     command: ["/bin/sh", "/poweroff.sh", "10"]
 trust:
   org: 

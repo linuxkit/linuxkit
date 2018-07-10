@@ -3,12 +3,14 @@
 
 Ajeet Singh Raina, Docker Captain, {Code} Catalysts, Dell EMC R&D <ajeetraina@gmail.com>
 Akihiro Suda <suda.akihiro@lab.ntt.co.jp>
+Alan Raison <alanraison@users.noreply.github.com>
 Alex Johnson <hello@alex-johnson.net>
 Alice Frosi <alice@linux.vnet.ibm.com>
 Amir Chaudhry <amir.chaudhry@docker.com>
 Anil Madhavapeddy <anil.madhavapeddy@docker.com>
 Avi Deitcher <avi@deitcher.net>
 Bill Kerr <bill@generalbill.com>
+Brice Figureau <brice-puppet@daysofwonder.com>
 Carlton-Semple <carlton.semple@ibm.com>
 Craig Ingram <cingram@heroku.com>
 Damiano Donati <damiano.donati@gmail.com>
@@ -47,6 +49,7 @@ Jes Ferrier <jes.ferrier@gmail.com>
 Jesse Adametz <jesseadametz@gmail.com>
 John Albietz <inthecloud247@gmail.com>
 Jose Carlos Venegas Munoz <jose.carlos.venegas.munoz@intel.com>
+Justin Barrick <jbarrick@cloudflare.com>
 Justin Cormack <justin.cormack@docker.com>
 Justin Ko <justin.ko@oracle.com>
 Ken Cochrane <ken.cochrane@docker.com>
@@ -60,6 +63,7 @@ Magnus Skjegstad <magnus.skjegstad@docker.com>
 Marco Mariani <marco.mariani@alterway.fr>
 Marcus van Dam <marcus@marcusvandam.nl>
 marten <marten.cassel@gmail.com>
+Mathieu Champlon <mathieu.champlon@docker.com>
 Mathieu Pasquet <mathieu.pasquet@alterway.fr>
 Matt Bajor <matt.bajor@workday.com>
 Matt Bentley <matt.bentley@docker.com>
@@ -76,6 +80,7 @@ Niclas Mietz <niclas@mietz.io>
 Nico Di Rocco <dirocco.nico@gmail.com>
 Olaf Bergner <olaf.bergner@gmx.de>
 Olaf Flebbe <of@oflebbe.de>
+Patrik Cyvoct <patrik@ptrk.io>
 Phil Estes <estesp@linux.vnet.ibm.com>
 Pierre Gayvallet <pierre.gayvallet@docker.com>
 Pratik Mallya <mallya@us.ibm.com>

@@ -1,10 +1,10 @@
-FROM linuxkit/alpine:6264e5b39af8eb1da7ffa4c05a7ccc597da01197 as build
+FROM linuxkit/alpine:daed76b8f1d28cdeeee215a95b9671c682a405dc as build
 
 RUN apk add --no-cache bash go git musl-dev linux-headers make
 
 ENV GOPATH=/go PATH=$PATH:/go/bin
 ENV GITREPO=github.com/google/cadvisor
-ENV COMMIT=v0.28.1
+ENV COMMIT=v0.30.2
 
 ADD /static.patch /tmp/
 
@@ -16,7 +16,7 @@ RUN go get -d ${GITREPO} \
     && mv cadvisor /usr/bin/
 
 
-FROM linuxkit/alpine:6264e5b39af8eb1da7ffa4c05a7ccc597da01197 AS mirror
+FROM linuxkit/alpine:daed76b8f1d28cdeeee215a95b9671c682a405dc AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \

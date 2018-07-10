@@ -2,23 +2,23 @@ kernel:
   image: linuxkit/kernel:4.9.34
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:317b039710f39b0263981cff25cf873043baf561
-  - linuxkit/runc:01b4f0706d999f9065ef44492689e43d0bcd83c5
-  - linuxkit/containerd:9924cc405996bc43a61e050e70284372d2cb09b8
-  - linuxkit/ca-certificates:ce2692e89d2be341b0d3caa0b0aa01b37d5d0694
+  - linuxkit/init:v0.5
+  - linuxkit/runc:v0.5
+  - linuxkit/containerd:v0.5
+  - linuxkit/ca-certificates:v0.5
   - samoht/fdd
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:6f96e509c7383b31dfdd2c3e9fa01c6ab3e4c586
+    image: linuxkit/sysctl:v0.5
 services:
   - name: getty
-    image: linuxkit/getty:3763a7fc3fddedc185bbd6f7f583f729e57fbeda
+    image: linuxkit/getty:v0.5
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:68dbb9f121634e7fcf538ab1c54f3eb2e2430e85
+    image: linuxkit/rngd:v0.5
   - name: dhcpcd
-    image: linuxkit/dhcpcd:0aa201ad1a4c134f0ed6ab2cec23602d5ee73d7f
+    image: linuxkit/dhcpcd:v0.5
 files:
   - path: etc/init.d/020-fdd-init
     mode: "0700"

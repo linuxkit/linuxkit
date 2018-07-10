@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:4.14.54
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:317b039710f39b0263981cff25cf873043baf561
-  - linuxkit/runc:01b4f0706d999f9065ef44492689e43d0bcd83c5
-  - linuxkit/ca-certificates:ce2692e89d2be341b0d3caa0b0aa01b37d5d0694
+  - linuxkit/init:v0.5
+  - linuxkit/runc:v0.5
+  - linuxkit/ca-certificates:v0.5
 onboot:
   - name: test
     image: alpine:3.8
@@ -13,7 +13,7 @@ onboot:
       - /etc:/host-etc
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:37021954220a932951eca5de5a856865e48cfc00
+    image: linuxkit/poweroff:2687ed712690766b8156a77ac600005b532d2c7d
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh

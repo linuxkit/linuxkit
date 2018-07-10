@@ -33,12 +33,12 @@ kernel:
   image: linuxkit/kernel:4.9.91
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:317b039710f39b0263981cff25cf873043baf561
-  - linuxkit/runc:01b4f0706d999f9065ef44492689e43d0bcd83c5
-  - linuxkit/containerd:9924cc405996bc43a61e050e70284372d2cb09b8
+  - linuxkit/init:v0.5
+  - linuxkit/runc:v0.5
+  - linuxkit/containerd:v0.5
 services:
   - name: getty
-    image: linuxkit/getty:3763a7fc3fddedc185bbd6f7f583f729e57fbeda
+    image: linuxkit/getty:v0.5
     env:
       - INSECURE=true
 trust:

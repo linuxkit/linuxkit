@@ -1,13 +1,13 @@
 # Make modules from a recentish kernel available
 FROM linuxkit/kernel:4.14.28 AS kernel
 
-FROM linuxkit/alpine:6264e5b39af8eb1da7ffa4c05a7ccc597da01197 AS build
+FROM linuxkit/alpine:daed76b8f1d28cdeeee215a95b9671c682a405dc AS build
 RUN apk add --no-cache git kmod
 
 # Clone the firmware repository
 # Make sure you also update the FW_COMMIT in ../firmware-all/Dockerfile
 ENV FW_URL=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
-ENV FW_COMMIT=65b1c68c63f974d72610db38dfae49861117cae2
+ENV FW_COMMIT=d1147327232ec4616a66ab898df84f9700c816c1
 WORKDIR /
 RUN git clone ${FW_URL} && \
     cd /linux-firmware && \
