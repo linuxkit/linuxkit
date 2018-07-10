@@ -3,6 +3,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
+## [v0.5] - 2018-07-10
+### Added
+- New logging support with log rotation.
+- Scaleway provider.
+- Support for v4.17.x kernels.
+- Kernel source are not included in the kernel packages.
+- Improved documentation about debugging LinuxKit.
+
+### Changed
+- Switched to Alpine Linux 3.8 as the base.
+- `containerd` updated to v1.1.1.
+- `pkg/cadvisor` updated to v0.30.2
+- `pkg/node_exporter` updated to 0.16.0
+- WireGuard updated to 0.0.20180708.
+- Linux firmware binaries update to latest.
+- Improved support for building on Windows.
+- Improved support for AWS/GCP metadata.
+- Better handling of reboot/poweroff.
+
+### Removed
+- Support for v4.16.x. kernels as they have been EOLed.
+
+
 ## [v0.4] - 2018-05-12
 ### Added
 - Support for v4.16.x kernels.
