@@ -4,7 +4,7 @@ RUN apk add --no-cache go git musl-dev make
 
 ENV GOPATH=/go PATH=$PATH:/go/bin
 ENV GITREPO=github.com/prometheus/node_exporter
-ENV COMMIT=v0.15.1
+ENV COMMIT=v0.16.0
 
 RUN go get -d ${GITREPO} \
     && cd /go/src/${GITREPO} \
