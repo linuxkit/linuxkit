@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:4.14.54
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:317b039710f39b0263981cff25cf873043baf561
-  - linuxkit/runc:01b4f0706d999f9065ef44492689e43d0bcd83c5
+  - linuxkit/init:v0.5
+  - linuxkit/runc:v0.5
 onboot:
   - name: binfmt
-    image: linuxkit/binfmt:b0d833f5ecd26d6cb991622b1234afd9a0f6ee31
+    image: linuxkit/binfmt:v0.5
   - name: test
     image: alpine:3.8
     binds:
