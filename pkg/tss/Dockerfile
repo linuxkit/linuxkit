@@ -24,8 +24,8 @@ COPY src/glibc_stubs/ /usr/src/glibc_stubs
 WORKDIR /usr/src/glibc_stubs
 RUN make && make install
 
-RUN git clone https://git.code.sf.net/p/trousers/trousers /usr/src/trousers-trousers && cd /usr/src/trousers-trousers && git checkout $TROUSERS_COMMIT
-RUN git clone https://git.code.sf.net/p/trousers/tpm-tools /usr/src/trousers-tpm-tools && cd /usr/src/trousers-tpm-tools && git checkout $TPM_TOOLS_COMMIT
+RUN git clone https://github.com/linuxkit/mirror-trousers.git /usr/src/trousers-trousers && cd /usr/src/trousers-trousers && git checkout $TROUSERS_COMMIT
+RUN git clone https://github.com/linuxkit/mirror-tpm-tools.git /usr/src/trousers-tpm-tools && cd /usr/src/trousers-tpm-tools && git checkout $TPM_TOOLS_COMMIT
 WORKDIR /usr/src/trousers-trousers
 RUN sh bootstrap.sh && \
     ./configure --prefix=/ --sysconfdir=/etc LDFLAGS="-L/out/lib/ -lgetpwent_r" && \
