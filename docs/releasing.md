@@ -182,13 +182,29 @@ Next, we update the LinuxKit packages. This is really the core of the
 release. The other steps above are just there to ensure consistency
 across packages.
 
+
 ```sh
 cd $LK_ROOT/pkg
 ../scripts/update-component-sha.sh --image linuxkit/alpine:$LK_ALPINE
 
 git commit -a -s -m "pkgs: Update packages to latest alpine base"
 git push $LK_REMOTE rel_$LK_RELEASE
+```
 
+Most of the packages are build from `linuxkit/alpine` and source code
+in the `linuxkit` repository, but some packages wrap external
+tools. The time of a release is a good opportunity to check if there
+have been updates. Specifically:
+
+- `pkg/cadvisor`: Check for [new releases](https://github.com/google/cadvisor/releases).
+- `pkg/firmware` and `pkg/firmware-all`: Use latest commit from [here](https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git).
+- `pkg/node_exporter`: Check for [new releases](https://github.com/prometheus/node_exporter/releases).
+- `example/docker.yml`: Check [docker hub](https://hub.docker.com/r/library/docker/tags/) for the latest `dind` tags.
+
+The build/push the packages:
+
+```sh
+cd $LK_ROOT/pkg
 make OPTIONS="-release $LK_RELEASE" push
 ```
 
