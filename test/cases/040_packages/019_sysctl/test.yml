@@ -16,7 +16,7 @@ onboot:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:37021954220a932951eca5de5a856865e48cfc00
+    image: linuxkit/poweroff:2687ed712690766b8156a77ac600005b532d2c7d
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh
