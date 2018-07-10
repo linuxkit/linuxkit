@@ -3,7 +3,7 @@ RUN apk add --no-cache git
 
 # Make sure you also update the FW_COMMIT in ../firmware/Dockerfile
 ENV FW_URL=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
-ENV FW_COMMIT=65b1c68c63f974d72610db38dfae49861117cae2
+ENV FW_COMMIT=d1147327232ec4616a66ab898df84f9700c816c1
 
 RUN mkdir -p /out/lib && \
     cd /out/lib && \
