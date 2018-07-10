@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.14.53
+  image: linuxkit/kernel:4.14.54
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0 root=/dev/vda"
 init:
   - linuxkit/init:317b039710f39b0263981cff25cf873043baf561
