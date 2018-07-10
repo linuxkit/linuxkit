@@ -1,7 +1,7 @@
 VERSION="v0.4+"
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=linuxkit/go-compile:a8031514cbd017cd10207de56be3434b9d7c6fd7
+GO_COMPILE=linuxkit/go-compile:49a2e8f8672ca95ad0159eebcc631773503465c1
 
 ifeq ($(OS),Windows_NT)
 LINUXKIT?=bin/linuxkit.exe
