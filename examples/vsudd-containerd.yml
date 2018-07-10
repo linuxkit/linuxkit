@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:4.14.53
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:720920b4a1b4dd90c99e8f91d543381798c4c3cb
+  - linuxkit/init:317b039710f39b0263981cff25cf873043baf561
   - linuxkit/runc:01b4f0706d999f9065ef44492689e43d0bcd83c5
-  - linuxkit/containerd:92c92a485b881b7b589ccc4a6279224931c8cadf
+  - linuxkit/containerd:9924cc405996bc43a61e050e70284372d2cb09b8
 onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:0aa201ad1a4c134f0ed6ab2cec23602d5ee73d7f
