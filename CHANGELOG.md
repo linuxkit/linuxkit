@@ -8,7 +8,7 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 - New logging support with log rotation.
 - Scaleway provider.
 - Support for v4.17.x kernels.
-- Kernel source are not included in the kernel packages.
+- Kernel source are now included in the kernel packages.
 - Improved documentation about debugging LinuxKit.
 
 ### Changed
