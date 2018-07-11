@@ -1,4 +1,4 @@
-# linuxkit/alpine:daed76b8f1d28cdeeee215a95b9671c682a405dc-amd64
+# linuxkit/alpine:cbf183a92cb4800c4129c2b9bb6e4d3eb3226330-amd64
 # automatically generated list of installed packages
 abuild-3.2.0-r0
 alpine-baselayout-3.1.0-r0
@@ -31,6 +31,10 @@ ca-certificates-20171114-r3
 cdrkit-1.1.11-r2
 celt051-0.5.1.3-r0
 cifs-utils-6.8-r0
+clang-5.0.1-r1
+clang-dev-5.0.1-r1
+clang-libs-5.0.1-r1
+clang-static-5.0.1-r1
 cmake-3.11.1-r2
 cmake-bash-completion-3.11.1-r2
 coreutils-8.29-r2
@@ -62,7 +66,11 @@ file-5.32-r0
 findmnt-2.32-r0
 findutils-4.6.0-r1
 flex-2.6.4-r1
+flex-dev-2.6.4-r1
+flex-libs-2.6.4-r1
 fortify-headers-0.9-r0
+fts-1.2.7-r1
+fts-dev-1.2.7-r1
 fuse-2.9.7-r1
 g++-6.4.0-r8
 gc-7.6.4-r2
@@ -127,6 +135,7 @@ libcrypto1.0-1.0.2o-r1
 libcurl-7.60.0-r1
 libdrm-2.4.92-r0
 libedit-20170329.3.1-r3
+libedit-dev-20170329.3.1-r3
 libelf-0.8.13-r3
 libelf-dev-0.8.13-r3
 libepoxy-1.4.3-r1
@@ -188,8 +197,14 @@ libxdmcp-1.1.2-r4
 libxkbcommon-0.7.1-r1
 libxml2-2.9.8-r0
 linux-headers-4.4.6-r2
+llvm5-5.0.1-r4
+llvm5-dev-5.0.1-r4
+llvm5-libs-5.0.1-r4
+llvm5-static-5.0.1-r4
 lsscsi-0.28-r0
 lua5.3-libs-5.3.4-r5
+luajit-2.1.0_beta3-r4
+luajit-dev-2.1.0_beta3-r4
 lz4-libs-1.8.2-r0
 lzip-1.20-r0
 lzo-2.10-r2
@@ -240,6 +255,7 @@ pinentry-1.1.0-r0
 pixman-0.34.0-r5
 pkgconf-1.5.1-r0
 popt-1.16-r7
+python2-2.7.15-r0
 python3-3.6.4-r1
 qemu-2.12.0-r3
 qemu-aarch64-2.12.0-r3
@@ -287,7 +303,7 @@ util-linux-dev-2.32-r0
 vde2-libs-2.3.2-r9
 vim-8.1.0115-r0
 wayland-libs-server-1.15.0-r0
-wireguard-tools-0.0.20180625-r0
+wireguard-tools-0.0.20180708-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r13
 wpa_supplicant-openrc-2.6-r13
