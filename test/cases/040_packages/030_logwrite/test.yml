@@ -13,7 +13,7 @@ services:
     image: alpine
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); done" ]
   - name: write-and-rotate-logs
-    image: linuxkit/logwrite:v0.5
+    image: linuxkit/logwrite:d9778c0d538094d398cf0cbfc89277aeca67f1be
     command: ["/usr/bin/logwrite", "-max-log-size", "1024"]
   - name: check-the-logs
     image: alpine:3.8

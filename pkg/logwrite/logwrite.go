@@ -62,15 +62,15 @@ func ParseLogMessage(line string) (*LogMessage, error) {
 // LogFile is where we write LogMessages to
 type LogFile struct {
 	File         *os.File // active file handle
-	Name         string   // filename of log file
-	Dir          string   // log file directory
+	Path         string   // Path to the logfile
 	BytesWritten int      // total number of bytes written so far
 }
 
 // NewLogFile creates a new LogFile.
 func NewLogFile(dir, name string) (*LogFile, error) {
 	// If the log exists already we want to append to it.
-	f, err := os.OpenFile(filepath.Join(dir, name), os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	p := filepath.Join(dir, name+".log")
+	f, err := os.OpenFile(p, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		return nil, err
 	}
@@ -80,8 +80,7 @@ func NewLogFile(dir, name string) (*LogFile, error) {
 	}
 	return &LogFile{
 		File:         f,
-		Name:         name,
-		Dir:          dir,
+		Path:         p,
 		BytesWritten: int(fi.Size()),
 	}, nil
 }
@@ -106,15 +105,14 @@ func (l *LogFile) Rotate(maxLogFiles int) error {
 	if err := l.File.Close(); err != nil {
 		return err
 	}
-	path := filepath.Join(l.Dir, l.Name)
 	for i := maxLogFiles - 1; i >= 0; i-- {
-		newerFile := fmt.Sprintf("%s.%d", path, i-1)
+		newerFile := fmt.Sprintf("%s.%d", l.Path, i-1)
 		// special case: if index is 0 we omit the suffix i.e. we expect
 		// foo foo.1 foo.2 up to foo.<maxLogFiles-1>
 		if i == 0 {
-			newerFile = path
+			newerFile = l.Path
 		}
-		olderFile := fmt.Sprintf("%s.%d", path, i)
+		olderFile := fmt.Sprintf("%s.%d", l.Path, i)
 		// overwrite the olderFile with the newerFile
 		err := os.Rename(newerFile, olderFile)
 		if os.IsNotExist(err) {
@@ -125,7 +123,7 @@ func (l *LogFile) Rotate(maxLogFiles int) error {
 			return err
 		}
 	}
-	f, err := os.Create(path)
+	f, err := os.Create(l.Path)
 	if err != nil {
 		return err
 	}

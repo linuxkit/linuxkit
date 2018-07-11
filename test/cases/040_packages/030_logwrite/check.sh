@@ -1,7 +1,7 @@
 #!/bin/sh
 
 for i in $(seq 1 20); do
-	if [ -e /var/log/fill-the-logs.out.0 ]; then
+	if [ -e /var/log/fill-the-logs.out.log.0 ]; then
 		printf "logwrite test suite PASSED\n" > /dev/console
 		/sbin/poweroff -f
 	fi
