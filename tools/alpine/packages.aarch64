@@ -1,2 +1,3 @@
 libunwind-dev
+luajit-dev
 qemu-system-aarch64

@@ -22,6 +22,9 @@ busybox-initscripts
 ca-certificates
 cdrkit
 cifs-utils
+clang
+clang-dev
+clang-static
 cmake
 coreutils
 cryptsetup
@@ -38,6 +41,8 @@ ethtool
 expect
 findutils
 flex
+flex-dev
+fts-dev
 gcc
 gettext
 gettext-dev
@@ -60,12 +65,16 @@ libc-dev
 libc-utils
 libc6-compat
 libcap-ng-dev
+libedit-dev
 libelf-dev
 libressl-dev
 libseccomp-dev
 libtirpc-dev
 libtool
 linux-headers
+llvm
+llvm-dev
+llvm-static
 lsscsi
 make
 mpc1-dev
@@ -83,6 +92,7 @@ openssl
 openssl-dev
 patch
 pigz
+python
 python3
 qemu-aarch64
 qemu-arm
