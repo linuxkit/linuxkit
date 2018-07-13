@@ -87,7 +87,7 @@ func runcInit(rootPath, serviceType string) int {
 		}
 		defer stdout.Close()
 
-		stderrLog := serviceType + "." + name + ".err"
+		stderrLog := serviceType + "." + name
 		stderr, err := logger.Open(stderrLog)
 		if err != nil {
 			log.Printf("Error opening stderr log connection: %v", err)

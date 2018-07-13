@@ -202,7 +202,7 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 
 	io := func(id string) (cio.IO, error) {
 		stdoutFile := logger.Path(service + ".out")
-		stderrFile := logger.Path(service + ".err")
+		stderrFile := logger.Path(service)
 		return &logio{
 			cio.Config{
 				Stdin:    "/dev/null",
