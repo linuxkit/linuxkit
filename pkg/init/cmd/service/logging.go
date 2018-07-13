@@ -29,6 +29,7 @@ type Log interface {
 	Path(string) string                  // Path of the log file (may be a FIFO)
 	Open(string) (io.WriteCloser, error) // Opens a log stream
 	Dump(string)                         // Copies logs to the console
+	Symlink(string)                      // Symlinks to the log directory (if there is one)
 }
 
 // GetLog returns the log destination we should use.
@@ -79,6 +80,16 @@ func (f *fileLog) Dump(n string) {
 	path := f.localPath(n)
 	if err := dumpFile(os.Stdout, path); err != nil {
 		fmt.Printf("Error writing %s to console: %v", path, err)
+	}
+}
+
+// Symlinks to the log directory. This is useful if we are logging directly to tmpfs and now need to symlink from a permanent disk.
+func (f *fileLog) Symlink(path string) {
+	parent := filepath.Dir(path)
+	if err := os.MkdirAll(parent, 0755); err != nil {
+		log.Printf("Error creating secondary log directory %s: %v", parent, err)
+	} else if err := os.Symlink(f.dir, path); err != nil && !os.IsExist(err) {
+		log.Printf("Error creating symlink from %s to %s: %v", path, f.dir, err)
 	}
 }
 
@@ -162,6 +173,11 @@ func (r *remoteLog) Dump(n string) {
 			fmt.Print(line)
 		}
 	}
+}
+
+// Symlinks to the log directory. This is a no-op because there is no log directory.
+func (r *remoteLog) Symlink(path string) {
+	return
 }
 
 func sendToLogger(name string, fd int) error {
