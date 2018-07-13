@@ -27,7 +27,7 @@ services:
   - name: write-and-rotate-logs
     image: linuxkit/logwrite:d9778c0d538094d398cf0cbfc89277aeca67f1be
   - name: kmsg
-    image: linuxkit/kmsg:v0.5
+    image: linuxkit/kmsg:cf3dc833591838596427aac032c829ea592599d0
 trust:
   org:
     - linuxkit
