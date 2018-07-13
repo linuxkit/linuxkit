@@ -113,7 +113,7 @@ cd $LK_ROOT/tools
 ../scripts/update-component-sha.sh --image linuxkit/alpine:$LK_ALPINE
 git checkout alpine/versions.aarch64 alpine/versions.s390x
 
-git commit -a -s -m "tools: Update to latest alpine base"
+git commit -a -s -m "tools: Update to the latest linuxkit/alpine"
 git push $LK_REMOTE rel_$LK_RELEASE
 
 make forcepush
@@ -151,7 +151,7 @@ Next, we update the test packages to the updated alpine base on the `x86_64` sys
 cd $LK_ROOT/test/pkg
 ../../scripts/update-component-sha.sh --image linuxkit/alpine:$LK_ALPINE
 
-git commit -a -s -m "tests: Update packages to latest alpine base"
+git commit -a -s -m "tests: Update packages to the latest linuxkit/alpine"
 git push $LK_REMOTE rel_$LK_RELEASE
 
 make push
@@ -176,6 +176,15 @@ done
 git commit -a -s -m "Update use of test packages to latest"
 ```
 
+Some tests also use `linuxkit/alpine`. Update them as well:
+
+```sh
+cd $LK_ROOT/test/cases
+../../scripts/update-component-sha.sh --image linuxkit/alpine:$LK_ALPINE
+
+git commit -a -s -m "tests: Update tests cases to the latest linuxkit/alpine"
+```
+
 ### Update packages
 
 Next, we update the LinuxKit packages. This is really the core of the
@@ -187,7 +196,7 @@ across packages.
 cd $LK_ROOT/pkg
 ../scripts/update-component-sha.sh --image linuxkit/alpine:$LK_ALPINE
 
-git commit -a -s -m "pkgs: Update packages to latest alpine base"
+git commit -a -s -m "pkgs: Update packages to the latest linuxkit/alpine"
 git push $LK_REMOTE rel_$LK_RELEASE
 ```
 
