@@ -5,6 +5,7 @@ package main
 import (
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/euank/go-kmsg-parser/kmsgparser"
@@ -20,6 +21,6 @@ func main() {
 	kmsg := parser.Parse()
 
 	for msg := range kmsg {
-		fmt.Printf("(%d) - %s: %s", msg.SequenceNumber, msg.Timestamp.Format(time.RFC3339Nano), msg.Message)
+		fmt.Fprintf(os.Stderr, "(%d) - %s: %s", msg.SequenceNumber, msg.Timestamp.Format(time.RFC3339Nano), msg.Message)
 	}
 }
