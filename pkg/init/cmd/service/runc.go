@@ -87,7 +87,7 @@ func runcInit(rootPath, serviceType string) int {
 		}
 		defer stdout.Close()
 
-		stderrLog := serviceType + "." + name + ".err"
+		stderrLog := serviceType + "." + name
 		stderr, err := logger.Open(stderrLog)
 		if err != nil {
 			log.Printf("Error opening stderr log connection: %v", err)
@@ -160,11 +160,7 @@ func runcInit(rootPath, serviceType string) int {
 	_ = os.RemoveAll(tmpdir)
 
 	// make sure the link exists from /var/log/onboot -> /run/log/onboot
-	if err := os.MkdirAll(varLogDir, 0755); err != nil {
-		log.Printf("Error creating secondary log directory %s: %v", varLogDir, err)
-	} else if err := os.Symlink(logDir, varLogLink); err != nil && !os.IsExist(err) {
-		log.Printf("Error creating symlink from %s to %s: %v", varLogLink, logDir, err)
-	}
+	logger.Symlink(varLogLink)
 
 	return status
 }
