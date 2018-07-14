@@ -1,4 +1,4 @@
-From 5691a3c7337cc0fd044ef4144af28c733371feb9 Mon Sep 17 00:00:00 2001
+From ed82181328c74fd840857821ae896c93e29dd4ba Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Tue, 31 Oct 2017 14:58:08 -0700
 Subject: [PATCH 21/21] scsi: storvsc: Avoid excessive host scan on controller
@@ -106,5 +106,5 @@ index e94f75e25cb1..66b1b6ad0ae0 100644
  	ret = scsi_add_host(host, &device->device);
  	if (ret != 0)
 -- 
-2.16.0
+2.18.0
 
