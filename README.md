@@ -58,8 +58,6 @@ linuxkit build linuxkit.yml
 to build the example configuration. You can also specify different output formats, eg `linuxkit build -format raw-bios linuxkit.yml` to
 output a raw BIOS bootable disk image, or `linuxkit build -format iso-efi linuxkit.yml` to output an EFI bootable ISO image. See `linuxkit build -help` for more information.
 
-Since `linuxkit build` is built around the [Moby tool](https://github.com/moby/tool) the input yml files are described in the [Moby tool documentation](https://github.com/moby/tool/blob/master/docs/yaml.md).
-
 ### Booting and Testing
 
 You can use `linuxkit run <name>` or `linuxkit run <name>.<format>` to
@@ -117,7 +115,7 @@ To customise, copy or modify the [`linuxkit.yml`](linuxkit.yml) to your own `fil
 generate its specified output. You can run the output with `linuxkit run file`.
 
 The yaml file specifies a kernel and base init system, a set of containers that are built into the generated image and started at boot time. You can specify the type
-of artifact to build with the `moby` tool eg `linuxkit build -format vhd linuxkit.yml`.
+of artifact to build eg `linuxkit build -format vhd linuxkit.yml`.
 
 If you want to build your own packages, see this [document](docs/packages.md).
 
@@ -131,7 +129,7 @@ The yaml format specifies the image to be built:
 - `services` is the system services, which normally run for the whole time the system is up
 - `files` are additional files to add to the image
 
-For a more detailed overview of the options see [yaml documentation](https://github.com/moby/tool/blob/master/docs/yaml.md)
+For a more detailed overview of the options see [yaml documentation](docs/yaml.md)
 
 ## Architecture and security
 

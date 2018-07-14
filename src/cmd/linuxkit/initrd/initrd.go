@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/moby/tool/src/pad4"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pad4"
 	"github.com/surma/gocpio"
 )
 

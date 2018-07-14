@@ -14,7 +14,7 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-// Note these definitions are from moby/tool/src/moby/config.go and should be kept in sync
+// Note these definitions are from src/moby/config.go and should be kept in sync
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
 type Runtime struct {
