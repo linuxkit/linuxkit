@@ -30,7 +30,7 @@ YAML file (`minimal.yml`):
 
 ```
 kernel:
-  image: linuxkit/kernel:4.9.91
+  image: linuxkit/kernel:4.9.112
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:3f1e5c32d6ca9e83a7ea7ad9854da2032971a83f
