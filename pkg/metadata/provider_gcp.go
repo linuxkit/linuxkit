@@ -97,7 +97,7 @@ func gcpGet(url string) ([]byte, error) {
 // TODO split them into individual user files and make the ssh
 //      container construct those users
 func (p *ProviderGCP) handleSSH() error {
-	sshKeys, err := gcpGet(project + "attributes/sshKeys")
+	sshKeys, err := gcpGet(project + "attributes/ssh-keys")
 	if err != nil {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}
