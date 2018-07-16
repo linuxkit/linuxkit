@@ -1,4 +1,4 @@
-# linuxkit/alpine:cbf183a92cb4800c4129c2b9bb6e4d3eb3226330-amd64
+# linuxkit/alpine:8a89682421abf0d886d777235a05f4a04a736df2-amd64
 # automatically generated list of installed packages
 abuild-3.2.0-r0
 alpine-baselayout-3.1.0-r0
@@ -40,7 +40,7 @@ cmake-bash-completion-3.11.1-r2
 coreutils-8.29-r2
 cryptsetup-2.0.2-r3
 cryptsetup-libs-2.0.2-r3
-curl-7.60.0-r1
+curl-7.61.0-r0
 db-5.3.28-r0
 dbus-libs-1.10.24-r1
 device-mapper-libs-2.02.178-r0
@@ -132,7 +132,7 @@ libcap-ng-0.7.9-r0
 libcap-ng-dev-0.7.9-r0
 libcom_err-1.44.2-r0
 libcrypto1.0-1.0.2o-r1
-libcurl-7.60.0-r1
+libcurl-7.61.0-r0
 libdrm-2.4.92-r0
 libedit-20170329.3.1-r3
 libedit-dev-20170329.3.1-r3
