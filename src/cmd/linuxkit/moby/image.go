@@ -72,6 +72,7 @@ func tarPrefix(path string, tw tarWriter) error {
 			Name:     mkdir,
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
+			Format:   tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -217,9 +218,10 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	}
 
 	hdr := &tar.Header{
-		Name: path.Join(prefix, "config.json"),
-		Mode: 0644,
-		Size: int64(len(config)),
+		Name:   path.Join(prefix, "config.json"),
+		Mode:   0644,
+		Size:   int64(len(config)),
+		Format: tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
@@ -237,6 +239,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			Name:     tmp,
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
+			Format:   tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -246,6 +249,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			Name:     path.Join(prefix, "rootfs"),
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
+			Format:   tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -264,6 +268,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 				Name:     path.Join(prefix, "rootfs"),
 				Mode:     0755,
 				Typeflag: tar.TypeDir,
+				Format:   tar.FormatPAX,
 			}
 			if err := tw.WriteHeader(hdr); err != nil {
 				return err
@@ -286,9 +291,10 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	}
 
 	hdr = &tar.Header{
-		Name: path.Join(prefix, "runtime.json"),
-		Mode: 0644,
-		Size: int64(len(runtimeConfig)),
+		Name:   path.Join(prefix, "runtime.json"),
+		Mode:   0644,
+		Size:   int64(len(runtimeConfig)),
+		Format: tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err

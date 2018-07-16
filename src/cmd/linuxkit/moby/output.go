@@ -10,23 +10,23 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/moby/tool/src/initrd"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/initrd"
 	log "github.com/sirupsen/logrus"
 )
 
 var (
 	outputImages = map[string]string{
-		"iso-bios":    "linuxkit/mkimage-iso-bios:9a51dc64a461f1cc50ba05f30a38f73f5227ac03",
-		"iso-efi":     "linuxkit/mkimage-iso-efi:343cf1a8ac0aba7d8a1f13b7f45fa0b57ab897dc",
-		"raw-bios":    "linuxkit/mkimage-raw-bios:d90713b2dd610cf9a0f5f9d9095f8bf86f40d5c6",
-		"raw-efi":     "linuxkit/mkimage-raw-efi:8938ffb6014543e557b624a40cce1714f30ce4b6",
-		"squashfs":    "linuxkit/mkimage-squashfs:b44d00b0a336fd32c122ff32bd2b39c36a965135",
+		"iso-bios":    "linuxkit/mkimage-iso-bios:fd0092700bc19ea36cc8dccccc9799b7847b4909",
+		"iso-efi":     "linuxkit/mkimage-iso-efi:79148c60bbf2a9526d976d708840492d85b0c576",
+		"raw-bios":    "linuxkit/mkimage-raw-bios:0ff04de5d11a88b0712cdc85b2ee5f0b966ffccf",
+		"raw-efi":     "linuxkit/mkimage-raw-efi:084f159cb44dc6c22351a70f1c1a043857be4e12",
+		"squashfs":    "linuxkit/mkimage-squashfs:36f3fa106cfb7f8b818a828d7aebb27f946c9526",
 		"gcp":         "linuxkit/mkimage-gcp:e6cdcf859ab06134c0c37a64ed5f886ec8dae1a1",
-		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:787b54906e14a56b9f1da35dcc8e46bd58435285",
+		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:0eb853459785fad0b518d8edad3b7434add6ad96",
 		"vhd":         "linuxkit/mkimage-vhd:3820219e5c350fe8ab2ec6a217272ae82f4b9242",
 		"dynamic-vhd": "linuxkit/mkimage-dynamic-vhd:743ac9959fe6d3912ebd78b4fd490b117c53f1a6",
 		"vmdk":        "linuxkit/mkimage-vmdk:cee81a3ed9c44ae446ef7ebff8c42c1e77b3e1b5",
-		"rpi3":        "linuxkit/mkimage-rpi3:0f23c4f37cdca99281ca33ac6188e1942fa7a2b8",
+		"rpi3":        "linuxkit/mkimage-rpi3:be740259f3b49bfe46f5322e22709c3af2111b33",
 	}
 )
 
@@ -273,9 +273,10 @@ func tarInitrdKernel(kernel, initrd []byte, cmdline string) (*bytes.Buffer, erro
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
 	hdr := &tar.Header{
-		Name: "kernel",
-		Mode: 0600,
-		Size: int64(len(kernel)),
+		Name:   "kernel",
+		Mode:   0600,
+		Size:   int64(len(kernel)),
+		Format: tar.FormatPAX,
 	}
 	err := tw.WriteHeader(hdr)
 	if err != nil {
@@ -286,9 +287,10 @@ func tarInitrdKernel(kernel, initrd []byte, cmdline string) (*bytes.Buffer, erro
 		return buf, err
 	}
 	hdr = &tar.Header{
-		Name: "initrd.img",
-		Mode: 0600,
-		Size: int64(len(initrd)),
+		Name:   "initrd.img",
+		Mode:   0600,
+		Size:   int64(len(initrd)),
+		Format: tar.FormatPAX,
 	}
 	err = tw.WriteHeader(hdr)
 	if err != nil {
@@ -299,9 +301,10 @@ func tarInitrdKernel(kernel, initrd []byte, cmdline string) (*bytes.Buffer, erro
 		return buf, err
 	}
 	hdr = &tar.Header{
-		Name: "cmdline",
-		Mode: 0600,
-		Size: int64(len(cmdline)),
+		Name:   "cmdline",
+		Mode:   0600,
+		Size:   int64(len(cmdline)),
+		Format: tar.FormatPAX,
 	}
 	err = tw.WriteHeader(hdr)
 	if err != nil {
@@ -389,9 +392,10 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	defer f.Close()
 	tw := tar.NewWriter(f)
 	hdr := &tar.Header{
-		Name: "kernel",
-		Mode: 0644,
-		Size: int64(len(kernel)),
+		Name:   "kernel",
+		Mode:   0644,
+		Size:   int64(len(kernel)),
+		Format: tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
@@ -400,9 +404,10 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 		return err
 	}
 	hdr = &tar.Header{
-		Name: "initrd.img",
-		Mode: 0644,
-		Size: int64(len(initrd)),
+		Name:   "initrd.img",
+		Mode:   0644,
+		Size:   int64(len(initrd)),
+		Format: tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
@@ -411,9 +416,10 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 		return err
 	}
 	hdr = &tar.Header{
-		Name: "cmdline",
-		Mode: 0644,
-		Size: int64(len(cmdline)),
+		Name:   "cmdline",
+		Mode:   0644,
+		Size:   int64(len(cmdline)),
+		Format: tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
@@ -423,9 +429,10 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	}
 	if len(ucode) != 0 {
 		hdr := &tar.Header{
-			Name: "ucode.cpio",
-			Mode: 0644,
-			Size: int64(len(ucode)),
+			Name:   "ucode.cpio",
+			Mode:   0644,
+			Size:   int64(len(ucode)),
+			Format: tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -454,6 +461,7 @@ func outputKernelSquashFS(image, base string, filesystem io.Reader) error {
 		if err != nil {
 			return err
 		}
+		thdr.Format = tar.FormatPAX
 		switch {
 		case thdr.Name == "boot/kernel":
 			kernel, err := ioutil.ReadAll(tr)
