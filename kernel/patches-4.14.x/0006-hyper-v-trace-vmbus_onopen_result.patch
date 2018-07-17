@@ -1,4 +1,4 @@
-From 7a231f6d7bb39546b4b0c32ef50a5b6f66687f17 Mon Sep 17 00:00:00 2001
+From 4eef38eb70a76f06b13df1e5d4dee345cd97aee5 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:04 -0700
 Subject: [PATCH 06/21] hyper-v: trace vmbus_onopen_result()
@@ -56,5 +56,5 @@ index dbbed1d1f327..9757c19d1c08 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.18.0
+2.16.0
 
