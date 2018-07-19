@@ -4,6 +4,7 @@ package moby
 // and also using the Docker API not shelling out
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -18,7 +19,6 @@ import (
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
 )
 
 func dockerRun(input io.Reader, output io.Writer, trust bool, img string, args ...string) error {
