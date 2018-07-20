@@ -70,11 +70,11 @@ func main() {
 
 	raddr := net.UnixAddr{Name: serverSocket, Net: "unixgram"}
 
-	if err = sendFD(conn, &raddr, name+".stdout", remoteStdoutFd); err != nil {
+	if err = sendFD(conn, &raddr, name+".out", remoteStdoutFd); err != nil {
 		log.Fatal("fd stdout send failed: ", err)
 	}
 
-	if err = sendFD(conn, &raddr, name+".stderr", remoteStderrFd); err != nil {
+	if err = sendFD(conn, &raddr, name, remoteStderrFd); err != nil {
 		log.Fatal("fd stderr send failed: ", err)
 	}
 

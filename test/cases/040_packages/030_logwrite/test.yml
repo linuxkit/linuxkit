@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:v0.5
   - linuxkit/containerd:0784cc754edb296b996c3510abbdf69686ef0f24
   - linuxkit/ca-certificates:v0.5
-  - linuxkit/memlogd:v0.5
+  - linuxkit/memlogd:ba4fcf55c35a3833546a1e39125bf0fa940327b0
 services:
 # A service which generates logs of log messages
   - name: fill-the-logs
