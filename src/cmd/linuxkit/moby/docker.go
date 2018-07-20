@@ -4,6 +4,7 @@ package moby
 // and also using the Docker API not shelling out
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,12 +14,23 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/docker/cli/cli/command"
+	"github.com/docker/cli/cli/config"
+	"github.com/docker/cli/cli/config/configfile"
+	distref "github.com/docker/distribution/reference"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
+	"github.com/docker/docker/registry"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/context"
+)
+
+var (
+	// configFile is a cached copy of the client config file
+	configFile *configfile.ConfigFile
+	// authCache maps a registry URL to encoded authentication
+	authCache map[string]string
 )
 
 func dockerRun(input io.Reader, output io.Writer, trust bool, img string, args ...string) error {
@@ -146,7 +158,8 @@ func dockerPull(ref *reference.Spec, forcePull, trustedPull bool) error {
 	}
 
 	log.Infof("Pull image: %s", ref)
-	r, err := cli.ImagePull(context.Background(), ref.String(), types.ImagePullOptions{})
+	pullOptions := types.ImagePullOptions{RegistryAuth: getAuth(cli, ref.String())}
+	r, err := cli.ImagePull(context.Background(), ref.String(), pullOptions)
 	if err != nil {
 		return err
 	}
@@ -190,4 +203,49 @@ func dockerInspectImage(cli *client.Client, ref *reference.Spec, trustedPull boo
 	log.Debugf("docker inspect image: %s...Done", ref)
 
 	return inspect, nil
+}
+
+// getAuth attempts to get an encoded authentication spec for a reference
+// This function does not error. It simply returns a empty string if something fails.
+func getAuth(cli *client.Client, refStr string) string {
+	// Initialise state on first use
+	if authCache == nil {
+		authCache = make(map[string]string)
+	}
+	if configFile == nil {
+		configFile = config.LoadDefaultConfigFile(ioutil.Discard)
+	}
+
+	// Normalise ref
+	ref, err := distref.ParseNormalizedNamed(refStr)
+	if err != nil {
+		log.Debugf("Failed to parse reference %s: %v: %v", refStr, err)
+		return ""
+	}
+	hostname := distref.Domain(ref)
+	// Special case for docker.io which currently is stored as https://index.docker.io/v1/ in authentication map.
+	// Other registries are stored under their domain name.
+	if hostname == registry.IndexName {
+		hostname = registry.IndexServer
+	}
+
+	// Look up in cache
+	if val, ok := authCache[hostname]; ok {
+		log.Debugf("Returning cached credentials for %s", hostname)
+		return val
+	}
+
+	authConfig, err := configFile.GetAuthConfig(hostname)
+	if err != nil {
+		log.Debugf("Failed to get authentication config for %s. Ignoring: %v", hostname, err)
+		return ""
+	}
+	log.Debugf("Looked up credentials for %s", hostname)
+
+	encodedAuth, err := command.EncodeAuthToBase64(authConfig)
+	if err != nil {
+		return ""
+	}
+	authCache[hostname] = encodedAuth
+	return encodedAuth
 }

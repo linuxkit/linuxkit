@@ -1,6 +1,6 @@
 # Configuration Reference
 
-The `moby` tool assembles a set of containerised components into in image. The simplest
+The `linuxkit build` command assembles a set of containerised components into in image. The simplest
 type of image is just a `tar` file of the contents (useful for debugging) but more useful
 outputs add a `Dockerfile` to build a container, or build a full disk image that can be
 booted as a linuxKit VM. The main use case is to build an assembly that includes
@@ -9,6 +9,11 @@ booted as a linuxKit VM. The main use case is to build an assembly that includes
 The yaml configuration specifies the components used to build up an image . All components
 are downloaded at build time to create an image. The image is self-contained and immutable,
 so it can be tested reliably for continuous delivery.
+
+Components are specified as Docker images which are pulled from a registry during build if they
+are not available locally. The Docker images are optionally verified with Docker Content Trust.
+For private registries or private repositories on a registry credentials provided via
+`docker login` are re-used. 
 
 The configuration file is processed in the order `kernel`, `init`, `onboot`, `onshutdown`,
 `services`, `files`. Each section adds files to the root file system. Sections may be omitted.
