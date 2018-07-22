@@ -52,11 +52,11 @@ RUN go get -u github.com/LK4D4/vndr
 # checkout and compile containerd
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
-ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.1.2
+ARG CONTAINERD_REPO=https://github.com/containerd/containerd.git
+ARG CONTAINERD_COMMIT=v1.1.2
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
-  git clone https://github.com/containerd/containerd.git && \
+  git clone ${CONTAINERD_REPO} && \
   cd $GOPATH/src/github.com/containerd/containerd && \
   git checkout $CONTAINERD_COMMIT
 RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make libseccomp-dev
