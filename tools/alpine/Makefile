@@ -30,7 +30,11 @@ show-tag:
 	@sed -n -e '1s/# \(.*\/.*:[0-9a-f]\{40\}\)/\1/p;q' versions.$(ARCH)
 
 iid: Dockerfile Makefile $(DEPS)
-	docker build --no-cache --iidfile iid .
+	docker build --no-cache \
+		--iidfile iid \
+		--build-arg CONTAINERD_REPO \
+		--build-arg CONTAINERD_COMMIT \
+		.
 
 hash: Makefile iid
 	docker run --rm $(shell cat iid) sh -c 'echo Dockerfile /lib/apk/db/installed $$(find /mirror -name '*.apk' -type f) $$(find /go/bin -type f) | xargs cat | sha1sum' | sed 's/ .*//' | sed 's/$$/$(SUFFIX)/'> $@
