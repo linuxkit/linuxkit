@@ -17,6 +17,7 @@ type pkgInfo struct {
 	Image               string            `yaml:"image"`
 	Org                 string            `yaml:"org"`
 	Arches              []string          `yaml:"arches"`
+	ExtraSources        []string          `yaml:"extra-sources"`
 	GitRepo             string            `yaml:"gitrepo"` // ??
 	Network             bool              `yaml:"network"`
 	DisableContentTrust bool              `yaml:"disable-content-trust"`
@@ -32,12 +33,19 @@ type pkgInfo struct {
 	} `yaml:"depends"`
 }
 
+// Specifies the source directory for a package and their destination in the build context.
+type pkgSource struct {
+	src string
+	dst string
+}
+
 // Pkg encapsulates information about a package's source
 type Pkg struct {
 	// These correspond to pkgInfo fields
 	image         string
 	org           string
 	arches        []string
+	sources       []pkgSource
 	gitRepo       string
 	network       bool
 	trust         bool
@@ -199,6 +207,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		hash:          hash,
 		commitHash:    hashCommit,
 		arches:        pi.Arches,
+		sources:       pi.Sources,
 		gitRepo:       pi.GitRepo,
 		network:       pi.Network,
 		trust:         !pi.DisableContentTrust,
