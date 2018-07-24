@@ -1,0 +1,18 @@
+#!/bin/sh
+
+set -e
+
+mkdir -p /tmp/iso
+cd /tmp/iso
+
+# input is a tarball of filesystem on stdin
+# output is an iso on stdout
+
+# extract. BSD tar auto recognises compression, unlike GNU tar
+# only if stdin is a tty, if so need files volume mounted...
+[ -t 0 ] || bsdtar xzf -
+
+genisoimage -o ../linuxkit.iso -l -J -R \
+		-joliet-long -input-charset utf8 \
+                -V LinuxKit .
+cat ../linuxkit.iso
