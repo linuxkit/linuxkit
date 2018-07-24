@@ -1,11 +1,13 @@
 package pkglib
 
 import (
+	"crypto/sha1"
 	"flag"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -177,6 +179,37 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		}
 	})
 
+	var srcHashes string
+	sources := []pkgSource{{src: pkgPath, dst: "/"}}
+
+	for _, source := range pi.ExtraSources {
+		tmp := strings.Split(source, ":")
+		if len(tmp) != 2 {
+			return Pkg{}, fmt.Errorf("Bad source format in %s", source)
+		}
+		srcPath := filepath.Clean(tmp[0]) // Should work with windows paths
+		dstPath := path.Clean(tmp[1])     // 'path' here because this should be a Unix path
+
+		if !filepath.IsAbs(srcPath) {
+			srcPath = filepath.Join(pkgPath, srcPath)
+		}
+
+		g, err := newGit(srcPath)
+		if err != nil {
+			return Pkg{}, err
+		}
+		if g == nil {
+			return Pkg{}, fmt.Errorf("Source %s not in a git repository", srcPath)
+		}
+		h, err := g.treeHash(srcPath, hashCommit)
+		if err != nil {
+			return Pkg{}, err
+		}
+
+		srcHashes += h
+		sources = append(sources, pkgSource{src: srcPath, dst: dstPath})
+	}
+
 	git, err := newGit(pkgPath)
 	if err != nil {
 		return Pkg{}, err
@@ -195,6 +228,11 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 				return Pkg{}, err
 			}
 
+			if srcHashes != "" {
+				hash += srcHashes
+				hash = fmt.Sprintf("%x", sha1.Sum([]byte(hash)))
+			}
+
 			if dirty {
 				hash += "-dirty"
 			}
@@ -207,7 +245,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		hash:          hash,
 		commitHash:    hashCommit,
 		arches:        pi.Arches,
-		sources:       pi.Sources,
+		sources:       sources,
 		gitRepo:       pi.GitRepo,
 		network:       pi.Network,
 		trust:         !pi.DisableContentTrust,
