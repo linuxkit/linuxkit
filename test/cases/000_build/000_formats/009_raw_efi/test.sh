@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that raw output format is generated
+# SUMMARY: Check that raw-efi output format is generated
 # LABELS:
 
 set -e

@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that kernel+squashfs output format is generated
+# SUMMARY: Check that kernel+iso output format is generated
 # LABELS:
 
 set -e
@@ -16,9 +16,9 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format kernel+squashfs -name "${NAME}" ../test.yml
+linuxkit build -format kernel+iso -name "${NAME}" ../test.yml
 [ -f "${NAME}-kernel" ] || exit 1
-[ -f "${NAME}-squashfs.img" ] || exit 1
+[ -f "${NAME}.iso" ] || exit 1
 [ -f "${NAME}-cmdline" ] || exit 1
 
 exit 0

@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that raw output format is generated
+# SUMMARY: Check that aws output format is generated
 # LABELS: amd64
 
 set -e
