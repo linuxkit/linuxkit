@@ -16,6 +16,7 @@ import (
 
 var (
 	outputImages = map[string]string{
+		"iso":         "linuxkit/mkimage-iso:4c77e9969773bf0ed6b0eb2230a2c94b5fae47ab",
 		"iso-bios":    "linuxkit/mkimage-iso-bios:65254243f003cf0ac74c64b0a23b543195ddad8a",
 		"iso-efi":     "linuxkit/mkimage-iso-efi:1f5556e56da8e82d52458667ad354b719f314eb2",
 		"raw-bios":    "linuxkit/mkimage-raw-bios:2795f6282bdb8582934d5a0c2f1f859d3073336c",
@@ -105,6 +106,13 @@ var outFuns = map[string]func(string, io.Reader, int) error{
 		err := outputKernelSquashFS(outputImages["squashfs"], base, image)
 		if err != nil {
 			return fmt.Errorf("Error writing kernel+squashfs output: %v", err)
+		}
+		return nil
+	},
+	"kernel+iso": func(base string, image io.Reader, size int) error {
+		err := outputKernelISO(outputImages["iso"], base, image)
+		if err != nil {
+			return fmt.Errorf("Error writing kernel+iso output: %v", err)
 		}
 		return nil
 	},
@@ -491,6 +499,61 @@ func outputKernelSquashFS(image, base string, filesystem io.Reader) error {
 	rootfs.Close()
 
 	output, err := os.Create(base + "-squashfs.img")
+	if err != nil {
+		return err
+	}
+	defer output.Close()
+
+	return dockerRun(buf, output, true, image)
+}
+
+func outputKernelISO(image, base string, filesystem io.Reader) error {
+	log.Debugf("output kernel/iso: %s %s", image, base)
+	log.Infof("  %s.iso", base)
+
+	tr := tar.NewReader(filesystem)
+	buf := new(bytes.Buffer)
+	rootfs := tar.NewWriter(buf)
+
+	for {
+		var thdr *tar.Header
+		thdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		thdr.Format = tar.FormatPAX
+		switch {
+		case thdr.Name == "boot/kernel":
+			kernel, err := ioutil.ReadAll(tr)
+			if err != nil {
+				return err
+			}
+			if err := ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
+				return err
+			}
+		case thdr.Name == "boot/cmdline":
+			cmdline, err := ioutil.ReadAll(tr)
+			if err != nil {
+				return err
+			}
+			if err := ioutil.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
+				return err
+			}
+		case strings.HasPrefix(thdr.Name, "boot/"):
+			// skip the rest of boot/
+		default:
+			rootfs.WriteHeader(thdr)
+			if _, err := io.Copy(rootfs, tr); err != nil {
+				return err
+			}
+		}
+	}
+	rootfs.Close()
+
+	output, err := os.Create(base + ".iso")
 	if err != nil {
 		return err
 	}
