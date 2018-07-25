@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that kernel+initrd output format is generated
+# SUMMARY: Check that kernel+squashfs output format is generated
 # LABELS:
 
 set -e

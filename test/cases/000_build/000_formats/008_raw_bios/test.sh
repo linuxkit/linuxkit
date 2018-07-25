@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: Check that raw output format is generated
+# SUMMARY: Check that raw-bios output format is generated
 # LABELS: amd64
 
 set -e
