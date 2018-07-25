@@ -1,4 +1,4 @@
-From 95547c5fb6bd9188568f08f5ec67d06fb1ec446e Mon Sep 17 00:00:00 2001
+From 72ddf854fc7145d80c3a63780c44caceae992e32 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 23 Jul 2016 01:35:51 +0000
 Subject: [PATCH 03/12] hv_sock: introduce Hyper-V Sockets
@@ -28,13 +28,13 @@ Origin: https://patchwork.kernel.org/patch/9244467/
  MAINTAINERS                 |    2 +
  include/linux/hyperv.h      |   13 +
  include/linux/socket.h      |    4 +-
- include/net/af_hvsock.h     |   78 +++
+ include/net/af_hvsock.h     |   78 ++
  include/uapi/linux/hyperv.h |   23 +
  net/Kconfig                 |    1 +
  net/Makefile                |    1 +
  net/hv_sock/Kconfig         |   10 +
  net/hv_sock/Makefile        |    3 +
- net/hv_sock/af_hvsock.c     | 1507 +++++++++++++++++++++++++++++++++++++++++++
+ net/hv_sock/af_hvsock.c     | 1507 +++++++++++++++++++++++++++++++++++
  10 files changed, 1641 insertions(+), 1 deletion(-)
  create mode 100644 include/net/af_hvsock.h
  create mode 100644 net/hv_sock/Kconfig
@@ -1787,5 +1787,5 @@ index 000000000000..331d3759f5cb
 +MODULE_DESCRIPTION("Hyper-V Sockets");
 +MODULE_LICENSE("Dual BSD/GPL");
 -- 
-2.16.0
+2.18.0
 

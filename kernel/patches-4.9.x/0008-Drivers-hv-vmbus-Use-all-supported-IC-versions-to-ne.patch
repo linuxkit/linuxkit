@@ -1,4 +1,4 @@
-From e154a405495251e1757dc8f25d8549eb005f1324 Mon Sep 17 00:00:00 2001
+From acba0dbe222b91f0e697960d22635f69d9392ef3 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 08/12] Drivers: hv: vmbus: Use all supported IC versions to
@@ -25,12 +25,12 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
 Origin: git://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git
 (cherry picked from commit a1656454131880980bc3a5313c8bf66ef5990c91)
 ---
- drivers/hv/channel_mgmt.c | 80 +++++++++++++++++++++++++++-------------
- drivers/hv/hv_fcopy.c     | 20 +++++++---
- drivers/hv/hv_kvp.c       | 41 +++++++++------------
- drivers/hv/hv_snapshot.c  | 18 +++++++--
- drivers/hv/hv_util.c      | 94 +++++++++++++++++++++++++----------------------
- include/linux/hyperv.h    |  7 ++--
+ drivers/hv/channel_mgmt.c | 80 ++++++++++++++++++++++-----------
+ drivers/hv/hv_fcopy.c     | 20 ++++++---
+ drivers/hv/hv_kvp.c       | 41 +++++++----------
+ drivers/hv/hv_snapshot.c  | 18 ++++++--
+ drivers/hv/hv_util.c      | 94 +++++++++++++++++++++------------------
+ include/linux/hyperv.h    |  7 +--
  6 files changed, 154 insertions(+), 106 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
@@ -488,5 +488,5 @@ index c9af8369b4f7..7df9eb8f0cf7 100644
  void hv_event_tasklet_disable(struct vmbus_channel *channel);
  void hv_event_tasklet_enable(struct vmbus_channel *channel);
 -- 
-2.16.0
+2.18.0
 
