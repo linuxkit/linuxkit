@@ -3,6 +3,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
+## [v0.6] - 2018-07-26
+### Added
+- `linuxkit build` now works with private repositories and registries.
+- `linuxkit pkg build` can build packages with sources outside the package directory.
+- New `kernel+iso` format for `linuxkit build`.
+
+### Changed
+- `containerd` updated to v1.1.2.
+- WireGuard updated to 0.0.20180718.
+- Fixed SSH key handling on GCP.
+- Changed name of logfiles when memlogd/logwrite is used.
+- `moby/tool` code merged back into `linuxkit/linuxkit`
+- Smaller `mkimage-*` packages.
+
+### Removed
+
+
+
 ## [v0.5] - 2018-07-10
 ### Added
 - New logging support with log rotation.
