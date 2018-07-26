@@ -37,6 +37,7 @@ A package source consists of a directory containing at least two files:
 - `image` _(string)_: *(mandatory)* The name of the image to build
 - `org` _(string)_: The hub/registry organisation to which this package belongs
 - `arches` _(list of string)_: The architectures which this package should be built for (valid entries are `GOARCH` names)
+- `extra-sources` _(list of strings)_: Additional sources for the package outside the package directory. The format is `src:dst`, where `src` can be relative to the package directory and `dst` is the destination in the build context. This is useful for sharing files, such as vendored go code, between packages.
 - `gitrepo` _(string)_: The git repository where the package source is kept.
 - `network` _(bool)_: Allow network access during the package build (default: no)
 - `disable-content-trust` _(bool)_: Disable Docker content trust for this package (default: no)

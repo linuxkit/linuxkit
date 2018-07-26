@@ -6,10 +6,12 @@ package pkglib
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
 )
 
 const dctEnableEnv = "DOCKER_CONTENT_TRUST=1"
@@ -17,6 +19,14 @@ const dctEnableEnv = "DOCKER_CONTENT_TRUST=1"
 type dockerRunner struct {
 	dct   bool
 	cache bool
+
+	// Optional build context to use
+	ctx buildContext
+}
+
+type buildContext interface {
+	// Copy copies the build context to the supplied WriterCloser
+	Copy(io.WriteCloser) error
 }
 
 func newDockerRunner(dct, cache bool) dockerRunner {
@@ -52,6 +62,8 @@ func (dr dockerRunner) command(args ...string) error {
 		dct = dctEnableEnv + " "
 	}
 
+	var eg errgroup.Group
+
 	if args[0] == "build" {
 		buildArgs := []string{}
 		for _, proxyVarName := range proxyEnvVars {
@@ -61,15 +73,30 @@ func (dr dockerRunner) command(args ...string) error {
 			}
 		}
 		cmd.Args = append(append(cmd.Args[:2], buildArgs...), cmd.Args[2:]...)
+
+		if dr.ctx != nil {
+			stdin, err := cmd.StdinPipe()
+			if err != nil {
+				return err
+			}
+			eg.Go(func() error {
+				defer stdin.Close()
+				return dr.ctx.Copy(stdin)
+			})
+
+			cmd.Args = append(cmd.Args[:len(cmd.Args)-1], "-")
+		}
 	}
 
 	log.Debugf("Executing: %s%v", dct, cmd.Args)
 
-	err := cmd.Run()
-	if isExecErrNotFound(err) {
-		return fmt.Errorf("linuxkit pkg requires docker to be installed")
+	if err := cmd.Run(); err != nil {
+		if isExecErrNotFound(err) {
+			return fmt.Errorf("linuxkit pkg requires docker to be installed")
+		}
+		return err
 	}
-	return err
+	return eg.Wait()
 }
 
 func (dr dockerRunner) pull(img string) (bool, error) {

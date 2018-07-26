@@ -1,11 +1,13 @@
 package pkglib
 
 import (
+	"crypto/sha1"
 	"flag"
 	"fmt"
 	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -17,6 +19,7 @@ type pkgInfo struct {
 	Image               string            `yaml:"image"`
 	Org                 string            `yaml:"org"`
 	Arches              []string          `yaml:"arches"`
+	ExtraSources        []string          `yaml:"extra-sources"`
 	GitRepo             string            `yaml:"gitrepo"` // ??
 	Network             bool              `yaml:"network"`
 	DisableContentTrust bool              `yaml:"disable-content-trust"`
@@ -32,12 +35,19 @@ type pkgInfo struct {
 	} `yaml:"depends"`
 }
 
+// Specifies the source directory for a package and their destination in the build context.
+type pkgSource struct {
+	src string
+	dst string
+}
+
 // Pkg encapsulates information about a package's source
 type Pkg struct {
 	// These correspond to pkgInfo fields
 	image         string
 	org           string
 	arches        []string
+	sources       []pkgSource
 	gitRepo       string
 	network       bool
 	trust         bool
@@ -169,6 +179,37 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		}
 	})
 
+	var srcHashes string
+	sources := []pkgSource{{src: pkgPath, dst: "/"}}
+
+	for _, source := range pi.ExtraSources {
+		tmp := strings.Split(source, ":")
+		if len(tmp) != 2 {
+			return Pkg{}, fmt.Errorf("Bad source format in %s", source)
+		}
+		srcPath := filepath.Clean(tmp[0]) // Should work with windows paths
+		dstPath := path.Clean(tmp[1])     // 'path' here because this should be a Unix path
+
+		if !filepath.IsAbs(srcPath) {
+			srcPath = filepath.Join(pkgPath, srcPath)
+		}
+
+		g, err := newGit(srcPath)
+		if err != nil {
+			return Pkg{}, err
+		}
+		if g == nil {
+			return Pkg{}, fmt.Errorf("Source %s not in a git repository", srcPath)
+		}
+		h, err := g.treeHash(srcPath, hashCommit)
+		if err != nil {
+			return Pkg{}, err
+		}
+
+		srcHashes += h
+		sources = append(sources, pkgSource{src: srcPath, dst: dstPath})
+	}
+
 	git, err := newGit(pkgPath)
 	if err != nil {
 		return Pkg{}, err
@@ -187,6 +228,11 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 				return Pkg{}, err
 			}
 
+			if srcHashes != "" {
+				hash += srcHashes
+				hash = fmt.Sprintf("%x", sha1.Sum([]byte(hash)))
+			}
+
 			if dirty {
 				hash += "-dirty"
 			}
@@ -199,6 +245,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		hash:          hash,
 		commitHash:    hashCommit,
 		arches:        pi.Arches,
+		sources:       sources,
 		gitRepo:       pi.GitRepo,
 		network:       pi.Network,
 		trust:         !pi.DisableContentTrust,

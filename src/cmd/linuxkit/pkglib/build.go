@@ -1,12 +1,18 @@
 package pkglib
 
 import (
+	"archive/tar"
 	"encoding/json"
 	"fmt"
+	"io"
 	"os"
+	"path"
+	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
+	log "github.com/sirupsen/logrus"
 )
 
 type buildOpts struct {
@@ -141,6 +147,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		args = append(args, "--label=org.mobyproject.linuxkit.version="+version.Version)
 		args = append(args, "--label=org.mobyproject.linuxkit.revision="+version.GitCommit)
 
+		d.ctx = &buildCtx{sources: p.sources}
+
 		if err := d.build(p.Tag()+suffix, p.path, args...); err != nil {
 			return err
 		}
@@ -188,6 +196,62 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	fmt.Printf("Build, push and release of %q complete, all done.\n", bo.release)
+
+	return nil
+}
+
+type buildCtx struct {
+	sources []pkgSource
+}
+
+// Copy iterates over the sources, tars up the content after rewriting the paths.
+// It assumes that sources is sane, ie is well formed and the first part is an absolute path
+// and that it exists. NewFromCLI() ensures that.
+func (c *buildCtx) Copy(w io.WriteCloser) error {
+	tw := tar.NewWriter(w)
+	defer func() {
+		tw.Close()
+		w.Close()
+	}()
+
+	for _, s := range c.sources {
+		log.Debugf("Adding to build context: %s -> %s", s.src, s.dst)
+
+		f := func(p string, i os.FileInfo, err error) error {
+			if err != nil {
+				return fmt.Errorf("ctx: Walk error on %s: %v", p, err)
+			}
+
+			h, err := tar.FileInfoHeader(i, "")
+			if err != nil {
+				return fmt.Errorf("ctx: Converting FileInfo for %s: %v", p, err)
+			}
+			h.Name = path.Join(s.dst, strings.TrimPrefix(p, s.src))
+			if err := tw.WriteHeader(h); err != nil {
+				return fmt.Errorf("ctx: Writing header for %s: %v", p, err)
+			}
+
+			if !i.Mode().IsRegular() {
+				return nil
+			}
+
+			f, err := os.Open(p)
+			if err != nil {
+				return fmt.Errorf("ctx: Open %s: %v", p, err)
+			}
+			defer f.Close()
+
+			_, err = io.Copy(tw, f)
+			if err != nil {
+				return fmt.Errorf("ctx: Writing %s: %v", p, err)
+			}
+			return nil
+		}
+
+		if err := filepath.Walk(s.src, f); err != nil {
+			return err
+		}
+	}
 
 	return nil
 }
