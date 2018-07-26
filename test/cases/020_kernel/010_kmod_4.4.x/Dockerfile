@@ -6,7 +6,7 @@
 FROM linuxkit/kernel:4.4.144 AS ksrc
 
 # Extract headers and compile module
-FROM linuxkit/alpine:daed76b8f1d28cdeeee215a95b9671c682a405dc AS build
+FROM linuxkit/alpine:3683c9a66cd4da40bd7d6c7da599b2dcd738b559 AS build
 RUN apk add build-base libelf-dev
 
 COPY --from=ksrc /kernel-dev.tar /
