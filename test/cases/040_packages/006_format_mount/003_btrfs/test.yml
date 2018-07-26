@@ -2,17 +2,17 @@ kernel:
   image: linuxkit/kernel:4.14.58
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:598439400c1e4bf8c25c63c98b2d3e83b1382be9
-  - linuxkit/runc:v0.5
+  - linuxkit/init:v0.6
+  - linuxkit/runc:v0.6
 onboot:
   - name: modprobe
-    image: linuxkit/modprobe:v0.5
+    image: linuxkit/modprobe:v0.6
     command: ["modprobe", "btrfs"]
   - name: format
-    image: linuxkit/format:v0.5
+    image: linuxkit/format:v0.6
     command: ["/usr/bin/format", "-type", "btrfs" ]
   - name: mount
-    image: linuxkit/mount:v0.5
+    image: linuxkit/mount:v0.6
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.8

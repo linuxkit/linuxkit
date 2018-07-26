@@ -3,21 +3,21 @@ kernel:
   image: linuxkit/kernel:4.14.58
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:598439400c1e4bf8c25c63c98b2d3e83b1382be9
-  - linuxkit/runc:v0.5
-  - linuxkit/containerd:0784cc754edb296b996c3510abbdf69686ef0f24
-  - linuxkit/ca-certificates:v0.5
-  - linuxkit/memlogd:ba4fcf55c35a3833546a1e39125bf0fa940327b0
+  - linuxkit/init:v0.6
+  - linuxkit/runc:v0.6
+  - linuxkit/containerd:v0.6
+  - linuxkit/ca-certificates:v0.6
+  - linuxkit/memlogd:v0.6
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.5
+    image: linuxkit/sysctl:v0.6
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.5
+    image: linuxkit/dhcpcd:v0.6
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
 # Inside the getty type `/proc/1/root/usr/bin/logread -F` to follow the log
   - name: getty
-    image: linuxkit/getty:v0.5
+    image: linuxkit/getty:v0.6
     env:
      - INSECURE=true
 # A service which generates log messages for testing
@@ -25,9 +25,9 @@ services:
     image: alpine:3.8
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); sleep 1; done" ]
   - name: write-and-rotate-logs
-    image: linuxkit/logwrite:d9778c0d538094d398cf0cbfc89277aeca67f1be
+    image: linuxkit/logwrite:v0.6
   - name: kmsg
-    image: linuxkit/kmsg:cf3dc833591838596427aac032c829ea592599d0
+    image: linuxkit/kmsg:v0.6
 trust:
   org:
     - linuxkit
