@@ -241,6 +241,7 @@ git commit -a -s -m "Update package tags to $LK_RELEASE"
 
 ### Final preparation steps
 
+- Update AUTHORS by running `./scripts/generate-authors.sh`
 - Update the `VERSION` variable in the top-level `Makefile`
 - Create an entry in `CHANGELOG.md`. Take a look at `git log v0.3..HEAD` and pick interesting updates (of course adjust `v0.3` to the previous version).
 - Create a PR with your changes.
