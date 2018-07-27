@@ -222,7 +222,16 @@ func (c *buildCtx) Copy(w io.WriteCloser) error {
 				return fmt.Errorf("ctx: Walk error on %s: %v", p, err)
 			}
 
-			h, err := tar.FileInfoHeader(i, "")
+			var link string
+			if i.Mode()&os.ModeSymlink != 0 {
+				var err error
+				link, err = os.Readlink(p)
+				if err != nil {
+					return fmt.Errorf("ctx: Failed to read symlink %s: %v", p, err)
+				}
+			}
+
+			h, err := tar.FileInfoHeader(i, link)
 			if err != nil {
 				return fmt.Errorf("ctx: Converting FileInfo for %s: %v", p, err)
 			}
