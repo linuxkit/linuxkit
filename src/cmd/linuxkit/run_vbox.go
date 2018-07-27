@@ -17,6 +17,43 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+// VBNetwork is the config for a Virtual Box network
+type VBNetwork struct {
+	Type    string
+	Adapter string
+}
+
+// VBNetworks is the type for a list of VBNetwork
+type VBNetworks []VBNetwork
+
+func (l *VBNetworks) String() string {
+	return fmt.Sprint(*l)
+}
+
+// Set is used by flag to configure value from CLI
+func (l *VBNetworks) Set(value string) error {
+	d := VBNetwork{}
+	s := strings.Split(value, ",")
+	for _, p := range s {
+		c := strings.SplitN(p, "=", 2)
+		switch len(c) {
+		case 1:
+			d.Type = c[0]
+		case 2:
+			switch c[0] {
+			case "type":
+				d.Type = c[1]
+			case "adapter", "bridgeadapter", "hostadapter":
+				d.Adapter = c[1]
+			default:
+				return fmt.Errorf("Unknown network config: %s", c[0])
+			}
+		}
+	}
+	*l = append(*l, d)
+	return nil
+}
+
 func runVbox(args []string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet("vbox", flag.ExitOnError)
@@ -51,8 +88,8 @@ func runVbox(args []string) {
 	uefiBoot := flags.Bool("uefi", false, "Use UEFI boot")
 
 	// networking
-	networking := flags.String("networking", "nat", "Networking mode. null|nat|bridged|intnet|hostonly|generic|natnetwork[<devicename>]")
-	bridgeadapter := flags.String("bridgeadapter", "", "Bridge adapter interface to use if networking mode is bridged")
+	var networks VBNetworks
+	flags.Var(&networks, "networking", "Network config, may be repeated. [type=](null|nat|bridged|intnet|hostonly|generic|natnetwork[<devicename>])[,[bridge|host]adapter=<interface>]")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -201,25 +238,33 @@ func runVbox(args []string) {
 		}
 	}
 
-	_, out, err = manage(vboxmanage, "modifyvm", name, "--nictype1", "virtio")
-	if err != nil {
-		log.Fatalf("modifyvm --nictype error: %v\n%s", err, out)
-	}
-
-	_, out, err = manage(vboxmanage, "modifyvm", name, "--nic1", *networking)
-	if err != nil {
-		log.Fatalf("modifyvm --nic error: %v\n%s", err, out)
-	}
-	if *networking == "bridged" {
-		_, out, err = manage(vboxmanage, "modifyvm", name, "--bridgeadapter1", *bridgeadapter)
+	for i, d := range networks {
+		nic := i + 1
+		_, out, err = manage(vboxmanage, "modifyvm", name, fmt.Sprintf("--nictype%d", nic), "virtio")
 		if err != nil {
-			log.Fatalf("modifyvm --bridgeadapter error: %v\n%s", err, out)
+			log.Fatalf("modifyvm --nictype error: %v\n%s", err, out)
 		}
-	}
 
-	_, out, err = manage(vboxmanage, "modifyvm", name, "--cableconnected1", "on")
-	if err != nil {
-		log.Fatalf("modifyvm --cableconnected error: %v\n%s", err, out)
+		_, out, err = manage(vboxmanage, "modifyvm", name, fmt.Sprintf("--nic%d", nic), d.Type)
+		if err != nil {
+			log.Fatalf("modifyvm --nic error: %v\n%s", err, out)
+		}
+		if d.Type == "hostonly" {
+			_, out, err = manage(vboxmanage, "modifyvm", name, fmt.Sprintf("--hostonlyadapter%d", nic), d.Adapter)
+			if err != nil {
+				log.Fatalf("modifyvm --hostonlyadapter error: %v\n%s", err, out)
+			}
+		} else if d.Type == "bridged" {
+			_, out, err = manage(vboxmanage, "modifyvm", name, fmt.Sprintf("--bridgeadapter%d", nic), d.Adapter)
+			if err != nil {
+				log.Fatalf("modifyvm --bridgeadapter error: %v\n%s", err, out)
+			}
+		}
+
+		_, out, err = manage(vboxmanage, "modifyvm", name, fmt.Sprintf("--cableconnected%d", nic), "on")
+		if err != nil {
+			log.Fatalf("modifyvm --cableconnected error: %v\n%s", err, out)
+		}
 	}
 
 	// create socket
