@@ -171,6 +171,13 @@ func runVbox(args []string) {
 		}
 	}
 
+	if len(disks) > 0 {
+		_, out, err = manage(vboxmanage, "storagectl", name, "--name", "SATA", "--add", "sata")
+		if err != nil {
+			log.Fatalf("storagectl error: %v\n%s", err, out)
+		}
+	}
+
 	for i, d := range disks {
 		id := strconv.Itoa(i)
 		if d.Size != 0 && d.Format == "" {
@@ -188,7 +195,7 @@ func runVbox(args []string) {
 				log.Fatalf("Cannot create disk: %v", err)
 			}
 		}
-		_, out, err = manage(vboxmanage, "storageattach", name, "--storagectl", "IDE Controller", "--port", "2", "--device", id, "--type", "hdd", "--medium", d.Path)
+		_, out, err = manage(vboxmanage, "storageattach", name, "--storagectl", "SATA", "--port", "0", "--device", id, "--type", "hdd", "--medium", d.Path)
 		if err != nil {
 			log.Fatalf("storageattach error: %v\n%s", err, out)
 		}
