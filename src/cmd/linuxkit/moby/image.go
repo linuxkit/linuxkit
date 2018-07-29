@@ -140,6 +140,9 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 		if err != nil {
 			return err
 		}
+		// force PAX format, since it allows for unlimited Name/Linkname
+		// and we move all files below prefix.
+		hdr.Format = tar.FormatPAX
 		if exclude[hdr.Name] {
 			log.Debugf("image tar: %s %s exclude %s", ref, prefix, hdr.Name)
 			_, err = io.Copy(ioutil.Discard, tr)
