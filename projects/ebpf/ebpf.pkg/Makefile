@@ -1,9 +1,9 @@
-KERNEL_FILES=-C ../alpine/kernel/x86_64 kernel-headers.tar kernel-dev.tar kernel-modules.tar
+KERNEL_IMAGE=iad.ocir.io/odx-fn/linuxkit/kernel:4.14.48-ee964ca1fb8641370812be8ef4592b2708d3551b-amd64
 
 default: ebpf.tag
 
 ebpf.tag: Dockerfile
-	BUILD=$$( tar cf - $^ $(KERNEL_FILES) | docker build -q - ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
+	BUILD=$$( docker build -q --build-arg IMAGE=$(KERNEL_IMAGE) . ) && [ -n "$$BUILD" ] && echo "Built $$BUILD" && \
 	echo $$BUILD > $@
 
 clean:

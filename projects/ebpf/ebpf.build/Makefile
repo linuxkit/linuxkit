@@ -1,6 +1,6 @@
 .PHONY: tag push
 
-BASE=alpine:3.5
+BASE=alpine:3.7
 IMAGE=alpine-build-ebpf
 
 default: push
