@@ -1,0 +1,17 @@
+--- lib/system.h-orig
++++ lib/system.h
+@@ -70,6 +70,14 @@
+ 
+ #define gettext_noop(Str) Str
+ 
++#ifndef TEMP_FAILURE_RETRY
++# define TEMP_FAILURE_RETRY(expression) \
++  (__extension__                                                              \
++    ({ long int __result;                                                     \
++       do __result = (long int) (expression);                                 \
++       while (__result == -1L && errno == EINTR);                             \
++       __result; }))
++#endif
+ 
+ #define pwrite_retry(fd, buf,  len, off) \
+   TEMP_FAILURE_RETRY (pwrite (fd, buf, len, off))

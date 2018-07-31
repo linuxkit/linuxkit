@@ -15,6 +15,7 @@
 # Name and Org on Hub
 ORG?=linuxkit
 IMAGE:=kernel
+IMAGE_BCC:=kernel-bcc
 IMAGE_PERF:=kernel-perf
 IMAGE_ZFS:=zfs-kmod
 
@@ -190,6 +191,46 @@ build: build_perf_$(2)$(3)$(4)
 forcebuild: forcebuild_perf_$(2)$(3)$(4)
 push: push_perf_$(2)$(3)$(4)
 forcepush: forcepush_perf_$(2)$(3)$(4)
+endif
+
+# For BCC, only build on x86 and only on latest LTS and latest stable.
+# That's 4.14.x and 4.17.x at time of authorship.
+ifeq ($(ARCH),x86_64)
+ifeq ($(2), $(filter $(2),4.14.x 4.17.x))
+build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
+	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
+		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
+			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+			--no-cache $(LABEL) -t $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
+
+forcebuild_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
+	 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
+		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+		--no-cache $(LABEL) -t $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
+
+push_bcc_$(2)$(3)$(4): build_bcc_$(2)$(3)$(4)
+	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
+		(docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
+		 docker tag $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
+		 docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
+
+forcepush_bcc_$(2)$(3)$(4): forcebuild_bcc_$(2)$(3)$(4)
+	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+	docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
+	docker tag $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
+	docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
+
+
+build: build_bcc_$(2)$(3)$(4)
+forcebuild: forcebuild_bcc_$(2)$(3)$(4)
+push: push_bcc_$(2)$(3)$(4)
+forcepush: forcepush_bcc_$(2)$(3)$(4)
+endif
 endif
 
 ifeq ($(4),)
