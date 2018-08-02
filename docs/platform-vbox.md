@@ -20,11 +20,20 @@ stdio, providing interactive access to the VM.
 ## Disks
 
 The Virtualbox backend support configuring a persistent disk using the
-standard `linuxkit` `-disk` syntax.  Multiple disks are
+standard `linuxkit` `-disk` syntax. Multiple disks are
 supported and can be created in `raw` format; other formats that VirtualBox
-supports can be attached
+supports can be attached. Note that additional drives are attached to the
+SATA Controller, unlike the VM disk which is on the IDE Controller.
 
 ## Networking
 
-You can select the networking mode, which defaults to the standard `nat`, but
-some networking modes may require additional configuration.
+You can select the networking mode, which defaults to the standard `nat`, by using the
+`-networking` command-line option. Some networking modes (`hostonly`, `bridge`) will require 
+the additional `adapter` parameter to the `-networking` option:
+
+~~~
+-networking hostonly,adapter=vboxnet0
+~~~
+
+You can specify more than one `-networking` option to setup multiple adapters. It is
+recommended to setup the first adapter as `nat`.
