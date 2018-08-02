@@ -1,0 +1,237 @@
+From b8caa2610ce5ba57f973a745413fb378bfdb1402 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 3 Jul 2009 08:44:31 -0500
+Subject: [PATCH 202/414] hrtimer: by timers by default into the softirq
+ context
+
+We can't have hrtimers callbacks running in hardirq context on RT. Therefore
+the timers are deferred to the softirq context by default.
+There are few timers which expect to be run in hardirq context even on RT.
+Those are:
+- very short running where low latency is critical (kvm lapic)
+- timers which take raw locks and need run in hard-irq context (perf, sched)
+- wake up related timer (kernel side of clock_nanosleep() and so on)
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/x86/kvm/lapic.c                 |  2 +-
+ include/linux/hrtimer.h              |  6 +++++
+ kernel/events/core.c                 |  4 ++--
+ kernel/sched/core.c                  |  2 +-
+ kernel/sched/deadline.c              |  2 +-
+ kernel/sched/rt.c                    |  4 ++--
+ kernel/time/hrtimer.c                | 34 ++++++++++++++++++++++++++--
+ kernel/time/tick-broadcast-hrtimer.c |  2 +-
+ kernel/time/tick-sched.c             |  2 +-
+ kernel/watchdog.c                    |  2 +-
+ 10 files changed, 48 insertions(+), 12 deletions(-)
+
+diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
+index 6d0fbff71d7a..92f13ac70ad4 100644
+--- a/arch/x86/kvm/lapic.c
++++ b/arch/x86/kvm/lapic.c
+@@ -2120,7 +2120,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
+ 	apic->vcpu = vcpu;
+ 
+ 	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
+-		     HRTIMER_MODE_ABS_PINNED);
++		     HRTIMER_MODE_ABS_PINNED_HARD);
+ 	apic->lapic_timer.timer.function = apic_timer_fn;
+ 
+ 	/*
+diff --git a/include/linux/hrtimer.h b/include/linux/hrtimer.h
+index 3de1b8cf4d2a..3bd606859b0a 100644
+--- a/include/linux/hrtimer.h
++++ b/include/linux/hrtimer.h
+@@ -42,6 +42,7 @@ enum hrtimer_mode {
+ 	HRTIMER_MODE_REL	= 0x01,
+ 	HRTIMER_MODE_PINNED	= 0x02,
+ 	HRTIMER_MODE_SOFT	= 0x04,
++	HRTIMER_MODE_HARD	= 0x08,
+ 
+ 	HRTIMER_MODE_ABS_PINNED = HRTIMER_MODE_ABS | HRTIMER_MODE_PINNED,
+ 	HRTIMER_MODE_REL_PINNED = HRTIMER_MODE_REL | HRTIMER_MODE_PINNED,
+@@ -52,6 +53,11 @@ enum hrtimer_mode {
+ 	HRTIMER_MODE_ABS_PINNED_SOFT = HRTIMER_MODE_ABS_PINNED | HRTIMER_MODE_SOFT,
+ 	HRTIMER_MODE_REL_PINNED_SOFT = HRTIMER_MODE_REL_PINNED | HRTIMER_MODE_SOFT,
+ 
++	HRTIMER_MODE_ABS_HARD	= HRTIMER_MODE_ABS | HRTIMER_MODE_HARD,
++	HRTIMER_MODE_REL_HARD	= HRTIMER_MODE_REL | HRTIMER_MODE_HARD,
++
++	HRTIMER_MODE_ABS_PINNED_HARD = HRTIMER_MODE_ABS_PINNED | HRTIMER_MODE_HARD,
++	HRTIMER_MODE_REL_PINNED_HARD = HRTIMER_MODE_REL_PINNED | HRTIMER_MODE_HARD,
+ };
+ 
+ /*
+diff --git a/kernel/events/core.c b/kernel/events/core.c
+index 7c394ddf1ce6..178d9c5feb62 100644
+--- a/kernel/events/core.c
++++ b/kernel/events/core.c
+@@ -1065,7 +1065,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
+ 	cpuctx->hrtimer_interval = ns_to_ktime(NSEC_PER_MSEC * interval);
+ 
+ 	raw_spin_lock_init(&cpuctx->hrtimer_lock);
+-	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_PINNED);
++	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_PINNED_HARD);
+ 	timer->function = perf_mux_hrtimer_handler;
+ }
+ 
+@@ -8750,7 +8750,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
+ 	if (!is_sampling_event(event))
+ 		return;
+ 
+-	hrtimer_init(&hwc->hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(&hwc->hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_HARD);
+ 	hwc->hrtimer.function = perf_swevent_hrtimer;
+ 
+ 	/*
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 0e27158e4083..a4b8316cdab5 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -341,7 +341,7 @@ static void init_rq_hrtick(struct rq *rq)
+ 	rq->hrtick_csd.info = rq;
+ #endif
+ 
+-	hrtimer_init(&rq->hrtick_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(&rq->hrtick_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_HARD);
+ 	rq->hrtick_timer.function = hrtick;
+ }
+ #else	/* CONFIG_SCHED_HRTICK */
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index a55cb8ce395d..24e69803cd14 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -1020,7 +1020,7 @@ void init_dl_task_timer(struct sched_dl_entity *dl_se)
+ {
+ 	struct hrtimer *timer = &dl_se->dl_timer;
+ 
+-	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_HARD);
+ 	timer->function = dl_task_timer;
+ }
+ 
+diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
+index 590c6eea6974..b2478126d109 100644
+--- a/kernel/sched/rt.c
++++ b/kernel/sched/rt.c
+@@ -47,8 +47,8 @@ void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime)
+ 
+ 	raw_spin_lock_init(&rt_b->rt_runtime_lock);
+ 
+-	hrtimer_init(&rt_b->rt_period_timer,
+-			CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(&rt_b->rt_period_timer, CLOCK_MONOTONIC,
++		     HRTIMER_MODE_REL_HARD);
+ 	rt_b->rt_period_timer.function = sched_rt_period_timer;
+ }
+ 
+diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
+index 8c3c0dff5184..ec9f271aa437 100644
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -1122,7 +1122,9 @@ void hrtimer_start_range_ns(struct hrtimer *timer, ktime_t tim,
+ 	 * Check whether the HRTIMER_MODE_SOFT bit and hrtimer.is_soft
+ 	 * match.
+ 	 */
++#ifndef CONFIG_PREEMPT_RT_BASE
+ 	WARN_ON_ONCE(!(mode & HRTIMER_MODE_SOFT) ^ !timer->is_soft);
++#endif
+ 
+ 	base = lock_hrtimer_base(timer, &flags);
+ 
+@@ -1249,10 +1251,17 @@ static inline int hrtimer_clockid_to_base(clockid_t clock_id)
+ static void __hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
+ 			   enum hrtimer_mode mode)
+ {
+-	bool softtimer = !!(mode & HRTIMER_MODE_SOFT);
+-	int base = softtimer ? HRTIMER_MAX_CLOCK_BASES / 2 : 0;
++	bool softtimer;
++	int base;
+ 	struct hrtimer_cpu_base *cpu_base;
+ 
++	softtimer = !!(mode & HRTIMER_MODE_SOFT);
++#ifdef CONFIG_PREEMPT_RT_FULL
++	if (!softtimer && !(mode & HRTIMER_MODE_HARD))
++		softtimer = true;
++#endif
++	base = softtimer ? HRTIMER_MAX_CLOCK_BASES / 2 : 0;
++
+ 	memset(timer, 0, sizeof(struct hrtimer));
+ 
+ 	cpu_base = raw_cpu_ptr(&hrtimer_bases);
+@@ -1631,11 +1640,32 @@ static enum hrtimer_restart hrtimer_wakeup(struct hrtimer *timer)
+ 	return HRTIMER_NORESTART;
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++static bool task_is_realtime(struct task_struct *tsk)
++{
++	int policy = tsk->policy;
++
++	if (policy == SCHED_FIFO || policy == SCHED_RR)
++		return true;
++	if (policy == SCHED_DEADLINE)
++		return true;
++	return false;
++}
++#endif
++
+ static void __hrtimer_init_sleeper(struct hrtimer_sleeper *sl,
+ 				   clockid_t clock_id,
+ 				   enum hrtimer_mode mode,
+ 				   struct task_struct *task)
+ {
++#ifdef CONFIG_PREEMPT_RT_FULL
++	if (!(mode & (HRTIMER_MODE_SOFT | HRTIMER_MODE_HARD))) {
++		if (task_is_realtime(current) || system_state != SYSTEM_RUNNING)
++			mode |= HRTIMER_MODE_HARD;
++		else
++			mode |= HRTIMER_MODE_SOFT;
++	}
++#endif
+ 	__hrtimer_init(&sl->timer, clock_id, mode);
+ 	sl->timer.function = hrtimer_wakeup;
+ 	sl->task = task;
+diff --git a/kernel/time/tick-broadcast-hrtimer.c b/kernel/time/tick-broadcast-hrtimer.c
+index 58045eb976c3..f0a34afbc252 100644
+--- a/kernel/time/tick-broadcast-hrtimer.c
++++ b/kernel/time/tick-broadcast-hrtimer.c
+@@ -106,7 +106,7 @@ static enum hrtimer_restart bc_handler(struct hrtimer *t)
+ 
+ void tick_setup_hrtimer_broadcast(void)
+ {
+-	hrtimer_init(&bctimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
++	hrtimer_init(&bctimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_HARD);
+ 	bctimer.function = bc_handler;
+ 	clockevents_register_device(&ce_broadcast_hrtimer);
+ }
+diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
+index d8d91b06f057..145dc49881e6 100644
+--- a/kernel/time/tick-sched.c
++++ b/kernel/time/tick-sched.c
+@@ -1255,7 +1255,7 @@ void tick_setup_sched_timer(void)
+ 	/*
+ 	 * Emulate tick processing via per-CPU hrtimers:
+ 	 */
+-	hrtimer_init(&ts->sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
++	hrtimer_init(&ts->sched_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_HARD);
+ 	ts->sched_timer.function = tick_sched_timer;
+ 
+ 	/* Get the next period (per-CPU) */
+diff --git a/kernel/watchdog.c b/kernel/watchdog.c
+index c8e06703e44c..1c6188a15481 100644
+--- a/kernel/watchdog.c
++++ b/kernel/watchdog.c
+@@ -462,7 +462,7 @@ static void watchdog_enable(unsigned int cpu)
+ 	 * Start the timer first to prevent the NMI watchdog triggering
+ 	 * before the timer has a chance to fire.
+ 	 */
+-	hrtimer_init(hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_HARD);
+ 	hrtimer->function = watchdog_timer_fn;
+ 	hrtimer_start(hrtimer, ns_to_ktime(sample_period),
+ 		      HRTIMER_MODE_REL_PINNED);
+-- 
+2.18.0
+

@@ -1,0 +1,85 @@
+From 97e106e8bd43112b14128759dfb48eb3191a2443 Mon Sep 17 00:00:00 2001
+From: Jason Wessel <jason.wessel@windriver.com>
+Date: Thu, 28 Jul 2011 12:42:23 -0500
+Subject: [PATCH 343/414] kgdb/serial: Short term workaround
+
+On 07/27/2011 04:37 PM, Thomas Gleixner wrote:
+>  - KGDB (not yet disabled) is reportedly unusable on -rt right now due
+>    to missing hacks in the console locking which I dropped on purpose.
+>
+
+To work around this in the short term you can use this patch, in
+addition to the clocksource watchdog patch that Thomas brewed up.
+
+Comments are welcome of course.  Ultimately the right solution is to
+change separation between the console and the HW to have a polled mode
++ work queue so as not to introduce any kind of latency.
+
+Thanks,
+Jason.
+---
+ drivers/tty/serial/8250/8250_port.c | 3 +++
+ include/linux/kdb.h                 | 2 ++
+ kernel/debug/kdb/kdb_io.c           | 2 ++
+ 3 files changed, 7 insertions(+)
+
+diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
+index 832d0fd9d371..05d4a17236cb 100644
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -35,6 +35,7 @@
+ #include <linux/nmi.h>
+ #include <linux/mutex.h>
+ #include <linux/slab.h>
++#include <linux/kdb.h>
+ #include <linux/uaccess.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/ktime.h>
+@@ -3227,6 +3228,8 @@ void serial8250_console_write(struct uart_8250_port *up, const char *s,
+ 
+ 	if (port->sysrq || oops_in_progress)
+ 		locked = 0;
++	else if (in_kdb_printk())
++		locked = spin_trylock_irqsave(&port->lock, flags);
+ 	else
+ 		spin_lock_irqsave(&port->lock, flags);
+ 
+diff --git a/include/linux/kdb.h b/include/linux/kdb.h
+index 68bd88223417..e033b25b0b72 100644
+--- a/include/linux/kdb.h
++++ b/include/linux/kdb.h
+@@ -167,6 +167,7 @@ extern __printf(2, 0) int vkdb_printf(enum kdb_msgsrc src, const char *fmt,
+ extern __printf(1, 2) int kdb_printf(const char *, ...);
+ typedef __printf(1, 2) int (*kdb_printf_t)(const char *, ...);
+ 
++#define in_kdb_printk()	(kdb_trap_printk)
+ extern void kdb_init(int level);
+ 
+ /* Access to kdb specific polling devices */
+@@ -201,6 +202,7 @@ extern int kdb_register_flags(char *, kdb_func_t, char *, char *,
+ extern int kdb_unregister(char *);
+ #else /* ! CONFIG_KGDB_KDB */
+ static inline __printf(1, 2) int kdb_printf(const char *fmt, ...) { return 0; }
++#define in_kdb_printk() (0)
+ static inline void kdb_init(int level) {}
+ static inline int kdb_register(char *cmd, kdb_func_t func, char *usage,
+ 			       char *help, short minlen) { return 0; }
+diff --git a/kernel/debug/kdb/kdb_io.c b/kernel/debug/kdb/kdb_io.c
+index ed5d34925ad0..c0d4c24fc241 100644
+--- a/kernel/debug/kdb/kdb_io.c
++++ b/kernel/debug/kdb/kdb_io.c
+@@ -854,9 +854,11 @@ int kdb_printf(const char *fmt, ...)
+ 	va_list ap;
+ 	int r;
+ 
++	kdb_trap_printk++;
+ 	va_start(ap, fmt);
+ 	r = vkdb_printf(KDB_MSGSRC_INTERNAL, fmt, ap);
+ 	va_end(ap);
++	kdb_trap_printk--;
+ 
+ 	return r;
+ }
+-- 
+2.18.0
+

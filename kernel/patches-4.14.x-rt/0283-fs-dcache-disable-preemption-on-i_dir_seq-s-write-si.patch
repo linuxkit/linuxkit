@@ -1,0 +1,131 @@
+From bb0e576eb73b966d34de4782a5cd9ae9a7d31e67 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 20 Oct 2017 11:29:53 +0200
+Subject: [PATCH 283/414] fs/dcache: disable preemption on i_dir_seq's write
+ side
+
+i_dir_seq is an opencoded seqcounter. Based on the code it looks like we
+could have two writers in parallel despite the fact that the d_lock is
+held. The problem is that during the write process on RT the preemption
+is still enabled and if this process is interrupted by a reader with RT
+priority then we lock up.
+To avoid that lock up I am disabling the preemption during the update.
+The rename of i_dir_seq is here to ensure to catch new write sides in
+future.
+
+Cc: stable-rt@vger.kernel.org
+Reported-by: Oleg.Karfich@wago.com
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/dcache.c        | 12 +++++++-----
+ fs/inode.c         |  2 +-
+ fs/libfs.c         |  6 ++++--
+ include/linux/fs.h |  2 +-
+ 4 files changed, 13 insertions(+), 9 deletions(-)
+
+diff --git a/fs/dcache.c b/fs/dcache.c
+index 73fe464d2240..0d8a43d0e445 100644
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -2439,9 +2439,10 @@ EXPORT_SYMBOL(d_rehash);
+ static inline unsigned start_dir_add(struct inode *dir)
+ {
+ 
++	preempt_disable_rt();
+ 	for (;;) {
+-		unsigned n = dir->i_dir_seq;
+-		if (!(n & 1) && cmpxchg(&dir->i_dir_seq, n, n + 1) == n)
++		unsigned n = dir->__i_dir_seq;
++		if (!(n & 1) && cmpxchg(&dir->__i_dir_seq, n, n + 1) == n)
+ 			return n;
+ 		cpu_relax();
+ 	}
+@@ -2449,7 +2450,8 @@ static inline unsigned start_dir_add(struct inode *dir)
+ 
+ static inline void end_dir_add(struct inode *dir, unsigned n)
+ {
+-	smp_store_release(&dir->i_dir_seq, n + 2);
++	smp_store_release(&dir->__i_dir_seq, n + 2);
++	preempt_enable_rt();
+ }
+ 
+ static void d_wait_lookup(struct dentry *dentry)
+@@ -2482,7 +2484,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
+ 
+ retry:
+ 	rcu_read_lock();
+-	seq = smp_load_acquire(&parent->d_inode->i_dir_seq);
++	seq = smp_load_acquire(&parent->d_inode->__i_dir_seq);
+ 	r_seq = read_seqbegin(&rename_lock);
+ 	dentry = __d_lookup_rcu(parent, name, &d_seq);
+ 	if (unlikely(dentry)) {
+@@ -2510,7 +2512,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
+ 	}
+ 
+ 	hlist_bl_lock(b);
+-	if (unlikely(READ_ONCE(parent->d_inode->i_dir_seq) != seq)) {
++	if (unlikely(READ_ONCE(parent->d_inode->__i_dir_seq) != seq)) {
+ 		hlist_bl_unlock(b);
+ 		rcu_read_unlock();
+ 		goto retry;
+diff --git a/fs/inode.c b/fs/inode.c
+index cfc36d11bcb3..b77ce179798a 100644
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -154,7 +154,7 @@ int inode_init_always(struct super_block *sb, struct inode *inode)
+ 	inode->i_bdev = NULL;
+ 	inode->i_cdev = NULL;
+ 	inode->i_link = NULL;
+-	inode->i_dir_seq = 0;
++	inode->__i_dir_seq = 0;
+ 	inode->i_rdev = 0;
+ 	inode->dirtied_when = 0;
+ 
+diff --git a/fs/libfs.c b/fs/libfs.c
+index 3aabe553fc45..b5d63bf1ad8e 100644
+--- a/fs/libfs.c
++++ b/fs/libfs.c
+@@ -90,7 +90,7 @@ static struct dentry *next_positive(struct dentry *parent,
+ 				    struct list_head *from,
+ 				    int count)
+ {
+-	unsigned *seq = &parent->d_inode->i_dir_seq, n;
++	unsigned *seq = &parent->d_inode->__i_dir_seq, n;
+ 	struct dentry *res;
+ 	struct list_head *p;
+ 	bool skipped;
+@@ -123,8 +123,9 @@ static struct dentry *next_positive(struct dentry *parent,
+ static void move_cursor(struct dentry *cursor, struct list_head *after)
+ {
+ 	struct dentry *parent = cursor->d_parent;
+-	unsigned n, *seq = &parent->d_inode->i_dir_seq;
++	unsigned n, *seq = &parent->d_inode->__i_dir_seq;
+ 	spin_lock(&parent->d_lock);
++	preempt_disable_rt();
+ 	for (;;) {
+ 		n = *seq;
+ 		if (!(n & 1) && cmpxchg(seq, n, n + 1) == n)
+@@ -137,6 +138,7 @@ static void move_cursor(struct dentry *cursor, struct list_head *after)
+ 	else
+ 		list_add_tail(&cursor->d_child, &parent->d_subdirs);
+ 	smp_store_release(seq, n + 2);
++	preempt_enable_rt();
+ 	spin_unlock(&parent->d_lock);
+ }
+ 
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index cc613f20e5a6..b806e2116f5c 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -655,7 +655,7 @@ struct inode {
+ 		struct block_device	*i_bdev;
+ 		struct cdev		*i_cdev;
+ 		char			*i_link;
+-		unsigned		i_dir_seq;
++		unsigned		__i_dir_seq;
+ 	};
+ 
+ 	__u32			i_generation;
+-- 
+2.18.0
+

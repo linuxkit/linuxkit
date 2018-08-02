@@ -1,0 +1,34 @@
+From 57aadd3335c145d39a4e3ced1de6e220f793e224 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 5 Oct 2017 14:38:52 +0200
+Subject: [PATCH 062/414] xen/9pfs: don't inclide rwlock.h directly.
+
+rwlock.h should not be included directly. Instead linux/splinlock.h
+should be included. One thing it does is to break the RT build.
+
+Cc: Eric Van Hensbergen <ericvh@gmail.com>
+Cc: Ron Minnich <rminnich@sandia.gov>
+Cc: Latchesar Ionkov <lucho@ionkov.net>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: v9fs-developer@lists.sourceforge.net
+Cc: netdev@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ net/9p/trans_xen.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/net/9p/trans_xen.c b/net/9p/trans_xen.c
+index 325c56043007..a3f577e81c79 100644
+--- a/net/9p/trans_xen.c
++++ b/net/9p/trans_xen.c
+@@ -38,7 +38,6 @@
+ 
+ #include <linux/module.h>
+ #include <linux/spinlock.h>
+-#include <linux/rwlock.h>
+ #include <net/9p/9p.h>
+ #include <net/9p/client.h>
+ #include <net/9p/transport.h>
+-- 
+2.18.0
+

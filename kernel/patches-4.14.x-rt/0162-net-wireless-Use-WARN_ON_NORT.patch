@@ -1,0 +1,29 @@
+From 701f386aec46c99105c5d3898566c0ecb2087e0e Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 21 Jul 2011 21:05:33 +0200
+Subject: [PATCH 162/414] net/wireless: Use WARN_ON_NORT()
+
+The softirq counter is meaningless on RT, so the check triggers a
+false positive.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ net/mac80211/rx.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/net/mac80211/rx.c b/net/mac80211/rx.c
+index dddd498e1338..8f39b8162df8 100644
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -4252,7 +4252,7 @@ void ieee80211_rx_napi(struct ieee80211_hw *hw, struct ieee80211_sta *pubsta,
+ 	struct ieee80211_supported_band *sband;
+ 	struct ieee80211_rx_status *status = IEEE80211_SKB_RXCB(skb);
+ 
+-	WARN_ON_ONCE(softirq_count() == 0);
++	WARN_ON_ONCE_NONRT(softirq_count() == 0);
+ 
+ 	if (WARN_ON(status->band >= NUM_NL80211_BANDS))
+ 		goto drop;
+-- 
+2.18.0
+

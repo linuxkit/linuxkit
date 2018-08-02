@@ -1,0 +1,29 @@
+From 2cfe77814265e7d32427f5e82837e6fd8ef5943e Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 29 Jun 2011 20:06:39 +0200
+Subject: [PATCH 251/414] rtmutex: Avoid include hell
+
+Include only the required raw types. This avoids pulling in the
+complete spinlock header which in turn requires rtmutex.h at some point.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/rtmutex.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/include/linux/rtmutex.h b/include/linux/rtmutex.h
+index 66aa13520b68..0331eb58f95d 100644
+--- a/include/linux/rtmutex.h
++++ b/include/linux/rtmutex.h
+@@ -15,7 +15,7 @@
+ 
+ #include <linux/linkage.h>
+ #include <linux/rbtree.h>
+-#include <linux/spinlock_types.h>
++#include <linux/spinlock_types_raw.h>
+ 
+ extern int max_lock_depth; /* for sysctl */
+ 
+-- 
+2.18.0
+

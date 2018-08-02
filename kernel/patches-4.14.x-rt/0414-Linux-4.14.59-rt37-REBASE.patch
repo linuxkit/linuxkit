@@ -1,0 +1,19 @@
+From b66fd2320be2393e6d868f921150ec8835a5c3e3 Mon Sep 17 00:00:00 2001
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Wed, 16 May 2018 09:33:00 -0400
+Subject: [PATCH 414/414] Linux 4.14.59-rt37 REBASE
+
+---
+ localversion-rt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/localversion-rt b/localversion-rt
+index 90290c642ed5..a3b2408c1da6 100644
+--- a/localversion-rt
++++ b/localversion-rt
+@@ -1 +1 @@
+--rt29
++-rt37
+-- 
+2.18.0
+

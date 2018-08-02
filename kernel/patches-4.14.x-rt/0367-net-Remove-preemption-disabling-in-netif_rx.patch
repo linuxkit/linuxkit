@@ -1,0 +1,70 @@
+From c8316fa5cbe45566ee2d0dab15dac9eb2e202f05 Mon Sep 17 00:00:00 2001
+From: Priyanka Jain <Priyanka.Jain@freescale.com>
+Date: Thu, 17 May 2012 09:35:11 +0530
+Subject: [PATCH 367/414] net: Remove preemption disabling in netif_rx()
+
+1)enqueue_to_backlog() (called from netif_rx) should be
+  bind to a particluar CPU. This can be achieved by
+  disabling migration. No need to disable preemption
+
+2)Fixes crash "BUG: scheduling while atomic: ksoftirqd"
+  in case of RT.
+  If preemption is disabled, enqueue_to_backog() is called
+  in atomic context. And if backlog exceeds its count,
+  kfree_skb() is called. But in RT, kfree_skb() might
+  gets scheduled out, so it expects non atomic context.
+
+3)When CONFIG_PREEMPT_RT_FULL is not defined,
+ migrate_enable(), migrate_disable() maps to
+ preempt_enable() and preempt_disable(), so no
+ change in functionality in case of non-RT.
+
+-Replace preempt_enable(), preempt_disable() with
+ migrate_enable(), migrate_disable() respectively
+-Replace get_cpu(), put_cpu() with get_cpu_light(),
+ put_cpu_light() respectively
+
+Signed-off-by: Priyanka Jain <Priyanka.Jain@freescale.com>
+Acked-by: Rajan Srivastava <Rajan.Srivastava@freescale.com>
+Cc: <rostedt@goodmis.orgn>
+Link: http://lkml.kernel.org/r/1337227511-2271-1-git-send-email-Priyanka.Jain@freescale.com
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ net/core/dev.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/net/core/dev.c b/net/core/dev.c
+index 9c936553c46e..11bb8981602d 100644
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -4046,7 +4046,7 @@ static int netif_rx_internal(struct sk_buff *skb)
+ 		struct rps_dev_flow voidflow, *rflow = &voidflow;
+ 		int cpu;
+ 
+-		preempt_disable();
++		migrate_disable();
+ 		rcu_read_lock();
+ 
+ 		cpu = get_rps_cpu(skb->dev, skb, &rflow);
+@@ -4056,14 +4056,14 @@ static int netif_rx_internal(struct sk_buff *skb)
+ 		ret = enqueue_to_backlog(skb, cpu, &rflow->last_qtail);
+ 
+ 		rcu_read_unlock();
+-		preempt_enable();
++		migrate_enable();
+ 	} else
+ #endif
+ 	{
+ 		unsigned int qtail;
+ 
+-		ret = enqueue_to_backlog(skb, get_cpu(), &qtail);
+-		put_cpu();
++		ret = enqueue_to_backlog(skb, get_cpu_light(), &qtail);
++		put_cpu_light();
+ 	}
+ 	return ret;
+ }
+-- 
+2.18.0
+

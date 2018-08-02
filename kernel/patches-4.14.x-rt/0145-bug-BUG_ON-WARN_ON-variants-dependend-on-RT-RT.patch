@@ -1,0 +1,41 @@
+From af460d99363f98df2653a9a18f91d6b024fddff3 Mon Sep 17 00:00:00 2001
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 3 Jul 2009 08:29:58 -0500
+Subject: [PATCH 145/414] bug: BUG_ON/WARN_ON variants dependend on RT/!RT
+
+Introduce RT/NON-RT WARN/BUG statements to avoid ifdefs in the code.
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/asm-generic/bug.h | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/include/asm-generic/bug.h b/include/asm-generic/bug.h
+index ae1a33aa8955..c6d04eca8345 100644
+--- a/include/asm-generic/bug.h
++++ b/include/asm-generic/bug.h
+@@ -234,6 +234,20 @@ void __warn(const char *file, int line, void *caller, unsigned taint,
+ # define WARN_ON_SMP(x)			({0;})
+ #endif
+ 
++#ifdef CONFIG_PREEMPT_RT_BASE
++# define BUG_ON_RT(c)			BUG_ON(c)
++# define BUG_ON_NONRT(c)		do { } while (0)
++# define WARN_ON_RT(condition)		WARN_ON(condition)
++# define WARN_ON_NONRT(condition)	do { } while (0)
++# define WARN_ON_ONCE_NONRT(condition)	do { } while (0)
++#else
++# define BUG_ON_RT(c)			do { } while (0)
++# define BUG_ON_NONRT(c)		BUG_ON(c)
++# define WARN_ON_RT(condition)		do { } while (0)
++# define WARN_ON_NONRT(condition)	WARN_ON(condition)
++# define WARN_ON_ONCE_NONRT(condition)	WARN_ON_ONCE(condition)
++#endif
++
+ #endif /* __ASSEMBLY__ */
+ 
+ #endif
+-- 
+2.18.0
+

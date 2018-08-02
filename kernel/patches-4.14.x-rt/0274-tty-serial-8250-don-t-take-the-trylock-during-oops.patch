@@ -1,0 +1,34 @@
+From 8f34f5a727c1131fefe52854b672c1f8d547075f Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 11 Apr 2016 16:55:02 +0200
+Subject: [PATCH 274/414] tty: serial: 8250: don't take the trylock during oops
+
+An oops with irqs off (panic() from irqsafe hrtimer like the watchdog
+timer) will lead to a lockdep warning on each invocation and as such
+never completes.
+Therefore we skip the trylock in the oops case.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/tty/serial/8250/8250_port.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/drivers/tty/serial/8250/8250_port.c b/drivers/tty/serial/8250/8250_port.c
+index be456ea27ab2..832d0fd9d371 100644
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -3225,10 +3225,8 @@ void serial8250_console_write(struct uart_8250_port *up, const char *s,
+ 
+ 	serial8250_rpm_get(up);
+ 
+-	if (port->sysrq)
++	if (port->sysrq || oops_in_progress)
+ 		locked = 0;
+-	else if (oops_in_progress)
+-		locked = spin_trylock_irqsave(&port->lock, flags);
+ 	else
+ 		spin_lock_irqsave(&port->lock, flags);
+ 
+-- 
+2.18.0
+

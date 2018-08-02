@@ -1,0 +1,37 @@
+From ea47cc05321649c62a036b5ee23a11856cb86f01 Mon Sep 17 00:00:00 2001
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 3 Jul 2009 08:29:30 -0500
+Subject: [PATCH 130/414] drivers: random: Reduce preempt disabled region
+
+No need to keep preemption disabled across the whole function.
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/char/random.c | 3 ---
+ 1 file changed, 3 deletions(-)
+
+diff --git a/drivers/char/random.c b/drivers/char/random.c
+index ddc493d976fd..106abdf67efd 100644
+--- a/drivers/char/random.c
++++ b/drivers/char/random.c
+@@ -1122,8 +1122,6 @@ static void add_timer_randomness(struct timer_rand_state *state, unsigned num)
+ 	} sample;
+ 	long delta, delta2, delta3;
+ 
+-	preempt_disable();
+-
+ 	sample.jiffies = jiffies;
+ 	sample.cycles = random_get_entropy();
+ 	sample.num = num;
+@@ -1164,7 +1162,6 @@ static void add_timer_randomness(struct timer_rand_state *state, unsigned num)
+ 		 */
+ 		credit_entropy_bits(r, min_t(int, fls(delta>>1), 11));
+ 	}
+-	preempt_enable();
+ }
+ 
+ void add_input_randomness(unsigned int type, unsigned int code,
+-- 
+2.18.0
+

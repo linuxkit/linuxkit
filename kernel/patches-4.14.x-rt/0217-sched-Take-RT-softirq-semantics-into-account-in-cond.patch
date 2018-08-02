@@ -1,0 +1,61 @@
+From ce876eb2af2cdfc73c34a1db566b2edeb4c29a5c Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 14 Jul 2011 09:56:44 +0200
+Subject: [PATCH 217/414] sched: Take RT softirq semantics into account in
+ cond_resched()
+
+The softirq semantics work different on -RT. There is no SOFTIRQ_MASK in
+the preemption counter which leads to the BUG_ON() statement in
+__cond_resched_softirq(). As for -RT it is enough to perform a "normal"
+schedule.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/sched.h | 4 ++++
+ kernel/sched/core.c   | 2 ++
+ 2 files changed, 6 insertions(+)
+
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 03b85406312d..209e71d83687 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1658,12 +1658,16 @@ extern int __cond_resched_lock(spinlock_t *lock);
+ 	__cond_resched_lock(lock);				\
+ })
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
+ extern int __cond_resched_softirq(void);
+ 
+ #define cond_resched_softirq() ({					\
+ 	___might_sleep(__FILE__, __LINE__, SOFTIRQ_DISABLE_OFFSET);	\
+ 	__cond_resched_softirq();					\
+ })
++#else
++# define cond_resched_softirq()		cond_resched()
++#endif
+ 
+ static inline void cond_resched_rcu(void)
+ {
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 957477d98330..f6987f504b74 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -4948,6 +4948,7 @@ int __cond_resched_lock(spinlock_t *lock)
+ }
+ EXPORT_SYMBOL(__cond_resched_lock);
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
+ int __sched __cond_resched_softirq(void)
+ {
+ 	BUG_ON(!in_softirq());
+@@ -4961,6 +4962,7 @@ int __sched __cond_resched_softirq(void)
+ 	return 0;
+ }
+ EXPORT_SYMBOL(__cond_resched_softirq);
++#endif
+ 
+ /**
+  * yield - yield the current processor to other threads.
+-- 
+2.18.0
+

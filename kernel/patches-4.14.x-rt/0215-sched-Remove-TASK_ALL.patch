@@ -1,0 +1,35 @@
+From 94fce9b3e1dd5ac4f2b3fc8f0b548588783e6fd6 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Wed, 7 Jun 2017 10:12:45 +0200
+Subject: [PATCH 215/414] sched: Remove TASK_ALL
+
+It's unused:
+
+$ git grep "\<TASK_ALL\>" | wc -l
+1
+
+And dangerous, kill the bugger.
+
+Cc: stable-rt@vger.kernel.org
+Acked-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/sched.h | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index cc5e4a3c2c63..03b85406312d 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -93,7 +93,6 @@ struct task_group;
+ 
+ /* Convenience macros for the sake of wake_up(): */
+ #define TASK_NORMAL			(TASK_INTERRUPTIBLE | TASK_UNINTERRUPTIBLE)
+-#define TASK_ALL			(TASK_NORMAL | __TASK_STOPPED | __TASK_TRACED)
+ 
+ /* get_task_state(): */
+ #define TASK_REPORT			(TASK_RUNNING | TASK_INTERRUPTIBLE | \
+-- 
+2.18.0
+

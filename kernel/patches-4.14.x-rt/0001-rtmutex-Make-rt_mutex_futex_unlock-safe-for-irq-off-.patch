@@ -1,0 +1,127 @@
+From 9d9b5967777fb3b9f3ad66dd4d63967edfc6caa0 Mon Sep 17 00:00:00 2001
+From: Boqun Feng <boqun.feng@gmail.com>
+Date: Fri, 9 Mar 2018 14:56:28 +0800
+Subject: [PATCH 001/414] rtmutex: Make rt_mutex_futex_unlock() safe for
+ irq-off callsites
+
+Upstream commit 6b0ef92fee2a3189eba6d6b827b247cb4f6da7e9
+
+When running rcutorture with TREE03 config, CONFIG_PROVE_LOCKING=y, and
+kernel cmdline argument "rcutorture.gp_exp=1", lockdep reports a
+HARDIRQ-safe->HARDIRQ-unsafe deadlock:
+
+ ================================
+ WARNING: inconsistent lock state
+ 4.16.0-rc4+ #1 Not tainted
+ --------------------------------
+ inconsistent {IN-HARDIRQ-W} -> {HARDIRQ-ON-W} usage.
+ takes:
+ __schedule+0xbe/0xaf0
+ {IN-HARDIRQ-W} state was registered at:
+   _raw_spin_lock+0x2a/0x40
+   scheduler_tick+0x47/0xf0
+...
+ other info that might help us debug this:
+  Possible unsafe locking scenario:
+        CPU0
+        ----
+   lock(&rq->lock);
+   <Interrupt>
+     lock(&rq->lock);
+  *** DEADLOCK ***
+ 1 lock held by rcu_torture_rea/724:
+ rcu_torture_read_lock+0x0/0x70
+ stack backtrace:
+ CPU: 2 PID: 724 Comm: rcu_torture_rea Not tainted 4.16.0-rc4+ #1
+ Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.11.0-20171110_100015-anatol 04/01/2014
+ Call Trace:
+  lock_acquire+0x90/0x200
+  ? __schedule+0xbe/0xaf0
+  _raw_spin_lock+0x2a/0x40
+  ? __schedule+0xbe/0xaf0
+  __schedule+0xbe/0xaf0
+  preempt_schedule_irq+0x2f/0x60
+  retint_kernel+0x1b/0x2d
+ RIP: 0010:rcu_read_unlock_special+0x0/0x680
+  ? rcu_torture_read_unlock+0x60/0x60
+  __rcu_read_unlock+0x64/0x70
+  rcu_torture_read_unlock+0x17/0x60
+  rcu_torture_reader+0x275/0x450
+  ? rcutorture_booster_init+0x110/0x110
+  ? rcu_torture_stall+0x230/0x230
+  ? kthread+0x10e/0x130
+  kthread+0x10e/0x130
+  ? kthread_create_worker_on_cpu+0x70/0x70
+  ? call_usermodehelper_exec_async+0x11a/0x150
+  ret_from_fork+0x3a/0x50
+
+This happens with the following even sequence:
+
+	preempt_schedule_irq();
+	  local_irq_enable();
+	  __schedule():
+	    local_irq_disable(); // irq off
+	    ...
+	    rcu_note_context_switch():
+	      rcu_note_preempt_context_switch():
+	        rcu_read_unlock_special():
+	          local_irq_save(flags);
+	          ...
+		  raw_spin_unlock_irqrestore(...,flags); // irq remains off
+	          rt_mutex_futex_unlock():
+	            raw_spin_lock_irq();
+	            ...
+	            raw_spin_unlock_irq(); // accidentally set irq on
+
+	    <return to __schedule()>
+	    rq_lock():
+	      raw_spin_lock(); // acquiring rq->lock with irq on
+
+which means rq->lock becomes a HARDIRQ-unsafe lock, which can cause
+deadlocks in scheduler code.
+
+This problem was introduced by commit 02a7c234e540 ("rcu: Suppress
+lockdep false-positive ->boost_mtx complaints"). That brought the user
+of rt_mutex_futex_unlock() with irq off.
+
+To fix this, replace the *lock_irq() in rt_mutex_futex_unlock() with
+*lock_irq{save,restore}() to make it safe to call rt_mutex_futex_unlock()
+with irq off.
+
+Fixes: 02a7c234e540 ("rcu: Suppress lockdep false-positive ->boost_mtx complaints")
+Signed-off-by: Boqun Feng <boqun.feng@gmail.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Lai Jiangshan <jiangshanlai@gmail.com>
+Cc: Steven Rostedt <rostedt@goodmis.org>
+Cc: Josh Triplett <josh@joshtriplett.org>
+Cc: Mathieu Desnoyers <mathieu.desnoyers@efficios.com>
+Cc: "Paul E . McKenney" <paulmck@linux.vnet.ibm.com>
+Link: https://lkml.kernel.org/r/20180309065630.8283-1-boqun.feng@gmail.com
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/locking/rtmutex.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
+index 65cc0cb984e6..940633c63254 100644
+--- a/kernel/locking/rtmutex.c
++++ b/kernel/locking/rtmutex.c
+@@ -1616,11 +1616,12 @@ bool __sched __rt_mutex_futex_unlock(struct rt_mutex *lock,
+ void __sched rt_mutex_futex_unlock(struct rt_mutex *lock)
+ {
+ 	DEFINE_WAKE_Q(wake_q);
++	unsigned long flags;
+ 	bool postunlock;
+ 
+-	raw_spin_lock_irq(&lock->wait_lock);
++	raw_spin_lock_irqsave(&lock->wait_lock, flags);
+ 	postunlock = __rt_mutex_futex_unlock(lock, &wake_q);
+-	raw_spin_unlock_irq(&lock->wait_lock);
++	raw_spin_unlock_irqrestore(&lock->wait_lock, flags);
+ 
+ 	if (postunlock)
+ 		rt_mutex_postunlock(&wake_q);
+-- 
+2.18.0
+

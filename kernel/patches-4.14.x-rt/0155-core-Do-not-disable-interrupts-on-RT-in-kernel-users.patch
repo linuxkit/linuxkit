@@ -1,0 +1,35 @@
+From ec4d7dfc11d797eeee2236fd32856f0ef1ab4efc Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 21 Jul 2009 23:06:05 +0200
+Subject: [PATCH 155/414] core: Do not disable interrupts on RT in
+ kernel/users.c
+
+Use the local_irq_*_nort variants to reduce latencies in RT. The code
+is serialized by the locks. No need to disable interrupts.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ kernel/user.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/user.c b/kernel/user.c
+index 00281add65b2..f4cf1841f2fd 100644
+--- a/kernel/user.c
++++ b/kernel/user.c
+@@ -162,11 +162,11 @@ void free_uid(struct user_struct *up)
+ 	if (!up)
+ 		return;
+ 
+-	local_irq_save(flags);
++	local_irq_save_nort(flags);
+ 	if (atomic_dec_and_lock(&up->__count, &uidhash_lock))
+ 		free_user(up, flags);
+ 	else
+-		local_irq_restore(flags);
++		local_irq_restore_nort(flags);
+ }
+ 
+ struct user_struct *alloc_uid(kuid_t uid)
+-- 
+2.18.0
+

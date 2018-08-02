@@ -1,0 +1,53 @@
+From 2462efc351d9d57bb8ed04782c1d97c9a76f026f Mon Sep 17 00:00:00 2001
+From: Clark Williams <williams@redhat.com>
+Date: Sat, 30 Jul 2011 21:55:53 -0500
+Subject: [PATCH 344/414] sysfs: Add /sys/kernel/realtime entry
+
+Add a /sys/kernel entry to indicate that the kernel is a
+realtime kernel.
+
+Clark says that he needs this for udev rules, udev needs to evaluate
+if its a PREEMPT_RT kernel a few thousand times and parsing uname
+output is too slow or so.
+
+Are there better solutions? Should it exist and return 0 on !-rt?
+
+Signed-off-by: Clark Williams <williams@redhat.com>
+Signed-off-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
+---
+ kernel/ksysfs.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
+
+diff --git a/kernel/ksysfs.c b/kernel/ksysfs.c
+index 46ba853656f6..9a23632b6294 100644
+--- a/kernel/ksysfs.c
++++ b/kernel/ksysfs.c
+@@ -140,6 +140,15 @@ KERNEL_ATTR_RO(vmcoreinfo);
+ 
+ #endif /* CONFIG_CRASH_CORE */
+ 
++#if defined(CONFIG_PREEMPT_RT_FULL)
++static ssize_t realtime_show(struct kobject *kobj,
++			     struct kobj_attribute *attr, char *buf)
++{
++	return sprintf(buf, "%d\n", 1);
++}
++KERNEL_ATTR_RO(realtime);
++#endif
++
+ /* whether file capabilities are enabled */
+ static ssize_t fscaps_show(struct kobject *kobj,
+ 				  struct kobj_attribute *attr, char *buf)
+@@ -230,6 +239,9 @@ static struct attribute * kernel_attrs[] = {
+ #ifndef CONFIG_TINY_RCU
+ 	&rcu_expedited_attr.attr,
+ 	&rcu_normal_attr.attr,
++#endif
++#ifdef CONFIG_PREEMPT_RT_FULL
++	&realtime_attr.attr,
+ #endif
+ 	NULL
+ };
+-- 
+2.18.0
+

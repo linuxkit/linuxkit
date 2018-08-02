@@ -1,0 +1,56 @@
+From 2d69de34c6fd6f08db2c84c9d5a8842e80bdef6c Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 7 Jun 2011 09:19:06 +0200
+Subject: [PATCH 216/414] sched: Do not account rcu_preempt_depth on RT in
+ might_sleep()
+
+RT changes the rcu_preempt_depth semantics, so we cannot check for it
+in might_sleep().
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/rcupdate.h | 7 +++++++
+ kernel/sched/core.c      | 2 +-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
+index a6ddc42f87a5..dbadbdbc8643 100644
+--- a/include/linux/rcupdate.h
++++ b/include/linux/rcupdate.h
+@@ -74,6 +74,11 @@ void synchronize_rcu(void);
+  * types of kernel builds, the rcu_read_lock() nesting depth is unknowable.
+  */
+ #define rcu_preempt_depth() (current->rcu_read_lock_nesting)
++#ifndef CONFIG_PREEMPT_RT_FULL
++#define sched_rcu_preempt_depth()	rcu_preempt_depth()
++#else
++static inline int sched_rcu_preempt_depth(void) { return 0; }
++#endif
+ 
+ #else /* #ifdef CONFIG_PREEMPT_RCU */
+ 
+@@ -99,6 +104,8 @@ static inline int rcu_preempt_depth(void)
+ 	return 0;
+ }
+ 
++#define sched_rcu_preempt_depth()	rcu_preempt_depth()
++
+ #endif /* #else #ifdef CONFIG_PREEMPT_RCU */
+ 
+ /* Internal to kernel */
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 32f291fe7959..957477d98330 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -6052,7 +6052,7 @@ void __init sched_init(void)
+ #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
+ static inline int preempt_count_equals(int preempt_offset)
+ {
+-	int nested = preempt_count() + rcu_preempt_depth();
++	int nested = preempt_count() + sched_rcu_preempt_depth();
+ 
+ 	return (nested == preempt_offset);
+ }
+-- 
+2.18.0
+

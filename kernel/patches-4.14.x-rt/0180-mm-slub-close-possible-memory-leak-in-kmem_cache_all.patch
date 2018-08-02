@@ -1,0 +1,31 @@
+From ed5f196a25aba453066d555488889cdc96e2453d Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 13 Dec 2017 12:44:14 +0100
+Subject: [PATCH 180/414] mm/slub: close possible memory-leak in
+ kmem_cache_alloc_bulk()
+
+Under certain circumstances we could leak elements which were moved to
+the local "to_free" list. The damage is limited since I can't find
+any users here.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/slub.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/mm/slub.c b/mm/slub.c
+index 91d46992fa59..9751f258d06a 100644
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -3218,6 +3218,7 @@ int kmem_cache_alloc_bulk(struct kmem_cache *s, gfp_t flags, size_t size,
+ 	return i;
+ error:
+ 	local_irq_enable();
++	free_delayed(&to_free);
+ 	slab_post_alloc_hook(s, flags, i, p);
+ 	__kmem_cache_free_bulk(s, i, p);
+ 	return 0;
+-- 
+2.18.0
+
