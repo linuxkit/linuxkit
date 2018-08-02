@@ -15,7 +15,7 @@ RUN apk add --no-cache \
     go \
     musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
-ENV VIRTSOCK_COMMIT=0416e3d85541e7a067fd000c69f50997b5d47c93
+ENV VIRTSOCK_COMMIT=f1e32d3189e0dbb81c0e752a4e214617487eb41f
 RUN git clone https://github.com/linuxkit/virtsock.git /go/src/github.com/linuxkit/virtsock && \
     cd /go/src/github.com/linuxkit/virtsock && \
     git checkout $VIRTSOCK_COMMIT && \
