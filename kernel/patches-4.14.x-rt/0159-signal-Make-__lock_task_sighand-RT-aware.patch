@@ -1,0 +1,44 @@
+From f10b95267c7cda93b855a602eea8b70dd2a7672c Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 22 Jul 2011 08:07:08 +0200
+Subject: [PATCH 159/414] signal: Make __lock_task_sighand() RT aware
+
+local_irq_save() + spin_lock(&sighand->siglock) does not work on
+-RT. Use the nort variants.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ kernel/signal.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/kernel/signal.c b/kernel/signal.c
+index 67354e467778..d02e38f75170 100644
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -1301,12 +1301,12 @@ struct sighand_struct *__lock_task_sighand(struct task_struct *tsk,
+ 		 * Disable interrupts early to avoid deadlocks.
+ 		 * See rcu_read_unlock() comment header for details.
+ 		 */
+-		local_irq_save(*flags);
++		local_irq_save_nort(*flags);
+ 		rcu_read_lock();
+ 		sighand = rcu_dereference(tsk->sighand);
+ 		if (unlikely(sighand == NULL)) {
+ 			rcu_read_unlock();
+-			local_irq_restore(*flags);
++			local_irq_restore_nort(*flags);
+ 			break;
+ 		}
+ 		/*
+@@ -1327,7 +1327,7 @@ struct sighand_struct *__lock_task_sighand(struct task_struct *tsk,
+ 		}
+ 		spin_unlock(&sighand->siglock);
+ 		rcu_read_unlock();
+-		local_irq_restore(*flags);
++		local_irq_restore_nort(*flags);
+ 	}
+ 
+ 	return sighand;
+-- 
+2.18.0
+

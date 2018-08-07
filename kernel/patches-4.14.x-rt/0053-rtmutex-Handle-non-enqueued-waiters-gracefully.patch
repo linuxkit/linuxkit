@@ -1,0 +1,37 @@
+From 64c4c76f4ac141722a1ba1fbcc2d41a50ba0e2c7 Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 6 Nov 2015 18:51:03 +0100
+Subject: [PATCH 053/414] rtmutex: Handle non enqueued waiters gracefully
+
+Yimin debugged that in case of a PI wakeup in progress when
+rt_mutex_start_proxy_lock() calls task_blocks_on_rt_mutex() the latter
+returns -EAGAIN and in consequence the remove_waiter() call runs into
+a BUG_ON() because there is nothing to remove.
+
+Guard it with rt_mutex_has_waiters(). This is a quick fix which is
+easy to backport. The proper fix is to have a central check in
+remove_waiter() so we can call it unconditionally.
+
+Reported-and-debugged-by: Yimin Deng <yimin11.deng@gmail.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: stable-rt@vger.kernel.org
+---
+ kernel/locking/rtmutex.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
+index 940633c63254..fe7f97edc94e 100644
+--- a/kernel/locking/rtmutex.c
++++ b/kernel/locking/rtmutex.c
+@@ -1729,7 +1729,7 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
+ 		ret = 0;
+ 	}
+ 
+-	if (unlikely(ret))
++	if (ret && rt_mutex_has_waiters(lock))
+ 		remove_waiter(lock, waiter);
+ 
+ 	debug_rt_mutex_print_deadlock(waiter);
+-- 
+2.18.0
+

@@ -1,0 +1,28 @@
+From bd21c3ac17eac6df8a1c67e53e6054125bd5e27b Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 14 Jun 2011 17:05:09 +0200
+Subject: [PATCH 278/414] block: Turn off warning which is bogus on RT
+
+On -RT the context is always with IRQs enabled. Ignore this warning on -RT.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ block/blk-core.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 2b026f66ecf1..7d9b502cc969 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -280,7 +280,7 @@ EXPORT_SYMBOL(blk_start_queue_async);
+ void blk_start_queue(struct request_queue *q)
+ {
+ 	lockdep_assert_held(q->queue_lock);
+-	WARN_ON(!in_interrupt() && !irqs_disabled());
++	WARN_ON_NONRT(!in_interrupt() && !irqs_disabled());
+ 	WARN_ON_ONCE(q->mq_ops);
+ 
+ 	queue_flag_clear(QUEUE_FLAG_STOPPED, q);
+-- 
+2.18.0
+

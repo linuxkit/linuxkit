@@ -1,0 +1,42 @@
+From c72a0cf2454273e3eed05132ec18684eb11e94bc Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 24 Jul 2011 12:11:43 +0200
+Subject: [PATCH 143/414] kconfig: Disable config options which are not RT
+ compatible
+
+Disable stuff which is known to have issues on RT
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/Kconfig | 1 +
+ mm/Kconfig   | 2 +-
+ 2 files changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/arch/Kconfig b/arch/Kconfig
+index 400b9e1b2f27..2f99c0d2166a 100644
+--- a/arch/Kconfig
++++ b/arch/Kconfig
+@@ -17,6 +17,7 @@ config OPROFILE
+ 	tristate "OProfile system profiling"
+ 	depends on PROFILING
+ 	depends on HAVE_OPROFILE
++	depends on !PREEMPT_RT_FULL
+ 	select RING_BUFFER
+ 	select RING_BUFFER_ALLOW_SWAP
+ 	help
+diff --git a/mm/Kconfig b/mm/Kconfig
+index 59efbd3337e0..3df123c0bc3f 100644
+--- a/mm/Kconfig
++++ b/mm/Kconfig
+@@ -385,7 +385,7 @@ config NOMMU_INITIAL_TRIM_EXCESS
+ 
+ config TRANSPARENT_HUGEPAGE
+ 	bool "Transparent Hugepage Support"
+-	depends on HAVE_ARCH_TRANSPARENT_HUGEPAGE
++	depends on HAVE_ARCH_TRANSPARENT_HUGEPAGE && !PREEMPT_RT_FULL
+ 	select COMPACTION
+ 	select RADIX_TREE_MULTIORDER
+ 	help
+-- 
+2.18.0
+

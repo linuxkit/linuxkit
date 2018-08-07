@@ -1,0 +1,102 @@
+From adc5656f17ae62e95ade16b068a3a45681ddeab0 Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 22 Jun 2011 19:47:02 +0200
+Subject: [PATCH 122/414] block: Shorten interrupt disabled regions
+
+Moving the blk_sched_flush_plug() call out of the interrupt/preempt
+disabled region in the scheduler allows us to replace
+local_irq_save/restore(flags) by local_irq_disable/enable() in
+blk_flush_plug().
+
+Now instead of doing this we disable interrupts explicitely when we
+lock the request_queue and reenable them when we drop the lock. That
+allows interrupts to be handled when the plug list contains requests
+for more than one queue.
+
+Aside of that this change makes the scope of the irq disabled region
+more obvious. The current code confused the hell out of me when
+looking at:
+
+ local_irq_save(flags);
+   spin_lock(q->queue_lock);
+   ...
+   queue_unplugged(q...);
+     scsi_request_fn();
+       spin_unlock(q->queue_lock);
+       spin_lock(shost->host_lock);
+       spin_unlock_irq(shost->host_lock);
+
+-------------------^^^ ????
+
+       spin_lock_irq(q->queue_lock);
+       spin_unlock(q->lock);
+ local_irq_restore(flags);
+
+Also add a comment to __blk_run_queue() documenting that
+q->request_fn() can drop q->queue_lock and reenable interrupts, but
+must return with q->queue_lock held and interrupts disabled.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Cc: Tejun Heo <tj@kernel.org>
+Cc: Jens Axboe <axboe@kernel.dk>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>
+Link: http://lkml.kernel.org/r/20110622174919.025446432@linutronix.de
+---
+ block/blk-core.c | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/block/blk-core.c b/block/blk-core.c
+index 68bae6338ad4..2b026f66ecf1 100644
+--- a/block/blk-core.c
++++ b/block/blk-core.c
+@@ -3308,7 +3308,7 @@ static void queue_unplugged(struct request_queue *q, unsigned int depth,
+ 		blk_run_queue_async(q);
+ 	else
+ 		__blk_run_queue(q);
+-	spin_unlock(q->queue_lock);
++	spin_unlock_irq(q->queue_lock);
+ }
+ 
+ static void flush_plug_callbacks(struct blk_plug *plug, bool from_schedule)
+@@ -3356,7 +3356,6 @@ EXPORT_SYMBOL(blk_check_plugged);
+ void blk_flush_plug_list(struct blk_plug *plug, bool from_schedule)
+ {
+ 	struct request_queue *q;
+-	unsigned long flags;
+ 	struct request *rq;
+ 	LIST_HEAD(list);
+ 	unsigned int depth;
+@@ -3376,11 +3375,6 @@ void blk_flush_plug_list(struct blk_plug *plug, bool from_schedule)
+ 	q = NULL;
+ 	depth = 0;
+ 
+-	/*
+-	 * Save and disable interrupts here, to avoid doing it for every
+-	 * queue lock we have to take.
+-	 */
+-	local_irq_save(flags);
+ 	while (!list_empty(&list)) {
+ 		rq = list_entry_rq(list.next);
+ 		list_del_init(&rq->queuelist);
+@@ -3393,7 +3387,7 @@ void blk_flush_plug_list(struct blk_plug *plug, bool from_schedule)
+ 				queue_unplugged(q, depth, from_schedule);
+ 			q = rq->q;
+ 			depth = 0;
+-			spin_lock(q->queue_lock);
++			spin_lock_irq(q->queue_lock);
+ 		}
+ 
+ 		/*
+@@ -3420,8 +3414,6 @@ void blk_flush_plug_list(struct blk_plug *plug, bool from_schedule)
+ 	 */
+ 	if (q)
+ 		queue_unplugged(q, depth, from_schedule);
+-
+-	local_irq_restore(flags);
+ }
+ 
+ void blk_finish_plug(struct blk_plug *plug)
+-- 
+2.18.0
+

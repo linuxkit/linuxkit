@@ -1,0 +1,105 @@
+From 1cf9026cb92cec557c31d0f5f3d861076cec78a0 Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sat, 25 Jun 2011 09:21:04 +0200
+Subject: [PATCH 213/414] sched: Add saved_state for tasks blocked on sleeping
+ locks
+
+Spinlocks are state preserving in !RT. RT changes the state when a
+task gets blocked on a lock. So we need to remember the state before
+the lock contention. If a regular wakeup (not a RTmutex related
+wakeup) happens, the saved_state is updated to running. When the lock
+sleep is done, the saved state is restored.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/sched.h |  3 +++
+ kernel/sched/core.c   | 31 ++++++++++++++++++++++++++++++-
+ kernel/sched/sched.h  |  1 +
+ 3 files changed, 34 insertions(+), 1 deletion(-)
+
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 84332b5139b5..cc5e4a3c2c63 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -566,6 +566,8 @@ struct task_struct {
+ #endif
+ 	/* -1 unrunnable, 0 runnable, >0 stopped: */
+ 	volatile long			state;
++	/* saved state for "spinlock sleepers" */
++	volatile long			saved_state;
+ 
+ 	/*
+ 	 * This begins the randomizable portion of task_struct. Only
+@@ -1555,6 +1557,7 @@ extern struct task_struct *find_task_by_pid_ns(pid_t nr, struct pid_namespace *n
+ 
+ extern int wake_up_state(struct task_struct *tsk, unsigned int state);
+ extern int wake_up_process(struct task_struct *tsk);
++extern int wake_up_lock_sleeper(struct task_struct *tsk);
+ extern void wake_up_new_task(struct task_struct *tsk);
+ 
+ #ifdef CONFIG_SMP
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index bc209b3994f2..f6eb8d150a53 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -2033,8 +2033,25 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
+ 	 */
+ 	raw_spin_lock_irqsave(&p->pi_lock, flags);
+ 	smp_mb__after_spinlock();
+-	if (!(p->state & state))
++	if (!(p->state & state)) {
++		/*
++		 * The task might be running due to a spinlock sleeper
++		 * wakeup. Check the saved state and set it to running
++		 * if the wakeup condition is true.
++		 */
++		if (!(wake_flags & WF_LOCK_SLEEPER)) {
++			if (p->saved_state & state)
++				p->saved_state = TASK_RUNNING;
++		}
+ 		goto out;
++	}
++
++	/*
++	 * If this is a regular wakeup, then we can unconditionally
++	 * clear the saved state of a "lock sleeper".
++	 */
++	if (!(wake_flags & WF_LOCK_SLEEPER))
++		p->saved_state = TASK_RUNNING;
+ 
+ 	trace_sched_waking(p);
+ 
+@@ -2198,6 +2215,18 @@ int wake_up_process(struct task_struct *p)
+ }
+ EXPORT_SYMBOL(wake_up_process);
+ 
++/**
++ * wake_up_lock_sleeper - Wake up a specific process blocked on a "sleeping lock"
++ * @p: The process to be woken up.
++ *
++ * Same as wake_up_process() above, but wake_flags=WF_LOCK_SLEEPER to indicate
++ * the nature of the wakeup.
++ */
++int wake_up_lock_sleeper(struct task_struct *p)
++{
++	return try_to_wake_up(p, TASK_ALL, WF_LOCK_SLEEPER);
++}
++
+ int wake_up_state(struct task_struct *p, unsigned int state)
+ {
+ 	return try_to_wake_up(p, state, 0);
+diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
+index b29376169f3f..ace39806bff8 100644
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -1354,6 +1354,7 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)
+ #define WF_SYNC		0x01		/* waker goes to sleep after wakeup */
+ #define WF_FORK		0x02		/* child wakeup after fork */
+ #define WF_MIGRATED	0x4		/* internal use, task got migrated */
++#define WF_LOCK_SLEEPER	0x08		/* wakeup spinlock "sleeper" */
+ 
+ /*
+  * To aid in avoiding the subversion of "niceness" due to uneven distribution
+-- 
+2.18.0
+

@@ -1,0 +1,33 @@
+From 00572c9a8e204d6a5371298aeb54e2bd52f59537 Mon Sep 17 00:00:00 2001
+From: "Wolfgang M. Reimer" <linuxball@gmail.com>
+Date: Tue, 21 Jul 2015 16:20:07 +0200
+Subject: [PATCH 247/414] locking: locktorture: Do NOT include rwlock.h
+ directly
+
+Including rwlock.h directly will cause kernel builds to fail
+if CONFIG_PREEMPT_RT_FULL is defined. The correct header file
+(rwlock_rt.h OR rwlock.h) will be included by spinlock.h which
+is included by locktorture.c anyway.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Wolfgang M. Reimer <linuxball@gmail.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/locking/locktorture.c | 1 -
+ 1 file changed, 1 deletion(-)
+
+diff --git a/kernel/locking/locktorture.c b/kernel/locking/locktorture.c
+index 6dca260eeccf..5d01ac590d4c 100644
+--- a/kernel/locking/locktorture.c
++++ b/kernel/locking/locktorture.c
+@@ -26,7 +26,6 @@
+ #include <linux/kthread.h>
+ #include <linux/sched/rt.h>
+ #include <linux/spinlock.h>
+-#include <linux/rwlock.h>
+ #include <linux/mutex.h>
+ #include <linux/rwsem.h>
+ #include <linux/smp.h>
+-- 
+2.18.0
+

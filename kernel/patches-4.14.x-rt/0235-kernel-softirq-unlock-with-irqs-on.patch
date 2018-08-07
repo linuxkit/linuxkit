@@ -1,0 +1,33 @@
+From 980c26756f45293920b47a8e68e72982b1418d2c Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 9 Feb 2016 18:17:18 +0100
+Subject: [PATCH 235/414] kernel: softirq: unlock with irqs on
+
+We unlock the lock while the interrupts are off. This isn't a problem
+now but will get because the migrate_disable() + enable are not
+symmetrical in regard to the status of interrupts.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/softirq.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/softirq.c b/kernel/softirq.c
+index c737ad6df54b..bd4be3911b4a 100644
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -560,8 +560,10 @@ static void do_current_softirqs(void)
+ 			do_single_softirq(i);
+ 		}
+ 		softirq_clr_runner(i);
+-		unlock_softirq(i);
+ 		WARN_ON(current->softirq_nestcnt != 1);
++		local_irq_enable();
++		unlock_softirq(i);
++		local_irq_disable();
+ 	}
+ }
+ 
+-- 
+2.18.0
+

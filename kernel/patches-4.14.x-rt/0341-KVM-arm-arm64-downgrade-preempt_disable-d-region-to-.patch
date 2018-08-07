@@ -1,0 +1,58 @@
+From cd4d7c7e603d7f09f3ade92a0c6a2eff81e7e7c2 Mon Sep 17 00:00:00 2001
+From: Josh Cartwright <joshc@ni.com>
+Date: Thu, 11 Feb 2016 11:54:01 -0600
+Subject: [PATCH 341/414] KVM: arm/arm64: downgrade preempt_disable()d region
+ to migrate_disable()
+
+kvm_arch_vcpu_ioctl_run() disables the use of preemption when updating
+the vgic and timer states to prevent the calling task from migrating to
+another CPU.  It does so to prevent the task from writing to the
+incorrect per-CPU GIC distributor registers.
+
+On -rt kernels, it's possible to maintain the same guarantee with the
+use of migrate_{disable,enable}(), with the added benefit that the
+migrate-disabled region is preemptible.  Update
+kvm_arch_vcpu_ioctl_run() to do so.
+
+Cc: Christoffer Dall <christoffer.dall@linaro.org>
+Reported-by: Manish Jaggi <Manish.Jaggi@caviumnetworks.com>
+Signed-off-by: Josh Cartwright <joshc@ni.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ virt/kvm/arm/arm.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/virt/kvm/arm/arm.c b/virt/kvm/arm/arm.c
+index 0099cce0e264..c09e04130bfe 100644
+--- a/virt/kvm/arm/arm.c
++++ b/virt/kvm/arm/arm.c
+@@ -651,7 +651,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 		 * involves poking the GIC, which must be done in a
+ 		 * non-preemptible context.
+ 		 */
+-		preempt_disable();
++		migrate_disable();
+ 
+ 		kvm_pmu_flush_hwstate(vcpu);
+ 
+@@ -688,7 +688,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 			kvm_pmu_sync_hwstate(vcpu);
+ 			kvm_timer_sync_hwstate(vcpu);
+ 			kvm_vgic_sync_hwstate(vcpu);
+-			preempt_enable();
++			migrate_enable();
+ 			continue;
+ 		}
+ 
+@@ -743,7 +743,7 @@ int kvm_arch_vcpu_ioctl_run(struct kvm_vcpu *vcpu, struct kvm_run *run)
+ 
+ 		kvm_vgic_sync_hwstate(vcpu);
+ 
+-		preempt_enable();
++		migrate_enable();
+ 
+ 		ret = handle_exit(vcpu, run, ret);
+ 	}
+-- 
+2.18.0
+

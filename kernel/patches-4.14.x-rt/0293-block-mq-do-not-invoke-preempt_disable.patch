@@ -1,0 +1,57 @@
+From 306ac409065baad2c353b2ed91f867daea9fe6d2 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 14 Jul 2015 14:26:34 +0200
+Subject: [PATCH 293/414] block/mq: do not invoke preempt_disable()
+
+preempt_disable() and get_cpu() don't play well together with the sleeping
+locks it tries to allocate later.
+It seems to be enough to replace it with get_cpu_light() and migrate_disable().
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ block/blk-mq.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
+
+diff --git a/block/blk-mq.c b/block/blk-mq.c
+index 1bd1069c5d84..ff88e0991196 100644
+--- a/block/blk-mq.c
++++ b/block/blk-mq.c
+@@ -558,7 +558,7 @@ static void __blk_mq_complete_request(struct request *rq)
+ 		return;
+ 	}
+ 
+-	cpu = get_cpu();
++	cpu = get_cpu_light();
+ 	if (!test_bit(QUEUE_FLAG_SAME_FORCE, &rq->q->queue_flags))
+ 		shared = cpus_share_cache(cpu, ctx->cpu);
+ 
+@@ -570,7 +570,7 @@ static void __blk_mq_complete_request(struct request *rq)
+ 	} else {
+ 		rq->q->softirq_done_fn(rq);
+ 	}
+-	put_cpu();
++	put_cpu_light();
+ }
+ 
+ /**
+@@ -1238,14 +1238,14 @@ static void __blk_mq_delay_run_hw_queue(struct blk_mq_hw_ctx *hctx, bool async,
+ 		return;
+ 
+ 	if (!async && !(hctx->flags & BLK_MQ_F_BLOCKING)) {
+-		int cpu = get_cpu();
++		int cpu = get_cpu_light();
+ 		if (cpumask_test_cpu(cpu, hctx->cpumask)) {
+ 			__blk_mq_run_hw_queue(hctx);
+-			put_cpu();
++			put_cpu_light();
+ 			return;
+ 		}
+ 
+-		put_cpu();
++		put_cpu_light();
+ 	}
+ 
+ 	kblockd_schedule_delayed_work_on(blk_mq_hctx_next_cpu(hctx),
+-- 
+2.18.0
+

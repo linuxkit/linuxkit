@@ -1,0 +1,68 @@
+From 52d7dcec9ecbf158d2c91222af9d377d848d3ba1 Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 29 Jun 2011 14:58:57 +0200
+Subject: [PATCH 144/414] kconfig: Add PREEMPT_RT_FULL
+
+Introduce the final symbol for PREEMPT_RT_FULL.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ init/Makefile          | 2 +-
+ kernel/Kconfig.preempt | 8 ++++++++
+ scripts/mkcompile_h    | 4 +++-
+ 3 files changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/init/Makefile b/init/Makefile
+index 1dbb23787290..eabf3f1b14be 100644
+--- a/init/Makefile
++++ b/init/Makefile
+@@ -36,4 +36,4 @@ silent_chk_compile.h = :
+ include/generated/compile.h: FORCE
+ 	@$($(quiet)chk_compile.h)
+ 	$(Q)$(CONFIG_SHELL) $(srctree)/scripts/mkcompile_h $@ \
+-	"$(UTS_MACHINE)" "$(CONFIG_SMP)" "$(CONFIG_PREEMPT)" "$(CC) $(KBUILD_CFLAGS)"
++	"$(UTS_MACHINE)" "$(CONFIG_SMP)" "$(CONFIG_PREEMPT)" "$(CONFIG_PREEMPT_RT_FULL)" "$(CC) $(KBUILD_CFLAGS)"
+diff --git a/kernel/Kconfig.preempt b/kernel/Kconfig.preempt
+index c669134982ec..f8a2982bdbde 100644
+--- a/kernel/Kconfig.preempt
++++ b/kernel/Kconfig.preempt
+@@ -67,6 +67,14 @@ config PREEMPT_RTB
+ 	  enables changes which are preliminary for the full preemptible
+ 	  RT kernel.
+ 
++config PREEMPT_RT_FULL
++	bool "Fully Preemptible Kernel (RT)"
++	depends on IRQ_FORCED_THREADING
++	select PREEMPT_RT_BASE
++	select PREEMPT_RCU
++	help
++	  All and everything
++
+ endchoice
+ 
+ config PREEMPT_COUNT
+diff --git a/scripts/mkcompile_h b/scripts/mkcompile_h
+index 959199c3147e..3e68004ed345 100755
+--- a/scripts/mkcompile_h
++++ b/scripts/mkcompile_h
+@@ -5,7 +5,8 @@ TARGET=$1
+ ARCH=$2
+ SMP=$3
+ PREEMPT=$4
+-CC=$5
++RT=$5
++CC=$6
+ 
+ vecho() { [ "${quiet}" = "silent_" ] || echo "$@" ; }
+ 
+@@ -58,6 +59,7 @@ UTS_VERSION="#$VERSION"
+ CONFIG_FLAGS=""
+ if [ -n "$SMP" ] ; then CONFIG_FLAGS="SMP"; fi
+ if [ -n "$PREEMPT" ] ; then CONFIG_FLAGS="$CONFIG_FLAGS PREEMPT"; fi
++if [ -n "$RT" ] ; then CONFIG_FLAGS="$CONFIG_FLAGS RT"; fi
+ UTS_VERSION="$UTS_VERSION $CONFIG_FLAGS $TIMESTAMP"
+ 
+ # Truncate to maximum length
+-- 
+2.18.0
+

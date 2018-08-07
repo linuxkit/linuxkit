@@ -1,0 +1,40 @@
+From b6750860f3a3df56c7b96d8585a0d889d9c6c64e Mon Sep 17 00:00:00 2001
+From: Tom Zanussi <tom.zanussi@linux.intel.com>
+Date: Wed, 28 Mar 2018 15:10:54 -0500
+Subject: [PATCH 119/414] tracing: Don't add flag strings when displaying
+ variable references
+
+Variable references should never have flags appended when displayed -
+prevent that from happening.
+
+Before:
+
+  # cat /sys/kernel/debug/tracing/events/sched/sched_switch/trigger
+  hist:keys=next_pid:vals=hitcount:wakeup_lat=common_timestamp.usecs-$ts0.usecs:...
+
+After:
+
+  hist:keys=next_pid:vals=hitcount:wakeup_lat=common_timestamp.usecs-$ts0:...
+
+Signed-off-by: Tom Zanussi <tom.zanussi@linux.intel.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace_events_hist.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/trace/trace_events_hist.c b/kernel/trace/trace_events_hist.c
+index 85b032a04b29..9def33acb5eb 100644
+--- a/kernel/trace/trace_events_hist.c
++++ b/kernel/trace/trace_events_hist.c
+@@ -2052,7 +2052,7 @@ static void expr_field_str(struct hist_field *field, char *expr)
+ 
+ 	strcat(expr, hist_field_name(field, 0));
+ 
+-	if (field->flags) {
++	if (field->flags && !(field->flags & HIST_FIELD_FL_VAR_REF)) {
+ 		const char *flags_str = get_hist_field_flags(field);
+ 
+ 		if (flags_str) {
+-- 
+2.18.0
+

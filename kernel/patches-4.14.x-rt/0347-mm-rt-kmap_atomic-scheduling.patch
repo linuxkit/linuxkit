@@ -1,0 +1,306 @@
+From e7ba36f21b5c2eab40fc7599eef46e785f17d803 Mon Sep 17 00:00:00 2001
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Thu, 28 Jul 2011 10:43:51 +0200
+Subject: [PATCH 347/414] mm, rt: kmap_atomic scheduling
+
+In fact, with migrate_disable() existing one could play games with
+kmap_atomic. You could save/restore the kmap_atomic slots on context
+switch (if there are any in use of course), this should be esp easy now
+that we have a kmap_atomic stack.
+
+Something like the below.. it wants replacing all the preempt_disable()
+stuff with pagefault_disable() && migrate_disable() of course, but then
+you can flip kmaps around like below.
+
+Signed-off-by: Peter Zijlstra <a.p.zijlstra@chello.nl>
+[dvhart@linux.intel.com: build fix]
+Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
+
+[tglx@linutronix.de: Get rid of the per cpu variable and store the idx
+		     and the pte content right away in the task struct.
+		     Shortens the context switch code. ]
+---
+ arch/x86/kernel/process_32.c | 32 ++++++++++++++++++++++++++++++++
+ arch/x86/mm/highmem_32.c     | 13 ++++++++++---
+ arch/x86/mm/iomap_32.c       |  9 ++++++++-
+ include/linux/highmem.h      | 27 +++++++++++++++++++++++----
+ include/linux/sched.h        |  7 +++++++
+ include/linux/uaccess.h      |  2 ++
+ mm/highmem.c                 |  6 ++++--
+ 7 files changed, 86 insertions(+), 10 deletions(-)
+
+diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
+index 5224c6099184..9b2b1f0409c5 100644
+--- a/arch/x86/kernel/process_32.c
++++ b/arch/x86/kernel/process_32.c
+@@ -38,6 +38,7 @@
+ #include <linux/io.h>
+ #include <linux/kdebug.h>
+ #include <linux/syscalls.h>
++#include <linux/highmem.h>
+ 
+ #include <asm/pgtable.h>
+ #include <asm/ldt.h>
+@@ -198,6 +199,35 @@ start_thread(struct pt_regs *regs, unsigned long new_ip, unsigned long new_sp)
+ }
+ EXPORT_SYMBOL_GPL(start_thread);
+ 
++#ifdef CONFIG_PREEMPT_RT_FULL
++static void switch_kmaps(struct task_struct *prev_p, struct task_struct *next_p)
++{
++	int i;
++
++	/*
++	 * Clear @prev's kmap_atomic mappings
++	 */
++	for (i = 0; i < prev_p->kmap_idx; i++) {
++		int idx = i + KM_TYPE_NR * smp_processor_id();
++		pte_t *ptep = kmap_pte - idx;
++
++		kpte_clear_flush(ptep, __fix_to_virt(FIX_KMAP_BEGIN + idx));
++	}
++	/*
++	 * Restore @next_p's kmap_atomic mappings
++	 */
++	for (i = 0; i < next_p->kmap_idx; i++) {
++		int idx = i + KM_TYPE_NR * smp_processor_id();
++
++		if (!pte_none(next_p->kmap_pte[i]))
++			set_pte(kmap_pte - idx, next_p->kmap_pte[i]);
++	}
++}
++#else
++static inline void
++switch_kmaps(struct task_struct *prev_p, struct task_struct *next_p) { }
++#endif
++
+ 
+ /*
+  *	switch_to(x,y) should switch tasks from x to y.
+@@ -273,6 +303,8 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
+ 		     task_thread_info(next_p)->flags & _TIF_WORK_CTXSW_NEXT))
+ 		__switch_to_xtra(prev_p, next_p, tss);
+ 
++	switch_kmaps(prev_p, next_p);
++
+ 	/*
+ 	 * Leave lazy mode, flushing any hypercalls made here.
+ 	 * This must be done before restoring TLS segments so
+diff --git a/arch/x86/mm/highmem_32.c b/arch/x86/mm/highmem_32.c
+index 6d18b70ed5a9..f752724c22e8 100644
+--- a/arch/x86/mm/highmem_32.c
++++ b/arch/x86/mm/highmem_32.c
+@@ -32,10 +32,11 @@ EXPORT_SYMBOL(kunmap);
+  */
+ void *kmap_atomic_prot(struct page *page, pgprot_t prot)
+ {
++	pte_t pte = mk_pte(page, prot);
+ 	unsigned long vaddr;
+ 	int idx, type;
+ 
+-	preempt_disable();
++	preempt_disable_nort();
+ 	pagefault_disable();
+ 
+ 	if (!PageHighMem(page))
+@@ -45,7 +46,10 @@ void *kmap_atomic_prot(struct page *page, pgprot_t prot)
+ 	idx = type + KM_TYPE_NR*smp_processor_id();
+ 	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
+ 	BUG_ON(!pte_none(*(kmap_pte-idx)));
+-	set_pte(kmap_pte-idx, mk_pte(page, prot));
++#ifdef CONFIG_PREEMPT_RT_FULL
++	current->kmap_pte[type] = pte;
++#endif
++	set_pte(kmap_pte-idx, pte);
+ 	arch_flush_lazy_mmu_mode();
+ 
+ 	return (void *)vaddr;
+@@ -88,6 +92,9 @@ void __kunmap_atomic(void *kvaddr)
+ 		 * is a bad idea also, in case the page changes cacheability
+ 		 * attributes or becomes a protected page in a hypervisor.
+ 		 */
++#ifdef CONFIG_PREEMPT_RT_FULL
++		current->kmap_pte[type] = __pte(0);
++#endif
+ 		kpte_clear_flush(kmap_pte-idx, vaddr);
+ 		kmap_atomic_idx_pop();
+ 		arch_flush_lazy_mmu_mode();
+@@ -100,7 +107,7 @@ void __kunmap_atomic(void *kvaddr)
+ #endif
+ 
+ 	pagefault_enable();
+-	preempt_enable();
++	preempt_enable_nort();
+ }
+ EXPORT_SYMBOL(__kunmap_atomic);
+ 
+diff --git a/arch/x86/mm/iomap_32.c b/arch/x86/mm/iomap_32.c
+index ada98b39b8ad..2620fb55ece1 100644
+--- a/arch/x86/mm/iomap_32.c
++++ b/arch/x86/mm/iomap_32.c
+@@ -56,6 +56,7 @@ EXPORT_SYMBOL_GPL(iomap_free);
+ 
+ void *kmap_atomic_prot_pfn(unsigned long pfn, pgprot_t prot)
+ {
++	pte_t pte = pfn_pte(pfn, prot);
+ 	unsigned long vaddr;
+ 	int idx, type;
+ 
+@@ -65,7 +66,10 @@ void *kmap_atomic_prot_pfn(unsigned long pfn, pgprot_t prot)
+ 	type = kmap_atomic_idx_push();
+ 	idx = type + KM_TYPE_NR * smp_processor_id();
+ 	vaddr = __fix_to_virt(FIX_KMAP_BEGIN + idx);
+-	set_pte(kmap_pte - idx, pfn_pte(pfn, prot));
++#ifdef CONFIG_PREEMPT_RT_FULL
++	current->kmap_pte[type] = pte;
++#endif
++	set_pte(kmap_pte - idx, pte);
+ 	arch_flush_lazy_mmu_mode();
+ 
+ 	return (void *)vaddr;
+@@ -113,6 +117,9 @@ iounmap_atomic(void __iomem *kvaddr)
+ 		 * is a bad idea also, in case the page changes cacheability
+ 		 * attributes or becomes a protected page in a hypervisor.
+ 		 */
++#ifdef CONFIG_PREEMPT_RT_FULL
++		current->kmap_pte[type] = __pte(0);
++#endif
+ 		kpte_clear_flush(kmap_pte-idx, vaddr);
+ 		kmap_atomic_idx_pop();
+ 	}
+diff --git a/include/linux/highmem.h b/include/linux/highmem.h
+index 776f90f3a1cd..cfcd7b7ab205 100644
+--- a/include/linux/highmem.h
++++ b/include/linux/highmem.h
+@@ -87,32 +87,51 @@ static inline void __kunmap_atomic(void *addr)
+ 
+ #if defined(CONFIG_HIGHMEM) || defined(CONFIG_X86_32)
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
+ DECLARE_PER_CPU(int, __kmap_atomic_idx);
++#endif
+ 
+ static inline int kmap_atomic_idx_push(void)
+ {
++#ifndef CONFIG_PREEMPT_RT_FULL
+ 	int idx = __this_cpu_inc_return(__kmap_atomic_idx) - 1;
+ 
+-#ifdef CONFIG_DEBUG_HIGHMEM
++# ifdef CONFIG_DEBUG_HIGHMEM
+ 	WARN_ON_ONCE(in_irq() && !irqs_disabled());
+ 	BUG_ON(idx >= KM_TYPE_NR);
+-#endif
++# endif
+ 	return idx;
++#else
++	current->kmap_idx++;
++	BUG_ON(current->kmap_idx > KM_TYPE_NR);
++	return current->kmap_idx - 1;
++#endif
+ }
+ 
+ static inline int kmap_atomic_idx(void)
+ {
++#ifndef CONFIG_PREEMPT_RT_FULL
+ 	return __this_cpu_read(__kmap_atomic_idx) - 1;
++#else
++	return current->kmap_idx - 1;
++#endif
+ }
+ 
+ static inline void kmap_atomic_idx_pop(void)
+ {
+-#ifdef CONFIG_DEBUG_HIGHMEM
++#ifndef CONFIG_PREEMPT_RT_FULL
++# ifdef CONFIG_DEBUG_HIGHMEM
+ 	int idx = __this_cpu_dec_return(__kmap_atomic_idx);
+ 
+ 	BUG_ON(idx < 0);
+-#else
++# else
+ 	__this_cpu_dec(__kmap_atomic_idx);
++# endif
++#else
++	current->kmap_idx--;
++# ifdef CONFIG_DEBUG_HIGHMEM
++	BUG_ON(current->kmap_idx < 0);
++# endif
+ #endif
+ }
+ 
+diff --git a/include/linux/sched.h b/include/linux/sched.h
+index 33d7cb59c00b..cb26ba8286fb 100644
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -27,6 +27,7 @@
+ #include <linux/signal_types.h>
+ #include <linux/mm_types_task.h>
+ #include <linux/task_io_accounting.h>
++#include <asm/kmap_types.h>
+ 
+ /* task_struct member predeclarations (sorted alphabetically): */
+ struct audit_context;
+@@ -1153,6 +1154,12 @@ struct task_struct {
+ 	int				softirq_nestcnt;
+ 	unsigned int			softirqs_raised;
+ #endif
++#ifdef CONFIG_PREEMPT_RT_FULL
++# if defined CONFIG_HIGHMEM || defined CONFIG_X86_32
++	int				kmap_idx;
++	pte_t				kmap_pte[KM_TYPE_NR];
++# endif
++#endif
+ #ifdef CONFIG_DEBUG_ATOMIC_SLEEP
+ 	unsigned long			task_state_change;
+ #endif
+diff --git a/include/linux/uaccess.h b/include/linux/uaccess.h
+index 251e655d407f..57e8e32ef2b0 100644
+--- a/include/linux/uaccess.h
++++ b/include/linux/uaccess.h
+@@ -185,6 +185,7 @@ static __always_inline void pagefault_disabled_dec(void)
+  */
+ static inline void pagefault_disable(void)
+ {
++	migrate_disable();
+ 	pagefault_disabled_inc();
+ 	/*
+ 	 * make sure to have issued the store before a pagefault
+@@ -201,6 +202,7 @@ static inline void pagefault_enable(void)
+ 	 */
+ 	barrier();
+ 	pagefault_disabled_dec();
++	migrate_enable();
+ }
+ 
+ /*
+diff --git a/mm/highmem.c b/mm/highmem.c
+index 59db3223a5d6..22aa3ddbd87b 100644
+--- a/mm/highmem.c
++++ b/mm/highmem.c
+@@ -30,10 +30,11 @@
+ #include <linux/kgdb.h>
+ #include <asm/tlbflush.h>
+ 
+-
++#ifndef CONFIG_PREEMPT_RT_FULL
+ #if defined(CONFIG_HIGHMEM) || defined(CONFIG_X86_32)
+ DEFINE_PER_CPU(int, __kmap_atomic_idx);
+ #endif
++#endif
+ 
+ /*
+  * Virtual_count is not a pure "count".
+@@ -108,8 +109,9 @@ static inline wait_queue_head_t *get_pkmap_wait_queue_head(unsigned int color)
+ unsigned long totalhigh_pages __read_mostly;
+ EXPORT_SYMBOL(totalhigh_pages);
+ 
+-
++#ifndef CONFIG_PREEMPT_RT_FULL
+ EXPORT_PER_CPU_SYMBOL(__kmap_atomic_idx);
++#endif
+ 
+ unsigned int nr_free_highpages (void)
+ {
+-- 
+2.18.0
+

@@ -1,0 +1,21 @@
+From d5b69ff19ba03f99b07025109a133509fa6eb9a4 Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 8 Jul 2011 20:25:16 +0200
+Subject: [PATCH 408/414] Add localversion for -RT release
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ localversion-rt | 1 +
+ 1 file changed, 1 insertion(+)
+ create mode 100644 localversion-rt
+
+diff --git a/localversion-rt b/localversion-rt
+new file mode 100644
+index 000000000000..90290c642ed5
+--- /dev/null
++++ b/localversion-rt
+@@ -0,0 +1 @@
++-rt29
+-- 
+2.18.0
+

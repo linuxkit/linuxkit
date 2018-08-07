@@ -1,0 +1,28 @@
+From c728fba7f8619edaab65fe4b225d1fd2e9f25a62 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 22 Sep 2017 15:01:46 +0200
+Subject: [PATCH 139/414] rcu/segcblist: include rcupdate.h
+
+The RT build on ARM complains about non-existing ULONG_CMP_LT. Since
+rcu_segcblist.c uses that macro it should include the header file.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/rcu/rcu_segcblist.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/kernel/rcu/rcu_segcblist.c b/kernel/rcu/rcu_segcblist.c
+index 7649fcd2c4c7..88cba7c2956c 100644
+--- a/kernel/rcu/rcu_segcblist.c
++++ b/kernel/rcu/rcu_segcblist.c
+@@ -23,6 +23,7 @@
+ #include <linux/types.h>
+ #include <linux/kernel.h>
+ #include <linux/interrupt.h>
++#include <linux/rcupdate.h>
+ 
+ #include "rcu_segcblist.h"
+ 
+-- 
+2.18.0
+

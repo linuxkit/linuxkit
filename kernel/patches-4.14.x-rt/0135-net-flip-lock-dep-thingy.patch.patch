@@ -1,0 +1,117 @@
+From 3adf880cb390bb4b6facea30dd0608c6032bc554 Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 28 Jun 2011 10:59:58 +0200
+Subject: [PATCH 135/414] net-flip-lock-dep-thingy.patch
+
+=======================================================
+[ INFO: possible circular locking dependency detected ]
+3.0.0-rc3+ #26
+-------------------------------------------------------
+ip/1104 is trying to acquire lock:
+ (local_softirq_lock){+.+...}, at: [<ffffffff81056d12>] __local_lock+0x25/0x68
+
+but task is already holding lock:
+ (sk_lock-AF_INET){+.+...}, at: [<ffffffff81433308>] lock_sock+0x10/0x12
+
+which lock already depends on the new lock.
+
+
+the existing dependency chain (in reverse order) is:
+
+-> #1 (sk_lock-AF_INET){+.+...}:
+       [<ffffffff810836e5>] lock_acquire+0x103/0x12e
+       [<ffffffff813e2781>] lock_sock_nested+0x82/0x92
+       [<ffffffff81433308>] lock_sock+0x10/0x12
+       [<ffffffff81433afa>] tcp_close+0x1b/0x355
+       [<ffffffff81453c99>] inet_release+0xc3/0xcd
+       [<ffffffff813dff3f>] sock_release+0x1f/0x74
+       [<ffffffff813dffbb>] sock_close+0x27/0x2b
+       [<ffffffff81129c63>] fput+0x11d/0x1e3
+       [<ffffffff81126577>] filp_close+0x70/0x7b
+       [<ffffffff8112667a>] sys_close+0xf8/0x13d
+       [<ffffffff814ae882>] system_call_fastpath+0x16/0x1b
+
+-> #0 (local_softirq_lock){+.+...}:
+       [<ffffffff81082ecc>] __lock_acquire+0xacc/0xdc8
+       [<ffffffff810836e5>] lock_acquire+0x103/0x12e
+       [<ffffffff814a7e40>] _raw_spin_lock+0x3b/0x4a
+       [<ffffffff81056d12>] __local_lock+0x25/0x68
+       [<ffffffff81056d8b>] local_bh_disable+0x36/0x3b
+       [<ffffffff814a7fc4>] _raw_write_lock_bh+0x16/0x4f
+       [<ffffffff81433c38>] tcp_close+0x159/0x355
+       [<ffffffff81453c99>] inet_release+0xc3/0xcd
+       [<ffffffff813dff3f>] sock_release+0x1f/0x74
+       [<ffffffff813dffbb>] sock_close+0x27/0x2b
+       [<ffffffff81129c63>] fput+0x11d/0x1e3
+       [<ffffffff81126577>] filp_close+0x70/0x7b
+       [<ffffffff8112667a>] sys_close+0xf8/0x13d
+       [<ffffffff814ae882>] system_call_fastpath+0x16/0x1b
+
+other info that might help us debug this:
+
+ Possible unsafe locking scenario:
+
+       CPU0                    CPU1
+       ----                    ----
+  lock(sk_lock-AF_INET);
+                               lock(local_softirq_lock);
+                               lock(sk_lock-AF_INET);
+  lock(local_softirq_lock);
+
+ *** DEADLOCK ***
+
+1 lock held by ip/1104:
+ #0:  (sk_lock-AF_INET){+.+...}, at: [<ffffffff81433308>] lock_sock+0x10/0x12
+
+stack backtrace:
+Pid: 1104, comm: ip Not tainted 3.0.0-rc3+ #26
+Call Trace:
+ [<ffffffff81081649>] print_circular_bug+0x1f8/0x209
+ [<ffffffff81082ecc>] __lock_acquire+0xacc/0xdc8
+ [<ffffffff81056d12>] ? __local_lock+0x25/0x68
+ [<ffffffff810836e5>] lock_acquire+0x103/0x12e
+ [<ffffffff81056d12>] ? __local_lock+0x25/0x68
+ [<ffffffff81046c75>] ? get_parent_ip+0x11/0x41
+ [<ffffffff814a7e40>] _raw_spin_lock+0x3b/0x4a
+ [<ffffffff81056d12>] ? __local_lock+0x25/0x68
+ [<ffffffff81046c8c>] ? get_parent_ip+0x28/0x41
+ [<ffffffff81056d12>] __local_lock+0x25/0x68
+ [<ffffffff81056d8b>] local_bh_disable+0x36/0x3b
+ [<ffffffff81433308>] ? lock_sock+0x10/0x12
+ [<ffffffff814a7fc4>] _raw_write_lock_bh+0x16/0x4f
+ [<ffffffff81433c38>] tcp_close+0x159/0x355
+ [<ffffffff81453c99>] inet_release+0xc3/0xcd
+ [<ffffffff813dff3f>] sock_release+0x1f/0x74
+ [<ffffffff813dffbb>] sock_close+0x27/0x2b
+ [<ffffffff81129c63>] fput+0x11d/0x1e3
+ [<ffffffff81126577>] filp_close+0x70/0x7b
+ [<ffffffff8112667a>] sys_close+0xf8/0x13d
+ [<ffffffff814ae882>] system_call_fastpath+0x16/0x1b
+
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ net/core/sock.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/net/core/sock.c b/net/core/sock.c
+index 68d08ed5521e..ee242ff5d4b1 100644
+--- a/net/core/sock.c
++++ b/net/core/sock.c
+@@ -2757,12 +2757,11 @@ void lock_sock_nested(struct sock *sk, int subclass)
+ 	if (sk->sk_lock.owned)
+ 		__lock_sock(sk);
+ 	sk->sk_lock.owned = 1;
+-	spin_unlock(&sk->sk_lock.slock);
++	spin_unlock_bh(&sk->sk_lock.slock);
+ 	/*
+ 	 * The sk_lock has mutex_lock() semantics here:
+ 	 */
+ 	mutex_acquire(&sk->sk_lock.dep_map, subclass, 0, _RET_IP_);
+-	local_bh_enable();
+ }
+ EXPORT_SYMBOL(lock_sock_nested);
+ 
+-- 
+2.18.0
+

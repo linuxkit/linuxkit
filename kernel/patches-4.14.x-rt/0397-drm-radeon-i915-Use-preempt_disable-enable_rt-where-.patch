@@ -1,0 +1,60 @@
+From 3724d7b8705354b77be2f3edec9e68e0edaef138 Mon Sep 17 00:00:00 2001
+From: Mike Galbraith <umgwanakikbuti@gmail.com>
+Date: Sat, 27 Feb 2016 08:09:11 +0100
+Subject: [PATCH 397/414] drm,radeon,i915: Use preempt_disable/enable_rt()
+ where recommended
+
+DRM folks identified the spots, so use them.
+
+Signed-off-by: Mike Galbraith <umgwanakikbuti@gmail.com>
+Cc: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Cc: linux-rt-users <linux-rt-users@vger.kernel.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ drivers/gpu/drm/i915/i915_irq.c         | 2 ++
+ drivers/gpu/drm/radeon/radeon_display.c | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/drivers/gpu/drm/i915/i915_irq.c b/drivers/gpu/drm/i915/i915_irq.c
+index 20a471ad0ad2..5d34d48a8b7b 100644
+--- a/drivers/gpu/drm/i915/i915_irq.c
++++ b/drivers/gpu/drm/i915/i915_irq.c
+@@ -867,6 +867,7 @@ static bool i915_get_crtc_scanoutpos(struct drm_device *dev, unsigned int pipe,
+ 	spin_lock_irqsave(&dev_priv->uncore.lock, irqflags);
+ 
+ 	/* preempt_disable_rt() should go right here in PREEMPT_RT patchset. */
++	preempt_disable_rt();
+ 
+ 	/* Get optional system timestamp before query. */
+ 	if (stime)
+@@ -918,6 +919,7 @@ static bool i915_get_crtc_scanoutpos(struct drm_device *dev, unsigned int pipe,
+ 		*etime = ktime_get();
+ 
+ 	/* preempt_enable_rt() should go right here in PREEMPT_RT patchset. */
++	preempt_enable_rt();
+ 
+ 	spin_unlock_irqrestore(&dev_priv->uncore.lock, irqflags);
+ 
+diff --git a/drivers/gpu/drm/radeon/radeon_display.c b/drivers/gpu/drm/radeon/radeon_display.c
+index ddfe91efa61e..3157bcf6428f 100644
+--- a/drivers/gpu/drm/radeon/radeon_display.c
++++ b/drivers/gpu/drm/radeon/radeon_display.c
+@@ -1839,6 +1839,7 @@ int radeon_get_crtc_scanoutpos(struct drm_device *dev, unsigned int pipe,
+ 	struct radeon_device *rdev = dev->dev_private;
+ 
+ 	/* preempt_disable_rt() should go right here in PREEMPT_RT patchset. */
++	preempt_disable_rt();
+ 
+ 	/* Get optional system timestamp before query. */
+ 	if (stime)
+@@ -1931,6 +1932,7 @@ int radeon_get_crtc_scanoutpos(struct drm_device *dev, unsigned int pipe,
+ 		*etime = ktime_get();
+ 
+ 	/* preempt_enable_rt() should go right here in PREEMPT_RT patchset. */
++	preempt_enable_rt();
+ 
+ 	/* Decode into vertical and horizontal scanout position. */
+ 	*vpos = position & 0x1fff;
+-- 
+2.18.0
+
