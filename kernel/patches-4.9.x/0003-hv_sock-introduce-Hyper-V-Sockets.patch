@@ -1,4 +1,4 @@
-From 4424d213072c0bb5626d415273754d125e81a5cd Mon Sep 17 00:00:00 2001
+From 65ef54ef3d1c8d29ab2fb899736e8001897e1545 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 23 Jul 2016 01:35:51 +0000
 Subject: [PATCH 03/12] hv_sock: introduce Hyper-V Sockets
