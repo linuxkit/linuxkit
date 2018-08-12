@@ -208,7 +208,7 @@ have been updates. Specifically:
 - `pkg/cadvisor`: Check for [new releases](https://github.com/google/cadvisor/releases).
 - `pkg/firmware` and `pkg/firmware-all`: Use latest commit from [here](https://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git).
 - `pkg/node_exporter`: Check for [new releases](https://github.com/prometheus/node_exporter/releases).
-- `example/docker.yml`: Check [docker hub](https://hub.docker.com/r/library/docker/tags/) for the latest `dind` tags.
+- Check [docker hub](https://hub.docker.com/r/library/docker/tags/) for the latest `dind` tags. and update `examples/docker.yml`, `examples/docker-for-mac.yml`, `examples/cadvisor.yml`, and `test/cases/030_security/000_docker-bench/test.yml` if necessary.
 
 The build/push the packages:
 
