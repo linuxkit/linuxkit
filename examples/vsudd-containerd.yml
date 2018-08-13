@@ -11,7 +11,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: vsudd
-    image: linuxkit/vsudd:v0.6
+    image: linuxkit/vsudd:98e554e4f3024c318e42c1f6876b541b654acd9f
     binds:
         - /run/containerd/containerd.sock:/run/containerd/containerd.sock
     command: ["/vsudd",

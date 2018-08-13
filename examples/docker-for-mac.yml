@@ -61,7 +61,7 @@ services:
   # VSOCK to unix domain socket forwarding. Forwards guest /var/run/docker.sock
   # to a socket on the host.
   - name: vsudd
-    image: linuxkit/vsudd:v0.6
+    image: linuxkit/vsudd:98e554e4f3024c318e42c1f6876b541b654acd9f
     binds:
         - /var/run:/var/run
     command: ["/vsudd", "-inport", "2376:unix:/var/run/docker.sock"]
@@ -78,7 +78,7 @@ services:
     image: linuxkit/trim-after-delete:v0.6
   # When the host resumes from sleep, force a clock resync
   - name: host-timesync-daemon
-    image: linuxkit/host-timesync-daemon:v0.6
+    image: linuxkit/host-timesync-daemon:613dc55e67470ec375335a1958650c3711dc4aa6
   # Run dockerd with the vpnkit userland proxy from the vpnkit-forwarder container.
   # Bind mounts /var/run to allow vsudd to connect to docker.sock, /var/vpnkit
   # for vpnkit coordination and /run/config/docker for the configuration file.
