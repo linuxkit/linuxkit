@@ -185,7 +185,7 @@ RUN if [ "${KERNEL_SERIES}" != "4.4.x" ] && [ "${KERNEL_SERIES}" != "4.9.x" ]; t
      fi
 
 # Download Intel ucode and create a CPIO archive for it
-ENV UCODE_URL=https://downloadmirror.intel.com/27776/eng/microcode-20180425.tgz
+ENV UCODE_URL=https://downloadmirror.intel.com/28039/eng/microcode-20180807.tgz
 RUN set -e && \
     if [ $(uname -m) == x86_64 ]; then \
         cd /ucode && \
