@@ -20,14 +20,19 @@ onboot:
     image: linuxkit/mount:v0.6
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
+  - name: getty
+    image: linuxkit/getty:v0.6
+    env:
+     - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:v0.6
   - name: ntpd
     image: linuxkit/openntpd:v0.6
   - name: docker
-    image: docker:17.07.0-ce-dind
+    image: docker:18.06.0-ce-dind
     capabilities:
      - all
+    net: host
     mounts:
      - type: cgroup
        options: ["rw","nosuid","noexec","nodev","relatime"]
@@ -39,11 +44,13 @@ services:
      - /etc/html:/var/html
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: compose
-    image: linuxkitprojects/compose:0535e78608f57702745dfd56fbe78d28d237e469
+    image: linuxkitprojects/compose:111f9f32a933c9e7acbf3ccfc13fedbdfce8224f
     binds:
      - /var/run:/var/run
      - /etc/compose:/compose
 files:
+  - path: var/lib/docker
+    directory: true
   - path: etc/html/a/index.html
     source: html-a.html
   - path: etc/html/b/index.html
@@ -53,3 +60,4 @@ files:
 trust:
   org:
     - linuxkit
+    - library

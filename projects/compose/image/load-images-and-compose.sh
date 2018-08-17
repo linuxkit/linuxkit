@@ -9,9 +9,11 @@ set -e
 
 [ -n "$DEBUG" ] && set -x
 
-for image in /compose/images/*.tar ; do
-	docker image load -i $image && rm -f $image
-done
+if [ -d /compose/images/ ]; then
+	for image in /compose/images/*.tar ; do
+		docker image load -i $image
+	done
+fi
 
 
 docker-compose -f /compose/docker-compose.yml up -d

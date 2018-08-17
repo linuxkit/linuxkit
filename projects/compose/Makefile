@@ -3,9 +3,7 @@
 ORG?=linuxkitprojects
 IMAGE=compose
 DEPS=image/Dockerfile docker-compose.yml image/waitfordocker.sh image/load-images-and-compose.sh
-COMMON_IMAGES := \
-	nginx:alpine \
-	traefik
+COMMON_IMAGES := $(shell awk '/image:/ {print $$2}' docker-compose.yml | sort | uniq)
 
 
 HASH?=$(shell git ls-tree HEAD -- ./image | awk '{print $$3}')
@@ -32,7 +30,7 @@ run-dynamic:
 	linuxkit run dist/compose-dynamic
 
 run-static:
-	linuxkit run dist/compose-static
+	linuxkit run -mem 2048 dist/compose-static
 
 clean:
 	rm -rf image-cache
