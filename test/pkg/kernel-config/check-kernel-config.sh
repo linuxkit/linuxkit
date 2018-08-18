@@ -27,7 +27,6 @@ arch="$(uname -m)"
 
 echo $UNZIPPED_CONFIG | grep -q CONFIG_BUG=y || fail "CONFIG_BUG=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_KERNEL=y || fail "CONFIG_DEBUG_KERNEL=y"
-echo $UNZIPPED_CONFIG | grep -q CONFIG_CC_STACKPROTECTOR_STRONG=y || fail "CONFIG_CC_STACKPROTECTOR_STRONG=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_STRICT_DEVMEM=y || fail "CONFIG_STRICT_DEVMEM=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_SYN_COOKIES=y || fail "CONFIG_SYN_COOKIES=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_CREDENTIALS=y || fail "CONFIG_DEBUG_CREDENTIALS=y"
@@ -55,6 +54,13 @@ fi
 # 4.16.x removed this option
 if [ "$kernelMajor" -le 4 -a "$kernelMinor" -le 15 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_CC_STACKPROTECTOR=y || fail "CONFIG_CC_STACKPROTECTOR=y"
+fi
+# 4.18.x renamed this option (and re-introduced CC_STACKPROTECTOR as STACKPROTECTOR)
+if [ "$kernelMajor" -le 4 -a "$kernelMinor" -ge 18 ]; then
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_STACKPROTECTOR=y || fail "CONFIG_STACKPROTECTOR=y"
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_STACKPROTECTOR_STRONG=y || fail "CONFIG_STACKPROTECTOR_STRONG=y"
+else
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_CC_STACKPROTECTOR_STRONG=y || fail "CONFIG_CC_STACKPROTECTOR_STRONG=y"
 fi
 
 # Positive cases conditional on architecture and/or kernel version
