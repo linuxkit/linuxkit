@@ -6,7 +6,10 @@ RUN apk add \
     curl \
     diffutils \
     flex \
+    gmp-dev \
     libarchive-tools \
+    mpc1-dev \
+    mpfr-dev \
     ncurses-dev \
     patch \
     xz
