@@ -35,7 +35,7 @@ configuration, for example:
 ```
 
 In another terminal you should now be able to access docker via the
-socket `guest.00000947` in the state directory
+socket `guest.00000948` in the state directory
 (`docker-for-mac-state/` by default):
 
 ```
