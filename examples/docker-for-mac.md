@@ -10,13 +10,13 @@ moment is to install a recent version of Docker for Mac.
 To build it with the latest Docker CE:
 
 ```
-$ linuxkit build docker-for-mac.yml
+$ linuxkit build -format iso-efi docker-for-mac.yml
 ```
 
 To run the VM with a 4G disk:
 
 ```
-linuxkit run hyperkit -networking=vpnkit -vsock-ports=2376 -disk size=4096M -data-file ./metadata.json docker-for-mac
+linuxkit run hyperkit -networking=vpnkit -vsock-ports=2376 -disk size=4096M -data-file ./metadata.json -iso -uefi docker-for-mac-efi
 ```
 
 Where the file `./metadata.json` should contain the desired docker daemon
@@ -36,9 +36,9 @@ configuration, for example:
 
 In another terminal you should now be able to access docker via the
 socket `guest.00000948` in the state directory
-(`docker-for-mac-state/` by default):
+(`docker-for-mac-efi-state/` by default):
 
 ```
-$ docker -H unix://docker-for-mac-state/guest.00000948 ps
+$ docker -H unix://docker-for-mac-efi-state/guest.00000948 ps
 CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
 ```
