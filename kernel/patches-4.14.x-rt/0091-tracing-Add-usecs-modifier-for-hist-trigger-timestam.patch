@@ -1,7 +1,7 @@
-From 2613c3be2bd48363cb6be506c88749dfc3134e8d Mon Sep 17 00:00:00 2001
+From 5aaa61969c551722784944cbb9586c489ca210d7 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:48 -0600
-Subject: [PATCH 091/414] tracing: Add usecs modifier for hist trigger
+Subject: [PATCH 091/413] tracing: Add usecs modifier for hist trigger
  timestamps
 
 Appending .usecs onto a common_timestamp field will cause the
@@ -41,7 +41,7 @@ index a4143f04a097..25c94730d3fe 100644
    Note that in general the semantics of a given field aren't
    interpreted when applying a modifier to it, but there are some
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index ed50ecb0592b..3cefb457970e 100644
+index b101ccf0b9fb..49d2457947f5 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -1170,6 +1170,14 @@ static struct {
@@ -59,7 +59,7 @@ index ed50ecb0592b..3cefb457970e 100644
  /*
   * trace_parser_get_init - gets the buffer for trace parser
   */
-@@ -4699,8 +4707,9 @@ static const char readme_msg[] =
+@@ -4705,8 +4713,9 @@ static const char readme_msg[] =
  	"\t            .sym        display an address as a symbol\n"
  	"\t            .sym-offset display an address as a symbol and offset\n"
  	"\t            .execname   display a common_pid as a program name\n"

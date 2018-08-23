@@ -1,7 +1,7 @@
-From f2dc1339a756443004b858f819f0ab4fb85ea91a Mon Sep 17 00:00:00 2001
+From e625c5a90ca52df684096746d21dd42d88b7746f Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:49 -0600
-Subject: [PATCH 092/414] tracing: Add variable support to hist triggers
+Subject: [PATCH 092/413] tracing: Add variable support to hist triggers
 
 Add support for saving the value of a current event's event field by
 assigning it to a variable that can be read by a subsequent event.

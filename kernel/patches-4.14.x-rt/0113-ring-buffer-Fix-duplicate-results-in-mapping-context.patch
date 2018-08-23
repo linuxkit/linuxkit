@@ -1,7 +1,7 @@
-From b7c042e24327f006567db33280debfcab01a3b67 Mon Sep 17 00:00:00 2001
+From 79951da37849d43aff7494bb673be2f630b7ce21 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Thu, 18 Jan 2018 15:42:09 -0500
-Subject: [PATCH 113/414] ring-buffer: Fix duplicate results in mapping context
+Subject: [PATCH 113/413] ring-buffer: Fix duplicate results in mapping context
  to bits in recursive lock
 
 In bringing back the context checks, the code checks first if its normal
@@ -24,7 +24,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/kernel/trace/ring_buffer.c b/kernel/trace/ring_buffer.c
-index 3621164c234b..cad398ba3009 100644
+index 07c0bb03d614..45fc91559aa6 100644
 --- a/kernel/trace/ring_buffer.c
 +++ b/kernel/trace/ring_buffer.c
 @@ -2633,8 +2633,7 @@ trace_recursive_lock(struct ring_buffer_per_cpu *cpu_buffer)

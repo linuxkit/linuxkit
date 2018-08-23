@@ -1,7 +1,7 @@
-From 45a3b7f05299ff169006f2aa6449ecd9de7abbb3 Mon Sep 17 00:00:00 2001
+From d955af7c03a290cac89faa263eaf599af12faa44 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:46 -0600
-Subject: [PATCH 089/414] tracing: Add per-element variable support to
+Subject: [PATCH 089/413] tracing: Add per-element variable support to
  tracing_map
 
 In order to allow information to be passed between trace events, add

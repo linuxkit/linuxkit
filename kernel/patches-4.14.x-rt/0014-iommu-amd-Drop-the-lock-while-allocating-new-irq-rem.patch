@@ -1,7 +1,7 @@
-From 78aff31b5badc9ef5def900f4eeb1e47f24134aa Mon Sep 17 00:00:00 2001
+From 7567c98c4ad5710bae08f45a10e7bf22833d1644 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:40 +0100
-Subject: [PATCH 014/414] iommu/amd: Drop the lock while allocating new irq
+Subject: [PATCH 014/413] iommu/amd: Drop the lock while allocating new irq
  remap table
 
 Upstream commit 993ca6e063a69a0c65ca42ed449b6bc1b3844151

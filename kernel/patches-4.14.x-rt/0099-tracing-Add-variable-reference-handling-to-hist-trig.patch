@@ -1,7 +1,7 @@
-From 3c12b641e2f0c57f21462cac690c044fba9754b7 Mon Sep 17 00:00:00 2001
+From cac5f3c3ce0bc6dff0a2f453b8a99c8a67ba9ec1 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:56 -0600
-Subject: [PATCH 099/414] tracing: Add variable reference handling to hist
+Subject: [PATCH 099/413] tracing: Add variable reference handling to hist
  triggers
 
 Add the necessary infrastructure to allow the variables defined on one
@@ -36,10 +36,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 656 insertions(+), 16 deletions(-)
 
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 3cefb457970e..68e19414258c 100644
+index 49d2457947f5..1bbef798b98c 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -7788,6 +7788,7 @@ static int instance_mkdir(const char *name)
+@@ -7794,6 +7794,7 @@ static int instance_mkdir(const char *name)
  
  	INIT_LIST_HEAD(&tr->systems);
  	INIT_LIST_HEAD(&tr->events);
@@ -47,7 +47,7 @@ index 3cefb457970e..68e19414258c 100644
  
  	if (allocate_trace_buffers(tr, trace_buf_size) < 0)
  		goto out_free_tr;
-@@ -8538,6 +8539,7 @@ __init static int tracer_alloc_buffers(void)
+@@ -8544,6 +8545,7 @@ __init static int tracer_alloc_buffers(void)
  
  	INIT_LIST_HEAD(&global_trace.systems);
  	INIT_LIST_HEAD(&global_trace.events);
@@ -946,10 +946,10 @@ index 6e60cb794dcd..2bc1f76915ef 100644
  
  	destroy_hist_data(hist_data);
 diff --git a/kernel/trace/trace_events_trigger.c b/kernel/trace/trace_events_trigger.c
-index 9dd8b9ce2594..5d41bc2aad1c 100644
+index 4c269f2e00a4..24d42350d738 100644
 --- a/kernel/trace/trace_events_trigger.c
 +++ b/kernel/trace/trace_events_trigger.c
-@@ -911,6 +911,12 @@ void set_named_trigger_data(struct event_trigger_data *data,
+@@ -915,6 +915,12 @@ void set_named_trigger_data(struct event_trigger_data *data,
  	data->named_data = named_data;
  }
  

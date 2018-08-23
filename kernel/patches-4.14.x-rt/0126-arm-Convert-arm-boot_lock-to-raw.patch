@@ -1,7 +1,7 @@
-From d8fddc17ebd5134f2dcf942c75e07b6b78709294 Mon Sep 17 00:00:00 2001
+From 3a404b67776194e86063ef352c7612dd405701f6 Mon Sep 17 00:00:00 2001
 From: Frank Rowand <frank.rowand@am.sony.com>
 Date: Mon, 19 Sep 2011 14:51:14 -0700
-Subject: [PATCH 126/414] arm: Convert arm boot_lock to raw
+Subject: [PATCH 126/413] arm: Convert arm boot_lock to raw
 
 The arm boot_lock is used by the secondary processor startup code.  The locking
 task is the idle thread, which has idle->sched_class == &idle_sched_class.

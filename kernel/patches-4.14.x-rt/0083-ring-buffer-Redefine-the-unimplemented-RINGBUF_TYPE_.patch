@@ -1,7 +1,7 @@
-From 9f67e02e27ed28e415ea0e2b36e3ed12113bdb37 Mon Sep 17 00:00:00 2001
+From 84238420757684f86aa07eca0f5fc81fffdaeb27 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:40 -0600
-Subject: [PATCH 083/414] ring-buffer: Redefine the unimplemented
+Subject: [PATCH 083/413] ring-buffer: Redefine the unimplemented
  RINGBUF_TYPE_TIME_STAMP
 
 RINGBUF_TYPE_TIME_STAMP is defined but not used, and from what I can
@@ -33,7 +33,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 83 insertions(+), 33 deletions(-)
 
 diff --git a/include/linux/ring_buffer.h b/include/linux/ring_buffer.h
-index 42b626aa88c7..b37a5df05e81 100644
+index adffb56bae8f..6c2a6b3f3c6d 100644
 --- a/include/linux/ring_buffer.h
 +++ b/include/linux/ring_buffer.h
 @@ -34,10 +34,12 @@ struct ring_buffer_event {
@@ -68,7 +68,7 @@ index 42b626aa88c7..b37a5df05e81 100644
  /*
   * ring_buffer_discard_commit will remove an event that has not
 diff --git a/kernel/trace/ring_buffer.c b/kernel/trace/ring_buffer.c
-index 2be361b63c7b..e48989ff0427 100644
+index dc6f47802d02..a9cb4359c280 100644
 --- a/kernel/trace/ring_buffer.c
 +++ b/kernel/trace/ring_buffer.c
 @@ -41,6 +41,8 @@ int ring_buffer_print_entry_header(struct trace_seq *s)
@@ -230,7 +230,7 @@ index 2be361b63c7b..e48989ff0427 100644
  		info.delta = diff;
  		if (unlikely(test_time_stamp(info.delta)))
  			rb_handle_timestamp(cpu_buffer, &info);
-@@ -3424,14 +3459,13 @@ rb_update_read_stamp(struct ring_buffer_per_cpu *cpu_buffer,
+@@ -3440,14 +3475,13 @@ rb_update_read_stamp(struct ring_buffer_per_cpu *cpu_buffer,
  		return;
  
  	case RINGBUF_TYPE_TIME_EXTEND:
@@ -248,7 +248,7 @@ index 2be361b63c7b..e48989ff0427 100644
  		return;
  
  	case RINGBUF_TYPE_DATA:
-@@ -3455,14 +3489,13 @@ rb_update_iter_read_stamp(struct ring_buffer_iter *iter,
+@@ -3471,14 +3505,13 @@ rb_update_iter_read_stamp(struct ring_buffer_iter *iter,
  		return;
  
  	case RINGBUF_TYPE_TIME_EXTEND:
@@ -266,7 +266,7 @@ index 2be361b63c7b..e48989ff0427 100644
  		return;
  
  	case RINGBUF_TYPE_DATA:
-@@ -3686,6 +3719,8 @@ rb_buffer_peek(struct ring_buffer_per_cpu *cpu_buffer, u64 *ts,
+@@ -3702,6 +3735,8 @@ rb_buffer_peek(struct ring_buffer_per_cpu *cpu_buffer, u64 *ts,
  	struct buffer_page *reader;
  	int nr_loops = 0;
  
@@ -275,7 +275,7 @@ index 2be361b63c7b..e48989ff0427 100644
   again:
  	/*
  	 * We repeat when a time extend is encountered.
-@@ -3722,12 +3757,17 @@ rb_buffer_peek(struct ring_buffer_per_cpu *cpu_buffer, u64 *ts,
+@@ -3738,12 +3773,17 @@ rb_buffer_peek(struct ring_buffer_per_cpu *cpu_buffer, u64 *ts,
  		goto again;
  
  	case RINGBUF_TYPE_TIME_STAMP:
@@ -295,7 +295,7 @@ index 2be361b63c7b..e48989ff0427 100644
  			*ts = cpu_buffer->read_stamp + event->time_delta;
  			ring_buffer_normalize_time_stamp(cpu_buffer->buffer,
  							 cpu_buffer->cpu, ts);
-@@ -3752,6 +3792,9 @@ rb_iter_peek(struct ring_buffer_iter *iter, u64 *ts)
+@@ -3768,6 +3808,9 @@ rb_iter_peek(struct ring_buffer_iter *iter, u64 *ts)
  	struct ring_buffer_event *event;
  	int nr_loops = 0;
  
@@ -305,7 +305,7 @@ index 2be361b63c7b..e48989ff0427 100644
  	cpu_buffer = iter->cpu_buffer;
  	buffer = cpu_buffer->buffer;
  
-@@ -3804,12 +3847,17 @@ rb_iter_peek(struct ring_buffer_iter *iter, u64 *ts)
+@@ -3820,12 +3863,17 @@ rb_iter_peek(struct ring_buffer_iter *iter, u64 *ts)
  		goto again;
  
  	case RINGBUF_TYPE_TIME_STAMP:

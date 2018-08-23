@@ -1,7 +1,7 @@
-From 00e76e4674dcb08f980b20339bd1e0df0bac774d Mon Sep 17 00:00:00 2001
+From 73c0b87644cdbf798e5f4de966debbc39c770b08 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:50 -0600
-Subject: [PATCH 093/414] tracing: Account for variables in named trigger
+Subject: [PATCH 093/413] tracing: Account for variables in named trigger
  compatibility
 
 Named triggers must also have the same set of variables in order to be

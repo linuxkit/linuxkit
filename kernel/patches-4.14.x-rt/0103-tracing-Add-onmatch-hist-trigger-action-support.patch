@@ -1,7 +1,7 @@
-From d2e765bcd140d3aff656231ef10d3bfbdad5ae56 Mon Sep 17 00:00:00 2001
+From bc1e8e96346b050f885ee2bfc339022752233ae6 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:00 -0600
-Subject: [PATCH 103/414] tracing: Add 'onmatch' hist trigger action support
+Subject: [PATCH 103/413] tracing: Add 'onmatch' hist trigger action support
 
 Add an 'onmatch(matching.event).<synthetic_event_name>(param list)'
 hist trigger action which is invoked with the set of variables or

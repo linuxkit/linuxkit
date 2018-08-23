@@ -1,7 +1,7 @@
-From 3a5f45a3ca9930690423b2744d8b7666408d4fc2 Mon Sep 17 00:00:00 2001
+From 6b88b389d03fc38ef70181df0d0c989e38797e5e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 15 Jul 2010 10:29:00 +0200
-Subject: [PATCH 134/414] suspend: Prevent might sleep splats
+Subject: [PATCH 134/413] suspend: Prevent might sleep splats
 
 timekeeping suspend/resume calls read_persistant_clock() which takes
 rtc_lock. That results in might sleep warnings because at that point
@@ -89,7 +89,7 @@ index a5c36e9c56a6..7c7dbbf23f37 100644
  
   Enable_cpus:
 diff --git a/kernel/power/suspend.c b/kernel/power/suspend.c
-index 0685c4499431..d74d04d49248 100644
+index c0bc2c89697a..0d3dab53c527 100644
 --- a/kernel/power/suspend.c
 +++ b/kernel/power/suspend.c
 @@ -428,6 +428,8 @@ static int suspend_enter(suspend_state_t state, bool *wakeup)

@@ -1,7 +1,7 @@
-From a640914843d66271e9087e3de8b4036ce7f9b531 Mon Sep 17 00:00:00 2001
+From 3f6f5cb5821242c5bdb3dfbc3a4f8c2562669d69 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:10 -0600
-Subject: [PATCH 116/414] tracing: Add inter-event blurb to HIST_TRIGGERS
+Subject: [PATCH 116/413] tracing: Add inter-event blurb to HIST_TRIGGERS
  config option
 
 So that users know that inter-event tracing is supported as part of

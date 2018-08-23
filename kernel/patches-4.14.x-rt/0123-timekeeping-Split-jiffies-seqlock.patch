@@ -1,7 +1,7 @@
-From 6edf0cab78911a30359452d1c7d0d93775f5d86a Mon Sep 17 00:00:00 2001
+From 58adfd3be63c551354a9e2d73cde488d720890a6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Subject: [PATCH 123/414] timekeeping: Split jiffies seqlock
+Subject: [PATCH 123/413] timekeeping: Split jiffies seqlock
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.
@@ -76,7 +76,7 @@ index 49edc1c4f3e6..7f5a26c3a8ee 100644
  		clockevents_switch_state(dev, CLOCK_EVT_STATE_ONESHOT);
  
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 9a372e16791c..d8d91b06f057 100644
+index 7f924eba78da..542817a88618 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -66,7 +66,8 @@ static void tick_do_update_jiffies64(ktime_t now)

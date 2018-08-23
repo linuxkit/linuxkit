@@ -1,7 +1,7 @@
-From aafe75f039f4e96b2c6c1d3c0032af678591e28d Mon Sep 17 00:00:00 2001
+From 4bb86bcae586476f20ddc1a154a7de89aa263cd2 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:11 +0100
-Subject: [PATCH 036/414] hrtimer: Remove base argument from
+Subject: [PATCH 036/413] hrtimer: Remove base argument from
  hrtimer_reprogram()
 
 hrtimer_reprogram() must have access to the hrtimer_clock_base of the new

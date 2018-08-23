@@ -1,7 +1,7 @@
-From 98fa7ef5ce9171e243c5ca9cc0a15d4a027d3991 Mon Sep 17 00:00:00 2001
+From 1104c43e61c583b6885fdaed7128e493befd0c5c Mon Sep 17 00:00:00 2001
 From: Mikulas Patocka <mpatocka@redhat.com>
 Date: Fri, 10 Nov 2017 12:29:34 -0500
-Subject: [PATCH 003/414] brd: remove unused brd_mutex
+Subject: [PATCH 003/413] brd: remove unused brd_mutex
 
 Upstream commit 15f7b41f70ddcca3b555bd0fdc7c8da7466b517e
 

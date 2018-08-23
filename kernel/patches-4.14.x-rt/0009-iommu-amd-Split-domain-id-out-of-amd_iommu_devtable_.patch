@@ -1,7 +1,7 @@
-From 83b51c4f5ff1be7f15efde56b978914d0895996e Mon Sep 17 00:00:00 2001
+From bb893b3f9364003820ea8219a69afbed2cf45001 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:35 +0100
-Subject: [PATCH 009/414] iommu/amd: Split domain id out of
+Subject: [PATCH 009/413] iommu/amd: Split domain id out of
  amd_iommu_devtable_lock
 
 Upstream commit 2bc00180890427dcc092b2f2b0d03c904bcade29

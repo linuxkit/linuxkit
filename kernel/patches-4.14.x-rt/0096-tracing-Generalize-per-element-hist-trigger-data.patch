@@ -1,7 +1,7 @@
-From c90c725c2ac00315e80251d6ed44bb3860b6484f Mon Sep 17 00:00:00 2001
+From d95785f49fa17053815aaf4aa879b0bb5f680b8c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:53 -0600
-Subject: [PATCH 096/414] tracing: Generalize per-element hist trigger data
+Subject: [PATCH 096/413] tracing: Generalize per-element hist trigger data
 
 Up until now, hist triggers only needed per-element support for saving
 'comm' data, which was saved directly as a private data pointer.
