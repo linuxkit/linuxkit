@@ -1,7 +1,7 @@
-From b64a31d00a26eafa511f2aa7b28416d42459fe0f Mon Sep 17 00:00:00 2001
+From 272b77138a9e6e7785e46cac33ed5badfe04d601 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:20 -0500
-Subject: [PATCH 074/414] tracing: Make traceprobe parsing code reusable
+Subject: [PATCH 074/413] tracing: Make traceprobe parsing code reusable
 
 traceprobe_probes_write() and traceprobe_command() actually contain
 nothing that ties them to kprobes - the code is generically useful for
@@ -28,10 +28,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  6 files changed, 103 insertions(+), 103 deletions(-)
 
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 26ec13580069..5aea670a9b7e 100644
+index c3d9b89a8267..99b415e5cd11 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -8265,6 +8265,92 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
+@@ -8271,6 +8271,92 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
  }
  EXPORT_SYMBOL_GPL(ftrace_dump);
  
@@ -143,10 +143,10 @@ index 851cd1605085..221591636530 100644
   * Normal trace_printk() and friends allocates special buffers
   * to do the manipulation, as well as saves the print formats
 diff --git a/kernel/trace/trace_kprobe.c b/kernel/trace/trace_kprobe.c
-index f8d3bd974bcc..1f8b72d82ad9 100644
+index ea20274a105a..3c40d4174052 100644
 --- a/kernel/trace/trace_kprobe.c
 +++ b/kernel/trace/trace_kprobe.c
-@@ -907,8 +907,8 @@ static int probes_open(struct inode *inode, struct file *file)
+@@ -918,8 +918,8 @@ static int probes_open(struct inode *inode, struct file *file)
  static ssize_t probes_write(struct file *file, const char __user *buffer,
  			    size_t count, loff_t *ppos)
  {
@@ -157,7 +157,7 @@ index f8d3bd974bcc..1f8b72d82ad9 100644
  }
  
  static const struct file_operations kprobe_events_ops = {
-@@ -1433,9 +1433,9 @@ static __init int kprobe_trace_self_tests_init(void)
+@@ -1444,9 +1444,9 @@ static __init int kprobe_trace_self_tests_init(void)
  
  	pr_info("Testing kprobe tracing: ");
  
@@ -170,7 +170,7 @@ index f8d3bd974bcc..1f8b72d82ad9 100644
  	if (WARN_ON_ONCE(ret)) {
  		pr_warn("error on probing function entry.\n");
  		warn++;
-@@ -1455,8 +1455,8 @@ static __init int kprobe_trace_self_tests_init(void)
+@@ -1466,8 +1466,8 @@ static __init int kprobe_trace_self_tests_init(void)
  		}
  	}
  
@@ -181,7 +181,7 @@ index f8d3bd974bcc..1f8b72d82ad9 100644
  	if (WARN_ON_ONCE(ret)) {
  		pr_warn("error on probing function return.\n");
  		warn++;
-@@ -1526,13 +1526,13 @@ static __init int kprobe_trace_self_tests_init(void)
+@@ -1537,13 +1537,13 @@ static __init int kprobe_trace_self_tests_init(void)
  			disable_trace_kprobe(tk, file);
  	}
  

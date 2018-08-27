@@ -1,7 +1,7 @@
-From df2a37f4a941491dde3d94a72010c3504b11ead3 Mon Sep 17 00:00:00 2001
+From 31100a21a9f76a38e09616077600214a62799b53 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:47 -0600
-Subject: [PATCH 090/414] tracing: Add hist_data member to hist_field
+Subject: [PATCH 090/413] tracing: Add hist_data member to hist_field
 
 Allow hist_data access via hist_field.  Some users of hist_fields
 require or will require more access to the associated hist_data.

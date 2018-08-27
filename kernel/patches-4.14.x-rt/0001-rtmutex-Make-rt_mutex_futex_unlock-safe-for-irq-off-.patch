@@ -1,7 +1,7 @@
-From 9d9b5967777fb3b9f3ad66dd4d63967edfc6caa0 Mon Sep 17 00:00:00 2001
+From f32c0ebd27d45b33cf1bdd575a9587a30db705a7 Mon Sep 17 00:00:00 2001
 From: Boqun Feng <boqun.feng@gmail.com>
 Date: Fri, 9 Mar 2018 14:56:28 +0800
-Subject: [PATCH 001/414] rtmutex: Make rt_mutex_futex_unlock() safe for
+Subject: [PATCH 001/413] rtmutex: Make rt_mutex_futex_unlock() safe for
  irq-off callsites
 
 Upstream commit 6b0ef92fee2a3189eba6d6b827b247cb4f6da7e9

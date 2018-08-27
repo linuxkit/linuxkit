@@ -1,7 +1,7 @@
-From a81e6c9cc4ebc43eb8b658a8f49e934c48d9895e Mon Sep 17 00:00:00 2001
+From fb5d4884cb1cfd7c58c4afb46dff91d5fbd7a23e Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Wed, 28 Mar 2018 15:10:56 -0500
-Subject: [PATCH 121/414] tracing: Make sure variable string fields are
+Subject: [PATCH 121/413] tracing: Make sure variable string fields are
  NULL-terminated
 
 The strncpy() currently being used for variable string fields can

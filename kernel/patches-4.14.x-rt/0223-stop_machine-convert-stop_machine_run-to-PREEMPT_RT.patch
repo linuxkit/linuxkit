@@ -1,0 +1,41 @@
+From 792c16732659d97ec5f7083c3f5e1ffaaddc2d14 Mon Sep 17 00:00:00 2001
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 3 Jul 2009 08:30:27 -0500
+Subject: [PATCH 223/413] stop_machine: convert stop_machine_run() to
+ PREEMPT_RT
+
+Instead of playing with non-preemption, introduce explicit
+startup serialization. This is more robust and cleaner as
+well.
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[bigeasy: XXX: stopper_lock -> stop_cpus_lock]
+---
+ kernel/stop_machine.c | 10 ++++++++++
+ 1 file changed, 10 insertions(+)
+
+diff --git a/kernel/stop_machine.c b/kernel/stop_machine.c
+index e190d1ef3a23..74f3997a40fd 100644
+--- a/kernel/stop_machine.c
++++ b/kernel/stop_machine.c
+@@ -496,6 +496,16 @@ static void cpu_stopper_thread(unsigned int cpu)
+ 		struct cpu_stop_done *done = work->done;
+ 		int ret;
+ 
++		/*
++		 * Wait until the stopper finished scheduling on all
++		 * cpus
++		 */
++		lg_global_lock(&stop_cpus_lock);
++		/*
++		 * Let other cpu threads continue as well
++		 */
++		lg_global_unlock(&stop_cpus_lock);
++
+ 		/* cpu stop callbacks must not sleep, make in_atomic() == T */
+ 		preempt_count_inc();
+ 		ret = fn(arg);
+-- 
+2.18.0
+

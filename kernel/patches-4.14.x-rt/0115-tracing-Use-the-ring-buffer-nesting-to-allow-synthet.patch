@@ -1,7 +1,7 @@
-From f39dfa9c11e62c1946a6c2786537011bbb92505b Mon Sep 17 00:00:00 2001
+From efb3e23919257687f390d2cb31c3b5727274dd29 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Wed, 7 Feb 2018 17:29:46 -0500
-Subject: [PATCH 115/414] tracing: Use the ring-buffer nesting to allow
+Subject: [PATCH 115/413] tracing: Use the ring-buffer nesting to allow
  synthetic events to be traced
 
 Synthetic events can be done within the recording of other events. Notify

@@ -1,7 +1,7 @@
-From 88ddb6459b76ae7f56abd46e62b976906d96701c Mon Sep 17 00:00:00 2001
+From 794e7fb5827ff40ea3d54b8e4a1ce42d0fec1fc2 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:42 -0600
-Subject: [PATCH 085/414] tracing: Give event triggers access to
+Subject: [PATCH 085/413] tracing: Give event triggers access to
  ring_buffer_event
 
 The ring_buffer event can provide a timestamp that may be useful to
@@ -137,7 +137,7 @@ index c57e5369b0c2..77079c79b6d4 100644
  
  static struct event_trigger_ops hist_enable_trigger_ops = {
 diff --git a/kernel/trace/trace_events_trigger.c b/kernel/trace/trace_events_trigger.c
-index b413fab7d75b..9dd8b9ce2594 100644
+index 43254c5e7e16..4c269f2e00a4 100644
 --- a/kernel/trace/trace_events_trigger.c
 +++ b/kernel/trace/trace_events_trigger.c
 @@ -63,7 +63,8 @@ void trigger_data_free(struct event_trigger_data *data)
@@ -186,7 +186,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  	}
  }
  EXPORT_SYMBOL_GPL(event_triggers_post_call);
-@@ -911,7 +912,8 @@ void set_named_trigger_data(struct event_trigger_data *data,
+@@ -915,7 +916,8 @@ void set_named_trigger_data(struct event_trigger_data *data,
  }
  
  static void
@@ -196,7 +196,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	if (tracing_is_on())
  		return;
-@@ -920,7 +922,8 @@ traceon_trigger(struct event_trigger_data *data, void *rec)
+@@ -924,7 +926,8 @@ traceon_trigger(struct event_trigger_data *data, void *rec)
  }
  
  static void
@@ -206,7 +206,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	if (tracing_is_on())
  		return;
-@@ -935,7 +938,8 @@ traceon_count_trigger(struct event_trigger_data *data, void *rec)
+@@ -939,7 +942,8 @@ traceon_count_trigger(struct event_trigger_data *data, void *rec)
  }
  
  static void
@@ -216,7 +216,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	if (!tracing_is_on())
  		return;
-@@ -944,7 +948,8 @@ traceoff_trigger(struct event_trigger_data *data, void *rec)
+@@ -948,7 +952,8 @@ traceoff_trigger(struct event_trigger_data *data, void *rec)
  }
  
  static void
@@ -226,7 +226,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	if (!tracing_is_on())
  		return;
-@@ -1041,7 +1046,8 @@ static struct event_command trigger_traceoff_cmd = {
+@@ -1045,7 +1050,8 @@ static struct event_command trigger_traceoff_cmd = {
  
  #ifdef CONFIG_TRACER_SNAPSHOT
  static void
@@ -236,7 +236,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	struct trace_event_file *file = data->private_data;
  
-@@ -1052,7 +1058,8 @@ snapshot_trigger(struct event_trigger_data *data, void *rec)
+@@ -1056,7 +1062,8 @@ snapshot_trigger(struct event_trigger_data *data, void *rec)
  }
  
  static void
@@ -246,7 +246,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	if (!data->count)
  		return;
-@@ -1060,7 +1067,7 @@ snapshot_count_trigger(struct event_trigger_data *data, void *rec)
+@@ -1064,7 +1071,7 @@ snapshot_count_trigger(struct event_trigger_data *data, void *rec)
  	if (data->count != -1)
  		(data->count)--;
  
@@ -255,7 +255,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  }
  
  static int
-@@ -1139,13 +1146,15 @@ static __init int register_trigger_snapshot_cmd(void) { return 0; }
+@@ -1143,13 +1150,15 @@ static __init int register_trigger_snapshot_cmd(void) { return 0; }
  #define STACK_SKIP 3
  
  static void
@@ -273,7 +273,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	if (!data->count)
  		return;
-@@ -1153,7 +1162,7 @@ stacktrace_count_trigger(struct event_trigger_data *data, void *rec)
+@@ -1157,7 +1166,7 @@ stacktrace_count_trigger(struct event_trigger_data *data, void *rec)
  	if (data->count != -1)
  		(data->count)--;
  
@@ -282,7 +282,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  }
  
  static int
-@@ -1215,7 +1224,8 @@ static __init void unregister_trigger_traceon_traceoff_cmds(void)
+@@ -1219,7 +1228,8 @@ static __init void unregister_trigger_traceon_traceoff_cmds(void)
  }
  
  static void
@@ -292,7 +292,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	struct enable_trigger_data *enable_data = data->private_data;
  
-@@ -1226,7 +1236,8 @@ event_enable_trigger(struct event_trigger_data *data, void *rec)
+@@ -1230,7 +1240,8 @@ event_enable_trigger(struct event_trigger_data *data, void *rec)
  }
  
  static void
@@ -302,7 +302,7 @@ index b413fab7d75b..9dd8b9ce2594 100644
  {
  	struct enable_trigger_data *enable_data = data->private_data;
  
-@@ -1240,7 +1251,7 @@ event_enable_count_trigger(struct event_trigger_data *data, void *rec)
+@@ -1244,7 +1255,7 @@ event_enable_count_trigger(struct event_trigger_data *data, void *rec)
  	if (data->count != -1)
  		(data->count)--;
  

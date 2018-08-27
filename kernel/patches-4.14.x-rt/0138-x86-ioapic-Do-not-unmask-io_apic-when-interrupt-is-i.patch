@@ -1,7 +1,7 @@
-From 703b87e87a5374b9d18cde645b1f611d0a6b30de Mon Sep 17 00:00:00 2001
+From dae99daa571095fe826bc1b2b4739c2154133849 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:27 -0500
-Subject: [PATCH 138/414] x86/ioapic: Do not unmask io_apic when interrupt is
+Subject: [PATCH 138/413] x86/ioapic: Do not unmask io_apic when interrupt is
  in progress
 
 With threaded interrupts we might see an interrupt in progress on
@@ -14,10 +14,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-index 3b89b27945ff..9744fbb856af 100644
+index 96a8a68f9c79..5832a9d657f2 100644
 --- a/arch/x86/kernel/apic/io_apic.c
 +++ b/arch/x86/kernel/apic/io_apic.c
-@@ -1690,7 +1690,8 @@ static bool io_apic_level_ack_pending(struct mp_chip_data *data)
+@@ -1691,7 +1691,8 @@ static bool io_apic_level_ack_pending(struct mp_chip_data *data)
  static inline bool ioapic_irqd_mask(struct irq_data *data)
  {
  	/* If we are moving the irq we need to mask it */

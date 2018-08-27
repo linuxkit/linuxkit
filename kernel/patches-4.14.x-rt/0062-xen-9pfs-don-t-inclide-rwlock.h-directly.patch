@@ -1,7 +1,7 @@
-From 57aadd3335c145d39a4e3ced1de6e220f793e224 Mon Sep 17 00:00:00 2001
+From 59713b0380114cd3191016cd76a177fddd7803bc Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Oct 2017 14:38:52 +0200
-Subject: [PATCH 062/414] xen/9pfs: don't inclide rwlock.h directly.
+Subject: [PATCH 062/413] xen/9pfs: don't inclide rwlock.h directly.
 
 rwlock.h should not be included directly. Instead linux/splinlock.h
 should be included. One thing it does is to break the RT build.

@@ -1,7 +1,7 @@
-From 06f1ea65611d18c2fce8e1c4fed1671f95d35702 Mon Sep 17 00:00:00 2001
+From 340a244f82269fcefc375632ede3243326f403ee Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:39 -0600
-Subject: [PATCH 082/414] ring-buffer: Add interface for setting absolute time
+Subject: [PATCH 082/413] ring-buffer: Add interface for setting absolute time
  stamps
 
 Define a new function, tracing_set_time_stamp_abs(), which can be used
@@ -26,10 +26,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 48 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/ring_buffer.h b/include/linux/ring_buffer.h
-index 289e4d54e3e0..42b626aa88c7 100644
+index 5caa062a02b2..adffb56bae8f 100644
 --- a/include/linux/ring_buffer.h
 +++ b/include/linux/ring_buffer.h
-@@ -178,6 +178,8 @@ void ring_buffer_normalize_time_stamp(struct ring_buffer *buffer,
+@@ -179,6 +179,8 @@ void ring_buffer_normalize_time_stamp(struct ring_buffer *buffer,
  				      int cpu, u64 *ts);
  void ring_buffer_set_clock(struct ring_buffer *buffer,
  			   u64 (*clock)(void));
@@ -39,7 +39,7 @@ index 289e4d54e3e0..42b626aa88c7 100644
  size_t ring_buffer_page_len(void *page);
  
 diff --git a/kernel/trace/ring_buffer.c b/kernel/trace/ring_buffer.c
-index 29bad749560a..2be361b63c7b 100644
+index c3b6b47fd44a..dc6f47802d02 100644
 --- a/kernel/trace/ring_buffer.c
 +++ b/kernel/trace/ring_buffer.c
 @@ -488,6 +488,7 @@ struct ring_buffer {
@@ -68,10 +68,10 @@ index 29bad749560a..2be361b63c7b 100644
  
  static inline unsigned long rb_page_entries(struct buffer_page *bpage)
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 5aea670a9b7e..f75eb0df7dd9 100644
+index 99b415e5cd11..e64ba2addfe7 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2269,7 +2269,7 @@ trace_event_buffer_lock_reserve(struct ring_buffer **current_rb,
+@@ -2275,7 +2275,7 @@ trace_event_buffer_lock_reserve(struct ring_buffer **current_rb,
  
  	*current_rb = trace_file->tr->trace_buffer.buffer;
  
@@ -80,7 +80,7 @@ index 5aea670a9b7e..f75eb0df7dd9 100644
  	     (EVENT_FILE_FL_SOFT_DISABLED | EVENT_FILE_FL_FILTERED)) &&
  	    (entry = this_cpu_read(trace_buffered_event))) {
  		/* Try to use the per cpu buffer first */
-@@ -6287,6 +6287,37 @@ static int tracing_clock_open(struct inode *inode, struct file *file)
+@@ -6293,6 +6293,37 @@ static int tracing_clock_open(struct inode *inode, struct file *file)
  	return ret;
  }
  

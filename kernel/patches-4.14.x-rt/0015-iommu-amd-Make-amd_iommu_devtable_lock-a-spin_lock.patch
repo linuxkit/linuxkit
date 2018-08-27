@@ -1,7 +1,7 @@
-From 37d2bc916fbc0c736b9c764ebbf176d915f35763 Mon Sep 17 00:00:00 2001
+From 5fe259167e7969e2f51f10b7261498ddc6cd028c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:41 +0100
-Subject: [PATCH 015/414] iommu/amd: Make amd_iommu_devtable_lock a spin_lock
+Subject: [PATCH 015/413] iommu/amd: Make amd_iommu_devtable_lock a spin_lock
 
 Upstream commit 2cd1083d79a0a8c223af430ca97884c28a1e2fc0
 

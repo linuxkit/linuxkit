@@ -1,7 +1,7 @@
-From 9141fb2cb13b8db2b10a5241330974dac538a15b Mon Sep 17 00:00:00 2001
+From affc78e03e4bff21dad45a0b92770e9398e5e765 Mon Sep 17 00:00:00 2001
 From: Benedikt Spranger <b.spranger@linutronix.de>
 Date: Mon, 8 Mar 2010 18:57:04 +0100
-Subject: [PATCH 133/414] clocksource: TCLIB: Allow higher clock rates for
+Subject: [PATCH 133/413] clocksource: TCLIB: Allow higher clock rates for
  clock events
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8

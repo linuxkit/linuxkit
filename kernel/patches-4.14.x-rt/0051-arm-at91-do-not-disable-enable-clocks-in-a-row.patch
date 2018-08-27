@@ -1,7 +1,7 @@
-From 727e4f53abcedadc467084c8a89aa37d235bd637 Mon Sep 17 00:00:00 2001
+From 2b498ad21a6aba531148a6f8d5b1555f71a88b21 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 9 Mar 2016 10:51:06 +0100
-Subject: [PATCH 051/414] arm: at91: do not disable/enable clocks in a row
+Subject: [PATCH 051/413] arm: at91: do not disable/enable clocks in a row
 
 Currently the driver will disable the clock and enable it one line later
 if it is switching from periodic mode into one shot.

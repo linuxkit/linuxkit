@@ -1,7 +1,7 @@
-From 84d22944bf656ca6957cc58ceba1a8f489ead682 Mon Sep 17 00:00:00 2001
+From 5c03f39867b511e7be17cb632d82d052779ea74d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:14 +0100
-Subject: [PATCH 047/414] softirq: Remove tasklet_hrtimer
+Subject: [PATCH 047/413] softirq: Remove tasklet_hrtimer
 
 There are no more tasklet_hrtimer users of this interface.
 Remove it.
@@ -51,10 +51,10 @@ index 69c238210325..af15bfd89598 100644
   * Autoprobing for irqs:
   *
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index e89c3b0cff6d..359cec869172 100644
+index a4c87cf27f9d..1a5dfc8dcf49 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
-@@ -584,57 +584,6 @@ void tasklet_kill(struct tasklet_struct *t)
+@@ -588,57 +588,6 @@ void tasklet_kill(struct tasklet_struct *t)
  }
  EXPORT_SYMBOL(tasklet_kill);
  

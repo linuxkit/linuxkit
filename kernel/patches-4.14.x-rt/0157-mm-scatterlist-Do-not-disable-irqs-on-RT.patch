@@ -1,7 +1,7 @@
-From ae871acd1253742f6ce7d3bc2d8599d7fa1e6337 Mon Sep 17 00:00:00 2001
+From a275a4f284bbe53d927bc62394983a23e1cefe4c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:34 -0500
-Subject: [PATCH 157/414] mm/scatterlist: Do not disable irqs on RT
+Subject: [PATCH 157/413] mm/scatterlist: Do not disable irqs on RT
 
 For -RT it is enough to keep pagefault disabled (which is currently handled by
 kmap_atomic()).

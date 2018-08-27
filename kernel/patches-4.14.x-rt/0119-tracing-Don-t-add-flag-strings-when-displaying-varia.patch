@@ -1,7 +1,7 @@
-From b6750860f3a3df56c7b96d8585a0d889d9c6c64e Mon Sep 17 00:00:00 2001
+From 619645d5a5982dc2dc533c6567344d48a1288397 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Wed, 28 Mar 2018 15:10:54 -0500
-Subject: [PATCH 119/414] tracing: Don't add flag strings when displaying
+Subject: [PATCH 119/413] tracing: Don't add flag strings when displaying
  variable references
 
 Variable references should never have flags appended when displayed -

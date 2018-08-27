@@ -1,7 +1,7 @@
-From 9cd219e6bbcfbb790039a30af4a0fe80c84a2d6c Mon Sep 17 00:00:00 2001
+From 20520cafc810815c7b14dc1257ed12729b378f54 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:19 -0500
-Subject: [PATCH 073/414] tracing: Increase tracing map KEYS_MAX size
+Subject: [PATCH 073/413] tracing: Increase tracing map KEYS_MAX size
 
 The current default for the number of subkeys in a compound key is 2,
 which is too restrictive.  Increase it to a more realistic value of 3.

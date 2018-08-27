@@ -1,7 +1,7 @@
-From 3d173b2cddbb8f72c1a8e412a9e13b7d69b4af6b Mon Sep 17 00:00:00 2001
+From 9f0770f9b7e16ce7f97f29560777ff0ec657af1f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 4 Oct 2017 09:55:58 +0200
-Subject: [PATCH 056/414] mfd: syscon: atmel-smc: include string.h
+Subject: [PATCH 056/413] mfd: syscon: atmel-smc: include string.h
 
 The string.h header file is needed for the memset() definition. The RT
 build fails because it is not pulled in via other header files.

@@ -1,7 +1,7 @@
-From 13e83fbfc0915adadbca222e863f7d93958bf009 Mon Sep 17 00:00:00 2001
+From 9ec4b3b72eb7ad4a5f464146950e03a33868154c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:52 -0600
-Subject: [PATCH 095/414] tracing: Add simple expression support to hist
+Subject: [PATCH 095/413] tracing: Add simple expression support to hist
  triggers
 
 Add support for simple addition, subtraction, and unary expressions

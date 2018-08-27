@@ -1,7 +1,7 @@
-From 992431d76e6245d8e63a730edc327af64290c6b1 Mon Sep 17 00:00:00 2001
+From 9d1afc68755f7a6c5ab077e59ad5a3eec8fea99b Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:07 -0600
-Subject: [PATCH 110/414] tracing: Make tracing_set_clock() non-static
+Subject: [PATCH 110/413] tracing: Make tracing_set_clock() non-static
 
 Allow tracing code outside of trace.c to access tracing_set_clock().
 
@@ -22,10 +22,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 68e19414258c..f8413f284892 100644
+index 1bbef798b98c..73b3e330ac0a 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -6219,7 +6219,7 @@ static int tracing_clock_show(struct seq_file *m, void *v)
+@@ -6225,7 +6225,7 @@ static int tracing_clock_show(struct seq_file *m, void *v)
  	return 0;
  }
  
