@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:4.14.63
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:v0.6
-  - linuxkit/runc:v0.6
+  - linuxkit/init:e24105ebb339e1a2e578fde7ec8bccf844a633d5
+  - linuxkit/runc:1dc6559fd0a9a332c740312637af0c3fbe6bafa3
 onboot:
   - name: mkimage
     image: linuxkit/mkimage:v0.6
