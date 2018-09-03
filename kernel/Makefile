@@ -260,7 +260,6 @@ endef
 #
 ifeq ($(ARCH),x86_64)
 $(eval $(call kernel,4.18.5,4.18.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.17.19,4.17.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.67,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.67,4.14.x,,-dbg))
 $(eval $(call kernel,4.14.63,4.14.x,-rt,))
