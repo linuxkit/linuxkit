@@ -264,7 +264,7 @@ $(eval $(call kernel,4.14.67,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.67,4.14.x,,-dbg))
 $(eval $(call kernel,4.14.63,4.14.x,-rt,))
 $(eval $(call kernel,4.9.124,4.9.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.4.152,4.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.4.153,4.4.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
 $(eval $(call kernel,4.18.5,4.18.x,$(EXTRA),$(DEBUG)))
