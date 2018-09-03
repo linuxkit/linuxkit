@@ -194,9 +194,9 @@ forcepush: forcepush_perf_$(2)$(3)$(4)
 endif
 
 # For BCC, only build on x86 and only on latest LTS and latest stable.
-# That's 4.14.x and 4.17.x at time of authorship.
+# That's 4.14.x and 4.18.x at time of authorship.
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),4.14.x 4.17.x))
+ifeq ($(2), $(filter $(2),4.14.x 4.18.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
@@ -260,12 +260,11 @@ endef
 #
 ifeq ($(ARCH),x86_64)
 $(eval $(call kernel,4.18.5,4.18.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.17.19,4.17.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.67,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.67,4.14.x,,-dbg))
 $(eval $(call kernel,4.14.63,4.14.x,-rt,))
 $(eval $(call kernel,4.9.124,4.9.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.4.152,4.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.4.153,4.4.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
 $(eval $(call kernel,4.18.5,4.18.x,$(EXTRA),$(DEBUG)))
