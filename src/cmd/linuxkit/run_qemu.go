@@ -15,14 +15,9 @@ import (
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
-// QemuImg is the version of qemu container
-const (
-	QemuImg       = "linuxkit/qemu:18e9e252d670ed829ae13a358f4efcf5d7da6a24"
-	defaultFWPath = "/usr/share/ovmf/bios.bin"
-)
+const defaultFWPath = "/usr/share/ovmf/bios.bin"
 
 // QemuConfig contains the config for Qemu
 type QemuConfig struct {
@@ -167,9 +162,7 @@ func runQemu(args []string) {
 	mem := flags.String("mem", "1024", "Amount of memory in MB")
 
 	// Backend configuration
-	qemuContainerized := flags.Bool("containerized", false, "Run qemu in a container")
 	qemuCmd := flags.String("qemu", "", "Path to the qemu binary (otherwise look in $PATH)")
-	qemuDetached := flags.Bool("detached", false, "Set qemu container to run in the background")
 
 	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
 	vmUUID := uuid.New()
@@ -188,7 +181,6 @@ func runQemu(args []string) {
 	// These envvars override the corresponding command line
 	// options. So this must remain after the `flags.Parse` above.
 	*accel = getStringValue("LINUXKIT_QEMU_ACCEL", *accel, "")
-	*qemuContainerized = getBoolValue("LINUXKIT_QEMU_CONTAINERIZED", *qemuContainerized)
 
 	if len(remArgs) == 0 {
 		fmt.Println("Please specify the path to the image to boot")
@@ -326,8 +318,6 @@ func runQemu(args []string) {
 		CPUs:           *cpus,
 		Memory:         *mem,
 		Accel:          *accel,
-		Containerized:  *qemuContainerized,
-		Detached:       *qemuDetached,
 		QemuBinPath:    *qemuCmd,
 		PublishedPorts: publishFlags,
 		NetdevConfig:   netdevConfig,
@@ -336,12 +326,7 @@ func runQemu(args []string) {
 
 	config = discoverBackend(config)
 
-	if config.Containerized {
-		err = runQemuContainer(config)
-	} else {
-		err = runQemuLocal(config)
-	}
-	if err != nil {
+	if err := runQemuLocal(config); err != nil {
 		log.Fatal(err.Error())
 	}
 }
@@ -385,11 +370,6 @@ func runQemuLocal(config QemuConfig) error {
 		}
 	}
 
-	// Detached mode is only supported in a container.
-	if config.Detached == true {
-		return fmt.Errorf("Detached mode is only supported when running in a container, not locally")
-	}
-
 	qemuCmd := exec.Command(config.QemuBinPath, args...)
 	// If verbosity is enabled print out the full path/arguments
 	log.Debugf("%v\n", qemuCmd.Args)
@@ -400,111 +380,6 @@ func runQemuLocal(config QemuConfig) error {
 		qemuCmd.Stdout = os.Stdout
 		qemuCmd.Stderr = os.Stderr
 	}
-
-	return qemuCmd.Run()
-}
-
-func runQemuContainer(config QemuConfig) error {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return err
-	}
-
-	var binds []string
-	addBind := func(p string) {
-		if filepath.IsAbs(p) {
-			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", filepath.Dir(p)))
-		} else {
-			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", cwd))
-		}
-	}
-	addBind(config.Path)
-
-	for _, p := range config.ISOImages {
-		addBind(p)
-	}
-	// also try to bind mount disk paths so the command works
-	for _, d := range config.Disks {
-		addBind(d.Path)
-	}
-
-	var args []string
-	config, args = buildQemuCmdline(config)
-
-	// If we are running in a container and if the the user
-	// does not specify the "-fw" parameter, we default to using the
-	// FW image in the container. Otherwise we bind mount the FW image
-	// into the container.
-	if config.UEFI {
-		if config.FWPath != "" {
-			binds = append(binds, "-v", fmt.Sprintf("%[1]s:%[1]s", config.FWPath))
-		} else {
-			config.FWPath = defaultFWPath
-		}
-	}
-
-	dockerArgs := append([]string{"run", "--interactive", "--rm", "-w", cwd}, binds...)
-	dockerArgsImg := append([]string{"run", "--rm", "-w", cwd}, binds...)
-
-	if terminal.IsTerminal(int(os.Stdin.Fd())) {
-		dockerArgs = append(dockerArgs, "--tty")
-	}
-
-	if strings.Contains(config.Accel, "kvm") {
-		dockerArgs = append(dockerArgs, "--device", "/dev/kvm")
-	}
-
-	if config.Detached == true {
-		dockerArgs = append(dockerArgs, "-d")
-	}
-
-	if config.PublishedPorts != nil && len(config.PublishedPorts) > 0 {
-		forwardings, err := buildDockerForwardings(config.PublishedPorts)
-		if err != nil {
-			return err
-		}
-		dockerArgs = append(dockerArgs, forwardings...)
-	}
-
-	dockerPath, err := exec.LookPath("docker")
-	if err != nil {
-		return fmt.Errorf("Unable to find docker in the $PATH")
-	}
-
-	for _, d := range config.Disks {
-		// If disk doesn't exist then create one
-		if _, err = os.Stat(d.Path); err != nil {
-			if os.IsNotExist(err) {
-				log.Debugf("Creating new qemu disk [%s] format %s", d.Path, d.Format)
-				imgArgs := append(dockerArgsImg, QemuImg, "qemu-img", "create", "-f", d.Format, d.Path, fmt.Sprintf("%dM", d.Size))
-				qemuImgCmd := exec.Command(dockerPath, imgArgs...)
-				qemuImgCmd.Stderr = os.Stderr
-				log.Debugf("%v\n", qemuImgCmd.Args)
-				if err = qemuImgCmd.Run(); err != nil {
-					return fmt.Errorf("Error creating disk [%s] format %s:  %s", d.Path, d.Format, err.Error())
-				}
-			} else {
-				return err
-			}
-		} else {
-			log.Infof("Using existing disk [%s] format %s", d.Path, d.Format)
-		}
-	}
-
-	qemuArgs := append(dockerArgs, QemuImg, "qemu-system-"+config.Arch)
-	qemuArgs = append(qemuArgs, args...)
-	qemuCmd := exec.Command(dockerPath, qemuArgs...)
-	// If verbosity is enabled print out the full path/arguments
-	log.Debugf("%v\n", qemuCmd.Args)
-
-	// GUI mode not currently supported in a container. Although it could be in future.
-	if config.GUI == true {
-		return fmt.Errorf("GUI mode is only supported when running locally, not in a container")
-	}
-
-	qemuCmd.Stdin = os.Stdin
-	qemuCmd.Stdout = os.Stdout
-	qemuCmd.Stderr = os.Stderr
 
 	return qemuCmd.Run()
 }
@@ -652,7 +527,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		} else {
 			qemuArgs = append(qemuArgs, "-device", "virtio-net-pci,netdev=t0,mac="+mac.String())
 		}
-		forwardings, err := buildQemuForwardings(config.PublishedPorts, config.Containerized)
+		forwardings, err := buildQemuForwardings(config.PublishedPorts)
 		if err != nil {
 			log.Error(err)
 		}
@@ -695,7 +570,7 @@ func discoverBackend(config QemuConfig) QemuConfig {
 	return config
 }
 
-func buildQemuForwardings(publishFlags multipleFlag, containerized bool) (string, error) {
+func buildQemuForwardings(publishFlags multipleFlag) (string, error) {
 	if len(publishFlags) == 0 {
 		return "", nil
 	}
@@ -709,23 +584,8 @@ func buildQemuForwardings(publishFlags multipleFlag, containerized bool) (string
 		hostPort := p.Host
 		guestPort := p.Guest
 
-		if containerized {
-			hostPort = guestPort
-		}
 		forwardings = fmt.Sprintf("%s,hostfwd=%s::%d-:%d", forwardings, p.Protocol, hostPort, guestPort)
 	}
 
 	return forwardings, nil
-}
-
-func buildDockerForwardings(publishedPorts []string) ([]string, error) {
-	pmap := []string{}
-	for _, port := range publishedPorts {
-		s, err := NewPublishedPort(port)
-		if err != nil {
-			return nil, err
-		}
-		pmap = append(pmap, "-p", fmt.Sprintf("%d:%d/%s", s.Host, s.Guest, s.Protocol))
-	}
-	return pmap, nil
 }
