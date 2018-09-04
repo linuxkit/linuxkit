@@ -6,3 +6,5 @@ config:
   readonly: true
   net: new
   ipc: new
+  binds:
+    - /dev:/dev

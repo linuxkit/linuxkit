@@ -23,8 +23,9 @@ func main() {
 		timeout = 0
 	}
 
+	tpm, err := initTPM()
 	supported := initRand()
-	if !supported {
+	if !supported && err != nil {
 		log.Fatalf("No random source available")
 	}
 
@@ -53,12 +54,28 @@ func main() {
 	count := 0
 
 	for {
-		// write some entropy
-		n, err := writeEntropy(random)
-		if err != nil {
-			log.Fatalf("write entropy: %v", err)
+		if supported {
+			r, err := rand()
+			if err != nil {
+				// assume can fail occasionally
+				n, err := writeEntropy(random, r)
+				if err != nil {
+					log.Fatalf("write entropy: %v", err)
+				}
+				count += n
+			}
 		}
-		count += n
+		if tpm != nil {
+			r, err := tpmRand(tpm)
+			if err != nil {
+				// assume can fail occasionally
+				n, err := writeEntropy(random, r)
+				if err != nil {
+					log.Fatalf("write entropy: %v", err)
+				}
+				count += n
+			}
+		}
 		// sleep until we can write more
 		nevents, err := unix.EpollWait(epfd, events[:], timeout)
 		if err != nil {
@@ -80,12 +97,7 @@ type randInfo struct {
 	buf          uint64
 }
 
-func writeEntropy(random *os.File) (int, error) {
-	r, err := rand()
-	if err != nil {
-		// assume can fail occasionally
-		return 0, nil
-	}
+func writeEntropy(random *os.File, r uint64) (int, error) {
 	const entropy = 64 // they are good random numbers, Brent
 	info := randInfo{entropy, 8, r}
 	ret, _, err := unix.Syscall(unix.SYS_IOCTL, uintptr(random.Fd()), uintptr(C.rndaddentropy), uintptr(unsafe.Pointer(&info)))
