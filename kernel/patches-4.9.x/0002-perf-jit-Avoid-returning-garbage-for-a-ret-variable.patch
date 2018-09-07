@@ -1,7 +1,7 @@
-From cc3952199183a1927dce1586c0c91b586468bb52 Mon Sep 17 00:00:00 2001
+From e3c72ac590752dd3812767cb6ea60e2b88ec0b06 Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 13 Oct 2016 17:12:35 -0300
-Subject: [PATCH 02/12] perf jit: Avoid returning garbage for a ret variable
+Subject: [PATCH 02/14] perf jit: Avoid returning garbage for a ret variable
 
 When the loop body isn't executed at all, then the 'ret' local variable,
 that is uninitialized will be used as the return value.
