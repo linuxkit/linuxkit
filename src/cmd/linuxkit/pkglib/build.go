@@ -6,10 +6,8 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 	log "github.com/sirupsen/logrus"
@@ -235,7 +233,11 @@ func (c *buildCtx) Copy(w io.WriteCloser) error {
 			if err != nil {
 				return fmt.Errorf("ctx: Converting FileInfo for %s: %v", p, err)
 			}
-			h.Name = path.Join(s.dst, strings.TrimPrefix(p, s.src))
+			rel, err := filepath.Rel(s.src, p)
+			if err != nil {
+				return err
+			}
+			h.Name = filepath.ToSlash(filepath.Join(s.dst, rel))
 			if err := tw.WriteHeader(h); err != nil {
 				return fmt.Errorf("ctx: Writing header for %s: %v", p, err)
 			}
