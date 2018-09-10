@@ -58,11 +58,11 @@ func tarPrefix(path string, tw tarWriter) error {
 	if path == "" {
 		return nil
 	}
-	if path[len(path)-1] != byte('/') {
+	if path[len(path)-1] != '/' {
 		return fmt.Errorf("path does not end with /: %s", path)
 	}
 	path = path[:len(path)-1]
-	if path[0] == byte('/') {
+	if path[0] == '/' {
 		return fmt.Errorf("path should be relative: %s", path)
 	}
 	mkdir := ""
@@ -85,7 +85,7 @@ func tarPrefix(path string, tw tarWriter) error {
 // ImageTar takes a Docker image and outputs it to a tar stream
 func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull bool, resolv string) (e error) {
 	log.Debugf("image tar: %s %s", ref, prefix)
-	if prefix != "" && prefix[len(prefix)-1] != byte('/') {
+	if prefix != "" && prefix[len(prefix)-1] != '/' {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
 	}
 
