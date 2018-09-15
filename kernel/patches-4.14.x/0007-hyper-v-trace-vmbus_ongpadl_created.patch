@@ -1,4 +1,4 @@
-From e6bba1977e90c6f45aba836c7399aeb01029a319 Mon Sep 17 00:00:00 2001
+From b963a3ce864850933cf4d78db1be7b763aefecf0 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:05 -0700
 Subject: [PATCH 07/21] hyper-v: trace vmbus_ongpadl_created()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 19 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 3e2753cf1d9e..802d7692d7dd 100644
+index 176a7bc13967..3fc3532df1d5 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -1025,6 +1025,8 @@ static void vmbus_ongpadl_created(struct vmbus_channel_message_header *hdr)
+@@ -1031,6 +1031,8 @@ static void vmbus_ongpadl_created(struct vmbus_channel_message_header *hdr)
  
  	gpadlcreated = (struct vmbus_channel_gpadl_created *)hdr;
  

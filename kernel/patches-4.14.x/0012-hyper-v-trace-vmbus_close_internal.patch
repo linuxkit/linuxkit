@@ -1,4 +1,4 @@
-From b87b46719ca55ce53465a36c76bda90f2123e98e Mon Sep 17 00:00:00 2001
+From 8e622bf25644682f55dc2976724c343eab1db6b8 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:10 -0700
 Subject: [PATCH 12/21] hyper-v: trace vmbus_close_internal()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 17 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index b562a7fb4c42..70babce00ddc 100644
+index 4df21aaf448e..6754725f0ea9 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -591,6 +591,8 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
+@@ -601,6 +601,8 @@ static int vmbus_close_internal(struct vmbus_channel *channel)
  	ret = vmbus_post_msg(msg, sizeof(struct vmbus_channel_close_channel),
  			     true);
  

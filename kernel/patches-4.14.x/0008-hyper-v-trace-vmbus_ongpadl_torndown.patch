@@ -1,4 +1,4 @@
-From 163dd4f9d52b094ba102dd7790878d1c18f9e4e1 Mon Sep 17 00:00:00 2001
+From ef14d81a1309c9bb7be3c4e5f168acebba6d03c9 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:06 -0700
 Subject: [PATCH 08/21] hyper-v: trace vmbus_ongpadl_torndown()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 10 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 802d7692d7dd..329e7f6491a4 100644
+index 3fc3532df1d5..2112d4cb2583 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -1075,6 +1075,8 @@ static void vmbus_ongpadl_torndown(
+@@ -1081,6 +1081,8 @@ static void vmbus_ongpadl_torndown(
  
  	gpadl_torndown = (struct vmbus_channel_gpadl_torndown *)hdr;
  
