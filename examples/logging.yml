@@ -3,9 +3,9 @@ kernel:
   image: linuxkit/kernel:4.14.71
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e24105ebb339e1a2e578fde7ec8bccf844a633d5
-  - linuxkit/runc:1dc6559fd0a9a332c740312637af0c3fbe6bafa3
-  - linuxkit/containerd:ed0589d53e29890b0e504f594a0e4af7326b6484
+  - linuxkit/init:6eb0158059b056a1567236280880cb87f03ff008
+  - linuxkit/runc:6cf26a0403376de3b5396cb676b88eea4f37aff8
+  - linuxkit/containerd:d955db7cd28dbd7be8a17d7063cc6b7f1bf91f0a
   - linuxkit/ca-certificates:v0.6
   - linuxkit/memlogd:v0.6
 onboot:
