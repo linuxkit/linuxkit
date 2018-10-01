@@ -1,4 +1,4 @@
-From a73290e6f417bffeb50ba48e5888ace8d7f70c40 Mon Sep 17 00:00:00 2001
+From 43454f7db458be2f4e2b828e57f44f22f544b71f Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Tue, 31 Oct 2017 14:58:08 -0700
 Subject: [PATCH 21/21] scsi: storvsc: Avoid excessive host scan on controller
