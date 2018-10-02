@@ -1,4 +1,4 @@
-From 001d8d1693a8ceb097a6e0f39444d60284e14a2a Mon Sep 17 00:00:00 2001
+From 50952a2a0f370e84f0cfeede2c2187c62b4433df Mon Sep 17 00:00:00 2001
 From: Rolf Neugebauer <rolf.neugebauer@gmail.com>
 Date: Mon, 23 May 2016 18:55:45 +0100
 Subject: [PATCH 04/14] vmbus: Don't spam the logs with unknown GUIDs
