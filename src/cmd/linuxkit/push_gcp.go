@@ -52,6 +52,10 @@ func pushGcp(args []string) {
 		name = filepath.Base(name)
 	}
 
+	if project == "" {
+		log.Fatalf("Please specify the project to use")
+	}
+
 	if bucket == "" {
 		log.Fatalf("Please specify the bucket to use")
 	}
