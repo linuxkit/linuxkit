@@ -63,7 +63,7 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 			projectName: projectName,
 		}
 	} else {
-		log.Debugf("Using Application Default crednetials")
+		log.Debugf("Using Application Default credentials")
 		gc, err := google.DefaultClient(
 			ctx,
 			storage.DevstorageReadWriteScope,
