@@ -1,7 +1,7 @@
-From 272b77138a9e6e7785e46cac33ed5badfe04d601 Mon Sep 17 00:00:00 2001
+From 8acdd6d55c9e80699e749a79790d94a2db6e757c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:20 -0500
-Subject: [PATCH 074/413] tracing: Make traceprobe parsing code reusable
+Subject: [PATCH 074/436] tracing: Make traceprobe parsing code reusable
 
 traceprobe_probes_write() and traceprobe_command() actually contain
 nothing that ties them to kprobes - the code is generically useful for
@@ -28,10 +28,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  6 files changed, 103 insertions(+), 103 deletions(-)
 
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index c3d9b89a8267..99b415e5cd11 100644
+index ee24e0bfc391..f3d7c259e424 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -8271,6 +8271,92 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
+@@ -8280,6 +8280,92 @@ void ftrace_dump(enum ftrace_dump_mode oops_dump_mode)
  }
  EXPORT_SYMBOL_GPL(ftrace_dump);
  
@@ -320,7 +320,7 @@ index dc39472ca9e4..a0d750e3d17c 100644
  static nokprobe_inline int
  __get_data_size(struct trace_probe *tp, struct pt_regs *regs)
 diff --git a/kernel/trace/trace_uprobe.c b/kernel/trace/trace_uprobe.c
-index 7197ff9f0bbd..2db5a19833ed 100644
+index ea0d90a31fc9..2ccfbb8efeb2 100644
 --- a/kernel/trace/trace_uprobe.c
 +++ b/kernel/trace/trace_uprobe.c
 @@ -647,7 +647,7 @@ static int probes_open(struct inode *inode, struct file *file)

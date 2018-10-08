@@ -1,7 +1,7 @@
-From 608ad956a6bc170b386a56c5254042614c3fc81d Mon Sep 17 00:00:00 2001
+From 99522c094d5e5ce9aafc867aed361773b4223229 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Sep 2012 14:50:37 +0200
-Subject: [PATCH 330/413] printk: Make rt aware
+Subject: [PATCH 330/436] printk: Make rt aware
 
 Drop the lock before calling the console driver and do not disable
 interrupts while printing to a serial console.
@@ -12,10 +12,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 18 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 1da739f39a3d..bce72853f9a2 100644
+index fec67b9d0fad..60786d701bfe 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1617,6 +1617,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1558,6 +1558,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  	if (!console_drivers)
  		return;
  
@@ -23,7 +23,7 @@ index 1da739f39a3d..bce72853f9a2 100644
  	for_each_console(con) {
  		if (exclusive_console && con != exclusive_console)
  			continue;
-@@ -1632,6 +1633,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1573,6 +1574,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  		else
  			con->write(con, text, len);
  	}
@@ -31,7 +31,7 @@ index 1da739f39a3d..bce72853f9a2 100644
  }
  
  int printk_delay_msec __read_mostly;
-@@ -1814,12 +1816,22 @@ asmlinkage int vprintk_emit(int facility, int level,
+@@ -1757,12 +1759,22 @@ asmlinkage int vprintk_emit(int facility, int level,
  
  	/* If called from the scheduler, we can not call up(). */
  	if (!in_sched) {
@@ -55,7 +55,7 @@ index 1da739f39a3d..bce72853f9a2 100644
  			console_unlock();
  	}
  
-@@ -2275,10 +2287,15 @@ void console_unlock(void)
+@@ -2218,10 +2230,15 @@ void console_unlock(void)
  		console_seq++;
  		raw_spin_unlock(&logbuf_lock);
  

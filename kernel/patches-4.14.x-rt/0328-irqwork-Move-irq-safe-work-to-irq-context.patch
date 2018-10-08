@@ -1,7 +1,7 @@
-From 20247db48c783641911dece83e789cdac738f3a8 Mon Sep 17 00:00:00 2001
+From f32be76d851fe341853ba04626414fbe4dab2d13 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 15 Nov 2015 18:40:17 +0100
-Subject: [PATCH 328/413] irqwork: Move irq safe work to irq context
+Subject: [PATCH 328/436] irqwork: Move irq safe work to irq context
 
 On architectures where arch_irq_work_has_interrupt() returns false, we
 end up running the irq safe work from the softirq context. That
@@ -59,7 +59,7 @@ index 0ddaf1e66d8c..2899ba0d23d1 100644
  /*
   * Synchronize against the irq_work @entry, ensures the entry is not
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index feab4b90d896..ff1d60d4c0cc 100644
+index 2362b03051aa..ea742b49bdb5 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -1638,7 +1638,7 @@ void update_process_times(int user_tick)
@@ -71,7 +71,7 @@ index feab4b90d896..ff1d60d4c0cc 100644
  	if (in_irq())
  		irq_work_tick();
  #endif
-@@ -1679,9 +1679,7 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
+@@ -1695,9 +1695,7 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
  {
  	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
  
@@ -79,9 +79,9 @@ index feab4b90d896..ff1d60d4c0cc 100644
 -	irq_work_tick();
 -#endif
 +	irq_work_tick_soft();
- 	/*
- 	 * must_forward_clk must be cleared before running timers so that any
- 	 * timer functions that call mod_timer will not try to forward the
+ 	__run_timers(base);
+ 	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
+ 		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
 -- 
 2.18.0
 

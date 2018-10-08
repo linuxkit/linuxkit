@@ -1,7 +1,7 @@
-From 113e9562eeaf0c032e588567e26063a137b0ed96 Mon Sep 17 00:00:00 2001
+From 89e87e954ea6d2cded7513daed364e6f797433a3 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 7 Sep 2017 12:38:47 +0200
-Subject: [PATCH 242/413] locking/rtmutex: don't drop the wait_lock twice
+Subject: [PATCH 242/436] locking/rtmutex: don't drop the wait_lock twice
 
 Since the futex rework, __rt_mutex_start_proxy_lock() does no longer
 acquire the wait_lock so it must not drop it. Otherwise the lock is not
@@ -19,10 +19,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 deletion(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index ee867d9ebf72..bbb3508d267f 100644
+index ea8dd82835c9..935adbbe08f1 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1766,7 +1766,6 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
+@@ -1787,7 +1787,6 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  	raw_spin_lock(&task->pi_lock);
  	if (task->pi_blocked_on) {
  		raw_spin_unlock(&task->pi_lock);

@@ -1,7 +1,7 @@
-From 42acc2821f5e4a9f596d81ec24500460a93f61da Mon Sep 17 00:00:00 2001
+From 890704261447021f07d3063eeb779b3f22ac285a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 22 Sep 2017 15:01:46 +0200
-Subject: [PATCH 139/413] rcu/segcblist: include rcupdate.h
+Subject: [PATCH 139/436] rcu/segcblist: include rcupdate.h
 
 The RT build on ARM complains about non-existing ULONG_CMP_LT. Since
 rcu_segcblist.c uses that macro it should include the header file.

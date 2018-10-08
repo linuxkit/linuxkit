@@ -1,7 +1,7 @@
-From dcc5cc2dd6f46960cd168e8329c85d33cc500cc6 Mon Sep 17 00:00:00 2001
+From 98d7854c84a951f48716262fa16cff392dce9a23 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:35 -0600
-Subject: [PATCH 078/413] tracing: Move hist trigger Documentation to
+Subject: [PATCH 078/436] tracing: Move hist trigger Documentation to
  histogram.txt
 
 The hist trigger Documentation takes up a large part of events.txt -

@@ -1,7 +1,7 @@
-From f32c0ebd27d45b33cf1bdd575a9587a30db705a7 Mon Sep 17 00:00:00 2001
+From 7db4815d5134e2d106985f95226ff4b2b0f33cf8 Mon Sep 17 00:00:00 2001
 From: Boqun Feng <boqun.feng@gmail.com>
 Date: Fri, 9 Mar 2018 14:56:28 +0800
-Subject: [PATCH 001/413] rtmutex: Make rt_mutex_futex_unlock() safe for
+Subject: [PATCH 001/436] rtmutex: Make rt_mutex_futex_unlock() safe for
  irq-off callsites
 
 Upstream commit 6b0ef92fee2a3189eba6d6b827b247cb4f6da7e9
@@ -104,10 +104,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 65cc0cb984e6..940633c63254 100644
+index 4ad35718f123..456750bf9c95 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -1616,11 +1616,12 @@ bool __sched __rt_mutex_futex_unlock(struct rt_mutex *lock,
+@@ -1637,11 +1637,12 @@ bool __sched __rt_mutex_futex_unlock(struct rt_mutex *lock,
  void __sched rt_mutex_futex_unlock(struct rt_mutex *lock)
  {
  	DEFINE_WAKE_Q(wake_q);

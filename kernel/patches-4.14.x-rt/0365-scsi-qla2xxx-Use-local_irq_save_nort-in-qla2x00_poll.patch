@@ -1,7 +1,7 @@
-From bc584883220a2f9a78fd7f2fced73aecff8e3cc8 Mon Sep 17 00:00:00 2001
+From 55d7dbf6e4c76145dbb74ded1f6d043be0a10447 Mon Sep 17 00:00:00 2001
 From: John Kacur <jkacur@redhat.com>
 Date: Fri, 27 Apr 2012 12:48:46 +0200
-Subject: [PATCH 365/413] scsi: qla2xxx: Use local_irq_save_nort() in
+Subject: [PATCH 365/436] scsi: qla2xxx: Use local_irq_save_nort() in
  qla2x00_poll
 
 RT triggers the following:

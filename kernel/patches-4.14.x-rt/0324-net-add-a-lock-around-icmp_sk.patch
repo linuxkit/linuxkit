@@ -1,7 +1,7 @@
-From 21d30a5f5420a743cf621fb9a51534d1268b17e3 Mon Sep 17 00:00:00 2001
+From 1ba8d7cc0dae5f1b40c880c63c23a07771652bc4 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 31 Aug 2016 17:54:09 +0200
-Subject: [PATCH 324/413] net: add a lock around icmp_sk()
+Subject: [PATCH 324/436] net: add a lock around icmp_sk()
 
 It looks like the this_cpu_ptr() access in icmp_sk() is protected with
 local_bh_disable(). To avoid missing serialization in -RT I am adding

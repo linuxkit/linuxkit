@@ -1,7 +1,7 @@
-From d980a233b75ababca4537449ab99fe556291b2d2 Mon Sep 17 00:00:00 2001
+From a8fe60e5cb2f1dd2ae918622c1d6211d523dd9d7 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 11 Mar 2013 17:09:55 +0100
-Subject: [PATCH 348/413] x86/highmem: Add a "already used pte" check
+Subject: [PATCH 348/436] x86/highmem: Add a "already used pte" check
 
 This is a copy from kmap_atomic_prot().
 

@@ -1,7 +1,7 @@
-From 7abd59836eaf908e121f6fa6f36e3f33cd21434c Mon Sep 17 00:00:00 2001
+From 3bf5d2d60f3c0e4adfb279cf4266e68e1cd7cf8d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Dec 2017 12:44:14 +0100
-Subject: [PATCH 179/413] mm/slub: close possible memory-leak in
+Subject: [PATCH 179/436] mm/slub: close possible memory-leak in
  kmem_cache_alloc_bulk()
 
 Under certain circumstances we could leak elements which were moved to

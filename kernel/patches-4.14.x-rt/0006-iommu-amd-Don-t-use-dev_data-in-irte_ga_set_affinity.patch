@@ -1,7 +1,7 @@
-From f4854290ac0421066bb86324a0a3d9b4019b7d80 Mon Sep 17 00:00:00 2001
+From f51b70017d4d268d1dcdd19a6efd6c9b1a30752b Mon Sep 17 00:00:00 2001
 From: Scott Wood <swood@redhat.com>
 Date: Sun, 28 Jan 2018 14:22:19 -0600
-Subject: [PATCH 006/413] iommu/amd: Don't use dev_data in
+Subject: [PATCH 006/436] iommu/amd: Don't use dev_data in
  irte_ga_set_affinity()
 
 Upstream commit 01ee04badefd296eb7a4430497373be9b7b16783

@@ -1,7 +1,7 @@
-From 1df3ab2ba2d95d9623be62bcc4eb8e54837a00c1 Mon Sep 17 00:00:00 2001
+From 64ecbc2f8fd6f506d936c801a7d7d6a2fef52d82 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:18 -0500
-Subject: [PATCH 072/413] tracing: Remove lookups from tracing_map hitcount
+Subject: [PATCH 072/436] tracing: Remove lookups from tracing_map hitcount
 
 Lookups inflate the hitcount, making it essentially useless.  Only
 inserts and updates should really affect the hitcount anyway, so

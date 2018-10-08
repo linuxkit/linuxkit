@@ -1,7 +1,7 @@
-From 464e9576e0fada6487bcc6fabba8a302c268e271 Mon Sep 17 00:00:00 2001
+From 6ce03196e83f3d3087dc29ecce8cde5bc73ab6a4 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 16 Nov 2017 16:48:48 +0100
-Subject: [PATCH 261/413] locking/rtmutex: re-init the wait_lock in
+Subject: [PATCH 261/436] locking/rtmutex: re-init the wait_lock in
  rt_mutex_init_proxy_locked()
 
 We could provide a key-class for the lockdep (and fixup all callers) or
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 8 insertions(+)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 53f344caf5c8..0cb716ba3be0 100644
+index 070cd952a3e8..53b510d29a3a 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
-@@ -2273,6 +2273,14 @@ void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
+@@ -2289,6 +2289,14 @@ void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
  				struct task_struct *proxy_owner)
  {
  	__rt_mutex_init(lock, NULL, NULL);

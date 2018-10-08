@@ -1,7 +1,7 @@
-From e00aad52582b4b7bc8cb583a826c30e05dfe5c3b Mon Sep 17 00:00:00 2001
+From 1de00b17a8bb4b23243dc5930921881b4296ae6d Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:18 +0100
-Subject: [PATCH 043/413] hrtimer: Implement SOFT/HARD clock base selection
+Subject: [PATCH 043/436] hrtimer: Implement SOFT/HARD clock base selection
 
 All prerequisites to handle hrtimers for expiry in either hard or soft
 interrupt context are in place.

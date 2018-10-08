@@ -1,7 +1,7 @@
-From 5ac41b269954b67319b8fae415490b9bc7306d0c Mon Sep 17 00:00:00 2001
+From ebb30b35c4e3bbbde4b3a238d46ca16ca37e9c4c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
-Subject: [PATCH 384/413] arm: Add support for lazy preemption
+Subject: [PATCH 384/436] arm: Add support for lazy preemption
 
 Implement the arm pieces for lazy preempt.
 

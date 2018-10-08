@@ -1,7 +1,7 @@
-From 20e06c7920e66f47b09b057cd48e6dd3eda1a6bb Mon Sep 17 00:00:00 2001
+From a153bfdb847b85d73e863cc34a0c70f403f6975b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 3 May 2018 17:16:26 +0200
-Subject: [PATCH 300/413] rtmutex: annotate sleeping lock context
+Subject: [PATCH 300/436] rtmutex: annotate sleeping lock context
 
 The RCU code complains on schedule() within a rcu_readlock() section.
 The valid scenario on -RT is if a sleeping is held. In order to suppress
@@ -70,7 +70,7 @@ index 52cf8d74b534..dc3c98d9f924 100644
   * Wrappers for p->thread_info->cpu access. No-op on UP.
   */
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 0cb716ba3be0..bac3fb580af6 100644
+index 53b510d29a3a..08e233b7dc21 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -1141,6 +1141,7 @@ void __sched rt_spin_lock_slowunlock(struct rt_mutex *lock)

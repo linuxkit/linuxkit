@@ -1,7 +1,7 @@
-From ed645cbce83e8173b8e86a2460155d8ea74df3ae Mon Sep 17 00:00:00 2001
+From e046c1bbfa59dda624291a952688b2a6e85fd52d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 381/413] sched: Add support for lazy preemption
+Subject: [PATCH 381/436] sched: Add support for lazy preemption
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -510,7 +510,7 @@ index ace39806bff8..96481980c8c7 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 03688e4efd82..cc85fd567e33 100644
+index e6c7395840b4..18c88eb19b5e 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2135,6 +2135,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -531,7 +531,7 @@ index 03688e4efd82..cc85fd567e33 100644
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
  
  	entry->migrate_disable = (tsk) ? __migrate_disabled(tsk) & 0xFF : 0;
-@@ -3347,15 +3349,17 @@ get_total_entries(struct trace_buffer *buf,
+@@ -3352,15 +3354,17 @@ get_total_entries(struct trace_buffer *buf,
  
  static void print_lat_help_header(struct seq_file *m)
  {
@@ -558,7 +558,7 @@ index 03688e4efd82..cc85fd567e33 100644
  }
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
-@@ -3391,15 +3395,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
+@@ -3396,15 +3400,17 @@ static void print_func_help_header_irq(struct trace_buffer *buf, struct seq_file
  		   tgid ? tgid_space : space);
  	seq_printf(m, "#                          %s / _----=> need-resched\n",
  		   tgid ? tgid_space : space);

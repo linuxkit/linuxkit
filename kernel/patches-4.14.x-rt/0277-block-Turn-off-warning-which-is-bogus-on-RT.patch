@@ -1,7 +1,7 @@
-From bc74fd4d1de638ebf56e0a35ed2b070cff625b30 Mon Sep 17 00:00:00 2001
+From ab23ebd1ca9a9f28bf29f320816546f39caa1406 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 14 Jun 2011 17:05:09 +0200
-Subject: [PATCH 277/413] block: Turn off warning which is bogus on RT
+Subject: [PATCH 277/436] block: Turn off warning which is bogus on RT
 
 On -RT the context is always with IRQs enabled. Ignore this warning on -RT.
 
@@ -11,7 +11,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 2b026f66ecf1..7d9b502cc969 100644
+index f71540b98c24..cdae8b09b90b 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -280,7 +280,7 @@ EXPORT_SYMBOL(blk_start_queue_async);

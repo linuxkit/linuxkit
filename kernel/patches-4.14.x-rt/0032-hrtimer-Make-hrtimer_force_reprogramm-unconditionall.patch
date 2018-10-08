@@ -1,7 +1,7 @@
-From 9ee0b0d8cdc3d1166b79d7ce508206c0712a7d58 Mon Sep 17 00:00:00 2001
+From dd4ce36a7454c59c459a450444a2e8914ded6213 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:07 +0100
-Subject: [PATCH 032/413] hrtimer: Make hrtimer_force_reprogramm()
+Subject: [PATCH 032/436] hrtimer: Make hrtimer_force_reprogramm()
  unconditionally available
 
 hrtimer_force_reprogram() needs to be available unconditionally for softirq

@@ -1,7 +1,7 @@
-From 33ddd963cffc0f9b25dbfec2e32e281284a7e7ce Mon Sep 17 00:00:00 2001
+From a25476cf82b2a067d4d9685498ea5fa8ef423af1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 22 Jul 2011 08:07:08 +0200
-Subject: [PATCH 159/413] signal: Make __lock_task_sighand() RT aware
+Subject: [PATCH 159/436] signal: Make __lock_task_sighand() RT aware
 
 local_irq_save() + spin_lock(&sighand->siglock) does not work on
 -RT. Use the nort variants.

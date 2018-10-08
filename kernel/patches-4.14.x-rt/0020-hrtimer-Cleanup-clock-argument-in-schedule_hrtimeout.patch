@@ -1,7 +1,7 @@
-From 7cd020dedd871257e6ca7c9782d1ac151e1b9899 Mon Sep 17 00:00:00 2001
+From b682676b3ec0ca18ff4fea4e67b618e5e043d827 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:53 +0100
-Subject: [PATCH 020/413] hrtimer: Cleanup clock argument in
+Subject: [PATCH 020/436] hrtimer: Cleanup clock argument in
  schedule_hrtimeout_range_clock()
 
 schedule_hrtimeout_range_clock() uses an integer for the clock id

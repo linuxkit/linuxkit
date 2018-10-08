@@ -1,7 +1,7 @@
-From 2ee48aa51dc4d77a21850e7b1c413d614cc60460 Mon Sep 17 00:00:00 2001
+From 60338787a09aa95d196c0a4b49f0d8488b8d6407 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Feb 2018 10:39:54 +0100
-Subject: [PATCH 318/413] net: use task_struct instead of CPU number as the
+Subject: [PATCH 318/436] net: use task_struct instead of CPU number as the
  queue owner on -RT
 
 In commit ("net: move xmit_recursion to per-task variable on -RT") the
@@ -124,7 +124,7 @@ index 7c2dce09019d..8b5151f9e31c 100644
  }
  
 diff --git a/net/core/dev.c b/net/core/dev.c
-index ecf45f23d3ef..afd50ebb7197 100644
+index 08b456db8fb9..b7a1f737faa3 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3491,7 +3491,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)

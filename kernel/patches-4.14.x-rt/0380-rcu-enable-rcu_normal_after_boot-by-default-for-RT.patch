@@ -1,7 +1,7 @@
-From c46341d01e53bbb6957837bcb63ed1eacefa0897 Mon Sep 17 00:00:00 2001
+From dfec3dd8fd0d7a8fe415d6548c13a8efc47a7d7a Mon Sep 17 00:00:00 2001
 From: Julia Cartwright <julia@ni.com>
 Date: Wed, 12 Oct 2016 11:21:14 -0500
-Subject: [PATCH 380/413] rcu: enable rcu_normal_after_boot by default for RT
+Subject: [PATCH 380/436] rcu: enable rcu_normal_after_boot by default for RT
 
 The forcing of an expedited grace period is an expensive and very
 RT-application unfriendly operation, as it forcibly preempts all running

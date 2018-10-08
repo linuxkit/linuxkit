@@ -1,7 +1,7 @@
-From 19e7696147b2d4c813596d0f4798488fb2d07c11 Mon Sep 17 00:00:00 2001
+From ffd38f2a04688792e0770e6a6ef28caa52da48d6 Mon Sep 17 00:00:00 2001
 From: Mikulas Patocka <mpatocka@redhat.com>
 Date: Mon, 13 Nov 2017 12:56:53 -0500
-Subject: [PATCH 260/413] locking/rt-mutex: fix deadlock in device mapper /
+Subject: [PATCH 260/436] locking/rt-mutex: fix deadlock in device mapper /
  block-IO
 
 When some block device driver creates a bio and submits it to another
@@ -38,7 +38,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 3e130ea6f85c..53f344caf5c8 100644
+index 5772283ebd17..070cd952a3e8 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -24,6 +24,7 @@

@@ -1,7 +1,7 @@
-From 643507ddc97f2bbb7721f6ff5698c506b4422c6f Mon Sep 17 00:00:00 2001
+From 63ade393ebd8b57acc65a226af3872c8bde7e9a6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 4 Dec 2017 13:11:10 +0100
-Subject: [PATCH 057/413] sched/swait: include wait.h
+Subject: [PATCH 057/436] sched/swait: include wait.h
 
 kbuild bot reported against an intermediate RT patch that the build
 fails with:

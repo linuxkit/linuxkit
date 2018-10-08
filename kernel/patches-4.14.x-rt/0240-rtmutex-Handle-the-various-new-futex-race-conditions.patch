@@ -1,7 +1,7 @@
-From 82fed9027092736a7074e7460e4d90ba88f48996 Mon Sep 17 00:00:00 2001
+From 7cbeacfc2c5eb2f95892e4751864a08e664a7370 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 10 Jun 2011 11:04:15 +0200
-Subject: [PATCH 240/413] rtmutex: Handle the various new futex race conditions
+Subject: [PATCH 240/436] rtmutex: Handle the various new futex race conditions
 
 RT opens a few new interesting race conditions in the rtmutex/futex
 combo due to futex hash bucket lock being a 'sleeping' spinlock and
@@ -141,7 +141,7 @@ index 1d87da84b2a2..207e10a1791a 100644
  			ret = 0;
  
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 6f3177a6b8e3..8d7ab272b109 100644
+index 205a0e2ca730..65c50c893513 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -135,6 +135,11 @@ static void fixup_rt_mutex_waiters(struct rt_mutex *lock)

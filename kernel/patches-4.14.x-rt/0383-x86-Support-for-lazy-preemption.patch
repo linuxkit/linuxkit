@@ -1,7 +1,7 @@
-From b332b251bdc53562b0784ebcd32b5cf96c18b841 Mon Sep 17 00:00:00 2001
+From 5b361c02fec862b6eaa19d01e2b13f19299b5f9c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
-Subject: [PATCH 383/413] x86: Support for lazy preemption
+Subject: [PATCH 383/436] x86: Support for lazy preemption
 
 Implement the x86 pieces for lazy preempt.
 
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 79 insertions(+), 3 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 3da3782e605c..74ed661c73df 100644
+index 3351fe1af2a8..7764f936d6ab 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -169,6 +169,7 @@ config X86
@@ -26,8 +26,8 @@ index 3da3782e605c..74ed661c73df 100644
  	select HAVE_PERF_USER_STACK_DUMP
 +	select HAVE_PREEMPT_LAZY
  	select HAVE_RCU_TABLE_FREE
+ 	select HAVE_RCU_TABLE_INVALIDATE	if HAVE_RCU_TABLE_FREE
  	select HAVE_REGS_AND_STACK_ACCESS_API
- 	select HAVE_RELIABLE_STACKTRACE		if X86_64 && UNWINDER_FRAME_POINTER && STACK_VALIDATION
 diff --git a/arch/x86/entry/common.c b/arch/x86/entry/common.c
 index 121f804a9dcb..0e27f35febe7 100644
 --- a/arch/x86/entry/common.c

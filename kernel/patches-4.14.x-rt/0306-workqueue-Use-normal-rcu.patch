@@ -1,7 +1,7 @@
-From 23ee6b9c2d76b0dc9aba3edf348d3bbb0496c123 Mon Sep 17 00:00:00 2001
+From 6b892e2044aaf5435db029038b2f3c57655cdf26 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 24 Jul 2013 15:26:54 +0200
-Subject: [PATCH 306/413] workqueue: Use normal rcu
+Subject: [PATCH 306/436] workqueue: Use normal rcu
 
 There is no need for sched_rcu. The undocumented reason why sched_rcu
 is used is to avoid a few explicit rcu_read_lock()/unlock() pairs by
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 52 insertions(+), 43 deletions(-)
 
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index d8a7f8939c81..309024baa39f 100644
+index 08bc551976b2..7ed3b49267a8 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -127,7 +127,7 @@ enum {

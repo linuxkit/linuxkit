@@ -1,7 +1,7 @@
-From 792c16732659d97ec5f7083c3f5e1ffaaddc2d14 Mon Sep 17 00:00:00 2001
+From 341d00e95164f9dc45f7773b018cd67b239f5653 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:30:27 -0500
-Subject: [PATCH 223/413] stop_machine: convert stop_machine_run() to
+Subject: [PATCH 223/436] stop_machine: convert stop_machine_run() to
  PREEMPT_RT
 
 Instead of playing with non-preemption, introduce explicit
@@ -16,10 +16,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 10 insertions(+)
 
 diff --git a/kernel/stop_machine.c b/kernel/stop_machine.c
-index e190d1ef3a23..74f3997a40fd 100644
+index 067cb83f37ea..f8d1ae9ed7be 100644
 --- a/kernel/stop_machine.c
 +++ b/kernel/stop_machine.c
-@@ -496,6 +496,16 @@ static void cpu_stopper_thread(unsigned int cpu)
+@@ -503,6 +503,16 @@ static void cpu_stopper_thread(unsigned int cpu)
  		struct cpu_stop_done *done = work->done;
  		int ret;
  

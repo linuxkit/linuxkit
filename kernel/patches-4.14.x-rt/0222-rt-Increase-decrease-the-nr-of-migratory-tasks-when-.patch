@@ -1,7 +1,7 @@
-From d12e21b0d4163d9232a4bdfb635bef4fb328b9b4 Mon Sep 17 00:00:00 2001
+From 98c25273d8d97de131f91cdf65a1d0ab688e0d72 Mon Sep 17 00:00:00 2001
 From: Daniel Bristot de Oliveira <bristot@redhat.com>
 Date: Mon, 26 Jun 2017 17:07:15 +0200
-Subject: [PATCH 222/413] rt: Increase/decrease the nr of migratory tasks when
+Subject: [PATCH 222/436] rt: Increase/decrease the nr of migratory tasks when
  enabling/disabling migration
 
 There is a problem in the migrate_disable()/enable() implementation

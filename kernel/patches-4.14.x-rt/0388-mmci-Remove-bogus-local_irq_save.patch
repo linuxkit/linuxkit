@@ -1,7 +1,7 @@
-From 445f060e4f890e7328721390f6dcc82c2dec6bc7 Mon Sep 17 00:00:00 2001
+From e8ef9df2c3e75972761d39c04287908aa28a315b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 9 Jan 2013 12:11:12 +0100
-Subject: [PATCH 388/413] mmci: Remove bogus local_irq_save()
+Subject: [PATCH 388/436] mmci: Remove bogus local_irq_save()
 
 On !RT interrupt runs with interrupts disabled. On RT it's in a
 thread, so no need to disable interrupts at all.

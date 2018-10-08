@@ -1,7 +1,7 @@
-From b127459a9003fd794f5ff33cff10094b24d81b2c Mon Sep 17 00:00:00 2001
+From cf9e8833c01852ff74293b8c7be564c62a3d7bdd Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:11 +0100
-Subject: [PATCH 044/413] can/bcm: Replace hrtimer_tasklet with softirq based
+Subject: [PATCH 044/436] can/bcm: Replace hrtimer_tasklet with softirq based
  hrtimer
 
 Switch the timer to HRTIMER_MODE_SOFT, which executed the timer

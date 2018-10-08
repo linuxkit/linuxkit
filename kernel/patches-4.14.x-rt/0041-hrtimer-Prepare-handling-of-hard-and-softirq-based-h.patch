@@ -1,7 +1,7 @@
-From 9b0bb3e5f3f980c8c18ea14a8adbcead2a93e286 Mon Sep 17 00:00:00 2001
+From 5be08d7e484f8400265d77ca7a45e6d2f04ed3ce Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:16 +0100
-Subject: [PATCH 041/413] hrtimer: Prepare handling of hard and softirq based
+Subject: [PATCH 041/436] hrtimer: Prepare handling of hard and softirq based
  hrtimers
 
 The softirq based hrtimer can utilize most of the existing hrtimers

@@ -1,7 +1,7 @@
-From 64fc707b2dd4a8177c74b9e6a975f86962e66c1d Mon Sep 17 00:00:00 2001
+From 79971ec5271cea8bb4fcb7644cdf25c823008332 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Jan 2016 15:39:05 +0100
-Subject: [PATCH 319/413] net: provide a way to delegate processing a softirq
+Subject: [PATCH 319/436] net: provide a way to delegate processing a softirq
  to ksoftirqd
 
 If the NET_RX uses up all of his budget it moves the following NAPI
@@ -71,7 +71,7 @@ index 0f4ddfa14360..996b03fb8c53 100644
   * This function must run with irqs disabled!
   */
 diff --git a/net/core/dev.c b/net/core/dev.c
-index afd50ebb7197..8f9fa90d72bc 100644
+index b7a1f737faa3..c324ec2fba5e 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -5673,7 +5673,7 @@ static __latent_entropy void net_rx_action(struct softirq_action *h)

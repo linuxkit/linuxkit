@@ -1,7 +1,7 @@
-From a978172e76545349ee0117d9ad9b051fa80e8660 Mon Sep 17 00:00:00 2001
+From 4809503f26c186ff7ed9e59e30e8d58ab5cc71bd Mon Sep 17 00:00:00 2001
 From: Dan Carpenter <dan.carpenter@oracle.com>
 Date: Wed, 28 Mar 2018 14:48:15 +0300
-Subject: [PATCH 411/413] tracing: Uninitialized variable in
+Subject: [PATCH 411/436] tracing: Uninitialized variable in
  create_tracing_map_fields()
 
 [ commit b28d7b2dc27f0eef1ae608b49d6860f2463910f1 ]

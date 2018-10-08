@@ -1,7 +1,7 @@
-From 340a244f82269fcefc375632ede3243326f403ee Mon Sep 17 00:00:00 2001
+From bbe92ec8c4769f61acd94dedbc739994cc1a6678 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:39 -0600
-Subject: [PATCH 082/413] ring-buffer: Add interface for setting absolute time
+Subject: [PATCH 082/436] ring-buffer: Add interface for setting absolute time
  stamps
 
 Define a new function, tracing_set_time_stamp_abs(), which can be used
@@ -68,7 +68,7 @@ index c3b6b47fd44a..dc6f47802d02 100644
  
  static inline unsigned long rb_page_entries(struct buffer_page *bpage)
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 99b415e5cd11..e64ba2addfe7 100644
+index f3d7c259e424..ffb67272b642 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2275,7 +2275,7 @@ trace_event_buffer_lock_reserve(struct ring_buffer **current_rb,
@@ -80,7 +80,7 @@ index 99b415e5cd11..e64ba2addfe7 100644
  	     (EVENT_FILE_FL_SOFT_DISABLED | EVENT_FILE_FL_FILTERED)) &&
  	    (entry = this_cpu_read(trace_buffered_event))) {
  		/* Try to use the per cpu buffer first */
-@@ -6293,6 +6293,37 @@ static int tracing_clock_open(struct inode *inode, struct file *file)
+@@ -6298,6 +6298,37 @@ static int tracing_clock_open(struct inode *inode, struct file *file)
  	return ret;
  }
  

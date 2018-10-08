@@ -1,7 +1,7 @@
-From 24c189923ec2a18ec59f026a61de134ab839fc8a Mon Sep 17 00:00:00 2001
+From dcc03e9cd88c63b47c7b7e8fef52cd2d84085ef0 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:23 -0500
-Subject: [PATCH 077/413] tracing: Reimplement log2
+Subject: [PATCH 077/436] tracing: Reimplement log2
 
 log2 as currently implemented applies only to u64 trace_event_field
 derived fields, and assumes that anything it's applied to is a u64

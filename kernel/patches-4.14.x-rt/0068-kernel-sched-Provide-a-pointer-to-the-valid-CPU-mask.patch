@@ -1,7 +1,7 @@
-From d7c5c11bebb377880836dbca53cd81aca444b56a Mon Sep 17 00:00:00 2001
+From 347101debb55e25b088cfecdfdf27a75fca2a066 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
-Subject: [PATCH 068/413] kernel: sched: Provide a pointer to the valid CPU
+Subject: [PATCH 068/436] kernel: sched: Provide a pointer to the valid CPU
  mask
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -219,10 +219,10 @@ index 2fd1694ac1d0..98f4fb696289 100644
  	}
  
 diff --git a/drivers/infiniband/hw/hfi1/affinity.c b/drivers/infiniband/hw/hfi1/affinity.c
-index b5fab55cc275..4b32a4e8d5da 100644
+index b197e925fe36..95ac319c8e69 100644
 --- a/drivers/infiniband/hw/hfi1/affinity.c
 +++ b/drivers/infiniband/hw/hfi1/affinity.c
-@@ -575,7 +575,7 @@ int hfi1_get_proc_affinity(int node)
+@@ -593,7 +593,7 @@ int hfi1_get_proc_affinity(int node)
  	struct hfi1_affinity_node *entry;
  	cpumask_var_t diff, hw_thread_mask, available_mask, intrs_mask;
  	const struct cpumask *node_mask,
@@ -231,7 +231,7 @@ index b5fab55cc275..4b32a4e8d5da 100644
  	struct hfi1_affinity_node_list *affinity = &node_affinity;
  	struct cpu_mask_set *set = &affinity->proc;
  
-@@ -583,7 +583,7 @@ int hfi1_get_proc_affinity(int node)
+@@ -601,7 +601,7 @@ int hfi1_get_proc_affinity(int node)
  	 * check whether process/context affinity has already
  	 * been set
  	 */
@@ -240,7 +240,7 @@ index b5fab55cc275..4b32a4e8d5da 100644
  		hfi1_cdbg(PROC, "PID %u %s affinity set to CPU %*pbl",
  			  current->pid, current->comm,
  			  cpumask_pr_args(proc_mask));
-@@ -594,7 +594,7 @@ int hfi1_get_proc_affinity(int node)
+@@ -612,7 +612,7 @@ int hfi1_get_proc_affinity(int node)
  		cpu = cpumask_first(proc_mask);
  		cpumask_set_cpu(cpu, &set->used);
  		goto done;
@@ -361,7 +361,7 @@ index 4657e2924ecb..7bb7384b543a 100644
  }
  
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 91907a3701ce..d146f616bf9e 100644
+index 6a219fea4926..d45043432b17 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -563,7 +563,8 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
@@ -582,7 +582,7 @@ index 2511aba36b89..7b9bc1de0e6c 100644
  			/*
  			 * We have to ensure that we have at least one bit
 diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
-index 501f17c642ab..a55cb8ce395d 100644
+index b2589c7e9439..7be1f4421cb8 100644
 --- a/kernel/sched/deadline.c
 +++ b/kernel/sched/deadline.c
 @@ -504,7 +504,7 @@ static struct rq *dl_task_offline_migration(struct rq *rq, struct task_struct *p
@@ -594,7 +594,7 @@ index 501f17c642ab..a55cb8ce395d 100644
  		if (cpu >= nr_cpu_ids) {
  			/*
  			 * Fail to find any suitable cpu.
-@@ -1749,7 +1749,7 @@ static void set_curr_task_dl(struct rq *rq)
+@@ -1753,7 +1753,7 @@ static void set_curr_task_dl(struct rq *rq)
  static int pick_dl_task(struct rq *rq, struct task_struct *p, int cpu)
  {
  	if (!task_running(rq, p) &&
@@ -603,7 +603,7 @@ index 501f17c642ab..a55cb8ce395d 100644
  		return 1;
  	return 0;
  }
-@@ -1899,7 +1899,7 @@ static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
+@@ -1903,7 +1903,7 @@ static struct rq *find_lock_later_rq(struct task_struct *task, struct rq *rq)
  		/* Retry if something changed. */
  		if (double_lock_balance(rq, later_rq)) {
  			if (unlikely(task_rq(task) != rq ||
@@ -742,10 +742,10 @@ index 0cc7098c6dfd..4388c2b26f70 100644
  							    flags);
  				env.flags |= LBF_ALL_PINNED;
 diff --git a/kernel/sched/rt.c b/kernel/sched/rt.c
-index bba2217652ff..590c6eea6974 100644
+index cb9a5b8532fa..fbe1aa2bb948 100644
 --- a/kernel/sched/rt.c
 +++ b/kernel/sched/rt.c
-@@ -1594,7 +1594,7 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
+@@ -1596,7 +1596,7 @@ static void put_prev_task_rt(struct rq *rq, struct task_struct *p)
  static int pick_rt_task(struct rq *rq, struct task_struct *p, int cpu)
  {
  	if (!task_running(rq, p) &&
@@ -754,7 +754,7 @@ index bba2217652ff..590c6eea6974 100644
  		return 1;
  	return 0;
  }
-@@ -1729,7 +1729,7 @@ static struct rq *find_lock_lowest_rq(struct task_struct *task, struct rq *rq)
+@@ -1731,7 +1731,7 @@ static struct rq *find_lock_lowest_rq(struct task_struct *task, struct rq *rq)
  			 * Also make sure that it wasn't scheduled on its rq.
  			 */
  			if (unlikely(task_rq(task) != rq ||

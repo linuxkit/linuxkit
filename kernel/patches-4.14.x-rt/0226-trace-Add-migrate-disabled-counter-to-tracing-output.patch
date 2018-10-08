@@ -1,7 +1,7 @@
-From 16d608c4cae506c59678e93e5d1c9cee799e8fc8 Mon Sep 17 00:00:00 2001
+From 2c4e30a9203bb0c3f281867041ade6a8f794f898 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 21:56:42 +0200
-Subject: [PATCH 226/413] trace: Add migrate-disabled counter to tracing output
+Subject: [PATCH 226/436] trace: Add migrate-disabled counter to tracing output
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -25,7 +25,7 @@ index aefc80f2909b..ffd595ab5008 100644
  
  #define TRACE_EVENT_TYPE_MAX						\
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 73b3e330ac0a..03688e4efd82 100644
+index 6c2aae7629a7..e6c7395840b4 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2147,6 +2147,8 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -37,7 +37,7 @@ index 73b3e330ac0a..03688e4efd82 100644
  }
  EXPORT_SYMBOL_GPL(tracing_generic_entry_update);
  
-@@ -3350,9 +3352,10 @@ static void print_lat_help_header(struct seq_file *m)
+@@ -3355,9 +3357,10 @@ static void print_lat_help_header(struct seq_file *m)
  		    "#                | / _----=> need-resched    \n"
  		    "#                || / _---=> hardirq/softirq \n"
  		    "#                ||| / _--=> preempt-depth   \n"
