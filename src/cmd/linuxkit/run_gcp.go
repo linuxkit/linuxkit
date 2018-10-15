@@ -84,7 +84,7 @@ func runGcp(args []string) {
 
 	client, err := NewGCPClient(keys, project)
 	if err != nil {
-		log.Fatalf("Unable to connect to GCP")
+		log.Fatalf("Unable to connect to GCP: %v", err)
 	}
 
 	if err = client.CreateInstance(*name, image, zone, machine, disks, data, *nestedVirt, true); err != nil {
