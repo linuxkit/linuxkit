@@ -38,6 +38,9 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 	log.Debugf("Connecting to GCP")
 	ctx := context.Background()
 	var client *GCPClient
+	if projectName == "" {
+		return nil, fmt.Errorf("the project name is not specified")
+	}
 	if keys != "" {
 		log.Debugf("Using Keys %s", keys)
 		f, err := os.Open(keys)
@@ -63,7 +66,7 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 			projectName: projectName,
 		}
 	} else {
-		log.Debugf("Using Application Default crednetials")
+		log.Debugf("Using Application Default credentials")
 		gc, err := google.DefaultClient(
 			ctx,
 			storage.DevstorageReadWriteScope,
