@@ -16,7 +16,7 @@ jobs:
       - run:
           name: Dependencies
           command: |
-            go get -u github.com/golang/lint/golint
+            go get -u golang.org/x/lint/golint
             go get -u github.com/gordonklaus/ineffassign
       - run:
           name: Lint
