@@ -52,13 +52,13 @@ func pushGcp(args []string) {
 		name = filepath.Base(name)
 	}
 
-	if bucket == "" {
-		log.Fatalf("Please specify the bucket to use")
-	}
-
 	client, err := NewGCPClient(keys, project)
 	if err != nil {
 		log.Fatalf("Unable to connect to GCP: %v", err)
+	}
+
+	if bucket == "" {
+		log.Fatalf("Please specify the bucket to use")
 	}
 
 	err = client.UploadFile(path, name+suffix, bucket, public)
