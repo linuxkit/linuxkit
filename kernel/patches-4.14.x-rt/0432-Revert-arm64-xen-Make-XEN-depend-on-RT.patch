@@ -1,0 +1,33 @@
+From 5f9fa9cb4a6516b0727b8ebab7f55e6725f91017 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 2 Aug 2018 17:11:01 +0200
+Subject: [PATCH 432/436] Revert "arm64/xen: Make XEN depend on !RT"
+
+[ Upstream commit c0a308b58829bd4066bce841fe49e8277a0cb32b ]
+
+Iain Hunter reported that there are no problems with it so there is no
+reason to keep it disabled.
+
+Reported-by: Iain Hunter <drhunter95@gmail.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ arch/arm64/Kconfig | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/arm64/Kconfig b/arch/arm64/Kconfig
+index f3c5213ea0ec..458d2033ffde 100644
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -791,7 +791,7 @@ config XEN_DOM0
+ 
+ config XEN
+ 	bool "Xen guest support on ARM64"
+-	depends on ARM64 && OF && !PREEMPT_RT_FULL
++	depends on ARM64 && OF
+ 	select SWIOTLB_XEN
+ 	select PARAVIRT
+ 	help
+-- 
+2.18.0
+

@@ -1,7 +1,7 @@
-From 4e6c12d9702e106edc2f5f496ae6746ec908137e Mon Sep 17 00:00:00 2001
+From c9d71088b043f8be89de17134b5f70b593c0b6bf Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 16:14:22 +0200
-Subject: [PATCH 252/413] rtmutex: Provide rt_mutex_slowlock_locked()
+Subject: [PATCH 252/436] rtmutex: Provide rt_mutex_slowlock_locked()
 
 This is the inner-part of rt_mutex_slowlock(), required for rwsem-rt.
 
@@ -13,7 +13,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 46 insertions(+), 30 deletions(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 0ba13b607757..922bf9c122b0 100644
+index 5f2b7609693f..1ae8d883c439 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -1244,35 +1244,16 @@ static void rt_mutex_handle_deadlock(int res, int detect_deadlock,

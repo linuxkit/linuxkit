@@ -1,7 +1,7 @@
-From 51e9e03debe37728482536f2da9aa29d6bd7738f Mon Sep 17 00:00:00 2001
+From 7c1a47834f988189df37aab399dcff61c71676e4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 208/413] sched: Move task_struct cleanup to RCU
+Subject: [PATCH 208/436] sched: Move task_struct cleanup to RCU
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -57,7 +57,7 @@ index a74ec619ac51..8e7f741370c5 100644
  
  #ifdef CONFIG_ARCH_WANTS_DYNAMIC_TASK_STRUCT
 diff --git a/kernel/fork.c b/kernel/fork.c
-index ee4894eb31d7..0e4f96449066 100644
+index d7f20bdbb465..677d17d7efb5 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -407,7 +407,9 @@ static inline void put_signal_struct(struct signal_struct *sig)

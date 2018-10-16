@@ -1,7 +1,7 @@
-From 02af8f2883cde6ef4ebeebed21d1b80ab1283c73 Mon Sep 17 00:00:00 2001
+From 412001f6cccbb9adba5f7a2b866b9f1d416f7fa4 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:51 -0500
-Subject: [PATCH 172/413] mm/swap: Convert to percpu locked
+Subject: [PATCH 172/436] mm/swap: Convert to percpu locked
 
 Replace global locks (get_cpu + local_irq_save) with "local_locks()".
 Currently there is one of for "rotate" and one for "swap".

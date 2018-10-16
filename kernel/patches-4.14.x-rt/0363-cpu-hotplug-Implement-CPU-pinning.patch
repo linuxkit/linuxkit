@@ -1,7 +1,7 @@
-From cebd24029a31d33da71afdb284e600527408ddc4 Mon Sep 17 00:00:00 2001
+From 6ab085ec41287142cea3d261b7fc3fe1c51e3df5 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Jul 2017 17:31:20 +0200
-Subject: [PATCH 363/413] cpu/hotplug: Implement CPU pinning
+Subject: [PATCH 363/436] cpu/hotplug: Implement CPU pinning
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -22,7 +22,7 @@ index cb26ba8286fb..4e48d5fe8bd6 100644
  	int				migrate_disable_atomic;
  # endif
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 083ff510b038..6d4fda219fd8 100644
+index c4e00efd6a2b..e337c60f2d00 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -74,6 +74,11 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {

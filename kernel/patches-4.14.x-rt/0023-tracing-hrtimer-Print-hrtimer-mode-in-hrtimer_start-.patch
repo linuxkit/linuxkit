@@ -1,7 +1,7 @@
-From 6f84153b211f7fb270f43e7636a68bce4241df30 Mon Sep 17 00:00:00 2001
+From 0fbbc5043b19de348d3c058d15955a94403181af Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:58 +0100
-Subject: [PATCH 023/413] tracing/hrtimer: Print hrtimer mode in hrtimer_start
+Subject: [PATCH 023/436] tracing/hrtimer: Print hrtimer mode in hrtimer_start
  tracepoint
 
 The hrtimer_start tracepoint lacks the mode information. The mode is

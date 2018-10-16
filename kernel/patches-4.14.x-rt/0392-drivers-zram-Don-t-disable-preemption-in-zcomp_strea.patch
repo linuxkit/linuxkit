@@ -1,7 +1,7 @@
-From 787fb8c244c78b881197632dca7d86e1656619f3 Mon Sep 17 00:00:00 2001
+From f1164b1b843b85908f3995ef7f521600e01d6d3d Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 20 Oct 2016 11:15:22 +0200
-Subject: [PATCH 392/413] drivers/zram: Don't disable preemption in
+Subject: [PATCH 392/436] drivers/zram: Don't disable preemption in
  zcomp_stream_get/put()
 
 In v4.7, the driver switched to percpu compression streams, disabling
@@ -66,10 +66,10 @@ index 41c1002a7d7d..d424eafcbf8e 100644
  
  /* dynamic per-device compression frontend */
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index 0fc72950be2d..9839656465ea 100644
+index 23be0e1b31e7..c5d61209eb05 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
-@@ -871,6 +871,7 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,
+@@ -876,6 +876,7 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,
  	unsigned long handle;
  	unsigned int size;
  	void *src, *dst;
@@ -77,7 +77,7 @@ index 0fc72950be2d..9839656465ea 100644
  
  	if (zram_wb_enabled(zram)) {
  		zram_slot_lock(zram, index);
-@@ -905,6 +906,7 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,
+@@ -910,6 +911,7 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,
  
  	size = zram_get_obj_size(zram, index);
  
@@ -85,7 +85,7 @@ index 0fc72950be2d..9839656465ea 100644
  	src = zs_map_object(zram->mem_pool, handle, ZS_MM_RO);
  	if (size == PAGE_SIZE) {
  		dst = kmap_atomic(page);
-@@ -912,14 +914,13 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,
+@@ -917,14 +919,13 @@ static int __zram_bvec_read(struct zram *zram, struct page *page, u32 index,
  		kunmap_atomic(dst);
  		ret = 0;
  	} else {

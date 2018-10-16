@@ -1,7 +1,7 @@
-From 29214cb68d4a0a56ac492c3925184db09a8a6d5a Mon Sep 17 00:00:00 2001
+From bfac03611e27998e340d9bdee3a11f175ae9bc81 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 2 Sep 2011 14:41:29 +0200
-Subject: [PATCH 141/413] printk: Add "force_early_printk" boot param to help
+Subject: [PATCH 141/436] printk: Add "force_early_printk" boot param to help
  with debugging
 
 Gives me an option to screw printk and actually see what the machine
@@ -12,14 +12,14 @@ Link: http://lkml.kernel.org/r/1314967289.1301.11.camel@twins
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Link: http://lkml.kernel.org/n/tip-ykb97nsfmobq44xketrxs977@git.kernel.org
 ---
- kernel/printk/printk.c | 7 +++++++
+ kernel/printk/printk_safe.c | 7 +++++++
  1 file changed, 7 insertions(+)
 
-diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 5b259bff7014..1da739f39a3d 100644
---- a/kernel/printk/printk.c
-+++ b/kernel/printk/printk.c
-@@ -430,6 +430,13 @@ asmlinkage void early_printk(const char *fmt, ...)
+diff --git a/kernel/printk/printk_safe.c b/kernel/printk/printk_safe.c
+index f0855cecec9d..a24e16bef51c 100644
+--- a/kernel/printk/printk_safe.c
++++ b/kernel/printk/printk_safe.c
+@@ -404,6 +404,13 @@ asmlinkage void early_printk(const char *fmt, ...)
   */
  static bool __read_mostly printk_killswitch;
  

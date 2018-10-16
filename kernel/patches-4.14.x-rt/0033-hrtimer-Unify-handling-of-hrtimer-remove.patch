@@ -1,7 +1,7 @@
-From a54d37065d2922d1d67d38fa44394f54b0bcb68c Mon Sep 17 00:00:00 2001
+From 077bf3d3f5ac279e4ddc10b07b1d5e2b94482026 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:08 +0100
-Subject: [PATCH 033/413] hrtimer: Unify handling of hrtimer remove
+Subject: [PATCH 033/436] hrtimer: Unify handling of hrtimer remove
 
 When the first hrtimer on the current CPU is removed,
 hrtimer_force_reprogram() is invoked but only when

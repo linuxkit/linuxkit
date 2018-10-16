@@ -1,7 +1,7 @@
-From 84238420757684f86aa07eca0f5fc81fffdaeb27 Mon Sep 17 00:00:00 2001
+From 74cb1bc561fd6f88c30b9bd5a36c71f79c972d0c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:40 -0600
-Subject: [PATCH 083/413] ring-buffer: Redefine the unimplemented
+Subject: [PATCH 083/436] ring-buffer: Redefine the unimplemented
  RINGBUF_TYPE_TIME_STAMP
 
 RINGBUF_TYPE_TIME_STAMP is defined but not used, and from what I can

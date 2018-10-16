@@ -1,7 +1,7 @@
-From 1d446035c5e9360d34385d7a9925752c12afd229 Mon Sep 17 00:00:00 2001
+From fdf53562d8cca6ed1b310fc06fcec32ad8dc9e45 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:22 -0500
-Subject: [PATCH 076/413] tracing: Add hist_field_name() accessor
+Subject: [PATCH 076/436] tracing: Add hist_field_name() accessor
 
 In preparation for hist_fields that won't be strictly based on
 trace_event_fields, add a new hist_field_name() accessor to allow that

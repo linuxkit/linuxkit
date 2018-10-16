@@ -1,7 +1,7 @@
-From 59a84f4042a9b7661a81aeb4d33d0d1b81f12528 Mon Sep 17 00:00:00 2001
+From 89833f309efbdc140af06b7f343b115ab89a73b7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:17:03 +0200
-Subject: [PATCH 255/413] rtmutex: add mutex implementation based on rtmutex
+Subject: [PATCH 255/436] rtmutex: add mutex implementation based on rtmutex
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>

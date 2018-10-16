@@ -1,7 +1,7 @@
-From dde2d69a6a4c73667c805b32876febf324c9c002 Mon Sep 17 00:00:00 2001
+From 337756a4678c4e1267a8c3ec1748a7b422763d5a Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:09 +0100
-Subject: [PATCH 034/413] hrtimer: Unify handling of remote enqueue
+Subject: [PATCH 034/436] hrtimer: Unify handling of remote enqueue
 
 hrtimer_reprogram() is conditionally invoked from hrtimer_start_range_ns()
 when hrtimer_cpu_base.hres_active is true.
@@ -127,7 +127,7 @@ index 4ac74dff59f0..e277284c2831 100644
  
  DECLARE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases);
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index b24232985960..34415f2b3f04 100644
+index 9b644e70b660..3b6c7e287f23 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -210,7 +210,7 @@ static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);

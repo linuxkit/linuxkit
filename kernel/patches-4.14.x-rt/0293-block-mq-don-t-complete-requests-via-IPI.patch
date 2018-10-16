@@ -1,7 +1,7 @@
-From 516215b2adf3d825650aa1f1968d305063bf1880 Mon Sep 17 00:00:00 2001
+From 7abd3a144a92dd305b6745bfbe792d5634d45fce Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 15:10:08 +0100
-Subject: [PATCH 293/413] block/mq: don't complete requests via IPI
+Subject: [PATCH 293/436] block/mq: don't complete requests via IPI
 
 The IPI runs in hardirq context and there are sleeping locks. This patch
 moves the completion into a workqueue.
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 30 insertions(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 7d9b502cc969..fb8ad5b175e2 100644
+index cdae8b09b90b..b565e24335a3 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -116,6 +116,9 @@ void blk_rq_init(struct request_queue *q, struct request *rq)

@@ -1,7 +1,7 @@
-From 91cf6512ab5c35ffa8de75ccea423edd949d0bf2 Mon Sep 17 00:00:00 2001
+From 2b2a746d15921b1ed320b025d4bf6c1221e4e460 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:41 -0600
-Subject: [PATCH 084/413] tracing: Add timestamp_mode trace file
+Subject: [PATCH 084/436] tracing: Add timestamp_mode trace file
 
 Add a new option flag indicating whether or not the ring buffer is in
 'absolute timestamp' mode.
@@ -62,10 +62,10 @@ index d4601df6e72e..54213e5c23f6 100644
  
  	Directory for the Hardware Latency Detector.
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index e64ba2addfe7..b101ccf0b9fb 100644
+index ffb67272b642..c358cae7461f 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -4526,6 +4526,9 @@ static const char readme_msg[] =
+@@ -4531,6 +4531,9 @@ static const char readme_msg[] =
  #ifdef CONFIG_X86_64
  	"     x86-tsc:   TSC cycle counter\n"
  #endif
@@ -75,7 +75,7 @@ index e64ba2addfe7..b101ccf0b9fb 100644
  	"\n  trace_marker\t\t- Writes into this file writes into the kernel buffer\n"
  	"\n  trace_marker_raw\t\t- Writes into this file writes binary data into the kernel buffer\n"
  	"  tracing_cpumask\t- Limit which CPUs to trace\n"
-@@ -6293,6 +6296,40 @@ static int tracing_clock_open(struct inode *inode, struct file *file)
+@@ -6298,6 +6301,40 @@ static int tracing_clock_open(struct inode *inode, struct file *file)
  	return ret;
  }
  
@@ -116,7 +116,7 @@ index e64ba2addfe7..b101ccf0b9fb 100644
  int tracing_set_time_stamp_abs(struct trace_array *tr, bool abs)
  {
  	int ret = 0;
-@@ -6571,6 +6608,13 @@ static const struct file_operations trace_clock_fops = {
+@@ -6576,6 +6613,13 @@ static const struct file_operations trace_clock_fops = {
  	.write		= tracing_clock_write,
  };
  
@@ -130,7 +130,7 @@ index e64ba2addfe7..b101ccf0b9fb 100644
  #ifdef CONFIG_TRACER_SNAPSHOT
  static const struct file_operations snapshot_fops = {
  	.open		= tracing_snapshot_open,
-@@ -7893,6 +7937,9 @@ init_tracer_tracefs(struct trace_array *tr, struct dentry *d_tracer)
+@@ -7900,6 +7944,9 @@ init_tracer_tracefs(struct trace_array *tr, struct dentry *d_tracer)
  	trace_create_file("tracing_on", 0644, d_tracer,
  			  tr, &rb_simple_fops);
  

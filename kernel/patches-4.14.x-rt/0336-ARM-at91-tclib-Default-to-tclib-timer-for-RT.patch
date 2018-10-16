@@ -1,7 +1,7 @@
-From 097550dd789debc8a3323bc545b5d231782ae3f3 Mon Sep 17 00:00:00 2001
+From 787d333215e80ba009ab2c8ba95ee04da51995d7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 1 May 2010 18:29:35 +0200
-Subject: [PATCH 336/413] ARM: at91: tclib: Default to tclib timer for RT
+Subject: [PATCH 336/436] ARM: at91: tclib: Default to tclib timer for RT
 
 RT is not too happy about the shared timer interrupt in AT91
 devices. Default to tclib timer for RT.

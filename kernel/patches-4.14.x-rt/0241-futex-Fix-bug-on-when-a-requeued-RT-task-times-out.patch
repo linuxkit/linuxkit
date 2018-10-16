@@ -1,7 +1,7 @@
-From b38ea20b60ba7a9fa94c24b04eccbd13bd649a45 Mon Sep 17 00:00:00 2001
+From 180eefea754623a6991e9e7a28e3b5854e3dd299 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
-Subject: [PATCH 241/413] futex: Fix bug on when a requeued RT task times out
+Subject: [PATCH 241/436] futex: Fix bug on when a requeued RT task times out
 
 Requeue with timeout causes a bug with PREEMPT_RT_FULL.
 
@@ -55,7 +55,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 32 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 8d7ab272b109..ee867d9ebf72 100644
+index 65c50c893513..ea8dd82835c9 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -137,7 +137,8 @@ static void fixup_rt_mutex_waiters(struct rt_mutex *lock)
@@ -68,7 +68,7 @@ index 8d7ab272b109..ee867d9ebf72 100644
  }
  
  /*
-@@ -1743,6 +1744,35 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
+@@ -1764,6 +1765,35 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
  	if (try_to_take_rt_mutex(lock, task, NULL))
  		return 1;
  

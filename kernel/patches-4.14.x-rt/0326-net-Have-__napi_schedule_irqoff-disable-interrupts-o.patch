@@ -1,7 +1,7 @@
-From 4a91f9a1ec0e45b50c5504a9c0de4e704c8539ec Mon Sep 17 00:00:00 2001
+From 237064ef4377b8b9a4f333dd72c333fee50104b1 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 326/413] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 326/436] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
@@ -52,7 +52,7 @@ index 8b5151f9e31c..8b7282a13652 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 17ec4679e3f3..9c936553c46e 100644
+index b8433ae8b36a..556edade3628 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -5268,6 +5268,7 @@ bool napi_schedule_prep(struct napi_struct *n)

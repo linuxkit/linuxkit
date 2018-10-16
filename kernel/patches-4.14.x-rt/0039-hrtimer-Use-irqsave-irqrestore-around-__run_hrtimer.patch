@@ -1,7 +1,7 @@
-From 6228d88fd2fa50ac7785f0f0acb373dc81ecd735 Mon Sep 17 00:00:00 2001
+From 868c0f3e6231a9f1ffae418b3411176e49dcf6bc Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:14 +0100
-Subject: [PATCH 039/413] hrtimer: Use irqsave/irqrestore around
+Subject: [PATCH 039/436] hrtimer: Use irqsave/irqrestore around
  __run_hrtimer()
 
 __run_hrtimer() is called with the hrtimer_cpu_base.lock held and

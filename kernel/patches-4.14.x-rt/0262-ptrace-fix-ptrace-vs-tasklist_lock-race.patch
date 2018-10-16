@@ -1,7 +1,7 @@
-From 5648ff3390c4e70eae6838b7c2bb928382eed970 Mon Sep 17 00:00:00 2001
+From a0aa2b86fabe118ce36663f2ecbe92b614b9547f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 262/413] ptrace: fix ptrace vs tasklist_lock race
+Subject: [PATCH 262/436] ptrace: fix ptrace vs tasklist_lock race
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 

@@ -1,7 +1,7 @@
-From a8eb9d3ad2db64f8fa95c16b8b606ca235dd1e40 Mon Sep 17 00:00:00 2001
+From 3f59563ac8145d1ad153fffbc2aa21bd1679e71b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 11 Oct 2017 17:43:49 +0200
-Subject: [PATCH 405/413] apparmor: use a locallock instead preempt_disable()
+Subject: [PATCH 405/436] apparmor: use a locallock instead preempt_disable()
 
 get_buffers() disables preemption which acts as a lock for the per-CPU
 variable. Since we can't disable preemption here on RT, a local_lock is

@@ -1,7 +1,7 @@
-From 1eb06655d02b3009eed1f6a93b2684d718e55190 Mon Sep 17 00:00:00 2001
+From 90c9e2622f36cf8d09621c4c4a171a9888a5e278 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:00:34 +0100
-Subject: [PATCH 303/413] fs: dcache: Use cpu_chill() in trylock loops
+Subject: [PATCH 303/436] fs: dcache: Use cpu_chill() in trylock loops
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 20 insertions(+), 6 deletions(-)
 
 diff --git a/fs/autofs4/autofs_i.h b/fs/autofs4/autofs_i.h
-index 4737615f0eaa..bf71f1aaecbe 100644
+index ce696d6c4641..b120fbd41483 100644
 --- a/fs/autofs4/autofs_i.h
 +++ b/fs/autofs4/autofs_i.h
 @@ -20,6 +20,7 @@
@@ -41,7 +41,7 @@ index 57725d4a8c59..62220508bace 100644
  			}
  			spin_unlock(&p->d_lock);
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 8c828c37cd30..19176cbc831a 100644
+index d368bd0bd48c..a3381e7f2062 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
 @@ -19,6 +19,7 @@
@@ -52,7 +52,7 @@ index 8c828c37cd30..19176cbc831a 100644
  #include <linux/slab.h>
  #include <linux/init.h>
  #include <linux/hash.h>
-@@ -793,6 +794,8 @@ static inline bool fast_dput(struct dentry *dentry)
+@@ -794,6 +795,8 @@ static inline bool fast_dput(struct dentry *dentry)
   */
  void dput(struct dentry *dentry)
  {
@@ -61,7 +61,7 @@ index 8c828c37cd30..19176cbc831a 100644
  	if (unlikely(!dentry))
  		return;
  
-@@ -829,9 +832,18 @@ void dput(struct dentry *dentry)
+@@ -830,9 +833,18 @@ void dput(struct dentry *dentry)
  	return;
  
  kill_it:
@@ -83,7 +83,7 @@ index 8c828c37cd30..19176cbc831a 100644
  		goto repeat;
  	}
  }
-@@ -2393,7 +2405,7 @@ void d_delete(struct dentry * dentry)
+@@ -2394,7 +2406,7 @@ void d_delete(struct dentry * dentry)
  	if (dentry->d_lockref.count == 1) {
  		if (!spin_trylock(&inode->i_lock)) {
  			spin_unlock(&dentry->d_lock);

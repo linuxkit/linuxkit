@@ -1,7 +1,7 @@
-From 09264d6a7b079c667e7ab9355ad4e17684189c00 Mon Sep 17 00:00:00 2001
+From 40a0099abe7556d58f4ae00a68be17e245355b41 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 8 Jul 2011 20:25:16 +0200
-Subject: [PATCH 407/413] Add localversion for -RT release
+Subject: [PATCH 407/436] Add localversion for -RT release
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---

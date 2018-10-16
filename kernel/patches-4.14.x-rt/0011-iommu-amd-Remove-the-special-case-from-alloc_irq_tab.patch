@@ -1,7 +1,7 @@
-From f9e7252eb1c41def5d916de943ec2277b7cb7495 Mon Sep 17 00:00:00 2001
+From e42ee86a6c0aa18a93bd28ec274622be903a11ce Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:37 +0100
-Subject: [PATCH 011/413] iommu/amd: Remove the special case from
+Subject: [PATCH 011/436] iommu/amd: Remove the special case from
  alloc_irq_table()
 
 Upstream commit fde65dd3d3096e8f6ecc7bbe544eb91f4220772c

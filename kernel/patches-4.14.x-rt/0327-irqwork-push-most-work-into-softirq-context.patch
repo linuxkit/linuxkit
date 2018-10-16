@@ -1,7 +1,7 @@
-From 1ecac280d8b4d476bf08ba0228bf9070608317bb Mon Sep 17 00:00:00 2001
+From 8f59e62f5a6e3d597913c61792db9ff9d1ee3452 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
-Subject: [PATCH 327/413] irqwork: push most work into softirq context
+Subject: [PATCH 327/436] irqwork: push most work into softirq context
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.
@@ -171,7 +171,7 @@ index 92222682dfce..643b36a0b8e1 100644
  
  /*
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index ced791c0b47b..feab4b90d896 100644
+index 9b08190ff65a..2362b03051aa 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -1638,7 +1638,7 @@ void update_process_times(int user_tick)
@@ -183,16 +183,16 @@ index ced791c0b47b..feab4b90d896 100644
  	if (in_irq())
  		irq_work_tick();
  #endif
-@@ -1679,6 +1679,9 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
+@@ -1695,6 +1695,9 @@ static __latent_entropy void run_timer_softirq(struct softirq_action *h)
  {
  	struct timer_base *base = this_cpu_ptr(&timer_bases[BASE_STD]);
  
 +#if defined(CONFIG_IRQ_WORK) && defined(CONFIG_PREEMPT_RT_FULL)
 +	irq_work_tick();
 +#endif
- 	/*
- 	 * must_forward_clk must be cleared before running timers so that any
- 	 * timer functions that call mod_timer will not try to forward the
+ 	__run_timers(base);
+ 	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
+ 		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
 -- 
 2.18.0
 

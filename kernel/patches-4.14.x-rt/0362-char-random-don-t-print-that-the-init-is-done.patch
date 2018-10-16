@@ -1,7 +1,7 @@
-From 9fa74a48b510ef7097a564b460d87c440e2d8016 Mon Sep 17 00:00:00 2001
+From 14b16fdfdab97a7a2dea23f77b9fc76e3f503e3a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 30 May 2017 16:39:01 +0200
-Subject: [PATCH 362/413] char/random: don't print that the init is done
+Subject: [PATCH 362/436] char/random: don't print that the init is done
 
 On RT we run into circular locking with pendingb_lock (workqueue),
 port_lock_key (uart) and the primary_crng (random):

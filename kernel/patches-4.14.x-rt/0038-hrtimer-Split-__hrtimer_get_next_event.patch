@@ -1,7 +1,7 @@
-From 70d21872a9b1a71675676eb4d42218d89787d845 Mon Sep 17 00:00:00 2001
+From 4da973b0f618e921421b1b5b2fbf161a61481be5 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:13 +0100
-Subject: [PATCH 038/413] hrtimer: Split __hrtimer_get_next_event()
+Subject: [PATCH 038/436] hrtimer: Split __hrtimer_get_next_event()
 
 Preparatory patch for softirq based hrtimers to avoid code duplication. No
 functional change.

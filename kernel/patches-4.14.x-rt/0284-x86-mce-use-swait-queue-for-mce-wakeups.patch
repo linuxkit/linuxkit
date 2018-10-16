@@ -1,7 +1,7 @@
-From 5102b87383b6bec476a32fbb46c52a9b25fb535e Mon Sep 17 00:00:00 2001
+From e99fb8bc6dd9232962e6d7c92c7d392464be00d8 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Fri, 27 Feb 2015 15:20:37 +0100
-Subject: [PATCH 284/413] x86/mce: use swait queue for mce wakeups
+Subject: [PATCH 284/436] x86/mce: use swait queue for mce wakeups
 
 We had a customer report a lockup on a 3.0-rt kernel that had the
 following backtrace:

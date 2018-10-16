@@ -1,7 +1,7 @@
-From 1b4e8293c93537e5d2a6073faa8ea8ba280faf69 Mon Sep 17 00:00:00 2001
+From 249ddfa2859cad0434721fa9b8c2f1432bb014c9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 13 Mar 2018 13:49:16 +0100
-Subject: [PATCH 301/413] block: blk-mq: move blk_queue_usage_counter_release()
+Subject: [PATCH 301/436] block: blk-mq: move blk_queue_usage_counter_release()
  into process context
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
@@ -52,7 +52,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index fb8ad5b175e2..81ab56cf7efa 100644
+index b565e24335a3..a29ca4dfad77 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -811,12 +811,21 @@ void blk_queue_exit(struct request_queue *q)
@@ -86,7 +86,7 @@ index fb8ad5b175e2..81ab56cf7efa 100644
  
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
-@@ -3626,6 +3636,8 @@ int __init blk_dev_init(void)
+@@ -3629,6 +3639,8 @@ int __init blk_dev_init(void)
  	if (!kblockd_workqueue)
  		panic("Failed to create kblockd\n");
  

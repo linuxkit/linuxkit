@@ -1,7 +1,7 @@
-From 96d21caefdb975f09b7aed330c3595bd59a4414f Mon Sep 17 00:00:00 2001
+From 5bf816344129ba05afd6a87fc2fd127c11cec3c6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Mar 2018 15:04:49 +0100
-Subject: [PATCH 299/413] Revert "cpu_chill: Add a UNINTERRUPTIBLE
+Subject: [PATCH 299/436] Revert "cpu_chill: Add a UNINTERRUPTIBLE
  hrtimer_nanosleep"
 
 This reverts commit "cpu_chill: Add a UNINTERRUPTIBLE

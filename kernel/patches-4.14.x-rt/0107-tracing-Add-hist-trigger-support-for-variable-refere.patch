@@ -1,7 +1,7 @@
-From 5b6ac5c210fab67ecd3814c350f75e3c4b2dded2 Mon Sep 17 00:00:00 2001
+From 0511b4eaf3310861df561feadaa66fd636bc7a1c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:04 -0600
-Subject: [PATCH 107/413] tracing: Add hist trigger support for variable
+Subject: [PATCH 107/436] tracing: Add hist trigger support for variable
  reference aliases
 
 Add support for alias=$somevar where alias can be used as

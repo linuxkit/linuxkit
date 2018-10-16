@@ -1,7 +1,7 @@
-From 8cd450021f32f6b8de9c72cc1c923a7e5ac1ccd1 Mon Sep 17 00:00:00 2001
+From 23f0bf88567761401bd6f3c1c577639e3bca0def Mon Sep 17 00:00:00 2001
 From: Paul Gortmaker <paul.gortmaker@windriver.com>
 Date: Sat, 14 Feb 2015 11:01:16 -0500
-Subject: [PATCH 352/413] sas-ata/isci: dont't disable interrupts in qc_issue
+Subject: [PATCH 352/436] sas-ata/isci: dont't disable interrupts in qc_issue
  handler
 
 On 3.14-rt we see the following trace on Canoe Pass for

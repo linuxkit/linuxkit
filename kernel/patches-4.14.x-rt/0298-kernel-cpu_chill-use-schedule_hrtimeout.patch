@@ -1,7 +1,7 @@
-From e17bdaf53cfd19c096e2288e0efe53a3a8ddd8d5 Mon Sep 17 00:00:00 2001
+From 4f37296a56c0803abc522de377277c3d02ad1f68 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Mar 2018 13:07:59 +0100
-Subject: [PATCH 298/413] kernel/cpu_chill: use schedule_hrtimeout()
+Subject: [PATCH 298/436] kernel/cpu_chill: use schedule_hrtimeout()
 
 If a task calls cpu_chill() and gets woken up by a regular or spurious
 wakeup and has a signal pending, then it exits the sleep loop in

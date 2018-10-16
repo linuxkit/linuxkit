@@ -1,7 +1,7 @@
-From 3158aae80923bc6e31f906955bb69de0bcee346d Mon Sep 17 00:00:00 2001
+From d648f2f70bab7ea86e9ac5cbad0645707d2f0e00 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Thu, 26 Apr 2018 20:04:48 -0500
-Subject: [PATCH 409/413] tracing: Add field parsing hist error for hist
+Subject: [PATCH 409/436] tracing: Add field parsing hist error for hist
  triggers
 
 [ commit 5ec432d7bf9dd3b4a2b84f8974e3adb71f45fb1d ]

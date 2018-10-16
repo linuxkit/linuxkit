@@ -1,7 +1,7 @@
-From d2ec59058e734354ec4b8374a79bc7fa2325be87 Mon Sep 17 00:00:00 2001
+From ae5add3aef2583f36a068347af08ba65e5ce3abc Mon Sep 17 00:00:00 2001
 From: "bigeasy@linutronix.de" <bigeasy@linutronix.de>
 Date: Fri, 23 Mar 2018 18:17:36 +0100
-Subject: [PATCH 067/413] target: drop spin_lock_assert() + irqs_disabled()
+Subject: [PATCH 067/436] target: drop spin_lock_assert() + irqs_disabled()
  combo checks
 
 There are a few functions which check for if the lock is held
@@ -40,10 +40,10 @@ index 9c7bc1ca341a..3d35dad1de2c 100644
  	 * If command already reached CMD_T_COMPLETE state within
  	 * target_complete_cmd() or CMD_T_FABRIC_STOP due to shutdown,
 diff --git a/drivers/target/target_core_transport.c b/drivers/target/target_core_transport.c
-index e6d51135d105..b00829995131 100644
+index 0d0be7d8b9d6..f652e58e2988 100644
 --- a/drivers/target/target_core_transport.c
 +++ b/drivers/target/target_core_transport.c
-@@ -2966,9 +2966,6 @@ __transport_wait_for_tasks(struct se_cmd *cmd, bool fabric_stop,
+@@ -2967,9 +2967,6 @@ __transport_wait_for_tasks(struct se_cmd *cmd, bool fabric_stop,
  	__acquires(&cmd->t_state_lock)
  {
  
@@ -53,7 +53,7 @@ index e6d51135d105..b00829995131 100644
  	if (fabric_stop)
  		cmd->transport_state |= CMD_T_FABRIC_STOP;
  
-@@ -3238,9 +3235,6 @@ static int __transport_check_aborted_status(struct se_cmd *cmd, int send_status)
+@@ -3239,9 +3236,6 @@ static int __transport_check_aborted_status(struct se_cmd *cmd, int send_status)
  {
  	int ret;
  

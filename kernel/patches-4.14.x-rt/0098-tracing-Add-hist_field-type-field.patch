@@ -1,7 +1,7 @@
-From 4a62814a84d553e653af96d3ac62631711d0e5ad Mon Sep 17 00:00:00 2001
+From 828254c5b8e4253c9b9190e021078fda82528efe Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:55 -0600
-Subject: [PATCH 098/413] tracing: Add hist_field 'type' field
+Subject: [PATCH 098/436] tracing: Add hist_field 'type' field
 
 Future support for synthetic events requires hist_field 'type'
 information, so add a field for that.

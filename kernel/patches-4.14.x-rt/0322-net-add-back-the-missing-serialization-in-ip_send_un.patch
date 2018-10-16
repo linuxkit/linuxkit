@@ -1,7 +1,7 @@
-From d1e7025d7ec87c83c6ad6230f49a4d0da980f1b8 Mon Sep 17 00:00:00 2001
+From 08e64aeae6c9f60c649ade9780315c2ae3d4c395 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 31 Aug 2016 17:21:56 +0200
-Subject: [PATCH 322/413] net: add back the missing serialization in
+Subject: [PATCH 322/436] net: add back the missing serialization in
  ip_send_unicast_reply()
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -42,7 +42,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 6 insertions(+)
 
 diff --git a/net/ipv4/tcp_ipv4.c b/net/ipv4/tcp_ipv4.c
-index a95ccdceb797..8f157f3aaafd 100644
+index 0e1a670dabd9..89f983c0384c 100644
 --- a/net/ipv4/tcp_ipv4.c
 +++ b/net/ipv4/tcp_ipv4.c
 @@ -62,6 +62,7 @@

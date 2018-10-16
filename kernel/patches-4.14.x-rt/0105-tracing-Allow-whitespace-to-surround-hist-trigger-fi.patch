@@ -1,7 +1,7 @@
-From 4b72e6c298c4a4bb412803bd380bb2bc4c526e1a Mon Sep 17 00:00:00 2001
+From 1a0b256dfc095306651e1d5e6d958baa3a7fd89c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:02 -0600
-Subject: [PATCH 105/413] tracing: Allow whitespace to surround hist trigger
+Subject: [PATCH 105/436] tracing: Allow whitespace to surround hist trigger
  filter
 
 The existing code only allows for one space before and after the 'if'

@@ -1,7 +1,7 @@
-From 7aa3241e49aeb877d3b6db85db821702a5c87b7b Mon Sep 17 00:00:00 2001
+From b008f71fa3fe8acb1142f561d3b0485a13d159a5 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:21 -0500
-Subject: [PATCH 075/413] tracing: Clean up hist_field_flags enum
+Subject: [PATCH 075/436] tracing: Clean up hist_field_flags enum
 
 As we add more flags, specifying explicit integers for the flag values
 becomes more unwieldy and error-prone - switch them over to left-shift

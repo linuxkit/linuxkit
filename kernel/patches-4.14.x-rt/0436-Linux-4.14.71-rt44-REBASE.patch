@@ -1,0 +1,19 @@
+From ed1df7e13145f40ab73b17af613136a9c1accb2f Mon Sep 17 00:00:00 2001
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Wed, 5 Sep 2018 08:08:53 -0400
+Subject: [PATCH 436/436] Linux 4.14.71-rt44 REBASE
+
+---
+ localversion-rt | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/localversion-rt b/localversion-rt
+index 90290c642ed5..ac4d836a809d 100644
+--- a/localversion-rt
++++ b/localversion-rt
+@@ -1 +1 @@
+--rt29
++-rt44
+-- 
+2.18.0
+

@@ -1,7 +1,7 @@
-From 12f9abd8917d3ac5127894f7525f5c7d17d3daf1 Mon Sep 17 00:00:00 2001
+From 9ae4daaf9fd52dadc4ee790d952a19fb87a01ce2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 4 Sep 2017 18:31:50 +0200
-Subject: [PATCH 199/413] hrtimer: consolidate hrtimer_init() +
+Subject: [PATCH 199/436] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
 
 hrtimer_init_sleeper() calls require a prior initialisation of the

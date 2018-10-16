@@ -1,7 +1,7 @@
-From 59713b0380114cd3191016cd76a177fddd7803bc Mon Sep 17 00:00:00 2001
+From d874c26680c40cd40b7bc10e7ebdc6cb36e2fc45 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Oct 2017 14:38:52 +0200
-Subject: [PATCH 062/413] xen/9pfs: don't inclide rwlock.h directly.
+Subject: [PATCH 062/436] xen/9pfs: don't inclide rwlock.h directly.
 
 rwlock.h should not be included directly. Instead linux/splinlock.h
 should be included. One thing it does is to break the RT build.
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 deletion(-)
 
 diff --git a/net/9p/trans_xen.c b/net/9p/trans_xen.c
-index 325c56043007..a3f577e81c79 100644
+index c10bdf63eae7..84a49f2bcfbc 100644
 --- a/net/9p/trans_xen.c
 +++ b/net/9p/trans_xen.c
 @@ -38,7 +38,6 @@

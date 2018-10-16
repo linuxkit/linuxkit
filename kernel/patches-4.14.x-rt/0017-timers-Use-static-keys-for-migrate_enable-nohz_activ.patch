@@ -1,7 +1,7 @@
-From b3ad0d0a382ccacf4b70d284f293ff109701d0bf Mon Sep 17 00:00:00 2001
+From 58c7c7274188d6ddaaf5fbe9138fb3f12083d8cc Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:50 +0100
-Subject: [PATCH 017/413] timers: Use static keys for
+Subject: [PATCH 017/436] timers: Use static keys for
  migrate_enable/nohz_active
 
 The members migrate_enable and nohz_active in the timer/hrtimer per CPU
@@ -134,7 +134,7 @@ index ea3c062e7e1c..7f924eba78da 100644
  
  /**
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 9fe525f410bf..b24232985960 100644
+index f17c76a1a05f..9b644e70b660 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -200,8 +200,6 @@ struct timer_base {

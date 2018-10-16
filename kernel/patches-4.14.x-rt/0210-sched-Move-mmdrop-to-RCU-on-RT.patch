@@ -1,7 +1,7 @@
-From 58ee061e0b0a8e590cf21d35609e9bddebe8dac1 Mon Sep 17 00:00:00 2001
+From 1429baf6accab2debdfb0f3a75f050c48596e8fe Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 210/413] sched: Move mmdrop to RCU on RT
+Subject: [PATCH 210/436] sched: Move mmdrop to RCU on RT
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 45 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/mm_types.h b/include/linux/mm_types.h
-index 9f0bb908e2b5..5a716df466a0 100644
+index e41ef532c4ce..63317710311e 100644
 --- a/include/linux/mm_types.h
 +++ b/include/linux/mm_types.h
 @@ -12,6 +12,7 @@
@@ -59,7 +59,7 @@ index 3d49b91b674d..d8f2fa8f500c 100644
  {
  	struct mm_struct *mm = container_of(work, struct mm_struct, async_put_work);
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 0e4f96449066..279bc8ae6543 100644
+index 677d17d7efb5..2c53e56ac3e3 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -929,6 +929,19 @@ void __mmdrop(struct mm_struct *mm)

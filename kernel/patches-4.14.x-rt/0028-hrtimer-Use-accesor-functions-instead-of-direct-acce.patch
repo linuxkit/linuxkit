@@ -1,7 +1,7 @@
-From 4497ed468019c6d815cae26a937cd45dead9b101 Mon Sep 17 00:00:00 2001
+From d5170ac607094f2114fdd6c14e0083416a9f260a Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:03 +0100
-Subject: [PATCH 028/413] hrtimer: Use accesor functions instead of direct
+Subject: [PATCH 028/436] hrtimer: Use accesor functions instead of direct
  access
 
 __hrtimer_hres_active() is now available unconditionally. Replace the

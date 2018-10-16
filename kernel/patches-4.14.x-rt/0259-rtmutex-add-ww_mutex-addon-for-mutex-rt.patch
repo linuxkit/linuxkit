@@ -1,7 +1,7 @@
-From 574b455571f59bb83cf90d56e9da47d407acd7fc Mon Sep 17 00:00:00 2001
+From 72b28b7932c1c6c0ea65a0d850cf98f8efaa1134 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 12 Oct 2017 17:34:38 +0200
-Subject: [PATCH 259/413] rtmutex: add ww_mutex addon for mutex-rt
+Subject: [PATCH 259/436] rtmutex: add ww_mutex addon for mutex-rt
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
@@ -11,7 +11,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 257 insertions(+), 11 deletions(-)
 
 diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
-index 3d6374f5f776..3e130ea6f85c 100644
+index 827546ba5a47..5772283ebd17 100644
 --- a/kernel/locking/rtmutex.c
 +++ b/kernel/locking/rtmutex.c
 @@ -23,6 +23,7 @@
@@ -277,7 +277,7 @@ index 3d6374f5f776..3e130ea6f85c 100644
  }
  
  static inline int
-@@ -1946,6 +2093,7 @@ rt_mutex_timed_lock(struct rt_mutex *lock, struct hrtimer_sleeper *timeout)
+@@ -1962,6 +2109,7 @@ rt_mutex_timed_lock(struct rt_mutex *lock, struct hrtimer_sleeper *timeout)
  	mutex_acquire(&lock->dep_map, 0, 0, _RET_IP_);
  	ret = rt_mutex_timed_fastlock(lock, TASK_INTERRUPTIBLE, timeout,
  				       RT_MUTEX_MIN_CHAINWALK,
@@ -285,7 +285,7 @@ index 3d6374f5f776..3e130ea6f85c 100644
  				       rt_mutex_slowlock);
  	if (ret)
  		mutex_release(&lock->dep_map, 1, _RET_IP_);
-@@ -2267,7 +2415,7 @@ int rt_mutex_wait_proxy_lock(struct rt_mutex *lock,
+@@ -2283,7 +2431,7 @@ int rt_mutex_wait_proxy_lock(struct rt_mutex *lock,
  	raw_spin_lock_irq(&lock->wait_lock);
  	/* sleep on the mutex */
  	set_current_state(TASK_INTERRUPTIBLE);
@@ -294,7 +294,7 @@ index 3d6374f5f776..3e130ea6f85c 100644
  	/*
  	 * try_to_take_rt_mutex() sets the waiter bit unconditionally. We might
  	 * have to fix that up.
-@@ -2351,3 +2499,99 @@ bool rt_mutex_cleanup_proxy_lock(struct rt_mutex *lock,
+@@ -2367,3 +2515,99 @@ bool rt_mutex_cleanup_proxy_lock(struct rt_mutex *lock,
  
  	return cleanup;
  }

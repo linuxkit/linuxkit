@@ -1,7 +1,7 @@
-From d0c71e65d57140421324065cbbfb34d8eeaae9f4 Mon Sep 17 00:00:00 2001
+From f9eea1ea07cfd4a0c1c898839ca5863823d061d6 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:37 -0500
-Subject: [PATCH 170/413] mm: page_alloc: rt-friendly per-cpu pages
+Subject: [PATCH 170/436] mm: page_alloc: rt-friendly per-cpu pages
 
 rt-friendly per-cpu pages: convert the irqs-off per-cpu locking
 method into a preemptible, explicit-per-cpu-locks method.

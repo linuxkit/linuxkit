@@ -1,7 +1,7 @@
-From 0b4fd077fb3691992a3bdc061531582eaeed8d8b Mon Sep 17 00:00:00 2001
+From 554e1835cbcbda85d19b7f3a766bc59eb226c5c4 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:51 -0600
-Subject: [PATCH 094/413] tracing: Move get_hist_field_flags()
+Subject: [PATCH 094/436] tracing: Move get_hist_field_flags()
 
 Move get_hist_field_flags() to make it more easily accessible for new
 code (and keep the move separate from new functionality).

@@ -1,7 +1,7 @@
-From aa5d9a932251815a7acba494bb7e54d79784f94e Mon Sep 17 00:00:00 2001
+From d36f43161cf9e7ac16b6bbd46f2b1f7dea2ab4d9 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
-Subject: [PATCH 391/413] drivers/block/zram: Replace bit spinlocks with
+Subject: [PATCH 391/436] drivers/block/zram: Replace bit spinlocks with
  rtmutex for -rt
 
 They're nondeterministic, and lead to ___might_sleep() splats in -rt.
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 29 insertions(+)
 
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index f149d3e61234..0fc72950be2d 100644
+index 1e2648e4c286..23be0e1b31e7 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
-@@ -756,6 +756,30 @@ static DEVICE_ATTR_RO(io_stat);
+@@ -761,6 +761,30 @@ static DEVICE_ATTR_RO(io_stat);
  static DEVICE_ATTR_RO(mm_stat);
  static DEVICE_ATTR_RO(debug_stat);
  
@@ -49,7 +49,7 @@ index f149d3e61234..0fc72950be2d 100644
  static void zram_slot_lock(struct zram *zram, u32 index)
  {
  	bit_spin_lock(ZRAM_ACCESS, &zram->table[index].value);
-@@ -765,6 +789,7 @@ static void zram_slot_unlock(struct zram *zram, u32 index)
+@@ -770,6 +794,7 @@ static void zram_slot_unlock(struct zram *zram, u32 index)
  {
  	bit_spin_unlock(ZRAM_ACCESS, &zram->table[index].value);
  }
@@ -57,7 +57,7 @@ index f149d3e61234..0fc72950be2d 100644
  
  static void zram_meta_free(struct zram *zram, u64 disksize)
  {
-@@ -794,6 +819,7 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
+@@ -799,6 +824,7 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
  		return false;
  	}
  

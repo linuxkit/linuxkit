@@ -1,7 +1,7 @@
-From b6b8c036e78e405426694e06f254b0e0ad09fbaf Mon Sep 17 00:00:00 2001
+From b5377859043c987e6045a4375785a280d646ed51 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 189/413] timers: Prepare for full preemption
+Subject: [PATCH 189/436] timers: Prepare for full preemption
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -59,7 +59,7 @@ index cca96e5a8263..8cd98168bd8b 100644
  }
  
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 34415f2b3f04..3866d537f109 100644
+index 3b6c7e287f23..97c28b96aeb1 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -44,6 +44,7 @@
@@ -150,7 +150,7 @@ index 34415f2b3f04..3866d537f109 100644
  			raw_spin_lock_irq(&base->lock);
  		}
  	}
-@@ -1627,8 +1661,8 @@ static inline void __run_timers(struct timer_base *base)
+@@ -1643,8 +1677,8 @@ static inline void __run_timers(struct timer_base *base)
  		while (levels--)
  			expire_timers(base, heads + levels);
  	}
@@ -160,7 +160,7 @@ index 34415f2b3f04..3866d537f109 100644
  }
  
  /*
-@@ -1874,6 +1908,9 @@ static void __init init_timer_cpu(int cpu)
+@@ -1877,6 +1911,9 @@ static void __init init_timer_cpu(int cpu)
  		base->cpu = cpu;
  		raw_spin_lock_init(&base->lock);
  		base->clk = jiffies;
