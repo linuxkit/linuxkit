@@ -12,6 +12,9 @@ RUN apk add --no-cache --initdb -p /out \
     aarch64) \
         apk add --no-cache --initdb -p /out qemu-system-aarch64; \
         ;; \
+    s390x) \
+        apk add --no-cache --initdb -p /out qemu-system-s390x; \
+        ;; \
     esac
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
