@@ -1,4 +1,4 @@
-From ce92deb935af7239c67505938e6ba9725e9de3af Mon Sep 17 00:00:00 2001
+From f37cfbeefebd889fcc767e938086e9bc0bad39cc Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:16 -0700
 Subject: [PATCH 18/21] hyper-v: trace channel events
@@ -37,10 +37,10 @@ index fb22ae642dbb..1ad9e41e3192 100644
  	 * For channels marked as in "low latency" mode
  	 * bypass the monitor page mechanism.
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index 5e36f86d0b0c..8acd2e0e7c8e 100644
+index e491a2878e98..66cfc70b9b6b 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
-@@ -322,6 +322,8 @@ void vmbus_on_event(unsigned long data)
+@@ -324,6 +324,8 @@ void vmbus_on_event(unsigned long data)
  	struct vmbus_channel *channel = (void *) data;
  	unsigned long time_limit = jiffies + 2;
  

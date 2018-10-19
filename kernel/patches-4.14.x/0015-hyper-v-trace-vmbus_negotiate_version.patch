@@ -1,4 +1,4 @@
-From 0139b99b36566e855a7fa4919b312477a315401e Mon Sep 17 00:00:00 2001
+From 488aca09eedae449671fc614951102aef8ab41de Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:13 -0700
 Subject: [PATCH 15/21] hyper-v: trace vmbus_negotiate_version()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 29 insertions(+)
 
 diff --git a/drivers/hv/connection.c b/drivers/hv/connection.c
-index f41901f80b64..5e36f86d0b0c 100644
+index 5449fc59b7f5..e491a2878e98 100644
 --- a/drivers/hv/connection.c
 +++ b/drivers/hv/connection.c
-@@ -117,6 +117,9 @@ static int vmbus_negotiate_version(struct vmbus_channel_msginfo *msginfo,
+@@ -119,6 +119,9 @@ static int vmbus_negotiate_version(struct vmbus_channel_msginfo *msginfo,
  	ret = vmbus_post_msg(msg,
  			     sizeof(struct vmbus_channel_initiate_contact),
  			     true);
