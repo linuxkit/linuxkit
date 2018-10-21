@@ -1,4 +1,4 @@
-From b254222aafa88495653131b52136db249e6f3ee4 Mon Sep 17 00:00:00 2001
+From b27c6d4142be97d9ad37083cd37e84b488637907 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:18 -0700
 Subject: [PATCH 09/14] Drivers: hv: Log the negotiated IC versions.
@@ -40,10 +40,10 @@ index f1e0d0358206..e0ce0753c568 100644
  		fcopy_msg = (struct hv_fcopy_hdr *)&recv_buffer[
  				sizeof(struct vmbuspipe_hdr) +
 diff --git a/drivers/hv/hv_kvp.c b/drivers/hv/hv_kvp.c
-index 70c28b8806de..a1adfe2cfb34 100644
+index 820d4cd71fa9..18c4deb39f41 100644
 --- a/drivers/hv/hv_kvp.c
 +++ b/drivers/hv/hv_kvp.c
-@@ -650,10 +650,14 @@ void hv_kvp_onchannelcallback(void *context)
+@@ -651,10 +651,14 @@ void hv_kvp_onchannelcallback(void *context)
  			sizeof(struct vmbuspipe_hdr)];
  
  		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
