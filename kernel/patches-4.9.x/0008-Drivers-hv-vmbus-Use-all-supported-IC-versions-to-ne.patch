@@ -1,4 +1,4 @@
-From 08f47593269dd825e3df9acfccef9f986a7a7d98 Mon Sep 17 00:00:00 2001
+From 9494ca1930f51c5a2132cf00c2dd49f0aea7eac4 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 08/14] Drivers: hv: vmbus: Use all supported IC versions to
@@ -207,7 +207,7 @@ index 44420073edda..f1e0d0358206 100644
  		fcopy_msg = (struct hv_fcopy_hdr *)&recv_buffer[
  				sizeof(struct vmbuspipe_hdr) +
 diff --git a/drivers/hv/hv_kvp.c b/drivers/hv/hv_kvp.c
-index 5e1fdc8d32ab..70c28b8806de 100644
+index 2fd0f119a67b..820d4cd71fa9 100644
 --- a/drivers/hv/hv_kvp.c
 +++ b/drivers/hv/hv_kvp.c
 @@ -46,6 +46,19 @@
@@ -239,7 +239,7 @@ index 5e1fdc8d32ab..70c28b8806de 100644
  	int kvp_srv_version;
  	static enum {NEGO_NOT_STARTED,
  		     NEGO_IN_PROGRESS,
-@@ -639,28 +650,10 @@ void hv_kvp_onchannelcallback(void *context)
+@@ -640,28 +651,10 @@ void hv_kvp_onchannelcallback(void *context)
  			sizeof(struct vmbuspipe_hdr)];
  
  		if (icmsghdrp->icmsgtype == ICMSGTYPE_NEGOTIATE) {
