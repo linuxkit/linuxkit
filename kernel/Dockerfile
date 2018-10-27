@@ -175,9 +175,11 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
 # perf
-# Skip for 4.4.x (the compile is broken and tedious to fix) and 4.9.x (the
-# compile broke with 4.9.93)
-RUN if [ "${KERNEL_SERIES}" != "4.4.x" ] && [ "${KERNEL_SERIES}" != "4.9.x" ]; then \
+# Only build perf for the latest LTS and the latest stable kernel.
+# There were intermittent breakage for 4.4.x and 4.9.x on some arches
+# Skip arm64 for now as perf for 4.19 fails to build.
+RUN if [ \( "${KERNEL_SERIES}" == "4.14.x" || "${KERNEL_SERIES}" == "4.19.x" \) \
+         && $(uname -m) != aarch64 ]; then \
        mkdir -p /build/perf && \
        make -C tools/perf LDFLAGS=-static O=/build/perf && \
        strip /build/perf/perf && \
