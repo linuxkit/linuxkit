@@ -1,4 +1,4 @@
-FROM rust:1.25.0-stretch
+FROM rust:1.30.0-stretch
 
 ENV CROSVM_REPO=https://chromium.googlesource.com/chromiumos/platform/crosvm
 ENV CROSVM_COMMIT=7a7268faf0a43c79b6a4520f5c2f35c3e0233932
