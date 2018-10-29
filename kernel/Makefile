@@ -157,8 +157,10 @@ fetch: sources/linux-$(1).tar.xz
 # with DCT as part of the dependency on build_$(2)$(3)$(4) and then build
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
-ifneq ($(2), $(filter $(2),4.4.x 4.9.x))
-# perf does not build out of the box for 4.4.x and 4.9.x
+ifeq ($(2), $(filter $(2),4.14.x 4.19.x))
+# Only build perf for the latest LTS and the latest stable kernel.
+ifneq ($(ARCH),aarch64)
+# Skip arm64 for now as perf for 4.19 fails to build.
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
@@ -192,11 +194,12 @@ forcebuild: forcebuild_perf_$(2)$(3)$(4)
 push: push_perf_$(2)$(3)$(4)
 forcepush: forcepush_perf_$(2)$(3)$(4)
 endif
+endif
 
 # For BCC, only build on x86 and only on latest LTS and latest stable.
-# That's 4.14.x and 4.18.x at time of authorship.
+# That's 4.14.x and 4.19.x at time of authorship.
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),4.14.x 4.18.x))
+ifeq ($(2), $(filter $(2),4.14.x 4.19.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
@@ -259,6 +262,7 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
+$(eval $(call kernel,4.19,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.18.16,4.18.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.78,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.78,4.14.x,,-dbg))
@@ -267,12 +271,12 @@ $(eval $(call kernel,4.9.135,4.9.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.4.162,4.4.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
-$(eval $(call kernel,4.18.16,4.18.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.78,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.71,4.14.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
-$(eval $(call kernel,4.18.16,4.18.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.78,4.14.x,$(EXTRA),$(DEBUG)))
 endif
 
