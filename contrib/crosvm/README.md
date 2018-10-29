@@ -25,34 +25,14 @@ You may also have to create an empty directory `/var/empty`.
 ## Use with LinuxKit images
 
 You can build a LinuxKit image suitable for `crosvm` with the
-`kernel+squashfs` build format. For example, using this LinuxKit
-YAML file (`minimal.yml`):
-
-```
-kernel:
-  image: linuxkit/kernel:4.9.135
-  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
-init:
-  - linuxkit/init:6eb0158059b056a1567236280880cb87f03ff008
-  - linuxkit/runc:6cf26a0403376de3b5396cb676b88eea4f37aff8
-  - linuxkit/containerd:d955db7cd28dbd7be8a17d7063cc6b7f1bf91f0a
-services:
-  - name: getty
-    image: linuxkit/getty:v0.6
-    env:
-      - INSECURE=true
-trust:
-  org:
-    - linuxkit
-```
-
-run:
+`kernel+squashfs` build format. For example, using `minimal.yml` from
+the `./examples` directory, run:
 
 ```sh
-linuxkit build -output kernel+squashfs minimal.yml
+linuxkit build -format kernel+squashfs minimal.yml
 ```
 
-The kernel this produces (`minimal-kernel`) needs to be converted as
+The generated kernel file (`minimal-kernel`) needs to be converted as
 `crosvm` does not grok `bzImage`s. You can convert the LinuxKit kernel
 image with
 [extract-vmlinux](https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-vmlinux):
