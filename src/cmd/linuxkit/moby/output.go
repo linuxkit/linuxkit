@@ -370,24 +370,33 @@ func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline strin
 		if err := ioutil.WriteFile(base+"-initrd.img", ucode, os.FileMode(0644)); err != nil {
 			return err
 		}
-		f, err := os.OpenFile(base+"-initrd.img", os.O_APPEND|os.O_WRONLY, 0644)
-		if err != nil {
-			return err
-		}
-		defer f.Close()
-		if _, err = f.Write(initrd); err != nil {
-			return err
+		if len(initrd) != 0 {
+			f, err := os.OpenFile(base+"-initrd.img", os.O_APPEND|os.O_WRONLY, 0644)
+			if err != nil {
+				return err
+			}
+			defer f.Close()
+			if _, err = f.Write(initrd); err != nil {
+				return err
+			}
 		}
 	} else {
-		log.Infof("  %s %s %s", base+"-kernel", base+"-initrd.img", base+"-cmdline")
-		if err := ioutil.WriteFile(base+"-initrd.img", initrd, os.FileMode(0644)); err != nil {
+		if len(initrd) != 0 {
+			log.Infof("  %s %s %s", base+"-kernel", base+"-initrd.img", base+"-cmdline")
+			if err := ioutil.WriteFile(base+"-initrd.img", initrd, os.FileMode(0644)); err != nil {
+				return err
+			}
+		}
+	}
+	if len(kernel) != 0 {
+		if err := ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
 			return err
 		}
 	}
-	if err := ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
-		return err
+	if len(cmdline) != 0 {
+		return ioutil.WriteFile(base+"-cmdline", []byte(cmdline), os.FileMode(0644))
 	}
-	return ioutil.WriteFile(base+"-cmdline", []byte(cmdline), os.FileMode(0644))
+	return nil
 }
 
 func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdline string, ucode []byte) error {
@@ -399,41 +408,47 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	}
 	defer f.Close()
 	tw := tar.NewWriter(f)
-	hdr := &tar.Header{
-		Name:   "kernel",
-		Mode:   0644,
-		Size:   int64(len(kernel)),
-		Format: tar.FormatPAX,
+	if len(kernel) != 0 {
+		hdr := &tar.Header{
+			Name:   "kernel",
+			Mode:   0644,
+			Size:   int64(len(kernel)),
+			Format: tar.FormatPAX,
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if _, err := tw.Write(kernel); err != nil {
+			return err
+		}
 	}
-	if err := tw.WriteHeader(hdr); err != nil {
-		return err
+	if len(initrd) != 0 {
+		hdr := &tar.Header{
+			Name:   "initrd.img",
+			Mode:   0644,
+			Size:   int64(len(initrd)),
+			Format: tar.FormatPAX,
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if _, err := tw.Write(initrd); err != nil {
+			return err
+		}
 	}
-	if _, err := tw.Write(kernel); err != nil {
-		return err
-	}
-	hdr = &tar.Header{
-		Name:   "initrd.img",
-		Mode:   0644,
-		Size:   int64(len(initrd)),
-		Format: tar.FormatPAX,
-	}
-	if err := tw.WriteHeader(hdr); err != nil {
-		return err
-	}
-	if _, err := tw.Write(initrd); err != nil {
-		return err
-	}
-	hdr = &tar.Header{
-		Name:   "cmdline",
-		Mode:   0644,
-		Size:   int64(len(cmdline)),
-		Format: tar.FormatPAX,
-	}
-	if err := tw.WriteHeader(hdr); err != nil {
-		return err
-	}
-	if _, err := tw.Write([]byte(cmdline)); err != nil {
-		return err
+	if len(cmdline) != 0 {
+		hdr := &tar.Header{
+			Name:   "cmdline",
+			Mode:   0644,
+			Size:   int64(len(cmdline)),
+			Format: tar.FormatPAX,
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		if _, err := tw.Write([]byte(cmdline)); err != nil {
+			return err
+		}
 	}
 	if len(ucode) != 0 {
 		hdr := &tar.Header{
