@@ -11,6 +11,7 @@ config:
     - /usr/bin/runc:/usr/bin/runc
     - /containers:/containers
     - /var/log:/var/log
+    - /var/lib/containerd:/var/lib/containerd
     - /dev:/dev
     - /sys:/sys
   capabilities:

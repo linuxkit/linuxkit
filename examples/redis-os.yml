@@ -13,7 +13,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:v0.6
+    image: linuxkit/getty:2eb742cd7a68e14cf50577c02f30147bc406e478
     env:
      - INSECURE=true
   # Currently redis:4.0.6-alpine has trust issue with multi-arch
