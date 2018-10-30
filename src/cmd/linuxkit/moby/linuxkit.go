@@ -17,8 +17,8 @@ kernel:
   image: linuxkit/kernel:4.9.39
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:6eb0158059b056a1567236280880cb87f03ff008
-  - linuxkit/runc:6cf26a0403376de3b5396cb676b88eea4f37aff8
+  - linuxkit/init:c563953a2277eb73a89d89f70e4b6dcdcfebc2d1
+  - linuxkit/runc:83d0edb4552b1a5df1f0976f05f442829eac38fe
 onboot:
   - name: mkimage
     image: linuxkit/mkimage:v0.6
