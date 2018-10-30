@@ -1,4 +1,4 @@
-# linuxkit/alpine:4768505d40f23e198011b6f2c796f985fe50ec39-amd64
+# linuxkit/alpine:ace75d0ec6978762d445083d6c8c6336bdb658ed-amd64
 # automatically generated list of installed packages
 abuild-3.2.0-r0
 alpine-baselayout-3.1.0-r0
@@ -72,15 +72,15 @@ fortify-headers-0.9-r0
 fts-1.2.7-r1
 fts-dev-1.2.7-r1
 fuse-2.9.8-r0
-g++-6.4.0-r8
+g++-6.4.0-r9
 gc-7.6.4-r2
-gcc-6.4.0-r8
+gcc-6.4.0-r9
 gdbm-1.13-r1
 gettext-0.19.8.1-r2
 gettext-asprintf-0.19.8.1-r2
 gettext-dev-0.19.8.1-r2
 gettext-libs-0.19.8.1-r2
-git-2.18.0-r0
+git-2.18.1-r0
 glib-2.56.1-r0
 gmp-6.1.2-r1
 gmp-dev-6.1.2-r1
@@ -117,7 +117,7 @@ libaio-0.3.111-r0
 libarchive-3.3.2-r3
 libarchive-tools-3.3.2-r3
 libassuan-2.5.1-r0
-libatomic-6.4.0-r8
+libatomic-6.4.0-r9
 libatomic_ops-7.6.4-r0
 libattr-2.4.47-r7
 libblkid-2.32-r0
@@ -144,10 +144,10 @@ libexecinfo-1.1-r0
 libexecinfo-dev-1.1-r0
 libfdisk-2.32-r0
 libffi-3.2.1-r4
-libgcc-6.4.0-r8
+libgcc-6.4.0-r9
 libgcrypt-1.8.3-r0
 libgmpxx-6.1.2-r1
-libgomp-6.4.0-r8
+libgomp-6.4.0-r9
 libgpg-error-1.30-r0
 libintl-0.19.8.1-r2
 libisoburn-1.4.8-r0
@@ -160,6 +160,7 @@ libmagic-5.32-r0
 libmnl-1.0.4-r0
 libmount-2.32-r0
 libmspack-0.7.1_alpha-r0
+libnfsidmap-2.3.1-r4
 libnftnl-libs-1.1.1-r0
 libnl-1.1.4-r0
 libnl3-3.2.28-r1
@@ -178,7 +179,7 @@ libseccomp-dev-2.3.3-r1
 libsmartcols-2.32-r0
 libssh2-1.8.0-r3
 libssl1.0-1.0.2p-r0
-libstdc++-6.4.0-r8
+libstdc++-6.4.0-r9
 libtasn1-4.13-r0
 libtirpc-1.0.3-r0
 libtirpc-dev-1.0.3-r0
@@ -195,7 +196,7 @@ libxau-1.0.8-r2
 libxcb-1.13-r2
 libxdmcp-1.1.2-r4
 libxkbcommon-0.7.1-r1
-libxml2-2.9.8-r0
+libxml2-2.9.8-r1
 linux-headers-4.4.6-r2
 llvm5-5.0.1-r4
 llvm5-dev-5.0.1-r4
@@ -226,8 +227,8 @@ ncurses-libs-6.1_p20180818-r1
 ncurses-terminfo-6.1_p20180818-r1
 ncurses-terminfo-base-6.1_p20180818-r1
 nettle-3.4-r1
-nfs-utils-2.3.1-r3
-nfs-utils-openrc-2.3.1-r3
+nfs-utils-2.3.1-r4
+nfs-utils-openrc-2.3.1-r4
 nghttp2-libs-1.32.0-r0
 npth-1.5-r1
 oniguruma-6.8.2-r0
@@ -293,7 +294,7 @@ tar-1.30-r0
 tcl-8.6.7-r0
 tcpdump-4.9.2-r3
 tini-0.18.0-r0
-tzdata-2018d-r1
+tzdata-2018f-r0
 udev-init-scripts-32-r2
 udev-init-scripts-openrc-32-r2
 usbredir-0.7.1-r0
@@ -303,7 +304,7 @@ util-linux-dev-2.32-r0
 vde2-libs-2.3.2-r9
 vim-8.1.0115-r0
 wayland-libs-server-1.15.0-r0
-wireguard-tools-0.0.20180918-r0
+wireguard-tools-0.0.20181018-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.6-r14
 wpa_supplicant-openrc-2.6-r14

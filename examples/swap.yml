@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:4.14.78
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:6eb0158059b056a1567236280880cb87f03ff008
-  - linuxkit/runc:6cf26a0403376de3b5396cb676b88eea4f37aff8
-  - linuxkit/containerd:d955db7cd28dbd7be8a17d7063cc6b7f1bf91f0a
+  - linuxkit/init:c563953a2277eb73a89d89f70e4b6dcdcfebc2d1
+  - linuxkit/runc:83d0edb4552b1a5df1f0976f05f442829eac38fe
+  - linuxkit/containerd:326b096cd5fbab0f864e52721d036cade67599d6
   - linuxkit/ca-certificates:v0.6
 onboot:
   - name: sysctl
@@ -24,7 +24,7 @@ onboot:
     command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]
 services:
   - name: getty
-    image: linuxkit/getty:v0.6
+    image: linuxkit/getty:2eb742cd7a68e14cf50577c02f30147bc406e478
     env:
      - INSECURE=true
   - name: rngd
