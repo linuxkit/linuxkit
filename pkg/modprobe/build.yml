@@ -2,6 +2,7 @@ image: modprobe
 config:
   binds:
     - /lib/modules:/lib/modules
+    - /lib/firmware:/lib/firmware
     - /sys:/sys
   capabilities:
-    - CAP_SYS_MODULE
+    - all
