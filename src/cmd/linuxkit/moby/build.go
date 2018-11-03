@@ -257,6 +257,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 type kernelFilter struct {
 	tw          *tar.Writer
 	buffer      *bytes.Buffer
+	hdr         *tar.Header
 	cmdline     string
 	kernel      string
 	tar         string
@@ -288,6 +289,19 @@ func (k *kernelFilter) finishTar() error {
 	if k.buffer == nil {
 		return nil
 	}
+
+	if k.hdr != nil {
+		if err := k.tw.WriteHeader(k.hdr); err != nil {
+			return err
+		}
+		if _, err := k.tw.Write(k.buffer.Bytes()); err != nil {
+			return err
+		}
+		k.hdr = nil
+		k.buffer = nil
+		return nil
+	}
+
 	tr := tar.NewReader(k.buffer)
 	err := tarAppend(k.tw, tr)
 	k.buffer = nil
@@ -362,15 +376,14 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		if err != nil {
 			return err
 		}
-		whdr = &tar.Header{
+		// Stash the kernel header and prime the buffer for the kernel
+		k.hdr = &tar.Header{
 			Name:   "boot/kernel",
 			Mode:   hdr.Mode,
 			Size:   hdr.Size,
 			Format: tar.FormatPAX,
 		}
-		if err := tw.WriteHeader(whdr); err != nil {
-			return err
-		}
+		k.buffer = new(bytes.Buffer)
 	case k.tar:
 		k.foundKTar = true
 		k.discard = false
