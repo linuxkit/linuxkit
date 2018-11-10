@@ -142,7 +142,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 }
 
 // Build performs the actual build process
-func Build(m Moby, w io.Writer, pull bool, tp string) error {
+func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) error {
 	if MobyDir == "" {
 		MobyDir = defaultMobyConfigDir()
 	}
@@ -179,7 +179,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 	if m.Kernel.ref != nil {
 		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
-		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode)
+		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, decompressKernel)
 		err := ImageTar(m.Kernel.ref, "", kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "")
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
@@ -255,20 +255,21 @@ func Build(m Moby, w io.Writer, pull bool, tp string) error {
 
 // kernelFilter is a tar.Writer that transforms a kernel image into the output we want on underlying tar writer
 type kernelFilter struct {
-	tw          *tar.Writer
-	buffer      *bytes.Buffer
-	hdr         *tar.Header
-	cmdline     string
-	kernel      string
-	tar         string
-	ucode       string
-	discard     bool
-	foundKernel bool
-	foundKTar   bool
-	foundUCode  bool
+	tw               *tar.Writer
+	buffer           *bytes.Buffer
+	hdr              *tar.Header
+	cmdline          string
+	kernel           string
+	tar              string
+	ucode            string
+	decompressKernel bool
+	discard          bool
+	foundKernel      bool
+	foundKTar        bool
+	foundUCode       bool
 }
 
-func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar, ucode *string) *kernelFilter {
+func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar, ucode *string, decompressKernel bool) *kernelFilter {
 	tarName, kernelName, ucodeName := "kernel.tar", "kernel", ""
 	if tar != nil {
 		tarName = *tar
@@ -282,7 +283,7 @@ func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar, ucode *
 	if ucode != nil {
 		ucodeName = *ucode
 	}
-	return &kernelFilter{tw: tw, cmdline: cmdline, kernel: kernelName, tar: tarName, ucode: ucodeName}
+	return &kernelFilter{tw: tw, cmdline: cmdline, kernel: kernelName, tar: tarName, ucode: ucodeName, decompressKernel: decompressKernel}
 }
 
 func (k *kernelFilter) finishTar() error {
