@@ -3,6 +3,8 @@ package moby
 import (
 	"archive/tar"
 	"bytes"
+	"compress/gzip"
+	"encoding/binary"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -292,6 +294,16 @@ func (k *kernelFilter) finishTar() error {
 	}
 
 	if k.hdr != nil {
+		if k.decompressKernel {
+			log.Debugf("Decompressing kernel")
+			b, err := decompressKernel(k.buffer)
+			if err != nil {
+				return err
+			}
+			k.buffer = b
+			k.hdr.Size = int64(k.buffer.Len())
+		}
+
 		if err := k.tw.WriteHeader(k.hdr); err != nil {
 			return err
 		}
@@ -439,6 +451,85 @@ func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 		}
 	}
 	return nil
+}
+
+// Attempt to decompress a Linux kernel image
+// The kernel image can be a plain gzip'ed image (e.g., the LinuxKit arm64 kernel) or a bzImage (x86)
+// or not compressed at all (e.g., s390x). This function tries to detect the image type and decompress
+// the kernel. If no supported compressed kernel is found it returns an error.
+// For bzImages it performs some sanity checks on the header and currently only supports gzip'ed bzImages.
+func decompressKernel(src *bytes.Buffer) (*bytes.Buffer, error) {
+	const gzipMagic = "\037\213"
+
+	s := src.Bytes()
+
+	if bytes.HasPrefix(s, []byte(gzipMagic)) {
+		log.Debugf("Found gzip signature at offset: 0")
+		return gunzip(src)
+	}
+
+	// Check if it is a bzImage
+	// See: https://git.kernel.org/pub/scm/linux/kernel/git/torvalds/linux.git/tree/Documentation/x86/boot.txt
+	const bzMagicIdx = 0x1fe
+	const bzMagic = uint16(0xaa55)
+	const bzHeaderIdx = 0x202
+	const bzHeader = "HdrS"
+	const bzMinLen = 0x250 // Minimum length for the required 2.0.8+ header
+	if len(s) > bzMinLen &&
+		binary.LittleEndian.Uint16(s[bzMagicIdx:bzMagicIdx+2]) == bzMagic &&
+		bytes.HasPrefix(s[bzHeaderIdx:], []byte(bzHeader)) {
+
+		log.Debugf("Found bzImage Magic and Header")
+
+		const versionIdx = 0x206
+		const setupSectorsIdx = 0x1f1
+		const sectorSize = 512
+		const payloadIdx = 0x248
+		const payloadLengthIdx = 0x24c
+
+		// Check that the version is 2.08+
+		versionMajor := int(s[versionIdx])
+		versionMinor := int(s[versionIdx+1])
+		if versionMajor < 2 && versionMinor < 8 {
+			return nil, fmt.Errorf("Unsupported bzImage version: %d.%d", versionMajor, versionMinor)
+		}
+
+		setupSectors := uint32(s[setupSectorsIdx])
+		payloadOff := binary.LittleEndian.Uint32(s[payloadIdx : payloadIdx+4])
+		payloadLen := binary.LittleEndian.Uint32(s[payloadLengthIdx : payloadLengthIdx+4])
+		payloadOff += (setupSectors + 1) * sectorSize
+		log.Debugf("bzImage: Payload at Offset: %d Length: %d", payloadOff, payloadLen)
+
+		if len(s) < int(payloadOff+payloadLen) {
+			return nil, fmt.Errorf("Compressed bzImage payload exceeds size of image")
+		}
+
+		if bytes.HasPrefix(s[payloadOff:], []byte(gzipMagic)) {
+			log.Debugf("bzImage: gzip signature at offset: %d", payloadOff)
+			return gunzip(bytes.NewBuffer(s[payloadOff : payloadOff+payloadLen]))
+		}
+		// TODO(rn): Add more supported formats
+		return nil, fmt.Errorf("Unsupported bzImage payload format at offset %d", payloadOff)
+	}
+
+	return nil, fmt.Errorf("No compressed kernel or no supported format found")
+}
+
+func gunzip(src *bytes.Buffer) (*bytes.Buffer, error) {
+	dst := new(bytes.Buffer)
+
+	zr, err := gzip.NewReader(src)
+	if err != nil {
+		return nil, err
+	}
+
+	n, err := io.Copy(dst, zr)
+	if err != nil {
+		return nil, err
+	}
+
+	log.Debugf("gunzip'ed %d bytes", n)
+	return dst, nil
 }
 
 // this allows inserting metadata into a file in the image
