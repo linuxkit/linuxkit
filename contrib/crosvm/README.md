@@ -26,35 +26,29 @@ You may also have to create an empty directory `/var/empty`.
 
 You can build a LinuxKit image suitable for `crosvm` with the
 `kernel+squashfs` build format. For example, using `minimal.yml` from
-the `./examples` directory, run:
+the `./examples` directory, run (but also see the known issues):
 
 ```sh
-linuxkit build -format kernel+squashfs minimal.yml
+linuxkit build -format kernel+squashfs -decompress-kernel minimal.yml
 ```
 
-The generated kernel file (`minimal-kernel`) needs to be converted as
-`crosvm` does not grok `bzImage`s. You can convert the LinuxKit kernel
-image with
-[extract-vmlinux](https://raw.githubusercontent.com/torvalds/linux/master/scripts/extract-vmlinux):
-
-```sh
-extract-vmlinux minimal-kernel > minimal-vmlinux
-```
+The `-vmlinux` switch is needed since `crosvm` does not grok
+compressed linux kernel images.
 
 Then you can run `crosvm`:
 ```sh
-./crosvm run --seccomp-policy-dir=./seccomp/x86_64 \
+crosvm run --disable-sandbox \
     --root ./minimal-squashfs.img \
     --mem 2048 \
-    --multiprocess \
     --socket ./linuxkit-socket \
-    minimal-vmlinux
+    minimal-kernel
 ```
 
 ## Known issues
 
 - With 4.14.x, a `BUG_ON()` is hit in `drivers/base/driver.c`. 4.9.x
   kernels seem to work.
+- With the latest version, I don't seem to get a interactive console.
 - Networking does not yet work, so don't include a `onboot` `dhcpd` service.
 - `poweroff` from the command line does not work (crosvm does not seem
   to support ACPI). So to stop a VM you can use the control socket
