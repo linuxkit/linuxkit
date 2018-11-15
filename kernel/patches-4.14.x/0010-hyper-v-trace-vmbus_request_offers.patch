@@ -1,4 +1,4 @@
-From 1e52a959351efffefbbc3f8ddaccf49f483c4b76 Mon Sep 17 00:00:00 2001
+From c4c100ca3ff28db38043c3787e62adb4887f0598 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:08 -0700
 Subject: [PATCH 10/21] hyper-v: trace vmbus_request_offers()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 63ede57c0376..78d900d0709a 100644
+index a30963907f69..92faa2a589d7 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -1223,9 +1223,11 @@ int vmbus_request_offers(void)
+@@ -1227,9 +1227,11 @@ int vmbus_request_offers(void)
  
  	msg->msgtype = CHANNELMSG_REQUESTOFFERS;
  
