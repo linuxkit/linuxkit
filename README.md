@@ -21,10 +21,10 @@ LinuxKit currently supports the `x86_64`, `arm64`, and `s390x` architectures on 
 
 - [LinuxKit kubernetes](https://github.com/linuxkit/kubernetes) aims to build minimal and immutable Kubernetes images. (previously `projects/kubernetes` in this repository).
 - [LinuxKit LCOW](https://github.com/linuxkit/lcow) LinuxKit images and utilities for Microsoft's Linux Containers on Windows.
-- [LinuxKit Nix](https://github.com/nix-community/linuxkit-nix) aims to provide a Linux Nix VM for macOS.
 - [linux](https://github.com/linuxkit/linux) A copy of the Linux stable tree with branches LinuxKit kernels.
 - [virtsock](https://github.com/linuxkit/virtsock) A `go` library and test utilities for `virtio` and Hyper-V sockets.
 - [rtf](https://github.com/linuxkit/rtf) A regression test framework used for the LinuxKit CI tests (and other projects).
+- [homebrew](https://github.com/linuxkit/homebrew-linuxkit) Homebrew packages for the `linuxkit` tool.
 
 ## Getting Started
 
@@ -156,6 +156,10 @@ This is an open project without fixed judgements, open to the community to set t
 ## Development reports
 
 There are weekly [development reports](reports/) summarizing work carried out in the week.
+
+## Adopters
+
+We maintain an incomplete list of [adopters](adopters.md). Please open a PR if you are using LinuxKit in production or in your project, or both.
 
 ## FAQ
 
