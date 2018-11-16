@@ -6,6 +6,8 @@ _This list is currently under construction. Please add your use cases to this wi
 
 **_[Docker Desktop](https://www.docker.com/products/docker-desktop)_** - Docker Desktop for Mac and Windows uses LinuxKit to provide an embedded, invisible virtual machine in order to run Linux containers and to run Kubernetes. There are currently millions of active users.
 
+**_[TagHub](https://www.taghub.net)_** - TagHub is a SaaS product for doing asset management. We use LinuxKit to have small and secure linux nodes powering our multi-cloud infrastructure. TagHub is made by [Smart Management](http://www.smartm.no/).
+
 # Projects Using LinuxKit
 
 **_[LinuxKit Nix](https://github.com/nix-community/linuxkit-nix)_** aims to provide a Linux Nix VM for macOS.
