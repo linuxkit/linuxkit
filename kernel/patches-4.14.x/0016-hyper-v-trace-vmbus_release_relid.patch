@@ -1,4 +1,4 @@
-From efbd801ec49f25719b5efdc896586eb8259e1832 Mon Sep 17 00:00:00 2001
+From fd3fa4f78a038715bc94f7604e29319b983acb56 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:14 -0700
 Subject: [PATCH 16/21] hyper-v: trace vmbus_release_relid()
@@ -15,7 +15,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 21 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 78d900d0709a..a2caa521c536 100644
+index 92faa2a589d7..98f04a9fb4e7 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
 @@ -374,12 +374,15 @@ static void percpu_channel_deq(void *arg)

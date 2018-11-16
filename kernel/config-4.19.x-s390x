@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/s390 4.19.1 Kernel Configuration
+# Linux/s390 4.19.2 Kernel Configuration
 #
 
 #
@@ -3105,7 +3105,6 @@ CONFIG_CRYPTO_CHACHA20=y
 CONFIG_CRYPTO_SEED=y
 CONFIG_CRYPTO_SERPENT=y
 # CONFIG_CRYPTO_SM4 is not set
-# CONFIG_CRYPTO_SPECK is not set
 CONFIG_CRYPTO_TEA=y
 CONFIG_CRYPTO_TWOFISH=y
 CONFIG_CRYPTO_TWOFISH_COMMON=y
