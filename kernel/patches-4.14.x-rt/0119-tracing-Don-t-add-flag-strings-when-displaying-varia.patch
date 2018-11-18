@@ -1,4 +1,4 @@
-From 24e71c54e991d2cc91670e77e9238b1a99271e29 Mon Sep 17 00:00:00 2001
+From d9a119ca5a746c538efec299b1411c0487b89155 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Wed, 28 Mar 2018 15:10:54 -0500
 Subject: [PATCH 119/436] tracing: Don't add flag strings when displaying
@@ -36,5 +36,5 @@ index 85b032a04b29..9def33acb5eb 100644
  
  		if (flags_str) {
 -- 
-2.18.0
+2.19.1
 

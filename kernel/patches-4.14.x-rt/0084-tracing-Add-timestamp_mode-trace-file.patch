@@ -1,4 +1,4 @@
-From 2b2a746d15921b1ed320b025d4bf6c1221e4e460 Mon Sep 17 00:00:00 2001
+From 3dfea406486d3099fe0bfa0e357544a9def75e5b Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:41 -0600
 Subject: [PATCH 084/436] tracing: Add timestamp_mode trace file
@@ -141,5 +141,5 @@ index ffb67272b642..c358cae7461f 100644
  
  #if defined(CONFIG_TRACER_MAX_TRACE) || defined(CONFIG_HWLAT_TRACER)
 -- 
-2.18.0
+2.19.1
 

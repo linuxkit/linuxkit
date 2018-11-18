@@ -1,4 +1,4 @@
-From 89b2849af449b42e47dafe985a84ac4bcbc6384d Mon Sep 17 00:00:00 2001
+From 6dab11f738527eaafa13a122be1450a4b222e3a0 Mon Sep 17 00:00:00 2001
 From: "Wolfgang M. Reimer" <linuxball@gmail.com>
 Date: Tue, 21 Jul 2015 16:20:07 +0200
 Subject: [PATCH 246/436] locking: locktorture: Do NOT include rwlock.h
@@ -29,5 +29,5 @@ index 6dca260eeccf..5d01ac590d4c 100644
  #include <linux/rwsem.h>
  #include <linux/smp.h>
 -- 
-2.18.0
+2.19.1
 

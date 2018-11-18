@@ -1,4 +1,4 @@
-From f8c7783bf48cae5fe9d6e44e6f623c4234478631 Mon Sep 17 00:00:00 2001
+From 38a0764aec2b4dc34b2e14ddd557564842191134 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 28 Mar 2018 11:15:19 +0200
 Subject: [PATCH 204/436] posix-timers: move the rcu head out of the union
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 3 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/posix-timers.h b/include/linux/posix-timers.h
-index 672c4f32311e..4754eb4298b1 100644
+index 437a539898ae..de5c49b0dccf 100644
 --- a/include/linux/posix-timers.h
 +++ b/include/linux/posix-timers.h
 @@ -101,8 +101,8 @@ struct k_itimer {
@@ -34,10 +34,10 @@ index 672c4f32311e..4754eb4298b1 100644
  
  void run_posix_cpu_timers(struct task_struct *task);
 diff --git a/kernel/time/posix-timers.c b/kernel/time/posix-timers.c
-index f3371482fc6a..c5866984f12d 100644
+index 5cf8bf8eea89..5a59538f3d16 100644
 --- a/kernel/time/posix-timers.c
 +++ b/kernel/time/posix-timers.c
-@@ -471,7 +471,7 @@ static struct k_itimer * alloc_posix_timer(void)
+@@ -480,7 +480,7 @@ static struct k_itimer * alloc_posix_timer(void)
  
  static void k_itimer_rcu_free(struct rcu_head *head)
  {
@@ -46,7 +46,7 @@ index f3371482fc6a..c5866984f12d 100644
  
  	kmem_cache_free(posix_timers_cache, tmr);
  }
-@@ -488,7 +488,7 @@ static void release_posix_timer(struct k_itimer *tmr, int it_id_set)
+@@ -497,7 +497,7 @@ static void release_posix_timer(struct k_itimer *tmr, int it_id_set)
  	}
  	put_pid(tmr->it_pid);
  	sigqueue_free(tmr->sigq);
@@ -56,5 +56,5 @@ index f3371482fc6a..c5866984f12d 100644
  
  static int common_timer_create(struct k_itimer *new_timer)
 -- 
-2.18.0
+2.19.1
 

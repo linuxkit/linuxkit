@@ -1,4 +1,4 @@
-From 9730d1b3b15e6406b2863c2ede1c8d36a28d8a99 Mon Sep 17 00:00:00 2001
+From 08b2a09ec68d16c30b6039d5bbd6bbdcff655285 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 11:48:57 +0200
 Subject: [PATCH 404/436] md: disable bcache
@@ -36,5 +36,5 @@ index 4d200883c505..98b64ed5cb81 100644
  	Allows a block device to be used as cache for other devices; uses
  	a btree for indexing and the layout is optimized for SSDs.
 -- 
-2.18.0
+2.19.1
 

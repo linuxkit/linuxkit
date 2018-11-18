@@ -1,4 +1,4 @@
-From e42ee86a6c0aa18a93bd28ec274622be903a11ce Mon Sep 17 00:00:00 2001
+From fc4c954dfa38b6185e122f81c5036ffa1c1032fc Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:37 +0100
 Subject: [PATCH 011/436] iommu/amd: Remove the special case from
@@ -21,10 +21,10 @@ Signed-off-by: Joerg Roedel <jroedel@suse.de>
  1 file changed, 20 insertions(+), 14 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index 2cedb0caec73..fc23b89d2372 100644
+index 1bb09f1e5cd1..f1017cf37eb3 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
-@@ -3594,7 +3594,7 @@ static struct irq_remap_table *get_irq_table(u16 devid)
+@@ -3600,7 +3600,7 @@ static struct irq_remap_table *get_irq_table(u16 devid)
  	return table;
  }
  
@@ -33,7 +33,7 @@ index 2cedb0caec73..fc23b89d2372 100644
  {
  	struct irq_remap_table *table = NULL;
  	struct amd_iommu *iommu;
-@@ -3628,10 +3628,6 @@ static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
+@@ -3634,10 +3634,6 @@ static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
  	/* Initialize table spin-lock */
  	raw_spin_lock_init(&table->lock);
  
@@ -44,7 +44,7 @@ index 2cedb0caec73..fc23b89d2372 100644
  	table->table = kmem_cache_alloc(amd_iommu_irq_cache, GFP_ATOMIC);
  	if (!table->table) {
  		kfree(table);
-@@ -3646,12 +3642,6 @@ static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
+@@ -3652,12 +3648,6 @@ static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
  		memset(table->table, 0,
  		       (MAX_IRQS_PER_TABLE * (sizeof(u64) * 2)));
  
@@ -57,7 +57,7 @@ index 2cedb0caec73..fc23b89d2372 100644
  
  	irq_lookup_table[devid] = table;
  	set_dte_irq_entry(devid, table);
-@@ -3681,7 +3671,7 @@ static int alloc_irq_index(u16 devid, int count)
+@@ -3687,7 +3677,7 @@ static int alloc_irq_index(u16 devid, int count)
  	if (!iommu)
  		return -ENODEV;
  
@@ -66,7 +66,7 @@ index 2cedb0caec73..fc23b89d2372 100644
  	if (!table)
  		return -ENODEV;
  
-@@ -4100,10 +4090,26 @@ static int irq_remapping_alloc(struct irq_domain *domain, unsigned int virq,
+@@ -4106,10 +4096,26 @@ static int irq_remapping_alloc(struct irq_domain *domain, unsigned int virq,
  		return ret;
  
  	if (info->type == X86_IRQ_ALLOC_TYPE_IOAPIC) {
@@ -96,5 +96,5 @@ index 2cedb0caec73..fc23b89d2372 100644
  		index = alloc_irq_index(devid, nr_irqs);
  	}
 -- 
-2.18.0
+2.19.1
 

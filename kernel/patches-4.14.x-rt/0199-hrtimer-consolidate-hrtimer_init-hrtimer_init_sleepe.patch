@@ -1,4 +1,4 @@
-From 9ae4daaf9fd52dadc4ee790d952a19fb87a01ce2 Mon Sep 17 00:00:00 2001
+From e16e8bb40ae2d303c0562cb31b810a9a1a0623d3 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 4 Sep 2017 18:31:50 +0200
 Subject: [PATCH 199/436] hrtimer: consolidate hrtimer_init() +
@@ -19,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  6 files changed, 65 insertions(+), 30 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 49979c095f31..1bd1069c5d84 100644
+index eac444804736..5a572127c7af 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -2863,10 +2863,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
@@ -258,5 +258,5 @@ index 6e1e10ff433a..c1ae4075e0ed 100644
  			set_current_state(TASK_INTERRUPTIBLE);
  			hrtimer_start_expires(&t.timer, HRTIMER_MODE_ABS);
 -- 
-2.18.0
+2.19.1
 

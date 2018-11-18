@@ -1,4 +1,4 @@
-From 9c13bb88b9ad90d129054dfd429a01240434378b Mon Sep 17 00:00:00 2001
+From 9e51b1059e92e4ab52bb5b2142c4da92c0f83b70 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 1 Dec 2017 10:42:03 +0100
 Subject: [PATCH 356/436] arm*: disable NEON in kernel mode
@@ -133,5 +133,5 @@ index 34b4e3d46aab..ae055cdad8cf 100644
  		crc32_pmull_algs[1].update = crc32c_pmull_update;
  
 -- 
-2.18.0
+2.19.1
 

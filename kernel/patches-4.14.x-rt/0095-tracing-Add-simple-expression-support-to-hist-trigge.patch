@@ -1,4 +1,4 @@
-From 63c4765ded6dd1c2421b9f82c8e3ca55f708dfbf Mon Sep 17 00:00:00 2001
+From abe8b5676b0a285193017fdd3ef7074af9cf9144 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:52 -0600
 Subject: [PATCH 095/436] tracing: Add simple expression support to hist
@@ -630,5 +630,5 @@ index c6c24d6d2be8..d2f01f3f26e1 100644
  
  		if (hist_data->fields[i]->flags & HIST_FIELD_FL_HEX) {
 -- 
-2.18.0
+2.19.1
 

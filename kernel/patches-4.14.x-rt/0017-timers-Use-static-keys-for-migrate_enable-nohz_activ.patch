@@ -1,4 +1,4 @@
-From 58c7c7274188d6ddaaf5fbe9138fb3f12083d8cc Mon Sep 17 00:00:00 2001
+From fc8f8ce973783ece4cc7da38056fb4311f58b448 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:50 +0100
 Subject: [PATCH 017/436] timers: Use static keys for
@@ -121,7 +121,7 @@ index f8e1845aa464..4ac74dff59f0 100644
  
  DECLARE_PER_CPU(struct hrtimer_cpu_base, hrtimer_bases);
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index ea3c062e7e1c..7f924eba78da 100644
+index a8fa0a896b78..67e2b79b6a9b 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -1132,7 +1132,7 @@ static inline void tick_nohz_activate(struct tick_sched *ts, int mode)
@@ -283,5 +283,5 @@ index f17c76a1a05f..9b644e70b660 100644
  
  /*
 -- 
-2.18.0
+2.19.1
 

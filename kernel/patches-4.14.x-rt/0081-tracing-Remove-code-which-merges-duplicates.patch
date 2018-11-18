@@ -1,4 +1,4 @@
-From 4d7f182a1f16bcc40a8427cdfd76975bec8f7801 Mon Sep 17 00:00:00 2001
+From 5f47ca5ca3a4eafc8400b2796acc4489868826fc Mon Sep 17 00:00:00 2001
 From: Vedang Patel <vedang.patel@intel.com>
 Date: Mon, 15 Jan 2018 20:51:38 -0600
 Subject: [PATCH 081/436] tracing: Remove code which merges duplicates
@@ -198,5 +198,5 @@ index 5b5bbf8ae550..de57887c0670 100644
  	void			(*elt_clear)(struct tracing_map_elt *elt);
  	void			(*elt_init)(struct tracing_map_elt *elt);
 -- 
-2.18.0
+2.19.1
 

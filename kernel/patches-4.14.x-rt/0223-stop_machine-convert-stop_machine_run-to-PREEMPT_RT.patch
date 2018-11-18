@@ -1,4 +1,4 @@
-From 341d00e95164f9dc45f7773b018cd67b239f5653 Mon Sep 17 00:00:00 2001
+From b323ce3cc2f7068302a6fb548f371d4180bae5e2 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:30:27 -0500
 Subject: [PATCH 223/436] stop_machine: convert stop_machine_run() to
@@ -37,5 +37,5 @@ index 067cb83f37ea..f8d1ae9ed7be 100644
  		preempt_count_inc();
  		ret = fn(arg);
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 8311f5e0eb9c3ed043538f6513299c6140b1c28e Mon Sep 17 00:00:00 2001
+From 68c2c1e228e2efebb161158734459a087d0428a0 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:58 -0600
 Subject: [PATCH 101/436] tracing: Add support for 'synthetic' events
@@ -1043,5 +1043,5 @@ index e5fea3cf60e9..ababc289835c 100644
 +
 +fs_initcall(trace_events_hist_init);
 -- 
-2.18.0
+2.19.1
 

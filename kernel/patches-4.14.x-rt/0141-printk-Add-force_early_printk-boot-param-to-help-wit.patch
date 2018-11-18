@@ -1,4 +1,4 @@
-From bfac03611e27998e340d9bdee3a11f175ae9bc81 Mon Sep 17 00:00:00 2001
+From 268db007a6d5215a7a8aa64941be10626c368277 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 2 Sep 2011 14:41:29 +0200
 Subject: [PATCH 141/436] printk: Add "force_early_printk" boot param to help
@@ -34,5 +34,5 @@ index f0855cecec9d..a24e16bef51c 100644
  {
  	printk_killswitch = true;
 -- 
-2.18.0
+2.19.1
 

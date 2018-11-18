@@ -1,4 +1,4 @@
-From 4688b96e542994bb3e897438590c391fc0e4359d Mon Sep 17 00:00:00 2001
+From 4fa7ca397a998e2ac319cc099b38843026303b8e Mon Sep 17 00:00:00 2001
 From: Bogdan Purcareata <bogdan.purcareata@freescale.com>
 Date: Fri, 24 Apr 2015 15:53:13 +0000
 Subject: [PATCH 334/436] powerpc/kvm: Disable in-kernel MPIC emulation for
@@ -40,5 +40,5 @@ index 648160334abf..9d24331fc9b4 100644
  	select HAVE_KVM_IRQFD
  	select HAVE_KVM_IRQ_ROUTING
 -- 
-2.18.0
+2.19.1
 

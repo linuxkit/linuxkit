@@ -1,4 +1,4 @@
-From 4aad92ddb789710e332ad322e51ae6ef1b7e1027 Mon Sep 17 00:00:00 2001
+From f89499735c61ddd6fa0fc737120053307d195daa Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:41 +0100
 Subject: [PATCH 015/436] iommu/amd: Make amd_iommu_devtable_lock a spin_lock
@@ -20,7 +20,7 @@ Signed-off-by: Joerg Roedel <jroedel@suse.de>
  1 file changed, 7 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index 8b6e515b395e..f685026e6d9e 100644
+index c9e703260324..67008031537a 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
 @@ -81,7 +81,7 @@
@@ -32,7 +32,7 @@ index 8b6e515b395e..f685026e6d9e 100644
  static DEFINE_SPINLOCK(pd_bitmap_lock);
  static DEFINE_SPINLOCK(iommu_table_lock);
  
-@@ -2086,9 +2086,9 @@ static int attach_device(struct device *dev,
+@@ -2092,9 +2092,9 @@ static int attach_device(struct device *dev,
  	}
  
  skip_ats_check:
@@ -44,7 +44,7 @@ index 8b6e515b395e..f685026e6d9e 100644
  
  	/*
  	 * We might boot into a crash-kernel here. The crashed kernel
-@@ -2138,9 +2138,9 @@ static void detach_device(struct device *dev)
+@@ -2144,9 +2144,9 @@ static void detach_device(struct device *dev)
  	domain   = dev_data->domain;
  
  	/* lock device table */
@@ -56,7 +56,7 @@ index 8b6e515b395e..f685026e6d9e 100644
  
  	if (!dev_is_pci(dev))
  		return;
-@@ -2804,7 +2804,7 @@ static void cleanup_domain(struct protection_domain *domain)
+@@ -2810,7 +2810,7 @@ static void cleanup_domain(struct protection_domain *domain)
  	struct iommu_dev_data *entry;
  	unsigned long flags;
  
@@ -65,7 +65,7 @@ index 8b6e515b395e..f685026e6d9e 100644
  
  	while (!list_empty(&domain->dev_list)) {
  		entry = list_first_entry(&domain->dev_list,
-@@ -2812,7 +2812,7 @@ static void cleanup_domain(struct protection_domain *domain)
+@@ -2818,7 +2818,7 @@ static void cleanup_domain(struct protection_domain *domain)
  		__detach_device(entry);
  	}
  
@@ -75,5 +75,5 @@ index 8b6e515b395e..f685026e6d9e 100644
  
  static void protection_domain_free(struct protection_domain *domain)
 -- 
-2.18.0
+2.19.1
 

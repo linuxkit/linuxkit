@@ -1,4 +1,4 @@
-From 29cdcdda3c1bdb680aac26a93d7ab0990b43bd92 Mon Sep 17 00:00:00 2001
+From 3062a89af94d8d70f3c044733bc906f51e195a69 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:15 +0100
 Subject: [PATCH 040/436] hrtimer: Add clock bases and hrtimer mode for soft
@@ -114,5 +114,5 @@ index 86cdc9a76911..b5121845d12c 100644
  };
  
 -- 
-2.18.0
+2.19.1
 

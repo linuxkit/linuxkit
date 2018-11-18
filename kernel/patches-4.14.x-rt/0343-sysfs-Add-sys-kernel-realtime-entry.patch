@@ -1,4 +1,4 @@
-From 4cc4307d4c9fa713e22408c13e3844efd697282c Mon Sep 17 00:00:00 2001
+From e1f52947793cb183b2578454e7cd34a722fc7724 Mon Sep 17 00:00:00 2001
 From: Clark Williams <williams@redhat.com>
 Date: Sat, 30 Jul 2011 21:55:53 -0500
 Subject: [PATCH 343/436] sysfs: Add /sys/kernel/realtime entry
@@ -49,5 +49,5 @@ index 46ba853656f6..9a23632b6294 100644
  	NULL
  };
 -- 
-2.18.0
+2.19.1
 

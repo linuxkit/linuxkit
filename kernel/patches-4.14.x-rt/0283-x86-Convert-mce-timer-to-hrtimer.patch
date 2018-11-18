@@ -1,4 +1,4 @@
-From 855154f5a7ee72cc9447bd0f1026d7b74c720d6e Mon Sep 17 00:00:00 2001
+From 5d05025d505d55d57a1129d2a463dd83a0b8735c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 13 Dec 2010 16:33:39 +0100
 Subject: [PATCH 283/436] x86: Convert mce timer to hrtimer
@@ -169,5 +169,5 @@ index 98e4e4dc4a3b..5cce2ee3b9f6 100644
  	mce_device_remove(cpu);
  	return 0;
 -- 
-2.18.0
+2.19.1
 

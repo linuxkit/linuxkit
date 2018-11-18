@@ -1,4 +1,4 @@
-From e293b7f54335f04a0aade401d90d39246e44bf1f Mon Sep 17 00:00:00 2001
+From 94963b7c1d982329242d90784866c528e1bdfa71 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 15 Apr 2015 19:00:47 +0200
 Subject: [PATCH 181/436] slub: Disable SLUB_CPU_PARTIAL
@@ -49,5 +49,5 @@ index 0fa1ade4351a..bec5b4b82585 100644
  	help
  	  Per cpu partial caches accellerate objects allocation and freeing
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 06ffc346d257f203c1b00a007133731cc603f1bf Mon Sep 17 00:00:00 2001
+From b2cea7d5b1270d58fa55fbe45765a377ad695ca4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
 Subject: [PATCH 123/436] timekeeping: Split jiffies seqlock
@@ -76,7 +76,7 @@ index 49edc1c4f3e6..7f5a26c3a8ee 100644
  		clockevents_switch_state(dev, CLOCK_EVT_STATE_ONESHOT);
  
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 7f924eba78da..542817a88618 100644
+index 67e2b79b6a9b..296b623ba045 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -66,7 +66,8 @@ static void tick_do_update_jiffies64(ktime_t now)
@@ -166,5 +166,5 @@ index c9f9af339914..0c0f52bf1927 100644
  #define CS_NAME_LEN	32
  
 -- 
-2.18.0
+2.19.1
 

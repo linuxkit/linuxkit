@@ -1,4 +1,4 @@
-From 86540f637a6359cb3e73f68e6d15414e1bd75658 Mon Sep 17 00:00:00 2001
+From e29fa4fd3cfb37cae8574b3627ecf35c37d15dfb Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:11 +0100
 Subject: [PATCH 036/436] hrtimer: Remove base argument from
@@ -52,5 +52,5 @@ index 1b2866645c83..9030dcb3ef14 100644
  	unlock_hrtimer_base(timer, &flags);
  }
 -- 
-2.18.0
+2.19.1
 

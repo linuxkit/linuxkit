@@ -1,4 +1,4 @@
-From b682676b3ec0ca18ff4fea4e67b618e5e043d827 Mon Sep 17 00:00:00 2001
+From 3f45b3cc684df54e7296b275ab4d3ab90172f705 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:53 +0100
 Subject: [PATCH 020/436] hrtimer: Cleanup clock argument in
@@ -84,5 +84,5 @@ index 65543d31af32..790841b59433 100644
   * Make the current task sleep until the given expiry time has
   * elapsed. The routine will return immediately unless
 -- 
-2.18.0
+2.19.1
 

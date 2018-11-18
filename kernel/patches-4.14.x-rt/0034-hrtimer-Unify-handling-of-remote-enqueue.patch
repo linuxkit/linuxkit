@@ -1,4 +1,4 @@
-From 337756a4678c4e1267a8c3ec1748a7b422763d5a Mon Sep 17 00:00:00 2001
+From 3daee0ac6328e6204b9195b261e8fadf0bc18122 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:09 +0100
 Subject: [PATCH 034/436] hrtimer: Unify handling of remote enqueue
@@ -154,5 +154,5 @@ index 9b644e70b660..3b6c7e287f23 100644
  
  static unsigned long round_jiffies_common(unsigned long j, int cpu,
 -- 
-2.18.0
+2.19.1
 

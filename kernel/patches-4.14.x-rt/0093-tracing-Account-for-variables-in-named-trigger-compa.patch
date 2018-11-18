@@ -1,4 +1,4 @@
-From 21bba4cd569aac8f28019dc244353d4dad2421f1 Mon Sep 17 00:00:00 2001
+From d2782b77fdc5d9f238ba186f8c408a9cd5f75576 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:50 -0600
 Subject: [PATCH 093/436] tracing: Account for variables in named trigger
@@ -47,5 +47,5 @@ index b4301542bb4a..68ff2491edd0 100644
  
  	for (i = 0; i < hist_data->n_sort_keys; i++) {
 -- 
-2.18.0
+2.19.1
 

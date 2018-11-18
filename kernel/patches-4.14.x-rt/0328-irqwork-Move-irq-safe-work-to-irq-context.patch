@@ -1,4 +1,4 @@
-From f32be76d851fe341853ba04626414fbe4dab2d13 Mon Sep 17 00:00:00 2001
+From bff2a2c94668887ade3eb1066fce7b55c52ee4ea Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 15 Nov 2015 18:40:17 +0100
 Subject: [PATCH 328/436] irqwork: Move irq safe work to irq context
@@ -83,5 +83,5 @@ index 2362b03051aa..ea742b49bdb5 100644
  	if (IS_ENABLED(CONFIG_NO_HZ_COMMON))
  		__run_timers(this_cpu_ptr(&timer_bases[BASE_DEF]));
 -- 
-2.18.0
+2.19.1
 

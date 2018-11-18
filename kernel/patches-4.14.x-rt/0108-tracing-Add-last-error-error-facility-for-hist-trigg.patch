@@ -1,4 +1,4 @@
-From 91942db4680ce1622cc68cbc3dff8401b648990a Mon Sep 17 00:00:00 2001
+From 875365c2c5a870265396449d1858494b4783b022 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:05 -0600
 Subject: [PATCH 108/436] tracing: Add 'last error' error facility for hist
@@ -506,5 +506,5 @@ index c8cfc56ff3ae..3856f173559a 100644
   out_unreg:
  	cmd_ops->unreg(glob+1, trigger_ops, trigger_data, file);
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From e046c1bbfa59dda624291a952688b2a6e85fd52d Mon Sep 17 00:00:00 2001
+From 6002bb81c493f6ec7d1937f94a445ed432d9b83b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
 Subject: [PATCH 381/436] sched: Add support for lazy preemption
@@ -400,10 +400,10 @@ index d3369a9bd607..6952b7765bde 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 4388c2b26f70..36ef77839be4 100644
+index a2421b2564b9..13a6f2f6bcf2 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -3840,7 +3840,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
+@@ -3842,7 +3842,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
  	ideal_runtime = sched_slice(cfs_rq, curr);
  	delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
  	if (delta_exec > ideal_runtime) {
@@ -412,7 +412,7 @@ index 4388c2b26f70..36ef77839be4 100644
  		/*
  		 * The current task ran long enough, ensure it doesn't get
  		 * re-elected due to buddy favours.
-@@ -3864,7 +3864,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
+@@ -3866,7 +3866,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
  		return;
  
  	if (delta > ideal_runtime)
@@ -421,7 +421,7 @@ index 4388c2b26f70..36ef77839be4 100644
  }
  
  static void
-@@ -4006,7 +4006,7 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
+@@ -4008,7 +4008,7 @@ entity_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr, int queued)
  	 * validating it and just reschedule.
  	 */
  	if (queued) {
@@ -430,7 +430,7 @@ index 4388c2b26f70..36ef77839be4 100644
  		return;
  	}
  	/*
-@@ -4188,7 +4188,7 @@ static void __account_cfs_rq_runtime(struct cfs_rq *cfs_rq, u64 delta_exec)
+@@ -4190,7 +4190,7 @@ static void __account_cfs_rq_runtime(struct cfs_rq *cfs_rq, u64 delta_exec)
  	 * hierarchy can be throttled
  	 */
  	if (!assign_cfs_rq_runtime(cfs_rq) && likely(cfs_rq->curr))
@@ -439,7 +439,7 @@ index 4388c2b26f70..36ef77839be4 100644
  }
  
  static __always_inline
-@@ -4837,7 +4837,7 @@ static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
+@@ -4839,7 +4839,7 @@ static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
  
  		if (delta < 0) {
  			if (rq->curr == p)
@@ -448,7 +448,7 @@ index 4388c2b26f70..36ef77839be4 100644
  			return;
  		}
  		hrtick_start(rq, delta);
-@@ -6231,7 +6231,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
+@@ -6233,7 +6233,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
  	return;
  
  preempt:
@@ -457,7 +457,7 @@ index 4388c2b26f70..36ef77839be4 100644
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -9085,7 +9085,7 @@ static void task_fork_fair(struct task_struct *p)
+@@ -9087,7 +9087,7 @@ static void task_fork_fair(struct task_struct *p)
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -466,7 +466,7 @@ index 4388c2b26f70..36ef77839be4 100644
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -9109,7 +9109,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
+@@ -9111,7 +9111,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
@@ -647,5 +647,5 @@ index dfbe55f3e6ac..74a4bfc2c6b7 100644
  		trace_seq_printf(s, "%x", entry->migrate_disable);
  	else
 -- 
-2.18.0
+2.19.1
 

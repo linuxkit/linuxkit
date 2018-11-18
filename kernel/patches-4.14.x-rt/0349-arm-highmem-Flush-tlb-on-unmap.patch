@@ -1,4 +1,4 @@
-From e69706fcb97f7634079636e68a0620a2772c3931 Mon Sep 17 00:00:00 2001
+From 693bce5b99d6db6c97a08aec94807e97af49692c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 11 Mar 2013 21:37:27 +0100
 Subject: [PATCH 349/436] arm/highmem: Flush tlb on unmap
@@ -29,5 +29,5 @@ index d02f8187b1cc..eb4b225d28c9 100644
  	} else if (vaddr >= PKMAP_ADDR(0) && vaddr < PKMAP_ADDR(LAST_PKMAP)) {
  		/* this address was obtained through kmap_high_get() */
 -- 
-2.18.0
+2.19.1
 

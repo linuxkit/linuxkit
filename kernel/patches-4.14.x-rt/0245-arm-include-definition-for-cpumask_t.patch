@@ -1,4 +1,4 @@
-From b53a15837cf37ad948eba435e7dc9c8426c98318 Mon Sep 17 00:00:00 2001
+From ec69d1b40f568fab4a0faafd5ee35ba5b600e19a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Dec 2016 17:28:33 +0100
 Subject: [PATCH 245/436] arm: include definition for cpumask_t
@@ -26,5 +26,5 @@ index b6f319606e30..ad377ef73739 100644
  struct pt_regs;
  extern void migrate_irqs(void);
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 1de00b17a8bb4b23243dc5930921881b4296ae6d Mon Sep 17 00:00:00 2001
+From a220113cd1c9f57fc5d45e5ea5c449f6240dc2de Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:18 +0100
 Subject: [PATCH 043/436] hrtimer: Implement SOFT/HARD clock base selection
@@ -57,5 +57,5 @@ index 66d7a12d7256..9947480ad731 100644
  void hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
  		  enum hrtimer_mode mode)
 -- 
-2.18.0
+2.19.1
 

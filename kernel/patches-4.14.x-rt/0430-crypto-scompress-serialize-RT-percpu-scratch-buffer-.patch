@@ -1,4 +1,4 @@
-From e992ad0ed46854501a59cf8092d03837b58333e5 Mon Sep 17 00:00:00 2001
+From 8d2810744e9411139258f78334757248d0d60dcc Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Wed, 11 Jul 2018 17:14:47 +0200
 Subject: [PATCH 430/436] crypto: scompress - serialize RT percpu scratch
@@ -81,5 +81,5 @@ index 2075e2c4e7df..c6b4e265c6bf 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

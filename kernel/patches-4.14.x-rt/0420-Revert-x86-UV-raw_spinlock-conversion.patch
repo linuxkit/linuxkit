@@ -1,4 +1,4 @@
-From bc96d730eef865ced4e04e278d31d891a3efd8b9 Mon Sep 17 00:00:00 2001
+From 60f51e3db19e151b853a63a15aba95042fd744c4 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 18 Jun 2018 10:34:34 +0200
 Subject: [PATCH 420/436] Revert "x86: UV: raw_spinlock conversion"
@@ -252,5 +252,5 @@ index badf377efc21..b082d71b08ee 100644
  
  /*
 -- 
-2.18.0
+2.19.1
 

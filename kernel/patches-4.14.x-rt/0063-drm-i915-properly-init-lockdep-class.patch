@@ -1,4 +1,4 @@
-From 6d523149511531f634b7c752df093241b19fec8b Mon Sep 17 00:00:00 2001
+From 549a18db1dde0ebb994070cf7eebbd74eacbb8b2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 30 Nov 2017 16:06:13 +0100
 Subject: [PATCH 063/436] drm/i915: properly init lockdep class
@@ -33,5 +33,5 @@ index c597ce277a04..c1108d3921f8 100644
  	INIT_LIST_HEAD(&tl->requests);
  	i915_syncmap_init(&tl->sync);
 -- 
-2.18.0
+2.19.1
 

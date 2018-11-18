@@ -1,4 +1,4 @@
-From 374e2f89e2fe61609a18ff316adfe42aeab70840 Mon Sep 17 00:00:00 2001
+From eef7d771c2194d81bffe450ec81eed252987ad25 Mon Sep 17 00:00:00 2001
 From: Rajvi Jingar <rajvi.jingar@intel.com>
 Date: Mon, 15 Jan 2018 20:52:11 -0600
 Subject: [PATCH 117/436] selftests: ftrace: Add inter-event hist triggers
@@ -465,5 +465,5 @@ index 000000000000..cef11377dcbd
 +
 +exit 0
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 54988812fdbf6c348138bee0f711df0c82ecc8c2 Mon Sep 17 00:00:00 2001
+From e5bfcf6dd1cd4acb24122db4998de421bb977ff6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 29 Jun 2011 11:01:51 +0200
 Subject: [PATCH 224/436] stop_machine: Use raw spinlocks
@@ -32,5 +32,5 @@ index f8d1ae9ed7be..56f2f2e01229 100644
  		/* cpu stop callbacks must not sleep, make in_atomic() == T */
  		preempt_count_inc();
 -- 
-2.18.0
+2.19.1
 

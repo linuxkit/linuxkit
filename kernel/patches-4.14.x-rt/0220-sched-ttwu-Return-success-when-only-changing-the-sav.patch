@@ -1,4 +1,4 @@
-From 6a583ff9a2304dfdb230487e590156e603fa64fd Mon Sep 17 00:00:00 2001
+From b21238fe2ff32ee340b683d6e77a7d84739e86bb Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 13 Dec 2011 21:42:19 +0100
 Subject: [PATCH 220/436] sched: ttwu: Return success when only changing the
@@ -36,5 +36,5 @@ index d1317216d326..dcbb3a4c2f53 100644
  		goto out;
  	}
 -- 
-2.18.0
+2.19.1
 

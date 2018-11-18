@@ -1,4 +1,4 @@
-From 1f0f50b1a21c7aeff7eadba417ed0b572fb10ca5 Mon Sep 17 00:00:00 2001
+From 5ca937656167a21fece6acbddd6ea557dfe5a31a Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:01 -0600
 Subject: [PATCH 104/436] tracing: Add 'onmax' hist trigger action support
@@ -488,5 +488,5 @@ index 34be7af7cc1f..0803b843623c 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

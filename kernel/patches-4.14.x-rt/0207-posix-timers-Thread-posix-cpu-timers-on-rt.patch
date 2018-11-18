@@ -1,4 +1,4 @@
-From 0455459f4a74351dec41e1b138725a3e39b1f328 Mon Sep 17 00:00:00 2001
+From 51149599ab9bc5e67d95cca689ec071477ac4c6b Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
 Subject: [PATCH 207/436] posix-timers: Thread posix-cpu-timers on -rt
@@ -71,7 +71,7 @@ index c66167f0bba6..d7f20bdbb465 100644
  	tsk->cputime_expires.virt_exp = 0;
  	tsk->cputime_expires.sched_exp = 0;
 diff --git a/kernel/time/posix-cpu-timers.c b/kernel/time/posix-cpu-timers.c
-index 5b117110b55b..47d063c4ed03 100644
+index 2da660d53a4b..c7b7d047d12e 100644
 --- a/kernel/time/posix-cpu-timers.c
 +++ b/kernel/time/posix-cpu-timers.c
 @@ -3,8 +3,10 @@
@@ -281,5 +281,5 @@ index 5b117110b55b..47d063c4ed03 100644
   * Set one of the process-wide special case CPU timers or RLIMIT_CPU.
   * The tsk->sighand->siglock must be held by the caller.
 -- 
-2.18.0
+2.19.1
 

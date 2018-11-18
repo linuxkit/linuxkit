@@ -1,4 +1,4 @@
-From 3f56589950fd3e0bbf4632e322559de1fe74d47b Mon Sep 17 00:00:00 2001
+From d68dfba4a8e4ef220769d9ae2040e09f8a67fa3d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 11:39:36 +0200
 Subject: [PATCH 290/436] mm/vmalloc: Another preempt disable region which
@@ -68,5 +68,5 @@ index 9ff21a12ea00..95c83b291548 100644
  
  	/* Allocate new block if nothing was found */
 -- 
-2.18.0
+2.19.1
 

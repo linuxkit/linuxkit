@@ -1,4 +1,4 @@
-From 9ea017f18144160c0200c067e43eecf8e16cb3ed Mon Sep 17 00:00:00 2001
+From 1220b7ab5f325a287e78f9ec5fe3ba356358a600 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Sun, 19 Aug 2018 08:28:35 +0200
 Subject: [PATCH 433/436] sched: Allow pinned user tasks to be awakened to the
@@ -36,5 +36,5 @@ index a5ce37b90fca..6e6bd5262f23 100644
  
  	return cpu_active(cpu);
 -- 
-2.18.0
+2.19.1
 

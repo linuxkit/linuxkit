@@ -1,4 +1,4 @@
-From d648f2f70bab7ea86e9ac5cbad0645707d2f0e00 Mon Sep 17 00:00:00 2001
+From fbbb3ccda99c98910ecf47f94b3a36a532497846 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Thu, 26 Apr 2018 20:04:48 -0500
 Subject: [PATCH 409/436] tracing: Add field parsing hist error for hist
@@ -49,5 +49,5 @@ index b8fee11b5be9..9dac8bae4f34 100644
  			goto out;
  		}
 -- 
-2.18.0
+2.19.1
 

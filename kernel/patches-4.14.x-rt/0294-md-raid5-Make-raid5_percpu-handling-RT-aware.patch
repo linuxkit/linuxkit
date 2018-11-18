@@ -1,4 +1,4 @@
-From 85fb99aa8be17469fcec1beab0a189ac3038beae Mon Sep 17 00:00:00 2001
+From 46df0e08c3b13b73127a72231fc5421ee8cdd4e6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 6 Apr 2010 16:51:31 +0200
 Subject: [PATCH 294/436] md: raid5: Make raid5_percpu handling RT aware
@@ -19,7 +19,7 @@ Tested-by: Udo van den Heuvel <udovdh@xs4all.nl>
  2 files changed, 6 insertions(+), 3 deletions(-)
 
 diff --git a/drivers/md/raid5.c b/drivers/md/raid5.c
-index 5018fb2352c2..e41586b1a02e 100644
+index dbf51b4c21b3..dd0c17736633 100644
 --- a/drivers/md/raid5.c
 +++ b/drivers/md/raid5.c
 @@ -2067,8 +2067,9 @@ static void raid_run_ops(struct stripe_head *sh, unsigned long ops_request)
@@ -72,5 +72,5 @@ index 2e6123825095..37a6021418a2 100644
  		struct flex_array *scribble;   /* space for constructing buffer
  					      * lists and performing address
 -- 
-2.18.0
+2.19.1
 

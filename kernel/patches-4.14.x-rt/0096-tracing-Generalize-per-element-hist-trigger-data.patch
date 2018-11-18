@@ -1,4 +1,4 @@
-From 4f3e76bd3081f635b560189c3e2ec27a11c0b9e8 Mon Sep 17 00:00:00 2001
+From 1fa62aedf355bf31958cfd401a0a1185e009e0c5 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:53 -0600
 Subject: [PATCH 096/436] tracing: Generalize per-element hist trigger data
@@ -160,5 +160,5 @@ index d2f01f3f26e1..893f65ce31a5 100644
  			uval = *(u64 *)(key + key_field->offset);
  			seq_printf(m, "%s: %-16s[%10llu]", field_name,
 -- 
-2.18.0
+2.19.1
 

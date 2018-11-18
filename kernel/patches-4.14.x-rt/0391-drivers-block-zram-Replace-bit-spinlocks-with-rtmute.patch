@@ -1,4 +1,4 @@
-From d36f43161cf9e7ac16b6bbd46f2b1f7dea2ab4d9 Mon Sep 17 00:00:00 2001
+From dc92194cc802a5c5cf948a5387d5a0f81c5ac3b5 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
 Subject: [PATCH 391/436] drivers/block/zram: Replace bit spinlocks with
@@ -80,5 +80,5 @@ index 31762db861e3..a417c96b8f3f 100644
  
  struct zram_stats {
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 48eebfef85769020e955db3ca24374296fe1e73e Mon Sep 17 00:00:00 2001
+From ba2ce34398180bcdd5d8a2b7c8c8edc0bf5fd565 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:59 +0100
 Subject: [PATCH 024/436] hrtimer: Switch for loop to _ffs() evaluation
@@ -86,5 +86,5 @@ index 476fe683e8ed..85f9335d0d60 100644
  
  		while ((node = timerqueue_getnext(&base->active))) {
 -- 
-2.18.0
+2.19.1
 

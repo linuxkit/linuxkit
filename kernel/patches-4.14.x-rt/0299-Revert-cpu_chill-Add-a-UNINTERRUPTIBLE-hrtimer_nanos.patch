@@ -1,4 +1,4 @@
-From 5bf816344129ba05afd6a87fc2fd127c11cec3c6 Mon Sep 17 00:00:00 2001
+From 55aebb70d0c96287f0139b5fecbbce900421daba Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Mar 2018 15:04:49 +0100
 Subject: [PATCH 299/436] Revert "cpu_chill: Add a UNINTERRUPTIBLE
@@ -76,5 +76,5 @@ index c0efc22ba635..ce2c2d04cbaa 100644
  		struct timespec __user *, rmtp)
  {
 -- 
-2.18.0
+2.19.1
 

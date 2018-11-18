@@ -1,4 +1,4 @@
-From 89833f309efbdc140af06b7f343b115ab89a73b7 Mon Sep 17 00:00:00 2001
+From eed854299960af9de3f470d76f78a5ddf4b43696 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:17:03 +0200
 Subject: [PATCH 255/436] rtmutex: add mutex implementation based on rtmutex
@@ -378,5 +378,5 @@ index 000000000000..4f81595c0f52
 +}
 +EXPORT_SYMBOL(atomic_dec_and_mutex_lock);
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 0c2b63decb4b63c7b7d86ebfede7503cc7331c59 Mon Sep 17 00:00:00 2001
+From cbb11d67893207e8c7e954ffe796a3f4067135c1 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 17 Oct 2017 16:36:18 +0200
 Subject: [PATCH 228/436] lockdep: disable self-test
@@ -30,5 +30,5 @@ index 62d0e25c054c..401b7ed164b5 100644
  	  Say Y here if you want the kernel to run a short self-test during
  	  bootup. The self-test checks whether common types of locking bugs
 -- 
-2.18.0
+2.19.1
 

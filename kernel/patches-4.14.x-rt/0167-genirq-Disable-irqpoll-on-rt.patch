@@ -1,4 +1,4 @@
-From ea8fa988d692653f08b0850f3017f154b444ae8e Mon Sep 17 00:00:00 2001
+From 0a4033fb69e4c3bdfe72bf175256eca8ed493f7f Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:57 -0500
 Subject: [PATCH 167/436] genirq: Disable irqpoll on -rt
@@ -38,5 +38,5 @@ index 987d7bca4864..75347fb1dfea 100644
  	printk(KERN_WARNING "Misrouted IRQ fixup and polling support "
  				"enabled\n");
 -- 
-2.18.0
+2.19.1
 

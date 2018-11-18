@@ -1,4 +1,4 @@
-From ac56dff9f85e0d7130c45867803cef847839cdee Mon Sep 17 00:00:00 2001
+From f2047df6a6ed3b88f3bdcc03cf0b87caf5bae087 Mon Sep 17 00:00:00 2001
 From: Mikulas Patocka <mpatocka@redhat.com>
 Date: Fri, 10 Nov 2017 12:29:34 -0500
 Subject: [PATCH 003/436] brd: remove unused brd_mutex
@@ -28,5 +28,5 @@ index 2d7178f7754e..c1cf87718c2e 100644
  {
  	pgoff_t idx;
 -- 
-2.18.0
+2.19.1
 

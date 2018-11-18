@@ -1,4 +1,4 @@
-From 9ecb5262ac296f78966a4b433c758ad33fa61c22 Mon Sep 17 00:00:00 2001
+From 2e5ac9f83fa30390a4955725bf9d3656bfc30740 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 25 Jan 2017 16:34:27 +0100
 Subject: [PATCH 187/436] radix-tree: use local locks
@@ -171,5 +171,5 @@ index d172f0341b80..c1da1109a107 100644
  	if (!this_cpu_read(ida_bitmap)) {
  		struct ida_bitmap *bitmap = kmalloc(sizeof(*bitmap), gfp);
 -- 
-2.18.0
+2.19.1
 

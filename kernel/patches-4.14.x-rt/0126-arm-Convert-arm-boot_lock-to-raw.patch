@@ -1,4 +1,4 @@
-From 2b3df7678b00dcb2ed79934b98dc49dc13a152bb Mon Sep 17 00:00:00 2001
+From 5f250a5787d059efd6cb193b4d317fdf6cd7dfff Mon Sep 17 00:00:00 2001
 From: Frank Rowand <frank.rowand@am.sony.com>
 Date: Mon, 19 Sep 2011 14:51:14 -0700
 Subject: [PATCH 126/436] arm: Convert arm boot_lock to raw
@@ -423,5 +423,5 @@ index c2366510187a..6b60f582b738 100644
  	return pen_release != -1 ? -ENOSYS : 0;
  }
 -- 
-2.18.0
+2.19.1
 

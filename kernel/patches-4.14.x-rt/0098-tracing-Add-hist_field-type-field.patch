@@ -1,4 +1,4 @@
-From 828254c5b8e4253c9b9190e021078fda82528efe Mon Sep 17 00:00:00 2001
+From 6cb2467eeb17c39e6c2ba5423d6ed8331d5575d4 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:55 -0600
 Subject: [PATCH 098/436] tracing: Add hist_field 'type' field
@@ -119,5 +119,5 @@ index becf37b2b0da..6e60cb794dcd 100644
  	switch (field_op) {
  	case FIELD_OP_MINUS:
 -- 
-2.18.0
+2.19.1
 

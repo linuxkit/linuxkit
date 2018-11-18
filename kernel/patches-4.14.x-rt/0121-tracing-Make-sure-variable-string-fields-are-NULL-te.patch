@@ -1,4 +1,4 @@
-From 1a75bdba626cffd803b33e1048bd1e9a9ae6def1 Mon Sep 17 00:00:00 2001
+From 4a8851278c7a39af116600f9b0d0981b94c64239 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Wed, 28 Mar 2018 15:10:56 -0500
 Subject: [PATCH 121/436] tracing: Make sure variable string fields are
@@ -38,5 +38,5 @@ index 514ec0b31eed..37db86145c8b 100644
  		}
  		tracing_map_set_var(elt, var_idx, var_val);
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 7cbeacfc2c5eb2f95892e4751864a08e664a7370 Mon Sep 17 00:00:00 2001
+From 1ef9712e95bc57114e2bdefc795ce3e356b46f1a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 10 Jun 2011 11:04:15 +0200
 Subject: [PATCH 240/436] rtmutex: Handle the various new futex race conditions
@@ -250,5 +250,5 @@ index 68686b3ec3c1..fa218cdff5eb 100644
  extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
  				       struct task_struct *proxy_owner);
 -- 
-2.18.0
+2.19.1
 

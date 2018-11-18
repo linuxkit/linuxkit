@@ -1,4 +1,4 @@
-From 7db4815d5134e2d106985f95226ff4b2b0f33cf8 Mon Sep 17 00:00:00 2001
+From 674fdb01b8d7a750309b71a1d0a6a8a622c75a28 Mon Sep 17 00:00:00 2001
 From: Boqun Feng <boqun.feng@gmail.com>
 Date: Fri, 9 Mar 2018 14:56:28 +0800
 Subject: [PATCH 001/436] rtmutex: Make rt_mutex_futex_unlock() safe for
@@ -123,5 +123,5 @@ index 4ad35718f123..456750bf9c95 100644
  	if (postunlock)
  		rt_mutex_postunlock(&wake_q);
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From b008f71fa3fe8acb1142f561d3b0485a13d159a5 Mon Sep 17 00:00:00 2001
+From 13692285738a6e8ea3912bf8fb04efe496c4f867 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:21 -0500
 Subject: [PATCH 075/436] tracing: Clean up hist_field_flags enum
@@ -49,5 +49,5 @@ index 7eb975a2d0e1..4f6b6406d6ec 100644
  
  struct hist_trigger_attrs {
 -- 
-2.18.0
+2.19.1
 

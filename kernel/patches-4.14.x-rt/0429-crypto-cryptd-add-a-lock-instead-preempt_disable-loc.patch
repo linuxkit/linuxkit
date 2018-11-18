@@ -1,4 +1,4 @@
-From a6a96c538434513c332f89ea3a654e5d536fa29d Mon Sep 17 00:00:00 2001
+From b1a030c98e09b4f87828c1ebed239423f5e32e17 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 18:52:00 +0200
 Subject: [PATCH 429/436] crypto: cryptd - add a lock instead
@@ -83,5 +83,5 @@ index 248f6ba41688..54b7985c8caa 100644
  	if (!req)
  		return;
 -- 
-2.18.0
+2.19.1
 

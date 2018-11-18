@@ -1,4 +1,4 @@
-From 2f79376a7074c96d6dc031a12abc096ddd4df267 Mon Sep 17 00:00:00 2001
+From 5792e4376b59ed9215a8fd40660bcf0e9bc9cac4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Feb 2012 12:03:30 +0100
 Subject: [PATCH 313/436] seqlock: Prevent rt starvation
@@ -189,5 +189,5 @@ index a964366a7ef5..51c854583987 100644
  {
  	unsigned int seq;
 -- 
-2.18.0
+2.19.1
 

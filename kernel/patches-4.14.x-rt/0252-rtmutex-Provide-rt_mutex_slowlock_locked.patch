@@ -1,4 +1,4 @@
-From c9d71088b043f8be89de17134b5f70b593c0b6bf Mon Sep 17 00:00:00 2001
+From 92adc8c6a73236295b05890dab138a39175a4295 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 16:14:22 +0200
 Subject: [PATCH 252/436] rtmutex: Provide rt_mutex_slowlock_locked()
@@ -135,5 +135,5 @@ index 509df18215f8..3b10fde6fd1f 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 -- 
-2.18.0
+2.19.1
 

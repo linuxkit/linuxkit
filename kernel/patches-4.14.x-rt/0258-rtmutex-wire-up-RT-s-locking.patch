@@ -1,4 +1,4 @@
-From a094a0fe281a6b0e5eaa98a697e445cfaac15cf1 Mon Sep 17 00:00:00 2001
+From 4810a98102a3c280cdf5972577b4181ac56f3667 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:31:14 +0200
 Subject: [PATCH 258/436] rtmutex: wire up RT's locking
@@ -264,5 +264,5 @@ index 9aa0fccd5d43..76d0b40d9193 100644
 +
 +#endif
 -- 
-2.18.0
+2.19.1
 

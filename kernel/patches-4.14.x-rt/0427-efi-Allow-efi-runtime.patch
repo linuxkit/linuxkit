@@ -1,4 +1,4 @@
-From 904086d9edef10e6ae118ba3e2898cd9e95d5ea3 Mon Sep 17 00:00:00 2001
+From 42338db617d6ca8d8981d4f456f47dcb39656e49 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 15:06:10 +0200
 Subject: [PATCH 427/436] efi: Allow efi=runtime
@@ -29,5 +29,5 @@ index c3eefa126e3b..9bd749389f31 100644
  }
  early_param("efi", parse_efi_cmdline);
 -- 
-2.18.0
+2.19.1
 

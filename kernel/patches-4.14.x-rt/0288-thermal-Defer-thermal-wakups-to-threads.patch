@@ -1,4 +1,4 @@
-From da06a259bc8773a0ab92eacfac813e5617690eb8 Mon Sep 17 00:00:00 2001
+From 7348c1484ac660274f6d3e91408781992e7d3bf0 Mon Sep 17 00:00:00 2001
 From: Daniel Wagner <wagi@monom.org>
 Date: Tue, 17 Feb 2015 09:37:44 +0100
 Subject: [PATCH 288/436] thermal: Defer thermal wakups to threads
@@ -131,5 +131,5 @@ index d93eee2f101b..0287333b1f3c 100644
  module_exit(pkg_temp_thermal_exit)
  
 -- 
-2.18.0
+2.19.1
 

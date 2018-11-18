@@ -1,4 +1,4 @@
-From bc315b471ebcd2770393d893f74b71f4837268a8 Mon Sep 17 00:00:00 2001
+From 1b5a9eb7ddc002f4b840d81b2d57e991bd60dee8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Jul 2011 09:56:44 +0200
 Subject: [PATCH 216/436] sched: Take RT softirq semantics into account in
@@ -57,5 +57,5 @@ index 5ca50d198b28..d1317216d326 100644
  /**
   * yield - yield the current processor to other threads.
 -- 
-2.18.0
+2.19.1
 

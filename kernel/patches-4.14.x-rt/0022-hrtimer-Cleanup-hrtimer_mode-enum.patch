@@ -1,4 +1,4 @@
-From ffdc6cac980d804fe7abaf7b9389159be7a3dc64 Mon Sep 17 00:00:00 2001
+From 1d542162944f298f4387b1519916f8ea87598c78 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:56 +0100
 Subject: [PATCH 022/436] hrtimer: Cleanup hrtimer_mode enum
@@ -47,5 +47,5 @@ index 4e6a8841dcbe..28f267cf2851 100644
  
  /*
 -- 
-2.18.0
+2.19.1
 

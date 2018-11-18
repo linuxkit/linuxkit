@@ -1,4 +1,4 @@
-From 7410b0f826fed18cb812512b91082f93c21c1f1e Mon Sep 17 00:00:00 2001
+From 49e0fa6e96563a132b2bb9ac613165f007a47f1b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 25 Oct 2012 10:32:35 +0100
 Subject: [PATCH 178/436] mm: Enable SLUB for RT
@@ -29,7 +29,7 @@ index 485d9fbb8802..f3b06c48bf39 100644
  #ifdef CONFIG_SLAB
  	struct list_head slabs_partial;	/* partial list first, better asm code */
 diff --git a/mm/slub.c b/mm/slub.c
-index 10e54c4acd19..ec77367359de 100644
+index 220d42e592ef..2f9f5e133587 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
 @@ -1179,7 +1179,7 @@ static noinline int free_debug_processing(
@@ -477,5 +477,5 @@ index 10e54c4acd19..ec77367359de 100644
  
  	for (i = 0; i < t.count; i++) {
 -- 
-2.18.0
+2.19.1
 

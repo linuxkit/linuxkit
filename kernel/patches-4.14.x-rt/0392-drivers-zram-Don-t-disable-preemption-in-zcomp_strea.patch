@@ -1,4 +1,4 @@
-From f1164b1b843b85908f3995ef7f521600e01d6d3d Mon Sep 17 00:00:00 2001
+From b50d06f081411df4de7180900e41a94b6c2106b8 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 20 Oct 2016 11:15:22 +0200
 Subject: [PATCH 392/436] drivers/zram: Don't disable preemption in
@@ -102,5 +102,5 @@ index 23be0e1b31e7..c5d61209eb05 100644
  
  	/* Should NEVER happen. Return bio error if it does. */
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 89e87e954ea6d2cded7513daed364e6f797433a3 Mon Sep 17 00:00:00 2001
+From f6e0981b87f212d404cf19620786c5e5e0565d58 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 7 Sep 2017 12:38:47 +0200
 Subject: [PATCH 242/436] locking/rtmutex: don't drop the wait_lock twice
@@ -31,5 +31,5 @@ index ea8dd82835c9..935adbbe08f1 100644
  	}
  	task->pi_blocked_on = PI_REQUEUE_INPROGRESS;
 -- 
-2.18.0
+2.19.1
 

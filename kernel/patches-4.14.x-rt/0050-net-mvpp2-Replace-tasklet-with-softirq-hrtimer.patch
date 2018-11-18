@@ -1,4 +1,4 @@
-From e33fb47723f7ecc21c6156b26303a6b002d8595e Mon Sep 17 00:00:00 2001
+From 2d4d8eb116bf37ce4e85e4f0a2258d1d2be4fbf0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:17 +0100
 Subject: [PATCH 050/436] net/mvpp2: Replace tasklet with softirq hrtimer
@@ -18,10 +18,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 25 insertions(+), 37 deletions(-)
 
 diff --git a/drivers/net/ethernet/marvell/mvpp2.c b/drivers/net/ethernet/marvell/mvpp2.c
-index 529be74f609d..b1d7378b131c 100644
+index 00e6f1d155a6..9c69ab2c5b07 100644
 --- a/drivers/net/ethernet/marvell/mvpp2.c
 +++ b/drivers/net/ethernet/marvell/mvpp2.c
-@@ -830,9 +830,8 @@ struct mvpp2_pcpu_stats {
+@@ -831,9 +831,8 @@ struct mvpp2_pcpu_stats {
  /* Per-CPU port control */
  struct mvpp2_port_pcpu {
  	struct hrtimer tx_done_timer;
@@ -32,7 +32,7 @@ index 529be74f609d..b1d7378b131c 100644
  };
  
  struct mvpp2_queue_vector {
-@@ -5954,46 +5953,34 @@ static void mvpp2_link_event(struct net_device *dev)
+@@ -5955,46 +5954,34 @@ static void mvpp2_link_event(struct net_device *dev)
  	}
  }
  
@@ -95,7 +95,7 @@ index 529be74f609d..b1d7378b131c 100644
  	return HRTIMER_NORESTART;
  }
  
-@@ -6482,7 +6469,12 @@ static int mvpp2_tx(struct sk_buff *skb, struct net_device *dev)
+@@ -6484,7 +6471,12 @@ static int mvpp2_tx(struct sk_buff *skb, struct net_device *dev)
  	    txq_pcpu->count > 0) {
  		struct mvpp2_port_pcpu *port_pcpu = this_cpu_ptr(port->pcpu);
  
@@ -109,7 +109,7 @@ index 529be74f609d..b1d7378b131c 100644
  	}
  
  	return NETDEV_TX_OK;
-@@ -6871,7 +6863,6 @@ static int mvpp2_stop(struct net_device *dev)
+@@ -6875,7 +6867,6 @@ static int mvpp2_stop(struct net_device *dev)
  
  			hrtimer_cancel(&port_pcpu->tx_done_timer);
  			port_pcpu->timer_scheduled = false;
@@ -117,7 +117,7 @@ index 529be74f609d..b1d7378b131c 100644
  		}
  	}
  	mvpp2_cleanup_rxqs(port);
-@@ -7644,13 +7635,10 @@ static int mvpp2_port_probe(struct platform_device *pdev,
+@@ -7648,13 +7639,10 @@ static int mvpp2_port_probe(struct platform_device *pdev,
  			port_pcpu = per_cpu_ptr(port->pcpu, cpu);
  
  			hrtimer_init(&port_pcpu->tx_done_timer, CLOCK_MONOTONIC,
@@ -134,5 +134,5 @@ index 529be74f609d..b1d7378b131c 100644
  	}
  
 -- 
-2.18.0
+2.19.1
 

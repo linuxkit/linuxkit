@@ -1,4 +1,4 @@
-From dd842f0280c1ba3bd475e9a7e99db3541e64f083 Mon Sep 17 00:00:00 2001
+From 38d69a7e3e4ec8fd65ec48d6ba3d1c9e373546f8 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Sun, 8 Jan 2017 09:32:25 +0100
 Subject: [PATCH 401/436] cpuset: Convert callback_lock to raw_spinlock_t
@@ -288,5 +288,5 @@ index 7bb7384b543a..bda2af78277a 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

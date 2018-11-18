@@ -1,4 +1,4 @@
-From 490281fbd2969d4e1bb622288c6102569f6faaaf Mon Sep 17 00:00:00 2001
+From 0f725ee8f8b99166a5d97517c2fe00062ead13c5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:35 +0100
 Subject: [PATCH 009/436] iommu/amd: Split domain id out of
@@ -18,7 +18,7 @@ Signed-off-by: Joerg Roedel <jroedel@suse.de>
  1 file changed, 5 insertions(+), 7 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index 1babecd37819..250b6354fae5 100644
+index 50b6cab604aa..ccf9d1d08983 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
 @@ -82,6 +82,7 @@
@@ -29,7 +29,7 @@ index 1babecd37819..250b6354fae5 100644
  
  /* List of all available dev_data structures */
  static LLIST_HEAD(dev_data_list);
-@@ -1596,29 +1597,26 @@ static void del_domain_from_list(struct protection_domain *domain)
+@@ -1602,29 +1603,26 @@ static void del_domain_from_list(struct protection_domain *domain)
  
  static u16 domain_id_alloc(void)
  {
@@ -64,5 +64,5 @@ index 1babecd37819..250b6354fae5 100644
  
  #define DEFINE_FREE_PT_FN(LVL, FN)				\
 -- 
-2.18.0
+2.19.1
 

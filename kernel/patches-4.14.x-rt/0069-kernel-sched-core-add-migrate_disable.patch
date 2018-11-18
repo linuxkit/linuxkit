@@ -1,4 +1,4 @@
-From 57f95402e515398dc1cb6c73c3cd72e4511f5543 Mon Sep 17 00:00:00 2001
+From 9c81f3c12b1ebc71818160d0bd10a3be7027b52a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 27 May 2017 19:02:06 +0200
 Subject: [PATCH 069/436] kernel/sched/core: add migrate_disable()
@@ -261,5 +261,5 @@ index 2f93e4a2d9f6..3108da1ee253 100644
  #undef PN
  #undef __PN
 -- 
-2.18.0
+2.19.1
 

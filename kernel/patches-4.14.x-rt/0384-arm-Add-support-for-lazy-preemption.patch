@@ -1,4 +1,4 @@
-From ebb30b35c4e3bbbde4b3a238d46ca16ca37e9c4c Mon Sep 17 00:00:00 2001
+From 2d03f18ec18196544de42f01c0a4a14c98489675 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
 Subject: [PATCH 384/436] arm: Add support for lazy preemption
@@ -28,7 +28,7 @@ index ac05a027539a..558b0995e94a 100644
  	select HAVE_REGS_AND_STACK_ACCESS_API
  	select HAVE_SYSCALL_TRACEPOINTS
 diff --git a/arch/arm/include/asm/thread_info.h b/arch/arm/include/asm/thread_info.h
-index 776757d1604a..1f36a4eccc72 100644
+index 57d2ad9c75ca..cdfb6855943b 100644
 --- a/arch/arm/include/asm/thread_info.h
 +++ b/arch/arm/include/asm/thread_info.h
 @@ -49,6 +49,7 @@ struct cpu_context_save {
@@ -39,7 +39,7 @@ index 776757d1604a..1f36a4eccc72 100644
  	mm_segment_t		addr_limit;	/* address limit */
  	struct task_struct	*task;		/* main task structure */
  	__u32			cpu;		/* cpu */
-@@ -142,7 +143,8 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
+@@ -142,7 +143,8 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
  #define TIF_SYSCALL_TRACE	4	/* syscall trace active */
  #define TIF_SYSCALL_AUDIT	5	/* syscall auditing active */
  #define TIF_SYSCALL_TRACEPOINT	6	/* syscall tracepoint instrumentation */
@@ -49,7 +49,7 @@ index 776757d1604a..1f36a4eccc72 100644
  
  #define TIF_NOHZ		12	/* in adaptive nohz mode */
  #define TIF_USING_IWMMXT	17
-@@ -152,6 +154,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
+@@ -152,6 +154,7 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
  #define _TIF_SIGPENDING		(1 << TIF_SIGPENDING)
  #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
  #define _TIF_NOTIFY_RESUME	(1 << TIF_NOTIFY_RESUME)
@@ -57,7 +57,7 @@ index 776757d1604a..1f36a4eccc72 100644
  #define _TIF_UPROBE		(1 << TIF_UPROBE)
  #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
  #define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
-@@ -167,7 +170,8 @@ extern int vfp_restore_user_hwstate(struct user_vfp __user *,
+@@ -167,7 +170,8 @@ extern int vfp_restore_user_hwstate(struct user_vfp *,
   * Change these and you break ASM code in entry-common.S
   */
  #define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_SIGPENDING | \
@@ -121,7 +121,7 @@ index fbc707626b3e..b434c59d2b64 100644
  
  __und_fault:
 diff --git a/arch/arm/kernel/entry-common.S b/arch/arm/kernel/entry-common.S
-index 99c908226065..5ffd7188af2d 100644
+index 54c10503d71f..3fdeade24e3f 100644
 --- a/arch/arm/kernel/entry-common.S
 +++ b/arch/arm/kernel/entry-common.S
 @@ -53,7 +53,9 @@ ret_fast_syscall:
@@ -149,7 +149,7 @@ index 99c908226065..5ffd7188af2d 100644
  ENDPROC(ret_fast_syscall)
  
 diff --git a/arch/arm/kernel/signal.c b/arch/arm/kernel/signal.c
-index b67ae12503f3..7039988510bb 100644
+index cdfe52b15a0a..198cf8bf0b37 100644
 --- a/arch/arm/kernel/signal.c
 +++ b/arch/arm/kernel/signal.c
 @@ -615,7 +615,8 @@ do_work_pending(struct pt_regs *regs, unsigned int thread_flags, int syscall)
@@ -163,5 +163,5 @@ index b67ae12503f3..7039988510bb 100644
  		} else {
  			if (unlikely(!user_mode(regs)))
 -- 
-2.18.0
+2.19.1
 

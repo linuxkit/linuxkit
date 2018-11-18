@@ -1,4 +1,4 @@
-From 5f9fa9cb4a6516b0727b8ebab7f55e6725f91017 Mon Sep 17 00:00:00 2001
+From e2f59edd8b939d079f63986580dee59732561a2e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 2 Aug 2018 17:11:01 +0200
 Subject: [PATCH 432/436] Revert "arm64/xen: Make XEN depend on !RT"
@@ -29,5 +29,5 @@ index f3c5213ea0ec..458d2033ffde 100644
  	select PARAVIRT
  	help
 -- 
-2.18.0
+2.19.1
 

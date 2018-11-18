@@ -1,4 +1,4 @@
-From c36a350a339a1e99601f1bfd3b4b1bdb7696a6ff Mon Sep 17 00:00:00 2001
+From c60625ecb1ae084217f1938e0d29a423821b6100 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 27 Mar 2018 15:58:16 +0200
 Subject: [PATCH 202/436] alarmtimer: Prevent live lock in alarm_cancel()
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
-index 639321bf2e39..0c7227f89349 100644
+index fa5de5e8de61..6020ee66e517 100644
 --- a/kernel/time/alarmtimer.c
 +++ b/kernel/time/alarmtimer.c
 @@ -436,7 +436,7 @@ int alarm_cancel(struct alarm *alarm)
@@ -28,5 +28,5 @@ index 639321bf2e39..0c7227f89349 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 -- 
-2.18.0
+2.19.1
 

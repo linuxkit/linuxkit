@@ -1,4 +1,4 @@
-From 7ef045f8804f584fee1bf69ba1687a81e83f0af8 Mon Sep 17 00:00:00 2001
+From 17608ff4d9e40e39a7de8cf77292c8215b3aa611 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Thu, 5 Jul 2018 12:43:18 +0200
 Subject: [PATCH 421/436] Revert "timer: delay waking softirqs from the jiffy
@@ -40,5 +40,5 @@ index ea742b49bdb5..5fadd754ce20 100644
  		run_posix_cpu_timers(p);
  }
 -- 
-2.18.0
+2.19.1
 

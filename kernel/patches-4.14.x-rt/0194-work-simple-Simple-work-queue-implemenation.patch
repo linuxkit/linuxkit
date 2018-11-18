@@ -1,4 +1,4 @@
-From af7a9586172e734dca5864f73c9393eadfebfcbd Mon Sep 17 00:00:00 2001
+From 75c87bb6cb3ab315f3f8c1d4c0aea2f62f47ac5d Mon Sep 17 00:00:00 2001
 From: Daniel Wagner <daniel.wagner@bmw-carit.de>
 Date: Fri, 11 Jul 2014 15:26:11 +0200
 Subject: [PATCH 194/436] work-simple: Simple work queue implemenation
@@ -241,5 +241,5 @@ index 000000000000..1950f40ca725
 +}
 +EXPORT_SYMBOL_GPL(swork_put);
 -- 
-2.18.0
+2.19.1
 

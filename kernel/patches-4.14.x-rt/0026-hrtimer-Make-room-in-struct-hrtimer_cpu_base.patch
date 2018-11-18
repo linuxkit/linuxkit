@@ -1,4 +1,4 @@
-From b5d163478c9a5913968d6e7851788a3420e9eac9 Mon Sep 17 00:00:00 2001
+From 439b902a93a050a76c5a41971d3bfff2a639991c Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:01 +0100
 Subject: [PATCH 026/436] hrtimer: Make room in struct hrtimer_cpu_base
@@ -35,5 +35,5 @@ index 1bae7b9f071d..56e56bcb6f0f 100644
  #endif
  	struct hrtimer_clock_base	clock_base[HRTIMER_MAX_CLOCK_BASES];
 -- 
-2.18.0
+2.19.1
 

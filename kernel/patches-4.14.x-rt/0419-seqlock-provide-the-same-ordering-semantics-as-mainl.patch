@@ -1,4 +1,4 @@
-From b0fa2f4002765bb68d699c4ccaaa97673e56bc76 Mon Sep 17 00:00:00 2001
+From ed9c660f82dd0375456402a91e0a79a3806f8573 Mon Sep 17 00:00:00 2001
 From: Julia Cartwright <julia@ni.com>
 Date: Thu, 26 Apr 2018 15:02:03 -0500
 Subject: [PATCH 419/436] seqlock: provide the same ordering semantics as
@@ -35,5 +35,5 @@ index a59751276b94..107079a2d7ed 100644
  }
  #endif
 -- 
-2.18.0
+2.19.1
 

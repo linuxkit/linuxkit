@@ -1,4 +1,4 @@
-From 2f8a4bc223b79c611945296d08dadf7a3fefa58d Mon Sep 17 00:00:00 2001
+From e4ef5b65dfcb350f0071847c6e8d8575bebeb0cc Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
 Subject: [PATCH 423/436] sched/migrate_disable: fallback to preempt_disable()
@@ -202,5 +202,5 @@ index 3108da1ee253..b5b43861c2b6 100644
  #endif
  	P(nr_cpus_allowed);
 -- 
-2.18.0
+2.19.1
 

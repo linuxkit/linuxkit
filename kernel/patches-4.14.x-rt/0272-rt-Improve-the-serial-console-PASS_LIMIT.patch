@@ -1,4 +1,4 @@
-From a403ec2b30026950dd4a23d5c60d5f4cd0bbfbda Mon Sep 17 00:00:00 2001
+From 9e16830eb2dfaffc6201d0b4b951a45ecdf900b3 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Wed, 14 Dec 2011 13:05:54 +0100
 Subject: [PATCH 272/436] rt: Improve the serial console PASS_LIMIT
@@ -42,5 +42,5 @@ index d29b512a7d9f..bc8cbb995b29 100644
  #include <asm/serial.h>
  /*
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 469e8abefe81517bb89be42ac625ef45d2209c87 Mon Sep 17 00:00:00 2001
+From 4c979671a86d2f4eba57e05ec29cdef767cba028 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
 Subject: [PATCH 225/436] hotplug: Lightweight get online cpus
@@ -96,5 +96,5 @@ index ad2e06ddd290..b8529f66f258 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 -- 
-2.18.0
+2.19.1
 

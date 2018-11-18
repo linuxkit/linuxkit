@@ -1,4 +1,4 @@
-From 528101f4c84e7ad55160976f28cfce3be5cdb27c Mon Sep 17 00:00:00 2001
+From e374adab1aacdaa8b6ebbd3255fb7038e625818e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
 Subject: [PATCH 305/436] fs/dcache: use swait_queue instead of waitqueue
@@ -22,7 +22,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  11 files changed, 29 insertions(+), 25 deletions(-)
 
 diff --git a/fs/cifs/readdir.c b/fs/cifs/readdir.c
-index a27fc8791551..791aecb7c1ac 100644
+index ef24b4527459..3ce6331a1101 100644
 --- a/fs/cifs/readdir.c
 +++ b/fs/cifs/readdir.c
 @@ -80,7 +80,7 @@ cifs_prime_dcache(struct dentry *parent, struct qstr *name,
@@ -35,10 +35,10 @@ index a27fc8791551..791aecb7c1ac 100644
  	cifs_dbg(FYI, "%s: for %s\n", __func__, name->name);
  
 diff --git a/fs/dcache.c b/fs/dcache.c
-index a3381e7f2062..26c798d79add 100644
+index c00380d37a3a..b08506ef464a 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -2468,21 +2468,24 @@ static inline void end_dir_add(struct inode *dir, unsigned n)
+@@ -2488,21 +2488,24 @@ static inline void end_dir_add(struct inode *dir, unsigned n)
  
  static void d_wait_lookup(struct dentry *dentry)
  {
@@ -74,7 +74,7 @@ index a3381e7f2062..26c798d79add 100644
  {
  	unsigned int hash = name->hash;
  	struct hlist_bl_head *b = in_lookup_hash(parent, hash);
-@@ -2597,7 +2600,7 @@ void __d_lookup_done(struct dentry *dentry)
+@@ -2617,7 +2620,7 @@ void __d_lookup_done(struct dentry *dentry)
  	hlist_bl_lock(b);
  	dentry->d_flags &= ~DCACHE_PAR_LOOKUP;
  	__hlist_bl_del(&dentry->d_u.d_in_lookup_hash);
@@ -163,10 +163,10 @@ index 2e78bc25bcea..0dc1d3e6a62f 100644
  	status = -EBUSY;
  	spin_lock(&dentry->d_lock);
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index c5c42f3e33d1..f5dcd63f37aa 100644
+index 9063738ff1f0..4085e56e261c 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -1886,7 +1886,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
+@@ -1900,7 +1900,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
  
  	child = d_hash_and_lookup(dir, &qname);
  	if (!child) {
@@ -236,5 +236,5 @@ index 7006375949c2..b14638a05ec9 100644
  	list_splice_init(&q->task_list, &tmp);
  	while (!list_empty(&tmp)) {
 -- 
-2.18.0
+2.19.1
 

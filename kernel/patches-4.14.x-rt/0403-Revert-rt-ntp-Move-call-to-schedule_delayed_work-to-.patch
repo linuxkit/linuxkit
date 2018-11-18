@@ -1,4 +1,4 @@
-From 8179c5bdf83b0cac2dd63fdfe2a69f4beccb7d1e Mon Sep 17 00:00:00 2001
+From 1c2ce8efee1b78da9a93a39d2e0645453ea7f6aa Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 2 Mar 2018 11:37:57 +0100
 Subject: [PATCH 403/436] Revert "rt,ntp: Move call to schedule_delayed_work()
@@ -73,5 +73,5 @@ index 2c226b90c231..99e03bec68e4 100644
  #else
  void ntp_notify_cmos_timer(void) { }
 -- 
-2.18.0
+2.19.1
 

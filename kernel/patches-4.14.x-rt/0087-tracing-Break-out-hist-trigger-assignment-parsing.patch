@@ -1,4 +1,4 @@
-From 09ea7ab2ecccaed453749327e2220ea1d58a73e9 Mon Sep 17 00:00:00 2001
+From f2e4dce83b688c63ff2b5ed7efbc9bfa9f05fc57 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:44 -0600
 Subject: [PATCH 087/436] tracing: Break out hist trigger assignment parsing
@@ -114,5 +114,5 @@ index 9126be52ff4d..4935290fd1e8 100644
  			goto free;
  		}
 -- 
-2.18.0
+2.19.1
 

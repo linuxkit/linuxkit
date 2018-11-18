@@ -1,4 +1,4 @@
-From 106c27835afe6360c635fc739d0ce5821430d5f6 Mon Sep 17 00:00:00 2001
+From 5895aa080bdee8cc285d01fe7f4c16d53365368e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 13 Feb 2013 11:03:11 +0100
 Subject: [PATCH 350/436] arm: Enable highmem for rt
@@ -179,5 +179,5 @@ index 8f248e2137eb..5f0bd7a3e6a7 100644
  #include <asm/cacheflush.h>
  
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 73e02e3354fc98f0eeab008de30711a76b9d41ef Mon Sep 17 00:00:00 2001
+From f4779fdd37c4e7e0c42a6ab01b6154bd77ca754f Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:17 +0100
 Subject: [PATCH 042/436] hrtimer: Implement support for softirq based hrtimers
@@ -502,5 +502,5 @@ index 9a1f2b00c847..66d7a12d7256 100644
  
  /**
 -- 
-2.18.0
+2.19.1
 

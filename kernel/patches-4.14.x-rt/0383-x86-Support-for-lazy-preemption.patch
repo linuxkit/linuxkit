@@ -1,4 +1,4 @@
-From 5b361c02fec862b6eaa19d01e2b13f19299b5f9c Mon Sep 17 00:00:00 2001
+From 45e525d781ec976e67f2785d8447fe07a3f0c732 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
 Subject: [PATCH 383/436] x86: Support for lazy preemption
@@ -81,11 +81,11 @@ index 60c4c342316c..cd0c7c56e2dd 100644
  	jz	restore_all
  	call	preempt_schedule_irq
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index 611f00b119c6..0ed8dbf6210d 100644
+index 8192e87963b5..75d42cb8a7c9 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
 @@ -633,7 +633,23 @@ retint_kernel:
- 	bt	$9, EFLAGS(%rsp)		/* were interrupts off? */
+ 	btl	$9, EFLAGS(%rsp)		/* were interrupts off? */
  	jnc	1f
  0:	cmpl	$0, PER_CPU_VAR(__preempt_count)
 +#ifndef CONFIG_PREEMPT_LAZY
@@ -236,5 +236,5 @@ index 76417a9aab73..62c3e27c8e1c 100644
  	/* TLB state for the entry code */
  	OFFSET(TLB_STATE_user_pcid_flush_mask, tlb_state, user_pcid_flush_mask);
 -- 
-2.18.0
+2.19.1
 

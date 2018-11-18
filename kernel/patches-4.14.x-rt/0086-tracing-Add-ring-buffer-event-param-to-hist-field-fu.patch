@@ -1,4 +1,4 @@
-From 37e8a2ddbcd7e30f65512f71ac3c0b6420fb1af4 Mon Sep 17 00:00:00 2001
+From c62050d8381247c03f707df8de2bdbe903992fab Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:43 -0600
 Subject: [PATCH 086/436] tracing: Add ring buffer event param to hist field
@@ -145,5 +145,5 @@ index 77079c79b6d4..9126be52ff4d 100644
  
  static void hist_trigger_stacktrace_print(struct seq_file *m,
 -- 
-2.18.0
+2.19.1
 

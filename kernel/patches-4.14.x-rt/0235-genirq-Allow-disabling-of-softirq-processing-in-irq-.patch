@@ -1,4 +1,4 @@
-From a1e93ea1399d901f3188a9c1262a52c61651ab1b Mon Sep 17 00:00:00 2001
+From 9d5ca280cb09cb21a9bc511f36c7b754aad1b53c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 Jan 2012 13:01:27 +0100
 Subject: [PATCH 235/436] genirq: Allow disabling of softirq processing in irq
@@ -136,7 +136,7 @@ index e43795cd2ccf..47e2f9e23586 100644
  {
  	return desc->status_use_accessors & _IRQ_PER_CPU;
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 6c60756bb586..839653fe2857 100644
+index 9b56981ccc8d..5650395b8d6a 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -593,6 +593,15 @@ void __local_bh_enable(void)
@@ -156,5 +156,5 @@ index 6c60756bb586..839653fe2857 100644
  {
  	return current->flags & PF_IN_SOFTIRQ;
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 7cdb9bdccfd76d3ffb48ab297ff707affdac25c3 Mon Sep 17 00:00:00 2001
+From e03f3937caac1e553e320735a45bec3b80d20597 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Thu, 26 Apr 2018 20:04:47 -0500
 Subject: [PATCH 410/436] tracing: Restore proper field flag printing when
@@ -64,5 +64,5 @@ index 9dac8bae4f34..4745ed588607 100644
  
  static int event_hist_trigger_print(struct seq_file *m,
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From adda96f50746328e259033573b8efc0240754afd Mon Sep 17 00:00:00 2001
+From 3c4800cbe68310ace32d6b81675131cee2bc76aa Mon Sep 17 00:00:00 2001
 From: Anders Roxell <anders.roxell@linaro.org>
 Date: Thu, 14 May 2015 17:52:17 +0200
 Subject: [PATCH 386/436] arch/arm64: Add lazy preempt support
@@ -128,5 +128,5 @@ index 43442b3a463f..81bf9545a589 100644
  		} else {
  			local_irq_enable();
 -- 
-2.18.0
+2.19.1
 

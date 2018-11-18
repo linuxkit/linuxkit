@@ -1,4 +1,4 @@
-From cef186a73b86a430b55cb8f3d2ddf4ec2de46a60 Mon Sep 17 00:00:00 2001
+From 8e20fe1ebfca9ba2552ab961b55df9dcf8b8b0a7 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 15:03:16 +0200
 Subject: [PATCH 428/436] efi: Disable runtime services on RT
@@ -43,5 +43,5 @@ index 9bd749389f31..47093745a53c 100644
  {
  	disable_runtime = true;
 -- 
-2.18.0
+2.19.1
 

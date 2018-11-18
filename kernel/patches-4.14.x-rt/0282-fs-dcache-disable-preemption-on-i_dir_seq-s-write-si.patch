@@ -1,4 +1,4 @@
-From 4ac89a969f11a736b7292753b9a2183fedf5cf18 Mon Sep 17 00:00:00 2001
+From bd1841425843e16d1c2867c8e6f4596da61e7fe3 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 20 Oct 2017 11:29:53 +0200
 Subject: [PATCH 282/436] fs/dcache: disable preemption on i_dir_seq's write
@@ -24,10 +24,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 13 insertions(+), 9 deletions(-)
 
 diff --git a/fs/dcache.c b/fs/dcache.c
-index f83742e47b4b..d368bd0bd48c 100644
+index f93b5570bc99..8aa63a9d18cd 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -2439,9 +2439,10 @@ EXPORT_SYMBOL(d_rehash);
+@@ -2459,9 +2459,10 @@ EXPORT_SYMBOL(d_rehash);
  static inline unsigned start_dir_add(struct inode *dir)
  {
  
@@ -40,7 +40,7 @@ index f83742e47b4b..d368bd0bd48c 100644
  			return n;
  		cpu_relax();
  	}
-@@ -2449,7 +2450,8 @@ static inline unsigned start_dir_add(struct inode *dir)
+@@ -2469,7 +2470,8 @@ static inline unsigned start_dir_add(struct inode *dir)
  
  static inline void end_dir_add(struct inode *dir, unsigned n)
  {
@@ -50,7 +50,7 @@ index f83742e47b4b..d368bd0bd48c 100644
  }
  
  static void d_wait_lookup(struct dentry *dentry)
-@@ -2482,7 +2484,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
+@@ -2502,7 +2504,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
  
  retry:
  	rcu_read_lock();
@@ -59,7 +59,7 @@ index f83742e47b4b..d368bd0bd48c 100644
  	r_seq = read_seqbegin(&rename_lock);
  	dentry = __d_lookup_rcu(parent, name, &d_seq);
  	if (unlikely(dentry)) {
-@@ -2510,7 +2512,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
+@@ -2530,7 +2532,7 @@ struct dentry *d_alloc_parallel(struct dentry *parent,
  	}
  
  	hlist_bl_lock(b);
@@ -127,5 +127,5 @@ index cc613f20e5a6..b806e2116f5c 100644
  
  	__u32			i_generation;
 -- 
-2.18.0
+2.19.1
 

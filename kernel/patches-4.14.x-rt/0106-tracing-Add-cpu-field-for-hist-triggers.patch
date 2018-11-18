@@ -1,4 +1,4 @@
-From 5cf8459cf4cd44c92c8079b80256bab3d70ebd8c Mon Sep 17 00:00:00 2001
+From a9925cc0e45790fdc670dcfdc7b6064cb1a6f6e1 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:03 -0600
 Subject: [PATCH 106/436] tracing: Add cpu field for hist triggers
@@ -118,5 +118,5 @@ index 0b73852f6923..34a2e8d0a052 100644
  		if (hist_field->flags & HIST_FIELD_FL_VAR_REF)
  			seq_putc(m, '$');
 -- 
-2.18.0
+2.19.1
 

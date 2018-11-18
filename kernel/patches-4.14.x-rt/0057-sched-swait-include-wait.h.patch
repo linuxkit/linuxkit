@@ -1,4 +1,4 @@
-From 63ade393ebd8b57acc65a226af3872c8bde7e9a6 Mon Sep 17 00:00:00 2001
+From 1adbe37c6f82c2b4e2624aca0fafb9eca5352a29 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 4 Dec 2017 13:11:10 +0100
 Subject: [PATCH 057/436] sched/swait: include wait.h
@@ -37,5 +37,5 @@ index c98aaf677466..84f9745365ff 100644
  
  /*
 -- 
-2.18.0
+2.19.1
 

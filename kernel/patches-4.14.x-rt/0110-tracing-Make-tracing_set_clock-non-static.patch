@@ -1,4 +1,4 @@
-From 30cd7275d4d0678008e62679cf34bd0e6ac8be5a Mon Sep 17 00:00:00 2001
+From da3ea9faf9b6da9fd4e68c5c73d7d734d0809f3f Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:07 -0600
 Subject: [PATCH 110/436] tracing: Make tracing_set_clock() non-static
@@ -47,5 +47,5 @@ index 5975d5f5c4bc..0b8af849dc75 100644
  extern bool trace_clock_in_ns(struct trace_array *tr);
  
 -- 
-2.18.0
+2.19.1
 

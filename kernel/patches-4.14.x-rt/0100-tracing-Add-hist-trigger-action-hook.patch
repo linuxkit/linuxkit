@@ -1,4 +1,4 @@
-From d0432cc4b5f4de8db438cb619900aaa62febcd85 Mon Sep 17 00:00:00 2001
+From 19fe267475a8ace8e7c956afd52aa0bf08544bf7 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:57 -0600
 Subject: [PATCH 100/436] tracing: Add hist trigger action hook
@@ -217,5 +217,5 @@ index 2bc1f76915ef..e5fea3cf60e9 100644
  	if (ret)
  		goto out_unreg;
 -- 
-2.18.0
+2.19.1
 

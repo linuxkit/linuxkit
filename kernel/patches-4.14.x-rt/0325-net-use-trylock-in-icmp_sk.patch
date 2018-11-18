@@ -1,4 +1,4 @@
-From ce4686150e12453bc0153af074e1c115bf435df1 Mon Sep 17 00:00:00 2001
+From 32e745c52bc18d10eb4c81a0e474e64f4985067e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:42:04 +0200
 Subject: [PATCH 325/436] net: use trylock in icmp_sk
@@ -75,5 +75,5 @@ index 6e1ae84d662c..0310ea93f877 100644
  out:;
  }
 -- 
-2.18.0
+2.19.1
 

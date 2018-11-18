@@ -1,4 +1,4 @@
-From 6ce03196e83f3d3087dc29ecce8cde5bc73ab6a4 Mon Sep 17 00:00:00 2001
+From a5ce93fa4852ceb1b29a7b7800ab02288f4d0863 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 16 Nov 2017 16:48:48 +0100
 Subject: [PATCH 261/436] locking/rtmutex: re-init the wait_lock in
@@ -34,5 +34,5 @@ index 070cd952a3e8..53b510d29a3a 100644
  	rt_mutex_set_owner(lock, proxy_owner);
  }
 -- 
-2.18.0
+2.19.1
 

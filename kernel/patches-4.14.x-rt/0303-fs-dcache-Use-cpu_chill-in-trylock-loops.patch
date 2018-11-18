@@ -1,4 +1,4 @@
-From 90c9e2622f36cf8d09621c4c4a171a9888a5e278 Mon Sep 17 00:00:00 2001
+From 50871ab4e47be72ec2fb0f74fb5b5eae93a15d4a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:00:34 +0100
 Subject: [PATCH 303/436] fs: dcache: Use cpu_chill() in trylock loops
@@ -41,7 +41,7 @@ index 57725d4a8c59..62220508bace 100644
  			}
  			spin_unlock(&p->d_lock);
 diff --git a/fs/dcache.c b/fs/dcache.c
-index d368bd0bd48c..a3381e7f2062 100644
+index 8aa63a9d18cd..c00380d37a3a 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
 @@ -19,6 +19,7 @@
@@ -52,7 +52,7 @@ index d368bd0bd48c..a3381e7f2062 100644
  #include <linux/slab.h>
  #include <linux/init.h>
  #include <linux/hash.h>
-@@ -794,6 +795,8 @@ static inline bool fast_dput(struct dentry *dentry)
+@@ -808,6 +809,8 @@ static inline bool fast_dput(struct dentry *dentry)
   */
  void dput(struct dentry *dentry)
  {
@@ -61,7 +61,7 @@ index d368bd0bd48c..a3381e7f2062 100644
  	if (unlikely(!dentry))
  		return;
  
-@@ -830,9 +833,18 @@ void dput(struct dentry *dentry)
+@@ -844,9 +847,18 @@ void dput(struct dentry *dentry)
  	return;
  
  kill_it:
@@ -83,7 +83,7 @@ index d368bd0bd48c..a3381e7f2062 100644
  		goto repeat;
  	}
  }
-@@ -2394,7 +2406,7 @@ void d_delete(struct dentry * dentry)
+@@ -2414,7 +2426,7 @@ void d_delete(struct dentry * dentry)
  	if (dentry->d_lockref.count == 1) {
  		if (!spin_trylock(&inode->i_lock)) {
  			spin_unlock(&dentry->d_lock);
@@ -114,5 +114,5 @@ index 63c157047e4d..85bfe5e55adf 100644
  	}
  	/*
 -- 
-2.18.0
+2.19.1
 

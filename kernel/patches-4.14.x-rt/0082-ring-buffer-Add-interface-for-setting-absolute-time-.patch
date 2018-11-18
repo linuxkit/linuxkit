@@ -1,4 +1,4 @@
-From bbe92ec8c4769f61acd94dedbc739994cc1a6678 Mon Sep 17 00:00:00 2001
+From ee8bdcca86ef3ea7c60a9826f0dbee38c9982d88 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:39 -0600
 Subject: [PATCH 082/436] ring-buffer: Add interface for setting absolute time
@@ -39,7 +39,7 @@ index 5caa062a02b2..adffb56bae8f 100644
  size_t ring_buffer_page_len(void *page);
  
 diff --git a/kernel/trace/ring_buffer.c b/kernel/trace/ring_buffer.c
-index c3b6b47fd44a..dc6f47802d02 100644
+index ade8493cb69f..c74b329879ad 100644
 --- a/kernel/trace/ring_buffer.c
 +++ b/kernel/trace/ring_buffer.c
 @@ -488,6 +488,7 @@ struct ring_buffer {
@@ -140,5 +140,5 @@ index 221591636530..0506c4cdfeba 100644
   * The global tracer (top) should be the first trace array added,
   * but we check the flag anyway.
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 9091afcc9d7fa601266f36acb40866fe604d0a46 Mon Sep 17 00:00:00 2001
+From a64ecd2b4b7f761a617877f87715965de0556fd3 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 24 Jul 2009 12:38:56 +0200
 Subject: [PATCH 148/436] preempt: Provide preempt_*_(no)rt variants
@@ -48,5 +48,5 @@ index 81c69aeab662..8681df8e1632 100644
  
  struct preempt_notifier;
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 990033cdd2cadcdf24ccda42457ff96031f70cdb Mon Sep 17 00:00:00 2001
+From 00c9e3285ff96ec493c5afb0408063fd130792a4 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Thu, 21 Sep 2017 16:22:49 -0400
 Subject: [PATCH 070/436] tracing: Reverse the order of trace_types_lock and
@@ -195,5 +195,5 @@ index d53268a4e167..1b87157edbff 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

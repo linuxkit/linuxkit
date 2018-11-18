@@ -1,4 +1,4 @@
-From 4f37296a56c0803abc522de377277c3d02ad1f68 Mon Sep 17 00:00:00 2001
+From 1ded3f00ce8eb2e8016a43d1cefa0590d07a5ab5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Mar 2018 13:07:59 +0100
 Subject: [PATCH 298/436] kernel/cpu_chill: use schedule_hrtimeout()
@@ -42,5 +42,5 @@ index 6c77643eaf02..c0efc22ba635 100644
  		current->flags &= ~PF_NOFREEZE;
  }
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 5031af0b1e3acdbd5664f0b84bdea052b38f8036 Mon Sep 17 00:00:00 2001
+From 8548b225be9811324d83006e197f2adb24b683cc Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Sep 2017 14:43:41 +0200
 Subject: [PATCH 374/436] srcu: use cpu_online() instead custom check
@@ -103,5 +103,5 @@ index 55c56b1aece7..85e2dc55a82c 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

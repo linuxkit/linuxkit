@@ -1,7 +1,7 @@
-From df699d88c450d44032815911ae16dbace8487cfb Mon Sep 17 00:00:00 2001
+From a05e2428f80d25646d2e684f44258dd802e1ec23 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 29 Aug 2018 21:59:04 +0200
-Subject: [PATCH 1/1] Drivers: hv: vmbus: include header for get_irq_regs()
+Subject: [PATCH 434/436] Drivers: hv: vmbus: include header for get_irq_regs()
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

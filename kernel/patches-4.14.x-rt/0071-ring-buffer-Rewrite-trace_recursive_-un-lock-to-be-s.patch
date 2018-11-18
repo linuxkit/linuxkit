@@ -1,4 +1,4 @@
-From 4640032fbb9a1b85f3b35972cca81b60c40fe474 Mon Sep 17 00:00:00 2001
+From 8c82729cb3bf984e8257bf7843a37d19e803edf0 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Fri, 22 Sep 2017 16:59:02 -0400
 Subject: [PATCH 071/436] ring-buffer: Rewrite trace_recursive_(un)lock() to be
@@ -28,10 +28,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 17 insertions(+), 47 deletions(-)
 
 diff --git a/kernel/trace/ring_buffer.c b/kernel/trace/ring_buffer.c
-index fd7809004297..c3b6b47fd44a 100644
+index a1d5e0949dcf..ade8493cb69f 100644
 --- a/kernel/trace/ring_buffer.c
 +++ b/kernel/trace/ring_buffer.c
-@@ -2545,61 +2545,29 @@ rb_wakeups(struct ring_buffer *buffer, struct ring_buffer_per_cpu *cpu_buffer)
+@@ -2547,61 +2547,29 @@ rb_wakeups(struct ring_buffer *buffer, struct ring_buffer_per_cpu *cpu_buffer)
   * The lock and unlock are done within a preempt disable section.
   * The current_context per_cpu variable can only be modified
   * by the current task between lock and unlock. But it can
@@ -107,7 +107,7 @@ index fd7809004297..c3b6b47fd44a 100644
  
  	return 0;
  }
-@@ -2607,7 +2575,9 @@ trace_recursive_lock(struct ring_buffer_per_cpu *cpu_buffer)
+@@ -2609,7 +2577,9 @@ trace_recursive_lock(struct ring_buffer_per_cpu *cpu_buffer)
  static __always_inline void
  trace_recursive_unlock(struct ring_buffer_per_cpu *cpu_buffer)
  {
@@ -119,5 +119,5 @@ index fd7809004297..c3b6b47fd44a 100644
  
  /**
 -- 
-2.18.0
+2.19.1
 

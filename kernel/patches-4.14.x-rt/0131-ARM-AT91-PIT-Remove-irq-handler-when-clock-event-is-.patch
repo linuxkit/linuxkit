@@ -1,4 +1,4 @@
-From a7c8f4dd78d48d16dc260b06f7932b36afb1c9da Mon Sep 17 00:00:00 2001
+From a754559af4b486fa13a446733251f5a539c169a6 Mon Sep 17 00:00:00 2001
 From: Benedikt Spranger <b.spranger@linutronix.de>
 Date: Sat, 6 Mar 2010 17:47:10 +0100
 Subject: [PATCH 131/436] ARM: AT91: PIT: Remove irq handler when clock event
@@ -18,12 +18,12 @@ commit 8fe82a55 ("ARM: at91: sparse irq support") which is included since v3.6.
 Patch based on what Sami Pietikäinen <Sami.Pietikainen@wapice.com> suggested].
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- drivers/clocksource/timer-atmel-pit.c | 18 +++++++-------
+ drivers/clocksource/timer-atmel-pit.c | 19 +++++++--------
  drivers/clocksource/timer-atmel-st.c  | 34 +++++++++++++++++----------
- 2 files changed, 31 insertions(+), 21 deletions(-)
+ 2 files changed, 31 insertions(+), 22 deletions(-)
 
 diff --git a/drivers/clocksource/timer-atmel-pit.c b/drivers/clocksource/timer-atmel-pit.c
-index ec8a4376f74f..d09cfb1dc12b 100644
+index 2fab18fae4fc..68c530354512 100644
 --- a/drivers/clocksource/timer-atmel-pit.c
 +++ b/drivers/clocksource/timer-atmel-pit.c
 @@ -96,15 +96,24 @@ static int pit_clkevt_shutdown(struct clock_event_device *dev)
@@ -51,8 +51,8 @@ index ec8a4376f74f..d09cfb1dc12b 100644
  
  	/* update clocksource counter */
  	data->cnt += data->cycle * PIT_PICNT(pit_read(data->base, AT91_PIT_PIVR));
-@@ -230,15 +239,6 @@ static int __init at91sam926x_pit_dt_init(struct device_node *node)
- 		return ret;
+@@ -233,16 +242,6 @@ static int __init at91sam926x_pit_dt_init(struct device_node *node)
+ 		goto exit;
  	}
  
 -	/* Set up irq handler */
@@ -61,7 +61,8 @@ index ec8a4376f74f..d09cfb1dc12b 100644
 -			  "at91_tick", data);
 -	if (ret) {
 -		pr_err("Unable to setup IRQ\n");
--		return ret;
+-		clocksource_unregister(&data->clksrc);
+-		goto exit;
 -	}
 -
  	/* Set up and register clockevents */
@@ -152,5 +153,5 @@ index d2e660f475af..c63b96cfc23e 100644
  	if (IS_ERR(sclk)) {
  		pr_err("Unable to get slow clock\n");
 -- 
-2.18.0
+2.19.1
 

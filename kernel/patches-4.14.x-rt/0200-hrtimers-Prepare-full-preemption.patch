@@ -1,4 +1,4 @@
-From b290657e952f17668561302ab682a8053569694e Mon Sep 17 00:00:00 2001
+From 720fa9955815e9b88eb6eae4448f48fb91dad0a9 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
 Subject: [PATCH 200/436] hrtimers: Prepare full preemption
@@ -138,10 +138,10 @@ index f26acef5d7b4..760f38528365 100644
  		}
  		expires = timeval_to_ktime(value->it_value);
 diff --git a/kernel/time/posix-timers.c b/kernel/time/posix-timers.c
-index f5392262fb77..f357877f0cb7 100644
+index dff86a0157db..27186326723f 100644
 --- a/kernel/time/posix-timers.c
 +++ b/kernel/time/posix-timers.c
-@@ -797,6 +797,20 @@ SYSCALL_DEFINE1(timer_getoverrun, timer_t, timer_id)
+@@ -806,6 +806,20 @@ SYSCALL_DEFINE1(timer_getoverrun, timer_t, timer_id)
  	return overrun;
  }
  
@@ -162,7 +162,7 @@ index f5392262fb77..f357877f0cb7 100644
  static void common_hrtimer_arm(struct k_itimer *timr, ktime_t expires,
  			       bool absolute, bool sigev_none)
  {
-@@ -891,6 +905,7 @@ static int do_timer_settime(timer_t timer_id, int flags,
+@@ -900,6 +914,7 @@ static int do_timer_settime(timer_t timer_id, int flags,
  	if (!timr)
  		return -EINVAL;
  
@@ -170,7 +170,7 @@ index f5392262fb77..f357877f0cb7 100644
  	kc = timr->kclock;
  	if (WARN_ON_ONCE(!kc || !kc->timer_set))
  		error = -EINVAL;
-@@ -899,9 +914,12 @@ static int do_timer_settime(timer_t timer_id, int flags,
+@@ -908,9 +923,12 @@ static int do_timer_settime(timer_t timer_id, int flags,
  
  	unlock_timer(timr, flag);
  	if (error == TIMER_RETRY) {
@@ -183,7 +183,7 @@ index f5392262fb77..f357877f0cb7 100644
  
  	return error;
  }
-@@ -983,10 +1001,15 @@ SYSCALL_DEFINE1(timer_delete, timer_t, timer_id)
+@@ -992,10 +1010,15 @@ SYSCALL_DEFINE1(timer_delete, timer_t, timer_id)
  	if (!timer)
  		return -EINVAL;
  
@@ -199,7 +199,7 @@ index f5392262fb77..f357877f0cb7 100644
  
  	spin_lock(&current->sighand->siglock);
  	list_del(&timer->list);
-@@ -1012,8 +1035,18 @@ static void itimer_delete(struct k_itimer *timer)
+@@ -1021,8 +1044,18 @@ static void itimer_delete(struct k_itimer *timer)
  retry_delete:
  	spin_lock_irqsave(&timer->it_lock, flags);
  
@@ -219,5 +219,5 @@ index f5392262fb77..f357877f0cb7 100644
  	}
  	list_del(&timer->list);
 -- 
-2.18.0
+2.19.1
 

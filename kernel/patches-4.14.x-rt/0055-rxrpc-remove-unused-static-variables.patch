@@ -1,4 +1,4 @@
-From a1fad51970b3d5e06a1d1874ba4d9322a9fbea04 Mon Sep 17 00:00:00 2001
+From 9189b3435be502e4f5d68f9cddc1521c061f8633 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 21 Oct 2016 10:54:50 +0200
 Subject: [PATCH 055/436] rxrpc: remove unused static variables
@@ -28,5 +28,5 @@ index e9f428351293..c4479afe8ae7 100644
  	[RXRPC_SECURITY_NONE]	= &rxrpc_no_security,
  #ifdef CONFIG_RXKAD
 -- 
-2.18.0
+2.19.1
 

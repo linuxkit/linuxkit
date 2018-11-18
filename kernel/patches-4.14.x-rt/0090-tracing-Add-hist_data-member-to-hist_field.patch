@@ -1,4 +1,4 @@
-From 1416d170806a9362bb5ffd4f428893bb25ad3f2f Mon Sep 17 00:00:00 2001
+From 303b4c99bdb6bdbb51279511fd64a73525ac260d Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:47 -0600
 Subject: [PATCH 090/436] tracing: Add hist_data member to hist_field
@@ -84,5 +84,5 @@ index cd80bca34cec..ec58902145e9 100644
  		ret = -ENOMEM;
  		goto out;
 -- 
-2.18.0
+2.19.1
 

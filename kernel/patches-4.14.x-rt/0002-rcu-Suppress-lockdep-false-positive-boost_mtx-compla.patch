@@ -1,4 +1,4 @@
-From 7dd6932742d496b40ed7403758ebc75dcac11229 Mon Sep 17 00:00:00 2001
+From b771e0a81ae85e59da482ab6ead21f9a0058b481 Mon Sep 17 00:00:00 2001
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Tue, 19 Sep 2017 15:36:42 -0700
 Subject: [PATCH 002/436] rcu: Suppress lockdep false-positive ->boost_mtx
@@ -52,5 +52,5 @@ index 8b3102d22823..181e2487c8b8 100644
  		/*
  		 * If this was the last task on the expedited lists,
 -- 
-2.18.0
+2.19.1
 

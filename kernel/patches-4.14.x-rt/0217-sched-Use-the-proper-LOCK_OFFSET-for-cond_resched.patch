@@ -1,4 +1,4 @@
-From bc57a8c8cd305b417c1532425f9c654a3f788860 Mon Sep 17 00:00:00 2001
+From 03f3ffba48952571c8628c3e77efe6ff28a62f11 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 22:51:33 +0200
 Subject: [PATCH 217/436] sched: Use the proper LOCK_OFFSET for cond_resched()
@@ -28,5 +28,5 @@ index 8681df8e1632..2d5d002e06c2 100644
  /*
   * The preempt_count offset needed for things like:
 -- 
-2.18.0
+2.19.1
 
