@@ -1,4 +1,4 @@
-From daefe5f44b9564aae25b59914facbd58cadc3a82 Mon Sep 17 00:00:00 2001
+From b73389139889b139d0739fc459dfd2df8948c19c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 13:59:17 +0200
 Subject: [PATCH 232/436] softirq: Disable softirq stacks for RT
@@ -119,7 +119,7 @@ index d66dde833f5e..f87b3f8f4d43 100644
  #ifdef CONFIG_HOTPLUG_CPU
  void fixup_irqs(void)
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index 0fae7096ae23..611f00b119c6 100644
+index 164cd7529f0b..8192e87963b5 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
 @@ -988,6 +988,7 @@ bad_gs:
@@ -172,5 +172,5 @@ index e53ff6a143e0..c77f7a9ba836 100644
  #else
  static inline void do_softirq_own_stack(void)
 -- 
-2.18.0
+2.19.1
 

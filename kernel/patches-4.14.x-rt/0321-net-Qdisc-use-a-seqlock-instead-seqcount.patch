@@ -1,4 +1,4 @@
-From 9deb8c7e0af46b05bc1e90675f3feb08b8fd144e Mon Sep 17 00:00:00 2001
+From fabe6c9378466635398874bd6cb51029798f92bf Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
 Subject: [PATCH 321/436] net/Qdisc: use a seqlock instead seqcount
@@ -242,7 +242,7 @@ index 441c04adedba..07f9a6a1f8e4 100644
  		      struct gnet_stats_basic_cpu __percpu *cpu,
  		      struct gnet_stats_basic_packed *b)
 diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
-index 22bc6fc48311..131aac4cf2e0 100644
+index cd69aa067543..73348ac5019f 100644
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
 @@ -1081,7 +1081,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
@@ -289,5 +289,5 @@ index de0839491dd8..341f7895659c 100644
  	sch->ops = ops;
  	sch->enqueue = ops->enqueue;
 -- 
-2.18.0
+2.19.1
 

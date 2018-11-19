@@ -1,4 +1,4 @@
-From 554e1835cbcbda85d19b7f3a766bc59eb226c5c4 Mon Sep 17 00:00:00 2001
+From 0323a396cb4b6da8c82e5b88603ffdb5e2139cb4 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:51 -0600
 Subject: [PATCH 094/436] tracing: Move get_hist_field_flags()
@@ -79,5 +79,5 @@ index 68ff2491edd0..c6c24d6d2be8 100644
  {
  	const char *field_name = hist_field_name(hist_field, 0);
 -- 
-2.18.0
+2.19.1
 

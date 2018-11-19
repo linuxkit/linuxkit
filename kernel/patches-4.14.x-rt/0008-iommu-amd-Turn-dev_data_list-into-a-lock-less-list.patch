@@ -1,4 +1,4 @@
-From 61f3bdb54c57649095506464ef0d662a224281b9 Mon Sep 17 00:00:00 2001
+From e3ccd1de428bd41b16b13d3b970c0224cb0d780c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:34 +0100
 Subject: [PATCH 008/436] iommu/amd: Turn dev_data_list into a lock less list
@@ -24,7 +24,7 @@ Signed-off-by: Joerg Roedel <jroedel@suse.de>
  2 files changed, 11 insertions(+), 19 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index e42992fcebca..1babecd37819 100644
+index 57c873ff05fa..50b6cab604aa 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
 @@ -84,8 +84,7 @@
@@ -101,5 +101,5 @@ index 7521745dc2a5..16b1404da58c 100644
  	u16 devid;			  /* PCI Device ID */
  	u16 alias;			  /* Alias Device ID */
 -- 
-2.18.0
+2.19.1
 

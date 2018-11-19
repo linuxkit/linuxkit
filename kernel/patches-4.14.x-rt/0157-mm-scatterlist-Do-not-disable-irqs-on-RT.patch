@@ -1,4 +1,4 @@
-From aca7d1aae1218a559831b8bdb735fab0cc8154bd Mon Sep 17 00:00:00 2001
+From 48452bcdf2638533efefd544e016aaf3afbe5edd Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:34 -0500
 Subject: [PATCH 157/436] mm/scatterlist: Do not disable irqs on RT
@@ -25,5 +25,5 @@ index be7b4dd6b68d..d06c15d3d186 100644
  		} else
  			kunmap(miter->page);
 -- 
-2.18.0
+2.19.1
 

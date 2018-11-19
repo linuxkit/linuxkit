@@ -1,4 +1,4 @@
-From 0e31a3d0f5204bdc91b335b672e3e1a7dd080203 Mon Sep 17 00:00:00 2001
+From ebc7e14e88eddad10be3e30e0546ea6243f30081 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Thu, 29 Sep 2011 12:24:30 -0500
 Subject: [PATCH 124/436] tracing: Account for preempt off in
@@ -49,5 +49,5 @@ index 40a07276d5a3..cca96e5a8263 100644
  
  		preempt_latency_stop(1);
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 8acdd6d55c9e80699e749a79790d94a2db6e757c Mon Sep 17 00:00:00 2001
+From 6d46ff947e3770ca06a31bed2994e949d53157d9 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:20 -0500
 Subject: [PATCH 074/436] tracing: Make traceprobe parsing code reusable
@@ -333,5 +333,5 @@ index ea0d90a31fc9..2ccfbb8efeb2 100644
  
  static const struct file_operations uprobe_events_ops = {
 -- 
-2.18.0
+2.19.1
 

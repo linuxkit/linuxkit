@@ -1,4 +1,4 @@
-From 77c468895a6f9dbe232193104cf281dd93efb5d9 Mon Sep 17 00:00:00 2001
+From 63d656787882461a3d7f93544d7fc7b2e12e9cba Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 9 Jan 2013 12:08:15 +0100
 Subject: [PATCH 180/436] slub: Enable irqs for __GFP_WAIT
@@ -12,7 +12,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+), 7 deletions(-)
 
 diff --git a/mm/slub.c b/mm/slub.c
-index c88f8f9e2d12..13bb67ee32e8 100644
+index aa884987df6b..9b337c28dd1f 100644
 --- a/mm/slub.c
 +++ b/mm/slub.c
 @@ -1567,14 +1567,17 @@ static struct page *allocate_slab(struct kmem_cache *s, gfp_t flags, int node)
@@ -49,5 +49,5 @@ index c88f8f9e2d12..13bb67ee32e8 100644
  	if (!page)
  		return NULL;
 -- 
-2.18.0
+2.19.1
 

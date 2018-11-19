@@ -1,4 +1,4 @@
-From e8cec8f5d711185cca665fd903898095defb87c8 Mon Sep 17 00:00:00 2001
+From 79f0b9349f6c0c3b3fa12c824db613d1865e0502 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:12 +0100
 Subject: [PATCH 045/436] mac80211_hwsim: Replace hrtimer tasklet with softirq
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 20 insertions(+), 24 deletions(-)
 
 diff --git a/drivers/net/wireless/mac80211_hwsim.c b/drivers/net/wireless/mac80211_hwsim.c
-index d686ba10fecc..4afcdee4f8e2 100644
+index aafa7aa18fbd..388f6d71ba71 100644
 --- a/drivers/net/wireless/mac80211_hwsim.c
 +++ b/drivers/net/wireless/mac80211_hwsim.c
 @@ -537,7 +537,7 @@ struct mac80211_hwsim_data {
@@ -123,7 +123,7 @@ index d686ba10fecc..4afcdee4f8e2 100644
  				data->beacon_int = 0;
  			}
  		}
-@@ -2725,9 +2721,9 @@ static int mac80211_hwsim_new_radio(struct genl_info *info,
+@@ -2722,9 +2718,9 @@ static int mac80211_hwsim_new_radio(struct genl_info *info,
  				    data->debugfs,
  				    data, &hwsim_simulate_radar);
  
@@ -137,5 +137,5 @@ index d686ba10fecc..4afcdee4f8e2 100644
  	spin_lock_bh(&hwsim_radio_lock);
  	list_add_tail(&data->list, &hwsim_radios);
 -- 
-2.18.0
+2.19.1
 

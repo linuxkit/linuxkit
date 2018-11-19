@@ -1,4 +1,4 @@
-From fdf53562d8cca6ed1b310fc06fcec32ad8dc9e45 Mon Sep 17 00:00:00 2001
+From 098486e3e0b23f387a8ae56146af524a899df61b Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:22 -0500
 Subject: [PATCH 076/436] tracing: Add hist_field_name() accessor
@@ -180,5 +180,5 @@ index 4f6b6406d6ec..4dc39e3efb21 100644
  		const char *flags_str = get_hist_field_flags(hist_field);
  
 -- 
-2.18.0
+2.19.1
 

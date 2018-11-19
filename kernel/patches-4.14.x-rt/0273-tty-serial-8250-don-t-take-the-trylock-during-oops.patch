@@ -1,4 +1,4 @@
-From d2e6ecdb858742c580bd81e426057548cbd1548e Mon Sep 17 00:00:00 2001
+From 33ac16833478caafde4674584072d1ac9de5ee11 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 11 Apr 2016 16:55:02 +0200
 Subject: [PATCH 273/436] tty: serial: 8250: don't take the trylock during oops
@@ -30,5 +30,5 @@ index ecf3d631bc09..c331434ce443 100644
  		spin_lock_irqsave(&port->lock, flags);
  
 -- 
-2.18.0
+2.19.1
 

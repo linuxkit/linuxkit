@@ -1,4 +1,4 @@
-From c32e631587454e9343f80d77ff5b4231d9ee7dc9 Mon Sep 17 00:00:00 2001
+From ecc1e9d779785cfa898061b46fa817345c6b368d Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:06 +0100
 Subject: [PATCH 031/436] hrtimer: Make hrtimer_reprogramm() unconditional
@@ -189,5 +189,5 @@ index e01c2e78c032..37085a13f19a 100644
   * Clock realtime was set
   *
 -- 
-2.18.0
+2.19.1
 

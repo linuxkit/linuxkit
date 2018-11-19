@@ -1,4 +1,4 @@
-From 38088d047d673ecfbddff3cc02a15c1093abfcf0 Mon Sep 17 00:00:00 2001
+From e8ee0982f127ed257ce19b4a4ab94663b5c07c13 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:51 +0100
 Subject: [PATCH 018/436] hrtimer: Correct blantanly wrong comment
@@ -38,5 +38,5 @@ index 883fef2926e9..65543d31af32 100644
  	raw_spin_unlock(&cpu_base->lock);
  	trace_hrtimer_expire_entry(timer, now);
 -- 
-2.18.0
+2.19.1
 

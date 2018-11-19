@@ -1,4 +1,4 @@
-From 67873b4ec50b9aa27425e8c7aa0e76a223aba669 Mon Sep 17 00:00:00 2001
+From 6b074ce3e9421503cffe9170fd52b3b7cbc7252a Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:54 -0600
 Subject: [PATCH 097/436] tracing: Pass tracing_map_elt to hist_field accessor
@@ -227,5 +227,5 @@ index 893f65ce31a5..becf37b2b0da 100644
  				key = (void *)(unsigned long)field_contents;
  				use_compound_key = true;
 -- 
-2.18.0
+2.19.1
 

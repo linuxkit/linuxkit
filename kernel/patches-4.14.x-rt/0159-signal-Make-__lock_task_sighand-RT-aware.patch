@@ -1,4 +1,4 @@
-From a25476cf82b2a067d4d9685498ea5fa8ef423af1 Mon Sep 17 00:00:00 2001
+From c77078c084825bfd4f58bc740560d8a57ac2072c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 22 Jul 2011 08:07:08 +0200
 Subject: [PATCH 159/436] signal: Make __lock_task_sighand() RT aware
@@ -40,5 +40,5 @@ index 67354e467778..d02e38f75170 100644
  
  	return sighand;
 -- 
-2.18.0
+2.19.1
 

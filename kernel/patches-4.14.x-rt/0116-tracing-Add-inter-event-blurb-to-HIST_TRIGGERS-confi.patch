@@ -1,4 +1,4 @@
-From 8b9390254dcb58da442d69e7b3a7d2c2772827a5 Mon Sep 17 00:00:00 2001
+From 6fe1fa985a64a1973a5d17be022156fa098e21e5 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:10 -0600
 Subject: [PATCH 116/436] tracing: Add inter-event blurb to HIST_TRIGGERS
@@ -35,5 +35,5 @@ index 4ad6f6ca18c1..55d39a3fbdf7 100644
  
  config MMIOTRACE_TEST
 -- 
-2.18.0
+2.19.1
 

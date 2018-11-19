@@ -1,4 +1,4 @@
-From c86c3e4b354ef9035dcfdf99f8568bc0acba6b43 Mon Sep 17 00:00:00 2001
+From 7bac8f719dba2ad13d81cb8a3ca0530035176de7 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Wed, 18 Feb 2015 16:05:28 +0100
 Subject: [PATCH 314/436] sunrpc: Make svc_xprt_do_enqueue() use
@@ -65,5 +65,5 @@ index d16a8b423c20..cedaf909eb97 100644
  	trace_svc_xprt_do_enqueue(xprt, rqstp);
  }
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 8749dbeb5c1c05ebd67fb5d17b083cc1e1196be0 Mon Sep 17 00:00:00 2001
+From 49fbd1426be14b0f181d0aef09462e23301e0e02 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 10:11:25 +0100
 Subject: [PATCH 164/436] fs: jbd/jbd2: Make state lock and journal head lock
@@ -105,5 +105,5 @@ index 29290bfb94a8..32379bfab9f0 100644
  
  #define J_ASSERT(assert)	BUG_ON(!(assert))
 -- 
-2.18.0
+2.19.1
 

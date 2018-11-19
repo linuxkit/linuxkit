@@ -1,4 +1,4 @@
-From 073b2694545045b990b22e750951f2486e8aee41 Mon Sep 17 00:00:00 2001
+From d934c3d6853f8b23f9fac1635fe4eaefdcebbdd2 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Fri, 7 Sep 2018 15:49:16 -0400
 Subject: [PATCH 435/436] Revert "softirq: keep the 'softirq pending' check
@@ -21,7 +21,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 1 insertion(+), 6 deletions(-)
 
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 996b03fb8c53..ec801952785a 100644
+index e3f89bcef432..583c9ecf04e3 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -842,13 +842,8 @@ static inline void tick_irq_exit(void)
@@ -40,5 +40,5 @@ index 996b03fb8c53..ec801952785a 100644
  			tick_nohz_irq_exit();
  	}
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 640a23c7d9657e9f7882f8ab999b6d9ecd710cce Mon Sep 17 00:00:00 2001
+From 5fc93fc1792bc04e7247b2189ffab41dd28e47e5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 25 May 2018 10:05:13 +0200
 Subject: [PATCH 418/436] PM / s2idle: Make s2idle_wait_head swait based
@@ -58,5 +58,5 @@ index 999236413460..b89605fe0e88 100644
  	raw_spin_unlock_irqrestore(&s2idle_lock, flags);
  }
 -- 
-2.18.0
+2.19.1
 

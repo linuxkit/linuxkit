@@ -1,4 +1,4 @@
-From 68aea95c6e6778ac94323d46c8bd533ee644fcad Mon Sep 17 00:00:00 2001
+From 2dbfbab7c44a39a4fb7a47460b35f12d4cb50201 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:00 -0600
 Subject: [PATCH 103/436] tracing: Add 'onmatch' hist trigger action support
@@ -689,5 +689,5 @@ index 0cf7cc32dee4..34be7af7cc1f 100644
  		seq_printf(m, " if %s", data->filter_str);
  
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From f9b4a04c476fab74c2e54dd5971dace93558c2e9 Mon Sep 17 00:00:00 2001
+From bf8d687dc598107653ab39d2aad51f83b15a2985 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:52 +0100
 Subject: [PATCH 019/436] hrtimer: Fix kerneldoc for struct hrtimer_cpu_base
@@ -44,5 +44,5 @@ index 79b2a8d29d8c..b3a382be8db0 100644
   * @nr_retries:		Total number of hrtimer interrupt retries
   * @nr_hangs:		Total number of hrtimer interrupt hangs
 -- 
-2.18.0
+2.19.1
 

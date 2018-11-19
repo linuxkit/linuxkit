@@ -1,4 +1,4 @@
-From abe0177eb3a728015a35f96779dd64f84e5c50ca Mon Sep 17 00:00:00 2001
+From 58ae5481e81c0df5ba40f2e5889b13e2c7a14258 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 17:08:34 +0200
 Subject: [PATCH 344/436] powerpc: Disable highmem on RT
@@ -24,5 +24,5 @@ index b8525ddc4b3b..f3201bf888ad 100644
  source kernel/Kconfig.hz
  source kernel/Kconfig.preempt
 -- 
-2.18.0
+2.19.1
 

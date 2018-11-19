@@ -1,4 +1,4 @@
-From f471d9f06458ba1b30e5dfe586e3f02967be1af9 Mon Sep 17 00:00:00 2001
+From 4dc6de419fb85d49be8f80b2b78ca900d781bb8c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 2 Dec 2015 11:34:07 +0100
 Subject: [PATCH 238/436] rtmutex: trylock is okay on -RT
@@ -29,5 +29,5 @@ index a8119deef92e..205a0e2ca730 100644
  
  	ret = rt_mutex_fasttrylock(lock, rt_mutex_slowtrylock);
 -- 
-2.18.0
+2.19.1
 

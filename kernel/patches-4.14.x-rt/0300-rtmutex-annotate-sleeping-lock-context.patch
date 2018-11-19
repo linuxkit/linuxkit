@@ -1,4 +1,4 @@
-From a153bfdb847b85d73e863cc34a0c70f403f6975b Mon Sep 17 00:00:00 2001
+From 971e7f8994dbef86bdf01c10e235a5e32d128c7d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 3 May 2018 17:16:26 +0200
 Subject: [PATCH 300/436] rtmutex: annotate sleeping lock context
@@ -239,5 +239,5 @@ index ce2c2d04cbaa..b59e009087a9 100644
  		current->flags &= ~PF_NOFREEZE;
  }
 -- 
-2.18.0
+2.19.1
 

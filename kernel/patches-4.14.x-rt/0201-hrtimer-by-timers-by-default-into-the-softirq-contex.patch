@@ -1,4 +1,4 @@
-From f6af00f51eb9bd8437d00759c5ddf03a68a85eb2 Mon Sep 17 00:00:00 2001
+From 91ec4197fa7e4fb3184ebf7f97a84d58e372d397 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
 Subject: [PATCH 201/436] hrtimer: by timers by default into the softirq
@@ -27,10 +27,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  10 files changed, 48 insertions(+), 12 deletions(-)
 
 diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
-index 6d0fbff71d7a..92f13ac70ad4 100644
+index 13dfb55b84db..dd66f629d1d0 100644
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
-@@ -2120,7 +2120,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
+@@ -2136,7 +2136,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)
  	apic->vcpu = vcpu;
  
  	hrtimer_init(&apic->lapic_timer.timer, CLOCK_MONOTONIC,
@@ -64,7 +64,7 @@ index 3de1b8cf4d2a..3bd606859b0a 100644
  
  /*
 diff --git a/kernel/events/core.c b/kernel/events/core.c
-index 7c394ddf1ce6..178d9c5feb62 100644
+index 4dbce29a9313..de3d23bae9bf 100644
 --- a/kernel/events/core.c
 +++ b/kernel/events/core.c
 @@ -1065,7 +1065,7 @@ static void __perf_mux_hrtimer_init(struct perf_cpu_context *cpuctx, int cpu)
@@ -76,7 +76,7 @@ index 7c394ddf1ce6..178d9c5feb62 100644
  	timer->function = perf_mux_hrtimer_handler;
  }
  
-@@ -8750,7 +8750,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
+@@ -8760,7 +8760,7 @@ static void perf_swevent_init_hrtimer(struct perf_event *event)
  	if (!is_sampling_event(event))
  		return;
  
@@ -207,7 +207,7 @@ index 58045eb976c3..f0a34afbc252 100644
  	clockevents_register_device(&ce_broadcast_hrtimer);
  }
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 542817a88618..3af3d93f49ce 100644
+index 296b623ba045..c21fd6a16870 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -1255,7 +1255,7 @@ void tick_setup_sched_timer(void)
@@ -233,5 +233,5 @@ index 087994b23f8b..ea4c09109ce4 100644
  	hrtimer_start(hrtimer, ns_to_ktime(sample_period),
  		      HRTIMER_MODE_REL_PINNED);
 -- 
-2.18.0
+2.19.1
 

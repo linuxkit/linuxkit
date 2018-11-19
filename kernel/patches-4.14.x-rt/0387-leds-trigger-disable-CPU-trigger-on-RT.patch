@@ -1,4 +1,4 @@
-From fbaa65a633c8d18211a65994c6c8eb2ab26c68cb Mon Sep 17 00:00:00 2001
+From 517f99388c143ae0a62bc1a7d4b16aee80554a15 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 23 Jan 2014 14:45:59 +0100
 Subject: [PATCH 387/436] leds: trigger: disable CPU trigger on -RT
@@ -37,5 +37,5 @@ index 3f9ddb9fafa7..09da5b6b44a1 100644
  	  This allows LEDs to be controlled by active CPUs. This shows
  	  the active CPUs across an array of LEDs so you can see which
 -- 
-2.18.0
+2.19.1
 

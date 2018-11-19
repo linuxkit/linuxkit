@@ -1,4 +1,4 @@
-From d3ae7bc61af8924ab28751f620d3d6f3118363ee Mon Sep 17 00:00:00 2001
+From 6b07734ad489748df65654353084f63fdc1b8d42 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 17:21:40 +0200
 Subject: [PATCH 060/436] iommu/iova: Use raw_cpu_ptr() instead of
@@ -44,5 +44,5 @@ index 33edfa794ae9..b30900025c62 100644
  EXPORT_SYMBOL_GPL(queue_iova);
  
 -- 
-2.18.0
+2.19.1
 

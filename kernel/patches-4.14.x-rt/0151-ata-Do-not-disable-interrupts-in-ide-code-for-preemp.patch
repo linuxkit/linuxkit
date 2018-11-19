@@ -1,4 +1,4 @@
-From 9a6df95171f7979ec424d911855ace06d7b4120d Mon Sep 17 00:00:00 2001
+From 56cd4bae71375f55e490683b5d998dbe74e263ce Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <srostedt@redhat.com>
 Date: Fri, 3 Jul 2009 08:44:29 -0500
 Subject: [PATCH 151/436] ata: Do not disable interrupts in ide code for
@@ -30,5 +30,5 @@ index cc2f2e35f4c2..0f0bc86e02df 100644
  	return consumed;
  }
 -- 
-2.18.0
+2.19.1
 

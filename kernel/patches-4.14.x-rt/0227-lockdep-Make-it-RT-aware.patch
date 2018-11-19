@@ -1,4 +1,4 @@
-From db4b16f11466ac66f9dbf7544c78c5e74aa651ce Mon Sep 17 00:00:00 2001
+From 17014b28a63a27db4b5781c10e89dc0ef3c1b463 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 18:51:23 +0200
 Subject: [PATCH 227/436] lockdep: Make it RT aware
@@ -78,5 +78,5 @@ index d7c155048ea9..def51a27f20f 100644
  	if (!debug_locks)
  		print_irqtrace_events(current);
 -- 
-2.18.0
+2.19.1
 

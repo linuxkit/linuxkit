@@ -1,4 +1,4 @@
-From c0a206c6c67732ce8e951f48bbaebc66e94c09ff Mon Sep 17 00:00:00 2001
+From b81f8a09c69bfa0a82ab64127d59b32b627cf110 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 1 Apr 2017 12:50:59 +0200
 Subject: [PATCH 248/436] rtmutex: Make lock_killable work
@@ -46,5 +46,5 @@ index fb6bb56ac33d..5f2b7609693f 100644
  
  		raw_spin_unlock_irq(&lock->wait_lock);
 -- 
-2.18.0
+2.19.1
 

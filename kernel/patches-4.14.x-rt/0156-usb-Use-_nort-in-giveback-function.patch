@@ -1,4 +1,4 @@
-From bfd6b93bf4f808c0645ba538eeaba459ddf9f2fd Mon Sep 17 00:00:00 2001
+From 69491178150f4c6625391c189695398ca7e3e1ca Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 8 Nov 2013 17:34:54 +0100
 Subject: [PATCH 156/436] usb: Use _nort in giveback function
@@ -59,5 +59,5 @@ index d0b2e0ed9bab..91f4f2bd55b0 100644
  	usb_anchor_resume_wakeups(anchor);
  	atomic_dec(&urb->use_count);
 -- 
-2.18.0
+2.19.1
 

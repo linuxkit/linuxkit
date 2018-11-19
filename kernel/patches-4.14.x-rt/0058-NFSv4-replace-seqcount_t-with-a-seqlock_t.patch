@@ -1,4 +1,4 @@
-From 089e5ef607cf2e3fd8919fcc1bc20c73eb1ffa6d Mon Sep 17 00:00:00 2001
+From 9fa0e7f0017db01e7e8c77ca1f86a566d4e5f019 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 28 Oct 2016 23:05:11 +0200
 Subject: [PATCH 058/436] NFSv4: replace seqcount_t with a seqlock_t
@@ -57,10 +57,10 @@ index a73144b3cb8c..0c403d280b96 100644
  };
  
 diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
-index 77c7d29fcd3b..e0a9f811f0ef 100644
+index a3b67d3b1dfb..4ce6ec109c2b 100644
 --- a/fs/nfs/nfs4proc.c
 +++ b/fs/nfs/nfs4proc.c
-@@ -2696,7 +2696,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
+@@ -2700,7 +2700,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
  	unsigned int seq;
  	int ret;
  
@@ -69,7 +69,7 @@ index 77c7d29fcd3b..e0a9f811f0ef 100644
  
  	ret = _nfs4_proc_open(opendata);
  	if (ret != 0)
-@@ -2734,7 +2734,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
+@@ -2738,7 +2738,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
  
  	if (d_inode(dentry) == state->inode) {
  		nfs_inode_attach_open_context(ctx);
@@ -79,7 +79,7 @@ index 77c7d29fcd3b..e0a9f811f0ef 100644
  	}
  out:
 diff --git a/fs/nfs/nfs4state.c b/fs/nfs/nfs4state.c
-index 45873ed92057..c487a1ca7106 100644
+index e1d88bca815e..c51bcc176026 100644
 --- a/fs/nfs/nfs4state.c
 +++ b/fs/nfs/nfs4state.c
 @@ -494,7 +494,7 @@ nfs4_alloc_state_owner(struct nfs_server *server,
@@ -91,7 +91,7 @@ index 45873ed92057..c487a1ca7106 100644
  	mutex_init(&sp->so_delegreturn_mutex);
  	return sp;
  }
-@@ -1519,8 +1519,12 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
+@@ -1521,8 +1521,12 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
  	 * recovering after a network partition or a reboot from a
  	 * server that doesn't support a grace period.
  	 */
@@ -105,7 +105,7 @@ index 45873ed92057..c487a1ca7106 100644
  restart:
  	list_for_each_entry(state, &sp->so_states, open_states) {
  		if (!test_and_clear_bit(ops->state_flag_bit, &state->flags))
-@@ -1589,14 +1593,20 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
+@@ -1591,14 +1595,20 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
  		spin_lock(&sp->so_lock);
  		goto restart;
  	}
@@ -131,5 +131,5 @@ index 45873ed92057..c487a1ca7106 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

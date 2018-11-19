@@ -1,4 +1,4 @@
-From 64ecbc2f8fd6f506d936c801a7d7d6a2fef52d82 Mon Sep 17 00:00:00 2001
+From 4d5bd2bc8c1046d6b64b98bf080b9e73d5eb8eb9 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:18 -0500
 Subject: [PATCH 072/436] tracing: Remove lookups from tracing_map hitcount
@@ -32,5 +32,5 @@ index 305039b122fa..07e75344725b 100644
  		}
  
 -- 
-2.18.0
+2.19.1
 

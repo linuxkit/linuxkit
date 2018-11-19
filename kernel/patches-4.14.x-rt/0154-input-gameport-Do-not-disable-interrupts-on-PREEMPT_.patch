@@ -1,4 +1,4 @@
-From 1622db186dcb64c3e5e420f29b3acfaa4b22e940 Mon Sep 17 00:00:00 2001
+From c0f28798a0a317fe5b47c3a849bf72acdb3a563d Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:30:16 -0500
 Subject: [PATCH 154/436] input: gameport: Do not disable interrupts on
@@ -62,5 +62,5 @@ index cedc665364cd..4a4fdef151aa 100644
  		if (t2 - t1 < tx) tx = t2 - t1;
  	}
 -- 
-2.18.0
+2.19.1
 

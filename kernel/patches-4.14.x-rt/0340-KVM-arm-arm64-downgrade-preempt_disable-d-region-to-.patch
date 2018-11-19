@@ -1,4 +1,4 @@
-From fbec738a0ec882a6f7bc43eb150627cdd8e7839f Mon Sep 17 00:00:00 2001
+From 87c87ce40ea5540075906896d99ba9b3f111719e Mon Sep 17 00:00:00 2001
 From: Josh Cartwright <joshc@ni.com>
 Date: Thu, 11 Feb 2016 11:54:01 -0600
 Subject: [PATCH 340/436] KVM: arm/arm64: downgrade preempt_disable()d region
@@ -54,5 +54,5 @@ index 0099cce0e264..c09e04130bfe 100644
  		ret = handle_exit(vcpu, run, ret);
  	}
 -- 
-2.18.0
+2.19.1
 

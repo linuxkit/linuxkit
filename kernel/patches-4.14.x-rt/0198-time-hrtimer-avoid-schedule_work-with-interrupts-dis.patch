@@ -1,4 +1,4 @@
-From 3745472a088f722979ca560c95f05e4310a3c437 Mon Sep 17 00:00:00 2001
+From 1ddb1305ba99dc123612581f1b7e9090866fcc0e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 15 Nov 2017 17:29:51 +0100
 Subject: [PATCH 198/436] time/hrtimer: avoid schedule_work() with interrupts
@@ -55,5 +55,5 @@ index 807133c1bc20..9b08190ff65a 100644
  			    void __user *buffer, size_t *lenp,
  			    loff_t *ppos)
 -- 
-2.18.0
+2.19.1
 

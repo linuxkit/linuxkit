@@ -1,4 +1,4 @@
-From 72b28b7932c1c6c0ea65a0d850cf98f8efaa1134 Mon Sep 17 00:00:00 2001
+From 6ff55e6580937cb7a03c77030dcb18b0ad9d07fc Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 12 Oct 2017 17:34:38 +0200
 Subject: [PATCH 259/436] rtmutex: add ww_mutex addon for mutex-rt
@@ -428,5 +428,5 @@ index a8f7ce5be989..26991ddb6c5a 100644
  	/*
  	 * The slowlock() above is guaranteed to return with the rtmutex is
 -- 
-2.18.0
+2.19.1
 

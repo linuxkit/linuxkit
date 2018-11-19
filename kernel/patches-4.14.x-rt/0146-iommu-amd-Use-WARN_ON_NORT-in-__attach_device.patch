@@ -1,4 +1,4 @@
-From 5373529780f4060b2d44529f397b720e02c8b623 Mon Sep 17 00:00:00 2001
+From 0ca497c4a9cf8e3eeb00e31decbb09708c0a31e4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 27 Feb 2016 10:22:23 +0100
 Subject: [PATCH 146/436] iommu/amd: Use WARN_ON_NORT in __attach_device()
@@ -16,10 +16,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index f61c2dab5490..b96b8c11a586 100644
+index 876947fcb4c6..7d9d41f803d1 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
-@@ -1937,10 +1937,10 @@ static int __attach_device(struct iommu_dev_data *dev_data,
+@@ -1943,10 +1943,10 @@ static int __attach_device(struct iommu_dev_data *dev_data,
  	int ret;
  
  	/*
@@ -33,7 +33,7 @@ index f61c2dab5490..b96b8c11a586 100644
  
  	/* lock domain */
  	spin_lock(&domain->lock);
-@@ -2108,10 +2108,10 @@ static void __detach_device(struct iommu_dev_data *dev_data)
+@@ -2114,10 +2114,10 @@ static void __detach_device(struct iommu_dev_data *dev_data)
  	struct protection_domain *domain;
  
  	/*
@@ -48,5 +48,5 @@ index f61c2dab5490..b96b8c11a586 100644
  	if (WARN_ON(!dev_data->domain))
  		return;
 -- 
-2.18.0
+2.19.1
 

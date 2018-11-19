@@ -1,4 +1,4 @@
-From ffd180daded1dd7e94e1db07b44d8a43ad08d894 Mon Sep 17 00:00:00 2001
+From a9c7c5d7c937d61e93dc109aed660c37b12058c1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
 Subject: [PATCH 233/436] softirq: Split softirq locks
@@ -211,7 +211,7 @@ index c4a45145e102..c86f3d3b9a72 100644
  	boot_cpu_hotplug_init();
  
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 7f8629d8ee57..fe0b46080cdb 100644
+index 7f8629d8ee57..92fbc06bce6f 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -26,6 +26,7 @@
@@ -304,7 +304,7 @@ index 7f8629d8ee57..fe0b46080cdb 100644
 +{
 +	static int rate_limit;
 +
-+	if (rate_limit < 10 &&
++	if (rate_limit < 10 && !in_softirq() &&
 +			(local_softirq_pending() & SOFTIRQ_STOP_IDLE_MASK)) {
 +		printk(KERN_ERR "NOHZ: local_softirq_pending %02x\n",
 +		       local_softirq_pending());
@@ -810,7 +810,7 @@ index 7f8629d8ee57..fe0b46080cdb 100644
  	.thread_fn		= run_ksoftirqd,
  	.thread_comm		= "ksoftirqd/%u",
 diff --git a/kernel/time/tick-sched.c b/kernel/time/tick-sched.c
-index 3af3d93f49ce..92222682dfce 100644
+index c21fd6a16870..92222682dfce 100644
 --- a/kernel/time/tick-sched.c
 +++ b/kernel/time/tick-sched.c
 @@ -911,14 +911,7 @@ static bool can_stop_idle_tick(int cpu, struct tick_sched *ts)
@@ -819,7 +819,7 @@ index 3af3d93f49ce..92222682dfce 100644
  	if (unlikely(local_softirq_pending() && cpu_online(cpu))) {
 -		static int ratelimit;
 -
--		if (ratelimit < 10 &&
+-		if (ratelimit < 10 && !in_softirq() &&
 -		    (local_softirq_pending() & SOFTIRQ_STOP_IDLE_MASK)) {
 -			pr_warn("NOHZ: local_softirq_pending %02x\n",
 -				(unsigned int) local_softirq_pending());
@@ -830,10 +830,10 @@ index 3af3d93f49ce..92222682dfce 100644
  	}
  
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 3c074254ee80..d2793442d459 100644
+index 048fc3e7355c..2400b73f79b2 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -4088,11 +4088,9 @@ int netif_rx_ni(struct sk_buff *skb)
+@@ -4110,11 +4110,9 @@ int netif_rx_ni(struct sk_buff *skb)
  
  	trace_netif_rx_ni_entry(skb);
  
@@ -848,5 +848,5 @@ index 3c074254ee80..d2793442d459 100644
  	return err;
  }
 -- 
-2.18.0
+2.19.1
 

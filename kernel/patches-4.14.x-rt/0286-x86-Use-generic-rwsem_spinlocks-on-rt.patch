@@ -1,4 +1,4 @@
-From 9558c60336915bd285175c0b12e4dd2cc83b71d2 Mon Sep 17 00:00:00 2001
+From e93fe4a0241a21b017e2eb266ebf0e66dcd50c55 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 26 Jul 2009 02:21:32 +0200
 Subject: [PATCH 286/436] x86: Use generic rwsem_spinlocks on -rt
@@ -29,5 +29,5 @@ index 2af0af33362a..5c7203cc0e6f 100644
  config GENERIC_CALIBRATE_DELAY
  	def_bool y
 -- 
-2.18.0
+2.19.1
 

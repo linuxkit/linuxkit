@@ -1,4 +1,4 @@
-From 14b16fdfdab97a7a2dea23f77b9fc76e3f503e3a Mon Sep 17 00:00:00 2001
+From 4fbc58de76eb03aacc9fc2fcd59465adf1546d1f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 30 May 2017 16:39:01 +0200
 Subject: [PATCH 362/436] char/random: don't print that the init is done
@@ -182,5 +182,5 @@ index 9fb3c929765c..c72a7f0b4494 100644
  		}
  	}
 -- 
-2.18.0
+2.19.1
 

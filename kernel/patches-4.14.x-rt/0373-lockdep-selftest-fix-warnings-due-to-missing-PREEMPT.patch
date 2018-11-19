@@ -1,4 +1,4 @@
-From 2c50a7289857b43d72a507c46c17d5f6ed6fc59d Mon Sep 17 00:00:00 2001
+From 55591a8dcdab815c288a513658a7bc7da6c31175 Mon Sep 17 00:00:00 2001
 From: Josh Cartwright <josh.cartwright@ni.com>
 Date: Wed, 28 Jan 2015 13:08:45 -0600
 Subject: [PATCH 373/436] lockdep: selftest: fix warnings due to missing
@@ -144,5 +144,5 @@ index 7a452887c9c3..075e225f4111 100644
   * read-lock / write-lock recursion that is unsafe.
   */
 -- 
-2.18.0
+2.19.1
 

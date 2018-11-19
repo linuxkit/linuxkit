@@ -1,4 +1,4 @@
-From 68abdeec10ab458a3360e7975d489f6c21431a51 Mon Sep 17 00:00:00 2001
+From 48095cfa3c1fed248e05fd3bccac285077201a13 Mon Sep 17 00:00:00 2001
 From: Yang Shi <yang.shi@linaro.org>
 Date: Thu, 10 Dec 2015 10:58:51 -0800
 Subject: [PATCH 161/436] x86/signal: delay calling signals on 32bit
@@ -44,5 +44,5 @@ index 7c7846cbab45..39117e57caf2 100644
  #endif
  
 -- 
-2.18.0
+2.19.1
 

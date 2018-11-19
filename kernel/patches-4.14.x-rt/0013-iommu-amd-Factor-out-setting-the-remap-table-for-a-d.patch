@@ -1,4 +1,4 @@
-From c903281f196c92a71078d0c1d3d5c0d43a1b8911 Mon Sep 17 00:00:00 2001
+From 78529f05c82263add354e44bef0e96fd7e9d7068 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:39 +0100
 Subject: [PATCH 013/436] iommu/amd: Factor out setting the remap table for a
@@ -20,10 +20,10 @@ Signed-off-by: Joerg Roedel <jroedel@suse.de>
  1 file changed, 12 insertions(+), 11 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index bfda5f26ea50..d4eeb91afa36 100644
+index 561664b0e609..473ec78ba50c 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
-@@ -3594,6 +3594,14 @@ static struct irq_remap_table *get_irq_table(u16 devid)
+@@ -3600,6 +3600,14 @@ static struct irq_remap_table *get_irq_table(u16 devid)
  	return table;
  }
  
@@ -38,7 +38,7 @@ index bfda5f26ea50..d4eeb91afa36 100644
  static struct irq_remap_table *alloc_irq_table(u16 devid)
  {
  	struct irq_remap_table *table = NULL;
-@@ -3614,9 +3622,7 @@ static struct irq_remap_table *alloc_irq_table(u16 devid)
+@@ -3620,9 +3628,7 @@ static struct irq_remap_table *alloc_irq_table(u16 devid)
  	alias = amd_iommu_alias_table[devid];
  	table = irq_lookup_table[alias];
  	if (table) {
@@ -49,7 +49,7 @@ index bfda5f26ea50..d4eeb91afa36 100644
  		goto out;
  	}
  
-@@ -3643,14 +3649,9 @@ static struct irq_remap_table *alloc_irq_table(u16 devid)
+@@ -3649,14 +3655,9 @@ static struct irq_remap_table *alloc_irq_table(u16 devid)
  		       (MAX_IRQS_PER_TABLE * (sizeof(u64) * 2)));
  
  
@@ -68,5 +68,5 @@ index bfda5f26ea50..d4eeb91afa36 100644
  out:
  	iommu_completion_wait(iommu);
 -- 
-2.18.0
+2.19.1
 

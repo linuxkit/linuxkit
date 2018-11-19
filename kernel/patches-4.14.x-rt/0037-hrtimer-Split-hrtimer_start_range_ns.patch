@@ -1,4 +1,4 @@
-From 4920cb2e2960150f0fe8352962d526fc14ca0aba Mon Sep 17 00:00:00 2001
+From e2c098336608f18700fd9487c311fb9aeece7d92 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:12 +0100
 Subject: [PATCH 037/436] hrtimer: Split hrtimer_start_range_ns()
@@ -77,5 +77,5 @@ index 9030dcb3ef14..687a8d903a18 100644
  }
  EXPORT_SYMBOL_GPL(hrtimer_start_range_ns);
 -- 
-2.18.0
+2.19.1
 

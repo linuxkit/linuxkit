@@ -1,4 +1,4 @@
-From b62cbd6acc3c520b4097ebcf612f1c63b064c85e Mon Sep 17 00:00:00 2001
+From b532b8c52b78b3ed509f8df7af1c18e649a86338 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Feb 2018 11:45:13 +0100
 Subject: [PATCH 264/436] RCU: skip the "schedule() in RCU section" warning on
@@ -128,5 +128,5 @@ index ae45cd2e929f..ab6ec5fb6796 100644
 +EXPORT_SYMBOL(migrate_enable);
  #endif
 -- 
-2.18.0
+2.19.1
 

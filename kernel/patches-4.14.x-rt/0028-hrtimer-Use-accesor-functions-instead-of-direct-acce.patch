@@ -1,4 +1,4 @@
-From d5170ac607094f2114fdd6c14e0083416a9f260a Mon Sep 17 00:00:00 2001
+From 0cb9b38d194f0dd00e2f1ff3df007d190eadbce0 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:03 +0100
 Subject: [PATCH 028/436] hrtimer: Use accesor functions instead of direct
@@ -38,5 +38,5 @@ index 7e0490143275..85882d5da523 100644
  
  	raw_spin_lock(&base->lock);
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 98d7854c84a951f48716262fa16cff392dce9a23 Mon Sep 17 00:00:00 2001
+From d27f2714b35489b3fd0f42402c6f9438c0a51a0c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:35 -0600
 Subject: [PATCH 078/436] tracing: Move hist trigger Documentation to
@@ -3150,5 +3150,5 @@ index 000000000000..b2145f44b190
 +        Entries: 7
 +        Dropped: 0
 -- 
-2.18.0
+2.19.1
 

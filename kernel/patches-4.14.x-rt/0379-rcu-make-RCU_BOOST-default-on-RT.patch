@@ -1,4 +1,4 @@
-From e25ebfdba7f69d1753ea5052d0dbdaaa68b7fc2a Mon Sep 17 00:00:00 2001
+From 5d5d9c25de1acf3a03307f9d7ef92407c67c358e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 21 Mar 2014 20:19:05 +0100
 Subject: [PATCH 379/436] rcu: make RCU_BOOST default on RT
@@ -36,5 +36,5 @@ index 644264be90f0..0be2c96fb640 100644
  	  This option boosts the priority of preempted RCU readers that
  	  block the current preemptible RCU grace period for too long.
 -- 
-2.18.0
+2.19.1
 

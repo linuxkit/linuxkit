@@ -1,4 +1,4 @@
-From 91d012a564e3d1c7be85c7e7512b59308e4a1b1f Mon Sep 17 00:00:00 2001
+From 7a862ee14845f42bad88b639eac42efcd5ea1b88 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 20 Dec 2012 18:28:26 +0100
 Subject: [PATCH 302/436] block: Use cpu_chill() for retry loops
@@ -46,5 +46,5 @@ index f23311e4b201..ca9ea624f159 100644
  			}
  		}
 -- 
-2.18.0
+2.19.1
 

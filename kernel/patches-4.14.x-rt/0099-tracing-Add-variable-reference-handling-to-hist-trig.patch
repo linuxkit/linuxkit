@@ -1,4 +1,4 @@
-From 3e0e4d82381b6107a7fcd68979f3c1ab36967de4 Mon Sep 17 00:00:00 2001
+From 4237736e5974d0768349dea6743014d1c43585c6 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:56 -0600
 Subject: [PATCH 099/436] tracing: Add variable reference handling to hist
@@ -963,5 +963,5 @@ index 4c269f2e00a4..24d42350d738 100644
  traceon_trigger(struct event_trigger_data *data, void *rec,
  		struct ring_buffer_event *event)
 -- 
-2.18.0
+2.19.1
 

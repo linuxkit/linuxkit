@@ -1,4 +1,4 @@
-From f8deff9630d9ee06227f67bfe1b89819c21d836f Mon Sep 17 00:00:00 2001
+From b08ab556382f0bdce4b2f23a8c03a5373acfe6d3 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Thu, 26 Apr 2018 20:04:49 -0500
 Subject: [PATCH 408/436] tracing: Add field modifier parsing hist error for
@@ -48,5 +48,5 @@ index 37db86145c8b..b8fee11b5be9 100644
  			goto out;
  		}
 -- 
-2.18.0
+2.19.1
 

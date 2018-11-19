@@ -1,4 +1,4 @@
-From 15d8f941f626aadae7298776dcc43d764888024f Mon Sep 17 00:00:00 2001
+From 808256d4814307c7c81ff3237ee52b008f64a1dc Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Wed, 13 Feb 2013 09:26:05 -0500
 Subject: [PATCH 358/436] acpi/rt: Convert acpi_gbl_hardware lock back to a
@@ -184,5 +184,5 @@ index 1b473efd9eb6..89ee5e1dac48 100644
   * OSL interfaces used by debugger/disassembler
   */
 -- 
-2.18.0
+2.19.1
 

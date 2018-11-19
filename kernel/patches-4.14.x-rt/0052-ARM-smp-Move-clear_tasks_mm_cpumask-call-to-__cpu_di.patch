@@ -1,4 +1,4 @@
-From f7b15f51329f5051d329d9b8199009e24e1133fb Mon Sep 17 00:00:00 2001
+From 53fb9206323ef728ea0f14902463967e270bd819 Mon Sep 17 00:00:00 2001
 From: Grygorii Strashko <grygorii.strashko@ti.com>
 Date: Fri, 11 Sep 2015 21:21:23 +0300
 Subject: [PATCH 052/436] ARM: smp: Move clear_tasks_mm_cpumask() call to
@@ -66,10 +66,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 1 insertion(+), 2 deletions(-)
 
 diff --git a/arch/arm/kernel/smp.c b/arch/arm/kernel/smp.c
-index c9a0a5299827..7e5122af96ca 100644
+index e61af0600133..d8f2e77d5651 100644
 --- a/arch/arm/kernel/smp.c
 +++ b/arch/arm/kernel/smp.c
-@@ -236,8 +236,6 @@ int __cpu_disable(void)
+@@ -237,8 +237,6 @@ int __cpu_disable(void)
  	flush_cache_louis();
  	local_flush_tlb_all();
  
@@ -78,7 +78,7 @@ index c9a0a5299827..7e5122af96ca 100644
  	return 0;
  }
  
-@@ -255,6 +253,7 @@ void __cpu_die(unsigned int cpu)
+@@ -256,6 +254,7 @@ void __cpu_die(unsigned int cpu)
  	}
  	pr_debug("CPU%u: shutdown\n", cpu);
  
@@ -87,5 +87,5 @@ index c9a0a5299827..7e5122af96ca 100644
  	 * platform_cpu_kill() is generally expected to do the powering off
  	 * and/or cutting of clocks to the dying CPU.  Optionally, this may
 -- 
-2.18.0
+2.19.1
 

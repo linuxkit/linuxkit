@@ -1,4 +1,4 @@
-From 14bb847988c3d7320603b5a71c72ebe7f2552491 Mon Sep 17 00:00:00 2001
+From 6bb97ecf668522b3b8537b234361fa39b0926c52 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Feb 2015 15:52:24 +0100
 Subject: [PATCH 398/436] cgroups: use simple wait in css_release()
@@ -34,7 +34,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/include/linux/cgroup-defs.h b/include/linux/cgroup-defs.h
-index 4e8f77504a57..8155c26315b7 100644
+index e7905d9353e8..4ecf7875e04f 100644
 --- a/include/linux/cgroup-defs.h
 +++ b/include/linux/cgroup-defs.h
 @@ -19,6 +19,7 @@
@@ -54,10 +54,10 @@ index 4e8f77504a57..8155c26315b7 100644
  	/*
  	 * PI: the parent css.	Placed here for cache proximity to following
 diff --git a/kernel/cgroup/cgroup.c b/kernel/cgroup/cgroup.c
-index 76c0ef2cb509..cfa3505f2b3b 100644
+index 3fc11b8851ac..a04c3aded76b 100644
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -4508,10 +4508,10 @@ static void css_free_rcu_fn(struct rcu_head *rcu_head)
+@@ -4515,10 +4515,10 @@ static void css_free_rcu_fn(struct rcu_head *rcu_head)
  	queue_work(cgroup_destroy_wq, &css->destroy_work);
  }
  
@@ -70,7 +70,7 @@ index 76c0ef2cb509..cfa3505f2b3b 100644
  	struct cgroup_subsys *ss = css->ss;
  	struct cgroup *cgrp = css->cgroup;
  
-@@ -4562,8 +4562,8 @@ static void css_release(struct percpu_ref *ref)
+@@ -4569,8 +4569,8 @@ static void css_release(struct percpu_ref *ref)
  	struct cgroup_subsys_state *css =
  		container_of(ref, struct cgroup_subsys_state, refcnt);
  
@@ -81,7 +81,7 @@ index 76c0ef2cb509..cfa3505f2b3b 100644
  }
  
  static void init_and_link_css(struct cgroup_subsys_state *css,
-@@ -5269,6 +5269,7 @@ static int __init cgroup_wq_init(void)
+@@ -5276,6 +5276,7 @@ static int __init cgroup_wq_init(void)
  	 */
  	cgroup_destroy_wq = alloc_workqueue("cgroup_destroy", 0, 1);
  	BUG_ON(!cgroup_destroy_wq);
@@ -90,5 +90,5 @@ index 76c0ef2cb509..cfa3505f2b3b 100644
  }
  core_initcall(cgroup_wq_init);
 -- 
-2.18.0
+2.19.1
 

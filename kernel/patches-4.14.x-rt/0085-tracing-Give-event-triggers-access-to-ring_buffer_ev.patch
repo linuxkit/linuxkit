@@ -1,4 +1,4 @@
-From e72ce81313743863730c6df969d034b2dd036a93 Mon Sep 17 00:00:00 2001
+From 6755f8741feecbfa6e028adc2c8d4b97b2853521 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:42 -0600
 Subject: [PATCH 085/436] tracing: Give event triggers access to
@@ -312,5 +312,5 @@ index 43254c5e7e16..4c269f2e00a4 100644
  
  int event_enable_trigger_print(struct seq_file *m,
 -- 
-2.18.0
+2.19.1
 

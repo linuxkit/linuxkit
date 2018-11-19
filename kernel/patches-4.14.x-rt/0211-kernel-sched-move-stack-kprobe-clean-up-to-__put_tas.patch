@@ -1,4 +1,4 @@
-From d7277971eddd793dcf6e17718a449c87d00a4fb4 Mon Sep 17 00:00:00 2001
+From 4074010bd28a8b0ba50df009cba3266165b7069d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 21 Nov 2016 19:31:08 +0100
 Subject: [PATCH 211/436] kernel/sched: move stack + kprobe clean up to
@@ -64,5 +64,5 @@ index b99908d5d3cb..33951deb3a3d 100644
  	}
  
 -- 
-2.18.0
+2.19.1
 

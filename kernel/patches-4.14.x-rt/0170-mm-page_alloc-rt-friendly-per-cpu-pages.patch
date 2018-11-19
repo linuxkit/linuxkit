@@ -1,4 +1,4 @@
-From f9eea1ea07cfd4a0c1c898839ca5863823d061d6 Mon Sep 17 00:00:00 2001
+From c2abc19756ef4fffddc0767b273bcd3f34d19beb Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:37 -0500
 Subject: [PATCH 170/436] mm: page_alloc: rt-friendly per-cpu pages
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 39 insertions(+), 16 deletions(-)
 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 59ccf455fcbd..76a291ac2172 100644
+index a604b5da6755..200abf5dc616 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -61,6 +61,7 @@
@@ -197,7 +197,7 @@ index 59ccf455fcbd..76a291ac2172 100644
  	return NULL;
  }
  
-@@ -7683,7 +7706,7 @@ void zone_pcp_reset(struct zone *zone)
+@@ -7690,7 +7713,7 @@ void zone_pcp_reset(struct zone *zone)
  	struct per_cpu_pageset *pset;
  
  	/* avoid races with drain_pages()  */
@@ -206,7 +206,7 @@ index 59ccf455fcbd..76a291ac2172 100644
  	if (zone->pageset != &boot_pageset) {
  		for_each_online_cpu(cpu) {
  			pset = per_cpu_ptr(zone->pageset, cpu);
-@@ -7692,7 +7715,7 @@ void zone_pcp_reset(struct zone *zone)
+@@ -7699,7 +7722,7 @@ void zone_pcp_reset(struct zone *zone)
  		free_percpu(zone->pageset);
  		zone->pageset = &boot_pageset;
  	}
@@ -216,5 +216,5 @@ index 59ccf455fcbd..76a291ac2172 100644
  
  #ifdef CONFIG_MEMORY_HOTREMOVE
 -- 
-2.18.0
+2.19.1
 

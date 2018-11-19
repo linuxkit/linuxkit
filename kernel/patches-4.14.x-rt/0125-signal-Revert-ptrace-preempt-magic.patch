@@ -1,4 +1,4 @@
-From c36c715e776a551e2d4c618b7c118f1bdfbc6578 Mon Sep 17 00:00:00 2001
+From 711518899e437a7dfba11ec1aa8557b15d8d34df Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 21 Sep 2011 19:57:12 +0200
 Subject: [PATCH 125/436] signal: Revert ptrace preempt magic
@@ -33,5 +33,5 @@ index 4439ba9dc5d9..2167e0407cbf 100644
  	} else {
  		/*
 -- 
-2.18.0
+2.19.1
 

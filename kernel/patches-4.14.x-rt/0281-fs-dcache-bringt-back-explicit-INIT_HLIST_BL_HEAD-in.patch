@@ -1,4 +1,4 @@
-From 9b61567c80ddaf2f4edac777ba5aebb8c0db344c Mon Sep 17 00:00:00 2001
+From c9dd95ccf021700144a53dcc9546e15d9f1a8668 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Sep 2017 12:32:34 +0200
 Subject: [PATCH 281/436] fs/dcache: bringt back explicit INIT_HLIST_BL_HEAD
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 10 insertions(+)
 
 diff --git a/fs/dcache.c b/fs/dcache.c
-index c1a7c174a905..f83742e47b4b 100644
+index 28b2e770bb69..f93b5570bc99 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -3618,6 +3618,8 @@ __setup("dhash_entries=", set_dhash_entries);
+@@ -3638,6 +3638,8 @@ __setup("dhash_entries=", set_dhash_entries);
  
  static void __init dcache_init_early(void)
  {
@@ -27,7 +27,7 @@ index c1a7c174a905..f83742e47b4b 100644
  	/* If hashes are distributed across NUMA nodes, defer
  	 * hash allocation until vmalloc space is available.
  	 */
-@@ -3634,10 +3636,14 @@ static void __init dcache_init_early(void)
+@@ -3654,10 +3656,14 @@ static void __init dcache_init_early(void)
  					&d_hash_mask,
  					0,
  					0);
@@ -42,7 +42,7 @@ index c1a7c174a905..f83742e47b4b 100644
  	/*
  	 * A constructor could be added for stable state like the lists,
  	 * but it is probably not worth it because of the cache nature
-@@ -3660,6 +3666,10 @@ static void __init dcache_init(void)
+@@ -3680,6 +3686,10 @@ static void __init dcache_init(void)
  					&d_hash_mask,
  					0,
  					0);
@@ -54,5 +54,5 @@ index c1a7c174a905..f83742e47b4b 100644
  
  /* SLAB cache for __getname() consumers */
 -- 
-2.18.0
+2.19.1
 

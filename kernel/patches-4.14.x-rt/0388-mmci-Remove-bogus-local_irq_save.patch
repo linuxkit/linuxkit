@@ -1,4 +1,4 @@
-From e8ef9df2c3e75972761d39c04287908aa28a315b Mon Sep 17 00:00:00 2001
+From 8eb344e9693a206838b7687464fe5b5d4e575f67 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 9 Jan 2013 12:11:12 +0100
 Subject: [PATCH 388/436] mmci: Remove bogus local_irq_save()
@@ -41,5 +41,5 @@ index f1f54a818489..ce102378df02 100644
  	 * If we have less than the fifo 'half-full' threshold to transfer,
  	 * trigger a PIO interrupt as soon as any data is available.
 -- 
-2.18.0
+2.19.1
 

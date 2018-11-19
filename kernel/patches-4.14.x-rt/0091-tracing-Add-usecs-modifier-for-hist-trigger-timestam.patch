@@ -1,4 +1,4 @@
-From 81bd3310894eaa928be2d3c476e7827cee10fbc4 Mon Sep 17 00:00:00 2001
+From 56d66cbe3f238bae410364f173b9bf467b93c8b2 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:48 -0600
 Subject: [PATCH 091/436] tracing: Add usecs modifier for hist trigger
@@ -166,5 +166,5 @@ index ec58902145e9..6d268e25d051 100644
  	return flags_str;
  }
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 263b4a5ea055c68385d7e77e138e384c5999658b Mon Sep 17 00:00:00 2001
+From 6b12f63160fd40de940554f9ed21674edb1aba09 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 14 Nov 2011 18:19:27 +0100
 Subject: [PATCH 353/436] x86: crypto: Reduce preempt disabled regions
@@ -113,5 +113,5 @@ index c690ddc78c03..7a3138d33e33 100644
  	return err;
  }
 -- 
-2.18.0
+2.19.1
 

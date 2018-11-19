@@ -1,4 +1,4 @@
-From 326d6f320310c950bd455bcfcabe0ecfc4ee367e Mon Sep 17 00:00:00 2001
+From fb6cd12081ee6d86489859ab63b6074749e19863 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:04 +0100
 Subject: [PATCH 029/436] hrtimer: Make the remote enqueue check unconditional
@@ -140,5 +140,5 @@ index 85882d5da523..b1016aabc73a 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

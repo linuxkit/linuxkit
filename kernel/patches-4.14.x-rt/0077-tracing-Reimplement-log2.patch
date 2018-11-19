@@ -1,4 +1,4 @@
-From dcc03e9cd88c63b47c7b7e8fef52cd2d84085ef0 Mon Sep 17 00:00:00 2001
+From 63287a6a1890a9ff59794d32ebe66ae2e211d067 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:23 -0500
 Subject: [PATCH 077/436] tracing: Reimplement log2
@@ -120,5 +120,5 @@ index 4dc39e3efb21..4eddc1933079 100644
  		}
  	}
 -- 
-2.18.0
+2.19.1
 

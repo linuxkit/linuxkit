@@ -1,4 +1,4 @@
-From 94e8a57c110d8d4d85abd3c0d1302a30d5ee6e3d Mon Sep 17 00:00:00 2001
+From 9668ed34ed80aa6c68f3fe38ee15975dd71a295a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 3 Apr 2011 11:57:29 +0200
 Subject: [PATCH 168/436] genirq: Force interrupt thread on RT
@@ -52,5 +52,5 @@ index 069311541577..0dc9ef91898a 100644
  
  static void __synchronize_hardirq(struct irq_desc *desc)
 -- 
-2.18.0
+2.19.1
 

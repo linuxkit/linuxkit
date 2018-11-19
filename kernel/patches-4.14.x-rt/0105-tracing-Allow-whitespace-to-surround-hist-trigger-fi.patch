@@ -1,4 +1,4 @@
-From 1a0b256dfc095306651e1d5e6d958baa3a7fd89c Mon Sep 17 00:00:00 2001
+From 55d9ed6e59a18aec68c89248940c2489ddd24a3d Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:02 -0600
 Subject: [PATCH 105/436] tracing: Allow whitespace to surround hist trigger
@@ -77,5 +77,5 @@ index 0803b843623c..0b73852f6923 100644
  	attrs = parse_hist_trigger_attrs(trigger);
  	if (IS_ERR(attrs))
 -- 
-2.18.0
+2.19.1
 

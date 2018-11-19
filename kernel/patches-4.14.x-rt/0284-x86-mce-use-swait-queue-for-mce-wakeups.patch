@@ -1,4 +1,4 @@
-From e99fb8bc6dd9232962e6d7c92c7d392464be00d8 Mon Sep 17 00:00:00 2001
+From 42fa8d7666f2f5007d5c6789575cb79a5c5b4725 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Fri, 27 Feb 2015 15:20:37 +0100
 Subject: [PATCH 284/436] x86/mce: use swait queue for mce wakeups
@@ -127,5 +127,5 @@ index 7f85b76f43bc..9e74b805070f 100644
  	return 0;
  }
 -- 
-2.18.0
+2.19.1
 

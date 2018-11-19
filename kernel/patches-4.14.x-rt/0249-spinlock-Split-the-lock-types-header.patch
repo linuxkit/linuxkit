@@ -1,4 +1,4 @@
-From b50e3a2c132d5cc24c9fcc10ea0ae43892be1b17 Mon Sep 17 00:00:00 2001
+From eb7b90e059a283f021c63218a822a33e844ef4f8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 29 Jun 2011 19:34:01 +0200
 Subject: [PATCH 249/436] spinlock: Split the lock types header
@@ -222,5 +222,5 @@ index 000000000000..03235b475b77
 +
 +#endif
 -- 
-2.18.0
+2.19.1
 

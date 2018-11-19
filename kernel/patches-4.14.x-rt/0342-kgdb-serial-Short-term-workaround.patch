@@ -1,4 +1,4 @@
-From a3c07195887632b8d7e0507fb47d55f958d511e8 Mon Sep 17 00:00:00 2001
+From 384eea24318d7aac543e641fac17bece675c017b Mon Sep 17 00:00:00 2001
 From: Jason Wessel <jason.wessel@windriver.com>
 Date: Thu, 28 Jul 2011 12:42:23 -0500
 Subject: [PATCH 342/436] kgdb/serial: Short term workaround
@@ -81,5 +81,5 @@ index ed5d34925ad0..c0d4c24fc241 100644
  	return r;
  }
 -- 
-2.18.0
+2.19.1
 

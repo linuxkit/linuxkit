@@ -1,4 +1,4 @@
-From 180eefea754623a6991e9e7a28e3b5854e3dd299 Mon Sep 17 00:00:00 2001
+From 80e8b355e289165f8ab5184fb73b906aa89ae8e7 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
 Subject: [PATCH 241/436] futex: Fix bug on when a requeued RT task times out
@@ -117,5 +117,5 @@ index fa218cdff5eb..509df18215f8 100644
  extern struct task_struct *rt_mutex_next_owner(struct rt_mutex *lock);
  extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
 -- 
-2.18.0
+2.19.1
 

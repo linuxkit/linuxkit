@@ -1,4 +1,4 @@
-From 40a0099abe7556d58f4ae00a68be17e245355b41 Mon Sep 17 00:00:00 2001
+From 5adfd4893f60581fcee7e0211bdcb4255651f74f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 8 Jul 2011 20:25:16 +0200
 Subject: [PATCH 407/436] Add localversion for -RT release
@@ -17,5 +17,5 @@ index 000000000000..90290c642ed5
 @@ -0,0 +1 @@
 +-rt29
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 4809503f26c186ff7ed9e59e30e8d58ab5cc71bd Mon Sep 17 00:00:00 2001
+From 9f8b7ecd7c3872dc80658d3f0cd57fc1bb6e4525 Mon Sep 17 00:00:00 2001
 From: Dan Carpenter <dan.carpenter@oracle.com>
 Date: Wed, 28 Mar 2018 14:48:15 +0300
 Subject: [PATCH 411/436] tracing: Uninitialized variable in
@@ -35,5 +35,5 @@ index 4745ed588607..b3808969ac92 100644
  	for_each_hist_field(i, hist_data) {
  		hist_field = hist_data->fields[i];
 -- 
-2.18.0
+2.19.1
 

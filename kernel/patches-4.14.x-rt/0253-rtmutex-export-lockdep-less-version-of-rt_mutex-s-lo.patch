@@ -1,4 +1,4 @@
-From dedfcc4e7dc5f3b63286f4ba2445b93b8052c11a Mon Sep 17 00:00:00 2001
+From 8044d61cf21d1c55c1e0a26c44e7efd4e63fa777 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 16:36:39 +0200
 Subject: [PATCH 253/436] rtmutex: export lockdep-less version of rt_mutex's
@@ -160,5 +160,5 @@ index 3b10fde6fd1f..ff17912f869c 100644
  				     struct hrtimer_sleeper *timeout,
  				     enum rtmutex_chainwalk chwalk,
 -- 
-2.18.0
+2.19.1
 

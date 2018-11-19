@@ -1,4 +1,4 @@
-From 026fb06acfc2486138e719b73577e1f58ef46e67 Mon Sep 17 00:00:00 2001
+From b3ef742bd69b1c3a8a8de92cd50a4ed847c8a704 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 4 Oct 2017 09:55:58 +0200
 Subject: [PATCH 056/436] mfd: syscon: atmel-smc: include string.h
@@ -24,5 +24,5 @@ index 7d77948567d7..0adbd2e796fe 100644
  /**
   * atmel_smc_cs_conf_init - initialize a SMC CS conf
 -- 
-2.18.0
+2.19.1
 

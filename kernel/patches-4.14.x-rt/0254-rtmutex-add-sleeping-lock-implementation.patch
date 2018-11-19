@@ -1,4 +1,4 @@
-From afa1c470bea57c7dff63591b65a420de40befc84 Mon Sep 17 00:00:00 2001
+From 8783b4309b64365dde7c6e3c4db69f9815809ae5 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
 Subject: [PATCH 254/436] rtmutex: add sleeping lock implementation
@@ -1221,5 +1221,5 @@ index b8529f66f258..521100928bce 100644
  	}
  }
 -- 
-2.18.0
+2.19.1
 

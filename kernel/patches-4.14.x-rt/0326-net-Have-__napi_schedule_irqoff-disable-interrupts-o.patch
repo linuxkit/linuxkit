@@ -1,4 +1,4 @@
-From 237064ef4377b8b9a4f333dd72c333fee50104b1 Mon Sep 17 00:00:00 2001
+From 2a9ffe4b0487f9e9a4ce951149513fabe80630e2 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
 Subject: [PATCH 326/436] net: Have __napi_schedule_irqoff() disable interrupts
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 14 insertions(+)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 8b5151f9e31c..8b7282a13652 100644
+index 6b891e37d8e3..3ceccf72757e 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -409,7 +409,19 @@ typedef enum rx_handler_result rx_handler_result_t;
@@ -52,10 +52,10 @@ index 8b5151f9e31c..8b7282a13652 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index b8433ae8b36a..556edade3628 100644
+index a69095902278..2c2b432fcec5 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5268,6 +5268,7 @@ bool napi_schedule_prep(struct napi_struct *n)
+@@ -5290,6 +5290,7 @@ bool napi_schedule_prep(struct napi_struct *n)
  }
  EXPORT_SYMBOL(napi_schedule_prep);
  
@@ -63,7 +63,7 @@ index b8433ae8b36a..556edade3628 100644
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -5279,6 +5280,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
+@@ -5301,6 +5302,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);
@@ -72,5 +72,5 @@ index b8433ae8b36a..556edade3628 100644
  bool napi_complete_done(struct napi_struct *n, int work_done)
  {
 -- 
-2.18.0
+2.19.1
 

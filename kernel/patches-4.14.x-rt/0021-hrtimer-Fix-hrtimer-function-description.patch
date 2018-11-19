@@ -1,4 +1,4 @@
-From 0118c08efa3375e08717b49e5546245f6561d6ba Mon Sep 17 00:00:00 2001
+From 7c110d9426bacfee7d216dda9d1919945e1f8168 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:54 +0100
 Subject: [PATCH 021/436] hrtimer: Fix hrtimer function description
@@ -64,5 +64,5 @@ index 790841b59433..6460aa2d9b25 100644
  void hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
  		  enum hrtimer_mode mode)
 -- 
-2.18.0
+2.19.1
 

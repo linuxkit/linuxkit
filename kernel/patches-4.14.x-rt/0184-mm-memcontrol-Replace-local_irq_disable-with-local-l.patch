@@ -1,4 +1,4 @@
-From 4aeaf21a49ba624d8a2793e2c3c2a14e3a3eb307 Mon Sep 17 00:00:00 2001
+From d5e5cebe569ad8f277880eab26ef2ac6c9bce1e3 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 28 Jan 2015 17:14:16 +0100
 Subject: [PATCH 184/436] mm/memcontrol: Replace local_irq_disable with local
@@ -119,5 +119,5 @@ index 92139e87df28..3cc297730103 100644
  
  /**
 -- 
-2.18.0
+2.19.1
 

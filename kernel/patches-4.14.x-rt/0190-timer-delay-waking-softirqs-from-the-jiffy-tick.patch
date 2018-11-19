@@ -1,4 +1,4 @@
-From 4a0eba7f3003650cd93e35830dffc2b4d62d3171 Mon Sep 17 00:00:00 2001
+From 9b0990b838b7aa57982939afd8f44a910221337f Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 21 Aug 2009 11:56:45 +0200
 Subject: [PATCH 190/436] timer: delay waking softirqs from the jiffy tick
@@ -76,5 +76,5 @@ index 97c28b96aeb1..807133c1bc20 100644
  		run_posix_cpu_timers(p);
  }
 -- 
-2.18.0
+2.19.1
 

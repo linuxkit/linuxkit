@@ -1,4 +1,4 @@
-From dd9c0a9f392182e65dcd82c6f577bbd4d66f4acc Mon Sep 17 00:00:00 2001
+From eccca881d4b64cf4fd9054e85af98b6d1d5d66db Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:45 -0600
 Subject: [PATCH 088/436] tracing: Add hist trigger timestamp support
@@ -248,5 +248,5 @@ index 4935290fd1e8..cd80bca34cec 100644
  				test->ops->free(test->ops, test);
  		}
 -- 
-2.18.0
+2.19.1
 

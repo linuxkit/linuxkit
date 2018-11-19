@@ -1,4 +1,4 @@
-From 0c6fb534761ed7fcfea26d3a944f12946209a9bd Mon Sep 17 00:00:00 2001
+From 96cdc8480d33807175b59e24bb8e886ecf91ab0c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 9 Jun 2011 11:43:52 +0200
 Subject: [PATCH 247/436] rtmutex: Add rtmutex_lock_killable()
@@ -55,5 +55,5 @@ index 935adbbe08f1..fb6bb56ac33d 100644
   * rt_mutex_timed_lock - lock a rt_mutex interruptible
   *			the timeout structure is provided
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From 890704261447021f07d3063eeb779b3f22ac285a Mon Sep 17 00:00:00 2001
+From 32cffb44d53ed4df4dd3a0a6784f7c91fc22ee83 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 22 Sep 2017 15:01:46 +0200
 Subject: [PATCH 139/436] rcu/segcblist: include rcupdate.h
@@ -24,5 +24,5 @@ index 7649fcd2c4c7..88cba7c2956c 100644
  #include "rcu_segcblist.h"
  
 -- 
-2.18.0
+2.19.1
 

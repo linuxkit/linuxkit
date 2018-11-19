@@ -1,4 +1,4 @@
-From 5c7a3ff30a6d7a141c2194e7137e6d5b510e3340 Mon Sep 17 00:00:00 2001
+From 5f7285e04a2ae0a4b3c764f4e053b0ce1f6d958d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 4 Oct 2017 10:24:23 +0200
 Subject: [PATCH 395/436] pci/switchtec: Don't use completion's wait queue
@@ -110,5 +110,5 @@ index 620f5b995a12..7fd1548a2905 100644
  		stuser_put(stuser);
  	}
 -- 
-2.18.0
+2.19.1
 

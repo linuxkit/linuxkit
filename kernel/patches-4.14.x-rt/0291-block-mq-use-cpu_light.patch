@@ -1,4 +1,4 @@
-From 6271bcee069c2ccabe80906e3b5292ba42fb8e31 Mon Sep 17 00:00:00 2001
+From 9443106a5d9415458cfb075d03ffaca5bb74f8a9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 9 Apr 2014 10:37:23 +0200
 Subject: [PATCH 291/436] block: mq: use cpu_light()
@@ -31,5 +31,5 @@ index 877237e09083..d944750bade0 100644
  
  struct blk_mq_alloc_data {
 -- 
-2.18.0
+2.19.1
 

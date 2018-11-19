@@ -1,4 +1,4 @@
-From 20358f176e3b515cce079d1e6bdad3d7e2671331 Mon Sep 17 00:00:00 2001
+From dd377535e4f45dbd1c3d0afccdafee1c7819868c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:29:20 -0500
 Subject: [PATCH 128/436] posix-timers: Prevent broadcast signals
@@ -12,10 +12,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/time/posix-timers.c b/kernel/time/posix-timers.c
-index 708992708332..f5392262fb77 100644
+index 55d45fe2cc17..dff86a0157db 100644
 --- a/kernel/time/posix-timers.c
 +++ b/kernel/time/posix-timers.c
-@@ -434,6 +434,7 @@ static enum hrtimer_restart posix_timer_fn(struct hrtimer *timer)
+@@ -443,6 +443,7 @@ static enum hrtimer_restart posix_timer_fn(struct hrtimer *timer)
  static struct pid *good_sigevent(sigevent_t * event)
  {
  	struct task_struct *rtn = current->group_leader;
@@ -23,7 +23,7 @@ index 708992708332..f5392262fb77 100644
  
  	switch (event->sigev_notify) {
  	case SIGEV_SIGNAL | SIGEV_THREAD_ID:
-@@ -443,7 +444,8 @@ static struct pid *good_sigevent(sigevent_t * event)
+@@ -452,7 +453,8 @@ static struct pid *good_sigevent(sigevent_t * event)
  		/* FALLTHRU */
  	case SIGEV_SIGNAL:
  	case SIGEV_THREAD:
@@ -34,5 +34,5 @@ index 708992708332..f5392262fb77 100644
  		/* FALLTHRU */
  	case SIGEV_NONE:
 -- 
-2.18.0
+2.19.1
 

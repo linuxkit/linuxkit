@@ -1,4 +1,4 @@
-From 2aae217dbd09d7e578d45226ce03e781130b0dad Mon Sep 17 00:00:00 2001
+From 037f47f6cc98685fdfd4980eb26e17b7ff9c5536 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sun, 16 Oct 2016 05:08:30 +0200
 Subject: [PATCH 382/436] ftrace: Fix trace header alignment
@@ -47,5 +47,5 @@ index 18c88eb19b5e..4fc60e5ec4b9 100644
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
 -- 
-2.18.0
+2.19.1
 

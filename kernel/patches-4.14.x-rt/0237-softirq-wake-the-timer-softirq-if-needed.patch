@@ -1,4 +1,4 @@
-From 31c07845d962fc6e73e1a418686460f591b6d68f Mon Sep 17 00:00:00 2001
+From 20cd0de4a7cbdb1c71c88012cc89604ac9b77e7b Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Fri, 20 Jan 2017 18:10:20 +0100
 Subject: [PATCH 237/436] softirq: wake the timer softirq if needed
@@ -29,7 +29,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 5 insertions(+), 6 deletions(-)
 
 diff --git a/kernel/softirq.c b/kernel/softirq.c
-index 54c66af28041..0f4ddfa14360 100644
+index ff8471aa1c0b..da87715b10be 100644
 --- a/kernel/softirq.c
 +++ b/kernel/softirq.c
 @@ -28,6 +28,7 @@
@@ -81,5 +81,5 @@ index 54c66af28041..0f4ddfa14360 100644
  	local_irq_save(flags);
  	if (__this_cpu_read(ksoftirqd) &&
 -- 
-2.18.0
+2.19.1
 

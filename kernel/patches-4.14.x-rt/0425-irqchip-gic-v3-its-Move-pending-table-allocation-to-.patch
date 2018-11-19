@@ -1,4 +1,4 @@
-From edb2be9eb844cf874d51707077bea3dfab3a1169 Mon Sep 17 00:00:00 2001
+From d3cab0b13fb3ed2213a7b78aa2a43d2ba5c0d79d Mon Sep 17 00:00:00 2001
 From: Marc Zyngier <marc.zyngier@arm.com>
 Date: Fri, 27 Jul 2018 13:38:54 +0100
 Subject: [PATCH 425/436] irqchip/gic-v3-its: Move pending table allocation to
@@ -169,5 +169,5 @@ index bacb499c512c..688f2565294c 100644
  	struct page		*prop_page;
  	int			id_bits;
 -- 
-2.18.0
+2.19.1
 

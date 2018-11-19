@@ -1,4 +1,4 @@
-From 5c5080da942549edf7d10ee51219b92205e16f66 Mon Sep 17 00:00:00 2001
+From c4df86ec70bdb2396440e02c8c2270aab4a98926 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Wed, 28 Mar 2018 15:10:53 -0500
 Subject: [PATCH 118/436] tracing: Fix display of hist trigger expressions
@@ -78,5 +78,5 @@ index 49afef3cc384..85b032a04b29 100644
  
  static int event_hist_trigger_print(struct seq_file *m,
 -- 
-2.18.0
+2.19.1
 

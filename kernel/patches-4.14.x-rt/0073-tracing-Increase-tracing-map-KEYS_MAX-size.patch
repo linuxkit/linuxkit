@@ -1,4 +1,4 @@
-From f8f8e42333ac0355c2675bbe6c4d0135678f6535 Mon Sep 17 00:00:00 2001
+From 75fce04d9c189d3ca0939a2fb9222148294ab580 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:19 -0500
 Subject: [PATCH 073/436] tracing: Increase tracing map KEYS_MAX size
@@ -30,5 +30,5 @@ index ab0ca77331d0..5b5bbf8ae550 100644
  #define TRACING_MAP_FIELDS_MAX		(TRACING_MAP_KEYS_MAX + \
  					 TRACING_MAP_VALS_MAX)
 -- 
-2.18.0
+2.19.1
 

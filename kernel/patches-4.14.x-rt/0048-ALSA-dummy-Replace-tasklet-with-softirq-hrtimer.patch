@@ -1,4 +1,4 @@
-From dc8384331679e5c2fe59fcc1e2d2159de9a1f263 Mon Sep 17 00:00:00 2001
+From 7328b08d4e7fc41ef5c3a97088a9aa737c57948f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:15 +0100
 Subject: [PATCH 048/436] ALSA/dummy: Replace tasklet with softirq hrtimer
@@ -101,5 +101,5 @@ index c0939a0164a6..549e014ecc0d 100644
  }
  
 -- 
-2.18.0
+2.19.1
 

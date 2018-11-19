@@ -1,4 +1,4 @@
-From 60338787a09aa95d196c0a4b49f0d8488b8d6407 Mon Sep 17 00:00:00 2001
+From 53039569e903c8d7ba3c851dfc82a20a81734c1a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Feb 2018 10:39:54 +0100
 Subject: [PATCH 318/436] net: use task_struct instead of CPU number as the
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 53 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/netdevice.h b/include/linux/netdevice.h
-index 7c2dce09019d..8b5151f9e31c 100644
+index 4480f0907e55..6b891e37d8e3 100644
 --- a/include/linux/netdevice.h
 +++ b/include/linux/netdevice.h
 @@ -571,7 +571,11 @@ struct netdev_queue {
@@ -35,7 +35,7 @@ index 7c2dce09019d..8b5151f9e31c 100644
  	/*
  	 * Time (in jiffies) of last Tx
  	 */
-@@ -3555,10 +3559,48 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
+@@ -3562,10 +3566,48 @@ static inline u32 netif_msg_init(int debug_value, int default_msg_enable_bits)
  	return (1 << debug_value) - 1;
  }
  
@@ -85,7 +85,7 @@ index 7c2dce09019d..8b5151f9e31c 100644
  }
  
  static inline bool __netif_tx_acquire(struct netdev_queue *txq)
-@@ -3575,32 +3617,32 @@ static inline void __netif_tx_release(struct netdev_queue *txq)
+@@ -3582,32 +3624,32 @@ static inline void __netif_tx_release(struct netdev_queue *txq)
  static inline void __netif_tx_lock_bh(struct netdev_queue *txq)
  {
  	spin_lock_bh(&txq->_xmit_lock);
@@ -124,10 +124,10 @@ index 7c2dce09019d..8b5151f9e31c 100644
  }
  
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 08b456db8fb9..b7a1f737faa3 100644
+index 47e2f8c53c0e..d863eec99b08 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -3491,7 +3491,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
+@@ -3513,7 +3513,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
  	if (dev->flags & IFF_UP) {
  		int cpu = smp_processor_id(); /* ok because BHs are off */
  
@@ -139,7 +139,7 @@ index 08b456db8fb9..b7a1f737faa3 100644
  			if (unlikely(xmit_rec_read() > XMIT_RECURSION_LIMIT))
  				goto recursion_alert;
  
-@@ -7496,7 +7500,7 @@ static void netdev_init_one_queue(struct net_device *dev,
+@@ -7520,7 +7524,7 @@ static void netdev_init_one_queue(struct net_device *dev,
  	/* Initialize queue lock */
  	spin_lock_init(&queue->_xmit_lock);
  	netdev_set_xmit_lockdep_class(&queue->_xmit_lock, dev->type);
@@ -149,5 +149,5 @@ index 08b456db8fb9..b7a1f737faa3 100644
  	queue->dev = dev;
  #ifdef CONFIG_BQL
 -- 
-2.18.0
+2.19.1
 

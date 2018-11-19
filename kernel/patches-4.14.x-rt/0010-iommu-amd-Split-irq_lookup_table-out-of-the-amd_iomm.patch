@@ -1,4 +1,4 @@
-From 64c08365c969038dfb304ce83908a93aaa519baa Mon Sep 17 00:00:00 2001
+From 423d244d388295c10057850f4baa46b22e2b7bf2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:36 +0100
 Subject: [PATCH 010/436] iommu/amd: Split irq_lookup_table out of the
@@ -22,7 +22,7 @@ Signed-off-by: Joerg Roedel <jroedel@suse.de>
  1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index 250b6354fae5..2cedb0caec73 100644
+index ccf9d1d08983..1bb09f1e5cd1 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
 @@ -83,6 +83,7 @@
@@ -33,7 +33,7 @@ index 250b6354fae5..2cedb0caec73 100644
  
  /* List of all available dev_data structures */
  static LLIST_HEAD(dev_data_list);
-@@ -3600,7 +3601,7 @@ static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
+@@ -3606,7 +3607,7 @@ static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
  	unsigned long flags;
  	u16 alias;
  
@@ -42,7 +42,7 @@ index 250b6354fae5..2cedb0caec73 100644
  
  	iommu = amd_iommu_rlookup_table[devid];
  	if (!iommu)
-@@ -3665,7 +3666,7 @@ static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
+@@ -3671,7 +3672,7 @@ static struct irq_remap_table *alloc_irq_table(u16 devid, bool ioapic)
  	iommu_completion_wait(iommu);
  
  out_unlock:
@@ -52,5 +52,5 @@ index 250b6354fae5..2cedb0caec73 100644
  	return table;
  }
 -- 
-2.18.0
+2.19.1
 

@@ -1,4 +1,4 @@
-From dd4ce36a7454c59c459a450444a2e8914ded6213 Mon Sep 17 00:00:00 2001
+From 48b6a0f506990ee4684b296d78e093e9ac0b7224 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:07 +0100
 Subject: [PATCH 032/436] hrtimer: Make hrtimer_force_reprogramm()
@@ -107,5 +107,5 @@ index 37085a13f19a..5fd669dd46be 100644
  
  #endif /* CONFIG_HIGH_RES_TIMERS */
 -- 
-2.18.0
+2.19.1
 

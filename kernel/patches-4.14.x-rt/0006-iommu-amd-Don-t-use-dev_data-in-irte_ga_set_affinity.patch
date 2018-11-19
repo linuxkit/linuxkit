@@ -1,4 +1,4 @@
-From f51b70017d4d268d1dcdd19a6efd6c9b1a30752b Mon Sep 17 00:00:00 2001
+From 5ad7803f55f3a755f8b29f051186009c22fa7a42 Mon Sep 17 00:00:00 2001
 From: Scott Wood <swood@redhat.com>
 Date: Sun, 28 Jan 2018 14:22:19 -0600
 Subject: [PATCH 006/436] iommu/amd: Don't use dev_data in
@@ -18,10 +18,10 @@ Signed-off-by: Joerg Roedel <jroedel@suse.de>
  1 file changed, 1 insertion(+), 3 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index ff50337fe3ba..388ec5e98ef5 100644
+index 131a881d033d..24fc8ea4909a 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
-@@ -3863,10 +3863,8 @@ static void irte_ga_set_affinity(void *entry, u16 devid, u16 index,
+@@ -3869,10 +3869,8 @@ static void irte_ga_set_affinity(void *entry, u16 devid, u16 index,
  				 u8 vector, u32 dest_apicid)
  {
  	struct irte_ga *irte = (struct irte_ga *) entry;
@@ -34,5 +34,5 @@ index ff50337fe3ba..388ec5e98ef5 100644
  		irte->lo.fields_remap.destination = dest_apicid;
  		modify_irte_ga(devid, index, irte, NULL);
 -- 
-2.18.0
+2.19.1
 

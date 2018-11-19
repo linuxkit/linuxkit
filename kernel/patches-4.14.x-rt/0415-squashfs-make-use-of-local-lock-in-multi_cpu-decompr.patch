@@ -1,4 +1,4 @@
-From e6afb14ae381c8de6e36b0fb9187a1e06429d723 Mon Sep 17 00:00:00 2001
+From 48f7e3f3f964f681a4bf764de6aa0387040b28d8 Mon Sep 17 00:00:00 2001
 From: Julia Cartwright <julia@ni.com>
 Date: Mon, 7 May 2018 08:58:57 -0500
 Subject: [PATCH 415/436] squashfs: make use of local lock in multi_cpu
@@ -70,5 +70,5 @@ index 23a9c28ad8ea..6a73c4fa88e7 100644
  	if (res < 0)
  		ERROR("%s decompression failed, data probably corrupt\n",
 -- 
-2.18.0
+2.19.1
 

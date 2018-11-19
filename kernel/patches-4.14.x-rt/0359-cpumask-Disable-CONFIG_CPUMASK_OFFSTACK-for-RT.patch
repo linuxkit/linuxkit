@@ -1,4 +1,4 @@
-From 94547e249ed17ae2e2531ab185d3172d94bf4ab1 Mon Sep 17 00:00:00 2001
+From 948306f7c511901cf72b22c0667c07e4de3bdae7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 14 Dec 2011 01:03:49 +0100
 Subject: [PATCH 359/436] cpumask: Disable CONFIG_CPUMASK_OFFSTACK for RT
@@ -71,5 +71,5 @@ index b1445b22a6de..9ab51b78991a 100644
  	  Use dynamic allocation for cpumask_var_t, instead of putting
  	  them on the stack.  This is a bit more expensive, but avoids
 -- 
-2.18.0
+2.19.1
 

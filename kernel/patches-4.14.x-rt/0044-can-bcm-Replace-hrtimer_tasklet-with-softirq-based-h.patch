@@ -1,4 +1,4 @@
-From cf9e8833c01852ff74293b8c7be564c62a3d7bdd Mon Sep 17 00:00:00 2001
+From f4f1acb61f5560c1db362ee697724bb4f53c0581 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:11 +0100
 Subject: [PATCH 044/436] can/bcm: Replace hrtimer_tasklet with softirq based
@@ -317,5 +317,5 @@ index 13690334efa3..9cc67ac257f1 100644
  
  	/* now we can register for can_ids, if we added a new bcm_op */
 -- 
-2.18.0
+2.19.1
 

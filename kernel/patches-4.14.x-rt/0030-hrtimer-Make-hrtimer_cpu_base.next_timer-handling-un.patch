@@ -1,4 +1,4 @@
-From 5a92ca11caa38ffe32d7f29e5ccc38d471c8af9d Mon Sep 17 00:00:00 2001
+From 4eafc2204b963f56aefd00ba6dd56281da522f9c Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:05 +0100
 Subject: [PATCH 030/436] hrtimer: Make hrtimer_cpu_base.next_timer handling
@@ -101,5 +101,5 @@ index b1016aabc73a..e01c2e78c032 100644
  	}
  	/*
 -- 
-2.18.0
+2.19.1
 

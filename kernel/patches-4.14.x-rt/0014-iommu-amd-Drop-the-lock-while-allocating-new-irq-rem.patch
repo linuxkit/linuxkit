@@ -1,4 +1,4 @@
-From bc4bc989f2b83c7ba8d1cedd9b2399ae0118f1ca Mon Sep 17 00:00:00 2001
+From 81ee5aec46b081ed1b00a4827b562a248e0ee7af Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:40 +0100
 Subject: [PATCH 014/436] iommu/amd: Drop the lock while allocating new irq
@@ -27,10 +27,10 @@ Signed-off-by: Joerg Roedel <jroedel@suse.de>
  1 file changed, 45 insertions(+), 18 deletions(-)
 
 diff --git a/drivers/iommu/amd_iommu.c b/drivers/iommu/amd_iommu.c
-index d4eeb91afa36..8b6e515b395e 100644
+index 473ec78ba50c..c9e703260324 100644
 --- a/drivers/iommu/amd_iommu.c
 +++ b/drivers/iommu/amd_iommu.c
-@@ -3594,6 +3594,30 @@ static struct irq_remap_table *get_irq_table(u16 devid)
+@@ -3600,6 +3600,30 @@ static struct irq_remap_table *get_irq_table(u16 devid)
  	return table;
  }
  
@@ -61,7 +61,7 @@ index d4eeb91afa36..8b6e515b395e 100644
  static void set_remap_table_entry(struct amd_iommu *iommu, u16 devid,
  				  struct irq_remap_table *table)
  {
-@@ -3605,6 +3629,7 @@ static void set_remap_table_entry(struct amd_iommu *iommu, u16 devid,
+@@ -3611,6 +3635,7 @@ static void set_remap_table_entry(struct amd_iommu *iommu, u16 devid,
  static struct irq_remap_table *alloc_irq_table(u16 devid)
  {
  	struct irq_remap_table *table = NULL;
@@ -69,7 +69,7 @@ index d4eeb91afa36..8b6e515b395e 100644
  	struct amd_iommu *iommu;
  	unsigned long flags;
  	u16 alias;
-@@ -3623,42 +3648,44 @@ static struct irq_remap_table *alloc_irq_table(u16 devid)
+@@ -3629,42 +3654,44 @@ static struct irq_remap_table *alloc_irq_table(u16 devid)
  	table = irq_lookup_table[alias];
  	if (table) {
  		set_remap_table_entry(iommu, devid, table);
@@ -133,5 +133,5 @@ index d4eeb91afa36..8b6e515b395e 100644
  }
  
 -- 
-2.18.0
+2.19.1
 
