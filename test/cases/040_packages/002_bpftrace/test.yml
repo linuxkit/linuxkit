@@ -1,0 +1,29 @@
+kernel:
+  image: linuxkit/kernel:4.14.86
+  cmdline: "console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:v0.5
+  - linuxkit/runc:v0.5
+  - linuxkit/bpftrace:67b5c3b4f13a4acf22eab8f422091e1efc06852d
+onboot:
+  - name: bpftrace-test
+    image: alpine:3.8
+    binds:
+      - /check.sh:/check.sh
+    command: ["sh", "./check.sh"]
+    pid: host
+    net: host
+    ipc: host
+    capabilities:
+      - all
+  - name: poweroff
+    image: linuxkit/poweroff:2687ed712690766b8156a77ac600005b532d2c7d
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+files:
+  - path: check.sh
+    source: ./check.sh
+trust:
+  org:
+    - linuxkit
+  image:
+    - alpine:3.8
