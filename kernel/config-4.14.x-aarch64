@@ -2589,6 +2589,11 @@ CONFIG_HISI_THERMAL=y
 #
 
 #
+# Broadcom thermal drivers
+#
+# CONFIG_BCM2835_THERMAL is not set
+
+#
 # Samsung thermal drivers
 #
 CONFIG_EXYNOS_THERMAL=y
