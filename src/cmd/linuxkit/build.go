@@ -49,6 +49,7 @@ func build(args []string) {
 	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
+	buildDecompressKernel := buildCmd.Bool("decompress-kernel", false, "Decompress the Linux kernel (default false)")
 	buildCmd.Var(&buildFormats, "format", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
 
 	if err := buildCmd.Parse(args); err != nil {
@@ -203,7 +204,7 @@ func build(args []string) {
 	if moby.Streamable(buildFormats[0]) {
 		tp = buildFormats[0]
 	}
-	err = moby.Build(m, w, *buildPull, tp)
+	err = moby.Build(m, w, *buildPull, tp, *buildDecompressKernel)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

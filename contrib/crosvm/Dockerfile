@@ -1,7 +1,7 @@
 FROM rust:1.30.0-stretch
 
 ENV CROSVM_REPO=https://chromium.googlesource.com/chromiumos/platform/crosvm
-ENV CROSVM_COMMIT=510c783c847b6d0c18516f31fbe3dbdc782f1252
+ENV CROSVM_COMMIT=c527c1a7e8136dae1e8ae728dfd9932bf3967e7e
 ENV MINIJAIL_REPO=https://android.googlesource.com/platform/external/minijail
 ENV MINIJAIL_COMMIT=d45fc420bb8fd9d1fc9297174f3c344db8c20bbd
 
