@@ -249,7 +249,8 @@ var schema = string(`
         "mkdir": {"$ref": "#/definitions/strings"},
         "interfaces": {"$ref": "#/definitions/interfaces"},
         "bindNS": {"$ref": "#/definitions/namespaces"},
-        "namespace": {"type": "string"}
+        "namespace": {"type": "string"},
+        "noRestart": {"type": "boolean"}
       }
     },
     "image": {

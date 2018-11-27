@@ -24,6 +24,7 @@ type Runtime struct {
 	Interfaces []Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
 	BindNS     Namespaces    `yaml:"bindNS" json:"bindNS,omitempty"`
 	Namespace  string        `yaml:"namespace,omitempty" json:"namespace,omitempty"`
+	NoRestart  *bool         `yaml:"noRestart,omitempty" json:"noRestart,omitempty"`
 }
 
 // Namespaces is the type for configuring paths to bind namespaces
