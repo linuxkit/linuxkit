@@ -11,6 +11,7 @@ import (
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/containerd/runtime/restart"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -118,6 +119,11 @@ func stop(ctx context.Context, service, sock, basePath string) (string, uint32, 
 		return "", 0, "loading container", err
 	}
 
+	err = ctr.Update(ctx, restart.WithStatus(containerd.Stopped))
+	if err != nil {
+		return "", 0, "stopping monitor", err
+	}
+
 	task, err := ctr.Task(ctx, nil)
 	if err != nil {
 		return "", 0, "fetching task", err
@@ -193,12 +199,14 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 		ctx = namespaces.WithNamespace(ctx, runtimeConfig.Namespace)
 	}
 
-	ctr, err := client.NewContainer(ctx, service, containerd.WithSpec(spec))
+	logger := GetLog(varLogDir)
+
+	ctr, err := client.NewContainer(ctx, service, containerd.WithSpec(spec),
+		restart.WithStatus(containerd.Running),
+		restart.WithLogPath(logger.Path(service+".restart")))
 	if err != nil {
 		return "", 0, "failed to create container", err
 	}
-
-	logger := GetLog(varLogDir)
 
 	io := func(id string) (cio.IO, error) {
 		stdoutFile := logger.Path(service + ".out")
