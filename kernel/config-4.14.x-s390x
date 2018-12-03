@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/s390 4.14.83 Kernel Configuration
+# Linux/s390 4.14.84 Kernel Configuration
 #
 CONFIG_MMU=y
 CONFIG_ZONE_DMA=y
