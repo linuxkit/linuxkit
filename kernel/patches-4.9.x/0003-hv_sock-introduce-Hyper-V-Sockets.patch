@@ -1,4 +1,4 @@
-From b767179d77cccfdca24c3abd6068561648a41854 Mon Sep 17 00:00:00 2001
+From 439591a23a541299b205b00dd6501bd8c3efee72 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Sat, 23 Jul 2016 01:35:51 +0000
 Subject: [PATCH 03/14] hv_sock: introduce Hyper-V Sockets
@@ -42,7 +42,7 @@ Origin: https://patchwork.kernel.org/patch/9244467/
  create mode 100644 net/hv_sock/af_hvsock.c
 
 diff --git a/MAINTAINERS b/MAINTAINERS
-index 63cefa62324c..e64920219d88 100644
+index 4f559f5b3a89..3eaa1c129f7d 100644
 --- a/MAINTAINERS
 +++ b/MAINTAINERS
 @@ -5853,7 +5853,9 @@ F:	drivers/pci/host/pci-hyperv.c
