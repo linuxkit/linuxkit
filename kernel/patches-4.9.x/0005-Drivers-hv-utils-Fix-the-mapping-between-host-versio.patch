@@ -1,4 +1,4 @@
-From 79c37155d0ce4185716be8deb0d1bbf0f6e381f6 Mon Sep 17 00:00:00 2001
+From 703b2f1cfcdb58c80a4e035ce5df7f2764f11ecc Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:07 -0800
 Subject: [PATCH 05/14] Drivers: hv: utils: Fix the mapping between host

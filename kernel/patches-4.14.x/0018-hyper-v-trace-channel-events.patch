@@ -1,4 +1,4 @@
-From 2ea83e5703f2fd65e2c3404d0346234cf2d27677 Mon Sep 17 00:00:00 2001
+From 9b07c4a7725e302e18993f807433dece531d1ca3 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:16 -0700
 Subject: [PATCH 18/21] hyper-v: trace channel events
@@ -24,7 +24,7 @@ Signed-off-by: Rolf Neugebauer <rolf.neugebauer@docker.com>
  4 files changed, 29 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index fb22ae642dbb..1ad9e41e3192 100644
+index d2730378c0dc..be05f7dde062 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
 @@ -43,6 +43,8 @@ void vmbus_setevent(struct vmbus_channel *channel)

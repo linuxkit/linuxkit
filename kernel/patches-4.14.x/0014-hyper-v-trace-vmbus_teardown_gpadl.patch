@@ -1,4 +1,4 @@
-From 2d82e4ffdafd725f714881fa5faa8d8fc85d9241 Mon Sep 17 00:00:00 2001
+From e53f626420a2692beb5ae4a862821d81f9e51887 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:12 -0700
 Subject: [PATCH 14/21] hyper-v: trace vmbus_teardown_gpadl()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 20 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 55ff0d59d9c9..7026a78a0d47 100644
+index bf2739dc9244..f503bd3e60b3 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
-@@ -519,6 +519,8 @@ int vmbus_teardown_gpadl(struct vmbus_channel *channel, u32 gpadl_handle)
+@@ -527,6 +527,8 @@ int vmbus_teardown_gpadl(struct vmbus_channel *channel, u32 gpadl_handle)
  	ret = vmbus_post_msg(msg, sizeof(struct vmbus_channel_gpadl_teardown),
  			     true);
  
