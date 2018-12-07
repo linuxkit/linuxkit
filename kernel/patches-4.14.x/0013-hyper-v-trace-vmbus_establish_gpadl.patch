@@ -1,4 +1,4 @@
-From c80aee044345eec95d3f73cdbcbe6bf86ba7e7c8 Mon Sep 17 00:00:00 2001
+From 691a191c22ec39ecb92541857e5469bab95ef06a Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:11 -0700
 Subject: [PATCH 13/21] hyper-v: trace vmbus_establish_gpadl()
@@ -15,7 +15,7 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 48 insertions(+)
 
 diff --git a/drivers/hv/channel.c b/drivers/hv/channel.c
-index 6754725f0ea9..55ff0d59d9c9 100644
+index 79b6c2a5a2d9..bf2739dc9244 100644
 --- a/drivers/hv/channel.c
 +++ b/drivers/hv/channel.c
 @@ -435,6 +435,9 @@ int vmbus_establish_gpadl(struct vmbus_channel *channel, void *kbuffer,
