@@ -1,4 +1,4 @@
-From 9c8ff4c95f3e3b8e9b7dd208672c2271fc865a31 Mon Sep 17 00:00:00 2001
+From 8994f044dc250d94c5791c15b12584f167c850b1 Mon Sep 17 00:00:00 2001
 From: Dexuan Cui <decui@microsoft.com>
 Date: Fri, 24 Mar 2017 20:53:18 +0800
 Subject: [PATCH 12/14] vmbus: dynamically enqueue/dequeue the channel on
@@ -173,5 +173,5 @@ index 7df9eb8f0cf7..a87757cf277b 100644
  
  void vmbus_setevent(struct vmbus_channel *channel);
 -- 
-2.18.0
+2.19.2
 

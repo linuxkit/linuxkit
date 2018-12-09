@@ -1,4 +1,4 @@
-From 49b610e27a16efa991cabec83dc14ae2a9245b11 Mon Sep 17 00:00:00 2001
+From 3ea00d164d1a3f9c5791b87b660c06ca00e25d88 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:02 -0700
 Subject: [PATCH 04/21] hyper-v: trace vmbus_onoffer()
@@ -76,5 +76,5 @@ index d432aba5df8a..488b873b563e 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.18.0
+2.19.2
 
