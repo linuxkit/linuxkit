@@ -1,4 +1,4 @@
-From 4bc2f9bd9f260acf00e50f21741d3d869b980323 Mon Sep 17 00:00:00 2001
+From d3d8e28283141b6b059326e3da73150dccf1da43 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:01 -0700
 Subject: [PATCH 03/21] hyper-v: trace vmbus_on_message()
@@ -16,10 +16,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 7 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 752c52f7353d..4460ad70342e 100644
+index 43eaf54736f4..2087402b8d01 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -1179,6 +1179,8 @@ void vmbus_onmessage(void *context)
+@@ -1244,6 +1244,8 @@ void vmbus_onmessage(void *context)
  	hdr = (struct vmbus_channel_message_header *)msg->u.payload;
  	size = msg->header.payload_size;
  

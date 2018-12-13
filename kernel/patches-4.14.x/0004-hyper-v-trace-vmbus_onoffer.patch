@@ -1,4 +1,4 @@
-From 3ea00d164d1a3f9c5791b87b660c06ca00e25d88 Mon Sep 17 00:00:00 2001
+From c3f03ae21b76a70e35c4c848cd737f1944f952b3 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:02 -0700
 Subject: [PATCH 04/21] hyper-v: trace vmbus_onoffer()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 39 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 4460ad70342e..37c1c9fecd80 100644
+index 2087402b8d01..28dae42c2b55 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -810,6 +810,8 @@ static void vmbus_onoffer(struct vmbus_channel_message_header *hdr)
+@@ -875,6 +875,8 @@ static void vmbus_onoffer(struct vmbus_channel_message_header *hdr)
  
  	offer = (struct vmbus_channel_offer_channel *)hdr;
  
