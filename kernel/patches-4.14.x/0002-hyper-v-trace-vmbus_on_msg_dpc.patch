@@ -1,4 +1,4 @@
-From 9e786676b962719737b4fa2c11cc70f01aa8f7a5 Mon Sep 17 00:00:00 2001
+From b62d0b3b7fc10c2f3acf62065e8032c22dcc91e0 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:00 -0700
 Subject: [PATCH 02/21] hyper-v: trace vmbus_on_msg_dpc()
@@ -81,7 +81,7 @@ index 000000000000..9c2772922c76
 +/* This part must be outside protection */
 +#include <trace/define_trace.h>
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 49569f8fe038..82eb082f3302 100644
+index a166de6efd99..02f13e803a8b 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -31,6 +31,8 @@

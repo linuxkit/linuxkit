@@ -1,4 +1,4 @@
-From 40d4b683c7c4c823191333b270c6370a52f2eccb Mon Sep 17 00:00:00 2001
+From 8c3ab59b60e32c6fa27bcab78f4247eba62c66f2 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:07 -0700
 Subject: [PATCH 09/21] hyper-v: trace vmbus_onversion_response()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 14 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 8222758958bc..a30963907f69 100644
+index d73d2677d16d..66eddd6feb3c 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -1130,6 +1130,9 @@ static void vmbus_onversion_response(
+@@ -1195,6 +1195,9 @@ static void vmbus_onversion_response(
  	unsigned long flags;
  
  	version_response = (struct vmbus_channel_version_response *)hdr;

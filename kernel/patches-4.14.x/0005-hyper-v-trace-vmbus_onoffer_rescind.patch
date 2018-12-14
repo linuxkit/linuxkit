@@ -1,4 +1,4 @@
-From 15dbba4196222b2a517e737f7be91cea70c69789 Mon Sep 17 00:00:00 2001
+From 601d341d8df2a3de762d80afa0c47728c15e94eb Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:03 -0700
 Subject: [PATCH 05/21] hyper-v: trace vmbus_onoffer_rescind()
@@ -15,10 +15,10 @@ Signed-off-by: Greg Kroah-Hartman <gregkh@linuxfoundation.org>
  2 files changed, 10 insertions(+)
 
 diff --git a/drivers/hv/channel_mgmt.c b/drivers/hv/channel_mgmt.c
-index 37c1c9fecd80..6bc1fa6cdb64 100644
+index 28dae42c2b55..3f4ebd86cff2 100644
 --- a/drivers/hv/channel_mgmt.c
 +++ b/drivers/hv/channel_mgmt.c
-@@ -853,6 +853,8 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
+@@ -918,6 +918,8 @@ static void vmbus_onoffer_rescind(struct vmbus_channel_message_header *hdr)
  
  	rescind = (struct vmbus_channel_rescind_offer *)hdr;
  

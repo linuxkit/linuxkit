@@ -5,7 +5,7 @@
 # for arm64 then the 'ucode' line in the kernel section can be left
 # out.
 kernel:
-  image: linuxkit/kernel:4.14.87
+  image: linuxkit/kernel:4.14.88
   cmdline: "console=ttyAMA0"
   ucode: ""
 onboot:
