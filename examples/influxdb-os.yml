@@ -16,32 +16,32 @@ services:
     env:
      - INSECURE=true
   - name: influxdb
-    image: influxdb:1.4
+    image: influxdb:1.7
     net: host
     capabilities:
       - CAP_NET_BIND_SERVICE
       - CAP_DAC_OVERRIDE
   - name: kapacitor
-    image: kapacitor:1.4
+    image: kapacitor:1.5
     net: host
     capabilities:
       - all
     env:
       - KAPACITOR_INFLUXDB_0_URLS_0=http://influxdb:8086
   - name: telegraf
-    image: telegraf:1.4
+    image: telegraf:1.9
     net: host
     capabilities:
       - all
   - name: chronograf
-    image: chronograf:1.4
+    image: chronograf:1.7
     net: host
     capabilities:
       - CAP_NET_BIND_SERVICE
       - CAP_DAC_OVERRIDE
     env:
-      - INFLUXDB_URL=http://localhost:8086
-      - KAPACITOR_URL=http://localhost:9092
+      - INFLUXDB_URL=http://127.0.0.1:8086
+      - KAPACITOR_URL=http://127.0.0.1:9092
 trust:
   org:
     - linuxkit
