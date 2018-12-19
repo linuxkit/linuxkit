@@ -5,9 +5,12 @@ init:
   - linuxkit/init:c563953a2277eb73a89d89f70e4b6dcdcfebc2d1
   - linuxkit/runc:83d0edb4552b1a5df1f0976f05f442829eac38fe
 onboot:
-  - name: losetup
-    image: linuxkit/losetup:b05ffc8641cc955abe45f6730cbe6d723b63bd3f
-    command: ["/usr/bin/loopy", "-c", "/var/test.img"]
+  - name: dm-crypt
+    image: linuxkit/dm-crypt:9e41a164358b0235f0c242219b1a424c6552d46c
+    command: ["/usr/bin/crypto", "-k", "/some/other/enc_key", "it_is_encrypted", "/dev/sda"]
+    binds:
+      - /dev/:/dev
+      - /some/other/enc_key:/some/other/enc_key
   - name: test
     image: alpine:3.8
     net: host
@@ -21,6 +24,8 @@ onboot:
 files:
   - path: check.sh
     source: ./check.sh
+  - path: some/other/enc_key
+    contents: "abcdefghijklmnopqrstuvwxyz123456"
 trust:
   org:
     - linuxkit
