@@ -47,6 +47,8 @@ type QemuConfig struct {
 	PublishedPorts []string
 	NetdevConfig   string
 	UUID           uuid.UUID
+	USB            bool
+	Devices        []string
 }
 
 const (
@@ -179,6 +181,11 @@ func runQemu(args []string) {
 
 	publishFlags := multipleFlag{}
 	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
+
+	// USB devices
+	usbEnabled := flags.Bool("usb", false, "Enable USB controller")
+	deviceFlags := multipleFlag{}
+	flags.Var(&deviceFlags, "device", "Add USB host device(s). Format driver[,prop=value][,...] -- add device, like -device on the qemu command line.")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -332,6 +339,8 @@ func runQemu(args []string) {
 		PublishedPorts: publishFlags,
 		NetdevConfig:   netdevConfig,
 		UUID:           vmUUID,
+		USB:            *usbEnabled,
+		Devices:        deviceFlags,
 	}
 
 	config = discoverBackend(config)
@@ -661,6 +670,13 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 
 	if config.GUI != true {
 		qemuArgs = append(qemuArgs, "-nographic")
+	}
+
+	if config.USB == true {
+		qemuArgs = append(qemuArgs, "-usb")
+	}
+	for _, d := range config.Devices {
+		qemuArgs = append(qemuArgs, "-device", d)
 	}
 
 	return config, qemuArgs
