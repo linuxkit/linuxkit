@@ -89,6 +89,10 @@ func main() {
 			if len(line) == 0 {
 				continue
 			}
+			// ignore comments
+			if line[0] == '#' {
+				continue
+			}
 			err = binfmt(line)
 			if err != nil {
 				log.Fatal(err)
