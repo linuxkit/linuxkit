@@ -156,7 +156,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				hdr.Size = int64(len(contents))
 				hdr.Name = prefix + hdr.Name
 				hdr.ModTime = defaultModTime
-				log.Debugf("image tar: %s %s add %s", ref, prefix, hdr.Name)
+				log.Debugf("image tar: %s %s add %s (replaced)", ref, prefix, hdr.Name)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
 				}
@@ -182,7 +182,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				return err
 			}
 		} else {
-			log.Debugf("image tar: %s %s add %s", ref, prefix, hdr.Name)
+			log.Debugf("image tar: %s %s add %s (original)", ref, prefix, hdr.Name)
 			hdr.Name = prefix + hdr.Name
 			if hdr.Typeflag == tar.TypeLink {
 				// hard links are referenced by full path so need to be adjusted
