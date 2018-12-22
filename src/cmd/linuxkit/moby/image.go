@@ -71,6 +71,7 @@ func tarPrefix(path string, tw tarWriter) error {
 		hdr := &tar.Header{
 			Name:     mkdir,
 			Mode:     0755,
+			ModTime:  defaultModTime,
 			Typeflag: tar.TypeDir,
 			Format:   tar.FormatPAX,
 		}
@@ -154,6 +155,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				contents := replace[hdr.Name]
 				hdr.Size = int64(len(contents))
 				hdr.Name = prefix + hdr.Name
+				hdr.ModTime = defaultModTime
 				log.Debugf("image tar: %s %s add %s", ref, prefix, hdr.Name)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
@@ -169,6 +171,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				hdr.Size = 0
 				hdr.Typeflag = tar.TypeSymlink
 				hdr.Linkname = resolv
+				hdr.ModTime = defaultModTime
 				log.Debugf("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", ref, prefix, resolv)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
@@ -221,10 +224,11 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	}
 
 	hdr := &tar.Header{
-		Name:   path.Join(prefix, "config.json"),
-		Mode:   0644,
-		Size:   int64(len(config)),
-		Format: tar.FormatPAX,
+		Name:    path.Join(prefix, "config.json"),
+		Mode:    0644,
+		Size:    int64(len(config)),
+		ModTime: defaultModTime,
+		Format:  tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
@@ -242,6 +246,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			Name:     tmp,
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
+			ModTime:  defaultModTime,
 			Format:   tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -252,6 +257,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			Name:     path.Join(prefix, "rootfs"),
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
+			ModTime:  defaultModTime,
 			Format:   tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -271,6 +277,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 				Name:     path.Join(prefix, "rootfs"),
 				Mode:     0755,
 				Typeflag: tar.TypeDir,
+				ModTime:  defaultModTime,
 				Format:   tar.FormatPAX,
 			}
 			if err := tw.WriteHeader(hdr); err != nil {
@@ -294,10 +301,11 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	}
 
 	hdr = &tar.Header{
-		Name:   path.Join(prefix, "runtime.json"),
-		Mode:   0644,
-		Size:   int64(len(runtimeConfig)),
-		Format: tar.FormatPAX,
+		Name:    path.Join(prefix, "runtime.json"),
+		Mode:    0644,
+		Size:    int64(len(runtimeConfig)),
+		ModTime: defaultModTime,
+		Format:  tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
