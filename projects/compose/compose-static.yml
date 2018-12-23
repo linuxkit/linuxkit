@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.14.89
+  image: linuxkit/kernel:4.14.90
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:c563953a2277eb73a89d89f70e4b6dcdcfebc2d1

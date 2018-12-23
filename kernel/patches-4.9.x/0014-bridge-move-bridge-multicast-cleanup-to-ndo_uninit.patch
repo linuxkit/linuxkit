@@ -1,4 +1,4 @@
-From 5a37c0a2e8e35228076a8550fde8abbbb7517c1e Mon Sep 17 00:00:00 2001
+From cfc0872ee582ec66872c9cca964e876b1595b794 Mon Sep 17 00:00:00 2001
 From: Xin Long <lucien.xin@gmail.com>
 Date: Tue, 25 Apr 2017 22:58:37 +0800
 Subject: [PATCH 14/14] bridge: move bridge multicast cleanup to ndo_uninit
