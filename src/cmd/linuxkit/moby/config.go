@@ -2,8 +2,6 @@ package moby
 
 import (
 	"fmt"
-	"os"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -416,22 +414,6 @@ func defaultMountpoint(tp string) string {
 	}
 }
 
-// Sort mounts by number of path components so /dev/pts is listed after /dev
-type mlist []specs.Mount
-
-func (m mlist) Len() int {
-	return len(m)
-}
-func (m mlist) Less(i, j int) bool {
-	return m.parts(i) < m.parts(j)
-}
-func (m mlist) Swap(i, j int) {
-	m[i], m[j] = m[j], m[i]
-}
-func (m mlist) parts(i int) int {
-	return strings.Count(filepath.Clean(m[i].Destination), string(os.PathSeparator))
-}
-
 // assignBool does ordered overrides from JSON bool pointers
 func assignBool(v1, v2 *bool) bool {
 	if v2 != nil {
@@ -821,11 +803,15 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 		}
 		mounts[dest] = specs.Mount{Destination: dest, Type: tp, Source: src, Options: opts}
 	}
-	mountList := mlist{}
+	// Create a list of mounts and sort them by destination. This makes the order deterministic and
+	// ensures that, e.g., the mount for /dev comes before the mount for /dev/pts
+	var mountList []specs.Mount
 	for _, m := range mounts {
 		mountList = append(mountList, m)
 	}
-	sort.Sort(mountList)
+	sort.Slice(mountList, func(i, j int) bool {
+		return mountList[i].Destination < mountList[j].Destination
+	})
 
 	namespaces := []specs.LinuxNamespace{}
 
