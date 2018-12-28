@@ -915,6 +915,8 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 	for capability := range boundingSet {
 		bounding = append(bounding, capability)
 	}
+	// Sort capabilities to make it deterministic
+	sort.Strings(bounding)
 
 	rlimitsString := assignStrings(label.Rlimits, yaml.Rlimits)
 	rlimits := []specs.POSIXRlimit{}
