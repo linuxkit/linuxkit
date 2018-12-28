@@ -53,6 +53,18 @@ ff02::2 ip6-allrouters
 `,
 }
 
+// Files which may be created as part of 'docker export'. These need their timestamp fixed.
+var touch = map[string]bool{
+	"dev/":            true,
+	"dev/pts/":        true,
+	"dev/shm/":        true,
+	"etc/":            true,
+	"etc/mtab":        true,
+	"etc/resolv.conf": true,
+	"proc/":           true,
+	"sys/":            true,
+}
+
 // tarPrefix creates the leading directories for a path
 func tarPrefix(path string, tw tarWriter) error {
 	if path == "" {
@@ -182,7 +194,12 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				return err
 			}
 		} else {
-			log.Debugf("image tar: %s %s add %s (original)", ref, prefix, hdr.Name)
+			if touch[hdr.Name] {
+				log.Debugf("image tar: %s %s add %s (touch)", ref, prefix, hdr.Name)
+				hdr.ModTime = defaultModTime
+			} else {
+				log.Debugf("image tar: %s %s add %s (original)", ref, prefix, hdr.Name)
+			}
 			hdr.Name = prefix + hdr.Name
 			if hdr.Typeflag == tar.TypeLink {
 				// hard links are referenced by full path so need to be adjusted
