@@ -156,7 +156,7 @@ This is an open project without fixed judgements, open to the community to set t
 
 ## Development reports
 
-There are weekly [development reports](reports/) summarizing work carried out in the week.
+There are monthly [development reports](reports/) summarising the work carried out each month.
 
 ## Adopters
 
