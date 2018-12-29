@@ -156,7 +156,7 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 
 	rootfs := filepath.Join(path, "rootfs")
 
-	if err := prepareFilesystem(path, runtimeConfig); err != nil {
+	if err := prepareFilesystem(rootfs, runtimeConfig); err != nil {
 		return "", 0, "preparing filesystem", err
 	}
 
@@ -174,7 +174,9 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 		return "", 0, "failed to parse service spec", err
 	}
 
-	spec.Root.Path = rootfs
+	if err := prepareSpec(rootfs, runtimeConfig, spec); err != nil {
+		return "", 0, "preparing environment variables", err
+	}
 
 	if dumpSpec != "" {
 		d, err := os.Create(dumpSpec)
@@ -186,7 +188,6 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 		if err := enc.Encode(&spec); err != nil {
 			return "", 0, "failed to write spec dump", err
 		}
-
 	}
 
 	if runtimeConfig.Namespace != "" {

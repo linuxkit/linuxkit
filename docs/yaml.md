@@ -208,6 +208,7 @@ which specifies some actions to take place when the container is being started.
 - `bindNS` specifies a namespace type and a path where the namespace from the container being created will be bound. This allows a namespace to be set up in an `onboot` container, and then
   using `net: path` for a `service` container to use that network namespace later.
 - `namespace` overrides the LinuxKit default containerd namespace to put the container in; only applicable to services.
+- `envFromFiles` specifies environment variables that need to be set based on content of files, e.g. for use when metadata needs to be used to set environment variables.
 
 An example of using the `runtime` config to configure a network namespace with `wireguard` and then run `nginx` in that namespace is shown below:
 ```
