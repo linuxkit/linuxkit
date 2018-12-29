@@ -10,6 +10,7 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 - Completely stateless, but persistent storage can be attached
 - Easy tooling, with easy iteration
 - Built with containers, for running containers
+- Designed to create [reproducible builds](./docs/reproducible-builds.md) [WIP]
 - Designed for building and running clustered applications, including but not limited to container orchestration such as Docker or Kubernetes
 - Designed from the experience of building Docker Editions, but redesigned as a general-purpose toolkit
 - Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) or similar tools
