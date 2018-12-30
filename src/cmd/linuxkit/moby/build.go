@@ -51,10 +51,11 @@ var additions = map[string]addFun{
 	"docker": func(tw *tar.Writer) error {
 		log.Infof("  Adding Dockerfile")
 		hdr := &tar.Header{
-			Name:   "Dockerfile",
-			Mode:   0644,
-			Size:   int64(len(dockerfile)),
-			Format: tar.FormatPAX,
+			Name:    "Dockerfile",
+			Mode:    0644,
+			Size:    int64(len(dockerfile)),
+			ModTime: defaultModTime,
+			Format:  tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -368,6 +369,7 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 				Name:     "boot",
 				Mode:     0755,
 				Typeflag: tar.TypeDir,
+				ModTime:  defaultModTime,
 				Format:   tar.FormatPAX,
 			}
 			if err := tw.WriteHeader(whdr); err != nil {
@@ -376,10 +378,11 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		}
 		// add the cmdline in /boot/cmdline
 		whdr := &tar.Header{
-			Name:   "boot/cmdline",
-			Mode:   0644,
-			Size:   int64(len(k.cmdline)),
-			Format: tar.FormatPAX,
+			Name:    "boot/cmdline",
+			Mode:    0644,
+			Size:    int64(len(k.cmdline)),
+			ModTime: defaultModTime,
+			Format:  tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
@@ -391,10 +394,11 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		}
 		// Stash the kernel header and prime the buffer for the kernel
 		k.hdr = &tar.Header{
-			Name:   "boot/kernel",
-			Mode:   hdr.Mode,
-			Size:   hdr.Size,
-			Format: tar.FormatPAX,
+			Name:    "boot/kernel",
+			Mode:    hdr.Mode,
+			Size:    hdr.Size,
+			ModTime: defaultModTime,
+			Format:  tar.FormatPAX,
 		}
 		k.buffer = new(bytes.Buffer)
 	case k.tar:
@@ -410,6 +414,7 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 				Name:     "boot",
 				Mode:     0755,
 				Typeflag: tar.TypeDir,
+				ModTime:  defaultModTime,
 				Format:   tar.FormatPAX,
 			}
 			if err := tw.WriteHeader(whdr); err != nil {
@@ -417,10 +422,11 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 			}
 		}
 		whdr := &tar.Header{
-			Name:   "boot/ucode.cpio",
-			Mode:   hdr.Mode,
-			Size:   hdr.Size,
-			Format: tar.FormatPAX,
+			Name:    "boot/ucode.cpio",
+			Mode:    hdr.Mode,
+			Size:    hdr.Size,
+			ModTime: defaultModTime,
+			Format:  tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
@@ -653,6 +659,7 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 					Name:     root,
 					Typeflag: tar.TypeDir,
 					Mode:     dirMode,
+					ModTime:  defaultModTime,
 					Uid:      int(uid),
 					Gid:      int(gid),
 					Format:   tar.FormatPAX,
@@ -666,11 +673,12 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 		}
 		addedFiles[f.Path] = true
 		hdr := &tar.Header{
-			Name:   f.Path,
-			Mode:   mode,
-			Uid:    int(uid),
-			Gid:    int(gid),
-			Format: tar.FormatPAX,
+			Name:    f.Path,
+			Mode:    mode,
+			ModTime: defaultModTime,
+			Uid:     int(uid),
+			Gid:     int(gid),
+			Format:  tar.FormatPAX,
 		}
 		if f.Directory {
 			if f.Contents != nil {

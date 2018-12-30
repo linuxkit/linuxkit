@@ -281,10 +281,11 @@ func tarInitrdKernel(kernel, initrd []byte, cmdline string) (*bytes.Buffer, erro
 	buf := new(bytes.Buffer)
 	tw := tar.NewWriter(buf)
 	hdr := &tar.Header{
-		Name:   "kernel",
-		Mode:   0600,
-		Size:   int64(len(kernel)),
-		Format: tar.FormatPAX,
+		Name:    "kernel",
+		Mode:    0600,
+		Size:    int64(len(kernel)),
+		ModTime: defaultModTime,
+		Format:  tar.FormatPAX,
 	}
 	err := tw.WriteHeader(hdr)
 	if err != nil {
@@ -295,10 +296,11 @@ func tarInitrdKernel(kernel, initrd []byte, cmdline string) (*bytes.Buffer, erro
 		return buf, err
 	}
 	hdr = &tar.Header{
-		Name:   "initrd.img",
-		Mode:   0600,
-		Size:   int64(len(initrd)),
-		Format: tar.FormatPAX,
+		Name:    "initrd.img",
+		Mode:    0600,
+		Size:    int64(len(initrd)),
+		ModTime: defaultModTime,
+		Format:  tar.FormatPAX,
 	}
 	err = tw.WriteHeader(hdr)
 	if err != nil {
@@ -309,10 +311,11 @@ func tarInitrdKernel(kernel, initrd []byte, cmdline string) (*bytes.Buffer, erro
 		return buf, err
 	}
 	hdr = &tar.Header{
-		Name:   "cmdline",
-		Mode:   0600,
-		Size:   int64(len(cmdline)),
-		Format: tar.FormatPAX,
+		Name:    "cmdline",
+		Mode:    0600,
+		Size:    int64(len(cmdline)),
+		ModTime: defaultModTime,
+		Format:  tar.FormatPAX,
 	}
 	err = tw.WriteHeader(hdr)
 	if err != nil {
@@ -410,10 +413,11 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	tw := tar.NewWriter(f)
 	if len(kernel) != 0 {
 		hdr := &tar.Header{
-			Name:   "kernel",
-			Mode:   0644,
-			Size:   int64(len(kernel)),
-			Format: tar.FormatPAX,
+			Name:    "kernel",
+			Mode:    0644,
+			Size:    int64(len(kernel)),
+			ModTime: defaultModTime,
+			Format:  tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -424,10 +428,11 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	}
 	if len(initrd) != 0 {
 		hdr := &tar.Header{
-			Name:   "initrd.img",
-			Mode:   0644,
-			Size:   int64(len(initrd)),
-			Format: tar.FormatPAX,
+			Name:    "initrd.img",
+			Mode:    0644,
+			Size:    int64(len(initrd)),
+			ModTime: defaultModTime,
+			Format:  tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -438,10 +443,11 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	}
 	if len(cmdline) != 0 {
 		hdr := &tar.Header{
-			Name:   "cmdline",
-			Mode:   0644,
-			Size:   int64(len(cmdline)),
-			Format: tar.FormatPAX,
+			Name:    "cmdline",
+			Mode:    0644,
+			Size:    int64(len(cmdline)),
+			ModTime: defaultModTime,
+			Format:  tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -452,10 +458,11 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	}
 	if len(ucode) != 0 {
 		hdr := &tar.Header{
-			Name:   "ucode.cpio",
-			Mode:   0644,
-			Size:   int64(len(ucode)),
-			Format: tar.FormatPAX,
+			Name:    "ucode.cpio",
+			Mode:    0644,
+			Size:    int64(len(ucode)),
+			ModTime: defaultModTime,
+			Format:  tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err

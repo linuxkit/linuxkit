@@ -53,6 +53,18 @@ ff02::2 ip6-allrouters
 `,
 }
 
+// Files which may be created as part of 'docker export'. These need their timestamp fixed.
+var touch = map[string]bool{
+	"dev/":            true,
+	"dev/pts/":        true,
+	"dev/shm/":        true,
+	"etc/":            true,
+	"etc/mtab":        true,
+	"etc/resolv.conf": true,
+	"proc/":           true,
+	"sys/":            true,
+}
+
 // tarPrefix creates the leading directories for a path
 func tarPrefix(path string, tw tarWriter) error {
 	if path == "" {
@@ -71,6 +83,7 @@ func tarPrefix(path string, tw tarWriter) error {
 		hdr := &tar.Header{
 			Name:     mkdir,
 			Mode:     0755,
+			ModTime:  defaultModTime,
 			Typeflag: tar.TypeDir,
 			Format:   tar.FormatPAX,
 		}
@@ -154,7 +167,8 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				contents := replace[hdr.Name]
 				hdr.Size = int64(len(contents))
 				hdr.Name = prefix + hdr.Name
-				log.Debugf("image tar: %s %s add %s", ref, prefix, hdr.Name)
+				hdr.ModTime = defaultModTime
+				log.Debugf("image tar: %s %s add %s (replaced)", ref, prefix, hdr.Name)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
 				}
@@ -169,6 +183,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				hdr.Size = 0
 				hdr.Typeflag = tar.TypeSymlink
 				hdr.Linkname = resolv
+				hdr.ModTime = defaultModTime
 				log.Debugf("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", ref, prefix, resolv)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
@@ -179,7 +194,12 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				return err
 			}
 		} else {
-			log.Debugf("image tar: %s %s add %s", ref, prefix, hdr.Name)
+			if touch[hdr.Name] {
+				log.Debugf("image tar: %s %s add %s (touch)", ref, prefix, hdr.Name)
+				hdr.ModTime = defaultModTime
+			} else {
+				log.Debugf("image tar: %s %s add %s (original)", ref, prefix, hdr.Name)
+			}
 			hdr.Name = prefix + hdr.Name
 			if hdr.Typeflag == tar.TypeLink {
 				// hard links are referenced by full path so need to be adjusted
@@ -221,10 +241,11 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	}
 
 	hdr := &tar.Header{
-		Name:   path.Join(prefix, "config.json"),
-		Mode:   0644,
-		Size:   int64(len(config)),
-		Format: tar.FormatPAX,
+		Name:    path.Join(prefix, "config.json"),
+		Mode:    0644,
+		Size:    int64(len(config)),
+		ModTime: defaultModTime,
+		Format:  tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
@@ -242,6 +263,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			Name:     tmp,
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
+			ModTime:  defaultModTime,
 			Format:   tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -252,6 +274,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			Name:     path.Join(prefix, "rootfs"),
 			Mode:     0755,
 			Typeflag: tar.TypeDir,
+			ModTime:  defaultModTime,
 			Format:   tar.FormatPAX,
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -271,6 +294,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 				Name:     path.Join(prefix, "rootfs"),
 				Mode:     0755,
 				Typeflag: tar.TypeDir,
+				ModTime:  defaultModTime,
 				Format:   tar.FormatPAX,
 			}
 			if err := tw.WriteHeader(hdr); err != nil {
@@ -294,10 +318,11 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	}
 
 	hdr = &tar.Header{
-		Name:   path.Join(prefix, "runtime.json"),
-		Mode:   0644,
-		Size:   int64(len(runtimeConfig)),
-		Format: tar.FormatPAX,
+		Name:    path.Join(prefix, "runtime.json"),
+		Mode:    0644,
+		Size:    int64(len(runtimeConfig)),
+		ModTime: defaultModTime,
+		Format:  tar.FormatPAX,
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
