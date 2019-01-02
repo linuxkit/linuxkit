@@ -76,7 +76,7 @@ func dockerCreate(image string) (string, error) {
 	log.Debugf("docker create: %s", image)
 	cli, err := dockerClient()
 	if err != nil {
-		return "", errors.New("could not initialize Docker API client")
+		return "", errors.New("could not initialize Docker API client: " + err.Error())
 	}
 	// we do not ever run the container, so /dev/null is used as command
 	config := &container.Config{
@@ -96,7 +96,7 @@ func dockerExport(container string) (io.ReadCloser, error) {
 	log.Debugf("docker export: %s", container)
 	cli, err := dockerClient()
 	if err != nil {
-		return nil, errors.New("could not initialize Docker API client")
+		return nil, errors.New("could not initialize Docker API client: " + err.Error())
 	}
 	responseBody, err := cli.ContainerExport(context.Background(), container)
 	if err != nil {
@@ -110,7 +110,7 @@ func dockerRm(container string) error {
 	log.Debugf("docker rm: %s", container)
 	cli, err := dockerClient()
 	if err != nil {
-		return errors.New("could not initialize Docker API client")
+		return errors.New("could not initialize Docker API client: " + err.Error())
 	}
 	if err = cli.ContainerRemove(context.Background(), container, types.ContainerRemoveOptions{}); err != nil {
 		return err
@@ -123,7 +123,7 @@ func dockerPull(ref *reference.Spec, forcePull, trustedPull bool) error {
 	log.Debugf("docker pull: %s", ref)
 	cli, err := dockerClient()
 	if err != nil {
-		return errors.New("could not initialize Docker API client")
+		return errors.New("could not initialize Docker API client: " + err.Error())
 	}
 
 	if trustedPull {
