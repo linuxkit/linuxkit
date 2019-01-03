@@ -176,9 +176,8 @@ RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
 # perf
 # Only build perf for the latest LTS and the latest stable kernel.
-# There were intermittent breakage for 4.4.x and 4.9.x on some arches
 # Skip arm64 for now as perf for 4.19.x fails to build.
-RUN if ( [ "${KERNEL_SERIES}" = 4.14.x ] || [ "${KERNEL_SERIES}" = 4.19.x ] ) && [ $(uname -m) != aarch64 ]; then \
+RUN if [ "${KERNEL_SERIES}" != 4.9.x ] && [ $(uname -m) != aarch64 ]; then \
        mkdir -p /build/perf && \
        make -C tools/perf LDFLAGS=-static O=/build/perf && \
        strip /build/perf/perf && \
