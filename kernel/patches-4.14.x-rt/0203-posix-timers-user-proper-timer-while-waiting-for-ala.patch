@@ -1,7 +1,7 @@
-From 0294c928d977219b3bc276ce87b5fa65bc2ad05a Mon Sep 17 00:00:00 2001
+From 3b2696c2db2ea687ecb4572ff3362c03146b4288 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 28 Mar 2018 10:45:40 +0200
-Subject: [PATCH 203/436] posix-timers: user proper timer while waiting for
+Subject: [PATCH 203/437] posix-timers: user proper timer while waiting for
  alarmtimer
 
 On RT the timer can be preempted while running and therefore we wait

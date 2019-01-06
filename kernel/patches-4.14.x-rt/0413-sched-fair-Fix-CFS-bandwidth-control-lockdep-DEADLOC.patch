@@ -1,7 +1,7 @@
-From 447e59141f82bc93af90c53aa57bfbcbe0d18f1d Mon Sep 17 00:00:00 2001
+From e03fc4f4b97262c8bddc2e79a6203f422adc41c3 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Fri, 4 May 2018 08:14:38 +0200
-Subject: [PATCH 413/436] sched/fair: Fix CFS bandwidth control lockdep
+Subject: [PATCH 413/437] sched/fair: Fix CFS bandwidth control lockdep
  DEADLOCK report
 
 [ Upstream commit df7e8acc0c9a84979a448d215b8ef889efe4ac5a ]
@@ -38,10 +38,10 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 13a6f2f6bcf2..20e7d867af7a 100644
+index 9cae149e78b6..d0c0c13b3bcb 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4686,9 +4686,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
+@@ -4701,9 +4701,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
  	cfs_b->period = ns_to_ktime(default_cfs_period());
  
  	INIT_LIST_HEAD(&cfs_b->throttled_cfs_rq);
@@ -51,8 +51,8 @@ index 13a6f2f6bcf2..20e7d867af7a 100644
 -	hrtimer_init(&cfs_b->slack_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
 +	hrtimer_init(&cfs_b->slack_timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_HARD);
  	cfs_b->slack_timer.function = sched_cfs_slack_timer;
+ 	cfs_b->distribute_running = 0;
  }
- 
 -- 
 2.19.1
 

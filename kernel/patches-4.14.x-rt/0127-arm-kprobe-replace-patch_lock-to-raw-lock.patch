@@ -1,7 +1,7 @@
-From e48ddfb43013eb98d5cf357f3a0b7b65ae106edc Mon Sep 17 00:00:00 2001
+From e9331a157470378a4524092971a16d10c3e9fd64 Mon Sep 17 00:00:00 2001
 From: Yang Shi <yang.shi@linaro.org>
 Date: Thu, 10 Nov 2016 16:17:55 -0800
-Subject: [PATCH 127/436] arm: kprobe: replace patch_lock to raw lock
+Subject: [PATCH 127/437] arm: kprobe: replace patch_lock to raw lock
 
 When running kprobe on -rt kernel, the below bug is caught:
 

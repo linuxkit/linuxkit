@@ -1,7 +1,7 @@
-From 93448707bb8f5d58d2cddf4588d711204f4df6ff Mon Sep 17 00:00:00 2001
+From ff1fd4c04ee29a12cf2ef8a3395461f27c6f63fe Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 21:41:35 +0200
-Subject: [PATCH 311/436] debugobjects: Make RT aware
+Subject: [PATCH 311/437] debugobjects: Make RT aware
 
 Avoid filling the pool / allocating memory with irqs off().
 

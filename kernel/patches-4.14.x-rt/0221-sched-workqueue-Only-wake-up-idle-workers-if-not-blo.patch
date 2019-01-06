@@ -1,7 +1,7 @@
-From 18897cb3e1ac19cd29a40047eb2b94ea8bda9b6a Mon Sep 17 00:00:00 2001
+From 64da8c818609427bd7dca604fde6217f536a8509 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Mon, 18 Mar 2013 15:12:49 -0400
-Subject: [PATCH 221/436] sched/workqueue: Only wake up idle workers if not
+Subject: [PATCH 221/437] sched/workqueue: Only wake up idle workers if not
  blocked on sleeping spin lock
 
 In -rt, most spin_locks() turn into mutexes. One of these spin_lock
@@ -24,7 +24,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 3 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index dcbb3a4c2f53..39e892bbe1a2 100644
+index 75c7bd31cba4..82da2b9facc9 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3405,8 +3405,10 @@ static void __sched notrace __schedule(bool preempt)

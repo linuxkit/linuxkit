@@ -1,19 +1,19 @@
-From 42699cec0fa254a9b752ea2922a003427829d526 Mon Sep 17 00:00:00 2001
+From e4f32b92f9cfa15b928173de2437b1015a831874 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Wed, 5 Sep 2018 08:08:53 -0400
-Subject: [PATCH 436/436] Linux 4.14.78-rt47 REBASE
+Subject: [PATCH 437/437] Linux 4.14.87-rt49 REBASE
 
 ---
  localversion-rt | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/localversion-rt b/localversion-rt
-index 90290c642ed5..8a777ac42aab 100644
+index 90290c642ed5..4b7dca68a5b4 100644
 --- a/localversion-rt
 +++ b/localversion-rt
 @@ -1 +1 @@
 --rt29
-+-rt47
++-rt49
 -- 
 2.19.1
 

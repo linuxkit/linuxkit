@@ -1,7 +1,7 @@
-From 948306f7c511901cf72b22c0667c07e4de3bdae7 Mon Sep 17 00:00:00 2001
+From 492db0fbf838a1d0864e1e8753f0a00a842dad94 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 14 Dec 2011 01:03:49 +0100
-Subject: [PATCH 359/436] cpumask: Disable CONFIG_CPUMASK_OFFSTACK for RT
+Subject: [PATCH 359/437] cpumask: Disable CONFIG_CPUMASK_OFFSTACK for RT
 
 There are "valid" GFP_ATOMIC allocations such as
 
@@ -46,10 +46,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 5c7203cc0e6f..3351fe1af2a8 100644
+index 22a63ddf5668..0520b7003c43 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
-@@ -936,7 +936,7 @@ config IOMMU_HELPER
+@@ -932,7 +932,7 @@ config IOMMU_HELPER
  config MAXSMP
  	bool "Enable Maximum number of SMP Processors and NUMA Nodes"
  	depends on X86_64 && SMP && DEBUG_KERNEL

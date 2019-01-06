@@ -1,7 +1,7 @@
-From e730a898497daf1851d1329c3eb5aaadda1079a2 Mon Sep 17 00:00:00 2001
+From 896a19a34dac35a435de6e32986dade16c56f4d7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 22 Dec 2017 15:51:13 +0100
-Subject: [PATCH 191/436] nohz: Prevent erroneous tick stop invocations
+Subject: [PATCH 191/437] nohz: Prevent erroneous tick stop invocations
 
 The conditions in irq_exit() to invoke tick_nohz_irq_exit() are:
 

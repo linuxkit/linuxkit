@@ -1,7 +1,7 @@
-From a41bf6c29a159b1f5da84cbcd7d2054c07857311 Mon Sep 17 00:00:00 2001
+From 846a0171bb7bedde591b065bf8bf3482c071801e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 21 Aug 2012 20:38:50 +0200
-Subject: [PATCH 360/436] random: Make it work on rt
+Subject: [PATCH 360/437] random: Make it work on rt
 
 Delegate the random insertion to the forced threaded interrupt
 handler. Store the return IP of the hard interrupt handler in the irq
@@ -126,10 +126,10 @@ index 79f987b942b8..d1dbacc29941 100644
  	if (!noirqdebug)
  		note_interrupt(desc, retval);
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 967c0bfc9f3b..f82dcca81712 100644
+index 400eca839bcc..01b282ddb83b 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -1027,6 +1027,12 @@ static int irq_thread(void *data)
+@@ -1031,6 +1031,12 @@ static int irq_thread(void *data)
  		if (action_ret == IRQ_WAKE_THREAD)
  			irq_wake_secondary(desc, action);
  

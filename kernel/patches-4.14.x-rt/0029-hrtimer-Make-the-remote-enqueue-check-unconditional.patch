@@ -1,7 +1,7 @@
-From fb6cd12081ee6d86489859ab63b6074749e19863 Mon Sep 17 00:00:00 2001
+From b5cd9c9539b8a050c5c9806e54aa9b295215ba00 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:04 +0100
-Subject: [PATCH 029/436] hrtimer: Make the remote enqueue check unconditional
+Subject: [PATCH 029/437] hrtimer: Make the remote enqueue check unconditional
 
 hrtimer_cpu_base.expires_next is used to cache the next event armed in the
 timer hardware. The value is used to check whether an hrtimer can be

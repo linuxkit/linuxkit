@@ -1,7 +1,7 @@
-From 17014b28a63a27db4b5781c10e89dc0ef3c1b463 Mon Sep 17 00:00:00 2001
+From 67472f6754cc2e0cafb055c2a43c13aef8d7996e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 18:51:23 +0200
-Subject: [PATCH 227/436] lockdep: Make it RT aware
+Subject: [PATCH 227/437] lockdep: Make it RT aware
 
 teach lockdep that we don't really do softirqs on -RT.
 
@@ -58,7 +58,7 @@ index 7834117a1ef5..2e023bfe45af 100644
  
  #if defined(CONFIG_IRQSOFF_TRACER) || \
 diff --git a/kernel/locking/lockdep.c b/kernel/locking/lockdep.c
-index d7c155048ea9..def51a27f20f 100644
+index bf694c709b96..8012378b7445 100644
 --- a/kernel/locking/lockdep.c
 +++ b/kernel/locking/lockdep.c
 @@ -3914,6 +3914,7 @@ static void check_flags(unsigned long flags)

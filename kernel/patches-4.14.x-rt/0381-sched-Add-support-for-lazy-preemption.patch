@@ -1,7 +1,7 @@
-From 6002bb81c493f6ec7d1937f94a445ed432d9b83b Mon Sep 17 00:00:00 2001
+From e12239c4111671341a3541f2d5bf0c11ab461a95 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 381/436] sched: Add support for lazy preemption
+Subject: [PATCH 381/437] sched: Add support for lazy preemption
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -142,10 +142,10 @@ index fd2efc6ffc3f..0591df500e9d 100644
  } while (0)
  
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 4e48d5fe8bd6..c26b5ff005ab 100644
+index ac1e8dd32a6f..462baf19cf41 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1661,6 +1661,44 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -1670,6 +1670,44 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -243,7 +243,7 @@ index f8a2982bdbde..11dbe26a8279 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index d3369a9bd607..6952b7765bde 100644
+index c304127bee78..64f3c372776b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -518,6 +518,48 @@ void resched_curr(struct rq *rq)
@@ -375,7 +375,7 @@ index d3369a9bd607..6952b7765bde 100644
  	/*
  	 * The idle tasks have their own, simple scheduling class:
  	 */
-@@ -6884,6 +6960,7 @@ void migrate_disable(void)
+@@ -6890,6 +6966,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -383,7 +383,7 @@ index d3369a9bd607..6952b7765bde 100644
  	pin_current_cpu();
  
  	migrate_disable_update_cpus_allowed(p);
-@@ -6951,6 +7028,7 @@ void migrate_enable(void)
+@@ -6957,6 +7034,7 @@ void migrate_enable(void)
  			arg.dest_cpu = dest_cpu;
  
  			unpin_current_cpu();
@@ -391,7 +391,7 @@ index d3369a9bd607..6952b7765bde 100644
  			preempt_enable();
  			stop_one_cpu(task_cpu(p), migration_cpu_stop, &arg);
  			tlb_migrate_finish(p->mm);
-@@ -6959,6 +7037,7 @@ void migrate_enable(void)
+@@ -6965,6 +7043,7 @@ void migrate_enable(void)
  		}
  	}
  	unpin_current_cpu();
@@ -400,7 +400,7 @@ index d3369a9bd607..6952b7765bde 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index a2421b2564b9..13a6f2f6bcf2 100644
+index 304a7ebc7657..9cae149e78b6 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -3842,7 +3842,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq, struct sched_entity *curr)
@@ -439,7 +439,7 @@ index a2421b2564b9..13a6f2f6bcf2 100644
  }
  
  static __always_inline
-@@ -4839,7 +4839,7 @@ static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
+@@ -4855,7 +4855,7 @@ static void hrtick_start_fair(struct rq *rq, struct task_struct *p)
  
  		if (delta < 0) {
  			if (rq->curr == p)
@@ -448,7 +448,7 @@ index a2421b2564b9..13a6f2f6bcf2 100644
  			return;
  		}
  		hrtick_start(rq, delta);
-@@ -6233,7 +6233,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
+@@ -6249,7 +6249,7 @@ static void check_preempt_wakeup(struct rq *rq, struct task_struct *p, int wake_
  	return;
  
  preempt:
@@ -457,7 +457,7 @@ index a2421b2564b9..13a6f2f6bcf2 100644
  	/*
  	 * Only set the backward buddy when the current task is still
  	 * on the rq. This can happen when a wakeup gets interleaved
-@@ -9087,7 +9087,7 @@ static void task_fork_fair(struct task_struct *p)
+@@ -9103,7 +9103,7 @@ static void task_fork_fair(struct task_struct *p)
  		 * 'current' within the tree based on its new key value.
  		 */
  		swap(curr->vruntime, se->vruntime);
@@ -466,7 +466,7 @@ index a2421b2564b9..13a6f2f6bcf2 100644
  	}
  
  	se->vruntime -= cfs_rq->min_vruntime;
-@@ -9111,7 +9111,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
+@@ -9127,7 +9127,7 @@ prio_changed_fair(struct rq *rq, struct task_struct *p, int oldprio)
  	 */
  	if (rq->curr == p) {
  		if (p->prio > oldprio)
@@ -490,7 +490,7 @@ index c675ee1694f5..fb069998b518 100644
  
  /*
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index ace39806bff8..96481980c8c7 100644
+index bd6363799cf6..4862a596717c 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1546,6 +1546,15 @@ extern void init_sched_fair_class(void);

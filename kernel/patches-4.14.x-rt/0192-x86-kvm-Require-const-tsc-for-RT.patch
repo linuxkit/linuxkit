@@ -1,7 +1,7 @@
-From afeb5922ff19919b8b0c196353173368860e4c98 Mon Sep 17 00:00:00 2001
+From 9109effb72a0964511b0c3a06980bf05a8e7d16d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 6 Nov 2011 12:26:18 +0100
-Subject: [PATCH 192/436] x86: kvm Require const tsc for RT
+Subject: [PATCH 192/437] x86: kvm Require const tsc for RT
 
 Non constant TSC is a nightmare on bare metal already, but with
 virtualization it becomes a complete disaster because the workarounds
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 7 insertions(+)
 
 diff --git a/arch/x86/kvm/x86.c b/arch/x86/kvm/x86.c
-index 3856828ee1dc..407658146ae1 100644
+index f24329659bea..1934203b6fc5 100644
 --- a/arch/x86/kvm/x86.c
 +++ b/arch/x86/kvm/x86.c
 @@ -6287,6 +6287,13 @@ int kvm_arch_init(void *opaque)

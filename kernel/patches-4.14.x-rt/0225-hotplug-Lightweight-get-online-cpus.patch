@@ -1,7 +1,7 @@
-From 4c979671a86d2f4eba57e05ec29cdef767cba028 Mon Sep 17 00:00:00 2001
+From bbeeb3d6b7c54f8bc6c3b96adcc16444961e23e1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
-Subject: [PATCH 225/436] hotplug: Lightweight get online cpus
+Subject: [PATCH 225/437] hotplug: Lightweight get online cpus
 
 get_online_cpus() is a heavy weight function which involves a global
 mutex. migrate_disable() wants a simpler construct which prevents only
@@ -42,10 +42,10 @@ index 2a378d261914..b418d3c5159d 100644
  
  /* Wrappers which go away once all code is converted */
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index f3f389e33343..c4e00efd6a2b 100644
+index 5c907d96e3dd..92a1e437e777 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -287,6 +287,21 @@ static int cpu_hotplug_disabled;
+@@ -288,6 +288,21 @@ static int cpu_hotplug_disabled;
  
  #ifdef CONFIG_HOTPLUG_CPU
  
@@ -68,10 +68,10 @@ index f3f389e33343..c4e00efd6a2b 100644
  
  void cpus_read_lock(void)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ad2e06ddd290..b8529f66f258 100644
+index b5738acc4bf1..e4c9a2f745cf 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -6911,6 +6911,7 @@ void migrate_disable(void)
+@@ -6917,6 +6917,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -79,7 +79,7 @@ index ad2e06ddd290..b8529f66f258 100644
  
  	migrate_disable_update_cpus_allowed(p);
  	p->migrate_disable = 1;
-@@ -6976,12 +6977,15 @@ void migrate_enable(void)
+@@ -6982,12 +6983,15 @@ void migrate_enable(void)
  			arg.task = p;
  			arg.dest_cpu = dest_cpu;
  

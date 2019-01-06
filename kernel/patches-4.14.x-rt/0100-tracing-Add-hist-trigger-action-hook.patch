@@ -1,7 +1,7 @@
-From 19fe267475a8ace8e7c956afd52aa0bf08544bf7 Mon Sep 17 00:00:00 2001
+From bc65875eba8adfc360b79baf7cc2772354f4824a Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:57 -0600
-Subject: [PATCH 100/436] tracing: Add hist trigger action hook
+Subject: [PATCH 100/437] tracing: Add hist trigger action hook
 
 Add a hook for executing extra actions whenever a histogram entry is
 added or updated.

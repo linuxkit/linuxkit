@@ -1,7 +1,7 @@
-From fb7ee3959928518c8ee7e1d81a27288b679a74a9 Mon Sep 17 00:00:00 2001
+From d3c22a59774ab35444d4c5958df90ced8600758a Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:06 -0600
-Subject: [PATCH 109/436] tracing: Add inter-event hist trigger Documentation
+Subject: [PATCH 109/437] tracing: Add inter-event hist trigger Documentation
 
 Add background and details on inter-event hist triggers, including
 hist variables, synthetic events, and actions.

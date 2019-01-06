@@ -1,7 +1,7 @@
-From 3062a89af94d8d70f3c044733bc906f51e195a69 Mon Sep 17 00:00:00 2001
+From ca683556d23c0f7dd07d63f56d9becd628db4386 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:15 +0100
-Subject: [PATCH 040/436] hrtimer: Add clock bases and hrtimer mode for soft
+Subject: [PATCH 040/437] hrtimer: Add clock bases and hrtimer mode for soft
  irq context
 
 hrtimer callback functions are always executed in hard interrupt

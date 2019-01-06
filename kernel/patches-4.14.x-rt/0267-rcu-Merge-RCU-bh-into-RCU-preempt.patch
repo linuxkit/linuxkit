@@ -1,7 +1,7 @@
-From 3f1b159f2bd11326720e1987c23d123f23518d49 Mon Sep 17 00:00:00 2001
+From 483b81787aca812ec731a33fbb0356a133c193f9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 5 Oct 2011 11:59:38 -0700
-Subject: [PATCH 267/436] rcu: Merge RCU-bh into RCU-preempt
+Subject: [PATCH 267/437] rcu: Merge RCU-bh into RCU-preempt
 
 The Linux kernel has long RCU-bh read-side critical sections that
 intolerably increase scheduling latency under mainline's RCU-bh rules,
@@ -194,7 +194,7 @@ index 45f2ffbc1e78..2e9dbb734d5a 100644
   * Don't even think about trying any of these in real life!!!
   * The names includes "busted", and they really means it!
 diff --git a/kernel/rcu/tree.c b/kernel/rcu/tree.c
-index 3e3650e94ae6..b2367bc209cc 100644
+index 710ce1d6b982..f9d942d18e86 100644
 --- a/kernel/rcu/tree.c
 +++ b/kernel/rcu/tree.c
 @@ -243,6 +243,7 @@ void rcu_sched_qs(void)
@@ -277,7 +277,7 @@ index 3e3650e94ae6..b2367bc209cc 100644
  	case RCU_SCHED_FLAVOR:
  		rsp = &rcu_sched_state;
  		break;
-@@ -3113,6 +3129,7 @@ void call_rcu_sched(struct rcu_head *head, rcu_callback_t func)
+@@ -3122,6 +3138,7 @@ void call_rcu_sched(struct rcu_head *head, rcu_callback_t func)
  }
  EXPORT_SYMBOL_GPL(call_rcu_sched);
  
@@ -285,7 +285,7 @@ index 3e3650e94ae6..b2367bc209cc 100644
  /**
   * call_rcu_bh() - Queue an RCU for invocation after a quicker grace period.
   * @head: structure to be used for queueing the RCU updates.
-@@ -3140,6 +3157,7 @@ void call_rcu_bh(struct rcu_head *head, rcu_callback_t func)
+@@ -3149,6 +3166,7 @@ void call_rcu_bh(struct rcu_head *head, rcu_callback_t func)
  	__call_rcu(head, func, &rcu_bh_state, -1, 0);
  }
  EXPORT_SYMBOL_GPL(call_rcu_bh);
@@ -293,7 +293,7 @@ index 3e3650e94ae6..b2367bc209cc 100644
  
  /*
   * Queue an RCU callback for lazy invocation after a grace period.
-@@ -3225,6 +3243,7 @@ void synchronize_sched(void)
+@@ -3234,6 +3252,7 @@ void synchronize_sched(void)
  }
  EXPORT_SYMBOL_GPL(synchronize_sched);
  
@@ -301,7 +301,7 @@ index 3e3650e94ae6..b2367bc209cc 100644
  /**
   * synchronize_rcu_bh - wait until an rcu_bh grace period has elapsed.
   *
-@@ -3251,6 +3270,7 @@ void synchronize_rcu_bh(void)
+@@ -3260,6 +3279,7 @@ void synchronize_rcu_bh(void)
  		wait_rcu_gp(call_rcu_bh);
  }
  EXPORT_SYMBOL_GPL(synchronize_rcu_bh);
@@ -309,7 +309,7 @@ index 3e3650e94ae6..b2367bc209cc 100644
  
  /**
   * get_state_synchronize_rcu - Snapshot current RCU state
-@@ -3601,6 +3621,7 @@ static void _rcu_barrier(struct rcu_state *rsp)
+@@ -3610,6 +3630,7 @@ static void _rcu_barrier(struct rcu_state *rsp)
  	mutex_unlock(&rsp->barrier_mutex);
  }
  
@@ -317,7 +317,7 @@ index 3e3650e94ae6..b2367bc209cc 100644
  /**
   * rcu_barrier_bh - Wait until all in-flight call_rcu_bh() callbacks complete.
   */
-@@ -3609,6 +3630,7 @@ void rcu_barrier_bh(void)
+@@ -3618,6 +3639,7 @@ void rcu_barrier_bh(void)
  	_rcu_barrier(&rcu_bh_state);
  }
  EXPORT_SYMBOL_GPL(rcu_barrier_bh);
@@ -325,7 +325,7 @@ index 3e3650e94ae6..b2367bc209cc 100644
  
  /**
   * rcu_barrier_sched - Wait for in-flight call_rcu_sched() callbacks.
-@@ -4184,7 +4206,9 @@ void __init rcu_init(void)
+@@ -4193,7 +4215,9 @@ void __init rcu_init(void)
  
  	rcu_bootup_announce();
  	rcu_init_geometry();

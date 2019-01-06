@@ -1,7 +1,7 @@
-From 55591a8dcdab815c288a513658a7bc7da6c31175 Mon Sep 17 00:00:00 2001
+From ccbca38a3469e06ecbd3bda0725b2228afc68ab6 Mon Sep 17 00:00:00 2001
 From: Josh Cartwright <josh.cartwright@ni.com>
 Date: Wed, 28 Jan 2015 13:08:45 -0600
-Subject: [PATCH 373/436] lockdep: selftest: fix warnings due to missing
+Subject: [PATCH 373/437] lockdep: selftest: fix warnings due to missing
  PREEMPT_RT conditionals
 
 "lockdep: Selftest: Only do hardirq context test for raw spinlock"

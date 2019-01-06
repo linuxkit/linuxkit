@@ -1,7 +1,7 @@
-From 384eea24318d7aac543e641fac17bece675c017b Mon Sep 17 00:00:00 2001
+From 72ac596912e69a9196b10e55a7893aa790795328 Mon Sep 17 00:00:00 2001
 From: Jason Wessel <jason.wessel@windriver.com>
 Date: Thu, 28 Jul 2011 12:42:23 -0500
-Subject: [PATCH 342/436] kgdb/serial: Short term workaround
+Subject: [PATCH 342/437] kgdb/serial: Short term workaround
 
 On 07/27/2011 04:37 PM, Thomas Gleixner wrote:
 >  - KGDB (not yet disabled) is reportedly unusable on -rt right now due
@@ -65,10 +65,10 @@ index 68bd88223417..e033b25b0b72 100644
  static inline int kdb_register(char *cmd, kdb_func_t func, char *usage,
  			       char *help, short minlen) { return 0; }
 diff --git a/kernel/debug/kdb/kdb_io.c b/kernel/debug/kdb/kdb_io.c
-index ed5d34925ad0..c0d4c24fc241 100644
+index 6a4b41484afe..197cb422f6e1 100644
 --- a/kernel/debug/kdb/kdb_io.c
 +++ b/kernel/debug/kdb/kdb_io.c
-@@ -854,9 +854,11 @@ int kdb_printf(const char *fmt, ...)
+@@ -857,9 +857,11 @@ int kdb_printf(const char *fmt, ...)
  	va_list ap;
  	int r;
  

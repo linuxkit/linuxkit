@@ -1,7 +1,7 @@
-From 2b1a2a149027a606cb7155a49a85d93ac254b369 Mon Sep 17 00:00:00 2001
+From 6e1dd27911fb7da4408d81137f91d0cef5d946a9 Mon Sep 17 00:00:00 2001
 From: Julia Cartwright <julia@ni.com>
 Date: Mon, 7 May 2018 08:58:56 -0500
-Subject: [PATCH 414/436] locallock: provide {get,put}_locked_ptr() variants
+Subject: [PATCH 414/437] locallock: provide {get,put}_locked_ptr() variants
 
 [ Upstream commit 3d45cf23db4f76cd356ebb0aa4cdaa7d92d1a64e ]
 

@@ -1,7 +1,7 @@
-From 0033394812f1fa3fcb33d68dca32c08f84dcbb4f Mon Sep 17 00:00:00 2001
+From 6c60a376a30a4c4009517c4bc742afdab31b7b3e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 30 Nov 2017 13:40:10 +0100
-Subject: [PATCH 355/436] crypto: limit more FPU-enabled sections
+Subject: [PATCH 355/437] crypto: limit more FPU-enabled sections
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

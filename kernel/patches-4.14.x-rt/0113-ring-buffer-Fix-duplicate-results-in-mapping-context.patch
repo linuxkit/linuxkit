@@ -1,7 +1,7 @@
-From a51f1d6202dd947639db67db099924528f58a22b Mon Sep 17 00:00:00 2001
+From 158c7e6197471e64b5d8b70c580808803b5383c5 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Thu, 18 Jan 2018 15:42:09 -0500
-Subject: [PATCH 113/436] ring-buffer: Fix duplicate results in mapping context
+Subject: [PATCH 113/437] ring-buffer: Fix duplicate results in mapping context
  to bits in recursive lock
 
 In bringing back the context checks, the code checks first if its normal

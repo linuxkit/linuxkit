@@ -1,7 +1,7 @@
-From 156ad8f7bc364f3d0e21668c0200a0aac0ffa751 Mon Sep 17 00:00:00 2001
+From 3931903ca419f65c45ab81f67443109aa1bde3cd Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:30 -0500
-Subject: [PATCH 130/436] drivers: random: Reduce preempt disabled region
+Subject: [PATCH 130/437] drivers: random: Reduce preempt disabled region
 
 No need to keep preemption disabled across the whole function.
 

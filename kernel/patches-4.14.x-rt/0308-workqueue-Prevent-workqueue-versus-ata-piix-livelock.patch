@@ -1,7 +1,7 @@
-From 5bdcef60b43bef894e71ffc190146f7dd2e58c7d Mon Sep 17 00:00:00 2001
+From f01d9be16d6f9f10226fdfe059747e3234a58827 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 1 Jul 2013 11:02:42 +0200
-Subject: [PATCH 308/436] workqueue: Prevent workqueue versus ata-piix livelock
+Subject: [PATCH 308/437] workqueue: Prevent workqueue versus ata-piix livelock
 
 An Intel i7 system regularly detected rcu_preempt stalls after the kernel
 was upgraded from 3.6-rt to 3.8-rt. When the stall happened, disk I/O was no

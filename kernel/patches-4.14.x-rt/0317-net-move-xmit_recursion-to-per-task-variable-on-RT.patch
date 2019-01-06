@@ -1,7 +1,7 @@
-From cba9a4a529c8122ceaa90f8a9347c54c09c2009e Mon Sep 17 00:00:00 2001
+From 60d98d8d56aaf5ef8a9c8f74d26326df8fba4a24 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
-Subject: [PATCH 317/436] net: move xmit_recursion to per-task variable on -RT
+Subject: [PATCH 317/437] net: move xmit_recursion to per-task variable on -RT
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -82,7 +82,7 @@ index fd318a3b4fc1..4480f0907e55 100644
  struct net_device *__dev_get_by_index(struct net *net, int ifindex);
  struct net_device *dev_get_by_index_rcu(struct net *net, int ifindex);
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index dc3c98d9f924..33d7cb59c00b 100644
+index 675cbae7adfb..ff13666bc6dd 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1155,6 +1155,9 @@ struct task_struct {
@@ -96,7 +96,7 @@ index dc3c98d9f924..33d7cb59c00b 100644
  	int				pagefault_disabled;
  #ifdef CONFIG_MMU
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 494d90f828c1..47e2f8c53c0e 100644
+index 093b2bf46ce7..73161f5455d1 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3270,8 +3270,10 @@ static void skb_update_prio(struct sk_buff *skb)

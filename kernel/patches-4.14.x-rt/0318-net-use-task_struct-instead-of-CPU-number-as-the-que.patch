@@ -1,7 +1,7 @@
-From 53039569e903c8d7ba3c851dfc82a20a81734c1a Mon Sep 17 00:00:00 2001
+From 3a58c2a589dd012d6bc31e7f0b2c4415f1b3903c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Feb 2018 10:39:54 +0100
-Subject: [PATCH 318/436] net: use task_struct instead of CPU number as the
+Subject: [PATCH 318/437] net: use task_struct instead of CPU number as the
  queue owner on -RT
 
 In commit ("net: move xmit_recursion to per-task variable on -RT") the
@@ -124,7 +124,7 @@ index 4480f0907e55..6b891e37d8e3 100644
  }
  
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 47e2f8c53c0e..d863eec99b08 100644
+index 73161f5455d1..8d35a35d99a0 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -3513,7 +3513,11 @@ static int __dev_queue_xmit(struct sk_buff *skb, void *accel_priv)
@@ -139,7 +139,7 @@ index 47e2f8c53c0e..d863eec99b08 100644
  			if (unlikely(xmit_rec_read() > XMIT_RECURSION_LIMIT))
  				goto recursion_alert;
  
-@@ -7520,7 +7524,7 @@ static void netdev_init_one_queue(struct net_device *dev,
+@@ -7524,7 +7528,7 @@ static void netdev_init_one_queue(struct net_device *dev,
  	/* Initialize queue lock */
  	spin_lock_init(&queue->_xmit_lock);
  	netdev_set_xmit_lockdep_class(&queue->_xmit_lock, dev->type);

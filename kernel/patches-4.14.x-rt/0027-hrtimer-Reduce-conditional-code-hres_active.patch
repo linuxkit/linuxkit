@@ -1,7 +1,7 @@
-From eed392ed4eea40dc81b0f08f5af6f9c8dd1e5c9d Mon Sep 17 00:00:00 2001
+From ae9cbcb83bcfc4a83965378438eca2a1ca78afc9 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:02 +0100
-Subject: [PATCH 027/436] hrtimer: Reduce conditional code (hres_active)
+Subject: [PATCH 027/437] hrtimer: Reduce conditional code (hres_active)
 
 The hrtimer_cpu_base struct has the CONFIG_HIGH_RES_TIMERS conditional
 struct member hres_active. All related functions to this member are

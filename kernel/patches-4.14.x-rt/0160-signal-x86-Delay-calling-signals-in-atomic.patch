@@ -1,7 +1,7 @@
-From e56a80b4cfb84871aaece2a4f0e3e48346c30105 Mon Sep 17 00:00:00 2001
+From 4961b4ad4cf8bba0c6e80477f4d0045c51f3f2c1 Mon Sep 17 00:00:00 2001
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
-Subject: [PATCH 160/436] signal/x86: Delay calling signals in atomic
+Subject: [PATCH 160/437] signal/x86: Delay calling signals in atomic
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -79,7 +79,7 @@ index 5f9012ff52ed..7c7846cbab45 100644
  typedef sigset_t compat_sigset_t;
  #endif
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 789e690fdade..620d9703a125 100644
+index 92f7f58d44f6..a7d48ad0fb96 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -835,6 +835,10 @@ struct task_struct {
@@ -94,7 +94,7 @@ index 789e690fdade..620d9703a125 100644
  	size_t				sas_ss_size;
  	unsigned int			sas_ss_flags;
 diff --git a/kernel/signal.c b/kernel/signal.c
-index d02e38f75170..d8f75a030292 100644
+index 374d60ea3699..c6266045e1b3 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -1237,8 +1237,8 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,

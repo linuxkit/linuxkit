@@ -1,7 +1,7 @@
-From aac90d8553f5912b8aa747cfeff416b182001c75 Mon Sep 17 00:00:00 2001
+From d8196bc0e2751a637e8eacbbd15ae20322b2b74d Mon Sep 17 00:00:00 2001
 From: Vedang Patel <vedang.patel@intel.com>
 Date: Mon, 15 Jan 2018 20:51:37 -0600
-Subject: [PATCH 080/436] tracing: Add support to detect and avoid duplicates
+Subject: [PATCH 080/437] tracing: Add support to detect and avoid duplicates
 
 A duplicate in the tracing_map hash table is when 2 different entries
 have the same key and, as a result, the key_hash. This is possible due

@@ -1,7 +1,7 @@
-From 56cd4bae71375f55e490683b5d998dbe74e263ce Mon Sep 17 00:00:00 2001
+From d68b176c0966248883554b0d06bafdd2cfd9d4d6 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <srostedt@redhat.com>
 Date: Fri, 3 Jul 2009 08:44:29 -0500
-Subject: [PATCH 151/436] ata: Do not disable interrupts in ide code for
+Subject: [PATCH 151/437] ata: Do not disable interrupts in ide code for
  preempt-rt
 
 Use the local_irq_*_nort variants.

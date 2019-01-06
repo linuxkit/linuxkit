@@ -1,7 +1,7 @@
-From e3ccd1de428bd41b16b13d3b970c0224cb0d780c Mon Sep 17 00:00:00 2001
+From ece88076b665589976cb6fc1e2fc07cc6e7c1ec4 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:34 +0100
-Subject: [PATCH 008/436] iommu/amd: Turn dev_data_list into a lock less list
+Subject: [PATCH 008/437] iommu/amd: Turn dev_data_list into a lock less list
 
 Upstream commit 779da73273fc4c4c6f41579a95e4fb7880a1720e
 

@@ -1,7 +1,7 @@
-From b779b40acf479c5a3e7e021aa32753d508a94c3d Mon Sep 17 00:00:00 2001
+From 3ea1ded21463a93bb065b5f50e6d391b0ec3f891 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 17:19:44 +0100
-Subject: [PATCH 158/436] mm/workingset: Do not protect workingset_shadow_nodes
+Subject: [PATCH 158/437] mm/workingset: Do not protect workingset_shadow_nodes
  with irq off
 
 workingset_shadow_nodes is protected by local_irq_disable(). Some users
@@ -83,7 +83,7 @@ index e2e738cc08b1..c47070dae8b9 100644
  	if (shadow) {
  		mapping->nrexceptional += nr;
 diff --git a/mm/truncate.c b/mm/truncate.c
-index 2330223841fb..d0c8e6c8fef5 100644
+index d3a2737cc188..a25891e3d066 100644
 --- a/mm/truncate.c
 +++ b/mm/truncate.c
 @@ -41,8 +41,10 @@ static void clear_shadow_entry(struct address_space *mapping, pgoff_t index,

@@ -1,7 +1,7 @@
-From 8d2810744e9411139258f78334757248d0d60dcc Mon Sep 17 00:00:00 2001
+From 33b672b6b513a144f0ccb471e007a9a7e7544af0 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Wed, 11 Jul 2018 17:14:47 +0200
-Subject: [PATCH 430/436] crypto: scompress - serialize RT percpu scratch
+Subject: [PATCH 430/437] crypto: scompress - serialize RT percpu scratch
  buffer access with a local lock
 
 [ Upstream commit 1a4eff3f8e743d149be26a414822710aef07fe14 ]

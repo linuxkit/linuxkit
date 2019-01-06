@@ -1,7 +1,7 @@
-From 2dce40038048a6a91012e693f26d00a5a8eacab6 Mon Sep 17 00:00:00 2001
+From 39baf9e4fb2678d4d977ab5c833063a28814935d Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Sep 2012 14:50:37 +0200
-Subject: [PATCH 330/436] printk: Make rt aware
+Subject: [PATCH 330/437] printk: Make rt aware
 
 Drop the lock before calling the console driver and do not disable
 interrupts while printing to a serial console.
@@ -12,10 +12,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 18 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index fec67b9d0fad..60786d701bfe 100644
+index 9c946617baae..febac6df82d2 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1558,6 +1558,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1563,6 +1563,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  	if (!console_drivers)
  		return;
  
@@ -23,7 +23,7 @@ index fec67b9d0fad..60786d701bfe 100644
  	for_each_console(con) {
  		if (exclusive_console && con != exclusive_console)
  			continue;
-@@ -1573,6 +1574,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1578,6 +1579,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  		else
  			con->write(con, text, len);
  	}
@@ -31,7 +31,7 @@ index fec67b9d0fad..60786d701bfe 100644
  }
  
  int printk_delay_msec __read_mostly;
-@@ -1757,12 +1759,22 @@ asmlinkage int vprintk_emit(int facility, int level,
+@@ -1762,6 +1764,16 @@ asmlinkage int vprintk_emit(int facility, int level,
  
  	/* If called from the scheduler, we can not call up(). */
  	if (!in_sched) {
@@ -46,16 +46,18 @@ index fec67b9d0fad..60786d701bfe 100644
 +			may_trylock = 0;
 +#endif
  		/*
- 		 * Try to acquire and then immediately release the console
+ 		 * Disable preemption to avoid being preempted while holding
+ 		 * console_sem which would prevent anyone from printing to
+@@ -1773,7 +1785,7 @@ asmlinkage int vprintk_emit(int facility, int level,
  		 * semaphore.  The release will print out buffers and wake up
  		 * /dev/kmsg and syslog() users.
  		 */
 -		if (console_trylock())
 +		if (may_trylock && console_trylock())
  			console_unlock();
+ 		preempt_enable();
  	}
- 
-@@ -2218,10 +2230,15 @@ void console_unlock(void)
+@@ -2217,10 +2229,15 @@ void console_unlock(void)
  		console_seq++;
  		raw_spin_unlock(&logbuf_lock);
  

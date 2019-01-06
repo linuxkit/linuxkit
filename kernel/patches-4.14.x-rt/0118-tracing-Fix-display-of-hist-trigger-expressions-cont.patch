@@ -1,7 +1,7 @@
-From c4df86ec70bdb2396440e02c8c2270aab4a98926 Mon Sep 17 00:00:00 2001
+From 85830476840c2e6ebbba8fe775453ab912e28934 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Wed, 28 Mar 2018 15:10:53 -0500
-Subject: [PATCH 118/436] tracing: Fix display of hist trigger expressions
+Subject: [PATCH 118/437] tracing: Fix display of hist trigger expressions
  containing timestamps
 
 When displaying hist triggers, variable references that have the

@@ -1,7 +1,7 @@
-From a9b7eeec1010037ed0ecbdb857adb46803e18d6c Mon Sep 17 00:00:00 2001
+From 38e63f2f170b11dc5d7d899f6f47987c9780d06c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 23 Jun 2015 15:32:51 +0200
-Subject: [PATCH 327/436] irqwork: push most work into softirq context
+Subject: [PATCH 327/437] irqwork: push most work into softirq context
 
 Initially we defered all irqwork into softirq because we didn't want the
 latency spikes if perf or another user was busy and delayed the RT task.

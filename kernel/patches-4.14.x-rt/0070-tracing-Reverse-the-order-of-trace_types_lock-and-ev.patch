@@ -1,7 +1,7 @@
-From 00c9e3285ff96ec493c5afb0408063fd130792a4 Mon Sep 17 00:00:00 2001
+From 5949dd1e7ccd5b129d4f1fd30c9090bcc1ee8620 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Thu, 21 Sep 2017 16:22:49 -0400
-Subject: [PATCH 070/436] tracing: Reverse the order of trace_types_lock and
+Subject: [PATCH 070/437] tracing: Reverse the order of trace_types_lock and
  event_mutex
 
 In order to make future changes where we need to call

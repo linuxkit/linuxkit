@@ -1,7 +1,7 @@
-From d9e85ffb300e1085555e533c5a94234132f3d57e Mon Sep 17 00:00:00 2001
+From 23624e1d8e58efec7e18f61451c2feb4f37238ab Mon Sep 17 00:00:00 2001
 From: "bigeasy@linutronix.de" <bigeasy@linutronix.de>
 Date: Fri, 23 Mar 2018 18:17:36 +0100
-Subject: [PATCH 067/436] target: drop spin_lock_assert() + irqs_disabled()
+Subject: [PATCH 067/437] target: drop spin_lock_assert() + irqs_disabled()
  combo checks
 
 There are a few functions which check for if the lock is held

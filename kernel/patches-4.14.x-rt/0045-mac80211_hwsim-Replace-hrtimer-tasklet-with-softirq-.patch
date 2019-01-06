@@ -1,7 +1,7 @@
-From 79f0b9349f6c0c3b3fa12c824db613d1865e0502 Mon Sep 17 00:00:00 2001
+From 342c4c04e0060c8e398dad26f9ca0abe9f9985b8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:12 +0100
-Subject: [PATCH 045/436] mac80211_hwsim: Replace hrtimer tasklet with softirq
+Subject: [PATCH 045/437] mac80211_hwsim: Replace hrtimer tasklet with softirq
  hrtimer
 
 Switch the timer to HRTIMER_MODE_SOFT, which executed the timer
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 20 insertions(+), 24 deletions(-)
 
 diff --git a/drivers/net/wireless/mac80211_hwsim.c b/drivers/net/wireless/mac80211_hwsim.c
-index aafa7aa18fbd..388f6d71ba71 100644
+index 477f9f2f6626..06dff45037fe 100644
 --- a/drivers/net/wireless/mac80211_hwsim.c
 +++ b/drivers/net/wireless/mac80211_hwsim.c
 @@ -537,7 +537,7 @@ struct mac80211_hwsim_data {

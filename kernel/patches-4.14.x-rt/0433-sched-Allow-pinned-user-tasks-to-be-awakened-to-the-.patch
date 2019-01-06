@@ -1,7 +1,7 @@
-From 1220b7ab5f325a287e78f9ec5fe3ba356358a600 Mon Sep 17 00:00:00 2001
+From 4326f7d62d7ab0d3e95e49e9fc806866aba01d26 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Sun, 19 Aug 2018 08:28:35 +0200
-Subject: [PATCH 433/436] sched: Allow pinned user tasks to be awakened to the
+Subject: [PATCH 433/437] sched: Allow pinned user tasks to be awakened to the
  CPU they pinned
 
 [ Upstream commit cd4d35ef89948221f7cd1751cee453943967364c ]
@@ -23,7 +23,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index a5ce37b90fca..6e6bd5262f23 100644
+index e1fc94836fe0..6ce950f24a7f 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -980,7 +980,7 @@ static inline bool is_cpu_allowed(struct task_struct *p, int cpu)

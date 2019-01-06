@@ -1,7 +1,7 @@
-From 8cf8843134965d92e233b4e4b51b338adca39531 Mon Sep 17 00:00:00 2001
+From adcfdb200a27ac5fe36e4b2acf769140cd46a0ef Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Wed, 26 Jun 2013 15:28:11 -0400
-Subject: [PATCH 402/436] rt,ntp: Move call to schedule_delayed_work() to
+Subject: [PATCH 402/437] rt,ntp: Move call to schedule_delayed_work() to
  helper thread
 
 The ntp code for notify_cmos_timer() is called from a hard interrupt

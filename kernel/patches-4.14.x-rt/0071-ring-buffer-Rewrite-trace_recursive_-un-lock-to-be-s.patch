@@ -1,7 +1,7 @@
-From 8c82729cb3bf984e8257bf7843a37d19e803edf0 Mon Sep 17 00:00:00 2001
+From 2b1f41ec5ffa792926f78d9561c67ec7bfc7a215 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Fri, 22 Sep 2017 16:59:02 -0400
-Subject: [PATCH 071/436] ring-buffer: Rewrite trace_recursive_(un)lock() to be
+Subject: [PATCH 071/437] ring-buffer: Rewrite trace_recursive_(un)lock() to be
  simpler
 
 The current method to prevent the ring buffer from entering into a recursize

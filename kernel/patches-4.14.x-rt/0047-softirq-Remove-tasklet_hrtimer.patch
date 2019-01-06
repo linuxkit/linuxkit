@@ -1,7 +1,7 @@
-From fb75d95b4db545cc06f533a961e2e72a0a4a1dab Mon Sep 17 00:00:00 2001
+From 7e36685a07adb7a6bb5e1c8ca09b359dad8ba444 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:14 +0100
-Subject: [PATCH 047/436] softirq: Remove tasklet_hrtimer
+Subject: [PATCH 047/437] softirq: Remove tasklet_hrtimer
 
 There are no more tasklet_hrtimer users of this interface.
 Remove it.

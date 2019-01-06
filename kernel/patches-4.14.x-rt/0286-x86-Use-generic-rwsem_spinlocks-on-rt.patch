@@ -1,7 +1,7 @@
-From e93fe4a0241a21b017e2eb266ebf0e66dcd50c55 Mon Sep 17 00:00:00 2001
+From 61139c98e3538a576a9f524393ba94eaf74e0fc8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 26 Jul 2009 02:21:32 +0200
-Subject: [PATCH 286/436] x86: Use generic rwsem_spinlocks on -rt
+Subject: [PATCH 286/437] x86: Use generic rwsem_spinlocks on -rt
 
 Simplifies the separation of anon_rw_semaphores and rw_semaphores for
 -rt.
@@ -12,7 +12,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 2af0af33362a..5c7203cc0e6f 100644
+index 4f393eb9745f..22a63ddf5668 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -257,8 +257,11 @@ config ARCH_MAY_HAVE_PC_FDC

@@ -1,7 +1,7 @@
-From 53fb9206323ef728ea0f14902463967e270bd819 Mon Sep 17 00:00:00 2001
+From 507ef937323c7aeb59dad74c200aaaa9f16e6150 Mon Sep 17 00:00:00 2001
 From: Grygorii Strashko <grygorii.strashko@ti.com>
 Date: Fri, 11 Sep 2015 21:21:23 +0300
-Subject: [PATCH 052/436] ARM: smp: Move clear_tasks_mm_cpumask() call to
+Subject: [PATCH 052/437] ARM: smp: Move clear_tasks_mm_cpumask() call to
  __cpu_die()
 
 When running with the RT-kernel (4.1.5-rt5) on TI OMAP dra7-evm and trying

@@ -1,7 +1,7 @@
-From 6cce46be8934e135b9552a92d55bc40938162fda Mon Sep 17 00:00:00 2001
+From 12e204e731465f1517223971e9046dd70de7ae59 Mon Sep 17 00:00:00 2001
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Wed, 5 Oct 2011 11:45:18 -0700
-Subject: [PATCH 268/436] rcu: Make ksoftirqd do RCU quiescent states
+Subject: [PATCH 268/437] rcu: Make ksoftirqd do RCU quiescent states
 
 Implementing RCU-bh in terms of RCU-preempt makes the system vulnerable
 to network-based denial-of-service attacks.  This patch therefore
@@ -45,7 +45,7 @@ index 104fa2bdf127..70996e134818 100644
  void rcu_report_dead(unsigned int cpu);
  void rcu_cpu_starting(unsigned int cpu);
 diff --git a/kernel/rcu/tree.c b/kernel/rcu/tree.c
-index b2367bc209cc..cc495f5273af 100644
+index f9d942d18e86..5e991041f50a 100644
 --- a/kernel/rcu/tree.c
 +++ b/kernel/rcu/tree.c
 @@ -243,7 +243,14 @@ void rcu_sched_qs(void)

@@ -1,7 +1,7 @@
-From cfbbccbd07a88130ae428d5ad487ac1789407621 Mon Sep 17 00:00:00 2001
+From c7627c7bde5f3a171a7838b80b8e146e9deb79ae Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 19 Jul 2018 21:50:23 +0200
-Subject: [PATCH 426/436] x86/ioapic: Don't let setaffinity unmask threaded EOI
+Subject: [PATCH 426/437] x86/ioapic: Don't let setaffinity unmask threaded EOI
  interrupt too early
 
 [ Upstream commit ac14002317721910204b82b9d8611dadb1cec2bb ]

@@ -1,7 +1,7 @@
-From 17608ff4d9e40e39a7de8cf77292c8215b3aa611 Mon Sep 17 00:00:00 2001
+From d05efb043fdc95a8cf20c7b0642eeec1817f9c33 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Thu, 5 Jul 2018 12:43:18 +0200
-Subject: [PATCH 421/436] Revert "timer: delay waking softirqs from the jiffy
+Subject: [PATCH 421/437] Revert "timer: delay waking softirqs from the jiffy
  tick"
 
 [ Upstream commit b5b16907c58280e015d5673dca4c6bd3fde0c348 ]

@@ -1,7 +1,7 @@
-From 8e7b14f2d2e42d71e1a5f875e6ab4e546ff39f43 Mon Sep 17 00:00:00 2001
+From 931ccf1b69d6dfecdea4048cec1a5f212511960c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Jul 2018 15:30:52 +0200
-Subject: [PATCH 422/436] irqchip/gic-v3-its: Make its_lock a raw_spin_lock_t
+Subject: [PATCH 422/437] irqchip/gic-v3-its: Make its_lock a raw_spin_lock_t
 
 [ Upstream commit c7a3334c762a9b1dd2e39cb2ded00ce66e8a06d1 ]
 

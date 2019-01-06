@@ -1,7 +1,7 @@
-From d68dfba4a8e4ef220769d9ae2040e09f8a67fa3d Mon Sep 17 00:00:00 2001
+From 3b5b7590e56263ba80198ae916802d69e5696f06 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 11:39:36 +0200
-Subject: [PATCH 290/436] mm/vmalloc: Another preempt disable region which
+Subject: [PATCH 290/437] mm/vmalloc: Another preempt disable region which
  sucks
 
 Avoid the preempt disable version of get_cpu_var(). The inner-lock should

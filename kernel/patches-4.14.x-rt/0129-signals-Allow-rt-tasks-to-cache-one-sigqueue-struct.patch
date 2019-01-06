@@ -1,7 +1,7 @@
-From b69917075c84524abe220f296d74ec434dd26e0b Mon Sep 17 00:00:00 2001
+From 818da71ff388a006767feb2a8332b9fc3f80766e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:56 -0500
-Subject: [PATCH 129/436] signals: Allow rt tasks to cache one sigqueue struct
+Subject: [PATCH 129/437] signals: Allow rt tasks to cache one sigqueue struct
 
 To avoid allocation allow rt tasks to cache one sigqueue struct in
 task struct.
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 70 insertions(+), 5 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index c22e7b475dd9..789e690fdade 100644
+index b0390902a36f..92f7f58d44f6 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -828,6 +828,8 @@ struct task_struct {
@@ -29,7 +29,7 @@ index c22e7b475dd9..789e690fdade 100644
  	sigset_t			real_blocked;
  	/* Restored if set_restore_sigmask() was used: */
 diff --git a/include/linux/signal.h b/include/linux/signal.h
-index 042968dd98f0..a7d20f85cc0e 100644
+index 843bd62b1ead..5d6a2206157a 100644
 --- a/include/linux/signal.h
 +++ b/include/linux/signal.h
 @@ -243,6 +243,7 @@ static inline void init_sigpending(struct sigpending *sig)
@@ -66,7 +66,7 @@ index d45043432b17..c66167f0bba6 100644
  	p->utime = p->stime = p->gtime = 0;
  #ifdef CONFIG_ARCH_HAS_SCALED_CPUTIME
 diff --git a/kernel/signal.c b/kernel/signal.c
-index 2167e0407cbf..67354e467778 100644
+index 8ffd4fb0a0f2..ca7de0d8a4bd 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -19,6 +19,7 @@

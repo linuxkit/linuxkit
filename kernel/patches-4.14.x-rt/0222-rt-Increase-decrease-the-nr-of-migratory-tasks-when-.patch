@@ -1,7 +1,7 @@
-From c044804c07e01212e42092e576d340684769220a Mon Sep 17 00:00:00 2001
+From 683b12cfb28b91fbb49cddbdbb8c1962d17cd855 Mon Sep 17 00:00:00 2001
 From: Daniel Bristot de Oliveira <bristot@redhat.com>
 Date: Mon, 26 Jun 2017 17:07:15 +0200
-Subject: [PATCH 222/436] rt: Increase/decrease the nr of migratory tasks when
+Subject: [PATCH 222/437] rt: Increase/decrease the nr of migratory tasks when
  enabling/disabling migration
 
 There is a problem in the migrate_disable()/enable() implementation
@@ -81,10 +81,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 44 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 39e892bbe1a2..ad2e06ddd290 100644
+index 82da2b9facc9..b5738acc4bf1 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -6847,6 +6847,47 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -6853,6 +6853,47 @@ const u32 sched_prio_to_wmult[40] = {
  
  #if defined(CONFIG_PREEMPT_COUNT) && defined(CONFIG_SMP)
  
@@ -132,7 +132,7 @@ index 39e892bbe1a2..ad2e06ddd290 100644
  void migrate_disable(void)
  {
  	struct task_struct *p = current;
-@@ -6870,10 +6911,9 @@ void migrate_disable(void)
+@@ -6876,10 +6917,9 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -145,7 +145,7 @@ index 39e892bbe1a2..ad2e06ddd290 100644
  
  	preempt_enable();
  }
-@@ -6905,9 +6945,8 @@ void migrate_enable(void)
+@@ -6911,9 +6951,8 @@ void migrate_enable(void)
  
  	preempt_disable();
  

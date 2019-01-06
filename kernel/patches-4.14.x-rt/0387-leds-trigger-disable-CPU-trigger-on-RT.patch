@@ -1,7 +1,7 @@
-From 517f99388c143ae0a62bc1a7d4b16aee80554a15 Mon Sep 17 00:00:00 2001
+From 50cf6e2ce0055e575512a80c22b66446e72f64b4 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 23 Jan 2014 14:45:59 +0100
-Subject: [PATCH 387/436] leds: trigger: disable CPU trigger on -RT
+Subject: [PATCH 387/437] leds: trigger: disable CPU trigger on -RT
 
 as it triggers:
 |CPU: 0 PID: 0 Comm: swapper Not tainted 3.12.8-rt10 #141

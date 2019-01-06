@@ -1,7 +1,7 @@
-From 42338db617d6ca8d8981d4f456f47dcb39656e49 Mon Sep 17 00:00:00 2001
+From 18fe30d8c5cba94eb27edfb01aa859bd05e8df12 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 15:06:10 +0200
-Subject: [PATCH 427/436] efi: Allow efi=runtime
+Subject: [PATCH 427/437] efi: Allow efi=runtime
 
 [ Upstream commit 71bef7da4112ed2677d4f10a58202a5a4638fb90 ]
 

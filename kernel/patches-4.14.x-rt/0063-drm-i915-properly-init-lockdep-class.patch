@@ -1,7 +1,7 @@
-From 549a18db1dde0ebb994070cf7eebbd74eacbb8b2 Mon Sep 17 00:00:00 2001
+From 0d3d9c5f072e910b2f184bfac6c15b9690a779e9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 30 Nov 2017 16:06:13 +0100
-Subject: [PATCH 063/436] drm/i915: properly init lockdep class
+Subject: [PATCH 063/437] drm/i915: properly init lockdep class
 
 The code has an ifdef and uses two functions to either init the bare
 spinlock or init it and set a lock-class. It is possible to do the same

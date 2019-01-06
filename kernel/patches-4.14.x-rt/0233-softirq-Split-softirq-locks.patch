@@ -1,7 +1,7 @@
-From a9c7c5d7c937d61e93dc109aed660c37b12058c1 Mon Sep 17 00:00:00 2001
+From caa51304cafba2c42f71347845f0d7f3aa7f32a7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
-Subject: [PATCH 233/436] softirq: Split softirq locks
+Subject: [PATCH 233/437] softirq: Split softirq locks
 
 The 3.x RT series removed the split softirq implementation in favour
 of pushing softirq processing into the context of the thread which
@@ -178,7 +178,7 @@ index a3b19af35e3d..2983043d2194 100644
  #define in_task()		(!(preempt_count() & \
  				   (NMI_MASK | HARDIRQ_MASK | SOFTIRQ_OFFSET)))
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 209e71d83687..b82a53ca6ce4 100644
+index ea110a4dea9b..ee6f6d3501de 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -1136,6 +1136,8 @@ struct task_struct {
@@ -830,7 +830,7 @@ index c21fd6a16870..92222682dfce 100644
  	}
  
 diff --git a/net/core/dev.c b/net/core/dev.c
-index 048fc3e7355c..2400b73f79b2 100644
+index 49812d1dba8e..8972786d17de 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -4110,11 +4110,9 @@ int netif_rx_ni(struct sk_buff *skb)

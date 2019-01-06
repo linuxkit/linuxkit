@@ -1,7 +1,7 @@
-From 8e20fe1ebfca9ba2552ab961b55df9dcf8b8b0a7 Mon Sep 17 00:00:00 2001
+From 74a94472ee3b10f3ee5a2bd59cf4a24d51f1e635 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 15:03:16 +0200
-Subject: [PATCH 428/436] efi: Disable runtime services on RT
+Subject: [PATCH 428/437] efi: Disable runtime services on RT
 
 [ Upstream commit 55544e1d5eb0d7608e2b41452729649c8ea1607a ]
 

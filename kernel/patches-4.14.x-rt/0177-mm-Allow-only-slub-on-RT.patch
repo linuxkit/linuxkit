@@ -1,7 +1,7 @@
-From cfce351eba955ebce1382f47e406b7c2be1d1b4f Mon Sep 17 00:00:00 2001
+From a276eb4d8b187ebb02c3edbb0cf6faf7c73f6ea2 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:44:03 -0500
-Subject: [PATCH 177/436] mm: Allow only slub on RT
+Subject: [PATCH 177/437] mm: Allow only slub on RT
 
 Disable SLAB and SLOB on -RT. Only SLUB is adopted to -RT needs.
 

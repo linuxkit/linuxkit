@@ -1,7 +1,7 @@
-From 733d0f3dab66164d9b7fd1c8148d74596a28a0b7 Mon Sep 17 00:00:00 2001
+From cdc25f0d6e106121a6dd599495ad7f00f766ca49 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:36 -0600
-Subject: [PATCH 079/436] tracing: Add Documentation for log2 modifier
+Subject: [PATCH 079/437] tracing: Add Documentation for log2 modifier
 
 Add a line for the log2 modifier, to keep it aligned with
 tracing/README.

@@ -1,7 +1,7 @@
-From 1c2ce8efee1b78da9a93a39d2e0645453ea7f6aa Mon Sep 17 00:00:00 2001
+From 9b8e921f44850673998d430379102463ddb4e322 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 2 Mar 2018 11:37:57 +0100
-Subject: [PATCH 403/436] Revert "rt,ntp: Move call to schedule_delayed_work()
+Subject: [PATCH 403/437] Revert "rt,ntp: Move call to schedule_delayed_work()
  to helper thread"
 
 I've been looking at this in v3.10-RT where it got in. The patch

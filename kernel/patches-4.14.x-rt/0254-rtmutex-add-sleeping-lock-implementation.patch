@@ -1,7 +1,7 @@
-From 8783b4309b64365dde7c6e3c4db69f9815809ae5 Mon Sep 17 00:00:00 2001
+From 64f504e34e6123f04c506325bbb231e879a03390 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 254/436] rtmutex: add sleeping lock implementation
+Subject: [PATCH 254/437] rtmutex: add sleeping lock implementation
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -102,7 +102,7 @@ index a355289b1fa1..138bd1e183e0 100644
   * rt_mutex_is_locked - is the mutex locked
   * @lock: the mutex to be queried
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index b82a53ca6ce4..71af67e42b1a 100644
+index ee6f6d3501de..1b5cc9f148d6 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -133,6 +133,11 @@ struct task_group;
@@ -1161,7 +1161,7 @@ index ff17912f869c..2d822a08c87d 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b8529f66f258..521100928bce 100644
+index e4c9a2f745cf..b34002b6c91b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -427,9 +427,15 @@ static bool set_nr_if_polling(struct task_struct *p)

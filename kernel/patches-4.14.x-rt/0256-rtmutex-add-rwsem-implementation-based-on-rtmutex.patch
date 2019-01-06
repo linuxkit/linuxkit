@@ -1,7 +1,7 @@
-From b94b8e25fa53b9e5e4b64cb56a24c1046261b67a Mon Sep 17 00:00:00 2001
+From 4029732510cb67246a845e4c9d329eaf9c94b402 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:28:34 +0200
-Subject: [PATCH 256/436] rtmutex: add rwsem implementation based on rtmutex
+Subject: [PATCH 256/437] rtmutex: add rwsem implementation based on rtmutex
 
 The RT specific R/W semaphore implementation restricts the number of readers
 to one because a writer cannot block on multiple readers and inherit its

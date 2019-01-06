@@ -1,7 +1,7 @@
-From 8548b225be9811324d83006e197f2adb24b683cc Mon Sep 17 00:00:00 2001
+From caaa4d10322908e9a347914745e83e2a55078869 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Sep 2017 14:43:41 +0200
-Subject: [PATCH 374/436] srcu: use cpu_online() instead custom check
+Subject: [PATCH 374/437] srcu: use cpu_online() instead custom check
 
 The current check via srcu_online is slightly racy because after looking
 at srcu_online there could be an interrupt that interrupted us long
@@ -72,10 +72,10 @@ index 6d5880089ff6..b72d8c552604 100644
  }
  
 diff --git a/kernel/rcu/tree.c b/kernel/rcu/tree.c
-index 55c56b1aece7..85e2dc55a82c 100644
+index f37d06ec5ee1..9eb9cfc9c9c1 100644
 --- a/kernel/rcu/tree.c
 +++ b/kernel/rcu/tree.c
-@@ -3775,8 +3775,6 @@ int rcutree_online_cpu(unsigned int cpu)
+@@ -3784,8 +3784,6 @@ int rcutree_online_cpu(unsigned int cpu)
  {
  	sync_sched_exp_online_cleanup(cpu);
  	rcutree_affinity_setting(cpu, -1);
@@ -84,7 +84,7 @@ index 55c56b1aece7..85e2dc55a82c 100644
  	return 0;
  }
  
-@@ -3787,8 +3785,6 @@ int rcutree_online_cpu(unsigned int cpu)
+@@ -3796,8 +3794,6 @@ int rcutree_online_cpu(unsigned int cpu)
  int rcutree_offline_cpu(unsigned int cpu)
  {
  	rcutree_affinity_setting(cpu, cpu);
@@ -93,7 +93,7 @@ index 55c56b1aece7..85e2dc55a82c 100644
  	return 0;
  }
  
-@@ -4236,8 +4232,6 @@ void __init rcu_init(void)
+@@ -4245,8 +4241,6 @@ void __init rcu_init(void)
  	for_each_online_cpu(cpu) {
  		rcutree_prepare_cpu(cpu);
  		rcu_cpu_starting(cpu);

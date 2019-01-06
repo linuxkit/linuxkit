@@ -1,7 +1,7 @@
-From bd1841425843e16d1c2867c8e6f4596da61e7fe3 Mon Sep 17 00:00:00 2001
+From a97e1866677bb396b2034a3ae3cd882234452caf Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 20 Oct 2017 11:29:53 +0200
-Subject: [PATCH 282/436] fs/dcache: disable preemption on i_dir_seq's write
+Subject: [PATCH 282/437] fs/dcache: disable preemption on i_dir_seq's write
  side
 
 i_dir_seq is an opencoded seqcounter. Based on the code it looks like we
@@ -114,10 +114,10 @@ index 3aabe553fc45..b5d63bf1ad8e 100644
  }
  
 diff --git a/include/linux/fs.h b/include/linux/fs.h
-index cc613f20e5a6..b806e2116f5c 100644
+index f6a577edec67..10cdd9dbbf84 100644
 --- a/include/linux/fs.h
 +++ b/include/linux/fs.h
-@@ -655,7 +655,7 @@ struct inode {
+@@ -657,7 +657,7 @@ struct inode {
  		struct block_device	*i_bdev;
  		struct cdev		*i_cdev;
  		char			*i_link;

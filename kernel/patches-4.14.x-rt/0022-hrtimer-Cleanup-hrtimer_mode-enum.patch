@@ -1,7 +1,7 @@
-From 1d542162944f298f4387b1519916f8ea87598c78 Mon Sep 17 00:00:00 2001
+From c70a78a159599bbc711e49f8d1d44a978d7fd6da Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:56 +0100
-Subject: [PATCH 022/436] hrtimer: Cleanup hrtimer_mode enum
+Subject: [PATCH 022/437] hrtimer: Cleanup hrtimer_mode enum
 
 It's not obvious that the HRTIMER_MODE variants are bit combinations
 because all modes are hard coded constants.

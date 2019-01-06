@@ -1,0 +1,45 @@
+From cf8995800318059df3252b7c58fca53dc3e59062 Mon Sep 17 00:00:00 2001
+From: Steven Rostedt <rostedt@goodmis.org>
+Date: Tue, 18 Dec 2018 14:30:10 -0500
+Subject: [PATCH 436/437] printk: Do not disable preemption calling
+ console_unlock() in PREEMPT_RT
+
+A stable backport placed open coded preempt_disable() around console_unlock()
+to prevent delays in output of printk() due to a task holding the console
+lock being preempted. But most consoles are not PREEMPT_RT safe, thus
+it needs to be preemptable when PREEMPT_RT is enabled.
+
+Replace the open coded preempt_disable() with migrate_disable() which
+is a preempt_disable() on non PREEMPT_RT, but just disables migration
+on PREEMPT_RT, even though it doesn't really depend on that.
+
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+---
+ kernel/printk/printk.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
+index 8a7c4f79fca0..029ae3caa80e 100644
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -1811,7 +1811,7 @@ asmlinkage int vprintk_emit(int facility, int level,
+ 		 * console_sem which would prevent anyone from printing to
+ 		 * console
+ 		 */
+-		preempt_disable();
++		migrate_disable();
+ 		/*
+ 		 * Try to acquire and then immediately release the console
+ 		 * semaphore.  The release will print out buffers and wake up
+@@ -1819,7 +1819,7 @@ asmlinkage int vprintk_emit(int facility, int level,
+ 		 */
+ 		if (may_trylock && console_trylock())
+ 			console_unlock();
+-		preempt_enable();
++		migrate_enable();
+ 	}
+ 
+ 	return printed_len;
+-- 
+2.19.1
+
