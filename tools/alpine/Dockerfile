@@ -22,6 +22,7 @@ RUN apk add alpine-sdk libmnl-dev curl && \
     chmod 0777 /wireguard && \
     cd /wireguard && \
     curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/testing/wireguard-tools/APKBUILD && \
+    curl -fsSLo alpine-compat.patch https://git.alpinelinux.org/aports/plain/testing/wireguard-tools/alpine-compat.patch && \
     su -c "abuild-keygen -a -n && abuild -r" builder && \
     cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch)
 
