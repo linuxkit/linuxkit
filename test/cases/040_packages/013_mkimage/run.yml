@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:e0dced91adbfba34c53cd673760e011f410638ff
-  - linuxkit/runc:e05648668932e0f1691f40f00ebd14170464577b
+  - linuxkit/runc:b87c49e73eb14ba73d23eabf75423e987a043209
 onboot:
   - name: poweroff
     image: linuxkit/poweroff:afe8f7dd0d47a7991c54519b0f09124cb8c4e300

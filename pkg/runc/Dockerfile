@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:3683c9a66cd4da40bd7d6c7da599b2dcd738b559 as alpine
+FROM linuxkit/alpine:0de3332a65895be3a610a99377545c157ca4b138 as alpine
 RUN \
   apk add \
   bash \

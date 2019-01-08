@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:e0dced91adbfba34c53cd673760e011f410638ff
-  - linuxkit/runc:e05648668932e0f1691f40f00ebd14170464577b
+  - linuxkit/runc:b87c49e73eb14ba73d23eabf75423e987a043209
   - linuxkit/containerd:cf158d5f56c5b4867f29f0fc3ec49ea505e99333
   - linuxkit/ca-certificates:v0.6
   - samoht/fdd
