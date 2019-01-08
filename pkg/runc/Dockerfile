@@ -11,7 +11,7 @@ RUN \
   make \
   && true
 ENV GOPATH=/go PATH=$PATH:/go/bin
-ENV RUNC_COMMIT=58592df56734acf62e574865fe40b9e53e967910
+ENV RUNC_COMMIT=96ec2177ae841256168fcf76954f7177af9446eb
 RUN mkdir -p $GOPATH/src/github.com/opencontainers && \
   cd $GOPATH/src/github.com/opencontainers && \
   git clone https://github.com/opencontainers/runc.git
