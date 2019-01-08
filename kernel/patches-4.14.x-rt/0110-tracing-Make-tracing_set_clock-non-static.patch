@@ -1,7 +1,7 @@
-From da3ea9faf9b6da9fd4e68c5c73d7d734d0809f3f Mon Sep 17 00:00:00 2001
+From 6987f618fe9c279ef6bcfb0a9a1a37007a8e85d5 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:07 -0600
-Subject: [PATCH 110/436] tracing: Make tracing_set_clock() non-static
+Subject: [PATCH 110/437] tracing: Make tracing_set_clock() non-static
 
 Allow tracing code outside of trace.c to access tracing_set_clock().
 

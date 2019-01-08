@@ -1,7 +1,7 @@
-From 43e87199c570773c94dda6bd3eee342a38b22bf4 Mon Sep 17 00:00:00 2001
+From 9926c096cded9f549edd991ee41f3f2d26c71691 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 12 May 2017 15:46:17 +0200
-Subject: [PATCH 361/436] random: avoid preempt_disable()ed section
+Subject: [PATCH 361/437] random: avoid preempt_disable()ed section
 
 extract_crng() will use sleeping locks while in a preempt_disable()
 section due to get_cpu_var().

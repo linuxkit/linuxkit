@@ -1,7 +1,7 @@
-From 23a3ad51459a01c1fa2450c31fada2ef5e15af36 Mon Sep 17 00:00:00 2001
+From 41156d65040c20950b51b8f9c52403188f998187 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 210/436] sched: Move mmdrop to RCU on RT
+Subject: [PATCH 210/437] sched: Move mmdrop to RCU on RT
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -83,7 +83,7 @@ index 677d17d7efb5..2c53e56ac3e3 100644
  {
  	VM_BUG_ON(atomic_read(&mm->mm_users));
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 127983f32776..b99908d5d3cb 100644
+index 1608faf5d08e..0d854e75e16a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2713,8 +2713,12 @@ static struct rq *finish_task_switch(struct task_struct *prev)
@@ -123,7 +123,7 @@ index 127983f32776..b99908d5d3cb 100644
  }
  
  /*
-@@ -5765,6 +5776,10 @@ int sched_cpu_dying(unsigned int cpu)
+@@ -5768,6 +5779,10 @@ int sched_cpu_dying(unsigned int cpu)
  	update_max_interval();
  	nohz_balance_exit_idle(cpu);
  	hrtick_clear(rq);

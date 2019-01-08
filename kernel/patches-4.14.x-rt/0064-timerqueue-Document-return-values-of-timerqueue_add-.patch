@@ -1,7 +1,7 @@
-From ff9be689ee4285f992d0a120fcd18352286f8835 Mon Sep 17 00:00:00 2001
+From 74826a26ced7740701c5d18e2678b2771ef4b9f1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 22 Dec 2017 15:51:15 +0100
-Subject: [PATCH 064/436] timerqueue: Document return values of
+Subject: [PATCH 064/437] timerqueue: Document return values of
  timerqueue_add/del()
 
 The return values of timerqueue_add/del() are not documented in the kernel doc

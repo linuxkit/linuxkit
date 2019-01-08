@@ -1,7 +1,7 @@
-From 1ddb1305ba99dc123612581f1b7e9090866fcc0e Mon Sep 17 00:00:00 2001
+From 99f37ca964eaf9bbf602221d3afb82c22586e778 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 15 Nov 2017 17:29:51 +0100
-Subject: [PATCH 198/436] time/hrtimer: avoid schedule_work() with interrupts
+Subject: [PATCH 198/437] time/hrtimer: avoid schedule_work() with interrupts
  disabled
 
 The NOHZ code tries to schedule a workqueue with interrupts disabled.

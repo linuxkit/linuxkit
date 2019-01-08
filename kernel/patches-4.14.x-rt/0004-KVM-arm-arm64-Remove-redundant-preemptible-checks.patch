@@ -1,7 +1,7 @@
-From 6312db47a66c5e177d7c05b04b2c18a9df476a4c Mon Sep 17 00:00:00 2001
+From caadf195c1da52ea6db6e657346eeac26afb68f3 Mon Sep 17 00:00:00 2001
 From: Christoffer Dall <christoffer.dall@linaro.org>
 Date: Fri, 8 Sep 2017 07:07:13 -0700
-Subject: [PATCH 004/436] KVM: arm/arm64: Remove redundant preemptible checks
+Subject: [PATCH 004/437] KVM: arm/arm64: Remove redundant preemptible checks
 
 Upstream commit 5a24575032971c5a9a4580417a791c427ebdb8e5
 
@@ -20,7 +20,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 deletions(-)
 
 diff --git a/virt/kvm/arm/arm.c b/virt/kvm/arm/arm.c
-index d5f1d8364571..0099cce0e264 100644
+index ed42b8cf6f5b..045aa39b14c1 100644
 --- a/virt/kvm/arm/arm.c
 +++ b/virt/kvm/arm/arm.c
 @@ -69,7 +69,6 @@ static DEFINE_PER_CPU(unsigned char, kvm_arm_hardware_enabled);

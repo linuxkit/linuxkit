@@ -1,7 +1,7 @@
-From 4b61ddb0f60bef9e6d4b2afc13a45e7ac56c3eb7 Mon Sep 17 00:00:00 2001
+From 2c9553a6b784c6d6c423df6d05f39fb46218f9b1 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 29 May 2018 17:44:24 +0200
-Subject: [PATCH 416/436] PM / suspend: Prevent might sleep splats (updated)
+Subject: [PATCH 416/437] PM / suspend: Prevent might sleep splats (updated)
 
 [ Upstream commit ec7ff06b919647a2fd7d2761a26f5a1d465e819c ]
 

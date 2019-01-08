@@ -1,7 +1,7 @@
-From d934c3d6853f8b23f9fac1635fe4eaefdcebbdd2 Mon Sep 17 00:00:00 2001
+From 0b426ba3f0d9f10f0e68cc12ec761cbc18ad7e07 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Fri, 7 Sep 2018 15:49:16 -0400
-Subject: [PATCH 435/436] Revert "softirq: keep the 'softirq pending' check
+Subject: [PATCH 435/437] Revert "softirq: keep the 'softirq pending' check
  RT-only"
 
 This reverts commit 5536f5491a2e098ba34995662dfc0e82d66d65c9.

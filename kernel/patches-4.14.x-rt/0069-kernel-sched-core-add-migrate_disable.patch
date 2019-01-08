@@ -1,7 +1,7 @@
-From 9c81f3c12b1ebc71818160d0bd10a3be7027b52a Mon Sep 17 00:00:00 2001
+From 79690d62718a5e83b3d7fce3f4939d55b961812a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 27 May 2017 19:02:06 +0200
-Subject: [PATCH 069/436] kernel/sched/core: add migrate_disable()
+Subject: [PATCH 069/437] kernel/sched/core: add migrate_disable()
 
 ---
  include/linux/preempt.h |  23 +++++++
@@ -53,7 +53,7 @@ index 5bd3f151da78..81c69aeab662 100644
  
  #ifdef MODULE
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 64d8d0794689..c22e7b475dd9 100644
+index 7a8983b9880e..b0390902a36f 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -620,6 +620,13 @@ struct task_struct {
@@ -85,7 +85,7 @@ index 9fb239e12b82..5801e516ba63 100644
   * Callback to arch code if there's nosmp or maxcpus=0 on the
   * boot command line:
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f2d6db386613..40a07276d5a3 100644
+index 977b32a40784..590a3a396048 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1042,7 +1042,15 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
@@ -144,7 +144,7 @@ index f2d6db386613..40a07276d5a3 100644
  	dest_cpu = cpumask_any_and(cpu_valid_mask, new_mask);
  	if (task_running(rq, p) || p->state == TASK_WAKING) {
  		struct migration_arg arg = { p, dest_cpu };
-@@ -6756,3 +6785,100 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -6762,3 +6791,100 @@ const u32 sched_prio_to_wmult[40] = {
   /*  10 */  39045157,  49367440,  61356676,  76695844,  95443717,
   /*  15 */ 119304647, 148102320, 186737708, 238609294, 286331153,
  };

@@ -1,7 +1,7 @@
-From 5fc93fc1792bc04e7247b2189ffab41dd28e47e5 Mon Sep 17 00:00:00 2001
+From 2803214c9456f6e0a7cf24b2177f744fbde0b2ec Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 25 May 2018 10:05:13 +0200
-Subject: [PATCH 418/436] PM / s2idle: Make s2idle_wait_head swait based
+Subject: [PATCH 418/437] PM / s2idle: Make s2idle_wait_head swait based
 
 [ Upstream commit 93f141324d4860a1294e6899923c01ec5411d70b ]
 

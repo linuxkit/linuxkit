@@ -1,7 +1,7 @@
-From 821c3e85adfa38ae214578940071accaf1c3f58e Mon Sep 17 00:00:00 2001
+From f3e9a706ad5104e136748227b3957ecdb5a1fe95 Mon Sep 17 00:00:00 2001
 From: Yong Zhang <yong.zhang@windriver.com>
 Date: Mon, 16 Apr 2012 15:01:56 +0800
-Subject: [PATCH 372/436] lockdep: selftest: Only do hardirq context test for
+Subject: [PATCH 372/437] lockdep: selftest: Only do hardirq context test for
  raw spinlock
 
 On -rt there is no softirq context any more and rwlock is sleepable,

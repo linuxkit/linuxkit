@@ -1,7 +1,7 @@
-From 3c4800cbe68310ace32d6b81675131cee2bc76aa Mon Sep 17 00:00:00 2001
+From 1b9d589106a2724d38ad507d597fcd1a408708b4 Mon Sep 17 00:00:00 2001
 From: Anders Roxell <anders.roxell@linaro.org>
 Date: Thu, 14 May 2015 17:52:17 +0200
-Subject: [PATCH 386/436] arch/arm64: Add lazy preempt support
+Subject: [PATCH 386/437] arch/arm64: Add lazy preempt support
 
 arm64 is missing support for PREEMPT_RT. The main feature which is
 lacking is support for lazy preemption. The arch-specific entry code,

@@ -1,7 +1,7 @@
-From 6f0cc81bad1700b16b20163030de45386f27c9d5 Mon Sep 17 00:00:00 2001
+From 93f30f296ca22bd9468ca86e1d0b2a8873adfaf2 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Mon, 15 Jan 2018 10:47:09 -0500
-Subject: [PATCH 112/436] ring-buffer: Bring back context level recursive
+Subject: [PATCH 112/437] ring-buffer: Bring back context level recursive
  checks
 
 Commit 1a149d7d3f45 ("ring-buffer: Rewrite trace_recursive_(un)lock() to be

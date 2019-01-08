@@ -1,7 +1,7 @@
-From 56d66cbe3f238bae410364f173b9bf467b93c8b2 Mon Sep 17 00:00:00 2001
+From 89f6ad2173cbe3a78397f9a3ed07de978840b30d Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:48 -0600
-Subject: [PATCH 091/436] tracing: Add usecs modifier for hist trigger
+Subject: [PATCH 091/437] tracing: Add usecs modifier for hist trigger
  timestamps
 
 Appending .usecs onto a common_timestamp field will cause the

@@ -1,7 +1,7 @@
-From 6b12f63160fd40de940554f9ed21674edb1aba09 Mon Sep 17 00:00:00 2001
+From 24f3c348c0fa264d8b9a6b9a6ad2907f8dbbd3f5 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 14 Nov 2011 18:19:27 +0100
-Subject: [PATCH 353/436] x86: crypto: Reduce preempt disabled regions
+Subject: [PATCH 353/437] x86: crypto: Reduce preempt disabled regions
 
 Restrict the preempt disabled regions to the actual floating point
 operations and enable preemption for the administrative actions.

@@ -1,7 +1,7 @@
-From 303da5afe17f3813bbcc8beb64cb204c4ddde26f Mon Sep 17 00:00:00 2001
+From 13b3625a91c6df2a63dfc4ac26db33008d63a7e2 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:10 +0100
-Subject: [PATCH 035/436] hrtimer: Make remote enqueue decision less
+Subject: [PATCH 035/437] hrtimer: Make remote enqueue decision less
  restrictive
 
 The current decision whether a timer can be queued on a remote CPU checks

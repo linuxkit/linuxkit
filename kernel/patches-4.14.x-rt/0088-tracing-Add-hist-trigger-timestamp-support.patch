@@ -1,7 +1,7 @@
-From eccca881d4b64cf4fd9054e85af98b6d1d5d66db Mon Sep 17 00:00:00 2001
+From 67b7fdf52c9a5092aea0a1dd29becd8b5ba7292b Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:45 -0600
-Subject: [PATCH 088/436] tracing: Add hist trigger timestamp support
+Subject: [PATCH 088/437] tracing: Add hist trigger timestamp support
 
 Add support for a timestamp event field.  This is actually a 'pseudo-'
 event field in that it behaves like it's part of the event record, but

@@ -1,7 +1,7 @@
-From a0ec2012c85fa4b13f37e52b543ac94f1e16d749 Mon Sep 17 00:00:00 2001
+From f94abf1239c11e181f09b117bc25e76247778145 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 4 Aug 2017 18:31:00 +0200
-Subject: [PATCH 364/436] hotplug: duct-tape RT-rwlock usage for non-RT
+Subject: [PATCH 364/437] hotplug: duct-tape RT-rwlock usage for non-RT
 
 This type is only available on -RT. We need to craft something for
 non-RT. Since the only migrate_disable() user is -RT only, there is no
@@ -13,10 +13,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 1 deletion(-)
 
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index e337c60f2d00..7d777b62e4eb 100644
+index bc97ca16de81..7f73ec1d95e6 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
-@@ -74,7 +74,7 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
+@@ -75,7 +75,7 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
  	.fail = CPUHP_INVALID,
  };
  
@@ -25,7 +25,7 @@ index e337c60f2d00..7d777b62e4eb 100644
  static DEFINE_PER_CPU(struct rt_rw_lock, cpuhp_pin_lock) = \
  	__RWLOCK_RT_INITIALIZER(cpuhp_pin_lock);
  #endif
-@@ -297,6 +297,7 @@ static int cpu_hotplug_disabled;
+@@ -298,6 +298,7 @@ static int cpu_hotplug_disabled;
   */
  void pin_current_cpu(void)
  {
@@ -33,7 +33,7 @@ index e337c60f2d00..7d777b62e4eb 100644
  	struct rt_rw_lock *cpuhp_pin;
  	unsigned int cpu;
  	int ret;
-@@ -321,6 +322,7 @@ void pin_current_cpu(void)
+@@ -322,6 +323,7 @@ void pin_current_cpu(void)
  		goto again;
  	}
  	current->pinned_on_cpu = cpu;
@@ -41,7 +41,7 @@ index e337c60f2d00..7d777b62e4eb 100644
  }
  
  /**
-@@ -328,6 +330,7 @@ void pin_current_cpu(void)
+@@ -329,6 +331,7 @@ void pin_current_cpu(void)
   */
  void unpin_current_cpu(void)
  {
@@ -49,7 +49,7 @@ index e337c60f2d00..7d777b62e4eb 100644
  	struct rt_rw_lock *cpuhp_pin = this_cpu_ptr(&cpuhp_pin_lock);
  
  	if (WARN_ON(current->pinned_on_cpu != smp_processor_id()))
-@@ -335,6 +338,7 @@ void unpin_current_cpu(void)
+@@ -336,6 +339,7 @@ void unpin_current_cpu(void)
  
  	current->pinned_on_cpu = -1;
  	__read_rt_unlock(cpuhp_pin);
@@ -57,7 +57,7 @@ index e337c60f2d00..7d777b62e4eb 100644
  }
  
  DEFINE_STATIC_PERCPU_RWSEM(cpu_hotplug_lock);
-@@ -893,7 +897,9 @@ static int take_cpu_down(void *_param)
+@@ -900,7 +904,9 @@ static int take_cpu_down(void *_param)
  
  static int takedown_cpu(unsigned int cpu)
  {
@@ -67,7 +67,7 @@ index e337c60f2d00..7d777b62e4eb 100644
  	struct cpuhp_cpu_state *st = per_cpu_ptr(&cpuhp_state, cpu);
  	int err;
  
-@@ -906,14 +912,18 @@ static int takedown_cpu(unsigned int cpu)
+@@ -913,14 +919,18 @@ static int takedown_cpu(unsigned int cpu)
  	 */
  	irq_lock_sparse();
  
@@ -86,7 +86,7 @@ index e337c60f2d00..7d777b62e4eb 100644
  		/* CPU refused to die */
  		irq_unlock_sparse();
  		/* Unpark the hotplug thread so we can rollback there */
-@@ -932,7 +942,9 @@ static int takedown_cpu(unsigned int cpu)
+@@ -939,7 +949,9 @@ static int takedown_cpu(unsigned int cpu)
  	wait_for_ap_thread(st, false);
  	BUG_ON(st->state != CPUHP_AP_IDLE_DEAD);
  

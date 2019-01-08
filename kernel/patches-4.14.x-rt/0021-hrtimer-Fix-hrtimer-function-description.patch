@@ -1,7 +1,7 @@
-From 7c110d9426bacfee7d216dda9d1919945e1f8168 Mon Sep 17 00:00:00 2001
+From 0a6e7eb400a68467d21993bd9ec87b43fc871411 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:54 +0100
-Subject: [PATCH 021/436] hrtimer: Fix hrtimer function description
+Subject: [PATCH 021/437] hrtimer: Fix hrtimer function description
 
 The hrtimer_start[_range_ns]() starts a timer reliable on this CPU only
 when HRTIMER_MODE_PINNED is set. Furthermore the HRTIMER_MODE_PINNED mode

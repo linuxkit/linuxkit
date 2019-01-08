@@ -1,7 +1,7 @@
-From 3dfea406486d3099fe0bfa0e357544a9def75e5b Mon Sep 17 00:00:00 2001
+From 78df5faab56e9333581a9b048905776dcb52bb99 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:41 -0600
-Subject: [PATCH 084/436] tracing: Add timestamp_mode trace file
+Subject: [PATCH 084/437] tracing: Add timestamp_mode trace file
 
 Add a new option flag indicating whether or not the ring buffer is in
 'absolute timestamp' mode.

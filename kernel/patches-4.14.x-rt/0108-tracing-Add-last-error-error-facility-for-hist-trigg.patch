@@ -1,7 +1,7 @@
-From 875365c2c5a870265396449d1858494b4783b022 Mon Sep 17 00:00:00 2001
+From be1cdd9536bb6be78ddaa8a461955dc5d701bfc1 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:05 -0600
-Subject: [PATCH 108/436] tracing: Add 'last error' error facility for hist
+Subject: [PATCH 108/437] tracing: Add 'last error' error facility for hist
  triggers
 
 With the addition of variables and actions, it's become necessary to

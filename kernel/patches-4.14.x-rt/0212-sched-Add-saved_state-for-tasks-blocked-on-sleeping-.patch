@@ -1,7 +1,7 @@
-From e53e8f57a8ae29baea2147560e854b6fa42fcde3 Mon Sep 17 00:00:00 2001
+From 38d8f2b7ebebc2376194de04e69fc39cc8a505f4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Subject: [PATCH 212/436] sched: Add saved_state for tasks blocked on sleeping
+Subject: [PATCH 212/437] sched: Add saved_state for tasks blocked on sleeping
  locks
 
 Spinlocks are state preserving in !RT. RT changes the state when a
@@ -18,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 34 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 84332b5139b5..cc5e4a3c2c63 100644
+index 8281cf6d97cd..962c3e6e8979 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -566,6 +566,8 @@ struct task_struct {
@@ -30,7 +30,7 @@ index 84332b5139b5..cc5e4a3c2c63 100644
  
  	/*
  	 * This begins the randomizable portion of task_struct. Only
-@@ -1555,6 +1557,7 @@ extern struct task_struct *find_task_by_pid_ns(pid_t nr, struct pid_namespace *n
+@@ -1564,6 +1566,7 @@ extern struct task_struct *find_task_by_pid_ns(pid_t nr, struct pid_namespace *n
  
  extern int wake_up_state(struct task_struct *tsk, unsigned int state);
  extern int wake_up_process(struct task_struct *tsk);
@@ -39,7 +39,7 @@ index 84332b5139b5..cc5e4a3c2c63 100644
  
  #ifdef CONFIG_SMP
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 33951deb3a3d..2f646f4454b1 100644
+index 8bdfb648b900..d5210a7dae70 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2033,8 +2033,25 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -89,7 +89,7 @@ index 33951deb3a3d..2f646f4454b1 100644
  {
  	return try_to_wake_up(p, state, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index b29376169f3f..ace39806bff8 100644
+index b3ba6e5e99f2..bd6363799cf6 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
 @@ -1354,6 +1354,7 @@ static inline void finish_lock_switch(struct rq *rq, struct task_struct *prev)

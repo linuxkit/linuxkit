@@ -1,7 +1,7 @@
-From 7225b7428d4187c1c0fa920a33deb9ebcf537dea Mon Sep 17 00:00:00 2001
+From b4d56c6e48e33fe18861b55552fd5375cbae4b67 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <a.p.zijlstra@chello.nl>
 Date: Sat, 13 Aug 2011 00:23:17 +0200
-Subject: [PATCH 266/436] rcu: Frob softirq test
+Subject: [PATCH 266/437] rcu: Frob softirq test
 
 With RT_FULL we get the below wreckage:
 

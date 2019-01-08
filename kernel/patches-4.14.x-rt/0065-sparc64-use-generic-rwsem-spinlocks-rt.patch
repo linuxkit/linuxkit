@@ -1,7 +1,7 @@
-From e89438fcc94141c04b9523198d6b4b313aa731b2 Mon Sep 17 00:00:00 2001
+From 5692af55627acc4af517136fd0ea965581b5bba8 Mon Sep 17 00:00:00 2001
 From: Allen Pais <allen.pais@oracle.com>
 Date: Fri, 13 Dec 2013 09:44:41 +0530
-Subject: [PATCH 065/436] sparc64: use generic rwsem spinlocks rt
+Subject: [PATCH 065/437] sparc64: use generic rwsem spinlocks rt
 
 Signed-off-by: Allen Pais <allen.pais@oracle.com>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>

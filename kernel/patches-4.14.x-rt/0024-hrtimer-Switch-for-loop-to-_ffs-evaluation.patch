@@ -1,7 +1,7 @@
-From ba2ce34398180bcdd5d8a2b7c8c8edc0bf5fd565 Mon Sep 17 00:00:00 2001
+From bb3a1b059ac7a6e2ada2d4045a8a18a125627e65 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:59 +0100
-Subject: [PATCH 024/436] hrtimer: Switch for loop to _ffs() evaluation
+Subject: [PATCH 024/437] hrtimer: Switch for loop to _ffs() evaluation
 
 Looping over all clock bases to find active bits is suboptimal if not all
 bases are active.

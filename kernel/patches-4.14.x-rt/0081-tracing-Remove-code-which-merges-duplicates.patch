@@ -1,7 +1,7 @@
-From 5f47ca5ca3a4eafc8400b2796acc4489868826fc Mon Sep 17 00:00:00 2001
+From 6139f982902cdb12bbbf875895de16575c41abc3 Mon Sep 17 00:00:00 2001
 From: Vedang Patel <vedang.patel@intel.com>
 Date: Mon, 15 Jan 2018 20:51:38 -0600
-Subject: [PATCH 081/436] tracing: Remove code which merges duplicates
+Subject: [PATCH 081/437] tracing: Remove code which merges duplicates
 
 We now have the logic to detect and remove duplicates in the
 tracing_map hash table. The code which merges duplicates in the

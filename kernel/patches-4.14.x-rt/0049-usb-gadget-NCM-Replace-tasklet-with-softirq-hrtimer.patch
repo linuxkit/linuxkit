@@ -1,7 +1,7 @@
-From 677b9236fd46765dfb19b620f9deebdc1d2109fa Mon Sep 17 00:00:00 2001
+From 9e2909d68eb94cf781688f66472b85e95a8aebde Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:16 +0100
-Subject: [PATCH 049/436] usb/gadget/NCM: Replace tasklet with softirq hrtimer
+Subject: [PATCH 049/437] usb/gadget/NCM: Replace tasklet with softirq hrtimer
 
 The tx_tasklet tasklet is used in invoke the hrtimer (task_timer) in
 softirq context. This can be also achieved without the tasklet but

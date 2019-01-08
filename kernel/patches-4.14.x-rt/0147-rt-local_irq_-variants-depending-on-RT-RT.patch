@@ -1,7 +1,7 @@
-From c8c78c5f0f61c1857c4ae7a0f8c3f423934f4420 Mon Sep 17 00:00:00 2001
+From ae3322916ba39450d3ea4f935ba2acaaf44ed5a9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 21 Jul 2009 22:34:14 +0200
-Subject: [PATCH 147/436] rt: local_irq_* variants depending on RT/!RT
+Subject: [PATCH 147/437] rt: local_irq_* variants depending on RT/!RT
 
 Add local_irq_*_(no)rt variant which are mainly used to break
 interrupt disabled sections on PREEMPT_RT or to explicitely disable

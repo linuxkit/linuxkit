@@ -1,7 +1,7 @@
-From 7e529a00405bb5878d45113d07724660e47f566d Mon Sep 17 00:00:00 2001
+From 7bb975338a8f37db0135bb469a0763c0f9089327 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:25:13 +0200
-Subject: [PATCH 263/436] RCU: we need to skip that warning but only on
+Subject: [PATCH 263/437] RCU: we need to skip that warning but only on
  sleeping locks
 
 This check is okay for upstream. On RT we trigger this while blocking on

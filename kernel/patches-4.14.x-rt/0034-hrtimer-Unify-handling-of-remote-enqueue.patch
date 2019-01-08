@@ -1,7 +1,7 @@
-From 3daee0ac6328e6204b9195b261e8fadf0bc18122 Mon Sep 17 00:00:00 2001
+From 8fb098ddff5d47a14a9a5843032b8e206c83ff7a Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:09 +0100
-Subject: [PATCH 034/436] hrtimer: Unify handling of remote enqueue
+Subject: [PATCH 034/437] hrtimer: Unify handling of remote enqueue
 
 hrtimer_reprogram() is conditionally invoked from hrtimer_start_range_ns()
 when hrtimer_cpu_base.hres_active is true.

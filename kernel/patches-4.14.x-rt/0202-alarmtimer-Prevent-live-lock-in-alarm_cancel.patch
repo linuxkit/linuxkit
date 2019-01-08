@@ -1,7 +1,7 @@
-From c60625ecb1ae084217f1938e0d29a423821b6100 Mon Sep 17 00:00:00 2001
+From 58fec41067dcdc269500b1dc6d8dfcf931c2d0b9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 27 Mar 2018 15:58:16 +0200
-Subject: [PATCH 202/436] alarmtimer: Prevent live lock in alarm_cancel()
+Subject: [PATCH 202/437] alarmtimer: Prevent live lock in alarm_cancel()
 
 If alarm_try_to_cancel() requires a retry, then depending on the
 priority setting the retry loop might prevent timer callback completion

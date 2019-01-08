@@ -1,7 +1,7 @@
-From 68c2c1e228e2efebb161158734459a087d0428a0 Mon Sep 17 00:00:00 2001
+From 77030dc4867f01af9cd39df8c2a82dd3c4649d44 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:58 -0600
-Subject: [PATCH 101/436] tracing: Add support for 'synthetic' events
+Subject: [PATCH 101/437] tracing: Add support for 'synthetic' events
 
 Synthetic events are user-defined events generated from hist trigger
 variables saved from one or more other events.

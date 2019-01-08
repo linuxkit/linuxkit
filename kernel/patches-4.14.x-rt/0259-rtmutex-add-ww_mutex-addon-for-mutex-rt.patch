@@ -1,7 +1,7 @@
-From 6ff55e6580937cb7a03c77030dcb18b0ad9d07fc Mon Sep 17 00:00:00 2001
+From 283bca2faa9abc1a7f3cac94fb3e6c01da391bd5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 12 Oct 2017 17:34:38 +0200
-Subject: [PATCH 259/436] rtmutex: add ww_mutex addon for mutex-rt
+Subject: [PATCH 259/437] rtmutex: add ww_mutex addon for mutex-rt
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---

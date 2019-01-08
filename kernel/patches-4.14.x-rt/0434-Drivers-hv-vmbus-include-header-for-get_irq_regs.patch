@@ -1,7 +1,7 @@
-From a05e2428f80d25646d2e684f44258dd802e1ec23 Mon Sep 17 00:00:00 2001
+From 8fd20e50ef3f7e79440646e5152d2070c2894059 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 29 Aug 2018 21:59:04 +0200
-Subject: [PATCH 434/436] Drivers: hv: vmbus: include header for get_irq_regs()
+Subject: [PATCH 434/437] Drivers: hv: vmbus: include header for get_irq_regs()
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -21,14 +21,13 @@ Reported-by: Bernhard Landauer <oberon@manjaro.org>
 Reported-by: Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
-[just rebase for linuxkit patches.]
 Integrated-by: Tiejun Chen <tiejunc@vmware.com>
 ---
  drivers/hv/hyperv_vmbus.h | 1 +
  1 file changed, 1 insertion(+)
 
 diff --git a/drivers/hv/hyperv_vmbus.h b/drivers/hv/hyperv_vmbus.h
-index 49569f8f..188724e4 100644
+index 49569f8fe038..a3608cd52805 100644
 --- a/drivers/hv/hyperv_vmbus.h
 +++ b/drivers/hv/hyperv_vmbus.h
 @@ -26,6 +26,7 @@
@@ -40,5 +39,5 @@ index 49569f8f..188724e4 100644
  #include <linux/atomic.h>
  #include <linux/hyperv.h>
 -- 
-2.17.1
+2.19.1
 

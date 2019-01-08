@@ -1,7 +1,7 @@
-From 6755f8741feecbfa6e028adc2c8d4b97b2853521 Mon Sep 17 00:00:00 2001
+From 635d753e923c3acd4de41b201ccc450da32e8330 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:42 -0600
-Subject: [PATCH 085/436] tracing: Give event triggers access to
+Subject: [PATCH 085/437] tracing: Give event triggers access to
  ring_buffer_event
 
 The ring_buffer event can provide a timestamp that may be useful to

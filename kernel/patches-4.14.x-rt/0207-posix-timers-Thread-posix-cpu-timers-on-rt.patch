@@ -1,7 +1,7 @@
-From 51149599ab9bc5e67d95cca689ec071477ac4c6b Mon Sep 17 00:00:00 2001
+From 4df2f4bb9dd44886b2c0e3687873500886f721fd Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 207/436] posix-timers: Thread posix-cpu-timers on -rt
+Subject: [PATCH 207/437] posix-timers: Thread posix-cpu-timers on -rt
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -43,7 +43,7 @@ index 53ee20e0b168..ee3ff961b84c 100644
  		[PIDTYPE_PID]  = INIT_PID_LINK(PIDTYPE_PID),		\
  		[PIDTYPE_PGID] = INIT_PID_LINK(PIDTYPE_PGID),		\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 620d9703a125..d1e0ea1dfe71 100644
+index a7d48ad0fb96..086c1913a441 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -785,6 +785,9 @@ struct task_struct {

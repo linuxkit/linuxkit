@@ -1,7 +1,7 @@
-From ee8bdcca86ef3ea7c60a9826f0dbee38c9982d88 Mon Sep 17 00:00:00 2001
+From 582fb702bc2b0544b208b2a5990dadf00da3e486 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:39 -0600
-Subject: [PATCH 082/436] ring-buffer: Add interface for setting absolute time
+Subject: [PATCH 082/437] ring-buffer: Add interface for setting absolute time
  stamps
 
 Define a new function, tracing_set_time_stamp_abs(), which can be used

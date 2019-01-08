@@ -1,7 +1,7 @@
-From 5f7285e04a2ae0a4b3c764f4e053b0ce1f6d958d Mon Sep 17 00:00:00 2001
+From 275b4646cd942674533ee907cf94b2d37731d9f1 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 4 Oct 2017 10:24:23 +0200
-Subject: [PATCH 395/436] pci/switchtec: Don't use completion's wait queue
+Subject: [PATCH 395/437] pci/switchtec: Don't use completion's wait queue
 
 The poll callback is using completion's wait_queue_head_t member and
 puts it in poll_wait() so the poll() caller gets a wakeup after command

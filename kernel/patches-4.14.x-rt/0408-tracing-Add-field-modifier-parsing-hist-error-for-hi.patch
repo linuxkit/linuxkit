@@ -1,7 +1,7 @@
-From b08ab556382f0bdce4b2f23a8c03a5373acfe6d3 Mon Sep 17 00:00:00 2001
+From 73ad7ee5b5504b356b95554b8eca6fd7b860f4c4 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Thu, 26 Apr 2018 20:04:49 -0500
-Subject: [PATCH 408/436] tracing: Add field modifier parsing hist error for
+Subject: [PATCH 408/437] tracing: Add field modifier parsing hist error for
  hist triggers
 
 [ commit dcf234577cd31fa16874e828b90659166ad6b80d ]

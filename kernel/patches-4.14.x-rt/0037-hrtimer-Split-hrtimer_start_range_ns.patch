@@ -1,7 +1,7 @@
-From e2c098336608f18700fd9487c311fb9aeece7d92 Mon Sep 17 00:00:00 2001
+From e884985cb8d91c0547a8d1cdda126bf7e0019c1c Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:12 +0100
-Subject: [PATCH 037/436] hrtimer: Split hrtimer_start_range_ns()
+Subject: [PATCH 037/437] hrtimer: Split hrtimer_start_range_ns()
 
 Preparatory patch for softirq based hrtimers to avoid code duplication. No
 functional change.

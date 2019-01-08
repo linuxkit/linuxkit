@@ -1,7 +1,7 @@
-From d004f6c3f6d12eec7721d5d42d69feb6696cb6c7 Mon Sep 17 00:00:00 2001
+From 55a309475692c9c88440298c8c02d9f4e9e581c6 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Wed, 7 Feb 2018 17:26:32 -0500
-Subject: [PATCH 114/436] ring-buffer: Add nesting for adding events within
+Subject: [PATCH 114/437] ring-buffer: Add nesting for adding events within
  events
 
 The ring-buffer code has recusion protection in case tracing ends up tracing

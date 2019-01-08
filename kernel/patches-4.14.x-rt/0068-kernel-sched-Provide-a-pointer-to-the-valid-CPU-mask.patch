@@ -1,7 +1,7 @@
-From 81f67130348c1a4e4b2fdbc3840738151370a036 Mon Sep 17 00:00:00 2001
+From 48bcffa01b2e8a54e5b8fb0100dffce5f3864bea Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
-Subject: [PATCH 068/436] kernel: sched: Provide a pointer to the valid CPU
+Subject: [PATCH 068/437] kernel: sched: Provide a pointer to the valid CPU
  mask
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -325,7 +325,7 @@ index 8062e6cc607c..53ee20e0b168 100644
  	.mm		= NULL,						\
  	.active_mm	= &init_mm,					\
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index e04919aa8201..64d8d0794689 100644
+index 866439c361a9..7a8983b9880e 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -618,7 +618,8 @@ struct task_struct {
@@ -375,7 +375,7 @@ index 6a219fea4926..d45043432b17 100644
  	 * One for us, one for whoever does the "release_task()" (usually
  	 * parent)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 4e89ed8a0fb2..f2d6db386613 100644
+index 0552ddbb25e2..977b32a40784 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -912,7 +912,7 @@ static inline bool is_per_cpu_kthread(struct task_struct *p)
@@ -613,7 +613,7 @@ index b2589c7e9439..7be1f4421cb8 100644
  				     !dl_task(task) ||
  				     !task_on_rq_queued(task))) {
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index b2d699f28304..a2421b2564b9 100644
+index 7240bb4a4090..304a7ebc7657 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
 @@ -1598,7 +1598,7 @@ static void task_numa_compare(struct task_numa_env *env,
@@ -634,7 +634,7 @@ index b2d699f28304..a2421b2564b9 100644
  			continue;
  
  		env->dst_cpu = cpu;
-@@ -5477,7 +5477,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
+@@ -5493,7 +5493,7 @@ find_idlest_group(struct sched_domain *sd, struct task_struct *p,
  
  		/* Skip over this group if it has no CPUs allowed */
  		if (!cpumask_intersects(sched_group_span(group),
@@ -643,7 +643,7 @@ index b2d699f28304..a2421b2564b9 100644
  			continue;
  
  		local_group = cpumask_test_cpu(this_cpu,
-@@ -5597,7 +5597,7 @@ find_idlest_cpu(struct sched_group *group, struct task_struct *p, int this_cpu)
+@@ -5613,7 +5613,7 @@ find_idlest_cpu(struct sched_group *group, struct task_struct *p, int this_cpu)
  		return cpumask_first(sched_group_span(group));
  
  	/* Traverse only the allowed CPUs */
@@ -652,7 +652,7 @@ index b2d699f28304..a2421b2564b9 100644
  		if (idle_cpu(i)) {
  			struct rq *rq = cpu_rq(i);
  			struct cpuidle_state *idle = idle_get_state(rq);
-@@ -5700,7 +5700,7 @@ static int select_idle_core(struct task_struct *p, struct sched_domain *sd, int
+@@ -5716,7 +5716,7 @@ static int select_idle_core(struct task_struct *p, struct sched_domain *sd, int
  	if (!test_idle_cores(target, false))
  		return -1;
  
@@ -661,7 +661,7 @@ index b2d699f28304..a2421b2564b9 100644
  
  	for_each_cpu_wrap(core, cpus, target) {
  		bool idle = true;
-@@ -5734,7 +5734,7 @@ static int select_idle_smt(struct task_struct *p, struct sched_domain *sd, int t
+@@ -5750,7 +5750,7 @@ static int select_idle_smt(struct task_struct *p, struct sched_domain *sd, int t
  		return -1;
  
  	for_each_cpu(cpu, cpu_smt_mask(target)) {
@@ -670,7 +670,7 @@ index b2d699f28304..a2421b2564b9 100644
  			continue;
  		if (idle_cpu(cpu))
  			return cpu;
-@@ -5797,7 +5797,7 @@ static int select_idle_cpu(struct task_struct *p, struct sched_domain *sd, int t
+@@ -5813,7 +5813,7 @@ static int select_idle_cpu(struct task_struct *p, struct sched_domain *sd, int t
  	for_each_cpu_wrap(cpu, sched_domain_span(sd), target) {
  		if (!--nr)
  			return -1;
@@ -679,7 +679,7 @@ index b2d699f28304..a2421b2564b9 100644
  			continue;
  		if (idle_cpu(cpu))
  			break;
-@@ -5952,7 +5952,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
+@@ -5968,7 +5968,7 @@ select_task_rq_fair(struct task_struct *p, int prev_cpu, int sd_flag, int wake_f
  	if (sd_flag & SD_BALANCE_WAKE) {
  		record_wakee(p);
  		want_affine = !wake_wide(p) && !wake_cap(p, cpu, prev_cpu)
@@ -688,7 +688,7 @@ index b2d699f28304..a2421b2564b9 100644
  	}
  
  	rcu_read_lock();
-@@ -6701,14 +6701,14 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
+@@ -6717,14 +6717,14 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
  	/*
  	 * We do not migrate tasks that are:
  	 * 1) throttled_lb_pair, or
@@ -705,7 +705,7 @@ index b2d699f28304..a2421b2564b9 100644
  		int cpu;
  
  		schedstat_inc(p->se.statistics.nr_failed_migrations_affine);
-@@ -6728,7 +6728,7 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
+@@ -6744,7 +6744,7 @@ int can_migrate_task(struct task_struct *p, struct lb_env *env)
  
  		/* Prevent to re-select dst_cpu via env's cpus */
  		for_each_cpu_and(cpu, env->dst_grpmask, env->cpus) {
@@ -714,7 +714,7 @@ index b2d699f28304..a2421b2564b9 100644
  				env->flags |= LBF_DST_PINNED;
  				env->new_dst_cpu = cpu;
  				break;
-@@ -7297,7 +7297,7 @@ check_cpu_capacity(struct rq *rq, struct sched_domain *sd)
+@@ -7313,7 +7313,7 @@ check_cpu_capacity(struct rq *rq, struct sched_domain *sd)
  
  /*
   * Group imbalance indicates (and tries to solve) the problem where balancing
@@ -723,7 +723,7 @@ index b2d699f28304..a2421b2564b9 100644
   *
   * Imagine a situation of two groups of 4 cpus each and 4 tasks each with a
   * cpumask covering 1 cpu of the first group and 3 cpus of the second group.
-@@ -7873,7 +7873,7 @@ static struct sched_group *find_busiest_group(struct lb_env *env)
+@@ -7889,7 +7889,7 @@ static struct sched_group *find_busiest_group(struct lb_env *env)
  	/*
  	 * If the busiest group is imbalanced the below checks don't
  	 * work because they assume all things are equal, which typically
@@ -732,7 +732,7 @@ index b2d699f28304..a2421b2564b9 100644
  	 */
  	if (busiest->group_type == group_imbalanced)
  		goto force_balance;
-@@ -8265,7 +8265,7 @@ static int load_balance(int this_cpu, struct rq *this_rq,
+@@ -8281,7 +8281,7 @@ static int load_balance(int this_cpu, struct rq *this_rq,
  			 * if the curr task on busiest cpu can't be
  			 * moved to this_cpu
  			 */

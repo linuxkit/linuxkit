@@ -1,7 +1,7 @@
-From 9668ed34ed80aa6c68f3fe38ee15975dd71a295a Mon Sep 17 00:00:00 2001
+From 2d09d245af35a2bb5b8ca6f92a26caf052e38ff6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 3 Apr 2011 11:57:29 +0200
-Subject: [PATCH 168/436] genirq: Force interrupt thread on RT
+Subject: [PATCH 168/437] genirq: Force interrupt thread on RT
 
 Force threaded_irqs and optimize the code (force_irqthreads) in regard
 to this.
@@ -32,7 +32,7 @@ index 2957da07e967..2395ebb443b9 100644
  
  #ifndef __ARCH_SET_SOFTIRQ_PENDING
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 069311541577..0dc9ef91898a 100644
+index 4cd85870f00e..f9934b6d879e 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
 @@ -24,6 +24,7 @@

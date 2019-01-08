@@ -1,7 +1,7 @@
-From b532b8c52b78b3ed509f8df7af1c18e649a86338 Mon Sep 17 00:00:00 2001
+From 59f632ff902c1a2697e9c67e1cb4b496573ba883 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Feb 2018 11:45:13 +0100
-Subject: [PATCH 264/436] RCU: skip the "schedule() in RCU section" warning on
+Subject: [PATCH 264/437] RCU: skip the "schedule() in RCU section" warning on
  UP, too
 
 In "RCU: we need to skip that warning but only on sleeping locks" we
@@ -44,7 +44,7 @@ index 2983043d2194..fd2efc6ffc3f 100644
  #define migrate_disable()		barrier()
  #define migrate_enable()		barrier()
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 1e829adc282e..52cf8d74b534 100644
+index 04403a5a34f1..1689c832ffb3 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -631,6 +631,12 @@ struct task_struct {
@@ -74,10 +74,10 @@ index 787321ad4f5f..18b98ae934a2 100644
  #endif
  	WARN_ON_ONCE(!preempt && t->rcu_read_lock_nesting > 0 && !mg_counter);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ae45cd2e929f..ab6ec5fb6796 100644
+index c9f8f0699885..44c22ff3e6fe 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7016,4 +7016,49 @@ void migrate_enable(void)
+@@ -7022,4 +7022,49 @@ void migrate_enable(void)
  	preempt_enable();
  }
  EXPORT_SYMBOL(migrate_enable);

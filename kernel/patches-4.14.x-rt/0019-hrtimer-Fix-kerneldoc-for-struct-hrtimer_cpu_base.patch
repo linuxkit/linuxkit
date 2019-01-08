@@ -1,7 +1,7 @@
-From bf8d687dc598107653ab39d2aad51f83b15a2985 Mon Sep 17 00:00:00 2001
+From 514d5cebbbc72530f555551b1edbf7908bb3bf2d Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:52 +0100
-Subject: [PATCH 019/436] hrtimer: Fix kerneldoc for struct hrtimer_cpu_base
+Subject: [PATCH 019/437] hrtimer: Fix kerneldoc for struct hrtimer_cpu_base
 
 The sequence '/**' marks the start of a struct description. Add the
 missing second asterisk. While at it adapt the ordering of the struct

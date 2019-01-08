@@ -1,7 +1,7 @@
-From bbe0e20999876ccbadaa173d8e7d467361e20023 Mon Sep 17 00:00:00 2001
+From 6cf8f87baddba1e9fc5d04d1ada5e2c89550e03a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 15 Jan 2016 16:33:34 +0100
-Subject: [PATCH 368/436] net/core: protect users of napi_alloc_cache against
+Subject: [PATCH 368/437] net/core: protect users of napi_alloc_cache against
  reentrance
 
 On -RT the code running in BH can not be moved to another CPU so CPU
@@ -17,7 +17,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 19 insertions(+), 6 deletions(-)
 
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index 37ad1dd0f574..c0f23b8dcfc6 100644
+index 1bb67588ca5a..8ec36697002b 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -332,6 +332,7 @@ struct napi_alloc_cache {

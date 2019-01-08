@@ -1,7 +1,7 @@
-From a978a7042ed34eb0bdbaec0a6d638b33a08da78e Mon Sep 17 00:00:00 2001
+From 0f961ceb5f56e333087f3ff78ba3f897f31a6113 Mon Sep 17 00:00:00 2001
 From: Scott Wood <swood@redhat.com>
 Date: Sun, 21 Jan 2018 03:28:54 -0600
-Subject: [PATCH 005/436] iommu/amd: Use raw locks on atomic context paths
+Subject: [PATCH 005/437] iommu/amd: Use raw locks on atomic context paths
 
 Upstream commit 27790398c2aed917828dc3c6f81240d57f1584c9
 

@@ -1,7 +1,7 @@
-From 5ca937656167a21fece6acbddd6ea557dfe5a31a Mon Sep 17 00:00:00 2001
+From 1f029483405f380bc7a8471acf036e7b54ff75ab Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:01 -0600
-Subject: [PATCH 104/436] tracing: Add 'onmax' hist trigger action support
+Subject: [PATCH 104/437] tracing: Add 'onmax' hist trigger action support
 
 Add an 'onmax(var).save(field,...)' hist trigger action which is
 invoked whenever an event exceeds the current maximum.

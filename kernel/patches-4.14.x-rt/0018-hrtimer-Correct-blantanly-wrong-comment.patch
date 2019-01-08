@@ -1,7 +1,7 @@
-From e8ee0982f127ed257ce19b4a4ab94663b5c07c13 Mon Sep 17 00:00:00 2001
+From 0032a44f1d407ce2c142b3493bb6f2bb60158896 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:51 +0100
-Subject: [PATCH 018/436] hrtimer: Correct blantanly wrong comment
+Subject: [PATCH 018/437] hrtimer: Correct blantanly wrong comment
 
 The protection of a hrtimer which runs its callback against migration to a
 different CPU has nothing to do with hard interrupt context.

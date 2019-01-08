@@ -1,7 +1,7 @@
-From ce3bbe59da7cf5a2dfd2ff1a5b223f90d94e25dc Mon Sep 17 00:00:00 2001
+From 89005b6d25c813eb854b61e5b6bdb950214107ce Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:08 -0600
-Subject: [PATCH 111/436] tracing: Add a clock attribute for hist triggers
+Subject: [PATCH 111/437] tracing: Add a clock attribute for hist triggers
 
 The default clock if timestamps are used in a histogram is "global".
 If timestamps aren't used, the clock is irrelevant.

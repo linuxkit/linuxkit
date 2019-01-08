@@ -1,7 +1,7 @@
-From 969f21446a37cb447b03b1971a22ab91ec05ff22 Mon Sep 17 00:00:00 2001
+From 339ab2c54f152afd0404e49eaa811e16f0f8ba4a Mon Sep 17 00:00:00 2001
 From: Daniel Bristot de Oliveira <bristot@redhat.com>
 Date: Mon, 30 Jul 2018 15:00:00 +0200
-Subject: [PATCH 431/436] sched/core: Avoid __schedule() being called twice in
+Subject: [PATCH 431/437] sched/core: Avoid __schedule() being called twice in
  a row
 
 [ Upstream commit 2bb94c48b2ffaabf8c15a51e5cc1b4c541988cab ]
@@ -37,7 +37,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 7 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index fa5b76255f8c..a5ce37b90fca 100644
+index 97b690d741f4..e1fc94836fe0 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -3482,10 +3482,15 @@ static inline void sched_submit_work(struct task_struct *tsk)

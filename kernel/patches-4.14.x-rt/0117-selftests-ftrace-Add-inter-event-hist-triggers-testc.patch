@@ -1,7 +1,7 @@
-From eef7d771c2194d81bffe450ec81eed252987ad25 Mon Sep 17 00:00:00 2001
+From aa0c1808950ef2ac45c2653ca1180f828570980e Mon Sep 17 00:00:00 2001
 From: Rajvi Jingar <rajvi.jingar@intel.com>
 Date: Mon, 15 Jan 2018 20:52:11 -0600
-Subject: [PATCH 117/436] selftests: ftrace: Add inter-event hist triggers
+Subject: [PATCH 117/437] selftests: ftrace: Add inter-event hist triggers
  testcases
 
     This adds inter-event hist triggers testcases which covers following:

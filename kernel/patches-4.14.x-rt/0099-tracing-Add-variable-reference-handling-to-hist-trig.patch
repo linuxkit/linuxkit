@@ -1,7 +1,7 @@
-From 4237736e5974d0768349dea6743014d1c43585c6 Mon Sep 17 00:00:00 2001
+From ba702b3dad3b6d3b50caac695d99bf3e30e34199 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:56 -0600
-Subject: [PATCH 099/436] tracing: Add variable reference handling to hist
+Subject: [PATCH 099/437] tracing: Add variable reference handling to hist
  triggers
 
 Add the necessary infrastructure to allow the variables defined on one

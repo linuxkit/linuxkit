@@ -1,7 +1,7 @@
-From a0f8cbb80d6cc51785289968446c345a489cfbec Mon Sep 17 00:00:00 2001
+From 8d96e538d166cc8dbd5af0889b59e4bc82107bf7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 24 Jul 2011 12:11:43 +0200
-Subject: [PATCH 143/436] kconfig: Disable config options which are not RT
+Subject: [PATCH 143/437] kconfig: Disable config options which are not RT
  compatible
 
 Disable stuff which is known to have issues on RT
@@ -13,7 +13,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 2 insertions(+), 1 deletion(-)
 
 diff --git a/arch/Kconfig b/arch/Kconfig
-index 40dc31fea90c..7c6108479209 100644
+index 77b3e21c4844..69d6f3793ae7 100644
 --- a/arch/Kconfig
 +++ b/arch/Kconfig
 @@ -20,6 +20,7 @@ config OPROFILE

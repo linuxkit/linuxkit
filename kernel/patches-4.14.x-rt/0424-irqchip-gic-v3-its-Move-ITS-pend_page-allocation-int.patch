@@ -1,7 +1,7 @@
-From bedbb68b4a8fe55c10d3bdad88139eb02e6c6cc0 Mon Sep 17 00:00:00 2001
+From 1536114d052ea22427284cb92273283011d46bf6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Jul 2018 15:45:36 +0200
-Subject: [PATCH 424/436] irqchip/gic-v3-its: Move ITS' ->pend_page allocation
+Subject: [PATCH 424/437] irqchip/gic-v3-its: Move ITS' ->pend_page allocation
  into an early CPU up hook
 
 [ Upstream commit e083f14dc2e98ced872bf077b4d1cccf95b7e4f8 ]

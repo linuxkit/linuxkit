@@ -1,7 +1,7 @@
-From 0455016aebf6a6a0ce90ce710ec7ee8241e8bb1e Mon Sep 17 00:00:00 2001
+From 658a6d6a81af4d03fff5e502932460e169becf3f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Jun 2011 19:47:03 +0200
-Subject: [PATCH 309/436] sched: Distangle worker accounting from rqlock
+Subject: [PATCH 309/437] sched: Distangle worker accounting from rqlock
 
 The worker accounting for cpu bound workers is plugged into the core
 scheduler code and the wakeup code. This is not a hard requirement and
@@ -30,7 +30,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 41 insertions(+), 100 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ab6ec5fb6796..d3369a9bd607 100644
+index 44c22ff3e6fe..c304127bee78 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1733,10 +1733,6 @@ static inline void ttwu_activate(struct rq *rq, struct task_struct *p, int en_fl

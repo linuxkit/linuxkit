@@ -1,7 +1,7 @@
-From f4779fdd37c4e7e0c42a6ab01b6154bd77ca754f Mon Sep 17 00:00:00 2001
+From 478a104cc093e2bd50b75791abc57f3a7957e566 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:17 +0100
-Subject: [PATCH 042/436] hrtimer: Implement support for softirq based hrtimers
+Subject: [PATCH 042/437] hrtimer: Implement support for softirq based hrtimers
 
 hrtimer callbacks are always invoked in hard interrupt context. Several
 users in tree require soft interrupt context for their callbacks and

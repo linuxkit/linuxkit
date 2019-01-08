@@ -1,7 +1,7 @@
-From ed9c660f82dd0375456402a91e0a79a3806f8573 Mon Sep 17 00:00:00 2001
+From afe78b8ee4460bb77ce376aa675bcb60ee95ace2 Mon Sep 17 00:00:00 2001
 From: Julia Cartwright <julia@ni.com>
 Date: Thu, 26 Apr 2018 15:02:03 -0500
-Subject: [PATCH 419/436] seqlock: provide the same ordering semantics as
+Subject: [PATCH 419/437] seqlock: provide the same ordering semantics as
  mainline
 
 [ Upstream commit afa4c06b89a3c0fb7784ff900ccd707bef519cb7 ]

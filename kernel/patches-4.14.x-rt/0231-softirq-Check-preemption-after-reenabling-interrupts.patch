@@ -1,7 +1,7 @@
-From 9001aa643161416419d563facd38b716de4e0010 Mon Sep 17 00:00:00 2001
+From 520d969b45300be63d4bb5af9e697edbadfb50f6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 13 Nov 2011 17:17:09 +0100
-Subject: [PATCH 231/436] softirq: Check preemption after reenabling interrupts
+Subject: [PATCH 231/437] softirq: Check preemption after reenabling interrupts
 
 raise_softirq_irqoff() disables interrupts and wakes the softirq
 daemon, but after reenabling interrupts there is no preemption check,
@@ -116,7 +116,7 @@ index 86a709954f5a..9c069ef83d6d 100644
  	return 0;
  }
 diff --git a/net/core/dev.c b/net/core/dev.c
-index e8a66ad6d07c..048fc3e7355c 100644
+index 4337450a5fdb..49812d1dba8e 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
 @@ -2460,6 +2460,7 @@ static void __netif_reschedule(struct Qdisc *q)
@@ -143,7 +143,7 @@ index e8a66ad6d07c..048fc3e7355c 100644
  
  	atomic_long_inc(&skb->dev->rx_dropped);
  	kfree_skb(skb);
-@@ -5153,12 +5156,14 @@ static void net_rps_action_and_irq_enable(struct softnet_data *sd)
+@@ -5157,12 +5160,14 @@ static void net_rps_action_and_irq_enable(struct softnet_data *sd)
  		sd->rps_ipi_list = NULL;
  
  		local_irq_enable();
@@ -158,7 +158,7 @@ index e8a66ad6d07c..048fc3e7355c 100644
  }
  
  static bool sd_has_rps_ipi_waiting(struct softnet_data *sd)
-@@ -5236,6 +5241,7 @@ void __napi_schedule(struct napi_struct *n)
+@@ -5240,6 +5245,7 @@ void __napi_schedule(struct napi_struct *n)
  	local_irq_save(flags);
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  	local_irq_restore(flags);
@@ -166,7 +166,7 @@ index e8a66ad6d07c..048fc3e7355c 100644
  }
  EXPORT_SYMBOL(__napi_schedule);
  
-@@ -8442,6 +8448,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
+@@ -8446,6 +8452,7 @@ static int dev_cpu_dead(unsigned int oldcpu)
  
  	raise_softirq_irqoff(NET_TX_SOFTIRQ);
  	local_irq_enable();

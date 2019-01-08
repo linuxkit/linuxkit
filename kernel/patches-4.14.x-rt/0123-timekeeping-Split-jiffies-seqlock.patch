@@ -1,7 +1,7 @@
-From b2cea7d5b1270d58fa55fbe45765a377ad695ca4 Mon Sep 17 00:00:00 2001
+From b4dce15b1521980b9cc0c5a8dc8fda4569e2d986 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Subject: [PATCH 123/436] timekeeping: Split jiffies seqlock
+Subject: [PATCH 123/437] timekeeping: Split jiffies seqlock
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.

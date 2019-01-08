@@ -1,7 +1,7 @@
-From f7d2f51a955845df416cec29b5b8f3d101a62edc Mon Sep 17 00:00:00 2001
+From 06c6f558d3e8182d49a68dd3cafa56d771e0aa30 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:00 +0100
-Subject: [PATCH 025/436] hrtimer: Store running timer in hrtimer_clock_base
+Subject: [PATCH 025/437] hrtimer: Store running timer in hrtimer_clock_base
 
 The pointer to the currently running timer is stored in hrtimer_cpu_base
 before the base lock is dropped and the callback is invoked.

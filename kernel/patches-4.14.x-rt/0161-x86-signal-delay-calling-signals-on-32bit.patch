@@ -1,7 +1,7 @@
-From 48095cfa3c1fed248e05fd3bccac285077201a13 Mon Sep 17 00:00:00 2001
+From ac824740da3271352df385fb547448c4258b9b5a Mon Sep 17 00:00:00 2001
 From: Yang Shi <yang.shi@linaro.org>
 Date: Thu, 10 Dec 2015 10:58:51 -0800
-Subject: [PATCH 161/436] x86/signal: delay calling signals on 32bit
+Subject: [PATCH 161/437] x86/signal: delay calling signals on 32bit
 
 When running some ptrace single step tests on x86-32 machine, the below problem
 is triggered:

@@ -1,7 +1,7 @@
-From 6b074ce3e9421503cffe9170fd52b3b7cbc7252a Mon Sep 17 00:00:00 2001
+From d2ce1d4ffafada6db4b9b4f8fe5561f40cb03b76 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:54 -0600
-Subject: [PATCH 097/436] tracing: Pass tracing_map_elt to hist_field accessor
+Subject: [PATCH 097/437] tracing: Pass tracing_map_elt to hist_field accessor
  functions
 
 Some accessor functions, such as for variable references, require

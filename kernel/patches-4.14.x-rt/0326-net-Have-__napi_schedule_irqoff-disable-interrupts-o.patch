@@ -1,7 +1,7 @@
-From 2a9ffe4b0487f9e9a4ce951149513fabe80630e2 Mon Sep 17 00:00:00 2001
+From b15c950527882f5fb205a4aaabf11a32fcde90de Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 326/436] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 326/437] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
@@ -52,10 +52,10 @@ index 6b891e37d8e3..3ceccf72757e 100644
  static inline bool napi_disable_pending(struct napi_struct *n)
  {
 diff --git a/net/core/dev.c b/net/core/dev.c
-index a69095902278..2c2b432fcec5 100644
+index 0b2abcfce03a..8f40b36c2ec3 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -5290,6 +5290,7 @@ bool napi_schedule_prep(struct napi_struct *n)
+@@ -5294,6 +5294,7 @@ bool napi_schedule_prep(struct napi_struct *n)
  }
  EXPORT_SYMBOL(napi_schedule_prep);
  
@@ -63,7 +63,7 @@ index a69095902278..2c2b432fcec5 100644
  /**
   * __napi_schedule_irqoff - schedule for receive
   * @n: entry to schedule
-@@ -5301,6 +5302,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
+@@ -5305,6 +5306,7 @@ void __napi_schedule_irqoff(struct napi_struct *n)
  	____napi_schedule(this_cpu_ptr(&softnet_data), n);
  }
  EXPORT_SYMBOL(__napi_schedule_irqoff);

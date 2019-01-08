@@ -1,7 +1,7 @@
-From e4ef5b65dfcb350f0071847c6e8d8575bebeb0cc Mon Sep 17 00:00:00 2001
+From db458c25559ed124e7b2dd0feeb8161f925fd4c2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
-Subject: [PATCH 423/436] sched/migrate_disable: fallback to preempt_disable()
+Subject: [PATCH 423/437] sched/migrate_disable: fallback to preempt_disable()
  instead barrier()
 
 [ Upstream commit 10e90c155bbc7cab420f47694404f8f9fe33c2b2 ]
@@ -73,7 +73,7 @@ index 0591df500e9d..6728662a81e8 100644
  {
  	return 0;
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index c26b5ff005ab..a6ffb552be01 100644
+index 462baf19cf41..5d069426cbea 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -626,7 +626,7 @@ struct task_struct {
@@ -96,7 +96,7 @@ index c26b5ff005ab..a6ffb552be01 100644
  # endif
  #endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index e7817c6c44d2..fa5b76255f8c 100644
+index d7bfa2dd53e4..97b690d741f4 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1107,7 +1107,7 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
@@ -126,7 +126,7 @@ index e7817c6c44d2..fa5b76255f8c 100644
  	if (__migrate_disabled(p)) {
  		p->migrate_disable_update = 1;
  		goto out;
-@@ -6897,7 +6897,7 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -6903,7 +6903,7 @@ const u32 sched_prio_to_wmult[40] = {
   /*  15 */ 119304647, 148102320, 186737708, 238609294, 286331153,
  };
  
@@ -135,7 +135,7 @@ index e7817c6c44d2..fa5b76255f8c 100644
  
  static inline void
  update_nr_migratory(struct task_struct *p, long delta)
-@@ -7048,45 +7048,44 @@ EXPORT_SYMBOL(migrate_enable);
+@@ -7054,45 +7054,44 @@ EXPORT_SYMBOL(migrate_enable);
  #elif !defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
  void migrate_disable(void)
  {

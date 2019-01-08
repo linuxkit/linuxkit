@@ -1,7 +1,7 @@
-From b2301f5f04dc4ebb34993449958f8527e44f5cb3 Mon Sep 17 00:00:00 2001
+From 4ee19b026a3e2b969b5da2f55cfee5122768a715 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Fri, 3 Jul 2009 08:30:00 -0500
-Subject: [PATCH 169/436] drivers/net: vortex fix locking issues
+Subject: [PATCH 169/437] drivers/net: vortex fix locking issues
 
 Argh, cut and paste wasn't enough...
 

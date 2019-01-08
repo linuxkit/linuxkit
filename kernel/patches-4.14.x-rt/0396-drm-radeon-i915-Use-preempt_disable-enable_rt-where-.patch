@@ -1,7 +1,7 @@
-From bfe9fe11830eebfc633a7d1b5355a25f04ec91fa Mon Sep 17 00:00:00 2001
+From 70536d56ecd5eb835f376d928cf1c650c3b7c224 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sat, 27 Feb 2016 08:09:11 +0100
-Subject: [PATCH 396/436] drm,radeon,i915: Use preempt_disable/enable_rt()
+Subject: [PATCH 396/437] drm,radeon,i915: Use preempt_disable/enable_rt()
  where recommended
 
 DRM folks identified the spots, so use them.

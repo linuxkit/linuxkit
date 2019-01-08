@@ -1,7 +1,7 @@
-From 971e7f8994dbef86bdf01c10e235a5e32d128c7d Mon Sep 17 00:00:00 2001
+From bbe072eda000ee970b84bf71ff4935f03c5b60af Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 3 May 2018 17:16:26 +0200
-Subject: [PATCH 300/436] rtmutex: annotate sleeping lock context
+Subject: [PATCH 300/437] rtmutex: annotate sleeping lock context
 
 The RCU code complains on schedule() within a rcu_readlock() section.
 The valid scenario on -RT is if a sleeping is held. In order to suppress
@@ -32,7 +32,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  5 files changed, 50 insertions(+), 10 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 52cf8d74b534..dc3c98d9f924 100644
+index 1689c832ffb3..675cbae7adfb 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -638,6 +638,9 @@ struct task_struct {
@@ -45,7 +45,7 @@ index 52cf8d74b534..dc3c98d9f924 100644
  
  #ifdef CONFIG_PREEMPT_RCU
  	int				rcu_read_lock_nesting;
-@@ -1756,6 +1759,23 @@ static __always_inline bool need_resched(void)
+@@ -1765,6 +1768,23 @@ static __always_inline bool need_resched(void)
  	return unlikely(tif_need_resched());
  }
  

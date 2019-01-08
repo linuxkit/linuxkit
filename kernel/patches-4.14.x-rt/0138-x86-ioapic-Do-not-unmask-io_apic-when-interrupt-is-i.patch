@@ -1,7 +1,7 @@
-From f113182e79279d5ccb4bbcceadfe4e6189a3dc41 Mon Sep 17 00:00:00 2001
+From 645a7c79aa4e0503fccfa644355244eb9ce8c608 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:27 -0500
-Subject: [PATCH 138/436] x86/ioapic: Do not unmask io_apic when interrupt is
+Subject: [PATCH 138/437] x86/ioapic: Do not unmask io_apic when interrupt is
  in progress
 
 With threaded interrupts we might see an interrupt in progress on

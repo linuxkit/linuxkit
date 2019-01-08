@@ -1,7 +1,7 @@
-From 865ca9e1850ddb841fd1ff936a8e51e6ba5eb8a9 Mon Sep 17 00:00:00 2001
+From 3b2d1998cf77761cff9598925362a9ca0c1b9f93 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:59 -0600
-Subject: [PATCH 102/436] tracing: Add support for 'field variables'
+Subject: [PATCH 102/437] tracing: Add support for 'field variables'
 
 Users should be able to directly specify event fields in hist trigger
 'actions' rather than being forced to explicitly create a variable for

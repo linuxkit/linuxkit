@@ -1,7 +1,7 @@
-From 9071098a18e62f10a038d8b2f9f110c116311de0 Mon Sep 17 00:00:00 2001
+From eb8c7a8a2dc15dd4c8783fda5340857dea64c171 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 29 Jun 2011 20:06:39 +0200
-Subject: [PATCH 250/436] rtmutex: Avoid include hell
+Subject: [PATCH 250/437] rtmutex: Avoid include hell
 
 Include only the required raw types. This avoids pulling in the
 complete spinlock header which in turn requires rtmutex.h at some point.

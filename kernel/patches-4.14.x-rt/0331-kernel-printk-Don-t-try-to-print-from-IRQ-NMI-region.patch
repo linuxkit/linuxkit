@@ -1,7 +1,7 @@
-From a6994be2af91e38d642884cc8d43a62d205ccd85 Mon Sep 17 00:00:00 2001
+From eb5db28c8bde4025a99c5ae984a59e27bee2c978 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 19 May 2016 17:45:27 +0200
-Subject: [PATCH 331/436] kernel/printk: Don't try to print from IRQ/NMI region
+Subject: [PATCH 331/437] kernel/printk: Don't try to print from IRQ/NMI region
 
 On -RT we try to acquire sleeping locks which might lead to warnings
 from lockdep or a warn_on() from spin_try_lock() (which is a rtmutex on
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 10 insertions(+)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 60786d701bfe..741bf27bb73c 100644
+index febac6df82d2..9b0deab74376 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1558,6 +1558,11 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1563,6 +1563,11 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  	if (!console_drivers)
  		return;
  
@@ -30,7 +30,7 @@ index 60786d701bfe..741bf27bb73c 100644
  	migrate_disable();
  	for_each_console(con) {
  		if (exclusive_console && con != exclusive_console)
-@@ -2292,6 +2297,11 @@ void console_unblank(void)
+@@ -2291,6 +2296,11 @@ void console_unblank(void)
  {
  	struct console *c;
  

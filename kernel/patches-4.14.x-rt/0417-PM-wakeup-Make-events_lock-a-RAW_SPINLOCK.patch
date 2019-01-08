@@ -1,7 +1,7 @@
-From 7c4d795f19c42ac79d15c8e32e0dd7e842b68028 Mon Sep 17 00:00:00 2001
+From d2b5a1778932ef8e6d6d9fad741154c7ac96ef12 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 25 May 2018 09:57:42 +0200
-Subject: [PATCH 417/436] PM / wakeup: Make events_lock a RAW_SPINLOCK
+Subject: [PATCH 417/437] PM / wakeup: Make events_lock a RAW_SPINLOCK
 
 [ Upstream commit 1debb85a1d7d5c7655b4574f5b0ddf5f7c84873e ]
 

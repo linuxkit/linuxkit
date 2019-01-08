@@ -1,7 +1,7 @@
-From e2f59edd8b939d079f63986580dee59732561a2e Mon Sep 17 00:00:00 2001
+From b22fe53abbec4dc14892f13227d5fcac87fdbfa8 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 2 Aug 2018 17:11:01 +0200
-Subject: [PATCH 432/436] Revert "arm64/xen: Make XEN depend on !RT"
+Subject: [PATCH 432/437] Revert "arm64/xen: Make XEN depend on !RT"
 
 [ Upstream commit c0a308b58829bd4066bce841fe49e8277a0cb32b ]
 

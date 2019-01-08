@@ -1,7 +1,7 @@
-From f20c8213923de59e66ff3a7c90374facf3bbafb7 Mon Sep 17 00:00:00 2001
+From a51f5adc29f1df6843454d69065b53400f945989 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 7 Jun 2017 10:12:45 +0200
-Subject: [PATCH 214/436] sched: Remove TASK_ALL
+Subject: [PATCH 214/437] sched: Remove TASK_ALL
 
 It's unused:
 
@@ -19,7 +19,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 deletion(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index cc5e4a3c2c63..03b85406312d 100644
+index 962c3e6e8979..45c1bc53321f 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -93,7 +93,6 @@ struct task_group;

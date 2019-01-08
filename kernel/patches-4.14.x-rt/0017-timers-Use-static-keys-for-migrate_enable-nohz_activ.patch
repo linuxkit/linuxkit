@@ -1,7 +1,7 @@
-From fc8f8ce973783ece4cc7da38056fb4311f58b448 Mon Sep 17 00:00:00 2001
+From 7d3e8471f6d634b971ed483bf0fe0e3f426a799c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:50 +0100
-Subject: [PATCH 017/436] timers: Use static keys for
+Subject: [PATCH 017/437] timers: Use static keys for
  migrate_enable/nohz_active
 
 The members migrate_enable and nohz_active in the timer/hrtimer per CPU

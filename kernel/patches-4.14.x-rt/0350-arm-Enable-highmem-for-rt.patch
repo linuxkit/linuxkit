@@ -1,7 +1,7 @@
-From 5895aa080bdee8cc285d01fe7f4c16d53365368e Mon Sep 17 00:00:00 2001
+From 959854b30385fb9a7899f30bc3bb84e46ce4ce5c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 13 Feb 2013 11:03:11 +0100
-Subject: [PATCH 350/436] arm: Enable highmem for rt
+Subject: [PATCH 350/437] arm: Enable highmem for rt
 
 fixup highmem for ARM.
 
