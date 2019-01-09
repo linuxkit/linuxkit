@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:3683c9a66cd4da40bd7d6c7da599b2dcd738b559 as alpine
+FROM linuxkit/alpine:0de3332a65895be3a610a99377545c157ca4b138 as alpine
 RUN \
   apk add \
   bash \
@@ -11,7 +11,7 @@ RUN \
   make \
   && true
 ENV GOPATH=/go PATH=$PATH:/go/bin
-ENV RUNC_COMMIT=58592df56734acf62e574865fe40b9e53e967910
+ENV RUNC_COMMIT=96ec2177ae841256168fcf76954f7177af9446eb
 RUN mkdir -p $GOPATH/src/github.com/opencontainers && \
   cd $GOPATH/src/github.com/opencontainers && \
   git clone https://github.com/opencontainers/runc.git
