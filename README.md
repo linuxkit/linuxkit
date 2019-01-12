@@ -160,7 +160,7 @@ There are monthly [development reports](reports/) summarising the work carried o
 
 ## Adopters
 
-We maintain an incomplete list of [adopters](adopters.md). Please open a PR if you are using LinuxKit in production or in your project, or both.
+We maintain an incomplete list of [adopters](ADOPTERS.md). Please open a PR if you are using LinuxKit in production or in your project, or both.
 
 ## FAQ
 
