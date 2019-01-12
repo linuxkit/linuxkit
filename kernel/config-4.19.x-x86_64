@@ -3090,6 +3090,7 @@ CONFIG_USB_STORAGE=m
 # CONFIG_USB_ISP1301 is not set
 # CONFIG_USB_GADGET is not set
 # CONFIG_TYPEC is not set
+# CONFIG_USB_ROLE_SWITCH is not set
 # CONFIG_USB_ULPI_BUS is not set
 # CONFIG_UWB is not set
 # CONFIG_MMC is not set
