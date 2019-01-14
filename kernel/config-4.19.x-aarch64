@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.19.13 Kernel Configuration
+# Linux/arm64 4.19.14 Kernel Configuration
 #
 
 #
@@ -3226,6 +3226,7 @@ CONFIG_NOP_USB_XCEIV=m
 # CONFIG_USB_ULPI is not set
 # CONFIG_USB_GADGET is not set
 # CONFIG_TYPEC is not set
+# CONFIG_USB_ROLE_SWITCH is not set
 # CONFIG_USB_ULPI_BUS is not set
 # CONFIG_UWB is not set
 CONFIG_MMC=m
