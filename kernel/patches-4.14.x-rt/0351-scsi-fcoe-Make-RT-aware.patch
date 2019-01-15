@@ -1,7 +1,7 @@
 From aaa790579b2116b6fce8e79d3be5a14c898109d1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 12 Nov 2011 14:00:48 +0100
-Subject: [PATCH 351/437] scsi/fcoe: Make RT aware.
+Subject: [PATCH 351/450] scsi/fcoe: Make RT aware.
 
 Do not disable preemption while taking sleeping locks. All user look safe
 for migrate_diable() only.
@@ -111,5 +111,5 @@ index 42bcf7f3a0f9..2ce045d6860c 100644
  	/* peek cache of free slot */
  	if (pool->left != FC_XID_UNKNOWN) {
 -- 
-2.19.1
+2.19.2
 

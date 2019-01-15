@@ -1,7 +1,7 @@
 From 3a58c2a589dd012d6bc31e7f0b2c4415f1b3903c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Feb 2018 10:39:54 +0100
-Subject: [PATCH 318/437] net: use task_struct instead of CPU number as the
+Subject: [PATCH 318/450] net: use task_struct instead of CPU number as the
  queue owner on -RT
 
 In commit ("net: move xmit_recursion to per-task variable on -RT") the
@@ -149,5 +149,5 @@ index 73161f5455d1..8d35a35d99a0 100644
  	queue->dev = dev;
  #ifdef CONFIG_BQL
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From 6cf8f87baddba1e9fc5d04d1ada5e2c89550e03a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 15 Jan 2016 16:33:34 +0100
-Subject: [PATCH 368/437] net/core: protect users of napi_alloc_cache against
+Subject: [PATCH 368/450] net/core: protect users of napi_alloc_cache against
  reentrance
 
 On -RT the code running in BH can not be moved to another CPU so CPU
@@ -114,5 +114,5 @@ index 1bb67588ca5a..8ec36697002b 100644
  void __kfree_skb_defer(struct sk_buff *skb)
  {
 -- 
-2.19.1
+2.19.2
 

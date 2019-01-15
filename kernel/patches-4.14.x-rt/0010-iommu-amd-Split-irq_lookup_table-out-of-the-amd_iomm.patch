@@ -1,7 +1,7 @@
 From 5003ff93cc34975cd85c14248483548cd0635dc6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:36 +0100
-Subject: [PATCH 010/437] iommu/amd: Split irq_lookup_table out of the
+Subject: [PATCH 010/450] iommu/amd: Split irq_lookup_table out of the
  amd_iommu_devtable_lock
 
 Upstream commit ea6166f4b83e9cfba1c18f46a764d50045682fe5
@@ -52,5 +52,5 @@ index ccf9d1d08983..1bb09f1e5cd1 100644
  	return table;
  }
 -- 
-2.19.1
+2.19.2
 

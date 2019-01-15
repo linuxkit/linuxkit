@@ -1,7 +1,7 @@
 From f7d4aeb6cc78f11fa4826c0d18b2807c976f4aee Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:52 -0600
-Subject: [PATCH 095/437] tracing: Add simple expression support to hist
+Subject: [PATCH 095/450] tracing: Add simple expression support to hist
  triggers
 
 Add support for simple addition, subtraction, and unary expressions
@@ -630,5 +630,5 @@ index c6c24d6d2be8..d2f01f3f26e1 100644
  
  		if (hist_data->fields[i]->flags & HIST_FIELD_FL_HEX) {
 -- 
-2.19.1
+2.19.2
 

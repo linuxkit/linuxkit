@@ -1,7 +1,7 @@
 From d43c1351f9ca08417f637274c72a3026ca6c8485 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
-Subject: [PATCH 384/437] arm: Add support for lazy preemption
+Subject: [PATCH 384/450] arm: Add support for lazy preemption
 
 Implement the arm pieces for lazy preempt.
 
@@ -163,5 +163,5 @@ index cdfe52b15a0a..198cf8bf0b37 100644
  		} else {
  			if (unlikely(!user_mode(regs)))
 -- 
-2.19.1
+2.19.2
 

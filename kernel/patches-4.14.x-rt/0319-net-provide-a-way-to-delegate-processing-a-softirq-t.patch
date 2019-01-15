@@ -1,7 +1,7 @@
 From b6f4517055f64f0afefa8fd3c16340334709b6eb Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Jan 2016 15:39:05 +0100
-Subject: [PATCH 319/437] net: provide a way to delegate processing a softirq
+Subject: [PATCH 319/450] net: provide a way to delegate processing a softirq
  to ksoftirqd
 
 If the NET_RX uses up all of his budget it moves the following NAPI
@@ -84,5 +84,5 @@ index 8d35a35d99a0..b5f1f2c51297 100644
  	net_rps_action_and_irq_enable(sd);
  out:
 -- 
-2.19.1
+2.19.2
 

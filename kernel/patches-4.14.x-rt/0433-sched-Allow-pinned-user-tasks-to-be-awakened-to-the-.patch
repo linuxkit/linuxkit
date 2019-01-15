@@ -1,7 +1,7 @@
 From 4326f7d62d7ab0d3e95e49e9fc806866aba01d26 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <efault@gmx.de>
 Date: Sun, 19 Aug 2018 08:28:35 +0200
-Subject: [PATCH 433/437] sched: Allow pinned user tasks to be awakened to the
+Subject: [PATCH 433/450] sched: Allow pinned user tasks to be awakened to the
  CPU they pinned
 
 [ Upstream commit cd4d35ef89948221f7cd1751cee453943967364c ]
@@ -36,5 +36,5 @@ index e1fc94836fe0..6ce950f24a7f 100644
  
  	return cpu_active(cpu);
 -- 
-2.19.1
+2.19.2
 

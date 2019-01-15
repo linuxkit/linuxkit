@@ -1,7 +1,7 @@
 From 3d8b3cac2bd3b3898bb0d37555cf677a1e9d9160 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:50 -0600
-Subject: [PATCH 093/437] tracing: Account for variables in named trigger
+Subject: [PATCH 093/450] tracing: Account for variables in named trigger
  compatibility
 
 Named triggers must also have the same set of variables in order to be
@@ -47,5 +47,5 @@ index b4301542bb4a..68ff2491edd0 100644
  
  	for (i = 0; i < hist_data->n_sort_keys; i++) {
 -- 
-2.19.1
+2.19.2
 

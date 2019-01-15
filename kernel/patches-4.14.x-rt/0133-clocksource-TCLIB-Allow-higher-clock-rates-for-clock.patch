@@ -1,7 +1,7 @@
 From 529e93f4547812493d1b1cd7add36cf38d43ee8c Mon Sep 17 00:00:00 2001
 From: Benedikt Spranger <b.spranger@linutronix.de>
 Date: Mon, 8 Mar 2010 18:57:04 +0100
-Subject: [PATCH 133/437] clocksource: TCLIB: Allow higher clock rates for
+Subject: [PATCH 133/450] clocksource: TCLIB: Allow higher clock rates for
  clock events
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -165,5 +165,5 @@ index 8136dc7e863d..d2feb491e689 100644
  	tristate "Dummy IRQ handler"
  	default n
 -- 
-2.19.1
+2.19.2
 

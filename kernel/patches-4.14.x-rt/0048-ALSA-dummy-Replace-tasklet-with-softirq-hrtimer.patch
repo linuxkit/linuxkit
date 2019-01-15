@@ -1,7 +1,7 @@
 From 3ebe79e022f917a7461c7785d2882e578c34f094 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:15 +0100
-Subject: [PATCH 048/437] ALSA/dummy: Replace tasklet with softirq hrtimer
+Subject: [PATCH 048/450] ALSA/dummy: Replace tasklet with softirq hrtimer
 
 The tasklet is used to defer the execution of snd_pcm_period_elapsed() to
 the softirq context. Using the HRTIMER_MODE_SOFT mode invokes the timer
@@ -101,5 +101,5 @@ index c0939a0164a6..549e014ecc0d 100644
  }
  
 -- 
-2.19.1
+2.19.2
 

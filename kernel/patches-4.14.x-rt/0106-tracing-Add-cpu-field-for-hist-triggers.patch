@@ -1,7 +1,7 @@
 From 160df7fa3eacee8583ef796699bafa229cfb3cc5 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:03 -0600
-Subject: [PATCH 106/437] tracing: Add cpu field for hist triggers
+Subject: [PATCH 106/450] tracing: Add cpu field for hist triggers
 
 A common key to use in a histogram is the cpuid - add a new cpu
 'synthetic' field named 'cpu' for that purpose.
@@ -118,5 +118,5 @@ index 0b73852f6923..34a2e8d0a052 100644
  		if (hist_field->flags & HIST_FIELD_FL_VAR_REF)
  			seq_putc(m, '$');
 -- 
-2.19.1
+2.19.2
 

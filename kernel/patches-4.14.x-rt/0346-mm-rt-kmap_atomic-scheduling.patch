@@ -1,7 +1,7 @@
 From c86332002f578e056c2d18c61cd4c288e1108f93 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Thu, 28 Jul 2011 10:43:51 +0200
-Subject: [PATCH 346/437] mm, rt: kmap_atomic scheduling
+Subject: [PATCH 346/450] mm, rt: kmap_atomic scheduling
 
 In fact, with migrate_disable() existing one could play games with
 kmap_atomic. You could save/restore the kmap_atomic slots on context
@@ -302,5 +302,5 @@ index 59db3223a5d6..22aa3ddbd87b 100644
  unsigned int nr_free_highpages (void)
  {
 -- 
-2.19.1
+2.19.2
 

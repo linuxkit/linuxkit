@@ -1,7 +1,7 @@
 From b15c950527882f5fb205a4aaabf11a32fcde90de Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 6 Dec 2016 17:50:30 -0500
-Subject: [PATCH 326/437] net: Have __napi_schedule_irqoff() disable interrupts
+Subject: [PATCH 326/450] net: Have __napi_schedule_irqoff() disable interrupts
  on RT
 
 A customer hit a crash where the napi sd->poll_list became corrupted.
@@ -72,5 +72,5 @@ index 0b2abcfce03a..8f40b36c2ec3 100644
  bool napi_complete_done(struct napi_struct *n, int work_done)
  {
 -- 
-2.19.1
+2.19.2
 

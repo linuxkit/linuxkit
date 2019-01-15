@@ -1,7 +1,7 @@
 From da8f518ac576fd0130fccdad0517bc0f228fddd7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 9 Jun 2011 11:43:52 +0200
-Subject: [PATCH 247/437] rtmutex: Add rtmutex_lock_killable()
+Subject: [PATCH 247/450] rtmutex: Add rtmutex_lock_killable()
 
 Add "killable" type to rtmutex. We need this since rtmutex are used as
 "normal" mutexes which do use this type.
@@ -55,5 +55,5 @@ index 935adbbe08f1..fb6bb56ac33d 100644
   * rt_mutex_timed_lock - lock a rt_mutex interruptible
   *			the timeout structure is provided
 -- 
-2.19.1
+2.19.2
 

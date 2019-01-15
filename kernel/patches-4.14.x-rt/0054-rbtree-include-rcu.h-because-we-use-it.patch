@@ -1,7 +1,7 @@
 From 3152ba2bf24f52a147556852a29522b67cb6ceb0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 11:52:17 +0200
-Subject: [PATCH 054/437] rbtree: include rcu.h because we use it
+Subject: [PATCH 054/450] rbtree: include rcu.h because we use it
 
 Since commit c1adf20052d8 ("Introduce rb_replace_node_rcu()")
 rbtree_augmented.h uses RCU related data structures but does not include
@@ -39,5 +39,5 @@ index ece43e882b56..7d012faa509a 100644
  struct latch_tree_node {
  	struct rb_node node[2];
 -- 
-2.19.1
+2.19.2
 

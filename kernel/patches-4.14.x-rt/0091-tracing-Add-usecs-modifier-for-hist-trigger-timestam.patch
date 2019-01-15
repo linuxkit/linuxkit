@@ -1,7 +1,7 @@
 From 89f6ad2173cbe3a78397f9a3ed07de978840b30d Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:48 -0600
-Subject: [PATCH 091/437] tracing: Add usecs modifier for hist trigger
+Subject: [PATCH 091/450] tracing: Add usecs modifier for hist trigger
  timestamps
 
 Appending .usecs onto a common_timestamp field will cause the
@@ -166,5 +166,5 @@ index ec58902145e9..6d268e25d051 100644
  	return flags_str;
  }
 -- 
-2.19.1
+2.19.2
 

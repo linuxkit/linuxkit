@@ -1,7 +1,7 @@
 From caadf195c1da52ea6db6e657346eeac26afb68f3 Mon Sep 17 00:00:00 2001
 From: Christoffer Dall <christoffer.dall@linaro.org>
 Date: Fri, 8 Sep 2017 07:07:13 -0700
-Subject: [PATCH 004/437] KVM: arm/arm64: Remove redundant preemptible checks
+Subject: [PATCH 004/450] KVM: arm/arm64: Remove redundant preemptible checks
 
 Upstream commit 5a24575032971c5a9a4580417a791c427ebdb8e5
 
@@ -40,5 +40,5 @@ index ed42b8cf6f5b..045aa39b14c1 100644
  }
  
 -- 
-2.19.1
+2.19.2
 

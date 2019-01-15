@@ -1,7 +1,7 @@
 From 8b60687c87f5161e598d231c4e9c28a467a8e567 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 31 Aug 2016 17:21:56 +0200
-Subject: [PATCH 322/437] net: add back the missing serialization in
+Subject: [PATCH 322/450] net: add back the missing serialization in
  ip_send_unicast_reply()
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -94,5 +94,5 @@ index 31b34c0c2d5f..a08d68e97bdb 100644
  
  static void tcp_v4_timewait_ack(struct sock *sk, struct sk_buff *skb)
 -- 
-2.19.1
+2.19.2
 

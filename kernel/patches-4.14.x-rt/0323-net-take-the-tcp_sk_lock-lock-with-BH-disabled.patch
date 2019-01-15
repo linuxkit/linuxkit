@@ -1,7 +1,7 @@
 From f63534d5a04a3fe4e7501e511d51e271e8884efe Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 21 Aug 2017 15:09:13 +0200
-Subject: [PATCH 323/437] net: take the tcp_sk_lock lock with BH disabled
+Subject: [PATCH 323/450] net: take the tcp_sk_lock lock with BH disabled
 
 Lockdep may complain about an unsafe locking scenario:
 |      CPU0                    CPU1
@@ -69,5 +69,5 @@ index a08d68e97bdb..851f241e70b5 100644
  
  static void tcp_v4_timewait_ack(struct sock *sk, struct sk_buff *skb)
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From 0f211fcb3e547aaa7e2148b82f3a019aa9eb0ffd Mon Sep 17 00:00:00 2001
 From: Marc Zyngier <marc.zyngier@arm.com>
 Date: Fri, 27 Jul 2018 13:38:54 +0100
-Subject: [PATCH 425/437] irqchip/gic-v3-its: Move pending table allocation to
+Subject: [PATCH 425/450] irqchip/gic-v3-its: Move pending table allocation to
  init time
 
 [ Upstream commit 4a0819bb25d12d39c0390636122eefba232596c1 ]
@@ -169,5 +169,5 @@ index bacb499c512c..688f2565294c 100644
  	struct page		*prop_page;
  	int			id_bits;
 -- 
-2.19.1
+2.19.2
 

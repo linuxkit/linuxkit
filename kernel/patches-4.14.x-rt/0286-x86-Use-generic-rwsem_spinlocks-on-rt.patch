@@ -1,7 +1,7 @@
 From 61139c98e3538a576a9f524393ba94eaf74e0fc8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 26 Jul 2009 02:21:32 +0200
-Subject: [PATCH 286/437] x86: Use generic rwsem_spinlocks on -rt
+Subject: [PATCH 286/450] x86: Use generic rwsem_spinlocks on -rt
 
 Simplifies the separation of anon_rw_semaphores and rw_semaphores for
 -rt.
@@ -29,5 +29,5 @@ index 4f393eb9745f..22a63ddf5668 100644
  config GENERIC_CALIBRATE_DELAY
  	def_bool y
 -- 
-2.19.1
+2.19.2
 

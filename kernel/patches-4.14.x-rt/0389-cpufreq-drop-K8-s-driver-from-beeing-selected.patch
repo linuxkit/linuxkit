@@ -1,7 +1,7 @@
 From a826d8b77351a76c294bebc69d0960a886a5649d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 9 Apr 2015 15:23:01 +0200
-Subject: [PATCH 389/437] cpufreq: drop K8's driver from beeing selected
+Subject: [PATCH 389/450] cpufreq: drop K8's driver from beeing selected
 
 Ralf posted a picture of a backtrace from
 
@@ -34,5 +34,5 @@ index 35f71825b7f3..bb4a6160d0f7 100644
  	  This adds the CPUFreq driver for K8/early Opteron/Athlon64 processors.
  	  Support for K10 and newer processors is now in acpi-cpufreq.
 -- 
-2.19.1
+2.19.2
 

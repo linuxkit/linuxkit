@@ -1,7 +1,7 @@
 From 1e90ab9e5476d88116ff2b47999ca5437cdd5f24 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Jul 2017 17:31:20 +0200
-Subject: [PATCH 363/437] cpu/hotplug: Implement CPU pinning
+Subject: [PATCH 363/450] cpu/hotplug: Implement CPU pinning
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -114,5 +114,5 @@ index 92a1e437e777..bc97ca16de81 100644
  	irq_unlock_sparse();
  
 -- 
-2.19.1
+2.19.2
 

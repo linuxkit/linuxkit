@@ -1,7 +1,7 @@
 From 70711d06940fcca6da7a80610b8c039da2c37d52 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
-Subject: [PATCH 385/437] powerpc: Add support for lazy preemption
+Subject: [PATCH 385/450] powerpc: Add support for lazy preemption
 
 Implement the powerpc pieces for lazy preempt.
 
@@ -183,5 +183,5 @@ index c194f4c8e66b..117c1f6cab66 100644
  
  	/*
 -- 
-2.19.1
+2.19.2
 

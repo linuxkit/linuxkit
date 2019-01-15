@@ -1,7 +1,7 @@
 From c8ee195989e8750fdd93991969e1254120e503f8 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Thu, 29 Sep 2011 12:24:30 -0500
-Subject: [PATCH 124/437] tracing: Account for preempt off in
+Subject: [PATCH 124/450] tracing: Account for preempt off in
  preempt_schedule()
 
 The preempt_schedule() uses the preempt_disable_notrace() version
@@ -49,5 +49,5 @@ index 590a3a396048..5b1a76112243 100644
  
  		preempt_latency_stop(1);
 -- 
-2.19.1
+2.19.2
 

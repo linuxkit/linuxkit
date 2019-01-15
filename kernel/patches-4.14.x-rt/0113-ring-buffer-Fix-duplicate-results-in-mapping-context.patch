@@ -1,7 +1,7 @@
 From 158c7e6197471e64b5d8b70c580808803b5383c5 Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
 Date: Thu, 18 Jan 2018 15:42:09 -0500
-Subject: [PATCH 113/437] ring-buffer: Fix duplicate results in mapping context
+Subject: [PATCH 113/450] ring-buffer: Fix duplicate results in mapping context
  to bits in recursive lock
 
 In bringing back the context checks, the code checks first if its normal
@@ -38,5 +38,5 @@ index b7cda4701ab3..be296c38893f 100644
  	if (unlikely(val & (1 << bit)))
  		return 1;
 -- 
-2.19.1
+2.19.2
 

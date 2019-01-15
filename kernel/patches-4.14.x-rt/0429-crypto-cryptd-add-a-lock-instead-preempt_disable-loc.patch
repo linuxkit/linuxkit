@@ -1,7 +1,7 @@
 From 17d691e76e9bf821fa0f10311b91b42bb1b3857a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 18:52:00 +0200
-Subject: [PATCH 429/437] crypto: cryptd - add a lock instead
+Subject: [PATCH 429/450] crypto: cryptd - add a lock instead
  preempt_disable/local_bh_disable
 
 [ Upstream commit 21aedb30d85979697f79a72a084e5d781e323663 ]
@@ -83,5 +83,5 @@ index 248f6ba41688..54b7985c8caa 100644
  	if (!req)
  		return;
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From 64d14090ceefe8b55ecdcb0d3543fec1d830920c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:40 -0600
-Subject: [PATCH 083/437] ring-buffer: Redefine the unimplemented
+Subject: [PATCH 083/450] ring-buffer: Redefine the unimplemented
  RINGBUF_TYPE_TIME_STAMP
 
 RINGBUF_TYPE_TIME_STAMP is defined but not used, and from what I can
@@ -326,5 +326,5 @@ index c74b329879ad..197617001c0b 100644
  			ring_buffer_normalize_time_stamp(buffer,
  							 cpu_buffer->cpu, ts);
 -- 
-2.19.1
+2.19.2
 

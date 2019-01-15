@@ -1,7 +1,7 @@
 From 342c4c04e0060c8e398dad26f9ca0abe9f9985b8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:12 +0100
-Subject: [PATCH 045/437] mac80211_hwsim: Replace hrtimer tasklet with softirq
+Subject: [PATCH 045/450] mac80211_hwsim: Replace hrtimer tasklet with softirq
  hrtimer
 
 Switch the timer to HRTIMER_MODE_SOFT, which executed the timer
@@ -137,5 +137,5 @@ index 477f9f2f6626..06dff45037fe 100644
  	spin_lock_bh(&hwsim_radio_lock);
  	list_add_tail(&data->list, &hwsim_radios);
 -- 
-2.19.1
+2.19.2
 

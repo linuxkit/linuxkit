@@ -1,0 +1,42 @@
+From eaad86f001b651d6933a3c57915c3f78a9bbb9ed Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 9 Nov 2018 15:02:49 +0100
+Subject: [PATCH 443/450] rcu: make RCU_BOOST default on RT without EXPERT
+
+[ Upstream commit 78cab7cb632b6a4c84e78e4f12bb9e83c09b8885 ]
+
+Paul E. McKenney suggested to allow enabling RCU_BOOST on RT without the
+need to go through the EXPERT option first.
+
+Suggeted-by: Paul E. McKenney <paulmck@linux.ibm.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/rcu/Kconfig | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/rcu/Kconfig b/kernel/rcu/Kconfig
+index 0be2c96fb640..a243a78ff38c 100644
+--- a/kernel/rcu/Kconfig
++++ b/kernel/rcu/Kconfig
+@@ -36,7 +36,7 @@ config TINY_RCU
+ 
+ config RCU_EXPERT
+ 	bool "Make expert-level adjustments to RCU configuration"
+-	default y if PREEMPT_RT_FULL
++	default n
+ 	help
+ 	  This option needs to be enabled if you wish to make
+ 	  expert-level adjustments to RCU configuration.  By default,
+@@ -190,7 +190,7 @@ config RCU_FAST_NO_HZ
+ 
+ config RCU_BOOST
+ 	bool "Enable RCU priority boosting"
+-	depends on RT_MUTEXES && PREEMPT_RCU && RCU_EXPERT
++	depends on (RT_MUTEXES && PREEMPT_RCU && RCU_EXPERT) || PREEMPT_RT_FULL
+ 	default y if PREEMPT_RT_FULL
+ 	help
+ 	  This option boosts the priority of preempted RCU readers that
+-- 
+2.19.2
+

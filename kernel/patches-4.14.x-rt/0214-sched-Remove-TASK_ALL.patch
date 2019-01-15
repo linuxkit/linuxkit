@@ -1,7 +1,7 @@
 From a51f5adc29f1df6843454d69065b53400f945989 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Wed, 7 Jun 2017 10:12:45 +0200
-Subject: [PATCH 214/437] sched: Remove TASK_ALL
+Subject: [PATCH 214/450] sched: Remove TASK_ALL
 
 It's unused:
 
@@ -31,5 +31,5 @@ index 962c3e6e8979..45c1bc53321f 100644
  /* get_task_state(): */
  #define TASK_REPORT			(TASK_RUNNING | TASK_INTERRUPTIBLE | \
 -- 
-2.19.1
+2.19.2
 

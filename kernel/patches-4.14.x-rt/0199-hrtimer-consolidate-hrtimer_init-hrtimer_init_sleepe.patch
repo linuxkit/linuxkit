@@ -1,7 +1,7 @@
 From 96e3bf1d2cdf9a751c29c974bfb3e523dfdacc8f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 4 Sep 2017 18:31:50 +0200
-Subject: [PATCH 199/437] hrtimer: consolidate hrtimer_init() +
+Subject: [PATCH 199/450] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
@@ -258,5 +258,5 @@ index 6e1e10ff433a..c1ae4075e0ed 100644
  			set_current_state(TASK_INTERRUPTIBLE);
  			hrtimer_start_expires(&t.timer, HRTIMER_MODE_ABS);
 -- 
-2.19.1
+2.19.2
 

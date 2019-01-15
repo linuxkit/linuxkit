@@ -1,7 +1,7 @@
 From 848a963465a750a46dd6554f18ff5593d8b9cbda Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:01 +0100
-Subject: [PATCH 026/437] hrtimer: Make room in struct hrtimer_cpu_base
+Subject: [PATCH 026/450] hrtimer: Make room in struct hrtimer_cpu_base
 
 The upcoming softirq based hrtimers support requires an additional field in
 the hrtimer_cpu_base struct, which would grow the struct size beyond a
@@ -35,5 +35,5 @@ index 1bae7b9f071d..56e56bcb6f0f 100644
  #endif
  	struct hrtimer_clock_base	clock_base[HRTIMER_MAX_CLOCK_BASES];
 -- 
-2.19.1
+2.19.2
 

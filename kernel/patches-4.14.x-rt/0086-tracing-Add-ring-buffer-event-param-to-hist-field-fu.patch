@@ -1,7 +1,7 @@
 From 9bd98ebd9a345d81a789160ce7ab7a0c4be5c61a Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:43 -0600
-Subject: [PATCH 086/437] tracing: Add ring buffer event param to hist field
+Subject: [PATCH 086/450] tracing: Add ring buffer event param to hist field
  functions
 
 Some events such as timestamps require access to a ring_buffer_event
@@ -145,5 +145,5 @@ index 77079c79b6d4..9126be52ff4d 100644
  
  static void hist_trigger_stacktrace_print(struct seq_file *m,
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From 6139f982902cdb12bbbf875895de16575c41abc3 Mon Sep 17 00:00:00 2001
 From: Vedang Patel <vedang.patel@intel.com>
 Date: Mon, 15 Jan 2018 20:51:38 -0600
-Subject: [PATCH 081/437] tracing: Remove code which merges duplicates
+Subject: [PATCH 081/450] tracing: Remove code which merges duplicates
 
 We now have the logic to detect and remove duplicates in the
 tracing_map hash table. The code which merges duplicates in the
@@ -198,5 +198,5 @@ index 5b5bbf8ae550..de57887c0670 100644
  	void			(*elt_clear)(struct tracing_map_elt *elt);
  	void			(*elt_init)(struct tracing_map_elt *elt);
 -- 
-2.19.1
+2.19.2
 

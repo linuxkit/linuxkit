@@ -1,7 +1,7 @@
 From 568b9c5ae7869762a8542d01cc003747610ac928 Mon Sep 17 00:00:00 2001
 From: Yang Shi <yang.shi@windriver.com>
 Date: Mon, 16 Sep 2013 14:09:19 -0700
-Subject: [PATCH 205/437] hrtimer: Move schedule_work call to helper thread
+Subject: [PATCH 205/450] hrtimer: Move schedule_work call to helper thread
 
 When run ltp leapsec_timer test, the following call trace is caught:
 
@@ -93,5 +93,5 @@ index ec9f271aa437..f824b9721ce7 100644
  #else
  
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From e12239c4111671341a3541f2d5bf0c11ab461a95 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 381/437] sched: Add support for lazy preemption
+Subject: [PATCH 381/450] sched: Add support for lazy preemption
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -647,5 +647,5 @@ index dfbe55f3e6ac..74a4bfc2c6b7 100644
  		trace_seq_printf(s, "%x", entry->migrate_disable);
  	else
 -- 
-2.19.1
+2.19.2
 

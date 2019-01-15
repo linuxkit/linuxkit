@@ -1,7 +1,7 @@
 From 10ac2a3a86592c59cd652aef2a60100d1efeca7c Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 189/437] timers: Prepare for full preemption
+Subject: [PATCH 189/450] timers: Prepare for full preemption
 
 When softirqs can be preempted we need to make sure that cancelling
 the timer from the active thread can not deadlock vs. a running timer
@@ -171,5 +171,5 @@ index 3b6c7e287f23..97c28b96aeb1 100644
  }
  
 -- 
-2.19.1
+2.19.2
 
