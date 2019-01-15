@@ -1,7 +1,7 @@
 From 2d09d245af35a2bb5b8ca6f92a26caf052e38ff6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 3 Apr 2011 11:57:29 +0200
-Subject: [PATCH 168/437] genirq: Force interrupt thread on RT
+Subject: [PATCH 168/450] genirq: Force interrupt thread on RT
 
 Force threaded_irqs and optimize the code (force_irqthreads) in regard
 to this.
@@ -52,5 +52,5 @@ index 4cd85870f00e..f9934b6d879e 100644
  
  static void __synchronize_hardirq(struct irq_desc *desc)
 -- 
-2.19.1
+2.19.2
 

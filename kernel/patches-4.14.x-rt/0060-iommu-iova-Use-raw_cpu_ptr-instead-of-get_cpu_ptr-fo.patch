@@ -1,7 +1,7 @@
 From fdbd8254ab62179f7aee6033e4ff8353b4ade395 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 17:21:40 +0200
-Subject: [PATCH 060/437] iommu/iova: Use raw_cpu_ptr() instead of
+Subject: [PATCH 060/450] iommu/iova: Use raw_cpu_ptr() instead of
  get_cpu_ptr() for ->fq
 
 get_cpu_ptr() disabled preemption and returns the ->fq object of the
@@ -44,5 +44,5 @@ index 33edfa794ae9..b30900025c62 100644
  EXPORT_SYMBOL_GPL(queue_iova);
  
 -- 
-2.19.1
+2.19.2
 

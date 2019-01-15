@@ -1,7 +1,7 @@
 From 7e36685a07adb7a6bb5e1c8ca09b359dad8ba444 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 23 Nov 2017 16:39:14 +0100
-Subject: [PATCH 047/437] softirq: Remove tasklet_hrtimer
+Subject: [PATCH 047/450] softirq: Remove tasklet_hrtimer
 
 There are no more tasklet_hrtimer users of this interface.
 Remove it.
@@ -113,5 +113,5 @@ index a4c87cf27f9d..1a5dfc8dcf49 100644
  {
  	int cpu;
 -- 
-2.19.1
+2.19.2
 

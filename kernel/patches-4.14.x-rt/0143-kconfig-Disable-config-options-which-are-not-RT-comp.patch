@@ -1,7 +1,7 @@
 From 8d96e538d166cc8dbd5af0889b59e4bc82107bf7 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 24 Jul 2011 12:11:43 +0200
-Subject: [PATCH 143/437] kconfig: Disable config options which are not RT
+Subject: [PATCH 143/450] kconfig: Disable config options which are not RT
  compatible
 
 Disable stuff which is known to have issues on RT
@@ -38,5 +38,5 @@ index 59efbd3337e0..3df123c0bc3f 100644
  	select RADIX_TREE_MULTIORDER
  	help
 -- 
-2.19.1
+2.19.2
 

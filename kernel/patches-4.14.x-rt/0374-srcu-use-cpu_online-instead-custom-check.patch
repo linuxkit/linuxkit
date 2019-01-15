@@ -1,7 +1,7 @@
 From caaa4d10322908e9a347914745e83e2a55078869 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Sep 2017 14:43:41 +0200
-Subject: [PATCH 374/437] srcu: use cpu_online() instead custom check
+Subject: [PATCH 374/450] srcu: use cpu_online() instead custom check
 
 The current check via srcu_online is slightly racy because after looking
 at srcu_online there could be an interrupt that interrupted us long
@@ -103,5 +103,5 @@ index f37d06ec5ee1..9eb9cfc9c9c1 100644
  }
  
 -- 
-2.19.1
+2.19.2
 

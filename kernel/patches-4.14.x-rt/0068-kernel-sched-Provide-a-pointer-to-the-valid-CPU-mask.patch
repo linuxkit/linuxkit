@@ -1,7 +1,7 @@
 From 48bcffa01b2e8a54e5b8fb0100dffce5f3864bea Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
-Subject: [PATCH 068/437] kernel: sched: Provide a pointer to the valid CPU
+Subject: [PATCH 068/450] kernel: sched: Provide a pointer to the valid CPU
  mask
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -803,5 +803,5 @@ index 5522692100ba..8b4be8e1802a 100644
  	trace_foo_with_template_simple("HELLO", cnt);
  
 -- 
-2.19.1
+2.19.2
 

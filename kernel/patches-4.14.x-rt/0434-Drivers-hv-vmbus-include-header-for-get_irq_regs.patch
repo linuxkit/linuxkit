@@ -1,7 +1,7 @@
 From 8fd20e50ef3f7e79440646e5152d2070c2894059 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 29 Aug 2018 21:59:04 +0200
-Subject: [PATCH 434/437] Drivers: hv: vmbus: include header for get_irq_regs()
+Subject: [PATCH 434/450] Drivers: hv: vmbus: include header for get_irq_regs()
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -39,5 +39,5 @@ index 49569f8fe038..a3608cd52805 100644
  #include <linux/atomic.h>
  #include <linux/hyperv.h>
 -- 
-2.19.1
+2.19.2
 

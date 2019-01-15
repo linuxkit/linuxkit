@@ -1,7 +1,7 @@
 From a4960078e4a0625bb9f468116b19e35061558a33 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:00 -0600
-Subject: [PATCH 103/437] tracing: Add 'onmatch' hist trigger action support
+Subject: [PATCH 103/450] tracing: Add 'onmatch' hist trigger action support
 
 Add an 'onmatch(matching.event).<synthetic_event_name>(param list)'
 hist trigger action which is invoked with the set of variables or
@@ -689,5 +689,5 @@ index 0cf7cc32dee4..34be7af7cc1f 100644
  		seq_printf(m, " if %s", data->filter_str);
  
 -- 
-2.19.1
+2.19.2
 

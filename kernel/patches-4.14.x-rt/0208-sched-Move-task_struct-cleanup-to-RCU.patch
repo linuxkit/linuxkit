@@ -1,7 +1,7 @@
 From 4e0c0cf0c61f3c059b8836923edda1afca0e46e1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 208/437] sched: Move task_struct cleanup to RCU
+Subject: [PATCH 208/450] sched: Move task_struct cleanup to RCU
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -91,5 +91,5 @@ index d7f20bdbb465..677d17d7efb5 100644
  void __init __weak arch_task_cache_init(void) { }
  
 -- 
-2.19.1
+2.19.2
 

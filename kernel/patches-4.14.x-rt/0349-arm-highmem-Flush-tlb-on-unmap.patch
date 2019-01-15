@@ -1,7 +1,7 @@
 From 9ea265c764addc8bd1864075d10a19de2a54f470 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 11 Mar 2013 21:37:27 +0100
-Subject: [PATCH 349/437] arm/highmem: Flush tlb on unmap
+Subject: [PATCH 349/450] arm/highmem: Flush tlb on unmap
 
 The tlb should be flushed on unmap and thus make the mapping entry
 invalid. This is only done in the non-debug case which does not look
@@ -29,5 +29,5 @@ index d02f8187b1cc..eb4b225d28c9 100644
  	} else if (vaddr >= PKMAP_ADDR(0) && vaddr < PKMAP_ADDR(LAST_PKMAP)) {
  		/* this address was obtained through kmap_high_get() */
 -- 
-2.19.1
+2.19.2
 

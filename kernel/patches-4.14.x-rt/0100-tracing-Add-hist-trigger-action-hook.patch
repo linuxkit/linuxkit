@@ -1,7 +1,7 @@
 From bc65875eba8adfc360b79baf7cc2772354f4824a Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:57 -0600
-Subject: [PATCH 100/437] tracing: Add hist trigger action hook
+Subject: [PATCH 100/450] tracing: Add hist trigger action hook
 
 Add a hook for executing extra actions whenever a histogram entry is
 added or updated.
@@ -217,5 +217,5 @@ index 2bc1f76915ef..e5fea3cf60e9 100644
  	if (ret)
  		goto out_unreg;
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From 9fdfae1b4d52c2db110dd6c8558833d7417b1e74 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 3 May 2018 17:46:31 +0200
-Subject: [PATCH 251/437] rbtree: don't include the rcu header
+Subject: [PATCH 251/450] rbtree: don't include the rcu header
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -170,5 +170,5 @@ index dbadbdbc8643..a2dc82b3118a 100644
   * rcu_swap_protected() - swap an RCU and a regular pointer
   * @rcu_ptr: RCU pointer
 -- 
-2.19.1
+2.19.2
 

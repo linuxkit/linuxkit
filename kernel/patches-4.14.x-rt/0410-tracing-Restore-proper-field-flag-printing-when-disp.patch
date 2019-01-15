@@ -1,7 +1,7 @@
 From fde475b48caa0305c67f9be0779b4a40bb395d80 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Thu, 26 Apr 2018 20:04:47 -0500
-Subject: [PATCH 410/437] tracing: Restore proper field flag printing when
+Subject: [PATCH 410/450] tracing: Restore proper field flag printing when
  displaying triggers
 
 [ commit 608940dabe1bd2ce4c97524004ec86637cf80f2c ]
@@ -64,5 +64,5 @@ index 9dac8bae4f34..4745ed588607 100644
  
  static int event_hist_trigger_print(struct seq_file *m,
 -- 
-2.19.1
+2.19.2
 

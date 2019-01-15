@@ -1,7 +1,7 @@
 From 7bb975338a8f37db0135bb469a0763c0f9089327 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:25:13 +0200
-Subject: [PATCH 263/437] RCU: we need to skip that warning but only on
+Subject: [PATCH 263/450] RCU: we need to skip that warning but only on
  sleeping locks
 
 This check is okay for upstream. On RT we trigger this while blocking on
@@ -37,5 +37,5 @@ index 181e2487c8b8..787321ad4f5f 100644
  	    !t->rcu_read_unlock_special.b.blocked) {
  
 -- 
-2.19.1
+2.19.2
 

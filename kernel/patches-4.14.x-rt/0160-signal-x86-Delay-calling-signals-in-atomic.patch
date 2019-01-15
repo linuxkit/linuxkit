@@ -1,7 +1,7 @@
 From 4961b4ad4cf8bba0c6e80477f4d0045c51f3f2c1 Mon Sep 17 00:00:00 2001
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
-Subject: [PATCH 160/437] signal/x86: Delay calling signals in atomic
+Subject: [PATCH 160/450] signal/x86: Delay calling signals in atomic
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -149,5 +149,5 @@ index 374d60ea3699..c6266045e1b3 100644
   * Nuke all other threads in the group.
   */
 -- 
-2.19.1
+2.19.2
 

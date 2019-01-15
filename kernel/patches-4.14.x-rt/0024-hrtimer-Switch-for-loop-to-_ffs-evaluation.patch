@@ -1,7 +1,7 @@
 From bb3a1b059ac7a6e2ada2d4045a8a18a125627e65 Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:12:59 +0100
-Subject: [PATCH 024/437] hrtimer: Switch for loop to _ffs() evaluation
+Subject: [PATCH 024/450] hrtimer: Switch for loop to _ffs() evaluation
 
 Looping over all clock bases to find active bits is suboptimal if not all
 bases are active.
@@ -86,5 +86,5 @@ index 476fe683e8ed..85f9335d0d60 100644
  
  		while ((node = timerqueue_getnext(&base->active))) {
 -- 
-2.19.1
+2.19.2
 

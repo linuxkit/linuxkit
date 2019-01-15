@@ -1,7 +1,7 @@
 From 2c72b0a19b6f6dcfe4dacb756e598410054e718e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 262/437] ptrace: fix ptrace vs tasklist_lock race
+Subject: [PATCH 262/450] ptrace: fix ptrace vs tasklist_lock race
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -161,5 +161,5 @@ index b34002b6c91b..c9f8f0699885 100644
  		task_rq_unlock(rq, p, &rf);
  
 -- 
-2.19.1
+2.19.2
 

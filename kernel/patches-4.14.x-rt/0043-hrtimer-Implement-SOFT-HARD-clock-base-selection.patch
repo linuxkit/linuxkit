@@ -1,7 +1,7 @@
 From 236c74d642c5fb89d4733b97b4f85ba6d1f98fde Mon Sep 17 00:00:00 2001
 From: Anna-Maria Gleixner <anna-maria@linutronix.de>
 Date: Wed, 20 Dec 2017 17:13:18 +0100
-Subject: [PATCH 043/437] hrtimer: Implement SOFT/HARD clock base selection
+Subject: [PATCH 043/450] hrtimer: Implement SOFT/HARD clock base selection
 
 All prerequisites to handle hrtimers for expiry in either hard or soft
 interrupt context are in place.
@@ -57,5 +57,5 @@ index 66d7a12d7256..9947480ad731 100644
  void hrtimer_init(struct hrtimer *timer, clockid_t clock_id,
  		  enum hrtimer_mode mode)
 -- 
-2.19.1
+2.19.2
 

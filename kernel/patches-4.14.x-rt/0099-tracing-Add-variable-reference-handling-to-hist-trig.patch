@@ -1,7 +1,7 @@
 From ba702b3dad3b6d3b50caac695d99bf3e30e34199 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:56 -0600
-Subject: [PATCH 099/437] tracing: Add variable reference handling to hist
+Subject: [PATCH 099/450] tracing: Add variable reference handling to hist
  triggers
 
 Add the necessary infrastructure to allow the variables defined on one
@@ -963,5 +963,5 @@ index 4c269f2e00a4..24d42350d738 100644
  traceon_trigger(struct event_trigger_data *data, void *rec,
  		struct ring_buffer_event *event)
 -- 
-2.19.1
+2.19.2
 

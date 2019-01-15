@@ -1,7 +1,7 @@
 From d04ec21118f4a3360a274c5bbb3d7c39c9b09e63 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 16:36:39 +0200
-Subject: [PATCH 253/437] rtmutex: export lockdep-less version of rt_mutex's
+Subject: [PATCH 253/450] rtmutex: export lockdep-less version of rt_mutex's
  lock, trylock and unlock
 
 Required for lock implementation ontop of rtmutex.
@@ -160,5 +160,5 @@ index 3b10fde6fd1f..ff17912f869c 100644
  				     struct hrtimer_sleeper *timeout,
  				     enum rtmutex_chainwalk chwalk,
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From bbeeb3d6b7c54f8bc6c3b96adcc16444961e23e1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
-Subject: [PATCH 225/437] hotplug: Lightweight get online cpus
+Subject: [PATCH 225/450] hotplug: Lightweight get online cpus
 
 get_online_cpus() is a heavy weight function which involves a global
 mutex. migrate_disable() wants a simpler construct which prevents only
@@ -96,5 +96,5 @@ index b5738acc4bf1..e4c9a2f745cf 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 -- 
-2.19.1
+2.19.2
 

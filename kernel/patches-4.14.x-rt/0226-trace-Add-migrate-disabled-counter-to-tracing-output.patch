@@ -1,7 +1,7 @@
 From 5590a85f742ef9adfea2559e265bf36d04576de3 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 21:56:42 +0200
-Subject: [PATCH 226/437] trace: Add migrate-disabled counter to tracing output
+Subject: [PATCH 226/450] trace: Add migrate-disabled counter to tracing output
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -81,5 +81,5 @@ index 4500b00e4e36..dfbe55f3e6ac 100644
  }
  
 -- 
-2.19.1
+2.19.2
 

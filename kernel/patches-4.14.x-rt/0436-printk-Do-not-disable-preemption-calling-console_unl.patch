@@ -1,7 +1,7 @@
 From cf8995800318059df3252b7c58fca53dc3e59062 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Tue, 18 Dec 2018 14:30:10 -0500
-Subject: [PATCH 436/437] printk: Do not disable preemption calling
+Subject: [PATCH 436/450] printk: Do not disable preemption calling
  console_unlock() in PREEMPT_RT
 
 A stable backport placed open coded preempt_disable() around console_unlock()
@@ -41,5 +41,5 @@ index 8a7c4f79fca0..029ae3caa80e 100644
  
  	return printed_len;
 -- 
-2.19.1
+2.19.2
 

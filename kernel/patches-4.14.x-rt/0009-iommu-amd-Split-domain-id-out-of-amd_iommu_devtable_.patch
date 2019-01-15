@@ -1,7 +1,7 @@
 From 5ef7777092fe740f67d1e304019e3bea28eb8fce Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:35 +0100
-Subject: [PATCH 009/437] iommu/amd: Split domain id out of
+Subject: [PATCH 009/450] iommu/amd: Split domain id out of
  amd_iommu_devtable_lock
 
 Upstream commit 2bc00180890427dcc092b2f2b0d03c904bcade29
@@ -64,5 +64,5 @@ index 50b6cab604aa..ccf9d1d08983 100644
  
  #define DEFINE_FREE_PT_FN(LVL, FN)				\
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From e81731c6c75b86e46ce4ce026bcf274583814ef2 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Wed, 28 Mar 2018 15:10:55 -0500
-Subject: [PATCH 120/437] tracing: Add action comparisons when testing matching
+Subject: [PATCH 120/450] tracing: Add action comparisons when testing matching
  hist triggers
 
 Actions also need to be considered when checking for matching triggers
@@ -86,5 +86,5 @@ index 9def33acb5eb..514ec0b31eed 100644
  }
  
 -- 
-2.19.1
+2.19.2
 

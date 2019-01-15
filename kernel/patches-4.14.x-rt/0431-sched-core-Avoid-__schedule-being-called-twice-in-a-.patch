@@ -1,7 +1,7 @@
 From 339ab2c54f152afd0404e49eaa811e16f0f8ba4a Mon Sep 17 00:00:00 2001
 From: Daniel Bristot de Oliveira <bristot@redhat.com>
 Date: Mon, 30 Jul 2018 15:00:00 +0200
-Subject: [PATCH 431/437] sched/core: Avoid __schedule() being called twice in
+Subject: [PATCH 431/450] sched/core: Avoid __schedule() being called twice in
  a row
 
 [ Upstream commit 2bb94c48b2ffaabf8c15a51e5cc1b4c541988cab ]
@@ -59,5 +59,5 @@ index 97b690d741f4..e1fc94836fe0 100644
  	if (tsk_is_pi_blocked(tsk))
  		return;
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From 683b12cfb28b91fbb49cddbdbb8c1962d17cd855 Mon Sep 17 00:00:00 2001
 From: Daniel Bristot de Oliveira <bristot@redhat.com>
 Date: Mon, 26 Jun 2017 17:07:15 +0200
-Subject: [PATCH 222/437] rt: Increase/decrease the nr of migratory tasks when
+Subject: [PATCH 222/450] rt: Increase/decrease the nr of migratory tasks when
  enabling/disabling migration
 
 There is a problem in the migrate_disable()/enable() implementation
@@ -157,5 +157,5 @@ index 82da2b9facc9..b5738acc4bf1 100644
  	if (p->migrate_disable_update) {
  		struct rq *rq;
 -- 
-2.19.1
+2.19.2
 

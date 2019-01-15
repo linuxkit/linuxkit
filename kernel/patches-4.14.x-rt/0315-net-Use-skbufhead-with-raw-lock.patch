@@ -1,7 +1,7 @@
 From eb7077b932491031b0470d697306c842b256a424 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 12 Jul 2011 15:38:34 +0200
-Subject: [PATCH 315/437] net: Use skbufhead with raw lock
+Subject: [PATCH 315/450] net: Use skbufhead with raw lock
 
 Use the rps lock as rawlock so we can keep irq-off regions. It looks low
 latency. However we can't kfree() from this context therefore we defer this
@@ -163,5 +163,5 @@ index 8972786d17de..b26b1b82f680 100644
  		sd->output_queue_tailp = &sd->output_queue;
  #ifdef CONFIG_RPS
 -- 
-2.19.1
+2.19.2
 

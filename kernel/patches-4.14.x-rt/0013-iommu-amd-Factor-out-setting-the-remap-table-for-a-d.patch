@@ -1,7 +1,7 @@
 From 78b50efad4c03293a63d9b482f5c33f8186bfc9f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:39 +0100
-Subject: [PATCH 013/437] iommu/amd: Factor out setting the remap table for a
+Subject: [PATCH 013/450] iommu/amd: Factor out setting the remap table for a
  devid
 
 Upstream commit 2fcc1e8ac4a8514c64f946178fc36c2e30e56a41
@@ -68,5 +68,5 @@ index 561664b0e609..473ec78ba50c 100644
  out:
  	iommu_completion_wait(iommu);
 -- 
-2.19.1
+2.19.2
 

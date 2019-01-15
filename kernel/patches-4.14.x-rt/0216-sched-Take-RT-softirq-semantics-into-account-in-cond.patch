@@ -1,7 +1,7 @@
 From 3f298647538a3d62d66db495dc930dc92db762ff Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Jul 2011 09:56:44 +0200
-Subject: [PATCH 216/437] sched: Take RT softirq semantics into account in
+Subject: [PATCH 216/450] sched: Take RT softirq semantics into account in
  cond_resched()
 
 The softirq semantics work different on -RT. There is no SOFTIRQ_MASK in
@@ -57,5 +57,5 @@ index bcb5ea038266..148e7627c595 100644
  /**
   * yield - yield the current processor to other threads.
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From be1cdd9536bb6be78ddaa8a461955dc5d701bfc1 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:52:05 -0600
-Subject: [PATCH 108/437] tracing: Add 'last error' error facility for hist
+Subject: [PATCH 108/450] tracing: Add 'last error' error facility for hist
  triggers
 
 With the addition of variables and actions, it's become necessary to
@@ -506,5 +506,5 @@ index c8cfc56ff3ae..3856f173559a 100644
   out_unreg:
  	cmd_ops->unreg(glob+1, trigger_ops, trigger_data, file);
 -- 
-2.19.1
+2.19.2
 

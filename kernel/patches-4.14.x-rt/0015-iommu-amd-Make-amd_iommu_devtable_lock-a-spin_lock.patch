@@ -1,7 +1,7 @@
 From 7febe26307d9a7f74f5e1509961b682017caaa31 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Mar 2018 16:22:41 +0100
-Subject: [PATCH 015/437] iommu/amd: Make amd_iommu_devtable_lock a spin_lock
+Subject: [PATCH 015/450] iommu/amd: Make amd_iommu_devtable_lock a spin_lock
 
 Upstream commit 2cd1083d79a0a8c223af430ca97884c28a1e2fc0
 
@@ -75,5 +75,5 @@ index c9e703260324..67008031537a 100644
  
  static void protection_domain_free(struct protection_domain *domain)
 -- 
-2.19.1
+2.19.2
 

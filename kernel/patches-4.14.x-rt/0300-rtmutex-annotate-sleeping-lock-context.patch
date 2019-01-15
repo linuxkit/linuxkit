@@ -1,7 +1,7 @@
 From bbe072eda000ee970b84bf71ff4935f03c5b60af Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 3 May 2018 17:16:26 +0200
-Subject: [PATCH 300/437] rtmutex: annotate sleeping lock context
+Subject: [PATCH 300/450] rtmutex: annotate sleeping lock context
 
 The RCU code complains on schedule() within a rcu_readlock() section.
 The valid scenario on -RT is if a sleeping is held. In order to suppress
@@ -239,5 +239,5 @@ index ce2c2d04cbaa..b59e009087a9 100644
  		current->flags &= ~PF_NOFREEZE;
  }
 -- 
-2.19.1
+2.19.2
 

@@ -1,7 +1,7 @@
 From 6683d5da8223ddf11782866fce26ff38e56da578 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Jan 2016 16:34:17 +0100
-Subject: [PATCH 236/437] softirq: split timer softirqs out of ksoftirqd
+Subject: [PATCH 236/450] softirq: split timer softirqs out of ksoftirqd
 
 The softirqd runs in -RT with SCHED_FIFO (prio 1) and deals mostly with
 timer wakeup which can not happen in hardirq context. The prio has been
@@ -210,5 +210,5 @@ index 5650395b8d6a..ff8471aa1c0b 100644
  }
  early_initcall(spawn_ksoftirqd);
 -- 
-2.19.1
+2.19.2
 

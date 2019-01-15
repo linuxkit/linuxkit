@@ -1,7 +1,7 @@
 From c3de8611575e0e51050210b128f9340bb006964a Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:53 -0600
-Subject: [PATCH 096/437] tracing: Generalize per-element hist trigger data
+Subject: [PATCH 096/450] tracing: Generalize per-element hist trigger data
 
 Up until now, hist triggers only needed per-element support for saving
 'comm' data, which was saved directly as a private data pointer.
@@ -160,5 +160,5 @@ index d2f01f3f26e1..893f65ce31a5 100644
  			uval = *(u64 *)(key + key_field->offset);
  			seq_printf(m, "%s: %-16s[%10llu]", field_name,
 -- 
-2.19.1
+2.19.2
 

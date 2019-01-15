@@ -1,7 +1,7 @@
 From 390a5ced0ef719df2a79efefb432898a454b628f Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sun, 16 Oct 2016 05:08:30 +0200
-Subject: [PATCH 382/437] ftrace: Fix trace header alignment
+Subject: [PATCH 382/450] ftrace: Fix trace header alignment
 
 Line up helper arrows to the right column.
 
@@ -47,5 +47,5 @@ index 18c88eb19b5e..4fc60e5ec4b9 100644
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
 -- 
-2.19.1
+2.19.2
 

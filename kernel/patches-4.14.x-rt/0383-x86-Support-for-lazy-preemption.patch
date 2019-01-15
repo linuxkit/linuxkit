@@ -1,7 +1,7 @@
 From fd1e22d07c1cfd9b044d2651d635faeea31409ee Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
-Subject: [PATCH 383/437] x86: Support for lazy preemption
+Subject: [PATCH 383/450] x86: Support for lazy preemption
 
 Implement the x86 pieces for lazy preempt.
 
@@ -236,5 +236,5 @@ index 76417a9aab73..62c3e27c8e1c 100644
  	/* TLB state for the entry code */
  	OFFSET(TLB_STATE_user_pcid_flush_mask, tlb_state, user_pcid_flush_mask);
 -- 
-2.19.1
+2.19.2
 

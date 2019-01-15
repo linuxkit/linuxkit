@@ -1,7 +1,7 @@
 From 63731b6eb06799763c7f72a36954341fffc9d003 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:35 -0600
-Subject: [PATCH 078/437] tracing: Move hist trigger Documentation to
+Subject: [PATCH 078/450] tracing: Move hist trigger Documentation to
  histogram.txt
 
 The hist trigger Documentation takes up a large part of events.txt -
@@ -3150,5 +3150,5 @@ index 000000000000..b2145f44b190
 +        Entries: 7
 +        Dropped: 0
 -- 
-2.19.1
+2.19.2
 

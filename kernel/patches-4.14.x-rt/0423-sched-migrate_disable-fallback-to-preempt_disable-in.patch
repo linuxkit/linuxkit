@@ -1,7 +1,7 @@
 From db458c25559ed124e7b2dd0feeb8161f925fd4c2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
-Subject: [PATCH 423/437] sched/migrate_disable: fallback to preempt_disable()
+Subject: [PATCH 423/450] sched/migrate_disable: fallback to preempt_disable()
  instead barrier()
 
 [ Upstream commit 10e90c155bbc7cab420f47694404f8f9fe33c2b2 ]
@@ -202,5 +202,5 @@ index 3108da1ee253..b5b43861c2b6 100644
  #endif
  	P(nr_cpus_allowed);
 -- 
-2.19.1
+2.19.2
 

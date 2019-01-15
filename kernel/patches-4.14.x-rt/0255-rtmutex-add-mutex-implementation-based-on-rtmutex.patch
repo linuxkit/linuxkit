@@ -1,7 +1,7 @@
 From 218562664afcb7a8d6439e04cbe06fb2e4a322f6 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:17:03 +0200
-Subject: [PATCH 255/437] rtmutex: add mutex implementation based on rtmutex
+Subject: [PATCH 255/450] rtmutex: add mutex implementation based on rtmutex
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -378,5 +378,5 @@ index 000000000000..4f81595c0f52
 +}
 +EXPORT_SYMBOL(atomic_dec_and_mutex_lock);
 -- 
-2.19.1
+2.19.2
 

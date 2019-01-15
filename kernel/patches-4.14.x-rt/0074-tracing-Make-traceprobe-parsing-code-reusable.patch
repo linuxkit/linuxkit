@@ -1,7 +1,7 @@
 From f8a450144ee205d29baae926ec23478a12f25476 Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Fri, 22 Sep 2017 14:58:20 -0500
-Subject: [PATCH 074/437] tracing: Make traceprobe parsing code reusable
+Subject: [PATCH 074/450] tracing: Make traceprobe parsing code reusable
 
 traceprobe_probes_write() and traceprobe_command() actually contain
 nothing that ties them to kprobes - the code is generically useful for
@@ -333,5 +333,5 @@ index ea0d90a31fc9..2ccfbb8efeb2 100644
  
  static const struct file_operations uprobe_events_ops = {
 -- 
-2.19.1
+2.19.2
 

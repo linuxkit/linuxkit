@@ -1,7 +1,7 @@
 From e2bbd29cab8010be36eb88dc22c5e3addc9d7a2c Mon Sep 17 00:00:00 2001
 From: Tom Zanussi <tom.zanussi@linux.intel.com>
 Date: Mon, 15 Jan 2018 20:51:44 -0600
-Subject: [PATCH 087/437] tracing: Break out hist trigger assignment parsing
+Subject: [PATCH 087/450] tracing: Break out hist trigger assignment parsing
 
 This will make it easier to add variables, and makes the parsing code
 cleaner regardless.
@@ -114,5 +114,5 @@ index 9126be52ff4d..4935290fd1e8 100644
  			goto free;
  		}
 -- 
-2.19.1
+2.19.2
 
