@@ -1,4 +1,4 @@
-From fa601b3738b099bd9fee196e34a0539fe56e3deb Mon Sep 17 00:00:00 2001
+From 72032d9b5ee4b9adf2f577f8e7b9404763ffe7b5 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:16 -0700
 Subject: [PATCH 18/21] hyper-v: trace channel events
