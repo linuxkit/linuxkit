@@ -1,0 +1,7 @@
+image: losetup
+config:
+  binds:
+    - /dev:/dev
+    - /var:/var
+  capabilities:
+    - CAP_SYS_ADMIN
