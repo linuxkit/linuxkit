@@ -9,9 +9,10 @@ import (
 	"strings"
 
 	"github.com/gophercloud/gophercloud"
-	"github.com/gophercloud/gophercloud/openstack"
 	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/imagedata"
 	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/images"
+	"github.com/gophercloud/utils/openstack/clientconfig"
+
 	log "github.com/sirupsen/logrus"
 )
 
@@ -25,14 +26,7 @@ func pushOpenstack(args []string) {
 		fmt.Printf("Options:\n\n")
 		flags.PrintDefaults()
 	}
-	authurlFlag := flags.String("authurl", "", "The URL of the OpenStack identity service, i.e https://keystone.example.com:5000/v3")
 	imageName := flags.String("img-name", "", "A unique name for the image, if blank the filename will be used")
-	passwordFlag := flags.String("password", "", "Password for the specified username")
-	projectNameFlag := flags.String("project", "", "Name of the Project (aka Tenant) to be used")
-	userDomainFlag := flags.String("domain", "Default", "Domain name")
-	usernameFlag := flags.String("username", "", "Username with permissions to upload image")
-	cacertFlag := flags.String("cacert", "", "CA certificate bundle file")
-	insecureFlag := flags.Bool("insecure", false, "Disable server certificate verification")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -48,41 +42,15 @@ func pushOpenstack(args []string) {
 	// Check that the file both exists, and can be read
 	checkFile(filePath)
 
-	authurl := getStringValue(authurlVar, *authurlFlag, "")
-	password := getStringValue(passwordVar, *passwordFlag, "")
-	projectName := getStringValue(projectNameVar, *projectNameFlag, "")
-	userDomain := getStringValue(userDomainVar, *userDomainFlag, "")
-	username := getStringValue(usernameVar, *usernameFlag, "")
-	cacert := getStringValue(cacertVar, *cacertFlag, "")
-	insecure := getBoolValue(insecureVar, *insecureFlag)
-
-	authOpts := gophercloud.AuthOptions{
-		DomainName:       userDomain,
-		IdentityEndpoint: authurl,
-		Password:         password,
-		TenantName:       projectName,
-		Username:         username,
-	}
-
-	provider, err := openstack.NewClient(authOpts.IdentityEndpoint)
+	client, err := clientconfig.NewServiceClient("image", nil)
 	if err != nil {
-		log.Fatalf("Failed to connect to OpenStack: %s", err)
+		log.Fatalf("Error connecting to your OpenStack cloud: %s", err)
 	}
 
-	provider.HTTPClient, err = openstackHTTPClient(cacert, insecure)
-	if err != nil {
-		log.Fatalf("Failed to authenticate with OpenStack: %s", err)
-	}
-
-	err = openstack.Authenticate(provider, authOpts)
-	if err != nil {
-		log.Fatalf("Failed to authenticate with OpenStack: %s", err)
-	}
-
-	createOpenStackImage(filePath, *imageName, provider)
+	createOpenStackImage(filePath, *imageName, client)
 }
 
-func createOpenStackImage(filePath string, imageName string, provider *gophercloud.ProviderClient) {
+func createOpenStackImage(filePath string, imageName string, client *gophercloud.ServiceClient) {
 	// Image formats that are supported by both LinuxKit and OpenStack Glance V2
 	formats := []string{"ami", "vhd", "vhdx", "vmdk", "raw", "qcow2", "iso"}
 
@@ -106,10 +74,6 @@ func createOpenStackImage(filePath string, imageName string, provider *gopherclo
 		imageName = fileName
 	}
 
-	client, err := openstack.NewImageServiceV2(provider, gophercloud.EndpointOpts{})
-	if err != nil {
-		log.Fatalf("Unable to create Image V2 client: %s", err)
-	}
 	imageOpts := images.CreateOpts{
 		Name:            imageName,
 		ContainerFormat: "bare",
