@@ -8,6 +8,7 @@ RUN apk add --no-cache --initdb -p /out \
     ca-certificates \
     musl \
     openssh-server \
+    rsync \
     tini \
     util-linux \
     wireguard-tools \

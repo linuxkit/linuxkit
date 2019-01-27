@@ -28,7 +28,7 @@ services:
     env:
      - INSECURE=true
   - name: sshd
-    image: linuxkit/sshd:c4bc89cf0d66733c923ab9cb46198b599eb99320
+    image: linuxkit/sshd:a0ac44ab1cbfd14e368ed139c6a4e128f2a33513
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
