@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.14.95 Kernel Configuration
+# Linux/x86 4.14.96 Kernel Configuration
 #
 CONFIG_64BIT=y
 CONFIG_X86_64=y
@@ -3541,9 +3541,11 @@ CONFIG_CEPH_FSCACHE=y
 CONFIG_CEPH_FS_POSIX_ACL=y
 CONFIG_CIFS=y
 # CONFIG_CIFS_STATS is not set
+CONFIG_CIFS_ALLOW_INSECURE_LEGACY=y
 # CONFIG_CIFS_WEAK_PW_HASH is not set
 # CONFIG_CIFS_UPCALL is not set
 CONFIG_CIFS_XATTR=y
+# CONFIG_CIFS_POSIX is not set
 # CONFIG_CIFS_ACL is not set
 CONFIG_CIFS_DEBUG=y
 # CONFIG_CIFS_DEBUG2 is not set
