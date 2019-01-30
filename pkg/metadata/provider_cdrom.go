@@ -10,36 +10,50 @@ import (
 
 const (
 	configFile = "config"
-	cdromDevs  = "/dev/sr[0-9]*"
+	fsType     = "iso9660"
 )
 
-// ProviderCDROM is the type implementing the Provider interface for CDROMs
-// It looks for a file called 'configFile' in the root
-type ProviderCDROM struct {
+// ProviderISO is the type implementing the Provider interface for any
+// disks or partions of iso9660 format that contain /config
+type ProviderISO struct {
 	device     string
 	mountPoint string
 	err        error
 	data       []byte
 }
 
-// ListCDROMs lists all the cdroms in the system
-func ListCDROMs() []Provider {
-	cdroms, err := filepath.Glob(cdromDevs)
-	if err != nil {
-		// Glob can only error on invalid pattern
-		panic(fmt.Sprintf("Invalid glob pattern: %s", cdromDevs))
+func blockDevices() []string {
+	return []string{
+		// SCSI CD-ROM devices
+		"/dev/sr[0-9]*",
+		"/dev/scd[0-9]*",
+		// SCSI disk devices
+		"/dev/sd[a-z]*",
+		// MMC block devices
+		"/dev/mmcblk[0-9]*",
 	}
+}
+
+// ListDisks lists all the cdroms in the system
+func ListDisks() []Provider {
 	providers := []Provider{}
-	for _, device := range cdroms {
-		providers = append(providers, NewCDROM(device))
+	for _, s := range blockDevices() {
+		disks, err := filepath.Glob(s)
+		if err != nil {
+			// Glob can only error on invalid pattern
+			panic(fmt.Sprintf("Invalid glob pattern: %s", s))
+		}
+		for _, device := range disks {
+			providers = append(providers, NewProviderISO(device))
+		}
 	}
 	return providers
 }
 
-// NewCDROM returns a new ProviderCDROM
-func NewCDROM(device string) *ProviderCDROM {
-	mountPoint, err := ioutil.TempDir("", "cd")
-	p := ProviderCDROM{device, mountPoint, err, []byte{}}
+// NewProviderISO returns a new ProviderISO
+func NewProviderISO(device string) *ProviderISO {
+	mountPoint, err := ioutil.TempDir("", "mnt")
+	p := ProviderISO{device, mountPoint, err, []byte{}}
 	if err == nil {
 		if p.err = p.mount(); p.err == nil {
 			p.data, p.err = ioutil.ReadFile(path.Join(p.mountPoint, configFile))
@@ -49,27 +63,27 @@ func NewCDROM(device string) *ProviderCDROM {
 	return &p
 }
 
-func (p *ProviderCDROM) String() string {
-	return "CDROM " + p.device
+func (p *ProviderISO) String() string {
+	return "ISO " + p.device
 }
 
-// Probe checks if the CD has the right file
-func (p *ProviderCDROM) Probe() bool {
+// Probe checks if the disk has the right file
+func (p *ProviderISO) Probe() bool {
 	return len(p.data) != 0
 }
 
-// Extract gets both the CDROM specific and generic userdata
-func (p *ProviderCDROM) Extract() ([]byte, error) {
+// Extract gets both the disk specific and generic userdata
+func (p *ProviderISO) Extract() ([]byte, error) {
 	return p.data, p.err
 }
 
-// mount mounts a CDROM/DVD device under mountPoint
-func (p *ProviderCDROM) mount() error {
+// mount mounts a disk under mountPoint
+func (p *ProviderISO) mount() error {
 	// We may need to poll a little for device ready
-	return syscall.Mount(p.device, p.mountPoint, "iso9660", syscall.MS_RDONLY, "")
+	return syscall.Mount(p.device, p.mountPoint, fsType, syscall.MS_RDONLY, "")
 }
 
 // unmount removes the mount
-func (p *ProviderCDROM) unmount() {
+func (p *ProviderISO) unmount() {
 	_ = syscall.Unmount(p.mountPoint, 0)
 }

@@ -41,11 +41,11 @@ type Provider interface {
 // netProviders is a list of Providers offering metadata/userdata over the network
 var netProviders []Provider
 
-// cdromProviders is a list of Providers offering metadata/userdata data via CDROM
-var cdromProviders []Provider
+// isoProviders is a list of Providers offering metadata/userdata data via a disk
+var isoProviders []Provider
 
 func main() {
-	providers := []string{"aws", "gcp", "openstack", "scaleway", "vultr", "packet", "cdrom"}
+	providers := []string{"aws", "gcp", "openstack", "scaleway", "vultr", "packet", "iso"}
 	if len(os.Args) > 1 {
 		providers = os.Args[1:]
 	}
@@ -63,8 +63,8 @@ func main() {
 			netProviders = append(netProviders, NewScaleway())
 		case "vultr":
 			netProviders = append(netProviders, NewVultr())
-		case "cdrom":
-			cdromProviders = ListCDROMs()
+		case "iso":
+			isoProviders = ListDisks()
 		default:
 			log.Fatalf("Unrecognised metadata provider: %s", p)
 		}
@@ -87,7 +87,7 @@ func main() {
 		}
 	}
 	if !found {
-		for _, p = range cdromProviders {
+		for _, p = range isoProviders {
 			log.Printf("Trying %s", p.String())
 			if p.Probe() {
 				log.Printf("%s: Probe succeeded", p)
