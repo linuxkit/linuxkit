@@ -10,11 +10,14 @@ Alexander Slesarev <alex.slesarev@nudatasecurity.com>
 Alice Frosi <alice@linux.vnet.ibm.com>
 Amir Chaudhry <amir.chaudhry@docker.com>
 Anil Madhavapeddy <anil.madhavapeddy@docker.com>
+Asbjorn Enge <asbjorn@hanafjedle.net>
 Avi Deitcher <avi@deitcher.net>
+Ben Allen <bsallen@alcf.anl.gov>
 Bill Kerr <bill@generalbill.com>
 Brice Figureau <brice-puppet@daysofwonder.com>
 Carlton-Semple <carlton.semple@ibm.com>
 Chanwit Kaewkasi <chanwit@gmail.com>
+Christian Wuerdig <christian.wuerdig@gmail.com>
 Craig Ingram <cingram@heroku.com>
 Damiano Donati <damiano.donati@gmail.com>
 Dan Finneran <dan@thebsdbox.co.uk>
@@ -30,6 +33,7 @@ David Scott <dave.scott@docker.com>
 David Sheets <david.sheets@docker.com>
 Dennis Chen <dennis.chen@arm.com>
 Dieter Reuter <dieter.reuter@me.com>
+duraki <duraki@linuxmail.org>
 Edward Vielmetti <edward.vielmetti@gmail.com>
 Emily Casey <ecasey@pivotal.io>
 Eric Briand <eric.briand@gmail.com>
@@ -59,6 +63,7 @@ Justin Cormack <justin.cormack@docker.com>
 Justin Ko <justin.ko@oracle.com>
 Ken Cochrane <ken.cochrane@docker.com>
 Krister Johansen <krister.johansen@oracle.com>
+Krisztian Horvath <keyki.kk@gmail.com>
 Kunal Kushwaha <kushwaha_kunal_v7@lab.ntt.co.jp>
 Liqdfire <liqdfire@gmail.com>
 Lorenzo Fontana <lo@linux.com>
@@ -86,6 +91,7 @@ Niclas Mietz <niclas@mietz.io>
 Nico Di Rocco <dirocco.nico@gmail.com>
 Olaf Bergner <olaf.bergner@gmx.de>
 Olaf Flebbe <of@oflebbe.de>
+Omar Ramadan <omar.ramadan93@gmail.com>
 Patrik Cyvoct <patrik@ptrk.io>
 Phil Estes <estesp@linux.vnet.ibm.com>
 Pierre Gayvallet <pierre.gayvallet@docker.com>
@@ -101,6 +107,7 @@ Rui Lopes <rgl@ruilopes.com>
 Ryoga Saito <proelbtn@gmail.com>
 Scott Coulton <scott.coulton@puppet.com>
 Sebastiaan van Stijn <sebastiaan.vanstijn@docker.com>
+Simarpreet Singh <simar@linux.com>
 Simon Ferquel <simon.ferquel@docker.com>
 Sotiris Salloumis <sotiris.salloumis@gmail.com>
 Steeve Morin <steeve.morin@gmail.com>
