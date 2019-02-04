@@ -1,4 +1,4 @@
-From d9def6a9b6c8f170e2c3b501bd49abc76e468235 Mon Sep 17 00:00:00 2001
+From 445df50d62fd60efc79a86d9281dd4cf08477d44 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:00 -0700
 Subject: [PATCH 02/21] hyper-v: trace vmbus_on_msg_dpc()
@@ -94,10 +94,10 @@ index a166de6efd99..02f13e803a8b 100644
   * Timeout for services such as KVP and fcopy.
   */
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index 4218a616f1d3..cc76a795b555 100644
+index 1fd812ed679b..70f857441399 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -853,6 +853,8 @@ void vmbus_on_msg_dpc(unsigned long data)
+@@ -884,6 +884,8 @@ void vmbus_on_msg_dpc(unsigned long data)
  
  	hdr = (struct vmbus_channel_message_header *)msg->u.payload;
  

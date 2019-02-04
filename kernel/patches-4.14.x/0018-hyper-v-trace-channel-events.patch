@@ -1,4 +1,4 @@
-From 9b7b7299e6b9db3166b94581cbe6ff0eeab139a9 Mon Sep 17 00:00:00 2001
+From 815000ba6135fa571fef05d06db7070ba8beccc8 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:16 -0700
 Subject: [PATCH 18/21] hyper-v: trace channel events
@@ -84,10 +84,10 @@ index 5382d9630306..d635ee95b20d 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 diff --git a/drivers/hv/vmbus_drv.c b/drivers/hv/vmbus_drv.c
-index cc76a795b555..678e82ddd514 100644
+index 70f857441399..14288a2958d0 100644
 --- a/drivers/hv/vmbus_drv.c
 +++ b/drivers/hv/vmbus_drv.c
-@@ -964,6 +964,8 @@ static void vmbus_chan_sched(struct hv_per_cpu_context *hv_cpu)
+@@ -995,6 +995,8 @@ static void vmbus_chan_sched(struct hv_per_cpu_context *hv_cpu)
  			if (channel->rescind)
  				continue;
  
