@@ -136,8 +136,9 @@ func copyFS(newRoot string) error {
 				return err
 			}
 		case (info.Mode() & os.ModeNamedPipe) == os.ModeNamedPipe:
-			// TODO support named pipes, although no real use case
-			return errors.New("Unsupported named pipe on rootfs")
+			if err := unix.Mkfifo(dest, uint32(info.Mode())); err != nil {
+				return err
+			}
 		case (info.Mode() & os.ModeSocket) == os.ModeSocket:
 			// TODO support sockets, although no real use case
 			return errors.New("Unsupported socket on rootfs")
