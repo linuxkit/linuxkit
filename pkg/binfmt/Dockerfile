@@ -3,7 +3,8 @@ FROM debian@sha256:de3eac83cd481c04c5d6c7344cd7327625a1d8b2540e82a8231b5675cef0a
 RUN apt-get update && apt-get install -y qemu-user-static && \
     mv /usr/bin/qemu-aarch64-static /usr/bin/qemu-aarch64 && \
     mv /usr/bin/qemu-arm-static /usr/bin/qemu-arm && \
-    mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le
+    mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le && \
+    mv /usr/bin/qemu-s390x-static /usr/bin/qemu-s390x
 
 FROM linuxkit/alpine:3683c9a66cd4da40bd7d6c7da599b2dcd738b559 AS mirror
 
