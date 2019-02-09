@@ -1,10 +1,10 @@
 kernel:
-  image: linuxkit/kernel:4.19.19
+  image: linuxkit/kernel:4.19.20
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:v0.5
   - linuxkit/runc:v0.5
-  - linuxkit/kernel-bcc:4.19.19
+  - linuxkit/kernel-bcc:4.19.20
 onboot:
   - name: check-bcc
     image: alpine:3.8
