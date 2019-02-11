@@ -64,7 +64,7 @@ func main() {
 		case "vultr":
 			netProviders = append(netProviders, NewVultr())
 		case "iso":
-			isoProviders = ListDisks()
+			isoProviders = ListBlockDevices()
 		default:
 			log.Fatalf("Unrecognised metadata provider: %s", p)
 		}

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
+	"os"
 	"path"
 	"path/filepath"
 	"syscall"
@@ -18,72 +19,95 @@ const (
 type ProviderISO struct {
 	device     string
 	mountPoint string
-	err        error
+	configInfo os.FileInfo
+	configPath string
 	data       []byte
+	err        error
 }
 
-func blockDevices() []string {
+func blockDeviceTypes() []string {
 	return []string{
 		// SCSI CD-ROM devices
 		"/dev/sr[0-9]*",
 		"/dev/scd[0-9]*",
-		// SCSI disk devices
-		"/dev/sd[a-z]*",
 		// MMC block devices
 		"/dev/mmcblk[0-9]*",
+		// SCSI disk devices
+		"/dev/sd[a-z]*",
 	}
 }
 
-// ListDisks lists all the cdroms in the system
-func ListDisks() []Provider {
-	providers := []Provider{}
-	for _, s := range blockDevices() {
-		disks, err := filepath.Glob(s)
+// ListBlockDevices retuns all block devices as list of providers
+func ListBlockDevices() []Provider {
+	allDevices := []Provider{}
+	for _, s := range blockDeviceTypes() {
+		devices, err := filepath.Glob(s)
 		if err != nil {
 			// Glob can only error on invalid pattern
 			panic(fmt.Sprintf("Invalid glob pattern: %s", s))
 		}
-		for _, device := range disks {
-			providers = append(providers, NewProviderISO(device))
+		for _, device := range devices {
+			allDevices = append(allDevices, NewProviderISO(device))
 		}
 	}
-	return providers
+	return allDevices
 }
 
 // NewProviderISO returns a new ProviderISO
 func NewProviderISO(device string) *ProviderISO {
-	mountPoint, err := ioutil.TempDir("", "mnt")
-	p := ProviderISO{device, mountPoint, err, []byte{}}
-	if err == nil {
-		if p.err = p.mount(); p.err == nil {
-			p.data, p.err = ioutil.ReadFile(path.Join(p.mountPoint, configFile))
-			p.unmount()
-		}
-	}
-	return &p
+	return &ProviderISO{device: device}
 }
 
+// String returns a string description of ProviderISO
 func (p *ProviderISO) String() string {
 	return "ISO " + p.device
 }
 
-// Probe checks if the disk has the right file
+// Probe attemps to mount any of the disks as an ISO volume
+// and looks for the config file, it returns true as soon as
+// it finds a suitable volume
 func (p *ProviderISO) Probe() bool {
-	return len(p.data) != 0
+	if err := p.mount(); err != nil {
+		return false
+	}
+	if p.configInfo.Mode().IsRegular() && p.configInfo.Size() > 0 {
+		return true
+	}
+	p.cleanup()
+	return false
 }
 
-// Extract gets both the disk specific and generic userdata
+// Extract attemps to read config file from a mounted volume, it will
+// return an error if it fails to read
 func (p *ProviderISO) Extract() ([]byte, error) {
-	return p.data, p.err
+	defer p.cleanup()
+	return ioutil.ReadFile(p.configPath)
 }
 
-// mount mounts a disk under mountPoint
 func (p *ProviderISO) mount() error {
+	mountPoint, err := ioutil.TempDir("", "mnt")
+	if err != nil {
+		return err
+	}
+	p.mountPoint = mountPoint
 	// We may need to poll a little for device ready
-	return syscall.Mount(p.device, p.mountPoint, fsType, syscall.MS_RDONLY, "")
+	err = syscall.Mount(p.device, p.mountPoint, fsType, syscall.MS_RDONLY, "")
+	if err != nil {
+		p.cleanup()
+		return err
+	}
+	p.configPath = path.Join(p.mountPoint, configFile)
+	p.configInfo, err = os.Stat(p.configPath)
+	if err != nil {
+		p.cleanup()
+		return err
+	}
+	return nil
 }
 
-// unmount removes the mount
-func (p *ProviderISO) unmount() {
-	_ = syscall.Unmount(p.mountPoint, 0)
+func (p *ProviderISO) cleanup() {
+	if p.mountPoint != "" {
+		_ = syscall.Unmount(p.mountPoint, 0)
+		_ = syscall.Rmdir(p.mountPoint)
+	}
 }
