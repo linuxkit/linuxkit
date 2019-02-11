@@ -29,4 +29,3 @@ WORKDIR $GOPATH/src/github.com/containerd/containerd
 ADD run.sh ./run.sh
 
 ENTRYPOINT ["/bin/sh", "run.sh"]
-LABEL org.mobyproject.config='{"capabilities": ["all"], "tmpfs": ["/tmp"], "binds": ["/dev:/dev", "/var/lib:/var/lib", "/etc/resolv.conf:/etc/resolv.conf", "/usr/bin/runc:/usr/bin/runc", "/usr/bin/containerd:/usr/bin/containerd", "/usr/bin/containerd-shim:/usr/bin/containerd-shim"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}],}'
