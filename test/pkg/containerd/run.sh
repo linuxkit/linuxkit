@@ -9,6 +9,10 @@ function failed {
 git describe HEAD
 git rev-parse HEAD
 
+# The unit tests need user_xattr support, which /tmp (a tmpfs) does not support.
+mkdir -p /var/lib/tmp
+export TMPDIR=/var/lib/tmp
+
 # unset -race (does not work on alpine; see golang/go#14481)
 export TESTFLAGS=
 make root-test || failed
