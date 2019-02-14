@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:19576072dd2b2f17fa73828e4bbd442e954992a3 AS mirror
+FROM linuxkit/alpine:9f00542b8b74b7815936affb11dedb86945fe4ac AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 # btrfs-progfs is required for btrfs test (mkfs.btrfs)
 # util-linux is required for btrfs test (losetup)
@@ -29,4 +29,3 @@ WORKDIR $GOPATH/src/github.com/containerd/containerd
 ADD run.sh ./run.sh
 
 ENTRYPOINT ["/bin/sh", "run.sh"]
-LABEL org.mobyproject.config='{"capabilities": ["all"], "tmpfs": ["/tmp"], "binds": ["/dev:/dev", "/var/lib:/var/lib", "/etc/resolv.conf:/etc/resolv.conf", "/usr/bin/runc:/usr/bin/runc", "/usr/bin/containerd:/usr/bin/containerd", "/usr/bin/containerd-shim:/usr/bin/containerd-shim"], "mounts": [{"type": "cgroup", "options": ["rw","nosuid","noexec","nodev","relatime"]}],}'
