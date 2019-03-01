@@ -1,4 +1,4 @@
-From c3ecd3c5944e7c4caf3400880d28242b77802bbd Mon Sep 17 00:00:00 2001
+From 3f71c515efc802e6ef4e5a926a343041561b29ca Mon Sep 17 00:00:00 2001
 From: Ido Schimmel <idosch@mellanox.com>
 Date: Mon, 10 Apr 2017 14:59:27 +0300
 Subject: [PATCH 13/14] bridge: implement missing ndo_uninit()
@@ -90,10 +90,10 @@ index 8e173324693d..1764de88483c 100644
  	del_timer_sync(&br->gc_timer);
  
 diff --git a/net/bridge/br_multicast.c b/net/bridge/br_multicast.c
-index 4bd57507b9a4..3c05d671ef37 100644
+index 2136e45f5277..4c16e01031d4 100644
 --- a/net/bridge/br_multicast.c
 +++ b/net/bridge/br_multicast.c
-@@ -1905,8 +1905,6 @@ void br_multicast_dev_del(struct net_bridge *br)
+@@ -1898,8 +1898,6 @@ void br_multicast_dev_del(struct net_bridge *br)
  
  out:
  	spin_unlock_bh(&br->multicast_lock);
@@ -102,7 +102,7 @@ index 4bd57507b9a4..3c05d671ef37 100644
  }
  
  int br_multicast_set_router(struct net_bridge *br, unsigned long val)
-@@ -2361,6 +2359,11 @@ int br_multicast_init_stats(struct net_bridge *br)
+@@ -2354,6 +2352,11 @@ int br_multicast_init_stats(struct net_bridge *br)
  	return 0;
  }
  
