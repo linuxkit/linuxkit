@@ -1,4 +1,4 @@
-FROM alpine:3.8 AS mirror
+FROM alpine:3.9 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -84,7 +84,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.8
+FROM alpine:3.9
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
