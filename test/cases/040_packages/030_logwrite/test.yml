@@ -16,7 +16,7 @@ services:
     image: linuxkit/logwrite:v0.6
     command: ["/usr/bin/logwrite", "-max-log-size", "1024"]
   - name: check-the-logs
-    image: alpine:3.8
+    image: alpine:3.9
     binds:
       - /check.sh:/check.sh
       - /dev/console:/dev/console
@@ -32,4 +32,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.8
+    - alpine:3.9

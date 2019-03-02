@@ -7,7 +7,7 @@ init:
   - linuxkit/ca-certificates:v0.6
 onboot:
   - name: test
-    image: alpine:3.8
+    image: alpine:3.9
     binds:
       - /check.sh:/check.sh
       - /etc:/host-etc
@@ -22,4 +22,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.8
+    - alpine:3.9

@@ -38,7 +38,7 @@ onboot:
           net: /run/netns/wg1
 onshutdown:
   - name: test2
-    image: alpine:3.8
+    image: alpine:3.9
     binds:
       - /tmp:/tmp
       - /check.sh:/check.sh
@@ -55,7 +55,7 @@ services:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
   - name: test
-    image: alpine:3.8
+    image: alpine:3.9
     net: /run/netns/wg1
     pid: host
     capabilities:

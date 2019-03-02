@@ -8,7 +8,7 @@ onboot:
   - name: sysctl
     image: linuxkit/sysctl:v0.6
   - name: test
-    image: alpine:3.8
+    image: alpine:3.9
     net: host
     pid: host
     ipc: host
@@ -25,4 +25,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.8
+    - alpine:3.9

@@ -12,7 +12,7 @@ onboot:
     image: linuxkit/mount:v0.6
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
-    image: alpine:3.8
+    image: alpine:3.9
     binds:
       - /var/lib/docker:/var/lib/docker
     command: ["touch", "/var/lib/docker/bar"]

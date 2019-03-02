@@ -9,7 +9,7 @@ onboot:
     image: linuxkit/dm-crypt:9e41a164358b0235f0c242219b1a424c6552d46c
     command: ["/usr/bin/crypto", "-l", "it_is_encrypted", "/dev/sda"]
   - name: test
-    image: alpine:3.8
+    image: alpine:3.9
     net: host
     binds:
       - /check.sh:/check.sh
@@ -27,4 +27,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.8
+    - alpine:3.9
