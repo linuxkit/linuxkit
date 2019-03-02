@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/s390 4.20.12 Kernel Configuration
+# Linux/s390 4.20.13 Kernel Configuration
 #
 
 #
@@ -2283,7 +2283,6 @@ CONFIG_BCMA_POSSIBLE=y
 #
 # CONFIG_MFD_AS3711 is not set
 # CONFIG_PMIC_ADP5520 is not set
-# CONFIG_MFD_AT91_USART is not set
 # CONFIG_MFD_BCM590XX is not set
 # CONFIG_MFD_BD9571MWV is not set
 # CONFIG_MFD_AXP20X_I2C is not set
