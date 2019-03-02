@@ -113,7 +113,7 @@ func createStorageAccount(accountName, location string, resourceGroup resources.
 		Sku: &storage.Sku{
 			Name: storage.StandardLRS,
 		},
-		Location: &location,
+		Location:                          &location,
 		AccountPropertiesCreateParameters: &storage.AccountPropertiesCreateParameters{},
 	}
 
@@ -332,7 +332,7 @@ func createNetworkInterface(resourceGroup resources.Group, networkInterfaceName 
 					InterfaceIPConfigurationPropertiesFormat: &network.InterfaceIPConfigurationPropertiesFormat{
 						PublicIPAddress:           &publicIPAddress,
 						PrivateIPAllocationMethod: network.Dynamic,
-						Subnet: &subnet,
+						Subnet:                    &subnet,
 					},
 				},
 			},
