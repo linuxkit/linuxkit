@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:3683c9a66cd4da40bd7d6c7da599b2dcd738b559 AS build
+FROM linuxkit/alpine:518c2ed0f398c5508969ac5e033607201fb419ed AS build
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN mkdir -p /out/var/run
 RUN apk add --no-cache --initdb -p /out \

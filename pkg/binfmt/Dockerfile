@@ -6,7 +6,7 @@ RUN apt-get update && apt-get install -y qemu-user-static && \
     mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le && \
     mv /usr/bin/qemu-s390x-static /usr/bin/qemu-s390x
 
-FROM linuxkit/alpine:3683c9a66cd4da40bd7d6c7da599b2dcd738b559 AS mirror
+FROM linuxkit/alpine:518c2ed0f398c5508969ac5e033607201fb419ed AS mirror
 
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
