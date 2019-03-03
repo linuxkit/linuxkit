@@ -87,6 +87,7 @@ nfs-utils
 open-iscsi
 openntpd
 openrc
+openresolv
 openssh-server
 openssl
 openssl-dev
