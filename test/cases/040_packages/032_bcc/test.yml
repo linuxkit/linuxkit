@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:4.19.26
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:v0.5
-  - linuxkit/runc:v0.5
+  - linuxkit/init:005807f5c6a74e23f485a6d1657818bdccb70cd0
+  - linuxkit/runc:606971451ea29b4238029804ca638f9f85caf5af
   - linuxkit/kernel-bcc:4.19.25
 onboot:
   - name: check-bcc
