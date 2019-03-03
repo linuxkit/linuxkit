@@ -94,7 +94,7 @@ func retrieveMAC(statePath string) net.HardwareAddr {
 
 	if macString, err := ioutil.ReadFile(fileName); err == nil {
 		if mac, err = net.ParseMAC(string(macString)); err != nil {
-			log.Fatal("failed to parse mac-addr file: %s\n", macString)
+			log.Fatalf("failed to parse mac-addr file: %s\n", macString)
 		}
 	} else {
 		// we did not generate a mac yet. generate one
@@ -114,7 +114,7 @@ func generateMAC() net.HardwareAddr {
 		log.WithError(err).Fatal("failed to generate random mac address")
 	}
 	if n != 6 {
-		log.WithError(err).Fatal("generated %d bytes for random mac address", n)
+		log.WithError(err).Fatalf("generated %d bytes for random mac address", n)
 	}
 	mac[0] &^= 0x01 // Clear multicast bit
 	mac[0] |= 0x2   // Set locally administered bit
@@ -546,7 +546,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	case "x86_64":
 		goArch = "amd64"
 	default:
-		log.Fatalf("%s is an unsupported architecture.")
+		log.Fatalf("%s is an unsupported architecture.", config.Arch)
 	}
 
 	if goArch != runtime.GOARCH {
