@@ -1,4 +1,4 @@
-# linuxkit/alpine:0a88e4620f01d271f46c99478b6a091c22b60361-arm64
+# linuxkit/alpine:e6dcfd363a0c17f550f515071b57c7008522ed61-arm64
 # automatically generated list of installed packages
 abuild-3.3.0-r1
 alpine-baselayout-3.1.0-r3
@@ -232,6 +232,7 @@ open-iscsi-2.0.874-r2
 open-isns-lib-0.97-r4
 openntpd-6.2_p3-r2
 openrc-0.39.2-r3
+openresolv-3.9.0-r0
 openssh-keygen-7.9_p1-r2
 openssh-server-7.9_p1-r2
 openssh-server-common-7.9_p1-r2
@@ -300,6 +301,8 @@ vim-8.1.0630-r0
 virglrenderer-0.7.0-r1
 wayland-libs-server-1.16.0-r0
 wireguard-tools-0.0.20190227-r0
+wireguard-tools-wg-0.0.20190227-r0
+wireguard-tools-wg-quick-0.0.20190227-r0
 wireless-tools-30_pre9-r0
 wpa_supplicant-2.7-r0
 wpa_supplicant-openrc-2.7-r0
