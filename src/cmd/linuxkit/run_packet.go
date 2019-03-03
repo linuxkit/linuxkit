@@ -80,7 +80,7 @@ func runPacket(args []string) {
 
 	url := getStringValue(packetBaseURL, *baseURLFlag, "")
 	if url == "" {
-		log.Fatal("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-packet.ipxe")
+		log.Fatalf("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-packet.ipxe", prefix, prefix, prefix)
 	}
 	facility := getStringValue(packetZoneVar, *zoneFlag, "")
 	plan := getStringValue(packetMachineVar, *machineFlag, defaultMachine)
