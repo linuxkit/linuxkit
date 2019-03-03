@@ -98,7 +98,7 @@ func pushScaleway(args []string) {
 	if !*noCleanFlag {
 		err = client.DeleteInstanceAndVolumes(instanceID)
 		if err != nil {
-			log.Fatalf("Error deleting Scaleway instance and volumes: %v")
+			log.Fatalf("Error deleting Scaleway instance and volumes: %v", err)
 		}
 	}
 }
