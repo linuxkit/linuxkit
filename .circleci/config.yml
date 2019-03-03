@@ -3,7 +3,7 @@ jobs:
   build:
     working_directory: /go/src/github.com/linuxkit/linuxkit
     docker:
-      - image: circleci/golang:1.10-stretch
+      - image: circleci/golang:1.11-stretch
     steps:
       - checkout
       - run: mkdir -p ./bin
