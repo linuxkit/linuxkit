@@ -10,7 +10,7 @@ onboot:
     image: linuxkit/dhcpcd:85738d3d2f152a7879e17a61444f7714b858c2ee
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: mount-vpnkit
-    image: alpine:3.8
+    image: alpine:3.9
     binds:
         - /var/:/host_var:rbind,rshared
     capabilities:
