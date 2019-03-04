@@ -1,0 +1,48 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 24 Jul 2018 14:48:55 +0200
+Subject: [PATCH] x86/efi: drop task_lock() from efi_switch_mm()
+
+efi_switch_mm() is a wrapper around switch_mm() which saves current's
+->active_mm, sets the requests mm as ->active_mm and invokes
+switch_mm().
+I don't think that task_lock() is required during that procedure. It
+protects ->mm which isn't changed here.
+
+It needs to be mentioned that during the whole procedure (switch to
+EFI's mm and back) the preemption needs to be disabled. A context switch
+at this point would reset the cr3 value based on current->mm. Also, this
+function may not be invoked at the same time on a different CPU because
+it would overwrite the efi_scratch.prev_mm information.
+
+Remove task_lock() and also update the comment to reflect it.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/x86/platform/efi/efi_64.c |   10 ++++------
+ 1 file changed, 4 insertions(+), 6 deletions(-)
+
+--- a/arch/x86/platform/efi/efi_64.c
++++ b/arch/x86/platform/efi/efi_64.c
+@@ -619,18 +619,16 @@ void __init efi_dump_pagetable(void)
+ 
+ /*
+  * Makes the calling thread switch to/from efi_mm context. Can be used
+- * for SetVirtualAddressMap() i.e. current->active_mm == init_mm as well
+- * as during efi runtime calls i.e current->active_mm == current_mm.
+- * We are not mm_dropping()/mm_grabbing() any mm, because we are not
+- * losing/creating any references.
++ * in a kernel thread and user context. Preemption needs to remain disabled
++ * while the EFI-mm is borrowed. mmgrab()/mmdrop() is not used because the mm
++ * can not change under us.
++ * It should be ensured that there are no concurent calls to this function.
+  */
+ void efi_switch_mm(struct mm_struct *mm)
+ {
+-	task_lock(current);
+ 	efi_scratch.prev_mm = current->active_mm;
+ 	current->active_mm = mm;
+ 	switch_mm(efi_scratch.prev_mm, mm, NULL);
+-	task_unlock(current);
+ }
+ 
+ #ifdef CONFIG_EFI_MIXED

@@ -1,0 +1,74 @@
+From: Julia Cartwright <julia@ni.com>
+Date: Fri, 28 Sep 2018 21:03:51 +0000
+Subject: [PATCH] watchdog: prevent deferral of watchdogd wakeup on RT
+
+When PREEMPT_RT_FULL is enabled, all hrtimer expiry functions are
+deferred for execution into the context of ktimersoftd unless otherwise
+annotated.
+
+Deferring the expiry of the hrtimer used by the watchdog core, however,
+is a waste, as the callback does nothing but queue a kthread work item
+and wakeup watchdogd.
+
+It's worst then that, too: the deferral through ktimersoftd also means
+that for correct behavior a user must adjust the scheduling parameters
+of both watchdogd _and_ ktimersoftd, which is unnecessary and has other
+side effects (like causing unrelated expiry functions to execute at
+potentially elevated priority).
+
+Instead, mark the hrtimer used by the watchdog core as being _HARD to
+allow it's execution directly from hardirq context.  The work done in
+this expiry function is well-bounded and minimal.
+
+A user still must adjust the scheduling parameters of the watchdogd
+to be correct w.r.t. their application needs.
+
+Cc: Guenter Roeck <linux@roeck-us.net>
+Reported-and-tested-by: Steffen Trumtrar <s.trumtrar@pengutronix.de>
+Reported-by: Tim Sander <tim@krieglstein.org>
+Signed-off-by: Julia Cartwright <julia@ni.com>
+Acked-by: Guenter Roeck <linux@roeck-us.net>
+[bigeasy: use only HRTIMER_MODE_REL_HARD]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/watchdog/watchdog_dev.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/drivers/watchdog/watchdog_dev.c
++++ b/drivers/watchdog/watchdog_dev.c
+@@ -147,7 +147,7 @@ static inline void watchdog_update_worke
+ 		ktime_t t = watchdog_next_keepalive(wdd);
+ 
+ 		if (t > 0)
+-			hrtimer_start(&wd_data->timer, t, HRTIMER_MODE_REL);
++			hrtimer_start(&wd_data->timer, t, HRTIMER_MODE_REL_HARD);
+ 	} else {
+ 		hrtimer_cancel(&wd_data->timer);
+ 	}
+@@ -166,7 +166,7 @@ static int __watchdog_ping(struct watchd
+ 	if (ktime_after(earliest_keepalive, now)) {
+ 		hrtimer_start(&wd_data->timer,
+ 			      ktime_sub(earliest_keepalive, now),
+-			      HRTIMER_MODE_REL);
++			      HRTIMER_MODE_REL_HARD);
+ 		return 0;
+ 	}
+ 
+@@ -945,7 +945,7 @@ static int watchdog_cdev_register(struct
+ 		return -ENODEV;
+ 
+ 	kthread_init_work(&wd_data->work, watchdog_ping_work);
+-	hrtimer_init(&wd_data->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(&wd_data->timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_HARD);
+ 	wd_data->timer.function = watchdog_timer_expired;
+ 
+ 	if (wdd->id == 0) {
+@@ -992,7 +992,7 @@ static int watchdog_cdev_register(struct
+ 		__module_get(wdd->ops->owner);
+ 		kref_get(&wd_data->kref);
+ 		if (handle_boot_enabled)
+-			hrtimer_start(&wd_data->timer, 0, HRTIMER_MODE_REL);
++			hrtimer_start(&wd_data->timer, 0, HRTIMER_MODE_REL_HARD);
+ 		else
+ 			pr_info("watchdog%d running and kernel based pre-userspace handler disabled\n",
+ 				wdd->id);

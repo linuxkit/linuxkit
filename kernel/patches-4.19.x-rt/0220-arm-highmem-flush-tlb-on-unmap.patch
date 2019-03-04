@@ -1,0 +1,27 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 11 Mar 2013 21:37:27 +0100
+Subject: arm/highmem: Flush tlb on unmap
+
+The tlb should be flushed on unmap and thus make the mapping entry
+invalid. This is only done in the non-debug case which does not look
+right.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/arm/mm/highmem.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/arch/arm/mm/highmem.c
++++ b/arch/arm/mm/highmem.c
+@@ -112,10 +112,10 @@ void __kunmap_atomic(void *kvaddr)
+ 			__cpuc_flush_dcache_area((void *)vaddr, PAGE_SIZE);
+ #ifdef CONFIG_DEBUG_HIGHMEM
+ 		BUG_ON(vaddr != __fix_to_virt(idx));
+-		set_fixmap_pte(idx, __pte(0));
+ #else
+ 		(void) idx;  /* to kill a warning */
+ #endif
++		set_fixmap_pte(idx, __pte(0));
+ 		kmap_atomic_idx_pop();
+ 	} else if (vaddr >= PKMAP_ADDR(0) && vaddr < PKMAP_ADDR(LAST_PKMAP)) {
+ 		/* this address was obtained through kmap_high_get() */

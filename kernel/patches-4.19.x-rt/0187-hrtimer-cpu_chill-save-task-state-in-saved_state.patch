@@ -1,0 +1,55 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 26 Feb 2019 12:31:10 +0100
+Subject: [PATCH] hrtimer: cpu_chill(): save task state in ->saved_state()
+
+In the previous change I saved the current task state on stack. This was
+bad because while the task is scheduled-out it might receive a wake-up.
+The wake up changes the task state and we must not destroy it.
+
+Save the task-state in ->saved_state under a PI-lock to unsure that
+state changes during are not missed while the task temporary scheduled
+out.
+
+Reported-by: Mike Galbraith <efault@gmx.de>
+Tested-by: Mike Galbraith <efault@gmx.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c |   18 +++++++++++++-----
+ 1 file changed, 13 insertions(+), 5 deletions(-)
+
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -1900,20 +1900,28 @@ COMPAT_SYSCALL_DEFINE2(nanosleep, struct
+  */
+ void cpu_chill(void)
+ {
+-	ktime_t chill_time;
+ 	unsigned int freeze_flag = current->flags & PF_NOFREEZE;
+-	long saved_state;
++	struct task_struct *self = current;
++	ktime_t chill_time;
+ 
+-	saved_state = current->state;
+-	chill_time = ktime_set(0, NSEC_PER_MSEC);
++	raw_spin_lock_irq(&self->pi_lock);
++	self->saved_state = self->state;
+ 	__set_current_state_no_track(TASK_UNINTERRUPTIBLE);
++	raw_spin_unlock_irq(&self->pi_lock);
++
++	chill_time = ktime_set(0, NSEC_PER_MSEC);
++
+ 	current->flags |= PF_NOFREEZE;
+ 	sleeping_lock_inc();
+ 	schedule_hrtimeout(&chill_time, HRTIMER_MODE_REL_HARD);
+ 	sleeping_lock_dec();
+ 	if (!freeze_flag)
+ 		current->flags &= ~PF_NOFREEZE;
+-	__set_current_state_no_track(saved_state);
++
++	raw_spin_lock_irq(&self->pi_lock);
++	__set_current_state_no_track(self->saved_state);
++	self->saved_state = TASK_RUNNING;
++	raw_spin_unlock_irq(&self->pi_lock);
+ }
+ EXPORT_SYMBOL(cpu_chill);
+ #endif

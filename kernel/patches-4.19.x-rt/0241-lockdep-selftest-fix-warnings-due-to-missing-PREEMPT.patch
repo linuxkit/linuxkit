@@ -1,0 +1,141 @@
+From: Josh Cartwright <josh.cartwright@ni.com>
+Date: Wed, 28 Jan 2015 13:08:45 -0600
+Subject: lockdep: selftest: fix warnings due to missing PREEMPT_RT conditionals
+
+"lockdep: Selftest: Only do hardirq context test for raw spinlock"
+disabled the execution of certain tests with PREEMPT_RT_FULL, but did
+not prevent the tests from still being defined.  This leads to warnings
+like:
+
+  ./linux/lib/locking-selftest.c:574:1: warning: 'irqsafe1_hard_rlock_12' defined but not used [-Wunused-function]
+  ./linux/lib/locking-selftest.c:574:1: warning: 'irqsafe1_hard_rlock_21' defined but not used [-Wunused-function]
+  ./linux/lib/locking-selftest.c:577:1: warning: 'irqsafe1_hard_wlock_12' defined but not used [-Wunused-function]
+  ./linux/lib/locking-selftest.c:577:1: warning: 'irqsafe1_hard_wlock_21' defined but not used [-Wunused-function]
+  ./linux/lib/locking-selftest.c:580:1: warning: 'irqsafe1_soft_spin_12' defined but not used [-Wunused-function]
+  ...
+
+Fixed by wrapping the test definitions in #ifndef CONFIG_PREEMPT_RT_FULL
+conditionals.
+
+
+Signed-off-by: Josh Cartwright <josh.cartwright@ni.com>
+Signed-off-by: Xander Huff <xander.huff@ni.com>
+Acked-by: Gratian Crisan <gratian.crisan@ni.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ lib/locking-selftest.c |   27 +++++++++++++++++++++++++++
+ 1 file changed, 27 insertions(+)
+
+--- a/lib/locking-selftest.c
++++ b/lib/locking-selftest.c
+@@ -742,6 +742,8 @@ GENERATE_TESTCASE(init_held_rtmutex);
+ #include "locking-selftest-spin-hardirq.h"
+ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe1_hard_spin)
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
++
+ #include "locking-selftest-rlock-hardirq.h"
+ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe1_hard_rlock)
+ 
+@@ -757,9 +759,12 @@ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe1_
+ #include "locking-selftest-wlock-softirq.h"
+ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe1_soft_wlock)
+ 
++#endif
++
+ #undef E1
+ #undef E2
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
+ /*
+  * Enabling hardirqs with a softirq-safe lock held:
+  */
+@@ -792,6 +797,8 @@ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe2A
+ #undef E1
+ #undef E2
+ 
++#endif
++
+ /*
+  * Enabling irqs with an irq-safe lock held:
+  */
+@@ -815,6 +822,8 @@ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe2A
+ #include "locking-selftest-spin-hardirq.h"
+ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe2B_hard_spin)
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
++
+ #include "locking-selftest-rlock-hardirq.h"
+ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe2B_hard_rlock)
+ 
+@@ -830,6 +839,8 @@ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe2B
+ #include "locking-selftest-wlock-softirq.h"
+ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe2B_soft_wlock)
+ 
++#endif
++
+ #undef E1
+ #undef E2
+ 
+@@ -861,6 +872,8 @@ GENERATE_PERMUTATIONS_2_EVENTS(irqsafe2B
+ #include "locking-selftest-spin-hardirq.h"
+ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe3_hard_spin)
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
++
+ #include "locking-selftest-rlock-hardirq.h"
+ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe3_hard_rlock)
+ 
+@@ -876,6 +889,8 @@ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe3_
+ #include "locking-selftest-wlock-softirq.h"
+ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe3_soft_wlock)
+ 
++#endif
++
+ #undef E1
+ #undef E2
+ #undef E3
+@@ -909,6 +924,8 @@ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe3_
+ #include "locking-selftest-spin-hardirq.h"
+ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe4_hard_spin)
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
++
+ #include "locking-selftest-rlock-hardirq.h"
+ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe4_hard_rlock)
+ 
+@@ -924,10 +941,14 @@ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe4_
+ #include "locking-selftest-wlock-softirq.h"
+ GENERATE_PERMUTATIONS_3_EVENTS(irqsafe4_soft_wlock)
+ 
++#endif
++
+ #undef E1
+ #undef E2
+ #undef E3
+ 
++#ifndef CONFIG_PREEMPT_RT_FULL
++
+ /*
+  * read-lock / write-lock irq inversion.
+  *
+@@ -990,6 +1011,10 @@ GENERATE_PERMUTATIONS_3_EVENTS(irq_inver
+ #undef E2
+ #undef E3
+ 
++#endif
++
++#ifndef CONFIG_PREEMPT_RT_FULL
++
+ /*
+  * read-lock / write-lock recursion that is actually safe.
+  */
+@@ -1028,6 +1053,8 @@ GENERATE_PERMUTATIONS_3_EVENTS(irq_read_
+ #undef E2
+ #undef E3
+ 
++#endif
++
+ /*
+  * read-lock / write-lock recursion that is unsafe.
+  */

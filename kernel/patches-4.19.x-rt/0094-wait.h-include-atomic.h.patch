@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 28 Oct 2013 12:19:57 +0100
+Subject: wait.h: include atomic.h
+
+|  CC      init/main.o
+|In file included from include/linux/mmzone.h:9:0,
+|                 from include/linux/gfp.h:4,
+|                 from include/linux/kmod.h:22,
+|                 from include/linux/module.h:13,
+|                 from init/main.c:15:
+|include/linux/wait.h: In function ‘wait_on_atomic_t’:
+|include/linux/wait.h:982:2: error: implicit declaration of function ‘atomic_read’ [-Werror=implicit-function-declaration]
+|  if (atomic_read(val) == 0)
+|  ^
+
+This pops up on ARM. Non-RT gets its atomic.h include from spinlock.h
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/wait.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/linux/wait.h
++++ b/include/linux/wait.h
+@@ -10,6 +10,7 @@
+ 
+ #include <asm/current.h>
+ #include <uapi/linux/wait.h>
++#include <linux/atomic.h>
+ 
+ typedef struct wait_queue_entry wait_queue_entry_t;
+ 

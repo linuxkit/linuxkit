@@ -1,0 +1,36 @@
+From: Grygorii Strashko <Grygorii.Strashko@linaro.org>
+Date: Tue, 21 Jul 2015 19:43:56 +0300
+Subject: pid.h: include atomic.h
+
+This patch fixes build error:
+  CC      kernel/pid_namespace.o
+In file included from kernel/pid_namespace.c:11:0:
+include/linux/pid.h: In function 'get_pid':
+include/linux/pid.h:78:3: error: implicit declaration of function 'atomic_inc' [-Werror=implicit-function-declaration]
+   atomic_inc(&pid->count);
+   ^
+which happens when
+ CONFIG_PROVE_LOCKING=n
+ CONFIG_DEBUG_SPINLOCK=n
+ CONFIG_DEBUG_MUTEXES=n
+ CONFIG_DEBUG_LOCK_ALLOC=n
+ CONFIG_PID_NS=y
+
+Vanilla gets this via spinlock.h.
+
+Signed-off-by: Grygorii Strashko <Grygorii.Strashko@linaro.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/pid.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/linux/pid.h
++++ b/include/linux/pid.h
+@@ -3,6 +3,7 @@
+ #define _LINUX_PID_H
+ 
+ #include <linux/rculist.h>
++#include <linux/atomic.h>
+ 
+ enum pid_type
+ {

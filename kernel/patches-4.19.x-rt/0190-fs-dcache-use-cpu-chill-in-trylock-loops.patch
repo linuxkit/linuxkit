@@ -1,0 +1,58 @@
+Subject: fs: dcache: Use cpu_chill() in trylock loops
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 07 Mar 2012 21:00:34 +0100
+
+Retry loops on RT might loop forever when the modifying side was
+preempted. Use cpu_chill() instead of cpu_relax() to let the system
+make progress.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ fs/autofs/expire.c |    3 ++-
+ fs/namespace.c     |    8 ++++++--
+ 2 files changed, 8 insertions(+), 3 deletions(-)
+
+--- a/fs/autofs/expire.c
++++ b/fs/autofs/expire.c
+@@ -8,6 +8,7 @@
+  * option, any later version, incorporated herein by reference.
+  */
+ 
++#include <linux/delay.h>
+ #include "autofs_i.h"
+ 
+ /* Check if a dentry can be expired */
+@@ -153,7 +154,7 @@ static struct dentry *get_next_positive_
+ 			parent = p->d_parent;
+ 			if (!spin_trylock(&parent->d_lock)) {
+ 				spin_unlock(&p->d_lock);
+-				cpu_relax();
++				cpu_chill();
+ 				goto relock;
+ 			}
+ 			spin_unlock(&p->d_lock);
+--- a/fs/namespace.c
++++ b/fs/namespace.c
+@@ -14,6 +14,7 @@
+ #include <linux/mnt_namespace.h>
+ #include <linux/user_namespace.h>
+ #include <linux/namei.h>
++#include <linux/delay.h>
+ #include <linux/security.h>
+ #include <linux/cred.h>
+ #include <linux/idr.h>
+@@ -327,8 +328,11 @@ int __mnt_want_write(struct vfsmount *m)
+ 	 * incremented count after it has set MNT_WRITE_HOLD.
+ 	 */
+ 	smp_mb();
+-	while (READ_ONCE(mnt->mnt.mnt_flags) & MNT_WRITE_HOLD)
+-		cpu_relax();
++	while (READ_ONCE(mnt->mnt.mnt_flags) & MNT_WRITE_HOLD) {
++		preempt_enable();
++		cpu_chill();
++		preempt_disable();
++	}
+ 	/*
+ 	 * After the slowpath clears MNT_WRITE_HOLD, mnt_is_readonly will
+ 	 * be set to match its requirements. So we must not load that until

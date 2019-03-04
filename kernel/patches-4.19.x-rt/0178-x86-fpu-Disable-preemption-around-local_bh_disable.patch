@@ -1,0 +1,31 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 11 Dec 2018 15:10:33 +0100
+Subject: [PATCH] x86/fpu: Disable preemption around local_bh_disable()
+
+__fpu__restore_sig() restores the content of the FPU state in the CPUs
+and in order to avoid concurency it disbles BH. On !RT it also disables
+preemption but on RT we can get preempted in BH.
+
+Add preempt_disable() while the FPU state is restored.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/x86/kernel/fpu/signal.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/x86/kernel/fpu/signal.c
++++ b/arch/x86/kernel/fpu/signal.c
+@@ -344,10 +344,12 @@ static int __fpu__restore_sig(void __use
+ 			sanitize_restored_xstate(tsk, &env, xfeatures, fx_only);
+ 		}
+ 
++		preempt_disable();
+ 		local_bh_disable();
+ 		fpu->initialized = 1;
+ 		fpu__restore(fpu);
+ 		local_bh_enable();
++		preempt_enable();
+ 
+ 		return err;
+ 	} else {

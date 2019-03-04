@@ -1,0 +1,45 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 16 Dec 2010 14:25:18 +0100
+Subject: x86: stackprotector: Avoid random pool on rt
+
+CPU bringup calls into the random pool to initialize the stack
+canary. During boot that works nicely even on RT as the might sleep
+checks are disabled. During CPU hotplug the might sleep checks
+trigger. Making the locks in random raw is a major PITA, so avoid the
+call on RT is the only sensible solution. This is basically the same
+randomness which we get during boot where the random pool has no
+entropy and we rely on the TSC randomnness.
+
+Reported-by: Carsten Emde <carsten.emde@osadl.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ arch/x86/include/asm/stackprotector.h |    8 +++++++-
+ 1 file changed, 7 insertions(+), 1 deletion(-)
+
+--- a/arch/x86/include/asm/stackprotector.h
++++ b/arch/x86/include/asm/stackprotector.h
+@@ -60,7 +60,7 @@
+  */
+ static __always_inline void boot_init_stack_canary(void)
+ {
+-	u64 canary;
++	u64 uninitialized_var(canary);
+ 	u64 tsc;
+ 
+ #ifdef CONFIG_X86_64
+@@ -71,8 +71,14 @@ static __always_inline void boot_init_st
+ 	 * of randomness. The TSC only matters for very early init,
+ 	 * there it already has some randomness on most systems. Later
+ 	 * on during the bootup the random pool has true entropy too.
++	 * For preempt-rt we need to weaken the randomness a bit, as
++	 * we can't call into the random generator from atomic context
++	 * due to locking constraints. We just leave canary
++	 * uninitialized and use the TSC based randomness on top of it.
+ 	 */
++#ifndef CONFIG_PREEMPT_RT_FULL
+ 	get_random_bytes(&canary, sizeof(canary));
++#endif
+ 	tsc = rdtsc();
+ 	canary += tsc + (tsc << 32UL);
+ 	canary &= CANARY_MASK;

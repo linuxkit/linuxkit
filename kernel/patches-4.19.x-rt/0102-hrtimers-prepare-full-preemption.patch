@@ -1,0 +1,272 @@
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 3 Jul 2009 08:29:34 -0500
+Subject: hrtimers: Prepare full preemption
+
+Make cancellation of a running callback in softirq context safe
+against preemption.
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ fs/timerfd.c                 |    5 ++++-
+ include/linux/hrtimer.h      |   13 ++++++++++++-
+ include/linux/posix-timers.h |    2 +-
+ kernel/time/alarmtimer.c     |    2 +-
+ kernel/time/hrtimer.c        |   33 ++++++++++++++++++++++++++++++++-
+ kernel/time/itimer.c         |    1 +
+ kernel/time/posix-timers.c   |   39 +++++++++++++++++++++++++++++++++++++--
+ 7 files changed, 88 insertions(+), 7 deletions(-)
+
+--- a/fs/timerfd.c
++++ b/fs/timerfd.c
+@@ -471,7 +471,10 @@ static int do_timerfd_settime(int ufd, i
+ 				break;
+ 		}
+ 		spin_unlock_irq(&ctx->wqh.lock);
+-		cpu_relax();
++		if (isalarm(ctx))
++			hrtimer_wait_for_timer(&ctx->t.alarm.timer);
++		else
++			hrtimer_wait_for_timer(&ctx->t.tmr);
+ 	}
+ 
+ 	/*
+--- a/include/linux/hrtimer.h
++++ b/include/linux/hrtimer.h
+@@ -22,6 +22,7 @@
+ #include <linux/percpu.h>
+ #include <linux/timer.h>
+ #include <linux/timerqueue.h>
++#include <linux/wait.h>
+ 
+ struct hrtimer_clock_base;
+ struct hrtimer_cpu_base;
+@@ -216,6 +217,9 @@ struct hrtimer_cpu_base {
+ 	ktime_t				expires_next;
+ 	struct hrtimer			*next_timer;
+ 	ktime_t				softirq_expires_next;
++#ifdef CONFIG_PREEMPT_RT_BASE
++	wait_queue_head_t		wait;
++#endif
+ 	struct hrtimer			*softirq_next_timer;
+ 	struct hrtimer_clock_base	clock_base[HRTIMER_MAX_CLOCK_BASES];
+ } ____cacheline_aligned;
+@@ -433,6 +437,13 @@ static inline void hrtimer_restart(struc
+ 	hrtimer_start_expires(timer, HRTIMER_MODE_ABS);
+ }
+ 
++/* Softirq preemption could deadlock timer removal */
++#ifdef CONFIG_PREEMPT_RT_BASE
++  extern void hrtimer_wait_for_timer(const struct hrtimer *timer);
++#else
++# define hrtimer_wait_for_timer(timer)	do { cpu_relax(); } while (0)
++#endif
++
+ /* Query timers: */
+ extern ktime_t __hrtimer_get_remaining(const struct hrtimer *timer, bool adjust);
+ 
+@@ -458,7 +469,7 @@ static inline int hrtimer_is_queued(stru
+  * Helper function to check, whether the timer is running the callback
+  * function
+  */
+-static inline int hrtimer_callback_running(struct hrtimer *timer)
++static inline int hrtimer_callback_running(const struct hrtimer *timer)
+ {
+ 	return timer->base->running == timer;
+ }
+--- a/include/linux/posix-timers.h
++++ b/include/linux/posix-timers.h
+@@ -114,8 +114,8 @@ struct k_itimer {
+ 		struct {
+ 			struct alarm	alarmtimer;
+ 		} alarm;
+-		struct rcu_head		rcu;
+ 	} it;
++	struct rcu_head		rcu;
+ };
+ 
+ void run_posix_cpu_timers(struct task_struct *task);
+--- a/kernel/time/alarmtimer.c
++++ b/kernel/time/alarmtimer.c
+@@ -436,7 +436,7 @@ int alarm_cancel(struct alarm *alarm)
+ 		int ret = alarm_try_to_cancel(alarm);
+ 		if (ret >= 0)
+ 			return ret;
+-		cpu_relax();
++		hrtimer_wait_for_timer(&alarm->timer);
+ 	}
+ }
+ EXPORT_SYMBOL_GPL(alarm_cancel);
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -939,6 +939,33 @@ u64 hrtimer_forward(struct hrtimer *time
+ }
+ EXPORT_SYMBOL_GPL(hrtimer_forward);
+ 
++#ifdef CONFIG_PREEMPT_RT_BASE
++# define wake_up_timer_waiters(b)	wake_up(&(b)->wait)
++
++/**
++ * hrtimer_wait_for_timer - Wait for a running timer
++ *
++ * @timer:	timer to wait for
++ *
++ * The function waits in case the timers callback function is
++ * currently executed on the waitqueue of the timer base. The
++ * waitqueue is woken up after the timer callback function has
++ * finished execution.
++ */
++void hrtimer_wait_for_timer(const struct hrtimer *timer)
++{
++	struct hrtimer_clock_base *base = timer->base;
++
++	if (base && base->cpu_base &&
++	    base->index >= HRTIMER_BASE_MONOTONIC_SOFT)
++		wait_event(base->cpu_base->wait,
++				!(hrtimer_callback_running(timer)));
++}
++
++#else
++# define wake_up_timer_waiters(b)	do { } while (0)
++#endif
++
+ /*
+  * enqueue_hrtimer - internal function to (re)start a timer
+  *
+@@ -1171,7 +1198,7 @@ int hrtimer_cancel(struct hrtimer *timer
+ 
+ 		if (ret >= 0)
+ 			return ret;
+-		cpu_relax();
++		hrtimer_wait_for_timer(timer);
+ 	}
+ }
+ EXPORT_SYMBOL_GPL(hrtimer_cancel);
+@@ -1477,6 +1504,7 @@ static __latent_entropy void hrtimer_run
+ 	hrtimer_update_softirq_timer(cpu_base, true);
+ 
+ 	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
++	wake_up_timer_waiters(cpu_base);
+ }
+ 
+ #ifdef CONFIG_HIGH_RES_TIMERS
+@@ -1846,6 +1874,9 @@ int hrtimers_prepare_cpu(unsigned int cp
+ 	cpu_base->softirq_next_timer = NULL;
+ 	cpu_base->expires_next = KTIME_MAX;
+ 	cpu_base->softirq_expires_next = KTIME_MAX;
++#ifdef CONFIG_PREEMPT_RT_BASE
++	init_waitqueue_head(&cpu_base->wait);
++#endif
+ 	return 0;
+ }
+ 
+--- a/kernel/time/itimer.c
++++ b/kernel/time/itimer.c
+@@ -215,6 +215,7 @@ int do_setitimer(int which, struct itime
+ 		/* We are sharing ->siglock with it_real_fn() */
+ 		if (hrtimer_try_to_cancel(timer) < 0) {
+ 			spin_unlock_irq(&tsk->sighand->siglock);
++			hrtimer_wait_for_timer(&tsk->signal->real_timer);
+ 			goto again;
+ 		}
+ 		expires = timeval_to_ktime(value->it_value);
+--- a/kernel/time/posix-timers.c
++++ b/kernel/time/posix-timers.c
+@@ -463,7 +463,7 @@ static struct k_itimer * alloc_posix_tim
+ 
+ static void k_itimer_rcu_free(struct rcu_head *head)
+ {
+-	struct k_itimer *tmr = container_of(head, struct k_itimer, it.rcu);
++	struct k_itimer *tmr = container_of(head, struct k_itimer, rcu);
+ 
+ 	kmem_cache_free(posix_timers_cache, tmr);
+ }
+@@ -480,7 +480,7 @@ static void release_posix_timer(struct k
+ 	}
+ 	put_pid(tmr->it_pid);
+ 	sigqueue_free(tmr->sigq);
+-	call_rcu(&tmr->it.rcu, k_itimer_rcu_free);
++	call_rcu(&tmr->rcu, k_itimer_rcu_free);
+ }
+ 
+ static int common_timer_create(struct k_itimer *new_timer)
+@@ -821,6 +821,22 @@ static void common_hrtimer_arm(struct k_
+ 		hrtimer_start_expires(timer, HRTIMER_MODE_ABS);
+ }
+ 
++/*
++ * Protected by RCU!
++ */
++static void timer_wait_for_callback(const struct k_clock *kc, struct k_itimer *timr)
++{
++#ifdef CONFIG_PREEMPT_RT_FULL
++	if (kc->timer_arm == common_hrtimer_arm)
++		hrtimer_wait_for_timer(&timr->it.real.timer);
++	else if (kc == &alarm_clock)
++		hrtimer_wait_for_timer(&timr->it.alarm.alarmtimer.timer);
++	else
++		/* FIXME: Whacky hack for posix-cpu-timers */
++		schedule_timeout(1);
++#endif
++}
++
+ static int common_hrtimer_try_to_cancel(struct k_itimer *timr)
+ {
+ 	return hrtimer_try_to_cancel(&timr->it.real.timer);
+@@ -885,6 +901,7 @@ static int do_timer_settime(timer_t time
+ 	if (!timr)
+ 		return -EINVAL;
+ 
++	rcu_read_lock();
+ 	kc = timr->kclock;
+ 	if (WARN_ON_ONCE(!kc || !kc->timer_set))
+ 		error = -EINVAL;
+@@ -893,9 +910,12 @@ static int do_timer_settime(timer_t time
+ 
+ 	unlock_timer(timr, flag);
+ 	if (error == TIMER_RETRY) {
++		timer_wait_for_callback(kc, timr);
+ 		old_spec64 = NULL;	// We already got the old time...
++		rcu_read_unlock();
+ 		goto retry;
+ 	}
++	rcu_read_unlock();
+ 
+ 	return error;
+ }
+@@ -977,10 +997,15 @@ SYSCALL_DEFINE1(timer_delete, timer_t, t
+ 	if (!timer)
+ 		return -EINVAL;
+ 
++	rcu_read_lock();
+ 	if (timer_delete_hook(timer) == TIMER_RETRY) {
+ 		unlock_timer(timer, flags);
++		timer_wait_for_callback(clockid_to_kclock(timer->it_clock),
++					timer);
++		rcu_read_unlock();
+ 		goto retry_delete;
+ 	}
++	rcu_read_unlock();
+ 
+ 	spin_lock(&current->sighand->siglock);
+ 	list_del(&timer->list);
+@@ -1006,8 +1031,18 @@ static void itimer_delete(struct k_itime
+ retry_delete:
+ 	spin_lock_irqsave(&timer->it_lock, flags);
+ 
++	/* On RT we can race with a deletion */
++	if (!timer->it_signal) {
++		unlock_timer(timer, flags);
++		return;
++	}
++
+ 	if (timer_delete_hook(timer) == TIMER_RETRY) {
++		rcu_read_lock();
+ 		unlock_timer(timer, flags);
++		timer_wait_for_callback(clockid_to_kclock(timer->it_clock),
++					timer);
++		rcu_read_unlock();
+ 		goto retry_delete;
+ 	}
+ 	list_del(&timer->list);
