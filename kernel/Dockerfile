@@ -16,8 +16,6 @@ RUN apk add \
     installkernel \
     kmod \
     libelf-dev \
-    libressl \
-    libressl-dev \
     linux-headers \
     mpc1-dev \
     mpfr-dev \
