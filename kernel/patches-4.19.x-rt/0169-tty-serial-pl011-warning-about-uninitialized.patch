@@ -1,0 +1,37 @@
+From: Kurt Kanzenbach <kurt@linutronix.de>
+Date: Mon, 24 Sep 2018 10:29:01 +0200
+Subject: [PATCH] tty: serial: pl011: explicitly initialize the flags variable
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Silence the following gcc warning:
+
+drivers/tty/serial/amba-pl011.c: In function ‘pl011_console_write’:
+./include/linux/spinlock.h:260:3: warning: ‘flags’ may be used uninitialized in this function [-Wmaybe-uninitialized]
+   _raw_spin_unlock_irqrestore(lock, flags); \
+   ^~~~~~~~~~~~~~~~~~~~~~~~~~~
+drivers/tty/serial/amba-pl011.c:2214:16: note: ‘flags’ was declared here
+  unsigned long flags;
+                ^~~~~
+
+The code is correct. Thus, initializing flags to zero doesn't change the
+behavior and resolves the warning.
+
+Signed-off-by: Kurt Kanzenbach <kurt@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/tty/serial/amba-pl011.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/tty/serial/amba-pl011.c
++++ b/drivers/tty/serial/amba-pl011.c
+@@ -2211,7 +2211,7 @@ pl011_console_write(struct console *co,
+ {
+ 	struct uart_amba_port *uap = amba_ports[co->index];
+ 	unsigned int old_cr = 0, new_cr;
+-	unsigned long flags;
++	unsigned long flags = 0;
+ 	int locked = 1;
+ 
+ 	clk_enable(uap->clk);

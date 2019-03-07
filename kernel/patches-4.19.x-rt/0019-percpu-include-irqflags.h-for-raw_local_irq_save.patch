@@ -1,0 +1,26 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 11 Oct 2018 16:39:59 +0200
+Subject: [PATCH] percpu: include irqflags.h for raw_local_irq_save()
+
+The header percpu.h header file is using raw_local_irq_save() but does
+not include irqflags.h for its definition. It compiles because the
+header file is included via an other header file.
+On -RT the build fails because raw_local_irq_save() is not defined.
+
+Include irqflags.h in percpu.h.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/asm-generic/percpu.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/include/asm-generic/percpu.h
++++ b/include/asm-generic/percpu.h
+@@ -5,6 +5,7 @@
+ #include <linux/compiler.h>
+ #include <linux/threads.h>
+ #include <linux/percpu-defs.h>
++#include <linux/irqflags.h>
+ 
+ #ifdef CONFIG_SMP
+ 

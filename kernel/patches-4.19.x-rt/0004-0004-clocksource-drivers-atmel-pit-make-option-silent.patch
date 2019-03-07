@@ -1,0 +1,29 @@
+From: Alexandre Belloni <alexandre.belloni@bootlin.com>
+Date: Thu, 13 Sep 2018 13:30:21 +0200
+Subject: [PATCH 4/7] clocksource/drivers: atmel-pit: make option silent
+
+To conform with the other option, make the ATMEL_PIT option silent so it
+can be selected from the platform
+
+Tested-by: Alexander Dahl <ada@thorsis.com>
+Signed-off-by: Alexandre Belloni <alexandre.belloni@bootlin.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/clocksource/Kconfig |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/drivers/clocksource/Kconfig
++++ b/drivers/clocksource/Kconfig
+@@ -393,8 +393,11 @@ config ARMV7M_SYSTICK
+ 	  This options enables support for the ARMv7M system timer unit
+ 
+ config ATMEL_PIT
++	bool "Microchip ARM Periodic Interval Timer (PIT)" if COMPILE_TEST
+ 	select TIMER_OF if OF
+-	def_bool SOC_AT91SAM9 || SOC_SAMA5
++	help
++	  This enables build of clocksource and clockevent driver for
++	  the integrated PIT in Microchip ARM SoCs.
+ 
+ config ATMEL_ST
+ 	bool "Atmel ST timer support" if COMPILE_TEST

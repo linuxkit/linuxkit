@@ -1,0 +1,67 @@
+From: Mike Galbraith <umgwanakikbuti@gmail.com>
+Date: Sun, 16 Oct 2016 05:11:54 +0200
+Subject: [PATCH] connector/cn_proc: Protect send_msg() with a local lock
+ on RT
+
+|BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:931
+|in_atomic(): 1, irqs_disabled(): 0, pid: 31807, name: sleep
+|Preemption disabled at:[<ffffffff8148019b>] proc_exit_connector+0xbb/0x140
+|
+|CPU: 4 PID: 31807 Comm: sleep Tainted: G        W   E   4.8.0-rt11-rt #106
+|Call Trace:
+| [<ffffffff813436cd>] dump_stack+0x65/0x88
+| [<ffffffff8109c425>] ___might_sleep+0xf5/0x180
+| [<ffffffff816406b0>] __rt_spin_lock+0x20/0x50
+| [<ffffffff81640978>] rt_read_lock+0x28/0x30
+| [<ffffffff8156e209>] netlink_broadcast_filtered+0x49/0x3f0
+| [<ffffffff81522621>] ? __kmalloc_reserve.isra.33+0x31/0x90
+| [<ffffffff8156e5cd>] netlink_broadcast+0x1d/0x20
+| [<ffffffff8147f57a>] cn_netlink_send_mult+0x19a/0x1f0
+| [<ffffffff8147f5eb>] cn_netlink_send+0x1b/0x20
+| [<ffffffff814801d8>] proc_exit_connector+0xf8/0x140
+| [<ffffffff81077f71>] do_exit+0x5d1/0xba0
+| [<ffffffff810785cc>] do_group_exit+0x4c/0xc0
+| [<ffffffff81078654>] SyS_exit_group+0x14/0x20
+| [<ffffffff81640a72>] entry_SYSCALL_64_fastpath+0x1a/0xa4
+
+Since ab8ed951080e ("connector: fix out-of-order cn_proc netlink message
+delivery") which is v4.7-rc6.
+
+Signed-off-by: Mike Galbraith <umgwanakikbuti@gmail.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/connector/cn_proc.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/drivers/connector/cn_proc.c
++++ b/drivers/connector/cn_proc.c
+@@ -32,6 +32,7 @@
+ #include <linux/pid_namespace.h>
+ 
+ #include <linux/cn_proc.h>
++#include <linux/locallock.h>
+ 
+ /*
+  * Size of a cn_msg followed by a proc_event structure.  Since the
+@@ -54,10 +55,11 @@ static struct cb_id cn_proc_event_id = {
+ 
+ /* proc_event_counts is used as the sequence number of the netlink message */
+ static DEFINE_PER_CPU(__u32, proc_event_counts) = { 0 };
++static DEFINE_LOCAL_IRQ_LOCK(send_msg_lock);
+ 
+ static inline void send_msg(struct cn_msg *msg)
+ {
+-	preempt_disable();
++	local_lock(send_msg_lock);
+ 
+ 	msg->seq = __this_cpu_inc_return(proc_event_counts) - 1;
+ 	((struct proc_event *)msg->data)->cpu = smp_processor_id();
+@@ -70,7 +72,7 @@ static inline void send_msg(struct cn_ms
+ 	 */
+ 	cn_netlink_send(msg, 0, CN_IDX_PROC, GFP_NOWAIT);
+ 
+-	preempt_enable();
++	local_unlock(send_msg_lock);
+ }
+ 
+ void proc_fork_connector(struct task_struct *task)

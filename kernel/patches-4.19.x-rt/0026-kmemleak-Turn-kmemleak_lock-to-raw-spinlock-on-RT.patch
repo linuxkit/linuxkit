@@ -1,0 +1,159 @@
+From: He Zhe <zhe.he@windriver.com>
+Date: Wed, 19 Dec 2018 16:30:57 +0100
+Subject: [PATCH] kmemleak: Turn kmemleak_lock to raw spinlock on RT
+
+kmemleak_lock, as a rwlock on RT, can possibly be held in atomic context and
+causes the follow BUG.
+
+BUG: scheduling while atomic: migration/15/132/0x00000002
+Preemption disabled at:
+[<ffffffff8c927c11>] cpu_stopper_thread+0x71/0x100
+CPU: 15 PID: 132 Comm: migration/15 Not tainted 4.19.0-rt1-preempt-rt #1
+Call Trace:
+ schedule+0x3d/0xe0
+ __rt_spin_lock+0x26/0x30
+ __write_rt_lock+0x23/0x1a0
+ rt_write_lock+0x2a/0x30
+ find_and_remove_object+0x1e/0x80
+ delete_object_full+0x10/0x20
+ kmemleak_free+0x32/0x50
+ kfree+0x104/0x1f0
+ intel_pmu_cpu_dying+0x67/0x70
+ x86_pmu_dying_cpu+0x1a/0x30
+ cpuhp_invoke_callback+0x92/0x700
+ take_cpu_down+0x70/0xa0
+ multi_cpu_stop+0x62/0xc0
+ cpu_stopper_thread+0x79/0x100
+ smpboot_thread_fn+0x20f/0x2d0
+ kthread+0x121/0x140
+
+And on v4.18 stable tree the following call trace, caused by grabbing
+kmemleak_lock again, is also observed.
+
+kernel BUG at kernel/locking/rtmutex.c:1048!
+CPU: 5 PID: 689 Comm: mkfs.ext4 Not tainted 4.18.16-rt9-preempt-rt #1
+Call Trace:
+ rt_write_lock+0x2a/0x30
+ create_object+0x17d/0x2b0
+ kmemleak_alloc+0x34/0x50
+ kmem_cache_alloc+0x146/0x220
+ mempool_alloc_slab+0x15/0x20
+ mempool_alloc+0x65/0x170
+ sg_pool_alloc+0x21/0x60
+ sg_alloc_table_chained+0x8b/0xb0
+…
+ blk_flush_plug_list+0x204/0x230
+ schedule+0x87/0xe0
+ rt_write_lock+0x2a/0x30
+ create_object+0x17d/0x2b0
+ kmemleak_alloc+0x34/0x50
+ __kmalloc_node+0x1cd/0x340
+ alloc_request_size+0x30/0x70
+ mempool_alloc+0x65/0x170
+ get_request+0x4e3/0x8d0
+ blk_queue_bio+0x153/0x470
+ generic_make_request+0x1dc/0x3f0
+ submit_bio+0x49/0x140
+…
+
+kmemleak is an error detecting feature. We would not expect as good performance
+as without it. As there is no raw rwlock defining helpers, we turn kmemleak_lock
+to a raw spinlock.
+
+Signed-off-by: He Zhe <zhe.he@windriver.com>
+Cc: catalin.marinas@arm.com
+Cc: bigeasy@linutronix.de
+Cc: tglx@linutronix.de
+Cc: rostedt@goodmis.org
+Acked-by: Catalin Marinas <catalin.marinas@arm.com>
+Link: https://lkml.kernel.org/r/1542877459-144382-1-git-send-email-zhe.he@windriver.com
+Link: https://lkml.kernel.org/r/20181218150744.GB20197@arrakis.emea.arm.com
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/kmemleak.c |   20 ++++++++++----------
+ 1 file changed, 10 insertions(+), 10 deletions(-)
+
+--- a/mm/kmemleak.c
++++ b/mm/kmemleak.c
+@@ -26,7 +26,7 @@
+  *
+  * The following locks and mutexes are used by kmemleak:
+  *
+- * - kmemleak_lock (rwlock): protects the object_list modifications and
++ * - kmemleak_lock (raw spinlock): protects the object_list modifications and
+  *   accesses to the object_tree_root. The object_list is the main list
+  *   holding the metadata (struct kmemleak_object) for the allocated memory
+  *   blocks. The object_tree_root is a red black tree used to look-up
+@@ -197,7 +197,7 @@ static LIST_HEAD(gray_list);
+ /* search tree for object boundaries */
+ static struct rb_root object_tree_root = RB_ROOT;
+ /* rw_lock protecting the access to object_list and object_tree_root */
+-static DEFINE_RWLOCK(kmemleak_lock);
++static DEFINE_RAW_SPINLOCK(kmemleak_lock);
+ 
+ /* allocation caches for kmemleak internal data */
+ static struct kmem_cache *object_cache;
+@@ -491,9 +491,9 @@ static struct kmemleak_object *find_and_
+ 	struct kmemleak_object *object;
+ 
+ 	rcu_read_lock();
+-	read_lock_irqsave(&kmemleak_lock, flags);
++	raw_spin_lock_irqsave(&kmemleak_lock, flags);
+ 	object = lookup_object(ptr, alias);
+-	read_unlock_irqrestore(&kmemleak_lock, flags);
++	raw_spin_unlock_irqrestore(&kmemleak_lock, flags);
+ 
+ 	/* check whether the object is still available */
+ 	if (object && !get_object(object))
+@@ -513,13 +513,13 @@ static struct kmemleak_object *find_and_
+ 	unsigned long flags;
+ 	struct kmemleak_object *object;
+ 
+-	write_lock_irqsave(&kmemleak_lock, flags);
++	raw_spin_lock_irqsave(&kmemleak_lock, flags);
+ 	object = lookup_object(ptr, alias);
+ 	if (object) {
+ 		rb_erase(&object->rb_node, &object_tree_root);
+ 		list_del_rcu(&object->object_list);
+ 	}
+-	write_unlock_irqrestore(&kmemleak_lock, flags);
++	raw_spin_unlock_irqrestore(&kmemleak_lock, flags);
+ 
+ 	return object;
+ }
+@@ -593,7 +593,7 @@ static struct kmemleak_object *create_ob
+ 	/* kernel backtrace */
+ 	object->trace_len = __save_stack_trace(object->trace);
+ 
+-	write_lock_irqsave(&kmemleak_lock, flags);
++	raw_spin_lock_irqsave(&kmemleak_lock, flags);
+ 
+ 	min_addr = min(min_addr, ptr);
+ 	max_addr = max(max_addr, ptr + size);
+@@ -624,7 +624,7 @@ static struct kmemleak_object *create_ob
+ 
+ 	list_add_tail_rcu(&object->object_list, &object_list);
+ out:
+-	write_unlock_irqrestore(&kmemleak_lock, flags);
++	raw_spin_unlock_irqrestore(&kmemleak_lock, flags);
+ 	return object;
+ }
+ 
+@@ -1310,7 +1310,7 @@ static void scan_block(void *_start, voi
+ 	unsigned long *end = _end - (BYTES_PER_POINTER - 1);
+ 	unsigned long flags;
+ 
+-	read_lock_irqsave(&kmemleak_lock, flags);
++	raw_spin_lock_irqsave(&kmemleak_lock, flags);
+ 	for (ptr = start; ptr < end; ptr++) {
+ 		struct kmemleak_object *object;
+ 		unsigned long pointer;
+@@ -1367,7 +1367,7 @@ static void scan_block(void *_start, voi
+ 			spin_unlock(&object->lock);
+ 		}
+ 	}
+-	read_unlock_irqrestore(&kmemleak_lock, flags);
++	raw_spin_unlock_irqrestore(&kmemleak_lock, flags);
+ }
+ 
+ /*

@@ -1,0 +1,26 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 11 Jan 2019 21:16:31 +0100
+Subject: [PATCH] rtmutex/rwlock: preserve state like a sleeping lock
+
+The rwlock is spinning while acquiring a lock. Therefore it must become
+a sleeping lock on RT and preserve its task state while sleeping and
+waiting for the lock to become available.
+
+Reported-by: Joe Korty <Joe.Korty@concurrent-rt.com>
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/locking/rwlock-rt.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/kernel/locking/rwlock-rt.c
++++ b/kernel/locking/rwlock-rt.c
+@@ -128,7 +128,7 @@ void __sched __read_rt_lock(struct rt_rw
+ 	 * That would put Reader1 behind the writer waiting on
+ 	 * Reader2 to call read_unlock() which might be unbound.
+ 	 */
+-	rt_mutex_init_waiter(&waiter, false);
++	rt_mutex_init_waiter(&waiter, true);
+ 	rt_spin_lock_slowlock_locked(m, &waiter, flags);
+ 	/*
+ 	 * The slowlock() above is guaranteed to return with the rtmutex is

@@ -1,0 +1,54 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 11 Dec 2018 21:53:43 +0100
+Subject: [PATCH] x86/mm/pat: disable preemption __split_large_page() after
+ spin_lock()
+
+Commit "x86/mm/pat: Disable preemption around __flush_tlb_all()" added a
+warning if __flush_tlb_all() is invoked in preemptible context. On !RT
+the warning does not trigger because a spin lock is acquired which
+disables preemption. On RT the spin lock does not disable preemption and
+so the warning is seen.
+
+Disable preemption to avoid the warning __flush_tlb_all().
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/x86/mm/pageattr.c |    8 ++++++++
+ 1 file changed, 8 insertions(+)
+
+--- a/arch/x86/mm/pageattr.c
++++ b/arch/x86/mm/pageattr.c
+@@ -688,11 +688,17 @@ static int
+ 
+ 	spin_lock(&pgd_lock);
+ 	/*
++	 * Keep preemption disabled after __flush_tlb_all() which expects not be
++	 * preempted during the flush of the local TLB.
++	 */
++	preempt_disable();
++	/*
+ 	 * Check for races, another CPU might have split this page
+ 	 * up for us already:
+ 	 */
+ 	tmp = _lookup_address_cpa(cpa, address, &level);
+ 	if (tmp != kpte) {
++		preempt_enable();
+ 		spin_unlock(&pgd_lock);
+ 		return 1;
+ 	}
+@@ -726,6 +732,7 @@ static int
+ 		break;
+ 
+ 	default:
++		preempt_enable();
+ 		spin_unlock(&pgd_lock);
+ 		return 1;
+ 	}
+@@ -764,6 +771,7 @@ static int
+ 	 * going on.
+ 	 */
+ 	__flush_tlb_all();
++	preempt_enable();
+ 	spin_unlock(&pgd_lock);
+ 
+ 	return 0;

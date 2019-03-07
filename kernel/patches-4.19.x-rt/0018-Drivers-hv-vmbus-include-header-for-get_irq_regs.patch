@@ -1,0 +1,33 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 29 Aug 2018 21:59:04 +0200
+Subject: [PATCH] Drivers: hv: vmbus: include header for get_irq_regs()
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+On !RT the header file get_irq_regs() gets pulled in via other header files. On
+RT it does not and the build fails:
+
+    drivers/hv/vmbus_drv.c:975 implicit declaration of function ‘get_irq_regs’ [-Werror=implicit-function-declaration]
+    drivers/hv/hv.c:115 implicit declaration of function ‘get_irq_regs’ [-Werror=implicit-function-declaration]
+
+Add the header file for get_irq_regs() in a common header so it used by
+vmbus_drv.c by hv.c for their get_irq_regs() usage.
+
+Reported-by: Bernhard Landauer <oberon@manjaro.org>
+Reported-by: Ralf Ramsauer <ralf.ramsauer@oth-regensburg.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/hv/hyperv_vmbus.h |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/drivers/hv/hyperv_vmbus.h
++++ b/drivers/hv/hyperv_vmbus.h
+@@ -31,6 +31,7 @@
+ #include <linux/atomic.h>
+ #include <linux/hyperv.h>
+ #include <linux/interrupt.h>
++#include <linux/irq.h>
+ 
+ #include "hv_trace.h"
+ 

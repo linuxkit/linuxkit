@@ -1,0 +1,96 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 18 Mar 2011 10:11:25 +0100
+Subject: fs: jbd/jbd2: Make state lock and journal head lock rt safe
+
+bit_spin_locks break under RT.
+
+Based on a previous patch from Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+--
+ include/linux/buffer_head.h |    8 ++++++++
+ include/linux/jbd2.h        |   24 ++++++++++++++++++++++++
+ 2 files changed, 32 insertions(+)
+
+--- a/include/linux/buffer_head.h
++++ b/include/linux/buffer_head.h
+@@ -78,6 +78,10 @@ struct buffer_head {
+ 	atomic_t b_count;		/* users using this buffer_head */
+ #ifdef CONFIG_PREEMPT_RT_BASE
+ 	spinlock_t b_uptodate_lock;
++#if IS_ENABLED(CONFIG_JBD2)
++	spinlock_t b_state_lock;
++	spinlock_t b_journal_head_lock;
++#endif
+ #endif
+ };
+ 
+@@ -109,6 +113,10 @@ static inline void buffer_head_init_lock
+ {
+ #ifdef CONFIG_PREEMPT_RT_BASE
+ 	spin_lock_init(&bh->b_uptodate_lock);
++#if IS_ENABLED(CONFIG_JBD2)
++	spin_lock_init(&bh->b_state_lock);
++	spin_lock_init(&bh->b_journal_head_lock);
++#endif
+ #endif
+ }
+ 
+--- a/include/linux/jbd2.h
++++ b/include/linux/jbd2.h
+@@ -347,32 +347,56 @@ static inline struct journal_head *bh2jh
+ 
+ static inline void jbd_lock_bh_state(struct buffer_head *bh)
+ {
++#ifndef CONFIG_PREEMPT_RT_BASE
+ 	bit_spin_lock(BH_State, &bh->b_state);
++#else
++	spin_lock(&bh->b_state_lock);
++#endif
+ }
+ 
+ static inline int jbd_trylock_bh_state(struct buffer_head *bh)
+ {
++#ifndef CONFIG_PREEMPT_RT_BASE
+ 	return bit_spin_trylock(BH_State, &bh->b_state);
++#else
++	return spin_trylock(&bh->b_state_lock);
++#endif
+ }
+ 
+ static inline int jbd_is_locked_bh_state(struct buffer_head *bh)
+ {
++#ifndef CONFIG_PREEMPT_RT_BASE
+ 	return bit_spin_is_locked(BH_State, &bh->b_state);
++#else
++	return spin_is_locked(&bh->b_state_lock);
++#endif
+ }
+ 
+ static inline void jbd_unlock_bh_state(struct buffer_head *bh)
+ {
++#ifndef CONFIG_PREEMPT_RT_BASE
+ 	bit_spin_unlock(BH_State, &bh->b_state);
++#else
++	spin_unlock(&bh->b_state_lock);
++#endif
+ }
+ 
+ static inline void jbd_lock_bh_journal_head(struct buffer_head *bh)
+ {
++#ifndef CONFIG_PREEMPT_RT_BASE
+ 	bit_spin_lock(BH_JournalHead, &bh->b_state);
++#else
++	spin_lock(&bh->b_journal_head_lock);
++#endif
+ }
+ 
+ static inline void jbd_unlock_bh_journal_head(struct buffer_head *bh)
+ {
++#ifndef CONFIG_PREEMPT_RT_BASE
+ 	bit_spin_unlock(BH_JournalHead, &bh->b_state);
++#else
++	spin_unlock(&bh->b_journal_head_lock);
++#endif
+ }
+ 
+ #define J_ASSERT(assert)	BUG_ON(!(assert))

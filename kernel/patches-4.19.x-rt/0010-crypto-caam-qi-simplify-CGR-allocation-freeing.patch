@@ -1,0 +1,131 @@
+From: =?UTF-8?q?Horia=20Geant=C4=83?= <horia.geanta@nxp.com>
+Date: Mon, 8 Oct 2018 14:09:37 +0300
+Subject: [PATCH] crypto: caam/qi - simplify CGR allocation, freeing
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+[Upstream commit 29e83c757006fd751966bdc53392bb22d74179c6]
+
+CGRs (Congestion Groups) have to be freed by the same CPU that
+initialized them.
+This is why currently the driver takes special measures; however, using
+set_cpus_allowed_ptr() is incorrect - as reported by Sebastian.
+
+Instead of the generic solution of replacing set_cpus_allowed_ptr() with
+work_on_cpu_safe(), we use the qman_delete_cgr_safe() QBMan API instead
+of qman_delete_cgr() - which internally takes care of proper CGR
+deletion.
+
+Link: https://lkml.kernel.org/r/20181005125443.dfhd2asqktm22ney@linutronix.de
+Reported-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Horia Geantă <horia.geanta@nxp.com>
+Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
+---
+ drivers/crypto/caam/qi.c |   43 ++++---------------------------------------
+ drivers/crypto/caam/qi.h |    2 +-
+ 2 files changed, 5 insertions(+), 40 deletions(-)
+
+--- a/drivers/crypto/caam/qi.c
++++ b/drivers/crypto/caam/qi.c
+@@ -84,13 +84,6 @@ static u64 times_congested;
+ #endif
+ 
+ /*
+- * CPU from where the module initialised. This is required because QMan driver
+- * requires CGRs to be removed from same CPU from where they were originally
+- * allocated.
+- */
+-static int mod_init_cpu;
+-
+-/*
+  * This is a a cache of buffers, from which the users of CAAM QI driver
+  * can allocate short (CAAM_QI_MEMCACHE_SIZE) buffers. It's faster than
+  * doing malloc on the hotpath.
+@@ -492,12 +485,11 @@ void caam_drv_ctx_rel(struct caam_drv_ct
+ }
+ EXPORT_SYMBOL(caam_drv_ctx_rel);
+ 
+-int caam_qi_shutdown(struct device *qidev)
++void caam_qi_shutdown(struct device *qidev)
+ {
+-	int i, ret;
++	int i;
+ 	struct caam_qi_priv *priv = dev_get_drvdata(qidev);
+ 	const cpumask_t *cpus = qman_affine_cpus();
+-	struct cpumask old_cpumask = current->cpus_allowed;
+ 
+ 	for_each_cpu(i, cpus) {
+ 		struct napi_struct *irqtask;
+@@ -510,26 +502,12 @@ int caam_qi_shutdown(struct device *qide
+ 			dev_err(qidev, "Rsp FQ kill failed, cpu: %d\n", i);
+ 	}
+ 
+-	/*
+-	 * QMan driver requires CGRs to be deleted from same CPU from where they
+-	 * were instantiated. Hence we get the module removal execute from the
+-	 * same CPU from where it was originally inserted.
+-	 */
+-	set_cpus_allowed_ptr(current, get_cpu_mask(mod_init_cpu));
+-
+-	ret = qman_delete_cgr(&priv->cgr);
+-	if (ret)
+-		dev_err(qidev, "Deletion of CGR failed: %d\n", ret);
+-	else
+-		qman_release_cgrid(priv->cgr.cgrid);
++	qman_delete_cgr_safe(&priv->cgr);
++	qman_release_cgrid(priv->cgr.cgrid);
+ 
+ 	kmem_cache_destroy(qi_cache);
+ 
+-	/* Now that we're done with the CGRs, restore the cpus allowed mask */
+-	set_cpus_allowed_ptr(current, &old_cpumask);
+-
+ 	platform_device_unregister(priv->qi_pdev);
+-	return ret;
+ }
+ 
+ static void cgr_cb(struct qman_portal *qm, struct qman_cgr *cgr, int congested)
+@@ -718,22 +696,11 @@ int caam_qi_init(struct platform_device
+ 	struct device *ctrldev = &caam_pdev->dev, *qidev;
+ 	struct caam_drv_private *ctrlpriv;
+ 	const cpumask_t *cpus = qman_affine_cpus();
+-	struct cpumask old_cpumask = current->cpus_allowed;
+ 	static struct platform_device_info qi_pdev_info = {
+ 		.name = "caam_qi",
+ 		.id = PLATFORM_DEVID_NONE
+ 	};
+ 
+-	/*
+-	 * QMAN requires CGRs to be removed from same CPU+portal from where it
+-	 * was originally allocated. Hence we need to note down the
+-	 * initialisation CPU and use the same CPU for module exit.
+-	 * We select the first CPU to from the list of portal owning CPUs.
+-	 * Then we pin module init to this CPU.
+-	 */
+-	mod_init_cpu = cpumask_first(cpus);
+-	set_cpus_allowed_ptr(current, get_cpu_mask(mod_init_cpu));
+-
+ 	qi_pdev_info.parent = ctrldev;
+ 	qi_pdev_info.dma_mask = dma_get_mask(ctrldev);
+ 	qi_pdev = platform_device_register_full(&qi_pdev_info);
+@@ -795,8 +762,6 @@ int caam_qi_init(struct platform_device
+ 		return -ENOMEM;
+ 	}
+ 
+-	/* Done with the CGRs; restore the cpus allowed mask */
+-	set_cpus_allowed_ptr(current, &old_cpumask);
+ #ifdef CONFIG_DEBUG_FS
+ 	debugfs_create_file("qi_congested", 0444, ctrlpriv->ctl,
+ 			    &times_congested, &caam_fops_u64_ro);
+--- a/drivers/crypto/caam/qi.h
++++ b/drivers/crypto/caam/qi.h
+@@ -174,7 +174,7 @@ int caam_drv_ctx_update(struct caam_drv_
+ void caam_drv_ctx_rel(struct caam_drv_ctx *drv_ctx);
+ 
+ int caam_qi_init(struct platform_device *pdev);
+-int caam_qi_shutdown(struct device *dev);
++void caam_qi_shutdown(struct device *dev);
+ 
+ /**
+  * qi_cache_alloc - Allocate buffers from CAAM-QI cache

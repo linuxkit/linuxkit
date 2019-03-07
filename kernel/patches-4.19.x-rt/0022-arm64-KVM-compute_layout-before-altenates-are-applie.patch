@@ -1,0 +1,71 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 26 Jul 2018 09:13:42 +0200
+Subject: [PATCH] arm64: KVM: compute_layout before altenates are applied
+
+compute_layout() is invoked as part of an alternative fixup under
+stop_machine() and needs a sleeping lock as part of get_random_long().
+
+Invoke compute_layout() before the alternatives are applied.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/arm64/include/asm/alternative.h |    6 ++++++
+ arch/arm64/kernel/alternative.c      |    1 +
+ arch/arm64/kvm/va_layout.c           |    7 +------
+ 3 files changed, 8 insertions(+), 6 deletions(-)
+
+--- a/arch/arm64/include/asm/alternative.h
++++ b/arch/arm64/include/asm/alternative.h
+@@ -35,6 +35,12 @@ void apply_alternatives_module(void *sta
+ static inline void apply_alternatives_module(void *start, size_t length) { }
+ #endif
+ 
++#ifdef CONFIG_KVM_ARM_HOST
++void kvm_compute_layout(void);
++#else
++static inline void kvm_compute_layout(void) { }
++#endif
++
+ #define ALTINSTR_ENTRY(feature,cb)					      \
+ 	" .word 661b - .\n"				/* label           */ \
+ 	" .if " __stringify(cb) " == 0\n"				      \
+--- a/arch/arm64/kernel/alternative.c
++++ b/arch/arm64/kernel/alternative.c
+@@ -224,6 +224,7 @@ static int __apply_alternatives_multi_st
+ void __init apply_alternatives_all(void)
+ {
+ 	/* better not try code patching on a live SMP system */
++	kvm_compute_layout();
+ 	stop_machine(__apply_alternatives_multi_stop, NULL, cpu_online_mask);
+ }
+ 
+--- a/arch/arm64/kvm/va_layout.c
++++ b/arch/arm64/kvm/va_layout.c
+@@ -33,7 +33,7 @@ static u8 tag_lsb;
+ static u64 tag_val;
+ static u64 va_mask;
+ 
+-static void compute_layout(void)
++__init void kvm_compute_layout(void)
+ {
+ 	phys_addr_t idmap_addr = __pa_symbol(__hyp_idmap_text_start);
+ 	u64 hyp_va_msb;
+@@ -121,8 +121,6 @@ void __init kvm_update_va_mask(struct al
+ 
+ 	BUG_ON(nr_inst != 5);
+ 
+-	if (!has_vhe() && !va_mask)
+-		compute_layout();
+ 
+ 	for (i = 0; i < nr_inst; i++) {
+ 		u32 rd, rn, insn, oinsn;
+@@ -167,9 +165,6 @@ void kvm_patch_vector_branch(struct alt_
+ 		return;
+ 	}
+ 
+-	if (!va_mask)
+-		compute_layout();
+-
+ 	/*
+ 	 * Compute HYP VA by using the same computation as kern_hyp_va()
+ 	 */

@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 9 Apr 2015 15:23:01 +0200
+Subject: cpufreq: drop K8's driver from beeing selected
+
+Ralf posted a picture of a backtrace from
+
+| powernowk8_target_fn() -> transition_frequency_fidvid() and then at the
+| end:
+| 932         policy = cpufreq_cpu_get(smp_processor_id());
+| 933         cpufreq_cpu_put(policy);
+
+crashing the system on -RT. I assumed that policy was a NULL pointer but
+was rulled out. Since Ralf can't do any more investigations on this and
+I have no machine with this, I simply switch it off.
+
+Reported-by:  Ralf Mardorf <ralf.mardorf@alice-dsl.net>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/cpufreq/Kconfig.x86 |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/cpufreq/Kconfig.x86
++++ b/drivers/cpufreq/Kconfig.x86
+@@ -125,7 +125,7 @@ config X86_POWERNOW_K7_ACPI
+ 
+ config X86_POWERNOW_K8
+ 	tristate "AMD Opteron/Athlon64 PowerNow!"
+-	depends on ACPI && ACPI_PROCESSOR && X86_ACPI_CPUFREQ
++	depends on ACPI && ACPI_PROCESSOR && X86_ACPI_CPUFREQ && !PREEMPT_RT_BASE
+ 	help
+ 	  This adds the CPUFreq driver for K8/early Opteron/Athlon64 processors.
+ 	  Support for K10 and newer processors is now in acpi-cpufreq.
