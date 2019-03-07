@@ -1,4 +1,4 @@
-FROM alpine:3.8 AS mirror
+FROM alpine:3.9 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -24,7 +24,9 @@ RUN apk add alpine-sdk libmnl-dev curl && \
     curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/testing/wireguard-tools/APKBUILD && \
     curl -fsSLo alpine-compat.patch https://git.alpinelinux.org/aports/plain/testing/wireguard-tools/alpine-compat.patch && \
     su -c "abuild-keygen -a -n && abuild -r" builder && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch)
+    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch) && \
+    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-[0-9]*.apk /mirror/$(apk --print-arch) && \
+    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-quick-[0-9]*.apk /mirror/$(apk --print-arch)
 
 # install abuild for signing
 RUN apk add --no-cache abuild
@@ -84,7 +86,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.8
+FROM alpine:3.9
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream

@@ -2,24 +2,24 @@ kernel:
   image: linuxkit/kernel:4.14.88
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:c563953a2277eb73a89d89f70e4b6dcdcfebc2d1
-  - linuxkit/runc:83d0edb4552b1a5df1f0976f05f442829eac38fe
-  - linuxkit/containerd:326b096cd5fbab0f864e52721d036cade67599d6
-  - linuxkit/ca-certificates:v0.6
+  - linuxkit/init:005807f5c6a74e23f485a6d1657818bdccb70cd0
+  - linuxkit/runc:606971451ea29b4238029804ca638f9f85caf5af
+  - linuxkit/containerd:6e6841be5ad15c30752d81d121b247fa3ae08c97
+  - linuxkit/ca-certificates:906c46a26fd2df271bf64c0259bf2267f7593213
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.6
+    image: linuxkit/sysctl:713e535f2d4e4c74aba50cc7f73e3826b2dd3857
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.6
+    image: linuxkit/dhcpcd:85738d3d2f152a7879e17a61444f7714b858c2ee
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:v0.6
+    image: linuxkit/format:ada5fd97592c33399140f5f93f517c02f55edb14
     command: ["/usr/bin/format", "/dev/sda"]
   - name: dm-crypt
-    image: linuxkit/dm-crypt:9e41a164358b0235f0c242219b1a424c6552d46c
+    image: linuxkit/dm-crypt:6ace64a97f2db77301be0c1106dd2e2ddf9e2eab
     command: ["/usr/bin/crypto", "crypt_dev", "/dev/sda1"]
   - name: mount
-    image: linuxkit/mount:v0.6
+    image: linuxkit/mount:019bc551972cf2d136b443d70b4bf94c54d0d1fe
     command: ["/usr/bin/mountie", "/dev/mapper/crypt_dev", "/var/secure_storage"]
   - name: bbox
     image: busybox
@@ -28,11 +28,11 @@ onboot:
       - /var:/var
 services:
   - name: getty
-    image: linuxkit/getty:2eb742cd7a68e14cf50577c02f30147bc406e478
+    image: linuxkit/getty:01993189b8c583dc91cbbc7d4be131832c0fc205
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:v0.6
+    image: linuxkit/rngd:dc49cff2c835b196610a3f2efb585bb276658bce
 files:
   - path: etc/dm-crypt/key
     # the below key is just to keep the example self-contained

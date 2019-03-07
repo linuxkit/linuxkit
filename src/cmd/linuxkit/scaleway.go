@@ -492,7 +492,7 @@ func (s *ScalewayClient) ConnectSerialPort(instanceID string) error {
 
 	fullURL := fmt.Sprintf("%s?arg=%s&arg=%s", gottyURL, s.api.Token, instanceID)
 
-	log.Debugf("Connection to ", fullURL)
+	log.Debugf("Connection to %s", fullURL)
 	gottyClient, err := gotty.NewClient(fullURL)
 	if err != nil {
 		return err

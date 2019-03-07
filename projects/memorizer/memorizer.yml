@@ -2,16 +2,16 @@ kernel:
   image: "linuxkitprojects/kernel-memorizer:4.10_dbg-17e2eee03ab59f8df8a9c10ace003a84aec2f540"
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:a2166a6048ce041eebe005ab99454cfdeaa5c848
-  - linuxkit/runc:069d5cd3cc4f0aec70e4af53aed5d27a21c79c35
-  - linuxkit/containerd:2aff4d486220667364b2971b5fc6225bf165a069
+  - linuxkit/init:005807f5c6a74e23f485a6d1657818bdccb70cd0
+  - linuxkit/runc:606971451ea29b4238029804ca638f9f85caf5af
+  - linuxkit/containerd:6e6841be5ad15c30752d81d121b247fa3ae08c97
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.6
+    image: linuxkit/dhcpcd:85738d3d2f152a7879e17a61444f7714b858c2ee
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:2eb742cd7a68e14cf50577c02f30147bc406e478
+    image: linuxkit/getty:01993189b8c583dc91cbbc7d4be131832c0fc205
     env:
      - INSECURE=true
 trust:

@@ -87,6 +87,7 @@ nfs-utils
 open-iscsi
 openntpd
 openrc
+openresolv
 openssh-server
 openssl
 openssl-dev
@@ -110,7 +111,6 @@ slang-dev
 sntpc
 socat
 squashfs-tools
-strace
 swig
 tar
 tcpdump

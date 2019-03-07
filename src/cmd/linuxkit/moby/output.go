@@ -16,18 +16,18 @@ import (
 
 var (
 	outputImages = map[string]string{
-		"iso":         "linuxkit/mkimage-iso:b5403fcaedec7fad46d69bf0d4a8704a24ac82ca",
-		"iso-bios":    "linuxkit/mkimage-iso-bios:f80dec8fd20b00b3f0689daebb4eb4f72bb8ccba",
+		"iso":         "linuxkit/mkimage-iso:17c68596851349c9d8917459116f7d3409f12fdd",
+		"iso-bios":    "linuxkit/mkimage-iso-bios:50aedc359bc13ee2d472a73d6e6740740b809c95",
 		"iso-efi":     "linuxkit/mkimage-iso-efi:248673cd3784eb3664d0f80b5bd31829465ca784",
-		"raw-bios":    "linuxkit/mkimage-raw-bios:6b4890aacfae5b010c9adb72d32c5f0edc366523",
+		"raw-bios":    "linuxkit/mkimage-raw-bios:71a966249ffbb23a499cfca280bbabb8afbbd530",
 		"raw-efi":     "linuxkit/mkimage-raw-efi:a01ff1621b9945a63675e2a73d3fda064fad3c3f",
-		"squashfs":    "linuxkit/mkimage-squashfs:60d9d141c49796f9a30bd2467884ea5c1813621f",
+		"squashfs":    "linuxkit/mkimage-squashfs:c409c0f2045a0b9bffec38b981994a3e02852443",
 		"gcp":         "linuxkit/mkimage-gcp:e6cdcf859ab06134c0c37a64ed5f886ec8dae1a1",
 		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:74cc5c7c4064c7d25d3caf08ab51cddd9b840ebe",
 		"vhd":         "linuxkit/mkimage-vhd:3820219e5c350fe8ab2ec6a217272ae82f4b9242",
 		"dynamic-vhd": "linuxkit/mkimage-dynamic-vhd:743ac9959fe6d3912ebd78b4fd490b117c53f1a6",
 		"vmdk":        "linuxkit/mkimage-vmdk:cee81a3ed9c44ae446ef7ebff8c42c1e77b3e1b5",
-		"rpi3":        "linuxkit/mkimage-rpi3:8b36b2cd7f19a71319a38c5c5059e655f3114cb0",
+		"rpi3":        "linuxkit/mkimage-rpi3:b787b1210a0e13456a8f128722f1134e3933907b",
 	}
 )
 

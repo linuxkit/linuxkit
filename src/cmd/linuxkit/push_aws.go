@@ -144,7 +144,7 @@ func pushAWS(args []string) {
 	if snapshotID == nil {
 		log.Fatalf("SnapshotID unavailable after import completed")
 	} else {
-		log.Debugf("SnapshotID: %s", snapshotID)
+		log.Debugf("SnapshotID: %s", *snapshotID)
 	}
 
 	regParams := &ec2.RegisterImageInput{

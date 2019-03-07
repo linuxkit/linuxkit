@@ -2,33 +2,33 @@ kernel:
   image: linuxkit/kernel:4.19.26
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:a2166a6048ce041eebe005ab99454cfdeaa5c848
-  - linuxkit/runc:069d5cd3cc4f0aec70e4af53aed5d27a21c79c35
-  - linuxkit/containerd:2aff4d486220667364b2971b5fc6225bf165a069
-  - linuxkit/ca-certificates:v0.6
+  - linuxkit/init:005807f5c6a74e23f485a6d1657818bdccb70cd0
+  - linuxkit/runc:606971451ea29b4238029804ca638f9f85caf5af
+  - linuxkit/containerd:6e6841be5ad15c30752d81d121b247fa3ae08c97
+  - linuxkit/ca-certificates:906c46a26fd2df271bf64c0259bf2267f7593213
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.6
+    image: linuxkit/sysctl:713e535f2d4e4c74aba50cc7f73e3826b2dd3857
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.6
+    image: linuxkit/dhcpcd:85738d3d2f152a7879e17a61444f7714b858c2ee
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: sysfs
-    image: linuxkit/sysfs:v0.6
+    image: linuxkit/sysfs:21a2071205e7060ed76656960eda5434b2fdcd91
   - name: format
-    image: linuxkit/format:v0.6
+    image: linuxkit/format:ada5fd97592c33399140f5f93f517c02f55edb14
   - name: mount
-    image: linuxkit/mount:v0.6
+    image: linuxkit/mount:019bc551972cf2d136b443d70b4bf94c54d0d1fe
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 
 services:
   - name: getty
-    image: linuxkit/getty:2eb742cd7a68e14cf50577c02f30147bc406e478
+    image: linuxkit/getty:01993189b8c583dc91cbbc7d4be131832c0fc205
     env:
       - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:v0.6
+    image: linuxkit/rngd:dc49cff2c835b196610a3f2efb585bb276658bce
   - name: ntpd
-    image: linuxkit/openntpd:v0.6
+    image: linuxkit/openntpd:7f48912e995d0eb6d021b5c0d2d2a062b3b2e4d3
 
   - name: docker
     image: docker:18.06.0-ce-dind
@@ -46,7 +46,7 @@ services:
       - /etc/docker/daemon.json:/etc/docker/daemon.json
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: cadvisor
-    image: linuxkit/cadvisor:v0.6
+    image: linuxkit/cadvisor:0fbe6a4a89a555d749ea99735477833757d24d5d
 files:
   - path: var/lib/docker
     directory: true

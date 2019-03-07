@@ -1,10 +1,43 @@
-# This Dockerfile extracts the perf utility from a kernel package and
-# places it into a scratch image
+# This Dockerfile extracts the source code and headers from a kernel package,
+# builds the perf utility, and places it into a scratch image
 ARG IMAGE
-FROM ${IMAGE} AS kernel
+FROM ${IMAGE} AS ksrc
+
+FROM linuxkit/alpine:518c2ed0f398c5508969ac5e033607201fb419ed AS build
+RUN apk add \
+    argp-standalone \
+    bash \
+    bc \
+    binutils-dev \
+    bison \
+    build-base \
+    diffutils \
+    flex \
+    gmp-dev \
+    installkernel \
+    kmod \
+    libelf-dev \
+    mpc1-dev \
+    mpfr-dev \
+    sed \
+    tar \
+    xz \
+    xz-dev \
+    zlib-dev
+
+COPY --from=ksrc /linux.tar.xz /kernel-headers.tar /
+RUN tar xf linux.tar.xz && \
+    tar xf kernel-headers.tar
+
+WORKDIR /linux
+
+RUN mkdir -p /out && \
+    make -C tools/perf LDFLAGS=-static && \
+    strip tools/perf/perf && \
+    cp tools/perf/perf /out
 
 FROM scratch
 ENTRYPOINT []
 CMD []
 WORKDIR /
-COPY --from=kernel /perf /usr/bin/perf
+COPY --from=build /out/perf /usr/bin/perf

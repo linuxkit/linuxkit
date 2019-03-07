@@ -157,10 +157,9 @@ fetch: sources/linux-$(1).tar.xz
 # with DCT as part of the dependency on build_$(2)$(3)$(4) and then build
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
-# Only build perf for the latest LTS and the latest stable kernel
-ifneq ($(2), $(filter $(2),4.9.x))
-ifneq ($(ARCH),aarch64)
-# Skip arm64 for now as perf for 4.19.x fails to build.
+# Skip perf build for now. See:
+# https://github.com/linuxkit/linuxkit/issues/3299
+ifeq ($(ARCH),SKIP)
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
@@ -193,7 +192,6 @@ build: build_perf_$(2)$(3)$(4)
 forcebuild: forcebuild_perf_$(2)$(3)$(4)
 push: push_perf_$(2)$(3)$(4)
 forcepush: forcepush_perf_$(2)$(3)$(4)
-endif
 endif
 
 # Only build BCC on x86 and only on latest LTS and latest stable kernels.

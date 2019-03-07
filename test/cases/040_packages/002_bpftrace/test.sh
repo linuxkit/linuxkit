@@ -1,5 +1,6 @@
 #!/bin/sh
 # SUMMARY: Check that the bpftrace package works
+# LABELS: disabled
 # REPEAT:
 
 set -e

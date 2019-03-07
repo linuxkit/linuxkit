@@ -2,21 +2,21 @@ kernel:
   image: linuxkit/kernel:4.19.26
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:a2166a6048ce041eebe005ab99454cfdeaa5c848
-  - linuxkit/runc:069d5cd3cc4f0aec70e4af53aed5d27a21c79c35
-  - linuxkit/containerd:2aff4d486220667364b2971b5fc6225bf165a069
-  - linuxkit/ca-certificates:v0.6
-  - linuxkit/memlogd:v0.6
+  - linuxkit/init:005807f5c6a74e23f485a6d1657818bdccb70cd0
+  - linuxkit/runc:606971451ea29b4238029804ca638f9f85caf5af
+  - linuxkit/containerd:6e6841be5ad15c30752d81d121b247fa3ae08c97
+  - linuxkit/ca-certificates:906c46a26fd2df271bf64c0259bf2267f7593213
+  - linuxkit/memlogd:3d74c1153f99948d92c0fa9c759f816ab48d9855
 services:
 # A service which generates logs of log messages
   - name: fill-the-logs
     image: alpine
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); done" ]
   - name: write-and-rotate-logs
-    image: linuxkit/logwrite:v0.6
+    image: linuxkit/logwrite:62cbf48ee2fcd374f26de7b901adc287ff6f4696
     command: ["/usr/bin/logwrite", "-max-log-size", "1024"]
   - name: check-the-logs
-    image: alpine:3.8
+    image: alpine:3.9
     binds:
       - /check.sh:/check.sh
       - /dev/console:/dev/console
@@ -32,4 +32,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.8
+    - alpine:3.9

@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:4768505d40f23e198011b6f2c796f985fe50ec39 AS kernel-build
+FROM linuxkit/alpine:518c2ed0f398c5508969ac5e033607201fb419ed AS kernel-build
 RUN apk add \
     argp-standalone \
     automake \
@@ -16,8 +16,6 @@ RUN apk add \
     installkernel \
     kmod \
     libelf-dev \
-    libressl \
-    libressl-dev \
     linux-headers \
     mpc1-dev \
     mpfr-dev \
@@ -173,16 +171,6 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
     ( cd /tmp && tar cf /out/kernel-dev.tar usr/src )
 
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
-
-# perf
-# Only build perf for the latest LTS and the latest stable kernel.
-# Skip arm64 for now as perf for 4.19.x fails to build.
-RUN if [ "${KERNEL_SERIES}" != 4.9.x ] && [ $(uname -m) != aarch64 ]; then \
-       mkdir -p /build/perf && \
-       make -C tools/perf LDFLAGS=-static O=/build/perf && \
-       strip /build/perf/perf && \
-       cp /build/perf/perf /out; \
-     fi
 
 # Download Intel ucode and create a CPIO archive for it
 ENV UCODE_URL=https://downloadmirror.intel.com/28039/eng/microcode-20180807.tgz

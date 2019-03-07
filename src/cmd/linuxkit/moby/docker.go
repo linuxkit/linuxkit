@@ -219,7 +219,7 @@ func getAuth(cli *client.Client, refStr string) string {
 	// Normalise ref
 	ref, err := distref.ParseNormalizedNamed(refStr)
 	if err != nil {
-		log.Debugf("Failed to parse reference %s: %v: %v", refStr, err)
+		log.Debugf("Failed to parse reference %s: %v", refStr, err)
 		return ""
 	}
 	hostname := distref.Domain(ref)

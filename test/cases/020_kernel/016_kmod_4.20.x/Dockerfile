@@ -6,7 +6,7 @@
 FROM linuxkit/kernel:4.20.13 AS ksrc
 
 # Extract headers and compile module
-FROM linuxkit/alpine:3683c9a66cd4da40bd7d6c7da599b2dcd738b559 AS build
+FROM linuxkit/alpine:5ce235f4fb55772e7f78871a70bfe26f774fe2b0 AS build
 RUN apk add build-base libelf-dev
 
 COPY --from=ksrc /kernel-dev.tar /
@@ -17,7 +17,7 @@ COPY ./src/* ./
 RUN make all
 
 # Package
-FROM alpine:3.8
+FROM alpine:3.9
 COPY --from=build /kmod/hello_world.ko /
 COPY check.sh /check.sh
 ENTRYPOINT ["/bin/sh", "/check.sh"]
