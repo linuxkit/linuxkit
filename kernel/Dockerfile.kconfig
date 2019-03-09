@@ -21,8 +21,10 @@ COPY / /
 # Unpack kernels (download if not present)
 RUN set -e && \
     for VERSION in ${KERNEL_VERSIONS}; do \
+        MAJOR=$(echo ${VERSION} | cut -d . -f 1) && \
+        MAJOR=v${MAJOR}.x && \
         echo "Downloading/Unpacking $VERSION" && \
-        KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${VERSION}.tar.xz && \
+        KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/${MAJOR}/linux-${VERSION}.tar.xz && \
         [ -f sources/linux-${VERSION}.tar.xz ] || curl -fSLo sources/linux-${VERSION}.tar.xz ${KERNEL_SOURCE} && \
         bsdtar xf sources/linux-${VERSION}.tar.xz; \
     done
