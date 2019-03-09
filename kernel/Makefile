@@ -72,17 +72,12 @@ endif
 
 KERNEL_VERSIONS=
 
-.PHONY: fetch build push
+.PHONY: build push
 # Targets:
-# fetch: Downloads the kernel sources into ./sources
 # build: Builds all kernels
 # push:  Pushes and sign all tagged kernel images to hub
-fetch:
 build:
 push:
-
-sources:
-	mkdir -p $@
 
 # A template for defining kernel build
 # Arguments:
@@ -100,8 +95,6 @@ sources:
 define kernel
 
 ifeq ($(4),)
-sources/linux-$(1).tar.xz: Makefile | sources
-	curl -fsSLo sources/linux-$(1).tar.xz https://www.kernel.org/pub/linux/kernel/v4.x/linux-$(1).tar.xz 
 KERNEL_VERSIONS+=$(1)
 endif
 
@@ -149,7 +142,6 @@ forcebuild: forcebuild_$(2)$(3)$(4)
 push: push_$(2)$(3)$(4)
 forcepush: forcepush_$(2)$(3)$(4)
 show-tags: show-tag_$(2)$(3)$(4)
-fetch: sources/linux-$(1).tar.xz
 
 # 'docker build' with the FROM image supplied as --build-arg
 # *and* with DOCKER_CONTENT_TRUST=1 currently does not work
