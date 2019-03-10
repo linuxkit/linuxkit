@@ -36,10 +36,6 @@ ARG KERNEL_SERIES
 ARG EXTRA
 ARG DEBUG
 
-ENV KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.xz
-ENV KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/v4.x/sha256sums.asc
-ENV KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/v4.x/linux-${KERNEL_VERSION}.tar.sign
-
 ENV WIREGUARD_VERSION=0.0.20190227
 ENV WIREGUARD_SHA256="fcdb26fd2692d9e1dee54d14418603c38fbb973a06ce89d08fbe45292ff37f79"
 ENV WIREGUARD_URL=https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${WIREGUARD_VERSION}.tar.xz
@@ -51,7 +47,12 @@ COPY / /
 
 # Download and verify kernel
 # PGP keys: 589DA6B1 (greg@kroah.com) & 6092693E (autosigner@kernel.org) & 00411886 (torvalds@linux-foundation.org)
-RUN curl -fsSLO ${KERNEL_SHA256_SUMS} && \
+RUN KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d . -f 1) && \
+    KERNEL_MAJOR=v${KERNEL_MAJOR}.x && \
+    KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/linux-${KERNEL_VERSION}.tar.xz && \
+    KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/sha256sums.asc && \
+    KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/linux-${KERNEL_VERSION}.tar.sign && \
+    curl -fsSLO ${KERNEL_SHA256_SUMS} && \
     gpg2 -q --import keys.asc && \
     gpg2 --verify sha256sums.asc && \
     KERNEL_SHA256=$(grep linux-${KERNEL_VERSION}.tar.xz sha256sums.asc | cut -d ' ' -f 1) && \
