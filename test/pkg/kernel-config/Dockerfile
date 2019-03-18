@@ -3,8 +3,8 @@ FROM linuxkit/alpine:5ce235f4fb55772e7f78871a70bfe26f774fe2b0 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl bash
 
-ENV DOCKER_CHECK_CONFIG_COMMIT=72cda6a6c2f25854bea2d69168082684f2c9feca
-ADD https://raw.githubusercontent.com/docker/docker/${DOCKER_CHECK_CONFIG_COMMIT}/contrib/check-config.sh /out/check-config.sh
+ENV MOBY_CHECK_CONFIG_COMMIT=38005cfc12fb6bdcff359c25e8fe05f2944b0d49
+ADD https://raw.githubusercontent.com/moby/moby/${MOBY_CHECK_CONFIG_COMMIT}/contrib/check-config.sh /out/check-config.sh
 ADD . ./out
 
 RUN mkdir -p /out/lib/modules
