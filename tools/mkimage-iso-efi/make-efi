@@ -8,7 +8,7 @@ case $ARCH in
 x86_64)
   BOOTFILE=BOOTX64.EFI
   ROOTDEV=/dev/sr0
-  LINUX_ENTRY=linuxefi
+  LINUX_ENTRY=linux
   ;;
 aarch64)
   BOOTFILE=BOOTAA64.EFI
