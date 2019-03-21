@@ -54,7 +54,7 @@ the specific version of the kernel. Currently, the headers are not
 included in the initial RAM disk, but it is possible to compile custom
 modules offline and then include the modules in the initial RAM disk.
 
-There is a [example](../test/cases/020_kernel/010_kmod_4.9.x), but
+There is a [example](../test/cases/020_kernel/011_kmod_4.9.x), but
 basically one can use a multi-stage build to compile the kernel
 modules:
 
