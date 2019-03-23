@@ -174,7 +174,7 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
 # Download Intel ucode and create a CPIO archive for it
-ENV UCODE_URL=https://downloadmirror.intel.com/28039/eng/microcode-20180807.tgz
+ENV UCODE_URL=https://downloadmirror.intel.com/28087/eng/microcode-20180807a.tgz
 RUN set -e && \
     if [ $(uname -m) == x86_64 ]; then \
         cd /ucode && \
