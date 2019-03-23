@@ -264,13 +264,11 @@ $(eval $(call kernel,5.0.1,5.0.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.20.15,4.20.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.28,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.25,4.19.x,-rt,))
-$(eval $(call kernel,4.14.105,4.14.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),s390x)
 $(eval $(call kernel,5.0.1,5.0.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.20.15,4.20.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.28,4.19.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.105,4.14.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config
