@@ -1,4 +1,4 @@
-From 5d71157d58856c352cffe294b1ae306944627f0c Mon Sep 17 00:00:00 2001
+From c840ad26d7b77ef17836ba4e0fac85a086804e54 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:04 -0700
 Subject: [PATCH 06/21] hyper-v: trace vmbus_onopen_result()
