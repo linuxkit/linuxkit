@@ -1,0 +1,32 @@
+kernel:
+  image: linuxkit/kernel:4.19.28
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:629fdad56e62ae72bf8becf0c8a668241480d3ff
+  - linuxkit/runc:606971451ea29b4238029804ca638f9f85caf5af
+  - linuxkit/containerd:39ac21278cfcc10dbcc32ad7f5abbe820852c5bd
+onboot:
+  - name: ip
+    image: linuxkit/ip:4787413a729748bcf7560c73e0b46d38b8a8df2b
+    binds:
+     - /etc/ip:/etc/ip
+    command: ["ip", "-b", "/etc/ip/eth0.conf"]
+services:
+  - name: getty
+    image: linuxkit/getty:01993189b8c583dc91cbbc7d4be131832c0fc205
+    env:
+     - INSECURE=true
+files:     
+  - path: etc/ip/eth0.conf
+    contents: |
+      address add 10.10.1.225/24 dev eth0
+      link set eth0 up
+      route add default via 10.10.1.100 dev eth0
+  - path: etc/resolv.conf
+    contents: |
+#      domain test.local
+      nameserver 10.10.1.101
+      nameserver 10.10.1.100     
+trust:
+  org:
+    - linuxkit
