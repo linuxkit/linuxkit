@@ -7,7 +7,7 @@ FROM linuxkit/kernel:4.14.110 AS ksrc
 
 # Extract headers and compile module
 FROM linuxkit/alpine:5ce235f4fb55772e7f78871a70bfe26f774fe2b0 AS build
-RUN apk add build-base libelf-dev
+RUN apk add build-base elfutils-dev
 
 COPY --from=ksrc /kernel-dev.tar /
 RUN tar xf kernel-dev.tar
