@@ -15,7 +15,7 @@ RUN apk add \
     gnupg \
     installkernel \
     kmod \
-    libelf-dev \
+    elfutils-dev \
     linux-headers \
     mpc1-dev \
     mpfr-dev \

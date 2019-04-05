@@ -16,7 +16,7 @@ RUN apk add \
     gmp-dev \
     installkernel \
     kmod \
-    libelf-dev \
+    elfutils-dev \
     mpc1-dev \
     mpfr-dev \
     sed \
