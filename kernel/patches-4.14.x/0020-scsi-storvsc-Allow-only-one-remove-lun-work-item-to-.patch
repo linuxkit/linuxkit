@@ -1,4 +1,4 @@
-From f2227120d3dd36a80a9fae854f68a5127a18cf29 Mon Sep 17 00:00:00 2001
+From cdda0d84f27668400ed0fdd652cac41cfbbec2e4 Mon Sep 17 00:00:00 2001
 From: Cathy Avery <cavery@redhat.com>
 Date: Tue, 31 Oct 2017 08:52:06 -0400
 Subject: [PATCH 20/21] scsi: storvsc: Allow only one remove lun work item to
@@ -128,5 +128,5 @@ index beb585ddc07d..e94f75e25cb1 100644
  	storvsc_dev_remove(dev);
  	scsi_host_put(host);
 -- 
-2.19.2
+2.21.0
 

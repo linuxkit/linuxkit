@@ -3,11 +3,11 @@
 # In the last stage, it creates a package, which can be used for
 # testing.
 
-FROM linuxkit/kernel:5.0.5 AS ksrc
+FROM linuxkit/kernel:5.0.6 AS ksrc
 
 # Extract headers and compile module
 FROM linuxkit/alpine:5ce235f4fb55772e7f78871a70bfe26f774fe2b0 AS build
-RUN apk add build-base libelf-dev
+RUN apk add build-base elfutils-dev
 
 COPY --from=ksrc /kernel-dev.tar /
 RUN tar xf kernel-dev.tar

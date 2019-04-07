@@ -1,4 +1,4 @@
-From f9520c3c8e3bfc0954693c97d117ae96c5b72d2e Mon Sep 17 00:00:00 2001
+From be3804c01ec67aff88f7f2d138b94d90f958f49c Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sun, 6 Nov 2016 13:14:07 -0800
 Subject: [PATCH 05/14] Drivers: hv: utils: Fix the mapping between host
@@ -44,5 +44,5 @@ index bcd06306f3e8..e7707747f56d 100644
  	}
  
 -- 
-2.19.2
+2.21.0
 
