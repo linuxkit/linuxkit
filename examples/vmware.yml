@@ -2,22 +2,22 @@ kernel:
   image: linuxkit/kernel:4.19.34
   cmdline: "console=tty0"
 init:
-  - linuxkit/init:3a772fafa2e45b872c72375dd6bc34993257b6d1
-  - linuxkit/runc:02f2f6dd425eb3ff98f488b5cdef0125be787332
-  - linuxkit/containerd:d197495c30d0c6e81cb038d8ab3b8f793736b39d
-  - linuxkit/ca-certificates:906c46a26fd2df271bf64c0259bf2267f7593213
+  - linuxkit/init:v0.7
+  - linuxkit/runc:v0.7
+  - linuxkit/containerd:v0.7
+  - linuxkit/ca-certificates:v0.7
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:713e535f2d4e4c74aba50cc7f73e3826b2dd3857
+    image: linuxkit/sysctl:v0.7
 services:
   - name: getty
-    image: linuxkit/getty:01993189b8c583dc91cbbc7d4be131832c0fc205
+    image: linuxkit/getty:v0.7
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:dc49cff2c835b196610a3f2efb585bb276658bce
+    image: linuxkit/rngd:v0.7
   - name: dhcpcd
-    image: linuxkit/dhcpcd:85738d3d2f152a7879e17a61444f7714b858c2ee
+    image: linuxkit/dhcpcd:v0.7
   - name: nginx
     image: nginx:1.13.8-alpine
     capabilities:

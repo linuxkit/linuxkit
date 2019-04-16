@@ -2,31 +2,31 @@ kernel:
   image: linuxkit/kernel:4.19.34
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:3a772fafa2e45b872c72375dd6bc34993257b6d1
-  - linuxkit/runc:02f2f6dd425eb3ff98f488b5cdef0125be787332
-  - linuxkit/containerd:d197495c30d0c6e81cb038d8ab3b8f793736b39d
-  - linuxkit/ca-certificates:906c46a26fd2df271bf64c0259bf2267f7593213
+  - linuxkit/init:v0.7
+  - linuxkit/runc:v0.7
+  - linuxkit/containerd:v0.7
+  - linuxkit/ca-certificates:v0.7
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:713e535f2d4e4c74aba50cc7f73e3826b2dd3857
+    image: linuxkit/sysctl:v0.7
   - name: sysfs
-    image: linuxkit/sysfs:21a2071205e7060ed76656960eda5434b2fdcd91
+    image: linuxkit/sysfs:v0.7
   - name: format
-    image: linuxkit/format:ada5fd97592c33399140f5f93f517c02f55edb14
+    image: linuxkit/format:v0.7
   - name: mount
-    image: linuxkit/mount:019bc551972cf2d136b443d70b4bf94c54d0d1fe
+    image: linuxkit/mount:v0.7
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: getty
-    image: linuxkit/getty:01993189b8c583dc91cbbc7d4be131832c0fc205
+    image: linuxkit/getty:v0.7
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:dc49cff2c835b196610a3f2efb585bb276658bce
+    image: linuxkit/rngd:v0.7
   - name: dhcpcd
-    image: linuxkit/dhcpcd:85738d3d2f152a7879e17a61444f7714b858c2ee
+    image: linuxkit/dhcpcd:v0.7
   - name: ntpd
-    image: linuxkit/openntpd:7f48912e995d0eb6d021b5c0d2d2a062b3b2e4d3
+    image: linuxkit/openntpd:v0.7
   - name: docker
     image: docker:18.06.0-ce-dind
     capabilities:
