@@ -20,7 +20,7 @@ onboot:
   - name: test
     image: linuxkit/test-containerd:6450109185b6678866b76867b7394c5c90f46225
   - name: poweroff
-    image: linuxkit/poweroff:9f4e04f09bbb4a028f0a1f57d430e1ad3095ace1
+    image: linuxkit/poweroff:b498d30dd9660090565537fceb9e757618737a85
 trust:
   org:
     - linuxkit
