@@ -1,4 +1,4 @@
-VERSION="v0.7"
+VERSION="v0.7+"
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
 GO_COMPILE=linuxkit/go-compile:8de0e27a38498389e43b3a5b520d943a2b3be5ba
