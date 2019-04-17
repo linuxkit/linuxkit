@@ -2,25 +2,25 @@ kernel:
   image: linuxkit/kernel:4.19.34
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:3a772fafa2e45b872c72375dd6bc34993257b6d1
-  - linuxkit/runc:02f2f6dd425eb3ff98f488b5cdef0125be787332
-  - linuxkit/containerd:d197495c30d0c6e81cb038d8ab3b8f793736b39d
-  - linuxkit/ca-certificates:906c46a26fd2df271bf64c0259bf2267f7593213
+  - linuxkit/init:v0.7
+  - linuxkit/runc:v0.7
+  - linuxkit/containerd:v0.7
+  - linuxkit/ca-certificates:v0.7
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:85738d3d2f152a7879e17a61444f7714b858c2ee
+    image: linuxkit/dhcpcd:v0.7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:713e535f2d4e4c74aba50cc7f73e3826b2dd3857
+    image: linuxkit/sysctl:v0.7
   - name: format
-    image: linuxkit/format:ada5fd97592c33399140f5f93f517c02f55edb14
+    image: linuxkit/format:v0.7
   - name: mount
-    image: linuxkit/mount:019bc551972cf2d136b443d70b4bf94c54d0d1fe
+    image: linuxkit/mount:v0.7
     command: ["/usr/bin/mountie", "/var/lib"]
   - name: test
     image: linuxkit/test-containerd:6450109185b6678866b76867b7394c5c90f46225
   - name: poweroff
-    image: linuxkit/poweroff:9f4e04f09bbb4a028f0a1f57d430e1ad3095ace1
+    image: linuxkit/poweroff:b498d30dd9660090565537fceb9e757618737a85
 trust:
   org:
     - linuxkit

@@ -3,6 +3,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
+## [v0.7] - 2019-04-17
+### Added
+- Reproducible `linuxkit build` for some output formats
+- Support uncompressed kernels, e.g., for crosvm and firecracker.
+- Support encrypted disks via `dm-crypt`
+- New `bpftrace` package
+- Support for USB devices in `qemu`
+
+### Changed
+- Alpine base updated to 3.9
+- `containerd` updated to v1.2.6
+- WireGuard updated to 0.0.20190227
+- Updated Docker base API level
+- VirtualBox improvements (multiple drives and network adapters)
+- Fixed Windows path handling in `linuxkit`
+- GCP: Improve error checking/handling
+
+### Removed
+
+
 ## [v0.6] - 2018-07-26
 ### Added
 - `linuxkit build` now works with private repositories and registries.

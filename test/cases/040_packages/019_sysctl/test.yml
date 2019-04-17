@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:4.19.34
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:3a772fafa2e45b872c72375dd6bc34993257b6d1
-  - linuxkit/runc:02f2f6dd425eb3ff98f488b5cdef0125be787332
+  - linuxkit/init:v0.7
+  - linuxkit/runc:v0.7
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:713e535f2d4e4c74aba50cc7f73e3826b2dd3857
+    image: linuxkit/sysctl:v0.7
   - name: test
     image: alpine:3.9
     net: host
@@ -16,7 +16,7 @@ onboot:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:9f4e04f09bbb4a028f0a1f57d430e1ad3095ace1
+    image: linuxkit/poweroff:b498d30dd9660090565537fceb9e757618737a85
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh

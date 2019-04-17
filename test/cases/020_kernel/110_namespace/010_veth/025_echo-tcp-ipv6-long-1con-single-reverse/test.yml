@@ -1,10 +1,10 @@
 onboot:
   - name: test-ns
-    image: linuxkit/test-ns:e64d5db65bf4e2523d4884f294e5458ac41bd04f
+    image: linuxkit/test-ns:ee7ca117a0651b922387d2d8a42b020538738414
     command: ["/bin/sh", "/runp-runc-net.sh", "1", "-l", "5", "-i", "15", "-ip", "6", "-p", "tcp", "-c", "1", "-r"]
     mounts: # for runc
     - type: cgroup
       options: ["rw"]
   - name: poweroff
-    image: linuxkit/poweroff:9f4e04f09bbb4a028f0a1f57d430e1ad3095ace1
+    image: linuxkit/poweroff:b498d30dd9660090565537fceb9e757618737a85
     command: ["/bin/sh", "/poweroff.sh", "3"]
