@@ -34,7 +34,7 @@ RUN patch -p 1 < /u-boot.patch && \
     cp tools/mkimage /out/bin
 
 # fetch the Raspberry Pi 3 firmware (latest master)
-ENV RPI_COMMIT=478d637c476e838ffcfa8535232ff0b86daf5918
+ENV RPI_COMMIT=f8939644f7bd3065068787f1f92b3f3c79cf3de9
 RUN mkdir -p /out/boot && \
     cd /out/boot && \
     curl -fsSLO https://github.com/raspberrypi/firmware/raw/$RPI_COMMIT/boot/LICENCE.broadcom && \
