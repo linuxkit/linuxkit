@@ -98,7 +98,7 @@ ifeq ($(4),)
 KERNEL_VERSIONS+=$(1)
 endif
 
-build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
+build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		docker build \
 			--build-arg KERNEL_VERSION=$(1) \
@@ -108,7 +108,7 @@ build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard co
 			$(LABELS) \
 			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
-forcebuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg | sources
+forcebuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
 	docker build \
 		--build-arg KERNEL_VERSION=$(1) \
 		--build-arg KERNEL_SERIES=$(2) \
@@ -269,7 +269,7 @@ $(eval $(call kernel,4.19.35,4.19.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config
-kconfig: | sources
+kconfig:
 	docker build --no-cache -f Dockerfile.kconfig \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		-t linuxkit/kconfig  .
