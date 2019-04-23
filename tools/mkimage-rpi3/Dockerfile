@@ -37,7 +37,7 @@ RUN patch -p 1 < /u-boot.patch && \
 ENV RPI_COMMIT=478d637c476e838ffcfa8535232ff0b86daf5918
 RUN mkdir -p /out/boot && \
     cd /out/boot && \
-    curl -fsSLO https://github.com/raspberrypi/firmware/raw/$RPI_COMMIT/boot/bootcode.bin && \
+    curl -fsSLO https://github.com/raspberrypi/firmware/raw/$RPI_COMMIT/boot/LICENCE.broadcom && \
     curl -fsSLO https://github.com/raspberrypi/firmware/raw/$RPI_COMMIT/boot/bootcode.bin && \
     curl -fsSLO https://github.com/raspberrypi/firmware/raw/$RPI_COMMIT/boot/fixup_cd.dat && \
     curl -fsSLO https://github.com/raspberrypi/firmware/raw/$RPI_COMMIT/boot/fixup.dat && \
