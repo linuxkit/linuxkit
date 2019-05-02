@@ -25,7 +25,7 @@ cd /tmp/bios
 [ -t 0 ] || bsdtar xzf -
 
 INITRD="$(find . -name '*.img')"
-KERNEL="$(find . -name kernel)"
+KERNEL="./kernel"
 CMDLINE_FILE="$(find . -name cmdline)"
 CMDLINE="$(cat $CMDLINE_FILE )"
 

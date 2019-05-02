@@ -1,6 +1,8 @@
 #!/bin/sh
 
 set -e
+# for debugging
+[ -n "$DEBUG" ] && set -x
 
 mkdir -p /tmp/image
 cd /tmp/image
@@ -17,10 +19,9 @@ cd files
 [ -t 0 ] || tar xf -
 
 INITRD="$(find . -name '*.img')"
-KERNEL="$(find . -name kernel -or -name bzImage)"
+KERNEL="./kernel"
 CMDLINE="$*"
 
-[ "$KERNEL" = "./kernel" ] || mv "$KERNEL" kernel
 [ "$INITRD" = "./initrd.img" ] || mv "$INITRD" initrd.img
 
 # clean up subdirectories
