@@ -1,6 +1,6 @@
-# Use Debian stretch until https://bugs.alpinelinux.org/issues/8131 is resolved.
-FROM debian@sha256:de3eac83cd481c04c5d6c7344cd7327625a1d8b2540e82a8231b5675cef0ae5f AS qemu
-RUN apt-get update && apt-get install -y qemu-user-static && \
+FROM fedora:30 as qemu
+RUN curl -OL https://kojipkgs.fedoraproject.org/packages/qemu/4.0.0/1.fc31/x86_64/qemu-user-static-4.0.0-1.fc31.x86_64.rpm && \
+    rpm -ivh qemu-user-static-4.0.0-1.fc31.x86_64.rpm --nodeps && \
     mv /usr/bin/qemu-aarch64-static /usr/bin/qemu-aarch64 && \
     mv /usr/bin/qemu-arm-static /usr/bin/qemu-arm && \
     mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le && \
