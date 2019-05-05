@@ -1,4 +1,4 @@
-From bc6d5ca8c7db1cb921397e626ba197f9d5d58a97 Mon Sep 17 00:00:00 2001
+From b460d2365153c714ee7bf741534fe53c2ec87e5a Mon Sep 17 00:00:00 2001
 From: Ido Schimmel <idosch@mellanox.com>
 Date: Mon, 10 Apr 2017 14:59:27 +0300
 Subject: [PATCH 13/14] bridge: implement missing ndo_uninit()
