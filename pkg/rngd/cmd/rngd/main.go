@@ -9,6 +9,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"syscall"
 	"unsafe"
 
 	"golang.org/x/sys/unix"
@@ -62,6 +63,17 @@ func main() {
 		// sleep until we can write more
 		nevents, err := unix.EpollWait(epfd, events[:], timeout)
 		if err != nil {
+			// According to signal(7) on Linux, epoll_wait(2) returns EINTR if
+			// the system call is interrupted by a SIGSTOP and then resumed by
+			// a SIGCONT, even if the default signal handler remains in place.
+			// This is a long-winded way of saying that we must handle EINTR
+			// here, or else the program may exit after being stopped and then
+			// resumed by a signal, a debugger, or ptrace.
+			if e, ok := err.(syscall.Errno); ok {
+				if e.Temporary() {
+					continue
+				}
+			}
 			log.Fatalf("epoll wait error: %v", err)
 		}
 		if nevents == 1 && events[0].Events&unix.EPOLLOUT == unix.EPOLLOUT {
