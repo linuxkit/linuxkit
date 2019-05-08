@@ -1,6 +1,5 @@
 FROM fedora:30 as qemu
-RUN curl -OL https://kojipkgs.fedoraproject.org/packages/qemu/4.0.0/1.fc31/x86_64/qemu-user-static-4.0.0-1.fc31.x86_64.rpm && \
-    rpm -ivh qemu-user-static-4.0.0-1.fc31.x86_64.rpm --nodeps && \
+RUN dnf install qemu-user-static -y && \
     mv /usr/bin/qemu-aarch64-static /usr/bin/qemu-aarch64 && \
     mv /usr/bin/qemu-arm-static /usr/bin/qemu-arm && \
     mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le && \
