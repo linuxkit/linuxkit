@@ -1,4 +1,4 @@
-From 5be4b284dcd3d983ac547225c70df72a667ea87a Mon Sep 17 00:00:00 2001
+From 0144b44f60317d0672af1a01dac3dfd670dd4c4e Mon Sep 17 00:00:00 2001
 From: Long Li <longli@microsoft.com>
 Date: Tue, 31 Oct 2017 14:58:08 -0700
 Subject: [PATCH 21/21] scsi: storvsc: Avoid excessive host scan on controller
@@ -24,7 +24,7 @@ Signed-off-by: Martin K. Petersen <martin.petersen@oracle.com>
  1 file changed, 11 insertions(+), 15 deletions(-)
 
 diff --git a/drivers/scsi/storvsc_drv.c b/drivers/scsi/storvsc_drv.c
-index e94f75e25cb1..66b1b6ad0ae0 100644
+index 405b5da45fa1..7b9173eebdd7 100644
 --- a/drivers/scsi/storvsc_drv.c
 +++ b/drivers/scsi/storvsc_drv.c
 @@ -487,6 +487,8 @@ struct hv_host_device {
@@ -62,7 +62,7 @@ index e94f75e25cb1..66b1b6ad0ae0 100644
  }
  
  static void storvsc_remove_lun(struct work_struct *work)
-@@ -1119,8 +1118,7 @@ static void storvsc_on_receive(struct storvsc_device *stor_device,
+@@ -1128,8 +1127,7 @@ static void storvsc_on_receive(struct storvsc_device *stor_device,
  			     struct vstor_packet *vstor_packet,
  			     struct storvsc_cmd_request *request)
  {
@@ -72,7 +72,7 @@ index e94f75e25cb1..66b1b6ad0ae0 100644
  	switch (vstor_packet->operation) {
  	case VSTOR_OPERATION_COMPLETE_IO:
  		storvsc_on_io_completion(stor_device, vstor_packet, request);
-@@ -1128,13 +1126,9 @@ static void storvsc_on_receive(struct storvsc_device *stor_device,
+@@ -1137,13 +1135,9 @@ static void storvsc_on_receive(struct storvsc_device *stor_device,
  
  	case VSTOR_OPERATION_REMOVE_DEVICE:
  	case VSTOR_OPERATION_ENUMERATE_BUS:
@@ -89,7 +89,7 @@ index e94f75e25cb1..66b1b6ad0ae0 100644
  		break;
  
  	case VSTOR_OPERATION_FCHBA_DATA:
-@@ -1750,6 +1744,7 @@ static int storvsc_probe(struct hv_device *device,
+@@ -1759,6 +1753,7 @@ static int storvsc_probe(struct hv_device *device,
  
  	host_dev->port = host->host_no;
  	host_dev->dev = device;
@@ -97,7 +97,7 @@ index e94f75e25cb1..66b1b6ad0ae0 100644
  
  
  	stor_device = kzalloc(sizeof(struct storvsc_device), GFP_KERNEL);
-@@ -1818,6 +1813,7 @@ static int storvsc_probe(struct hv_device *device,
+@@ -1827,6 +1822,7 @@ static int storvsc_probe(struct hv_device *device,
  						host->host_no);
  	if (!host_dev->handle_error_wq)
  		goto err_out2;
