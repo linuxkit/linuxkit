@@ -1,4 +1,4 @@
-From 0a3195b8a886d0a2f441e545fce642dabad702fd Mon Sep 17 00:00:00 2001
+From c15e0457ed3c7e4fb5bd07edf6b9737dbe4c1952 Mon Sep 17 00:00:00 2001
 From: Alex Ng <alexng@messages.microsoft.com>
 Date: Sat, 28 Jan 2017 12:37:17 -0700
 Subject: [PATCH 08/14] Drivers: hv: vmbus: Use all supported IC versions to
