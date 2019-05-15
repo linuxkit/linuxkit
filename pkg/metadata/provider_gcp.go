@@ -53,7 +53,7 @@ func (p *ProviderGCP) Extract() ([]byte, error) {
 	}
 
 	// Generic userdata
-	userData, err := gcpGet(instance + "attributes/userdata")
+	userData, err := gcpGet(instance + "attributes/user-data")
 	if err != nil {
 		log.Printf("GCP: Failed to get user-data: %s", err)
 		// This is not an error
@@ -102,8 +102,10 @@ func (p *ProviderGCP) handleSSH() error {
 		return fmt.Errorf("Failed to get sshKeys: %s", err)
 	}
 
-	if err := os.Mkdir(path.Join(ConfigPath, SSH), 0755); err != nil {
-		return fmt.Errorf("Failed to create %s: %s", SSH, err)
+	if _, err := os.Stat(path.Join(ConfigPath, SSH)); os.IsNotExist(err) {
+		if err := os.Mkdir(path.Join(ConfigPath, SSH), 0755); err != nil {
+			return fmt.Errorf("Failed to create %s: %s", SSH, err)
+		}
 	}
 
 	rootKeys := ""
