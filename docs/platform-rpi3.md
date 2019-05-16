@@ -70,4 +70,11 @@ LinuxKit YAML file:
     command: ["modprobe", "smsc95xx"]
 ```
 
+For Raspberry Pi 3b+ use:
+```
+  - name: netdev
+    image: linuxkit/modprobe:<hash>
+    command: ["modprobe", "lan78xx"]
+```
+
 **TODO:** Figure out why mdev is not loading the driver.
