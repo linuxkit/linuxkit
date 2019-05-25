@@ -174,16 +174,15 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
 # Download Intel ucode and create a CPIO archive for it
-ENV UCODE_URL=https://downloadmirror.intel.com/28087/eng/microcode-20180807a.tgz
+ENV UCODE_REPO=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
+ENV UCODE_COMMIT=1dd14da6d1ea5cfbd95923653f31c04aac3aa655
 RUN set -e && \
     if [ $(uname -m) == x86_64 ]; then \
-        cd /ucode && \
-        curl -fsSL -o microcode.tar.gz ${UCODE_URL} && \
-        md5sum -c intel-ucode-md5sums && \
-        tar xf microcode.tar.gz && \
-        rm -f intel-ucode/list && \
+        git clone ${UCODE_REPO} ucode && \
+        cd ucode && \
+        git checkout ${UCODE_COMMIT} && \
         iucode_tool --normal-earlyfw --write-earlyfw=/out/intel-ucode.cpio ./intel-ucode && \
-        cp intel-ucode-license.txt /out; \
+        cp license /out/intel-ucode-license.txt; \
     fi
 
 FROM scratch
