@@ -36,8 +36,8 @@ ARG KERNEL_SERIES
 ARG EXTRA
 ARG DEBUG
 
-ENV WIREGUARD_VERSION=0.0.20190227
-ENV WIREGUARD_SHA256="fcdb26fd2692d9e1dee54d14418603c38fbb973a06ce89d08fbe45292ff37f79"
+ENV WIREGUARD_VERSION=0.0.20190406
+ENV WIREGUARD_SHA256="2f06f3adf70b95e74a7736a22dcf6e9ef623b311a15b7d55b5474e57c3d0415b"
 ENV WIREGUARD_URL=https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${WIREGUARD_VERSION}.tar.xz
 
 # We copy the entire directory. This copies some unneeded files, but
@@ -131,14 +131,11 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
     ([ -n "${DEBUG}" ] && cp vmlinux /out || true)
 
 # WireGuard
-RUN set -e && \
-    if [ "$KERNEL_SERIES" != "5.1.x" ]; then \
-        curl -fsSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
-        echo "${WIREGUARD_SHA256}  /wireguard.tar.xz" | sha256sum -c - && \
-        cp /wireguard.tar.xz /out/src/ && \
-        tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "WireGuard-${WIREGUARD_VERSION}/src" && \
-        make -j "$(getconf _NPROCESSORS_ONLN)" M="/wireguard" modules; \
-    fi
+RUN curl -fsSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
+    echo "${WIREGUARD_SHA256}  /wireguard.tar.xz" | sha256sum -c - && \
+    cp /wireguard.tar.xz /out/src/ && \
+    tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "WireGuard-${WIREGUARD_VERSION}/src" && \
+    make -j "$(getconf _NPROCESSORS_ONLN)" M="/wireguard" modules
 
 # Modules and Device Tree binaries
 RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
