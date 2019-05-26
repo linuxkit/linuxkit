@@ -1,4 +1,4 @@
-From fe0482b6b2c06aebd0211e43186db0bcd21079b9 Mon Sep 17 00:00:00 2001
+From a28cce525c0a2a8b5cc6e329c8f6f416b11bb0e7 Mon Sep 17 00:00:00 2001
 From: Xin Long <lucien.xin@gmail.com>
 Date: Tue, 25 Apr 2017 22:58:37 +0800
 Subject: [PATCH 14/14] bridge: move bridge multicast cleanup to ndo_uninit
@@ -93,7 +93,7 @@ index 15be72678bc8..a0a7bb6a991f 100644
  	br_vlan_flush(br);
  	free_percpu(br->stats);
 diff --git a/net/bridge/br_if.c b/net/bridge/br_if.c
-index 1764de88483c..e25b75654256 100644
+index 191b1f23c160..93d08d1b039e 100644
 --- a/net/bridge/br_if.c
 +++ b/net/bridge/br_if.c
 @@ -311,7 +311,6 @@ void br_dev_delete(struct net_device *dev, struct list_head *head)
