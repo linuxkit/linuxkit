@@ -24,8 +24,7 @@ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 # u-boot compile. The patch is needed to handle larger kernels
 ENV UBOOT_COMMIT=v2019.04
 COPY u-boot.patch .
-RUN git clone -b $UBOOT_COMMIT --depth 1 https://github.com/u-boot/u-boot.git && \
-    cd /u-boot
+RUN git clone -b $UBOOT_COMMIT --depth 1 https://github.com/u-boot/u-boot.git
 WORKDIR /u-boot
 RUN patch -p 1 < /u-boot.patch && \
     make rpi_3_defconfig all && \

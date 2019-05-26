@@ -14,7 +14,8 @@ cd /files
 cd /
 
 # copy/convert files 
-cp /files/boot/dtb/broadcom/bcm2837-rpi-3-b.dtb /boot
+mkdir -p /boot/dtb/broadcom
+cp /files/boot/dtb/broadcom/bcm2837-rpi-3-b*.dtb /boot/dtb/broadcom
 /bin/mkimage -A arm64 -O linux -T kernel -C gzip -a 0x80000 -e 0x80000 \
              -d /files/boot/kernel /boot/kernel.uimg >> /boot/uboot.log
 /bin/mkimage -A arm64 -O linux -T script -C none -a 0x00000000 -e 0x00000000 -n RPi3 \
