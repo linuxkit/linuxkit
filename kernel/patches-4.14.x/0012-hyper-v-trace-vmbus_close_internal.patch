@@ -1,4 +1,4 @@
-From 9c3d2803e6e9e35c2e5750092f1d11e6c9bac9f0 Mon Sep 17 00:00:00 2001
+From 22e38dac26af20759641a3b1f3e7c6621903117d Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:10 -0700
 Subject: [PATCH 12/21] hyper-v: trace vmbus_close_internal()
