@@ -1,0 +1,42 @@
+From ca4a1c8ce5f7224d99ef6c2a6754468cb72ea4c3 Mon Sep 17 00:00:00 2001
+From: Alexandre Belloni <alexandre.belloni@bootlin.com>
+Date: Thu, 13 Sep 2018 13:30:23 +0200
+Subject: [PATCH 006/269] ARM: configs: at91: use new TCB timer driver
+
+Unselecting ATMEL_TCLIB switches the TCB timer driver from tcb_clksrc to
+timer-atmel-tcb.
+
+Signed-off-by: Alexandre Belloni <alexandre.belloni@bootlin.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/arm/configs/at91_dt_defconfig | 1 -
+ arch/arm/configs/sama5_defconfig   | 1 -
+ 2 files changed, 2 deletions(-)
+
+diff --git a/arch/arm/configs/at91_dt_defconfig b/arch/arm/configs/at91_dt_defconfig
+index e4b1be66b3f5..09f262e59fef 100644
+--- a/arch/arm/configs/at91_dt_defconfig
++++ b/arch/arm/configs/at91_dt_defconfig
+@@ -64,7 +64,6 @@ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=4
+ CONFIG_BLK_DEV_RAM_SIZE=8192
+-CONFIG_ATMEL_TCLIB=y
+ CONFIG_ATMEL_SSC=y
+ CONFIG_SCSI=y
+ CONFIG_BLK_DEV_SD=y
+diff --git a/arch/arm/configs/sama5_defconfig b/arch/arm/configs/sama5_defconfig
+index 2080025556b5..f2bbc6339ca6 100644
+--- a/arch/arm/configs/sama5_defconfig
++++ b/arch/arm/configs/sama5_defconfig
+@@ -75,7 +75,6 @@ CONFIG_BLK_DEV_LOOP=y
+ CONFIG_BLK_DEV_RAM=y
+ CONFIG_BLK_DEV_RAM_COUNT=4
+ CONFIG_BLK_DEV_RAM_SIZE=8192
+-CONFIG_ATMEL_TCLIB=y
+ CONFIG_ATMEL_SSC=y
+ CONFIG_EEPROM_AT24=y
+ CONFIG_SCSI=y
+-- 
+2.20.1
+

@@ -1,0 +1,47 @@
+From 420f45d08b300f698438e0a208f03e0f89aa8009 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 19 Feb 2019 16:59:15 +0100
+Subject: [PATCH 184/269] hrtimer: Don't lose state in cpu_chill()
+
+In cpu_chill() the state is set to TASK_UNINTERRUPTIBLE and a timer is
+programmed. On return the state is always TASK_RUNNING which means we
+lose the state if it was something other than RUNNING. Also
+set_current_state() sets ->task_state_change to within cpu_chill() which
+is not expected.
+
+Save the task state on entry and restore it on return. Simply set the
+state in order to avoid updating ->task_state_change.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
+index 851b2134e77f..6f2736ec4b8e 100644
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -1902,15 +1902,18 @@ void cpu_chill(void)
+ {
+ 	ktime_t chill_time;
+ 	unsigned int freeze_flag = current->flags & PF_NOFREEZE;
++	long saved_state;
+ 
++	saved_state = current->state;
+ 	chill_time = ktime_set(0, NSEC_PER_MSEC);
+-	set_current_state(TASK_UNINTERRUPTIBLE);
++	__set_current_state_no_track(TASK_UNINTERRUPTIBLE);
+ 	current->flags |= PF_NOFREEZE;
+ 	sleeping_lock_inc();
+ 	schedule_hrtimeout(&chill_time, HRTIMER_MODE_REL_HARD);
+ 	sleeping_lock_dec();
+ 	if (!freeze_flag)
+ 		current->flags &= ~PF_NOFREEZE;
++	__set_current_state_no_track(saved_state);
+ }
+ EXPORT_SYMBOL(cpu_chill);
+ #endif
+-- 
+2.20.1
+

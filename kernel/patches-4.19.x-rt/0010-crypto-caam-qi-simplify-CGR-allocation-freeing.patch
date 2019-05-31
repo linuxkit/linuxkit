@@ -1,6 +1,7 @@
+From b37ee7bd4ac42c97c3fce905634cf808345a25ac Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Horia=20Geant=C4=83?= <horia.geanta@nxp.com>
 Date: Mon, 8 Oct 2018 14:09:37 +0300
-Subject: [PATCH] crypto: caam/qi - simplify CGR allocation, freeing
+Subject: [PATCH 010/269] crypto: caam/qi - simplify CGR allocation, freeing
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -22,27 +23,29 @@ Reported-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Signed-off-by: Horia Geantă <horia.geanta@nxp.com>
 Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
 ---
- drivers/crypto/caam/qi.c |   43 ++++---------------------------------------
- drivers/crypto/caam/qi.h |    2 +-
+ drivers/crypto/caam/qi.c | 43 ++++------------------------------------
+ drivers/crypto/caam/qi.h |  2 +-
  2 files changed, 5 insertions(+), 40 deletions(-)
 
+diff --git a/drivers/crypto/caam/qi.c b/drivers/crypto/caam/qi.c
+index 67f7f8c42c93..b84e6c8b1e13 100644
 --- a/drivers/crypto/caam/qi.c
 +++ b/drivers/crypto/caam/qi.c
-@@ -84,13 +84,6 @@ static u64 times_congested;
+@@ -83,13 +83,6 @@ EXPORT_SYMBOL(caam_congested);
+ static u64 times_congested;
  #endif
  
- /*
+-/*
 - * CPU from where the module initialised. This is required because QMan driver
 - * requires CGRs to be removed from same CPU from where they were originally
 - * allocated.
 - */
 -static int mod_init_cpu;
 -
--/*
+ /*
   * This is a a cache of buffers, from which the users of CAAM QI driver
   * can allocate short (CAAM_QI_MEMCACHE_SIZE) buffers. It's faster than
-  * doing malloc on the hotpath.
-@@ -492,12 +485,11 @@ void caam_drv_ctx_rel(struct caam_drv_ct
+@@ -492,12 +485,11 @@ void caam_drv_ctx_rel(struct caam_drv_ctx *drv_ctx)
  }
  EXPORT_SYMBOL(caam_drv_ctx_rel);
  
@@ -57,7 +60,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  
  	for_each_cpu(i, cpus) {
  		struct napi_struct *irqtask;
-@@ -510,26 +502,12 @@ int caam_qi_shutdown(struct device *qide
+@@ -510,26 +502,12 @@ int caam_qi_shutdown(struct device *qidev)
  			dev_err(qidev, "Rsp FQ kill failed, cpu: %d\n", i);
  	}
  
@@ -86,7 +89,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  }
  
  static void cgr_cb(struct qman_portal *qm, struct qman_cgr *cgr, int congested)
-@@ -718,22 +696,11 @@ int caam_qi_init(struct platform_device
+@@ -718,22 +696,11 @@ int caam_qi_init(struct platform_device *caam_pdev)
  	struct device *ctrldev = &caam_pdev->dev, *qidev;
  	struct caam_drv_private *ctrlpriv;
  	const cpumask_t *cpus = qman_affine_cpus();
@@ -109,7 +112,7 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  	qi_pdev_info.parent = ctrldev;
  	qi_pdev_info.dma_mask = dma_get_mask(ctrldev);
  	qi_pdev = platform_device_register_full(&qi_pdev_info);
-@@ -795,8 +762,6 @@ int caam_qi_init(struct platform_device
+@@ -795,8 +762,6 @@ int caam_qi_init(struct platform_device *caam_pdev)
  		return -ENOMEM;
  	}
  
@@ -118,9 +121,11 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  #ifdef CONFIG_DEBUG_FS
  	debugfs_create_file("qi_congested", 0444, ctrlpriv->ctl,
  			    &times_congested, &caam_fops_u64_ro);
+diff --git a/drivers/crypto/caam/qi.h b/drivers/crypto/caam/qi.h
+index 357b69f57072..b6c8acc30853 100644
 --- a/drivers/crypto/caam/qi.h
 +++ b/drivers/crypto/caam/qi.h
-@@ -174,7 +174,7 @@ int caam_drv_ctx_update(struct caam_drv_
+@@ -174,7 +174,7 @@ int caam_drv_ctx_update(struct caam_drv_ctx *drv_ctx, u32 *sh_desc);
  void caam_drv_ctx_rel(struct caam_drv_ctx *drv_ctx);
  
  int caam_qi_init(struct platform_device *pdev);
@@ -129,3 +134,6 @@ Signed-off-by: Herbert Xu <herbert@gondor.apana.org.au>
  
  /**
   * qi_cache_alloc - Allocate buffers from CAAM-QI cache
+-- 
+2.20.1
+
