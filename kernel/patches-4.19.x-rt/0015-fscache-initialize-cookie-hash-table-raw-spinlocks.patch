@@ -1,0 +1,63 @@
+From 8cf7a5b4f03a2829c823971a12c1a206bcba069d Mon Sep 17 00:00:00 2001
+From: Clark Williams <williams@redhat.com>
+Date: Tue, 3 Jul 2018 13:34:30 -0500
+Subject: [PATCH 015/269] fscache: initialize cookie hash table raw spinlocks
+
+The fscache cookie mechanism uses a hash table of hlist_bl_head structures. The
+PREEMPT_RT patcheset adds a raw spinlock to this structure and so on PREEMPT_RT
+the structures get used uninitialized, causing warnings about bad magic numbers
+when spinlock debugging is turned on.
+
+Use the init function for fscache cookies.
+
+Signed-off-by: Clark Williams <williams@redhat.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/fscache/cookie.c     | 8 ++++++++
+ fs/fscache/main.c       | 1 +
+ include/linux/fscache.h | 1 +
+ 3 files changed, 10 insertions(+)
+
+diff --git a/fs/fscache/cookie.c b/fs/fscache/cookie.c
+index c550512ce335..d5d57da32ffa 100644
+--- a/fs/fscache/cookie.c
++++ b/fs/fscache/cookie.c
+@@ -962,3 +962,11 @@ int __fscache_check_consistency(struct fscache_cookie *cookie,
+ 	return -ESTALE;
+ }
+ EXPORT_SYMBOL(__fscache_check_consistency);
++
++void __init fscache_cookie_init(void)
++{
++	int i;
++
++	for (i = 0; i < (1 << fscache_cookie_hash_shift) - 1; i++)
++		INIT_HLIST_BL_HEAD(&fscache_cookie_hash[i]);
++}
+diff --git a/fs/fscache/main.c b/fs/fscache/main.c
+index 30ad89db1efc..1d5f1d679ffa 100644
+--- a/fs/fscache/main.c
++++ b/fs/fscache/main.c
+@@ -149,6 +149,7 @@ static int __init fscache_init(void)
+ 		ret = -ENOMEM;
+ 		goto error_cookie_jar;
+ 	}
++	fscache_cookie_init();
+ 
+ 	fscache_root = kobject_create_and_add("fscache", kernel_kobj);
+ 	if (!fscache_root)
+diff --git a/include/linux/fscache.h b/include/linux/fscache.h
+index 84b90a79d75a..87a9330eafa2 100644
+--- a/include/linux/fscache.h
++++ b/include/linux/fscache.h
+@@ -230,6 +230,7 @@ extern void __fscache_readpages_cancel(struct fscache_cookie *cookie,
+ extern void __fscache_disable_cookie(struct fscache_cookie *, const void *, bool);
+ extern void __fscache_enable_cookie(struct fscache_cookie *, const void *, loff_t,
+ 				    bool (*)(void *), void *);
++extern void fscache_cookie_init(void);
+ 
+ /**
+  * fscache_register_netfs - Register a filesystem as desiring caching services
+-- 
+2.20.1
+

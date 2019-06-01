@@ -1,0 +1,49 @@
+From 1117688ac7606703683b1ac8cacdbf02d47b4adb Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 3 Jul 2018 18:19:48 +0200
+Subject: [PATCH 014/269] cgroup: use irqsave in cgroup_rstat_flush_locked()
+
+All callers of cgroup_rstat_flush_locked() acquire cgroup_rstat_lock
+either with spin_lock_irq() or spin_lock_irqsave().
+cgroup_rstat_flush_locked() itself acquires cgroup_rstat_cpu_lock which
+is a raw_spin_lock. This lock is also acquired in cgroup_rstat_updated()
+in IRQ context and therefore requires _irqsave() locking suffix in
+cgroup_rstat_flush_locked().
+Since there is no difference between spin_lock_t and raw_spin_lock_t
+on !RT lockdep does not complain here. On RT lockdep complains because
+the interrupts were not disabled here and a deadlock is possible.
+
+Acquire the raw_spin_lock_t with disabled interrupts.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/cgroup/rstat.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/cgroup/rstat.c b/kernel/cgroup/rstat.c
+index bb95a35e8c2d..3266a9781b4e 100644
+--- a/kernel/cgroup/rstat.c
++++ b/kernel/cgroup/rstat.c
+@@ -159,8 +159,9 @@ static void cgroup_rstat_flush_locked(struct cgroup *cgrp, bool may_sleep)
+ 		raw_spinlock_t *cpu_lock = per_cpu_ptr(&cgroup_rstat_cpu_lock,
+ 						       cpu);
+ 		struct cgroup *pos = NULL;
++		unsigned long flags;
+ 
+-		raw_spin_lock(cpu_lock);
++		raw_spin_lock_irqsave(cpu_lock, flags);
+ 		while ((pos = cgroup_rstat_cpu_pop_updated(pos, cgrp, cpu))) {
+ 			struct cgroup_subsys_state *css;
+ 
+@@ -172,7 +173,7 @@ static void cgroup_rstat_flush_locked(struct cgroup *cgrp, bool may_sleep)
+ 				css->ss->css_rstat_flush(css, cpu);
+ 			rcu_read_unlock();
+ 		}
+-		raw_spin_unlock(cpu_lock);
++		raw_spin_unlock_irqrestore(cpu_lock, flags);
+ 
+ 		/* if @may_sleep, play nice and yield if necessary */
+ 		if (may_sleep && (need_resched() ||
+-- 
+2.20.1
+

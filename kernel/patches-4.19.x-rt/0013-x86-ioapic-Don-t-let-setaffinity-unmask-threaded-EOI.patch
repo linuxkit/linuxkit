@@ -1,6 +1,7 @@
+From 4debab2aa3d29fcdb5b9cd132416094c54e9361b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 17 Jul 2018 18:25:31 +0200
-Subject: [PATCH] x86/ioapic: Don't let setaffinity unmask threaded EOI
+Subject: [PATCH 013/269] x86/ioapic: Don't let setaffinity unmask threaded EOI
  interrupt too early
 
 There is an issue with threaded interrupts which are marked ONESHOT
@@ -29,12 +30,14 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
           ifdef paths (spotted by Andy Shevchenko)]
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- arch/x86/kernel/apic/io_apic.c |   23 +++++++++++++----------
+ arch/x86/kernel/apic/io_apic.c | 23 +++++++++++++----------
  1 file changed, 13 insertions(+), 10 deletions(-)
 
+diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
+index ff0d14cd9e82..c2bd6e0433f8 100644
 --- a/arch/x86/kernel/apic/io_apic.c
 +++ b/arch/x86/kernel/apic/io_apic.c
-@@ -1722,19 +1722,20 @@ static bool io_apic_level_ack_pending(st
+@@ -1722,19 +1722,20 @@ static bool io_apic_level_ack_pending(struct mp_chip_data *data)
  	return false;
  }
  
@@ -59,7 +62,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  		/* Only migrate the irq if the ack has been received.
  		 *
  		 * On rare occasions the broadcast level triggered ack gets
-@@ -1763,15 +1764,17 @@ static inline void ioapic_irqd_unmask(st
+@@ -1763,15 +1764,17 @@ static inline void ioapic_irqd_unmask(struct irq_data *data, bool masked)
  		 */
  		if (!io_apic_level_ack_pending(data->chip_data))
  			irq_move_masked_irq(data);
@@ -80,7 +83,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  {
  }
  #endif
-@@ -1780,11 +1783,11 @@ static void ioapic_ack_level(struct irq_
+@@ -1780,11 +1783,11 @@ static void ioapic_ack_level(struct irq_data *irq_data)
  {
  	struct irq_cfg *cfg = irqd_cfg(irq_data);
  	unsigned long v;
@@ -94,7 +97,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  
  	/*
  	 * It appears there is an erratum which affects at least version 0x11
-@@ -1839,7 +1842,7 @@ static void ioapic_ack_level(struct irq_
+@@ -1839,7 +1842,7 @@ static void ioapic_ack_level(struct irq_data *irq_data)
  		eoi_ioapic_pin(cfg->vector, irq_data->chip_data);
  	}
  
@@ -103,3 +106,6 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  }
  
  static void ioapic_ir_ack_level(struct irq_data *irq_data)
+-- 
+2.20.1
+

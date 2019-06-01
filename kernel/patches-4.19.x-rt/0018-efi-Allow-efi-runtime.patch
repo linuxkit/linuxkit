@@ -1,0 +1,31 @@
+From 10c47a6dadf91edee1d414002f91cc73bbe59c90 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 26 Jul 2018 15:06:10 +0200
+Subject: [PATCH 018/269] efi: Allow efi=runtime
+
+In case the option "efi=noruntime" is default at built-time, the user
+could overwrite its sate by `efi=runtime' and allow it again.
+
+Acked-by: Ard Biesheuvel <ard.biesheuvel@linaro.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/firmware/efi/efi.c | 3 +++
+ 1 file changed, 3 insertions(+)
+
+diff --git a/drivers/firmware/efi/efi.c b/drivers/firmware/efi/efi.c
+index 2a29dd9c986d..ab668e17fd05 100644
+--- a/drivers/firmware/efi/efi.c
++++ b/drivers/firmware/efi/efi.c
+@@ -113,6 +113,9 @@ static int __init parse_efi_cmdline(char *str)
+ 	if (parse_option_str(str, "noruntime"))
+ 		disable_runtime = true;
+ 
++	if (parse_option_str(str, "runtime"))
++		disable_runtime = false;
++
+ 	return 0;
+ }
+ early_param("efi", parse_efi_cmdline);
+-- 
+2.20.1
+
