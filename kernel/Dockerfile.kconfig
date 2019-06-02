@@ -25,7 +25,7 @@ RUN set -e && \
         MAJOR=v${MAJOR}.x && \
         echo "Downloading/Unpacking $VERSION" && \
         KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/${MAJOR}/linux-${VERSION}.tar.xz && \
-        [ -f sources/linux-${VERSION}.tar.xz ] || curl -fSLo sources/linux-${VERSION}.tar.xz ${KERNEL_SOURCE} && \
+        [ -f sources/linux-${VERSION}.tar.xz ] || curl -fSLo sources/linux-${VERSION}.tar.xz --create-dirs ${KERNEL_SOURCE} && \
         bsdtar xf sources/linux-${VERSION}.tar.xz; \
     done
 
