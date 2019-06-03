@@ -1,4 +1,4 @@
-From 81c16b91df39bf1046571fb773ba59de057f51df Mon Sep 17 00:00:00 2001
+From 866b0d37aec73df9c45c458f05ccdcfbeed2e7c6 Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 2 Mar 2017 12:55:49 -0300
 Subject: [PATCH 01/14] tools build: Add test for sched_getcpu()
@@ -131,10 +131,10 @@ index d0d465953d36..94a5a7d829d5 100644
 -
  #endif /* __PERF_CLOEXEC_H */
 diff --git a/tools/perf/util/util.h b/tools/perf/util/util.h
-index e72d370889f8..605c4812430f 100644
+index 8b39e8086c2d..d0c7526db145 100644
 --- a/tools/perf/util/util.h
 +++ b/tools/perf/util/util.h
-@@ -354,8 +354,8 @@ void print_binary(unsigned char *data, size_t len,
+@@ -353,8 +353,8 @@ void print_binary(unsigned char *data, size_t len,
  		  size_t bytes_per_line, print_binary_t printer,
  		  void *extra);
  
