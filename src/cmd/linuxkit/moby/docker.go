@@ -55,7 +55,7 @@ func dockerRun(input io.Reader, output io.Writer, trust bool, img string, args .
 		return err
 	}
 
-	args = append([]string{"run", "--network=none", "--rm", "-i", img}, args...)
+	args = append([]string{"run", "--network=none", "--log-driver=none", "--rm", "-i", img}, args...)
 	cmd := exec.Command(docker, args...)
 	cmd.Stdin = input
 	cmd.Stdout = output
