@@ -1,8 +1,10 @@
 FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec as build
 RUN apk add \
     bc \
+    bison \
     dtc \
     curl \
+    flex \
     make \
     gcc \
     git \
@@ -20,11 +22,9 @@ RUN apk add --no-cache --initdb -p /out \
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 # u-boot compile. The patch is needed to handle larger kernels
-ENV UBOOT_COMMIT=v2017.09
+ENV UBOOT_COMMIT=v2019.04
 COPY u-boot.patch .
-RUN git clone https://github.com/u-boot/u-boot.git && \
-    cd /u-boot && \
-    git checkout $UBOOT_COMMIT
+RUN git clone -b $UBOOT_COMMIT --depth 1 https://github.com/u-boot/u-boot.git
 WORKDIR /u-boot
 RUN patch -p 1 < /u-boot.patch && \
     make rpi_3_defconfig all && \
