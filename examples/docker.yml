@@ -22,7 +22,7 @@ services:
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:v0.7
+    image: linuxkit/rngd:02c555b50cd1887aa628836662d2eec54c0d7e81
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.7
   - name: ntpd

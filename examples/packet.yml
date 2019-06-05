@@ -10,7 +10,7 @@ init:
   - linuxkit/firmware:v0.7
 onboot:
   - name: rngd1
-    image: linuxkit/rngd:v0.7
+    image: linuxkit/rngd:02c555b50cd1887aa628836662d2eec54c0d7e81
     command: ["/sbin/rngd", "-1"]
   - name: sysctl
     image: linuxkit/sysctl:v0.7
@@ -22,7 +22,7 @@ onboot:
     command: ["/usr/bin/metadata", "packet"]
 services:
   - name: rngd
-    image: linuxkit/rngd:v0.7
+    image: linuxkit/rngd:02c555b50cd1887aa628836662d2eec54c0d7e81
   - name: getty
     image: linuxkit/getty:v0.7
     env:
