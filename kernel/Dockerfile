@@ -20,6 +20,7 @@ RUN apk add \
     mpc1-dev \
     mpfr-dev \
     ncurses-dev \
+    openssl-dev \
     patch \
     sed \
     squashfs-tools \
