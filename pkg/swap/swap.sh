@@ -115,23 +115,27 @@ done
 ### Required? exit 1
 ### Else? exit 0
 
-
-## Allocate the file
-dd if=/dev/zero of=$path bs=1024 count=$(disksize_to_count 1024 $size)
-chmod 0600 $path
-
-## was it encrypted? use cryptsetup and get the mapped device
 if [ "$ENCRYPT" == "true" ]; then
-	# might need
-	#loop=$(losetup -f)
-	#losetup ${loop} ${path}
-
-	cryptsetup open --type plain --key-file /dev/urandom --key-size=256 --cipher=aes-cbc-essiv:sha256 --offset=0  ${path} swapfile
 	SWAPDEV=/dev/mapper/swapfile
 else
 	SWAPDEV=$path
 fi
 
-## mkswap and swapon the device
-/sbin/mkswap $SWAPDEV
+if [ ! -f $path ] || ! [ $(stat -c "%s" $path) == $(disksize_to_count 1 $size) ]; then
+	## Allocate the file
+	dd if=/dev/zero of=$path bs=1024 count=$(disksize_to_count 1024 $size)
+	chmod 0600 $path
+
+	## was it encrypted? use cryptsetup and get the mapped device
+	if [ "$ENCRYPT" == "true" ]; then
+		# might need
+		#loop=$(losetup -f)
+		#losetup ${loop} ${path}
+
+		cryptsetup open --type plain --key-file /dev/urandom --key-size=256 --cipher=aes-cbc-essiv:sha256 --offset=0  ${path} swapfile
+	fi
+
+	/sbin/mkswap $SWAPDEV
+fi
+
 /sbin/swapon $SWAPDEV
