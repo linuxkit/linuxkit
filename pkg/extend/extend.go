@@ -65,7 +65,7 @@ func extend(d, fsType string) error {
 
 	data, err := exec.Command("sfdisk", "-J", d).Output()
 	if err != nil {
-		log.Fatalf("Unable to get drive data for %s from sfdisk: %v", d, err)
+		return fmt.Errorf("Unable to get drive data for %s from sfdisk: %v", d, err)
 	}
 
 	f := Fdisk{}
