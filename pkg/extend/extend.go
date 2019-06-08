@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -86,6 +87,20 @@ func extend(d, fsType string) error {
 	if f.PartitionTable.Label == "gpt" && partition.Start+partition.Size == f.PartitionTable.LastLBA {
 		log.Printf("No free space on device to extend partition")
 		return nil
+	}
+	if f.PartitionTable.Label == "dos" {
+		out, err := exec.Command("blockdev", "--getsz", d).Output()
+		if err != nil {
+			return fmt.Errorf("Unable to get total size of %s: %v", d, err)
+		}
+		totalSize, err := strconv.Atoi(strings.TrimSpace(string(out)))
+		if err != nil {
+			return fmt.Errorf("Unable to convert total size from string to int: %v", err)
+		}
+		if partition.Start+partition.Size == totalSize {
+			log.Printf("No free space on device to extend partition")
+			return nil
+		}
 	}
 
 	switch fsType {
