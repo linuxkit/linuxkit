@@ -83,7 +83,7 @@ func extend(d, fsType string) error {
 		return fmt.Errorf("Partition 1 on disk %s is not a Linux Partition", d)
 	}
 
-	if partition.Start+partition.Size == f.PartitionTable.LastLBA {
+	if f.PartitionTable.Label == "gpt" && partition.Start+partition.Size == f.PartitionTable.LastLBA {
 		log.Printf("No free space on device to extend partition")
 		return nil
 	}
