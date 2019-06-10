@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.19.47 Kernel Configuration
+# Linux/x86 4.19.49 Kernel Configuration
 #
 
 #
@@ -9,6 +9,7 @@
 CONFIG_CC_IS_GCC=y
 CONFIG_GCC_VERSION=80300
 CONFIG_CLANG_VERSION=0
+CONFIG_CC_HAS_ASM_GOTO=y
 CONFIG_IRQ_WORK=y
 CONFIG_BUILDTIME_EXTABLE_SORT=y
 CONFIG_THREAD_INFO_IN_TASK=y
