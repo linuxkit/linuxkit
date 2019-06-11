@@ -9,7 +9,7 @@ onboot:
     image: linuxkit/modprobe:v0.7
     command: ["modprobe", "btrfs"]
   - name: extend
-    image: linuxkit/extend:v0.7
+    image: linuxkit/extend:79475e430851110b39d93dfb4a7e8ea041b57dc0
     command: ["/usr/bin/extend", "-type", "btrfs"]
   - name: mount
     image: linuxkit/mount:v0.7
