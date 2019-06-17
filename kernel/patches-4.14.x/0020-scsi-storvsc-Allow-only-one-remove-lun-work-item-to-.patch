@@ -1,4 +1,4 @@
-From 0f4b2c4a1917ae69ad35fd0abc87d8c420809bba Mon Sep 17 00:00:00 2001
+From ceea9852a1cc335d2faac0bf3b31612da59d30d5 Mon Sep 17 00:00:00 2001
 From: Cathy Avery <cavery@redhat.com>
 Date: Tue, 31 Oct 2017 08:52:06 -0400
 Subject: [PATCH 20/21] scsi: storvsc: Allow only one remove lun work item to
