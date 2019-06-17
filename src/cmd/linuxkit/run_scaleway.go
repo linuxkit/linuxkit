@@ -10,15 +10,16 @@ import (
 )
 
 const (
-	defaultScalewayInstanceType = "VC1S"
-	defaultScalewayRegion       = "par1"
+	defaultScalewayInstanceType = "DEV1-S"
+	defaultScalewayZone         = "par1"
 
 	scalewayNameVar = "SCW_IMAGE_NAME"   // non-standard
-	tokenVar        = "SCW_TOKEN"        // non-standard
+	secretKeyVar    = "SCW_SECRET_KEY"   // non-standard
 	sshKeyVar       = "SCW_SSH_KEY_FILE" // non-standard
 	instanceIDVar   = "SCW_INSTANCE_ID"  // non-standard
 	deviceNameVar   = "SCW_DEVICE_NAME"  // non-standard
-	regionVar       = "SCW_TARGET_REGION"
+	scwZoneVar      = "SCW_DEFAULT_ZONE"
+	projectIDVar    = "SCW_DEFAULT_PROJECT_ID"
 
 	instanceTypeVar = "SCW_RUN_TYPE" // non-standard
 )
@@ -35,8 +36,9 @@ func runScaleway(args []string) {
 	}
 	instanceTypeFlag := flags.String("instance-type", defaultScalewayInstanceType, "Scaleway instance type")
 	instanceNameFlag := flags.String("instance-name", "linuxkit", "Name of the create instance, default to the image name")
-	tokenFlag := flags.String("token", "", "Token to connect to Scaleway API")
-	regionFlag := flags.String("region", defaultScalewayRegion, "Select Scaleway region")
+	secretKeyFlag := flags.String("secret-key", "", "Secret Key to connect to Scaleway API")
+	zoneFlag := flags.String("zone", defaultScalewayZone, "Select Scaleway zone")
+	projectIDFlag := flags.String("project-id", "", "Select Scaleway's project ID")
 	cleanFlag := flags.Bool("clean", false, "Remove instance")
 	noAttachFlag := flags.Bool("no-attach", false, "Don't attach to serial port, you will have to connect to instance manually")
 
@@ -54,10 +56,11 @@ func runScaleway(args []string) {
 
 	instanceType := getStringValue(instanceTypeVar, *instanceTypeFlag, defaultScalewayInstanceType)
 	instanceName := getStringValue("", *instanceNameFlag, name)
-	token := getStringValue(tokenVar, *tokenFlag, "")
-	region := getStringValue(regionVar, *regionFlag, defaultScalewayRegion)
+	secretKey := getStringValue(secretKeyVar, *secretKeyFlag, "")
+	zone := getStringValue(scwZoneVar, *zoneFlag, defaultScalewayZone)
+	projectID := getStringValue(projectIDVar, *projectIDFlag, "")
 
-	client, err := NewScalewayClient(token, region)
+	client, err := NewScalewayClient(secretKey, zone, projectID)
 	if err != nil {
 		log.Fatalf("Unable to connect to Scaleway: %v", err)
 	}

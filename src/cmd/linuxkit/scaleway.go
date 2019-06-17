@@ -2,7 +2,6 @@ package main
 
 import (
 	"bytes"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -11,143 +10,189 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 	"time"
 
+	"github.com/ScaleFT/sshkeys"
 	gotty "github.com/moul/gotty-client"
-	scw "github.com/scaleway/go-scaleway"
-	"github.com/scaleway/go-scaleway/logger"
-	"github.com/scaleway/go-scaleway/types"
+	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
+	"github.com/scaleway/scaleway-sdk-go/api/marketplace/v1"
+	"github.com/scaleway/scaleway-sdk-go/scw"
+	"github.com/scaleway/scaleway-sdk-go/scwconfig"
+	"github.com/scaleway/scaleway-sdk-go/utils"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
+)
+
+var (
+	defaultScalewayCommercialType = "DEV1-S"
+	defaultScalewayImageName      = "Ubuntu Bionic"
+	defaultScalewayImageArch      = "x86_64"
+	defaultVolumeSize             = uint64(10000000000)
 )
 
 // ScalewayClient contains state required for communication with Scaleway as well as the instance
 type ScalewayClient struct {
-	api       *scw.ScalewayAPI
-	fileName  string
-	region    string
-	sshConfig *ssh.ClientConfig
-}
-
-// ScalewayConfig contains required field to read scaleway config file
-type ScalewayConfig struct {
-	Organization string `json:"organization"`
-	Token        string `json:"token"`
-	Version      string `json:"version"`
+	instanceAPI    *instance.API
+	marketplaceAPI *marketplace.API
+	fileName       string
+	zone           string
+	sshConfig      *ssh.ClientConfig
+	secretKey      string
 }
 
 // NewScalewayClient creates a new scaleway client
-func NewScalewayClient(token, region string) (*ScalewayClient, error) {
+func NewScalewayClient(secretKey, zone, projectID string) (*ScalewayClient, error) {
+	var scwClient *scw.Client
 	log.Debugf("Connecting to Scaleway")
-	organization := ""
-	if token == "" {
-		log.Debugf("Using .scwrc file to get token")
-		homeDir := os.Getenv("HOME")
-		if homeDir == "" {
-			homeDir = os.Getenv("USERPROFILE") // Windows support
-		}
-		if homeDir == "" {
-			return nil, fmt.Errorf("Home directory not found")
-		}
-		swrcPath := filepath.Join(homeDir, ".scwrc")
-
-		file, err := ioutil.ReadFile(swrcPath)
-		if err != nil {
-			return nil, fmt.Errorf("Error reading Scaleway config file: %v", err)
-		}
-
-		var scalewayConfig ScalewayConfig
-		err = json.Unmarshal(file, &scalewayConfig)
-		if err != nil {
-			return nil, fmt.Errorf("Error during unmarshal of Scaleway config file: %v", err)
-		}
-
-		token = scalewayConfig.Token
-		organization = scalewayConfig.Organization
-	}
-
-	api, err := scw.NewScalewayAPI(organization, token, "", region)
-	if err != nil {
-		return nil, err
-	}
-
-	l := logger.NewDisableLogger()
-	api.Logger = l
-
-	if organization == "" {
-		organisations, err := api.GetOrganization()
+	if secretKey == "" {
+		config, err := scwconfig.Load()
 		if err != nil {
 			return nil, err
 		}
-		api.Organization = organisations.Organizations[0].ID
+
+		scwClient, err = scw.NewClient(
+			scw.WithConfig(config),
+		)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		scwZone, err := utils.ParseZone(zone)
+		if err != nil {
+			return nil, err
+		}
+
+		scwClient, err = scw.NewClient(
+			scw.WithAuth("", secretKey),
+			scw.WithDefaultZone(scwZone),
+			scw.WithDefaultProjectID(projectID),
+		)
+		if err != nil {
+			return nil, err
+		}
 	}
 
+	instanceAPI := instance.NewAPI(scwClient)
+	marketplaceAPI := marketplace.NewAPI(scwClient)
+
 	client := &ScalewayClient{
-		api:      api,
-		fileName: "",
-		region:   region,
+		instanceAPI:    instanceAPI,
+		marketplaceAPI: marketplaceAPI,
+		zone:           zone,
+		fileName:       "",
+		secretKey:      secretKey,
 	}
 
 	return client, nil
 }
 
+func (s *ScalewayClient) getImageID(imageName, commercialType, arch string) (string, error) {
+	imagesResp, err := s.marketplaceAPI.ListImages(&marketplace.ListImagesRequest{})
+	if err != nil {
+		return "", err
+	}
+	for _, image := range imagesResp.Images {
+		if image.Name == imageName {
+			for _, version := range image.Versions {
+				for _, localImage := range version.LocalImages {
+					if localImage.Arch == arch {
+						for _, compatibleCommercialType := range localImage.CompatibleCommercialTypes {
+							if compatibleCommercialType == commercialType {
+								return localImage.ID, nil
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+	return "", errors.New("No image matching given requests")
+}
+
 // CreateInstance create an instance with one additional volume
 func (s *ScalewayClient) CreateInstance() (string, error) {
 	// get the Ubuntu Xenial image id
-	image, err := s.api.GetImageID("Ubuntu Xenial", "x86_64") // TODO fix arch and use from args
+	imageID, err := s.getImageID(defaultScalewayImageName, defaultScalewayCommercialType, defaultScalewayImageArch)
 	if err != nil {
 		return "", err
 	}
-	imageID := image.Identifier
 
-	var serverDefinition types.ScalewayServerDefinition
-
-	serverDefinition.Name = "linuxkit-builder"
-	serverDefinition.Image = &imageID
-	serverDefinition.CommercialType = "VC1M" // TODO use args?
-
-	// creation of second volume
-	var volumeDefinition types.ScalewayVolumeDefinition
-	volumeDefinition.Name = "linuxkit-builder-volume"
-	volumeDefinition.Size = 50000000000 // FIX remove hardcoded value
-	volumeDefinition.Type = "l_ssd"
+	createVolumeRequest := &instance.CreateVolumeRequest{
+		Name:       "linuxkit-builder-volume",
+		VolumeType: "l_ssd",
+		Size:       &defaultVolumeSize,
+	}
 
 	log.Debugf("Creating volume on Scaleway")
-	volumeID, err := s.api.PostVolume(volumeDefinition)
+	volumeResp, err := s.instanceAPI.CreateVolume(createVolumeRequest)
 	if err != nil {
 		return "", err
 	}
 
-	serverDefinition.Volumes = make(map[string]string)
-	serverDefinition.Volumes["1"] = volumeID
+	volumeMap := make(map[string]*instance.VolumeTemplate)
+	volumeTemplate := &instance.VolumeTemplate{
+		Size: defaultVolumeSize,
+	}
+	volumeMap["0"] = volumeTemplate
 
-	serverID, err := s.api.PostServer(serverDefinition)
+	createServerRequest := &instance.CreateServerRequest{
+		Name:              "linuxkit-builder",
+		CommercialType:    defaultScalewayCommercialType,
+		DynamicIPRequired: true,
+		Image:             imageID,
+		EnableIPv6:        false,
+		BootType:          instance.ServerBootTypeLocal,
+		Volumes:           volumeMap,
+	}
+
+	serverResp, err := s.instanceAPI.CreateServer(createServerRequest)
 	if err != nil {
 		return "", err
 	}
 
-	log.Debugf("Created server %s on Scaleway", serverID)
-	return serverID, nil
+	attachVolumeRequest := &instance.AttachVolumeRequest{
+		ServerID: serverResp.Server.ID,
+		VolumeID: volumeResp.Volume.ID,
+	}
+
+	_, err = s.instanceAPI.AttachVolume(attachVolumeRequest)
+	if err != nil {
+		return "", nil
+	}
+
+	log.Debugf("Created server %s on Scaleway", serverResp.Server.ID)
+	return serverResp.Server.ID, nil
 }
 
 // GetSecondVolumeID returns the ID of the second volume of the server
 func (s *ScalewayClient) GetSecondVolumeID(instanceID string) (string, error) {
-	server, err := s.api.GetServer(instanceID)
+	getServerRequest := &instance.GetServerRequest{
+		ServerID: instanceID,
+	}
+
+	serverResp, err := s.instanceAPI.GetServer(getServerRequest)
 	if err != nil {
 		return "", err
 	}
 
-	secondVolume, ok := server.Volumes["1"]
+	secondVolume, ok := serverResp.Server.Volumes["1"]
 	if !ok {
 		return "", errors.New("No second volume found")
 	}
 
-	return secondVolume.Identifier, nil
+	return secondVolume.ID, nil
 }
 
 // BootInstanceAndWait boots and wait for instance to be booted
 func (s *ScalewayClient) BootInstanceAndWait(instanceID string) error {
-	err := s.api.PostServerAction(instanceID, "poweron")
+	serverActionRequest := &instance.ServerActionRequest{
+		ServerID: instanceID,
+		Action:   instance.ServerActionPoweron,
+	}
+
+	_, err := s.instanceAPI.ServerAction(serverActionRequest)
 	if err != nil {
 		return err
 	}
@@ -156,14 +201,17 @@ func (s *ScalewayClient) BootInstanceAndWait(instanceID string) error {
 
 	// code taken from scaleway-cli, could need some changes
 	promise := make(chan bool)
-	var server *types.ScalewayServer
-	var currentState string
+	var server *instance.Server
+	var currentState instance.ServerState
 
 	go func() {
 		defer close(promise)
 
 		for {
-			server, err = s.api.GetServer(instanceID)
+			serverResp, err := s.instanceAPI.GetServer(&instance.GetServerRequest{
+				ServerID: instanceID,
+			})
+			server = serverResp.Server
 			if err != nil {
 				promise <- false
 				return
@@ -173,20 +221,17 @@ func (s *ScalewayClient) BootInstanceAndWait(instanceID string) error {
 				currentState = server.State
 			}
 
-			if server.State == "running" {
+			if server.State == instance.ServerStateRunning {
 				break
 			}
-			if server.State == "stopped" {
+			if server.State == instance.ServerStateStopped {
 				promise <- false
 				return
 			}
 			time.Sleep(1 * time.Second)
 		}
 
-		ip := server.PublicAddress.IP
-		if ip == "" && server.EnableIPV6 {
-			ip = fmt.Sprintf("[%s]", server.IPV6.Address)
-		}
+		ip := server.PublicIP.Address.String()
 		dest := fmt.Sprintf("%s:22", ip)
 		for {
 			conn, err := net.Dial("tcp", dest)
@@ -232,7 +277,16 @@ func getSSHAuth(sshKeyPath string) (ssh.Signer, error) {
 	}
 	signer, err := ssh.ParsePrivateKey(buf)
 	if err != nil {
-		return nil, err
+		fmt.Print("Enter ssh key passphrase: ")
+		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
+		if err != nil {
+			return nil, err
+		}
+		signer, err := sshkeys.ParseEncryptedPrivateKey(buf, bytePassword)
+		if err != nil {
+			return nil, err
+		}
+		return signer, nil
 	}
 	return signer, err
 }
@@ -242,10 +296,13 @@ func (s *ScalewayClient) CopyImageToInstance(instanceID, path, sshKeyPath string
 	_, base := filepath.Split(path)
 	s.fileName = base
 
-	server, err := s.api.GetServer(instanceID)
+	serverResp, err := s.instanceAPI.GetServer(&instance.GetServerRequest{
+		ServerID: instanceID,
+	})
 	if err != nil {
 		return err
 	}
+	server := serverResp.Server
 
 	signer, err := getSSHAuth(sshKeyPath)
 	if err != nil {
@@ -260,7 +317,7 @@ func (s *ScalewayClient) CopyImageToInstance(instanceID, path, sshKeyPath string
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(), // TODO validate server before?
 	}
 
-	client, err := ssh.Dial("tcp", server.PublicAddress.IP+":22", s.sshConfig) // TODO remove hardocoded port?
+	client, err := ssh.Dial("tcp", server.PublicIP.Address.String()+":22", s.sshConfig) // TODO remove hardocoded port?
 	if err != nil {
 		return err
 	}
@@ -303,12 +360,16 @@ func (s *ScalewayClient) CopyImageToInstance(instanceID, path, sshKeyPath string
 
 // WriteImageToVolume does a dd command on the remote instance via ssh
 func (s *ScalewayClient) WriteImageToVolume(instanceID, deviceName string) error {
-	server, err := s.api.GetServer(instanceID)
+	serverResp, err := s.instanceAPI.GetServer(&instance.GetServerRequest{
+		ServerID: instanceID,
+	})
 	if err != nil {
 		return err
 	}
 
-	client, err := ssh.Dial("tcp", server.PublicAddress.IP+":22", s.sshConfig) // TODO remove hardcoded port + use the same dial as before?
+	server := serverResp.Server
+
+	client, err := ssh.Dial("tcp", server.PublicIP.Address.String()+":22", s.sshConfig) // TODO remove hardcoded port + use the same dial as before?
 	if err != nil {
 		return err
 	}
@@ -350,14 +411,12 @@ func (s *ScalewayClient) WriteImageToVolume(instanceID, deviceName string) error
 
 // TerminateInstance terminates the instance and wait for termination
 func (s *ScalewayClient) TerminateInstance(instanceID string) error {
-	server, err := s.api.GetServer(instanceID)
-	if err != nil {
-		return err
-	}
-
 	log.Debugf("Shutting down server %s", instanceID)
 
-	err = s.api.PostServerAction(server.Identifier, "poweroff")
+	_, err := s.instanceAPI.ServerAction(&instance.ServerActionRequest{
+		ServerID: instanceID,
+		Action:   instance.ServerActionPoweroff,
+	})
 	if err != nil {
 		return err
 	}
@@ -365,19 +424,24 @@ func (s *ScalewayClient) TerminateInstance(instanceID string) error {
 	// code taken from scaleway-cli
 	time.Sleep(10 * time.Second)
 
-	var currentState string
+	var currentState instance.ServerState
 
 	log.Debugf("Waiting for server to shutdown")
 
 	for {
-		server, err = s.api.GetServer(instanceID)
+		serverResp, err := s.instanceAPI.GetServer(&instance.GetServerRequest{
+			ServerID: instanceID,
+		})
 		if err != nil {
 			return err
 		}
+
+		server := serverResp.Server
+
 		if currentState != server.State {
 			currentState = server.State
 		}
-		if server.State == "stopped" {
+		if server.State == instance.ServerStateStopped {
 			break
 		}
 		time.Sleep(1 * time.Second)
@@ -387,51 +451,76 @@ func (s *ScalewayClient) TerminateInstance(instanceID string) error {
 
 // CreateScalewayImage creates the image and delete old image and snapshot if same name
 func (s *ScalewayClient) CreateScalewayImage(instanceID, volumeID, name string) error {
-	oldImage, err := s.api.GetImageID(name, "x86_64")
+	oldImageID, err := s.getImageID(name, defaultScalewayCommercialType, defaultArch)
 	if err == nil {
-		err = s.api.DeleteImage(oldImage.Identifier)
+		log.Debugf("deleting image %s", oldImageID)
+		err = s.instanceAPI.DeleteImage(&instance.DeleteImageRequest{
+			ImageID: oldImageID,
+		})
 		if err != nil {
 			return err
 		}
 	}
 
-	oldSnapshot, err := s.api.GetSnapshotID(name)
+	oldSnapshotsResp, err := s.instanceAPI.ListSnapshots(&instance.ListSnapshotsRequest{
+		Name: &name,
+	}, scw.WithAllPages())
 	if err == nil {
-		err := s.api.DeleteSnapshot(oldSnapshot)
-		if err != nil {
-			return err
+		for _, oldSnapshot := range oldSnapshotsResp.Snapshots {
+			log.Debugf("deleting snapshot %s", oldSnapshot.ID)
+			err = s.instanceAPI.DeleteSnapshot(&instance.DeleteSnapshotRequest{
+				SnapshotID: oldSnapshot.ID,
+			})
+			if err != nil {
+				return err
+			}
 		}
 	}
 
-	snapshotID, err := s.api.PostSnapshot(volumeID, name)
+	log.Debugf("creating snapshot %s with volume %s", name, volumeID)
+	snapshotResp, err := s.instanceAPI.CreateSnapshot(&instance.CreateSnapshotRequest{
+		VolumeID: volumeID,
+		Name:     name,
+	})
 	if err != nil {
 		return err
 	}
 
-	imageID, err := s.api.PostImage(snapshotID, name, "", "x86_64") // TODO remove hardcoded arch
+	log.Debugf("creating image %s with snapshot %s", name, snapshotResp.Snapshot.ID)
+	imageResp, err := s.instanceAPI.CreateImage(&instance.CreateImageRequest{
+		Name:       name,
+		Arch:       instance.Arch(defaultArch),
+		RootVolume: snapshotResp.Snapshot.ID,
+	})
 	if err != nil {
 		return err
 	}
 
-	log.Infof("Image %s with ID %s created", name, imageID)
+	log.Infof("Image %s with ID %s created", name, imageResp.Image.ID)
 
 	return nil
 }
 
 // DeleteInstanceAndVolumes deletes the instance and the volumes attached
 func (s *ScalewayClient) DeleteInstanceAndVolumes(instanceID string) error {
-	server, err := s.api.GetServer(instanceID)
+	serverResp, err := s.instanceAPI.GetServer(&instance.GetServerRequest{
+		ServerID: instanceID,
+	})
 	if err != nil {
 		return err
 	}
 
-	err = s.api.DeleteServer(instanceID)
+	err = s.instanceAPI.DeleteServer(&instance.DeleteServerRequest{
+		ServerID: instanceID,
+	})
 	if err != nil {
 		return err
 	}
 
-	for _, volume := range server.Volumes {
-		err = s.api.DeleteVolume(volume.Identifier)
+	for _, volume := range serverResp.Server.Volumes {
+		err = s.instanceAPI.DeleteVolume(&instance.DeleteVolumeRequest{
+			VolumeID: volume.ID,
+		})
 		if err != nil {
 			return err
 		}
@@ -445,33 +534,38 @@ func (s *ScalewayClient) DeleteInstanceAndVolumes(instanceID string) error {
 // CreateLinuxkitInstance creates an instance with the given linuxkit image
 func (s *ScalewayClient) CreateLinuxkitInstance(instanceName, imageName, instanceType string) (string, error) {
 	// get the image ID
-	image, err := s.api.GetImageID(imageName, "x86_64") // TODO fix arch and use from args
+	imageResp, err := s.instanceAPI.ListImages(&instance.ListImagesRequest{
+		Name: &imageName,
+	})
 	if err != nil {
 		return "", err
 	}
-	imageID := image.Identifier
+	if len(imageResp.Images) != 1 {
+		return "", fmt.Errorf("Image %s not found or found multiple times", imageName)
+	}
+	imageID := imageResp.Images[0].ID
 
-	var serverDefinition types.ScalewayServerDefinition
-
-	serverDefinition.Name = instanceName
-	serverDefinition.Image = &imageID
-	serverDefinition.CommercialType = instanceType
-	serverDefinition.BootType = "local"
-
-	log.Debugf("Creating volume on Scaleway")
-
-	log.Debugf("Creating server %s on Scaleway", serverDefinition.Name)
-	serverID, err := s.api.PostServer(serverDefinition)
+	log.Debugf("Creating server %s on Scaleway", instanceName)
+	serverResp, err := s.instanceAPI.CreateServer(&instance.CreateServerRequest{
+		Name:              instanceName,
+		DynamicIPRequired: true,
+		CommercialType:    instanceType,
+		Image:             imageID,
+		BootType:          instance.ServerBootTypeLocal,
+	})
 	if err != nil {
 		return "", err
 	}
 
-	return serverID, nil
+	return serverResp.Server.ID, nil
 }
 
 // BootInstance boots the specified instance, and don't wait
 func (s *ScalewayClient) BootInstance(instanceID string) error {
-	err := s.api.PostServerAction(instanceID, "poweron")
+	_, err := s.instanceAPI.ServerAction(&instance.ServerActionRequest{
+		ServerID: instanceID,
+		Action:   instance.ServerActionPoweron,
+	})
 	if err != nil {
 		return err
 	}
@@ -481,7 +575,7 @@ func (s *ScalewayClient) BootInstance(instanceID string) error {
 // ConnectSerialPort connects to the serial port of the instance
 func (s *ScalewayClient) ConnectSerialPort(instanceID string) error {
 	var gottyURL string
-	switch s.region {
+	switch s.zone {
 	case "par1":
 		gottyURL = "https://tty-par1.scaleway.com/v2/"
 	case "ams1":
@@ -490,7 +584,7 @@ func (s *ScalewayClient) ConnectSerialPort(instanceID string) error {
 		return errors.New("Instance have no region")
 	}
 
-	fullURL := fmt.Sprintf("%s?arg=%s&arg=%s", gottyURL, s.api.Token, instanceID)
+	fullURL := fmt.Sprintf("%s?arg=%s&arg=%s", gottyURL, s.secretKey, instanceID)
 
 	log.Debugf("Connection to %s", fullURL)
 	gottyClient, err := gotty.NewClient(fullURL)

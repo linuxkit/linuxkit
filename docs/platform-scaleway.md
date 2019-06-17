@@ -3,14 +3,11 @@
 This is a quick guide to run LinuxKit on Scaleway (only VPS x86_64 for now)
 
 ## Setup
-Before you proceed it's recommanded that you set up the [Scaleway CLI](https://github.com/scaleway/scaleway-cli/)
-and perform an `scw login`. This will create a `$HOME/.scwrc` file containing the required API token.
 
-You can also use the `SCW_TOKEN` environment variable to set a Scaleway token. 
-The `-token` flag of the `linuxkit push scaleway` and `linuxkit run scaleway` can also be used.
+You must create a Scaleway Secret Key (available ine the [Scaleway Console](https://console.scaleway.com/account/credentials)) first.
+Then you can use it either with the `SCW_SECRET_KEY` environment variable or with the `-secret-key` flag of the `linuxkit push scaleway` and `linuxkit run scaleway` commands.
 
-The environment variable `SCW_TARGET_REGION` is used to set the region (there is also the `-region` flag)
-
+The environment variable `SCW_DEFAULT_ZONE` is used to set the zone (there is also the `-zone` flag)
 
 ## Build an image
 
@@ -33,13 +30,13 @@ It can be overidden with the `-img-name` flag or the `SCW_IMAGE_NAME` environmen
 
 **Note 1:** If an image (and snapshot) of the same name exists, it will be replaced.
 
-**Note 2:** The image is region specific: if you create an image in `par1` you can't use is in `ams1`.
+**Note 2:** The image is zone specific: if you create an image in `par1` you can't use is in `ams1`.
 
 ### Push process
 
 Building a Scaleway image have a special process. Basically:
 
-* Create an `image-builder` instance with an additional volume, based on Ubuntu Xenial (only x86_64 for now)
+* Create an `image-builder` instance with an additional volume, based on Ubuntu Bionic (only x86_64 for now)
 * Copy the ISO image on this instance
 * Use `dd` to write the image on the additional volume (`/dev/vdb` by default)
 * Terminate the instance, create a snapshot, and create an image from the snapshot
