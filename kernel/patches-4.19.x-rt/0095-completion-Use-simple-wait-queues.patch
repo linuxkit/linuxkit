@@ -1,7 +1,7 @@
-From d24dfe04ec75d5329d870c0d20f56f2cba4563ec Mon Sep 17 00:00:00 2001
+From 1ae4e1e50bf83abfe832fb78fab3b4ca6797ee18 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 095/269] completion: Use simple wait queues
+Subject: [PATCH 095/268] completion: Use simple wait queues
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -160,10 +160,10 @@ index 73e06e9986d4..f426a0661aa0 100644
  extern long prepare_to_swait_event(struct swait_queue_head *q, struct swait_queue *wait, int state);
  
 diff --git a/kernel/power/hibernate.c b/kernel/power/hibernate.c
-index abef759de7c8..69e418787f21 100644
+index f5ce9f7ec132..0f00ba01376f 100644
 --- a/kernel/power/hibernate.c
 +++ b/kernel/power/hibernate.c
-@@ -681,6 +681,10 @@ static int load_image_and_restore(void)
+@@ -690,6 +690,10 @@ static int load_image_and_restore(void)
  	return error;
  }
  
@@ -174,7 +174,7 @@ index abef759de7c8..69e418787f21 100644
  /**
   * hibernate - Carry out system hibernation, including saving the image.
   */
-@@ -694,6 +698,8 @@ int hibernate(void)
+@@ -703,6 +707,8 @@ int hibernate(void)
  		return -EPERM;
  	}
  
@@ -183,7 +183,7 @@ index abef759de7c8..69e418787f21 100644
  	lock_system_sleep();
  	/* The snapshot device should not be opened while we're running */
  	if (!atomic_add_unless(&snapshot_device_available, -1, 0)) {
-@@ -772,6 +778,7 @@ int hibernate(void)
+@@ -781,6 +787,7 @@ int hibernate(void)
  	atomic_inc(&snapshot_device_available);
   Unlock:
  	unlock_system_sleep();
@@ -319,10 +319,10 @@ index a1ad5b7d5521..755a58084978 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ddf6282d9780..8272d920b749 100644
+index 5de80f29ef57..337cc72e6a6a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7109,7 +7109,10 @@ void migrate_disable(void)
+@@ -7116,7 +7116,10 @@ void migrate_disable(void)
  		return;
  	}
  #ifdef CONFIG_SCHED_DEBUG
@@ -334,7 +334,7 @@ index ddf6282d9780..8272d920b749 100644
  #endif
  
  	if (p->migrate_disable) {
-@@ -7139,7 +7142,10 @@ void migrate_enable(void)
+@@ -7146,7 +7149,10 @@ void migrate_enable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG

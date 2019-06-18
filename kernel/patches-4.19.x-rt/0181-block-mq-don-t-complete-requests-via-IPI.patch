@@ -1,7 +1,7 @@
-From 9ec5d3b932b407e0b6780392ddb1f7f2fe1251e4 Mon Sep 17 00:00:00 2001
+From 51879ee35d8ba158a433bdb91e441c4ce9c51e01 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 15:10:08 +0100
-Subject: [PATCH 181/269] block/mq: don't complete requests via IPI
+Subject: [PATCH 181/268] block/mq: don't complete requests via IPI
 
 The IPI runs in hardirq context and there are sleeping locks. This patch
 moves the completion into a workqueue.
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 30 insertions(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index eb8b52241453..581bf704154a 100644
+index 33488b1426b7..709a4108f78c 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -189,6 +189,9 @@ void blk_rq_init(struct request_queue *q, struct request *rq)
@@ -29,7 +29,7 @@ index eb8b52241453..581bf704154a 100644
  	rq->q = q;
  	rq->__sector = (sector_t) -1;
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 430037cda971..9560ebae322d 100644
+index 8d00d8dc9e59..9df82adf428b 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -320,6 +320,9 @@ static struct request *blk_mq_rq_ctx_init(struct blk_mq_alloc_data *data,

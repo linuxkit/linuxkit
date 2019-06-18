@@ -1,7 +1,7 @@
-From bbbfae78f8bad17199822dcfb994d1c927de5c32 Mon Sep 17 00:00:00 2001
+From 97bc78094bf8bd0789398abb1bfdefef58b8b0a2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Sep 2017 12:32:34 +0200
-Subject: [PATCH 172/269] fs/dcache: bring back explicit INIT_HLIST_BL_HEAD
+Subject: [PATCH 172/268] fs/dcache: bring back explicit INIT_HLIST_BL_HEAD
  init
 
 Commit 3d375d78593c ("mm: update callers to use HASH_ZERO flag") removed
@@ -15,10 +15,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 11 insertions(+)
 
 diff --git a/fs/dcache.c b/fs/dcache.c
-index cb515f183482..7e15f1bff5ea 100644
+index 6e0022326afe..10225a9135fb 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -3058,6 +3058,8 @@ __setup("dhash_entries=", set_dhash_entries);
+@@ -3060,6 +3060,8 @@ __setup("dhash_entries=", set_dhash_entries);
  
  static void __init dcache_init_early(void)
  {
@@ -27,7 +27,7 @@ index cb515f183482..7e15f1bff5ea 100644
  	/* If hashes are distributed across NUMA nodes, defer
  	 * hash allocation until vmalloc space is available.
  	 */
-@@ -3074,11 +3076,16 @@ static void __init dcache_init_early(void)
+@@ -3076,11 +3078,16 @@ static void __init dcache_init_early(void)
  					NULL,
  					0,
  					0);
@@ -44,7 +44,7 @@ index cb515f183482..7e15f1bff5ea 100644
  	/*
  	 * A constructor could be added for stable state like the lists,
  	 * but it is probably not worth it because of the cache nature
-@@ -3102,6 +3109,10 @@ static void __init dcache_init(void)
+@@ -3104,6 +3111,10 @@ static void __init dcache_init(void)
  					NULL,
  					0,
  					0);

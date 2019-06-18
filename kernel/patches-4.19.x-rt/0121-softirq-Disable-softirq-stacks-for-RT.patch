@@ -1,7 +1,7 @@
-From 7a6ae7f96331bdaeeac96006086d01805ca48612 Mon Sep 17 00:00:00 2001
+From d77fb7d27741bbe41b0f531f90d2db7a8a88c265 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 13:59:17 +0200
-Subject: [PATCH 121/269] softirq: Disable softirq stacks for RT
+Subject: [PATCH 121/268] softirq: Disable softirq stacks for RT
 
 Disable extra stacks for softirqs. We want to preempt softirqs and
 having them on special IRQ-stack does not make this easier.
@@ -119,10 +119,10 @@ index 713670e6d13d..5dfc715343f9 100644
  #ifdef CONFIG_HOTPLUG_CPU
  void fixup_irqs(void)
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index 617df50a11d9..ce2a6587ed11 100644
+index c90e00db5c13..7b29f2c10d01 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -1043,6 +1043,7 @@ bad_gs:
+@@ -1059,6 +1059,7 @@ bad_gs:
  	jmp	2b
  	.previous
  
@@ -130,7 +130,7 @@ index 617df50a11d9..ce2a6587ed11 100644
  /* Call softirq on interrupt stack. Interrupts are off. */
  ENTRY(do_softirq_own_stack)
  	pushq	%rbp
-@@ -1053,6 +1054,7 @@ ENTRY(do_softirq_own_stack)
+@@ -1069,6 +1070,7 @@ ENTRY(do_softirq_own_stack)
  	leaveq
  	ret
  ENDPROC(do_softirq_own_stack)

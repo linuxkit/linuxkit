@@ -1,7 +1,7 @@
-From 0e5745ddcc9a0454ba787dfcb0da5e9753b787dc Mon Sep 17 00:00:00 2001
+From 39d3c3e68c29022f49c912be08823922d6864dce Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 190/269] fs/dcache: use swait_queue instead of waitqueue
+Subject: [PATCH 190/268] fs/dcache: use swait_queue instead of waitqueue
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -35,10 +35,10 @@ index 3925a7bfc74d..33f7723fb83e 100644
  	cifs_dbg(FYI, "%s: for %s\n", __func__, name->name);
  
 diff --git a/fs/dcache.c b/fs/dcache.c
-index 173b53b536f0..7cb44c7218a4 100644
+index dcde8ffe384c..b2a00f3ff7df 100644
 --- a/fs/dcache.c
 +++ b/fs/dcache.c
-@@ -2417,21 +2417,24 @@ static inline void end_dir_add(struct inode *dir, unsigned n)
+@@ -2421,21 +2421,24 @@ static inline void end_dir_add(struct inode *dir, unsigned n)
  
  static void d_wait_lookup(struct dentry *dentry)
  {
@@ -74,7 +74,7 @@ index 173b53b536f0..7cb44c7218a4 100644
  {
  	unsigned int hash = name->hash;
  	struct hlist_bl_head *b = in_lookup_hash(parent, hash);
-@@ -2546,7 +2549,7 @@ void __d_lookup_done(struct dentry *dentry)
+@@ -2550,7 +2553,7 @@ void __d_lookup_done(struct dentry *dentry)
  	hlist_bl_lock(b);
  	dentry->d_flags &= ~DCACHE_PAR_LOOKUP;
  	__hlist_bl_del(&dentry->d_u.d_in_lookup_hash);
@@ -163,7 +163,7 @@ index ce9100b5604d..839bfa76f41e 100644
  	status = -EBUSY;
  	spin_lock(&dentry->d_lock);
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index 81d77b15b347..2c0ac4338e17 100644
+index f999e8bd3771..bf9476600c73 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
 @@ -1872,7 +1872,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
@@ -176,7 +176,7 @@ index 81d77b15b347..2c0ac4338e17 100644
  		if (IS_ERR(child))
  			goto end_instantiate;
 diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
-index d65390727541..abd4d1632e7c 100644
+index 7325baa8f9d4..31f25ff3999f 100644
 --- a/fs/proc/proc_sysctl.c
 +++ b/fs/proc/proc_sysctl.c
 @@ -677,7 +677,7 @@ static bool proc_sys_fill_cache(struct file *file,
@@ -189,7 +189,7 @@ index d65390727541..abd4d1632e7c 100644
  		if (IS_ERR(child))
  			return false;
 diff --git a/include/linux/dcache.h b/include/linux/dcache.h
-index ef4b70f64f33..be6ab83705aa 100644
+index 0880baefd85f..8b4d6c8c1f7f 100644
 --- a/include/linux/dcache.h
 +++ b/include/linux/dcache.h
 @@ -105,7 +105,7 @@ struct dentry {

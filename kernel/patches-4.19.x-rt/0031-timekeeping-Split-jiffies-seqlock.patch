@@ -1,7 +1,7 @@
-From 5a0bfb35b3b826135a39a8e8744e9926b5be7607 Mon Sep 17 00:00:00 2001
+From b09d65be8e3e09795b3ce4ab655f04b5a7b42217 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 14 Feb 2013 22:36:59 +0100
-Subject: [PATCH 031/269] timekeeping: Split jiffies seqlock
+Subject: [PATCH 031/268] timekeeping: Split jiffies seqlock
 
 Replace jiffies_lock seqlock with a simple seqcounter and a rawlock so
 it can be taken in atomic context on RT.
@@ -135,7 +135,7 @@ index 5b33e2f5c0ed..54fd344ef973 100644
  	ts->timer_expires_base = basemono;
  
 diff --git a/kernel/time/timekeeping.c b/kernel/time/timekeeping.c
-index 7846ce24ecc0..68cf97548cba 100644
+index 9a6bfcd22dc6..5e584cdebd24 100644
 --- a/kernel/time/timekeeping.c
 +++ b/kernel/time/timekeeping.c
 @@ -2417,8 +2417,10 @@ EXPORT_SYMBOL(hardpps);

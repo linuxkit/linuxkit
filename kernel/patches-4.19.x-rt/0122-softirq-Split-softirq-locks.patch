@@ -1,7 +1,7 @@
-From 35e1d70c2ede4d34ff411570acf377f7ffe77e70 Mon Sep 17 00:00:00 2001
+From 3957a5e25779f87d825a2309f3da9084dfacae01 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 4 Oct 2012 14:20:47 +0100
-Subject: [PATCH 122/269] softirq: Split softirq locks
+Subject: [PATCH 122/268] softirq: Split softirq locks
 
 The 3.x RT series removed the split softirq implementation in favour
 of pushing softirq processing into the context of the thread which
@@ -198,7 +198,7 @@ index ad44849fba2e..7ecccccbd358 100644
  #define PF_EXITING		0x00000004	/* Getting shut down */
  #define PF_EXITPIDONE		0x00000008	/* PI exit done on shut down */
 diff --git a/init/main.c b/init/main.c
-index e083fac08aed..1647cb052be5 100644
+index 020972fed117..4a7471606e53 100644
 --- a/init/main.c
 +++ b/init/main.c
 @@ -561,6 +561,7 @@ asmlinkage __visible void __init start_kernel(void)

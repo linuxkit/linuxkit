@@ -1,0 +1,32 @@
+From 5e63d7fdebaf84c9c726a49717401f852d254be4 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 18 Feb 2019 16:57:09 +0100
+Subject: [PATCH 242/268] x86: lazy-preempt: properly check against
+ preempt-mask
+
+should_resched() should check against preempt_offset after unmasking the
+need-resched-bit. Otherwise should_resched() won't work for
+preempt_offset != 0 and lazy-preempt set.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/x86/include/asm/preempt.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/arch/x86/include/asm/preempt.h b/arch/x86/include/asm/preempt.h
+index 22992c837795..f66708779274 100644
+--- a/arch/x86/include/asm/preempt.h
++++ b/arch/x86/include/asm/preempt.h
+@@ -118,7 +118,7 @@ static __always_inline bool should_resched(int preempt_offset)
+ 
+ 	/* preempt count == 0 ? */
+ 	tmp &= ~PREEMPT_NEED_RESCHED;
+-	if (tmp)
++	if (tmp != preempt_offset)
+ 		return false;
+ 	if (current_thread_info()->preempt_lazy_count)
+ 		return false;
+-- 
+2.20.1
+

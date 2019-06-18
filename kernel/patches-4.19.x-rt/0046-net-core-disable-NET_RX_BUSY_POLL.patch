@@ -1,7 +1,7 @@
-From a5a9737c0c6edf17eecb16a923a936432f11019e Mon Sep 17 00:00:00 2001
+From efe57b197e5cc1e85e486bebe98e95235f5c3410 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 27 May 2017 19:02:06 +0200
-Subject: [PATCH 046/269] net/core: disable NET_RX_BUSY_POLL
+Subject: [PATCH 046/268] net/core: disable NET_RX_BUSY_POLL
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

@@ -1,7 +1,7 @@
-From 160a19dcfe1a664e430a678562901a32630f7ee2 Mon Sep 17 00:00:00 2001
+From 465429cd60203ac29544c5597dc2048c699d9573 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 19 May 2016 17:45:27 +0200
-Subject: [PATCH 208/269] kernel/printk: Don't try to print from IRQ/NMI region
+Subject: [PATCH 208/268] kernel/printk: Don't try to print from IRQ/NMI region
 
 On -RT we try to acquire sleeping locks which might lead to warnings
 from lockdep or a warn_on() from spin_try_lock() (which is a rtmutex on

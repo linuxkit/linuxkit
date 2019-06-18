@@ -1,7 +1,7 @@
-From e8dfb76eeb36e00d6827406f9b0d110eee60a084 Mon Sep 17 00:00:00 2001
+From eea2f1ac38ce1affeba31e7e4b1e79d475e1078d Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Thu, 28 Jul 2011 10:43:51 +0200
-Subject: [PATCH 216/269] mm, rt: kmap_atomic scheduling
+Subject: [PATCH 216/268] mm, rt: kmap_atomic scheduling
 
 In fact, with migrate_disable() existing one could play games with
 kmap_atomic. You could save/restore the kmap_atomic slots on context
@@ -30,7 +30,7 @@ Link: http://lkml.kernel.org/r/1311842631.5890.208.camel@twins
  7 files changed, 88 insertions(+), 12 deletions(-)
 
 diff --git a/arch/x86/kernel/process_32.c b/arch/x86/kernel/process_32.c
-index d3e593eb189f..84afe55625f8 100644
+index 020efe0f9614..5d0c975559ad 100644
 --- a/arch/x86/kernel/process_32.c
 +++ b/arch/x86/kernel/process_32.c
 @@ -38,6 +38,7 @@
@@ -41,7 +41,7 @@ index d3e593eb189f..84afe55625f8 100644
  
  #include <asm/pgtable.h>
  #include <asm/ldt.h>
-@@ -198,6 +199,35 @@ start_thread(struct pt_regs *regs, unsigned long new_ip, unsigned long new_sp)
+@@ -205,6 +206,35 @@ start_thread(struct pt_regs *regs, unsigned long new_ip, unsigned long new_sp)
  }
  EXPORT_SYMBOL_GPL(start_thread);
  
@@ -77,7 +77,7 @@ index d3e593eb189f..84afe55625f8 100644
  
  /*
   *	switch_to(x,y) should switch tasks from x to y.
-@@ -267,6 +297,8 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
+@@ -274,6 +304,8 @@ __switch_to(struct task_struct *prev_p, struct task_struct *next_p)
  
  	switch_to_extra(prev_p, next_p);
  

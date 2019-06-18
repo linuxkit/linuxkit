@@ -1,7 +1,7 @@
-From dd8eae9da2e22bd7b41cea43792b107b3deb3fd7 Mon Sep 17 00:00:00 2001
+From 4eb76fc1dccdec1b6b64cb5be42a2fe21d1e3e67 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 5 Oct 2011 11:59:38 -0700
-Subject: [PATCH 159/269] rcu: Merge RCU-bh into RCU-preempt
+Subject: [PATCH 159/268] rcu: Merge RCU-bh into RCU-preempt
 
 The Linux kernel has long RCU-bh read-side critical sections that
 intolerably increase scheduling latency under mainline's RCU-bh rules,
@@ -34,7 +34,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 73 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
-index 63cd0a1a99a0..60a9b5feefe2 100644
+index b73715c3c3c2..241a4a9577a0 100644
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
 @@ -56,7 +56,11 @@ void call_rcu(struct rcu_head *head, rcu_callback_t func);
@@ -49,7 +49,7 @@ index 63cd0a1a99a0..60a9b5feefe2 100644
  void call_rcu_sched(struct rcu_head *head, rcu_callback_t func);
  void synchronize_sched(void);
  void rcu_barrier_tasks(void);
-@@ -263,7 +267,14 @@ extern struct lockdep_map rcu_sched_lock_map;
+@@ -261,7 +265,14 @@ extern struct lockdep_map rcu_sched_lock_map;
  extern struct lockdep_map rcu_callback_map;
  int debug_lockdep_rcu_enabled(void);
  int rcu_read_lock_held(void);
@@ -64,7 +64,7 @@ index 63cd0a1a99a0..60a9b5feefe2 100644
  int rcu_read_lock_sched_held(void);
  
  #else /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
-@@ -663,10 +674,14 @@ static inline void rcu_read_unlock(void)
+@@ -661,10 +672,14 @@ static inline void rcu_read_unlock(void)
  static inline void rcu_read_lock_bh(void)
  {
  	local_bh_disable();
@@ -79,7 +79,7 @@ index 63cd0a1a99a0..60a9b5feefe2 100644
  }
  
  /*
-@@ -676,10 +691,14 @@ static inline void rcu_read_lock_bh(void)
+@@ -674,10 +689,14 @@ static inline void rcu_read_lock_bh(void)
   */
  static inline void rcu_read_unlock_bh(void)
  {
@@ -155,7 +155,7 @@ index 4d04683c31b2..808cce9a5d43 100644
  
  #ifdef CONFIG_RCU_NOCB_CPU
 diff --git a/kernel/rcu/rcutorture.c b/kernel/rcu/rcutorture.c
-index c596c6f1e457..7d2a615601e7 100644
+index 0b7af7e2bcbb..e95d121efc80 100644
 --- a/kernel/rcu/rcutorture.c
 +++ b/kernel/rcu/rcutorture.c
 @@ -434,6 +434,7 @@ static struct rcu_torture_ops rcu_ops = {

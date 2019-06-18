@@ -1,7 +1,7 @@
-From 8cf7a5b4f03a2829c823971a12c1a206bcba069d Mon Sep 17 00:00:00 2001
+From bdc5bf179f2fd29ef29ea44993ad316ffaae41b3 Mon Sep 17 00:00:00 2001
 From: Clark Williams <williams@redhat.com>
 Date: Tue, 3 Jul 2018 13:34:30 -0500
-Subject: [PATCH 015/269] fscache: initialize cookie hash table raw spinlocks
+Subject: [PATCH 015/268] fscache: initialize cookie hash table raw spinlocks
 
 The fscache cookie mechanism uses a hash table of hlist_bl_head structures. The
 PREEMPT_RT patcheset adds a raw spinlock to this structure and so on PREEMPT_RT

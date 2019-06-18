@@ -1,7 +1,7 @@
-From e30b0dc820111e11ecc71383d20682d2eee77061 Mon Sep 17 00:00:00 2001
+From 44737bfdb1bdf0012da1f5a8ceea5d865ad2d7cc Mon Sep 17 00:00:00 2001
 From: Kurt Kanzenbach <kurt@linutronix.de>
 Date: Mon, 24 Sep 2018 10:29:01 +0200
-Subject: [PATCH 167/269] tty: serial: pl011: explicitly initialize the flags
+Subject: [PATCH 167/268] tty: serial: pl011: explicitly initialize the flags
  variable
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8

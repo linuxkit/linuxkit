@@ -1,7 +1,7 @@
-From b37ee7bd4ac42c97c3fce905634cf808345a25ac Mon Sep 17 00:00:00 2001
+From ab7516f814d1df7736f158b4217b78c99e40168e Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Horia=20Geant=C4=83?= <horia.geanta@nxp.com>
 Date: Mon, 8 Oct 2018 14:09:37 +0300
-Subject: [PATCH 010/269] crypto: caam/qi - simplify CGR allocation, freeing
+Subject: [PATCH 010/268] crypto: caam/qi - simplify CGR allocation, freeing
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

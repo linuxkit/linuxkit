@@ -1,7 +1,7 @@
-From 9179df818d04fdf3d3cc195a5d19fac4b4c904f1 Mon Sep 17 00:00:00 2001
+From 7363a96960b8c2b297273a23b1a23af568962cfb Mon Sep 17 00:00:00 2001
 From: Josh Cartwright <joshc@ni.com>
 Date: Thu, 11 Feb 2016 11:54:00 -0600
-Subject: [PATCH 211/269] genirq: update irq_set_irqchip_state documentation
+Subject: [PATCH 211/268] genirq: update irq_set_irqchip_state documentation
 
 On -rt kernels, the use of migrate_disable()/migrate_enable() is
 sufficient to guarantee a task isn't moved to another CPU.  Update the
@@ -14,10 +14,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index ba5bba5f1ffd..48c2690070f3 100644
+index 69b4bfd4654c..aafe2256bd39 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -2277,7 +2277,7 @@ EXPORT_SYMBOL_GPL(irq_get_irqchip_state);
+@@ -2282,7 +2282,7 @@ EXPORT_SYMBOL_GPL(irq_get_irqchip_state);
   *	This call sets the internal irqchip state of an interrupt,
   *	depending on the value of @which.
   *

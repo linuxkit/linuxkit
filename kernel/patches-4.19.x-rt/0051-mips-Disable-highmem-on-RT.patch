@@ -1,7 +1,7 @@
-From 29b46bfd781d871ae857c940e6ef76454bf356c2 Mon Sep 17 00:00:00 2001
+From 593308991349a9b9d16ccb020dee918680b9f6e4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 17:10:12 +0200
-Subject: [PATCH 051/269] mips: Disable highmem on RT
+Subject: [PATCH 051/268] mips: Disable highmem on RT
 
 The current highmem handling on -RT is not compatible and needs fixups.
 
