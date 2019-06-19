@@ -1,7 +1,7 @@
-From 2fc8b5c9ca4ff2df7913d6e6d75a98bdece9b264 Mon Sep 17 00:00:00 2001
+From de7795ed1a14201e737e05a2d1b240a9dc6aded6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 27 May 2017 19:02:06 +0200
-Subject: [PATCH 027/269] kernel/sched/core: add migrate_disable()
+Subject: [PATCH 027/268] kernel/sched/core: add migrate_disable()
 
 ---
  include/linux/preempt.h |  23 +++++++
@@ -85,7 +85,7 @@ index 9fb239e12b82..5801e516ba63 100644
   * Callback to arch code if there's nosmp or maxcpus=0 on the
   * boot command line:
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 80badc70c258..3df110e8c6f9 100644
+index d6f690064cce..b658f0147c3b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1008,7 +1008,15 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
@@ -144,7 +144,7 @@ index 80badc70c258..3df110e8c6f9 100644
  	dest_cpu = cpumask_any_and(cpu_valid_mask, new_mask);
  	if (task_running(rq, p) || p->state == TASK_WAKING) {
  		struct migration_arg arg = { p, dest_cpu };
-@@ -7060,3 +7089,100 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -7067,3 +7096,100 @@ const u32 sched_prio_to_wmult[40] = {
  };
  
  #undef CREATE_TRACE_POINTS
@@ -246,7 +246,7 @@ index 80badc70c258..3df110e8c6f9 100644
 +EXPORT_SYMBOL(migrate_enable);
 +#endif
 diff --git a/kernel/sched/debug.c b/kernel/sched/debug.c
-index 141ea9ff210e..34c27afae009 100644
+index 78fadf0438ea..5027158d3908 100644
 --- a/kernel/sched/debug.c
 +++ b/kernel/sched/debug.c
 @@ -982,6 +982,10 @@ void proc_sched_show_task(struct task_struct *p, struct pid_namespace *ns,

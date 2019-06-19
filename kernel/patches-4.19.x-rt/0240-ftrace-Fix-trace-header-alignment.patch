@@ -1,0 +1,51 @@
+From b5f1bda181e054ae5afcfb2a2fb671ec16ea211f Mon Sep 17 00:00:00 2001
+From: Mike Galbraith <umgwanakikbuti@gmail.com>
+Date: Sun, 16 Oct 2016 05:08:30 +0200
+Subject: [PATCH 240/268] ftrace: Fix trace header alignment
+
+Line up helper arrows to the right column.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Mike Galbraith <umgwanakikbuti@gmail.com>
+[bigeasy: fixup function tracer header]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace.c | 22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
+index d51fc6825a6b..2ce8428d0f45 100644
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -3351,17 +3351,17 @@ get_total_entries(struct trace_buffer *buf,
+ 
+ static void print_lat_help_header(struct seq_file *m)
+ {
+-	seq_puts(m, "#                   _--------=> CPU#              \n"
+-		    "#                  / _-------=> irqs-off          \n"
+-		    "#                 | / _------=> need-resched      \n"
+-		    "#                 || / _-----=> need-resched_lazy \n"
+-		    "#                 ||| / _----=> hardirq/softirq   \n"
+-		    "#                 |||| / _---=> preempt-depth     \n"
+-		    "#                 ||||| / _--=> preempt-lazy-depth\n"
+-		    "#                 |||||| / _-=> migrate-disable   \n"
+-		    "#                 ||||||| /     delay             \n"
+-		    "#  cmd     pid    |||||||| time  |   caller       \n"
+-		    "#     \\   /      ||||||||  \\   |   /            \n");
++	seq_puts(m, "#                  _--------=> CPU#              \n"
++		    "#                 / _-------=> irqs-off          \n"
++		    "#                | / _------=> need-resched      \n"
++		    "#                || / _-----=> need-resched_lazy \n"
++		    "#                ||| / _----=> hardirq/softirq   \n"
++		    "#                |||| / _---=> preempt-depth     \n"
++		    "#                ||||| / _--=> preempt-lazy-depth\n"
++		    "#                |||||| / _-=> migrate-disable   \n"
++		    "#                ||||||| /     delay             \n"
++		    "# cmd     pid    |||||||| time   |  caller       \n"
++		    "#     \\   /      ||||||||   \\    |  /            \n");
+ }
+ 
+ static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
+-- 
+2.20.1
+

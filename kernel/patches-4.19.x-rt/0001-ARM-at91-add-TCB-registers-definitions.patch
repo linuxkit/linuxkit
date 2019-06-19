@@ -1,7 +1,7 @@
-From bc4d8f04b5bd123853531af90f1ec548d8ab61e4 Mon Sep 17 00:00:00 2001
+From 51502f785ba92dab73427034abe6ebc29b827637 Mon Sep 17 00:00:00 2001
 From: Alexandre Belloni <alexandre.belloni@bootlin.com>
 Date: Thu, 13 Sep 2018 13:30:18 +0200
-Subject: [PATCH 001/269] ARM: at91: add TCB registers definitions
+Subject: [PATCH 001/268] ARM: at91: add TCB registers definitions
 
 Add registers and bits definitions for the timer counter blocks found on
 Atmel ARM SoCs.

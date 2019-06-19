@@ -1,7 +1,7 @@
-From 6107effb93a85ff7db4857dca4a0acc2ec4a7d5c Mon Sep 17 00:00:00 2001
+From 35cce66d60508a5221b8ffdc4a6dabd3548ba2c9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 10:11:25 +0100
-Subject: [PATCH 067/269] fs: jbd/jbd2: Make state lock and journal head lock
+Subject: [PATCH 067/268] fs: jbd/jbd2: Make state lock and journal head lock
  rt safe
 
 bit_spin_locks break under RT.
@@ -44,7 +44,7 @@ index 8a1bcfb145d7..5869330d1f38 100644
  }
  
 diff --git a/include/linux/jbd2.h b/include/linux/jbd2.h
-index b708e5169d1d..018665350951 100644
+index 583b82b5a1e9..57f4ad8d45a5 100644
 --- a/include/linux/jbd2.h
 +++ b/include/linux/jbd2.h
 @@ -347,32 +347,56 @@ static inline struct journal_head *bh2jh(struct buffer_head *bh)

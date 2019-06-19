@@ -1,7 +1,7 @@
-From 4452796adea3514d123d9e41188dfcfc86adc6d0 Mon Sep 17 00:00:00 2001
+From 362bcb09ec2183fe4a7d43abf3924ffe9be6f071 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 22 Jun 2011 19:47:03 +0200
-Subject: [PATCH 194/269] sched: Distangle worker accounting from rqlock
+Subject: [PATCH 194/268] sched: Distangle worker accounting from rqlock
 
 The worker accounting for cpu bound workers is plugged into the core
 scheduler code and the wakeup code. This is not a hard requirement and
@@ -33,7 +33,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 47 insertions(+), 100 deletions(-)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index fb205b1ec799..1cd1abc45097 100644
+index 36f791ff52bc..08052198031a 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1704,10 +1704,6 @@ static inline void ttwu_activate(struct rq *rq, struct task_struct *p, int en_fl
@@ -169,7 +169,7 @@ index fb205b1ec799..1cd1abc45097 100644
  EXPORT_SYMBOL(schedule);
  
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index f6551d189ca4..bf7be926ce5f 100644
+index 0a11d2f64424..aa39924bd3b5 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -843,43 +843,32 @@ static void wake_up_worker(struct worker_pool *pool)

@@ -1,7 +1,7 @@
-From 82889085f9639d9aed51313cf8fd8e8ca32b8e8b Mon Sep 17 00:00:00 2001
+From 8f433a327631f56d446edaa607b815681c84073d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 28 Oct 2016 23:05:11 +0200
-Subject: [PATCH 025/269] NFSv4: replace seqcount_t with a seqlock_t
+Subject: [PATCH 025/268] NFSv4: replace seqcount_t with a seqlock_t
 
 The raw_write_seqcount_begin() in nfs4_reclaim_open_state() bugs me
 because it maps to preempt_disable() in -RT which I can't have at this
@@ -57,7 +57,7 @@ index 63287d911c08..2ae55eaa4a1e 100644
  };
  
 diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
-index 580e37bc3fe2..9d010731f901 100644
+index 53cf8599a46e..42850fb5944b 100644
 --- a/fs/nfs/nfs4proc.c
 +++ b/fs/nfs/nfs4proc.c
 @@ -2863,7 +2863,7 @@ static int _nfs4_open_and_get_state(struct nfs4_opendata *opendata,
@@ -79,10 +79,10 @@ index 580e37bc3fe2..9d010731f901 100644
  	}
  
 diff --git a/fs/nfs/nfs4state.c b/fs/nfs/nfs4state.c
-index d2f645d34eb1..1698dd2ca20b 100644
+index 3ba2087469ac..f10952680bd9 100644
 --- a/fs/nfs/nfs4state.c
 +++ b/fs/nfs/nfs4state.c
-@@ -511,7 +511,7 @@ nfs4_alloc_state_owner(struct nfs_server *server,
+@@ -515,7 +515,7 @@ nfs4_alloc_state_owner(struct nfs_server *server,
  	nfs4_init_seqid_counter(&sp->so_seqid);
  	atomic_set(&sp->so_count, 1);
  	INIT_LIST_HEAD(&sp->so_lru);
@@ -91,7 +91,7 @@ index d2f645d34eb1..1698dd2ca20b 100644
  	mutex_init(&sp->so_delegreturn_mutex);
  	return sp;
  }
-@@ -1564,8 +1564,12 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
+@@ -1568,8 +1568,12 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
  	 * recovering after a network partition or a reboot from a
  	 * server that doesn't support a grace period.
  	 */
@@ -105,7 +105,7 @@ index d2f645d34eb1..1698dd2ca20b 100644
  restart:
  	list_for_each_entry(state, &sp->so_states, open_states) {
  		if (!test_and_clear_bit(ops->state_flag_bit, &state->flags))
-@@ -1652,14 +1656,20 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
+@@ -1656,14 +1660,20 @@ static int nfs4_reclaim_open_state(struct nfs4_state_owner *sp, const struct nfs
  		spin_lock(&sp->so_lock);
  		goto restart;
  	}

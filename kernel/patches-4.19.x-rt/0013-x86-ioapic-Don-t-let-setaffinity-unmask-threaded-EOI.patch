@@ -1,7 +1,7 @@
-From 4debab2aa3d29fcdb5b9cd132416094c54e9361b Mon Sep 17 00:00:00 2001
+From d3b004343e524bde70e0ff21eb2ef4d4989a21d5 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 17 Jul 2018 18:25:31 +0200
-Subject: [PATCH 013/269] x86/ioapic: Don't let setaffinity unmask threaded EOI
+Subject: [PATCH 013/268] x86/ioapic: Don't let setaffinity unmask threaded EOI
  interrupt too early
 
 There is an issue with threaded interrupts which are marked ONESHOT

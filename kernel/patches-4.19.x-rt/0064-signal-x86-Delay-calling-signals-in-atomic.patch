@@ -1,7 +1,7 @@
-From d892f2116baf1643d4d3c792231c687fa49b71ce Mon Sep 17 00:00:00 2001
+From 41445095315411d8baebfc36b2f6f30aefe2abc6 Mon Sep 17 00:00:00 2001
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
-Subject: [PATCH 064/269] signal/x86: Delay calling signals in atomic
+Subject: [PATCH 064/268] signal/x86: Delay calling signals in atomic
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -37,10 +37,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 59 insertions(+), 2 deletions(-)
 
 diff --git a/arch/x86/entry/common.c b/arch/x86/entry/common.c
-index 3b2490b81918..ec46ee700791 100644
+index 8353348ddeaf..91676b0d2d4c 100644
 --- a/arch/x86/entry/common.c
 +++ b/arch/x86/entry/common.c
-@@ -151,6 +151,13 @@ static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
+@@ -152,6 +152,13 @@ static void exit_to_usermode_loop(struct pt_regs *regs, u32 cached_flags)
  		if (cached_flags & _TIF_NEED_RESCHED)
  			schedule();
  
@@ -94,7 +94,7 @@ index df39ad5916e7..535e57775208 100644
  	size_t				sas_ss_size;
  	unsigned int			sas_ss_flags;
 diff --git a/kernel/signal.c b/kernel/signal.c
-index f29def2be652..57c48b3d1491 100644
+index d5a9646b3538..56edb0580a3a 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
 @@ -1268,8 +1268,8 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,

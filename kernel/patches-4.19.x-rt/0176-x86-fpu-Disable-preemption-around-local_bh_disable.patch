@@ -1,7 +1,7 @@
-From ac8e13bf3ba7c4ef2587d4b8932ca56d30ca4841 Mon Sep 17 00:00:00 2001
+From 9b5de25508fdcf3dfaccbe5a2c99832a22508f21 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 11 Dec 2018 15:10:33 +0100
-Subject: [PATCH 176/269] x86/fpu: Disable preemption around local_bh_disable()
+Subject: [PATCH 176/268] x86/fpu: Disable preemption around local_bh_disable()
 
 __fpu__restore_sig() restores the content of the FPU state in the CPUs
 and in order to avoid concurency it disbles BH. On !RT it also disables

@@ -1,7 +1,7 @@
-From bb357496d72d05e2841899655c8e709d7c369ab0 Mon Sep 17 00:00:00 2001
+From 860cae9aedf5937c7f9e6d7c228e02ece79b0e0a Mon Sep 17 00:00:00 2001
 From: Marc Zyngier <marc.zyngier@arm.com>
 Date: Fri, 27 Jul 2018 13:38:54 +0100
-Subject: [PATCH 008/269] irqchip/gic-v3-its: Move pending table allocation to
+Subject: [PATCH 008/268] irqchip/gic-v3-its: Move pending table allocation to
  init time
 
 Signed-off-by: Marc Zyngier <marc.zyngier@arm.com>

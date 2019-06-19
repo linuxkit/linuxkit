@@ -1,7 +1,7 @@
-From b710c9561c0a7ddf1c7fef8d3bd3bc6d9e140a4e Mon Sep 17 00:00:00 2001
+From 3e3086ae2a7f6bb9834e51d8322673247a1d3e4c Mon Sep 17 00:00:00 2001
 From: "Paul E. McKenney" <paulmck@linux.ibm.com>
 Date: Mon, 29 Oct 2018 11:53:01 +0100
-Subject: [PATCH 023/269] EXP rcu: Revert expedited GP parallelization
+Subject: [PATCH 023/268] EXP rcu: Revert expedited GP parallelization
  cleverness
 
 (Commit 258ba8e089db23f760139266c232f01bad73f85c from linux-rcu)

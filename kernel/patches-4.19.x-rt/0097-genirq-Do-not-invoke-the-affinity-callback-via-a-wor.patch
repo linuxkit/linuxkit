@@ -1,7 +1,7 @@
-From 2010005b28eea662f9390937d92563ea1c466e24 Mon Sep 17 00:00:00 2001
+From 46fbd681dc222e3c76385b0421c6663371aa1738 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Aug 2013 17:48:46 +0200
-Subject: [PATCH 097/269] genirq: Do not invoke the affinity callback via a
+Subject: [PATCH 097/268] genirq: Do not invoke the affinity callback via a
  workqueue on RT
 
 Joe Korty reported, that __irq_set_affinity_locked() schedules a
@@ -11,9 +11,9 @@ This patch uses swork_queue() instead.
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- include/linux/interrupt.h |  6 ++++++
- kernel/irq/manage.c       | 43 ++++++++++++++++++++++++++++++++++++---
- 2 files changed, 46 insertions(+), 3 deletions(-)
+ include/linux/interrupt.h |  6 +++++
+ kernel/irq/manage.c       | 46 ++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 49 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/interrupt.h b/include/linux/interrupt.h
 index 315f852b4981..a943c07b54ba 100644
@@ -48,7 +48,7 @@ index 315f852b4981..a943c07b54ba 100644
  	void (*release)(struct kref *ref);
  };
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 94a18cf54293..d2270f61d335 100644
+index c3b9f6dacd8f..af2a8757abfb 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
 @@ -259,7 +259,12 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
@@ -125,6 +125,17 @@ index 94a18cf54293..d2270f61d335 100644
  	}
  
  	raw_spin_lock_irqsave(&desc->lock, flags);
+@@ -359,7 +396,10 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
+ 	raw_spin_unlock_irqrestore(&desc->lock, flags);
+ 
+ 	if (old_notify) {
++#ifndef CONFIG_PREEMPT_RT_BASE
++		/* Need to address this for PREEMPT_RT */
+ 		cancel_work_sync(&old_notify->work);
++#endif
+ 		kref_put(&old_notify->kref, old_notify->release);
+ 	}
+ 
 -- 
 2.20.1
 

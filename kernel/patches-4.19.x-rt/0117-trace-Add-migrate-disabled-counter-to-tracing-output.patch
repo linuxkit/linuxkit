@@ -1,7 +1,7 @@
-From e93174d8da86d81922b37dd559f026f1eb4cafb8 Mon Sep 17 00:00:00 2001
+From 0add084e2fc599e34a02b6d87f1657895c25bac2 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 21:56:42 +0200
-Subject: [PATCH 117/269] trace: Add migrate-disabled counter to tracing output
+Subject: [PATCH 117/268] trace: Add migrate-disabled counter to tracing output
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -25,10 +25,10 @@ index 78a010e19ed4..0403d9696944 100644
  
  #define TRACE_EVENT_TYPE_MAX						\
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index c65cea71d1ee..0af14953d52d 100644
+index 1bd7a758583b..10843c80cffb 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
-@@ -2146,6 +2146,8 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
+@@ -2149,6 +2149,8 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
  		((pc & SOFTIRQ_OFFSET) ? TRACE_FLAG_SOFTIRQ : 0) |
  		(tif_need_resched() ? TRACE_FLAG_NEED_RESCHED : 0) |
  		(test_preempt_need_resched() ? TRACE_FLAG_PREEMPT_RESCHED : 0);
@@ -37,7 +37,7 @@ index c65cea71d1ee..0af14953d52d 100644
  }
  EXPORT_SYMBOL_GPL(tracing_generic_entry_update);
  
-@@ -3349,9 +3351,10 @@ static void print_lat_help_header(struct seq_file *m)
+@@ -3352,9 +3354,10 @@ static void print_lat_help_header(struct seq_file *m)
  		    "#                | / _----=> need-resched    \n"
  		    "#                || / _---=> hardirq/softirq \n"
  		    "#                ||| / _--=> preempt-depth   \n"
@@ -52,7 +52,7 @@ index c65cea71d1ee..0af14953d52d 100644
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
 diff --git a/kernel/trace/trace_events.c b/kernel/trace/trace_events.c
-index f94be0c2827b..acdb2c2067c6 100644
+index 7345f5f8f3fe..6455e2ca7987 100644
 --- a/kernel/trace/trace_events.c
 +++ b/kernel/trace/trace_events.c
 @@ -188,6 +188,8 @@ static int trace_define_common_fields(void)

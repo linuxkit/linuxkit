@@ -1,7 +1,7 @@
-From 693d52e4cc082c2aafb8154ee7581e38f4c584d3 Mon Sep 17 00:00:00 2001
+From a760e3d3db919ed90f2a71a124ff2ba1239752f4 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 21:42:26 +0200
-Subject: [PATCH 192/269] workqueue: Use local irq lock instead of irq disable
+Subject: [PATCH 192/268] workqueue: Use local irq lock instead of irq disable
  regions
 
 Use a local_irq_lock as a replacement for irq off regions. We keep the
@@ -13,7 +13,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 30 insertions(+), 15 deletions(-)
 
 diff --git a/kernel/workqueue.c b/kernel/workqueue.c
-index ca8014edaa84..1e8b2ff804e3 100644
+index 88d7db5e0105..d168a5581c7f 100644
 --- a/kernel/workqueue.c
 +++ b/kernel/workqueue.c
 @@ -49,6 +49,7 @@
@@ -149,7 +149,7 @@ index ca8014edaa84..1e8b2ff804e3 100644
  }
  
  /**
-@@ -2999,7 +3014,7 @@ static bool __cancel_work_timer(struct work_struct *work, bool is_dwork)
+@@ -3002,7 +3017,7 @@ static bool __cancel_work_timer(struct work_struct *work, bool is_dwork)
  
  	/* tell other tasks trying to grab @work to back off */
  	mark_work_canceling(work);
@@ -158,7 +158,7 @@ index ca8014edaa84..1e8b2ff804e3 100644
  
  	/*
  	 * This allows canceling during early boot.  We know that @work
-@@ -3060,10 +3075,10 @@ EXPORT_SYMBOL_GPL(cancel_work_sync);
+@@ -3063,10 +3078,10 @@ EXPORT_SYMBOL_GPL(cancel_work_sync);
   */
  bool flush_delayed_work(struct delayed_work *dwork)
  {
@@ -171,7 +171,7 @@ index ca8014edaa84..1e8b2ff804e3 100644
  	return flush_work(&dwork->work);
  }
  EXPORT_SYMBOL(flush_delayed_work);
-@@ -3101,7 +3116,7 @@ static bool __cancel_work(struct work_struct *work, bool is_dwork)
+@@ -3104,7 +3119,7 @@ static bool __cancel_work(struct work_struct *work, bool is_dwork)
  		return false;
  
  	set_work_pool_and_clear_pending(work, get_work_pool_id(work));

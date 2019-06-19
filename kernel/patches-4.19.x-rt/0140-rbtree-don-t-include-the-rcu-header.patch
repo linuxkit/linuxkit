@@ -1,7 +1,7 @@
-From 3465bbb3bbbf562cd3d67f1c2f387eaa48a1af70 Mon Sep 17 00:00:00 2001
+From d1b0b3ad3b5dd89c0ec4ca6abffc706b47d60305 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 26 Feb 2019 16:56:02 +0100
-Subject: [PATCH 140/269] rbtree: don't include the rcu header
+Subject: [PATCH 140/268] rbtree: don't include the rcu header
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -103,7 +103,7 @@ index 000000000000..7066962a4379
 +
 +#endif
 diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
-index 0539f55bf7b3..63cd0a1a99a0 100644
+index 87eafcb3312f..b73715c3c3c2 100644
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
 @@ -42,6 +42,7 @@
@@ -114,7 +114,7 @@ index 0539f55bf7b3..63cd0a1a99a0 100644
  
  #define ULONG_CMP_GE(a, b)	(ULONG_MAX / 2 >= (a) - (b))
  #define ULONG_CMP_LT(a, b)	(ULONG_MAX / 2 < (a) - (b))
-@@ -371,54 +372,6 @@ static inline void rcu_preempt_sleep_check(void) { }
+@@ -369,54 +370,6 @@ static inline void rcu_preempt_sleep_check(void) { }
  	((typeof(*p) __force __kernel *)(________p1)); \
  })
  

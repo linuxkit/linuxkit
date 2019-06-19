@@ -1,7 +1,7 @@
-From 364aac82cf51da276aaf325fbcc1d837b41ebd6d Mon Sep 17 00:00:00 2001
+From 84494b284beb71d7beb044cebab91eee663d083c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 8 Jul 2011 16:35:35 +0200
-Subject: [PATCH 177/269] fs/epoll: Do not disable preemption on RT
+Subject: [PATCH 177/268] fs/epoll: Do not disable preemption on RT
 
 ep_call_nested() takes a sleeping lock so we can't disable preemption.
 The light version is enough since ep_call_nested() doesn't mind beeing

@@ -1,7 +1,7 @@
-From 588e8fb01ec7915ef280606b80bd605f49c56915 Mon Sep 17 00:00:00 2001
+From f478188cf8735d85f62c91f1766b395f8294e72c Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 17 Jun 2011 12:39:57 +0200
-Subject: [PATCH 036/269] rt: Provide PREEMPT_RT_BASE config switch
+Subject: [PATCH 036/268] rt: Provide PREEMPT_RT_BASE config switch
 
 Introduce PREEMPT_RT_BASE which enables parts of
 PREEMPT_RT_FULL. Forces interrupt threading and enables some of the RT

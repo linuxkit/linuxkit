@@ -1,7 +1,7 @@
-From f6803050ab0965a1255a3b407ca429a04c5cb230 Mon Sep 17 00:00:00 2001
+From a4ddee4eca713013e407261d0e2b49bec1d1cadc Mon Sep 17 00:00:00 2001
 From: Alexandre Belloni <alexandre.belloni@bootlin.com>
 Date: Thu, 13 Sep 2018 13:30:20 +0200
-Subject: [PATCH 003/269] clocksource/drivers: timer-atmel-tcb: add clockevent
+Subject: [PATCH 003/268] clocksource/drivers: timer-atmel-tcb: add clockevent
  device on separate channel
 
 Add an other clockevent device that uses a separate TCB channel when

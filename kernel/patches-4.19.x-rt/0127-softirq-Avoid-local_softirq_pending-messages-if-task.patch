@@ -1,7 +1,7 @@
-From 35b95587b8a912221d7eb0bdbb7aefb126c7db5d Mon Sep 17 00:00:00 2001
+From 9abf3c7d8b43d087c3154991c899d8547e677332 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 19 Feb 2019 16:49:29 +0100
-Subject: [PATCH 127/269] softirq: Avoid "local_softirq_pending" messages if
+Subject: [PATCH 127/268] softirq: Avoid "local_softirq_pending" messages if
  task is in cpu_chill()
 
 If the softirq thread enters cpu_chill() then ->state is UNINTERRUPTIBLE

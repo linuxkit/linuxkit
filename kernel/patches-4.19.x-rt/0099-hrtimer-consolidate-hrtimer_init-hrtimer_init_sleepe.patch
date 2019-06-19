@@ -1,7 +1,7 @@
-From 7223736bbeccbb731d509b603b15adcbf36bdade Mon Sep 17 00:00:00 2001
+From 7a13f46fcc126f6aa31e1b203a33cb8ba7b17c2e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
-Subject: [PATCH 099/269] hrtimer: consolidate hrtimer_init() +
+Subject: [PATCH 099/268] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
@@ -27,10 +27,10 @@ Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
  7 files changed, 67 insertions(+), 34 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 7d53f2314d7c..b0d0b74cf5a6 100644
+index 4e563ee462cb..fa984527b1ae 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -3124,10 +3124,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
+@@ -3126,10 +3126,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
  	kt = nsecs;
  
  	mode = HRTIMER_MODE_REL;
@@ -125,10 +125,10 @@ index 2b5ef8e94d19..94bd2e841de6 100644
  		hrtimer_start_range_ns(&__t.timer, timeout,			\
  				       current->timer_slack_ns,			\
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 1bd0950bea4e..fadd9bff6e3c 100644
+index 304f07d08c95..ccf933ac2997 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -2684,10 +2684,9 @@ static int futex_wait(u32 __user *uaddr, unsigned int flags, u32 val,
+@@ -2701,10 +2701,9 @@ static int futex_wait(u32 __user *uaddr, unsigned int flags, u32 val,
  	if (abs_time) {
  		to = &timeout;
  
@@ -142,7 +142,7 @@ index 1bd0950bea4e..fadd9bff6e3c 100644
  		hrtimer_set_expires_range_ns(&to->timer, *abs_time,
  					     current->timer_slack_ns);
  	}
-@@ -2786,9 +2785,8 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2803,9 +2802,8 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  
  	if (time) {
  		to = &timeout;
@@ -154,7 +154,7 @@ index 1bd0950bea4e..fadd9bff6e3c 100644
  		hrtimer_set_expires(&to->timer, *time);
  	}
  
-@@ -3212,10 +3210,9 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
+@@ -3242,10 +3240,9 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  
  	if (abs_time) {
  		to = &timeout;
@@ -263,7 +263,7 @@ index e1a549c9e399..4f43ece42f3b 100644
  
  	if (likely(t.task))
 diff --git a/net/core/pktgen.c b/net/core/pktgen.c
-index 7f6938405fa1..b71d9eef334e 100644
+index 092fa3d75b32..9d472d626aaa 100644
 --- a/net/core/pktgen.c
 +++ b/net/core/pktgen.c
 @@ -2160,7 +2160,8 @@ static void spin(struct pktgen_dev *pkt_dev, ktime_t spin_until)

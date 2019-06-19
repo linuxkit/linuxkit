@@ -1,7 +1,7 @@
-From 1eef86c9b8aa09d8e57f4ee5684c7bfd28f6900f Mon Sep 17 00:00:00 2001
+From 0d17e392d25ce41fbd73368c207e9e3c8a509200 Mon Sep 17 00:00:00 2001
 From: Alexandre Belloni <alexandre.belloni@bootlin.com>
 Date: Thu, 13 Sep 2018 13:30:19 +0200
-Subject: [PATCH 002/269] clocksource/drivers: Add a new driver for the Atmel
+Subject: [PATCH 002/268] clocksource/drivers: Add a new driver for the Atmel
  ARM TC blocks
 
 Add a driver for the Atmel Timer Counter Blocks. This driver provides a
@@ -31,10 +31,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  create mode 100644 drivers/clocksource/timer-atmel-tcb.c
 
 diff --git a/drivers/clocksource/Kconfig b/drivers/clocksource/Kconfig
-index c1ddafa4c299..c5a5ad4e22e7 100644
+index 4d37f018d846..0ab22e7037f4 100644
 --- a/drivers/clocksource/Kconfig
 +++ b/drivers/clocksource/Kconfig
-@@ -414,6 +414,14 @@ config ATMEL_ST
+@@ -415,6 +415,14 @@ config ATMEL_ST
  	help
  	  Support for the Atmel ST timer.
  

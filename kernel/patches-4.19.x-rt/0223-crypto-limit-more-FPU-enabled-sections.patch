@@ -1,7 +1,7 @@
-From da94fdf57dbc4e55dd359d103c8f61cc2811f47c Mon Sep 17 00:00:00 2001
+From 6555c5da9c6903d1fb1af6a7feaabfc3415f393e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 30 Nov 2017 13:40:10 +0100
-Subject: [PATCH 223/269] crypto: limit more FPU-enabled sections
+Subject: [PATCH 223/268] crypto: limit more FPU-enabled sections
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -68,11 +68,11 @@ index dce7c5d39c2f..6194160b7fbc 100644
  }
  
 diff --git a/arch/x86/include/asm/fpu/api.h b/arch/x86/include/asm/fpu/api.h
-index a9caac9d4a72..18b31f22ca5d 100644
+index b56d504af654..e51c7094075d 100644
 --- a/arch/x86/include/asm/fpu/api.h
 +++ b/arch/x86/include/asm/fpu/api.h
-@@ -25,6 +25,7 @@ extern void __kernel_fpu_begin(void);
- extern void __kernel_fpu_end(void);
+@@ -20,6 +20,7 @@
+  */
  extern void kernel_fpu_begin(void);
  extern void kernel_fpu_end(void);
 +extern void kernel_fpu_resched(void);
@@ -80,10 +80,10 @@ index a9caac9d4a72..18b31f22ca5d 100644
  
  /*
 diff --git a/arch/x86/kernel/fpu/core.c b/arch/x86/kernel/fpu/core.c
-index 2ea85b32421a..6914dc569d1e 100644
+index 2e5003fef51a..768c53767bb2 100644
 --- a/arch/x86/kernel/fpu/core.c
 +++ b/arch/x86/kernel/fpu/core.c
-@@ -138,6 +138,18 @@ void kernel_fpu_end(void)
+@@ -136,6 +136,18 @@ void kernel_fpu_end(void)
  }
  EXPORT_SYMBOL_GPL(kernel_fpu_end);
  

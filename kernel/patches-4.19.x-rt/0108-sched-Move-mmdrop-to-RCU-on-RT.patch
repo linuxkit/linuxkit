@@ -1,7 +1,7 @@
-From 2870b4f8c6cadeb84fb963b2d58ffc546a4c3371 Mon Sep 17 00:00:00 2001
+From feffa6aee3aaca77452731da0452ebbd27e28d5e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 108/269] sched: Move mmdrop to RCU on RT
+Subject: [PATCH 108/268] sched: Move mmdrop to RCU on RT
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -59,7 +59,7 @@ index cebb79fe2c72..6e578905e4ec 100644
   * This has to be called after a get_task_mm()/mmget_not_zero()
   * followed by taking the mmap_sem for writing before modifying the
 diff --git a/kernel/fork.c b/kernel/fork.c
-index b7e0aac93ee5..857ce1a7269f 100644
+index cba3cade3d5b..098130002cda 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
 @@ -637,6 +637,19 @@ void __mmdrop(struct mm_struct *mm)
@@ -83,7 +83,7 @@ index b7e0aac93ee5..857ce1a7269f 100644
  {
  	struct mm_struct *mm;
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index f6504beff565..551ce1adea4a 100644
+index 88a886c751ca..0c916e7010a2 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -2729,9 +2729,13 @@ static struct rq *finish_task_switch(struct task_struct *prev)
