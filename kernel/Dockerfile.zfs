@@ -12,6 +12,7 @@ RUN apk add \
     libtool \
     mpc1-dev \
     mpfr-dev \
+    openssl-dev \
     util-linux-dev \
     zlib-dev
 
@@ -22,17 +23,8 @@ RUN tar xf kernel-dev.tar
 COPY --from=ksrc /kernel.tar /
 RUN tar xf kernel.tar
 
-# Note: ZFS and SPL commits must match. It's unclear how much the user
-# space tools must match the kernel module version.
-# package on Alpine is 0.6.5.9. We pick the version that compiles with
-# latest kernel we support.
-ENV VERSION=0.7.12
-
-ENV SPL_REPO=https://github.com/zfsonlinux/spl.git
-ENV SPL_COMMIT=spl-${VERSION}
-RUN git clone ${SPL_REPO} && \
-    cd spl && \
-    git checkout ${SPL_COMMIT}
+# SPL is part of the ZFS repo since 0.8.0 (https://github.com/zfsonlinux/zfs/releases/tag/zfs-0.8.0)
+ENV VERSION=0.8.1
 
 ENV ZFS_REPO=https://github.com/zfsonlinux/zfs.git
 ENV ZFS_COMMIT=zfs-${VERSION}
@@ -40,16 +32,10 @@ RUN git clone ${ZFS_REPO} && \
     cd zfs && \
     git checkout ${ZFS_COMMIT}
 
-WORKDIR /spl
-RUN ./autogen.sh && \
-    ./configure && \
-    cd module && \
-    make && \
-    make install
-
 WORKDIR /zfs
 RUN ./autogen.sh && \
-    ./configure --with-spl=/spl && \
+    ./configure && \
+    ./scripts/make_gitrev.sh && \
     cd module && \
     make -j "$(getconf _NPROCESSORS_ONLN)" && \
     make install
