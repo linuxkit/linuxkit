@@ -1,10 +1,10 @@
-# linuxkit/alpine:f6c99e2325c4e0d8d439aac34e5d8c718aa73874-s390x
+# linuxkit/alpine:f1bf0f44c405ad95b4fd63ca6b1112169885bd9f-s390x
 # automatically generated list of installed packages
 abuild-3.3.1-r0
 alpine-baselayout-3.1.0-r3
 alpine-keys-2.1-r1
 apk-tools-2.10.3-r1
-argon2-libs-20171227-r1
+argon2-libs-20171227-r2
 argp-standalone-1.3-r3
 attr-2.4.47-r7
 attr-dev-2.4.47-r7
@@ -43,9 +43,9 @@ coreutils-8.30-r0
 cryptsetup-2.0.6-r0
 cryptsetup-libs-2.0.6-r0
 cryptsetup-openrc-2.0.6-r0
-curl-7.64.0-r1
+curl-7.64.0-r2
 db-5.3.28-r1
-dbus-libs-1.10.24-r1
+dbus-libs-1.10.28-r0
 device-mapper-libs-2.02.182-r0
 dhcpcd-7.0.8-r0
 dhcpcd-openrc-7.0.8-r0
@@ -65,7 +65,7 @@ eudev-libs-3.2.7-r0
 expat-2.2.6-r0
 expect-5.45.4-r0
 fakeroot-1.23-r0
-file-5.35-r0
+file-5.36-r0
 findmnt-2.33-r0
 findutils-4.6.0-r1
 flex-2.6.4-r1
@@ -83,7 +83,7 @@ gettext-asprintf-0.19.8.1-r4
 gettext-dev-0.19.8.1-r4
 gettext-libs-0.19.8.1-r4
 git-2.20.1-r0
-glib-2.58.1-r2
+glib-2.58.1-r3
 gmp-6.1.2-r1
 gmp-dev-6.1.2-r1
 gnupg-2.2.12-r0
@@ -130,7 +130,7 @@ libcap-ng-0.7.9-r1
 libcap-ng-dev-0.7.9-r1
 libcom_err-1.44.5-r0
 libcrypto1.1-1.1.1b-r1
-libcurl-7.64.0-r1
+libcurl-7.64.0-r2
 libdrm-2.4.96-r0
 libedit-20181209.3.1-r0
 libedit-dev-20181209.3.1-r0
@@ -152,7 +152,7 @@ libjpeg-turbo-1.5.3-r4
 libksba-1.3.5-r0
 libldap-2.4.47-r2
 libltdl-2.4.6-r5
-libmagic-5.35-r0
+libmagic-5.36-r0
 libmnl-1.0.4-r0
 libmount-2.33-r0
 libnfsidmap-2.3.2-r1
@@ -161,7 +161,7 @@ libnl-1.1.4-r0
 libnl3-3.4.0-r0
 libogg-1.3.3-r2
 libpcap-1.9.0-r1
-libpng-1.6.35-r0
+libpng-1.6.37-r0
 libressl-dev-2.7.5-r0
 libressl2.7-libcrypto-2.7.5-r0
 libressl2.7-libssl-2.7.5-r0
@@ -183,7 +183,7 @@ libusb-1.0.22-r0
 libuuid-2.33-r0
 libuv-1.23.2-r0
 libverto-0.3.0-r1
-libwbclient-4.8.8-r0
+libwbclient-4.8.12-r0
 libx11-1.6.7-r0
 libxau-1.0.8-r3
 libxcb-1.13-r2
@@ -196,7 +196,7 @@ llvm5-dev-5.0.2-r0
 llvm5-libs-5.0.2-r0
 llvm5-static-5.0.2-r0
 lsscsi-0.30-r0
-lua5.3-libs-5.3.5-r1
+lua5.3-libs-5.3.5-r2
 lz4-libs-1.8.3-r2
 lzip-1.20-r0
 lzo-2.10-r2
@@ -227,9 +227,9 @@ open-isns-lib-0.97-r4
 openntpd-6.2_p3-r2
 openrc-0.39.2-r3
 openresolv-3.9.0-r0
-openssh-keygen-7.9_p1-r4
-openssh-server-7.9_p1-r4
-openssh-server-common-7.9_p1-r4
+openssh-keygen-7.9_p1-r5
+openssh-server-7.9_p1-r5
+openssh-server-common-7.9_p1-r5
 openssl-1.1.1b-r1
 openssl-dev-1.1.1b-r1
 opus-1.3-r0
@@ -245,7 +245,7 @@ pinentry-1.1.0-r0
 pixman-0.34.0-r6
 pkgconf-1.6.0-r0
 popt-1.16-r7
-python2-2.7.15-r3
+python2-2.7.16-r1
 python3-3.6.8-r2
 qemu-3.1.0-r3
 qemu-aarch64-3.1.0-r3
@@ -272,7 +272,7 @@ snappy-1.1.7-r1
 sntpc-0.9-r6
 socat-1.7.3.2-r5
 spice-server-0.14.1-r6
-sqlite-libs-3.26.0-r3
+sqlite-libs-3.28.0-r0
 squashfs-tools-4.3-r5
 ssl_client-1.29.3-r10
 sudo-1.8.25_p1-r2
@@ -282,7 +282,7 @@ tar-1.32-r0
 tcl-8.6.9-r0
 tcpdump-4.9.2-r4
 tini-0.18.0-r0
-tzdata-2018i-r0
+tzdata-2019a-r0
 udev-init-scripts-32-r2
 udev-init-scripts-openrc-32-r2
 usbredir-0.7.1-r0
@@ -290,15 +290,15 @@ userspace-rcu-0.10.1-r0
 util-linux-2.33-r0
 util-linux-dev-2.33-r0
 vde2-libs-2.3.2-r10
-vim-8.1.0630-r0
+vim-8.1.1365-r0
 virglrenderer-0.7.0-r1
 wayland-libs-server-1.16.0-r0
-wireguard-tools-0.0.20190406-r0
-wireguard-tools-wg-0.0.20190406-r0
-wireguard-tools-wg-quick-0.0.20190406-r0
+wireguard-tools-0.0.20190601-r1
+wireguard-tools-wg-0.0.20190601-r1
+wireguard-tools-wg-quick-0.0.20190601-r1
 wireless-tools-30_pre9-r0
-wpa_supplicant-2.7-r0
-wpa_supplicant-openrc-2.7-r0
+wpa_supplicant-2.7-r3
+wpa_supplicant-openrc-2.7-r3
 xfsprogs-4.19.0-r1
 xfsprogs-extra-4.19.0-r1
 xorriso-1.4.8-r0
