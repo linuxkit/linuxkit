@@ -21,8 +21,8 @@ RUN apk add alpine-sdk libmnl-dev curl && \
     mkdir -p /wireguard && \
     chmod 0777 /wireguard && \
     cd /wireguard && \
-    curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/testing/wireguard-tools/APKBUILD && \
-    curl -fsSLo alpine-compat.patch https://git.alpinelinux.org/aports/plain/testing/wireguard-tools/alpine-compat.patch && \
+    curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/community/wireguard-tools/APKBUILD && \
+    curl -fsSLo alpine-compat.patch https://git.alpinelinux.org/aports/plain/community/wireguard-tools/alpine-compat.patch && \
     su -c "abuild-keygen -a -n && abuild -r" builder && \
     cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch) && \
     cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-[0-9]*.apk /mirror/$(apk --print-arch) && \
@@ -56,7 +56,7 @@ RUN go get -u github.com/LK4D4/vndr
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.2.6
+ENV CONTAINERD_COMMIT=v1.2.7
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
