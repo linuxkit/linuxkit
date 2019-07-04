@@ -21,6 +21,16 @@ build-base
 busybox-initscripts
 ca-certificates
 cdrkit
+ceph-base
+ceph-common
+ceph-dev
+ceph-doc
+ceph-fuse
+ceph-mon
+ceph-mds
+ceph-mgr
+ceph-osd
+ceph-radosgw
 cifs-utils
 clang
 clang-dev
@@ -66,7 +76,6 @@ libc-utils
 libc6-compat
 libcap-ng-dev
 libedit-dev
-libelf-dev
 libressl-dev
 libseccomp-dev
 libtirpc-dev

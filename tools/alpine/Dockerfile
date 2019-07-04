@@ -1,4 +1,4 @@
-FROM alpine:3.9 AS mirror
+FROM alpine:3.10 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -48,7 +48,7 @@ RUN mv /etc/apk/repositories /etc/apk/repositories.upstream && echo "/mirror" > 
 COPY go-compile.sh /go/bin/
 RUN apk add --no-cache git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
-RUN go get -u github.com/golang/lint/golint
+RUN go get -u golang.org/x/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
@@ -69,7 +69,7 @@ RUN cd $GOPATH/src/github.com/containerd/containerd && \
 # Checkout and compile iucode-tool for Intel CPU microcode
 # On non-x86_64 create a dummy file to copy below.
 ENV IUCODE_REPO=https://gitlab.com/iucode-tool/iucode-tool
-ENV IUCODE_COMMIT=v2.2
+ENV IUCODE_COMMIT=v2.3.1
 WORKDIR /
 ADD iucode-tool.patch /
 RUN set -e && \
@@ -86,7 +86,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.9
+FROM alpine:3.10
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
