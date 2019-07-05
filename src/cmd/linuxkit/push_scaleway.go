@@ -20,11 +20,12 @@ func pushScaleway(args []string) {
 		flags.PrintDefaults()
 	}
 	nameFlag := flags.String("img-name", "", "Overrides the name used to identify the image name in Scaleway's images. Defaults to the base of 'path' with the '.iso' suffix removed")
-	tokenFlag := flags.String("token", "", "Token to connet to Scaleway API")
+	secretKeyFlag := flags.String("secret-key", "", "Secret Key to connet to Scaleway API")
 	sshKeyFlag := flags.String("ssh-key", os.Getenv("HOME")+"/.ssh/id_rsa", "SSH key file")
 	instanceIDFlag := flags.String("instance-id", "", "Instance ID of a running Scaleway instance, with a second volume.")
 	deviceNameFlag := flags.String("device-name", "/dev/vdb", "Device name on which the image will be copied")
-	regionFlag := flags.String("region", defaultScalewayRegion, "Select scaleway region")
+	zoneFlag := flags.String("zone", defaultScalewayZone, "Select Scaleway zone")
+	projectIDFlag := flags.String("project-id", "", "Select Scaleway's project ID")
 	noCleanFlag := flags.Bool("no-clean", false, "Do not remove temporary instance and volumes")
 
 	if err := flags.Parse(args); err != nil {
@@ -40,11 +41,12 @@ func pushScaleway(args []string) {
 	path := remArgs[0]
 
 	name := getStringValue(scalewayNameVar, *nameFlag, "")
-	token := getStringValue(tokenVar, *tokenFlag, "")
+	secretKey := getStringValue(secretKeyVar, *secretKeyFlag, "")
 	sshKeyFile := getStringValue(sshKeyVar, *sshKeyFlag, "")
 	instanceID := getStringValue(instanceIDVar, *instanceIDFlag, "")
 	deviceName := getStringValue(deviceNameVar, *deviceNameFlag, "")
-	region := getStringValue(regionVar, *regionFlag, defaultScalewayRegion)
+	zone := getStringValue(zoneVar, *zoneFlag, defaultScalewayZone)
+	projectID := getStringValue(projectIDVar, *projectIDFlag, "")
 
 	const suffix = ".iso"
 	if name == "" {
@@ -52,7 +54,7 @@ func pushScaleway(args []string) {
 		name = filepath.Base(name)
 	}
 
-	client, err := NewScalewayClient(token, region)
+	client, err := NewScalewayClient(secretKey, zone, projectID)
 	if err != nil {
 		log.Fatalf("Unable to connect to Scaleway: %v", err)
 	}

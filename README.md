@@ -78,6 +78,7 @@ Currently supported platforms are:
   - [Google Cloud](docs/platform-gcp.md) `[x86_64]`
   - [Microsoft Azure](docs/platform-azure.md) `[x86_64]`
   - [OpenStack](docs/platform-openstack.md) `[x86_64]`
+  - [Scaleway](docs/platform-scaleway.md) `[x86_64]`
 - Baremetal:
   - [packet.net](docs/platform-packet.md) `[x86_64, arm64]`
   - [Raspberry Pi Model 3b](docs/platform-rpi3.md)  `[arm64]`
