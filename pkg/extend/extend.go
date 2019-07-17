@@ -11,10 +11,12 @@ import (
 	"path/filepath"
 	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"syscall"
 	"time"
+	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 const timeout = 60
@@ -31,8 +33,8 @@ type Fdisk struct {
 		ID         string `json:"id"`
 		Device     string `json:"device"`
 		Unit       string `json:"unit"`
-		FirstLBA   int    `json:"firstlba"`
-		LastLBA    int    `json:"lastlba"`
+		FirstLBA   int64  `json:"firstlba"`
+		LastLBA    int64  `json:"lastlba"`
 		Partitions []Partition
 	} `json:"partitionTable"`
 }
@@ -40,8 +42,8 @@ type Fdisk struct {
 // Partition represents a single partition
 type Partition struct {
 	Node  string `json:"node"`
-	Start int    `json:"start"`
-	Size  int    `json:"size"`
+	Start int64  `json:"start"`
+	Size  int64  `json:"size"`
 	Type  string `json:"type"`
 	UUID  string `json:"uuid"`
 	Name  string `json:"name"`
@@ -89,11 +91,7 @@ func extend(d, fsType string) error {
 		return nil
 	}
 	if f.PartitionTable.Label == "dos" {
-		out, err := exec.Command("blockdev", "--getsz", d).Output()
-		if err != nil {
-			return fmt.Errorf("Unable to get total size of %s: %v", d, err)
-		}
-		totalSize, err := strconv.Atoi(strings.TrimSpace(string(out)))
+		totalSize, err := deviceSize(d)
 		if err != nil {
 			return fmt.Errorf("Unable to convert total size from string to int: %v", err)
 		}
@@ -188,8 +186,8 @@ func createPartition(d string, partition Partition) error {
 	}
 
 	// update status
-	if err := exec.Command("blockdev", "--rereadpt", d).Run(); err != nil {
-		return fmt.Errorf("Error running blockdev: %v", err)
+	if err := rereadPartitions(d); err != nil {
+		return fmt.Errorf("Error re-reading partition using ioctl: %v", err)
 	}
 
 	exec.Command("mdev", "-s").Run()
@@ -213,6 +211,31 @@ func createPartition(d string, partition Partition) error {
 	}
 	// even after the device appears we still have a race
 	time.Sleep(1 * time.Second)
+	return nil
+}
+
+func deviceSize(device string) (int64, error) {
+	file, err := os.Open(device)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	var devsize int64
+	if _, _, errno := unix.Syscall(unix.SYS_IOCTL, file.Fd(), unix.BLKGETSIZE, uintptr(unsafe.Pointer(&devsize))); errno != 0 {
+		return 0, errno
+	}
+	return devsize, nil
+}
+
+func rereadPartitions(device string) error {
+	file, err := os.Open(device)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if _, _, errno := unix.Syscall(unix.SYS_IOCTL, file.Fd(), unix.BLKRRPART, 0); errno != 0 {
+		return errno
+	}
 	return nil
 }
 

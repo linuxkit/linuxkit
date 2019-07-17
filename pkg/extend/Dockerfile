@@ -20,6 +20,7 @@ FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS build
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
 
+COPY vendor /go/src/extend/vendor
 COPY extend.go /go/src/extend/
 RUN go-compile.sh /go/src/extend
 
