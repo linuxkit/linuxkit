@@ -61,6 +61,11 @@ func (p *ProviderVultr) Extract() ([]byte, error) {
 	// instance-id
 	vultrMetaGet("instanceid", "instance_id", 0644)
 
+	// ssh
+	if err := p.handleSSH(); err != nil {
+		log.Printf("Vultr: Failed to get ssh data: %s", err)
+	}
+
 	return nil, nil
 }
 
