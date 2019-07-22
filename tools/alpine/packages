@@ -48,6 +48,7 @@ e2fsprogs-extra
 ebtables
 elfutils-dev
 ethtool
+eudev
 expect
 findutils
 flex
@@ -71,6 +72,7 @@ jq
 keyutils
 kmod
 libarchive-tools
+libblkid
 libc-dev
 libc-utils
 libc6-compat
@@ -104,6 +106,7 @@ patch
 pigz
 python
 python3
+py-prettytable
 qemu-aarch64
 qemu-arm
 qemu-guest-agent
@@ -111,6 +114,7 @@ qemu-img
 qemu-ppc64le
 qemu-system-arm
 qemu-system-x86_64
+rbd-nbd
 rsync
 sed
 sfdisk
