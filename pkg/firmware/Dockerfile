@@ -33,7 +33,7 @@ RUN tar xf /kernel.tar
 # Copy files required by the modules
 RUN set -e && \
     for fw in $(find /lib/modules -name \*.ko -exec modinfo --field=firmware {} \;); do \
-        mkdir -p "/out/lib/firmware/$fw" && \
+        mkdir -p "/out/lib/firmware/$(dirname $fw)" && \
         cp "/linux-firmware/$fw" "/out/lib/firmware/$fw"; \
     done
 
