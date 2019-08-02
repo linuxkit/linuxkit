@@ -1,5 +1,5 @@
 # Make modules from a recentish kernel available
-FROM linuxkit/kernel:4.14.28 AS kernel
+FROM linuxkit/kernel:4.14.126 AS kernel
 
 FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS build
 RUN apk add --no-cache git kmod
@@ -7,7 +7,7 @@ RUN apk add --no-cache git kmod
 # Clone the firmware repository
 # Make sure you also update the FW_COMMIT in ../firmware-all/Dockerfile
 ENV FW_URL=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
-ENV FW_COMMIT=9ee52be785cf91fc6a3c6aa27d484873f8270b72
+ENV FW_COMMIT=dff98c6c57383fe343407bcb7b6e775e0b87274f
 WORKDIR /
 RUN git clone ${FW_URL} && \
     cd /linux-firmware && \
@@ -33,7 +33,7 @@ RUN tar xf /kernel.tar
 # Copy files required by the modules
 RUN set -e && \
     for fw in $(find /lib/modules -name \*.ko -exec modinfo --field=firmware {} \;); do \
-        mkdir -p "/out/lib/firmware/$fw" && \
+        mkdir -p "/out/lib/firmware/$(dirname $fw)" && \
         cp "/linux-firmware/$fw" "/out/lib/firmware/$fw"; \
     done
 
