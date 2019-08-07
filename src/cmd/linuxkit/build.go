@@ -216,7 +216,7 @@ func build(args []string) {
 		}
 
 		log.Infof("Create outputs:")
-		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size)
+		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, !*buildDisableTrust)
 		if err != nil {
 			log.Fatalf("Error writing outputs: %v", err)
 		}
