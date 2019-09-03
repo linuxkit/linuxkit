@@ -151,3 +151,27 @@ linuxkit pkg build -org=wombat -disable-content-trust -hash=foo push
 
 and this will create `wombat/<image>:foo-<arch>` and
 `wombat/<image>:foo` for use in your YAML files.
+
+### Proxies
+
+If you are building packages from behind a proxy, `linuxkit pkg build` respects
+the following environment variables, and will set them as `--build-arg` to
+`docker build` when building a package.
+
+* `http_proxy` / `HTTP_PROXY`
+* `https_proxy` / `HTTPS_PROXY`
+* `ftp_proxy` / `FTP_PROXY`
+* `no_proxy` / `NO_PROXY`
+* `all_proxy` / `ALL_PROXY`
+
+Note that the first four of these are the standard built-in `build-arg` options available
+for `docker build`; see the [docker build documentation](https://docs.docker.com/v17.09/engine/reference/builder/#arg).
+The last, `all_proxy`, is a standard var used for socks proxying. Since it is not built into `docker build`,
+if you want to use it, you will need to add the following line to the dockerfile:
+
+```dockerfile
+ARG all_proxy
+```
+
+Linuxkit does not judge between lower-cased or upper-cased variants of these options, e.g. `http_proxy` vs `HTTP_PROXY`,
+as `docker build` does not either. It just passes them through "as-is".
