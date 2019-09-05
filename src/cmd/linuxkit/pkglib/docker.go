@@ -41,13 +41,19 @@ func isExecErrNotFound(err error) bool {
 	return eerr.Err == exec.ErrNotFound
 }
 
+// these are the standard 4 build-args supported by `docker build`
+// plus the all_proxy/ALL_PROXY which is a socks standard one
 var proxyEnvVars = []string{
 	"http_proxy",
 	"https_proxy",
 	"no_proxy",
+	"ftp_proxy",
+	"all_proxy",
 	"HTTP_PROXY",
 	"HTTPS_PROXY",
 	"NO_PROXY",
+	"FTP_PROXY",
+	"ALL_PROXY",
 }
 
 func (dr dockerRunner) command(args ...string) error {
@@ -72,7 +78,12 @@ func (dr dockerRunner) command(args ...string) error {
 					[]string{"--build-arg", fmt.Sprintf("%s=%s", proxyVarName, value)}...)
 			}
 		}
-		cmd.Args = append(append(cmd.Args[:2], buildArgs...), cmd.Args[2:]...)
+		// cannot use usual append(append( because it overwrites part of it
+		newArgs := make([]string, len(cmd.Args)+len(buildArgs))
+		copy(newArgs[:2], cmd.Args[:2])
+		copy(newArgs[2:], buildArgs)
+		copy(newArgs[2+len(buildArgs):], cmd.Args[2:])
+		cmd.Args = newArgs
 
 		if dr.ctx != nil {
 			stdin, err := cmd.StdinPipe()
