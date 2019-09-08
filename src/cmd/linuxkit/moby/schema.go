@@ -301,6 +301,7 @@ var schema = string(`
     }
   },
   "properties": {
+    "from": { "type": "string" },
     "kernel": { "$ref": "#/definitions/kernel" },
     "init": { "$ref": "#/definitions/strings" },
     "onboot": { "$ref": "#/definitions/images" },
