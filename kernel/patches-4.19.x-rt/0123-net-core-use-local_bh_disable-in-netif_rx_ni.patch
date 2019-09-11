@@ -1,7 +1,7 @@
-From 88bee7f8c3b942350cdafe85c78387c056a2d049 Mon Sep 17 00:00:00 2001
+From 05b2969dc9be8c70c6bac548cf956a1d14d905f5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 16 Jun 2017 19:03:16 +0200
-Subject: [PATCH 123/268] net/core: use local_bh_disable() in netif_rx_ni()
+Subject: [PATCH 123/283] net/core: use local_bh_disable() in netif_rx_ni()
 
 In 2004 netif_rx_ni() gained a preempt_disable() section around
 netif_rx() and its do_softirq() + testing for it. The do_softirq() part

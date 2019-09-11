@@ -1,7 +1,7 @@
-From e38ec11acd94c6fe346d33ce75e30349b1734e40 Mon Sep 17 00:00:00 2001
+From 302fcfd8e9527e8f7b6ec9d733a5a3a760af64ef Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 28 May 2018 15:24:22 +0200
-Subject: [PATCH 074/268] mm/SLxB: change list_lock to raw_spinlock_t
+Subject: [PATCH 074/283] mm/SLxB: change list_lock to raw_spinlock_t
 
 The list_lock is used with used with IRQs off on RT. Make it a raw_spinlock_t
 otherwise the interrupts won't be disabled on -RT.  The locking rules remain
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 73 insertions(+), 73 deletions(-)
 
 diff --git a/mm/slab.c b/mm/slab.c
-index 018d32496e8d..8ccc092fcd39 100644
+index 46f21e73db2f..38f6609343b3 100644
 --- a/mm/slab.c
 +++ b/mm/slab.c
 @@ -233,7 +233,7 @@ static void kmem_cache_node_init(struct kmem_cache_node *parent)
@@ -368,7 +368,7 @@ index 018d32496e8d..8ccc092fcd39 100644
  	}
  	num_objs = total_slabs * cachep->num;
  	active_slabs = total_slabs - free_slabs;
-@@ -4334,13 +4334,13 @@ static int leaks_show(struct seq_file *m, void *p)
+@@ -4338,13 +4338,13 @@ static int leaks_show(struct seq_file *m, void *p)
  		for_each_kmem_cache_node(cachep, node, n) {
  
  			check_irq_on();

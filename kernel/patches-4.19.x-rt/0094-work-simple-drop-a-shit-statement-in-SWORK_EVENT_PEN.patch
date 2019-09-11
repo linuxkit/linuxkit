@@ -1,7 +1,7 @@
-From 6e00748d2128e6af60b7e37506da39208dc8e0ca Mon Sep 17 00:00:00 2001
+From 147a7822bfe8f027b88fa0ca82ae0d210e57bf34 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 10 Sep 2018 18:00:31 +0200
-Subject: [PATCH 094/268] work-simple: drop a shit statement in
+Subject: [PATCH 094/283] work-simple: drop a shit statement in
  SWORK_EVENT_PENDING
 
 Dan Carpenter reported

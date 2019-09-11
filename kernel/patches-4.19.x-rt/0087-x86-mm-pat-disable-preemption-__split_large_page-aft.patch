@@ -1,7 +1,7 @@
-From 789271b9a5c962ee26a3ec8d65c7c58db403d9e4 Mon Sep 17 00:00:00 2001
+From 3d625e1fb1f5adff8191330efe6d47017b0806bd Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 11 Dec 2018 21:53:43 +0100
-Subject: [PATCH 087/268] x86/mm/pat: disable preemption __split_large_page()
+Subject: [PATCH 087/283] x86/mm/pat: disable preemption __split_large_page()
  after spin_lock()
 
 Commit "x86/mm/pat: Disable preemption around __flush_tlb_all()" added a

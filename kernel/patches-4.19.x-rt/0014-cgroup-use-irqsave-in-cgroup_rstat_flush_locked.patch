@@ -1,7 +1,7 @@
-From bce3ba7d9bf5c645f5425e98fc15f9c14c4d1bd5 Mon Sep 17 00:00:00 2001
+From 39150ca165ea6d7d6b5ffe76efb6170893ffdb06 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 18:19:48 +0200
-Subject: [PATCH 014/268] cgroup: use irqsave in cgroup_rstat_flush_locked()
+Subject: [PATCH 014/283] cgroup: use irqsave in cgroup_rstat_flush_locked()
 
 All callers of cgroup_rstat_flush_locked() acquire cgroup_rstat_lock
 either with spin_lock_irq() or spin_lock_irqsave().

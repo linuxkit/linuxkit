@@ -1,7 +1,7 @@
-From d064ab26bcb4da0b801921c6b1115d344abb9496 Mon Sep 17 00:00:00 2001
+From da6822e02b92c82126e1e2ef3846912c9874b024 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 3 Jul 2009 08:44:31 -0500
-Subject: [PATCH 101/268] hrtimer: by timers by default into the softirq
+Subject: [PATCH 101/283] hrtimer: by timers by default into the softirq
  context
 
 We can't have hrtimers callbacks running in hardirq context on RT. Therefore
@@ -28,7 +28,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  11 files changed, 37 insertions(+), 14 deletions(-)
 
 diff --git a/arch/x86/kvm/lapic.c b/arch/x86/kvm/lapic.c
-index cba414db14cb..e4e4147daa93 100644
+index 031bd7f91f98..4b2a399f1df5 100644
 --- a/arch/x86/kvm/lapic.c
 +++ b/arch/x86/kvm/lapic.c
 @@ -2252,7 +2252,7 @@ int kvm_create_lapic(struct kvm_vcpu *vcpu)

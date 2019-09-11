@@ -1,0 +1,35 @@
+From 8f756e565320c9c32ed9f5e964f03f939dd38379 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 24 Jun 2019 18:29:13 +0200
+Subject: [PATCH 272/283] rcu: Don't allow to change rcu_normal_after_boot on
+ RT
+
+[ Upstream commit c6c058c10577815a2491ce661876cff00a4c3b15 ]
+
+On RT rcu_normal_after_boot is enabled by default.
+Don't allow to disable it on RT because the "expedited rcu" would
+introduce latency spikes.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/rcu/update.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/kernel/rcu/update.c b/kernel/rcu/update.c
+index 16d8dba23329..ed75addd3ccd 100644
+--- a/kernel/rcu/update.c
++++ b/kernel/rcu/update.c
+@@ -69,7 +69,9 @@ module_param(rcu_expedited, int, 0);
+ extern int rcu_normal; /* from sysctl */
+ module_param(rcu_normal, int, 0);
+ static int rcu_normal_after_boot = IS_ENABLED(CONFIG_PREEMPT_RT_FULL);
++#ifndef CONFIG_PREEMPT_RT_FULL
+ module_param(rcu_normal_after_boot, int, 0);
++#endif
+ #endif /* #ifndef CONFIG_TINY_RCU */
+ 
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+-- 
+2.20.1
+

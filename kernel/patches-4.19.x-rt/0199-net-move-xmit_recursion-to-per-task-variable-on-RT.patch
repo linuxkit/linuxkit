@@ -1,7 +1,7 @@
-From 0978e6214358cf3fcc499500916fc616b6ba1193 Mon Sep 17 00:00:00 2001
+From 2cb581744045c7aea758c05bbc5c84389753b1a5 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Jan 2016 15:55:02 +0100
-Subject: [PATCH 199/268] net: move xmit_recursion to per-task variable on -RT
+Subject: [PATCH 199/283] net: move xmit_recursion to per-task variable on -RT
 
 A softirq on -RT can be preempted. That means one task is in
 __dev_queue_xmit(), gets preempted and another task may enter
@@ -248,7 +248,7 @@ index 616429a4715c..1a8677236939 100644
  	queue->dev = dev;
  #ifdef CONFIG_BQL
 diff --git a/net/core/filter.c b/net/core/filter.c
-index eb81e9db4093..2dd1f2eef4fa 100644
+index 34ec9324737b..03925960fb5c 100644
 --- a/net/core/filter.c
 +++ b/net/core/filter.c
 @@ -2000,7 +2000,7 @@ static inline int __bpf_tx_skb(struct net_device *dev, struct sk_buff *skb)

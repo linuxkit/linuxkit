@@ -1,7 +1,7 @@
-From 65dde8c4bc16a1dde81f4aac939c46b6a5fe3c14 Mon Sep 17 00:00:00 2001
+From ceae4b480cbafa469d9bfb43e2916b8cd4092ec6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Sep 2017 14:43:41 +0200
-Subject: [PATCH 162/268] srcu: use cpu_online() instead custom check
+Subject: [PATCH 162/283] srcu: use cpu_online() instead custom check
 
 The current check via srcu_online is slightly racy because after looking
 at srcu_online there could be an interrupt that interrupted us long

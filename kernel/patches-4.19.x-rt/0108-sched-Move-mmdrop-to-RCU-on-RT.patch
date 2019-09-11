@@ -1,7 +1,7 @@
-From feffa6aee3aaca77452731da0452ebbd27e28d5e Mon Sep 17 00:00:00 2001
+From a07363220fb1b9eb6ed3a28d5eef11e4b95f6170 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 6 Jun 2011 12:20:33 +0200
-Subject: [PATCH 108/268] sched: Move mmdrop to RCU on RT
+Subject: [PATCH 108/283] sched: Move mmdrop to RCU on RT
 
 Takes sleeping locks and calls into the memory allocator, so nothing
 we want to do in task switch and oder atomic contexts.
@@ -37,7 +37,7 @@ index 5ed8f6292a53..f430cf0a377e 100644
  		atomic_long_t hugetlb_usage;
  #endif
 diff --git a/include/linux/sched/mm.h b/include/linux/sched/mm.h
-index cebb79fe2c72..6e578905e4ec 100644
+index 0d10b7ce0da7..b6758c6fffbf 100644
 --- a/include/linux/sched/mm.h
 +++ b/include/linux/sched/mm.h
 @@ -49,6 +49,17 @@ static inline void mmdrop(struct mm_struct *mm)

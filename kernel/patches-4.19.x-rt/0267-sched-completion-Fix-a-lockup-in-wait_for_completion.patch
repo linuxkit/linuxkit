@@ -1,7 +1,7 @@
-From e331096b94e8826b34dbbfc482bcb357e0ec2963 Mon Sep 17 00:00:00 2001
+From 2de445a925a0c92865a6308ce0e1587ebc250ccb Mon Sep 17 00:00:00 2001
 From: Corey Minyard <cminyard@mvista.com>
 Date: Thu, 9 May 2019 14:33:20 -0500
-Subject: [PATCH 267/268] sched/completion: Fix a lockup in
+Subject: [PATCH 267/283] sched/completion: Fix a lockup in
  wait_for_completion()
 
 Consider following race:

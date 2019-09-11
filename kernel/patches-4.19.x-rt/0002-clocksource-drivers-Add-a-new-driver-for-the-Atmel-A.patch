@@ -1,7 +1,7 @@
-From 0d17e392d25ce41fbd73368c207e9e3c8a509200 Mon Sep 17 00:00:00 2001
+From 13e8b97c81d4029a2c41ce13ffc84507af252845 Mon Sep 17 00:00:00 2001
 From: Alexandre Belloni <alexandre.belloni@bootlin.com>
 Date: Thu, 13 Sep 2018 13:30:19 +0200
-Subject: [PATCH 002/268] clocksource/drivers: Add a new driver for the Atmel
+Subject: [PATCH 002/283] clocksource/drivers: Add a new driver for the Atmel
  ARM TC blocks
 
 Add a driver for the Atmel Timer Counter Blocks. This driver provides a

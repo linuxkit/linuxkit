@@ -1,7 +1,7 @@
-From 56c3100fe3a1b4a512d394b5c851473ac95bad3b Mon Sep 17 00:00:00 2001
+From 6c5886f66d8a616f3294c2fd8ca26b4c638e430b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
-Subject: [PATCH 116/268] hotplug: Lightweight get online cpus
+Subject: [PATCH 116/283] hotplug: Lightweight get online cpus
 
 get_online_cpus() is a heavy weight function which involves a global
 mutex. migrate_disable() wants a simpler construct which prevents only
@@ -42,7 +42,7 @@ index 006f69f9277b..d45ea5c98cdd 100644
  
  /* Wrappers which go away once all code is converted */
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 5d65eae893bd..e1efb98a56de 100644
+index 46aefe5c0e35..9001e1779325 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -281,6 +281,21 @@ static int cpu_hotplug_disabled;

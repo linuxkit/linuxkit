@@ -1,0 +1,179 @@
+From 59fa1a99358d2859eff36b2531fed5a219437ad5 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 12 Feb 2019 15:09:38 +0100
+Subject: [PATCH 268/283] kthread: add a global worker thread.
+
+[ Upstream commit 0532e87d9d44795221aa921ba7024bde689cc894 ]
+
+Add kthread_schedule_work() which uses a global kthread for all its
+jobs.
+Split the cgroup include to avoid recussive includes from interrupt.h.
+Fixup everything that fails to build (and did not include all header).
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[
+  Fixed up include in blk-cgroup.h reported by Juri Lelli
+  http://lkml.kernel.org/r/20190722083009.GE25636@localhost.localdomain
+]
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ drivers/block/loop.c           |  2 +-
+ drivers/spi/spi-rockchip.c     |  1 +
+ include/linux/blk-cgroup.h     |  2 +-
+ include/linux/kthread-cgroup.h | 17 +++++++++++++++++
+ include/linux/kthread.h        | 17 +++++++----------
+ init/main.c                    |  1 +
+ kernel/kthread.c               | 14 ++++++++++++++
+ 7 files changed, 42 insertions(+), 12 deletions(-)
+ create mode 100644 include/linux/kthread-cgroup.h
+
+diff --git a/drivers/block/loop.c b/drivers/block/loop.c
+index f1e63eb7cbca..aa76c816dbb4 100644
+--- a/drivers/block/loop.c
++++ b/drivers/block/loop.c
+@@ -70,7 +70,7 @@
+ #include <linux/writeback.h>
+ #include <linux/completion.h>
+ #include <linux/highmem.h>
+-#include <linux/kthread.h>
++#include <linux/kthread-cgroup.h>
+ #include <linux/splice.h>
+ #include <linux/sysfs.h>
+ #include <linux/miscdevice.h>
+diff --git a/drivers/spi/spi-rockchip.c b/drivers/spi/spi-rockchip.c
+index fdcf3076681b..b56619418cea 100644
+--- a/drivers/spi/spi-rockchip.c
++++ b/drivers/spi/spi-rockchip.c
+@@ -22,6 +22,7 @@
+ #include <linux/spi/spi.h>
+ #include <linux/pm_runtime.h>
+ #include <linux/scatterlist.h>
++#include <linux/interrupt.h>
+ 
+ #define DRIVER_NAME "rockchip-spi"
+ 
+diff --git a/include/linux/blk-cgroup.h b/include/linux/blk-cgroup.h
+index 6d766a19f2bb..0473efda4c65 100644
+--- a/include/linux/blk-cgroup.h
++++ b/include/linux/blk-cgroup.h
+@@ -14,7 +14,7 @@
+  * 	              Nauman Rafique <nauman@google.com>
+  */
+ 
+-#include <linux/cgroup.h>
++#include <linux/kthread-cgroup.h>
+ #include <linux/percpu_counter.h>
+ #include <linux/seq_file.h>
+ #include <linux/radix-tree.h>
+diff --git a/include/linux/kthread-cgroup.h b/include/linux/kthread-cgroup.h
+new file mode 100644
+index 000000000000..53d34bca9d72
+--- /dev/null
++++ b/include/linux/kthread-cgroup.h
+@@ -0,0 +1,17 @@
++/* SPDX-License-Identifier: GPL-2.0 */
++#ifndef _LINUX_KTHREAD_CGROUP_H
++#define _LINUX_KTHREAD_CGROUP_H
++#include <linux/kthread.h>
++#include <linux/cgroup.h>
++
++#ifdef CONFIG_BLK_CGROUP
++void kthread_associate_blkcg(struct cgroup_subsys_state *css);
++struct cgroup_subsys_state *kthread_blkcg(void);
++#else
++static inline void kthread_associate_blkcg(struct cgroup_subsys_state *css) { }
++static inline struct cgroup_subsys_state *kthread_blkcg(void)
++{
++	return NULL;
++}
++#endif
++#endif
+diff --git a/include/linux/kthread.h b/include/linux/kthread.h
+index ad292898f7f2..7cf56eb54103 100644
+--- a/include/linux/kthread.h
++++ b/include/linux/kthread.h
+@@ -4,7 +4,6 @@
+ /* Simple interface for creating and stopping kernel threads without mess. */
+ #include <linux/err.h>
+ #include <linux/sched.h>
+-#include <linux/cgroup.h>
+ 
+ __printf(4, 5)
+ struct task_struct *kthread_create_on_node(int (*threadfn)(void *data),
+@@ -106,7 +105,7 @@ struct kthread_delayed_work {
+ };
+ 
+ #define KTHREAD_WORKER_INIT(worker)	{				\
+-	.lock = __SPIN_LOCK_UNLOCKED((worker).lock),			\
++	.lock = __RAW_SPIN_LOCK_UNLOCKED((worker).lock),		\
+ 	.work_list = LIST_HEAD_INIT((worker).work_list),		\
+ 	.delayed_work_list = LIST_HEAD_INIT((worker).delayed_work_list),\
+ 	}
+@@ -198,14 +197,12 @@ bool kthread_cancel_delayed_work_sync(struct kthread_delayed_work *work);
+ 
+ void kthread_destroy_worker(struct kthread_worker *worker);
+ 
+-#ifdef CONFIG_BLK_CGROUP
+-void kthread_associate_blkcg(struct cgroup_subsys_state *css);
+-struct cgroup_subsys_state *kthread_blkcg(void);
+-#else
+-static inline void kthread_associate_blkcg(struct cgroup_subsys_state *css) { }
+-static inline struct cgroup_subsys_state *kthread_blkcg(void)
++extern struct kthread_worker kthread_global_worker;
++void kthread_init_global_worker(void);
++
++static inline bool kthread_schedule_work(struct kthread_work *work)
+ {
+-	return NULL;
++	return kthread_queue_work(&kthread_global_worker, work);
+ }
+-#endif
++
+ #endif /* _LINUX_KTHREAD_H */
+diff --git a/init/main.c b/init/main.c
+index 4a7471606e53..b0e95351c22c 100644
+--- a/init/main.c
++++ b/init/main.c
+@@ -1130,6 +1130,7 @@ static noinline void __init kernel_init_freeable(void)
+ 	smp_prepare_cpus(setup_max_cpus);
+ 
+ 	workqueue_init();
++	kthread_init_global_worker();
+ 
+ 	init_mm_internals();
+ 
+diff --git a/kernel/kthread.c b/kernel/kthread.c
+index 5641b55783a6..9db017761a1f 100644
+--- a/kernel/kthread.c
++++ b/kernel/kthread.c
+@@ -20,6 +20,7 @@
+ #include <linux/freezer.h>
+ #include <linux/ptrace.h>
+ #include <linux/uaccess.h>
++#include <linux/cgroup.h>
+ #include <trace/events/sched.h>
+ 
+ static DEFINE_SPINLOCK(kthread_create_lock);
+@@ -1180,6 +1181,19 @@ void kthread_destroy_worker(struct kthread_worker *worker)
+ }
+ EXPORT_SYMBOL(kthread_destroy_worker);
+ 
++DEFINE_KTHREAD_WORKER(kthread_global_worker);
++EXPORT_SYMBOL(kthread_global_worker);
++
++__init void kthread_init_global_worker(void)
++{
++	kthread_global_worker.task = kthread_create(kthread_worker_fn,
++						    &kthread_global_worker,
++						    "kswork");
++	if (WARN_ON(IS_ERR(kthread_global_worker.task)))
++		return;
++	wake_up_process(kthread_global_worker.task);
++}
++
+ #ifdef CONFIG_BLK_CGROUP
+ /**
+  * kthread_associate_blkcg - associate blkcg to current kthread
+-- 
+2.20.1
+

@@ -1,7 +1,7 @@
-From 53f0e68188d4f6d6b4cfae7150446199bafc00cb Mon Sep 17 00:00:00 2001
+From d96d2893a46a35127c07a99df70a4c2b4bcde7c9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 26 Sep 2012 16:21:08 +0200
-Subject: [PATCH 233/268] net: Another local_irq_disable/kmalloc headache
+Subject: [PATCH 233/283] net: Another local_irq_disable/kmalloc headache
 
 Replace it by a local lock. Though that's pretty inefficient :(
 
@@ -11,7 +11,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 6 insertions(+), 4 deletions(-)
 
 diff --git a/net/core/skbuff.c b/net/core/skbuff.c
-index 8b5768113acd..f89d5388ea07 100644
+index 9b9f696281a9..9ce072fb662e 100644
 --- a/net/core/skbuff.c
 +++ b/net/core/skbuff.c
 @@ -63,6 +63,7 @@

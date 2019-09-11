@@ -1,7 +1,7 @@
-From 9fe5cd2edadfa8760b3ebc58af32d2d0f3ee8af4 Mon Sep 17 00:00:00 2001
+From 3cb7dde3b41a847eefeac79763e46ce167c8521f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 28 Jan 2015 17:14:16 +0100
-Subject: [PATCH 085/268] mm/memcontrol: Replace local_irq_disable with local
+Subject: [PATCH 085/283] mm/memcontrol: Replace local_irq_disable with local
  locks
 
 There are a few local_irq_disable() which then take sleeping locks. This

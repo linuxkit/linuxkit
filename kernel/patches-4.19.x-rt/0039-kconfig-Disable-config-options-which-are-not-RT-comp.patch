@@ -1,7 +1,7 @@
-From 29c669c7c70f5c80be40b69f20b4c4a8034ee7a1 Mon Sep 17 00:00:00 2001
+From 94fd428643474b867a8cac432d7d911a5250c367 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 24 Jul 2011 12:11:43 +0200
-Subject: [PATCH 039/268] kconfig: Disable config options which are not RT
+Subject: [PATCH 039/283] kconfig: Disable config options which are not RT
  compatible
 
 Disable stuff which is known to have issues on RT
@@ -25,7 +25,7 @@ index a336548487e6..3f537b264852 100644
  	select RING_BUFFER_ALLOW_SWAP
  	help
 diff --git a/mm/Kconfig b/mm/Kconfig
-index de64ea658716..438460486a5b 100644
+index b457e94ae618..0dddbb2a3282 100644
 --- a/mm/Kconfig
 +++ b/mm/Kconfig
 @@ -377,7 +377,7 @@ config NOMMU_INITIAL_TRIM_EXCESS

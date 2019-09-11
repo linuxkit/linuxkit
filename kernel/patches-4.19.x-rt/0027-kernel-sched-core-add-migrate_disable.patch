@@ -1,7 +1,7 @@
-From de7795ed1a14201e737e05a2d1b240a9dc6aded6 Mon Sep 17 00:00:00 2001
+From bda814671dc9f9f74cabd99a65cad3101b68ee83 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 27 May 2017 19:02:06 +0200
-Subject: [PATCH 027/268] kernel/sched/core: add migrate_disable()
+Subject: [PATCH 027/283] kernel/sched/core: add migrate_disable()
 
 ---
  include/linux/preempt.h |  23 +++++++

@@ -1,7 +1,7 @@
-From 9a8c2b871dbfc84555fccac1a07f73733462045b Mon Sep 17 00:00:00 2001
+From f9cb7c14dad693481c5b5dfea9223e1904a63a09 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 6 Dec 2018 10:15:13 +0100
-Subject: [PATCH 104/268] hrtimer: move state change before hrtimer_cancel in
+Subject: [PATCH 104/283] hrtimer: move state change before hrtimer_cancel in
  do_nanosleep()
 
 There is a small window between setting t->task to NULL and waking the

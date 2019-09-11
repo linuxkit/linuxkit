@@ -1,7 +1,7 @@
-From 1ab863bb2d985228b7bec14117d4467e44058b03 Mon Sep 17 00:00:00 2001
+From 0a339e66574cbd8cf1cb2b146d2b960db46a2803 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:00:34 +0100
-Subject: [PATCH 188/268] fs: dcache: Use cpu_chill() in trylock loops
+Subject: [PATCH 188/283] fs: dcache: Use cpu_chill() in trylock loops
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system

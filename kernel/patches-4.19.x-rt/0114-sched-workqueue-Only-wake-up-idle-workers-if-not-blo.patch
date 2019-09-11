@@ -1,7 +1,7 @@
-From dfc2626360c00270806603e89a95316ece262a01 Mon Sep 17 00:00:00 2001
+From 4ad0a976dcfe34e35355f20f464dd7eb08dd38e5 Mon Sep 17 00:00:00 2001
 From: Steven Rostedt <rostedt@goodmis.org>
 Date: Mon, 18 Mar 2013 15:12:49 -0400
-Subject: [PATCH 114/268] sched/workqueue: Only wake up idle workers if not
+Subject: [PATCH 114/283] sched/workqueue: Only wake up idle workers if not
  blocked on sleeping spin lock
 
 In -rt, most spin_locks() turn into mutexes. One of these spin_lock

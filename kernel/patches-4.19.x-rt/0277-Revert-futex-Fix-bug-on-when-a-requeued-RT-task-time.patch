@@ -1,0 +1,82 @@
+From 9848e5129d0d928c27247ab10835cdfb2948bd60 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 26 Jun 2019 17:44:18 +0200
+Subject: [PATCH 277/283] Revert "futex: Fix bug on when a requeued RT task
+ times out"
+
+[ Upstream commit f1a170cb3289a48df26cae3c60d77608f7a988bb ]
+
+Drop the RT fixup, the futex code will be changed to avoid the need for
+the workaround.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/locking/rtmutex.c        | 31 +------------------------------
+ kernel/locking/rtmutex_common.h |  1 -
+ 2 files changed, 1 insertion(+), 31 deletions(-)
+
+diff --git a/kernel/locking/rtmutex.c b/kernel/locking/rtmutex.c
+index 2a9bf2443acc..7f6f402e04ae 100644
+--- a/kernel/locking/rtmutex.c
++++ b/kernel/locking/rtmutex.c
+@@ -144,8 +144,7 @@ static void fixup_rt_mutex_waiters(struct rt_mutex *lock)
+ 
+ static int rt_mutex_real_waiter(struct rt_mutex_waiter *waiter)
+ {
+-	return waiter && waiter != PI_WAKEUP_INPROGRESS &&
+-		waiter != PI_REQUEUE_INPROGRESS;
++	return waiter && waiter != PI_WAKEUP_INPROGRESS;
+ }
+ 
+ /*
+@@ -2350,34 +2349,6 @@ int __rt_mutex_start_proxy_lock(struct rt_mutex *lock,
+ 	if (try_to_take_rt_mutex(lock, task, NULL))
+ 		return 1;
+ 
+-#ifdef CONFIG_PREEMPT_RT_FULL
+-	/*
+-	 * In PREEMPT_RT there's an added race.
+-	 * If the task, that we are about to requeue, times out,
+-	 * it can set the PI_WAKEUP_INPROGRESS. This tells the requeue
+-	 * to skip this task. But right after the task sets
+-	 * its pi_blocked_on to PI_WAKEUP_INPROGRESS it can then
+-	 * block on the spin_lock(&hb->lock), which in RT is an rtmutex.
+-	 * This will replace the PI_WAKEUP_INPROGRESS with the actual
+-	 * lock that it blocks on. We *must not* place this task
+-	 * on this proxy lock in that case.
+-	 *
+-	 * To prevent this race, we first take the task's pi_lock
+-	 * and check if it has updated its pi_blocked_on. If it has,
+-	 * we assume that it woke up and we return -EAGAIN.
+-	 * Otherwise, we set the task's pi_blocked_on to
+-	 * PI_REQUEUE_INPROGRESS, so that if the task is waking up
+-	 * it will know that we are in the process of requeuing it.
+-	 */
+-	raw_spin_lock(&task->pi_lock);
+-	if (task->pi_blocked_on) {
+-		raw_spin_unlock(&task->pi_lock);
+-		return -EAGAIN;
+-	}
+-	task->pi_blocked_on = PI_REQUEUE_INPROGRESS;
+-	raw_spin_unlock(&task->pi_lock);
+-#endif
+-
+ 	/* We enforce deadlock detection for futexes */
+ 	ret = task_blocks_on_rt_mutex(lock, waiter, task,
+ 				      RT_MUTEX_FULL_CHAINWALK);
+diff --git a/kernel/locking/rtmutex_common.h b/kernel/locking/rtmutex_common.h
+index 546aaf058b9e..a501f3b47081 100644
+--- a/kernel/locking/rtmutex_common.h
++++ b/kernel/locking/rtmutex_common.h
+@@ -133,7 +133,6 @@ enum rtmutex_chainwalk {
+  * PI-futex support (proxy locking functions, etc.):
+  */
+ #define PI_WAKEUP_INPROGRESS	((struct rt_mutex_waiter *) 1)
+-#define PI_REQUEUE_INPROGRESS	((struct rt_mutex_waiter *) 2)
+ 
+ extern struct task_struct *rt_mutex_next_owner(struct rt_mutex *lock);
+ extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
+-- 
+2.20.1
+

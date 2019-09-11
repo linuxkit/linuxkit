@@ -1,7 +1,7 @@
-From 3eb644da699b9d5916ad3b0e8465e4edc5f6a333 Mon Sep 17 00:00:00 2001
+From 6fb56185df42e49e0e2d8fe12d315356a57f4bce Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 9 Oct 2018 17:34:50 +0200
-Subject: [PATCH 028/268] sched/migrate_disable: Add export_symbol_gpl for
+Subject: [PATCH 028/283] sched/migrate_disable: Add export_symbol_gpl for
  __migrate_disabled
 
 Jonathan reported that lttng/modules can't use __migrate_disabled().

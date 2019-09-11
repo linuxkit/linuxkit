@@ -1,7 +1,7 @@
-From ee6a6c573101060336e51ddacf0faa38099ddd9d Mon Sep 17 00:00:00 2001
+From 8cc7d52a64f1f62c24514589af91171961b4b31a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 26 Oct 2012 18:50:54 +0100
-Subject: [PATCH 239/268] sched: Add support for lazy preemption
+Subject: [PATCH 239/283] sched: Add support for lazy preemption
 
 It has become an obsession to mitigate the determinism vs. throughput
 loss of RT. Looking at the mainline semantics of preemption points
@@ -244,7 +244,7 @@ index 907d72b3ba95..306567f72a3e 100644
  	prompt "Preemption Model"
  	default PREEMPT_NONE
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 3c2135e8cbac..22a479fb720d 100644
+index 0523f2f0f4a2..3857a0afdfbf 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -304,11 +304,13 @@ void pin_current_cpu(void)
@@ -529,7 +529,7 @@ index 49ae30da28ee..f7c1c262457f 100644
  extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
  
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 10843c80cffb..d51fc6825a6b 100644
+index 496c5d358010..da619e974a11 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2137,6 +2137,7 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -601,7 +601,7 @@ index 10843c80cffb..d51fc6825a6b 100644
  }
  
 diff --git a/kernel/trace/trace.h b/kernel/trace/trace.h
-index 447bd96ee658..65afd0c04622 100644
+index d11d7bfc3fa5..6eba8c96f4bc 100644
 --- a/kernel/trace/trace.h
 +++ b/kernel/trace/trace.h
 @@ -127,6 +127,7 @@ struct kretprobe_trace_entry_head {

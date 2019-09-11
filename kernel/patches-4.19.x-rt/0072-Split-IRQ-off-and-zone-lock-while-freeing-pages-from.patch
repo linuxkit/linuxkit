@@ -1,7 +1,7 @@
-From 95156c42eddf17dc207a94b719ec18b031e4a713 Mon Sep 17 00:00:00 2001
+From 6ec0e8d1526370de73bd18c096f7f96827594308 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 28 May 2018 15:24:20 +0200
-Subject: [PATCH 072/268] Split IRQ-off and zone->lock while freeing pages from
+Subject: [PATCH 072/283] Split IRQ-off and zone->lock while freeing pages from
  PCP list #1
 
 Split the IRQ-off section while accessing the PCP list from zone->lock
@@ -17,7 +17,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 52 insertions(+), 30 deletions(-)
 
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 8e6932a140b8..8c10f34364c0 100644
+index 2d04bd2e1ced..332b48f38d1e 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
 @@ -1095,7 +1095,7 @@ static inline void prefetch_buddy(struct page *page)

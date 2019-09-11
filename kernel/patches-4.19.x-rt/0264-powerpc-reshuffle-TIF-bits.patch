@@ -1,7 +1,7 @@
-From a55a83a5c20bf641d7ded63b53e940f54c16778f Mon Sep 17 00:00:00 2001
+From 76ccb7ba434581a4fa6338c0451f3f0752582520 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 22 Mar 2019 17:15:58 +0100
-Subject: [PATCH 264/268] powerpc: reshuffle TIF bits
+Subject: [PATCH 264/283] powerpc: reshuffle TIF bits
 
 Powerpc32/64 does not compile because TIF_SYSCALL_TRACE's bit is higher
 than 15 and the assembly instructions don't expect that.

@@ -1,7 +1,7 @@
-From 0d6bc3016c56136ba59d6a3519ba23bcaecf4e37 Mon Sep 17 00:00:00 2001
+From b66a9f85a9e8ee817d0e2de1637bf95b7710127f Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 09:13:42 +0200
-Subject: [PATCH 020/268] arm64: KVM: compute_layout before altenates are
+Subject: [PATCH 020/283] arm64: KVM: compute_layout before altenates are
  applied
 
 compute_layout() is invoked as part of an alternative fixup under

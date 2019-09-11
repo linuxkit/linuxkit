@@ -1,7 +1,7 @@
-From 719de0a8c6c4489eae0ea592aaa78898611c5f7f Mon Sep 17 00:00:00 2001
+From db6f702c9d0558505d757c28c61f4f6a567a898a Mon Sep 17 00:00:00 2001
 From: Alexandre Belloni <alexandre.belloni@bootlin.com>
 Date: Thu, 13 Sep 2018 13:30:23 +0200
-Subject: [PATCH 006/268] ARM: configs: at91: use new TCB timer driver
+Subject: [PATCH 006/283] ARM: configs: at91: use new TCB timer driver
 
 Unselecting ATMEL_TCLIB switches the TCB timer driver from tcb_clksrc to
 timer-atmel-tcb.

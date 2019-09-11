@@ -1,7 +1,7 @@
-From 55ac9fe1a16eab7f85e646280cb842f4cf31e27d Mon Sep 17 00:00:00 2001
+From 3d881bc012788bea38e0bf55b03d9996eb40b1b9 Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Fri, 2 Sep 2011 14:41:29 +0200
-Subject: [PATCH 058/268] printk: Add "force_early_printk" boot param to help
+Subject: [PATCH 058/283] printk: Add "force_early_printk" boot param to help
  with debugging
 
 Gives me an option to screw printk and actually see what the machine

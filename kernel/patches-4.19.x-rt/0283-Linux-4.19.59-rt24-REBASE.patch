@@ -1,19 +1,19 @@
-From 5c15b7623e1aa08b31d5b4fc5db7d6b7a9b5fb78 Mon Sep 17 00:00:00 2001
+From bfbf9b36800f945fc7bd6bf934e65b59831aa03d Mon Sep 17 00:00:00 2001
 From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
-Date: Fri, 24 May 2019 14:22:06 -0400
-Subject: [PATCH 268/268] Linux 4.19.50-rt22 REBASE
+Date: Fri, 19 Jul 2019 17:46:46 -0400
+Subject: [PATCH 283/283] Linux 4.19.59-rt24 REBASE
 
 ---
  localversion-rt | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/localversion-rt b/localversion-rt
-index 1199ebade17b..c29508d21914 100644
+index 1199ebade17b..b2111a212663 100644
 --- a/localversion-rt
 +++ b/localversion-rt
 @@ -1 +1 @@
 --rt16
-+-rt22
++-rt24
 -- 
 2.20.1
 

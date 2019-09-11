@@ -1,0 +1,41 @@
+From 1f38c3b121feba50524996f2cceb92eb47269e52 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 28 May 2019 10:42:15 +0200
+Subject: [PATCH 270/283] genirq: Handle missing work_struct in
+ irq_set_affinity_notifier()
+
+[ Upstream commit bbc4d2a7d6ff54ba923640d9a42c7bef7185fe98 ]
+
+The backported stable commit
+   59c39840f5abf ("genirq: Prevent use-after-free and work list corruption")
+
+added cancel_work_sync() on a work_struct element which is not available
+in RT.
+
+Replace cancel_work_sync() with kthread_cancel_work_sync() on RT.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/irq/manage.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
+index 381305c48a0a..b2736d7d863b 100644
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -385,8 +385,9 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
+ 	raw_spin_unlock_irqrestore(&desc->lock, flags);
+ 
+ 	if (old_notify) {
+-#ifndef CONFIG_PREEMPT_RT_BASE
+-		/* Need to address this for PREEMPT_RT */
++#ifdef CONFIG_PREEMPT_RT_BASE
++		kthread_cancel_work_sync(&notify->work);
++#else
+ 		cancel_work_sync(&old_notify->work);
+ #endif
+ 		kref_put(&old_notify->kref, old_notify->release);
+-- 
+2.20.1
+
