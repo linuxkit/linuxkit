@@ -265,7 +265,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 
 	tf.Seek(0, 0) // seek to the begining so we can start reading
 	ir := tar.NewReader(tf)
-	writtenFilePaths := []string{}
+	writtenFilePaths := make(map[string][]byte, 0)
 
 	iw = tar.NewWriter(w)
 
@@ -280,20 +280,18 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 
 		hdrName := filepath.Clean(hdr.Name)
 
-		found := false
+		writtenContents, found := writtenFilePaths[hdrName]
 
-		for _, wF := range writtenFilePaths {
-			if wF == hdrName {
-				found = true
-				break
-			}
+		fileContents := make([]byte, hdr.Size)
+		_, err = ir.Read(fileContents)
+		if err != nil && err != io.EOF {
+			return fmt.Errorf("error reading file contents: %v", err)
 		}
 
 		if found {
 			log.Debugf("Dup File: %s removing from output", hdrName)
-			_, err = io.Copy(ioutil.Discard, ir)
-			if err != nil {
-				return err
+			if !bytes.Equal(writtenContents, fileContents) {
+				return fmt.Errorf("Tried to write duplicate file into image with different contents %s", hdrName)
 			}
 			continue
 		}
@@ -302,12 +300,12 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 			return err
 		}
 
-		_, err = io.Copy(iw, ir)
+		_, err = iw.Write(fileContents)
 		if err != nil {
 			return err
 		}
 
-		writtenFilePaths = append(writtenFilePaths, hdrName)
+		writtenFilePaths[hdrName] = fileContents
 	}
 
 	err = tf.Close()
