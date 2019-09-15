@@ -1,7 +1,7 @@
-From 7a13f46fcc126f6aa31e1b203a33cb8ba7b17c2e Mon Sep 17 00:00:00 2001
+From 2decd81945344204be663182b0eac46997f297b2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 3 Jul 2018 11:25:41 +0200
-Subject: [PATCH 099/268] hrtimer: consolidate hrtimer_init() +
+Subject: [PATCH 099/283] hrtimer: consolidate hrtimer_init() +
  hrtimer_init_sleeper() calls
 
 hrtimer_init_sleeper() calls require a prior initialisation of the
@@ -27,10 +27,10 @@ Signed-off-by: Anna-Maria Gleixner <anna-maria@linutronix.de>
  7 files changed, 67 insertions(+), 34 deletions(-)
 
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index 4e563ee462cb..fa984527b1ae 100644
+index 70d839b9c3b0..e3e7a88e03a6 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
-@@ -3126,10 +3126,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
+@@ -3128,10 +3128,9 @@ static bool blk_mq_poll_hybrid_sleep(struct request_queue *q,
  	kt = nsecs;
  
  	mode = HRTIMER_MODE_REL;

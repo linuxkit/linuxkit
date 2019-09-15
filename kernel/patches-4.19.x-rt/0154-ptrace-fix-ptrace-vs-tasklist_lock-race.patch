@@ -1,7 +1,7 @@
-From 91b6c0acd7435a12a250d41c7c7cc9c6f38cddae Mon Sep 17 00:00:00 2001
+From b031672801c6d24d255cc3d458e9a546899c919b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 154/268] ptrace: fix ptrace vs tasklist_lock race
+Subject: [PATCH 154/283] ptrace: fix ptrace vs tasklist_lock race
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -99,10 +99,10 @@ index 1797fd3c8cbb..25e9a40f9576 100644
   * cond_resched() and cond_resched_lock(): latency reduction via
   * explicit rescheduling in places that are safe. The return
 diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index fc0d667f5792..536a917ac6c0 100644
+index fed682a01a75..ace2839323de 100644
 --- a/kernel/ptrace.c
 +++ b/kernel/ptrace.c
-@@ -176,7 +176,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
+@@ -174,7 +174,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
  
  	spin_lock_irq(&task->sighand->siglock);
  	if (task_is_traced(task) && !__fatal_signal_pending(task)) {

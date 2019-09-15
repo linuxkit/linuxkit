@@ -1,7 +1,7 @@
-From a01400fc47cb4ce13c00b03a908533848af6cf74 Mon Sep 17 00:00:00 2001
+From 3b1c3bc41b87cd7a714ebfa5e88651d4f3326f2e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 11:48:57 +0200
-Subject: [PATCH 055/268] md: disable bcache
+Subject: [PATCH 055/283] md: disable bcache
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

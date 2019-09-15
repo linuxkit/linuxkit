@@ -1,7 +1,7 @@
-From aa5a624b58a513730b1c7b73a1a2a9d1e52265b7 Mon Sep 17 00:00:00 2001
+From 65b275b3fee3444107af46dd38c427834861ea37 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 26 Feb 2019 12:31:10 +0100
-Subject: [PATCH 185/268] hrtimer: cpu_chill(): save task state in
+Subject: [PATCH 185/283] hrtimer: cpu_chill(): save task state in
  ->saved_state()
 
 In the previous change I saved the current task state on stack. This was

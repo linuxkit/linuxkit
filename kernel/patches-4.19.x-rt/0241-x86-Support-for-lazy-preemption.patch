@@ -1,7 +1,7 @@
-From d6770ae0dff21e273f805126b99ad09e602ad27f Mon Sep 17 00:00:00 2001
+From fb20d310604701fc1f1d53bf74f792f58a83812f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
-Subject: [PATCH 241/268] x86: Support for lazy preemption
+Subject: [PATCH 241/283] x86: Support for lazy preemption
 
 Implement the x86 pieces for lazy preempt.
 

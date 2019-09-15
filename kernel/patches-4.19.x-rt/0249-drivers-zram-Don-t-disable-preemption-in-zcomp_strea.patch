@@ -1,7 +1,7 @@
-From 7ebc2fcbf40e267f5fc4785c62b5325e77dad1ce Mon Sep 17 00:00:00 2001
+From 3af8e8733e58687a2fe72ce5b8d47e458d09a9b5 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 20 Oct 2016 11:15:22 +0200
-Subject: [PATCH 249/268] drivers/zram: Don't disable preemption in
+Subject: [PATCH 249/283] drivers/zram: Don't disable preemption in
  zcomp_stream_get/put()
 
 In v4.7, the driver switched to percpu compression streams, disabling

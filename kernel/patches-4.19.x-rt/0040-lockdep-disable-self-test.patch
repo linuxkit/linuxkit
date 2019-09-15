@@ -1,7 +1,7 @@
-From 36f9204a770887f7280fb9db2450f6dd8ef11b33 Mon Sep 17 00:00:00 2001
+From 1a9e9b418236c18717a91955eeafe5bd72a00598 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 17 Oct 2017 16:36:18 +0200
-Subject: [PATCH 040/268] lockdep: disable self-test
+Subject: [PATCH 040/283] lockdep: disable self-test
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

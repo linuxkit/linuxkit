@@ -1,7 +1,7 @@
-From d3d4bb55c2d289271ff369309d3f8675e651165d Mon Sep 17 00:00:00 2001
+From 1d605947258bfd1a27d7d2d155e7466da763ffd2 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 8 Jul 2011 20:25:16 +0200
-Subject: [PATCH 262/268] Add localversion for -RT release
+Subject: [PATCH 262/283] Add localversion for -RT release
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---

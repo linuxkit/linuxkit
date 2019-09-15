@@ -1,7 +1,7 @@
-From f38b5d4083660218919ae8aaf04084ec81984b3f Mon Sep 17 00:00:00 2001
+From 88037fc07062d469557427c97507d3f95d7ca3a6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 28 Oct 2013 12:19:57 +0100
-Subject: [PATCH 092/268] wait.h: include atomic.h
+Subject: [PATCH 092/283] wait.h: include atomic.h
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit

@@ -1,7 +1,7 @@
-From e22533415f2d2e4fbc723286a1946a5ac1c3d2ed Mon Sep 17 00:00:00 2001
+From 02954bb06eedf19db3637fea6699d0dc1761b270 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 4 Apr 2017 12:50:16 +0200
-Subject: [PATCH 026/268] kernel: sched: Provide a pointer to the valid CPU
+Subject: [PATCH 026/283] kernel: sched: Provide a pointer to the valid CPU
  mask
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -254,7 +254,7 @@ index 98e1ce14fa2a..5d3828625017 100644
  		if (weight == 1 && !test_bit(cpu, qib_cpulist))
  			if (!find_hca(cpu, &unit) && unit >= 0)
 diff --git a/fs/proc/array.c b/fs/proc/array.c
-index 0ceb3b6b37e7..ccfef702c771 100644
+index 9eb99a43f849..e4d0cfebaac5 100644
 --- a/fs/proc/array.c
 +++ b/fs/proc/array.c
 @@ -381,9 +381,9 @@ static inline void task_context_switch_counts(struct seq_file *m,
@@ -307,7 +307,7 @@ index 5aebe3be4d7c..0b49b9cf5571 100644
  	.mm		= NULL,
  	.active_mm	= &init_mm,
 diff --git a/kernel/cgroup/cpuset.c b/kernel/cgroup/cpuset.c
-index 266f10cb7222..ef085d84a940 100644
+index ff956ccbb6df..7bb129c5b412 100644
 --- a/kernel/cgroup/cpuset.c
 +++ b/kernel/cgroup/cpuset.c
 @@ -2090,7 +2090,7 @@ static void cpuset_fork(struct task_struct *task)

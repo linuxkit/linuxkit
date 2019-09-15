@@ -1,7 +1,7 @@
-From b5f1bda181e054ae5afcfb2a2fb671ec16ea211f Mon Sep 17 00:00:00 2001
+From 03fa817c57795a125667feb747f1c683b3c456c1 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sun, 16 Oct 2016 05:08:30 +0200
-Subject: [PATCH 240/268] ftrace: Fix trace header alignment
+Subject: [PATCH 240/283] ftrace: Fix trace header alignment
 
 Line up helper arrows to the right column.
 
@@ -14,7 +14,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 11 insertions(+), 11 deletions(-)
 
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index d51fc6825a6b..2ce8428d0f45 100644
+index da619e974a11..f82da65109eb 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -3351,17 +3351,17 @@ get_total_entries(struct trace_buffer *buf,

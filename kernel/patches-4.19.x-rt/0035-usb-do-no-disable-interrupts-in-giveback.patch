@@ -1,7 +1,7 @@
-From a7d0a6cef67c51b65ef7a826069f17fd3e027d7c Mon Sep 17 00:00:00 2001
+From b91ae27f3efa2e15087397591db35dd1d11f5120 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 8 Nov 2013 17:34:54 +0100
-Subject: [PATCH 035/268] usb: do no disable interrupts in giveback
+Subject: [PATCH 035/283] usb: do no disable interrupts in giveback
 
 Since commit 94dfd7ed ("USB: HCD: support giveback of URB in tasklet
 context") the USB code disables interrupts before invoking the complete

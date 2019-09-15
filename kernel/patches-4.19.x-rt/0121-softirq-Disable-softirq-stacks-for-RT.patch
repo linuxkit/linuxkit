@@ -1,7 +1,7 @@
-From d77fb7d27741bbe41b0f531f90d2db7a8a88c265 Mon Sep 17 00:00:00 2001
+From ac1ed27a8471e837c8ea8811ca8322f47f47add2 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 13:59:17 +0200
-Subject: [PATCH 121/268] softirq: Disable softirq stacks for RT
+Subject: [PATCH 121/283] softirq: Disable softirq stacks for RT
 
 Disable extra stacks for softirqs. We want to preempt softirqs and
 having them on special IRQ-stack does not make this easier.

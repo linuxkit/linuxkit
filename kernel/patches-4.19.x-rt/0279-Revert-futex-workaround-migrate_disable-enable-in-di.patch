@@ -1,0 +1,69 @@
+From a4c6efd8adfd48a378c579bb7bc2c1a3162ced7f Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 26 Jun 2019 17:44:27 +0200
+Subject: [PATCH 279/283] Revert "futex: workaround migrate_disable/enable in
+ different context"
+
+[ Upstream commit a71221d81cc4873891ae44f3aa02df596079b786 ]
+
+Drop the RT fixup, the futex code will be changed to avoid the need for
+the workaround.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/futex.c | 19 -------------------
+ 1 file changed, 19 deletions(-)
+
+diff --git a/kernel/futex.c b/kernel/futex.c
+index 1d9423914bf4..54ffc25183ed 100644
+--- a/kernel/futex.c
++++ b/kernel/futex.c
+@@ -2875,14 +2875,6 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+ 	 * before __rt_mutex_start_proxy_lock() is done.
+ 	 */
+ 	raw_spin_lock_irq(&q.pi_state->pi_mutex.wait_lock);
+-	/*
+-	 * the migrate_disable() here disables migration in the in_atomic() fast
+-	 * path which is enabled again in the following spin_unlock(). We have
+-	 * one migrate_disable() pending in the slow-path which is reversed
+-	 * after the raw_spin_unlock_irq() where we leave the atomic context.
+-	 */
+-	migrate_disable();
+-
+ 	spin_unlock(q.lock_ptr);
+ 	/*
+ 	 * __rt_mutex_start_proxy_lock() unconditionally enqueues the @rt_waiter
+@@ -2891,7 +2883,6 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+ 	 */
+ 	ret = __rt_mutex_start_proxy_lock(&q.pi_state->pi_mutex, &rt_waiter, current);
+ 	raw_spin_unlock_irq(&q.pi_state->pi_mutex.wait_lock);
+-	migrate_enable();
+ 
+ 	if (ret) {
+ 		if (ret == 1)
+@@ -3040,21 +3031,11 @@ static int futex_unlock_pi(u32 __user *uaddr, unsigned int flags)
+ 		 * rt_waiter. Also see the WARN in wake_futex_pi().
+ 		 */
+ 		raw_spin_lock_irq(&pi_state->pi_mutex.wait_lock);
+-		/*
+-		 * Magic trickery for now to make the RT migrate disable
+-		 * logic happy. The following spin_unlock() happens with
+-		 * interrupts disabled so the internal migrate_enable()
+-		 * won't undo the migrate_disable() which was issued when
+-		 * locking hb->lock.
+-		 */
+-		migrate_disable();
+ 		spin_unlock(&hb->lock);
+ 
+ 		/* drops pi_state->pi_mutex.wait_lock */
+ 		ret = wake_futex_pi(uaddr, uval, pi_state);
+ 
+-		migrate_enable();
+-
+ 		put_pi_state(pi_state);
+ 
+ 		/*
+-- 
+2.20.1
+

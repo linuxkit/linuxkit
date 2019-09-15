@@ -1,7 +1,7 @@
-From 4902321bc0e6616144d8a98ddadff7f48f0ecebc Mon Sep 17 00:00:00 2001
+From 0ac4d3a8d1b2e6effaea2997c80bb3583d3f6a12 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:18:06 +0200
-Subject: [PATCH 146/268] rtmutex: add rwlock implementation based on rtmutex
+Subject: [PATCH 146/283] rtmutex: add rwlock implementation based on rtmutex
 
 The implementation is bias-based, similar to the rwsem implementation.
 

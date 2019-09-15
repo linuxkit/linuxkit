@@ -1,7 +1,7 @@
-From 3681b7011d489da9a82f90fee87711d1bab983fe Mon Sep 17 00:00:00 2001
+From 91f768aed73cc93826112811b4e622dce0c1915f Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 3 Apr 2011 11:57:29 +0200
-Subject: [PATCH 071/268] genirq: Force interrupt thread on RT
+Subject: [PATCH 071/283] genirq: Force interrupt thread on RT
 
 Force threaded_irqs and optimize the code (force_irqthreads) in regard
 to this.

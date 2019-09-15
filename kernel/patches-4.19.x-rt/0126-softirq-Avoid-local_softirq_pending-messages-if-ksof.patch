@@ -1,7 +1,7 @@
-From 352ba4a234b354e8dffc9bf8ce2f76159d635c81 Mon Sep 17 00:00:00 2001
+From 75bef693f46a9a3fd05cda70554c004df275c92b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 18 Feb 2019 13:19:59 +0100
-Subject: [PATCH 126/268] softirq: Avoid "local_softirq_pending" messages if
+Subject: [PATCH 126/283] softirq: Avoid "local_softirq_pending" messages if
  ksoftirqd is blocked
 
 If the ksoftirqd thread has a softirq pending and is blocked on the

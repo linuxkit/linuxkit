@@ -1,7 +1,7 @@
-From 83b8d6b7af22014f1cc6001b8509627485bef74a Mon Sep 17 00:00:00 2001
+From 7a6eaa6b88680cbb1309983cc198a08c1bccacfa Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 22 Dec 2016 17:28:33 +0100
-Subject: [PATCH 134/268] arm: include definition for cpumask_t
+Subject: [PATCH 134/283] arm: include definition for cpumask_t
 
 This definition gets pulled in by other files. With the (later) split of
 RCU and spinlock.h it won't compile anymore.

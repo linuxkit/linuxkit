@@ -1,0 +1,49 @@
+From 13885eb4d49323964f1067b3f1b9f6503f07e29e Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 24 Jun 2019 19:33:16 +0200
+Subject: [PATCH 274/283] sched/core: Drop a preempt_disable_rt() statement
+
+[ Upstream commit 761126efdcbe3fa3e99c9079fa0ad6eca2f251f2 ]
+
+The caller holds a lock which already disables preemption.
+Drop the preempt_disable_rt() statement in get_nohz_timer_target().
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/sched/core.c | 9 ++-------
+ 1 file changed, 2 insertions(+), 7 deletions(-)
+
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index 91a9b2556fb0..1b2503b87473 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -558,14 +558,11 @@ void resched_cpu(int cpu)
+  */
+ int get_nohz_timer_target(void)
+ {
+-	int i, cpu;
++	int i, cpu = smp_processor_id();
+ 	struct sched_domain *sd;
+ 
+-	preempt_disable_rt();
+-	cpu = smp_processor_id();
+-
+ 	if (!idle_cpu(cpu) && housekeeping_cpu(cpu, HK_FLAG_TIMER))
+-		goto preempt_en_rt;
++		return cpu;
+ 
+ 	rcu_read_lock();
+ 	for_each_domain(cpu, sd) {
+@@ -584,8 +581,6 @@ int get_nohz_timer_target(void)
+ 		cpu = housekeeping_any_cpu(HK_FLAG_TIMER);
+ unlock:
+ 	rcu_read_unlock();
+-preempt_en_rt:
+-	preempt_enable_rt();
+ 	return cpu;
+ }
+ 
+-- 
+2.20.1
+

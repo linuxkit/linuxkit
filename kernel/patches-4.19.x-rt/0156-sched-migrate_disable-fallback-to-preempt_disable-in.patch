@@ -1,7 +1,7 @@
-From 2e8a1d88c6613f72f219e3cc24178658f6abed52 Mon Sep 17 00:00:00 2001
+From 55652e517f87d321623cda451d7bfbcdc55528d9 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
-Subject: [PATCH 156/268] sched/migrate_disable: fallback to preempt_disable()
+Subject: [PATCH 156/283] sched/migrate_disable: fallback to preempt_disable()
  instead barrier()
 
 On SMP + !RT migrate_disable() is still around. It is not part of spin_lock()

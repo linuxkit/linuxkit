@@ -1,7 +1,7 @@
-From bc76479aeddec4b75a6e18bf57b6ac3df6b6ce97 Mon Sep 17 00:00:00 2001
+From f9ae4924361c91598ce03771aaa5f99c4bfa8100 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:25:13 +0200
-Subject: [PATCH 155/268] rtmutex: annotate sleeping lock context
+Subject: [PATCH 155/283] rtmutex: annotate sleeping lock context
 
 The RCU code complains on schedule() within a rcu_readlock() section.
 The valid scenario on -RT is if a sleeping is held. In order to suppress
