@@ -264,7 +264,8 @@ $(eval $(call kernel,4.19.71,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.59,4.19.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
-$(eval $(call kernel,5.2.9,5.2.x,$(EXTRA),$(DEBUG)))
+# Disable 5.2.x due to https://github.com/linuxkit/linuxkit/issues/3412
+# $(eval $(call kernel,5.2.9,5.2.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.71,4.19.x,$(EXTRA),$(DEBUG)))
 endif
 
