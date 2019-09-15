@@ -1,4 +1,4 @@
-From 5f99faad295458e428c63512a2c3ce70bc292119 Mon Sep 17 00:00:00 2001
+From a8ad56f6cd1fe2fd0b7c23df3c443c9ad3711217 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:14 -0700
 Subject: [PATCH 16/21] hyper-v: trace vmbus_release_relid()
@@ -64,5 +64,5 @@ index f06284d64a8c..f0e437c3522f 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.21.0
+2.22.0
 
