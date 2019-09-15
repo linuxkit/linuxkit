@@ -90,6 +90,7 @@ RUN mkdir -p /out/src
 RUN tar cJf /out/src/linux.tar.xz /linux
 
 # Kernel config
+# The s390x defconfig moved with 5.2.x
 RUN case $(uname -m) in \
     x86_64) \
         KERNEL_DEF_CONF=/linux/arch/x86/configs/x86_64_defconfig; \
@@ -98,7 +99,11 @@ RUN case $(uname -m) in \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
         ;; \
     s390x) \
-        KERNEL_DEF_CONF=/linux/arch/s390/defconfig; \
+        if [ -f /linux/arch/s390/defconfig ]; then \
+            KERNEL_DEF_CONF=/linux/arch/s390/defconfig; \
+        else \
+            KERNEL_DEF_CONF=/linux/arch/s390/configs/defconfig; \
+        fi; \
         ;; \
     esac  && \
     cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
