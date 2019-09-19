@@ -1,7 +1,7 @@
 ARG IMAGE
 FROM ${IMAGE} as ksrc
 
-FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS build
+FROM linuxkit/alpine:3fdc49366257e53276c6f363956a4353f95d9a81 AS build
 RUN apk update && apk upgrade -a && \
   apk add --no-cache \
   argp-standalone \
@@ -103,7 +103,7 @@ RUN mkdir -p /out/usr/bin && \
 RUN mkdir -p /out/usr/local/share/ && \
     cp -a /usr/local/share/lua /out/usr/local/share/
 
-FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec as mirror
+FROM linuxkit/alpine:3fdc49366257e53276c6f363956a4353f95d9a81 as mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk update && apk upgrade -a && \
   apk add --no-cache --initdb -p /out \

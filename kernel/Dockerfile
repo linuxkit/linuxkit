@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS kernel-build
+FROM linuxkit/alpine:3fdc49366257e53276c6f363956a4353f95d9a81 AS kernel-build
 RUN apk add \
     argp-standalone \
     automake \
@@ -37,8 +37,8 @@ ARG KERNEL_SERIES
 ARG EXTRA
 ARG DEBUG
 
-ENV WIREGUARD_VERSION=0.0.20190601
-ENV WIREGUARD_SHA256="7528461824a0174bd7d4f15e68d8f0ce9a8ea318411502b80759438e8ef65568"
+ENV WIREGUARD_VERSION=0.0.20190913
+ENV WIREGUARD_SHA256="997327185d2d1b597dc118f737c0c165e2a2c21453387ea02659f1159d148518"
 ENV WIREGUARD_URL=https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${WIREGUARD_VERSION}.tar.xz
 
 # We copy the entire directory. This copies some unneeded files, but
@@ -90,6 +90,7 @@ RUN mkdir -p /out/src
 RUN tar cJf /out/src/linux.tar.xz /linux
 
 # Kernel config
+# The s390x defconfig moved with 5.2.x
 RUN case $(uname -m) in \
     x86_64) \
         KERNEL_DEF_CONF=/linux/arch/x86/configs/x86_64_defconfig; \
@@ -98,7 +99,11 @@ RUN case $(uname -m) in \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
         ;; \
     s390x) \
-        KERNEL_DEF_CONF=/linux/arch/s390/defconfig; \
+        if [ -f /linux/arch/s390/defconfig ]; then \
+            KERNEL_DEF_CONF=/linux/arch/s390/defconfig; \
+        else \
+            KERNEL_DEF_CONF=/linux/arch/s390/configs/defconfig; \
+        fi; \
         ;; \
     esac  && \
     cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \

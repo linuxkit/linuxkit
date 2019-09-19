@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS kernel-build
+FROM linuxkit/alpine:3fdc49366257e53276c6f363956a4353f95d9a81 AS kernel-build
 RUN apk add \
     argp-standalone \
     bison \
@@ -43,7 +43,13 @@ RUN set -e && \
         fi && \
         [ ! -f /config-${SERIES}-x86_64 ] || mv /config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
         [ ! -f /config-${SERIES}-aarch64 ] || mv /config-${SERIES}-aarch64 arch/arm64/configs/defconfig ; \
-        [ ! -f /config-${SERIES}-s390x ] || mv /config-${SERIES}-s390x arch/s390/defconfig; \
+        if [ -f /config-${SERIES}-s390x ]; then \
+            if [ -f /linux/arch/s390/defconfig ]; then \
+                mv /config-${SERIES}-s390x arch/s390/defconfig; \
+            else \
+                mv /config-${SERIES}-s390x arch/s390/configs/defconfig; \
+            fi; \
+        fi; \
     done
 
 ENTRYPOINT ["/bin/sh"]

@@ -1,4 +1,4 @@
-From ca442ac85b317c5c0d8479e045bd59749ace3398 Mon Sep 17 00:00:00 2001
+From cdad917a6043bf558c0733ce01a3e9417a7adce5 Mon Sep 17 00:00:00 2001
 From: Xin Long <lucien.xin@gmail.com>
 Date: Tue, 25 Apr 2017 22:58:37 +0800
 Subject: [PATCH 14/14] bridge: move bridge multicast cleanup to ndo_uninit
@@ -105,5 +105,5 @@ index 191b1f23c160..93d08d1b039e 100644
  
  	br_sysfs_delbr(br->dev);
 -- 
-2.21.0
+2.22.0
 
