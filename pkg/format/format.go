@@ -197,7 +197,7 @@ func format(d, label, fsType string, forced bool) error {
 	case "btrfs":
 		btrfsArgs := []string{"-f"}
 		if label != "" {
-			btrfsArgs = append(btrfsArgs, []string{"-l", label}...)
+			btrfsArgs = append(btrfsArgs, []string{"-L", label}...)
 		}
 		mkfsArgs = append(mkfsArgs, btrfsArgs...)
 	case "xfs":
