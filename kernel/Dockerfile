@@ -64,6 +64,26 @@ RUN KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d . -f 1) && \
     gpg2 --verify linux-${KERNEL_VERSION}.tar.sign linux-${KERNEL_VERSION}.tar && \
     cat linux-${KERNEL_VERSION}.tar | tar --absolute-names -x && mv /linux-${KERNEL_VERSION} /linux
 
+
+RUN mkdir -p /out/src
+
+WORKDIR /tmp
+# Download Intel ucode, create a CPIO archive for it, and keep it in the build context
+# so the firmware can also be referenced with CONFIG_EXTRA_FIRMWARE
+ENV UCODE_REPO=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
+ENV UCODE_COMMIT=1dd14da6d1ea5cfbd95923653f31c04aac3aa655
+RUN set -e && \
+    if [ $(uname -m) == x86_64 ]; then \
+        git clone ${UCODE_REPO} ucode && \
+        cd ucode && \
+        git checkout ${UCODE_COMMIT} && \
+        iucode_tool --normal-earlyfw --write-earlyfw=/out/intel-ucode.cpio ./intel-ucode && \
+        cp license /out/intel-ucode-license.txt && \
+        mkdir -p /lib/firmware && \
+        cp -rav ./intel-ucode /lib/firmware; \
+    fi
+
+
 WORKDIR /linux
 # Apply local specific patches if present
 RUN set -e && \
@@ -84,7 +104,7 @@ RUN set -e && \
         done; \
     fi
 
-RUN mkdir -p /out/src
+
 
 # Save kernel source
 RUN tar cJf /out/src/linux.tar.xz /linux
@@ -179,17 +199,6 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
 
-# Download Intel ucode and create a CPIO archive for it
-ENV UCODE_REPO=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
-ENV UCODE_COMMIT=1dd14da6d1ea5cfbd95923653f31c04aac3aa655
-RUN set -e && \
-    if [ $(uname -m) == x86_64 ]; then \
-        git clone ${UCODE_REPO} ucode && \
-        cd ucode && \
-        git checkout ${UCODE_COMMIT} && \
-        iucode_tool --normal-earlyfw --write-earlyfw=/out/intel-ucode.cpio ./intel-ucode && \
-        cp license /out/intel-ucode-license.txt; \
-    fi
 
 FROM scratch
 ENTRYPOINT []
