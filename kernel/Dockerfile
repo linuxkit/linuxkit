@@ -141,7 +141,15 @@ RUN case $(uname -m) in \
 
 
 # Kernel
-RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
+RUN case $(uname -m) in \
+    s390x) \
+        KCFLAGS="-fno-pie -fPIC"; \
+        ;; \
+    *) \
+        KCFLAGS="-fno-pie"; \
+        ;; \
+    esac && \
+    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="$KCFLAGS" && \
     case $(uname -m) in \
     x86_64) \
         cp arch/x86_64/boot/bzImage /out/kernel; \
