@@ -179,7 +179,7 @@ func extractReferences(m *Moby) error {
 	for _, ii := range m.Init {
 		r, err := reference.Parse(ii)
 		if err != nil {
-			return fmt.Errorf("extract on boot image reference: %v", err)
+			return fmt.Errorf("extract init image reference: %v", err)
 		}
 		m.initRefs = append(m.initRefs, &r)
 	}
