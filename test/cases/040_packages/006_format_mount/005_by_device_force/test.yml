@@ -6,19 +6,19 @@ init:
   - linuxkit/runc:c1f0db27e71d948f3134b31ce76276f843849b0a
 onboot:
   - name: format
-    image: linuxkit/format:v0.7
+    image: linuxkit/format:65b9e0a76d0b9fb8ac5c5f3bc8d3131109290f56
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sda"]
   - name: format
-    image: linuxkit/format:v0.7
+    image: linuxkit/format:65b9e0a76d0b9fb8ac5c5f3bc8d3131109290f56
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sdb"]
   - name: format
-    image: linuxkit/format:v0.7
+    image: linuxkit/format:65b9e0a76d0b9fb8ac5c5f3bc8d3131109290f56
     command: ["/usr/bin/format", "-verbose", "-type", "xfs", "/dev/sda"]
   - name: format
-    image: linuxkit/format:v0.7
+    image: linuxkit/format:65b9e0a76d0b9fb8ac5c5f3bc8d3131109290f56
     command: ["/usr/bin/format", "-verbose", "-force", "-type", "xfs", "/dev/sdb"]
   - name: test
-    image: linuxkit/format:v0.7
+    image: linuxkit/format:65b9e0a76d0b9fb8ac5c5f3bc8d3131109290f56
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
