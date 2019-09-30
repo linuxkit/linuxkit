@@ -13,7 +13,7 @@ onboot:
     image: linuxkit/dhcpcd:v0.7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:v0.7
+    image: linuxkit/format:65b9e0a76d0b9fb8ac5c5f3bc8d3131109290f56
     command: ["/usr/bin/format", "/dev/sda"]
   - name: dm-crypt
     image: linuxkit/dm-crypt:v0.7

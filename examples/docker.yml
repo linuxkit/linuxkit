@@ -12,7 +12,7 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:v0.7
   - name: format
-    image: linuxkit/format:v0.7
+    image: linuxkit/format:65b9e0a76d0b9fb8ac5c5f3bc8d3131109290f56
   - name: mount
     image: linuxkit/mount:v0.7
     command: ["/usr/bin/mountie", "/var/lib/docker"]
