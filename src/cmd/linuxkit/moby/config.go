@@ -168,37 +168,50 @@ func uniqueServices(m Moby) error {
 	return nil
 }
 
+// referenceExpand expands "redis" to "docker.io/library/redis" so all images have a full domain
+func referenceExpand(ref string) string {
+	parts := strings.Split(ref, "/")
+	switch len(parts) {
+	case 1:
+		return "docker.io/library/" + ref
+	case 2:
+		return "docker.io/" + ref
+	default:
+		return ref
+	}
+}
+
 func extractReferences(m *Moby) error {
 	if m.Kernel.Image != "" {
-		r, err := reference.Parse(m.Kernel.Image)
+		r, err := reference.Parse(referenceExpand(m.Kernel.Image))
 		if err != nil {
 			return fmt.Errorf("extract kernel image reference: %v", err)
 		}
 		m.Kernel.ref = &r
 	}
 	for _, ii := range m.Init {
-		r, err := reference.Parse(ii)
+		r, err := reference.Parse(referenceExpand(ii))
 		if err != nil {
 			return fmt.Errorf("extract on boot image reference: %v", err)
 		}
 		m.initRefs = append(m.initRefs, &r)
 	}
 	for _, image := range m.Onboot {
-		r, err := reference.Parse(image.Image)
+		r, err := reference.Parse(referenceExpand(image.Image))
 		if err != nil {
 			return fmt.Errorf("extract on boot image reference: %v", err)
 		}
 		image.ref = &r
 	}
 	for _, image := range m.Onshutdown {
-		r, err := reference.Parse(image.Image)
+		r, err := reference.Parse(referenceExpand(image.Image))
 		if err != nil {
 			return fmt.Errorf("extract on shutdown image reference: %v", err)
 		}
 		image.ref = &r
 	}
 	for _, image := range m.Services {
-		r, err := reference.Parse(image.Image)
+		r, err := reference.Parse(referenceExpand(image.Image))
 		if err != nil {
 			return fmt.Errorf("extract service image reference: %v", err)
 		}
