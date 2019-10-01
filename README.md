@@ -45,10 +45,16 @@ brew tap linuxkit/linuxkit
 brew install --HEAD linuxkit
 ```
 
-Build requirements from source:
+Build requirements from source using a container
 - GNU `make`
 - Docker
 - optionally `qemu`
+
+For a local build using `make local`
+- `go`
+- `make`
+- `go get -u golang.org/x/lint/golint`
+- `go get -u github.com/gordonklaus/ineffassign`
 
 ### Building images
 
