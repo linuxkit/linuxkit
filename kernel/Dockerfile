@@ -22,6 +22,7 @@ RUN apk add \
     ncurses-dev \
     openssl-dev \
     patch \
+    rsync \
     sed \
     squashfs-tools \
     tar \
