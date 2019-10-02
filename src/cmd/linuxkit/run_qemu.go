@@ -574,15 +574,20 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		}
 	}
 
-	rng := "rng-random,id=rng0"
-	if runtime.GOOS == "linux" {
-		rng = rng + ",filename=/dev/urandom"
+	// rng-random does not work on macOS
+	// Temporarily disable it until fixed upstream.
+	if runtime.GOOS != "darwin" {
+		rng := "rng-random,id=rng0"
+		if runtime.GOOS == "linux" {
+			rng = rng + ",filename=/dev/urandom"
+		}
+		if config.Arch == "s390x" {
+			qemuArgs = append(qemuArgs, "-object", rng, "-device", "virtio-rng-ccw,rng=rng0")
+		} else {
+			qemuArgs = append(qemuArgs, "-object", rng, "-device", "virtio-rng-pci,rng=rng0")
+		}
 	}
-	if config.Arch == "s390x" {
-		qemuArgs = append(qemuArgs, "-object", rng, "-device", "virtio-rng-ccw,rng=rng0")
-	} else {
-		qemuArgs = append(qemuArgs, "-object", rng, "-device", "virtio-rng-pci,rng=rng0")
-	}
+
 	var lastDisk int
 	for i, d := range config.Disks {
 		index := i
