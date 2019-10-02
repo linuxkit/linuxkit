@@ -251,24 +251,24 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.3.1,5.3.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.2.17,5.2.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.75,4.19.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.75,4.19.x,,-dbg))
+$(eval $(call kernel,5.3.2,5.3.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.2.18,5.2.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19.76,4.19.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19.76,4.19.x,,-dbg))
 $(eval $(call kernel,4.19.59,4.19.x,-rt,))
 $(eval $(call kernel,4.14.146,4.14.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.9.194,4.9.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
-$(eval $(call kernel,5.3.1,5.3.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.2.17,5.2.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.75,4.19.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.3.2,5.3.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.2.18,5.2.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19.76,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.59,4.19.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
-$(eval $(call kernel,5.3.1,5.3.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.2.17,5.2.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.75,4.19.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.3.2,5.3.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.2.18,5.2.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19.76,4.19.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config
