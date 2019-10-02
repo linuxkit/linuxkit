@@ -1,3 +1,5 @@
+// +build linux
+
 package main
 
 // Log the kernel log buffer (from /dev/kmsg)

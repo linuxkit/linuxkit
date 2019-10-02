@@ -477,7 +477,7 @@ func (g *GCPClient) pollOperationStatus(operationName string) error {
 			return fmt.Errorf("error fetching operation status: %v", err)
 		}
 		if operation.Error != nil {
-			return fmt.Errorf("error running operation: %s", operation.Error)
+			return fmt.Errorf("error running operation: %v", operation.Error)
 		}
 		if operation.Status == "DONE" {
 			return nil
@@ -494,7 +494,7 @@ func (g *GCPClient) pollZoneOperationStatus(operationName, zone string) error {
 			return fmt.Errorf("error fetching operation status: %v", err)
 		}
 		if operation.Error != nil {
-			return fmt.Errorf("error running operation: %s", operation.Error)
+			return fmt.Errorf("error running operation: %v", operation.Error)
 		}
 		if operation.Status == "DONE" {
 			return nil

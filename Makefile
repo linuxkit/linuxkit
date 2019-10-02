@@ -75,7 +75,7 @@ LOCAL_TARGET ?= $(LINUXKIT)
 .PHONY: local-check local-build local-test local-static-pie local-static local-dynamic local
 local-check: $(LINUXKIT_DEPS)
 	@echo gofmt... && o=$$(gofmt -s -l $(filter %.go,$(LINUXKIT_DEPS))) && if [ -n "$$o" ] ; then echo $$o ; exit 1 ; fi
-	@echo govet... && go tool vet -printf=false $(filter %.go,$(LINUXKIT_DEPS))
+	@echo govet... && go vet ./...
 	@echo golint... && set -e ; for i in $(filter %.go,$(LINUXKIT_DEPS)); do golint $$i ; done
 	@echo ineffassign... && ineffassign  $(filter %.go,$(LINUXKIT_DEPS))
 
