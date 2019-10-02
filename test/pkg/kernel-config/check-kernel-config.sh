@@ -130,7 +130,6 @@ done
 # check filesystems that are built in
 for fs in \
 sysfs \
-rootfs \
 tmpfs \
 bdev \
 proc \
