@@ -1,4 +1,4 @@
-From d28ae400b9ac1559e1efc94e0b0a2c67bbf30c38 Mon Sep 17 00:00:00 2001
+From e7ae5563ed324e44e906efdd837fdfb363b81961 Mon Sep 17 00:00:00 2001
 From: Christian Borntraeger <borntraeger@de.ibm.com>
 Date: Tue, 12 Dec 2017 09:08:35 +0100
 Subject: [PATCH 19/21] serial: forbid 8250 on s390
@@ -31,5 +31,5 @@ index a5c0ef1e7695..16b1496e6105 100644
  	---help---
  	  This selects whether you want to include the driver for the standard
 -- 
-2.22.0
+2.23.0
 

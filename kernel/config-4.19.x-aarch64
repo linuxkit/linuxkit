@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 4.19.71 Kernel Configuration
+# Linux/arm64 4.19.76 Kernel Configuration
 #
 
 #
@@ -2900,7 +2900,6 @@ CONFIG_MFD_SYSCON=y
 # CONFIG_MFD_TPS65086 is not set
 # CONFIG_MFD_TPS65090 is not set
 # CONFIG_MFD_TPS65217 is not set
-# CONFIG_MFD_TPS68470 is not set
 # CONFIG_MFD_TI_LP873X is not set
 # CONFIG_MFD_TI_LP87565 is not set
 # CONFIG_MFD_TPS65218 is not set

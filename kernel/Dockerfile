@@ -22,6 +22,7 @@ RUN apk add \
     ncurses-dev \
     openssl-dev \
     patch \
+    rsync \
     sed \
     squashfs-tools \
     tar \
@@ -71,7 +72,7 @@ WORKDIR /tmp
 # Download Intel ucode, create a CPIO archive for it, and keep it in the build context
 # so the firmware can also be referenced with CONFIG_EXTRA_FIRMWARE
 ENV UCODE_REPO=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
-ENV UCODE_COMMIT=1dd14da6d1ea5cfbd95923653f31c04aac3aa655
+ENV UCODE_COMMIT=5ada2f32ed7d216e38823f1320358e4679941990
 RUN set -e && \
     if [ $(uname -m) == x86_64 ]; then \
         git clone ${UCODE_REPO} ucode && \
@@ -141,7 +142,15 @@ RUN case $(uname -m) in \
 
 
 # Kernel
-RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
+RUN case $(uname -m) in \
+    s390x) \
+        KCFLAGS="-fno-pie -fPIC"; \
+        ;; \
+    *) \
+        KCFLAGS="-fno-pie"; \
+        ;; \
+    esac && \
+    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="$KCFLAGS" && \
     case $(uname -m) in \
     x86_64) \
         cp arch/x86_64/boot/bzImage /out/kernel; \

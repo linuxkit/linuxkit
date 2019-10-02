@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 4.19.71 Kernel Configuration
+# Linux/x86 4.19.76 Kernel Configuration
 #
 
 #
@@ -2727,7 +2727,6 @@ CONFIG_MFD_CORE=y
 # CONFIG_MFD_INTEL_QUARK_I2C_GPIO is not set
 CONFIG_LPC_ICH=y
 CONFIG_LPC_SCH=y
-# CONFIG_INTEL_SOC_PMIC_CHTWC is not set
 # CONFIG_MFD_INTEL_LPSS_ACPI is not set
 # CONFIG_MFD_INTEL_LPSS_PCI is not set
 # CONFIG_MFD_JANZ_CMODIO is not set
@@ -2766,7 +2765,6 @@ CONFIG_MFD_SM501=y
 # CONFIG_TPS6507X is not set
 # CONFIG_MFD_TPS65086 is not set
 # CONFIG_MFD_TPS65090 is not set
-# CONFIG_MFD_TPS68470 is not set
 # CONFIG_MFD_TI_LP873X is not set
 # CONFIG_MFD_TPS6586X is not set
 # CONFIG_MFD_TPS65912_I2C is not set
