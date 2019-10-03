@@ -101,6 +101,14 @@ hostname and populate the `/run/config/ssh/authorized_keys` from metadata.
 AWS userdata is extracted from `http://169.254.169.254/latest/user-data` and
 and made available in `/run/config/userdata`.
 
+## Hetzner
+
+Hetzner metadata is reached via the following URL
+(`http://169.254.169.254/latest/meta-data/`) and currently we extract the
+hostname and populate the `/run/config/ssh/authorized_keys` from metadata.
+
+Hetzner userdata is extracted from `http://169.254.169.254/latest/user-data` and
+and made available in `/run/config/userdata`.
 
 ## HyperKit
 
