@@ -29,6 +29,7 @@ cmake
 coreutils
 cryptsetup
 curl
+device-mapper
 dhcpcd
 diffutils
 dosfstools
