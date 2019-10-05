@@ -8,6 +8,8 @@ RUN apk add --no-cache --initdb -p /out \
     busybox \
     btrfs-progs \
     btrfs-progs-dev \
+    device-mapper \
+    e2fsprogs \
     gcc \
     git \
     go \
