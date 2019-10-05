@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel-ima:4.11.1-186dd3605ee7b23214850142f8f02b4679dbd148
   cmdline: "console=ttyS0 console=tty0 page_poison=1 ima_appraise=enforce_ns"
 init:
-  - linuxkit/init:1d8e0532ca588c5ad0d9ca6038349a70bb7ac626
+  - linuxkit/init:47afeae33a9fcba8afa117dfd9efd354b5e11869
   - linuxkit/runc:c1f0db27e71d948f3134b31ce76276f843849b0a
-  - linuxkit/containerd:751de142273e1b5d2d247d2832d654ab92e907bc
+  - linuxkit/containerd:abaae2256441d9a8bd67753750d3602163b99025
   - linuxkit/ca-certificates:v0.7
   - linuxkit/ima-utils:dfeb3896fd29308b80ff9ba7fe5b8b767e40ca29
 onboot:

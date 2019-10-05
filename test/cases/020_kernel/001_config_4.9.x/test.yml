@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.9.194
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:1d8e0532ca588c5ad0d9ca6038349a70bb7ac626
+  - linuxkit/init:47afeae33a9fcba8afa117dfd9efd354b5e11869
   - linuxkit/runc:c1f0db27e71d948f3134b31ce76276f843849b0a
 onboot:
   - name: check-kernel-config
