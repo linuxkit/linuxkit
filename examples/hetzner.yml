@@ -1,0 +1,39 @@
+kernel:
+  image: linuxkit/kernel:4.19.71
+  cmdline: console=ttyS1
+  ucode: intel-ucode.cpio
+init:
+  - linuxkit/init:1d8e0532ca588c5ad0d9ca6038349a70bb7ac626
+  - linuxkit/runc:c1f0db27e71d948f3134b31ce76276f843849b0a
+  - linuxkit/containerd:751de142273e1b5d2d247d2832d654ab92e907bc
+  - linuxkit/ca-certificates:v0.7
+  - linuxkit/firmware:e246ab4c77bc4e70b53db091371a699fced5e01d
+onboot:
+  - name: rngd1
+    image: linuxkit/rngd:02c555b50cd1887aa628836662d2eec54c0d7e81
+    command: ["/sbin/rngd", "-1"]
+  - name: sysctl
+    image: linuxkit/sysctl:v0.7
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.7
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: metadata
+    image: linuxkit/metadata:fc88e2104ef06d0bf467181da7088fc06e60b6f7
+    command: ["/usr/bin/metadata", "hetzner"]
+services:
+  - name: rngd
+    image: linuxkit/rngd:02c555b50cd1887aa628836662d2eec54c0d7e81
+  - name: getty
+    image: linuxkit/getty:v0.7
+    env:
+     - INSECURE=true
+  - name: sshd
+    image: linuxkit/sshd:v0.7
+files:
+  - path: root/.ssh/authorized_keys
+    source: ~/.ssh/id_rsa.pub
+    mode: "0600"
+    optional: true
+trust:
+  org:
+    - linuxkit
