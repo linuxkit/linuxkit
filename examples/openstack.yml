@@ -13,7 +13,7 @@ onboot:
     image: linuxkit/dhcpcd:v0.7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:v0.7
+    image: linuxkit/metadata:e182c1e638a30937918ac8b2d03d3b55f950104c
     command: ["/usr/bin/metadata", "openstack"]
 services:
   - name: rngd
