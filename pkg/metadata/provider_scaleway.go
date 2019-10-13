@@ -210,11 +210,11 @@ func scalewayGetUserdata() ([]byte, error) {
 		return nil, errors.New("not able to found a free port below 1024")
 	}
 	defer conn.Close()
-	fmt.Fprintf(conn, "GET /user_data HTTP/1.0\r\n\r\n")
+	fmt.Fprintf(conn, "GET /user_data/cloud-init HTTP/1.0\r\n\r\n")
 
 	reader := bufio.NewReader(conn)
 	resp, err := http.ReadResponse(reader, nil)
-	if err != nil {
+	if err != nil || resp.StatusCode == 404 {
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -245,10 +245,7 @@ func (p *ProviderScaleway) handleSSH(metadata []byte) error {
 		}
 
 		line := string(bytes.Trim(sshKey, "'"))
-		parts := strings.SplitN(line, " ", 2)
-		if len(parts) == 2 {
-			rootKeys = rootKeys + parts[1] + "\n"
-		}
+		rootKeys = rootKeys + line + "\n"
 	}
 
 	if err := os.Mkdir(path.Join(ConfigPath, SSH), 0755); err != nil {
