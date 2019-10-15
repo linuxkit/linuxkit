@@ -38,27 +38,6 @@ func (p *ProviderScaleway) String() string {
 	return "Scaleway"
 }
 
-func (p *ProviderScaleway) sendBootSignal() error {
-	var client = &http.Client{
-		Timeout: time.Second * 2,
-	}
-
-	state := []byte(`{"state_detail": "booted"}`)
-
-	req, err := http.NewRequest("PATCH", scalewayMetadataURL+"state", bytes.NewBuffer(state))
-	if err != nil {
-		return fmt.Errorf("Scaleway: http.NewRequest failed: %s", err)
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	_, err = client.Do(req)
-	if err != nil {
-		return fmt.Errorf("Scaleway: Could not contact state service: %s", err)
-	}
-
-	return nil
-}
-
 // Probe checks if we are running on Scaleway
 func (p *ProviderScaleway) Probe() bool {
 	// Getting the conf should always work...
@@ -66,12 +45,6 @@ func (p *ProviderScaleway) Probe() bool {
 	if err != nil {
 		log.Printf(err.Error())
 		return false
-	}
-
-	// we are on Scaleway so we need to send a request to tell that the instance has correctly booted
-	err = p.sendBootSignal()
-	if err != nil {
-		log.Printf("Scaleway: Could not signal that the instance booted")
 	}
 
 	return true
