@@ -271,6 +271,12 @@ endif
 
 # Target for kernel config
 kconfig:
+ifeq (${KCONFIG_TAG},)
 	docker build --no-cache -f Dockerfile.kconfig \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		-t linuxkit/kconfig  .
+else
+	docker build --no-cache -f Dockerfile.kconfig \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		-t linuxkit/kconfig:${KCONFIG_TAG}  .
+endif
