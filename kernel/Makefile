@@ -149,9 +149,9 @@ show-tags: show-tag_$(2)$(3)$(4)
 # with DCT as part of the dependency on build_$(2)$(3)$(4) and then build
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
-# Skip perf build for now. See:
-# https://github.com/linuxkit/linuxkit/issues/3299
-ifeq ($(ARCH),SKIP)
+# Only build perf on latest LTS and stable kernels.  Skip arm64.
+ifeq ($(2), $(filter $(2),5.3.x 4.19.x))
+ifneq ($(ARCH),aarch64)
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
@@ -185,10 +185,11 @@ forcebuild: forcebuild_perf_$(2)$(3)$(4)
 push: push_perf_$(2)$(3)$(4)
 forcepush: forcepush_perf_$(2)$(3)$(4)
 endif
+endif
 
 # Only build BCC on x86 and only on latest LTS and latest stable kernels.
 ifeq ($(ARCH),x86_64)
-ifneq ($(2), $(filter $(2),4.9.x))
+ifeq ($(2), $(filter $(2),5.3.x 4.19.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
