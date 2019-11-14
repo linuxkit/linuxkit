@@ -1,0 +1,52 @@
+From c3770da814783f82f86d36673fd19e4ebde6bf54 Mon Sep 17 00:00:00 2001
+From: Arnaldo Carvalho de Melo <acme@redhat.com>
+Date: Mon, 4 Feb 2019 15:48:03 -0300
+Subject: [PATCH 1/2] perf symbols: Add fallback definitions for
+ GELF_ST_VISIBILITY()
+
+Those aren't present in Alpine Linux 3.4 to edge, so provide fallback
+defines to get the next patch building there keeping the build
+bisectable.
+
+Cc: Adrian Hunter <adrian.hunter@intel.com>
+Cc: Alexander Shishkin <alexander.shishkin@linux.intel.com>
+Cc: Jiri Olsa <jolsa@kernel.org>
+Cc: Masami Hiramatsu <mhiramat@kernel.org>
+Cc: Michael Petlan <mpetlan@redhat.com>
+Cc: Namhyung Kim <namhyung@kernel.org>
+Cc: Nick Clifton <nickc@redhat.com>
+Cc: Peter Zijlstra <peterz@infradead.org>
+Link: https://lkml.kernel.org/n/tip-03cg3gya2ju4ba2x6ibb9fuz@git.kernel.org
+Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
+---
+ tools/perf/util/symbol-elf.c | 14 ++++++++++++++
+ 1 file changed, 14 insertions(+)
+
+diff --git a/tools/perf/util/symbol-elf.c b/tools/perf/util/symbol-elf.c
+index a701a8a48f00..dc3fbcbb0e79 100644
+--- a/tools/perf/util/symbol-elf.c
++++ b/tools/perf/util/symbol-elf.c
+@@ -19,6 +19,20 @@
+ #define EM_AARCH64	183  /* ARM 64 bit */
+ #endif
+ 
++#ifndef ELF32_ST_VISIBILITY
++#define ELF32_ST_VISIBILITY(o)	((o) & 0x03)
++#endif
++
++/* For ELF64 the definitions are the same.  */
++#ifndef ELF64_ST_VISIBILITY
++#define ELF64_ST_VISIBILITY(o)	ELF32_ST_VISIBILITY (o)
++#endif
++
++/* How to extract information held in the st_other field.  */
++#ifndef GELF_ST_VISIBILITY
++#define GELF_ST_VISIBILITY(val)	ELF64_ST_VISIBILITY (val)
++#endif
++
+ typedef Elf64_Nhdr GElf_Nhdr;
+ 
+ #ifdef HAVE_CPLUS_DEMANGLE_SUPPORT
+-- 
+2.24.0
+
