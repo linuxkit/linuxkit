@@ -50,11 +50,10 @@ RUN curl -sSL -O https://fedorahosted.org/releases/e/l/elfutils/0.165/elfutils-$
     patch -p0 < ../decl.patch && \
     patch -p0 < ../intl.patch
 
-ENV BCC_COMMIT=6972806729da00ecda0235abac61d66c8fad7fad
+ENV BCC_COMMIT=0fa419a64e71984d42f107c210d3d3f0cc82d59a
 RUN git clone https://github.com/iovisor/bcc.git && \
     cd bcc && \
-    git checkout $BCC_COMMIT && \
-    patch -p0 < ../bcc-gnuism.patch && patch -p0 < ../bcc-lua.patch
+    git checkout $BCC_COMMIT
 
 ENV LJSYSCALL_COMMIT=e587f8c55aad3955dddab3a4fa6c1968037b5c6e
 RUN git clone https://github.com/justincormack/ljsyscall.git && \
