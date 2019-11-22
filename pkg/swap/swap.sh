@@ -123,7 +123,12 @@ fi
 
 if [ ! -f $path ] || ! [ $(stat -c "%s" $path) == $(disksize_to_count 1 $size) ]; then
 	## Allocate the file
-	dd if=/dev/zero of=$path bs=1024 count=$(disksize_to_count 1024 $size)
+	## If possible use a large blocksize:
+	bs=1048576 # 1 MiB
+	if [ "$size" -lt "$bs" ]; then
+		bs=1024 # fall back to 1KiB
+	fi
+	dd if=/dev/zero of=$path bs=$bs count=$(disksize_to_count $bs $size)
 	chmod 0600 $path
 
 	## was it encrypted? use cryptsetup and get the mapped device
