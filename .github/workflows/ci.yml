@@ -1,0 +1,322 @@
+name: LinuxKit CI
+on: [push, pull_request]
+
+jobs:
+  build:
+    name: Build & Test
+    strategy:
+      matrix:
+        arch:
+          - amd64-linux
+          - arm64-linux
+          - s390x-linux
+          - amd64-darwin
+          - amd64-windows.exe
+
+    runs-on: ubuntu-latest
+    steps:
+
+    - name: Set up Go 1.11
+      uses: actions/setup-go@v1
+      with:
+        go-version: 1.11
+      id: go
+
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+
+    - name: Get pre-requisites
+      run: |
+            echo "::set-env name=PATH::$PATH:$(go env GOPATH)/bin"
+            go get -u golang.org/x/lint/golint
+            go get -u github.com/gordonklaus/ineffassign
+      env:
+        GOPATH: ${{runner.workspace}}
+
+    - name: Lint
+      run: |
+        make local-check
+      env:
+        GOPATH: ${{runner.workspace}}
+
+    - name: Build
+      run: |
+        make LOCAL_TARGET=bin/linuxkit-${{matrix.arch}} local-build
+      env:
+        GOPATH: ${{runner.workspace}}
+
+    - name: Checksum
+      run: cd bin && sha256sum linuxkit-${{matrix.arch}} > linuxkit-${{matrix.arch}}.SHA256SUM
+
+    - name: Test
+      run: make local-test
+      env:
+        GOPATH: ${{runner.workspace}}
+
+    - name: Cache binary
+      uses: actions/cache@v1
+      with:
+        path: bin
+        key: linuxkit-${{matrix.arch}}-${{hashFiles('src/**')}}
+
+    - name: Upload binary
+      uses: actions/upload-artifact@v1.0.0
+      with:
+        name: linuxkit-${{matrix.arch}}
+        path: bin
+
+  build_packages:
+    name: Build Packages
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+
+    - name: Restore LinuxKit From Cache
+      uses: actions/cache@v1
+      with:
+        path: lkt
+        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+
+    - name: Symlink Linuxkit
+      run: |
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+
+    - name: Build Packages
+      run: |
+        make -C pkg build
+
+  test_packages:
+    name: Packages Tests
+    needs: [ build_packages, build ]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+    
+    - name: Install Pre-Requisites
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt-get update 
+        sudo apt-get install -qy qemu-utils qemu-system-x86 expect
+    
+    - name: Restore RTF From Cache
+      id: cache-rtf
+      uses: actions/cache@v1
+      with:
+        path: bin
+        key: rtf-${{hashFiles('Makefile')}}
+    
+    - name: Build RTF
+      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      run: make bin/rtf
+    
+    - name: Symlink RTF
+      run: |
+        sudo ln -s `pwd`/bin/rtf /bin/rtf
+
+    - name: Restore LinuxKit From Cache
+      uses: actions/cache@v1
+      with:
+        path: lkt
+        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+  
+    - name: Symlink Linuxkit
+      run: |
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+
+    - name: Run Tests
+      run: |
+          cd test
+          rtf -l build -v run -x linuxkit.packages
+
+  test_kernel:
+    name: Kernel Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+   
+    - name: Install Pre-Requisites
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt-get update 
+        sudo apt-get install -qy qemu-utils qemu-system-x86 expect
+
+    - name: Restore RTF From Cache
+      id: cache-rtf
+      uses: actions/cache@v1
+      with:
+        path: bin
+        key: rtf-${{hashFiles('Makefile')}}
+    
+    - name: Build RTF
+      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      run: make bin/rtf
+    
+    - name: Symlink RTF
+      run: |
+        sudo ln -s `pwd`/bin/rtf /bin/rtf
+
+    - name: Restore LinuxKit From Cache
+      uses: actions/cache@v1
+      with:
+        path: lkt
+        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+
+    - name: Symlink Linuxkit
+      run: |
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+
+    - name: Run Tests
+      run: |
+          cd test
+          rtf -l build -v run -x linuxkit.kernel
+
+  test_linuxkit:
+    name: LinuxKit Build Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+    
+    - name: Install Pre-Requisites
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt-get update 
+        sudo apt-get install -qy qemu-utils qemu-system-x86 expect    
+    
+    - name: Restore RTF From Cache
+      id: cache-rtf
+      uses: actions/cache@v1
+      with:
+        path: bin
+        key: rtf-${{hashFiles('Makefile')}}
+    
+    - name: Build RTF
+      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      run: make bin/rtf
+    
+    - name: Symlink RTF
+      run: |
+        sudo ln -s `pwd`/bin/rtf /bin/rtf
+  
+    - name: Restore LinuxKit From Cache
+      uses: actions/cache@v1
+      with:
+        path: lkt
+        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+    
+    - name: Symlink Linuxkit
+      run: |
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+
+    - name: Run Tests
+      run: |
+          cd test
+          rtf -l build -v run -x linuxkit.build
+
+  test_platforms:
+    name: Platform Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+
+    - name: Install Pre-Requisites
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt-get update 
+        sudo apt-get install -qy qemu-utils qemu-system-x86 expect
+   
+    - name: Restore RTF From Cache
+      id: cache-rtf
+      uses: actions/cache@v1
+      with:
+        path: bin
+        key: rtf-${{hashFiles('Makefile')}}
+    
+    - name: Build RTF
+      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      run: make bin/rtf
+    
+    - name: Symlink RTF
+      run: |
+        sudo ln -s `pwd`/bin/rtf /bin/rtf
+    
+    - name: Restore LinuxKit From Cache
+      uses: actions/cache@v1
+      with:
+        path: lkt
+        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+    
+    - name: Symlink Linuxkit
+      run: |
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+
+    - name: Run Tests
+      run: |
+          cd test
+          rtf -l build -v run -x linuxkit.platforms
+
+  test_security:
+    name: Security Tests
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+    
+    - name: Install Pre-Requisites
+      run: |
+        export DEBIAN_FRONTEND=noninteractive
+        sudo apt-get update 
+        sudo apt-get install -qy qemu-utils qemu-system-x86 expect
+
+    - name: Restore RTF From Cache
+      id: cache-rtf
+      uses: actions/cache@v1
+      with:
+        path: bin
+        key: rtf-${{hashFiles('Makefile')}}
+    
+    - name: Build RTF
+      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      run: make bin/rtf
+    
+    - name: Symlink RTF
+      run: |
+        sudo ln -s `pwd`/bin/rtf /bin/rtf
+
+    - name: Restore LinuxKit From Cache
+      uses: actions/cache@v1
+      with:
+        path: lkt
+        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+    
+    - name: Symlink Linuxkit
+      run: |
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+
+    - name: Run Tests
+      run: |
+          cd test
+          rtf -l build -v run -x linuxkit.security
