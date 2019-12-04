@@ -159,6 +159,7 @@ on disputes for technical matters."
 [Org]
 	[Org."Core maintainers"]
 		people = [
+			"dave-tucker",
 			"deitch",
 			"ijc",
 			"justincormack",
@@ -172,6 +173,11 @@ on disputes for technical matters."
 # in the people section.
 
 	# ADD YOURSELF HERE IN ALPHABETICAL ORDER
+	[People.dave-tucker]
+	Name = "Dave Tucker"
+	Email = "dave@dtucker.co.uk"
+	Github = "dave-tucker"
+
 	[People.deitch]
 	Name = "Avi Deitcher"
 	Email = "avi@atomicinc.com"
