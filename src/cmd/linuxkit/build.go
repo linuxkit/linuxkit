@@ -48,6 +48,7 @@ func build(args []string) {
 	buildOutputFile := buildCmd.String("o", "", "File to use for a single output, or '-' for stdout")
 	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
+	buildPrefix := buildCmd.String("prefix", "", "Add a prefix to the root filesystem of the image")
 	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
 	buildDecompressKernel := buildCmd.Bool("decompress-kernel", false, "Decompress the Linux kernel (default false)")
 	buildCmd.Var(&buildFormats, "format", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
@@ -204,7 +205,7 @@ func build(args []string) {
 	if moby.Streamable(buildFormats[0]) {
 		tp = buildFormats[0]
 	}
-	err = moby.Build(m, w, *buildPull, tp, *buildDecompressKernel)
+	err = moby.Build(m, w, *buildPull, *buildPrefix, tp, *buildDecompressKernel)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

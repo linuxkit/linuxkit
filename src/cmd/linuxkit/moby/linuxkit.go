@@ -62,7 +62,7 @@ func ensureLinuxkitImage(name string) error {
 		return err
 	}
 	defer os.Remove(tf.Name())
-	Build(m, tf, false, "", false)
+	Build(m, tf, false, "", "", false)
 	if err := tf.Close(); err != nil {
 		return err
 	}
