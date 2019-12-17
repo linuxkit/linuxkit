@@ -155,17 +155,8 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 		return err
 	}
 
-	// write to a tempfile so we can inspect it and remove duplicate files
-	// this allows docker to import images
-	// bufio doesn't seem to work, we get an unexpected EOF when reading
-	var tf *os.File
-	var err error
-	if tf, err = ioutil.TempFile("", ""); err != nil {
-		return fmt.Errorf("Error creating tempfile: %v", err)
-	}
-	defer os.Remove(tf.Name())
-
-	iw := tar.NewWriter(tf)
+	buf := new(bytes.Buffer)
+	iw := tar.NewWriter(buf)
 
 	// add additions
 	addition := additions[tp]
@@ -245,7 +236,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	}
 
 	// add files
-	err = filesystem(m, iw, idMap)
+	err := filesystem(m, iw, idMap)
 	if err != nil {
 		return fmt.Errorf("failed to add filesystem parts: %v", err)
 	}
@@ -263,8 +254,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 		return fmt.Errorf("initrd close error: %v", err)
 	}
 
-	tf.Seek(0, 0) // seek to the begining so we can start reading
-	ir := tar.NewReader(tf)
+	ir := tar.NewReader(buf)
 	writtenFilePaths := make(map[string][]byte, 0)
 
 	iw = tar.NewWriter(w)
@@ -306,11 +296,6 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 		}
 
 		writtenFilePaths[hdrName] = fileContents
-	}
-
-	err = tf.Close()
-	if err != nil {
-		return fmt.Errorf("err closing tempfile: %v", err)
 	}
 
 	err = iw.Close()
