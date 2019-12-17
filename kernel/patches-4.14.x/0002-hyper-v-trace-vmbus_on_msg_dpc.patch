@@ -1,4 +1,4 @@
-From fbcba5c082a3655f60b84dd8f0c2b4987c7935e1 Mon Sep 17 00:00:00 2001
+From ca2a66078ec2f0212f325b3fc62005134897c5d6 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:00 -0700
 Subject: [PATCH 02/21] hyper-v: trace vmbus_on_msg_dpc()
@@ -107,5 +107,5 @@ index 1fd812ed679b..70f857441399 100644
  		WARN_ONCE(1, "unknown msgtype=%d\n", hdr->msgtype);
  		goto msg_handled;
 -- 
-2.23.0
+2.24.0
 
