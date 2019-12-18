@@ -150,7 +150,7 @@ show-tags: show-tag_$(2)$(3)$(4)
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
 # Only build perf on latest LTS and stable kernels.  Skip arm64.
-ifeq ($(2), $(filter $(2),5.3.x 4.19.x))
+ifeq ($(2), $(filter $(2),5.4.x 4.19.x))
 ifneq ($(ARCH),aarch64)
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
@@ -189,7 +189,7 @@ endif
 
 # Only build BCC on x86 and only on latest LTS and latest stable kernels.
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.3.x 4.19.x))
+ifeq ($(2), $(filter $(2),5.4.x 4.19.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
