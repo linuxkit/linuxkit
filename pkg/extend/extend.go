@@ -14,6 +14,9 @@ import (
 	"strings"
 	"syscall"
 	"time"
+	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 const timeout = 60
@@ -30,8 +33,8 @@ type Fdisk struct {
 		ID         string `json:"id"`
 		Device     string `json:"device"`
 		Unit       string `json:"unit"`
-		FirstLBA   int    `json:"firstlba"`
-		LastLBA    int    `json:"lastlba"`
+		FirstLBA   int64  `json:"firstlba"`
+		LastLBA    int64  `json:"lastlba"`
 		Partitions []Partition
 	} `json:"partitionTable"`
 }
@@ -39,8 +42,8 @@ type Fdisk struct {
 // Partition represents a single partition
 type Partition struct {
 	Node  string `json:"node"`
-	Start int    `json:"start"`
-	Size  int    `json:"size"`
+	Start int64  `json:"start"`
+	Size  int64  `json:"size"`
 	Type  string `json:"type"`
 	UUID  string `json:"uuid"`
 	Name  string `json:"name"`
@@ -65,7 +68,7 @@ func extend(d, fsType string) error {
 
 	data, err := exec.Command("sfdisk", "-J", d).Output()
 	if err != nil {
-		log.Fatalf("Unable to get drive data for %s from sfdisk: %v", d, err)
+		return fmt.Errorf("Unable to get drive data for %s from sfdisk: %v", d, err)
 	}
 
 	f := Fdisk{}
@@ -83,9 +86,19 @@ func extend(d, fsType string) error {
 		return fmt.Errorf("Partition 1 on disk %s is not a Linux Partition", d)
 	}
 
-	if partition.Start+partition.Size == f.PartitionTable.LastLBA {
+	if f.PartitionTable.Label == "gpt" && partition.Start+partition.Size == f.PartitionTable.LastLBA {
 		log.Printf("No free space on device to extend partition")
 		return nil
+	}
+	if f.PartitionTable.Label == "dos" {
+		totalSize, err := deviceSize(d)
+		if err != nil {
+			return fmt.Errorf("Unable to convert total size from string to int: %v", err)
+		}
+		if partition.Start+partition.Size == totalSize {
+			log.Printf("No free space on device to extend partition")
+			return nil
+		}
 	}
 
 	switch fsType {
@@ -173,8 +186,8 @@ func createPartition(d string, partition Partition) error {
 	}
 
 	// update status
-	if err := exec.Command("blockdev", "--rereadpt", d).Run(); err != nil {
-		return fmt.Errorf("Error running blockdev: %v", err)
+	if err := rereadPartitions(d); err != nil {
+		return fmt.Errorf("Error re-reading partition using ioctl: %v", err)
 	}
 
 	exec.Command("mdev", "-s").Run()
@@ -198,6 +211,31 @@ func createPartition(d string, partition Partition) error {
 	}
 	// even after the device appears we still have a race
 	time.Sleep(1 * time.Second)
+	return nil
+}
+
+func deviceSize(device string) (int64, error) {
+	file, err := os.Open(device)
+	if err != nil {
+		return 0, err
+	}
+	defer file.Close()
+	var devsize int64
+	if _, _, errno := unix.Syscall(unix.SYS_IOCTL, file.Fd(), unix.BLKGETSIZE, uintptr(unsafe.Pointer(&devsize))); errno != 0 {
+		return 0, errno
+	}
+	return devsize, nil
+}
+
+func rereadPartitions(device string) error {
+	file, err := os.Open(device)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+	if _, _, errno := unix.Syscall(unix.SYS_IOCTL, file.Fd(), unix.BLKRRPART, 0); errno != 0 {
+		return errno
+	}
 	return nil
 }
 
