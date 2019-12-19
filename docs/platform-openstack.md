@@ -11,17 +11,7 @@ Supported (tested) versions of the relevant OpenStack APIs are:
 
 ## Authentication
 
-LinuxKit's support for OpenStack handles two ways of providing the endpoint and authentication details.  You can either set the standard set of environment variables and the commands detailed below will inherit those, or you can explicitly provide them on the command-line as options to `push` and `run`.  The examples below use the latter, but if you prefer the former then you'll need to set the following:
-
-```shell
-OS_USERNAME="admin"
-OS_PASSWORD="xxx"
-OS_TENANT_NAME="linuxkit"
-OS_AUTH_URL="https://keystone.com:5000/v3"
-OS_USER_DOMAIN_NAME=default
-OS_CACERT=/path/to/cacert.pem
-OS_INSECURE=false
-```
+LinuxKit's support for OpenStack includes configuring access to your cloud as detailed in the official [os-client-config](https://docs.openstack.org/os-client-config/latest/user/configuration.html) documentation.
 
 ## Push
 
@@ -40,20 +30,8 @@ Images generated with Moby can be uploaded into OpenStack's image service with `
 
 ```shell
 ./linuxkit push openstack \
-  -authurl=https://keystone.example.com:5000/v3 \
-  -username=admin \
-  -password=XXXXXXXXXXX \
-  -project=linuxkit \
   -img-name=LinuxKitTest
   ./linuxkit.iso
-```
-
-If successful, this will return the image's UUID.  If you've set your environment variables up as described above, this command can then be simplified:
-
-```shell
-./linuxkit push openstack \
-  -img-name "LinuxKitTest" \
-  ~/Desktop/linuxkitmage.qcow2
 ```
 
 ## Run
@@ -62,10 +40,7 @@ Virtual machines can be launched using `linuxkit run openstack`.  As an example:
 
 ```shell
 linuxkit run openstack \
-  -authurl https://keystone.example.com:5000/v3 \
-  -username=admin \
-  -password=xxx \
-  -project=linuxkit \
+  -flavor=hotdog
   -keyname=deadline_ed25519 \
   -sec-groups=allow_ssh,nginx \
   -network c5d02c5f-c625-4539-8aed-1dab3aa85a0a \
