@@ -266,7 +266,7 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 					Value: sshKey,
 				},
 				{
-					Key:   "userdata",
+					Key:   "user-data",
 					Value: data,
 				},
 			},
