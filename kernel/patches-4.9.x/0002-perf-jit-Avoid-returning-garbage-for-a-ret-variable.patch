@@ -1,4 +1,4 @@
-From ba7ea1dd864393d6f117d483d4580135463ab6d3 Mon Sep 17 00:00:00 2001
+From 3c894cd46a6b7bd5f98e5743715c8bfeb5169992 Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Thu, 13 Oct 2016 17:12:35 -0300
 Subject: [PATCH 02/14] perf jit: Avoid returning garbage for a ret variable
@@ -53,7 +53,7 @@ Signed-off-by: Arnaldo Carvalho de Melo <acme@redhat.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/tools/perf/util/jitdump.c b/tools/perf/util/jitdump.c
-index 95f0884aae02..f3ed3c963c71 100644
+index 7e2e8aa95467..e85918002f13 100644
 --- a/tools/perf/util/jitdump.c
 +++ b/tools/perf/util/jitdump.c
 @@ -581,7 +581,7 @@ static int
@@ -66,5 +66,5 @@ index 95f0884aae02..f3ed3c963c71 100644
  	while ((jr = jit_get_next_entry(jd))) {
  		switch(jr->prefix.id) {
 -- 
-2.23.0
+2.24.0
 

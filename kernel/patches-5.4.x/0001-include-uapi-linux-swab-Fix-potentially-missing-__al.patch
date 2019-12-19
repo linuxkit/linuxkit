@@ -1,7 +1,7 @@
-From 73f20f50d9204abcff0ff18c6abf09c8643cb8a5 Mon Sep 17 00:00:00 2001
+From 9be6bfc1bd4218035fdca1f8db5eb8855fd8f01d Mon Sep 17 00:00:00 2001
 From: Matt Redfearn <matt.redfearn@mips.com>
 Date: Wed, 3 Jan 2018 09:57:30 +0000
-Subject: [PATCH 2/2] include/uapi/linux/swab: Fix potentially missing
+Subject: [PATCH] include/uapi/linux/swab: Fix potentially missing
  __always_inline
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8

@@ -150,7 +150,7 @@ show-tags: show-tag_$(2)$(3)$(4)
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
 # Only build perf on latest LTS and stable kernels.  Skip arm64.
-ifeq ($(2), $(filter $(2),5.3.x 4.19.x))
+ifeq ($(2), $(filter $(2),5.4.x 4.19.x))
 ifneq ($(ARCH),aarch64)
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
@@ -189,7 +189,7 @@ endif
 
 # Only build BCC on x86 and only on latest LTS and latest stable kernels.
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.3.x 4.19.x))
+ifeq ($(2), $(filter $(2),5.4.x 4.19.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
@@ -252,22 +252,22 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.3.2,5.3.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.2.18,5.2.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.76,4.19.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.76,4.19.x,,-dbg))
+$(eval $(call kernel,5.4.4,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.3.17,5.3.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19.90,4.19.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19.90,4.19.x,,-dbg))
 $(eval $(call kernel,4.19.59,4.19.x,-rt,))
-$(eval $(call kernel,4.14.146,4.14.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.9.194,4.9.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.159,4.14.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.9.206,4.9.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
-$(eval $(call kernel,5.3.2,5.3.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.76,4.19.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.4,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19.90,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.59,4.19.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
-$(eval $(call kernel,5.3.2,5.3.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.76,4.19.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.4,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.19.90,4.19.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config
