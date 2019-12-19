@@ -1,7 +1,6 @@
 package main
 
 import (
-	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -128,17 +127,15 @@ func (p *ProviderHetzner) handleSSH() error {
 		return fmt.Errorf("Failed to create %s: %s", SSH, err)
 	}
 
-	fileHandle, _ := os.OpenFile(path.Join(ConfigPath, SSH, "authorized_keys"), os.O_CREATE|os.O_APPEND, 0600)
-	writer := bufio.NewWriter(fileHandle)
+	fileHandle, _ := os.OpenFile(path.Join(ConfigPath, SSH, "authorized_keys"), os.O_CREATE|os.O_TRUNC|os.O_WRONLY, 0600)
 	defer fileHandle.Close()
 
 	for _, sshKey := range sshKeys {
-		_, err = fmt.Fprintln(writer, sshKey)
+		_, err = fileHandle.WriteString(sshKey + "\n")
 		if err != nil {
 			return fmt.Errorf("Failed to write ssh keys: %s", err)
 		}
 	}
 
-	writer.Flush()
 	return nil
 }
