@@ -7,6 +7,7 @@ import (
 	"os"
 	"path"
 	"strconv"
+	"strings"
 	"syscall"
 )
 
@@ -44,29 +45,34 @@ var netProviders []Provider
 // cdromProviders is a list of Providers offering metadata/userdata data via CDROM
 var cdromProviders []Provider
 
+// fileProviders is a list of Providers offering metadata/userdata in a file on the filesystem
+var fileProviders []Provider
+
 func main() {
 	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "packet", "cdrom"}
 	if len(os.Args) > 1 {
 		providers = os.Args[1:]
 	}
 	for _, p := range providers {
-		switch p {
-		case "aws":
+		switch {
+		case p == "aws":
 			netProviders = append(netProviders, NewAWS())
-		case "gcp":
+		case p == "gcp":
 			netProviders = append(netProviders, NewGCP())
-		case "hetzner":
+		case p == "hetzner":
 			netProviders = append(netProviders, NewHetzner())
-		case "openstack":
+		case p == "openstack":
 			netProviders = append(netProviders, NewOpenstack())
-		case "packet":
+		case p == "packet":
 			netProviders = append(netProviders, NewPacket())
-		case "scaleway":
+		case p == "scaleway":
 			netProviders = append(netProviders, NewScaleway())
-		case "vultr":
+		case p == "vultr":
 			netProviders = append(netProviders, NewVultr())
-		case "cdrom":
+		case p == "cdrom":
 			cdromProviders = ListCDROMs()
+		case strings.HasPrefix(p, "file="):
+			fileProviders = append(fileProviders, fileProvider(p[5:]))
 		default:
 			log.Fatalf("Unrecognised metadata provider: %s", p)
 		}
@@ -91,6 +97,17 @@ func main() {
 	if !found {
 		for _, p = range cdromProviders {
 			log.Printf("Trying %s", p.String())
+			if p.Probe() {
+				log.Printf("%s: Probe succeeded", p)
+				userdata, err = p.Extract()
+				found = true
+				break
+			}
+		}
+	}
+	if !found {
+		for _, p = range fileProviders {
+			log.Printf("Trying file %s", p.String())
 			if p.Probe() {
 				log.Printf("%s: Probe succeeded", p)
 				userdata, err = p.Extract()
