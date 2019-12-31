@@ -1,5 +1,3 @@
-# Generate AUTHORS: scripts/generate-authors.sh
-
 # Tip for finding duplicates (besides scanning the output of AUTHORS for name
 # duplicates that aren't also email duplicates): scan the output of:
 #   git log --format='%aE - %aN' | sort -uf
@@ -41,7 +39,8 @@ Magnus Skjegstad <magnus.skjegstad@docker.com> <magnus@skjegstad.com>
 Marten Cassel <marten.cassel@gmail.com> <mcpop28@hotmail.com>
 Mindy Preston <mindy.preston@docker.com> <meetup@yomimono.org>
 MinJae Kwon <mingrammer@gmail.com>
-Nathan Dautenhahn <ndd@seas.upenn.edu> <ndd@cis.upenn.edu>
+Nathan Dautenhahn <ndd@rice.edu> <ndd@seas.upenn.edu>
+Nathan Dautenhahn <ndd@rice.edu> <ndd@cis.upenn.edu>
 Nathan LeClaire <nathan.leclaire@docker.com> <nathan.leclaire@gmail.com>
 Nathan LeClaire <nathan.leclaire@docker.com> <nathanleclaire@gmail.com>
 Niclas Mietz <niclas@mietz.io>
