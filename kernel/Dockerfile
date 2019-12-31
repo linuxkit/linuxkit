@@ -38,9 +38,9 @@ ARG KERNEL_SERIES
 ARG EXTRA
 ARG DEBUG
 
-ENV WIREGUARD_VERSION=0.0.20191212
-ENV WIREGUARD_SHA256="b0d718380f7a8822b2f12d75e462fa4eafa3a77871002981f367cd4fe2a1b071"
-ENV WIREGUARD_URL=https://git.zx2c4.com/WireGuard/snapshot/WireGuard-${WIREGUARD_VERSION}.tar.xz
+ENV WIREGUARD_VERSION=0.0.20191226
+ENV WIREGUARD_SHA256="7c0e576459c6337bcdea692bdbec561719a15da207dc739e0e3e60ff821a5491"
+ENV WIREGUARD_URL=https://git.zx2c4.com/wireguard-linux-compat/snapshot/wireguard-linux-compat-${WIREGUARD_VERSION}.tar.xz
 
 # We copy the entire directory. This copies some unneeded files, but
 # allows us to check for the existence /patches-${KERNEL_SERIES} to
@@ -169,7 +169,7 @@ RUN case $(uname -m) in \
 RUN curl -fsSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
     echo "${WIREGUARD_SHA256}  /wireguard.tar.xz" | sha256sum -c - && \
     cp /wireguard.tar.xz /out/src/ && \
-    tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "WireGuard-${WIREGUARD_VERSION}/src" && \
+    tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "wireguard-linux-compat-${WIREGUARD_VERSION}/src" && \
     make -j "$(getconf _NPROCESSORS_ONLN)" M="/wireguard" modules
 
 # Modules and Device Tree binaries
