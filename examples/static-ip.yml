@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:751de142273e1b5d2d247d2832d654ab92e907bc
 onboot:
   - name: ip
-    image: linuxkit/ip:v0.7
+    image: linuxkit/ip:7b1cf3150bf5d9a0df7ef07572e2d81fe3c0c3d3
     binds:
      - /etc/ip:/etc/ip
     command: ["ip", "-b", "/etc/ip/eth0.conf"]
