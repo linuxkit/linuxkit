@@ -1,4 +1,4 @@
-FROM alpine:3.9 AS mirror
+FROM alpine:3.11 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -6,6 +6,7 @@ RUN apk update && apk upgrade -a
 # Copy Dockerfile so we can include it in the hash
 COPY Dockerfile /Dockerfile
 COPY packages* /tmp/
+COPY libelf /libelf
 
 # mirror packages
 RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
@@ -18,14 +19,20 @@ RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
 RUN apk add alpine-sdk libmnl-dev curl && \
     adduser -D builder && \
     addgroup builder abuild && \
+    su -c "abuild-keygen -a -n" builder && \
     mkdir -p /wireguard && \
     chmod 0777 /wireguard && \
     cd /wireguard && \
     curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/community/wireguard-tools/APKBUILD && \
-    su -c "abuild-keygen -a -n && abuild -r" builder && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch) && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-[0-9]*.apk /mirror/$(apk --print-arch) && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-quick-[0-9]*.apk /mirror/$(apk --print-arch)
+    su -c "abuild -r -P /wireguard/packages" builder && \
+    cp /wireguard/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch) && \
+    cp /wireguard/packages/$(apk --print-arch)/wireguard-tools-wg-[0-9]*.apk /mirror/$(apk --print-arch) && \
+    cp /wireguard/packages/$(apk --print-arch)/wireguard-tools-wg-quick-[0-9]*.apk /mirror/$(apk --print-arch) && \
+    chmod 0777 /libelf && \
+    cd /libelf && \
+    su -c "abuild -r  -P /libelf/packages" builder && \
+    cp /libelf/packages/$(apk --print-arch)/libelf-[0-9]*.apk /mirror/$(apk --print-arch) && \
+    cp /libelf/packages/$(apk --print-arch)/libelf-dev-[0-9]*.apk /mirror/$(apk --print-arch)
 
 # install abuild for signing
 RUN apk add --no-cache abuild
@@ -47,7 +54,7 @@ RUN mv /etc/apk/repositories /etc/apk/repositories.upstream && echo "/mirror" > 
 COPY go-compile.sh /go/bin/
 RUN apk add --no-cache git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
-RUN go get -u github.com/golang/lint/golint
+RUN go get -u golang.org/x/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
@@ -85,7 +92,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.9
+FROM alpine:3.11
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream

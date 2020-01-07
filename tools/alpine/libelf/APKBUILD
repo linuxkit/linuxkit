@@ -1,0 +1,44 @@
+# Maintainer: Natanael Copa <ncopa@alpinelinux.org>
+pkgname=libelf
+pkgver=0.8.13
+pkgrel=3
+pkgdesc="libelf is a free ELF object file access library"
+url="https://fossies.org/linux/misc/old"
+arch="all"
+license="GPL"
+depends=
+makedepends=
+subpackages="$pkgname-dev"
+source="https://fossies.org/linux/misc/old/$pkgname-$pkgver.tar.gz"
+
+builddir="$srcdir/$pkgname-$pkgver"
+
+prepare() {
+	cd "$builddir"
+	default_prepare
+	update_config_sub
+}
+
+build() {
+	cd "$builddir"
+	./configure \
+		--build=$CBUILD \
+		--host=$CHOST \
+		--prefix=/usr \
+		--enable-shared \
+		--enable-gnu-names \
+		--enable-compat \
+		--disable-nls
+	make
+}
+
+check() {
+	cd "$builddir"
+	make check
+}
+
+package() {
+	cd "$builddir"
+	make install prefix="$pkgdir"/usr
+}
+sha512sums="d2a4ea8ccc0bbfecac38fa20fbd96aefa8e86f8af38691fb6991cd9c5a03f587475ecc2365fc89a4954c11a679d93460ee9a5890693112f6133719af3e6582fe  libelf-0.8.13.tar.gz"
