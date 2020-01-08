@@ -15,5 +15,7 @@ export TMPDIR=/var/lib/tmp
 
 # unset -race (does not work on alpine; see golang/go#14481)
 export TESTFLAGS=
+# disable devmapper tests
+export SKIPTESTS="github.com/containerd/containerd/snapshots/devmapper github.com/containerd/containerd/snapshots/devmapper/dmsetup github.com/containerd/containerd/snapshots/devmapper/losetup"
 make root-test || failed
 printf "containerd test suite PASSED\n"
