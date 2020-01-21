@@ -85,7 +85,7 @@ jobs:
 
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
 
     - name: Build Packages
       run: |
@@ -100,24 +100,24 @@ jobs:
       uses: actions/checkout@v1
       with:
         path: ./src/github.com/linuxkit/linuxkit
-    
+
     - name: Install Pre-Requisites
       run: |
         export DEBIAN_FRONTEND=noninteractive
-        sudo apt-get update 
+        sudo apt-get update
         sudo apt-get install -qy qemu-utils qemu-system-x86 expect
-    
+
     - name: Restore RTF From Cache
       id: cache-rtf
       uses: actions/cache@v1
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
-    
+
     - name: Build RTF
-      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      if: steps.cache-rtf.outputs.cache-hit != 'true'
       run: make bin/rtf
-    
+
     - name: Symlink RTF
       run: |
         sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
@@ -127,10 +127,10 @@ jobs:
       with:
         path: lkt
         key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
-  
+
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
 
     - name: Run Tests
       run: |
@@ -146,11 +146,11 @@ jobs:
       uses: actions/checkout@v1
       with:
         path: ./src/github.com/linuxkit/linuxkit
-   
+
     - name: Install Pre-Requisites
       run: |
         export DEBIAN_FRONTEND=noninteractive
-        sudo apt-get update 
+        sudo apt-get update
         sudo apt-get install -qy qemu-utils qemu-system-x86 expect
 
     - name: Restore RTF From Cache
@@ -159,11 +159,11 @@ jobs:
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
-    
+
     - name: Build RTF
-      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      if: steps.cache-rtf.outputs.cache-hit != 'true'
       run: make bin/rtf
-    
+
     - name: Symlink RTF
       run: |
         sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
@@ -176,7 +176,7 @@ jobs:
 
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
 
     - name: Run Tests
       run: |
@@ -192,37 +192,37 @@ jobs:
       uses: actions/checkout@v1
       with:
         path: ./src/github.com/linuxkit/linuxkit
-    
+
     - name: Install Pre-Requisites
       run: |
         export DEBIAN_FRONTEND=noninteractive
-        sudo apt-get update 
-        sudo apt-get install -qy qemu-utils qemu-system-x86 expect    
-    
+        sudo apt-get update
+        sudo apt-get install -qy qemu-utils qemu-system-x86 expect
+
     - name: Restore RTF From Cache
       id: cache-rtf
       uses: actions/cache@v1
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
-    
+
     - name: Build RTF
-      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      if: steps.cache-rtf.outputs.cache-hit != 'true'
       run: make bin/rtf
-    
+
     - name: Symlink RTF
       run: |
         sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
-  
+
     - name: Restore LinuxKit From Cache
       uses: actions/cache@v1
       with:
         path: lkt
         key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
-    
+
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
 
     - name: Run Tests
       run: |
@@ -242,33 +242,33 @@ jobs:
     - name: Install Pre-Requisites
       run: |
         export DEBIAN_FRONTEND=noninteractive
-        sudo apt-get update 
+        sudo apt-get update
         sudo apt-get install -qy qemu-utils qemu-system-x86 expect
-   
+
     - name: Restore RTF From Cache
       id: cache-rtf
       uses: actions/cache@v1
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
-    
+
     - name: Build RTF
-      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      if: steps.cache-rtf.outputs.cache-hit != 'true'
       run: make bin/rtf
-    
+
     - name: Symlink RTF
       run: |
         sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
-    
+
     - name: Restore LinuxKit From Cache
       uses: actions/cache@v1
       with:
         path: lkt
         key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
-    
+
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
 
     - name: Run Tests
       run: |
@@ -284,11 +284,11 @@ jobs:
       uses: actions/checkout@v1
       with:
         path: ./src/github.com/linuxkit/linuxkit
-    
+
     - name: Install Pre-Requisites
       run: |
         export DEBIAN_FRONTEND=noninteractive
-        sudo apt-get update 
+        sudo apt-get update
         sudo apt-get install -qy qemu-utils qemu-system-x86 expect
 
     - name: Restore RTF From Cache
@@ -297,11 +297,11 @@ jobs:
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
-    
+
     - name: Build RTF
-      if: steps.cache-rtf.outputs.cache-hit != 'true' 
+      if: steps.cache-rtf.outputs.cache-hit != 'true'
       run: make bin/rtf
-    
+
     - name: Symlink RTF
       run: |
         sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
@@ -311,10 +311,10 @@ jobs:
       with:
         path: lkt
         key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
-    
+
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /bin/linuxkit
+        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
 
     - name: Run Tests
       run: |
