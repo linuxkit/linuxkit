@@ -54,16 +54,20 @@ RUN go get -u github.com/LK4D4/vndr
 # checkout and compile containerd
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
+# For v1.3.x cherry-pick a upstream commit to allow disabling some tests.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.2.8
+ENV CONTAINERD_COMMIT=v1.3.2
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
   cd $GOPATH/src/github.com/containerd/containerd && \
-  git checkout $CONTAINERD_COMMIT
+  git checkout $CONTAINERD_COMMIT && \
+  git config --global user.email "you@example.com" && \
+  git config --global user.name "Your Name" && \
+  git cherry-pick 94d499843c0202af9636cad522d30eaf9ffed798
 RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make libseccomp-dev
 RUN cd $GOPATH/src/github.com/containerd/containerd && \
-  make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILD_TAGS="static_build"
+  make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILDTAGS="static_build no_devmapper"
 
 # Checkout and compile iucode-tool for Intel CPU microcode
 # On non-x86_64 create a dummy file to copy below.
