@@ -16,4 +16,4 @@ _This list is currently under construction. Please add your use cases to this wi
 
 **_[dm-linuxkit](https://github.com/dotmesh-io/dm-linuxkit)_** A dotmesh controller for LinuxKit persistent storage management.
 
-**_[Zenbuild](https://github.com/zededa/zenbuild)_** Linuxkit based IoT Edge Operating System (Zenix)
+**_[Linux Foundation Edge EVE](https://github.com/lf-edge/eve)_** Edge Virtualization Engine Operating System
