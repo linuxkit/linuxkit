@@ -47,7 +47,7 @@ With the image created, we can now create an instance.
 You won't be able to see the serial console output until after it has terminated.
 
 ```
-linuxkit run aws aws
+linuxkit run aws -security-group "<security_group_id>" aws
 ```
 
 You can edit the AWS example to allow you to SSH to your instance in order to use it.
