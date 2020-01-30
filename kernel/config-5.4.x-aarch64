@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.4.4 Kernel Configuration
+# Linux/arm64 5.4.9 Kernel Configuration
 #
 
 #
@@ -689,15 +689,10 @@ CONFIG_ARCH_HAS_GCOV_PROFILE_ALL=y
 CONFIG_PLUGIN_HOSTCC="g++"
 CONFIG_HAVE_GCC_PLUGINS=y
 CONFIG_GCC_PLUGINS=y
-
-#
-# GCC plugins
-#
 # CONFIG_GCC_PLUGIN_CYC_COMPLEXITY is not set
 # CONFIG_GCC_PLUGIN_LATENT_ENTROPY is not set
 CONFIG_GCC_PLUGIN_RANDSTRUCT=y
 CONFIG_GCC_PLUGIN_RANDSTRUCT_PERFORMANCE=y
-# end of GCC plugins
 # end of General architecture-dependent options
 
 CONFIG_RT_MUTEXES=y
