@@ -13,7 +13,7 @@ LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 - Designed to create [reproducible builds](./docs/reproducible-builds.md) [WIP]
 - Designed for building and running clustered applications, including but not limited to container orchestration such as Docker or Kubernetes
 - Designed from the experience of building Docker Editions, but redesigned as a general-purpose toolkit
-- Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) or similar tools
+- Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) (renamed to [deploykit](https://github.com/docker/deploykit) which has been archived in 2019) or similar tools
 - Includes a set of longer-term collaborative projects in various stages of development to innovate on kernel and userspace changes, particularly around security
 
 LinuxKit currently supports the `x86_64`, `arm64`, and `s390x` architectures on a variety of platforms, both as virtual machines and baremetal (see [below](#booting-and-testing) for details).
