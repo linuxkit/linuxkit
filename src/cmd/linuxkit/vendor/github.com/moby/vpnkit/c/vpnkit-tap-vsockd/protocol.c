@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <syslog.h>
 
+#include "log.h"
 #include "protocol.h"
 
 /* Version 0 of the protocol used this */
@@ -23,13 +23,13 @@ int really_read(int fd, uint8_t *buffer, size_t total)
 	while (remaining > 0) {
 		n = read(fd, buffer, remaining);
 		if (n == 0) {
-			syslog(LOG_CRIT, "EOF reading from socket: closing\n");
+			ERROR("EOF reading from socket: closing\n");
 			goto err;
 		}
 		if (n < 0) {
-			syslog(LOG_CRIT,
-			       "Failure reading from socket: closing: %s",
-			       strerror(errno));
+			ERROR(
+				"Failure reading from socket: closing: %s",
+			    strerror(errno));
 			goto err;
 		}
 		remaining -= (size_t) n;
@@ -53,13 +53,13 @@ int really_write(int fd, uint8_t *buffer, size_t total)
 	while (remaining > 0) {
 		n = write(fd, buffer, remaining);
 		if (n == 0) {
-			syslog(LOG_CRIT, "EOF writing to socket: closing");
+			ERROR("EOF writing to socket: closing");
 			goto err;
 		}
 		if (n < 0) {
-			syslog(LOG_CRIT,
-			       "Failure writing to socket: closing: %s",
-			       strerror(errno));
+			ERROR(
+				"Failure writing to socket: closing: %s",
+			    strerror(errno));
 			goto err;
 		}
 		remaining -= (size_t) n;
@@ -117,7 +117,7 @@ int read_init_message(int fd, struct init_message *ci)
 
 	res = really_read(fd, (uint8_t *)&ci->hello[0], sizeof(ci->hello));
 	if (res  == -1) {
-		syslog(LOG_CRIT, "Failed to read hello from client");
+		ERROR("Failed to read hello from client");
 		return -1;
 	}
 
@@ -131,19 +131,19 @@ int read_init_message(int fd, struct init_message *ci)
 	res = memcmp(&ci->hello[0],
 		     &expected_hello[0], sizeof(expected_hello));
 	if (res != 0) {
-		syslog(LOG_CRIT, "Failed to read header magic from client");
+		ERROR("Failed to read header magic from client");
 		return -1;
 	}
 
 	res = really_read(fd, (uint8_t *)&ci->version, sizeof(ci->version));
 	if (res == -1) {
-		syslog(LOG_CRIT, "Failed to read header version from client");
+		ERROR("Failed to read header version from client");
 		return -1;
 	}
 
 	res = really_read(fd, (uint8_t *)&ci->commit[0], sizeof(ci->commit));
 	if (res == -1) {
-		syslog(LOG_CRIT, "Failed to read header hash from client");
+		ERROR("Failed to read header hash from client");
 		return -1;
 	}
 
@@ -156,21 +156,20 @@ int write_init_message(int fd, struct init_message *ci)
 
 	res = really_write(fd, (uint8_t *)&ci->hello[0], sizeof(ci->hello));
 	if (res == -1) {
-		syslog(LOG_CRIT, "Failed to write hello to client");
+		ERROR("Failed to write hello to client");
 		return -1;
 	}
 	if (ci->version > 0) {
 		res = really_write(fd, (uint8_t *)&ci->version,
 				   sizeof(ci->version));
 		if (res == -1) {
-			syslog(LOG_CRIT, "Failed to write version to client");
+			ERROR("Failed to write version to client");
 			return -1;
 		}
 		res = really_write(fd, (uint8_t *)&ci->commit[0],
 				   sizeof(ci->commit));
 		if (res == -1) {
-			syslog(LOG_CRIT,
-			       "Failed to write header hash to client");
+			ERROR("Failed to write header hash to client");
 			return -1;
 		}
 	}
@@ -182,7 +181,7 @@ int read_vif_response(int fd, struct vif_info *vif)
 	struct msg_response msg;
 
 	if (really_read(fd, (uint8_t*)&msg, sizeof(msg)) == -1) {
-		syslog(LOG_CRIT, "Client failed to read server response");
+		ERROR("Client failed to read server response");
 		return -1;
 	}
 
@@ -191,10 +190,10 @@ int read_vif_response(int fd, struct vif_info *vif)
 			memcpy((uint8_t*)vif, (uint8_t*)&msg.vif, sizeof(*vif));
 			return 0;
 		case rt_disconnect:
-			syslog(LOG_CRIT, "Server disconnected: %*s", msg.disconnect.len, msg.disconnect.msg);
+			ERROR("Server disconnected: %*s", msg.disconnect.len, msg.disconnect.msg);
 			return -1;
 		default:
-			syslog(LOG_CRIT, "Unknown response type from server");
+			ERROR("Unknown response type from server");
 			return -1;
 	}
 
@@ -205,7 +204,7 @@ int write_command(int fd, enum command *c)
 	uint8_t command = *c;
 
 	if (really_write(fd, (uint8_t *)&command, sizeof(command)) == -1) {
-		syslog(LOG_CRIT, "Failed to write command to client");
+		ERROR("Failed to write command to client");
 		return -1;
 	}
 	return 0;
@@ -218,7 +217,7 @@ int write_ethernet_args(int fd, struct ethernet_args *args)
     memcpy(&buffer[0], (uint8_t *)&args->uuid_string[0], 36);
 
 	if (really_write(fd, (uint8_t *)&buffer, sizeof(buffer)) == -1) {
-		syslog(LOG_CRIT, "Failed to write ethernet args to client");
+		ERROR("Failed to write ethernet args to client");
 		return -1;
 	}
 	return 0;

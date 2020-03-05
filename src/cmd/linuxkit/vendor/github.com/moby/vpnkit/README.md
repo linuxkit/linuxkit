@@ -14,21 +14,42 @@ VPNKit is a set of tools and services for helping [HyperKit](https://github.com/
 VMs interoperate with host VPN configurations.
 
 
-Building on Unix
-----------------
+Building on Unix (including Mac)
+--------------------------------
 
-First install `wget`, `opam` using your package manager of choice.
+First install `wget`, `opam` and `pkg-config` using your package manager of choice.
 
-Build all the dependencies and the program itself with:
-
+If you are an existing `opam` user then you can either build against your existing `opam`
+package universe, or the custom universe contained in this repo. To use the custom universe,
+ensure that you unset your `OPAMROOT` environment variable:
 ```
-cd [path to vpnkit source]
-opam remote add vpnkit ./repo/darwin
-opam install --deps-only vpnkit
+unset OPAMROOT
+```
+
+To build, type
+```
+make
+```
+The first build will take a little longer as it will build all the package dependencies first.
+
+When the build succeeds the `vpnkit.exe` binary should be available in the current directory.
+
+Building on Windows
+-------------------
+
+First install the [OCaml environment with Cygwin](https://fdopen.github.io/opam-repository-mingw/installation/).
+Note that although the Cygwin tools are needed for the build scripts, Cygwin itself will not
+be linked to the final executable.
+
+Inside the `OCaml64` (Cygwin) shell, unset the `OPAMROOT` environment and build by:
+```
+unset OPAMROOT
 make
 ```
 
-When the build succeeds the `vpnkit` binary should be available in the current path.
+The first build will take a little longer as it will build all the package dependencies first.
+
+When the build succeeds the `vpnkit.exe` binary should be available in the current directory.
 
 Running with hyperkit
 ---------------------

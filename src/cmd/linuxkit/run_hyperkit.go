@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/moby/hyperkit/go"
+	"github.com/moby/vpnkit/go/pkg/vmnet"
 	"github.com/moby/vpnkit/go/pkg/vpnkit"
 	log "github.com/sirupsen/logrus"
 )
@@ -435,17 +436,17 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 	}
 
 	log.Debugf("Creating new VPNKit VMNet on %s", h.VPNKitSock)
-	vmnet, err := vpnkit.NewVmnet(ctx, h.VPNKitSock)
+	vmnetClient, err := vmnet.New(ctx, h.VPNKitSock)
 	if err != nil {
 		return nil, fmt.Errorf("NewVmnet failed: %v", err)
 	}
-	defer vmnet.Close()
+	defer vmnetClient.Close()
 
 	// Register with VPNKit
-	var vif *vpnkit.Vif
+	var vif *vmnet.Vif
 	if h.VPNKitPreferredIPv4 == "" {
 		log.Debugf("Creating VPNKit VIF for %v", vpnkitUUID)
-		vif, err = vmnet.ConnectVif(vpnkitUUID)
+		vif, err = vmnetClient.ConnectVif(vpnkitUUID)
 		if err != nil {
 			return nil, fmt.Errorf("Connection to Vif failed: %v", err)
 		}
@@ -455,7 +456,7 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 			return nil, fmt.Errorf("Failed to parse IP: %s", h.VPNKitPreferredIPv4)
 		}
 		log.Debugf("Creating VPNKit VIF for %v ip=%v", vpnkitUUID, ip)
-		vif, err = vmnet.ConnectVifIP(vpnkitUUID, ip)
+		vif, err = vmnetClient.ConnectVifIP(vpnkitUUID, ip)
 		if err != nil {
 			return nil, fmt.Errorf("Connection to Vif with IP failed: %v", err)
 		}
@@ -463,7 +464,7 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 	log.Debugf("VPNKit UUID:%s IP: %v", vpnkitUUID, vif.IP)
 
 	log.Debugf("Connecting to VPNKit on %s", portSocket)
-	c, err := vpnkit.NewConnection(context.Background(), portSocket)
+	c, err := vpnkit.NewClient(portSocket)
 	if err != nil {
 		return nil, fmt.Errorf("Connection to VPNKit failed: %v", err)
 	}
@@ -477,8 +478,14 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 		}
 
 		log.Debugf("Publishing %s", publish)
-		vp := vpnkit.NewPort(c, p.Protocol, localhost, p.Host, vif.IP, p.Guest)
-		if err = vp.Expose(context.Background()); err != nil {
+		vp := &vpnkit.Port{
+			Proto:   vpnkit.Protocol(p.Protocol),
+			OutIP:   localhost,
+			OutPort: p.Host,
+			InIP:    vif.IP,
+			InPort:  p.Guest,
+		}
+		if err = c.Expose(context.Background(), vp); err != nil {
 			return nil, fmt.Errorf("Failed to expose port %s: %v", publish, err)
 		}
 		ports = append(ports, vp)
@@ -487,7 +494,7 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 	// Return cleanup function
 	return func() {
 		for _, vp := range ports {
-			vp.Unexpose(context.Background())
+			c.Unexpose(context.Background(), vp)
 		}
 	}, nil
 }

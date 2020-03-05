@@ -2,21 +2,18 @@ package vpnkit
 
 import (
 	"context"
-
-	datakit "github.com/moby/datakit/api/go-datakit"
+	"io"
 )
 
-// Connection represents an open control connection to vpnkit
-type Connection struct {
-	client *datakit.Client
+// Implementation of the control interface.
+type Implementation interface {
+	Client
 }
 
-// NewConnection connects to a vpnkit Unix domain socket on the given path
-// and returns the connection
-func NewConnection(ctx context.Context, path string) (*Connection, error) {
-	client, err := datakit.Dial(ctx, "unix", path)
-	if err != nil {
-		return nil, err
-	}
-	return &Connection{client}, nil
+// Client exposes and unexposes ports on vpnkit.
+type Client interface {
+	Expose(context.Context, *Port) error
+	Unexpose(context.Context, *Port) error
+	ListExposed(context.Context) ([]Port, error)
+	DumpState(context.Context, io.Writer) error
 }
