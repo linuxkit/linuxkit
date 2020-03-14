@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <getopt.h>
-#include <syslog.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
@@ -11,8 +10,11 @@
 #include <fcntl.h>
 #include <err.h>
 #include <sys/wait.h>
+#include <sys/socket.h>
+#include <linux/vm_sockets.h>
 
 #include "hvsock.h"
+#include "log.h"
 
 #define NONE 0
 #define LISTEN 1
@@ -20,14 +22,7 @@
 
 int mode = NONE;
 
-char *default_sid = "C378280D-DA14-42C8-A24E-0DE92A1028E2";
 char *mount = "/bin/mount";
-
-void fatal(const char *msg)
-{
-	syslog(LOG_CRIT, "%s Error: %d. %s", msg, errno, strerror(errno));
-	exit(1);
-}
 
 static int handle(int fd, char *tag, char *path)
 {
@@ -57,14 +52,13 @@ static int handle(int fd, char *tag, char *path)
 
 	res = waitpid(pid, &status, 0);
 	if (res == -1) {
-		syslog(LOG_CRIT,
-		       "waitpid failed: %d. %s", errno, strerror(errno));
+		ERROR("waitpid failed: %d. %s", errno, strerror(errno));
 		exit(1);
 	}
 	return WEXITSTATUS(status);
 }
 
-static int create_listening_socket(GUID serviceid)
+static int create_listening_hvsocket(GUID serviceid)
 {
 	SOCKADDR_HV sa;
 	int lsock;
@@ -72,8 +66,9 @@ static int create_listening_socket(GUID serviceid)
 
 	lsock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
 	if (lsock == -1)
-		fatal("socket()");
+		return -1;
 
+	bzero(&sa, sizeof(sa));
 	sa.Family = AF_HYPERV;
 	sa.Reserved = 0;
 	sa.VmId = HV_GUID_WILDCARD;
@@ -81,16 +76,44 @@ static int create_listening_socket(GUID serviceid)
 
 	res = bind(lsock, (const struct sockaddr *)&sa, sizeof(sa));
 	if (res == -1)
-		fatal("bind()");
+		return -1; /* ignore the fd leak */
 
 	res = listen(lsock, 1);
 	if (res == -1)
-		fatal("listen()");
+		return -1; /* ignore the fd leak */
 
 	return lsock;
 }
 
-static int connect_socket(GUID serviceid)
+static int create_listening_vsocket(long port)
+{
+	struct sockaddr_vm sa;
+	int lsock;
+	int res;
+
+	lsock = socket(AF_VSOCK, SOCK_STREAM, 0);
+	if (lsock == -1)
+		return -1;
+
+	bzero(&sa, sizeof(sa));
+	sa.svm_family = AF_VSOCK;
+	sa.svm_reserved1 = 0;
+	sa.svm_port = port;
+	sa.svm_cid = VMADDR_CID_ANY;
+
+	res = bind(lsock, (const struct sockaddr *)&sa, sizeof(sa));
+	if (res == -1)
+		return -1; /* ignore the fd leak */
+
+	res = listen(lsock, 1);
+	if (res == -1)
+		return -1; /* ignore the fd leak */
+
+	return lsock;
+}
+
+
+static int connect_hvsocket(GUID serviceid)
 {
 	SOCKADDR_HV sa;
 	int sock;
@@ -98,8 +121,9 @@ static int connect_socket(GUID serviceid)
 
 	sock = socket(AF_HYPERV, SOCK_STREAM, HV_PROTOCOL_RAW);
 	if (sock == -1)
-		fatal("socket()");
+		return -1;
 
+	bzero(&sa, sizeof(sa));
 	sa.Family = AF_HYPERV;
 	sa.Reserved = 0;
 	sa.VmId = HV_GUID_PARENT;
@@ -107,12 +131,35 @@ static int connect_socket(GUID serviceid)
 
 	res = connect(sock, (const struct sockaddr *)&sa, sizeof(sa));
 	if (res == -1)
-		fatal("connect()");
+		return -1; /* ignore the fd leak */
 
 	return sock;
 }
 
-static int accept_socket(int lsock)
+static int connect_vsocket(long port)
+{
+	struct sockaddr_vm sa;
+	int sock;
+	int res;
+
+	sock = socket(AF_VSOCK, SOCK_STREAM, 0);
+	if (sock == -1)
+		return -1;
+
+	bzero(&sa, sizeof(sa));
+	sa.svm_family = AF_VSOCK;
+	sa.svm_reserved1 = 0;
+	sa.svm_port = port;
+	sa.svm_cid = VMADDR_CID_HOST;
+
+	res = connect(sock, (const struct sockaddr *)&sa, sizeof(sa));
+	if (res == -1)
+		return -1; /* ignore the fd leak */
+
+	return sock;
+}
+
+static int accept_hvsocket(int lsock)
 {
 	SOCKADDR_HV sac;
 	socklen_t socklen = sizeof(sac);
@@ -122,8 +169,23 @@ static int accept_socket(int lsock)
 	if (csock == -1)
 		fatal("accept()");
 
-	syslog(LOG_INFO, "Connect from: " GUID_FMT ":" GUID_FMT "\n",
+	INFO("Connect from: " GUID_FMT ":" GUID_FMT "\n",
 	       GUID_ARGS(sac.VmId), GUID_ARGS(sac.ServiceId));
+
+	return csock;
+}
+
+static int accept_vsocket(int lsock)
+{
+	struct sockaddr_vm sac;
+	socklen_t socklen = sizeof(sac);
+	int csock;
+
+	csock = accept(lsock, (struct sockaddr *)&sac, &socklen);
+	if (csock == -1)
+		fatal("accept()");
+
+	INFO("Connect from: port=%x cid=%d", sac.svm_port, sac.svm_cid);
 
 	return csock;
 }
@@ -132,11 +194,10 @@ void usage(char *name)
 {
 	printf("%s: mount a 9P filesystem from an hvsock connection\n", name);
 	printf("usage:\n");
-	printf("\t[--serviceid <guid>] <listen | connect> <tag> <path>\n");
+	printf("\t[--vsock port] <listen | connect> <tag> <path>\n");
 	printf("where\n");
-	printf("\t--serviceid <guid>: use <guid> as the well-known service GUID\n");
-	printf("\t  (defaults to %s)\n", default_sid);
-	printf("\t--listen: listen forever for incoming AF_HVSOCK connections\n");
+	printf("\t--vsock <port>: use the AF_VSOCK <port>\n");
+	printf("\t--listen: listen forever for incoming AF_VSOCK connections\n");
 	printf("\t--connect: connect to the parent partition\n");
 }
 
@@ -145,8 +206,8 @@ int main(int argc, char **argv)
 	int res = 0;
 	GUID sid;
 	int c;
-	/* Defaults to a testing GUID */
-	char *serviceid = default_sid;
+	unsigned int port = 0;
+	char serviceid[37]; /* 36 for a GUID and 1 for a NULL */
 	char *tag = NULL;
 	char *path = NULL;
 
@@ -154,18 +215,22 @@ int main(int argc, char **argv)
 	while (1) {
 		static struct option long_options[] = {
 			/* These options set a flag. */
-			{"serviceid", required_argument, NULL, 's'},
+			{"vsock", required_argument, NULL, 'v'},
+			{"verbose", no_argument, NULL, 'w'},
 			{0, 0, 0, 0}
 		};
 		int option_index = 0;
 
-		c = getopt_long(argc, argv, "s:", long_options, &option_index);
+		c = getopt_long(argc, argv, "v:", long_options, &option_index);
 		if (c == -1)
 			break;
 
 		switch (c) {
-		case 's':
-			serviceid = optarg;
+		case 'v':
+			port = (unsigned int) strtol(optarg, NULL, 0);
+			break;
+		case 'w':
+			verbose++;
 			break;
 		case 0:
 			break;
@@ -206,6 +271,7 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
+	snprintf(serviceid, sizeof(serviceid), "%08x-FACB-11E6-BD58-64006A7986D3", port);
 	res = parseguid(serviceid, &sid);
 	if (res) {
 		fprintf(stderr,
@@ -214,27 +280,39 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	openlog(argv[0], LOG_CONS | LOG_NDELAY | LOG_PERROR, LOG_DAEMON);
 	for (;;) {
 		int lsocket;
 		int sock;
 		int r;
 
 		if (mode == LISTEN) {
-			syslog(LOG_INFO, "starting in listening mode with serviceid=%s, tag=%s, path=%s", serviceid, tag, path);
-			lsocket = create_listening_socket(sid);
-			sock = accept_socket(lsocket);
-			close(lsocket);
+			INFO("starting in listening mode with port=%x, tag=%s, path=%s", port, tag, path);
+			lsocket = create_listening_vsocket(port);
+			if (lsocket != -1) {
+				sock = accept_vsocket(lsocket);
+				close(lsocket);
+			} else {
+				INFO("failed to create AF_VSOCK, trying with AF_HVSOCK serviceid=%s", serviceid);
+				lsocket = create_listening_hvsocket(sid);
+				if (lsocket == -1)
+					fatal("create_listening_vsocket");
+				sock = accept_hvsocket(lsocket);
+				close(lsocket);
+			}
 		} else {
-			syslog(LOG_INFO, "starting in connect mode with serviceid=%s, tag=%s, path=%s", serviceid, tag, path);
-			sock = connect_socket(sid);
+			INFO("starting in connect mode with port=%x, tag=%s, path=%s", port, tag, path);
+			sock = connect_vsocket(port);
+			if (sock == -1) {
+				INFO("failed to connect AF_VSOCK, trying with AF_HVSOCK serviceid=%s", serviceid);
+				sock = connect_hvsocket(sid);
+			}
 		}
 
 		r = handle(sock, tag, path);
 		close(sock);
 
 		if (r == 0) {
-			syslog(LOG_INFO, "mount successful for serviceid=%s tag=%s path=%s", serviceid, tag, path);
+			INFO("mount successful for (serviceid=%s) port=%x tag=%s path=%s", serviceid, port, tag, path);
 			exit(0);
 		}
 
@@ -242,7 +320,7 @@ int main(int argc, char **argv)
 		 * This can happen if the client times out the connection
 		 * after we accept it
 		 */
-		syslog(LOG_CRIT, "mount failed with %d for serviceid=%s tag=%s path=%s", r, serviceid, tag, path);
+		ERROR("mount failed with %d for (serviceid=%s) port=%x tag=%s path=%s", r, serviceid, port, tag, path);
 		sleep(1); /* retry */
 	}
 }

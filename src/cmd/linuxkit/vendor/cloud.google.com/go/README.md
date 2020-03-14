@@ -1,188 +1,76 @@
-# Google Cloud for Go
+# Google Cloud Client Libraries for Go
 
-[![Build Status](https://travis-ci.org/GoogleCloudPlatform/google-cloud-go.svg?branch=master)](https://travis-ci.org/GoogleCloudPlatform/google-cloud-go)
 [![GoDoc](https://godoc.org/cloud.google.com/go?status.svg)](https://godoc.org/cloud.google.com/go)
+
+Go packages for [Google Cloud Platform](https://cloud.google.com) services.
 
 ``` go
 import "cloud.google.com/go"
 ```
 
-Go packages for Google Cloud Platform services.
+To install the packages on your system, *do not clone the repo*. Instead:
 
-To install the packages on your system,
+1. Change to your project directory:
 
-```
-$ go get -u cloud.google.com/go/...
-```
+   ```
+   cd /my/cloud/project
+   ```
+1. Get the package you want to use. Some products have their own module, so it's
+   best to `go get` the package(s) you want to use:
 
-**NOTE:** These packages are under development, and may occasionally make
-backwards-incompatible changes.
+   ```
+   $ go get cloud.google.com/go/firestore # Replace with the package you want to use.
+   ```
+
+**NOTE:** Some of these packages are under development, and may occasionally
+make backwards-incompatible changes.
 
 **NOTE:** Github repo is a mirror of [https://code.googlesource.com/gocloud](https://code.googlesource.com/gocloud).
 
-  * [News](#news)
-  * [Supported APIs](#supported-apis)
-  * [Go Versions Supported](#go-versions-supported)
-  * [Authorization](#authorization)
-  * [Cloud Datastore](#cloud-datastore-)
-  * [Cloud Storage](#cloud-storage-)
-  * [Cloud Pub/Sub](#cloud-pub-sub-)
-  * [Cloud BigQuery](#cloud-bigquery-)
-  * [Stackdriver Logging](#stackdriver-logging-)
-  * [Cloud Spanner](#cloud-spanner-)
-
-
-## News
-
-_February 14, 2017_
-
-Release of a client library for Spanner. See
-the
-[blog post](https://cloudplatform.googleblog.com/2017/02/introducing-Cloud-Spanner-a-global-database-service-for-mission-critical-applications.html). 
-
-Note that although the Spanner service is beta, the Go client library is alpha.
-
-_December 12, 2016_
-
-Beta release of BigQuery, DataStore, Logging and Storage. See the
-[blog post](https://cloudplatform.googleblog.com/2016/12/announcing-new-google-cloud-client.html).
-
-Also, BigQuery now supports structs. Read a row directly into a struct with
-`RowIterator.Next`, and upload a row directly from a struct with `Uploader.Put`.
-You can also use field tags. See the [package documentation][cloud-bigquery-ref]
-for details.
-
-_December 5, 2016_
-
-More changes to BigQuery:
-
-* The `ValueList` type was removed. It is no longer necessary. Instead of
-   ```go
-   var v ValueList
-   ... it.Next(&v) ..
-   ```
-   use
-
-   ```go
-   var v []Value
-   ... it.Next(&v) ...
-   ```
-
-* Previously, repeatedly calling `RowIterator.Next` on the same `[]Value` or
-  `ValueList` would append to the slice. Now each call resets the size to zero first.
-
-* Schema inference will infer the SQL type BYTES for a struct field of
-  type []byte. Previously it inferred STRING.
-
-* The types `uint`, `uint64` and `uintptr` are no longer supported in schema
-  inference. BigQuery's integer type is INT64, and those types may hold values
-  that are not correctly represented in a 64-bit signed integer.
-
-* The SQL types DATE, TIME and DATETIME are now supported. They correspond to
-  the `Date`, `Time` and `DateTime` types in the new `cloud.google.com/go/civil`
-  package.
-
-_November 17, 2016_
-
-Change to BigQuery: values from INTEGER columns will now be returned as int64,
-not int. This will avoid errors arising from large values on 32-bit systems.
-
-_November 8, 2016_
-
-New datastore feature: datastore now encodes your nested Go structs as Entity values,
-instead of a flattened list of the embedded struct's fields.
-This means that you may now have twice-nested slices, eg.
-```go
-type State struct {
-  Cities  []struct{
-    Populations []int
-  }
-}
-```
-
-See [the announcement](https://groups.google.com/forum/#!topic/google-api-go-announce/79jtrdeuJAg) for
-more details.
-
-_November 8, 2016_
-
-Breaking changes to datastore: contexts no longer hold namespaces; instead you
-must set a key's namespace explicitly. Also, key functions have been changed
-and renamed.
-
-* The WithNamespace function has been removed. To specify a namespace in a Query, use the Query.Namespace method:
-  ```go
-  q := datastore.NewQuery("Kind").Namespace("ns")
-  ```
-
-* All the fields of Key are exported. That means you can construct any Key with a struct literal:
-  ```go
-  k := &Key{Kind: "Kind",  ID: 37, Namespace: "ns"}
-  ```
-
-* As a result of the above, the Key methods Kind, ID, d.Name, Parent, SetParent and Namespace have been removed.
-
-* `NewIncompleteKey` has been removed, replaced by `IncompleteKey`. Replace
-  ```go
-  NewIncompleteKey(ctx, kind, parent)
-  ```
-  with
-  ```go
-  IncompleteKey(kind, parent)
-  ```
-  and if you do use namespaces, make sure you set the namespace on the returned key.
-
-* `NewKey` has been removed, replaced by `NameKey` and `IDKey`. Replace
-  ```go
-  NewKey(ctx, kind, name, 0, parent)
-  NewKey(ctx, kind, "", id, parent)
-  ```
-  with
-  ```go
-  NameKey(kind, name, parent)
-  IDKey(kind, id, parent)
-  ```
-  and if you do use namespaces, make sure you set the namespace on the returned key.
-
-* The `Done` variable has been removed. Replace `datastore.Done` with `iterator.Done`, from the package `google.golang.org/api/iterator`.
-
-* The `Client.Close` method will have a return type of error. It will return the result of closing the underlying gRPC connection.
-
-See [the announcement](https://groups.google.com/forum/#!topic/google-api-go-announce/hqXtM_4Ix-0) for
-more details.
-
-_October 27, 2016_
-
-Breaking change to bigquery: `NewGCSReference` is now a function,
-not a method on `Client`.
-
-New bigquery feature: `Table.LoaderFrom` now accepts a `ReaderSource`, enabling
-loading data into a table from a file or any `io.Reader`.
-
-_October 21, 2016_
-
-Breaking change to pubsub: removed `pubsub.Done`.
-
-Use `iterator.Done` instead, where `iterator` is the package
-`google.golang.org/api/iterator`.
-
-
-[Older news](https://github.com/GoogleCloudPlatform/google-cloud-go/blob/master/old-news.md)
-
 ## Supported APIs
 
-Google API                     | Status       | Package
--------------------------------|--------------|-----------------------------------------------------------
-[Datastore][cloud-datastore]   | beta         | [`cloud.google.com/go/datastore`][cloud-datastore-ref]
-[Storage][cloud-storage]       | beta         | [`cloud.google.com/go/storage`][cloud-storage-ref]
-[Bigtable][cloud-bigtable]     | beta         | [`cloud.google.com/go/bigtable`][cloud-bigtable-ref]
-[BigQuery][cloud-bigquery]     | beta         | [`cloud.google.com/go/bigquery`][cloud-bigquery-ref]
-[Logging][cloud-logging]       | beta         | [`cloud.google.com/go/logging`][cloud-logging-ref]
-[Pub/Sub][cloud-pubsub]        | alpha | [`cloud.google.com/go/pubsub`][cloud-pubsub-ref]
-[Vision][cloud-vision]         | beta | [`cloud.google.com/go/vision`][cloud-vision-ref]
-[Language][cloud-language]     | alpha | [`cloud.google.com/go/language/apiv1`][cloud-language-ref]
-[Speech][cloud-speech]         | alpha | [`cloud.google.com/go/speech/apiv1beta`][cloud-speech-ref]
-[Spanner][cloud-spanner]       | alpha | [`cloud.google.com/go/spanner`][cloud-spanner-ref]
-
+Google API                                      | Status       | Package
+------------------------------------------------|--------------|-----------------------------------------------------------
+[Asset][cloud-asset]                            | alpha        | [`cloud.google.com/go/asset/v1beta`](https://godoc.org/cloud.google.com/go/asset/v1beta)
+[Automl][cloud-automl]                          | stable       | [`cloud.google.com/go/automl/apiv1`](https://godoc.org/cloud.google.com/go/automl/apiv1)
+[BigQuery][cloud-bigquery]                      | stable       | [`cloud.google.com/go/bigquery`](https://godoc.org/cloud.google.com/go/bigquery)
+[Bigtable][cloud-bigtable]                      | stable       | [`cloud.google.com/go/bigtable`](https://godoc.org/cloud.google.com/go/bigtable)
+[Cloudbuild][cloud-build]                       | stable       | [`cloud.google.com/go/cloudbuild/apiv1`](https://godoc.org/cloud.google.com/go/cloudbuild/apiv1)
+[Cloudtasks][cloud-tasks]                       | stable       | [`cloud.google.com/go/cloudtasks/apiv2`](https://godoc.org/cloud.google.com/go/cloudtasks/apiv2)
+[Container][cloud-container]                    | stable       | [`cloud.google.com/go/container/apiv1`](https://godoc.org/cloud.google.com/go/container/apiv1)
+[ContainerAnalysis][cloud-containeranalysis]    | beta         | [`cloud.google.com/go/containeranalysis/apiv1`](https://godoc.org/cloud.google.com/go/containeranalysis/apiv1)
+[Dataproc][cloud-dataproc]                      | stable       | [`cloud.google.com/go/dataproc/apiv1`](https://godoc.org/cloud.google.com/go/dataproc/apiv1)
+[Datastore][cloud-datastore]                    | stable       | [`cloud.google.com/go/datastore`](https://godoc.org/cloud.google.com/go/datastore)
+[Debugger][cloud-debugger]                      | stable       | [`cloud.google.com/go/debugger/apiv2`](https://godoc.org/cloud.google.com/go/debugger/apiv2)
+[Dialogflow][cloud-dialogflow]                  | stable       | [`cloud.google.com/go/dialogflow/apiv2`](https://godoc.org/cloud.google.com/go/dialogflow/apiv2)
+[Data Loss Prevention][cloud-dlp]               | stable       | [`cloud.google.com/go/dlp/apiv2`](https://godoc.org/cloud.google.com/go/dlp/apiv2)
+[ErrorReporting][cloud-errors]                  | alpha        | [`cloud.google.com/go/errorreporting`](https://godoc.org/cloud.google.com/go/errorreporting)
+[Firestore][cloud-firestore]                    | stable       | [`cloud.google.com/go/firestore`](https://godoc.org/cloud.google.com/go/firestore)
+[IAM][cloud-iam]                                | stable       | [`cloud.google.com/go/iam`](https://godoc.org/cloud.google.com/go/iam)
+[IoT][cloud-iot]                                | stable       | [`cloud.google.com/go/iot/apiv1`](https://godoc.org/cloud.google.com/go/iot/apiv1)
+[IRM][cloud-irm]                                | alpha        | [`cloud.google.com/go/irm/apiv1alpha2`](https://godoc.org/cloud.google.com/go/irm/apiv1alpha2)
+[KMS][cloud-kms]                                | stable       | [`cloud.google.com/go/kms/apiv1`](https://godoc.org/cloud.google.com/go/kms/apiv1)
+[Natural Language][cloud-natural-language]      | stable       | [`cloud.google.com/go/language/apiv1`](https://godoc.org/cloud.google.com/go/language/apiv1)
+[Logging][cloud-logging]                        | stable       | [`cloud.google.com/go/logging`](https://godoc.org/cloud.google.com/go/logging)
+[Memorystore][cloud-memorystore]                | alpha        | [`cloud.google.com/go/redis/apiv1`](https://godoc.org/cloud.google.com/go/redis/apiv1)
+[Monitoring][cloud-monitoring]                  | alpha        | [`cloud.google.com/go/monitoring/apiv3`](https://godoc.org/cloud.google.com/go/monitoring/apiv3)
+[OS Login][cloud-oslogin]                       | alpha        | [`cloud.google.com/go/oslogin/apiv1`](https://godoc.org/cloud.google.com/go/oslogin/apiv1)
+[Pub/Sub][cloud-pubsub]                         | stable       | [`cloud.google.com/go/pubsub`](https://godoc.org/cloud.google.com/go/pubsub)
+[Phishing Protection][cloud-phishingprotection] | alpha        | [`cloud.google.com/go/phishingprotection/apiv1beta1`](https://godoc.org/cloud.google.com/go/phishingprotection/apiv1beta1)
+[reCAPTCHA Enterprise][cloud-recaptcha]         | alpha        | [`cloud.google.com/go/recaptchaenterprise/apiv1beta1`](https://godoc.org/cloud.google.com/go/recaptchaenterprise/apiv1beta1)
+[Recommender][cloud-recommender]                | beta         | [`cloud.google.com/go/recommender/apiv1beta1`](https://godoc.org/cloud.google.com/go/recommender/apiv1beta1)
+[Scheduler][cloud-scheduler]                    | stable       | [`cloud.google.com/go/scheduler/apiv1`](https://godoc.org/cloud.google.com/go/scheduler/apiv1)
+[Securitycenter][cloud-securitycenter]          | alpha        | [`cloud.google.com/go/securitycenter/apiv1`](https://godoc.org/cloud.google.com/go/securitycenter/apiv1)
+[Spanner][cloud-spanner]                        | stable       | [`cloud.google.com/go/spanner`](https://godoc.org/cloud.google.com/go/spanner)
+[Speech][cloud-speech]                          | stable       | [`cloud.google.com/go/speech/apiv1`](https://godoc.org/cloud.google.com/go/speech/apiv1)
+[Storage][cloud-storage]                        | stable       | [`cloud.google.com/go/storage`](https://godoc.org/cloud.google.com/go/storage)
+[Talent][cloud-talent]                          | alpha        | [`cloud.google.com/go/talent/apiv4beta1`](https://godoc.org/cloud.google.com/go/talent/apiv4beta1)
+[Text To Speech][cloud-texttospeech]            | alpha        | [`cloud.google.com/go/texttospeech/apiv1`](https://godoc.org/cloud.google.com/go/texttospeech/apiv1)
+[Trace][cloud-trace]                            | alpha        | [`cloud.google.com/go/trace/apiv2`](https://godoc.org/cloud.google.com/go/trace/apiv2)
+[Translate][cloud-translate]                    | stable       | [`cloud.google.com/go/translate`](https://godoc.org/cloud.google.com/go/translate)
+[Video Intelligence][cloud-video]               | alpha        | [`cloud.google.com/go/videointelligence/apiv1beta1`](https://godoc.org/cloud.google.com/go/videointelligence/apiv1beta1)
+[Vision][cloud-vision]                          | stable       | [`cloud.google.com/go/vision/apiv1`](https://godoc.org/cloud.google.com/go/vision/apiv1)
+[Webrisk][cloud-webrisk]                        | alpha        | [`cloud.google.com/go/webrisk/apiv1beta1`](https://godoc.org/cloud.google.com/go/webrisk/apiv1beta1)
 
 > **Alpha status**: the API is still being actively developed. As a
 > result, it might change in backward-incompatible ways and is not recommended
@@ -195,26 +83,20 @@ Google API                     | Status       | Package
 > **Stable status**: the API is mature and ready for production use. We will
 > continue addressing bugs and feature requests.
 
-Documentation and examples are available at
-https://godoc.org/cloud.google.com/go
-
-Visit or join the
-[google-api-go-announce group](https://groups.google.com/forum/#!forum/google-api-go-announce)
-for updates on these packages.
+Documentation and examples are available at [godoc.org/cloud.google.com/go](https://godoc.org/cloud.google.com/go)
 
 ## Go Versions Supported
 
 We support the two most recent major versions of Go. If Google App Engine uses
-an older version, we support that as well. You can see which versions are
-currently supported by looking at the lines following `go:` in
-[`.travis.yml`](.travis.yml).
+an older version, we support that as well.
 
 ## Authorization
 
-By default, each API will use [Google Application Default Credentials][default-creds]
+By default, each API will use [Google Application Default Credentials](https://developers.google.com/identity/protocols/application-default-credentials)
 for authorization credentials used in calling the API endpoints. This will allow your
 application to run in many environments without requiring explicit configuration.
 
+[snip]:# (auth)
 ```go
 client, err := storage.NewClient(ctx)
 ```
@@ -222,11 +104,12 @@ client, err := storage.NewClient(ctx)
 To authorize using a
 [JSON key file](https://cloud.google.com/iam/docs/managing-service-account-keys),
 pass
-[`option.WithServiceAccountFile`](https://godoc.org/google.golang.org/api/option#WithServiceAccountFile)
+[`option.WithCredentialsFile`](https://godoc.org/google.golang.org/api/option#WithCredentialsFile)
 to the `NewClient` function of the desired package. For example:
 
+[snip]:# (auth-JSON)
 ```go
-client, err := storage.NewClient(ctx, option.WithServiceAccountFile("path/to/keyfile.json"))
+client, err := storage.NewClient(ctx, option.WithCredentialsFile("path/to/keyfile.json"))
 ```
 
 You can exert more control over authorization by using the
@@ -234,246 +117,11 @@ You can exert more control over authorization by using the
 create an `oauth2.TokenSource`. Then pass
 [`option.WithTokenSource`](https://godoc.org/google.golang.org/api/option#WithTokenSource)
 to the `NewClient` function:
+[snip]:# (auth-ts)
 ```go
 tokenSource := ...
 client, err := storage.NewClient(ctx, option.WithTokenSource(tokenSource))
 ```
-
-## Cloud Datastore [![GoDoc](https://godoc.org/cloud.google.com/go/datastore?status.svg)](https://godoc.org/cloud.google.com/go/datastore)
-
-- [About Cloud Datastore][cloud-datastore]
-- [Activating the API for your project][cloud-datastore-activation]
-- [API documentation][cloud-datastore-docs]
-- [Go client documentation](https://godoc.org/cloud.google.com/go/datastore)
-- [Complete sample program](https://github.com/GoogleCloudPlatform/golang-samples/tree/master/datastore/tasks)
-
-### Example Usage
-
-First create a `datastore.Client` to use throughout your application:
-
-```go
-client, err := datastore.NewClient(ctx, "my-project-id")
-if err != nil {
-	log.Fatal(err)
-}
-```
-
-Then use that client to interact with the API:
-
-```go
-type Post struct {
-	Title       string
-	Body        string `datastore:",noindex"`
-	PublishedAt time.Time
-}
-keys := []*datastore.Key{
-	datastore.NewKey(ctx, "Post", "post1", 0, nil),
-	datastore.NewKey(ctx, "Post", "post2", 0, nil),
-}
-posts := []*Post{
-	{Title: "Post 1", Body: "...", PublishedAt: time.Now()},
-	{Title: "Post 2", Body: "...", PublishedAt: time.Now()},
-}
-if _, err := client.PutMulti(ctx, keys, posts); err != nil {
-	log.Fatal(err)
-}
-```
-
-## Cloud Storage [![GoDoc](https://godoc.org/cloud.google.com/go/storage?status.svg)](https://godoc.org/cloud.google.com/go/storage)
-
-- [About Cloud Storage][cloud-storage]
-- [API documentation][cloud-storage-docs]
-- [Go client documentation](https://godoc.org/cloud.google.com/go/storage)
-- [Complete sample programs](https://github.com/GoogleCloudPlatform/golang-samples/tree/master/storage)
-
-### Example Usage
-
-First create a `storage.Client` to use throughout your application:
-
-```go
-client, err := storage.NewClient(ctx)
-if err != nil {
-	log.Fatal(err)
-}
-```
-
-```go
-// Read the object1 from bucket.
-rc, err := client.Bucket("bucket").Object("object1").NewReader(ctx)
-if err != nil {
-	log.Fatal(err)
-}
-defer rc.Close()
-body, err := ioutil.ReadAll(rc)
-if err != nil {
-	log.Fatal(err)
-}
-```
-
-## Cloud Pub/Sub [![GoDoc](https://godoc.org/cloud.google.com/go/pubsub?status.svg)](https://godoc.org/cloud.google.com/go/pubsub)
-
-- [About Cloud Pubsub][cloud-pubsub]
-- [API documentation][cloud-pubsub-docs]
-- [Go client documentation](https://godoc.org/cloud.google.com/go/pubsub)
-- [Complete sample programs](https://github.com/GoogleCloudPlatform/golang-samples/tree/master/pubsub)
-
-### Example Usage
-
-First create a `pubsub.Client` to use throughout your application:
-
-```go
-client, err := pubsub.NewClient(ctx, "project-id")
-if err != nil {
-	log.Fatal(err)
-}
-```
-
-Then use the client to publish and subscribe:
-
-```go
-// Publish "hello world" on topic1.
-topic := client.Topic("topic1")
-msgIDs, err := topic.Publish(ctx, &pubsub.Message{
-	Data: []byte("hello world"),
-})
-if err != nil {
-	log.Fatal(err)
-}
-
-// Create an iterator to pull messages via subscription1.
-it, err := client.Subscription("subscription1").Pull(ctx)
-if err != nil {
-	log.Println(err)
-}
-defer it.Stop()
-
-// Consume N messages from the iterator.
-for i := 0; i < N; i++ {
-	msg, err := it.Next()
-	if err == iterator.Done {
-		break
-	}
-	if err != nil {
-		log.Fatalf("Failed to retrieve message: %v", err)
-	}
-
-	fmt.Printf("Message %d: %s\n", i, msg.Data)
-	msg.Done(true) // Acknowledge that we've consumed the message.
-}
-```
-
-## Cloud BigQuery [![GoDoc](https://godoc.org/cloud.google.com/go/bigquery?status.svg)](https://godoc.org/cloud.google.com/go/bigquery)
-
-- [About Cloud BigQuery][cloud-bigquery]
-- [API documentation][cloud-bigquery-docs]
-- [Go client documentation][cloud-bigquery-ref]
-- [Complete sample programs](https://github.com/GoogleCloudPlatform/golang-samples/tree/master/bigquery)
-
-### Example Usage
-
-First create a `bigquery.Client` to use throughout your application:
-```go
-c, err := bigquery.NewClient(ctx, "my-project-ID")
-if err != nil {
-    // TODO: Handle error.
-}
-```
-Then use that client to interact with the API:
-```go
-// Construct a query.
-q := c.Query(`
-    SELECT year, SUM(number)
-    FROM [bigquery-public-data:usa_names.usa_1910_2013]
-    WHERE name = "William"
-    GROUP BY year
-    ORDER BY year
-`)
-// Execute the query.
-it, err := q.Read(ctx)
-if err != nil {
-    // TODO: Handle error.
-}
-// Iterate through the results.
-for {
-    var values []bigquery.Value
-    err := it.Next(&values)
-    if err == iterator.Done {
-        break
-    }
-    if err != nil {
-        // TODO: Handle error.
-    }
-    fmt.Println(values)
-}
-```
-
-
-## Stackdriver Logging [![GoDoc](https://godoc.org/cloud.google.com/go/logging?status.svg)](https://godoc.org/cloud.google.com/go/logging)
-
-- [About Stackdriver Logging][cloud-logging]
-- [API documentation][cloud-logging-docs]
-- [Go client documentation][cloud-logging-ref]
-- [Complete sample programs](https://github.com/GoogleCloudPlatform/golang-samples/tree/master/logging)
-
-### Example Usage
-
-First create a `logging.Client` to use throughout your application:
-
-```go
-ctx := context.Background()
-client, err := logging.NewClient(ctx, "my-project")
-if err != nil {
-    // TODO: Handle error.
-}
-```
-Usually, you'll want to add log entries to a buffer to be periodically flushed
-(automatically and asynchronously) to the Stackdriver Logging service.
-```go
-logger := client.Logger("my-log")
-logger.Log(logging.Entry{Payload: "something happened!"})
-```
-Close your client before your program exits, to flush any buffered log entries.
-```go
-err = client.Close()
-if err != nil {
-    // TODO: Handle error.
-}
-```
-
-
-## Cloud Spanner [![GoDoc](https://godoc.org/cloud.google.com/go/spanner?status.svg)](https://godoc.org/cloud.google.com/go/spanner)
-
-- [About Cloud Spanner][cloud-spanner]
-- [API documentation][cloud-spanner-docs]
-- [Go client documentation](https://godoc.org/cloud.google.com/go/spanner)
-
-### Example Usage
-
-First create a `spanner.Client` to use throughout your application:
-
-```go
-client, err := spanner.NewClient(ctx, "projects/P/instances/I/databases/D")
-if err != nil {
-    log.Fatal(err)
-}
-```
-
-```go
-// Simple Reads And Writes
-_, err := client.Apply(ctx, []*spanner.Mutation{
-    spanner.Insert("Users",
-        []string{"name", "email"},
-        []interface{}{"alice", "a@example.com"})})
-if err != nil {
-    log.Fatal(err)
-}
-row, err := client.Single().ReadRow(ctx, "Users",
-    spanner.Key{"alice"}, []string{"email"})
-if err != nil {
-   log.Fatal(err)
-}
-```
-
 
 ## Contributing
 
@@ -487,42 +135,45 @@ By participating in this project you agree to abide by its terms.
 See [Contributor Code of Conduct](https://github.com/GoogleCloudPlatform/google-cloud-go/blob/master/CONTRIBUTING.md#contributor-code-of-conduct)
 for more information.
 
-[cloud-datastore]: https://cloud.google.com/datastore/
-[cloud-datastore-ref]: https://godoc.org/cloud.google.com/go/datastore
-[cloud-datastore-docs]: https://cloud.google.com/datastore/docs
-[cloud-datastore-activation]: https://cloud.google.com/datastore/docs/activate
-
-[cloud-pubsub]: https://cloud.google.com/pubsub/
-[cloud-pubsub-ref]: https://godoc.org/cloud.google.com/go/pubsub
-[cloud-pubsub-docs]: https://cloud.google.com/pubsub/docs
-
-[cloud-storage]: https://cloud.google.com/storage/
-[cloud-storage-ref]: https://godoc.org/cloud.google.com/go/storage
-[cloud-storage-docs]: https://cloud.google.com/storage/docs
-[cloud-storage-create-bucket]: https://cloud.google.com/storage/docs/cloud-console#_creatingbuckets
-
-[cloud-bigtable]: https://cloud.google.com/bigtable/
-[cloud-bigtable-ref]: https://godoc.org/cloud.google.com/go/bigtable
-
+[cloud-asset]: https://cloud.google.com/security-command-center/docs/how-to-asset-inventory
+[cloud-automl]: https://cloud.google.com/automl
+[cloud-build]: https://cloud.google.com/cloud-build/
 [cloud-bigquery]: https://cloud.google.com/bigquery/
-[cloud-bigquery-docs]: https://cloud.google.com/bigquery/docs
-[cloud-bigquery-ref]: https://godoc.org/cloud.google.com/go/bigquery
-
-[cloud-logging]: https://cloud.google.com/logging/
-[cloud-logging-docs]: https://cloud.google.com/logging/docs
-[cloud-logging-ref]: https://godoc.org/cloud.google.com/go/logging
-
-[cloud-vision]: https://cloud.google.com/vision/
-[cloud-vision-ref]: https://godoc.org/cloud.google.com/go/vision
-
+[cloud-bigtable]: https://cloud.google.com/bigtable/
+[cloud-container]: https://cloud.google.com/containers/
+[cloud-containeranalysis]: https://cloud.google.com/container-registry/docs/container-analysis
+[cloud-dataproc]: https://cloud.google.com/dataproc/
+[cloud-datastore]: https://cloud.google.com/datastore/
+[cloud-dialogflow]: https://cloud.google.com/dialogflow-enterprise/
+[cloud-debugger]: https://cloud.google.com/debugger/
+[cloud-dlp]: https://cloud.google.com/dlp/
+[cloud-errors]: https://cloud.google.com/error-reporting/
+[cloud-firestore]: https://cloud.google.com/firestore/
+[cloud-iam]: https://cloud.google.com/iam/
+[cloud-iot]: https://cloud.google.com/iot-core/
+[cloud-irm]: https://cloud.google.com/incident-response/docs/concepts
+[cloud-kms]: https://cloud.google.com/kms/
+[cloud-pubsub]: https://cloud.google.com/pubsub/
+[cloud-storage]: https://cloud.google.com/storage/
 [cloud-language]: https://cloud.google.com/natural-language
-[cloud-language-ref]: https://godoc.org/cloud.google.com/go/language/apiv1
-
-[cloud-speech]: https://cloud.google.com/speech
-[cloud-speech-ref]: https://godoc.org/cloud.google.com/go/speech/apiv1beta1
-
+[cloud-logging]: https://cloud.google.com/logging/
+[cloud-natural-language]: https://cloud.google.com/natural-language/
+[cloud-memorystore]: https://cloud.google.com/memorystore/
+[cloud-monitoring]: https://cloud.google.com/monitoring/
+[cloud-oslogin]: https://cloud.google.com/compute/docs/oslogin/rest
+[cloud-phishingprotection]: https://cloud.google.com/phishing-protection/
+[cloud-securitycenter]: https://cloud.google.com/security-command-center/
+[cloud-scheduler]: https://cloud.google.com/scheduler
 [cloud-spanner]: https://cloud.google.com/spanner/
-[cloud-spanner-ref]: https://godoc.org/cloud.google.com/go/spanner
-[cloud-spanner-docs]: https://cloud.google.com/spanner/docs
-
-[default-creds]: https://developers.google.com/identity/protocols/application-default-credentials
+[cloud-speech]: https://cloud.google.com/speech
+[cloud-talent]: https://cloud.google.com/solutions/talent-solution/
+[cloud-tasks]: https://cloud.google.com/tasks/
+[cloud-texttospeech]: https://cloud.google.com/texttospeech/
+[cloud-talent]: https://cloud.google.com/solutions/talent-solution/
+[cloud-trace]: https://cloud.google.com/trace/
+[cloud-translate]: https://cloud.google.com/translate
+[cloud-recaptcha]: https://cloud.google.com/recaptcha-enterprise/
+[cloud-recommender]: https://cloud.google.com/recommendations/
+[cloud-video]: https://cloud.google.com/video-intelligence/
+[cloud-vision]: https://cloud.google.com/vision
+[cloud-webrisk]: https://cloud.google.com/web-risk/
