@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:4.19.104
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:a4fcf333298f644dfac6adf680b83140927aa85e
+  - linuxkit/init:a0246dd478a24abbee0a4cede99662ffc4931691
   - linuxkit/runc:69b4a35eaa22eba4990ee52cccc8f48f6c08ed03
   - linuxkit/containerd:09553963ed9da626c25cf8acdf6d62ec37645412
   - linuxkit/ca-certificates:v0.7
