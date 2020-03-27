@@ -1,4 +1,4 @@
-From f03446d0e131d71ec981b40ba3172bb10930125b Mon Sep 17 00:00:00 2001
+From 18ffc33bbae039509d07f2cc2054499560532859 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:07 -0700
 Subject: [PATCH 09/21] hyper-v: trace vmbus_onversion_response()
@@ -51,5 +51,5 @@ index 84c08cdf7235..2a046547107f 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.17.1
+2.24.0
 
