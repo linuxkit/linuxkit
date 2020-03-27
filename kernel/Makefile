@@ -260,12 +260,10 @@ $(eval $(call kernel,4.14.171,4.14.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
 $(eval $(call kernel,5.4.19,5.4.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.104,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.59,4.19.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
 $(eval $(call kernel,5.4.19,5.4.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.104,4.19.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config
