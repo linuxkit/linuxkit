@@ -1,4 +1,4 @@
-From f40fc467a8eb0c3efdba96c71f47cf3adfdabdae Mon Sep 17 00:00:00 2001
+From c2b71b1d0a9c4c7eefe8da97ffc4baa4615fa6e5 Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:01 -0700
 Subject: [PATCH 03/21] hyper-v: trace vmbus_on_message()
@@ -45,5 +45,5 @@ index 9c2772922c76..d432aba5df8a 100644
  #define TRACE_INCLUDE_PATH .
  #undef TRACE_INCLUDE_FILE
 -- 
-2.17.1
+2.24.0
 
