@@ -6,7 +6,10 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	pathutil "path"
 	"path/filepath"
+
+	syscall "golang.org/x/sys/unix"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/cio"
@@ -200,12 +203,31 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 
 	logger := GetLog(varLogDir)
 
+	// This is silly but necessary due to containerd bug
+	// https://github.com/containerd/containerd/issues/4019
+	// essentially, when you create a container and then remove it,
+	// containerd blows away everything in the parent dir of the first one it finds,
+	// in this case, "/dev/null", so it blows away everything in "/dev".
+	// This most certainly is a "bad thing".
+	//
+	// To fix it temporarily, we are creating a tmpdir and creating a null
+	// device there, so that it can blow away the tempdir
+	stdinDir := pathutil.Join("/run", "containers-stdin", service)
+	if err := os.MkdirAll(stdinDir, 0700); err != nil {
+		return "", 0, "failed to create stdin directory", err
+	}
+	stdinFile := pathutil.Join(stdinDir, "null")
+	// make a dev null in stdinDir
+	if err := syscall.Mknod(stdinFile, uint32(os.FileMode(0660)|syscall.S_IFCHR), int(syscall.Mkdev(1, 3))); err != nil {
+		return "", 0, "failed to create stdin null file", err
+	}
+
 	io := func(id string) (cio.IO, error) {
 		stdoutFile := logger.Path(service + ".out")
 		stderrFile := logger.Path(service)
 		return &logio{
 			cio.Config{
-				Stdin:    "/dev/null",
+				Stdin:    stdinFile,
 				Stdout:   stdoutFile,
 				Stderr:   stderrFile,
 				Terminal: false,
