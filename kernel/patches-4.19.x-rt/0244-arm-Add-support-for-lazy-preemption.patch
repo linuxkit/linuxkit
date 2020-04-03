@@ -1,7 +1,7 @@
-From f83f8291ac518e18c94e68d86fe1639ba7b25a2f Mon Sep 17 00:00:00 2001
+From 36713bb8882eef3bd06bc3de88d56fcaa0d968c8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 31 Oct 2012 12:04:11 +0100
-Subject: [PATCH 244/283] arm: Add support for lazy preemption
+Subject: [PATCH 244/328] arm: Add support for lazy preemption
 
 Implement the arm pieces for lazy preempt.
 
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  6 files changed, 33 insertions(+), 8 deletions(-)
 
 diff --git a/arch/arm/Kconfig b/arch/arm/Kconfig
-index e122dd212ab3..9413ad933336 100644
+index bd9d180db5c7..9945e699e0a4 100644
 --- a/arch/arm/Kconfig
 +++ b/arch/arm/Kconfig
 @@ -90,6 +90,7 @@ config ARM
@@ -121,7 +121,7 @@ index e85a3af9ddeb..cc67c0a3ae7b 100644
  
  __und_fault:
 diff --git a/arch/arm/kernel/entry-common.S b/arch/arm/kernel/entry-common.S
-index 746565a876dc..156e3ba4b319 100644
+index 0465d65d23de..47675830ed30 100644
 --- a/arch/arm/kernel/entry-common.S
 +++ b/arch/arm/kernel/entry-common.S
 @@ -56,7 +56,9 @@ __ret_fast_syscall:
@@ -163,5 +163,5 @@ index b908382b69ff..339fbc281cf1 100644
  		} else {
  			if (unlikely(!user_mode(regs)))
 -- 
-2.20.1
+2.25.1
 

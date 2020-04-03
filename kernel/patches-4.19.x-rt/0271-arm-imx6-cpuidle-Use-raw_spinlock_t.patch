@@ -1,7 +1,7 @@
-From 17d57bbeda05b3bfe93276333b7b1db0958796d7 Mon Sep 17 00:00:00 2001
+From 0db2daea3de433d6d516bde0bd855fc8be716a8c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 14 May 2019 17:07:44 +0200
-Subject: [PATCH 271/283] arm: imx6: cpuidle: Use raw_spinlock_t
+Subject: [PATCH 271/328] arm: imx6: cpuidle: Use raw_spinlock_t
 
 [ Upstream commit 40d0332ec8312e9c090f0a5414d9c90e12b13611 ]
 
@@ -47,5 +47,5 @@ index 326e870d7123..d9ac80aa1eb0 100644
  	return index;
  }
 -- 
-2.20.1
+2.25.1
 

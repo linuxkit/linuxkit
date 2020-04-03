@@ -1,7 +1,7 @@
-From b64de8d2bb376abf6af01c84a94e1a201aecc6ec Mon Sep 17 00:00:00 2001
+From 5d6ef143b9e65be0cda54dcea9150f3cfa951ffd Mon Sep 17 00:00:00 2001
 From: Yang Shi <yang.shi@windriver.com>
 Date: Wed, 30 Oct 2013 11:48:33 -0700
-Subject: [PATCH 084/283] mm/memcontrol: Don't call schedule_work_on in
+Subject: [PATCH 084/328] mm/memcontrol: Don't call schedule_work_on in
  preemption disabled context
 
 The following trace is triggered when running ltp oom test cases:
@@ -48,10 +48,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/mm/memcontrol.c b/mm/memcontrol.c
-index 7e7cc0cd89fe..174329de4779 100644
+index 3a3d109dce21..cf9e81fb342d 100644
 --- a/mm/memcontrol.c
 +++ b/mm/memcontrol.c
-@@ -2063,7 +2063,7 @@ static void drain_all_stock(struct mem_cgroup *root_memcg)
+@@ -2082,7 +2082,7 @@ static void drain_all_stock(struct mem_cgroup *root_memcg)
  	 * as well as workers from this path always operate on the local
  	 * per-cpu data. CPU up doesn't touch memcg_stock at all.
  	 */
@@ -60,7 +60,7 @@ index 7e7cc0cd89fe..174329de4779 100644
  	for_each_online_cpu(cpu) {
  		struct memcg_stock_pcp *stock = &per_cpu(memcg_stock, cpu);
  		struct mem_cgroup *memcg;
-@@ -2083,7 +2083,7 @@ static void drain_all_stock(struct mem_cgroup *root_memcg)
+@@ -2102,7 +2102,7 @@ static void drain_all_stock(struct mem_cgroup *root_memcg)
  		}
  		css_put(&memcg->css);
  	}
@@ -70,5 +70,5 @@ index 7e7cc0cd89fe..174329de4779 100644
  }
  
 -- 
-2.20.1
+2.25.1
 

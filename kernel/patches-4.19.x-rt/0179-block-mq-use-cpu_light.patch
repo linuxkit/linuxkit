@@ -1,7 +1,7 @@
-From a8a7839dcded1152098641824de0792247d0af82 Mon Sep 17 00:00:00 2001
+From 736284010de7d42e40ecf1250dfb1f45e5a94d4e Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 9 Apr 2014 10:37:23 +0200
-Subject: [PATCH 179/283] block: mq: use cpu_light()
+Subject: [PATCH 179/328] block: mq: use cpu_light()
 
 there is a might sleep splat because get_cpu() disables preemption and
 later we grab a lock. As a workaround for this we use get_cpu_light().
@@ -12,7 +12,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/block/blk-mq.h b/block/blk-mq.h
-index 9497b47e2526..e55c8599b90b 100644
+index 5ad9251627f8..5a96c97991b6 100644
 --- a/block/blk-mq.h
 +++ b/block/blk-mq.h
 @@ -113,12 +113,12 @@ static inline struct blk_mq_ctx *__blk_mq_get_ctx(struct request_queue *q,
@@ -31,5 +31,5 @@ index 9497b47e2526..e55c8599b90b 100644
  
  struct blk_mq_alloc_data {
 -- 
-2.20.1
+2.25.1
 

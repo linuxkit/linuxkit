@@ -1,7 +1,7 @@
-From 6fb56185df42e49e0e2d8fe12d315356a57f4bce Mon Sep 17 00:00:00 2001
+From db2220843fd1c19c7b89db5f6e20382b5622fa05 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 9 Oct 2018 17:34:50 +0200
-Subject: [PATCH 028/283] sched/migrate_disable: Add export_symbol_gpl for
+Subject: [PATCH 028/328] sched/migrate_disable: Add export_symbol_gpl for
  __migrate_disabled
 
 Jonathan reported that lttng/modules can't use __migrate_disabled().
@@ -21,7 +21,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 1 insertion(+)
 
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b658f0147c3b..7a39d56f6a6b 100644
+index d0450f06612c..e6022cc2605b 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1013,6 +1013,7 @@ int __migrate_disabled(struct task_struct *p)
@@ -33,5 +33,5 @@ index b658f0147c3b..7a39d56f6a6b 100644
  
  static void __do_set_cpus_allowed_tail(struct task_struct *p,
 -- 
-2.20.1
+2.25.1
 

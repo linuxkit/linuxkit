@@ -1,7 +1,7 @@
-From a82c4acdfe13556ab98571ef02f3a3eb9d29dd6e Mon Sep 17 00:00:00 2001
+From e78e0f017d742dada34166305b5b965bc26ddef0 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 13 Sep 2017 12:32:34 +0200
-Subject: [PATCH 172/283] fs/dcache: bring back explicit INIT_HLIST_BL_HEAD
+Subject: [PATCH 172/328] fs/dcache: bring back explicit INIT_HLIST_BL_HEAD
  init
 
 Commit 3d375d78593c ("mm: update callers to use HASH_ZERO flag") removed
@@ -56,5 +56,5 @@ index 6e0022326afe..10225a9135fb 100644
  }
  
 -- 
-2.20.1
+2.25.1
 

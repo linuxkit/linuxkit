@@ -1,0 +1,40 @@
+From ae0252a9cd108b1f72aa0d7ff0dfc9a888a05d81 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 16 Sep 2019 12:33:59 +0200
+Subject: [PATCH 301/328] posix-timers: Unlock expiry lock in the early return
+
+[ Upstream commit 356a2781375ec58521a9bc3f500488745990c242 ]
+
+Patch ("posix-timers: Add expiry lock") acquired a lock in
+run_posix_cpu_timers() but didn't drop the lock in the early return.
+
+Unlock the lock in the early return path.
+
+Reported-by: kbuild test robot <lkp@intel.com>
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Reviewed-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/time/posix-cpu-timers.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/kernel/time/posix-cpu-timers.c b/kernel/time/posix-cpu-timers.c
+index 765e700962ab..c9964dc3276b 100644
+--- a/kernel/time/posix-cpu-timers.c
++++ b/kernel/time/posix-cpu-timers.c
+@@ -1175,8 +1175,10 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
+ 	expiry_lock = this_cpu_ptr(&cpu_timer_expiry_lock);
+ 	spin_lock(expiry_lock);
+ 
+-	if (!lock_task_sighand(tsk, &flags))
++	if (!lock_task_sighand(tsk, &flags)) {
++		spin_unlock(expiry_lock);
+ 		return;
++	}
+ 	/*
+ 	 * Here we take off tsk->signal->cpu_timers[N] and
+ 	 * tsk->cpu_timers[N] all the timers that are firing, and
+-- 
+2.25.1
+

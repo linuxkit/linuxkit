@@ -1,7 +1,7 @@
-From 4625df6903b8b9c8ebbcddea1660e7df3e4f9efa Mon Sep 17 00:00:00 2001
+From fc8e48cfb7705d33f133b8b927ec35a1c95af05d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 14:35:49 +0200
-Subject: [PATCH 190/283] fs/dcache: use swait_queue instead of waitqueue
+Subject: [PATCH 190/328] fs/dcache: use swait_queue instead of waitqueue
 
 __d_lookup_done() invokes wake_up_all() while holding a hlist_bl_lock()
 which disables preemption. As a workaround convert it to swait.
@@ -84,10 +84,10 @@ index dcde8ffe384c..b2a00f3ff7df 100644
  	hlist_bl_unlock(b);
  	INIT_HLIST_NODE(&dentry->d_u.d_alias);
 diff --git a/fs/fuse/dir.c b/fs/fuse/dir.c
-index 82a13221775e..58324a93e3c0 100644
+index 6244345a5745..7ee10b7cc808 100644
 --- a/fs/fuse/dir.c
 +++ b/fs/fuse/dir.c
-@@ -1203,7 +1203,7 @@ static int fuse_direntplus_link(struct file *file,
+@@ -1213,7 +1213,7 @@ static int fuse_direntplus_link(struct file *file,
  	struct inode *dir = d_inode(parent);
  	struct fuse_conn *fc;
  	struct inode *inode;
@@ -97,10 +97,10 @@ index 82a13221775e..58324a93e3c0 100644
  	if (!o->nodeid) {
  		/*
 diff --git a/fs/namei.c b/fs/namei.c
-index 914178cdbe94..2a8c41bc227f 100644
+index c00a7e1da4c0..742e7935f777 100644
 --- a/fs/namei.c
 +++ b/fs/namei.c
-@@ -1645,7 +1645,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,
+@@ -1646,7 +1646,7 @@ static struct dentry *__lookup_slow(const struct qstr *name,
  {
  	struct dentry *dentry, *old;
  	struct inode *inode = dir->d_inode;
@@ -109,7 +109,7 @@ index 914178cdbe94..2a8c41bc227f 100644
  
  	/* Don't go there if it's already dead */
  	if (unlikely(IS_DEADDIR(inode)))
-@@ -3135,7 +3135,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
+@@ -3136,7 +3136,7 @@ static int lookup_open(struct nameidata *nd, struct path *path,
  	struct dentry *dentry;
  	int error, create_error = 0;
  	umode_t mode = op->mode;
@@ -119,10 +119,10 @@ index 914178cdbe94..2a8c41bc227f 100644
  	if (unlikely(IS_DEADDIR(dir_inode)))
  		return -ENOENT;
 diff --git a/fs/nfs/dir.c b/fs/nfs/dir.c
-index 62afe8ca1e36..9818a5dfb472 100644
+index c60b20884c45..7e653c14c7ed 100644
 --- a/fs/nfs/dir.c
 +++ b/fs/nfs/dir.c
-@@ -445,7 +445,7 @@ static
+@@ -457,7 +457,7 @@ static
  void nfs_prime_dcache(struct dentry *parent, struct nfs_entry *entry)
  {
  	struct qstr filename = QSTR_INIT(entry->name, entry->len);
@@ -131,7 +131,7 @@ index 62afe8ca1e36..9818a5dfb472 100644
  	struct dentry *dentry;
  	struct dentry *alias;
  	struct inode *dir = d_inode(parent);
-@@ -1459,7 +1459,7 @@ int nfs_atomic_open(struct inode *dir, struct dentry *dentry,
+@@ -1516,7 +1516,7 @@ int nfs_atomic_open(struct inode *dir, struct dentry *dentry,
  		    struct file *file, unsigned open_flags,
  		    umode_t mode)
  {
@@ -163,10 +163,10 @@ index ce9100b5604d..839bfa76f41e 100644
  	status = -EBUSY;
  	spin_lock(&dentry->d_lock);
 diff --git a/fs/proc/base.c b/fs/proc/base.c
-index f999e8bd3771..bf9476600c73 100644
+index 3b9b726b1a6c..a45d4d640f01 100644
 --- a/fs/proc/base.c
 +++ b/fs/proc/base.c
-@@ -1872,7 +1872,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
+@@ -1890,7 +1890,7 @@ bool proc_fill_cache(struct file *file, struct dir_context *ctx,
  
  	child = d_hash_and_lookup(dir, &qname);
  	if (!child) {
@@ -176,10 +176,10 @@ index f999e8bd3771..bf9476600c73 100644
  		if (IS_ERR(child))
  			goto end_instantiate;
 diff --git a/fs/proc/proc_sysctl.c b/fs/proc/proc_sysctl.c
-index 7325baa8f9d4..31f25ff3999f 100644
+index c95f32b83a94..75f500cb7e74 100644
 --- a/fs/proc/proc_sysctl.c
 +++ b/fs/proc/proc_sysctl.c
-@@ -677,7 +677,7 @@ static bool proc_sys_fill_cache(struct file *file,
+@@ -681,7 +681,7 @@ static bool proc_sys_fill_cache(struct file *file,
  
  	child = d_lookup(dir, &qname);
  	if (!child) {
@@ -211,7 +211,7 @@ index 0880baefd85f..8b4d6c8c1f7f 100644
  extern struct dentry * d_add_ci(struct dentry *, struct inode *, struct qstr *);
  extern struct dentry * d_exact_alias(struct dentry *, struct inode *);
 diff --git a/include/linux/nfs_xdr.h b/include/linux/nfs_xdr.h
-index bd1c889a9ed9..1fc27eb1f021 100644
+index cab24a127feb..73b0d19ef0d9 100644
 --- a/include/linux/nfs_xdr.h
 +++ b/include/linux/nfs_xdr.h
 @@ -1549,7 +1549,7 @@ struct nfs_unlinkdata {
@@ -236,5 +236,5 @@ index c7cb30cdd1b7..119a56d7f739 100644
  	list_splice_init(&q->task_list, &tmp);
  	while (!list_empty(&tmp)) {
 -- 
-2.20.1
+2.25.1
 

@@ -1,7 +1,7 @@
-From 334dc78522991ee04c4704a53d24f0009be71172 Mon Sep 17 00:00:00 2001
+From ae24940034c02ed671e3a5cc9c4cf31ebfc24fed Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 11 Jan 2013 11:23:51 +0100
-Subject: [PATCH 095/283] completion: Use simple wait queues
+Subject: [PATCH 095/328] completion: Use simple wait queues
 
 Completions have no long lasting callbacks and therefor do not need
 the complex waitqueue variant. Use simple waitqueues which reduces the
@@ -39,7 +39,7 @@ index e7075aaff1bb..1580464a9d5b 100644
  		res = -EINTR;
  	if (res) {
 diff --git a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
-index 94ad6fe29e69..52a49f0bbc19 100644
+index b704e4bce171..c364abaac548 100644
 --- a/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
 +++ b/drivers/net/wireless/intersil/orinoco/orinoco_usb.c
 @@ -697,8 +697,8 @@ static void ezusb_req_ctx_wait(struct ezusb_priv *upriv,
@@ -54,10 +54,10 @@ index 94ad6fe29e69..52a49f0bbc19 100644
  		break;
  	default:
 diff --git a/drivers/usb/gadget/function/f_fs.c b/drivers/usb/gadget/function/f_fs.c
-index aa15593a3ac4..5e9269cd14fa 100644
+index 2050993fb58b..e2ca75a6e241 100644
 --- a/drivers/usb/gadget/function/f_fs.c
 +++ b/drivers/usb/gadget/function/f_fs.c
-@@ -1624,7 +1624,7 @@ static void ffs_data_put(struct ffs_data *ffs)
+@@ -1626,7 +1626,7 @@ static void ffs_data_put(struct ffs_data *ffs)
  		pr_info("%s(): freeing\n", __func__);
  		ffs_data_clear(ffs);
  		BUG_ON(waitqueue_active(&ffs->ev.waitq) ||
@@ -319,10 +319,10 @@ index a1ad5b7d5521..755a58084978 100644
  }
  EXPORT_SYMBOL(completion_done);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 5de80f29ef57..337cc72e6a6a 100644
+index 986ed04425be..584978640512 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7116,7 +7116,10 @@ void migrate_disable(void)
+@@ -7154,7 +7154,10 @@ void migrate_disable(void)
  		return;
  	}
  #ifdef CONFIG_SCHED_DEBUG
@@ -334,7 +334,7 @@ index 5de80f29ef57..337cc72e6a6a 100644
  #endif
  
  	if (p->migrate_disable) {
-@@ -7146,7 +7149,10 @@ void migrate_enable(void)
+@@ -7184,7 +7187,10 @@ void migrate_enable(void)
  	}
  
  #ifdef CONFIG_SCHED_DEBUG
@@ -386,5 +386,5 @@ index 66b59ac77c22..c7cb30cdd1b7 100644
  	wait->task = current;
  	if (list_empty(&wait->task_list))
 -- 
-2.20.1
+2.25.1
 

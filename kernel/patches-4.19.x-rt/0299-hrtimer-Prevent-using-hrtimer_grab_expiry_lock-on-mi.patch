@@ -1,0 +1,42 @@
+From 0167d3fb02b4f30f0f219f65726e5344ad871f9f Mon Sep 17 00:00:00 2001
+From: Julien Grall <julien.grall@arm.com>
+Date: Wed, 21 Aug 2019 10:24:09 +0100
+Subject: [PATCH 299/328] hrtimer: Prevent using hrtimer_grab_expiry_lock() on
+ migration_base
+
+[ Upstream commit cef1b87f98823af923a386f3f69149acb212d4a1 ]
+
+As tglx puts it:
+|If base == migration_base then there is no point to lock soft_expiry_lock
+|simply because the timer is not executing the callback in soft irq context
+|and the whole lock/unlock dance can be avoided.
+
+Furthermore, all the path leading to hrtimer_grab_expiry_lock() assumes
+timer->base and timer->base->cpu_base are always non-NULL. So it is safe
+to remove the NULL checks here.
+
+Signed-off-by: Julien Grall <julien.grall@arm.com>
+Link: https://lkml.kernel.org/r/alpine.DEB.2.21.1908211557420.2223@nanos.tec.linutronix.de
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+[bigeasy: rewrite changelog]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
+index 49d20fe8570f..1a5167c68310 100644
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -943,7 +943,7 @@ void hrtimer_grab_expiry_lock(const struct hrtimer *timer)
+ {
+ 	struct hrtimer_clock_base *base = READ_ONCE(timer->base);
+ 
+-	if (timer->is_soft && base && base->cpu_base) {
++	if (timer->is_soft && base != &migration_base) {
+ 		spin_lock(&base->cpu_base->softirq_expiry_lock);
+ 		spin_unlock(&base->cpu_base->softirq_expiry_lock);
+ 	}
+-- 
+2.25.1
+

@@ -1,7 +1,7 @@
-From 701e93b4c6964c05cec92d9611c50dc83a6b6b9b Mon Sep 17 00:00:00 2001
+From 3340a41255c128e25956abc1370f0e5d1b702dda Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 16:14:22 +0200
-Subject: [PATCH 141/283] rtmutex: Provide rt_mutex_slowlock_locked()
+Subject: [PATCH 141/328] rtmutex: Provide rt_mutex_slowlock_locked()
 
 This is the inner-part of rt_mutex_slowlock(), required for rwsem-rt.
 
@@ -140,5 +140,5 @@ index 461527f3f7af..cb9815f0c766 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 -- 
-2.20.1
+2.25.1
 

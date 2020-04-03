@@ -1,7 +1,7 @@
-From 91f768aed73cc93826112811b4e622dce0c1915f Mon Sep 17 00:00:00 2001
+From 056e2667682c7afa14f71cb6d97ccf2217c0c08b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 3 Apr 2011 11:57:29 +0200
-Subject: [PATCH 071/283] genirq: Force interrupt thread on RT
+Subject: [PATCH 071/328] genirq: Force interrupt thread on RT
 
 Force threaded_irqs and optimize the code (force_irqthreads) in regard
 to this.
@@ -29,10 +29,10 @@ index eeceac3376fc..315f852b4981 100644
  #define force_irqthreads	(0)
  #endif
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index cd4f9f3e8345..c3b9f6dacd8f 100644
+index 23bcfa71077f..3c26d0708709 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -23,6 +23,7 @@
+@@ -24,6 +24,7 @@
  #include "internals.h"
  
  #ifdef CONFIG_IRQ_FORCED_THREADING
@@ -40,14 +40,14 @@ index cd4f9f3e8345..c3b9f6dacd8f 100644
  __read_mostly bool force_irqthreads;
  EXPORT_SYMBOL_GPL(force_irqthreads);
  
-@@ -32,6 +33,7 @@ static int __init setup_forced_irqthreads(char *arg)
+@@ -33,6 +34,7 @@ static int __init setup_forced_irqthreads(char *arg)
  	return 0;
  }
  early_param("threadirqs", setup_forced_irqthreads);
 +# endif
  #endif
  
- static void __synchronize_hardirq(struct irq_desc *desc)
+ static void __synchronize_hardirq(struct irq_desc *desc, bool sync_chip)
 -- 
-2.20.1
+2.25.1
 

@@ -1,7 +1,7 @@
-From 8f756e565320c9c32ed9f5e964f03f939dd38379 Mon Sep 17 00:00:00 2001
+From 63e76d2c0af10f033768782de397bb94afd9c20b Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 24 Jun 2019 18:29:13 +0200
-Subject: [PATCH 272/283] rcu: Don't allow to change rcu_normal_after_boot on
+Subject: [PATCH 272/328] rcu: Don't allow to change rcu_normal_after_boot on
  RT
 
 [ Upstream commit c6c058c10577815a2491ce661876cff00a4c3b15 ]
@@ -31,5 +31,5 @@ index 16d8dba23329..ed75addd3ccd 100644
  
  #ifdef CONFIG_DEBUG_LOCK_ALLOC
 -- 
-2.20.1
+2.25.1
 

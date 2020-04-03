@@ -1,7 +1,7 @@
-From 2de445a925a0c92865a6308ce0e1587ebc250ccb Mon Sep 17 00:00:00 2001
+From 62aaf2e45d6bc981cec8335fd58bfe5216343cce Mon Sep 17 00:00:00 2001
 From: Corey Minyard <cminyard@mvista.com>
 Date: Thu, 9 May 2019 14:33:20 -0500
-Subject: [PATCH 267/283] sched/completion: Fix a lockup in
+Subject: [PATCH 267/328] sched/completion: Fix a lockup in
  wait_for_completion()
 
 Consider following race:
@@ -64,5 +64,5 @@ index 755a58084978..49c14137988e 100644
  			raw_spin_unlock_irq(&x->wait.lock);
  			timeout = action(timeout);
 -- 
-2.20.1
+2.25.1
 

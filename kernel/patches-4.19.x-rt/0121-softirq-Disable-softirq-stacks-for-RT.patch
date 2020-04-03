@@ -1,7 +1,7 @@
-From ac1ed27a8471e837c8ea8811ca8322f47f47add2 Mon Sep 17 00:00:00 2001
+From 72daa94331fe79e1c1b596147ec920920f1cd87a Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Mon, 18 Jul 2011 13:59:17 +0200
-Subject: [PATCH 121/283] softirq: Disable softirq stacks for RT
+Subject: [PATCH 121/328] softirq: Disable softirq stacks for RT
 
 Disable extra stacks for softirqs. We want to preempt softirqs and
 having them on special IRQ-stack does not make this easier.
@@ -19,7 +19,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  8 files changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/arch/powerpc/kernel/irq.c b/arch/powerpc/kernel/irq.c
-index 916ddc4aac44..833d27f85aea 100644
+index d37704ebccdb..b45a9849b687 100644
 --- a/arch/powerpc/kernel/irq.c
 +++ b/arch/powerpc/kernel/irq.c
 @@ -766,6 +766,7 @@ void irq_ctx_init(void)
@@ -59,7 +59,7 @@ index 695b24a2d954..032ada21b7bd 100644
  /*
   * void call_do_irq(struct pt_regs *regs, struct thread_info *irqtp);
 diff --git a/arch/powerpc/kernel/misc_64.S b/arch/powerpc/kernel/misc_64.S
-index 262ba9481781..4935ef9a142e 100644
+index facc02964ab3..8b1774186c68 100644
 --- a/arch/powerpc/kernel/misc_64.S
 +++ b/arch/powerpc/kernel/misc_64.S
 @@ -32,6 +32,7 @@
@@ -119,10 +119,10 @@ index 713670e6d13d..5dfc715343f9 100644
  #ifdef CONFIG_HOTPLUG_CPU
  void fixup_irqs(void)
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index c90e00db5c13..7b29f2c10d01 100644
+index ccb5e3486aee..7ffd83c57ef2 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -1059,6 +1059,7 @@ bad_gs:
+@@ -1083,6 +1083,7 @@ bad_gs:
  	jmp	2b
  	.previous
  
@@ -130,7 +130,7 @@ index c90e00db5c13..7b29f2c10d01 100644
  /* Call softirq on interrupt stack. Interrupts are off. */
  ENTRY(do_softirq_own_stack)
  	pushq	%rbp
-@@ -1069,6 +1070,7 @@ ENTRY(do_softirq_own_stack)
+@@ -1093,6 +1094,7 @@ ENTRY(do_softirq_own_stack)
  	leaveq
  	ret
  ENDPROC(do_softirq_own_stack)
@@ -172,5 +172,5 @@ index e74936c7be48..cb2d1384cb0d 100644
  #else
  static inline void do_softirq_own_stack(void)
 -- 
-2.20.1
+2.25.1
 

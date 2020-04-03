@@ -1,7 +1,7 @@
-From f7d44ae1ff53ff9277b2207c7987b8ffa0a65738 Mon Sep 17 00:00:00 2001
+From 502c5fa30dc1a4c295e2f42049d7c79b0245db74 Mon Sep 17 00:00:00 2001
 From: John Stultz <johnstul@us.ibm.com>
 Date: Fri, 3 Jul 2009 08:29:58 -0500
-Subject: [PATCH 105/283] posix-timers: Thread posix-cpu-timers on -rt
+Subject: [PATCH 105/328] posix-timers: Thread posix-cpu-timers on -rt
 
 posix-cpu-timer code takes non -rt safe locks in hard irq
 context. Move it to a thread.
@@ -18,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 164 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 535e57775208..c2dfe6939773 100644
+index e4af260f81c5..a90b6be626cd 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -832,6 +832,9 @@ struct task_struct {
@@ -57,10 +57,10 @@ index 0b49b9cf5571..9e3362748214 100644
  	.thread_group	= LIST_HEAD_INIT(init_task.thread_group),
  	.thread_node	= LIST_HEAD_INIT(init_signals.thread_head),
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 98c971cb1d36..492bc898b09a 100644
+index bc182d6fa2a9..ccfcd44a370f 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -1585,6 +1585,9 @@ static void rt_mutex_init_task(struct task_struct *p)
+@@ -1590,6 +1590,9 @@ static void rt_mutex_init_task(struct task_struct *p)
   */
  static void posix_cpu_timers_init(struct task_struct *tsk)
  {
@@ -71,7 +71,7 @@ index 98c971cb1d36..492bc898b09a 100644
  	tsk->cputime_expires.virt_exp = 0;
  	tsk->cputime_expires.sched_exp = 0;
 diff --git a/kernel/time/posix-cpu-timers.c b/kernel/time/posix-cpu-timers.c
-index 76801b9b481e..baeeaef3b721 100644
+index d62d7ae5201c..8d95e8de98b2 100644
 --- a/kernel/time/posix-cpu-timers.c
 +++ b/kernel/time/posix-cpu-timers.c
 @@ -3,8 +3,10 @@
@@ -93,7 +93,7 @@ index 76801b9b481e..baeeaef3b721 100644
  
  #include "posix-timers.h"
  
-@@ -1136,14 +1139,12 @@ static inline int fastpath_timer_check(struct task_struct *tsk)
+@@ -1140,14 +1143,12 @@ static inline int fastpath_timer_check(struct task_struct *tsk)
   * already updated our counts.  We need to check if any timers fire now.
   * Interrupts are disabled.
   */
@@ -109,7 +109,7 @@ index 76801b9b481e..baeeaef3b721 100644
  	/*
  	 * The fast path checks that there are no expired thread or thread
  	 * group timers.  If that's so, just return.
-@@ -1196,6 +1197,153 @@ void run_posix_cpu_timers(struct task_struct *tsk)
+@@ -1200,6 +1201,153 @@ void run_posix_cpu_timers(struct task_struct *tsk)
  	}
  }
  
@@ -264,5 +264,5 @@ index 76801b9b481e..baeeaef3b721 100644
   * Set one of the process-wide special case CPU timers or RLIMIT_CPU.
   * The tsk->sighand->siglock must be held by the caller.
 -- 
-2.20.1
+2.25.1
 

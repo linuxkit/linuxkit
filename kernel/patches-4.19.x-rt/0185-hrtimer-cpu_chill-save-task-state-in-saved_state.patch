@@ -1,7 +1,7 @@
-From 65b275b3fee3444107af46dd38c427834861ea37 Mon Sep 17 00:00:00 2001
+From c5e6ba548ce7b077f2c912fa506401cccf68d85d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 26 Feb 2019 12:31:10 +0100
-Subject: [PATCH 185/283] hrtimer: cpu_chill(): save task state in
+Subject: [PATCH 185/328] hrtimer: cpu_chill(): save task state in
  ->saved_state()
 
 In the previous change I saved the current task state on stack. This was
@@ -20,10 +20,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 5 deletions(-)
 
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 6f2736ec4b8e..e1040b80362c 100644
+index 21a454557c8a..f16cbc98c47a 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
-@@ -1900,20 +1900,28 @@ COMPAT_SYSCALL_DEFINE2(nanosleep, struct compat_timespec __user *, rqtp,
+@@ -1903,20 +1903,28 @@ COMPAT_SYSCALL_DEFINE2(nanosleep, struct compat_timespec __user *, rqtp,
   */
  void cpu_chill(void)
  {
@@ -58,5 +58,5 @@ index 6f2736ec4b8e..e1040b80362c 100644
  EXPORT_SYMBOL(cpu_chill);
  #endif
 -- 
-2.20.1
+2.25.1
 

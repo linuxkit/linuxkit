@@ -1,7 +1,7 @@
-From 806f56991b1c799b77919980a4331ebd857eca6e Mon Sep 17 00:00:00 2001
+From eb88fbf4264f3c4776aeeec310568e4bc79ced80 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Jan 2015 15:10:08 +0100
-Subject: [PATCH 181/283] block/mq: don't complete requests via IPI
+Subject: [PATCH 181/328] block/mq: don't complete requests via IPI
 
 The IPI runs in hardirq context and there are sleeping locks. This patch
 moves the completion into a workqueue.
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  4 files changed, 30 insertions(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 682bc561b77b..b6010a1c3aad 100644
+index ea33d6abdcfc..4860cd26cd5a 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
 @@ -189,6 +189,9 @@ void blk_rq_init(struct request_queue *q, struct request *rq)
@@ -29,7 +29,7 @@ index 682bc561b77b..b6010a1c3aad 100644
  	rq->q = q;
  	rq->__sector = (sector_t) -1;
 diff --git a/block/blk-mq.c b/block/blk-mq.c
-index b07332cab8ff..a01b6aba61fa 100644
+index 376fb90de054..5808446e4758 100644
 --- a/block/blk-mq.c
 +++ b/block/blk-mq.c
 @@ -320,6 +320,9 @@ static struct request *blk_mq_rq_ctx_init(struct blk_mq_alloc_data *data,
@@ -87,10 +87,10 @@ index b07332cab8ff..a01b6aba61fa 100644
  		rq->q->softirq_done_fn(rq);
  	}
 diff --git a/include/linux/blk-mq.h b/include/linux/blk-mq.h
-index 1da59c16f637..04c15b5ca76c 100644
+index 2885dce1ad49..8dbb9ecf9993 100644
 --- a/include/linux/blk-mq.h
 +++ b/include/linux/blk-mq.h
-@@ -249,7 +249,7 @@ static inline u16 blk_mq_unique_tag_to_tag(u32 unique_tag)
+@@ -256,7 +256,7 @@ static inline u16 blk_mq_unique_tag_to_tag(u32 unique_tag)
  	return unique_tag & BLK_MQ_UNIQUE_TAG_MASK;
  }
  
@@ -100,7 +100,7 @@ index 1da59c16f637..04c15b5ca76c 100644
  void blk_mq_start_request(struct request *rq);
  void blk_mq_end_request(struct request *rq, blk_status_t error);
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 6980014357d4..f93ae914abda 100644
+index 6e67aeb56928..111ab4209797 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
 @@ -149,6 +149,9 @@ enum mq_rq_state {
@@ -114,5 +114,5 @@ index 6980014357d4..f93ae914abda 100644
  
  	int cpu;
 -- 
-2.20.1
+2.25.1
 

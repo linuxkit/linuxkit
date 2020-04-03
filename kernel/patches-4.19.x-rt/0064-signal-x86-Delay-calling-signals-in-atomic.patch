@@ -1,7 +1,7 @@
-From f994c5279fb1173131e67419c540713cd25a59e3 Mon Sep 17 00:00:00 2001
+From f95acea987d23816f8094d7db13ae2afb94136ce Mon Sep 17 00:00:00 2001
 From: Oleg Nesterov <oleg@redhat.com>
 Date: Tue, 14 Jul 2015 14:26:34 +0200
-Subject: [PATCH 064/283] signal/x86: Delay calling signals in atomic
+Subject: [PATCH 064/328] signal/x86: Delay calling signals in atomic
 
 On x86_64 we must disable preemption before we enable interrupts
 for stack faults, int3 and debugging, because the current task is using
@@ -79,7 +79,7 @@ index 33d3c88a7225..fb0438d06ca7 100644
  typedef sigset_t compat_sigset_t;
  #endif
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index df39ad5916e7..535e57775208 100644
+index 0489d3e0e78c..e4af260f81c5 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -881,6 +881,10 @@ struct task_struct {
@@ -94,10 +94,10 @@ index df39ad5916e7..535e57775208 100644
  	size_t				sas_ss_size;
  	unsigned int			sas_ss_flags;
 diff --git a/kernel/signal.c b/kernel/signal.c
-index d5a9646b3538..56edb0580a3a 100644
+index 5e278f1540ad..d5e764bb2444 100644
 --- a/kernel/signal.c
 +++ b/kernel/signal.c
-@@ -1268,8 +1268,8 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,
+@@ -1277,8 +1277,8 @@ int do_send_sig_info(int sig, struct siginfo *info, struct task_struct *p,
   * We don't want to have recursive SIGSEGV's etc, for example,
   * that is why we also clear SIGNAL_UNKILLABLE.
   */
@@ -108,7 +108,7 @@ index d5a9646b3538..56edb0580a3a 100644
  {
  	unsigned long int flags;
  	int ret, blocked, ignored;
-@@ -1298,6 +1298,39 @@ force_sig_info(int sig, struct siginfo *info, struct task_struct *t)
+@@ -1307,6 +1307,39 @@ force_sig_info(int sig, struct siginfo *info, struct task_struct *t)
  	return ret;
  }
  
@@ -149,5 +149,5 @@ index d5a9646b3538..56edb0580a3a 100644
   * Nuke all other threads in the group.
   */
 -- 
-2.20.1
+2.25.1
 

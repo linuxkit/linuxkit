@@ -1,0 +1,49 @@
+From adb807c2fbd6d2f64515708367de2cae2b106925 Mon Sep 17 00:00:00 2001
+From: Juri Lelli <juri.lelli@redhat.com>
+Date: Wed, 31 Jul 2019 12:37:15 +0200
+Subject: [PATCH 292/328] sched/deadline: Ensure inactive_timer runs in hardirq
+ context
+
+[ Upstream commit ba94e7aed7405c58251b1380e6e7d73aa8284b41 ]
+
+SCHED_DEADLINE inactive timer needs to run in hardirq context (as
+dl_task_timer already does) on PREEMPT_RT
+
+Change the mode to HRTIMER_MODE_REL_HARD.
+
+[ tglx: Fixed up the start site, so mode debugging works ]
+
+Signed-off-by: Juri Lelli <juri.lelli@redhat.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Link: https://lkml.kernel.org/r/20190731103715.4047-1-juri.lelli@redhat.com
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/sched/deadline.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/kernel/sched/deadline.c b/kernel/sched/deadline.c
+index 974a8f9b615a..929167a1d991 100644
+--- a/kernel/sched/deadline.c
++++ b/kernel/sched/deadline.c
+@@ -287,7 +287,7 @@ static void task_non_contending(struct task_struct *p)
+ 
+ 	dl_se->dl_non_contending = 1;
+ 	get_task_struct(p);
+-	hrtimer_start(timer, ns_to_ktime(zerolag_time), HRTIMER_MODE_REL);
++	hrtimer_start(timer, ns_to_ktime(zerolag_time), HRTIMER_MODE_REL_HARD);
+ }
+ 
+ static void task_contending(struct sched_dl_entity *dl_se, int flags)
+@@ -1325,7 +1325,7 @@ void init_dl_inactive_task_timer(struct sched_dl_entity *dl_se)
+ {
+ 	struct hrtimer *timer = &dl_se->inactive_timer;
+ 
+-	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL);
++	hrtimer_init(timer, CLOCK_MONOTONIC, HRTIMER_MODE_REL_HARD);
+ 	timer->function = inactive_task_timer;
+ }
+ 
+-- 
+2.25.1
+

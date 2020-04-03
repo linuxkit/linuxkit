@@ -1,0 +1,44 @@
+From 053a5be342cf9ab6925975f8ce90e62bf13c81b1 Mon Sep 17 00:00:00 2001
+From: Waiman Long <longman@redhat.com>
+Date: Thu, 3 Oct 2019 16:36:08 -0400
+Subject: [PATCH 306/328] lib/smp_processor_id: Don't use cpumask_equal()
+
+[ Upstream commit 659252061477862f45b79e1de169e6030f5c8918 ]
+
+The check_preemption_disabled() function uses cpumask_equal() to see
+if the task is bounded to the current CPU only. cpumask_equal() calls
+memcmp() to do the comparison. As x86 doesn't have __HAVE_ARCH_MEMCMP,
+the slow memcmp() function in lib/string.c is used.
+
+On a RT kernel that call check_preemption_disabled() very frequently,
+below is the perf-record output of a certain microbenchmark:
+
+  42.75%  2.45%  testpmd [kernel.kallsyms] [k] check_preemption_disabled
+  40.01% 39.97%  testpmd [kernel.kallsyms] [k] memcmp
+
+We should avoid calling memcmp() in performance critical path. So the
+cpumask_equal() call is now replaced with an equivalent simpler check.
+
+Signed-off-by: Waiman Long <longman@redhat.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ lib/smp_processor_id.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/lib/smp_processor_id.c b/lib/smp_processor_id.c
+index fb35c45b9421..b8a8a8db2d75 100644
+--- a/lib/smp_processor_id.c
++++ b/lib/smp_processor_id.c
+@@ -22,7 +22,7 @@ notrace static unsigned int check_preemption_disabled(const char *what1,
+ 	 * Kernel threads bound to a single CPU can safely use
+ 	 * smp_processor_id():
+ 	 */
+-	if (cpumask_equal(current->cpus_ptr, cpumask_of(this_cpu)))
++	if (current->nr_cpus_allowed == 1)
+ 		goto out;
+ 
+ 	/*
+-- 
+2.25.1
+

@@ -1,0 +1,38 @@
+From 0f49b94879548ccd41d4518afa7cf6b88b578656 Mon Sep 17 00:00:00 2001
+From: Scott Wood <swood@redhat.com>
+Date: Sat, 27 Jul 2019 00:56:33 -0500
+Subject: [PATCH 304/328] sched: Remove dead __migrate_disabled() check
+
+[ Upstream commit 14d9272d534ea91262e15db99443fc5995c7c016 ]
+
+This code was unreachable given the __migrate_disabled() branch
+to "out" immediately beforehand.
+
+Signed-off-by: Scott Wood <swood@redhat.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/sched/core.c | 7 -------
+ 1 file changed, 7 deletions(-)
+
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index d6bd8129a390..a29f33e776d0 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -1182,13 +1182,6 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+ 	if (cpumask_test_cpu(task_cpu(p), new_mask) || __migrate_disabled(p))
+ 		goto out;
+ 
+-#if defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
+-	if (__migrate_disabled(p)) {
+-		p->migrate_disable_update = 1;
+-		goto out;
+-	}
+-#endif
+-
+ 	if (task_running(rq, p) || p->state == TASK_WAKING) {
+ 		struct migration_arg arg = { p, dest_cpu };
+ 		/* Need help from migration thread: drop lock and wait. */
+-- 
+2.25.1
+

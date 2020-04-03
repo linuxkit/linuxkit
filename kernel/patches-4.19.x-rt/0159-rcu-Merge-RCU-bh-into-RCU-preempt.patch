@@ -1,7 +1,7 @@
-From 324e697209ed33e734f64df4cf0ddf60658de5ff Mon Sep 17 00:00:00 2001
+From 4e202b7ae394bcf87490c85f7edf3c528a9e93ed Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 5 Oct 2011 11:59:38 -0700
-Subject: [PATCH 159/283] rcu: Merge RCU-bh into RCU-preempt
+Subject: [PATCH 159/328] rcu: Merge RCU-bh into RCU-preempt
 
 The Linux kernel has long RCU-bh read-side critical sections that
 intolerably increase scheduling latency under mainline's RCU-bh rules,
@@ -34,7 +34,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 73 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/rcupdate.h b/include/linux/rcupdate.h
-index b73715c3c3c2..241a4a9577a0 100644
+index e6733d7911e9..08d64e5713fc 100644
 --- a/include/linux/rcupdate.h
 +++ b/include/linux/rcupdate.h
 @@ -56,7 +56,11 @@ void call_rcu(struct rcu_head *head, rcu_callback_t func);
@@ -346,5 +346,5 @@ index 81688a133552..6ffafb1b1584 100644
  #endif /* #ifdef CONFIG_DEBUG_LOCK_ALLOC */
  
 -- 
-2.20.1
+2.25.1
 

@@ -1,7 +1,7 @@
-From 3b1c3bc41b87cd7a714ebfa5e88651d4f3326f2e Mon Sep 17 00:00:00 2001
+From 274246f0cc33aabdc562929c114eae24541eb9a3 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 11:48:57 +0200
-Subject: [PATCH 055/283] md: disable bcache
+Subject: [PATCH 055/328] md: disable bcache
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -36,5 +36,5 @@ index f6e0a8b3a61e..18c03d79a442 100644
  	help
  	Allows a block device to be used as cache for other devices; uses
 -- 
-2.20.1
+2.25.1
 

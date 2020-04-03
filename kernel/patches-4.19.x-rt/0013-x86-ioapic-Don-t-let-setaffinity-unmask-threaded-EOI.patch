@@ -1,7 +1,7 @@
-From abbec8803a7e474a1e1a1b1ee105de8ffd0c8cbc Mon Sep 17 00:00:00 2001
+From 9ecaf2a8f433399cc3fabcfb9fbce9a88fe6f200 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 17 Jul 2018 18:25:31 +0200
-Subject: [PATCH 013/283] x86/ioapic: Don't let setaffinity unmask threaded EOI
+Subject: [PATCH 013/328] x86/ioapic: Don't let setaffinity unmask threaded EOI
  interrupt too early
 
 There is an issue with threaded interrupts which are marked ONESHOT
@@ -30,27 +30,23 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
           ifdef paths (spotted by Andy Shevchenko)]
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
- arch/x86/kernel/apic/io_apic.c | 23 +++++++++++++----------
- 1 file changed, 13 insertions(+), 10 deletions(-)
+ arch/x86/kernel/apic/io_apic.c | 16 ++++++++--------
+ 1 file changed, 8 insertions(+), 8 deletions(-)
 
 diff --git a/arch/x86/kernel/apic/io_apic.c b/arch/x86/kernel/apic/io_apic.c
-index ff0d14cd9e82..c2bd6e0433f8 100644
+index fa3b85b222e3..1bdad61a3ef7 100644
 --- a/arch/x86/kernel/apic/io_apic.c
 +++ b/arch/x86/kernel/apic/io_apic.c
-@@ -1722,19 +1722,20 @@ static bool io_apic_level_ack_pending(struct mp_chip_data *data)
+@@ -1722,7 +1722,7 @@ static bool io_apic_level_ack_pending(struct mp_chip_data *data)
  	return false;
  }
  
 -static inline bool ioapic_irqd_mask(struct irq_data *data)
 +static inline bool ioapic_prepare_move(struct irq_data *data)
  {
- 	/* If we are moving the irq we need to mask it */
+ 	/* If we are moving the IRQ we need to mask it */
  	if (unlikely(irqd_is_setaffinity_pending(data))) {
--		mask_ioapic_irq(data);
-+		if (!irqd_irq_masked(data))
-+			mask_ioapic_irq(data);
- 		return true;
- 	}
+@@ -1733,9 +1733,9 @@ static inline bool ioapic_irqd_mask(struct irq_data *data)
  	return false;
  }
  
@@ -62,14 +58,7 @@ index ff0d14cd9e82..c2bd6e0433f8 100644
  		/* Only migrate the irq if the ack has been received.
  		 *
  		 * On rare occasions the broadcast level triggered ack gets
-@@ -1763,15 +1764,17 @@ static inline void ioapic_irqd_unmask(struct irq_data *data, bool masked)
- 		 */
- 		if (!io_apic_level_ack_pending(data->chip_data))
- 			irq_move_masked_irq(data);
--		unmask_ioapic_irq(data);
-+		/* If the irq is masked in the core, leave it */
-+		if (!irqd_irq_masked(data))
-+			unmask_ioapic_irq(data);
+@@ -1770,11 +1770,11 @@ static inline void ioapic_irqd_unmask(struct irq_data *data, bool masked)
  	}
  }
  #else
@@ -83,7 +72,7 @@ index ff0d14cd9e82..c2bd6e0433f8 100644
  {
  }
  #endif
-@@ -1780,11 +1783,11 @@ static void ioapic_ack_level(struct irq_data *irq_data)
+@@ -1783,11 +1783,11 @@ static void ioapic_ack_level(struct irq_data *irq_data)
  {
  	struct irq_cfg *cfg = irqd_cfg(irq_data);
  	unsigned long v;
@@ -97,7 +86,7 @@ index ff0d14cd9e82..c2bd6e0433f8 100644
  
  	/*
  	 * It appears there is an erratum which affects at least version 0x11
-@@ -1839,7 +1842,7 @@ static void ioapic_ack_level(struct irq_data *irq_data)
+@@ -1842,7 +1842,7 @@ static void ioapic_ack_level(struct irq_data *irq_data)
  		eoi_ioapic_pin(cfg->vector, irq_data->chip_data);
  	}
  
@@ -107,5 +96,5 @@ index ff0d14cd9e82..c2bd6e0433f8 100644
  
  static void ioapic_ir_ack_level(struct irq_data *irq_data)
 -- 
-2.20.1
+2.25.1
 

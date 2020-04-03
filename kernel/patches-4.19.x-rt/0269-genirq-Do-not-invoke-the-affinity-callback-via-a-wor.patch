@@ -1,7 +1,7 @@
-From 1c00699faf9b42d9e365cb0a9c4f701c72089d90 Mon Sep 17 00:00:00 2001
+From ea09ce2ccce72c0a8abbd8c5971aee290b24b222 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Aug 2013 17:48:46 +0200
-Subject: [PATCH 269/283] genirq: Do not invoke the affinity callback via a
+Subject: [PATCH 269/328] genirq: Do not invoke the affinity callback via a
  workqueue on RT
 
 [ Upstream commit 2122adbe011cdc0eb62ad62494e181005b23c76a ]
@@ -49,10 +49,10 @@ index 72333899f043..a9321f6429f2 100644
  	struct work_struct work;
  #endif
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index 7f4041357d2f..381305c48a0a 100644
+index ce86341a9e19..d5539e04e00a 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -261,7 +261,7 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
+@@ -287,7 +287,7 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
  		kref_get(&desc->affinity_notify->kref);
  
  #ifdef CONFIG_PREEMPT_RT_BASE
@@ -61,7 +61,7 @@ index 7f4041357d2f..381305c48a0a 100644
  #else
  		schedule_work(&desc->affinity_notify->work);
  #endif
-@@ -326,21 +326,11 @@ static void _irq_affinity_notify(struct irq_affinity_notify *notify)
+@@ -352,21 +352,11 @@ static void _irq_affinity_notify(struct irq_affinity_notify *notify)
  }
  
  #ifdef CONFIG_PREEMPT_RT_BASE
@@ -85,7 +85,7 @@ index 7f4041357d2f..381305c48a0a 100644
  	_irq_affinity_notify(notify);
  }
  
-@@ -383,8 +373,7 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
+@@ -409,8 +399,7 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
  		notify->irq = irq;
  		kref_init(&notify->kref);
  #ifdef CONFIG_PREEMPT_RT_BASE
@@ -96,5 +96,5 @@ index 7f4041357d2f..381305c48a0a 100644
  		INIT_WORK(&notify->work, irq_affinity_notify);
  #endif
 -- 
-2.20.1
+2.25.1
 

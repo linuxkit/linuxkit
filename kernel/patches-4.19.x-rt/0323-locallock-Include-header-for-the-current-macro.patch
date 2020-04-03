@@ -1,0 +1,31 @@
+From eed4b1765107814294260e3f2a1838a7837efffa Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 4 Feb 2020 13:29:50 +0100
+Subject: [PATCH 323/328] locallock: Include header for the `current' macro
+
+[ Upstream commit e693075a5fd852043fa8d2b0467e078d9e5cb782 ]
+
+Include the header for `current' macro so that
+CONFIG_KERNEL_HEADER_TEST=y passes.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ include/linux/locallock.h | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/include/linux/locallock.h b/include/linux/locallock.h
+index 921eab83cd34..81c89d87723b 100644
+--- a/include/linux/locallock.h
++++ b/include/linux/locallock.h
+@@ -3,6 +3,7 @@
+ 
+ #include <linux/percpu.h>
+ #include <linux/spinlock.h>
++#include <asm/current.h>
+ 
+ #ifdef CONFIG_PREEMPT_RT_BASE
+ 
+-- 
+2.25.1
+

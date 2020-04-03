@@ -1,7 +1,7 @@
-From f9ae4924361c91598ce03771aaa5f99c4bfa8100 Mon Sep 17 00:00:00 2001
+From f030909005b15efe1f934a507d10971242608d81 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 21 Sep 2017 14:25:13 +0200
-Subject: [PATCH 155/283] rtmutex: annotate sleeping lock context
+Subject: [PATCH 155/328] rtmutex: annotate sleeping lock context
 
 The RCU code complains on schedule() within a rcu_readlock() section.
 The valid scenario on -RT is if a sleeping is held. In order to suppress
@@ -53,7 +53,7 @@ index 27c3176d88d2..9eafc34898b4 100644
  #define migrate_disable()		barrier()
  #define migrate_enable()		barrier()
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 25e9a40f9576..8f0bb5f6d39e 100644
+index dd47fd913997..682cf84a7e1b 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -673,6 +673,15 @@ struct task_struct {
@@ -72,7 +72,7 @@ index 25e9a40f9576..8f0bb5f6d39e 100644
  #endif
  
  #ifdef CONFIG_PREEMPT_RCU
-@@ -1802,6 +1811,23 @@ static __always_inline bool need_resched(void)
+@@ -1810,6 +1819,23 @@ static __always_inline bool need_resched(void)
  	return unlikely(tif_need_resched());
  }
  
@@ -230,7 +230,7 @@ index 8f90afe111ce..c3b91205161c 100644
  EXPORT_SYMBOL(rt_write_unlock);
  
 diff --git a/kernel/rcu/tree_plugin.h b/kernel/rcu/tree_plugin.h
-index a97c20ea9bce..564e3927e7b0 100644
+index 5f6de49dc78e..35f3552b7463 100644
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
 @@ -337,9 +337,13 @@ static void rcu_preempt_note_context_switch(bool preempt)
@@ -249,10 +249,10 @@ index a97c20ea9bce..564e3927e7b0 100644
  	    !t->rcu_read_unlock_special.b.blocked) {
  
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index b2149a7ed3cd..ce1cb23cb78f 100644
+index 6bab30347081..d49580cb0eb2 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7316,4 +7316,49 @@ void migrate_enable(void)
+@@ -7354,4 +7354,49 @@ void migrate_enable(void)
  	preempt_enable();
  }
  EXPORT_SYMBOL(migrate_enable);
@@ -303,5 +303,5 @@ index b2149a7ed3cd..ce1cb23cb78f 100644
 +EXPORT_SYMBOL(migrate_enable);
  #endif
 -- 
-2.20.1
+2.25.1
 

@@ -1,0 +1,71 @@
+From 4fcf946bf6e220c1b07cafc8412afffa5b7e1f10 Mon Sep 17 00:00:00 2001
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Sun, 22 Mar 2020 00:00:28 +0100
+Subject: [PATCH 327/328] irq_work: Fix checking of IRQ_WORK_LAZY flag set on
+ non PREEMPT_RT
+
+When CONFIG_PREEMPT_RT_FULL is not set, some of the checks for using
+lazy_list are not properly made as the IRQ_WORK_LAZY is not checked. There's
+two locations that need this update, so a use_lazy_list() helper function is
+added and used in both locations.
+
+Link: https://lore.kernel.org/r/20200321230028.GA22058@duo.ucw.cz
+Reported-by: Pavel Machek <pavel@denx.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/irq_work.c | 15 ++++++++-------
+ 1 file changed, 8 insertions(+), 7 deletions(-)
+
+diff --git a/kernel/irq_work.c b/kernel/irq_work.c
+index 2940622da5b3..b6d9d35941ac 100644
+--- a/kernel/irq_work.c
++++ b/kernel/irq_work.c
+@@ -70,6 +70,12 @@ static void __irq_work_queue_local(struct irq_work *work, struct llist_head *lis
+ 		arch_irq_work_raise();
+ }
+ 
++static inline bool use_lazy_list(struct irq_work *work)
++{
++	return (IS_ENABLED(CONFIG_PREEMPT_RT_FULL) && !(work->flags & IRQ_WORK_HARD_IRQ))
++		|| (work->flags & IRQ_WORK_LAZY);
++}
++
+ /* Enqueue the irq work @work on the current CPU */
+ bool irq_work_queue(struct irq_work *work)
+ {
+@@ -81,11 +87,10 @@ bool irq_work_queue(struct irq_work *work)
+ 
+ 	/* Queue the entry and raise the IPI if needed. */
+ 	preempt_disable();
+-	if (IS_ENABLED(CONFIG_PREEMPT_RT_FULL) && !(work->flags & IRQ_WORK_HARD_IRQ))
++	if (use_lazy_list(work))
+ 		list = this_cpu_ptr(&lazy_list);
+ 	else
+ 		list = this_cpu_ptr(&raised_list);
+-
+ 	__irq_work_queue_local(work, list);
+ 	preempt_enable();
+ 
+@@ -106,7 +111,6 @@ bool irq_work_queue_on(struct irq_work *work, int cpu)
+ 
+ #else /* CONFIG_SMP: */
+ 	struct llist_head *list;
+-	bool lazy_work, realtime = IS_ENABLED(CONFIG_PREEMPT_RT_FULL);
+ 
+ 	/* All work should have been flushed before going offline */
+ 	WARN_ON_ONCE(cpu_is_offline(cpu));
+@@ -116,10 +120,7 @@ bool irq_work_queue_on(struct irq_work *work, int cpu)
+ 		return false;
+ 
+ 	preempt_disable();
+-
+-	lazy_work = work->flags & IRQ_WORK_LAZY;
+-
+-	if (lazy_work || (realtime && !(work->flags & IRQ_WORK_HARD_IRQ)))
++	if (use_lazy_list(work))
+ 		list = &per_cpu(lazy_list, cpu);
+ 	else
+ 		list = &per_cpu(raised_list, cpu);
+-- 
+2.25.1
+

@@ -1,7 +1,7 @@
-From bac483c38a96edeadc43fa8dcf03c3e57c41cc62 Mon Sep 17 00:00:00 2001
+From d349b691ea7fdefe94bb546a0533b63786c1857d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 21 Aug 2013 17:48:46 +0200
-Subject: [PATCH 097/283] genirq: Do not invoke the affinity callback via a
+Subject: [PATCH 097/328] genirq: Do not invoke the affinity callback via a
  workqueue on RT
 
 Joe Korty reported, that __irq_set_affinity_locked() schedules a
@@ -48,10 +48,10 @@ index 315f852b4981..a943c07b54ba 100644
  	void (*release)(struct kref *ref);
  };
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index c3b9f6dacd8f..af2a8757abfb 100644
+index 3c26d0708709..eadcbfbd434a 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -259,7 +259,12 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
+@@ -285,7 +285,12 @@ int irq_set_affinity_locked(struct irq_data *data, const struct cpumask *mask,
  
  	if (desc->affinity_notify) {
  		kref_get(&desc->affinity_notify->kref);
@@ -64,7 +64,7 @@ index c3b9f6dacd8f..af2a8757abfb 100644
  	}
  	irqd_set(data, IRQD_AFFINITY_SET);
  
-@@ -297,10 +302,8 @@ int irq_set_affinity_hint(unsigned int irq, const struct cpumask *m)
+@@ -323,10 +328,8 @@ int irq_set_affinity_hint(unsigned int irq, const struct cpumask *m)
  }
  EXPORT_SYMBOL_GPL(irq_set_affinity_hint);
  
@@ -76,7 +76,7 @@ index c3b9f6dacd8f..af2a8757abfb 100644
  	struct irq_desc *desc = irq_to_desc(notify->irq);
  	cpumask_var_t cpumask;
  	unsigned long flags;
-@@ -322,6 +325,35 @@ static void irq_affinity_notify(struct work_struct *work)
+@@ -348,6 +351,35 @@ static void irq_affinity_notify(struct work_struct *work)
  	kref_put(&notify->kref, notify->release);
  }
  
@@ -112,7 +112,7 @@ index c3b9f6dacd8f..af2a8757abfb 100644
  /**
   *	irq_set_affinity_notifier - control notification of IRQ affinity changes
   *	@irq:		Interrupt for which to enable/disable notification
-@@ -350,7 +382,12 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
+@@ -376,7 +408,12 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
  	if (notify) {
  		notify->irq = irq;
  		kref_init(&notify->kref);
@@ -125,7 +125,7 @@ index c3b9f6dacd8f..af2a8757abfb 100644
  	}
  
  	raw_spin_lock_irqsave(&desc->lock, flags);
-@@ -359,7 +396,10 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
+@@ -385,7 +422,10 @@ irq_set_affinity_notifier(unsigned int irq, struct irq_affinity_notify *notify)
  	raw_spin_unlock_irqrestore(&desc->lock, flags);
  
  	if (old_notify) {
@@ -137,5 +137,5 @@ index c3b9f6dacd8f..af2a8757abfb 100644
  	}
  
 -- 
-2.20.1
+2.25.1
 

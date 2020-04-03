@@ -1,7 +1,7 @@
-From 00cbdab312799cf3648a917434e3178644f44f07 Mon Sep 17 00:00:00 2001
+From 2342184568653d14130d3ce56aec7fcf39e5bf5e Mon Sep 17 00:00:00 2001
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Wed, 5 Oct 2011 11:45:18 -0700
-Subject: [PATCH 160/283] rcu: Make ksoftirqd do RCU quiescent states
+Subject: [PATCH 160/328] rcu: Make ksoftirqd do RCU quiescent states
 
 Implementing RCU-bh in terms of RCU-preempt makes the system vulnerable
 to network-based denial-of-service attacks.  This patch therefore
@@ -64,7 +64,7 @@ index 1456a3d97971..1a40e3d44cb8 100644
  
  /*
 diff --git a/kernel/rcu/tree_plugin.h b/kernel/rcu/tree_plugin.h
-index 429a2f144e19..bee9bffeb0ce 100644
+index e9ce51e19e87..938e64c69d18 100644
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
 @@ -29,6 +29,7 @@
@@ -75,7 +75,7 @@ index 429a2f144e19..bee9bffeb0ce 100644
  #include <linux/sched/isolation.h>
  #include <uapi/linux/sched/types.h>
  #include "../time/tick-internal.h"
-@@ -1407,7 +1408,7 @@ static void rcu_prepare_kthreads(int cpu)
+@@ -1408,7 +1409,7 @@ static void rcu_prepare_kthreads(int cpu)
  
  #endif /* #else #ifdef CONFIG_RCU_BOOST */
  
@@ -84,7 +84,7 @@ index 429a2f144e19..bee9bffeb0ce 100644
  
  /*
   * Check to see if any future RCU-related work will need to be done
-@@ -1423,7 +1424,9 @@ int rcu_needs_cpu(u64 basemono, u64 *nextevt)
+@@ -1424,7 +1425,9 @@ int rcu_needs_cpu(u64 basemono, u64 *nextevt)
  	*nextevt = KTIME_MAX;
  	return rcu_cpu_has_callbacks(NULL);
  }
@@ -94,7 +94,7 @@ index 429a2f144e19..bee9bffeb0ce 100644
  /*
   * Because we do not have RCU_FAST_NO_HZ, don't bother cleaning up
   * after it.
-@@ -1520,6 +1523,8 @@ static bool __maybe_unused rcu_try_advance_all_cbs(void)
+@@ -1521,6 +1524,8 @@ static bool __maybe_unused rcu_try_advance_all_cbs(void)
  	return cbs_ready;
  }
  
@@ -103,7 +103,7 @@ index 429a2f144e19..bee9bffeb0ce 100644
  /*
   * Allow the CPU to enter dyntick-idle mode unless it has callbacks ready
   * to invoke.  If the CPU has callbacks, try to advance them.  Tell the
-@@ -1562,6 +1567,7 @@ int rcu_needs_cpu(u64 basemono, u64 *nextevt)
+@@ -1563,6 +1568,7 @@ int rcu_needs_cpu(u64 basemono, u64 *nextevt)
  	*nextevt = basemono + dj * TICK_NSEC;
  	return 0;
  }
@@ -112,5 +112,5 @@ index 429a2f144e19..bee9bffeb0ce 100644
  /*
   * Prepare a CPU for idle from an RCU perspective.  The first major task
 -- 
-2.20.1
+2.25.1
 

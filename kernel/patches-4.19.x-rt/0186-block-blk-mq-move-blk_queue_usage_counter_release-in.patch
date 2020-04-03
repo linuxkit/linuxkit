@@ -1,7 +1,7 @@
-From a0f3744dd80367c9d401ebb5764b426fa7634006 Mon Sep 17 00:00:00 2001
+From 57df777639aebaef79d278a5dfa3d749c5884099 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 13 Mar 2018 13:49:16 +0100
-Subject: [PATCH 186/283] block: blk-mq: move blk_queue_usage_counter_release()
+Subject: [PATCH 186/328] block: blk-mq: move blk_queue_usage_counter_release()
  into process context
 
 | BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
@@ -51,10 +51,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 15 insertions(+), 1 deletion(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index b6010a1c3aad..38b1bd493165 100644
+index 4860cd26cd5a..13bf37156bb0 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -967,12 +967,21 @@ void blk_queue_exit(struct request_queue *q)
+@@ -973,12 +973,21 @@ void blk_queue_exit(struct request_queue *q)
  	percpu_ref_put(&q->q_usage_counter);
  }
  
@@ -77,7 +77,7 @@ index b6010a1c3aad..38b1bd493165 100644
  }
  
  static void blk_rq_timed_out_timer(struct timer_list *t)
-@@ -1069,6 +1078,7 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id,
+@@ -1075,6 +1084,7 @@ struct request_queue *blk_alloc_queue_node(gfp_t gfp_mask, int node_id,
  	queue_flag_set_unlocked(QUEUE_FLAG_BYPASS, q);
  
  	init_waitqueue_head(&q->mq_freeze_wq);
@@ -85,7 +85,7 @@ index b6010a1c3aad..38b1bd493165 100644
  
  	/*
  	 * Init percpu_ref in atomic mode so that it's faster to shutdown.
-@@ -3958,6 +3968,8 @@ int __init blk_dev_init(void)
+@@ -3964,6 +3974,8 @@ int __init blk_dev_init(void)
  	if (!kblockd_workqueue)
  		panic("Failed to create kblockd\n");
  
@@ -95,7 +95,7 @@ index b6010a1c3aad..38b1bd493165 100644
  			sizeof(struct request), 0, SLAB_PANIC, NULL);
  
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index f93ae914abda..940c794042ae 100644
+index 111ab4209797..2f3b2e5196eb 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
 @@ -27,6 +27,7 @@
@@ -106,7 +106,7 @@ index f93ae914abda..940c794042ae 100644
  
  struct module;
  struct scsi_ioctl_command;
-@@ -649,6 +650,7 @@ struct request_queue {
+@@ -655,6 +656,7 @@ struct request_queue {
  #endif
  	struct rcu_head		rcu_head;
  	wait_queue_head_t	mq_freeze_wq;
@@ -115,5 +115,5 @@ index f93ae914abda..940c794042ae 100644
  	struct list_head	all_q_node;
  
 -- 
-2.20.1
+2.25.1
 

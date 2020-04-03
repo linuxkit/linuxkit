@@ -1,7 +1,7 @@
-From b031672801c6d24d255cc3d458e9a546899c919b Mon Sep 17 00:00:00 2001
+From e5ddc20b573d59f3760489cedf7080c8634ae241 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 29 Aug 2013 18:21:04 +0200
-Subject: [PATCH 154/283] ptrace: fix ptrace vs tasklist_lock race
+Subject: [PATCH 154/328] ptrace: fix ptrace vs tasklist_lock race
 
 As explained by Alexander Fyodorov <halcy@yandex.ru>:
 
@@ -30,7 +30,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  3 files changed, 68 insertions(+), 7 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 1797fd3c8cbb..25e9a40f9576 100644
+index 527d04f9163e..dd47fd913997 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -101,12 +101,8 @@ struct task_group;
@@ -46,7 +46,7 @@ index 1797fd3c8cbb..25e9a40f9576 100644
  #define task_contributes_to_load(task)	((task->state & TASK_UNINTERRUPTIBLE) != 0 && \
  					 (task->flags & PF_FROZEN) == 0 && \
  					 (task->state & TASK_NOLOAD) == 0)
-@@ -1709,6 +1705,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
+@@ -1717,6 +1713,51 @@ static inline int test_tsk_need_resched(struct task_struct *tsk)
  	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
  }
  
@@ -99,7 +99,7 @@ index 1797fd3c8cbb..25e9a40f9576 100644
   * cond_resched() and cond_resched_lock(): latency reduction via
   * explicit rescheduling in places that are safe. The return
 diff --git a/kernel/ptrace.c b/kernel/ptrace.c
-index fed682a01a75..ace2839323de 100644
+index b93eb4eaf7ac..a38b304fb9fd 100644
 --- a/kernel/ptrace.c
 +++ b/kernel/ptrace.c
 @@ -174,7 +174,14 @@ static bool ptrace_freeze_traced(struct task_struct *task)
@@ -119,7 +119,7 @@ index fed682a01a75..ace2839323de 100644
  	}
  	spin_unlock_irq(&task->sighand->siglock);
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 868d3395c3cf..b2149a7ed3cd 100644
+index 6a0ccaea2b42..6bab30347081 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1349,6 +1349,18 @@ int migrate_swap(struct task_struct *cur, struct task_struct *p,
@@ -161,5 +161,5 @@ index 868d3395c3cf..b2149a7ed3cd 100644
  		task_rq_unlock(rq, p, &rf);
  
 -- 
-2.20.1
+2.25.1
 

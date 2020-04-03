@@ -1,7 +1,7 @@
-From e8f1bc60d8f9bb78f3671441af7f6dea46c576a9 Mon Sep 17 00:00:00 2001
+From 340c12c894a65dfd465a251f6f7f795746c803a0 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 12 Nov 2011 14:00:48 +0100
-Subject: [PATCH 220/283] scsi/fcoe: Make RT aware.
+Subject: [PATCH 220/328] scsi/fcoe: Make RT aware.
 
 Do not disable preemption while taking sleeping locks. All user look safe
 for migrate_diable() only.
@@ -72,7 +72,7 @@ index 6768b2e8148a..c20f51af6bdf 100644
  }
  
 diff --git a/drivers/scsi/fcoe/fcoe_ctlr.c b/drivers/scsi/fcoe/fcoe_ctlr.c
-index 7dc4ffa24430..4946df66a5ab 100644
+index 24cbd0a2cc69..ccf60801fe9d 100644
 --- a/drivers/scsi/fcoe/fcoe_ctlr.c
 +++ b/drivers/scsi/fcoe/fcoe_ctlr.c
 @@ -838,7 +838,7 @@ static unsigned long fcoe_ctlr_age_fcfs(struct fcoe_ctlr *fip)
@@ -94,7 +94,7 @@ index 7dc4ffa24430..4946df66a5ab 100644
  	list_for_each_entry_safe(fcf, next, &del_list, list) {
  		/* Removes fcf from current list */
 diff --git a/drivers/scsi/libfc/fc_exch.c b/drivers/scsi/libfc/fc_exch.c
-index 42bcf7f3a0f9..2ce045d6860c 100644
+index 6ba257cbc6d9..d2398a19f84c 100644
 --- a/drivers/scsi/libfc/fc_exch.c
 +++ b/drivers/scsi/libfc/fc_exch.c
 @@ -833,10 +833,10 @@ static struct fc_exch *fc_exch_em_alloc(struct fc_lport *lport,
@@ -111,5 +111,5 @@ index 42bcf7f3a0f9..2ce045d6860c 100644
  	/* peek cache of free slot */
  	if (pool->left != FC_XID_UNKNOWN) {
 -- 
-2.20.1
+2.25.1
 

@@ -1,7 +1,7 @@
-From 86a1cbd4eddbe083ad0331f0eeec002f6fa7b322 Mon Sep 17 00:00:00 2001
+From 6b9121d4d6cf25eabc1b638027345308486f88b1 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Fri, 18 Mar 2011 09:18:52 +0100
-Subject: [PATCH 066/283] buffer_head: Replace bh_uptodate_lock for -rt
+Subject: [PATCH 066/328] buffer_head: Replace bh_uptodate_lock for -rt
 
 Wrap the bit_spin_lock calls into a separate inline and add the RT
 replacements with a real spinlock.
@@ -86,7 +86,7 @@ index a550e0d8e965..a5b3a456dbff 100644
  		__this_cpu_inc(bh_accounting.nr);
  		recalc_bh_state();
 diff --git a/fs/ext4/page-io.c b/fs/ext4/page-io.c
-index db7590178dfc..d76364124443 100644
+index 9cc79b7b0df1..3f4ba2011499 100644
 --- a/fs/ext4/page-io.c
 +++ b/fs/ext4/page-io.c
 @@ -95,8 +95,7 @@ static void ext4_finish_bio(struct bio *bio)
@@ -192,5 +192,5 @@ index 96225a77c112..8a1bcfb145d7 100644
   * macro tricks to expand the set_buffer_foo(), clear_buffer_foo()
   * and buffer_foo() functions.
 -- 
-2.20.1
+2.25.1
 

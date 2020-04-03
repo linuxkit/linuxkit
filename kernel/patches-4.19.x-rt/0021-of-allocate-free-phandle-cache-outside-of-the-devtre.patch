@@ -1,7 +1,7 @@
-From 6d0f5b28de481062ee69b0d62ae5ef2fc5101f9c Mon Sep 17 00:00:00 2001
+From 8779fdd5686d1f9be670c7ee5ea6dfaece9e37d8 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 31 Aug 2018 14:16:30 +0200
-Subject: [PATCH 021/283] of: allocate / free phandle cache outside of the
+Subject: [PATCH 021/328] of: allocate / free phandle cache outside of the
  devtree_lock
 
 The phandle cache code allocates memory while holding devtree_lock which
@@ -18,7 +18,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 13 insertions(+), 6 deletions(-)
 
 diff --git a/drivers/of/base.c b/drivers/of/base.c
-index 3f21ea6a90dc..2c7cf83b200c 100644
+index f0dbb7ad88cf..c59b30bab0e0 100644
 --- a/drivers/of/base.c
 +++ b/drivers/of/base.c
 @@ -130,31 +130,34 @@ static u32 phandle_cache_mask;
@@ -98,5 +98,5 @@ index 3f21ea6a90dc..2c7cf83b200c 100644
  
  void __init of_core_init(void)
 -- 
-2.20.1
+2.25.1
 
