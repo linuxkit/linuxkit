@@ -16,6 +16,7 @@ RUN apk add \
     installkernel \
     kmod \
     elfutils-dev \
+    libunwind-dev \
     linux-headers \
     mpc1-dev \
     mpfr-dev \
@@ -29,9 +30,6 @@ RUN apk add \
     xz \
     xz-dev \
     zlib-dev
-
-# libunwind-dev pkg is missed from arm64 now, below statement will be removed if the pkg is available.
-RUN [ $(uname -m) == x86_64 ] && apk add libunwind-dev || true
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
