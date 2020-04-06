@@ -39,7 +39,7 @@ cd ..
 tar cf files.tar -C files .
 
 # no direct vhd support
-virt-make-fs --size=1G --type=ext4 --partition files.tar disk.img
+virt-make-fs --type=ext4 --partition files.tar disk.img
 
 guestfish -a disk.img -m /dev/sda1 <<EOF
   upload /usr/lib/SYSLINUX/mbr.bin /mbr.bin

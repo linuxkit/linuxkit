@@ -24,9 +24,9 @@ var (
 		"squashfs":    "linuxkit/mkimage-squashfs:c771872c292081a36333425c12e57393bd79f4e9",
 		"gcp":         "linuxkit/mkimage-gcp:a7416d21d4ef642bb2ba560c8f7651250823546d",
 		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:aeb084ea016689ed97bce3b52e2695591cb02693",
-		"vhd":         "linuxkit/mkimage-vhd:4cc60c4f46b07e11c64ba618e46b81fa0096c91f",
+		"vhd":         "linuxkit/mkimage-vhd:07b7cd3d598bce874d6ec05294580e10f1045551",
 		"dynamic-vhd": "linuxkit/mkimage-dynamic-vhd:99b9009ed54a793020d3ce8322a42e0cc06da71a",
-		"vmdk":        "linuxkit/mkimage-vmdk:b55ea46297a16d8a4448ce7f5a2df987a9602b27",
+		"vmdk":        "linuxkit/mkimage-vmdk:3bddab9dd518ee0007b16ad00e60ffdbb76219c0",
 		"rpi3":        "linuxkit/mkimage-rpi3:9dd4f7735e19e495c2b0a856a52af15141816534",
 	}
 )
