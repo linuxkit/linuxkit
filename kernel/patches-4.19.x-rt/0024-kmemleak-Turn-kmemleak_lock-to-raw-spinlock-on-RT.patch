@@ -1,7 +1,7 @@
-From ced9290a5d8460c8a46615a475cd094bc3b0c344 Mon Sep 17 00:00:00 2001
+From 4b0c7eda4403c5a7146714857bd1abffd2b080f8 Mon Sep 17 00:00:00 2001
 From: He Zhe <zhe.he@windriver.com>
 Date: Wed, 19 Dec 2018 16:30:57 +0100
-Subject: [PATCH 024/283] kmemleak: Turn kmemleak_lock to raw spinlock on RT
+Subject: [PATCH 024/328] kmemleak: Turn kmemleak_lock to raw spinlock on RT
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -78,7 +78,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 10 insertions(+), 10 deletions(-)
 
 diff --git a/mm/kmemleak.c b/mm/kmemleak.c
-index 72e3fb3bb037..0ed549045074 100644
+index 5eeabece0c17..92ce99b15f2b 100644
 --- a/mm/kmemleak.c
 +++ b/mm/kmemleak.c
 @@ -26,7 +26,7 @@
@@ -164,5 +164,5 @@ index 72e3fb3bb037..0ed549045074 100644
  
  /*
 -- 
-2.20.1
+2.25.1
 

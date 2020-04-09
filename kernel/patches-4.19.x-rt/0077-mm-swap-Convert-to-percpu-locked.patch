@@ -1,7 +1,7 @@
-From 98c01e9756e741d807b1198eb885a26e0998fcde Mon Sep 17 00:00:00 2001
+From a03a4ee82ac46307acebdfe58e602aea9835a9a1 Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:51 -0500
-Subject: [PATCH 077/283] mm/swap: Convert to percpu locked
+Subject: [PATCH 077/328] mm/swap: Convert to percpu locked
 
 Replace global locks (get_cpu + local_irq_save) with "local_locks()".
 Currently there is one of for "rotate" and one for "swap".
@@ -16,7 +16,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 30 insertions(+), 19 deletions(-)
 
 diff --git a/include/linux/swap.h b/include/linux/swap.h
-index 7bd0a6f2ac2b..e643672fa802 100644
+index ee8f9f554a9e..2ad000e362bd 100644
 --- a/include/linux/swap.h
 +++ b/include/linux/swap.h
 @@ -12,6 +12,7 @@
@@ -36,10 +36,10 @@ index 7bd0a6f2ac2b..e643672fa802 100644
  extern void lru_cache_add_anon(struct page *page);
  extern void lru_cache_add_file(struct page *page);
 diff --git a/mm/compaction.c b/mm/compaction.c
-index faca45ebe62d..f8ccb9d9daa3 100644
+index 5079ddbec8f9..c40d3a13cbbd 100644
 --- a/mm/compaction.c
 +++ b/mm/compaction.c
-@@ -1657,10 +1657,12 @@ static enum compact_result compact_zone(struct zone *zone, struct compact_contro
+@@ -1668,10 +1668,12 @@ static enum compact_result compact_zone(struct zone *zone, struct compact_contro
  				block_start_pfn(cc->migrate_pfn, cc->order);
  
  			if (cc->last_migrated_pfn < current_block_start) {
@@ -55,10 +55,10 @@ index faca45ebe62d..f8ccb9d9daa3 100644
  				cc->last_migrated_pfn = 0;
  			}
 diff --git a/mm/page_alloc.c b/mm/page_alloc.c
-index 99b3861b1ef6..1679f5883307 100644
+index d6f9be9c6635..a1547f1be42c 100644
 --- a/mm/page_alloc.c
 +++ b/mm/page_alloc.c
-@@ -7207,8 +7207,9 @@ void __init free_area_init(unsigned long *zones_size)
+@@ -7242,8 +7242,9 @@ void __init free_area_init(unsigned long *zones_size)
  
  static int page_alloc_cpu_dead(unsigned int cpu)
  {
@@ -70,7 +70,7 @@ index 99b3861b1ef6..1679f5883307 100644
  
  	/*
 diff --git a/mm/swap.c b/mm/swap.c
-index a3fc028e338e..4bac22ec1328 100644
+index 45fdbfb6b2a6..92f994b962f0 100644
 --- a/mm/swap.c
 +++ b/mm/swap.c
 @@ -33,6 +33,7 @@
@@ -206,5 +206,5 @@ index a3fc028e338e..4bac22ec1328 100644
  
  #ifdef CONFIG_SMP
 -- 
-2.20.1
+2.25.1
 

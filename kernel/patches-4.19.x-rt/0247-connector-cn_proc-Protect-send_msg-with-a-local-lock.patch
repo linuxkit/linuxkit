@@ -1,7 +1,7 @@
-From cb13c6a753442e63d2b8097a890892bdd36305f1 Mon Sep 17 00:00:00 2001
+From 8d0546a63b1afa99131c556d9f273f8865eaf480 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Sun, 16 Oct 2016 05:11:54 +0200
-Subject: [PATCH 247/283] connector/cn_proc: Protect send_msg() with a local
+Subject: [PATCH 247/328] connector/cn_proc: Protect send_msg() with a local
  lock on RT
 
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:931
@@ -69,5 +69,5 @@ index ad48fd52cb53..c5264b3ee0b0 100644
  
  void proc_fork_connector(struct task_struct *task)
 -- 
-2.20.1
+2.25.1
 

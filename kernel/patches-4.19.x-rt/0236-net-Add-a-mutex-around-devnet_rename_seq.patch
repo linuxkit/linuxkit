@@ -1,7 +1,7 @@
-From c9f595c704d979c0123fa62e3ef3a6254b32f2da Mon Sep 17 00:00:00 2001
+From b93f55390ad8ab8d74d16b0d67fcfdbf8be92dae Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 20 Mar 2013 18:06:20 +0100
-Subject: [PATCH 236/283] net: Add a mutex around devnet_rename_seq
+Subject: [PATCH 236/328] net: Add a mutex around devnet_rename_seq
 
 On RT write_seqcount_begin() disables preemption and device_rename()
 allocates memory with GFP_KERNEL and grabs later the sysfs_mutex
@@ -21,10 +21,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 20 insertions(+), 14 deletions(-)
 
 diff --git a/net/core/dev.c b/net/core/dev.c
-index cdf356fe054c..63b3058dd172 100644
+index 935156f1c5d4..dbd9bdffafff 100644
 --- a/net/core/dev.c
 +++ b/net/core/dev.c
-@@ -195,6 +195,7 @@ static unsigned int napi_gen_id = NR_CPUS;
+@@ -196,6 +196,7 @@ static unsigned int napi_gen_id = NR_CPUS;
  static DEFINE_READ_MOSTLY_HASHTABLE(napi_hash, 8);
  
  static seqcount_t devnet_rename_seq;
@@ -32,7 +32,7 @@ index cdf356fe054c..63b3058dd172 100644
  
  static inline void dev_base_seq_inc(struct net *net)
  {
-@@ -920,7 +921,8 @@ int netdev_get_name(struct net *net, char *name, int ifindex)
+@@ -921,7 +922,8 @@ int netdev_get_name(struct net *net, char *name, int ifindex)
  	strcpy(name, dev->name);
  	rcu_read_unlock();
  	if (read_seqcount_retry(&devnet_rename_seq, seq)) {
@@ -42,7 +42,7 @@ index cdf356fe054c..63b3058dd172 100644
  		goto retry;
  	}
  
-@@ -1197,20 +1199,17 @@ int dev_change_name(struct net_device *dev, const char *newname)
+@@ -1198,20 +1200,17 @@ int dev_change_name(struct net_device *dev, const char *newname)
  	    likely(!(dev->priv_flags & IFF_LIVE_RENAME_OK)))
  		return -EBUSY;
  
@@ -69,7 +69,7 @@ index cdf356fe054c..63b3058dd172 100644
  
  	if (oldname[0] && !strchr(oldname, '%'))
  		netdev_info(dev, "renamed from %s\n", oldname);
-@@ -1223,11 +1222,12 @@ int dev_change_name(struct net_device *dev, const char *newname)
+@@ -1224,11 +1223,12 @@ int dev_change_name(struct net_device *dev, const char *newname)
  	if (ret) {
  		memcpy(dev->name, oldname, IFNAMSIZ);
  		dev->name_assign_type = old_assign_type;
@@ -85,7 +85,7 @@ index cdf356fe054c..63b3058dd172 100644
  
  	netdev_adjacent_rename_links(dev, oldname);
  
-@@ -1248,7 +1248,8 @@ int dev_change_name(struct net_device *dev, const char *newname)
+@@ -1249,7 +1249,8 @@ int dev_change_name(struct net_device *dev, const char *newname)
  		/* err >= 0 after dev_alloc_name() or stores the first errno */
  		if (err >= 0) {
  			err = ret;
@@ -95,7 +95,7 @@ index cdf356fe054c..63b3058dd172 100644
  			memcpy(dev->name, oldname, IFNAMSIZ);
  			memcpy(oldname, newname, IFNAMSIZ);
  			dev->name_assign_type = old_assign_type;
-@@ -1261,6 +1262,11 @@ int dev_change_name(struct net_device *dev, const char *newname)
+@@ -1262,6 +1263,11 @@ int dev_change_name(struct net_device *dev, const char *newname)
  	}
  
  	return err;
@@ -108,5 +108,5 @@ index cdf356fe054c..63b3058dd172 100644
  
  /**
 -- 
-2.20.1
+2.25.1
 

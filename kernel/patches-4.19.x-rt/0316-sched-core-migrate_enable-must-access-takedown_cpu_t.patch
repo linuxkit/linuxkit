@@ -1,0 +1,54 @@
+From 459ffc40b777727525726563ee2522a82ecfa12c Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 29 Nov 2019 17:24:55 +0100
+Subject: [PATCH 316/328] sched/core: migrate_enable() must access
+ takedown_cpu_task on !HOTPLUG_CPU
+
+[ Upstream commit a61d1977f692e46bad99a100f264981ba08cb4bd ]
+
+The variable takedown_cpu_task is never declared/used on !HOTPLUG_CPU
+except for migrate_enable(). This leads to a link error.
+
+Don't use takedown_cpu_task in !HOTPLUG_CPU.
+
+Reported-by: Dick Hollenbeck <dick@softplc.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ kernel/cpu.c        | 2 ++
+ kernel/sched/core.c | 2 ++
+ 2 files changed, 4 insertions(+)
+
+diff --git a/kernel/cpu.c b/kernel/cpu.c
+index 2834eed32b55..d28254597f59 100644
+--- a/kernel/cpu.c
++++ b/kernel/cpu.c
+@@ -845,7 +845,9 @@ static int take_cpu_down(void *_param)
+ 	return 0;
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT_BASE
+ struct task_struct *takedown_cpu_task;
++#endif
+ 
+ static int takedown_cpu(unsigned int cpu)
+ {
+diff --git a/kernel/sched/core.c b/kernel/sched/core.c
+index e465381b464d..cbd76324babd 100644
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -7314,9 +7314,11 @@ void migrate_enable(void)
+ 
+ 	p->migrate_disable = 0;
+ 	rq->nr_pinned--;
++#ifdef CONFIG_HOTPLUG_CPU
+ 	if (rq->nr_pinned == 0 && unlikely(!cpu_active(cpu)) &&
+ 	    takedown_cpu_task)
+ 		wake_up_process(takedown_cpu_task);
++#endif
+ 
+ 	if (!p->migrate_disable_scheduled)
+ 		goto out;
+-- 
+2.25.1
+

@@ -1,7 +1,7 @@
-From 1b7fcb7ee765eafbf39fa9f1427f38370c00eff3 Mon Sep 17 00:00:00 2001
+From 713f8459593a71106384c1a9ba33189561ea892e Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sat, 25 Jun 2011 09:21:04 +0200
-Subject: [PATCH 110/283] sched: Add saved_state for tasks blocked on sleeping
+Subject: [PATCH 110/328] sched: Add saved_state for tasks blocked on sleeping
  locks
 
 Spinlocks are state preserving in !RT. RT changes the state when a
@@ -18,7 +18,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 36 insertions(+), 1 deletion(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index a6f2f76b1162..ad44849fba2e 100644
+index 0b8850b6093b..f180bfadff33 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -600,6 +600,8 @@ struct task_struct {
@@ -30,7 +30,7 @@ index a6f2f76b1162..ad44849fba2e 100644
  
  	/*
  	 * This begins the randomizable portion of task_struct. Only
-@@ -1613,6 +1615,7 @@ extern struct task_struct *find_get_task_by_vpid(pid_t nr);
+@@ -1621,6 +1623,7 @@ extern struct task_struct *find_get_task_by_vpid(pid_t nr);
  
  extern int wake_up_state(struct task_struct *tsk, unsigned int state);
  extern int wake_up_process(struct task_struct *tsk);
@@ -39,7 +39,7 @@ index a6f2f76b1162..ad44849fba2e 100644
  
  #ifdef CONFIG_SMP
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 31d8e5828ece..5734699b0812 100644
+index 79e0d052e848..d1c564acff76 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1999,8 +1999,27 @@ try_to_wake_up(struct task_struct *p, unsigned int state, int wake_flags)
@@ -91,10 +91,10 @@ index 31d8e5828ece..5734699b0812 100644
  {
  	return try_to_wake_up(p, state, 0);
 diff --git a/kernel/sched/sched.h b/kernel/sched/sched.h
-index 9a7c3d08b39f..49ae30da28ee 100644
+index 94bec97bd5e2..c79e32488940 100644
 --- a/kernel/sched/sched.h
 +++ b/kernel/sched/sched.h
-@@ -1443,6 +1443,7 @@ static inline int task_on_rq_migrating(struct task_struct *p)
+@@ -1439,6 +1439,7 @@ static inline int task_on_rq_migrating(struct task_struct *p)
  #define WF_SYNC			0x01		/* Waker goes to sleep after wakeup */
  #define WF_FORK			0x02		/* Child wakeup after fork */
  #define WF_MIGRATED		0x4		/* Internal use, task got migrated */
@@ -103,5 +103,5 @@ index 9a7c3d08b39f..49ae30da28ee 100644
  /*
   * To aid in avoiding the subversion of "niceness" due to uneven distribution
 -- 
-2.20.1
+2.25.1
 

@@ -1,0 +1,47 @@
+From 7c3f8afe7bf7bfc55e4dd00b2cdc0471d7fa56b4 Mon Sep 17 00:00:00 2001
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 13 Aug 2019 12:30:12 +0200
+Subject: [PATCH 290/328] i2c: exynos5: Remove IRQF_ONESHOT
+
+[ Upstream commit 4b217df0ab3f7910c96e42091cc7d9f221d05f01 ]
+
+The drivers sets IRQF_ONESHOT and passes only a primary handler. The IRQ
+is masked while the primary is handler is invoked independently of
+IRQF_ONESHOT.
+With IRQF_ONESHOT the core code will not force-thread the interrupt and
+this is probably not intended. I *assume* that the original author copied
+the IRQ registration from another driver which passed a primary and
+secondary handler and removed the secondary handler but keeping the
+ONESHOT flag.
+
+Remove IRQF_ONESHOT.
+
+Reported-by: Benjamin Rouxel <benjamin.rouxel@uva.nl>
+Tested-by: Benjamin Rouxel <benjamin.rouxel@uva.nl>
+Cc: Kukjin Kim <kgene@kernel.org>
+Cc: Krzysztof Kozlowski <krzk@kernel.org>
+Cc: linux-samsung-soc@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ drivers/i2c/busses/i2c-exynos5.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/drivers/i2c/busses/i2c-exynos5.c b/drivers/i2c/busses/i2c-exynos5.c
+index c1ce2299a76e..5c57ecf4b79e 100644
+--- a/drivers/i2c/busses/i2c-exynos5.c
++++ b/drivers/i2c/busses/i2c-exynos5.c
+@@ -800,9 +800,7 @@ static int exynos5_i2c_probe(struct platform_device *pdev)
+ 	}
+ 
+ 	ret = devm_request_irq(&pdev->dev, i2c->irq, exynos5_i2c_irq,
+-				IRQF_NO_SUSPEND | IRQF_ONESHOT,
+-				dev_name(&pdev->dev), i2c);
+-
++			       IRQF_NO_SUSPEND, dev_name(&pdev->dev), i2c);
+ 	if (ret != 0) {
+ 		dev_err(&pdev->dev, "cannot request HS-I2C IRQ %d\n", i2c->irq);
+ 		goto err_clk;
+-- 
+2.25.1
+

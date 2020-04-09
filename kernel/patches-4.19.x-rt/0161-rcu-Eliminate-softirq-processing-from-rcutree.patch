@@ -1,7 +1,7 @@
-From e270d045cc4c717e9781c7e4f0d351b63e61858a Mon Sep 17 00:00:00 2001
+From 7f9bb7afbe82ac923286da26040cd1aea23359aa Mon Sep 17 00:00:00 2001
 From: "Paul E. McKenney" <paulmck@linux.vnet.ibm.com>
 Date: Mon, 4 Nov 2013 13:21:10 -0800
-Subject: [PATCH 161/283] rcu: Eliminate softirq processing from rcutree
+Subject: [PATCH 161/328] rcu: Eliminate softirq processing from rcutree
 
 Running RCU out of softirq is a problem for some workloads that would
 like to manage RCU core processing independently of other softirq work,
@@ -210,7 +210,7 @@ index fbbff7c21148..98257d20feb2 100644
  static int rcu_spawn_one_boost_kthread(struct rcu_state *rsp,
  						 struct rcu_node *rnp);
 diff --git a/kernel/rcu/tree_plugin.h b/kernel/rcu/tree_plugin.h
-index bee9bffeb0ce..2e8737f1010f 100644
+index 938e64c69d18..56639c8ed550 100644
 --- a/kernel/rcu/tree_plugin.h
 +++ b/kernel/rcu/tree_plugin.h
 @@ -24,42 +24,16 @@
@@ -256,7 +256,7 @@ index bee9bffeb0ce..2e8737f1010f 100644
  #ifdef CONFIG_RCU_NOCB_CPU
  static cpumask_var_t rcu_nocb_mask; /* CPUs to have callbacks offloaded. */
  static bool __read_mostly rcu_nocb_poll;    /* Offload kthread are to poll. */
-@@ -1027,18 +1001,21 @@ dump_blkd_tasks(struct rcu_state *rsp, struct rcu_node *rnp, int ncheck)
+@@ -1028,18 +1002,21 @@ dump_blkd_tasks(struct rcu_state *rsp, struct rcu_node *rnp, int ncheck)
  
  #endif /* #else #ifdef CONFIG_PREEMPT_RCU */
  
@@ -286,7 +286,7 @@ index bee9bffeb0ce..2e8737f1010f 100644
  /*
   * Carry out RCU priority boosting on the task indicated by ->exp_tasks
   * or ->boost_tasks, advancing the pointer to the next task in the
-@@ -1176,23 +1153,6 @@ static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags)
+@@ -1177,23 +1154,6 @@ static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags)
  	}
  }
  
@@ -310,7 +310,7 @@ index bee9bffeb0ce..2e8737f1010f 100644
  /*
   * Is the current CPU running the RCU-callbacks kthread?
   * Caller must have preemption disabled.
-@@ -1247,67 +1207,6 @@ static int rcu_spawn_one_boost_kthread(struct rcu_state *rsp,
+@@ -1248,67 +1208,6 @@ static int rcu_spawn_one_boost_kthread(struct rcu_state *rsp,
  	return 0;
  }
  
@@ -378,7 +378,7 @@ index bee9bffeb0ce..2e8737f1010f 100644
  /*
   * Set the per-rcu_node kthread's affinity to cover all CPUs that are
   * served by the rcu_node in question.  The CPU hotplug lock is still
-@@ -1338,26 +1237,12 @@ static void rcu_boost_kthread_setaffinity(struct rcu_node *rnp, int outgoingcpu)
+@@ -1339,26 +1238,12 @@ static void rcu_boost_kthread_setaffinity(struct rcu_node *rnp, int outgoingcpu)
  	free_cpumask_var(cm);
  }
  
@@ -405,7 +405,7 @@ index bee9bffeb0ce..2e8737f1010f 100644
  	rcu_for_each_leaf_node(rcu_state_p, rnp)
  		(void)rcu_spawn_one_boost_kthread(rcu_state_p, rnp);
  }
-@@ -1380,11 +1265,6 @@ static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags)
+@@ -1381,11 +1266,6 @@ static void rcu_initiate_boost(struct rcu_node *rnp, unsigned long flags)
  	raw_spin_unlock_irqrestore_rcu_node(rnp, flags);
  }
  
@@ -418,5 +418,5 @@ index bee9bffeb0ce..2e8737f1010f 100644
  {
  	return false;
 -- 
-2.20.1
+2.25.1
 

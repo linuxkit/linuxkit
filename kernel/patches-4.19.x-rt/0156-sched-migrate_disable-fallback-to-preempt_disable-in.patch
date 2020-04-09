@@ -1,7 +1,7 @@
-From 55652e517f87d321623cda451d7bfbcdc55528d9 Mon Sep 17 00:00:00 2001
+From 517e8491cd9ecd425b48019a9303e744ed3200b6 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 5 Jul 2018 14:44:51 +0200
-Subject: [PATCH 156/283] sched/migrate_disable: fallback to preempt_disable()
+Subject: [PATCH 156/328] sched/migrate_disable: fallback to preempt_disable()
  instead barrier()
 
 On SMP + !RT migrate_disable() is still around. It is not part of spin_lock()
@@ -70,7 +70,7 @@ index 9eafc34898b4..ed8413e7140f 100644
  {
  	return 0;
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 8f0bb5f6d39e..a023e1ba5d8f 100644
+index 682cf84a7e1b..a38a2c2a8fe4 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -667,7 +667,7 @@ struct task_struct {
@@ -93,7 +93,7 @@ index 8f0bb5f6d39e..a023e1ba5d8f 100644
  # endif
  #endif
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index ce1cb23cb78f..36f791ff52bc 100644
+index d49580cb0eb2..3b2664e691de 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1031,7 +1031,7 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
@@ -114,7 +114,7 @@ index ce1cb23cb78f..36f791ff52bc 100644
  	if (__migrate_disabled(p)) {
  		lockdep_assert_held(&p->pi_lock);
  
-@@ -1144,7 +1144,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1145,7 +1145,7 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  	if (cpumask_test_cpu(task_cpu(p), new_mask) || __migrate_disabled(p))
  		goto out;
  
@@ -123,7 +123,7 @@ index ce1cb23cb78f..36f791ff52bc 100644
  	if (__migrate_disabled(p)) {
  		p->migrate_disable_update = 1;
  		goto out;
-@@ -7172,7 +7172,7 @@ const u32 sched_prio_to_wmult[40] = {
+@@ -7210,7 +7210,7 @@ const u32 sched_prio_to_wmult[40] = {
  
  #undef CREATE_TRACE_POINTS
  
@@ -132,7 +132,7 @@ index ce1cb23cb78f..36f791ff52bc 100644
  
  static inline void
  update_nr_migratory(struct task_struct *p, long delta)
-@@ -7320,45 +7320,44 @@ EXPORT_SYMBOL(migrate_enable);
+@@ -7358,45 +7358,44 @@ EXPORT_SYMBOL(migrate_enable);
  #elif !defined(CONFIG_SMP) && defined(CONFIG_PREEMPT_RT_BASE)
  void migrate_disable(void)
  {
@@ -199,5 +199,5 @@ index 5027158d3908..dd6c364d6f01 100644
  #endif
  	P(nr_cpus_allowed);
 -- 
-2.20.1
+2.25.1
 

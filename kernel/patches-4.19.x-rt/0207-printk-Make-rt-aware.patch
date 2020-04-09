@@ -1,7 +1,7 @@
-From fd90db4e8653f0ebf2a6959313658fcdaadec8fc Mon Sep 17 00:00:00 2001
+From e06507e6c3956ece840a3de1c8124c035609a1fb Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Sep 2012 14:50:37 +0200
-Subject: [PATCH 207/283] printk: Make rt aware
+Subject: [PATCH 207/328] printk: Make rt aware
 
 Drop the lock before calling the console driver and do not disable
 interrupts while printing to a serial console.
@@ -12,10 +12,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  1 file changed, 30 insertions(+), 3 deletions(-)
 
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 6553508ff388..d983c509f74a 100644
+index f934baed564d..c927f89961a8 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
-@@ -1617,6 +1617,7 @@ SYSCALL_DEFINE3(syslog, int, type, char __user *, buf, int, len)
+@@ -1624,6 +1624,7 @@ SYSCALL_DEFINE3(syslog, int, type, char __user *, buf, int, len)
  	return do_syslog(type, buf, len, SYSLOG_FROM_READER);
  }
  
@@ -23,7 +23,7 @@ index 6553508ff388..d983c509f74a 100644
  /*
   * Special console_lock variants that help to reduce the risk of soft-lockups.
   * They allow to pass console_lock to another printk() call using a busy wait.
-@@ -1757,6 +1758,15 @@ static int console_trylock_spinning(void)
+@@ -1764,6 +1765,15 @@ static int console_trylock_spinning(void)
  	return 1;
  }
  
@@ -39,7 +39,7 @@ index 6553508ff388..d983c509f74a 100644
  /*
   * Call the console drivers, asking them to write out
   * log_buf[start] to log_buf[end - 1].
-@@ -1772,6 +1782,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1779,6 +1789,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  	if (!console_drivers)
  		return;
  
@@ -47,7 +47,7 @@ index 6553508ff388..d983c509f74a 100644
  	for_each_console(con) {
  		if (exclusive_console && con != exclusive_console)
  			continue;
-@@ -1787,6 +1798,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
+@@ -1794,6 +1805,7 @@ static void call_console_drivers(const char *ext_text, size_t ext_len,
  		else
  			con->write(con, text, len);
  	}
@@ -55,10 +55,10 @@ index 6553508ff388..d983c509f74a 100644
  }
  
  int printk_delay_msec __read_mostly;
-@@ -1978,20 +1990,30 @@ asmlinkage int vprintk_emit(int facility, int level,
+@@ -1988,20 +2000,30 @@ asmlinkage int vprintk_emit(int facility, int level,
  
  	/* If called from the scheduler, we can not call up(). */
- 	if (!in_sched) {
+ 	if (!in_sched && pending_output) {
 +		int may_trylock = 1;
 +
 +#ifdef CONFIG_PREEMPT_RT_FULL
@@ -88,8 +88,8 @@ index 6553508ff388..d983c509f74a 100644
 +		migrate_enable();
  	}
  
- 	wake_up_klogd();
-@@ -2444,6 +2466,10 @@ void console_unlock(void)
+ 	if (pending_output)
+@@ -2463,6 +2485,10 @@ void console_unlock(void)
  		console_seq++;
  		raw_spin_unlock(&logbuf_lock);
  
@@ -100,7 +100,7 @@ index 6553508ff388..d983c509f74a 100644
  		/*
  		 * While actively printing out messages, if another printk()
  		 * were to occur on another CPU, it may wait for this one to
-@@ -2462,6 +2488,7 @@ void console_unlock(void)
+@@ -2481,6 +2507,7 @@ void console_unlock(void)
  		}
  
  		printk_safe_exit_irqrestore(flags);
@@ -109,5 +109,5 @@ index 6553508ff388..d983c509f74a 100644
  		if (do_cond_resched)
  			cond_resched();
 -- 
-2.20.1
+2.25.1
 

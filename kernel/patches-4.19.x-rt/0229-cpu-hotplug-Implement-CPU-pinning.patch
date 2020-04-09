@@ -1,7 +1,7 @@
-From 8d14b62a0aef3f8f55641157c07a65df44f4cdda Mon Sep 17 00:00:00 2001
+From cdd389d22cc7f273f3d955eeacc80bda55db5bb8 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 19 Jul 2017 17:31:20 +0200
-Subject: [PATCH 229/283] cpu/hotplug: Implement CPU pinning
+Subject: [PATCH 229/328] cpu/hotplug: Implement CPU pinning
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -10,7 +10,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 39 insertions(+)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 76e6cdafb992..0445d5c7ced0 100644
+index dc668524ccff..fc9300d0787d 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -671,6 +671,7 @@ struct task_struct {
@@ -22,7 +22,7 @@ index 76e6cdafb992..0445d5c7ced0 100644
  	int				migrate_disable_atomic;
  # endif
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 9001e1779325..89b56880314d 100644
+index 328d7bf67d2f..e005e64ae30f 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -75,6 +75,11 @@ static DEFINE_PER_CPU(struct cpuhp_cpu_state, cpuhp_state) = {
@@ -112,5 +112,5 @@ index 9001e1779325..89b56880314d 100644
  	irq_unlock_sparse();
  
 -- 
-2.20.1
+2.25.1
 

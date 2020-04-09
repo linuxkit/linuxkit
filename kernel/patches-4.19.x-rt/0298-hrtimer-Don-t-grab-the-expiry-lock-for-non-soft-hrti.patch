@@ -1,0 +1,40 @@
+From 3097c6c64c15f7942c9b280325c27db70de41d04 Mon Sep 17 00:00:00 2001
+From: Julien Grall <julien.grall@arm.com>
+Date: Wed, 21 Aug 2019 10:24:08 +0100
+Subject: [PATCH 298/328] hrtimer: Don't grab the expiry lock for non-soft
+ hrtimer
+
+[ Upstream commit fd420354bea2f57c11f3de191dffdeea76531e76 ]
+
+Acquiring the lock in hrtimer_grab_expiry_lock() is designed for
+sleeping-locks and should not be used with disabled interrupts.
+hrtimer_cancel() may invoke hrtimer_grab_expiry_lock() also for locks
+which expire in hard-IRQ context.
+
+Let hrtimer_cancel() invoke hrtimer_grab_expiry_lock() only for locks
+which expire in softirq context.
+
+Signed-off-by: Julien Grall <julien.grall@arm.com>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+[bigeasy: rewrite changelog]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/time/hrtimer.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
+index d6026c170c2d..49d20fe8570f 100644
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -943,7 +943,7 @@ void hrtimer_grab_expiry_lock(const struct hrtimer *timer)
+ {
+ 	struct hrtimer_clock_base *base = READ_ONCE(timer->base);
+ 
+-	if (base && base->cpu_base) {
++	if (timer->is_soft && base && base->cpu_base) {
+ 		spin_lock(&base->cpu_base->softirq_expiry_lock);
+ 		spin_unlock(&base->cpu_base->softirq_expiry_lock);
+ 	}
+-- 
+2.25.1
+

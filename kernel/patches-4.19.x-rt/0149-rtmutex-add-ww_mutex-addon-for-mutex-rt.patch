@@ -1,7 +1,7 @@
-From a0132c114d821b81d4e4104b797f76f0dd8fbcba Mon Sep 17 00:00:00 2001
+From 01d5bbd35ae2a2b3350c42e526b0199fb3836e48 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 12 Oct 2017 17:34:38 +0200
-Subject: [PATCH 149/283] rtmutex: add ww_mutex addon for mutex-rt
+Subject: [PATCH 149/328] rtmutex: add ww_mutex addon for mutex-rt
 
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 ---
@@ -440,5 +440,5 @@ index 7d3c5cf3d23d..660e22caf709 100644
  	 * The slowlock() above is guaranteed to return with the rtmutex (for
  	 * ret = 0) is now held, so there can't be a writer active. Increment
 -- 
-2.20.1
+2.25.1
 

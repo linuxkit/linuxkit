@@ -1,7 +1,7 @@
-From cea179e4bc61a9548573e2f5ece3e78b976c35eb Mon Sep 17 00:00:00 2001
+From b04beb8ffbac46b3e231d5032cabf43bb8638052 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 17 Jul 2011 21:56:42 +0200
-Subject: [PATCH 117/283] trace: Add migrate-disabled counter to tracing output
+Subject: [PATCH 117/328] trace: Add migrate-disabled counter to tracing output
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 ---
@@ -12,7 +12,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  4 files changed, 15 insertions(+), 3 deletions(-)
 
 diff --git a/include/linux/trace_events.h b/include/linux/trace_events.h
-index 78a010e19ed4..0403d9696944 100644
+index 0643c083ed86..1cc4d2da954c 100644
 --- a/include/linux/trace_events.h
 +++ b/include/linux/trace_events.h
 @@ -62,6 +62,8 @@ struct trace_entry {
@@ -25,7 +25,7 @@ index 78a010e19ed4..0403d9696944 100644
  
  #define TRACE_EVENT_TYPE_MAX						\
 diff --git a/kernel/trace/trace.c b/kernel/trace/trace.c
-index 3b0de19b9ed7..496c5d358010 100644
+index e61aa1c68e99..5eccf1c201db 100644
 --- a/kernel/trace/trace.c
 +++ b/kernel/trace/trace.c
 @@ -2149,6 +2149,8 @@ tracing_generic_entry_update(struct trace_entry *entry, unsigned long flags,
@@ -52,7 +52,7 @@ index 3b0de19b9ed7..496c5d358010 100644
  
  static void print_event_info(struct trace_buffer *buf, struct seq_file *m)
 diff --git a/kernel/trace/trace_events.c b/kernel/trace/trace_events.c
-index 7345f5f8f3fe..6455e2ca7987 100644
+index ec340e1cbffc..1febb0ca4c81 100644
 --- a/kernel/trace/trace_events.c
 +++ b/kernel/trace/trace_events.c
 @@ -188,6 +188,8 @@ static int trace_define_common_fields(void)
@@ -81,5 +81,5 @@ index 6e6cc64faa38..46c96744f09d 100644
  }
  
 -- 
-2.20.1
+2.25.1
 

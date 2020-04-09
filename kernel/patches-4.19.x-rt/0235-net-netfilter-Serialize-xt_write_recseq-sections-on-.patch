@@ -1,7 +1,7 @@
-From 0e06ddd7109d337dafee0134e5e07c2a2ca1b4fb Mon Sep 17 00:00:00 2001
+From 36ec80a84528a6adb376007baf97560835f37d79 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Sun, 28 Oct 2012 11:18:08 +0100
-Subject: [PATCH 235/283] net: netfilter: Serialize xt_write_recseq sections on
+Subject: [PATCH 235/328] net: netfilter: Serialize xt_write_recseq sections on
  RT
 
 The netfilter code relies only on the implicit semantics of
@@ -79,5 +79,5 @@ index 93aaec3a54ec..b364cf8e5776 100644
  EXPORT_SYMBOL_GPL(nf_ipv6_ops);
  
 -- 
-2.20.1
+2.25.1
 

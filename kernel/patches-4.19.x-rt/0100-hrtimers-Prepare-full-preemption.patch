@@ -1,7 +1,7 @@
-From 15ee476637495474369f2b444a8ae5c041e59ed4 Mon Sep 17 00:00:00 2001
+From 46ce0d2ba1077d583aa36bef4e8ffb712246bf2e Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 3 Jul 2009 08:29:34 -0500
-Subject: [PATCH 100/283] hrtimers: Prepare full preemption
+Subject: [PATCH 100/328] hrtimers: Prepare full preemption
 
 Make cancellation of a running callback in softirq context safe
 against preemption.
@@ -35,7 +35,7 @@ index d69ad801eb80..82d0f52414a6 100644
  
  	/*
 diff --git a/include/linux/hrtimer.h b/include/linux/hrtimer.h
-index b8bbaabd5aff..73ad7309436a 100644
+index cbd041b22088..8714f1a37d84 100644
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
 @@ -22,6 +22,7 @@
@@ -70,7 +70,7 @@ index b8bbaabd5aff..73ad7309436a 100644
  /* Query timers: */
  extern ktime_t __hrtimer_get_remaining(const struct hrtimer *timer, bool adjust);
  
-@@ -458,7 +469,7 @@ static inline int hrtimer_is_queued(struct hrtimer *timer)
+@@ -464,7 +475,7 @@ static inline bool hrtimer_is_queued(struct hrtimer *timer)
   * Helper function to check, whether the timer is running the callback
   * function
   */
@@ -94,10 +94,10 @@ index ee7e987ea1b4..0571b498db73 100644
  
  void run_posix_cpu_timers(struct task_struct *task);
 diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
-index fdeb9bc6affb..966708e8ce14 100644
+index 9eece67f29f3..a465564367ec 100644
 --- a/kernel/time/alarmtimer.c
 +++ b/kernel/time/alarmtimer.c
-@@ -436,7 +436,7 @@ int alarm_cancel(struct alarm *alarm)
+@@ -438,7 +438,7 @@ int alarm_cancel(struct alarm *alarm)
  		int ret = alarm_try_to_cancel(alarm);
  		if (ret >= 0)
  			return ret;
@@ -107,7 +107,7 @@ index fdeb9bc6affb..966708e8ce14 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index 4f43ece42f3b..923a650e5c35 100644
+index c6f755495a63..e135cb27db39 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -939,6 +939,33 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -144,7 +144,7 @@ index 4f43ece42f3b..923a650e5c35 100644
  /*
   * enqueue_hrtimer - internal function to (re)start a timer
   *
-@@ -1171,7 +1198,7 @@ int hrtimer_cancel(struct hrtimer *timer)
+@@ -1174,7 +1201,7 @@ int hrtimer_cancel(struct hrtimer *timer)
  
  		if (ret >= 0)
  			return ret;
@@ -153,7 +153,7 @@ index 4f43ece42f3b..923a650e5c35 100644
  	}
  }
  EXPORT_SYMBOL_GPL(hrtimer_cancel);
-@@ -1477,6 +1504,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1480,6 +1507,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	hrtimer_update_softirq_timer(cpu_base, true);
  
  	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
@@ -161,7 +161,7 @@ index 4f43ece42f3b..923a650e5c35 100644
  }
  
  #ifdef CONFIG_HIGH_RES_TIMERS
-@@ -1846,6 +1874,9 @@ int hrtimers_prepare_cpu(unsigned int cpu)
+@@ -1849,6 +1877,9 @@ int hrtimers_prepare_cpu(unsigned int cpu)
  	cpu_base->softirq_next_timer = NULL;
  	cpu_base->expires_next = KTIME_MAX;
  	cpu_base->softirq_expires_next = KTIME_MAX;
@@ -285,5 +285,5 @@ index 5a01c4fdbfef..a5ec421e3437 100644
  	}
  	list_del(&timer->list);
 -- 
-2.20.1
+2.25.1
 

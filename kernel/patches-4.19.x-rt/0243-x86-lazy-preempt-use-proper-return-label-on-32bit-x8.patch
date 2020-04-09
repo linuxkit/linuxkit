@@ -1,7 +1,7 @@
-From fb5b75a4b989c8e039eb585a99ee0c41ae05664b Mon Sep 17 00:00:00 2001
+From 95f51ccaa646d290d44e1c6a6fece8cebcce7f82 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 26 Feb 2019 14:53:49 +0100
-Subject: [PATCH 243/283] x86: lazy-preempt: use proper return label on
+Subject: [PATCH 243/328] x86: lazy-preempt: use proper return label on
  32bit-x86
 
 The lazy-preempt uses the wrong return label in case preemption isn't
@@ -16,10 +16,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 4 insertions(+), 4 deletions(-)
 
 diff --git a/arch/x86/entry/entry_32.S b/arch/x86/entry/entry_32.S
-index 83d43eb2f556..0b25d2efdb87 100644
+index d44f446a0e74..56398b07211b 100644
 --- a/arch/x86/entry/entry_32.S
 +++ b/arch/x86/entry/entry_32.S
-@@ -775,15 +775,15 @@ ENTRY(resume_kernel)
+@@ -759,15 +759,15 @@ ENTRY(resume_kernel)
  
  	# atleast preempt count == 0 ?
  	cmpl $_PREEMPT_ENABLED,PER_CPU_VAR(__preempt_count)
@@ -40,5 +40,5 @@ index 83d43eb2f556..0b25d2efdb87 100644
  	testl	$X86_EFLAGS_IF, PT_EFLAGS(%esp)	# interrupts off (exception path) ?
  	jz	restore_all_kernel
 -- 
-2.20.1
+2.25.1
 

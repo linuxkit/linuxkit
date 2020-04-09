@@ -1,7 +1,7 @@
-From 0a9138797894a06ad63067de77df6b2dcd97b61e Mon Sep 17 00:00:00 2001
+From 50ea98cbb28042ef353cdb79d52d70d051d45c50 Mon Sep 17 00:00:00 2001
 From: Mike Galbraith <umgwanakikbuti@gmail.com>
 Date: Thu, 31 Mar 2016 04:08:28 +0200
-Subject: [PATCH 248/283] drivers/block/zram: Replace bit spinlocks with
+Subject: [PATCH 248/328] drivers/block/zram: Replace bit spinlocks with
  rtmutex for -rt
 
 They're nondeterministic, and lead to ___might_sleep() splats in -rt.
@@ -15,7 +15,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 41 insertions(+)
 
 diff --git a/drivers/block/zram/zram_drv.c b/drivers/block/zram/zram_drv.c
-index 70cbd0ee1b07..42de45ebfb43 100644
+index 76abe40bfa83..d6cf9508b80d 100644
 --- a/drivers/block/zram/zram_drv.c
 +++ b/drivers/block/zram/zram_drv.c
 @@ -53,6 +53,40 @@ static size_t huge_class_size;
@@ -67,7 +67,7 @@ index 70cbd0ee1b07..42de45ebfb43 100644
  
  static inline bool init_done(struct zram *zram)
  {
-@@ -901,6 +936,8 @@ static DEVICE_ATTR_RO(io_stat);
+@@ -902,6 +937,8 @@ static DEVICE_ATTR_RO(io_stat);
  static DEVICE_ATTR_RO(mm_stat);
  static DEVICE_ATTR_RO(debug_stat);
  
@@ -76,7 +76,7 @@ index 70cbd0ee1b07..42de45ebfb43 100644
  static void zram_meta_free(struct zram *zram, u64 disksize)
  {
  	size_t num_pages = disksize >> PAGE_SHIFT;
-@@ -931,6 +968,7 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
+@@ -932,6 +969,7 @@ static bool zram_meta_alloc(struct zram *zram, u64 disksize)
  
  	if (!huge_class_size)
  		huge_class_size = zs_huge_class_size(zram->mem_pool);
@@ -99,5 +99,5 @@ index d1095dfdffa8..144e91061df8 100644
  	ktime_t ac_time;
  #endif
 -- 
-2.20.1
+2.25.1
 

@@ -1,7 +1,7 @@
-From 232cc4794d35bf36a49924022ebd18edb13c8a5d Mon Sep 17 00:00:00 2001
+From a6f0c5a56834d5fe16591a7fe6e5586f35ca6a00 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 16 Nov 2017 16:48:48 +0100
-Subject: [PATCH 153/283] locking/rtmutex: re-init the wait_lock in
+Subject: [PATCH 153/328] locking/rtmutex: re-init the wait_lock in
  rt_mutex_init_proxy_locked()
 
 We could provide a key-class for the lockdep (and fixup all callers) or
@@ -34,5 +34,5 @@ index b38c3a92dce8..94788662b2f2 100644
  	rt_mutex_set_owner(lock, proxy_owner);
  }
 -- 
-2.20.1
+2.25.1
 

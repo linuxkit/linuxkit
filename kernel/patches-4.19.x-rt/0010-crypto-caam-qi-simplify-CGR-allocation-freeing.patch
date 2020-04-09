@@ -1,7 +1,7 @@
-From d4cc8969937e548b95b4d6f40804a4b706c9b441 Mon Sep 17 00:00:00 2001
+From 1e7f9f15b5cb5088ac28a0919a2fcc74bfc5f5c7 Mon Sep 17 00:00:00 2001
 From: =?UTF-8?q?Horia=20Geant=C4=83?= <horia.geanta@nxp.com>
 Date: Mon, 8 Oct 2018 14:09:37 +0300
-Subject: [PATCH 010/283] crypto: caam/qi - simplify CGR allocation, freeing
+Subject: [PATCH 010/328] crypto: caam/qi - simplify CGR allocation, freeing
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Content-Transfer-Encoding: 8bit
@@ -135,5 +135,5 @@ index 357b69f57072..b6c8acc30853 100644
  /**
   * qi_cache_alloc - Allocate buffers from CAAM-QI cache
 -- 
-2.20.1
+2.25.1
 

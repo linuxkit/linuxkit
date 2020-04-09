@@ -1,7 +1,7 @@
-From 46ee243833b0300b7f72e77268030fba7d083f36 Mon Sep 17 00:00:00 2001
+From 850e714cfa9823eea1841d36cb29b28434d6ac2d Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Thu, 26 Jul 2018 18:52:00 +0200
-Subject: [PATCH 225/283] crypto: cryptd - add a lock instead
+Subject: [PATCH 225/328] crypto: cryptd - add a lock instead
  preempt_disable/local_bh_disable
 
 cryptd has a per-CPU lock which protected with local_bh_disable() and
@@ -80,5 +80,5 @@ index e0c8e907b086..e079f9a70201 100644
  	if (!req)
  		return;
 -- 
-2.20.1
+2.25.1
 

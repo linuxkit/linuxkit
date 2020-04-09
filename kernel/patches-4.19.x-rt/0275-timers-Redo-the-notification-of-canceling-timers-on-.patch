@@ -1,7 +1,7 @@
-From dc0135054565b6bea6821540271adc3643f1098c Mon Sep 17 00:00:00 2001
+From b624498d8a6db63e6d6390bbd5f560f37929a500 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Mon, 24 Jun 2019 19:39:06 +0200
-Subject: [PATCH 275/283] timers: Redo the notification of canceling timers on
+Subject: [PATCH 275/328] timers: Redo the notification of canceling timers on
  -RT
 
 [ Upstream commit c71273154c2ad12e13333aada340ff30e826a11b ]
@@ -57,7 +57,7 @@ index 82d0f52414a6..f845093466be 100644
  
  	/*
 diff --git a/include/linux/hrtimer.h b/include/linux/hrtimer.h
-index 2bdb047c7656..6c4c38186c99 100644
+index 082147c07831..aee31b1f0cc3 100644
 --- a/include/linux/hrtimer.h
 +++ b/include/linux/hrtimer.h
 @@ -22,7 +22,6 @@
@@ -113,7 +113,7 @@ index 2bdb047c7656..6c4c38186c99 100644
  /* Query timers: */
  extern ktime_t __hrtimer_get_remaining(const struct hrtimer *timer, bool adjust);
  
-@@ -475,7 +468,7 @@ static inline int hrtimer_is_queued(struct hrtimer *timer)
+@@ -481,7 +474,7 @@ static inline bool hrtimer_is_queued(struct hrtimer *timer)
   * Helper function to check, whether the timer is running the callback
   * function
   */
@@ -135,10 +135,10 @@ index 0571b498db73..3e6c91bdf2ef 100644
  
  /*
 diff --git a/kernel/time/alarmtimer.c b/kernel/time/alarmtimer.c
-index 966708e8ce14..efa1e433974b 100644
+index a465564367ec..dcf0204264f1 100644
 --- a/kernel/time/alarmtimer.c
 +++ b/kernel/time/alarmtimer.c
-@@ -436,7 +436,7 @@ int alarm_cancel(struct alarm *alarm)
+@@ -438,7 +438,7 @@ int alarm_cancel(struct alarm *alarm)
  		int ret = alarm_try_to_cancel(alarm);
  		if (ret >= 0)
  			return ret;
@@ -148,7 +148,7 @@ index 966708e8ce14..efa1e433974b 100644
  }
  EXPORT_SYMBOL_GPL(alarm_cancel);
 diff --git a/kernel/time/hrtimer.c b/kernel/time/hrtimer.c
-index e1040b80362c..4534e7871c8c 100644
+index f16cbc98c47a..ed5d8d51ca91 100644
 --- a/kernel/time/hrtimer.c
 +++ b/kernel/time/hrtimer.c
 @@ -963,33 +963,16 @@ u64 hrtimer_forward(struct hrtimer *timer, ktime_t now, ktime_t interval)
@@ -190,7 +190,7 @@ index e1040b80362c..4534e7871c8c 100644
  /*
   * enqueue_hrtimer - internal function to (re)start a timer
   *
-@@ -1224,7 +1207,7 @@ int hrtimer_cancel(struct hrtimer *timer)
+@@ -1227,7 +1210,7 @@ int hrtimer_cancel(struct hrtimer *timer)
  
  		if (ret >= 0)
  			return ret;
@@ -199,7 +199,7 @@ index e1040b80362c..4534e7871c8c 100644
  	}
  }
  EXPORT_SYMBOL_GPL(hrtimer_cancel);
-@@ -1528,6 +1511,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1531,6 +1514,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	unsigned long flags;
  	ktime_t now;
  
@@ -207,7 +207,7 @@ index e1040b80362c..4534e7871c8c 100644
  	raw_spin_lock_irqsave(&cpu_base->lock, flags);
  
  	now = hrtimer_update_base(cpu_base);
-@@ -1537,7 +1521,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
+@@ -1540,7 +1524,7 @@ static __latent_entropy void hrtimer_run_softirq(struct softirq_action *h)
  	hrtimer_update_softirq_timer(cpu_base, true);
  
  	raw_spin_unlock_irqrestore(&cpu_base->lock, flags);
@@ -216,7 +216,7 @@ index e1040b80362c..4534e7871c8c 100644
  }
  
  #ifdef CONFIG_HIGH_RES_TIMERS
-@@ -1947,9 +1931,7 @@ int hrtimers_prepare_cpu(unsigned int cpu)
+@@ -1950,9 +1934,7 @@ int hrtimers_prepare_cpu(unsigned int cpu)
  	cpu_base->softirq_next_timer = NULL;
  	cpu_base->expires_next = KTIME_MAX;
  	cpu_base->softirq_expires_next = KTIME_MAX;
@@ -241,10 +241,10 @@ index 55b0e58368bf..a5ff222df4c7 100644
  		}
  		expires = timeval_to_ktime(value->it_value);
 diff --git a/kernel/time/posix-cpu-timers.c b/kernel/time/posix-cpu-timers.c
-index baeeaef3b721..59ceedbb03f0 100644
+index 8d95e8de98b2..765e700962ab 100644
 --- a/kernel/time/posix-cpu-timers.c
 +++ b/kernel/time/posix-cpu-timers.c
-@@ -789,6 +789,7 @@ check_timers_list(struct list_head *timers,
+@@ -792,6 +792,7 @@ check_timers_list(struct list_head *timers,
  			return t->expires;
  
  		t->firing = 1;
@@ -252,7 +252,7 @@ index baeeaef3b721..59ceedbb03f0 100644
  		list_move_tail(&t->entry, firing);
  	}
  
-@@ -1134,6 +1135,20 @@ static inline int fastpath_timer_check(struct task_struct *tsk)
+@@ -1138,6 +1139,20 @@ static inline int fastpath_timer_check(struct task_struct *tsk)
  	return 0;
  }
  
@@ -273,7 +273,7 @@ index baeeaef3b721..59ceedbb03f0 100644
  /*
   * This is called from the timer interrupt handler.  The irq handler has
   * already updated our counts.  We need to check if any timers fire now.
-@@ -1144,6 +1159,7 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
+@@ -1148,6 +1163,7 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
  	LIST_HEAD(firing);
  	struct k_itimer *timer, *next;
  	unsigned long flags;
@@ -281,7 +281,7 @@ index baeeaef3b721..59ceedbb03f0 100644
  
  	/*
  	 * The fast path checks that there are no expired thread or thread
-@@ -1152,6 +1168,9 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
+@@ -1156,6 +1172,9 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
  	if (!fastpath_timer_check(tsk))
  		return;
  
@@ -291,7 +291,7 @@ index baeeaef3b721..59ceedbb03f0 100644
  	if (!lock_task_sighand(tsk, &flags))
  		return;
  	/*
-@@ -1186,6 +1205,7 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
+@@ -1190,6 +1209,7 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
  		list_del_init(&timer->it.cpu.entry);
  		cpu_firing = timer->it.cpu.firing;
  		timer->it.cpu.firing = 0;
@@ -299,7 +299,7 @@ index baeeaef3b721..59ceedbb03f0 100644
  		/*
  		 * The firing flag is -1 if we collided with a reset
  		 * of the timer, which already reported this
-@@ -1195,6 +1215,7 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
+@@ -1199,6 +1219,7 @@ static void __run_posix_cpu_timers(struct task_struct *tsk)
  			cpu_timer_fire(timer);
  		spin_unlock(&timer->it_lock);
  	}
@@ -307,7 +307,7 @@ index baeeaef3b721..59ceedbb03f0 100644
  }
  
  #ifdef CONFIG_PREEMPT_RT_BASE
-@@ -1460,6 +1481,8 @@ static int do_cpu_nanosleep(const clockid_t which_clock, int flags,
+@@ -1466,6 +1487,8 @@ static int do_cpu_nanosleep(const clockid_t which_clock, int flags,
  		spin_unlock_irq(&timer.it_lock);
  
  		while (error == TIMER_RETRY) {
@@ -460,7 +460,7 @@ index ddb21145211a..725bd230a8db 100644
  
  void common_timer_get(struct k_itimer *timr, struct itimerspec64 *cur_setting);
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index 781483c76b17..d6289d8df06b 100644
+index 2fcd56aa6092..1c67aab34ff5 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -44,7 +44,6 @@
@@ -616,7 +616,7 @@ index 781483c76b17..d6289d8df06b 100644
  			raw_spin_lock_irq(&base->lock);
  		}
  	}
-@@ -1696,6 +1693,7 @@ static inline void __run_timers(struct timer_base *base)
+@@ -1698,6 +1695,7 @@ static inline void __run_timers(struct timer_base *base)
  	if (!time_after_eq(jiffies, base->clk))
  		return;
  
@@ -624,7 +624,7 @@ index 781483c76b17..d6289d8df06b 100644
  	raw_spin_lock_irq(&base->lock);
  
  	/*
-@@ -1723,7 +1721,7 @@ static inline void __run_timers(struct timer_base *base)
+@@ -1725,7 +1723,7 @@ static inline void __run_timers(struct timer_base *base)
  			expire_timers(base, heads + levels);
  	}
  	raw_spin_unlock_irq(&base->lock);
@@ -633,7 +633,7 @@ index 781483c76b17..d6289d8df06b 100644
  }
  
  /*
-@@ -1970,9 +1968,7 @@ static void __init init_timer_cpu(int cpu)
+@@ -1972,9 +1970,7 @@ static void __init init_timer_cpu(int cpu)
  		base->cpu = cpu;
  		raw_spin_lock_init(&base->lock);
  		base->clk = jiffies;
@@ -645,5 +645,5 @@ index 781483c76b17..d6289d8df06b 100644
  }
  
 -- 
-2.20.1
+2.25.1
 

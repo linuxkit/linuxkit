@@ -1,7 +1,7 @@
-From 6c5886f66d8a616f3294c2fd8ca26b4c638e430b Mon Sep 17 00:00:00 2001
+From 54abe9a86c78a78b978f91e21929db155fc9f342 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 15 Jun 2011 12:36:06 +0200
-Subject: [PATCH 116/283] hotplug: Lightweight get online cpus
+Subject: [PATCH 116/328] hotplug: Lightweight get online cpus
 
 get_online_cpus() is a heavy weight function which involves a global
 mutex. migrate_disable() wants a simpler construct which prevents only
@@ -19,10 +19,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 24 insertions(+)
 
 diff --git a/include/linux/cpu.h b/include/linux/cpu.h
-index 006f69f9277b..d45ea5c98cdd 100644
+index aab4273810e3..e67645924404 100644
 --- a/include/linux/cpu.h
 +++ b/include/linux/cpu.h
-@@ -113,6 +113,8 @@ extern void cpu_hotplug_disable(void);
+@@ -118,6 +118,8 @@ extern void cpu_hotplug_disable(void);
  extern void cpu_hotplug_enable(void);
  void clear_tasks_mm_cpumask(int cpu);
  int cpu_down(unsigned int cpu);
@@ -31,7 +31,7 @@ index 006f69f9277b..d45ea5c98cdd 100644
  
  #else /* CONFIG_HOTPLUG_CPU */
  
-@@ -124,6 +126,9 @@ static inline int  cpus_read_trylock(void) { return true; }
+@@ -129,6 +131,9 @@ static inline int  cpus_read_trylock(void) { return true; }
  static inline void lockdep_assert_cpus_held(void) { }
  static inline void cpu_hotplug_disable(void) { }
  static inline void cpu_hotplug_enable(void) { }
@@ -42,7 +42,7 @@ index 006f69f9277b..d45ea5c98cdd 100644
  
  /* Wrappers which go away once all code is converted */
 diff --git a/kernel/cpu.c b/kernel/cpu.c
-index 46aefe5c0e35..9001e1779325 100644
+index 2d850eaaf82e..328d7bf67d2f 100644
 --- a/kernel/cpu.c
 +++ b/kernel/cpu.c
 @@ -281,6 +281,21 @@ static int cpu_hotplug_disabled;
@@ -68,10 +68,10 @@ index 46aefe5c0e35..9001e1779325 100644
  
  void cpus_read_lock(void)
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index 434fd8946629..a8e9283f018c 100644
+index 57617777c4ba..42b42ebf52bc 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
-@@ -7211,6 +7211,7 @@ void migrate_disable(void)
+@@ -7249,6 +7249,7 @@ void migrate_disable(void)
  	}
  
  	preempt_disable();
@@ -79,7 +79,7 @@ index 434fd8946629..a8e9283f018c 100644
  
  	migrate_disable_update_cpus_allowed(p);
  	p->migrate_disable = 1;
-@@ -7276,12 +7277,15 @@ void migrate_enable(void)
+@@ -7314,12 +7315,15 @@ void migrate_enable(void)
  			arg.task = p;
  			arg.dest_cpu = dest_cpu;
  
@@ -96,5 +96,5 @@ index 434fd8946629..a8e9283f018c 100644
  }
  EXPORT_SYMBOL(migrate_enable);
 -- 
-2.20.1
+2.25.1
 

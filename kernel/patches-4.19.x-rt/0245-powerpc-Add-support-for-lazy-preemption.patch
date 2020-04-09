@@ -1,7 +1,7 @@
-From 47a223b448c07e6c574e14e44d912dcd27ca4803 Mon Sep 17 00:00:00 2001
+From e02242904650a778f562757a77e406336000d790 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 10:14:11 +0100
-Subject: [PATCH 245/283] powerpc: Add support for lazy preemption
+Subject: [PATCH 245/328] powerpc: Add support for lazy preemption
 
 Implement the powerpc pieces for lazy preempt.
 
@@ -15,7 +15,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  5 files changed, 33 insertions(+), 11 deletions(-)
 
 diff --git a/arch/powerpc/Kconfig b/arch/powerpc/Kconfig
-index 1563820a37e8..d4835f8cfcf2 100644
+index 1b332f69dd36..c8c2230c8aff 100644
 --- a/arch/powerpc/Kconfig
 +++ b/arch/powerpc/Kconfig
 @@ -216,6 +216,7 @@ config PPC
@@ -76,7 +76,7 @@ index 3c0002044bc9..ce316076bc52 100644
  /* Bits in local_flags */
  /* Don't move TLF_NAPPING without adjusting the code in entry_32.S */
 diff --git a/arch/powerpc/kernel/asm-offsets.c b/arch/powerpc/kernel/asm-offsets.c
-index 89cf15566c4e..1870c87fb22a 100644
+index 50400f213bbf..1bb82c5dc1d9 100644
 --- a/arch/powerpc/kernel/asm-offsets.c
 +++ b/arch/powerpc/kernel/asm-offsets.c
 @@ -156,6 +156,7 @@ int main(void)
@@ -140,7 +140,7 @@ index 26b3f853cbf6..3783f3ef17a4 100644
  	andi.	r0,r9,_TIF_USER_WORK_MASK
  	beq	restore_user
 diff --git a/arch/powerpc/kernel/entry_64.S b/arch/powerpc/kernel/entry_64.S
-index 7a46e0e57a36..7671fa5da9fa 100644
+index 58b50967b3e5..ef02e41d5d96 100644
 --- a/arch/powerpc/kernel/entry_64.S
 +++ b/arch/powerpc/kernel/entry_64.S
 @@ -176,7 +176,7 @@ system_call:			/* label this so stack traces look sane */
@@ -152,7 +152,7 @@ index 7a46e0e57a36..7671fa5da9fa 100644
  	beq	15f
  	addi	r11,r11,8	/* use 32-bit syscall entries */
  	clrldi	r3,r3,32
-@@ -768,7 +768,7 @@ _GLOBAL(ret_from_except_lite)
+@@ -774,7 +774,7 @@ _GLOBAL(ret_from_except_lite)
  	bl	restore_math
  	b	restore
  #endif
@@ -161,7 +161,7 @@ index 7a46e0e57a36..7671fa5da9fa 100644
  	beq	2f
  	bl	restore_interrupts
  	SCHEDULE_USER
-@@ -830,10 +830,18 @@ resume_kernel:
+@@ -836,10 +836,18 @@ resume_kernel:
  
  #ifdef CONFIG_PREEMPT
  	/* Check if we need to preempt */
@@ -181,7 +181,7 @@ index 7a46e0e57a36..7671fa5da9fa 100644
  	cmpwi	cr0,r8,0
  	bne	restore
  	ld	r0,SOFTE(r1)
-@@ -850,7 +858,7 @@ resume_kernel:
+@@ -856,7 +864,7 @@ resume_kernel:
  	/* Re-test flags and eventually loop */
  	CURRENT_THREAD_INFO(r9, r1)
  	ld	r4,TI_FLAGS(r9)
@@ -191,5 +191,5 @@ index 7a46e0e57a36..7671fa5da9fa 100644
  
  	/*
 -- 
-2.20.1
+2.25.1
 

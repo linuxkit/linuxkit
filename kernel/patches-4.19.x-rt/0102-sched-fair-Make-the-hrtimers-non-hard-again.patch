@@ -1,7 +1,7 @@
-From bccc05d43b6e3443288909080b555413b80fe36a Mon Sep 17 00:00:00 2001
+From 80511ff61a43b8db5ac26d665ef32b73cbc03471 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 8 Jan 2019 12:31:06 +0100
-Subject: [PATCH 102/283] sched/fair: Make the hrtimers non-hard again
+Subject: [PATCH 102/328] sched/fair: Make the hrtimers non-hard again
 
 Since commit "sched/fair: Robustify CFS-bandwidth timer locking" both
 hrtimer can run in softirq context because now interrupts are disabled
@@ -13,10 +13,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 4022ad749d85..0048a32a3b4d 100644
+index d801e6c763ee..27f9f9a785c1 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4908,9 +4908,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
+@@ -4930,9 +4930,9 @@ void init_cfs_bandwidth(struct cfs_bandwidth *cfs_b)
  	cfs_b->period = ns_to_ktime(default_cfs_period());
  
  	INIT_LIST_HEAD(&cfs_b->throttled_cfs_rq);
@@ -29,5 +29,5 @@ index 4022ad749d85..0048a32a3b4d 100644
  	cfs_b->distribute_running = 0;
  }
 -- 
-2.20.1
+2.25.1
 

@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:4.19.59-rt
+  image: linuxkit/kernel:4.19.106-rt
   cmdline: "console=tty0"
 init:
   - linuxkit/init:a0246dd478a24abbee0a4cede99662ffc4931691

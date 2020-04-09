@@ -1,7 +1,7 @@
-From bda814671dc9f9f74cabd99a65cad3101b68ee83 Mon Sep 17 00:00:00 2001
+From 9f9cd889fa22fc1e25802f565f7210b271d136a2 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Sat, 27 May 2017 19:02:06 +0200
-Subject: [PATCH 027/283] kernel/sched/core: add migrate_disable()
+Subject: [PATCH 027/328] kernel/sched/core: add migrate_disable()
 
 ---
  include/linux/preempt.h |  23 +++++++
@@ -53,7 +53,7 @@ index c01813c3fbe9..3196d0e76719 100644
  
  #ifdef MODULE
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index fdb8ba398ea8..df39ad5916e7 100644
+index 4298a87b9de6..0489d3e0e78c 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -662,6 +662,13 @@ struct task_struct {
@@ -85,7 +85,7 @@ index 9fb239e12b82..5801e516ba63 100644
   * Callback to arch code if there's nosmp or maxcpus=0 on the
   * boot command line:
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index d6f690064cce..b658f0147c3b 100644
+index 07dc66137a26..d0450f06612c 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -1008,7 +1008,15 @@ void set_cpus_allowed_common(struct task_struct *p, const struct cpumask *new_ma
@@ -126,7 +126,7 @@ index d6f690064cce..b658f0147c3b 100644
  /*
   * Change a given task's CPU affinity. Migrate the thread to a
   * proper CPU and schedule it away if the CPU it's executing on
-@@ -1095,9 +1117,16 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
+@@ -1096,9 +1118,16 @@ static int __set_cpus_allowed_ptr(struct task_struct *p,
  	}
  
  	/* Can the task run on the task's current CPU? If so, we're done */
@@ -141,10 +141,10 @@ index d6f690064cce..b658f0147c3b 100644
 +	}
 +#endif
 +
- 	dest_cpu = cpumask_any_and(cpu_valid_mask, new_mask);
  	if (task_running(rq, p) || p->state == TASK_WAKING) {
  		struct migration_arg arg = { p, dest_cpu };
-@@ -7067,3 +7096,100 @@ const u32 sched_prio_to_wmult[40] = {
+ 		/* Need help from migration thread: drop lock and wait. */
+@@ -7105,3 +7134,100 @@ const u32 sched_prio_to_wmult[40] = {
  };
  
  #undef CREATE_TRACE_POINTS
@@ -261,5 +261,5 @@ index 78fadf0438ea..5027158d3908 100644
  #undef PN
  #undef __PN
 -- 
-2.20.1
+2.25.1
 

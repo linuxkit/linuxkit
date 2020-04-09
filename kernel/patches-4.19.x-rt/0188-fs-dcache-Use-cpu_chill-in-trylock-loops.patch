@@ -1,7 +1,7 @@
-From 0a339e66574cbd8cf1cb2b146d2b960db46a2803 Mon Sep 17 00:00:00 2001
+From e4c2d46c06d5e1181e6ab26038689d1c112b9d0b Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Wed, 7 Mar 2012 21:00:34 +0100
-Subject: [PATCH 188/283] fs: dcache: Use cpu_chill() in trylock loops
+Subject: [PATCH 188/328] fs: dcache: Use cpu_chill() in trylock loops
 
 Retry loops on RT might loop forever when the modifying side was
 preempted. Use cpu_chill() instead of cpu_relax() to let the system
@@ -14,7 +14,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  2 files changed, 8 insertions(+), 3 deletions(-)
 
 diff --git a/fs/autofs/expire.c b/fs/autofs/expire.c
-index 28d9c2b1b3bb..354b7147cead 100644
+index 70e9afe589fb..1a6b88ad4fe0 100644
 --- a/fs/autofs/expire.c
 +++ b/fs/autofs/expire.c
 @@ -8,6 +8,7 @@
@@ -61,5 +61,5 @@ index 1fce41ba3535..5dc970027e30 100644
  	 * After the slowpath clears MNT_WRITE_HOLD, mnt_is_readonly will
  	 * be set to match its requirements. So we must not load that until
 -- 
-2.20.1
+2.25.1
 

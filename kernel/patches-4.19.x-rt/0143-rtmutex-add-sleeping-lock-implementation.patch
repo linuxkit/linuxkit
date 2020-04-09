@@ -1,7 +1,7 @@
-From 966d9bcd54442c2ae5dd15f89a908539d6ad7137 Mon Sep 17 00:00:00 2001
+From 4972c101326c6e36a9f541deeab9b56e3bef9932 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 12 Oct 2017 17:11:19 +0200
-Subject: [PATCH 143/283] rtmutex: add sleeping lock implementation
+Subject: [PATCH 143/328] rtmutex: add sleeping lock implementation
 
 Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
 Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
@@ -22,10 +22,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  create mode 100644 include/linux/spinlock_types_rt.h
 
 diff --git a/include/linux/kernel.h b/include/linux/kernel.h
-index 3d83ebb302cf..d81a153df451 100644
+index f6f94e54ab96..78f30d553037 100644
 --- a/include/linux/kernel.h
 +++ b/include/linux/kernel.h
-@@ -259,6 +259,9 @@ extern int _cond_resched(void);
+@@ -260,6 +260,9 @@ extern int _cond_resched(void);
   */
  # define might_sleep() \
  	do { __might_sleep(__FILE__, __LINE__, 0); might_resched(); } while (0)
@@ -35,7 +35,7 @@ index 3d83ebb302cf..d81a153df451 100644
  # define sched_annotate_sleep()	(current->task_state_change = 0)
  #else
    static inline void ___might_sleep(const char *file, int line,
-@@ -266,6 +269,7 @@ extern int _cond_resched(void);
+@@ -267,6 +270,7 @@ extern int _cond_resched(void);
    static inline void __might_sleep(const char *file, int line,
  				   int preempt_offset) { }
  # define might_sleep() do { might_resched(); } while (0)
@@ -102,7 +102,7 @@ index a355289b1fa1..138bd1e183e0 100644
   * rt_mutex_is_locked - is the mutex locked
   * @lock: the mutex to be queried
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index 7ecccccbd358..1797fd3c8cbb 100644
+index f4ff928e6be3..527d04f9163e 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
 @@ -134,6 +134,9 @@ struct task_group;
@@ -395,10 +395,10 @@ index 000000000000..3e3d8c5f7a9a
 +
 +#endif
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 247b08eb66c8..96297e71019c 100644
+index 29b54a64daf5..ecec0f8bef7e 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -895,6 +895,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
+@@ -900,6 +900,7 @@ static struct task_struct *dup_task_struct(struct task_struct *orig, int node)
  	tsk->splice_pipe = NULL;
  	tsk->task_frag.page = NULL;
  	tsk->wake_q.next = NULL;
@@ -407,10 +407,10 @@ index 247b08eb66c8..96297e71019c 100644
  	account_kernel_stack(tsk, 1);
  
 diff --git a/kernel/futex.c b/kernel/futex.c
-index 4d6501d689b5..fe90164aa6ec 100644
+index 60be4530c767..4c448dddce3c 100644
 --- a/kernel/futex.c
 +++ b/kernel/futex.c
-@@ -1476,6 +1476,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
+@@ -1479,6 +1479,7 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
  	struct task_struct *new_owner;
  	bool postunlock = false;
  	DEFINE_WAKE_Q(wake_q);
@@ -418,7 +418,7 @@ index 4d6501d689b5..fe90164aa6ec 100644
  	int ret = 0;
  
  	new_owner = rt_mutex_next_owner(&pi_state->pi_mutex);
-@@ -1535,13 +1536,13 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
+@@ -1538,13 +1539,13 @@ static int wake_futex_pi(u32 __user *uaddr, u32 uval, struct futex_pi_state *pi_
  	pi_state->owner = new_owner;
  	raw_spin_unlock(&new_owner->pi_lock);
  
@@ -435,7 +435,7 @@ index 4d6501d689b5..fe90164aa6ec 100644
  
  	return ret;
  }
-@@ -2870,7 +2871,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
+@@ -2873,7 +2874,7 @@ static int futex_lock_pi(u32 __user *uaddr, unsigned int flags,
  		goto no_block;
  	}
  
@@ -444,7 +444,7 @@ index 4d6501d689b5..fe90164aa6ec 100644
  
  	/*
  	 * On PREEMPT_RT_FULL, when hb->lock becomes an rt_mutex, we must not
-@@ -3263,7 +3264,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
+@@ -3266,7 +3267,7 @@ static int futex_wait_requeue_pi(u32 __user *uaddr, unsigned int flags,
  	 * The waiter is allocated on our stack, manipulated by the requeue
  	 * code while we sleep on uaddr.
  	 */
@@ -1143,7 +1143,7 @@ index 5955ad2aa2a8..6fcf0a3e180d 100644
  #ifdef CONFIG_DEBUG_RT_MUTEXES
  # include "rtmutex-debug.h"
 diff --git a/kernel/sched/core.c b/kernel/sched/core.c
-index a8e9283f018c..868d3395c3cf 100644
+index 42b42ebf52bc..6a0ccaea2b42 100644
 --- a/kernel/sched/core.c
 +++ b/kernel/sched/core.c
 @@ -401,9 +401,15 @@ static bool set_nr_if_polling(struct task_struct *p)
@@ -1203,5 +1203,5 @@ index a8e9283f018c..868d3395c3cf 100644
  	}
  }
 -- 
-2.20.1
+2.25.1
 

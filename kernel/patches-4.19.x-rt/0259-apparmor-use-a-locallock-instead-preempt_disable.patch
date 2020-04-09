@@ -1,7 +1,7 @@
-From 304bb4fbcbaaf44ce6ea8b7605d79c64d72c47df Mon Sep 17 00:00:00 2001
+From 7d1cc83845fbfeae6cbe51a05849c8934e40bc56 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 11 Oct 2017 17:43:49 +0200
-Subject: [PATCH 259/283] apparmor: use a locallock instead preempt_disable()
+Subject: [PATCH 259/328] apparmor: use a locallock instead preempt_disable()
 
 get_buffers() disables preemption which acts as a lock for the per-CPU
 variable. Since we can't disable preemption here on RT, a local_lock is
@@ -67,7 +67,7 @@ index b6380c5f0097..12abfddb19c9 100644
  
  #endif /* __AA_PATH_H */
 diff --git a/security/apparmor/lsm.c b/security/apparmor/lsm.c
-index 8b8b70620bbe..8330ef57a784 100644
+index 730de4638b4e..edc911ff6a4d 100644
 --- a/security/apparmor/lsm.c
 +++ b/security/apparmor/lsm.c
 @@ -45,7 +45,7 @@
@@ -80,5 +80,5 @@ index 8b8b70620bbe..8330ef57a784 100644
  /*
   * LSM hook functions
 -- 
-2.20.1
+2.25.1
 

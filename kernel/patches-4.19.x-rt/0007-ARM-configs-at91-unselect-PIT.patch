@@ -1,7 +1,7 @@
-From 95cda24e3882fa19a569c029275d14089e8418e9 Mon Sep 17 00:00:00 2001
+From f58179ebd23db67a287e5267a5cbc2c1ae5d75d9 Mon Sep 17 00:00:00 2001
 From: Alexandre Belloni <alexandre.belloni@bootlin.com>
 Date: Thu, 13 Sep 2018 13:30:24 +0200
-Subject: [PATCH 007/283] ARM: configs: at91: unselect PIT
+Subject: [PATCH 007/328] ARM: configs: at91: unselect PIT
 
 The PIT is not required anymore to successfully boot and may actually harm
 in case preempt-rt is used because the PIT interrupt is shared.
@@ -39,5 +39,5 @@ index f2bbc6339ca6..be92871ab155 100644
  CONFIG_UACCESS_WITH_MEMCPY=y
  CONFIG_ZBOOT_ROM_TEXT=0x0
 -- 
-2.20.1
+2.25.1
 

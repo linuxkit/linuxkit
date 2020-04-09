@@ -1,0 +1,53 @@
+From 616f33b56d89956d43be1ee3a48873012a5e01f2 Mon Sep 17 00:00:00 2001
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 13 Aug 2019 14:29:41 +0200
+Subject: [PATCH 295/328] KVM: arm/arm64: Let the timer expire in hardirq
+ context on RT
+
+[ Upstream commit 719cc080c914045a6e35787bf4dc3ba91cfd3efb ]
+
+The timers are canceled from an preempt-notifier which is invoked with
+disabled preemption which is not allowed on PREEMPT_RT.
+The timer callback is short so in could be invoked in hard-IRQ context
+on -RT.
+
+Let the timer expire on hard-IRQ context even on -RT.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Acked-by: Marc Zyngier <maz@kernel.org>
+Tested-by: Julien Grall <julien.grall@arm.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ virt/kvm/arm/arch_timer.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/virt/kvm/arm/arch_timer.c b/virt/kvm/arm/arch_timer.c
+index 17cecc96f735..217d39f40393 100644
+--- a/virt/kvm/arm/arch_timer.c
++++ b/virt/kvm/arm/arch_timer.c
+@@ -67,7 +67,7 @@ static inline bool userspace_irqchip(struct kvm *kvm)
+ static void soft_timer_start(struct hrtimer *hrt, u64 ns)
+ {
+ 	hrtimer_start(hrt, ktime_add_ns(ktime_get(), ns),
+-		      HRTIMER_MODE_ABS);
++		      HRTIMER_MODE_ABS_HARD);
+ }
+ 
+ static void soft_timer_cancel(struct hrtimer *hrt, struct work_struct *work)
+@@ -638,10 +638,10 @@ void kvm_timer_vcpu_init(struct kvm_vcpu *vcpu)
+ 	vcpu_ptimer(vcpu)->cntvoff = 0;
+ 
+ 	INIT_WORK(&timer->expired, kvm_timer_inject_irq_work);
+-	hrtimer_init(&timer->bg_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
++	hrtimer_init(&timer->bg_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_HARD);
+ 	timer->bg_timer.function = kvm_bg_timer_expire;
+ 
+-	hrtimer_init(&timer->phys_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
++	hrtimer_init(&timer->phys_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_HARD);
+ 	timer->phys_timer.function = kvm_phys_timer_expire;
+ 
+ 	vtimer->irq.irq = default_vtimer_irq.irq;
+-- 
+2.25.1
+

@@ -1,7 +1,7 @@
-From bc6dc2730e93dec5ead183a44781b5c8bf47b3d7 Mon Sep 17 00:00:00 2001
+From 11ee26b0db121f202fdb0adaea13a37ae4ee31f9 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 31 May 2011 16:59:16 +0200
-Subject: [PATCH 106/283] sched: Move task_struct cleanup to RCU
+Subject: [PATCH 106/328] sched: Move task_struct cleanup to RCU
 
 __put_task_struct() does quite some expensive work. We don't want to
 burden random tasks with that.
@@ -14,10 +14,10 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  3 files changed, 27 insertions(+), 2 deletions(-)
 
 diff --git a/include/linux/sched.h b/include/linux/sched.h
-index c2dfe6939773..a6f2f76b1162 100644
+index a90b6be626cd..0b8850b6093b 100644
 --- a/include/linux/sched.h
 +++ b/include/linux/sched.h
-@@ -1186,6 +1186,9 @@ struct task_struct {
+@@ -1194,6 +1194,9 @@ struct task_struct {
  	unsigned int			sequential_io;
  	unsigned int			sequential_io_avg;
  #endif
@@ -28,10 +28,10 @@ index c2dfe6939773..a6f2f76b1162 100644
  	unsigned long			task_state_change;
  #endif
 diff --git a/include/linux/sched/task.h b/include/linux/sched/task.h
-index 108ede99e533..bb98c5b43f81 100644
+index 44c6f15800ff..d2b33e57c636 100644
 --- a/include/linux/sched/task.h
 +++ b/include/linux/sched/task.h
-@@ -88,6 +88,15 @@ extern void sched_exec(void);
+@@ -90,6 +90,15 @@ extern void sched_exec(void);
  
  #define get_task_struct(tsk) do { atomic_inc(&(tsk)->usage); } while(0)
  
@@ -47,7 +47,7 @@ index 108ede99e533..bb98c5b43f81 100644
  extern void __put_task_struct(struct task_struct *t);
  
  static inline void put_task_struct(struct task_struct *t)
-@@ -95,7 +104,7 @@ static inline void put_task_struct(struct task_struct *t)
+@@ -97,7 +106,7 @@ static inline void put_task_struct(struct task_struct *t)
  	if (atomic_dec_and_test(&t->usage))
  		__put_task_struct(t);
  }
@@ -57,10 +57,10 @@ index 108ede99e533..bb98c5b43f81 100644
  
  #ifdef CONFIG_ARCH_WANTS_DYNAMIC_TASK_STRUCT
 diff --git a/kernel/fork.c b/kernel/fork.c
-index 492bc898b09a..cba3cade3d5b 100644
+index ccfcd44a370f..309f4a20d4ac 100644
 --- a/kernel/fork.c
 +++ b/kernel/fork.c
-@@ -671,7 +671,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
+@@ -676,7 +676,9 @@ static inline void put_signal_struct(struct signal_struct *sig)
  	if (atomic_dec_and_test(&sig->sigcnt))
  		free_signal_struct(sig);
  }
@@ -71,7 +71,7 @@ index 492bc898b09a..cba3cade3d5b 100644
  void __put_task_struct(struct task_struct *tsk)
  {
  	WARN_ON(!tsk->exit_state);
-@@ -688,7 +690,18 @@ void __put_task_struct(struct task_struct *tsk)
+@@ -693,7 +695,18 @@ void __put_task_struct(struct task_struct *tsk)
  	if (!profile_handoff_task(tsk))
  		free_task(tsk);
  }
@@ -91,5 +91,5 @@ index 492bc898b09a..cba3cade3d5b 100644
  void __init __weak arch_task_cache_init(void) { }
  
 -- 
-2.20.1
+2.25.1
 

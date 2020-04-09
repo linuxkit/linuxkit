@@ -1,7 +1,7 @@
-From 256f2e459fd2eea3e04b6b9934f06c46e19185bb Mon Sep 17 00:00:00 2001
+From 2a9fed89a7bea6fbe31e717ab5f277405e20826e Mon Sep 17 00:00:00 2001
 From: Peter Zijlstra <peterz@infradead.org>
 Date: Mon, 7 Jan 2019 13:52:31 +0100
-Subject: [PATCH 011/283] sched/fair: Robustify CFS-bandwidth timer locking
+Subject: [PATCH 011/328] sched/fair: Robustify CFS-bandwidth timer locking
 
 Traditionally hrtimer callbacks were run with IRQs disabled, but with
 the introduction of HRTIMER_MODE_SOFT it is possible they run from
@@ -29,10 +29,10 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 16 insertions(+), 14 deletions(-)
 
 diff --git a/kernel/sched/fair.c b/kernel/sched/fair.c
-index 4a433608ba74..289c966f907a 100644
+index 7f4f4ab5bfef..0f1ba3d72336 100644
 --- a/kernel/sched/fair.c
 +++ b/kernel/sched/fair.c
-@@ -4557,7 +4557,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
+@@ -4576,7 +4576,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)
  		struct rq *rq = rq_of(cfs_rq);
  		struct rq_flags rf;
  
@@ -41,7 +41,7 @@ index 4a433608ba74..289c966f907a 100644
  		if (!cfs_rq_throttled(cfs_rq))
  			goto next;
  
-@@ -4574,7 +4574,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
+@@ -4595,7 +4595,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)
  			unthrottle_cfs_rq(cfs_rq);
  
  next:
@@ -50,35 +50,33 @@ index 4a433608ba74..289c966f907a 100644
  
  		if (!remaining)
  			break;
-@@ -4590,7 +4590,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b,
+@@ -4611,7 +4611,7 @@ static u64 distribute_cfs_runtime(struct cfs_bandwidth *cfs_b, u64 remaining)
   * period the timer is deactivated until scheduling resumes; cfs_b->idle is
   * used to track this state.
   */
 -static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
 +static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun, unsigned long flags)
  {
- 	u64 runtime, runtime_expires;
+ 	u64 runtime;
  	int throttled;
-@@ -4632,11 +4632,11 @@ static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
+@@ -4651,10 +4651,10 @@ static int do_sched_cfs_period_timer(struct cfs_bandwidth *cfs_b, int overrun)
  	while (throttled && cfs_b->runtime > 0 && !cfs_b->distribute_running) {
  		runtime = cfs_b->runtime;
  		cfs_b->distribute_running = 1;
 -		raw_spin_unlock(&cfs_b->lock);
 +		raw_spin_unlock_irqrestore(&cfs_b->lock, flags);
  		/* we can't nest cfs_b->lock while distributing bandwidth */
- 		runtime = distribute_cfs_runtime(cfs_b, runtime,
- 						 runtime_expires);
+ 		runtime = distribute_cfs_runtime(cfs_b, runtime);
 -		raw_spin_lock(&cfs_b->lock);
 +		raw_spin_lock_irqsave(&cfs_b->lock, flags);
  
  		cfs_b->distribute_running = 0;
  		throttled = !list_empty(&cfs_b->throttled_cfs_rq);
-@@ -4745,17 +4745,18 @@ static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
+@@ -4762,16 +4762,17 @@ static __always_inline void return_cfs_rq_runtime(struct cfs_rq *cfs_rq)
  static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
  {
  	u64 runtime = 0, slice = sched_cfs_bandwidth_slice();
 +	unsigned long flags;
- 	u64 expires;
  
  	/* confirm we're still not at a refresh boundary */
 -	raw_spin_lock(&cfs_b->lock);
@@ -95,7 +93,7 @@ index 4a433608ba74..289c966f907a 100644
  		return;
  	}
  
-@@ -4766,18 +4767,18 @@ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
+@@ -4781,17 +4782,17 @@ static void do_sched_cfs_slack_timer(struct cfs_bandwidth *cfs_b)
  	if (runtime)
  		cfs_b->distribute_running = 1;
  
@@ -105,19 +103,18 @@ index 4a433608ba74..289c966f907a 100644
  	if (!runtime)
  		return;
  
- 	runtime = distribute_cfs_runtime(cfs_b, runtime, expires);
+ 	runtime = distribute_cfs_runtime(cfs_b, runtime);
  
 -	raw_spin_lock(&cfs_b->lock);
 +	raw_spin_lock_irqsave(&cfs_b->lock, flags);
- 	if (expires == cfs_b->runtime_expires)
- 		cfs_b->runtime -= min(runtime, cfs_b->runtime);
+ 	cfs_b->runtime -= min(runtime, cfs_b->runtime);
  	cfs_b->distribute_running = 0;
 -	raw_spin_unlock(&cfs_b->lock);
 +	raw_spin_unlock_irqrestore(&cfs_b->lock, flags);
  }
  
  /*
-@@ -4857,11 +4858,12 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
+@@ -4871,11 +4872,12 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
  {
  	struct cfs_bandwidth *cfs_b =
  		container_of(timer, struct cfs_bandwidth, period_timer);
@@ -131,7 +128,7 @@ index 4a433608ba74..289c966f907a 100644
  	for (;;) {
  		overrun = hrtimer_forward_now(timer, cfs_b->period);
  		if (!overrun)
-@@ -4889,11 +4891,11 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
+@@ -4911,11 +4913,11 @@ static enum hrtimer_restart sched_cfs_period_timer(struct hrtimer *timer)
  			count = 0;
  		}
  
@@ -146,5 +143,5 @@ index 4a433608ba74..289c966f907a 100644
  	return idle ? HRTIMER_NORESTART : HRTIMER_RESTART;
  }
 -- 
-2.20.1
+2.25.1
 

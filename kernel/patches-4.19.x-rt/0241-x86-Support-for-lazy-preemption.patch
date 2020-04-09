@@ -1,7 +1,7 @@
-From fb20d310604701fc1f1d53bf74f792f58a83812f Mon Sep 17 00:00:00 2001
+From 963f0a5965bbcac189d89f4501cdd7a26bd823df Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Thu, 1 Nov 2012 11:03:47 +0100
-Subject: [PATCH 241/283] x86: Support for lazy preemption
+Subject: [PATCH 241/328] x86: Support for lazy preemption
 
 Implement the x86 pieces for lazy preempt.
 
@@ -17,7 +17,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 79 insertions(+), 3 deletions(-)
 
 diff --git a/arch/x86/Kconfig b/arch/x86/Kconfig
-index 1b05ae86bdde..736e369e141b 100644
+index f22e787329cf..a56f57f95993 100644
 --- a/arch/x86/Kconfig
 +++ b/arch/x86/Kconfig
 @@ -180,6 +180,7 @@ config X86
@@ -51,10 +51,10 @@ index 91676b0d2d4c..3b5e41d9b29d 100644
  
  #ifdef ARCH_RT_DELAYS_SIGNAL_SEND
 diff --git a/arch/x86/entry/entry_32.S b/arch/x86/entry/entry_32.S
-index b5c2b1091b18..83d43eb2f556 100644
+index d07432062ee6..d44f446a0e74 100644
 --- a/arch/x86/entry/entry_32.S
 +++ b/arch/x86/entry/entry_32.S
-@@ -766,8 +766,25 @@ END(ret_from_exception)
+@@ -750,8 +750,25 @@ END(ret_from_exception)
  ENTRY(resume_kernel)
  	DISABLE_INTERRUPTS(CLBR_ANY)
  .Lneed_resched:
@@ -81,10 +81,10 @@ index b5c2b1091b18..83d43eb2f556 100644
  	jz	restore_all_kernel
  	call	preempt_schedule_irq
 diff --git a/arch/x86/entry/entry_64.S b/arch/x86/entry/entry_64.S
-index 7b29f2c10d01..23dda6f4a69f 100644
+index 7ffd83c57ef2..663a99f6320f 100644
 --- a/arch/x86/entry/entry_64.S
 +++ b/arch/x86/entry/entry_64.S
-@@ -708,7 +708,23 @@ retint_kernel:
+@@ -732,7 +732,23 @@ retint_kernel:
  	btl	$9, EFLAGS(%rsp)		/* were interrupts off? */
  	jnc	1f
  0:	cmpl	$0, PER_CPU_VAR(__preempt_count)
@@ -235,5 +235,5 @@ index 01de31db300d..ce1c5b9fbd8c 100644
  	/* TLB state for the entry code */
  	OFFSET(TLB_STATE_user_pcid_flush_mask, tlb_state, user_pcid_flush_mask);
 -- 
-2.20.1
+2.25.1
 

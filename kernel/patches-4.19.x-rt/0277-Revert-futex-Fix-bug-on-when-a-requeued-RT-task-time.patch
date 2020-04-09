@@ -1,7 +1,7 @@
-From 9848e5129d0d928c27247ab10835cdfb2948bd60 Mon Sep 17 00:00:00 2001
+From 72c47093b9b237534280c6953d3cc0c635a96d3c Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 26 Jun 2019 17:44:18 +0200
-Subject: [PATCH 277/283] Revert "futex: Fix bug on when a requeued RT task
+Subject: [PATCH 277/328] Revert "futex: Fix bug on when a requeued RT task
  times out"
 
 [ Upstream commit f1a170cb3289a48df26cae3c60d77608f7a988bb ]
@@ -78,5 +78,5 @@ index 546aaf058b9e..a501f3b47081 100644
  extern struct task_struct *rt_mutex_next_owner(struct rt_mutex *lock);
  extern void rt_mutex_init_proxy_locked(struct rt_mutex *lock,
 -- 
-2.20.1
+2.25.1
 

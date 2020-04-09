@@ -1,7 +1,7 @@
-From d1e9e20fe16f16a1665eabaa44a0f1c2a4cebfec Mon Sep 17 00:00:00 2001
+From dc16c6a47edf44cb0f69ff6124d6a85ee6dd3dcc Mon Sep 17 00:00:00 2001
 From: Ingo Molnar <mingo@elte.hu>
 Date: Fri, 22 Jul 2011 17:58:40 +0200
-Subject: [PATCH 057/283] printk: Add a printk kill switch
+Subject: [PATCH 057/328] printk: Add a printk kill switch
 
 Add a prinkt-kill-switch. This is used from (NMI) watchdog to ensure that
 it does not dead-lock with the early printk code.
@@ -30,7 +30,7 @@ index cf3eccfe1543..30ebf5f82a7c 100644
  
  #ifdef CONFIG_PRINTK_NMI
 diff --git a/kernel/printk/printk.c b/kernel/printk/printk.c
-index 06045abd1887..413160a93814 100644
+index 7a2fdc097c8c..29838e532f46 100644
 --- a/kernel/printk/printk.c
 +++ b/kernel/printk/printk.c
 @@ -405,6 +405,58 @@ DEFINE_RAW_SPINLOCK(logbuf_lock);
@@ -92,9 +92,9 @@ index 06045abd1887..413160a93814 100644
  #ifdef CONFIG_PRINTK
  DECLARE_WAIT_QUEUE_HEAD(log_wait);
  /* the next printk record to read by syslog(READ) or /proc/kmsg */
-@@ -1897,6 +1949,13 @@ asmlinkage int vprintk_emit(int facility, int level,
- 	bool in_sched = false;
+@@ -1905,6 +1957,13 @@ asmlinkage int vprintk_emit(int facility, int level,
  	unsigned long flags;
+ 	u64 curr_log_seq;
  
 +	/*
 +	 * Fall back to early_printk if a debugging subsystem has
@@ -106,7 +106,7 @@ index 06045abd1887..413160a93814 100644
  	if (level == LOGLEVEL_SCHED) {
  		level = LOGLEVEL_DEFAULT;
  		in_sched = true;
-@@ -2037,26 +2096,6 @@ static bool suppress_message_printing(int level) { return false; }
+@@ -2049,26 +2108,6 @@ static bool suppress_message_printing(int level) { return false; }
  
  #endif /* CONFIG_PRINTK */
  
@@ -169,5 +169,5 @@ index 71381168dede..685443375dc0 100644
  			nmi_panic(regs, "Hard LOCKUP");
  
 -- 
-2.20.1
+2.25.1
 

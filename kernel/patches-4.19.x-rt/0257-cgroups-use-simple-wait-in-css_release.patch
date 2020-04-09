@@ -1,7 +1,7 @@
-From bd17886ee0bbb3d61ca16373b799a2e9f4f71fb3 Mon Sep 17 00:00:00 2001
+From 33ef8c81b2c33d47247da6b0b5d534c41dd7359a Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Fri, 13 Feb 2015 15:52:24 +0100
-Subject: [PATCH 257/283] cgroups: use simple wait in css_release()
+Subject: [PATCH 257/328] cgroups: use simple wait in css_release()
 
 To avoid:
 |BUG: sleeping function called from invalid context at kernel/locking/rtmutex.c:914
@@ -34,7 +34,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  2 files changed, 7 insertions(+), 4 deletions(-)
 
 diff --git a/include/linux/cgroup-defs.h b/include/linux/cgroup-defs.h
-index a6090154b2ab..46a706e2ba35 100644
+index a01ebb630abc..34fb541e90be 100644
 --- a/include/linux/cgroup-defs.h
 +++ b/include/linux/cgroup-defs.h
 @@ -20,6 +20,7 @@
@@ -54,10 +54,10 @@ index a6090154b2ab..46a706e2ba35 100644
  
  	/*
 diff --git a/kernel/cgroup/cgroup.c b/kernel/cgroup/cgroup.c
-index 81441117f611..7b536796daf8 100644
+index 08bd40d90066..aceac97f78f4 100644
 --- a/kernel/cgroup/cgroup.c
 +++ b/kernel/cgroup/cgroup.c
-@@ -4628,10 +4628,10 @@ static void css_free_rwork_fn(struct work_struct *work)
+@@ -4667,10 +4667,10 @@ static void css_free_rwork_fn(struct work_struct *work)
  	}
  }
  
@@ -70,7 +70,7 @@ index 81441117f611..7b536796daf8 100644
  	struct cgroup_subsys *ss = css->ss;
  	struct cgroup *cgrp = css->cgroup;
  
-@@ -4693,8 +4693,8 @@ static void css_release(struct percpu_ref *ref)
+@@ -4732,8 +4732,8 @@ static void css_release(struct percpu_ref *ref)
  	struct cgroup_subsys_state *css =
  		container_of(ref, struct cgroup_subsys_state, refcnt);
  
@@ -81,7 +81,7 @@ index 81441117f611..7b536796daf8 100644
  }
  
  static void init_and_link_css(struct cgroup_subsys_state *css,
-@@ -5420,6 +5420,7 @@ static int __init cgroup_wq_init(void)
+@@ -5459,6 +5459,7 @@ static int __init cgroup_wq_init(void)
  	 */
  	cgroup_destroy_wq = alloc_workqueue("cgroup_destroy", 0, 1);
  	BUG_ON(!cgroup_destroy_wq);
@@ -90,5 +90,5 @@ index 81441117f611..7b536796daf8 100644
  }
  core_initcall(cgroup_wq_init);
 -- 
-2.20.1
+2.25.1
 

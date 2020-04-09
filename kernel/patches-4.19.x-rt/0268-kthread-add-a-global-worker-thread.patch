@@ -1,7 +1,7 @@
-From 59fa1a99358d2859eff36b2531fed5a219437ad5 Mon Sep 17 00:00:00 2001
+From e63273e590c9d2a348ac876a3e0a86fe0053be88 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Tue, 12 Feb 2019 15:09:38 +0100
-Subject: [PATCH 268/283] kthread: add a global worker thread.
+Subject: [PATCH 268/328] kthread: add a global worker thread.
 
 [ Upstream commit 0532e87d9d44795221aa921ba7024bde689cc894 ]
 
@@ -28,7 +28,7 @@ Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
  create mode 100644 include/linux/kthread-cgroup.h
 
 diff --git a/drivers/block/loop.c b/drivers/block/loop.c
-index f1e63eb7cbca..aa76c816dbb4 100644
+index 9cd231a27328..351ea22ffb56 100644
 --- a/drivers/block/loop.c
 +++ b/drivers/block/loop.c
 @@ -70,7 +70,7 @@
@@ -41,7 +41,7 @@ index f1e63eb7cbca..aa76c816dbb4 100644
  #include <linux/sysfs.h>
  #include <linux/miscdevice.h>
 diff --git a/drivers/spi/spi-rockchip.c b/drivers/spi/spi-rockchip.c
-index fdcf3076681b..b56619418cea 100644
+index 185bbdce62b1..63b10236eb05 100644
 --- a/drivers/spi/spi-rockchip.c
 +++ b/drivers/spi/spi-rockchip.c
 @@ -22,6 +22,7 @@
@@ -131,10 +131,10 @@ index ad292898f7f2..7cf56eb54103 100644
 +
  #endif /* _LINUX_KTHREAD_H */
 diff --git a/init/main.c b/init/main.c
-index 4a7471606e53..b0e95351c22c 100644
+index 6e02188386a7..e514dd93de76 100644
 --- a/init/main.c
 +++ b/init/main.c
-@@ -1130,6 +1130,7 @@ static noinline void __init kernel_init_freeable(void)
+@@ -1129,6 +1129,7 @@ static noinline void __init kernel_init_freeable(void)
  	smp_prepare_cpus(setup_max_cpus);
  
  	workqueue_init();
@@ -175,5 +175,5 @@ index 5641b55783a6..9db017761a1f 100644
  /**
   * kthread_associate_blkcg - associate blkcg to current kthread
 -- 
-2.20.1
+2.25.1
 

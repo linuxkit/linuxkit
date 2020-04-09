@@ -1,7 +1,7 @@
-From fb089e89b26bc5653a90d9983021813e15fa04d9 Mon Sep 17 00:00:00 2001
+From 5af4ea849237914c63d3fd50079e6975aa28f9b2 Mon Sep 17 00:00:00 2001
 From: Frank Rowand <frank.rowand@am.sony.com>
 Date: Sat, 1 Oct 2011 18:58:13 -0700
-Subject: [PATCH 080/283] ARM: Initialize split page table locks for vector
+Subject: [PATCH 080/328] ARM: Initialize split page table locks for vector
  page
 
 Without this patch, ARM can not use SPLIT_PTLOCK_CPUS if
@@ -71,5 +71,5 @@ index 82ab015bf42b..8d3c7ce34c24 100644
  /*
   * The vectors page is always readable from user space for the
 -- 
-2.20.1
+2.25.1
 

@@ -1,7 +1,7 @@
-From d7138138dbb45015e20668ec13215dc198c4c4d9 Mon Sep 17 00:00:00 2001
+From 5f480f8b688aa96212f301664644d53b0d3a3e95 Mon Sep 17 00:00:00 2001
 From: Thomas Gleixner <tglx@linutronix.de>
 Date: Tue, 21 Aug 2012 20:38:50 +0200
-Subject: [PATCH 228/283] random: Make it work on rt
+Subject: [PATCH 228/328] random: Make it work on rt
 
 Delegate the random insertion to the forced threaded interrupt
 handler. Store the return IP of the hard interrupt handler in the irq
@@ -20,7 +20,7 @@ Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
  7 files changed, 26 insertions(+), 10 deletions(-)
 
 diff --git a/drivers/char/random.c b/drivers/char/random.c
-index 0a84b7f468ad..75ae2d9e8720 100644
+index 28b110cd3977..d15dd08a92e2 100644
 --- a/drivers/char/random.c
 +++ b/drivers/char/random.c
 @@ -1232,28 +1232,27 @@ static __u32 get_reg(struct fast_pool *f, struct pt_regs *regs)
@@ -58,7 +58,7 @@ index 0a84b7f468ad..75ae2d9e8720 100644
  	fast_mix(fast_pool);
  	add_interrupt_bench(cycles);
 diff --git a/drivers/hv/hv.c b/drivers/hv/hv.c
-index 8e923e70e594..e77716a62351 100644
+index 12bc9fa21111..278f03f50147 100644
 --- a/drivers/hv/hv.c
 +++ b/drivers/hv/hv.c
 @@ -112,10 +112,12 @@ int hv_post_message(union hv_connection_id connection_id,
@@ -145,10 +145,10 @@ index 38554bc35375..06a80bbf78af 100644
  	if (!noirqdebug)
  		note_interrupt(desc, retval);
 diff --git a/kernel/irq/manage.c b/kernel/irq/manage.c
-index aafe2256bd39..7f4041357d2f 100644
+index 5701774a6d71..ce86341a9e19 100644
 --- a/kernel/irq/manage.c
 +++ b/kernel/irq/manage.c
-@@ -1084,6 +1084,12 @@ static int irq_thread(void *data)
+@@ -1110,6 +1110,12 @@ static int irq_thread(void *data)
  		if (action_ret == IRQ_WAKE_THREAD)
  			irq_wake_secondary(desc, action);
  
@@ -162,5 +162,5 @@ index aafe2256bd39..7f4041357d2f 100644
  	}
  
 -- 
-2.20.1
+2.25.1
 

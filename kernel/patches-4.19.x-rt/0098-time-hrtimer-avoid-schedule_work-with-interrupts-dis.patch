@@ -1,7 +1,7 @@
-From 7ada38687fe4d4f0ff8b7390d1588f7fed28a28d Mon Sep 17 00:00:00 2001
+From 059e9b393e1838e4ad06a521a8e11c21e7ea7919 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 15 Nov 2017 17:29:51 +0100
-Subject: [PATCH 098/283] time/hrtimer: avoid schedule_work() with interrupts
+Subject: [PATCH 098/328] time/hrtimer: avoid schedule_work() with interrupts
  disabled
 
 The NOHZ code tries to schedule a workqueue with interrupts disabled.
@@ -13,7 +13,7 @@ Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
  1 file changed, 11 insertions(+), 4 deletions(-)
 
 diff --git a/kernel/time/timer.c b/kernel/time/timer.c
-index bbe24e241643..696e7583137c 100644
+index 9019c9caf146..3fab1c50bf1b 100644
 --- a/kernel/time/timer.c
 +++ b/kernel/time/timer.c
 @@ -217,8 +217,7 @@ static DEFINE_PER_CPU(struct timer_base, timer_bases[NR_BASES]);
@@ -55,5 +55,5 @@ index bbe24e241643..696e7583137c 100644
  			    void __user *buffer, size_t *lenp,
  			    loff_t *ppos)
 -- 
-2.20.1
+2.25.1
 

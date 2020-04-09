@@ -1,7 +1,7 @@
-From f0d7dcb8d6664bb3c716c75710d0a37f3ed3d107 Mon Sep 17 00:00:00 2001
+From 41d62c0f01ed3d5b94cee9c89dba5a3ba0947e42 Mon Sep 17 00:00:00 2001
 From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
 Date: Wed, 14 Sep 2016 17:36:35 +0200
-Subject: [PATCH 202/283] net/Qdisc: use a seqlock instead seqcount
+Subject: [PATCH 202/328] net/Qdisc: use a seqlock instead seqcount
 
 The seqcount disables preemption on -RT while it is held which can't
 remove. Also we don't want the reader to spin for ages if the writer is
@@ -105,7 +105,7 @@ index 000000000000..a7034298a82a
 +
 +#endif
 diff --git a/include/net/sch_generic.h b/include/net/sch_generic.h
-index c44da48de7df..c85ac38f7fa9 100644
+index d737a6a2600b..2d35b952bf60 100644
 --- a/include/net/sch_generic.h
 +++ b/include/net/sch_generic.h
 @@ -10,6 +10,7 @@
@@ -165,7 +165,7 @@ index c44da48de7df..c85ac38f7fa9 100644
  	if (qdisc->flags & TCQ_F_NOLOCK)
  		spin_unlock(&qdisc->seqlock);
  }
-@@ -453,7 +468,7 @@ static inline spinlock_t *qdisc_root_sleeping_lock(const struct Qdisc *qdisc)
+@@ -459,7 +474,7 @@ static inline spinlock_t *qdisc_root_sleeping_lock(const struct Qdisc *qdisc)
  	return qdisc_lock(root);
  }
  
@@ -241,7 +241,7 @@ index e2fd8baec65f..8bab88738691 100644
  		      struct gnet_stats_basic_cpu __percpu *cpu,
  		      struct gnet_stats_basic_packed *b)
 diff --git a/net/sched/sch_api.c b/net/sched/sch_api.c
-index be7cd140b2a3..5b8f90de0615 100644
+index 39e319d04bb8..fe99928aff78 100644
 --- a/net/sched/sch_api.c
 +++ b/net/sched/sch_api.c
 @@ -1166,7 +1166,7 @@ static struct Qdisc *qdisc_create(struct net_device *dev,
@@ -254,10 +254,10 @@ index be7cd140b2a3..5b8f90de0615 100644
  		err = -EOPNOTSUPP;
  		if (sch->flags & TCQ_F_MQROOT) {
 diff --git a/net/sched/sch_generic.c b/net/sched/sch_generic.c
-index 31b9c2b415b4..b0cc57ff96e3 100644
+index 4ab20f1138fd..a9ed58ca3924 100644
 --- a/net/sched/sch_generic.c
 +++ b/net/sched/sch_generic.c
-@@ -570,7 +570,11 @@ struct Qdisc noop_qdisc = {
+@@ -575,7 +575,11 @@ struct Qdisc noop_qdisc = {
  	.ops		=	&noop_qdisc_ops,
  	.q.lock		=	__SPIN_LOCK_UNLOCKED(noop_qdisc.q.lock),
  	.dev_queue	=	&noop_netdev_queue,
@@ -267,9 +267,9 @@ index 31b9c2b415b4..b0cc57ff96e3 100644
  	.running	=	SEQCNT_ZERO(noop_qdisc.running),
 +#endif
  	.busylock	=	__SPIN_LOCK_UNLOCKED(noop_qdisc.busylock),
- };
- EXPORT_SYMBOL(noop_qdisc);
-@@ -859,9 +863,17 @@ struct Qdisc *qdisc_alloc(struct netdev_queue *dev_queue,
+ 	.gso_skb = {
+ 		.next = (struct sk_buff *)&noop_qdisc.gso_skb,
+@@ -876,9 +880,17 @@ struct Qdisc *qdisc_alloc(struct netdev_queue *dev_queue,
  	lockdep_set_class(&sch->busylock,
  			  dev->qdisc_tx_busylock ?: &qdisc_tx_busylock);
  
@@ -288,5 +288,5 @@ index 31b9c2b415b4..b0cc57ff96e3 100644
  	sch->ops = ops;
  	sch->flags = ops->static_flags;
 -- 
-2.20.1
+2.25.1
 

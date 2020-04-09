@@ -1,0 +1,70 @@
+From ab2dc29034ff92024537b768305a45a2d4b138fb Mon Sep 17 00:00:00 2001
+From: "Steven Rostedt (VMware)" <rostedt@goodmis.org>
+Date: Fri, 20 Sep 2019 17:50:53 -0400
+Subject: [PATCH 283/328] revert-aio
+
+revert: fs/aio: simple simple work
+
+Signed-off-by: Steven Rostedt (VMware) <rostedt@goodmis.org>
+---
+ fs/aio.c | 15 ++-------------
+ 1 file changed, 2 insertions(+), 13 deletions(-)
+
+diff --git a/fs/aio.c b/fs/aio.c
+index 93f8cf7fdeab..b5fbf2061868 100644
+--- a/fs/aio.c
++++ b/fs/aio.c
+@@ -42,7 +42,6 @@
+ #include <linux/ramfs.h>
+ #include <linux/percpu-refcount.h>
+ #include <linux/mount.h>
+-#include <linux/swork.h>
+ 
+ #include <asm/kmap_types.h>
+ #include <linux/uaccess.h>
+@@ -122,7 +121,6 @@ struct kioctx {
+ 	long			nr_pages;
+ 
+ 	struct rcu_work		free_rwork;	/* see free_ioctx() */
+-	struct swork_event	free_swork;	/* see free_ioctx() */
+ 
+ 	/*
+ 	 * signals when all in-flight requests are done
+@@ -267,7 +265,6 @@ static int __init aio_setup(void)
+ 		.mount		= aio_mount,
+ 		.kill_sb	= kill_anon_super,
+ 	};
+-	BUG_ON(swork_get());
+ 	aio_mnt = kern_mount(&aio_fs);
+ 	if (IS_ERR(aio_mnt))
+ 		panic("Failed to create aio fs mount.");
+@@ -609,9 +606,9 @@ static void free_ioctx_reqs(struct percpu_ref *ref)
+  * and ctx->users has dropped to 0, so we know no more kiocbs can be submitted -
+  * now it's safe to cancel any that need to be.
+  */
+-static void free_ioctx_users_work(struct swork_event *sev)
++static void free_ioctx_users(struct percpu_ref *ref)
+ {
+-	struct kioctx *ctx = container_of(sev, struct kioctx, free_swork);
++	struct kioctx *ctx = container_of(ref, struct kioctx, users);
+ 	struct aio_kiocb *req;
+ 
+ 	spin_lock_irq(&ctx->ctx_lock);
+@@ -629,14 +626,6 @@ static void free_ioctx_users_work(struct swork_event *sev)
+ 	percpu_ref_put(&ctx->reqs);
+ }
+ 
+-static void free_ioctx_users(struct percpu_ref *ref)
+-{
+-	struct kioctx *ctx = container_of(ref, struct kioctx, users);
+-
+-	INIT_SWORK(&ctx->free_swork, free_ioctx_users_work);
+-	swork_queue(&ctx->free_swork);
+-}
+-
+ static int ioctx_add_table(struct kioctx *ctx, struct mm_struct *mm)
+ {
+ 	unsigned i, new_nr;
+-- 
+2.25.1
+
