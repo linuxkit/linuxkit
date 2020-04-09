@@ -1,0 +1,102 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Fri, 10 Jan 2020 16:45:32 +0106
+Subject: [PATCH] serial: 8250: fsl/ingenic/mtk: fix atomic console
+
+A few 8250 implementations have their own IER access. If the port
+is a console, wrap the accesses with console_atomic_lock.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/tty/serial/8250/8250_fsl.c     |    9 +++++++++
+ drivers/tty/serial/8250/8250_ingenic.c |    7 +++++++
+ drivers/tty/serial/8250/8250_mtk.c     |   29 +++++++++++++++++++++++++++--
+ 3 files changed, 43 insertions(+), 2 deletions(-)
+
+--- a/drivers/tty/serial/8250/8250_fsl.c
++++ b/drivers/tty/serial/8250/8250_fsl.c
+@@ -57,9 +57,18 @@ int fsl8250_handle_irq(struct uart_port
+ 
+ 	/* Stop processing interrupts on input overrun */
+ 	if ((orig_lsr & UART_LSR_OE) && (up->overrun_backoff_time_ms > 0)) {
++		unsigned int ca_flags;
+ 		unsigned long delay;
++		bool is_console;
+ 
++		is_console = uart_console(port);
++
++		if (is_console)
++			console_atomic_lock(&ca_flags);
+ 		up->ier = port->serial_in(port, UART_IER);
++		if (is_console)
++			console_atomic_unlock(ca_flags);
++
+ 		if (up->ier & (UART_IER_RLSI | UART_IER_RDI)) {
+ 			port->ops->stop_rx(port);
+ 		} else {
+--- a/drivers/tty/serial/8250/8250_ingenic.c
++++ b/drivers/tty/serial/8250/8250_ingenic.c
+@@ -146,6 +146,8 @@ OF_EARLYCON_DECLARE(x1000_uart, "ingenic
+ 
+ static void ingenic_uart_serial_out(struct uart_port *p, int offset, int value)
+ {
++	unsigned int flags;
++	bool is_console;
+ 	int ier;
+ 
+ 	switch (offset) {
+@@ -167,7 +169,12 @@ static void ingenic_uart_serial_out(stru
+ 		 * If we have enabled modem status IRQs we should enable
+ 		 * modem mode.
+ 		 */
++		is_console = uart_console(p);
++		if (is_console)
++			console_atomic_lock(&flags);
+ 		ier = p->serial_in(p, UART_IER);
++		if (is_console)
++			console_atomic_unlock(flags);
+ 
+ 		if (ier & UART_IER_MSI)
+ 			value |= UART_MCR_MDCE | UART_MCR_FCM;
+--- a/drivers/tty/serial/8250/8250_mtk.c
++++ b/drivers/tty/serial/8250/8250_mtk.c
+@@ -212,12 +212,37 @@ static void mtk8250_shutdown(struct uart
+ 
+ static void mtk8250_disable_intrs(struct uart_8250_port *up, int mask)
+ {
+-	serial_out(up, UART_IER, serial_in(up, UART_IER) & (~mask));
++	struct uart_port *port = &up->port;
++	unsigned int flags;
++	unsigned int ier;
++	bool is_console;
++
++	is_console = uart_console(port);
++
++	if (is_console)
++		console_atomic_lock(&flags);
++
++	ier = serial_in(up, UART_IER);
++	serial_out(up, UART_IER, ier & (~mask));
++
++	if (is_console)
++		console_atomic_unlock(flags);
+ }
+ 
+ static void mtk8250_enable_intrs(struct uart_8250_port *up, int mask)
+ {
+-	serial_out(up, UART_IER, serial_in(up, UART_IER) | mask);
++	struct uart_port *port = &up->port;
++	unsigned int flags;
++	unsigned int ier;
++
++	if (uart_console(port))
++		console_atomic_lock(&flags);
++
++	ier = serial_in(up, UART_IER);
++	serial_out(up, UART_IER, ier | mask);
++
++	if (uart_console(port))
++		console_atomic_unlock(flags);
+ }
+ 
+ static void mtk8250_set_flow_ctrl(struct uart_8250_port *up, int mode)

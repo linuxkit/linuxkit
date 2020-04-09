@@ -1,0 +1,115 @@
+Subject: rt: Introduce cpu_chill()
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 07 Mar 2012 20:51:03 +0100
+
+Retry loops on RT might loop forever when the modifying side was
+preempted. Add cpu_chill() to replace cpu_relax(). cpu_chill()
+defaults to cpu_relax() for non RT. On RT it puts the looping task to
+sleep for a tick so the preempted task can make progress.
+
+Steven Rostedt changed it to use a hrtimer instead of msleep():
+|
+|Ulrich Obergfell pointed out that cpu_chill() calls msleep() which is woken
+|up by the ksoftirqd running the TIMER softirq. But as the cpu_chill() is
+|called from softirq context, it may block the ksoftirqd() from running, in
+|which case, it may never wake up the msleep() causing the deadlock.
+
++ bigeasy later changed to schedule_hrtimeout()
+|If a task calls cpu_chill() and gets woken up by a regular or spurious
+|wakeup and has a signal pending, then it exits the sleep loop in
+|do_nanosleep() and sets up the restart block. If restart->nanosleep.type is
+|not TI_NONE then this results in accessing a stale user pointer from a
+|previously interrupted syscall and a copy to user based on the stale
+|pointer or a BUG() when 'type' is not supported in nanosleep_copyout().
+
++ bigeasy: add PF_NOFREEZE:
+| [....] Waiting for /dev to be fully populated...
+| =====================================
+| [ BUG: udevd/229 still has locks held! ]
+| 3.12.11-rt17 #23 Not tainted
+| -------------------------------------
+| 1 lock held by udevd/229:
+|  #0:  (&type->i_mutex_dir_key#2){+.+.+.}, at: lookup_slow+0x28/0x98
+|
+| stack backtrace:
+| CPU: 0 PID: 229 Comm: udevd Not tainted 3.12.11-rt17 #23
+| (unwind_backtrace+0x0/0xf8) from (show_stack+0x10/0x14)
+| (show_stack+0x10/0x14) from (dump_stack+0x74/0xbc)
+| (dump_stack+0x74/0xbc) from (do_nanosleep+0x120/0x160)
+| (do_nanosleep+0x120/0x160) from (hrtimer_nanosleep+0x90/0x110)
+| (hrtimer_nanosleep+0x90/0x110) from (cpu_chill+0x30/0x38)
+| (cpu_chill+0x30/0x38) from (dentry_kill+0x158/0x1ec)
+| (dentry_kill+0x158/0x1ec) from (dput+0x74/0x15c)
+| (dput+0x74/0x15c) from (lookup_real+0x4c/0x50)
+| (lookup_real+0x4c/0x50) from (__lookup_hash+0x34/0x44)
+| (__lookup_hash+0x34/0x44) from (lookup_slow+0x38/0x98)
+| (lookup_slow+0x38/0x98) from (path_lookupat+0x208/0x7fc)
+| (path_lookupat+0x208/0x7fc) from (filename_lookup+0x20/0x60)
+| (filename_lookup+0x20/0x60) from (user_path_at_empty+0x50/0x7c)
+| (user_path_at_empty+0x50/0x7c) from (user_path_at+0x14/0x1c)
+| (user_path_at+0x14/0x1c) from (vfs_fstatat+0x48/0x94)
+| (vfs_fstatat+0x48/0x94) from (SyS_stat64+0x14/0x30)
+| (SyS_stat64+0x14/0x30) from (ret_fast_syscall+0x0/0x48)
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/delay.h |    6 ++++++
+ kernel/time/hrtimer.c |   32 ++++++++++++++++++++++++++++++++
+ 2 files changed, 38 insertions(+)
+
+--- a/include/linux/delay.h
++++ b/include/linux/delay.h
+@@ -65,4 +65,10 @@ static inline void ssleep(unsigned int s
+ 	msleep(seconds * 1000);
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT
++extern void cpu_chill(void);
++#else
++# define cpu_chill()	cpu_relax()
++#endif
++
+ #endif /* defined(_LINUX_DELAY_H) */
+--- a/kernel/time/hrtimer.c
++++ b/kernel/time/hrtimer.c
+@@ -1982,6 +1982,38 @@ SYSCALL_DEFINE2(nanosleep_time32, struct
+ }
+ #endif
+ 
++#ifdef CONFIG_PREEMPT_RT
++/*
++ * Sleep for 1 ms in hope whoever holds what we want will let it go.
++ */
++void cpu_chill(void)
++{
++	unsigned int freeze_flag = current->flags & PF_NOFREEZE;
++	struct task_struct *self = current;
++	ktime_t chill_time;
++
++	raw_spin_lock_irq(&self->pi_lock);
++	self->saved_state = self->state;
++	__set_current_state_no_track(TASK_UNINTERRUPTIBLE);
++	raw_spin_unlock_irq(&self->pi_lock);
++
++	chill_time = ktime_set(0, NSEC_PER_MSEC);
++
++	current->flags |= PF_NOFREEZE;
++	sleeping_lock_inc();
++	schedule_hrtimeout(&chill_time, HRTIMER_MODE_REL_HARD);
++	sleeping_lock_dec();
++	if (!freeze_flag)
++		current->flags &= ~PF_NOFREEZE;
++
++	raw_spin_lock_irq(&self->pi_lock);
++	__set_current_state_no_track(self->saved_state);
++	self->saved_state = TASK_RUNNING;
++	raw_spin_unlock_irq(&self->pi_lock);
++}
++EXPORT_SYMBOL(cpu_chill);
++#endif
++
+ /*
+  * Functions related to boot-time initialization:
+  */

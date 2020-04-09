@@ -1,0 +1,42 @@
+Subject: net: Use cpu_chill() instead of cpu_relax()
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 07 Mar 2012 21:10:04 +0100
+
+Retry loops on RT might loop forever when the modifying side was
+preempted. Use cpu_chill() instead of cpu_relax() to let the system
+make progress.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ net/packet/af_packet.c |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/net/packet/af_packet.c
++++ b/net/packet/af_packet.c
+@@ -57,6 +57,7 @@
+ #include <linux/if_packet.h>
+ #include <linux/wireless.h>
+ #include <linux/kernel.h>
++#include <linux/delay.h>
+ #include <linux/kmod.h>
+ #include <linux/slab.h>
+ #include <linux/vmalloc.h>
+@@ -660,7 +661,7 @@ static void prb_retire_rx_blk_timer_expi
+ 	if (BLOCK_NUM_PKTS(pbd)) {
+ 		while (atomic_read(&pkc->blk_fill_in_prog)) {
+ 			/* Waiting for skb_copy_bits to finish... */
+-			cpu_relax();
++			cpu_chill();
+ 		}
+ 	}
+ 
+@@ -922,7 +923,7 @@ static void prb_retire_current_block(str
+ 		if (!(status & TP_STATUS_BLK_TMO)) {
+ 			while (atomic_read(&pkc->blk_fill_in_prog)) {
+ 				/* Waiting for skb_copy_bits to finish... */
+-				cpu_relax();
++				cpu_chill();
+ 			}
+ 		}
+ 		prb_close_block(pkc, pbd, po, status);

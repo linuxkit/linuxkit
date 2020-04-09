@@ -1,0 +1,46 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 13 Aug 2019 14:29:41 +0200
+Subject: [PATCH] KVM: arm/arm64: Let the timer expire in hardirq context
+ on RT
+
+The timers are canceled from an preempt-notifier which is invoked with
+disabled preemption which is not allowed on PREEMPT_RT.
+The timer callback is short so in could be invoked in hard-IRQ context
+on -RT.
+
+Let the timer expire on hard-IRQ context even on -RT.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Acked-by: Marc Zyngier <maz@kernel.org>
+Tested-by: Julien Grall <julien.grall@arm.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ virt/kvm/arm/arch_timer.c |    8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+--- a/virt/kvm/arm/arch_timer.c
++++ b/virt/kvm/arm/arch_timer.c
+@@ -80,7 +80,7 @@ static inline bool userspace_irqchip(str
+ static void soft_timer_start(struct hrtimer *hrt, u64 ns)
+ {
+ 	hrtimer_start(hrt, ktime_add_ns(ktime_get(), ns),
+-		      HRTIMER_MODE_ABS);
++		      HRTIMER_MODE_ABS_HARD);
+ }
+ 
+ static void soft_timer_cancel(struct hrtimer *hrt)
+@@ -697,11 +697,11 @@ void kvm_timer_vcpu_init(struct kvm_vcpu
+ 	update_vtimer_cntvoff(vcpu, kvm_phys_timer_read());
+ 	ptimer->cntvoff = 0;
+ 
+-	hrtimer_init(&timer->bg_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
++	hrtimer_init(&timer->bg_timer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_HARD);
+ 	timer->bg_timer.function = kvm_bg_timer_expire;
+ 
+-	hrtimer_init(&vtimer->hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
+-	hrtimer_init(&ptimer->hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS);
++	hrtimer_init(&vtimer->hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_HARD);
++	hrtimer_init(&ptimer->hrtimer, CLOCK_MONOTONIC, HRTIMER_MODE_ABS_HARD);
+ 	vtimer->hrtimer.function = kvm_hrtimer_expire;
+ 	ptimer->hrtimer.function = kvm_hrtimer_expire;
+ 

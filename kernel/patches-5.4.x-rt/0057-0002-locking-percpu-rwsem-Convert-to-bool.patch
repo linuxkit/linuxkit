@@ -1,0 +1,75 @@
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Fri, 31 Jan 2020 16:07:05 +0100
+Subject: [PATCH 2/7] locking/percpu-rwsem: Convert to bool
+
+Use bool where possible.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Tested-by: Juri Lelli <juri.lelli@redhat.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/percpu-rwsem.h  |    6 +++---
+ kernel/locking/percpu-rwsem.c |    8 ++++----
+ 2 files changed, 7 insertions(+), 7 deletions(-)
+
+--- a/include/linux/percpu-rwsem.h
++++ b/include/linux/percpu-rwsem.h
+@@ -41,7 +41,7 @@ is_static struct percpu_rw_semaphore nam
+ #define DEFINE_STATIC_PERCPU_RWSEM(name)	\
+ 	__DEFINE_PERCPU_RWSEM(name, static)
+ 
+-extern int __percpu_down_read(struct percpu_rw_semaphore *, int);
++extern bool __percpu_down_read(struct percpu_rw_semaphore *, bool);
+ extern void __percpu_up_read(struct percpu_rw_semaphore *);
+ 
+ static inline void percpu_down_read(struct percpu_rw_semaphore *sem)
+@@ -69,9 +69,9 @@ static inline void percpu_down_read(stru
+ 	preempt_enable();
+ }
+ 
+-static inline int percpu_down_read_trylock(struct percpu_rw_semaphore *sem)
++static inline bool percpu_down_read_trylock(struct percpu_rw_semaphore *sem)
+ {
+-	int ret = 1;
++	bool ret = true;
+ 
+ 	preempt_disable();
+ 	/*
+--- a/kernel/locking/percpu-rwsem.c
++++ b/kernel/locking/percpu-rwsem.c
+@@ -45,7 +45,7 @@ void percpu_free_rwsem(struct percpu_rw_
+ }
+ EXPORT_SYMBOL_GPL(percpu_free_rwsem);
+ 
+-int __percpu_down_read(struct percpu_rw_semaphore *sem, int try)
++bool __percpu_down_read(struct percpu_rw_semaphore *sem, bool try)
+ {
+ 	/*
+ 	 * Due to having preemption disabled the decrement happens on
+@@ -69,7 +69,7 @@ int __percpu_down_read(struct percpu_rw_
+ 	 * release in percpu_up_write().
+ 	 */
+ 	if (likely(!smp_load_acquire(&sem->readers_block)))
+-		return 1;
++		return true;
+ 
+ 	/*
+ 	 * Per the above comment; we still have preemption disabled and
+@@ -78,7 +78,7 @@ int __percpu_down_read(struct percpu_rw_
+ 	__percpu_up_read(sem);
+ 
+ 	if (try)
+-		return 0;
++		return false;
+ 
+ 	/*
+ 	 * We either call schedule() in the wait, or we'll fall through
+@@ -94,7 +94,7 @@ int __percpu_down_read(struct percpu_rw_
+ 	__up_read(&sem->rw_sem);
+ 
+ 	preempt_disable();
+-	return 1;
++	return true;
+ }
+ EXPORT_SYMBOL_GPL(__percpu_down_read);
+ 

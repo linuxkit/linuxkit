@@ -1,0 +1,44 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 21 Feb 2020 18:15:15 +0100
+Subject: [PATCH] tracing: make preempt_lazy and migrate_disable counter
+ smaller
+
+The migrate_disable counter should not exceed 255 so it is enough to
+store it in an 8bit field.
+With this change we can move the `preempt_lazy_count' member into the
+gap so the whole struct shrinks by 4 bytes to 12 bytes in total.
+Remove the `padding' field, it is not needed.
+Update the tracing fields in trace_define_common_fields() (it was
+missing the preempt_lazy_count field).
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/trace_events.h |    3 +--
+ kernel/trace/trace_events.c  |    4 ++--
+ 2 files changed, 3 insertions(+), 4 deletions(-)
+
+--- a/include/linux/trace_events.h
++++ b/include/linux/trace_events.h
+@@ -62,8 +62,7 @@ struct trace_entry {
+ 	unsigned char		flags;
+ 	unsigned char		preempt_count;
+ 	int			pid;
+-	unsigned short		migrate_disable;
+-	unsigned short		padding;
++	unsigned char		migrate_disable;
+ 	unsigned char		preempt_lazy_count;
+ };
+ 
+--- a/kernel/trace/trace_events.c
++++ b/kernel/trace/trace_events.c
+@@ -181,8 +181,8 @@ static int trace_define_common_fields(vo
+ 	__common_field(unsigned char, flags);
+ 	__common_field(unsigned char, preempt_count);
+ 	__common_field(int, pid);
+-	__common_field(unsigned short, migrate_disable);
+-	__common_field(unsigned short, padding);
++	__common_field(unsigned char, migrate_disable);
++	__common_field(unsigned char, preempt_lazy_count);
+ 
+ 	return ret;
+ }

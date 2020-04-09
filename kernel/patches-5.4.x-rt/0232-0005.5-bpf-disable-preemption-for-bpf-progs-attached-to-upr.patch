@@ -1,0 +1,34 @@
+From: Alexei Starovoitov <ast@kernel.org>
+Date: Mon, 24 Feb 2020 11:27:15 -0800
+Subject: [PATCH] bpf: disable preemption for bpf progs attached to uprobe
+
+trace_call_bpf() no longer disables preemption on its own.
+All callers of this function has to do it explicitly.
+
+Signed-off-by: Alexei Starovoitov <ast@kernel.org>
+Acked-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/trace_uprobe.c |   11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+--- a/kernel/trace/trace_uprobe.c
++++ b/kernel/trace/trace_uprobe.c
+@@ -1333,8 +1333,15 @@ static void __uprobe_perf_func(struct tr
+ 	int size, esize;
+ 	int rctx;
+ 
+-	if (bpf_prog_array_valid(call) && !trace_call_bpf(call, regs))
+-		return;
++	if (bpf_prog_array_valid(call)) {
++		u32 ret;
++
++		preempt_disable();
++		ret = trace_call_bpf(call, regs);
++		preempt_enable();
++		if (!ret)
++			return;
++	}
+ 
+ 	esize = SIZEOF_TRACE_ENTRY(is_ret_probe(tu));
+ 

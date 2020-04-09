@@ -1,0 +1,24 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 22 Feb 2019 12:47:13 +0100
+Subject: [PATCH] printk: print "rate-limitted" message as info
+
+If messages which are injected via kmsg are dropped then they don't need
+to be printed as warnings. This is to avoid latency spikes if the
+interface decides to print a lot of important messages.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/ratelimit.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/include/linux/ratelimit.h
++++ b/include/linux/ratelimit.h
+@@ -59,7 +59,7 @@ static inline void ratelimit_state_exit(
+ 		return;
+ 
+ 	if (rs->missed) {
+-		pr_warn("%s: %d output lines suppressed due to ratelimiting\n",
++		pr_info("%s: %d output lines suppressed due to ratelimiting\n",
+ 			current->comm, rs->missed);
+ 		rs->missed = 0;
+ 	}

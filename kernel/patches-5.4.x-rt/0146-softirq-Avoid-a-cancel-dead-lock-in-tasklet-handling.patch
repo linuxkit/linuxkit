@@ -1,0 +1,48 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Sat, 22 Jun 2019 00:09:22 +0200
+Subject: [PATCH] softirq: Avoid a cancel dead-lock in tasklet handling due to
+ preemptible-softirq
+
+A pending / active tasklet which is preempted by a task on the same CPU
+will spin indefinitely because the tasklet makes no progress.
+To avoid this deadlock we can disable BH which will acquire the
+softirq-lock which will force the completion of the softirq and so the
+tasklet.
+The BH off/on in tasklet_kill() will force tasklets which are not yet
+running but scheduled (because ksoftirqd was preempted before it could
+start the tasklet).
+The BH off/on in  tasklet_unlock_wait() will force tasklets which got
+preempted while running.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/interrupt.h |    5 ++++-
+ kernel/softirq.c          |    3 ++-
+ 2 files changed, 6 insertions(+), 2 deletions(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -626,7 +626,10 @@ static inline void tasklet_unlock(struct
+ 
+ static inline void tasklet_unlock_wait(struct tasklet_struct *t)
+ {
+-	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) { barrier(); }
++	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) {
++		local_bh_disable();
++		local_bh_enable();
++	}
+ }
+ #else
+ #define tasklet_trylock(t) 1
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -711,7 +711,8 @@ void tasklet_kill(struct tasklet_struct
+ 
+ 	while (test_and_set_bit(TASKLET_STATE_SCHED, &t->state)) {
+ 		do {
+-			yield();
++			local_bh_disable();
++			local_bh_enable();
+ 		} while (test_bit(TASKLET_STATE_SCHED, &t->state));
+ 	}
+ 	tasklet_unlock_wait(t);

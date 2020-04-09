@@ -1,0 +1,72 @@
+From: David Miller <davem@davemloft.net>
+Date: Mon, 24 Feb 2020 15:01:44 +0100
+Subject: [PATCH 13/22] bpf/tests: Use migrate disable instead of preempt
+ disable
+
+Replace the preemption disable/enable with migrate_disable/enable() to
+reflect the actual requirement and to allow PREEMPT_RT to substitute it
+with an actual migration disable mechanism which does not disable
+preemption.
+
+[ tglx: Switched it over to migrate disable ]
+
+Signed-off-by: David S. Miller <davem@davemloft.net>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ lib/test_bpf.c     |    4 ++--
+ net/bpf/test_run.c |    8 ++++----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/lib/test_bpf.c
++++ b/lib/test_bpf.c
+@@ -6660,14 +6660,14 @@ static int __run_one(const struct bpf_pr
+ 	u64 start, finish;
+ 	int ret = 0, i;
+ 
+-	preempt_disable();
++	migrate_disable();
+ 	start = ktime_get_ns();
+ 
+ 	for (i = 0; i < runs; i++)
+ 		ret = BPF_PROG_RUN(fp, data);
+ 
+ 	finish = ktime_get_ns();
+-	preempt_enable();
++	migrate_enable();
+ 
+ 	*duration = finish - start;
+ 	do_div(*duration, runs);
+--- a/net/bpf/test_run.c
++++ b/net/bpf/test_run.c
+@@ -37,7 +37,7 @@ static int bpf_test_run(struct bpf_prog
+ 		repeat = 1;
+ 
+ 	rcu_read_lock();
+-	preempt_disable();
++	migrate_disable();
+ 	time_start = ktime_get_ns();
+ 	for (i = 0; i < repeat; i++) {
+ 		bpf_cgroup_storage_set(storage);
+@@ -50,18 +50,18 @@ static int bpf_test_run(struct bpf_prog
+ 
+ 		if (need_resched()) {
+ 			time_spent += ktime_get_ns() - time_start;
+-			preempt_enable();
++			migrate_enable();
+ 			rcu_read_unlock();
+ 
+ 			cond_resched();
+ 
+ 			rcu_read_lock();
+-			preempt_disable();
++			migrate_disable();
+ 			time_start = ktime_get_ns();
+ 		}
+ 	}
+ 	time_spent += ktime_get_ns() - time_start;
+-	preempt_enable();
++	migrate_enable();
+ 	rcu_read_unlock();
+ 
+ 	do_div(time_spent, repeat);

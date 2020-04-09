@@ -1,0 +1,53 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 11 Jun 2019 11:21:09 +0200
+Subject: [PATCH 3/4] workqueue: Use swait for wq_manager_wait
+
+In order for the workqueue code use raw_spinlock_t typed locking there
+must not be a spinlock_t typed lock be acquired. A wait_queue_head uses
+a spinlock_t lock for its list protection.
+
+Use a swait based queue head to avoid raw_spinlock_t -> spinlock_t
+locking.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/workqueue.c |    7 ++++---
+ 1 file changed, 4 insertions(+), 3 deletions(-)
+
+--- a/kernel/workqueue.c
++++ b/kernel/workqueue.c
+@@ -50,6 +50,7 @@
+ #include <linux/uaccess.h>
+ #include <linux/sched/isolation.h>
+ #include <linux/nmi.h>
++#include <linux/swait.h>
+ 
+ #include "workqueue_internal.h"
+ 
+@@ -301,7 +302,7 @@ static struct workqueue_attrs *wq_update
+ static DEFINE_MUTEX(wq_pool_mutex);	/* protects pools and workqueues list */
+ static DEFINE_MUTEX(wq_pool_attach_mutex); /* protects worker attach/detach */
+ static DEFINE_SPINLOCK(wq_mayday_lock);	/* protects wq->maydays list */
+-static DECLARE_WAIT_QUEUE_HEAD(wq_manager_wait); /* wait for manager to go away */
++static DECLARE_SWAIT_QUEUE_HEAD(wq_manager_wait); /* wait for manager to go away */
+ 
+ static LIST_HEAD(workqueues);		/* PR: list of all workqueues */
+ static bool workqueue_freezing;		/* PL: have wqs started freezing? */
+@@ -2146,7 +2147,7 @@ static bool manage_workers(struct worker
+ 
+ 	pool->manager = NULL;
+ 	pool->flags &= ~POOL_MANAGER_ACTIVE;
+-	wake_up(&wq_manager_wait);
++	swake_up_one(&wq_manager_wait);
+ 	return true;
+ }
+ 
+@@ -3547,7 +3548,7 @@ static void put_unbound_pool(struct work
+ 	 * manager and @pool gets freed with the flag set.
+ 	 */
+ 	spin_lock_irq(&pool->lock);
+-	wait_event_lock_irq(wq_manager_wait,
++	swait_event_lock_irq(wq_manager_wait,
+ 			    !(pool->flags & POOL_MANAGER_ACTIVE), pool->lock);
+ 	pool->flags |= POOL_MANAGER_ACTIVE;
+ 

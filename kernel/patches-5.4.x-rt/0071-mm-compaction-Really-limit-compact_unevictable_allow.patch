@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 3 Mar 2020 13:43:25 +0100
+Subject: [PATCH] =?UTF-8?q?mm/compaction:=20Really=20limit=20compact=5Fune?=
+ =?UTF-8?q?victable=5Fallowed=20to=200=E2=80=A61?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+The proc file `compact_unevictable_allowed' should allow 0 and 1 only,
+the `extra*' attribues have been set properly but without
+proc_dointvec_minmax() as the `proc_handler' the limit will not be
+enforced.
+
+Use proc_dointvec_minmax() as the `proc_handler' to enfoce the valid
+specified range.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/sysctl.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/kernel/sysctl.c
++++ b/kernel/sysctl.c
+@@ -1493,7 +1493,7 @@ static struct ctl_table vm_table[] = {
+ 		.data		= &sysctl_compact_unevictable_allowed,
+ 		.maxlen		= sizeof(int),
+ 		.mode		= 0644,
+-		.proc_handler	= proc_dointvec,
++		.proc_handler	= proc_dointvec_minmax,
+ 		.extra1		= SYSCTL_ZERO,
+ 		.extra2		= SYSCTL_ONE,
+ 	},

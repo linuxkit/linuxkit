@@ -1,0 +1,13 @@
+Subject: Add localversion for -RT release
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 08 Jul 2011 20:25:16 +0200
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ localversion-rt |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- /dev/null
++++ b/localversion-rt
+@@ -0,0 +1 @@
++-rt19
