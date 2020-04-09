@@ -1,0 +1,37 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 24 Feb 2020 15:01:37 +0100
+Subject: [PATCH 06/22] bpf/trace: Remove redundant preempt_disable from
+ trace_call_bpf()
+
+Similar to __bpf_trace_run this is redundant because __bpf_trace_run() is
+invoked from a trace point via __DO_TRACE() which already disables
+preemption _before_ invoking any of the functions which are attached to a
+trace point.
+
+Remove it and add a cant_sleep() check.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/trace/bpf_trace.c |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/kernel/trace/bpf_trace.c
++++ b/kernel/trace/bpf_trace.c
+@@ -83,7 +83,7 @@ unsigned int trace_call_bpf(struct trace
+ 	if (in_nmi()) /* not supported yet */
+ 		return 1;
+ 
+-	preempt_disable();
++	cant_sleep();
+ 
+ 	if (unlikely(__this_cpu_inc_return(bpf_prog_active) != 1)) {
+ 		/*
+@@ -115,7 +115,6 @@ unsigned int trace_call_bpf(struct trace
+ 
+  out:
+ 	__this_cpu_dec(bpf_prog_active);
+-	preempt_enable();
+ 
+ 	return ret;
+ }

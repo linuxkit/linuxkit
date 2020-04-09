@@ -1,0 +1,272 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Tue, 12 Feb 2019 15:29:57 +0100
+Subject: [PATCH 19/25] printk: introduce emergency messages
+
+Console messages are generally either critical or non-critical.
+Critical messages are messages such as crashes or sysrq output.
+Critical messages should never be lost because generally they provide
+important debugging information.
+
+Since all console messages are output via a fully preemptible printk
+kernel thread, it is possible that messages are not output because
+that thread cannot be scheduled (BUG in scheduler, run-away RT task,
+etc).
+
+To allow critical messages to be output independent of the
+schedulability of the printk task, introduce an emergency mechanism
+that _immediately_ outputs the message to the consoles. To avoid
+possible unbounded latency issues, the emergency mechanism only
+outputs the printk line provided by the caller and ignores any
+pending messages in the log buffer.
+
+Critical messages are identified as messages (by default) with log
+level LOGLEVEL_WARNING or more critical. This is configurable via the
+kernel option CONSOLE_LOGLEVEL_EMERGENCY.
+
+Any messages output as emergency messages are skipped by the printk
+thread on those consoles that output the emergency message.
+
+In order for a console driver to support emergency messages, the
+write_atomic function must be implemented by the driver. If not
+implemented, the emergency messages are handled like all other
+messages and are printed by the printk thread.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/printk.h |    2 
+ kernel/printk/printk.c |  111 ++++++++++++++++++++++++++++++++++++++++++++++---
+ lib/Kconfig.debug      |   17 +++++++
+ 3 files changed, 124 insertions(+), 6 deletions(-)
+
+--- a/include/linux/printk.h
++++ b/include/linux/printk.h
+@@ -58,6 +58,7 @@ static inline const char *printk_skip_he
+  */
+ #define CONSOLE_LOGLEVEL_DEFAULT CONFIG_CONSOLE_LOGLEVEL_DEFAULT
+ #define CONSOLE_LOGLEVEL_QUIET	 CONFIG_CONSOLE_LOGLEVEL_QUIET
++#define CONSOLE_LOGLEVEL_EMERGENCY CONFIG_CONSOLE_LOGLEVEL_EMERGENCY
+ 
+ extern int console_printk[];
+ 
+@@ -65,6 +66,7 @@ extern int console_printk[];
+ #define default_message_loglevel (console_printk[1])
+ #define minimum_console_loglevel (console_printk[2])
+ #define default_console_loglevel (console_printk[3])
++#define emergency_console_loglevel (console_printk[4])
+ 
+ static inline void console_silent(void)
+ {
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -46,6 +46,7 @@
+ #include <linux/ctype.h>
+ #include <linux/uio.h>
+ #include <linux/kthread.h>
++#include <linux/clocksource.h>
+ #include <linux/printk_ringbuffer.h>
+ #include <linux/sched/clock.h>
+ #include <linux/sched/debug.h>
+@@ -62,11 +63,12 @@
+ #include "braille.h"
+ #include "internal.h"
+ 
+-int console_printk[4] = {
++int console_printk[5] = {
+ 	CONSOLE_LOGLEVEL_DEFAULT,	/* console_loglevel */
+ 	MESSAGE_LOGLEVEL_DEFAULT,	/* default_message_loglevel */
+ 	CONSOLE_LOGLEVEL_MIN,		/* minimum_console_loglevel */
+ 	CONSOLE_LOGLEVEL_DEFAULT,	/* default_console_loglevel */
++	CONSOLE_LOGLEVEL_EMERGENCY,	/* emergency_console_loglevel */
+ };
+ EXPORT_SYMBOL_GPL(console_printk);
+ 
+@@ -498,6 +500,9 @@ static u32 log_next(u32 idx)
+ 	return idx + msg->len;
+ }
+ 
++static void printk_emergency(char *buffer, int level, u64 ts_nsec, u16 cpu,
++			     char *text, u16 text_len);
++
+ /* insert record into the buffer, discard old ones, update heads */
+ static int log_store(u32 caller_id, int facility, int level,
+ 		     enum log_flags flags, u64 ts_nsec, u16 cpu,
+@@ -1641,7 +1646,7 @@ static void printk_write_history(struct
+  * The console_lock must be held.
+  */
+ static void call_console_drivers(u64 seq, const char *ext_text, size_t ext_len,
+-				 const char *text, size_t len)
++				 const char *text, size_t len, int level)
+ {
+ 	struct console *con;
+ 
+@@ -1661,6 +1666,18 @@ static void call_console_drivers(u64 seq
+ 			con->wrote_history = 1;
+ 			con->printk_seq = seq - 1;
+ 		}
++		if (con->write_atomic && level < emergency_console_loglevel) {
++			/* skip emergency messages, already printed */
++			if (con->printk_seq < seq)
++				con->printk_seq = seq;
++			continue;
++		}
++		if (con->flags & CON_BOOT) {
++			/* skip emergency messages, already printed */
++			if (con->printk_seq < seq)
++				con->printk_seq = seq;
++			continue;
++		}
+ 		if (!con->write)
+ 			continue;
+ 		if (!cpu_online(raw_smp_processor_id()) &&
+@@ -1780,8 +1797,12 @@ asmlinkage int vprintk_emit(int facility
+ 
+ 	cpu = raw_smp_processor_id();
+ 
+-	text = rbuf;
+-	text_len = vscnprintf(text, PRINTK_SPRINT_MAX, fmt, args);
++	/*
++	 * If this turns out to be an emergency message, there
++	 * may need to be a prefix added. Leave room for it.
++	 */
++	text = rbuf + PREFIX_MAX;
++	text_len = vscnprintf(text, PRINTK_SPRINT_MAX - PREFIX_MAX, fmt, args);
+ 
+ 	/* strip and flag a trailing newline */
+ 	if (text_len && text[text_len-1] == '\n') {
+@@ -1814,6 +1835,14 @@ asmlinkage int vprintk_emit(int facility
+ 	if (dict)
+ 		lflags |= LOG_NEWLINE;
+ 
++	/*
++	 * NOTE:
++	 * - rbuf points to beginning of allocated buffer
++	 * - text points to beginning of text
++	 * - there is room before text for prefix
++	 */
++	printk_emergency(rbuf, level, ts_nsec, cpu, text, text_len);
++
+ 	printed_len = log_store(caller_id, facility, level, lflags, ts_nsec, cpu,
+ 				dict, dictlen, text, text_len);
+ 
+@@ -1906,7 +1935,7 @@ static ssize_t msg_print_ext_body(char *
+ 				  char *dict, size_t dict_len,
+ 				  char *text, size_t text_len) { return 0; }
+ static void call_console_drivers(u64 seq, const char *ext_text, size_t ext_len,
+-				 const char *text, size_t len) {}
++				 const char *text, size_t len, int level) {}
+ static size_t msg_print_text(const struct printk_log *msg, bool syslog,
+ 			     bool time, char *buf, size_t size) { return 0; }
+ static bool suppress_message_printing(int level) { return false; }
+@@ -2639,7 +2668,7 @@ static int printk_kthread_func(void *dat
+ 
+ 		console_lock();
+ 		call_console_drivers(master_seq, ext_text,
+-				     ext_len, text, len);
++				     ext_len, text, len, msg->level);
+ 		if (len > 0 || ext_len > 0)
+ 			printk_delay(msg->level);
+ 		console_unlock();
+@@ -3043,6 +3072,76 @@ void kmsg_dump_rewind(struct kmsg_dumper
+ 	logbuf_unlock_irqrestore(flags);
+ }
+ EXPORT_SYMBOL_GPL(kmsg_dump_rewind);
++
++static bool console_can_emergency(int level)
++{
++	struct console *con;
++
++	for_each_console(con) {
++		if (!(con->flags & CON_ENABLED))
++			continue;
++		if (con->write_atomic && level < emergency_console_loglevel)
++			return true;
++		if (con->write && (con->flags & CON_BOOT))
++			return true;
++	}
++	return false;
++}
++
++static void call_emergency_console_drivers(int level, const char *text,
++					   size_t text_len)
++{
++	struct console *con;
++
++	for_each_console(con) {
++		if (!(con->flags & CON_ENABLED))
++			continue;
++		if (con->write_atomic && level < emergency_console_loglevel) {
++			con->write_atomic(con, text, text_len);
++			continue;
++		}
++		if (con->write && (con->flags & CON_BOOT)) {
++			con->write(con, text, text_len);
++			continue;
++		}
++	}
++}
++
++static void printk_emergency(char *buffer, int level, u64 ts_nsec, u16 cpu,
++			     char *text, u16 text_len)
++{
++	struct printk_log msg;
++	size_t prefix_len;
++
++	if (!console_can_emergency(level))
++		return;
++
++	msg.level = level;
++	msg.ts_nsec = ts_nsec;
++	msg.cpu = cpu;
++	msg.facility = 0;
++
++	/* "text" must have PREFIX_MAX preceding bytes available */
++
++	prefix_len = print_prefix(&msg,
++				  console_msg_format & MSG_FORMAT_SYSLOG,
++				  printk_time, buffer);
++	/* move the prefix forward to the beginning of the message text */
++	text -= prefix_len;
++	memmove(text, buffer, prefix_len);
++	text_len += prefix_len;
++
++	text[text_len++] = '\n';
++
++	call_emergency_console_drivers(level, text, text_len);
++
++	touch_softlockup_watchdog_sync();
++	clocksource_touch_watchdog();
++	rcu_cpu_stall_reset();
++	touch_nmi_watchdog();
++
++	printk_delay(level);
++}
+ #endif
+ 
+ void console_atomic_lock(unsigned int *flags)
+--- a/lib/Kconfig.debug
++++ b/lib/Kconfig.debug
+@@ -61,6 +61,23 @@ config CONSOLE_LOGLEVEL_QUIET
+ 	  will be used as the loglevel. IOW passing "quiet" will be the
+ 	  equivalent of passing "loglevel=<CONSOLE_LOGLEVEL_QUIET>"
+ 
++config CONSOLE_LOGLEVEL_EMERGENCY
++	int "Emergency console loglevel (1-15)"
++	range 1 15
++	default "5"
++	help
++	  The loglevel to determine if a console message is an emergency
++	  message.
++
++	  If supported by the console driver, emergency messages will be
++	  flushed to the console immediately. This can cause significant system
++	  latencies so the value should be set such that only significant
++	  messages are classified as emergency messages.
++
++	  Setting a default here is equivalent to passing in
++	  emergency_loglevel=<x> in the kernel bootargs. emergency_loglevel=<x>
++	  continues to override whatever value is specified here as well.
++
+ config MESSAGE_LOGLEVEL_DEFAULT
+ 	int "Default message log level (1-7)"
+ 	range 1 7

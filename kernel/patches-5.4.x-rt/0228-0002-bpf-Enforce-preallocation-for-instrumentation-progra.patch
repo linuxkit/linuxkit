@@ -1,0 +1,49 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 24 Feb 2020 15:01:33 +0100
+Subject: [PATCH 02/22] bpf: Enforce preallocation for instrumentation programs
+ on RT
+
+Aside of the general unsafety of run-time map allocation for
+instrumentation type programs RT enabled kernels have another constraint:
+
+The instrumentation programs are invoked with preemption disabled, but the
+memory allocator spinlocks cannot be acquired in atomic context because
+they are converted to 'sleeping' spinlocks on RT.
+
+Therefore enforce map preallocation for these programs types when RT is
+enabled.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/bpf/verifier.c |   13 +++++++++----
+ 1 file changed, 9 insertions(+), 4 deletions(-)
+
+--- a/kernel/bpf/verifier.c
++++ b/kernel/bpf/verifier.c
+@@ -7899,16 +7899,21 @@ static int check_map_prog_compatibility(
+ 	 * of the memory allocator or at a place where a recursion into the
+ 	 * memory allocator would see inconsistent state.
+ 	 *
+-	 * For now running such programs is allowed for backwards
+-	 * compatibility reasons, but warnings are emitted so developers are
+-	 * made aware of the unsafety and can fix their programs before this
+-	 * is enforced.
++	 * On RT enabled kernels run-time allocation of all trace type
++	 * programs is strictly prohibited due to lock type constraints. On
++	 * !RT kernels it is allowed for backwards compatibility reasons for
++	 * now, but warnings are emitted so developers are made aware of
++	 * the unsafety and can fix their programs before this is enforced.
+ 	 */
+ 	if (is_tracing_prog_type(prog->type) && !is_preallocated_map(map)) {
+ 		if (prog->type == BPF_PROG_TYPE_PERF_EVENT) {
+ 			verbose(env, "perf_event programs can only use preallocated hash map\n");
+ 			return -EINVAL;
+ 		}
++		if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
++			verbose(env, "trace type programs can only use preallocated hash map\n");
++			return -EINVAL;
++		}
+ 		WARN_ONCE(1, "trace type BPF program uses run-time allocation\n");
+ 		verbose(env, "trace type programs with run-time allocated hash maps are unsafe. Switch to preallocated hash maps.\n");
+ 	}

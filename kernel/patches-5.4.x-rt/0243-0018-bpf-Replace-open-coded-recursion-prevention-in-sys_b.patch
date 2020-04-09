@@ -1,0 +1,84 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 24 Feb 2020 15:01:49 +0100
+Subject: [PATCH 18/22] bpf: Replace open coded recursion prevention in
+ sys_bpf()
+
+The required protection is that the caller cannot be migrated to a
+different CPU as these functions end up in places which take either a hash
+bucket lock or might trigger a kprobe inside the memory allocator. Both
+scenarios can lead to deadlocks. The deadlock prevention is per CPU by
+incrementing a per CPU variable which temporarily blocks the invocation of
+BPF programs from perf and kprobes.
+
+Replace the open coded preempt_[dis|en]able and __this_cpu_[inc|dec] pairs
+with the new helper functions. These functions are already prepared to make
+BPF work on PREEMPT_RT enabled kernels. No functional change for !RT
+kernels.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/bpf/syscall.c |   21 ++++++---------------
+ 1 file changed, 6 insertions(+), 15 deletions(-)
+
+--- a/kernel/bpf/syscall.c
++++ b/kernel/bpf/syscall.c
+@@ -794,8 +794,7 @@ static int map_lookup_elem(union bpf_att
+ 		goto done;
+ 	}
+ 
+-	preempt_disable();
+-	this_cpu_inc(bpf_prog_active);
++	bpf_disable_instrumentation();
+ 	if (map->map_type == BPF_MAP_TYPE_PERCPU_HASH ||
+ 	    map->map_type == BPF_MAP_TYPE_LRU_PERCPU_HASH) {
+ 		err = bpf_percpu_hash_copy(map, key, value);
+@@ -836,8 +835,7 @@ static int map_lookup_elem(union bpf_att
+ 		}
+ 		rcu_read_unlock();
+ 	}
+-	this_cpu_dec(bpf_prog_active);
+-	preempt_enable();
++	bpf_enable_instrumentation();
+ 
+ done:
+ 	if (err)
+@@ -934,11 +932,7 @@ static int map_update_elem(union bpf_att
+ 		goto out;
+ 	}
+ 
+-	/* must increment bpf_prog_active to avoid kprobe+bpf triggering from
+-	 * inside bpf map update or delete otherwise deadlocks are possible
+-	 */
+-	preempt_disable();
+-	__this_cpu_inc(bpf_prog_active);
++	bpf_disable_instrumentation();
+ 	if (map->map_type == BPF_MAP_TYPE_PERCPU_HASH ||
+ 	    map->map_type == BPF_MAP_TYPE_LRU_PERCPU_HASH) {
+ 		err = bpf_percpu_hash_update(map, key, value, attr->flags);
+@@ -969,8 +963,7 @@ static int map_update_elem(union bpf_att
+ 		err = map->ops->map_update_elem(map, key, value, attr->flags);
+ 		rcu_read_unlock();
+ 	}
+-	__this_cpu_dec(bpf_prog_active);
+-	preempt_enable();
++	bpf_enable_instrumentation();
+ 	maybe_wait_bpf_programs(map);
+ out:
+ free_value:
+@@ -1016,13 +1009,11 @@ static int map_delete_elem(union bpf_att
+ 		goto out;
+ 	}
+ 
+-	preempt_disable();
+-	__this_cpu_inc(bpf_prog_active);
++	bpf_disable_instrumentation();
+ 	rcu_read_lock();
+ 	err = map->ops->map_delete_elem(map, key);
+ 	rcu_read_unlock();
+-	__this_cpu_dec(bpf_prog_active);
+-	preempt_enable();
++	bpf_enable_instrumentation();
+ 	maybe_wait_bpf_programs(map);
+ out:
+ 	kfree(key);

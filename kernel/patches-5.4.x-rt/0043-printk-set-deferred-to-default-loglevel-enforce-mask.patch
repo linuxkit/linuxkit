@@ -1,0 +1,38 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Thu, 14 Feb 2019 23:13:30 +0100
+Subject: [PATCH] printk: set deferred to default loglevel, enforce mask
+
+All messages printed via vpritnk_deferred() were being
+automatically treated as emergency messages.
+
+Messages printed via vprintk_deferred() should be set to the
+default loglevel. LOGLEVEL_SCHED is no longer relevant.
+
+Also, enforce the loglevel mask for emergency messages.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/printk/printk.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -1951,7 +1951,7 @@ asmlinkage int vprintk_emit(int facility
+ 	 * - text points to beginning of text
+ 	 * - there is room before text for prefix
+ 	 */
+-	printk_emergency(rbuf, level, ts_nsec, cpu, text, text_len);
++	printk_emergency(rbuf, level & 7, ts_nsec, cpu, text, text_len);
+ 
+ 	if ((lflags & LOG_CONT) || !(lflags & LOG_NEWLINE)) {
+ 		 cont_add(ctx, cpu, caller_id, facility, level, lflags, text, text_len);
+@@ -2744,7 +2744,7 @@ late_initcall(init_printk_kthread);
+ 
+ static int vprintk_deferred(const char *fmt, va_list args)
+ {
+-	return vprintk_emit(0, LOGLEVEL_SCHED, NULL, 0, fmt, args);
++	return vprintk_emit(0, LOGLEVEL_DEFAULT, NULL, 0, fmt, args);
+ }
+ 
+ int printk_deferred(const char *fmt, ...)

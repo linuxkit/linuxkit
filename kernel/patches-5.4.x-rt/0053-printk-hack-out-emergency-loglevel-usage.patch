@@ -1,0 +1,52 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Tue, 3 Dec 2019 09:14:57 +0100
+Subject: [PATCH] printk: hack out emergency loglevel usage
+
+Instead of using an emergency loglevel to determine if atomic
+messages should be printed, use oops_in_progress. This conforms
+to the decision that latency-causing atomic messages never be
+generated during normal operation.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/printk/printk.c |   13 +++----------
+ 1 file changed, 3 insertions(+), 10 deletions(-)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -1777,15 +1777,8 @@ static void call_console_drivers(u64 seq
+ 			con->wrote_history = 1;
+ 			con->printk_seq = seq - 1;
+ 		}
+-		if (con->write_atomic && level < emergency_console_loglevel &&
+-		    facility == 0) {
+-			/* skip emergency messages, already printed */
+-			if (con->printk_seq < seq)
+-				con->printk_seq = seq;
+-			continue;
+-		}
+ 		if (con->flags & CON_BOOT && facility == 0) {
+-			/* skip emergency messages, already printed */
++			/* skip boot messages, already printed */
+ 			if (con->printk_seq < seq)
+ 				con->printk_seq = seq;
+ 			continue;
+@@ -3171,7 +3164,7 @@ static bool console_can_emergency(int le
+ 	for_each_console(con) {
+ 		if (!(con->flags & CON_ENABLED))
+ 			continue;
+-		if (con->write_atomic && level < emergency_console_loglevel)
++		if (con->write_atomic && oops_in_progress)
+ 			return true;
+ 		if (con->write && (con->flags & CON_BOOT))
+ 			return true;
+@@ -3187,7 +3180,7 @@ static void call_emergency_console_drive
+ 	for_each_console(con) {
+ 		if (!(con->flags & CON_ENABLED))
+ 			continue;
+-		if (con->write_atomic && level < emergency_console_loglevel) {
++		if (con->write_atomic && oops_in_progress) {
+ 			con->write_atomic(con, text, text_len);
+ 			continue;
+ 		}

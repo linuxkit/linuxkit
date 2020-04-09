@@ -1,0 +1,41 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 11 Feb 2019 10:40:46 +0100
+Subject: [PATCH] mm: workingset: replace IRQ-off check with a lockdep assert.
+
+Commit
+
+  68d48e6a2df57 ("mm: workingset: add vmstat counter for shadow nodes")
+
+introduced an IRQ-off check to ensure that a lock is held which also
+disabled interrupts. This does not work the same way on -RT because none
+of the locks, that are held, disable interrupts.
+Replace this check with a lockdep assert which ensures that the lock is
+held.
+
+Cc: Peter Zijlstra <peterz@infradead.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/workingset.c |    5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+--- a/mm/workingset.c
++++ b/mm/workingset.c
+@@ -367,6 +367,8 @@ static struct list_lru shadow_nodes;
+ 
+ void workingset_update_node(struct xa_node *node)
+ {
++	struct address_space *mapping;
++
+ 	/*
+ 	 * Track non-empty nodes that contain only shadow entries;
+ 	 * unlink those that contain pages or are being freed.
+@@ -375,7 +377,8 @@ void workingset_update_node(struct xa_no
+ 	 * already where they should be. The list_empty() test is safe
+ 	 * as node->private_list is protected by the i_pages lock.
+ 	 */
+-	VM_WARN_ON_ONCE(!irqs_disabled());  /* For __inc_lruvec_page_state */
++	mapping = container_of(node->array, struct address_space, i_pages);
++	lockdep_assert_held(&mapping->i_pages.xa_lock);
+ 
+ 	if (node->count && node->count == node->nr_values) {
+ 		if (list_empty(&node->private_list)) {

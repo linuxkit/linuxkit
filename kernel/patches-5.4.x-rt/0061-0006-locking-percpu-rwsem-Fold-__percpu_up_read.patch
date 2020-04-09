@@ -1,0 +1,85 @@
+From: Davidlohr Bueso <dave@stgolabs.net>
+Date: Fri, 31 Jan 2020 16:07:09 +0100
+Subject: [PATCH 6/7] locking/percpu-rwsem: Fold __percpu_up_read()
+
+Now that __percpu_up_read() is only ever used from percpu_up_read()
+merge them, it's a small function.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/percpu-rwsem.h  |   19 +++++++++++++++----
+ kernel/exit.c                 |    1 +
+ kernel/locking/percpu-rwsem.c |   15 ---------------
+ 3 files changed, 16 insertions(+), 19 deletions(-)
+
+--- a/include/linux/percpu-rwsem.h
++++ b/include/linux/percpu-rwsem.h
+@@ -43,7 +43,6 @@ is_static struct percpu_rw_semaphore nam
+ 	__DEFINE_PERCPU_RWSEM(name, static)
+ 
+ extern bool __percpu_down_read(struct percpu_rw_semaphore *, bool);
+-extern void __percpu_up_read(struct percpu_rw_semaphore *);
+ 
+ static inline void percpu_down_read(struct percpu_rw_semaphore *sem)
+ {
+@@ -103,10 +102,22 @@ static inline void percpu_up_read(struct
+ 	/*
+ 	 * Same as in percpu_down_read().
+ 	 */
+-	if (likely(rcu_sync_is_idle(&sem->rss)))
++	if (likely(rcu_sync_is_idle(&sem->rss))) {
+ 		__this_cpu_dec(*sem->read_count);
+-	else
+-		__percpu_up_read(sem); /* Unconditional memory barrier */
++	} else {
++		/*
++		 * slowpath; reader will only ever wake a single blocked
++		 * writer.
++		 */
++		smp_mb(); /* B matches C */
++		/*
++		 * In other words, if they see our decrement (presumably to
++		 * aggregate zero, as that is the only time it matters) they
++		 * will also see our critical section.
++		 */
++		__this_cpu_dec(*sem->read_count);
++		rcuwait_wake_up(&sem->writer);
++	}
+ 	preempt_enable();
+ }
+ 
+--- a/kernel/exit.c
++++ b/kernel/exit.c
+@@ -258,6 +258,7 @@ void rcuwait_wake_up(struct rcuwait *w)
+ 		wake_up_process(task);
+ 	rcu_read_unlock();
+ }
++EXPORT_SYMBOL_GPL(rcuwait_wake_up);
+ 
+ /*
+  * Determine if a process group is "orphaned", according to the POSIX
+--- a/kernel/locking/percpu-rwsem.c
++++ b/kernel/locking/percpu-rwsem.c
+@@ -177,21 +177,6 @@ bool __percpu_down_read(struct percpu_rw
+ }
+ EXPORT_SYMBOL_GPL(__percpu_down_read);
+ 
+-void __percpu_up_read(struct percpu_rw_semaphore *sem)
+-{
+-	smp_mb(); /* B matches C */
+-	/*
+-	 * In other words, if they see our decrement (presumably to aggregate
+-	 * zero, as that is the only time it matters) they will also see our
+-	 * critical section.
+-	 */
+-	__this_cpu_dec(*sem->read_count);
+-
+-	/* Prod writer to re-evaluate readers_active_check() */
+-	rcuwait_wake_up(&sem->writer);
+-}
+-EXPORT_SYMBOL_GPL(__percpu_up_read);
+-
+ #define per_cpu_sum(var)						\
+ ({									\
+ 	typeof(var) __sum = 0;						\

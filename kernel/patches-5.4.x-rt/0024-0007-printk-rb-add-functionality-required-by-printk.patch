@@ -1,0 +1,159 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Tue, 12 Feb 2019 15:29:45 +0100
+Subject: [PATCH 07/25] printk-rb: add functionality required by printk
+
+The printk subsystem needs to be able to query the size of the ring
+buffer, seek to specific entries within the ring buffer, and track
+if records could not be stored in the ring buffer.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/printk_ringbuffer.h |    5 ++
+ lib/printk_ringbuffer.c           |   95 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 100 insertions(+)
+
+--- a/include/linux/printk_ringbuffer.h
++++ b/include/linux/printk_ringbuffer.h
+@@ -17,6 +17,7 @@ struct printk_ringbuffer {
+ 	unsigned int size_bits;
+ 
+ 	u64 seq;
++	atomic_long_t lost;
+ 
+ 	atomic_long_t tail;
+ 	atomic_long_t head;
+@@ -78,6 +79,7 @@ static struct printk_ringbuffer name = {
+ 	.buffer = &_##name##_buffer[0],					\
+ 	.size_bits = szbits,						\
+ 	.seq = 0,							\
++	.lost = ATOMIC_LONG_INIT(0),					\
+ 	.tail = ATOMIC_LONG_INIT(-111 * sizeof(long)),			\
+ 	.head = ATOMIC_LONG_INIT(-111 * sizeof(long)),			\
+ 	.reserve = ATOMIC_LONG_INIT(-111 * sizeof(long)),		\
+@@ -100,9 +102,12 @@ void prb_iter_copy(struct prb_iterator *
+ int prb_iter_next(struct prb_iterator *iter, char *buf, int size, u64 *seq);
+ int prb_iter_wait_next(struct prb_iterator *iter, char *buf, int size,
+ 		       u64 *seq);
++int prb_iter_seek(struct prb_iterator *iter, u64 seq);
+ int prb_iter_data(struct prb_iterator *iter, char *buf, int size, u64 *seq);
+ 
+ /* utility functions */
++int prb_buffer_size(struct printk_ringbuffer *rb);
++void prb_inc_lost(struct printk_ringbuffer *rb);
+ void prb_lock(struct prb_cpulock *cpu_lock, unsigned int *cpu_store);
+ void prb_unlock(struct prb_cpulock *cpu_lock, unsigned int cpu_store);
+ 
+--- a/lib/printk_ringbuffer.c
++++ b/lib/printk_ringbuffer.c
+@@ -175,11 +175,16 @@ void prb_commit(struct prb_handle *h)
+ 				head = PRB_WRAP_LPOS(rb, head, 1);
+ 				continue;
+ 			}
++			while (atomic_long_read(&rb->lost)) {
++				atomic_long_dec(&rb->lost);
++				rb->seq++;
++			}
+ 			e->seq = ++rb->seq;
+ 			head += e->size;
+ 			changed = true;
+ 		}
+ 		atomic_long_set_release(&rb->head, res);
++
+ 		atomic_dec(&rb->ctx);
+ 
+ 		if (atomic_long_read(&rb->reserve) == res)
+@@ -492,3 +497,93 @@ int prb_iter_wait_next(struct prb_iterat
+ 
+ 	return ret;
+ }
++
++/*
++ * prb_iter_seek: Seek forward to a specific record.
++ * @iter: Iterator to advance.
++ * @seq: Record number to advance to.
++ *
++ * Advance @iter such that a following call to prb_iter_data() will provide
++ * the contents of the specified record. If a record is specified that does
++ * not yet exist, advance @iter to the end of the record list.
++ *
++ * Note that iterators cannot be rewound. So if a record is requested that
++ * exists but is previous to @iter in position, @iter is considered invalid.
++ *
++ * It is safe to call this function from any context and state.
++ *
++ * Returns 1 on succces, 0 if specified record does not yet exist (@iter is
++ * now at the end of the list), or -EINVAL if @iter is now invalid.
++ */
++int prb_iter_seek(struct prb_iterator *iter, u64 seq)
++{
++	u64 cur_seq;
++	int ret;
++
++	/* first check if the iterator is already at the wanted seq */
++	if (seq == 0) {
++		if (iter->lpos == PRB_INIT)
++			return 1;
++		else
++			return -EINVAL;
++	}
++	if (iter->lpos != PRB_INIT) {
++		if (prb_iter_data(iter, NULL, 0, &cur_seq) >= 0) {
++			if (cur_seq == seq)
++				return 1;
++			if (cur_seq > seq)
++				return -EINVAL;
++		}
++	}
++
++	/* iterate to find the wanted seq */
++	for (;;) {
++		ret = prb_iter_next(iter, NULL, 0, &cur_seq);
++		if (ret <= 0)
++			break;
++
++		if (cur_seq == seq)
++			break;
++
++		if (cur_seq > seq) {
++			ret = -EINVAL;
++			break;
++		}
++	}
++
++	return ret;
++}
++
++/*
++ * prb_buffer_size: Get the size of the ring buffer.
++ * @rb: The ring buffer to get the size of.
++ *
++ * Return the number of bytes used for the ring buffer entry storage area.
++ * Note that this area stores both entry header and entry data. Therefore
++ * this represents an upper bound to the amount of data that can be stored
++ * in the ring buffer.
++ *
++ * It is safe to call this function from any context and state.
++ *
++ * Returns the size in bytes of the entry storage area.
++ */
++int prb_buffer_size(struct printk_ringbuffer *rb)
++{
++	return PRB_SIZE(rb);
++}
++
++/*
++ * prb_inc_lost: Increment the seq counter to signal a lost record.
++ * @rb: The ring buffer to increment the seq of.
++ *
++ * Increment the seq counter so that a seq number is intentially missing
++ * for the readers. This allows readers to identify that a record is
++ * missing. A writer will typically use this function if prb_reserve()
++ * fails.
++ *
++ * It is safe to call this function from any context and state.
++ */
++void prb_inc_lost(struct printk_ringbuffer *rb)
++{
++	atomic_long_inc(&rb->lost);
++}

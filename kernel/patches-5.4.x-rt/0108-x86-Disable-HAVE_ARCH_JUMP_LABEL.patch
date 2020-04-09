@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 1 Jul 2019 17:39:28 +0200
+Subject: [PATCH] x86: Disable HAVE_ARCH_JUMP_LABEL
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+__text_poke() does:
+|        local_irq_save(flags);
+…
+|        ptep = get_locked_pte(poking_mm, poking_addr, &ptl);
+
+which does not work on -RT because the PTE-lock is a spinlock_t typed lock.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/x86/Kconfig |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/arch/x86/Kconfig
++++ b/arch/x86/Kconfig
+@@ -132,8 +132,8 @@ config X86
+ 	select HAVE_ALIGNED_STRUCT_PAGE		if SLUB
+ 	select HAVE_ARCH_AUDITSYSCALL
+ 	select HAVE_ARCH_HUGE_VMAP		if X86_64 || X86_PAE
+-	select HAVE_ARCH_JUMP_LABEL
+-	select HAVE_ARCH_JUMP_LABEL_RELATIVE
++	select HAVE_ARCH_JUMP_LABEL		if !PREEMPT_RT
++	select HAVE_ARCH_JUMP_LABEL_RELATIVE	if !PREEMPT_RT
+ 	select HAVE_ARCH_KASAN			if X86_64
+ 	select HAVE_ARCH_KGDB
+ 	select HAVE_ARCH_MMAP_RND_BITS		if MMU

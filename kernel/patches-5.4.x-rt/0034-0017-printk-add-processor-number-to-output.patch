@@ -1,0 +1,99 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Tue, 12 Feb 2019 15:29:55 +0100
+Subject: [PATCH 17/25] printk: add processor number to output
+
+It can be difficult to sort printk out if multiple processors are
+printing simultaneously. Add the processor number to the printk
+output to allow the messages to be sorted.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/printk/printk.c |   19 +++++++++++++++----
+ 1 file changed, 15 insertions(+), 4 deletions(-)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -348,6 +348,7 @@ enum log_flags {
+ 
+ struct printk_log {
+ 	u64 ts_nsec;		/* timestamp in nanoseconds */
++	u16 cpu;		/* cpu that generated record */
+ 	u16 len;		/* length of entire record */
+ 	u16 text_len;		/* length of text buffer */
+ 	u16 dict_len;		/* length of dictionary buffer */
+@@ -499,7 +500,7 @@ static u32 log_next(u32 idx)
+ 
+ /* insert record into the buffer, discard old ones, update heads */
+ static int log_store(u32 caller_id, int facility, int level,
+-		     enum log_flags flags, u64 ts_nsec,
++		     enum log_flags flags, u64 ts_nsec, u16 cpu,
+ 		     const char *dict, u16 dict_len,
+ 		     const char *text, u16 text_len)
+ {
+@@ -533,6 +534,7 @@ static int log_store(u32 caller_id, int
+ #ifdef CONFIG_PRINTK_CALLER
+ 	msg->caller_id = caller_id;
+ #endif
++	msg->cpu = cpu;
+ 	msg->len = size;
+ 
+ 	/* insert message */
+@@ -606,9 +608,9 @@ static ssize_t msg_print_ext_header(char
+ 
+ 	do_div(ts_usec, 1000);
+ 
+-	return scnprintf(buf, size, "%u,%llu,%llu,%c%s;",
++	return scnprintf(buf, size, "%u,%llu,%llu,%c%s,%hu;",
+ 			 (msg->facility << 3) | msg->level, seq, ts_usec,
+-			 msg->flags & LOG_CONT ? 'c' : '-', caller);
++			 msg->flags & LOG_CONT ? 'c' : '-', caller, msg->cpu);
+ }
+ 
+ static ssize_t msg_print_ext_body(char *buf, size_t size,
+@@ -1142,6 +1144,11 @@ static inline void boot_delay_msec(int l
+ static bool printk_time = IS_ENABLED(CONFIG_PRINTK_TIME);
+ module_param_named(time, printk_time, bool, S_IRUGO | S_IWUSR);
+ 
++static size_t print_cpu(u16 cpu, char *buf)
++{
++	return sprintf(buf, "%03hu: ", cpu);
++}
++
+ static size_t print_syslog(unsigned int level, char *buf)
+ {
+ 	return sprintf(buf, "<%u>", level);
+@@ -1185,6 +1192,7 @@ static size_t print_prefix(const struct
+ 		buf[len++] = ' ';
+ 		buf[len] = '\0';
+ 	}
++	len += print_cpu(msg->cpu, buf + len);
+ 
+ 	return len;
+ }
+@@ -1760,6 +1768,7 @@ asmlinkage int vprintk_emit(int facility
+ 	u64 ts_nsec;
+ 	char *text;
+ 	char *rbuf;
++	int cpu;
+ 
+ 	ts_nsec = local_clock();
+ 
+@@ -1769,6 +1778,8 @@ asmlinkage int vprintk_emit(int facility
+ 		return printed_len;
+ 	}
+ 
++	cpu = raw_smp_processor_id();
++
+ 	text = rbuf;
+ 	text_len = vscnprintf(text, PRINTK_SPRINT_MAX, fmt, args);
+ 
+@@ -1803,7 +1814,7 @@ asmlinkage int vprintk_emit(int facility
+ 	if (dict)
+ 		lflags |= LOG_NEWLINE;
+ 
+-	printed_len = log_store(caller_id, facility, level, lflags, ts_nsec,
++	printed_len = log_store(caller_id, facility, level, lflags, ts_nsec, cpu,
+ 				dict, dictlen, text, text_len);
+ 
+ 	prb_commit(&h);

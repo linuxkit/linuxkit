@@ -1,0 +1,62 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 24 Feb 2020 19:41:53 +0100
+Subject: [PATCH V4 10/22] bpf: Provide bpf_prog_run_pin_on_cpu() helper
+
+BPF programs require to run on one CPU to completion as they use per CPU
+storage, but according to Alexei they don't need reentrancy protection as
+obviously BPF programs running in thread context can always be 'preempted'
+by hard and soft interrupts and instrumentation and the same program can
+run concurrently on a different CPU.
+
+The currently used mechanism to ensure CPUness is to wrap the invocation
+into a preempt_disable/enable() pair. Disabling preemption is also
+disabling migration for a task.
+
+preempt_disable/enable() is used because there is no explicit way to
+reliably disable only migration.
+
+Provide a separate macro to invoke a BPF program which can be used in
+migrateable task context.
+
+It wraps BPF_PROG_RUN() in a migrate_disable/enable() pair which maps on
+non RT enabled kernels to preempt_disable/enable(). On RT enabled kernels
+this merely disables migration. Both methods ensure that the invoked BPF
+program runs on one CPU to completion.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/filter.h |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+--- a/include/linux/filter.h
++++ b/include/linux/filter.h
+@@ -570,6 +570,28 @@ DECLARE_STATIC_KEY_FALSE(bpf_stats_enabl
+ 	}							\
+ 	ret; })
+ 
++/*
++ * Use in preemptible and therefore migratable context to make sure that
++ * the execution of the BPF program runs on one CPU.
++ *
++ * This uses migrate_disable/enable() explicitly to document that the
++ * invocation of a BPF program does not require reentrancy protection
++ * against a BPF program which is invoked from a preempting task.
++ *
++ * For non RT enabled kernels migrate_disable/enable() maps to
++ * preempt_disable/enable(), i.e. it disables also preemption.
++ */
++static inline u32 bpf_prog_run_pin_on_cpu(const struct bpf_prog *prog,
++					  const void *ctx)
++{
++	u32 ret;
++
++	migrate_disable();
++	ret = BPF_PROG_RUN(prog, ctx);
++	migrate_enable();
++	return ret;
++}
++
+ #define BPF_SKB_CB_LEN QDISC_CB_PRIV_LEN
+ 
+ struct bpf_skb_data_end {

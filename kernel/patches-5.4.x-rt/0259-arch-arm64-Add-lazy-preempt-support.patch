@@ -1,0 +1,152 @@
+From: Anders Roxell <anders.roxell@linaro.org>
+Date: Thu, 14 May 2015 17:52:17 +0200
+Subject: arch/arm64: Add lazy preempt support
+
+arm64 is missing support for PREEMPT_RT. The main feature which is
+lacking is support for lazy preemption. The arch-specific entry code,
+thread information structure definitions, and associated data tables
+have to be extended to provide this support. Then the Kconfig file has
+to be extended to indicate the support is available, and also to
+indicate that support for full RT preemption is now available.
+
+Signed-off-by: Anders Roxell <anders.roxell@linaro.org>
+---
+ arch/arm64/Kconfig                   |    1 +
+ arch/arm64/include/asm/preempt.h     |   25 ++++++++++++++++++++++++-
+ arch/arm64/include/asm/thread_info.h |    6 +++++-
+ arch/arm64/kernel/asm-offsets.c      |    1 +
+ arch/arm64/kernel/entry.S            |   13 +++++++++++--
+ arch/arm64/kernel/signal.c           |    2 +-
+ 6 files changed, 43 insertions(+), 5 deletions(-)
+
+--- a/arch/arm64/Kconfig
++++ b/arch/arm64/Kconfig
+@@ -159,6 +159,7 @@ config ARM64
+ 	select HAVE_PERF_EVENTS
+ 	select HAVE_PERF_REGS
+ 	select HAVE_PERF_USER_STACK_DUMP
++	select HAVE_PREEMPT_LAZY
+ 	select HAVE_REGS_AND_STACK_ACCESS_API
+ 	select HAVE_FUNCTION_ARG_ACCESS_API
+ 	select HAVE_RCU_TABLE_FREE
+--- a/arch/arm64/include/asm/preempt.h
++++ b/arch/arm64/include/asm/preempt.h
+@@ -70,13 +70,36 @@ static inline bool __preempt_count_dec_a
+ 	 * interrupt occurring between the non-atomic READ_ONCE/WRITE_ONCE
+ 	 * pair.
+ 	 */
+-	return !pc || !READ_ONCE(ti->preempt_count);
++	if (!pc || !READ_ONCE(ti->preempt_count))
++		return true;
++#ifdef CONFIG_PREEMPT_LAZY
++	if ((pc & ~PREEMPT_NEED_RESCHED))
++		return false;
++	if (current_thread_info()->preempt_lazy_count)
++		return false;
++	return test_thread_flag(TIF_NEED_RESCHED_LAZY);
++#else
++	return false;
++#endif
+ }
+ 
+ static inline bool should_resched(int preempt_offset)
+ {
++#ifdef CONFIG_PREEMPT_LAZY
++	u64 pc = READ_ONCE(current_thread_info()->preempt_count);
++	if (pc == preempt_offset)
++		return true;
++
++	if ((pc & ~PREEMPT_NEED_RESCHED) != preempt_offset)
++		return false;
++
++	if (current_thread_info()->preempt_lazy_count)
++		return false;
++	return test_thread_flag(TIF_NEED_RESCHED_LAZY);
++#else
+ 	u64 pc = READ_ONCE(current_thread_info()->preempt_count);
+ 	return pc == preempt_offset;
++#endif
+ }
+ 
+ #ifdef CONFIG_PREEMPTION
+--- a/arch/arm64/include/asm/thread_info.h
++++ b/arch/arm64/include/asm/thread_info.h
+@@ -29,6 +29,7 @@ struct thread_info {
+ #ifdef CONFIG_ARM64_SW_TTBR0_PAN
+ 	u64			ttbr0;		/* saved TTBR0_EL1 */
+ #endif
++	int			preempt_lazy_count;	/* 0 => preemptable, <0 => bug */
+ 	union {
+ 		u64		preempt_count;	/* 0 => preemptible, <0 => bug */
+ 		struct {
+@@ -63,6 +64,7 @@ void arch_release_task_struct(struct tas
+ #define TIF_FOREIGN_FPSTATE	3	/* CPU's FP state is not current's */
+ #define TIF_UPROBE		4	/* uprobe breakpoint or singlestep */
+ #define TIF_FSCHECK		5	/* Check FS is USER_DS on return */
++#define TIF_NEED_RESCHED_LAZY	6
+ #define TIF_NOHZ		7
+ #define TIF_SYSCALL_TRACE	8	/* syscall trace active */
+ #define TIF_SYSCALL_AUDIT	9	/* syscall auditing */
+@@ -83,6 +85,7 @@ void arch_release_task_struct(struct tas
+ #define _TIF_NEED_RESCHED	(1 << TIF_NEED_RESCHED)
+ #define _TIF_NOTIFY_RESUME	(1 << TIF_NOTIFY_RESUME)
+ #define _TIF_FOREIGN_FPSTATE	(1 << TIF_FOREIGN_FPSTATE)
++#define _TIF_NEED_RESCHED_LAZY	(1 << TIF_NEED_RESCHED_LAZY)
+ #define _TIF_NOHZ		(1 << TIF_NOHZ)
+ #define _TIF_SYSCALL_TRACE	(1 << TIF_SYSCALL_TRACE)
+ #define _TIF_SYSCALL_AUDIT	(1 << TIF_SYSCALL_AUDIT)
+@@ -96,8 +99,9 @@ void arch_release_task_struct(struct tas
+ 
+ #define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_SIGPENDING | \
+ 				 _TIF_NOTIFY_RESUME | _TIF_FOREIGN_FPSTATE | \
+-				 _TIF_UPROBE | _TIF_FSCHECK)
++				 _TIF_UPROBE | _TIF_FSCHECK | _TIF_NEED_RESCHED_LAZY)
+ 
++#define _TIF_NEED_RESCHED_MASK	(_TIF_NEED_RESCHED | _TIF_NEED_RESCHED_LAZY)
+ #define _TIF_SYSCALL_WORK	(_TIF_SYSCALL_TRACE | _TIF_SYSCALL_AUDIT | \
+ 				 _TIF_SYSCALL_TRACEPOINT | _TIF_SECCOMP | \
+ 				 _TIF_NOHZ | _TIF_SYSCALL_EMU)
+--- a/arch/arm64/kernel/asm-offsets.c
++++ b/arch/arm64/kernel/asm-offsets.c
+@@ -30,6 +30,7 @@ int main(void)
+   BLANK();
+   DEFINE(TSK_TI_FLAGS,		offsetof(struct task_struct, thread_info.flags));
+   DEFINE(TSK_TI_PREEMPT,	offsetof(struct task_struct, thread_info.preempt_count));
++  DEFINE(TSK_TI_PREEMPT_LAZY,	offsetof(struct task_struct, thread_info.preempt_lazy_count));
+   DEFINE(TSK_TI_ADDR_LIMIT,	offsetof(struct task_struct, thread_info.addr_limit));
+ #ifdef CONFIG_ARM64_SW_TTBR0_PAN
+   DEFINE(TSK_TI_TTBR0,		offsetof(struct task_struct, thread_info.ttbr0));
+--- a/arch/arm64/kernel/entry.S
++++ b/arch/arm64/kernel/entry.S
+@@ -679,9 +679,18 @@ alternative_if ARM64_HAS_IRQ_PRIO_MASKIN
+ 	mrs	x0, daif
+ 	orr	x24, x24, x0
+ alternative_else_nop_endif
+-	cbnz	x24, 1f				// preempt count != 0 || NMI return path
+-	bl	arm64_preempt_schedule_irq	// irq en/disable is done inside
++
++	cbz	x24, 1f					// (need_resched + count) == 0
++	cbnz	w24, 2f					// count != 0
++
++	ldr	w24, [tsk, #TSK_TI_PREEMPT_LAZY]	// get preempt lazy count
++	cbnz	w24, 2f					// preempt lazy count != 0
++
++	ldr	x0, [tsk, #TSK_TI_FLAGS]		// get flags
++	tbz	x0, #TIF_NEED_RESCHED_LAZY, 2f		// needs rescheduling?
+ 1:
++	bl	arm64_preempt_schedule_irq		// irq en/disable is done inside
++2:
+ #endif
+ 
+ #ifdef CONFIG_ARM64_PSEUDO_NMI
+--- a/arch/arm64/kernel/signal.c
++++ b/arch/arm64/kernel/signal.c
+@@ -910,7 +910,7 @@ asmlinkage void do_notify_resume(struct
+ 		/* Check valid user FS if needed */
+ 		addr_limit_user_check();
+ 
+-		if (thread_flags & _TIF_NEED_RESCHED) {
++		if (thread_flags & _TIF_NEED_RESCHED_MASK) {
+ 			/* Unmask Debug and SError for the next task */
+ 			local_daif_restore(DAIF_PROCCTX_NOIRQ);
+ 

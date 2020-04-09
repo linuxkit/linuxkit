@@ -1,0 +1,53 @@
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Fri, 31 Jan 2020 16:07:06 +0100
+Subject: [PATCH 3/7] locking/percpu-rwsem: Move __this_cpu_inc() into the
+ slowpath
+
+As preparation to rework __percpu_down_read() move the
+__this_cpu_inc() into it.
+
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Tested-by: Juri Lelli <juri.lelli@redhat.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/percpu-rwsem.h  |   10 ++++++----
+ kernel/locking/percpu-rwsem.c |    2 ++
+ 2 files changed, 8 insertions(+), 4 deletions(-)
+
+--- a/include/linux/percpu-rwsem.h
++++ b/include/linux/percpu-rwsem.h
+@@ -59,8 +59,9 @@ static inline void percpu_down_read(stru
+ 	 * and that once the synchronize_rcu() is done, the writer will see
+ 	 * anything we did within this RCU-sched read-size critical section.
+ 	 */
+-	__this_cpu_inc(*sem->read_count);
+-	if (unlikely(!rcu_sync_is_idle(&sem->rss)))
++	if (likely(rcu_sync_is_idle(&sem->rss)))
++		__this_cpu_inc(*sem->read_count);
++	else
+ 		__percpu_down_read(sem, false); /* Unconditional memory barrier */
+ 	/*
+ 	 * The preempt_enable() prevents the compiler from
+@@ -77,8 +78,9 @@ static inline bool percpu_down_read_tryl
+ 	/*
+ 	 * Same as in percpu_down_read().
+ 	 */
+-	__this_cpu_inc(*sem->read_count);
+-	if (unlikely(!rcu_sync_is_idle(&sem->rss)))
++	if (likely(rcu_sync_is_idle(&sem->rss)))
++		__this_cpu_inc(*sem->read_count);
++	else
+ 		ret = __percpu_down_read(sem, true); /* Unconditional memory barrier */
+ 	preempt_enable();
+ 	/*
+--- a/kernel/locking/percpu-rwsem.c
++++ b/kernel/locking/percpu-rwsem.c
+@@ -47,6 +47,8 @@ EXPORT_SYMBOL_GPL(percpu_free_rwsem);
+ 
+ bool __percpu_down_read(struct percpu_rw_semaphore *sem, bool try)
+ {
++	__this_cpu_inc(*sem->read_count);
++
+ 	/*
+ 	 * Due to having preemption disabled the decrement happens on
+ 	 * the same CPU as the increment, avoiding the

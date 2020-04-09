@@ -1,0 +1,329 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Tue, 12 Feb 2019 15:29:50 +0100
+Subject: [PATCH 12/25] printk: minimize console locking implementation
+
+Since printing of the printk buffer is now handled by the printk
+kthread, minimize the console locking functions to just handle
+locking of the console.
+
+NOTE: With this console_flush_on_panic will no longer flush.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/printk/printk.c |  255 -------------------------------------------------
+ 1 file changed, 1 insertion(+), 254 deletions(-)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -227,19 +227,7 @@ static int nr_ext_console_drivers;
+ 
+ static int __down_trylock_console_sem(unsigned long ip)
+ {
+-	int lock_failed;
+-	unsigned long flags;
+-
+-	/*
+-	 * Here and in __up_console_sem() we need to be in safe mode,
+-	 * because spindump/WARN/etc from under console ->lock will
+-	 * deadlock in printk()->down_trylock_console_sem() otherwise.
+-	 */
+-	printk_safe_enter_irqsave(flags);
+-	lock_failed = down_trylock(&console_sem);
+-	printk_safe_exit_irqrestore(flags);
+-
+-	if (lock_failed)
++	if (down_trylock(&console_sem))
+ 		return 1;
+ 	mutex_acquire(&console_lock_dep_map, 0, 1, ip);
+ 	return 0;
+@@ -248,13 +236,9 @@ static int __down_trylock_console_sem(un
+ 
+ static void __up_console_sem(unsigned long ip)
+ {
+-	unsigned long flags;
+-
+ 	mutex_release(&console_lock_dep_map, 1, ip);
+ 
+-	printk_safe_enter_irqsave(flags);
+ 	up(&console_sem);
+-	printk_safe_exit_irqrestore(flags);
+ }
+ #define up_console_sem() __up_console_sem(_RET_IP_)
+ 
+@@ -1552,82 +1536,6 @@ static void format_text(struct printk_lo
+ }
+ 
+ /*
+- * Special console_lock variants that help to reduce the risk of soft-lockups.
+- * They allow to pass console_lock to another printk() call using a busy wait.
+- */
+-
+-#ifdef CONFIG_LOCKDEP
+-static struct lockdep_map console_owner_dep_map = {
+-	.name = "console_owner"
+-};
+-#endif
+-
+-static DEFINE_RAW_SPINLOCK(console_owner_lock);
+-static struct task_struct *console_owner;
+-static bool console_waiter;
+-
+-/**
+- * console_lock_spinning_enable - mark beginning of code where another
+- *	thread might safely busy wait
+- *
+- * This basically converts console_lock into a spinlock. This marks
+- * the section where the console_lock owner can not sleep, because
+- * there may be a waiter spinning (like a spinlock). Also it must be
+- * ready to hand over the lock at the end of the section.
+- */
+-static void console_lock_spinning_enable(void)
+-{
+-	raw_spin_lock(&console_owner_lock);
+-	console_owner = current;
+-	raw_spin_unlock(&console_owner_lock);
+-
+-	/* The waiter may spin on us after setting console_owner */
+-	spin_acquire(&console_owner_dep_map, 0, 0, _THIS_IP_);
+-}
+-
+-/**
+- * console_lock_spinning_disable_and_check - mark end of code where another
+- *	thread was able to busy wait and check if there is a waiter
+- *
+- * This is called at the end of the section where spinning is allowed.
+- * It has two functions. First, it is a signal that it is no longer
+- * safe to start busy waiting for the lock. Second, it checks if
+- * there is a busy waiter and passes the lock rights to her.
+- *
+- * Important: Callers lose the lock if there was a busy waiter.
+- *	They must not touch items synchronized by console_lock
+- *	in this case.
+- *
+- * Return: 1 if the lock rights were passed, 0 otherwise.
+- */
+-static int console_lock_spinning_disable_and_check(void)
+-{
+-	int waiter;
+-
+-	raw_spin_lock(&console_owner_lock);
+-	waiter = READ_ONCE(console_waiter);
+-	console_owner = NULL;
+-	raw_spin_unlock(&console_owner_lock);
+-
+-	if (!waiter) {
+-		spin_release(&console_owner_dep_map, 1, _THIS_IP_);
+-		return 0;
+-	}
+-
+-	/* The waiter is now free to continue */
+-	WRITE_ONCE(console_waiter, false);
+-
+-	spin_release(&console_owner_dep_map, 1, _THIS_IP_);
+-
+-	/*
+-	 * Hand off console_lock to waiter. The waiter will perform
+-	 * the up(). After this, the waiter is the console_lock owner.
+-	 */
+-	mutex_release(&console_lock_dep_map, 1, _THIS_IP_);
+-	return 1;
+-}
+-
+-/*
+  * Call the console drivers, asking them to write out
+  * log_buf[start] to log_buf[end - 1].
+  * The console_lock must be held.
+@@ -1889,8 +1797,6 @@ static ssize_t msg_print_ext_header(char
+ static ssize_t msg_print_ext_body(char *buf, size_t size,
+ 				  char *dict, size_t dict_len,
+ 				  char *text, size_t text_len) { return 0; }
+-static void console_lock_spinning_enable(void) { }
+-static int console_lock_spinning_disable_and_check(void) { return 0; }
+ static void call_console_drivers(const char *ext_text, size_t ext_len,
+ 				 const char *text, size_t len) {}
+ static size_t msg_print_text(const struct printk_log *msg, bool syslog,
+@@ -2125,35 +2031,6 @@ int is_console_locked(void)
+ {
+ 	return console_locked;
+ }
+-EXPORT_SYMBOL(is_console_locked);
+-
+-/*
+- * Check if we have any console that is capable of printing while cpu is
+- * booting or shutting down. Requires console_sem.
+- */
+-static int have_callable_console(void)
+-{
+-	struct console *con;
+-
+-	for_each_console(con)
+-		if ((con->flags & CON_ENABLED) &&
+-				(con->flags & CON_ANYTIME))
+-			return 1;
+-
+-	return 0;
+-}
+-
+-/*
+- * Can we actually use the console at this time on this cpu?
+- *
+- * Console drivers may assume that per-cpu resources have been allocated. So
+- * unless they're explicitly marked as being able to cope (CON_ANYTIME) don't
+- * call them until this CPU is officially up.
+- */
+-static inline int can_use_console(void)
+-{
+-	return cpu_online(raw_smp_processor_id()) || have_callable_console();
+-}
+ 
+ /**
+  * console_unlock - unlock the console system
+@@ -2161,147 +2038,17 @@ static inline int can_use_console(void)
+  * Releases the console_lock which the caller holds on the console system
+  * and the console driver list.
+  *
+- * While the console_lock was held, console output may have been buffered
+- * by printk().  If this is the case, console_unlock(); emits
+- * the output prior to releasing the lock.
+- *
+- * If there is output waiting, we wake /dev/kmsg and syslog() users.
+- *
+  * console_unlock(); may be called from any context.
+  */
+ void console_unlock(void)
+ {
+-	static char ext_text[CONSOLE_EXT_LOG_MAX];
+-	static char text[LOG_LINE_MAX + PREFIX_MAX];
+-	unsigned long flags;
+-	bool do_cond_resched, retry;
+-
+ 	if (console_suspended) {
+ 		up_console_sem();
+ 		return;
+ 	}
+ 
+-	/*
+-	 * Console drivers are called with interrupts disabled, so
+-	 * @console_may_schedule should be cleared before; however, we may
+-	 * end up dumping a lot of lines, for example, if called from
+-	 * console registration path, and should invoke cond_resched()
+-	 * between lines if allowable.  Not doing so can cause a very long
+-	 * scheduling stall on a slow console leading to RCU stall and
+-	 * softlockup warnings which exacerbate the issue with more
+-	 * messages practically incapacitating the system.
+-	 *
+-	 * console_trylock() is not able to detect the preemptive
+-	 * context reliably. Therefore the value must be stored before
+-	 * and cleared after the the "again" goto label.
+-	 */
+-	do_cond_resched = console_may_schedule;
+-again:
+-	console_may_schedule = 0;
+-
+-	/*
+-	 * We released the console_sem lock, so we need to recheck if
+-	 * cpu is online and (if not) is there at least one CON_ANYTIME
+-	 * console.
+-	 */
+-	if (!can_use_console()) {
+-		console_locked = 0;
+-		up_console_sem();
+-		return;
+-	}
+-
+-	for (;;) {
+-		struct printk_log *msg;
+-		size_t ext_len = 0;
+-		size_t len;
+-
+-		printk_safe_enter_irqsave(flags);
+-		raw_spin_lock(&logbuf_lock);
+-		if (console_seq < log_first_seq) {
+-			len = sprintf(text,
+-				      "** %llu printk messages dropped **\n",
+-				      log_first_seq - console_seq);
+-
+-			/* messages are gone, move to first one */
+-			console_seq = log_first_seq;
+-			console_idx = log_first_idx;
+-		} else {
+-			len = 0;
+-		}
+-skip:
+-		if (console_seq == log_next_seq)
+-			break;
+-
+-		msg = log_from_idx(console_idx);
+-		if (suppress_message_printing(msg->level)) {
+-			/*
+-			 * Skip record we have buffered and already printed
+-			 * directly to the console when we received it, and
+-			 * record that has level above the console loglevel.
+-			 */
+-			console_idx = log_next(console_idx);
+-			console_seq++;
+-			goto skip;
+-		}
+-
+-		len += msg_print_text(msg,
+-				console_msg_format & MSG_FORMAT_SYSLOG,
+-				printk_time, text + len, sizeof(text) - len);
+-		if (nr_ext_console_drivers) {
+-			ext_len = msg_print_ext_header(ext_text,
+-						sizeof(ext_text),
+-						msg, console_seq);
+-			ext_len += msg_print_ext_body(ext_text + ext_len,
+-						sizeof(ext_text) - ext_len,
+-						log_dict(msg), msg->dict_len,
+-						log_text(msg), msg->text_len);
+-		}
+-		console_idx = log_next(console_idx);
+-		console_seq++;
+-		raw_spin_unlock(&logbuf_lock);
+-
+-		/*
+-		 * While actively printing out messages, if another printk()
+-		 * were to occur on another CPU, it may wait for this one to
+-		 * finish. This task can not be preempted if there is a
+-		 * waiter waiting to take over.
+-		 */
+-		console_lock_spinning_enable();
+-
+-		stop_critical_timings();	/* don't trace print latency */
+-		//call_console_drivers(ext_text, ext_len, text, len);
+-		start_critical_timings();
+-
+-		if (console_lock_spinning_disable_and_check()) {
+-			printk_safe_exit_irqrestore(flags);
+-			return;
+-		}
+-
+-		printk_safe_exit_irqrestore(flags);
+-
+-		if (do_cond_resched)
+-			cond_resched();
+-	}
+-
+ 	console_locked = 0;
+-
+-	raw_spin_unlock(&logbuf_lock);
+-
+ 	up_console_sem();
+-
+-	/*
+-	 * Someone could have filled up the buffer again, so re-check if there's
+-	 * something to flush. In case we cannot trylock the console_sem again,
+-	 * there's a new owner and the console_unlock() from them will do the
+-	 * flush, no worries.
+-	 */
+-	raw_spin_lock(&logbuf_lock);
+-	retry = console_seq != log_next_seq;
+-	raw_spin_unlock(&logbuf_lock);
+-	printk_safe_exit_irqrestore(flags);
+-
+-	if (retry && console_trylock())
+-		goto again;
+ }
+ EXPORT_SYMBOL(console_unlock);
+ 

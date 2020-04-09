@@ -1,0 +1,300 @@
+From: John Stultz <johnstul@us.ibm.com>
+Date: Fri, 3 Jul 2009 08:29:58 -0500
+Subject: posix-timers: Thread posix-cpu-timers on -rt
+
+posix-cpu-timer code takes non -rt safe locks in hard irq
+context. Move it to a thread.
+
+[ 3.0 fixes from Peter Zijlstra <peterz@infradead.org> ]
+
+Signed-off-by: John Stultz <johnstul@us.ibm.com>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+
+---
+ include/linux/posix-timers.h   |   10 ++
+ kernel/time/posix-cpu-timers.c |  175 ++++++++++++++++++++++++++++++++++++++---
+ 2 files changed, 174 insertions(+), 11 deletions(-)
+
+--- a/include/linux/posix-timers.h
++++ b/include/linux/posix-timers.h
+@@ -123,6 +123,9 @@ struct posix_cputimers {
+ 	struct posix_cputimer_base	bases[CPUCLOCK_MAX];
+ 	unsigned int			timers_active;
+ 	unsigned int			expiry_active;
++#ifdef CONFIG_PREEMPT_RT
++	struct task_struct		*posix_timer_list;
++#endif
+ };
+ 
+ static inline void posix_cputimers_init(struct posix_cputimers *pct)
+@@ -152,9 +155,16 @@ static inline void posix_cputimers_rt_wa
+ 	INIT_CPU_TIMERBASE(b[2]),					\
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT
++# define INIT_TIMER_LIST	.posix_timer_list = NULL,
++#else
++# define INIT_TIMER_LIST
++#endif
++
+ #define INIT_CPU_TIMERS(s)						\
+ 	.posix_cputimers = {						\
+ 		.bases = INIT_CPU_TIMERBASES(s.posix_cputimers.bases),	\
++		INIT_TIMER_LIST						\
+ 	},
+ #else
+ struct posix_cputimers { };
+--- a/kernel/time/posix-cpu-timers.c
++++ b/kernel/time/posix-cpu-timers.c
+@@ -3,8 +3,10 @@
+  * Implement CPU time clocks for the POSIX clock interface.
+  */
+ 
++#include <uapi/linux/sched/types.h>
+ #include <linux/sched/signal.h>
+ #include <linux/sched/cputime.h>
++#include <linux/sched/rt.h>
+ #include <linux/posix-timers.h>
+ #include <linux/errno.h>
+ #include <linux/math64.h>
+@@ -15,6 +17,7 @@
+ #include <linux/workqueue.h>
+ #include <linux/compat.h>
+ #include <linux/sched/deadline.h>
++#include <linux/smpboot.h>
+ 
+ #include "posix-timers.h"
+ 
+@@ -27,6 +30,9 @@ void posix_cputimers_group_init(struct p
+ 		pct->bases[CPUCLOCK_PROF].nextevt = cpu_limit * NSEC_PER_SEC;
+ 		pct->timers_active = true;
+ 	}
++#ifdef CONFIG_PREEMPT_RT
++	pct->posix_timer_list = NULL;
++#endif
+ }
+ 
+ /*
+@@ -804,7 +810,8 @@ static inline void check_dl_overrun(stru
+ 	}
+ }
+ 
+-static bool check_rlimit(u64 time, u64 limit, int signo, bool rt, bool hard)
++static bool check_rlimit(struct task_struct *tsk, u64 time, u64 limit,
++			 int signo, bool rt, bool hard)
+ {
+ 	if (time < limit)
+ 		return false;
+@@ -812,9 +819,9 @@ static bool check_rlimit(u64 time, u64 l
+ 	if (print_fatal_signals) {
+ 		pr_info("%s Watchdog Timeout (%s): %s[%d]\n",
+ 			rt ? "RT" : "CPU", hard ? "hard" : "soft",
+-			current->comm, task_pid_nr(current));
++			tsk->comm, task_pid_nr(tsk));
+ 	}
+-	__group_send_sig_info(signo, SEND_SIG_PRIV, current);
++	__group_send_sig_info(signo, SEND_SIG_PRIV, tsk);
+ 	return true;
+ }
+ 
+@@ -850,11 +857,11 @@ static void check_thread_timers(struct t
+ 
+ 		/* At the hard limit, send SIGKILL. No further action. */
+ 		if (hard != RLIM_INFINITY &&
+-		    check_rlimit(rttime, hard, SIGKILL, true, true))
++		    check_rlimit(tsk, rttime, hard, SIGKILL, true, true))
+ 			return;
+ 
+ 		/* At the soft limit, send a SIGXCPU every second */
+-		if (check_rlimit(rttime, soft, SIGXCPU, true, false)) {
++		if (check_rlimit(tsk, rttime, soft, SIGXCPU, true, false)) {
+ 			soft += USEC_PER_SEC;
+ 			tsk->signal->rlim[RLIMIT_RTTIME].rlim_cur = soft;
+ 		}
+@@ -949,11 +956,11 @@ static void check_process_timers(struct
+ 
+ 		/* At the hard limit, send SIGKILL. No further action. */
+ 		if (hard != RLIM_INFINITY &&
+-		    check_rlimit(ptime, hardns, SIGKILL, false, true))
++		    check_rlimit(tsk, ptime, hardns, SIGKILL, false, true))
+ 			return;
+ 
+ 		/* At the soft limit, send a SIGXCPU every second */
+-		if (check_rlimit(ptime, softns, SIGXCPU, false, false)) {
++		if (check_rlimit(tsk, ptime, softns, SIGXCPU, false, false)) {
+ 			sig->rlim[RLIMIT_CPU].rlim_cur = soft + 1;
+ 			softns += NSEC_PER_SEC;
+ 		}
+@@ -1110,15 +1117,12 @@ static inline bool fastpath_timer_check(
+  * already updated our counts.  We need to check if any timers fire now.
+  * Interrupts are disabled.
+  */
+-void run_posix_cpu_timers(void)
++static void __run_posix_cpu_timers(struct task_struct *tsk)
+ {
+-	struct task_struct *tsk = current;
+ 	struct k_itimer *timer, *next;
+ 	unsigned long flags;
+ 	LIST_HEAD(firing);
+ 
+-	lockdep_assert_irqs_disabled();
+-
+ 	/*
+ 	 * The fast path checks that there are no expired thread or thread
+ 	 * group timers.  If that's so, just return.
+@@ -1171,6 +1175,155 @@ void run_posix_cpu_timers(void)
+ 	}
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT
++#include <linux/kthread.h>
++#include <linux/cpu.h>
++DEFINE_PER_CPU(struct task_struct *, posix_timer_task);
++DEFINE_PER_CPU(struct task_struct *, posix_timer_tasklist);
++DEFINE_PER_CPU(bool, posix_timer_th_active);
++
++static void posix_cpu_kthread_fn(unsigned int cpu)
++{
++	struct task_struct *tsk = NULL;
++	struct task_struct *next = NULL;
++
++	BUG_ON(per_cpu(posix_timer_task, cpu) != current);
++
++	/* grab task list */
++	raw_local_irq_disable();
++	tsk = per_cpu(posix_timer_tasklist, cpu);
++	per_cpu(posix_timer_tasklist, cpu) = NULL;
++	raw_local_irq_enable();
++
++	/* its possible the list is empty, just return */
++	if (!tsk)
++		return;
++
++	/* Process task list */
++	while (1) {
++		/* save next */
++		next = tsk->posix_cputimers.posix_timer_list;
++
++		/* run the task timers, clear its ptr and
++		 * unreference it
++		 */
++		__run_posix_cpu_timers(tsk);
++		tsk->posix_cputimers.posix_timer_list = NULL;
++		put_task_struct(tsk);
++
++		/* check if this is the last on the list */
++		if (next == tsk)
++			break;
++		tsk = next;
++	}
++}
++
++static inline int __fastpath_timer_check(struct task_struct *tsk)
++{
++	/* tsk == current, ensure it is safe to use ->signal/sighand */
++	if (unlikely(tsk->exit_state))
++		return 0;
++
++	if (!expiry_cache_is_inactive(&tsk->posix_cputimers))
++		return 1;
++
++	if (!expiry_cache_is_inactive(&tsk->signal->posix_cputimers))
++		return 1;
++
++	return 0;
++}
++
++void run_posix_cpu_timers(void)
++{
++	unsigned int cpu = smp_processor_id();
++	struct task_struct *tsk = current;
++	struct task_struct *tasklist;
++
++	BUG_ON(!irqs_disabled());
++
++	if (per_cpu(posix_timer_th_active, cpu) != true)
++		return;
++
++	/* get per-cpu references */
++	tasklist = per_cpu(posix_timer_tasklist, cpu);
++
++	/* check to see if we're already queued */
++	if (!tsk->posix_cputimers.posix_timer_list && __fastpath_timer_check(tsk)) {
++		get_task_struct(tsk);
++		if (tasklist) {
++			tsk->posix_cputimers.posix_timer_list = tasklist;
++		} else {
++			/*
++			 * The list is terminated by a self-pointing
++			 * task_struct
++			 */
++			tsk->posix_cputimers.posix_timer_list = tsk;
++		}
++		per_cpu(posix_timer_tasklist, cpu) = tsk;
++
++		wake_up_process(per_cpu(posix_timer_task, cpu));
++	}
++}
++
++static int posix_cpu_kthread_should_run(unsigned int cpu)
++{
++	return __this_cpu_read(posix_timer_tasklist) != NULL;
++}
++
++static void posix_cpu_kthread_park(unsigned int cpu)
++{
++	this_cpu_write(posix_timer_th_active, false);
++}
++
++static void posix_cpu_kthread_unpark(unsigned int cpu)
++{
++	this_cpu_write(posix_timer_th_active, true);
++}
++
++static void posix_cpu_kthread_setup(unsigned int cpu)
++{
++	struct sched_param sp;
++
++	sp.sched_priority = MAX_RT_PRIO - 1;
++	sched_setscheduler_nocheck(current, SCHED_FIFO, &sp);
++	posix_cpu_kthread_unpark(cpu);
++}
++
++static struct smp_hotplug_thread posix_cpu_thread = {
++	.store			= &posix_timer_task,
++	.thread_should_run	= posix_cpu_kthread_should_run,
++	.thread_fn		= posix_cpu_kthread_fn,
++	.thread_comm		= "posixcputmr/%u",
++	.setup			= posix_cpu_kthread_setup,
++	.park			= posix_cpu_kthread_park,
++	.unpark			= posix_cpu_kthread_unpark,
++};
++
++static int __init posix_cpu_thread_init(void)
++{
++	/* Start one for boot CPU. */
++	unsigned long cpu;
++	int ret;
++
++	/* init the per-cpu posix_timer_tasklets */
++	for_each_possible_cpu(cpu)
++		per_cpu(posix_timer_tasklist, cpu) = NULL;
++
++	ret = smpboot_register_percpu_thread(&posix_cpu_thread);
++	WARN_ON(ret);
++
++	return 0;
++}
++early_initcall(posix_cpu_thread_init);
++
++#else /* CONFIG_PREEMPT_RT */
++void run_posix_cpu_timers(void)
++{
++	lockdep_assert_irqs_disabled();
++	__run_posix_cpu_timers(current);
++}
++#endif /* CONFIG_PREEMPT_RT */
++
+ /*
+  * Set one of the process-wide special case CPU timers or RLIMIT_CPU.
+  * The tsk->sighand->siglock must be held by the caller.

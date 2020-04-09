@@ -1,0 +1,26 @@
+From: Davidlohr Bueso <dave@stgolabs.net>
+Date: Fri, 31 Jan 2020 16:07:10 +0100
+Subject: [PATCH 7/7] locking/percpu-rwsem: Add might_sleep() for writer
+ locking
+
+We are missing this annotation in percpu_down_write(). Correct
+this.
+
+Signed-off-by: Davidlohr Bueso <dbueso@suse.de>
+Signed-off-by: Peter Zijlstra (Intel) <peterz@infradead.org>
+Link: https://lkml.kernel.org/r/20200108013305.7732-1-dave@stgolabs.net
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/locking/percpu-rwsem.c |    1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/kernel/locking/percpu-rwsem.c
++++ b/kernel/locking/percpu-rwsem.c
+@@ -212,6 +212,7 @@ static bool readers_active_check(struct
+ 
+ void percpu_down_write(struct percpu_rw_semaphore *sem)
+ {
++	might_sleep();
+ 	rwsem_acquire(&sem->dep_map, 0, 0, _RET_IP_);
+ 
+ 	/* Notify readers to take the slow path. */

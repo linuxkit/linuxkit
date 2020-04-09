@@ -1,0 +1,43 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 14 Feb 2019 17:38:24 +0100
+Subject: [PATCH] serial: 8250: remove that trylock in
+ serial8250_console_write_atomic()
+
+This does not work as rtmutex in NMI context. As per John, it is not
+needed.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/tty/serial/8250/8250_port.c |   11 -----------
+ 1 file changed, 11 deletions(-)
+
+--- a/drivers/tty/serial/8250/8250_port.c
++++ b/drivers/tty/serial/8250/8250_port.c
+@@ -3191,17 +3191,9 @@ void serial8250_console_write_atomic(str
+ {
+ 	struct uart_port *port = &up->port;
+ 	unsigned int flags;
+-	bool locked;
+ 
+ 	console_atomic_lock(&flags);
+ 
+-	/*
+-	 * If possible, keep any other CPUs from working with the
+-	 * UART until the atomic message is completed. This helps
+-	 * to keep the output more orderly.
+-	 */
+-	locked = spin_trylock(&port->lock);
+-
+ 	touch_nmi_watchdog();
+ 
+ 	clear_ier(up);
+@@ -3216,9 +3208,6 @@ void serial8250_console_write_atomic(str
+ 	wait_for_xmitr(up, BOTH_EMPTY);
+ 	restore_ier(up);
+ 
+-	if (locked)
+-		spin_unlock(&port->lock);
+-
+ 	console_atomic_unlock(flags);
+ }
+ 

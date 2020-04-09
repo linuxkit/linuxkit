@@ -1,0 +1,40 @@
+From: Ingo Molnar <mingo@elte.hu>
+Date: Fri, 3 Jul 2009 08:44:03 -0500
+Subject: mm: Allow only SLUB on RT
+
+Memory allocation disables interrupts as part of the allocation and freeing
+process. For -RT it is important that this section remain short and don't
+depend on the size of the request or an internal state of the memory allocator.
+At the beginning the SLAB memory allocator was adopted for RT's needs and it
+required substantial changes. Later, with the addition of the SLUB memory
+allocator we adopted this one as well and the changes were smaller. More
+important, due to the design of the SLUB allocator it performs better and its
+worst case latency was smaller. In the end only SLUB remained supported.
+
+Disable SLAB and SLOB on -RT. Only SLUB is adopted to -RT needs.
+
+Signed-off-by: Ingo Molnar <mingo@elte.hu>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ init/Kconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/init/Kconfig
++++ b/init/Kconfig
+@@ -1785,6 +1785,7 @@ choice
+ 
+ config SLAB
+ 	bool "SLAB"
++	depends on !PREEMPT_RT
+ 	select HAVE_HARDENED_USERCOPY_ALLOCATOR
+ 	help
+ 	  The regular slab allocator that is established and known to work
+@@ -1805,6 +1806,7 @@ config SLUB
+ config SLOB
+ 	depends on EXPERT
+ 	bool "SLOB (Simple Allocator)"
++	depends on !PREEMPT_RT
+ 	help
+ 	   SLOB replaces the stock allocator with a drastically simpler
+ 	   allocator. SLOB is generally more space efficient but

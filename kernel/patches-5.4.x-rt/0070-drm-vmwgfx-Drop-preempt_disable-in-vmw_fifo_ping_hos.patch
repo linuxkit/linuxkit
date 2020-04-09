@@ -1,0 +1,35 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 21 Feb 2020 18:57:11 +0100
+Subject: [PATCH] drm/vmwgfx: Drop preempt_disable() in
+ vmw_fifo_ping_host()
+
+vmw_fifo_ping_host() disables preemption around a test and a register
+write via vmw_write(). The write function acquires a spinlock_t typed
+lock which is not allowed in a preempt_disable()ed section on
+PREEMPT_RT. This has been reported in the bugzilla.
+
+It has been explained by Thomas Hellstrom that this preempt_disable()ed
+section is not required for correctness.
+
+Remove the preempt_disable() section.
+
+Link: https://bugzilla.kernel.org/show_bug.cgi?id=206591
+Link: https://lkml.kernel.org/r/0b5e1c65d89951de993deab06d1d197b40fd67aa.camel@vmware.com
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/gpu/drm/vmwgfx/vmwgfx_fifo.c |    2 --
+ 1 file changed, 2 deletions(-)
+
+--- a/drivers/gpu/drm/vmwgfx/vmwgfx_fifo.c
++++ b/drivers/gpu/drm/vmwgfx/vmwgfx_fifo.c
+@@ -169,10 +169,8 @@ void vmw_fifo_ping_host(struct vmw_priva
+ {
+ 	u32 *fifo_mem = dev_priv->mmio_virt;
+ 
+-	preempt_disable();
+ 	if (cmpxchg(fifo_mem + SVGA_FIFO_BUSY, 0, 1) == 0)
+ 		vmw_write(dev_priv, SVGA_REG_SYNC, reason);
+-	preempt_enable();
+ }
+ 
+ void vmw_fifo_release(struct vmw_private *dev_priv, struct vmw_fifo_state *fifo)

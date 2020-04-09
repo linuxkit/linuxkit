@@ -253,6 +253,7 @@ endef
 #
 ifeq ($(ARCH),x86_64)
 $(eval $(call kernel,5.4.28,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 $(eval $(call kernel,4.19.113,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.19.113,4.19.x,,-dbg))
 $(eval $(call kernel,4.19.106,4.19.x,-rt,))
@@ -260,6 +261,7 @@ $(eval $(call kernel,4.14.174,4.14.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
 $(eval $(call kernel,5.4.28,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 $(eval $(call kernel,4.19.106,4.19.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
