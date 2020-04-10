@@ -16,7 +16,6 @@ RUN apk add \
     installkernel \
     kmod \
     elfutils-dev \
-    libunwind-dev \
     linux-headers \
     mpc1-dev \
     mpfr-dev \
@@ -30,6 +29,9 @@ RUN apk add \
     xz \
     xz-dev \
     zlib-dev
+
+# libunwind-dev pkg is missing for s390x for now. Only install on other arch
+RUN [ $(uname -m) != s390x ] && apk add libunwind-dev || true
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
