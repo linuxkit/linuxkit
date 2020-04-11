@@ -1,4 +1,4 @@
-From 66f0f687d1a77d74639a694d5f95900970851560 Mon Sep 17 00:00:00 2001
+From 5f86d3c6c5e6e3e3ea93cef6a76a85cffd9a6372 Mon Sep 17 00:00:00 2001
 From: Arnaldo Carvalho de Melo <acme@redhat.com>
 Date: Mon, 4 Feb 2019 15:48:03 -0300
 Subject: [PATCH 1/2] perf symbols: Add fallback definitions for
