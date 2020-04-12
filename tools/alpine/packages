@@ -66,7 +66,6 @@ libc-utils
 libc6-compat
 libcap-ng-dev
 libedit-dev
-libelf-dev
 libressl-dev
 libseccomp-dev
 libtirpc-dev
