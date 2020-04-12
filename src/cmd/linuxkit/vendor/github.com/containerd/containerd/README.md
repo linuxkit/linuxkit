@@ -1,7 +1,8 @@
-![banner](/docs/images/containerd-dark.png?raw=true)
+![containerd banner](https://raw.githubusercontent.com/cncf/artwork/master/projects/containerd/horizontal/color/containerd-horizontal-color.png)
 
 [![GoDoc](https://godoc.org/github.com/containerd/containerd?status.svg)](https://godoc.org/github.com/containerd/containerd)
 [![Build Status](https://travis-ci.org/containerd/containerd.svg?branch=master)](https://travis-ci.org/containerd/containerd)
+[![Windows Build Status](https://ci.appveyor.com/api/projects/status/github/containerd/containerd?branch=master&svg=true)](https://ci.appveyor.com/project/mlaventure/containerd-3g73f?branch=master)
 [![FOSSA Status](https://app.fossa.io/api/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fcontainerd%2Fcontainerd.svg?type=shield)](https://app.fossa.io/projects/git%2Bhttps%3A%2F%2Fgithub.com%2Fcontainerd%2Fcontainerd?ref=badge_shield)
 [![Go Report Card](https://goreportcard.com/badge/github.com/containerd/containerd)](https://goreportcard.com/report/github.com/containerd/containerd)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/1271/badge)](https://bestpractices.coreinfrastructure.org/projects/1271)
@@ -166,16 +167,14 @@ If you have [criu](https://criu.org/Main_Page) installed on your machine you can
 
 ```go
 // checkpoint the task then push it to a registry
-checkpoint, err := task.Checkpoint(context, containerd.WithExit)
+checkpoint, err := task.Checkpoint(context)
 
 err := client.Push(context, "myregistry/checkpoints/redis:master", checkpoint)
 
 // on a new machine pull the checkpoint and restore the redis container
-image, err := client.Pull(context, "myregistry/checkpoints/redis:master")
+checkpoint, err := client.Pull(context, "myregistry/checkpoints/redis:master")
 
-checkpoint := image.Target()
-
-redis, err = client.NewContainer(context, "redis-master", containerd.WithCheckpoint(checkpoint, "redis-rootfs"))
+redis, err = client.NewContainer(context, "redis-master", containerd.WithNewSnapshot("redis-rootfs", checkpoint))
 defer container.Delete(context)
 
 task, err = redis.NewTask(context, cio.Stdio, containerd.WithTaskCheckpoint(checkpoint))
@@ -184,15 +183,32 @@ defer task.Delete(context)
 err := task.Start(context)
 ```
 
+### Snapshot Plugins
+
+In addition to the built-in Snapshot plugins in containerd, additional external
+plugins can be configured using GRPC. An external plugin is made available using
+the configured name and appears as a plugin alongside the built-in ones.
+
+To add an external snapshot plugin, add the plugin to containerd's config file
+(by default at `/etc/containerd/config.toml`). The string following
+`proxy_plugin.` will be used as the name of the snapshotter and the address
+should refer to a socket with a GRPC listener serving containerd's Snapshot
+GRPC API. Remember to restart containerd for any configuration changes to take
+effect.
+
+```
+[proxy_plugins]
+  [proxy_plugins.customsnapshot]
+    type = "snapshot"
+    address =  "/var/run/mysnapshotter.sock"
+```
+
+See [PLUGINS.md](PLUGINS.md) for how to create plugins
+
 ### Releases and API Stability
 
 Please see [RELEASES.md](RELEASES.md) for details on versioning and stability
 of containerd components.
-
-### Development reports.
-
-Weekly summary on the progress and what is being worked on.
-https://github.com/containerd/containerd/tree/master/reports
 
 ### Communication
 
@@ -201,7 +217,12 @@ This will be the best place to discuss design and implementation.
 
 For sync communication we have a community slack with a #containerd channel that everyone is welcome to join and chat about development.
 
-**Slack:** https://dockr.ly/community
+**Slack:** Catch us in the #containerd and #containerd-dev channels on dockercommunity.slack.com.
+[Click here for an invite to docker community slack.](https://dockr.ly/slack)
+
+### Security audit
+
+A third party security audit was performed by Cure53 in 4Q2018; the [full report](docs/SECURITY_AUDIT.pdf) is available in our docs/ directory.
 
 ### Reporting security issues
 
@@ -213,3 +234,21 @@ The containerd codebase is released under the [Apache 2.0 license](LICENSE.code)
 The README.md file, and files in the "docs" folder are licensed under the
 Creative Commons Attribution 4.0 International License. You may obtain a
 copy of the license, titled CC-BY-4.0, at http://creativecommons.org/licenses/by/4.0/.
+
+## Project details
+
+**containerd** is the primary open source project within the broader containerd GitHub repository.
+However, all projects within the repo have common maintainership, governance, and contributing
+guidelines which are stored in a `project` repository commonly for all containerd projects.
+
+Please find all these core project documents, including the:
+ * [Project governance](https://github.com/containerd/project/blob/master/GOVERNANCE.md),
+ * [Maintainers](https://github.com/containerd/project/blob/master/MAINTAINERS),
+ * and [Contributing guidelines](https://github.com/containerd/project/blob/master/CONTRIBUTING.md)
+
+information in our [`containerd/project`](https://github.com/containerd/project) repository.
+
+## Adoption
+
+Interested to see who is using containerd? Are you using containerd in a project?
+Please add yourself via pull request to our [ADOPTERS.md](./ADOPTERS.md) file.

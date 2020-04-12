@@ -5,16 +5,20 @@ package pkglib
 //go:generate ./gen
 
 import (
-	"bytes"
 	"encoding/base64"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
 	"path"
+	"strconv"
 	"strings"
 
 	"github.com/docker/cli/cli/config"
+	"github.com/docker/distribution/manifest/manifestlist"
+	dockertypes "github.com/docker/docker/api/types"
+	"github.com/estesp/manifest-tool/docker"
+	"github.com/estesp/manifest-tool/types"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
@@ -149,13 +153,23 @@ func (dr dockerRunner) pushWithManifest(img, suffix string) error {
 		return err
 	}
 
-	var trust bool
-	if dr.dct {
-		trust = true
+	auth, err := getDockerAuth()
+	if err != nil {
+		return fmt.Errorf("failed to get auth: %v", err)
 	}
 
 	fmt.Printf("Pushing %s to manifest %s\n", img+suffix, img)
-	return manifestPush(img, trust)
+	digest, l, err := manifestPush(img, auth)
+	if err != nil {
+		return err
+	}
+	// if trust is not enabled, nothing more to do
+	if !dr.dct {
+		fmt.Println("trust disabled, not signing")
+		return nil
+	}
+	fmt.Printf("Signing manifest for %s\n", img)
+	return signManifest(img, digest, l, auth)
 }
 
 func (dr dockerRunner) tag(ref, tag string) error {
@@ -178,7 +192,49 @@ func (dr dockerRunner) save(tgt string, refs ...string) error {
 	return dr.command(args...)
 }
 
-func manifestPush(img string, trust bool) error {
+func getDockerAuth() (dockertypes.AuthConfig, error) {
+	cfgFile := config.LoadDefaultConfigFile(os.Stderr)
+	return cfgFile.GetAuthConfig(registry)
+}
+
+func manifestPush(img string, auth dockertypes.AuthConfig) (hash string, length int, err error) {
+	srcImages := []types.ManifestEntry{}
+
+	for i, platform := range platforms {
+		osArchArr := strings.Split(platform, "/")
+		if len(osArchArr) != 2 && len(osArchArr) != 3 {
+			return hash, length, fmt.Errorf("platform argument %d is not of form 'os/arch': '%s'", i, platform)
+		}
+		variant := ""
+		os, arch := osArchArr[0], osArchArr[1]
+		if len(osArchArr) == 3 {
+			variant = osArchArr[2]
+		}
+		srcImages = append(srcImages, types.ManifestEntry{
+			Image: fmt.Sprintf("%s-%s", img, arch),
+			Platform: manifestlist.PlatformSpec{
+				OS:           os,
+				Architecture: arch,
+				Variant:      variant,
+			},
+		})
+	}
+
+	yamlInput := types.YAMLInput{
+		Image:     img,
+		Manifests: srcImages,
+	}
+
+	a := types.AuthInfo{
+		Username: auth.Username,
+		Password: auth.Password,
+	}
+
+	// push the manifest list with the auth as given, ignore missing, do not allow insecure
+	return docker.PutManifestList(&a, yamlInput, true, false)
+}
+
+func signManifest(img, digest string, length int, auth dockertypes.AuthConfig) error {
 	imgParts := strings.Split(img, ":")
 	if len(imgParts) < 2 {
 		return fmt.Errorf("image not composed of <repo>:<tag> '%s'", img)
@@ -186,64 +242,18 @@ func manifestPush(img string, trust bool) error {
 	repo := imgParts[0]
 	tag := imgParts[1]
 
-	cfgFile := config.LoadDefaultConfigFile(os.Stderr)
-	auth, err := cfgFile.GetAuthConfig(registry)
-	if err != nil {
-		return fmt.Errorf("unable to get auth for %s: %v", registry, err)
+	digestParts := strings.Split(digest, ":")
+	if len(digestParts) < 2 {
+		return fmt.Errorf("digest not composed of <algo>:<hash> '%s'", digest)
 	}
-
-	args := []string{
-		"push",
-		"from-args",
-		"--ignore-missing",
-		"--platforms",
-		strings.Join(platforms, ","),
-		"--template",
-		fmt.Sprintf("%s-ARCH", img),
-		"--target",
-		img,
+	algo, hash := digestParts[0], digestParts[1]
+	if algo != "sha256" {
+		return fmt.Errorf("notary works with sha256 hash, not the provided %s", algo)
 	}
-	manTool := "manifest-tool"
-	// we do this separately to avoid printing username and password to debug output
-	log.Debugf("Executing (will add username/password): %v", append([]string{manTool}, args...))
-	args = append([]string{
-		"--username",
-		auth.Username,
-		"--password",
-		auth.Password,
-	}, args...)
-	cmd := exec.Command(manTool, args...)
-
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	cmd.Stderr = os.Stderr
-	cmd.Env = os.Environ()
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to execute manifest-tool: %v", err)
-	}
-
-	if !trust {
-		fmt.Printf("trust disabled, not signing %s\n", img)
-		return nil
-	}
-
-	// get the image hash and the length from the manifest tool output
-	manToolOut := string(stdout.Bytes())
-	manToolOutParts := strings.Fields(manToolOut)
-	if len(manToolOutParts) < 3 {
-		return fmt.Errorf("manifest-tool output was less then required 3 parts '%s'", manToolOut)
-	}
-	hashParts := strings.Split(manToolOutParts[1], ":")
-	if len(hashParts) < 2 {
-		return fmt.Errorf("manifest-tool output hash was not in format <repo>:<hash> '%s'", manToolOutParts[1])
-	}
-	hash := hashParts[1]
-	length := manToolOutParts[2]
 
 	notaryAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", auth.Username, auth.Password)))
 	// run the notary command to sign
-	args = []string{
+	args := []string{
 		"-s",
 		notaryServer,
 		"-d",
@@ -252,13 +262,13 @@ func manifestPush(img string, trust bool) error {
 		"-p",
 		fmt.Sprintf("docker.io/%s", repo),
 		tag,
-		length,
+		strconv.Itoa(length),
 		"--sha256",
 		hash,
 		"-r",
 		"targets/releases",
 	}
-	cmd = exec.Command("notary", args...)
+	cmd := exec.Command("notary", args...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", notaryDelegationPassphraseEnvVar, os.Getenv(dctEnvVar)), fmt.Sprintf("%s=%s", notaryAuthEnvVar, notaryAuth))

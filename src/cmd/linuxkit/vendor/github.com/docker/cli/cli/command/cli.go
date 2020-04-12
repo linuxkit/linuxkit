@@ -8,17 +8,20 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strconv"
 	"time"
 
 	"github.com/docker/cli/cli"
 	"github.com/docker/cli/cli/config"
 	cliconfig "github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
+	"github.com/docker/cli/cli/connhelper"
 	cliflags "github.com/docker/cli/cli/flags"
 	manifeststore "github.com/docker/cli/cli/manifest/store"
 	registryclient "github.com/docker/cli/cli/registry/client"
 	"github.com/docker/cli/cli/trust"
 	dopts "github.com/docker/cli/opts"
+	clitypes "github.com/docker/cli/types"
 	"github.com/docker/docker/api"
 	"github.com/docker/docker/api/types"
 	registrytypes "github.com/docker/docker/api/types/registry"
@@ -53,19 +56,21 @@ type Cli interface {
 	ManifestStore() manifeststore.Store
 	RegistryClient(bool) registryclient.RegistryClient
 	ContentTrustEnabled() bool
+	NewContainerizedEngineClient(sockPath string) (clitypes.ContainerizedClient, error)
 }
 
 // DockerCli is an instance the docker command line client.
 // Instances of the client can be returned from NewDockerCli.
 type DockerCli struct {
-	configFile   *configfile.ConfigFile
-	in           *InStream
-	out          *OutStream
-	err          io.Writer
-	client       client.APIClient
-	serverInfo   ServerInfo
-	clientInfo   ClientInfo
-	contentTrust bool
+	configFile            *configfile.ConfigFile
+	in                    *InStream
+	out                   *OutStream
+	err                   io.Writer
+	client                client.APIClient
+	serverInfo            ServerInfo
+	clientInfo            ClientInfo
+	contentTrust          bool
+	newContainerizeClient func(string) (clitypes.ContainerizedClient, error)
 }
 
 // DefaultVersion returns api.defaultVersion or DOCKER_API_VERSION if specified.
@@ -127,6 +132,20 @@ func (cli *DockerCli) ClientInfo() ClientInfo {
 // environment variable.
 func (cli *DockerCli) ContentTrustEnabled() bool {
 	return cli.contentTrust
+}
+
+// BuildKitEnabled returns whether buildkit is enabled either through a daemon setting
+// or otherwise the client-side DOCKER_BUILDKIT environment variable
+func BuildKitEnabled(si ServerInfo) (bool, error) {
+	buildkitEnabled := si.BuildkitVersion == types.BuilderBuildKit
+	if buildkitEnv := os.Getenv("DOCKER_BUILDKIT"); buildkitEnv != "" {
+		var err error
+		buildkitEnabled, err = strconv.ParseBool(buildkitEnv)
+		if err != nil {
+			return false, errors.Wrap(err, "DOCKER_BUILDKIT environment variable expects boolean value")
+		}
+	}
+	return buildkitEnabled, nil
 }
 
 // ManifestStore returns a store for local manifests
@@ -205,6 +224,7 @@ func (cli *DockerCli) initializeFromClient() {
 	cli.serverInfo = ServerInfo{
 		HasExperimental: ping.Experimental,
 		OSType:          ping.OSType,
+		BuildkitVersion: ping.BuilderVersion,
 	}
 	cli.client.NegotiateAPIVersionPing(ping)
 }
@@ -228,11 +248,17 @@ func (cli *DockerCli) NotaryClient(imgRefAndAuth trust.ImageRefAndAuth, actions 
 	return trust.GetNotaryRepository(cli.In(), cli.Out(), UserAgent(), imgRefAndAuth.RepoInfo(), imgRefAndAuth.AuthConfig(), actions...)
 }
 
+// NewContainerizedEngineClient returns a containerized engine client
+func (cli *DockerCli) NewContainerizedEngineClient(sockPath string) (clitypes.ContainerizedClient, error) {
+	return cli.newContainerizeClient(sockPath)
+}
+
 // ServerInfo stores details about the supported features and platform of the
 // server
 type ServerInfo struct {
 	HasExperimental bool
 	OSType          string
+	BuildkitVersion types.BuilderVersion
 }
 
 // ClientInfo stores details about the supported features of the client
@@ -242,8 +268,8 @@ type ClientInfo struct {
 }
 
 // NewDockerCli returns a DockerCli instance with IO output and error streams set by in, out and err.
-func NewDockerCli(in io.ReadCloser, out, err io.Writer, isTrusted bool) *DockerCli {
-	return &DockerCli{in: NewInStream(in), out: NewOutStream(out), err: err, contentTrust: isTrusted}
+func NewDockerCli(in io.ReadCloser, out, err io.Writer, isTrusted bool, containerizedFn func(string) (clitypes.ContainerizedClient, error)) *DockerCli {
+	return &DockerCli{in: NewInStream(in), out: NewOutStream(out), err: err, contentTrust: isTrusted, newContainerizeClient: containerizedFn}
 }
 
 // NewAPIClientFromFlags creates a new APIClient from command line flags
@@ -252,24 +278,43 @@ func NewAPIClientFromFlags(opts *cliflags.CommonOptions, configFile *configfile.
 	if err != nil {
 		return &client.Client{}, err
 	}
+	var clientOpts []client.Opt
+	helper, err := connhelper.GetConnectionHelper(host)
+	if err != nil {
+		return &client.Client{}, err
+	}
+	if helper == nil {
+		clientOpts = append(clientOpts, withHTTPClient(opts.TLSOptions))
+		clientOpts = append(clientOpts, client.WithHost(host))
+	} else {
+		clientOpts = append(clientOpts, func(c *client.Client) error {
+			httpClient := &http.Client{
+				// No tls
+				// No proxy
+				Transport: &http.Transport{
+					DialContext: helper.Dialer,
+				},
+			}
+			return client.WithHTTPClient(httpClient)(c)
+		})
+		clientOpts = append(clientOpts, client.WithHost(helper.Host))
+		clientOpts = append(clientOpts, client.WithDialContext(helper.Dialer))
+	}
 
 	customHeaders := configFile.HTTPHeaders
 	if customHeaders == nil {
 		customHeaders = map[string]string{}
 	}
 	customHeaders["User-Agent"] = UserAgent()
+	clientOpts = append(clientOpts, client.WithHTTPHeaders(customHeaders))
 
 	verStr := api.DefaultVersion
 	if tmpStr := os.Getenv("DOCKER_API_VERSION"); tmpStr != "" {
 		verStr = tmpStr
 	}
+	clientOpts = append(clientOpts, client.WithVersion(verStr))
 
-	return client.NewClientWithOpts(
-		withHTTPClient(opts.TLSOptions),
-		client.WithHTTPHeaders(customHeaders),
-		client.WithVersion(verStr),
-		client.WithHost(host),
-	)
+	return client.NewClientWithOpts(clientOpts...)
 }
 
 func getServerHost(hosts []string, tlsOptions *tlsconfig.Options) (string, error) {
