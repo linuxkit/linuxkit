@@ -4,7 +4,7 @@ RUN apk add --no-cache bash go git musl-dev linux-headers make
 
 ENV GOPATH=/go PATH=$PATH:/go/bin
 ENV GITREPO=github.com/google/cadvisor
-ENV COMMIT=v0.33.0
+ENV COMMIT=v0.36.0
 
 ADD /static.patch /tmp/
 
