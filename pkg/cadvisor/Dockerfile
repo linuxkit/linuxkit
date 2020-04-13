@@ -1,6 +1,8 @@
 FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 as build
 
 RUN apk add --no-cache bash go git musl-dev linux-headers make
+# Hack to work around an issue with go on arm64 requiring gcc
+RUN [ $(uname -m) = aarch64 ] && apk add --no-cache gcc || true
 
 ENV GOPATH=/go PATH=$PATH:/go/bin
 ENV GITREPO=github.com/google/cadvisor

@@ -12,6 +12,8 @@ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 # We also need the Go binary which calls it:
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
+# Hack to work around an issue with go on arm64 requiring gcc
+RUN [ $(uname -m) = aarch64 ] && apk add --no-cache gcc || true
 
 COPY .  /go/src/trim-after-delete
 RUN go-compile.sh /go/src/trim-after-delete
