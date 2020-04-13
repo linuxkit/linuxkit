@@ -7,6 +7,8 @@ RUN apk add --no-cache --initdb -p /out \
     git \
     go \
     musl-dev
+# Hack to work around an issue wirh go on arm64 requiring gcc
+RUN [ $(uname -m) = aarch64 ] && apk add --no-cache --initdb -p /out gcc || true
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 FROM scratch
