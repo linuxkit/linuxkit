@@ -3,30 +3,30 @@ kernel:
   image: linuxkit/kernel:5.4.30
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/vpnkit-expose-port:v0.7 # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
-  - linuxkit/init:a0246dd478a24abbee0a4cede99662ffc4931691
-  - linuxkit/runc:69b4a35eaa22eba4990ee52cccc8f48f6c08ed03
-  - linuxkit/containerd:09553963ed9da626c25cf8acdf6d62ec37645412
-  - linuxkit/ca-certificates:v0.7
+  - linuxkit/vpnkit-expose-port:3fd88b7025065843792484b1ad83ddd5c4b28684 # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
+  - linuxkit/init:f670045ecb6ec31ea37dd10114366e9a1e915013
+  - linuxkit/runc:1eef77f5963e44e491abfe392206769037d47ae2
+  - linuxkit/containerd:8ee7a0d636fff9df7e13076f5492d06274e5f644
+  - linuxkit/ca-certificates:abfc6701b9ca17e34ac9439ce5946a247e720ff5
 onboot:
   # support metadata for optional config in /run/config
   - name: metadata
-    image: linuxkit/metadata:2dade7485ac60c765b16a34a42afc6431da938cf
+    image: linuxkit/metadata:12794dd50fd1563dee6c960710fd8b923dba6231
   - name: sysctl
-    image: linuxkit/sysctl:v0.7
+    image: linuxkit/sysctl:541f60fe3676611328e89e8bac251fc636b1a6aa
   - name: sysfs
-    image: linuxkit/sysfs:v0.7
+    image: linuxkit/sysfs:697f996868d6625a78bbbefb199d7b6b6ae3533a
   - name: binfmt
-    image: linuxkit/binfmt:v0.7
+    image: linuxkit/binfmt:94d59bc179c7a9155d8593a974d499352b70bfd5
   # Format and mount the disk image in /var/lib/docker
   - name: format
-    image: linuxkit/format:65b9e0a76d0b9fb8ac5c5f3bc8d3131109290f56
+    image: linuxkit/format:80bd847a90842d3f19460a560d7d95d6fe13bd71
   - name: mount
-    image: linuxkit/mount:v0.7
+    image: linuxkit/mount:8363f4f1744e1df2557ec260a4cc94227178fd69
     command: ["/usr/bin/mountie", "/var/lib"]
   # make a swap file on the mounted disk
   - name: swap
-    image: linuxkit/swap:7f17cd1dfca99f643f91c895e19ab61df09aa870
+    image: linuxkit/swap:2cf5c3f08c4b238bb5fe231fd59ce19faee0fbc6
     command: ["/swap.sh", "--path", "/var/lib/swap", "--size", "1024M"]
   # mount-vpnkit mounts the 9p share used by vpnkit to coordinate port forwarding
   - name: mount-vpnkit
@@ -44,41 +44,41 @@ onboot:
         - /var:/host_var
     command: ["sh", "-c", "mv -v /host_var/log /host_var/lib && ln -vs /var/lib/log /host_var/log"]
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.7
+    image: linuxkit/dhcpcd:2f8a9b670aa6e96a09db56ec45c9f07ef2a811ee
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   # Enable acpi to shutdown on power events
   - name: acpid
-    image: linuxkit/acpid:v0.7
+    image: linuxkit/acpid:d5692a8c9d7cfceb7922acb8e356928c920bc280
   # Enable getty for easier debugging
   - name: getty
-    image: linuxkit/getty:v0.7
+    image: linuxkit/getty:48f66df198981e692084bf70ab72b9fe2be0f880
     env:
         - INSECURE=true
   # Run ntpd to keep time synchronised in the VM
   - name: ntpd
-    image: linuxkit/openntpd:v0.7
+    image: linuxkit/openntpd:9b33f59f6d66c0f5027754a75e52f972e11882c1
   # VSOCK to unix domain socket forwarding. Forwards guest /var/run/docker.sock
   # to a socket on the host.
   - name: vsudd
-    image: linuxkit/vsudd:v0.7
+    image: linuxkit/vsudd:0366cd7fb47398de85b176f3b0420355cda235fa
     binds:
         - /var/run:/var/run
     command: ["/vsudd", "-inport", "2376:unix:/var/run/docker.sock"]
   # vpnkit-forwarder forwards network traffic to/from the host via VSOCK port 62373. 
   # It needs access to the vpnkit 9P coordination share 
   - name: vpnkit-forwarder
-    image: linuxkit/vpnkit-forwarder:v0.7
+    image: linuxkit/vpnkit-forwarder:e0964f3c34f92f7e7ff7b13e360d57559c64581c
     binds:
         - /var/vpnkit:/port
     net: host
     command: ["/vpnkit-forwarder", "-vsockPort", "62373"]
   # Monitor for image deletes and invoke a TRIM on the container filesystem
   - name: trim-after-delete
-    image: linuxkit/trim-after-delete:v0.7
+    image: linuxkit/trim-after-delete:f5a83f55b1bc24d61bca4891d997bca33474945d
   # When the host resumes from sleep, force a clock resync
   - name: host-timesync-daemon
-    image: linuxkit/host-timesync-daemon:v0.7
+    image: linuxkit/host-timesync-daemon:8625ccdbda099c94b9635acd167e8f0e2f9c6318
   # Run dockerd with the vpnkit userland proxy from the vpnkit-forwarder container.
   # Bind mounts /var/run to allow vsudd to connect to docker.sock, /var/vpnkit
   # for vpnkit coordination and /run/config/docker for the configuration file.

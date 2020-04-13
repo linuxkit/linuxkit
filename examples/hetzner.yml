@@ -3,32 +3,32 @@ kernel:
   cmdline: console=ttyS1
   ucode: intel-ucode.cpio
 init:
-  - linuxkit/init:a0246dd478a24abbee0a4cede99662ffc4931691
-  - linuxkit/runc:69b4a35eaa22eba4990ee52cccc8f48f6c08ed03
-  - linuxkit/containerd:09553963ed9da626c25cf8acdf6d62ec37645412
-  - linuxkit/ca-certificates:v0.7
-  - linuxkit/firmware:e246ab4c77bc4e70b53db091371a699fced5e01d
+  - linuxkit/init:f670045ecb6ec31ea37dd10114366e9a1e915013
+  - linuxkit/runc:1eef77f5963e44e491abfe392206769037d47ae2
+  - linuxkit/containerd:8ee7a0d636fff9df7e13076f5492d06274e5f644
+  - linuxkit/ca-certificates:abfc6701b9ca17e34ac9439ce5946a247e720ff5
+  - linuxkit/firmware:2b5688289ec6708e41a20a10aa4b5a05d4b331f6
 onboot:
   - name: rngd1
-    image: linuxkit/rngd:02c555b50cd1887aa628836662d2eec54c0d7e81
+    image: linuxkit/rngd:7fab61cca793113280397dcee8159f35dc37adcb
     command: ["/sbin/rngd", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:v0.7
+    image: linuxkit/sysctl:541f60fe3676611328e89e8bac251fc636b1a6aa
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.7
+    image: linuxkit/dhcpcd:2f8a9b670aa6e96a09db56ec45c9f07ef2a811ee
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:2dade7485ac60c765b16a34a42afc6431da938cf
+    image: linuxkit/metadata:12794dd50fd1563dee6c960710fd8b923dba6231
     command: ["/usr/bin/metadata", "hetzner"]
 services:
   - name: rngd
-    image: linuxkit/rngd:02c555b50cd1887aa628836662d2eec54c0d7e81
+    image: linuxkit/rngd:7fab61cca793113280397dcee8159f35dc37adcb
   - name: getty
-    image: linuxkit/getty:v0.7
+    image: linuxkit/getty:48f66df198981e692084bf70ab72b9fe2be0f880
     env:
      - INSECURE=true
   - name: sshd
-    image: linuxkit/sshd:v0.7
+    image: linuxkit/sshd:d5860b5fd032ca3e755e0e3ab39c918c344d8c91
 files:
   - path: root/.ssh/authorized_keys
     source: ~/.ssh/id_rsa.pub
