@@ -1,2 +1,5 @@
 image: firmware
 network: true
+arches:
+  - amd64
+  - arm64
