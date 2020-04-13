@@ -25,6 +25,10 @@ RUN set -e && \
         ;; \
     esac
 
+# Create copy of files with symlinks based on WHENCE
+RUN cd /linux-firmware && \
+    ./copy-firmware.sh /linux-firmware-whence
+
 # Extract kernel modules for
 WORKDIR /
 COPY --from=kernel /kernel.tar /kernel.tar
@@ -34,7 +38,7 @@ RUN tar xf /kernel.tar
 RUN set -e && \
     for fw in $(find /lib/modules -name \*.ko -exec modinfo --field=firmware {} \;); do \
         mkdir -p "/out/lib/firmware/$(dirname $fw)" && \
-        cp "/linux-firmware/$fw" "/out/lib/firmware/$fw"; \
+        cp "/linux-firmware-whence/$fw" "/out/lib/firmware/$fw"; \
     done
 
 FROM scratch
