@@ -7,7 +7,7 @@ RUN apk add --no-cache git kmod
 # Clone the firmware repository
 # Make sure you also update the FW_COMMIT in ../firmware-all/Dockerfile
 ENV FW_URL=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
-ENV FW_COMMIT=dff98c6c57383fe343407bcb7b6e775e0b87274f
+ENV FW_COMMIT=edf390c23a4e185ff36daded36575f669f5059f7
 WORKDIR /
 RUN git clone ${FW_URL} && \
     cd /linux-firmware && \
