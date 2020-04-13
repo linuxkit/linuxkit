@@ -13,7 +13,7 @@ services:
   - name: write-and-rotate-logs
     image: linuxkit/logwrite:v0.7
   - name: check-the-logs
-    image: alpine:3.9
+    image: alpine:3.11
     binds:
       - /check.sh:/check.sh
       - /dev/console:/dev/console
@@ -29,4 +29,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.9
+    - alpine:3.11

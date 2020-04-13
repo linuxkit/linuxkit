@@ -9,7 +9,7 @@ onboot:
     image: linuxkit/losetup:v0.7
     command: ["/usr/bin/loopy", "-c", "/var/test.img"]
   - name: test
-    image: alpine:3.9
+    image: alpine:3.11
     net: host
     binds:
       - /check.sh:/check.sh
@@ -25,4 +25,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.9
+    - alpine:3.11

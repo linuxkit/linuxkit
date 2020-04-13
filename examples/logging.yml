@@ -22,7 +22,7 @@ services:
      - INSECURE=true
 # A service which generates log messages for testing
   - name: write-to-the-logs
-    image: alpine:3.9
+    image: alpine:3.11
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); sleep 1; done" ]
   - name: write-and-rotate-logs
     image: linuxkit/logwrite:v0.7

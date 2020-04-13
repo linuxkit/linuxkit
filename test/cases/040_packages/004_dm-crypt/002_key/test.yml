@@ -12,7 +12,7 @@ onboot:
       - /dev/:/dev
       - /some/other/enc_key:/some/other/enc_key
   - name: test
-    image: alpine:3.9
+    image: alpine:3.11
     net: host
     binds:
       - /check.sh:/check.sh
@@ -30,4 +30,4 @@ trust:
   org:
     - linuxkit
   image:
-    - alpine:3.9
+    - alpine:3.11
