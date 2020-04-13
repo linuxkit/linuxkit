@@ -1,6 +1,6 @@
 FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 as build
 
-RUN apk add --no-cache go git musl-dev make
+RUN apk add --no-cache go git musl-dev make curl gcc
 
 ENV GOPATH=/go PATH=$PATH:/go/bin
 ENV GITREPO=github.com/prometheus/node_exporter
