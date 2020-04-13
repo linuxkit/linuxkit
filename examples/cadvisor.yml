@@ -31,7 +31,7 @@ services:
     image: linuxkit/openntpd:v0.7
 
   - name: docker
-    image: docker:18.06.0-ce-dind
+    image: docker:19.03.8-dind
     capabilities:
       - all
     net: host
