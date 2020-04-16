@@ -70,7 +70,7 @@ RUN tar xf /build/kernel-headers.tar && \
 RUN cd elfutils-$ELFUTILS_VERSION && \
     aclocal && \
     automake && \
-    ./configure --prefix=/usr CFLAGS=-Wno-strict-aliasing && \
+    ./configure --prefix=/usr CFLAGS="-Wno-strict-aliasing -Wno-error" && \
     make -C libelf && make -C libelf install
 
 RUN mkdir -p bcc/build && cd bcc/build && \
