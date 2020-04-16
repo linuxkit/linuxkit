@@ -150,7 +150,8 @@ show-tags: show-tag_$(2)$(3)$(4)
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
 # Only build perf on x86 and latest LTS and stable kernels
-ifeq ($(ARCH),x86_64)
+# Temporarily disable perf build: https://github.com/linuxkit/linuxkit/issues/3498
+ifeq ($(ARCH),disabled)
 ifeq ($(2), $(filter $(2),5.6.x 5.4.x))
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
