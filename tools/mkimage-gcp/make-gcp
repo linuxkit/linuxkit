@@ -43,7 +43,7 @@ cd ..
 
 tar cf files.tar -C files .
 
-virt-make-fs --type=ext4 --partition files.tar disk.raw
+virt-make-fs --size=1G --type=ext4 --partition files.tar disk.raw
 
 guestfish -a disk.raw -m /dev/sda1 <<EOF
   upload /usr/lib/SYSLINUX/mbr.bin /mbr.bin
