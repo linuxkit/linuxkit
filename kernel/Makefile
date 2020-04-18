@@ -149,9 +149,10 @@ show-tags: show-tag_$(2)$(3)$(4)
 # with DCT as part of the dependency on build_$(2)$(3)$(4) and then build
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
-# Only build perf on latest LTS and stable kernels.  Skip arm64.
-ifeq ($(2), $(filter $(2),5.4.x 4.19.x))
-ifneq ($(ARCH),aarch64)
+# Only build perf on x86 and latest LTS and stable kernels
+# Temporarily disable perf build: https://github.com/linuxkit/linuxkit/issues/3498
+ifeq ($(ARCH),disabled)
+ifeq ($(2), $(filter $(2),5.6.x 5.4.x))
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
@@ -189,7 +190,7 @@ endif
 
 # Only build BCC on x86 and only on latest LTS and latest stable kernels.
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.4.x 4.19.x))
+ifeq ($(2), $(filter $(2),5.6.x 5.4.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
@@ -254,9 +255,9 @@ endef
 ifeq ($(ARCH),x86_64)
 $(eval $(call kernel,5.6.2,5.6.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.4.30,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.30,5.4.x,,-dbg))
 $(eval $(call kernel,5.4.28,5.4.x,-rt,))
 $(eval $(call kernel,4.19.114,4.19.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.19.114,4.19.x,,-dbg))
 $(eval $(call kernel,4.14.175,4.14.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)

@@ -1,16 +1,17 @@
-FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS build
+FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 AS build
 RUN apk add --no-cache git
 
 # Make sure you also update the FW_COMMIT in ../firmware/Dockerfile
 ENV FW_URL=git://git.kernel.org/pub/scm/linux/kernel/git/firmware/linux-firmware.git
-ENV FW_COMMIT=dff98c6c57383fe343407bcb7b6e775e0b87274f
+ENV FW_COMMIT=edf390c23a4e185ff36daded36575f669f5059f7
 
-RUN mkdir -p /out/lib && \
-    cd /out/lib && \
-    git clone ${FW_URL} firmware && \
-    cd firmware && \
-    git checkout ${FW_COMMIT} && \
-    rm -rf .git 
+RUN git clone ${FW_URL} && \
+    cd /linux-firmware && \
+    git checkout ${FW_COMMIT}
+
+RUN mkdir -p /out/lib/firmware && \
+    cd /linux-firmware && \
+    ./copy-firmware.sh /out/lib/firmware
 
 FROM scratch
 WORKDIR /

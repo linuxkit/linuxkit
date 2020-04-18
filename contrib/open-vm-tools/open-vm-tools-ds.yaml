@@ -23,7 +23,7 @@ spec:
         effect: NoSchedule
       - key: node-role.kubernetes.io/master
       containers:
-      - image: linuxkit/open-vm-tools:v0.7
+      - image: linuxkit/open-vm-tools:3a312fca405bb749f6bd2bda96110fb2154da564
         name: open-vm-tools
         resources:
           requests:

@@ -2,24 +2,24 @@ kernel:
   image: linuxkit/kernel:5.4.28-rt
   cmdline: "console=tty0"
 init:
-  - linuxkit/init:a0246dd478a24abbee0a4cede99662ffc4931691
-  - linuxkit/runc:69b4a35eaa22eba4990ee52cccc8f48f6c08ed03
-  - linuxkit/containerd:09553963ed9da626c25cf8acdf6d62ec37645412
-  - linuxkit/ca-certificates:v0.7
+  - linuxkit/init:f670045ecb6ec31ea37dd10114366e9a1e915013
+  - linuxkit/runc:1eef77f5963e44e491abfe392206769037d47ae2
+  - linuxkit/containerd:8ee7a0d636fff9df7e13076f5492d06274e5f644
+  - linuxkit/ca-certificates:abfc6701b9ca17e34ac9439ce5946a247e720ff5
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.7
+    image: linuxkit/sysctl:541f60fe3676611328e89e8bac251fc636b1a6aa
 services:
   - name: getty
-    image: linuxkit/getty:v0.7
+    image: linuxkit/getty:48f66df198981e692084bf70ab72b9fe2be0f880
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:02c555b50cd1887aa628836662d2eec54c0d7e81
+    image: linuxkit/rngd:7fab61cca793113280397dcee8159f35dc37adcb
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.7
+    image: linuxkit/dhcpcd:2f8a9b670aa6e96a09db56ec45c9f07ef2a811ee
   - name: open-vm-tools
-    image: linuxkit/open-vm-tools:v0.7
+    image: linuxkit/open-vm-tools:3a312fca405bb749f6bd2bda96110fb2154da564
   - name: nginx
     image: nginx:1.13.8-alpine
     capabilities:

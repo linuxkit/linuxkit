@@ -3,7 +3,7 @@
 ARG IMAGE
 FROM ${IMAGE} AS ksrc
 
-FROM linuxkit/alpine:3fdc49366257e53276c6f363956a4353f95d9a81 AS build
+FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 AS build
 RUN apk add \
     argp-standalone \
     bash \
@@ -17,6 +17,7 @@ RUN apk add \
     installkernel \
     kmod \
     elfutils-dev \
+    findutils \
     mpc1-dev \
     mpfr-dev \
     sed \
@@ -32,7 +33,7 @@ RUN tar xf linux.tar.xz && \
 WORKDIR /linux
 
 RUN mkdir -p /out && \
-    make -C tools/perf LDFLAGS=-static && \
+    make -C tools/perf LDFLAGS=-static V=1 && \
     strip tools/perf/perf && \
     cp tools/perf/perf /out
 

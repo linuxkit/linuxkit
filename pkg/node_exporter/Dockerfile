@@ -1,10 +1,10 @@
-FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec as build
+FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 as build
 
-RUN apk add --no-cache go git musl-dev make
+RUN apk add --no-cache go git musl-dev make curl gcc
 
 ENV GOPATH=/go PATH=$PATH:/go/bin
 ENV GITREPO=github.com/prometheus/node_exporter
-ENV COMMIT=v0.16.0
+ENV COMMIT=v0.18.1
 
 RUN go get -d ${GITREPO} \
     && cd /go/src/${GITREPO} \

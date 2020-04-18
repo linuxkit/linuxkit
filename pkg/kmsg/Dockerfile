@@ -1,7 +1,9 @@
-FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS mirror
+FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 AS mirror
 
 RUN apk add --no-cache go musl-dev linux-headers
 ENV GOPATH=/go PATH=$PATH:/go/bin
+# Hack to work around an issue with go on arm64 requiring gcc
+RUN [ $(uname -m) = aarch64 ] && apk add --no-cache gcc || true
 
 COPY .  /go/src/kmsg/
 RUN go-compile.sh /go/src/kmsg

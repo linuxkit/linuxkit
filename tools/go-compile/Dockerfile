@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS mirror
+FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
@@ -7,6 +7,8 @@ RUN apk add --no-cache --initdb -p /out \
     git \
     go \
     musl-dev
+# Hack to work around an issue wirh go on arm64 requiring gcc
+RUN [ $(uname -m) = aarch64 ] && apk add --no-cache --initdb -p /out gcc || true
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 FROM scratch

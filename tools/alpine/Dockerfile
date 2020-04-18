@@ -1,4 +1,4 @@
-FROM alpine:3.9 AS mirror
+FROM alpine:3.11 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -47,7 +47,7 @@ RUN mv /etc/apk/repositories /etc/apk/repositories.upstream && echo "/mirror" > 
 COPY go-compile.sh /go/bin/
 RUN apk add --no-cache git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
-RUN go get -u github.com/golang/lint/golint
+RUN go get -u golang.org/x/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
@@ -56,15 +56,12 @@ RUN go get -u github.com/LK4D4/vndr
 # `test/pkg/containerd/Dockerfile` when changing this.
 # For v1.3.x cherry-pick a upstream commit to allow disabling some tests.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.3.2
+ENV CONTAINERD_COMMIT=v1.3.3
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
   cd $GOPATH/src/github.com/containerd/containerd && \
-  git checkout $CONTAINERD_COMMIT && \
-  git config --global user.email "you@example.com" && \
-  git config --global user.name "Your Name" && \
-  git cherry-pick 94d499843c0202af9636cad522d30eaf9ffed798
+  git checkout $CONTAINERD_COMMIT
 RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make libseccomp-dev
 RUN cd $GOPATH/src/github.com/containerd/containerd && \
   make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILDTAGS="static_build no_devmapper"
@@ -89,7 +86,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.9
+FROM alpine:3.11
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
