@@ -20,12 +20,13 @@ const (
 )
 
 var (
-	labelVar   string
-	fsTypeVar  string
-	forceVar   bool
-	verboseVar bool
-	drives     map[string]bool
-	driveKeys  []string
+	labelVar    string
+	fsTypeVar   string
+	partTypeVar string
+	forceVar    bool
+	verboseVar  bool
+	drives      map[string]bool
+	driveKeys   []string
 )
 
 func hasPartitions(d string) bool {
@@ -72,7 +73,7 @@ func isEmptyDevice(d string) (bool, error) {
 	return isEmpty, nil
 }
 
-func autoformat(label, fsType string) error {
+func autoformat(label, fsType string, partType string) error {
 	var first string
 	for _, d := range driveKeys {
 		if verboseVar {
@@ -93,7 +94,7 @@ func autoformat(label, fsType string) error {
 		return fmt.Errorf("No eligible disks found")
 	}
 
-	return format(first, label, fsType, false)
+	return format(first, label, fsType, partType, false)
 }
 
 func refreshDevicesAndWaitFor(awaitedDevice string) error {
@@ -128,7 +129,7 @@ func refreshDevicesAndWaitFor(awaitedDevice string) error {
 	return nil
 }
 
-func format(d, label, fsType string, forced bool) error {
+func format(d, label, fsType string, partType string, forced bool) error {
 	if forced {
 		// clear partitions on device if forced format and they exist
 		if hasPartitions(d) {
@@ -154,7 +155,14 @@ func format(d, label, fsType string, forced bool) error {
 	http://bugs.alpinelinux.org/issues/145
 	*/
 	fdiskCmd := exec.Command("fdisk", d)
-	fdiskCmd.Stdin = strings.NewReader("w")
+	switch partType {
+	case "dos":
+		fdiskCmd.Stdin = strings.NewReader("w")
+	case "gpt":
+		fdiskCmd.Stdin = strings.NewReader("g\nw")
+	default:
+		return fmt.Errorf("Unsupported partition table type: %s", partType)
+	}
 	if out, err := fdiskCmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("Error running fdisk: %v\n%s", err, out)
 	}
@@ -258,6 +266,7 @@ func init() {
 	flag.BoolVar(&forceVar, "force", false, "Force format of specified single device (default false)")
 	flag.StringVar(&labelVar, "label", "", "Disk label to apply")
 	flag.StringVar(&fsTypeVar, "type", "ext4", "Type of filesystem to create")
+	flag.StringVar(&partTypeVar, "partition", "dos", "Type of partition table to create")
 	flag.BoolVar(&verboseVar, "verbose", false, "Enable verbose output (default false)")
 }
 
@@ -283,7 +292,7 @@ func main() {
 	if flag.NArg() == 0 {
 		// auto-detect drives if a device to format is not explicitly specified
 		findDrives()
-		if err := autoformat(labelVar, fsTypeVar); err != nil {
+		if err := autoformat(labelVar, fsTypeVar, partTypeVar); err != nil {
 			log.Fatalf("%v", err)
 		}
 	} else {
@@ -294,13 +303,13 @@ func main() {
 		}
 
 		if forceVar == true {
-			if err := format(candidateDevice, labelVar, fsTypeVar, forceVar); err != nil {
+			if err := format(candidateDevice, labelVar, fsTypeVar, partTypeVar, forceVar); err != nil {
 				log.Fatalf("%v", err)
 			}
 		} else {
 			// add the deviceVar to the array of devices to consider autoformatting
 			driveKeys = []string{candidateDevice}
-			if err := autoformat(labelVar, fsTypeVar); err != nil {
+			if err := autoformat(labelVar, fsTypeVar, partTypeVar); err != nil {
 				log.Fatalf("%v", err)
 			}
 		}

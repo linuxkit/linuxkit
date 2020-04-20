@@ -52,9 +52,17 @@ onboot:
     command: ["/usr/bin/format", "-force", "-type", "xfs", "-label", "DATA", "-verbose", "/dev/vda"]
 ```
 
+```
+onboot:
+  - name: format
+    image: linuxkit/format:<hash>
+    command: ["/usr/bin/format", "-type", "ext4", "-partition", "gpt", "/dev/vda"]
+```
+
 - `-force` can be used to force the partition to be cleared and recreated (if applicable), and the recreated partition formatted. This option would be used to re-init the partition on every boot, rather than persisting the partition between boots.
 - `-label` can be used to give the disk a label
 - `-type` can be used to specify the type. This is `ext4` by default but `btrfs` and `xfs` are also supported
+- `-partition` can be used to specify the partition table type. This is `dos` by default but `gpt` is also supported
 - `-verbose` enables verbose logging, which can be used to troubleshoot device auto-detection and (re-)partitioning
 - The final (optional) argument specifies the device name
 

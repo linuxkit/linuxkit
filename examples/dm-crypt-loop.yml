@@ -13,7 +13,7 @@ onboot:
     image: linuxkit/dhcpcd:2f8a9b670aa6e96a09db56ec45c9f07ef2a811ee
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:80bd847a90842d3f19460a560d7d95d6fe13bd71
+    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
     command: ["/usr/bin/format", "/dev/sda"]
   - name: mount
     image: linuxkit/mount:8363f4f1744e1df2557ec260a4cc94227178fd69
