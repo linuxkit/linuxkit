@@ -11,7 +11,7 @@ init:
 onboot:
   # support metadata for optional config in /run/config
   - name: metadata
-    image: linuxkit/metadata:12794dd50fd1563dee6c960710fd8b923dba6231
+    image: linuxkit/metadata:04ce7519c2ea2eaf99bbdc76bb01fc036eed7ab0
   - name: sysctl
     image: linuxkit/sysctl:541f60fe3676611328e89e8bac251fc636b1a6aa
   - name: sysfs
