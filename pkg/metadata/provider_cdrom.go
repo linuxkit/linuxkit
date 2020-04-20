@@ -9,17 +9,23 @@ import (
 )
 
 const (
-	configFile = "config"
-	cdromDevs  = "/dev/sr[0-9]*"
+	metadataFile     = "meta-data"
+	userdataFile     = "user-data"
+	userdataFallback = "config"
+	cdromDevs        = "/dev/sr[0-9]*"
+)
+
+var (
+	userdataFiles = []string{userdataFile, userdataFallback}
 )
 
 // ProviderCDROM is the type implementing the Provider interface for CDROMs
-// It looks for a file called 'configFile' in the root
+// It looks for file called 'meta-data', 'user-data' or 'config' in the root
 type ProviderCDROM struct {
-	device     string
-	mountPoint string
-	err        error
-	data       []byte
+	device             string
+	mountPoint         string
+	err                error
+	userdata, metadata []byte
 }
 
 // ListCDROMs lists all the cdroms in the system
@@ -39,10 +45,28 @@ func ListCDROMs() []Provider {
 // NewCDROM returns a new ProviderCDROM
 func NewCDROM(device string) *ProviderCDROM {
 	mountPoint, err := ioutil.TempDir("", "cd")
-	p := ProviderCDROM{device, mountPoint, err, []byte{}}
+	p := ProviderCDROM{device, mountPoint, err, []byte{}, []byte{}}
 	if err == nil {
 		if p.err = p.mount(); p.err == nil {
-			p.data, p.err = ioutil.ReadFile(path.Join(p.mountPoint, configFile))
+			// read the userdata - we read the spec file and the fallback, but eventually
+			// will remove the fallback
+			for _, f := range userdataFiles {
+				userdata, err := ioutil.ReadFile(path.Join(p.mountPoint, f))
+				// did we find a file?
+				if err == nil && userdata != nil {
+					p.userdata = userdata
+					break
+				}
+			}
+			if p.userdata == nil {
+				p.err = fmt.Errorf("no userdata file found at any of %v", userdataFiles)
+			}
+			// read the metadata
+			metadata, err := ioutil.ReadFile(path.Join(p.mountPoint, metadataFile))
+			// did we find a file?
+			if err == nil && metadata != nil {
+				p.metadata = metadata
+			}
 			p.unmount()
 		}
 	}
@@ -55,12 +79,12 @@ func (p *ProviderCDROM) String() string {
 
 // Probe checks if the CD has the right file
 func (p *ProviderCDROM) Probe() bool {
-	return len(p.data) != 0
+	return len(p.userdata) != 0
 }
 
 // Extract gets both the CDROM specific and generic userdata
 func (p *ProviderCDROM) Extract() ([]byte, error) {
-	return p.data, p.err
+	return p.userdata, p.err
 }
 
 // mount mounts a CDROM/DVD device under mountPoint
