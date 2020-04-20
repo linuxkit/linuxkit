@@ -18,7 +18,7 @@ onboot:
     image: linuxkit/dhcpcd:2f8a9b670aa6e96a09db56ec45c9f07ef2a811ee
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:12794dd50fd1563dee6c960710fd8b923dba6231
+    image: linuxkit/metadata:04ce7519c2ea2eaf99bbdc76bb01fc036eed7ab0
     command: ["/usr/bin/metadata", "packet"]
 services:
   - name: rngd
