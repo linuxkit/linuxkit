@@ -13,7 +13,7 @@ onboot:
   - name: sysctl
     image: linuxkit/sysctl:541f60fe3676611328e89e8bac251fc636b1a6aa
   - name: format
-    image: linuxkit/format:80bd847a90842d3f19460a560d7d95d6fe13bd71
+    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
   - name: mount
     image: linuxkit/mount:8363f4f1744e1df2557ec260a4cc94227178fd69
     command: ["/usr/bin/mountie", "/var/lib"]
