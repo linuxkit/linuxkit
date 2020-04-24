@@ -17,7 +17,7 @@ onboot:
   - name: format
     image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
   - name: mount
-    image: linuxkit/mount:8363f4f1744e1df2557ec260a4cc94227178fd69
+    image: linuxkit/mount:19fa297189166206ac97261679c3e31fb140d48f
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 
 services:

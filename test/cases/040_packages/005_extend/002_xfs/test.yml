@@ -6,10 +6,10 @@ init:
   - linuxkit/runc:1eef77f5963e44e491abfe392206769037d47ae2
 onboot:
   - name: extend
-    image: linuxkit/extend:1ea3b8f198bf564e8ae6c71481715aadadd4e242
+    image: linuxkit/extend:10bc501a6890be931c6f6602c8caca31337eafeb
     command: ["/usr/bin/extend", "-type", "xfs"]
   - name: mount
-    image: linuxkit/mount:8363f4f1744e1df2557ec260a4cc94227178fd69
+    image: linuxkit/mount:19fa297189166206ac97261679c3e31fb140d48f
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.11

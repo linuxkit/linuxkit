@@ -16,7 +16,7 @@ onboot:
     image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
     command: ["/usr/bin/format", "/dev/sda"]
   - name: mount
-    image: linuxkit/mount:8363f4f1744e1df2557ec260a4cc94227178fd69
+    image: linuxkit/mount:19fa297189166206ac97261679c3e31fb140d48f
     command: ["/usr/bin/mountie", "/dev/sda1", "/var/external"]
   - name: loop
     image: linuxkit/losetup:0730b61ac5c8803ba73318c2dd5121dc15cfbf34
@@ -25,7 +25,7 @@ onboot:
     image: linuxkit/dm-crypt:0ea63bfd97b719d185b69994b4856d97fbc8a2dd
     command: ["/usr/bin/crypto", "crypt_loop_dev", "/dev/loop0"]
   - name: mount
-    image: linuxkit/mount:8363f4f1744e1df2557ec260a4cc94227178fd69
+    image: linuxkit/mount:19fa297189166206ac97261679c3e31fb140d48f
     command: ["/usr/bin/mountie", "/dev/mapper/crypt_loop_dev", "/var/secure_storage"]
   - name: bbox
     image: busybox

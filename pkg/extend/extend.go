@@ -82,7 +82,10 @@ func extend(d, fsType string) error {
 	}
 
 	partition := f.PartitionTable.Partitions[0]
-	if partition.Type != "83" {
+	// fail on anything that isn't a Linux partition
+	// 83 -> MBR/DOS Linux Partition ID
+	// 0FC63DAF-8483-4772-8E79-3D69D8477DE4 -> GPT Linux Partition GUID
+	if partition.Type != "83" && partition.Type != "0FC63DAF-8483-4772-8E79-3D69D8477DE4" {
 		return fmt.Errorf("Partition 1 on disk %s is not a Linux Partition", d)
 	}
 
@@ -176,7 +179,7 @@ func createPartition(d string, partition Partition) error {
 	}
 
 	createCmd := exec.Command("sfdisk", "-q", d)
-	createCmd.Stdin = strings.NewReader(fmt.Sprintf("%d,,83;", partition.Start))
+	createCmd.Stdin = strings.NewReader(fmt.Sprintf("%d,,%s;", partition.Start, partition.Type))
 	if err := createCmd.Run(); err != nil {
 		return fmt.Errorf("Error creating partition table: %v", err)
 	}

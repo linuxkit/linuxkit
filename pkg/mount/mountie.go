@@ -98,7 +98,9 @@ func findFirst(drives []string) (string, error) {
 
 		for _, partition := range f.PartitionTable.Partitions {
 			// ignore anything that isn't a Linux partition
-			if partition.Type != "83" {
+			// 83 -> MBR/DOS Linux Partition ID
+			// 0FC63DAF-8483-4772-8E79-3D69D8477DE4 -> GPT Linux Partition GUID
+			if partition.Type != "83" && partition.Type != "0FC63DAF-8483-4772-8E79-3D69D8477DE4" {
 				continue
 			}
 			if _, ok := mounted[partition.Node]; ok {
