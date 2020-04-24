@@ -2,13 +2,15 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"io/ioutil"
-	"log"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"syscall"
+
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -25,6 +27,22 @@ const (
 	userDataURL = "http://169.254.169.254/latest/user-data"
 	metaDataURL = "http://169.254.169.254/latest/meta-data/"
 )
+
+var (
+	defaultLogFormatter = &log.TextFormatter{}
+)
+
+// infoFormatter overrides the default format for Info() log events to
+// provide an easier to read output
+type infoFormatter struct {
+}
+
+func (f *infoFormatter) Format(entry *log.Entry) ([]byte, error) {
+	if entry.Level == log.InfoLevel {
+		return append([]byte(entry.Message), '\n'), nil
+	}
+	return defaultLogFormatter.Format(entry)
+}
 
 // Provider is a generic interface for metadata/userdata providers.
 type Provider interface {
@@ -49,9 +67,21 @@ var cdromProviders []Provider
 var fileProviders []Provider
 
 func main() {
+	log.SetFormatter(new(infoFormatter))
+	log.SetLevel(log.InfoLevel)
+	flagVerbose := flag.Bool("v", false, "Verbose execution")
+
+	flag.Parse()
+	if *flagVerbose {
+		// Switch back to the standard formatter
+		log.SetFormatter(defaultLogFormatter)
+		log.SetLevel(log.DebugLevel)
+	}
+
 	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "packet", "cdrom"}
-	if len(os.Args) > 1 {
-		providers = os.Args[1:]
+	args := flag.Args()
+	if len(args) > 0 {
+		providers = args
 	}
 	for _, p := range providers {
 		switch {
