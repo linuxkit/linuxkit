@@ -1,0 +1,28 @@
+kernel:
+  image: linuxkit/kernel:5.4.30
+  cmdline: "console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:7195dc244cd92af01fd0895fd204249a6114c5e2
+  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+onboot:
+  - name: mount
+    image: linuxkit/mount:19fa297189166206ac97261679c3e31fb140d48f
+    binds.add:
+      - /check.sh:/check.sh
+      - /var/tmp:/var/tmp
+    # default binds from linuxkit/mount
+    # - /dev:/dev
+    # - /var:/var:rshared,rbind
+    # - /:/hostroot
+    command: ["sh", "-c", "/check.sh"]
+  - name: poweroff
+    image: linuxkit/poweroff:06dd4e46c62fbe79123a028835c921f80e4855d3
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+files:
+  - path: check.sh
+    source: ./check.sh
+    mode: "0700"
+trust:
+  org:
+    - linuxkit
+    - library
