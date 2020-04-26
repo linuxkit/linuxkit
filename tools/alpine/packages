@@ -127,3 +127,4 @@ xz
 xz-dev
 zfs
 zlib-dev
+zlib-static
