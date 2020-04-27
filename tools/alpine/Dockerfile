@@ -54,9 +54,8 @@ RUN go get -u github.com/LK4D4/vndr
 # checkout and compile containerd
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
-# For v1.3.x cherry-pick a upstream commit to allow disabling some tests.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.3.3
+ENV CONTAINERD_COMMIT=v1.3.4
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
