@@ -117,8 +117,8 @@ type Metadata struct {
 	}
 }
 
-// ListUserdata returns the metadata available from the server
-func (*MetadataAPI) ListUserdata() (res *Userdata, err error) {
+// ListUserData returns the metadata available from the server
+func (*MetadataAPI) ListUserData() (res *UserData, err error) {
 	retries := 0
 	for retries <= metadataRetryBindPort {
 		port := rand.Intn(1024)
@@ -144,20 +144,20 @@ func (*MetadataAPI) ListUserdata() (res *Userdata, err error) {
 		}
 		defer resp.Body.Close()
 
-		userdata := &Userdata{}
+		userdata := &UserData{}
 		err = json.NewDecoder(resp.Body).Decode(userdata)
 		if err != nil {
 			return nil, errors.Wrap(err, "error decoding userdata")
 		}
 		return userdata, nil
 	}
-	return nil, errors.New("too many bind port retries for ListUserdata")
+	return nil, errors.New("too many bind port retries for ListUserData")
 }
 
-// GetUserdata returns the value for the given metadata key
-func (*MetadataAPI) GetUserdata(key string) ([]byte, error) {
+// GetUserData returns the value for the given metadata key
+func (*MetadataAPI) GetUserData(key string) ([]byte, error) {
 	if key == "" {
-		return make([]byte, 0), errors.New("key must not be empty in GetUserdata")
+		return make([]byte, 0), errors.New("key must not be empty in GetUserData")
 	}
 
 	retries := 0
@@ -192,13 +192,13 @@ func (*MetadataAPI) GetUserdata(key string) ([]byte, error) {
 
 		return body, nil
 	}
-	return make([]byte, 0), errors.New("too may bind port retries for GetUserdata")
+	return make([]byte, 0), errors.New("too may bind port retries for GetUserData")
 }
 
-// SetUserdata sets the userdata key with the given value
-func (*MetadataAPI) SetUserdata(key string, value []byte) error {
+// SetUserData sets the userdata key with the given value
+func (*MetadataAPI) SetUserData(key string, value []byte) error {
 	if key == "" {
-		return errors.New("key must not be empty in SetUserdata")
+		return errors.New("key must not be empty in SetUserData")
 	}
 
 	retries := 0
@@ -231,13 +231,13 @@ func (*MetadataAPI) SetUserdata(key string, value []byte) error {
 
 		return nil
 	}
-	return errors.New("too may bind port retries for SetUserdata")
+	return errors.New("too may bind port retries for SetUserData")
 }
 
-// DeleteUserdata deletes the userdata key and the associated value
-func (*MetadataAPI) DeleteUserdata(key string) error {
+// DeleteUserData deletes the userdata key and the associated value
+func (*MetadataAPI) DeleteUserData(key string) error {
 	if key == "" {
-		return errors.New("key must not be empty in DeleteUserdata")
+		return errors.New("key must not be empty in DeleteUserData")
 	}
 
 	retries := 0
@@ -269,10 +269,10 @@ func (*MetadataAPI) DeleteUserdata(key string) error {
 
 		return nil
 	}
-	return errors.New("too may bind port retries for DeleteUserdata")
+	return errors.New("too may bind port retries for DeleteUserData")
 }
 
-// Userdata represents the user data
-type Userdata struct {
+// UserData represents the user data
+type UserData struct {
 	UserData []string `json:"user_data,omitempty"`
 }

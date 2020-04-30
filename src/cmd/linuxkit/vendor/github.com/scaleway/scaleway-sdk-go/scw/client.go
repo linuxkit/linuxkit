@@ -3,9 +3,12 @@ package scw
 import (
 	"crypto/tls"
 	"encoding/json"
+	"io"
+	"math"
 	"net"
 	"net/http"
 	"net/http/httputil"
+	"reflect"
 	"strconv"
 	"sync/atomic"
 	"time"
@@ -13,7 +16,6 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/internal/auth"
 	"github.com/scaleway/scaleway-sdk-go/internal/errors"
 	"github.com/scaleway/scaleway-sdk-go/logger"
-	"github.com/scaleway/scaleway-sdk-go/utils"
 )
 
 // Client is the Scaleway client which performs API requests.
@@ -21,18 +23,19 @@ import (
 // This client should be passed in the `NewApi` functions whenever an API instance is created.
 // Creating a Client is done with the `NewClient` function.
 type Client struct {
-	httpClient       httpClient
-	auth             auth.Auth
-	apiURL           string
-	userAgent        string
-	defaultProjectID *string
-	defaultRegion    *utils.Region
-	defaultZone      *utils.Zone
-	defaultPageSize  *int32
+	httpClient            httpClient
+	auth                  auth.Auth
+	apiURL                string
+	userAgent             string
+	defaultOrganizationID *string
+	defaultRegion         *Region
+	defaultZone           *Zone
+	defaultPageSize       *uint32
 }
 
 func defaultOptions() []ClientOption {
 	return []ClientOption{
+		WithoutAuth(),
 		WithAPIURL("https://api.scaleway.com"),
 		withDefaultUserAgent(userAgent),
 	}
@@ -68,51 +71,51 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	logger.Debugf("client: using sdk version " + version)
 
 	return &Client{
-		auth:             s.token,
-		httpClient:       s.httpClient,
-		apiURL:           s.apiURL,
-		userAgent:        s.userAgent,
-		defaultProjectID: s.defaultProjectID,
-		defaultRegion:    s.defaultRegion,
-		defaultZone:      s.defaultZone,
-		defaultPageSize:  s.defaultPageSize,
+		auth:                  s.token,
+		httpClient:            s.httpClient,
+		apiURL:                s.apiURL,
+		userAgent:             s.userAgent,
+		defaultOrganizationID: s.defaultOrganizationID,
+		defaultRegion:         s.defaultRegion,
+		defaultZone:           s.defaultZone,
+		defaultPageSize:       s.defaultPageSize,
 	}, nil
 }
 
-// GetDefaultProjectID return the default project ID
+// GetDefaultOrganizationID returns the default organization ID
 // of the client. This value can be set in the client option
-// WithDefaultProjectID(). Be aware this value can be empty.
-func (c *Client) GetDefaultProjectID() (string, bool) {
-	if c.defaultProjectID != nil {
-		return *c.defaultProjectID, true
+// WithDefaultOrganizationID(). Be aware this value can be empty.
+func (c *Client) GetDefaultOrganizationID() (organizationID string, exists bool) {
+	if c.defaultOrganizationID != nil {
+		return *c.defaultOrganizationID, true
 	}
 	return "", false
 }
 
-// GetDefaultRegion return the default region of the client.
+// GetDefaultRegion returns the default region of the client.
 // This value can be set in the client option
 // WithDefaultRegion(). Be aware this value can be empty.
-func (c *Client) GetDefaultRegion() (utils.Region, bool) {
+func (c *Client) GetDefaultRegion() (region Region, exists bool) {
 	if c.defaultRegion != nil {
 		return *c.defaultRegion, true
 	}
-	return utils.Region(""), false
+	return Region(""), false
 }
 
-// GetDefaultZone return the default zone of the client.
+// GetDefaultZone returns the default zone of the client.
 // This value can be set in the client option
 // WithDefaultZone(). Be aware this value can be empty.
-func (c *Client) GetDefaultZone() (utils.Zone, bool) {
+func (c *Client) GetDefaultZone() (zone Zone, exists bool) {
 	if c.defaultZone != nil {
 		return *c.defaultZone, true
 	}
-	return utils.Zone(""), false
+	return Zone(""), false
 }
 
-// GetDefaultPageSize return the default page size of the client.
+// GetDefaultPageSize returns the default page size of the client.
 // This value can be set in the client option
 // WithDefaultPageSize(). Be aware this value can be empty.
-func (c *Client) GetDefaultPageSize() (int32, bool) {
+func (c *Client) GetDefaultPageSize() (pageSize uint32, exists bool) {
 	if c.defaultPageSize != nil {
 		return *c.defaultPageSize, true
 	}
@@ -122,22 +125,20 @@ func (c *Client) GetDefaultPageSize() (int32, bool) {
 // Do performs HTTP request(s) based on the ScalewayRequest object.
 // RequestOptions are applied prior to doing the request.
 func (c *Client) Do(req *ScalewayRequest, res interface{}, opts ...RequestOption) (err error) {
-	requestSettings := newRequestSettings()
-
 	// apply request options
-	requestSettings.apply(opts)
+	req.apply(opts)
 
 	// validate request options
-	err = requestSettings.validate()
+	err = req.validate()
 	if err != nil {
 		return err
 	}
 
-	if requestSettings.ctx != nil {
-		req.Ctx = requestSettings.ctx
+	if req.auth == nil {
+		req.auth = c.auth
 	}
 
-	if requestSettings.allPages {
+	if req.allPages {
 		return c.doListAll(req, res)
 	}
 
@@ -149,8 +150,7 @@ func (c *Client) Do(req *ScalewayRequest, res interface{}, opts ...RequestOption
 var requestNumber uint32
 
 // do performs a single HTTP request based on the ScalewayRequest object.
-func (c *Client) do(req *ScalewayRequest, res interface{}) (sdkErr SdkError) {
-
+func (c *Client) do(req *ScalewayRequest, res interface{}) (sdkErr error) {
 	currentRequestNumber := atomic.AddUint32(&requestNumber, 1)
 
 	if req == nil {
@@ -170,19 +170,18 @@ func (c *Client) do(req *ScalewayRequest, res interface{}) (sdkErr SdkError) {
 		return errors.Wrap(err, "could not create request")
 	}
 
-	httpRequest.Header = req.getAllHeaders(c.auth, c.userAgent, false)
+	httpRequest.Header = req.getAllHeaders(req.auth, c.userAgent, false)
 
-	if req.Ctx != nil {
-		httpRequest = httpRequest.WithContext(req.Ctx)
+	if req.ctx != nil {
+		httpRequest = httpRequest.WithContext(req.ctx)
 	}
 
 	if logger.ShouldLog(logger.LogLevelDebug) {
-
 		// Keep original headers (before anonymization)
 		originalHeaders := httpRequest.Header
 
 		// Get anonymized headers
-		httpRequest.Header = req.getAllHeaders(c.auth, c.userAgent, true)
+		httpRequest.Header = req.getAllHeaders(req.auth, c.userAgent, true)
 
 		dump, err := httputil.DumpRequestOut(httpRequest, true)
 		if err != nil {
@@ -232,9 +231,24 @@ func (c *Client) do(req *ScalewayRequest, res interface{}) (sdkErr SdkError) {
 	}
 
 	if res != nil {
-		err = json.NewDecoder(httpResponse.Body).Decode(&res)
-		if err != nil {
-			return errors.Wrap(err, "could not parse response body")
+		contentType := httpResponse.Header.Get("Content-Type")
+
+		switch contentType {
+		case "application/json":
+			err = json.NewDecoder(httpResponse.Body).Decode(&res)
+			if err != nil {
+				return errors.Wrap(err, "could not parse %s response body", contentType)
+			}
+		default:
+			buffer, isBuffer := res.(io.Writer)
+			if !isBuffer {
+				return errors.Wrap(err, "could not handle %s response body with %T result type", contentType, buffer)
+			}
+
+			_, err := io.Copy(buffer, httpResponse.Body)
+			if err != nil {
+				return errors.Wrap(err, "could not copy %s response body", contentType)
+			}
 		}
 
 		// Handle instance API X-Total-Count header
@@ -246,10 +260,64 @@ func (c *Client) do(req *ScalewayRequest, res interface{}) (sdkErr SdkError) {
 			}
 			legacyLister.UnsafeSetTotalCount(xTotalCount)
 		}
-
 	}
 
 	return nil
+}
+
+type lister interface {
+	UnsafeGetTotalCount() uint32
+	UnsafeAppend(interface{}) (uint32, error)
+}
+
+type legacyLister interface {
+	UnsafeSetTotalCount(totalCount int)
+}
+
+const maxPageCount uint32 = math.MaxUint32
+
+// doListAll collects all pages of a List request and aggregate all results on a single response.
+func (c *Client) doListAll(req *ScalewayRequest, res interface{}) (err error) {
+	// check for lister interface
+	if response, isLister := res.(lister); isLister {
+		pageCount := maxPageCount
+		for page := uint32(1); page <= pageCount; page++ {
+			// set current page
+			req.Query.Set("page", strconv.FormatUint(uint64(page), 10))
+
+			// request the next page
+			nextPage := newVariableFromType(response)
+			err := c.do(req, nextPage)
+			if err != nil {
+				return err
+			}
+
+			// append results
+			pageSize, err := response.UnsafeAppend(nextPage)
+			if err != nil {
+				return err
+			}
+
+			if pageSize == 0 {
+				return nil
+			}
+
+			// set total count on first request
+			if pageCount == maxPageCount {
+				totalCount := nextPage.(lister).UnsafeGetTotalCount()
+				pageCount = (totalCount + pageSize - 1) / pageSize
+			}
+		}
+		return nil
+	}
+
+	return errors.New("%T does not support pagination", res)
+}
+
+// newVariableFromType returns a variable set to the zero value of the given type
+func newVariableFromType(t interface{}) interface{} {
+	// reflect.New always create a pointer, that's why we use reflect.Indirect before
+	return reflect.New(reflect.Indirect(reflect.ValueOf(t)).Type()).Interface()
 }
 
 func newHTTPClient() *http.Client {
@@ -279,26 +347,4 @@ func setInsecureMode(c httpClient) {
 		transportClient.TLSClientConfig = &tls.Config{}
 	}
 	transportClient.TLSClientConfig.InsecureSkipVerify = true
-}
-
-func hasResponseError(res *http.Response) SdkError {
-	if res.StatusCode >= 200 && res.StatusCode <= 299 {
-		return nil
-	}
-
-	newErr := &ResponseError{
-		StatusCode: res.StatusCode,
-		Status:     res.Status,
-	}
-
-	if res.Body == nil {
-		return newErr
-	}
-
-	err := json.NewDecoder(res.Body).Decode(newErr)
-	if err != nil {
-		return errors.Wrap(err, "could not parse error response body")
-	}
-
-	return newErr
 }

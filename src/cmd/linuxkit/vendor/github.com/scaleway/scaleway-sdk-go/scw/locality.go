@@ -1,10 +1,17 @@
-package utils
+package scw
 
 import (
 	"encoding/json"
+	"fmt"
+	"strings"
 
+	"github.com/scaleway/scaleway-sdk-go/internal/errors"
 	"github.com/scaleway/scaleway-sdk-go/logger"
+	"github.com/scaleway/scaleway-sdk-go/validation"
 )
+
+// localityPartsSeparator is the separator used in Zone and Region
+const localityPartsSeparator = "-"
 
 // Zone is an availability zone
 type Zone string
@@ -35,6 +42,22 @@ func (zone *Zone) Exists() bool {
 		}
 	}
 	return false
+}
+
+// String returns a Zone as a string
+func (zone *Zone) String() string {
+	return string(*zone)
+}
+
+// Region returns the parent Region for the Zone.
+// Manipulates the string directly to allow unlisted zones formatted as xx-yyy-z.
+func (zone *Zone) Region() (Region, error) {
+	zoneStr := zone.String()
+	if !validation.IsZone(zoneStr) {
+		return "", fmt.Errorf("invalid zone '%v'", zoneStr)
+	}
+	zoneParts := strings.Split(zoneStr, localityPartsSeparator)
+	return Region(strings.Join(zoneParts[:2], localityPartsSeparator)), nil
 }
 
 // Region is a geographical location
@@ -77,7 +100,7 @@ func (region Region) GetZones() []Zone {
 	}
 }
 
-// ParseZone parse a string value into a Zone object
+// ParseZone parses a string value into a Zone and returns an error if it has a bad format.
 func ParseZone(zone string) (Zone, error) {
 	switch zone {
 	case "par1":
@@ -89,6 +112,14 @@ func ParseZone(zone string) (Zone, error) {
 		// logger.Warningf("ams1 is a deprecated name for zone, use nl-ams-1 instead")
 		return ZoneNlAms1, nil
 	default:
+		if !validation.IsZone(zone) {
+			zones := []string(nil)
+			for _, z := range AllZones {
+				zones = append(zones, string(z))
+			}
+			return "", errors.New("bad zone format, available zones are: %s", strings.Join(zones, ", "))
+		}
+
 		newZone := Zone(zone)
 		if !newZone.Exists() {
 			logger.Warningf("%s is an unknown zone", newZone)
@@ -100,7 +131,6 @@ func ParseZone(zone string) (Zone, error) {
 // UnmarshalJSON implements the Unmarshaler interface for a Zone.
 // this to call ParseZone on the string input and return the correct Zone object.
 func (zone *Zone) UnmarshalJSON(input []byte) error {
-
 	// parse input value as string
 	var stringValue string
 	err := json.Unmarshal(input, &stringValue)
@@ -116,7 +146,7 @@ func (zone *Zone) UnmarshalJSON(input []byte) error {
 	return nil
 }
 
-// ParseRegion parse a string value into a Zone object
+// ParseRegion parses a string value into a Region and returns an error if it has a bad format.
 func ParseRegion(region string) (Region, error) {
 	switch region {
 	case "par1":
@@ -128,6 +158,14 @@ func ParseRegion(region string) (Region, error) {
 		// logger.Warningf("ams1 is a deprecated name for region, use nl-ams instead")
 		return RegionNlAms, nil
 	default:
+		if !validation.IsRegion(region) {
+			regions := []string(nil)
+			for _, r := range AllRegions {
+				regions = append(regions, string(r))
+			}
+			return "", errors.New("bad region format, available regions are: %s", strings.Join(regions, ", "))
+		}
+
 		newRegion := Region(region)
 		if !newRegion.Exists() {
 			logger.Warningf("%s is an unknown region", newRegion)
@@ -152,4 +190,9 @@ func (region *Region) UnmarshalJSON(input []byte) error {
 		return err
 	}
 	return nil
+}
+
+// String returns a Region as a string
+func (region *Region) String() string {
+	return string(*region)
 }

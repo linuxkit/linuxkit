@@ -1,6 +1,7 @@
 // This file was automatically generated. DO NOT EDIT.
 // If you have any remark or suggestion do not hesitate to open an issue.
 
+// Package marketplace provides methods and message types of the marketplace v1 API.
 package marketplace
 
 import (
@@ -15,8 +16,8 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/internal/errors"
 	"github.com/scaleway/scaleway-sdk-go/internal/marshaler"
 	"github.com/scaleway/scaleway-sdk-go/internal/parameter"
+	"github.com/scaleway/scaleway-sdk-go/namegenerator"
 	"github.com/scaleway/scaleway-sdk-go/scw"
-	"github.com/scaleway/scaleway-sdk-go/utils"
 )
 
 // always import dependencies
@@ -31,8 +32,9 @@ var (
 
 	_ scw.ScalewayRequest
 	_ marshaler.Duration
-	_ utils.File
+	_ scw.File
 	_ = parameter.AddToQuery
+	_ = namegenerator.GetRandomName
 )
 
 // API marketplace API
@@ -48,79 +50,91 @@ func NewAPI(client *scw.Client) *API {
 }
 
 type GetImageResponse struct {
-	Image *Image `json:"image,omitempty"`
+	Image *Image `json:"image"`
 }
 
 type GetServiceInfoResponse struct {
-	API string `json:"api,omitempty"`
+	API string `json:"api"`
 
-	Description string `json:"description,omitempty"`
+	Description string `json:"description"`
 
-	Version string `json:"version,omitempty"`
+	Version string `json:"version"`
 }
 
 type GetVersionResponse struct {
-	Version *Version `json:"version,omitempty"`
+	Version *Version `json:"version"`
 }
 
+// Image image
 type Image struct {
-	ID string `json:"id,omitempty"`
+	// ID uUID of this image
+	ID string `json:"id"`
+	// Name name of the image
+	Name string `json:"name"`
+	// Description text description of this image
+	Description string `json:"description"`
+	// Logo uRL of this image's logo
+	Logo string `json:"logo"`
+	// Categories list of categories this image belongs to
+	Categories []string `json:"categories"`
+	// CreationDate creation date of this image
+	CreationDate time.Time `json:"creation_date"`
+	// ModificationDate date of the last modification of this image
+	ModificationDate time.Time `json:"modification_date"`
+	// ValidUntil expiration date of this image
+	ValidUntil time.Time `json:"valid_until"`
+	// Label label of this image
+	Label string `json:"label"`
+	// Versions list of versions of this image
+	Versions []*Version `json:"versions"`
+	// Organization organization this image belongs to
+	Organization *Organization `json:"organization"`
 
-	Name string `json:"name,omitempty"`
-
-	Description string `json:"description,omitempty"`
-
-	Logo string `json:"logo,omitempty"`
-
-	Categories []string `json:"categories,omitempty"`
-
-	Organization *Organization `json:"organization,omitempty"`
-
-	ValidUntil time.Time `json:"valid_until,omitempty"`
-
-	CreationDate time.Time `json:"creation_date,omitempty"`
-
-	ModificationDate time.Time `json:"modification_date,omitempty"`
-
-	Versions []*Version `json:"versions,omitempty"`
-
-	CurrentPublicVersion string `json:"current_public_version,omitempty"`
+	CurrentPublicVersion string `json:"current_public_version"`
 }
 
 type ListImagesResponse struct {
-	Images []*Image `json:"images,omitempty"`
+	Images []*Image `json:"images"`
+
+	TotalCount uint32 `json:"total_count"`
 }
 
 type ListVersionsResponse struct {
-	Versions []*Version `json:"versions,omitempty"`
+	Versions []*Version `json:"versions"`
+
+	TotalCount uint32 `json:"total_count"`
 }
 
+// LocalImage local image
 type LocalImage struct {
-	ID string `json:"id,omitempty"`
-
-	Arch string `json:"arch,omitempty"`
-
-	Zone utils.Zone `json:"zone,omitempty"`
-
-	CompatibleCommercialTypes []string `json:"compatible_commercial_types,omitempty"`
+	// ID uUID of this local image
+	ID string `json:"id"`
+	// CompatibleCommercialTypes list of all commercial types that are compatible with this local image
+	CompatibleCommercialTypes []string `json:"compatible_commercial_types"`
+	// Arch supported architecture for this local image
+	Arch string `json:"arch"`
+	// Zone availability Zone where this local image is available
+	Zone scw.Zone `json:"zone"`
 }
 
 type Organization struct {
-	ID string `json:"id,omitempty"`
+	ID string `json:"id"`
 
-	Name string `json:"name,omitempty"`
+	Name string `json:"name"`
 }
 
+// Version version
 type Version struct {
-	ID string `json:"id,omitempty"`
-
-	Name string `json:"name,omitempty"`
-
-	CreationDate time.Time `json:"creation_date,omitempty"`
-
-	ModificationDate time.Time `json:"modification_date,omitempty"`
-
-	LocalImages []*LocalImage `json:"local_images,omitempty"`
+	// ID uUID of this version
+	ID string `json:"id"`
+	// Name name of this version
+	Name string `json:"name"`
+	// CreationDate creation date of this image version
+	CreationDate time.Time `json:"creation_date"`
+	// ModificationDate date of the last modification of this version
+	ModificationDate time.Time `json:"modification_date"`
+	// LocalImages list of local images available in this version
+	LocalImages []*LocalImage `json:"local_images"`
 }
 
 // Service API
@@ -147,11 +161,13 @@ func (s *API) GetServiceInfo(req *GetServiceInfoRequest, opts ...scw.RequestOpti
 }
 
 type ListImagesRequest struct {
-	PerPage *int32 `json:"-"`
-
+	// PerPage a positive integer lower or equal to 100 to select the number of items to display
+	PerPage *uint32 `json:"-"`
+	// Page a positive integer to choose the page to display
 	Page *int32 `json:"-"`
 }
 
+// ListImages list marketplace images
 func (s *API) ListImages(req *ListImagesRequest, opts ...scw.RequestOption) (*ListImagesResponse, error) {
 	var err error
 
@@ -180,10 +196,31 @@ func (s *API) ListImages(req *ListImagesRequest, opts ...scw.RequestOption) (*Li
 	return &resp, nil
 }
 
+// UnsafeGetTotalCount should not be used
+// Internal usage only
+func (r *ListImagesResponse) UnsafeGetTotalCount() uint32 {
+	return r.TotalCount
+}
+
+// UnsafeAppend should not be used
+// Internal usage only
+func (r *ListImagesResponse) UnsafeAppend(res interface{}) (uint32, error) {
+	results, ok := res.(*ListImagesResponse)
+	if !ok {
+		return 0, errors.New("%T type cannot be appended to type %T", res, r)
+	}
+
+	r.Images = append(r.Images, results.Images...)
+	r.TotalCount += uint32(len(results.Images))
+	return uint32(len(results.Images)), nil
+}
+
 type GetImageRequest struct {
+	// ImageID display the image name
 	ImageID string `json:"-"`
 }
 
+// GetImage get a specific marketplace image
 func (s *API) GetImage(req *GetImageRequest, opts ...scw.RequestOption) (*GetImageResponse, error) {
 	var err error
 

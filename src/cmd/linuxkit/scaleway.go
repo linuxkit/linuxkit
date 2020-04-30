@@ -18,8 +18,6 @@ import (
 	"github.com/scaleway/scaleway-sdk-go/api/instance/v1"
 	"github.com/scaleway/scaleway-sdk-go/api/marketplace/v1"
 	"github.com/scaleway/scaleway-sdk-go/scw"
-	"github.com/scaleway/scaleway-sdk-go/scwconfig"
-	"github.com/scaleway/scaleway-sdk-go/utils"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
@@ -29,7 +27,9 @@ var (
 	defaultScalewayCommercialType = "DEV1-S"
 	defaultScalewayImageName      = "Ubuntu Bionic"
 	defaultScalewayImageArch      = "x86_64"
-	defaultVolumeSize             = uint64(10000000000)
+	defaultVolumeSize             = scw.GB * 10
+	scalewayDynamicIPRequired     = true
+	scalewayBootType              = instance.BootTypeLocal
 )
 
 // ScalewayClient contains state required for communication with Scaleway as well as the instance
@@ -43,23 +43,28 @@ type ScalewayClient struct {
 }
 
 // NewScalewayClient creates a new scaleway client
-func NewScalewayClient(secretKey, zone, projectID string) (*ScalewayClient, error) {
+func NewScalewayClient(secretKey, zone, organizationID string) (*ScalewayClient, error) {
 	var scwClient *scw.Client
 	log.Debugf("Connecting to Scaleway")
 	if secretKey == "" {
-		config, err := scwconfig.Load()
+		config, err := scw.LoadConfig()
+		if err != nil {
+			return nil, err
+		}
+		profile, err := config.GetActiveProfile()
 		if err != nil {
 			return nil, err
 		}
 
 		scwClient, err = scw.NewClient(
-			scw.WithConfig(config),
+			scw.WithProfile(profile),
+			scw.WithEnv(),
 		)
 		if err != nil {
 			return nil, err
 		}
 	} else {
-		scwZone, err := utils.ParseZone(zone)
+		scwZone, err := scw.ParseZone(zone)
 		if err != nil {
 			return nil, err
 		}
@@ -67,7 +72,7 @@ func NewScalewayClient(secretKey, zone, projectID string) (*ScalewayClient, erro
 		scwClient, err = scw.NewClient(
 			scw.WithAuth("", secretKey),
 			scw.WithDefaultZone(scwZone),
-			scw.WithDefaultProjectID(projectID),
+			scw.WithDefaultOrganizationID(organizationID),
 		)
 		if err != nil {
 			return nil, err
@@ -140,10 +145,10 @@ func (s *ScalewayClient) CreateInstance() (string, error) {
 	createServerRequest := &instance.CreateServerRequest{
 		Name:              "linuxkit-builder",
 		CommercialType:    defaultScalewayCommercialType,
-		DynamicIPRequired: true,
+		DynamicIPRequired: &scalewayDynamicIPRequired,
 		Image:             imageID,
 		EnableIPv6:        false,
-		BootType:          instance.ServerBootTypeLocal,
+		BootType:          &scalewayBootType,
 		Volumes:           volumeMap,
 	}
 
@@ -548,10 +553,10 @@ func (s *ScalewayClient) CreateLinuxkitInstance(instanceName, imageName, instanc
 	log.Debugf("Creating server %s on Scaleway", instanceName)
 	serverResp, err := s.instanceAPI.CreateServer(&instance.CreateServerRequest{
 		Name:              instanceName,
-		DynamicIPRequired: true,
+		DynamicIPRequired: &scalewayDynamicIPRequired,
 		CommercialType:    instanceType,
 		Image:             imageID,
-		BootType:          instance.ServerBootTypeLocal,
+		BootType:          &scalewayBootType,
 	})
 	if err != nil {
 		return "", err

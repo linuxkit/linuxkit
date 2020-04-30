@@ -27,5 +27,4 @@ func AddToQuery(query url.Values, key string, value interface{}) {
 	default:
 		query.Add(key, fmt.Sprint(elemValue.Interface()))
 	}
-
 }

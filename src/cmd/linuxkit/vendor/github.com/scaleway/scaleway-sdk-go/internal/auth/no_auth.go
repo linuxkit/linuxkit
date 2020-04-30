@@ -2,18 +2,18 @@ package auth
 
 import "net/http"
 
-type noAuth struct {
+type NoAuth struct {
 }
 
 // NewNoAuth return an auth with no authentication method
-func NewNoAuth() *noAuth {
-	return &noAuth{}
+func NewNoAuth() *NoAuth {
+	return &NoAuth{}
 }
 
-func (t *noAuth) Headers() http.Header {
+func (t *NoAuth) Headers() http.Header {
 	return http.Header{}
 }
 
-func (t *noAuth) AnonymizedHeaders() http.Header {
+func (t *NoAuth) AnonymizedHeaders() http.Header {
 	return http.Header{}
 }
