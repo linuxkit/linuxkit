@@ -24,12 +24,12 @@ import (
 )
 
 var (
-	defaultScalewayCommercialType = "DEV1-S"
-	defaultScalewayImageName      = "Ubuntu Bionic"
-	defaultScalewayImageArch      = "x86_64"
-	defaultVolumeSize             = scw.GB * 10
-	scalewayDynamicIPRequired     = true
-	scalewayBootType              = instance.BootTypeLocal
+	defaultScalewayCommercialType          = "DEV1-S"
+	defaultScalewayImageName               = "Ubuntu Bionic"
+	defaultScalewayImageArch               = "x86_64"
+	scalewayDynamicIPRequired              = true
+	scalewayBootType                       = instance.BootTypeLocal
+	scalewayInstanceVolumeSize    scw.Size = 20
 )
 
 // ScalewayClient contains state required for communication with Scaleway as well as the instance
@@ -37,16 +37,18 @@ type ScalewayClient struct {
 	instanceAPI    *instance.API
 	marketplaceAPI *marketplace.API
 	fileName       string
-	zone           string
+	zone           scw.Zone
 	sshConfig      *ssh.ClientConfig
 	secretKey      string
 }
 
 // NewScalewayClient creates a new scaleway client
-func NewScalewayClient(secretKey, zone, organizationID string) (*ScalewayClient, error) {
-	var scwClient *scw.Client
+func NewScalewayClient(accessKey, secretKey, zone, organizationID string) (*ScalewayClient, error) {
 	log.Debugf("Connecting to Scaleway")
-	if secretKey == "" {
+
+	scwOptions := []scw.ClientOption{}
+
+	if accessKey == "" || secretKey == "" {
 		config, err := scw.LoadConfig()
 		if err != nil {
 			return nil, err
@@ -56,36 +58,35 @@ func NewScalewayClient(secretKey, zone, organizationID string) (*ScalewayClient,
 			return nil, err
 		}
 
-		scwClient, err = scw.NewClient(
-			scw.WithProfile(profile),
-			scw.WithEnv(),
-		)
-		if err != nil {
-			return nil, err
+		scwOptions = append(scwOptions, scw.WithProfile(profile), scw.WithEnv())
+		if *profile.DefaultZone != "" {
+			zone = *profile.DefaultZone
 		}
 	} else {
-		scwZone, err := scw.ParseZone(zone)
-		if err != nil {
-			return nil, err
-		}
-
-		scwClient, err = scw.NewClient(
-			scw.WithAuth("", secretKey),
-			scw.WithDefaultZone(scwZone),
+		scwOptions = append(
+			scwOptions,
+			scw.WithAuth(accessKey, secretKey),
 			scw.WithDefaultOrganizationID(organizationID),
 		)
-		if err != nil {
-			return nil, err
-		}
 	}
 
+	scwZone, err := scw.ParseZone(zone)
+	if err != nil {
+		return nil, err
+	}
+	scwOptions = append(scwOptions, scw.WithDefaultZone(scwZone))
+
+	scwClient, err := scw.NewClient(scwOptions...)
+	if err != nil {
+		return nil, err
+	}
 	instanceAPI := instance.NewAPI(scwClient)
 	marketplaceAPI := marketplace.NewAPI(scwClient)
 
 	client := &ScalewayClient{
 		instanceAPI:    instanceAPI,
 		marketplaceAPI: marketplaceAPI,
-		zone:           zone,
+		zone:           scwZone,
 		fileName:       "",
 		secretKey:      secretKey,
 	}
@@ -102,7 +103,7 @@ func (s *ScalewayClient) getImageID(imageName, commercialType, arch string) (str
 		if image.Name == imageName {
 			for _, version := range image.Versions {
 				for _, localImage := range version.LocalImages {
-					if localImage.Arch == arch {
+					if localImage.Arch == arch && localImage.Zone == s.zone {
 						for _, compatibleCommercialType := range localImage.CompatibleCommercialTypes {
 							if compatibleCommercialType == commercialType {
 								return localImage.ID, nil
@@ -117,17 +118,20 @@ func (s *ScalewayClient) getImageID(imageName, commercialType, arch string) (str
 }
 
 // CreateInstance create an instance with one additional volume
-func (s *ScalewayClient) CreateInstance() (string, error) {
-	// get the Ubuntu Xenial image id
+func (s *ScalewayClient) CreateInstance(volumeSize int) (string, error) {
+	// get the Ubuntu Bionic image id
 	imageID, err := s.getImageID(defaultScalewayImageName, defaultScalewayCommercialType, defaultScalewayImageArch)
 	if err != nil {
 		return "", err
 	}
 
+	scwVolumeSize := scw.Size(volumeSize)
+	builderVolumeSize := scwVolumeSize * scw.GB
+
 	createVolumeRequest := &instance.CreateVolumeRequest{
 		Name:       "linuxkit-builder-volume",
 		VolumeType: "l_ssd",
-		Size:       &defaultVolumeSize,
+		Size:       &builderVolumeSize,
 	}
 
 	log.Debugf("Creating volume on Scaleway")
@@ -136,11 +140,9 @@ func (s *ScalewayClient) CreateInstance() (string, error) {
 		return "", err
 	}
 
-	volumeMap := make(map[string]*instance.VolumeTemplate)
-	volumeTemplate := &instance.VolumeTemplate{
-		Size: defaultVolumeSize,
+	volumeMap := map[string]*instance.VolumeTemplate{
+		"0": {Size: (scalewayInstanceVolumeSize - scwVolumeSize) * scw.GB},
 	}
-	volumeMap["0"] = volumeTemplate
 
 	createServerRequest := &instance.CreateServerRequest{
 		Name:              "linuxkit-builder",
@@ -152,6 +154,7 @@ func (s *ScalewayClient) CreateInstance() (string, error) {
 		Volumes:           volumeMap,
 	}
 
+	log.Debug("Creating server on Scaleway")
 	serverResp, err := s.instanceAPI.CreateServer(createServerRequest)
 	if err != nil {
 		return "", err
@@ -268,7 +271,7 @@ func (s *ScalewayClient) BootInstanceAndWait(instanceID string) error {
 	}
 }
 
-// getSSHAuth is uses to get the ssh.Signer needed to connect via SSH
+// getSSHAuth gets the ssh.Signer needed to connect via SSH
 func getSSHAuth(sshKeyPath string) (ssh.Signer, error) {
 	f, err := os.Open(sshKeyPath)
 	if err != nil {
@@ -284,6 +287,8 @@ func getSSHAuth(sshKeyPath string) (ssh.Signer, error) {
 	if err != nil {
 		fmt.Print("Enter ssh key passphrase: ")
 		bytePassword, err := terminal.ReadPassword(int(syscall.Stdin))
+		// ReadPassword eats newline, put it back to avoid mangling logs
+		fmt.Println()
 		if err != nil {
 			return nil, err
 		}
@@ -581,9 +586,9 @@ func (s *ScalewayClient) BootInstance(instanceID string) error {
 func (s *ScalewayClient) ConnectSerialPort(instanceID string) error {
 	var gottyURL string
 	switch s.zone {
-	case "par1":
+	case scw.ZoneFrPar1:
 		gottyURL = "https://tty-par1.scaleway.com/v2/"
-	case "ams1":
+	case scw.ZoneNlAms1:
 		gottyURL = "https://tty-ams1.scaleway.com/"
 	default:
 		return errors.New("Instance have no region")

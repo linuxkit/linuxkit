@@ -4,8 +4,11 @@ This is a quick guide to run LinuxKit on Scaleway (only VPS x86_64 for now)
 
 ## Setup
 
-You must create a Scaleway Secret Key (available ine the [Scaleway Console](https://console.scaleway.com/account/credentials)) first.
-Then you can use it either with the `SCW_SECRET_KEY` environment variable or with the `-secret-key` flag of the `linuxkit push scaleway` and `linuxkit run scaleway` commands.
+You must create a Scaleway API Token (combination of Access and Secret Key), available at [Scaleway Console](https://console.scaleway.com/account/credentials), first.
+Then you can use it either with the `SCW_ACCESS_KEY` and `SCW_SECRET_KEY` environment variables or the `-access-key` and `-secret-key` flags
+of the `linuxkit push scaleway` and `linuxkit run scaleway` commands.
+
+In addition, Organization ID value has to be set, either with the `SCW_DEFAULT_ORGANIZATION_ID` environment variable or the `-organization-id` command line flag.
 
 The environment variable `SCW_DEFAULT_ZONE` is used to set the zone (there is also the `-zone` flag)
 
@@ -25,7 +28,7 @@ $ linuxkit build -format iso-efi examples/scaleway.yml
 ## Push image
 
 You have to do `linuxkit push scaleway scaleway.iso` to upload it to your Scaleway images.
-By default the image name is the name of the ISO file without the extension. 
+By default the image name is the name of the ISO file without the extension.
 It can be overidden with the `-img-name` flag or the `SCW_IMAGE_NAME` environment variable.
 
 **Note 1:** If an image (and snapshot) of the same name exists, it will be replaced.
