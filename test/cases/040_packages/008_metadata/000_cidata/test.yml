@@ -1,0 +1,25 @@
+kernel:
+  image: linuxkit/kernel:5.4.30
+  cmdline: "console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:7195dc244cd92af01fd0895fd204249a6114c5e2
+  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+onboot:
+  - name: metadata
+    image: linuxkit/metadata:dc5bcfa45946053145391ceabe33729c8b9507a1
+  - name: test
+    image: alpine:3.11
+    binds:
+      - /check.sh:/check.sh
+      - /run:/run
+    command: ["sh", "./check.sh"]
+  - name: poweroff
+    image: linuxkit/poweroff:06dd4e46c62fbe79123a028835c921f80e4855d3
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+files:
+  - path: check.sh
+    source: ./check.sh
+trust:
+  org:
+    - linuxkit
+    - library
