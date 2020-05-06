@@ -220,6 +220,8 @@ func doMounts() {
 	mountSilent("fusectl", "/sys/fs/fuse/connections", "fusectl", noexec|nosuid|nodev, "")
 	mountSilent("selinuxfs", "/sys/fs/selinux", "selinuxfs", noexec|nosuid, "")
 	mountSilent("pstore", "/sys/fs/pstore", "pstore", noexec|nosuid|nodev, "")
+	mountSilent("bpffs", "/sys/fs/bpf", "bpf", nodev, "")
+
 	mountSilent("efivarfs", "/sys/firmware/efi/efivars", "efivarfs", noexec|nosuid|nodev, "")
 
 	// misc /proc mounted fs
