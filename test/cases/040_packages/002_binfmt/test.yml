@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
 onboot:
   - name: binfmt
-    image: linuxkit/binfmt:4ea3b9b0938cbd19834c096aa31ff475cc75d281
+    image: linuxkit/binfmt:5d33e7346e79f9c13a73c6952669e47a53b063d4
   - name: test
     image: alpine:3.11
     binds:
