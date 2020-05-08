@@ -1,4 +1,4 @@
-From 26ed515a9a0fa1c65c4ddada44e803ab67970bae Mon Sep 17 00:00:00 2001
+From 654a742e0c19c817e31443fc95f01aabaf2ee034 Mon Sep 17 00:00:00 2001
 From: Matt Redfearn <matt.redfearn@mips.com>
 Date: Wed, 3 Jan 2018 09:57:30 +0000
 Subject: [PATCH] include/uapi/linux/swab: Fix potentially missing
@@ -51,5 +51,5 @@ index 7272f85d6d6a..3736f2fe1541 100644
  #include <asm/swab.h>
  
 -- 
-2.24.0
+2.26.2
 
