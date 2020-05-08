@@ -3,12 +3,15 @@ package main
 import (
 	"flag"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
 )
+
+const defaultScalewayVolumeSize = 10 // GB
 
 func pushScaleway(args []string) {
 	flags := flag.NewFlagSet("scaleway", flag.ExitOnError)
@@ -20,12 +23,14 @@ func pushScaleway(args []string) {
 		flags.PrintDefaults()
 	}
 	nameFlag := flags.String("img-name", "", "Overrides the name used to identify the image name in Scaleway's images. Defaults to the base of 'path' with the '.iso' suffix removed")
-	secretKeyFlag := flags.String("secret-key", "", "Secret Key to connet to Scaleway API")
+	accessKeyFlag := flags.String("access-key", "", "Access Key to connect to Scaleway API")
+	secretKeyFlag := flags.String("secret-key", "", "Secret Key to connect to Scaleway API")
 	sshKeyFlag := flags.String("ssh-key", os.Getenv("HOME")+"/.ssh/id_rsa", "SSH key file")
 	instanceIDFlag := flags.String("instance-id", "", "Instance ID of a running Scaleway instance, with a second volume.")
 	deviceNameFlag := flags.String("device-name", "/dev/vdb", "Device name on which the image will be copied")
+	volumeSizeFlag := flags.Int("volume-size", 0, "Size of the volume to use (in GB). Defaults to size of the ISO file rounded up to GB")
 	zoneFlag := flags.String("zone", defaultScalewayZone, "Select Scaleway zone")
-	projectIDFlag := flags.String("project-id", "", "Select Scaleway's project ID")
+	organizationIDFlag := flags.String("organization-id", "", "Select Scaleway's organization ID")
 	noCleanFlag := flags.Bool("no-clean", false, "Do not remove temporary instance and volumes")
 
 	if err := flags.Parse(args); err != nil {
@@ -41,12 +46,14 @@ func pushScaleway(args []string) {
 	path := remArgs[0]
 
 	name := getStringValue(scalewayNameVar, *nameFlag, "")
+	accessKey := getStringValue(accessKeyVar, *accessKeyFlag, "")
 	secretKey := getStringValue(secretKeyVar, *secretKeyFlag, "")
 	sshKeyFile := getStringValue(sshKeyVar, *sshKeyFlag, "")
 	instanceID := getStringValue(instanceIDVar, *instanceIDFlag, "")
 	deviceName := getStringValue(deviceNameVar, *deviceNameFlag, "")
+	volumeSize := getIntValue(volumeSizeVar, *volumeSizeFlag, 0)
 	zone := getStringValue(zoneVar, *zoneFlag, defaultScalewayZone)
-	projectID := getStringValue(projectIDVar, *projectIDFlag, "")
+	organizationID := getStringValue(organizationIDVar, *organizationIDFlag, "")
 
 	const suffix = ".iso"
 	if name == "" {
@@ -54,14 +61,25 @@ func pushScaleway(args []string) {
 		name = filepath.Base(name)
 	}
 
-	client, err := NewScalewayClient(secretKey, zone, projectID)
+	client, err := NewScalewayClient(accessKey, secretKey, zone, organizationID)
 	if err != nil {
 		log.Fatalf("Unable to connect to Scaleway: %v", err)
 	}
 
+	// if volume size not set, try to calculate it from file size
+	if volumeSize == 0 {
+		if fi, err := os.Stat(path); err == nil {
+			volumeSize = int(math.Ceil(float64(fi.Size()) / 1000000000)) // / 1 GB
+		} else {
+			// fallback to default
+			log.Warnf("Unable to calculate volume size, using default of %d GB: %v", defaultScalewayVolumeSize, err)
+			volumeSize = defaultScalewayVolumeSize
+		}
+	}
+
 	// if no instanceID is provided, we create the instance
 	if instanceID == "" {
-		instanceID, err = client.CreateInstance()
+		instanceID, err = client.CreateInstance(volumeSize)
 		if err != nil {
 			log.Fatalf("Error creating a Scaleway instance: %v", err)
 		}

@@ -10,7 +10,6 @@ import (
 
 	"github.com/scaleway/scaleway-sdk-go/internal/auth"
 	"github.com/scaleway/scaleway-sdk-go/internal/errors"
-	"github.com/scaleway/scaleway-sdk-go/utils"
 )
 
 // ScalewayRequest contains all the contents related to performing a request on the Scaleway API.
@@ -20,7 +19,11 @@ type ScalewayRequest struct {
 	Headers http.Header
 	Query   url.Values
 	Body    io.Reader
-	Ctx     context.Context
+
+	// request options
+	ctx      context.Context
+	auth     auth.Auth
+	allPages bool
 }
 
 // getAllHeaders constructs a http.Header object and aggregates all headers into the object.
@@ -34,11 +37,12 @@ func (req *ScalewayRequest) getAllHeaders(token auth.Auth, userAgent string, ano
 
 	allHeaders.Set("User-Agent", userAgent)
 	if req.Body != nil {
-		allHeaders.Set("content-type", "application/json")
+		allHeaders.Set("Content-Type", "application/json")
 	}
 	for key, value := range req.Headers {
+		allHeaders.Del(key)
 		for _, v := range value {
-			allHeaders.Set(key, v)
+			allHeaders.Add(key, v)
 		}
 	}
 
@@ -46,7 +50,7 @@ func (req *ScalewayRequest) getAllHeaders(token auth.Auth, userAgent string, ano
 }
 
 // getURL constructs a URL based on the base url and the client.
-func (req *ScalewayRequest) getURL(baseURL string) (*url.URL, SdkError) {
+func (req *ScalewayRequest) getURL(baseURL string) (*url.URL, error) {
 	url, err := url.Parse(baseURL + req.Path)
 	if err != nil {
 		return nil, errors.New("invalid url %s: %s", baseURL+req.Path, err)
@@ -63,9 +67,12 @@ func (req *ScalewayRequest) SetBody(body interface{}) error {
 	var content io.Reader
 
 	switch b := body.(type) {
-	case *utils.File:
+	case *File:
 		contentType = b.ContentType
 		content = b.Content
+	case io.Reader:
+		contentType = "text/plain"
+		content = b
 	default:
 		buf, err := json.Marshal(body)
 		if err != nil {
@@ -75,8 +82,23 @@ func (req *ScalewayRequest) SetBody(body interface{}) error {
 		content = bytes.NewReader(buf)
 	}
 
+	if req.Headers == nil {
+		req.Headers = http.Header{}
+	}
+
 	req.Headers.Set("Content-Type", contentType)
 	req.Body = content
 
+	return nil
+}
+
+func (req *ScalewayRequest) apply(opts []RequestOption) {
+	for _, opt := range opts {
+		opt(req)
+	}
+}
+
+func (req *ScalewayRequest) validate() error {
+	// nothing so far
 	return nil
 }

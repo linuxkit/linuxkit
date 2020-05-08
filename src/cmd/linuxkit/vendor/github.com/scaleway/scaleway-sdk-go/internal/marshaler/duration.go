@@ -137,3 +137,24 @@ func (ds *LongDurationSlice) Standard() []*time.Duration {
 	}
 	return t
 }
+
+// LongDurationint32Map is a int32 map of *LongDuration
+type LongDurationint32Map map[int32]*LongDuration
+
+// NewLongDurationint32Map converts a map[int32]*time.LongDuration to a LongDurationint32Map type.
+func NewLongDurationint32Map(t map[int32]*time.Duration) LongDurationint32Map {
+	dm := make(LongDurationint32Map, len(t))
+	for i := range t {
+		dm[i] = NewLongDuration(t[i])
+	}
+	return dm
+}
+
+// Standard converts a LongDurationint32Map to a map[int32]*time.LongDuration type.
+func (dm *LongDurationint32Map) Standard() map[int32]*time.Duration {
+	t := make(map[int32]*time.Duration, len(*dm))
+	for key, value := range *dm {
+		t[key] = value.Standard()
+	}
+	return t
+}

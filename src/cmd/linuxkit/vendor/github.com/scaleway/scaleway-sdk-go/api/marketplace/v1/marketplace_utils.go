@@ -2,16 +2,16 @@ package marketplace
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/scaleway/scaleway-sdk-go/utils"
+	"github.com/scaleway/scaleway-sdk-go/internal/errors"
+	"github.com/scaleway/scaleway-sdk-go/scw"
 )
 
 // getLocalImage returns the correct local version of an image matching
 // the current zone and the compatible commercial type
-func (version *Version) getLocalImage(zone utils.Zone, commercialType string) (*LocalImage, error) {
-
+func (version *Version) getLocalImage(zone scw.Zone, commercialType string) (*LocalImage, error) {
 	for _, localImage := range version.LocalImages {
-
 		// Check if in correct zone
 		if localImage.Zone != zone {
 			continue
@@ -26,56 +26,73 @@ func (version *Version) getLocalImage(zone utils.Zone, commercialType string) (*
 	}
 
 	return nil, fmt.Errorf("couldn't find compatible local image for this image version (%s)", version.ID)
-
 }
 
 // getLatestVersion returns the current/latests version on an image,
 // or an error in case the image doesn't have a public version.
 func (image *Image) getLatestVersion() (*Version, error) {
-
 	for _, version := range image.Versions {
 		if version.ID == image.CurrentPublicVersion {
 			return version, nil
 		}
 	}
 
-	return nil, fmt.Errorf("latest version could not be found for image %s", image.Name)
+	return nil, errors.New("latest version could not be found for image %s", image.Label)
 }
 
-// FindLocalImageIDByName search for an image with the given name (exact match) in the given region
+// GetLocalImageIDByLabelRequest is used by GetLocalImageIDByLabel
+type GetLocalImageIDByLabelRequest struct {
+	ImageLabel     string
+	Zone           scw.Zone
+	CommercialType string
+}
+
+// GetLocalImageIDByLabel search for an image with the given label (exact match) in the given region
 // it returns the latest version of this specific image.
-func (s *API) FindLocalImageIDByName(imageName string, zone utils.Zone, commercialType string) (string, error) {
+func (s *API) GetLocalImageIDByLabel(req *GetLocalImageIDByLabelRequest) (string, error) {
+	if req.Zone == "" {
+		defaultZone, _ := s.client.GetDefaultZone()
+		req.Zone = defaultZone
+	}
 
 	listImageRequest := &ListImagesRequest{}
-	listImageResponse, err := s.ListImages(listImageRequest)
+	listImageResponse, err := s.ListImages(listImageRequest, scw.WithAllPages())
 	if err != nil {
 		return "", err
 	}
 
-	// TODO: handle pagination
-
 	images := listImageResponse.Images
-	_ = images
+	label := strings.Replace(req.ImageLabel, "-", "_", -1)
+	commercialType := strings.ToUpper(req.CommercialType)
 
 	for _, image := range images {
-
-		// Match name of the image
-		if image.Name == imageName {
-
+		// Match label of the image
+		if label == image.Label {
 			latestVersion, err := image.getLatestVersion()
 			if err != nil {
-				return "", fmt.Errorf("couldn't find a matching image for the given name (%s), zone (%s) and commercial type (%s): %s", imageName, zone, commercialType, err)
+				return "", errors.Wrap(err, "couldn't find a matching image for the given label (%s), zone (%s) and commercial type (%s)", req.ImageLabel, req.Zone, req.CommercialType)
 			}
 
-			localImage, err := latestVersion.getLocalImage(zone, commercialType)
+			localImage, err := latestVersion.getLocalImage(req.Zone, commercialType)
 			if err != nil {
-				return "", fmt.Errorf("couldn't find a matching image for the given name (%s), zone (%s) and commercial type (%s): %s", imageName, zone, commercialType, err)
+				return "", errors.Wrap(err, "couldn't find a matching image for the given label (%s), zone (%s) and commercial type (%s)", req.ImageLabel, req.Zone, req.CommercialType)
 			}
 
 			return localImage.ID, nil
 		}
-
 	}
 
-	return "", fmt.Errorf("couldn't find a matching image for the given name (%s), zone (%s) and commercial type (%s)", imageName, zone, commercialType)
+	return "", errors.New("couldn't find a matching image for the given label (%s), zone (%s) and commercial type (%s)", req.ImageLabel, req.Zone, req.CommercialType)
+}
+
+// UnsafeSetTotalCount should not be used
+// Internal usage only
+func (r *ListImagesResponse) UnsafeSetTotalCount(totalCount int) {
+	r.TotalCount = uint32(totalCount)
+}
+
+// UnsafeSetTotalCount should not be used
+// Internal usage only
+func (r *ListVersionsResponse) UnsafeSetTotalCount(totalCount int) {
+	r.TotalCount = uint32(totalCount)
 }

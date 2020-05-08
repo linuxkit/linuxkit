@@ -2,10 +2,11 @@ package scw
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/scaleway/scaleway-sdk-go/internal/auth"
-	"github.com/scaleway/scaleway-sdk-go/scwconfig"
-	"github.com/scaleway/scaleway-sdk-go/utils"
+	"github.com/scaleway/scaleway-sdk-go/internal/errors"
+	"github.com/scaleway/scaleway-sdk-go/validation"
 )
 
 // ClientOption is a function which applies options to a settings object.
@@ -68,56 +69,61 @@ func withDefaultUserAgent(ua string) ClientOption {
 	}
 }
 
-// WithConfig client option configure a client with Scaleway configuration.
-func WithConfig(config scwconfig.Config) ClientOption {
+// WithProfile client option configures a client from the given profile.
+func WithProfile(p *Profile) ClientOption {
 	return func(s *settings) {
-		// The access key is not used for API authentications.
-		accessKey, _ := config.GetAccessKey()
-		secretKey, secretKeyExist := config.GetSecretKey()
-		if secretKeyExist {
-			s.token = auth.NewToken(accessKey, secretKey)
+		accessKey := ""
+		if p.AccessKey != nil {
+			accessKey = *p.AccessKey
 		}
 
-		apiURL, exist := config.GetAPIURL()
-		if exist {
-			s.apiURL = apiURL
+		if p.SecretKey != nil {
+			s.token = auth.NewToken(accessKey, *p.SecretKey)
 		}
 
-		insecure, exist := config.GetInsecure()
-		if exist {
-			s.insecure = insecure
+		if p.APIURL != nil {
+			s.apiURL = *p.APIURL
 		}
 
-		defaultProjectID, exist := config.GetDefaultProjectID()
-		if exist {
-			s.defaultProjectID = &defaultProjectID
+		if p.Insecure != nil {
+			s.insecure = *p.Insecure
 		}
 
-		defaultRegion, exist := config.GetDefaultRegion()
-		if exist {
+		if p.DefaultOrganizationID != nil {
+			organizationID := *p.DefaultOrganizationID
+			s.defaultOrganizationID = &organizationID
+		}
+
+		if p.DefaultRegion != nil {
+			defaultRegion := Region(*p.DefaultRegion)
 			s.defaultRegion = &defaultRegion
 		}
 
-		defaultZone, exist := config.GetDefaultZone()
-		if exist {
+		if p.DefaultZone != nil {
+			defaultZone := Zone(*p.DefaultZone)
 			s.defaultZone = &defaultZone
 		}
 	}
 }
 
-// WithDefaultProjectID client option sets the client default project ID.
+// WithProfile client option configures a client from the environment variables.
+func WithEnv() ClientOption {
+	return WithProfile(LoadEnvProfile())
+}
+
+// WithDefaultOrganizationID client option sets the client default organization ID.
 //
-// It will be used as the default value of the project_id field in all requests made with this client.
-func WithDefaultProjectID(projectID string) ClientOption {
+// It will be used as the default value of the organization_id field in all requests made with this client.
+func WithDefaultOrganizationID(organizationID string) ClientOption {
 	return func(s *settings) {
-		s.defaultProjectID = &projectID
+		s.defaultOrganizationID = &organizationID
 	}
 }
 
 // WithDefaultRegion client option sets the client default region.
 //
 // It will be used as the default value of the region field in all requests made with this client.
-func WithDefaultRegion(region utils.Region) ClientOption {
+func WithDefaultRegion(region Region) ClientOption {
 	return func(s *settings) {
 		s.defaultRegion = &region
 	}
@@ -126,7 +132,7 @@ func WithDefaultRegion(region utils.Region) ClientOption {
 // WithDefaultZone client option sets the client default zone.
 //
 // It will be used as the default value of the zone field in all requests made with this client.
-func WithDefaultZone(zone utils.Zone) ClientOption {
+func WithDefaultZone(zone Zone) ClientOption {
 	return func(s *settings) {
 		s.defaultZone = &zone
 	}
@@ -135,8 +141,100 @@ func WithDefaultZone(zone utils.Zone) ClientOption {
 // WithDefaultPageSize client option overrides the default page size of the SDK.
 //
 // It will be used as the default value of the page_size field in all requests made with this client.
-func WithDefaultPageSize(pageSize int32) ClientOption {
+func WithDefaultPageSize(pageSize uint32) ClientOption {
 	return func(s *settings) {
 		s.defaultPageSize = &pageSize
 	}
+}
+
+// settings hold the values of all client options
+type settings struct {
+	apiURL                string
+	token                 auth.Auth
+	userAgent             string
+	httpClient            httpClient
+	insecure              bool
+	defaultOrganizationID *string
+	defaultRegion         *Region
+	defaultZone           *Zone
+	defaultPageSize       *uint32
+}
+
+func newSettings() *settings {
+	return &settings{}
+}
+
+func (s *settings) apply(opts []ClientOption) {
+	for _, opt := range opts {
+		opt(s)
+	}
+}
+
+func (s *settings) validate() error {
+	// Auth.
+	if s.token == nil {
+		// It should not happen, WithoutAuth option is used by default.
+		panic(errors.New("no credential option provided"))
+	}
+	if token, isToken := s.token.(*auth.Token); isToken {
+		if token.AccessKey == "" {
+			return NewInvalidClientOptionError("access key cannot be empty")
+		}
+		if !validation.IsAccessKey(token.AccessKey) {
+			return NewInvalidClientOptionError("invalid access key format '%s', expected SCWXXXXXXXXXXXXXXXXX format", token.AccessKey)
+		}
+		if token.SecretKey == "" {
+			return NewInvalidClientOptionError("secret key cannot be empty")
+		}
+		if !validation.IsSecretKey(token.SecretKey) {
+			return NewInvalidClientOptionError("invalid secret key format '%s', expected a UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", token.SecretKey)
+		}
+	}
+
+	// Default Organization ID.
+	if s.defaultOrganizationID != nil {
+		if *s.defaultOrganizationID == "" {
+			return NewInvalidClientOptionError("default organization ID cannot be empty")
+		}
+		if !validation.IsOrganizationID(*s.defaultOrganizationID) {
+			return NewInvalidClientOptionError("invalid organization ID format '%s', expected a UUID: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx", *s.defaultOrganizationID)
+		}
+	}
+
+	// Default Region.
+	if s.defaultRegion != nil {
+		if *s.defaultRegion == "" {
+			return NewInvalidClientOptionError("default region cannot be empty")
+		}
+		if !validation.IsRegion(string(*s.defaultRegion)) {
+			regions := []string(nil)
+			for _, r := range AllRegions {
+				regions = append(regions, string(r))
+			}
+			return NewInvalidClientOptionError("invalid default region format '%s', available regions are: %s", *s.defaultRegion, strings.Join(regions, ", "))
+		}
+	}
+
+	// Default Zone.
+	if s.defaultZone != nil {
+		if *s.defaultZone == "" {
+			return NewInvalidClientOptionError("default zone cannot be empty")
+		}
+		if !validation.IsZone(string(*s.defaultZone)) {
+			zones := []string(nil)
+			for _, z := range AllZones {
+				zones = append(zones, string(z))
+			}
+			return NewInvalidClientOptionError("invalid default zone format '%s', available zones are: %s", *s.defaultZone, strings.Join(zones, ", "))
+		}
+	}
+
+	// API URL.
+	if !validation.IsURL(s.apiURL) {
+		return NewInvalidClientOptionError("invalid url %s", s.apiURL)
+	}
+
+	// TODO: check for max s.defaultPageSize
+
+	return nil
 }

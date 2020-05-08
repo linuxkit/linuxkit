@@ -2,14 +2,16 @@ package scw
 
 import (
 	"context"
+
+	"github.com/scaleway/scaleway-sdk-go/internal/auth"
 )
 
 // RequestOption is a function that applies options to a ScalewayRequest.
-type RequestOption func(*requestSettings)
+type RequestOption func(*ScalewayRequest)
 
 // WithContext request option sets the context of a ScalewayRequest
 func WithContext(ctx context.Context) RequestOption {
-	return func(s *requestSettings) {
+	return func(s *ScalewayRequest) {
 		s.ctx = ctx
 	}
 }
@@ -17,27 +19,14 @@ func WithContext(ctx context.Context) RequestOption {
 // WithAllPages aggregate all pages in the response of a List request.
 // Will error when pagination is not supported on the request.
 func WithAllPages() RequestOption {
-	return func(s *requestSettings) {
+	return func(s *ScalewayRequest) {
 		s.allPages = true
 	}
 }
 
-type requestSettings struct {
-	ctx      context.Context
-	allPages bool
-}
-
-func newRequestSettings() *requestSettings {
-	return &requestSettings{}
-}
-
-func (s *requestSettings) apply(opts []RequestOption) {
-	for _, opt := range opts {
-		opt(s)
+// WithAuthRequest overwrites the client access key and secret key used in the request.
+func WithAuthRequest(accessKey, secretKey string) RequestOption {
+	return func(s *ScalewayRequest) {
+		s.auth = auth.NewToken(accessKey, secretKey)
 	}
-}
-
-func (s *requestSettings) validate() SdkError {
-	// nothing so far
-	return nil
 }

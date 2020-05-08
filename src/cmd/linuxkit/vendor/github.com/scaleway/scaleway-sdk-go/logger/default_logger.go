@@ -94,9 +94,18 @@ func newLogger(w io.Writer, level LogLevel) *loggerT {
 	// Info logs will be written to infoW and debugW.
 	// Debug logs will be written to debugW.
 	var m [4]*log.Logger
-	m[LogLevelError] = log.New(io.MultiWriter(debugW, infoW, warningW, errorW), severityName[LogLevelError]+": ", log.LstdFlags)
-	m[LogLevelWarning] = log.New(io.MultiWriter(debugW, infoW, warningW), severityName[LogLevelWarning]+": ", log.LstdFlags)
-	m[LogLevelInfo] = log.New(io.MultiWriter(debugW, infoW), severityName[LogLevelInfo]+": ", log.LstdFlags)
-	m[LogLevelDebug] = log.New(debugW, severityName[LogLevelDebug]+": ", log.LstdFlags)
+
+	m[LogLevelError] = log.New(io.MultiWriter(debugW, infoW, warningW, errorW),
+		severityName[LogLevelError]+": ", log.LstdFlags)
+
+	m[LogLevelWarning] = log.New(io.MultiWriter(debugW, infoW, warningW),
+		severityName[LogLevelWarning]+": ", log.LstdFlags)
+
+	m[LogLevelInfo] = log.New(io.MultiWriter(debugW, infoW),
+		severityName[LogLevelInfo]+": ", log.LstdFlags)
+
+	m[LogLevelDebug] = log.New(debugW,
+		severityName[LogLevelDebug]+": ", log.LstdFlags)
+
 	return &loggerT{m: m, v: level}
 }

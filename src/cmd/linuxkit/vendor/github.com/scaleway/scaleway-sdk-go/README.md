@@ -1,4 +1,4 @@
-<p align="center"><img height="125" src="docs/static_files/scaleway-logo.png" /></p>
+<p align="center"><img width="50%" src="docs/static_files/sdk-artwork.png" /></p>
 
 <p align="center">
   <a href="https://godoc.org/github.com/scaleway/scaleway-sdk-go"><img src="https://godoc.org/github.com/scaleway/scaleway-sdk-go?status.svg" alt="GoDoc"/></a>
@@ -12,8 +12,7 @@
 **:warning: This is an early release, keep in mind that the API can break**
 
 
-Scaleway is a simple way to build, deploy and scale your infrastructure in the cloud.
-We help thousands of developers and businesses to run their infrastructures without any issue.
+Scaleway is a single way to create, deploy and scale your infrastructure in the cloud. We help thousands of businesses to run their infrastructures easily.
 
 ## Documentation
 
@@ -44,7 +43,7 @@ func main() {
 	// Create a Scaleway client
 	client, err := scw.NewClient(
 		// Get your credentials at https://console.scaleway.com/account/credentials
-		scw.WithDefaultProjectID("ORGANISATION_ID"),
+		scw.WithDefaultOrganizationID("ORGANISATION_ID"),
 		scw.WithAuth("ACCESS_KEY", "SECRET_KEY"),
 	)
 	if err != nil {
@@ -56,7 +55,7 @@ func main() {
 
 	// Call the ListServers method on the Instance SDK
 	response, err := instanceApi.ListServers(&instance.ListServersRequest{
-		Zone: utils.ZoneFrPar1,
+		Zone: scw.ZoneFrPar1,
 	})
 	if err != nil {
 		panic(err)
@@ -69,6 +68,10 @@ func main() {
 
 }
 ```
+
+## Examples
+
+You can find additional examples in the [GoDoc](https://godoc.org/github.com/scaleway/scaleway-sdk-go).
 
 ## Development
 
