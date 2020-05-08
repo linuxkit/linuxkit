@@ -38,8 +38,8 @@ ARG KERNEL_SERIES
 ARG EXTRA
 ARG DEBUG
 
-ENV WIREGUARD_VERSION=1.0.20200401
-ENV WIREGUARD_SHA256="7dfb4a8315e1d6ae406ff32d01c496175df558dd65968a19e5222d02c7cfb77a"
+ENV WIREGUARD_VERSION=1.0.20200506
+ENV WIREGUARD_SHA256="98a99f2b825a82d57a7213e666f1ee4f7cc02bddb09bf4908b4b09447a8f121e"
 ENV WIREGUARD_URL=https://git.zx2c4.com/wireguard-linux-compat/snapshot/wireguard-linux-compat-${WIREGUARD_VERSION}.tar.xz
 
 # We copy the entire directory. This copies some unneeded files, but
