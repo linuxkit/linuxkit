@@ -20,11 +20,13 @@ RUN apk add \
     findutils \
     mpc1-dev \
     mpfr-dev \
+    python3 \
     sed \
     tar \
     xz \
     xz-dev \
-    zlib-dev
+    zlib-dev \
+    zlib-static
 
 COPY --from=ksrc /linux.tar.xz /kernel-headers.tar /
 RUN tar xf linux.tar.xz && \
