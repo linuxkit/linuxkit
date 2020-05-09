@@ -1,6 +1,6 @@
 # Sample YAML file for manual testing
 kernel:
-  image: linuxkit/kernel:5.4.30
+  image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
