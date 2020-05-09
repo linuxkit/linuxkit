@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:5.4.30
+  image: linuxkit/kernel:5.4.39
   cmdline: console=ttyS1
   ucode: intel-ucode.cpio
 init:

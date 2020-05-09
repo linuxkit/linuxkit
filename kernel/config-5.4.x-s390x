@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/s390 5.4.30 Kernel Configuration
+# Linux/s390 5.4.39 Kernel Configuration
 #
 
 #
@@ -3482,7 +3482,6 @@ CONFIG_DEBUG_INFO=y
 # CONFIG_DEBUG_INFO_REDUCED is not set
 CONFIG_DEBUG_INFO_SPLIT=y
 # CONFIG_DEBUG_INFO_DWARF4 is not set
-# CONFIG_DEBUG_INFO_BTF is not set
 # CONFIG_GDB_SCRIPTS is not set
 CONFIG_ENABLE_MUST_CHECK=y
 CONFIG_FRAME_WARN=1024

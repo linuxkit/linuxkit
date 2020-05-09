@@ -150,8 +150,7 @@ show-tags: show-tag_$(2)$(3)$(4)
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
 # Only build perf on x86 and latest LTS and stable kernels
-# Temporarily disable perf build: https://github.com/linuxkit/linuxkit/issues/3498
-ifeq ($(ARCH),disabled)
+ifeq ($(ARCH),x86_64)
 ifeq ($(2), $(filter $(2),5.6.x 5.4.x))
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
@@ -253,21 +252,21 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.6.2,5.6.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.30,5.4.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.30,5.4.x,,-dbg))
-$(eval $(call kernel,5.4.28,5.4.x,-rt,))
-$(eval $(call kernel,4.19.114,4.19.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,4.14.175,4.14.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.6.11,5.6.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.39,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.39,5.4.x,,-dbg))
+#$(eval $(call kernel,5.4.28,5.4.x,-rt,))
+$(eval $(call kernel,4.19.121,4.19.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,4.14.179,4.14.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
-$(eval $(call kernel,5.6.2,5.6.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.30,5.4.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.28,5.4.x,-rt,))
+$(eval $(call kernel,5.6.11,5.6.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.39,5.4.x,$(EXTRA),$(DEBUG)))
+#$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
-$(eval $(call kernel,5.6.2,5.6.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.30,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.6.11,5.6.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.39,5.4.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config

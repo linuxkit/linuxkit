@@ -1,4 +1,4 @@
-From 194853f9b9fe9fcf424410cf5c455390caf91385 Mon Sep 17 00:00:00 2001
+From 3635a8090f2271103511b68a5853b1d7e0a925b5 Mon Sep 17 00:00:00 2001
 From: Matt Redfearn <matt.redfearn@mips.com>
 Date: Wed, 3 Jan 2018 09:57:30 +0000
 Subject: [PATCH] include/uapi/linux/swab: Fix potentially missing
@@ -38,7 +38,7 @@ Signed-off-by: Matt Redfearn <matt.redfearn@mips.com>
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/include/uapi/linux/swab.h b/include/uapi/linux/swab.h
-index 23cd84868cc3..f6a8cf737abf 100644
+index 7272f85d6d6a..3736f2fe1541 100644
 --- a/include/uapi/linux/swab.h
 +++ b/include/uapi/linux/swab.h
 @@ -3,7 +3,7 @@
@@ -47,9 +47,9 @@ index 23cd84868cc3..f6a8cf737abf 100644
  #include <linux/types.h>
 -#include <linux/compiler.h>
 +#include <linux/stddef.h>
+ #include <asm/bitsperlong.h>
  #include <asm/swab.h>
  
- /*
 -- 
-2.24.0
+2.26.2
 

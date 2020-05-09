@@ -1,4 +1,4 @@
-From 5d99bb75cf678b865f7d7f4befa78a7565711830 Mon Sep 17 00:00:00 2001
+From 4b4897b070cab0d37051afa01b6044e19b207a1d Mon Sep 17 00:00:00 2001
 From: Vitaly Kuznetsov <vkuznets@redhat.com>
 Date: Sun, 29 Oct 2017 12:21:16 -0700
 Subject: [PATCH 18/21] hyper-v: trace channel events
@@ -97,5 +97,5 @@ index 70f857441399..14288a2958d0 100644
  			case HV_CALL_ISR:
  				vmbus_channel_isr(channel);
 -- 
-2.24.0
+2.26.2
 

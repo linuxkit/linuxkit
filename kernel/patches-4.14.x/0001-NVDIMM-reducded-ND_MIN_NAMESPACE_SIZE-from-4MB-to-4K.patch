@@ -1,4 +1,4 @@
-From 24796cb1c1993f1d90742d39eda9cbec7ba9f93f Mon Sep 17 00:00:00 2001
+From 333f5bbf9097beda89c22a4d55aadba6cd1cf14e Mon Sep 17 00:00:00 2001
 From: Cheng-mean Liu <soccerl@microsoft.com>
 Date: Tue, 11 Jul 2017 16:58:26 -0700
 Subject: [PATCH 01/21] NVDIMM: reducded ND_MIN_NAMESPACE_SIZE from 4MB to 4KB
@@ -24,5 +24,5 @@ index 145f242c7c90..e360610911f3 100644
  
  enum ars_masks {
 -- 
-2.24.0
+2.26.2
 

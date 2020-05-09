@@ -3,7 +3,7 @@
 ARG IMAGE
 FROM ${IMAGE} AS ksrc
 
-FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 AS build
+FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS build
 RUN apk add \
     argp-standalone \
     bash \
@@ -20,11 +20,13 @@ RUN apk add \
     findutils \
     mpc1-dev \
     mpfr-dev \
+    python3 \
     sed \
     tar \
     xz \
     xz-dev \
-    zlib-dev
+    zlib-dev \
+    zlib-static
 
 COPY --from=ksrc /linux.tar.xz /kernel-headers.tar /
 RUN tar xf linux.tar.xz && \
