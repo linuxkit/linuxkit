@@ -7,7 +7,7 @@ packages, as it's very easy. Packages are the unit of customisation
 in a LinuxKit-based project, if you know how to build a container,
 you should be able to build a LinuxKit package.
 
-All LinuxKit packages are:
+All official LinuxKit packages are:
 - Signed with Docker Content Trust.
 - Enabled with multi-arch manifests to work on multiple architectures.
 - Derived from well-known (and signed) sources for repeatable builds.
@@ -15,6 +15,7 @@ All LinuxKit packages are:
 
 
 ## CI and Package Builds
+
 When building and merging packages, it is important to note that our CI process builds packages. The targets `make ci` and `make ci-pr` execute `make -C pkg build`. These in turn execute `linuxkit pkg build` for each package under `pkg/`. This in turn will try to pull the image whose tag matches the tree hash or, failing that, to build it.
 
 We do not want the builds to happen with each CI run for two reasons:
@@ -73,38 +74,89 @@ should also be set up with signing keys for packages and your signing
 key should have a passphrase, which we call `<passphrase>` throughout.
 
 All official LinuxKit packages are multi-arch manifests and most of
-them are available for `amd64`, `arm64`, and `s390x`. Official images
-*must* be build on both architectures and they must be build *in
-sequence*, i.e., they can't be build in parallel.
+them are available for the following platforms:
 
-To build a package on an architecture:
+* `linux/amd64`
+* `linux/arm64`
+* `linux/s390x`
+
+Official images *must* be built on all architectures for which they are available.
+They can be built and pushed in parallel, but the manifest should be pushed once
+when all of the images are done.
+
+Pushing out a package as a maintainer involves two distinct stages:
+
+1. Building and pushing out the platform-specific image
+1. Creating, pushing out and signing the multi-arch manifest, a.k.a. OCI image index
+
+The `linuxkit pkg` command contains automation which performs all of the steps.
+Note that `«path-to-package»` is the path to the package's source directory
+(containing at least `build.yml` and `Dockerfile`). It can be `.` if
+the package is in the current directory.
+
+
+#### Image Only
+
+To build and push out the platform-specific image, on that platform:
+
+```
+linuxkit pkg push --manifest=false «path-to-package»
+```
+
+The options do the following:
+
+* `--manifest=false` means not to push or sign a manifest
+
+Repeat the above on each platform where you need an image.
+
+This will do the following:
+
+1. Determine the name and tag for the image as follows:
+   * The tag is from the hash of the git tree for that package. You can see it by doing `linuxkit pkg show-tag «path-to-package»`.
+   * The name for the image is from `«path-to-package»/build.yml`
+   * The organization for the package is given on the command-line, default to `linuxkit`.
+1. Build the package in the given path using your local docker instance for the local platform. E.g. if you are running on `linux/arm64`, it will build for `linux/arm64`.
+1. Tag the build image as `«image-name»:«hash»-«arch»`
+1. Push the image to the hub
+
+#### Manifest Only
+
+To perform just the manifest steps, do:
+
+```
+DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE="<passphrase>" linuxkit pkg push --image=false --manifest «path-to-package»
+```
+
+The options do the following:
+
+* `--image=false` do not push the image, as you already did it; you can, of course, skip this argument and push the image as well
+* `--manifest` create and push the manifest
+
+This will do the following:
+
+1. Find all of the images on the hub of the format `«image-name»:«hash»-«arch»`
+1. Create a multi-arch manifest called `«image-name»:«hash»` (note no `-«arch»`)
+1. Push the manifest to the hub
+1. Sign the manifest with your key
+
+Each time you perform the manifest steps, it will find all of the images,
+including any that have been added since last time.
+The LinuxKit YAML files should consume the package as the multi-arch manifest:
+`linuxkit/<image>:<hash>`.
+
+#### Everything at once
+
+To perform _all_ of the steps at once - build and push out the image for whatever platform
+you are running on, and create and sign a manifest - do:
 
 ```
 DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE="<passphrase>" linuxkit pkg push «path-to-package»
 ```
 
-`«path-to-package»` is the path to the package's source directory
-(containing at least `build.yml` and `Dockerfile`). It can be `.` if
-the package is in the current directory.
+#### Prerequisites
 
-**Note:** You *must* be logged into hub (`docker login`) and the
-passphrase for the key *must* be supplied as an environment
-variable. The build process has to resort to using `expect` to drive
-`notary` so none of the credentials can be entered interactively.
-
-This will:
-- Build a local images as `linuxkit/<image>:<hash>-<arch>`
-- Push it to hub
-- Sign it with your key
-- Create a manifest called `linuxkit/<image>:<hash>` (note no `-<arch>`)
-- Push the manifest to hub
-- Sign the manifest
-
-If you repeat the same on another architecture, a new manifest will be
-pushed and signed containing the previous and the new
-architecture. The YAML files should consume the package as:
-`linuxkit/<image>:<hash>`.
-
+* For all of the steps, you *must* be logged into hub (`docker login`).
+* For the manifest steps, you must be logged into hub and the passphrase for the key *must* be supplied as an environment variable. The build process has to resort to using `expect` to drive `notary` so none of the credentials can be entered interactively.
 
 Since it is not very good to have your passphrase in the clear (or
 even stashed in your shell history), we recommend using a password
@@ -173,5 +225,5 @@ if you want to use it, you will need to add the following line to the dockerfile
 ARG all_proxy
 ```
 
-Linuxkit does not judge between lower-cased or upper-cased variants of these options, e.g. `http_proxy` vs `HTTP_PROXY`,
+LinuxKit does not judge between lower-cased or upper-cased variants of these options, e.g. `http_proxy` vs `HTTP_PROXY`,
 as `docker build` does not either. It just passes them through "as-is".
