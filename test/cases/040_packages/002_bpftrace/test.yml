@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
-  - linuxkit/bpftrace:65c4dc9f6dcb3bbb52f7f13acf067d01f7e6e538
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
+  - linuxkit/bpftrace:v0.8
 onboot:
   - name: bpftrace-test
     image: alpine:3.11

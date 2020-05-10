@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
 onboot:
   - name: metadata
-    image: linuxkit/metadata:dc5bcfa45946053145391ceabe33729c8b9507a1
+    image: linuxkit/metadata:v0.8
   - name: test
     image: alpine:3.11
     binds:

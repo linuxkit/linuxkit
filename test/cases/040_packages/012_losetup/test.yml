@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
 onboot:
   - name: losetup
-    image: linuxkit/losetup:0730b61ac5c8803ba73318c2dd5121dc15cfbf34
+    image: linuxkit/losetup:v0.8
     command: ["/usr/bin/loopy", "-c", "/var/test.img"]
   - name: test
     image: alpine:3.11

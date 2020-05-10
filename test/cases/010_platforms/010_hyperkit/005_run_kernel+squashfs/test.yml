@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
 onboot:
   - name: poweroff
     image: linuxkit/poweroff:06dd4e46c62fbe79123a028835c921f80e4855d3

@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
 onboot:
   - name: dm-crypt
-    image: linuxkit/dm-crypt:0ea63bfd97b719d185b69994b4856d97fbc8a2dd
+    image: linuxkit/dm-crypt:v0.8
     command: ["/usr/bin/crypto", "it_is_encrypted", "/dev/sda"]
   - name: test
     image: alpine:3.11

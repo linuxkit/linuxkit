@@ -2,13 +2,13 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
 onboot:
   - name: format
-    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
+    image: linuxkit/format:v0.8
   - name: mount
-    image: linuxkit/mount:19fa297189166206ac97261679c3e31fb140d48f
+    image: linuxkit/mount:v0.8
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.11
