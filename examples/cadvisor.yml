@@ -2,33 +2,33 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
-  - linuxkit/containerd:6ef473a228db6f6ee163f9b9a051102a1552a4ef
-  - linuxkit/ca-certificates:abfc6701b9ca17e34ac9439ce5946a247e720ff5
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
+  - linuxkit/containerd:v0.8
+  - linuxkit/ca-certificates:v0.8
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:541f60fe3676611328e89e8bac251fc636b1a6aa
+    image: linuxkit/sysctl:v0.8
   - name: dhcpcd
-    image: linuxkit/dhcpcd:2f8a9b670aa6e96a09db56ec45c9f07ef2a811ee
+    image: linuxkit/dhcpcd:v0.8
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: sysfs
-    image: linuxkit/sysfs:697f996868d6625a78bbbefb199d7b6b6ae3533a
+    image: linuxkit/sysfs:v0.8
   - name: format
-    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
+    image: linuxkit/format:v0.8
   - name: mount
-    image: linuxkit/mount:19fa297189166206ac97261679c3e31fb140d48f
+    image: linuxkit/mount:v0.8
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 
 services:
   - name: getty
-    image: linuxkit/getty:48f66df198981e692084bf70ab72b9fe2be0f880
+    image: linuxkit/getty:v0.8
     env:
       - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:7fab61cca793113280397dcee8159f35dc37adcb
+    image: linuxkit/rngd:v0.8
   - name: ntpd
-    image: linuxkit/openntpd:9b33f59f6d66c0f5027754a75e52f972e11882c1
+    image: linuxkit/openntpd:v0.8
 
   - name: docker
     image: docker:19.03.8-dind
@@ -46,7 +46,7 @@ services:
       - /etc/docker/daemon.json:/etc/docker/daemon.json
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: cadvisor
-    image: linuxkit/cadvisor:07bf2e8e6ec05dc0644f1a974df1ce465d028b59
+    image: linuxkit/cadvisor:v0.8
 files:
   - path: var/lib/docker
     directory: true

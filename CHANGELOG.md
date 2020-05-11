@@ -3,6 +3,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/).
 
+## [v0.8] - 2020-05-10
+### Added
+
+- Removed dependency on external `notary` and `manifest-tool` binaries for package builds
+- Risc-V support for `binfmt`
+- Support for GPT partitions
+- `metadata` package support for Digital Ocean and Hetzner as well as loading from a file
+- Support for `/sys/fs/bpf` in `init`
+- Github Actions for CI
+
+### Changed
+- `alpine` base updated to 3.11
+- `containerd` updated to v1.3.4
+- `runc` updated to v1.0.0-rc9
+- `binfmt` updated to qemu 4.2
+- `node_exporter` updated to  v0.18.1
+- `cadvisor` updated to v0.36.0
+- WireGuard updated to 1.0.20200319
+- Improved CDROM support and fixes to GCP and Scaleway providers in the `metadata` package
+- Improved creation of `swap` files
+- Improved RPI3 build
+
+### Removed
+
 ## [v0.7] - 2019-04-17
 ### Added
 - Reproducible `linuxkit build` for some output formats

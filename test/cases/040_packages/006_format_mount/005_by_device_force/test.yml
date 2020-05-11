@@ -2,23 +2,23 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
 onboot:
   - name: format
-    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
+    image: linuxkit/format:v0.8
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sda"]
   - name: format
-    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
+    image: linuxkit/format:v0.8
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sdb"]
   - name: format
-    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
+    image: linuxkit/format:v0.8
     command: ["/usr/bin/format", "-verbose", "-type", "xfs", "/dev/sda"]
   - name: format
-    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
+    image: linuxkit/format:v0.8
     command: ["/usr/bin/format", "-verbose", "-force", "-type", "xfs", "/dev/sdb"]
   - name: test
-    image: linuxkit/format:0b75e494eea0312f3015e6c6f7c5927620d56c96
+    image: linuxkit/format:v0.8
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]

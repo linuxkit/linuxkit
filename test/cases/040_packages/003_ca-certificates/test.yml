@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
-  - linuxkit/ca-certificates:abfc6701b9ca17e34ac9439ce5946a247e720ff5
+  - linuxkit/init:v0.8
+  - linuxkit/runc:v0.8
+  - linuxkit/ca-certificates:v0.8
 onboot:
   - name: test
     image: alpine:3.11
