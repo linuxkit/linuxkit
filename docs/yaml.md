@@ -13,7 +13,7 @@ so it can be tested reliably for continuous delivery.
 Components are specified as Docker images which are pulled from a registry during build if they
 are not available locally. The Docker images are optionally verified with Docker Content Trust.
 For private registries or private repositories on a registry credentials provided via
-`docker login` are re-used. 
+`docker login` are re-used.
 
 The configuration file is processed in the order `kernel`, `init`, `onboot`, `onshutdown`,
 `services`, `files`. Each section adds files to the root file system. Sections may be omitted.
@@ -144,7 +144,9 @@ options. Default values may be specified using the `org.mobyproject.config` imag
 For more details see the [OCI specification](https://github.com/opencontainers/runtime-spec/blob/master/spec.md).
 
 If the `org.mobylinux.config` label is set in the image, that specifies default values for these fields if they
-are not set in the yaml file. You can override the label by setting the value, or setting it to be empty to remove
+are not set in the yaml file. While most fields are _replaced_ if they are specified in the yaml file,
+some support _add_ via the format `<field>.add`; see below.
+You can override the label entirely by setting the value, or setting it to be empty to remove
 the specification for that value in the label.
 
 If you need an OCI option that is not specified here please open an issue or pull request as the list is not yet
@@ -159,6 +161,7 @@ bind mounted into a container.
   extracted from this so they need not be filled in.
 - `capabilities` the Linux capabilities required, for example `CAP_SYS_ADMIN`. If there is a single
   capability `all` then all capabilities are added.
+- `capabilities.add` the Linux capabilities required, but these are added to the defaults, rather than overriding them.
 - `ambient` the Linux ambient capabilities (capabilities passed to non root users) that are required.
 - `mounts` is the full form for specifying a mount, which requires `type`, `source`, `destination`
   and a list of `options`. If any fields are omitted, sensible defaults are used if possible, for example
@@ -166,6 +169,7 @@ bind mounted into a container.
   can be replaced by specifying a mount with new options here at the same mount point.
 - `binds` is a simpler interface to specify bind mounts, accepting a string like `/src:/dest:opt1,opt2`
   similar to the `-v` option for bind mounts in Docker.
+- `binds.add` is a simpler interface to specify bind mounts, but these are added to the defaults, rather than overriding them.
 - `tmpfs` is a simpler interface to mount a `tmpfs`, like `--tmpfs` in Docker, taking `/dest:opt1,opt2`.
 - `command` will override the command and entrypoint in the image with a new list of commands.
 - `env` will override the environment in the image with a new environment list. Specify variables as `VAR=value`.

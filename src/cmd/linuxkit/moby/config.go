@@ -71,9 +71,11 @@ type Image struct {
 // Everything except Runtime and ref is used to build the OCI spec
 type ImageConfig struct {
 	Capabilities      *[]string               `yaml:"capabilities,omitempty" json:"capabilities,omitempty"`
+	CapabilitiesAdd   *[]string               `yaml:"capabilities.add,omitempty" json:"capabilities.add,omitempty"`
 	Ambient           *[]string               `yaml:"ambient,omitempty" json:"ambient,omitempty"`
 	Mounts            *[]specs.Mount          `yaml:"mounts,omitempty" json:"mounts,omitempty"`
 	Binds             *[]string               `yaml:"binds,omitempty" json:"binds,omitempty"`
+	BindsAdd          *[]string               `yaml:"binds.add,omitempty" json:"binds.add,omitempty"`
 	Tmpfs             *[]string               `yaml:"tmpfs,omitempty" json:"tmpfs,omitempty"`
 	Command           *[]string               `yaml:"command,omitempty" json:"command,omitempty"`
 	Env               *[]string               `yaml:"env,omitempty" json:"env,omitempty"`
@@ -505,6 +507,34 @@ func assignStrings3(v1 []string, v2, v3 *[]string) []string {
 	return v1
 }
 
+// mergeStrings does ordered unique merge between JSON string array pointers
+func mergeStrings(v1, v2 *[]string) *[]string {
+	switch {
+	case v2 == nil && v1 == nil:
+		return &[]string{}
+	case v2 == nil:
+		return v1
+	case v1 == nil:
+		return v2
+	}
+	// merge the two uniquely
+	ret := []string{}
+	m := make(map[string]bool)
+	for _, s := range *v1 {
+		if m[s] {
+			continue
+		}
+		ret = append(ret, s)
+	}
+	for _, s := range *v2 {
+		if m[s] {
+			continue
+		}
+		ret = append(ret, s)
+	}
+	return &ret
+}
+
 // assignMaps does ordered overrides from JSON string map pointers
 func assignMaps(v1, v2 *map[string]string) map[string]string {
 	if v2 != nil {
@@ -770,7 +800,7 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 		}
 		mounts[dest] = specs.Mount{Destination: dest, Type: "tmpfs", Source: "tmpfs", Options: opts}
 	}
-	for _, b := range assignStrings(label.Binds, yaml.Binds) {
+	for _, b := range assignStrings(mergeStrings(label.Binds, yaml.BindsAdd), yaml.Binds) {
 		parts := strings.Split(b, ":")
 		if len(parts) < 2 {
 			return oci, runtime, fmt.Errorf("Cannot parse bind, missing ':': %s", b)
@@ -880,7 +910,7 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 		capCheck[capability] = true
 	}
 	boundingSet := map[string]bool{}
-	caps := assignStrings(label.Capabilities, yaml.Capabilities)
+	caps := assignStrings(mergeStrings(label.Capabilities, yaml.CapabilitiesAdd), yaml.Capabilities)
 	if len(caps) == 1 {
 		switch cap := strings.ToLower(caps[0]); cap {
 		case "none":

@@ -1,0 +1,29 @@
+kernel:
+  image: linuxkit/kernel:5.4.30
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
+init:
+  - linuxkit/init:7195dc244cd92af01fd0895fd204249a6114c5e2
+  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+  - linuxkit/containerd:8ee7a0d636fff9df7e13076f5492d06274e5f644
+  - linuxkit/ca-certificates:abfc6701b9ca17e34ac9439ce5946a247e720ff5
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:541f60fe3676611328e89e8bac251fc636b1a6aa
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:2f8a9b670aa6e96a09db56ec45c9f07ef2a811ee
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+services:
+  - name: getty
+    image: linuxkit/getty:48f66df198981e692084bf70ab72b9fe2be0f880
+    binds.add:
+      # this will keep all of the existing ones as well
+      - /var/tmp:/var/tmp
+  - name: rngd
+    image: linuxkit/rngd:7fab61cca793113280397dcee8159f35dc37adcb
+files:
+  - path: etc/getty.shadow
+    # sample sets password for root to "abcdefgh" (without quotes)
+    contents: 'root:$6$6tPd2uhHrecCEKug$8mKfcgfwguP7f.BLdZsT1Wz7WIIJOBY1oUFHzIv9/O71M2J0EPdtFqFGTxB1UK5ejqQxRFQ.ZSG9YXR0SNsc11:17322:0:::::'
+trust:
+  org:
+    - linuxkit
