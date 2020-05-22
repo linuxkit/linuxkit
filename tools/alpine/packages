@@ -7,6 +7,7 @@ attr-dev
 audit
 autoconf
 automake
+avahi
 bash
 bc
 binutils
