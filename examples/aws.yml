@@ -15,6 +15,8 @@ onboot:
   - name: metadata
     image: linuxkit/metadata:v0.8
 services:
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.8
   - name: rngd
     image: linuxkit/rngd:v0.8
   - name: sshd
