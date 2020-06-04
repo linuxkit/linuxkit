@@ -1,0 +1,50 @@
+kernel:
+  image: linuxkit/kernel:5.6.11
+  cmdline: "console=serial0,115200 console=tty1 root=/dev/ram0 rw"
+  ucode: ""
+init:
+  - linuxkit/init:e93b0bf37b030238d33e04b98e90d087637f3d2c
+  - linuxkit/runc:v0.8
+  - linuxkit/containerd:v0.8
+  - linuxkit/ca-certificates:v0.8
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:v0.8
+  - name: rngd1
+    image: linuxkit/rngd:v0.8
+    command: ["/sbin/rngd", "-1"]
+  # HW RNG for RPi4
+  - name: hwrng
+    image: linuxkit/modprobe:v0.8
+    command: ["modprobe", "iproc-rng200" ]
+  # Net for RPi4
+  - name: netdev
+    image: linuxkit/modprobe:v0.8
+    command: ["modprobe", "mdio-bcm-unimac" ]
+  - name: netdev
+    image: linuxkit/modprobe:v0.8
+    command: ["modprobe", "bcm7xxx" ]
+  # SD Card for RPi 
+  - name: block
+    image: linuxkit/modprobe:v0.8
+    command: ["modprobe", "mmc_block" ]
+  - name: sdhci
+    image: linuxkit/modprobe:v0.8
+    command: ["modprobe", "sdhci-iproc" ] # RPi4
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.8
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+services:
+  - name: getty
+    image: linuxkit/getty:v0.8
+    env:
+     - INSECURE=true
+  - name: rngd
+    image: linuxkit/rngd:v0.8
+    command: ["rngd", "-f", "-r", "/dev/hwrng"]
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.8
+trust:
+  org:
+    - linuxkit
+    - library
