@@ -21,8 +21,8 @@ RUN apk add --no-cache --initdb -p /out \
     tar
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
-ENV UBOOT_COMMIT=ag/rpi4
-RUN git clone -b $UBOOT_COMMIT --depth 1 https://github.com/agherzan/u-boot.git
+ENV UBOOT_COMMIT=v2020.04
+RUN git clone -b $UBOOT_COMMIT --depth 1 https://github.com/u-boot/u-boot.git
 WORKDIR /u-boot
 # u-boot compile. The patch is needed to handle larger kernels
 COPY increase_mem.patch .
