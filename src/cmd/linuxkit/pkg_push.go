@@ -22,6 +22,9 @@ func pkgPush(args []string) {
 	force := flags.Bool("force", false, "Force rebuild")
 	release := flags.String("release", "", "Release the given version")
 	nobuild := flags.Bool("nobuild", false, "Skip the build")
+	manifest := flags.Bool("manifest", true, "Create and push multi-arch manifest")
+	image := flags.Bool("image", true, "Build and push image for the current platform")
+	sign := flags.Bool("sign", true, "sign the manifest, if a manifest is created; ignored if --manifest=false")
 
 	p, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
@@ -43,6 +46,16 @@ func pkgPush(args []string) {
 	}
 	if *release != "" {
 		opts = append(opts, pkglib.WithRelease(*release))
+	}
+	if *manifest {
+		opts = append(opts, pkglib.WithBuildManifest())
+	}
+	if *image {
+		opts = append(opts, pkglib.WithBuildImage())
+	}
+	// only sign manifests; ignore for image only
+	if *sign && *manifest {
+		opts = append(opts, pkglib.WithBuildSign())
 	}
 
 	if *nobuild {

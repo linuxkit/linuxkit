@@ -18,6 +18,9 @@ type buildOpts struct {
 	force     bool
 	push      bool
 	release   string
+	manifest  bool
+	sign      bool
+	image     bool
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -47,6 +50,30 @@ func WithBuildPush() BuildOpt {
 	}
 }
 
+// WithBuildImage builds the image
+func WithBuildImage() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.image = true
+		return nil
+	}
+}
+
+// WithBuildManifest creates a multi-arch manifest for the image
+func WithBuildManifest() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.manifest = true
+		return nil
+	}
+}
+
+// WithBuildSign signs the image and/or the index
+func WithBuildSign() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.sign = true
+		return nil
+	}
+}
+
 // WithRelease releases as the given version after push
 func WithRelease(r string) BuildOpt {
 	return func(bo *buildOpts) error {
@@ -64,7 +91,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 	}
 
-	if _, ok := os.LookupEnv("DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"); !ok && p.trust && bo.push {
+	if _, ok := os.LookupEnv("DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"); !ok && bo.sign && p.trust && bo.push {
 		return fmt.Errorf("Pushing with trust enabled requires $DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE to be set")
 	}
 
@@ -98,7 +125,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return fmt.Errorf("Cannot release %q if not pushing", bo.release)
 	}
 
-	d := newDockerRunner(p.trust, p.cache)
+	d := newDockerRunner(p.trust, p.cache, bo.sign)
 
 	if !bo.force {
 		ok, err := d.pull(p.Tag())
@@ -111,7 +138,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		fmt.Println("No image pulled, continuing with build")
 	}
 
-	if !bo.skipBuild {
+	if bo.image && !bo.skipBuild {
 		var args []string
 
 		if err := p.dockerDepends.Do(d); err != nil {
@@ -171,7 +198,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	// matters given we do either pull or build above in the
 	// !force case.
 
-	if err := d.pushWithManifest(p.Tag(), suffix); err != nil {
+	if err := d.pushWithManifest(p.Tag(), suffix, bo.image, bo.manifest, bo.sign); err != nil {
 		return err
 	}
 
@@ -189,7 +216,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return err
 	}
 
-	if err := d.pushWithManifest(relTag, suffix); err != nil {
+	if err := d.pushWithManifest(relTag, suffix, bo.image, bo.manifest, bo.sign); err != nil {
 		return err
 	}
 
