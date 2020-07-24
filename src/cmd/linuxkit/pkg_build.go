@@ -29,7 +29,7 @@ func pkgBuild(args []string) {
 
 	fmt.Printf("Building %q\n", p.Tag())
 
-	var opts []pkglib.BuildOpt
+	opts := []pkglib.BuildOpt{pkglib.WithBuildImage()}
 	if *force {
 		opts = append(opts, pkglib.WithBuildForce())
 	}
