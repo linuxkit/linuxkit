@@ -1,0 +1,55 @@
+version: 2.1
+
+orbs:
+  go: circleci/go@1.1.1
+
+references:
+  environments:
+    tmp: &TEST_RESULTS_PATH /tmp/test-results
+
+environment: &ENVIRONMENT
+  TEST_RESULTS: "/tmp/test-results"
+
+jobs:
+  run-tests:
+    executor:
+      name: go/default
+      tag: << parameters.go-version >>
+    parameters:
+      go-version:
+        type: string
+    environment:
+      TEST_RESULTS: *TEST_RESULTS_PATH
+    steps:
+      - checkout
+      - run: mkdir -p $TEST_RESULTS/go-retryablyhttp
+      - go/load-cache
+      - go/mod-download
+      - go/save-cache
+      - run: 
+          name: Run go format
+          command: |
+            files=$(go fmt ./...)
+            if [ -n "$files" ]; then
+              echo "The following file(s) do not conform to go fmt:"
+              echo "$files"
+              exit 1
+            fi
+      - run: 
+          name: Run tests with gotestsum 
+          command: |
+            PACKAGE_NAMES=$(go list ./...)
+            gotestsum --format=short-verbose --junitfile $TEST_RESULTS/go-retryablyhttp/gotestsum-report.xml -- $PACKAGE_NAMES
+      - store_test_results:
+          path: *TEST_RESULTS_PATH
+      - store_artifacts:
+          path: *TEST_RESULTS_PATH
+
+workflows:
+  go-retryablehttp:
+    jobs:
+      - run-tests:
+          matrix:
+            parameters:
+              go-version: ["1.14.2"]
+          name: test-go-<< matrix.go-version >>

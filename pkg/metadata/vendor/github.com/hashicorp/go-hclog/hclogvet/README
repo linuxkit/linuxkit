@@ -1,0 +1,2 @@
+This is a fork of `go vet` that adds an hclog checker. It removes
+the other vet checks so it can be run along with normal vet.

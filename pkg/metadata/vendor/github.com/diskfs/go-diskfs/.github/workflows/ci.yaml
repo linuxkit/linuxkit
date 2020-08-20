@@ -1,0 +1,31 @@
+name: Continuous Integration
+on: 
+ pull_request:
+   types: [opened, synchronize, reopened]
+ push:
+   branches:
+     - master
+
+jobs:
+  report:
+    name: Report
+    runs-on: ubuntu-latest
+    steps:
+    - name: ref
+      run: echo ${{ github.ref }} 
+    - name: event_name
+      run: echo ${{ github.event_name }} 
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2
+    - uses: actions/setup-go@v2
+      with:
+        go-version: '1.12.10' # The Go version to download (if necessary) and use.
+    - name: image
+      run: make image
+    - name: test
+      run: make test
+
