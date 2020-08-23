@@ -49,7 +49,6 @@ RUN apk add --no-cache git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
 RUN go get -u golang.org/x/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
-RUN go get -u github.com/LK4D4/vndr
 
 # checkout and compile containerd
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and

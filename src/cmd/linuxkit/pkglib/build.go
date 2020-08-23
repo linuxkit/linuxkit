@@ -9,8 +9,9 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 )
 
 type buildOpts struct {

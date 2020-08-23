@@ -1032,7 +1032,7 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 
 	oci.Process = &specs.Process{
 		Terminal: false,
-		//ConsoleSize
+		// ConsoleSize
 		User: specs.User{
 			UID:            uid,
 			GID:            gid,

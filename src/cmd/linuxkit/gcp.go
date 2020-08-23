@@ -463,7 +463,7 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 	}
 
 	err = session.Wait()
-	//exit <- true
+	// exit <- true
 	if err != nil {
 		return err
 	}

@@ -13,8 +13,8 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-//Version 12 relates to Fusion 8 and WS 12
-//virtualHW.version = "12"
+// Version 12 relates to Fusion 8 and WS 12
+// virtualHW.version = "12"
 
 const vmxHW string = `config.version = "8"
 virtualHW.version = "12"

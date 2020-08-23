@@ -62,8 +62,8 @@ func runOpenStack(args []string) {
 	var serverOpts servers.CreateOptsBuilder
 
 	serverOpts = &servers.CreateOpts{
-		FlavorName:     *flavorName,
-		ImageName:      name,
+		FlavorRef:      *flavorName,
+		ImageRef:       name,
 		Name:           *instanceName,
 		Networks:       []servers.Network{network},
 		ServiceClient:  client,

@@ -4,12 +4,13 @@ import (
 	"crypto/sha1"
 	"flag"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+
+	"gopkg.in/yaml.v2"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 )

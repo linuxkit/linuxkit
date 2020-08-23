@@ -151,13 +151,13 @@ func runPacket(args []string) {
 		log.Fatalf("Invalid initrd URL %s: %v", initrdURL, err)
 	}
 
-	client := packngo.NewClient("", apiKey, nil)
+	client := packngo.NewClientWithAuth("", apiKey, nil)
 	tags := []string{}
 
 	var dev *packngo.Device
 	var err error
 	if *deviceFlag != "" {
-		dev, _, err = client.Devices.Get(*deviceFlag)
+		dev, _, err = client.Devices.Get(*deviceFlag, nil)
 		if err != nil {
 			log.Fatalf("Getting info for device %s failed: %v", *deviceFlag, err)
 		}
@@ -168,11 +168,11 @@ func runPacket(args []string) {
 		log.Debugf("%s\n", string(b))
 
 		req := packngo.DeviceUpdateRequest{
-			Hostname:      hostname,
-			Locked:        dev.Locked,
-			Tags:          dev.Tags,
-			IPXEScriptURL: ipxeURL,
-			AlwaysPXE:     *alwaysPXE,
+			Hostname:      &hostname,
+			Locked:        &dev.Locked,
+			Tags:          &dev.Tags,
+			IPXEScriptURL: &ipxeURL,
+			AlwaysPXE:     alwaysPXE,
 		}
 		dev, _, err = client.Devices.Update(*deviceFlag, &req)
 		if err != nil {
@@ -186,7 +186,7 @@ func runPacket(args []string) {
 		req := packngo.DeviceCreateRequest{
 			Hostname:      hostname,
 			Plan:          plan,
-			Facility:      facility,
+			Facility:      []string{facility},
 			OS:            osType,
 			BillingCycle:  billing,
 			ProjectID:     projectID,
@@ -382,7 +382,7 @@ func sshHostKey(host string) (ssh.PublicKey, error) {
 			return nil, fmt.Errorf("Parse error in known_hosts: %v", err)
 		}
 		if marker != "" {
-			//ignore CA or revoked key
+			// ignore CA or revoked key
 			fmt.Printf("ignoring marker: %s\n", marker)
 			continue
 		}

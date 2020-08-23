@@ -11,8 +11,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 )
 
 const defaultNameForStdin = "moby"

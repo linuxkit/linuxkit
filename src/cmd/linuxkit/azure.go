@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -9,20 +10,20 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/arm/compute"
-	"github.com/Azure/azure-sdk-for-go/arm/network"
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
-	"github.com/Azure/azure-sdk-for-go/arm/storage"
+	"github.com/Azure/azure-sdk-for-go/services/compute/mgmt/2020-06-01/compute"
+	"github.com/Azure/azure-sdk-for-go/services/network/mgmt/2020-05-01/network"
+	"github.com/Azure/azure-sdk-for-go/services/resources/mgmt/2019-10-01/resources"
+	"github.com/Azure/azure-sdk-for-go/services/storage/mgmt/2019-06-01/storage"
+	simpleStorage "github.com/Azure/azure-sdk-for-go/storage"
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
 	"github.com/Azure/go-autorest/autorest/to"
-	simpleStorage "github.com/radu-matei/azure-sdk-for-go/storage"
-	"github.com/radu-matei/azure-vhd-utils/upload"
-	uploadMetaData "github.com/radu-matei/azure-vhd-utils/upload/metadata"
-	"github.com/radu-matei/azure-vhd-utils/vhdcore/common"
-	"github.com/radu-matei/azure-vhd-utils/vhdcore/diskstream"
-	"github.com/radu-matei/azure-vhd-utils/vhdcore/validator"
+	"github.com/Microsoft/azure-vhd-utils/upload"
+	uploadMetaData "github.com/Microsoft/azure-vhd-utils/upload/metadata"
+	"github.com/Microsoft/azure-vhd-utils/vhdcore/common"
+	"github.com/Microsoft/azure-vhd-utils/vhdcore/diskstream"
+	"github.com/Microsoft/azure-vhd-utils/vhdcore/validator"
 )
 
 const (
@@ -98,7 +99,7 @@ func createResourceGroup(resourceGroupName, location string) *resources.Group {
 	resourceGroupParameters := resources.Group{
 		Location: &location,
 	}
-	group, err := groupsClient.CreateOrUpdate(resourceGroupName, resourceGroupParameters)
+	group, err := groupsClient.CreateOrUpdate(context.Background(), resourceGroupName, resourceGroupParameters)
 	if err != nil {
 		log.Fatalf("Unable to create resource group: %v", err)
 	}
@@ -116,25 +117,11 @@ func createStorageAccount(accountName, location string, resourceGroup resources.
 		Location:                          &location,
 		AccountPropertiesCreateParameters: &storage.AccountPropertiesCreateParameters{},
 	}
-
-	storageChannel, errorChannel := accountsClient.Create(*resourceGroup.Name, accountName, storageAccountCreateParameters, nil)
 	for {
-		select {
-		case _, ok := <-storageChannel:
-			if !ok {
-				storageChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if storageChannel == nil && errorChannel == nil {
-			break
+		if _, err := accountsClient.Create(context.Background(), *resourceGroup.Name, accountName, storageAccountCreateParameters); err != nil {
+			time.Sleep(time.Second * 5)
 		}
 	}
-
-	time.Sleep(time.Second * 5)
 }
 
 func uploadVMImage(resourceGroupName string, accountName string, imagePath string) {
@@ -142,7 +129,7 @@ func uploadVMImage(resourceGroupName string, accountName string, imagePath strin
 	const PageBlobPageSize int64 = 2 * 1024 * 1024
 	parallelism := 8 * runtime.NumCPU()
 
-	accountKeys, err := accountsClient.ListKeys(resourceGroupName, accountName)
+	accountKeys, err := accountsClient.ListKeys(context.Background(), resourceGroupName, accountName, "")
 	if err != nil {
 		log.Fatalf("Unable to retrieve storage account key: %v", err)
 	}
@@ -154,7 +141,7 @@ func uploadVMImage(resourceGroupName string, accountName string, imagePath strin
 		log.Fatalf("Unable to get absolute path: %v", err)
 	}
 
-	//directory, image := filepath.Split(absolutePath)
+	// directory, image := filepath.Split(absolutePath)
 
 	ensureVHDSanity(absolutePath)
 
@@ -170,21 +157,24 @@ func uploadVMImage(resourceGroupName string, accountName string, imagePath strin
 	}
 
 	blobServiceClient := simpleStorageClient.GetBlobService()
-	_, err = blobServiceClient.CreateContainerIfNotExists(defaultStorageContainerName, simpleStorage.ContainerAccessTypePrivate)
-	if err != nil {
+	container := blobServiceClient.GetContainerReference(defaultStorageContainerName)
+	resp, err := container.CreateIfNotExists(&simpleStorage.CreateContainerOptions{Access: simpleStorage.ContainerAccessTypePrivate})
+	if err != nil || !resp {
 		log.Fatalf("Unable to create or retrieve container: %v", err)
 	}
 
 	localMetaData := getLocalVHDMetaData(absolutePath)
 
-	err = blobServiceClient.PutPageBlob(defaultStorageContainerName, defaultStorageBlobName, diskStream.GetSize(), nil)
+	blob := container.GetBlobReference(defaultStorageBlobName)
+	err = blob.PutPageBlob(nil)
 	if err != nil {
 		log.Fatalf("Unable to create VHD blob: %v", err)
 	}
 
 	m, _ := localMetaData.ToMap()
-	err = blobServiceClient.SetBlobMetadata(defaultStorageContainerName, defaultStorageBlobName, m, make(map[string]string))
-	if err != nil {
+	blob.Metadata = m
+
+	if err = blob.SetMetadata(nil); err != nil {
 		log.Fatalf("Unable to set blob metatada: %v", err)
 	}
 
@@ -231,26 +221,12 @@ func createVirtualNetwork(resourceGroup resources.Group, virtualNetworkName stri
 			},
 		},
 	}
-	virtualNetworkChannel, errorChannel := virtualNetworksClient.CreateOrUpdate(*resourceGroup.Name, virtualNetworkName, virtualNetworkParameters, nil)
-	var virtualNetwork network.VirtualNetwork
-	for {
-		select {
-		case v, ok := <-virtualNetworkChannel:
-			virtualNetwork = v
-			if !ok {
-				virtualNetworkChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if virtualNetworkChannel == nil && errorChannel == nil {
-			break
+	if future, err := virtualNetworksClient.CreateOrUpdate(context.Background(), *resourceGroup.Name, virtualNetworkName, virtualNetworkParameters); err == nil {
+		if virtualNetwork, err := future.Result(virtualNetworksClient); err != nil {
+			return &virtualNetwork
 		}
 	}
-
-	return &virtualNetwork
+	return nil
 }
 
 func createSubnet(resourceGroup resources.Group, virtualNetworkName, subnetName string) *network.Subnet {
@@ -262,28 +238,15 @@ func createSubnet(resourceGroup resources.Group, virtualNetworkName, subnetName 
 		},
 	}
 
-	subnetChannel, errorChannel := subnetsClient.CreateOrUpdate(*resourceGroup.Name, virtualNetworkName, subnetName, subnetParameters, nil)
-	for {
-		select {
-		case _, ok := <-subnetChannel:
-			if !ok {
-				subnetChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
+	var err error
+	if future, err := subnetsClient.CreateOrUpdate(context.Background(), *resourceGroup.Name, virtualNetworkName, subnetName, subnetParameters); err == nil {
+		if subnet, err := future.Result(subnetsClient); err == nil {
+			return &subnet
 		}
-		if subnetChannel == nil && errorChannel == nil {
-			break
-		}
-	}
-	subnet, err := subnetsClient.Get(*resourceGroup.Name, virtualNetworkName, subnetName, "")
-	if err != nil {
-		log.Fatalf("Unable to retrieve subnet: %v", err)
 	}
 
-	return &subnet
+	log.Fatalf("Unable to retrieve subnet: %v", err)
+	return nil
 }
 
 func createPublicIPAddress(resourceGroup resources.Group, ipName, location string) *network.PublicIPAddress {
@@ -297,28 +260,16 @@ func createPublicIPAddress(resourceGroup resources.Group, ipName, location strin
 			},
 		},
 	}
-	ipAddressChannel, errorChannel := publicIPAddressesClient.CreateOrUpdate(*resourceGroup.Name, ipName, ipParameters, nil)
-	for {
-		select {
-		case _, ok := <-ipAddressChannel:
-			if !ok {
-				ipAddressChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if ipAddressChannel == nil && errorChannel == nil {
-			break
+
+	var err error
+	if future, err := publicIPAddressesClient.CreateOrUpdate(context.Background(), *resourceGroup.Name, ipName, ipParameters); err == nil {
+		if publicIPAddress, err := future.Result(publicIPAddressesClient); err == nil {
+			return &publicIPAddress
 		}
 	}
-	time.Sleep(time.Second * 5)
-	publicIPAddress, err := publicIPAddressesClient.Get(*resourceGroup.Name, ipName, "")
-	if err != nil {
-		log.Fatalf("Unable to retrieve public IP address: %v", err)
-	}
-	return &publicIPAddress
+
+	log.Fatalf("Unable to retrieve public IP address: %v", err)
+	return nil
 }
 
 func createNetworkInterface(resourceGroup resources.Group, networkInterfaceName string, publicIPAddress network.PublicIPAddress, subnet network.Subnet, location string) *network.Interface {
@@ -338,28 +289,15 @@ func createNetworkInterface(resourceGroup resources.Group, networkInterfaceName 
 			},
 		},
 	}
-	networkInterfaceChannel, errorChannel := interfacesClient.CreateOrUpdate(*resourceGroup.Name, networkInterfaceName, networkInterfaceParameters, nil)
-	for {
-		select {
-		case _, ok := <-networkInterfaceChannel:
-			if !ok {
-				networkInterfaceChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if networkInterfaceChannel == nil && errorChannel == nil {
-			break
-		}
-	}
 
-	networkInterface, err := interfacesClient.Get(*resourceGroup.Name, networkInterfaceName, "")
-	if err != nil {
-		log.Fatalf("Unable to retrieve network interface: %v", err)
+	var err error
+	if future, err := interfacesClient.CreateOrUpdate(context.Background(), *resourceGroup.Name, networkInterfaceName, networkInterfaceParameters); err == nil {
+		if networkInterface, err := future.Result(interfacesClient); err == nil {
+			return &networkInterface
+		}
 	}
-	return &networkInterface
+	log.Fatalf("Unable to retrieve network interface: %v", err)
+	return nil
 }
 
 func setVirtualMachineParameters(storageAccountName string, networkInterfaceID, location string) compute.VirtualMachine {
@@ -367,7 +305,7 @@ func setVirtualMachineParameters(storageAccountName string, networkInterfaceID, 
 		Location: &location,
 		VirtualMachineProperties: &compute.VirtualMachineProperties{
 			HardwareProfile: &compute.HardwareProfile{
-				VMSize: compute.StandardDS1,
+				VMSize: compute.VirtualMachineSizeTypesStandardDS1,
 			},
 			// This is only for deployment validation.
 			// The values here will not be usable by anyone
@@ -381,8 +319,8 @@ func setVirtualMachineParameters(storageAccountName string, networkInterfaceID, 
 				OsDisk: &compute.OSDisk{
 					Name:         to.StringPtr("osDisk"),
 					OsType:       compute.Linux,
-					Caching:      compute.ReadWrite,
-					CreateOption: compute.FromImage,
+					Caching:      compute.CachingTypesReadWrite,
+					CreateOption: compute.DiskCreateOptionTypesFromImage,
 					Image: &compute.VirtualHardDisk{
 						URI: to.StringPtr(fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s", storageAccountName, defaultStorageContainerName, defaultStorageBlobName)),
 					},
@@ -415,23 +353,13 @@ func createVirtualMachine(resourceGroup resources.Group, storageAccountName stri
 	fmt.Printf("Creating virtual machine in resource group %s, with name %s, in location %s\n", *resourceGroup.Name, virtualMachineName, location)
 
 	virtualMachineParameters := setVirtualMachineParameters(storageAccountName, *networkInterface.ID, location)
-	virtualMachineChannel, errorChannel := virtualMachinesClient.CreateOrUpdate(*resourceGroup.Name, virtualMachineName, virtualMachineParameters, nil)
-	for {
-		select {
-		case _, ok := <-virtualMachineChannel:
-			if !ok {
-				virtualMachineChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if virtualMachineChannel == nil && errorChannel == nil {
-			break
+	var err error
+	if future, err := virtualMachinesClient.CreateOrUpdate(context.Background(), *resourceGroup.Name, virtualMachineName, virtualMachineParameters); err == nil {
+		if _, err := future.Result(virtualMachinesClient); err == nil {
+			return
 		}
 	}
-
+	panic(err)
 }
 
 func getEnvVarOrExit(varName string) string {
@@ -463,10 +391,9 @@ func getLocalVHDMetaData(localVHDPath string) *uploadMetaData.MetaData {
 
 func setBlobMD5Hash(client simpleStorage.BlobStorageClient, containerName, blobName string, vhdMetaData *uploadMetaData.MetaData) {
 	if vhdMetaData.FileMetaData.MD5Hash != nil {
-		blobHeaders := simpleStorage.BlobHeaders{
-			ContentMD5: base64.StdEncoding.EncodeToString(vhdMetaData.FileMetaData.MD5Hash),
-		}
-		if err := client.SetBlobProperties(containerName, blobName, blobHeaders); err != nil {
+		blob := client.GetContainerReference(containerName).GetBlobReference(blobName)
+		blob.Properties.ContentMD5 = base64.StdEncoding.EncodeToString(vhdMetaData.FileMetaData.MD5Hash)
+		if err := blob.SetProperties(nil); err != nil {
 			log.Fatalf("Unable to set blob properties: %v", err)
 		}
 	}

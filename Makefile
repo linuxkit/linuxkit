@@ -50,7 +50,7 @@ bin/manifest-tool: tmp_mt_bin.tar | bin
 tmp_mt_bin.tar: Makefile
 	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/estesp/manifest-tool --clone $(MT_REPO) --commit $(MT_COMMIT) --package github.com/estesp/manifest-tool --ldflags "-X main.gitCommit=$(MT_COMMIT)" -o bin/manifest-tool > $@
 
-LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) $(wildcard src/cmd/linuxkit/*/*.go) Makefile src/cmd/linuxkit/vendor.conf
+LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) $(wildcard src/cmd/linuxkit/*/*.go) Makefile
 $(LINUXKIT): tmp_linuxkit_bin.tar
 	tar xf $<
 	rm $<
@@ -91,7 +91,7 @@ local-dynamic: $(LINUXKIT_DEPS) | bin
 	go build -o $(LOCAL_TARGET) --ldflags "$(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
 
 local-test: $(LINUXKIT_DEPS)
-	go test $(shell go list github.com/linuxkit/linuxkit/src/cmd/linuxkit/... | grep -v ^github.com/linuxkit/linuxkit/src/cmd/linuxkit/vendor/)
+	go test $(shell go list github.com/linuxkit/linuxkit/src/cmd/linuxkit/...)
 
 local: local-check local-build local-test
 
