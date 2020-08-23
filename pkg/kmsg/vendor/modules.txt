@@ -1,0 +1,2 @@
+# github.com/euank/go-kmsg-parser v2.0.0+incompatible
+github.com/euank/go-kmsg-parser/kmsgparser
