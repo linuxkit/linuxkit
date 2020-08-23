@@ -1,0 +1,29 @@
+# github.com/diskfs/go-diskfs v1.1.1
+github.com/diskfs/go-diskfs
+github.com/diskfs/go-diskfs/disk
+github.com/diskfs/go-diskfs/filesystem
+github.com/diskfs/go-diskfs/filesystem/fat32
+github.com/diskfs/go-diskfs/filesystem/iso9660
+github.com/diskfs/go-diskfs/partition
+github.com/diskfs/go-diskfs/partition/gpt
+github.com/diskfs/go-diskfs/partition/mbr
+github.com/diskfs/go-diskfs/partition/part
+github.com/diskfs/go-diskfs/util
+# github.com/google/uuid v1.1.1
+github.com/google/uuid
+# github.com/konsorten/go-windows-terminal-sequences v1.0.3
+github.com/konsorten/go-windows-terminal-sequences
+# github.com/packethost/packngo v0.2.0
+github.com/packethost/packngo/metadata
+# github.com/sirupsen/logrus v1.6.0
+github.com/sirupsen/logrus
+# github.com/vishvananda/netlink v1.1.0
+github.com/vishvananda/netlink
+github.com/vishvananda/netlink/nl
+# github.com/vishvananda/netns v0.0.0-20200728191858-db3c7e526aae
+github.com/vishvananda/netns
+# golang.org/x/sys v0.0.0-20200821140526-fda516888d29
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
+# gopkg.in/djherbis/times.v1 v1.2.0
+gopkg.in/djherbis/times.v1

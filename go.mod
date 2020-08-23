@@ -23,7 +23,6 @@ require (
 	github.com/containerd/fifo v0.0.0-20200410184934-f15a3290365b // indirect
 	github.com/containerd/ttrpc v1.0.1 // indirect
 	github.com/containerd/typeurl v1.0.1 // indirect
-	github.com/diskfs/go-diskfs v1.1.1
 	github.com/docker/cli v0.0.0-20200617172703-0ed913b885c8
 	github.com/docker/distribution v0.0.0-20200821225708-0316f34bf223
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200618181300-9dc6525e6118+incompatible
