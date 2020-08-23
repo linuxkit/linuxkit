@@ -5,6 +5,7 @@ package moby
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -243,7 +244,18 @@ func getAuth(cli *client.Client, refStr string) string {
 	}
 	log.Debugf("Looked up credentials for %s", hostname)
 
-	encodedAuth, err := command.EncodeAuthToBase64(authConfig)
+	// this is an ugly hack to workaround two different (from language perspective)
+	// but equivalent types existing in both Docker CLI and Docker Engine
+	authConfigJson, err := json.Marshal(authConfig)
+	if err != nil {
+		panic(err)
+	}
+	engineAuthConfig := types.AuthConfig{}
+	if err := json.Unmarshal(authConfigJson, &engineAuthConfig); err != nil {
+		panic(err)
+	}
+
+	encodedAuth, err := command.EncodeAuthToBase64(engineAuthConfig)
 	if err != nil {
 		return ""
 	}
