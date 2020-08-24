@@ -15,8 +15,9 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli/config"
+	dockerCliTypes "github.com/docker/cli/cli/config/types"
 	"github.com/docker/distribution/manifest/manifestlist"
-	dockertypes "github.com/docker/docker/api/types"
+
 	"github.com/estesp/manifest-tool/docker"
 	"github.com/estesp/manifest-tool/types"
 	log "github.com/sirupsen/logrus"
@@ -213,12 +214,12 @@ func (dr dockerRunner) save(tgt string, refs ...string) error {
 	return dr.command(args...)
 }
 
-func getDockerAuth() (dockertypes.AuthConfig, error) {
+func getDockerAuth() (dockerCliTypes.AuthConfig, error) {
 	cfgFile := config.LoadDefaultConfigFile(os.Stderr)
 	return cfgFile.GetAuthConfig(registry)
 }
 
-func manifestPush(img string, auth dockertypes.AuthConfig) (hash string, length int, err error) {
+func manifestPush(img string, auth dockerCliTypes.AuthConfig) (hash string, length int, err error) {
 	srcImages := []types.ManifestEntry{}
 
 	for i, platform := range platforms {
@@ -255,7 +256,7 @@ func manifestPush(img string, auth dockertypes.AuthConfig) (hash string, length 
 	return docker.PutManifestList(&a, yamlInput, true, false)
 }
 
-func signManifest(img, digest string, length int, auth dockertypes.AuthConfig) error {
+func signManifest(img, digest string, length int, auth dockerCliTypes.AuthConfig) error {
 	imgParts := strings.Split(img, ":")
 	if len(imgParts) < 2 {
 		return fmt.Errorf("image not composed of <repo>:<tag> '%s'", img)
