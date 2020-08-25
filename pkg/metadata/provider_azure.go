@@ -124,13 +124,15 @@ type ProviderAzure struct {
 }
 
 // NewAzure new azure provider
-func NewAzure() *ProviderAzure {
+func NewAzure() (provider *ProviderAzure) {
+	defer func() { provider.ProviderUtil = provider }()
 	client := snooze.Client{Root: azureAPIBaseURL, Before: func(request *retryablehttp.Request, client *retryablehttp.Client) {
 		request.Header.Add("Metadata", "true")
 		q := request.URL.Query()
 		q.Add("api-version", azureAPIVersion)
 		request.URL.RawQuery = q.Encode()
 	}}
+	snoozeSetDefaultLogger(&client)
 	api := &AzureMetadataAPI{}
 	client.Create(api)
 	return &ProviderAzure{AzureMetadataAPI: api}
@@ -152,66 +154,56 @@ func (p *ProviderAzure) Probe() bool {
 }
 
 // Extract extract
-func (p *ProviderAzure) Extract() ([]byte, error) {
-
-	if metadata, err := p.NetworkMetadata(); err == nil {
-		ip := metadata.Interface[0].Ipv4.IPAddress[0]
-
-		if ip.PublicIPAddress != nil {
-			if err := p.WriteDataToFile("public ipv4", 0644, *ip.PublicIPAddress, path.Join(ConfigPath, "public_ipv4")); err != nil {
-				return nil, err
+func (p *ProviderAzure) Extract() (userData []byte, err error) {
+	// wrap a variable/field to match simpleExtractData.Getter
+	wrap := func(x *string) func() (string, error) {
+		return func() (ret string, err error) {
+			// screw you, golang, where's my ternary expression?
+			if x != nil {
+				ret = *x
+			} else {
+				ret = ""
 			}
-		}
-
-		if err := p.WriteDataToFile("private ipv4", 0644, ip.PrivateIPAddress, path.Join(ConfigPath, "private_ipv4")); err != nil {
-			return nil, err
+			return
 		}
 	}
+	var (
+		networkMetadata AzureInstanceNetworkMetadata
+		computeMetadata AzureInstanceComputeMetadata
+	)
 
-	if metadata, err := p.ComputeMetadata(); err == nil {
-		if err := p.WriteDataToFile("instance id", 0644, metadata.VMID, path.Join(ConfigPath, "instance_id")); err != nil {
-			return nil, err
-		}
+	networkMetadata, err = p.NetworkMetadata()
+	if err != nil {
+		return
+	}
+	computeMetadata, err = p.ComputeMetadata()
+	if err != nil {
+		return
+	}
+	ip := networkMetadata.Interface[0].Ipv4.IPAddress[0]
 
-		// there's three major shapes in oracle cloud, flexible, bare metal and VM, so it is definitely the instance type
-		if err := p.WriteDataToFile("instance type", 0644, metadata.VMSize, path.Join(ConfigPath, "instance_type")); err != nil {
-			return nil, err
-		}
-
-		if err := p.WriteDataToFile("region", 0644, metadata.Location, path.Join(ConfigPath, "region")); err != nil {
-			return nil, err
-		}
-
-		if err := p.WriteDataToFile("instance image", 0644, metadata.StorageProfile.OsDisk.Name, path.Join(ConfigPath, "image")); err != nil {
-			return nil, err
-		}
-
+	err = p.simpleExtract([]simpleExtractData{
+		{Type: "region", Dest: path.Join(ConfigPath, "region"), Perm: 0644, Getter: wrap(&computeMetadata.Location)},
+		{Type: "availability zone", Dest: path.Join(ConfigPath, "availability_zone"), Perm: 0644, Getter: wrap(&computeMetadata.Zone)},
+		{Type: "instance type", Dest: path.Join(ConfigPath, "instance_type"), Perm: 0644, Getter: wrap(&computeMetadata.VMSize)},
+		{Type: "instance image", Dest: path.Join(ConfigPath, "image"), Perm: 0644, Getter: wrap(&computeMetadata.StorageProfile.OsDisk.Name)},
+		{Type: "instance id", Dest: path.Join(ConfigPath, "instance_id"), Perm: 0644, Getter: wrap(&computeMetadata.VMID)},
 		// unfortunately azure assumes the vm name to be the instance host name
-		if err := p.WriteDataToFile("host name", 0644, metadata.Name, path.Join(ConfigPath, Hostname)); err != nil {
-			return nil, err
-		}
-
-		if err := p.WriteDataToFile("availability zone", 0644, metadata.Zone, path.Join(ConfigPath, "availability_zone")); err != nil {
-			return nil, err
-		}
-
-		if publicKeys := metadata.PublicKeys; publicKeys != nil && len(*publicKeys) > 0 {
-			if err := p.MakeFolder("ssh public keys", 0755, path.Join(ConfigPath, SSH)); err != nil {
-				return nil, err
-			}
-
-			combinedSSHKeys := strings.Join(funk.Map(publicKeys, func(entry AzurePublicKeyEntry) string {
-				return entry.KeyData
-			}).([]string), "\n")
-
-			if err := p.WriteDataToFile("ssh public keys", 0600, combinedSSHKeys, path.Join(ConfigPath, SSH, "authorized_keys")); err != nil {
-				return nil, err
-			}
-		}
-
+		{Type: "host name", Dest: path.Join(ConfigPath, Hostname), Perm: 0644, Getter: wrap(&computeMetadata.Name)},
+		{Type: "private ipv4", Dest: path.Join(ConfigPath, "private_ipv4"), Perm: 0644, Getter: wrap(&ip.PrivateIPAddress)},
+		{Type: "public ipv4", Dest: path.Join(ConfigPath, "public_ipv4"), Perm: 0644, Getter: wrap(ip.PublicIPAddress)},
+		{Type: "ssh public keys", Dest: path.Join(ConfigPath, SSH, "authorized_keys"), Perm: 0755, Success: ensureSSHKeySecure,
+			Getter: func() (ret string, err error) {
+				if publicKeys := computeMetadata.PublicKeys; publicKeys != nil && len(*publicKeys) > 0 {
+					ret = strings.Join(funk.Map(publicKeys, func(entry AzurePublicKeyEntry) string { return entry.KeyData }).([]string), "\n")
+				}
+				return
+			},
+		},
+	})
+	if err == nil {
 		// TODO: this field is disabled, figure out a way to obtain user data somewhere else
-		return []byte(metadata.CustomData), nil
+		userData = []byte(computeMetadata.CustomData)
 	}
-
-	return nil, nil
+	return
 }

@@ -28,7 +28,6 @@ const (
 	metaDataURL = "http://169.254.169.254/latest/meta-data/"
 )
 
-
 var (
 	defaultLogFormatter = &log.TextFormatter{}
 )
@@ -227,7 +226,7 @@ func writeConfigFiles(target string, current Entry) {
 	if isFile(current) {
 		filemode, err := parseFileMode(current.Perm, 0644)
 		if err != nil {
-			log.Printf("Failed to parse permission %+v: %s", current, err)
+			log.Printf("Failed to parse Perm %+v: %s", current, err)
 			return
 		}
 		if err := ioutil.WriteFile(target, []byte(*current.Content), filemode); err != nil {
@@ -237,7 +236,7 @@ func writeConfigFiles(target string, current Entry) {
 	} else if isDirectory(current) {
 		filemode, err := parseFileMode(current.Perm, 0755)
 		if err != nil {
-			log.Printf("Failed to parse permission %+v: %s", current, err)
+			log.Printf("Failed to parse Perm %+v: %s", current, err)
 			return
 		}
 		if err := os.MkdirAll(target, filemode); err != nil {

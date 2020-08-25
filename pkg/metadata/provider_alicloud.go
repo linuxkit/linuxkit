@@ -1,9 +1,9 @@
 package main
 
 import (
+	"os"
 	"path"
 
-	"github.com/sirupsen/logrus"
 	"github.com/sl1pm4t/snooze"
 )
 
@@ -36,7 +36,9 @@ type ProviderAliCloud struct {
 
 // NewAliCloud new alicloud provider
 func NewAliCloud() (provider *ProviderAliCloud) {
+	defer func() { provider.ProviderUtil = provider }()
 	client := snooze.Client{Root: aliCloudMetadataBaseURL}
+	snoozeSetDefaultLogger(&client)
 	api := &AliCloudMetadataAPI{}
 	client.Create(api)
 	return &ProviderAliCloud{AliCloudMetadataAPI: api}
@@ -53,94 +55,35 @@ func (p *ProviderAliCloud) ShortName() string {
 
 // Probe probe
 func (p *ProviderAliCloud) Probe() bool {
-	res, err := p.Hostname()
+	res, err := p.InstanceMaxIngress()
 	return err == nil && res != ""
 }
 
 // Extract extract
 func (p *ProviderAliCloud) Extract() (userData []byte, err error) {
+	err = p.simpleExtract([]simpleExtractData{
+		{Type: "instance id", Dest: path.Join(ConfigPath, "instance_id"), Perm: 0644, Getter: p.InstanceID},
+		{Type: "instance type", Dest: path.Join(ConfigPath, "instance_type"), Perm: 0644, Getter: p.InstanceType},
+		{Type: "region", Dest: path.Join(ConfigPath, "region"), Perm: 0644, Getter: p.Region},
+		{Type: "zone", Dest: path.Join(ConfigPath, "zone"), Perm: 0644, Getter: p.Zone},
+		{Type: "instance image", Dest: path.Join(ConfigPath, "image"), Perm: 0644, Getter: p.ImageID},
+		{Type: "host name", Dest: path.Join(ConfigPath, Hostname), Perm: 0644, Getter: p.Hostname},
+		{Type: "public ipv4", Dest: path.Join(ConfigPath, "public_ipv4"), Perm: 0644, Getter: func() (ret string, err error) {
+			if ret, err = p.PublicIP(); err != nil {
+				ret, err = p.ElasticPublicIP()
+			}
+			return
+		}},
+		{Type: "private ipv4", Dest: path.Join(ConfigPath, "private_ipv4"), Perm: 0644, Getter: p.PrivateIP},
+		{Type: "ssh public keys", Dest: path.Join(ConfigPath, SSH, "authorized_keys"), Perm: 0755, Getter: p.PublicKeys, Success: func() error {
+			return os.Chmod(path.Join(ConfigPath, SSH, "authorized_keys"), 0600)
+		}},
+	})
+	if err != nil {
+		return
+	}
 	var ret string
-
-	if ret, err = p.InstanceID(); err == nil {
-		if err := p.WriteDataToFile("instance id", 0644, ret, path.Join(ConfigPath, "instance_id")); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get instance id: %s", err)
-	}
-
-	if ret, err = p.InstanceType(); err == nil {
-		if err := p.WriteDataToFile("instance type", 0644, ret, path.Join(ConfigPath, "instance_type")); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get instance type: %s", err)
-	}
-
-	if ret, err = p.Region(); err == nil {
-		if err := p.WriteDataToFile("region", 0644, ret, path.Join(ConfigPath, "region")); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get region: %s", err)
-	}
-
-	if ret, err = p.Zone(); err == nil {
-		if err := p.WriteDataToFile("zone", 0644, ret, path.Join(ConfigPath, "zone")); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get zone: %s", err)
-	}
-
-	if ret, err = p.ImageID(); err == nil {
-		if err := p.WriteDataToFile("instance image", 0644, ret, path.Join(ConfigPath, "image")); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get instance image: %s", err)
-	}
-
-	if ret, err = p.Hostname(); err == nil {
-		if err := p.WriteDataToFile("host name", 0644, ret, path.Join(ConfigPath, Hostname)); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get host name: %s", err)
-	}
-
-	if ret, err = p.PublicIP(); err != nil {
-		ret, err = p.ElasticPublicIP()
-	}
-
-	if err == nil {
-		if err := p.WriteDataToFile("public ipv4", 0644, ret, path.Join(ConfigPath, "public_ipv4")); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get public ipv4: %s", err)
-	}
-
-	if ret, err = p.PrivateIP(); err == nil {
-		if err := p.WriteDataToFile("private ipv4", 0644, ret, path.Join(ConfigPath, "private_ipv4")); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get private ipv4: %s", err)
-	}
-
-	if ret, err = p.PublicKeys(); err == nil {
-		if err = p.MakeFolder("ssh public keys", 0755, path.Join(ConfigPath, SSH)); err != nil {
-			return nil, err
-		}
-
-		if err = p.WriteDataToFile("ssh public keys", 0600, ret, path.Join(ConfigPath, SSH, "authorized_keys")); err != nil {
-			return nil, err
-		}
-	} else {
-		logrus.Error("failed to get public keys: %s", err)
-	}
-
 	ret, err = p.Userdata()
-	return []byte(ret), err
+	userData = []byte(ret)
+	return
 }

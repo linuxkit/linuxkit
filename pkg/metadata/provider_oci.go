@@ -2,10 +2,11 @@ package main
 
 import (
 	"encoding/base64"
-	"fmt"
 	"path"
 
 	"github.com/go-resty/resty"
+	"github.com/sirupsen/logrus"
+	// "gopkg.in/resty.v1"
 )
 
 // OracleInstanceMetaData oracle instance metadata
@@ -41,10 +42,9 @@ type ProviderOracle struct {
 }
 
 // NewOracle returns a new ProviderOracle
-func NewOracle() *ProviderOracle {
-	return &ProviderOracle{
-		client: resty.New(),
-	}
+func NewOracle() (provider *ProviderOracle) {
+	defer func() { provider.ProviderUtil = provider }()
+	return &ProviderOracle{client: resty.New()}
 }
 
 func (p *ProviderOracle) String() string {
@@ -64,83 +64,66 @@ func (p *ProviderOracle) Probe() bool {
 }
 
 // Extract gets both the Oracle specific and generic userdata
-func (p *ProviderOracle) Extract() ([]byte, error) {
+func (p *ProviderOracle) Extract() (userData []byte, err error) {
+	var publicIP string
 	resp, err := p.client.R().Get("http://checkip.amazonaws.com")
 	if err == nil {
-		if err := p.WriteDataToFile("public ipv4", 0644, string(resp.Body()), path.Join(ConfigPath, "public_ipv4")); err != nil {
-			return nil, err
-		}
+		publicIP = string(resp.Body())
 	} else {
-		fmt.Printf("oracle: error on getting a public ip address, this instance is probably private-only")
+		logrus.WithError(err).
+			Error("cannot get public ip address. this instance is probably NAT-only")
 	}
 
 	resp, err = p.client.R().SetResult(&OracleInstanceMetaData{}).Get(oracleInstanceMetaDataURL)
 	if err != nil {
-		return nil, err
+		return
 	}
 
 	if metadata, ok := resp.Result().(*OracleInstanceMetaData); ok && metadata != nil {
-		if err := p.WriteDataToFile("instance id", 0644, metadata.ID, path.Join(ConfigPath, "instance_id")); err != nil {
-			return nil, err
-		}
-
-		// there's three major shapes in oracle cloud, flexible, bare metal and VM, so it is definitely the instance type
-		if err := p.WriteDataToFile("instance type", 0644, metadata.Shape, path.Join(ConfigPath, "instance_type")); err != nil {
-			return nil, err
-		}
-
-		if err := p.WriteDataToFile("region", 0644, metadata.Region, path.Join(ConfigPath, "region")); err != nil {
-			return nil, err
-		}
-
-		if err := p.WriteDataToFile("instance image", 0644, metadata.Image, path.Join(ConfigPath, "image")); err != nil {
-			return nil, err
-		}
-
-		if err := p.WriteDataToFile("host name", 0644, metadata.Hostname, path.Join(ConfigPath, Hostname)); err != nil {
-			return nil, err
-		}
-
-		if err := p.WriteDataToFile("availability domain", 0644, metadata.AvailabilityDomain, path.Join(ConfigPath, "availability_domain")); err != nil {
-			return nil, err
-		}
-
-		if metadata.DisplayName != nil {
-			if err := p.WriteDataToFile("local host name", 0644, *metadata.DisplayName, path.Join(ConfigPath, "local_hostname")); err != nil {
-				return nil, err
-			}
-		}
-
-		// well, sh*t, oracle sub-partition availability domain into fault domain,
-		// so there's no concept of "zone" I don't know which is which,
-		// in the meanwhile I think the canonical name would be the closest thing to availability zone, so whatever
-		if metadata.CanonicalRegionName != nil {
-			if err := p.WriteDataToFile(`"availability zone"`, 0644, *metadata.CanonicalRegionName, path.Join(ConfigPath, "availability_zone")); err != nil {
-				return nil, err
-			}
-		}
-
-		if metadata.FaultDomain != nil {
-			if err := p.WriteDataToFile("fault domain", 0644, *metadata.FaultDomain, path.Join(ConfigPath, "fault_domain")); err != nil {
-				return nil, err
-			}
-		}
-
-		if userMetadata := metadata.Metadata; userMetadata != nil {
-			// interestingly oracle set this as a metadata and will be undefined if the ssh key is not specified
-			if userMetadata.SSHAuthorizedKeys != nil {
-				if err := p.MakeFolder("ssh public keys", 0755, path.Join(ConfigPath, SSH)); err != nil {
-					return nil, err
+		// wrap a variable/field to match simpleExtractData.Getter
+		wrap := func(x *string) func() (string, error) {
+			return func() (ret string, err error) {
+				if x != nil {
+					ret = *x
+				} else {
+					ret = ""
 				}
-
-				if err := p.WriteDataToFile("ssh public keys", 0600, *userMetadata.SSHAuthorizedKeys, path.Join(ConfigPath, SSH, "authorized_keys")); err != nil {
-					return nil, err
-				}
+				return
 			}
-			if userMetadata.UserData != nil {
-				return base64.StdEncoding.DecodeString(*userMetadata.UserData)
+		}
+		err = p.simpleExtract([]simpleExtractData{
+			{Type: "region", Dest: path.Join(ConfigPath, "region"), Perm: 0644, Getter: wrap(&metadata.Region)},
+			// well, sh*t, oracle sub-partition availability domain into fault domain,
+			// so there's no concept of "zone" I don't know which is which,
+			// in the meanwhile I think the canonical name would be the closest thing to availability zone, so whatever
+			{Type: "availability zone", Dest: path.Join(ConfigPath, "availability_zone"), Perm: 0644, Getter: wrap(metadata.CanonicalRegionName)},
+			{Type: "availability domain", Dest: path.Join(ConfigPath, "domain", "availability"), Perm: 0644, Getter: wrap(&metadata.AvailabilityDomain)},
+			{Type: "fault domain", Dest: path.Join(ConfigPath, "domain", "fault"), Perm: 0644, Getter: wrap(metadata.FaultDomain)},
+			{Type: "instance type", Dest: path.Join(ConfigPath, "instance_type"), Perm: 0644, Getter: wrap(&metadata.Shape)},
+			{Type: "instance image", Dest: path.Join(ConfigPath, "image"), Perm: 0644, Getter: wrap(&metadata.Image)},
+			{Type: "instance id", Dest: path.Join(ConfigPath, "instance_id"), Perm: 0644, Getter: wrap(&metadata.ID)},
+			{Type: "host name", Dest: path.Join(ConfigPath, Hostname), Perm: 0644, Getter: wrap(&metadata.Hostname)},
+			{Type: "local host name", Dest: path.Join(ConfigPath, "local_host_name"), Perm: 0644, Getter: wrap(metadata.DisplayName)},
+			{Type: "public ipv4", Dest: path.Join(ConfigPath, "public_ipv4"), Perm: 0644, Getter: wrap(&publicIP)},
+			{Type: "ssh public keys", Dest: path.Join(ConfigPath, SSH, "authorized_keys"), Perm: 0755, Success: ensureSSHKeySecure,
+				Getter: func() (ret string, err error) {
+					if userMetadata := metadata.Metadata; userMetadata != nil {
+						// interestingly oracle set this as a metadata and will be undefined if the ssh key is not specified
+						if userMetadata.SSHAuthorizedKeys != nil {
+							ret = *userMetadata.SSHAuthorizedKeys
+						}
+					}
+					return
+				},
+			},
+		})
+		if err == nil {
+			if userMetadata := metadata.Metadata; userMetadata != nil {
+				if optUserData := userMetadata.UserData; optUserData != nil {
+					userData, err = base64.StdEncoding.DecodeString(*optUserData)
+				}
 			}
 		}
 	}
-	return nil, nil
+	return
 }
