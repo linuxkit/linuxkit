@@ -204,6 +204,12 @@ linuxkit pkg build -org=wombat -disable-content-trust -hash=foo push
 and this will create `wombat/<image>:foo-<arch>` and
 `wombat/<image>:foo` for use in your YAML files.
 
+#### Build Args
+
+Like [docker build-time variables](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg), you can set build-time variables when running `linuxkit pkg build --build-arg=key=val`
+or simply `--build-arg ENVVAR`. See the documentation for
+[docker build-time variables](https://docs.docker.com/engine/reference/commandline/build/#set-build-time-variables---build-arg) for more information.
+
 ### Proxies
 
 If you are building packages from behind a proxy, `linuxkit pkg build` respects
