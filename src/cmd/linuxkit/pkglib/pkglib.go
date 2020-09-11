@@ -18,6 +18,7 @@ import (
 type pkgInfo struct {
 	Image               string            `yaml:"image"`
 	Org                 string            `yaml:"org"`
+	Hash                string            `yaml:"hash"`
 	Arches              []string          `yaml:"arches"`
 	ExtraSources        []string          `yaml:"extra-sources"`
 	GitRepo             string            `yaml:"gitrepo"` // ??
@@ -224,17 +225,21 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		dirty = dirty || gitDirty
 
 		if hash == "" {
-			if hash, err = git.treeHash(hashPath, hashCommit); err != nil {
-				return Pkg{}, err
-			}
+			if pi.Hash != "" {
+				hash = pi.Hash
+			} else {
+				if hash, err = git.treeHash(hashPath, hashCommit); err != nil {
+					return Pkg{}, err
+				}
 
-			if srcHashes != "" {
-				hash += srcHashes
-				hash = fmt.Sprintf("%x", sha1.Sum([]byte(hash)))
-			}
+				if srcHashes != "" {
+					hash += srcHashes
+					hash = fmt.Sprintf("%x", sha1.Sum([]byte(hash)))
+				}
 
-			if dirty {
-				hash += "-dirty"
+				if dirty {
+					hash += "-dirty"
+				}
 			}
 		}
 	}
