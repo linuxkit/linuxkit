@@ -22,6 +22,9 @@ spec:
         value: "true"
         effect: NoSchedule
       - key: node-role.kubernetes.io/master
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
       containers:
       - image: linuxkit/open-vm-tools:v0.8
         name: open-vm-tools
