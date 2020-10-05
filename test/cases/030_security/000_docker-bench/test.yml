@@ -22,7 +22,7 @@ services:
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.8
   - name: docker
-    image: docker:19.03.8-dind
+    image: docker:20.10.6-dind
     capabilities:
      - all
     mounts:
