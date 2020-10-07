@@ -87,12 +87,13 @@ open-iscsi
 openntpd
 openrc
 openresolv
+openssh-client
 openssh-server
 openssl
 openssl-dev
 patch
 pigz
-python
+python2
 python3
 qemu-aarch64
 qemu-arm
@@ -118,6 +119,7 @@ tzdata
 util-linux
 util-linux-dev
 vim
+wireguard-tools
 wireless-tools
 wpa_supplicant
 xfsprogs

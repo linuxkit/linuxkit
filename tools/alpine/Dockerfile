@@ -1,4 +1,4 @@
-FROM alpine:3.11 AS mirror
+FROM alpine:3.12 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -12,23 +12,8 @@ RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
    mkdir -p /mirror/$(apk --print-arch) && \
    apk fetch --recursive -o /mirror/$(apk --print-arch) $(apk info; cat /tmp/packages)
 
-# It's tricky to mix edge/testing packages which sometimes leads to dependency conflicts.
-# wireguard-tools currently is only in edge, so here we build our own package using the
-# APKBUILD file from edge.
-RUN apk add alpine-sdk libmnl-dev curl && \
-    adduser -D builder && \
-    addgroup builder abuild && \
-    mkdir -p /wireguard && \
-    chmod 0777 /wireguard && \
-    cd /wireguard && \
-    curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/community/wireguard-tools/APKBUILD && \
-    su -c "abuild-keygen -a -n && abuild -r" builder && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch) && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-[0-9]*.apk /mirror/$(apk --print-arch) && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-quick-[0-9]*.apk /mirror/$(apk --print-arch)
-
-# install abuild for signing
-RUN apk add --no-cache abuild
+# install abuild and sudo for signing
+RUN apk add --no-cache abuild sudo
 
 # install a new key into /etc/apk/keys
 RUN abuild-keygen -a -i -n
@@ -55,7 +40,7 @@ RUN go get -u github.com/LK4D4/vndr
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.3.4
+ENV CONTAINERD_COMMIT=v1.4.1
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
