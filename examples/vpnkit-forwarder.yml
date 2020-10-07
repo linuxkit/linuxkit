@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:v0.8
   - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
+  - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
 onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:v0.8
