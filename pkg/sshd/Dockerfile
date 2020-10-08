@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS mirror
+FROM linuxkit/alpine:a3d78322152a8b341bdaecfe182a2689fdbdee53 AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
@@ -7,6 +7,7 @@ RUN apk add --no-cache --initdb -p /out \
     busybox \
     ca-certificates \
     musl \
+    openssh-client \
     openssh-server \
     tini \
     util-linux \
