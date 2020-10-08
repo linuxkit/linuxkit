@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:v0.8
   - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
+  - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
 onboot:
   - name: ltp
     image: linuxkit/test-ltp:0967388fb338867dddd3c1a72470a1a7cec5a0dd

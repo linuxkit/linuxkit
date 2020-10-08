@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:v0.8
   - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
+  - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
   - linuxkit/ca-certificates:v0.8
   - linuxkit/ima-utils:dfeb3896fd29308b80ff9ba7fe5b8b767e40ca29
 onboot:

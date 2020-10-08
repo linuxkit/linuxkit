@@ -6,7 +6,7 @@ init:
   - linuxkit/vpnkit-expose-port:v0.8 # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
   - linuxkit/init:v0.8
   - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
+  - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
   - linuxkit/ca-certificates:v0.8
 onboot:
   # support metadata for optional config in /run/config
