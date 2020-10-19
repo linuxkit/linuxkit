@@ -1,0 +1,28 @@
+kernel:
+  image: linuxkit/kernel:5.4.39
+  cmdline: "console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:4f6508f4f35b134dda3807bb5d75c117c193a86a
+  - linuxkit/runc:v0.8
+  - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
+  - linuxkit/ca-certificates:v0.8
+services:
+  - name: test
+    image: alpine:3.11
+    pid: host
+    binds:
+      - /check.sh:/check.sh
+      - /dev/console:/dev/console
+    capabilities:
+      - CAP_SYS_BOOT
+    command: ["sh", "/check.sh"]
+files:
+  - path: check.sh
+    source: ./check.sh
+  - path: /etc/containerd/cli-opts
+    contents: "--log-level trace"
+trust:
+  org:
+    - linuxkit
+  image:
+    - alpine:3.11
