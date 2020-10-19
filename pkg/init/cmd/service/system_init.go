@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -15,6 +16,10 @@ import (
 	"github.com/containerd/containerd/errdefs"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	containerdOptsFile = "/etc/containerd/cli-opts"
 )
 
 func cleanupTask(ctx context.Context, ctr containerd.Container) error {
@@ -78,8 +83,14 @@ func systemInitCmd(ctx context.Context, args []string) {
 	// remove (unlikely) old containerd socket
 	_ = os.Remove(*sock)
 
+	// look for containerd options
+	ctrdArgs := []string{}
+	if b, err := ioutil.ReadFile(containerdOptsFile); err != nil {
+		ctrdArgs = strings.Fields(string(b))
+	}
+
 	// start up containerd
-	cmd := exec.Command(*binary)
+	cmd := exec.Command(*binary, ctrdArgs...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	if err := cmd.Start(); err != nil {
