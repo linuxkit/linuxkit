@@ -37,6 +37,29 @@ If you're not seeing `containerd` logs in the console during boot, make sure tha
 
 `init` and other processes like `containerd` will use the last defined console in the kernel `cmdline`. When using `qemu`, to see the console you need to list `ttyS0` as the last console to properly see the output.
 
+## Enabling debug or trace log levels on containerd
+
+On startup, linuxkit looks for and parses a file `/etc/containerd/cli-opts`. If it exists, the content is used as arguments to containerd. Thus, to enable
+a higher log level, for example `debug`, create a file whose contents are `--log-level debug` and place it on the image:
+
+```yml
+files:
+  - path: /etc/containerd/cli-opts
+    contents: "--log-level debug"
+```
+
+Note that the package that parses the contents splits on _all_ whitespace. It does not, as of this writing, support shell-like parsing, so the following will work:
+
+```
+--log-level debug --arg abcd
+```
+
+while the following will not:
+
+```
+--log-level debug --arg 'abcd def'
+```
+
 ## Troubleshooting containers
 
 Linuxkit runs all services in a specific `containerd` namespace called `services.linuxkit`. To list all the defined containers:
