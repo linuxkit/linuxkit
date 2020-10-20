@@ -1,0 +1,3 @@
+cliopts="--log-level trace"
+stderr="/var/log/containerd.out.log"
+stdout="stdout"
