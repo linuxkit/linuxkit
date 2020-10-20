@@ -85,7 +85,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 
 	// look for containerd options
 	ctrdArgs := []string{}
-	if b, err := ioutil.ReadFile(containerdOptsFile); err != nil {
+	if b, err := ioutil.ReadFile(containerdOptsFile); err == nil {
 		ctrdArgs = strings.Fields(string(b))
 	}
 

@@ -4,7 +4,7 @@ kernel:
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/vpnkit-expose-port:v0.8 # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
-  - linuxkit/init:9415d6bba5ca440e4f526b51c1d4cae51eefcdde
+  - linuxkit/init:4f6508f4f35b134dda3807bb5d75c117c193a86a
   - linuxkit/runc:v0.8
   - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
   - linuxkit/ca-certificates:v0.8

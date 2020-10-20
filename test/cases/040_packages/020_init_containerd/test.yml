@@ -6,25 +6,21 @@ init:
   - linuxkit/runc:v0.8
   - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
   - linuxkit/ca-certificates:v0.8
-  - linuxkit/memlogd:v0.8
 services:
-  - name: kmsg
-    image: linuxkit/kmsg:v0.8
-  - name: write-and-rotate-logs
-    image: linuxkit/logwrite:v0.8
-  - name: check-the-logs
+  - name: test
     image: alpine:3.11
+    pid: host
     binds:
       - /check.sh:/check.sh
       - /dev/console:/dev/console
-      - /var/log:/var/log
-    command: ["sh", "./check.sh"]
-    pid: host
     capabilities:
       - CAP_SYS_BOOT
+    command: ["sh", "/check.sh"]
 files:
   - path: check.sh
     source: ./check.sh
+  - path: /etc/containerd/cli-opts
+    contents: "--log-level trace"
 trust:
   org:
     - linuxkit
