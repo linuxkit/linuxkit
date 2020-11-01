@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:5.4.39
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:4f6508f4f35b134dda3807bb5d75c117c193a86a
+  - linuxkit/init:a68f9fa0c1d9dbfc9c23663749a0b7ac510cbe1c
   - linuxkit/runc:v0.8
 onboot:
   - name: losetup
