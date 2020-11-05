@@ -7,8 +7,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
@@ -17,13 +16,14 @@ import (
 
 // Moby is the type of a Moby config file
 type Moby struct {
-	Kernel     KernelConfig `kernel:"cmdline,omitempty" json:"kernel,omitempty"`
-	Init       []string     `init:"cmdline" json:"init"`
-	Onboot     []*Image     `yaml:"onboot" json:"onboot"`
-	Onshutdown []*Image     `yaml:"onshutdown" json:"onshutdown"`
-	Services   []*Image     `yaml:"services" json:"services"`
-	Trust      TrustConfig  `yaml:"trust,omitempty" json:"trust,omitempty"`
-	Files      []File       `yaml:"files" json:"files"`
+	Kernel       KernelConfig `kernel:"cmdline,omitempty" json:"kernel,omitempty"`
+	Init         []string     `init:"cmdline" json:"init"`
+	Onboot       []*Image     `yaml:"onboot" json:"onboot"`
+	Onshutdown   []*Image     `yaml:"onshutdown" json:"onshutdown"`
+	Services     []*Image     `yaml:"services" json:"services"`
+	Trust        TrustConfig  `yaml:"trust,omitempty" json:"trust,omitempty"`
+	Files        []File       `yaml:"files" json:"files"`
+	Architecture string
 
 	initRefs []*reference.Spec
 }
@@ -321,6 +321,7 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby.Trust.Image = append(moby.Trust.Image, m1.Trust.Image...)
 	moby.Trust.Org = append(moby.Trust.Org, m1.Trust.Org...)
 	moby.initRefs = append(moby.initRefs, m1.initRefs...)
+	moby.Architecture = m1.Architecture
 
 	return moby, uniqueServices(moby)
 }
@@ -389,27 +390,6 @@ func NewImage(config []byte) (Image, error) {
 	}
 
 	return mi, nil
-}
-
-// ConfigToOCI converts a config specification to an OCI config file and a runtime config
-func ConfigToOCI(image *Image, trust bool, idMap map[string]uint32) (specs.Spec, Runtime, error) {
-
-	// TODO pass through same docker client to all functions
-	cli, err := dockerClient()
-	if err != nil {
-		return specs.Spec{}, Runtime{}, err
-	}
-	inspect, err := dockerInspectImage(cli, image.ref, trust)
-	if err != nil {
-		return specs.Spec{}, Runtime{}, err
-	}
-
-	oci, runtime, err := ConfigInspectToOCI(image, inspect, idMap)
-	if err != nil {
-		return specs.Spec{}, Runtime{}, err
-	}
-
-	return oci, runtime, nil
 }
 
 func defaultMountpoint(tp string) string {
@@ -732,19 +712,14 @@ func idNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
 	}
 }
 
-// ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
-func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[string]uint32) (specs.Spec, Runtime, error) {
+// ConfigToOCI converts a config and the output of image inspect to an OCI config
+func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uint32) (specs.Spec, Runtime, error) {
 	oci := specs.Spec{}
 	runtime := Runtime{}
 
-	inspectConfig := &container.Config{}
-	if inspect.Config != nil {
-		inspectConfig = inspect.Config
-	}
-
 	// look for org.mobyproject.config label
 	var label Image
-	labelString := inspectConfig.Labels["org.mobyproject.config"]
+	labelString := config.Labels["org.mobyproject.config"]
 	if labelString != "" {
 		var err error
 		label, err = NewImage([]byte(labelString))
@@ -756,13 +731,13 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 	// command, env and cwd can be taken from image, as they are commonly specified in Dockerfile
 
 	// TODO we could handle entrypoint and cmd independently more like Docker
-	inspectCommand := append(inspectConfig.Entrypoint, inspectConfig.Cmd...)
+	inspectCommand := append(config.Entrypoint, config.Cmd...)
 	args := assignStrings3(inspectCommand, label.Command, yaml.Command)
 
-	env := assignStrings3(inspectConfig.Env, label.Env, yaml.Env)
+	env := assignStrings3(config.Env, label.Env, yaml.Env)
 
 	// empty Cwd not allowed in OCI, must be / in that case
-	cwd := assignStringEmpty4("/", inspectConfig.WorkingDir, label.Cwd, yaml.Cwd)
+	cwd := assignStringEmpty4("/", config.WorkingDir, label.Cwd, yaml.Cwd)
 
 	// the other options will never be in the image config, but may be in label or yaml
 

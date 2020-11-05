@@ -28,4 +28,3 @@ deinit)
 esac
 
 exit $res
-

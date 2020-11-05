@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -35,7 +36,7 @@ func imageFilename(name string) string {
 	return filepath.Join(MobyDir, "linuxkit", name+"-"+fmt.Sprintf("%x", hash))
 }
 
-func ensureLinuxkitImage(name string) error {
+func ensureLinuxkitImage(name, cache string) error {
 	filename := imageFilename(name)
 	_, err1 := os.Stat(filename + "-kernel")
 	_, err2 := os.Stat(filename + "-initrd.img")
@@ -56,13 +57,18 @@ func ensureLinuxkitImage(name string) error {
 	if err != nil {
 		return err
 	}
+	// This is just a local utility used for conversion, so it does not matter what architecture we use.
+	// Might as well just use our local one.
+	m.Architecture = runtime.GOARCH
 	// TODO pass through --pull to here
 	tf, err := ioutil.TempFile("", "")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tf.Name())
-	Build(m, tf, false, "", false)
+	if err := Build(m, tf, false, "", false, cache, true); err != nil {
+		return err
+	}
 	if err := tf.Close(); err != nil {
 		return err
 	}

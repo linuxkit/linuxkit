@@ -215,17 +215,17 @@ var prereq = map[string]string{
 	"qcow2-bios": "mkimage",
 }
 
-func ensurePrereq(out string) error {
+func ensurePrereq(out, cache string) error {
 	var err error
 	p := prereq[out]
 	if p != "" {
-		err = ensureLinuxkitImage(p)
+		err = ensureLinuxkitImage(p, cache)
 	}
 	return err
 }
 
 // ValidateFormats checks if the format type is known
-func ValidateFormats(formats []string) error {
+func ValidateFormats(formats []string, cache string) error {
 	log.Debugf("validating output: %v", formats)
 
 	for _, o := range formats {
@@ -233,7 +233,7 @@ func ValidateFormats(formats []string) error {
 		if f == nil {
 			return fmt.Errorf("Unknown format type %s", o)
 		}
-		err := ensurePrereq(o)
+		err := ensurePrereq(o, cache)
 		if err != nil {
 			return fmt.Errorf("Failed to set up format type %s: %v", o, err)
 		}
@@ -243,10 +243,10 @@ func ValidateFormats(formats []string) error {
 }
 
 // Formats generates all the specified output formats
-func Formats(base string, image string, formats []string, size int, trust bool) error {
+func Formats(base string, image string, formats []string, size int, trust bool, cache string) error {
 	log.Debugf("format: %v %s", formats, base)
 
-	err := ValidateFormats(formats)
+	err := ValidateFormats(formats, cache)
 	if err != nil {
 		return err
 	}

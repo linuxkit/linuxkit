@@ -8,9 +8,11 @@ import (
 	"io"
 	"io/ioutil"
 	"path"
+	"sort"
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -20,6 +22,13 @@ type tarWriter interface {
 	Flush() error
 	Write(b []byte) (n int, err error)
 	WriteHeader(hdr *tar.Header) error
+}
+
+// ImageSource interface to an image. It can have its config read, and a its containers
+// can be read via an io.ReadCloser tar stream.
+type ImageSource interface {
+	Config() (imagespec.ImageConfig, error)
+	TarReader() (io.ReadCloser, error)
 }
 
 // This uses Docker to convert a Docker image into a tarball. It would be an improvement if we
@@ -53,16 +62,91 @@ ff02::2 ip6-allrouters
 `,
 }
 
-// Files which may be created as part of 'docker export'. These need their timestamp fixed.
-var touch = map[string]bool{
-	"dev/":            true,
-	"dev/pts/":        true,
-	"dev/shm/":        true,
-	"etc/":            true,
-	"etc/mtab":        true,
-	"etc/resolv.conf": true,
-	"proc/":           true,
-	"sys/":            true,
+// Files which must exist. They may be created as part of 'docker export',
+// in which case they need their timestamp fixed. If they do not exist, they must be created.
+var touch = map[string]tar.Header{
+	"dev/": {
+		Size:     0,
+		Mode:     0755,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "dev",
+		Typeflag: tar.TypeDir,
+	},
+	"dev/pts/": {
+		Size:     0,
+		Mode:     0755,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "dev/pts",
+		Typeflag: tar.TypeDir,
+	},
+	"dev/shm/": {
+		Size:     0,
+		Mode:     0755,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "dev/shm",
+		Typeflag: tar.TypeDir,
+	},
+	"etc/": {
+		Size:     0,
+		Mode:     0755,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "etc",
+		Typeflag: tar.TypeDir,
+	},
+	"etc/mtab": {
+		Size:     0,
+		Mode:     0755,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "etc/mtab",
+		Typeflag: tar.TypeSymlink,
+		Linkname: "/proc/mounts",
+	},
+	"etc/resolv.conf": {
+		Size:     0,
+		Mode:     0644,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "etc/resolv.conf",
+		Typeflag: tar.TypeReg,
+	},
+	"etc/hosts": {
+		Size:     0,
+		Mode:     0644,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "etc/hosts",
+		Typeflag: tar.TypeReg,
+	},
+	"proc/": {
+		Size:     0,
+		Mode:     0755,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "proc",
+		Typeflag: tar.TypeDir,
+	},
+	"sys/": {
+		Size:     0,
+		Mode:     0755,
+		Uid:      0,
+		Gid:      0,
+		ModTime:  defaultModTime,
+		Name:     "sys",
+		Typeflag: tar.TypeDir,
+	},
 }
 
 // tarPrefix creates the leading directories for a path
@@ -96,7 +180,7 @@ func tarPrefix(path string, tw tarWriter) error {
 }
 
 // ImageTar takes a Docker image and outputs it to a tar stream
-func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull bool, resolv string) (e error) {
+func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull bool, resolv, cacheDir string, dockerCache bool, architecture string) (e error) {
 	log.Debugf("image tar: %s %s", ref, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != '/' {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
@@ -107,39 +191,23 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 		return err
 	}
 
-	if pull || trust {
-		err := dockerPull(ref, pull, trust)
-		if err != nil {
-			return fmt.Errorf("Could not pull image %s: %v", ref, err)
-		}
-	}
-	container, err := dockerCreate(ref.String())
+	// pullImage first checks in the cache, then pulls the image.
+	// If pull==true, then it always tries to pull from registry.
+	src, err := imagePull(ref, pull, trust, cacheDir, dockerCache, architecture)
 	if err != nil {
-		// if the image wasn't found, pull it down.  Bail on other errors.
-		if strings.Contains(err.Error(), "No such image") {
-			err := dockerPull(ref, true, trust)
-			if err != nil {
-				return fmt.Errorf("Could not pull image %s: %v", ref, err)
-			}
-			container, err = dockerCreate(ref.String())
-			if err != nil {
-				return fmt.Errorf("Failed to docker create image %s: %v", ref, err)
-			}
-		} else {
-			return fmt.Errorf("Failed to create docker image %s: %v", ref, err)
-		}
+		return fmt.Errorf("Could not pull image %s: %v", ref, err)
 	}
-	contents, err := dockerExport(container)
-	if err != nil {
-		return fmt.Errorf("Failed to docker export container from container %s: %v", container, err)
-	}
-	defer func() {
-		contents.Close()
 
-		if err := dockerRm(container); e == nil && err != nil {
-			e = fmt.Errorf("Failed to docker rm container %s: %v", container, err)
-		}
-	}()
+	contents, err := src.TarReader()
+	if err != nil {
+		return fmt.Errorf("Could not unpack image %s: %v", ref, err)
+	}
+
+	defer contents.Close()
+
+	// all of the files in `touch` must exist in the output, so keep track if
+	// we found them, and, if not, create them
+	touchFound := map[string]bool{}
 
 	// now we need to filter out some files from the resulting tar archive
 
@@ -194,9 +262,11 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 				return err
 			}
 		} else {
-			if touch[hdr.Name] {
+			if found, ok := touch[hdr.Name]; ok {
 				log.Debugf("image tar: %s %s add %s (touch)", ref, prefix, hdr.Name)
-				hdr.ModTime = defaultModTime
+				hdr.ModTime = found.ModTime
+				// record that we saw this one
+				touchFound[hdr.Name] = true
 			} else {
 				log.Debugf("image tar: %s %s add %s (original)", ref, prefix, hdr.Name)
 			}
@@ -214,11 +284,49 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 			}
 		}
 	}
+	// now make sure that we had all of the touch files
+	// be sure to do it in a consistent order
+	var touchNames []string
+	for name := range touch {
+		touchNames = append(touchNames, name)
+	}
+	sort.Strings(touchNames)
+	for _, name := range touchNames {
+		if touchFound[name] {
+			log.Debugf("image tar: %s already found in original image", name)
+			continue
+		}
+		hdr := touch[name]
+		origName := hdr.Name
+		hdr.Name = prefix + origName
+		hdr.Format = tar.FormatPAX
+		contents, ok := replace[origName]
+		switch {
+		case ok && len(contents) > 0 && (origName != "etc/resolv.conf" || resolv == ""):
+			hdr.Size = int64(len(contents))
+		case origName == "etc/resolv.conf" && resolv != "":
+			// replace resolv.conf with specified symlink
+			hdr.Size = 0
+			hdr.Typeflag = tar.TypeSymlink
+			hdr.Linkname = resolv
+			log.Debugf("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", ref, prefix, resolv)
+		}
+		log.Debugf("image tar: creating %s", name)
+		if err := tw.WriteHeader(&hdr); err != nil {
+			return err
+		}
+		if hdr.Size > 0 {
+			buf := bytes.NewBufferString(contents)
+			if _, err = io.Copy(tw, buf); err != nil {
+				return err
+			}
+		}
+	}
 	return nil
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string) error { // nolint: lll
+func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string, cacheDir string, dockerCache bool, architecture string) error { // nolint: lll
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
 	rootExtract := "rootfs"
 	if !readonly {
@@ -229,7 +337,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	root := path.Join(prefix, rootExtract)
 	var foundElsewhere = dupMap[ref.String()] != ""
 	if !foundElsewhere {
-		if err := ImageTar(ref, root+"/", tw, trust, pull, ""); err != nil {
+		if err := ImageTar(ref, root+"/", tw, trust, pull, "", cacheDir, dockerCache, architecture); err != nil {
 			return err
 		}
 		dupMap[ref.String()] = root

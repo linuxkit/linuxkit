@@ -11,7 +11,8 @@ are downloaded at build time to create an image. The image is self-contained and
 so it can be tested reliably for continuous delivery.
 
 Components are specified as Docker images which are pulled from a registry during build if they
-are not available locally. The Docker images are optionally verified with Docker Content Trust.
+are not available locally. See [image-cache](./image-cache.md) for more details on local caching.
+The Docker images are optionally verified with Docker Content Trust.
 For private registries or private repositories on a registry credentials provided via
 `docker login` are re-used.
 

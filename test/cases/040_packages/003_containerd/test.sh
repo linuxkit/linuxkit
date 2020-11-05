@@ -17,7 +17,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-linuxkit build -format kernel+initrd -name "${NAME}" test.yml
+linuxkit build -docker -format kernel+initrd -name "${NAME}" test.yml
 RESULT="$(linuxkit run -mem 3072 -disk size=2G ${NAME})"
 echo "${RESULT}" | grep -q "suite PASSED"
 
