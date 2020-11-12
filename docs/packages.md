@@ -172,6 +172,252 @@ pkg:
   content-trust-passphrase-command: "lpass show <key> --password"
 ```
 
+#### Signing Manually
+
+If, for whatever reason, you want to sign an individual tag manually, whether the index (a.k.a. "multi-arch manifest") or the architecture-specific manifest, do the following:
+
+1. Make sure you have ready your credentials:
+   * docker hub login and passphrase
+   * docker notary signing key passphrase
+1. Get the following information:
+   * the name of the image repository you want to sign, including the registry host but **not** including the tag, e.g. `linuxkit/containerd`
+   * the tag of the image you want to sign, e.g. `a4aa19c608556f7d786852557c36136255220c1f` or `v5.0`
+   * the size of the image you want to sign in bytes, e.g. `1052`. See below for information on how to get this.
+   * the hash of the manifest or index to which the tag points, **not** including the `sha256:` leader, e.g. `66b3d74aeb855f393ddb85e7371a00d5f7994cc26b425825df2ce910583d74dc`. See below for information on how to get this.
+1. Set env vars with the following:
+   * `IMAGE`: name of the image, e.g. `IMAGE=docker.io/linuxkit/containerd`
+   * `TAG`: the tag you want to sign. It could be a tag pointing at a multi-arch manifest or tag pointing at an individual architecture's manifest, e.g. `TAG=a4aa19c608556f7d786852557c36136255220c1f` or `TAG=a4aa19c608556f7d786852557c36136255220c1f-s390x`
+   * `SIZE`: size of the pointed-at manifest or index, e.g. `SIZE=1052`
+   * `HASH`: sha256 hash of the pointed-at manifest or index, e.g. `HASH=66b3d74aeb855f393ddb85e7371a00d5f7994cc26b425825df2ce910583d74dc`
+1. Run the command: `notary -s https://notary.docker.io -d ~/.docker/trust addhash -p $IMAGE $TAG $SIZE --sha256 $HASH  -r targets/releases`
+
+For example:
+
+```console
+IMAGE=docker.io/linuxkit/containerd
+TAG=a4aa19c608556f7d786852557c36136255220c1f
+SIZE=1052
+HASH=66b3d74aeb855f393ddb85e7371a00d5f7994cc26b425825df2ce910583d74dc
+notary -s https://notary.docker.io -d ~/.docker/trust addhash -p $IMAGE $TAG $SIZE --sha256 $HASH  -r targets/releases
+```
+
+##### Getting Size and Hash
+
+There are several ways to get the size and hash of a particular manifest or index. Remember that you are signing a
+tag, so you are looking for the size and hash of whatever the tag points to, manifest or index.
+
+* `docker push`
+* script
+* `manifest-tool`
+* `ocidist`
+
+###### docker push
+
+If you pushed the image tag using `docker push`, the very last line of output will give you the hash and size:
+
+```console
+$ docker push linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
+The push refers to repository [docker.io/linuxkit/containerd]
+fce5742422e4: Layer already exists
+48a02e7b3096: Layer already exists
+4381f8a59bb1: Layer already exists
+c0328291406b: Layer already exists
+79053b1996f5: Layer already exists
+a4aa19c608556f7d786852557c36136255220c1f: digest: sha256:164f6c27410f145b479cdce1ed08e694c9b3d1e3e320c94d0e1ece9755043ea8 size: 1357
+```
+
+The first part is the tag you pushed, followed by the keyword `digest`, then the hash, then the size.
+
+##### script
+
+The following script command will provide the output for docker hub. Set the `IMAGE` name and `TAG`
+environment variables.
+
+```console
+IMAGE=linuxkit/containerd
+TAG=v0.8-amd64
+jwt=$(curl -sSL "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${IMAGE}:pull" | jq -r .token)
+curl https://index.docker.io/v2/linuxkit/containerd/manifests/${TAG} -H "Authorization: Bearer ${jwt}" -H "Accept: application/vnd.docker.distribution.manifest.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json" -D /dev/stdout -o /dev/null -s
+```
+
+##### manifest-tool
+
+The [manifest-tool](https://github.com/estesp/manifest-tool) allows you to inspect manifests, including
+both OCI indexes, a.k.a. multi-arch manifests, and simple manifests.
+
+If you inspect the actual tag, you will get just the hash, not the size.
+If you inspect an index that includes a manifest that you want, you will get the hash and size.
+
+For example, inspecting just a single arch manifest gives us the hash on the second line, but not the
+size:
+
+```console
+$ manifest-tool inspect linuxkit/containerd:v0.8-amd64
+Name: linuxkit/containerd:v0.8-amd64 (Type: application/vnd.docker.distribution.manifest.v2+json)
+      Digest: sha256:0dc4f37966e23c0dffa6961119f29100c6d181b221e748c4688a280c08ab52a8
+          OS: linux
+        Arch: amd64
+    # Layers: 5
+      layer 1: digest = sha256:319073c03e01a960e61913b0e05b4e0094061726f6959732371a1496098c0980
+      layer 2: digest = sha256:85521c11021aed78da3b61193b3e2cd1f316040eb08744f684cb98fa8ba35dc3
+      layer 3: digest = sha256:f29bf65845868b4b2adccc661040b939e4119ca5b5cb34cb0583b8b4e279bcc9
+      layer 4: digest = sha256:95c51328f79f6be125241ba10488e8962bdfd807fe93fc5d4d990eea7ac065e2
+      layer 5: digest = sha256:794ca16dd5d22f1ccb5f58dea0ef9cb0c95d957ed33af5c4ab008cbdd30c359e
+```
+
+While inspecting the index that includes the above tag, gives us the hash but not the size of the
+index, but finding the right entry, for example the first one is `amd64`, gives us the size as
+`Mfst Length: 1357`:
+
+```console
+$ manifest-tool inspect linuxkit/containerd:v0.8
+Name:   linuxkit/containerd:v0.8 (Type: application/vnd.docker.distribution.manifest.list.v2+json)
+Digest: sha256:247e1eb712c2f5e9d80bb1a9ddf9bb5479b3f785a7e0dd4a8844732bbaa96851
+ * Contains 3 manifest references:
+1    Mfst Type: application/vnd.docker.distribution.manifest.v2+json
+1       Digest: sha256:0dc4f37966e23c0dffa6961119f29100c6d181b221e748c4688a280c08ab52a8
+1  Mfst Length: 1357
+1     Platform:
+1           -      OS: linux
+1           - OS Vers:
+1           - OS Feat: []
+1           -    Arch: amd64
+1           - Variant:
+1     # Layers: 5
+         layer 1: digest = sha256:319073c03e01a960e61913b0e05b4e0094061726f6959732371a1496098c0980
+         layer 2: digest = sha256:85521c11021aed78da3b61193b3e2cd1f316040eb08744f684cb98fa8ba35dc3
+         layer 3: digest = sha256:f29bf65845868b4b2adccc661040b939e4119ca5b5cb34cb0583b8b4e279bcc9
+         layer 4: digest = sha256:95c51328f79f6be125241ba10488e8962bdfd807fe93fc5d4d990eea7ac065e2
+         layer 5: digest = sha256:794ca16dd5d22f1ccb5f58dea0ef9cb0c95d957ed33af5c4ab008cbdd30c359e
+
+2    Mfst Type: application/vnd.docker.distribution.manifest.v2+json
+2       Digest: sha256:febd923be587826c64db19c429f92a369d6e41d8abb715ff30643250ceafa621
+2  Mfst Length: 1357
+2     Platform:
+2           -      OS: linux
+2           - OS Vers:
+2           - OS Feat: []
+2           -    Arch: arm64
+2           - Variant:
+2     # Layers: 5
+         layer 1: digest = sha256:c35625c316366a48ec51192731e4155191b39fac7848e1b41fa46be1de9d11dc
+         layer 2: digest = sha256:a73cb03ae4fe7b79bf9ec202ee734a55f962a597b93e9a9625c64e9f2be9e78f
+         layer 3: digest = sha256:75b2023060fd85e40f4eed9fc5fe60c5b1866d909fc9ea783a21318ec2437e96
+         layer 4: digest = sha256:413204d4c4ee875fd84dd93799ed1346cfb15e02a508b6306ea7da1a160babc3
+         layer 5: digest = sha256:cf2293c110f0718e58e01ff4cbafa53eadde280999902fcdcd57269e8ba48339
+
+3    Mfst Type: application/vnd.docker.distribution.manifest.v2+json
+3       Digest: sha256:b6adad183487d969059b3badeb5dce032bb449f61607eb024d91cfeabcaf0e57
+3  Mfst Length: 1357
+3     Platform:
+3           -      OS: linux
+3           - OS Vers:
+3           - OS Feat: []
+3           -    Arch: s390x
+3           - Variant:
+3     # Layers: 5
+         layer 1: digest = sha256:16c1054185680ee839fa57dff29f412c179f1739191c12d33ab59bceca28a8ac
+         layer 2: digest = sha256:e38fe65829ed75127337f18dc2a641e2e9f6c2859a314cf5ac1b7d5022150e26
+         layer 3: digest = sha256:f2e84a29733f5f17cc860468b94eeeebf378d2a8af9bfc468427b1da430fe927
+         layer 4: digest = sha256:b38f9350a90499ce01e7704a58b52c90ee28c5562379f7096ce930b5fea160be
+         layer 5: digest = sha256:cc86a47d79015d074b41a4a3f0918e98dfb13f2fc6ef8def180a81fd36ae2544
+```
+
+##### ocidist
+
+[ocidist](https://github.com/deitch/ocidist) is a simple utility to inspect or pull images, manifests,
+indexes and individual blobs. If you call `ocidist manifest` and pass it the `--detail` flag, it will
+report the hash and size.
+
+For an index:
+
+```console
+$ ocidist manifest docker.io/linuxkit/containerd:v0.8 --detail
+2020/11/12 11:00:03 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8", original:"docker.io/linuxkit/containerd:v0.8"}
+2020/11/12 11:00:03 advanced API
+2020/11/12 11:00:06 referenced manifest hash sha256:247e1eb712c2f5e9d80bb1a9ddf9bb5479b3f785a7e0dd4a8844732bbaa96851 size 1052
+{
+   "schemaVersion": 2,
+   "mediaType": "application/vnd.docker.distribution.manifest.list.v2+json",
+   "manifests": [
+      {
+         "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+         "size": 1357,
+         "digest": "sha256:0dc4f37966e23c0dffa6961119f29100c6d181b221e748c4688a280c08ab52a8",
+         "platform": {
+            "architecture": "amd64",
+            "os": "linux"
+         }
+      },
+      {
+         "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+         "size": 1357,
+         "digest": "sha256:febd923be587826c64db19c429f92a369d6e41d8abb715ff30643250ceafa621",
+         "platform": {
+            "architecture": "arm64",
+            "os": "linux"
+         }
+      },
+      {
+         "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+         "size": 1357,
+         "digest": "sha256:b6adad183487d969059b3badeb5dce032bb449f61607eb024d91cfeabcaf0e57",
+         "platform": {
+            "architecture": "s390x",
+            "os": "linux"
+         }
+      }
+   ]
+}
+```
+
+For a single manifest:
+
+```console
+$ ocidist manifest docker.io/linuxkit/containerd:v0.8-amd64 --detail
+2020/11/12 10:59:08 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8-amd64", original:"docker.io/linuxkit/containerd:v0.8-amd64"}
+2020/11/12 10:59:08 advanced API
+2020/11/12 10:59:11 referenced manifest hash sha256:0dc4f37966e23c0dffa6961119f29100c6d181b221e748c4688a280c08ab52a8 size 1357
+{
+   "schemaVersion": 2,
+   "mediaType": "application/vnd.docker.distribution.manifest.v2+json",
+   "config": {
+      "mediaType": "application/vnd.docker.container.image.v1+json",
+      "size": 1973,
+      "digest": "sha256:b11103cf6c84fc3a2968d89e9d6fd7ce9e427380098c17828e3bda27de61ed6a"
+   },
+   "layers": [
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 41779632,
+         "digest": "sha256:319073c03e01a960e61913b0e05b4e0094061726f6959732371a1496098c0980"
+      },
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 328,
+         "digest": "sha256:85521c11021aed78da3b61193b3e2cd1f316040eb08744f684cb98fa8ba35dc3"
+      },
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 176,
+         "digest": "sha256:f29bf65845868b4b2adccc661040b939e4119ca5b5cb34cb0583b8b4e279bcc9"
+      },
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 202,
+         "digest": "sha256:95c51328f79f6be125241ba10488e8962bdfd807fe93fc5d4d990eea7ac065e2"
+      },
+      {
+         "mediaType": "application/vnd.docker.image.rootfs.diff.tar.gzip",
+         "size": 300,
+         "digest": "sha256:794ca16dd5d22f1ccb5f58dea0ef9cb0c95d957ed33af5c4ab008cbdd30c359e"
+      }
+   ]
+}
+```
+
+
+
 ### Build packages as a developer
 
 If you want to develop packages or test them locally, it is best to
