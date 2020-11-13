@@ -19,6 +19,7 @@ import (
 type Moby struct {
 	Kernel     KernelConfig `kernel:"cmdline,omitempty" json:"kernel,omitempty"`
 	Init       []string     `init:"cmdline" json:"init"`
+	Prefix     string       `yaml:"prefix" json:"prefix"`
 	Onboot     []*Image     `yaml:"onboot" json:"onboot"`
 	Onshutdown []*Image     `yaml:"onshutdown" json:"onshutdown"`
 	Services   []*Image     `yaml:"services" json:"services"`
@@ -312,6 +313,9 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	}
 	if m1.Kernel.ref != nil {
 		moby.Kernel.ref = m1.Kernel.ref
+	}
+	if m1.Prefix != "" {
+		moby.Prefix = m1.Prefix
 	}
 	moby.Init = append(moby.Init, m1.Init...)
 	moby.Onboot = append(moby.Onboot, m1.Onboot...)
