@@ -27,9 +27,13 @@ jobs:
       with:
         path: ./src/github.com/linuxkit/linuxkit
 
+    - name: Set path
+      run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      env:
+         GOPATH: ${{runner.workspace}}
+
     - name: Get pre-requisites
       run: |
-            echo "::set-env name=PATH::$PATH:$(go env GOPATH)/bin"
             go get -u golang.org/x/lint/golint
             go get -u github.com/gordonklaus/ineffassign
       env:
