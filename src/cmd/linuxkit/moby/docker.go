@@ -18,7 +18,7 @@ import (
 	"github.com/docker/cli/cli/config"
 	"github.com/docker/cli/cli/config/configfile"
 	distref "github.com/docker/distribution/reference"
-	"github.com/docker/docker/api/types"
+	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/client"
@@ -112,7 +112,7 @@ func dockerRm(container string) error {
 	if err != nil {
 		return errors.New("could not initialize Docker API client: " + err.Error())
 	}
-	if err = cli.ContainerRemove(context.Background(), container, types.ContainerRemoveOptions{}); err != nil {
+	if err = cli.ContainerRemove(context.Background(), container, dockertypes.ContainerRemoveOptions{}); err != nil {
 		return err
 	}
 	log.Debugf("docker rm: %s...Done", container)
@@ -151,14 +151,14 @@ func dockerPull(ref *reference.Spec, forcePull, trustedPull bool) error {
 
 		imageSearchArg := filters.NewArgs()
 		imageSearchArg.Add("reference", trustedImg.String())
-		if _, err := cli.ImageList(context.Background(), types.ImageListOptions{Filters: imageSearchArg}); err == nil && !forcePull {
+		if _, err := cli.ImageList(context.Background(), dockertypes.ImageListOptions{Filters: imageSearchArg}); err == nil && !forcePull {
 			log.Debugf("docker pull: trusted image %s already cached...Done", trustedImg.String())
 			return nil
 		}
 	}
 
 	log.Infof("Pull image: %s", ref)
-	pullOptions := types.ImagePullOptions{RegistryAuth: getAuth(cli, ref.String())}
+	pullOptions := dockertypes.ImagePullOptions{RegistryAuth: getAuth(cli, ref.String())}
 	r, err := cli.ImagePull(context.Background(), ref.String(), pullOptions)
 	if err != nil {
 		return err
@@ -182,7 +182,7 @@ func dockerClient() (*client.Client, error) {
 	return client.NewEnvClient()
 }
 
-func dockerInspectImage(cli *client.Client, ref *reference.Spec, trustedPull bool) (types.ImageInspect, error) {
+func dockerInspectImage(cli *client.Client, ref *reference.Spec, trustedPull bool) (dockertypes.ImageInspect, error) {
 	log.Debugf("docker inspect image: %s", ref)
 
 	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), ref.String())
@@ -190,14 +190,14 @@ func dockerInspectImage(cli *client.Client, ref *reference.Spec, trustedPull boo
 		if client.IsErrNotFound(err) {
 			pullErr := dockerPull(ref, true, trustedPull)
 			if pullErr != nil {
-				return types.ImageInspect{}, pullErr
+				return dockertypes.ImageInspect{}, pullErr
 			}
 			inspect, _, err = cli.ImageInspectWithRaw(context.Background(), ref.String())
 			if err != nil {
-				return types.ImageInspect{}, err
+				return dockertypes.ImageInspect{}, err
 			}
 		} else {
-			return types.ImageInspect{}, err
+			return dockertypes.ImageInspect{}, err
 		}
 	}
 
@@ -243,7 +243,7 @@ func getAuth(cli *client.Client, refStr string) string {
 	}
 	log.Debugf("Looked up credentials for %s", hostname)
 
-	encodedAuth, err := command.EncodeAuthToBase64(authConfig)
+	encodedAuth, err := command.EncodeAuthToBase64(dockertypes.AuthConfig(authConfig))
 	if err != nil {
 		return ""
 	}

@@ -1,4 +1,5 @@
-[![build status](https://circleci.com/gh/docker/cli.svg?style=shield)](https://circleci.com/gh/docker/cli/tree/master) [![Build Status](https://jenkins.dockerproject.org/job/docker/job/cli/job/master/badge/icon)](https://jenkins.dockerproject.org/job/docker/job/cli/job/master/)
+[![build status](https://circleci.com/gh/docker/cli.svg?style=shield)](https://circleci.com/gh/docker/cli/tree/master)
+[![Build Status](https://ci.docker.com/public/job/cli/job/master/badge/icon)](https://ci.docker.com/public/job/cli/job/master)
 
 docker/cli
 ==========
