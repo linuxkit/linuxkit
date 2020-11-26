@@ -24,7 +24,7 @@ services:
   - name: rngd
     image: linuxkit/rngd:v0.8
   - name: nginx
-    image: nginx:1.13.8-alpine
+    image: nginx:1.19.5-alpine
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN
