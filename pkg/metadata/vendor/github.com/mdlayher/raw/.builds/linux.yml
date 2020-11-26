@@ -1,0 +1,16 @@
+image: archlinux
+packages:
+  - go
+sources:
+  - https://github.com/mdlayher/raw
+environment:
+  GO111MODULE: "on"
+tasks:
+  - build: |
+      go version
+      go get golang.org/x/lint/golint
+      go get honnef.co/go/tools/cmd/staticcheck
+      cd raw/
+      /home/build/go/bin/staticcheck ./...
+      /home/build/go/bin/golint -set_exit_status ./...
+      go test -v -race ./...

@@ -92,7 +92,7 @@ func uploadFile(c *govmomi.Client, newVM vmConfig, dss *object.Datastore) {
 	dsurl := dss.NewURL(fmt.Sprintf("%s/%s", *newVM.vmFolder, fileName))
 
 	p := soap.DefaultUpload
-	if err := c.Client.UploadFile(*newVM.path, dsurl, &p); err != nil {
+	if err := c.Client.UploadFile(context.Background(), *newVM.path, dsurl, &p); err != nil {
 		log.Fatalf("Unable to upload file to vCenter Datastore\n%v", err)
 	}
 }

@@ -78,7 +78,7 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "packet", "cdrom"}
+	providers := []string{"aws", "gcp", "hetzner", "openstack", "oracle", "azure", "alicloud", "scaleway", "vultr", "digitalocean", "ikoula", "packet", "cdrom"}
 	args := flag.Args()
 	if len(args) > 0 {
 		providers = args
@@ -93,12 +93,20 @@ func main() {
 			netProviders = append(netProviders, NewHetzner())
 		case p == "openstack":
 			netProviders = append(netProviders, NewOpenstack())
+		case p == "oracle":
+			netProviders = append(netProviders, NewOracle())
+		case p == "alicloud":
+			netProviders = append(netProviders, NewAliCloud())
+		case p == "azure":
+			netProviders = append(netProviders, NewAzure())
 		case p == "packet":
 			netProviders = append(netProviders, NewPacket())
 		case p == "scaleway":
 			netProviders = append(netProviders, NewScaleway())
 		case p == "vultr":
 			netProviders = append(netProviders, NewVultr())
+		case p == "ikoula":
+			netProviders = append(netProviders, NewIkoula())
 		case p == "digitalocean":
 			netProviders = append(netProviders, NewDigitalOcean())
 		case p == "cdrom":
@@ -218,7 +226,7 @@ func writeConfigFiles(target string, current Entry) {
 	if isFile(current) {
 		filemode, err := parseFileMode(current.Perm, 0644)
 		if err != nil {
-			log.Printf("Failed to parse permission %+v: %s", current, err)
+			log.Printf("Failed to parse Perm %+v: %s", current, err)
 			return
 		}
 		if err := ioutil.WriteFile(target, []byte(*current.Content), filemode); err != nil {
@@ -228,7 +236,7 @@ func writeConfigFiles(target string, current Entry) {
 	} else if isDirectory(current) {
 		filemode, err := parseFileMode(current.Perm, 0755)
 		if err != nil {
-			log.Printf("Failed to parse permission %+v: %s", current, err)
+			log.Printf("Failed to parse Perm %+v: %s", current, err)
 			return
 		}
 		if err := os.MkdirAll(target, filemode); err != nil {
