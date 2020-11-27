@@ -191,12 +191,23 @@ $ ./manifest-tool push from-args \
     --target foo/bar:v1
 ```
 
-On the command line you specify the platform os/arch pairs, a template for finding the source images for each input platform pair, and a target image name.
+On the command line you specify the platform os/arch pairs (or optionally, an os/arch/variant triplicate), a template for finding the source images for each input platform pair, and a target image name.
 
 Specifically:
  - `--platforms` specifies which platforms you want to push for in the form OS/ARCH,OS/ARCH,...
- - `--template` specifies the image repo:tag source for inputs by replacing the placeholders `OS` and `ARCH` with the inputs from `--platforms`.
+ - `--template` specifies the image repo:tag source for inputs by replacing the placeholders `OS`, `ARCH` and `VARIANT` with the inputs from `--platforms`.
  - `--target` specifies the target image repo:tag that will be the manifest list entry in the registry.
+
+When using the optional `VARIANT` placeholder, it is ignored when a `platform` does not have a variant.
+
+```
+$ ./manifest-tool push from-args \
+    --platforms linux/amd64,linux/arm/v5,linux/arm/v7 \
+    --template foo/bar-ARCHVARIANT:v1 \
+    --target foo/bar:v1
+```
+
+In the above example, `linux/amd64` returns `foo/bar-amd64:v1`, while `linux/arm/v5` returns `foo/bar-armv5:v1`.
 
 ##### Functional Changelog for Push/Create
 

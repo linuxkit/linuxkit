@@ -19,7 +19,7 @@ const (
 	RegistryPrefix = "docker.io/store/docker"
 
 	// ReleaseNotePrefix is where to point users to for release notes
-	ReleaseNotePrefix = "https://docker.com/engine/releasenotes"
+	ReleaseNotePrefix = "https://docs.docker.com/releasenotes"
 
 	// RuntimeMetadataName is the name of the runtime metadata file
 	// When stored as a label on the container it is prefixed by "com.docker."

@@ -15,17 +15,16 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli/config"
-	"github.com/docker/distribution/manifest/manifestlist"
 	dockertypes "github.com/docker/docker/api/types"
-	"github.com/estesp/manifest-tool/docker"
-	"github.com/estesp/manifest-tool/types"
+	"github.com/estesp/manifest-tool/pkg/types"
+	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
 const (
 	dctEnableEnv                     = "DOCKER_CONTENT_TRUST=1"
-	registry                         = "https://index.docker.io/v1/"
+	registryServer                   = "https://index.docker.io/v1/"
 	notaryServer                     = "https://notary.docker.io"
 	notaryDelegationPassphraseEnvVar = "NOTARY_DELEGATION_PASSPHRASE"
 	notaryAuthEnvVar                 = "NOTARY_AUTH"
@@ -215,7 +214,8 @@ func (dr dockerRunner) save(tgt string, refs ...string) error {
 
 func getDockerAuth() (dockertypes.AuthConfig, error) {
 	cfgFile := config.LoadDefaultConfigFile(os.Stderr)
-	return cfgFile.GetAuthConfig(registry)
+	authconfig, err := cfgFile.GetAuthConfig(registryServer)
+	return dockertypes.AuthConfig(authconfig), err
 }
 
 func manifestPush(img string, auth dockertypes.AuthConfig) (hash string, length int, err error) {
@@ -233,7 +233,7 @@ func manifestPush(img string, auth dockertypes.AuthConfig) (hash string, length 
 		}
 		srcImages = append(srcImages, types.ManifestEntry{
 			Image: fmt.Sprintf("%s-%s", img, arch),
-			Platform: manifestlist.PlatformSpec{
+			Platform: ocispec.Platform{
 				OS:           os,
 				Architecture: arch,
 				Variant:      variant,
@@ -246,13 +246,8 @@ func manifestPush(img string, auth dockertypes.AuthConfig) (hash string, length 
 		Manifests: srcImages,
 	}
 
-	a := types.AuthInfo{
-		Username: auth.Username,
-		Password: auth.Password,
-	}
-
 	// push the manifest list with the auth as given, ignore missing, do not allow insecure
-	return docker.PutManifestList(&a, yamlInput, true, false)
+	return pushManifestList(auth, yamlInput, true, false, false, "")
 }
 
 func signManifest(img, digest string, length int, auth dockertypes.AuthConfig) error {
