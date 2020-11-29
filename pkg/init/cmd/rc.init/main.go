@@ -26,8 +26,7 @@ const (
 )
 
 var (
-	rliminf  = unix.RLIM_INFINITY
-	infinity = uint64(rliminf)
+	infinity uint64 = unix.RLIM_INFINITY
 )
 
 // set as a subreaper
