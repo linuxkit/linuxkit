@@ -32,7 +32,7 @@ import (
  push.go and util.go. It then was modified to remove any command-line dependencies.
 */
 
-func pushManifestList(auth dockertypes.AuthConfig, input types.YAMLInput, ignoreMissing, insecure, plainHttp bool, configDir string) (hash string, length int, err error) {
+func pushManifestList(auth dockertypes.AuthConfig, input types.YAMLInput, ignoreMissing, insecure, plainHTTP bool, configDir string) (hash string, length int, err error) {
 	// resolve the target image reference for the combined manifest list/index
 	targetRef, err := reference.ParseNormalizedNamed(input.Image)
 	if err != nil {
@@ -44,7 +44,7 @@ func pushManifestList(auth dockertypes.AuthConfig, input types.YAMLInput, ignore
 		configDirs = append(configDirs, filepath.Join(configDir, "config.json"))
 	}
 	resolver := newResolver(auth.Username, auth.Password, insecure,
-		plainHttp, configDirs...)
+		plainHTTP, configDirs...)
 
 	imageType := types.Docker
 	manifestList := types.ManifestList{
