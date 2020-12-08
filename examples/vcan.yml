@@ -1,0 +1,55 @@
+kernel:
+  image: linuxkit/kernel:5.4.39
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
+init:
+  - linuxkit/init:a68f9fa0c1d9dbfc9c23663749a0b7ac510cbe1c
+  - linuxkit/runc:v0.8
+  - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
+  - linuxkit/ca-certificates:v0.8
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:v0.8
+  - name: sysfs
+    image: linuxkit/sysfs:v0.8
+  - name: format
+    image: linuxkit/format:v0.8
+  - name: mount
+    image: linuxkit/mount:v0.8
+    command: ["/usr/bin/mountie", "/var/lib/docker"]
+  - name: modprobe
+    image: linuxkit/modprobe:v0.8
+    command: ["modprobe", "-a", "vcan"]
+services:
+  - name: getty
+    image: linuxkit/getty:v0.8
+    env:
+     - INSECURE=true
+  - name: rngd
+    image: linuxkit/rngd:v0.8
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:v0.8
+  - name: ntpd
+    image: linuxkit/openntpd:v0.8
+  - name: docker
+    image: docker:19.03.8-dind
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /etc/resolv.conf:/etc/resolv.conf
+     - /var/lib/docker:/var/lib/docker
+     - /lib/modules:/lib/modules
+     - /etc/docker/daemon.json:/etc/docker/daemon.json
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+files:
+  - path: var/lib/docker
+    directory: true
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
+trust:
+  org:
+    - linuxkit
+    - library
