@@ -20,7 +20,7 @@ ifneq ($(GOARCH),amd64)
 CROSS+=-e GOARCH=$(GOARCH)
 endif
 
-PREFIX?=/usr/local/
+PREFIX?=/usr/local
 
 .DELETE_ON_ERROR:
 
