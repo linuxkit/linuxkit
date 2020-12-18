@@ -16,6 +16,7 @@ import (
 
 	"github.com/docker/cli/cli/config"
 	dockertypes "github.com/docker/docker/api/types"
+	"github.com/estesp/manifest-tool/pkg/registry"
 	"github.com/estesp/manifest-tool/pkg/types"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
@@ -247,7 +248,7 @@ func manifestPush(img string, auth dockertypes.AuthConfig) (hash string, length 
 	}
 
 	// push the manifest list with the auth as given, ignore missing, do not allow insecure
-	return pushManifestList(auth, yamlInput, true, false, false, "")
+	return registry.PushManifestList(auth.Username, auth.Password, yamlInput, true, false, false, "")
 }
 
 func signManifest(img, digest string, length int, auth dockertypes.AuthConfig) error {
