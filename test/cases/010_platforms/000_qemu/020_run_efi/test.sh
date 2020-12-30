@@ -25,7 +25,7 @@ if command -v qemu-system-x86_64; then
 	fi
 fi
 
-linuxkit build -format iso-efi -name "${NAME}" test.yml
+linuxkit build -docker -format iso-efi -name "${NAME}" test.yml
 [ -f "${NAME}-efi.iso" ] || exit 1
 linuxkit run qemu -iso -uefi "${NAME}-efi.iso" | grep -q "Welcome to LinuxKit"
 

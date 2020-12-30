@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/containerd/containerd/reference"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -124,10 +126,23 @@ func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
 	return false
 }
 
-func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer) error {
+func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer, cacheDir string, dockerCache bool) error {
 	log.Infof("  Create OCI config for %s", image.Image)
 	useTrust := enforceContentTrust(image.Image, &m.Trust)
-	oci, runtime, err := ConfigToOCI(image, useTrust, idMap)
+	imageName := referenceExpand(image.Image)
+	ref, err := reference.Parse(imageName)
+	if err != nil {
+		return fmt.Errorf("could not resolve references for image %s: %v", image.Image, err)
+	}
+	src, err := imagePull(&ref, pull, useTrust, cacheDir, dockerCache, m.Architecture)
+	if err != nil {
+		return fmt.Errorf("Could not pull image %s: %v", image.Image, err)
+	}
+	configRaw, err := src.Config()
+	if err != nil {
+		return fmt.Errorf("Failed to retrieve config for %s: %v", image.Image, err)
+	}
+	oci, runtime, err := ConfigToOCI(image, configRaw, idMap)
 	if err != nil {
 		return fmt.Errorf("Failed to create OCI spec for %s: %v", image.Image, err)
 	}
@@ -137,7 +152,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, image.ref, config, runtime, iw, useTrust, pull, readonly, dupMap)
+	err = ImageBundle(path, image.ref, config, runtime, iw, useTrust, pull, readonly, dupMap, cacheDir, dockerCache, m.Architecture)
 	if err != nil {
 		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 	}
@@ -145,7 +160,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 }
 
 // Build performs the actual build process
-func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) error {
+func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cacheDir string, dockerCache bool) error {
 	if MobyDir == "" {
 		MobyDir = defaultMobyConfigDir()
 	}
@@ -183,7 +198,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
 		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, decompressKernel)
-		err := ImageTar(m.Kernel.ref, "", kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "")
+		err := ImageTar(m.Kernel.ref, "", kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "", cacheDir, dockerCache, m.Architecture)
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
 		}
@@ -199,7 +214,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	}
 	for _, ii := range m.initRefs {
 		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", iw, enforceContentTrust(ii.String(), &m.Trust), pull, resolvconfSymlink)
+		err := ImageTar(ii, "", iw, enforceContentTrust(ii.String(), &m.Trust), pull, resolvconfSymlink, cacheDir, dockerCache, m.Architecture)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}
@@ -210,7 +225,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	}
 	for i, image := range m.Onboot {
 		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onboot", so+"-", m, idMap, dupMap, pull, iw); err != nil {
+		if err := outputImage(image, "onboot", so+"-", m, idMap, dupMap, pull, iw, cacheDir, dockerCache); err != nil {
 			return err
 		}
 	}
@@ -220,7 +235,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	}
 	for i, image := range m.Onshutdown {
 		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onshutdown", so+"-", m, idMap, dupMap, pull, iw); err != nil {
+		if err := outputImage(image, "onshutdown", so+"-", m, idMap, dupMap, pull, iw, cacheDir, dockerCache); err != nil {
 			return err
 		}
 	}
@@ -229,7 +244,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 		log.Infof("Add service containers:")
 	}
 	for _, image := range m.Services {
-		if err := outputImage(image, "services", "", m, idMap, dupMap, pull, iw); err != nil {
+		if err := outputImage(image, "services", "", m, idMap, dupMap, pull, iw, cacheDir, dockerCache); err != nil {
 			return err
 		}
 	}
@@ -613,7 +628,7 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 			if f.Source != "" {
 				source := f.Source
 				if len(source) > 2 && source[:2] == "~/" {
-					source = homeDir() + source[1:]
+					source = util.HomeDir() + source[1:]
 				}
 				if f.Optional {
 					_, err := os.Stat(source)
