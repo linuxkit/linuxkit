@@ -77,7 +77,7 @@ local-check: $(LINUXKIT_DEPS)
 	@echo gofmt... && o=$$(gofmt -s -l $(filter %.go,$(LINUXKIT_DEPS))) && if [ -n "$$o" ] ; then echo $$o ; exit 1 ; fi
 	@echo govet... && go vet -printf=false ./src/cmd/linuxkit/...
 	@echo golint... && set -e ; for i in $(filter %.go,$(LINUXKIT_DEPS)); do golint $$i ; done
-	@echo ineffassign... && ineffassign  $(filter %.go,$(LINUXKIT_DEPS))
+	@echo ineffassign... && ineffassign ./src/cmd/linuxkit/...
 
 local-build: local-static
 
