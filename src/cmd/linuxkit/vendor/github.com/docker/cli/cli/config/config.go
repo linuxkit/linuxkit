@@ -95,11 +95,7 @@ func Load(configDir string) (*configfile.ConfigFile, error) {
 	configFile := configfile.New(filename)
 
 	// Try happy path first - latest config file
-	if _, err := os.Stat(filename); err == nil {
-		file, err := os.Open(filename)
-		if err != nil {
-			return configFile, errors.Wrap(err, filename)
-		}
+	if file, err := os.Open(filename); err == nil {
 		defer file.Close()
 		err = configFile.LoadFromReader(file)
 		if err != nil {
@@ -113,18 +109,16 @@ func Load(configDir string) (*configfile.ConfigFile, error) {
 	}
 
 	// Can't find latest config file so check for the old one
-	confFile := filepath.Join(homedir.Get(), oldConfigfile)
-	if _, err := os.Stat(confFile); err != nil {
-		return configFile, nil //missing file is not an error
-	}
-	file, err := os.Open(confFile)
+	home, err := os.UserHomeDir()
 	if err != nil {
-		return configFile, errors.Wrap(err, filename)
+		return configFile, errors.Wrap(err, oldConfigfile)
 	}
-	defer file.Close()
-	err = configFile.LegacyLoadFromReader(file)
-	if err != nil {
-		return configFile, errors.Wrap(err, filename)
+	filename = filepath.Join(home, oldConfigfile)
+	if file, err := os.Open(filename); err == nil {
+		defer file.Close()
+		if err := configFile.LegacyLoadFromReader(file); err != nil {
+			return configFile, errors.Wrap(err, filename)
+		}
 	}
 	return configFile, nil
 }
