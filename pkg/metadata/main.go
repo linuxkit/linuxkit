@@ -78,7 +78,7 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "packet", "cdrom"}
+	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "packet", "metaldata", "cdrom"}
 	args := flag.Args()
 	if len(args) > 0 {
 		providers = args
@@ -101,6 +101,8 @@ func main() {
 			netProviders = append(netProviders, NewVultr())
 		case p == "digitalocean":
 			netProviders = append(netProviders, NewDigitalOcean())
+		case p == "metaldata":
+			netProviders = append(netProviders, NewMetalData())
 		case p == "cdrom":
 			cdromProviders = ListCDROMs()
 		case strings.HasPrefix(p, "file="):

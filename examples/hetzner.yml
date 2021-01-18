@@ -18,7 +18,7 @@ onboot:
     image: linuxkit/dhcpcd:v0.8
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:v0.8
+    image: linuxkit/metadata:2cf1db0f0d2c9916b4894318bd76f1c97d8c8f7b
     command: ["/usr/bin/metadata", "hetzner"]
 services:
   - name: rngd
