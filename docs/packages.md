@@ -216,7 +216,7 @@ tag, so you are looking for the size and hash of whatever the tag points to, man
 If you pushed the image tag using `docker push`, the very last line of output will give you the hash and size:
 
 ```console
-$ docker push linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
+$ docker push linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106
 The push refers to repository [docker.io/linuxkit/containerd]
 fce5742422e4: Layer already exists
 48a02e7b3096: Layer already exists
@@ -252,8 +252,8 @@ For example, inspecting just a single arch manifest gives us the hash on the sec
 size:
 
 ```console
-$ manifest-tool inspect linuxkit/containerd:v0.8-amd64
-Name: linuxkit/containerd:v0.8-amd64 (Type: application/vnd.docker.distribution.manifest.v2+json)
+$ manifest-tool inspect linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106-amd64
+Name: linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106-amd64 (Type: application/vnd.docker.distribution.manifest.v2+json)
       Digest: sha256:0dc4f37966e23c0dffa6961119f29100c6d181b221e748c4688a280c08ab52a8
           OS: linux
         Arch: amd64
@@ -270,8 +270,8 @@ index, but finding the right entry, for example the first one is `amd64`, gives 
 `Mfst Length: 1357`:
 
 ```console
-$ manifest-tool inspect linuxkit/containerd:v0.8
-Name:   linuxkit/containerd:v0.8 (Type: application/vnd.docker.distribution.manifest.list.v2+json)
+$ manifest-tool inspect linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106
+Name:   linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106 (Type: application/vnd.docker.distribution.manifest.list.v2+json)
 Digest: sha256:247e1eb712c2f5e9d80bb1a9ddf9bb5479b3f785a7e0dd4a8844732bbaa96851
  * Contains 3 manifest references:
 1    Mfst Type: application/vnd.docker.distribution.manifest.v2+json
@@ -332,8 +332,8 @@ report the hash and size.
 For an index:
 
 ```console
-$ ocidist manifest docker.io/linuxkit/containerd:v0.8 --detail
-2020/11/12 11:00:03 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8", original:"docker.io/linuxkit/containerd:v0.8"}
+$ ocidist manifest docker.io/linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106 --detail
+2020/11/12 11:00:03 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8", original:"docker.io/linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106"}
 2020/11/12 11:00:03 advanced API
 2020/11/12 11:00:06 referenced manifest hash sha256:247e1eb712c2f5e9d80bb1a9ddf9bb5479b3f785a7e0dd4a8844732bbaa96851 size 1052
 {
@@ -374,8 +374,8 @@ $ ocidist manifest docker.io/linuxkit/containerd:v0.8 --detail
 For a single manifest:
 
 ```console
-$ ocidist manifest docker.io/linuxkit/containerd:v0.8-amd64 --detail
-2020/11/12 10:59:08 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8-amd64", original:"docker.io/linuxkit/containerd:v0.8-amd64"}
+$ ocidist manifest docker.io/linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106-amd64 --detail
+2020/11/12 10:59:08 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8-amd64", original:"docker.io/linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106-amd64"}
 2020/11/12 10:59:08 advanced API
 2020/11/12 10:59:11 referenced manifest hash sha256:0dc4f37966e23c0dffa6961119f29100c6d181b221e748c4688a280c08ab52a8 size 1357
 {
