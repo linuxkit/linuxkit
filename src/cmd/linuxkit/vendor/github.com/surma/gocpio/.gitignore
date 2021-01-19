@@ -1,0 +1,6 @@
+*~
+*.swp
+/bin
+/_obj
+_go_.*
+/cmd/cpio/cpio

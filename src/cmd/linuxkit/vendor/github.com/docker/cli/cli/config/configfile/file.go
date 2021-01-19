@@ -119,7 +119,7 @@ func (configFile *ConfigFile) LegacyLoadFromReader(configData io.Reader) error {
 // LoadFromReader reads the configuration data given and sets up the auth config
 // information with given directory and populates the receiver object
 func (configFile *ConfigFile) LoadFromReader(configData io.Reader) error {
-	if err := json.NewDecoder(configData).Decode(&configFile); err != nil {
+	if err := json.NewDecoder(configData).Decode(&configFile); err != nil && !errors.Is(err, io.EOF) {
 		return err
 	}
 	var err error
@@ -209,9 +209,15 @@ func (configFile *ConfigFile) Save() (retErr error) {
 		return errors.Wrap(err, "error closing temp file")
 	}
 
+	// Handle situation where the configfile is a symlink
+	cfgFile := configFile.Filename
+	if f, err := os.Readlink(cfgFile); err == nil {
+		cfgFile = f
+	}
+
 	// Try copying the current config file (if any) ownership and permissions
-	copyFilePermissions(configFile.Filename, temp.Name())
-	return os.Rename(temp.Name(), configFile.Filename)
+	copyFilePermissions(cfgFile, temp.Name())
+	return os.Rename(temp.Name(), cfgFile)
 }
 
 // ParseProxyConfig computes proxy configuration by retrieving the config for the provided host and

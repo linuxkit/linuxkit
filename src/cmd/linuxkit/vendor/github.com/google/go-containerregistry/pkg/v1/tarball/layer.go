@@ -28,7 +28,6 @@ import (
 	gestargz "github.com/google/go-containerregistry/pkg/v1/internal/estargz"
 	ggzip "github.com/google/go-containerregistry/pkg/v1/internal/gzip"
 	"github.com/google/go-containerregistry/pkg/v1/types"
-	"github.com/google/go-containerregistry/pkg/v1/v1util"
 )
 
 type layer struct {
@@ -165,7 +164,7 @@ func WithEstargz(l *layer) {
 		if err != nil {
 			return nil, err
 		}
-		return v1util.GunzipReadCloser(urc)
+		return ggzip.UnzipReadCloser(urc)
 	}
 
 	l.compressedopener = estargz
