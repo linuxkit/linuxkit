@@ -21,6 +21,7 @@ type buildOpts struct {
 	manifest  bool
 	sign      bool
 	image     bool
+	args      []string
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -78,6 +79,17 @@ func WithBuildSign() BuildOpt {
 func WithRelease(r string) BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.release = r
+		return nil
+	}
+}
+
+// WithBuildArg add a build arg to the build, run as docker --build-arg=<passed value>
+func WithBuildArg(r string) BuildOpt {
+	return func(bo *buildOpts) error {
+		if bo.args == nil {
+			bo.args = []string{}
+		}
+		bo.args = append(bo.args, r)
 		return nil
 	}
 }
@@ -171,6 +183,10 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 		args = append(args, "--label=org.mobyproject.linuxkit.version="+version.Version)
 		args = append(args, "--label=org.mobyproject.linuxkit.revision="+version.GitCommit)
+
+		for _, arg := range bo.args {
+			args = append(args, fmt.Sprintf("--build-arg=%s", arg))
+		}
 
 		d.ctx = &buildCtx{sources: p.sources}
 
