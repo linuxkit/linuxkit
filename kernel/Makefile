@@ -151,7 +151,7 @@ show-tags: show-tag_$(2)$(3)$(4)
 
 # Only build perf on x86 and latest LTS and stable kernels
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.6.x 5.4.x))
+ifeq ($(2), $(filter $(2),5.10.x 5.6.x 5.4.x))
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
@@ -252,6 +252,7 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
+$(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.6.11,5.6.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.4.39,5.4.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.4.39,5.4.x,,-dbg))
@@ -260,11 +261,13 @@ $(eval $(call kernel,4.19.121,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.179,4.14.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),aarch64)
+$(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.6.11,5.6.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.4.39,5.4.x,$(EXTRA),$(DEBUG)))
 #$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
+$(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.6.11,5.6.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.4.39,5.4.x,$(EXTRA),$(DEBUG)))
 endif
