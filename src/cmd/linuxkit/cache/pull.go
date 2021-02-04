@@ -5,6 +5,7 @@ import (
 
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
 )
 
@@ -15,6 +16,7 @@ func ValidateImage(ref *reference.Spec, cacheDir, architecture string) (ImageSou
 		imageIndex v1.ImageIndex
 		image      v1.Image
 		imageName  = ref.String()
+		desc       *v1.Descriptor
 	)
 	// next try the local cache
 	root, err := FindRoot(cacheDir, imageName)
@@ -22,10 +24,16 @@ func ValidateImage(ref *reference.Spec, cacheDir, architecture string) (ImageSou
 		img, err := root.Image()
 		if err == nil {
 			image = img
+			if desc, err = partial.Descriptor(img); err != nil {
+				return ImageSource{}, errors.New("image could not create valid descriptor")
+			}
 		} else {
 			ii, err := root.ImageIndex()
 			if err == nil {
 				imageIndex = ii
+				if desc, err = partial.Descriptor(ii); err != nil {
+					return ImageSource{}, errors.New("index could not create valid descriptor")
+				}
 			}
 		}
 	}
@@ -45,6 +53,7 @@ func ValidateImage(ref *reference.Spec, cacheDir, architecture string) (ImageSou
 				ref,
 				cacheDir,
 				architecture,
+				desc,
 			), nil
 		}
 		return ImageSource{}, errors.New("invalid index")
@@ -55,6 +64,7 @@ func ValidateImage(ref *reference.Spec, cacheDir, architecture string) (ImageSou
 				ref,
 				cacheDir,
 				architecture,
+				desc,
 			), nil
 		}
 		return ImageSource{}, errors.New("invalid image")

@@ -20,6 +20,8 @@ func pkgBuild(args []string) {
 	}
 
 	force := flags.Bool("force", false, "Force rebuild")
+	docker := flags.Bool("docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
+	buildCacheDir := flags.String("cache", defaultLinuxkitCache(), "Directory for storing built image, incompatible with --docker")
 
 	p, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
@@ -32,6 +34,10 @@ func pkgBuild(args []string) {
 	opts := []pkglib.BuildOpt{pkglib.WithBuildImage()}
 	if *force {
 		opts = append(opts, pkglib.WithBuildForce())
+	}
+	opts = append(opts, pkglib.WithBuildCacheDir(*buildCacheDir))
+	if *docker {
+		opts = append(opts, pkglib.WithBuildTargetDockerCache())
 	}
 	if err := p.Build(opts...); err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)

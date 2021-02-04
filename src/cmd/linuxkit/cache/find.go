@@ -48,3 +48,25 @@ func findImage(p layout.Path, imageName, architecture string) (v1.Image, error) 
 	}
 	return nil, fmt.Errorf("no image found for %s", imageName)
 }
+
+// FindDescriptor get the first descriptor pointed to by the image name
+func FindDescriptor(dir string, name string) (*v1.Descriptor, error) {
+	p, err := Get(dir)
+	if err != nil {
+		return nil, err
+	}
+	index, err := p.ImageIndex()
+	// if there is no root index, we are broken
+	if err != nil {
+		return nil, fmt.Errorf("invalid image cache: %v", err)
+	}
+
+	descs, err := partial.FindManifests(index, match.Name(name))
+	if err != nil {
+		return nil, err
+	}
+	if len(descs) < 1 {
+		return nil, nil
+	}
+	return &descs[0], nil
+}

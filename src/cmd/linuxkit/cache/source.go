@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -17,16 +18,18 @@ type ImageSource struct {
 	ref          *reference.Spec
 	cache        layout.Path
 	architecture string
+	descriptor   *v1.Descriptor
 }
 
 // NewSource return an ImageSource for a specific ref and architecture in the given
 // cache directory.
-func NewSource(ref *reference.Spec, dir string, architecture string) ImageSource {
+func NewSource(ref *reference.Spec, dir string, architecture string, descriptor *v1.Descriptor) ImageSource {
 	p, _ := Get(dir)
 	return ImageSource{
 		ref:          ref,
 		cache:        p,
 		architecture: architecture,
+		descriptor:   descriptor,
 	}
 }
 
@@ -66,4 +69,9 @@ func (c ImageSource) TarReader() (io.ReadCloser, error) {
 	}
 
 	return mutate.Extract(image), nil
+}
+
+// Descriptor return the descriptor of the image.
+func (c ImageSource) Descriptor() *v1.Descriptor {
+	return c.descriptor
 }

@@ -313,7 +313,7 @@ github.com/google/go-cmp/cmp/internal/diff
 github.com/google/go-cmp/cmp/internal/flags
 github.com/google/go-cmp/cmp/internal/function
 github.com/google/go-cmp/cmp/internal/value
-# github.com/google/go-containerregistry v0.4.0
+# github.com/google/go-containerregistry v0.4.1-0.20210208222243-cbafe638a7a9
 ## explicit
 github.com/google/go-containerregistry/pkg/authn
 github.com/google/go-containerregistry/pkg/internal/redact
@@ -375,6 +375,7 @@ github.com/gorilla/websocket
 ## explicit
 # github.com/hashicorp/go-version v1.2.0
 ## explicit
+github.com/hashicorp/go-version
 # github.com/hashicorp/golang-lru v0.5.3
 ## explicit
 # github.com/inconshreveable/mousetrap v1.0.0
@@ -403,7 +404,7 @@ github.com/linuxkit/virtsock/pkg/vsock
 # github.com/matttproud/golang_protobuf_extensions v1.0.1
 ## explicit
 github.com/matttproud/golang_protobuf_extensions/pbutil
-# github.com/maxbrunsfeld/counterfeiter/v6 v6.2.2
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.3.0
 ## explicit
 # github.com/miekg/pkcs11 v1.0.3
 ## explicit
@@ -433,10 +434,6 @@ github.com/moul/gotty-client
 # github.com/ncw/swift v1.0.47
 ## explicit
 # github.com/niemeyer/pretty v0.0.0-20200227124842-a10e7caefd8e
-## explicit
-# github.com/onsi/ginkgo v1.12.0
-## explicit
-# github.com/onsi/gomega v1.9.0
 ## explicit
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit
@@ -625,6 +622,8 @@ golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
 golang.org/x/crypto/ssh/terminal
+# golang.org/x/mod v0.4.1
+## explicit
 # golang.org/x/net v0.0.0-20201110031124-69a78807bb2b
 ## explicit
 golang.org/x/net/context
@@ -646,7 +645,7 @@ golang.org/x/oauth2/jwt
 ## explicit
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
-# golang.org/x/sys v0.0.0-20210113181707-4bcb84eeeb78
+# golang.org/x/sys v0.0.0-20210124154548-22da62e12c0c
 ## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/internal/unsafeheader
@@ -659,7 +658,7 @@ golang.org/x/text/unicode/bidi
 golang.org/x/text/unicode/norm
 # golang.org/x/time v0.0.0-20200416051211-89c76fbcd5d1
 ## explicit
-# golang.org/x/tools v0.0.0-20200916195026-c9a70fc28ce3
+# golang.org/x/tools v0.1.0
 ## explicit
 # gonum.org/v1/netlib v0.0.0-20190331212654-76723241ea4e
 ## explicit
@@ -767,8 +766,6 @@ google.golang.org/protobuf/runtime/protoimpl
 google.golang.org/protobuf/types/known/anypb
 google.golang.org/protobuf/types/known/durationpb
 google.golang.org/protobuf/types/known/timestamppb
-# gopkg.in/check.v1 v1.0.0-20200227125254-8fa46927fb4f
-## explicit
 # gopkg.in/dancannon/gorethink.v3 v3.0.5
 ## explicit
 # gopkg.in/fatih/pool.v2 v2.0.0
@@ -788,9 +785,13 @@ gopkg.in/yaml.v3
 ## explicit
 # k8s.io/apiserver v0.18.8
 ## explicit
-# k8s.io/code-generator v0.20.1
+# k8s.io/code-generator v0.20.2
 ## explicit
 # k8s.io/csi-translation-lib v0.18.8
+## explicit
+# k8s.io/gengo v0.0.0-20210203185629-de9496dff47b
+## explicit
+# k8s.io/klog/v2 v2.5.0
 ## explicit
 # rsc.io/letsencrypt v0.0.3
 ## explicit
