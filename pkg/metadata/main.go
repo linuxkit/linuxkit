@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"os"
 	"path"
 	"strconv"
@@ -80,7 +81,20 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "packet", "metaldata", "cdrom"}
+	providers := []string{
+		"aws",
+		"gcp",
+		"hetzner",
+		"openstack",
+		"scaleway",
+		"vultr",
+		"digitalocean",
+		"packet",
+		"metaldata",
+		"cdrom",
+		"azure-imds",
+		"azure-ovf",
+	}
 	args := flag.Args()
 	if len(args) > 0 {
 		providers = args
@@ -105,6 +119,14 @@ func main() {
 			netProviders = append(netProviders, NewDigitalOcean())
 		case p == "metaldata":
 			netProviders = append(netProviders, NewMetalData())
+		case p == "azure-imds":
+			netProviders = append(netProviders, NewAzureIMDS())
+		case p == "azure-ovf":
+			// TODO not every provider should create a separate http client
+			client := &http.Client{
+				Timeout: time.Second * 2,
+			}
+			netProviders = append(netProviders, NewAzureOVF(client))
 		case p == "cdrom":
 			cdromProviders = ListCDROMs()
 		case strings.HasPrefix(p, "file="):
@@ -207,7 +229,7 @@ func processUserData(basePath string, data []byte) error {
 	var root ConfigFile
 	if err := json.Unmarshal(data, &root); err != nil {
 		// Userdata is no JSON, presumably...
-		log.Printf("Could not unmarshall userdata: %s", err)
+		log.Printf("Could not unmarshal userdata: %s", err)
 		// This is not an error
 		return nil
 	}
@@ -291,7 +313,7 @@ func retry(attempts int, sleep time.Duration, f func() error) (err error) {
 
 		time.Sleep(sleep)
 
-		log.Printf("retrying after error:", err)
+		log.Debugf("Retrying after error: %s", err)
 	}
-	return fmt.Errorf("after %d attempts, last error: %s", attempts, err)
+	return fmt.Errorf("After %d attempts, last error: %s", attempts, err)
 }
