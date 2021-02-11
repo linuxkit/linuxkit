@@ -37,11 +37,7 @@ func (p *ProviderAzureIMDS) String() string {
 func (p *ProviderAzureIMDS) Probe() bool {
 	// "Poll" VM Unique ID
 	// See: https://azure.microsoft.com/en-us/blog/accessing-and-using-azure-vm-unique-id/
-	pollVMID := func() error {
-		_, err := p.imdsGet("compute/vmId")
-		return err
-	}
-	if err := retry(6, 5*time.Second, pollVMID); err != nil {
+	if _, err := p.imdsGet("compute/vmId"); err != nil {
 		log.Debugf("%s: Probe failed: %s", p.String(), err)
 		return false
 	}
@@ -173,7 +169,7 @@ func (p *ProviderAzureIMDS) getUserData() ([]byte, error) {
 	if len(userData) > 0 { // Always false
 		log.Warnf("%s: Unexpectedly received user data: \n%s", p.String(), string(userData))
 		// TODO
-		// Getting user data via IMDS is disabled. See upstream issue:
+		// Getting user data via IMDS is disabled. See blocking upstream issue:
 		//  * https://github.com/MicrosoftDocs/azure-docs/issues/64154
 		//  * https://github.com/MicrosoftDocs/azure-docs/issues/30370 (OP)
 		// return userData, nil

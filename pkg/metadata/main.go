@@ -3,15 +3,12 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"fmt"
 	"io/ioutil"
-	"net/http"
 	"os"
 	"path"
 	"strconv"
 	"strings"
 	"syscall"
-	"time"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -92,8 +89,7 @@ func main() {
 		"packet",
 		"metaldata",
 		"cdrom",
-		"azure-imds",
-		"azure-ovf",
+		"azure",
 	}
 	args := flag.Args()
 	if len(args) > 0 {
@@ -119,14 +115,8 @@ func main() {
 			netProviders = append(netProviders, NewDigitalOcean())
 		case p == "metaldata":
 			netProviders = append(netProviders, NewMetalData())
-		case p == "azure-imds":
+		case p == "azure":
 			netProviders = append(netProviders, NewAzureIMDS())
-		case p == "azure-ovf":
-			// TODO not every provider should create a separate http client
-			client := &http.Client{
-				Timeout: time.Second * 2,
-			}
-			netProviders = append(netProviders, NewAzureOVF(client))
 		case p == "cdrom":
 			cdromProviders = ListCDROMs()
 		case strings.HasPrefix(p, "file="):
@@ -296,24 +286,4 @@ type Entry struct {
 	Perm    string           `json:"perm,omitempty"`
 	Content *string          `json:"content,omitempty"`
 	Entries map[string]Entry `json:"entries,omitempty"`
-}
-
-// https://stackoverflow.com/questions/47606761/repeat-code-if-an-error-occured/47606858#47606858
-// https://blog.abourget.net/en/2016/01/04/my-favorite-golang-retry-function/
-func retry(attempts int, sleep time.Duration, f func() error) (err error) {
-	for i := 0; ; i++ {
-		err = f()
-		if err == nil {
-			return
-		}
-
-		if i >= (attempts - 1) {
-			break
-		}
-
-		time.Sleep(sleep)
-
-		log.Debugf("Retrying after error: %s", err)
-	}
-	return fmt.Errorf("After %d attempts, last error: %s", attempts, err)
 }

@@ -169,3 +169,23 @@ func (p *ProviderAzureOVF) getUserData(ovf *OVF) ([]byte, error) {
 	log.Debugf("%s: Raw user data: \n%s", p.String(), string(userData))
 	return userData, nil
 }
+
+// https://stackoverflow.com/questions/47606761/repeat-code-if-an-error-occured/47606858#47606858
+// https://blog.abourget.net/en/2016/01/04/my-favorite-golang-retry-function/
+func retry(attempts int, sleep time.Duration, f func() error) (err error) {
+	for i := 0; ; i++ {
+		err = f()
+		if err == nil {
+			return
+		}
+
+		if i >= (attempts - 1) {
+			break
+		}
+
+		time.Sleep(sleep)
+
+		log.Debugf("Retrying after error: %s", err)
+	}
+	return fmt.Errorf("After %d attempts, last error: %s", attempts, err)
+}
