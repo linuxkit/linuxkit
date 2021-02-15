@@ -77,8 +77,7 @@ func Write(ref name.Reference, img v1.Image, options ...Option) error {
 		if err != nil {
 			return err
 		}
-		if !mt.IsDistributable() {
-			// TODO(jonjohnsonjr): Add "allow-nondistributable-artifacts" option.
+		if !mt.IsDistributable() && !o.allowNondistributableArtifacts {
 			continue
 		}
 
@@ -391,6 +390,10 @@ func (w *writer) uploadOne(l v1.Layer) error {
 	return retry.Retry(tryUpload, retry.IsTemporary, backoff)
 }
 
+type withLayer interface {
+	Layer(v1.Hash) (v1.Layer, error)
+}
+
 func (w *writer) writeIndex(ref name.Reference, ii v1.ImageIndex, options ...Option) error {
 	index, err := ii.IndexManifest()
 	if err != nil {
@@ -429,6 +432,17 @@ func (w *writer) writeIndex(ref name.Reference, ii v1.ImageIndex, options ...Opt
 			// re-do the token exchange. MultiWrite fixes this.
 			if err := Write(ref, img, options...); err != nil {
 				return err
+			}
+		default:
+			// Workaround for #819.
+			if wl, ok := ii.(withLayer); ok {
+				layer, err := wl.Layer(desc.Digest)
+				if err != nil {
+					return err
+				}
+				if err := w.uploadOne(layer); err != nil {
+					return err
+				}
 			}
 		}
 	}

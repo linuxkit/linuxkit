@@ -29,13 +29,14 @@ import (
 type Option func(*options) error
 
 type options struct {
-	auth      authn.Authenticator
-	keychain  authn.Keychain
-	transport http.RoundTripper
-	platform  v1.Platform
-	context   context.Context
-	jobs      int
-	userAgent string
+	auth                           authn.Authenticator
+	keychain                       authn.Keychain
+	transport                      http.RoundTripper
+	platform                       v1.Platform
+	context                        context.Context
+	jobs                           int
+	userAgent                      string
+	allowNondistributableArtifacts bool
 }
 
 var defaultPlatform = v1.Platform{
@@ -172,4 +173,14 @@ func WithUserAgent(ua string) Option {
 		o.userAgent = ua
 		return nil
 	}
+}
+
+// WithNondistributable includes non-distributable (foreign) layers
+// when writing images, see:
+// https://github.com/opencontainers/image-spec/blob/master/layer.md#non-distributable-layers
+//
+// The default behaviour is to skip these layers
+func WithNondistributable(o *options) error {
+	o.allowNondistributableArtifacts = true
+	return nil
 }

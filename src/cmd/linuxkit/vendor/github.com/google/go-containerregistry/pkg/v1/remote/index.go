@@ -122,6 +122,30 @@ func (r *remoteIndex) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
 	return desc.ImageIndex()
 }
 
+// Workaround for #819.
+func (r *remoteIndex) Layer(h v1.Hash) (v1.Layer, error) {
+	index, err := r.IndexManifest()
+	if err != nil {
+		return nil, err
+	}
+	for _, childDesc := range index.Manifests {
+		if h == childDesc.Digest {
+			l, err := partial.CompressedToLayer(&remoteLayer{
+				fetcher: r.fetcher,
+				digest:  h,
+			})
+			if err != nil {
+				return nil, err
+			}
+			return &MountableLayer{
+				Layer:     l,
+				Reference: r.Ref.Context().Digest(h.String()),
+			}, nil
+		}
+	}
+	return nil, fmt.Errorf("layer not found: %s", h)
+}
+
 func (r *remoteIndex) imageByPlatform(platform v1.Platform) (v1.Image, error) {
 	desc, err := r.childByPlatform(platform)
 	if err != nil {

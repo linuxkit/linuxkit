@@ -16,6 +16,7 @@ package mutate
 
 import (
 	"encoding/json"
+	"fmt"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/logs"
@@ -65,6 +66,7 @@ type index struct {
 	mediaType *types.MediaType
 	imageMap  map[v1.Hash]v1.Image
 	indexMap  map[v1.Hash]v1.ImageIndex
+	layerMap  map[v1.Hash]v1.Layer
 }
 
 var _ v1.ImageIndex = (*index)(nil)
@@ -86,6 +88,7 @@ func (i *index) compute() error {
 
 	i.imageMap = make(map[v1.Hash]v1.Image)
 	i.indexMap = make(map[v1.Hash]v1.ImageIndex)
+	i.layerMap = make(map[v1.Hash]v1.Layer)
 
 	m, err := i.base.IndexManifest()
 	if err != nil {
@@ -115,6 +118,8 @@ func (i *index) compute() error {
 			i.indexMap[desc.Digest] = idx
 		} else if img, ok := add.Add.(v1.Image); ok {
 			i.imageMap[desc.Digest] = img
+		} else if l, ok := add.Add.(v1.Layer); ok {
+			i.layerMap[desc.Digest] = l
 		} else {
 			logs.Warn.Printf("Unexpected index addendum: %T", add.Add)
 		}
@@ -149,6 +154,21 @@ func (i *index) ImageIndex(h v1.Hash) (v1.ImageIndex, error) {
 		return idx, nil
 	}
 	return i.base.ImageIndex(h)
+}
+
+type withLayer interface {
+	Layer(v1.Hash) (v1.Layer, error)
+}
+
+// Workaround for #819.
+func (i *index) Layer(h v1.Hash) (v1.Layer, error) {
+	if layer, ok := i.layerMap[h]; ok {
+		return layer, nil
+	}
+	if wl, ok := i.base.(withLayer); ok {
+		return wl.Layer(h)
+	}
+	return nil, fmt.Errorf("layer not found: %s", h)
 }
 
 // Digest returns the sha256 of this image's manifest.

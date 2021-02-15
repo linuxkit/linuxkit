@@ -45,23 +45,27 @@ func MultiWrite(m map[name.Reference]Taggable, options ...Option) error {
 		}
 	}
 
+	o, err := makeOptions(repo, options...)
+	if err != nil {
+		return err
+	}
+
 	// Collect unique blobs (layers and config blobs).
 	blobs := map[v1.Hash]v1.Layer{}
 	newManifests := []map[name.Reference]Taggable{}
 	// Separate originally requested images and indexes, so we can push images first.
 	images, indexes := map[name.Reference]Taggable{}, map[name.Reference]Taggable{}
-	var err error
 	for ref, i := range m {
 		if img, ok := i.(v1.Image); ok {
 			images[ref] = i
-			if err := addImageBlobs(img, blobs); err != nil {
+			if err := addImageBlobs(img, blobs, o.allowNondistributableArtifacts); err != nil {
 				return err
 			}
 			continue
 		}
 		if idx, ok := i.(v1.ImageIndex); ok {
 			indexes[ref] = i
-			newManifests, err = addIndexBlobs(idx, blobs, repo, newManifests, 0)
+			newManifests, err = addIndexBlobs(idx, blobs, repo, newManifests, 0, o.allowNondistributableArtifacts)
 			if err != nil {
 				return err
 			}
@@ -70,10 +74,6 @@ func MultiWrite(m map[name.Reference]Taggable, options ...Option) error {
 		return fmt.Errorf("pushable resource was not Image or ImageIndex: %T", i)
 	}
 
-	o, err := makeOptions(repo, options...)
-	if err != nil {
-		return err
-	}
 	// Determine if any of the layers are Mountable, because if so we need
 	// to request Pull scope too.
 	ls := []v1.Layer{}
@@ -161,7 +161,7 @@ func MultiWrite(m map[name.Reference]Taggable, options ...Option) error {
 
 // addIndexBlobs adds blobs to the set of blobs we intend to upload, and
 // returns the latest copy of the ordered collection of manifests to upload.
-func addIndexBlobs(idx v1.ImageIndex, blobs map[v1.Hash]v1.Layer, repo name.Repository, newManifests []map[name.Reference]Taggable, lvl int) ([]map[name.Reference]Taggable, error) {
+func addIndexBlobs(idx v1.ImageIndex, blobs map[v1.Hash]v1.Layer, repo name.Repository, newManifests []map[name.Reference]Taggable, lvl int, allowNondistributableArtifacts bool) ([]map[name.Reference]Taggable, error) {
 	if lvl > len(newManifests)-1 {
 		newManifests = append(newManifests, map[name.Reference]Taggable{})
 	}
@@ -177,7 +177,7 @@ func addIndexBlobs(idx v1.ImageIndex, blobs map[v1.Hash]v1.Layer, repo name.Repo
 			if err != nil {
 				return nil, err
 			}
-			newManifests, err = addIndexBlobs(idx, blobs, repo, newManifests, lvl+1)
+			newManifests, err = addIndexBlobs(idx, blobs, repo, newManifests, lvl+1, allowNondistributableArtifacts)
 			if err != nil {
 				return nil, err
 			}
@@ -189,42 +189,59 @@ func addIndexBlobs(idx v1.ImageIndex, blobs map[v1.Hash]v1.Layer, repo name.Repo
 			if err != nil {
 				return nil, err
 			}
-			if err := addImageBlobs(img, blobs); err != nil {
+			if err := addImageBlobs(img, blobs, allowNondistributableArtifacts); err != nil {
 				return nil, err
 			}
 
 			// Also track the sub-image manifest to upload later by digest.
 			newManifests[lvl][repo.Digest(desc.Digest.String())] = img
 		default:
-			return nil, fmt.Errorf("unknown media type: %v", desc.MediaType)
+			// Workaround for #819.
+			if wl, ok := idx.(withLayer); ok {
+				layer, err := wl.Layer(desc.Digest)
+				if err != nil {
+					return nil, err
+				}
+				if err := addLayerBlob(layer, blobs, allowNondistributableArtifacts); err != nil {
+					return nil, err
+				}
+			} else {
+				return nil, fmt.Errorf("unknown media type: %v", desc.MediaType)
+			}
 		}
 	}
 	return newManifests, nil
 }
 
-func addImageBlobs(img v1.Image, blobs map[v1.Hash]v1.Layer) error {
+func addLayerBlob(l v1.Layer, blobs map[v1.Hash]v1.Layer, allowNondistributableArtifacts bool) error {
+	// Ignore foreign layers.
+	mt, err := l.MediaType()
+	if err != nil {
+		return err
+	}
+
+	if mt.IsDistributable() || allowNondistributableArtifacts {
+		d, err := l.Digest()
+		if err != nil {
+			return err
+		}
+
+		blobs[d] = l
+	}
+
+	return nil
+}
+
+func addImageBlobs(img v1.Image, blobs map[v1.Hash]v1.Layer, allowNondistributableArtifacts bool) error {
 	ls, err := img.Layers()
 	if err != nil {
 		return err
 	}
 	// Collect all layers.
 	for _, l := range ls {
-		d, err := l.Digest()
-		if err != nil {
+		if err := addLayerBlob(l, blobs, allowNondistributableArtifacts); err != nil {
 			return err
 		}
-
-		// Ignore foreign layers.
-		mt, err := l.MediaType()
-		if err != nil {
-			return err
-		}
-		if !mt.IsDistributable() {
-			// TODO(jonjohnsonjr): Add "allow-nondistributable-artifacts" option.
-			continue
-		}
-
-		blobs[d] = l
 	}
 
 	// Collect config blob.
@@ -232,10 +249,5 @@ func addImageBlobs(img v1.Image, blobs map[v1.Hash]v1.Layer) error {
 	if err != nil {
 		return err
 	}
-	cld, err := cl.Digest()
-	if err != nil {
-		return err
-	}
-	blobs[cld] = cl
-	return nil
+	return addLayerBlob(cl, blobs, allowNondistributableArtifacts)
 }

@@ -3,24 +3,35 @@ package pkglib
 import (
 	"archive/tar"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"github.com/containerd/containerd/reference"
+	"github.com/google/go-containerregistry/pkg/v1"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sync/errgroup"
+)
+
+const (
+	minimumDockerVersion = "19.03"
 )
 
 type buildOpts struct {
-	skipBuild bool
-	force     bool
-	push      bool
-	release   string
-	manifest  bool
-	sign      bool
-	image     bool
+	skipBuild    bool
+	force        bool
+	push         bool
+	release      string
+	manifest     bool
+	sign         bool
+	image        bool
+	targetDocker bool
+	cache        string
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -82,6 +93,22 @@ func WithRelease(r string) BuildOpt {
 	}
 }
 
+// WithBuildTargetDockerCache put the build target in the docker cache instead of the default linuxkit cache
+func WithBuildTargetDockerCache() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.targetDocker = true
+		return nil
+	}
+}
+
+// WithBuildCacheDir provide a build cache directory to use
+func WithBuildCacheDir(dir string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.cache = dir
+		return nil
+	}
+}
+
 // Build builds the package
 func (p Pkg) Build(bos ...BuildOpt) error {
 	var bo buildOpts
@@ -105,12 +132,21 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return err
 	}
 
-	var suffix string
+	var (
+		desc   *v1.Descriptor
+		suffix string
+	)
 	switch arch {
 	case "amd64", "arm64", "s390x":
 		suffix = "-" + arch
 	default:
 		return fmt.Errorf("Unknown arch %q", arch)
+	}
+
+	// did we have the build cache dir provided? Yes, there is a default, but that is at the CLI level,
+	// and expected to be provided at this function level
+	if bo.cache == "" && !bo.targetDocker {
+		return errors.New("must provide linuxkit build cache directory when not targeting docker")
 	}
 
 	if p.git != nil && bo.push && bo.release == "" {
@@ -127,13 +163,30 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	d := newDockerRunner(p.trust, p.cache, bo.sign)
 
+	if err := d.buildkitCheck(); err != nil {
+		return fmt.Errorf("buildkit not supported, check docker version: %v", err)
+	}
+
 	if !bo.force {
-		ok, err := d.pull(p.Tag())
-		if err != nil {
-			return err
-		}
-		if ok {
-			return nil
+		if bo.targetDocker {
+			ok, err := d.pull(p.Tag())
+			// any error returns
+			if err != nil {
+				return err
+			}
+			// if we already have it, do not bother building any more
+			if ok {
+				return nil
+			}
+		} else {
+			ref, err := reference.Parse(p.Tag())
+			if err != nil {
+				return fmt.Errorf("could not resolve references for image %s: %v", p.Tag(), err)
+			}
+			if _, err := cache.ImageWrite(bo.cache, &ref, "", arch); err == nil {
+				fmt.Printf("image already found %s", ref)
+				return nil
+			}
 		}
 		fmt.Println("No image pulled, continuing with build")
 	}
@@ -174,15 +227,75 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 		d.ctx = &buildCtx{sources: p.sources}
 
-		if err := d.build(p.Tag()+suffix, p.path, args...); err != nil {
+		// set the target
+		var (
+			buildxOutput string
+			stdout       io.WriteCloser
+			tag          = p.Tag()
+			tagArch      = tag + suffix
+			eg           errgroup.Group
+			stdoutCloser = func() {
+				if stdout != nil {
+					stdout.Close()
+				}
+			}
+		)
+		ref, err := reference.Parse(tag)
+		if err != nil {
+			return fmt.Errorf("could not resolve references for image %s: %v", tagArch, err)
+		}
+
+		if bo.targetDocker {
+			buildxOutput = "type=docker"
+			stdout = nil
+			// there is no gofunc processing for simple output to docker
+		} else {
+			// we are writing to local, so we need to catch the tar output stream and place the right files in the right place
+			buildxOutput = "type=oci"
+			piper, pipew := io.Pipe()
+			stdout = pipew
+
+			eg.Go(func() error {
+				source, err := cache.ImageWriteTar(bo.cache, &ref, arch, piper)
+				// send the error down the channel
+				if err != nil {
+					fmt.Printf("cache.ImageWriteTar goroutine ended with error: %v\n", err)
+				}
+				desc = source.Descriptor()
+				piper.Close()
+				return err
+			})
+		}
+		args = append(args, fmt.Sprintf("--output=%s", buildxOutput))
+
+		if err := d.build(tagArch, p.path, stdout, args...); err != nil {
+			stdoutCloser()
+			return err
+		}
+		stdoutCloser()
+
+		// wait for the processor to finish
+		if err := eg.Wait(); err != nil {
 			return err
 		}
 
-		if !bo.push {
-			if err := d.tag(p.Tag()+suffix, p.Tag()); err != nil {
+		// create the arch-less image
+		switch {
+		case bo.targetDocker:
+			// if in docker, use a tag
+			if err := d.tag(tagArch, tag); err != nil {
 				return err
 			}
+		case desc == nil:
+			return errors.New("no valid descriptor returned for image")
+		default:
+			// if in the proper linuxkit cache, create a multi-arch index
+			if _, err := cache.IndexWrite(bo.cache, &ref, *desc); err != nil {
+				return err
+			}
+		}
 
+		if !bo.push {
 			fmt.Printf("Build complete, not pushing, all done.\n")
 			return nil
 		}
@@ -198,8 +311,14 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	// matters given we do either pull or build above in the
 	// !force case.
 
-	if err := d.pushWithManifest(p.Tag(), suffix, bo.image, bo.manifest, bo.sign); err != nil {
-		return err
+	if bo.targetDocker {
+		if err := d.pushWithManifest(p.Tag(), suffix, bo.image, bo.manifest, bo.sign); err != nil {
+			return err
+		}
+	} else {
+		if err := cache.PushWithManifest(bo.cache, p.Tag(), suffix, bo.image, bo.manifest, p.trust, bo.sign); err != nil {
+			return err
+		}
 	}
 
 	if bo.release == "" {
@@ -212,12 +331,32 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return err
 	}
 
-	if err := d.tag(p.Tag()+suffix, relTag+suffix); err != nil {
-		return err
-	}
+	if bo.targetDocker {
+		if err := d.tag(p.Tag()+suffix, relTag+suffix); err != nil {
+			return err
+		}
 
-	if err := d.pushWithManifest(relTag, suffix, bo.image, bo.manifest, bo.sign); err != nil {
-		return err
+		if err := d.pushWithManifest(relTag, suffix, bo.image, bo.manifest, bo.sign); err != nil {
+			return err
+		}
+	} else {
+		// must make sure descriptor is available
+		if desc == nil {
+			desc, err = cache.FindDescriptor(bo.cache, p.Tag()+suffix)
+			if err != nil {
+				return err
+			}
+		}
+		ref, err := reference.Parse(relTag + suffix)
+		if err != nil {
+			return err
+		}
+		if _, err := cache.DescriptorWrite(bo.cache, &ref, *desc); err != nil {
+			return err
+		}
+		if err := cache.PushWithManifest(bo.cache, relTag, suffix, bo.image, bo.manifest, p.trust, bo.sign); err != nil {
+			return err
+		}
 	}
 
 	fmt.Printf("Build, push and release of %q complete, all done.\n", bo.release)

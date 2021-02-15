@@ -23,7 +23,7 @@ We do not want the builds to happen with each CI run for two reasons:
 1. It is slower to do a package build than to just pull the latest image.
 2. If any of the steps of the build fails, e.g. a `curl` download that depends on an intermittent target, it can cause all of CI to fail.
 
-Thus, if, as a maintainer, you merge any commits into a `pkg/`, even if the change is documentation alone, please do a `linuxkit package push`.
+Thus, if, as a maintainer, you merge any commits into a `pkg/`, even if the change is documentation alone, please do a `linuxkit pkg push`.
 
 
 ## Package source
@@ -54,8 +54,8 @@ A package source consists of a directory containing at least two files:
 ### Prerequisites
 
 Before you can build packages you need:
-- Docker version 17.06 or newer. If you are on a Mac you also need
-  `docker-credential-osxkeychain.bin`, which comes with Docker for Mac.
+- Docker version 19.03 or newer, which includes [buildx](https://docs.docker.com/buildx/working-with-buildx/)
+- If you are on a Mac you also need `docker-credential-osxkeychain.bin`, which comes with Docker for Mac.
 - `make`, `notary`, `base64`, `jq`, and `expect`
 - A *recent* version of `manifest-tool` which you can build with `make
   bin/manifest-tool`, or `go get github.com:estesp/manifest-tool`, or
@@ -66,6 +66,35 @@ Before you can build packages you need:
 Further, when building packages you need to be logged into hub with
 `docker login` as some of the tooling extracts your hub credentials
 during the build.
+
+### Build Targets
+
+LinuxKit builds packages as docker images. It deposits the built package as a docker image in one of two targets:
+
+* the linuxkit cache `~/.linuxkit/` (configurable) - default option
+* the docker image cache
+
+If you want to build images and test and run them _in a standalone_ fashion locally, then you should pick the docker image cache. Otherwise, you should use the default linuxkit cache. LinuxKit defaults to building OS images using docker images from this cache,\
+only looking in the docker cache if instructed to via `linuxkit build --docker`.
+
+When using the linuxkit cache as the package build target, it creates all of the layers, the manifest that can be uploaded
+to a registry, and the multi-architecture index. If an image already exists for a different architecture in the cache,
+it updates the index to include additional manifests created.
+
+As of this writing, `linuxkit pkg build` only builds packages for the platform on which it is running; it does not (yet) support cross-building the packages for other architectures.
+
+Note that the local docker option is available _only_ when building without pushing to a remote registry, i.e.:
+
+```
+linuxkit pkg build
+linuxkit pkg build --docker
+```
+
+If you push to a registry, it _always_ uses the linuxkit cache only:
+
+```
+linuxkit pkg push
+```
 
 ### Build packages as a maintainer
 

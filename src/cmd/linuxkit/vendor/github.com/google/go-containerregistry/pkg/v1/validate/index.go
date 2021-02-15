@@ -44,6 +44,10 @@ func Index(idx v1.ImageIndex) error {
 	return nil
 }
 
+type withLayer interface {
+	Layer(v1.Hash) (v1.Layer, error)
+}
+
 func validateChildren(idx v1.ImageIndex) error {
 	manifest, err := idx.IndexManifest()
 	if err != nil {
@@ -76,7 +80,23 @@ func validateChildren(idx v1.ImageIndex) error {
 				errs = append(errs, fmt.Sprintf("failed to validate image MediaType[%d](%s): %v", i, desc.Digest, err))
 			}
 		default:
-			logs.Warn.Printf("Unexpected manifest: %s", desc.MediaType)
+			// Workaround for #819.
+			if wl, ok := idx.(withLayer); ok {
+				layer, err := wl.Layer(desc.Digest)
+				if err != nil {
+					return fmt.Errorf("failed to get layer Manifests[%d]: %v", i, err)
+				}
+				if err := Layer(layer); err != nil {
+					lerr := fmt.Sprintf("failed to validate layer Manifests[%d](%s): %v", i, desc.Digest, err)
+					if desc.MediaType.IsDistributable() {
+						errs = append(errs, lerr)
+					} else {
+						logs.Warn.Printf("nondistributable layer failure: %v", lerr)
+					}
+				}
+			} else {
+				logs.Warn.Printf("Unexpected manifest: %s", desc.MediaType)
+			}
 		}
 	}
 
