@@ -5,10 +5,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
+	"sync"
 
 	"github.com/docker/cli/cli/config/configfile"
 	"github.com/docker/cli/cli/config/credentials"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/cli/cli/config/types"
 	"github.com/docker/docker/pkg/homedir"
 	"github.com/pkg/errors"
 )
@@ -18,13 +20,19 @@ const (
 	ConfigFileName = "config.json"
 	configFileDir  = ".docker"
 	oldConfigfile  = ".dockercfg"
+	contextsDir    = "contexts"
 )
 
 var (
-	configDir = os.Getenv("DOCKER_CONFIG")
+	initConfigDir sync.Once
+	configDir     string
 )
 
-func init() {
+func setConfigDir() {
+	if configDir != "" {
+		return
+	}
+	configDir = os.Getenv("DOCKER_CONFIG")
 	if configDir == "" {
 		configDir = filepath.Join(homedir.Get(), configFileDir)
 	}
@@ -32,12 +40,27 @@ func init() {
 
 // Dir returns the directory the configuration file is stored in
 func Dir() string {
+	initConfigDir.Do(setConfigDir)
 	return configDir
+}
+
+// ContextStoreDir returns the directory the docker contexts are stored in
+func ContextStoreDir() string {
+	return filepath.Join(Dir(), contextsDir)
 }
 
 // SetDir sets the directory the configuration file is stored in
 func SetDir(dir string) {
-	configDir = dir
+	configDir = filepath.Clean(dir)
+}
+
+// Path returns the path to a file relative to the config dir
+func Path(p ...string) (string, error) {
+	path := filepath.Join(append([]string{Dir()}, p...)...)
+	if !strings.HasPrefix(path, Dir()+string(filepath.Separator)) {
+		return "", errors.Errorf("path %q is outside of root config directory %q", path, Dir())
+	}
+	return path, nil
 }
 
 // LegacyLoadFromReader is a convenience function that creates a ConfigFile object from
@@ -72,11 +95,7 @@ func Load(configDir string) (*configfile.ConfigFile, error) {
 	configFile := configfile.New(filename)
 
 	// Try happy path first - latest config file
-	if _, err := os.Stat(filename); err == nil {
-		file, err := os.Open(filename)
-		if err != nil {
-			return configFile, errors.Wrap(err, filename)
-		}
+	if file, err := os.Open(filename); err == nil {
 		defer file.Close()
 		err = configFile.LoadFromReader(file)
 		if err != nil {
@@ -90,18 +109,16 @@ func Load(configDir string) (*configfile.ConfigFile, error) {
 	}
 
 	// Can't find latest config file so check for the old one
-	confFile := filepath.Join(homedir.Get(), oldConfigfile)
-	if _, err := os.Stat(confFile); err != nil {
-		return configFile, nil //missing file is not an error
-	}
-	file, err := os.Open(confFile)
+	home, err := os.UserHomeDir()
 	if err != nil {
-		return configFile, errors.Wrap(err, filename)
+		return configFile, errors.Wrap(err, oldConfigfile)
 	}
-	defer file.Close()
-	err = configFile.LegacyLoadFromReader(file)
-	if err != nil {
-		return configFile, errors.Wrap(err, filename)
+	filename = filepath.Join(home, oldConfigfile)
+	if file, err := os.Open(filename); err == nil {
+		defer file.Close()
+		if err := configFile.LegacyLoadFromReader(file); err != nil {
+			return configFile, errors.Wrap(err, filename)
+		}
 	}
 	return configFile, nil
 }

@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:a68f9fa0c1d9dbfc9c23663749a0b7ac510cbe1c
   - linuxkit/runc:v0.8
-  - linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
+  - linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106
   - linuxkit/ca-certificates:v0.8
 onboot:
   - name: sysctl
@@ -24,7 +24,7 @@ services:
   - name: rngd
     image: linuxkit/rngd:v0.8
   - name: nginx
-    image: nginx:1.13.8-alpine
+    image: nginx:1.19.5-alpine
     capabilities:
      - CAP_NET_BIND_SERVICE
      - CAP_CHOWN

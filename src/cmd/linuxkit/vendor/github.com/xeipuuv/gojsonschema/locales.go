@@ -36,16 +36,19 @@ type (
 		NumberNot() string
 		MissingDependency() string
 		Internal() string
+		Const() string
 		Enum() string
 		ArrayNotEnoughItems() string
 		ArrayNoAdditionalItems() string
 		ArrayMinItems() string
 		ArrayMaxItems() string
 		Unique() string
+		ArrayContains() string
 		ArrayMinProperties() string
 		ArrayMaxProperties() string
 		AdditionalPropertyNotAllowed() string
 		InvalidPropertyPattern() string
+		InvalidPropertyName() string
 		StringGTE() string
 		StringLTE() string
 		DoesNotMatchPattern() string
@@ -74,6 +77,10 @@ type (
 		NotAValidType() string
 		Duplicated() string
 		HttpBadStatus() string
+		ParseError() string
+
+		ConditionThen() string
+		ConditionElse() string
 
 		// ErrorFormat
 		ErrorFormat() string
@@ -115,6 +122,10 @@ func (l DefaultLocale) Internal() string {
 	return `Internal Error {{.error}}`
 }
 
+func (l DefaultLocale) Const() string {
+	return `{{.field}} does not match: {{.allowed}}`
+}
+
 func (l DefaultLocale) Enum() string {
 	return `{{.field}} must be one of the following: {{.allowed}}`
 }
@@ -139,6 +150,10 @@ func (l DefaultLocale) Unique() string {
 	return `{{.type}} items must be unique`
 }
 
+func (l DefaultLocale) ArrayContains() string {
+	return `At least one of the items must match`
+}
+
 func (l DefaultLocale) ArrayMinProperties() string {
 	return `Must have at least {{.min}} properties`
 }
@@ -153,6 +168,10 @@ func (l DefaultLocale) AdditionalPropertyNotAllowed() string {
 
 func (l DefaultLocale) InvalidPropertyPattern() string {
 	return `Property "{{.property}}" does not match pattern {{.pattern}}`
+}
+
+func (l DefaultLocale) InvalidPropertyName() string {
+	return `Property name of "{{.property}}" does not match`
 }
 
 func (l DefaultLocale) StringGTE() string {
@@ -249,7 +268,7 @@ func (l DefaultLocale) ReferenceMustBeCanonical() string {
 }
 
 func (l DefaultLocale) NotAValidType() string {
-	return `{{.type}} is not a valid type -- `
+	return `has a primitive type that is NOT VALID -- given: {{.given}} Expected valid values are:{{.expected}}`
 }
 
 func (l DefaultLocale) Duplicated() string {
@@ -265,11 +284,25 @@ func (l DefaultLocale) ErrorFormat() string {
 	return `{{.field}}: {{.description}}`
 }
 
+//Parse error
+func (l DefaultLocale) ParseError() string {
+	return `Expected: {{.expected}}, given: Invalid JSON`
+}
+
+//If/Else
+func (l DefaultLocale) ConditionThen() string {
+	return `Must validate "then" as "if" was valid`
+}
+
+func (l DefaultLocale) ConditionElse() string {
+	return `Must validate "else" as "if" was not valid`
+}
+
 const (
 	STRING_NUMBER                     = "number"
 	STRING_ARRAY_OF_STRINGS           = "array of strings"
 	STRING_ARRAY_OF_SCHEMAS           = "array of schemas"
-	STRING_SCHEMA                     = "schema"
+	STRING_SCHEMA                     = "valid schema"
 	STRING_SCHEMA_OR_ARRAY_OF_STRINGS = "schema or array of strings"
 	STRING_PROPERTIES                 = "properties"
 	STRING_DEPENDENCY                 = "dependency"

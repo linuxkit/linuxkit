@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/base64"
 	"fmt"
 	"log"
@@ -9,10 +10,11 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/Azure/azure-sdk-for-go/arm/compute"
-	"github.com/Azure/azure-sdk-for-go/arm/network"
-	"github.com/Azure/azure-sdk-for-go/arm/resources/resources"
-	"github.com/Azure/azure-sdk-for-go/arm/storage"
+	"github.com/Azure/azure-sdk-for-go/profiles/2017-03-09/storage/mgmt/storage"
+	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/compute/mgmt/compute"
+	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/network/mgmt/network"
+	"github.com/Azure/azure-sdk-for-go/profiles/2019-03-01/resources/mgmt/resources"
+
 	"github.com/Azure/go-autorest/autorest"
 	"github.com/Azure/go-autorest/autorest/adal"
 	"github.com/Azure/go-autorest/autorest/azure"
@@ -98,7 +100,7 @@ func createResourceGroup(resourceGroupName, location string) *resources.Group {
 	resourceGroupParameters := resources.Group{
 		Location: &location,
 	}
-	group, err := groupsClient.CreateOrUpdate(resourceGroupName, resourceGroupParameters)
+	group, err := groupsClient.CreateOrUpdate(context.Background(), resourceGroupName, resourceGroupParameters)
 	if err != nil {
 		log.Fatalf("Unable to create resource group: %v", err)
 	}
@@ -117,21 +119,20 @@ func createStorageAccount(accountName, location string, resourceGroup resources.
 		AccountPropertiesCreateParameters: &storage.AccountPropertiesCreateParameters{},
 	}
 
-	storageChannel, errorChannel := accountsClient.Create(*resourceGroup.Name, accountName, storageAccountCreateParameters, nil)
-	for {
-		select {
-		case _, ok := <-storageChannel:
-			if !ok {
-				storageChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if storageChannel == nil && errorChannel == nil {
-			break
-		}
+	ctx := context.Background()
+	future, err := accountsClient.Create(ctx, *resourceGroup.Name, accountName, storageAccountCreateParameters)
+	if err != nil {
+		log.Fatalf("Error creating storage account: %v", err)
+		return
+	}
+	err = future.WaitForCompletionRef(ctx, accountsClient.Client)
+	if err != nil {
+		log.Fatalf("failed to finish creating storage account: %+v", err)
+		return
+	}
+	if _, err := future.Result(accountsClient); err != nil {
+		log.Fatalf("error creating storage: %v", err)
+		return
 	}
 
 	time.Sleep(time.Second * 5)
@@ -142,7 +143,8 @@ func uploadVMImage(resourceGroupName string, accountName string, imagePath strin
 	const PageBlobPageSize int64 = 2 * 1024 * 1024
 	parallelism := 8 * runtime.NumCPU()
 
-	accountKeys, err := accountsClient.ListKeys(resourceGroupName, accountName)
+	ctx := context.Background()
+	accountKeys, err := accountsClient.ListKeys(ctx, resourceGroupName, accountName)
 	if err != nil {
 		log.Fatalf("Unable to retrieve storage account key: %v", err)
 	}
@@ -231,23 +233,24 @@ func createVirtualNetwork(resourceGroup resources.Group, virtualNetworkName stri
 			},
 		},
 	}
-	virtualNetworkChannel, errorChannel := virtualNetworksClient.CreateOrUpdate(*resourceGroup.Name, virtualNetworkName, virtualNetworkParameters, nil)
-	var virtualNetwork network.VirtualNetwork
-	for {
-		select {
-		case v, ok := <-virtualNetworkChannel:
-			virtualNetwork = v
-			if !ok {
-				virtualNetworkChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if virtualNetworkChannel == nil && errorChannel == nil {
-			break
-		}
+	var (
+		virtualNetwork network.VirtualNetwork
+	)
+	ctx := context.Background()
+	future, err := virtualNetworksClient.CreateOrUpdate(ctx, *resourceGroup.Name, virtualNetworkName, virtualNetworkParameters)
+	if err != nil {
+		log.Fatalf("failed to create networks account: %+v", err)
+		return nil
+	}
+	err = future.WaitForCompletionRef(ctx, virtualNetworksClient.Client)
+	if err != nil {
+		log.Fatalf("failed to finish creating networks account: %+v", err)
+		return nil
+	}
+	virtualNetwork, err = future.Result(virtualNetworksClient)
+	if err != nil {
+		log.Fatalf("error creating networks: %v", err)
+		return nil
 	}
 
 	return &virtualNetwork
@@ -262,25 +265,16 @@ func createSubnet(resourceGroup resources.Group, virtualNetworkName, subnetName 
 		},
 	}
 
-	subnetChannel, errorChannel := subnetsClient.CreateOrUpdate(*resourceGroup.Name, virtualNetworkName, subnetName, subnetParameters, nil)
-	for {
-		select {
-		case _, ok := <-subnetChannel:
-			if !ok {
-				subnetChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if subnetChannel == nil && errorChannel == nil {
-			break
-		}
-	}
-	subnet, err := subnetsClient.Get(*resourceGroup.Name, virtualNetworkName, subnetName, "")
+	ctx := context.Background()
+	future, err := subnetsClient.CreateOrUpdate(ctx, *resourceGroup.Name, virtualNetworkName, subnetName, subnetParameters)
 	if err != nil {
-		log.Fatalf("Unable to retrieve subnet: %v", err)
+		log.Fatalf("failed to finish creating subnets account: %+v", err)
+		return nil
+	}
+	subnet, err := future.Result(subnetsClient)
+	if err != nil {
+		log.Fatalf("error creating subnet: %v", err)
+		return nil
 	}
 
 	return &subnet
@@ -297,28 +291,18 @@ func createPublicIPAddress(resourceGroup resources.Group, ipName, location strin
 			},
 		},
 	}
-	ipAddressChannel, errorChannel := publicIPAddressesClient.CreateOrUpdate(*resourceGroup.Name, ipName, ipParameters, nil)
-	for {
-		select {
-		case _, ok := <-ipAddressChannel:
-			if !ok {
-				ipAddressChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if ipAddressChannel == nil && errorChannel == nil {
-			break
-		}
-	}
-	time.Sleep(time.Second * 5)
-	publicIPAddress, err := publicIPAddressesClient.Get(*resourceGroup.Name, ipName, "")
+	ctx := context.Background()
+	future, err := publicIPAddressesClient.CreateOrUpdate(ctx, *resourceGroup.Name, ipName, ipParameters)
 	if err != nil {
-		log.Fatalf("Unable to retrieve public IP address: %v", err)
+		log.Fatalf("failed to finish creating public IP account: %+v", err)
+		return nil
 	}
-	return &publicIPAddress
+	publicIP, err := future.Result(publicIPAddressesClient)
+	if err != nil {
+		log.Fatalf("error creating publicIP: %v", err)
+		return nil
+	}
+	return &publicIP
 }
 
 func createNetworkInterface(resourceGroup resources.Group, networkInterfaceName string, publicIPAddress network.PublicIPAddress, subnet network.Subnet, location string) *network.Interface {
@@ -338,26 +322,16 @@ func createNetworkInterface(resourceGroup resources.Group, networkInterfaceName 
 			},
 		},
 	}
-	networkInterfaceChannel, errorChannel := interfacesClient.CreateOrUpdate(*resourceGroup.Name, networkInterfaceName, networkInterfaceParameters, nil)
-	for {
-		select {
-		case _, ok := <-networkInterfaceChannel:
-			if !ok {
-				networkInterfaceChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if networkInterfaceChannel == nil && errorChannel == nil {
-			break
-		}
-	}
-
-	networkInterface, err := interfacesClient.Get(*resourceGroup.Name, networkInterfaceName, "")
+	ctx := context.Background()
+	future, err := interfacesClient.CreateOrUpdate(ctx, *resourceGroup.Name, networkInterfaceName, networkInterfaceParameters)
 	if err != nil {
-		log.Fatalf("Unable to retrieve network interface: %v", err)
+		log.Fatalf("failed to finish creating network interface account: %+v", err)
+		return nil
+	}
+	networkInterface, err := future.Result(interfacesClient)
+	if err != nil {
+		log.Fatalf("error creating network interface: %v", err)
+		return nil
 	}
 	return &networkInterface
 }
@@ -381,8 +355,8 @@ func setVirtualMachineParameters(storageAccountName string, networkInterfaceID, 
 				OsDisk: &compute.OSDisk{
 					Name:         to.StringPtr("osDisk"),
 					OsType:       compute.Linux,
-					Caching:      compute.ReadWrite,
-					CreateOption: compute.FromImage,
+					Caching:      compute.CachingTypesReadWrite,
+					CreateOption: compute.DiskCreateOptionTypesFromImage,
 					Image: &compute.VirtualHardDisk{
 						URI: to.StringPtr(fmt.Sprintf("https://%s.blob.core.windows.net/%s/%s", storageAccountName, defaultStorageContainerName, defaultStorageBlobName)),
 					},
@@ -415,21 +389,15 @@ func createVirtualMachine(resourceGroup resources.Group, storageAccountName stri
 	fmt.Printf("Creating virtual machine in resource group %s, with name %s, in location %s\n", *resourceGroup.Name, virtualMachineName, location)
 
 	virtualMachineParameters := setVirtualMachineParameters(storageAccountName, *networkInterface.ID, location)
-	virtualMachineChannel, errorChannel := virtualMachinesClient.CreateOrUpdate(*resourceGroup.Name, virtualMachineName, virtualMachineParameters, nil)
-	for {
-		select {
-		case _, ok := <-virtualMachineChannel:
-			if !ok {
-				virtualMachineChannel = nil
-			}
-		case _, ok := <-errorChannel:
-			if !ok {
-				errorChannel = nil
-			}
-		}
-		if virtualMachineChannel == nil && errorChannel == nil {
-			break
-		}
+	ctx := context.Background()
+	future, err := virtualMachinesClient.CreateOrUpdate(ctx, *resourceGroup.Name, virtualMachineName, virtualMachineParameters)
+	if err != nil {
+		log.Fatalf("failed to finish creating virtual machines account: %+v", err)
+		return
+	}
+	if _, err := future.Result(virtualMachinesClient); err != nil {
+		log.Fatalf("error creating virtual machine: %v", err)
+		return
 	}
 
 }

@@ -5,31 +5,24 @@ package pkglib
 //go:generate ./gen
 
 import (
-	"encoding/base64"
+	"bytes"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"path"
-	"strconv"
-	"strings"
 
-	"github.com/docker/cli/cli/config"
-	"github.com/docker/distribution/manifest/manifestlist"
-	dockertypes "github.com/docker/docker/api/types"
-	"github.com/estesp/manifest-tool/docker"
-	"github.com/estesp/manifest-tool/types"
+	versioncompare "github.com/hashicorp/go-version"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sync/errgroup"
 )
 
 const (
-	dctEnableEnv                     = "DOCKER_CONTENT_TRUST=1"
-	registry                         = "https://index.docker.io/v1/"
-	notaryServer                     = "https://notary.docker.io"
-	notaryDelegationPassphraseEnvVar = "NOTARY_DELEGATION_PASSPHRASE"
-	notaryAuthEnvVar                 = "NOTARY_AUTH"
-	dctEnvVar                        = "DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"
+	dctEnableEnv        = "DOCKER_CONTENT_TRUST=1"
+	registryServer      = "https://index.docker.io/v1/"
+	buildkitBuilderName = "linuxkit"
 )
 
 var platforms = []string{
@@ -77,10 +70,16 @@ var proxyEnvVars = []string{
 	"ALL_PROXY",
 }
 
-func (dr dockerRunner) command(args ...string) error {
+func (dr dockerRunner) command(stdout, stderr io.Writer, args ...string) error {
 	cmd := exec.Command("docker", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	if stdout == nil {
+		stdout = os.Stdout
+	}
+	if stderr == nil {
+		stderr = os.Stderr
+	}
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	cmd.Env = os.Environ()
 
 	dct := ""
@@ -94,7 +93,8 @@ func (dr dockerRunner) command(args ...string) error {
 
 	var eg errgroup.Group
 
-	if args[0] == "build" {
+	// special handling for build-args
+	if args[0] == "buildx" && args[1] == "build" {
 		buildArgs := []string{}
 		for _, proxyVarName := range proxyEnvVars {
 			if value, ok := os.LookupEnv(proxyVarName); ok {
@@ -134,8 +134,87 @@ func (dr dockerRunner) command(args ...string) error {
 	return eg.Wait()
 }
 
+// versionCheck returns the client version and server version, and compares them both
+// against the minimum required version.
+func (dr dockerRunner) versionCheck(version string) (string, string, error) {
+	var stdout bytes.Buffer
+	if err := dr.command(&stdout, nil, "version", "--format", "json"); err != nil {
+		return "", "", err
+	}
+
+	// we can build a struct for everything, but all we really need is .Client.Version and .Server.Version
+	jsonMap := make(map[string]map[string]interface{})
+	b := stdout.Bytes()
+	if err := json.Unmarshal(b, &jsonMap); err != nil {
+		return "", "", fmt.Errorf("unable to parse docker version output: %v, output is: %s", err, string(b))
+	}
+	client, ok := jsonMap["Client"]
+	if !ok {
+		return "", "", errors.New("docker version output did not have 'Client' field")
+	}
+	clientVersionInt, ok := client["Version"]
+	if !ok {
+		return "", "", errors.New("docker version output did not have 'Client.Version' field")
+	}
+	clientVersionString, ok := clientVersionInt.(string)
+	if !ok {
+		return "", "", errors.New("client version was not a string")
+	}
+	server, ok := jsonMap["Server"]
+	if !ok {
+		return "", "", errors.New("docker version output did not have 'Server' field")
+	}
+	serverVersionInt, ok := server["Version"]
+	if !ok {
+		return clientVersionString, "", errors.New("docker version output did not have 'Server.Version' field")
+	}
+	serverVersionString, ok := serverVersionInt.(string)
+	if !ok {
+		return clientVersionString, "", errors.New("server version was not a string")
+	}
+
+	// get the lower of each of those versions
+	clientVersion, err := versioncompare.NewVersion(clientVersionString)
+	if err != nil {
+		return clientVersionString, serverVersionString, fmt.Errorf("invalid client version %s: %v", clientVersionString, err)
+	}
+	serverVersion, err := versioncompare.NewVersion(serverVersionString)
+	if err != nil {
+		return clientVersionString, serverVersionString, fmt.Errorf("invalid server version %s: %v", serverVersionString, err)
+	}
+	compareVersion, err := versioncompare.NewVersion(version)
+	if err != nil {
+		return clientVersionString, serverVersionString, fmt.Errorf("invalid provided version %s: %v", version, err)
+	}
+	if serverVersion.LessThan(compareVersion) {
+		return clientVersionString, serverVersionString, fmt.Errorf("server version %s less than compare version %s", serverVersion, compareVersion)
+	}
+	if clientVersion.LessThan(compareVersion) {
+		return clientVersionString, serverVersionString, fmt.Errorf("client version %s less than compare version %s", clientVersion, compareVersion)
+	}
+	return clientVersionString, serverVersionString, nil
+}
+
+// buildkitCheck checks if buildkit is supported. This is necessary because github uses some strange versions
+// of docker in Actions, which makes it difficult to tell if buildkit is supported.
+// See https://github.community/t/what-really-is-docker-3-0-6/16171
+func (dr dockerRunner) buildkitCheck() error {
+	return dr.command(nil, nil, "buildx", "ls")
+}
+
+// builder ensure that a builder of the given name exists
+func (dr dockerRunner) builder(name string) error {
+	if err := dr.command(nil, nil, "buildx", "inspect", name); err == nil {
+		// if no error, then we have a builder already
+		return nil
+	}
+
+	// create a builder
+	return dr.command(nil, nil, "buildx", "create", "--name", name, "--driver", "docker-container", "--buildkitd-flags", "--allow-insecure-entitlement network.host")
+}
+
 func (dr dockerRunner) pull(img string) (bool, error) {
-	err := dr.command("image", "pull", img)
+	err := dr.command(nil, nil, "image", "pull", img)
 	if err == nil {
 		return true, nil
 	}
@@ -148,7 +227,7 @@ func (dr dockerRunner) pull(img string) (bool, error) {
 }
 
 func (dr dockerRunner) push(img string) error {
-	return dr.command("image", "push", img)
+	return dr.command(nil, nil, "image", "push", img)
 }
 
 func (dr dockerRunner) pushWithManifest(img, suffix string, pushImage, pushManifest, sign bool) error {
@@ -166,14 +245,14 @@ func (dr dockerRunner) pushWithManifest(img, suffix string, pushImage, pushManif
 		fmt.Print("Image push disabled, skipping...\n")
 	}
 
-	auth, err := getDockerAuth()
+	auth, err := registry.GetDockerAuth()
 	if err != nil {
 		return fmt.Errorf("failed to get auth: %v", err)
 	}
 
 	if pushManifest {
 		fmt.Printf("Pushing %s to manifest %s\n", img+suffix, img)
-		digest, l, err = manifestPush(img, auth)
+		digest, l, err = registry.PushManifest(img, auth)
 		if err != nil {
 			return err
 		}
@@ -190,117 +269,31 @@ func (dr dockerRunner) pushWithManifest(img, suffix string, pushImage, pushManif
 		return nil
 	}
 	fmt.Printf("Signing manifest for %s\n", img)
-	return signManifest(img, digest, l, auth)
+	return registry.SignTag(img, digest, l, auth)
 }
 
 func (dr dockerRunner) tag(ref, tag string) error {
 	fmt.Printf("Tagging %s as %s\n", ref, tag)
-	return dr.command("image", "tag", ref, tag)
+	return dr.command(nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr dockerRunner) build(tag, pkg string, opts ...string) error {
-	args := []string{"build"}
+func (dr dockerRunner) build(tag, pkg string, stdout io.Writer, opts ...string) error {
+	// ensure we have a builder
+	if err := dr.builder(buildkitBuilderName); err != nil {
+		return fmt.Errorf("unable to ensure proper buildx builder: %v", err)
+	}
+
+	args := []string{"buildx", "build"}
 	if !dr.cache {
 		args = append(args, "--no-cache")
 	}
 	args = append(args, opts...)
+	args = append(args, fmt.Sprintf("--builder=%s", buildkitBuilderName))
 	args = append(args, "-t", tag, pkg)
-	return dr.command(args...)
+	return dr.command(stdout, nil, args...)
 }
 
 func (dr dockerRunner) save(tgt string, refs ...string) error {
 	args := append([]string{"image", "save", "-o", tgt}, refs...)
-	return dr.command(args...)
-}
-
-func getDockerAuth() (dockertypes.AuthConfig, error) {
-	cfgFile := config.LoadDefaultConfigFile(os.Stderr)
-	return cfgFile.GetAuthConfig(registry)
-}
-
-func manifestPush(img string, auth dockertypes.AuthConfig) (hash string, length int, err error) {
-	srcImages := []types.ManifestEntry{}
-
-	for i, platform := range platforms {
-		osArchArr := strings.Split(platform, "/")
-		if len(osArchArr) != 2 && len(osArchArr) != 3 {
-			return hash, length, fmt.Errorf("platform argument %d is not of form 'os/arch': '%s'", i, platform)
-		}
-		variant := ""
-		os, arch := osArchArr[0], osArchArr[1]
-		if len(osArchArr) == 3 {
-			variant = osArchArr[2]
-		}
-		srcImages = append(srcImages, types.ManifestEntry{
-			Image: fmt.Sprintf("%s-%s", img, arch),
-			Platform: manifestlist.PlatformSpec{
-				OS:           os,
-				Architecture: arch,
-				Variant:      variant,
-			},
-		})
-	}
-
-	yamlInput := types.YAMLInput{
-		Image:     img,
-		Manifests: srcImages,
-	}
-
-	a := types.AuthInfo{
-		Username: auth.Username,
-		Password: auth.Password,
-	}
-
-	// push the manifest list with the auth as given, ignore missing, do not allow insecure
-	return docker.PutManifestList(&a, yamlInput, true, false)
-}
-
-func signManifest(img, digest string, length int, auth dockertypes.AuthConfig) error {
-	imgParts := strings.Split(img, ":")
-	if len(imgParts) < 2 {
-		return fmt.Errorf("image not composed of <repo>:<tag> '%s'", img)
-	}
-	repo := imgParts[0]
-	tag := imgParts[1]
-
-	digestParts := strings.Split(digest, ":")
-	if len(digestParts) < 2 {
-		return fmt.Errorf("digest not composed of <algo>:<hash> '%s'", digest)
-	}
-	algo, hash := digestParts[0], digestParts[1]
-	if algo != "sha256" {
-		return fmt.Errorf("notary works with sha256 hash, not the provided %s", algo)
-	}
-
-	notaryAuth := base64.StdEncoding.EncodeToString([]byte(fmt.Sprintf("%s:%s", auth.Username, auth.Password)))
-	// run the notary command to sign
-	args := []string{
-		"-s",
-		notaryServer,
-		"-d",
-		path.Join(os.Getenv("HOME"), ".docker/trust"),
-		"addhash",
-		"-p",
-		fmt.Sprintf("docker.io/%s", repo),
-		tag,
-		strconv.Itoa(length),
-		"--sha256",
-		hash,
-		"-r",
-		"targets/releases",
-	}
-	cmd := exec.Command("notary", args...)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
-	cmd.Env = append(os.Environ(), fmt.Sprintf("%s=%s", notaryDelegationPassphraseEnvVar, os.Getenv(dctEnvVar)), fmt.Sprintf("%s=%s", notaryAuthEnvVar, notaryAuth))
-	log.Debugf("Executing: %v", cmd.Args)
-
-	if err := cmd.Run(); err != nil {
-		return fmt.Errorf("failed to execute notary-tool: %v", err)
-	}
-
-	// report output
-	fmt.Printf("Signed manifest index: %s:%s\n", repo, tag)
-
-	return nil
+	return dr.command(nil, nil, args...)
 }

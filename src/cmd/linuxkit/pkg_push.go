@@ -25,6 +25,7 @@ func pkgPush(args []string) {
 	manifest := flags.Bool("manifest", true, "Create and push multi-arch manifest")
 	image := flags.Bool("image", true, "Build and push image for the current platform")
 	sign := flags.Bool("sign", true, "sign the manifest, if a manifest is created; ignored if --manifest=false")
+	buildCacheDir := flags.String("cache", defaultLinuxkitCache(), "Directory for storing built image, incompatible with --docker")
 
 	p, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
@@ -57,6 +58,7 @@ func pkgPush(args []string) {
 	if *sign && *manifest {
 		opts = append(opts, pkglib.WithBuildSign())
 	}
+	opts = append(opts, pkglib.WithBuildCacheDir(*buildCacheDir))
 
 	if *nobuild {
 		fmt.Printf("Pushing %q without building\n", p.Tag())

@@ -5,13 +5,11 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
-func setupInspect(t *testing.T, label ImageConfig) types.ImageInspect {
-	var inspect types.ImageInspect
-	var config container.Config
+func setupInspect(t *testing.T, label ImageConfig) imagespec.ImageConfig {
+	var config imagespec.ImageConfig
 
 	labelJSON, err := json.Marshal(label)
 	if err != nil {
@@ -19,9 +17,7 @@ func setupInspect(t *testing.T, label ImageConfig) types.ImageInspect {
 	}
 	config.Labels = map[string]string{"org.mobyproject.config": string(labelJSON)}
 
-	inspect.Config = &config
-
-	return inspect
+	return config
 }
 
 func TestOverrides(t *testing.T) {
@@ -46,7 +42,7 @@ func TestOverrides(t *testing.T) {
 
 	inspect := setupInspect(t, label)
 
-	oci, _, err := ConfigInspectToOCI(&yaml, inspect, idMap)
+	oci, _, err := ConfigToOCI(&yaml, inspect, idMap)
 	if err != nil {
 		t.Error(err)
 	}
@@ -74,7 +70,7 @@ func TestInvalidCap(t *testing.T) {
 
 	inspect := setupInspect(t, label)
 
-	_, _, err := ConfigInspectToOCI(&yaml, inspect, idMap)
+	_, _, err := ConfigToOCI(&yaml, inspect, idMap)
 	if err == nil {
 		t.Error("expected error, got valid OCI config")
 	}
@@ -99,7 +95,7 @@ func TestIdMap(t *testing.T) {
 
 	inspect := setupInspect(t, label)
 
-	oci, _, err := ConfigInspectToOCI(&yaml, inspect, idMap)
+	oci, _, err := ConfigToOCI(&yaml, inspect, idMap)
 	if err != nil {
 		t.Error(err)
 	}

@@ -1,8 +1,10 @@
 FROM linuxkit/alpine:a3d78322152a8b341bdaecfe182a2689fdbdee53 as alpine
-RUN apk add tzdata
+RUN apk add tzdata binutils
 
 WORKDIR $GOPATH/src/github.com/containerd/containerd
 RUN cp bin/containerd bin/ctr bin/containerd-shim bin/containerd-shim-runc-v2 /usr/bin/
+
+RUN strip /usr/bin/containerd /usr/bin/ctr /usr/bin/containerd-shim /usr/bin/containerd-shim-runc-v2
 
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/020-containerd
 

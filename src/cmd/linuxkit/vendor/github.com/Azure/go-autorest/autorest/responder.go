@@ -1,5 +1,19 @@
 package autorest
 
+// Copyright 2017 Microsoft Corporation
+//
+//  Licensed under the Apache License, Version 2.0 (the "License");
+//  you may not use this file except in compliance with the License.
+//  You may obtain a copy of the License at
+//
+//      http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software
+//  distributed under the License is distributed on an "AS IS" BASIS,
+//  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+//  See the License for the specific language governing permissions and
+//  limitations under the License.
+
 import (
 	"bytes"
 	"encoding/json"
@@ -132,6 +146,25 @@ func ByClosingIfError() RespondDecorator {
 			if err != nil && resp != nil && resp.Body != nil {
 				if err := resp.Body.Close(); err != nil {
 					return fmt.Errorf("Error closing the response body: %v", err)
+				}
+			}
+			return err
+		})
+	}
+}
+
+// ByUnmarshallingBytes returns a RespondDecorator that copies the Bytes returned in the
+// response Body into the value pointed to by v.
+func ByUnmarshallingBytes(v *[]byte) RespondDecorator {
+	return func(r Responder) Responder {
+		return ResponderFunc(func(resp *http.Response) error {
+			err := r.Respond(resp)
+			if err == nil {
+				bytes, errInner := ioutil.ReadAll(resp.Body)
+				if errInner != nil {
+					err = fmt.Errorf("Error occurred reading http.Response#Body - Error = '%v'", errInner)
+				} else {
+					*v = bytes
 				}
 			}
 			return err

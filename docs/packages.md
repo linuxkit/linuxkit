@@ -23,7 +23,7 @@ We do not want the builds to happen with each CI run for two reasons:
 1. It is slower to do a package build than to just pull the latest image.
 2. If any of the steps of the build fails, e.g. a `curl` download that depends on an intermittent target, it can cause all of CI to fail.
 
-Thus, if, as a maintainer, you merge any commits into a `pkg/`, even if the change is documentation alone, please do a `linuxkit package push`.
+Thus, if, as a maintainer, you merge any commits into a `pkg/`, even if the change is documentation alone, please do a `linuxkit pkg push`.
 
 
 ## Package source
@@ -54,8 +54,8 @@ A package source consists of a directory containing at least two files:
 ### Prerequisites
 
 Before you can build packages you need:
-- Docker version 17.06 or newer. If you are on a Mac you also need
-  `docker-credential-osxkeychain.bin`, which comes with Docker for Mac.
+- Docker version 19.03 or newer, which includes [buildx](https://docs.docker.com/buildx/working-with-buildx/)
+- If you are on a Mac you also need `docker-credential-osxkeychain.bin`, which comes with Docker for Mac.
 - `make`, `notary`, `base64`, `jq`, and `expect`
 - A *recent* version of `manifest-tool` which you can build with `make
   bin/manifest-tool`, or `go get github.com:estesp/manifest-tool`, or
@@ -66,6 +66,35 @@ Before you can build packages you need:
 Further, when building packages you need to be logged into hub with
 `docker login` as some of the tooling extracts your hub credentials
 during the build.
+
+### Build Targets
+
+LinuxKit builds packages as docker images. It deposits the built package as a docker image in one of two targets:
+
+* the linuxkit cache `~/.linuxkit/` (configurable) - default option
+* the docker image cache
+
+If you want to build images and test and run them _in a standalone_ fashion locally, then you should pick the docker image cache. Otherwise, you should use the default linuxkit cache. LinuxKit defaults to building OS images using docker images from this cache,\
+only looking in the docker cache if instructed to via `linuxkit build --docker`.
+
+When using the linuxkit cache as the package build target, it creates all of the layers, the manifest that can be uploaded
+to a registry, and the multi-architecture index. If an image already exists for a different architecture in the cache,
+it updates the index to include additional manifests created.
+
+As of this writing, `linuxkit pkg build` only builds packages for the platform on which it is running; it does not (yet) support cross-building the packages for other architectures.
+
+Note that the local docker option is available _only_ when building without pushing to a remote registry, i.e.:
+
+```
+linuxkit pkg build
+linuxkit pkg build --docker
+```
+
+If you push to a registry, it _always_ uses the linuxkit cache only:
+
+```
+linuxkit pkg push
+```
 
 ### Build packages as a maintainer
 
@@ -216,7 +245,7 @@ tag, so you are looking for the size and hash of whatever the tag points to, man
 If you pushed the image tag using `docker push`, the very last line of output will give you the hash and size:
 
 ```console
-$ docker push linuxkit/containerd:a4aa19c608556f7d786852557c36136255220c1f
+$ docker push linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106
 The push refers to repository [docker.io/linuxkit/containerd]
 fce5742422e4: Layer already exists
 48a02e7b3096: Layer already exists
@@ -252,8 +281,8 @@ For example, inspecting just a single arch manifest gives us the hash on the sec
 size:
 
 ```console
-$ manifest-tool inspect linuxkit/containerd:v0.8-amd64
-Name: linuxkit/containerd:v0.8-amd64 (Type: application/vnd.docker.distribution.manifest.v2+json)
+$ manifest-tool inspect linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106-amd64
+Name: linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106-amd64 (Type: application/vnd.docker.distribution.manifest.v2+json)
       Digest: sha256:0dc4f37966e23c0dffa6961119f29100c6d181b221e748c4688a280c08ab52a8
           OS: linux
         Arch: amd64
@@ -270,8 +299,8 @@ index, but finding the right entry, for example the first one is `amd64`, gives 
 `Mfst Length: 1357`:
 
 ```console
-$ manifest-tool inspect linuxkit/containerd:v0.8
-Name:   linuxkit/containerd:v0.8 (Type: application/vnd.docker.distribution.manifest.list.v2+json)
+$ manifest-tool inspect linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106
+Name:   linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106 (Type: application/vnd.docker.distribution.manifest.list.v2+json)
 Digest: sha256:247e1eb712c2f5e9d80bb1a9ddf9bb5479b3f785a7e0dd4a8844732bbaa96851
  * Contains 3 manifest references:
 1    Mfst Type: application/vnd.docker.distribution.manifest.v2+json
@@ -332,8 +361,8 @@ report the hash and size.
 For an index:
 
 ```console
-$ ocidist manifest docker.io/linuxkit/containerd:v0.8 --detail
-2020/11/12 11:00:03 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8", original:"docker.io/linuxkit/containerd:v0.8"}
+$ ocidist manifest docker.io/linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106 --detail
+2020/11/12 11:00:03 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8", original:"docker.io/linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106"}
 2020/11/12 11:00:03 advanced API
 2020/11/12 11:00:06 referenced manifest hash sha256:247e1eb712c2f5e9d80bb1a9ddf9bb5479b3f785a7e0dd4a8844732bbaa96851 size 1052
 {
@@ -374,8 +403,8 @@ $ ocidist manifest docker.io/linuxkit/containerd:v0.8 --detail
 For a single manifest:
 
 ```console
-$ ocidist manifest docker.io/linuxkit/containerd:v0.8-amd64 --detail
-2020/11/12 10:59:08 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8-amd64", original:"docker.io/linuxkit/containerd:v0.8-amd64"}
+$ ocidist manifest docker.io/linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106-amd64 --detail
+2020/11/12 10:59:08 ref name.Tag{Repository:name.Repository{Registry:name.Registry{insecure:false, registry:"index.docker.io"}, repository:"linuxkit/containerd"}, tag:"v0.8-amd64", original:"docker.io/linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106-amd64"}
 2020/11/12 10:59:08 advanced API
 2020/11/12 10:59:11 referenced manifest hash sha256:0dc4f37966e23c0dffa6961119f29100c6d181b221e748c4688a280c08ab52a8 size 1357
 {

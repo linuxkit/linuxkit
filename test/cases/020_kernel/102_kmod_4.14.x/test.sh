@@ -24,7 +24,7 @@ docker pull linuxkit/kernel:4.14.179
 docker build -t ${IMAGE_NAME} .
 
 # Build and run a LinuxKit image with kernel module (and test script)
-linuxkit build -format kernel+initrd -name "${NAME}" test.yml
+linuxkit build -docker -format kernel+initrd -name "${NAME}" test.yml
 RESULT="$(linuxkit run ${NAME})"
 echo "${RESULT}" | grep -q "Hello LinuxKit"
 
