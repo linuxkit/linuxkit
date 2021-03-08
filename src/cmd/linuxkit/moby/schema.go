@@ -305,6 +305,7 @@ var schema = string(`
   "properties": {
     "kernel": { "$ref": "#/definitions/kernel" },
     "init": { "$ref": "#/definitions/strings" },
+    "prefix": { "type": "string" },
     "onboot": { "$ref": "#/definitions/images" },
     "onshutdown": { "$ref": "#/definitions/images" },
     "services": { "$ref": "#/definitions/images" },

@@ -198,7 +198,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
 		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, decompressKernel)
-		err := ImageTar(m.Kernel.ref, "", kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "", cacheDir, dockerCache, m.Architecture)
+		err := ImageTar(m.Kernel.ref, m.Prefix, kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "", cacheDir, dockerCache, m.Architecture)
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
 		}
@@ -214,7 +214,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 	}
 	for _, ii := range m.initRefs {
 		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", iw, enforceContentTrust(ii.String(), &m.Trust), pull, resolvconfSymlink, cacheDir, dockerCache, m.Architecture)
+		err := ImageTar(ii, m.Prefix, iw, enforceContentTrust(ii.String(), &m.Trust), pull, resolvconfSymlink, cacheDir, dockerCache, m.Architecture)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}

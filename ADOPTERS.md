@@ -8,6 +8,8 @@ _This list is currently under construction. Please add your use cases to this wi
 
 **_[TagHub](https://www.taghub.net)_** - TagHub is a SaaS product for doing asset management. We use LinuxKit to have small and secure linux nodes powering our multi-cloud infrastructure. TagHub is made by [Smart Management](http://www.smartm.no/).
 
+**_[AWS Nitro Enclaves](https://aws.amazon.com/ec2/nitro/nitro-enclaves/)_** - Nitro Enclaves Command Line Interface uses LinuxKit in order to reproducibly build an Enclave Image Format (EIF) file starting from a Docker image.
+
 # Projects Using LinuxKit
 
 **_[LinuxKit Nix](https://github.com/nix-community/linuxkit-nix)_** aims to provide a Linux Nix VM for macOS.
