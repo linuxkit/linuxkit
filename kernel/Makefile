@@ -45,7 +45,7 @@ ARCH := $(shell uname -m)
 ifeq ($(ARCH),x86_64)
 SUFFIX=-amd64
 endif
-ifeq ($(ARCH),aarch64)
+ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
 SUFFIX=-arm64
 endif
 ifeq ($(ARCH),s390x)
@@ -260,7 +260,7 @@ $(eval $(call kernel,5.4.39,5.4.x,,-dbg))
 $(eval $(call kernel,4.19.121,4.19.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,4.14.179,4.14.x,$(EXTRA),$(DEBUG)))
 
-else ifeq ($(ARCH),aarch64)
+else ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
 $(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.6.11,5.6.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.4.39,5.4.x,$(EXTRA),$(DEBUG)))
