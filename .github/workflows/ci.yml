@@ -57,7 +57,7 @@ jobs:
 
     - name: Build
       run: |
-        make GOARCH=${{matrix.target.arch}} GOOS=${{matrix.target.os}} LOCAL_TARGET=bin/linuxkit-${{matrix.target.suffix}} local-build
+        make GOARCH=${{matrix.target.arch}} GOOS=${{matrix.target.os}} LOCAL_TARGET=$(pwd)/bin/linuxkit-${{matrix.target.suffix}} local-build
         file bin/linuxkit-${{matrix.target.suffix}}
       env:
         GOPATH: ${{runner.workspace}}
