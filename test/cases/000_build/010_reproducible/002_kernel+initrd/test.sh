@@ -16,9 +16,8 @@ clean_up() {
 
 trap clean_up EXIT
 
-# -disable-content-trust to speed up the test
-linuxkit build -disable-content-trust -format kernel+initrd -name "${NAME}-1" ../test.yml
-linuxkit build -disable-content-trust -format kernel+initrd -name "${NAME}-2" ../test.yml
+linuxkit build -format kernel+initrd -name "${NAME}-1" ../test.yml
+linuxkit build -format kernel+initrd -name "${NAME}-2" ../test.yml
 
 diff -q "${NAME}-1-cmdline"    "${NAME}-2-cmdline"    || exit 1
 diff -q "${NAME}-1-kernel"     "${NAME}-2-kernel"     || exit 1

@@ -1,8 +1,6 @@
 package moby
 
 import (
-	"fmt"
-
 	"github.com/containerd/containerd/reference"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/docker"
@@ -12,7 +10,7 @@ import (
 // If the image root already is in the cache, use it, unless
 // the option pull is set to true.
 // if alwaysPull, then do not even bother reading locally
-func imagePull(ref *reference.Spec, alwaysPull bool, trust bool, cacheDir string, dockerCache bool, architecture string) (ImageSource, error) {
+func imagePull(ref *reference.Spec, alwaysPull bool, cacheDir string, dockerCache bool, architecture string) (ImageSource, error) {
 	// several possibilities:
 	// - alwaysPull: try to pull it down from the registry to linuxkit cache, then fail
 	// - !alwaysPull && dockerCache: try to read it from docker, then try linuxkit cache, then try to pull from registry, then fail
@@ -33,22 +31,11 @@ func imagePull(ref *reference.Spec, alwaysPull bool, trust bool, cacheDir string
 	}
 
 	// if we made it here, we either did not have the image, or it was incomplete
-	return imageLayoutWrite(cacheDir, ref, architecture, trust)
+	return imageLayoutWrite(cacheDir, ref, architecture)
 }
 
 // imageLayoutWrite takes an image name and pulls it down, writing it locally
-func imageLayoutWrite(cacheDir string, ref *reference.Spec, architecture string, trust bool) (ImageSource, error) {
+func imageLayoutWrite(cacheDir string, ref *reference.Spec, architecture string) (ImageSource, error) {
 	image := ref.String()
-	var (
-		trustedName string
-	)
-	if trust {
-		// get trusted reference
-		trustedRef, err := TrustedReference(image)
-		if err != nil {
-			return nil, fmt.Errorf("Trusted pull for %s failed: %v", ref, err)
-		}
-		trustedName = trustedRef.String()
-	}
-	return cache.ImageWrite(cacheDir, ref, trustedName, architecture)
+	return cache.ImageWrite(cacheDir, ref, image, architecture)
 }

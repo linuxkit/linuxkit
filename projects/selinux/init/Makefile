@@ -29,7 +29,7 @@ IMAGE=init
 ETC=$(shell find etc -type f)
 
 hash: Dockerfile $(ETC) init $(RUNC_BINARY) $(CONTAINERD_BINARIES) $(START_STOP_DAEMON) repositories
-	DOCKER_CONTENT_TRUST=1 docker pull $(BASE)
+	 docker pull $(BASE)
 	tar cf - $^ | docker build --no-cache -t $(IMAGE):build -
 	docker run --rm $(IMAGE):build sh -c 'cat $^ /lib/apk/db/installed | sha1sum' | sed 's/ .*//' > $@
 

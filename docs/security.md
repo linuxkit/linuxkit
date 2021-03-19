@@ -50,8 +50,6 @@ and namespaced separately from the host as appropriate.
 LinuxKit's build process heavily leverages Docker images for packaging. Of note, all intermediate build images
 are referenced by digest to ensures reproducibility across LinuxKit builds. Tags are mutable, and thus subject to override
 (intentionally or maliciously) - referencing by digest mitigates classes of registry poisoning attacks in LinuxKit's buildchain.
-Certain images, such as the kernel image, will be signed by LinuxKit maintainers using [Docker Content Trust](https://docs.docker.com/engine/security/trust/content_trust/),
-which guarantees authenticity, integrity, and freshness of the image.
 
 Moreover, LinuxKit's build process leverages [Alpine Linux's](https://alpinelinux.org/) hardened userspace tools such as
 Musl libc, and compiler options that include `-fstack-protector` and position-independent executable output. Go binaries

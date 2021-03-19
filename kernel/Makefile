@@ -64,12 +64,6 @@ COMMIT_LABEL=--label org.opencontainers.image.revision=$(REPO_COMMIT)
 endif
 LABELS=$(REPO_LABEL) $(COMMIT_LABEL)
 
-ifeq ($(DOCKER_CONTENT_TRUST),)
-ifndef NOTRUST
-export DOCKER_CONTENT_TRUST=1
-endif
-endif
-
 KERNEL_VERSIONS=
 
 .PHONY: build push
@@ -143,6 +137,8 @@ push: push_$(2)$(3)$(4)
 forcepush: forcepush_$(2)$(3)$(4)
 show-tags: show-tag_$(2)$(3)$(4)
 
+# FIXME: We no longer use DOCKER_CONENT_TRUST=1
+#
 # 'docker build' with the FROM image supplied as --build-arg
 # *and* with DOCKER_CONTENT_TRUST=1 currently does not work
 # (https://github.com/moby/moby/issues/34199). So, we pull the image

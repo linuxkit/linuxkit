@@ -21,7 +21,6 @@ type Moby struct {
 	Onboot       []*Image     `yaml:"onboot" json:"onboot"`
 	Onshutdown   []*Image     `yaml:"onshutdown" json:"onshutdown"`
 	Services     []*Image     `yaml:"services" json:"services"`
-	Trust        TrustConfig  `yaml:"trust,omitempty" json:"trust,omitempty"`
 	Files        []File       `yaml:"files" json:"files"`
 	Architecture string
 
@@ -37,12 +36,6 @@ type KernelConfig struct {
 	UCode   *string `yaml:"ucode,omitempty" json:"ucode,omitempty"`
 
 	ref *reference.Spec
-}
-
-// TrustConfig is the type of a content trust config
-type TrustConfig struct {
-	Image []string `yaml:"image,omitempty" json:"image,omitempty"`
-	Org   []string `yaml:"org,omitempty" json:"org,omitempty"`
 }
 
 // File is the type of a file specification
@@ -318,8 +311,6 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby.Onshutdown = append(moby.Onshutdown, m1.Onshutdown...)
 	moby.Services = append(moby.Services, m1.Services...)
 	moby.Files = append(moby.Files, m1.Files...)
-	moby.Trust.Image = append(moby.Trust.Image, m1.Trust.Image...)
-	moby.Trust.Org = append(moby.Trust.Org, m1.Trust.Org...)
 	moby.initRefs = append(moby.initRefs, m1.initRefs...)
 	moby.Architecture = m1.Architecture
 

@@ -52,7 +52,7 @@ Image names are kept in `index.json` in the [annotation](https://github.com/open
 For each image that linuxkit needs to read, it does the following. Note that if the `--pull` option
 is provided, it always will pull, independent of what is in the cache.
 
-1. Check in the cache for the image name in the cache `index.json`. If it does not find it, pull it down and store it in cache, using content trust, if enabled.
+1. Check in the cache for the image name in the cache `index.json`. If it does not find it, pull it down and store it in cache.
 1. Read the root hash from `index.json`.
 1. Find the root blob in the `blobs/` directory via the hash and read it.
 1. Proceed to read the manifest, config and layers.

@@ -28,7 +28,6 @@ type buildOpts struct {
 	push         bool
 	release      string
 	manifest     bool
-	sign         bool
 	image        bool
 	targetDocker bool
 	cache        string
@@ -77,14 +76,6 @@ func WithBuildManifest() BuildOpt {
 	}
 }
 
-// WithBuildSign signs the image and/or the index
-func WithBuildSign() BuildOpt {
-	return func(bo *buildOpts) error {
-		bo.sign = true
-		return nil
-	}
-}
-
 // WithRelease releases as the given version after push
 func WithRelease(r string) BuildOpt {
 	return func(bo *buildOpts) error {
@@ -116,10 +107,6 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		if err := fn(&bo); err != nil {
 			return err
 		}
-	}
-
-	if _, ok := os.LookupEnv("DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"); !ok && bo.sign && p.trust && bo.push {
-		return fmt.Errorf("Pushing with trust enabled requires $DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE to be set")
 	}
 
 	arch := runtime.GOARCH
@@ -161,7 +148,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return fmt.Errorf("Cannot release %q if not pushing", bo.release)
 	}
 
-	d := newDockerRunner(p.trust, p.cache, bo.sign)
+	d := newDockerRunner(p.cache)
 
 	if err := d.buildkitCheck(); err != nil {
 		return fmt.Errorf("buildkit not supported, check docker version: %v", err)
@@ -312,11 +299,11 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	// !force case.
 
 	if bo.targetDocker {
-		if err := d.pushWithManifest(p.Tag(), suffix, bo.image, bo.manifest, bo.sign); err != nil {
+		if err := d.pushWithManifest(p.Tag(), suffix, bo.image, bo.manifest); err != nil {
 			return err
 		}
 	} else {
-		if err := cache.PushWithManifest(bo.cache, p.Tag(), suffix, bo.image, bo.manifest, p.trust, bo.sign); err != nil {
+		if err := cache.PushWithManifest(bo.cache, p.Tag(), suffix, bo.image, bo.manifest); err != nil {
 			return err
 		}
 	}
@@ -336,7 +323,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			return err
 		}
 
-		if err := d.pushWithManifest(relTag, suffix, bo.image, bo.manifest, bo.sign); err != nil {
+		if err := d.pushWithManifest(relTag, suffix, bo.image, bo.manifest); err != nil {
 			return err
 		}
 	} else {
@@ -354,7 +341,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		if _, err := cache.DescriptorWrite(bo.cache, &ref, *desc); err != nil {
 			return err
 		}
-		if err := cache.PushWithManifest(bo.cache, relTag, suffix, bo.image, bo.manifest, p.trust, bo.sign); err != nil {
+		if err := cache.PushWithManifest(bo.cache, relTag, suffix, bo.image, bo.manifest); err != nil {
 			return err
 		}
 	}

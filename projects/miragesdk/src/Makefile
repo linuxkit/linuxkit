@@ -18,8 +18,8 @@ tag: $(DEPS)
 	docker build --squash $(NOCACHE) -t $(ORG)/$(IMAGE):$(HASH) .
 
 push: tag
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(HASH) || \
-	DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(HASH)
+	 docker pull $(ORG)/$(IMAGE):$(HASH) || \
+	 docker push $(ORG)/$(IMAGE):$(HASH)
 
 #### DEV
 

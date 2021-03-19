@@ -60,10 +60,10 @@ build_$(2)$(3): Dockerfile Makefile $(wildcard patches-$(2)/*) kernel_config-$(2
 
 push_$(2)$(3): build_$(2)$(3)
 	@if [ $(DIRTY) -ne 0 ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) || \
-		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) && \
+	 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) || \
+		( docker push $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) && \
 		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(TAG) $(ORG)/$(IMAGE):$(1)$(3) && \
-		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3))
+		  docker push $(ORG)/$(IMAGE):$(1)$(3))
 
 build: build_$(2)$(3)
 push: push_$(2)$(3)

@@ -16,17 +16,14 @@ import (
 
 // dockerRun is outside the linuxkit/docker package, because that is for caching, this is
 // used for running to build images.
-func dockerRun(input io.Reader, output io.Writer, trust bool, img string, args ...string) error {
-	log.Debugf("docker run %s (trust=%t) (input): %s", img, trust, strings.Join(args, " "))
+func dockerRun(input io.Reader, output io.Writer, img string, args ...string) error {
+	log.Debugf("docker run %s (input): %s", img, strings.Join(args, " "))
 	docker, err := exec.LookPath("docker")
 	if err != nil {
 		return errors.New("Docker does not seem to be installed")
 	}
 
 	env := os.Environ()
-	if trust {
-		env = append(env, "DOCKER_CONTENT_TRUST=1")
-	}
 
 	// Pull first to avoid https://github.com/docker/cli/issues/631
 	pull := exec.Command(docker, "pull", img)

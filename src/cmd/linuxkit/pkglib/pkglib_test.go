@@ -83,10 +83,6 @@ func TestCache(t *testing.T) {
 	testBool(t, "disable-cache", true, "-enable-cache", "-disable-cache", func(p Pkg) bool { return p.cache })
 }
 
-func TestContentTrust(t *testing.T) {
-	testBool(t, "disable-content-trust", true, "-enable-content-trust", "-disable-content-trust", func(p Pkg) bool { return p.trust })
-}
-
 func testBadBuildYML(t *testing.T, build, expect string) {
 	cwd, err := os.Getwd()
 	require.NoError(t, err)
