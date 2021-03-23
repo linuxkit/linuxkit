@@ -281,6 +281,11 @@ func (p Pkg) TrustEnabled() bool {
 	return p.trust
 }
 
+// Arches which arches this can be built for
+func (p Pkg) Arches() []string {
+	return p.arches
+}
+
 func (p Pkg) archSupported(want string) bool {
 	for _, supp := range p.arches {
 		if supp == want {

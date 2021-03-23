@@ -7,11 +7,12 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
+	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 )
 
 // ValidateImage given a reference, validate that it is complete. If not, pull down missing
 // components as necessary.
-func ValidateImage(ref *reference.Spec, cacheDir, architecture string) (ImageSource, error) {
+func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lktspec.ImageSource, error) {
 	var (
 		imageIndex v1.ImageIndex
 		image      v1.Image
@@ -19,7 +20,7 @@ func ValidateImage(ref *reference.Spec, cacheDir, architecture string) (ImageSou
 		desc       *v1.Descriptor
 	)
 	// next try the local cache
-	root, err := FindRoot(cacheDir, imageName)
+	root, err := p.FindRoot(imageName)
 	if err == nil {
 		img, err := root.Image()
 		if err == nil {
@@ -49,9 +50,8 @@ func ValidateImage(ref *reference.Spec, cacheDir, architecture string) (ImageSou
 	case imageIndex != nil:
 		// we found a local index, just make sure it is up to date and, if not, download it
 		if err := validate.Index(imageIndex); err == nil {
-			return NewSource(
+			return p.NewSource(
 				ref,
-				cacheDir,
 				architecture,
 				desc,
 			), nil
@@ -60,9 +60,8 @@ func ValidateImage(ref *reference.Spec, cacheDir, architecture string) (ImageSou
 	case image != nil:
 		// we found a local image, just make sure it is up to date
 		if err := validate.Image(image); err == nil {
-			return NewSource(
+			return p.NewSource(
 				ref,
-				cacheDir,
 				architecture,
 				desc,
 			), nil

@@ -6,6 +6,7 @@ import (
 	"io"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/google/go-containerregistry/pkg/v1"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -74,4 +75,9 @@ func (d ImageSource) TarReader() (io.ReadCloser, error) {
 			return Rm(container)
 		},
 	}, nil
+}
+
+// Descriptor return the descriptor of the image.
+func (d ImageSource) Descriptor() *v1.Descriptor {
+	return nil
 }
