@@ -36,7 +36,7 @@ LinuxKit uses the `linuxkit` tool for building, pushing and running VM images.
 Simple build instructions: use `make` to build. This will build the tool in `bin/`. Add this
 to your `PATH` or copy it to somewhere in your `PATH` eg `sudo cp bin/* /usr/local/bin/`. Or you can use `sudo make install`.
 
-If you already have `go` installed you can use `go get -u github.com/linuxkit/linuxkit/src/cmd/linuxkit` to install the `linuxkit` tool.
+If you already have `go` installed you can use `go install github.com/linuxkit/linuxkit/src/cmd/linuxkit@latest` to install the `linuxkit` tool.
 
 On MacOS there is a `brew tap` available. Detailed instructions are at [linuxkit/homebrew-linuxkit](https://github.com/linuxkit/homebrew-linuxkit),
 the short summary is
