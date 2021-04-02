@@ -2,8 +2,6 @@
 
 IMAGE=guestfs
 
-export DOCKER_CONTENT_TRUST=1
-
 default: push
 
 iid: Dockerfile

@@ -10,10 +10,8 @@ import (
 )
 
 // PushWithManifest push an image along with, optionally, a multi-arch index.
-func PushWithManifest(dir string, name, suffix string, pushImage, pushManifest, trust, sign bool) error {
+func PushWithManifest(dir string, name, suffix string, pushImage, pushManifest bool) error {
 	var (
-		digest  string
-		l       int
 		err     error
 		options []remote.Option
 	)
@@ -63,23 +61,12 @@ func PushWithManifest(dir string, name, suffix string, pushImage, pushManifest, 
 
 	if pushManifest {
 		fmt.Printf("Pushing %s to manifest %s\n", imageName, name)
-		digest, l, err = registry.PushManifest(imageName, auth)
+		_, _, err = registry.PushManifest(imageName, auth)
 		if err != nil {
 			return err
 		}
 	} else {
 		fmt.Print("Manifest push disabled, skipping...\n")
 	}
-
-	// if trust is not enabled, nothing more to do
-	if !trust {
-		fmt.Println("trust disabled, not signing")
-		return nil
-	}
-	if !sign {
-		fmt.Println("signing disabled, not signing")
-		return nil
-	}
-	fmt.Printf("Signing manifest for %s\n", imageName)
-	return registry.SignTag(name, digest, l, auth)
+	return nil
 }

@@ -49,10 +49,10 @@ push_$(2)$(3): build_$(2)$(3)
 		 docker push $(ORG)/$(IMAGE):$(2)$(3))
 
 sign_$(2)$(3): build_$(2)$(3)
-	DOCKER_CONTENT_TRUST=1 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) || \
-		(DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) && \
+	 docker pull $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) || \
+		( docker push $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) && \
 		 docker tag $(ORG)/$(IMAGE):$(1)$(3)-$(HASH) $(ORG)/$(IMAGE):$(2)$(3) && \
-		 DOCKER_CONTENT_TRUST=1 docker push $(ORG)/$(IMAGE):$(2)$(3))
+		  docker push $(ORG)/$(IMAGE):$(2)$(3))
 
 build: build_$(2)$(3)
 push: push_$(2)$(3)

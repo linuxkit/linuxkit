@@ -50,7 +50,6 @@ func build(args []string) {
 	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDocker := buildCmd.Bool("docker", false, "Check for images in docker before linuxkit cache")
-	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
 	buildDecompressKernel := buildCmd.Bool("decompress-kernel", false, "Decompress the Linux kernel (default false)")
 	buildCacheDir := buildCmd.String("cache", defaultLinuxkitCache(), "Directory for caching and finding cached image")
 	buildCmd.Var(&buildFormats, "format", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
@@ -188,11 +187,6 @@ func build(args []string) {
 		}
 	}
 
-	if *buildDisableTrust {
-		log.Debugf("Disabling content trust checks for this build")
-		m.Trust = moby.TrustConfig{}
-	}
-
 	var tf *os.File
 	var w io.Writer
 	if outputFile != nil {
@@ -223,7 +217,7 @@ func build(args []string) {
 		}
 
 		log.Infof("Create outputs:")
-		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, !*buildDisableTrust, cacheDir)
+		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, cacheDir)
 		if err != nil {
 			log.Fatalf("Error writing outputs: %v", err)
 		}

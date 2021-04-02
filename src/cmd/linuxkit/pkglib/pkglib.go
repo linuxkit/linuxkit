@@ -4,28 +4,28 @@ import (
 	"crypto/sha1"
 	"flag"
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v2"
+
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 )
 
 // Contains fields settable in the build.yml
 type pkgInfo struct {
-	Image               string            `yaml:"image"`
-	Org                 string            `yaml:"org"`
-	Arches              []string          `yaml:"arches"`
-	ExtraSources        []string          `yaml:"extra-sources"`
-	GitRepo             string            `yaml:"gitrepo"` // ??
-	Network             bool              `yaml:"network"`
-	DisableContentTrust bool              `yaml:"disable-content-trust"`
-	DisableCache        bool              `yaml:"disable-cache"`
-	Config              *moby.ImageConfig `yaml:"config"`
-	Depends             struct {
+	Image        string            `yaml:"image"`
+	Org          string            `yaml:"org"`
+	Arches       []string          `yaml:"arches"`
+	ExtraSources []string          `yaml:"extra-sources"`
+	GitRepo      string            `yaml:"gitrepo"` // ??
+	Network      bool              `yaml:"network"`
+	DisableCache bool              `yaml:"disable-cache"`
+	Config       *moby.ImageConfig `yaml:"config"`
+	Depends      struct {
 		DockerImages struct {
 			TargetDir string   `yaml:"target-dir"`
 			Target    string   `yaml:"target"`
@@ -67,12 +67,11 @@ type Pkg struct {
 func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// Defaults
 	pi := pkgInfo{
-		Org:                 "linuxkit",
-		Arches:              []string{"amd64", "arm64", "s390x"},
-		GitRepo:             "https://github.com/linuxkit/linuxkit",
-		Network:             false,
-		DisableContentTrust: false,
-		DisableCache:        false,
+		Org:          "linuxkit",
+		Arches:       []string{"amd64", "arm64", "s390x"},
+		GitRepo:      "https://github.com/linuxkit/linuxkit",
+		Network:      false,
+		DisableCache: false,
 	}
 
 	// TODO(ijc) look for "$(git rev-parse --show-toplevel)/.build-defaults.yml"?
@@ -83,8 +82,6 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 	// These override fields in pi below, bools are in both forms to allow user overrides in either direction
 	argDisableCache := fs.Bool("disable-cache", pi.DisableCache, "Disable build cache")
 	argEnableCache := fs.Bool("enable-cache", !pi.DisableCache, "Enable build cache")
-	argDisableContentTrust := fs.Bool("disable-content-trust", pi.DisableContentTrust, "Disable content trust")
-	argEnableContentTrust := fs.Bool("enable-content-trust", !pi.DisableContentTrust, "Enable content trust")
 	argNoNetwork := fs.Bool("nonetwork", !pi.Network, "Disallow network use during build")
 	argNetwork := fs.Bool("network", pi.Network, "Allow network use during build")
 
@@ -166,10 +163,6 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 			pi.DisableCache = *argDisableCache
 		case "enable-cache":
 			pi.DisableCache = !*argEnableCache
-		case "disable-content-trust":
-			pi.DisableContentTrust = *argDisableContentTrust
-		case "enable-content-trust":
-			pi.DisableContentTrust = !*argEnableContentTrust
 		case "network":
 			pi.Network = *argNetwork
 		case "nonetwork":
@@ -248,7 +241,6 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) (Pkg, error) {
 		sources:       sources,
 		gitRepo:       pi.GitRepo,
 		network:       pi.Network,
-		trust:         !pi.DisableContentTrust,
 		cache:         !pi.DisableCache,
 		config:        pi.Config,
 		dockerDepends: dockerDepends,

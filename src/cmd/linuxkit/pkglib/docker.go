@@ -20,7 +20,6 @@ import (
 )
 
 const (
-	dctEnableEnv        = "DOCKER_CONTENT_TRUST=1"
 	registryServer      = "https://index.docker.io/v1/"
 	buildkitBuilderName = "linuxkit"
 )
@@ -30,9 +29,7 @@ var platforms = []string{
 }
 
 type dockerRunner struct {
-	dct   bool
 	cache bool
-	sign  bool
 
 	// Optional build context to use
 	ctx buildContext
@@ -43,8 +40,8 @@ type buildContext interface {
 	Copy(io.WriteCloser) error
 }
 
-func newDockerRunner(dct, cache, sign bool) dockerRunner {
-	return dockerRunner{dct: dct, cache: cache, sign: sign}
+func newDockerRunner(cache bool) dockerRunner {
+	return dockerRunner{cache: cache}
 }
 
 func isExecErrNotFound(err error) bool {
@@ -82,15 +79,6 @@ func (dr dockerRunner) command(stdout, stderr io.Writer, args ...string) error {
 	cmd.Stderr = stderr
 	cmd.Env = os.Environ()
 
-	dct := ""
-
-	// when we are doing a push, we need to disable DCT if not signing
-	isPush := len(args) >= 2 && args[0] == "image" && args[1] == "push"
-	if dr.dct && (!isPush || dr.sign) {
-		cmd.Env = append(cmd.Env, dctEnableEnv)
-		dct = dctEnableEnv + " "
-	}
-
 	var eg errgroup.Group
 
 	// special handling for build-args
@@ -123,7 +111,7 @@ func (dr dockerRunner) command(stdout, stderr io.Writer, args ...string) error {
 		}
 	}
 
-	log.Debugf("Executing: %s%v", dct, cmd.Args)
+	log.Debugf("Executing: %v", cmd.Args)
 
 	if err := cmd.Run(); err != nil {
 		if isExecErrNotFound(err) {
@@ -230,12 +218,8 @@ func (dr dockerRunner) push(img string) error {
 	return dr.command(nil, nil, "image", "push", img)
 }
 
-func (dr dockerRunner) pushWithManifest(img, suffix string, pushImage, pushManifest, sign bool) error {
-	var (
-		digest string
-		l      int
-		err    error
-	)
+func (dr dockerRunner) pushWithManifest(img, suffix string, pushImage, pushManifest bool) error {
+	var err error
 	if pushImage {
 		fmt.Printf("Pushing %s\n", img+suffix)
 		if err := dr.push(img + suffix); err != nil {
@@ -252,24 +236,14 @@ func (dr dockerRunner) pushWithManifest(img, suffix string, pushImage, pushManif
 
 	if pushManifest {
 		fmt.Printf("Pushing %s to manifest %s\n", img+suffix, img)
-		digest, l, err = registry.PushManifest(img, auth)
+		_, _, err = registry.PushManifest(img, auth)
 		if err != nil {
 			return err
 		}
 	} else {
 		fmt.Print("Manifest push disabled, skipping...\n")
 	}
-	// if trust is not enabled, nothing more to do
-	if !dr.dct {
-		fmt.Println("trust disabled, not signing")
-		return nil
-	}
-	if !sign {
-		fmt.Println("signing disabled, not signing")
-		return nil
-	}
-	fmt.Printf("Signing manifest for %s\n", img)
-	return registry.SignTag(img, digest, l, auth)
+	return nil
 }
 
 func (dr dockerRunner) tag(ref, tag string) error {

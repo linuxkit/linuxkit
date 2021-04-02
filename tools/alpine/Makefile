@@ -4,12 +4,6 @@ ORG?=linuxkit
 IMAGE=alpine
 DEPS=packages
 
-ifeq ($(DOCKER_CONTENT_TRUST),)
-ifndef NOTRUST
-export DOCKER_CONTENT_TRUST=1
-endif
-endif
-
 ARCH := $(shell uname -m)
 ifeq ($(ARCH), x86_64)
 DEPS += packages.x86_64

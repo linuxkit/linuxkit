@@ -83,58 +83,14 @@ func OutputTypes() []string {
 	return ts
 }
 
-func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
-	for _, img := range config.Image {
-		// First check for an exact name match
-		if img == fullImageName {
-			return true
-		}
-		// Also check for an image name only match
-		// by removing a possible tag (with possibly added digest):
-		imgAndTag := strings.Split(fullImageName, ":")
-		if len(imgAndTag) >= 2 && img == imgAndTag[0] {
-			return true
-		}
-		// and by removing a possible digest:
-		imgAndDigest := strings.Split(fullImageName, "@sha256:")
-		if len(imgAndDigest) >= 2 && img == imgAndDigest[0] {
-			return true
-		}
-	}
-
-	for _, org := range config.Org {
-		var imgOrg string
-		splitName := strings.Split(fullImageName, "/")
-		switch len(splitName) {
-		case 0:
-			// if the image is empty, return false
-			return false
-		case 1:
-			// for single names like nginx, use library
-			imgOrg = "library"
-		case 2:
-			// for names that assume docker hub, like linxukit/alpine, take the first split
-			imgOrg = splitName[0]
-		default:
-			// for names that include the registry, the second piece is the org, ex: docker.io/library/alpine
-			imgOrg = splitName[1]
-		}
-		if imgOrg == org {
-			return true
-		}
-	}
-	return false
-}
-
 func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer, cacheDir string, dockerCache bool) error {
 	log.Infof("  Create OCI config for %s", image.Image)
-	useTrust := enforceContentTrust(image.Image, &m.Trust)
 	imageName := referenceExpand(image.Image)
 	ref, err := reference.Parse(imageName)
 	if err != nil {
 		return fmt.Errorf("could not resolve references for image %s: %v", image.Image, err)
 	}
-	src, err := imagePull(&ref, pull, useTrust, cacheDir, dockerCache, m.Architecture)
+	src, err := imagePull(&ref, pull, cacheDir, dockerCache, m.Architecture)
 	if err != nil {
 		return fmt.Errorf("Could not pull image %s: %v", image.Image, err)
 	}
@@ -152,7 +108,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, image.ref, config, runtime, iw, useTrust, pull, readonly, dupMap, cacheDir, dockerCache, m.Architecture)
+	err = ImageBundle(path, image.ref, config, runtime, iw, pull, readonly, dupMap, cacheDir, dockerCache, m.Architecture)
 	if err != nil {
 		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 	}
@@ -198,7 +154,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
 		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, decompressKernel)
-		err := ImageTar(m.Kernel.ref, "", kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "", cacheDir, dockerCache, m.Architecture)
+		err := ImageTar(m.Kernel.ref, "", kf, pull, "", cacheDir, dockerCache, m.Architecture)
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
 		}
@@ -214,7 +170,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 	}
 	for _, ii := range m.initRefs {
 		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", iw, enforceContentTrust(ii.String(), &m.Trust), pull, resolvconfSymlink, cacheDir, dockerCache, m.Architecture)
+		err := ImageTar(ii, "", iw, pull, resolvconfSymlink, cacheDir, dockerCache, m.Architecture)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}

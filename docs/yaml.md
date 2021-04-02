@@ -125,19 +125,6 @@ file:
 
 Because a `tmpfs` is mounted onto `/var`, `/run`, and `/tmp` by default, the `tmpfs` mounts will shadow anything specified in `files` section for those directories.
 
-## `trust`
-
-The `trust` section specifies which build components are to be cryptographically verified with
-[Docker Content Trust](https://docs.docker.com/engine/security/trust/content_trust/) prior to pulling.
-Trust is a central concern in any build system, and LinuxKit's is no exception: Docker Content Trust provides authenticity,
-integrity, and freshness guarantees for the components it verifies.  The LinuxKit maintainers are responsible for signing
-`linuxkit` components, though collaborators can sign their own images with Docker Content Trust or [Notary](https://github.com/docker/notary).
-
-- `image` lists which individual images to enforce pulling with Docker Content Trust.
-The image name may include tag or digest, but the matching also succeeds if the base image name is the same.
-- `org` lists which organizations for which Docker Content Trust is to be enforced across all images,
-for example `linuxkit` is the org for `linuxkit/kernel`
-
 ## Image specification
 
 Entries in the `onboot` and `services` sections specify an OCI image and

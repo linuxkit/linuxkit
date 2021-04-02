@@ -180,7 +180,7 @@ func tarPrefix(path string, tw tarWriter) error {
 }
 
 // ImageTar takes a Docker image and outputs it to a tar stream
-func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull bool, resolv, cacheDir string, dockerCache bool, architecture string) (e error) {
+func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, pull bool, resolv, cacheDir string, dockerCache bool, architecture string) (e error) {
 	log.Debugf("image tar: %s %s", ref, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != '/' {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
@@ -193,7 +193,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 
 	// pullImage first checks in the cache, then pulls the image.
 	// If pull==true, then it always tries to pull from registry.
-	src, err := imagePull(ref, pull, trust, cacheDir, dockerCache, architecture)
+	src, err := imagePull(ref, pull, cacheDir, dockerCache, architecture)
 	if err != nil {
 		return fmt.Errorf("Could not pull image %s: %v", ref, err)
 	}
@@ -326,7 +326,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, trust bool, pull
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, trust bool, pull bool, readonly bool, dupMap map[string]string, cacheDir string, dockerCache bool, architecture string) error { // nolint: lll
+func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, pull bool, readonly bool, dupMap map[string]string, cacheDir string, dockerCache bool, architecture string) error { // nolint: lll
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
 	rootExtract := "rootfs"
 	if !readonly {
@@ -337,7 +337,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	root := path.Join(prefix, rootExtract)
 	var foundElsewhere = dupMap[ref.String()] != ""
 	if !foundElsewhere {
-		if err := ImageTar(ref, root+"/", tw, trust, pull, "", cacheDir, dockerCache, architecture); err != nil {
+		if err := ImageTar(ref, root+"/", tw, pull, "", cacheDir, dockerCache, architecture); err != nil {
 			return err
 		}
 		dupMap[ref.String()] = root

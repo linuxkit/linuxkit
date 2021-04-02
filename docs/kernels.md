@@ -149,7 +149,7 @@ appended. Then you can also override the Hub organisation to use the
 image elsewhere with (and also disable image signing):
 
 ```sh
-make ORG=<your hub org> NOTRUST=1
+make ORG=<your hub org>
 ```
 
 The image will be uploaded to Hub and can be use in a YAML file as
@@ -322,7 +322,7 @@ yourself:
 
 ```sh
 cd kernel
-make ORG=<foo> NOTRUST=1 push_zfs_4.9.x # or different kernel version
+make ORG=<foo> push_zfs_4.9.x # or different kernel version
 ```
 
 will build and push a `zfs-kmod-4.9.<version>` image to Docker Hub
