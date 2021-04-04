@@ -1,0 +1,41 @@
+# github.com/diskfs/go-diskfs v1.1.1
+## explicit
+github.com/diskfs/go-diskfs
+github.com/diskfs/go-diskfs/disk
+github.com/diskfs/go-diskfs/filesystem
+github.com/diskfs/go-diskfs/filesystem/fat32
+github.com/diskfs/go-diskfs/filesystem/iso9660
+github.com/diskfs/go-diskfs/partition
+github.com/diskfs/go-diskfs/partition/gpt
+github.com/diskfs/go-diskfs/partition/mbr
+github.com/diskfs/go-diskfs/partition/part
+github.com/diskfs/go-diskfs/util
+# github.com/google/uuid v1.1.1
+github.com/google/uuid
+# github.com/packethost/packngo v0.1.0
+## explicit
+github.com/packethost/packngo/metadata
+# github.com/sirupsen/logrus v1.0.3
+## explicit
+github.com/sirupsen/logrus
+# github.com/stretchr/testify v1.7.0
+## explicit
+# github.com/vishvananda/netlink v0.0.0-20170808154308-f5a6f697a596
+## explicit
+github.com/vishvananda/netlink
+github.com/vishvananda/netlink/nl
+# github.com/vishvananda/netns v0.0.0-20170707011535-86bef332bfc3
+## explicit
+github.com/vishvananda/netns
+# golang.org/x/crypto v0.0.0-20180515001509-1a580b3eff78
+## explicit
+golang.org/x/crypto/ssh/terminal
+# golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f
+golang.org/x/sys/unix
+golang.org/x/sys/windows
+# gopkg.in/airbrake/gobrake.v2 v2.0.9
+## explicit
+# gopkg.in/djherbis/times.v1 v1.2.0
+gopkg.in/djherbis/times.v1
+# gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2
+## explicit
