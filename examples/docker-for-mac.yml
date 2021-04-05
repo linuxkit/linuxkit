@@ -75,7 +75,7 @@ services:
     command: ["/vpnkit-forwarder", "-vsockPort", "62373"]
   # Monitor for image deletes and invoke a TRIM on the container filesystem
   - name: trim-after-delete
-    image: linuxkit/trim-after-delete:v0.8
+    image: linuxkit/trim-after-delete:6258aec13d91259379289b577f8a79754819777e
   # When the host resumes from sleep, force a clock resync
   - name: host-timesync-daemon
     image: linuxkit/host-timesync-daemon:v0.8
