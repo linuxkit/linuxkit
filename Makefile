@@ -28,7 +28,7 @@ PREFIX?=/usr/local
 default: $(LINUXKIT) $(RTF)
 all: default
 
-RTF_COMMIT=171155c375706f2616f0b9c96afe2240e15d1de1
+RTF_COMMIT=2351267f358ce6621c0c0d9a069f361268dba5fc
 RTF_CMD=github.com/linuxkit/rtf/cmd
 RTF_VERSION=0.0
 $(RTF): tmp_rtf_bin.tar | bin
