@@ -1530,7 +1530,6 @@ CONFIG_NET_FLOW_LIMIT=y
 # end of Networking options
 
 # CONFIG_HAMRADIO is not set
-# CONFIG_CAN is not set
 # CONFIG_BT is not set
 # CONFIG_AF_RXRPC is not set
 # CONFIG_AF_KCM is not set
@@ -4644,3 +4643,18 @@ CONFIG_UNWINDER_ORC=y
 # CONFIG_UNWINDER_FRAME_POINTER is not set
 # CONFIG_UNWINDER_GUESS is not set
 # end of Kernel hacking
+
+#
+# CAN Bus support
+#
+
+CONFIG_CAN=m
+CONFIG_CAN_RAW=m
+CONFIG_CAN_BCM=m
+CONFIG_CAN_GW=m
+
+#
+# CAN Device Drivers
+#
+CONFIG_CAN_VCAN=m
+CONFIG_CAN_DEV=m

@@ -1268,7 +1268,7 @@ CONFIG_NET_FLOW_LIMIT=y
 # end of Network testing
 # end of Networking options
 
-# CONFIG_CAN is not set
+
 # CONFIG_AF_RXRPC is not set
 # CONFIG_AF_KCM is not set
 CONFIG_FIB_RULES=y
@@ -3735,3 +3735,18 @@ CONFIG_RUNTIME_TESTING_MENU=y
 # CONFIG_MEMTEST is not set
 # end of Kernel Testing and Coverage
 # end of Kernel hacking
+
+#
+# CAN Bus support
+#
+
+CONFIG_CAN=m
+CONFIG_CAN_RAW=m
+CONFIG_CAN_BCM=m
+CONFIG_CAN_GW=m
+
+#
+# CAN Device Drivers
+#
+CONFIG_CAN_VCAN=m
+CONFIG_CAN_DEV=m
