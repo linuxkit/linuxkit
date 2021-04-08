@@ -1,0 +1,1 @@
+dwc_otg.lpm_enable=0 earlyprintk console=tty1 console=ttyS0,115200 root=/dev/ram0 rw

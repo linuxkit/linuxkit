@@ -1,0 +1,10 @@
+[pi3]
+kernel=u-boot-rpi-3.bin
+
+[pi4]
+kernel=u-boot-rpi-4.bin
+
+[all]
+arm_64bit=1
+avoid_warnings=2
+enable_uart=1
