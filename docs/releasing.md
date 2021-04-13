@@ -112,6 +112,7 @@ other packages:
 cd $LK_ROOT/tools
 ../scripts/update-component-sha.sh --image linuxkit/alpine:$LK_ALPINE
 git checkout alpine/versions.aarch64 alpine/versions.s390x
+git checkout grub/Dockerfile
 
 git commit -a -s -m "tools: Update to the latest linuxkit/alpine"
 git push $LK_REMOTE rel_$LK_RELEASE
@@ -122,6 +123,8 @@ make forcepush
 Note, the `git checkout` reverts the changes made by
 `update-component-sha.sh` to files which are accidentally updated and
 the `make forcepush` will skip building the alpine base.
+Also, `git checkout` of `grub`. This is a bit old and only can be built with specific
+older versions of packages like `gcc`, and should not be updated.
 
 Then, on the other build machines in turn:
 
@@ -275,5 +278,3 @@ This completes the release, but you are not done, one more step is required.
 Create a PR which bumps the version number in the top-level `Makefile`
 to `$LK_RELEASE+` to make sure that the version reported by `linuxkit
 version` gets updated.
-
-

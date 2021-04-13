@@ -49,7 +49,6 @@ gettext-dev
 git
 gmp-dev
 gnupg
-go
 grep
 hvtools
 installkernel
@@ -68,6 +67,7 @@ libcap-ng-dev
 libedit-dev
 libressl-dev
 libseccomp-dev
+libseccomp-static
 libtirpc-dev
 libtool
 linux-headers
