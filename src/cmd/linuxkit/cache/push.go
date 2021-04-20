@@ -61,7 +61,7 @@ func PushWithManifest(dir string, name, suffix string, pushImage, pushManifest b
 
 	if pushManifest {
 		fmt.Printf("Pushing %s to manifest %s\n", imageName, name)
-		_, _, err = registry.PushManifest(imageName, auth)
+		_, _, err = registry.PushManifest(name, auth)
 		if err != nil {
 			return err
 		}
