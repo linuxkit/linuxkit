@@ -16,14 +16,14 @@ import (
 
 var (
 	outputImages = map[string]string{
-		"iso":         "linuxkit/mkimage-iso:4f1a2476ac515983ade72814cf08624c8968f65f",
-		"iso-bios":    "linuxkit/mkimage-iso-bios:ea9a22b705b8201a201609905f7636fba8d061b9",
-		"iso-efi":     "linuxkit/mkimage-iso-efi:c62420c8588a1d1440249c2c58f325700d72280f",
-		"raw-bios":    "linuxkit/mkimage-raw-bios:4f3041edd9de02ef8f15bd92cc2d1afecb90084b",
-		"raw-efi":     "linuxkit/mkimage-raw-efi:9ed69b7ac9e75aef6eebaed787223d9504dd967b",
-		"squashfs":    "linuxkit/mkimage-squashfs:a1e99651662cb5781f8485a588ce4c85a75d7c9c",
+		"iso":         "linuxkit/mkimage-iso:ddf65a0a268249577f7f7979ca0ba7bf1a048b99",
+		"iso-bios":    "linuxkit/mkimage-iso-bios:3df2dbbc90eadf84566c58291d08954180caa1cb",
+		"iso-efi":     "linuxkit/mkimage-iso-efi:5e7405be79930aef5581c86267833b48312a540a",
+		"raw-bios":    "linuxkit/mkimage-raw-bios:2d6827726ab1090b2b771a450724fe8f65161f91",
+		"raw-efi":     "linuxkit/mkimage-raw-efi:5f8af329ee5b5b9d4b65b489c6896e527e144990",
+		"squashfs":    "linuxkit/mkimage-squashfs:013b1594a1b560cd3544d3c51947829703fc186a",
 		"gcp":         "linuxkit/mkimage-gcp:a7416d21d4ef642bb2ba560c8f7651250823546d",
-		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:9a623f72befcaadb560290c29b9fb28f3843545b",
+		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:0ee27a57706dee8399f15d8619495af3b1303f78",
 		"vhd":         "linuxkit/mkimage-vhd:4cc60c4f46b07e11c64ba618e46b81fa0096c91f",
 		"dynamic-vhd": "linuxkit/mkimage-dynamic-vhd:99b9009ed54a793020d3ce8322a42e0cc06da71a",
 		"vmdk":        "linuxkit/mkimage-vmdk:b55ea46297a16d8a4448ce7f5a2df987a9602b27",
