@@ -30,6 +30,6 @@ docker run -it --rm \
 -v $(pwd):/go/src/github.com/linuxkit/linuxkit \
 -w /go/src/github.com/linuxkit/linuxkit/src/cmd/linuxkit \
 --entrypoint=go
-linuxkit/go-compile:6d73c4723ae2b58af22e3736b2b0f0292e18eb6d
+linuxkit/go-compile:ceff1817e4c670d253c7bd38da05daecaa513f5f
 mod vendor
 ```
