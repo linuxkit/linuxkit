@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )
@@ -27,8 +26,8 @@ func matchPlatformsOSArch(platforms ...v1.Platform) match.Matcher {
 	}
 }
 
-func findImage(p layout.Path, imageName, architecture string) (v1.Image, error) {
-	root, err := findRootFromLayout(p, imageName)
+func (p *Provider) findImage(imageName, architecture string) (v1.Image, error) {
+	root, err := p.FindRoot(imageName)
 	if err != nil {
 		return nil, err
 	}
@@ -50,12 +49,8 @@ func findImage(p layout.Path, imageName, architecture string) (v1.Image, error) 
 }
 
 // FindDescriptor get the first descriptor pointed to by the image name
-func FindDescriptor(dir string, name string) (*v1.Descriptor, error) {
-	p, err := Get(dir)
-	if err != nil {
-		return nil, err
-	}
-	index, err := p.ImageIndex()
+func (p *Provider) FindDescriptor(name string) (*v1.Descriptor, error) {
+	index, err := p.cache.ImageIndex()
 	// if there is no root index, we are broken
 	if err != nil {
 		return nil, fmt.Errorf("invalid image cache: %v", err)

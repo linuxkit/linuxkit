@@ -7,8 +7,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"os"
-	"path"
 	"strings"
 
 	"github.com/containerd/containerd/reference"
@@ -20,6 +18,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
+	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 )
@@ -28,20 +27,16 @@ const (
 	linux = "linux"
 )
 
-// ImageWrite takes an image name and pulls it down, writing it locally. It should be
+// ImagePull takes an image name and pulls it down, writing it locally. It should be
 // efficient and only write missing blobs, based on their content hash.
-func ImageWrite(dir string, ref *reference.Spec, trustedRef, architecture string) (ImageSource, error) {
-	p, err := Get(dir)
-	if err != nil {
-		return ImageSource{}, err
-	}
+func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture string) (lktspec.ImageSource, error) {
 	image := ref.String()
 	pullImageName := image
 	remoteOptions := []remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}
 	if trustedRef != "" {
 		pullImageName = trustedRef
 	}
-	log.Debugf("ImageWrite to cache %s trusted reference %s", image, pullImageName)
+	log.Debugf("ImagePull to cache %s trusted reference %s", image, pullImageName)
 	remoteRef, err := name.ParseReference(pullImageName)
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("invalid image name %s: %v", pullImageName, err)
@@ -61,7 +56,7 @@ func ImageWrite(dir string, ref *reference.Spec, trustedRef, architecture string
 	ii, err := desc.ImageIndex()
 	if err == nil {
 		log.Debugf("ImageWrite retrieved %s is index, saving", pullImageName)
-		err = p.ReplaceIndex(ii, match.Name(image), layout.WithAnnotations(annotations))
+		err = p.cache.ReplaceIndex(ii, match.Name(image), layout.WithAnnotations(annotations))
 	} else {
 		var im v1.Image
 		// try an image
@@ -70,27 +65,21 @@ func ImageWrite(dir string, ref *reference.Spec, trustedRef, architecture string
 			return ImageSource{}, fmt.Errorf("provided image is neither an image nor an index: %s", image)
 		}
 		log.Debugf("ImageWrite retrieved %s is image, saving", pullImageName)
-		err = p.ReplaceImage(im, match.Name(image), layout.WithAnnotations(annotations))
+		err = p.cache.ReplaceImage(im, match.Name(image), layout.WithAnnotations(annotations))
 	}
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("unable to save image to cache: %v", err)
 	}
-	return NewSource(
+	return p.NewSource(
 		ref,
-		dir,
 		architecture,
 		&desc.Descriptor,
 	), nil
 }
 
-// ImageWriteTar takes an OCI format image tar stream and writes it locally. It should be
+// ImageLoad takes an OCI format image tar stream and writes it locally. It should be
 // efficient and only write missing blobs, based on their content hash.
-func ImageWriteTar(dir string, ref *reference.Spec, architecture string, r io.Reader) (ImageSource, error) {
-	p, err := Get(dir)
-	if err != nil {
-		return ImageSource{}, err
-	}
-
+func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Reader) (lktspec.ImageSource, error) {
 	var (
 		tr    = tar.NewReader(r)
 		index bytes.Buffer
@@ -147,7 +136,7 @@ func ImageWriteTar(dir string, ref *reference.Spec, architecture string, r io.Re
 				return ImageSource{}, fmt.Errorf("invalid hash filename for %s: %v", filename, err)
 			}
 			log.Debugf("writing %s as hash %s", filename, hash)
-			if err := p.WriteBlob(hash, ioutil.NopCloser(tr)); err != nil {
+			if err := p.cache.WriteBlob(hash, ioutil.NopCloser(tr)); err != nil {
 				return ImageSource{}, fmt.Errorf("error reading data for file %s : %v", filename, err)
 			}
 		}
@@ -164,7 +153,7 @@ func ImageWriteTar(dir string, ref *reference.Spec, architecture string, r io.Re
 		if len(im.Manifests) != 1 {
 			return ImageSource{}, fmt.Errorf("currently only support OCI tar stream that has a single image")
 		}
-		if err := p.RemoveDescriptors(match.Name(imageName)); err != nil {
+		if err := p.cache.RemoveDescriptors(match.Name(imageName)); err != nil {
 			return ImageSource{}, fmt.Errorf("unable to remove old descriptors for %s: %v", imageName, err)
 		}
 		for _, desc := range im.Manifests {
@@ -176,7 +165,7 @@ func ImageWriteTar(dir string, ref *reference.Spec, architecture string, r io.Re
 			descriptor = &desc
 
 			log.Debugf("appending descriptor %#v", descriptor)
-			if err := p.AppendDescriptor(desc); err != nil {
+			if err := p.cache.AppendDescriptor(desc); err != nil {
 				return ImageSource{}, fmt.Errorf("error appending descriptor to layout index: %v", err)
 			}
 		}
@@ -187,9 +176,8 @@ func ImageWriteTar(dir string, ref *reference.Spec, architecture string, r io.Re
 			Architecture: architecture,
 		}
 	}
-	return NewSource(
+	return p.NewSource(
 		ref,
-		dir,
 		architecture,
 		descriptor,
 	), nil
@@ -199,28 +187,24 @@ func ImageWriteTar(dir string, ref *reference.Spec, architecture string, r io.Re
 // does not pull down any images; entirely assumes that the subjects of the manifests are present.
 // If a reference to the provided already exists and it is an index, updates the manifests in the
 // existing index.
-func IndexWrite(dir string, ref *reference.Spec, descriptors ...v1.Descriptor) (ImageSource, error) {
-	p, err := Get(dir)
-	if err != nil {
-		return ImageSource{}, err
-	}
+func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor) (lktspec.ImageSource, error) {
 	image := ref.String()
 	log.Debugf("writing an index for %s", image)
 
-	ii, err := p.ImageIndex()
+	ii, err := p.cache.ImageIndex()
 	if err != nil {
-		return ImageSource{}, fmt.Errorf("unable to get root index at %s: %v", dir, err)
+		return ImageSource{}, fmt.Errorf("unable to get root index: %v", err)
 	}
 	images, err := partial.FindImages(ii, match.Name(image))
 	if err != nil {
-		return ImageSource{}, fmt.Errorf("error parsing index at %s: %v", dir, err)
+		return ImageSource{}, fmt.Errorf("error parsing index: %v", err)
 	}
 	if err == nil && len(images) > 0 {
-		return ImageSource{}, fmt.Errorf("image named %s already exists in cache at %s and is not an index", image, dir)
+		return ImageSource{}, fmt.Errorf("image named %s already exists in cache and is not an index", image)
 	}
 	indexes, err := partial.FindIndexes(ii, match.Name(image))
 	if err != nil {
-		return ImageSource{}, fmt.Errorf("error parsing index at %s: %v", dir, err)
+		return ImageSource{}, fmt.Errorf("error parsing index: %v", err)
 	}
 	var im v1.IndexManifest
 	// do we update an existing one? Or create a new one?
@@ -260,7 +244,7 @@ func IndexWrite(dir string, ref *reference.Spec, descriptors ...v1.Descriptor) (
 		manifest.Manifests = manifests
 		im = *manifest
 		// remove the old index
-		if err := p.RemoveBlob(oldhash); err != nil {
+		if err := p.cache.RemoveBlob(oldhash); err != nil {
 			return ImageSource{}, fmt.Errorf("unable to remove old index file: %v", err)
 		}
 
@@ -282,11 +266,11 @@ func IndexWrite(dir string, ref *reference.Spec, descriptors ...v1.Descriptor) (
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("error calculating hash of index json: %v", err)
 	}
-	if err := p.WriteBlob(hash, ioutil.NopCloser(bytes.NewReader(b))); err != nil {
+	if err := p.cache.WriteBlob(hash, ioutil.NopCloser(bytes.NewReader(b))); err != nil {
 		return ImageSource{}, fmt.Errorf("error writing new index to json: %v", err)
 	}
 	// finally update the descriptor in the root
-	if err := p.RemoveDescriptors(match.Name(image)); err != nil {
+	if err := p.cache.RemoveDescriptors(match.Name(image)); err != nil {
 		return ImageSource{}, fmt.Errorf("unable to remove old descriptor from index.json: %v", err)
 	}
 	desc := v1.Descriptor{
@@ -297,41 +281,36 @@ func IndexWrite(dir string, ref *reference.Spec, descriptors ...v1.Descriptor) (
 			imagespec.AnnotationRefName: image,
 		},
 	}
-	if err := p.AppendDescriptor(desc); err != nil {
+	if err := p.cache.AppendDescriptor(desc); err != nil {
 		return ImageSource{}, fmt.Errorf("unable to append new descriptor to index.json: %v", err)
 	}
 
-	return NewSource(
+	return p.NewSource(
 		ref,
-		dir,
 		"",
 		&desc,
 	), nil
 }
 
 // DescriptorWrite writes a name for a given descriptor
-func DescriptorWrite(dir string, ref *reference.Spec, descriptors ...v1.Descriptor) (ImageSource, error) {
-	p, err := Get(dir)
-	if err != nil {
-		return ImageSource{}, err
-	}
+func (p *Provider) DescriptorWrite(ref *reference.Spec, descriptors ...v1.Descriptor) (lktspec.ImageSource, error) {
 	image := ref.String()
 	log.Debugf("writing descriptors for image %s: %v", image, descriptors)
 
-	ii, err := p.ImageIndex()
+	ii, err := p.cache.ImageIndex()
 	if err != nil {
-		return ImageSource{}, fmt.Errorf("unable to get root index at %s: %v", dir, err)
+		return ImageSource{}, fmt.Errorf("unable to get root index: %v", err)
 	}
 	images, err := partial.FindImages(ii, match.Name(image))
 	if err != nil {
-		return ImageSource{}, fmt.Errorf("error parsing index at %s: %v", dir, err)
+		return ImageSource{}, fmt.Errorf("error parsing index: %v", err)
 	}
 	if err == nil && len(images) > 0 {
-		return ImageSource{}, fmt.Errorf("image named %s already exists in cache at %s and is not an index", image, dir)
+		return ImageSource{}, fmt.Errorf("image named %s already exists in cache and is not an index", image)
 	}
 	indexes, err := partial.FindIndexes(ii, match.Name(image))
 	if err != nil {
-		return ImageSource{}, fmt.Errorf("error parsing index at %s: %v", dir, err)
+		return ImageSource{}, fmt.Errorf("error parsing index: %v", err)
 	}
 	var im v1.IndexManifest
 	// do we update an existing one? Or create a new one?
@@ -368,13 +347,9 @@ func DescriptorWrite(dir string, ref *reference.Spec, descriptors ...v1.Descript
 		}
 		im.Manifests = manifests
 
-		// remove the old index - unfortunately, there is no "RemoveBlob" option in the library
-		// once https://github.com/google/go-containerregistry/pull/936/ is in, we can get rid of some of this
-		oldfile := path.Join(dir, oldhash.Algorithm, oldhash.Hex)
-		if err := os.RemoveAll(oldfile); err != nil {
-			return ImageSource{}, fmt.Errorf("unable to remove old file %s: %v", oldfile, err)
+		if err := p.cache.RemoveBlob(oldhash); err != nil {
+			return ImageSource{}, fmt.Errorf("unable to remove old index blob: %v", err)
 		}
-
 	} else {
 		// we did not have one, so create an index, store it, update the root index.json, and return
 		im = v1.IndexManifest{
@@ -393,11 +368,11 @@ func DescriptorWrite(dir string, ref *reference.Spec, descriptors ...v1.Descript
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("error calculating hash of index json: %v", err)
 	}
-	if err := p.WriteBlob(hash, ioutil.NopCloser(bytes.NewReader(b))); err != nil {
+	if err := p.cache.WriteBlob(hash, ioutil.NopCloser(bytes.NewReader(b))); err != nil {
 		return ImageSource{}, fmt.Errorf("error writing new index to json: %v", err)
 	}
 	// finally update the descriptor in the root
-	if err := p.RemoveDescriptors(match.Name(image)); err != nil {
+	if err := p.cache.RemoveDescriptors(match.Name(image)); err != nil {
 		return ImageSource{}, fmt.Errorf("unable to remove old descriptor from index.json: %v", err)
 	}
 	desc := v1.Descriptor{
@@ -408,13 +383,12 @@ func DescriptorWrite(dir string, ref *reference.Spec, descriptors ...v1.Descript
 			imagespec.AnnotationRefName: image,
 		},
 	}
-	if err := p.AppendDescriptor(desc); err != nil {
+	if err := p.cache.AppendDescriptor(desc); err != nil {
 		return ImageSource{}, fmt.Errorf("unable to append new descriptor to index.json: %v", err)
 	}
 
-	return NewSource(
+	return p.NewSource(
 		ref,
-		dir,
 		"",
 		&desc,
 	), nil

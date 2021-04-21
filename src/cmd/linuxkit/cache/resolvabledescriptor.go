@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )
@@ -43,17 +42,9 @@ func (l layoutIndex) ImageIndex() (v1.ImageIndex, error) {
 
 // FindRoot find the root ResolvableDescriptor, representing an Image or Index, for
 // a given imageName.
-func FindRoot(dir, imageName string) (ResolvableDescriptor, error) {
-	p, err := Get(dir)
-	if err != nil {
-		return nil, err
-	}
-	return findRootFromLayout(p, imageName)
-}
-
-func findRootFromLayout(p layout.Path, imageName string) (ResolvableDescriptor, error) {
+func (p *Provider) FindRoot(imageName string) (ResolvableDescriptor, error) {
 	matcher := match.Name(imageName)
-	rootIndex, err := p.ImageIndex()
+	rootIndex, err := p.cache.ImageIndex()
 	// of there is no root index, we are broken
 	if err != nil {
 		return nil, fmt.Errorf("invalid image cache: %v", err)

@@ -7,27 +7,26 @@ import (
 
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // ImageSource a source for an image in the OCI distribution cache.
-// Implements a moby.ImageSource.
+// Implements a spec.ImageSource.
 type ImageSource struct {
 	ref          *reference.Spec
-	cache        layout.Path
+	provider     *Provider
 	architecture string
 	descriptor   *v1.Descriptor
 }
 
 // NewSource return an ImageSource for a specific ref and architecture in the given
 // cache directory.
-func NewSource(ref *reference.Spec, dir string, architecture string, descriptor *v1.Descriptor) ImageSource {
-	p, _ := Get(dir)
+func (p *Provider) NewSource(ref *reference.Spec, architecture string, descriptor *v1.Descriptor) lktspec.ImageSource {
 	return ImageSource{
 		ref:          ref,
-		cache:        p,
+		provider:     p,
 		architecture: architecture,
 		descriptor:   descriptor,
 	}
@@ -37,7 +36,7 @@ func NewSource(ref *reference.Spec, dir string, architecture string, descriptor 
 // architecture, if necessary.
 func (c ImageSource) Config() (imagespec.ImageConfig, error) {
 	imageName := c.ref.String()
-	image, err := findImage(c.cache, imageName, c.architecture)
+	image, err := c.provider.findImage(imageName, c.architecture)
 	if err != nil {
 		return imagespec.ImageConfig{}, err
 	}
@@ -63,7 +62,7 @@ func (c ImageSource) TarReader() (io.ReadCloser, error) {
 	imageName := c.ref.String()
 
 	// get a reference to the image
-	image, err := findImage(c.cache, imageName, c.architecture)
+	image, err := c.provider.findImage(imageName, c.architecture)
 	if err != nil {
 		return nil, err
 	}
