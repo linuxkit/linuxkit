@@ -2,6 +2,9 @@
 
 package main
 
+// int rndaddentropy;
+import "C"
+
 import "errors"
 
 func initRand() bool {
