@@ -24,7 +24,7 @@ onboot:
   - name: mkimage
     image: linuxkit/mkimage:v0.8
   - name: poweroff
-    image: linuxkit/poweroff:06dd4e46c62fbe79123a028835c921f80e4855d3
+    image: linuxkit/poweroff:9c65fd4cda512be34a80efc8876e49b63750ac2c
 trust:
   org:
     - linuxkit
