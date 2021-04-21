@@ -6,7 +6,7 @@
 FROM linuxkit/kernel:5.10.31 AS ksrc
 
 # Extract headers and compile module
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS build
+FROM linuxkit/alpine:f0af677747790eda63ee5e9b37b9002b965f48dc AS build
 RUN apk add build-base elfutils-dev
 
 COPY --from=ksrc /kernel-dev.tar /
