@@ -1,7 +1,7 @@
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS mirror
+FROM linuxkit/alpine:f0af677747790eda63ee5e9b37b9002b965f48dc AS mirror
 
 RUN apk add --no-cache go musl-dev git
-ENV GOPATH=/go PATH=$PATH:/go/bin
+ENV GOPATH=/go PATH=$PATH:/go/bin GO111MODULE=off
 
 ENV VIRTSOCK_COMMIT=f1e32d3189e0dbb81c0e752a4e214617487eb41f
 RUN mkdir -p $GOPATH/src/github.com/linuxkit && \
