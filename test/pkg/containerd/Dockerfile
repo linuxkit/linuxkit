@@ -24,7 +24,9 @@ RUN cp /out/usr/share/zoneinfo/UTC /out/etc/localtime
 FROM scratch
 COPY --from=mirror /out/ /
 COPY --from=mirror /go/src/github.com/containerd/containerd /go/src/github.com/containerd/containerd/
-ENV GOPATH=/go
+
+# containerd 1.4.x does not support go modules; remove GO111MODULE=off when we switch to 1.5.x
+ENV GOPATH=/go GO111MODULE=off
 WORKDIR $GOPATH/src/github.com/containerd/containerd
 ADD run.sh ./run.sh
 
