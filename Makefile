@@ -37,7 +37,7 @@ $(RTF): tmp_rtf_bin.tar | bin
 	touch $@
 
 tmp_rtf_bin.tar: Makefile
-	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(RTF_VERSION)" -o $(RTF) > $@
+	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/linuxkit/rtf --clone https://github.com/linuxkit/rtf.git --commit $(RTF_COMMIT) --package github.com/linuxkit/rtf --ldflags "-X $(RTF_CMD).GitCommit=$(RTF_COMMIT) -X $(RTF_CMD).Version=$(RTF_VERSION) -linkmode=external" -o $(RTF) > $@
 
 # Manifest tool for multi-arch images
 MT_COMMIT=bfbd11963b8e0eb5f6e400afaebeaf39820b4e90
@@ -48,7 +48,7 @@ bin/manifest-tool: tmp_mt_bin.tar | bin
 	touch $@
 
 tmp_mt_bin.tar: Makefile
-	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/estesp/manifest-tool --clone $(MT_REPO) --commit $(MT_COMMIT) --package github.com/estesp/manifest-tool --ldflags "-X main.gitCommit=$(MT_COMMIT)" -o bin/manifest-tool > $@
+	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/estesp/manifest-tool --clone $(MT_REPO) --commit $(MT_COMMIT) --package github.com/estesp/manifest-tool --ldflags "-X main.gitCommit=$(MT_COMMIT)  -linkmode=external" -o bin/manifest-tool > $@
 
 LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) $(wildcard src/cmd/linuxkit/*/*.go) Makefile
 $(LINUXKIT): tmp_linuxkit_bin.tar
@@ -57,7 +57,7 @@ $(LINUXKIT): tmp_linuxkit_bin.tar
 	touch $@
 
 tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
-	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)" -o $(LINUXKIT) > $@
+	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION) -linkmode=external" -o $(LINUXKIT) > $@
 
 .PHONY: test-cross
 test-cross:
