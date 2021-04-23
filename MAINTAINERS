@@ -161,6 +161,7 @@ on disputes for technical matters."
 		people = [
 			"dave-tucker",
 			"deitch",
+			"djs55",
 			"ijc",
 			"justincormack",
 			"rn",
@@ -182,6 +183,11 @@ on disputes for technical matters."
 	Name = "Avi Deitcher"
 	Email = "avi@atomicinc.com"
 	GitHub = "deitch"
+
+	[People.djs55]
+	Name = "David Scott"
+	Email = "dave@recoil.org"
+	Github = "djs55"
 
 	[People.ijc]
 	Name = "Ian Campbell"
