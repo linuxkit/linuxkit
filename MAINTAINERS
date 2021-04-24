@@ -167,6 +167,16 @@ on disputes for technical matters."
 			"rn",
 		]
 
+	[Org.Alumni]
+
+	# This list contains maintainers that are no longer active on the project.
+	# It is thanks to these people that the project has become what it is today.
+	# Thank you!
+
+		people = [
+			"riyazdf",
+		]
+
 [people]
 
 # A reference list of all people associated with the project.
@@ -198,6 +208,11 @@ on disputes for technical matters."
 	Name = "Justin Cormack"
 	Email = "justin.cormack@docker.com"
 	GitHub = "justincormack"
+
+	[people.riyazdf]
+	Name = "Riyaz Faizullabhoy"
+	Email = "riyaz@docker.com"
+	GitHub = "riyazdf"
 
 	[people.rn]
 	Name = "Rolf Neugebauer"
