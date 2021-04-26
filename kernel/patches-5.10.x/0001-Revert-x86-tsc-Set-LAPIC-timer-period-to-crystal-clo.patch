@@ -1,0 +1,35 @@
+From a08c878b14c36a07fc2cfd0e1e3fb668428c0b78 Mon Sep 17 00:00:00 2001
+From: =?UTF-8?q?Fr=C3=A9d=C3=A9ric=20Dalleau?= <fred@dalleau.re>
+Date: Fri, 19 Mar 2021 09:15:03 +0100
+Subject: [PATCH] Revert "x86/tsc: Set LAPIC timer period to crystal clock
+ frequency"
+
+This reverts commit 2420a0b1798d7a78d1f9b395f09f3c80d92cc588.
+---
+ arch/x86/kernel/tsc.c | 10 ----------
+ 1 file changed, 10 deletions(-)
+
+diff --git a/arch/x86/kernel/tsc.c b/arch/x86/kernel/tsc.c
+index f70dffc2771f..b52d85658fb5 100644
+--- a/arch/x86/kernel/tsc.c
++++ b/arch/x86/kernel/tsc.c
+@@ -679,16 +679,6 @@ unsigned long native_calibrate_tsc(void)
+ 	if (boot_cpu_data.x86_model == INTEL_FAM6_ATOM_GOLDMONT)
+ 		setup_force_cpu_cap(X86_FEATURE_TSC_RELIABLE);
+ 
+-#ifdef CONFIG_X86_LOCAL_APIC
+-	/*
+-	 * The local APIC appears to be fed by the core crystal clock
+-	 * (which sounds entirely sensible). We can set the global
+-	 * lapic_timer_period here to avoid having to calibrate the APIC
+-	 * timer later.
+-	 */
+-	lapic_timer_period = crystal_khz * 1000 / HZ;
+-#endif
+-
+ 	return crystal_khz * ebx_numerator / eax_denominator;
+ }
+ 
+-- 
+2.25.1
+
