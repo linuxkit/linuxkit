@@ -3,21 +3,21 @@ kernel:
   image: linuxkit/kernel:5.4.113
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:a68f9fa0c1d9dbfc9c23663749a0b7ac510cbe1c
-  - linuxkit/runc:v0.8
-  - linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106
-  - linuxkit/ca-certificates:v0.8
-  - linuxkit/memlogd:v0.8
+  - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
+  - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
+  - linuxkit/containerd:cc02c2af9c928c2faeccbe4edc78bd297ad91866
+  - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
+  - linuxkit/memlogd:9b0e8a5b3f67672234170d88833163caf7898984
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.8
+    image: linuxkit/sysctl:02d2bd74509fd063857ceb4c4f502f09ee4f2e0a
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.8
+    image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
 # Inside the getty type `/proc/1/root/usr/bin/logread -F` to follow the log
   - name: getty
-    image: linuxkit/getty:v0.8
+    image: linuxkit/getty:ed32c71531f5998aa510847bb07bd847492d4101
     env:
      - INSECURE=true
 # A service which generates log messages for testing
@@ -25,9 +25,9 @@ services:
     image: alpine:3.11
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); sleep 1; done" ]
   - name: write-and-rotate-logs
-    image: linuxkit/logwrite:v0.8
+    image: linuxkit/logwrite:e64e0f06e485e3542b58f3517da3bc13f246d208
   - name: kmsg
-    image: linuxkit/kmsg:v0.8
+    image: linuxkit/kmsg:df84eda2a82d5e24ddfe241831af3efb13a1a557
 trust:
   org:
     - linuxkit
