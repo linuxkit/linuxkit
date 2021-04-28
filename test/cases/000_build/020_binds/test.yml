@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.4.30
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:a68f9fa0c1d9dbfc9c23663749a0b7ac510cbe1c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
+  - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
+  - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
 onboot:
   - name: mount
-    image: linuxkit/mount:19fa297189166206ac97261679c3e31fb140d48f
+    image: linuxkit/mount:71c868267a4503f99e84fd7698717a3669d9dfdb
     binds.add:
       - /check.sh:/check.sh
       - /var/tmp:/var/tmp
@@ -16,7 +16,7 @@ onboot:
     # - /:/hostroot
     command: ["sh", "-c", "/check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:06dd4e46c62fbe79123a028835c921f80e4855d3
+    image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh

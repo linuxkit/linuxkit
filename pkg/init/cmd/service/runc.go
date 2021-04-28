@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/opencontainers/runc/libcontainer/system"
 	log "github.com/sirupsen/logrus"
+	"golang.org/x/sys/unix"
 )
 
 const (
@@ -49,7 +49,7 @@ func runcInit(rootPath, serviceType string) int {
 	}
 
 	// need to set ourselves as a child subreaper or we cannot wait for runc as reparents to init
-	if err := system.SetSubreaper(1); err != nil {
+	if err := setSubreaper(1); err != nil {
 		log.Fatalf("Cannot set as subreaper: %v", err)
 	}
 
@@ -163,4 +163,10 @@ func runcInit(rootPath, serviceType string) int {
 	logger.Symlink(varLogLink)
 
 	return status
+}
+
+// setSubreaper copied directly from https://github.com/opencontainers/runc/blob/b23315bdd99c388f5d0dd3616188729c5a97484a/libcontainer/system/linux.go#L88
+// to avoid version and vendor conflict issues
+func setSubreaper(i int) error {
+	return unix.Prctl(unix.PR_SET_CHILD_SUBREAPER, uintptr(i), 0, 0, 0)
 }

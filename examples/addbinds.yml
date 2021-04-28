@@ -2,24 +2,24 @@ kernel:
   image: linuxkit/kernel:5.4.30
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:a68f9fa0c1d9dbfc9c23663749a0b7ac510cbe1c
-  - linuxkit/runc:f79954950022fea76b8b6f10de58cb48e4fb3878
-  - linuxkit/containerd:1ae8f054e9fe792d1dbdb9a65f1b5e14491cb106
-  - linuxkit/ca-certificates:abfc6701b9ca17e34ac9439ce5946a247e720ff5
+  - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
+  - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
+  - linuxkit/containerd:cc02c2af9c928c2faeccbe4edc78bd297ad91866
+  - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:541f60fe3676611328e89e8bac251fc636b1a6aa
+    image: linuxkit/sysctl:02d2bd74509fd063857ceb4c4f502f09ee4f2e0a
   - name: dhcpcd
-    image: linuxkit/dhcpcd:2f8a9b670aa6e96a09db56ec45c9f07ef2a811ee
+    image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:48f66df198981e692084bf70ab72b9fe2be0f880
+    image: linuxkit/getty:ed32c71531f5998aa510847bb07bd847492d4101
     binds.add:
       # this will keep all of the existing ones as well
       - /var/tmp:/var/tmp
   - name: rngd
-    image: linuxkit/rngd:7fab61cca793113280397dcee8159f35dc37adcb
+    image: linuxkit/rngd:bdabfe138f05f7d48396d2f435af16f5a6ccaa45
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)
