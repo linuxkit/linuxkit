@@ -101,7 +101,7 @@ type cacheMocker struct {
 	hashes                 map[string][]byte
 }
 
-func (c *cacheMocker) ImagePull(ref *reference.Spec, trustedRef, architecture string) (lktspec.ImageSource, error) {
+func (c *cacheMocker) ImagePull(ref *reference.Spec, trustedRef, architecture string, alwaysPull bool) (lktspec.ImageSource, error) {
 	if !c.enableImagePull {
 		return nil, errors.New("ImagePull disabled")
 	}

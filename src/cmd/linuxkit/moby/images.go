@@ -36,15 +36,9 @@ func imagePull(ref *reference.Spec, alwaysPull bool, cacheDir string, dockerCach
 	}
 
 	// if we made it here, we either did not have the image, or it was incomplete
-	return imageLayoutWrite(cacheDir, ref, architecture)
-}
-
-// imageLayoutWrite takes an image name and pulls it down, writing it locally
-func imageLayoutWrite(cacheDir string, ref *reference.Spec, architecture string) (lktspec.ImageSource, error) {
-	image := ref.String()
 	c, err := cache.NewProvider(cacheDir)
 	if err != nil {
 		return nil, err
 	}
-	return c.ImagePull(ref, image, architecture)
+	return c.ImagePull(ref, ref.String(), architecture, alwaysPull)
 }

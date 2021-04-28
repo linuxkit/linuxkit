@@ -11,7 +11,7 @@ import (
 )
 
 // ValidateImage given a reference, validate that it is complete. If not, pull down missing
-// components as necessary.
+// components as necessary. It also calculates the hash of each component.
 func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lktspec.ImageSource, error) {
 	var (
 		imageIndex v1.ImageIndex

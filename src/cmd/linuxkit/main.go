@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	stdlog "log"
 	"os"
 	"path/filepath"
 
+	ggcrlog "github.com/google/go-containerregistry/pkg/logs"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 
 	log "github.com/sirupsen/logrus"
@@ -104,7 +106,11 @@ func main() {
 		// Switch back to the standard formatter
 		log.SetFormatter(defaultLogFormatter)
 		log.SetLevel(log.DebugLevel)
+		// set go-containerregistry logging as well
+		ggcrlog.Warn = stdlog.New(log.StandardLogger().WriterLevel(log.WarnLevel), "", 0)
+		ggcrlog.Debug = stdlog.New(log.StandardLogger().WriterLevel(log.DebugLevel), "", 0)
 	}
+	ggcrlog.Progress = stdlog.New(log.StandardLogger().WriterLevel(log.InfoLevel), "", 0)
 
 	args := flag.Args()
 	if len(args) < 1 {

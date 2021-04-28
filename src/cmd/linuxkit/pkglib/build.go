@@ -226,15 +226,19 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return fmt.Errorf("buildkit not supported, check docker version: %v", err)
 	}
 
+	skipBuild := bo.skipBuild
 	if !bo.force {
-		if _, err := c.ImagePull(&ref, "", arch); err == nil {
-			fmt.Fprintf(writer, "image already found %s", ref)
-			return nil
+		fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", ref)
+		if _, err := c.ImagePull(&ref, "", arch, false); err == nil {
+			fmt.Fprintf(writer, "%s found or pulled\n", ref)
+			skipBuild = true
+		} else {
+			fmt.Fprintf(writer, "%s not found\n", ref)
 		}
-		fmt.Fprintln(writer, "No image pulled, continuing with build")
 	}
 
-	if bo.image && !bo.skipBuild {
+	if bo.image && !skipBuild {
+		fmt.Fprintf(writer, "building %s\n", ref)
 		var (
 			args  []string
 			descs []v1.Descriptor
@@ -375,7 +379,7 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 		if err != nil {
 			return nil, fmt.Errorf("could not resolve references for image %s: %v", p.Tag(), err)
 		}
-		if _, err := c.ImagePull(&ref, "", arch); err == nil {
+		if _, err := c.ImagePull(&ref, "", arch, false); err == nil {
 			fmt.Fprintf(writer, "image already found %s for arch %s", ref, arch)
 			desc, err := c.FindDescriptor(ref.String())
 			if err != nil {
