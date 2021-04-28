@@ -28,8 +28,9 @@ const (
 )
 
 // ImagePull takes an image name and pulls it down, writing it locally. It should be
-// efficient and only write missing blobs, based on their content hash.
-func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture string) (lktspec.ImageSource, error) {
+// efficient and only write missing blobs, based on their content hash. If the ref already
+// exists in the cache, it will niot pull anything, unless alwaysPull is set to true.
+func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture string, alwaysPull bool) (lktspec.ImageSource, error) {
 	image := ref.String()
 	pullImageName := image
 	remoteOptions := []remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}
@@ -37,6 +38,17 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 		pullImageName = trustedRef
 	}
 	log.Debugf("ImagePull to cache %s trusted reference %s", image, pullImageName)
+
+	// unless alwaysPull is set to true, check locally first
+	if !alwaysPull {
+		imgSrc, err := p.ValidateImage(ref, architecture)
+		if err == nil && imgSrc != nil {
+			log.Printf("Image %s found in local cache, not pulling", image)
+			return imgSrc, nil
+		}
+		// there was an error, so try to pull
+	}
+	log.Printf("Image %s not found in local cache, pulling", image)
 	remoteRef, err := name.ParseReference(pullImageName)
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("invalid image name %s: %v", pullImageName, err)
