@@ -87,7 +87,7 @@ test -z $(GOOS=linux go vet $MOD_ARG -printf=false . 2>&1 | grep -v "^#" | grep 
 test -z $(find . -type f -name "*.go" -not -path "*/vendor/*" -not -name "*.pb.*" -exec golint {} \; | tee /dev/stderr)
 
 >&2 echo "ineffassign..."
-test -z $(find . -type f -name "*.go" -not -path "*/vendor/*" -not -name "*.pb.*" -exec ineffassign {} \; | tee /dev/stderr)
+test -z $(ineffassign ./... | tee /dev/stderr)
 
 >&2 echo "go build..."
 
@@ -100,7 +100,7 @@ then
 		go build $MOD_ARG -o $out -ldflags "${ldflags}" "$package"
 	fi
 else
-	go build $MOD_ARG -o $out -buildmode pie -ldflags "-s -w ${ldflags} -extldflags \"-static\"" "$package"
+	go build $MOD_ARG -o $out -buildmode pie -ldflags "-linkmode=external -s -w ${ldflags} -extldflags \"-static-pie\"" "$package"
 fi
 
 tar cf - $out
