@@ -103,3 +103,15 @@ ci-pr: test-cross
 .PHONY: clean
 clean:
 	rm -rf bin *.log *-kernel *-cmdline *-state *.img *.iso *.gz *.qcow2 *.vhd *.vmx *.vmdk *.tar *.raw
+
+update-package-tags:
+ifneq ($(LK_RELEASE),)
+	$(eval tags := $(shell cd pkg; make show-tag | cut -d ':' -f1))
+	$(eval image := :$(LK_RELEASE))
+else
+	$(eval tags := $(shell cd pkg; make show-tag))
+	$(eval image := )
+endif
+	for img in $(tags); do \
+		./scripts/update-component-sha.sh --image $${img}$(image); \
+	done
