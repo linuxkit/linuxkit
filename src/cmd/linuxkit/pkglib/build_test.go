@@ -298,7 +298,6 @@ func TestBuild(t *testing.T) {
 		cache   *cacheMocker
 		err     string
 	}{
-		{"missing tag", Pkg{}, nil, nil, &dockerMocker{}, &cacheMocker{}, "could not resolve references"},
 		{"invalid tag", Pkg{image: "docker.io/foo/bar:abc:def:ghi"}, nil, nil, &dockerMocker{}, &cacheMocker{}, "could not resolve references"},
 		{"mismatched platforms", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"arm64"}}, nil, []string{"amd64"}, nil, nil, fmt.Sprintf("arch %s not supported", "amd64")},
 		{"not at head", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "foo"}, nil, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "Cannot build from commit hash != HEAD"},

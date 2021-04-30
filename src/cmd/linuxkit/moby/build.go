@@ -85,7 +85,7 @@ func OutputTypes() []string {
 
 func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer, cacheDir string, dockerCache bool) error {
 	log.Infof("  Create OCI config for %s", image.Image)
-	imageName := referenceExpand(image.Image)
+	imageName := util.ReferenceExpand(image.Image)
 	ref, err := reference.Parse(imageName)
 	if err != nil {
 		return fmt.Errorf("could not resolve references for image %s: %v", image.Image, err)

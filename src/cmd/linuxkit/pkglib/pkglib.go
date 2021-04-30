@@ -13,6 +13,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 )
 
 // Contains fields settable in the build.yml
@@ -274,6 +275,10 @@ func (p Pkg) Tag() string {
 		t = "latest"
 	}
 	return p.org + "/" + p.image + ":" + t
+}
+
+func (p Pkg) FullTag() string {
+	return util.ReferenceExpand(p.Tag())
 }
 
 // TrustEnabled returns true if trust is enabled
