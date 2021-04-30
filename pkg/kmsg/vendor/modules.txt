@@ -1,0 +1,5 @@
+# github.com/euank/go-kmsg-parser v2.0.0+incompatible
+## explicit
+github.com/euank/go-kmsg-parser/kmsgparser
+# github.com/stretchr/testify v1.7.0
+## explicit
