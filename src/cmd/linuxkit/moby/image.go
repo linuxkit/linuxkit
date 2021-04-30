@@ -12,7 +12,6 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
-	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -22,13 +21,6 @@ type tarWriter interface {
 	Flush() error
 	Write(b []byte) (n int, err error)
 	WriteHeader(hdr *tar.Header) error
-}
-
-// ImageSource interface to an image. It can have its config read, and a its containers
-// can be read via an io.ReadCloser tar stream.
-type ImageSource interface {
-	Config() (imagespec.ImageConfig, error)
-	TarReader() (io.ReadCloser, error)
 }
 
 // This uses Docker to convert a Docker image into a tarball. It would be an improvement if we

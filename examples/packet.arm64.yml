@@ -5,10 +5,10 @@
 # for arm64 then the 'ucode' line in the kernel section can be left
 # out.
 kernel:
-  image: linuxkit/kernel:5.4.39
+  image: linuxkit/kernel:5.4.113
   cmdline: "console=ttyAMA0"
   ucode: ""
 onboot:
   - name: modprobe
-    image: linuxkit/modprobe:v0.8
+    image: linuxkit/modprobe:e2045c96cd2d3ef08eaf452396462d9205667690
     command: ["modprobe", "nicvf"]

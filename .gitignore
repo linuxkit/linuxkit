@@ -19,3 +19,4 @@ Dockerfile.media
 *-cmdline
 *-state
 artifacts/*
+tools/alpine/iid

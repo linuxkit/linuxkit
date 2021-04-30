@@ -10,16 +10,11 @@ import (
 )
 
 // PushWithManifest push an image along with, optionally, a multi-arch index.
-func PushWithManifest(dir string, name, suffix string, pushImage, pushManifest bool) error {
+func (p *Provider) PushWithManifest(name, suffix string, pushImage, pushManifest bool) error {
 	var (
 		err     error
 		options []remote.Option
 	)
-	p, err := Get(dir)
-	if err != nil {
-		return err
-	}
-
 	imageName := name + suffix
 	ref, err := namepkg.ParseReference(imageName)
 	if err != nil {
@@ -29,7 +24,7 @@ func PushWithManifest(dir string, name, suffix string, pushImage, pushManifest b
 	if pushImage {
 		fmt.Printf("Pushing %s\n", imageName)
 		// do we even have the given one?
-		root, err := findRootFromLayout(p, imageName)
+		root, err := p.FindRoot(imageName)
 		if err != nil {
 			return err
 		}
@@ -61,12 +56,49 @@ func PushWithManifest(dir string, name, suffix string, pushImage, pushManifest b
 
 	if pushManifest {
 		fmt.Printf("Pushing %s to manifest %s\n", imageName, name)
-		_, _, err = registry.PushManifest(imageName, auth)
+		_, _, err = registry.PushManifest(name, auth)
 		if err != nil {
 			return err
 		}
 	} else {
 		fmt.Print("Manifest push disabled, skipping...\n")
+	}
+	return nil
+}
+
+// Push push an image along with a multi-arch index.
+func (p *Provider) Push(name string) error {
+	var (
+		err     error
+		options []remote.Option
+	)
+	ref, err := namepkg.ParseReference(name)
+	if err != nil {
+		return err
+	}
+
+	fmt.Printf("Pushing %s\n", name)
+	// do we even have the given one?
+	root, err := p.FindRoot(name)
+	if err != nil {
+		return err
+	}
+	options = append(options, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+	img, err1 := root.Image()
+	ii, err2 := root.ImageIndex()
+	switch {
+	case err1 == nil:
+		if err := remote.Write(ref, img, options...); err != nil {
+			return err
+		}
+		fmt.Printf("Pushed image %s\n", name)
+	case err2 == nil:
+		if err := remote.WriteIndex(ref, ii, options...); err != nil {
+			return err
+		}
+		fmt.Printf("Pushed index %s\n", name)
+	default:
+		return fmt.Errorf("name %s unknown in cache", name)
 	}
 	return nil
 }

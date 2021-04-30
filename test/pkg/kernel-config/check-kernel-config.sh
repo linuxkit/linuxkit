@@ -71,8 +71,11 @@ fi
 # poisoning cannot be enabled in 4.4
 if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 9 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING=y || fail "CONFIG_PAGE_POISONING=y"
-  echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING_NO_SANITY=y || fail "CONFIG_PAGE_POISONING_NO_SANITY=y"
-  echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING_ZERO=y || fail "CONFIG_PAGE_POISONING_ZERO=y"
+  # These sub options were removed from 5.11.x
+  if [ "$kernelMajor" -le 5 -a "$kernelMinor" -lt 11 ]; then
+      echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING_NO_SANITY=y || fail "CONFIG_PAGE_POISONING_NO_SANITY=y"
+      echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING_ZERO=y || fail "CONFIG_PAGE_POISONING_ZERO=y"
+  fi
 fi
 if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 10 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_BUG_ON_DATA_CORRUPTION=y || fail "CONFIG_BUG_ON_DATA_CORRUPTION=y"

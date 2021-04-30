@@ -1,7 +1,7 @@
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS build
+FROM linuxkit/alpine:0c069d0fd7defddb6e03925fcd4915407db0c9e1 AS build
 
 RUN apk add --no-cache go musl-dev git build-base
-ENV GOPATH=/go PATH=$PATH:/go/bin 
+ENV GOPATH=/go PATH=$PATH:/go/bin GO111MODULE=off
 ENV COMMIT=db7b7b0f8147f29360d69dc81af9e2877647f0de
 
 RUN git clone https://github.com/moby/vpnkit.git /go/src/github.com/moby/vpnkit && \

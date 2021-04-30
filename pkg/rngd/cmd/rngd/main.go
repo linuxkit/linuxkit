@@ -2,7 +2,7 @@
 
 package main
 
-// int rndaddentropy;
+// extern int rndaddentropy;
 import "C"
 
 import (

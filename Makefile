@@ -1,7 +1,7 @@
 VERSION="v0.8+"
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
-GO_COMPILE=linuxkit/go-compile:6d73c4723ae2b58af22e3736b2b0f0292e18eb6d
+GO_COMPILE=linuxkit/go-compile:9f76f29606aec51f2f568984c4c6fe55da2dde10
 
 ifeq ($(OS),Windows_NT)
 LINUXKIT?=bin/linuxkit.exe
@@ -28,7 +28,7 @@ PREFIX?=/usr/local
 default: $(LINUXKIT) $(RTF)
 all: default
 
-RTF_COMMIT=171155c375706f2616f0b9c96afe2240e15d1de1
+RTF_COMMIT=2351267f358ce6621c0c0d9a069f361268dba5fc
 RTF_CMD=github.com/linuxkit/rtf/cmd
 RTF_VERSION=0.0
 $(RTF): tmp_rtf_bin.tar | bin

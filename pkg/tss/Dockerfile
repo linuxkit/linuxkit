@@ -1,7 +1,7 @@
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS build
+FROM linuxkit/alpine:0c069d0fd7defddb6e03925fcd4915407db0c9e1 AS build
 
-ENV TROUSERS_COMMIT de57f069ef2297d6a6b3a0353e217a5a2f66e444
-ENV TPM_TOOLS_COMMIT bdf9f1bc8f63cd6fc370c2deb58d03ac55079e84
+ENV TROUSERS_COMMIT 94144b0a1dcef6e31845d6c319e9bd7357208eb9
+ENV TPM_TOOLS_COMMIT bf43837575c5f7d31865562dce7778eae970052e
 
 RUN apk add --no-cache --initdb \
     automake \
@@ -24,8 +24,8 @@ COPY src/glibc_stubs/ /usr/src/glibc_stubs
 WORKDIR /usr/src/glibc_stubs
 RUN make && make install
 
-RUN git clone https://github.com/linuxkit/mirror-trousers.git /usr/src/trousers-trousers && cd /usr/src/trousers-trousers && git checkout $TROUSERS_COMMIT
-RUN git clone https://github.com/linuxkit/mirror-tpm-tools.git /usr/src/trousers-tpm-tools && cd /usr/src/trousers-tpm-tools && git checkout $TPM_TOOLS_COMMIT
+RUN git clone https://git.code.sf.net/p/trousers/trousers /usr/src/trousers-trousers && cd /usr/src/trousers-trousers && git checkout $TROUSERS_COMMIT
+RUN git clone https://git.code.sf.net/p/trousers/tpm-tools /usr/src/trousers-tpm-tools && cd /usr/src/trousers-tpm-tools && git checkout $TPM_TOOLS_COMMIT
 WORKDIR /usr/src/trousers-trousers
 RUN sh bootstrap.sh && \
     ./configure --prefix=/ --sysconfdir=/etc LDFLAGS="-L/out/lib/ -lgetpwent_r" && \

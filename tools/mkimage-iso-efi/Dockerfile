@@ -1,6 +1,6 @@
-FROM linuxkit/grub:a0e2211d39c3c71613f902b3e29746badee3295e AS grub
+FROM linuxkit/grub:4de02c056b3295f510b7fb4f9b5a2785f854ac23 AS grub
 
-FROM linuxkit/alpine:bc528cf9d4065d2e09aa44ff76909b94cfe8d867 AS mirror
+FROM linuxkit/alpine:0c069d0fd7defddb6e03925fcd4915407db0c9e1 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
   alpine-baselayout \

@@ -1,4 +1,4 @@
-FROM alpine:3.12 AS mirror
+FROM alpine:3.13 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -7,10 +7,29 @@ RUN apk update && apk upgrade -a
 COPY Dockerfile /Dockerfile
 COPY packages* /tmp/
 
-# mirror packages
+# mirror packages - both generic and repository specific ones
 RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
    mkdir -p /mirror/$(apk --print-arch) && \
    apk fetch --recursive -o /mirror/$(apk --print-arch) $(apk info; cat /tmp/packages)
+
+# these are the repository-specific ones, if they exist
+RUN for repopkgs in /tmp/packages.repo.*; do \
+        repo=${repopkgs##*repo.} && archspecific=/tmp/packages.$(uname -m).repo.${repo} && mergedfile=/tmp/packages.merged.${repo} && repofile=/tmp/repositories.${repo} && \
+	cachedir=/tmp/cache/${repo} && \
+	mkdir -p ${cachedir} && \
+        cp ${repopkgs} ${mergedfile} && \
+        if [ -f ${archspecific} ]; then cat ${archspecific} >> ${mergedfile}; fi && \
+        sed "s#alpine/[^\/]*/#alpine/${repo}/#g" /etc/apk/repositories > ${repofile} && \
+        apk update --repositories-file=${repofile} --cache-dir ${cachedir} && \
+        apk fetch --repositories-file=${repofile} --cache-dir ${cachedir} --recursive -o /mirror/$(apk --print-arch) $(cat ${mergedfile}); done
+
+# we CANNOT allow musl-dev or musl > 1.2.2-r0, which ships with alpine:3.13, because 1.2.2-r2, which ships with alpine:edge / alpine:3.14
+#   uses the new faccessat2 system call which gives errors, see https://wiki.alpinelinux.org/wiki/Draft_Release_Notes_for_Alpine_3.14.0#faccessat2
+RUN target="1.2.2-r0" && \
+    verlte() { [  "$1" = $(printf '%s\n%s' "$1" "$2" | sort -V | head -n1) ] ; } && \
+    for file in /mirror/$(apk --print-arch)/musl-*.apk; do \
+    version=$(tar -xf ${file}  -O .PKGINFO | awk '$1 == "pkgver" {print $3}') && \
+    if ! verlte ${version} ${target} ; then echo "removing ${file}" && rm ${file}; fi; done
 
 # install abuild and sudo for signing
 RUN apk add --no-cache abuild sudo
@@ -39,8 +58,10 @@ RUN go get -u github.com/LK4D4/vndr
 # checkout and compile containerd
 # Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
 # `test/pkg/containerd/Dockerfile` when changing this.
+# when building, note that containerd does not use go modules in the below commit,
+# while go1.16 defaults to using it, so must disable with GO111MODULE=off
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.4.1
+ENV CONTAINERD_COMMIT=v1.4.4
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
@@ -48,7 +69,7 @@ RUN mkdir -p $GOPATH/src/github.com/containerd && \
   git checkout $CONTAINERD_COMMIT
 RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make libseccomp-dev
 RUN cd $GOPATH/src/github.com/containerd/containerd && \
-  make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILDTAGS="static_build no_devmapper"
+  GO111MODULE=off make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILDTAGS="static_build no_devmapper"
 
 # Checkout and compile iucode-tool for Intel CPU microcode
 # On non-x86_64 create a dummy file to copy below.
@@ -70,7 +91,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.11
+FROM alpine:3.13
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
