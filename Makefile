@@ -1,14 +1,11 @@
 VERSION="v0.8+"
-GIT_COMMIT=$(shell git rev-list -1 HEAD)
 
 GO_COMPILE=linuxkit/go-compile:7b1f5a37d2a93cd4a9aa2a87db264d8145944006
 
 ifeq ($(OS),Windows_NT)
-LINUXKIT?=bin/linuxkit.exe
 RTF?=bin/rtf.exe
 GOOS?=windows
 else
-LINUXKIT?=bin/linuxkit
 RTF?=bin/rtf
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 endif
@@ -22,10 +19,14 @@ endif
 
 PREFIX?=/usr/local
 
+LOCAL_TARGET?=$(CURDIR)/bin/linuxkit
+
+export VERSION GO_COMPILE GOOS GOARCH LOCAL_TARGET
+
 .DELETE_ON_ERROR:
 
 .PHONY: default all
-default: $(LINUXKIT) $(RTF)
+default: linuxkit $(RTF)
 all: default
 
 RTF_COMMIT=2351267f358ce6621c0c0d9a069f361268dba5fc
@@ -50,56 +51,26 @@ bin/manifest-tool: tmp_mt_bin.tar | bin
 tmp_mt_bin.tar: Makefile
 	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/estesp/manifest-tool --clone $(MT_REPO) --commit $(MT_COMMIT) --package github.com/estesp/manifest-tool --ldflags "-X main.gitCommit=$(MT_COMMIT)" -o bin/manifest-tool > $@
 
-LINUXKIT_DEPS=$(wildcard src/cmd/linuxkit/*.go) $(wildcard src/cmd/linuxkit/*/*.go) Makefile
-$(LINUXKIT): tmp_linuxkit_bin.tar
-	tar xf $<
-	rm $<
-	touch $@
-
-tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
-	tar cf - -C src/cmd/linuxkit . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)" -o $(LINUXKIT) > $@
+.PHONY: linuxkit
+linuxkit:
+	make -C ./src/cmd/linuxkit
 
 .PHONY: test-cross
 test-cross:
-	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=darwin tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
-	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=windows tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
-	$(MAKE) clean
-	$(MAKE) -j 3 GOOS=linux tmp_rtf_bin.tar tmp_mt_bin.tar tmp_linuxkit_bin.tar
-	$(MAKE) clean
+	make -C ./src/cmd/linuxkit test-cross
 
-LOCAL_LDFLAGS += -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)
-LOCAL_TARGET ?= $(LINUXKIT)
+.PHONY: local local-%
+local:
+	make -C ./src/cmd/linuxkit local
 
-.PHONY: local-check local-build local-test local-static-pie local-static local-dynamic local
-local-check: $(LINUXKIT_DEPS)
-	@echo gofmt... && o=$$(gofmt -s -l $(filter %.go,$(LINUXKIT_DEPS))) && if [ -n "$$o" ] ; then echo $$o ; exit 1 ; fi
-	@echo govet... && go vet -printf=false ./src/cmd/linuxkit/...
-	@echo golint... && set -e ; for i in $(filter %.go,$(LINUXKIT_DEPS)); do golint $$i ; done
-	@echo ineffassign... && ineffassign ./src/cmd/linuxkit/...
-
-local-build: local-static
-
-local-static-pie: $(LINUXKIT_DEPS) | bin
-	CGO_ENABLED=0 go build -o $(LOCAL_TARGET) --buildmode pie --ldflags "-s -w -extldflags \"-static\" $(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
-
-local-static: $(LINUXKIT_DEPS) | bin
-	CGO_ENABLED=0 go build -o $(LOCAL_TARGET) --ldflags "$(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
-
-local-dynamic: $(LINUXKIT_DEPS) | bin
-	go build -o $(LOCAL_TARGET) --ldflags "$(LOCAL_LDFLAGS)" github.com/linuxkit/linuxkit/src/cmd/linuxkit
-
-local-test: $(LINUXKIT_DEPS)
-	go test $(shell go list github.com/linuxkit/linuxkit/src/cmd/linuxkit/... | grep -v ^github.com/linuxkit/linuxkit/src/cmd/linuxkit/vendor/)
-
-local: local-check local-build local-test
+local-%:
+	make -C ./src/cmd/linuxkit $@
 
 bin:
 	mkdir -p $@
 
 install:
-	cp -R ./bin/* $(PREFIX)/bin
+	cp -R bin/* $(PREFIX)/bin
 
 .PHONY: test
 test:
