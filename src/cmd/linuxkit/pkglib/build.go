@@ -163,7 +163,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	arch := runtime.GOARCH
-	ref, err := reference.Parse(p.Tag())
+	ref, err := reference.Parse(p.FullTag())
 	if err != nil {
 		return fmt.Errorf("could not resolve references for image %s: %v", p.Tag(), err)
 	}
@@ -295,7 +295,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	// get descriptor for root of manifest
-	desc, err := c.FindDescriptor(p.Tag())
+	desc, err := c.FindDescriptor(p.FullTag())
 	if err != nil {
 		return err
 	}
@@ -322,7 +322,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	// push the manifest
-	if err := c.Push(p.Tag()); err != nil {
+	if err := c.Push(p.FullTag()); err != nil {
 		return err
 	}
 
@@ -349,7 +349,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	// tag in docker, if requested
 	if bo.targetDocker {
-		if err := d.tag(p.Tag(), relTag); err != nil {
+		if err := d.tag(p.FullTag(), relTag); err != nil {
 			return err
 		}
 	}
@@ -375,7 +375,7 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 	fmt.Fprintf(writer, "Building for arch %s as %s\n", arch, tagArch)
 
 	if !bo.force {
-		ref, err := reference.Parse(p.Tag())
+		ref, err := reference.Parse(p.FullTag())
 		if err != nil {
 			return nil, fmt.Errorf("could not resolve references for image %s: %v", p.Tag(), err)
 		}
@@ -410,7 +410,7 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 			}
 		}
 	)
-	ref, err := reference.Parse(tag)
+	ref, err := reference.Parse(p.FullTag())
 	if err != nil {
 		return nil, fmt.Errorf("could not resolve references for image %s: %v", tagArch, err)
 	}
