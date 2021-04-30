@@ -22,7 +22,7 @@ ENV GOPATH=/go PATH=$PATH:/go/bin
 # Hack to work around an issue with go on arm64 requiring gcc
 RUN [ $(uname -m) = aarch64 ] && apk add --no-cache gcc || true
 
-COPY format.go /go/src/format/
+COPY . /go/src/format/
 RUN go-compile.sh /go/src/format
 
 FROM scratch
