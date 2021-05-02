@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
-	v1 "github.com/google/go-containerregistry/pkg/v1"
+	registry "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
@@ -235,7 +235,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		fmt.Fprintf(writer, "building %s\n", ref)
 		var (
 			args  []string
-			descs []v1.Descriptor
+			descs []registry.Descriptor
 		)
 
 		if p.git != nil && p.gitRepo != "" {
@@ -354,9 +354,9 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 }
 
 // buildArch builds the package for a single arch
-func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, args []string, writer io.Writer, bo buildOpts) (*v1.Descriptor, error) {
+func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, args []string, writer io.Writer, bo buildOpts) (*registry.Descriptor, error) {
 	var (
-		desc    *v1.Descriptor
+		desc    *registry.Descriptor
 		tagArch string
 		tag     = p.Tag()
 	)
