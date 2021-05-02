@@ -277,6 +277,7 @@ func (p Pkg) Tag() string {
 	return p.org + "/" + p.image + ":" + t
 }
 
+// FullTag returns a reference expanded tag
 func (p Pkg) FullTag() string {
 	return util.ReferenceExpand(p.Tag())
 }
