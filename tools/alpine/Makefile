@@ -7,15 +7,12 @@ DEPS=packages
 ARCH := $(shell uname -m)
 ifeq ($(ARCH), x86_64)
 DEPS += packages.x86_64
-SUFFIX=-amd64
 endif
 ifeq ($(ARCH), aarch64)
 DEPS += packages.aarch64
-SUFFIX=-arm64
 endif
 ifeq ($(ARCH), s390x)
 DEPS += packages.s390x
-SUFFIX=-s390x
 endif
 
 default: push
@@ -27,7 +24,7 @@ iid: Dockerfile Makefile $(DEPS)
 	docker build --no-cache --iidfile iid .
 
 hash: Makefile iid
-	docker run --rm $(shell cat iid) sh -c 'echo Dockerfile /lib/apk/db/installed $$(find /mirror -name '*.apk' -type f) $$(find /go/bin -type f) | xargs cat | sha1sum' | sed 's/ .*//' | sed 's/$$/$(SUFFIX)/'> $@
+	docker run --rm $(shell cat iid) cat /etc/alpine-hash > $@
 
 versions.$(ARCH): Makefile hash iid
 	echo "# $(ORG)/$(IMAGE):$(shell cat hash)" > versions.$(ARCH)

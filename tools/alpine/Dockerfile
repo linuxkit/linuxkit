@@ -93,6 +93,8 @@ RUN set -e && \
 
 FROM alpine:3.13
 
+ARG TARGETARCH
+
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
 COPY --from=mirror /etc/apk/keys /etc/apk/keys/
@@ -103,5 +105,7 @@ COPY --from=mirror /go/src/github.com/containerd/containerd /go/src/github.com/c
 COPY --from=mirror /iucode_tool /usr/bin/
 
 RUN apk update && apk upgrade -a
+
+RUN echo Dockerfile /lib/apk/db/installed $(find /mirror -name '*.apk' -type f) $(find /go/bin -type f) | xargs cat | sha1sum | sed 's/ .*//' | sed 's/$/-${TARGETARCH}/' > /etc/alpine-hash
 
 ENV GOPATH=/go PATH=$PATH:/go/bin
