@@ -1,9 +1,11 @@
 .PHONY: default pr all
-
-default: check-deps test 
-pr: check-deps test-pr
+PACKAGES=$(dir $(shell find ../pkg ./pkg ../tools/ -maxdepth 2 -mindepth 2 -type f -name build.yml))
+TOOLS=$(dir $(shell find ../tools -maxdepth 2 -mindepth 2 -type f -name Makefile))
+echo "ERROR: expected latest tag ${full_tag}"
+default: latest-tags check-deps test
+pr: latest-tags check-deps test-pr
 # TODO: should have a separate target
-all: check-deps test-pr ltp
+all: latest-tags check-deps test-pr ltp
 
 LINUXKIT:=$(shell command -v linuxkit 2> /dev/null)
 RTF:=$(shell command -v rtf 2> /dev/null)
@@ -17,6 +19,17 @@ ifndef RTF
 	$(error "rtf is not available. please install it!")
 endif
 
+clean:
+	@rm -f latest-tags
+
+latest-tags: $(PACKAGES) $(TOOLS)Makefile
+	@rm -f latest-tags
+	for t in $(TOOLS); do make --no-print-directory -C $$t show-tag >> latest-tags; done
+	@for p in $(PACKAGES); do linuxkit pkg show-tag $$p >> latest-tags; done
+
+.PHONY: lint
+lint: latest-tags
+	@./lint.sh
 
 # TODO: Remove this section once we no longer depend on this in CI
 ### -------
