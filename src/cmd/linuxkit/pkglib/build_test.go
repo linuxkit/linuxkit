@@ -13,7 +13,7 @@ import (
 	"testing"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -299,7 +299,6 @@ func TestBuild(t *testing.T) {
 		err     string
 	}{
 		{"invalid tag", Pkg{image: "docker.io/foo/bar:abc:def:ghi"}, nil, nil, &dockerMocker{}, &cacheMocker{}, "could not resolve references"},
-		{"mismatched platforms", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"arm64"}}, nil, []string{"amd64"}, nil, nil, fmt.Sprintf("arch %s not supported", "amd64")},
 		{"not at head", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "foo"}, nil, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "Cannot build from commit hash != HEAD"},
 		{"no build cache", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, nil, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "must provide linuxkit build cache"},
 		{"unsupported buildkit", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "buildkit not supported, check docker version"},

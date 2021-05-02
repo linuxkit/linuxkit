@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
@@ -166,12 +166,6 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	ref, err := reference.Parse(p.FullTag())
 	if err != nil {
 		return fmt.Errorf("could not resolve references for image %s: %v", p.Tag(), err)
-	}
-
-	for _, platform := range bo.platforms {
-		if !p.archSupported(platform.Architecture) {
-			return fmt.Errorf("arch %s not supported by this package, skipping build", platform.Architecture)
-		}
 	}
 
 	if err := p.cleanForBuild(); err != nil {
