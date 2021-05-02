@@ -105,6 +105,15 @@ As of this writing, those are:
 * `linux/arm64`
 * `linux/s390x`
 
+You can choose to skip one of the platforms from `build.yml` or those selected
+by default using the `--skip-platforms` flag.
+
+For example:
+
+```
+linuxkit pkg build --skip-platforms linux/s390x ...
+```
+
 You can override the target build platform by passing it the `--platforms` option:
 
 ```
