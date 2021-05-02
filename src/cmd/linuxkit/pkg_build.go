@@ -28,6 +28,7 @@ func pkgBuild(args []string) {
 	force := flags.Bool("force", false, "Force rebuild")
 	docker := flags.Bool("docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
 	platforms := flags.String("platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
+	skipPlatforms := flags.String("skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
 	builders := flags.String("builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
 	buildCacheDir := flags.String("cache", defaultLinuxkitCache(), "Directory for storing built image, incompatible with --docker")
 
@@ -47,13 +48,34 @@ func pkgBuild(args []string) {
 	if *docker {
 		opts = append(opts, pkglib.WithBuildTargetDockerCache())
 	}
+
+	// skipPlatformsMap contains platforms that should be skipped
+	skipPlatformsMap := make(map[string]bool)
+	if *skipPlatforms != "" {
+		for _, platform := range strings.Split(*skipPlatforms, ",") {
+			parts := strings.SplitN(platform, "/", 2)
+			if len(parts) != 2 || parts[0] == "" || parts[0] != "linux" || parts[1] == "" {
+				fmt.Fprintf(os.Stderr, "invalid target platform specification '%s'\n", platform)
+				os.Exit(1)
+			}
+			skipPlatformsMap[strings.Trim(parts[1], " ")] = true
+		}
+	}
 	// if platforms requested is blank, use all from the config
 	var plats []imagespec.Platform
 	if *platforms == "" {
 		for _, a := range p.Arches() {
+			if _, ok := skipPlatformsMap[a]; ok {
+				continue
+			}
 			plats = append(plats, imagespec.Platform{OS: "linux", Architecture: a})
 		}
 	} else {
+		// don't allow the use of --skip-platforms with --platforms
+		if *skipPlatforms != "" {
+			fmt.Fprintln(os.Stderr, "--skip-platforms and --platforms may not be used together")
+			os.Exit(1)
+		}
 		for _, p := range strings.Split(*platforms, ",") {
 			parts := strings.SplitN(p, "/", 2)
 			if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
