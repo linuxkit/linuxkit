@@ -18,6 +18,7 @@ IMAGE:=kernel
 IMAGE_BCC:=kernel-bcc
 IMAGE_PERF:=kernel-perf
 IMAGE_ZFS:=zfs-kmod
+IMAGE_BUILDER=linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba
 
 # You can specify an extra options for the Makefile. This will:
 # - append a config$(EXTRA) to the kernel config for your kernel/arch
@@ -73,6 +74,11 @@ KERNEL_VERSIONS=
 build:
 push:
 
+.PHONY: notdirty
+notdirty:
+	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+
+
 # A template for defining kernel build
 # Arguments:
 # $1: Full kernel version, e.g., 4.9.22
@@ -99,8 +105,10 @@ build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard co
 			--build-arg KERNEL_SERIES=$(2) \
 			--build-arg EXTRA=$(3) \
 			--build-arg DEBUG=$(4) \
+			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			$(LABELS) \
 			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
+
 
 forcebuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
 	docker build \
@@ -108,11 +116,11 @@ forcebuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildca
 		--build-arg KERNEL_SERIES=$(2) \
 		--build-arg EXTRA=$(3) \
 		--build-arg DEBUG=$(4) \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		$(LABELS) \
 		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
-push_$(2)$(3)$(4): build_$(2)$(3)$(4)
-	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+push_$(2)$(3)$(4): notdirty build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		(docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
@@ -120,21 +128,30 @@ push_$(2)$(3)$(4): build_$(2)$(3)$(4)
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
 
-forcepush_$(2)$(3)$(4): forcebuild_$(2)$(3)$(4)
-	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+forcepush_$(2)$(3)$(4): notdirty forcebuild_$(2)$(3)$(4)
 	docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 	 docker tag $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
 	 docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
 	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
 	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
 
+# tag the builder and create the manifest
+tagbuilder_$(2)$(3)$(4): notdirty
+	docker tag $(IMAGE_BUILDER) $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder$(SUFFIX) && \
+	docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder$(SUFFIX) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder $(DOCKER_CONTENT_TRUST)
+
+
 show-tag_$(2)$(3)$(4):
 	@echo $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)
 
 build: build_$(2)$(3)$(4)
 forcebuild: forcebuild_$(2)$(3)$(4)
-push: push_$(2)$(3)$(4)
-forcepush: forcepush_$(2)$(3)$(4)
+push: push_image tagbuilder
+push_image: push_$(2)$(3)$(4)
+forcepush: forcepush_image tagbuilder
+forcepush_image: forcepush_$(2)$(3)$(4)
+tagbuilder: tagbuilder_$(2)$(3)$(4)
 show-tags: show-tag_$(2)$(3)$(4)
 
 # FIXME: We no longer use DOCKER_CONENT_TRUST=1
@@ -152,15 +169,16 @@ build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
 forcebuild_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
 		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
-push_perf_$(2)$(3)$(4): build_perf_$(2)$(3)$(4)
-	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+push_perf_$(2)$(3)$(4): notdirty build_perf_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		(docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
@@ -168,8 +186,7 @@ push_perf_$(2)$(3)$(4): build_perf_$(2)$(3)$(4)
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
 
-forcepush_perf_$(2)$(3)$(4): forcebuild_perf_$(2)$(3)$(4)
-	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+forcepush_perf_$(2)$(3)$(4): notdirty forcebuild_perf_$(2)$(3)$(4)
 	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 	docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
 	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
@@ -190,15 +207,16 @@ build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			--no-cache $(LABEL) -t $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
 forcebuild_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
 		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		--no-cache $(LABEL) -t $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
-push_bcc_$(2)$(3)$(4): build_bcc_$(2)$(3)$(4)
-	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+push_bcc_$(2)$(3)$(4): notdirty build_bcc_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		(docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
@@ -206,8 +224,7 @@ push_bcc_$(2)$(3)$(4): build_bcc_$(2)$(3)$(4)
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
 		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
 
-forcepush_bcc_$(2)$(3)$(4): forcebuild_bcc_$(2)$(3)$(4)
-	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+forcepush_bcc_$(2)$(3)$(4): notdirty forcebuild_bcc_$(2)$(3)$(4)
 	docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 	docker tag $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
 	docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
@@ -229,10 +246,10 @@ build_zfs_$(2)$(3): build_$(2)$(3)
 	docker pull $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.zfs \
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
+			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			--no-cache $(LABEL) -t $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) .
 
-push_zfs_$(2)$(3): build_zfs_$(2)$(3)
-	@if [ x"$(DIRTY)" != x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
+push_zfs_$(2)$(3): notdirty build_zfs_$(2)$(3)
 	docker pull $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) || \
 		(docker push $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_ZFS):$(1)$(3)$(SUFFIX) && \
@@ -269,9 +286,11 @@ kconfig:
 ifeq (${KCONFIG_TAG},)
 	docker build --no-cache -f Dockerfile.kconfig \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		-t linuxkit/kconfig  .
 else
 	docker build --no-cache -f Dockerfile.kconfig \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		-t linuxkit/kconfig:${KCONFIG_TAG}  .
 endif

@@ -50,7 +50,7 @@ You must copy an existing `group.sh` in to this folder and adjust as required or
 [example](https://github.com/linuxkit/rtf/tree/master/etc/templates/group.sh)
 
 To write your test, create a folder within the group using the `000_name` format as described above.
-You should then copy an existing `test.sh` in to this directory and amdend it,
+You should then copy an existing `test.sh` in to this directory and amend it,
 or start from an [example](http://github.com/linuxkit/rtf/tree/master/etc/templates/test.sh)
 
 If your test can only be run when certain conditions are met, you should consider adding a label to
