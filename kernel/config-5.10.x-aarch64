@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.10.31 Kernel Configuration
+# Linux/arm64 5.10.34 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Alpine 9.2.0) 9.2.0"
 CONFIG_CC_IS_GCC=y

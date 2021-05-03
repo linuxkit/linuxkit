@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.11.15 Kernel Configuration
+# Linux/x86 5.11.18 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Alpine 9.2.0) 9.2.0"
 CONFIG_CC_IS_GCC=y
