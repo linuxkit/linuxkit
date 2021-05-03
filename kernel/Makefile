@@ -214,11 +214,11 @@ forcepush_bcc_$(2)$(3)$(4): forcebuild_bcc_$(2)$(3)$(4)
 	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
 	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
 
-
-build: build_bcc_$(2)$(3)$(4)
-forcebuild: forcebuild_bcc_$(2)$(3)$(4)
-push: push_bcc_$(2)$(3)$(4)
-forcepush: forcepush_bcc_$(2)$(3)$(4)
+# Disable bcc build as it is failing: https://github.com/linuxkit/linuxkit/issues/3652
+# build: build_bcc_$(2)$(3)$(4)
+# forcebuild: forcebuild_bcc_$(2)$(3)$(4)
+# push: push_bcc_$(2)$(3)$(4)
+# forcepush: forcepush_bcc_$(2)$(3)$(4)
 endif
 endif
 
