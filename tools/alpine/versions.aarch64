@@ -1,4 +1,4 @@
-# linuxkit/alpine:6b51a56743e4f8b923a52b908bea216749b08bec-arm64
+# linuxkit/alpine:3f3f1159e07077cdcf1544f536cfee5052fffa89-arm64
 # automatically generated list of installed packages
 abuild-3.7.0-r0
 alpine-baselayout-3.2.0-r8
@@ -152,6 +152,7 @@ libeconf-0.3.8-r0
 libedit-20191231.3.1-r1
 libedit-dev-20191231.3.1-r1
 libelf-0.182-r0
+libelf-static-0.182-r0
 libepoxy-1.5.5-r0
 libevent-2.1.12-r1
 libfdisk-2.36.1-r1

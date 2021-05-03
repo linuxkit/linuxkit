@@ -1,13 +1,13 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.4.113 Kernel Configuration
+# Linux/x86 5.4.116 Kernel Configuration
 #
 
 #
-# Compiler: gcc (Alpine 9.2.0) 9.2.0
+# Compiler: gcc (Alpine 10.2.1_pre1) 10.2.1 20201203
 #
 CONFIG_CC_IS_GCC=y
-CONFIG_GCC_VERSION=90200
+CONFIG_GCC_VERSION=100201
 CONFIG_CLANG_VERSION=0
 CONFIG_CC_CAN_LINK=y
 CONFIG_CC_HAS_ASM_GOTO=y

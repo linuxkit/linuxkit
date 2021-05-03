@@ -145,9 +145,9 @@ show-tags: show-tag_$(2)$(3)$(4)
 # with DCT as part of the dependency on build_$(2)$(3)$(4) and then build
 # with DOCKER_CONTENT_TRUST explicitly set to 0
 
-# Only build perf on x86 and latest LTS and stable kernels
+# Only build perf only on x86 and recent LTS and latest stable kernels
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.6.x 5.4.x))
+ifeq ($(2), $(filter $(2),5.11.x 5.10.x 5.4.x))
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
@@ -183,9 +183,9 @@ forcepush: forcepush_perf_$(2)$(3)$(4)
 endif
 endif
 
-# Only build BCC on x86 and only on latest LTS and latest stable kernels.
+# Only build bcc only on x86 and recent LTS and latest stable kernels
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.6.x 5.4.x))
+ifeq ($(2), $(filter $(2),5.11.x 5.10.x 5.4.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
@@ -214,11 +214,11 @@ forcepush_bcc_$(2)$(3)$(4): forcebuild_bcc_$(2)$(3)$(4)
 	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
 	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
 
-
-build: build_bcc_$(2)$(3)$(4)
-forcebuild: forcebuild_bcc_$(2)$(3)$(4)
-push: push_bcc_$(2)$(3)$(4)
-forcepush: forcepush_bcc_$(2)$(3)$(4)
+# Disable bcc build as it is failing: https://github.com/linuxkit/linuxkit/issues/3652
+# build: build_bcc_$(2)$(3)$(4)
+# forcebuild: forcebuild_bcc_$(2)$(3)$(4)
+# push: push_bcc_$(2)$(3)$(4)
+# forcepush: forcepush_bcc_$(2)$(3)$(4)
 endif
 endif
 
@@ -248,23 +248,20 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.11.15,5.11.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.31,5.10.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.113,5.4.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.113,5.4.x,,-dbg))
+$(eval $(call kernel,5.11.18,5.11.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.34,5.10.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.34,5.10.x,,-dbg))
+$(eval $(call kernel,5.4.116,5.4.x,$(EXTRA),$(DEBUG)))
 #$(eval $(call kernel,5.4.28,5.4.x,-rt,))
-$(eval $(call kernel,4.19.188,4.19.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
-$(eval $(call kernel,5.11.15,5.11.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.11,5.10.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.39,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.11.18,5.11.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.34,5.10.x,$(EXTRA),$(DEBUG)))
 #$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
-$(eval $(call kernel,5.11.15,5.11.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.31,5.10.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.113,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.11.18,5.11.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.34,5.10.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config
