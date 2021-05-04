@@ -52,7 +52,14 @@ func pushAWS(args []string) {
 		sriovNetFlag = nil
 	}
 
-	sess := session.Must(session.NewSession())
+	sess, err := session.NewSessionWithOptions(session.Options{
+		SharedConfigState: session.SharedConfigEnable,
+	})
+
+	if err != nil {
+		log.Fatalf("Failed to stablish AWS session: %v", err)
+	}
+
 	storage := s3.New(sess)
 
 	ctx, cancelFn := context.WithTimeout(context.Background(), time.Duration(timeout)*time.Second)
