@@ -3,9 +3,11 @@ VERSION="v0.8+"
 GO_COMPILE=linuxkit/go-compile:7b1f5a37d2a93cd4a9aa2a87db264d8145944006
 
 ifeq ($(OS),Windows_NT)
+LINUXKIT?=$(CURDIR)/bin/linuxkit.exe
 RTF?=bin/rtf.exe
 GOOS?=windows
 else
+LINUXKIT?=$(CURDIR)/bin/linuxkit
 RTF?=bin/rtf
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 endif
@@ -21,7 +23,7 @@ PREFIX?=/usr/local
 
 LOCAL_TARGET?=$(CURDIR)/bin/linuxkit
 
-export VERSION GO_COMPILE GOOS GOARCH LOCAL_TARGET
+export VERSION GO_COMPILE GOOS GOARCH LOCAL_TARGET LINUXKIT
 
 .DELETE_ON_ERROR:
 
@@ -52,7 +54,7 @@ tmp_mt_bin.tar: Makefile
 	docker run --rm --log-driver=none -e http_proxy=$(http_proxy) -e https_proxy=$(https_proxy) $(CROSS) $(GO_COMPILE) --clone-path github.com/estesp/manifest-tool --clone $(MT_REPO) --commit $(MT_COMMIT) --package github.com/estesp/manifest-tool --ldflags "-X main.gitCommit=$(MT_COMMIT)" -o bin/manifest-tool > $@
 
 .PHONY: linuxkit
-linuxkit:
+linuxkit: bin
 	make -C ./src/cmd/linuxkit
 
 .PHONY: test-cross
