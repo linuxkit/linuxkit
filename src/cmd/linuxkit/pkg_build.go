@@ -16,10 +16,18 @@ const (
 )
 
 func pkgBuild(args []string) {
+	pkgBuildPush(args, false)
+}
+
+func pkgBuildPush(args []string, withPush bool) {
 	flags := flag.NewFlagSet("pkg build", flag.ExitOnError)
 	flags.Usage = func() {
 		invoked := filepath.Base(os.Args[0])
-		fmt.Fprintf(os.Stderr, "USAGE: %s pkg build [options] path\n\n", invoked)
+		name := "build"
+		if withPush {
+			name = "push"
+		}
+		fmt.Fprintf(os.Stderr, "USAGE: %s pkg %s [options] path\n\n", name, invoked)
 		fmt.Fprintf(os.Stderr, "'path' specifies the path to the package source directory.\n")
 		fmt.Fprintf(os.Stderr, "\n")
 		flags.PrintDefaults()
@@ -32,19 +40,46 @@ func pkgBuild(args []string) {
 	builders := flags.String("builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
 	buildCacheDir := flags.String("cache", defaultLinuxkitCache(), "Directory for storing built image, incompatible with --docker")
 
-	p, err := pkglib.NewFromCLI(flags, args...)
+	var (
+		release                  *string
+		nobuild, manifest, image *bool
+		imageRef                 = false
+	)
+	image = &imageRef
+	if withPush {
+		release = flags.String("release", "", "Release the given version")
+		nobuild = flags.Bool("nobuild", false, "Skip the build")
+		manifest = flags.Bool("manifest", true, "Create and push multi-arch manifest")
+		image = flags.Bool("image", true, "Build and push image for the current platform")
+	}
+
+	pkgs, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Printf("Building %q\n", p.Tag())
-
-	opts := []pkglib.BuildOpt{pkglib.WithBuildImage()}
+	var opts []pkglib.BuildOpt
+	if *image {
+		opts = append(opts, pkglib.WithBuildImage())
+	}
 	if *force {
 		opts = append(opts, pkglib.WithBuildForce())
 	}
 	opts = append(opts, pkglib.WithBuildCacheDir(*buildCacheDir))
+
+	if withPush {
+		opts = append(opts, pkglib.WithBuildPush())
+		if *nobuild {
+			opts = append(opts, pkglib.WithBuildSkip())
+		}
+		if *release != "" {
+			opts = append(opts, pkglib.WithRelease(*release))
+		}
+		if *manifest {
+			opts = append(opts, pkglib.WithBuildManifest())
+		}
+	}
 	if *docker {
 		opts = append(opts, pkglib.WithBuildTargetDockerCache())
 	}
@@ -61,21 +96,16 @@ func pkgBuild(args []string) {
 			skipPlatformsMap[strings.Trim(parts[1], " ")] = true
 		}
 	}
-	// if platforms requested is blank, use all from the config
+	// if requested specific platforms, build those. If not, then we will
+	// retrieve the defaults in the loop over each package.
 	var plats []imagespec.Platform
-	if *platforms == "" {
-		for _, a := range p.Arches() {
-			if _, ok := skipPlatformsMap[a]; ok {
-				continue
-			}
-			plats = append(plats, imagespec.Platform{OS: "linux", Architecture: a})
-		}
-	} else {
-		// don't allow the use of --skip-platforms with --platforms
-		if *skipPlatforms != "" {
-			fmt.Fprintln(os.Stderr, "--skip-platforms and --platforms may not be used together")
-			os.Exit(1)
-		}
+	// don't allow the use of --skip-platforms with --platforms
+	if *platforms != "" && *skipPlatforms != "" {
+		fmt.Fprintln(os.Stderr, "--skip-platforms and --platforms may not be used together")
+		os.Exit(1)
+	}
+	// process the platforms if provided
+	if *platforms != "" {
 		for _, p := range strings.Split(*platforms, ",") {
 			parts := strings.SplitN(p, "/", 2)
 			if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
@@ -85,7 +115,6 @@ func pkgBuild(args []string) {
 			plats = append(plats, imagespec.Platform{OS: parts[0], Architecture: parts[1]})
 		}
 	}
-	opts = append(opts, pkglib.WithBuildPlatforms(plats...))
 
 	// build the builders map
 	buildersMap := map[string]string{}
@@ -102,9 +131,45 @@ func pkgBuild(args []string) {
 		os.Exit(1)
 	}
 	opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
-	if err := p.Build(opts...); err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
+
+	for _, p := range pkgs {
+		// things we need our own copies of
+		var (
+			pkgOpts  = make([]pkglib.BuildOpt, len(opts))
+			pkgPlats = make([]imagespec.Platform, len(plats))
+		)
+		copy(pkgOpts, opts)
+		copy(pkgPlats, plats)
+		// unless overridden, platforms are specific to a package, so this needs to be inside the for loop
+		if len(pkgPlats) == 0 {
+			for _, a := range p.Arches() {
+				if _, ok := skipPlatformsMap[a]; ok {
+					continue
+				}
+				pkgPlats = append(pkgPlats, imagespec.Platform{OS: "linux", Architecture: a})
+			}
+		}
+		pkgOpts = append(pkgOpts, pkglib.WithBuildPlatforms(pkgPlats...))
+
+		var msg, action string
+		switch {
+		case !withPush:
+			msg = fmt.Sprintf("Building %q", p.Tag())
+			action = "building"
+		case *nobuild:
+			msg = fmt.Sprintf("Pushing %q without building", p.Tag())
+			action = "building and pushing"
+		default:
+			msg = fmt.Sprintf("Building and pushing %q", p.Tag())
+			action = "building and pushing"
+		}
+
+		fmt.Println(msg)
+
+		if err := p.Build(pkgOpts...); err != nil {
+			fmt.Fprintf(os.Stderr, "Error %s %q: %v\n", action, p.Tag(), err)
+			os.Exit(1)
+		}
 	}
 }
 

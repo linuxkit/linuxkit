@@ -19,11 +19,12 @@ func pkgShowTag(args []string) {
 		flags.PrintDefaults()
 	}
 
-	p, err := pkglib.NewFromCLI(flags, args...)
+	pkgs, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "%v\n", err)
 		os.Exit(1)
 	}
-
-	fmt.Println(p.Tag())
+	for _, p := range pkgs {
+		fmt.Println(p.Tag())
+	}
 }

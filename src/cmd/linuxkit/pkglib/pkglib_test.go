@@ -39,8 +39,9 @@ func testBool(t *testing.T, key string, inv bool, forceOn, forceOff string, get 
 				args = append(args, override)
 			}
 			args = append(args, pkgDir)
-			pkg, err := NewFromCLI(flags, args...)
+			pkgs, err := NewFromCLI(flags, args...)
 			require.NoError(t, err)
+			pkg := pkgs[0]
 			t.Logf("override %q produced %t", override, get(pkg))
 			f(t, pkg)
 		}
