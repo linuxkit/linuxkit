@@ -1,9 +1,13 @@
-FROM linuxkit/alpine:0c069d0fd7defddb6e03925fcd4915407db0c9e1 AS mirror
+FROM linuxkit/alpine:b3028815dbf119404ab68a25acfcf84c585ab432 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     alpine-baselayout \
     busybox \
-    open-vm-tools 
+    open-vm-tools \
+    open-vm-tools-guestinfo \
+    open-vm-tools-deploypkg \
+    open-vm-tools-static \
+    open-vm-tools-vmbackup 
 
 # Remove apk residuals
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
