@@ -24,7 +24,7 @@ iid: Dockerfile Makefile $(DEPS)
 	docker build --no-cache --iidfile iid .
 
 hash: Makefile iid
-	docker run --rm $(shell cat iid) cat /etc/alpine-hash > $@
+	docker run --rm $(shell cat iid) cat /etc/alpine-hash-arch > $@
 
 versions.$(ARCH): Makefile hash iid
 	echo "# $(ORG)/$(IMAGE):$(shell cat hash)" > versions.$(ARCH)
