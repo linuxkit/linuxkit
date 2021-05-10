@@ -62,44 +62,54 @@ master.
 
 This step is not necessarily required if the alpine base image has
 recently been updated, but it is good to pick up any recent bug
-fixes. Updating the alpine base image is different to other packages
-and it must be performed on `x86_64` first:
+fixes. Updating the alpine base image is different to other packages.
+You must perform the arch-specific image builds, pushes and updates on each
+architecture first - these can be done in parallel, if you choose. When done,
+you then copy the updated `versions.<arch>` to one place, commit them, and
+push the manifest.
 
-```sh
-cd $LK_ROOT/tools/alpine
-make push
-```
+Details:
 
-This will update `linuxkit/alpine` and change the `versions.x86_64`
-file. Check it in and push to GitHub:
+#### Build and Push Per-Architecture
 
-```sh
-git commit -a -s -m "tools/alpine: Update to latest"
-git push $LK_REMOTE rel_$LK_RELEASE
-```
-
-Now, on each build machine for the other supported architectures, in turn:
+On each supported platform, build and update `linuxkit/alpine`, which will update the `versions.<arch>`
+file.:
 
 ```sh
 git fetch
 git checkout rel_$LK_RELEASE
 cd $LK_ROOT/tools/alpine
 make push
-git commit -a --amend
-git push --force $LK_REMOTE rel_$LK_RELEASE
 ```
 
-With all supported architectures updated, head back to the `x86_64`
-machine and update the release branch:
+Repeat on each platform.
+
+#### Commit Changed Versions Files
+
+When all of the platforms are done, copy the changed `versions.<arch>` from each platform to one please, commit and push.
+In the below, replace `linuxkit-arch` with each build machine's name:
 
 ```sh
-git fetch && git reset --hard $LK_REMOTE/rel_$LK_RELEASE
+# one of these will not be necessary, as you will likely be executing it on one of these machines
+scp linuxkit-s390x:$LK_ROOT/tools/alpine/versions.s390x $LK_ROOT/tools/alpine/versions.s390x
+scp linuxkit-aarch64:$LK_ROOT/tools/alpine/versions.aarch64 $LK_ROOT/tools/alpine/versions.aarch64
+scp linuxkit-x86_64:$LK_ROOT/tools/alpine/versions.x86_64 $LK_ROOT/tools/alpine/versions.x86_64
+git commit -a -s -m "tools/alpine: Update to latest"
+git push $LK_REMOTE rel_$LK_RELEASE
+```
+
+#### Update and Push Multi-Arch Index
+
+Push out the multi-arch index:
+
+```sh
+make push-manifest
 ```
 
 Stash the tag of the alpine base image in an environment variable:
 
 ```sh
-LK_ALPINE=$(head -1 alpine/versions.x86_64 | sed 's,[#| ]*,,' | sed 's,\-.*$,,' | cut -d':' -f2)
+LK_ALPINE=$(make show-tag)
 ```
 
 
