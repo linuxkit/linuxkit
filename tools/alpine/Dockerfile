@@ -106,6 +106,6 @@ COPY --from=mirror /iucode_tool /usr/bin/
 
 RUN apk update && apk upgrade -a
 
-RUN echo Dockerfile /lib/apk/db/installed $(find /mirror -name '*.apk' -type f) $(find /go/bin -type f) | xargs cat | sha1sum | sed 's/ .*//' | sed 's/$/-${TARGETARCH}/' > /etc/alpine-hash
+RUN echo Dockerfile /lib/apk/db/installed $(find /mirror -name '*.apk' -type f) $(find /go/bin -type f) | xargs cat | sha1sum | sed 's/ .*//' | sed 's/$/-'"${TARGETARCH}"'/' > /etc/alpine-hash-arch
 
 ENV GOPATH=/go PATH=$PATH:/go/bin
