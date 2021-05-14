@@ -96,6 +96,9 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	arch := runtime.GOARCH
+	if value, ok := os.LookupEnv("ZARCH"); ok {
+		arch = value
+	}
 
 	if !p.archSupported(arch) {
 		fmt.Printf("Arch %s not supported by this package, skipping build.\n", arch)
@@ -107,7 +110,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	var suffix string
 	switch arch {
-	case "amd64", "arm64", "s390x":
+	case "amd64", "arm64", "s390x", "riscv64":
 		suffix = "-" + arch
 	default:
 		return fmt.Errorf("Unknown arch %q", arch)

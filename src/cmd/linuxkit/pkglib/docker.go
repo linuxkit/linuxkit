@@ -6,6 +6,7 @@ package pkglib
 
 import (
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"os"
@@ -33,7 +34,7 @@ const (
 )
 
 var platforms = []string{
-	"linux/amd64", "linux/arm64", "linux/s390x",
+	"linux/amd64", "linux/arm64", "linux/s390x", "linux/riscv64",
 }
 
 type dockerRunner struct {
@@ -77,6 +78,8 @@ var proxyEnvVars = []string{
 	"ALL_PROXY",
 }
 
+const buildArgsEnv = "LK_BUILD_ARGS"
+
 func (dr dockerRunner) command(args ...string) error {
 	cmd := exec.Command("docker", args...)
 	cmd.Stdout = os.Stdout
@@ -100,6 +103,15 @@ func (dr dockerRunner) command(args ...string) error {
 			if value, ok := os.LookupEnv(proxyVarName); ok {
 				buildArgs = append(buildArgs,
 					[]string{"--build-arg", fmt.Sprintf("%s=%s", proxyVarName, value)}...)
+			}
+		}
+		if value, ok := os.LookupEnv(buildArgsEnv); ok {
+			var KVs map[string]string
+			if err := json.Unmarshal([]byte(value), &KVs); err == nil {
+				for k, v := range KVs {
+					buildArgs = append(buildArgs,
+						[]string{"--build-arg", fmt.Sprintf("%s=%s", k, v)}...)
+				}
 			}
 		}
 		// cannot use usual append(append( because it overwrites part of it
