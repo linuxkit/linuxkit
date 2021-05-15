@@ -2,6 +2,10 @@ gummiboot
 libunwind-dev
 luajit-dev
 open-vm-tools
+open-vm-tools-guestinfo
+open-vm-tools-deploypkg
+open-vm-tools-static
+open-vm-tools-vmbackup
 ovmf
 strace
 syslinux
