@@ -144,6 +144,18 @@ RECONNECT:
 			} else if event.Action == "destroy" && event.Type == "volume" {
 				log.Printf("A volume has been removed: will run the action at least once more")
 				action.AtLeastOnceMore()
+			} else if event.Action == "prune" && event.Type == "image" {
+				log.Printf("Dangling images have been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "prune" && event.Type == "container" {
+				log.Printf("Stopped containers have been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "prune" && event.Type == "volume" {
+				log.Printf("Unused volumes have been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "prune" && event.Type == "builder" {
+				log.Printf("Dangling build cache has been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
 			}
 		}
 	}
