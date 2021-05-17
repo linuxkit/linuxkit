@@ -68,14 +68,6 @@ func WithBuildPush() BuildOpt {
 	}
 }
 
-// WithBuildImage builds the image
-func WithBuildImage() BuildOpt {
-	return func(bo *buildOpts) error {
-		bo.image = true
-		return nil
-	}
-}
-
 // WithBuildManifest creates a multi-arch manifest for the image
 func WithBuildManifest() BuildOpt {
 	return func(bo *buildOpts) error {
@@ -231,7 +223,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 	}
 
-	if bo.image && !skipBuild {
+	if !skipBuild {
 		fmt.Fprintf(writer, "building %s\n", ref)
 		var (
 			args  []string

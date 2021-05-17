@@ -33,24 +33,31 @@ func pkgBuildPush(args []string, withPush bool) {
 		flags.PrintDefaults()
 	}
 
-	force := flags.Bool("force", false, "Force rebuild")
+	force := flags.Bool("force", false, "Force rebuild even if image is in local cache")
 	docker := flags.Bool("docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
 	platforms := flags.String("platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
 	skipPlatforms := flags.String("skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
 	builders := flags.String("builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
 	buildCacheDir := flags.String("cache", defaultLinuxkitCache(), "Directory for storing built image, incompatible with --docker")
 
+	// some logic clarification:
+	// pkg build                   - always builds unless is in cache
+	// pkg build --force           - always builds even if is in cache
+	// pkg push                    - always builds unless is in cache
+	// pkg push --force            - always builds even if is in cache
+	// pkg push --nobuild          - skips build; if not in cache, fails
+	// pkg push --nobuild --force  - nonsensical
+
 	var (
-		release                  *string
-		nobuild, manifest, image *bool
-		imageRef                 = false
+		release           *string
+		nobuild, manifest *bool
+		nobuildRef        = false
 	)
-	image = &imageRef
+	nobuild = &nobuildRef
 	if withPush {
 		release = flags.String("release", "", "Release the given version")
-		nobuild = flags.Bool("nobuild", false, "Skip the build")
+		nobuild = flags.Bool("nobuild", false, "Skip building the image before pushing, conflicts with -force")
 		manifest = flags.Bool("manifest", true, "Create and push multi-arch manifest")
-		image = flags.Bool("image", true, "Build and push image for the current platform")
 	}
 
 	pkgs, err := pkglib.NewFromCLI(flags, args...)
@@ -59,10 +66,12 @@ func pkgBuildPush(args []string, withPush bool) {
 		os.Exit(1)
 	}
 
-	var opts []pkglib.BuildOpt
-	if *image {
-		opts = append(opts, pkglib.WithBuildImage())
+	if *nobuild && *force {
+		fmt.Fprint(os.Stderr, "flags -force and -nobuild conflict")
+		os.Exit(1)
 	}
+
+	var opts []pkglib.BuildOpt
 	if *force {
 		opts = append(opts, pkglib.WithBuildForce())
 	}
