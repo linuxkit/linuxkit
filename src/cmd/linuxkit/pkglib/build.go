@@ -352,12 +352,7 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 		tagArch string
 		tag     = p.Tag()
 	)
-	switch arch {
-	case "amd64", "arm64", "s390x":
-		tagArch = tag + "-" + arch
-	default:
-		return nil, fmt.Errorf("Unknown arch %q", arch)
-	}
+	tagArch = tag + "-" + arch
 	fmt.Fprintf(writer, "Building for arch %s as %s\n", arch, tagArch)
 
 	if !bo.force {

@@ -26,10 +26,6 @@ const (
 	buildkitBuilderName = "linuxkit"
 )
 
-var platforms = []string{
-	"linux/amd64", "linux/arm64", "linux/s390x",
-}
-
 type dockerRunner interface {
 	buildkitCheck() error
 	tag(ref, tag string) error
