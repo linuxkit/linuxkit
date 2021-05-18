@@ -25,7 +25,6 @@ type dockerMocker struct {
 	enableTag       bool
 	enableBuild     bool
 	enablePull      bool
-	ctx             buildContext
 	fixedReadName   string
 	builds          []buildLog
 }
@@ -51,7 +50,7 @@ func (d *dockerMocker) tag(ref, tag string) error {
 	d.images[tag] = d.images[ref]
 	return nil
 }
-func (d *dockerMocker) build(tag, pkg, dockerContext, platform string, stdout io.Writer, opts ...string) error {
+func (d *dockerMocker) build(tag, pkg, dockerContext, platform string, stdin io.Reader, stdout io.Writer, opts ...string) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")
 	}
@@ -85,10 +84,6 @@ func (d *dockerMocker) pull(img string) (bool, error) {
 		return true, nil
 	}
 	return false, errors.New("failed to pull")
-}
-func (d *dockerMocker) setBuildCtx(ctx buildContext) {
-	d.ctx = ctx
-
 }
 
 type cacheMocker struct {

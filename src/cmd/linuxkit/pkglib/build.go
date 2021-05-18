@@ -383,8 +383,6 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 	// find the desired builder
 	builderName := getBuilderForPlatform(arch, bo.builders)
 
-	d.setBuildCtx(&buildCtx{sources: p.sources})
-
 	// set the target
 	var (
 		buildxOutput string
@@ -419,10 +417,11 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 	})
 	args = append(args, fmt.Sprintf("--output=%s", buildxOutput))
 
+	buildCtx := &buildCtx{sources: p.sources}
 	platform := fmt.Sprintf("linux/%s", arch)
 	archArgs := append(args, "--platform")
 	archArgs = append(archArgs, platform)
-	if err := d.build(tagArch, p.path, builderName, platform, stdout, archArgs...); err != nil {
+	if err := d.build(tagArch, p.path, builderName, platform, buildCtx.Reader(), stdout, archArgs...); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)
@@ -441,71 +440,90 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 
 type buildCtx struct {
 	sources []pkgSource
+	err     error
+	r       io.ReadCloser
 }
 
-// Copy iterates over the sources, tars up the content after rewriting the paths.
+// Reader gets an io.Reader by iterating over the sources, tarring up the content after rewriting the paths.
 // It assumes that sources is sane, ie is well formed and the first part is an absolute path
 // and that it exists. NewFromCLI() ensures that.
-func (c *buildCtx) Copy(w io.WriteCloser) error {
+func (c *buildCtx) Reader() io.ReadCloser {
+	r, w := io.Pipe()
 	tw := tar.NewWriter(w)
-	defer func() {
-		tw.Close()
-		w.Close()
-	}()
 
-	for _, s := range c.sources {
-		log.Debugf("Adding to build context: %s -> %s", s.src, s.dst)
+	go func() {
+		defer func() {
+			tw.Close()
+			w.Close()
+		}()
+		for _, s := range c.sources {
+			log.Debugf("Adding to build context: %s -> %s", s.src, s.dst)
 
-		f := func(p string, i os.FileInfo, err error) error {
-			if err != nil {
-				return fmt.Errorf("ctx: Walk error on %s: %v", p, err)
-			}
-
-			var link string
-			if i.Mode()&os.ModeSymlink != 0 {
-				var err error
-				link, err = os.Readlink(p)
+			f := func(p string, i os.FileInfo, err error) error {
 				if err != nil {
-					return fmt.Errorf("ctx: Failed to read symlink %s: %v", p, err)
+					return fmt.Errorf("ctx: Walk error on %s: %v", p, err)
 				}
-			}
 
-			h, err := tar.FileInfoHeader(i, link)
-			if err != nil {
-				return fmt.Errorf("ctx: Converting FileInfo for %s: %v", p, err)
-			}
-			rel, err := filepath.Rel(s.src, p)
-			if err != nil {
-				return err
-			}
-			h.Name = filepath.ToSlash(filepath.Join(s.dst, rel))
-			if err := tw.WriteHeader(h); err != nil {
-				return fmt.Errorf("ctx: Writing header for %s: %v", p, err)
-			}
+				var link string
+				if i.Mode()&os.ModeSymlink != 0 {
+					var err error
+					link, err = os.Readlink(p)
+					if err != nil {
+						return fmt.Errorf("ctx: Failed to read symlink %s: %v", p, err)
+					}
+				}
 
-			if !i.Mode().IsRegular() {
+				h, err := tar.FileInfoHeader(i, link)
+				if err != nil {
+					return fmt.Errorf("ctx: Converting FileInfo for %s: %v", p, err)
+				}
+				rel, err := filepath.Rel(s.src, p)
+				if err != nil {
+					return err
+				}
+				h.Name = filepath.ToSlash(filepath.Join(s.dst, rel))
+				if err := tw.WriteHeader(h); err != nil {
+					return fmt.Errorf("ctx: Writing header for %s: %v", p, err)
+				}
+
+				if !i.Mode().IsRegular() {
+					return nil
+				}
+
+				f, err := os.Open(p)
+				if err != nil {
+					return fmt.Errorf("ctx: Open %s: %v", p, err)
+				}
+				defer f.Close()
+
+				_, err = io.Copy(tw, f)
+				if err != nil {
+					return fmt.Errorf("ctx: Writing %s: %v", p, err)
+				}
 				return nil
 			}
 
-			f, err := os.Open(p)
-			if err != nil {
-				return fmt.Errorf("ctx: Open %s: %v", p, err)
+			if err := filepath.Walk(s.src, f); err != nil {
+				c.err = err
+				return
 			}
-			defer f.Close()
-
-			_, err = io.Copy(tw, f)
-			if err != nil {
-				return fmt.Errorf("ctx: Writing %s: %v", p, err)
-			}
-			return nil
 		}
+	}()
+	c.r = r
+	return c
+}
 
-		if err := filepath.Walk(s.src, f); err != nil {
-			return err
-		}
+// Read wraps the usual read, but allows us to include an error
+func (c *buildCtx) Read(data []byte) (n int, err error) {
+	if c.err != nil {
+		return 0, err
 	}
+	return c.r.Read(data)
+}
 
-	return nil
+// Close wraps the usual close
+func (c *buildCtx) Close() error {
+	return c.r.Close()
 }
 
 // getBuilderForPlatform given an arch, find the context for the desired builder.
