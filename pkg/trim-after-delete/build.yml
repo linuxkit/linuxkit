@@ -1,4 +1,7 @@
 image: trim-after-delete
+arches:
+  - amd64
+  - arm64
 config:
   binds:
     - /var/run:/var/run
