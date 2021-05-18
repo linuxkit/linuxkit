@@ -77,6 +77,11 @@ func (d ImageSource) TarReader() (io.ReadCloser, error) {
 	}, nil
 }
 
+// V1TarReader return an io.ReadCloser to read the save of the image
+func (d ImageSource) V1TarReader() (io.ReadCloser, error) {
+	return Save(d.ref.String())
+}
+
 // Descriptor return the descriptor of the image.
 func (d ImageSource) Descriptor() *v1.Descriptor {
 	return nil

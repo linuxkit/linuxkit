@@ -19,7 +19,6 @@ import (
 	versioncompare "github.com/hashicorp/go-version"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -34,18 +33,14 @@ var platforms = []string{
 type dockerRunner interface {
 	buildkitCheck() error
 	tag(ref, tag string) error
-	build(tag, pkg, dockerContext, platform string, stdout io.Writer, opts ...string) error
+	build(tag, pkg, dockerContext, platform string, stdin io.Reader, stdout io.Writer, opts ...string) error
 	save(tgt string, refs ...string) error
 	load(src io.Reader) error
 	pull(img string) (bool, error)
-	setBuildCtx(ctx buildContext)
 }
 
 type dockerRunnerImpl struct {
 	cache bool
-
-	// Optional build context to use
-	ctx buildContext
 }
 
 type buildContext interface {
@@ -80,8 +75,11 @@ var proxyEnvVars = []string{
 	"ALL_PROXY",
 }
 
-func (dr *dockerRunnerImpl) command(stdout, stderr io.Writer, args ...string) error {
+func (dr *dockerRunnerImpl) command(stdin io.Reader, stdout, stderr io.Writer, args ...string) error {
 	cmd := exec.Command("docker", args...)
+	if stdin == nil {
+		stdin = os.Stdin
+	}
 	if stdout == nil {
 		stdout = os.Stdout
 	}
@@ -90,56 +88,26 @@ func (dr *dockerRunnerImpl) command(stdout, stderr io.Writer, args ...string) er
 	}
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
+	cmd.Stdin = stdin
 	cmd.Env = os.Environ()
-
-	var eg errgroup.Group
-
-	// special handling for build-args
-	if args[0] == "buildx" && args[1] == "build" {
-		buildArgs := []string{}
-		for _, proxyVarName := range proxyEnvVars {
-			if value, ok := os.LookupEnv(proxyVarName); ok {
-				buildArgs = append(buildArgs,
-					[]string{"--build-arg", fmt.Sprintf("%s=%s", proxyVarName, value)}...)
-			}
-		}
-		// cannot use usual append(append( because it overwrites part of it
-		newArgs := make([]string, len(cmd.Args)+len(buildArgs))
-		copy(newArgs[:2], cmd.Args[:2])
-		copy(newArgs[2:], buildArgs)
-		copy(newArgs[2+len(buildArgs):], cmd.Args[2:])
-		cmd.Args = newArgs
-
-		if dr.ctx != nil {
-			stdin, err := cmd.StdinPipe()
-			if err != nil {
-				return err
-			}
-			eg.Go(func() error {
-				defer stdin.Close()
-				return dr.ctx.Copy(stdin)
-			})
-
-			cmd.Args = append(cmd.Args[:len(cmd.Args)-1], "-")
-		}
-	}
 
 	log.Debugf("Executing: %v", cmd.Args)
 
-	if err := cmd.Run(); err != nil {
+	err := cmd.Run()
+	if err != nil {
 		if isExecErrNotFound(err) {
 			return fmt.Errorf("linuxkit pkg requires docker to be installed")
 		}
 		return err
 	}
-	return eg.Wait()
+	return nil
 }
 
 // versionCheck returns the client version and server version, and compares them both
 // against the minimum required version.
 func (dr *dockerRunnerImpl) versionCheck(version string) (string, string, error) {
 	var stdout bytes.Buffer
-	if err := dr.command(&stdout, nil, "version", "--format", "json"); err != nil {
+	if err := dr.command(nil, &stdout, nil, "version", "--format", "json"); err != nil {
 		return "", "", err
 	}
 
@@ -200,7 +168,7 @@ func (dr *dockerRunnerImpl) versionCheck(version string) (string, string, error)
 // of docker in Actions, which makes it difficult to tell if buildkit is supported.
 // See https://github.community/t/what-really-is-docker-3-0-6/16171
 func (dr *dockerRunnerImpl) buildkitCheck() error {
-	return dr.command(ioutil.Discard, ioutil.Discard, "buildx", "ls")
+	return dr.command(nil, ioutil.Discard, ioutil.Discard, "buildx", "ls")
 }
 
 // builder ensure that a builder exists. Works as follows.
@@ -216,7 +184,7 @@ func (dr *dockerRunnerImpl) builder(dockerContext, platform string) (string, err
 	// if we were given a context, we must find a builder and use it, or create one and use it
 	if dockerContext != "" {
 		// does the context exist?
-		if err := dr.command(ioutil.Discard, ioutil.Discard, "context", "inspect", dockerContext); err != nil {
+		if err := dr.command(nil, ioutil.Discard, ioutil.Discard, "context", "inspect", dockerContext); err != nil {
 			return "", fmt.Errorf("provided docker context '%s' not found", dockerContext)
 		}
 		builderName = fmt.Sprintf("%s-%s-%s-builder", buildkitBuilderName, dockerContext, strings.ReplaceAll(platform, "/", "-"))
@@ -228,7 +196,7 @@ func (dr *dockerRunnerImpl) builder(dockerContext, platform string) (string, err
 
 	// no provided dockerContext, so look for one based on platform-specific name
 	dockerContext = fmt.Sprintf("%s-%s", buildkitBuilderName, strings.ReplaceAll(platform, "/", "-"))
-	if err := dr.command(ioutil.Discard, ioutil.Discard, "context", "inspect", dockerContext); err == nil {
+	if err := dr.command(nil, ioutil.Discard, ioutil.Discard, "context", "inspect", dockerContext); err == nil {
 		// we found an appropriately named context, so let us try to use it or error out
 		builderName = fmt.Sprintf("%s-builder", dockerContext)
 		if err := dr.builderEnsureContainer(builderName, platform, dockerContext, args...); err == nil {
@@ -250,7 +218,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(name, platform, dockerContext
 	// if no error, then we have a builder already
 	// inspect it to make sure it is of the right type
 	var b bytes.Buffer
-	if err := dr.command(&b, ioutil.Discard, "buildx", "inspect", name); err != nil {
+	if err := dr.command(nil, &b, ioutil.Discard, "buildx", "inspect", name); err != nil {
 		// we did not have the named builder, so create the builder
 		args = append(args, "--name", name)
 		msg := fmt.Sprintf("creating builder '%s'", name)
@@ -265,7 +233,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(name, platform, dockerContext
 			msg = fmt.Sprintf("%s based on docker context '%s'", msg, dockerContext)
 		}
 		fmt.Println(msg)
-		return dr.command(ioutil.Discard, ioutil.Discard, args...)
+		return dr.command(nil, ioutil.Discard, ioutil.Discard, args...)
 	}
 	// if we got here, we found a builder already, so let us check its type
 	var (
@@ -295,7 +263,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(name, platform, dockerContext
 }
 
 func (dr *dockerRunnerImpl) pull(img string) (bool, error) {
-	err := dr.command(nil, nil, "image", "pull", img)
+	err := dr.command(nil, nil, nil, "image", "pull", img)
 	if err == nil {
 		return true, nil
 	}
@@ -308,7 +276,7 @@ func (dr *dockerRunnerImpl) pull(img string) (bool, error) {
 }
 
 func (dr dockerRunnerImpl) push(img string) error {
-	return dr.command(nil, nil, "image", "push", img)
+	return dr.command(nil, nil, nil, "image", "push", img)
 }
 
 func (dr *dockerRunnerImpl) pushWithManifest(img, suffix string, pushImage, pushManifest bool) error {
@@ -341,10 +309,10 @@ func (dr *dockerRunnerImpl) pushWithManifest(img, suffix string, pushImage, push
 
 func (dr *dockerRunnerImpl) tag(ref, tag string) error {
 	fmt.Printf("Tagging %s as %s\n", ref, tag)
-	return dr.command(nil, nil, "image", "tag", ref, tag)
+	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(tag, pkg, dockerContext, platform string, stdout io.Writer, opts ...string) error {
+func (dr *dockerRunnerImpl) build(tag, pkg, dockerContext, platform string, stdin io.Reader, stdout io.Writer, opts ...string) error {
 	// ensure we have a builder
 	builderName, err := dr.builder(dockerContext, platform)
 	if err != nil {
@@ -352,28 +320,37 @@ func (dr *dockerRunnerImpl) build(tag, pkg, dockerContext, platform string, stdo
 	}
 
 	args := []string{"buildx", "build"}
+
+	for _, proxyVarName := range proxyEnvVars {
+		if value, ok := os.LookupEnv(proxyVarName); ok {
+			args = append(args,
+				[]string{"--build-arg", fmt.Sprintf("%s=%s", proxyVarName, value)}...)
+		}
+	}
 	if !dr.cache {
 		args = append(args, "--no-cache")
 	}
 	args = append(args, opts...)
 	args = append(args, fmt.Sprintf("--builder=%s", builderName))
-	args = append(args, "-t", tag, pkg)
+	args = append(args, "-t", tag)
+
+	// should docker read from the build path or stdin?
+	buildPath := pkg
+	if stdin != nil {
+		buildPath = "-"
+	}
+	args = append(args, buildPath)
+
 	fmt.Printf("building for platform %s using builder %s\n", platform, builderName)
-	return dr.command(stdout, nil, args...)
+	return dr.command(stdin, stdout, nil, args...)
 }
 
 func (dr *dockerRunnerImpl) save(tgt string, refs ...string) error {
 	args := append([]string{"image", "save", "-o", tgt}, refs...)
-	return dr.command(nil, nil, args...)
+	return dr.command(nil, nil, nil, args...)
 }
 
 func (dr *dockerRunnerImpl) load(src io.Reader) error {
 	args := []string{"image", "load"}
-	dr.ctx = &readerCtx{
-		reader: src,
-	}
-	return dr.command(nil, nil, args...)
-}
-func (dr *dockerRunnerImpl) setBuildCtx(ctx buildContext) {
-	dr.ctx = ctx
+	return dr.command(src, nil, nil, args...)
 }

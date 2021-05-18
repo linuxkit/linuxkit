@@ -88,6 +88,16 @@ func Export(container string) (io.ReadCloser, error) {
 	return responseBody, err
 }
 
+// Save save the provided image ref.
+func Save(image string) (io.ReadCloser, error) {
+	log.Debugf("docker save: %s", image)
+	cli, err := Client()
+	if err != nil {
+		return nil, errors.New("could not initialize Docker API client")
+	}
+	return cli.ImageSave(context.Background(), []string{image})
+}
+
 // Rm remove the given container from docker.
 func Rm(container string) error {
 	log.Debugf("docker rm: %s", container)

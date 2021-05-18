@@ -25,7 +25,6 @@ type dockerMocker struct {
 	enableTag       bool
 	enableBuild     bool
 	enablePull      bool
-	ctx             buildContext
 	fixedReadName   string
 	builds          []buildLog
 }
@@ -51,7 +50,7 @@ func (d *dockerMocker) tag(ref, tag string) error {
 	d.images[tag] = d.images[ref]
 	return nil
 }
-func (d *dockerMocker) build(tag, pkg, dockerContext, platform string, stdout io.Writer, opts ...string) error {
+func (d *dockerMocker) build(tag, pkg, dockerContext, platform string, stdin io.Reader, stdout io.Writer, opts ...string) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")
 	}
@@ -85,10 +84,6 @@ func (d *dockerMocker) pull(img string) (bool, error) {
 		return true, nil
 	}
 	return false, errors.New("failed to pull")
-}
-func (d *dockerMocker) setBuildCtx(ctx buildContext) {
-	d.ctx = ctx
-
 }
 
 type cacheMocker struct {
@@ -275,6 +270,9 @@ func (c cacheMockerSource) Config() (imagespec.ImageConfig, error) {
 func (c cacheMockerSource) TarReader() (io.ReadCloser, error) {
 	return nil, errors.New("unsupported")
 }
+func (c cacheMockerSource) V1TarReader() (io.ReadCloser, error) {
+	return nil, errors.New("unsupported")
+}
 func (c cacheMockerSource) Descriptor() *registry.Descriptor {
 	return c.descriptor
 }
@@ -303,9 +301,9 @@ func TestBuild(t *testing.T) {
 		{"no build cache", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, nil, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "must provide linuxkit build cache"},
 		{"unsupported buildkit", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "buildkit not supported, check docker version"},
 		{"load docker without local platform", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir), WithBuildTargetDockerCache()}, []string{nonLocal}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "must build for local platform"},
-		{"amd64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir), WithBuildImage()}, []string{"amd64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
-		{"arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir), WithBuildImage()}, []string{"arm64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
-		{"amd64 and arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir), WithBuildImage()}, []string{"amd64", "arm64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
+		{"amd64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
+		{"arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"arm64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
+		{"amd64 and arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64", "arm64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.msg, func(t *testing.T) {
