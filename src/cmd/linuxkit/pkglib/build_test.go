@@ -270,6 +270,9 @@ func (c cacheMockerSource) Config() (imagespec.ImageConfig, error) {
 func (c cacheMockerSource) TarReader() (io.ReadCloser, error) {
 	return nil, errors.New("unsupported")
 }
+func (c cacheMockerSource) V1TarReader() (io.ReadCloser, error) {
+	return nil, errors.New("unsupported")
+}
 func (c cacheMockerSource) Descriptor() *registry.Descriptor {
 	return c.descriptor
 }

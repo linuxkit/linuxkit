@@ -289,7 +289,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	// if requested docker, load the image up
 	if bo.targetDocker {
 		cacheSource := c.NewSource(&ref, arch, desc)
-		reader, err := cacheSource.TarReader()
+		reader, err := cacheSource.V1TarReader()
 		if err != nil {
 			return fmt.Errorf("unable to get reader from cache: %v", err)
 		}

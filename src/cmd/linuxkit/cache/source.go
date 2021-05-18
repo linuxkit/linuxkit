@@ -6,8 +6,10 @@ import (
 	"io"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -68,6 +70,28 @@ func (c ImageSource) TarReader() (io.ReadCloser, error) {
 	}
 
 	return mutate.Extract(image), nil
+}
+
+// V1TarReader return an io.ReadCloser to read the image as a v1 tarball
+func (c ImageSource) V1TarReader() (io.ReadCloser, error) {
+	imageName := c.ref.String()
+
+	refName, err := name.ParseReference(imageName)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing image name: %v", err)
+	}
+	// get a reference to the image
+	image, err := c.provider.findImage(imageName, c.architecture)
+	if err != nil {
+		return nil, err
+	}
+	// convert the writer to a reader
+	r, w := io.Pipe()
+	go func() {
+		defer w.Close()
+		tarball.Write(refName, image, w)
+	}()
+	return r, nil
 }
 
 // Descriptor return the descriptor of the image.
