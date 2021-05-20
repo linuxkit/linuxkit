@@ -131,7 +131,11 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	d := newDockerRunner(p.trust, p.cache, bo.sign)
 
 	if !bo.force {
-		ok, err := d.pull(p.Tag())
+		tag := p.Tag()
+		if value, ok := os.LookupEnv("ZARCH"); ok {
+			tag = tag + "-" + value
+		}
+		ok, err := d.pull(tag)
 		if err != nil {
 			return err
 		}
