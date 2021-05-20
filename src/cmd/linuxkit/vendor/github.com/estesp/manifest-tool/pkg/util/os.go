@@ -25,6 +25,7 @@ var validOSArch = map[string]bool{
 	"linux/ppc64le":   true,
 	"linux/mips64":    true,
 	"linux/mips64le":  true,
+	"linux/riscv64":   true,
 	"linux/s390x":     true,
 	"netbsd/386":      true,
 	"netbsd/amd64":    true,
