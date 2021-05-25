@@ -1,4 +1,6 @@
-FROM linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba AS kernel-build
+ARG BUILD_IMAGE
+FROM ${BUILD_IMAGE} AS kernel-build
+ARG BUILD_IMAGE
 RUN apk add \
     argp-standalone \
     automake \
@@ -209,7 +211,8 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
     ( cd /tmp && tar cf /out/kernel-dev.tar usr/src )
 
 RUN printf "KERNEL_SOURCE=${KERNEL_SOURCE}\n" > /out/kernel-source-info
-
+RUN printf "${BUILD_IMAGE}" > /out/kernel-builder
+LABEL org.mobyproject.linuxkit.kernel.buildimage ${BUILD_IMAGE}
 
 FROM scratch
 ENTRYPOINT []

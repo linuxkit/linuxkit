@@ -3,7 +3,8 @@
 ARG IMAGE
 FROM ${IMAGE} AS ksrc
 
-FROM linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba AS build
+ARG BUILD_IMAGE
+FROM ${BUILD_IMAGE} AS build
 RUN apk add \
     argp-standalone \
     bash \
