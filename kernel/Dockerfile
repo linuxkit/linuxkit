@@ -40,10 +40,6 @@ ARG KERNEL_SERIES
 ARG EXTRA
 ARG DEBUG
 
-ENV WIREGUARD_VERSION=v1.0.20210219
-ENV WIREGUARD_SHA256="11a75cf2387b6bb227c96241c911b5f48475def1ac84d0e758793cf9e677a6f0"
-ENV WIREGUARD_URL=https://git.zx2c4.com/wireguard-linux-compat/snapshot/wireguard-linux-compat-${WIREGUARD_VERSION}.tar.xz
-
 # We copy the entire directory. This copies some unneeded files, but
 # allows us to check for the existence /patches-${KERNEL_SERIES} to
 # build kernels without patches.
@@ -167,18 +163,8 @@ RUN case $(uname -m) in \
     cp System.map /out && \
     ([ -n "${DEBUG}" ] && cp vmlinux /out || true)
 
-# WireGuard (skip kernels which have it in tree)
-RUN if [  ! -d /linux/drivers/net/wireguard ]; then \
-        curl -fsSL -o /wireguard.tar.xz "${WIREGUARD_URL}" && \
-        echo "${WIREGUARD_SHA256}  /wireguard.tar.xz" | sha256sum -c - && \
-        cp /wireguard.tar.xz /out/src/ && \
-        tar -C / --one-top-level=wireguard --strip-components=2 -xJf /wireguard.tar.xz "wireguard-linux-compat-${WIREGUARD_VERSION}/src" && \
-        make -j "$(getconf _NPROCESSORS_ONLN)" M="/wireguard" modules; \
-     fi
-
 # Modules and Device Tree binaries
 RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
-    make INSTALL_MOD_PATH=/tmp/kernel-modules M="/wireguard" modules_install && \
     ( DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
       cd /tmp/kernel-modules/lib/modules/$DVER && \
       rm build source && \
