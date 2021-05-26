@@ -15,6 +15,7 @@ func cacheUsage() {
 	fmt.Printf("Supported commands are\n")
 	// Please keep these in alphabetical order
 	fmt.Printf("  clean\n")
+	fmt.Printf("  export\n")
 	fmt.Printf("  ls\n")
 	fmt.Printf("\n")
 	fmt.Printf("'options' are the backend specific options.\n")
@@ -33,6 +34,8 @@ func cache(args []string) {
 		cacheClean(args[1:])
 	case "ls":
 		cacheList(args[1:])
+	case "export":
+		cacheExport(args[1:])
 	case "help", "-h", "-help", "--help":
 		cacheUsage()
 		os.Exit(0)
