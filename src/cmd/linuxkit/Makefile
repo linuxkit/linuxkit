@@ -26,12 +26,12 @@ all: default
 
 LINUXKIT_DEPS=$(wildcard *.go) $(wildcard */*.go) Makefile
 $(LINUXKIT): tmp_linuxkit_bin.tar | bin
-	tar xf $<
+	tar -C $(dir $(LINUXKIT)) -xf $<
 	rm $<
 	touch $@
 
 tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
-	tar cf - -C . . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)" -o bin/linuxkit > $@
+	tar cf - -C . . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)" -o $(notdir $(LINUXKIT)) > $@
 
 .PHONY: test-cross
 test-cross:
