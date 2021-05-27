@@ -55,6 +55,8 @@ endif
 
 TAG=$(HASH)$(DIRTY)
 
+BUILD_LABEL=--label org.mobyproject.linuxkit.kernel.buildimage=$(IMAGE_BUILDER)
+
 REPO?=https://github.com/linuxkit/linuxkit
 ifneq ($(REPO),)
 REPO_LABEL=--label org.opencontainers.image.source=$(REPO)
@@ -63,7 +65,8 @@ ifeq ($(DIRTY),)
 REPO_COMMIT=$(shell git rev-parse HEAD)
 COMMIT_LABEL=--label org.opencontainers.image.revision=$(REPO_COMMIT)
 endif
-LABELS=$(REPO_LABEL) $(COMMIT_LABEL)
+
+LABELS=$(REPO_LABEL) $(COMMIT_LABEL) $(BUILD_LABEL)
 
 KERNEL_VERSIONS=
 

@@ -195,7 +195,6 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
     ( cd /tmp && tar cf /out/kernel-dev.tar usr/src )
 
 RUN printf "${BUILD_IMAGE}" > /out/kernel-builder
-LABEL org.mobyproject.linuxkit.kernel.buildimage ${BUILD_IMAGE}
 
 FROM scratch
 ENTRYPOINT []
