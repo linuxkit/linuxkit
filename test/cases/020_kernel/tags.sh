@@ -36,7 +36,7 @@ BUILDERLABEL=$(docker inspect -f '{{index .Config.Labels "org.mobyproject.linuxk
 # create the container; /bin/sh does not exist, but that does not prevent us from indicating what the command
 #   *would* be. Indeed, you *must* have a command for `docker create` to work
 ctrid=$(docker create $KERNEL /bin/sh)
-docker cp ${ctrid}:/etc/kernel-builder ${BUILDERFILE}
+docker cp ${ctrid}:/kernel-builder ${BUILDERFILE}
 FILECONTENTS=$(cat ${BUILDERFILE})
 
 # get the manifests for the referenced tag and for the referenced builder.
