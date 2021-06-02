@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/x86 5.10.34 Kernel Configuration
+# Linux/x86 5.10.39 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Alpine 10.2.1_pre1) 10.2.1 20201203"
 CONFIG_CC_IS_GCC=y

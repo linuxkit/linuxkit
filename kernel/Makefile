@@ -55,6 +55,8 @@ endif
 
 TAG=$(HASH)$(DIRTY)
 
+BUILD_LABEL=--label org.mobyproject.linuxkit.kernel.buildimage=$(IMAGE_BUILDER)
+
 REPO?=https://github.com/linuxkit/linuxkit
 ifneq ($(REPO),)
 REPO_LABEL=--label org.opencontainers.image.source=$(REPO)
@@ -63,7 +65,8 @@ ifeq ($(DIRTY),)
 REPO_COMMIT=$(shell git rev-parse HEAD)
 COMMIT_LABEL=--label org.opencontainers.image.revision=$(REPO_COMMIT)
 endif
-LABELS=$(REPO_LABEL) $(COMMIT_LABEL)
+
+LABELS=$(REPO_LABEL) $(COMMIT_LABEL) $(BUILD_LABEL)
 
 KERNEL_VERSIONS=
 
@@ -125,21 +128,21 @@ push_$(2)$(3)$(4): notdirty build_$(2)$(3)$(4)
 		(docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
 		 docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4))
 
 forcepush_$(2)$(3)$(4): notdirty forcebuild_$(2)$(3)$(4)
 	docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 	 docker tag $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
 	 docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
-	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
+	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) && \
+	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)
 
 # tag the builder and create the manifest
 tagbuilder_$(2)$(3)$(4): notdirty
 	docker tag $(IMAGE_BUILDER) $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder$(SUFFIX) && \
 	docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder$(SUFFIX) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder $(DOCKER_CONTENT_TRUST)
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder
 
 
 show-tag_$(2)$(3)$(4):
@@ -154,26 +157,18 @@ forcepush_image: forcepush_$(2)$(3)$(4)
 tagbuilder: tagbuilder_$(2)$(3)$(4)
 show-tags: show-tag_$(2)$(3)$(4)
 
-# FIXME: We no longer use DOCKER_CONENT_TRUST=1
-#
-# 'docker build' with the FROM image supplied as --build-arg
-# *and* with DOCKER_CONTENT_TRUST=1 currently does not work
-# (https://github.com/moby/moby/issues/34199). So, we pull the image
-# with DCT as part of the dependency on build_$(2)$(3)$(4) and then build
-# with DOCKER_CONTENT_TRUST explicitly set to 0
-
 # Only build perf only on x86 and recent LTS and latest stable kernels
 ifeq ($(ARCH),x86_64)
 ifeq ($(2), $(filter $(2),5.11.x 5.10.x 5.4.x))
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
-		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
+		 docker build -f Dockerfile.perf \
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
 			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
 forcebuild_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
-	 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.perf \
+	docker build -f Dockerfile.perf \
 		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
 		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
@@ -183,15 +178,15 @@ push_perf_$(2)$(3)$(4): notdirty build_perf_$(2)$(3)$(4)
 		(docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
 		 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4))
 
 forcepush_perf_$(2)$(3)$(4): notdirty forcebuild_perf_$(2)$(3)$(4)
 	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 	docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
 	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)
 
 build: build_perf_$(2)$(3)$(4)
 forcebuild: forcebuild_perf_$(2)$(3)$(4)
@@ -205,13 +200,13 @@ ifeq ($(ARCH),x86_64)
 ifeq ($(2), $(filter $(2),5.11.x 5.10.x 5.4.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
-		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
+		docker build -f Dockerfile.bcc \
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
 			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			--no-cache $(LABEL) -t $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
 
 forcebuild_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
-	 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.bcc \
+	 docker build -f Dockerfile.bcc \
 		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
 		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		--no-cache $(LABEL) -t $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
@@ -221,15 +216,15 @@ push_bcc_$(2)$(3)$(4): notdirty build_bcc_$(2)$(3)$(4)
 		(docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
 		 docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST))
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4))
 
 forcepush_bcc_$(2)$(3)$(4): notdirty forcebuild_bcc_$(2)$(3)$(4)
 	docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
 	docker tag $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
 	docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4) $(DOCKER_CONTENT_TRUST)
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) && \
+	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)
 
 # Disable bcc build as it is failing: https://github.com/linuxkit/linuxkit/issues/3652
 # build: build_bcc_$(2)$(3)$(4)
@@ -244,7 +239,7 @@ ifeq ($(4),)
 # is incompatible with CDDL, apparently (this is ./configure check)
 build_zfs_$(2)$(3): build_$(2)$(3)
 	docker pull $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) || \
-		 DOCKER_CONTENT_TRUST=0 docker build -f Dockerfile.zfs \
+		docker build -f Dockerfile.zfs \
 			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
 			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			--no-cache $(LABEL) -t $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) .
@@ -254,8 +249,8 @@ push_zfs_$(2)$(3): notdirty build_zfs_$(2)$(3)
 		(docker push $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) && \
 		 docker tag $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_ZFS):$(1)$(3)$(SUFFIX) && \
 		 docker push $(ORG)/$(IMAGE_ZFS):$(1)$(3)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG) $(DOCKER_CONTENT_TRUST) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_ZFS):$(1)$(3) $(DOCKER_CONTENT_TRUST))
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG) && \
+		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_ZFS):$(1)$(3))
 endif
 
 endef
@@ -265,20 +260,20 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.11.18,5.11.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.34,5.10.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.34,5.10.x,,-dbg))
-$(eval $(call kernel,5.4.116,5.4.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.11.22,5.11.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.39,5.10.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.39,5.10.x,,-dbg))
+$(eval $(call kernel,5.4.121,5.4.x,$(EXTRA),$(DEBUG)))
 #$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 
 else ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
-$(eval $(call kernel,5.11.18,5.11.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.34,5.10.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.11.22,5.11.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.39,5.10.x,$(EXTRA),$(DEBUG)))
 #$(eval $(call kernel,5.4.28,5.4.x,-rt,))
 
 else ifeq ($(ARCH),s390x)
-$(eval $(call kernel,5.11.18,5.11.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.34,5.10.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.11.22,5.11.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.39,5.10.x,$(EXTRA),$(DEBUG)))
 endif
 
 # Target for kernel config

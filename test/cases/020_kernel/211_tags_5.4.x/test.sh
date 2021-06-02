@@ -5,7 +5,7 @@
 
 set -e
 
-KERNEL=linuxkit/kernel:5.4.116
+KERNEL=linuxkit/kernel:5.4.121
 
 # just include the common test
 . ../tags.sh

@@ -1,4 +1,6 @@
 ARG BUILD_IMAGE
+ARG KERNEL_VERSIONS
+
 FROM ${BUILD_IMAGE} AS kernel-build
 RUN apk add \
     argp-standalone \
@@ -14,8 +16,6 @@ RUN apk add \
     ncurses-dev \
     patch \
     xz
-
-ARG KERNEL_VERSIONS
 
 COPY / /
 

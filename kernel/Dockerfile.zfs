@@ -1,7 +1,8 @@
 ARG IMAGE
+ARG BUILD_IMAGE
+
 FROM ${IMAGE} AS ksrc
 
-ARG BUILD_IMAGE
 FROM ${BUILD_IMAGE} AS build
 RUN apk add \
     attr-dev \
