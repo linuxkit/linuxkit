@@ -61,7 +61,7 @@ RUN go get -u github.com/LK4D4/vndr
 # when building, note that containerd does not use go modules in the below commit,
 # while go1.16 defaults to using it, so must disable with GO111MODULE=off
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.4.4
+ENV CONTAINERD_COMMIT=v1.4.6
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
   cd $GOPATH/src/github.com/containerd && \
   git clone https://github.com/containerd/containerd.git && \
