@@ -29,7 +29,7 @@ services:
   - name: ntpd
     image: linuxkit/openntpd:66f25a516c7460f5e49195309cf276903741c428
   - name: docker
-    image: docker:19.03.8-dind
+    image: docker:20.10.6-dind
     capabilities:
      - all
     net: host
