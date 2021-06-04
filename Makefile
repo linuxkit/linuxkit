@@ -6,11 +6,23 @@ ifeq ($(OS),Windows_NT)
 LINUXKIT?=$(CURDIR)/bin/linuxkit.exe
 RTF?=bin/rtf.exe
 GOOS?=windows
+GOARCH?=amd64
 else
 LINUXKIT?=$(CURDIR)/bin/linuxkit
 RTF?=bin/rtf
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
+MACHINE := $(shell uname -m)
+ifeq ($(MACHINE),x86_64)
+GOARCH?=amd64
 endif
+ifeq ($(MACHINE),$(filter $(MACHINE),aarch64 arm64))
+GOARCH?=arm64
+endif
+ifeq ($(MACHINE),s390x)
+GOARCH?=s390x
+endif
+endif
+
 GOARCH?=amd64
 ifneq ($(GOOS),linux)
 CROSS+=-e GOOS=$(GOOS)
