@@ -180,6 +180,8 @@ github.com/envoyproxy/go-control-plane v0.9.4/go.mod h1:6rpuAdCZL397s3pYoYcLgu1m
 github.com/envoyproxy/protoc-gen-validate v0.1.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7+kN2VEUnK/pcBlmesArF7c=
 github.com/estesp/manifest-tool v1.0.4-0.20201218012658-2d360eeba276 h1:1wNgB5QKQ+/0cIVJPCdaTo9bXW/2RZG+IlrpasRbTXE=
 github.com/estesp/manifest-tool v1.0.4-0.20201218012658-2d360eeba276/go.mod h1:4jExvdppkxmwr9pslitpwwJB0c8bBNK+UE0B4UK9GSk=
+github.com/estesp/manifest-tool v1.0.4-0.20210209183109-dd311423107e h1:IxLhZ22ibyDv3NQdoxa3GE2FoGpdYmfHYNpfbLTQCsE=
+github.com/estesp/manifest-tool v1.0.4-0.20210209183109-dd311423107e/go.mod h1:4jExvdppkxmwr9pslitpwwJB0c8bBNK+UE0B4UK9GSk=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible h1:TcekIExNqud5crz4xD2pavyTgWiPvpYe4Xau31I0PRk=
 github.com/form3tech-oss/jwt-go v3.2.2+incompatible/go.mod h1:pbq4aXjuKjdthFRnoDwaVPLA+WlJuPGy+QneDUgJi2k=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=

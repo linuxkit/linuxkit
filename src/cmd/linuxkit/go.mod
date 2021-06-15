@@ -20,7 +20,7 @@ require (
 	github.com/docker/cli v20.10.0-beta1+incompatible
 	github.com/docker/docker v17.12.0-ce-rc1.0.20200116195852-71e07f91307a+incompatible
 	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
-	github.com/estesp/manifest-tool v1.0.4-0.20201218012658-2d360eeba276
+	github.com/estesp/manifest-tool v1.0.4-0.20210209183109-dd311423107e
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/google/go-containerregistry v0.4.1-0.20210208222243-cbafe638a7a9
 	github.com/google/uuid v1.1.1
