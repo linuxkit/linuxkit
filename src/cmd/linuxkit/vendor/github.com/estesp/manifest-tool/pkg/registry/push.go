@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"path/filepath"
 
 	"github.com/docker/distribution/reference"
 	"github.com/estesp/manifest-tool/pkg/store"
@@ -23,7 +22,7 @@ func PushManifestList(username, password string, input types.YAMLInput, ignoreMi
 
 	var configDirs []string
 	if configDir != "" {
-		configDirs = append(configDirs, filepath.Join(configDir, "config.json"))
+		configDirs = append(configDirs, configDir)
 	}
 	resolver := util.NewResolver(username, password, insecure,
 		plainHttp, configDirs...)

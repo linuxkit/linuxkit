@@ -2,51 +2,41 @@ package util
 
 import "fmt"
 
-// list of valid os/arch values (see "Optional Environment Variables" section
-// of https://golang.org/doc/install/source
-var validOSArch = map[string]bool{
-	"darwin/386":      true,
-	"darwin/amd64":    true,
-	"darwin/arm":      true,
-	"darwin/arm64":    true,
-	"dragonfly/amd64": true,
-	"freebsd/386":     true,
-	"freebsd/amd64":   true,
-	"freebsd/arm":     true,
-	"linux/386":       true,
-	"linux/amd64":     true,
-	"linux/arm":       true,
-	"linux/arm/v5":    true,
-	"linux/arm/v6":    true,
-	"linux/arm/v7":    true,
-	"linux/arm64":     true,
-	"linux/arm64/v8":  true,
-	"linux/ppc64":     true,
-	"linux/ppc64le":   true,
-	"linux/mips64":    true,
-	"linux/mips64le":  true,
-	"linux/s390x":     true,
-	"netbsd/386":      true,
-	"netbsd/amd64":    true,
-	"netbsd/arm":      true,
-	"openbsd/386":     true,
-	"openbsd/amd64":   true,
-	"openbsd/arm":     true,
-	"plan9/386":       true,
-	"plan9/amd64":     true,
-	"solaris/amd64":   true,
-	"windows/386":     true,
-	"windows/amd64":   true,
-	"windows/arm":     true,
-}
+//go:generate go run osgen.go
 
+var (
+	armVariants = map[string]bool{
+		"v5": true,
+		"v6": true,
+		"v7": true,
+	}
+)
+
+// IsValidOSArch checks against the generated list of os/arch combinations
+// from Go as well as checking for valid variants for ARM (the only architecture that uses variants)
 func IsValidOSArch(os string, arch string, variant string) bool {
 	osarch := fmt.Sprintf("%s/%s", os, arch)
-
-	if variant != "" {
-		osarch = fmt.Sprintf("%s/%s/%s", os, arch, variant)
+	if _, ok := validOS[os]; !ok {
+		return false
+	}
+	if _, ok := validArch[arch]; !ok {
+		return false
+	}
+	if variant == "" {
+		return true
 	}
 
-	_, ok := validOSArch[osarch]
-	return ok
+	// only arm/arm64 can use variant
+	switch osarch {
+	case "linux/arm":
+		_, ok := armVariants[variant]
+		return ok
+	case "linux/arm64":
+		if variant == "v8" {
+			return true
+		}
+	default:
+		return false
+	}
+	return false
 }

@@ -218,7 +218,7 @@ github.com/docker/go-metrics
 github.com/docker/go-units
 # github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
 ## explicit
-# github.com/estesp/manifest-tool v1.0.4-0.20201218012658-2d360eeba276
+# github.com/estesp/manifest-tool v1.0.4-0.20210209183109-dd311423107e
 ## explicit
 github.com/estesp/manifest-tool/pkg/registry
 github.com/estesp/manifest-tool/pkg/store
