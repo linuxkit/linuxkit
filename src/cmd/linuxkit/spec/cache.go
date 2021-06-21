@@ -13,7 +13,7 @@ type CacheProvider interface {
 	ImagePull(ref *reference.Spec, trustedRef, architecture string, alwaysPull bool) (ImageSource, error)
 	IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor) (ImageSource, error)
 	ImageLoad(ref *reference.Spec, architecture string, r io.Reader) (ImageSource, error)
-	DescriptorWrite(ref *reference.Spec, descriptors ...v1.Descriptor) (ImageSource, error)
+	DescriptorWrite(ref *reference.Spec, descriptors v1.Descriptor) (ImageSource, error)
 	Push(name string) error
 	NewSource(ref *reference.Spec, architecture string, descriptor *v1.Descriptor) ImageSource
 }

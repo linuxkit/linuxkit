@@ -15,6 +15,7 @@ import (
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
@@ -321,21 +322,22 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if err != nil {
 		return err
 	}
+	fullRelTag := util.ReferenceExpand(relTag)
 
-	ref, err = reference.Parse(relTag)
+	ref, err = reference.Parse(fullRelTag)
 	if err != nil {
 		return err
 	}
 	if _, err := c.DescriptorWrite(&ref, *desc); err != nil {
 		return err
 	}
-	if err := c.Push(relTag); err != nil {
+	if err := c.Push(fullRelTag); err != nil {
 		return err
 	}
 
 	// tag in docker, if requested
 	if bo.targetDocker {
-		if err := d.tag(p.FullTag(), relTag); err != nil {
+		if err := d.tag(p.FullTag(), fullRelTag); err != nil {
 			return err
 		}
 	}

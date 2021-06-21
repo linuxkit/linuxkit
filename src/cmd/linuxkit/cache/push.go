@@ -7,6 +7,7 @@ import (
 	namepkg "github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -60,7 +61,20 @@ func (p *Provider) Push(name string) error {
 			}
 			img, err := p.cache.Image(m.Digest)
 			if err != nil {
-				return fmt.Errorf("could not find arch-specific image in cache %s: %v", m.Digest, err)
+				// it might not have existed, so we can add it locally
+				// use the original image name in the annotation
+				desc := m.DeepCopy()
+				if desc.Annotations == nil {
+					desc.Annotations = map[string]string{}
+				}
+				desc.Annotations[imagespec.AnnotationRefName] = archTag
+				if err := p.cache.AppendDescriptor(*desc); err != nil {
+					return fmt.Errorf("error appending descriptor for %s to layout index: %v", archTag, err)
+				}
+				img, err = p.cache.Image(m.Digest)
+				if err != nil {
+					return fmt.Errorf("could not find or create arch-specific image for %s: %v", archTag, err)
+				}
 			}
 			log.Debugf("pushing image %s", tag)
 			if err := remote.Tag(tag, img, options...); err != nil {
