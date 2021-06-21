@@ -58,13 +58,9 @@ func (p *Provider) Push(name string) error {
 			if err != nil {
 				return fmt.Errorf("could not create a valid arch-specific tag %s: %v", archTag, err)
 			}
-			image, err := p.FindRoot(archTag)
+			img, err := p.cache.Image(m.Digest)
 			if err != nil {
-				return fmt.Errorf("could not find arch-specific image in cache %s: %v", archTag, err)
-			}
-			img, err := image.Image()
-			if err != nil {
-				return fmt.Errorf("found arch-specific image in cache %s, but could not resolve to actual image: %v", archTag, err)
+				return fmt.Errorf("could not find arch-specific image in cache %s: %v", m.Digest, err)
 			}
 			log.Debugf("pushing image %s", tag)
 			if err := remote.Tag(tag, img, options...); err != nil {

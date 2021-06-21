@@ -82,11 +82,8 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("unable to save image to cache: %v", err)
 	}
-	return p.NewSource(
-		ref,
-		architecture,
-		&desc.Descriptor,
-	), nil
+	// ensure it includes our architecture
+	return p.ValidateImage(ref, architecture)
 }
 
 // ImageLoad takes an OCI format image tar stream and writes it locally. It should be

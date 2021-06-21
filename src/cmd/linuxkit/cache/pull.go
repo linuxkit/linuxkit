@@ -2,6 +2,7 @@ package cache
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/v1"
@@ -28,12 +29,29 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 			if desc, err = partial.Descriptor(img); err != nil {
 				return ImageSource{}, errors.New("image could not create valid descriptor")
 			}
+			if desc.Platform == nil || desc.Platform.Architecture != architecture || desc.Platform.OS != "linux" {
+				return ImageSource{}, fmt.Errorf("image was not for requested architecture: linux/%s", architecture)
+			}
 		} else {
 			ii, err := root.ImageIndex()
 			if err == nil {
 				imageIndex = ii
 				if desc, err = partial.Descriptor(ii); err != nil {
 					return ImageSource{}, errors.New("index could not create valid descriptor")
+				}
+			}
+			// check that the index has a manifest for our arch
+			im, err := imageIndex.IndexManifest()
+			if err != nil {
+				return ImageSource{}, fmt.Errorf("could not get index manifest: %v", err)
+			}
+			for _, m := range im.Manifests {
+				if m.Platform != nil && m.Platform.Architecture == architecture && m.Platform.OS == "linux" {
+					return p.NewSource(
+						ref,
+						architecture,
+						desc,
+					), nil
 				}
 			}
 		}
