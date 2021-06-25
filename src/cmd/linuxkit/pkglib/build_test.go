@@ -201,7 +201,7 @@ func (c *cacheMocker) Push(name string) error {
 	return nil
 }
 
-func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, descriptors ...registry.Descriptor) (lktspec.ImageSource, error) {
+func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, desc registry.Descriptor) (lktspec.ImageSource, error) {
 	if !c.enabledDescriptorWrite {
 		return nil, errors.New("descriptor disabled")
 	}
@@ -209,7 +209,7 @@ func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, descriptors ...regist
 		image = ref.String()
 		im    = registry.IndexManifest{
 			MediaType:     types.OCIImageIndex,
-			Manifests:     descriptors,
+			Manifests:     []registry.Descriptor{desc},
 			SchemaVersion: 2,
 		}
 	)

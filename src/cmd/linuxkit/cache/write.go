@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -82,11 +83,8 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("unable to save image to cache: %v", err)
 	}
-	return p.NewSource(
-		ref,
-		architecture,
-		&desc.Descriptor,
-	), nil
+	// ensure it includes our architecture
+	return p.ValidateImage(ref, architecture)
 }
 
 // ImageLoad takes an OCI format image tar stream and writes it locally. It should be
@@ -304,99 +302,26 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 	), nil
 }
 
-// DescriptorWrite writes a name for a given descriptor
-func (p *Provider) DescriptorWrite(ref *reference.Spec, descriptors ...v1.Descriptor) (lktspec.ImageSource, error) {
+// DescriptorWrite writes a descriptor to the cache index; it validates that it has a name
+// and replaces any existing one
+func (p *Provider) DescriptorWrite(ref *reference.Spec, desc v1.Descriptor) (lktspec.ImageSource, error) {
+	if ref == nil {
+		return ImageSource{}, errors.New("cannot write descriptor without reference name")
+	}
 	image := ref.String()
-	log.Debugf("writing descriptors for image %s: %v", image, descriptors)
+	if desc.Annotations == nil {
+		desc.Annotations = map[string]string{}
+	}
+	desc.Annotations[imagespec.AnnotationRefName] = image
+	log.Debugf("writing descriptor for image %s", image)
 
-	ii, err := p.cache.ImageIndex()
-	if err != nil {
-		return ImageSource{}, fmt.Errorf("unable to get root index: %v", err)
-	}
-	images, err := partial.FindImages(ii, match.Name(image))
-	if err != nil {
-		return ImageSource{}, fmt.Errorf("error parsing index: %v", err)
-	}
-	if err == nil && len(images) > 0 {
-		return ImageSource{}, fmt.Errorf("image named %s already exists in cache and is not an index", image)
-	}
-	indexes, err := partial.FindIndexes(ii, match.Name(image))
-	if err != nil {
-		return ImageSource{}, fmt.Errorf("error parsing index: %v", err)
-	}
-	var im v1.IndexManifest
 	// do we update an existing one? Or create a new one?
-	if len(indexes) > 0 {
-		// we already had one, so update just the referenced index and return
-		im, err := indexes[0].IndexManifest()
-		if err != nil {
-			return ImageSource{}, fmt.Errorf("unable to convert index for %s into its manifest: %v", image, err)
-		}
-		oldhash, err := indexes[0].Digest()
-		if err != nil {
-			return ImageSource{}, fmt.Errorf("unable to get hash of existing index: %v", err)
-		}
-		// we only care about avoiding duplicate arch/OS/Variant
-		descReplace := map[string]v1.Descriptor{}
-		for _, desc := range descriptors {
-			descReplace[fmt.Sprintf("%s/%s/%s", desc.Platform.OS, desc.Platform.Architecture, desc.Platform.OSVersion)] = desc
-		}
-		// now we can go through each one and see if it already exists, and, if so, replace it
-		var manifests []v1.Descriptor
-		for _, m := range im.Manifests {
-			lookup := fmt.Sprintf("%s/%s/%s", m.Platform.OS, m.Platform.Architecture, m.Platform.OSVersion)
-			if desc, ok := descReplace[lookup]; ok {
-				manifests = append(manifests, desc)
-				// already added, so do not need it in the lookup list any more
-				delete(descReplace, lookup)
-				continue
-			}
-			manifests = append(manifests, m)
-		}
-		// any left get added
-		for _, desc := range descReplace {
-			manifests = append(manifests, desc)
-		}
-		im.Manifests = manifests
-
-		if err := p.cache.RemoveBlob(oldhash); err != nil {
-			return ImageSource{}, fmt.Errorf("unable to remove old index blob: %v", err)
-		}
-	} else {
-		// we did not have one, so create an index, store it, update the root index.json, and return
-		im = v1.IndexManifest{
-			MediaType:     types.OCIImageIndex,
-			Manifests:     descriptors,
-			SchemaVersion: 2,
-		}
-	}
-
-	// write the updated index, remove the old one
-	b, err := json.Marshal(im)
-	if err != nil {
-		return ImageSource{}, fmt.Errorf("unable to marshal new index to json: %v", err)
-	}
-	hash, size, err := v1.SHA256(bytes.NewReader(b))
-	if err != nil {
-		return ImageSource{}, fmt.Errorf("error calculating hash of index json: %v", err)
-	}
-	if err := p.cache.WriteBlob(hash, ioutil.NopCloser(bytes.NewReader(b))); err != nil {
-		return ImageSource{}, fmt.Errorf("error writing new index to json: %v", err)
-	}
-	// finally update the descriptor in the root
 	if err := p.cache.RemoveDescriptors(match.Name(image)); err != nil {
-		return ImageSource{}, fmt.Errorf("unable to remove old descriptor from index.json: %v", err)
+		return ImageSource{}, fmt.Errorf("unable to remove old descriptors for %s: %v", image, err)
 	}
-	desc := v1.Descriptor{
-		MediaType: types.OCIImageIndex,
-		Size:      size,
-		Digest:    hash,
-		Annotations: map[string]string{
-			imagespec.AnnotationRefName: image,
-		},
-	}
+
 	if err := p.cache.AppendDescriptor(desc); err != nil {
-		return ImageSource{}, fmt.Errorf("unable to append new descriptor to index.json: %v", err)
+		return ImageSource{}, fmt.Errorf("unable to append new descriptor for %s: %v", image, err)
 	}
 
 	return p.NewSource(

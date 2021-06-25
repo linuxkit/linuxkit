@@ -2,6 +2,7 @@ package cache
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/v1"
@@ -48,25 +49,35 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 		// or because it was not available - so get it from the remote
 		return ImageSource{}, errors.New("no such image")
 	case imageIndex != nil:
+		// check that the index has a manifest for our arch
+		im, err := imageIndex.IndexManifest()
+		if err != nil {
+			return ImageSource{}, fmt.Errorf("could not get index manifest: %v", err)
+		}
 		// we found a local index, just make sure it is up to date and, if not, download it
-		if err := validate.Index(imageIndex); err == nil {
-			return p.NewSource(
-				ref,
-				architecture,
-				desc,
-			), nil
+		if err := validate.Index(imageIndex); err != nil {
+			return ImageSource{}, errors.New("invalid index")
 		}
-		return ImageSource{}, errors.New("invalid index")
+		for _, m := range im.Manifests {
+			if m.Platform != nil && m.Platform.Architecture == architecture && m.Platform.OS == "linux" {
+				return p.NewSource(
+					ref,
+					architecture,
+					desc,
+				), nil
+			}
+		}
+		return ImageSource{}, fmt.Errorf("index for %s did not contain image for platform linux/%s", imageName, architecture)
 	case image != nil:
-		// we found a local image, just make sure it is up to date
-		if err := validate.Image(image); err == nil {
-			return p.NewSource(
-				ref,
-				architecture,
-				desc,
-			), nil
+		// we found a local image, make sure it is up to date, and that it matches our platform
+		if err := validate.Image(image); err != nil {
+			return ImageSource{}, errors.New("invalid image")
 		}
-		return ImageSource{}, errors.New("invalid image")
+		return p.NewSource(
+			ref,
+			architecture,
+			desc,
+		), nil
 	}
 	// if we made it to here, we had some strange error
 	return ImageSource{}, errors.New("should not have reached this point, image index and image were both empty and not-empty")
