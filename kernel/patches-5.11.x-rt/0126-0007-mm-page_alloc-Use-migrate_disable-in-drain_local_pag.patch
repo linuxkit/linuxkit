@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 2 Jul 2020 14:27:23 +0200
+Subject: [PATCH 7/8] mm: page_alloc: Use migrate_disable() in
+ drain_local_pages_wq()
+
+drain_local_pages_wq() disables preemption to avoid CPU migration during
+CPU hotplug and can't use cpus_read_lock().
+
+Using migrate_disable() works here, too. The scheduler won't take the
+CPU offline until the task left the migrate-disable section.
+
+Use migrate_disable() in drain_local_pages_wq().
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/page_alloc.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -3033,9 +3033,9 @@ static void drain_local_pages_wq(struct
+ 	 * cpu which is allright but we also have to make sure to not move to
+ 	 * a different one.
+ 	 */
+-	preempt_disable();
++	migrate_disable();
+ 	drain_local_pages(drain->zone);
+-	preempt_enable();
++	migrate_enable();
+ }
+ 
+ /*

@@ -1,0 +1,105 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Thu, 10 Dec 2020 15:33:40 +0106
+Subject: [PATCH 08/28] printk: use atomic64_t for devkmsg_user.seq
+
+@user->seq is indirectly protected by @logbuf_lock. Once @logbuf_lock
+is removed, @user->seq will be no longer safe from an atomicity point
+of view.
+
+In preparation for the removal of @logbuf_lock, change it to
+atomic64_t to provide this safety.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+---
+ kernel/printk/printk.c |   22 +++++++++++-----------
+ 1 file changed, 11 insertions(+), 11 deletions(-)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -662,7 +662,7 @@ static ssize_t msg_print_ext_body(char *
+ 
+ /* /dev/kmsg - userspace message inject/listen interface */
+ struct devkmsg_user {
+-	u64 seq;
++	atomic64_t seq;
+ 	struct ratelimit_state rs;
+ 	struct mutex lock;
+ 	char buf[CONSOLE_EXT_LOG_MAX];
+@@ -763,7 +763,7 @@ static ssize_t devkmsg_read(struct file
+ 		return ret;
+ 
+ 	logbuf_lock_irq();
+-	if (!prb_read_valid(prb, user->seq, r)) {
++	if (!prb_read_valid(prb, atomic64_read(&user->seq), r)) {
+ 		if (file->f_flags & O_NONBLOCK) {
+ 			ret = -EAGAIN;
+ 			logbuf_unlock_irq();
+@@ -772,15 +772,15 @@ static ssize_t devkmsg_read(struct file
+ 
+ 		logbuf_unlock_irq();
+ 		ret = wait_event_interruptible(log_wait,
+-					prb_read_valid(prb, user->seq, r));
++				prb_read_valid(prb, atomic64_read(&user->seq), r));
+ 		if (ret)
+ 			goto out;
+ 		logbuf_lock_irq();
+ 	}
+ 
+-	if (r->info->seq != user->seq) {
++	if (r->info->seq != atomic64_read(&user->seq)) {
+ 		/* our last seen message is gone, return error and reset */
+-		user->seq = r->info->seq;
++		atomic64_set(&user->seq, r->info->seq);
+ 		ret = -EPIPE;
+ 		logbuf_unlock_irq();
+ 		goto out;
+@@ -791,7 +791,7 @@ static ssize_t devkmsg_read(struct file
+ 				  &r->text_buf[0], r->info->text_len,
+ 				  &r->info->dev_info);
+ 
+-	user->seq = r->info->seq + 1;
++	atomic64_set(&user->seq, r->info->seq + 1);
+ 	logbuf_unlock_irq();
+ 
+ 	if (len > count) {
+@@ -831,7 +831,7 @@ static loff_t devkmsg_llseek(struct file
+ 	switch (whence) {
+ 	case SEEK_SET:
+ 		/* the first record */
+-		user->seq = prb_first_valid_seq(prb);
++		atomic64_set(&user->seq, prb_first_valid_seq(prb));
+ 		break;
+ 	case SEEK_DATA:
+ 		/*
+@@ -839,11 +839,11 @@ static loff_t devkmsg_llseek(struct file
+ 		 * like issued by 'dmesg -c'. Reading /dev/kmsg itself
+ 		 * changes no global state, and does not clear anything.
+ 		 */
+-		user->seq = latched_seq_read_nolock(&clear_seq);
++		atomic64_set(&user->seq, latched_seq_read_nolock(&clear_seq));
+ 		break;
+ 	case SEEK_END:
+ 		/* after the last record */
+-		user->seq = prb_next_seq(prb);
++		atomic64_set(&user->seq, prb_next_seq(prb));
+ 		break;
+ 	default:
+ 		ret = -EINVAL;
+@@ -866,7 +866,7 @@ static __poll_t devkmsg_poll(struct file
+ 	logbuf_lock_irq();
+ 	if (prb_read_valid_info(prb, user->seq, &info, NULL)) {
+ 		/* return error when data has vanished underneath us */
+-		if (info.seq != user->seq)
++		if (info.seq != atomic64_read(&user->seq))
+ 			ret = EPOLLIN|EPOLLRDNORM|EPOLLERR|EPOLLPRI;
+ 		else
+ 			ret = EPOLLIN|EPOLLRDNORM;
+@@ -905,7 +905,7 @@ static int devkmsg_open(struct inode *in
+ 			&user->text_buf[0], sizeof(user->text_buf));
+ 
+ 	logbuf_lock_irq();
+-	user->seq = prb_first_valid_seq(prb);
++	atomic64_set(&user->seq, prb_first_valid_seq(prb));
+ 	logbuf_unlock_irq();
+ 
+ 	file->private_data = user;

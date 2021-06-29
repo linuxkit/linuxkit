@@ -1,0 +1,67 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Mon, 30 Nov 2020 01:42:09 +0106
+Subject: [PATCH 27/28] printk: add console handover
+
+If earlyprintk is used, a boot console will print directly to the
+console immediately. The boot console will unregister itself as soon
+as a non-boot console registers. However, the non-boot console does
+not begin printing until its kthread has started. Since this happens
+much later, there is a long pause in the console output. If the
+ringbuffer is small, messages could even be dropped during the
+pause.
+
+Add a new CON_HANDOVER console flag to be used internally by printk
+in order to track which non-boot console took over from a boot
+console. If handover consoles have implemented write_atomic(), they
+are allowed to print directly to the console until their kthread can
+take over.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/console.h |    1 +
+ kernel/printk/printk.c  |    8 +++++++-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+--- a/include/linux/console.h
++++ b/include/linux/console.h
+@@ -137,6 +137,7 @@ static inline int con_debug_leave(void)
+ #define CON_ANYTIME	(16) /* Safe to call when cpu is offline */
+ #define CON_BRL		(32) /* Used for a braille device */
+ #define CON_EXTENDED	(64) /* Use the extended output format a la /dev/kmsg */
++#define CON_HANDOVER	(128) /* Device was previously a boot console. */
+ 
+ struct console {
+ 	char	name[16];
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -1726,6 +1726,8 @@ static bool console_can_sync(struct cons
+ 		return false;
+ 	if (con->write_atomic && kernel_sync_mode())
+ 		return true;
++	if (con->write_atomic && (con->flags & CON_HANDOVER) && !con->thread)
++		return true;
+ 	if (con->write && (con->flags & CON_BOOT) && !con->thread)
+ 		return true;
+ 	return false;
+@@ -1737,6 +1739,8 @@ static bool call_sync_console_driver(str
+ 		return false;
+ 	if (con->write_atomic && kernel_sync_mode())
+ 		con->write_atomic(con, text, text_len);
++	else if (con->write_atomic && (con->flags & CON_HANDOVER) && !con->thread)
++		con->write_atomic(con, text, text_len);
+ 	else if (con->write && (con->flags & CON_BOOT) && !con->thread)
+ 		con->write(con, text, text_len);
+ 	else
+@@ -2829,8 +2833,10 @@ void register_console(struct console *ne
+ 	 * the real console are the same physical device, it's annoying to
+ 	 * see the beginning boot messages twice
+ 	 */
+-	if (bcon && ((newcon->flags & (CON_CONSDEV | CON_BOOT)) == CON_CONSDEV))
++	if (bcon && ((newcon->flags & (CON_CONSDEV | CON_BOOT)) == CON_CONSDEV)) {
+ 		newcon->flags &= ~CON_PRINTBUFFER;
++		newcon->flags |= CON_HANDOVER;
++	}
+ 
+ 	/*
+ 	 *	Put this console in the list - keep the

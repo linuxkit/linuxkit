@@ -1,0 +1,57 @@
+From: Scott Wood <swood@redhat.com>
+Date: Tue, 15 Dec 2020 15:16:46 +0100
+Subject: [PATCH 2/5] rcu: Unconditionally use rcuc threads on PREEMPT_RT
+
+PREEMPT_RT systems have long used the rcutree.use_softirq kernel
+boot parameter to avoid use of RCU_SOFTIRQ handlers, which can disrupt
+real-time applications by invoking callbacks during return from interrupts
+that arrived while executing time-critical code.  This kernel boot
+parameter instead runs RCU core processing in an 'rcuc' kthread, thus
+allowing the scheduler to do its job of avoiding disrupting time-critical
+code.
+
+This commit therefore disables the rcutree.use_softirq kernel boot
+parameter on PREEMPT_RT systems, thus forcing such systems to do RCU
+core processing in 'rcuc' kthreads.  This approach has long been in
+use by users of the -rt patchset, and there have been no complaints.
+There is therefore no way for the system administrator to override this
+choice, at least without modifying and rebuilding the kernel.
+
+Signed-off-by: Scott Wood <swood@redhat.com>
+[bigeasy: Reword commit message]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[ paulmck: Update kernel-parameters.txt accordingly. ]
+Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ Documentation/admin-guide/kernel-parameters.txt |    4 ++++
+ kernel/rcu/tree.c                               |    4 +++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)
+
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -4092,6 +4092,10 @@
+ 			value, meaning that RCU_SOFTIRQ is used by default.
+ 			Specify rcutree.use_softirq=0 to use rcuc kthreads.
+ 
++			But note that CONFIG_PREEMPT_RT=y kernels disable
++			this kernel boot parameter, forcibly setting it
++			to zero.
++
+ 	rcutree.rcu_fanout_exact= [KNL]
+ 			Disable autobalancing of the rcu_node combining
+ 			tree.  This is used by rcutorture, and might
+--- a/kernel/rcu/tree.c
++++ b/kernel/rcu/tree.c
+@@ -100,8 +100,10 @@ static struct rcu_state rcu_state = {
+ static bool dump_tree;
+ module_param(dump_tree, bool, 0444);
+ /* By default, use RCU_SOFTIRQ instead of rcuc kthreads. */
+-static bool use_softirq = true;
++static bool use_softirq = !IS_ENABLED(CONFIG_PREEMPT_RT);
++#ifndef CONFIG_PREEMPT_RT
+ module_param(use_softirq, bool, 0444);
++#endif
+ /* Control rcu_node-tree auto-balancing at boot time. */
+ static bool rcu_fanout_exact;
+ module_param(rcu_fanout_exact, bool, 0444);

@@ -1,0 +1,47 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 9 Mar 2021 09:55:54 +0100
+Subject: [PATCH 16/20] irqtime: Make accounting correct on RT
+
+vtime_account_irq and irqtime_account_irq() base checks on preempt_count()
+which fails on RT because preempt_count() does not contain the softirq
+accounting which is seperate on RT.
+
+These checks do not need the full preempt count as they only operate on the
+hard and softirq sections.
+
+Use irq_count() instead which provides the correct value on both RT and non
+RT kernels. The compiler is clever enough to fold the masking for !RT:
+
+       99b:	65 8b 05 00 00 00 00 	mov    %gs:0x0(%rip),%eax
+ -     9a2:	25 ff ff ff 7f       	and    $0x7fffffff,%eax
+ +     9a2:	25 00 ff ff 00       	and    $0xffff00,%eax
+
+Reported-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Reviewed-by: Frederic Weisbecker <frederic@kernel.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/sched/cputime.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/kernel/sched/cputime.c
++++ b/kernel/sched/cputime.c
+@@ -60,7 +60,7 @@ void irqtime_account_irq(struct task_str
+ 	cpu = smp_processor_id();
+ 	delta = sched_clock_cpu(cpu) - irqtime->irq_start_time;
+ 	irqtime->irq_start_time += delta;
+-	pc = preempt_count() - offset;
++	pc = irq_count() - offset;
+ 
+ 	/*
+ 	 * We do not account for softirq time from ksoftirqd here.
+@@ -421,7 +421,7 @@ void vtime_task_switch(struct task_struc
+ 
+ void vtime_account_irq(struct task_struct *tsk, unsigned int offset)
+ {
+-	unsigned int pc = preempt_count() - offset;
++	unsigned int pc = irq_count() - offset;
+ 
+ 	if (pc & HARDIRQ_OFFSET) {
+ 		vtime_account_hardirq(tsk);

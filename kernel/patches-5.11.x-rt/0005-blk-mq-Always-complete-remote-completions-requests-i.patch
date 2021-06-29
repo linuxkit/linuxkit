@@ -1,0 +1,42 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Sat, 23 Jan 2021 21:10:26 +0100
+Subject: [PATCH] blk-mq: Always complete remote completions requests in
+ softirq
+
+Controllers with multiple queues have their IRQ-handelers pinned to a
+CPU. The core shouldn't need to complete the request on a remote CPU.
+
+Remove this case and always raise the softirq to complete the request.
+
+Reviewed-by: Christoph Hellwig <hch@lst.de>
+Reviewed-by: Daniel Wagner <dwagner@suse.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Jens Axboe <axboe@kernel.dk>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ block/blk-mq.c |   14 +-------------
+ 1 file changed, 1 insertion(+), 13 deletions(-)
+
+--- a/block/blk-mq.c
++++ b/block/blk-mq.c
+@@ -628,19 +628,7 @@ static void __blk_mq_complete_request_re
+ {
+ 	struct request *rq = data;
+ 
+-	/*
+-	 * For most of single queue controllers, there is only one irq vector
+-	 * for handling I/O completion, and the only irq's affinity is set
+-	 * to all possible CPUs.  On most of ARCHs, this affinity means the irq
+-	 * is handled on one specific CPU.
+-	 *
+-	 * So complete I/O requests in softirq context in case of single queue
+-	 * devices to avoid degrading I/O performance due to irqsoff latency.
+-	 */
+-	if (rq->q->nr_hw_queues == 1)
+-		blk_mq_trigger_softirq(rq);
+-	else
+-		rq->q->mq_ops->complete(rq);
++	blk_mq_trigger_softirq(rq);
+ }
+ 
+ static inline bool blk_mq_complete_need_ipi(struct request *rq)

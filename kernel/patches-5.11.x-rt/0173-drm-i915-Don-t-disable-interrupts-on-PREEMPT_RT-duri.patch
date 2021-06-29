@@ -1,0 +1,73 @@
+From: Mike Galbraith <umgwanakikbuti@gmail.com>
+Date: Sat, 27 Feb 2016 09:01:42 +0100
+Subject: [PATCH] drm/i915: Don't disable interrupts on PREEMPT_RT during
+ atomic updates
+
+Commit
+   8d7849db3eab7 ("drm/i915: Make sprite updates atomic")
+
+started disabling interrupts across atomic updates. This breaks on PREEMPT_RT
+because within this section the code attempt to acquire spinlock_t locks which
+are sleeping locks on PREEMPT_RT.
+
+According to the comment the interrupts are disabled to avoid random delays and
+not required for protection or synchronisation.
+
+Don't disable interrupts on PREEMPT_RT during atomic updates.
+
+[bigeasy: drop local locks, commit message]
+
+Signed-off-by: Mike Galbraith <umgwanakikbuti@gmail.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/gpu/drm/i915/display/intel_sprite.c |   15 ++++++++++-----
+ 1 file changed, 10 insertions(+), 5 deletions(-)
+
+--- a/drivers/gpu/drm/i915/display/intel_sprite.c
++++ b/drivers/gpu/drm/i915/display/intel_sprite.c
+@@ -122,7 +122,8 @@ void intel_pipe_update_start(const struc
+ 			"PSR idle timed out 0x%x, atomic update may fail\n",
+ 			psr_status);
+ 
+-	local_irq_disable();
++	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
++		local_irq_disable();
+ 
+ 	crtc->debug.min_vbl = min;
+ 	crtc->debug.max_vbl = max;
+@@ -147,11 +148,13 @@ void intel_pipe_update_start(const struc
+ 			break;
+ 		}
+ 
+-		local_irq_enable();
++		if (!IS_ENABLED(CONFIG_PREEMPT_RT))
++			local_irq_enable();
+ 
+ 		timeout = schedule_timeout(timeout);
+ 
+-		local_irq_disable();
++		if (!IS_ENABLED(CONFIG_PREEMPT_RT))
++			local_irq_disable();
+ 	}
+ 
+ 	finish_wait(wq, &wait);
+@@ -184,7 +187,8 @@ void intel_pipe_update_start(const struc
+ 	return;
+ 
+ irq_disable:
+-	local_irq_disable();
++	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
++		local_irq_disable();
+ }
+ 
+ /**
+@@ -233,7 +237,8 @@ void intel_pipe_update_end(struct intel_
+ 		new_crtc_state->uapi.event = NULL;
+ 	}
+ 
+-	local_irq_enable();
++	if (!IS_ENABLED(CONFIG_PREEMPT_RT))
++		local_irq_enable();
+ 
+ 	if (intel_vgpu_active(dev_priv))
+ 		return;

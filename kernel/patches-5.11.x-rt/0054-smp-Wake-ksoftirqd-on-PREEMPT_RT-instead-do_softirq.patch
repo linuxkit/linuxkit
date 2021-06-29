@@ -1,0 +1,40 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Mon, 15 Feb 2021 18:44:12 +0100
+Subject: [PATCH] smp: Wake ksoftirqd on PREEMPT_RT instead do_softirq().
+
+The softirq implementation on PREEMPT_RT does not provide do_softirq().
+The other user of do_softirq() is replaced with a local_bh_disable()
++ enable() around the possible raise-softirq invocation. This can not be
+done here because migration_cpu_stop() is invoked with disabled
+preemption.
+
+Wake the softirq thread on PREEMPT_RT if there are any pending softirqs.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/smp.c |   14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+--- a/kernel/smp.c
++++ b/kernel/smp.c
+@@ -450,8 +450,18 @@ void flush_smp_call_function_from_idle(v
+ 
+ 	local_irq_save(flags);
+ 	flush_smp_call_function_queue(true);
+-	if (local_softirq_pending())
+-		do_softirq();
++
++	if (local_softirq_pending()) {
++
++		if (!IS_ENABLED(CONFIG_PREEMPT_RT)) {
++			do_softirq();
++		} else {
++			struct task_struct *ksoftirqd = this_cpu_ksoftirqd();
++
++			if (ksoftirqd && ksoftirqd->state != TASK_RUNNING)
++				wake_up_process(ksoftirqd);
++		}
++	}
+ 
+ 	local_irq_restore(flags);
+ }

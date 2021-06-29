@@ -1,0 +1,123 @@
+From: Valentin Schneider <valentin.schneider@arm.com>
+Date: Sun, 22 Nov 2020 20:19:04 +0000
+Subject: [PATCH] notifier: Make atomic_notifiers use raw_spinlock
+
+Booting a recent PREEMPT_RT kernel (v5.10-rc3-rt7-rebase) on my arm64 Juno
+leads to the idle task blocking on an RT sleeping spinlock down some
+notifier path:
+
+  [    1.809101] BUG: scheduling while atomic: swapper/5/0/0x00000002
+  [    1.809116] Modules linked in:
+  [    1.809123] Preemption disabled at:
+  [    1.809125] secondary_start_kernel (arch/arm64/kernel/smp.c:227)
+  [    1.809146] CPU: 5 PID: 0 Comm: swapper/5 Tainted: G        W         5.10.0-rc3-rt7 #168
+  [    1.809153] Hardware name: ARM Juno development board (r0) (DT)
+  [    1.809158] Call trace:
+  [    1.809160] dump_backtrace (arch/arm64/kernel/stacktrace.c:100 (discriminator 1))
+  [    1.809170] show_stack (arch/arm64/kernel/stacktrace.c:198)
+  [    1.809178] dump_stack (lib/dump_stack.c:122)
+  [    1.809188] __schedule_bug (kernel/sched/core.c:4886)
+  [    1.809197] __schedule (./arch/arm64/include/asm/preempt.h:18 kernel/sched/core.c:4913 kernel/sched/core.c:5040)
+  [    1.809204] preempt_schedule_lock (kernel/sched/core.c:5365 (discriminator 1))
+  [    1.809210] rt_spin_lock_slowlock_locked (kernel/locking/rtmutex.c:1072)
+  [    1.809217] rt_spin_lock_slowlock (kernel/locking/rtmutex.c:1110)
+  [    1.809224] rt_spin_lock (./include/linux/rcupdate.h:647 kernel/locking/rtmutex.c:1139)
+  [    1.809231] atomic_notifier_call_chain_robust (kernel/notifier.c:71 kernel/notifier.c:118 kernel/notifier.c:186)
+  [    1.809240] cpu_pm_enter (kernel/cpu_pm.c:39 kernel/cpu_pm.c:93)
+  [    1.809249] psci_enter_idle_state (drivers/cpuidle/cpuidle-psci.c:52 drivers/cpuidle/cpuidle-psci.c:129)
+  [    1.809258] cpuidle_enter_state (drivers/cpuidle/cpuidle.c:238)
+  [    1.809267] cpuidle_enter (drivers/cpuidle/cpuidle.c:353)
+  [    1.809275] do_idle (kernel/sched/idle.c:132 kernel/sched/idle.c:213 kernel/sched/idle.c:273)
+  [    1.809282] cpu_startup_entry (kernel/sched/idle.c:368 (discriminator 1))
+  [    1.809288] secondary_start_kernel (arch/arm64/kernel/smp.c:273)
+
+Two points worth noting:
+
+1) That this is conceptually the same issue as pointed out in:
+   313c8c16ee62 ("PM / CPU: replace raw_notifier with atomic_notifier")
+2) Only the _robust() variant of atomic_notifier callchains suffer from
+   this
+
+AFAICT only the cpu_pm_notifier_chain really needs to be changed, but
+singling it out would mean introducing a new (truly) non-blocking API. At
+the same time, callers that are fine with any blocking within the call
+chain should use blocking notifiers, so patching up all atomic_notifier's
+doesn't seem *too* crazy to me.
+
+Fixes: 70d932985757 ("notifier: Fix broken error handling pattern")
+Signed-off-by: Valentin Schneider <valentin.schneider@arm.com>
+Reviewed-by: Daniel Bristot de Oliveira <bristot@redhat.com>
+Link: https://lkml.kernel.org/r/20201122201904.30940-1-valentin.schneider@arm.com
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/notifier.h |    6 +++---
+ kernel/notifier.c        |   12 ++++++------
+ 2 files changed, 9 insertions(+), 9 deletions(-)
+
+--- a/include/linux/notifier.h
++++ b/include/linux/notifier.h
+@@ -58,7 +58,7 @@ struct notifier_block {
+ };
+ 
+ struct atomic_notifier_head {
+-	spinlock_t lock;
++	raw_spinlock_t lock;
+ 	struct notifier_block __rcu *head;
+ };
+ 
+@@ -78,7 +78,7 @@ struct srcu_notifier_head {
+ };
+ 
+ #define ATOMIC_INIT_NOTIFIER_HEAD(name) do {	\
+-		spin_lock_init(&(name)->lock);	\
++		raw_spin_lock_init(&(name)->lock);	\
+ 		(name)->head = NULL;		\
+ 	} while (0)
+ #define BLOCKING_INIT_NOTIFIER_HEAD(name) do {	\
+@@ -95,7 +95,7 @@ extern void srcu_init_notifier_head(stru
+ 		cleanup_srcu_struct(&(name)->srcu);
+ 
+ #define ATOMIC_NOTIFIER_INIT(name) {				\
+-		.lock = __SPIN_LOCK_UNLOCKED(name.lock),	\
++		.lock = __RAW_SPIN_LOCK_UNLOCKED(name.lock),	\
+ 		.head = NULL }
+ #define BLOCKING_NOTIFIER_INIT(name) {				\
+ 		.rwsem = __RWSEM_INITIALIZER((name).rwsem),	\
+--- a/kernel/notifier.c
++++ b/kernel/notifier.c
+@@ -142,9 +142,9 @@ int atomic_notifier_chain_register(struc
+ 	unsigned long flags;
+ 	int ret;
+ 
+-	spin_lock_irqsave(&nh->lock, flags);
++	raw_spin_lock_irqsave(&nh->lock, flags);
+ 	ret = notifier_chain_register(&nh->head, n);
+-	spin_unlock_irqrestore(&nh->lock, flags);
++	raw_spin_unlock_irqrestore(&nh->lock, flags);
+ 	return ret;
+ }
+ EXPORT_SYMBOL_GPL(atomic_notifier_chain_register);
+@@ -164,9 +164,9 @@ int atomic_notifier_chain_unregister(str
+ 	unsigned long flags;
+ 	int ret;
+ 
+-	spin_lock_irqsave(&nh->lock, flags);
++	raw_spin_lock_irqsave(&nh->lock, flags);
+ 	ret = notifier_chain_unregister(&nh->head, n);
+-	spin_unlock_irqrestore(&nh->lock, flags);
++	raw_spin_unlock_irqrestore(&nh->lock, flags);
+ 	synchronize_rcu();
+ 	return ret;
+ }
+@@ -182,9 +182,9 @@ int atomic_notifier_call_chain_robust(st
+ 	 * Musn't use RCU; because then the notifier list can
+ 	 * change between the up and down traversal.
+ 	 */
+-	spin_lock_irqsave(&nh->lock, flags);
++	raw_spin_lock_irqsave(&nh->lock, flags);
+ 	ret = notifier_call_chain_robust(&nh->head, val_up, val_down, v);
+-	spin_unlock_irqrestore(&nh->lock, flags);
++	raw_spin_unlock_irqrestore(&nh->lock, flags);
+ 
+ 	return ret;
+ }

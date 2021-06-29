@@ -1,0 +1,321 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 12 Oct 2017 17:31:14 +0200
+Subject: [PATCH 20/22] locking/rtmutex: wire up RT's locking
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/mutex.h             |   26 ++++++++++++++++----------
+ include/linux/rwsem.h             |   12 ++++++++++++
+ include/linux/spinlock.h          |   12 +++++++++++-
+ include/linux/spinlock_api_smp.h  |    4 +++-
+ include/linux/spinlock_types.h    |   11 ++++++++---
+ include/linux/spinlock_types_up.h |    2 +-
+ kernel/Kconfig.preempt            |    1 +
+ kernel/locking/Makefile           |   10 +++++++---
+ kernel/locking/rwsem.c            |    6 ++++++
+ kernel/locking/spinlock.c         |    7 +++++++
+ kernel/locking/spinlock_debug.c   |    5 +++++
+ 11 files changed, 77 insertions(+), 19 deletions(-)
+
+--- a/include/linux/mutex.h
++++ b/include/linux/mutex.h
+@@ -22,6 +22,20 @@
+ 
+ struct ww_acquire_ctx;
+ 
++#ifdef CONFIG_DEBUG_LOCK_ALLOC
++# define __DEP_MAP_MUTEX_INITIALIZER(lockname)			\
++		, .dep_map = {					\
++			.name = #lockname,			\
++			.wait_type_inner = LD_WAIT_SLEEP,	\
++		}
++#else
++# define __DEP_MAP_MUTEX_INITIALIZER(lockname)
++#endif
++
++#ifdef CONFIG_PREEMPT_RT
++# include <linux/mutex_rt.h>
++#else
++
+ /*
+  * Simple, straightforward mutexes with strict semantics:
+  *
+@@ -119,16 +133,6 @@ do {									\
+ 	__mutex_init((mutex), #mutex, &__key);				\
+ } while (0)
+ 
+-#ifdef CONFIG_DEBUG_LOCK_ALLOC
+-# define __DEP_MAP_MUTEX_INITIALIZER(lockname)			\
+-		, .dep_map = {					\
+-			.name = #lockname,			\
+-			.wait_type_inner = LD_WAIT_SLEEP,	\
+-		}
+-#else
+-# define __DEP_MAP_MUTEX_INITIALIZER(lockname)
+-#endif
+-
+ #define __MUTEX_INITIALIZER(lockname) \
+ 		{ .owner = ATOMIC_LONG_INIT(0) \
+ 		, .wait_lock = __SPIN_LOCK_UNLOCKED(lockname.wait_lock) \
+@@ -224,4 +228,6 @@ enum mutex_trylock_recursive_enum {
+ extern /* __deprecated */ __must_check enum mutex_trylock_recursive_enum
+ mutex_trylock_recursive(struct mutex *lock);
+ 
++#endif /* !PREEMPT_RT */
++
+ #endif /* __LINUX_MUTEX_H */
+--- a/include/linux/rwsem.h
++++ b/include/linux/rwsem.h
+@@ -16,6 +16,11 @@
+ #include <linux/spinlock.h>
+ #include <linux/atomic.h>
+ #include <linux/err.h>
++
++#ifdef CONFIG_PREEMPT_RT
++#include <linux/rwsem-rt.h>
++#else /* PREEMPT_RT */
++
+ #ifdef CONFIG_RWSEM_SPIN_ON_OWNER
+ #include <linux/osq_lock.h>
+ #endif
+@@ -119,6 +124,13 @@ static inline int rwsem_is_contended(str
+ 	return !list_empty(&sem->wait_list);
+ }
+ 
++#endif /* !PREEMPT_RT */
++
++/*
++ * The functions below are the same for all rwsem implementations including
++ * the RT specific variant.
++ */
++
+ /*
+  * lock for reading
+  */
+--- a/include/linux/spinlock.h
++++ b/include/linux/spinlock.h
+@@ -309,7 +309,11 @@ static inline void do_raw_spin_unlock(ra
+ })
+ 
+ /* Include rwlock functions */
+-#include <linux/rwlock.h>
++#ifdef CONFIG_PREEMPT_RT
++# include <linux/rwlock_rt.h>
++#else
++# include <linux/rwlock.h>
++#endif
+ 
+ /*
+  * Pull the _spin_*()/_read_*()/_write_*() functions/declarations:
+@@ -320,6 +324,10 @@ static inline void do_raw_spin_unlock(ra
+ # include <linux/spinlock_api_up.h>
+ #endif
+ 
++#ifdef CONFIG_PREEMPT_RT
++# include <linux/spinlock_rt.h>
++#else /* PREEMPT_RT */
++
+ /*
+  * Map the spin_lock functions to the raw variants for PREEMPT_RT=n
+  */
+@@ -454,6 +462,8 @@ static __always_inline int spin_is_conte
+ 
+ #define assert_spin_locked(lock)	assert_raw_spin_locked(&(lock)->rlock)
+ 
++#endif /* !PREEMPT_RT */
++
+ /*
+  * Pull the atomic_t declaration:
+  * (asm-mips/atomic.h needs above definitions)
+--- a/include/linux/spinlock_api_smp.h
++++ b/include/linux/spinlock_api_smp.h
+@@ -187,6 +187,8 @@ static inline int __raw_spin_trylock_bh(
+ 	return 0;
+ }
+ 
+-#include <linux/rwlock_api_smp.h>
++#ifndef CONFIG_PREEMPT_RT
++# include <linux/rwlock_api_smp.h>
++#endif
+ 
+ #endif /* __LINUX_SPINLOCK_API_SMP_H */
+--- a/include/linux/spinlock_types.h
++++ b/include/linux/spinlock_types.h
+@@ -11,8 +11,13 @@
+ 
+ #include <linux/spinlock_types_raw.h>
+ 
+-#include <linux/spinlock_types_nort.h>
+-
+-#include <linux/rwlock_types.h>
++#ifndef CONFIG_PREEMPT_RT
++# include <linux/spinlock_types_nort.h>
++# include <linux/rwlock_types.h>
++#else
++# include <linux/rtmutex.h>
++# include <linux/spinlock_types_rt.h>
++# include <linux/rwlock_types_rt.h>
++#endif
+ 
+ #endif /* __LINUX_SPINLOCK_TYPES_H */
+--- a/include/linux/spinlock_types_up.h
++++ b/include/linux/spinlock_types_up.h
+@@ -1,7 +1,7 @@
+ #ifndef __LINUX_SPINLOCK_TYPES_UP_H
+ #define __LINUX_SPINLOCK_TYPES_UP_H
+ 
+-#ifndef __LINUX_SPINLOCK_TYPES_H
++#if !defined(__LINUX_SPINLOCK_TYPES_H) && !defined(__LINUX_RT_MUTEX_H)
+ # error "please don't include this file directly"
+ #endif
+ 
+--- a/kernel/Kconfig.preempt
++++ b/kernel/Kconfig.preempt
+@@ -59,6 +59,7 @@ config PREEMPT_RT
+ 	bool "Fully Preemptible Kernel (Real-Time)"
+ 	depends on EXPERT && ARCH_SUPPORTS_RT
+ 	select PREEMPTION
++	select RT_MUTEXES
+ 	help
+ 	  This option turns the kernel into a real-time kernel by replacing
+ 	  various locking primitives (spinlocks, rwlocks, etc.) with
+--- a/kernel/locking/Makefile
++++ b/kernel/locking/Makefile
+@@ -3,7 +3,7 @@
+ # and is generally not a function of system call inputs.
+ KCOV_INSTRUMENT		:= n
+ 
+-obj-y += mutex.o semaphore.o rwsem.o percpu-rwsem.o
++obj-y += semaphore.o rwsem.o percpu-rwsem.o
+ 
+ # Avoid recursion lockdep -> KCSAN -> ... -> lockdep.
+ KCSAN_SANITIZE_lockdep.o := n
+@@ -15,19 +15,23 @@ CFLAGS_REMOVE_mutex-debug.o = $(CC_FLAGS
+ CFLAGS_REMOVE_rtmutex-debug.o = $(CC_FLAGS_FTRACE)
+ endif
+ 
+-obj-$(CONFIG_DEBUG_MUTEXES) += mutex-debug.o
+ obj-$(CONFIG_LOCKDEP) += lockdep.o
+ ifeq ($(CONFIG_PROC_FS),y)
+ obj-$(CONFIG_LOCKDEP) += lockdep_proc.o
+ endif
+ obj-$(CONFIG_SMP) += spinlock.o
+-obj-$(CONFIG_LOCK_SPIN_ON_OWNER) += osq_lock.o
+ obj-$(CONFIG_PROVE_LOCKING) += spinlock.o
+ obj-$(CONFIG_QUEUED_SPINLOCKS) += qspinlock.o
+ obj-$(CONFIG_RT_MUTEXES) += rtmutex.o
+ obj-$(CONFIG_DEBUG_RT_MUTEXES) += rtmutex-debug.o
+ obj-$(CONFIG_DEBUG_SPINLOCK) += spinlock.o
+ obj-$(CONFIG_DEBUG_SPINLOCK) += spinlock_debug.o
++ifneq ($(CONFIG_PREEMPT_RT),y)
++obj-y += mutex.o
++obj-$(CONFIG_LOCK_SPIN_ON_OWNER) += osq_lock.o
++obj-$(CONFIG_DEBUG_MUTEXES) += mutex-debug.o
++endif
++obj-$(CONFIG_PREEMPT_RT) += mutex-rt.o rwsem-rt.o rwlock-rt.o
+ obj-$(CONFIG_QUEUED_RWLOCKS) += qrwlock.o
+ obj-$(CONFIG_LOCK_TORTURE_TEST) += locktorture.o
+ obj-$(CONFIG_WW_MUTEX_SELFTEST) += test-ww_mutex.o
+--- a/kernel/locking/rwsem.c
++++ b/kernel/locking/rwsem.c
+@@ -28,6 +28,7 @@
+ #include <linux/rwsem.h>
+ #include <linux/atomic.h>
+ 
++#ifndef CONFIG_PREEMPT_RT
+ #include "lock_events.h"
+ 
+ /*
+@@ -1343,6 +1344,7 @@ static inline void __downgrade_write(str
+ 	if (tmp & RWSEM_FLAG_WAITERS)
+ 		rwsem_downgrade_wake(sem);
+ }
++#endif
+ 
+ /*
+  * lock for reading
+@@ -1506,7 +1508,9 @@ void down_read_non_owner(struct rw_semap
+ {
+ 	might_sleep();
+ 	__down_read(sem);
++#ifndef CONFIG_PREEMPT_RT
+ 	__rwsem_set_reader_owned(sem, NULL);
++#endif
+ }
+ EXPORT_SYMBOL(down_read_non_owner);
+ 
+@@ -1535,7 +1539,9 @@ EXPORT_SYMBOL(down_write_killable_nested
+ 
+ void up_read_non_owner(struct rw_semaphore *sem)
+ {
++#ifndef CONFIG_PREEMPT_RT
+ 	DEBUG_RWSEMS_WARN_ON(!is_rwsem_reader_owned(sem), sem);
++#endif
+ 	__up_read(sem);
+ }
+ EXPORT_SYMBOL(up_read_non_owner);
+--- a/kernel/locking/spinlock.c
++++ b/kernel/locking/spinlock.c
+@@ -124,8 +124,11 @@ void __lockfunc __raw_##op##_lock_bh(loc
+  *         __[spin|read|write]_lock_bh()
+  */
+ BUILD_LOCK_OPS(spin, raw_spinlock);
++
++#ifndef CONFIG_PREEMPT_RT
+ BUILD_LOCK_OPS(read, rwlock);
+ BUILD_LOCK_OPS(write, rwlock);
++#endif
+ 
+ #endif
+ 
+@@ -209,6 +212,8 @@ void __lockfunc _raw_spin_unlock_bh(raw_
+ EXPORT_SYMBOL(_raw_spin_unlock_bh);
+ #endif
+ 
++#ifndef CONFIG_PREEMPT_RT
++
+ #ifndef CONFIG_INLINE_READ_TRYLOCK
+ int __lockfunc _raw_read_trylock(rwlock_t *lock)
+ {
+@@ -353,6 +358,8 @@ void __lockfunc _raw_write_unlock_bh(rwl
+ EXPORT_SYMBOL(_raw_write_unlock_bh);
+ #endif
+ 
++#endif /* !PREEMPT_RT */
++
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC
+ 
+ void __lockfunc _raw_spin_lock_nested(raw_spinlock_t *lock, int subclass)
+--- a/kernel/locking/spinlock_debug.c
++++ b/kernel/locking/spinlock_debug.c
+@@ -31,6 +31,7 @@ void __raw_spin_lock_init(raw_spinlock_t
+ 
+ EXPORT_SYMBOL(__raw_spin_lock_init);
+ 
++#ifndef CONFIG_PREEMPT_RT
+ void __rwlock_init(rwlock_t *lock, const char *name,
+ 		   struct lock_class_key *key)
+ {
+@@ -48,6 +49,7 @@ void __rwlock_init(rwlock_t *lock, const
+ }
+ 
+ EXPORT_SYMBOL(__rwlock_init);
++#endif
+ 
+ static void spin_dump(raw_spinlock_t *lock, const char *msg)
+ {
+@@ -139,6 +141,7 @@ void do_raw_spin_unlock(raw_spinlock_t *
+ 	arch_spin_unlock(&lock->raw_lock);
+ }
+ 
++#ifndef CONFIG_PREEMPT_RT
+ static void rwlock_bug(rwlock_t *lock, const char *msg)
+ {
+ 	if (!debug_locks_off())
+@@ -228,3 +231,5 @@ void do_raw_write_unlock(rwlock_t *lock)
+ 	debug_write_unlock(lock);
+ 	arch_write_unlock(&lock->raw_lock);
+ }
++
++#endif

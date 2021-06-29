@@ -1,0 +1,122 @@
+Subject: arm: Add support for lazy preemption
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 31 Oct 2012 12:04:11 +0100
+
+Implement the arm pieces for lazy preempt.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/arm/Kconfig                   |    1 +
+ arch/arm/include/asm/thread_info.h |    6 +++++-
+ arch/arm/kernel/asm-offsets.c      |    1 +
+ arch/arm/kernel/entry-armv.S       |   19 ++++++++++++++++---
+ arch/arm/kernel/signal.c           |    3 ++-
+ 5 files changed, 25 insertions(+), 5 deletions(-)
+
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -107,6 +107,7 @@ config ARM
+ 	select HAVE_PERF_EVENTS
+ 	select HAVE_PERF_REGS
+ 	select HAVE_PERF_USER_STACK_DUMP
++	select HAVE_PREEMPT_LAZY
+ 	select MMU_GATHER_RCU_TABLE_FREE if SMP && ARM_LPAE
+ 	select HAVE_REGS_AND_STACK_ACCESS_API
+ 	select HAVE_RSEQ
+--- a/arch/arm/include/asm/thread_info.h
++++ b/arch/arm/include/asm/thread_info.h
+@@ -54,6 +54,7 @@ struct cpu_context_save {
+ struct thread_info {
+ 	unsigned long		flags;		/* low level flags */
+ 	int			preempt_count;	/* 0 => preemptable, <0 => bug */
++	int			preempt_lazy_count; /* 0 => preemptable, <0 => bug */
+ 	mm_segment_t		addr_limit;	/* address limit */
+ 	struct task_struct	*task;		/* main task structure */
+ 	__u32			cpu;		/* cpu */
+@@ -146,6 +147,7 @@ extern int vfp_restore_user_hwstate(stru
+ #define TIF_SYSCALL_TRACEPOINT	6	/* syscall tracepoint instrumentation */
+ #define TIF_SECCOMP		7	/* seccomp syscall filtering active */
+ #define TIF_NOTIFY_SIGNAL	8	/* signal notifications exist */
++#define TIF_NEED_RESCHED_LAZY	9
+ 
+ #define TIF_USING_IWMMXT	17
+ #define TIF_MEMDIE		18	/* is terminating due to OOM killer */
+@@ -160,6 +162,7 @@ extern int vfp_restore_user_hwstate(stru
+ #define _TIF_SYSCALL_TRACEPOINT	(1 << TIF_SYSCALL_TRACEPOINT)
+ #define _TIF_SECCOMP		(1 << TIF_SECCOMP)
+ #define _TIF_NOTIFY_SIGNAL	(1 << TIF_NOTIFY_SIGNAL)
++#define _TIF_NEED_RESCHED_LAZY	(1 << TIF_NEED_RESCHED_LAZY)
+ #define _TIF_USING_IWMMXT	(1 << TIF_USING_IWMMXT)
+ 
+ /* Checks for any syscall work in entry-common.S */
+@@ -169,7 +172,8 @@ extern int vfp_restore_user_hwstate(stru
+ /*
+  * Change these and you break ASM code in entry-common.S
+  */
+-#define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_SIGPENDING | \
++#define _TIF_WORK_MASK		(_TIF_NEED_RESCHED | _TIF_NEED_RESCHED_LAZY | \
++				 _TIF_SIGPENDING | \
+ 				 _TIF_NOTIFY_RESUME | _TIF_UPROBE | \
+ 				 _TIF_NOTIFY_SIGNAL)
+ 
+--- a/arch/arm/kernel/asm-offsets.c
++++ b/arch/arm/kernel/asm-offsets.c
+@@ -42,6 +42,7 @@ int main(void)
+   BLANK();
+   DEFINE(TI_FLAGS,		offsetof(struct thread_info, flags));
+   DEFINE(TI_PREEMPT,		offsetof(struct thread_info, preempt_count));
++  DEFINE(TI_PREEMPT_LAZY,	offsetof(struct thread_info, preempt_lazy_count));
+   DEFINE(TI_ADDR_LIMIT,		offsetof(struct thread_info, addr_limit));
+   DEFINE(TI_TASK,		offsetof(struct thread_info, task));
+   DEFINE(TI_CPU,		offsetof(struct thread_info, cpu));
+--- a/arch/arm/kernel/entry-armv.S
++++ b/arch/arm/kernel/entry-armv.S
+@@ -206,11 +206,18 @@ ENDPROC(__dabt_svc)
+ 
+ #ifdef CONFIG_PREEMPTION
+ 	ldr	r8, [tsk, #TI_PREEMPT]		@ get preempt count
+-	ldr	r0, [tsk, #TI_FLAGS]		@ get flags
+ 	teq	r8, #0				@ if preempt count != 0
++	bne	1f				@ return from exeption
++	ldr	r0, [tsk, #TI_FLAGS]		@ get flags
++	tst	r0, #_TIF_NEED_RESCHED		@ if NEED_RESCHED is set
++	blne	svc_preempt			@ preempt!
++
++	ldr	r8, [tsk, #TI_PREEMPT_LAZY]	@ get preempt lazy count
++	teq	r8, #0				@ if preempt lazy count != 0
+ 	movne	r0, #0				@ force flags to 0
+-	tst	r0, #_TIF_NEED_RESCHED
++	tst	r0, #_TIF_NEED_RESCHED_LAZY
+ 	blne	svc_preempt
++1:
+ #endif
+ 
+ 	svc_exit r5, irq = 1			@ return from exception
+@@ -225,8 +232,14 @@ ENDPROC(__irq_svc)
+ 1:	bl	preempt_schedule_irq		@ irq en/disable is done inside
+ 	ldr	r0, [tsk, #TI_FLAGS]		@ get new tasks TI_FLAGS
+ 	tst	r0, #_TIF_NEED_RESCHED
++	bne	1b
++	tst	r0, #_TIF_NEED_RESCHED_LAZY
+ 	reteq	r8				@ go again
+-	b	1b
++	ldr	r0, [tsk, #TI_PREEMPT_LAZY]	@ get preempt lazy count
++	teq	r0, #0				@ if preempt lazy count != 0
++	beq	1b
++	ret	r8				@ go again
++
+ #endif
+ 
+ __und_fault:
+--- a/arch/arm/kernel/signal.c
++++ b/arch/arm/kernel/signal.c
+@@ -649,7 +649,8 @@ do_work_pending(struct pt_regs *regs, un
+ 	 */
+ 	trace_hardirqs_off();
+ 	do {
+-		if (likely(thread_flags & _TIF_NEED_RESCHED)) {
++		if (likely(thread_flags & (_TIF_NEED_RESCHED |
++					   _TIF_NEED_RESCHED_LAZY))) {
+ 			schedule();
+ 		} else {
+ 			if (unlikely(!user_mode(regs)))

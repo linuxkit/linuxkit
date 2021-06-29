@@ -1,0 +1,35 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Wed, 17 Feb 2021 18:23:16 +0100
+Subject: [PATCH 14/28] printk: kmsg_dump: use kmsg_dump_rewind
+
+kmsg_dump() is open coding the kmsg_dump_rewind(). Call
+kmsg_dump_rewind() instead.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/printk/printk.c |    6 +-----
+ 1 file changed, 1 insertion(+), 5 deletions(-)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -3351,7 +3351,6 @@ void kmsg_dump(enum kmsg_dump_reason rea
+ {
+ 	struct kmsg_dumper_iter iter;
+ 	struct kmsg_dumper *dumper;
+-	unsigned long flags;
+ 
+ 	rcu_read_lock();
+ 	list_for_each_entry_rcu(dumper, &dump_list, list) {
+@@ -3370,10 +3369,7 @@ void kmsg_dump(enum kmsg_dump_reason rea
+ 
+ 		/* initialize iterator with data about the stored records */
+ 		iter.active = true;
+-		printk_safe_enter_irqsave(flags);
+-		iter.cur_seq = latched_seq_read_nolock(&clear_seq);
+-		iter.next_seq = prb_next_seq(prb);
+-		printk_safe_exit_irqrestore(flags);
++		kmsg_dump_rewind(&iter);
+ 
+ 		/* invoke dumper which will iterate over records */
+ 		dumper->dump(dumper, reason, &iter);

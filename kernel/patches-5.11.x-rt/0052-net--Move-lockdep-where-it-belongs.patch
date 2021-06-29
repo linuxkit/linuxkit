@@ -1,0 +1,40 @@
+Subject: net: Move lockdep where it belongs
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 08 Sep 2020 07:32:20 +0200
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ net/core/sock.c |    6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/net/core/sock.c
++++ b/net/core/sock.c
+@@ -3050,12 +3050,11 @@ void lock_sock_nested(struct sock *sk, i
+ 	if (sk->sk_lock.owned)
+ 		__lock_sock(sk);
+ 	sk->sk_lock.owned = 1;
+-	spin_unlock(&sk->sk_lock.slock);
++	spin_unlock_bh(&sk->sk_lock.slock);
+ 	/*
+ 	 * The sk_lock has mutex_lock() semantics here:
+ 	 */
+ 	mutex_acquire(&sk->sk_lock.dep_map, subclass, 0, _RET_IP_);
+-	local_bh_enable();
+ }
+ EXPORT_SYMBOL(lock_sock_nested);
+ 
+@@ -3104,13 +3103,12 @@ bool lock_sock_fast(struct sock *sk) __a
+ 
+ 	__lock_sock(sk);
+ 	sk->sk_lock.owned = 1;
+-	spin_unlock(&sk->sk_lock.slock);
++	spin_unlock_bh(&sk->sk_lock.slock);
+ 	/*
+ 	 * The sk_lock has mutex_lock() semantics here:
+ 	 */
+ 	mutex_acquire(&sk->sk_lock.dep_map, 0, 0, _RET_IP_);
+ 	__acquire(&sk->sk_lock.slock);
+-	local_bh_enable();
+ 	return true;
+ }
+ EXPORT_SYMBOL(lock_sock_fast);

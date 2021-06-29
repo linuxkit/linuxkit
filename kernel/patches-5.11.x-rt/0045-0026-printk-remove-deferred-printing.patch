@@ -1,0 +1,407 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Mon, 30 Nov 2020 01:42:08 +0106
+Subject: [PATCH 26/28] printk: remove deferred printing
+
+Since printing occurs either atomically or from the printing
+kthread, there is no need for any deferring or tracking possible
+recursion paths. Remove all printk context tracking.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/arm/kernel/smp.c       |    2 -
+ arch/powerpc/kexec/crash.c  |    3 -
+ include/linux/hardirq.h     |    2 -
+ include/linux/printk.h      |   12 ------
+ kernel/printk/Makefile      |    1 
+ kernel/printk/internal.h    |   70 -----------------------------------
+ kernel/printk/printk.c      |   58 +++++++++++------------------
+ kernel/printk/printk_safe.c |   88 --------------------------------------------
+ kernel/trace/trace.c        |    2 -
+ 9 files changed, 22 insertions(+), 216 deletions(-)
+ delete mode 100644 kernel/printk/internal.h
+ delete mode 100644 kernel/printk/printk_safe.c
+
+--- a/arch/arm/kernel/smp.c
++++ b/arch/arm/kernel/smp.c
+@@ -671,9 +671,7 @@ static void do_handle_IPI(int ipinr)
+ 		break;
+ 
+ 	case IPI_CPU_BACKTRACE:
+-		printk_nmi_enter();
+ 		nmi_cpu_backtrace(get_irq_regs());
+-		printk_nmi_exit();
+ 		break;
+ 
+ 	default:
+--- a/arch/powerpc/kexec/crash.c
++++ b/arch/powerpc/kexec/crash.c
+@@ -311,9 +311,6 @@ void default_machine_crash_shutdown(stru
+ 	unsigned int i;
+ 	int (*old_handler)(struct pt_regs *regs);
+ 
+-	/* Avoid hardlocking with irresponsive CPU holding logbuf_lock */
+-	printk_nmi_enter();
+-
+ 	/*
+ 	 * This function is only called after the system
+ 	 * has panicked or is otherwise in a critical state.
+--- a/include/linux/hardirq.h
++++ b/include/linux/hardirq.h
+@@ -115,7 +115,6 @@ extern void rcu_nmi_exit(void);
+ 	do {							\
+ 		lockdep_off();					\
+ 		arch_nmi_enter();				\
+-		printk_nmi_enter();				\
+ 		BUG_ON(in_nmi() == NMI_MASK);			\
+ 		__preempt_count_add(NMI_OFFSET + HARDIRQ_OFFSET);	\
+ 	} while (0)
+@@ -134,7 +133,6 @@ extern void rcu_nmi_exit(void);
+ 	do {							\
+ 		BUG_ON(!in_nmi());				\
+ 		__preempt_count_sub(NMI_OFFSET + HARDIRQ_OFFSET);	\
+-		printk_nmi_exit();				\
+ 		arch_nmi_exit();				\
+ 		lockdep_on();					\
+ 	} while (0)
+--- a/include/linux/printk.h
++++ b/include/linux/printk.h
+@@ -155,18 +155,6 @@ static inline __printf(1, 2) __cold
+ void early_printk(const char *s, ...) { }
+ #endif
+ 
+-#ifdef CONFIG_PRINTK_NMI
+-extern void printk_nmi_enter(void);
+-extern void printk_nmi_exit(void);
+-extern void printk_nmi_direct_enter(void);
+-extern void printk_nmi_direct_exit(void);
+-#else
+-static inline void printk_nmi_enter(void) { }
+-static inline void printk_nmi_exit(void) { }
+-static inline void printk_nmi_direct_enter(void) { }
+-static inline void printk_nmi_direct_exit(void) { }
+-#endif /* PRINTK_NMI */
+-
+ struct dev_printk_info;
+ 
+ #ifdef CONFIG_PRINTK
+--- a/kernel/printk/Makefile
++++ b/kernel/printk/Makefile
+@@ -1,5 +1,4 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ obj-y	= printk.o
+-obj-$(CONFIG_PRINTK)	+= printk_safe.o
+ obj-$(CONFIG_A11Y_BRAILLE_CONSOLE)	+= braille.o
+ obj-$(CONFIG_PRINTK)	+= printk_ringbuffer.o
+--- a/kernel/printk/internal.h
++++ /dev/null
+@@ -1,70 +0,0 @@
+-/* SPDX-License-Identifier: GPL-2.0-or-later */
+-/*
+- * internal.h - printk internal definitions
+- */
+-#include <linux/percpu.h>
+-
+-#ifdef CONFIG_PRINTK
+-
+-#define PRINTK_SAFE_CONTEXT_MASK	0x007ffffff
+-#define PRINTK_NMI_DIRECT_CONTEXT_MASK	0x008000000
+-#define PRINTK_NMI_CONTEXT_MASK		0xff0000000
+-
+-#define PRINTK_NMI_CONTEXT_OFFSET	0x010000000
+-
+-__printf(4, 0)
+-int vprintk_store(int facility, int level,
+-		  const struct dev_printk_info *dev_info,
+-		  const char *fmt, va_list args);
+-
+-__printf(1, 0) int vprintk_default(const char *fmt, va_list args);
+-__printf(1, 0) int vprintk_deferred(const char *fmt, va_list args);
+-__printf(1, 0) int vprintk_func(const char *fmt, va_list args);
+-void __printk_safe_enter(void);
+-void __printk_safe_exit(void);
+-
+-bool printk_percpu_data_ready(void);
+-
+-#define printk_safe_enter_irqsave(flags)	\
+-	do {					\
+-		local_irq_save(flags);		\
+-		__printk_safe_enter();		\
+-	} while (0)
+-
+-#define printk_safe_exit_irqrestore(flags)	\
+-	do {					\
+-		__printk_safe_exit();		\
+-		local_irq_restore(flags);	\
+-	} while (0)
+-
+-#define printk_safe_enter_irq()		\
+-	do {					\
+-		local_irq_disable();		\
+-		__printk_safe_enter();		\
+-	} while (0)
+-
+-#define printk_safe_exit_irq()			\
+-	do {					\
+-		__printk_safe_exit();		\
+-		local_irq_enable();		\
+-	} while (0)
+-
+-void defer_console_output(void);
+-
+-#else
+-
+-__printf(1, 0) int vprintk_func(const char *fmt, va_list args) { return 0; }
+-
+-/*
+- * In !PRINTK builds we still export console_sem
+- * semaphore and some of console functions (console_unlock()/etc.), so
+- * printk-safe must preserve the existing local IRQ guarantees.
+- */
+-#define printk_safe_enter_irqsave(flags) local_irq_save(flags)
+-#define printk_safe_exit_irqrestore(flags) local_irq_restore(flags)
+-
+-#define printk_safe_enter_irq() local_irq_disable()
+-#define printk_safe_exit_irq() local_irq_enable()
+-
+-static inline bool printk_percpu_data_ready(void) { return false; }
+-#endif /* CONFIG_PRINTK */
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -45,6 +45,7 @@
+ #include <linux/ctype.h>
+ #include <linux/uio.h>
+ #include <linux/kthread.h>
++#include <linux/kdb.h>
+ #include <linux/clocksource.h>
+ #include <linux/sched/clock.h>
+ #include <linux/sched/debug.h>
+@@ -60,7 +61,6 @@
+ #include "printk_ringbuffer.h"
+ #include "console_cmdline.h"
+ #include "braille.h"
+-#include "internal.h"
+ 
+ int console_printk[4] = {
+ 	CONSOLE_LOGLEVEL_DEFAULT,	/* console_loglevel */
+@@ -227,19 +227,7 @@ static int nr_ext_console_drivers;
+ 
+ static int __down_trylock_console_sem(unsigned long ip)
+ {
+-	int lock_failed;
+-	unsigned long flags;
+-
+-	/*
+-	 * Here and in __up_console_sem() we need to be in safe mode,
+-	 * because spindump/WARN/etc from under console ->lock will
+-	 * deadlock in printk()->down_trylock_console_sem() otherwise.
+-	 */
+-	printk_safe_enter_irqsave(flags);
+-	lock_failed = down_trylock(&console_sem);
+-	printk_safe_exit_irqrestore(flags);
+-
+-	if (lock_failed)
++	if (down_trylock(&console_sem))
+ 		return 1;
+ 	mutex_acquire(&console_lock_dep_map, 0, 1, ip);
+ 	return 0;
+@@ -248,13 +236,9 @@ static int __down_trylock_console_sem(un
+ 
+ static void __up_console_sem(unsigned long ip)
+ {
+-	unsigned long flags;
+-
+ 	mutex_release(&console_lock_dep_map, ip);
+ 
+-	printk_safe_enter_irqsave(flags);
+ 	up(&console_sem);
+-	printk_safe_exit_irqrestore(flags);
+ }
+ #define up_console_sem() __up_console_sem(_RET_IP_)
+ 
+@@ -426,7 +410,7 @@ static struct printk_ringbuffer *prb = &
+  */
+ static bool __printk_percpu_data_ready __read_mostly;
+ 
+-bool printk_percpu_data_ready(void)
++static bool printk_percpu_data_ready(void)
+ {
+ 	return __printk_percpu_data_ready;
+ }
+@@ -1060,7 +1044,6 @@ void __init setup_log_buf(int early)
+ 	struct printk_record r;
+ 	size_t new_descs_size;
+ 	size_t new_infos_size;
+-	unsigned long flags;
+ 	char *new_log_buf;
+ 	unsigned int free;
+ 	u64 seq;
+@@ -1958,9 +1941,9 @@ static u16 printk_sprint(char *text, u16
+ }
+ 
+ __printf(4, 0)
+-int vprintk_store(int facility, int level,
+-		  const struct dev_printk_info *dev_info,
+-		  const char *fmt, va_list args)
++static int vprintk_store(int facility, int level,
++			 const struct dev_printk_info *dev_info,
++			 const char *fmt, va_list args)
+ {
+ 	const u32 caller_id = printk_caller_id();
+ 	struct prb_reserved_entry e;
+@@ -2106,11 +2089,22 @@ asmlinkage int vprintk_emit(int facility
+ }
+ EXPORT_SYMBOL(vprintk_emit);
+ 
+-int vprintk_default(const char *fmt, va_list args)
++__printf(1, 0)
++static int vprintk_default(const char *fmt, va_list args)
+ {
+ 	return vprintk_emit(0, LOGLEVEL_DEFAULT, NULL, fmt, args);
+ }
+-EXPORT_SYMBOL_GPL(vprintk_default);
++
++__printf(1, 0)
++static int vprintk_func(const char *fmt, va_list args)
++{
++#ifdef CONFIG_KGDB_KDB
++	/* Allow to pass printk() to kdb but avoid a recursion. */
++	if (unlikely(kdb_trap_printk && kdb_printf_cpu < 0))
++		return vkdb_printf(KDB_MSGSRC_PRINTK, fmt, args);
++#endif
++	return vprintk_default(fmt, args);
++}
+ 
+ asmlinkage int vprintk(const char *fmt, va_list args)
+ {
+@@ -3073,18 +3067,10 @@ void wake_up_klogd(void)
+ 	preempt_enable();
+ }
+ 
+-void defer_console_output(void)
++__printf(1, 0)
++static int vprintk_deferred(const char *fmt, va_list args)
+ {
+-}
+-
+-int vprintk_deferred(const char *fmt, va_list args)
+-{
+-	int r;
+-
+-	r = vprintk_emit(0, LOGLEVEL_SCHED, NULL, fmt, args);
+-	defer_console_output();
+-
+-	return r;
++	return vprintk_emit(0, LOGLEVEL_DEFAULT, NULL, fmt, args);
+ }
+ 
+ int printk_deferred(const char *fmt, ...)
+--- a/kernel/printk/printk_safe.c
++++ /dev/null
+@@ -1,88 +0,0 @@
+-// SPDX-License-Identifier: GPL-2.0-or-later
+-/*
+- * printk_safe.c - Safe printk for printk-deadlock-prone contexts
+- */
+-
+-#include <linux/preempt.h>
+-#include <linux/spinlock.h>
+-#include <linux/debug_locks.h>
+-#include <linux/kdb.h>
+-#include <linux/smp.h>
+-#include <linux/cpumask.h>
+-#include <linux/irq_work.h>
+-#include <linux/printk.h>
+-#include <linux/kprobes.h>
+-
+-#include "internal.h"
+-
+-static DEFINE_PER_CPU(int, printk_context);
+-
+-#ifdef CONFIG_PRINTK_NMI
+-void noinstr printk_nmi_enter(void)
+-{
+-	this_cpu_add(printk_context, PRINTK_NMI_CONTEXT_OFFSET);
+-}
+-
+-void noinstr printk_nmi_exit(void)
+-{
+-	this_cpu_sub(printk_context, PRINTK_NMI_CONTEXT_OFFSET);
+-}
+-
+-/*
+- * Marks a code that might produce many messages in NMI context
+- * and the risk of losing them is more critical than eventual
+- * reordering.
+- */
+-void printk_nmi_direct_enter(void)
+-{
+-	if (this_cpu_read(printk_context) & PRINTK_NMI_CONTEXT_MASK)
+-		this_cpu_or(printk_context, PRINTK_NMI_DIRECT_CONTEXT_MASK);
+-}
+-
+-void printk_nmi_direct_exit(void)
+-{
+-	this_cpu_and(printk_context, ~PRINTK_NMI_DIRECT_CONTEXT_MASK);
+-}
+-
+-#endif /* CONFIG_PRINTK_NMI */
+-
+-/* Can be preempted by NMI. */
+-void __printk_safe_enter(void)
+-{
+-	this_cpu_inc(printk_context);
+-}
+-
+-/* Can be preempted by NMI. */
+-void __printk_safe_exit(void)
+-{
+-	this_cpu_dec(printk_context);
+-}
+-
+-__printf(1, 0) int vprintk_func(const char *fmt, va_list args)
+-{
+-#ifdef CONFIG_KGDB_KDB
+-	/* Allow to pass printk() to kdb but avoid a recursion. */
+-	if (unlikely(kdb_trap_printk && kdb_printf_cpu < 0))
+-		return vkdb_printf(KDB_MSGSRC_PRINTK, fmt, args);
+-#endif
+-
+-	/*
+-	 * Use the main logbuf even in NMI. But avoid calling console
+-	 * drivers that might have their own locks.
+-	 */
+-	if (this_cpu_read(printk_context) &
+-	    (PRINTK_NMI_DIRECT_CONTEXT_MASK |
+-	     PRINTK_NMI_CONTEXT_MASK |
+-	     PRINTK_SAFE_CONTEXT_MASK)) {
+-		int len;
+-
+-		printk_safe_enter_irqsave(flags);
+-		len = vprintk_store(0, LOGLEVEL_DEFAULT, NULL, fmt, args);
+-		printk_safe_exit_irqrestore(flags);
+-		defer_console_output();
+-		return len;
+-	}
+-
+-	/* No obstacles. */
+-	return vprintk_default(fmt, args);
+-}
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -9325,7 +9325,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+ 	tracing_off();
+ 
+ 	local_irq_save(flags);
+-	printk_nmi_direct_enter();
+ 
+ 	/* Simulate the iterator */
+ 	trace_init_global_iter(&iter);
+@@ -9405,7 +9404,6 @@ void ftrace_dump(enum ftrace_dump_mode o
+ 		atomic_dec(&per_cpu_ptr(iter.array_buffer->data, cpu)->disabled);
+ 	}
+ 	atomic_dec(&dump_running);
+-	printk_nmi_direct_exit();
+ 	local_irq_restore(flags);
+ }
+ EXPORT_SYMBOL_GPL(ftrace_dump);

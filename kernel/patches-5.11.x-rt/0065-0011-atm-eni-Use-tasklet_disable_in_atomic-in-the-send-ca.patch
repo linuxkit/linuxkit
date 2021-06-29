@@ -1,0 +1,35 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 9 Mar 2021 09:42:14 +0100
+Subject: [PATCH 11/20] atm: eni: Use tasklet_disable_in_atomic() in the send()
+ callback
+
+The atmdev_ops::send callback which calls tasklet_disable() is invoked with
+bottom halfs disabled from net_device_ops::ndo_start_xmit(). All other
+invocations of tasklet_disable() in this driver happen in preemptible
+context.
+
+Change the send() call to use tasklet_disable_in_atomic() which allows
+tasklet_disable() to be made sleepable once the remaining atomic context
+usage sites are cleaned up.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Chas Williams <3chas3@gmail.com>
+Cc: linux-atm-general@lists.sourceforge.net
+Cc: netdev@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/atm/eni.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/atm/eni.c
++++ b/drivers/atm/eni.c
+@@ -2054,7 +2054,7 @@ static int eni_send(struct atm_vcc *vcc,
+ 	}
+ 	submitted++;
+ 	ATM_SKB(skb)->vcc = vcc;
+-	tasklet_disable(&ENI_DEV(vcc->dev)->task);
++	tasklet_disable_in_atomic(&ENI_DEV(vcc->dev)->task);
+ 	res = do_tx(skb);
+ 	tasklet_enable(&ENI_DEV(vcc->dev)->task);
+ 	if (res == enq_ok) return 0;

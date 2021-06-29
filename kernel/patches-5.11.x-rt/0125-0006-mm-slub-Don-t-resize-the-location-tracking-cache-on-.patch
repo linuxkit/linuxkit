@@ -1,0 +1,29 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 26 Feb 2021 17:26:04 +0100
+Subject: [PATCH 6/8] mm: slub: Don't resize the location tracking cache on
+ PREEMPT_RT
+
+The location tracking cache has a size of a page and is resized if its
+current size is too small.
+This allocation happens with disabled interrupts and can't happen on
+PREEMPT_RT.
+Should one page be too small, then we have to allocate more at the
+beginning. The only downside is that less callers will be visible.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/slub.c |    3 +++
+ 1 file changed, 3 insertions(+)
+
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -4737,6 +4737,9 @@ static int alloc_loc_track(struct loc_tr
+ 	struct location *l;
+ 	int order;
+ 
++	if (IS_ENABLED(CONFIG_PREEMPT_RT) && flags == GFP_ATOMIC)
++		return 0;
++
+ 	order = get_order(sizeof(struct location) * max);
+ 
+ 	l = (void *)__get_free_pages(flags, order);
