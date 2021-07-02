@@ -1,4 +1,4 @@
-FROM alpine:3.13 AS mirror
+FROM alpine:3.14 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -11,17 +11,6 @@ COPY packages* /tmp/
 RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
    mkdir -p /mirror/$(apk --print-arch) && \
    apk fetch --recursive -o /mirror/$(apk --print-arch) $(apk info; cat /tmp/packages)
-
-# these are the repository-specific ones, if they exist
-RUN for repopkgs in /tmp/packages.repo.*; do \
-        repo=${repopkgs##*repo.} && archspecific=/tmp/packages.$(uname -m).repo.${repo} && mergedfile=/tmp/packages.merged.${repo} && repofile=/tmp/repositories.${repo} && \
-	cachedir=/tmp/cache/${repo} && \
-	mkdir -p ${cachedir} && \
-        cp ${repopkgs} ${mergedfile} && \
-        if [ -f ${archspecific} ]; then cat ${archspecific} >> ${mergedfile}; fi && \
-        sed "s#alpine/[^\/]*/#alpine/${repo}/#g" /etc/apk/repositories > ${repofile} && \
-        apk update --repositories-file=${repofile} --cache-dir ${cachedir} && \
-        apk fetch --repositories-file=${repofile} --cache-dir ${cachedir} --recursive -o /mirror/$(apk --print-arch) $(cat ${mergedfile}); done
 
 # install abuild and sudo for signing
 RUN apk add --no-cache abuild sudo
@@ -83,7 +72,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.13
+FROM alpine:3.14
 
 ARG TARGETARCH
 
