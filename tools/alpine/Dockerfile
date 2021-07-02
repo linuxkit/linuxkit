@@ -1,4 +1,4 @@
-FROM alpine:3.13 AS mirror
+FROM alpine:3.14 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -12,24 +12,8 @@ RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
    mkdir -p /mirror/$(apk --print-arch) && \
    apk fetch --recursive -o /mirror/$(apk --print-arch) $(apk info; cat /tmp/packages)
 
-# these are the repository-specific ones, if they exist
-RUN for repopkgs in /tmp/packages.repo.*; do \
-        repo=${repopkgs##*repo.} && archspecific=/tmp/packages.$(uname -m).repo.${repo} && mergedfile=/tmp/packages.merged.${repo} && repofile=/tmp/repositories.${repo} && \
-	cachedir=/tmp/cache/${repo} && \
-	mkdir -p ${cachedir} && \
-        cp ${repopkgs} ${mergedfile} && \
-        if [ -f ${archspecific} ]; then cat ${archspecific} >> ${mergedfile}; fi && \
-        sed "s#alpine/[^\/]*/#alpine/${repo}/#g" /etc/apk/repositories > ${repofile} && \
-        apk update --repositories-file=${repofile} --cache-dir ${cachedir} && \
-        apk fetch --repositories-file=${repofile} --cache-dir ${cachedir} --recursive -o /mirror/$(apk --print-arch) $(cat ${mergedfile}); done
-
-# we CANNOT allow musl-dev or musl > 1.2.2-r0, which ships with alpine:3.13, because 1.2.2-r2, which ships with alpine:edge / alpine:3.14
+# musl-dev and musl > 1.2.2-r0, which ship with alpine:3.13 have an issue, because 1.2.2-r2, which ships with alpine:3.14+
 #   uses the new faccessat2 system call which gives errors, see https://wiki.alpinelinux.org/wiki/Draft_Release_Notes_for_Alpine_3.14.0#faccessat2
-RUN target="1.2.2-r0" && \
-    verlte() { [  "$1" = $(printf '%s\n%s' "$1" "$2" | sort -V | head -n1) ] ; } && \
-    for file in /mirror/$(apk --print-arch)/musl-*.apk; do \
-    version=$(tar -xf ${file}  -O .PKGINFO | awk '$1 == "pkgver" {print $3}') && \
-    if ! verlte ${version} ${target} ; then echo "removing ${file}" && rm ${file}; fi; done
 
 # install abuild and sudo for signing
 RUN apk add --no-cache abuild sudo
@@ -91,7 +75,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.13
+FROM alpine:3.14
 
 ARG TARGETARCH
 

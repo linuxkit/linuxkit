@@ -49,6 +49,7 @@ gettext-dev
 git
 gmp-dev
 gnupg
+go
 grep
 hvtools
 installkernel
