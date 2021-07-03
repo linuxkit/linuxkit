@@ -1,0 +1,115 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Subject: mm/memcontrol: Replace local_irq_disable with local locks
+Date: Wed, 28 Jan 2015 17:14:16 +0100
+
+There are a few local_irq_disable() which then take sleeping locks. This
+patch converts them local locks.
+
+[bigeasy: Move unlock after memcg_check_events() in mem_cgroup_swapout(),
+	pointed out by Matt Fleming <matt@codeblueprint.co.uk>]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/memcontrol.c |   29 +++++++++++++++++++++--------
+ 1 file changed, 21 insertions(+), 8 deletions(-)
+
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -66,6 +66,7 @@
+ #include <net/sock.h>
+ #include <net/ip.h>
+ #include "slab.h"
++#include <linux/local_lock.h>
+ 
+ #include <linux/uaccess.h>
+ 
+@@ -96,6 +97,13 @@ bool cgroup_memory_noswap __read_mostly;
+ static DECLARE_WAIT_QUEUE_HEAD(memcg_cgwb_frn_waitq);
+ #endif
+ 
++struct event_lock {
++	local_lock_t l;
++};
++static DEFINE_PER_CPU(struct event_lock, event_lock) = {
++	.l      = INIT_LOCAL_LOCK(l),
++};
++
+ /* Whether legacy memory+swap accounting is active */
+ static bool do_memsw_account(void)
+ {
+@@ -5696,12 +5704,12 @@ static int mem_cgroup_move_account(struc
+ 
+ 	ret = 0;
+ 
+-	local_irq_disable();
++	local_lock_irq(&event_lock.l);
+ 	mem_cgroup_charge_statistics(to, page, nr_pages);
+ 	memcg_check_events(to, page);
+ 	mem_cgroup_charge_statistics(from, page, -nr_pages);
+ 	memcg_check_events(from, page);
+-	local_irq_enable();
++	local_unlock_irq(&event_lock.l);
+ out_unlock:
+ 	unlock_page(page);
+ out:
+@@ -6752,10 +6760,10 @@ int mem_cgroup_charge(struct page *page,
+ 	css_get(&memcg->css);
+ 	commit_charge(page, memcg);
+ 
+-	local_irq_disable();
++	local_lock_irq(&event_lock.l);
+ 	mem_cgroup_charge_statistics(memcg, page, nr_pages);
+ 	memcg_check_events(memcg, page);
+-	local_irq_enable();
++	local_unlock_irq(&event_lock.l);
+ 
+ 	/*
+ 	 * Cgroup1's unified memory+swap counter has been charged with the
+@@ -6811,11 +6819,11 @@ static void uncharge_batch(const struct
+ 		memcg_oom_recover(ug->memcg);
+ 	}
+ 
+-	local_irq_save(flags);
++	local_lock_irqsave(&event_lock.l, flags);
+ 	__count_memcg_events(ug->memcg, PGPGOUT, ug->pgpgout);
+ 	__this_cpu_add(ug->memcg->vmstats_percpu->nr_page_events, ug->nr_pages);
+ 	memcg_check_events(ug->memcg, ug->dummy_page);
+-	local_irq_restore(flags);
++	local_unlock_irqrestore(&event_lock.l, flags);
+ 
+ 	/* drop reference from uncharge_page */
+ 	css_put(&ug->memcg->css);
+@@ -6967,10 +6975,10 @@ void mem_cgroup_migrate(struct page *old
+ 	css_get(&memcg->css);
+ 	commit_charge(newpage, memcg);
+ 
+-	local_irq_save(flags);
++	local_lock_irqsave(&event_lock.l, flags);
+ 	mem_cgroup_charge_statistics(memcg, newpage, nr_pages);
+ 	memcg_check_events(memcg, newpage);
+-	local_irq_restore(flags);
++	local_unlock_irqrestore(&event_lock.l, flags);
+ }
+ 
+ DEFINE_STATIC_KEY_FALSE(memcg_sockets_enabled_key);
+@@ -7145,6 +7153,7 @@ void mem_cgroup_swapout(struct page *pag
+ 	struct mem_cgroup *memcg, *swap_memcg;
+ 	unsigned int nr_entries;
+ 	unsigned short oldid;
++	unsigned long flags;
+ 
+ 	VM_BUG_ON_PAGE(PageLRU(page), page);
+ 	VM_BUG_ON_PAGE(page_count(page), page);
+@@ -7193,9 +7202,13 @@ void mem_cgroup_swapout(struct page *pag
+ 	 * important here to have the interrupts disabled because it is the
+ 	 * only synchronisation we have for updating the per-CPU variables.
+ 	 */
++	local_lock_irqsave(&event_lock.l, flags);
++#ifndef CONFIG_PREEMPT_RT
+ 	VM_BUG_ON(!irqs_disabled());
++#endif
+ 	mem_cgroup_charge_statistics(memcg, page, -nr_entries);
+ 	memcg_check_events(memcg, page);
++	local_unlock_irqrestore(&event_lock.l, flags);
+ 
+ 	css_put(&memcg->css);
+ }

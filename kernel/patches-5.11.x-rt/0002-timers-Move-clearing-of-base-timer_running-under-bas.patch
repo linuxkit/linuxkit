@@ -1,0 +1,55 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Sun, 6 Dec 2020 22:40:07 +0100
+Subject: [PATCH] timers: Move clearing of base::timer_running under base::lock
+
+syzbot reported KCSAN data races vs. timer_base::timer_running being set to
+NULL without holding base::lock in expire_timers().
+
+This looks innocent and most reads are clearly not problematic but for a
+non-RT kernel it's completely irrelevant whether the store happens before
+or after taking the lock. For an RT kernel moving the store under the lock
+requires an extra unlock/lock pair in the case that there is a waiter for
+the timer. But that's not the end of the world and definitely not worth the
+trouble of adding boatloads of comments and annotations to the code. Famous
+last words...
+
+Reported-by: syzbot+aa7c2385d46c5eba0b89@syzkaller.appspotmail.com
+Reported-by: syzbot+abea4558531bae1ba9fe@syzkaller.appspotmail.com
+Link: https://lkml.kernel.org/r/87lfea7gw8.fsf@nanos.tec.linutronix.de
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Cc: stable-rt@vger.kernel.org
+---
+ kernel/time/timer.c |    6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/kernel/time/timer.c
++++ b/kernel/time/timer.c
+@@ -1263,8 +1263,10 @@ static inline void timer_base_unlock_exp
+ static void timer_sync_wait_running(struct timer_base *base)
+ {
+ 	if (atomic_read(&base->timer_waiters)) {
++		raw_spin_unlock_irq(&base->lock);
+ 		spin_unlock(&base->expiry_lock);
+ 		spin_lock(&base->expiry_lock);
++		raw_spin_lock_irq(&base->lock);
+ 	}
+ }
+ 
+@@ -1455,14 +1457,14 @@ static void expire_timers(struct timer_b
+ 		if (timer->flags & TIMER_IRQSAFE) {
+ 			raw_spin_unlock(&base->lock);
+ 			call_timer_fn(timer, fn, baseclk);
+-			base->running_timer = NULL;
+ 			raw_spin_lock(&base->lock);
++			base->running_timer = NULL;
+ 		} else {
+ 			raw_spin_unlock_irq(&base->lock);
+ 			call_timer_fn(timer, fn, baseclk);
++			raw_spin_lock_irq(&base->lock);
+ 			base->running_timer = NULL;
+ 			timer_sync_wait_running(base);
+-			raw_spin_lock_irq(&base->lock);
+ 		}
+ 	}
+ }

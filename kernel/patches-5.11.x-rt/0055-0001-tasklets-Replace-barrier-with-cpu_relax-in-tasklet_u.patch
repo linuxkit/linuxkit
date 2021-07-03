@@ -1,0 +1,28 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 9 Mar 2021 09:42:04 +0100
+Subject: [PATCH 01/20] tasklets: Replace barrier() with cpu_relax() in
+ tasklet_unlock_wait()
+
+A barrier() in a tight loop which waits for something to happen on a remote
+CPU is a pointless exercise. Replace it with cpu_relax() which allows HT
+siblings to make progress.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/interrupt.h |    3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -677,7 +677,8 @@ static inline void tasklet_unlock(struct
+ 
+ static inline void tasklet_unlock_wait(struct tasklet_struct *t)
+ {
+-	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) { barrier(); }
++	while (test_bit(TASKLET_STATE_RUN, &t->state))
++		cpu_relax();
+ }
+ #else
+ #define tasklet_trylock(t) 1

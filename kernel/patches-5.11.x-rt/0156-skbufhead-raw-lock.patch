@@ -1,0 +1,65 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 12 Jul 2011 15:38:34 +0200
+Subject: net: Use skbufhead with raw lock
+
+Use the rps lock as rawlock so we can keep irq-off regions. It looks low
+latency. However we can't kfree() from this context therefore we defer this
+to the softirq and use the tofree_queue list for it (similar to process_queue).
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/skbuff.h |    7 +++++++
+ net/core/dev.c         |    6 +++---
+ 2 files changed, 10 insertions(+), 3 deletions(-)
+
+--- a/include/linux/skbuff.h
++++ b/include/linux/skbuff.h
+@@ -295,6 +295,7 @@ struct sk_buff_head {
+ 
+ 	__u32		qlen;
+ 	spinlock_t	lock;
++	raw_spinlock_t	raw_lock;
+ };
+ 
+ struct sk_buff;
+@@ -1890,6 +1891,12 @@ static inline void skb_queue_head_init(s
+ 	__skb_queue_head_init(list);
+ }
+ 
++static inline void skb_queue_head_init_raw(struct sk_buff_head *list)
++{
++	raw_spin_lock_init(&list->raw_lock);
++	__skb_queue_head_init(list);
++}
++
+ static inline void skb_queue_head_init_class(struct sk_buff_head *list,
+ 		struct lock_class_key *class)
+ {
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -221,14 +221,14 @@ static inline struct hlist_head *dev_ind
+ static inline void rps_lock(struct softnet_data *sd)
+ {
+ #ifdef CONFIG_RPS
+-	spin_lock(&sd->input_pkt_queue.lock);
++	raw_spin_lock(&sd->input_pkt_queue.raw_lock);
+ #endif
+ }
+ 
+ static inline void rps_unlock(struct softnet_data *sd)
+ {
+ #ifdef CONFIG_RPS
+-	spin_unlock(&sd->input_pkt_queue.lock);
++	raw_spin_unlock(&sd->input_pkt_queue.raw_lock);
+ #endif
+ }
+ 
+@@ -11314,7 +11314,7 @@ static int __init net_dev_init(void)
+ 
+ 		INIT_WORK(flush, flush_backlog);
+ 
+-		skb_queue_head_init(&sd->input_pkt_queue);
++		skb_queue_head_init_raw(&sd->input_pkt_queue);
+ 		skb_queue_head_init(&sd->process_queue);
+ #ifdef CONFIG_XFRM_OFFLOAD
+ 		skb_queue_head_init(&sd->xfrm_backlog);

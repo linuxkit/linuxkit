@@ -1,0 +1,73 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 9 Mar 2021 09:55:57 +0100
+Subject: [PATCH 19/20] tick/sched: Prevent false positive softirq pending
+ warnings on RT
+
+On RT a task which has soft interrupts disabled can block on a lock and
+schedule out to idle while soft interrupts are pending. This triggers the
+warning in the NOHZ idle code which complains about going idle with pending
+soft interrupts. But as the task is blocked soft interrupt processing is
+temporarily blocked as well which means that such a warning is a false
+positive.
+
+To prevent that check the per CPU state which indicates that a scheduled
+out task has soft interrupts disabled.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Reviewed-by: Frederic Weisbecker <frederic@kernel.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/bottom_half.h |    6 ++++++
+ kernel/softirq.c            |   15 +++++++++++++++
+ kernel/time/tick-sched.c    |    2 +-
+ 3 files changed, 22 insertions(+), 1 deletion(-)
+
+--- a/include/linux/bottom_half.h
++++ b/include/linux/bottom_half.h
+@@ -32,4 +32,10 @@ static inline void local_bh_enable(void)
+ 	__local_bh_enable_ip(_THIS_IP_, SOFTIRQ_DISABLE_OFFSET);
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT
++extern bool local_bh_blocked(void);
++#else
++static inline bool local_bh_blocked(void) { return false; }
++#endif
++
+ #endif /* _LINUX_BH_H */
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -139,6 +139,21 @@ static DEFINE_PER_CPU(struct softirq_ctr
+ 	.lock	= INIT_LOCAL_LOCK(softirq_ctrl.lock),
+ };
+ 
++/**
++ * local_bh_blocked() - Check for idle whether BH processing is blocked
++ *
++ * Returns false if the per CPU softirq::cnt is 0 otherwise true.
++ *
++ * This is invoked from the idle task to guard against false positive
++ * softirq pending warnings, which would happen when the task which holds
++ * softirq_ctrl::lock was the only running task on the CPU and blocks on
++ * some other lock.
++ */
++bool local_bh_blocked(void)
++{
++	return __this_cpu_read(softirq_ctrl.cnt) != 0;
++}
++
+ void __local_bh_disable_ip(unsigned long ip, unsigned int cnt)
+ {
+ 	unsigned long flags;
+--- a/kernel/time/tick-sched.c
++++ b/kernel/time/tick-sched.c
+@@ -973,7 +973,7 @@ static bool can_stop_idle_tick(int cpu,
+ 	if (unlikely(local_softirq_pending())) {
+ 		static int ratelimit;
+ 
+-		if (ratelimit < 10 &&
++		if (ratelimit < 10 && !local_bh_blocked() &&
+ 		    (local_softirq_pending() & SOFTIRQ_STOP_IDLE_MASK)) {
+ 			pr_warn("NOHZ tick-stop error: Non-RCU local softirq work is pending, handler #%02x!!!\n",
+ 				(unsigned int) local_softirq_pending());

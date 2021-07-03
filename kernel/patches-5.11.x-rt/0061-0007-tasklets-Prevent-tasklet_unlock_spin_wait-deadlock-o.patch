@@ -1,0 +1,100 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 9 Mar 2021 09:42:10 +0100
+Subject: [PATCH 07/20] tasklets: Prevent tasklet_unlock_spin_wait() deadlock
+ on RT
+
+tasklet_unlock_spin_wait() spin waits for the TASKLET_STATE_SCHED bit in
+the tasklet state to be cleared. This works on !RT nicely because the
+corresponding execution can only happen on a different CPU.
+
+On RT softirq processing is preemptible, therefore a task preempting the
+softirq processing thread can spin forever.
+
+Prevent this by invoking local_bh_disable()/enable() inside the loop. In
+case that the softirq processing thread was preempted by the current task,
+current will block on the local lock which yields the CPU to the preempted
+softirq processing thread. If the tasklet is processed on a different CPU
+then the local_bh_disable()/enable() pair is just a waste of processor
+cycles.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/interrupt.h |   12 ++----------
+ kernel/softirq.c          |   28 +++++++++++++++++++++++++++-
+ 2 files changed, 29 insertions(+), 11 deletions(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -663,7 +663,7 @@ enum
+ 	TASKLET_STATE_RUN	/* Tasklet is running (SMP only) */
+ };
+ 
+-#ifdef CONFIG_SMP
++#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
+ static inline int tasklet_trylock(struct tasklet_struct *t)
+ {
+ 	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
+@@ -671,16 +671,8 @@ static inline int tasklet_trylock(struct
+ 
+ void tasklet_unlock(struct tasklet_struct *t);
+ void tasklet_unlock_wait(struct tasklet_struct *t);
++void tasklet_unlock_spin_wait(struct tasklet_struct *t);
+ 
+-/*
+- * Do not use in new code. Waiting for tasklets from atomic contexts is
+- * error prone and should be avoided.
+- */
+-static inline void tasklet_unlock_spin_wait(struct tasklet_struct *t)
+-{
+-	while (test_bit(TASKLET_STATE_RUN, &t->state))
+-		cpu_relax();
+-}
+ #else
+ static inline int tasklet_trylock(struct tasklet_struct *t) { return 1; }
+ static inline void tasklet_unlock(struct tasklet_struct *t) { }
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -614,6 +614,32 @@ void tasklet_init(struct tasklet_struct
+ }
+ EXPORT_SYMBOL(tasklet_init);
+ 
++#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
++/*
++ * Do not use in new code. Waiting for tasklets from atomic contexts is
++ * error prone and should be avoided.
++ */
++void tasklet_unlock_spin_wait(struct tasklet_struct *t)
++{
++	while (test_bit(TASKLET_STATE_RUN, &(t)->state)) {
++		if (IS_ENABLED(CONFIG_PREEMPT_RT)) {
++			/*
++			 * Prevent a live lock when current preempted soft
++			 * interrupt processing or prevents ksoftirqd from
++			 * running. If the tasklet runs on a different CPU
++			 * then this has no effect other than doing the BH
++			 * disable/enable dance for nothing.
++			 */
++			local_bh_disable();
++			local_bh_enable();
++		} else {
++			cpu_relax();
++		}
++	}
++}
++EXPORT_SYMBOL(tasklet_unlock_spin_wait);
++#endif
++
+ void tasklet_kill(struct tasklet_struct *t)
+ {
+ 	if (in_interrupt())
+@@ -627,7 +653,7 @@ void tasklet_kill(struct tasklet_struct
+ }
+ EXPORT_SYMBOL(tasklet_kill);
+ 
+-#ifdef CONFIG_SMP
++#if defined(CONFIG_SMP) || defined(CONFIG_PREEMPT_RT)
+ void tasklet_unlock(struct tasklet_struct *t)
+ {
+ 	smp_mb__before_atomic();

@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 9 Mar 2021 09:42:12 +0100
+Subject: [PATCH 09/20] net: sundance: Use tasklet_disable_in_atomic().
+
+tasklet_disable() is used in the timer callback. This might be distangled,
+but without access to the hardware that's a bit risky.
+
+Replace it with tasklet_disable_in_atomic() so tasklet_disable() can be
+changed to a sleep wait once all remaining atomic users are converted.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: Denis Kirjanov <kda@linux-powerpc.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Jakub Kicinski <kuba@kernel.org>
+Cc: netdev@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/net/ethernet/dlink/sundance.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/ethernet/dlink/sundance.c
++++ b/drivers/net/ethernet/dlink/sundance.c
+@@ -963,7 +963,7 @@ static void tx_timeout(struct net_device
+ 	unsigned long flag;
+ 
+ 	netif_stop_queue(dev);
+-	tasklet_disable(&np->tx_tasklet);
++	tasklet_disable_in_atomic(&np->tx_tasklet);
+ 	iowrite16(0, ioaddr + IntrEnable);
+ 	printk(KERN_WARNING "%s: Transmit timed out, TxStatus %2.2x "
+ 		   "TxFrameId %2.2x,"

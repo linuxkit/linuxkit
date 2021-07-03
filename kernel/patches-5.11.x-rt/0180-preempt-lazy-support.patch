@@ -1,0 +1,662 @@
+Subject: sched: Add support for lazy preemption
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Fri, 26 Oct 2012 18:50:54 +0100
+
+It has become an obsession to mitigate the determinism vs. throughput
+loss of RT. Looking at the mainline semantics of preemption points
+gives a hint why RT sucks throughput wise for ordinary SCHED_OTHER
+tasks. One major issue is the wakeup of tasks which are right away
+preempting the waking task while the waking task holds a lock on which
+the woken task will block right after having preempted the wakee. In
+mainline this is prevented due to the implicit preemption disable of
+spin/rw_lock held regions. On RT this is not possible due to the fully
+preemptible nature of sleeping spinlocks.
+
+Though for a SCHED_OTHER task preempting another SCHED_OTHER task this
+is really not a correctness issue. RT folks are concerned about
+SCHED_FIFO/RR tasks preemption and not about the purely fairness
+driven SCHED_OTHER preemption latencies.
+
+So I introduced a lazy preemption mechanism which only applies to
+SCHED_OTHER tasks preempting another SCHED_OTHER task. Aside of the
+existing preempt_count each tasks sports now a preempt_lazy_count
+which is manipulated on lock acquiry and release. This is slightly
+incorrect as for lazyness reasons I coupled this on
+migrate_disable/enable so some other mechanisms get the same treatment
+(e.g. get_cpu_light).
+
+Now on the scheduler side instead of setting NEED_RESCHED this sets
+NEED_RESCHED_LAZY in case of a SCHED_OTHER/SCHED_OTHER preemption and
+therefor allows to exit the waking task the lock held region before
+the woken task preempts. That also works better for cross CPU wakeups
+as the other side can stay in the adaptive spinning loop.
+
+For RT class preemption there is no change. This simply sets
+NEED_RESCHED and forgoes the lazy preemption counter.
+
+ Initial test do not expose any observable latency increasement, but
+history shows that I've been proven wrong before :)
+
+The lazy preemption mode is per default on, but with
+CONFIG_SCHED_DEBUG enabled it can be disabled via:
+
+ # echo NO_PREEMPT_LAZY >/sys/kernel/debug/sched_features
+
+and reenabled via
+
+ # echo PREEMPT_LAZY >/sys/kernel/debug/sched_features
+
+The test results so far are very machine and workload dependent, but
+there is a clear trend that it enhances the non RT workload
+performance.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/preempt.h      |   54 ++++++++++++++++++++++++++--
+ include/linux/sched.h        |   38 +++++++++++++++++++
+ include/linux/thread_info.h  |   12 +++++-
+ include/linux/trace_events.h |    5 ++
+ kernel/Kconfig.preempt       |    6 +++
+ kernel/sched/core.c          |   82 +++++++++++++++++++++++++++++++++++++++++--
+ kernel/sched/fair.c          |   16 ++++----
+ kernel/sched/features.h      |    3 +
+ kernel/sched/sched.h         |    9 ++++
+ kernel/trace/trace.c         |   50 ++++++++++++++++----------
+ kernel/trace/trace_events.c  |    1 
+ kernel/trace/trace_output.c  |   14 ++++++-
+ 12 files changed, 254 insertions(+), 36 deletions(-)
+
+--- a/include/linux/preempt.h
++++ b/include/linux/preempt.h
+@@ -174,6 +174,20 @@ extern void preempt_count_sub(int val);
+ #define preempt_count_inc() preempt_count_add(1)
+ #define preempt_count_dec() preempt_count_sub(1)
+ 
++#ifdef CONFIG_PREEMPT_LAZY
++#define add_preempt_lazy_count(val)	do { preempt_lazy_count() += (val); } while (0)
++#define sub_preempt_lazy_count(val)	do { preempt_lazy_count() -= (val); } while (0)
++#define inc_preempt_lazy_count()	add_preempt_lazy_count(1)
++#define dec_preempt_lazy_count()	sub_preempt_lazy_count(1)
++#define preempt_lazy_count()		(current_thread_info()->preempt_lazy_count)
++#else
++#define add_preempt_lazy_count(val)	do { } while (0)
++#define sub_preempt_lazy_count(val)	do { } while (0)
++#define inc_preempt_lazy_count()	do { } while (0)
++#define dec_preempt_lazy_count()	do { } while (0)
++#define preempt_lazy_count()		(0)
++#endif
++
+ #ifdef CONFIG_PREEMPT_COUNT
+ 
+ #define preempt_disable() \
+@@ -182,6 +196,12 @@ do { \
+ 	barrier(); \
+ } while (0)
+ 
++#define preempt_lazy_disable() \
++do { \
++	inc_preempt_lazy_count(); \
++	barrier(); \
++} while (0)
++
+ #define sched_preempt_enable_no_resched() \
+ do { \
+ 	barrier(); \
+@@ -219,6 +239,18 @@ do { \
+ 		__preempt_schedule(); \
+ } while (0)
+ 
++/*
++ * open code preempt_check_resched() because it is not exported to modules and
++ * used by local_unlock() or bpf_enable_instrumentation().
++ */
++#define preempt_lazy_enable() \
++do { \
++	dec_preempt_lazy_count(); \
++	barrier(); \
++	if (should_resched(0)) \
++		__preempt_schedule(); \
++} while (0)
++
+ #else /* !CONFIG_PREEMPTION */
+ #define preempt_enable() \
+ do { \
+@@ -226,6 +258,12 @@ do { \
+ 	preempt_count_dec(); \
+ } while (0)
+ 
++#define preempt_lazy_enable() \
++do { \
++	dec_preempt_lazy_count(); \
++	barrier(); \
++} while (0)
++
+ #define preempt_enable_notrace() \
+ do { \
+ 	barrier(); \
+@@ -267,6 +305,9 @@ do { \
+ #define preempt_check_resched_rt()		barrier()
+ #define preemptible()				0
+ 
++#define preempt_lazy_disable()			barrier()
++#define preempt_lazy_enable()			barrier()
++
+ #endif /* CONFIG_PREEMPT_COUNT */
+ 
+ #ifdef MODULE
+@@ -285,7 +326,7 @@ do { \
+ } while (0)
+ #define preempt_fold_need_resched() \
+ do { \
+-	if (tif_need_resched()) \
++	if (tif_need_resched_now()) \
+ 		set_preempt_need_resched(); \
+ } while (0)
+ 
+@@ -413,8 +454,15 @@ extern void migrate_enable(void);
+ 
+ #else
+ 
+-static inline void migrate_disable(void) { }
+-static inline void migrate_enable(void) { }
++static inline void migrate_disable(void)
++{
++	preempt_lazy_disable();
++}
++
++static inline void migrate_enable(void)
++{
++	preempt_lazy_enable();
++}
+ 
+ #endif /* CONFIG_SMP */
+ 
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1877,6 +1877,44 @@ static inline int test_tsk_need_resched(
+ 	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED));
+ }
+ 
++#ifdef CONFIG_PREEMPT_LAZY
++static inline void set_tsk_need_resched_lazy(struct task_struct *tsk)
++{
++	set_tsk_thread_flag(tsk,TIF_NEED_RESCHED_LAZY);
++}
++
++static inline void clear_tsk_need_resched_lazy(struct task_struct *tsk)
++{
++	clear_tsk_thread_flag(tsk,TIF_NEED_RESCHED_LAZY);
++}
++
++static inline int test_tsk_need_resched_lazy(struct task_struct *tsk)
++{
++	return unlikely(test_tsk_thread_flag(tsk,TIF_NEED_RESCHED_LAZY));
++}
++
++static inline int need_resched_lazy(void)
++{
++	return test_thread_flag(TIF_NEED_RESCHED_LAZY);
++}
++
++static inline int need_resched_now(void)
++{
++	return test_thread_flag(TIF_NEED_RESCHED);
++}
++
++#else
++static inline void clear_tsk_need_resched_lazy(struct task_struct *tsk) { }
++static inline int need_resched_lazy(void) { return 0; }
++
++static inline int need_resched_now(void)
++{
++	return test_thread_flag(TIF_NEED_RESCHED);
++}
++
++#endif
++
++
+ static inline bool __task_is_stopped_or_traced(struct task_struct *task)
+ {
+ 	if (task->state & (__TASK_STOPPED | __TASK_TRACED))
+--- a/include/linux/thread_info.h
++++ b/include/linux/thread_info.h
+@@ -149,7 +149,17 @@ static inline int test_ti_thread_flag(st
+ 	clear_ti_thread_flag(task_thread_info(t), TIF_##fl)
+ #endif /* !CONFIG_GENERIC_ENTRY */
+ 
+-#define tif_need_resched() test_thread_flag(TIF_NEED_RESCHED)
++#ifdef CONFIG_PREEMPT_LAZY
++#define tif_need_resched()	(test_thread_flag(TIF_NEED_RESCHED) || \
++				 test_thread_flag(TIF_NEED_RESCHED_LAZY))
++#define tif_need_resched_now()	(test_thread_flag(TIF_NEED_RESCHED))
++#define tif_need_resched_lazy()	test_thread_flag(TIF_NEED_RESCHED_LAZY)
++
++#else
++#define tif_need_resched()	test_thread_flag(TIF_NEED_RESCHED)
++#define tif_need_resched_now()	test_thread_flag(TIF_NEED_RESCHED)
++#define tif_need_resched_lazy()	0
++#endif
+ 
+ #ifndef CONFIG_HAVE_ARCH_WITHIN_STACK_FRAMES
+ static inline int arch_within_stack_frames(const void * const stack,
+--- a/include/linux/trace_events.h
++++ b/include/linux/trace_events.h
+@@ -68,6 +68,7 @@ struct trace_entry {
+ 	unsigned char		preempt_count;
+ 	int			pid;
+ 	unsigned char		migrate_disable;
++	unsigned char		preempt_lazy_count;
+ };
+ 
+ #define TRACE_EVENT_TYPE_MAX						\
+@@ -155,9 +156,10 @@ static inline void tracing_generic_entry
+ {
+ 	entry->preempt_count		= trace_ctx & 0xff;
+ 	entry->migrate_disable		= (trace_ctx >> 8) & 0xff;
++	entry->preempt_lazy_count	= (trace_ctx >> 16) & 0xff;
+ 	entry->pid			= current->pid;
+ 	entry->type			= type;
+-	entry->flags =			trace_ctx >> 16;
++	entry->flags			= trace_ctx >> 24;
+ }
+ 
+ unsigned int tracing_gen_ctx_irq_test(unsigned int irqs_status);
+@@ -170,6 +172,7 @@ enum trace_flag_type {
+ 	TRACE_FLAG_SOFTIRQ		= 0x10,
+ 	TRACE_FLAG_PREEMPT_RESCHED	= 0x20,
+ 	TRACE_FLAG_NMI			= 0x40,
++	TRACE_FLAG_NEED_RESCHED_LAZY	= 0x80,
+ };
+ 
+ #ifdef CONFIG_TRACE_IRQFLAGS_SUPPORT
+--- a/kernel/Kconfig.preempt
++++ b/kernel/Kconfig.preempt
+@@ -1,5 +1,11 @@
+ # SPDX-License-Identifier: GPL-2.0-only
+ 
++config HAVE_PREEMPT_LAZY
++	bool
++
++config PREEMPT_LAZY
++	def_bool y if HAVE_PREEMPT_LAZY && PREEMPT_RT
++
+ choice
+ 	prompt "Preemption Model"
+ 	default PREEMPT_NONE
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -647,6 +647,48 @@ void resched_curr(struct rq *rq)
+ 		trace_sched_wake_idle_without_ipi(cpu);
+ }
+ 
++#ifdef CONFIG_PREEMPT_LAZY
++
++static int tsk_is_polling(struct task_struct *p)
++{
++#ifdef TIF_POLLING_NRFLAG
++	return test_tsk_thread_flag(p, TIF_POLLING_NRFLAG);
++#else
++	return 0;
++#endif
++}
++
++void resched_curr_lazy(struct rq *rq)
++{
++	struct task_struct *curr = rq->curr;
++	int cpu;
++
++	if (!sched_feat(PREEMPT_LAZY)) {
++		resched_curr(rq);
++		return;
++	}
++
++	lockdep_assert_held(&rq->lock);
++
++	if (test_tsk_need_resched(curr))
++		return;
++
++	if (test_tsk_need_resched_lazy(curr))
++		return;
++
++	set_tsk_need_resched_lazy(curr);
++
++	cpu = cpu_of(rq);
++	if (cpu == smp_processor_id())
++		return;
++
++	/* NEED_RESCHED_LAZY must be visible before we test polling */
++	smp_mb();
++	if (!tsk_is_polling(curr))
++		smp_send_reschedule(cpu);
++}
++#endif
++
+ void resched_cpu(int cpu)
+ {
+ 	struct rq *rq = cpu_rq(cpu);
+@@ -1778,6 +1820,7 @@ void migrate_disable(void)
+ 	preempt_disable();
+ 	this_rq()->nr_pinned++;
+ 	p->migration_disabled = 1;
++	preempt_lazy_disable();
+ 	preempt_enable();
+ }
+ EXPORT_SYMBOL_GPL(migrate_disable);
+@@ -1806,6 +1849,7 @@ void migrate_enable(void)
+ 	barrier();
+ 	p->migration_disabled = 0;
+ 	this_rq()->nr_pinned--;
++	preempt_lazy_enable();
+ 	preempt_enable();
+ }
+ EXPORT_SYMBOL_GPL(migrate_enable);
+@@ -3853,6 +3897,9 @@ int sched_fork(unsigned long clone_flags
+ 	p->on_cpu = 0;
+ #endif
+ 	init_task_preempt_count(p);
++#ifdef CONFIG_HAVE_PREEMPT_LAZY
++	task_thread_info(p)->preempt_lazy_count = 0;
++#endif
+ #ifdef CONFIG_SMP
+ 	plist_node_init(&p->pushable_tasks, MAX_PRIO);
+ 	RB_CLEAR_NODE(&p->pushable_dl_tasks);
+@@ -5106,6 +5153,7 @@ static void __sched notrace __schedule(b
+ 
+ 	next = pick_next_task(rq, prev, &rf);
+ 	clear_tsk_need_resched(prev);
++	clear_tsk_need_resched_lazy(prev);
+ 	clear_preempt_need_resched();
+ 
+ 	if (likely(prev != next)) {
+@@ -5305,6 +5353,30 @@ static void __sched notrace preempt_sche
+ 	} while (need_resched());
+ }
+ 
++#ifdef CONFIG_PREEMPT_LAZY
++/*
++ * If TIF_NEED_RESCHED is then we allow to be scheduled away since this is
++ * set by a RT task. Oterwise we try to avoid beeing scheduled out as long as
++ * preempt_lazy_count counter >0.
++ */
++static __always_inline int preemptible_lazy(void)
++{
++	if (test_thread_flag(TIF_NEED_RESCHED))
++		return 1;
++	if (current_thread_info()->preempt_lazy_count)
++		return 0;
++	return 1;
++}
++
++#else
++
++static inline int preemptible_lazy(void)
++{
++	return 1;
++}
++
++#endif
++
+ #ifdef CONFIG_PREEMPTION
+ /*
+  * This is the entry point to schedule() from in-kernel preemption
+@@ -5318,7 +5390,8 @@ asmlinkage __visible void __sched notrac
+ 	 */
+ 	if (likely(!preemptible()))
+ 		return;
+-
++	if (!preemptible_lazy())
++		return;
+ 	preempt_schedule_common();
+ }
+ NOKPROBE_SYMBOL(preempt_schedule);
+@@ -5358,6 +5431,9 @@ asmlinkage __visible void __sched notrac
+ 	if (likely(!preemptible()))
+ 		return;
+ 
++	if (!preemptible_lazy())
++		return;
++
+ 	do {
+ 		/*
+ 		 * Because the function tracer can trace preempt_count_sub()
+@@ -7194,7 +7270,9 @@ void init_idle(struct task_struct *idle,
+ 
+ 	/* Set the preempt count _outside_ the spinlocks! */
+ 	init_idle_preempt_count(idle, cpu);
+-
++#ifdef CONFIG_HAVE_PREEMPT_LAZY
++	task_thread_info(idle)->preempt_lazy_count = 0;
++#endif
+ 	/*
+ 	 * The idle tasks have their own, simple scheduling class:
+ 	 */
+--- a/kernel/sched/fair.c
++++ b/kernel/sched/fair.c
+@@ -4383,7 +4383,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
+ 	ideal_runtime = sched_slice(cfs_rq, curr);
+ 	delta_exec = curr->sum_exec_runtime - curr->prev_sum_exec_runtime;
+ 	if (delta_exec > ideal_runtime) {
+-		resched_curr(rq_of(cfs_rq));
++		resched_curr_lazy(rq_of(cfs_rq));
+ 		/*
+ 		 * The current task ran long enough, ensure it doesn't get
+ 		 * re-elected due to buddy favours.
+@@ -4407,7 +4407,7 @@ check_preempt_tick(struct cfs_rq *cfs_rq
+ 		return;
+ 
+ 	if (delta > ideal_runtime)
+-		resched_curr(rq_of(cfs_rq));
++		resched_curr_lazy(rq_of(cfs_rq));
+ }
+ 
+ static void
+@@ -4550,7 +4550,7 @@ entity_tick(struct cfs_rq *cfs_rq, struc
+ 	 * validating it and just reschedule.
+ 	 */
+ 	if (queued) {
+-		resched_curr(rq_of(cfs_rq));
++		resched_curr_lazy(rq_of(cfs_rq));
+ 		return;
+ 	}
+ 	/*
+@@ -4687,7 +4687,7 @@ static void __account_cfs_rq_runtime(str
+ 	 * hierarchy can be throttled
+ 	 */
+ 	if (!assign_cfs_rq_runtime(cfs_rq) && likely(cfs_rq->curr))
+-		resched_curr(rq_of(cfs_rq));
++		resched_curr_lazy(rq_of(cfs_rq));
+ }
+ 
+ static __always_inline
+@@ -5431,7 +5431,7 @@ static void hrtick_start_fair(struct rq
+ 
+ 		if (delta < 0) {
+ 			if (rq->curr == p)
+-				resched_curr(rq);
++				resched_curr_lazy(rq);
+ 			return;
+ 		}
+ 		hrtick_start(rq, delta);
+@@ -7017,7 +7017,7 @@ static void check_preempt_wakeup(struct
+ 	return;
+ 
+ preempt:
+-	resched_curr(rq);
++	resched_curr_lazy(rq);
+ 	/*
+ 	 * Only set the backward buddy when the current task is still
+ 	 * on the rq. This can happen when a wakeup gets interleaved
+@@ -10794,7 +10794,7 @@ static void task_fork_fair(struct task_s
+ 		 * 'current' within the tree based on its new key value.
+ 		 */
+ 		swap(curr->vruntime, se->vruntime);
+-		resched_curr(rq);
++		resched_curr_lazy(rq);
+ 	}
+ 
+ 	se->vruntime -= cfs_rq->min_vruntime;
+@@ -10821,7 +10821,7 @@ prio_changed_fair(struct rq *rq, struct
+ 	 */
+ 	if (rq->curr == p) {
+ 		if (p->prio > oldprio)
+-			resched_curr(rq);
++			resched_curr_lazy(rq);
+ 	} else
+ 		check_preempt_curr(rq, p, 0);
+ }
+--- a/kernel/sched/features.h
++++ b/kernel/sched/features.h
+@@ -47,6 +47,9 @@ SCHED_FEAT(NONTASK_CAPACITY, true)
+ 
+ #ifdef CONFIG_PREEMPT_RT
+ SCHED_FEAT(TTWU_QUEUE, false)
++# ifdef CONFIG_PREEMPT_LAZY
++SCHED_FEAT(PREEMPT_LAZY, true)
++# endif
+ #else
+ 
+ /*
+--- a/kernel/sched/sched.h
++++ b/kernel/sched/sched.h
+@@ -2015,6 +2015,15 @@ extern void reweight_task(struct task_st
+ extern void resched_curr(struct rq *rq);
+ extern void resched_cpu(int cpu);
+ 
++#ifdef CONFIG_PREEMPT_LAZY
++extern void resched_curr_lazy(struct rq *rq);
++#else
++static inline void resched_curr_lazy(struct rq *rq)
++{
++	resched_curr(rq);
++}
++#endif
++
+ extern struct rt_bandwidth def_rt_bandwidth;
+ extern void init_rt_bandwidth(struct rt_bandwidth *rt_b, u64 period, u64 runtime);
+ 
+--- a/kernel/trace/trace.c
++++ b/kernel/trace/trace.c
+@@ -2605,8 +2605,16 @@ unsigned int tracing_gen_ctx_irq_test(un
+ 		trace_flags |= TRACE_FLAG_NEED_RESCHED;
+ 	if (test_preempt_need_resched())
+ 		trace_flags |= TRACE_FLAG_PREEMPT_RESCHED;
+-	return (trace_flags << 16) | (pc & 0xff) |
+-		(migration_disable_value() & 0xff) << 8;
++
++#ifdef CONFIG_PREEMPT_LAZY
++	if (need_resched_lazy())
++		trace_flags |= TRACE_FLAG_NEED_RESCHED_LAZY;
++#endif
++
++	return (pc & 0xff) |
++		(migration_disable_value() & 0xff) << 8 |
++		(preempt_lazy_count() & 0xff) << 16 |
++		(trace_flags << 24);
+ }
+ 
+ struct ring_buffer_event *
+@@ -3807,15 +3815,17 @@ unsigned long trace_total_entries(struct
+ 
+ static void print_lat_help_header(struct seq_file *m)
+ {
+-	seq_puts(m, "#                    _------=> CPU#            \n"
+-		    "#                   / _-----=> irqs-off        \n"
+-		    "#                  | / _----=> need-resched    \n"
+-		    "#                  || / _---=> hardirq/softirq \n"
+-		    "#                  ||| / _--=> preempt-depth   \n"
+-		    "#                  |||| / _-=> migrate-disable \n"
+-		    "#                  ||||| /     delay           \n"
+-		    "#  cmd     pid     |||||| time  |   caller     \n"
+-		    "#     \\   /        ||||||  \\    |    /       \n");
++	seq_puts(m, "#                    _--------=> CPU#            \n"
++		    "#                   / _-------=> irqs-off        \n"
++		    "#                  | / _------=> need-resched    \n"
++		    "#                  || / _-----=> need-resched-lazy\n"
++		    "#                  ||| / _----=> hardirq/softirq \n"
++		    "#                  |||| / _---=> preempt-depth   \n"
++		    "#                  ||||| / _--=> preempt-lazy-depth\n"
++		    "#                  |||||| / _-=> migrate-disable \n"
++		    "#                  ||||||| /     delay           \n"
++		    "#  cmd     pid     |||||||| time  |   caller     \n"
++		    "#     \\   /        ||||||||  \\    |    /       \n");
+ }
+ 
+ static void print_event_info(struct array_buffer *buf, struct seq_file *m)
+@@ -3849,14 +3859,16 @@ static void print_func_help_header_irq(s
+ 
+ 	print_event_info(buf, m);
+ 
+-	seq_printf(m, "#                            %.*s  _-----=> irqs-off\n", prec, space);
+-	seq_printf(m, "#                            %.*s / _----=> need-resched\n", prec, space);
+-	seq_printf(m, "#                            %.*s| / _---=> hardirq/softirq\n", prec, space);
+-	seq_printf(m, "#                            %.*s|| / _--=> preempt-depth\n", prec, space);
+-	seq_printf(m, "#                            %.*s||| / _-=> migrate-disable\n", prec, space);
+-	seq_printf(m, "#                            %.*s|||| /     delay\n", prec, space);
+-	seq_printf(m, "#           TASK-PID  %.*s CPU#  |||||  TIMESTAMP  FUNCTION\n", prec, "     TGID   ");
+-	seq_printf(m, "#              | |    %.*s   |   |||||     |         |\n", prec, "       |    ");
++	seq_printf(m, "#                            %.*s  _-------=> irqs-off\n", prec, space);
++	seq_printf(m, "#                            %.*s / _------=> need-resched\n", prec, space);
++	seq_printf(m, "#                            %.*s| / _-----=> need-resched-lazy\n", prec, space);
++	seq_printf(m, "#                            %.*s|| / _----=> hardirq/softirq\n", prec, space);
++	seq_printf(m, "#                            %.*s||| / _---=> preempt-depth\n", prec, space);
++	seq_printf(m, "#                            %.*s|||| / _--=> preempt-lazy-depth\n", prec, space);
++	seq_printf(m, "#                            %.*s||||| / _-=> migrate-disable\n", prec, space);
++	seq_printf(m, "#                            %.*s|||||| /     delay\n", prec, space);
++	seq_printf(m, "#           TASK-PID  %.*s CPU#  |||||||  TIMESTAMP  FUNCTION\n", prec, "     TGID   ");
++	seq_printf(m, "#              | |    %.*s   |   |||||||      |         |\n", prec, "       |    ");
+ }
+ 
+ void
+--- a/kernel/trace/trace_events.c
++++ b/kernel/trace/trace_events.c
+@@ -184,6 +184,7 @@ static int trace_define_common_fields(vo
+ 	__common_field(unsigned char, preempt_count);
+ 	__common_field(int, pid);
+ 	__common_field(unsigned char, migrate_disable);
++	__common_field(unsigned char, preempt_lazy_count);
+ 
+ 	return ret;
+ }
+--- a/kernel/trace/trace_output.c
++++ b/kernel/trace/trace_output.c
+@@ -441,6 +441,7 @@ int trace_print_lat_fmt(struct trace_seq
+ {
+ 	char hardsoft_irq;
+ 	char need_resched;
++	char need_resched_lazy;
+ 	char irqs_off;
+ 	int hardirq;
+ 	int softirq;
+@@ -471,6 +472,9 @@ int trace_print_lat_fmt(struct trace_seq
+ 		break;
+ 	}
+ 
++	need_resched_lazy =
++		(entry->flags & TRACE_FLAG_NEED_RESCHED_LAZY) ? 'L' : '.';
++
+ 	hardsoft_irq =
+ 		(nmi && hardirq)     ? 'Z' :
+ 		nmi                  ? 'z' :
+@@ -479,14 +483,20 @@ int trace_print_lat_fmt(struct trace_seq
+ 		softirq              ? 's' :
+ 		                       '.' ;
+ 
+-	trace_seq_printf(s, "%c%c%c",
+-			 irqs_off, need_resched, hardsoft_irq);
++	trace_seq_printf(s, "%c%c%c%c",
++			 irqs_off, need_resched, need_resched_lazy,
++			 hardsoft_irq);
+ 
+ 	if (entry->preempt_count)
+ 		trace_seq_printf(s, "%x", entry->preempt_count);
+ 	else
+ 		trace_seq_putc(s, '.');
+ 
++	if (entry->preempt_lazy_count)
++		trace_seq_printf(s, "%x", entry->preempt_lazy_count);
++	else
++		trace_seq_putc(s, '.');
++
+ 	if (entry->migrate_disable)
+ 		trace_seq_printf(s, "%x", entry->migrate_disable);
+ 	else

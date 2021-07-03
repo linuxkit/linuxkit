@@ -1,0 +1,45 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 7 Jul 2020 12:25:11 +0200
+Subject: [PATCH] drm/i915/gt: Only disable interrupts for the timeline lock on
+ !force-threaded
+
+According to commit
+    d67739268cf0e ("drm/i915/gt: Mark up the nested engine-pm timeline lock as irqsafe")
+
+the intrrupts are disabled the code may be called from an interrupt
+handler and from preemptible context.
+With `force_irqthreads' set the timeline mutex is never observed in IRQ
+context so it is not neede to disable interrupts.
+
+Disable only interrupts if not in `force_irqthreads' mode.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/gpu/drm/i915/gt/intel_engine_pm.c |    8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
+
+--- a/drivers/gpu/drm/i915/gt/intel_engine_pm.c
++++ b/drivers/gpu/drm/i915/gt/intel_engine_pm.c
+@@ -73,9 +73,10 @@ static int __engine_unpark(struct intel_
+ 
+ static inline unsigned long __timeline_mark_lock(struct intel_context *ce)
+ {
+-	unsigned long flags;
++	unsigned long flags = 0;
+ 
+-	local_irq_save(flags);
++	if (!force_irqthreads)
++		local_irq_save(flags);
+ 	mutex_acquire(&ce->timeline->mutex.dep_map, 2, 0, _THIS_IP_);
+ 
+ 	return flags;
+@@ -85,7 +86,8 @@ static inline void __timeline_mark_unloc
+ 					  unsigned long flags)
+ {
+ 	mutex_release(&ce->timeline->mutex.dep_map, _THIS_IP_);
+-	local_irq_restore(flags);
++	if (!force_irqthreads)
++		local_irq_restore(flags);
+ }
+ 
+ #else

@@ -1,0 +1,37 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 28 Oct 2020 18:15:32 +0100
+Subject: [PATCH] mm/memcontrol: Disable preemption in
+ __mod_memcg_lruvec_state()
+
+The callers expect disabled preemption/interrupts while invoking
+__mod_memcg_lruvec_state(). This works mainline because a lock of
+somekind is acquired.
+
+Use preempt_disable_rt() where per-CPU variables are accessed and a
+stable pointer is expected. This is also done in __mod_zone_page_state()
+for the same reason.
+
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/memcontrol.c |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/mm/memcontrol.c
++++ b/mm/memcontrol.c
+@@ -805,6 +805,7 @@ void __mod_memcg_lruvec_state(struct lru
+ 	pn = container_of(lruvec, struct mem_cgroup_per_node, lruvec);
+ 	memcg = pn->memcg;
+ 
++	preempt_disable_rt();
+ 	/* Update memcg */
+ 	__mod_memcg_state(memcg, idx, val);
+ 
+@@ -824,6 +825,7 @@ void __mod_memcg_lruvec_state(struct lru
+ 		x = 0;
+ 	}
+ 	__this_cpu_write(pn->lruvec_stat_cpu->count[idx], x);
++	preempt_enable_rt();
+ }
+ 
+ /**

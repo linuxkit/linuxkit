@@ -1,0 +1,76 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Thu, 18 Feb 2021 18:31:26 +0100
+Subject: [PATCH] kcov: Remove kcov include from sched.h and move it to its
+ users.
+
+The recent addition of in_serving_softirq() to kconv.h results in
+compile failure on PREEMPT_RT because it requires
+task_struct::softirq_disable_cnt. This is not available if kconv.h is
+included from sched.h.
+
+It is not needed to include kconv.h from sched.h. All but the net/ user
+already include the kconv header file.
+
+Move the include of the kconv.h header from sched.h it its users.
+Additionally include sched.h from kconv.h to ensure that everything
+task_struct related is available.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/kcov.h  |    1 +
+ include/linux/sched.h |    1 -
+ net/core/skbuff.c     |    1 +
+ net/mac80211/iface.c  |    1 +
+ net/mac80211/rx.c     |    1 +
+ 5 files changed, 4 insertions(+), 1 deletion(-)
+
+--- a/include/linux/kcov.h
++++ b/include/linux/kcov.h
+@@ -2,6 +2,7 @@
+ #ifndef _LINUX_KCOV_H
+ #define _LINUX_KCOV_H
+ 
++#include <linux/sched.h>
+ #include <uapi/linux/kcov.h>
+ 
+ struct task_struct;
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -14,7 +14,6 @@
+ #include <linux/pid.h>
+ #include <linux/sem.h>
+ #include <linux/shm.h>
+-#include <linux/kcov.h>
+ #include <linux/mutex.h>
+ #include <linux/plist.h>
+ #include <linux/hrtimer.h>
+--- a/net/core/skbuff.c
++++ b/net/core/skbuff.c
+@@ -60,6 +60,7 @@
+ #include <linux/prefetch.h>
+ #include <linux/if_vlan.h>
+ #include <linux/mpls.h>
++#include <linux/kcov.h>
+ 
+ #include <net/protocol.h>
+ #include <net/dst.h>
+--- a/net/mac80211/iface.c
++++ b/net/mac80211/iface.c
+@@ -15,6 +15,7 @@
+ #include <linux/if_arp.h>
+ #include <linux/netdevice.h>
+ #include <linux/rtnetlink.h>
++#include <linux/kcov.h>
+ #include <net/mac80211.h>
+ #include <net/ieee80211_radiotap.h>
+ #include "ieee80211_i.h"
+--- a/net/mac80211/rx.c
++++ b/net/mac80211/rx.c
+@@ -17,6 +17,7 @@
+ #include <linux/etherdevice.h>
+ #include <linux/rcupdate.h>
+ #include <linux/export.h>
++#include <linux/kcov.h>
+ #include <linux/bitops.h>
+ #include <net/mac80211.h>
+ #include <net/ieee80211_radiotap.h>

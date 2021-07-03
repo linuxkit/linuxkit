@@ -1,0 +1,61 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 8 Sep 2020 16:57:11 +0200
+Subject: [PATCH] net: Properly annotate the try-lock for the seqlock
+
+In patch
+   ("net/Qdisc: use a seqlock instead seqcount")
+
+the seqcount has been replaced with a seqlock to allow to reader to
+boost the preempted writer.
+The try_write_seqlock() acquired the lock with a try-lock but the
+seqcount annotation was "lock".
+
+Opencode write_seqcount_t_begin() and use the try-lock annotation for
+lockdep.
+
+Reported-by: Mike Galbraith <efault@gmx.de>
+Cc: stable-rt@vger.kernel.org
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/net/net_seq_lock.h |    9 ---------
+ include/net/sch_generic.h  |   10 +++++++++-
+ 2 files changed, 9 insertions(+), 10 deletions(-)
+
+--- a/include/net/net_seq_lock.h
++++ b/include/net/net_seq_lock.h
+@@ -6,15 +6,6 @@
+ # define net_seq_begin(__r)		read_seqbegin(__r)
+ # define net_seq_retry(__r, __s)	read_seqretry(__r, __s)
+ 
+-static inline int try_write_seqlock(seqlock_t *sl)
+-{
+-	if (spin_trylock(&sl->lock)) {
+-		write_seqcount_begin(&sl->seqcount);
+-		return 1;
+-	}
+-	return 0;
+-}
+-
+ #else
+ # define net_seqlock_t			seqcount_t
+ # define net_seq_begin(__r)		read_seqcount_begin(__r)
+--- a/include/net/sch_generic.h
++++ b/include/net/sch_generic.h
+@@ -171,8 +171,16 @@ static inline bool qdisc_run_begin(struc
+ 		return false;
+ 	}
+ #ifdef CONFIG_PREEMPT_RT
+-	if (try_write_seqlock(&qdisc->running))
++	if (spin_trylock(&qdisc->running.lock)) {
++		seqcount_t *s = &qdisc->running.seqcount.seqcount;
++		/*
++		 * Variant of write_seqcount_t_begin() telling lockdep that a
++		 * trylock was attempted.
++		 */
++		do_raw_write_seqcount_begin(s);
++		seqcount_acquire(&s->dep_map, 0, 1, _RET_IP_);
+ 		return true;
++	}
+ 	return false;
+ #else
+ 	/* Variant of write_seqcount_begin() telling lockdep a trylock

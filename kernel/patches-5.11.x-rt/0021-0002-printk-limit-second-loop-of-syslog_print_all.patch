@@ -1,0 +1,49 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Wed, 17 Feb 2021 16:15:31 +0100
+Subject: [PATCH 02/28] printk: limit second loop of syslog_print_all
+
+The second loop of syslog_print_all() subtracts lengths that were
+added in the first loop. With commit b031a684bfd0 ("printk: remove
+logbuf_lock writer-protection of ringbuffer") it is possible that
+records are (over)written during syslog_print_all(). This allows the
+possibility of the second loop subtracting lengths that were never
+added in the first loop.
+
+This situation can result in syslog_print_all() filling the buffer
+starting from a later record, even though there may have been room
+to fit the earlier record(s) as well.
+
+Fixes: b031a684bfd0 ("printk: remove logbuf_lock writer-protection of ringbuffer")
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Reviewed-by: Petr Mladek <pmladek@suse.com>
+---
+ kernel/printk/printk.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -1494,6 +1494,7 @@ static int syslog_print_all(char __user
+ 	struct printk_info info;
+ 	unsigned int line_count;
+ 	struct printk_record r;
++	u64 max_seq;
+ 	char *text;
+ 	int len = 0;
+ 	u64 seq;
+@@ -1512,9 +1513,15 @@ static int syslog_print_all(char __user
+ 	prb_for_each_info(clear_seq, prb, seq, &info, &line_count)
+ 		len += get_record_print_text_size(&info, line_count, true, time);
+ 
++	/*
++	 * Set an upper bound for the next loop to avoid subtracting lengths
++	 * that were never added.
++	 */
++	max_seq = seq;
++
+ 	/* move first record forward until length fits into the buffer */
+ 	prb_for_each_info(clear_seq, prb, seq, &info, &line_count) {
+-		if (len <= size)
++		if (len <= size || info.seq >= max_seq)
+ 			break;
+ 		len -= get_record_print_text_size(&info, line_count, true, time);
+ 	}

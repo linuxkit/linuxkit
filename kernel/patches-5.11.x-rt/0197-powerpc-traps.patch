@@ -1,0 +1,32 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 26 Jul 2019 11:30:49 +0200
+Subject: [PATCH] powerpc: traps: Use PREEMPT_RT
+
+Add PREEMPT_RT to the backtrace if enabled.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/powerpc/kernel/traps.c |    7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+--- a/arch/powerpc/kernel/traps.c
++++ b/arch/powerpc/kernel/traps.c
+@@ -259,12 +259,17 @@ static char *get_mmu_str(void)
+ 
+ static int __die(const char *str, struct pt_regs *regs, long err)
+ {
++	const char *pr = "";
++
+ 	printk("Oops: %s, sig: %ld [#%d]\n", str, err, ++die_counter);
+ 
++	if (IS_ENABLED(CONFIG_PREEMPTION))
++		pr = IS_ENABLED(CONFIG_PREEMPT_RT) ? " PREEMPT_RT" : " PREEMPT";
++
+ 	printk("%s PAGE_SIZE=%luK%s%s%s%s%s%s %s\n",
+ 	       IS_ENABLED(CONFIG_CPU_LITTLE_ENDIAN) ? "LE" : "BE",
+ 	       PAGE_SIZE / 1024, get_mmu_str(),
+-	       IS_ENABLED(CONFIG_PREEMPT) ? " PREEMPT" : "",
++	       pr,
+ 	       IS_ENABLED(CONFIG_SMP) ? " SMP" : "",
+ 	       IS_ENABLED(CONFIG_SMP) ? (" NR_CPUS=" __stringify(NR_CPUS)) : "",
+ 	       debug_pagealloc_enabled() ? " DEBUG_PAGEALLOC" : "",

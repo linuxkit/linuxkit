@@ -1,0 +1,102 @@
+Subject: sched: Move mmdrop to RCU on RT
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 06 Jun 2011 12:20:33 +0200
+
+Takes sleeping locks and calls into the memory allocator, so nothing
+we want to do in task switch and oder atomic contexts.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ include/linux/mm_types.h |    4 ++++
+ include/linux/sched/mm.h |   11 +++++++++++
+ kernel/fork.c            |   13 +++++++++++++
+ kernel/sched/core.c      |    7 ++++++-
+ 4 files changed, 34 insertions(+), 1 deletion(-)
+
+--- a/include/linux/mm_types.h
++++ b/include/linux/mm_types.h
+@@ -12,6 +12,7 @@
+ #include <linux/completion.h>
+ #include <linux/cpumask.h>
+ #include <linux/uprobes.h>
++#include <linux/rcupdate.h>
+ #include <linux/page-flags-layout.h>
+ #include <linux/workqueue.h>
+ #include <linux/seqlock.h>
+@@ -553,6 +554,9 @@ struct mm_struct {
+ 		bool tlb_flush_batched;
+ #endif
+ 		struct uprobes_state uprobes_state;
++#ifdef CONFIG_PREEMPT_RT
++		struct rcu_head delayed_drop;
++#endif
+ #ifdef CONFIG_HUGETLB_PAGE
+ 		atomic_long_t hugetlb_usage;
+ #endif
+--- a/include/linux/sched/mm.h
++++ b/include/linux/sched/mm.h
+@@ -49,6 +49,17 @@ static inline void mmdrop(struct mm_stru
+ 		__mmdrop(mm);
+ }
+ 
++#ifdef CONFIG_PREEMPT_RT
++extern void __mmdrop_delayed(struct rcu_head *rhp);
++static inline void mmdrop_delayed(struct mm_struct *mm)
++{
++	if (atomic_dec_and_test(&mm->mm_count))
++		call_rcu(&mm->delayed_drop, __mmdrop_delayed);
++}
++#else
++# define mmdrop_delayed(mm)    mmdrop(mm)
++#endif
++
+ /**
+  * mmget() - Pin the address space associated with a &struct mm_struct.
+  * @mm: The address space to pin.
+--- a/kernel/fork.c
++++ b/kernel/fork.c
+@@ -689,6 +689,19 @@ void __mmdrop(struct mm_struct *mm)
+ }
+ EXPORT_SYMBOL_GPL(__mmdrop);
+ 
++#ifdef CONFIG_PREEMPT_RT
++/*
++ * RCU callback for delayed mm drop. Not strictly rcu, but we don't
++ * want another facility to make this work.
++ */
++void __mmdrop_delayed(struct rcu_head *rhp)
++{
++	struct mm_struct *mm = container_of(rhp, struct mm_struct, delayed_drop);
++
++	__mmdrop(mm);
++}
++#endif
++
+ static void mmdrop_async_fn(struct work_struct *work)
+ {
+ 	struct mm_struct *mm;
+--- a/kernel/sched/core.c
++++ b/kernel/sched/core.c
+@@ -4272,9 +4272,13 @@ static struct rq *finish_task_switch(str
+ 	 *   provided by mmdrop(),
+ 	 * - a sync_core for SYNC_CORE.
+ 	 */
++	/*
++	 * We use mmdrop_delayed() here so we don't have to do the
++	 * full __mmdrop() when we are the last user.
++	 */
+ 	if (mm) {
+ 		membarrier_mm_sync_core_before_usermode(mm);
+-		mmdrop(mm);
++		mmdrop_delayed(mm);
+ 	}
+ 	if (unlikely(prev_state == TASK_DEAD)) {
+ 		if (prev->sched_class->task_dead)
+@@ -7291,6 +7295,7 @@ void sched_setnuma(struct task_struct *p
+ #endif /* CONFIG_NUMA_BALANCING */
+ 
+ #ifdef CONFIG_HOTPLUG_CPU
++
+ /*
+  * Ensure that the idle task is using init_mm right before its CPU goes
+  * offline.

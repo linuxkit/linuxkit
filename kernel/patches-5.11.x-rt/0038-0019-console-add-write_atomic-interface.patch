@@ -1,0 +1,154 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Mon, 30 Nov 2020 01:42:01 +0106
+Subject: [PATCH 19/28] console: add write_atomic interface
+
+Add a write_atomic() callback to the console. This is an optional
+function for console drivers. The function must be atomic (including
+NMI safe) for writing to the console.
+
+Console drivers must still implement the write() callback. The
+write_atomic() callback will only be used in special situations,
+such as when the kernel panics.
+
+Creating an NMI safe write_atomic() that must synchronize with
+write() requires a careful implementation of the console driver. To
+aid with the implementation, a set of console_atomic_*() functions
+are provided:
+
+    void console_atomic_lock(unsigned int *flags);
+    void console_atomic_unlock(unsigned int flags);
+
+These functions synchronize using a processor-reentrant spinlock
+(called a cpulock).
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/console.h |    4 +
+ kernel/printk/printk.c  |  100 ++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 104 insertions(+)
+
+--- a/include/linux/console.h
++++ b/include/linux/console.h
+@@ -140,6 +140,7 @@ static inline int con_debug_leave(void)
+ struct console {
+ 	char	name[16];
+ 	void	(*write)(struct console *, const char *, unsigned);
++	void	(*write_atomic)(struct console *co, const char *s, unsigned int count);
+ 	int	(*read)(struct console *, char *, unsigned);
+ 	struct tty_driver *(*device)(struct console *, int *);
+ 	void	(*unblank)(void);
+@@ -229,4 +230,7 @@ extern void console_init(void);
+ void dummycon_register_output_notifier(struct notifier_block *nb);
+ void dummycon_unregister_output_notifier(struct notifier_block *nb);
+ 
++extern void console_atomic_lock(unsigned int *flags);
++extern void console_atomic_unlock(unsigned int flags);
++
+ #endif /* _LINUX_CONSOLE_H */
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -3546,3 +3546,103 @@ void kmsg_dump_rewind(struct kmsg_dumper
+ EXPORT_SYMBOL_GPL(kmsg_dump_rewind);
+ 
+ #endif
++
++struct prb_cpulock {
++	atomic_t owner;
++	unsigned long __percpu *irqflags;
++};
++
++#define DECLARE_STATIC_PRINTKRB_CPULOCK(name)				\
++static DEFINE_PER_CPU(unsigned long, _##name##_percpu_irqflags);	\
++static struct prb_cpulock name = {					\
++	.owner = ATOMIC_INIT(-1),					\
++	.irqflags = &_##name##_percpu_irqflags,				\
++}
++
++static bool __prb_trylock(struct prb_cpulock *cpu_lock,
++			  unsigned int *cpu_store)
++{
++	unsigned long *flags;
++	unsigned int cpu;
++
++	cpu = get_cpu();
++
++	*cpu_store = atomic_read(&cpu_lock->owner);
++	/* memory barrier to ensure the current lock owner is visible */
++	smp_rmb();
++	if (*cpu_store == -1) {
++		flags = per_cpu_ptr(cpu_lock->irqflags, cpu);
++		local_irq_save(*flags);
++		if (atomic_try_cmpxchg_acquire(&cpu_lock->owner,
++					       cpu_store, cpu)) {
++			return true;
++		}
++		local_irq_restore(*flags);
++	} else if (*cpu_store == cpu) {
++		return true;
++	}
++
++	put_cpu();
++	return false;
++}
++
++/*
++ * prb_lock: Perform a processor-reentrant spin lock.
++ * @cpu_lock: A pointer to the lock object.
++ * @cpu_store: A "flags" pointer to store lock status information.
++ *
++ * If no processor has the lock, the calling processor takes the lock and
++ * becomes the owner. If the calling processor is already the owner of the
++ * lock, this function succeeds immediately. If lock is locked by another
++ * processor, this function spins until the calling processor becomes the
++ * owner.
++ *
++ * It is safe to call this function from any context and state.
++ */
++static void prb_lock(struct prb_cpulock *cpu_lock, unsigned int *cpu_store)
++{
++	for (;;) {
++		if (__prb_trylock(cpu_lock, cpu_store))
++			break;
++		cpu_relax();
++	}
++}
++
++/*
++ * prb_unlock: Perform a processor-reentrant spin unlock.
++ * @cpu_lock: A pointer to the lock object.
++ * @cpu_store: A "flags" object storing lock status information.
++ *
++ * Release the lock. The calling processor must be the owner of the lock.
++ *
++ * It is safe to call this function from any context and state.
++ */
++static void prb_unlock(struct prb_cpulock *cpu_lock, unsigned int cpu_store)
++{
++	unsigned long *flags;
++	unsigned int cpu;
++
++	cpu = atomic_read(&cpu_lock->owner);
++	atomic_set_release(&cpu_lock->owner, cpu_store);
++
++	if (cpu_store == -1) {
++		flags = per_cpu_ptr(cpu_lock->irqflags, cpu);
++		local_irq_restore(*flags);
++	}
++
++	put_cpu();
++}
++
++DECLARE_STATIC_PRINTKRB_CPULOCK(printk_cpulock);
++
++void console_atomic_lock(unsigned int *flags)
++{
++	prb_lock(&printk_cpulock, flags);
++}
++EXPORT_SYMBOL(console_atomic_lock);
++
++void console_atomic_unlock(unsigned int flags)
++{
++	prb_unlock(&printk_cpulock, flags);
++}
++EXPORT_SYMBOL(console_atomic_unlock);

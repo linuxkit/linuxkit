@@ -1,0 +1,87 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 20 Oct 2017 11:29:53 +0200
+Subject: [PATCH] fs/dcache: disable preemption on i_dir_seq's write side
+
+i_dir_seq is an opencoded seqcounter. Based on the code it looks like we
+could have two writers in parallel despite the fact that the d_lock is
+held. The problem is that during the write process on RT the preemption
+is still enabled and if this process is interrupted by a reader with RT
+priority then we lock up.
+To avoid that lock up I am disabling the preemption during the update.
+The rename of i_dir_seq is here to ensure to catch new write sides in
+future.
+
+Cc: stable-rt@vger.kernel.org
+Reported-by: Oleg.Karfich@wago.com
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/dcache.c        |   12 +++++++-----
+ fs/inode.c         |    2 +-
+ include/linux/fs.h |    2 +-
+ 3 files changed, 9 insertions(+), 7 deletions(-)
+
+--- a/fs/dcache.c
++++ b/fs/dcache.c
+@@ -2510,9 +2510,10 @@ EXPORT_SYMBOL(d_rehash);
+ static inline unsigned start_dir_add(struct inode *dir)
+ {
+ 
++	preempt_disable_rt();
+ 	for (;;) {
+-		unsigned n = dir->i_dir_seq;
+-		if (!(n & 1) && cmpxchg(&dir->i_dir_seq, n, n + 1) == n)
++		unsigned n = dir->__i_dir_seq;
++		if (!(n & 1) && cmpxchg(&dir->__i_dir_seq, n, n + 1) == n)
+ 			return n;
+ 		cpu_relax();
+ 	}
+@@ -2520,7 +2521,8 @@ static inline unsigned start_dir_add(str
+ 
+ static inline void end_dir_add(struct inode *dir, unsigned n)
+ {
+-	smp_store_release(&dir->i_dir_seq, n + 2);
++	smp_store_release(&dir->__i_dir_seq, n + 2);
++	preempt_enable_rt();
+ }
+ 
+ static void d_wait_lookup(struct dentry *dentry)
+@@ -2556,7 +2558,7 @@ struct dentry *d_alloc_parallel(struct d
+ 
+ retry:
+ 	rcu_read_lock();
+-	seq = smp_load_acquire(&parent->d_inode->i_dir_seq);
++	seq = smp_load_acquire(&parent->d_inode->__i_dir_seq);
+ 	r_seq = read_seqbegin(&rename_lock);
+ 	dentry = __d_lookup_rcu(parent, name, &d_seq);
+ 	if (unlikely(dentry)) {
+@@ -2584,7 +2586,7 @@ struct dentry *d_alloc_parallel(struct d
+ 	}
+ 
+ 	hlist_bl_lock(b);
+-	if (unlikely(READ_ONCE(parent->d_inode->i_dir_seq) != seq)) {
++	if (unlikely(READ_ONCE(parent->d_inode->__i_dir_seq) != seq)) {
+ 		hlist_bl_unlock(b);
+ 		rcu_read_unlock();
+ 		goto retry;
+--- a/fs/inode.c
++++ b/fs/inode.c
+@@ -157,7 +157,7 @@ int inode_init_always(struct super_block
+ 	inode->i_pipe = NULL;
+ 	inode->i_cdev = NULL;
+ 	inode->i_link = NULL;
+-	inode->i_dir_seq = 0;
++	inode->__i_dir_seq = 0;
+ 	inode->i_rdev = 0;
+ 	inode->dirtied_when = 0;
+ 
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -698,7 +698,7 @@ struct inode {
+ 		struct pipe_inode_info	*i_pipe;
+ 		struct cdev		*i_cdev;
+ 		char			*i_link;
+-		unsigned		i_dir_seq;
++		unsigned		__i_dir_seq;
+ 	};
+ 
+ 	__u32			i_generation;

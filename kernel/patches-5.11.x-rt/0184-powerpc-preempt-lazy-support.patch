@@ -1,0 +1,250 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Thu, 1 Nov 2012 10:14:11 +0100
+Subject: powerpc: Add support for lazy preemption
+
+Implement the powerpc pieces for lazy preempt.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+---
+ arch/powerpc/Kconfig                   |    1 +
+ arch/powerpc/include/asm/thread_info.h |   15 ++++++++++++---
+ arch/powerpc/kernel/asm-offsets.c      |    1 +
+ arch/powerpc/kernel/entry_32.S         |   23 ++++++++++++++++-------
+ arch/powerpc/kernel/exceptions-64e.S   |   16 ++++++++++++----
+ arch/powerpc/kernel/syscall_64.c       |   10 +++++++---
+ 6 files changed, 49 insertions(+), 17 deletions(-)
+
+--- a/arch/powerpc/Kconfig
++++ b/arch/powerpc/Kconfig
+@@ -233,6 +233,7 @@ config PPC
+ 	select HAVE_HARDLOCKUP_DETECTOR_PERF	if PERF_EVENTS && HAVE_PERF_EVENTS_NMI && !HAVE_HARDLOCKUP_DETECTOR_ARCH
+ 	select HAVE_PERF_REGS
+ 	select HAVE_PERF_USER_STACK_DUMP
++	select HAVE_PREEMPT_LAZY
+ 	select MMU_GATHER_RCU_TABLE_FREE
+ 	select MMU_GATHER_PAGE_SIZE
+ 	select HAVE_REGS_AND_STACK_ACCESS_API
+--- a/arch/powerpc/include/asm/thread_info.h
++++ b/arch/powerpc/include/asm/thread_info.h
+@@ -48,6 +48,8 @@
+ struct thread_info {
+ 	int		preempt_count;		/* 0 => preemptable,
+ 						   <0 => BUG */
++	int             preempt_lazy_count;	/* 0 => preemptable,
++						   <0 => BUG */
+ 	unsigned long	local_flags;		/* private flags for thread */
+ #ifdef CONFIG_LIVEPATCH
+ 	unsigned long *livepatch_sp;
+@@ -96,11 +98,12 @@ void arch_setup_new_exec(void);
+ #define TIF_SINGLESTEP		8	/* singlestepping active */
+ #define TIF_NOHZ		9	/* in adaptive nohz mode */
+ #define TIF_SECCOMP		10	/* secure computing */
+-#define TIF_RESTOREALL		11	/* Restore all regs (implies NOERROR) */
+-#define TIF_NOERROR		12	/* Force successful syscall return */
++
++#define TIF_NEED_RESCHED_LAZY	11	/* lazy rescheduling necessary */
++#define TIF_SYSCALL_TRACEPOINT	12	/* syscall tracepoint instrumentation */
++
+ #define TIF_NOTIFY_RESUME	13	/* callback before returning to user */
+ #define TIF_UPROBE		14	/* breakpointed or single-stepping */
+-#define TIF_SYSCALL_TRACEPOINT	15	/* syscall tracepoint instrumentation */
+ #define TIF_EMULATE_STACK_STORE	16	/* Is an instruction emulation
+ 						for stack store? */
+ #define TIF_MEMDIE		17	/* is terminating due to OOM killer */
+@@ -109,6 +112,9 @@ void arch_setup_new_exec(void);
+ #endif
+ #define TIF_POLLING_NRFLAG	19	/* true if poll_idle() is polling TIF_NEED_RESCHED */
+ #define TIF_32BIT		20	/* 32 bit binary */
++#define TIF_RESTOREALL		21	/* Restore all regs (implies NOERROR) */
++#define TIF_NOERROR		22	/* Force successful syscall return */
++
+ 
+ /* as above, but as bit values */
+ #define _TIF_SYSCALL_TRACE	(1<<TIF_SYSCALL_TRACE)
+@@ -129,16 +135,19 @@ void arch_setup_new_exec(void);
+ #define _TIF_SYSCALL_TRACEPOINT	(1<<TIF_SYSCALL_TRACEPOINT)
+ #define _TIF_EMULATE_STACK_STORE	(1<<TIF_EMULATE_STACK_STORE)
+ #define _TIF_NOHZ		(1<<TIF_NOHZ)
++#define _TIF_NEED_RESCHED_LAZY	(1<<TIF_NEED_RESCHED_LAZY)
+ #define _TIF_SYSCALL_EMU	(1<<TIF_SYSCALL_EMU)
+ #define _TIF_SYSCALL_DOTRACE	(_TIF_SYSCALL_TRACE | _TIF_SYSCALL_AUDIT | \
+ 				 _TIF_SECCOMP | _TIF_SYSCALL_TRACEPOINT | \
+ 				 _TIF_NOHZ | _TIF_SYSCALL_EMU)
+ 
+ #define _TIF_USER_WORK_MASK	(_TIF_SIGPENDING | _TIF_NEED_RESCHED | \
++				 _TIF_NEED_RESCHED_LAZY | \
+ 				 _TIF_NOTIFY_RESUME | _TIF_UPROBE | \
+ 				 _TIF_RESTORE_TM | _TIF_PATCH_PENDING | \
+ 				 _TIF_NOTIFY_SIGNAL)
+ #define _TIF_PERSYSCALL_MASK	(_TIF_RESTOREALL|_TIF_NOERROR)
++#define _TIF_NEED_RESCHED_MASK	(_TIF_NEED_RESCHED | _TIF_NEED_RESCHED_LAZY)
+ 
+ /* Bits in local_flags */
+ /* Don't move TLF_NAPPING without adjusting the code in entry_32.S */
+--- a/arch/powerpc/kernel/asm-offsets.c
++++ b/arch/powerpc/kernel/asm-offsets.c
+@@ -191,6 +191,7 @@ int main(void)
+ 	OFFSET(TI_FLAGS, thread_info, flags);
+ 	OFFSET(TI_LOCAL_FLAGS, thread_info, local_flags);
+ 	OFFSET(TI_PREEMPT, thread_info, preempt_count);
++	OFFSET(TI_PREEMPT_LAZY, thread_info, preempt_lazy_count);
+ 
+ #ifdef CONFIG_PPC64
+ 	OFFSET(DCACHEL1BLOCKSIZE, ppc64_caches, l1d.block_size);
+--- a/arch/powerpc/kernel/entry_32.S
++++ b/arch/powerpc/kernel/entry_32.S
+@@ -423,7 +423,9 @@
+ 	mtmsr	r10
+ 	lwz	r9,TI_FLAGS(r2)
+ 	li	r8,-MAX_ERRNO
+-	andi.	r0,r9,(_TIF_SYSCALL_DOTRACE|_TIF_SINGLESTEP|_TIF_USER_WORK_MASK|_TIF_PERSYSCALL_MASK)
++	lis	r0,(_TIF_SYSCALL_DOTRACE|_TIF_SINGLESTEP|_TIF_USER_WORK_MASK|_TIF_PERSYSCALL_MASK)@h
++	ori	r0,r0, (_TIF_SYSCALL_DOTRACE|_TIF_SINGLESTEP|_TIF_USER_WORK_MASK|_TIF_PERSYSCALL_MASK)@l
++	and.	r0,r9,r0
+ 	bne-	syscall_exit_work
+ 	cmplw	0,r3,r8
+ 	blt+	syscall_exit_cont
+@@ -540,13 +542,13 @@ END_FTR_SECTION_IFSET(CPU_FTR_NEED_PAIRE
+ 	b	syscall_dotrace_cont
+ 
+ syscall_exit_work:
+-	andi.	r0,r9,_TIF_RESTOREALL
++	andis.	r0,r9,_TIF_RESTOREALL@h
+ 	beq+	0f
+ 	REST_NVGPRS(r1)
+ 	b	2f
+ 0:	cmplw	0,r3,r8
+ 	blt+	1f
+-	andi.	r0,r9,_TIF_NOERROR
++	andis.	r0,r9,_TIF_NOERROR@h
+ 	bne-	1f
+ 	lwz	r11,_CCR(r1)			/* Load CR */
+ 	neg	r3,r3
+@@ -555,12 +557,12 @@ END_FTR_SECTION_IFSET(CPU_FTR_NEED_PAIRE
+ 
+ 1:	stw	r6,RESULT(r1)	/* Save result */
+ 	stw	r3,GPR3(r1)	/* Update return value */
+-2:	andi.	r0,r9,(_TIF_PERSYSCALL_MASK)
++2:	andis.	r0,r9,(_TIF_PERSYSCALL_MASK)@h
+ 	beq	4f
+ 
+ 	/* Clear per-syscall TIF flags if any are set.  */
+ 
+-	li	r11,_TIF_PERSYSCALL_MASK
++	lis	r11,(_TIF_PERSYSCALL_MASK)@h
+ 	addi	r12,r2,TI_FLAGS
+ 3:	lwarx	r8,0,r12
+ 	andc	r8,r8,r11
+@@ -943,7 +945,14 @@ user_exc_return:		/* r10 contains MSR_KE
+ 	cmpwi	0,r0,0		/* if non-zero, just restore regs and return */
+ 	bne	restore_kuap
+ 	andi.	r8,r8,_TIF_NEED_RESCHED
++	bne+	1f
++	lwz	r0,TI_PREEMPT_LAZY(r2)
++	cmpwi	0,r0,0          /* if non-zero, just restore regs and return */
++	bne	restore_kuap
++	lwz	r0,TI_FLAGS(r2)
++	andi.	r0,r0,_TIF_NEED_RESCHED_LAZY
+ 	beq+	restore_kuap
++1:
+ 	lwz	r3,_MSR(r1)
+ 	andi.	r0,r3,MSR_EE	/* interrupts off? */
+ 	beq	restore_kuap	/* don't schedule if so */
+@@ -1261,7 +1270,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_NEED_PAIRE
+ #endif /* !(CONFIG_4xx || CONFIG_BOOKE) */
+ 
+ do_work:			/* r10 contains MSR_KERNEL here */
+-	andi.	r0,r9,_TIF_NEED_RESCHED
++	andi.	r0,r9,_TIF_NEED_RESCHED_MASK
+ 	beq	do_user_signal
+ 
+ do_resched:			/* r10 contains MSR_KERNEL here */
+@@ -1280,7 +1289,7 @@ do_resched:			/* r10 contains MSR_KERNEL
+ 	LOAD_REG_IMMEDIATE(r10,MSR_KERNEL)
+ 	mtmsr	r10		/* disable interrupts */
+ 	lwz	r9,TI_FLAGS(r2)
+-	andi.	r0,r9,_TIF_NEED_RESCHED
++	andi.	r0,r9,_TIF_NEED_RESCHED_MASK
+ 	bne-	do_resched
+ 	andi.	r0,r9,_TIF_USER_WORK_MASK
+ 	beq	restore_user
+--- a/arch/powerpc/kernel/exceptions-64e.S
++++ b/arch/powerpc/kernel/exceptions-64e.S
+@@ -1080,7 +1080,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+ 	li	r10, -1
+ 	mtspr	SPRN_DBSR,r10
+ 	b	restore
+-1:	andi.	r0,r4,_TIF_NEED_RESCHED
++1:	andi.	r0,r4,_TIF_NEED_RESCHED_MASK
+ 	beq	2f
+ 	bl	restore_interrupts
+ 	SCHEDULE_USER
+@@ -1132,12 +1132,20 @@ END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+ 	bne-	0b
+ 1:
+ 
+-#ifdef CONFIG_PREEMPT
++#ifdef CONFIG_PREEMPTION
+ 	/* Check if we need to preempt */
++	lwz	r8,TI_PREEMPT(r9)
++	cmpwi	0,r8,0		/* if non-zero, just restore regs and return */
++	bne	restore
+ 	andi.	r0,r4,_TIF_NEED_RESCHED
++	bne+	check_count
++
++	andi.	r0,r4,_TIF_NEED_RESCHED_LAZY
+ 	beq+	restore
++	lwz	r8,TI_PREEMPT_LAZY(r9)
++
+ 	/* Check that preempt_count() == 0 and interrupts are enabled */
+-	lwz	r8,TI_PREEMPT(r9)
++check_count:
+ 	cmpwi	cr0,r8,0
+ 	bne	restore
+ 	ld	r0,SOFTE(r1)
+@@ -1158,7 +1166,7 @@ END_FTR_SECTION_IFSET(CPU_FTR_ALTIVEC)
+ 	 * interrupted after loading SRR0/1.
+ 	 */
+ 	wrteei	0
+-#endif /* CONFIG_PREEMPT */
++#endif /* CONFIG_PREEMPTION */
+ 
+ restore:
+ 	/*
+--- a/arch/powerpc/kernel/syscall_64.c
++++ b/arch/powerpc/kernel/syscall_64.c
+@@ -217,7 +217,7 @@ notrace unsigned long syscall_exit_prepa
+ 	ti_flags = READ_ONCE(*ti_flagsp);
+ 	while (unlikely(ti_flags & (_TIF_USER_WORK_MASK & ~_TIF_RESTORE_TM))) {
+ 		local_irq_enable();
+-		if (ti_flags & _TIF_NEED_RESCHED) {
++		if (ti_flags & _TIF_NEED_RESCHED_MASK) {
+ 			schedule();
+ 		} else {
+ 			/*
+@@ -307,7 +307,7 @@ notrace unsigned long interrupt_exit_use
+ 	ti_flags = READ_ONCE(*ti_flagsp);
+ 	while (unlikely(ti_flags & (_TIF_USER_WORK_MASK & ~_TIF_RESTORE_TM))) {
+ 		local_irq_enable(); /* returning to user: may enable */
+-		if (ti_flags & _TIF_NEED_RESCHED) {
++		if (ti_flags & _TIF_NEED_RESCHED_MASK) {
+ 			schedule();
+ 		} else {
+ 			if (ti_flags & _TIF_SIGPENDING)
+@@ -395,11 +395,15 @@ notrace unsigned long interrupt_exit_ker
+ 		/* Returning to a kernel context with local irqs enabled. */
+ 		WARN_ON_ONCE(!(regs->msr & MSR_EE));
+ again:
+-		if (IS_ENABLED(CONFIG_PREEMPT)) {
++		if (IS_ENABLED(CONFIG_PREEMPTION)) {
+ 			/* Return to preemptible kernel context */
+ 			if (unlikely(*ti_flagsp & _TIF_NEED_RESCHED)) {
+ 				if (preempt_count() == 0)
+ 					preempt_schedule_irq();
++			} else if (unlikely(*ti_flagsp & _TIF_NEED_RESCHED_LAZY)) {
++				if ((preempt_count() == 0) &&
++				    (current_thread_info()->preempt_lazy_count == 0))
++					preempt_schedule_irq();
+ 			}
+ 		}
+ 

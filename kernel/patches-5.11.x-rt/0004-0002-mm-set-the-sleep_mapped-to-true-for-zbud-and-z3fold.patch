@@ -1,0 +1,45 @@
+From: Tian Tao <tiantao6@hisilicon.com>
+Date: Sat, 13 Feb 2021 20:58:31 +1300
+Subject: [PATCH 2/2] mm: set the sleep_mapped to true for zbud and z3fold
+
+zpool driver adds a flag to indicate whether the zpool driver can enter
+an atomic context after mapping. This patch sets it true for z3fold and
+zbud.
+
+Link: https://lkml.kernel.org/r/1611035683-12732-3-git-send-email-tiantao6@hisilicon.com
+[song.bao.hua@hisilicon.com: Rewrote changelog]
+Fixes: 1ec3b5fe6e ("mm/zswap: move to use crypto_acomp API for hardware acceleration")
+Signed-off-by: Tian Tao <tiantao6@hisilicon.com>
+Reviewed-by: Vitaly Wool <vitaly.wool@konsulko.com>
+Acked-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Reported-by: Mike Galbraith <efault@gmx.de>
+Cc: Seth Jennings <sjenning@redhat.com>
+Cc: Dan Streetman <ddstreet@ieee.org>
+Signed-off-by: Andrew Morton <akpm@linux-foundation.org>
+Signed-off-by: Barry Song <song.bao.hua@hisilicon.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/z3fold.c |    1 +
+ mm/zbud.c   |    1 +
+ 2 files changed, 2 insertions(+)
+
+--- a/mm/z3fold.c
++++ b/mm/z3fold.c
+@@ -1778,6 +1778,7 @@ static u64 z3fold_zpool_total_size(void
+ 
+ static struct zpool_driver z3fold_zpool_driver = {
+ 	.type =		"z3fold",
++	.sleep_mapped = true,
+ 	.owner =	THIS_MODULE,
+ 	.create =	z3fold_zpool_create,
+ 	.destroy =	z3fold_zpool_destroy,
+--- a/mm/zbud.c
++++ b/mm/zbud.c
+@@ -203,6 +203,7 @@ static u64 zbud_zpool_total_size(void *p
+ 
+ static struct zpool_driver zbud_zpool_driver = {
+ 	.type =		"zbud",
++	.sleep_mapped = true,
+ 	.owner =	THIS_MODULE,
+ 	.create =	zbud_zpool_create,
+ 	.destroy =	zbud_zpool_destroy,
