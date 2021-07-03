@@ -18,6 +18,7 @@ RUN apk add \
     installkernel \
     kmod \
     elfutils-dev \
+    libunwind-dev \
     linux-headers \
     mpc1-dev \
     mpfr-dev \
@@ -31,9 +32,6 @@ RUN apk add \
     xz \
     xz-dev \
     zlib-dev
-
-# libunwind-dev pkg is missing for s390x for now. Only install on other arch
-RUN [ $(uname -m) != s390x ] && apk add libunwind-dev || true
 
 ARG KERNEL_VERSION
 ARG KERNEL_SERIES
@@ -107,20 +105,12 @@ RUN set -e && \
 RUN tar cJf /out/src/linux.tar.xz /linux
 
 # Kernel config
-# The s390x defconfig moved with 5.2.x
 RUN case $(uname -m) in \
     x86_64) \
         KERNEL_DEF_CONF=/linux/arch/x86/configs/x86_64_defconfig; \
         ;; \
     aarch64) \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
-        ;; \
-    s390x) \
-        if [ -f /linux/arch/s390/defconfig ]; then \
-            KERNEL_DEF_CONF=/linux/arch/s390/defconfig; \
-        else \
-            KERNEL_DEF_CONF=/linux/arch/s390/configs/defconfig; \
-        fi; \
         ;; \
     esac  && \
     cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
@@ -138,24 +128,13 @@ RUN case $(uname -m) in \
 
 
 # Kernel
-RUN case $(uname -m) in \
-    s390x) \
-        KCFLAGS="-fno-pie -fPIC"; \
-        ;; \
-    *) \
-        KCFLAGS="-fno-pie"; \
-        ;; \
-    esac && \
-    make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="$KCFLAGS" && \
+RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
     case $(uname -m) in \
     x86_64) \
         cp arch/x86_64/boot/bzImage /out/kernel; \
         ;; \
     aarch64) \
         cp arch/arm64/boot/Image.gz /out/kernel; \
-        ;; \
-    s390x) \
-        cp arch/s390/boot/bzImage /out/kernel; \
         ;; \
     esac && \
     cp System.map /out && \
