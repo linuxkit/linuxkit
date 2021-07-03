@@ -20,7 +20,7 @@ IMG_s390x=$(head -1 versions.s390x | sed 's,[#| ]*,,')
 # Extract the TAG from the tree hash - just like how "linuxkit pkg show-tag" does it - name and build the manifest target name
 TAG=$(git ls-tree --full-tree HEAD -- $(pwd) | awk '{print $3}')
 DIRTY=$(git diff-index HEAD -- $(pwd))
-if [ -n "$DIRTY"]; then
+if [ -n "$DIRTY" ]; then
   echo "will not push out manifest when git tree is dirty" >&2
   exit 1
 fi
