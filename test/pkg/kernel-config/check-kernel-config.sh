@@ -171,10 +171,6 @@ mqueue
 do
 	grep -q "[[:space:]]${fs}\$" /proc/filesystems || fail "${fs} filesystem missing"
 done
-if [ "$arch" = "x86_64" ]; then
-  grep -q "[[:space:]]oprofilefs\$" /proc/filesystems || fail "${fs} filesystem missing"
-fi
-
 
 if [ -z "$FAILED" ]
 then
