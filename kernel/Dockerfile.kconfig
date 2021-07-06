@@ -1,7 +1,8 @@
 ARG BUILD_IMAGE
+FROM ${BUILD_IMAGE} AS kernel-build
+
 ARG KERNEL_VERSIONS
 
-FROM ${BUILD_IMAGE} AS kernel-build
 RUN apk add \
     argp-standalone \
     bison \
@@ -44,13 +45,6 @@ RUN set -e && \
         fi && \
         [ ! -f /config-${SERIES}-x86_64 ] || mv /config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
         [ ! -f /config-${SERIES}-aarch64 ] || mv /config-${SERIES}-aarch64 arch/arm64/configs/defconfig ; \
-        if [ -f /config-${SERIES}-s390x ]; then \
-            if [ -f /linux/arch/s390/defconfig ]; then \
-                mv /config-${SERIES}-s390x arch/s390/defconfig; \
-            else \
-                mv /config-${SERIES}-s390x arch/s390/configs/defconfig; \
-            fi; \
-        fi; \
     done
 
 ENTRYPOINT ["/bin/sh"]

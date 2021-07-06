@@ -1,7 +1,7 @@
 # FIXME: This should use the minimal example
 # We continue to use the kernel-config-test as CI is currently expecting to see a success message
 kernel:
-  image: linuxkit/kernel:5.10.39
+  image: linuxkit/kernel:5.10.47
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
@@ -12,7 +12,7 @@ onboot:
     image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: check-kernel-config
-    image: linuxkit/test-kernel-config:6b4d6aff84721c069ec38a89c88c2d725b6cc6c0
+    image: linuxkit/test-kernel-config:b916af1ec0ed92efb13b25899ef9e43970dab1c2
   - name: poweroff
     image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f
     command: ["/bin/sh", "/poweroff.sh", "120"]
