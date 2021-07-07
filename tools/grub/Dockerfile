@@ -5,38 +5,40 @@ RUN apk add \
   automake \
   make \
   bison \
+  coreutils \
   gettext \
+  gettext-dev \
   flex \
   gcc \
   git \
   libtool \
   libc-dev \
   linux-headers \
+  patch \
+  pkgconfig \
   python3 \
   autoconf
-	
+
 # because python is not available
 RUN ln -s python3 /usr/bin/python
-	
-ENV GRUB_MODULES="part_gpt fat ext2 iso9660 gzio linux acpi normal cpio crypto disk boot crc64 gpt \
-search_disk_uuid tftp verify xzio xfs video"
-ENV GRUB_COMMIT=2f868ac992be2ae3ab838951aa3e260c045f20f9
 
-COPY patches/* /patches/
+# this is the precise commit for 2.04; using the commit just in case tags change in the future
+ENV GRUB_COMMIT=2a2e10c1b39672de3d5da037a50d5c371f49b40d
 
 WORKDIR /src
-RUN git clone https://github.com/coreos/grub.git grub
+RUN git clone https://git.savannah.gnu.org/git/grub.git grub
 WORKDIR /src/grub
 RUN git checkout -b grub-build ${GRUB_COMMIT}
-RUN  for patch in /patches/*.patch; do \
-    echo "Applying $patch"; \
-    patch -p1 < "$patch"; \
-  done
 
+RUN ./bootstrap
 RUN ./autogen.sh
 RUN ./configure --libdir=/grub-lib --with-platform=efi CFLAGS="-Os -Wno-unused-value"
 RUN make -j "$(getconf _NPROCESSORS_ONLN)"
 RUN make install
+
+ENV GRUB_MODULES="part_gpt fat ext2 iso9660 gzio linux acpi normal cpio crypto disk boot crc64 \
+tftp xzio xfs video"
+
 RUN case $(uname -m) in \
   x86_64) \
     ./grub-mkimage -O x86_64-efi -d /grub-lib/grub/x86_64-efi -o /grub-lib/BOOTX64.EFI -p /EFI/BOOT ${GRUB_MODULES} linuxefi; \
