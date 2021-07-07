@@ -4,10 +4,13 @@ package main
 
 import (
 	"bufio"
+	"bytes"
+	"compress/gzip"
 	"errors"
 	"flag"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -24,6 +27,12 @@ const (
 )
 
 const mb = 1024 * 1024
+
+// Default value whether to compress rotated log files.
+const compressFiles = false
+
+// String appended to files when compression occurs
+const gzipFileExtension = ".gz"
 
 // LogMessage is a message received from memlogd.
 type LogMessage struct {
@@ -100,19 +109,71 @@ func (l *LogFile) Close() error {
 	return l.File.Close()
 }
 
-// Rotate closes the current log file, rotates the files and creates an empty log file.
-func (l *LogFile) Rotate(maxLogFiles int) error {
+// Compress the given LogFile
+func (l *LogFile) Compress() error {
+	originalLogFile, err := os.OpenFile(l.Path, os.O_RDONLY, 0644)
+
+	if err != nil {
+		return err
+	}
+
+	// calculate the buffer size for rawfile
+	info, _ := originalLogFile.Stat()
+
+	var logFileSize = info.Size()
+	rawBytes := make([]byte, logFileSize)
+
+	// Read the log file into memory
+	inputBuffer := bufio.NewReader(originalLogFile)
+	_, err = inputBuffer.Read(rawBytes)
+
+	originalLogFile.Close()
+
+	if err != nil {
+		return err
+	}
+
+	// Create a GZIP writer
+	var outputBuffer bytes.Buffer
+	writer := gzip.NewWriter(&outputBuffer)
+	writer.Write(rawBytes)
+	writer.Close()
+
+	// Write the gzipped data to the same file
+	err = ioutil.WriteFile(l.Path, outputBuffer.Bytes(), info.Mode())
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Rotate and optionally compress the currently open log file. Close the current log file, and create a new empty file.
+func (l *LogFile) Rotate(maxLogFiles int, compress bool) error {
 	if err := l.File.Close(); err != nil {
 		return err
 	}
+
+	// This specifies the expected file extensions on the rotated files if compression is enabled.
+	fileExtension := ""
+
+	// Optionally compress the log file before rotation
+	if compress {
+		fileExtension = gzipFileExtension
+		if err := l.Compress(); err != nil {
+			return err
+		}
+	}
+
 	for i := maxLogFiles - 1; i >= 0; i-- {
-		newerFile := fmt.Sprintf("%s.%d", l.Path, i-1)
+		newerFile := fmt.Sprintf("%s.%d%s", l.Path, i-1, fileExtension)
 		// special case: if index is 0 we omit the suffix i.e. we expect
 		// foo foo.1 foo.2 up to foo.<maxLogFiles-1>
 		if i == 0 {
 			newerFile = l.Path
 		}
-		olderFile := fmt.Sprintf("%s.%d", l.Path, i)
+		olderFile := fmt.Sprintf("%s.%d%s", l.Path, i, fileExtension)
 		// overwrite the olderFile with the newerFile
 		err := os.Rename(newerFile, olderFile)
 		if os.IsNotExist(err) {
@@ -137,6 +198,8 @@ func main() {
 	logDir := flag.String("log-dir", "/var/log", "Directory containing log files")
 	maxLogFiles := flag.Int("max-log-files", 10, "Maximum number of rotated log files before deletion")
 	maxLogSize := flag.Int("max-log-size", mb, "Maximum size of a log file before rotation")
+	compress := flag.Bool("compress", compressFiles, fmt.Sprintf("Enables compression of rotated log files (default: %t)", compressFiles))
+
 	flag.Parse()
 
 	addr := net.UnixAddr{
@@ -195,7 +258,7 @@ func main() {
 			continue
 		}
 		if logF.BytesWritten > *maxLogSize {
-			logF.Rotate(*maxLogFiles)
+			logF.Rotate(*maxLogFiles, *compress)
 		}
 	}
 }

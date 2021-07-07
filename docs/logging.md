@@ -60,8 +60,9 @@ a maximum size of 1 MiB and up to 10 files are kept per log. The arguments
 `-max-log-files` and `-max-log-size` can be used to override these defaults.
 
 Here is an example log file:
+
 ```
-# cat /var/log/onboot.001-dhcpcd.out 
+# cat /var/log/onboot.001-dhcpcd.out
 2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: waiting for carrier
 2018-07-08T09:16:53Z onboot.001-dhcpcd.out eth0: carrier acquired
 2018-07-08T09:16:53Z onboot.001-dhcpcd.out DUID 00:01:00:01:22:d4:93:05:02:50:00
@@ -79,6 +80,10 @@ conds
 2018-07-08T09:16:53Z onboot.001-dhcpcd.out exiting due to oneshot
 2018-07-08T09:16:53Z onboot.001-dhcpcd.out dhcpcd exited
 ```
+
+### Compression
+
+Rotated logs can be automatically compressed (gzip) if needed. By default, this feature is disabled, however this may be overwritten using the argument `-compress true`.
 
 ## Current issues and limitations:
 
