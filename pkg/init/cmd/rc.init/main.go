@@ -55,7 +55,7 @@ func mountSilent(source string, target string, fstype string, flags uintptr, dat
 func mkchar(path string, mode, major, minor uint32) {
 	// unix.Mknod only supports int dev numbers; this is ok for us
 	dev := int(unix.Mkdev(major, minor))
-	err := unix.Mknod(path, mode, dev)
+	err := unix.Mknod(path, mode|unix.S_IFCHR, dev)
 	if err != nil {
 		if err.Error() == "file exists" {
 			return
@@ -164,6 +164,12 @@ func modalias(path string) {
 }
 
 func doMounts() {
+	// Disable umask to make sure permissions are applied as specified,
+	// and restore original umask after we're done. This assumes no other
+	// processes run concurrently.
+	umask := unix.Umask(0000)
+	defer unix.Umask(umask)
+
 	// mount proc filesystem
 	mount("proc", "/proc", "proc", nodev|nosuid|noexec|relatime, "")
 
