@@ -82,6 +82,7 @@ func FindCIs() []string {
 			log.Debugf("failed to open device read-only: %s: %v", dev, err)
 			continue
 		}
+		disk.DefaultBlocks = true
 		fs, err := disk.GetFilesystem(0)
 		if err != nil {
 			log.Debugf("failed to get filesystem on partition 0 for device: %s: %v", dev, err)
