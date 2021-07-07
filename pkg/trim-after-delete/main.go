@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"time"
 )
@@ -63,17 +64,20 @@ func (a *DelayedAction) AtLeastOnceMore() {
 }
 
 func main() {
-	// after-image-deletes --delay 10s -- /sbin/fstrim /var
-
 	delay := flag.Duration("delay", time.Second*10, "maximum time to wait after an image delete before triggering")
+	sockPath := flag.String("docker-socket", "/var/run/docker.sock", "location of the docker socket to connect to")
 	flag.Usage = func() {
-		fmt.Fprintf(os.Stderr, "%s: run a command after images are deleted by Docker.\n\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "Example usage:\n")
-		fmt.Fprintf(os.Stderr, "%s --delay 10s -- /sbin/fstrim /var\n", os.Args[0])
-		fmt.Fprintf(os.Stderr, "   -- run the command /sbin/fstrim /var at most 10s after an image is deleted.\n")
-		fmt.Fprintf(os.Stderr, "      This would allow large batches of image deletions to happen and amortise the\n")
-		fmt.Fprintf(os.Stderr, "      cost of the TRIM operation.\n\n")
-		fmt.Fprintf(os.Stderr, "Arguments:\n")
+		fmt.Fprintf(os.Stderr, `%[1]s: run a command after images are deleted by Docker.
+
+Example usage:
+%[1]s --docker-socket=/var/run/docker.sock.raw --delay 10s -- /sbin/fstrim /var
+   -- connect to the docker API through /var/run/docker.sock.raw, and run the
+      command /sbin/fstrim /var at most 10s after images are deleted. This
+      allows large batches of image deletions to happen and amortise the cost of
+      the TRIM operation.
+
+Arguments:
+`, filepath.Base(os.Args[0]))
 		flag.PrintDefaults()
 	}
 
@@ -103,7 +107,7 @@ func main() {
 	httpc := http.Client{
 		Transport: &http.Transport{
 			DialContext: func(_ context.Context, _, _ string) (net.Conn, error) {
-				return net.Dial("unix", "/var/run/docker.sock")
+				return net.Dial("unix", *sockPath)
 			},
 		},
 	}
@@ -113,7 +117,7 @@ RECONNECT:
 	for {
 		res, err := httpc.Get("http://unix/v1.24/events")
 		if err != nil {
-			log.Printf("Failed to connect to the Docker daemon: will retry in 1s")
+			log.Printf("Failed to connect to the Docker daemon at %s: will retry in 1s", *sockPath)
 			time.Sleep(time.Second)
 			continue RECONNECT
 		}
