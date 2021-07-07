@@ -18,12 +18,11 @@ RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 FROM linuxkit/alpine:0c069d0fd7defddb6e03925fcd4915407db0c9e1 AS build
 
 RUN apk add --no-cache go musl-dev
-ENV GOPATH=/go PATH=$PATH:/go/bin GO111MODULE=off
+ENV GOPATH=/go PATH=$PATH:/go/bin
 # Hack to work around an issue with go on arm64 requiring gcc
 RUN [ $(uname -m) = aarch64 ] && apk add --no-cache gcc || true
 
-COPY vendor /go/src/extend/vendor
-COPY extend.go /go/src/extend/
+COPY . /go/src/extend
 RUN go-compile.sh /go/src/extend
 
 FROM scratch

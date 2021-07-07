@@ -1,0 +1,10 @@
+# github.com/linuxkit/virtsock v0.0.0-20180323111827-f1e32d3189e0
+## explicit
+github.com/linuxkit/virtsock/pkg/vsock
+# github.com/pkg/errors v0.9.1
+## explicit
+github.com/pkg/errors
+# golang.org/x/sys v0.0.0-20210426230700-d19ff857e887
+## explicit
+golang.org/x/sys/internal/unsafeheader
+golang.org/x/sys/unix
