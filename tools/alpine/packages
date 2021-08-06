@@ -76,6 +76,7 @@ llvm
 llvm-dev
 llvm-static
 lsscsi
+lvm2
 make
 mpc1-dev
 mpfr-dev
