@@ -14,5 +14,26 @@ config:
     - /var/lib/containerd:/var/lib/containerd
     - /dev:/dev
     - /sys:/sys
+  devices:
+    - path: "/dev/console"
+      type: c
+      major: 5
+      minor: 1
+      mode: 0666
+    - path: "/dev/tty0"
+      type: c
+      major: 4
+      minor: 0
+      mode: 0666
+    - path: "/dev/ttyS0"
+      type: c
+      major: 4
+      minor: 64
+      mode: 0666
+    - path: "/dev/ttyAMA0"
+      type: c
+      major: 204
+      minor: 64
+      mode: 0666
   capabilities:
     - all

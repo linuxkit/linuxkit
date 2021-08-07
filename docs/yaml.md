@@ -232,6 +232,21 @@ services:
      - CAP_DAC_OVERRIDE
 ```
 
+## `devices`
+
+To access the console, it's necessary to explicitly add a "device" definition, for example:
+
+```
+devices:
+- path: "/dev/console"
+  type: c
+  major: 5
+  minor: 1
+  mode: 0666
+```
+
+See the [the getty package](../pkg/getty/build.yml) for a more complete example
+and see [runc](https://github.com/opencontainers/runc/commit/60e21ec26e15945259d4b1e790e8fd119ee86467) for context).
 
 ### Mount Options
 When mounting filesystem paths into a container - whether as part of `onboot` or `services` - there are several options of which you need to be aware. Using them properly is necessary for your containers to function properly.

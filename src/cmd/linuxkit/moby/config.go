@@ -2,6 +2,7 @@ package moby
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -70,6 +71,7 @@ type ImageConfig struct {
 	Mounts            *[]specs.Mount          `yaml:"mounts,omitempty" json:"mounts,omitempty"`
 	Binds             *[]string               `yaml:"binds,omitempty" json:"binds,omitempty"`
 	BindsAdd          *[]string               `yaml:"binds.add,omitempty" json:"binds.add,omitempty"`
+	Devices           *[]Device               `yaml:"devices,omitempty" json:"devices,omitempty"`
 	Tmpfs             *[]string               `yaml:"tmpfs,omitempty" json:"tmpfs,omitempty"`
 	Command           *[]string               `yaml:"command,omitempty" json:"command,omitempty"`
 	Env               *[]string               `yaml:"env,omitempty" json:"env,omitempty"`
@@ -100,6 +102,15 @@ type ImageConfig struct {
 	Runtime *Runtime `yaml:"runtime,omitempty" json:"runtime,omitempty"`
 
 	ref *reference.Spec
+}
+
+// Device specifies a device to be exposed to the container.
+type Device struct {
+	Path  string `yaml:"path" json:"path"`
+	Type  string `yaml:"type" json:"type"`
+	Major int64  `yaml:"major" json:"major"`
+	Minor int64  `yaml:"minor" json:"minor"`
+	Mode  string `yaml:"mode,omitempty" json:"mode,omitempty"`
 }
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
@@ -559,6 +570,17 @@ func assignResources(v1, v2 *specs.LinuxResources) specs.LinuxResources {
 		return *v1
 	}
 	return specs.LinuxResources{}
+}
+
+// assignDevices does ordered overrides from Devices
+func assignDevices(v1, v2 *[]Device) []Device {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return []Device{}
 }
 
 // assignRuntime does ordered overrides from Runtime
@@ -1021,6 +1043,25 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 
 	resources := assignResources(label.Resources, yaml.Resources)
 
+	devices := assignDevices(label.Devices, yaml.Devices)
+	var linuxDevices []specs.LinuxDevice
+	for _, device := range devices {
+		mode, err := strconv.ParseInt(device.Mode, 8, 32)
+		if err != nil {
+			return oci, runtime, fmt.Errorf("Cannot parse device mode as octal value: %v", err)
+		}
+		fileMode := os.FileMode(mode)
+		linuxDevice := specs.LinuxDevice{
+			Path:     device.Path,
+			Type:     device.Type,
+			Major:    device.Major,
+			Minor:    device.Minor,
+			FileMode: &fileMode,
+		}
+		linuxDevices = append(linuxDevices, linuxDevice)
+		resources.Devices = append(resources.Devices, deviceCgroup(linuxDevice))
+	}
+
 	oci.Linux = &specs.Linux{
 		UIDMappings: assignMappings(label.UIDMappings, yaml.UIDMappings),
 		GIDMappings: assignMappings(label.GIDMappings, yaml.GIDMappings),
@@ -1028,7 +1069,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 		Resources:   &resources,
 		CgroupsPath: assignString(label.CgroupsPath, yaml.CgroupsPath),
 		Namespaces:  namespaces,
-		// Devices
+		Devices:     linuxDevices,
 		// Seccomp
 		RootfsPropagation: assignString(label.RootfsPropagation, yaml.RootfsPropagation),
 		MaskedPaths:       assignStrings(label.MaskedPaths, yaml.MaskedPaths),
@@ -1040,4 +1081,14 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	runtime = assignRuntime(label.Runtime, yaml.Runtime)
 
 	return oci, runtime, nil
+}
+
+func deviceCgroup(device specs.LinuxDevice) specs.LinuxDeviceCgroup {
+	return specs.LinuxDeviceCgroup{
+		Allow:  true,
+		Type:   device.Type,
+		Major:  &device.Major,
+		Minor:  &device.Minor,
+		Access: "rwm",
+	}
 }
