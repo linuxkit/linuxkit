@@ -7,7 +7,7 @@ init:
   - linuxkit/kernel-bcc:5.4.113
 onboot:
   - name: check-bcc
-    image: alpine:3.11
+    image: alpine:3.13
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]

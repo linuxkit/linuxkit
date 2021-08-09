@@ -7,7 +7,7 @@ linuxkit does not use the docker image cache to store these images. This is
 for two key reasons.
 
 First, docker does not provide support for different architecture versions. For
-example, if you want to pull down `docker.io/library/alpine:3.11` by manifest,
+example, if you want to pull down `docker.io/library/alpine:3.13` by manifest,
 with its signature, but get the `arm64` version while you are on an `amd64` device,
 it is not supported.
 
@@ -40,7 +40,7 @@ Image names are kept in `index.json` in the [annotation](https://github.com/open
       "size": 1638,
       "digest": "sha256:9a839e63dad54c3a6d1834e29692c8492d93f90c59c978c1ed79109ea4fb9a54",
       "annotations": {
-        "org.opencontainers.image.ref.name": "docker.io/library/alpine:3.11"
+        "org.opencontainers.image.ref.name": "docker.io/library/alpine:3.13"
       }
     }
   ]
