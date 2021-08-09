@@ -42,7 +42,3 @@ services:
     env:
       - INFLUXDB_URL=http://127.0.0.1:8086
       - KAPACITOR_URL=http://127.0.0.1:9092
-trust:
-  org:
-    - linuxkit
-    - library

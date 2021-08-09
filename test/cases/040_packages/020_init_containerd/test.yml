@@ -21,8 +21,3 @@ files:
     source: ./check.sh
   - path: /etc/containerd/runtime-config.toml
     source: ./runtime-config.toml
-trust:
-  org:
-    - linuxkit
-  image:
-    - alpine:3.11

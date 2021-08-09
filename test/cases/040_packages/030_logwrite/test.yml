@@ -28,8 +28,3 @@ services:
 files:
   - path: check.sh
     source: ./check.sh
-trust:
-  org:
-    - linuxkit
-  image:
-    - alpine:3.11

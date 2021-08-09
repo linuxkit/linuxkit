@@ -32,7 +32,3 @@ files:
     source: ~/.ssh/id_rsa.pub
     mode: "0600"
     optional: true
-
-trust:
-  org:
-    - linuxkit

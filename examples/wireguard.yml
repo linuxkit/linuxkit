@@ -77,7 +77,3 @@ files:
       PublicKey = AcS5t3PC5nL/oj0sYhc3yFpDlRaXoJ0mfEq6iq0rFF4=
       AllowedIPs = 0.0.0.0/0
       Endpoint = 127.0.0.1:51820
-trust:
-  org:
-    - linuxkit
-    - library

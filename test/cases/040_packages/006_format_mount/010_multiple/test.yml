@@ -30,7 +30,3 @@ onboot:
 files:
   - path: check.sh
     source: ./check.sh
-trust:
-  org:
-    - linuxkit
-    - library

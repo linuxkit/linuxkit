@@ -8,6 +8,3 @@ onboot:
   - name: dhcpcd
     image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
-trust:
-  org:
-    - linuxkit

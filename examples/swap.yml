@@ -29,7 +29,3 @@ services:
      - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:bdabfe138f05f7d48396d2f435af16f5a6ccaa45
-trust:
-  org:
-    - linuxkit
-    - library

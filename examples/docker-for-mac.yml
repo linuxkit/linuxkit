@@ -106,8 +106,3 @@ services:
             "--storage-driver", "overlay2" ]
     runtime:
       mkdir: ["/var/lib/docker"]
-
-trust:
-    org:
-        - linuxkit
-        - library

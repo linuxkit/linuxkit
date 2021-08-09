@@ -23,8 +23,3 @@ files:
     source: ./check.sh
   - path: etc/dm-crypt/key
     contents: "abcdefghijklmnopqrstuvwxyz123456"
-trust:
-  org:
-    - linuxkit
-  image:
-    - alpine:3.11

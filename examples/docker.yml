@@ -46,7 +46,3 @@ files:
     directory: true
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
-trust:
-  org:
-    - linuxkit
-    - library

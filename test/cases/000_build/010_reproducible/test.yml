@@ -45,8 +45,3 @@ services:
 files:
   - path: etc/linuxkit-config
     metadata: yaml
-
-trust:
-  org:
-    - linuxkit
-    - library

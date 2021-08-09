@@ -26,8 +26,3 @@ files:
     source: ./check.sh
   - path: some/other/enc_key
     contents: "abcdefghijklmnopqrstuvwxyz123456"
-trust:
-  org:
-    - linuxkit
-  image:
-    - alpine:3.11

@@ -27,7 +27,3 @@ services:
      - CAP_SETGID
      - CAP_DAC_OVERRIDE
     net: host
-trust:
-  org:
-    - linuxkit
-    - library

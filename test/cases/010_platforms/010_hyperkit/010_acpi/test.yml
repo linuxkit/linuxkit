@@ -8,6 +8,3 @@ init:
 services:
   - name: acpid
     image: linuxkit/acpid:d2ddd88c7918466f875e7c5c3e527b51dfb0b0ea
-trust:
-  org:
-    - linuxkit

@@ -16,7 +16,3 @@ services:
         - /run/containerd/containerd.sock:/run/containerd/containerd.sock
     command: ["/vsudd",
         "-inport", "2374:unix:/run/containerd/containerd.sock"]
-
-trust:
-  org:
-    - linuxkit

@@ -14,6 +14,3 @@ services:
     image: linuxkit/getty:ed32c71531f5998aa510847bb07bd847492d4101
     env:
      - INSECURE=true
-trust:
-  org:
-    - linuxkit

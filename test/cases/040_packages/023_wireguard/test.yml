@@ -87,7 +87,3 @@ files:
       Endpoint = 127.0.0.1:51820
   - path: check.sh
     source: ./check.sh
-trust:
-  org:
-    - linuxkit
-    - library
