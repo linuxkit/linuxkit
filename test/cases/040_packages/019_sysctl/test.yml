@@ -8,7 +8,7 @@ onboot:
   - name: sysctl
     image: linuxkit/sysctl:02d2bd74509fd063857ceb4c4f502f09ee4f2e0a
   - name: test
-    image: alpine:3.11
+    image: alpine:3.13
     net: host
     pid: host
     ipc: host
@@ -21,8 +21,3 @@ onboot:
 files:
   - path: check.sh
     source: ./check.sh
-trust:
-  org:
-    - linuxkit
-  image:
-    - alpine:3.11

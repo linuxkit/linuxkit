@@ -16,6 +16,3 @@ services:
     image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
   - name: node_exporter
     image: linuxkit/node_exporter:f2e8d89c950dada9a1ff497f312abd79a00292f8
-trust:
-  org:
-    - linuxkit

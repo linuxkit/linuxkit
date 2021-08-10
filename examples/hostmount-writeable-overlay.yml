@@ -41,7 +41,3 @@ services:
      - CAP_DAC_OVERRIDE
     binds:
      - /etc/resolv.conf:/etc/resolv.conf
-trust:
-  org:
-    - linuxkit
-    - library

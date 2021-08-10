@@ -22,7 +22,3 @@ files:
   - path: check.sh
     source: ./check.sh
     mode: "0700"
-trust:
-  org:
-    - linuxkit
-    - library

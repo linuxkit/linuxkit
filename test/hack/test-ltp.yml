@@ -15,6 +15,3 @@ onboot:
 files:
   - path: /etc/ltp/baseline
     contents: "100"
-trust:
-  org:
-    - linuxkit

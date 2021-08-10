@@ -7,6 +7,3 @@ init:
 onboot:
   - name: poweroff
     image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f
-trust:
-  org:
-    - linuxkit

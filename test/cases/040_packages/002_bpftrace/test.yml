@@ -7,7 +7,7 @@ init:
   - linuxkit/bpftrace:a5c57a3791a87e96aea456f78fd88973ea9904d0
 onboot:
   - name: bpftrace-test
-    image: alpine:3.11
+    image: alpine:3.13
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
@@ -22,8 +22,3 @@ onboot:
 files:
   - path: check.sh
     source: ./check.sh
-trust:
-  org:
-    - linuxkit
-  image:
-    - alpine:3.11

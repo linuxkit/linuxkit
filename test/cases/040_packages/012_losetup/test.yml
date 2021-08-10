@@ -9,7 +9,7 @@ onboot:
     image: linuxkit/losetup:db35344a21e44a55195540a8670886f60aa77201
     command: ["/usr/bin/loopy", "-c", "/var/test.img"]
   - name: test
-    image: alpine:3.11
+    image: alpine:3.13
     net: host
     binds:
       - /check.sh:/check.sh
@@ -21,8 +21,3 @@ onboot:
 files:
   - path: check.sh
     source: ./check.sh
-trust:
-  org:
-    - linuxkit
-  image:
-    - alpine:3.11

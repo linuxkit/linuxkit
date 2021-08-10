@@ -12,7 +12,7 @@ onboot:
     image: linuxkit/mount:71c868267a4503f99e84fd7698717a3669d9dfdb
     command: ["/usr/bin/mountie", "-label", "docker", "/var/lib/docker"]
   - name: test
-    image: alpine:3.11
+    image: alpine:3.13
     binds:
       - /var/lib/docker:/var/lib/docker 
       - /check.sh:/check.sh
@@ -23,7 +23,3 @@ onboot:
 files:
   - path: check.sh
     source: ./check.sh
-trust:
-  org:
-    - linuxkit
-    - library

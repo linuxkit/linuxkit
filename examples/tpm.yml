@@ -25,6 +25,3 @@ files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)
     contents: 'root:$6$6tPd2uhHrecCEKug$8mKfcgfwguP7f.BLdZsT1Wz7WIIJOBY1oUFHzIv9/O71M2J0EPdtFqFGTxB1UK5ejqQxRFQ.ZSG9YXR0SNsc11:17322:0:::::'
-trust:
-  org:
-    - linuxkit

@@ -1,6 +1,6 @@
 kernel:
-  image: linuxkit/kernel:5.11.4-rt
-  cmdline: "console=tty0"
+  image: linuxkit/kernel:5.10.47
+  cmdline: "console=ttyS0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
   - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
@@ -9,6 +9,11 @@ init:
 onboot:
   - name: sysctl
     image: linuxkit/sysctl:02d2bd74509fd063857ceb4c4f502f09ee4f2e0a
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: metadata
+    image: linuxkit/metadata:91125438842110e7709811997815b7b33dc18d1d
 services:
   - name: getty
     image: linuxkit/getty:ed32c71531f5998aa510847bb07bd847492d4101
@@ -16,10 +21,10 @@ services:
      - INSECURE=true
   - name: rngd
     image: linuxkit/rngd:bdabfe138f05f7d48396d2f435af16f5a6ccaa45
-  - name: dhcpcd
-    image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
-  - name: open-vm-tools
-    image: linuxkit/open-vm-tools:b7e7f12c310a55a4959cfa72d01216698d5c24bb
+  - name: sshd
+    image: linuxkit/sshd:add8c094a9a253870b0a596796628fd4ec220b70
+    binds:
+     - /run/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx
     image: nginx:1.13.8-alpine
     capabilities:
@@ -30,7 +35,3 @@ services:
      - CAP_DAC_OVERRIDE
     binds:
      - /etc/resolv.conf:/etc/resolv.conf
-trust:
-  org:
-    - linuxkit
-    - library

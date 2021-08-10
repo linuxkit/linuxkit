@@ -44,6 +44,3 @@ files:
     # the below key is just to keep the example self-contained
     # !!! provide a proper key for production use here !!!
     contents: "abcdefghijklmnopqrstuvwxyz123456"
-trust:
-  org:
-    - linuxkit

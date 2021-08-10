@@ -27,6 +27,3 @@ files:
 #      domain test.local
       nameserver 10.10.1.101
       nameserver 10.10.1.100     
-trust:
-  org:
-    - linuxkit

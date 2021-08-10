@@ -22,13 +22,9 @@ services:
      - INSECURE=true
 # A service which generates log messages for testing
   - name: write-to-the-logs
-    image: alpine:3.11
+    image: alpine:3.13
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); sleep 1; done" ]
   - name: write-and-rotate-logs
     image: linuxkit/logwrite:e64e0f06e485e3542b58f3517da3bc13f246d208
   - name: kmsg
     image: linuxkit/kmsg:df84eda2a82d5e24ddfe241831af3efb13a1a557
-trust:
-  org:
-    - linuxkit
-    - library
