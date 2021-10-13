@@ -445,7 +445,15 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		case "s390x":
 			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("s390-ccw-virtio,accel=%s", config.Accel))
 		case "aarch64":
-			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("virt,gic_version=host,accel=%s", config.Accel))
+			gic := ""
+			// VCPU supports less PA bits (36) than requested by the memory map (40)
+			highmem := "highmem=off,"
+			if runtime.GOOS == "linux" {
+				// gic-version=host requires KVM, which implies Linux
+				gic = "gic_version=host,"
+				highmem = ""
+			}
+			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("virt,%s%saccel=%s", gic, highmem, config.Accel))
 		default:
 			qemuArgs = append(qemuArgs, "-machine", fmt.Sprintf("q35,accel=%s", config.Accel))
 		}
