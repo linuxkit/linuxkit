@@ -17,7 +17,7 @@ onboot:
   - name: format
     image: linuxkit/format:cf335053c7d0b4cd8cc2d136e9392ea5904a71dc
   - name: mount
-    image: linuxkit/mount:71c868267a4503f99e84fd7698717a3669d9dfdb
+    image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: getty

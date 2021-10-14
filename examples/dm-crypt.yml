@@ -19,7 +19,7 @@ onboot:
     image: linuxkit/dm-crypt:4daf2010d088955b42ba50db813226e4b3f773cb
     command: ["/usr/bin/crypto", "crypt_dev", "/dev/sda1"]
   - name: mount
-    image: linuxkit/mount:71c868267a4503f99e84fd7698717a3669d9dfdb
+    image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba
     command: ["/usr/bin/mountie", "/dev/mapper/crypt_dev", "/var/secure_storage"]
   - name: bbox
     image: busybox
