@@ -1046,6 +1046,15 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	devices := assignDevices(label.Devices, yaml.Devices)
 	var linuxDevices []specs.LinuxDevice
 	for _, device := range devices {
+		if device.Path == "all" {
+			// add a category of devices to the device whitelist cgroup controller
+			resources.Devices = append(resources.Devices, specs.LinuxDeviceCgroup{
+				Allow:  true,
+				Type:   device.Type,
+				Access: "rwm", // read, write, mknod
+			})
+			continue
+		}
 		mode, err := strconv.ParseInt(device.Mode, 8, 32)
 		if err != nil {
 			return oci, runtime, fmt.Errorf("Cannot parse device mode as octal value: %v", err)
@@ -1059,6 +1068,8 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 			FileMode: &fileMode,
 		}
 		linuxDevices = append(linuxDevices, linuxDevice)
+		// to access the device it must be added to the device whitelist cgroup controller
+		// see https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/devices.html
 		resources.Devices = append(resources.Devices, deviceCgroup(linuxDevice))
 	}
 
@@ -1089,6 +1100,6 @@ func deviceCgroup(device specs.LinuxDevice) specs.LinuxDeviceCgroup {
 		Type:   device.Type,
 		Major:  &device.Major,
 		Minor:  &device.Minor,
-		Access: "rwm",
+		Access: "rwm", // read, write, mknod
 	}
 }

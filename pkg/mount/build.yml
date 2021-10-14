@@ -4,6 +4,10 @@ config:
     - /dev:/dev
     - /var:/var:rshared,rbind
     - /:/hostroot
+  devices:
+    # all block devices
+    - path: all
+      type: b
   capabilities:
     - CAP_SYS_ADMIN
   rootfsPropagation: shared

@@ -15,6 +15,7 @@ config:
     - /dev:/dev
     - /sys:/sys
   devices:
+    # individual console / tty character devices
     - path: "/dev/console"
       type: c
       major: 5
