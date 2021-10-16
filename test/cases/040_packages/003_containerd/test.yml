@@ -13,9 +13,9 @@ onboot:
   - name: sysctl
     image: linuxkit/sysctl:02d2bd74509fd063857ceb4c4f502f09ee4f2e0a
   - name: format
-    image: linuxkit/format:fdad8c50d594712537f94862dab3d955cbb48fc3
+    image: linuxkit/format:cf335053c7d0b4cd8cc2d136e9392ea5904a71dc
   - name: mount
-    image: linuxkit/mount:71c868267a4503f99e84fd7698717a3669d9dfdb
+    image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba
     command: ["/usr/bin/mountie", "/var/lib"]
   - name: test
     image: linuxkit/test-containerd:701421314e1b114c4787255431e066a681e80f16

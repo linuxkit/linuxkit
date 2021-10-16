@@ -15,14 +15,14 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:3498aa99c90a29439b5a1926f6ffcd75c270372c
   - name: format
-    image: linuxkit/format:fdad8c50d594712537f94862dab3d955cbb48fc3
+    image: linuxkit/format:cf335053c7d0b4cd8cc2d136e9392ea5904a71dc
   - name: mount
-    image: linuxkit/mount:71c868267a4503f99e84fd7698717a3669d9dfdb
+    image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 
 services:
   - name: getty
-    image: linuxkit/getty:ed32c71531f5998aa510847bb07bd847492d4101
+    image: linuxkit/getty:ebe3397aa9b08e8f310121fdb0aac9406e1c8e73
     env:
       - INSECURE=true
   - name: rngd

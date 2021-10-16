@@ -13,13 +13,13 @@ onboot:
     image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:fdad8c50d594712537f94862dab3d955cbb48fc3
+    image: linuxkit/format:cf335053c7d0b4cd8cc2d136e9392ea5904a71dc
     command: ["/usr/bin/format", "/dev/sda"]
   - name: dm-crypt
     image: linuxkit/dm-crypt:4daf2010d088955b42ba50db813226e4b3f773cb
     command: ["/usr/bin/crypto", "crypt_dev", "/dev/sda1"]
   - name: mount
-    image: linuxkit/mount:71c868267a4503f99e84fd7698717a3669d9dfdb
+    image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba
     command: ["/usr/bin/mountie", "/dev/mapper/crypt_dev", "/var/secure_storage"]
   - name: bbox
     image: busybox
@@ -28,7 +28,7 @@ onboot:
       - /var:/var
 services:
   - name: getty
-    image: linuxkit/getty:ed32c71531f5998aa510847bb07bd847492d4101
+    image: linuxkit/getty:ebe3397aa9b08e8f310121fdb0aac9406e1c8e73
     env:
      - INSECURE=true
   - name: rngd
