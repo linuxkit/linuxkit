@@ -21,6 +21,12 @@ services:
       - /check.sh:/check.sh
       - /dev/console:/dev/console
       - /var/log:/var/log
+    devices:
+      - path: "/dev/console"
+        type: c
+        major: 5
+        minor: 1
+        mode: "0666"
     command: ["sh", "./check.sh"]
     pid: host
     capabilities:
