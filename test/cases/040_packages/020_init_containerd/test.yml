@@ -13,6 +13,12 @@ services:
     binds:
       - /check.sh:/check.sh
       - /dev/console:/dev/console
+    devices:
+      - path: "/dev/console"
+        type: c
+        major: 5
+        minor: 1
+        mode: "0666"
     capabilities:
       - CAP_SYS_BOOT
     command: ["sh", "/check.sh"]
