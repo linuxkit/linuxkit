@@ -14,6 +14,10 @@ onboot:
     binds:
       - /check.sh:/check.sh
       - /dev:/dev
+    devices:
+      # all block devices
+      - path: all
+        type: b
     command: ["sh", "./check.sh"]
   - name: poweroff
     image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f
