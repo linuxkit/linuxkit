@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=tty0 console=ttyS0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:f9c8a136f6aca1cde95b249eb5095df702c23ac8
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
   - linuxkit/containerd:1c4d860d198095565baa3d8d60d434f034f0fef0
 services:
   - name: getty

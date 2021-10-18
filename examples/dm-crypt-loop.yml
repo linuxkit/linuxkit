@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=tty0 console=ttyS0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:f9c8a136f6aca1cde95b249eb5095df702c23ac8
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
   - linuxkit/containerd:1c4d860d198095565baa3d8d60d434f034f0fef0
   - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
 onboot:
@@ -19,10 +19,10 @@ onboot:
     image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba
     command: ["/usr/bin/mountie", "/dev/sda1", "/var/external"]
   - name: loop
-    image: linuxkit/losetup:db35344a21e44a55195540a8670886f60aa77201
+    image: linuxkit/losetup:bd8b9d59785e9be62f8374c359c0736ad33744d4
     command: ["/usr/bin/loopy", "--create", "/var/external/storage_file"]
   - name: dm-crypt
-    image: linuxkit/dm-crypt:4daf2010d088955b42ba50db813226e4b3f773cb
+    image: linuxkit/dm-crypt:313085c3279e5c64ef3777973a139f30e4a48306
     command: ["/usr/bin/crypto", "crypt_loop_dev", "/dev/loop0"]
   - name: mount
     image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba

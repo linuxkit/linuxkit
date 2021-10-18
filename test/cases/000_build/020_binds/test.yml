@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:f9c8a136f6aca1cde95b249eb5095df702c23ac8
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
 onboot:
   - name: mount
     image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba

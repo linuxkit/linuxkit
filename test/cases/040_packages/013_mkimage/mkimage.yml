@@ -3,9 +3,9 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:f9c8a136f6aca1cde95b249eb5095df702c23ac8
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
 onboot:
   - name: mkimage
-    image: linuxkit/mkimage:6a13c5814c95ccfb02518f8824a7c09bcea266fe
+    image: linuxkit/mkimage:fa71899c159d8c1ae63a02a22fe8db113c4e540c
   - name: poweroff
     image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f

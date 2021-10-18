@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:f9c8a136f6aca1cde95b249eb5095df702c23ac8
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
   - linuxkit/containerd:1c4d860d198095565baa3d8d60d434f034f0fef0
   - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
 onboot:
@@ -13,7 +13,7 @@ onboot:
     image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:91125438842110e7709811997815b7b33dc18d1d
+    image: linuxkit/metadata:a18ef20139eba44a80e1213c746471dc67d1b023
     command: ["/usr/bin/metadata", "openstack"]
 services:
   - name: rngd

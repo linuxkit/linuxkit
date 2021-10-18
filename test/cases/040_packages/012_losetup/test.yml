@@ -3,10 +3,10 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:f9c8a136f6aca1cde95b249eb5095df702c23ac8
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
 onboot:
   - name: losetup
-    image: linuxkit/losetup:db35344a21e44a55195540a8670886f60aa77201
+    image: linuxkit/losetup:bd8b9d59785e9be62f8374c359c0736ad33744d4
     command: ["/usr/bin/loopy", "-c", "/var/test.img"]
   - name: test
     image: alpine:3.13

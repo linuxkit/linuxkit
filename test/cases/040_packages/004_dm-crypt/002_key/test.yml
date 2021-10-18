@@ -3,10 +3,10 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:f9c8a136f6aca1cde95b249eb5095df702c23ac8
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
 onboot:
   - name: dm-crypt
-    image: linuxkit/dm-crypt:4daf2010d088955b42ba50db813226e4b3f773cb
+    image: linuxkit/dm-crypt:313085c3279e5c64ef3777973a139f30e4a48306
     command: ["/usr/bin/crypto", "-k", "/some/other/enc_key", "it_is_encrypted", "/dev/sda"]
     binds:
       - /dev/:/dev
