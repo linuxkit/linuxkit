@@ -4,7 +4,7 @@ kernel:
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
   - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
-  - linuxkit/containerd:1c4d860d198095565baa3d8d60d434f034f0fef0
+  - linuxkit/containerd:b991571dd383351dbb2873f9ae3b70475adb6816
   - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
   - linuxkit/memlogd:9b0e8a5b3f67672234170d88833163caf7898984
 services:
