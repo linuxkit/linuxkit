@@ -3,13 +3,13 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
 onboot:
   - name: modprobe
     image: linuxkit/modprobe:e2045c96cd2d3ef08eaf452396462d9205667690
     command: ["modprobe", "btrfs"]
   - name: extend
-    image: linuxkit/extend:d0d5e69ba5716bd48d260b15510ca258ae17f990
+    image: linuxkit/extend:59d7fdc4aa8901f94e2506c41d7c7358463b83f9
     command: ["/usr/bin/extend", "-type", "btrfs"]
   - name: mount
     image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba

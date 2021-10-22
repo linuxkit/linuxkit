@@ -5,13 +5,13 @@ kernel:
 init:
   - linuxkit/vpnkit-expose-port:b0a5ede4c53aa718b48fb9a86e4725ab6ae7f96e # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
-  - linuxkit/containerd:cc02c2af9c928c2faeccbe4edc78bd297ad91866
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
+  - linuxkit/containerd:b991571dd383351dbb2873f9ae3b70475adb6816
   - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
 onboot:
   # support metadata for optional config in /run/config
   - name: metadata
-    image: linuxkit/metadata:91125438842110e7709811997815b7b33dc18d1d
+    image: linuxkit/metadata:a18ef20139eba44a80e1213c746471dc67d1b023
   - name: sysctl
     image: linuxkit/sysctl:02d2bd74509fd063857ceb4c4f502f09ee4f2e0a
   - name: sysfs

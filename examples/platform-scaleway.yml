@@ -3,8 +3,8 @@ kernel:
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0 root=/dev/vda"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
-  - linuxkit/containerd:cc02c2af9c928c2faeccbe4edc78bd297ad91866
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
+  - linuxkit/containerd:b991571dd383351dbb2873f9ae3b70475adb6816
   - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
 onboot:
   - name: sysctl
@@ -16,7 +16,7 @@ onboot:
     image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:91125438842110e7709811997815b7b33dc18d1d
+    image: linuxkit/metadata:a18ef20139eba44a80e1213c746471dc67d1b023
 services:
   - name: getty
     image: linuxkit/getty:ebe3397aa9b08e8f310121fdb0aac9406e1c8e73

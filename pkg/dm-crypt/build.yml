@@ -3,6 +3,10 @@ config:
   binds:
     - /dev:/dev
     - /etc/dm-crypt:/etc/dm-crypt
+  devices:
+    # all devices (/dev/mapper is a character device)
+    - path: all
+      type: a
   capabilities:
     - CAP_SYS_ADMIN
     - CAP_MKNOD

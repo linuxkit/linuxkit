@@ -3,10 +3,10 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
-  - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
+  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
 onboot:
   - name: losetup
-    image: linuxkit/losetup:db35344a21e44a55195540a8670886f60aa77201
+    image: linuxkit/losetup:bd8b9d59785e9be62f8374c359c0736ad33744d4
     command: ["/usr/bin/loopy", "-c", "/var/test.img"]
   - name: test
     image: alpine:3.13
@@ -14,6 +14,10 @@ onboot:
     binds:
       - /check.sh:/check.sh
       - /dev:/dev
+    devices:
+      # all block devices
+      - path: all
+        type: b
     command: ["sh", "./check.sh"]
   - name: poweroff
     image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f
