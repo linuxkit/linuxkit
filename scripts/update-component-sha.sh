@@ -11,71 +11,93 @@ usage() {
     cat >&2 <<EOF
 $0 --<mode> <how-to-find> <new-hash>
 
-Available modes: --hash and --image
+Available modes: --hash, --image, --pkg
 
 Replace by hash:
-	$0 --hash <OLD> <NEW>
-	Example: $0 --hash 8675309abcdefg abcdef567899
-    	   Will replace all instances of 8675309abcdefg with abcdef567899
+        $0 --hash <OLD> <NEW>
+        Example: $0 --hash 8675309abcdefg abcdef567899
+           Will replace all instances of 8675309abcdefg with abcdef567899
 
-Replace by image: $0 --image <IMAGE> <NEW>
-	$0 --image <IMAGE> <NEW>
-	Example: $0 --image linuxkit/foo abcdef567899
-	   Will tag all instances of linuxkit/foo with abcdef567899
+Replace by image:
+        $0 --image <IMAGE> <NEW>
+        Example: $0 --image linuxkit/foo abcdef567899
+           Will tag all instances of linuxkit/foo with abcdef567899
 
         $0 --image <IMAGE>:<NEW> is accepted as a convenient shortcut for cutting
         and pasting e.g.the output of linuxkit pkg show-tag
 
-By default, for convenience, if no mode is given (--image or --hash), the first method (--hash) is assumed. 
-Thus the following are equivalent:
-	$0 <OLD> <NEW>
-	$0 --hash <OLD> <NEW>
+Replace by pkg directory:
+        $0 --pkg <PATH/TO/PKG> <NEW>
+        Example: $0 --pkg ./pkg/xen-tools
+           Will use linuxkit pkg show-tag on the directory ./pkg/xen-tools, and then
+     tag all instances with the result
 
 EOF
 }
 
+updateImage() {
+        local image
+        local hash
+
+        case $# in
+        1)
+                image=${1%:*}
+                hash=${1#*:}
+                ;;
+        2)
+                image=$1
+                hash=$2
+                ;;
+        esac
+        git grep -E -l "[[:space:]]$image:" | grep -v /vendor/ | xargs sed -i.bak -E -e "s,([[:space:]])($image):([^[:space:]]+), $image:$hash,g"
+}
 
 # backwards compatibility
 if [ $# -eq 2 -a -n "${1%--*}" ]; then
   set -- "--hash" "$1" "$2"
 fi
 
-# sufficient arguments
-if [ $# -lt 2 -o $# -gt 3 ] ; then
-    usage
-    exit 1
-fi
-
 # which mode?
-case "$1" in
-    --hash)
-	if [ $# -ne 3 ] ; then
-	    usage
-	    exit 1
-	fi
-        old=$2
-        new=$3
+mode=$1
+shift
+
+case "${mode}" in
+--hash)
+        if [ $# -ne 2 ] ; then
+                usage
+                exit 1
+        fi
+        old=$1
+        new=$2
 
         git grep -w -l "\b$old\b" | grep -v /vendor/ | xargs sed -i.bak -e "s,$old,$new,g"
         ;;
-    --image)
-	case $# in
-	    2)
-		image=${2%:*}
-		hash=${2#*:}
-		;;
-	    3)
-		image=$2
-		hash=$3
-		;;
-	    esac
-        git grep -E -l "\b$image:" | grep -v /vendor/ | xargs sed -i.bak -E -e "s,$image:([[:xdigit:]]{40}|v[0-9\.]+),$image:$hash,g"
+--image)
+	if [ $# -lt 1 ] ; then
+		usage
+		exit 1
+	fi
+
+        updateImage $@
         ;;
-    *)
-        echo "Unknown mode $1"
-        usage
-        exit 1
+--pkg)
+        if [ $# -ne 1 ]; then
+                usage
+                exit 1
+        fi
+	if [ ! -d "$1" ]; then
+		echo "Directory '$1' does not exist"
+		usage
+		exit 1
+	fi
+        tag=$(linuxkit pkg show-tag $1)
+        updateImage ${tag}
         ;;
+*)
+	echo "Unknown mode $1"
+	usage
+	exit 1
+	;;
 esac
 
 find . -name '*.bak' | xargs rm
