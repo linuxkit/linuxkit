@@ -23,6 +23,7 @@ RUN apk add \
     mpc1-dev \
     mpfr-dev \
     ncurses-dev \
+    openssl \
     openssl-dev \
     patch \
     rsync \
