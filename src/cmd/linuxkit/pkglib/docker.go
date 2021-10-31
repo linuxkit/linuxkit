@@ -14,6 +14,7 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"runtime"
 	"strings"
 
 	versioncompare "github.com/hashicorp/go-version"
@@ -80,7 +81,17 @@ func (dr *dockerRunnerImpl) command(stdin io.Reader, stdout, stderr io.Writer, a
 		stdout = os.Stdout
 	}
 	if stderr == nil {
-		stderr = os.Stderr
+		if runtime.GOOS != "windows" {
+			stderr = os.Stderr
+		} else {
+			// On Windows directly setting stderr to os.Stderr results in the output being written to stdout,
+			// corrupting the image tar. Adding an explicit indirection via a pipe works around the issue.
+			r, w := io.Pipe()
+			stderr = w
+			go func() {
+				_, _ = io.Copy(os.Stderr, r)
+			}()
+		}
 	}
 	cmd.Stdout = stdout
 	cmd.Stderr = stderr
