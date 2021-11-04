@@ -1,6 +1,6 @@
 module github.com/linuxkit/linuxkit/src/cmd/linuxkit
 
-go 1.15
+go 1.16
 
 require (
 	github.com/Azure/azure-sdk-for-go v50.1.0+incompatible
