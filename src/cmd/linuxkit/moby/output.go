@@ -3,6 +3,7 @@ package moby
 import (
 	"archive/tar"
 	"bytes"
+	_ "embed"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -12,24 +13,12 @@ import (
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/initrd"
 	log "github.com/sirupsen/logrus"
+	"gopkg.in/yaml.v2"
 )
 
-var (
-	outputImages = map[string]string{
-		"iso":         "linuxkit/mkimage-iso:f0ba58e54282f481a87a2b487a70568c702f001b",
-		"iso-bios":    "linuxkit/mkimage-iso-bios:2fb7eea032a8f8ec76d9ca69592046875c50683c",
-		"iso-efi":     "linuxkit/mkimage-iso-efi:71c9dfc7de921e4521adbce03c01ce8282c0a9a5",
-		"raw-bios":    "linuxkit/mkimage-raw-bios:a0f4f6af871f9388639f2939a5e7bee5c467b736",
-		"raw-efi":     "linuxkit/mkimage-raw-efi:bc5d55daccfe1e75bc7373b4f45fc08e3b9adea9",
-		"squashfs":    "linuxkit/mkimage-squashfs:078f292e085fe31f508ff55a05eab958aec25e25",
-		"gcp":         "linuxkit/mkimage-gcp:a7416d21d4ef642bb2ba560c8f7651250823546d",
-		"qcow2-efi":   "linuxkit/mkimage-qcow2-efi:2a835e4ce894070268e5fa6f53be67007452095e",
-		"vhd":         "linuxkit/mkimage-vhd:4cc60c4f46b07e11c64ba618e46b81fa0096c91f",
-		"dynamic-vhd": "linuxkit/mkimage-dynamic-vhd:99b9009ed54a793020d3ce8322a42e0cc06da71a",
-		"vmdk":        "linuxkit/mkimage-vmdk:b55ea46297a16d8a4448ce7f5a2df987a9602b27",
-		"rpi3":        "linuxkit/mkimage-rpi3:19c5354d6f8f68781adbc9bb62095ebb424222dc",
-	}
-)
+//go:embed images.yaml
+var imagesBytes []byte
+var outputImages map[string]string
 
 // UpdateOutputImages overwrite the docker images used to build the outputs
 // 'update' is a map where the key is the output format and the value is a LinuxKit 'mkimage' image.
@@ -224,9 +213,25 @@ func ensurePrereq(out, cache string) error {
 	return err
 }
 
+// parseOutputImages parse the raw output image info
+func parseOutputImages(b []byte) (map[string]string, error) {
+	var (
+		m map[string]string
+	)
+	err := yaml.Unmarshal(b, &m)
+	return m, err
+}
+
 // ValidateFormats checks if the format type is known
 func ValidateFormats(formats []string, cache string) error {
 	log.Debugf("validating output: %v", formats)
+	if outputImages == nil {
+		var err error
+		outputImages, err = parseOutputImages(imagesBytes)
+		if err != nil {
+			return err
+		}
+	}
 
 	for _, o := range formats {
 		f := outFuns[o]
