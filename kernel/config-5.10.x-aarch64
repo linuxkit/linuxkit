@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/arm64 5.10.47 Kernel Configuration
+# Linux/arm64 5.10.76 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Alpine 10.2.1_pre1) 10.2.1 20201203"
 CONFIG_CC_IS_GCC=y
@@ -2917,6 +2917,7 @@ CONFIG_POWER_SUPPLY_HWMON=y
 # CONFIG_CHARGER_BQ25980 is not set
 # CONFIG_CHARGER_SMB347 is not set
 # CONFIG_BATTERY_GAUGE_LTC2941 is not set
+# CONFIG_BATTERY_RT5033 is not set
 # CONFIG_CHARGER_RT9455 is not set
 # CONFIG_CHARGER_BD99954 is not set
 CONFIG_HWMON=y
@@ -3769,7 +3770,6 @@ CONFIG_DMA_BCM2835=m
 # DMABUF options
 #
 # CONFIG_SYNC_FILE is not set
-# CONFIG_DMABUF_MOVE_NOTIFY is not set
 # CONFIG_DMABUF_HEAPS is not set
 # end of DMABUF options
 
@@ -4050,8 +4050,6 @@ CONFIG_PARTITION_PERCPU=y
 
 # CONFIG_IPACK_BUS is not set
 CONFIG_RESET_CONTROLLER=y
-# CONFIG_RESET_BRCMSTB_RESCAL is not set
-# CONFIG_RESET_INTEL_GW is not set
 # CONFIG_RESET_QCOM_AOSS is not set
 # CONFIG_RESET_QCOM_PDC is not set
 CONFIG_RESET_RASPBERRYPI=m
@@ -4327,7 +4325,6 @@ CONFIG_PSTORE_COMPRESS_DEFAULT="deflate"
 # CONFIG_PSTORE_PMSG is not set
 # CONFIG_PSTORE_FTRACE is not set
 # CONFIG_PSTORE_RAM is not set
-# CONFIG_PSTORE_BLK is not set
 # CONFIG_SYSV_FS is not set
 # CONFIG_UFS_FS is not set
 # CONFIG_EROFS_FS is not set
