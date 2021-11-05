@@ -2,6 +2,7 @@ package moby
 
 import (
 	"crypto/sha256"
+	_ "embed"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,22 +14,9 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-var linuxkitYaml = map[string]string{"mkimage": `
-kernel:
-  image: linuxkit/kernel:4.9.39
-  cmdline: "console=ttyS0"
-init:
-  - linuxkit/init:43c52456571369d62882605e4d510f0df3ed93de
-  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
-onboot:
-  - name: mkimage
-    image: linuxkit/mkimage:fa71899c159d8c1ae63a02a22fe8db113c4e540c
-  - name: poweroff
-    image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f
-trust:
-  org:
-    - linuxkit
-`}
+//go:embed mkimage.yaml
+var linuxkitYamlStr string
+var linuxkitYaml = map[string]string{"mkimage": linuxkitYamlStr}
 
 func imageFilename(name string) string {
 	yaml := linuxkitYaml[name]
