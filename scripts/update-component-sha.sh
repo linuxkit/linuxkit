@@ -49,7 +49,7 @@ updateImage() {
                 hash=$2
                 ;;
         esac
-        git grep -E -l "[[:space:]]$image:" | grep -v /vendor/ | xargs sed -i.bak -E -e "s,([[:space:]])($image):([^[:space:]]+), $image:$hash,g"
+        git grep -E -l "[[:space:]]$image:" -- '*.yml' '*.yaml' '*.yml.in' '*.yaml.in' '*/Dockerfile' '*/Makefile' | grep -v /vendor/ | xargs sed -i.bak -E -e "s,([[:space:]])($image):([^[:space:]]+), $image:$hash,g"
 }
 
 # backwards compatibility
@@ -70,7 +70,7 @@ case "${mode}" in
         old=$1
         new=$2
 
-        git grep -w -l "\b$old\b" | grep -v /vendor/ | xargs sed -i.bak -e "s,$old,$new,g"
+        git grep -w -l "\b$old\b" -- '*.yml' '*.yaml' '*.yml.in' '*.yaml.in' '*/Dockerfile' '*/Makefile' | grep -v /vendor/ | xargs sed -i.bak -e "s,$old,$new,g"
         ;;
 --image)
 	if [ $# -lt 1 ] ; then
