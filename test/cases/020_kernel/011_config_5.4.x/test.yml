@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
 onboot:
   - name: check-kernel-config
-    image: linuxkit/test-kernel-config:b916af1ec0ed92efb13b25899ef9e43970dab1c2
+    image: linuxkit/test-kernel-config:41aa03790ea637624a3f9737187e0c878766474b
   - name: poweroff
-    image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f
+    image: linuxkit/poweroff:39d99e5909b6f8faccedc78d6d2646cdb6c9ed9c
     command: ["/bin/sh", "/poweroff.sh", "3"]
