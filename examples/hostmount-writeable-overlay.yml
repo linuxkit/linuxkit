@@ -2,15 +2,15 @@ kernel:
   image: linuxkit/kernel:5.10.47
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:43c52456571369d62882605e4d510f0df3ed93de
-  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
-  - linuxkit/containerd:b991571dd383351dbb2873f9ae3b70475adb6816
-  - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
+  - linuxkit/init:eb597ef74d808b5320ad1060b1620a6ac31e7ced
+  - linuxkit/runc:21dbbda709ae138de0af6b0c7e4ae49525db5e88
+  - linuxkit/containerd:2f0907913dd54ab5186006034eb224a0da12443e
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:02d2bd74509fd063857ceb4c4f502f09ee4f2e0a
+    image: linuxkit/sysctl:0dc8f792fc3a58afcebcb0fbe6b48de587265c17
   - name: dhcpcd
-    image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 onshutdown:
   - name: shutdown
@@ -18,7 +18,7 @@ onshutdown:
     command: ["/bin/echo", "so long and thanks for all the fish"]
 services:
   - name: getty
-    image: linuxkit/getty:ebe3397aa9b08e8f310121fdb0aac9406e1c8e73
+    image: linuxkit/getty:3c6e89681a988c3d4e2610fcd7aaaa0247ded3ec
     env:
      - INSECURE=true
     runtime:
@@ -30,7 +30,7 @@ services:
           destination: writeable-host-etc
           options: ["rw", "lowerdir=/etc", "upperdir=/run/hostetc/upper", "workdir=/run/hostetc/work"]
   - name: rngd
-    image: linuxkit/rngd:bdabfe138f05f7d48396d2f435af16f5a6ccaa45
+    image: linuxkit/rngd:a44c6230f1620f1d6310b95a9e9f585de73a8bd7
   - name: nginx
     image: nginx:1.13.8-alpine
     capabilities:

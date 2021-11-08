@@ -2,20 +2,20 @@ kernel:
   image: linuxkit/kernel:5.10.47
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:43c52456571369d62882605e4d510f0df3ed93de
-  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
-  - linuxkit/containerd:b991571dd383351dbb2873f9ae3b70475adb6816
-  - linuxkit/ca-certificates:4df823737c9bf6a9564b736f1a19fd25d60e909a
+  - linuxkit/init:eb597ef74d808b5320ad1060b1620a6ac31e7ced
+  - linuxkit/runc:21dbbda709ae138de0af6b0c7e4ae49525db5e88
+  - linuxkit/containerd:2f0907913dd54ab5186006034eb224a0da12443e
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:1033f340e2d42f86a60aab70752346f0045ea388
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:02d2bd74509fd063857ceb4c4f502f09ee4f2e0a
+    image: linuxkit/sysctl:0dc8f792fc3a58afcebcb0fbe6b48de587265c17
   - name: format
-    image: linuxkit/format:cf335053c7d0b4cd8cc2d136e9392ea5904a71dc
+    image: linuxkit/format:b2c5f160916ba4793fda7bdc9fe66c68df116a61
   - name: mount
-    image: linuxkit/mount:a9a5f731261891bd880e108e6fa2be5bac2f63ba
+    image: linuxkit/mount:43a2c1fb1ee19d0b2fe696655844cd6800e76aff
     command: ["/usr/bin/mountie", "/var/lib"]
   - name: test
     image: linuxkit/test-containerd:56001736371960e8989f93e90211eaa7f1a573b3
