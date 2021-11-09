@@ -169,6 +169,13 @@ func (configFile *ConfigFile) SaveToWriter(writer io.Writer) error {
 	configFile.AuthConfigs = tmpAuthConfigs
 	defer func() { configFile.AuthConfigs = saveAuthConfigs }()
 
+	// User-Agent header is automatically set, and should not be stored in the configuration
+	for v := range configFile.HTTPHeaders {
+		if strings.EqualFold(v, "User-Agent") {
+			delete(configFile.HTTPHeaders, v)
+		}
+	}
+
 	data, err := json.MarshalIndent(configFile, "", "\t")
 	if err != nil {
 		return err

@@ -22,6 +22,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strings"
+	"time"
 
 	authchallenge "github.com/docker/distribution/registry/client/auth/challenge"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -86,7 +87,12 @@ func ping(ctx context.Context, reg name.Registry, t http.RoundTripper) (*pingRes
 		if err != nil {
 			return nil, err
 		}
-		resp, err := client.Do(req.WithContext(ctx))
+		// The ping handler should be extremely fast, but for registries that serve
+		// over http, it could take a while to fallback from https (esp. if the
+		// transport has retries).  So give each ping attempt a (generous) 5s timeout.
+		pctx, cancel := context.WithTimeout(ctx, 5*time.Second)
+		defer cancel()
+		resp, err := client.Do(req.WithContext(pctx))
 		if err != nil {
 			errs = append(errs, err.Error())
 			// Potentially retry with http.
@@ -108,8 +114,8 @@ func ping(ctx context.Context, reg name.Registry, t http.RoundTripper) (*pingRes
 			}, nil
 		case http.StatusUnauthorized:
 			if challenges := authchallenge.ResponseChallenges(resp); len(challenges) != 0 {
-				// If we hit more than one, I'm not even sure what to do.
-				wac := challenges[0]
+				// If we hit more than one, let's try to find one that we know how to handle.
+				wac := pickFromMultipleChallenges(challenges)
 				return &pingResp{
 					challenge:  challenge(wac.Scheme).Canonical(),
 					parameters: wac.Parameters,
@@ -126,4 +132,22 @@ func ping(ctx context.Context, reg name.Registry, t http.RoundTripper) (*pingRes
 		}
 	}
 	return nil, errors.New(strings.Join(errs, "; "))
+}
+
+func pickFromMultipleChallenges(challenges []authchallenge.Challenge) authchallenge.Challenge {
+	// It might happen there are multiple www-authenticate headers, e.g. `Negotiate` and `Basic`.
+	// Picking simply the first one could result eventually in `unrecognized challenge` error,
+	// that's why we're looping through the challenges in search for one that can be handled.
+	allowedSchemes := []string{"basic", "bearer"}
+
+	for _, wac := range challenges {
+		currentScheme := strings.ToLower(wac.Scheme)
+		for _, allowed := range allowedSchemes {
+			if allowed == currentScheme {
+				return wac
+			}
+		}
+	}
+
+	return challenges[0]
 }

@@ -27,10 +27,10 @@ import (
 )
 
 // Index validates that idx does not violate any invariants of the index format.
-func Index(idx v1.ImageIndex) error {
+func Index(idx v1.ImageIndex, opt ...Option) error {
 	errs := []string{}
 
-	if err := validateChildren(idx); err != nil {
+	if err := validateChildren(idx, opt...); err != nil {
 		errs = append(errs, fmt.Sprintf("validating children: %v", err))
 	}
 
@@ -48,7 +48,7 @@ type withLayer interface {
 	Layer(v1.Hash) (v1.Layer, error)
 }
 
-func validateChildren(idx v1.ImageIndex) error {
+func validateChildren(idx v1.ImageIndex, opt ...Option) error {
 	manifest, err := idx.IndexManifest()
 	if err != nil {
 		return err
@@ -62,7 +62,7 @@ func validateChildren(idx v1.ImageIndex) error {
 			if err != nil {
 				return err
 			}
-			if err := Index(idx); err != nil {
+			if err := Index(idx, opt...); err != nil {
 				errs = append(errs, fmt.Sprintf("failed to validate index Manifests[%d](%s): %v", i, desc.Digest, err))
 			}
 			if err := validateMediaType(idx, desc.MediaType); err != nil {
@@ -73,7 +73,7 @@ func validateChildren(idx v1.ImageIndex) error {
 			if err != nil {
 				return err
 			}
-			if err := Image(img); err != nil {
+			if err := Image(img, opt...); err != nil {
 				errs = append(errs, fmt.Sprintf("failed to validate image Manifests[%d](%s): %v", i, desc.Digest, err))
 			}
 			if err := validateMediaType(img, desc.MediaType); err != nil {
@@ -84,9 +84,9 @@ func validateChildren(idx v1.ImageIndex) error {
 			if wl, ok := idx.(withLayer); ok {
 				layer, err := wl.Layer(desc.Digest)
 				if err != nil {
-					return fmt.Errorf("failed to get layer Manifests[%d]: %v", i, err)
+					return fmt.Errorf("failed to get layer Manifests[%d]: %w", i, err)
 				}
-				if err := Layer(layer); err != nil {
+				if err := Layer(layer, opt...); err != nil {
 					lerr := fmt.Sprintf("failed to validate layer Manifests[%d](%s): %v", i, desc.Digest, err)
 					if desc.MediaType.IsDistributable() {
 						errs = append(errs, lerr)
