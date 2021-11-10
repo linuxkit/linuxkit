@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	dockertypes "github.com/docker/docker/api/types"
-	"github.com/estesp/manifest-tool/pkg/registry"
-	"github.com/estesp/manifest-tool/pkg/types"
+	"github.com/estesp/manifest-tool/v2/pkg/registry"
+	"github.com/estesp/manifest-tool/v2/pkg/types"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 )

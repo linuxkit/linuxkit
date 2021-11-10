@@ -62,10 +62,9 @@ func (l Path) AppendImage(img v1.Image, options ...Option) error {
 		Digest:    d,
 	}
 
-	for _, opt := range options {
-		if err := opt(&desc); err != nil {
-			return err
-		}
+	o := makeOptions(options...)
+	for _, opt := range o.descOpts {
+		opt(&desc)
 	}
 
 	return l.AppendDescriptor(desc)
@@ -99,10 +98,9 @@ func (l Path) AppendIndex(ii v1.ImageIndex, options ...Option) error {
 		Digest:    d,
 	}
 
-	for _, opt := range options {
-		if err := opt(&desc); err != nil {
-			return err
-		}
+	o := makeOptions(options...)
+	for _, opt := range o.descOpts {
+		opt(&desc)
 	}
 
 	return l.AppendDescriptor(desc)
@@ -163,10 +161,9 @@ func (l Path) replaceDescriptor(append mutate.Appendable, matcher match.Matcher,
 		return err
 	}
 
-	for _, opt := range options {
-		if err := opt(desc); err != nil {
-			return err
-		}
+	o := makeOptions(options...)
+	for _, opt := range o.descOpts {
+		opt(desc)
 	}
 
 	add := mutate.IndexAddendum{
@@ -219,7 +216,6 @@ func (l Path) WriteFile(name string, data []byte, perm os.FileMode) error {
 	}
 
 	return ioutil.WriteFile(l.path(name), data, perm)
-
 }
 
 // WriteBlob copies a file to the blobs/ directory in the Path from the given ReadCloser at
@@ -368,9 +364,9 @@ func (l Path) writeIndexToFile(indexFile string, ii v1.ImageIndex) error {
 			var blob io.ReadCloser
 			// Workaround for #819.
 			if wl, ok := ii.(withLayer); ok {
-				layer, err := wl.Layer(desc.Digest)
-				if err != nil {
-					return err
+				layer, lerr := wl.Layer(desc.Digest)
+				if lerr != nil {
+					return lerr
 				}
 				blob, err = layer.Compressed()
 			} else if wb, ok := ii.(withBlob); ok {
@@ -413,7 +409,6 @@ func (l Path) WriteIndex(ii v1.ImageIndex) error {
 
 	indexFile := filepath.Join("blobs", h.Algorithm, h.Hex)
 	return l.writeIndexToFile(indexFile, ii)
-
 }
 
 // Write constructs a Path at path from an ImageIndex.
