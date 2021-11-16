@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.10.76
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:43c52456571369d62882605e4d510f0df3ed93de
-  - linuxkit/runc:5f9941eed05f58293f928c9f2f0b6a3f9f6f55c1
+  - linuxkit/init:eb597ef74d808b5320ad1060b1620a6ac31e7ced
+  - linuxkit/runc:21dbbda709ae138de0af6b0c7e4ae49525db5e88
 onboot:
   - name: losetup
-    image: linuxkit/losetup:bd8b9d59785e9be62f8374c359c0736ad33744d4
+    image: linuxkit/losetup:43e40be0c82cbccf171ebd2a8065246e2e84f66e
     command: ["/usr/bin/loopy", "-c", "/var/test.img"]
   - name: test
     image: alpine:3.13
@@ -20,7 +20,7 @@ onboot:
         type: b
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:afe4b3ab865afe1e3ed5c88e58f57808f4f5119f
+    image: linuxkit/poweroff:39d99e5909b6f8faccedc78d6d2646cdb6c9ed9c
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh
