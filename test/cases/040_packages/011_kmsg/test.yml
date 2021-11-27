@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:21dbbda709ae138de0af6b0c7e4ae49525db5e88
   - linuxkit/containerd:2f0907913dd54ab5186006034eb224a0da12443e
   - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
-  - linuxkit/memlogd:55ba089dd98e96b0aeb24463852fb7539e2c2c1e
+  - linuxkit/memlogd:fe4a123b619a7dfffc2ba1297dd03b4ac90e3dd7
 services:
   - name: kmsg
     image: linuxkit/kmsg:2ed5334395ec64a7844a2cbd88837050fbd34880
