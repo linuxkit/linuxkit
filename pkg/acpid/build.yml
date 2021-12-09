@@ -1,5 +1,9 @@
 image: acpid
 config:
   binds:
-  - /dev:/dev
+    - /dev:/dev
+  devices:
+    - path: all
+      type: c
+      major: 13
   pid: host
