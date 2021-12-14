@@ -3,6 +3,9 @@ package moby
 import (
 	"archive/tar"
 	"bytes"
+	// fix: #3742
+	// golint requires comments on non-main(test)
+	// package for blank import
 	_ "embed"
 	"fmt"
 	"io"
