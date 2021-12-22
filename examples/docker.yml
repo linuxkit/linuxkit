@@ -26,7 +26,7 @@ services:
   - name: dhcpcd
     image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
   - name: ntpd
-    image: linuxkit/openntpd:3d4190529a74dc2a2c74635f5cac817206be65c7
+    image: linuxkit/openntpd:d6c36ac367ed26a6eeffd8db78334d9f8041b038
   - name: docker
     image: docker:20.10.6-dind
     capabilities:
