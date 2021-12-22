@@ -15,4 +15,4 @@ CMD []
 WORKDIR /
 COPY --from=mirror /out/ /
 COPY etc/ /etc/
-CMD ["/usr/sbin/ntpd", "-d", "-s"]
+CMD ["/usr/sbin/ntpd", "-d"]
