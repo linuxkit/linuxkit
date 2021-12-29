@@ -747,6 +747,9 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	// default options match what Docker does
 	procOptions := []string{"nosuid", "nodev", "noexec", "relatime"}
 	devOptions := []string{"nosuid", "strictatime", "mode=755", "size=65536k"}
+	if readonly {
+		devOptions = append(devOptions, "ro")
+	}
 	ptsOptions := []string{"nosuid", "noexec", "newinstance", "ptmxmode=0666", "mode=0620"}
 	sysOptions := []string{"nosuid", "noexec", "nodev"}
 	if readonly {

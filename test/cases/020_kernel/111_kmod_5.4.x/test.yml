@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:eb597ef74d808b5320ad1060b1620a6ac31e7ced
-  - linuxkit/runc:21dbbda709ae138de0af6b0c7e4ae49525db5e88
+  - linuxkit/runc:9f7aad4eb5e4360cc9ed8778a5c501cce6e21601
 onboot:
   - name: check
     image: kmod-test
