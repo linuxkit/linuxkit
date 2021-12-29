@@ -57,7 +57,7 @@ services:
         - INSECURE=true
   # Run ntpd to keep time synchronised in the VM
   - name: ntpd
-    image: linuxkit/openntpd:3d4190529a74dc2a2c74635f5cac817206be65c7
+    image: linuxkit/openntpd:d6c36ac367ed26a6eeffd8db78334d9f8041b038
   # VSOCK to unix domain socket forwarding. Forwards guest /var/run/docker.sock
   # to a socket on the host.
   - name: vsudd

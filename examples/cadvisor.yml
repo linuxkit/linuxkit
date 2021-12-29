@@ -28,7 +28,7 @@ services:
   - name: rngd
     image: linuxkit/rngd:a44c6230f1620f1d6310b95a9e9f585de73a8bd7
   - name: ntpd
-    image: linuxkit/openntpd:3d4190529a74dc2a2c74635f5cac817206be65c7
+    image: linuxkit/openntpd:d6c36ac367ed26a6eeffd8db78334d9f8041b038
 
   - name: docker
     image: docker:20.10.6-dind
