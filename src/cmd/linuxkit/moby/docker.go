@@ -35,15 +35,17 @@ func dockerRun(input io.Reader, output io.Writer, img string, args ...string) er
 		return err
 	}
 
+	var errbuf strings.Builder
 	args = append([]string{"run", "--network=none", "--log-driver=none", "--rm", "-i", img}, args...)
 	cmd := exec.Command(docker, args...)
+	cmd.Stderr = &errbuf
 	cmd.Stdin = input
 	cmd.Stdout = output
 	cmd.Env = env
 
 	if err := cmd.Run(); err != nil {
-		if exitError, ok := err.(*exec.ExitError); ok {
-			return fmt.Errorf("docker run %s failed: %v output:\n%s", img, err, exitError.Stderr)
+		if _, ok := err.(*exec.ExitError); ok {
+			return fmt.Errorf("docker run %s failed: %v output:\n%s", img, err, errbuf.String())
 		}
 		return err
 	}
