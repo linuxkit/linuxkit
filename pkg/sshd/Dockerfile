@@ -22,4 +22,4 @@ COPY --from=mirror /out/ /
 COPY etc/ /etc/
 COPY usr/ /usr/
 RUN mkdir -p /etc/ssh /root/.ssh && chmod 0700 /root/.ssh
-CMD ["/sbin/tini", "/usr/bin/ssh.sh"]
+CMD ["/sbin/tini", "-s", "/usr/bin/ssh.sh"]

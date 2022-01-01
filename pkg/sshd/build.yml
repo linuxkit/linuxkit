@@ -16,3 +16,6 @@ config:
     - /sys:/sys
   capabilities:
     - all
+  devices:
+    - path: all
+      type: a
