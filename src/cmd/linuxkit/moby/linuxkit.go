@@ -50,14 +50,14 @@ func ensureLinuxkitImage(name, cache string) error {
 	}
 	// This is just a local utility used for conversion, so it does not matter what architecture we use.
 	// Might as well just use our local one.
-	m.Architecture = runtime.GOARCH
+	arch := runtime.GOARCH
 	// TODO pass through --pull to here
 	tf, err := ioutil.TempFile("", "")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tf.Name())
-	if err := Build(m, tf, false, "", false, cache, true); err != nil {
+	if err := Build(m, tf, false, "", false, cache, true, arch); err != nil {
 		return err
 	}
 	if err := tf.Close(); err != nil {

@@ -83,14 +83,14 @@ func OutputTypes() []string {
 	return ts
 }
 
-func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer, cacheDir string, dockerCache bool) error {
+func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer, cacheDir string, dockerCache bool, arch string) error {
 	log.Infof("  Create OCI config for %s", image.Image)
 	imageName := util.ReferenceExpand(image.Image)
 	ref, err := reference.Parse(imageName)
 	if err != nil {
 		return fmt.Errorf("could not resolve references for image %s: %v", image.Image, err)
 	}
-	src, err := imagePull(&ref, pull, cacheDir, dockerCache, m.Architecture)
+	src, err := imagePull(&ref, pull, cacheDir, dockerCache, arch)
 	if err != nil {
 		return fmt.Errorf("Could not pull image %s: %v", image.Image, err)
 	}
@@ -108,7 +108,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, image.ref, config, runtime, iw, pull, readonly, dupMap, cacheDir, dockerCache, m.Architecture)
+	err = ImageBundle(path, image.ref, config, runtime, iw, pull, readonly, dupMap, cacheDir, dockerCache, arch)
 	if err != nil {
 		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 	}
@@ -116,7 +116,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 }
 
 // Build performs the actual build process
-func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cacheDir string, dockerCache bool) error {
+func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cacheDir string, dockerCache bool, arch string) error {
 	if MobyDir == "" {
 		MobyDir = defaultMobyConfigDir()
 	}
@@ -154,7 +154,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
 		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, decompressKernel)
-		err := ImageTar(m.Kernel.ref, "", kf, pull, "", cacheDir, dockerCache, m.Architecture)
+		err := ImageTar(m.Kernel.ref, "", kf, pull, "", cacheDir, dockerCache, arch)
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
 		}
@@ -170,7 +170,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 	}
 	for _, ii := range m.initRefs {
 		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", iw, pull, resolvconfSymlink, cacheDir, dockerCache, m.Architecture)
+		err := ImageTar(ii, "", iw, pull, resolvconfSymlink, cacheDir, dockerCache, arch)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}
@@ -181,7 +181,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 	}
 	for i, image := range m.Onboot {
 		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onboot", so+"-", m, idMap, dupMap, pull, iw, cacheDir, dockerCache); err != nil {
+		if err := outputImage(image, "onboot", so+"-", m, idMap, dupMap, pull, iw, cacheDir, dockerCache, arch); err != nil {
 			return err
 		}
 	}
@@ -191,7 +191,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 	}
 	for i, image := range m.Onshutdown {
 		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onshutdown", so+"-", m, idMap, dupMap, pull, iw, cacheDir, dockerCache); err != nil {
+		if err := outputImage(image, "onshutdown", so+"-", m, idMap, dupMap, pull, iw, cacheDir, dockerCache, arch); err != nil {
 			return err
 		}
 	}
@@ -200,7 +200,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool, cac
 		log.Infof("Add service containers:")
 	}
 	for _, image := range m.Services {
-		if err := outputImage(image, "services", "", m, idMap, dupMap, pull, iw, cacheDir, dockerCache); err != nil {
+		if err := outputImage(image, "services", "", m, idMap, dupMap, pull, iw, cacheDir, dockerCache, arch); err != nil {
 			return err
 		}
 	}

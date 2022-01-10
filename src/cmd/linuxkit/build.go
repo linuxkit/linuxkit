@@ -180,7 +180,6 @@ func build(args []string) {
 		if err != nil {
 			log.Fatalf("Invalid config: %v", err)
 		}
-		c.Architecture = *buildArch
 		m, err = moby.AppendConfig(m, c)
 		if err != nil {
 			log.Fatalf("Cannot append config files: %v", err)
@@ -205,7 +204,7 @@ func build(args []string) {
 	if moby.Streamable(buildFormats[0]) {
 		tp = buildFormats[0]
 	}
-	err = moby.Build(m, w, *buildPull, tp, *buildDecompressKernel, cacheDir, *buildDocker)
+	err = moby.Build(m, w, *buildPull, tp, *buildDecompressKernel, cacheDir, *buildDocker, *buildArch)
 	if err != nil {
 		log.Fatalf("%v", err)
 	}

@@ -18,13 +18,12 @@ import (
 
 // Moby is the type of a Moby config file
 type Moby struct {
-	Kernel       KernelConfig `kernel:"cmdline,omitempty" json:"kernel,omitempty"`
-	Init         []string     `init:"cmdline" json:"init"`
-	Onboot       []*Image     `yaml:"onboot" json:"onboot"`
-	Onshutdown   []*Image     `yaml:"onshutdown" json:"onshutdown"`
-	Services     []*Image     `yaml:"services" json:"services"`
-	Files        []File       `yaml:"files" json:"files"`
-	Architecture string
+	Kernel     KernelConfig `kernel:"cmdline,omitempty" json:"kernel,omitempty"`
+	Init       []string     `init:"cmdline" json:"init"`
+	Onboot     []*Image     `yaml:"onboot" json:"onboot"`
+	Onshutdown []*Image     `yaml:"onshutdown" json:"onshutdown"`
+	Services   []*Image     `yaml:"services" json:"services"`
+	Files      []File       `yaml:"files" json:"files"`
 
 	initRefs []*reference.Spec
 }
@@ -311,7 +310,6 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby.Services = append(moby.Services, m1.Services...)
 	moby.Files = append(moby.Files, m1.Files...)
 	moby.initRefs = append(moby.initRefs, m1.initRefs...)
-	moby.Architecture = m1.Architecture
 
 	return moby, uniqueServices(moby)
 }
