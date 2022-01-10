@@ -24,7 +24,7 @@ type Moby struct {
 	Onshutdown   []*Image     `yaml:"onshutdown" json:"onshutdown"`
 	Services     []*Image     `yaml:"services" json:"services"`
 	Files        []File       `yaml:"files" json:"files"`
-	Architecture string
+	Architecture string       `yaml:"architecture" json:"architecture"`
 
 	initRefs []*reference.Spec
 }

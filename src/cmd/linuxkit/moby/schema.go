@@ -6,6 +6,9 @@ var schema = string(`
   "title": "Moby Config",
   "additionalProperties": false,
   "definitions": {
+    "architecture" : {
+      "type": "string"
+    },
     "kernel": {
       "type": "object",
       "additionalProperties": false,
@@ -319,6 +322,7 @@ var schema = string(`
     }
   },
   "properties": {
+    "architecture": { "$ref": "#/definitions/architecture" },
     "kernel": { "$ref": "#/definitions/kernel" },
     "init": { "$ref": "#/definitions/strings" },
     "onboot": { "$ref": "#/definitions/images" },
