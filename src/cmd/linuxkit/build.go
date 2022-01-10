@@ -204,7 +204,7 @@ func build(args []string) {
 	if moby.Streamable(buildFormats[0]) {
 		tp = buildFormats[0]
 	}
-	err = moby.Build(m, w, *buildPull, tp, *buildDecompressKernel, cacheDir, *buildDocker, *buildArch)
+	err = moby.Build(m, w, moby.BuildOpts{Pull: *buildPull, BuilderType: tp, DecompressKernel: *buildDecompressKernel, CacheDir: cacheDir, DockerCache: *buildDocker, Arch: *buildArch})
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
