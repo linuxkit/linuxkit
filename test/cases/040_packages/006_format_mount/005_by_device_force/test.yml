@@ -2,23 +2,23 @@ kernel:
   image: linuxkit/kernel:5.10.76
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:eb597ef74d808b5320ad1060b1620a6ac31e7ced
+  - linuxkit/init:7e3d51e6ab5896ecb36a4829450f7430f2878927
   - linuxkit/runc:9f7aad4eb5e4360cc9ed8778a5c501cce6e21601
 onboot:
   - name: format
-    image: linuxkit/format:b2c5f160916ba4793fda7bdc9fe66c68df116a61
+    image: linuxkit/format:7efa07559dd23cb4dbebfd3ab48c50fd33625918
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sda"]
   - name: format
-    image: linuxkit/format:b2c5f160916ba4793fda7bdc9fe66c68df116a61
+    image: linuxkit/format:7efa07559dd23cb4dbebfd3ab48c50fd33625918
     command: ["/usr/bin/format", "-verbose", "-type", "ext4", "/dev/sdb"]
   - name: format
-    image: linuxkit/format:b2c5f160916ba4793fda7bdc9fe66c68df116a61
+    image: linuxkit/format:7efa07559dd23cb4dbebfd3ab48c50fd33625918
     command: ["/usr/bin/format", "-verbose", "-type", "xfs", "/dev/sda"]
   - name: format
-    image: linuxkit/format:b2c5f160916ba4793fda7bdc9fe66c68df116a61
+    image: linuxkit/format:7efa07559dd23cb4dbebfd3ab48c50fd33625918
     command: ["/usr/bin/format", "-verbose", "-force", "-type", "xfs", "/dev/sdb"]
   - name: test
-    image: linuxkit/format:b2c5f160916ba4793fda7bdc9fe66c68df116a61
+    image: linuxkit/format:7efa07559dd23cb4dbebfd3ab48c50fd33625918
     binds:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
