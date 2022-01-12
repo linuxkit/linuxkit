@@ -2,13 +2,13 @@ kernel:
   image: linuxkit/kernel:5.10.76
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:eb597ef74d808b5320ad1060b1620a6ac31e7ced
+  - linuxkit/init:7e3d51e6ab5896ecb36a4829450f7430f2878927
   - linuxkit/runc:9f7aad4eb5e4360cc9ed8778a5c501cce6e21601
   - linuxkit/containerd:2f0907913dd54ab5186006034eb224a0da12443e
   - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:0dc8f792fc3a58afcebcb0fbe6b48de587265c17
+    image: linuxkit/sysctl:bdc99eeedc224439ff237990ee06e5b992c8c1ae
   - name: dhcpcd
     image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
@@ -19,7 +19,7 @@ services:
     #env:
     # - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:a44c6230f1620f1d6310b95a9e9f585de73a8bd7
+    image: linuxkit/rngd:4f85d8de3f6f45973a8c88dc8fba9ec596e5495a
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)

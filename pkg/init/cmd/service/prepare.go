@@ -254,7 +254,7 @@ func prepareProcess(pid int, runtime Runtime) error {
 			default:
 				// no special creation options needed
 				la := netlink.LinkAttrs{Name: iface.Name, Namespace: ns}
-				link = &netlink.GenericLink{la, iface.Add}
+				link = &netlink.GenericLink{LinkAttrs: la, LinkType: iface.Add}
 			}
 			if err := netlink.LinkAdd(link); err != nil {
 				return fmt.Errorf("Link add %s of type %s failed: %v", iface.Name, iface.Add, err)

@@ -11,9 +11,9 @@ RUN apt-get update && apt-get install -y qemu-user-static && \
 FROM linuxkit/alpine:33063834cf72d563cd8703467836aaa2f2b5a300 AS mirror
 
 RUN apk add --no-cache go musl-dev
-ENV GOPATH=/go PATH=$PATH:/go/bin GO111MODULE=off
+ENV GOPATH=/go PATH=$PATH:/go/bin
 
-COPY main.go /go/src/binfmt/
+COPY . /go/src/binfmt/
 RUN go-compile.sh /go/src/binfmt
 
 FROM scratch
