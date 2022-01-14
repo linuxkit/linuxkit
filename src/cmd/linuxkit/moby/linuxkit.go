@@ -57,7 +57,7 @@ func ensureLinuxkitImage(name, cache string) error {
 		return err
 	}
 	defer os.Remove(tf.Name())
-	if err := Build(m, tf, false, "", false, cache, true, arch); err != nil {
+	if err := Build(m, tf, BuildOpts{Pull: false, BuilderType: "", DecompressKernel: false, CacheDir: cache, DockerCache: true, Arch: arch}); err != nil {
 		return err
 	}
 	if err := tf.Close(); err != nil {
