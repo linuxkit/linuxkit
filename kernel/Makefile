@@ -154,9 +154,9 @@ forcepush_image: forcepush_$(2)$(3)$(4)
 tagbuilder: tagbuilder_$(2)$(3)$(4)
 show-tags: show-tag_$(2)$(3)$(4)
 
-# Only build perf only on x86 and recent LTS and latest stable kernels
+# Build perf only on x86 and recent LTS and latest stable kernels
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.12.x 5.10.x 5.4.x))
+ifeq ($(2), $(filter $(2), 5.10.x 5.4.x))
 build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		 docker build -f Dockerfile.perf \
@@ -194,7 +194,7 @@ endif
 
 # Only build bcc only on x86 and recent LTS and latest stable kernels
 ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.12.x 5.10.x 5.4.x))
+ifeq ($(2), $(filter $(2), 5.10.x 5.4.x))
 build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
 	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		docker build -f Dockerfile.bcc \
@@ -256,14 +256,12 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.12.14,5.12.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.10.47,5.10.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.10.47,5.10.x,,-dbg))
 $(eval $(call kernel,5.4.129,5.4.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.11.4,5.11.x,-rt,))
 
 else ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
-$(eval $(call kernel,5.12.14,5.12.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.10.47,5.10.x,$(EXTRA),$(DEBUG)))
 $(eval $(call kernel,5.11.4,5.11.x,-rt,))
 
