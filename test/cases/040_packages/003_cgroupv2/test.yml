@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:5.10.76
+  image: linuxkit/kernel:5.10.92
   cmdline: "linuxkit.unified_cgroup_hierarchy=1 console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:7e3d51e6ab5896ecb36a4829450f7430f2878927
