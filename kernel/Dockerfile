@@ -68,7 +68,7 @@ WORKDIR /tmp
 # Download Intel ucode, create a CPIO archive for it, and keep it in the build context
 # so the firmware can also be referenced with CONFIG_EXTRA_FIRMWARE
 ENV UCODE_REPO=https://github.com/intel/Intel-Linux-Processor-Microcode-Data-Files
-ENV UCODE_COMMIT=microcode-20210216
+ENV UCODE_COMMIT=microcode-20210608
 RUN set -e && \
     if [ $(uname -m) == x86_64 ]; then \
         git clone ${UCODE_REPO} ucode && \
