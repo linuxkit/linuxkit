@@ -8,7 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/opencontainers/runtime-spec/specs-go"
+	specs "github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/vishvananda/netlink"
 	"golang.org/x/sys/unix"
@@ -18,12 +18,13 @@ import (
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
 type Runtime struct {
-	Cgroups    []string      `yaml:"cgroups" json:"cgroups,omitempty"`
-	Mounts     []specs.Mount `yaml:"mounts" json:"mounts,omitempty"`
-	Mkdir      []string      `yaml:"mkdir" json:"mkdir,omitempty"`
-	Interfaces []Interface   `yaml:"interfaces" json:"interfaces,omitempty"`
-	BindNS     Namespaces    `yaml:"bindNS" json:"bindNS,omitempty"`
-	Namespace  string        `yaml:"namespace,omitempty" json:"namespace,omitempty"`
+	Cgroups      []string          `yaml:"cgroups" json:"cgroups,omitempty"`
+	Mounts       []specs.Mount     `yaml:"mounts" json:"mounts,omitempty"`
+	Mkdir        []string          `yaml:"mkdir" json:"mkdir,omitempty"`
+	Interfaces   []Interface       `yaml:"interfaces" json:"interfaces,omitempty"`
+	BindNS       Namespaces        `yaml:"bindNS" json:"bindNS,omitempty"`
+	Namespace    string            `yaml:"namespace,omitempty" json:"namespace,omitempty"`
+	EnvFromFiles map[string]string `yaml:"envFromFiles,omitempty" json:"envFromFiles,omitempty"`
 }
 
 // Namespaces is the type for configuring paths to bind namespaces
@@ -139,23 +140,23 @@ func newCgroup(cgroup string) error {
 	return nil
 }
 
+func makeAbsolute(rootfs, dir string) string {
+	if filepath.IsAbs(dir) {
+		return dir
+	}
+	// relative paths are relative to rootfs of container
+	return filepath.Join(rootfs, dir)
+}
+
 // prepareFilesystem sets up the mounts and cgroups, before the container is created
-func prepareFilesystem(path string, runtime Runtime) error {
+func prepareFilesystem(rootfs string, runtime Runtime) error {
 	// execute the runtime config that should be done up front
 	// we execute Mounts before Mkdir so you can make a directory under a mount
 	// but we do mkdir of the destination path in case missing
-	rootfs := filepath.Join(path, "rootfs")
-	makeAbsolute := func(dir string) string {
-		if filepath.IsAbs(dir) {
-			return dir
-		}
-		// relative paths are relative to rootfs of container
-		return filepath.Join(rootfs, dir)
-	}
 
 	for _, mount := range runtime.Mounts {
 		const mode os.FileMode = 0755
-		dir := makeAbsolute(mount.Destination)
+		dir := makeAbsolute(rootfs, mount.Destination)
 		err := os.MkdirAll(dir, mode)
 		if err != nil {
 			return fmt.Errorf("Cannot create directory for mount destination %s: %v", dir, err)
@@ -178,7 +179,7 @@ func prepareFilesystem(path string, runtime Runtime) error {
 	for _, dir := range runtime.Mkdir {
 		// in future we may need to change the structure to set mode, ownership
 		const mode os.FileMode = 0755
-		dir = makeAbsolute(dir)
+		dir = makeAbsolute(rootfs, dir)
 		err := os.MkdirAll(dir, mode)
 		if err != nil {
 			return fmt.Errorf("Cannot create directory %s: %v", dir, err)
@@ -190,6 +191,29 @@ func prepareFilesystem(path string, runtime Runtime) error {
 		if err := newCgroup(cgroup); err != nil {
 			return fmt.Errorf("Cannot create cgroup %s: %v", cgroup, err)
 		}
+	}
+
+	return nil
+}
+
+// prepareSpec appends spec based on runtime config;
+// NOTE: these changes are runtime-only, and config.json is read-only on disk
+// so you won't see any of these changes in config.json
+func prepareSpec(rootfs string, runtime Runtime, spec *specs.Spec) error {
+	spec.Root.Path = rootfs
+
+	if spec.Process == nil {
+		spec.Process = &specs.Process{}
+	}
+
+	for envKey, filePath := range runtime.EnvFromFiles {
+		filePath = makeAbsolute(rootfs, filePath)
+		data, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			return fmt.Errorf("Cannot read file %s: %v", filePath, err)
+		}
+		envVar := fmt.Sprintf("%s=%s", envKey, string(data))
+		spec.Process.Env = append(spec.Process.Env, envVar)
 	}
 
 	return nil
