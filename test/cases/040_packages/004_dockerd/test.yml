@@ -1,0 +1,44 @@
+kernel:
+  image: linuxkit/kernel:5.10.92
+  cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
+init:
+  - linuxkit/init:7e3d51e6ab5896ecb36a4829450f7430f2878927
+  - linuxkit/runc:9f7aad4eb5e4360cc9ed8778a5c501cce6e21601
+  - linuxkit/containerd:2f0907913dd54ab5186006034eb224a0da12443e
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:bdc99eeedc224439ff237990ee06e5b992c8c1ae
+  - name: sysfs
+    image: linuxkit/sysfs:c3bdb00c5e23bf566d294bafd5f7890ca319056f
+  - name: format
+    image: linuxkit/format:7efa07559dd23cb4dbebfd3ab48c50fd33625918
+  - name: mount
+    image: linuxkit/mount:422b219bb1c7051096126ac83e6dcc8b2f3f1176
+    command: ["/usr/bin/mountie", "/var/lib/docker"]
+services:
+  - name: getty
+    image: linuxkit/getty:3c6e89681a988c3d4e2610fcd7aaaa0247ded3ec
+    env:
+     - INSECURE=true
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
+  - name: docker
+    image: docker:20.10.6-dind
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /etc/resolv.conf:/etc/resolv.conf
+     - /var/lib/docker:/var/lib/docker
+     - /lib/modules:/lib/modules
+     - /etc/docker/daemon.json:/etc/docker/daemon.json
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+files:
+  - path: var/lib/docker
+    directory: true
+  - path: etc/docker/daemon.json
+    contents: '{"debug": true}'
