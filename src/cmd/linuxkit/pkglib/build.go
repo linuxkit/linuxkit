@@ -257,6 +257,12 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		args = append(args, "--label=org.mobyproject.linuxkit.version="+version.Version)
 		args = append(args, "--label=org.mobyproject.linuxkit.revision="+version.GitCommit)
 
+		if p.buildArgs != nil {
+			for _, buildArg := range *p.buildArgs {
+				args = append(args, "--build-arg", buildArg)
+			}
+		}
+
 		// build for each arch and save in the linuxkit cache
 		for _, platform := range bo.platforms {
 			desc, err := p.buildArch(d, c, platform.Architecture, args, writer, bo)

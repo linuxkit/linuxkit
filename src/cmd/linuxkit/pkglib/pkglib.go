@@ -26,6 +26,7 @@ type pkgInfo struct {
 	Network      bool              `yaml:"network"`
 	DisableCache bool              `yaml:"disable-cache"`
 	Config       *moby.ImageConfig `yaml:"config"`
+	BuildArgs    *[]string         `yaml:"buildArgs,omitempty"`
 	Depends      struct {
 		DockerImages struct {
 			TargetDir string   `yaml:"target-dir"`
@@ -54,6 +55,7 @@ type Pkg struct {
 	trust         bool
 	cache         bool
 	config        *moby.ImageConfig
+	buildArgs     *[]string
 	dockerDepends dockerDepends
 
 	// Internal state
@@ -260,6 +262,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) ([]Pkg, error) {
 			network:       pi.Network,
 			cache:         !pi.DisableCache,
 			config:        pi.Config,
+			buildArgs:     pi.BuildArgs,
 			dockerDepends: dockerDepends,
 			dirty:         dirty,
 			path:          pkgPath,
