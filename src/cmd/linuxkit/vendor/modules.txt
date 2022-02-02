@@ -37,6 +37,9 @@ github.com/Azure/go-autorest/autorest/validation
 github.com/Azure/go-autorest/logger
 # github.com/Azure/go-autorest/tracing v0.6.0
 github.com/Azure/go-autorest/tracing
+# github.com/Code-Hex/vz v0.0.4
+## explicit
+github.com/Code-Hex/vz
 # github.com/Microsoft/go-winio v0.5.2
 ## explicit
 github.com/Microsoft/go-winio
@@ -427,6 +430,9 @@ github.com/opencontainers/runtime-spec/specs-go
 github.com/packethost/packngo
 # github.com/pkg/errors v0.9.1
 github.com/pkg/errors
+# github.com/pkg/term v1.1.0
+## explicit
+github.com/pkg/term/termios
 # github.com/pmezard/go-difflib v1.0.0
 github.com/pmezard/go-difflib/difflib
 # github.com/prometheus/client_golang v1.12.1
@@ -468,6 +474,8 @@ github.com/radu-matei/azure-vhd-utils/vhdcore/writer
 # github.com/rn/iso9660wrap v0.0.0-20171120145750-baf8d62ad315
 ## explicit
 github.com/rn/iso9660wrap
+# github.com/rs/xid v1.4.0
+github.com/rs/xid
 # github.com/scaleway/scaleway-sdk-go v1.0.0-beta.6
 ## explicit
 github.com/scaleway/scaleway-sdk-go/api/instance/v1
@@ -610,6 +618,7 @@ golang.org/x/oauth2/jwt
 golang.org/x/sync/errgroup
 golang.org/x/sync/semaphore
 # golang.org/x/sys v0.0.0-20220412211240-33da011f77ad
+## explicit
 golang.org/x/sys/cpu
 golang.org/x/sys/execabs
 golang.org/x/sys/internal/unsafeheader

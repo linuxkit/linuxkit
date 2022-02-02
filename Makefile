@@ -5,17 +5,14 @@ GO_COMPILE=linuxkit/go-compile:7b1f5a37d2a93cd4a9aa2a87db264d8145944006
 ifeq ($(OS),Windows_NT)
 LINUXKIT?=$(CURDIR)/bin/linuxkit.exe
 RTF?=bin/rtf.exe
-GOOS?=windows
 else
 LINUXKIT?=$(CURDIR)/bin/linuxkit
 RTF?=bin/rtf
-GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 endif
-GOARCH?=amd64
-ifneq ($(GOOS),linux)
+ifneq ($(GOOS),)
 CROSS+=-e GOOS=$(GOOS)
 endif
-ifneq ($(GOARCH),amd64)
+ifneq ($(GOARCH),)
 CROSS+=-e GOARCH=$(GOARCH)
 endif
 
@@ -73,6 +70,9 @@ bin:
 
 install:
 	cp -R bin/* $(PREFIX)/bin
+
+sign:
+	codesign --entitlements linuxkit.entitlements --force -s - $(PREFIX)/bin/linuxkit
 
 .PHONY: test
 test:
