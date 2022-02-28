@@ -36,5 +36,10 @@ config:
       major: 204
       minor: 64
       mode: 0666
+    - path: "/dev/hvc0"
+      type: c
+      major: 229
+      minor: 0
+      mode: 0666
   capabilities:
     - all
