@@ -11,4 +11,6 @@ DEVICE=/dev/sdb
 
 mount | grep cgroup2 || failed
 
+stat /sys/fs/cgroup/newcgroup || failed
+
 printf "cgroup2 detected, suite PASSED\n" >&1

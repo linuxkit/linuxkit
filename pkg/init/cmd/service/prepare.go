@@ -119,9 +119,21 @@ func parseMountOptions(options []string) (int, string) {
 	return flag, strings.Join(data, ",")
 }
 
-// newCgroup creates a cgroup (ie directory) under all directories in /sys/fs/cgroup
+// newCgroup creates a cgroup (ie directory)
 // we could use github.com/containerd/cgroups but it has a lot of deps and this is just a sugary mkdir
 func newCgroup(cgroup string) error {
+	v2, err := isCgroupV2()
+	if err != nil {
+		return err
+	}
+	if v2 {
+		// a cgroupv2 cgroup is a single directory
+		if err := os.MkdirAll(filepath.Join("/sys/fs/cgroup", cgroup), 0755); err != nil {
+			log.Printf("cgroup error: %v", err)
+		}
+		return nil
+	}
+	// a cgroupv1 cgroup is a directory under all directories in /sys/fs/cgroup
 	dirs, err := ioutil.ReadDir("/sys/fs/cgroup")
 	if err != nil {
 		return err
@@ -137,6 +149,17 @@ func newCgroup(cgroup string) error {
 	}
 
 	return nil
+}
+
+func isCgroupV2() (bool, error) {
+	_, err := os.Stat("/sys/fs/cgroup/cgroup.controllers")
+	if err == nil {
+		return true, nil
+	}
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	return false, err
 }
 
 // prepareFilesystem sets up the mounts and cgroups, before the container is created
