@@ -3,7 +3,7 @@ kernel:
   image: linuxkit/kernel:5.10.92
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:cc3132885af876a247bc99199b4cc788f3173896
+  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
   - linuxkit/runc:9f7aad4eb5e4360cc9ed8778a5c501cce6e21601
 onboot:
   - name: test-ns
