@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
-  - linuxkit/runc:9f7aad4eb5e4360cc9ed8778a5c501cce6e21601
+  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
 onboot:
   - name: modprobe
     image: linuxkit/modprobe:1b59b4f2ebb877085ea0d8d3a41cf06f64c09a15

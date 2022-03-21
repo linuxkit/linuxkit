@@ -4,7 +4,7 @@ kernel:
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
-  - linuxkit/runc:9f7aad4eb5e4360cc9ed8778a5c501cce6e21601
+  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
   - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
 
 onboot:
