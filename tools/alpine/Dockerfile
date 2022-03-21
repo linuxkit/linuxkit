@@ -36,22 +36,6 @@ RUN go get -u golang.org/x/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
-# checkout and compile containerd
-# Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
-# `test/pkg/containerd/Dockerfile` when changing this.
-# when building, note that containerd does not use go modules in the below commit,
-# while go1.16 defaults to using it, so must disable with GO111MODULE=off
-ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.4.11
-RUN mkdir -p $GOPATH/src/github.com/containerd && \
-  cd $GOPATH/src/github.com/containerd && \
-  git clone https://github.com/containerd/containerd.git && \
-  cd $GOPATH/src/github.com/containerd/containerd && \
-  git checkout $CONTAINERD_COMMIT
-RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make libseccomp-dev
-RUN cd $GOPATH/src/github.com/containerd/containerd && \
-  GO111MODULE=off make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILDTAGS="static_build no_devmapper"
-
 # Checkout and compile iucode-tool for Intel CPU microcode
 # On non-x86_64 create a dummy file to copy below.
 ENV IUCODE_REPO=https://gitlab.com/iucode-tool/iucode-tool
@@ -82,7 +66,6 @@ COPY --from=mirror /etc/apk/keys /etc/apk/keys/
 COPY --from=mirror /mirror /mirror/
 COPY --from=mirror /go/bin /go/bin/
 COPY --from=mirror /Dockerfile /Dockerfile
-COPY --from=mirror /go/src/github.com/containerd/containerd /go/src/github.com/containerd/containerd/
 COPY --from=mirror /iucode_tool /usr/bin/
 
 RUN apk update && apk upgrade -a

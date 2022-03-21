@@ -2,9 +2,9 @@ kernel:
   image: linuxkitprojects/kernel-shiftfs:4.11.4-881a041fc14bd95814cf140b5e98d97dd65160b5
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:cc3132885af876a247bc99199b4cc788f3173896
+  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
   - linuxkit/runc:9f7aad4eb5e4360cc9ed8778a5c501cce6e21601
-  - linuxkit/containerd:2f0907913dd54ab5186006034eb224a0da12443e
+  - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
   - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
 onboot:
   - name: sysctl
