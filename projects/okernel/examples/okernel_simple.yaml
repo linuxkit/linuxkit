@@ -2,18 +2,18 @@ kernel:
   image: okernel:latest
   cmdline: "console=tty0 page_poison=1"
 init:
-  - linuxkit/init:v0.8
-  - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
-  - linuxkit/ca-certificates:v0.8
+  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
+  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
+  - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.8
+    image: linuxkit/sysctl:bdc99eeedc224439ff237990ee06e5b992c8c1ae
 services:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.8
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
   - name: getty
-    image: linuxkit/getty:v0.8
+    image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
     env:
      - INSECURE=true
 trust:

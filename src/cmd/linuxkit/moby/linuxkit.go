@@ -2,32 +2,24 @@ package moby
 
 import (
 	"crypto/sha256"
+	// fix: #3742
+	// golint requires comments on non-main(test)
+	// package for blank import
+	_ "embed"
 	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	log "github.com/sirupsen/logrus"
 )
 
-var linuxkitYaml = map[string]string{"mkimage": `
-kernel:
-  image: linuxkit/kernel:4.9.39
-  cmdline: "console=ttyS0"
-init:
-  - linuxkit/init:v0.8
-  - linuxkit/runc:v0.8
-onboot:
-  - name: mkimage
-    image: linuxkit/mkimage:v0.8
-  - name: poweroff
-    image: linuxkit/poweroff:06dd4e46c62fbe79123a028835c921f80e4855d3
-trust:
-  org:
-    - linuxkit
-`}
+//go:embed mkimage.yaml
+var linuxkitYamlStr string
+var linuxkitYaml = map[string]string{"mkimage": linuxkitYamlStr}
 
 func imageFilename(name string) string {
 	yaml := linuxkitYaml[name]
@@ -35,7 +27,7 @@ func imageFilename(name string) string {
 	return filepath.Join(MobyDir, "linuxkit", name+"-"+fmt.Sprintf("%x", hash))
 }
 
-func ensureLinuxkitImage(name string) error {
+func ensureLinuxkitImage(name, cache string) error {
 	filename := imageFilename(name)
 	_, err1 := os.Stat(filename + "-kernel")
 	_, err2 := os.Stat(filename + "-initrd.img")
@@ -56,13 +48,18 @@ func ensureLinuxkitImage(name string) error {
 	if err != nil {
 		return err
 	}
+	// This is just a local utility used for conversion, so it does not matter what architecture we use.
+	// Might as well just use our local one.
+	arch := runtime.GOARCH
 	// TODO pass through --pull to here
 	tf, err := ioutil.TempFile("", "")
 	if err != nil {
 		return err
 	}
 	defer os.Remove(tf.Name())
-	Build(m, tf, false, "", false)
+	if err := Build(m, tf, BuildOpts{Pull: false, BuilderType: "", DecompressKernel: false, CacheDir: cache, DockerCache: true, Arch: arch}); err != nil {
+		return err
+	}
 	if err := tf.Close(); err != nil {
 		return err
 	}

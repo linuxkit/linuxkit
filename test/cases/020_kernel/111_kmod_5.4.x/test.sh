@@ -19,12 +19,12 @@ clean_up() {
 trap clean_up EXIT
 
 # Make sure we have the latest kernel image
-docker pull linuxkit/kernel:5.4.39
+docker pull linuxkit/kernel:5.4.156
 # Build a package
 docker build -t ${IMAGE_NAME} .
 
 # Build and run a LinuxKit image with kernel module (and test script)
-linuxkit build -format kernel+initrd -name "${NAME}" test.yml
+linuxkit build -docker -format kernel+initrd -name "${NAME}" test.yml
 RESULT="$(linuxkit run ${NAME})"
 echo "${RESULT}" | grep -q "Hello LinuxKit"
 

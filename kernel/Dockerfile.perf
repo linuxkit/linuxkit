@@ -1,9 +1,11 @@
 # This Dockerfile extracts the source code and headers from a kernel package,
 # builds the perf utility, and places it into a scratch image
 ARG IMAGE
+ARG BUILD_IMAGE
+
 FROM ${IMAGE} AS ksrc
 
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS build
+FROM ${BUILD_IMAGE} AS build
 RUN apk add \
     argp-standalone \
     bash \
@@ -18,6 +20,7 @@ RUN apk add \
     kmod \
     elfutils-dev \
     findutils \
+    libelf-static \
     mpc1-dev \
     mpfr-dev \
     python3 \

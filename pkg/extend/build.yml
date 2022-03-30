@@ -2,6 +2,10 @@ image: extend
 config:
   binds:
     - /dev:/dev
+  devices:
+    # all block devices
+    - path: all
+      type: b
   capabilities:
     - CAP_SYS_ADMIN
     - CAP_MKNOD

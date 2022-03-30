@@ -1,0 +1,41 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 9 Mar 2021 09:42:13 +0100
+Subject: [PATCH 10/20] ath9k: Use tasklet_disable_in_atomic()
+
+All callers of ath9k_beacon_ensure_primary_slot() are preemptible /
+acquire a mutex except for this callchain:
+
+  spin_lock_bh(&sc->sc_pcu_lock);
+  ath_complete_reset()
+  -> ath9k_calculate_summary_state()
+     -> ath9k_beacon_ensure_primary_slot()
+
+It's unclear how that can be distangled, so use tasklet_disable_in_atomic()
+for now. This allows tasklet_disable() to become sleepable once the
+remaining atomic users are cleaned up.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Cc: ath9k-devel@qca.qualcomm.com
+Cc: Kalle Valo <kvalo@codeaurora.org>
+Cc: "David S. Miller" <davem@davemloft.net>
+Cc: Jakub Kicinski <kuba@kernel.org>
+Cc: linux-wireless@vger.kernel.org
+Cc: netdev@vger.kernel.org
+Acked-by: Kalle Valo <kvalo@codeaurora.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/net/wireless/ath/ath9k/beacon.c |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/net/wireless/ath/ath9k/beacon.c
++++ b/drivers/net/wireless/ath/ath9k/beacon.c
+@@ -251,7 +251,7 @@ void ath9k_beacon_ensure_primary_slot(st
+ 	int first_slot = ATH_BCBUF;
+ 	int slot;
+ 
+-	tasklet_disable(&sc->bcon_tasklet);
++	tasklet_disable_in_atomic(&sc->bcon_tasklet);
+ 
+ 	/* Find first taken slot. */
+ 	for (slot = 0; slot < ATH_BCBUF; slot++) {

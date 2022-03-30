@@ -1,0 +1,28 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 9 Mar 2021 09:42:17 +0100
+Subject: [PATCH 14/20] tasklets: Switch tasklet_disable() to the sleep wait
+ variant
+
+ -- NOT FOR IMMEDIATE MERGING --
+
+Now that all users of tasklet_disable() are invoked from sleepable context,
+convert it to use tasklet_unlock_wait() which might sleep.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/interrupt.h |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -716,8 +716,7 @@ static inline void tasklet_disable_in_at
+ static inline void tasklet_disable(struct tasklet_struct *t)
+ {
+ 	tasklet_disable_nosync(t);
+-	/* Spin wait until all atomic users are converted */
+-	tasklet_unlock_spin_wait(t);
++	tasklet_unlock_wait(t);
+ 	smp_mb();
+ }
+ 

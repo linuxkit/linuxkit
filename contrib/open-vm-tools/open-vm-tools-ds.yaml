@@ -22,8 +22,15 @@ spec:
         value: "true"
         effect: NoSchedule
       - key: node-role.kubernetes.io/master
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - key: node-role.kubernetes.io/control-plane
+      - key: node-role.kubernetes.io/control-plane
+        operator: Exists
+        effect: NoSchedule
       containers:
-      - image: linuxkit/open-vm-tools:v0.8
+      - image: linuxkit/open-vm-tools:4c3158c7ba27f7ad0ede5d383ca25b57c5588a26
         name: open-vm-tools
         resources:
           requests:

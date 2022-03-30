@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS mirror
+FROM linuxkit/alpine:33063834cf72d563cd8703467836aaa2f2b5a300 AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
@@ -7,6 +7,7 @@ RUN apk add --no-cache --initdb -p /out \
     busybox \
     ca-certificates \
     musl \
+    openssh-client \
     openssh-server \
     tini \
     util-linux \
@@ -21,4 +22,4 @@ COPY --from=mirror /out/ /
 COPY etc/ /etc/
 COPY usr/ /usr/
 RUN mkdir -p /etc/ssh /root/.ssh && chmod 0700 /root/.ssh
-CMD ["/sbin/tini", "/usr/bin/ssh.sh"]
+CMD ["/sbin/tini", "-s", "/usr/bin/ssh.sh"]

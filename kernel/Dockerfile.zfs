@@ -1,6 +1,9 @@
 ARG IMAGE
+ARG BUILD_IMAGE
+
 FROM ${IMAGE} AS ksrc
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS build
+
+FROM ${BUILD_IMAGE} AS build
 RUN apk add \
     attr-dev \
     autoconf \
@@ -42,7 +45,7 @@ RUN ./autogen.sh && \
 
 # Run depmod against the new module directory.
 RUN cd /lib/modules && \
-    depmod -ae * 
+    depmod -ae *
 
 FROM scratch
 ENTRYPOINT []

@@ -1,0 +1,59 @@
+From: "Ahmed S. Darwish" <a.darwish@linutronix.de>
+Date: Wed, 10 Jun 2020 12:53:22 +0200
+Subject: [PATCH 24/24] xfrm: Use sequence counter with associated spinlock
+
+A sequence counter write side critical section must be protected by some
+form of locking to serialize writers. A plain seqcount_t does not
+contain the information of which lock must be held when entering a write
+side critical section.
+
+Use the new seqcount_spinlock_t data type, which allows to associate a
+spinlock with the sequence counter. This enables lockdep to verify that
+the spinlock used for writer serialization is held when the write side
+critical section is entered.
+
+If lockdep is disabled this lock association is compiled out and has
+neither storage size nor runtime overhead.
+
+Upstream-status: The xfrm locking used for seqcoun writer serialization
+appears to be broken. If that's the case, a proper fix will need to be
+submitted upstream. (e.g. make the seqcount per network namespace?)
+
+Signed-off-by: Ahmed S. Darwish <a.darwish@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ net/xfrm/xfrm_state.c |    9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+--- a/net/xfrm/xfrm_state.c
++++ b/net/xfrm/xfrm_state.c
+@@ -44,7 +44,7 @@ static void xfrm_state_gc_task(struct wo
+  */
+ 
+ static unsigned int xfrm_state_hashmax __read_mostly = 1 * 1024 * 1024;
+-static __read_mostly seqcount_t xfrm_state_hash_generation = SEQCNT_ZERO(xfrm_state_hash_generation);
++static __read_mostly seqcount_spinlock_t xfrm_state_hash_generation;
+ static struct kmem_cache *xfrm_state_cache __ro_after_init;
+ 
+ static DECLARE_WORK(xfrm_state_gc_work, xfrm_state_gc_task);
+@@ -139,6 +139,11 @@ static void xfrm_hash_resize(struct work
+ 		return;
+ 	}
+ 
++	/* XXX - the locking which protects the sequence counter appears
++	 * to be broken here. The sequence counter is global, but the
++	 * spinlock used for the sequence counter write serialization is
++	 * per network namespace...
++	 */
+ 	spin_lock_bh(&net->xfrm.xfrm_state_lock);
+ 	write_seqcount_begin(&xfrm_state_hash_generation);
+ 
+@@ -2666,6 +2671,8 @@ int __net_init xfrm_state_init(struct ne
+ 	net->xfrm.state_num = 0;
+ 	INIT_WORK(&net->xfrm.state_hash_work, xfrm_hash_resize);
+ 	spin_lock_init(&net->xfrm.xfrm_state_lock);
++	seqcount_spinlock_init(&xfrm_state_hash_generation,
++			       &net->xfrm.xfrm_state_lock);
+ 	return 0;
+ 
+ out_byspi:

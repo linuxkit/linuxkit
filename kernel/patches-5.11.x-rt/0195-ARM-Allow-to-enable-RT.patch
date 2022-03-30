@@ -1,0 +1,29 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 11 Oct 2019 13:14:29 +0200
+Subject: [PATCH] ARM: Allow to enable RT
+
+Allow to select RT.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ arch/arm/Kconfig |    2 ++
+ 1 file changed, 2 insertions(+)
+
+--- a/arch/arm/Kconfig
++++ b/arch/arm/Kconfig
+@@ -30,6 +30,7 @@ config ARM
+ 	select ARCH_OPTIONAL_KERNEL_RWX if ARCH_HAS_STRICT_KERNEL_RWX
+ 	select ARCH_OPTIONAL_KERNEL_RWX_DEFAULT if CPU_V7
+ 	select ARCH_SUPPORTS_ATOMIC_RMW
++	select ARCH_SUPPORTS_RT if HAVE_POSIX_CPU_TIMERS_TASK_WORK
+ 	select ARCH_USE_BUILTIN_BSWAP
+ 	select ARCH_USE_CMPXCHG_LOCKREF
+ 	select ARCH_WANT_DEFAULT_TOPDOWN_MMAP_LAYOUT if MMU
+@@ -123,6 +124,7 @@ config ARM
+ 	select OLD_SIGSUSPEND3
+ 	select PCI_SYSCALL if PCI
+ 	select PERF_USE_VMALLOC
++	select HAVE_POSIX_CPU_TIMERS_TASK_WORK if !KVM
+ 	select RTC_LIB
+ 	select SET_FS
+ 	select SYS_SUPPORTS_APM_EMULATION

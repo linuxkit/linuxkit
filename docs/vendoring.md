@@ -2,16 +2,24 @@ Vendoring
 =========
 
 The Go code in this repo depends on a number of Go libraries.
-These are vendored in to the `src/cmd/linuxkit/vendor` directory using [`vndr`](https://github.com/lk4d4/vndr)
-The `vendor.conf` file contains a list of the repositories and the git SHA or branch name that should be vendored
+These are vendored in to the `src/cmd/linuxkit/vendor` directory using [go modules](https://golang.org/ref/mod)
 
 ## Updating dependencies
 
-Update `src/cmd/linuxkit/vendor.conf` with the dependency that you would like to add.
-Details of usage of the `vndr` tool and the format of `vendor.conf` can be found [here](https://github.com/LK4D4/vndr/blob/master/README.md)
+Go modules should install any required dependencies to `go.mod` and `go.sum` when running normal go commands such as `go build`,
+`go vet`, etc. To install specific versions, use `go get <dependency>@<reference>`.
 
-Once done, you must run the `vndr` tool to add the necessary files to the `vendor` directory.
-The easiest way to do this is in a container.
+See the [go modules](https://golang.org/ref/mod) documentation for more information.
+
+LinuxKit vendors all dependencies to make it completely self-contained. Once `go.mod` is up to date,
+you must update the dependencies, either using your local go toolchain or in a container.
+
+## Updating locally
+
+To vendor all dependencies:
+
+1. `cd src/cmd/linuxkit`
+1. Run `go mod vendor`
 
 ## Updating in a container
 
@@ -21,39 +29,7 @@ To update all dependencies:
 docker run -it --rm \
 -v $(pwd):/go/src/github.com/linuxkit/linuxkit \
 -w /go/src/github.com/linuxkit/linuxkit/src/cmd/linuxkit \
---entrypoint /go/bin/vndr \
-linuxkit/go-compile:b1446b2ba407225011f97ae1dba0f512ae7f9b84
-```
-
-To update a single dependency:
-
-```
-docker run -it --rm \
--v $(pwd):/go/src/github.com/linuxkit/linuxkit \
--w /go/src/github.com/linuxkit/linuxkit/src/cmd/linuxkit \
---entrypoint /go/bin/vndr \
-linuxkit/go-compile:b1446b2ba407225011f97ae1dba0f512ae7f9b84
-github.com/docker/docker
-```
-
-## Updating locally
-
-First you must install `vndr` and ensure that `$GOPATH/bin` is on your `$PATH`
-
-```
-go get -u github.com/LK4D4/vndr
-```
-
-To update all dependencies:
-
-```
-cd src/cmd/linuxkit
-vndr
-```
-
-To update a single dependency:
-
-```
-cd /src/cmd/linuxkit
-vndr github.com/docker/docker
+--entrypoint=go
+linuxkit/go-compile:7b1f5a37d2a93cd4a9aa2a87db264d8145944006
+mod vendor
 ```

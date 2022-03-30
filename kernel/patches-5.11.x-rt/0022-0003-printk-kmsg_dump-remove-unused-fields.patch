@@ -1,0 +1,36 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Mon, 21 Dec 2020 11:19:39 +0106
+Subject: [PATCH 03/28] printk: kmsg_dump: remove unused fields
+
+struct kmsg_dumper still contains some fields that were used to
+iterate the old ringbuffer. They are no longer used. Remove them
+and update the struct documentation.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Reviewed-by: Petr Mladek <pmladek@suse.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/kmsg_dump.h |    5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
+
+--- a/include/linux/kmsg_dump.h
++++ b/include/linux/kmsg_dump.h
+@@ -36,6 +36,9 @@ enum kmsg_dump_reason {
+  * 		through the record iterator
+  * @max_reason:	filter for highest reason number that should be dumped
+  * @registered:	Flag that specifies if this is already registered
++ * @active:	Flag that specifies if this is currently dumping
++ * @cur_seq:	Points to the oldest message to dump (private)
++ * @next_seq:	Points after the newest message to dump (private)
+  */
+ struct kmsg_dumper {
+ 	struct list_head list;
+@@ -45,8 +48,6 @@ struct kmsg_dumper {
+ 	bool registered;
+ 
+ 	/* private state of the kmsg iterator */
+-	u32 cur_idx;
+-	u32 next_idx;
+ 	u64 cur_seq;
+ 	u64 next_seq;
+ };

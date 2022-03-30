@@ -4,9 +4,11 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
+	stdlog "log"
 	"os"
 	"path/filepath"
 
+	ggcrlog "github.com/google/go-containerregistry/pkg/logs"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 
 	log "github.com/sirupsen/logrus"
@@ -20,10 +22,6 @@ type GlobalConfig struct {
 
 // PkgConfig is the config specific to the `pkg` subcommand
 type PkgConfig struct {
-	// ContentTrustCommand is passed to `sh -c` and the stdout
-	// (including whitespace and \n) is set as the content trust
-	// passphrase. Can be used to execute a password manager.
-	ContentTrustCommand string `yaml:"content-trust-passphrase-command"`
 }
 
 var (
@@ -74,6 +72,7 @@ func main() {
 		fmt.Printf("USAGE: %s [options] COMMAND\n\n", filepath.Base(os.Args[0]))
 		fmt.Printf("Commands:\n")
 		fmt.Printf("  build       Build an image from a YAML file\n")
+		fmt.Printf("  cache       Manage the local cache\n")
 		fmt.Printf("  metadata    Metadata utilities\n")
 		fmt.Printf("  pkg         Package building\n")
 		fmt.Printf("  push        Push a VM image to a cloud or image store\n")
@@ -107,7 +106,11 @@ func main() {
 		// Switch back to the standard formatter
 		log.SetFormatter(defaultLogFormatter)
 		log.SetLevel(log.DebugLevel)
+		// set go-containerregistry logging as well
+		ggcrlog.Warn = stdlog.New(log.StandardLogger().WriterLevel(log.WarnLevel), "", 0)
+		ggcrlog.Debug = stdlog.New(log.StandardLogger().WriterLevel(log.DebugLevel), "", 0)
 	}
+	ggcrlog.Progress = stdlog.New(log.StandardLogger().WriterLevel(log.InfoLevel), "", 0)
 
 	args := flag.Args()
 	if len(args) < 1 {
@@ -119,6 +122,8 @@ func main() {
 	switch args[0] {
 	case "build":
 		build(args[1:])
+	case "cache":
+		cache(args[1:])
 	case "metadata":
 		metadata(args[1:])
 	case "pkg":

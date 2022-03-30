@@ -1,0 +1,136 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Fri, 11 Dec 2020 00:55:25 +0106
+Subject: [PATCH 16/28] printk: track/limit recursion
+
+Limit printk() recursion to 1 level. This is enough to print a
+stacktrace for the printk call, should a WARN or BUG occur.
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ kernel/printk/printk.c |   74 +++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 71 insertions(+), 3 deletions(-)
+
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -1940,6 +1940,65 @@ static void call_console_drivers(const c
+ 	}
+ }
+ 
++#ifdef CONFIG_PRINTK_NMI
++#define NUM_RECURSION_CTX 2
++#else
++#define NUM_RECURSION_CTX 1
++#endif
++
++struct printk_recursion {
++	char	count[NUM_RECURSION_CTX];
++};
++
++static DEFINE_PER_CPU(struct printk_recursion, percpu_printk_recursion);
++static char printk_recursion_count[NUM_RECURSION_CTX];
++
++static char *printk_recursion_counter(void)
++{
++	struct printk_recursion *rec;
++	char *count;
++
++	if (!printk_percpu_data_ready()) {
++		count = &printk_recursion_count[0];
++	} else {
++		rec = this_cpu_ptr(&percpu_printk_recursion);
++
++		count = &rec->count[0];
++	}
++
++#ifdef CONFIG_PRINTK_NMI
++	if (in_nmi())
++		count++;
++#endif
++
++	return count;
++}
++
++static bool printk_enter_irqsave(unsigned long *flags)
++{
++	char *count;
++
++	local_irq_save(*flags);
++	count = printk_recursion_counter();
++	/* Only 1 level of recursion allowed. */
++	if (*count > 1) {
++		local_irq_restore(*flags);
++		return false;
++	}
++	(*count)++;
++
++	return true;
++}
++
++static void printk_exit_irqrestore(unsigned long flags)
++{
++	char *count;
++
++	count = printk_recursion_counter();
++	(*count)--;
++	local_irq_restore(flags);
++}
++
+ int printk_delay_msec __read_mostly;
+ 
+ static inline void printk_delay(void)
+@@ -2040,11 +2099,13 @@ int vprintk_store(int facility, int leve
+ 	struct prb_reserved_entry e;
+ 	enum log_flags lflags = 0;
+ 	struct printk_record r;
++	unsigned long irqflags;
+ 	u16 trunc_msg_len = 0;
+ 	char prefix_buf[8];
+ 	u16 reserve_size;
+ 	va_list args2;
+ 	u16 text_len;
++	int ret = 0;
+ 	u64 ts_nsec;
+ 
+ 	/*
+@@ -2055,6 +2116,9 @@ int vprintk_store(int facility, int leve
+ 	 */
+ 	ts_nsec = local_clock();
+ 
++	if (!printk_enter_irqsave(&irqflags))
++		return 0;
++
+ 	/*
+ 	 * The sprintf needs to come first since the syslog prefix might be
+ 	 * passed in as a parameter. An extra byte must be reserved so that
+@@ -2092,7 +2156,8 @@ int vprintk_store(int facility, int leve
+ 				prb_commit(&e);
+ 			}
+ 
+-			return text_len;
++			ret = text_len;
++			goto out;
+ 		}
+ 	}
+ 
+@@ -2108,7 +2173,7 @@ int vprintk_store(int facility, int leve
+ 
+ 		prb_rec_init_wr(&r, reserve_size + trunc_msg_len);
+ 		if (!prb_reserve(&e, prb, &r))
+-			return 0;
++			goto out;
+ 	}
+ 
+ 	/* fill message */
+@@ -2130,7 +2195,10 @@ int vprintk_store(int facility, int leve
+ 	else
+ 		prb_final_commit(&e);
+ 
+-	return (text_len + trunc_msg_len);
++	ret = text_len + trunc_msg_len;
++out:
++	printk_exit_irqrestore(irqflags);
++	return ret;
+ }
+ 
+ asmlinkage int vprintk_emit(int facility, int level,

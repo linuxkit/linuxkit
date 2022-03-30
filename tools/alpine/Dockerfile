@@ -1,4 +1,4 @@
-FROM alpine:3.11 AS mirror
+FROM alpine:3.14 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -7,28 +7,13 @@ RUN apk update && apk upgrade -a
 COPY Dockerfile /Dockerfile
 COPY packages* /tmp/
 
-# mirror packages
+# mirror packages - both generic and repository specific ones
 RUN cat /tmp/packages.$(uname -m) >> /tmp/packages && \
    mkdir -p /mirror/$(apk --print-arch) && \
    apk fetch --recursive -o /mirror/$(apk --print-arch) $(apk info; cat /tmp/packages)
 
-# It's tricky to mix edge/testing packages which sometimes leads to dependency conflicts.
-# wireguard-tools currently is only in edge, so here we build our own package using the
-# APKBUILD file from edge.
-RUN apk add alpine-sdk libmnl-dev curl && \
-    adduser -D builder && \
-    addgroup builder abuild && \
-    mkdir -p /wireguard && \
-    chmod 0777 /wireguard && \
-    cd /wireguard && \
-    curl -fsSLo APKBUILD https://git.alpinelinux.org/cgit/aports/plain/community/wireguard-tools/APKBUILD && \
-    su -c "abuild-keygen -a -n && abuild -r" builder && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-[0-9]*.apk /mirror/$(apk --print-arch) && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-[0-9]*.apk /mirror/$(apk --print-arch) && \
-    cp /home/builder/packages/$(apk --print-arch)/wireguard-tools-wg-quick-[0-9]*.apk /mirror/$(apk --print-arch)
-
-# install abuild for signing
-RUN apk add --no-cache abuild
+# install abuild and sudo for signing
+RUN apk add --no-cache abuild sudo
 
 # install a new key into /etc/apk/keys
 RUN abuild-keygen -a -i -n
@@ -51,20 +36,6 @@ RUN go get -u golang.org/x/lint/golint
 RUN go get -u github.com/gordonklaus/ineffassign
 RUN go get -u github.com/LK4D4/vndr
 
-# checkout and compile containerd
-# Update `FROM` in `pkg/containerd/Dockerfile`, `pkg/init/Dockerfile` and
-# `test/pkg/containerd/Dockerfile` when changing this.
-ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
-ENV CONTAINERD_COMMIT=v1.3.4
-RUN mkdir -p $GOPATH/src/github.com/containerd && \
-  cd $GOPATH/src/github.com/containerd && \
-  git clone https://github.com/containerd/containerd.git && \
-  cd $GOPATH/src/github.com/containerd/containerd && \
-  git checkout $CONTAINERD_COMMIT
-RUN apk add --no-cache btrfs-progs-dev gcc libc-dev linux-headers make libseccomp-dev
-RUN cd $GOPATH/src/github.com/containerd/containerd && \
-  make binaries EXTRA_FLAGS="-buildmode pie" EXTRA_LDFLAGS='-extldflags "-fno-PIC -static"' BUILDTAGS="static_build no_devmapper"
-
 # Checkout and compile iucode-tool for Intel CPU microcode
 # On non-x86_64 create a dummy file to copy below.
 ENV IUCODE_REPO=https://gitlab.com/iucode-tool/iucode-tool
@@ -85,7 +56,9 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.11
+FROM alpine:3.14
+
+ARG TARGETARCH
 
 COPY --from=mirror /etc/apk/repositories /etc/apk/repositories
 COPY --from=mirror /etc/apk/repositories.upstream /etc/apk/repositories.upstream
@@ -93,9 +66,10 @@ COPY --from=mirror /etc/apk/keys /etc/apk/keys/
 COPY --from=mirror /mirror /mirror/
 COPY --from=mirror /go/bin /go/bin/
 COPY --from=mirror /Dockerfile /Dockerfile
-COPY --from=mirror /go/src/github.com/containerd/containerd /go/src/github.com/containerd/containerd/
 COPY --from=mirror /iucode_tool /usr/bin/
 
 RUN apk update && apk upgrade -a
+
+RUN echo Dockerfile /lib/apk/db/installed $(find /mirror -name '*.apk' -type f) $(find /go/bin -type f) | xargs cat | sha1sum | sed 's/ .*//' | sed 's/$/-'"${TARGETARCH}"'/' > /etc/alpine-hash-arch
 
 ENV GOPATH=/go PATH=$PATH:/go/bin

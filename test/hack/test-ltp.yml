@@ -1,20 +1,17 @@
 kernel:
-  image: linuxkit/kernel:5.4.39
+  image: linuxkit/kernel:5.10.92
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:v0.8
-  - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
+  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
+  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
+  - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
 onboot:
   - name: ltp
     image: linuxkit/test-ltp:0967388fb338867dddd3c1a72470a1a7cec5a0dd
     binds:
      - /etc/ltp/baseline:/etc/ltp/baseline
   - name: poweroff
-    image: linuxkit/poweroff:06dd4e46c62fbe79123a028835c921f80e4855d3
+    image: linuxkit/poweroff:39d99e5909b6f8faccedc78d6d2646cdb6c9ed9c
 files:
   - path: /etc/ltp/baseline
     contents: "100"
-trust:
-  org:
-    - linuxkit

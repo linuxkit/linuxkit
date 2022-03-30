@@ -8,20 +8,14 @@ set -e
 # the manifest is pushed to. It assumes that there is are images of
 # the form <org>/<image>:<tag>-<arch> already on hub.
 #
-# If TRUST is not set, the manifest will not be signed.
-#
-# For signing, DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE must be set.
-
 # This should all be replaced with 'docker manifest' once it lands.
 
 TARGET=$1
-TRUST=$2
 
 REPO=$(echo "$TARGET" | cut -d':' -f1)
 TAG=$(echo "$TARGET" | cut -d':' -f2)
 
-# Work out credentials. On macOS they are needed for manifest-tool and
-# we need them for notary on all platforms.
+# Work out credentials. On macOS they are needed for manifest-tool
 case $(uname -s) in
     Darwin)
         # Prior to 2018-03-27 D4M used a .bin suffix on the keychain utility binary name. Support the old name for a while
@@ -63,23 +57,3 @@ OUT=$(manifest-tool $MT_ARGS push from-args \
                     --target "$TARGET")
 
 echo "$OUT"
-if [ -z "$TRUST" ]; then
-    echo "Not signing $TARGET"
-    exit 0
-fi
-
-# Extract sha256 and length from the manifest-tool output
-SHA256=$(echo "$OUT" | cut -d' ' -f2 | cut -d':' -f2)
-LEN=$(echo "$OUT" | cut -d' ' -f3)
-
-# notary 0.6.0 accepts authentication as base64-encoded "username:password"
-export NOTARY_AUTH=$(echo "$USER:$PASS" | base64)
-export NOTARY_DELEGATION_PASSPHRASE="$DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"
-
-notary -s https://notary.docker.io -d $HOME/.docker/trust addhash \
-       -p docker.io/$REPO $TAG $LEN --sha256 $SHA256 \
-       -r targets/releases
-
-echo
-echo "New signed multi-arch image: $REPO:$TAG"
-echo

@@ -1,0 +1,198 @@
+From: John Ogness <john.ogness@linutronix.de>
+Date: Mon, 30 Nov 2020 01:42:10 +0106
+Subject: [PATCH 28/28] printk: add pr_flush()
+
+Provide a function to allow waiting for console printers to catch
+up to the latest logged message.
+
+Use pr_flush() to give console printers a chance to finish in
+critical situations if no atomic console is available. For now
+pr_flush() is only used in the most common error paths:
+panic(), print_oops_end_marker(), report_bug(), kmsg_dump().
+
+Signed-off-by: John Ogness <john.ogness@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/printk.h |    2 +
+ kernel/panic.c         |   28 ++++++++++-------
+ kernel/printk/printk.c |   79 +++++++++++++++++++++++++++++++++++++++++++++++++
+ lib/bug.c              |    1 
+ 4 files changed, 99 insertions(+), 11 deletions(-)
+
+--- a/include/linux/printk.h
++++ b/include/linux/printk.h
+@@ -481,6 +481,8 @@ extern int kptr_restrict;
+ 	no_printk(KERN_DEBUG pr_fmt(fmt), ##__VA_ARGS__)
+ #endif
+ 
++bool pr_flush(int timeout_ms, bool reset_on_progress);
++
+ /*
+  * ratelimited messages with local ratelimit_state,
+  * no local ratelimit_state used in the !PRINTK case
+--- a/kernel/panic.c
++++ b/kernel/panic.c
+@@ -177,12 +177,28 @@ static void panic_print_sys_info(void)
+ void panic(const char *fmt, ...)
+ {
+ 	static char buf[1024];
++	va_list args2;
+ 	va_list args;
+ 	long i, i_next = 0, len;
+ 	int state = 0;
+ 	int old_cpu, this_cpu;
+ 	bool _crash_kexec_post_notifiers = crash_kexec_post_notifiers;
+ 
++	console_verbose();
++	pr_emerg("Kernel panic - not syncing:\n");
++	va_start(args2, fmt);
++	va_copy(args, args2);
++	vprintk(fmt, args2);
++	va_end(args2);
++#ifdef CONFIG_DEBUG_BUGVERBOSE
++	/*
++	 * Avoid nested stack-dumping if a panic occurs during oops processing
++	 */
++	if (!test_taint(TAINT_DIE) && oops_in_progress <= 1)
++		dump_stack();
++#endif
++	pr_flush(1000, true);
++
+ 	/*
+ 	 * Disable local interrupts. This will prevent panic_smp_self_stop
+ 	 * from deadlocking the first cpu that invokes the panic, since
+@@ -213,24 +229,13 @@ void panic(const char *fmt, ...)
+ 	if (old_cpu != PANIC_CPU_INVALID && old_cpu != this_cpu)
+ 		panic_smp_self_stop();
+ 
+-	console_verbose();
+ 	bust_spinlocks(1);
+-	va_start(args, fmt);
+ 	len = vscnprintf(buf, sizeof(buf), fmt, args);
+ 	va_end(args);
+ 
+ 	if (len && buf[len - 1] == '\n')
+ 		buf[len - 1] = '\0';
+ 
+-	pr_emerg("Kernel panic - not syncing: %s\n", buf);
+-#ifdef CONFIG_DEBUG_BUGVERBOSE
+-	/*
+-	 * Avoid nested stack-dumping if a panic occurs during oops processing
+-	 */
+-	if (!test_taint(TAINT_DIE) && oops_in_progress <= 1)
+-		dump_stack();
+-#endif
+-
+ 	/*
+ 	 * If kgdb is enabled, give it a chance to run before we stop all
+ 	 * the other CPUs or else we won't be able to debug processes left
+@@ -552,6 +557,7 @@ static void print_oops_end_marker(void)
+ {
+ 	init_oops_id();
+ 	pr_warn("---[ end trace %016llx ]---\n", (unsigned long long)oops_id);
++	pr_flush(1000, true);
+ }
+ 
+ /*
+--- a/kernel/printk/printk.c
++++ b/kernel/printk/printk.c
+@@ -3228,6 +3228,12 @@ void kmsg_dump(enum kmsg_dump_reason rea
+ 			sync_mode = true;
+ 			pr_info("enabled sync mode\n");
+ 		}
++
++		/*
++		 * Give the printing threads time to flush, allowing up to
++		 * 1s of no printing forward progress before giving up.
++		 */
++		pr_flush(1000, true);
+ 	}
+ 
+ 	rcu_read_lock();
+@@ -3507,3 +3513,76 @@ void console_atomic_unlock(unsigned int
+ 	prb_unlock(&printk_cpulock, flags);
+ }
+ EXPORT_SYMBOL(console_atomic_unlock);
++
++static void pr_msleep(bool may_sleep, int ms)
++{
++	if (may_sleep) {
++		msleep(ms);
++	} else {
++		while (ms--)
++			udelay(1000);
++	}
++}
++
++/**
++ * pr_flush() - Wait for printing threads to catch up.
++ *
++ * @timeout_ms:        The maximum time (in ms) to wait.
++ * @reset_on_progress: Reset the timeout if forward progress is seen.
++ *
++ * A value of 0 for @timeout_ms means no waiting will occur. A value of -1
++ * represents infinite waiting.
++ *
++ * If @reset_on_progress is true, the timeout will be reset whenever any
++ * printer has been seen to make some forward progress.
++ *
++ * Context: Any context.
++ * Return: true if all enabled printers are caught up.
++ */
++bool pr_flush(int timeout_ms, bool reset_on_progress)
++{
++	int remaining = timeout_ms;
++	struct console *con;
++	u64 last_diff = 0;
++	bool may_sleep;
++	u64 printk_seq;
++	u64 diff;
++	u64 seq;
++
++	may_sleep = (preemptible() && !in_softirq());
++
++	seq = prb_next_seq(prb);
++
++	for (;;) {
++		diff = 0;
++
++		for_each_console(con) {
++			if (!(con->flags & CON_ENABLED))
++				continue;
++			printk_seq = atomic64_read(&con->printk_seq);
++			if (printk_seq < seq)
++				diff += seq - printk_seq;
++		}
++
++		if (diff != last_diff && reset_on_progress)
++			remaining = timeout_ms;
++
++		if (!diff || remaining == 0)
++			break;
++
++		if (remaining < 0) {
++			pr_msleep(may_sleep, 100);
++		} else if (remaining < 100) {
++			pr_msleep(may_sleep, remaining);
++			remaining = 0;
++		} else {
++			pr_msleep(may_sleep, 100);
++			remaining -= 100;
++		}
++
++		last_diff = diff;
++	}
++
++	return (diff == 0);
++}
++EXPORT_SYMBOL(pr_flush);
+--- a/lib/bug.c
++++ b/lib/bug.c
+@@ -205,6 +205,7 @@ enum bug_trap_type report_bug(unsigned l
+ 	else
+ 		pr_crit("Kernel BUG at %pB [verbose debug info unavailable]\n",
+ 			(void *)bugaddr);
++	pr_flush(1000, true);
+ 
+ 	return BUG_TRAP_TYPE_BUG;
+ }

@@ -1,0 +1,410 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 26 Feb 2021 15:14:15 +0100
+Subject: [PATCH 4/8] mm: slub: Move discard_slab() invocations out of IRQ-off
+ sections
+
+discard_slab() gives the memory back to the page-allocator. Some of its
+invocation occur from IRQ-disabled sections which were disabled by SLUB.
+An example is the deactivate_slab() invocation from within
+___slab_alloc() or put_cpu_partial().
+
+Instead of giving the memory back directly, put the pages on a list and
+process it once the caller is out of the known IRQ-off region.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/slub.c |  114 ++++++++++++++++++++++++++++++++++++++++++--------------------
+ 1 file changed, 78 insertions(+), 36 deletions(-)
+
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -1869,12 +1869,29 @@ static void free_slab(struct kmem_cache
+ 		__free_slab(s, page);
+ }
+ 
++static void discard_slab_delayed(struct kmem_cache *s, struct page *page,
++				 struct list_head *delayed_free)
++{
++	dec_slabs_node(s, page_to_nid(page), page->objects);
++	list_add(&page->lru, delayed_free);
++}
++
+ static void discard_slab(struct kmem_cache *s, struct page *page)
+ {
+ 	dec_slabs_node(s, page_to_nid(page), page->objects);
+ 	free_slab(s, page);
+ }
+ 
++static void discard_delayed(struct list_head *l)
++{
++	while (!list_empty(l)) {
++		struct page *page = list_first_entry(l, struct page, lru);
++
++		list_del(&page->lru);
++		__free_slab(page->slab_cache, page);
++	}
++}
++
+ /*
+  * Management of partially allocated slabs.
+  */
+@@ -1948,15 +1965,16 @@ static inline void *acquire_slab(struct
+ 	WARN_ON(!freelist);
+ 	return freelist;
+ }
+-
+-static void put_cpu_partial(struct kmem_cache *s, struct page *page, int drain);
++static void put_cpu_partial(struct kmem_cache *s, struct page *page, int drain,
++			    struct list_head *delayed_free);
+ static inline bool pfmemalloc_match(struct page *page, gfp_t gfpflags);
+ 
+ /*
+  * Try to allocate a partial slab from a specific node.
+  */
+ static void *get_partial_node(struct kmem_cache *s, struct kmem_cache_node *n,
+-				struct kmem_cache_cpu *c, gfp_t flags)
++			      struct kmem_cache_cpu *c, gfp_t flags,
++			      struct list_head *delayed_free)
+ {
+ 	struct page *page, *page2;
+ 	void *object = NULL;
+@@ -1989,7 +2007,7 @@ static void *get_partial_node(struct kme
+ 			stat(s, ALLOC_FROM_PARTIAL);
+ 			object = t;
+ 		} else {
+-			put_cpu_partial(s, page, 0);
++			put_cpu_partial(s, page, 0, delayed_free);
+ 			stat(s, CPU_PARTIAL_NODE);
+ 		}
+ 		if (!kmem_cache_has_cpu_partial(s)
+@@ -2005,7 +2023,8 @@ static void *get_partial_node(struct kme
+  * Get a page from somewhere. Search in increasing NUMA distances.
+  */
+ static void *get_any_partial(struct kmem_cache *s, gfp_t flags,
+-		struct kmem_cache_cpu *c)
++			     struct kmem_cache_cpu *c,
++			     struct list_head *delayed_free)
+ {
+ #ifdef CONFIG_NUMA
+ 	struct zonelist *zonelist;
+@@ -2047,7 +2066,7 @@ static void *get_any_partial(struct kmem
+ 
+ 			if (n && cpuset_zone_allowed(zone, flags) &&
+ 					n->nr_partial > s->min_partial) {
+-				object = get_partial_node(s, n, c, flags);
++				object = get_partial_node(s, n, c, flags, delayed_free);
+ 				if (object) {
+ 					/*
+ 					 * Don't check read_mems_allowed_retry()
+@@ -2069,7 +2088,8 @@ static void *get_any_partial(struct kmem
+  * Get a partial page, lock it and return it.
+  */
+ static void *get_partial(struct kmem_cache *s, gfp_t flags, int node,
+-		struct kmem_cache_cpu *c)
++			 struct kmem_cache_cpu *c,
++			 struct list_head *delayed_free)
+ {
+ 	void *object;
+ 	int searchnode = node;
+@@ -2077,11 +2097,12 @@ static void *get_partial(struct kmem_cac
+ 	if (node == NUMA_NO_NODE)
+ 		searchnode = numa_mem_id();
+ 
+-	object = get_partial_node(s, get_node(s, searchnode), c, flags);
++	object = get_partial_node(s, get_node(s, searchnode), c, flags,
++				  delayed_free);
+ 	if (object || node != NUMA_NO_NODE)
+ 		return object;
+ 
+-	return get_any_partial(s, flags, c);
++	return get_any_partial(s, flags, c, delayed_free);
+ }
+ 
+ #ifdef CONFIG_PREEMPTION
+@@ -2157,7 +2178,8 @@ static void init_kmem_cache_cpus(struct
+  * Remove the cpu slab
+  */
+ static void deactivate_slab(struct kmem_cache *s, struct page *page,
+-				void *freelist, struct kmem_cache_cpu *c)
++			    void *freelist, struct kmem_cache_cpu *c,
++			    struct list_head *delayed_free)
+ {
+ 	enum slab_modes { M_NONE, M_PARTIAL, M_FULL, M_FREE };
+ 	struct kmem_cache_node *n = get_node(s, page_to_nid(page));
+@@ -2294,7 +2316,7 @@ static void deactivate_slab(struct kmem_
+ 		stat(s, DEACTIVATE_FULL);
+ 	else if (m == M_FREE) {
+ 		stat(s, DEACTIVATE_EMPTY);
+-		discard_slab(s, page);
++		discard_slab_delayed(s, page, delayed_free);
+ 		stat(s, FREE_SLAB);
+ 	}
+ 
+@@ -2309,8 +2331,8 @@ static void deactivate_slab(struct kmem_
+  * for the cpu using c (or some other guarantee must be there
+  * to guarantee no concurrent accesses).
+  */
+-static void unfreeze_partials(struct kmem_cache *s,
+-		struct kmem_cache_cpu *c)
++static void unfreeze_partials(struct kmem_cache *s, struct kmem_cache_cpu *c,
++			      struct list_head *delayed_free)
+ {
+ #ifdef CONFIG_SLUB_CPU_PARTIAL
+ 	struct kmem_cache_node *n = NULL, *n2 = NULL;
+@@ -2364,7 +2386,7 @@ static void unfreeze_partials(struct kme
+ 		discard_page = discard_page->next;
+ 
+ 		stat(s, DEACTIVATE_EMPTY);
+-		discard_slab(s, page);
++		discard_slab_delayed(s, page, delayed_free);
+ 		stat(s, FREE_SLAB);
+ 	}
+ #endif	/* CONFIG_SLUB_CPU_PARTIAL */
+@@ -2377,7 +2399,8 @@ static void unfreeze_partials(struct kme
+  * If we did not find a slot then simply move all the partials to the
+  * per node partial list.
+  */
+-static void put_cpu_partial(struct kmem_cache *s, struct page *page, int drain)
++static void put_cpu_partial(struct kmem_cache *s, struct page *page, int drain,
++			    struct list_head *delayed_free)
+ {
+ #ifdef CONFIG_SLUB_CPU_PARTIAL
+ 	struct page *oldpage;
+@@ -2400,7 +2423,8 @@ static void put_cpu_partial(struct kmem_
+ 				 * set to the per node partial list.
+ 				 */
+ 				local_irq_save(flags);
+-				unfreeze_partials(s, this_cpu_ptr(s->cpu_slab));
++				unfreeze_partials(s, this_cpu_ptr(s->cpu_slab),
++						  delayed_free);
+ 				local_irq_restore(flags);
+ 				oldpage = NULL;
+ 				pobjects = 0;
+@@ -2422,17 +2446,18 @@ static void put_cpu_partial(struct kmem_
+ 		unsigned long flags;
+ 
+ 		local_irq_save(flags);
+-		unfreeze_partials(s, this_cpu_ptr(s->cpu_slab));
++		unfreeze_partials(s, this_cpu_ptr(s->cpu_slab), delayed_free);
+ 		local_irq_restore(flags);
+ 	}
+ 	preempt_enable();
+ #endif	/* CONFIG_SLUB_CPU_PARTIAL */
+ }
+ 
+-static inline void flush_slab(struct kmem_cache *s, struct kmem_cache_cpu *c)
++static inline void flush_slab(struct kmem_cache *s, struct kmem_cache_cpu *c,
++			      struct list_head *delayed_free)
+ {
+ 	stat(s, CPUSLAB_FLUSH);
+-	deactivate_slab(s, c->page, c->freelist, c);
++	deactivate_slab(s, c->page, c->freelist, c, delayed_free);
+ 
+ 	c->tid = next_tid(c->tid);
+ }
+@@ -2442,21 +2467,24 @@ static inline void flush_slab(struct kme
+  *
+  * Called from IPI handler with interrupts disabled.
+  */
+-static inline void __flush_cpu_slab(struct kmem_cache *s, int cpu)
++static inline void __flush_cpu_slab(struct kmem_cache *s, int cpu,
++				    struct list_head *delayed_free)
+ {
+ 	struct kmem_cache_cpu *c = per_cpu_ptr(s->cpu_slab, cpu);
+ 
+ 	if (c->page)
+-		flush_slab(s, c);
++		flush_slab(s, c, delayed_free);
+ 
+-	unfreeze_partials(s, c);
++	unfreeze_partials(s, c, delayed_free);
+ }
+ 
+ static void flush_cpu_slab(void *d)
+ {
+ 	struct kmem_cache *s = d;
++	LIST_HEAD(delayed_free);
+ 
+-	__flush_cpu_slab(s, smp_processor_id());
++	__flush_cpu_slab(s, smp_processor_id(), &delayed_free);
++	discard_delayed(&delayed_free);
+ }
+ 
+ static bool has_cpu_slab(int cpu, void *info)
+@@ -2480,13 +2508,15 @@ static int slub_cpu_dead(unsigned int cp
+ {
+ 	struct kmem_cache *s;
+ 	unsigned long flags;
++	LIST_HEAD(delayed_free);
+ 
+ 	mutex_lock(&slab_mutex);
+ 	list_for_each_entry(s, &slab_caches, list) {
+ 		local_irq_save(flags);
+-		__flush_cpu_slab(s, cpu);
++		__flush_cpu_slab(s, cpu, &delayed_free);
+ 		local_irq_restore(flags);
+ 	}
++	discard_delayed(&delayed_free);
+ 	mutex_unlock(&slab_mutex);
+ 	return 0;
+ }
+@@ -2570,7 +2600,8 @@ slab_out_of_memory(struct kmem_cache *s,
+ }
+ 
+ static inline void *new_slab_objects(struct kmem_cache *s, gfp_t flags,
+-			int node, struct kmem_cache_cpu **pc)
++				     int node, struct kmem_cache_cpu **pc,
++				     struct list_head *delayed_free)
+ {
+ 	void *freelist;
+ 	struct kmem_cache_cpu *c = *pc;
+@@ -2578,7 +2609,7 @@ static inline void *new_slab_objects(str
+ 
+ 	WARN_ON_ONCE(s->ctor && (flags & __GFP_ZERO));
+ 
+-	freelist = get_partial(s, flags, node, c);
++	freelist = get_partial(s, flags, node, c, delayed_free);
+ 
+ 	if (freelist)
+ 		return freelist;
+@@ -2587,7 +2618,7 @@ static inline void *new_slab_objects(str
+ 	if (page) {
+ 		c = raw_cpu_ptr(s->cpu_slab);
+ 		if (c->page)
+-			flush_slab(s, c);
++			flush_slab(s, c, delayed_free);
+ 
+ 		/*
+ 		 * No other reference to the page yet so we can
+@@ -2666,7 +2697,8 @@ static inline void *get_freelist(struct
+  * already disabled (which is the case for bulk allocation).
+  */
+ static void *___slab_alloc(struct kmem_cache *s, gfp_t gfpflags, int node,
+-			  unsigned long addr, struct kmem_cache_cpu *c)
++			  unsigned long addr, struct kmem_cache_cpu *c,
++			  struct list_head *delayed_free)
+ {
+ 	void *freelist;
+ 	struct page *page;
+@@ -2696,7 +2728,7 @@ static void *___slab_alloc(struct kmem_c
+ 			goto redo;
+ 		} else {
+ 			stat(s, ALLOC_NODE_MISMATCH);
+-			deactivate_slab(s, page, c->freelist, c);
++			deactivate_slab(s, page, c->freelist, c, delayed_free);
+ 			goto new_slab;
+ 		}
+ 	}
+@@ -2707,7 +2739,7 @@ static void *___slab_alloc(struct kmem_c
+ 	 * information when the page leaves the per-cpu allocator
+ 	 */
+ 	if (unlikely(!pfmemalloc_match(page, gfpflags))) {
+-		deactivate_slab(s, page, c->freelist, c);
++		deactivate_slab(s, page, c->freelist, c, delayed_free);
+ 		goto new_slab;
+ 	}
+ 
+@@ -2746,7 +2778,7 @@ static void *___slab_alloc(struct kmem_c
+ 		goto redo;
+ 	}
+ 
+-	freelist = new_slab_objects(s, gfpflags, node, &c);
++	freelist = new_slab_objects(s, gfpflags, node, &c, delayed_free);
+ 
+ 	if (unlikely(!freelist)) {
+ 		slab_out_of_memory(s, gfpflags, node);
+@@ -2762,7 +2794,7 @@ static void *___slab_alloc(struct kmem_c
+ 			!alloc_debug_processing(s, page, freelist, addr))
+ 		goto new_slab;	/* Slab failed checks. Next slab needed */
+ 
+-	deactivate_slab(s, page, get_freepointer(s, freelist), c);
++	deactivate_slab(s, page, get_freepointer(s, freelist), c, delayed_free);
+ 	return freelist;
+ }
+ 
+@@ -2775,6 +2807,7 @@ static void *__slab_alloc(struct kmem_ca
+ {
+ 	void *p;
+ 	unsigned long flags;
++	LIST_HEAD(delayed_free);
+ 
+ 	local_irq_save(flags);
+ #ifdef CONFIG_PREEMPTION
+@@ -2786,8 +2819,9 @@ static void *__slab_alloc(struct kmem_ca
+ 	c = this_cpu_ptr(s->cpu_slab);
+ #endif
+ 
+-	p = ___slab_alloc(s, gfpflags, node, addr, c);
++	p = ___slab_alloc(s, gfpflags, node, addr, c, &delayed_free);
+ 	local_irq_restore(flags);
++	discard_delayed(&delayed_free);
+ 	return p;
+ }
+ 
+@@ -3042,11 +3076,13 @@ static void __slab_free(struct kmem_cach
+ 			 */
+ 			stat(s, FREE_FROZEN);
+ 		} else if (new.frozen) {
++			LIST_HEAD(delayed_free);
+ 			/*
+ 			 * If we just froze the page then put it onto the
+ 			 * per cpu partial list.
+ 			 */
+-			put_cpu_partial(s, page, 1);
++			put_cpu_partial(s, page, 1, &delayed_free);
++			discard_delayed(&delayed_free);
+ 			stat(s, CPU_PARTIAL_FREE);
+ 		}
+ 
+@@ -3290,6 +3326,7 @@ int kmem_cache_alloc_bulk(struct kmem_ca
+ 	struct kmem_cache_cpu *c;
+ 	int i;
+ 	struct obj_cgroup *objcg = NULL;
++	LIST_HEAD(delayed_free);
+ 
+ 	if (IS_ENABLED(CONFIG_PREEMPT_RT) && IS_ENABLED(CONFIG_DEBUG_ATOMIC_SLEEP))
+ 		WARN_ON_ONCE(!preemptible() &&
+@@ -3325,7 +3362,7 @@ int kmem_cache_alloc_bulk(struct kmem_ca
+ 			 * of re-populating per CPU c->freelist
+ 			 */
+ 			p[i] = ___slab_alloc(s, flags, NUMA_NO_NODE,
+-					    _RET_IP_, c);
++					    _RET_IP_, c, &delayed_free);
+ 			if (unlikely(!p[i]))
+ 				goto error;
+ 
+@@ -3341,6 +3378,8 @@ int kmem_cache_alloc_bulk(struct kmem_ca
+ 	c->tid = next_tid(c->tid);
+ 	local_irq_enable();
+ 
++	discard_delayed(&delayed_free);
++
+ 	/* Clear memory outside IRQ disabled fastpath loop */
+ 	if (unlikely(slab_want_init_on_alloc(flags, s))) {
+ 		int j;
+@@ -3354,6 +3393,7 @@ int kmem_cache_alloc_bulk(struct kmem_ca
+ 	return i;
+ error:
+ 	local_irq_enable();
++	discard_delayed(&delayed_free);
+ 	slab_post_alloc_hook(s, objcg, flags, i, p);
+ 	__kmem_cache_free_bulk(s, i, p);
+ 	return 0;
+@@ -4363,6 +4403,7 @@ static struct kmem_cache * __init bootst
+ 	int node;
+ 	struct kmem_cache *s = kmem_cache_zalloc(kmem_cache, GFP_NOWAIT);
+ 	struct kmem_cache_node *n;
++	LIST_HEAD(delayed_free);
+ 
+ 	memcpy(s, static_cache, kmem_cache->object_size);
+ 
+@@ -4371,7 +4412,8 @@ static struct kmem_cache * __init bootst
+ 	 * up.  Even if it weren't true, IRQs are not up so we couldn't fire
+ 	 * IPIs around.
+ 	 */
+-	__flush_cpu_slab(s, smp_processor_id());
++	__flush_cpu_slab(s, smp_processor_id(), &delayed_free);
++	discard_delayed(&delayed_free);
+ 	for_each_kmem_cache_node(s, node, n) {
+ 		struct page *p;
+ 

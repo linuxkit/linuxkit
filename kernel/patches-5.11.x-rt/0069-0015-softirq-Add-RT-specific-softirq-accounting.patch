@@ -1,0 +1,64 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 9 Mar 2021 09:55:53 +0100
+Subject: [PATCH 15/20] softirq: Add RT specific softirq accounting
+
+RT requires the softirq processing and local bottomhalf disabled regions to
+be preemptible. Using the normal preempt count based serialization is
+therefore not possible because this implicitely disables preemption.
+
+RT kernels use a per CPU local lock to serialize bottomhalfs. As
+local_bh_disable() can nest the lock can only be acquired on the outermost
+invocation of local_bh_disable() and released when the nest count becomes
+zero. Tasks which hold the local lock can be preempted so its required to
+keep track of the nest count per task.
+
+Add a RT only counter to task struct and adjust the relevant macros in
+preempt.h.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Reviewed-by: Frederic Weisbecker <frederic@kernel.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/hardirq.h |    1 +
+ include/linux/preempt.h |    6 +++++-
+ include/linux/sched.h   |    3 +++
+ 3 files changed, 9 insertions(+), 1 deletion(-)
+
+--- a/include/linux/hardirq.h
++++ b/include/linux/hardirq.h
+@@ -6,6 +6,7 @@
+ #include <linux/preempt.h>
+ #include <linux/lockdep.h>
+ #include <linux/ftrace_irq.h>
++#include <linux/sched.h>
+ #include <linux/vtime.h>
+ #include <asm/hardirq.h>
+ 
+--- a/include/linux/preempt.h
++++ b/include/linux/preempt.h
+@@ -79,7 +79,11 @@
+ 
+ #define nmi_count()	(preempt_count() & NMI_MASK)
+ #define hardirq_count()	(preempt_count() & HARDIRQ_MASK)
+-#define softirq_count()	(preempt_count() & SOFTIRQ_MASK)
++#ifdef CONFIG_PREEMPT_RT
++# define softirq_count()	(current->softirq_disable_cnt & SOFTIRQ_MASK)
++#else
++# define softirq_count()	(preempt_count() & SOFTIRQ_MASK)
++#endif
+ #define irq_count()	(nmi_count() | hardirq_count() | softirq_count())
+ 
+ /*
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -1040,6 +1040,9 @@ struct task_struct {
+ 	int				softirq_context;
+ 	int				irq_config;
+ #endif
++#ifdef CONFIG_PREEMPT_RT
++	int				softirq_disable_cnt;
++#endif
+ 
+ #ifdef CONFIG_LOCKDEP
+ # define MAX_LOCK_DEPTH			48UL

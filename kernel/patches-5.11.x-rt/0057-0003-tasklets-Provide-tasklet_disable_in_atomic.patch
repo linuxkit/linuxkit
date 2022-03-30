@@ -1,0 +1,61 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 9 Mar 2021 09:42:06 +0100
+Subject: [PATCH 03/20] tasklets: Provide tasklet_disable_in_atomic()
+
+Replacing the spin wait loops in tasklet_unlock_wait() with
+wait_var_event() is not possible as a handful of tasklet_disable()
+invocations are happening in atomic context. All other invocations are in
+teardown paths which can sleep.
+
+Provide tasklet_disable_in_atomic() and tasklet_unlock_spin_wait() to
+convert the few atomic use cases over, which allows to change
+tasklet_disable() and tasklet_unlock_wait() in a later step.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/interrupt.h |   22 ++++++++++++++++++++++
+ 1 file changed, 22 insertions(+)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -680,10 +680,21 @@ static inline void tasklet_unlock_wait(s
+ 	while (test_bit(TASKLET_STATE_RUN, &t->state))
+ 		cpu_relax();
+ }
++
++/*
++ * Do not use in new code. Waiting for tasklets from atomic contexts is
++ * error prone and should be avoided.
++ */
++static inline void tasklet_unlock_spin_wait(struct tasklet_struct *t)
++{
++	while (test_bit(TASKLET_STATE_RUN, &t->state))
++		cpu_relax();
++}
+ #else
+ static inline int tasklet_trylock(struct tasklet_struct *t) { return 1; }
+ static inline void tasklet_unlock(struct tasklet_struct *t) { }
+ static inline void tasklet_unlock_wait(struct tasklet_struct *t) { }
++static inline void tasklet_unlock_spin_wait(struct tasklet_struct *t) { }
+ #endif
+ 
+ extern void __tasklet_schedule(struct tasklet_struct *t);
+@@ -708,6 +719,17 @@ static inline void tasklet_disable_nosyn
+ 	smp_mb__after_atomic();
+ }
+ 
++/*
++ * Do not use in new code. Disabling tasklets from atomic contexts is
++ * error prone and should be avoided.
++ */
++static inline void tasklet_disable_in_atomic(struct tasklet_struct *t)
++{
++	tasklet_disable_nosync(t);
++	tasklet_unlock_spin_wait(t);
++	smp_mb();
++}
++
+ static inline void tasklet_disable(struct tasklet_struct *t)
+ {
+ 	tasklet_disable_nosync(t);

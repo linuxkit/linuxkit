@@ -4,17 +4,24 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
 	"github.com/containerd/containerd"
 	"github.com/containerd/containerd/errdefs"
+	"github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
+)
+
+const (
+	containerdOptsFile = "/etc/containerd/runtime-config.toml"
 )
 
 func cleanupTask(ctx context.Context, ctr containerd.Container) error {
@@ -78,10 +85,45 @@ func systemInitCmd(ctx context.Context, args []string) {
 	// remove (unlikely) old containerd socket
 	_ = os.Remove(*sock)
 
+	// look for containerd options
+	ctrdArgs := []string{}
+	var (
+		stderr io.Writer = os.Stderr
+		stdout io.Writer = os.Stdout
+	)
+	if b, err := ioutil.ReadFile(containerdOptsFile); err == nil {
+		config, err := toml.LoadBytes(b)
+		if err != nil {
+			log.Fatalf("error reading toml file %s: %v", containerdOptsFile, err)
+		}
+		if config != nil {
+			// did we have any CLI opts?
+			cliOptsLine := config.Get("cliopts")
+			if cliOptsLine != nil {
+				ctrdArgs = strings.Fields(cliOptsLine.(string))
+			}
+			// stderr?
+			stderrLine := config.Get("stderr")
+			if stderrLine != nil {
+				stderr, err = getWriter(stderrLine.(string))
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+			stdoutLine := config.Get("stdout")
+			if stdoutLine != nil {
+				stdout, err = getWriter(stdoutLine.(string))
+				if err != nil {
+					log.Fatal(err)
+				}
+			}
+		}
+	}
+
 	// start up containerd
-	cmd := exec.Command(*binary)
-	cmd.Stdout = os.Stdout
-	cmd.Stderr = os.Stderr
+	cmd := exec.Command(*binary, ctrdArgs...)
+	cmd.Stdout = stdout
+	cmd.Stderr = stderr
 	if err := cmd.Start(); err != nil {
 		log.WithError(err).Fatal("cannot start containerd")
 	}
@@ -143,4 +185,22 @@ func systemInitCmd(ctx context.Context, args []string) {
 			log.Debugf("Started %s pid %d", id, pid)
 		}
 	}
+}
+
+func getWriter(line string) (io.Writer, error) {
+	switch {
+	case line == "stderr":
+		return os.Stderr, nil
+	case line == "stdout":
+		return os.Stdout, nil
+	case strings.HasPrefix(line, "/"):
+		// does the file exist?
+		f, err := os.OpenFile(line,
+			os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+		if err != nil {
+			return nil, fmt.Errorf("unable to open file %s for creation or appending: %v", line, err)
+		}
+		return f, nil
+	}
+	return nil, fmt.Errorf("invalid option for writer: %s", line)
 }

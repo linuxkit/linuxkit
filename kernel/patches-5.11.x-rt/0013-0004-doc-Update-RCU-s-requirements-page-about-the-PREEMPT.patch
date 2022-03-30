@@ -1,0 +1,28 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Tue, 15 Dec 2020 15:16:48 +0100
+Subject: [PATCH 4/5] doc: Update RCU's requirements page about the PREEMPT_RT
+ wiki.
+
+The PREEMPT_RT wiki moved from kernel.org to the Linux Foundation wiki.
+The kernel.org wiki is read only.
+
+This commit therefore updates the URL of the active PREEMPT_RT wiki.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ Documentation/RCU/Design/Requirements/Requirements.rst |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/Documentation/RCU/Design/Requirements/Requirements.rst
++++ b/Documentation/RCU/Design/Requirements/Requirements.rst
+@@ -2319,7 +2319,7 @@ decides to throw at it.
+ 
+ The Linux kernel is used for real-time workloads, especially in
+ conjunction with the `-rt
+-patchset <https://rt.wiki.kernel.org/index.php/Main_Page>`__. The
++patchset <https://wiki.linuxfoundation.org/realtime/>`__. The
+ real-time-latency response requirements are such that the traditional
+ approach of disabling preemption across RCU read-side critical sections
+ is inappropriate. Kernels built with ``CONFIG_PREEMPT=y`` therefore use

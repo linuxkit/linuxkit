@@ -6,7 +6,7 @@ Please open an issue if you want to add a question here.
 
 LinuxKit does not require being installed on a disk, it is often run from an ISO, PXE or other
 such means, so it does not require an on disk upgrade method such as the ChromeOS code that
-is often used. It would definitely be possible to use that type of upgrade method if the 
+is often used. It would definitely be possible to use that type of upgrade method if the
 system is installed, and it would be useful to support this for that use case, and an
 updater container to control this for people who want to use this.
 
@@ -36,6 +36,52 @@ real work takes place.
 If you're not seeing `containerd` logs in the console during boot, make sure that your kernel `cmdline` configuration doesn't list multiple consoles.
 
 `init` and other processes like `containerd` will use the last defined console in the kernel `cmdline`. When using `qemu`, to see the console you need to list `ttyS0` as the last console to properly see the output.
+
+## Enabling and controlling containerd logs
+
+On startup, linuxkit looks for and parses a file `/etc/containerd/runtime-config.toml`. If it exists, the content is used to configure containerd runtime.
+
+Sample config is below:
+
+```toml
+cliopts="--log-level debug"
+stderr="/var/log/containerd.out.log"
+stdout="stdout"
+```
+
+The options are as follows:
+
+* `cliopts`: options to pass to the containerd command-line as is.
+* `stderr`: where to send stderr from containerd. If blank, it sends it to the default stderr, which is the console.
+* `stdout`: where to send stdout from containerd. If blank, it sends it to the default stdout, which is the console. containerd normally does not have any stdout.
+
+The `stderr` and `stdout` options can take exactly one of the following options:
+
+* `stderr` - send to stderr
+* `stdout` - send to stdout
+* any absolute path (beginning with `/`) - send to that file. If the file exists, append to it; if not, create it and append to it.
+
+Thus, to enable
+a higher log level, for example `debug`, create a file whose contents are `--log-level debug` and place it on the image:
+
+```yml
+files:
+  - path: /etc/containerd/runtime-config.toml
+    source: "/path/to/runtime-config.toml"
+    mode: "0644"
+```
+
+Note that the package that parses the `cliopts` splits on _all_ whitespace. It does not, as of this writing, support shell-like parsing, so the following will work:
+
+```
+--log-level debug --arg abcd
+```
+
+while the following will not:
+
+```
+--log-level debug --arg 'abcd def'
+```
 
 ## Troubleshooting containers
 

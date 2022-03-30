@@ -11,9 +11,9 @@ import (
 	"strings"
 
 	"github.com/docker/cli/cli/config/credentials"
-	"github.com/docker/cli/opts"
-	"github.com/docker/docker/api/types"
+	"github.com/docker/cli/cli/config/types"
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 )
 
 const (
@@ -25,29 +25,33 @@ const (
 
 // ConfigFile ~/.docker/config.json file info
 type ConfigFile struct {
-	AuthConfigs          map[string]types.AuthConfig `json:"auths"`
-	HTTPHeaders          map[string]string           `json:"HttpHeaders,omitempty"`
-	PsFormat             string                      `json:"psFormat,omitempty"`
-	ImagesFormat         string                      `json:"imagesFormat,omitempty"`
-	NetworksFormat       string                      `json:"networksFormat,omitempty"`
-	PluginsFormat        string                      `json:"pluginsFormat,omitempty"`
-	VolumesFormat        string                      `json:"volumesFormat,omitempty"`
-	StatsFormat          string                      `json:"statsFormat,omitempty"`
-	DetachKeys           string                      `json:"detachKeys,omitempty"`
-	CredentialsStore     string                      `json:"credsStore,omitempty"`
-	CredentialHelpers    map[string]string           `json:"credHelpers,omitempty"`
-	Filename             string                      `json:"-"` // Note: for internal use only
-	ServiceInspectFormat string                      `json:"serviceInspectFormat,omitempty"`
-	ServicesFormat       string                      `json:"servicesFormat,omitempty"`
-	TasksFormat          string                      `json:"tasksFormat,omitempty"`
-	SecretFormat         string                      `json:"secretFormat,omitempty"`
-	ConfigFormat         string                      `json:"configFormat,omitempty"`
-	NodesFormat          string                      `json:"nodesFormat,omitempty"`
-	PruneFilters         []string                    `json:"pruneFilters,omitempty"`
-	Proxies              map[string]ProxyConfig      `json:"proxies,omitempty"`
-	Experimental         string                      `json:"experimental,omitempty"`
-	StackOrchestrator    string                      `json:"stackOrchestrator,omitempty"`
-	Kubernetes           *KubernetesConfig           `json:"kubernetes,omitempty"`
+	AuthConfigs          map[string]types.AuthConfig  `json:"auths"`
+	HTTPHeaders          map[string]string            `json:"HttpHeaders,omitempty"`
+	PsFormat             string                       `json:"psFormat,omitempty"`
+	ImagesFormat         string                       `json:"imagesFormat,omitempty"`
+	NetworksFormat       string                       `json:"networksFormat,omitempty"`
+	PluginsFormat        string                       `json:"pluginsFormat,omitempty"`
+	VolumesFormat        string                       `json:"volumesFormat,omitempty"`
+	StatsFormat          string                       `json:"statsFormat,omitempty"`
+	DetachKeys           string                       `json:"detachKeys,omitempty"`
+	CredentialsStore     string                       `json:"credsStore,omitempty"`
+	CredentialHelpers    map[string]string            `json:"credHelpers,omitempty"`
+	Filename             string                       `json:"-"` // Note: for internal use only
+	ServiceInspectFormat string                       `json:"serviceInspectFormat,omitempty"`
+	ServicesFormat       string                       `json:"servicesFormat,omitempty"`
+	TasksFormat          string                       `json:"tasksFormat,omitempty"`
+	SecretFormat         string                       `json:"secretFormat,omitempty"`
+	ConfigFormat         string                       `json:"configFormat,omitempty"`
+	NodesFormat          string                       `json:"nodesFormat,omitempty"`
+	PruneFilters         []string                     `json:"pruneFilters,omitempty"`
+	Proxies              map[string]ProxyConfig       `json:"proxies,omitempty"`
+	Experimental         string                       `json:"experimental,omitempty"`
+	StackOrchestrator    string                       `json:"stackOrchestrator,omitempty"`
+	Kubernetes           *KubernetesConfig            `json:"kubernetes,omitempty"`
+	CurrentContext       string                       `json:"currentContext,omitempty"`
+	CLIPluginsExtraDirs  []string                     `json:"cliPluginsExtraDirs,omitempty"`
+	Plugins              map[string]map[string]string `json:"plugins,omitempty"`
+	Aliases              map[string]string            `json:"aliases,omitempty"`
 }
 
 // ProxyConfig contains proxy configuration settings
@@ -69,6 +73,8 @@ func New(fn string) *ConfigFile {
 		AuthConfigs: make(map[string]types.AuthConfig),
 		HTTPHeaders: make(map[string]string),
 		Filename:    fn,
+		Plugins:     make(map[string]map[string]string),
+		Aliases:     make(map[string]string),
 	}
 }
 
@@ -113,14 +119,16 @@ func (configFile *ConfigFile) LegacyLoadFromReader(configData io.Reader) error {
 // LoadFromReader reads the configuration data given and sets up the auth config
 // information with given directory and populates the receiver object
 func (configFile *ConfigFile) LoadFromReader(configData io.Reader) error {
-	if err := json.NewDecoder(configData).Decode(&configFile); err != nil {
+	if err := json.NewDecoder(configData).Decode(&configFile); err != nil && !errors.Is(err, io.EOF) {
 		return err
 	}
 	var err error
 	for addr, ac := range configFile.AuthConfigs {
-		ac.Username, ac.Password, err = decodeAuth(ac.Auth)
-		if err != nil {
-			return err
+		if ac.Auth != "" {
+			ac.Username, ac.Password, err = decodeAuth(ac.Auth)
+			if err != nil {
+				return err
+			}
 		}
 		ac.Auth = ""
 		ac.ServerAddress = addr
@@ -161,6 +169,13 @@ func (configFile *ConfigFile) SaveToWriter(writer io.Writer) error {
 	configFile.AuthConfigs = tmpAuthConfigs
 	defer func() { configFile.AuthConfigs = saveAuthConfigs }()
 
+	// User-Agent header is automatically set, and should not be stored in the configuration
+	for v := range configFile.HTTPHeaders {
+		if strings.EqualFold(v, "User-Agent") {
+			delete(configFile.HTTPHeaders, v)
+		}
+	}
+
 	data, err := json.MarshalIndent(configFile, "", "\t")
 	if err != nil {
 		return err
@@ -170,25 +185,51 @@ func (configFile *ConfigFile) SaveToWriter(writer io.Writer) error {
 }
 
 // Save encodes and writes out all the authorization information
-func (configFile *ConfigFile) Save() error {
+func (configFile *ConfigFile) Save() (retErr error) {
 	if configFile.Filename == "" {
 		return errors.Errorf("Can't save config with empty filename")
 	}
 
-	if err := os.MkdirAll(filepath.Dir(configFile.Filename), 0700); err != nil {
+	dir := filepath.Dir(configFile.Filename)
+	if err := os.MkdirAll(dir, 0700); err != nil {
 		return err
 	}
-	f, err := os.OpenFile(configFile.Filename, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, 0600)
+	temp, err := ioutil.TempFile(dir, filepath.Base(configFile.Filename))
 	if err != nil {
 		return err
 	}
-	defer f.Close()
-	return configFile.SaveToWriter(f)
+	defer func() {
+		temp.Close()
+		if retErr != nil {
+			if err := os.Remove(temp.Name()); err != nil {
+				logrus.WithError(err).WithField("file", temp.Name()).Debug("Error cleaning up temp file")
+			}
+		}
+	}()
+
+	err = configFile.SaveToWriter(temp)
+	if err != nil {
+		return err
+	}
+
+	if err := temp.Close(); err != nil {
+		return errors.Wrap(err, "error closing temp file")
+	}
+
+	// Handle situation where the configfile is a symlink
+	cfgFile := configFile.Filename
+	if f, err := os.Readlink(cfgFile); err == nil {
+		cfgFile = f
+	}
+
+	// Try copying the current config file (if any) ownership and permissions
+	copyFilePermissions(cfgFile, temp.Name())
+	return os.Rename(temp.Name(), cfgFile)
 }
 
 // ParseProxyConfig computes proxy configuration by retrieving the config for the provided host and
 // then checking this against any environment variables provided to the container
-func (configFile *ConfigFile) ParseProxyConfig(host string, runOpts []string) map[string]*string {
+func (configFile *ConfigFile) ParseProxyConfig(host string, runOpts map[string]*string) map[string]*string {
 	var cfgKey string
 
 	if _, ok := configFile.Proxies[host]; !ok {
@@ -204,7 +245,10 @@ func (configFile *ConfigFile) ParseProxyConfig(host string, runOpts []string) ma
 		"NO_PROXY":    &config.NoProxy,
 		"FTP_PROXY":   &config.FTPProxy,
 	}
-	m := opts.ConvertKVStringsToMapWithNil(runOpts)
+	m := runOpts
+	if m == nil {
+		m = make(map[string]*string)
+	}
 	for k := range permitted {
 		if *permitted[k] == "" {
 			continue
@@ -318,6 +362,42 @@ func (configFile *ConfigFile) GetAllCredentials() (map[string]types.AuthConfig, 
 // GetFilename returns the file name that this config file is based on.
 func (configFile *ConfigFile) GetFilename() string {
 	return configFile.Filename
+}
+
+// PluginConfig retrieves the requested option for the given plugin.
+func (configFile *ConfigFile) PluginConfig(pluginname, option string) (string, bool) {
+	if configFile.Plugins == nil {
+		return "", false
+	}
+	pluginConfig, ok := configFile.Plugins[pluginname]
+	if !ok {
+		return "", false
+	}
+	value, ok := pluginConfig[option]
+	return value, ok
+}
+
+// SetPluginConfig sets the option to the given value for the given
+// plugin. Passing a value of "" will remove the option. If removing
+// the final config item for a given plugin then also cleans up the
+// overall plugin entry.
+func (configFile *ConfigFile) SetPluginConfig(pluginname, option, value string) {
+	if configFile.Plugins == nil {
+		configFile.Plugins = make(map[string]map[string]string)
+	}
+	pluginConfig, ok := configFile.Plugins[pluginname]
+	if !ok {
+		pluginConfig = make(map[string]string)
+		configFile.Plugins[pluginname] = pluginConfig
+	}
+	if value != "" {
+		pluginConfig[option] = value
+	} else {
+		delete(pluginConfig, option)
+	}
+	if len(pluginConfig) == 0 {
+		delete(configFile.Plugins, pluginname)
+	}
 }
 
 func checkKubernetesConfiguration(kubeConfig *KubernetesConfig) error {

@@ -1,0 +1,62 @@
+From: Julia Cartwright <julia@ni.com>
+Date: Tue, 15 Dec 2020 15:16:47 +0100
+Subject: [PATCH 3/5] rcu: Enable rcu_normal_after_boot unconditionally for RT
+
+Expedited RCU grace periods send IPIs to all non-idle CPUs, and thus can
+disrupt time-critical code in real-time applications.  However, there
+is a portion of boot-time processing (presumably before any real-time
+applications have started) where expedited RCU grace periods are the only
+option.  And so it is that experience with the -rt patchset indicates that
+PREEMPT_RT systems should always set the rcupdate.rcu_normal_after_boot
+kernel boot parameter.
+
+This commit therefore makes the post-boot application environment safe
+for real-time applications by making PREEMPT_RT systems disable the
+rcupdate.rcu_normal_after_boot kernel boot parameter and acting as
+if this parameter had been set.  This means that post-boot calls to
+synchronize_rcu_expedited() will be treated as if they were instead
+calls to synchronize_rcu(), thus preventing the IPIs, and thus avoiding
+disrupting real-time applications.
+
+Suggested-by: Luiz Capitulino <lcapitulino@redhat.com>
+Acked-by: Paul E. McKenney <paulmck@linux.ibm.com>
+Signed-off-by: Julia Cartwright <julia@ni.com>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+[ paulmck: Update kernel-parameters.txt accordingly. ]
+Signed-off-by: Paul E. McKenney <paulmck@kernel.org>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ Documentation/admin-guide/kernel-parameters.txt |    7 +++++++
+ kernel/rcu/update.c                             |    4 +++-
+ 2 files changed, 10 insertions(+), 1 deletion(-)
+
+--- a/Documentation/admin-guide/kernel-parameters.txt
++++ b/Documentation/admin-guide/kernel-parameters.txt
+@@ -4474,6 +4474,13 @@
+ 			only normal grace-period primitives.  No effect
+ 			on CONFIG_TINY_RCU kernels.
+ 
++			But note that CONFIG_PREEMPT_RT=y kernels enables
++			this kernel boot parameter, forcibly setting
++			it to the value one, that is, converting any
++			post-boot attempt at an expedited RCU grace
++			period to instead use normal non-expedited
++			grace-period processing.
++
+ 	rcupdate.rcu_task_ipi_delay= [KNL]
+ 			Set time in jiffies during which RCU tasks will
+ 			avoid sending IPIs, starting with the beginning
+--- a/kernel/rcu/update.c
++++ b/kernel/rcu/update.c
+@@ -56,8 +56,10 @@
+ #ifndef CONFIG_TINY_RCU
+ module_param(rcu_expedited, int, 0);
+ module_param(rcu_normal, int, 0);
+-static int rcu_normal_after_boot;
++static int rcu_normal_after_boot = IS_ENABLED(CONFIG_PREEMPT_RT);
++#ifndef CONFIG_PREEMPT_RT
+ module_param(rcu_normal_after_boot, int, 0);
++#endif
+ #endif /* #ifndef CONFIG_TINY_RCU */
+ 
+ #ifdef CONFIG_DEBUG_LOCK_ALLOC

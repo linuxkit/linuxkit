@@ -1,0 +1,25 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Wed, 19 Dec 2018 10:47:02 +0100
+Subject: [PATCH] drm/i915: skip DRM_I915_LOW_LEVEL_TRACEPOINTS with NOTRACE
+
+The order of the header files is important. If this header file is
+included after tracepoint.h was included then the NOTRACE here becomes a
+nop. Currently this happens for two .c files which use the tracepoitns
+behind DRM_I915_LOW_LEVEL_TRACEPOINTS.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ drivers/gpu/drm/i915/i915_trace.h |    2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/drivers/gpu/drm/i915/i915_trace.h
++++ b/drivers/gpu/drm/i915/i915_trace.h
+@@ -782,7 +782,7 @@ DEFINE_EVENT(i915_request, i915_request_
+ 	    TP_ARGS(rq)
+ );
+ 
+-#if defined(CONFIG_DRM_I915_LOW_LEVEL_TRACEPOINTS)
++#if defined(CONFIG_DRM_I915_LOW_LEVEL_TRACEPOINTS) && !defined(NOTRACE)
+ DEFINE_EVENT(i915_request, i915_request_submit,
+ 	     TP_PROTO(struct i915_request *rq),
+ 	     TP_ARGS(rq)

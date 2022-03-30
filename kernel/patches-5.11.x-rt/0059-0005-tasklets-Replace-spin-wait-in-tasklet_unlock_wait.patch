@@ -1,0 +1,81 @@
+From: Peter Zijlstra <peterz@infradead.org>
+Date: Tue, 9 Mar 2021 09:42:08 +0100
+Subject: [PATCH 05/20] tasklets: Replace spin wait in tasklet_unlock_wait()
+
+tasklet_unlock_wait() spin waits for TASKLET_STATE_RUN to be cleared. This
+is wasting CPU cycles in a tight loop which is especially painful in a
+guest when the CPU running the tasklet is scheduled out.
+
+tasklet_unlock_wait() is invoked from tasklet_kill() which is used in
+teardown paths and not performance critical at all. Replace the spin wait
+with wait_var_event().
+
+There are no users of tasklet_unlock_wait() which are invoked from atomic
+contexts. The usage in tasklet_disable() has been replaced temporarily with
+the spin waiting variant until the atomic users are fixed up and will be
+converted to the sleep wait variant later.
+
+Signed-off-by: Peter Zijlstra <peterz@infradead.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/interrupt.h |   13 ++-----------
+ kernel/softirq.c          |   18 ++++++++++++++++++
+ 2 files changed, 20 insertions(+), 11 deletions(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -669,17 +669,8 @@ static inline int tasklet_trylock(struct
+ 	return !test_and_set_bit(TASKLET_STATE_RUN, &(t)->state);
+ }
+ 
+-static inline void tasklet_unlock(struct tasklet_struct *t)
+-{
+-	smp_mb__before_atomic();
+-	clear_bit(TASKLET_STATE_RUN, &(t)->state);
+-}
+-
+-static inline void tasklet_unlock_wait(struct tasklet_struct *t)
+-{
+-	while (test_bit(TASKLET_STATE_RUN, &t->state))
+-		cpu_relax();
+-}
++void tasklet_unlock(struct tasklet_struct *t);
++void tasklet_unlock_wait(struct tasklet_struct *t);
+ 
+ /*
+  * Do not use in new code. Waiting for tasklets from atomic contexts is
+--- a/kernel/softirq.c
++++ b/kernel/softirq.c
+@@ -25,6 +25,7 @@
+ #include <linux/smpboot.h>
+ #include <linux/tick.h>
+ #include <linux/irq.h>
++#include <linux/wait_bit.h>
+ 
+ #define CREATE_TRACE_POINTS
+ #include <trace/events/irq.h>
+@@ -619,6 +620,23 @@ void tasklet_kill(struct tasklet_struct
+ }
+ EXPORT_SYMBOL(tasklet_kill);
+ 
++#ifdef CONFIG_SMP
++void tasklet_unlock(struct tasklet_struct *t)
++{
++	smp_mb__before_atomic();
++	clear_bit(TASKLET_STATE_RUN, &t->state);
++	smp_mb__after_atomic();
++	wake_up_var(&t->state);
++}
++EXPORT_SYMBOL_GPL(tasklet_unlock);
++
++void tasklet_unlock_wait(struct tasklet_struct *t)
++{
++	wait_var_event(&t->state, !test_bit(TASKLET_STATE_RUN, &t->state));
++}
++EXPORT_SYMBOL_GPL(tasklet_unlock_wait);
++#endif
++
+ void __init softirq_init(void)
+ {
+ 	int cpu;

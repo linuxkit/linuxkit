@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
@@ -48,9 +49,11 @@ func build(args []string) {
 	buildOutputFile := buildCmd.String("o", "", "File to use for a single output, or '-' for stdout")
 	buildSize := buildCmd.String("size", "1024M", "Size for output image, if supported and fixed size")
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
-	buildDisableTrust := buildCmd.Bool("disable-content-trust", false, "Skip image trust verification specified in trust section of config (default false)")
+	buildDocker := buildCmd.Bool("docker", false, "Check for images in docker before linuxkit cache")
 	buildDecompressKernel := buildCmd.Bool("decompress-kernel", false, "Decompress the Linux kernel (default false)")
+	buildCacheDir := buildCmd.String("cache", defaultLinuxkitCache(), "Directory for caching and finding cached image")
 	buildCmd.Var(&buildFormats, "format", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
+	buildArch := buildCmd.String("arch", runtime.GOARCH, "target architecture for which to build")
 
 	if err := buildCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -95,6 +98,8 @@ func build(args []string) {
 		}
 	}
 
+	cacheDir := *buildCacheDir
+
 	if len(buildFormats) == 1 && moby.Streamable(buildFormats[0]) {
 		if *buildOutputFile == "" {
 			*buildOutputFile = filepath.Join(*buildDir, name+"."+buildFormats[0])
@@ -103,7 +108,7 @@ func build(args []string) {
 			*buildDir = ""
 		}
 	} else {
-		err := moby.ValidateFormats(buildFormats)
+		err := moby.ValidateFormats(buildFormats, cacheDir)
 		if err != nil {
 			log.Errorf("Error parsing formats: %v", err)
 			buildCmd.Usage()
@@ -181,11 +186,6 @@ func build(args []string) {
 		}
 	}
 
-	if *buildDisableTrust {
-		log.Debugf("Disabling content trust checks for this build")
-		m.Trust = moby.TrustConfig{}
-	}
-
 	var tf *os.File
 	var w io.Writer
 	if outputFile != nil {
@@ -204,7 +204,7 @@ func build(args []string) {
 	if moby.Streamable(buildFormats[0]) {
 		tp = buildFormats[0]
 	}
-	err = moby.Build(m, w, *buildPull, tp, *buildDecompressKernel)
+	err = moby.Build(m, w, moby.BuildOpts{Pull: *buildPull, BuilderType: tp, DecompressKernel: *buildDecompressKernel, CacheDir: cacheDir, DockerCache: *buildDocker, Arch: *buildArch})
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -216,7 +216,7 @@ func build(args []string) {
 		}
 
 		log.Infof("Create outputs:")
-		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, !*buildDisableTrust)
+		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, cacheDir)
 		if err != nil {
 			log.Fatalf("Error writing outputs: %v", err)
 		}

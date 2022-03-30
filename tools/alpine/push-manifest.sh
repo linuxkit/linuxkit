@@ -2,15 +2,12 @@
 set -e
 
 # This script creates a multiarch manifest for the 'linuxkit/alpine'
-# image, pushes and signs it. The manifest is pushed with the tag of
+# image and pushes it. The manifest is pushed with the tag of
 # the amd64 images (which is the suffix removed). On macOS we use the
-# credentials helper to extract the Hub credentials. We need to
-# manually sign the manifest using 'notary'.
+# credentials helper to extract the Hub credentials.
 #
 # This script is specific to 'linuxkit/alpine'. For normal packages we
 # use a different scheme.
-#
-# For signing, DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE must be set.
 #
 # This should all be replaced with 'docker manifest' once it lands.
 
@@ -20,8 +17,13 @@ IMAGE=$2
 IMG_X86_64=$(head -1 versions.x86_64 | sed 's,[#| ]*,,')
 IMG_ARM64=$(head -1 versions.aarch64 | sed 's,[#| ]*,,')
 IMG_s390x=$(head -1 versions.s390x | sed 's,[#| ]*,,')
-# Extract the TAG from the x86_64 name and build the manifest target name
-TAG=$(echo "$IMG_X86_64" | sed 's,\-.*$,,' | cut -d':' -f2)
+# Extract the TAG from the tree hash - just like how "linuxkit pkg show-tag" does it - name and build the manifest target name
+TAG=$(git ls-tree --full-tree HEAD -- $(pwd) | awk '{print $3}')
+DIRTY=$(git diff-index HEAD -- $(pwd))
+if [ -n "$DIRTY" ]; then
+  echo "will not push out manifest when git tree is dirty" >&2
+  exit 1
+fi
 TARGET="$ORG/$IMAGE:$TAG"
 
 YAML=$(mktemp)
@@ -81,57 +83,3 @@ fi
 OUT=$(manifest-tool $MT_ARGS push from-spec --ignore-missing "$YAML")
 rm "$YAML"
 echo "$OUT"
-
-# Extract sha256 and length from the manifest-tool output
-SHA256=$(echo "$OUT" | cut -d' ' -f2 | cut -d':' -f2)
-LEN=$(echo "$OUT" | cut -d' ' -f3)
-
-NOTARY_DELEGATION_PASSPHRASE="$DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"
-
-# Notary requires a PTY for username/password so use expect for that.
-export NOTARY_DELEGATION_PASSPHRASE="$DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE"
-NOTARY_CMD="notary -s https://notary.docker.io -d $HOME/.docker/trust addhash \
-             -p docker.io/"$ORG"/"$IMAGE" $TAG $LEN --sha256 $SHA256 \
-             -r targets/releases"
-
-echo '
-spawn '"$NOTARY_CMD"'
-set pid [exp_pid]
-set timeout 60
-expect {
-    timeout {
-        puts "Expected username prompt"
-        exec kill -9 $pid
-        exit 1
-    }
-    "username: " {
-        send "'"$USER"'\n"
-    }
-}
-expect {
-    timeout {
-        puts "Expected password prompt"
-        exec kill -9 $pid
-        exit 1
-    }
-    "password: " {
-        send "'"$PASS"'\n"
-    }
-}
-expect {
-    timeout {
-        puts "Expected password prompt"
-        exec kill -9 $pid
-        exit 1
-    }
-    eof {
-    }
-}
-set waitval [wait -i $spawn_id]
-set exval [lindex $waitval 3]
-exit $exval
-' | expect -f -
-
-echo
-echo "New signed multi-arch image: $REPO:$TAG"
-echo

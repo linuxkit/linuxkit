@@ -67,6 +67,21 @@ var schema = string(`
       "type": "array",
       "items": { "$ref": "#/definitions/mount" }
     },
+    "device": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "type": { "type": "string" },
+        "major": { "type": "integer" },
+        "minor": { "type": "integer" },
+        "mode": { "type": "string" }
+      }
+    },
+    "devices": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/device" }
+    },
     "idmapping": {
       "type": "object",
       "additionalProperties": false,
@@ -265,6 +280,7 @@ var schema = string(`
         "mounts": { "$ref": "#/definitions/mounts" },
         "binds": { "$ref": "#/definitions/strings" },
         "binds.add": { "$ref": "#/definitions/strings" },
+        "devices": { "$ref": "#/definitions/devices" },
         "tmpfs": { "$ref": "#/definitions/strings" },
         "command": { "$ref": "#/definitions/strings" },
         "env": { "$ref": "#/definitions/strings" },

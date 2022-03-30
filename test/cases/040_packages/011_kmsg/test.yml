@@ -1,0 +1,33 @@
+kernel:
+  image: linuxkit/kernel:5.10.92
+  cmdline: "console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
+  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
+  - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
+  - linuxkit/memlogd:014f86dce2ea4bb2ec13e92ae5c1e854bcefec40
+services:
+  - name: kmsg
+    image: linuxkit/kmsg:b2f6cd4ce9041120e30a4b5ab36bb8db4f5eb458
+  - name: write-and-rotate-logs
+    image: linuxkit/logwrite:4d8aa07d4a7130239fc62b09f33e3401ecf62a38
+  - name: check-the-logs
+    image: alpine:3.13
+    binds:
+      - /check.sh:/check.sh
+      - /dev/console:/dev/console
+      - /var/log:/var/log
+    devices:
+      - path: "/dev/console"
+        type: c
+        major: 5
+        minor: 1
+        mode: "0666"
+    command: ["sh", "./check.sh"]
+    pid: host
+    capabilities:
+      - CAP_SYS_BOOT
+files:
+  - path: check.sh
+    source: ./check.sh

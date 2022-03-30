@@ -1,0 +1,55 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Mon, 9 Nov 2020 23:32:39 +0100
+Subject: [PATCH 2/2] genirq: Move prio assignment into the newly created
+ thread
+
+With enabled threaded interrupts the nouveau driver reported the
+following:
+| Chain exists of:
+|   &mm->mmap_lock#2 --> &device->mutex --> &cpuset_rwsem
+|
+|  Possible unsafe locking scenario:
+|
+|        CPU0                    CPU1
+|        ----                    ----
+|   lock(&cpuset_rwsem);
+|                                lock(&device->mutex);
+|                                lock(&cpuset_rwsem);
+|   lock(&mm->mmap_lock#2);
+
+The device->mutex is nvkm_device::mutex.
+
+Unblocking the lockchain at `cpuset_rwsem' is probably the easiest thing
+to do.
+Move the priority assignment to the start of the newly created thread.
+
+Fixes: 710da3c8ea7df ("sched/core: Prevent race condition between cpuset and __sched_setscheduler()")
+Reported-by: Mike Galbraith <efault@gmx.de>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[bigeasy: Patch description]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Link: https://lkml.kernel.org/r/a23a826af7c108ea5651e73b8fbae5e653f16e86.camel@gmx.de
+---
+ kernel/irq/manage.c |    4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/kernel/irq/manage.c
++++ b/kernel/irq/manage.c
+@@ -1225,6 +1225,8 @@ static int irq_thread(void *data)
+ 	irqreturn_t (*handler_fn)(struct irq_desc *desc,
+ 			struct irqaction *action);
+ 
++	sched_set_fifo(current);
++
+ 	if (force_irqthreads && test_bit(IRQTF_FORCED_THREAD,
+ 					&action->thread_flags))
+ 		handler_fn = irq_forced_thread_fn;
+@@ -1390,8 +1392,6 @@ setup_irq_thread(struct irqaction *new,
+ 	if (IS_ERR(t))
+ 		return PTR_ERR(t);
+ 
+-	sched_set_fifo(t);
+-
+ 	/*
+ 	 * We keep the reference to the task struct even if
+ 	 * the thread dies to avoid that the interrupt code

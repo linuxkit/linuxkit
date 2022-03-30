@@ -1,30 +1,27 @@
 kernel:
-  image: linuxkit/kernel:5.4.39
+  image: linuxkit/kernel:5.10.92
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:v0.8
-  - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
-  - linuxkit/ca-certificates:v0.8
+  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
+  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
+  - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.8
+    image: linuxkit/sysctl:bdc99eeedc224439ff237990ee06e5b992c8c1ae
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.8
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:v0.8
+    image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
     env:
      - INSECURE=true
   - name: tss
-    image: linuxkit/tss:v0.8
+    image: linuxkit/tss:9cfa8c15f2120415aab35efcfdede5b3b5fe5b4c
   - name: rngd
-    image: linuxkit/rngd:v0.8
+    image: linuxkit/rngd:4f85d8de3f6f45973a8c88dc8fba9ec596e5495a
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)
     contents: 'root:$6$6tPd2uhHrecCEKug$8mKfcgfwguP7f.BLdZsT1Wz7WIIJOBY1oUFHzIv9/O71M2J0EPdtFqFGTxB1UK5ejqQxRFQ.ZSG9YXR0SNsc11:17322:0:::::'
-trust:
-  org:
-    - linuxkit

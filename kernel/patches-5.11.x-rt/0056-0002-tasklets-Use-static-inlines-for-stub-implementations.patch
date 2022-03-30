@@ -1,0 +1,28 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Tue, 9 Mar 2021 09:42:05 +0100
+Subject: [PATCH 02/20] tasklets: Use static inlines for stub implementations
+
+Inlines exist for a reason.
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Tested-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/interrupt.h |    6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+--- a/include/linux/interrupt.h
++++ b/include/linux/interrupt.h
+@@ -681,9 +681,9 @@ static inline void tasklet_unlock_wait(s
+ 		cpu_relax();
+ }
+ #else
+-#define tasklet_trylock(t) 1
+-#define tasklet_unlock_wait(t) do { } while (0)
+-#define tasklet_unlock(t) do { } while (0)
++static inline int tasklet_trylock(struct tasklet_struct *t) { return 1; }
++static inline void tasklet_unlock(struct tasklet_struct *t) { }
++static inline void tasklet_unlock_wait(struct tasklet_struct *t) { }
+ #endif
+ 
+ extern void __tasklet_schedule(struct tasklet_struct *t);

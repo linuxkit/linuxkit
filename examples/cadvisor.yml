@@ -1,37 +1,37 @@
 kernel:
-  image: linuxkit/kernel:5.4.39
+  image: linuxkit/kernel:5.10.92
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:v0.8
-  - linuxkit/runc:v0.8
-  - linuxkit/containerd:v0.8
-  - linuxkit/ca-certificates:v0.8
+  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
+  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
+  - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:v0.8
+    image: linuxkit/sysctl:bdc99eeedc224439ff237990ee06e5b992c8c1ae
   - name: dhcpcd
-    image: linuxkit/dhcpcd:v0.8
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: sysfs
-    image: linuxkit/sysfs:v0.8
+    image: linuxkit/sysfs:c3bdb00c5e23bf566d294bafd5f7890ca319056f
   - name: format
-    image: linuxkit/format:v0.8
+    image: linuxkit/format:7efa07559dd23cb4dbebfd3ab48c50fd33625918
   - name: mount
-    image: linuxkit/mount:v0.8
+    image: linuxkit/mount:422b219bb1c7051096126ac83e6dcc8b2f3f1176
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 
 services:
   - name: getty
-    image: linuxkit/getty:v0.8
+    image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
     env:
       - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:v0.8
+    image: linuxkit/rngd:4f85d8de3f6f45973a8c88dc8fba9ec596e5495a
   - name: ntpd
-    image: linuxkit/openntpd:v0.8
+    image: linuxkit/openntpd:d6c36ac367ed26a6eeffd8db78334d9f8041b038
 
   - name: docker
-    image: docker:19.03.8-dind
+    image: docker:20.10.6-dind
     capabilities:
       - all
     net: host
@@ -46,14 +46,10 @@ services:
       - /etc/docker/daemon.json:/etc/docker/daemon.json
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: cadvisor
-    image: linuxkit/cadvisor:v0.8
+    image: linuxkit/cadvisor:38174e03a9495a2ba8a8a049458f585a8b8e4a59
 files:
   - path: var/lib/docker
     directory: true
   - path: etc/docker/daemon.json
     contents: '{"debug": true, "hosts": ["unix:///var/run/docker.sock"]}'
     mode: "0644"
-trust:
-  org:
-    - linuxkit
-    - library

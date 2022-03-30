@@ -8,3 +8,6 @@ config:
     - CAP_MKNOD
   binds:
     - /dev:/dev
+  devices:
+    - path: all
+      type: b

@@ -71,8 +71,11 @@ fi
 # poisoning cannot be enabled in 4.4
 if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 9 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING=y || fail "CONFIG_PAGE_POISONING=y"
-  echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING_NO_SANITY=y || fail "CONFIG_PAGE_POISONING_NO_SANITY=y"
-  echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING_ZERO=y || fail "CONFIG_PAGE_POISONING_ZERO=y"
+  # These sub options were removed from 5.11.x
+  if [ "$kernelMajor" -le 5 -a "$kernelMinor" -lt 11 ]; then
+      echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING_NO_SANITY=y || fail "CONFIG_PAGE_POISONING_NO_SANITY=y"
+      echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_POISONING_ZERO=y || fail "CONFIG_PAGE_POISONING_ZERO=y"
+  fi
 fi
 if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 10 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_BUG_ON_DATA_CORRUPTION=y || fail "CONFIG_BUG_ON_DATA_CORRUPTION=y"
@@ -107,7 +110,6 @@ echo $UNZIPPED_CONFIG | grep -q 'CONFIG_SCSI_PROC_FS is not set' || fail "CONFIG
 # Negative cases conditional on architecture and/or kernel version
 if [ "$arch" = "x86_64" ]; then
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_ACPI_CUSTOM_METHOD is not set' || fail "CONFIG_ACPI_CUSTOM_METHOD is not set"
-  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_DEVKMEM is not set' || fail "CONFIG_DEVKMEM is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_COMPAT_VDSO is not set' || fail "CONFIG_COMPAT_VDSO is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_KEXEC is not set' || fail "CONFIG_KEXEC is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_X86_X32 is not set' || fail "CONFIG_X86_X32 is not set"
@@ -115,6 +117,11 @@ if [ "$arch" = "x86_64" ]; then
   if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 5 ]; then
     echo $UNZIPPED_CONFIG | grep -q 'CONFIG_LEGACY_PTYS is not set' || fail "CONFIG_LEGACY_PTYS is not set"
     echo $UNZIPPED_CONFIG | grep -q 'CONFIG_HIBERNATION is not set' || fail "CONFIG_HIBERNATION is not set"
+  fi
+  # DEVKMEM was removed with 5.13.x (Note this check is not quote accurate but we are not adding
+  # older kernels like e.g. 4.11 anymore.
+  if [ "$kernelMajor" -le 5 ] && [ "$kernelMinor" -lt 13 ]; then
+    echo $UNZIPPED_CONFIG | grep -q 'CONFIG_DEVKMEM is not set' || fail "CONFIG_DEVKMEM is not set"
   fi
 fi
 
@@ -168,10 +175,6 @@ mqueue
 do
 	grep -q "[[:space:]]${fs}\$" /proc/filesystems || fail "${fs} filesystem missing"
 done
-if [ "$arch" = "x86_64" ]; then
-  grep -q "[[:space:]]oprofilefs\$" /proc/filesystems || fail "${fs} filesystem missing"
-fi
-
 
 if [ -z "$FAILED" ]
 then

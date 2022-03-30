@@ -2,13 +2,14 @@ package moby
 
 import (
 	"fmt"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/xeipuuv/gojsonschema"
@@ -22,7 +23,6 @@ type Moby struct {
 	Onboot     []*Image     `yaml:"onboot" json:"onboot"`
 	Onshutdown []*Image     `yaml:"onshutdown" json:"onshutdown"`
 	Services   []*Image     `yaml:"services" json:"services"`
-	Trust      TrustConfig  `yaml:"trust,omitempty" json:"trust,omitempty"`
 	Files      []File       `yaml:"files" json:"files"`
 
 	initRefs []*reference.Spec
@@ -37,12 +37,6 @@ type KernelConfig struct {
 	UCode   *string `yaml:"ucode,omitempty" json:"ucode,omitempty"`
 
 	ref *reference.Spec
-}
-
-// TrustConfig is the type of a content trust config
-type TrustConfig struct {
-	Image []string `yaml:"image,omitempty" json:"image,omitempty"`
-	Org   []string `yaml:"org,omitempty" json:"org,omitempty"`
 }
 
 // File is the type of a file specification
@@ -76,6 +70,7 @@ type ImageConfig struct {
 	Mounts            *[]specs.Mount          `yaml:"mounts,omitempty" json:"mounts,omitempty"`
 	Binds             *[]string               `yaml:"binds,omitempty" json:"binds,omitempty"`
 	BindsAdd          *[]string               `yaml:"binds.add,omitempty" json:"binds.add,omitempty"`
+	Devices           *[]Device               `yaml:"devices,omitempty" json:"devices,omitempty"`
 	Tmpfs             *[]string               `yaml:"tmpfs,omitempty" json:"tmpfs,omitempty"`
 	Command           *[]string               `yaml:"command,omitempty" json:"command,omitempty"`
 	Env               *[]string               `yaml:"env,omitempty" json:"env,omitempty"`
@@ -106,6 +101,15 @@ type ImageConfig struct {
 	Runtime *Runtime `yaml:"runtime,omitempty" json:"runtime,omitempty"`
 
 	ref *reference.Spec
+}
+
+// Device specifies a device to be exposed to the container.
+type Device struct {
+	Path  string `yaml:"path" json:"path"`
+	Type  string `yaml:"type" json:"type"`
+	Major int64  `yaml:"major" json:"major"`
+	Minor int64  `yaml:"minor" json:"minor"`
+	Mode  string `yaml:"mode,omitempty" json:"mode,omitempty"`
 }
 
 // Runtime is the type of config processed at runtime, not used to build the OCI spec
@@ -170,50 +174,37 @@ func uniqueServices(m Moby) error {
 	return nil
 }
 
-// referenceExpand expands "redis" to "docker.io/library/redis" so all images have a full domain
-func referenceExpand(ref string) string {
-	parts := strings.Split(ref, "/")
-	switch len(parts) {
-	case 1:
-		return "docker.io/library/" + ref
-	case 2:
-		return "docker.io/" + ref
-	default:
-		return ref
-	}
-}
-
 func extractReferences(m *Moby) error {
 	if m.Kernel.Image != "" {
-		r, err := reference.Parse(referenceExpand(m.Kernel.Image))
+		r, err := reference.Parse(util.ReferenceExpand(m.Kernel.Image))
 		if err != nil {
 			return fmt.Errorf("extract kernel image reference: %v", err)
 		}
 		m.Kernel.ref = &r
 	}
 	for _, ii := range m.Init {
-		r, err := reference.Parse(referenceExpand(ii))
+		r, err := reference.Parse(util.ReferenceExpand(ii))
 		if err != nil {
 			return fmt.Errorf("extract init image reference: %v", err)
 		}
 		m.initRefs = append(m.initRefs, &r)
 	}
 	for _, image := range m.Onboot {
-		r, err := reference.Parse(referenceExpand(image.Image))
+		r, err := reference.Parse(util.ReferenceExpand(image.Image))
 		if err != nil {
 			return fmt.Errorf("extract on boot image reference: %v", err)
 		}
 		image.ref = &r
 	}
 	for _, image := range m.Onshutdown {
-		r, err := reference.Parse(referenceExpand(image.Image))
+		r, err := reference.Parse(util.ReferenceExpand(image.Image))
 		if err != nil {
 			return fmt.Errorf("extract on shutdown image reference: %v", err)
 		}
 		image.ref = &r
 	}
 	for _, image := range m.Services {
-		r, err := reference.Parse(referenceExpand(image.Image))
+		r, err := reference.Parse(util.ReferenceExpand(image.Image))
 		if err != nil {
 			return fmt.Errorf("extract service image reference: %v", err)
 		}
@@ -318,8 +309,6 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby.Onshutdown = append(moby.Onshutdown, m1.Onshutdown...)
 	moby.Services = append(moby.Services, m1.Services...)
 	moby.Files = append(moby.Files, m1.Files...)
-	moby.Trust.Image = append(moby.Trust.Image, m1.Trust.Image...)
-	moby.Trust.Org = append(moby.Trust.Org, m1.Trust.Org...)
 	moby.initRefs = append(moby.initRefs, m1.initRefs...)
 
 	return moby, uniqueServices(moby)
@@ -389,27 +378,6 @@ func NewImage(config []byte) (Image, error) {
 	}
 
 	return mi, nil
-}
-
-// ConfigToOCI converts a config specification to an OCI config file and a runtime config
-func ConfigToOCI(image *Image, trust bool, idMap map[string]uint32) (specs.Spec, Runtime, error) {
-
-	// TODO pass through same docker client to all functions
-	cli, err := dockerClient()
-	if err != nil {
-		return specs.Spec{}, Runtime{}, err
-	}
-	inspect, err := dockerInspectImage(cli, image.ref, trust)
-	if err != nil {
-		return specs.Spec{}, Runtime{}, err
-	}
-
-	oci, runtime, err := ConfigInspectToOCI(image, inspect, idMap)
-	if err != nil {
-		return specs.Spec{}, Runtime{}, err
-	}
-
-	return oci, runtime, nil
 }
 
 func defaultMountpoint(tp string) string {
@@ -602,6 +570,17 @@ func assignResources(v1, v2 *specs.LinuxResources) specs.LinuxResources {
 	return specs.LinuxResources{}
 }
 
+// assignDevices does ordered overrides from Devices
+func assignDevices(v1, v2 *[]Device) []Device {
+	if v2 != nil {
+		return *v2
+	}
+	if v1 != nil {
+		return *v1
+	}
+	return []Device{}
+}
+
 // assignRuntime does ordered overrides from Runtime
 func assignRuntime(v1, v2 *Runtime) Runtime {
 	if v1 == nil {
@@ -732,19 +711,14 @@ func idNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
 	}
 }
 
-// ConfigInspectToOCI converts a config and the output of image inspect to an OCI config
-func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[string]uint32) (specs.Spec, Runtime, error) {
+// ConfigToOCI converts a config and the output of image inspect to an OCI config
+func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uint32) (specs.Spec, Runtime, error) {
 	oci := specs.Spec{}
 	runtime := Runtime{}
 
-	inspectConfig := &container.Config{}
-	if inspect.Config != nil {
-		inspectConfig = inspect.Config
-	}
-
 	// look for org.mobyproject.config label
 	var label Image
-	labelString := inspectConfig.Labels["org.mobyproject.config"]
+	labelString := config.Labels["org.mobyproject.config"]
 	if labelString != "" {
 		var err error
 		label, err = NewImage([]byte(labelString))
@@ -756,13 +730,13 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 	// command, env and cwd can be taken from image, as they are commonly specified in Dockerfile
 
 	// TODO we could handle entrypoint and cmd independently more like Docker
-	inspectCommand := append(inspectConfig.Entrypoint, inspectConfig.Cmd...)
+	inspectCommand := append(config.Entrypoint, config.Cmd...)
 	args := assignStrings3(inspectCommand, label.Command, yaml.Command)
 
-	env := assignStrings3(inspectConfig.Env, label.Env, yaml.Env)
+	env := assignStrings3(config.Env, label.Env, yaml.Env)
 
 	// empty Cwd not allowed in OCI, must be / in that case
-	cwd := assignStringEmpty4("/", inspectConfig.WorkingDir, label.Cwd, yaml.Cwd)
+	cwd := assignStringEmpty4("/", config.WorkingDir, label.Cwd, yaml.Cwd)
 
 	// the other options will never be in the image config, but may be in label or yaml
 
@@ -1067,6 +1041,36 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 
 	resources := assignResources(label.Resources, yaml.Resources)
 
+	devices := assignDevices(label.Devices, yaml.Devices)
+	var linuxDevices []specs.LinuxDevice
+	for _, device := range devices {
+		if device.Path == "all" {
+			// add a category of devices to the device whitelist cgroup controller
+			resources.Devices = append(resources.Devices, specs.LinuxDeviceCgroup{
+				Allow:  true,
+				Type:   device.Type,
+				Access: "rwm", // read, write, mknod
+			})
+			continue
+		}
+		mode, err := strconv.ParseInt(device.Mode, 8, 32)
+		if err != nil {
+			return oci, runtime, fmt.Errorf("Cannot parse device mode as octal value: %v", err)
+		}
+		fileMode := os.FileMode(mode)
+		linuxDevice := specs.LinuxDevice{
+			Path:     device.Path,
+			Type:     device.Type,
+			Major:    device.Major,
+			Minor:    device.Minor,
+			FileMode: &fileMode,
+		}
+		linuxDevices = append(linuxDevices, linuxDevice)
+		// to access the device it must be added to the device whitelist cgroup controller
+		// see https://www.kernel.org/doc/html/latest/admin-guide/cgroup-v1/devices.html
+		resources.Devices = append(resources.Devices, deviceCgroup(linuxDevice))
+	}
+
 	oci.Linux = &specs.Linux{
 		UIDMappings: assignMappings(label.UIDMappings, yaml.UIDMappings),
 		GIDMappings: assignMappings(label.GIDMappings, yaml.GIDMappings),
@@ -1074,7 +1078,7 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 		Resources:   &resources,
 		CgroupsPath: assignString(label.CgroupsPath, yaml.CgroupsPath),
 		Namespaces:  namespaces,
-		// Devices
+		Devices:     linuxDevices,
 		// Seccomp
 		RootfsPropagation: assignString(label.RootfsPropagation, yaml.RootfsPropagation),
 		MaskedPaths:       assignStrings(label.MaskedPaths, yaml.MaskedPaths),
@@ -1086,4 +1090,14 @@ func ConfigInspectToOCI(yaml *Image, inspect types.ImageInspect, idMap map[strin
 	runtime = assignRuntime(label.Runtime, yaml.Runtime)
 
 	return oci, runtime, nil
+}
+
+func deviceCgroup(device specs.LinuxDevice) specs.LinuxDeviceCgroup {
+	return specs.LinuxDeviceCgroup{
+		Allow:  true,
+		Type:   device.Type,
+		Major:  &device.Major,
+		Minor:  &device.Minor,
+		Access: "rwm", // read, write, mknod
+	}
 }

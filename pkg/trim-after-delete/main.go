@@ -15,7 +15,7 @@ import (
 	"time"
 )
 
-// Listen for Docker image delete events and run a command after a delay.
+// Listen for Docker image, container, and volume delete events and run a command after a delay.
 
 // Event represents the subset of the Docker event message that we're
 // interested in
@@ -136,7 +136,25 @@ RECONNECT:
 				continue RECONNECT
 			}
 			if event.Action == "delete" && event.Type == "image" {
-				log.Printf("The delayed action will happen at least once more")
+				log.Printf("An image has been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "destroy" && event.Type == "container" {
+				log.Printf("A container has been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "destroy" && event.Type == "volume" {
+				log.Printf("A volume has been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "prune" && event.Type == "image" {
+				log.Printf("Dangling images have been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "prune" && event.Type == "container" {
+				log.Printf("Stopped containers have been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "prune" && event.Type == "volume" {
+				log.Printf("Unused volumes have been removed: will run the action at least once more")
+				action.AtLeastOnceMore()
+			} else if event.Action == "prune" && event.Type == "builder" {
+				log.Printf("Dangling build cache has been removed: will run the action at least once more")
 				action.AtLeastOnceMore()
 			}
 		}

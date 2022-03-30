@@ -1,0 +1,14 @@
+# This YAML snippet is to be used in conjunction with packet.yml to
+# build a arm64 image for packet.net. It adds a modprobe of the NIC
+# driver and overrides the kernel section to disable prepending the
+# Intel CPU microcode to the initrd. If writing a YAML specifically
+# for arm64 then the 'ucode' line in the kernel section can be left
+# out.
+kernel:
+  image: linuxkit/kernel:5.10.92
+  cmdline: "console=ttyAMA0"
+  ucode: ""
+onboot:
+  - name: modprobe
+    image: linuxkit/modprobe:1b59b4f2ebb877085ea0d8d3a41cf06f64c09a15
+    command: ["modprobe", "nicvf"]

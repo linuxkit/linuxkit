@@ -3,10 +3,10 @@
 # In the last stage, it creates a package, which can be used for
 # testing.
 
-FROM linuxkit/kernel:5.4.39 AS ksrc
+FROM linuxkit/kernel:5.4.172 AS ksrc
 
 # Extract headers and compile module
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS build
+FROM linuxkit/kernel:5.4.172-builder AS build
 RUN apk add build-base elfutils-dev
 
 COPY --from=ksrc /kernel-dev.tar /
@@ -17,7 +17,7 @@ COPY ./src/* ./
 RUN make all
 
 # Package
-FROM alpine:3.11
+FROM alpine:3.13
 COPY --from=build /kmod/hello_world.ko /
 COPY check.sh /check.sh
 ENTRYPOINT ["/bin/sh", "/check.sh"]

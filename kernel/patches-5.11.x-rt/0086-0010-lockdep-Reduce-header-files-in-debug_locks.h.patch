@@ -1,0 +1,26 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 14 Aug 2020 16:55:25 +0200
+Subject: [PATCH 11/23] lockdep: Reduce header files in debug_locks.h
+
+The inclusion of printk.h leads to circular dependency if spinlock_t is
+based on rt_mutex.
+
+Include only atomic.h (xchg()) and cache.h (__read_mostly).
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ include/linux/debug_locks.h |    3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/include/linux/debug_locks.h
++++ b/include/linux/debug_locks.h
+@@ -3,8 +3,7 @@
+ #define __LINUX_DEBUG_LOCKING_H
+ 
+ #include <linux/atomic.h>
+-#include <linux/bug.h>
+-#include <linux/printk.h>
++#include <linux/cache.h>
+ 
+ struct task_struct;
+ 

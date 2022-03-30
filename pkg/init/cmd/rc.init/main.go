@@ -26,8 +26,7 @@ const (
 )
 
 var (
-	rliminf  = unix.RLIM_INFINITY
-	infinity = uint64(rliminf)
+	infinity = uint64(unix.RLIM_INFINITY)
 )
 
 // set as a subreaper
@@ -227,21 +226,25 @@ func doMounts() {
 	// misc /proc mounted fs
 	mountSilent("binfmt_misc", "/proc/sys/fs/binfmt_misc", "binfmt_misc", noexec|nosuid|nodev, "")
 
-	// mount cgroup root tmpfs
-	mount("cgroup_root", "/sys/fs/cgroup", "tmpfs", nodev|noexec|nosuid, "mode=755,size=10m")
-	// mount cgroups filesystems for all enabled cgroups
-	for _, cg := range cgroupList() {
-		path := filepath.Join("/sys/fs/cgroup", cg)
-		mkdir(path, 0555)
-		mount(cg, path, "cgroup", noexec|nosuid|nodev, cg)
+	if isCgroupV2() {
+		mount("cgroup2", "/sys/fs/cgroup", "cgroup2", noexec|nosuid|nodev, "")
+	} else {
+		// mount cgroup root tmpfs
+		mount("cgroup_root", "/sys/fs/cgroup", "tmpfs", nodev|noexec|nosuid, "mode=755,size=10m")
+		// mount cgroups filesystems for all enabled cgroups
+		for _, cg := range cgroupList() {
+			path := filepath.Join("/sys/fs/cgroup", cg)
+			mkdir(path, 0555)
+			mount(cg, path, "cgroup", noexec|nosuid|nodev, cg)
+		}
+
+		// use hierarchy for memory
+		write("/sys/fs/cgroup/memory/memory.use_hierarchy", "1")
+
+		// many things assume systemd
+		mkdir("/sys/fs/cgroup/systemd", 0555)
+		mount("cgroup", "/sys/fs/cgroup/systemd", "cgroup", 0, "none,name=systemd")
 	}
-
-	// use hierarchy for memory
-	write("/sys/fs/cgroup/memory/memory.use_hierarchy", "1")
-
-	// many things assume systemd
-	mkdir("/sys/fs/cgroup/systemd", 0555)
-	mount("cgroup", "/sys/fs/cgroup/systemd", "cgroup", 0, "none,name=systemd")
 
 	// make / rshared
 	mount("", "/", "", rec|shared, "")
@@ -419,6 +422,20 @@ func doShutdown(action string) {
 	}
 	// if this failed, init will try again
 	os.Exit(0)
+}
+
+func isCgroupV2() bool {
+	dt, err := os.ReadFile("/proc/cmdline")
+	if err != nil {
+		log.Printf("error reading /proc/cmdline: %v", err)
+		return false
+	}
+	for _, s := range strings.Split(string(dt), " ") {
+		if s == "linuxkit.unified_cgroup_hierarchy=1" {
+			return true
+		}
+	}
+	return false
 }
 
 func main() {

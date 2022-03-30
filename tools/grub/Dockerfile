@@ -1,4 +1,6 @@
+# this is really hard to build. Do not change this version unless you must
 FROM linuxkit/alpine:86cd4f51b49fb9a078b50201d892a3c7973d48ec AS grub-build
+
 RUN apk add \
   automake \
   make \

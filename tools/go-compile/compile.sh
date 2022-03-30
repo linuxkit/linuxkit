@@ -73,18 +73,21 @@ fi
 
 cd "$dir"
 
+# Use '-mod=vendor' for builds which have switched to go modules
+[ -f go.mod ] && MOD_ARG="-mod=vendor"
+
 # lint before building
 >&2 echo "gofmt..."
 test -z $(gofmt -s -l .| grep -v .pb. | grep -v vendor/ | tee /dev/stderr)
 
 >&2 echo "govet..."
-test -z $(GOOS=linux go vet -printf=false . 2>&1 | grep -v "^#" | grep -v vendor/ | tee /dev/stderr)
+test -z $(GOOS=linux go vet $MOD_ARG -printf=false . 2>&1 | grep -v "^#" | grep -v vendor/ | tee /dev/stderr)
 
 >&2 echo "golint..."
 test -z $(find . -type f -name "*.go" -not -path "*/vendor/*" -not -name "*.pb.*" -exec golint {} \; | tee /dev/stderr)
 
 >&2 echo "ineffassign..."
-test -z $(find . -type f -name "*.go" -not -path "*/vendor/*" -not -name "*.pb.*" -exec ineffassign {} \; | tee /dev/stderr)
+test -z $(ineffassign ./... | tee /dev/stderr)
 
 >&2 echo "go build..."
 
@@ -92,12 +95,12 @@ if [ "$GOOS" = "darwin" -o "$GOOS" = "windows" ]
 then
 	if [ -z "$ldflags" ]
 	then
-		go build -o $out "$package"
+		go build $MOD_ARG -o $out "$package"
 	else
-		go build -o $out -ldflags "${ldflags}" "$package"
+		go build $MOD_ARG -o $out -ldflags "${ldflags}" "$package"
 	fi
 else
-	go build -o $out -buildmode pie -ldflags "-s -w ${ldflags} -extldflags \"-static\"" "$package"
+	go build $MOD_ARG -o $out -buildmode pie -ldflags "-linkmode=external -s -w ${ldflags} -extldflags \"-static-pie\"" "$package"
 fi
 
 tar cf - $out

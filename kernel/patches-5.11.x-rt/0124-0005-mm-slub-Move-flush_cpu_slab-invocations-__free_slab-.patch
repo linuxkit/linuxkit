@@ -1,0 +1,114 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 26 Feb 2021 17:11:55 +0100
+Subject: [PATCH 5/8] mm: slub: Move flush_cpu_slab() invocations __free_slab()
+ invocations out of IRQ context
+
+flush_all() flushes a specific SLAB cache on each CPU (where the cache
+is present). The discard_delayed()/__free_slab() invocation happens
+within IPI handler and is problematic for PREEMPT_RT.
+
+The flush operation is not a frequent operation or a hot path. The
+per-CPU flush operation can be moved to within a workqueue.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/slub.c |   60 ++++++++++++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 52 insertions(+), 8 deletions(-)
+
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -2478,26 +2478,70 @@ static inline void __flush_cpu_slab(stru
+ 	unfreeze_partials(s, c, delayed_free);
+ }
+ 
+-static void flush_cpu_slab(void *d)
++struct slub_flush_work {
++	struct work_struct work;
++	struct kmem_cache *s;
++	bool skip;
++};
++
++static void flush_cpu_slab(struct work_struct *w)
+ {
+-	struct kmem_cache *s = d;
++	struct slub_flush_work *sfw;
+ 	LIST_HEAD(delayed_free);
+ 
+-	__flush_cpu_slab(s, smp_processor_id(), &delayed_free);
++	sfw = container_of(w, struct slub_flush_work, work);
++
++	local_irq_disable();
++	__flush_cpu_slab(sfw->s, smp_processor_id(), &delayed_free);
++	local_irq_enable();
++
+ 	discard_delayed(&delayed_free);
+ }
+ 
+-static bool has_cpu_slab(int cpu, void *info)
++static bool has_cpu_slab(int cpu, struct kmem_cache *s)
+ {
+-	struct kmem_cache *s = info;
+ 	struct kmem_cache_cpu *c = per_cpu_ptr(s->cpu_slab, cpu);
+ 
+ 	return c->page || slub_percpu_partial(c);
+ }
+ 
++static DEFINE_MUTEX(flush_lock);
++static DEFINE_PER_CPU(struct slub_flush_work, slub_flush);
++
++static void flush_all_locked(struct kmem_cache *s)
++{
++	struct slub_flush_work *sfw;
++	unsigned int cpu;
++
++	mutex_lock(&flush_lock);
++
++	for_each_online_cpu(cpu) {
++		sfw = &per_cpu(slub_flush, cpu);
++		if (!has_cpu_slab(cpu, s)) {
++			sfw->skip = true;
++			continue;
++		}
++		INIT_WORK(&sfw->work, flush_cpu_slab);
++		sfw->skip = false;
++		sfw->s = s;
++		schedule_work_on(cpu, &sfw->work);
++	}
++
++	for_each_online_cpu(cpu) {
++		sfw = &per_cpu(slub_flush, cpu);
++		if (sfw->skip)
++			continue;
++		flush_work(&sfw->work);
++	}
++
++	mutex_unlock(&flush_lock);
++}
++
+ static void flush_all(struct kmem_cache *s)
+ {
+-	on_each_cpu_cond(has_cpu_slab, flush_cpu_slab, s, 1);
++	cpus_read_lock();
++	flush_all_locked(s);
++	cpus_read_unlock();
+ }
+ 
+ /*
+@@ -3979,7 +4023,7 @@ int __kmem_cache_shutdown(struct kmem_ca
+ 	int node;
+ 	struct kmem_cache_node *n;
+ 
+-	flush_all(s);
++	flush_all_locked(s);
+ 	/* Attempt to free all objects */
+ 	for_each_kmem_cache_node(s, node, n) {
+ 		free_partial(s, n);
+@@ -4219,7 +4263,7 @@ int __kmem_cache_shrink(struct kmem_cach
+ 	unsigned long flags;
+ 	int ret = 0;
+ 
+-	flush_all(s);
++	flush_all_locked(s);
+ 	for_each_kmem_cache_node(s, node, n) {
+ 		INIT_LIST_HEAD(&discard);
+ 		for (i = 0; i < SHRINK_PROMOTE_MAX; i++)

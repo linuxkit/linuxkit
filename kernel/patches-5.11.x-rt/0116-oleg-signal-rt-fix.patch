@@ -1,0 +1,129 @@
+From: Oleg Nesterov <oleg@redhat.com>
+Date: Tue, 14 Jul 2015 14:26:34 +0200
+Subject: signal/x86: Delay calling signals in atomic
+
+On x86_64 we must disable preemption before we enable interrupts
+for stack faults, int3 and debugging, because the current task is using
+a per CPU debug stack defined by the IST. If we schedule out, another task
+can come in and use the same stack and cause the stack to be corrupted
+and crash the kernel on return.
+
+When CONFIG_PREEMPT_RT is enabled, spin_locks become mutexes, and
+one of these is the spin lock used in signal handling.
+
+Some of the debug code (int3) causes do_trap() to send a signal.
+This function calls a spin lock that has been converted to a mutex
+and has the possibility to sleep. If this happens, the above issues with
+the corrupted stack is possible.
+
+Instead of calling the signal right away, for PREEMPT_RT and x86_64,
+the signal information is stored on the stacks task_struct and
+TIF_NOTIFY_RESUME is set. Then on exit of the trap, the signal resume
+code will send the signal when preemption is enabled.
+
+[ rostedt: Switched from #ifdef CONFIG_PREEMPT_RT to
+  ARCH_RT_DELAYS_SIGNAL_SEND and added comments to the code. ]
+
+
+Signed-off-by: Oleg Nesterov <oleg@redhat.com>
+Signed-off-by: Steven Rostedt <rostedt@goodmis.org>
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+[bigeasy: also needed on 32bit as per Yang Shi <yang.shi@linaro.org>]
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+
+ arch/x86/include/asm/signal.h |   13 +++++++++++++
+ include/linux/sched.h         |    4 ++++
+ kernel/entry/common.c         |    8 ++++++++
+ kernel/signal.c               |   28 ++++++++++++++++++++++++++++
+ 4 files changed, 53 insertions(+)
+
+--- a/arch/x86/include/asm/signal.h
++++ b/arch/x86/include/asm/signal.h
+@@ -28,6 +28,19 @@ typedef struct {
+ #define SA_IA32_ABI	0x02000000u
+ #define SA_X32_ABI	0x01000000u
+ 
++/*
++ * Because some traps use the IST stack, we must keep preemption
++ * disabled while calling do_trap(), but do_trap() may call
++ * force_sig_info() which will grab the signal spin_locks for the
++ * task, which in PREEMPT_RT are mutexes.  By defining
++ * ARCH_RT_DELAYS_SIGNAL_SEND the force_sig_info() will set
++ * TIF_NOTIFY_RESUME and set up the signal to be sent on exit of the
++ * trap.
++ */
++#if defined(CONFIG_PREEMPT_RT)
++#define ARCH_RT_DELAYS_SIGNAL_SEND
++#endif
++
+ #ifndef CONFIG_COMPAT
+ typedef sigset_t compat_sigset_t;
+ #endif
+--- a/include/linux/sched.h
++++ b/include/linux/sched.h
+@@ -994,6 +994,10 @@ struct task_struct {
+ 	/* Restored if set_restore_sigmask() was used: */
+ 	sigset_t			saved_sigmask;
+ 	struct sigpending		pending;
++#ifdef CONFIG_PREEMPT_RT
++	/* TODO: move me into ->restart_block ? */
++	struct				kernel_siginfo forced_info;
++#endif
+ 	unsigned long			sas_ss_sp;
+ 	size_t				sas_ss_size;
+ 	unsigned int			sas_ss_flags;
+--- a/kernel/entry/common.c
++++ b/kernel/entry/common.c
+@@ -161,6 +161,14 @@ static unsigned long exit_to_user_mode_l
+ 		if (ti_work & _TIF_NEED_RESCHED)
+ 			schedule();
+ 
++#ifdef ARCH_RT_DELAYS_SIGNAL_SEND
++		if (unlikely(current->forced_info.si_signo)) {
++			struct task_struct *t = current;
++			force_sig_info(&t->forced_info);
++			t->forced_info.si_signo = 0;
++		}
++#endif
++
+ 		if (ti_work & _TIF_UPROBE)
+ 			uprobe_notify_resume(regs);
+ 
+--- a/kernel/signal.c
++++ b/kernel/signal.c
+@@ -1314,6 +1314,34 @@ force_sig_info_to_task(struct kernel_sig
+ 	struct k_sigaction *action;
+ 	int sig = info->si_signo;
+ 
++	/*
++	 * On some archs, PREEMPT_RT has to delay sending a signal from a trap
++	 * since it can not enable preemption, and the signal code's spin_locks
++	 * turn into mutexes. Instead, it must set TIF_NOTIFY_RESUME which will
++	 * send the signal on exit of the trap.
++	 */
++#ifdef ARCH_RT_DELAYS_SIGNAL_SEND
++	if (in_atomic()) {
++		struct task_struct *t = current;
++
++		if (WARN_ON_ONCE(t->forced_info.si_signo))
++			return 0;
++
++		if (is_si_special(info)) {
++			WARN_ON_ONCE(info != SEND_SIG_PRIV);
++			t->forced_info.si_signo = info->si_signo;
++			t->forced_info.si_errno = 0;
++			t->forced_info.si_code = SI_KERNEL;
++			t->forced_info.si_pid = 0;
++			t->forced_info.si_uid = 0;
++		} else {
++			t->forced_info = *info;
++		}
++
++		set_tsk_thread_flag(t, TIF_NOTIFY_RESUME);
++		return 0;
++	}
++#endif
+ 	spin_lock_irqsave(&t->sighand->siglock, flags);
+ 	action = &t->sighand->action[sig-1];
+ 	ignored = action->sa.sa_handler == SIG_IGN;

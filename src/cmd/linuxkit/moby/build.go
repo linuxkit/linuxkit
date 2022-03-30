@@ -17,6 +17,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/containerd/containerd/reference"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
@@ -81,53 +83,22 @@ func OutputTypes() []string {
 	return ts
 }
 
-func enforceContentTrust(fullImageName string, config *TrustConfig) bool {
-	for _, img := range config.Image {
-		// First check for an exact name match
-		if img == fullImageName {
-			return true
-		}
-		// Also check for an image name only match
-		// by removing a possible tag (with possibly added digest):
-		imgAndTag := strings.Split(fullImageName, ":")
-		if len(imgAndTag) >= 2 && img == imgAndTag[0] {
-			return true
-		}
-		// and by removing a possible digest:
-		imgAndDigest := strings.Split(fullImageName, "@sha256:")
-		if len(imgAndDigest) >= 2 && img == imgAndDigest[0] {
-			return true
-		}
-	}
-
-	for _, org := range config.Org {
-		var imgOrg string
-		splitName := strings.Split(fullImageName, "/")
-		switch len(splitName) {
-		case 0:
-			// if the image is empty, return false
-			return false
-		case 1:
-			// for single names like nginx, use library
-			imgOrg = "library"
-		case 2:
-			// for names that assume docker hub, like linxukit/alpine, take the first split
-			imgOrg = splitName[0]
-		default:
-			// for names that include the registry, the second piece is the org, ex: docker.io/library/alpine
-			imgOrg = splitName[1]
-		}
-		if imgOrg == org {
-			return true
-		}
-	}
-	return false
-}
-
-func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, pull bool, iw *tar.Writer) error {
+func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, iw *tar.Writer, opts BuildOpts) error {
 	log.Infof("  Create OCI config for %s", image.Image)
-	useTrust := enforceContentTrust(image.Image, &m.Trust)
-	oci, runtime, err := ConfigToOCI(image, useTrust, idMap)
+	imageName := util.ReferenceExpand(image.Image)
+	ref, err := reference.Parse(imageName)
+	if err != nil {
+		return fmt.Errorf("could not resolve references for image %s: %v", image.Image, err)
+	}
+	src, err := imagePull(&ref, opts.Pull, opts.CacheDir, opts.DockerCache, opts.Arch)
+	if err != nil {
+		return fmt.Errorf("Could not pull image %s: %v", image.Image, err)
+	}
+	configRaw, err := src.Config()
+	if err != nil {
+		return fmt.Errorf("Failed to retrieve config for %s: %v", image.Image, err)
+	}
+	oci, runtime, err := ConfigToOCI(image, configRaw, idMap)
 	if err != nil {
 		return fmt.Errorf("Failed to create OCI spec for %s: %v", image.Image, err)
 	}
@@ -137,7 +108,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, image.ref, config, runtime, iw, useTrust, pull, readonly, dupMap)
+	err = ImageBundle(path, image.ref, config, runtime, iw, readonly, dupMap, opts)
 	if err != nil {
 		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
 	}
@@ -145,7 +116,7 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 }
 
 // Build performs the actual build process
-func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) error {
+func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	if MobyDir == "" {
 		MobyDir = defaultMobyConfigDir()
 	}
@@ -158,7 +129,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	iw := tar.NewWriter(w)
 
 	// add additions
-	addition := additions[tp]
+	addition := additions[opts.BuilderType]
 
 	// allocate each container a uid, gid that can be referenced by name
 	idMap := map[string]uint32{}
@@ -182,8 +153,8 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	if m.Kernel.ref != nil {
 		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
-		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, decompressKernel)
-		err := ImageTar(m.Kernel.ref, "", kf, enforceContentTrust(m.Kernel.ref.String(), &m.Trust), pull, "")
+		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, opts.DecompressKernel)
+		err := ImageTar(m.Kernel.ref, "", kf, "", opts)
 		if err != nil {
 			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
 		}
@@ -199,7 +170,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	}
 	for _, ii := range m.initRefs {
 		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", iw, enforceContentTrust(ii.String(), &m.Trust), pull, resolvconfSymlink)
+		err := ImageTar(ii, "", iw, resolvconfSymlink, opts)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}
@@ -210,7 +181,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	}
 	for i, image := range m.Onboot {
 		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onboot", so+"-", m, idMap, dupMap, pull, iw); err != nil {
+		if err := outputImage(image, "onboot", so+"-", m, idMap, dupMap, iw, opts); err != nil {
 			return err
 		}
 	}
@@ -220,7 +191,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 	}
 	for i, image := range m.Onshutdown {
 		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onshutdown", so+"-", m, idMap, dupMap, pull, iw); err != nil {
+		if err := outputImage(image, "onshutdown", so+"-", m, idMap, dupMap, iw, opts); err != nil {
 			return err
 		}
 	}
@@ -229,7 +200,7 @@ func Build(m Moby, w io.Writer, pull bool, tp string, decompressKernel bool) err
 		log.Infof("Add service containers:")
 	}
 	for _, image := range m.Services {
-		if err := outputImage(image, "services", "", m, idMap, dupMap, pull, iw); err != nil {
+		if err := outputImage(image, "services", "", m, idMap, dupMap, iw, opts); err != nil {
 			return err
 		}
 	}
@@ -613,7 +584,7 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 			if f.Source != "" {
 				source := f.Source
 				if len(source) > 2 && source[:2] == "~/" {
-					source = homeDir() + source[1:]
+					source = util.HomeDir() + source[1:]
 				}
 				if f.Optional {
 					_, err := os.Stat(source)

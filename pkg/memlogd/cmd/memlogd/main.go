@@ -66,7 +66,7 @@ func logQueryHandler(l *connListener) {
 }
 
 func (msg *logEntry) String() string {
-	return fmt.Sprintf("%s,%s;%s", msg.time.Format(time.RFC3339), msg.source, msg.msg)
+	return fmt.Sprintf("%s,%s;%s", msg.time.Format(time.RFC3339Nano), msg.source, msg.msg)
 }
 
 func ringBufferHandler(ringSize, chanSize int, logCh chan logEntry, queryMsgChan chan queryMessage) {

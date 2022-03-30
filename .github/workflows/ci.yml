@@ -6,20 +6,30 @@ jobs:
     name: Build & Test
     strategy:
       matrix:
-        arch:
-          - amd64-linux
-          - arm64-linux
-          - s390x-linux
-          - amd64-darwin
-          - amd64-windows.exe
+        target:
+          - os: linux
+            arch: amd64
+            suffix: amd64-linux
+          - os: linux
+            arch: arm64
+            suffix: arm64-linux
+          - os: linux
+            arch: s390x
+            suffix: s390x-linux
+          - os: darwin
+            arch: amd64
+            suffix: amd64-darwin
+          - os: windows
+            arch: amd64
+            suffix: amd64-windows.exe
 
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.13
+    - name: Set up Go 1.16
       uses: actions/setup-go@v2
       with:
-        go-version: 1.13.4
+        go-version: 1.16.7
       id: go
 
     - name: Check out code
@@ -27,9 +37,13 @@ jobs:
       with:
         path: ./src/github.com/linuxkit/linuxkit
 
+    - name: Set path
+      run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      env:
+         GOPATH: ${{runner.workspace}}
+
     - name: Get pre-requisites
       run: |
-            echo "::set-env name=PATH::$PATH:$(go env GOPATH)/bin"
             go get -u golang.org/x/lint/golint
             go get -u github.com/gordonklaus/ineffassign
       env:
@@ -43,29 +57,29 @@ jobs:
 
     - name: Build
       run: |
-        make LOCAL_TARGET=bin/linuxkit-${{matrix.arch}} local-build
+        make GOARCH=${{matrix.target.arch}} GOOS=${{matrix.target.os}} LOCAL_TARGET=$(pwd)/bin/linuxkit-${{matrix.target.suffix}} local-build
+        file bin/linuxkit-${{matrix.target.suffix}}
       env:
         GOPATH: ${{runner.workspace}}
 
     - name: Checksum
-      run: cd bin && sha256sum linuxkit-${{matrix.arch}} > linuxkit-${{matrix.arch}}.SHA256SUM
+      run: |
+        cd bin && sha256sum linuxkit-${{matrix.target.suffix}} > linuxkit-${{matrix.target.suffix}}.SHA256SUM
+        cat linuxkit-${{matrix.target.suffix}}.SHA256SUM
 
     - name: Test
       run: make local-test
       env:
         GOPATH: ${{runner.workspace}}
 
-    - name: Cache binary
-      uses: actions/cache@v1
-      with:
-        path: bin
-        key: linuxkit-${{matrix.arch}}-${{hashFiles('src/**')}}
-
     - name: Upload binary
-      uses: actions/upload-artifact@v1.0.0
+      uses: actions/upload-artifact@v2
       with:
-        name: linuxkit-${{matrix.arch}}
-        path: bin
+        name: linuxkit-${{matrix.target.suffix}}
+        path: |
+          bin/linuxkit-${{matrix.target.suffix}}
+          bin/linuxkit-${{matrix.target.suffix}}.SHA256SUM
+        if-no-files-found: error
 
   build_packages:
     name: Build Packages
@@ -77,19 +91,34 @@ jobs:
       with:
         path: ./src/github.com/linuxkit/linuxkit
 
-    - name: Restore LinuxKit From Cache
-      uses: actions/cache@v1
+    - name: Set up binfmt
+      # Only register arm64 as we are on amd64 already. s390x is not reliable
+      run: docker run --privileged --rm tonistiigi/binfmt --install arm64
+
+    - name: Download linuxkit
+      uses: actions/download-artifact@v2
       with:
-        path: lkt
-        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+        name: linuxkit-amd64-linux
+        path: bin
 
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        chmod ugo+x bin/linuxkit-amd64-linux
+        sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        /usr/local/bin/linuxkit version
+
+    - name: Cache Packages
+      uses: actions/cache@v2
+      with:
+        path: ~/.linuxkit/cache/
+        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-linuxkit-
 
     - name: Build Packages
+      # Skip s390x as emulation is unreliable
       run: |
-        make -C pkg build
+        make OPTIONS="--skip-platforms linux/s390x" -C pkg build
 
   test_packages:
     name: Packages Tests
@@ -109,7 +138,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -120,17 +149,27 @@ jobs:
 
     - name: Symlink RTF
       run: |
-        sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
+        sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
-    - name: Restore LinuxKit From Cache
-      uses: actions/cache@v1
+    - name: Download linuxkit
+      uses: actions/download-artifact@v2
       with:
-        path: lkt
-        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+        name: linuxkit-amd64-linux
+        path: bin
 
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        chmod ugo+x bin/linuxkit-amd64-linux
+        sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        /usr/local/bin/linuxkit version
+
+    - name: Restore Package Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.linuxkit/cache/
+        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-linuxkit-
 
     - name: Run Tests
       run: |
@@ -155,7 +194,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -166,17 +205,19 @@ jobs:
 
     - name: Symlink RTF
       run: |
-        sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
+        sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
-    - name: Restore LinuxKit From Cache
-      uses: actions/cache@v1
+    - name: Download linuxkit
+      uses: actions/download-artifact@v2
       with:
-        path: lkt
-        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+        name: linuxkit-amd64-linux
+        path: bin
 
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        chmod ugo+x bin/linuxkit-amd64-linux
+        sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        /usr/local/bin/linuxkit version
 
     - name: Run Tests
       run: |
@@ -201,7 +242,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -212,17 +253,19 @@ jobs:
 
     - name: Symlink RTF
       run: |
-        sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
+        sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
-    - name: Restore LinuxKit From Cache
-      uses: actions/cache@v1
+    - name: Download linuxkit
+      uses: actions/download-artifact@v2
       with:
-        path: lkt
-        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+        name: linuxkit-amd64-linux
+        path: bin
 
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        chmod ugo+x bin/linuxkit-amd64-linux
+        sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        /usr/local/bin/linuxkit version
 
     - name: Run Tests
       run: |
@@ -247,7 +290,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -258,17 +301,19 @@ jobs:
 
     - name: Symlink RTF
       run: |
-        sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
+        sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
-    - name: Restore LinuxKit From Cache
-      uses: actions/cache@v1
+    - name: Download linuxkit
+      uses: actions/download-artifact@v2
       with:
-        path: lkt
-        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+        name: linuxkit-amd64-linux
+        path: bin
 
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        chmod ugo+x bin/linuxkit-amd64-linux
+        sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        /usr/local/bin/linuxkit version
 
     - name: Run Tests
       run: |
@@ -293,7 +338,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v1
+      uses: actions/cache@v2
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -304,17 +349,19 @@ jobs:
 
     - name: Symlink RTF
       run: |
-        sudo ln -s `pwd`/bin/rtf /usr/local/bin/rtf
+        sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
-    - name: Restore LinuxKit From Cache
-      uses: actions/cache@v1
+    - name: Download linuxkit
+      uses: actions/download-artifact@v2
       with:
-        path: lkt
-        key: linuxkit-amd64-linux-${{hashFiles('src/**')}}
+        name: linuxkit-amd64-linux
+        path: bin
 
     - name: Symlink Linuxkit
       run: |
-        sudo ln -s `pwd`/lkt/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        chmod ugo+x bin/linuxkit-amd64-linux
+        sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        /usr/local/bin/linuxkit version
 
     - name: Run Tests
       run: |

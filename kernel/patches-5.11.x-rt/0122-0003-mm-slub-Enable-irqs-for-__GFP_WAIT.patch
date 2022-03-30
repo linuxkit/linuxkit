@@ -1,0 +1,70 @@
+From: Thomas Gleixner <tglx@linutronix.de>
+Date: Wed, 9 Jan 2013 12:08:15 +0100
+Subject: [PATCH 3/8] mm: slub: Enable irqs for __GFP_WAIT
+
+SYSTEM_RUNNING might be too late for enabling interrupts. Allocations
+with GFP_WAIT can happen before that. So use this as an indicator.
+
+[bigeasy: Add warning on RT for allocations in atomic context.
+  Don't enable interrupts on allocations during SYSTEM_SUSPEND. This is done
+  during suspend by ACPI, noticed by Liwei Song <liwei.song@windriver.com>
+]
+
+Signed-off-by: Thomas Gleixner <tglx@linutronix.de>
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ mm/slub.c |   18 +++++++++++++++++-
+ 1 file changed, 17 insertions(+), 1 deletion(-)
+
+--- a/mm/slub.c
++++ b/mm/slub.c
+@@ -1739,10 +1739,18 @@ static struct page *allocate_slab(struct
+ 	void *start, *p, *next;
+ 	int idx;
+ 	bool shuffle;
++	bool enableirqs = false;
+ 
+ 	flags &= gfp_allowed_mask;
+ 
+ 	if (gfpflags_allow_blocking(flags))
++		enableirqs = true;
++
++#ifdef CONFIG_PREEMPT_RT
++	if (system_state > SYSTEM_BOOTING && system_state < SYSTEM_SUSPEND)
++		enableirqs = true;
++#endif
++	if (enableirqs)
+ 		local_irq_enable();
+ 
+ 	flags |= s->allocflags;
+@@ -1803,7 +1811,7 @@ static struct page *allocate_slab(struct
+ 	page->frozen = 1;
+ 
+ out:
+-	if (gfpflags_allow_blocking(flags))
++	if (enableirqs)
+ 		local_irq_disable();
+ 	if (!page)
+ 		return NULL;
+@@ -2814,6 +2822,10 @@ static __always_inline void *slab_alloc_
+ 	unsigned long tid;
+ 	struct obj_cgroup *objcg = NULL;
+ 
++	if (IS_ENABLED(CONFIG_PREEMPT_RT) && IS_ENABLED(CONFIG_DEBUG_ATOMIC_SLEEP))
++		WARN_ON_ONCE(!preemptible() &&
++			     (system_state > SYSTEM_BOOTING && system_state < SYSTEM_SUSPEND));
++
+ 	s = slab_pre_alloc_hook(s, &objcg, 1, gfpflags);
+ 	if (!s)
+ 		return NULL;
+@@ -3279,6 +3291,10 @@ int kmem_cache_alloc_bulk(struct kmem_ca
+ 	int i;
+ 	struct obj_cgroup *objcg = NULL;
+ 
++	if (IS_ENABLED(CONFIG_PREEMPT_RT) && IS_ENABLED(CONFIG_DEBUG_ATOMIC_SLEEP))
++		WARN_ON_ONCE(!preemptible() &&
++			     (system_state > SYSTEM_BOOTING && system_state < SYSTEM_SUSPEND));
++
+ 	/* memcg and kmem_cache debug support */
+ 	s = slab_pre_alloc_hook(s, &objcg, size, flags);
+ 	if (unlikely(!s))

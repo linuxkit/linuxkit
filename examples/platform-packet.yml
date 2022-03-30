@@ -1,0 +1,36 @@
+kernel:
+  image: linuxkit/kernel:5.10.92
+  cmdline: console=ttyS1
+  ucode: intel-ucode.cpio
+init:
+  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
+  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
+  - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
+  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
+  - linuxkit/firmware:8f89601312327c78999a880ee104ceae9a25d20e
+onboot:
+  - name: rngd1
+    image: linuxkit/rngd:4f85d8de3f6f45973a8c88dc8fba9ec596e5495a
+    command: ["/sbin/rngd", "-1"]
+  - name: sysctl
+    image: linuxkit/sysctl:bdc99eeedc224439ff237990ee06e5b992c8c1ae
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: metadata
+    image: linuxkit/metadata:646c00ad6c0b3fc246b6af9ccfcd6b1eb6b6da8a
+    command: ["/usr/bin/metadata", "packet"]
+services:
+  - name: rngd
+    image: linuxkit/rngd:4f85d8de3f6f45973a8c88dc8fba9ec596e5495a
+  - name: getty
+    image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
+    env:
+     - INSECURE=true
+  - name: sshd
+    image: linuxkit/sshd:4696ba61c3ec091328e1c14857d77e675802342f
+files:
+  - path: root/.ssh/authorized_keys
+    source: ~/.ssh/id_rsa.pub
+    mode: "0600"
+    optional: true

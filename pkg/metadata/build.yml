@@ -7,6 +7,10 @@ config:
     - /sys:/sys
     - /etc/resolv.conf:/etc/resolv.conf
     - /etc/ssl/certs:/etc/ssl/certs
+  devices:
+    # all block devices
+    - path: all
+      type: b
   tmpfs:
     - /tmp
   readonly: true

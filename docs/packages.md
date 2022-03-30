@@ -7,14 +7,14 @@ packages, as it's very easy. Packages are the unit of customisation
 in a LinuxKit-based project, if you know how to build a container,
 you should be able to build a LinuxKit package.
 
-All LinuxKit packages are:
-- Signed with Docker Content Trust.
+All official LinuxKit packages are:
 - Enabled with multi-arch manifests to work on multiple architectures.
-- Derived from well-known (and signed) sources for repeatable builds.
+- Derived from well-known sources for repeatable builds.
 - Built with multi-stage builds to minimise their size.
 
 
 ## CI and Package Builds
+
 When building and merging packages, it is important to note that our CI process builds packages. The targets `make ci` and `make ci-pr` execute `make -C pkg build`. These in turn execute `linuxkit pkg build` for each package under `pkg/`. This in turn will try to pull the image whose tag matches the tree hash or, failing that, to build it.
 
 We do not want the builds to happen with each CI run for two reasons:
@@ -22,7 +22,7 @@ We do not want the builds to happen with each CI run for two reasons:
 1. It is slower to do a package build than to just pull the latest image.
 2. If any of the steps of the build fails, e.g. a `curl` download that depends on an intermittent target, it can cause all of CI to fail.
 
-Thus, if, as a maintainer, you merge any commits into a `pkg/`, even if the change is documentation alone, please do a `linuxkit package push`.
+Thus, if, as a maintainer, you merge any commits into a `pkg/`, even if the change is documentation alone, please do a `linuxkit pkg push`.
 
 
 ## Package source
@@ -40,7 +40,6 @@ A package source consists of a directory containing at least two files:
 - `extra-sources` _(list of strings)_: Additional sources for the package outside the package directory. The format is `src:dst`, where `src` can be relative to the package directory and `dst` is the destination in the build context. This is useful for sharing files, such as vendored go code, between packages.
 - `gitrepo` _(string)_: The git repository where the package source is kept.
 - `network` _(bool)_: Allow network access during the package build (default: no)
-- `disable-content-trust` _(bool)_: Disable Docker content trust for this package (default: no)
 - `disable-cache` _(bool)_: Disable build cache for this package (default: no)
 - `config`: _(struct `github.com/moby/tool/src/moby.ImageConfig`)_: Image configuration, marshalled to JSON and added as `org.mobyproject.config` label on image (default: no label)
 - `depends`: Contains information on prerequisites which must be satisfied in order to build the package. Has subfields:
@@ -53,9 +52,9 @@ A package source consists of a directory containing at least two files:
 ### Prerequisites
 
 Before you can build packages you need:
-- Docker version 17.06 or newer. If you are on a Mac you also need
-  `docker-credential-osxkeychain.bin`, which comes with Docker for Mac.
-- `make`, `notary`, `base64`, `jq`, and `expect`
+- Docker version 19.03 or newer, which includes [buildx](https://docs.docker.com/buildx/working-with-buildx/)
+- If you are on a Mac you also need `docker-credential-osxkeychain.bin`, which comes with Docker for Mac.
+- `make`, `base64`, `jq`, and `expect`
 - A *recent* version of `manifest-tool` which you can build with `make
   bin/manifest-tool`, or `go get github.com:estesp/manifest-tool`, or
   via the LinuxKit homebrew tap with `brew install --HEAD
@@ -66,68 +65,229 @@ Further, when building packages you need to be logged into hub with
 `docker login` as some of the tooling extracts your hub credentials
 during the build.
 
+### Build Targets
+
+LinuxKit builds packages as docker images. It deposits the built package as a docker image in one or both of two targets:
+
+* the linuxkit cache, which is at `~/.linuxkit/cache/` (configurable)
+* the docker image cache (optional)
+
+The package _always_ is built and saved in the linuxkit cache. However, you _also_ can load the package for the current
+architecture, if available, into the docker image cache.
+
+If you want to build images and test and run them _in a standalone_ fashion locally, then you should add the docker image cache.
+Otherwise, you don't need anything more than the default linuxkit cache. LinuxKit defaults to building OS images using docker
+images from this cache, only looking in the docker cache if instructed to via `linuxkit build --docker`.
+
+In the linuxkit cache, it creates all of the layers, the manifest that can be uploaded
+to a registry, and the multi-architecture index. If an image already exists for a different architecture in the cache,
+it updates the index to include additional manifests created.
+
+The order of building is as follows:
+
+1. Build the image to the linuxkit cache
+1. If `--docker` is provided, load the image into the docker image cache
+
+For example:
+
+```bash
+linuxkit pkg build pkg/foo           # builds pkg/foo and places it in the linuxkit cache
+linuxkit pkg build pkg/foo --docker  # builds pkg/foo and places it in the linuxkit cache and also loads it into docker
+```
+
+#### Build Platforms
+
+By default, `linuxkit pkg build` builds for all supported platforms in the package's `build.yml`, whose syntax is available
+[here][Package source]. If no platforms are provided in the `build.yml`, it builds for all platforms that linuxkit supports.
+As of this writing, those are:
+
+* `linux/amd64`
+* `linux/arm64`
+* `linux/s390x`
+
+You can choose to skip one of the platforms from `build.yml` or those selected
+by default using the `--skip-platforms` flag.
+
+For example:
+
+```
+linuxkit pkg build --skip-platforms linux/s390x ...
+```
+
+You can override the target build platform by passing it the `--platforms` option:
+
+```
+linuxkit pkg build --platforms <platform1,platform2,...platformN>
+```
+
+The options for `--platforms` are identical to those for [docker build](https://docs.docker.com/engine/reference/commandline/build/).
+An example is available in the official [buildx documentation](https://docs.docker.com/buildx/working-with-buildx/#build-multi-platform-images).
+
+Given that this is linuxkit, i.e. all builds are for linux, the `OS` part would seem redundant, and it should be sufficient to pass `--platform arm64`. However, for complete consistency, the _entire_ platform, e.g. `--platforms linux/amd64,linux/arm64`, must be provided.
+
+#### Where it builds
+
+You are running the `linuxkit pkg build` command on a single platform, e.g. your local linux cloud instance running on `amd64`, or
+a MacBook with Apple Silicon running on `arm64`.
+
+How does linuxkit determine where to build the target images?
+
+linuxkit uses a combination of buildx builders and docker contexts, controlled by your input, to determine where to build.
+
+Upon startup, it looks for a buildx builder named `linuxkit`. If it cannot find that builder, it creates it.
+
+When linuxkit needs to build a package for a particular architecture:
+
+1. If a context for that architecture was provided, use that context.
+1. If no context for that architecture was provided, use the default `linuxkit` context
+
+The actual building then will be one of:
+
+1. native, if the provided context has the same architecture as the target build architecture; else
+1. cross-build, if the provided context has a different architecture, but the package's `Dockerfile` supports cross-building; else
+1. emulated build, using docker's qemu binfmt capabilities
+
+Cross-building, i.e. building on one platform using that platform's binaries to create outputs for a different platform,
+depends on the package's `Dockerfile`. Details are available in the
+[official Docker buildx docs](https://docs.docker.com/buildx/working-with-buildx/#build-multi-platform-images).
+
+* if the image is just `FROM something`, then it runs it under qemu using binfmt
+* if the image is `FROM --platform=$BUILDPLATFORM something`, then it runs it using the local architecture, invoking cross-builders
+
+Read the official docs to learn more how to leverage cross-building with buildx.
+
+**Important:** When building, if the local architecture is not one of those being build,
+selecting `--docker` to load the images into the docker image cache will result in an error.
+You _must_ be building for the local architecture - optionally for others as well - in order to
+pass the `--docker` option.
+
+#### Providing native builder nodes
+
+linuxkit is capable of using native build nodes to do the build, even remotely. To do so, you must:
+
+1. Create a [docker context](https://docs.docker.com/engine/context/working-with-contexts/) that references the build node
+1. Tell linuxkit to use that context for that architecture
+
+linuxkit will then use that provided context to create a buildx builder and use it for that architecture.
+
+linuxkit looks for contexts in the following descending order of priority:
+
+1. CLI option `--builders <platform>=<context>,<platform>=<context>`, e.g. `--builders linux/arm64=linuxkit-arm64,linux/amd64=default`
+1. Environment variable `LINUXKIT_BUILDERS=<platform>=<context>,<platform>=<context>`, e.g. `LINUXKIT_BUILDERS=linux/arm64=linuxkit-arm64,linux/amd64=default`
+1. Existing context named `linuxkit-<platform>`, e.g. `linuxkit-linux-arm64` or `linuxkit-linux-s390x`, with "/" replaced by "-", as "/" is an invalid character.
+1. Default builder named `linuxkit`, created by linuxkit, running in the default context
+
+If a builder name is provided for a specific platform, and it doesn't exist, it will be treated as a fatal error.
+
+#### Examples
+
+##### Simple build
+
+There are no contexts starting with `linuxkit-`, no environment variable `LINUXKIT_BUILDERS`, no command-line argument `--builders`.
+
+linuxkit will build any requested packages using `docker buildx` on the local platform, with a builder (created, if necessary) named `linuxkit`.
+Builds for the same architecture will be native, builds for other platforms will use either qemu or cross-building.
+
+
+##### Specified target
+
+You create a context named `my-remote-arm64` and then run:
+
+```bash
+linuxkit pkg build --platforms=linux/arm64,linux/amd64 --builders linux/arm64=my-remote-arm64
+```
+
+linuxkit will build:
+
+* for arm64 using the context `my-remote-arm64`, since you specified in `--builders` to use `my-remote-arm64` for `linux/arm64`
+* for amd64 using the context `default` and the `linuxkit` builder, as that is the default fallback
+
+The same would happen if you used `LINUXKIT_BUILDERS=linux/arm64=my-remote-arm64` instead of the `--builders` flag.
+
+##### Named context
+
+You create a context named `linuxkit-linux-arm64` and then run:
+
+```bash
+linuxkit pkg build --platforms=linux/arm64,linux/amd64
+```
+
+linuxkit will build:
+
+* for arm64 using the context `linuxkit-linux-arm64`, since there is a context with the name `linuxkit-<platform>`, and you did not override it using `--builders` or the environment variable `LINUXKIT_BUILDERS`
+* for amd64 using the context `default` and the `linuxkit` builder, as that is the default fallback
+
+##### Combination
+
+You create a context named `linuxkit-arm64`, and another named `my-remote-builder-amd64` and then run:
+
+```bash
+linuxkit pkg build --platforms=linux/arm64,linux/amd64 --builders linux/amd64=my-remote-builder-amd64
+```
+
+linuxkit will build:
+
+* for arm64 using the context `linuxkit-arm64`, since there is a context with the name `linuxkit-<arch>`, and you did not override that particular architecture using `--builders` or the environment variable `LINUXKIT_BUILDERS`
+* for amd64 using the context `my-remote-builder-amd64`, since you specified for that architecture using `--builders`
+
+The same would happen if you used `LINUXKIT_BUILDERS=linux/arm64=my-remote-builder-amd64` instead of the `--builders` flag.
+
+##### Missing context
+
+You do not have a context named `my-remote-arm64`, and run:
+
+```bash
+linuxkit pkg build --platforms=linux/arm64 --builders linux/arm64=my-remote-arm64
+```
+
+linuxkit will try to build for `linux/arm64` using the context `my-remote-arm64`. Since that context does not exist, you will get an error.
+
 ### Build packages as a maintainer
 
-If you have write access to the `linuxkit` organisation on hub, you
-should also be set up with signing keys for packages and your signing
-key should have a passphrase, which we call `<passphrase>` throughout.
-
 All official LinuxKit packages are multi-arch manifests and most of
-them are available for `amd64`, `arm64`, and `s390x`. Official images
-*must* be build on both architectures and they must be build *in
-sequence*, i.e., they can't be build in parallel.
+them are available for the following platforms:
 
-To build a package on an architecture:
+* `linux/amd64`
+* `linux/arm64`
+* `linux/s390x`
 
-```
-DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE="<passphrase>" linuxkit pkg push «path-to-package»
-```
+Official images *must* be built for all architectures for which they are available.
 
-`«path-to-package»` is the path to the package's source directory
+Pushing out a package as a maintainer involves two stages:
+
+1. Building and pushing out the platform-specific images
+1. Creating and pushing out the multi-arch manifest, a.k.a. OCI image index
+
+The `linuxkit pkg` command contains automation which performs all of the steps.
+Note that `«path-to-package»` is the path to the package's source directory
 (containing at least `build.yml` and `Dockerfile`). It can be `.` if
 the package is in the current directory.
 
-**Note:** You *must* be logged into hub (`docker login`) and the
-passphrase for the key *must* be supplied as an environment
-variable. The build process has to resort to using `expect` to drive
-`notary` so none of the credentials can be entered interactively.
-
-This will:
-- Build a local images as `linuxkit/<image>:<hash>-<arch>`
-- Push it to hub
-- Sign it with your key
-- Create a manifest called `linuxkit/<image>:<hash>` (note no `-<arch>`)
-- Push the manifest to hub
-- Sign the manifest
-
-If you repeat the same on another architecture, a new manifest will be
-pushed and signed containing the previous and the new
-architecture. The YAML files should consume the package as:
-`linuxkit/<image>:<hash>`.
-
-
-Since it is not very good to have your passphrase in the clear (or
-even stashed in your shell history), we recommend using a password
-manager with a CLI interface, such as LastPass or `pass`. You can then
-invoke the build like this (for LastPass):
-
 ```
-DOCKER_CONTENT_TRUST_REPOSITORY_PASSPHRASE=$(lpass show <key> --password) linuxkit pkg push «path-to-package»
+linuxkit pkg push «path-to-package»
 ```
-or alternatively you may add the command to `~/.moby/linuxkit/config.yml` e.g.:
-```
-pkg:
-  content-trust-passphrase-command: "lpass show <key> --password"
-```
+
+This will do the following:
+
+1. Determine the name and tag for the image as follows:
+   * The tag is from the hash of the git tree for that package. You can see it by doing `linuxkit pkg show-tag «path-to-package»`.
+   * The name for the image is from `«path-to-package»/build.yml`
+   * The organization for the package is given on the command-line, default to `linuxkit`.
+1. Build the package in the given path using your local docker instance for all the platforms in `«path-to-package»/build.yml`
+1. Save the built image in the linuxkit cache
+1. Tag each built image as `«image-name»:«hash»-«arch»`
+1. Create a multi-arch manifest called `«image-name»:«hash»` (note no `-«arch»`)
+1. Push the manifest and all of the images to the hub
+
+#### Prerequisites
+
+* For all of the steps, you *must* be logged into hub (`docker login`).
 
 ### Build packages as a developer
 
-If you want to develop packages or test them locally, it is best to
-override the hub organisation used. You may also want to disable
-signing while developing. A typical example would be:
 
 ```
-linuxkit pkg build -org=wombat -disable-content-trust «path-to-package»
+linuxkit pkg build -org=wombat «path-to-package»
 ```
 
 This will create a local image: `wombat/<image>:<hash>-<arch>` which
@@ -136,7 +296,7 @@ on other systems you can push the image to your hub account and pull
 from a different system by issuing:
 
 ```
-linuxkit pkg build -org=wombat -disable-content-trust push
+linuxkit pkg build -org=wombat push
 ```
 
 This will push both `wombat/<image>:<hash>-<arch>` and
@@ -146,7 +306,7 @@ Finally, if you are tired of the long hashes you can override the hash
 with:
 
 ```
-linuxkit pkg build -org=wombat -disable-content-trust -hash=foo push
+linuxkit pkg build -org=wombat -hash=foo push
 ```
 
 and this will create `wombat/<image>:foo-<arch>` and
@@ -173,5 +333,5 @@ if you want to use it, you will need to add the following line to the dockerfile
 ARG all_proxy
 ```
 
-Linuxkit does not judge between lower-cased or upper-cased variants of these options, e.g. `http_proxy` vs `HTTP_PROXY`,
+LinuxKit does not judge between lower-cased or upper-cased variants of these options, e.g. `http_proxy` vs `HTTP_PROXY`,
 as `docker build` does not either. It just passes them through "as-is".

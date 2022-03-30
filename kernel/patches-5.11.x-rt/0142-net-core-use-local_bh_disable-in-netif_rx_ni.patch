@@ -1,0 +1,34 @@
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Date: Fri, 16 Jun 2017 19:03:16 +0200
+Subject: [PATCH] net/core: use local_bh_disable() in netif_rx_ni()
+
+In 2004 netif_rx_ni() gained a preempt_disable() section around
+netif_rx() and its do_softirq() + testing for it. The do_softirq() part
+is required because netif_rx() raises the softirq but does not invoke
+it. The preempt_disable() is required to remain on the same CPU which added the
+skb to the per-CPU list.
+All this can be avoided be putting this into a local_bh_disable()ed
+section. The local_bh_enable() part will invoke do_softirq() if
+required.
+
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ net/core/dev.c |    6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
+
+--- a/net/core/dev.c
++++ b/net/core/dev.c
+@@ -4844,11 +4844,9 @@ int netif_rx_ni(struct sk_buff *skb)
+ 
+ 	trace_netif_rx_ni_entry(skb);
+ 
+-	preempt_disable();
++	local_bh_disable();
+ 	err = netif_rx_internal(skb);
+-	if (local_softirq_pending())
+-		do_softirq();
+-	preempt_enable();
++	local_bh_enable();
+ 	trace_netif_rx_ni_exit(err);
+ 
+ 	return err;

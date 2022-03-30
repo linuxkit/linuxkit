@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:e2391e0b164c57db9f6c4ae110ee84f766edc430 AS mirror
+FROM linuxkit/alpine:33063834cf72d563cd8703467836aaa2f2b5a300 AS mirror
 
 RUN apk add --no-cache go gcc musl-dev linux-headers
 ENV GOPATH=/go PATH=$PATH:/go/bin
@@ -8,8 +8,8 @@ RUN [ $(uname -m) = aarch64 ] && apk add --no-cache gcc || true
 # see https://github.com/golang/go/issues/23672
 ENV CGO_CFLAGS_ALLOW=(-mrdrnd|-mrdseed)
 
-COPY cmd/rngd/ /go/src/rngd/
-RUN REQUIRE_CGO=1 go-compile.sh /go/src/rngd
+COPY . /go/src/rngd/
+RUN REQUIRE_CGO=1 go-compile.sh /go/src/rngd/cmd/rngd
 
 FROM scratch
 ENTRYPOINT []
