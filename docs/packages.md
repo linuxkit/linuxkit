@@ -41,6 +41,7 @@ A package source consists of a directory containing at least two files:
 - `gitrepo` _(string)_: The git repository where the package source is kept.
 - `network` _(bool)_: Allow network access during the package build (default: no)
 - `disable-cache` _(bool)_: Disable build cache for this package (default: no)
+- `buildArgs` will forward a list of build arguments down to docker. As if `--build-arg` was specified during `docker build`
 - `config`: _(struct `github.com/moby/tool/src/moby.ImageConfig`)_: Image configuration, marshalled to JSON and added as `org.mobyproject.config` label on image (default: no label)
 - `depends`: Contains information on prerequisites which must be satisfied in order to build the package. Has subfields:
     - `docker-images`: Docker images to be made available (as `tar` files via `docker image save`) within the package build context. Contains the following nested fields:

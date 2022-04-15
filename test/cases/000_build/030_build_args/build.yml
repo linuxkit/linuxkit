@@ -1,0 +1,7 @@
+image: build-args-test
+network: true
+arches:
+    - amd64
+    - arm64
+buildArgs:
+    - TEST_RESULT=PASSED
