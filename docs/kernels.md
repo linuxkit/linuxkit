@@ -45,22 +45,36 @@ Most kernel modules are autoloaded with `mdev` but if you need to `modprobe` a m
 ## Compiling external kernel modules
 
 This section describes how to build external (out-of-tree) kernel
-modules. It is assumed you have the source available to those modules,
-and require the correct kernel version headers and compile tools.
+modules. You need the following to build external modules. All of
+these are to be built for a specific version of the kernel. For
+the examples, we will assume 5.10.104; replace with your desired
+version.
 
-The LinuxKit kernel packages include `kernel-dev.tar` which contains
+* source available to your modules - you need to get those on your own
+* kernel development headers - available in the `linuxkit/kernel` image as `kernel-dev.tar`, e.g. `linuxkit/kernel:5.10.104`
+* OS with sources and compiler - this **must** be the exact same version as that used to compile the kernel
+
+As described above, the `linuxkit/kernel` images include `kernel-dev.tar` which contains
 the headers and other files required to compile kernel modules against
 the specific version of the kernel. Currently, the headers are not
 included in the initial RAM disk, but it is possible to compile custom
 modules offline and then include the modules in the initial RAM disk.
 
-There is a [example](../test/cases/020_kernel/011_kmod_4.9.x), but
+The source is available as the same name as the `linuxkit/kernel` image, with the addition of `-builder` on the tag.
+For example:
+
+* `linuxkit/kernel:5.10.92` has builder `linuxkit/kernel:5.10.92-builder`
+* `linuxkit/kernel:5.15.15` has builder `linuxkit/kernel:5.15.15-builder`
+
+With the above in hand, you can create a multi-stage `Dockerfile` build to compile your modules.
+There is an [example](../test/cases/020_kernel/011_kmod_4.9.x), but
 basically one can use a multi-stage build to compile the kernel
 modules:
 
-```
-FROM linuxkit/kernel:4.9.33 AS ksrc
-FROM linuxkit/alpine:<hash> AS build
+```dockerfile
+FROM linuxkit/kernel:5.10.104 AS ksrc
+FROM linuxkit/kernel:5.10.104-builder AS build
+
 RUN apk add build-base
 
 COPY --from=ksrc /kernel-dev.tar /
@@ -76,6 +90,36 @@ package to the `onboot` section in your YAML
 file. [kmod.yml](../test/cases/020_kernel/010_kmod_4.9.x/kmod.yml)
 contains an example for the configuration.
 
+### Builder Backups
+
+As described above, the OS builder is referenced via `<kernel-image>-builder`, e.g.
+`linuxkit/kernel:5.15.15-builder`.
+
+As a fallback, in case the `-builder` image is not available or you cannot access it from your development environment,
+you have 3 total places to determine the correct version of the OS image with sources and compiler:
+
+* `-builder` tag added to the kernel version, e.g. `linuxkit/kernel:5.10.104-builder`
+* labels on the kernel image, e.g. `docker inspect linuxkit/kernel:5.10.104 | jq -r '.[].Config.Labels["org.mobyproject.linuxkit.kernel.buildimage"]'`
+* `/kernel-builder` file in the kernel image
+
+You **should** use `-builder` tag as the `AS build` in your `Dockerfile`, but you **can** use
+the direct source, extracted from the labels or `/kernel-builder` file in the kernel image, in the `AS build`.
+
+For example, in the case of `5.10.104`, the label and `/kernel-builder` file show `linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba`,
+so you can use either `linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba` or
+`linuxkit/kernel:5.10.104-builder` to build the modules.
+
+Thus, the following are equivalent:
+
+```dockerfile
+FROM linuxkit/kernel:5.10.104 AS ksrc
+FROM linuxkit/kernel:5.10.104-builder AS build
+```
+
+```dockerfile
+FROM linuxkit/kernel:5.10.104 AS ksrc
+FROM linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba AS build
+```
 
 ## Modifying the kernel config
 
