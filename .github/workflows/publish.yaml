@@ -1,0 +1,42 @@
+# publish changes that are merged to master
+name: Packages Push
+on:
+  workflow_run:
+    workflows: [LinuxKit CI]
+    types: [completed]
+    branches: [master, main]
+
+jobs:
+  packages:
+    name: Publish Changed Packages
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+    - name: Download linuxkit
+      uses: actions/download-artifact@v2
+      with:
+        name: linuxkit-amd64-linux
+        path: bin
+    - name: Symlink Linuxkit
+      run: |
+        chmod ugo+x bin/linuxkit-amd64-linux
+        sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        /usr/local/bin/linuxkit version
+    - name: Restore Package Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.linuxkit/cache/
+        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-linuxkit-
+    - name: Publish Packages
+      # this should only push changed ones:
+      #  - unchanged: already in the registry
+      #  - changed: already built and cached, so only will push
+      # Skip s390x as emulation is unreliable
+      run: |
+        make OPTIONS="--skip-platforms linux/s390x" -C pkg push PUSHOPTIONS="--nobuild"
+

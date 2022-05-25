@@ -17,13 +17,27 @@ All official LinuxKit packages are:
 
 When building and merging packages, it is important to note that our CI process builds packages. The targets `make ci` and `make ci-pr` execute `make -C pkg build`. These in turn execute `linuxkit pkg build` for each package under `pkg/`. This in turn will try to pull the image whose tag matches the tree hash or, failing that, to build it.
 
-We do not want the builds to happen with each CI run for two reasons:
+Any released image, i.e. any package under `pkg/` that has _not_ changed as
+part of a pull request,
+already will be released to Docker Hub. This will cause it to download that image, rather
+than try to build it.
+
+Any non-releaed image, i.e. any package under `pkg/` that _has_ changed as part of
+a pull request, will not be in Docker Hub until the PR has merged.
+This will cause the download to fail, leading `linuxkit pkg build` to try and build the
+image and save it in the cache.
+
+This does have two downsides:
 
 1. It is slower to do a package build than to just pull the latest image.
 2. If any of the steps of the build fails, e.g. a `curl` download that depends on an intermittent target, it can cause all of CI to fail.
 
-Thus, if, as a maintainer, you merge any commits into a `pkg/`, even if the change is documentation alone, please do a `linuxkit pkg push`.
+In the past, each PR required a maintainer to build, and push to Docker Hub, every
+changed package in `pkg/`. This placed the maintainer in the PR cycle, with the
+following downsides:
 
+1. A maintainer had to be involved in every PR, not just reviewing but actually building and pushing. This reduces the ability for others to contribute.
+1. The actual package is pushed out by a person, violating good supply-chain practice.
 
 ## Package source
 
@@ -279,6 +293,9 @@ This will do the following:
 1. Tag each built image as `«image-name»:«hash»-«arch»`
 1. Create a multi-arch manifest called `«image-name»:«hash»` (note no `-«arch»`)
 1. Push the manifest and all of the images to the hub
+
+Note that for actual release images, these steps normally are performed as part
+of CI, by the merge-to-master process.
 
 #### Prerequisites
 
