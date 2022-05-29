@@ -16,10 +16,26 @@ jobs:
       with:
         path: ./src/github.com/linuxkit/linuxkit
     - name: Download linuxkit
-      uses: actions/download-artifact@v2
+      uses: actions/github-script@v3.1.0
       with:
-        name: linuxkit-amd64-linux
-        path: bin
+        script: |
+          var artifacts = await github.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{github.event.workflow_run.id }},
+          });
+          var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+            return artifact.name == "linuxkit-amd64-linux"
+          })[0];
+          var download = await github.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: matchArtifact.id,
+              archive_format: 'zip',
+          });
+          var fs = require('fs');
+          fs.writeFileSync('${{github.workspace}}/bin/linuxkit-amd64-linux.zip', Buffer.from(download.data));
+    - run: cd bin && unzip linuxkit-amd64-linux.zip
     - name: Symlink Linuxkit
       run: |
         chmod ugo+x bin/linuxkit-amd64-linux
