@@ -8,6 +8,8 @@ on:
 
 jobs:
   packages:
+    env:
+      linuxkit_file: linuxkit-amd64-linux
     name: Publish Changed Packages
     runs-on: ubuntu-latest
     steps:
@@ -15,6 +17,8 @@ jobs:
       uses: actions/checkout@v1
       with:
         path: ./src/github.com/linuxkit/linuxkit
+    - name: Ensure bin/ directory
+      run: mkdir -p bin
     - name: Download linuxkit
       uses: actions/github-script@v3.1.0
       with:
@@ -25,7 +29,7 @@ jobs:
               run_id: ${{github.event.workflow_run.id }},
           });
           var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
-            return artifact.name == "linuxkit-amd64-linux"
+            return artifact.name == "${{ env.linuxkit_file }}"
           })[0];
           var download = await github.actions.downloadArtifact({
               owner: context.repo.owner,
@@ -34,12 +38,13 @@ jobs:
               archive_format: 'zip',
           });
           var fs = require('fs');
-          fs.writeFileSync('${{github.workspace}}/bin/linuxkit-amd64-linux.zip', Buffer.from(download.data));
-    - run: cd bin && unzip linuxkit-amd64-linux.zip
+          fs.writeFileSync('${{github.workspace}}/bin/${{ env.linuxkit_file }}.zip', Buffer.from(download.data));
+    - name: unzip linuxkit
+      run: cd bin && unzip ${{ env.linuxkit_file }}.zip
     - name: Symlink Linuxkit
       run: |
-        chmod ugo+x bin/linuxkit-amd64-linux
-        sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
+        chmod ugo+x bin/${{ env.linuxkit_file }}
+        sudo ln -s $(pwd)/bin/${{ env.linuxkit_file }} /usr/local/bin/linuxkit
         /usr/local/bin/linuxkit version
     - name: Restore Package Cache
       uses: actions/cache@v2
