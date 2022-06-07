@@ -29,16 +29,38 @@ func (p *Provider) Push(name string) error {
 		return err
 	}
 	options = append(options, remote.WithAuthFromKeychain(authn.DefaultKeychain))
+
 	img, err1 := root.Image()
 	ii, err2 := root.ImageIndex()
+	// before we even try to push, let us see if it exists remotely
+	remoteOptions := []remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}
+
 	switch {
 	case err1 == nil:
+		dig, err := img.Digest()
+		if err != nil {
+			return fmt.Errorf("could not get digest for image %s: %v", name, err)
+		}
+		desc, err := remote.Get(ref, remoteOptions...)
+		if err == nil && desc != nil && dig == desc.Digest {
+			fmt.Printf("%s image already available on remote registry, skipping push", name)
+			return nil
+		}
 		log.Debugf("pushing image %s", name)
 		if err := remote.Write(ref, img, options...); err != nil {
 			return err
 		}
 		fmt.Printf("Pushed image %s\n", name)
 	case err2 == nil:
+		dig, err := ii.Digest()
+		if err != nil {
+			return fmt.Errorf("could not get digest for index %s: %v", name, err)
+		}
+		desc, err := remote.Get(ref, remoteOptions...)
+		if err == nil && desc != nil && dig == desc.Digest {
+			fmt.Printf("%s index already available on remote registry, skipping push", name)
+			return nil
+		}
 		log.Debugf("pushing index %s", name)
 		// this is an index, so we not only want to write the index, but tags for each arch-specific image in it
 		if err := remote.WriteIndex(ref, ii, options...); err != nil {
