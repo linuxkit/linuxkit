@@ -163,7 +163,7 @@ func pkgBuildPush(args []string, withPush bool) {
 		// note that this is *not* an error; we simply skip it
 		if len(pkgPlats) == 0 {
 			fmt.Printf("Skipping %s with no architectures to build\n", p.Tag())
-			return
+			continue
 		}
 
 		pkgOpts = append(pkgOpts, pkglib.WithBuildPlatforms(pkgPlats...))
