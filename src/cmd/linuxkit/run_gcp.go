@@ -46,6 +46,7 @@ func runGcp(args []string) {
 
 	skipCleanup := flags.Bool("skip-cleanup", false, "Don't remove images or VMs")
 	nestedVirt := flags.Bool("nested-virt", false, "Enabled nested virtualization")
+	vTPM := flags.Bool("vtpm", false, "Enable vTPM device")
 
 	data := flags.String("data", "", "String of metadata to pass to VM; error to specify both -data and -data-file")
 	dataPath := flags.String("data-file", "", "Path to file containing metadata to pass to VM; error to specify both -data and -data-file")
@@ -87,7 +88,7 @@ func runGcp(args []string) {
 		log.Fatalf("Unable to connect to GCP: %v", err)
 	}
 
-	if err = client.CreateInstance(*name, image, zone, machine, disks, data, *nestedVirt, true); err != nil {
+	if err = client.CreateInstance(*name, image, zone, machine, disks, data, *nestedVirt, *vTPM, true); err != nil {
 		log.Fatal(err)
 	}
 
