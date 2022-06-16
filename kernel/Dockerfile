@@ -103,7 +103,7 @@ RUN set -e && \
     fi
 
 # Save kernel source
-RUN tar cJf /out/src/linux.tar.xz /linux
+RUN XZ_DEFAULTS="-T0" tar cJf /out/src/linux.tar.xz /linux
 
 # Kernel config
 RUN case $(uname -m) in \
