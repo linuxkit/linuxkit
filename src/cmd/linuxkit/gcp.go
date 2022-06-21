@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/docker/docker/pkg/term"
@@ -20,8 +21,13 @@ import (
 	"google.golang.org/api/storage/v1"
 )
 
-const pollingInterval = 500 * time.Millisecond
-const timeout = 300
+const (
+	pollingInterval = 500 * time.Millisecond
+	timeout         = 300
+
+	uefiCompatibleFeature = "UEFI_COMPATIBLE"
+	vmxImageLicence       = "projects/vm-options/global/licenses/enable-vmx"
+)
 
 // GCPClient contains state required for communication with GCP
 type GCPClient struct {
@@ -125,8 +131,8 @@ func (g GCPClient) UploadFile(src, dst, bucketName string, public bool) error {
 	return nil
 }
 
-// CreateImage creates a GCP image using the a source from Google Storage
-func (g GCPClient) CreateImage(name, storageURL, family string, nested, replace bool) error {
+// CreateImage creates a GCP image using the source from Google Storage
+func (g GCPClient) CreateImage(name, storageURL, family string, nested, uefi, replace bool) error {
 	if replace {
 		if err := g.DeleteImage(name); err != nil {
 			return err
@@ -146,7 +152,13 @@ func (g GCPClient) CreateImage(name, storageURL, family string, nested, replace 
 	}
 
 	if nested {
-		imgObj.Licenses = []string{"projects/vm-options/global/licenses/enable-vmx"}
+		imgObj.Licenses = []string{vmxImageLicence}
+	}
+
+	if uefi {
+		imgObj.GuestOsFeatures = []*compute.GuestOsFeature{
+			{Type: uefiCompatibleFeature},
+		}
 	}
 
 	op, err := g.compute.Images.Insert(g.projectName, imgObj).Do()
@@ -185,7 +197,7 @@ func (g GCPClient) DeleteImage(name string) error {
 }
 
 // CreateInstance creates and starts an instance on GCP
-func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, data *string, nested, replace bool) error {
+func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks Disks, data *string, nested, vtpm, replace bool) error {
 	if replace {
 		if err := g.DeleteInstance(name, zone, true); err != nil {
 			return err
@@ -203,6 +215,34 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 	}
 	sshKey := new(string)
 	*sshKey = fmt.Sprintf("moby:%s moby", string(ssh.MarshalAuthorizedKey(k)))
+
+	// check provided image to be compatible with provided options
+	op, err := g.compute.Images.Get(g.projectName, image).Do()
+	if err != nil {
+		return err
+	}
+	uefiCompatible := false
+	for _, feature := range op.GuestOsFeatures {
+		if feature != nil && feature.Type == uefiCompatibleFeature {
+			uefiCompatible = true
+			break
+		}
+	}
+	if vtpm && !uefiCompatible {
+		return fmt.Errorf("cannot use vTPM without UEFI_COMPATIBLE image")
+	}
+	// we should check for nested
+	vmxLicense := false
+	for _, license := range op.Licenses {
+		// we omit hostname and version when define license
+		if strings.HasSuffix(license, vmxImageLicence) {
+			vmxLicense = true
+			break
+		}
+	}
+	if nested && !vmxLicense {
+		return fmt.Errorf("cannot use nested virtualization without enable-vmx image")
+	}
 
 	instanceDisks := []*compute.AttachedDisk{
 		{
@@ -227,7 +267,13 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 		} else {
 			diskSizeGb = int64(convertMBtoGB(disk.Size))
 		}
-		diskOp, err := g.compute.Disks.Insert(g.projectName, zone, &compute.Disk{Name: diskName, SizeGb: diskSizeGb}).Do()
+		diskObj := &compute.Disk{Name: diskName, SizeGb: diskSizeGb}
+		if vtpm {
+			diskObj.GuestOsFeatures = []*compute.GuestOsFeature{
+				{Type: uefiCompatibleFeature},
+			}
+		}
+		diskOp, err := g.compute.Disks.Insert(g.projectName, zone, diskObj).Do()
 		if err != nil {
 			return err
 		}
@@ -274,8 +320,10 @@ func (g GCPClient) CreateInstance(name, image, zone, machineType string, disks D
 	}
 
 	if nested {
-		// TODO(rn): We could/should check here if the image has nested virt enabled
 		instanceObj.MinCpuPlatform = "Intel Haswell"
+	}
+	if vtpm {
+		instanceObj.ShieldedInstanceConfig = &compute.ShieldedInstanceConfig{EnableVtpm: true}
 	}
 
 	// Don't wait for operation to complete!
