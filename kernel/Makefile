@@ -15,7 +15,7 @@
 # Name and Org on Hub
 ORG?=linuxkit
 PLATFORMS?=linux/amd64,linux/arm64
-IMAGE:=kernel
+IMAGE?=kernel
 IMAGE_BCC:=kernel-bcc
 IMAGE_PERF:=kernel-perf
 IMAGE_ZFS:=zfs-kmod
