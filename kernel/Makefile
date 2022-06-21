@@ -14,6 +14,7 @@
 
 # Name and Org on Hub
 ORG?=linuxkit
+PLATFORMS?=linux/amd64,linux/arm64
 IMAGE:=kernel
 IMAGE_BCC:=kernel-bcc
 IMAGE_PERF:=kernel-perf
@@ -101,7 +102,7 @@ endif
 buildx_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
 		docker buildx build \
-			--platform=linux/amd64,linux/arm64 --push \
+			--platform=$(PLATFORMS) --push \
 			--build-arg KERNEL_VERSION=$(1) \
 			--build-arg KERNEL_SERIES=$(2) \
 			--build-arg EXTRA=$(3) \
