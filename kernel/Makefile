@@ -295,3 +295,22 @@ else
 		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		-t linuxkit/kconfig:${KCONFIG_TAG}  .
 endif
+
+kconfigx:
+ifeq (${KCONFIG_TAG},)
+	docker buildx build --no-cache -f Dockerfile.kconfigx \
+		--platform=$(PLATFORMS) \
+		--output . \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
+		-t linuxkit/kconfigx  .
+	cp linux_arm64/config-${KERNEL_VERSIONS}-arm64 config-${KERNEL_SERIES}-aarch64
+	cp linux_amd64/config-${KERNEL_VERSIONS}-amd64 config-${KERNEL_SERIES}-x86_64
+else
+	docker buildx build --no-cache -f Dockerfile.kconfigx \
+		--platform=$(PLATFORMS) --push \
+		--output . \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
+		-t linuxkit/kconfigx:${KCONFIG_TAG}  .
+endif
