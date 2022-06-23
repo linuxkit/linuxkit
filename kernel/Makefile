@@ -100,7 +100,7 @@ KERNEL_VERSIONS+=$(1)
 endif
 
 buildx_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) || \
 		docker buildx build \
 			--platform=$(PLATFORMS) --push \
 			--build-arg KERNEL_VERSION=$(1) \
@@ -109,7 +109,7 @@ buildx_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard c
 			--build-arg DEBUG=$(4) \
 			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			$(LABELS) \
-			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
+			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
 
 build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
