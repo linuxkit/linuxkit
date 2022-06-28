@@ -2,6 +2,7 @@ package pkglib
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,6 +14,7 @@ import (
 	"testing"
 
 	"github.com/containerd/containerd/reference"
+	dockertypes "github.com/docker/docker/api/types"
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
@@ -20,7 +22,7 @@ import (
 )
 
 type dockerMocker struct {
-	supportBuildKit bool
+	supportContexts bool
 	images          map[string][]byte
 	enableTag       bool
 	enableBuild     bool
@@ -34,15 +36,8 @@ type buildLog struct {
 	pkg           string
 	dockerContext string
 	platform      string
-	opts          []string
 }
 
-func (d *dockerMocker) buildkitCheck() error {
-	if d.supportBuildKit {
-		return nil
-	}
-	return errors.New("buildkit unsupported")
-}
 func (d *dockerMocker) tag(ref, tag string) error {
 	if !d.enableTag {
 		return errors.New("tags not allowed")
@@ -50,11 +45,18 @@ func (d *dockerMocker) tag(ref, tag string) error {
 	d.images[tag] = d.images[ref]
 	return nil
 }
-func (d *dockerMocker) build(tag, pkg, dockerContext, platform string, stdin io.Reader, stdout io.Writer, opts ...string) error {
+func (d *dockerMocker) contextSupportCheck() error {
+	if d.supportContexts {
+		return nil
+	}
+	return errors.New("contexts not supported")
+}
+
+func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, builderRestart bool, stdin io.Reader, stdout io.Writer, imageBuildOpts dockertypes.ImageBuildOptions) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")
 	}
-	d.builds = append(d.builds, buildLog{tag, pkg, dockerContext, platform, opts})
+	d.builds = append(d.builds, buildLog{tag, pkg, dockerContext, platform})
 	return nil
 }
 func (d *dockerMocker) save(tgt string, refs ...string) error {
@@ -297,13 +299,13 @@ func TestBuild(t *testing.T) {
 		err     string
 	}{
 		{"invalid tag", Pkg{image: "docker.io/foo/bar:abc:def:ghi"}, nil, nil, &dockerMocker{}, &cacheMocker{}, "could not resolve references"},
-		{"not at head", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "foo"}, nil, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "Cannot build from commit hash != HEAD"},
-		{"no build cache", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, nil, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "must provide linuxkit build cache"},
-		{"unsupported buildkit", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "buildkit not supported, check docker version"},
-		{"load docker without local platform", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir), WithBuildTargetDockerCache()}, []string{nonLocal}, &dockerMocker{supportBuildKit: false}, &cacheMocker{}, "must build for local platform"},
-		{"amd64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
-		{"arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"arm64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
-		{"amd64 and arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64", "arm64"}, &dockerMocker{supportBuildKit: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
+		{"not at head", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "foo"}, nil, []string{"amd64"}, &dockerMocker{supportContexts: false}, &cacheMocker{}, "Cannot build from commit hash != HEAD"},
+		{"no build cache", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, nil, []string{"amd64"}, &dockerMocker{supportContexts: false}, &cacheMocker{}, "must provide linuxkit build cache"},
+		{"unsupported contexts", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportContexts: false}, &cacheMocker{}, "contexts not supported, check docker version"},
+		{"load docker without local platform", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir), WithBuildTargetDockerCache()}, []string{nonLocal}, &dockerMocker{supportContexts: false}, &cacheMocker{}, "must build for local platform"},
+		{"amd64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportContexts: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
+		{"arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"arm64"}, &dockerMocker{supportContexts: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
+		{"amd64 and arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64", "arm64"}, &dockerMocker{supportContexts: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
 	}
 	for _, tt := range tests {
 		t.Run(tt.msg, func(t *testing.T) {
@@ -324,7 +326,12 @@ func TestBuild(t *testing.T) {
 				// need to make sure that it was called the correct number of times with the correct arguments
 				t.Errorf("mismatched call to runners, should be %d was %d: %#v", len(tt.targets), len(tt.runner.builds), tt.runner.builds)
 			case tt.err == "":
-				// check that all of our platforms were called
+				// check that all of our platforms were called exactly once each
+				// we do that by:
+				// 1- creating a map of all of the target platforms and setting them to `false`
+				// 2- checking with each build for which platform it was called
+				//
+				// each build is assumed to track what platform it built
 				platformMap := map[string]bool{}
 				for _, arch := range tt.targets {
 					platformMap[fmt.Sprintf("linux/%s", arch)] = false
@@ -334,6 +341,11 @@ func TestBuild(t *testing.T) {
 						t.Errorf("mismatch in build: '%v', %#v", err, build)
 					}
 				}
+				for k, v := range platformMap {
+					if !v {
+						t.Errorf("did not execute build for platform: %s", k)
+					}
+				}
 			}
 		})
 	}
@@ -341,23 +353,14 @@ func TestBuild(t *testing.T) {
 
 // testCheckBuildRun check the output of a build run
 func testCheckBuildRun(build buildLog, platforms map[string]bool) error {
-	for i, arg := range build.opts {
-		switch {
-		case arg == "--platform", arg == "-platform":
-			if i+1 >= len(build.opts) {
-				return errors.New("provided arg --platform with no next argument")
-			}
-			platform := build.opts[i+1]
-			used, ok := platforms[platform]
-			if !ok {
-				return fmt.Errorf("requested unknown platform: %s", platform)
-			}
-			if used {
-				return fmt.Errorf("tried to use platform twice: %s", platform)
-			}
-			platforms[platform] = true
-			return nil
-		}
+	platform := build.platform
+	used, ok := platforms[platform]
+	if !ok {
+		return fmt.Errorf("requested unknown platform: %s", platform)
 	}
-	return errors.New("missing platform argument")
+	if used {
+		return fmt.Errorf("tried to use platform twice: %s", platform)
+	}
+	platforms[platform] = true
+	return nil
 }

@@ -8,7 +8,7 @@ in a LinuxKit-based project, if you know how to build a container,
 you should be able to build a LinuxKit package.
 
 All official LinuxKit packages are:
-- Enabled with multi-arch manifests to work on multiple architectures.
+- Enabled with multi-arch indexes to work on multiple architectures.
 - Derived from well-known sources for repeatable builds.
 - Built with multi-stage builds to minimise their size.
 
@@ -67,7 +67,7 @@ A package source consists of a directory containing at least two files:
 ### Prerequisites
 
 Before you can build packages you need:
-- Docker version 19.03 or newer, which includes [buildx](https://docs.docker.com/buildx/working-with-buildx/)
+- Docker version 19.03 or newer.
 - If you are on a Mac you also need `docker-credential-osxkeychain.bin`, which comes with Docker for Mac.
 - `make`, `base64`, `jq`, and `expect`
 - A *recent* version of `manifest-tool` which you can build with `make
@@ -147,14 +147,19 @@ a MacBook with Apple Silicon running on `arm64`.
 
 How does linuxkit determine where to build the target images?
 
-linuxkit uses a combination of buildx builders and docker contexts, controlled by your input, to determine where to build.
+linuxkit uses [buildkit](https://github.com/moby/buildkit) directly to build all images.
+It uses docker contexts to determine _where_ to run those buildkit containers, based on the target
+architecture.
 
-Upon startup, it looks for a buildx builder named `linuxkit`. If it cannot find that builder, it creates it.
+When running a package build, linuxkit looks for a container named `linuxkit-builder`, running the appropriate
+version of buildkit. If it cannot find a container with that name, it creates it.
+If the container already exists but is not running buildkit, or if the version is incorrect, linuxkit stops and removes
+the existing `linuxkit-builder` container and creates one running the correct version of buildkit.
 
 When linuxkit needs to build a package for a particular architecture:
 
-1. If a context for that architecture was provided, use that context.
-1. If no context for that architecture was provided, use the default `linuxkit` context
+1. If a context for that architecture was provided, use that context, looking for and/or starting a buildkit container named `linuxkit-builder`.
+1. If no context for that architecture was provided, use the `default` context.
 
 The actual building then will be one of:
 
@@ -183,14 +188,14 @@ linuxkit is capable of using native build nodes to do the build, even remotely. 
 1. Create a [docker context](https://docs.docker.com/engine/context/working-with-contexts/) that references the build node
 1. Tell linuxkit to use that context for that architecture
 
-linuxkit will then use that provided context to create a buildx builder and use it for that architecture.
+linuxkit will then use that provided context to look for and/or start a container in which to run buildkit for that architecture.
 
 linuxkit looks for contexts in the following descending order of priority:
 
 1. CLI option `--builders <platform>=<context>,<platform>=<context>`, e.g. `--builders linux/arm64=linuxkit-arm64,linux/amd64=default`
 1. Environment variable `LINUXKIT_BUILDERS=<platform>=<context>,<platform>=<context>`, e.g. `LINUXKIT_BUILDERS=linux/arm64=linuxkit-arm64,linux/amd64=default`
 1. Existing context named `linuxkit-<platform>`, e.g. `linuxkit-linux-arm64` or `linuxkit-linux-s390x`, with "/" replaced by "-", as "/" is an invalid character.
-1. Default builder named `linuxkit`, created by linuxkit, running in the default context
+1. Default context
 
 If a builder name is provided for a specific platform, and it doesn't exist, it will be treated as a fatal error.
 
@@ -200,9 +205,8 @@ If a builder name is provided for a specific platform, and it doesn't exist, it 
 
 There are no contexts starting with `linuxkit-`, no environment variable `LINUXKIT_BUILDERS`, no command-line argument `--builders`.
 
-linuxkit will build any requested packages using `docker buildx` on the local platform, with a builder (created, if necessary) named `linuxkit`.
+linuxkit will build any requested packages using `default` context on the local platform, with a container (created, if necessary) named `linuxkit-builder`.
 Builds for the same architecture will be native, builds for other platforms will use either qemu or cross-building.
-
 
 ##### Specified target
 
@@ -215,9 +219,12 @@ linuxkit pkg build --platforms=linux/arm64,linux/amd64 --builders linux/arm64=my
 linuxkit will build:
 
 * for arm64 using the context `my-remote-arm64`, since you specified in `--builders` to use `my-remote-arm64` for `linux/arm64`
-* for amd64 using the context `default` and the `linuxkit` builder, as that is the default fallback
+* for amd64 using the context `default`, as that is the default fallback
 
 The same would happen if you used `LINUXKIT_BUILDERS=linux/arm64=my-remote-arm64` instead of the `--builders` flag.
+
+In both cases - the remote context `my-remote-arm64` and the local `default` context - it will do the build inside
+a container named `linuxkit-builder`.
 
 ##### Named context
 
@@ -234,7 +241,7 @@ linuxkit will build:
 
 ##### Combination
 
-You create a context named `linuxkit-arm64`, and another named `my-remote-builder-amd64` and then run:
+You create a context named `linuxkit-linux-arm64`, and another named `my-remote-builder-amd64` and then run:
 
 ```bash
 linuxkit pkg build --platforms=linux/arm64,linux/amd64 --builders linux/amd64=my-remote-builder-amd64
@@ -242,7 +249,7 @@ linuxkit pkg build --platforms=linux/arm64,linux/amd64 --builders linux/amd64=my
 
 linuxkit will build:
 
-* for arm64 using the context `linuxkit-arm64`, since there is a context with the name `linuxkit-<arch>`, and you did not override that particular architecture using `--builders` or the environment variable `LINUXKIT_BUILDERS`
+* for arm64 using the context `linuxkit-linux-arm64`, since there is a context with the name `linuxkit-<platform>`, and you did not override that particular architecture using `--builders` or the environment variable `LINUXKIT_BUILDERS`
 * for amd64 using the context `my-remote-builder-amd64`, since you specified for that architecture using `--builders`
 
 The same would happen if you used `LINUXKIT_BUILDERS=linux/arm64=my-remote-builder-amd64` instead of the `--builders` flag.

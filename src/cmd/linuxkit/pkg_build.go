@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	buildersEnvVar = "LINUXKIT_BUILDERS"
+	buildersEnvVar      = "LINUXKIT_BUILDERS"
+	defaultBuilderImage = "moby/buildkit:v0.10.3"
 )
 
 func pkgBuild(args []string) {
@@ -38,6 +39,8 @@ func pkgBuildPush(args []string, withPush bool) {
 	platforms := flags.String("platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
 	skipPlatforms := flags.String("skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
 	builders := flags.String("builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
+	builderImage := flags.String("builder-image", defaultBuilderImage, "buildkit builder container image to use")
+	builderRestart := flags.Bool("builder-restart", false, "force restarting builder, even if container with correct name and image exists")
 	buildCacheDir := flags.String("cache", defaultLinuxkitCache(), "Directory for storing built image, incompatible with --docker")
 
 	// some logic clarification:
@@ -140,6 +143,8 @@ func pkgBuildPush(args []string, withPush bool) {
 		os.Exit(1)
 	}
 	opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
+	opts = append(opts, pkglib.WithBuildBuilderImage(*builderImage))
+	opts = append(opts, pkglib.WithBuildBuilderRestart(*builderRestart))
 
 	for _, p := range pkgs {
 		// things we need our own copies of

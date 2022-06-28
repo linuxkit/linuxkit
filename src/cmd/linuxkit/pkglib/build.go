@@ -2,6 +2,7 @@ package pkglib
 
 import (
 	"archive/tar"
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -12,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/docker/docker/api/types"
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
@@ -27,19 +29,21 @@ const (
 )
 
 type buildOpts struct {
-	skipBuild     bool
-	force         bool
-	push          bool
-	release       string
-	manifest      bool
-	image         bool
-	targetDocker  bool
-	cacheDir      string
-	cacheProvider lktspec.CacheProvider
-	platforms     []imagespec.Platform
-	builders      map[string]string
-	runner        dockerRunner
-	writer        io.Writer
+	skipBuild      bool
+	force          bool
+	push           bool
+	release        string
+	manifest       bool
+	image          bool
+	targetDocker   bool
+	cacheDir       string
+	cacheProvider  lktspec.CacheProvider
+	platforms      []imagespec.Platform
+	builders       map[string]string
+	runner         dockerRunner
+	writer         io.Writer
+	builderImage   string
+	builderRestart bool
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -141,9 +145,26 @@ func WithBuildOutputWriter(w io.Writer) BuildOpt {
 	}
 }
 
+// WithBuildBuilderImage set the builder container image to use.
+func WithBuildBuilderImage(image string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.builderImage = image
+		return nil
+	}
+}
+
+// WithBuildBuilderRestart restart the builder container even if it already is running with the correct image version
+func WithBuildBuilderRestart(restart bool) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.builderRestart = restart
+		return nil
+	}
+}
+
 // Build builds the package
 func (p Pkg) Build(bos ...BuildOpt) error {
 	var bo buildOpts
+	var ctx = context.TODO()
 	for _, fn := range bos {
 		if err := fn(&bo); err != nil {
 			return err
@@ -209,8 +230,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 	}
 
-	if err := d.buildkitCheck(); err != nil {
-		return fmt.Errorf("buildkit not supported, check docker version: %v", err)
+	if err := d.contextSupportCheck(); err != nil {
+		return fmt.Errorf("contexts not supported, check docker version: %v", err)
 	}
 
 	skipBuild := bo.skipBuild
@@ -227,23 +248,31 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if !skipBuild {
 		fmt.Fprintf(writer, "building %s\n", ref)
 		var (
-			args  []string
+			imageBuildOpts = types.ImageBuildOptions{
+				Labels:    map[string]string{},
+				BuildArgs: map[string]*string{},
+			}
 			descs []registry.Descriptor
 		)
 
+		// args that we use:
+		//   labels map[string]string
+		//   network string
+		//   build-arg []string
+
 		if p.git != nil && p.gitRepo != "" {
-			args = append(args, "--label", "org.opencontainers.image.source="+p.gitRepo)
+			imageBuildOpts.Labels["org.opencontainers.image.source"] = p.gitRepo
 		}
 		if p.git != nil && !p.dirty {
 			commit, err := p.git.commitHash("HEAD")
 			if err != nil {
 				return err
 			}
-			args = append(args, "--label", "org.opencontainers.image.revision="+commit)
+			imageBuildOpts.Labels["org.opencontainers.image.revision"] = commit
 		}
 
 		if !p.network {
-			args = append(args, "--network=none")
+			imageBuildOpts.NetworkMode = "none"
 		}
 
 		if p.config != nil {
@@ -251,21 +280,25 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			if err != nil {
 				return err
 			}
-			args = append(args, "--label=org.mobyproject.config="+string(b))
+			imageBuildOpts.Labels["org.mobyproject.config"] = string(b)
 		}
 
-		args = append(args, "--label=org.mobyproject.linuxkit.version="+version.Version)
-		args = append(args, "--label=org.mobyproject.linuxkit.revision="+version.GitCommit)
+		imageBuildOpts.Labels["org.mobyproject.linuxkit.version"] = version.Version
+		imageBuildOpts.Labels["org.mobyproject.linuxkit.revision"] = version.GitCommit
 
 		if p.buildArgs != nil {
 			for _, buildArg := range *p.buildArgs {
-				args = append(args, "--build-arg", buildArg)
+				parts := strings.SplitN(buildArg, "=", 2)
+				if len(parts) != 2 {
+					return fmt.Errorf("invalid build-arg, must be in format 'arg=value': %s", buildArg)
+				}
+				imageBuildOpts.BuildArgs[parts[0]] = &parts[1]
 			}
 		}
 
 		// build for each arch and save in the linuxkit cache
 		for _, platform := range bo.platforms {
-			desc, err := p.buildArch(d, c, platform.Architecture, args, writer, bo)
+			desc, err := p.buildArch(ctx, d, c, bo.builderImage, platform.Architecture, bo.builderRestart, writer, bo, imageBuildOpts)
 			if err != nil {
 				return fmt.Errorf("error building for arch %s: %v", platform.Architecture, err)
 			}
@@ -354,7 +387,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 }
 
 // buildArch builds the package for a single arch
-func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, args []string, writer io.Writer, bo buildOpts) (*registry.Descriptor, error) {
+func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts types.ImageBuildOptions) (*registry.Descriptor, error) {
 	var (
 		desc    *registry.Descriptor
 		tagArch string
@@ -388,7 +421,6 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 
 	// set the target
 	var (
-		buildxOutput string
 		stdout       io.WriteCloser
 		eg           errgroup.Group
 		stdoutCloser = func() {
@@ -403,7 +435,6 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 	}
 
 	// we are writing to local, so we need to catch the tar output stream and place the right files in the right place
-	buildxOutput = "type=oci"
 	piper, pipew := io.Pipe()
 	stdout = pipew
 
@@ -418,13 +449,10 @@ func (p Pkg) buildArch(d dockerRunner, c lktspec.CacheProvider, arch string, arg
 		piper.Close()
 		return err
 	})
-	args = append(args, fmt.Sprintf("--output=%s", buildxOutput))
 
 	buildCtx := &buildCtx{sources: p.sources}
 	platform := fmt.Sprintf("linux/%s", arch)
-	archArgs := append(args, "--platform")
-	archArgs = append(archArgs, platform)
-	if err := d.build(tagArch, p.path, builderName, platform, buildCtx.Reader(), stdout, archArgs...); err != nil {
+	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, platform, restart, buildCtx.Reader(), stdout, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)
