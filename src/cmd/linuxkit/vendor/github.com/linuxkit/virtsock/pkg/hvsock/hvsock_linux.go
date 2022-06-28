@@ -30,7 +30,10 @@ int connect_sockaddr_hv(int fd, const struct sockaddr_hv *sa_hv) {
     return connect(fd, (const struct sockaddr*)sa_hv, sizeof(*sa_hv));
 }
 int accept_hv(int fd, struct sockaddr_hv *sa_hv, socklen_t *sa_hv_len) {
-    return accept4(fd, (struct sockaddr *)sa_hv, sa_hv_len, 0);
+    return accept(fd, (struct sockaddr *)sa_hv, sa_hv_len);
+}
+int getsockname_hv(int fd, struct sockaddr_hv *sa_hv, socklen_t *sa_hv_len) {
+    return getsockname(fd, (struct sockaddr *)sa_hv, sa_hv_len);
 }
 */
 import "C"
@@ -53,6 +56,9 @@ const (
 
 // Supported returns if hvsocks are supported on your platform
 func Supported() bool {
+	var sa C.struct_sockaddr_hv
+	var sa_len C.socklen_t
+
 	// Try opening  a hvsockAF socket. If it works we are on older, i.e. 4.9.x kernels.
 	// 4.11 defines AF_SMC as 43 but it doesn't support protocol 1 so the
 	// socket() call should fail.
@@ -60,7 +66,16 @@ func Supported() bool {
 	if err != nil {
 		return false
 	}
+
+	// 4.16 defines SMCPROTO_SMC6 as 1 but its socket name size doesn't match
+	// size of sockaddr_hv so corresponding check should fail.
+	sa_len = C.sizeof_struct_sockaddr_hv
+	ret, _ := C.getsockname_hv(C.int(fd), &sa, &sa_len)
 	syscall.Close(fd)
+	if ret < 0 || sa_len != C.sizeof_struct_sockaddr_hv {
+		return false
+	}
+
 	return true
 }
 

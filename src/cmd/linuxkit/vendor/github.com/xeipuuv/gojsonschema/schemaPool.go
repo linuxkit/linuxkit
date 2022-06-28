@@ -28,6 +28,7 @@ package gojsonschema
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/xeipuuv/gojsonreference"
@@ -35,29 +36,44 @@ import (
 
 type schemaPoolDocument struct {
 	Document interface{}
+	Draft    *Draft
 }
 
 type schemaPool struct {
 	schemaPoolDocuments map[string]*schemaPoolDocument
 	jsonLoaderFactory   JSONLoaderFactory
+	autoDetect          *bool
 }
 
-func newSchemaPool(f JSONLoaderFactory) *schemaPool {
+func (p *schemaPool) parseReferences(document interface{}, ref gojsonreference.JsonReference, pooled bool) error {
 
-	p := &schemaPool{}
-	p.schemaPoolDocuments = make(map[string]*schemaPoolDocument)
-	p.jsonLoaderFactory = f
+	var (
+		draft     *Draft
+		err       error
+		reference = ref.String()
+	)
+	// Only the root document should be added to the schema pool if pooled is true
+	if _, ok := p.schemaPoolDocuments[reference]; pooled && ok {
+		return fmt.Errorf("Reference already exists: \"%s\"", reference)
+	}
 
-	return p
+	if *p.autoDetect {
+		_, draft, err = parseSchemaURL(document)
+		if err != nil {
+			return err
+		}
+	}
+
+	err = p.parseReferencesRecursive(document, ref, draft)
+
+	if pooled {
+		p.schemaPoolDocuments[reference] = &schemaPoolDocument{Document: document, Draft: draft}
+	}
+
+	return err
 }
 
-func (p *schemaPool) ParseReferences(document interface{}, ref gojsonreference.JsonReference) {
-	// Only the root document should be added to the schema pool
-	p.schemaPoolDocuments[ref.String()] = &schemaPoolDocument{Document: document}
-	p.parseReferencesRecursive(document, ref)
-}
-
-func (p *schemaPool) parseReferencesRecursive(document interface{}, ref gojsonreference.JsonReference) {
+func (p *schemaPool) parseReferencesRecursive(document interface{}, ref gojsonreference.JsonReference, draft *Draft) error {
 	// parseReferencesRecursive parses a JSON document and resolves all $id and $ref references.
 	// For $ref references it takes into account the $id scope it is in and replaces
 	// the reference by the absolute resolved reference
@@ -67,7 +83,7 @@ func (p *schemaPool) parseReferencesRecursive(document interface{}, ref gojsonre
 	switch m := document.(type) {
 	case []interface{}:
 		for _, v := range m {
-			p.parseReferencesRecursive(v, ref)
+			p.parseReferencesRecursive(v, ref, draft)
 		}
 	case map[string]interface{}:
 		localRef := &ref
@@ -81,7 +97,10 @@ func (p *schemaPool) parseReferencesRecursive(document interface{}, ref gojsonre
 			if err == nil {
 				localRef, err = ref.Inherits(jsonReference)
 				if err == nil {
-					p.schemaPoolDocuments[localRef.String()] = &schemaPoolDocument{Document: document}
+					if _, ok := p.schemaPoolDocuments[localRef.String()]; ok {
+						return fmt.Errorf("Reference already exists: \"%s\"", localRef.String())
+					}
+					p.schemaPoolDocuments[localRef.String()] = &schemaPoolDocument{Document: document, Draft: draft}
 				}
 			}
 		}
@@ -106,22 +125,24 @@ func (p *schemaPool) parseReferencesRecursive(document interface{}, ref gojsonre
 			if k == KEY_PROPERTIES || k == KEY_DEPENDENCIES || k == KEY_PATTERN_PROPERTIES {
 				if child, ok := v.(map[string]interface{}); ok {
 					for _, v := range child {
-						p.parseReferencesRecursive(v, *localRef)
+						p.parseReferencesRecursive(v, *localRef, draft)
 					}
 				}
 			} else {
-				p.parseReferencesRecursive(v, *localRef)
+				p.parseReferencesRecursive(v, *localRef, draft)
 			}
 		}
 	}
+	return nil
 }
 
 func (p *schemaPool) GetDocument(reference gojsonreference.JsonReference) (*schemaPoolDocument, error) {
 
 	var (
-		spd *schemaPoolDocument
-		ok  bool
-		err error
+		spd   *schemaPoolDocument
+		draft *Draft
+		ok    bool
+		err   error
 	)
 
 	if internalLogEnabled {
@@ -129,12 +150,12 @@ func (p *schemaPool) GetDocument(reference gojsonreference.JsonReference) (*sche
 	}
 
 	// Create a deep copy, so we can remove the fragment part later on without altering the original
-	refToUrl, _ := gojsonreference.NewJsonReference(reference.String())
+	refToURL, _ := gojsonreference.NewJsonReference(reference.String())
 
 	// First check if the given fragment is a location independent identifier
 	// http://json-schema.org/latest/json-schema-core.html#rfc.section.8.2.3
 
-	if spd, ok = p.schemaPoolDocuments[refToUrl.String()]; ok {
+	if spd, ok = p.schemaPoolDocuments[refToURL.String()]; ok {
 		if internalLogEnabled {
 			internalLog(" From pool")
 		}
@@ -144,9 +165,9 @@ func (p *schemaPool) GetDocument(reference gojsonreference.JsonReference) (*sche
 	// If the given reference is not a location independent identifier,
 	// strip the fragment and look for a document with it's base URI
 
-	refToUrl.GetUrl().Fragment = ""
+	refToURL.GetUrl().Fragment = ""
 
-	if cachedSpd, ok := p.schemaPoolDocuments[refToUrl.String()]; ok {
+	if cachedSpd, ok := p.schemaPoolDocuments[refToURL.String()]; ok {
 		document, _, err := reference.GetPointer().Get(cachedSpd.Document)
 
 		if err != nil {
@@ -157,7 +178,7 @@ func (p *schemaPool) GetDocument(reference gojsonreference.JsonReference) (*sche
 			internalLog(" From pool")
 		}
 
-		spd = &schemaPoolDocument{Document: document}
+		spd = &schemaPoolDocument{Document: document, Draft: cachedSpd.Draft}
 		p.schemaPoolDocuments[reference.String()] = spd
 
 		return spd, nil
@@ -179,7 +200,9 @@ func (p *schemaPool) GetDocument(reference gojsonreference.JsonReference) (*sche
 	}
 
 	// add the whole document to the pool for potential re-use
-	p.ParseReferences(document, refToUrl)
+	p.parseReferences(document, refToURL, true)
+
+	_, draft, _ = parseSchemaURL(document)
 
 	// resolve the potential fragment and also cache it
 	document, _, err = reference.GetPointer().Get(document)
@@ -188,5 +211,5 @@ func (p *schemaPool) GetDocument(reference gojsonreference.JsonReference) (*sche
 		return nil, err
 	}
 
-	return &schemaPoolDocument{Document: document}, nil
+	return &schemaPoolDocument{Document: document, Draft: draft}, nil
 }

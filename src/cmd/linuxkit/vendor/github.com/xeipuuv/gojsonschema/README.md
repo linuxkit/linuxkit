@@ -1,5 +1,6 @@
 [![GoDoc](https://godoc.org/github.com/xeipuuv/gojsonschema?status.svg)](https://godoc.org/github.com/xeipuuv/gojsonschema)
 [![Build Status](https://travis-ci.org/xeipuuv/gojsonschema.svg)](https://travis-ci.org/xeipuuv/gojsonschema)
+[![Go Report Card](https://goreportcard.com/badge/github.com/xeipuuv/gojsonschema)](https://goreportcard.com/report/github.com/xeipuuv/gojsonschema)
 
 # gojsonschema
 
@@ -55,7 +56,6 @@ func main() {
             fmt.Printf("- %s\n", desc)
         }
     }
-
 }
 
 
@@ -149,6 +149,87 @@ To check the result :
     }
 ```
 
+
+## Loading local schemas
+
+By default `file` and `http(s)` references to external schemas are loaded automatically via the file system or via http(s). An external schema can also be loaded using a `SchemaLoader`.
+
+```go
+	sl := gojsonschema.NewSchemaLoader()
+	loader1 := gojsonschema.NewStringLoader(`{ "type" : "string" }`)
+	err := sl.AddSchema("http://some_host.com/string.json", loader1)
+```
+
+Alternatively if your schema already has an `$id` you can use the `AddSchemas` function
+```go
+	loader2 := gojsonschema.NewStringLoader(`{
+			"$id" : "http://some_host.com/maxlength.json",
+			"maxLength" : 5
+		}`)
+	err = sl.AddSchemas(loader2)
+```
+
+The main schema should be passed to the `Compile` function. This main schema can then directly reference the added schemas without needing to download them.
+```go
+	loader3 := gojsonschema.NewStringLoader(`{
+		"$id" : "http://some_host.com/main.json",
+		"allOf" : [
+			{ "$ref" : "http://some_host.com/string.json" },
+			{ "$ref" : "http://some_host.com/maxlength.json" }
+		]
+	}`)
+
+	schema, err := sl.Compile(loader3)
+
+	documentLoader := gojsonschema.NewStringLoader(`"hello world"`)
+
+	result, err := schema.Validate(documentLoader)
+```
+
+It's also possible to pass a `ReferenceLoader` to the `Compile` function that references a loaded schema.
+
+```go
+err = sl.AddSchemas(loader3)
+schema, err := sl.Compile(gojsonschema.NewReferenceLoader("http://some_host.com/main.json"))
+``` 
+
+Schemas added by `AddSchema` and `AddSchemas` are only validated when the entire schema is compiled, unless meta-schema validation is used.
+
+## Using a specific draft
+By default `gojsonschema` will try to detect the draft of a schema by using the `$schema` keyword and parse it in a strict draft-04, draft-06 or draft-07 mode. If `$schema` is missing, or the draft version is not explicitely set, a hybrid mode is used which merges together functionality of all drafts into one mode.
+
+Autodectection can be turned off with the `AutoDetect` property. Specific draft versions can be specified with the `Draft` property.
+
+```go
+sl := gojsonschema.NewSchemaLoader()
+sl.Draft = gojsonschema.Draft7
+sl.AutoDetect = false
+```
+
+If autodetection is on (default), a draft-07 schema can savely reference draft-04 schemas and vice-versa, as long as `$schema` is specified in all schemas.
+
+## Meta-schema validation
+Schemas that are added using the `AddSchema`, `AddSchemas` and `Compile` can be validated against their meta-schema by setting the `Validate` property.
+
+The following example will produce an error as `multipleOf` must be a number. If `Validate` is off (default), this error is only returned at the `Compile` step. 
+
+```go
+sl := gojsonschema.NewSchemaLoader()
+sl.Validate = true
+err := sl.AddSchemas(gojsonschema.NewStringLoader(`{
+     $id" : "http://some_host.com/invalid.json",
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "multipleOf" : true
+}`))
+ ```
+``` 
+ ```
+
+Errors returned by meta-schema validation are more readable and contain more information, which helps significantly if you are developing a schema.
+
+Meta-schema validation also works with a custom `$schema`. In case `$schema` is missing, or `AutoDetect` is set to `false`, the meta-schema of the used draft is used.
+
+
 ## Working with Errors
 
 The library handles string error codes which you can customize by creating your own gojsonschema.locale and setting it
@@ -192,6 +273,8 @@ Note: An error of RequiredType has an err.Type() return value of "required"
     "number_gt": NumberGTError
     "number_lte": NumberLTEError
     "number_lt": NumberLTError
+    "condition_then" : ConditionThenError
+    "condition_else" : ConditionElseError
 
 **err.Value()**: *interface{}* Returns the value given
 
@@ -233,10 +316,35 @@ Learn more about what types of template functions you can use in `ErrorTemplateF
 
 ## Formats
 JSON Schema allows for optional "format" property to validate instances against well-known formats. gojsonschema ships with all of the formats defined in the spec that you can use like this:
+
 ````json
 {"type": "string", "format": "email"}
 ````
-Available formats: date-time, hostname, email, ipv4, ipv6, uri, uri-reference, uuid, regex. Some of the new formats in draft-06 and draft-07 are not yet implemented.
+
+Not all formats defined in draft-07 are available. Implemented formats are:
+
+* `date`
+* `time`
+* `date-time`
+* `hostname`. Subdomains that start with a number are also supported, but this means that it doesn't strictly follow [RFC1034](http://tools.ietf.org/html/rfc1034#section-3.5) and has the implication that ipv4 addresses are also recognized as valid hostnames.
+* `email`. Go's email parser deviates slightly from [RFC5322](https://tools.ietf.org/html/rfc5322). Includes unicode support.
+* `idn-email`. Same caveat as `email`.
+* `ipv4`
+* `ipv6`
+* `uri`. Includes unicode support.
+* `uri-reference`. Includes unicode support.
+* `iri`
+* `iri-reference`
+* `uri-template`
+* `uuid`
+* `regex`. Go uses the [RE2](https://github.com/google/re2/wiki/Syntax) engine and is not [ECMA262](http://www.ecma-international.org/publications/files/ECMA-ST/Ecma-262.pdf) compatible.
+* `json-pointer`
+* `relative-json-pointer`
+
+`email`, `uri` and `uri-reference` use the same validation code as their unicode counterparts `idn-email`, `iri` and `iri-reference`. If you rely on unicode support you should use the specific 
+unicode enabled formats for the sake of interoperability as other implementations might not support unicode in the regular formats.
+
+The validation code for `uri`, `idn-email` and their relatives use mostly standard library code.
 
 For repetitive or more complex formats, you can create custom format checkers and add them to gojsonschema like this:
 
@@ -292,6 +400,13 @@ func (f ValidUserIdFormatChecker) IsFormat(input interface{}) bool {
 // Add it to the library
 gojsonschema.FormatCheckers.Add("ValidUserId", ValidUserIdFormatChecker{})
 ````
+
+Formats can also be removed, for example if you want to override one of the formats that is defined by default.
+
+```go
+gojsonschema.FormatCheckers.Remove("hostname")
+```
+
 
 ## Additional custom validation
 After the validation has run and you have the results, you may add additional
