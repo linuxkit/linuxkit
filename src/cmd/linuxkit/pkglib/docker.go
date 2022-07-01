@@ -15,14 +15,19 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
+	"path"
 	"runtime"
 	"strings"
 	"time"
 
+	"github.com/containerd/containerd/content"
+	"github.com/containerd/containerd/reference"
 	"github.com/docker/buildx/util/progress"
 	"github.com/docker/docker/api/types"
 	versioncompare "github.com/hashicorp/go-version"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	buildkitClient "github.com/moby/buildkit/client"
 
 	// golint requires comments on non-main(test)
@@ -30,6 +35,8 @@ import (
 	_ "github.com/moby/buildkit/client/connhelper/dockercontainer"
 	_ "github.com/moby/buildkit/client/connhelper/ssh"
 	"github.com/moby/buildkit/frontend/dockerfile/builder"
+	"github.com/moby/buildkit/frontend/dockerfile/instructions"
+	"github.com/moby/buildkit/frontend/dockerfile/parser"
 	"github.com/moby/buildkit/session/upload/uploadprovider"
 	log "github.com/sirupsen/logrus"
 )
@@ -44,7 +51,7 @@ const (
 
 type dockerRunner interface {
 	tag(ref, tag string) error
-	build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, stdin io.Reader, stdout io.Writer, imageBuildOpts types.ImageBuildOptions) error
+	build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, imageBuildOpts types.ImageBuildOptions) error
 	save(tgt string, refs ...string) error
 	load(src io.Reader) error
 	pull(img string) (bool, error)
@@ -367,7 +374,7 @@ func (dr *dockerRunnerImpl) tag(ref, tag string) error {
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, stdin io.Reader, stdout io.Writer, imageBuildOpts types.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, imageBuildOpts types.ImageBuildOptions) error {
 	// ensure we have a builder
 	client, err := dr.builder(ctx, dockerContext, builderImage, platform, restart)
 	if err != nil {
@@ -424,6 +431,59 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 		solveOpts.LocalDirs = map[string]string{
 			builder.DefaultLocalNameDockerfile: pkg,
 			builder.DefaultLocalNameContext:    pkg,
+		}
+	}
+
+	// go through the dockerfile to see if we have any provided images cached
+	if c != nil {
+		dockerfile := path.Join(pkg, "Dockerfile")
+		f, err := os.Open(dockerfile)
+		if err != nil {
+			return fmt.Errorf("error opening dockerfile %s: %v", dockerfile, err)
+		}
+		defer f.Close()
+		ast, err := parser.Parse(f)
+		if err != nil {
+			return fmt.Errorf("error parsing dockerfile from bytes into AST %s: %v", dockerfile, err)
+		}
+		stages, _, err := instructions.Parse(ast.AST)
+		if err != nil {
+			return fmt.Errorf("error parsing dockerfile from AST into stages %s: %v", dockerfile, err)
+		}
+
+		// go through each stage, get the basename of the image, see if we have it in the linuxkit cache
+		imageStores := map[string]string{}
+		for _, stage := range stages {
+			// see if the provided image name is tagged (docker.io/linuxkit/foo:latest) or digested (docker.io/linuxkit/foo@sha256:abcdefg)
+			// if neither, we have an error
+			ref, err := reference.Parse(util.ReferenceExpand(stage.BaseName))
+			if err != nil {
+				return fmt.Errorf("could not resolve references for image %s: %v", stage.BaseName, err)
+			}
+			gdesc, err := c.FindDescriptor(&ref)
+			if err != nil {
+				return fmt.Errorf("invalid name %s", stage.BaseName)
+			}
+			// not found, so nothing to look up
+			if gdesc == nil {
+				continue
+			}
+			hash := gdesc.Digest
+			imageStores[stage.BaseName] = hash.String()
+		}
+		if len(imageStores) > 0 {
+			// if we made it here, we found the reference
+			store, err := c.Store()
+			if err != nil {
+				return fmt.Errorf("unable to get content store from cache: %v", err)
+			}
+			if solveOpts.OCIStores == nil {
+				solveOpts.OCIStores = map[string]content.Store{}
+			}
+			solveOpts.OCIStores["linuxkit-cache"] = store
+			for image, hash := range imageStores {
+				solveOpts.FrontendAttrs["context:"+image] = fmt.Sprintf("oci-layout:%s@%s", "linuxkit-cache", hash)
+			}
 		}
 	}
 

@@ -13,10 +13,12 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/reference"
 	dockertypes "github.com/docker/docker/api/types"
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
@@ -52,7 +54,7 @@ func (d *dockerMocker) contextSupportCheck() error {
 	return errors.New("contexts not supported")
 }
 
-func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, builderRestart bool, stdin io.Reader, stdout io.Writer, imageBuildOpts dockertypes.ImageBuildOptions) error {
+func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, builderRestart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, imageBuildOpts dockertypes.ImageBuildOptions) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")
 	}
@@ -237,7 +239,8 @@ func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, desc registry.Descrip
 
 	return c.NewSource(ref, "", &root), nil
 }
-func (c *cacheMocker) FindDescriptor(name string) (*registry.Descriptor, error) {
+func (c *cacheMocker) FindDescriptor(ref *reference.Spec) (*registry.Descriptor, error) {
+	name := ref.String()
 	if desc, ok := c.images[name]; ok && len(desc) > 0 {
 		return &desc[0], nil
 	}
@@ -257,6 +260,11 @@ func (c *cacheMocker) appendImage(image string, root registry.Descriptor) {
 		c.images = map[string][]registry.Descriptor{}
 	}
 	c.images[image] = append(c.images[image], root)
+}
+
+// Store get content.Store referencing the cache
+func (c *cacheMocker) Store() (content.Store, error) {
+	return nil, errors.New("unsupported")
 }
 
 type cacheMockerSource struct {

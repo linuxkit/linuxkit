@@ -2,8 +2,10 @@ package cache
 
 import (
 	"fmt"
+	"strings"
 
-	"github.com/google/go-containerregistry/pkg/v1"
+	"github.com/containerd/containerd/reference"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )
@@ -48,20 +50,46 @@ func (p *Provider) findImage(imageName, architecture string) (v1.Image, error) {
 	return nil, fmt.Errorf("no image found for %s", imageName)
 }
 
-// FindDescriptor get the first descriptor pointed to by the image name
-func (p *Provider) FindDescriptor(name string) (*v1.Descriptor, error) {
+// FindDescriptor get the first descriptor pointed to by the image reference, whether tagged or digested
+func (p *Provider) FindDescriptor(ref *reference.Spec) (*v1.Descriptor, error) {
 	index, err := p.cache.ImageIndex()
 	// if there is no root index, we are broken
 	if err != nil {
 		return nil, fmt.Errorf("invalid image cache: %v", err)
 	}
 
-	descs, err := partial.FindManifests(index, match.Name(name))
+	// parse the ref.Object to determine what it is, then search by that
+	dig := ref.Digest()
+	hash, err := v1.NewHash(dig.String())
+	// if we had a valid hash, search by that
+	if err == nil {
+		// we had a valid hash, so we should search by it
+		descs, err := partial.FindManifests(index, match.Digests(hash))
+		if err != nil {
+			return nil, err
+		}
+		if len(descs) > 0 {
+			return &descs[0], nil
+		}
+		// we had a valid hash, but didn't find any descriptors
+		return nil, nil
+	}
+	// no valid hash, try the tag
+	tag := ref.Object
+	// remove anything after an '@'
+	n := strings.LastIndex(tag, "@")
+	if n == 0 {
+		return nil, fmt.Errorf("invalid tag, was not digest, yet began with '@': %s", tag)
+	}
+	if n >= 0 {
+		tag = tag[:n]
+	}
+	descs, err := partial.FindManifests(index, match.Name(fmt.Sprintf("%s:%s", ref.Locator, tag)))
 	if err != nil {
 		return nil, err
 	}
-	if len(descs) < 1 {
-		return nil, nil
+	if len(descs) > 0 {
+		return &descs[0], nil
 	}
-	return &descs[0], nil
+	return nil, nil
 }
