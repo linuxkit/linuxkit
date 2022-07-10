@@ -24,6 +24,9 @@ import (
 	versioncompare "github.com/hashicorp/go-version"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	buildkitClient "github.com/moby/buildkit/client"
+
+	// golint requires comments on non-main(test)
+	// package for blank import
 	_ "github.com/moby/buildkit/client/connhelper/dockercontainer"
 	_ "github.com/moby/buildkit/client/connhelper/ssh"
 	"github.com/moby/buildkit/frontend/dockerfile/builder"
