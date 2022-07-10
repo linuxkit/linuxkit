@@ -1,0 +1,62 @@
+#!/bin/sh
+
+set -e
+
+# get the GRUB2 boot file name
+ARCH=`uname -m`
+case $ARCH in
+x86_64)
+  BOOTFILE=BOOTX64.EFI
+  LINUX_ENTRY=linuxefi
+  INITRD_ENTRY=initrdefi
+  ;;
+aarch64)
+  BOOTFILE=BOOTAA64.EFI
+  LINUX_ENTRY=linux
+  INITRD_ENTRY=initrd
+  ;;
+esac
+
+mkdir -p /tmp/efi
+cd /tmp/efi
+
+# input is a tarball on stdin with kernel and cmdline in /boot
+# output is an iso on stdout
+
+# extract. BSD tar auto recognises compression, unlike GNU tar
+# only if stdin is a tty, if so need files volume mounted...
+[ -t 0 ] || bsdtar xzf -
+
+CMDLINE="$(cat cmdline)"
+rm cmdline
+
+cp /usr/local/share/$BOOTFILE .
+
+CFG="set timeout=0
+set gfxpayload=text
+menuentry 'LinuxKit ISO Image' {
+	$LINUX_ENTRY /kernel ${CMDLINE} text
+	$INITRD_ENTRY /initrd.img
+}
+"
+
+mkdir -p EFI/BOOT
+printf "$CFG" > EFI/BOOT/grub.cfg
+
+# create a ISO with a EFI boot partition
+# Stuff it into a FAT filesystem, making it as small as possible.  511KiB
+# headroom seems to be enough; (x+31)/32*32 rounds up to multiple of 32.
+mkfs.vfat -v -C boot.img \
+        $(( ($(stat -c %s "${BOOTFILE}") / 1024 + 511) \
+		/ 32 * 32 )) > /dev/null
+echo "mtools_skip_check=1" >> /etc/mtools.conf && \
+mmd -i boot.img ::/EFI
+mmd -i boot.img ::/EFI/BOOT
+mcopy -i boot.img $BOOTFILE ::/EFI/BOOT/
+
+rm $BOOTFILE
+
+xorriso -as mkisofs \
+	-R -e boot.img -hide boot.img -hide boot.catalog -no-emul-boot -o linuxkit-efi-initrd.iso .
+
+cat linuxkit-efi-initrd.iso

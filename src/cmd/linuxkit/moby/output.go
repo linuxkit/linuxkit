@@ -3,6 +3,7 @@ package moby
 import (
 	"archive/tar"
 	"bytes"
+
 	// fix: #3742
 	// golint requires comments on non-main(test)
 	// package for blank import
@@ -68,6 +69,18 @@ var outFuns = map[string]func(string, io.Reader, int) error{
 		err := outputIso(outputImages["iso-efi"], base+"-efi.iso", image)
 		if err != nil {
 			return fmt.Errorf("Error writing iso-efi output: %v", err)
+		}
+		return nil
+	},
+	"iso-efi-initrd": func(base string, image io.Reader, size int) error {
+		kernel, initrd, cmdline, _, err := tarToInitrd(image)
+		if err != nil {
+			return fmt.Errorf("Error converting to initrd: %v", err)
+		}
+
+		err = outputImg(outputImages["iso-efi-initrd"], base+"-efi-initrd.iso", kernel, initrd, cmdline)
+		if err != nil {
+			return fmt.Errorf("Error writing iso-efi-initrd output: %v", err)
 		}
 		return nil
 	},
