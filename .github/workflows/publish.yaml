@@ -4,7 +4,7 @@ on:
   workflow_run:
     workflows: [LinuxKit CI]
     types: [completed]
-    branches: [master, main]
+    branches: [master, main, Aline-316]
 
 jobs:
   packages:
