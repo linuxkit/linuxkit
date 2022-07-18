@@ -9,7 +9,6 @@ import (
 	"io"
 	"io/ioutil"
 	"math/rand"
-	"runtime"
 	"strings"
 	"testing"
 
@@ -116,7 +115,7 @@ func (c *cacheMocker) ImageLoad(ref *reference.Spec, architecture string, r io.R
 }
 
 func (c *cacheMocker) imageWriteStream(ref *reference.Spec, architecture string, r io.Reader) (lktspec.ImageSource, error) {
-	image := ref.String()
+	image := fmt.Sprintf("%s-%s", ref.String(), architecture)
 
 	// make some random data for a layer
 	b, err := ioutil.ReadAll(r)
@@ -154,10 +153,14 @@ func (c *cacheMocker) imageWriteStream(ref *reference.Spec, architecture string,
 		Annotations: map[string]string{
 			imagespec.AnnotationRefName: image,
 		},
+		Platform: &registry.Platform{
+			OS:           "linux",
+			Architecture: architecture,
+		},
 	}
 	c.appendImage(image, desc)
 
-	return c.NewSource(ref, "", &desc), nil
+	return c.NewSource(ref, architecture, &desc), nil
 }
 
 func (c *cacheMocker) IndexWrite(ref *reference.Spec, descriptors ...registry.Descriptor) (lktspec.ImageSource, error) {
@@ -273,7 +276,13 @@ func (c cacheMockerSource) TarReader() (io.ReadCloser, error) {
 	return nil, errors.New("unsupported")
 }
 func (c cacheMockerSource) V1TarReader() (io.ReadCloser, error) {
-	return nil, errors.New("unsupported")
+	_, found := c.c.images[c.ref.String()]
+	if !found {
+		return nil, fmt.Errorf("no image found with ref: %s", c.ref.String())
+	}
+	b := make([]byte, 256)
+	rand.Read(b)
+	return io.NopCloser(bytes.NewReader(b)), nil
 }
 func (c cacheMockerSource) Descriptor() *registry.Descriptor {
 	return c.descriptor
@@ -281,14 +290,8 @@ func (c cacheMockerSource) Descriptor() *registry.Descriptor {
 
 func TestBuild(t *testing.T) {
 	var (
-		nonLocal string
 		cacheDir = "somecachedir"
 	)
-	if runtime.GOARCH == "amd64" {
-		nonLocal = "arm64"
-	} else {
-		nonLocal = "amd64"
-	}
 	tests := []struct {
 		msg     string
 		p       Pkg
@@ -302,7 +305,7 @@ func TestBuild(t *testing.T) {
 		{"not at head", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "foo"}, nil, []string{"amd64"}, &dockerMocker{supportContexts: false}, &cacheMocker{}, "Cannot build from commit hash != HEAD"},
 		{"no build cache", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, nil, []string{"amd64"}, &dockerMocker{supportContexts: false}, &cacheMocker{}, "must provide linuxkit build cache"},
 		{"unsupported contexts", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportContexts: false}, &cacheMocker{}, "contexts not supported, check docker version"},
-		{"load docker without local platform", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir), WithBuildTargetDockerCache()}, []string{nonLocal}, &dockerMocker{supportContexts: false}, &cacheMocker{}, "must build for local platform"},
+		{"load docker without local platform", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir), WithBuildTargetDockerCache()}, []string{"amd64", "arm64"}, &dockerMocker{supportContexts: true, enableBuild: true, images: map[string][]byte{}, enableTag: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
 		{"amd64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64"}, &dockerMocker{supportContexts: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
 		{"arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"arm64"}, &dockerMocker{supportContexts: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},
 		{"amd64 and arm64", Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64", "arm64"}, commitHash: "HEAD"}, []BuildOpt{WithBuildCacheDir(cacheDir)}, []string{"amd64", "arm64"}, &dockerMocker{supportContexts: true, enableBuild: true}, &cacheMocker{enableImagePull: false, enableImageLoad: true, enableIndexWrite: true}, ""},

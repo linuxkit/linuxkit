@@ -288,7 +288,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 	}
 	// create the builder
 	args := []string{"container", "run", "-d", "--name", name, "--privileged", image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug"}
-	msg := fmt.Sprintf("creating builder container '%s' in context '%s", name, dockerContext)
+	msg := fmt.Sprintf("creating builder container '%s' in context '%s'", name, dockerContext)
 	fmt.Println(msg)
 	if err := dr.command(nil, ioutil.Discard, ioutil.Discard, args...); err != nil {
 		return nil, err

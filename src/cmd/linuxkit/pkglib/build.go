@@ -191,20 +191,6 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return errors.New("must provide linuxkit build cache directory")
 	}
 
-	// if targeting docker, be sure local arch is a build target
-	if bo.targetDocker {
-		var found bool
-		for _, platform := range bo.platforms {
-			if platform.Architecture == arch {
-				found = true
-				break
-			}
-		}
-		if !found {
-			return fmt.Errorf("must build for local platform 'linux/%s' when targeting docker", arch)
-		}
-	}
-
 	if p.git != nil && bo.push && bo.release == "" {
 		r, err := p.git.commitTag("HEAD")
 		if err != nil {
@@ -242,6 +228,24 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			skipBuild = true
 		} else {
 			fmt.Fprintf(writer, "%s not found\n", ref)
+		}
+		if bo.targetDocker {
+			notFound := false
+			for _, platform := range bo.platforms {
+				archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
+				if err != nil {
+					return err
+				}
+				fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", archRef)
+				if _, err := c.ImagePull(&archRef, "", platform.Architecture, false); err == nil {
+					fmt.Fprintf(writer, "%s found or pulled\n", archRef)
+					skipBuild = true
+				} else {
+					fmt.Fprintf(writer, "%s not found\n", archRef)
+					notFound = true
+				}
+			}
+			skipBuild = skipBuild && !notFound
 		}
 	}
 
@@ -327,14 +331,28 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	// if requested docker, load the image up
+	// we will store images with arch suffix, i.e. -amd64
+	// if one of the arch equals with system, we will add tag without suffix
 	if bo.targetDocker {
-		cacheSource := c.NewSource(&ref, arch, desc)
-		reader, err := cacheSource.V1TarReader()
-		if err != nil {
-			return fmt.Errorf("unable to get reader from cache: %v", err)
-		}
-		if err := d.load(reader); err != nil {
-			return err
+		for _, platform := range bo.platforms {
+			archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
+			if err != nil {
+				return err
+			}
+			cacheSource := c.NewSource(&archRef, platform.Architecture, desc)
+			reader, err := cacheSource.V1TarReader()
+			if err != nil {
+				return fmt.Errorf("unable to get reader from cache: %v", err)
+			}
+			if err := d.load(reader); err != nil {
+				return err
+			}
+			if platform.Architecture == arch {
+				err = d.tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), p.FullTag())
+				if err != nil {
+					return err
+				}
+			}
 		}
 	}
 
@@ -375,9 +393,18 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	// tag in docker, if requested
+	// will tag all images with arch suffix
+	// if one of the arch equals with system will add tag without suffix
 	if bo.targetDocker {
-		if err := d.tag(p.FullTag(), fullRelTag); err != nil {
-			return err
+		for _, platform := range bo.platforms {
+			if err := d.tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), fmt.Sprintf("%s-%s", fullRelTag, platform.Architecture)); err != nil {
+				return err
+			}
+			if platform.Architecture == arch {
+				if err := d.tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), fullRelTag); err != nil {
+					return err
+				}
+			}
 		}
 	}
 
