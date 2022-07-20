@@ -335,7 +335,7 @@ github.com/linuxkit/virtsock/pkg/vsock
 github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mitchellh/go-ps v0.0.0-20190716172923-621e5597135b
 github.com/mitchellh/go-ps
-# github.com/moby/buildkit v0.10.1-0.20220614084718-b3d272e22672
+# github.com/moby/buildkit v0.10.1-0.20220617010517-a6a114a1a476
 ## explicit
 github.com/moby/buildkit/api/services/control
 github.com/moby/buildkit/api/types
@@ -414,6 +414,7 @@ github.com/morikuni/aec
 ## explicit
 github.com/moul/gotty-client
 # github.com/opencontainers/go-digest v1.0.0
+## explicit
 github.com/opencontainers/go-digest
 # github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799
 ## explicit

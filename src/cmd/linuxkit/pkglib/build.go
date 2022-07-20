@@ -31,6 +31,7 @@ const (
 type buildOpts struct {
 	skipBuild      bool
 	force          bool
+	ignoreCache    bool
 	push           bool
 	release        string
 	manifest       bool
@@ -157,6 +158,14 @@ func WithBuildBuilderImage(image string) BuildOpt {
 func WithBuildBuilderRestart(restart bool) BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.builderRestart = restart
+		return nil
+	}
+}
+
+// WithBuildIgnoreCache when building an image, do not look in local cache for dependent images
+func WithBuildIgnoreCache() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.ignoreCache = true
 		return nil
 	}
 }
@@ -325,7 +334,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	// get descriptor for root of manifest
-	desc, err := c.FindDescriptor(p.FullTag())
+	desc, err := c.FindDescriptor(&ref)
 	if err != nil {
 		return err
 	}
@@ -430,7 +439,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 		}
 		if _, err := c.ImagePull(&ref, "", arch, false); err == nil {
 			fmt.Fprintf(writer, "image already found %s for arch %s", ref, arch)
-			desc, err := c.FindDescriptor(ref.String())
+			desc, err := c.FindDescriptor(&ref)
 			if err != nil {
 				return nil, fmt.Errorf("could not find root descriptor for %s: %v", ref, err)
 			}
@@ -479,7 +488,12 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 
 	buildCtx := &buildCtx{sources: p.sources}
 	platform := fmt.Sprintf("linux/%s", arch)
-	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, platform, restart, buildCtx.Reader(), stdout, imageBuildOpts); err != nil {
+	// if we were told to ignore cached dependent images, pass it a nil cache so it cannot read anything
+	passCache := c
+	if bo.ignoreCache {
+		passCache = nil
+	}
+	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)

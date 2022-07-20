@@ -35,13 +35,13 @@ func cacheExport(args []string) {
 	if err != nil {
 		log.Fatalf("unable to read a local cache: %v", err)
 	}
-	desc, err := p.FindDescriptor(fullname)
-	if err != nil {
-		log.Fatalf("unable to find image named %s: %v", name, err)
-	}
 	ref, err := reference.Parse(fullname)
 	if err != nil {
 		log.Fatalf("invalid image name %s: %v", name, err)
+	}
+	desc, err := p.FindDescriptor(&ref)
+	if err != nil {
+		log.Fatalf("unable to find image named %s: %v", name, err)
 	}
 
 	src := p.NewSource(&ref, *arch, desc)

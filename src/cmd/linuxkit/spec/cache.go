@@ -3,14 +3,19 @@ package spec
 import (
 	"io"
 
+	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/reference"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 )
 
 // CacheProvider interface for a provide of a cache.
 type CacheProvider interface {
-	// FindDescriptor get the first descriptor pointed to by the image name
-	FindDescriptor(name string) (*v1.Descriptor, error)
+	// FindDescriptor find the descriptor pointed to by the reference in the cache.
+	// ref is a valid reference, such as docker.io/library/alpine:3.15 or alpine@sha256:4edbd2beb5f78b1014028f4fbb99f3237d9561100b6881aabbf5acce2c4f9454
+	// If both tag and digest are provided, will use digest exclusively.
+	// Will expand to full names, so "alpine" becomes "docker.io/library/alpine:latest".
+	// If none is found, returns nil Descriptor and no error.
+	FindDescriptor(ref *reference.Spec) (*v1.Descriptor, error)
 	// ImagePull takes an image name and pulls it from a registry to the cache. It should be
 	// efficient and only write missing blobs, based on their content hash. If the ref already
 	// exists in the cache, it should not pull anything, unless alwaysPull is set to true.
@@ -30,4 +35,6 @@ type CacheProvider interface {
 	Push(name string) error
 	// NewSource return an ImageSource for a specific ref and architecture in the cache.
 	NewSource(ref *reference.Spec, architecture string, descriptor *v1.Descriptor) ImageSource
+	// Store get content.Store referencing the cache
+	Store() (content.Store, error)
 }

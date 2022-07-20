@@ -12,8 +12,10 @@ import (
 )
 
 const (
-	buildersEnvVar      = "LINUXKIT_BUILDERS"
-	defaultBuilderImage = "moby/buildkit:v0.10.3"
+	buildersEnvVar = "LINUXKIT_BUILDERS"
+	// this is the most recent manifest pointed to by moby/buildkit:master as of 2022-07-13, so it includes
+	// our required commit. Once there is a normal semver tag later than this, we should switch to it.
+	defaultBuilderImage = "moby/buildkit@sha256:e7b24395dff0280513cb795fe6dbd77d8f22e49ef9401eedc311c08b2b7fdd0b"
 )
 
 func pkgBuild(args []string) {
@@ -35,6 +37,7 @@ func pkgBuildPush(args []string, withPush bool) {
 	}
 
 	force := flags.Bool("force", false, "Force rebuild even if image is in local cache")
+	ignoreCache := flags.Bool("ignore-cached", false, "Ignore cached intermediate images, always pulling from registry")
 	docker := flags.Bool("docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
 	platforms := flags.String("platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
 	skipPlatforms := flags.String("skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
@@ -77,6 +80,9 @@ func pkgBuildPush(args []string, withPush bool) {
 	var opts []pkglib.BuildOpt
 	if *force {
 		opts = append(opts, pkglib.WithBuildForce())
+	}
+	if *ignoreCache {
+		opts = append(opts, pkglib.WithBuildIgnoreCache())
 	}
 	opts = append(opts, pkglib.WithBuildCacheDir(*buildCacheDir))
 
