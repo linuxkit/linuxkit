@@ -37,6 +37,7 @@ import (
 	"github.com/moby/buildkit/frontend/dockerfile/builder"
 	"github.com/moby/buildkit/frontend/dockerfile/instructions"
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
+	"github.com/moby/buildkit/frontend/dockerfile/shell"
 	"github.com/moby/buildkit/session/upload/uploadprovider"
 	log "github.com/sirupsen/logrus"
 )
@@ -446,30 +447,57 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 		if err != nil {
 			return fmt.Errorf("error parsing dockerfile from bytes into AST %s: %v", dockerfile, err)
 		}
-		stages, _, err := instructions.Parse(ast.AST)
+		stages, metaArgs, err := instructions.Parse(ast.AST)
 		if err != nil {
 			return fmt.Errorf("error parsing dockerfile from AST into stages %s: %v", dockerfile, err)
 		}
 
+		// fill optMetaArgs with args found while parsing Dockerfile
+		optMetaArgs := make(map[string]string)
+		for _, cmd := range metaArgs {
+			for _, metaArg := range cmd.Args {
+				optMetaArgs[metaArg.Key] = metaArg.ValueString()
+			}
+		}
+		// replace parsed args with provided BuildArgs if keys found
+		for k, v := range imageBuildOpts.BuildArgs {
+			if _, found := optMetaArgs[k]; found {
+				optMetaArgs[k] = *v
+			}
+		}
+
+		shlex := shell.NewLex(ast.EscapeToken)
 		// go through each stage, get the basename of the image, see if we have it in the linuxkit cache
 		imageStores := map[string]string{}
 		for _, stage := range stages {
+			// check if we have args in FROM and replace them:
+			//   ARG IMAGE=linuxkit/img
+			//   FROM ${IMAGE} as src
+			// will be parsed as:
+			//   FROM linuxkit/img as src
+			name, err := shlex.ProcessWordWithMap(stage.BaseName, optMetaArgs)
+			if err != nil {
+				return fmt.Errorf("could not process word for image %s: %v", stage.BaseName, err)
+			}
+			if name == "" {
+				return fmt.Errorf("base name (%s) should not be blank", stage.BaseName)
+			}
 			// see if the provided image name is tagged (docker.io/linuxkit/foo:latest) or digested (docker.io/linuxkit/foo@sha256:abcdefg)
 			// if neither, we have an error
-			ref, err := reference.Parse(util.ReferenceExpand(stage.BaseName))
+			ref, err := reference.Parse(util.ReferenceExpand(name))
 			if err != nil {
-				return fmt.Errorf("could not resolve references for image %s: %v", stage.BaseName, err)
+				return fmt.Errorf("could not resolve references for image %s: %v", name, err)
 			}
 			gdesc, err := c.FindDescriptor(&ref)
 			if err != nil {
-				return fmt.Errorf("invalid name %s", stage.BaseName)
+				return fmt.Errorf("invalid name %s", name)
 			}
 			// not found, so nothing to look up
 			if gdesc == nil {
 				continue
 			}
 			hash := gdesc.Digest
-			imageStores[stage.BaseName] = hash.String()
+			imageStores[name] = hash.String()
 		}
 		if len(imageStores) > 0 {
 			// if we made it here, we found the reference
