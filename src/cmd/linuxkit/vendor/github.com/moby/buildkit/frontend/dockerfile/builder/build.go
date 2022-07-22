@@ -61,7 +61,7 @@ const (
 	keyUlimit           = "ulimit"
 
 	// Don't forget to update frontend documentation if you add
-	// a new build-arg: frontend/dockerfile/docs/syntax.md
+	// a new build-arg: frontend/dockerfile/docs/reference.md
 	keyCacheNSArg           = "build-arg:BUILDKIT_CACHE_MOUNT_NS"
 	keyContextKeepGitDirArg = "build-arg:BUILDKIT_CONTEXT_KEEP_GIT_DIR"
 	keyHostnameArg          = "build-arg:BUILDKIT_SANDBOX_HOSTNAME"
@@ -861,6 +861,7 @@ func contextByName(ctx context.Context, c client.Client, sessionID, name string,
 		if err := json.Unmarshal(data, &img); err != nil {
 			return nil, nil, nil, err
 		}
+		img.Created = nil
 
 		st := llb.Image(ref, imgOpt...)
 		st, err = st.WithImageConfig(data)
