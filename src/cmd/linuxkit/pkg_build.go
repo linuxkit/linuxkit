@@ -13,9 +13,9 @@ import (
 
 const (
 	buildersEnvVar = "LINUXKIT_BUILDERS"
-	// this is the most recent manifest pointed to by moby/buildkit:master as of 2022-07-13, so it includes
+	// this is the most recent manifest pointed to by moby/buildkit:master as of 2022-07-22, so it includes
 	// our required commit. Once there is a normal semver tag later than this, we should switch to it.
-	defaultBuilderImage = "moby/buildkit@sha256:e7b24395dff0280513cb795fe6dbd77d8f22e49ef9401eedc311c08b2b7fdd0b"
+	defaultBuilderImage = "moby/buildkit@sha256:19c4637f8809f21af01dedf65f7f0d64636165d8191381ec9d5150fccedbae48"
 )
 
 func pkgBuild(args []string) {

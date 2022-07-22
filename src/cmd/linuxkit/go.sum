@@ -1064,10 +1064,8 @@ github.com/mitchellh/mapstructure v1.4.3/go.mod h1:bFUtVrKA4DC2yAKiSyO/QUcy7e+RR
 github.com/mitchellh/osext v0.0.0-20151018003038-5e2d6d41470f/go.mod h1:OkQIRizQZAeMln+1tSwduZz7+Af5oFlKirV/MSYes2A=
 github.com/moby/buildkit v0.8.1/go.mod h1:/kyU1hKy/aYCuP39GZA9MaKioovHku57N6cqlKZIaiQ=
 github.com/moby/buildkit v0.10.1-0.20220403220257-10e6f94bf90d/go.mod h1:WvwAZv8aRScHkqc/+X46cRC2CKMKpqcaX+pRvUTtPes=
-github.com/moby/buildkit v0.10.1-0.20220614084718-b3d272e22672 h1:cDyvSdAMu2BSuEaodU0d9Jm7ki/wWibm/s8G/xRurYA=
-github.com/moby/buildkit v0.10.1-0.20220614084718-b3d272e22672/go.mod h1:yle9eiU1fiJ/WhC4VTLOaQ6rxFou1mc4AhwScHwysi0=
-github.com/moby/buildkit v0.10.1-0.20220617010517-a6a114a1a476 h1:quXwiNE0nC/0bHFJkQKcwetpk1jNHIwwzDpq9hVmxSM=
-github.com/moby/buildkit v0.10.1-0.20220617010517-a6a114a1a476/go.mod h1:yle9eiU1fiJ/WhC4VTLOaQ6rxFou1mc4AhwScHwysi0=
+github.com/moby/buildkit v0.10.1-0.20220721175135-c75998aec3d4 h1:+AwP6ma57EBQ5+eOSsg29MAylks33kt2MverACSqJv0=
+github.com/moby/buildkit v0.10.1-0.20220721175135-c75998aec3d4/go.mod h1:yle9eiU1fiJ/WhC4VTLOaQ6rxFou1mc4AhwScHwysi0=
 github.com/moby/hyperkit v0.0.0-20180416161519-d65b09c1c28a h1:hExo7kltIidoitYnXsnqfvkJXG3YEMbHuQbf9nOMvow=
 github.com/moby/hyperkit v0.0.0-20180416161519-d65b09c1c28a/go.mod h1:zGAVB/FkAf4ozkR8CCuj4LcVuErrNsj9APTDFvhOckw=
 github.com/moby/locker v1.0.1 h1:fOXqR41zeveg4fFODix+1Ch4mj/gT0NE1XJbp/epuBg=

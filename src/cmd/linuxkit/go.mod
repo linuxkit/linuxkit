@@ -26,12 +26,11 @@ require (
 	github.com/gophercloud/gophercloud v0.1.0
 	github.com/gophercloud/utils v0.0.0-20181029231510-34f5991525d1
 	github.com/hashicorp/go-version v1.2.0
-	github.com/moby/buildkit v0.10.1-0.20220617010517-a6a114a1a476
+	github.com/moby/buildkit v0.10.1-0.20220721175135-c75998aec3d4
 	github.com/moby/hyperkit v0.0.0-20180416161519-d65b09c1c28a
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/moby/vpnkit v0.4.1-0.20200311130018-2ffc1dd8a84e
 	github.com/moul/gotty-client v1.7.1-0.20180526075433-e5589f6df359
-	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/image-spec v1.0.3-0.20211202183452-c5a74bcca799
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/packethost/packngo v0.1.1-0.20171201154433-f1be085ecd6f
