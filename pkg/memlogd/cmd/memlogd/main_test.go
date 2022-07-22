@@ -15,7 +15,7 @@ func TestNonblock(t *testing.T) {
 	// Test that writes to the logger don't block because it is full
 	linesInBuffer := 10
 
-	logCh := make(chan LogEntry)
+	logCh := make(chan logEntry)
 	queryMsgChan := make(chan queryMessage)
 
 	go ringBufferHandler(linesInBuffer, linesInBuffer, logCh, queryMsgChan)
@@ -23,7 +23,7 @@ func TestNonblock(t *testing.T) {
 	// Overflow the log to make sure it doesn't block
 	for i := 0; i < 2*linesInBuffer; i++ {
 		select {
-		case logCh <- LogEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestNonblock"}:
+		case logCh <- logEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestNonblock"}:
 			continue
 		case <-time.After(time.Second):
 			t.Errorf("write to the logger blocked for over 1s after %d (size was set to %d)", i, linesInBuffer)
@@ -35,14 +35,14 @@ func TestFinite(t *testing.T) {
 	// Test that the logger doesn't store more than its configured maximum size
 	linesInBuffer := 10
 
-	logCh := make(chan LogEntry)
+	logCh := make(chan logEntry)
 	queryMsgChan := make(chan queryMessage)
 
 	go ringBufferHandler(linesInBuffer, linesInBuffer, logCh, queryMsgChan)
 
 	// Overflow the log by 2x
 	for i := 0; i < 2*linesInBuffer; i++ {
-		logCh <- LogEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestFinite"}
+		logCh <- logEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestFinite"}
 	}
 	a, b := loopback()
 	defer a.Close()
@@ -75,14 +75,14 @@ func TestFinite2(t *testing.T) {
 	linesInBuffer := 10
 	// the output buffer size will be 1/2 of the ring
 	outputBufferSize := linesInBuffer / 2
-	logCh := make(chan LogEntry)
+	logCh := make(chan logEntry)
 	queryMsgChan := make(chan queryMessage)
 
 	go ringBufferHandler(linesInBuffer, outputBufferSize, logCh, queryMsgChan)
 
 	// fill the ring
 	for i := 0; i < linesInBuffer; i++ {
-		logCh <- LogEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestFinite2"}
+		logCh <- logEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestFinite2"}
 	}
 
 	a, b := loopback()

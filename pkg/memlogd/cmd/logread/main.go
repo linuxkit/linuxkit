@@ -15,13 +15,13 @@ const (
 	logDumpFollow
 )
 
-type LogEntry struct {
+type logEntry struct {
 	Time   time.Time `json:"time"`
 	Source string    `json:"source"`
 	Msg    string    `json:"msg"`
 }
 
-func (msg *LogEntry) String() string {
+func (msg *logEntry) String() string {
 	return fmt.Sprintf("%s;%s;%s", msg.Time.Format(time.RFC3339Nano), strings.ReplaceAll(msg.Source, `;`, `\;`), msg.Msg)
 }
 
@@ -61,7 +61,7 @@ func main() {
 		panic(err)
 	}
 
-	var entry LogEntry
+	var entry logEntry
 	decoder := json.NewDecoder(conn)
 	for {
 		if err := decoder.Decode(&entry); err != nil {
