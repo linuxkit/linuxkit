@@ -1,10 +1,12 @@
 package main
 
 import (
-	"bufio"
+	"encoding/json"
 	"flag"
+	"fmt"
 	"net"
-	"os"
+	"strings"
+	"time"
 )
 
 const (
@@ -12,6 +14,16 @@ const (
 	logFollow
 	logDumpFollow
 )
+
+type LogEntry struct {
+	Time   time.Time `json:"time"`
+	Source string    `json:"source"`
+	Msg    string    `json:"msg"`
+}
+
+func (msg *LogEntry) String() string {
+	return fmt.Sprintf("%s;%s;%s", msg.Time.Format(time.RFC3339Nano), strings.ReplaceAll(msg.Source, `;`, `\;`), msg.Msg)
+}
 
 func main() {
 	var err error
@@ -49,7 +61,13 @@ func main() {
 		panic(err)
 	}
 
-	r := bufio.NewReader(conn)
-	r.WriteTo(os.Stdout)
+	var entry LogEntry
+	decoder := json.NewDecoder(conn)
+	for {
+		if err := decoder.Decode(&entry); err != nil {
+			panic(err)
+		}
 
+		fmt.Println(entry.String())
+	}
 }
