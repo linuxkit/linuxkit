@@ -6,7 +6,6 @@ import (
 	"log"
 	"net"
 	"os"
-	"strings"
 	"syscall"
 	"testing"
 	"time"
@@ -24,7 +23,7 @@ func TestNonblock(t *testing.T) {
 	// Overflow the log to make sure it doesn't block
 	for i := 0; i < 2*linesInBuffer; i++ {
 		select {
-		case logCh <- logEntry{time: time.Now(), source: "memlogd", msg: "hello TestNonblock"}:
+		case logCh <- logEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestNonblock"}:
 			continue
 		case <-time.After(time.Second):
 			t.Errorf("write to the logger blocked for over 1s after %d (size was set to %d)", i, linesInBuffer)
@@ -43,7 +42,7 @@ func TestFinite(t *testing.T) {
 
 	// Overflow the log by 2x
 	for i := 0; i < 2*linesInBuffer; i++ {
-		logCh <- logEntry{time: time.Now(), source: "memlogd", msg: "hello TestFinite"}
+		logCh <- logEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestFinite"}
 	}
 	a, b := loopback()
 	defer a.Close()
@@ -83,7 +82,7 @@ func TestFinite2(t *testing.T) {
 
 	// fill the ring
 	for i := 0; i < linesInBuffer; i++ {
-		logCh <- logEntry{time: time.Now(), source: "memlogd", msg: "hello TestFinite2"}
+		logCh <- logEntry{Time: time.Now(), Source: "memlogd", Msg: "hello TestFinite2"}
 	}
 
 	a, b := loopback()
@@ -111,63 +110,6 @@ func TestFinite2(t *testing.T) {
 	if count != outputBufferSize {
 		t.Errorf("Read %d lines but expected %d", count, outputBufferSize)
 	}
-}
-
-func TestGoodName(t *testing.T) {
-	// Test that the source names can't contain ";"
-	linesInBuffer := 10
-	logCh := make(chan logEntry)
-	fdMsgChan := make(chan fdMessage)
-	queryMsgChan := make(chan queryMessage)
-
-	go ringBufferHandler(linesInBuffer, linesInBuffer, logCh, queryMsgChan)
-	go loggingRequestHandler(80, logCh, fdMsgChan)
-
-	fds, err := syscall.Socketpair(syscall.AF_UNIX, syscall.SOCK_STREAM, 0)
-	if err != nil {
-		log.Fatal("Unable to create socketpair: ", err)
-	}
-	a := fdToConn(fds[0])
-	b := fdToConn(fds[1])
-	defer a.Close()
-	defer b.Close()
-	// defer close fds
-
-	fdMsgChan <- fdMessage{
-		name: "semi-colons are banned;",
-		fd:   fds[0],
-	}
-	// although the fd should be rejected my memlogd the Write should be buffered
-	// by the kernel and not block.
-	if _, err := b.Write([]byte("hello\n")); err != nil {
-		log.Fatalf("Failed to write log message: %s", err)
-	}
-	c, d := loopback()
-	defer c.Close()
-	defer d.Close()
-	// this log should not be in the ring because the connection was rejected.
-	queryM := queryMessage{
-		conn: c,
-		mode: logDumpFollow,
-	}
-	queryMsgChan <- queryM
-	// The error log is generated asynchronously. It should be fast. On error time out
-	// after 5s.
-	d.SetDeadline(time.Now().Add(5 * time.Second))
-	r := bufio.NewReader(d)
-	for {
-		line, err := r.ReadString('\n')
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatalf("Unexpected error reading from socket: %s", err)
-		}
-		if strings.Contains(line, "ERROR: cannot register log") {
-			return
-		}
-	}
-	t.Fatal("Failed to read error message when registering a log with a ;")
 }
 
 // caller must close fd themselves: closing the net.Conn will not close fd.

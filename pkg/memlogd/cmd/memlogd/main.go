@@ -5,9 +5,9 @@ import (
 	"bytes"
 	"container/list"
 	"container/ring"
+	"encoding/json"
 	"flag"
 	"fmt"
-	"io"
 	"log"
 	"net"
 	"os"
@@ -18,9 +18,13 @@ import (
 )
 
 type logEntry struct {
-	time   time.Time
-	source string
-	msg    string
+	Time   time.Time `json:"time"`
+	Source string    `json:"source"`
+	Msg    string    `json:"msg"`
+}
+
+func (msg *logEntry) String() string {
+	return fmt.Sprintf("%s;%s;%s", msg.Time.Format(time.RFC3339Nano), strings.ReplaceAll(msg.Source, `;`, `\;`), msg.Msg)
 }
 
 type fdMessage struct {
@@ -49,24 +53,23 @@ type connListener struct {
 }
 
 func doLog(logCh chan logEntry, msg string) {
-	logCh <- logEntry{time: time.Now(), source: "memlogd", msg: msg}
-	return
+	logCh <- logEntry{
+		Time:   time.Now(),
+		Source: "memlogd",
+		Msg:    msg,
+	}
 }
 
 func logQueryHandler(l *connListener) {
 	defer l.conn.Close()
 
+	encoder := json.NewEncoder(l.conn)
 	for msg := range l.output {
-		_, err := io.Copy(l.conn, strings.NewReader(msg.String()+"\n"))
-		if err != nil {
+		if err := encoder.Encode(msg); err != nil {
 			l.err = err
 			return
 		}
 	}
-}
-
-func (msg *logEntry) String() string {
-	return fmt.Sprintf("%s,%s;%s", msg.time.Format(time.RFC3339Nano), msg.source, msg.msg)
 }
 
 func ringBufferHandler(ringSize, chanSize int, logCh chan logEntry, queryMsgChan chan queryMessage) {
@@ -77,7 +80,8 @@ func ringBufferHandler(ringSize, chanSize int, logCh chan logEntry, queryMsgChan
 	for {
 		select {
 		case msg := <-logCh:
-			fmt.Printf("%s\n", msg.String())
+			fmt.Println(msg.String())
+
 			// add log entry
 			ring.Value = msg
 			ring = ring.Next()
@@ -213,7 +217,11 @@ func readLogFromFd(maxLineLen int, fd int, source string, logCh chan logEntry) {
 		if buffer.Len() > maxLineLen {
 			buffer.Truncate(maxLineLen)
 		}
-		logCh <- logEntry{time: time.Now(), source: source, msg: buffer.String()}
+		logCh <- logEntry{
+			Time:   time.Now(),
+			Source: source,
+			Msg:    buffer.String(),
+		}
 		buffer.Reset()
 
 		l, isPrefix, err = r.ReadLine()
@@ -221,19 +229,8 @@ func readLogFromFd(maxLineLen int, fd int, source string, logCh chan logEntry) {
 }
 
 func loggingRequestHandler(lineMaxLength int, logCh chan logEntry, fdMsgChan chan fdMessage) {
-	for true {
-		select {
-		case msg := <-fdMsgChan: // incoming fd
-			if strings.Contains(msg.name, ";") {
-				// The log message spec bans ";" in the log names
-				doLog(logCh, fmt.Sprintf("ERROR: cannot register log with name '%s' as it contains ;", msg.name))
-				if err := syscall.Close(msg.fd); err != nil {
-					doLog(logCh, fmt.Sprintf("ERROR: failed to close fd: %s", err))
-				}
-				continue
-			}
-			go readLogFromFd(lineMaxLength, msg.fd, msg.name, logCh)
-		}
+	for msg := range fdMsgChan {
+		go readLogFromFd(lineMaxLength, msg.fd, msg.name, logCh)
 	}
 }
 
