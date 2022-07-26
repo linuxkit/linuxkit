@@ -32,6 +32,10 @@ func pkg(args []string) {
 		pkgPush(args[1:])
 	case "show-tag":
 		pkgShowTag(args[1:])
+	case "manifest":
+		pkgManifest(args[1:])
+	case "index":
+		pkgIndex(args[1:])
 	default:
 		fmt.Printf("Unknown subcommand %q\n\n", args[0])
 		pkgUsage()
