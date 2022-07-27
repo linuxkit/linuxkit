@@ -12,6 +12,7 @@ func pkgUsage() {
 
 	fmt.Printf("'subcommand' is one of:\n")
 	fmt.Printf("  build\n")
+	fmt.Printf("  builder\n")
 	fmt.Printf("  push\n")
 	fmt.Printf("  show-tag\n")
 	fmt.Printf("\n")
@@ -28,6 +29,8 @@ func pkg(args []string) {
 	switch args[0] {
 	case "build":
 		pkgBuild(args[1:])
+	case "builder":
+		pkgBuilder(args[1:])
 	case "push":
 		pkgPush(args[1:])
 	case "show-tag":
