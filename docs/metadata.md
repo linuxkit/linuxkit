@@ -115,3 +115,9 @@ and made available in `/run/config/userdata`.
 HyperKit does not distinguish metadata and userdata, it's simply
 refered to as data, which is passed to the VM as a disk image
 in ISO9660 format.
+
+## Virtualization.Framework
+
+Virtualization.Framework does not distinguish metadata and userdata, it's simply
+refered to as data, which is passed to the VM as a disk image
+in ISO9660 format.

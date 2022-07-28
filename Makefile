@@ -11,7 +11,6 @@ LINUXKIT?=$(CURDIR)/bin/linuxkit
 RTF?=bin/rtf
 GOOS?=$(shell uname -s | tr '[:upper:]' '[:lower:]')
 endif
-GOARCH?=amd64
 ifneq ($(GOOS),linux)
 CROSS+=-e GOOS=$(GOOS)
 endif
@@ -73,6 +72,9 @@ bin:
 
 install:
 	cp -R bin/* $(PREFIX)/bin
+
+sign:
+	codesign --entitlements linuxkit.entitlements --force -s - $(PREFIX)/bin/linuxkit
 
 .PHONY: test
 test:

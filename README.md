@@ -75,6 +75,7 @@ for example VMWare.  See `linuxkit run --help`.
 
 Currently supported platforms are:
 - Local hypervisors
+  - [Virtualization.Framework (macOS)](docs/platform-virtualization-framework.md) `[x86_64, arm64]`
   - [HyperKit (macOS)](docs/platform-hyperkit.md) `[x86_64]`
   - [Hyper-V (Windows)](docs/platform-hyperv.md) `[x86_64]`
   - [qemu (macOS, Linux, Windows)](docs/platform-qemu.md) `[x86_64, arm64, s390x]`

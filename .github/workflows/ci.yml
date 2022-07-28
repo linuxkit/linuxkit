@@ -10,20 +10,25 @@ jobs:
           - os: linux
             arch: amd64
             suffix: amd64-linux
+            runner: ubuntu-latest
           - os: linux
             arch: arm64
             suffix: arm64-linux
+            runner: ubuntu-latest
           - os: linux
             arch: s390x
             suffix: s390x-linux
+            runner: ubuntu-latest
           - os: darwin
             arch: amd64
             suffix: amd64-darwin
+            runner: macos-latest
           - os: windows
             arch: amd64
             suffix: amd64-windows.exe
+            runner: ubuntu-latest
 
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.target.runner }}
     steps:
 
     - name: Set up Go 1.16
@@ -64,7 +69,10 @@ jobs:
 
     - name: Checksum
       run: |
-        cd bin && sha256sum linuxkit-${{matrix.target.suffix}} > linuxkit-${{matrix.target.suffix}}.SHA256SUM
+        cd bin
+        if command -v sha256sum > /dev/null; then sha256sum linuxkit-${{matrix.target.suffix}} > linuxkit-${{matrix.target.suffix}}.SHA256SUM
+        else openssl sha256 -r linuxkit-${{matrix.target.suffix}} | tr -d '*'  > linuxkit-${{matrix.target.suffix}}.SHA256SUM
+        fi
         cat linuxkit-${{matrix.target.suffix}}.SHA256SUM
 
     - name: Test

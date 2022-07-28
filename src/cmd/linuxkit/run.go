@@ -20,7 +20,8 @@ func runUsage() {
 	fmt.Printf("  aws\n")
 	fmt.Printf("  azure\n")
 	fmt.Printf("  gcp\n")
-	fmt.Printf("  hyperkit [macOS]\n")
+	fmt.Printf("  virtualization [macOS]\n")
+	fmt.Printf("  hyperkit\n")
 	fmt.Printf("  hyperv [Windows]\n")
 	fmt.Printf("  openstack\n")
 	fmt.Printf("  packet\n")
@@ -55,6 +56,8 @@ func run(args []string) {
 		os.Exit(0)
 	case "hyperkit":
 		runHyperKit(args[1:])
+	case "virtualization":
+		runVirtualizationFramework(args[1:])
 	case "hyperv":
 		runHyperV(args[1:])
 	case "openstack":
@@ -74,7 +77,7 @@ func run(args []string) {
 	default:
 		switch runtime.GOOS {
 		case "darwin":
-			runHyperKit(args)
+			runVirtualizationFramework(args)
 		case "linux":
 			runQemu(args)
 		case "windows":

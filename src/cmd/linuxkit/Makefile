@@ -25,10 +25,16 @@ default: $(LINUXKIT)
 all: default
 
 LINUXKIT_DEPS=$(wildcard *.go) $(wildcard */*.go) Makefile
+
+
+ifeq ($(GOOS),darwin)
+$(LINUXKIT): local-build sign | bin
+else
 $(LINUXKIT): tmp_linuxkit_bin.tar | bin
 	tar -C $(dir $(LINUXKIT)) -xf $<
 	rm $<
 	touch $@
+endif
 
 tmp_linuxkit_bin.tar: $(LINUXKIT_DEPS)
 	tar cf - -C . . | docker run --rm --net=none --log-driver=none -i $(CROSS) $(GO_COMPILE) --package github.com/linuxkit/linuxkit/src/cmd/linuxkit --ldflags "-X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.GitCommit=$(GIT_COMMIT) -X github.com/linuxkit/linuxkit/src/cmd/linuxkit/version.Version=$(VERSION)" -o $(notdir $(LINUXKIT)) > $@
@@ -52,6 +58,11 @@ PIE?=0
 
 ifeq ($(STATIC), 1)
 	CGO_ENABLED=0
+endif
+
+# darwin needs CGO to build for virtualization framework
+ifeq ($(GOOS), darwin)
+	CGO_ENABLED=1
 endif
 
 ifeq ($(PIE), 1)
@@ -80,6 +91,9 @@ local: local-check local-build local-test
 
 bin:
 	mkdir -p $@
+
+sign:
+	codesign --entitlements linuxkit.entitlements --force -s - $(LOCAL_TARGET)
 
 install:
 	cp -R ./bin/* $(PREFIX)/bin

@@ -7,7 +7,8 @@
 ## Make Disk Available
 In order to make the disk available, you need to tell `linuxkit` where the disk file or block device is.
 
-All local `linuxkit run` methods (currently `hyperkit`, `qemu`, and `vmware`) take a `-disk` argument:
+All local `linuxkit run` methods (currently `hyperkit`, `qemu`, `virtualization.framework` and `vmware`)
+take a `-disk` argument:
 
 * `-disk path,size=100M,format=qcow2`. For size the default is in GB but an `M` can be appended to specify sizes in MB. The format can be omitted for the platform default, and is only useful on `qemu` at present.
 
