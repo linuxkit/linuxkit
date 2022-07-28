@@ -55,5 +55,5 @@ func PushManifest(img string, auth dockertypes.AuthConfig) (hash string, length 
 	log.Debugf("pushing manifest list for %s -> %#v", img, yamlInput)
 
 	// push the manifest list with the auth as given, ignore missing, do not allow insecure
-	return registry.PushManifestList(auth.Username, auth.Password, yamlInput, true, false, false, "")
+	return registry.PushManifestList(auth.Username, auth.Password, yamlInput, true, false, false, types.OCI, "")
 }

@@ -14,7 +14,16 @@ import (
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/registry"
 	"github.com/docker/docker/api/types/swarm"
+	"github.com/docker/docker/api/types/volume"
 	"github.com/docker/go-connections/nat"
+)
+
+const (
+	// MediaTypeRawStream is vendor specific MIME-Type set for raw TTY streams
+	MediaTypeRawStream = "application/vnd.docker.raw-stream"
+
+	// MediaTypeMultiplexedStream is vendor specific MIME-Type set for stdin/stdout/stderr multiplexed streams
+	MediaTypeMultiplexedStream = "application/vnd.docker.multiplexed-stream"
 )
 
 // RootFS returns Image's RootFS description including the layer IDs.
@@ -28,7 +37,7 @@ type RootFS struct {
 type ImageInspect struct {
 	// ID is the content-addressable ID of an image.
 	//
-	// This identified is a content-addressable digest calculated from the
+	// This identifier is a content-addressable digest calculated from the
 	// image's configuration (which includes the digests of layers used by
 	// the image).
 	//
@@ -39,7 +48,7 @@ type ImageInspect struct {
 	// RepoTags is a list of image names/tags in the local image cache that
 	// reference this image.
 	//
-	// Multiple image tags can refer to the same imagem and this list may be
+	// Multiple image tags can refer to the same image, and this list may be
 	// empty if no tags reference the image, in which case the image is
 	// "untagged", in which case it can still be referenced by its ID.
 	RepoTags []string
@@ -73,8 +82,11 @@ type ImageInspect struct {
 	// Depending on how the image was created, this field may be empty.
 	Container string
 
-	// ContainerConfig is the configuration of the container that was committed
-	// into the image.
+	// ContainerConfig is an optional field containing the configuration of the
+	// container that was last committed when creating the image.
+	//
+	// Previous versions of Docker builder used this field to store build cache,
+	// and it is not in active use anymore.
 	ContainerConfig *container.Config
 
 	// DockerVersion is the version of Docker that was used to build the image.
@@ -285,8 +297,6 @@ type Info struct {
 	Labels             []string
 	ExperimentalBuild  bool
 	ServerVersion      string
-	ClusterStore       string `json:",omitempty"` // Deprecated: host-discovery and overlay networks with external k/v stores are deprecated
-	ClusterAdvertise   string `json:",omitempty"` // Deprecated: host-discovery and overlay networks with external k/v stores are deprecated
 	Runtimes           map[string]Runtime
 	DefaultRuntime     string
 	Swarm              swarm.Info
@@ -378,6 +388,8 @@ type ExecStartCheck struct {
 	Detach bool
 	// Check if there's a tty
 	Tty bool
+	// Terminal size [height, width], unused if Tty == false
+	ConsoleSize *[2]uint `json:",omitempty"`
 }
 
 // HealthcheckResult stores information about a single run of a healthcheck probe
@@ -683,7 +695,7 @@ type DiskUsage struct {
 	LayersSize  int64
 	Images      []*ImageSummary
 	Containers  []*Container
-	Volumes     []*Volume
+	Volumes     []*volume.Volume
 	BuildCache  []*BuildCache
 	BuilderSize int64 `json:",omitempty"` // Deprecated: deprecated in API 1.38, and no longer used since API 1.40.
 }

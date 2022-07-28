@@ -7,7 +7,7 @@ import (
 
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
-	auth "github.com/deislabs/oras/pkg/auth/docker"
+	auth "oras.land/oras-go/pkg/auth/docker"
 	"github.com/sirupsen/logrus"
 )
 

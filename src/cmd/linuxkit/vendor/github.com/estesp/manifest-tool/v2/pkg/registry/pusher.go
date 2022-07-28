@@ -3,6 +3,8 @@ package registry
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"strings"
 
 	"github.com/estesp/manifest-tool/v2/pkg/store"
 	"github.com/estesp/manifest-tool/v2/pkg/types"
@@ -43,7 +45,18 @@ func Push(m types.ManifestList, addedTags []string, ms *store.MemoryStore) (stri
 	ms.Set(desc, indexJSON)
 
 	if err := push(m.Reference, desc, m.Resolver, ms); err != nil {
-		return "", 0, errors.Wrapf(err, "Error pushing manifest list/index to registry: %s", desc.Digest.String())
+		if strings.Contains(fmt.Sprint(err), "cannot reuse body") {
+			// until containerd/containerd issue #5978 (https://github.com/containerd/containerd/issues/5978) is
+			// fixed, we can work around this by attempting the push again now that the auth 401 is handled for
+			// registries like GCR and Quay.io
+			logrus.Debugf("body re-use error; will retry: %+v", err)
+			err := push(m.Reference, desc, m.Resolver, ms)
+			if err != nil {
+				return "", 0, errors.Wrapf(err, "Error pushing manifest list/index to registry: %s", desc.Digest.String())
+			}
+		} else {
+			return "", 0, errors.Wrapf(err, "Error pushing manifest list/index to registry: %s", desc.Digest.String())
+		}
 	}
 	for _, tag := range addedTags {
 		taggedRef, err := reference.WithTag(baseRef, tag)
@@ -100,7 +113,7 @@ func push(ref reference.Reference, desc ocispec.Descriptor, resolver remotes.Res
 			}
 			filtered := children[:0]
 			for _, c := range children {
-				if !nonDistributable(c.MediaType) {
+				if !skippable(c.MediaType) {
 					filtered = append(filtered, c)
 				}
 			}

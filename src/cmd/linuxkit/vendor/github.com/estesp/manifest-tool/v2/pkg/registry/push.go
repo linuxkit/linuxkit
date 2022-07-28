@@ -14,7 +14,7 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-func PushManifestList(username, password string, input types.YAMLInput, ignoreMissing, insecure, plainHttp bool, configDir string) (hash string, length int, err error) {
+func PushManifestList(username, password string, input types.YAMLInput, ignoreMissing, insecure, plainHttp bool, manifestType types.ManifestType, configDir string) (hash string, length int, err error) {
 	// resolve the target image reference for the combined manifest list/index
 	targetRef, err := reference.ParseNormalizedNamed(input.Image)
 	if err != nil {
@@ -28,12 +28,11 @@ func PushManifestList(username, password string, input types.YAMLInput, ignoreMi
 	resolver := util.NewResolver(username, password, insecure,
 		plainHttp, configDirs...)
 
-	imageType := types.Docker
 	manifestList := types.ManifestList{
 		Name:      input.Image,
 		Reference: targetRef,
 		Resolver:  resolver,
-		Type:      imageType,
+		Type:      manifestType,
 	}
 	// create an in-memory store for OCI descriptors and content used during the push operation
 	memoryStore := store.NewMemoryStore()
@@ -45,7 +44,7 @@ func PushManifestList(username, password string, input types.YAMLInput, ignoreMi
 			return hash, length, fmt.Errorf("Unable to parse image reference: %s: %v", img.Image, err)
 		}
 		if reference.Domain(targetRef) != reference.Domain(ref) {
-			return hash, length, fmt.Errorf("Cannot use source images from a different registry than the target image: %s != %s", reference.Domain(ref), reference.Domain(targetRef))
+			return hash, length, fmt.Errorf("Source image (%s) registry does not match target image (%s) registry", ref, targetRef)
 		}
 		descriptor, err := FetchDescriptor(resolver, memoryStore, ref)
 		if err != nil {
@@ -79,7 +78,7 @@ func PushManifestList(username, password string, input types.YAMLInput, ignoreMi
 		info, _ := memoryStore.Info(context.TODO(), descriptor.Digest)
 		for _, layer := range man.Layers {
 			// only need to handle cross-repo blob mount for distributable layer types
-			if nonDistributable(layer.MediaType) {
+			if skippable(layer.MediaType) {
 				continue
 			}
 			info.Digest = layer.Digest
@@ -151,8 +150,14 @@ func resolvePlatform(descriptor ocispec.Descriptor, img types.ManifestEntry, img
 	return platform, nil
 }
 
-func nonDistributable(mediaType string) bool {
+func skippable(mediaType string) bool {
+	// skip foreign/non-distributable layers
 	if strings.Index(mediaType, "foreign") > 0 || strings.Index(mediaType, "nondistributable") > 0 {
+		return true
+	}
+	// skip manifests (OCI or Dockerv2) as they are already handled on push references code
+	switch mediaType {
+	case ocispec.MediaTypeImageManifest, types.MediaTypeDockerSchema2Manifest:
 		return true
 	}
 	return false
