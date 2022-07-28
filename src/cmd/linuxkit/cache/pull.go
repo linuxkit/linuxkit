@@ -54,12 +54,15 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 		if err != nil {
 			return ImageSource{}, fmt.Errorf("could not get index manifest: %v", err)
 		}
-		// we found a local index, just make sure it is up to date and, if not, download it
-		if err := validate.Index(imageIndex); err != nil {
-			return ImageSource{}, errors.New("invalid index")
-		}
 		for _, m := range im.Manifests {
-			if m.Platform != nil && m.Platform.Architecture == architecture && m.Platform.OS == "linux" {
+			if m.Platform != nil && m.Platform.Architecture == architecture && m.Platform.OS == linux {
+				img, err := imageIndex.Image(m.Digest)
+				if err != nil {
+					return ImageSource{}, fmt.Errorf("unable to get image: %v", err)
+				}
+				if err := validate.Image(img); err != nil {
+					return ImageSource{}, fmt.Errorf("invalid image: %s", err)
+				}
 				return p.NewSource(
 					ref,
 					architecture,
@@ -71,7 +74,7 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 	case image != nil:
 		// we found a local image, make sure it is up to date, and that it matches our platform
 		if err := validate.Image(image); err != nil {
-			return ImageSource{}, errors.New("invalid image")
+			return ImageSource{}, fmt.Errorf("invalid image, %s", err)
 		}
 		return p.NewSource(
 			ref,

@@ -28,9 +28,14 @@ const (
 	linux = "linux"
 )
 
-// ImagePull takes an image name and pulls it down, writing it locally. It should be
-// efficient and only write missing blobs, based on their content hash. If the ref already
-// exists in the cache, it will niot pull anything, unless alwaysPull is set to true.
+// ImagePull takes an image name and ensures that the image manifest or index to which it refers
+// exists in local cache and, if not, pulls it from the registry and writes it locally. It should be
+// efficient and only write missing blobs, based on their content hash.
+// It will only pull the actual blobs, config and manifest for the requested architectures, even if ref
+// points to an index with multiple architectures. If the ref and all of the content for the requested
+// architectures already exist in the cache, it will not pull anything, unless alwaysPull is set to true.
+// If you call it multiple times, even with different architectures, the ref will continue to point to the same index.
+// Only the underlying content will be added.
 func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture string, alwaysPull bool) (lktspec.ImageSource, error) {
 	image := ref.String()
 	pullImageName := image
@@ -69,7 +74,25 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 	ii, err := desc.ImageIndex()
 	if err == nil {
 		log.Debugf("ImageWrite retrieved %s is index, saving", pullImageName)
-		err = p.cache.ReplaceIndex(ii, match.Name(image), layout.WithAnnotations(annotations))
+		im, err := ii.IndexManifest()
+		if err != nil {
+			return ImageSource{}, fmt.Errorf("unable to get IndexManifest: %v", err)
+		}
+		_, err = p.IndexWrite(ref, im.Manifests...)
+		if err == nil {
+			for _, m := range im.Manifests {
+				if m.MediaType.IsImage() && (m.Platform == nil || m.Platform.Architecture == architecture) {
+					img, err := ii.Image(m.Digest)
+					if err != nil {
+						return ImageSource{}, fmt.Errorf("unable to get image: %v", err)
+					}
+					err = p.cache.WriteImage(img)
+					if err != nil {
+						return ImageSource{}, fmt.Errorf("unable to write image: %v", err)
+					}
+				}
+			}
+		}
 	} else {
 		var im v1.Image
 		// try an image
