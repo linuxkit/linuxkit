@@ -34,7 +34,7 @@ func (r *Request) Reference() reference.Named {
 	return r.reference
 }
 
-// Digest returns the image digesh hash of this image manifest
+// Digest returns the image digest hash of this image manifest
 func (r *Request) Digest() digest.Digest {
 	return r.digest
 }

@@ -11,7 +11,7 @@ type YAMLInput struct {
 }
 
 // ManifestEntry contains an image reference and it's corresponding OCI
-// platform definiton (OS/Arch/Variant)
+// platform definition (OS/Arch/Variant)
 type ManifestEntry struct {
 	Image    string
 	Platform ocispec.Platform
