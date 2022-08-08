@@ -3,12 +3,14 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+	log "github.com/sirupsen/logrus"
 )
 
 // ValidateImage given a reference, validate that it is complete. If not, pull down missing
@@ -56,6 +58,10 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 		}
 		// we found a local index, just make sure it is up to date and, if not, download it
 		if err := validate.Index(imageIndex); err != nil {
+			// only suggest clearing cache when it contains incomplete downloads
+			if strings.Contains(err.Error(), "unexpected EOF") {
+				log.Warn("A file in your linuxkit cache seems to be incomplete. You may want to try clearing your cache.")
+			}
 			return ImageSource{}, errors.New("invalid index")
 		}
 		for _, m := range im.Manifests {
