@@ -13,7 +13,7 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
@@ -200,6 +200,9 @@ func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Read
 func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor) (lktspec.ImageSource, error) {
 	image := ref.String()
 	log.Debugf("writing an index for %s", image)
+	if len(descriptors) < 1 {
+		return ImageSource{}, errors.New("cannot create index without any manifests")
+	}
 
 	ii, err := p.cache.ImageIndex()
 	if err != nil {

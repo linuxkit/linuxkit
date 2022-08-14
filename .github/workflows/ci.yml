@@ -126,7 +126,7 @@ jobs:
     - name: Build Packages
       # Skip s390x as emulation is unreliable
       run: |
-        make OPTIONS="--skip-platforms linux/s390x" -C pkg build
+        make OPTIONS="-v --skip-platforms linux/s390x" -C pkg build
 
   test_packages:
     name: Packages Tests

@@ -102,7 +102,11 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) ([]Pkg, error) {
 	fs.BoolVar(&dirty, "force-dirty", false, "Force the pkg(s) to be considered dirty")
 	fs.BoolVar(&devMode, "dev", false, "Force org and hash to $USER and \"dev\" respectively")
 
+	util.AddLoggingFlags(fs)
+
 	_ = fs.Parse(args)
+
+	util.SetupLogging()
 
 	if fs.NArg() < 1 {
 		return nil, fmt.Errorf("At least one pkg directory is required")

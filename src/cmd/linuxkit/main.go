@@ -4,11 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	stdlog "log"
 	"os"
 	"path/filepath"
 
-	ggcrlog "github.com/google/go-containerregistry/pkg/logs"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 
 	log "github.com/sirupsen/logrus"
@@ -86,31 +85,13 @@ func main() {
 		fmt.Printf("Options:\n")
 		flag.PrintDefaults()
 	}
-	flagQuiet := flag.Bool("q", false, "Quiet execution")
-	flagVerbose := flag.Bool("v", false, "Verbose execution")
 
 	readConfig()
 
 	// Set up logging
-	log.SetFormatter(new(infoFormatter))
-	log.SetLevel(log.InfoLevel)
+	util.AddLoggingFlags(nil)
 	flag.Parse()
-	if *flagQuiet && *flagVerbose {
-		fmt.Printf("Can't set quiet and verbose flag at the same time\n")
-		os.Exit(1)
-	}
-	if *flagQuiet {
-		log.SetLevel(log.ErrorLevel)
-	}
-	if *flagVerbose {
-		// Switch back to the standard formatter
-		log.SetFormatter(defaultLogFormatter)
-		log.SetLevel(log.DebugLevel)
-		// set go-containerregistry logging as well
-		ggcrlog.Warn = stdlog.New(log.StandardLogger().WriterLevel(log.WarnLevel), "", 0)
-		ggcrlog.Debug = stdlog.New(log.StandardLogger().WriterLevel(log.DebugLevel), "", 0)
-	}
-	ggcrlog.Progress = stdlog.New(log.StandardLogger().WriterLevel(log.InfoLevel), "", 0)
+	util.SetupLogging()
 
 	args := flag.Args()
 	if len(args) < 1 {
