@@ -13,20 +13,14 @@ require (
 	github.com/Code-Hex/vz v0.0.4
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/ScaleFT/sshkeys v0.0.0-20181112160850-82451a803681
-	github.com/aws/aws-sdk-go v1.43.16
-	github.com/bshuster-repo/logrus-logstash-hook v1.0.2 // indirect
-	github.com/bugsnag/bugsnag-go v2.1.2+incompatible // indirect
-	github.com/bugsnag/panicwrap v1.3.4 // indirect
+	github.com/aws/aws-sdk-go v1.44.82
 	github.com/containerd/containerd v1.6.6
 	github.com/creack/goselect v0.0.0-20180501195510-58854f77ee8d // indirect
 	github.com/dchest/bcrypt_pbkdf v0.0.0-20150205184540-83f37f9c154a // indirect
-	github.com/distribution/distribution/v3 v3.0.0-20220526142353-ffbd94cbe269 // indirect
 	github.com/docker/buildx v0.8.2
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/docker/docker v20.10.17+incompatible
-	github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7 // indirect
-	github.com/estesp/manifest-tool/v2 v2.0.0
-	github.com/gofrs/uuid v4.2.0+incompatible // indirect
+	github.com/estesp/manifest-tool/v2 v2.0.6-0.20220728154431-89d791ab7966
 	github.com/google/go-containerregistry v0.6.1-0.20211105150418-5c9c442d5d68
 	github.com/google/uuid v1.3.0
 	github.com/gophercloud/gophercloud v0.1.0
@@ -51,12 +45,8 @@ require (
 	github.com/spf13/cobra v1.4.0 // indirect
 	github.com/stretchr/testify v1.7.2
 	github.com/surma/gocpio v1.0.2-0.20160926205914-fcb68777e7dc
-	github.com/urfave/cli v1.22.9 // indirect
 	github.com/vmware/govmomi v0.20.3
 	github.com/xeipuuv/gojsonschema v1.2.0
-	github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940 // indirect
-	github.com/yvasiyarov/gorelic v0.0.7 // indirect
-	github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
 	golang.org/x/net v0.0.0-20220127200216-cd36cc0744dd
 	golang.org/x/oauth2 v0.0.0-20211005180243-6b3c2da341f1
@@ -69,6 +59,5 @@ require (
 replace (
 	// these are for the delicate dance of docker/docker, moby/moby, moby/buildkit, estesp/manifest-tool, oras.land/oras-go, linuxkit/linuxkit
 	github.com/docker/docker => github.com/moby/moby v20.10.3-0.20220728162118-71cb54cec41e+incompatible
-	github.com/estesp/manifest-tool/v2 => github.com/estesp/manifest-tool/v2 v2.0.6-0.20220728154431-89d791ab7966
 	oras.land/oras-go => oras.land/oras-go v1.1.0
 )
