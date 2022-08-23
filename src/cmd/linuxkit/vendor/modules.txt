@@ -49,7 +49,7 @@ github.com/Microsoft/go-winio/pkg/guid
 github.com/ScaleFT/sshkeys
 # github.com/agext/levenshtein v1.2.3
 github.com/agext/levenshtein
-# github.com/aws/aws-sdk-go v1.43.16
+# github.com/aws/aws-sdk-go v1.44.82
 ## explicit
 github.com/aws/aws-sdk-go/aws
 github.com/aws/aws-sdk-go/aws/arn
@@ -104,12 +104,6 @@ github.com/aws/aws-sdk-go/service/sts
 github.com/aws/aws-sdk-go/service/sts/stsiface
 # github.com/beorn7/perks v1.0.1
 github.com/beorn7/perks/quantile
-# github.com/bshuster-repo/logrus-logstash-hook v1.0.2
-## explicit
-# github.com/bugsnag/bugsnag-go v2.1.2+incompatible
-## explicit
-# github.com/bugsnag/panicwrap v1.3.4
-## explicit
 # github.com/cespare/xxhash/v2 v2.1.2
 github.com/cespare/xxhash/v2
 # github.com/containerd/console v1.0.3
@@ -156,8 +150,6 @@ github.com/davecgh/go-spew/spew
 # github.com/dchest/bcrypt_pbkdf v0.0.0-20150205184540-83f37f9c154a
 ## explicit
 github.com/dchest/bcrypt_pbkdf
-# github.com/distribution/distribution/v3 v3.0.0-20220526142353-ffbd94cbe269
-## explicit
 # github.com/docker/buildx v0.8.2
 ## explicit
 github.com/docker/buildx/util/logutil
@@ -224,9 +216,7 @@ github.com/docker/go-connections/tlsconfig
 github.com/docker/go-metrics
 # github.com/docker/go-units v0.4.0
 github.com/docker/go-units
-# github.com/docker/libtrust v0.0.0-20160708172513-aabc10ec26b7
-## explicit
-# github.com/estesp/manifest-tool/v2 v2.0.0 => github.com/estesp/manifest-tool/v2 v2.0.6-0.20220728154431-89d791ab7966
+# github.com/estesp/manifest-tool/v2 v2.0.6-0.20220728154431-89d791ab7966
 ## explicit
 github.com/estesp/manifest-tool/v2/pkg/registry
 github.com/estesp/manifest-tool/v2/pkg/store
@@ -239,8 +229,6 @@ github.com/go-logr/logr/funcr
 github.com/go-logr/stdr
 # github.com/gofrs/flock v0.7.3
 github.com/gofrs/flock
-# github.com/gofrs/uuid v4.2.0+incompatible
-## explicit
 # github.com/gogo/googleapis v1.4.1
 github.com/gogo/googleapis/google/rpc
 # github.com/gogo/protobuf v1.3.2
@@ -522,8 +510,6 @@ github.com/tonistiigi/fsutil/types
 github.com/tonistiigi/units
 # github.com/tonistiigi/vt100 v0.0.0-20210615222946-8066bb97264f
 github.com/tonistiigi/vt100
-# github.com/urfave/cli v1.22.9
-## explicit
 # github.com/vbatts/tar-split v0.11.2
 github.com/vbatts/tar-split/archive/tar
 # github.com/vmware/govmomi v0.20.3
@@ -551,12 +537,6 @@ github.com/xeipuuv/gojsonreference
 # github.com/xeipuuv/gojsonschema v1.2.0
 ## explicit
 github.com/xeipuuv/gojsonschema
-# github.com/yvasiyarov/go-metrics v0.0.0-20150112132944-c25f46c4b940
-## explicit
-# github.com/yvasiyarov/gorelic v0.0.7
-## explicit
-# github.com/yvasiyarov/newrelic_platform_go v0.0.0-20160601141957-9c099fbc30e9
-## explicit
 # go.opencensus.io v0.23.0
 go.opencensus.io
 go.opencensus.io/internal
@@ -786,5 +766,4 @@ oras.land/oras-go/pkg/auth
 oras.land/oras-go/pkg/auth/docker
 oras.land/oras-go/pkg/content
 # github.com/docker/docker => github.com/moby/moby v20.10.3-0.20220728162118-71cb54cec41e+incompatible
-# github.com/estesp/manifest-tool/v2 => github.com/estesp/manifest-tool/v2 v2.0.6-0.20220728154431-89d791ab7966
 # oras.land/oras-go => oras.land/oras-go v1.1.0
