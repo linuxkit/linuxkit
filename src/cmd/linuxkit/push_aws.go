@@ -32,6 +32,8 @@ func pushAWS(args []string) {
 	nameFlag := flags.String("img-name", "", "Overrides the name used to identify the file in Amazon S3 and the VM image. Defaults to the base of 'path' with the file extension removed.")
 	enaFlag := flags.Bool("ena", false, "Enable ENA networking")
 	sriovNetFlag := flags.String("sriov", "", "SRIOV network support, set to 'simple' to enable 82599 VF networking")
+	uefiFlag := flags.Bool("uefi", false, "Enable uefi boot mode.")
+	tpmFlag := flags.Bool("tpm", false, "Enable tpm device.")
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -50,6 +52,10 @@ func pushAWS(args []string) {
 	name := getStringValue(nameVar, *nameFlag, "")
 	if *sriovNetFlag == "" {
 		sriovNetFlag = nil
+	}
+
+	if !*uefiFlag && *tpmFlag {
+		log.Fatal("Cannot use tpm without uefi mode")
 	}
 
 	sess := session.Must(session.NewSession())
@@ -165,6 +171,12 @@ func pushAWS(args []string) {
 		VirtualizationType: aws.String("hvm"),
 		EnaSupport:         enaFlag,
 		SriovNetSupport:    sriovNetFlag,
+	}
+	if *uefiFlag {
+		regParams.BootMode = aws.String("uefi")
+		if *tpmFlag {
+			regParams.TpmSupport = aws.String("v2.0")
+		}
 	}
 	log.Debugf("RegisterImage:\n%v", regParams)
 	regResp, err := compute.RegisterImage(regParams)
