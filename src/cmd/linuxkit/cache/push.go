@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	namepkg "github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/google/go-containerregistry/pkg/v1/validate"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
@@ -97,6 +98,11 @@ func (p *Provider) Push(name string) error {
 				if err != nil {
 					return fmt.Errorf("could not find or create arch-specific image for %s: %v", archTag, err)
 				}
+			}
+			if err := validate.Image(img); err != nil {
+				// skip arch we did not build/pull locally
+				log.Debugf("could not validate arch-specific image for %s: %v", archTag, err)
+				continue
 			}
 			log.Debugf("pushing image %s", tag)
 			if err := remote.Tag(tag, img, options...); err != nil {

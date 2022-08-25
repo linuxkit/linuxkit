@@ -231,15 +231,18 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	skipBuild := bo.skipBuild
 	if !bo.force {
+		notFound := false
 		fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", ref)
-		if _, err := c.ImagePull(&ref, "", arch, false); err == nil {
-			fmt.Fprintf(writer, "%s found or pulled\n", ref)
-			skipBuild = true
-		} else {
-			fmt.Fprintf(writer, "%s not found\n", ref)
+		for _, platform := range bo.platforms {
+			if _, err := c.ImagePull(&ref, "", platform.Architecture, false); err == nil {
+				fmt.Fprintf(writer, "%s found or pulled\n", ref)
+				skipBuild = true
+			} else {
+				fmt.Fprintf(writer, "%s not found: %s\n", ref, err)
+				notFound = true
+			}
 		}
 		if bo.targetDocker {
-			notFound := false
 			for _, platform := range bo.platforms {
 				archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
 				if err != nil {
@@ -250,7 +253,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 					fmt.Fprintf(writer, "%s found or pulled\n", archRef)
 					skipBuild = true
 				} else {
-					fmt.Fprintf(writer, "%s not found\n", archRef)
+					fmt.Fprintf(writer, "%s not found: %s\n", archRef, err)
 					notFound = true
 				}
 			}
