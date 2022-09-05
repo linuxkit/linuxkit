@@ -18,6 +18,7 @@ func cacheExport(args []string) {
 	cacheDir := fs.String("cache", defaultLinuxkitCache(), "Directory for caching and finding cached image")
 	arch := fs.String("arch", runtime.GOARCH, "Architecture to resolve an index to an image, if the provided image name is an index")
 	outfile := fs.String("outfile", "", "Path to file to save output, '-' for stdout")
+	format := fs.String("format", "oci", "export format, one of 'oci', 'filesystem'")
 
 	if err := fs.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -45,7 +46,15 @@ func cacheExport(args []string) {
 	}
 
 	src := p.NewSource(&ref, *arch, desc)
-	reader, err := src.V1TarReader()
+	var reader io.ReadCloser
+	switch *format {
+	case "oci":
+		reader, err = src.V1TarReader()
+	case "filesystem":
+		reader, err = src.TarReader()
+	default:
+		log.Fatalf("requested unknown format %s: %v", name, err)
+	}
 	if err != nil {
 		log.Fatalf("error getting reader for image %s: %v", name, err)
 	}
