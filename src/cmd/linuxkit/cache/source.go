@@ -7,7 +7,7 @@ import (
 
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
@@ -73,10 +73,13 @@ func (c ImageSource) TarReader() (io.ReadCloser, error) {
 }
 
 // V1TarReader return an io.ReadCloser to read the image as a v1 tarball
-func (c ImageSource) V1TarReader() (io.ReadCloser, error) {
+func (c ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 	imageName := c.ref.String()
-
-	refName, err := name.ParseReference(imageName)
+	saveName := imageName
+	if overrideName != "" {
+		saveName = overrideName
+	}
+	refName, err := name.ParseReference(saveName)
 	if err != nil {
 		return nil, fmt.Errorf("error parsing image name: %v", err)
 	}
