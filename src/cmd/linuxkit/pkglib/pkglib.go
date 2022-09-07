@@ -250,7 +250,15 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) ([]Pkg, error) {
 				}
 
 				if dirty {
-					pkgHash += "-dirty"
+					contentHash, err := git.contentHash()
+					if err != nil {
+						return nil, err
+					}
+					if len(contentHash) < 7 {
+						return nil, fmt.Errorf("unexpected hash len: %d", len(contentHash))
+					}
+					// construct <ls-tree>-dirty-<content hash> tag
+					pkgHash += fmt.Sprintf("-dirty-%s", contentHash[0:7])
 				}
 			}
 		}

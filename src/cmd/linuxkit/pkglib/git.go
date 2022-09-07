@@ -3,10 +3,13 @@ package pkglib
 // Thin wrappers around git CLI invocations
 
 import (
+	"bufio"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"regexp"
 	"strings"
 
@@ -81,6 +84,32 @@ func (g git) isWorkTree(pkg string) (bool, error) {
 	}
 
 	return false, fmt.Errorf("unexpected output from git rev-parse --is-inside-work-tree: %s", tf)
+}
+
+func (g git) contentHash() (string, error) {
+	hash := sha256.New()
+	out, err := g.commandStdout(nil, "ls-files")
+	if err != nil {
+		return "", err
+	}
+	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(out)))
+	for scanner.Scan() {
+		f, err := os.Open(filepath.Join(g.dir, scanner.Text()))
+		if err != nil {
+			return "", err
+		}
+		if _, err := io.Copy(hash, f); err != nil {
+			_ = f.Close()
+			return "", err
+		}
+		if err = f.Close(); err != nil {
+			return "", err
+		}
+	}
+	if err = scanner.Err(); err != nil {
+		return "", err
+	}
+	return fmt.Sprintf("%x", hash.Sum(nil)), nil
 }
 
 func (g git) treeHash(pkg, commit string) (string, error) {
