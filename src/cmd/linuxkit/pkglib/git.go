@@ -94,9 +94,20 @@ func (g git) contentHash() (string, error) {
 	}
 	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(out)))
 	for scanner.Scan() {
-		f, err := os.Open(filepath.Join(g.dir, scanner.Text()))
+		filename := filepath.Join(g.dir, scanner.Text())
+		info, err := os.Lstat(filename)
 		if err != nil {
-			return "", err
+			log.Debugf("cannot stat %s: %s, skipped", filename, err)
+			continue
+		}
+		if info.IsDir() || info.Mode()&os.ModeSymlink != 0 {
+			// we do not want to calculate hash of directory or symlinks
+			continue
+		}
+		f, err := os.Open(filename)
+		if err != nil {
+			log.Debugf("cannot open %s: %s, skipped", filename, err)
+			continue
 		}
 		if _, err := io.Copy(hash, f); err != nil {
 			_ = f.Close()
