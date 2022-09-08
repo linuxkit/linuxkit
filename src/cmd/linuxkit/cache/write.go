@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/estesp/manifest-tool/v2/pkg/util"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -117,13 +118,10 @@ func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Read
 		tr    = tar.NewReader(r)
 		index bytes.Buffer
 	)
-	var suffix string
-	switch architecture {
-	case "amd64", "arm64", "s390x":
-		suffix = "-" + architecture
-	default:
-		return ImageSource{}, fmt.Errorf("Unknown arch %q", architecture)
+	if !util.IsValidOSArch(linux, architecture, "") {
+		return ImageSource{}, fmt.Errorf("unknown arch %s", architecture)
 	}
+	suffix := "-" + architecture
 	imageName := ref.String() + suffix
 	log.Debugf("ImageWriteTar to cache %s", imageName)
 	for {
