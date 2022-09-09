@@ -1,5 +1,5 @@
-//go:build darwin
-// +build darwin
+//go:build darwin && cgo
+// +build darwin,cgo
 
 package main
 
