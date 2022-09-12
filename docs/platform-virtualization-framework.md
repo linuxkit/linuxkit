@@ -9,6 +9,7 @@ with updated versions of both.
 
 Alternatively, you can install Virtualization.Framework and VPNKit standalone and use it without Docker for Mac.
 
+Virtualization.Framework is enabled on macOS only when built with CGO enabled.
 
 ## Boot
 

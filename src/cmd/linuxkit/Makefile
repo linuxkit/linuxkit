@@ -61,6 +61,7 @@ ifeq ($(STATIC), 1)
 endif
 
 # darwin needs CGO to build for virtualization framework
+# without CGO attempt to use virtualization framework will ends with error
 ifeq ($(GOOS), darwin)
 	CGO_ENABLED=1
 endif
