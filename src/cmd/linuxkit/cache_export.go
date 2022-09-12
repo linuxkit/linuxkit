@@ -19,6 +19,7 @@ func cacheExport(args []string) {
 	arch := fs.String("arch", runtime.GOARCH, "Architecture to resolve an index to an image, if the provided image name is an index")
 	outfile := fs.String("outfile", "", "Path to file to save output, '-' for stdout")
 	format := fs.String("format", "oci", "export format, one of 'oci', 'filesystem'")
+	tagName := fs.String("name", "", "override the provided image name in the exported tar file; useful only for format=oci")
 
 	if err := fs.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -49,7 +50,11 @@ func cacheExport(args []string) {
 	var reader io.ReadCloser
 	switch *format {
 	case "oci":
-		reader, err = src.V1TarReader()
+		fullTagName := fullname
+		if *tagName != "" {
+			fullTagName = util.ReferenceExpand(*tagName)
+		}
+		reader, err = src.V1TarReader(fullTagName)
 	case "filesystem":
 		reader, err = src.TarReader()
 	default:

@@ -6,7 +6,7 @@ import (
 	"io"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -78,8 +78,12 @@ func (d ImageSource) TarReader() (io.ReadCloser, error) {
 }
 
 // V1TarReader return an io.ReadCloser to read the save of the image
-func (d ImageSource) V1TarReader() (io.ReadCloser, error) {
-	return Save(d.ref.String())
+func (d ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
+	saveName := d.ref.String()
+	if overrideName != "" {
+		saveName = overrideName
+	}
+	return Save(saveName)
 }
 
 // Descriptor return the descriptor of the image.

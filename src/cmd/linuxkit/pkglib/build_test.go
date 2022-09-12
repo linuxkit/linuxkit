@@ -283,7 +283,7 @@ func (c cacheMockerSource) Config() (imagespec.ImageConfig, error) {
 func (c cacheMockerSource) TarReader() (io.ReadCloser, error) {
 	return nil, errors.New("unsupported")
 }
-func (c cacheMockerSource) V1TarReader() (io.ReadCloser, error) {
+func (c cacheMockerSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 	_, found := c.c.images[c.ref.String()]
 	if !found {
 		return nil, fmt.Errorf("no image found with ref: %s", c.ref.String())

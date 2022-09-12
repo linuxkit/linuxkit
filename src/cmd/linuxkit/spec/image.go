@@ -3,7 +3,7 @@ package spec
 import (
 	"io"
 
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -12,10 +12,10 @@ import (
 type ImageSource interface {
 	// Config get the config for the image
 	Config() (imagespec.ImageConfig, error)
-	// TarReader get the flattened filesystem of the image as a tar stream/
+	// TarReader get the flattened filesystem of the image as a tar stream
 	TarReader() (io.ReadCloser, error)
 	// Descriptor get the v1.Descriptor of the image
 	Descriptor() *v1.Descriptor
-	// V1TarReader get the image as v1 tarball, also compatibel with `docker load`
-	V1TarReader() (io.ReadCloser, error)
+	// V1TarReader get the image as v1 tarball, also compatible with `docker load`. If name arg is not "", override name of image in tarfile from default of image.
+	V1TarReader(overrideName string) (io.ReadCloser, error)
 }

@@ -352,7 +352,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 				return err
 			}
 			cacheSource := c.NewSource(&archRef, platform.Architecture, desc)
-			reader, err := cacheSource.V1TarReader()
+			reader, err := cacheSource.V1TarReader("")
 			if err != nil {
 				return fmt.Errorf("unable to get reader from cache: %v", err)
 			}
