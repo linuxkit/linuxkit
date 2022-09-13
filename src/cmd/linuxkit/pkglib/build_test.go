@@ -19,6 +19,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+	buildkitClient "github.com/moby/buildkit/client"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -52,7 +53,9 @@ func (d *dockerMocker) contextSupportCheck() error {
 	}
 	return errors.New("contexts not supported")
 }
-
+func (d *dockerMocker) builder(_ context.Context, _, _, _ string, _ bool) (*buildkitClient.Client, error) {
+	return nil, fmt.Errorf("not implemented")
+}
 func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, builderRestart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, imageBuildOpts dockertypes.ImageBuildOptions) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")

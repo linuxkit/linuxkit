@@ -57,6 +57,7 @@ type dockerRunner interface {
 	load(src io.Reader) error
 	pull(img string) (bool, error)
 	contextSupportCheck() error
+	builder(ctx context.Context, dockerContext, builderImage, platform string, restart bool) (*buildkitClient.Client, error)
 }
 
 type dockerRunnerImpl struct {
