@@ -229,40 +229,40 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return fmt.Errorf("contexts not supported, check docker version: %v", err)
 	}
 
-	skipBuild := bo.skipBuild
-	if !bo.force {
-		notFound := false
+	var platformsToBuild []imagespec.Platform
+	if bo.force {
+		platformsToBuild = bo.platforms
+	} else if !bo.skipBuild {
 		fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", ref)
 		for _, platform := range bo.platforms {
 			if _, err := c.ImagePull(&ref, "", platform.Architecture, false); err == nil {
 				fmt.Fprintf(writer, "%s found or pulled\n", ref)
-				skipBuild = true
+				if bo.targetDocker {
+					archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
+					if err != nil {
+						return err
+					}
+					fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", archRef)
+					if _, err := c.ImagePull(&archRef, "", platform.Architecture, false); err == nil {
+						fmt.Fprintf(writer, "%s found or pulled\n", archRef)
+					} else {
+						fmt.Fprintf(writer, "%s not found, will build: %s\n", archRef, err)
+						platformsToBuild = append(platformsToBuild, platform)
+					}
+				}
 			} else {
-				fmt.Fprintf(writer, "%s not found: %s\n", ref, err)
-				notFound = true
+				fmt.Fprintf(writer, "%s not found, will build: %s\n", ref, err)
+				platformsToBuild = append(platformsToBuild, platform)
 			}
-		}
-		if bo.targetDocker {
-			for _, platform := range bo.platforms {
-				archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
-				if err != nil {
-					return err
-				}
-				fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", archRef)
-				if _, err := c.ImagePull(&archRef, "", platform.Architecture, false); err == nil {
-					fmt.Fprintf(writer, "%s found or pulled\n", archRef)
-					skipBuild = true
-				} else {
-					fmt.Fprintf(writer, "%s not found: %s\n", archRef, err)
-					notFound = true
-				}
-			}
-			skipBuild = skipBuild && !notFound
 		}
 	}
 
-	if !skipBuild {
-		fmt.Fprintf(writer, "building %s\n", ref)
+	if len(platformsToBuild) > 0 {
+		var arches []string
+		for _, platform := range platformsToBuild {
+			arches = append(arches, platform.Architecture)
+		}
+		fmt.Fprintf(writer, "building %s for arches: %s\n", ref, strings.Join(arches, ","))
 		var (
 			imageBuildOpts = types.ImageBuildOptions{
 				Labels:    map[string]string{},
@@ -313,7 +313,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 
 		// build for each arch and save in the linuxkit cache
-		for _, platform := range bo.platforms {
+		for _, platform := range platformsToBuild {
 			desc, err := p.buildArch(ctx, d, c, bo.builderImage, platform.Architecture, bo.builderRestart, writer, bo, imageBuildOpts)
 			if err != nil {
 				return fmt.Errorf("error building for arch %s: %v", platform.Architecture, err)
