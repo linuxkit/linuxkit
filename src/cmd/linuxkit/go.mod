@@ -20,6 +20,7 @@ require (
 	github.com/docker/buildx v0.8.2
 	github.com/docker/cli v20.10.17+incompatible
 	github.com/docker/docker v20.10.17+incompatible
+	github.com/docker/go-units v0.4.0
 	github.com/estesp/manifest-tool/v2 v2.0.6-0.20220728154431-89d791ab7966
 	github.com/google/go-containerregistry v0.6.1-0.20211105150418-5c9c442d5d68
 	github.com/google/uuid v1.3.0
