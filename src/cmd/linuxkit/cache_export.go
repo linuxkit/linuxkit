@@ -2,6 +2,7 @@ package main
 
 import (
 	"flag"
+	"fmt"
 	"io"
 	"os"
 	"runtime"
@@ -15,7 +16,8 @@ import (
 func cacheExport(args []string) {
 	fs := flag.NewFlagSet("export", flag.ExitOnError)
 
-	cacheDir := fs.String("cache", defaultLinuxkitCache(), "Directory for caching and finding cached image")
+	cacheDir := flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
+	fs.Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 	arch := fs.String("arch", runtime.GOARCH, "Architecture to resolve an index to an image, if the provided image name is an index")
 	outfile := fs.String("outfile", "", "Path to file to save output, '-' for stdout")
 	format := fs.String("format", "oci", "export format, one of 'oci', 'filesystem'")
@@ -33,7 +35,7 @@ func cacheExport(args []string) {
 	name := names[0]
 	fullname := util.ReferenceExpand(name)
 
-	p, err := cachepkg.NewProvider(*cacheDir)
+	p, err := cachepkg.NewProvider(cacheDir.String())
 	if err != nil {
 		log.Fatalf("unable to read a local cache: %v", err)
 	}

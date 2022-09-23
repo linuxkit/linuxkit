@@ -114,6 +114,31 @@ func stringToIntArray(l string, sep string) ([]int, error) {
 	return i, nil
 }
 
+// handle string with built-in default, overridden by env var, overridden by CLI flag
+type flagOverEnvVarOverDefaultString struct {
+	value  string
+	def    string
+	envVar string
+}
+
+func (f *flagOverEnvVarOverDefaultString) String() string {
+	val := f.def
+	if f.envVar != "" {
+		if e := os.Getenv(f.envVar); e != "" {
+			val = e
+		}
+	}
+	if f.value != "" {
+		val = f.value
+	}
+	return val
+}
+
+func (f *flagOverEnvVarOverDefaultString) Set(value string) error {
+	f.value = value
+	return nil
+}
+
 // Convert a multi-line string into an array of strings
 func splitLines(in string) []string {
 	res := []string{}

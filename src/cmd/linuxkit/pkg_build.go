@@ -13,6 +13,7 @@ import (
 
 const (
 	buildersEnvVar = "LINUXKIT_BUILDERS"
+	envVarCacheDir = "LINUXKIT_CACHE"
 	// this is the most recent manifest pointed to by moby/buildkit:master as of 2022-07-22, so it includes
 	// our required commit. Once there is a normal semver tag later than this, we should switch to it.
 	defaultBuilderImage = "moby/buildkit@sha256:19c4637f8809f21af01dedf65f7f0d64636165d8191381ec9d5150fccedbae48"
@@ -44,7 +45,8 @@ func pkgBuildPush(args []string, withPush bool) {
 	builders := flags.String("builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
 	builderImage := flags.String("builder-image", defaultBuilderImage, "buildkit builder container image to use")
 	builderRestart := flags.Bool("builder-restart", false, "force restarting builder, even if container with correct name and image exists")
-	buildCacheDir := flags.String("cache", defaultLinuxkitCache(), "Directory for storing built image, incompatible with --docker")
+	cacheDir := flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
+	flags.Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 
 	// some logic clarification:
 	// pkg build                   - always builds unless is in cache
@@ -84,7 +86,8 @@ func pkgBuildPush(args []string, withPush bool) {
 	if *ignoreCache {
 		opts = append(opts, pkglib.WithBuildIgnoreCache())
 	}
-	opts = append(opts, pkglib.WithBuildCacheDir(*buildCacheDir))
+
+	opts = append(opts, pkglib.WithBuildCacheDir(cacheDir.String()))
 
 	if withPush {
 		opts = append(opts, pkglib.WithBuildPush())
