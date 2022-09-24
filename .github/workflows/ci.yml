@@ -57,6 +57,7 @@ jobs:
     - name: Lint
       run: |
         make local-check
+        make -C test lint
       env:
         GOPATH: ${{runner.workspace}}
 
