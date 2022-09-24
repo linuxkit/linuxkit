@@ -51,9 +51,10 @@ func build(args []string) {
 	buildPull := buildCmd.Bool("pull", false, "Always pull images")
 	buildDocker := buildCmd.Bool("docker", false, "Check for images in docker before linuxkit cache")
 	buildDecompressKernel := buildCmd.Bool("decompress-kernel", false, "Decompress the Linux kernel (default false)")
-	buildCacheDir := buildCmd.String("cache", defaultLinuxkitCache(), "Directory for caching and finding cached image")
 	buildCmd.Var(&buildFormats, "format", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
 	buildArch := buildCmd.String("arch", runtime.GOARCH, "target architecture for which to build")
+	cacheDir := flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
+	buildCmd.Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 
 	if err := buildCmd.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -98,8 +99,6 @@ func build(args []string) {
 		}
 	}
 
-	cacheDir := *buildCacheDir
-
 	if len(buildFormats) == 1 && moby.Streamable(buildFormats[0]) {
 		if *buildOutputFile == "" {
 			*buildOutputFile = filepath.Join(*buildDir, name+"."+buildFormats[0])
@@ -108,7 +107,7 @@ func build(args []string) {
 			*buildDir = ""
 		}
 	} else {
-		err := moby.ValidateFormats(buildFormats, cacheDir)
+		err := moby.ValidateFormats(buildFormats, cacheDir.String())
 		if err != nil {
 			log.Errorf("Error parsing formats: %v", err)
 			buildCmd.Usage()
@@ -204,7 +203,7 @@ func build(args []string) {
 	if moby.Streamable(buildFormats[0]) {
 		tp = buildFormats[0]
 	}
-	err = moby.Build(m, w, moby.BuildOpts{Pull: *buildPull, BuilderType: tp, DecompressKernel: *buildDecompressKernel, CacheDir: cacheDir, DockerCache: *buildDocker, Arch: *buildArch})
+	err = moby.Build(m, w, moby.BuildOpts{Pull: *buildPull, BuilderType: tp, DecompressKernel: *buildDecompressKernel, CacheDir: cacheDir.String(), DockerCache: *buildDocker, Arch: *buildArch})
 	if err != nil {
 		log.Fatalf("%v", err)
 	}
@@ -216,7 +215,7 @@ func build(args []string) {
 		}
 
 		log.Infof("Create outputs:")
-		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, cacheDir)
+		err = moby.Formats(filepath.Join(*buildDir, name), image, buildFormats, size, cacheDir.String())
 		if err != nil {
 			log.Fatalf("Error writing outputs: %v", err)
 		}
