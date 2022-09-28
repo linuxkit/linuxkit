@@ -35,7 +35,7 @@ specified bucket, and create a bootable image from the stored image.
 
 Alternatively, you can use the `AWS_BUCKET` environment variable to specify the bucket name.
 
-**Note:** If the push times out before it finishes, you can use the `-timeout` flag to extend the timeout.
+**Note:** If the push times out before it finishes, you can use the `-timeout` flag to extend the timeout. You may also want to consider passing `-ena` to enable enhanced networking in the AMI.
 
 ```
 linuxkit push aws -bucket bucketname -timeout 1200 aws.raw
