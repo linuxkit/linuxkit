@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"io"
-	"os"
 
 	"github.com/containerd/containerd/reference"
 	dockertypes "github.com/docker/docker/api/types"
@@ -15,13 +14,15 @@ import (
 
 // Client get a docker client.
 func Client() (*client.Client, error) {
-	// for maximum compatibility as we use nothing new
-	// 1.30 corresponds to Docker 17.06, supported until 2020.
-	err := os.Setenv("DOCKER_API_VERSION", "1.30")
-	if err != nil {
-		return nil, err
+	options := []client.Opt{
+		// for maximum compatibility as we use nothing new
+		// 1.30 corresponds to Docker 17.06, supported until 2020.
+		client.WithVersion("1.30"),
+		client.WithTLSClientConfigFromEnv(),
+		client.WithHostFromEnv(),
 	}
-	return client.NewEnvClient()
+
+	return client.NewClientWithOpts(options...)
 }
 
 // HasImage check if the provided ref is available in the docker cache.
