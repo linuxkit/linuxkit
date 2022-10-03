@@ -5,6 +5,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/containerd/containerd/reference"
 	"github.com/docker/cli/cli/connhelper"
@@ -14,12 +15,23 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	clientOnce     sync.Once
+	memoizedClient *client.Client
+	errClient      error
+)
+
 // Client get a docker client.
 func Client() (*client.Client, error) {
+	clientOnce.Do(func() {
+		memoizedClient, errClient = createClient()
+	})
+	return memoizedClient, errClient
+}
+
+func createClient() (*client.Client, error) {
 	options := []client.Opt{
-		// for maximum compatibility as we use nothing new
-		// 1.30 corresponds to Docker 17.06, supported until 2020.
-		client.WithVersion("1.30"),
+		client.WithAPIVersionNegotiation(),
 		client.WithTLSClientConfigFromEnv(),
 		client.WithHostFromEnv(),
 	}
