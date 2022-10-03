@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"io"
+	"os"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/docker/cli/cli/connhelper"
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
@@ -20,6 +22,17 @@ func Client() (*client.Client, error) {
 		client.WithVersion("1.30"),
 		client.WithTLSClientConfigFromEnv(),
 		client.WithHostFromEnv(),
+	}
+
+	// Support connection over ssh.
+	if host := os.Getenv(client.EnvOverrideHost); host != "" {
+		helper, err := connhelper.GetConnectionHelper(host)
+		if err != nil {
+			return nil, err
+		}
+		if helper != nil {
+			options = append(options, client.WithDialContext(helper.Dialer))
+		}
 	}
 
 	return client.NewClientWithOpts(options...)
