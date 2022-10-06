@@ -10,7 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/klauspost/compress/gzip"
+	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
+	gzip "github.com/klauspost/pgzip"
 	log "github.com/sirupsen/logrus"
 )
 

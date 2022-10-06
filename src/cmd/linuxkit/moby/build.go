@@ -17,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
 	gzip "github.com/klauspost/pgzip"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
