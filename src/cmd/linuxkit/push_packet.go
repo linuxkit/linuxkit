@@ -1,7 +1,6 @@
 package main
 
 import (
-	"compress/gzip"
 	"flag"
 	"fmt"
 	"io"
@@ -11,6 +10,8 @@ import (
 	"path/filepath"
 	"runtime"
 
+	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
+	gzip "github.com/klauspost/pgzip"
 	log "github.com/sirupsen/logrus"
 )
 

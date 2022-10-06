@@ -3,13 +3,14 @@ package initrd
 import (
 	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"errors"
 	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 
+	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
+	gzip "github.com/klauspost/pgzip"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pad4"
 	"github.com/surma/gocpio"
 )
