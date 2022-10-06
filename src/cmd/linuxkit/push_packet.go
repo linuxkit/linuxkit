@@ -1,7 +1,6 @@
 package main
 
 import (
-	"compress/gzip"
 	"flag"
 	"fmt"
 	"io"
@@ -11,6 +10,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/klauspost/compress/gzip"
 	log "github.com/sirupsen/logrus"
 )
 

@@ -3,7 +3,6 @@ package moby
 import (
 	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"encoding/binary"
 	"encoding/json"
 	"errors"
@@ -18,6 +17,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	gzip "github.com/klauspost/pgzip"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"

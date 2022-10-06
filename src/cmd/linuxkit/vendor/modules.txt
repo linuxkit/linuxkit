@@ -326,12 +326,18 @@ github.com/hashicorp/go-version
 # github.com/jmespath/go-jmespath v0.4.0
 github.com/jmespath/go-jmespath
 # github.com/klauspost/compress v1.15.1
+## explicit
 github.com/klauspost/compress
+github.com/klauspost/compress/flate
 github.com/klauspost/compress/fse
+github.com/klauspost/compress/gzip
 github.com/klauspost/compress/huff0
 github.com/klauspost/compress/internal/snapref
 github.com/klauspost/compress/zstd
 github.com/klauspost/compress/zstd/internal/xxhash
+# github.com/klauspost/pgzip v1.2.5
+## explicit
+github.com/klauspost/pgzip
 # github.com/linuxkit/virtsock v0.0.0-20201010232012-f8cee7dfc7a3
 github.com/linuxkit/virtsock/pkg/hvsock
 github.com/linuxkit/virtsock/pkg/vsock

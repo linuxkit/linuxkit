@@ -3,13 +3,13 @@ package initrd
 import (
 	"archive/tar"
 	"bytes"
-	"compress/gzip"
 	"errors"
 	"io"
 	"io/ioutil"
 	"path/filepath"
 	"strings"
 
+	gzip "github.com/klauspost/pgzip"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pad4"
 	"github.com/surma/gocpio"
 )
