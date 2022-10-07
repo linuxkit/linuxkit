@@ -72,7 +72,7 @@ var additions = map[string]addFun{
 
 // OutputTypes returns a list of the valid output types
 func OutputTypes() []string {
-	ts := []string{}
+	var ts []string
 	for k := range streamable {
 		ts = append(ts, k)
 	}

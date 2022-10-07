@@ -152,7 +152,7 @@ func runPacket(args []string) {
 	}
 
 	client := packngo.NewClient("", apiKey, nil)
-	tags := []string{}
+	var tags []string
 
 	var dev *packngo.Device
 	var err error
