@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -47,7 +46,7 @@ type Interface struct {
 
 func getRuntimeConfig(path string) Runtime {
 	var runtime Runtime
-	conf, err := ioutil.ReadFile(filepath.Join(path, "runtime.json"))
+	conf, err := os.ReadFile(filepath.Join(path, "runtime.json"))
 	if err != nil {
 		// if it does not exist it is fine to return an empty runtime, to not do anything
 		if os.IsNotExist(err) {
@@ -134,7 +133,7 @@ func newCgroup(cgroup string) error {
 		return nil
 	}
 	// a cgroupv1 cgroup is a directory under all directories in /sys/fs/cgroup
-	dirs, err := ioutil.ReadDir("/sys/fs/cgroup")
+	dirs, err := os.ReadDir("/sys/fs/cgroup")
 	if err != nil {
 		return err
 	}

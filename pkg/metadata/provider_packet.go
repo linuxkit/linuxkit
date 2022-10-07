@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"path"
@@ -47,7 +46,7 @@ func (p *ProviderPacket) Extract() ([]byte, error) {
 		return nil, p.err
 	}
 
-	if err := ioutil.WriteFile(path.Join(ConfigPath, Hostname), []byte(p.metadata.Hostname), 0644); err != nil {
+	if err := os.WriteFile(path.Join(ConfigPath, Hostname), []byte(p.metadata.Hostname), 0644); err != nil {
 		return nil, fmt.Errorf("Packet: Failed to write hostname: %s", err)
 	}
 
@@ -57,7 +56,7 @@ func (p *ProviderPacket) Extract() ([]byte, error) {
 
 	sshKeys := strings.Join(p.metadata.SSHKeys, "\n")
 
-	if err := ioutil.WriteFile(path.Join(ConfigPath, SSH, "authorized_keys"), []byte(sshKeys), 0600); err != nil {
+	if err := os.WriteFile(path.Join(ConfigPath, SSH, "authorized_keys"), []byte(sshKeys), 0600); err != nil {
 		return nil, fmt.Errorf("Failed to write ssh keys: %s", err)
 	}
 
@@ -125,7 +124,7 @@ func networkConfig(ni metadata.NetworkInfo) error {
 		// weirdly creating a bind always seems to return EEXIST
 		fmt.Fprintf(os.Stderr, "Error adding bond0: %v (ignoring)", err)
 	}
-	if err := ioutil.WriteFile("/sys/class/net/bond0/bonding/mode", []byte(strconv.Itoa(int(ni.Bonding.Mode))), 0); err != nil {
+	if err := os.WriteFile("/sys/class/net/bond0/bonding/mode", []byte(strconv.Itoa(int(ni.Bonding.Mode))), 0); err != nil {
 		return fmt.Errorf("Cannot write to /sys/class/net/bond0/bonding/mode: %v", err)
 	}
 	if err := netlink.LinkSetUp(bond); err != nil {

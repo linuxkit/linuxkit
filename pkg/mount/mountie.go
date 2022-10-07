@@ -129,7 +129,7 @@ func makeDevLinks() error {
 		}
 	}
 
-	devs, err := ioutil.ReadDir("/sys/class/block")
+	devs, err := os.ReadDir("/sys/class/block")
 	if err != nil {
 		return err
 	}

@@ -3,14 +3,13 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
 	"os"
 	"path"
 	"testing"
 )
 
 func TestSampleConfig(t *testing.T) {
-	basePath, err := ioutil.TempDir("", "metadata")
+	basePath, err := os.MkdirTemp("", "metadata")
 	if err != nil {
 		t.Fatalf("can't make a temp rootdir %v", err)
 	}
@@ -82,7 +81,7 @@ func TestSerialization(t *testing.T) {
 }
 
 func TestWriteSingleFile(t *testing.T) {
-	basePath, err := ioutil.TempDir(os.TempDir(), "metadata")
+	basePath, err := os.MkdirTemp(os.TempDir(), "metadata")
 	if err != nil {
 		t.Fatalf("can't make a temp rootdir %v", err)
 	}
@@ -98,7 +97,7 @@ func TestWriteSingleFile(t *testing.T) {
 }
 
 func TestWriteEmptyFile(t *testing.T) {
-	basePath, err := ioutil.TempDir(os.TempDir(), "metadata")
+	basePath, err := os.MkdirTemp(os.TempDir(), "metadata")
 	if err != nil {
 		t.Fatalf("can't make a temp rootdir %v", err)
 	}
@@ -114,7 +113,7 @@ func TestWriteEmptyFile(t *testing.T) {
 }
 
 func TestWriteEmptyDirectory(t *testing.T) {
-	basePath, err := ioutil.TempDir(os.TempDir(), "metadata")
+	basePath, err := os.MkdirTemp(os.TempDir(), "metadata")
 	if err != nil {
 		t.Fatalf("can't make a temp rootdir %v", err)
 	}
@@ -132,7 +131,7 @@ func TestWriteEmptyDirectory(t *testing.T) {
 }
 
 func TestSetPermission(t *testing.T) {
-	basePath, err := ioutil.TempDir(os.TempDir(), "metadata")
+	basePath, err := os.MkdirTemp(os.TempDir(), "metadata")
 	if err != nil {
 		t.Fatalf("can't make a temp rootdir %v", err)
 	}
@@ -155,7 +154,7 @@ func TestSetPermission(t *testing.T) {
 }
 
 func TestDeepTree(t *testing.T) {
-	basePath, err := ioutil.TempDir("", "metadata")
+	basePath, err := os.MkdirTemp("", "metadata")
 	if err != nil {
 		t.Fatalf("can't make a temp rootdir %v", err)
 	}
@@ -207,7 +206,7 @@ func assertPermission(t *testing.T, path string, expected os.FileMode) {
 }
 
 func assertContent(t *testing.T, path, expected string) {
-	file, err := ioutil.ReadFile(path)
+	file, err := os.ReadFile(path)
 	if err != nil {
 		t.Fatalf("can't read %v: %v", path, err)
 	}
