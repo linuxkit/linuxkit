@@ -1,0 +1,42 @@
+name: LinuxKit CI
+
+on:
+  create:
+    tags:
+      - v*
+
+jobs:
+  build:
+    name: Build all targets
+    runs-on: macos-latest
+    steps:
+
+    - name: Set up Go 1.16
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.16.7
+      id: go
+
+    - name: Check out code
+      uses: actions/checkout@v1
+      with:
+        path: ./src/github.com/linuxkit/linuxkit
+
+    - name: Set path
+      run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      env:
+         GOPATH: ${{runner.workspace}}
+
+    - name: Build
+      run: |
+        make build-all-targets
+      env:
+        GOPATH: ${{runner.workspace}}
+
+    - name: GitHub Release
+      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        draft: true
+        files: bin/*
