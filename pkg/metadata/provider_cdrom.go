@@ -48,7 +48,7 @@ func ListCDROMs() []Provider {
 	cdroms = append(cidevs, cdroms...)
 	cdroms = uniqueString(cdroms)
 	log.Debugf("unique devices to be checked: %v", cdroms)
-	providers := []Provider{}
+	var providers []Provider
 	for _, device := range cdroms {
 		providers = append(providers, NewCDROM(device))
 	}
@@ -65,7 +65,7 @@ func FindCIs() []string {
 		// Glob can only error on invalid pattern
 		panic(fmt.Sprintf("Invalid glob pattern: %s", blockDevs))
 	}
-	foundDevices := []string{}
+	var foundDevices []string
 	for _, device := range devs {
 		// get the base device name
 		dev := filepath.Base(device)

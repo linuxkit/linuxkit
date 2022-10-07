@@ -85,7 +85,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 	_ = os.Remove(*sock)
 
 	// look for containerd options
-	ctrdArgs := []string{}
+	var ctrdArgs []string
 	var (
 		stderr io.Writer = os.Stderr
 		stdout io.Writer = os.Stdout
