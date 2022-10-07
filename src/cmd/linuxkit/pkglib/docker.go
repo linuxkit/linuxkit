@@ -12,7 +12,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -199,7 +198,7 @@ func (dr *dockerRunnerImpl) versionCheck(version string) (string, string, error)
 // of docker in Actions, which makes it difficult to tell if context is supported.
 // See https://github.community/t/what-really-is-docker-3-0-6/16171
 func (dr *dockerRunnerImpl) contextSupportCheck() error {
-	return dr.command(nil, ioutil.Discard, ioutil.Discard, "context", "ls")
+	return dr.command(nil, io.Discard, io.Discard, "context", "ls")
 }
 
 // builder ensure that a builder container exists or return an error.
@@ -219,7 +218,7 @@ func (dr *dockerRunnerImpl) builder(ctx context.Context, dockerContext, builderI
 	// if we were given a context, we must find a builder and use it, or create one and use it
 	if dockerContext != "" {
 		// does the context exist?
-		if err := dr.command(nil, ioutil.Discard, ioutil.Discard, "context", "inspect", dockerContext); err != nil {
+		if err := dr.command(nil, io.Discard, io.Discard, "context", "inspect", dockerContext); err != nil {
 			return nil, fmt.Errorf("provided docker context '%s' not found", dockerContext)
 		}
 		client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, platform, dockerContext, restart)
@@ -231,7 +230,7 @@ func (dr *dockerRunnerImpl) builder(ctx context.Context, dockerContext, builderI
 
 	// no provided dockerContext, so look for one based on platform-specific name
 	dockerContext = fmt.Sprintf("%s-%s", "linuxkit", strings.ReplaceAll(platform, "/", "-"))
-	if err := dr.command(nil, ioutil.Discard, ioutil.Discard, "context", "inspect", dockerContext); err == nil {
+	if err := dr.command(nil, io.Discard, io.Discard, "context", "inspect", dockerContext); err == nil {
 		// we found an appropriately named context, so let us try to use it or error out
 		if client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, platform, dockerContext, restart); err == nil {
 			return client, nil
@@ -263,7 +262,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		b      bytes.Buffer
 	)
 
-	if err := dr.command(nil, &b, ioutil.Discard, "--context", dockerContext, "container", "inspect", name); err == nil {
+	if err := dr.command(nil, &b, io.Discard, "--context", dockerContext, "container", "inspect", name); err == nil {
 		// we already have a container named "linuxkit-builder" in the provided context.
 		// get its state and config
 		var containerJSON []types.ContainerJSON
@@ -300,7 +299,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		default:
 			// we have an existing container, but it isn't running, so start it
 			fmt.Printf("starting existing container %s\n", name)
-			if err := dr.command(nil, ioutil.Discard, ioutil.Discard, "--context", dockerContext, "container", "start", name); err != nil {
+			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "start", name); err != nil {
 				return nil, fmt.Errorf("failed to start existing container %s", name)
 			}
 			recreate = false
@@ -311,12 +310,12 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 	// if we made it here, we need to stop and remove the container, either because of a config mismatch,
 	// or because we received the CLI option
 	if stop {
-		if err := dr.command(nil, ioutil.Discard, ioutil.Discard, "--context", dockerContext, "container", "stop", name); err != nil {
+		if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "stop", name); err != nil {
 			return nil, fmt.Errorf("failed to stop existing container %s", name)
 		}
 	}
 	if remove {
-		if err := dr.command(nil, ioutil.Discard, ioutil.Discard, "--context", dockerContext, "container", "rm", name); err != nil {
+		if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "rm", name); err != nil {
 			return nil, fmt.Errorf("failed to remove existing container %s", name)
 		}
 	}
@@ -325,7 +324,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		args := []string{"container", "run", "-d", "--name", name, "--privileged", image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug"}
 		msg := fmt.Sprintf("creating builder container '%s' in context '%s'", name, dockerContext)
 		fmt.Println(msg)
-		if err := dr.command(nil, ioutil.Discard, ioutil.Discard, args...); err != nil {
+		if err := dr.command(nil, io.Discard, io.Discard, args...); err != nil {
 			return nil, err
 		}
 	}

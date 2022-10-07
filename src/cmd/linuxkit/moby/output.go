@@ -10,7 +10,6 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"runtime"
 	"strings"
@@ -379,7 +378,7 @@ func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline strin
 
 	if len(ucode) != 0 {
 		log.Infof("  %s ucode+%s %s", base+"-kernel", base+"-initrd.img", base+"-cmdline")
-		if err := ioutil.WriteFile(base+"-initrd.img", ucode, os.FileMode(0644)); err != nil {
+		if err := os.WriteFile(base+"-initrd.img", ucode, os.FileMode(0644)); err != nil {
 			return err
 		}
 		if len(initrd) != 0 {
@@ -395,18 +394,18 @@ func outputKernelInitrd(base string, kernel []byte, initrd []byte, cmdline strin
 	} else {
 		if len(initrd) != 0 {
 			log.Infof("  %s %s %s", base+"-kernel", base+"-initrd.img", base+"-cmdline")
-			if err := ioutil.WriteFile(base+"-initrd.img", initrd, os.FileMode(0644)); err != nil {
+			if err := os.WriteFile(base+"-initrd.img", initrd, os.FileMode(0644)); err != nil {
 				return err
 			}
 		}
 	}
 	if len(kernel) != 0 {
-		if err := ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
+		if err := os.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
 			return err
 		}
 	}
 	if len(cmdline) != 0 {
-		return ioutil.WriteFile(base+"-cmdline", []byte(cmdline), os.FileMode(0644))
+		return os.WriteFile(base+"-cmdline", []byte(cmdline), os.FileMode(0644))
 	}
 	return nil
 }
@@ -503,19 +502,19 @@ func outputKernelSquashFS(image, base string, filesystem io.Reader) error {
 		thdr.Format = tar.FormatPAX
 		switch {
 		case thdr.Name == "boot/kernel":
-			kernel, err := ioutil.ReadAll(tr)
+			kernel, err := io.ReadAll(tr)
 			if err != nil {
 				return err
 			}
-			if err := ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
+			if err := os.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
 				return err
 			}
 		case thdr.Name == "boot/cmdline":
-			cmdline, err := ioutil.ReadAll(tr)
+			cmdline, err := io.ReadAll(tr)
 			if err != nil {
 				return err
 			}
-			if err := ioutil.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
+			if err := os.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
 				return err
 			}
 		case strings.HasPrefix(thdr.Name, "boot/"):
@@ -558,19 +557,19 @@ func outputKernelISO(image, base string, filesystem io.Reader) error {
 		thdr.Format = tar.FormatPAX
 		switch {
 		case thdr.Name == "boot/kernel":
-			kernel, err := ioutil.ReadAll(tr)
+			kernel, err := io.ReadAll(tr)
 			if err != nil {
 				return err
 			}
-			if err := ioutil.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
+			if err := os.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
 				return err
 			}
 		case thdr.Name == "boot/cmdline":
-			cmdline, err := ioutil.ReadAll(tr)
+			cmdline, err := io.ReadAll(tr)
 			if err != nil {
 				return err
 			}
-			if err := ioutil.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
+			if err := os.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
 				return err
 			}
 		case strings.HasPrefix(thdr.Name, "boot/"):

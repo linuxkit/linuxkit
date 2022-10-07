@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"path"
 	"sort"
 	"strings"
@@ -218,7 +217,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 		hdr.Format = tar.FormatPAX
 		if exclude[hdr.Name] {
 			log.Debugf("image tar: %s %s exclude %s", ref, prefix, hdr.Name)
-			_, err = io.Copy(ioutil.Discard, tr)
+			_, err = io.Copy(io.Discard, tr)
 			if err != nil {
 				return err
 			}
@@ -249,7 +248,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 					return err
 				}
 			}
-			_, err = io.Copy(ioutil.Discard, tr)
+			_, err = io.Copy(io.Discard, tr)
 			if err != nil {
 				return err
 			}

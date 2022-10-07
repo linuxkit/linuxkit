@@ -5,7 +5,6 @@ import (
 	"crypto/rsa"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -54,7 +53,7 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 			return nil, err
 		}
 
-		jsonKey, err := ioutil.ReadAll(f)
+		jsonKey, err := io.ReadAll(f)
 		if err != nil {
 			return nil, err
 		}
@@ -397,7 +396,7 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 		return err
 	}
 	defer resp.Body.Close()
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
 	}

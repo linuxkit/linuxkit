@@ -8,7 +8,6 @@ import (
 	_ "embed"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -52,7 +51,7 @@ func ensureLinuxkitImage(name, cache string) error {
 	// Might as well just use our local one.
 	arch := runtime.GOARCH
 	// TODO pass through --pull to here
-	tf, err := ioutil.TempFile("", "")
+	tf, err := os.CreateTemp("", "")
 	if err != nil {
 		return err
 	}
@@ -77,21 +76,21 @@ func ensureLinuxkitImage(name, cache string) error {
 }
 
 func writeKernelInitrd(filename string, kernel []byte, initrd []byte, cmdline string) error {
-	err := ioutil.WriteFile(filename+"-kernel", kernel, 0600)
+	err := os.WriteFile(filename+"-kernel", kernel, 0600)
 	if err != nil {
 		return err
 	}
-	err = ioutil.WriteFile(filename+"-initrd.img", initrd, 0600)
+	err = os.WriteFile(filename+"-initrd.img", initrd, 0600)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(filename+"-cmdline", []byte(cmdline), 0600)
+	return os.WriteFile(filename+"-cmdline", []byte(cmdline), 0600)
 }
 
 func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte, cmdline string, size int) error {
 	log.Debugf("output linuxkit generated img: %s %s size %d", format, filename, size)
 
-	tmp, err := ioutil.TempDir(filepath.Join(MobyDir, "tmp"), "moby")
+	tmp, err := os.MkdirTemp(filepath.Join(MobyDir, "tmp"), "moby")
 	if err != nil {
 		return err
 	}

@@ -4,7 +4,6 @@ import (
 	"crypto/rand"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -88,14 +87,14 @@ func retrieveMAC(statePath string) net.HardwareAddr {
 	var mac net.HardwareAddr
 	fileName := filepath.Join(statePath, "mac-addr")
 
-	if macString, err := ioutil.ReadFile(fileName); err == nil {
+	if macString, err := os.ReadFile(fileName); err == nil {
 		if mac, err = net.ParseMAC(string(macString)); err != nil {
 			log.Fatalf("failed to parse mac-addr file: %s\n", macString)
 		}
 	} else {
 		// we did not generate a mac yet. generate one
 		mac = generateMAC()
-		if err = ioutil.WriteFile(fileName, []byte(mac.String()), 0640); err != nil {
+		if err = os.WriteFile(fileName, []byte(mac.String()), 0640); err != nil {
 			log.Fatalln("failed to write mac-addr file:", err)
 		}
 	}
@@ -532,7 +531,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		qemuInitrdPath := config.Path + "-initrd.img"
 		qemuArgs = append(qemuArgs, "-kernel", qemuKernelPath)
 		qemuArgs = append(qemuArgs, "-initrd", qemuInitrdPath)
-		cmdlineBytes, err := ioutil.ReadFile(config.Path + "-cmdline")
+		cmdlineBytes, err := os.ReadFile(config.Path + "-cmdline")
 		if err != nil {
 			log.Errorf("Cannot open cmdline file: %v", err)
 		} else {
@@ -541,7 +540,7 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 	case config.SquashFS:
 		qemuKernelPath := config.Path + "-kernel"
 		qemuArgs = append(qemuArgs, "-kernel", qemuKernelPath)
-		cmdlineBytes, err := ioutil.ReadFile(config.Path + "-cmdline")
+		cmdlineBytes, err := os.ReadFile(config.Path + "-cmdline")
 		if err != nil {
 			log.Errorf("Cannot open cmdline file: %v", err)
 		} else {

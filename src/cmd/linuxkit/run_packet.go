@@ -6,7 +6,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"net/http"
 	"os"
@@ -108,7 +107,7 @@ func runPacket(args []string) {
 	if *serveFlag != "" {
 		// Read kernel command line
 		var cmdline string
-		if c, err := ioutil.ReadFile(prefix + "-cmdline"); err != nil {
+		if c, err := os.ReadFile(prefix + "-cmdline"); err != nil {
 			log.Fatalf("Cannot open cmdline file: %v", err)
 		} else {
 			cmdline = string(c)
@@ -368,7 +367,7 @@ func sshAgent() ssh.AuthMethod {
 // This function returns the host key for a given host (the SOS server).
 // If it can't be found, it errors
 func sshHostKey(host string) (ssh.PublicKey, error) {
-	f, err := ioutil.ReadFile(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
+	f, err := os.ReadFile(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
 	if err != nil {
 		return nil, fmt.Errorf("Can't read known_hosts file: %v", err)
 	}

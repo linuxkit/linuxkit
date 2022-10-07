@@ -2,7 +2,6 @@ package pkglib
 
 import (
 	"flag"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -13,10 +12,10 @@ import (
 )
 
 func dummyPackage(t *testing.T, tmpDir, yml string) string {
-	d, err := ioutil.TempDir(tmpDir, "")
+	d, err := os.MkdirTemp(tmpDir, "")
 	require.NoError(t, err)
 
-	err = ioutil.WriteFile(filepath.Join(d, "build.yml"), []byte(yml), 0644)
+	err = os.WriteFile(filepath.Join(d, "build.yml"), []byte(yml), 0644)
 	require.NoError(t, err)
 
 	return d

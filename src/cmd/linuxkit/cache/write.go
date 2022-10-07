@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strings"
 
 	"github.com/containerd/containerd/reference"
@@ -167,7 +166,7 @@ func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Read
 				return ImageSource{}, fmt.Errorf("invalid hash filename for %s: %v", filename, err)
 			}
 			log.Debugf("writing %s as hash %s", filename, hash)
-			if err := p.cache.WriteBlob(hash, ioutil.NopCloser(tr)); err != nil {
+			if err := p.cache.WriteBlob(hash, io.NopCloser(tr)); err != nil {
 				return ImageSource{}, fmt.Errorf("error reading data for file %s : %v", filename, err)
 			}
 		}
@@ -300,7 +299,7 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("error calculating hash of index json: %v", err)
 	}
-	if err := p.cache.WriteBlob(hash, ioutil.NopCloser(bytes.NewReader(b))); err != nil {
+	if err := p.cache.WriteBlob(hash, io.NopCloser(bytes.NewReader(b))); err != nil {
 		return ImageSource{}, fmt.Errorf("error writing new index to json: %v", err)
 	}
 	// finally update the descriptor in the root

@@ -5,7 +5,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/ioutil"
 	"path/filepath"
 	"strings"
 
@@ -107,19 +106,19 @@ func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, ucod
 		}
 		switch {
 		case thdr.Name == "boot/kernel":
-			kernel, err = ioutil.ReadAll(r)
+			kernel, err = io.ReadAll(r)
 			if err != nil {
 				return
 			}
 		case thdr.Name == "boot/cmdline":
 			var buf []byte
-			buf, err = ioutil.ReadAll(r)
+			buf, err = io.ReadAll(r)
 			if err != nil {
 				return
 			}
 			cmdline = string(buf)
 		case thdr.Name == "boot/ucode.cpio":
-			ucode, err = ioutil.ReadAll(r)
+			ucode, err = io.ReadAll(r)
 			if err != nil {
 				return
 			}
