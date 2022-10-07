@@ -5,23 +5,49 @@ import (
 	"errors"
 	"io"
 	"os"
+	"sync"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/docker/cli/cli/connhelper"
 	dockertypes "github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 )
 
+var (
+	clientOnce     sync.Once
+	memoizedClient *client.Client
+	errClient      error
+)
+
 // Client get a docker client.
 func Client() (*client.Client, error) {
-	// for maximum compatibility as we use nothing new
-	// 1.30 corresponds to Docker 17.06, supported until 2020.
-	err := os.Setenv("DOCKER_API_VERSION", "1.30")
-	if err != nil {
-		return nil, err
+	clientOnce.Do(func() {
+		memoizedClient, errClient = createClient()
+	})
+	return memoizedClient, errClient
+}
+
+func createClient() (*client.Client, error) {
+	options := []client.Opt{
+		client.WithAPIVersionNegotiation(),
+		client.WithTLSClientConfigFromEnv(),
+		client.WithHostFromEnv(),
 	}
-	return client.NewEnvClient()
+
+	// Support connection over ssh.
+	if host := os.Getenv(client.EnvOverrideHost); host != "" {
+		helper, err := connhelper.GetConnectionHelper(host)
+		if err != nil {
+			return nil, err
+		}
+		if helper != nil {
+			options = append(options, client.WithDialContext(helper.Dialer))
+		}
+	}
+
+	return client.NewClientWithOpts(options...)
 }
 
 // HasImage check if the provided ref is available in the docker cache.
