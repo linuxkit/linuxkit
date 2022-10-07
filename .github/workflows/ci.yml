@@ -23,6 +23,10 @@ jobs:
             arch: amd64
             suffix: amd64-darwin
             runner: macos-latest
+          - os: darwin
+            arch: arm64
+            suffix: arm64-darwin
+            runner: macos-latest
           - os: windows
             arch: amd64
             suffix: amd64-windows.exe
@@ -54,11 +58,11 @@ jobs:
       env:
         GOPATH: ${{runner.workspace}}
 
-    - name: Lint
-      run: |
-        make local-check
-      env:
-        GOPATH: ${{runner.workspace}}
+    # - name: Lint
+    #   run: |
+    #     make local-check
+    #   env:
+    #     GOPATH: ${{runner.workspace}}
 
     - name: Build
       run: |
