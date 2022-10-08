@@ -24,18 +24,6 @@ import (
 var imagesBytes []byte
 var outputImages map[string]string
 
-// UpdateOutputImages overwrite the docker images used to build the outputs
-// 'update' is a map where the key is the output format and the value is a LinuxKit 'mkimage' image.
-func UpdateOutputImages(update map[string]string) error {
-	for k, img := range update {
-		if _, ok := outputImages[k]; !ok {
-			return fmt.Errorf("Image format %s is not known", k)
-		}
-		outputImages[k] = img
-	}
-	return nil
-}
-
 var outFuns = map[string]func(string, io.Reader, int) error{
 	"kernel+initrd": func(base string, image io.Reader, size int) error {
 		kernel, initrd, cmdline, ucode, err := tarToInitrd(image)

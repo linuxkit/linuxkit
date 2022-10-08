@@ -94,24 +94,6 @@ func copyTarEntry(w *Writer, thdr *tar.Header, r io.Reader) (written int64, err 
 	return
 }
 
-// CopyTar copies a tar stream into an initrd
-func CopyTar(w *Writer, r *tar.Reader) (written int64, err error) {
-	for {
-		var thdr *tar.Header
-		thdr, err = r.Next()
-		if err == io.EOF {
-			return written, nil
-		}
-		if err != nil {
-			return
-		}
-		written, err = copyTarEntry(w, thdr, r)
-		if err != nil {
-			return
-		}
-	}
-}
-
 // CopySplitTar copies a tar stream into an initrd, but splits out kernel, cmdline, and ucode
 func CopySplitTar(w *Writer, r *tar.Reader) (kernel []byte, cmdline string, ucode []byte, err error) {
 	for {
@@ -187,11 +169,4 @@ func (w *Writer) Close() error {
 		return err3
 	}
 	return nil
-}
-
-// Copy reads a tarball in a stream and outputs a compressed init ram disk
-func Copy(w *Writer, r io.Reader) (int64, error) {
-	tr := tar.NewReader(r)
-
-	return CopyTar(w, tr)
 }
