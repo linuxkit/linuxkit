@@ -117,3 +117,19 @@ endif
 	for img in $(tags); do \
 		./scripts/update-component-sha.sh --image $${img}$(image); \
 	done
+
+.PHONY: build-all-targets
+build-all-targets: bin
+	$(MAKE) GOOS=darwin GOARCH=arm64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-darwin-arm64 local-build
+	file bin/linuxkit-darwin-arm64
+	$(MAKE) GOOS=darwin GOARCH=amd64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-darwin-amd64 local-build
+	file bin/linuxkit-darwin-amd64
+	$(MAKE) GOOS=linux GOARCH=arm64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-linux-arm64 local-build
+	file bin/linuxkit-linux-arm64
+	$(MAKE) GOOS=linux GOARCH=amd64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-linux-amd64 local-build
+	file bin/linuxkit-linux-amd64
+	$(MAKE) GOOS=linux GOARCH=s390x LOCAL_TARGET=$(CURDIR)/bin/linuxkit-linux-s390x local-build
+	file bin/linuxkit-linux-s390x
+	$(MAKE) GOOS=windows GOARCH=amd64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-windows-amd64.exe local-build
+	file bin/linuxkit-windows-amd64.exe
+	cd bin && openssl sha256 -r linuxkit-* | tr -d '*' > checksums.txt
