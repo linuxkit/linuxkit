@@ -33,7 +33,7 @@ func (p *ProviderMetaldata) Probe() bool {
 	log.Println("Metaldata: Probing...")
 	// Getting the hostname should always work...
 	_, err := metaldataGet(metaldataMetaDataURL + "hostname")
-	return (err == nil)
+	return err == nil
 }
 
 // Extract gets both the Metaldata specific and generic userdata

@@ -28,7 +28,7 @@ func (p *ProviderHetzner) String() string {
 func (p *ProviderHetzner) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := hetznerGet(metaDataURL + "hostname")
-	return (err == nil)
+	return err == nil
 }
 
 // Extract gets both the Hetzner specific and generic userdata

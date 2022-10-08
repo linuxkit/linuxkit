@@ -114,7 +114,7 @@ func ringBufferHandler(ringSize, chanSize int, logCh chan logEntry, queryMsgChan
 				conn:      msg.conn,
 				output:    make(chan *logEntry, chanSize),
 				err:       nil,
-				exitOnEOF: (msg.mode == logDump),
+				exitOnEOF: msg.mode == logDump,
 			}
 			go logQueryHandler(&l)
 			if msg.mode == logDumpFollow || msg.mode == logFollow {

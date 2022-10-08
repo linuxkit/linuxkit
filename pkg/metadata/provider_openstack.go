@@ -27,7 +27,7 @@ func (p *ProviderOpenstack) String() string {
 func (p *ProviderOpenstack) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := openstackGet(metaDataURL + "hostname")
-	return (err == nil)
+	return err == nil
 }
 
 // Extract gets both the OpenStack specific and generic userdata

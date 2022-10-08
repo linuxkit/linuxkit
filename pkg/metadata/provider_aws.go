@@ -27,7 +27,7 @@ func (p *ProviderAWS) String() string {
 func (p *ProviderAWS) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := awsGet(metaDataURL + "hostname")
-	return (err == nil)
+	return err == nil
 }
 
 // Extract gets both the AWS specific and generic userdata
