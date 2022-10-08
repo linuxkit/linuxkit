@@ -358,8 +358,7 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
 		}
-		buf := bytes.NewBufferString(k.cmdline)
-		_, err = io.Copy(tw, buf)
+		_, err = tw.Write([]byte(k.cmdline))
 		if err != nil {
 			return err
 		}

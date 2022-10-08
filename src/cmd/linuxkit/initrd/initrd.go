@@ -2,7 +2,6 @@ package initrd
 
 import (
 	"archive/tar"
-	"bytes"
 	"errors"
 	"io"
 	"path/filepath"
@@ -83,8 +82,9 @@ func copyTarEntry(w *Writer, thdr *tar.Header, r io.Reader) (written int64, err 
 	var n int64
 	switch tp {
 	case cpio.TYPE_SYMLINK:
-		buffer := bytes.NewBufferString(thdr.Linkname)
-		n, err = io.Copy(w, buffer)
+		var count int
+		count, err = w.Write([]byte(thdr.Linkname))
+		n = int64(count)
 	case cpio.TYPE_REG:
 		n, err = io.Copy(w, r)
 	}

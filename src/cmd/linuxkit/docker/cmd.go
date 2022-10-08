@@ -106,12 +106,7 @@ func Export(container string) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, errors.New("could not initialize Docker API client")
 	}
-	responseBody, err := cli.ContainerExport(context.Background(), container)
-	if err != nil {
-		return nil, err
-	}
-
-	return responseBody, err
+	return cli.ContainerExport(context.Background(), container)
 }
 
 // Save save the provided image ref.

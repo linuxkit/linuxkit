@@ -1,6 +1,6 @@
 package moby
 
-var schema = string(`
+var schema = `
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
   "title": "Moby Config",
@@ -328,4 +328,4 @@ var schema = string(`
     "files": { "$ref": "#/definitions/files" }
   }
 }
-`)
+`
