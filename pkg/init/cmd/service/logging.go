@@ -83,7 +83,7 @@ func (f *fileLog) Dump(n string) {
 	}
 }
 
-// Symlinks to the log directory. This is useful if we are logging directly to tmpfs and now need to symlink from a permanent disk.
+// Symlink links to the log directory. This is useful if we are logging directly to tmpfs and now need to symlink from a permanent disk.
 func (f *fileLog) Symlink(path string) {
 	parent := filepath.Dir(path)
 	if err := os.MkdirAll(parent, 0755); err != nil {
@@ -175,7 +175,7 @@ func (r *remoteLog) Dump(n string) {
 	}
 }
 
-// Symlinks to the log directory. This is a no-op because there is no log directory.
+// Symlink links to the log directory. This is a no-op because there is no log directory.
 func (r *remoteLog) Symlink(path string) {
 	return
 }
