@@ -8,7 +8,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/signal"
@@ -99,7 +98,7 @@ func runVirtualizationFramework(args []string) {
 
 	// Run
 
-	cmdlineBytes, err := ioutil.ReadFile(prefix + "-cmdline")
+	cmdlineBytes, err := os.ReadFile(prefix + "-cmdline")
 	if err != nil {
 		log.Fatalf("Cannot open cmdline file: %v", err)
 	}

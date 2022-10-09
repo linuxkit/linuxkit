@@ -8,7 +8,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -596,7 +595,7 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 					}
 				}
 				var err error
-				contents, err = ioutil.ReadFile(source)
+				contents, err = os.ReadFile(source)
 				if err != nil {
 					return err
 				}

@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 
@@ -63,7 +62,7 @@ func runAWS(args []string) {
 	}
 
 	if *dataPath != "" {
-		dataB, err := ioutil.ReadFile(*dataPath)
+		dataB, err := os.ReadFile(*dataPath)
 		if err != nil {
 			log.Fatalf("Unable to read metadata file: %v", err)
 		}

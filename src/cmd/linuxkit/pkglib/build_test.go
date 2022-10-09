@@ -7,8 +7,8 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"math/rand"
+	"os"
 	"strings"
 	"testing"
 
@@ -72,10 +72,10 @@ func (d *dockerMocker) save(tgt string, refs ...string) error {
 		}
 		return fmt.Errorf("do not have image %s", ref)
 	}
-	return ioutil.WriteFile(tgt, b, 0666)
+	return os.WriteFile(tgt, b, 0666)
 }
 func (d *dockerMocker) load(src io.Reader) error {
-	b, err := ioutil.ReadAll(src)
+	b, err := io.ReadAll(src)
 	if err != nil {
 		return err
 	}
@@ -123,7 +123,7 @@ func (c *cacheMocker) imageWriteStream(ref *reference.Spec, architecture string,
 	image := fmt.Sprintf("%s-%s", ref.String(), architecture)
 
 	// make some random data for a layer
-	b, err := ioutil.ReadAll(r)
+	b, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("error reading data: %v", err)
 	}
@@ -323,7 +323,7 @@ func TestBuild(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.msg, func(t *testing.T) {
-			opts := append(tt.options, WithBuildDocker(tt.runner), WithBuildCacheProvider(tt.cache), WithBuildOutputWriter(ioutil.Discard))
+			opts := append(tt.options, WithBuildDocker(tt.runner), WithBuildCacheProvider(tt.cache), WithBuildOutputWriter(io.Discard))
 			// build our build options
 			if len(tt.targets) > 0 {
 				var targets []imagespec.Platform

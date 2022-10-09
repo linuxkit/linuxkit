@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -151,7 +150,7 @@ func build(args []string) {
 		var config []byte
 		if conf := arg; conf == "-" {
 			var err error
-			config, err = ioutil.ReadAll(os.Stdin)
+			config, err = io.ReadAll(os.Stdin)
 			if err != nil {
 				log.Fatalf("Cannot read stdin: %v", err)
 			}
@@ -169,7 +168,7 @@ func build(args []string) {
 			config = buffer.Bytes()
 		} else {
 			var err error
-			config, err = ioutil.ReadFile(conf)
+			config, err = os.ReadFile(conf)
 			if err != nil {
 				log.Fatalf("Cannot open config file: %v", err)
 			}
@@ -190,7 +189,7 @@ func build(args []string) {
 	if outputFile != nil {
 		w = outputFile
 	} else {
-		if tf, err = ioutil.TempFile("", ""); err != nil {
+		if tf, err = os.CreateTemp("", ""); err != nil {
 			log.Fatalf("Error creating tempfile: %v", err)
 		}
 		defer os.Remove(tf.Name())

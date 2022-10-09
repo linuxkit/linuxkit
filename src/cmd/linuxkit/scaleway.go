@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"path/filepath"
@@ -278,7 +277,7 @@ func getSSHAuth(sshKeyPath string) (ssh.Signer, error) {
 	}
 	defer f.Close()
 
-	buf, err := ioutil.ReadAll(f)
+	buf, err := io.ReadAll(f)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +343,7 @@ func (s *ScalewayClient) CopyImageToInstance(instanceID, path, sshKeyPath string
 	defer f.Close()
 
 	// code taken from bramvdbogaerde/go-scp
-	contentBytes, err := ioutil.ReadAll(f)
+	contentBytes, err := io.ReadAll(f)
 	if err != nil {
 		return err
 	}

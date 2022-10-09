@@ -3,7 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -187,7 +186,7 @@ func runVMware(args []string) {
 
 	// Create the .vmx file
 	vmxPath := filepath.Join(*state, "linuxkit.vmx")
-	err := ioutil.WriteFile(vmxPath, []byte(vmx), 0644)
+	err := os.WriteFile(vmxPath, []byte(vmx), 0644)
 	if err != nil {
 		log.Fatalf("Error writing .vmx file: %v", err)
 	}

@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -294,7 +293,7 @@ func CreateMetadataISO(state, data string, dataPath string) ([]string, error) {
 		d = []byte(data)
 	case dataPath != "":
 		var err error
-		d, err = ioutil.ReadFile(dataPath)
+		d, err = os.ReadFile(dataPath)
 		if err != nil {
 			return nil, fmt.Errorf("Cannot read user data from path %s: %v", dataPath, err)
 		}

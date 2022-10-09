@@ -4,7 +4,6 @@ import (
 	"crypto/sha1"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
@@ -148,7 +147,7 @@ func NewFromCLI(fs *flag.FlagSet, args ...string) ([]Pkg, error) {
 			return nil, err
 		}
 
-		b, err := ioutil.ReadFile(filepath.Join(pkgPath, buildYML))
+		b, err := os.ReadFile(filepath.Join(pkgPath, buildYML))
 		if err != nil {
 			return nil, err
 		}

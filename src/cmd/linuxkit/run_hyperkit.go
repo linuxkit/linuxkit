@@ -4,7 +4,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/exec"
@@ -166,11 +165,11 @@ func runHyperKit(args []string) {
 		vpnkitUUIDFile := filepath.Join(*state, "vpnkit.uuid")
 		if _, err := os.Stat(vpnkitUUIDFile); os.IsNotExist(err) {
 			*vpnkitUUID = uuid.New().String()
-			if err := ioutil.WriteFile(vpnkitUUIDFile, []byte(*vpnkitUUID), 0600); err != nil {
+			if err := os.WriteFile(vpnkitUUIDFile, []byte(*vpnkitUUID), 0600); err != nil {
 				log.Fatalf("Unable to write to %s: %v", vpnkitUUIDFile, err)
 			}
 		} else {
-			uuidBytes, err := ioutil.ReadFile(vpnkitUUIDFile)
+			uuidBytes, err := os.ReadFile(vpnkitUUIDFile)
 			if err != nil {
 				log.Fatalf("Unable to read VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
 			}
@@ -189,7 +188,7 @@ func runHyperKit(args []string) {
 	// Run
 	var cmdline string
 	if *kernelBoot || *squashFSBoot {
-		cmdlineBytes, err := ioutil.ReadFile(prefix + "-cmdline")
+		cmdlineBytes, err := os.ReadFile(prefix + "-cmdline")
 		if err != nil {
 			log.Fatalf("Cannot open cmdline file: %v", err)
 		}

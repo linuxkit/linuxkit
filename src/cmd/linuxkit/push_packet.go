@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/url"
 	"os"
 	"path/filepath"
@@ -74,7 +73,7 @@ func pushPacket(args []string) {
 
 	// Read kernel command line
 	var cmdline string
-	if c, err := ioutil.ReadFile(prefix + "-cmdline"); err != nil {
+	if c, err := os.ReadFile(prefix + "-cmdline"); err != nil {
 		log.Fatalf("Cannot open cmdline file: %v", err)
 	} else {
 		cmdline = string(c)
@@ -113,7 +112,7 @@ func packetPushFile(dst *url.URL, decompress bool, name, cmdline, ipxeScript str
 	}
 
 	ipxeScriptName := fmt.Sprintf("%s-packet.ipxe", name)
-	if err := ioutil.WriteFile(filepath.Join(dstPath, ipxeScriptName), []byte(ipxeScript), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(dstPath, ipxeScriptName), []byte(ipxeScript), 0644); err != nil {
 		log.Fatalf("Error writing iPXE script: %v", err)
 	}
 }
