@@ -14,9 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v1
-      with:
-        path: ./src/github.com/linuxkit/linuxkit
+      uses: actions/checkout@v3
     - name: Ensure bin/ directory
       run: mkdir -p bin
     - name: Download linuxkit

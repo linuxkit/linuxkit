@@ -35,35 +35,29 @@ jobs:
     runs-on: ${{ matrix.target.runner }}
     steps:
 
-    - name: Set up Go 1.16
-      uses: actions/setup-go@v2
+    - name: Set up Go 1.19
+      uses: actions/setup-go@v3
       with:
-        go-version: 1.16.7
+        go-version: 1.19.2
       id: go
 
     - name: Check out code
-      uses: actions/checkout@v1
-      with:
-        path: ./src/github.com/linuxkit/linuxkit
+      uses: actions/checkout@v3
 
     - name: Set path
       run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
       env:
          GOPATH: ${{runner.workspace}}
 
-    - name: Get pre-requisites
+    - name: golangci-lint CLI
+      uses: golangci/golangci-lint-action@v3
+      with:
+        version: v1.50.0
+        working-directory: src/cmd/linuxkit
+        args: --verbose --timeout=10m
+    - name: go vet CLI
       run: |
-            go get -u golang.org/x/lint/golint
-            go get -u github.com/gordonklaus/ineffassign
-      env:
-        GOPATH: ${{runner.workspace}}
-
-    # - name: Lint
-    #   run: |
-    #     make local-check
-    #   env:
-    #     GOPATH: ${{runner.workspace}}
-
+        cd src/cmd/linuxkit && go vet ./...
     - name: Build
       run: |
         make GOARCH=${{matrix.target.arch}} GOOS=${{matrix.target.os}} LOCAL_TARGET=$(pwd)/bin/linuxkit-${{matrix.target.suffix}} local-build
@@ -99,9 +93,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v1
-      with:
-        path: ./src/github.com/linuxkit/linuxkit
+      uses: actions/checkout@v3
 
     - name: Set up binfmt
       # Only register arm64 as we are on amd64 already. s390x is not reliable
@@ -138,9 +130,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v1
-      with:
-        path: ./src/github.com/linuxkit/linuxkit
+      uses: actions/checkout@v3
 
     - name: Install Pre-Requisites
       run: |
@@ -194,9 +184,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v1
-      with:
-        path: ./src/github.com/linuxkit/linuxkit
+      uses: actions/checkout@v3
 
     - name: Install Pre-Requisites
       run: |
@@ -242,9 +230,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v1
-      with:
-        path: ./src/github.com/linuxkit/linuxkit
+      uses: actions/checkout@v3
 
     - name: Install Pre-Requisites
       run: |
@@ -290,9 +276,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v1
-      with:
-        path: ./src/github.com/linuxkit/linuxkit
+      uses: actions/checkout@v3
 
     - name: Install Pre-Requisites
       run: |
@@ -338,9 +322,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v1
-      with:
-        path: ./src/github.com/linuxkit/linuxkit
+      uses: actions/checkout@v3
 
     - name: Install Pre-Requisites
       run: |
