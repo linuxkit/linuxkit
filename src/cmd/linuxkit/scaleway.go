@@ -46,8 +46,7 @@ type ScalewayClient struct {
 func NewScalewayClient(accessKey, secretKey, zone, organizationID string) (*ScalewayClient, error) {
 	log.Debugf("Connecting to Scaleway")
 
-	scwOptions := []scw.ClientOption{}
-
+	var scwOptions []scw.ClientOption
 	if accessKey == "" || secretKey == "" {
 		config, err := scw.LoadConfig()
 		if err != nil {

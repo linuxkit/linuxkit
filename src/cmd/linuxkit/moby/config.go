@@ -486,7 +486,7 @@ func mergeStrings(v1, v2 *[]string) *[]string {
 		return v2
 	}
 	// merge the two uniquely
-	ret := []string{}
+	var ret []string
 	m := make(map[string]bool)
 	for _, s := range *v1 {
 		if m[s] {
@@ -768,7 +768,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 			return oci, runtime, fmt.Errorf("Cannot parse tmpfs, too many ':': %s", t)
 		}
 		dest := parts[0]
-		opts := []string{}
+		var opts []string
 		if len(parts) == 2 {
 			opts = strings.Split(parts[1], ",")
 		}
@@ -830,7 +830,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 		return mountList[i].Destination < mountList[j].Destination
 	})
 
-	namespaces := []specs.LinuxNamespace{}
+	var namespaces []specs.LinuxNamespace
 
 	// net, ipc, and uts namespaces: default to not creating a new namespace (usually host namespace)
 	netNS := assignStringEmpty3("root", label.Net, yaml.Net)
@@ -914,7 +914,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 		}
 		boundingSet[capability] = true
 	}
-	bounding := []string{}
+	var bounding []string
 	for capability := range boundingSet {
 		bounding = append(bounding, capability)
 	}
@@ -922,7 +922,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	sort.Strings(bounding)
 
 	rlimitsString := assignStrings(label.Rlimits, yaml.Rlimits)
-	rlimits := []specs.POSIXRlimit{}
+	var rlimits []specs.POSIXRlimit
 	for _, limitString := range rlimitsString {
 		rs := strings.SplitN(limitString, ",", 3)
 		var limit string
@@ -993,7 +993,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	if err != nil {
 		return oci, runtime, err
 	}
-	additionalGroups := []uint32{}
+	var additionalGroups []uint32
 	for _, id := range agIf {
 		ag, err := idNumeric(id, idMap)
 		if err != nil {

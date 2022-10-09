@@ -624,7 +624,7 @@ func buildQemuForwardings(publishFlags multipleFlag) (string, error) {
 }
 
 func buildDockerForwardings(publishedPorts []string) ([]string, error) {
-	pmap := []string{}
+	var pmap []string
 	for _, port := range publishedPorts {
 		s, err := NewPublishedPort(port)
 		if err != nil {

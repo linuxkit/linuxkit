@@ -25,7 +25,7 @@ var platformsToSearchForIndex = []string{
 
 // PushManifest create a manifest that supports each of the provided platforms and push it out.
 func PushManifest(img string, auth dockertypes.AuthConfig) (hash string, length int, err error) {
-	srcImages := []types.ManifestEntry{}
+	var srcImages []types.ManifestEntry
 
 	for i, platform := range platformsToSearchForIndex {
 		osArchArr := strings.Split(platform, "/")

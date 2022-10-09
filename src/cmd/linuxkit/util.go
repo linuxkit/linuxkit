@@ -141,7 +141,7 @@ func (f *flagOverEnvVarOverDefaultString) Set(value string) error {
 
 // Convert a multi-line string into an array of strings
 func splitLines(in string) []string {
-	res := []string{}
+	var res []string
 
 	s := bufio.NewScanner(strings.NewReader(in))
 	for s.Scan() {
