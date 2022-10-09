@@ -1,4 +1,4 @@
-name: LinuxKit CI
+name: Release a tag
 
 on:
   create:
