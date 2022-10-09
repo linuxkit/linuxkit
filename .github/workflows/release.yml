@@ -40,3 +40,4 @@ jobs:
       with:
         draft: true
         files: bin/*
+        generate_release_notes: true
