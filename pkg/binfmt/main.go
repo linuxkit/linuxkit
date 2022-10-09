@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -74,13 +73,13 @@ func main() {
 	}
 	defer syscall.Unmount(mount, 0)
 
-	files, err := ioutil.ReadDir(dir)
+	files, err := os.ReadDir(dir)
 	if err != nil {
 		log.Fatalf("Cannot read directory %s: %s", dir, err)
 	}
 
 	for _, file := range files {
-		contents, err := ioutil.ReadFile(filepath.Join(dir, file.Name()))
+		contents, err := os.ReadFile(filepath.Join(dir, file.Name()))
 		if err != nil {
 			log.Fatalf("Cannot read file %s: %s", file.Name(), err)
 		}

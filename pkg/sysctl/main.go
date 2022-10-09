@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -54,13 +53,13 @@ func splitKv(r rune) bool {
 func main() {
 	flag.Parse()
 
-	files, err := ioutil.ReadDir(configDir)
+	files, err := os.ReadDir(configDir)
 	if err != nil {
 		log.Fatalf("Cannot read directory %s: %s", configDir, err)
 	}
 
 	for _, file := range files {
-		contents, err := ioutil.ReadFile(filepath.Join(configDir, file.Name()))
+		contents, err := os.ReadFile(filepath.Join(configDir, file.Name()))
 		if err != nil {
 			log.Fatalf("Cannot read file %s: %s", file.Name(), err)
 		}

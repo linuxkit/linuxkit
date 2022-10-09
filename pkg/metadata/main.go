@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"os"
 	"path"
 	"strconv"
@@ -160,7 +159,7 @@ func main() {
 		log.Printf("Error during metadata probe: %s", err)
 	}
 
-	err = ioutil.WriteFile(path.Join(ConfigPath, "provider"), []byte(p.String()), 0644)
+	err = os.WriteFile(path.Join(ConfigPath, "provider"), []byte(p.String()), 0644)
 	if err != nil {
 		log.Printf("Error writing metadata provider: %s", err)
 	}
@@ -173,7 +172,7 @@ func main() {
 
 	// Handle setting the hostname as a special case. We want to
 	// do this early and don't really want another container for it.
-	hostname, err := ioutil.ReadFile(path.Join(ConfigPath, Hostname))
+	hostname, err := os.ReadFile(path.Join(ConfigPath, Hostname))
 	if err == nil {
 		err := syscall.Sethostname(hostname)
 		if err != nil {
@@ -196,7 +195,7 @@ func main() {
 // Will create foobar/foo with mode 0644 and content "hello"
 func processUserData(basePath string, data []byte) error {
 	// Always write the raw data to a file
-	err := ioutil.WriteFile(path.Join(basePath, "userdata"), data, 0644)
+	err := os.WriteFile(path.Join(basePath, "userdata"), data, 0644)
 	if err != nil {
 		log.Printf("Could not write userdata: %s", err)
 		return err
@@ -223,7 +222,7 @@ func writeConfigFiles(target string, current Entry) {
 			log.Printf("Failed to parse permission %+v: %s", current, err)
 			return
 		}
-		if err := ioutil.WriteFile(target, []byte(*current.Content), filemode); err != nil {
+		if err := os.WriteFile(target, []byte(*current.Content), filemode); err != nil {
 			log.Printf("Failed to write %s: %s", target, err)
 			return
 		}

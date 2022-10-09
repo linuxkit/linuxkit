@@ -2,7 +2,6 @@ package main
 
 import (
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path"
@@ -38,12 +37,12 @@ func runcInit(rootPath, serviceType string) int {
 	}
 
 	// get files; note ReadDir already sorts them
-	files, err := ioutil.ReadDir(rootPath)
+	files, err := os.ReadDir(rootPath)
 	if err != nil {
 		log.Fatalf("Cannot read files in %s: %v", rootPath, err)
 	}
 
-	tmpdir, err := ioutil.TempDir("", filepath.Base(rootPath))
+	tmpdir, err := os.MkdirTemp("", filepath.Base(rootPath))
 	if err != nil {
 		log.Fatalf("Cannot create temporary directory: %v", err)
 	}
@@ -105,7 +104,7 @@ func runcInit(rootPath, serviceType string) int {
 			// skip cleanup on error for debug
 			continue
 		}
-		pf, err := ioutil.ReadFile(pidfile)
+		pf, err := os.ReadFile(pidfile)
 		if err != nil {
 			log.Printf("Cannot read pidfile: %v", err)
 			status = 1

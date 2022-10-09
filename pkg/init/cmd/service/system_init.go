@@ -5,7 +5,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -91,7 +90,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 		stderr io.Writer = os.Stderr
 		stdout io.Writer = os.Stdout
 	)
-	if b, err := ioutil.ReadFile(containerdOptsFile); err == nil {
+	if b, err := os.ReadFile(containerdOptsFile); err == nil {
 		config, err := toml.LoadBytes(b)
 		if err != nil {
 			log.Fatalf("error reading toml file %s: %v", containerdOptsFile, err)
@@ -173,7 +172,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 	}
 
 	// Start up containers
-	files, err := ioutil.ReadDir(*path)
+	files, err := os.ReadDir(*path)
 	// just skip if there is an error, eg no such path
 	if err != nil {
 		return

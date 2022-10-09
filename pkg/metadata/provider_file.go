@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io/ioutil"
 	"os"
 )
 
@@ -17,5 +16,5 @@ func (p fileProvider) Probe() bool {
 }
 
 func (p fileProvider) Extract() ([]byte, error) {
-	return ioutil.ReadFile(string(p))
+	return os.ReadFile(string(p))
 }

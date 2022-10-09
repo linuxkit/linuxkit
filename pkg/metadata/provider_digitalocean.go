@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -41,7 +41,7 @@ func (p *ProviderDigitalOcean) Extract() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	err = ioutil.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
+	err = os.WriteFile(path.Join(ConfigPath, Hostname), hostname, 0644)
 	if err != nil {
 		return nil, fmt.Errorf("DigitalOcean: Failed to write hostname: %s", err)
 	}
@@ -77,7 +77,7 @@ func (p *ProviderDigitalOcean) Extract() ([]byte, error) {
 func digitalOceanMetaGet(lookupName string, fileName string, fileMode os.FileMode) {
 	if lookupValue, err := digitalOceanGet(digitalOceanMetaDataURL + lookupName); err == nil {
 		// we got a value from the metadata server, now save to filesystem
-		err = ioutil.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
+		err = os.WriteFile(path.Join(ConfigPath, fileName), lookupValue, fileMode)
 		if err != nil {
 			// we couldn't save the file for some reason
 			log.Printf("DigitalOcean: Failed to write %s:%s %s", fileName, lookupValue, err)
@@ -106,7 +106,7 @@ func digitalOceanGet(url string) ([]byte, error) {
 	if resp.StatusCode != 200 {
 		return nil, fmt.Errorf("DigitalOcean: Status not ok: %d", resp.StatusCode)
 	}
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, fmt.Errorf("DigitalOcean: Failed to read http response: %s", err)
 	}
@@ -124,7 +124,7 @@ func (p *ProviderDigitalOcean) handleSSH() error {
 		return fmt.Errorf("Failed to create %s: %s", SSH, err)
 	}
 
-	err = ioutil.WriteFile(path.Join(ConfigPath, SSH, "authorized_keys"), sshKeys, 0600)
+	err = os.WriteFile(path.Join(ConfigPath, SSH, "authorized_keys"), sshKeys, 0600)
 	if err != nil {
 		return fmt.Errorf("Failed to write ssh keys: %s", err)
 	}
