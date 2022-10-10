@@ -80,7 +80,7 @@ func mkdir(path string, perm os.FileMode) {
 
 // list of all enabled cgroups
 func cgroupList() []string {
-	list := []string{}
+	var list []string
 	f, err := os.Open("/proc/cgroups")
 	if err != nil {
 		log.Printf("cannot open /proc/cgroups: %v", err)
@@ -125,7 +125,7 @@ func read(path string) string {
 
 // read a directory
 func readdir(path string) []string {
-	names := []string{}
+	var names []string
 	files, err := os.ReadDir(path)
 	if err != nil {
 		log.Printf("cannot read directory %s: %v", path, err)
