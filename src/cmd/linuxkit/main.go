@@ -9,7 +9,6 @@ import (
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 
-	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
 )
 
@@ -23,8 +22,6 @@ type PkgConfig struct {
 }
 
 var (
-	defaultLogFormatter = &log.TextFormatter{}
-
 	// Config is the global tool configuration
 	Config = GlobalConfig{}
 )

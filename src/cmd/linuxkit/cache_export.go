@@ -83,5 +83,5 @@ func cacheExport(args []string) {
 		w = f
 	}
 
-	io.Copy(w, reader)
+	_, _ = io.Copy(w, reader)
 }

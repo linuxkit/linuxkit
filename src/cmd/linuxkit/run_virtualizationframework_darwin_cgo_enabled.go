@@ -288,7 +288,7 @@ func setRawMode(f *os.File) {
 	var attr unix.Termios
 
 	// Get settings for terminal
-	termios.Tcgetattr(f.Fd(), &attr)
+	_ = termios.Tcgetattr(f.Fd(), &attr)
 
 	// Put stdin into raw mode, disabling local echo, input canonicalization,
 	// and CR-NL mapping.
@@ -302,7 +302,7 @@ func setRawMode(f *os.File) {
 	attr.Cc[syscall.VTIME] = 0
 
 	// reflects the changed settings
-	termios.Tcsetattr(f.Fd(), termios.TCSANOW, &attr)
+	_ = termios.Tcsetattr(f.Fd(), termios.TCSANOW, &attr)
 }
 
 func checkFileType(infile string) (string, error) {

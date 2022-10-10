@@ -78,7 +78,7 @@ func runVcenter(args []string) {
 	}
 	*newVM.path = remArgs[0]
 
-	if (*newVM.guestIP == true) && *newVM.poweron != true {
+	if *newVM.guestIP && !*newVM.poweron {
 		log.Fatalln("The waitForIP flag can not be used without the powerOn flag")
 	}
 	// Ensure an iso has been passed to the vCenter run Command
@@ -140,7 +140,7 @@ func runVcenter(args []string) {
 		addNIC(ctx, vm, net)
 	}
 
-	if *newVM.poweron == true {
+	if *newVM.poweron {
 		log.Infoln("Powering on LinuxKit VM")
 		powerOnVM(ctx, vm)
 	}
@@ -261,7 +261,7 @@ func addNIC(ctx context.Context, vm *object.VirtualMachine, net object.NetworkRe
 	var add []types.BaseVirtualDevice
 	add = append(add, netdev)
 
-	if vm.AddDevice(ctx, add...); err != nil {
+	if err := vm.AddDevice(ctx, add...); err != nil {
 		log.Fatalf("Unable to add new networking device to VM configuration\n%v", err)
 	}
 }
@@ -286,7 +286,7 @@ func addVMDK(ctx context.Context, vm *object.VirtualMachine, dss *object.Datasto
 
 	log.Infof("Adding a persistent disk to the Virtual Machine")
 
-	if vm.AddDevice(ctx, add...); err != nil {
+	if err := vm.AddDevice(ctx, add...); err != nil {
 		log.Fatalf("Unable to add new storage device to VM configuration\n%v", err)
 	}
 }
@@ -312,7 +312,7 @@ func addISO(ctx context.Context, newVM vmConfig, vm *object.VirtualMachine, dss 
 
 	log.Infof("Adding ISO to the Virtual Machine")
 
-	if vm.AddDevice(ctx, add...); err != nil {
+	if err := vm.AddDevice(ctx, add...); err != nil {
 		log.Fatalf("Unable to add new CD-ROM device to VM configuration\n%v", err)
 	}
 }

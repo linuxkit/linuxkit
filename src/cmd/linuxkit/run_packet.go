@@ -20,7 +20,7 @@ import (
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
-	"golang.org/x/crypto/ssh/terminal"
+	"golang.org/x/term"
 )
 
 const (
@@ -120,7 +120,7 @@ func runPacket(args []string) {
 		mux := http.NewServeMux()
 		mux.HandleFunc(fmt.Sprintf("/%s", ipxeScriptName),
 			func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprintf(w, ipxeScript)
+				fmt.Fprint(w, ipxeScript)
 			})
 		fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
 		mux.Handle("/", http.FileServer(fs))
@@ -230,7 +230,7 @@ func runPacket(args []string) {
 		log.Debugf("Shutting down http server...")
 		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
-		httpServer.Shutdown(ctx)
+		_ = httpServer.Shutdown(ctx)
 	}
 
 	if *keepFlag {
@@ -331,7 +331,7 @@ func packetSOS(user, host string) error {
 		ssh.IGNCR: 1,
 	}
 
-	width, height, err := terminal.GetSize(0)
+	width, height, err := term.GetSize(0)
 	if err != nil {
 		log.Warningf("Error getting terminal size. Ignored. %v", err)
 		width = 80
@@ -340,18 +340,20 @@ func packetSOS(user, host string) error {
 	if err := s.RequestPty("vt100", width, height, modes); err != nil {
 		return fmt.Errorf("Request for PTY failed: %v", err)
 	}
-	oldState, err := terminal.MakeRaw(int(os.Stdin.Fd()))
+	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
 		return err
 	}
-	defer terminal.Restore(0, oldState)
+	defer func() {
+		_ = term.Restore(0, oldState)
+	}()
 
 	// Start remote shell
 	if err := s.Shell(); err != nil {
 		return fmt.Errorf("Failed to start shell: %v", err)
 	}
 
-	s.Wait()
+	_ = s.Wait()
 	return nil
 }
 

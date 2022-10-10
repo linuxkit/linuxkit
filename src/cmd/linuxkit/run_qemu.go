@@ -385,7 +385,7 @@ func runQemuLocal(config QemuConfig) error {
 	}
 
 	// Detached mode is only supported in a container.
-	if config.Detached == true {
+	if config.Detached {
 		return fmt.Errorf("Detached mode is only supported when running in a container, not locally")
 	}
 
@@ -394,7 +394,7 @@ func runQemuLocal(config QemuConfig) error {
 	log.Debugf("%v\n", qemuCmd.Args)
 
 	// If we're not using a separate window then link the execution to stdin/out
-	if config.GUI != true {
+	if !config.GUI {
 		qemuCmd.Stdin = os.Stdin
 		qemuCmd.Stdout = os.Stdout
 		qemuCmd.Stderr = os.Stderr
@@ -566,11 +566,11 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		qemuArgs = append(qemuArgs, "-netdev", config.NetdevConfig+forwardings)
 	}
 
-	if config.GUI != true {
+	if !config.GUI {
 		qemuArgs = append(qemuArgs, "-nographic")
 	}
 
-	if config.USB == true {
+	if config.USB {
 		qemuArgs = append(qemuArgs, "-usb")
 	}
 	for _, d := range config.Devices {

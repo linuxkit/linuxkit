@@ -12,7 +12,7 @@ type Writer struct {
 }
 
 // Write writes output
-func (pad Writer) Write(p []byte) (int, error) {
+func (pad *Writer) Write(p []byte) (int, error) {
 	n, err := pad.w.Write(p)
 	if err != nil {
 		return 0, err
@@ -22,7 +22,7 @@ func (pad Writer) Write(p []byte) (int, error) {
 }
 
 // Close adds the padding
-func (pad Writer) Close() error {
+func (pad *Writer) Close() error {
 	mod4 := pad.count & 3
 	if mod4 == 0 {
 		return nil

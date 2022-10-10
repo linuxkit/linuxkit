@@ -17,6 +17,7 @@ import (
 	"golang.org/x/oauth2/google"
 	"google.golang.org/api/compute/v1"
 	"google.golang.org/api/googleapi"
+	"google.golang.org/api/option"
 	"google.golang.org/api/storage/v1"
 )
 
@@ -34,7 +35,6 @@ type GCPClient struct {
 	compute     *compute.Service
 	storage     *storage.Service
 	projectName string
-	fileName    string
 	privKey     *rsa.PrivateKey
 }
 
@@ -87,12 +87,12 @@ func NewGCPClient(keys, projectName string) (*GCPClient, error) {
 	}
 
 	var err error
-	client.compute, err = compute.New(client.client)
+	client.compute, err = compute.NewService(ctx, option.WithHTTPClient(client.client))
 	if err != nil {
 		return nil, err
 	}
 
-	client.storage, err = storage.New(client.client)
+	client.storage, err = storage.NewService(ctx, option.WithHTTPClient(client.client))
 	if err != nil {
 		return nil, err
 	}
@@ -443,19 +443,25 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 	if err != nil {
 		return fmt.Errorf("Unable to setup stdin for session: %v", err)
 	}
-	go io.Copy(stdin, os.Stdin)
+	go func() {
+		_, _ = io.Copy(stdin, os.Stdin)
+	}()
 
 	stdout, err := session.StdoutPipe()
 	if err != nil {
 		return fmt.Errorf("Unable to setup stdout for session: %v", err)
 	}
-	go io.Copy(os.Stdout, stdout)
+	go func() {
+		_, _ = io.Copy(os.Stdout, stdout)
+	}()
 
 	stderr, err := session.StderrPipe()
 	if err != nil {
 		return fmt.Errorf("Unable to setup stderr for session: %v", err)
 	}
-	go io.Copy(os.Stderr, stderr)
+	go func() {
+		_, _ = io.Copy(os.Stderr, stderr)
+	}()
 	/*
 		c := make(chan os.Signal, 1)
 		exit := make(chan bool, 1)
@@ -487,7 +493,9 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 			return err
 		}
 
-		defer term.RestoreTerminal(fd, oldState)
+		defer func() {
+			_ = term.RestoreTerminal(fd, oldState)
+		}()
 
 		winsize, err := term.GetWinsize(fd)
 		if err != nil {

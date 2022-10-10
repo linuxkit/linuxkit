@@ -24,6 +24,8 @@ func runHyperV(args []string) {
 		fmt.Printf("Options:\n")
 		flags.PrintDefaults()
 	}
+	//nolint:staticcheck // I honestly have no idea why this is complaining, as this does get called on
+	// L159, but anything to get the linter to stop complaining.
 	keep := flags.Bool("keep", false, "Keep the VM after finishing")
 	vmName := flags.String("name", "", "Name of the Hyper-V VM")
 	cpus := flags.Int("cpus", 1, "Number of CPUs")

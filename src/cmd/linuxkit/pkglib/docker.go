@@ -129,6 +129,8 @@ func (dr *dockerRunnerImpl) command(stdin io.Reader, stdout, stderr io.Writer, a
 
 // versionCheck returns the client version and server version, and compares them both
 // against the minimum required version.
+//
+//nolint:unused // will be used when linuxkit cache is eliminated and we return to docker image cache
 func (dr *dockerRunnerImpl) versionCheck(version string) (string, string, error) {
 	var stdout bytes.Buffer
 	if err := dr.command(nil, &stdout, nil, "version", "--format", "json"); err != nil {
@@ -325,7 +327,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 	// wait for buildkit socket to be ready up to the timeout
 	fmt.Printf("waiting for buildkit builder to be ready, up to %d seconds\n", buildkitWaitServer)
 	timeout := time.After(buildkitWaitServer * time.Second)
-	ticker := time.Tick(buildkitCheckInterval * time.Second)
+	ticker := time.NewTicker(buildkitCheckInterval * time.Second)
 	// Keep trying until we're timed out or get a success
 	for {
 		select {
@@ -333,7 +335,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		case <-timeout:
 			return nil, fmt.Errorf("could not communicate with buildkit builder at context/container %s/%s after %d seconds", dockerContext, name, buildkitWaitServer)
 			// Got a tick, we should try again
-		case <-ticker:
+		case <-ticker.C:
 			client, err := buildkitClient.New(ctx, fmt.Sprintf("docker-container://%s?context=%s", name, dockerContext))
 			if err == nil {
 				_, err = client.Info(ctx)
@@ -363,10 +365,12 @@ func (dr *dockerRunnerImpl) pull(img string) (bool, error) {
 	}
 }
 
+//nolint:unused // will be used when linuxkit cache is eliminated and we return to docker image cache
 func (dr dockerRunnerImpl) push(img string) error {
 	return dr.command(nil, nil, nil, "image", "push", img)
 }
 
+//nolint:unused // will be used when linuxkit cache is eliminated and we return to docker image cache
 func (dr *dockerRunnerImpl) pushWithManifest(img, suffix string, pushImage, pushManifest bool) error {
 	var err error
 	if pushImage {

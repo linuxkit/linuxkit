@@ -92,7 +92,7 @@ func (c ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 	r, w := io.Pipe()
 	go func() {
 		defer w.Close()
-		tarball.Write(refName, image, w)
+		_ = tarball.Write(refName, image, w)
 	}()
 	return r, nil
 }
