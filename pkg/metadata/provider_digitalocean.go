@@ -31,7 +31,7 @@ func (p *ProviderDigitalOcean) String() string {
 func (p *ProviderDigitalOcean) Probe() bool {
 	// Getting the index should always work...
 	_, err := digitalOceanGet(digitalOceanMetaDataURL)
-	return (err == nil)
+	return err == nil
 }
 
 // Extract gets both the DigitalOcean specific and generic userdata

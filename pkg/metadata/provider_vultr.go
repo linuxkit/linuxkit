@@ -31,7 +31,7 @@ func (p *ProviderVultr) String() string {
 func (p *ProviderVultr) Probe() bool {
 	// Getting the index should always work...
 	_, err := vultrGet(vultrMetaDataURL)
-	return (err == nil)
+	return err == nil
 }
 
 // Extract gets both the Vultr specific and generic userdata

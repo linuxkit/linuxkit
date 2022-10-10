@@ -211,6 +211,6 @@ func assertContent(t *testing.T, path, expected string) {
 		t.Fatalf("can't read %v: %v", path, err)
 	}
 	if !bytes.Equal(file, []byte(expected)) {
-		t.Fatalf("%v: expected %v but has %v", path, string(expected), string(file))
+		t.Fatalf("%v: expected %v but has %v", path, expected, string(file))
 	}
 }

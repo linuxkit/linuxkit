@@ -108,7 +108,7 @@ func main() {
 		d := time.Date(int(t.tmYear+1900), time.Month(t.tmMon+1), int(t.tmMday), int(t.tmHour), int(t.tmMin), int(t.tmSec), 0, time.UTC)
 		log.Printf("Setting system clock to %s", d)
 		tv := syscall.Timeval{
-			Sec:  int64(d.Unix()),
+			Sec:  d.Unix(),
 			Usec: 0, // the RTC only has second granularity
 		}
 		if err = syscall.Settimeofday(&tv); err != nil {

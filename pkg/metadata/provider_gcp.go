@@ -33,7 +33,7 @@ func (p *ProviderGCP) String() string {
 func (p *ProviderGCP) Probe() bool {
 	// Getting the hostname should always work...
 	_, err := gcpGet(instance + "hostname")
-	return (err == nil)
+	return err == nil
 }
 
 // Extract gets both the GCP specific and generic userdata

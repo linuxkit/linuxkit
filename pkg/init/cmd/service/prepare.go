@@ -292,7 +292,7 @@ func prepareProcess(pid int, runtime Runtime) error {
 			move = true
 		}
 		if move {
-			if err := netlink.LinkSetNsPid(link, int(pid)); err != nil {
+			if err := netlink.LinkSetNsPid(link, pid); err != nil {
 				return fmt.Errorf("Cannot move interface %s into namespace: %v", iface.Name, err)
 			}
 			fmt.Fprintf(os.Stderr, "Moved interface %s to pid %d\n", iface.Name, pid)
