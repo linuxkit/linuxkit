@@ -2,7 +2,6 @@ package moby
 
 import (
 	"archive/tar"
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -231,8 +230,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
 				}
-				buf := bytes.NewBufferString(contents)
-				_, err = io.Copy(tw, buf)
+				_, err = tw.Write([]byte(contents))
 				if err != nil {
 					return err
 				}
@@ -307,8 +305,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 			return err
 		}
 		if hdr.Size > 0 {
-			buf := bytes.NewBufferString(contents)
-			if _, err = io.Copy(tw, buf); err != nil {
+			if _, err = tw.Write([]byte(contents)); err != nil {
 				return err
 			}
 		}
@@ -349,8 +346,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
 	}
-	buf := bytes.NewBuffer(config)
-	if _, err := io.Copy(tw, buf); err != nil {
+	if _, err := tw.Write(config); err != nil {
 		return err
 	}
 
@@ -426,8 +422,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
 	}
-	buf = bytes.NewBuffer(runtimeConfig)
-	if _, err := io.Copy(tw, buf); err != nil {
+	if _, err := tw.Write(runtimeConfig); err != nil {
 		return err
 	}
 

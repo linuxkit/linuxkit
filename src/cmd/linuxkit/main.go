@@ -29,18 +29,6 @@ var (
 	Config = GlobalConfig{}
 )
 
-// infoFormatter overrides the default format for Info() log events to
-// provide an easier to read output
-type infoFormatter struct {
-}
-
-func (f *infoFormatter) Format(entry *log.Entry) ([]byte, error) {
-	if entry.Level == log.InfoLevel {
-		return append([]byte(entry.Message), '\n'), nil
-	}
-	return defaultLogFormatter.Format(entry)
-}
-
 func printVersion() {
 	fmt.Printf("%s version %s\n", filepath.Base(os.Args[0]), version.Version)
 	if version.GitCommit != "" {

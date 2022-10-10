@@ -42,7 +42,6 @@ import (
 )
 
 const (
-	registryServer        = "https://index.docker.io/v1/"
 	buildkitBuilderName   = "linuxkit-builder"
 	buildkitSocketPath    = "/run/buildkit/buildkitd.sock"
 	buildkitWaitServer    = 30 // seconds
@@ -61,11 +60,6 @@ type dockerRunner interface {
 
 type dockerRunnerImpl struct {
 	cache bool
-}
-
-type buildContext interface {
-	// Copy copies the build context to the supplied WriterCloser
-	Copy(io.WriteCloser) error
 }
 
 func newDockerRunner(cache bool) dockerRunner {

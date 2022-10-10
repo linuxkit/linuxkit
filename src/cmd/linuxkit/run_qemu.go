@@ -113,7 +113,7 @@ func generateMAC() net.HardwareAddr {
 	}
 	mac[0] &^= 0x01 // Clear multicast bit
 	mac[0] |= 0x2   // Set locally administered bit
-	return net.HardwareAddr(mac)
+	return mac
 }
 
 func runQemu(args []string) {
@@ -620,16 +620,4 @@ func buildQemuForwardings(publishFlags multipleFlag) (string, error) {
 	}
 
 	return forwardings, nil
-}
-
-func buildDockerForwardings(publishedPorts []string) ([]string, error) {
-	var pmap []string
-	for _, port := range publishedPorts {
-		s, err := NewPublishedPort(port)
-		if err != nil {
-			return nil, err
-		}
-		pmap = append(pmap, "-p", fmt.Sprintf("%d:%d/%s", s.Host, s.Guest, s.Protocol))
-	}
-	return pmap, nil
 }

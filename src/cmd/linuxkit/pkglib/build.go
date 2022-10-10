@@ -24,10 +24,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-const (
-	minimumDockerVersion = "19.03"
-)
-
 type buildOpts struct {
 	skipBuild      bool
 	force          bool
