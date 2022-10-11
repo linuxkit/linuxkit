@@ -51,15 +51,18 @@ func createClient() (*client.Client, error) {
 }
 
 // HasImage check if the provided ref is available in the docker cache.
-func HasImage(ref *reference.Spec) error {
+// If the image exists, returns its ID.
+func HasImage(ref *reference.Spec) (string, error) {
 	log.Debugf("docker inspect image: %s", ref)
 	cli, err := Client()
 	if err != nil {
-		return err
+		return "", err
 	}
-	_, err = InspectImage(cli, ref)
-
-	return err
+	inspect, err := InspectImage(cli, ref)
+	if err != nil {
+		return "", err
+	}
+	return inspect.ID, err
 }
 
 // InspectImage inspect the provided ref.

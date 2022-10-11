@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/name"
@@ -61,15 +62,18 @@ func (c ImageSource) Config() (imagespec.ImageConfig, error) {
 // TarReader return an io.ReadCloser to read the filesystem contents of the image,
 // as resolved to the provided architecture.
 func (c ImageSource) TarReader() (io.ReadCloser, error) {
-	imageName := c.ref.String()
+	digest := strings.TrimPrefix(c.descriptor.Digest.String(), "sha256:")
+	cacheKey := digest + "=" + c.architecture
 
-	// get a reference to the image
-	image, err := c.provider.findImage(imageName, c.architecture)
-	if err != nil {
-		return nil, err
-	}
-
-	return mutate.Extract(image), nil
+	return ReadOrCompute(cacheKey, func() (io.ReadCloser, error) {
+		// get a reference to the image
+		imageName := c.ref.String()
+		image, err := c.provider.findImage(imageName, c.architecture)
+		if err != nil {
+			return nil, err
+		}
+		return mutate.Extract(image), nil
+	})
 }
 
 // V1TarReader return an io.ReadCloser to read the image as a v1 tarball

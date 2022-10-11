@@ -18,8 +18,8 @@ func imagePull(ref *reference.Spec, alwaysPull bool, cacheDir string, dockerCach
 	// - !alwaysPull && !dockerCache: try linuxkit cache, then try to pull from registry, then fail
 	// first, try docker, if that is available
 	if !alwaysPull && dockerCache {
-		if err := docker.HasImage(ref); err == nil {
-			return docker.NewSource(ref), nil
+		if id, err := docker.HasImage(ref); err == nil {
+			return docker.NewSource(ref, id, architecture), nil
 		}
 		// docker is not required, so any error - image not available, no docker, whatever - just gets ignored
 	}

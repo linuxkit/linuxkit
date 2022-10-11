@@ -4,9 +4,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/containerd/containerd/reference"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -25,13 +27,17 @@ func (t readCloser) Close() error {
 // ImageSource a source for an image in the docker engine.
 // Implements a moby.ImageSource.
 type ImageSource struct {
-	ref *reference.Spec
+	ref          *reference.Spec
+	id           string
+	architecture string
 }
 
 // NewSource return an ImageSource for a specific ref from docker.
-func NewSource(ref *reference.Spec) ImageSource {
+func NewSource(ref *reference.Spec, id, architecture string) ImageSource {
 	return ImageSource{
-		ref: ref,
+		ref:          ref,
+		id:           id,
+		architecture: architecture,
 	}
 }
 
@@ -58,23 +64,28 @@ func (d ImageSource) Config() (imagespec.ImageConfig, error) {
 
 // TarReader return an io.ReadCloser to read the filesystem contents of the image.
 func (d ImageSource) TarReader() (io.ReadCloser, error) {
-	container, err := Create(d.ref.String(), false)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to create docker image %s: %v", d.ref, err)
-	}
-	contents, err := Export(container)
-	if err != nil {
-		return nil, fmt.Errorf("Failed to docker export container from container %s: %v", container, err)
-	}
+	digest := strings.TrimPrefix(d.id, "sha256:")
+	cacheKey := digest + "-" + d.architecture
 
-	return readCloser{
-		r: contents,
-		closer: func() error {
-			contents.Close()
+	return cache.ReadOrCompute(cacheKey, func() (io.ReadCloser, error) {
+		container, err := Create(d.ref.String(), false)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to create docker image %s: %v", d.ref, err)
+		}
+		contents, err := Export(container)
+		if err != nil {
+			return nil, fmt.Errorf("Failed to docker export container from container %s: %v", container, err)
+		}
 
-			return Rm(container)
-		},
-	}, nil
+		return readCloser{
+			r: contents,
+			closer: func() error {
+				contents.Close()
+				return Rm(container)
+			},
+		}, nil
+	})
+
 }
 
 // V1TarReader return an io.ReadCloser to read the save of the image
