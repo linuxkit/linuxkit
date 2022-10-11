@@ -66,7 +66,7 @@ func createOpenStackImage(filePath string, imageName string, client *gophercloud
 		}
 	}
 
-	if supportedExtension == false {
+	if !supportedExtension {
 		log.Fatalf("Extension [%s] is not supported", fileExtension)
 	}
 

@@ -12,7 +12,7 @@ import (
 	"strings"
 
 	"github.com/google/uuid"
-	"github.com/moby/hyperkit/go"
+	hyperkit "github.com/moby/hyperkit/go"
 	"github.com/moby/vpnkit/go/pkg/vmnet"
 	"github.com/moby/vpnkit/go/pkg/vpnkit"
 	log "github.com/sirupsen/logrus"
@@ -412,7 +412,9 @@ func launchVPNKit(vpnkitPath, etherSock, vsockSock, portSock string) (*os.Proces
 		return nil, err
 	}
 
-	go cmd.Wait() // run in background
+	go func() {
+		_ = cmd.Wait() // run in background
+	}()
 
 	return cmd.Process, nil
 }
@@ -493,7 +495,7 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 	// Return cleanup function
 	return func() {
 		for _, vp := range ports {
-			c.Unexpose(context.Background(), vp)
+			_ = c.Unexpose(context.Background(), vp)
 		}
 	}, nil
 }

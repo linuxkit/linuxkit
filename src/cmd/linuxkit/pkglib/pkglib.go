@@ -324,6 +324,7 @@ func (p Pkg) Arches() []string {
 	return p.arches
 }
 
+//nolint:unused // will be used when linuxkit cache is eliminated and we return to docker image cache
 func (p Pkg) archSupported(want string) bool {
 	for _, supp := range p.arches {
 		if supp == want {
@@ -359,7 +360,7 @@ func makeAbsSubpath(field, base, path string) (string, error) {
 		return "", fmt.Errorf("%s must not be exactly the package directory", field)
 	}
 
-	if !filepath.HasPrefix(p, base) {
+	if !strings.HasPrefix(p, base) {
 		return "", fmt.Errorf("%s must be within package directory", field)
 	}
 

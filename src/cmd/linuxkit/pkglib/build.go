@@ -31,7 +31,6 @@ type buildOpts struct {
 	push           bool
 	release        string
 	manifest       bool
-	image          bool
 	targetDocker   bool
 	cacheDir       string
 	cacheProvider  lktspec.CacheProvider

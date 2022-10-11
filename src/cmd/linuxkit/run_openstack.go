@@ -82,7 +82,7 @@ func runOpenStack(args []string) {
 		log.Fatalf("Unable to create server: %s", err)
 	}
 
-	servers.WaitForStatus(client, server.ID, "ACTIVE", 600)
+	_ = servers.WaitForStatus(client, server.ID, "ACTIVE", 600)
 	log.Infof("Server created, UUID is %s", server.ID)
 	fmt.Println(server.ID)
 

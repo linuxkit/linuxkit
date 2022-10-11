@@ -520,7 +520,7 @@ func outputKernelSquashFS(image, base string, filesystem io.Reader) error {
 		case strings.HasPrefix(thdr.Name, "boot/"):
 			// skip the rest of boot/
 		default:
-			rootfs.WriteHeader(thdr)
+			_ = rootfs.WriteHeader(thdr)
 			if _, err := io.Copy(rootfs, tr); err != nil {
 				return err
 			}
@@ -575,7 +575,7 @@ func outputKernelISO(image, base string, filesystem io.Reader) error {
 		case strings.HasPrefix(thdr.Name, "boot/"):
 			// skip the rest of boot/
 		default:
-			rootfs.WriteHeader(thdr)
+			_ = rootfs.WriteHeader(thdr)
 			if _, err := io.Copy(rootfs, tr); err != nil {
 				return err
 			}
