@@ -58,7 +58,7 @@ func (d ImageSource) Config() (imagespec.ImageConfig, error) {
 
 // TarReader return an io.ReadCloser to read the filesystem contents of the image.
 func (d ImageSource) TarReader() (io.ReadCloser, error) {
-	container, err := Create(d.ref.String())
+	container, err := Create(d.ref.String(), false)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create docker image %s: %v", d.ref, err)
 	}
