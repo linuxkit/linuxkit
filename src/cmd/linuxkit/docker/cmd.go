@@ -78,7 +78,7 @@ func InspectImage(cli *client.Client, ref *reference.Spec) (dockertypes.ImageIns
 
 // Create create a container from the given image in docker, returning the full hash ID
 // of the created container. Does not start the container.
-func Create(image string) (string, error) {
+func Create(image string, withNetwork bool) (string, error) {
 	log.Debugf("docker create: %s", image)
 	cli, err := Client()
 	if err != nil {
@@ -86,9 +86,11 @@ func Create(image string) (string, error) {
 	}
 	// we do not ever run the container, so /dev/null is used as command
 	config := &container.Config{
-		Cmd:   []string{"/dev/null"},
-		Image: image,
+		Cmd:             []string{"/dev/null"},
+		Image:           image,
+		NetworkDisabled: !withNetwork,
 	}
+
 	respBody, err := cli.ContainerCreate(context.Background(), config, nil, nil, nil, "")
 	if err != nil {
 		return "", err
