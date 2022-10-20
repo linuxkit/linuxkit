@@ -6,7 +6,7 @@ import (
 
 	"github.com/containerd/typeurl"
 	gogotypes "github.com/gogo/protobuf/types"
-	"github.com/golang/protobuf/proto" // nolint:staticcheck
+	"github.com/golang/protobuf/proto" //nolint:staticcheck
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/moby/buildkit/util/stack"
 	"github.com/sirupsen/logrus"
@@ -39,6 +39,14 @@ func ToGRPC(err error) error {
 		}
 		pb := st.Proto()
 		pb.Code = int32(code)
+		st = status.FromProto(pb)
+	}
+
+	// If the original error was wrapped with more context than the GRPCStatus error,
+	// copy the original message to the GRPCStatus error
+	if err.Error() != st.Message() {
+		pb := st.Proto()
+		pb.Message = err.Error()
 		st = status.FromProto(pb)
 	}
 
