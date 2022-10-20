@@ -28,16 +28,18 @@ func (t readCloser) Close() error {
 // Implements a moby.ImageSource.
 type ImageSource struct {
 	ref          *reference.Spec
+	provider     *cache.Provider
 	id           string
 	architecture string
 }
 
 // NewSource return an ImageSource for a specific ref from docker.
-func NewSource(ref *reference.Spec, id, architecture string) ImageSource {
+func NewSource(ref *reference.Spec, id, architecture string, provider *cache.Provider) ImageSource {
 	return ImageSource{
 		ref:          ref,
 		id:           id,
 		architecture: architecture,
+		provider:     provider,
 	}
 }
 
@@ -67,7 +69,7 @@ func (d ImageSource) TarReader() (io.ReadCloser, error) {
 	digest := strings.TrimPrefix(d.id, "sha256:")
 	cacheKey := digest + "-" + d.architecture
 
-	return cache.ReadOrCompute(cacheKey, func() (io.ReadCloser, error) {
+	return d.provider.ReadOrComputeBlob(cacheKey, func() (io.ReadCloser, error) {
 		container, err := Create(d.ref.String(), false)
 		if err != nil {
 			return nil, fmt.Errorf("Failed to create docker image %s: %v", d.ref, err)

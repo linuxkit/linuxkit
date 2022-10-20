@@ -65,7 +65,7 @@ func (c ImageSource) TarReader() (io.ReadCloser, error) {
 	digest := strings.TrimPrefix(c.descriptor.Digest.String(), "sha256:")
 	cacheKey := digest + "=" + c.architecture
 
-	return ReadOrCompute(cacheKey, func() (io.ReadCloser, error) {
+	return c.provider.ReadOrComputeBlob(cacheKey, func() (io.ReadCloser, error) {
 		// get a reference to the image
 		imageName := c.ref.String()
 		image, err := c.provider.findImage(imageName, c.architecture)

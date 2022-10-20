@@ -1,6 +1,8 @@
 package cache
 
 import (
+	"path/filepath"
+
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/content/local"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
@@ -10,6 +12,7 @@ import (
 type Provider struct {
 	cache layout.Path
 	store content.Store
+	blobs string
 }
 
 // NewProvider create a new CacheProvider based in the provided directory
@@ -22,5 +25,9 @@ func NewProvider(dir string) (*Provider, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Provider{p, store}, nil
+	return &Provider{
+		cache: p,
+		store: store,
+		blobs: filepath.Join(dir, "cache", "blobs"),
+	}, nil
 }
