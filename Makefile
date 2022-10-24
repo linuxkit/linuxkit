@@ -1,5 +1,8 @@
 VERSION="v0.8+"
 
+# test suite to run, blank for all
+TEST_SUITE ?=
+
 GO_COMPILE=linuxkit/go-compile:7b1f5a37d2a93cd4a9aa2a87db264d8145944006
 
 ifeq ($(OS),Windows_NT)
@@ -78,10 +81,7 @@ sign:
 
 .PHONY: test
 test:
-	$(MAKE) -C test
-
-.PHONY: collect-artifacts
-collect-artifacts: artifacts/test.img.tar.gz artifacts/test-ltp.img.tar.gz
+	$(MAKE) -C test TEST_SUITE=$(TEST_SUITE)
 
 .PHONY: ci ci-tag ci-pr
 ci: test-cross
