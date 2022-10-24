@@ -174,9 +174,7 @@ jobs:
           ${{ runner.os }}-linuxkit-
 
     - name: Run Tests
-      run: |
-          cd test
-          rtf -l build -v run -x linuxkit.packages
+      run: make test TEST_SUITE=linuxkit.packages
 
   test_kernel:
     name: Kernel Tests
@@ -220,9 +218,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Run Tests
-      run: |
-          cd test
-          rtf -l build -v run -x linuxkit.kernel
+      run: make test TEST_SUITE=linuxkit.kernel
 
   test_linuxkit:
     name: LinuxKit Build Tests
@@ -266,9 +262,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Run Tests
-      run: |
-          cd test
-          rtf -l build -v run -x linuxkit.build
+      run: make test TEST_SUITE=linuxkit.build
 
   test_platforms:
     name: Platform Tests
@@ -312,9 +306,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Run Tests
-      run: |
-          cd test
-          rtf -l build -v run -x linuxkit.platforms
+      run: make test TEST_SUITE=linuxkit.platforms
 
   test_security:
     name: Security Tests
@@ -358,6 +350,4 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Run Tests
-      run: |
-          cd test
-          rtf -l build -v run -x linuxkit.security
+      run: make test TEST_SUITE=linuxkit.security

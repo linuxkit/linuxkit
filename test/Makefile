@@ -7,6 +7,8 @@ all: check-deps test-pr ltp
 
 LINUXKIT:=$(shell command -v linuxkit 2> /dev/null)
 RTF:=$(shell command -v rtf 2> /dev/null)
+# test suite to run, blank for all
+TEST_SUITE ?=
 
 .PHONY: check-deps
 check-deps:
@@ -17,17 +19,6 @@ ifndef RTF
 	$(error "rtf is not available. please install it!")
 endif
 
-
-# TODO: Remove this section once we no longer depend on this in CI
-### -------
-# Currently the linuxkit-ci runs GCP tests outside of rtf and expects some
-# files in ../artifacts. This hacky target puts them there until
-# the CI can use rtf for running GCP tests
-gcp-hack: ../artifacts/test.img.tar.gz
-../artifacts/test.img.tar.gz:
-	rm -rf ../artifacts
-	mkdir -p ../artifacts
-	$(LINUXKIT) build -format gcp -pull -name ../artifacts/test hack/test.yml
 
 define check_test_log
 	@cat $1 |grep -q 'test suite PASSED'
@@ -42,8 +33,7 @@ ltp: $(LINUXKIT) test-ltp.img.tar.gz
 	$(call check_test_log, test-ltp.log)
 ### ------
 
-test: gcp-hack
-	@rtf -l build -v run -x
+test:
+	@rtf -l build -v run -x $(TEST_SUITE)
 
-test-pr: gcp-hack
-	@rtf -l build -v run -x
+test-pr: test
