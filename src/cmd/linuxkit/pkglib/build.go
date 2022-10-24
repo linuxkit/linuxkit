@@ -316,6 +316,9 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			if desc == nil {
 				return fmt.Errorf("no valid descriptor returned for image for arch %s", platform.Architecture)
 			}
+			if desc.Platform == nil {
+				return fmt.Errorf("descriptor for platform %v has no information on the platform: %#v", platform, desc)
+			}
 			descs = append(descs, *desc)
 		}
 
