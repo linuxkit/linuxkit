@@ -2,6 +2,7 @@ VERSION="v0.8+"
 
 # test suite to run, blank for all
 TEST_SUITE ?=
+TEST_SHARD ?=
 
 GO_COMPILE=linuxkit/go-compile:7b1f5a37d2a93cd4a9aa2a87db264d8145944006
 
@@ -33,7 +34,7 @@ export VERSION GO_COMPILE GOOS GOARCH LOCAL_TARGET LINUXKIT
 default: linuxkit $(RTF)
 all: default
 
-RTF_COMMIT=2351267f358ce6621c0c0d9a069f361268dba5fc
+RTF_COMMIT=1b6277593346dea7e6039d528c4e8321a4bd9eaf
 RTF_CMD=github.com/linuxkit/rtf/cmd
 RTF_VERSION=0.0
 $(RTF): tmp_rtf_bin.tar | bin
@@ -81,7 +82,7 @@ sign:
 
 .PHONY: test
 test:
-	$(MAKE) -C test TEST_SUITE=$(TEST_SUITE)
+	$(MAKE) -C test TEST_SUITE=$(TEST_SUITE) TEST_SHARD=$(TEST_SHARD)
 
 .PHONY: ci ci-tag ci-pr
 ci: test-cross

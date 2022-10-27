@@ -9,6 +9,13 @@ LINUXKIT:=$(shell command -v linuxkit 2> /dev/null)
 RTF:=$(shell command -v rtf 2> /dev/null)
 # test suite to run, blank for all
 TEST_SUITE ?=
+# test shard to run, must be in format <this>/<total>, e.g. 1/10 means "first shard out of 10"
+# uses total count to figure out which one to run
+TEST_SHARD ?=
+TEST_SHARD_ARG =
+ifneq ($(TEST_SHARD),)
+override TEST_SHARD_ARG=-s $(TEST_SHARD)
+endif
 
 .PHONY: check-deps
 check-deps:
@@ -34,6 +41,6 @@ ltp: $(LINUXKIT) test-ltp.img.tar.gz
 ### ------
 
 test:
-	@rtf -l build -v run -x $(TEST_SUITE)
+	@rtf -l build -v=2 run -x $(TEST_SUITE) $(TEST_SHARD_ARG)
 
 test-pr: test
