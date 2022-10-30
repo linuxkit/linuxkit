@@ -282,6 +282,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			imageBuildOpts.Labels["org.opencontainers.image.revision"] = commit
 		}
 
+		imageBuildOpts.NetworkMode = "default"
 		if !p.network {
 			imageBuildOpts.NetworkMode = "none"
 		}

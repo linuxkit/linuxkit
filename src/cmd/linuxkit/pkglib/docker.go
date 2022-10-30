@@ -432,7 +432,15 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 	}
 
 	// network
-	frontendAttrs["network"] = imageBuildOpts.NetworkMode
+	// translate to net modes understood by buildkit dockerfile frontend
+	switch imageBuildOpts.NetworkMode {
+	case "host", "none":
+		frontendAttrs["force-network-mode"] = imageBuildOpts.NetworkMode
+	case "default":
+		frontendAttrs["force-network-mode"] = "sandbox"
+	default:
+		return fmt.Errorf("unsupported network mode %q", imageBuildOpts.NetworkMode)
+	}
 
 	for k, v := range imageBuildOpts.Labels {
 		frontendAttrs[fmt.Sprintf("label:%s", k)] = v
