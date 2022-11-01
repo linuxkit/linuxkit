@@ -58,7 +58,6 @@ func pkgBuildPush(args []string, withPush bool) {
 	// pkg push --force            - always builds even if is in cache
 	// pkg push --nobuild          - skips build; if not in cache, fails
 	// pkg push --nobuild --force  - nonsensical
-	// pkg pull                    - pull from registry if available, otherwise fail
 
 	var (
 		release           *string

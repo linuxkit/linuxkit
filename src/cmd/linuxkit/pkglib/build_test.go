@@ -112,6 +112,24 @@ func (c *cacheMocker) ImagePull(ref *reference.Spec, trustedRef, architecture st
 	return c.imageWriteStream(ref, architecture, bytes.NewReader(b))
 }
 
+func (c *cacheMocker) ImageInCache(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
+	image := ref.String()
+	desc, ok := c.images[image]
+	if !ok {
+		return false, nil
+	}
+	for _, d := range desc {
+		if d.Platform != nil && d.Platform.Architecture == architecture {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func (c *cacheMocker) ImageInRegistry(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
+	return false, nil
+}
+
 func (c *cacheMocker) ImageLoad(ref *reference.Spec, architecture string, r io.Reader) (lktspec.ImageSource, error) {
 	if !c.enableImageLoad {
 		return nil, errors.New("ImageLoad disabled")

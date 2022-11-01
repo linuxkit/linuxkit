@@ -20,6 +20,12 @@ type CacheProvider interface {
 	// efficient and only write missing blobs, based on their content hash. If the ref already
 	// exists in the cache, it should not pull anything, unless alwaysPull is set to true.
 	ImagePull(ref *reference.Spec, trustedRef, architecture string, alwaysPull bool) (ImageSource, error)
+	// ImageInCache takes an image name and checks if it exists in the cache, including checking that the given
+	// architecture is complete. Like ImagePull, it should be efficient and only write missing blobs, based on
+	// their content hash.
+	ImageInCache(ref *reference.Spec, trustedRef, architecture string) (bool, error)
+	// ImageInRegistry takes an image name and checks if it exists in the registry.
+	ImageInRegistry(ref *reference.Spec, trustedRef, architecture string) (bool, error)
 	// IndexWrite takes an image name and creates an index for the descriptors to which it points.
 	// Cache implementation determines whether it should pull missing blobs from a remote registry.
 	// If the provided reference already exists and it is an index, updates the manifests in the
