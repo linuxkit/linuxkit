@@ -128,6 +128,9 @@ jobs:
     name: Packages Tests
     needs: [ build_packages, build ]
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        shard: [1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,10/10]
     steps:
     - name: Check out code
       uses: actions/checkout@v3
@@ -174,7 +177,7 @@ jobs:
           ${{ runner.os }}-linuxkit-
 
     - name: Run Tests
-      run: make test TEST_SUITE=linuxkit.packages
+      run: make test TEST_SUITE=linuxkit.packages TEST_SHARD=${{ matrix.shard }}
 
   test_kernel:
     name: Kernel Tests
