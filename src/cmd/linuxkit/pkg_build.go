@@ -38,6 +38,7 @@ func pkgBuildPush(args []string, withPush bool) {
 	}
 
 	force := flags.Bool("force", false, "Force rebuild even if image is in local cache")
+	pull := flags.Bool("pull", false, "Pull image if in registry but not in local cache; conflicts with --force")
 	ignoreCache := flags.Bool("ignore-cached", false, "Ignore cached intermediate images, always pulling from registry")
 	docker := flags.Bool("docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
 	platforms := flags.String("platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
@@ -49,12 +50,15 @@ func pkgBuildPush(args []string, withPush bool) {
 	flags.Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 
 	// some logic clarification:
-	// pkg build                   - always builds unless is in cache
-	// pkg build --force           - always builds even if is in cache
+	// pkg build                   - builds unless is in cache or published in registry
+	// pkg build --pull            - builds unless is in cache or published in registry; pulls from registry if not in cache
+	// pkg build --force           - always builds even if is in cache or published in registry
+	// pkg build --force --pull    - always builds even if is in cache or published in registry; --pull ignored
 	// pkg push                    - always builds unless is in cache
 	// pkg push --force            - always builds even if is in cache
 	// pkg push --nobuild          - skips build; if not in cache, fails
 	// pkg push --nobuild --force  - nonsensical
+	// pkg pull                    - pull from registry if available, otherwise fail
 
 	var (
 		release           *string
@@ -78,6 +82,10 @@ func pkgBuildPush(args []string, withPush bool) {
 		fmt.Fprint(os.Stderr, "flags -force and -nobuild conflict")
 		os.Exit(1)
 	}
+	if *pull && *force {
+		fmt.Fprint(os.Stderr, "flags -force and -pull conflict")
+		os.Exit(1)
+	}
 
 	var opts []pkglib.BuildOpt
 	if *force {
@@ -85,6 +93,9 @@ func pkgBuildPush(args []string, withPush bool) {
 	}
 	if *ignoreCache {
 		opts = append(opts, pkglib.WithBuildIgnoreCache())
+	}
+	if *pull {
+		opts = append(opts, pkglib.WithBuildPull())
 	}
 
 	opts = append(opts, pkglib.WithBuildCacheDir(cacheDir.String()))

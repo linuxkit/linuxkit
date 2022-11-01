@@ -27,6 +27,7 @@ import (
 type buildOpts struct {
 	skipBuild      bool
 	force          bool
+	pull           bool
 	ignoreCache    bool
 	push           bool
 	release        string
@@ -57,6 +58,14 @@ func WithBuildSkip() BuildOpt {
 func WithBuildForce() BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.force = true
+		return nil
+	}
+}
+
+// WithBuildPull pull down the image to cache if it already exists in registry
+func WithBuildPull() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.pull = true
 		return nil
 	}
 }
@@ -225,6 +234,12 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	var platformsToBuild []imagespec.Platform
+	switch {
+	case bo.force:
+	case bo.pull:
+	case !bo.skipBuild:
+	}
+
 	if bo.force {
 		platformsToBuild = bo.platforms
 	} else if !bo.skipBuild {
