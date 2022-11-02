@@ -16,7 +16,7 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/Code-Hex/vz"
+	vz "github.com/Code-Hex/vz/v3"
 	"github.com/pkg/term/termios"
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
@@ -147,22 +147,34 @@ func runVirtualizationFramework(args []string) {
 		}
 		vmlinuzFile = vmlinuzUncompressed
 	}
-	bootLoader := vz.NewLinuxBootLoader(
+	bootLoader, err := vz.NewLinuxBootLoader(
 		vmlinuzFile,
 		vz.WithCommandLine(strings.Join(kernelCommandLineArguments, " ")),
 		vz.WithInitrd(initrd),
 	)
+	if err != nil {
+		log.Fatalf("unable to create bootloader: %v", err)
+	}
 
-	config := vz.NewVirtualMachineConfiguration(
+	config, err := vz.NewVirtualMachineConfiguration(
 		bootLoader,
 		*cpus,
 		memBytes,
 	)
+	if err != nil {
+		log.Fatalf("unable to create VM config: %v", err)
+	}
 
 	// console
 	stdin, stdout := os.Stdin, os.Stdout
-	serialPortAttachment := vz.NewFileHandleSerialPortAttachment(stdin, stdout)
-	consoleConfig := vz.NewVirtioConsoleDeviceSerialPortConfiguration(serialPortAttachment)
+	serialPortAttachment, err := vz.NewFileHandleSerialPortAttachment(stdin, stdout)
+	if err != nil {
+		log.Fatalf("unable to create serial port attachment: %v", err)
+	}
+	consoleConfig, err := vz.NewVirtioConsoleDeviceSerialPortConfiguration(serialPortAttachment)
+	if err != nil {
+		log.Fatalf("unable to create console config: %v", err)
+	}
 	config.SetSerialPortsVirtualMachineConfiguration([]*vz.VirtioConsoleDeviceSerialPortConfiguration{
 		consoleConfig,
 	})
@@ -179,19 +191,33 @@ func runVirtualizationFramework(args []string) {
 	switch netMode[0] {
 
 	case virtualizationNetworkingVMNet:
-		natAttachment := vz.NewNATNetworkDeviceAttachment()
-		networkConfig := vz.NewVirtioNetworkDeviceConfiguration(natAttachment)
+		natAttachment, err := vz.NewNATNetworkDeviceAttachment()
+		if err != nil {
+			log.Fatalf("Could not create NAT network device attachment: %v", err)
+		}
+		networkConfig, err := vz.NewVirtioNetworkDeviceConfiguration(natAttachment)
+		if err != nil {
+			log.Fatalf("Could not create virtio network device configuration: %v", err)
+		}
 		config.SetNetworkDevicesVirtualMachineConfiguration([]*vz.VirtioNetworkDeviceConfiguration{
 			networkConfig,
 		})
-		networkConfig.SetMacAddress(vz.NewRandomLocallyAdministeredMACAddress())
+		macAddress, err := vz.NewRandomLocallyAdministeredMACAddress()
+		if err != nil {
+			log.Fatalf("Could not create random MAC address: %v", err)
+		}
+		networkConfig.SetMACAddress(macAddress)
 	case virtualizationNetworkingNone:
 	default:
 		log.Fatalf("Invalid networking mode: %s", netMode[0])
 	}
 
 	// entropy
-	entropyConfig := vz.NewVirtioEntropyDeviceConfiguration()
+	entropyConfig, err := vz.NewVirtioEntropyDeviceConfiguration()
+	if err != nil {
+		log.Fatalf("Could not create virtio entropy device configuration: %v", err)
+	}
+
 	config.SetEntropyDevicesVirtualMachineConfiguration([]*vz.VirtioEntropyDeviceConfiguration{
 		entropyConfig,
 	})
@@ -215,7 +241,10 @@ func runVirtualizationFramework(args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		storageDeviceConfig := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
+		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
+		if err != nil {
+			log.Fatalf("Could not create virtio block device configuration: %v", err)
+		}
 		storageDevices = append(storageDevices, storageDeviceConfig)
 	}
 	for _, iso := range isoPaths {
@@ -226,38 +255,50 @@ func runVirtualizationFramework(args []string) {
 		if err != nil {
 			log.Fatal(err)
 		}
-		storageDeviceConfig := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
+		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
+		if err != nil {
+			log.Fatalf("Could not create virtio block device configuration: %v", err)
+		}
 		storageDevices = append(storageDevices, storageDeviceConfig)
 	}
 
 	config.SetStorageDevicesVirtualMachineConfiguration(storageDevices)
 
 	// traditional memory balloon device which allows for managing guest memory. (optional)
+	memoryBalloonDeviceConfiguration, err := vz.NewVirtioTraditionalMemoryBalloonDeviceConfiguration()
+	if err != nil {
+		log.Fatalf("Could not create virtio traditional memory balloon device configuration: %v", err)
+	}
 	config.SetMemoryBalloonDevicesVirtualMachineConfiguration([]vz.MemoryBalloonDeviceConfiguration{
-		vz.NewVirtioTraditionalMemoryBalloonDeviceConfiguration(),
+		memoryBalloonDeviceConfiguration,
 	})
 
 	// socket device (optional)
+	socketDeviceConfiguration, err := vz.NewVirtioSocketDeviceConfiguration()
+	if err != nil {
+		log.Fatalf("Could not create virtio socket device configuration: %v", err)
+	}
 	config.SetSocketDevicesVirtualMachineConfiguration([]vz.SocketDeviceConfiguration{
-		vz.NewVirtioSocketDeviceConfiguration(),
+		socketDeviceConfiguration,
 	})
 	validated, err := config.Validate()
 	if !validated || err != nil {
 		log.Fatal("validation failed", err)
 	}
 
-	vm := vz.NewVirtualMachine(config)
+	vm, err := vz.NewVirtualMachine(config)
+	if err != nil {
+		log.Fatalf("Could not create virtual machine: %v", err)
+	}
 
 	signalCh := make(chan os.Signal, 1)
 	signal.Notify(signalCh, syscall.SIGTERM)
 
 	errCh := make(chan error, 1)
 
-	vm.Start(func(err error) {
-		if err != nil {
-			errCh <- err
-		}
-	})
+	if err := vm.Start(); err != nil {
+		errCh <- err
+	}
 
 	for {
 		select {

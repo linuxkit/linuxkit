@@ -1,0 +1,7 @@
+virtualization
+*.log
+.envrc
+.env
+RestoreImage.ipsw
+testdata/*
+!testdata/.gitkeep
