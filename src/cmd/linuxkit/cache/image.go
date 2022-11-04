@@ -1,13 +1,20 @@
 package cache
 
 import (
-	"github.com/google/go-containerregistry/pkg/v1/layout"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // ListImages list the named images and their root digests from a layout.Path
-func ListImages(p layout.Path) (map[string]string, error) {
-	ii, err := p.ImageIndex()
+func ListImages(dir string) (map[string]string, error) {
+	p, err := NewProvider(dir)
+	if err != nil {
+		return nil, err
+	}
+	return p.List()
+}
+
+func (p *Provider) List() (map[string]string, error) {
+	ii, err := p.cache.ImageIndex()
 	if err != nil {
 		return nil, err
 	}

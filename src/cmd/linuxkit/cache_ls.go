@@ -19,11 +19,7 @@ func cacheList(args []string) {
 	}
 
 	// list all of the images and content in the cache
-	p, err := cachepkg.Get(cacheDir.String())
-	if err != nil {
-		log.Fatalf("unable to read a local cache: %v", err)
-	}
-	images, err := cachepkg.ListImages(p)
+	images, err := cachepkg.ListImages(cacheDir.String())
 	if err != nil {
 		log.Fatalf("error reading image names: %v", err)
 	}

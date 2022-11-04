@@ -32,6 +32,8 @@ func cache(args []string) {
 	// Please keep cases in alphabetical order
 	case "clean":
 		cacheClean(args[1:])
+	case "rm":
+		cacheRm(args[1:])
 	case "ls":
 		cacheList(args[1:])
 	case "export":

@@ -49,12 +49,12 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 	if !alwaysPull {
 		imgSrc, err := p.ValidateImage(ref, architecture)
 		if err == nil && imgSrc != nil {
-			log.Printf("Image %s found in local cache, not pulling", image)
+			log.Printf("Image %s arch %s found in local cache, not pulling", image, architecture)
 			return imgSrc, nil
 		}
 		// there was an error, so try to pull
 	}
-	log.Printf("Image %s not found in local cache, pulling", image)
+	log.Printf("Image %s arch %s not found in local cache, pulling", image, architecture)
 	remoteRef, err := name.ParseReference(pullImageName)
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("invalid image name %s: %v", pullImageName, err)
@@ -78,18 +78,21 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 		if err != nil {
 			return ImageSource{}, fmt.Errorf("unable to get IndexManifest: %v", err)
 		}
-		_, err = p.IndexWrite(ref, im.Manifests...)
-		if err == nil {
-			for _, m := range im.Manifests {
-				if m.MediaType.IsImage() && (m.Platform == nil || m.Platform.Architecture == architecture) {
-					img, err := ii.Image(m.Digest)
-					if err != nil {
-						return ImageSource{}, fmt.Errorf("unable to get image: %v", err)
-					}
-					err = p.cache.WriteImage(img)
-					if err != nil {
-						return ImageSource{}, fmt.Errorf("unable to write image: %v", err)
-					}
+		// write the index blob and the descriptor
+		if err := p.cache.WriteBlob(desc.Digest, io.NopCloser(bytes.NewReader(desc.Manifest))); err != nil {
+			return ImageSource{}, fmt.Errorf("unable to write index content to cache: %v", err)
+		}
+		if _, err := p.DescriptorWrite(ref, desc.Descriptor); err != nil {
+			return ImageSource{}, fmt.Errorf("unable to write index descriptor to cache: %v", err)
+		}
+		for _, m := range im.Manifests {
+			if m.MediaType.IsImage() && (m.Platform == nil || m.Platform.Architecture == architecture) {
+				img, err := ii.Image(m.Digest)
+				if err != nil {
+					return ImageSource{}, fmt.Errorf("unable to get image: %v", err)
+				}
+				if err := p.cache.WriteImage(img); err != nil {
+					return ImageSource{}, fmt.Errorf("unable to write image: %v", err)
 				}
 			}
 		}
@@ -355,9 +358,39 @@ func (p *Provider) DescriptorWrite(ref *reference.Spec, desc v1.Descriptor) (lkt
 }
 
 func (p *Provider) ImageInCache(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
-	if _, err := p.findImage(ref.String(), architecture); err != nil {
+	img, err := p.findImage(ref.String(), architecture)
+	if err != nil {
 		return false, err
 	}
+	// findImage only checks if we had the pointer to it; it does not check if it is complete.
+	// We need to do that next.
+
+	// check that all of the layers exist
+	layers, err := img.Layers()
+	if err != nil {
+		return false, fmt.Errorf("layers not found: %v", err)
+	}
+	for _, layer := range layers {
+		dig, err := layer.Digest()
+		if err != nil {
+			return false, fmt.Errorf("unable to get digest of layer: %v", err)
+		}
+		var rc io.ReadCloser
+		if rc, err = p.cache.Blob(dig); err != nil {
+			return false, fmt.Errorf("layer %s not found: %v", dig, err)
+		}
+		rc.Close()
+	}
+	// check that the config exists
+	config, err := img.ConfigName()
+	if err != nil {
+		return false, fmt.Errorf("unable to get config: %v", err)
+	}
+	var rc io.ReadCloser
+	if rc, err = p.cache.Blob(config); err != nil {
+		return false, fmt.Errorf("config %s not found: %v", config, err)
+	}
+	rc.Close()
 	return true, nil
 }
 
