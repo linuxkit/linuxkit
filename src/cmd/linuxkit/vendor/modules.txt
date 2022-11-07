@@ -41,9 +41,11 @@ github.com/Azure/go-autorest/logger
 # github.com/Azure/go-autorest/tracing v0.6.0
 ## explicit; go 1.12
 github.com/Azure/go-autorest/tracing
-# github.com/Code-Hex/vz v0.0.4
-## explicit; go 1.16
-github.com/Code-Hex/vz
+# github.com/Code-Hex/vz/v3 v3.0.0
+## explicit; go 1.19
+github.com/Code-Hex/vz/v3
+github.com/Code-Hex/vz/v3/internal/objc
+github.com/Code-Hex/vz/v3/internal/progress
 # github.com/Microsoft/go-winio v0.5.2
 ## explicit; go 1.13
 github.com/Microsoft/go-winio
@@ -559,7 +561,6 @@ github.com/radu-matei/azure-vhd-utils/vhdcore/writer
 github.com/rn/iso9660wrap
 # github.com/rs/xid v1.3.0
 ## explicit; go 1.12
-github.com/rs/xid
 # github.com/scaleway/scaleway-sdk-go v1.0.0-beta.6
 ## explicit; go 1.12
 github.com/scaleway/scaleway-sdk-go/api/instance/v1
@@ -698,20 +699,23 @@ go.opentelemetry.io/proto/otlp/collector/trace/v1
 go.opentelemetry.io/proto/otlp/common/v1
 go.opentelemetry.io/proto/otlp/resource/v1
 go.opentelemetry.io/proto/otlp/trace/v1
-# golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e
+# golang.org/x/crypto v0.1.0
 ## explicit; go 1.17
 golang.org/x/crypto/blowfish
 golang.org/x/crypto/chacha20
 golang.org/x/crypto/curve25519
 golang.org/x/crypto/curve25519/internal/field
 golang.org/x/crypto/ed25519
+golang.org/x/crypto/internal/alias
 golang.org/x/crypto/internal/poly1305
-golang.org/x/crypto/internal/subtle
 golang.org/x/crypto/pkcs12
 golang.org/x/crypto/pkcs12/internal/rc2
 golang.org/x/crypto/ssh
 golang.org/x/crypto/ssh/agent
 golang.org/x/crypto/ssh/internal/bcrypt_pbkdf
+# golang.org/x/mod v0.6.0
+## explicit; go 1.17
+golang.org/x/mod/semver
 # golang.org/x/net v0.1.0
 ## explicit; go 1.17
 golang.org/x/net/context

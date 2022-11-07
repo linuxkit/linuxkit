@@ -1,0 +1,4 @@
+BasedOnStyle: WebKit
+Language: ObjC
+TabWidth: 4
+PointerAlignment: Right
