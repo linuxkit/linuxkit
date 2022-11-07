@@ -27,6 +27,7 @@ import (
 type buildOpts struct {
 	skipBuild      bool
 	force          bool
+	pull           bool
 	ignoreCache    bool
 	push           bool
 	release        string
@@ -61,6 +62,14 @@ func WithBuildForce() BuildOpt {
 	}
 }
 
+// WithBuildPull pull down the image to cache if it already exists in registry
+func WithBuildPull() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.pull = true
+		return nil
+	}
+}
+
 // WithBuildPush pushes the result of the build to the registry
 func WithBuildPush() BuildOpt {
 	return func(bo *buildOpts) error {
@@ -89,6 +98,7 @@ func WithRelease(r string) BuildOpt {
 func WithBuildTargetDockerCache() BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.targetDocker = true
+		bo.pull = true // if we are to load it into docker, it must be in local cache
 		return nil
 	}
 }
@@ -225,29 +235,61 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	var platformsToBuild []imagespec.Platform
-	if bo.force {
+	switch {
+	case bo.force && bo.skipBuild:
+		return errors.New("cannot force build and skip build")
+	case bo.force:
+		// force local build
 		platformsToBuild = bo.platforms
-	} else if !bo.skipBuild {
-		fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", ref)
+	case bo.skipBuild:
+		// do not build anything if we explicitly did skipBuild
+		platformsToBuild = nil
+	default:
+		// check local cache, fallback to check registry / pull image from registry, fallback to build
+		fmt.Fprintf(writer, "checking for %s in local cache...\n", ref)
 		for _, platform := range bo.platforms {
-			if _, err := c.ImagePull(&ref, "", platform.Architecture, false); err == nil {
-				fmt.Fprintf(writer, "%s found or pulled\n", ref)
-				if bo.targetDocker {
-					archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
-					if err != nil {
-						return err
+			if exists, err := c.ImageInCache(&ref, "", platform.Architecture); err == nil && exists {
+				fmt.Fprintf(writer, "found %s in local cache, skipping build\n", ref)
+				continue
+			}
+			if bo.pull {
+				// need to pull the image from the registry, else build
+				fmt.Fprintf(writer, "%s %s not found in local cache, trying to pull\n", ref, platform.Architecture)
+				if _, err := c.ImagePull(&ref, "", platform.Architecture, false); err == nil {
+					fmt.Fprintf(writer, "%s pulled\n", ref)
+					if bo.targetDocker {
+						archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
+						if err != nil {
+							return err
+						}
+						fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", archRef)
+						if _, err := c.ImagePull(&archRef, "", platform.Architecture, false); err == nil {
+							fmt.Fprintf(writer, "%s found or pulled\n", archRef)
+						} else {
+							fmt.Fprintf(writer, "%s not found, will build: %s\n", archRef, err)
+							platformsToBuild = append(platformsToBuild, platform)
+						}
 					}
-					fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", archRef)
-					if _, err := c.ImagePull(&archRef, "", platform.Architecture, false); err == nil {
-						fmt.Fprintf(writer, "%s found or pulled\n", archRef)
-					} else {
-						fmt.Fprintf(writer, "%s not found, will build: %s\n", archRef, err)
-						platformsToBuild = append(platformsToBuild, platform)
-					}
+					// successfully pulled, no need to build, continue with next platform
+					continue
 				}
-			} else {
 				fmt.Fprintf(writer, "%s not found, will build: %s\n", ref, err)
 				platformsToBuild = append(platformsToBuild, platform)
+			} else {
+				// do not pull, just check if it exists in a registry
+				fmt.Fprintf(writer, "%s %s not found in local cache, checking registry\n", ref, platform.Architecture)
+				exists, err := c.ImageInRegistry(&ref, "", platform.Architecture)
+				if err != nil {
+					return fmt.Errorf("error checking remote registry for %s: %v", ref, err)
+				}
+
+				if exists {
+					fmt.Fprintf(writer, "%s %s found on registry\n", ref, platform.Architecture)
+					continue
+				}
+				fmt.Fprintf(writer, "%s %s not found, will build\n", ref, platform.Architecture)
+				platformsToBuild = append(platformsToBuild, platform)
+
 			}
 		}
 	}

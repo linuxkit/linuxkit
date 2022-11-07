@@ -353,3 +353,60 @@ func (p *Provider) DescriptorWrite(ref *reference.Spec, desc v1.Descriptor) (lkt
 		&desc,
 	), nil
 }
+
+func (p *Provider) ImageInCache(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
+	if _, err := p.findImage(ref.String(), architecture); err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
+// ImageInRegistry takes an image name and checks that the image manifest or index to which it refers
+// exists in the registry.
+func (p *Provider) ImageInRegistry(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
+	image := ref.String()
+	remoteOptions := []remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}
+	log.Debugf("Checking image %s in registry", image)
+
+	remoteRef, err := name.ParseReference(image)
+	if err != nil {
+		return false, fmt.Errorf("invalid image name %s: %v", image, err)
+	}
+
+	desc, err := remote.Get(remoteRef, remoteOptions...)
+	if err != nil {
+		return false, fmt.Errorf("error getting manifest for image %s: %v", image, err)
+	}
+	// first attempt as an index
+	ii, err := desc.ImageIndex()
+	if err == nil {
+		log.Debugf("ImageExists retrieved %s as index", remoteRef)
+		im, err := ii.IndexManifest()
+		if err != nil {
+			return false, fmt.Errorf("unable to get IndexManifest: %v", err)
+		}
+		for _, m := range im.Manifests {
+			if m.MediaType.IsImage() && (m.Platform == nil || m.Platform.Architecture == architecture) {
+				return true, nil
+			}
+		}
+		// we went through all of the manifests and did not find one that matches the target architecture
+	} else {
+		var im v1.Image
+		// try an image
+		im, err = desc.Image()
+		if err != nil {
+			return false, fmt.Errorf("provided image is neither an image nor an index: %s", image)
+		}
+		log.Debugf("ImageExists retrieved %s as image", remoteRef)
+		conf, err := im.ConfigFile()
+		if err != nil {
+			return false, fmt.Errorf("unable to get ConfigFile: %v", err)
+		}
+		if conf.Architecture == architecture {
+			return true, nil
+		}
+		// the image had the wrong architecture
+	}
+	return false, nil
+}
