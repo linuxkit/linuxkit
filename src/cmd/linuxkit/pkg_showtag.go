@@ -18,6 +18,7 @@ func pkgShowTag(args []string) {
 		fmt.Fprintf(os.Stderr, "\n")
 		flags.PrintDefaults()
 	}
+	canonical := flags.Bool("canonical", false, "Show canonical name, e.g. docker.io/linuxkit/foo:1234, instead of the default, e.g. linuxkit/foo:1234")
 
 	pkgs, err := pkglib.NewFromCLI(flags, args...)
 	if err != nil {
@@ -25,6 +26,10 @@ func pkgShowTag(args []string) {
 		os.Exit(1)
 	}
 	for _, p := range pkgs {
-		fmt.Println(p.Tag())
+		tag := p.Tag()
+		if *canonical {
+			tag = p.FullTag()
+		}
+		fmt.Println(tag)
 	}
 }
