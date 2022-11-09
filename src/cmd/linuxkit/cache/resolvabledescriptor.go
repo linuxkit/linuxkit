@@ -3,7 +3,7 @@ package cache
 import (
 	"fmt"
 
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 )
@@ -17,6 +17,7 @@ import (
 type ResolvableDescriptor interface {
 	Image() (v1.Image, error)
 	ImageIndex() (v1.ImageIndex, error)
+	Digest() (v1.Hash, error)
 }
 type layoutImage struct {
 	img v1.Image
@@ -28,6 +29,9 @@ func (l layoutImage) Image() (v1.Image, error) {
 func (l layoutImage) ImageIndex() (v1.ImageIndex, error) {
 	return nil, fmt.Errorf("not an ImageIndex")
 }
+func (l layoutImage) Digest() (v1.Hash, error) {
+	return l.img.Digest()
+}
 
 type layoutIndex struct {
 	idx v1.ImageIndex
@@ -38,6 +42,9 @@ func (l layoutIndex) Image() (v1.Image, error) {
 }
 func (l layoutIndex) ImageIndex() (v1.ImageIndex, error) {
 	return l.idx, nil
+}
+func (l layoutIndex) Digest() (v1.Hash, error) {
+	return l.idx.Digest()
 }
 
 // FindRoot find the root ResolvableDescriptor, representing an Image or Index, for
