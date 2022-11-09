@@ -408,7 +408,8 @@ func (p *Provider) ImageInRegistry(ref *reference.Spec, trustedRef, architecture
 
 	desc, err := remote.Get(remoteRef, remoteOptions...)
 	if err != nil {
-		return false, fmt.Errorf("error getting manifest for image %s: %v", image, err)
+		log.Debugf("Retrieving image %s returned an error, ignoring: %v", image, err)
+		return false, nil
 	}
 	// first attempt as an index
 	ii, err := desc.ImageIndex()
