@@ -20,6 +20,8 @@ onboot:
 services:
   - name: sshd
     image: linuxkit/sshd:4696ba61c3ec091328e1c14857d77e675802342f
+    binds.add:
+      - /root/.ssh:/root/.ssh
   - name: vpnkit-forwarder
     image: linuxkit/vpnkit-forwarder:ea4dded7386b09dd647e854664b029be0a4f420f
     binds:
