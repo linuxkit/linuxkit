@@ -14,9 +14,10 @@ import (
 const (
 	buildersEnvVar = "LINUXKIT_BUILDERS"
 	envVarCacheDir = "LINUXKIT_CACHE"
-	// this is the most recent manifest pointed to by moby/buildkit:master as of 2022-07-22, so it includes
-	// our required commit. Once there is a normal semver tag later than this, we should switch to it.
-	defaultBuilderImage = "moby/buildkit@sha256:19c4637f8809f21af01dedf65f7f0d64636165d8191381ec9d5150fccedbae48"
+	// this is the most recent manifest pointed to by moby/buildkit:master as of 2022-11-11, with the latest commit
+	// d3f26c63389c2ad66600ae5c884d6cbde627d6d8.
+	// Once there is a normal semver tag later than this, we should switch to it.
+	defaultBuilderImage = "moby/buildkit@sha256:a44defefec23a24cfc250116c4862e0e47c8d0339cefc4c7ab0ca7f3837618e3"
 )
 
 func pkgBuild(args []string) {
