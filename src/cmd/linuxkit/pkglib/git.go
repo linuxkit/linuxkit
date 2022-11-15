@@ -88,11 +88,17 @@ func (g git) isWorkTree(pkg string) (bool, error) {
 
 func (g git) contentHash() (string, error) {
 	hash := sha256.New()
-	out, err := g.commandStdout(nil, "ls-files")
+	// list of files tracked by git that might have changed
+	trackedFiles, err := g.commandStdout(nil, "ls-files")
 	if err != nil {
 		return "", err
 	}
-	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(out)))
+	untrackedFiles, err := g.commandStdout(nil, "ls-files", "--exclude-standard", "--others")
+	if err != nil {
+		return "", err
+	}
+	allFiles := strings.Join([]string{trackedFiles, untrackedFiles}, "\n")
+	scanner := bufio.NewScanner(strings.NewReader(strings.TrimSpace(allFiles)))
 	for scanner.Scan() {
 		filename := filepath.Join(g.dir, scanner.Text())
 		info, err := os.Lstat(filename)
@@ -188,9 +194,14 @@ func (g git) isDirty(pkg, commit string) (bool, error) {
 		return false, err
 	}
 
+	// diff-index works pretty well, except that
 	err := g.command("diff-index", "--quiet", commit, "--", pkg)
 	if err == nil {
-		return false, nil
+		// this returns an error if there are *no* untracked files, which is strange, but we can work with it
+		if _, err := g.commandStdout(nil, "ls-files", "--exclude-standard", "--others", "--error-unmatch", "--", pkg); err != nil {
+			return false, nil
+		}
+		return true, nil
 	}
 	switch err.(type) {
 	case *exec.ExitError:
