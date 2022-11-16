@@ -37,8 +37,9 @@ type CacheProvider interface {
 	// DescriptorWrite writes a descriptor to the cache index; it validates that it has a name
 	// and replaces any existing one
 	DescriptorWrite(ref *reference.Spec, descriptors v1.Descriptor) (ImageSource, error)
-	// Push push an image along with a multi-arch index from local cache to remote registry.
-	Push(name string) error
+	// Push an image along with a multi-arch index from local cache to remote registry.
+	// if withManifest defined will push a multi-arch manifest
+	Push(name string, withManifest bool) error
 	// NewSource return an ImageSource for a specific ref and architecture in the cache.
 	NewSource(ref *reference.Spec, architecture string, descriptor *v1.Descriptor) ImageSource
 	// Store get content.Store referencing the cache

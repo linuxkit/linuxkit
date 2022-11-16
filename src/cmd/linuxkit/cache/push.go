@@ -13,7 +13,7 @@ import (
 )
 
 // Push push an image along with a multi-arch index.
-func (p *Provider) Push(name string) error {
+func (p *Provider) Push(name string, withManifest bool) error {
 	var (
 		err     error
 		options []remote.Option
@@ -113,6 +113,9 @@ func (p *Provider) Push(name string) error {
 		return fmt.Errorf("name %s unknown in cache", name)
 	}
 
+	if !withManifest {
+		return nil
+	}
 	// Even though we may have pushed the index, we want to be sure that we have an index that includes every architecture on the registry,
 	// not just those that were in our local cache. So we use manifest-tool library to build a broad index
 	auth, err := registry.GetDockerAuth()

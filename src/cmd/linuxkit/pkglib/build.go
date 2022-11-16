@@ -419,7 +419,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	// push the manifest
-	if err := c.Push(p.FullTag()); err != nil {
+	if err := c.Push(p.FullTag(), bo.manifest); err != nil {
 		return err
 	}
 
@@ -441,7 +441,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if _, err := c.DescriptorWrite(&ref, *desc); err != nil {
 		return err
 	}
-	if err := c.Push(fullRelTag); err != nil {
+	if err := c.Push(fullRelTag, bo.manifest); err != nil {
 		return err
 	}
 
