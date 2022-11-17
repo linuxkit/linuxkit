@@ -382,14 +382,9 @@ func (dr *dockerRunnerImpl) pushWithManifest(img, suffix string, pushImage, push
 		fmt.Print("Image push disabled, skipping...\n")
 	}
 
-	auth, err := registry.GetDockerAuth()
-	if err != nil {
-		return fmt.Errorf("failed to get auth: %v", err)
-	}
-
 	if pushManifest {
 		fmt.Printf("Pushing %s to manifest %s\n", img+suffix, img)
-		_, _, err = registry.PushManifest(img, auth)
+		_, _, err = registry.PushManifest(img)
 		if err != nil {
 			return err
 		}

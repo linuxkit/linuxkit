@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	dockertypes "github.com/docker/docker/api/types"
 	"github.com/estesp/manifest-tool/v2/pkg/registry"
 	"github.com/estesp/manifest-tool/v2/pkg/types"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -24,7 +23,7 @@ var platformsToSearchForIndex = []string{
 }
 
 // PushManifest create a manifest that supports each of the provided platforms and push it out.
-func PushManifest(img string, auth dockertypes.AuthConfig) (hash string, length int, err error) {
+func PushManifest(img string) (hash string, length int, err error) {
 	var srcImages []types.ManifestEntry
 
 	for i, platform := range platformsToSearchForIndex {
@@ -54,6 +53,8 @@ func PushManifest(img string, auth dockertypes.AuthConfig) (hash string, length 
 
 	log.Debugf("pushing manifest list for %s -> %#v", img, yamlInput)
 
-	// push the manifest list with the auth as given, ignore missing, do not allow insecure
-	return registry.PushManifestList(auth.Username, auth.Password, yamlInput, true, false, false, types.OCI, "")
+	// push the manifest list, ignore missing, do not allow insecure
+	// we do not provide auth credentials to force resolve them internally
+	// according to the hostname of image to push
+	return registry.PushManifestList("", "", yamlInput, true, false, false, types.OCI, "")
 }
