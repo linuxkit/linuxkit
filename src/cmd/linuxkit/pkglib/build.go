@@ -214,7 +214,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	if bo.release != "" && !bo.push {
-		return fmt.Errorf("Cannot release %q if not pushing", bo.release)
+		return fmt.Errorf("cannot release %q if not pushing", bo.release)
 	}
 
 	d := bo.runner
@@ -234,7 +234,12 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return fmt.Errorf("contexts not supported, check docker version: %v", err)
 	}
 
-	var platformsToBuild []imagespec.Platform
+	var (
+		platformsToBuild []imagespec.Platform
+		// imageInLocalCache flags if we had at least one image in local cache. If we had at least one,
+		// and push was requested, we will try to push.
+		imageInLocalCache bool
+	)
 	switch {
 	case bo.force && bo.skipBuild:
 		return errors.New("cannot force build and skip build")
@@ -248,34 +253,23 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		// check local cache, fallback to check registry / pull image from registry, fallback to build
 		fmt.Fprintf(writer, "checking for %s in local cache...\n", ref)
 		for _, platform := range bo.platforms {
-			if exists, err := c.ImageInCache(&ref, "", platform.Architecture); err == nil && exists {
+			exists, err := c.ImageInCache(&ref, "", platform.Architecture)
+			switch {
+			case err == nil && exists:
 				fmt.Fprintf(writer, "found %s in local cache, skipping build\n", ref)
+				imageInLocalCache = true
 				continue
-			}
-			if bo.pull {
+			case bo.pull:
 				// need to pull the image from the registry, else build
 				fmt.Fprintf(writer, "%s %s not found in local cache, trying to pull\n", ref, platform.Architecture)
 				if _, err := c.ImagePull(&ref, "", platform.Architecture, false); err == nil {
 					fmt.Fprintf(writer, "%s pulled\n", ref)
-					if bo.targetDocker {
-						archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
-						if err != nil {
-							return err
-						}
-						fmt.Fprintf(writer, "checking for %s in local cache, fallback to remote registry...\n", archRef)
-						if _, err := c.ImagePull(&archRef, "", platform.Architecture, false); err == nil {
-							fmt.Fprintf(writer, "%s found or pulled\n", archRef)
-						} else {
-							fmt.Fprintf(writer, "%s not found, will build: %s\n", archRef, err)
-							platformsToBuild = append(platformsToBuild, platform)
-						}
-					}
 					// successfully pulled, no need to build, continue with next platform
 					continue
 				}
 				fmt.Fprintf(writer, "%s not found, will build: %s\n", ref, err)
 				platformsToBuild = append(platformsToBuild, platform)
-			} else {
+			default:
 				// do not pull, just check if it exists in a registry
 				fmt.Fprintf(writer, "%s %s not found in local cache, checking registry\n", ref, platform.Architecture)
 				exists, err := c.ImageInRegistry(&ref, "", platform.Architecture)
@@ -289,7 +283,6 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 				}
 				fmt.Fprintf(writer, "%s %s not found, will build\n", ref, platform.Architecture)
 				platformsToBuild = append(platformsToBuild, platform)
-
 			}
 		}
 	}
@@ -388,12 +381,12 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	// if one of the arch equals with system, we will add tag without suffix
 	if bo.targetDocker {
 		for _, platform := range bo.platforms {
-			archRef, err := reference.Parse(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
+			ref, err := reference.Parse(p.FullTag())
 			if err != nil {
 				return err
 			}
-			cacheSource := c.NewSource(&archRef, platform.Architecture, desc)
-			reader, err := cacheSource.V1TarReader("")
+			cacheSource := c.NewSource(&ref, platform.Architecture, desc)
+			reader, err := cacheSource.V1TarReader(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
 			if err != nil {
 				return fmt.Errorf("unable to get reader from cache: %v", err)
 			}
@@ -411,6 +404,15 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	if !bo.push {
 		fmt.Fprintf(writer, "Build complete, not pushing, all done.\n")
+		return nil
+	}
+
+	// we only will push if one of these is true:
+	// - we had at least one platform to build
+	// - we found an image in local cache
+	// if neither is true, there is nothing to push
+	if len(platformsToBuild) == 0 && !imageInLocalCache {
+		fmt.Fprintf(writer, "No new platforms to push, skipping.\n")
 		return nil
 	}
 
