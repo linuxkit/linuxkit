@@ -168,12 +168,16 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	if len(m.Init) != 0 {
 		log.Infof("Add init containers:")
 	}
+	apkTar := newAPKTarWriter(iw)
 	for _, ii := range m.initRefs {
 		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", iw, resolvconfSymlink, opts)
+		err := ImageTar(ii, "", apkTar, resolvconfSymlink, opts)
 		if err != nil {
 			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
 		}
+	}
+	if err := apkTar.WriteAPKDB(); err != nil {
+		return err
 	}
 
 	if len(m.Onboot) != 0 {
