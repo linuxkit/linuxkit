@@ -1,0 +1,4 @@
+image: chained-build-platform-image1-test-does-not-exist-anywhere-else-123456789 # this must be used as FROM in the chained image
+network: true
+arches:
+    - amd64
