@@ -16,6 +16,8 @@ import (
 
 type Result = result.Result[Reference]
 
+type Attestation = result.Attestation[Reference]
+
 type BuildFunc func(context.Context, Client) (*Result, error)
 
 func NewResult() *Result {
@@ -73,6 +75,8 @@ type StartRequest struct {
 	Stdin          io.ReadCloser
 	Stdout, Stderr io.WriteCloser
 	SecurityMode   pb.SecurityMode
+
+	RemoveMountStubsRecursive bool
 }
 
 // WinSize is same as executor.WinSize, copied here to prevent circular package
