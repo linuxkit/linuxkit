@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
 services:
   - name: getty
-    image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
+    image: linuxkit/getty:c9d5afa9a61ac907904090643e946874ff6bf07c
     env:
      - INSECURE=true
   - name: rngd
