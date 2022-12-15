@@ -1,4 +1,4 @@
-DIRS = $(dir $(shell find . -maxdepth 2 -mindepth 2 -type f -name build.yml))
+DIRS = $(dir $(shell find . -maxdepth 2 -mindepth 2 -type f --name build.yml))
 .PHONY: push forcepush build forcebuild show-tag clean
 
 push:

@@ -15,8 +15,8 @@ clean_up() {
 }
 trap clean_up EXIT
 
-linuxkit build -format iso-bios -name "${NAME}" test.yml
+linuxkit build --format iso-bios --name "${NAME}" test.yml
 [ -f "${NAME}.iso" ] || exit 1
-linuxkit run qemu -iso "${NAME}.iso" | grep -q "Welcome to LinuxKit"
+linuxkit run qemu --iso "${NAME}.iso" | grep -q "Welcome to LinuxKit"
 
 exit 0

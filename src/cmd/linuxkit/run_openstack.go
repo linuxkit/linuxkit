@@ -1,15 +1,13 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/extensions/keypairs"
 	"github.com/gophercloud/gophercloud/openstack/compute/v2/servers"
 	"github.com/gophercloud/utils/openstack/clientconfig"
+	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -18,72 +16,73 @@ const (
 	defaultOSFlavor = "m1.tiny"
 )
 
-func runOpenStack(args []string) {
-	flags := flag.NewFlagSet("openstack", flag.ExitOnError)
-	invoked := filepath.Base(os.Args[0])
-	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run openstack [options] [name]\n\n", invoked)
-		fmt.Printf("'name' is the name of an OpenStack image that has already been\n")
-		fmt.Printf(" uploaded using 'linuxkit push'\n\n")
-		fmt.Printf("Options:\n\n")
-		flags.PrintDefaults()
-	}
-	flavorName := flags.String("flavor", defaultOSFlavor, "Instance size (flavor)")
-	instanceName := flags.String("instancename", "", "Name of instance.  Defaults to the name of the image if not specified")
-	networkID := flags.String("network", "", "The ID of the network to attach the instance to")
-	secGroups := flags.String("sec-groups", "default", "Security Group names separated by comma")
-	keyName := flags.String("keyname", "", "The name of the SSH keypair to associate with the instance")
+func runOpenStackCmd() *cobra.Command {
+	var (
+		flavorName   string
+		instanceName string
+		networkID    string
+		secGroups    string
+		keyName      string
+	)
 
-	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
-	}
+	cmd := &cobra.Command{
+		Use:   "openstack",
+		Short: "launch an openstack instance using an existing image",
+		Long: `Launch an openstack instance using an existing image.
+		'name' is the name of an OpenStack image that has already been uploaded using 'linuxkit push'.
+		`,
+		Args:    cobra.ExactArgs(1),
+		Example: "linuxkit run openstack [options] [name]",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
+			if instanceName == "" {
+				instanceName = name
+			}
 
-	remArgs := flags.Args()
-	if len(remArgs) == 0 {
-		fmt.Printf("Please specify the name of the image to boot\n")
-		flags.Usage()
-		os.Exit(1)
-	}
-	name := remArgs[0]
+			client, err := clientconfig.NewServiceClient("compute", nil)
+			if err != nil {
+				return fmt.Errorf("Unable to create Compute client, %s", err)
+			}
 
-	if *instanceName == "" {
-		*instanceName = name
-	}
+			network := servers.Network{
+				UUID: networkID,
+			}
 
-	client, err := clientconfig.NewServiceClient("compute", nil)
-	if err != nil {
-		log.Fatalf("Unable to create Compute client, %s", err)
-	}
+			var serverOpts servers.CreateOptsBuilder
 
-	network := servers.Network{
-		UUID: *networkID,
-	}
+			serverOpts = &servers.CreateOpts{
+				FlavorName:     flavorName,
+				ImageName:      name,
+				Name:           instanceName,
+				Networks:       []servers.Network{network},
+				ServiceClient:  client,
+				SecurityGroups: strings.Split(secGroups, ","),
+			}
 
-	var serverOpts servers.CreateOptsBuilder
+			if keyName != "" {
+				serverOpts = &keypairs.CreateOptsExt{
+					CreateOptsBuilder: serverOpts,
+					KeyName:           keyName,
+				}
+			}
 
-	serverOpts = &servers.CreateOpts{
-		FlavorName:     *flavorName,
-		ImageName:      name,
-		Name:           *instanceName,
-		Networks:       []servers.Network{network},
-		ServiceClient:  client,
-		SecurityGroups: strings.Split(*secGroups, ","),
-	}
+			server, err := servers.Create(client, serverOpts).Extract()
+			if err != nil {
+				return fmt.Errorf("Unable to create server: %w", err)
+			}
 
-	if *keyName != "" {
-		serverOpts = &keypairs.CreateOptsExt{
-			CreateOptsBuilder: serverOpts,
-			KeyName:           *keyName,
-		}
-	}
-
-	server, err := servers.Create(client, serverOpts).Extract()
-	if err != nil {
-		log.Fatalf("Unable to create server: %s", err)
+			_ = servers.WaitForStatus(client, server.ID, "ACTIVE", 600)
+			log.Infof("Server created, UUID is %s", server.ID)
+			fmt.Println(server.ID)
+			return nil
+		},
 	}
 
-	_ = servers.WaitForStatus(client, server.ID, "ACTIVE", 600)
-	log.Infof("Server created, UUID is %s", server.ID)
-	fmt.Println(server.ID)
+	cmd.Flags().StringVar(&flavorName, "flavor", defaultOSFlavor, "Instance size (flavor)")
+	cmd.Flags().StringVar(&instanceName, "instancename", "", "Name of instance.  Defaults to the name of the image if not specified")
+	cmd.Flags().StringVar(&networkID, "network", "", "The ID of the network to attach the instance to")
+	cmd.Flags().StringVar(&secGroups, "sec-groups", "default", "Security Group names separated by comma")
+	cmd.Flags().StringVar(&keyName, "keyname", "", "The name of the SSH keypair to associate with the instance")
 
+	return cmd
 }

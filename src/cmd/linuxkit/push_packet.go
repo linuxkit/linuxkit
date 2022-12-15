@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"net/url"
@@ -12,6 +11,7 @@ import (
 	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
 	gzip "github.com/klauspost/pgzip"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 var (
@@ -28,70 +28,77 @@ func init() {
 	}
 }
 
-// Process the run arguments and execute run
-func pushPacket(args []string) {
-	flags := flag.NewFlagSet("packet", flag.ExitOnError)
-	invoked := filepath.Base(os.Args[0])
-	flags.Usage = func() {
-		fmt.Printf("USAGE: %s push packet [options] [name]\n\n", invoked)
-		fmt.Printf("Options:\n\n")
-		flags.PrintDefaults()
-	}
-	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+packetBaseURL+")")
-	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
-	archFlag := flags.String("arch", packetDefaultArch, "Image architecture (x86_64 or aarch64)")
-	decompressFlag := flags.Bool("decompress", packetDefaultDecompress, "Decompress kernel/initrd before pushing")
-	dstFlag := flags.String("destination", "", "URL where to push the image to. Currently only 'file' is supported as a scheme (which is also the default if omitted)")
+func pushPacketCmd() *cobra.Command {
+	var (
+		baseURLFlag string
+		nameFlag    string
+		arch        string
+		dst         string
+		decompress  bool
+	)
+	cmd := &cobra.Command{
+		Use:   "packet",
+		Short: "push image to Equinix Metal / Packet",
+		Long: `Push image to Equinix Metal / Packet.
+		Single argument is the prefix to use for the image, defualts to "packet".
+		`,
+		Example: "linuxkit push packet [options] [name]",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			prefix := "packet"
+			if len(args) > 0 {
+				prefix = args[0]
+			}
 
-	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
+			baseURL := getStringValue(packetBaseURL, baseURLFlag, "")
+			if baseURL == "" {
+				return fmt.Errorf("Need to specify a value for --base-url from where the kernel, initrd and iPXE script will be loaded from.")
+			}
+
+			if dst == "" {
+				return fmt.Errorf("Need to specify the destination where to push to.")
+			}
+
+			name := getStringValue(packetNameVar, nameFlag, prefix)
+
+			if _, err := os.Stat(fmt.Sprintf("%s-kernel", name)); os.IsNotExist(err) {
+				return fmt.Errorf("kernel file does not exist: %v", err)
+			}
+			if _, err := os.Stat(fmt.Sprintf("%s-initrd.img", name)); os.IsNotExist(err) {
+				return fmt.Errorf("initrd file does not exist: %v", err)
+			}
+
+			// Read kernel command line
+			var cmdline string
+			if c, err := os.ReadFile(prefix + "-cmdline"); err != nil {
+				return fmt.Errorf("Cannot open cmdline file: %v", err)
+			} else {
+				cmdline = string(c)
+			}
+
+			ipxeScript := packetIPXEScript(name, baseURL, cmdline, arch)
+
+			// Parse the destination
+			dst, err := url.Parse(dst)
+			if err != nil {
+				return fmt.Errorf("Cannot parse destination: %v", err)
+			}
+			switch dst.Scheme {
+			case "", "file":
+				packetPushFile(dst, decompress, name, cmdline, ipxeScript)
+			default:
+				return fmt.Errorf("Unknown destination format: %s", dst.Scheme)
+			}
+			return nil
+		},
 	}
 
-	remArgs := flags.Args()
-	prefix := "packet"
-	if len(remArgs) > 0 {
-		prefix = remArgs[0]
-	}
+	cmd.Flags().StringVar(&baseURLFlag, "base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+packetBaseURL+")")
+	cmd.Flags().StringVar(&nameFlag, "img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
+	cmd.Flags().StringVar(&arch, "arch", packetDefaultArch, "Image architecture (x86_64 or aarch64)")
+	cmd.Flags().BoolVar(&decompress, "decompress", packetDefaultDecompress, "Decompress kernel/initrd before pushing")
+	cmd.Flags().StringVar(&dst, "destination", "", "URL where to push the image to. Currently only 'file' is supported as a scheme (which is also the default if omitted)")
 
-	baseURL := getStringValue(packetBaseURL, *baseURLFlag, "")
-	if baseURL == "" {
-		log.Fatal("Need to specify a value for --base-url from where the kernel, initrd and iPXE script will be loaded from.")
-	}
-
-	if *dstFlag == "" {
-		log.Fatal("Need to specify the destination where to push to.")
-	}
-
-	name := getStringValue(packetNameVar, *nameFlag, prefix)
-
-	if _, err := os.Stat(fmt.Sprintf("%s-kernel", name)); os.IsNotExist(err) {
-		log.Fatalf("kernel file does not exist: %v", err)
-	}
-	if _, err := os.Stat(fmt.Sprintf("%s-initrd.img", name)); os.IsNotExist(err) {
-		log.Fatalf("initrd file does not exist: %v", err)
-	}
-
-	// Read kernel command line
-	var cmdline string
-	if c, err := os.ReadFile(prefix + "-cmdline"); err != nil {
-		log.Fatalf("Cannot open cmdline file: %v", err)
-	} else {
-		cmdline = string(c)
-	}
-
-	ipxeScript := packetIPXEScript(name, baseURL, cmdline, *archFlag)
-
-	// Parse the destination
-	dst, err := url.Parse(*dstFlag)
-	if err != nil {
-		log.Fatalf("Cannot parse destination: %v", err)
-	}
-	switch dst.Scheme {
-	case "", "file":
-		packetPushFile(dst, *decompressFlag, name, cmdline, ipxeScript)
-	default:
-		log.Fatalf("Unknown destination format: %s", dst.Scheme)
-	}
+	return cmd
 }
 
 func packetPushFile(dst *url.URL, decompress bool, name, cmdline, ipxeScript string) {

@@ -24,8 +24,8 @@ ISOFILE=/tmp/cidata.iso
 
 docker run -i --rm -v $(pwd)/geniso.sh:/geniso.sh:ro alpine:3.13 /geniso.sh > ${ISOFILE}
 
-linuxkit build -format kernel+initrd -name ${NAME} test.yml
-RESULT="$(linuxkit run -disk file=${DISK},size=32M -disk file=${ISOFILE} ${NAME})"
+linuxkit build --format kernel+initrd --name ${NAME} test.yml
+RESULT="$(linuxkit run --disk file=${DISK},size=32M --disk file=${ISOFILE} ${NAME})"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
 

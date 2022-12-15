@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"path"
@@ -12,43 +11,10 @@ import (
 	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/imagedata"
 	"github.com/gophercloud/gophercloud/openstack/imageservice/v2/images"
 	"github.com/gophercloud/utils/openstack/clientconfig"
+	"github.com/spf13/cobra"
 
 	log "github.com/sirupsen/logrus"
 )
-
-// Process the run arguments and execute run
-func pushOpenstack(args []string) {
-	flags := flag.NewFlagSet("openstack", flag.ExitOnError)
-	invoked := filepath.Base(os.Args[0])
-	flags.Usage = func() {
-		fmt.Printf("USAGE: %s push openstack [options] path\n\n", invoked)
-		fmt.Printf("'path' is the full path to an image that will be uploaded to an OpenStack Image store (Glance)\n")
-		fmt.Printf("Options:\n\n")
-		flags.PrintDefaults()
-	}
-	imageName := flags.String("img-name", "", "A unique name for the image, if blank the filename will be used")
-
-	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
-	}
-
-	remArgs := flags.Args()
-	if len(remArgs) == 0 {
-		fmt.Printf("Please specify the path to the image to push\n")
-		flags.Usage()
-		os.Exit(1)
-	}
-	filePath := remArgs[0]
-	// Check that the file both exists, and can be read
-	checkFile(filePath)
-
-	client, err := clientconfig.NewServiceClient("image", nil)
-	if err != nil {
-		log.Fatalf("Error connecting to your OpenStack cloud: %s", err)
-	}
-
-	createOpenStackImage(filePath, *imageName, client)
-}
 
 func createOpenStackImage(filePath string, imageName string, client *gophercloud.ServiceClient) {
 	// Image formats that are supported by both LinuxKit and OpenStack Glance V2
@@ -102,4 +68,36 @@ func createOpenStackImage(filePath string, imageName string, client *gophercloud
 		log.Infof("Image uploaded successfully!")
 		fmt.Println(image.ID)
 	}
+}
+
+func pushOpenstackCmd() *cobra.Command {
+	var (
+		imageName string
+	)
+	cmd := &cobra.Command{
+		Use:   "openstack",
+		Short: "push image to OpenStack Image store (Glance)",
+		Long: `Push image to OpenStack Image store (Glance).
+		First argument specifies the path to a disk file.
+		`,
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path := args[0]
+
+			// Check that the file both exists, and can be read
+			checkFile(path)
+
+			client, err := clientconfig.NewServiceClient("image", nil)
+			if err != nil {
+				log.Fatalf("Error connecting to your OpenStack cloud: %s", err)
+			}
+
+			createOpenStackImage(path, imageName, client)
+			return nil
+		},
+	}
+
+	cmd.Flags().StringVar(&imageName, "img-name", "", "A unique name for the image, if blank the filename will be used")
+
+	return cmd
 }

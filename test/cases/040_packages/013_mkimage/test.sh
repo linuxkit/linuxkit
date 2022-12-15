@@ -18,10 +18,10 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-linuxkit build -format kernel+initrd run.yml
-linuxkit build -format kernel+initrd mkimage.yml
+linuxkit build --format kernel+initrd run.yml
+linuxkit build --format kernel+initrd mkimage.yml
 tar cf tarball.img run-kernel run-initrd.img run-cmdline
-linuxkit run qemu -disk disk.qcow2,size=200M,format=qcow2 -disk tarball.img,format=raw -kernel mkimage
+linuxkit run qemu --disk disk.qcow2,size=200M,format=qcow2 --disk tarball.img,format=raw --kernel mkimage
 linuxkit run qemu disk.qcow2
 
 exit 0

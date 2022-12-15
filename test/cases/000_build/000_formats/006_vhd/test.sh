@@ -17,7 +17,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format vhd -name "${NAME}" ../test.yml
+linuxkit build --format vhd --name "${NAME}" ../test.yml
 [ -f "${NAME}.vhd" ] || exit 1
 
 exit 0

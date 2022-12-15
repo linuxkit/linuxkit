@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"flag"
+	"errors"
 	"fmt"
 	"io"
 	"net"
@@ -18,6 +18,7 @@ import (
 
 	"github.com/packethost/packngo"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/term"
@@ -46,202 +47,217 @@ func init() {
 	}
 }
 
-// Process the run arguments and execute run
-func runPacket(args []string) {
-	flags := flag.NewFlagSet("packet", flag.ExitOnError)
-	invoked := filepath.Base(os.Args[0])
-	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run packet [options] [name]\n\n", invoked)
-		fmt.Printf("Options:\n\n")
-		flags.PrintDefaults()
-	}
-	baseURLFlag := flags.String("base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+packetBaseURL+")")
-	zoneFlag := flags.String("zone", packetDefaultZone, "Packet Zone (or "+packetZoneVar+")")
-	machineFlag := flags.String("machine", packetDefaultMachine, "Packet Machine Type (or "+packetMachineVar+")")
-	apiKeyFlag := flags.String("api-key", "", "Packet API key (or "+packetAPIKeyVar+")")
-	projectFlag := flags.String("project-id", "", "Packet Project ID (or "+packetProjectIDVar+")")
-	deviceFlag := flags.String("device", "", "The ID of an existing device")
-	hostNameFlag := flags.String("hostname", packetDefaultHostname, "Hostname of new instance (or "+packetHostnameVar+")")
-	nameFlag := flags.String("img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
-	alwaysPXE := flags.Bool("always-pxe", true, "Reboot from PXE every time.")
-	serveFlag := flags.String("serve", "", "Serve local files via the http port specified, e.g. ':8080'.")
-	consoleFlag := flags.Bool("console", true, "Provide interactive access on the console.")
-	keepFlag := flags.Bool("keep", false, "Keep the machine after exiting/poweroff.")
-	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
-	}
+func runPacketCmd() *cobra.Command {
+	var (
+		baseURLFlag  string
+		zoneFlag     string
+		machineFlag  string
+		apiKeyFlag   string
+		projectFlag  string
+		deviceFlag   string
+		hostNameFlag string
+		nameFlag     string
+		alwaysPXE    bool
+		serveFlag    string
+		consoleFlag  bool
+		keepFlag     bool
+	)
 
-	remArgs := flags.Args()
-	prefix := "packet"
-	if len(remArgs) > 0 {
-		prefix = remArgs[0]
-	}
-
-	url := getStringValue(packetBaseURL, *baseURLFlag, "")
-	if url == "" {
-		log.Fatalf("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-packet.ipxe", prefix, prefix, prefix)
-	}
-	facility := getStringValue(packetZoneVar, *zoneFlag, "")
-	plan := getStringValue(packetMachineVar, *machineFlag, defaultMachine)
-	apiKey := getStringValue(packetAPIKeyVar, *apiKeyFlag, "")
-	if apiKey == "" {
-		log.Fatal("Must specify a Packet.net API key with --api-key")
-	}
-	projectID := getStringValue(packetProjectIDVar, *projectFlag, "")
-	if projectID == "" {
-		log.Fatal("Must specify a Packet.net Project ID with --project-id")
-	}
-	hostname := getStringValue(packetHostnameVar, *hostNameFlag, "")
-	name := getStringValue(packetNameVar, *nameFlag, prefix)
-	osType := "custom_ipxe"
-	billing := "hourly"
-
-	if !*keepFlag && !*consoleFlag {
-		log.Fatalf("Combination of keep=%t and console=%t makes little sense", *keepFlag, *consoleFlag)
-	}
-
-	ipxeScriptName := fmt.Sprintf("%s-packet.ipxe", name)
-
-	// Serve files with a local http server
-	var httpServer *http.Server
-	if *serveFlag != "" {
-		// Read kernel command line
-		var cmdline string
-		if c, err := os.ReadFile(prefix + "-cmdline"); err != nil {
-			log.Fatalf("Cannot open cmdline file: %v", err)
-		} else {
-			cmdline = string(c)
-		}
-
-		ipxeScript := packetIPXEScript(name, url, cmdline, packetMachineToArch(*machineFlag))
-		log.Debugf("Using iPXE script:\n%s\n", ipxeScript)
-
-		// Two handlers, one for the iPXE script and one for the kernel/initrd files
-		mux := http.NewServeMux()
-		mux.HandleFunc(fmt.Sprintf("/%s", ipxeScriptName),
-			func(w http.ResponseWriter, r *http.Request) {
-				fmt.Fprint(w, ipxeScript)
-			})
-		fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
-		mux.Handle("/", http.FileServer(fs))
-		httpServer = &http.Server{Addr: *serveFlag, Handler: mux}
-		go func() {
-			log.Debugf("Listening on http://%s\n", *serveFlag)
-			if err := httpServer.ListenAndServe(); err != nil {
-				log.Infof("http server exited with: %v", err)
+	cmd := &cobra.Command{
+		Use:   "packet",
+		Short: "launch an Equinix Metal (Packet) device",
+		Long: `Launch an Equinix Metal (Packet) device.
+		`,
+		Args:    cobra.ExactArgs(1),
+		Example: "linuxkit run packet [options] name",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			prefix := "packet"
+			if len(args) > 0 {
+				prefix = args[0]
 			}
-		}()
+			url := getStringValue(packetBaseURL, baseURLFlag, "")
+			if url == "" {
+				return fmt.Errorf("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-packet.ipxe", prefix, prefix, prefix)
+			}
+			facility := getStringValue(packetZoneVar, zoneFlag, "")
+			plan := getStringValue(packetMachineVar, machineFlag, defaultMachine)
+			apiKey := getStringValue(packetAPIKeyVar, apiKeyFlag, "")
+			if apiKey == "" {
+				return errors.New("Must specify a Packet.net API key with --api-key")
+			}
+			projectID := getStringValue(packetProjectIDVar, projectFlag, "")
+			if projectID == "" {
+				return errors.New("Must specify a Packet.net Project ID with --project-id")
+			}
+			hostname := getStringValue(packetHostnameVar, hostNameFlag, "")
+			name := getStringValue(packetNameVar, nameFlag, prefix)
+			osType := "custom_ipxe"
+			billing := "hourly"
+
+			if !keepFlag && !consoleFlag {
+				return fmt.Errorf("Combination of keep=%t and console=%t makes little sense", keepFlag, consoleFlag)
+			}
+
+			ipxeScriptName := fmt.Sprintf("%s-packet.ipxe", name)
+
+			// Serve files with a local http server
+			var httpServer *http.Server
+			if serveFlag != "" {
+				// Read kernel command line
+				var cmdline string
+				if c, err := os.ReadFile(prefix + "-cmdline"); err != nil {
+					return fmt.Errorf("Cannot open cmdline file: %v", err)
+				} else {
+					cmdline = string(c)
+				}
+
+				ipxeScript := packetIPXEScript(name, url, cmdline, packetMachineToArch(machineFlag))
+				log.Debugf("Using iPXE script:\n%s\n", ipxeScript)
+
+				// Two handlers, one for the iPXE script and one for the kernel/initrd files
+				mux := http.NewServeMux()
+				mux.HandleFunc(fmt.Sprintf("/%s", ipxeScriptName),
+					func(w http.ResponseWriter, r *http.Request) {
+						fmt.Fprint(w, ipxeScript)
+					})
+				fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
+				mux.Handle("/", http.FileServer(fs))
+				httpServer = &http.Server{Addr: serveFlag, Handler: mux}
+				go func() {
+					log.Debugf("Listening on http://%s\n", serveFlag)
+					if err := httpServer.ListenAndServe(); err != nil {
+						log.Infof("http server exited with: %v", err)
+					}
+				}()
+			}
+
+			// Make sure the URLs work
+			ipxeURL := fmt.Sprintf("%s/%s", url, ipxeScriptName)
+			initrdURL := fmt.Sprintf("%s/%s-initrd.img", url, name)
+			kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
+			log.Infof("Validating URL: %s", ipxeURL)
+			if err := validateHTTPURL(ipxeURL); err != nil {
+				return fmt.Errorf("Invalid iPXE URL %s: %v", ipxeURL, err)
+			}
+			log.Infof("Validating URL: %s", kernelURL)
+			if err := validateHTTPURL(kernelURL); err != nil {
+				return fmt.Errorf("Invalid kernel URL %s: %v", kernelURL, err)
+			}
+			log.Infof("Validating URL: %s", initrdURL)
+			if err := validateHTTPURL(initrdURL); err != nil {
+				return fmt.Errorf("Invalid initrd URL %s: %v", initrdURL, err)
+			}
+
+			client := packngo.NewClient("", apiKey, nil)
+			var tags []string
+
+			var dev *packngo.Device
+			var err error
+			if deviceFlag != "" {
+				dev, _, err = client.Devices.Get(deviceFlag)
+				if err != nil {
+					return fmt.Errorf("Getting info for device %s failed: %v", deviceFlag, err)
+				}
+				b, err := json.MarshalIndent(dev, "", "    ")
+				if err != nil {
+					log.Fatal(err)
+				}
+				log.Debugf("%s\n", string(b))
+
+				req := packngo.DeviceUpdateRequest{
+					Hostname:      hostname,
+					Locked:        dev.Locked,
+					Tags:          dev.Tags,
+					IPXEScriptURL: ipxeURL,
+					AlwaysPXE:     alwaysPXE,
+				}
+				dev, _, err = client.Devices.Update(deviceFlag, &req)
+				if err != nil {
+					return fmt.Errorf("Update device %s failed: %v", deviceFlag, err)
+				}
+				if _, err := client.Devices.Reboot(deviceFlag); err != nil {
+					return fmt.Errorf("Rebooting device %s failed: %v", deviceFlag, err)
+				}
+			} else {
+				// Create a new device
+				req := packngo.DeviceCreateRequest{
+					Hostname:      hostname,
+					Plan:          plan,
+					Facility:      facility,
+					OS:            osType,
+					BillingCycle:  billing,
+					ProjectID:     projectID,
+					Tags:          tags,
+					IPXEScriptURL: ipxeURL,
+					AlwaysPXE:     alwaysPXE,
+				}
+				dev, _, err = client.Devices.Create(&req)
+				if err != nil {
+					return fmt.Errorf("Creating device failed: %w", err)
+				}
+			}
+			b, err := json.MarshalIndent(dev, "", "    ")
+			if err != nil {
+				return err
+			}
+			log.Debugf("%s\n", string(b))
+
+			log.Printf("Booting %s...", dev.ID)
+
+			sshHost := "sos." + dev.Facility.Code + ".packet.net"
+			if consoleFlag {
+				// Connect to the serial console
+				if err := packetSOS(dev.ID, sshHost); err != nil {
+					return err
+				}
+			} else {
+				log.Printf("Access the console with: ssh %s@%s", dev.ID, sshHost)
+
+				// if the serve option is present, wait till 'ctrl-c' is hit.
+				// Otherwise we wouldn't serve the files
+				if serveFlag != "" {
+					stop := make(chan os.Signal, 1)
+					signal.Notify(stop, os.Interrupt)
+					log.Printf("Hit ctrl-c to stop http server")
+					<-stop
+				}
+			}
+
+			// Stop the http server before exiting
+			if serveFlag != "" {
+				log.Debugf("Shutting down http server...")
+				ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+				defer cancel()
+				_ = httpServer.Shutdown(ctx)
+			}
+
+			if keepFlag {
+				log.Printf("The machine is kept...")
+				log.Printf("Device ID: %s", dev.ID)
+				log.Printf("Serial:    ssh %s@%s", dev.ID, sshHost)
+			} else {
+				if _, err := client.Devices.Delete(dev.ID); err != nil {
+					return fmt.Errorf("Unable to delete device: %v", err)
+				}
+			}
+			return nil
+		},
 	}
 
-	// Make sure the URLs work
-	ipxeURL := fmt.Sprintf("%s/%s", url, ipxeScriptName)
-	initrdURL := fmt.Sprintf("%s/%s-initrd.img", url, name)
-	kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
-	log.Infof("Validating URL: %s", ipxeURL)
-	if err := validateHTTPURL(ipxeURL); err != nil {
-		log.Fatalf("Invalid iPXE URL %s: %v", ipxeURL, err)
-	}
-	log.Infof("Validating URL: %s", kernelURL)
-	if err := validateHTTPURL(kernelURL); err != nil {
-		log.Fatalf("Invalid kernel URL %s: %v", kernelURL, err)
-	}
-	log.Infof("Validating URL: %s", initrdURL)
-	if err := validateHTTPURL(initrdURL); err != nil {
-		log.Fatalf("Invalid initrd URL %s: %v", initrdURL, err)
-	}
+	cmd.Flags().StringVar(&baseURLFlag, "base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+packetBaseURL+")")
+	cmd.Flags().StringVar(&zoneFlag, "zone", packetDefaultZone, "Packet Zone (or "+packetZoneVar+")")
+	cmd.Flags().StringVar(&machineFlag, "machine", packetDefaultMachine, "Packet Machine Type (or "+packetMachineVar+")")
+	cmd.Flags().StringVar(&apiKeyFlag, "api-key", "", "Packet API key (or "+packetAPIKeyVar+")")
+	cmd.Flags().StringVar(&projectFlag, "project-id", "", "Packet Project ID (or "+packetProjectIDVar+")")
+	cmd.Flags().StringVar(&deviceFlag, "device", "", "The ID of an existing device")
+	cmd.Flags().StringVar(&hostNameFlag, "hostname", packetDefaultHostname, "Hostname of new instance (or "+packetHostnameVar+")")
+	cmd.Flags().StringVar(&nameFlag, "img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
+	cmd.Flags().BoolVar(&alwaysPXE, "always-pxe", true, "Reboot from PXE every time.")
+	cmd.Flags().StringVar(&serveFlag, "serve", "", "Serve local files via the http port specified, e.g. ':8080'.")
+	cmd.Flags().BoolVar(&consoleFlag, "console", true, "Provide interactive access on the console.")
+	cmd.Flags().BoolVar(&keepFlag, "keep", false, "Keep the machine after exiting/poweroff.")
 
-	client := packngo.NewClient("", apiKey, nil)
-	var tags []string
-
-	var dev *packngo.Device
-	var err error
-	if *deviceFlag != "" {
-		dev, _, err = client.Devices.Get(*deviceFlag)
-		if err != nil {
-			log.Fatalf("Getting info for device %s failed: %v", *deviceFlag, err)
-		}
-		b, err := json.MarshalIndent(dev, "", "    ")
-		if err != nil {
-			log.Fatal(err)
-		}
-		log.Debugf("%s\n", string(b))
-
-		req := packngo.DeviceUpdateRequest{
-			Hostname:      hostname,
-			Locked:        dev.Locked,
-			Tags:          dev.Tags,
-			IPXEScriptURL: ipxeURL,
-			AlwaysPXE:     *alwaysPXE,
-		}
-		dev, _, err = client.Devices.Update(*deviceFlag, &req)
-		if err != nil {
-			log.Fatalf("Update device %s failed: %v", *deviceFlag, err)
-		}
-		if _, err := client.Devices.Reboot(*deviceFlag); err != nil {
-			log.Fatalf("Rebooting device %s failed: %v", *deviceFlag, err)
-		}
-	} else {
-		// Create a new device
-		req := packngo.DeviceCreateRequest{
-			Hostname:      hostname,
-			Plan:          plan,
-			Facility:      facility,
-			OS:            osType,
-			BillingCycle:  billing,
-			ProjectID:     projectID,
-			Tags:          tags,
-			IPXEScriptURL: ipxeURL,
-			AlwaysPXE:     *alwaysPXE,
-		}
-		dev, _, err = client.Devices.Create(&req)
-		if err != nil {
-			log.Fatalf("Creating device failed: %v", err)
-		}
-	}
-	b, err := json.MarshalIndent(dev, "", "    ")
-	if err != nil {
-		log.Fatal(err)
-	}
-	log.Debugf("%s\n", string(b))
-
-	log.Printf("Booting %s...", dev.ID)
-
-	sshHost := "sos." + dev.Facility.Code + ".packet.net"
-	if *consoleFlag {
-		// Connect to the serial console
-		if err := packetSOS(dev.ID, sshHost); err != nil {
-			log.Fatal(err)
-		}
-	} else {
-		log.Printf("Access the console with: ssh %s@%s", dev.ID, sshHost)
-
-		// if the serve option is present, wait till 'ctrl-c' is hit.
-		// Otherwise we wouldn't serve the files
-		if *serveFlag != "" {
-			stop := make(chan os.Signal, 1)
-			signal.Notify(stop, os.Interrupt)
-			log.Printf("Hit ctrl-c to stop http server")
-			<-stop
-		}
-	}
-
-	// Stop the http server before exiting
-	if *serveFlag != "" {
-		log.Debugf("Shutting down http server...")
-		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-		defer cancel()
-		_ = httpServer.Shutdown(ctx)
-	}
-
-	if *keepFlag {
-		log.Printf("The machine is kept...")
-		log.Printf("Device ID: %s", dev.ID)
-		log.Printf("Serial:    ssh %s@%s", dev.ID, sshHost)
-	} else {
-		if _, err := client.Devices.Delete(dev.ID); err != nil {
-			log.Fatalf("Unable to delete device: %v", err)
-		}
-	}
+	return cmd
 }
 
 // Convert machine type to architecture

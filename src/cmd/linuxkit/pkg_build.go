@@ -1,14 +1,14 @@
 package main
 
 import (
-	"flag"
+	"errors"
 	"fmt"
 	"os"
-	"path/filepath"
 	"strings"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkglib"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -17,199 +17,199 @@ const (
 	defaultBuilderImage = "moby/buildkit:v0.11.0-rc2"
 )
 
-func pkgBuild(args []string) {
-	pkgBuildPush(args, false)
-}
+// some logic clarification:
+// pkg build                   - builds unless is in cache or published in registry
+// pkg build --pull            - builds unless is in cache or published in registry; pulls from registry if not in cache
+// pkg build --force           - always builds even if is in cache or published in registry
+// pkg build --force --pull    - always builds even if is in cache or published in registry; --pull ignored
+// pkg push                    - always builds unless is in cache
+// pkg push --force            - always builds even if is in cache
+// pkg push --nobuild          - skips build; if not in cache, fails
+// pkg push --nobuild --force  - nonsensical
 
-func pkgBuildPush(args []string, withPush bool) {
-	flags := flag.NewFlagSet("pkg build", flag.ExitOnError)
-	flags.Usage = func() {
-		invoked := filepath.Base(os.Args[0])
-		name := "build"
-		if withPush {
-			name = "push"
-		}
-		fmt.Fprintf(os.Stderr, "USAGE: %s pkg %s [options] path\n\n", name, invoked)
-		fmt.Fprintf(os.Stderr, "'path' specifies the path to the package source directory.\n")
-		fmt.Fprintf(os.Stderr, "\n")
-		flags.PrintDefaults()
-	}
-
-	force := flags.Bool("force", false, "Force rebuild even if image is in local cache")
-	pull := flags.Bool("pull", false, "Pull image if in registry but not in local cache; conflicts with --force")
-	ignoreCache := flags.Bool("ignore-cached", false, "Ignore cached intermediate images, always pulling from registry")
-	docker := flags.Bool("docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
-	platforms := flags.String("platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
-	skipPlatforms := flags.String("skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
-	builders := flags.String("builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
-	builderImage := flags.String("builder-image", defaultBuilderImage, "buildkit builder container image to use")
-	builderRestart := flags.Bool("builder-restart", false, "force restarting builder, even if container with correct name and image exists")
-	cacheDir := flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
-	flags.Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
-
-	// some logic clarification:
-	// pkg build                   - builds unless is in cache or published in registry
-	// pkg build --pull            - builds unless is in cache or published in registry; pulls from registry if not in cache
-	// pkg build --force           - always builds even if is in cache or published in registry
-	// pkg build --force --pull    - always builds even if is in cache or published in registry; --pull ignored
-	// pkg push                    - always builds unless is in cache
-	// pkg push --force            - always builds even if is in cache
-	// pkg push --nobuild          - skips build; if not in cache, fails
-	// pkg push --nobuild --force  - nonsensical
-
+// addCmdRunPkgBuildPush adds the RunE function and flags to a cobra.Command
+// for "pkg build" or "pkg push".
+func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 	var (
-		release           *string
-		nobuild, manifest *bool
-		nobuildRef        = false
+		force          bool
+		pull           bool
+		ignoreCache    bool
+		docker         bool
+		platforms      string
+		skipPlatforms  string
+		builders       string
+		builderImage   string
+		builderRestart bool
+		release        string
+		nobuild        bool
+		manifest       bool
+		cacheDir       = flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
 	)
-	nobuild = &nobuildRef
-	if withPush {
-		release = flags.String("release", "", "Release the given version")
-		nobuild = flags.Bool("nobuild", false, "Skip building the image before pushing, conflicts with -force")
-		manifest = flags.Bool("manifest", true, "Create and push multi-arch manifest")
-	}
 
-	pkgs, err := pkglib.NewFromCLI(flags, args...)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%v\n", err)
-		os.Exit(1)
-	}
-
-	if *nobuild && *force {
-		fmt.Fprint(os.Stderr, "flags -force and -nobuild conflict")
-		os.Exit(1)
-	}
-	if *pull && *force {
-		fmt.Fprint(os.Stderr, "flags -force and -pull conflict")
-		os.Exit(1)
-	}
-
-	var opts []pkglib.BuildOpt
-	if *force {
-		opts = append(opts, pkglib.WithBuildForce())
-	}
-	if *ignoreCache {
-		opts = append(opts, pkglib.WithBuildIgnoreCache())
-	}
-	if *pull {
-		opts = append(opts, pkglib.WithBuildPull())
-	}
-
-	opts = append(opts, pkglib.WithBuildCacheDir(cacheDir.String()))
-
-	if withPush {
-		opts = append(opts, pkglib.WithBuildPush())
-		if *nobuild {
-			opts = append(opts, pkglib.WithBuildSkip())
+	cmd.RunE = func(cmd *cobra.Command, args []string) error {
+		pkgs, err := pkglib.NewFromConfig(pkglibConfig, args...)
+		if err != nil {
+			return err
 		}
-		if *release != "" {
-			opts = append(opts, pkglib.WithRelease(*release))
-		}
-		if *manifest {
-			opts = append(opts, pkglib.WithBuildManifest())
-		}
-	}
-	if *docker {
-		opts = append(opts, pkglib.WithBuildTargetDockerCache())
-	}
 
-	// skipPlatformsMap contains platforms that should be skipped
-	skipPlatformsMap := make(map[string]bool)
-	if *skipPlatforms != "" {
-		for _, platform := range strings.Split(*skipPlatforms, ",") {
-			parts := strings.SplitN(platform, "/", 2)
-			if len(parts) != 2 || parts[0] == "" || parts[0] != "linux" || parts[1] == "" {
-				fmt.Fprintf(os.Stderr, "invalid target platform specification '%s'\n", platform)
-				os.Exit(1)
+		if nobuild && force {
+			return errors.New("flags -force and -nobuild conflict")
+		}
+		if pull && force {
+			return errors.New("flags -force and -pull conflict")
+		}
+
+		var opts []pkglib.BuildOpt
+		if force {
+			opts = append(opts, pkglib.WithBuildForce())
+		}
+		if ignoreCache {
+			opts = append(opts, pkglib.WithBuildIgnoreCache())
+		}
+		if pull {
+			opts = append(opts, pkglib.WithBuildPull())
+		}
+
+		opts = append(opts, pkglib.WithBuildCacheDir(cacheDir.String()))
+
+		if withPush {
+			opts = append(opts, pkglib.WithBuildPush())
+			if nobuild {
+				opts = append(opts, pkglib.WithBuildSkip())
 			}
-			skipPlatformsMap[strings.Trim(parts[1], " ")] = true
-		}
-	}
-	// if requested specific platforms, build those. If not, then we will
-	// retrieve the defaults in the loop over each package.
-	var plats []imagespec.Platform
-	// don't allow the use of --skip-platforms with --platforms
-	if *platforms != "" && *skipPlatforms != "" {
-		fmt.Fprintln(os.Stderr, "--skip-platforms and --platforms may not be used together")
-		os.Exit(1)
-	}
-	// process the platforms if provided
-	if *platforms != "" {
-		for _, p := range strings.Split(*platforms, ",") {
-			parts := strings.SplitN(p, "/", 2)
-			if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
-				fmt.Fprintf(os.Stderr, "invalid target platform specification '%s'\n", p)
-				os.Exit(1)
+			if release != "" {
+				opts = append(opts, pkglib.WithRelease(release))
 			}
-			plats = append(plats, imagespec.Platform{OS: parts[0], Architecture: parts[1]})
+			if manifest {
+				opts = append(opts, pkglib.WithBuildManifest())
+			}
 		}
-	}
+		if docker {
+			opts = append(opts, pkglib.WithBuildTargetDockerCache())
+		}
 
-	// build the builders map
-	buildersMap := map[string]string{}
-	// look for builders env var
-	buildersMap, err = buildPlatformBuildersMap(os.Getenv(buildersEnvVar), buildersMap)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s in environment variable %s\n", err.Error(), buildersEnvVar)
-		os.Exit(1)
-	}
-	// any CLI options override env var
-	buildersMap, err = buildPlatformBuildersMap(*builders, buildersMap)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "%s in --builders flag\n", err.Error())
-		os.Exit(1)
-	}
-	opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
-	opts = append(opts, pkglib.WithBuildBuilderImage(*builderImage))
-	opts = append(opts, pkglib.WithBuildBuilderRestart(*builderRestart))
-
-	for _, p := range pkgs {
-		// things we need our own copies of
-		var (
-			pkgOpts  = make([]pkglib.BuildOpt, len(opts))
-			pkgPlats = make([]imagespec.Platform, len(plats))
-		)
-		copy(pkgOpts, opts)
-		copy(pkgPlats, plats)
-		// unless overridden, platforms are specific to a package, so this needs to be inside the for loop
-		if len(pkgPlats) == 0 {
-			for _, a := range p.Arches() {
-				if _, ok := skipPlatformsMap[a]; ok {
-					continue
+		// skipPlatformsMap contains platforms that should be skipped
+		skipPlatformsMap := make(map[string]bool)
+		if skipPlatforms != "" {
+			for _, platform := range strings.Split(skipPlatforms, ",") {
+				parts := strings.SplitN(platform, "/", 2)
+				if len(parts) != 2 || parts[0] == "" || parts[0] != "linux" || parts[1] == "" {
+					return fmt.Errorf("invalid target platform specification '%s'\n", platform)
 				}
-				pkgPlats = append(pkgPlats, imagespec.Platform{OS: "linux", Architecture: a})
+				skipPlatformsMap[strings.Trim(parts[1], " ")] = true
+			}
+		}
+		// if requested specific platforms, build those. If not, then we will
+		// retrieve the defaults in the loop over each package.
+		var plats []imagespec.Platform
+		// don't allow the use of --skip-platforms with --platforms
+		if platforms != "" && skipPlatforms != "" {
+			return errors.New("--skip-platforms and --platforms may not be used together")
+		}
+		// process the platforms if provided
+		if platforms != "" {
+			for _, p := range strings.Split(platforms, ",") {
+				parts := strings.SplitN(p, "/", 2)
+				if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+					fmt.Fprintf(os.Stderr, "invalid target platform specification '%s'\n", p)
+					os.Exit(1)
+				}
+				plats = append(plats, imagespec.Platform{OS: parts[0], Architecture: parts[1]})
 			}
 		}
 
-		// if there are no platforms to build for, do nothing.
-		// note that this is *not* an error; we simply skip it
-		if len(pkgPlats) == 0 {
-			fmt.Printf("Skipping %s with no architectures to build\n", p.Tag())
-			continue
+		// build the builders map
+		buildersMap := map[string]string{}
+		// look for builders env var
+		buildersMap, err = buildPlatformBuildersMap(os.Getenv(buildersEnvVar), buildersMap)
+		if err != nil {
+			return fmt.Errorf("error in environment variable %s: %w\n", buildersEnvVar, err)
 		}
-
-		pkgOpts = append(pkgOpts, pkglib.WithBuildPlatforms(pkgPlats...))
-
-		var msg, action string
-		switch {
-		case !withPush:
-			msg = fmt.Sprintf("Building %q", p.Tag())
-			action = "building"
-		case *nobuild:
-			msg = fmt.Sprintf("Pushing %q without building", p.Tag())
-			action = "building and pushing"
-		default:
-			msg = fmt.Sprintf("Building and pushing %q", p.Tag())
-			action = "building and pushing"
+		// any CLI options override env var
+		buildersMap, err = buildPlatformBuildersMap(builders, buildersMap)
+		if err != nil {
+			return fmt.Errorf("error in --builders flag: %w\n", err)
 		}
+		opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
+		opts = append(opts, pkglib.WithBuildBuilderImage(builderImage))
+		opts = append(opts, pkglib.WithBuildBuilderRestart(builderRestart))
 
-		fmt.Println(msg)
+		for _, p := range pkgs {
+			// things we need our own copies of
+			var (
+				pkgOpts  = make([]pkglib.BuildOpt, len(opts))
+				pkgPlats = make([]imagespec.Platform, len(plats))
+			)
+			copy(pkgOpts, opts)
+			copy(pkgPlats, plats)
+			// unless overridden, platforms are specific to a package, so this needs to be inside the for loop
+			if len(pkgPlats) == 0 {
+				for _, a := range p.Arches() {
+					if _, ok := skipPlatformsMap[a]; ok {
+						continue
+					}
+					pkgPlats = append(pkgPlats, imagespec.Platform{OS: "linux", Architecture: a})
+				}
+			}
 
-		if err := p.Build(pkgOpts...); err != nil {
-			fmt.Fprintf(os.Stderr, "Error %s %q: %v\n", action, p.Tag(), err)
-			os.Exit(1)
+			// if there are no platforms to build for, do nothing.
+			// note that this is *not* an error; we simply skip it
+			if len(pkgPlats) == 0 {
+				fmt.Printf("Skipping %s with no architectures to build\n", p.Tag())
+				continue
+			}
+
+			pkgOpts = append(pkgOpts, pkglib.WithBuildPlatforms(pkgPlats...))
+
+			var msg, action string
+			switch {
+			case !withPush:
+				msg = fmt.Sprintf("Building %q", p.Tag())
+				action = "building"
+			case nobuild:
+				msg = fmt.Sprintf("Pushing %q without building", p.Tag())
+				action = "building and pushing"
+			default:
+				msg = fmt.Sprintf("Building and pushing %q", p.Tag())
+				action = "building and pushing"
+			}
+
+			fmt.Println(msg)
+
+			if err := p.Build(pkgOpts...); err != nil {
+				return fmt.Errorf("error %s %q: %w", action, p.Tag(), err)
+			}
 		}
+		return nil
 	}
+
+	cmd.Flags().BoolVar(&force, "force", false, "Force rebuild even if image is in local cache")
+	cmd.Flags().BoolVar(&pull, "pull", false, "Pull image if in registry but not in local cache; conflicts with --force")
+	cmd.Flags().BoolVar(&ignoreCache, "ignore-cached", false, "Ignore cached intermediate images, always pulling from registry")
+	cmd.Flags().BoolVar(&docker, "docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
+	cmd.Flags().StringVar(&platforms, "platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
+	cmd.Flags().StringVar(&skipPlatforms, "skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
+	cmd.Flags().StringVar(&builders, "builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
+	cmd.Flags().StringVar(&builderImage, "builder-image", defaultBuilderImage, "buildkit builder container image to use")
+	cmd.Flags().BoolVar(&builderRestart, "builder-restart", false, "force restarting builder, even if container with correct name and image exists")
+	cmd.Flags().Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
+	cmd.Flags().StringVar(&release, "release", "", "Release the given version")
+	cmd.Flags().BoolVar(&nobuild, "nobuild", false, "Skip building the image before pushing, conflicts with -force")
+	cmd.Flags().BoolVar(&manifest, "manifest", true, "Create and push multi-arch manifest")
+
+	return cmd
+}
+func pkgBuildCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "build",
+		Short: "build an OCI package from a directory with a yaml configuration file",
+		Long: `Build an OCI package from a directory with a yaml configuration file.
+		'path' specifies the path to the package source directory.
+`,
+		Example: `  linuxkit pkg build [options] pkg/dir/`,
+		Args:    cobra.MinimumNArgs(1),
+	}
+	return addCmdRunPkgBuildPush(cmd, false)
 }
 
 func buildPlatformBuildersMap(inputs string, existing map[string]string) (map[string]string, error) {

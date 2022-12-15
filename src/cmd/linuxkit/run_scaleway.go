@@ -1,12 +1,8 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"os"
-	"path/filepath"
-
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -26,76 +22,82 @@ const (
 	instanceTypeVar = "SCW_RUN_TYPE" // non-standard
 )
 
-func runScaleway(args []string) {
-	flags := flag.NewFlagSet("scaleway", flag.ExitOnError)
-	invoked := filepath.Base(os.Args[0])
-	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run scaleway [options] [name]\n\n", invoked)
-		fmt.Printf("'name' is the name of a Scaleway image that has already \n")
-		fmt.Printf("been uploaded using 'linuxkit push'\n\n")
-		fmt.Printf("Options:\n\n")
-		flags.PrintDefaults()
-	}
-	instanceTypeFlag := flags.String("instance-type", defaultScalewayInstanceType, "Scaleway instance type")
-	instanceNameFlag := flags.String("instance-name", "linuxkit", "Name of the create instance, default to the image name")
-	accessKeyFlag := flags.String("access-key", "", "Access Key to connect to Scaleway API")
-	secretKeyFlag := flags.String("secret-key", "", "Secret Key to connect to Scaleway API")
-	zoneFlag := flags.String("zone", defaultScalewayZone, "Select Scaleway zone")
-	organizationIDFlag := flags.String("organization-id", "", "Select Scaleway's organization ID")
-	cleanFlag := flags.Bool("clean", false, "Remove instance")
-	noAttachFlag := flags.Bool("no-attach", false, "Don't attach to serial port, you will have to connect to instance manually")
+func runScalewayCmd() *cobra.Command {
+	var (
+		instanceTypeFlag   string
+		instanceNameFlag   string
+		accessKeyFlag      string
+		secretKeyFlag      string
+		zoneFlag           string
+		organizationIDFlag string
+		cleanFlag          bool
+		noAttachFlag       bool
+	)
 
-	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
-	}
+	cmd := &cobra.Command{
+		Use:   "scaleway",
+		Short: "launch a scaleway instance",
+		Long: `Launch an Scaleway instance using an existing image.
+		'name' is the name of a Scaleway image that has already been uploaded using 'linuxkit push'.
+		`,
+		Args:    cobra.ExactArgs(1),
+		Example: "linuxkit run scaleway [options] [name]",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			name := args[0]
 
-	remArgs := flags.Args()
-	if len(remArgs) == 0 {
-		fmt.Printf("Please specify the name of the image to boot\n")
-		flags.Usage()
-		os.Exit(1)
-	}
-	name := remArgs[0]
+			instanceType := getStringValue(instanceTypeVar, instanceTypeFlag, defaultScalewayInstanceType)
+			instanceName := getStringValue("", instanceNameFlag, name)
+			accessKey := getStringValue(accessKeyVar, accessKeyFlag, "")
+			secretKey := getStringValue(secretKeyVar, secretKeyFlag, "")
+			zone := getStringValue(scwZoneVar, zoneFlag, defaultScalewayZone)
+			organizationID := getStringValue(organizationIDVar, organizationIDFlag, "")
 
-	instanceType := getStringValue(instanceTypeVar, *instanceTypeFlag, defaultScalewayInstanceType)
-	instanceName := getStringValue("", *instanceNameFlag, name)
-	accessKey := getStringValue(accessKeyVar, *accessKeyFlag, "")
-	secretKey := getStringValue(secretKeyVar, *secretKeyFlag, "")
-	zone := getStringValue(scwZoneVar, *zoneFlag, defaultScalewayZone)
-	organizationID := getStringValue(organizationIDVar, *organizationIDFlag, "")
+			client, err := NewScalewayClient(accessKey, secretKey, zone, organizationID)
+			if err != nil {
+				log.Fatalf("Unable to connect to Scaleway: %v", err)
+			}
 
-	client, err := NewScalewayClient(accessKey, secretKey, zone, organizationID)
-	if err != nil {
-		log.Fatalf("Unable to connect to Scaleway: %v", err)
-	}
+			instanceID, err := client.CreateLinuxkitInstance(instanceName, name, instanceType)
+			if err != nil {
+				log.Fatalf("Unable to create Scaleway instance: %v", err)
+			}
 
-	instanceID, err := client.CreateLinuxkitInstance(instanceName, name, instanceType)
-	if err != nil {
-		log.Fatalf("Unable to create Scaleway instance: %v", err)
-	}
+			err = client.BootInstance(instanceID)
+			if err != nil {
+				log.Fatalf("Unable to boot Scaleway instance: %v", err)
+			}
 
-	err = client.BootInstance(instanceID)
-	if err != nil {
-		log.Fatalf("Unable to boot Scaleway instance: %v", err)
-	}
+			if !noAttachFlag {
+				err = client.ConnectSerialPort(instanceID)
+				if err != nil {
+					log.Fatalf("Unable to connect to serial port: %v", err)
+				}
+			}
 
-	if !*noAttachFlag {
-		err = client.ConnectSerialPort(instanceID)
-		if err != nil {
-			log.Fatalf("Unable to connect to serial port: %v", err)
-		}
-	}
+			if cleanFlag {
+				err = client.TerminateInstance(instanceID)
+				if err != nil {
+					log.Fatalf("Unable to stop instance: %v", err)
+				}
 
-	if *cleanFlag {
-		err = client.TerminateInstance(instanceID)
-		if err != nil {
-			log.Fatalf("Unable to stop instance: %v", err)
-		}
+				err = client.DeleteInstanceAndVolumes(instanceID)
+				if err != nil {
+					log.Fatalf("Unable to delete instance: %v", err)
+				}
+			}
 
-		err = client.DeleteInstanceAndVolumes(instanceID)
-		if err != nil {
-			log.Fatalf("Unable to delete instance: %v", err)
-		}
+			return nil
+		},
 	}
 
+	cmd.Flags().StringVar(&instanceTypeFlag, "instance-type", defaultScalewayInstanceType, "Scaleway instance type")
+	cmd.Flags().StringVar(&instanceNameFlag, "instance-name", "linuxkit", "Name of the create instance, default to the image name")
+	cmd.Flags().StringVar(&accessKeyFlag, "access-key", "", "Access Key to connect to Scaleway API")
+	cmd.Flags().StringVar(&secretKeyFlag, "secret-key", "", "Secret Key to connect to Scaleway API")
+	cmd.Flags().StringVar(&zoneFlag, "zone", defaultScalewayZone, "Select Scaleway zone")
+	cmd.Flags().StringVar(&organizationIDFlag, "organization-id", "", "Select Scaleway's organization ID")
+	cmd.Flags().BoolVar(&cleanFlag, "clean", false, "Remove instance")
+	cmd.Flags().BoolVar(&noAttachFlag, "no-attach", false, "Don't attach to serial port, you will have to connect to instance manually")
+
+	return cmd
 }

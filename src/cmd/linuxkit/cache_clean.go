@@ -1,7 +1,6 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 
@@ -9,39 +8,45 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	cachepkg "github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
-func cacheClean(args []string) {
-	flags := flag.NewFlagSet("clean", flag.ExitOnError)
+func cacheCleanCmd() *cobra.Command {
+	var (
+		publishedOnly bool
+	)
+	cmd := &cobra.Command{
+		Use:   "clean",
+		Short: "empty the linuxkit cache",
+		Long:  `Empty the linuxkit cache.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			// did we limit to published only?
+			if !publishedOnly {
+				if err := os.RemoveAll(cacheDir); err != nil {
+					return fmt.Errorf("Unable to clean cache %s: %v", cacheDir, err)
+				}
+				log.Infof("Cache emptied: %s", cacheDir)
+				return nil
+			}
 
-	cacheDir := flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
-	flags.Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
-	publishedOnly := flags.Bool("published-only", false, "Only clean images that linuxkit can confirm at the time of running have been published to the registry")
+			// list all of the images and content in the cache
+			p, err := cachepkg.NewProvider(cacheDir)
+			if err != nil {
+				return fmt.Errorf("unable to read a local cache: %v", err)
+			}
+			images, err := p.List()
 
-	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
+			if err != nil {
+				return fmt.Errorf("error reading image names: %v", err)
+			}
+			removeImagesFromCache(images, p, publishedOnly)
+			return nil
+		},
 	}
 
-	// did we limit to published only?
-	if !*publishedOnly {
-		if err := os.RemoveAll(cacheDir.String()); err != nil {
-			log.Fatalf("Unable to clean cache %s: %v", cacheDir, err)
-		}
-		log.Infof("Cache emptied: %s", cacheDir)
-		return
-	}
+	cmd.Flags().BoolVar(&publishedOnly, "published-only", false, "Only clean images that linuxkit can confirm at the time of running have been published to the registry")
 
-	// list all of the images and content in the cache
-	p, err := cachepkg.NewProvider(cacheDir.String())
-	if err != nil {
-		log.Fatalf("unable to read a local cache: %v", err)
-	}
-	images, err := p.List()
-
-	if err != nil {
-		log.Fatalf("error reading image names: %v", err)
-	}
-	removeImagesFromCache(images, p, *publishedOnly)
+	return cmd
 }
 
 // removeImagesFromCache removes images from the cache.

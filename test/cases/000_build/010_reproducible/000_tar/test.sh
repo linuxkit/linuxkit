@@ -16,8 +16,8 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format tar -name "${NAME}-1" ../test.yml
-linuxkit build -format tar -name "${NAME}-2" ../test.yml
+linuxkit build --format tar --name "${NAME}-1" ../test.yml
+linuxkit build --format tar --name "${NAME}-2" ../test.yml
 
 diff -q "${NAME}-1.tar" "${NAME}-2.tar" || exit 1
 

@@ -127,9 +127,9 @@ func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte
 	}
 	commandLine := []string{
 		"-q", "run", "qemu",
-		"-disk", fmt.Sprintf("%s,size=%s,format=%s", filename, sizeString, format),
-		"-disk", fmt.Sprintf("%s,format=raw", tardisk),
-		"-kernel", imageFilename("mkimage"),
+		"--disk", fmt.Sprintf("%s,size=%s,format=%s", filename, sizeString, format),
+		"--disk", fmt.Sprintf("%s,format=raw", tardisk),
+		"--kernel", imageFilename("mkimage"),
 	}
 	log.Debugf("run %s: %v", linuxkit, commandLine)
 	cmd := exec.Command(linuxkit, commandLine...)

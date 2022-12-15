@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format iso-bios -name "${NAME}" ../test.yml
+linuxkit build --format iso-bios --name "${NAME}" ../test.yml
 [ -f "${NAME}.iso" ] || exit 1
 
 exit 0

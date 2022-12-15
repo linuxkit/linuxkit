@@ -15,7 +15,7 @@ clean_up() {
 }
 trap clean_up EXIT
 
-linuxkit build -format kernel+initrd -name "${NAME}" test.yml
+linuxkit build --format kernel+initrd --name "${NAME}" test.yml
 [ -f "${NAME}-kernel" ] || exit 1
 [ -f "${NAME}-initrd.img" ] || exit 1
 [ -f "${NAME}-cmdline" ] || exit 1

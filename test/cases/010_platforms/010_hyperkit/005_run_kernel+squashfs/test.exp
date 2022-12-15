@@ -1,5 +1,5 @@
 #!/usr/bin/env expect
-spawn linuxkit run hyperkit -squashfs hyperkit-squashfs
+spawn linuxkit run hyperkit --squashfs hyperkit-squashfs
 set pid [exp_pid]
 set timeout 30
 
