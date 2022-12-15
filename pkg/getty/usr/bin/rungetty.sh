@@ -82,4 +82,4 @@ for opt in $(cat /proc/cmdline); do
 done
 
 # if we are in a container (not in root init) wait for all our child process to exit; tini will handle subreaping, if necessary
-[ -z "$INITGETTY" ] && wait
+[ -n "$INITGETTY" ] || wait

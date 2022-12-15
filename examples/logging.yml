@@ -17,7 +17,7 @@ onboot:
 services:
 # Inside the getty type `/proc/1/root/usr/bin/logread -F` to follow the log
   - name: getty
-    image: linuxkit/getty:76951a596aa5e0867a38e28f0b94d620e948e3e8
+    image: linuxkit/getty:c9d5afa9a61ac907904090643e946874ff6bf07c
     env:
      - INSECURE=true
 # A service which generates log messages for testing

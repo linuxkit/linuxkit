@@ -225,7 +225,7 @@ jobs:
 
   test_linuxkit:
     name: LinuxKit Build Tests
-    needs: build
+    needs: [ build_packages, build ]
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
@@ -243,6 +243,14 @@ jobs:
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
+
+    - name: Restore Package Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.linuxkit/cache/
+        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-linuxkit-
 
     - name: Build RTF
       if: steps.cache-rtf.outputs.cache-hit != 'true'
