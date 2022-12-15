@@ -438,7 +438,7 @@ github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mitchellh/go-ps v0.0.0-20190716172923-621e5597135b
 ## explicit
 github.com/mitchellh/go-ps
-# github.com/moby/buildkit v0.11.0-rc1.0.20221213132957-c0ac5e8b9b51
+# github.com/moby/buildkit v0.11.0-rc2
 ## explicit; go 1.18
 github.com/moby/buildkit/api/services/control
 github.com/moby/buildkit/api/types
@@ -481,6 +481,7 @@ github.com/moby/buildkit/solver/internal/pipe
 github.com/moby/buildkit/solver/pb
 github.com/moby/buildkit/solver/result
 github.com/moby/buildkit/source/types
+github.com/moby/buildkit/sourcepolicy/pb
 github.com/moby/buildkit/util/apicaps
 github.com/moby/buildkit/util/apicaps/pb
 github.com/moby/buildkit/util/appdefaults

@@ -23,7 +23,7 @@ require (
 	github.com/gophercloud/utils v0.0.0-20181029231510-34f5991525d1
 	github.com/hashicorp/go-version v1.2.0
 	github.com/klauspost/pgzip v1.2.5
-	github.com/moby/buildkit v0.11.0-rc1.0.20221213132957-c0ac5e8b9b51
+	github.com/moby/buildkit v0.11.0-rc2
 	github.com/moby/hyperkit v0.0.0-20180416161519-d65b09c1c28a
 	//github.com/moby/moby v20.10.3-0.20220728162118-71cb54cec41e+incompatible // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
