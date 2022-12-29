@@ -130,7 +130,7 @@ following which is an explanation of each one.
 ```sh
 # Update tools packages
 cd $LK_ROOT/tools
-$LK_ROOT/scripts/update-component-sha.sh --pkg $LK_ROOT/tools/alpine
+$LK_ROOT/scripts/update-component-sha.sh --image $LK_ALPINE
 git checkout grub/Dockerfile
 git commit -a -s -m "tools: Update to the latest linuxkit/alpine"
 
@@ -143,7 +143,7 @@ git commit -a -s -m "Update use of tools to latest"
 
 # Update test packages
 cd $LK_ROOT/test/pkg
-$LK_ROOT/scripts/update-component-sha.sh --pkg $LK_ROOT/tools/alpine
+$LK_ROOT/scripts/update-component-sha.sh --image $LK_ALPINE
 git commit -a -s -m "tests: Update packages to the latest linuxkit/alpine"
 
 # Update test packages dependencies
@@ -155,12 +155,12 @@ git commit -a -s -m "Update use of test packages to latest"
 
 # Update test cases to latest linuxkit/alpine
 cd $LK_ROOT/test/cases
-$LK_ROOT/scripts/update-component-sha.sh --pkg $LK_ROOT/tools/alpine
+$LK_ROOT/scripts/update-component-sha.sh --image $LK_ALPINE
 git commit -a -s -m "tests: Update tests cases to the latest linuxkit/alpine"
 
 # Update packages to latest linuxkit/alpine
 cd $LK_ROOT/pkg
-$LK_ROOT/scripts/update-component-sha.sh --pkg $LK_ROOT/tools/alpine
+$LK_ROOT/scripts/update-component-sha.sh --image $LK_ALPINE
 git commit -a -s -m "pkgs: Update packages to the latest linuxkit/alpine"
 
 # update package tags - may want to include the release in it if set
