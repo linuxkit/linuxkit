@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format gcp -name "${NAME}" ../test.yml
+linuxkit build --format gcp --name "${NAME}" ../test.yml
 [ -f "${NAME}.img.tar.gz" ] || exit 1
 
 exit 0

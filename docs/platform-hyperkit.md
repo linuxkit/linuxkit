@@ -20,7 +20,7 @@ The HyperKit backend currently supports booting:
 You need to select the boot method manually using the command line
 options. The default is `kernel+initrd`. `kernel+squashfs` can be
 selected using `-squashfs` and to boot a ISO with EFI you have to
-specify `-iso -uefi`.
+specify `--iso --uefi`.
 
 The `kernel+initrd` uses a RAM disk for the root filesystem. If you
 have RAM constraints or large images we recommend using either the

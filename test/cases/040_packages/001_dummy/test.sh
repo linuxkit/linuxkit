@@ -16,7 +16,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Test code goes here
-linuxkit build -format kernel+initrd -name "${NAME}" test.yml
+linuxkit build --format kernel+initrd --name "${NAME}" test.yml
 # all we are checking is that we can build using the dummy package, which
 # was not pushed out
 

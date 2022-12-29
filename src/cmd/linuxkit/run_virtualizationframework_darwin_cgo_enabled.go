@@ -5,7 +5,7 @@ package main
 
 import (
 	"compress/gzip"
-	"flag"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -22,53 +22,12 @@ import (
 	"golang.org/x/sys/unix"
 )
 
-const (
-	virtualizationNetworkingNone         string = "none"
-	virtualizationNetworkingDockerForMac        = "docker-for-mac"
-	virtualizationNetworkingVPNKit              = "vpnkit"
-	virtualizationNetworkingVMNet               = "vmnet"
-	virtualizationNetworkingDefault             = virtualizationNetworkingVMNet
-	virtualizationFrameworkConsole              = "console=hvc0"
-)
-
 // Process the run arguments and execute run
-func runVirtualizationFramework(args []string) {
-	flags := flag.NewFlagSet("virtualization", flag.ExitOnError)
-	invoked := filepath.Base(os.Args[0])
-	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run virtualization [options] prefix\n\n", invoked)
-		fmt.Printf("'prefix' specifies the path to the VM image.\n")
-		fmt.Printf("\n")
-		fmt.Printf("Options:\n")
-		flags.PrintDefaults()
-	}
-	cpus := flags.Uint("cpus", 1, "Number of CPUs")
-	mem := flags.Uint64("mem", 1024, "Amount of memory in MB")
-	memBytes := *mem * 1024 * 1024
-	var disks Disks
-	flags.Var(&disks, "disk", "Disk config. [file=]path[,size=1G]")
-	data := flags.String("data", "", "String of metadata to pass to VM; error to specify both -data and -data-file")
-	dataPath := flags.String("data-file", "", "Path to file containing metadata to pass to VM; error to specify both -data and -data-file")
-
-	if *data != "" && *dataPath != "" {
-		log.Fatal("Cannot specify both -data and -data-file")
+func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) error {
+	if cfg.data != "" && cfg.dataPath != "" {
+		return errors.New("Cannot specify both -data and -data-file")
 	}
 
-	state := flags.String("state", "", "Path to directory to keep VM state in")
-	networking := flags.String("networking", virtualizationNetworkingDefault, "Networking mode. Valid options are 'default', 'vmnet' and 'none'. 'vmnet' uses the Apple vmnet framework. 'none' disables networking.`")
-
-	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
-
-	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
-	}
-	remArgs := flags.Args()
-	if len(remArgs) == 0 {
-		fmt.Println("Please specify the prefix to the image to boot")
-		flags.Usage()
-		os.Exit(1)
-	}
-	path := remArgs[0]
 	prefix := path
 
 	_, err := os.Stat(path + "-kernel")
@@ -78,18 +37,18 @@ func runVirtualizationFramework(args []string) {
 
 	// Default to kernel+initrd
 	if !statKernel {
-		log.Fatalf("Cannot find kernel file: %s", path+"-kernel")
+		return fmt.Errorf("Cannot find kernel file: %s", path+"-kernel")
 	}
 	_, err = os.Stat(path + "-initrd.img")
 	statInitrd := err == nil
 	if !statInitrd {
-		log.Fatalf("Cannot find initrd file (%s): %v", path+"-initrd.img", err)
+		return fmt.Errorf("Cannot find initrd file (%s): %w", path+"-initrd.img", err)
 	}
-	*kernelBoot = true
+	cfg.kernelBoot = true
 
-	metadataPaths, err := CreateMetadataISO(*state, *data, *dataPath)
+	metadataPaths, err := CreateMetadataISO(cfg.state, cfg.data, cfg.dataPath)
 	if err != nil {
-		log.Fatalf("%v", err)
+		return fmt.Errorf("%w", err)
 	}
 	isoPaths = append(isoPaths, metadataPaths...)
 
@@ -100,7 +59,7 @@ func runVirtualizationFramework(args []string) {
 
 	cmdlineBytes, err := os.ReadFile(prefix + "-cmdline")
 	if err != nil {
-		log.Fatalf("Cannot open cmdline file: %v", err)
+		return fmt.Errorf("Cannot open cmdline file: %v", err)
 	}
 	// must have hvc0 as console for vf
 	kernelCommandLineArguments := strings.Split(string(cmdlineBytes), " ")
@@ -119,7 +78,7 @@ func runVirtualizationFramework(args []string) {
 	// need to check if it is gzipped, and, if so, gunzip it
 	filetype, err := checkFileType(vmlinuz)
 	if err != nil {
-		log.Fatalf("unable to check kernel file type at %s: %v", vmlinuz, err)
+		return fmt.Errorf("unable to check kernel file type at %s: %v", vmlinuz, err)
 	}
 
 	if filetype == "application/x-gzip" {
@@ -127,23 +86,23 @@ func runVirtualizationFramework(args []string) {
 		// gzipped kernel, we load it into memory, unzip it, and pass it
 		f, err := os.Open(vmlinuz)
 		if err != nil {
-			log.Fatalf("unable to read kernel file %s: %v", vmlinuz, err)
+			return fmt.Errorf("unable to read kernel file %s: %v", vmlinuz, err)
 		}
 		defer f.Close()
 		r, err := gzip.NewReader(f)
 		if err != nil {
-			log.Fatalf("unable to read from file %s: %v", vmlinuz, err)
+			return fmt.Errorf("unable to read from file %s: %v", vmlinuz, err)
 		}
 		defer r.Close()
 
 		writer, err := os.Create(vmlinuzUncompressed)
 		if err != nil {
-			log.Fatalf("unable to create decompressed kernel file %s: %v", vmlinuzUncompressed, err)
+			return fmt.Errorf("unable to create decompressed kernel file %s: %v", vmlinuzUncompressed, err)
 		}
 		defer writer.Close()
 
 		if _, err = io.Copy(writer, r); err != nil {
-			log.Fatalf("unable to decompress kernel file to %s: %v", vmlinuzUncompressed, err)
+			return fmt.Errorf("unable to decompress kernel file to %s: %v", vmlinuzUncompressed, err)
 		}
 		vmlinuzFile = vmlinuzUncompressed
 	}
@@ -153,27 +112,27 @@ func runVirtualizationFramework(args []string) {
 		vz.WithInitrd(initrd),
 	)
 	if err != nil {
-		log.Fatalf("unable to create bootloader: %v", err)
+		return fmt.Errorf("unable to create bootloader: %v", err)
 	}
 
 	config, err := vz.NewVirtualMachineConfiguration(
 		bootLoader,
-		*cpus,
-		memBytes,
+		cfg.cpus,
+		cfg.mem,
 	)
 	if err != nil {
-		log.Fatalf("unable to create VM config: %v", err)
+		return fmt.Errorf("unable to create VM config: %v", err)
 	}
 
 	// console
 	stdin, stdout := os.Stdin, os.Stdout
 	serialPortAttachment, err := vz.NewFileHandleSerialPortAttachment(stdin, stdout)
 	if err != nil {
-		log.Fatalf("unable to create serial port attachment: %v", err)
+		return fmt.Errorf("unable to create serial port attachment: %v", err)
 	}
 	consoleConfig, err := vz.NewVirtioConsoleDeviceSerialPortConfiguration(serialPortAttachment)
 	if err != nil {
-		log.Fatalf("unable to create console config: %v", err)
+		return fmt.Errorf("unable to create console config: %v", err)
 	}
 	config.SetSerialPortsVirtualMachineConfiguration([]*vz.VirtioConsoleDeviceSerialPortConfiguration{
 		consoleConfig,
@@ -183,39 +142,38 @@ func runVirtualizationFramework(args []string) {
 	// network
 	// Select network mode
 	// for now, we only support vmnet and none, but hoping to have more in the future
-	if *networking == "" || *networking == "default" {
-		dflt := virtualizationNetworkingDefault
-		networking = &dflt
+	if cfg.networking == "" || cfg.networking == "default" {
+		cfg.networking = virtualizationNetworkingDefault
 	}
-	netMode := strings.SplitN(*networking, ",", 3)
+	netMode := strings.SplitN(cfg.networking, ",", 3)
 	switch netMode[0] {
 
 	case virtualizationNetworkingVMNet:
 		natAttachment, err := vz.NewNATNetworkDeviceAttachment()
 		if err != nil {
-			log.Fatalf("Could not create NAT network device attachment: %v", err)
+			return fmt.Errorf("Could not create NAT network device attachment: %v", err)
 		}
 		networkConfig, err := vz.NewVirtioNetworkDeviceConfiguration(natAttachment)
 		if err != nil {
-			log.Fatalf("Could not create virtio network device configuration: %v", err)
+			return fmt.Errorf("Could not create virtio network device configuration: %v", err)
 		}
 		config.SetNetworkDevicesVirtualMachineConfiguration([]*vz.VirtioNetworkDeviceConfiguration{
 			networkConfig,
 		})
 		macAddress, err := vz.NewRandomLocallyAdministeredMACAddress()
 		if err != nil {
-			log.Fatalf("Could not create random MAC address: %v", err)
+			return fmt.Errorf("Could not create random MAC address: %v", err)
 		}
 		networkConfig.SetMACAddress(macAddress)
 	case virtualizationNetworkingNone:
 	default:
-		log.Fatalf("Invalid networking mode: %s", netMode[0])
+		return fmt.Errorf("Invalid networking mode: %s", netMode[0])
 	}
 
 	// entropy
 	entropyConfig, err := vz.NewVirtioEntropyDeviceConfiguration()
 	if err != nil {
-		log.Fatalf("Could not create virtio entropy device configuration: %v", err)
+		return fmt.Errorf("Could not create virtio entropy device configuration: %v", err)
 	}
 
 	config.SetEntropyDevicesVirtualMachineConfiguration([]*vz.VirtioEntropyDeviceConfiguration{
@@ -223,16 +181,16 @@ func runVirtualizationFramework(args []string) {
 	})
 
 	var storageDevices []vz.StorageDeviceConfiguration
-	for i, d := range disks {
+	for i, d := range cfg.disks {
 		var id, diskPath string
 		if i != 0 {
 			id = strconv.Itoa(i)
 		}
 		if d.Size != 0 && d.Path == "" {
-			diskPath = filepath.Join(*state, "disk"+id+".raw")
+			diskPath = filepath.Join(cfg.state, "disk"+id+".raw")
 		}
 		if d.Path == "" {
-			log.Fatalf("disk specified with no size or name")
+			return fmt.Errorf("disk specified with no size or name")
 		}
 		diskImageAttachment, err := vz.NewDiskImageStorageDeviceAttachment(
 			diskPath,
@@ -243,7 +201,7 @@ func runVirtualizationFramework(args []string) {
 		}
 		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
 		if err != nil {
-			log.Fatalf("Could not create virtio block device configuration: %v", err)
+			return fmt.Errorf("Could not create virtio block device configuration: %v", err)
 		}
 		storageDevices = append(storageDevices, storageDeviceConfig)
 	}
@@ -257,7 +215,7 @@ func runVirtualizationFramework(args []string) {
 		}
 		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
 		if err != nil {
-			log.Fatalf("Could not create virtio block device configuration: %v", err)
+			return fmt.Errorf("Could not create virtio block device configuration: %v", err)
 		}
 		storageDevices = append(storageDevices, storageDeviceConfig)
 	}
@@ -267,7 +225,7 @@ func runVirtualizationFramework(args []string) {
 	// traditional memory balloon device which allows for managing guest memory. (optional)
 	memoryBalloonDeviceConfiguration, err := vz.NewVirtioTraditionalMemoryBalloonDeviceConfiguration()
 	if err != nil {
-		log.Fatalf("Could not create virtio traditional memory balloon device configuration: %v", err)
+		return fmt.Errorf("Could not create virtio traditional memory balloon device configuration: %v", err)
 	}
 	config.SetMemoryBalloonDevicesVirtualMachineConfiguration([]vz.MemoryBalloonDeviceConfiguration{
 		memoryBalloonDeviceConfiguration,
@@ -276,7 +234,7 @@ func runVirtualizationFramework(args []string) {
 	// socket device (optional)
 	socketDeviceConfiguration, err := vz.NewVirtioSocketDeviceConfiguration()
 	if err != nil {
-		log.Fatalf("Could not create virtio socket device configuration: %v", err)
+		return fmt.Errorf("Could not create virtio socket device configuration: %v", err)
 	}
 	config.SetSocketDevicesVirtualMachineConfiguration([]vz.SocketDeviceConfiguration{
 		socketDeviceConfiguration,
@@ -288,7 +246,7 @@ func runVirtualizationFramework(args []string) {
 
 	vm, err := vz.NewVirtualMachine(config)
 	if err != nil {
-		log.Fatalf("Could not create virtual machine: %v", err)
+		return fmt.Errorf("Could not create virtual machine: %v", err)
 	}
 
 	signalCh := make(chan os.Signal, 1)
@@ -306,7 +264,7 @@ func runVirtualizationFramework(args []string) {
 			result, err := vm.RequestStop()
 			if err != nil {
 				log.Println("request stop error:", err)
-				return
+				return nil
 			}
 			log.Println("recieved signal", result)
 		case newState := <-vm.StateChangedNotify():
@@ -315,7 +273,7 @@ func runVirtualizationFramework(args []string) {
 			}
 			if newState == vz.VirtualMachineStateStopped {
 				log.Println("stopped successfully")
-				return
+				return nil
 			}
 		case err := <-errCh:
 			log.Println("in start:", err)

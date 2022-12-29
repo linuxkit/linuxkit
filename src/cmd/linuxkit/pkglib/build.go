@@ -564,7 +564,7 @@ type buildCtx struct {
 
 // Reader gets an io.Reader by iterating over the sources, tarring up the content after rewriting the paths.
 // It assumes that sources is sane, ie is well formed and the first part is an absolute path
-// and that it exists. NewFromCLI() ensures that.
+// and that it exists.
 func (c *buildCtx) Reader() io.ReadCloser {
 	r, w := io.Pipe()
 	tw := tar.NewWriter(w)

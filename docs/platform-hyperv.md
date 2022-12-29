@@ -8,7 +8,7 @@ manage the Hyper-V VMs.
 
 Example:
 ```sh
-linuxkit.exe run -disk size=1 linuxkit-efi.iso
+linuxkit.exe run --disk size=1 linuxkit-efi.iso
 ```
 
 The Hyper-V VM, by default, is named after the prefix of the ISO, ie

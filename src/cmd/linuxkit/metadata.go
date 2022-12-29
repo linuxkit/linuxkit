@@ -1,12 +1,10 @@
 package main
 
 import (
-	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/rn/iso9660wrap"
-	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 // WriteMetadataISO writes a metadata ISO file in a format usable by pkg/metadata
@@ -20,58 +18,35 @@ func WriteMetadataISO(path string, content []byte) error {
 	return iso9660wrap.WriteBuffer(outfh, content, "config")
 }
 
-func metadataCreateUsage() {
-	invoked := filepath.Base(os.Args[0])
-	fmt.Printf("USAGE: %s metadata create [file.iso] [metadata]\n\n", invoked)
+func metadataCreateCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "create",
+		Short: "create an ISO with metadata",
+		Long: `Create an ISO file with metadata in it.
+		Provided metadata will be written to '/config' in the ISO.
+		This is compatible with the linuxkit/metadata package.`,
+		Args:    cobra.ExactArgs(2),
+		Example: "linuxkit metadata create file.iso \"metadata\"",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			isoImage := args[0]
+			metadata := args[1]
 
-	fmt.Printf("'file.iso' is the file to create.\n")
-	fmt.Printf("'metadata' will be written to '/config' in the ISO.\n")
-	fmt.Printf("This is compatible with the linuxkit/metadata package\n")
+			return WriteMetadataISO(isoImage, []byte(metadata))
+		},
+	}
+
+	return cmd
 }
 
-func metadataCreate(args []string) {
-	if len(args) != 2 {
-		metadataCreateUsage()
-		os.Exit(1)
-	}
-	switch args[0] {
-	case "help", "-h", "-help", "--help":
-		metadataCreateUsage()
-		os.Exit(0)
+func metadataCmd() *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "metadata",
+		Short: "manage ISO metadata",
+		Long:  `Manage ISO metadata.`,
 	}
 
-	isoImage := args[0]
-	metadata := args[1]
+	cmd.AddCommand(metadataCreateCmd())
 
-	if err := WriteMetadataISO(isoImage, []byte(metadata)); err != nil {
-		log.Fatal("Failed to write user data ISO: ", err)
-	}
-}
-
-func metadataUsage() {
-	invoked := filepath.Base(os.Args[0])
-	fmt.Printf("USAGE: %s metadata COMMAND [options]\n\n", invoked)
-	fmt.Printf("Commands:\n")
-	fmt.Printf("  create      Create a metadata ISO\n")
-}
-
-func metadata(args []string) {
-	if len(args) < 1 {
-		metadataUsage()
-		os.Exit(1)
-	}
-	switch args[0] {
-	case "help", "-h", "-help", "--help":
-		metadataUsage()
-		os.Exit(0)
-	}
-
-	switch args[0] {
-	case "create":
-		metadataCreate(args[1:])
-	default:
-		fmt.Printf("%q is not a valid metadata command.\n\n", args[0])
-		metadataUsage()
-		os.Exit(1)
-	}
+	return cmd
 }

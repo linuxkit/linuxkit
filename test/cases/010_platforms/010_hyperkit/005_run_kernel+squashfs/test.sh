@@ -15,7 +15,7 @@ clean_up() {
 }
 trap clean_up EXIT
 
-linuxkit build -format kernel+squashfs -name "${NAME}" test.yml
+linuxkit build --format kernel+squashfs --name "${NAME}" test.yml
 [ -f "${NAME}-kernel" ] || exit 1
 [ -f "${NAME}-squashfs.img" ] || exit 1
 [ -f "${NAME}-cmdline" ]|| exit 1

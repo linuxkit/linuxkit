@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format vmdk -name "${NAME}" ../test.yml
+linuxkit build --format vmdk --name "${NAME}" ../test.yml
 [ -f "${NAME}.vmdk" ] || exit 1
 
 exit 0

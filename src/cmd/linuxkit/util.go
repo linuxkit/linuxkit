@@ -16,6 +16,10 @@ func (f *multipleFlag) String() string {
 	return "A multiple flag is a type of flag that can be repeated any number of times"
 }
 
+func (f *multipleFlag) Type() string {
+	return "[]string"
+}
+
 func (f *multipleFlag) Set(value string) error {
 	*f = append(*f, value)
 	return nil
@@ -138,6 +142,10 @@ func (f *flagOverEnvVarOverDefaultString) Set(value string) error {
 	return nil
 }
 
+func (f *flagOverEnvVarOverDefaultString) Type() string {
+	return "string"
+}
+
 // Convert a multi-line string into an array of strings
 func splitLines(in string) []string {
 	var res []string
@@ -197,6 +205,10 @@ type Disks []DiskConfig
 
 func (l *Disks) String() string {
 	return fmt.Sprint(*l)
+}
+
+func (l *Disks) Type() string {
+	return "[]DiskConfig"
 }
 
 // Set is used by flag to configure value from CLI

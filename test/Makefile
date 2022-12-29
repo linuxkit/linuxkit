@@ -34,7 +34,7 @@ endef
 .PHONY: ltp
 ltp: export CLOUDSDK_IMAGE_NAME?=test-ltp
 ltp: $(LINUXKIT) test-ltp.img.tar.gz
-	$(LINUXKIT) build -format gcp -pull hack/test-ltp.yml
+	$(LINUXKIT) build --format gcp -pull hack/test-ltp.yml
 	$(LINUXKIT) push gcp test-ltp.img.tar.gz
 	$(LINUXKIT) run gcp -skip-cleanup -machine n1-highcpu-4 $(CLOUDSDK_IMAGE_NAME) | tee test-ltp.log
 	$(call check_test_log, test-ltp.log)

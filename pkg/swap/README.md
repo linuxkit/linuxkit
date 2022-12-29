@@ -79,5 +79,5 @@ The sample command to run the enclosed is:
 
 ```
 linuxkit build swap.yml
-linuxkit run -disk size=4G swap
+linuxkit run --disk size=4G swap
 ```

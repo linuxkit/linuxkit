@@ -1,10 +1,8 @@
 package util
 
 import (
-	"flag"
-	"fmt"
+	"errors"
 	stdlog "log"
-	"os"
 
 	ggcrlog "github.com/google/go-containerregistry/pkg/logs"
 	log "github.com/sirupsen/logrus"
@@ -26,37 +24,18 @@ func (f *infoFormatter) Format(entry *log.Entry) ([]byte, error) {
 	return defaultLogFormatter.Format(entry)
 }
 
-var (
-	flagQuiet, flagVerbose *bool
-)
-
-// AddLoggingFlags add the logging flags to a flagset, or, if none given,
-// the default flag package
-func AddLoggingFlags(fs *flag.FlagSet) {
-	// if we have no flagset, add it to the default flag package
-	if fs == nil {
-		flagQuiet = flag.Bool("q", false, "Quiet execution")
-		flagVerbose = flag.Bool("v", false, "Verbose execution")
-	} else {
-		flagQuiet = fs.Bool("q", false, "Quiet execution")
-		flagVerbose = fs.Bool("v", false, "Verbose execution")
-	}
-}
-
 // SetupLogging once the flags have been parsed, setup the logging
-func SetupLogging() {
+func SetupLogging(quiet, verbose bool) error {
 	// Set up logging
 	log.SetFormatter(new(infoFormatter))
 	log.SetLevel(log.InfoLevel)
-	flag.Parse()
-	if *flagQuiet && *flagVerbose {
-		fmt.Printf("Can't set quiet and verbose flag at the same time\n")
-		os.Exit(1)
+	if quiet && verbose {
+		return errors.New("can't set quiet and verbose flag at the same time")
 	}
-	if *flagQuiet {
+	if quiet {
 		log.SetLevel(log.ErrorLevel)
 	}
-	if *flagVerbose {
+	if verbose {
 		// Switch back to the standard formatter
 		log.SetFormatter(defaultLogFormatter)
 		log.SetLevel(log.DebugLevel)
@@ -65,4 +44,5 @@ func SetupLogging() {
 		ggcrlog.Debug = stdlog.New(log.StandardLogger().WriterLevel(log.DebugLevel), "", 0)
 	}
 	ggcrlog.Progress = stdlog.New(log.StandardLogger().WriterLevel(log.InfoLevel), "", 0)
+	return nil
 }

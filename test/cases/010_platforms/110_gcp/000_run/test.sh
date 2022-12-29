@@ -29,7 +29,7 @@ trap clean_up EXIT
 mkdir -p certs
 printf '%s' "$GCLOUD_CREDENTIALS" > certs/svc_account.json
 
-linuxkit build -format gcp -name "${NAME}" test.yml
+linuxkit build --format gcp --name "${NAME}" test.yml
 [ -f "${NAME}.img.tar.gz" ] || exit 1
 linuxkit push gcp -keys certs/svc_account.json -bucket linuxkit-gcp-test-bucket ${NAME}.img.tar.gz
 # tee output of lk run to file as grep hides failures and doesn't 

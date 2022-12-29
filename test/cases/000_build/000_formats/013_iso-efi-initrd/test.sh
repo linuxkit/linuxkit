@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format iso-efi-initrd -name "${NAME}" ../test.yml
+linuxkit build --format iso-efi-initrd --name "${NAME}" ../test.yml
 [ -f "${NAME}"-efi-initrd.iso ] || exit 1
 
 exit 0

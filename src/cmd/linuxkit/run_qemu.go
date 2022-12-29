@@ -2,7 +2,7 @@ package main
 
 import (
 	"crypto/rand"
-	"flag"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 )
 
 const (
@@ -116,233 +117,241 @@ func generateMAC() net.HardwareAddr {
 	return mac
 }
 
-func runQemu(args []string) {
-	invoked := filepath.Base(os.Args[0])
-	flags := flag.NewFlagSet("qemu", flag.ExitOnError)
-	flags.Usage = func() {
-		fmt.Printf("USAGE: %s run qemu [options] path\n\n", invoked)
-		fmt.Printf("'path' specifies the path to the VM image.\n")
-		fmt.Printf("\n")
-		fmt.Printf("Options:\n")
-		flags.PrintDefaults()
-		fmt.Printf("\n")
-		fmt.Printf("If not running as root note that '-networking bridge,br0' requires a\n")
-		fmt.Printf("setuid network helper and appropriate host configuration, see\n")
-		fmt.Printf("http://wiki.qemu.org/Features/HelperNetworking.\n")
+func runQEMUCmd() *cobra.Command {
+	var (
+		enableGUI    bool
+		uefiBoot     bool
+		isoBoot      bool
+		squashFSBoot bool
+		kernelBoot   bool
+		state        string
+		data         string
+		dataPath     string
+		fw           string
+		accel        string
+		arch         string
+		qemuCmd      string
+		qemuDetached bool
+		networking   string
+		usbEnabled   bool
+		deviceFlags  multipleFlag
+		publishFlags multipleFlag
+	)
+
+	cmd := &cobra.Command{
+		Use:   "qemu",
+		Short: "launch a VM using qemu",
+		Long: `Launch a VM using qemu.
+		'path' specifies the path to the VM image.
+
+		If not running as root note that '-networking bridge,br0' requires a
+		setuid network helper and appropriate host configuration, see
+		http://wiki.qemu.org/Features/HelperNetworking.
+		`,
+		Args:    cobra.ExactArgs(1),
+		Example: "linuxkit run qemu [options] path",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			path := args[0]
+
+			if data != "" && dataPath != "" {
+				return errors.New("Cannot specify both -data and -data-file")
+			}
+
+			// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
+			vmUUID := uuid.New()
+
+			// These envvars override the corresponding command line
+			// options. So this must remain after the `flags.Parse` above.
+			accel = getStringValue("LINUXKIT_QEMU_ACCEL", accel, "")
+
+			prefix := path
+
+			_, err := os.Stat(path)
+			stat := err == nil
+
+			// if the path does not exist, must be trying to do a kernel+initrd or kernel+squashfs boot
+			if !stat {
+				_, err = os.Stat(path + "-kernel")
+				statKernel := err == nil
+				if statKernel {
+					_, err = os.Stat(path + "-squashfs.img")
+					statSquashFS := err == nil
+					if statSquashFS {
+						squashFSBoot = true
+					} else {
+						kernelBoot = true
+					}
+				}
+				// we will error out later if neither found
+			} else {
+				// if path ends in .iso they meant an ISO
+				if strings.HasSuffix(path, ".iso") {
+					isoBoot = true
+					prefix = strings.TrimSuffix(path, ".iso")
+				}
+			}
+
+			if state == "" {
+				state = prefix + "-state"
+			}
+
+			if err := os.MkdirAll(state, 0755); err != nil {
+				return fmt.Errorf("Could not create state directory: %w", err)
+			}
+
+			var isoPaths []string
+
+			if isoBoot {
+				isoPaths = append(isoPaths, path)
+			}
+
+			metadataPaths, err := CreateMetadataISO(state, data, dataPath)
+			if err != nil {
+				return err
+			}
+			isoPaths = append(isoPaths, metadataPaths...)
+
+			for i, d := range disks {
+				id := ""
+				if i != 0 {
+					id = strconv.Itoa(i)
+				}
+				if d.Size != 0 && d.Format == "" {
+					d.Format = "qcow2"
+				}
+				if d.Size != 0 && d.Path == "" {
+					d.Path = filepath.Join(state, "disk"+id+".img")
+				}
+				if d.Path == "" {
+					return fmt.Errorf("disk specified with no size or name")
+				}
+				disks[i] = d
+			}
+
+			// user not trying to boot off ISO or kernel+initrd, so assume booting from a disk image or kernel+squashfs
+			if !kernelBoot && !isoBoot {
+				var diskPath string
+				if squashFSBoot {
+					diskPath = path + "-squashfs.img"
+				} else {
+					if _, err := os.Stat(path); err != nil {
+						log.Fatalf("Boot disk image %s does not exist", path)
+					}
+					diskPath = path
+				}
+				// currently no way to set format, but autodetect probably works
+				d := Disks{DiskConfig{Path: diskPath}}
+				disks = append(d, disks...)
+			}
+
+			if networking == "" || networking == "default" {
+				networking = qemuNetworkingDefault
+			}
+			netMode := strings.SplitN(networking, ",", 2)
+
+			var netdevConfig string
+			switch netMode[0] {
+			case qemuNetworkingUser:
+				netdevConfig = "user,id=t0"
+			case qemuNetworkingTap:
+				if len(netMode) != 2 {
+					return fmt.Errorf("Not enough arguments for %q networking mode", qemuNetworkingTap)
+				}
+				if len(publishFlags) != 0 {
+					return fmt.Errorf("Port publishing requires %q networking mode", qemuNetworkingUser)
+				}
+				netdevConfig = fmt.Sprintf("tap,id=t0,ifname=%s,script=no,downscript=no", netMode[1])
+			case qemuNetworkingBridge:
+				if len(netMode) != 2 {
+					return fmt.Errorf("Not enough arguments for %q networking mode", qemuNetworkingBridge)
+				}
+				if len(publishFlags) != 0 {
+					return fmt.Errorf("Port publishing requires %q networking mode", qemuNetworkingUser)
+				}
+				netdevConfig = fmt.Sprintf("bridge,id=t0,br=%s", netMode[1])
+			case qemuNetworkingNone:
+				if len(publishFlags) != 0 {
+					return fmt.Errorf("Port publishing requires %q networking mode", qemuNetworkingUser)
+				}
+				netdevConfig = ""
+			default:
+				return fmt.Errorf("Invalid networking mode: %s", netMode[0])
+			}
+
+			config := QemuConfig{
+				Path:           path,
+				ISOBoot:        isoBoot,
+				UEFI:           uefiBoot,
+				SquashFS:       squashFSBoot,
+				Kernel:         kernelBoot,
+				GUI:            enableGUI,
+				Disks:          disks,
+				ISOImages:      isoPaths,
+				StatePath:      state,
+				FWPath:         fw,
+				Arch:           arch,
+				CPUs:           fmt.Sprintf("%d", cpus),
+				Memory:         fmt.Sprintf("%d", mem),
+				Accel:          accel,
+				Detached:       qemuDetached,
+				QemuBinPath:    qemuCmd,
+				PublishedPorts: publishFlags,
+				NetdevConfig:   netdevConfig,
+				UUID:           vmUUID,
+				USB:            usbEnabled,
+				Devices:        deviceFlags,
+			}
+
+			config, err = discoverBinaries(config)
+			if err != nil {
+				return err
+			}
+
+			if err = runQemuLocal(config); err != nil {
+				return err
+			}
+			return nil
+		},
 	}
 
 	// Display flags
-	enableGUI := flags.Bool("gui", false, "Set qemu to use video output instead of stdio")
+	cmd.Flags().BoolVar(&enableGUI, "gui", false, "Set qemu to use video output instead of stdio")
 
 	// Boot type; we try to determine automatically
-	uefiBoot := flags.Bool("uefi", false, "Use UEFI boot")
-	isoBoot := flags.Bool("iso", false, "Boot image is an ISO")
-	squashFSBoot := flags.Bool("squashfs", false, "Boot image is a kernel+squashfs+cmdline")
-	kernelBoot := flags.Bool("kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
+	cmd.Flags().BoolVar(&uefiBoot, "uefi", false, "Use UEFI boot")
+	cmd.Flags().BoolVar(&isoBoot, "iso", false, "Boot image is an ISO")
+	cmd.Flags().BoolVar(&squashFSBoot, "squashfs", false, "Boot image is a kernel+squashfs+cmdline")
+	cmd.Flags().BoolVar(&kernelBoot, "kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
 
 	// State flags
-	state := flags.String("state", "", "Path to directory to keep VM state in")
+	cmd.Flags().StringVar(&state, "state", "", "Path to directory to keep VM state in")
 
 	// Paths and settings for disks
-	var disks Disks
-	flags.Var(&disks, "disk", "Disk config, may be repeated. [file=]path[,size=1G][,format=qcow2]")
-	data := flags.String("data", "", "String of metadata to pass to VM; error to specify both -data and -data-file")
-	dataPath := flags.String("data-file", "", "Path to file containing metadata to pass to VM; error to specify both -data and -data-file")
-
-	if *data != "" && *dataPath != "" {
-		log.Fatal("Cannot specify both -data and -data-file")
-	}
+	cmd.Flags().StringVar(&data, "data", "", "String of metadata to pass to VM; error to specify both -data and -data-file")
+	cmd.Flags().StringVar(&dataPath, "data-file", "", "Path to file containing metadata to pass to VM; error to specify both -data and -data-file")
 
 	// Paths and settings for UEFI firware
 	// Note, we do not use defaultFWPath here as we have a special case for containerised execution
-	fw := flags.String("fw", "", "Path to OVMF firmware for UEFI boot")
+	cmd.Flags().StringVar(&fw, "fw", "", "Path to OVMF firmware for UEFI boot")
 
 	// VM configuration
-	accel := flags.String("accel", defaultAccel, "Choose acceleration mode. Use 'tcg' to disable it.")
-	arch := flags.String("arch", defaultArch, "Type of architecture to use, e.g. x86_64, aarch64, s390x")
-	cpus := flags.String("cpus", "1", "Number of CPUs")
-	mem := flags.String("mem", "1024", "Amount of memory in MB")
+	cmd.Flags().StringVar(&accel, "accel", defaultAccel, "Choose acceleration mode. Use 'tcg' to disable it.")
+	cmd.Flags().StringVar(&arch, "arch", defaultArch, "Type of architecture to use, e.g. x86_64, aarch64, s390x")
 
 	// Backend configuration
-	qemuCmd := flags.String("qemu", "", "Path to the qemu binary (otherwise look in $PATH)")
-	qemuDetached := flags.Bool("detached", false, "Set qemu container to run in the background")
-
-	// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
-	vmUUID := uuid.New()
+	cmd.Flags().StringVar(&qemuCmd, "qemu", "", "Path to the qemu binary (otherwise look in $PATH)")
+	cmd.Flags().BoolVar(&qemuDetached, "detached", false, "Set qemu container to run in the background")
 
 	// Networking
-	networking := flags.String("networking", qemuNetworkingDefault, "Networking mode. Valid options are 'default', 'user', 'bridge[,name]', tap[,name] and 'none'. 'user' uses QEMUs userspace networking. 'bridge' connects to a preexisting bridge. 'tap' uses a prexisting tap device. 'none' disables networking.`")
+	cmd.Flags().StringVar(&networking, "networking", qemuNetworkingDefault, "Networking mode. Valid options are 'default', 'user', 'bridge[,name]', tap[,name] and 'none'. 'user' uses QEMUs userspace networking. 'bridge' connects to a preexisting bridge. 'tap' uses a prexisting tap device. 'none' disables networking.`")
 
-	publishFlags := multipleFlag{}
-	flags.Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
+	cmd.Flags().Var(&publishFlags, "publish", "Publish a vm's port(s) to the host (default [])")
 
 	// USB devices
-	usbEnabled := flags.Bool("usb", false, "Enable USB controller")
-	deviceFlags := multipleFlag{}
-	flags.Var(&deviceFlags, "device", "Add USB host device(s). Format driver[,prop=value][,...] -- add device, like -device on the qemu command line.")
+	cmd.Flags().BoolVar(&usbEnabled, "usb", false, "Enable USB controller")
+	cmd.Flags().Var(&deviceFlags, "device", "Add USB host device(s). Format driver[,prop=value][,...] -- add device, like -device on the qemu command line.")
 
-	if err := flags.Parse(args); err != nil {
-		log.Fatal("Unable to parse args")
-	}
-	remArgs := flags.Args()
-
-	// These envvars override the corresponding command line
-	// options. So this must remain after the `flags.Parse` above.
-	*accel = getStringValue("LINUXKIT_QEMU_ACCEL", *accel, "")
-
-	if len(remArgs) == 0 {
-		fmt.Println("Please specify the path to the image to boot")
-		flags.Usage()
-		os.Exit(1)
-	}
-	path := remArgs[0]
-	prefix := path
-
-	_, err := os.Stat(path)
-	stat := err == nil
-
-	// if the path does not exist, must be trying to do a kernel+initrd or kernel+squashfs boot
-	if !stat {
-		_, err = os.Stat(path + "-kernel")
-		statKernel := err == nil
-		if statKernel {
-			_, err = os.Stat(path + "-squashfs.img")
-			statSquashFS := err == nil
-			if statSquashFS {
-				*squashFSBoot = true
-			} else {
-				*kernelBoot = true
-			}
-		}
-		// we will error out later if neither found
-	} else {
-		// if path ends in .iso they meant an ISO
-		if strings.HasSuffix(path, ".iso") {
-			*isoBoot = true
-			prefix = strings.TrimSuffix(path, ".iso")
-		}
-	}
-
-	if *state == "" {
-		*state = prefix + "-state"
-	}
-
-	if err := os.MkdirAll(*state, 0755); err != nil {
-		log.Fatalf("Could not create state directory: %v", err)
-	}
-
-	var isoPaths []string
-
-	if *isoBoot {
-		isoPaths = append(isoPaths, path)
-	}
-
-	metadataPaths, err := CreateMetadataISO(*state, *data, *dataPath)
-	if err != nil {
-		log.Fatalf("%v", err)
-	}
-	isoPaths = append(isoPaths, metadataPaths...)
-
-	for i, d := range disks {
-		id := ""
-		if i != 0 {
-			id = strconv.Itoa(i)
-		}
-		if d.Size != 0 && d.Format == "" {
-			d.Format = "qcow2"
-		}
-		if d.Size != 0 && d.Path == "" {
-			d.Path = filepath.Join(*state, "disk"+id+".img")
-		}
-		if d.Path == "" {
-			log.Fatalf("disk specified with no size or name")
-		}
-		disks[i] = d
-	}
-
-	// user not trying to boot off ISO or kernel+initrd, so assume booting from a disk image or kernel+squashfs
-	if !*kernelBoot && !*isoBoot {
-		var diskPath string
-		if *squashFSBoot {
-			diskPath = path + "-squashfs.img"
-		} else {
-			if _, err := os.Stat(path); err != nil {
-				log.Fatalf("Boot disk image %s does not exist", path)
-			}
-			diskPath = path
-		}
-		// currently no way to set format, but autodetect probably works
-		d := Disks{DiskConfig{Path: diskPath}}
-		disks = append(d, disks...)
-	}
-
-	if *networking == "" || *networking == "default" {
-		dflt := qemuNetworkingDefault
-		networking = &dflt
-	}
-	netMode := strings.SplitN(*networking, ",", 2)
-
-	var netdevConfig string
-	switch netMode[0] {
-	case qemuNetworkingUser:
-		netdevConfig = "user,id=t0"
-	case qemuNetworkingTap:
-		if len(netMode) != 2 {
-			log.Fatalf("Not enough arguments for %q networking mode", qemuNetworkingTap)
-		}
-		if len(publishFlags) != 0 {
-			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
-		}
-		netdevConfig = fmt.Sprintf("tap,id=t0,ifname=%s,script=no,downscript=no", netMode[1])
-	case qemuNetworkingBridge:
-		if len(netMode) != 2 {
-			log.Fatalf("Not enough arguments for %q networking mode", qemuNetworkingBridge)
-		}
-		if len(publishFlags) != 0 {
-			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
-		}
-		netdevConfig = fmt.Sprintf("bridge,id=t0,br=%s", netMode[1])
-	case qemuNetworkingNone:
-		if len(publishFlags) != 0 {
-			log.Fatalf("Port publishing requires %q networking mode", qemuNetworkingUser)
-		}
-		netdevConfig = ""
-	default:
-		log.Fatalf("Invalid networking mode: %s", netMode[0])
-	}
-
-	config := QemuConfig{
-		Path:           path,
-		ISOBoot:        *isoBoot,
-		UEFI:           *uefiBoot,
-		SquashFS:       *squashFSBoot,
-		Kernel:         *kernelBoot,
-		GUI:            *enableGUI,
-		Disks:          disks,
-		ISOImages:      isoPaths,
-		StatePath:      *state,
-		FWPath:         *fw,
-		Arch:           *arch,
-		CPUs:           *cpus,
-		Memory:         *mem,
-		Accel:          *accel,
-		Detached:       *qemuDetached,
-		QemuBinPath:    *qemuCmd,
-		PublishedPorts: publishFlags,
-		NetdevConfig:   netdevConfig,
-		UUID:           vmUUID,
-		USB:            *usbEnabled,
-		Devices:        deviceFlags,
-	}
-
-	config, err = discoverBinaries(config)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	if err = runQemuLocal(config); err != nil {
-		log.Fatal(err.Error())
-	}
+	return cmd
 }
 
 func runQemuLocal(config QemuConfig) error {

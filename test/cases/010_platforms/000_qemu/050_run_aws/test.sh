@@ -15,7 +15,7 @@ clean_up() {
 }
 trap clean_up EXIT
 
-linuxkit build -format aws -name "${NAME}" test.yml
+linuxkit build --format aws --name "${NAME}" test.yml
 [ -f "${NAME}.raw" ] || exit 1
 linuxkit run qemu "${NAME}.raw" | grep -q "Welcome to LinuxKit"
 

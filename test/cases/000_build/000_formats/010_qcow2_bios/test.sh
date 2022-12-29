@@ -16,7 +16,7 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build -format qcow2-bios -name "${NAME}" ../test.yml
+linuxkit build --format qcow2-bios --name "${NAME}" ../test.yml
 [ -f "${NAME}.qcow2" ] || exit 1
 
 exit 0
