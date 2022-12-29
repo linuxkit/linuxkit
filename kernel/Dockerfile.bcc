@@ -18,7 +18,6 @@ RUN apk update && apk upgrade -a && \
   curl \
   elfutils-dev \
   flex-dev \
-  fts-dev \
   gettext-dev \
   git \
   iperf3 \
@@ -29,6 +28,7 @@ RUN apk update && apk upgrade -a && \
   llvm-static \
   luajit-dev \
   m4 \
+  musl-fts-dev \
   python3 \
   zlib-dev \
   && true
