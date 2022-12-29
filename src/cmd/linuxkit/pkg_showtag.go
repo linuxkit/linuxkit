@@ -11,11 +11,12 @@ func pkgShowTagCmd() *cobra.Command {
 	var canonical bool
 	cmd := &cobra.Command{
 		Use:   "show-tag",
-		Short: "show the tag for a package based on its source directory",
-		Long: `Show the tag for a package based on its source directory.
+		Short: "show the tag for packages based on its source directory",
+		Long: `Show the tag for one or more packages based on their source directories.
 		'path' specifies the path to the package source directory.
 `,
-		Args: cobra.ExactArgs(1),
+		Args:    cobra.MinimumNArgs(1),
+		Example: "linuxkit pkg show-tag path/to/package [path/to/another/package] [path/to/yet/another/package]",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			pkgs, err := pkglib.NewFromConfig(pkglibConfig, args...)
 			if err != nil {
