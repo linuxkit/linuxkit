@@ -6,14 +6,14 @@ init:
   - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
   - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
   - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
-  - linuxkit/memlogd:014f86dce2ea4bb2ec13e92ae5c1e854bcefec40
+  - linuxkit/memlogd:36758a7ab239943852c4f849283e28ba975413c6
 services:
 # A service which generates logs of log messages
   - name: fill-the-logs
     image: alpine
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); done" ]
   - name: write-and-rotate-logs
-    image: linuxkit/logwrite:4d8aa07d4a7130239fc62b09f33e3401ecf62a38
+    image: linuxkit/logwrite:6100d207d36a089f322defb60e86032c6f66078c
     command: ["/usr/bin/logwrite", "-max-log-size", "1024"]
   - name: check-the-logs
     image: alpine:3.13
