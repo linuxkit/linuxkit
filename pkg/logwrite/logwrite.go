@@ -3,8 +3,7 @@ package main
 // Write logs to files and perform rotation.
 
 import (
-	"bufio"
-	"errors"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -27,36 +26,13 @@ const mb = 1024 * 1024
 
 // LogMessage is a message received from memlogd.
 type LogMessage struct {
-	Time    time.Time // time message was received by memlogd
-	Name    string    // name of the service that wrote the message
-	Message string    // body of the message
+	Time   time.Time `json:"time"`   // time message was received by memlogd
+	Source string    `json:"source"` // name of the service that wrote the message
+	Msg    string    `json:"msg"`    // body of the message
 }
 
 func (m *LogMessage) String() string {
-	return m.Time.Format(time.RFC3339) + " " + m.Name + " " + m.Message
-}
-
-// ParseLogMessage reconstructs a LogMessage from a line of text which looks like:
-// <timestamp>,<origin>;<body>
-func ParseLogMessage(line string) (*LogMessage, error) {
-	bits := strings.SplitN(line, ";", 2)
-	if len(bits) != 2 {
-		return nil, errors.New("Failed to parse log message: " + line)
-	}
-	bits2 := strings.Split(bits[0], ",")
-	if len(bits2) < 2 {
-		// There could be more parameters in future
-		return nil, errors.New("Failed to parse log message: " + line)
-	}
-	Time, err := time.Parse(time.RFC3339, bits2[0])
-	if err != nil {
-		return nil, err
-	}
-	return &LogMessage{
-		Time:    Time,
-		Name:    bits2[1],
-		Message: bits[1],
-	}, nil
+	return m.Time.Format(time.RFC3339) + " " + m.Source + " " + m.Msg
 }
 
 // LogFile is where we write LogMessages to
@@ -87,7 +63,7 @@ func NewLogFile(dir, name string) (*LogFile, error) {
 
 // Write appends a message to the log file
 func (l *LogFile) Write(m *LogMessage) error {
-	s := m.String()
+	s := m.String() + "\n"
 	_, err := io.WriteString(l.File, s)
 	if err == nil {
 		l.BytesWritten += len(s)
@@ -157,41 +133,34 @@ func main() {
 	// map of service name to active log file
 	logs := make(map[string]*LogFile)
 
-	r := bufio.NewReader(conn)
+	var msg LogMessage
+	decoder := json.NewDecoder(conn)
 	for {
-		line, err := r.ReadString('\n')
-		if err == io.EOF {
-			return
-		}
-		if err != nil {
-			log.Fatalf("Failed to read from memlogd: %v", err)
-		}
-		msg, err := ParseLogMessage(line)
-		if err != nil {
+		if err := decoder.Decode(&msg); err != nil {
 			log.Println(err)
 			continue
 		}
-		if strings.HasPrefix(msg.Name, "logwrite") {
+		if strings.HasPrefix(msg.Source, "logwrite") {
 			// don't log our own output in a loop
 			continue
 		}
 
 		var logF *LogFile
 		var ok bool
-		if logF, ok = logs[msg.Name]; !ok {
-			logF, err = NewLogFile(*logDir, msg.Name)
+		if logF, ok = logs[msg.Source]; !ok {
+			logF, err = NewLogFile(*logDir, msg.Source)
 			if err != nil {
-				log.Printf("Failed to create log file %s: %v", msg.Name, err)
+				log.Printf("Failed to create log file %s: %v", msg.Source, err)
 				continue
 			}
-			logs[msg.Name] = logF
+			logs[msg.Source] = logF
 		}
-		if err = logF.Write(msg); err != nil {
-			log.Printf("Failed to write to log file %s: %v", msg.Name, err)
+		if err = logF.Write(&msg); err != nil {
+			log.Printf("Failed to write to log file %s: %v", msg.Source, err)
 			if err := logF.Close(); err != nil {
-				log.Printf("Failed to close log file %s: %v", msg.Name, err)
+				log.Printf("Failed to close log file %s: %v", msg.Source, err)
 			}
-			delete(logs, msg.Name)
+			delete(logs, msg.Source)
 			continue
 		}
 		if logF.BytesWritten > *maxLogSize {
