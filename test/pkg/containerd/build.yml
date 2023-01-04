@@ -12,9 +12,11 @@ config:
     - /usr/bin/containerd:/usr/bin/containerd
     - /usr/bin/containerd-shim:/usr/bin/containerd-shim
   devices:
-    # all block devices
+    # all block and character devices
     - path: all
       type: b
+    - path: all
+      type: c
   mounts:
     - type: cgroup
       options: ["rw","nosuid","noexec","nodev","relatime"]
