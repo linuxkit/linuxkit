@@ -90,12 +90,15 @@ func gcpGet(url string) ([]byte, error) {
 
 // SSH keys:
 // TODO also retrieve the instance keys and respect block
-//      project keys see:
-//      https://cloud.google.com/compute/docs/instances/ssh-keys
+//
+//	project keys see:
+//	https://cloud.google.com/compute/docs/instances/ssh-keys
+//
 // The keys have usernames attached, but as a simplification
 // we are going to add them all to one root file
 // TODO split them into individual user files and make the ssh
-//      container construct those users
+//
+//	container construct those users
 func (p *ProviderGCP) handleSSH() error {
 	sshKeys, err := gcpGet(project + "attributes/ssh-keys")
 	if err != nil {
