@@ -121,11 +121,13 @@ else
 	SWAPDEV=$path
 fi
 
-if [ ! -f $path ] || ! [ $(stat -c "%s" $path) == $(disksize_to_count 1 $size) ]; then
+count="$(disksize_to_count 1 $size)"
+
+if [ ! -f $path ] || ! [ $(stat -c "%s" $path) == $count ]; then
 	## Allocate the file
 	## If possible use a large blocksize:
 	bs=1048576 # 1 MiB
-	if [ "$size" -lt "$bs" ]; then
+	if [ "$count" -lt "$bs" ]; then
 		bs=1024 # fall back to 1KiB
 	fi
 	dd if=/dev/zero of=$path bs=$bs count=$(disksize_to_count $bs $size)
