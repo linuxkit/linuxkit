@@ -1,4 +1,4 @@
-FROM linuxkit/containerd-dev:e6a8da1e270da1601ed1bb85bb44c4442e5d51be AS containerd-dev
+FROM linuxkit/containerd-dev:30c6ccebe92d8af06596fb33b71ec005859116cc AS containerd-dev
 FROM linuxkit/alpine:5d89cd05a567f9bfbe4502be1027a422d46f4a75 AS build
 RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev git linux-headers
 
