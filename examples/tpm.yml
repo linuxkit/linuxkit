@@ -20,7 +20,7 @@ services:
   - name: tss
     image: linuxkit/tss:1246031b0c9d408ceb81790a05dd37bcb9e1c4e1
   - name: rngd
-    image: linuxkit/rngd:a2f118ccde626725d53580aab9517763b888ce27
+    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)

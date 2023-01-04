@@ -10,17 +10,17 @@ onboot:
   - name: sysctl
     image: linuxkit/sysctl:e5959517fab7b44692ad63941eecf37486e73799
   - name: rngd1
-    image: linuxkit/rngd:a2f118ccde626725d53580aab9517763b888ce27
+    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
     command: ["/sbin/rngd", "-1"]
   - name: dhcpcd
     image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:8269c70f323951cea684eca3359401bbc169848f
+    image: linuxkit/metadata:cd284d211eb6456961bf9988f802492b4b63d5b5
 services:
   - name: getty
     image: linuxkit/getty:06f34bce0facea79161566d67345c3ea49965437
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:a2f118ccde626725d53580aab9517763b888ce27
+    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4

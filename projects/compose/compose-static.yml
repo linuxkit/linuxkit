@@ -25,7 +25,7 @@ services:
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:a2f118ccde626725d53580aab9517763b888ce27
+    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
   - name: ntpd
     image: linuxkit/openntpd:dd353cac6cbd816008c565041cec6650090d0ad0
   - name: docker

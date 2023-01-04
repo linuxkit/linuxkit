@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
 onboot:
   - name: metadata
-    image: linuxkit/metadata:8269c70f323951cea684eca3359401bbc169848f
+    image: linuxkit/metadata:cd284d211eb6456961bf9988f802492b4b63d5b5
   - name: test
     image: alpine:3.13
     binds:

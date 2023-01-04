@@ -13,14 +13,14 @@ onboot:
     image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:8269c70f323951cea684eca3359401bbc169848f
+    image: linuxkit/metadata:cd284d211eb6456961bf9988f802492b4b63d5b5
 services:
   - name: getty
     image: linuxkit/getty:06f34bce0facea79161566d67345c3ea49965437
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:a2f118ccde626725d53580aab9517763b888ce27
+    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
   - name: sshd
     image: linuxkit/sshd:62036c2a279715d05e8298b9269a0659964f2619
     binds.add:

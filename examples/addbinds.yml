@@ -19,7 +19,7 @@ services:
       # this will keep all of the existing ones as well
       - /var/tmp:/var/tmp
   - name: rngd
-    image: linuxkit/rngd:a2f118ccde626725d53580aab9517763b888ce27
+    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
 files:
   - path: etc/getty.shadow
     # sample sets password for root to "abcdefgh" (without quotes)
