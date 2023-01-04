@@ -124,6 +124,12 @@ jobs:
       run: |
         make OPTIONS="-v --skip-platforms linux/s390x" -C pkg build
 
+    - name: Build Test Packages
+      # ensures that the test packages are in linuxkit cache when we need them for tests later
+      # Skip s390x as emulation is unreliable
+      run: |
+        make OPTIONS="-v --skip-platforms linux/s390x" -C test/pkg build
+
   test_packages:
     name: Packages Tests
     needs: [ build_packages, build ]
@@ -181,7 +187,7 @@ jobs:
 
   test_kernel:
     name: Kernel Tests
-    needs: build
+    needs: [ build_packages, build ]
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
@@ -219,6 +225,14 @@ jobs:
         chmod ugo+x bin/linuxkit-amd64-linux
         sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
         /usr/local/bin/linuxkit version
+
+    - name: Restore Package Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.linuxkit/cache/
+        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-linuxkit-
 
     - name: Run Tests
       run: make test TEST_SUITE=linuxkit.kernel
@@ -277,7 +291,7 @@ jobs:
 
   test_platforms:
     name: Platform Tests
-    needs: build
+    needs: [ build_packages, build ]
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
@@ -315,13 +329,21 @@ jobs:
         chmod ugo+x bin/linuxkit-amd64-linux
         sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
         /usr/local/bin/linuxkit version
+
+    - name: Restore Package Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.linuxkit/cache/
+        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-linuxkit-
 
     - name: Run Tests
       run: make test TEST_SUITE=linuxkit.platforms
 
   test_security:
     name: Security Tests
-    needs: build
+    needs: [ build_packages, build ]
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
@@ -359,6 +381,14 @@ jobs:
         chmod ugo+x bin/linuxkit-amd64-linux
         sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
         /usr/local/bin/linuxkit version
+
+    - name: Restore Package Cache
+      uses: actions/cache@v2
+      with:
+        path: ~/.linuxkit/cache/
+        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-linuxkit-
 
     - name: Run Tests
       run: make test TEST_SUITE=linuxkit.security

@@ -1,19 +1,21 @@
-DIRS = $(dir $(shell find . -maxdepth 2 -mindepth 2 -type f --name build.yml))
+DIRS = $(dir $(shell find . -maxdepth 2 -mindepth 2 -type f -name build.yml | sort))
 .PHONY: push forcepush build forcebuild show-tag clean
 
+OPTIONS ?=
+
 push:
-	@set -e; for d in $(DIRS); do linuxkit pkg push "$$d"; done
+	linuxkit pkg push $(OPTIONS) $(DIRS)
 
 forcepush:
-	@set -e; for d in $(DIRS); do linuxkit pkg push --force "$$d"; done
+	linuxkit pkg push $(OPTIONS) --force $(DIRS)
 
 build:
-	@set -e; for d in $(DIRS); do linuxkit pkg build "$$d"; done
+	linuxkit pkg build $(OPTIONS) $(DIRS)
 
 forcebuild:
-	@set -e; for d in $(DIRS); do linuxkit pkg build --force "$$d"; done
+	linuxkit pkg build $(OPTIONS) --force $(DIRS)
 
 show-tag:
-	@set -e; for d in $(DIRS); do linuxkit pkg show-tag "$$d"; done
+	linuxkit pkg show-tag $(OPTIONS) $(DIRS)
 
 clean:
