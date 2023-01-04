@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:5d89cd05a567f9bfbe4502be1027a422d46f4a75 as alpine
+FROM linuxkit/alpine:316c3f9d85c21fdd8bc7479e81d290f85bf60eb0 as alpine
 
 RUN apk add tzdata binutils
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/020-containerd
