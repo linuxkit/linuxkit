@@ -10,5 +10,5 @@ kernel:
   ucode: ""
 onboot:
   - name: modprobe
-    image: linuxkit/modprobe:1b59b4f2ebb877085ea0d8d3a41cf06f64c09a15
+    image: linuxkit/modprobe:5dd4d7238f760bcd9f91b9166f414da953242f43
     command: ["modprobe", "nicvf"]

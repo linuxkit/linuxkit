@@ -2,13 +2,13 @@ kernel:
   image: linuxkit/kernel:4.9.39
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
-  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
+  - linuxkit/init:14df799bb3b9e0eb0491da9fda7f32a108a2e2a5
+  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
 onboot:
   - name: mkimage
-    image: linuxkit/mkimage:ef008e6ec914daf0accbb02f5319fa2435d46133
+    image: linuxkit/mkimage:43a37c8c98dfb4cdf9639223fa1baacf305eb5e7
   - name: poweroff
-    image: linuxkit/poweroff:39d99e5909b6f8faccedc78d6d2646cdb6c9ed9c
+    image: linuxkit/poweroff:992d9c7531166fe071d945e8b2728d8b61eb8d5a
 trust:
   org:
     - linuxkit

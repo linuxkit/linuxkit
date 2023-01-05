@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
-  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
+  - linuxkit/init:14df799bb3b9e0eb0491da9fda7f32a108a2e2a5
+  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
+    image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: test
     image: alpine:3.13
@@ -15,7 +15,7 @@ onboot:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:39d99e5909b6f8faccedc78d6d2646cdb6c9ed9c
+    image: linuxkit/poweroff:992d9c7531166fe071d945e8b2728d8b61eb8d5a
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh

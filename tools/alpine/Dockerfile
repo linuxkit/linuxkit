@@ -1,4 +1,4 @@
-FROM alpine:3.14 AS mirror
+FROM alpine:3.17 AS mirror
 
 # update base image
 RUN apk update && apk upgrade -a
@@ -32,9 +32,8 @@ RUN mv /etc/apk/repositories /etc/apk/repositories.upstream && echo "/mirror" > 
 COPY go-compile.sh /go/bin/
 RUN apk add --no-cache git go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
-RUN go get -u golang.org/x/lint/golint
-RUN go get -u github.com/gordonklaus/ineffassign
-RUN go get -u github.com/LK4D4/vndr
+RUN go install golang.org/x/lint/golint@latest
+RUN go install github.com/gordonklaus/ineffassign@latest
 
 # Checkout and compile iucode-tool for Intel CPU microcode
 # On non-x86_64 create a dummy file to copy below.
@@ -56,7 +55,7 @@ RUN set -e && \
         cp iucode_tool /iucode_tool; \
     fi
 
-FROM alpine:3.14
+FROM alpine:3.17
 
 ARG TARGETARCH
 

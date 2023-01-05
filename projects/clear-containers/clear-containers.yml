@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel-clear-containers:4.9.x
   cmdline: "root=/dev/pmem0p1 rootflags=dax,data=ordered,errors=remount-ro rw rootfstype=ext4 tsc=reliable no_timer_check rcupdate.rcu_expedited=1 i8042.direct=1 i8042.dumbkbd=1 i8042.nopnp=1 i8042.noaux=1 noreplace-smp reboot=k panic=1 console=hvc0 console=hvc1 initcall_debug iommu=off quiet  cryptomgr.notests page_poison=on"
 init:
-  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
+  - linuxkit/init:14df799bb3b9e0eb0491da9fda7f32a108a2e2a5
 onboot:
   - name: sysctl
     image: mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c

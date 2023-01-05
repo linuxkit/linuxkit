@@ -2,26 +2,26 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:8f1e6a0747acbbb4d7e24dc98f97faa8d1c6cec7
-  - linuxkit/runc:f01b88c7033180d50ae43562d72707c6881904e4
-  - linuxkit/containerd:de1b18eed76a266baa3092e5c154c84f595e56da
-  - linuxkit/ca-certificates:c1c73ef590dffb6a0138cf758fe4a4305c9864f4
+  - linuxkit/init:14df799bb3b9e0eb0491da9fda7f32a108a2e2a5
+  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
+  - linuxkit/containerd:eeb3aaf497c0b3f6c67f3a245d61ea5a568ca718
+  - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:bdc99eeedc224439ff237990ee06e5b992c8c1ae
+    image: linuxkit/sysctl:e5959517fab7b44692ad63941eecf37486e73799
   - name: dhcpcd
-    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
+    image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:646c00ad6c0b3fc246b6af9ccfcd6b1eb6b6da8a
+    image: linuxkit/metadata:cd284d211eb6456961bf9988f802492b4b63d5b5
 services:
   - name: rngd
-    image: linuxkit/rngd:4f85d8de3f6f45973a8c88dc8fba9ec596e5495a
+    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
   - name: dhcpcd2
-    image: linuxkit/dhcpcd:52d2c4df0311b182e99241cdc382ff726755c450
+    image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf"]
   - name: sshd
-    image: linuxkit/sshd:4696ba61c3ec091328e1c14857d77e675802342f
+    image: linuxkit/sshd:62036c2a279715d05e8298b9269a0659964f2619
     binds.add:
      - /run/config/ssh/authorized_keys:/root/.ssh/authorized_keys
   - name: nginx
