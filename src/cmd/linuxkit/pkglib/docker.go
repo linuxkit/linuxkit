@@ -320,8 +320,9 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		args := []string{"container", "run", "-d", "--name", name, "--privileged", image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug"}
 		msg := fmt.Sprintf("creating builder container '%s' in context '%s'", name, dockerContext)
 		fmt.Println(msg)
-		if err := dr.command(nil, io.Discard, io.Discard, args...); err != nil {
-			return nil, err
+		var outputBytes bytes.Buffer
+		if err := dr.command(nil, &outputBytes, &outputBytes, args...); err != nil {
+			return nil, fmt.Errorf("Error creating builder: %s - output: %s", err, outputBytes.String())
 		}
 	}
 	// wait for buildkit socket to be ready up to the timeout
