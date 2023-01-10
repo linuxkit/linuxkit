@@ -107,16 +107,16 @@ The generated image can be in one of multiple formats which can be run on variou
 			var outfile *os.File
 			if outputFile != "" {
 				if len(buildFormats) > 1 {
-					return fmt.Errorf("The -output option can only be specified when generating a single output format")
+					return fmt.Errorf("The --o option can only be specified when generating a single output format")
 				}
 				if name != "" {
-					return fmt.Errorf("The -output option cannot be specified with -name")
+					return fmt.Errorf("The --o option cannot be specified with -name")
 				}
 				if dir != "" {
-					return fmt.Errorf("The -output option cannot be specified with -dir")
+					return fmt.Errorf("The --o option cannot be specified with -dir")
 				}
 				if !moby.Streamable(buildFormats[0]) {
-					return fmt.Errorf("The -output option cannot be specified for build type %s as it cannot be streamed", buildFormats[0])
+					return fmt.Errorf("The --o option cannot be specified for build type %s as it cannot be streamed", buildFormats[0])
 				}
 				if outputFile == "-" {
 					outfile = os.Stdout
