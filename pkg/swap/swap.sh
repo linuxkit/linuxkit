@@ -114,7 +114,6 @@ done
 ## if a condition failed:
 ### Required? exit 1
 ### Else? exit 0
-
 if [ "$ENCRYPT" == "true" ]; then
 	SWAPDEV=/dev/mapper/swapfile
 else
@@ -140,6 +139,10 @@ if [ ! -f $path ] || ! [ $(stat -c "%s" $path) == $(disksize_to_count 1 $size) ]
 		cryptsetup open --type plain --key-file /dev/urandom --key-size=256 --cipher=aes-cbc-essiv:sha256 --offset=0  ${path} swapfile
 	fi
 
+	/sbin/mkswap $SWAPDEV
+elif [ "$ENCRYPT" == "true" ]; then
+	## Ensure the encrypted swap is created as it won't persist on a reboot
+	cryptsetup open --type plain --key-file /dev/urandom --key-size=256 --cipher=aes-cbc-essiv:sha256 --offset=0  ${path} swapfile
 	/sbin/mkswap $SWAPDEV
 fi
 
