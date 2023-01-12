@@ -239,6 +239,30 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	config.SetSocketDevicesVirtualMachineConfiguration([]vz.SocketDeviceConfiguration{
 		socketDeviceConfiguration,
 	})
+
+	if len(cfg.virtiofsShares) > 0 {
+		var cs []vz.DirectorySharingDeviceConfiguration
+
+		for idx, share := range cfg.virtiofsShares {
+			tag := fmt.Sprintf("virtiofs%d", idx)
+			device, err := vz.NewVirtioFileSystemDeviceConfiguration(tag)
+			if err != nil {
+				log.Fatal("virtiofs device configuration failed", err)
+			}
+			dir, err := vz.NewSharedDirectory(share, false)
+			if err != nil {
+				log.Fatal("virtiofs shared directory failed", err)
+			}
+			single, err := vz.NewSingleDirectoryShare(dir)
+			if err != nil {
+				log.Fatal("virtiofs single directory share failed", err)
+			}
+			device.SetDirectoryShare(single)
+			cs = append(cs, device)
+		}
+		config.SetDirectorySharingDevicesVirtualMachineConfiguration(cs)
+	}
+
 	validated, err := config.Validate()
 	if !validated || err != nil {
 		log.Fatal("validation failed", err)
