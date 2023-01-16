@@ -411,9 +411,26 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	// - we had at least one platform to build
 	// - we found an image in local cache
 	// if neither is true, there is nothing to push
-	if len(platformsToBuild) == 0 && !imageInLocalCache {
-		fmt.Fprintf(writer, "No new platforms to push, skipping.\n")
-		return nil
+
+	if len(platformsToBuild) == 0 {
+		// if we did not yet find the image in local cache,
+		// check, in case we have it and would need to push.
+		// If we did not build it because we were not requested to do so,
+		// then we might not know we have it in local cache.
+		if !imageInLocalCache {
+			// we need this to know whether or not we might push
+			for _, platform := range bo.platforms {
+				exists, err := c.ImageInCache(&ref, "", platform.Architecture)
+				if err == nil && exists {
+					imageInLocalCache = true
+					break
+				}
+			}
+		}
+		if !imageInLocalCache {
+			fmt.Fprintf(writer, "No new platforms to push, skipping.\n")
+			return nil
+		}
 	}
 
 	if p.dirty {
