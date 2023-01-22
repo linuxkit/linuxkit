@@ -45,7 +45,7 @@ jobs:
         sudo ln -s $(pwd)/bin/${{ env.linuxkit_file }} /usr/local/bin/linuxkit
         /usr/local/bin/linuxkit version
     - name: Restore Package Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}

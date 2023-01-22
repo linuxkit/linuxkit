@@ -79,7 +79,7 @@ jobs:
         GOPATH: ${{runner.workspace}}
 
     - name: Upload binary
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: linuxkit-${{matrix.target.suffix}}
         path: |
@@ -100,7 +100,7 @@ jobs:
       run: docker run --privileged --rm tonistiigi/binfmt --install arm64
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -112,7 +112,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Cache Packages
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -149,7 +149,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -163,7 +163,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -175,7 +175,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Restore Package Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -201,7 +201,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -215,7 +215,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -227,7 +227,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Restore Package Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -253,13 +253,13 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
 
     - name: Restore Package Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -275,7 +275,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -305,7 +305,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -319,7 +319,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -331,7 +331,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Restore Package Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -357,7 +357,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -371,7 +371,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v2
+      uses: actions/download-artifact@v3
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -383,7 +383,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Restore Package Cache
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
