@@ -6,7 +6,7 @@ GOENV ?= GO111MODULE=on CGO_ENABLED=0
 GO_FILES ?= $(shell $(GOENV) go list ./...)
 GOBIN ?= $(shell go env GOPATH)/bin
 LINTER ?= $(GOBIN)/golangci-lint
-
+LINTER_VERSION ?= v1.49.0
 
 # BUILDARCH is the host architecture
 # ARCH is the target architecture
@@ -59,8 +59,7 @@ test: image
 
 golangci-lint: $(LINTER)
 $(LINTER):
-	$(GOENV) go get github.com/golangci/golangci-lint/cmd/golangci-lint@v1.17.1
-
+	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) $(LINTER_VERSION)
 
 ## Check the file format
 fmt-check:
@@ -70,13 +69,8 @@ fmt-check:
 	fi
 
 ## Lint the files
-lint: golint golangci-lint
-	@$(BUILD_CMD) $(LINTER) run --disable-all --enable=golint ./...
-
-golint:
-ifeq (, $(shell which golint))
-	go get -u golang.org/x/lint/golint
-endif
+lint: golangci-lint
+	@$(BUILD_CMD) $(LINTER) run ./...
 
 ## Vet the files
 vet:

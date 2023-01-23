@@ -62,6 +62,8 @@ type bootVolumeDescriptor struct {
 }
 type terminatorVolumeDescriptor struct {
 }
+
+//nolint:structcheck // we accept some unused fields as useful for reference
 type supplementaryVolumeDescriptor struct {
 	volumeFlags                uint8
 	systemIdentifier           string // length 32 bytes
@@ -103,7 +105,7 @@ func (v *volumeDescriptors) equal(a *volumeDescriptors) bool {
 		return false
 	}
 	// just convert everything to bytes and compare
-	return bytes.Compare(v.toBytes(), a.toBytes()) == 0
+	return bytes.Equal(v.toBytes(), a.toBytes())
 }
 
 func (v *volumeDescriptors) toBytes() []byte {
@@ -119,13 +121,13 @@ func (v *primaryVolumeDescriptor) Type() volumeDescriptorType {
 	return volumeDescriptorPrimary
 }
 func (v *primaryVolumeDescriptor) equal(a volumeDescriptor) bool {
-	return bytes.Compare(v.toBytes(), a.toBytes()) == 0
+	return bytes.Equal(v.toBytes(), a.toBytes())
 }
 func (v *primaryVolumeDescriptor) toBytes() []byte {
 	b := volumeDescriptorFirstBytes(volumeDescriptorPrimary)
 
-	copy(b[8:40], []byte(v.systemIdentifier))
-	copy(b[40:72], []byte(v.volumeIdentifier))
+	copy(b[8:40], v.systemIdentifier)
+	copy(b[40:72], v.volumeIdentifier)
 	binary.LittleEndian.PutUint32(b[80:84], v.volumeSize)
 	binary.BigEndian.PutUint32(b[84:88], v.volumeSize)
 	binary.LittleEndian.PutUint16(b[120:122], v.setSize)
@@ -149,13 +151,13 @@ func (v *primaryVolumeDescriptor) toBytes() []byte {
 	}
 	copy(b[156:156+34], rootDirEntry)
 
-	copy(b[190:190+128], []byte(v.volumeSetIdentifier))
-	copy(b[318:318+128], []byte(v.publisherIdentifier))
-	copy(b[446:446+128], []byte(v.preparerIdentifier))
-	copy(b[574:574+128], []byte(v.applicationIdentifier))
-	copy(b[702:702+37], []byte(v.copyrightFile))
-	copy(b[739:739+37], []byte(v.abstractFile))
-	copy(b[776:776+37], []byte(v.bibliographicFile))
+	copy(b[190:190+128], v.volumeSetIdentifier)
+	copy(b[318:318+128], v.publisherIdentifier)
+	copy(b[446:446+128], v.preparerIdentifier)
+	copy(b[574:574+128], v.applicationIdentifier)
+	copy(b[702:702+37], v.copyrightFile)
+	copy(b[739:739+37], v.abstractFile)
+	copy(b[776:776+37], v.bibliographicFile)
 	copy(b[813:813+17], timeToDecBytes(v.creation))
 	copy(b[830:830+17], timeToDecBytes(v.modification))
 	copy(b[847:847+17], timeToDecBytes(v.expiration))
@@ -171,19 +173,19 @@ func (v *primaryVolumeDescriptor) toBytes() []byte {
 // volumeDescriptorFromBytes create a volumeDescriptor struct from bytes
 func volumeDescriptorFromBytes(b []byte) (volumeDescriptor, error) {
 	if len(b) != int(volumeDescriptorSize) {
-		return nil, fmt.Errorf("Cannot read volume descriptor from bytes of length %d, must be %d", len(b), volumeDescriptorSize)
+		return nil, fmt.Errorf("cannot read volume descriptor from bytes of length %d, must be %d", len(b), volumeDescriptorSize)
 	}
 	// validate the signature
-	tmpb := make([]byte, 8, 8)
+	tmpb := make([]byte, 8)
 	copy(tmpb[3:8], b[1:6])
 	signature := binary.BigEndian.Uint64(tmpb)
 	if signature != isoIdentifier {
-		return nil, fmt.Errorf("Mismatched ISO identifier in Volume Descriptor. Found %x expected %x", signature, isoIdentifier)
+		return nil, fmt.Errorf("mismatched ISO identifier in Volume Descriptor. Found %x expected %x", signature, isoIdentifier)
 	}
 	// validate the version
 	version := b[6]
 	if version != isoVersion {
-		return nil, fmt.Errorf("Mismatched ISO version in Volume Descriptor. Found %x expected %x", version, isoVersion)
+		return nil, fmt.Errorf("mismatched ISO version in Volume Descriptor. Found %x expected %x", version, isoVersion)
 	}
 	// get the type and data - later we will be more intelligent about this and read actual primary volume info
 	vdType := volumeDescriptorType(b[0])
@@ -194,12 +196,12 @@ func volumeDescriptorFromBytes(b []byte) (volumeDescriptor, error) {
 	case volumeDescriptorPrimary:
 		vd, err = parsePrimaryVolumeDescriptor(b)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to parse primary volume descriptor bytes: %v", err)
+			return nil, fmt.Errorf("unable to parse primary volume descriptor bytes: %v", err)
 		}
 	case volumeDescriptorBoot:
 		vd, err = parseBootVolumeDescriptor(b)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to parse primary volume descriptor bytes: %v", err)
+			return nil, fmt.Errorf("unable to parse primary volume descriptor bytes: %v", err)
 		}
 	case volumeDescriptorTerminator:
 		vd = &terminatorVolumeDescriptor{}
@@ -210,10 +212,10 @@ func volumeDescriptorFromBytes(b []byte) (volumeDescriptor, error) {
 	case volumeDescriptorSupplementary:
 		vd, err = parseSupplementaryVolumeDescriptor(b)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to parse primary volume descriptor bytes: %v", err)
+			return nil, fmt.Errorf("unable to parse primary volume descriptor bytes: %v", err)
 		}
 	default:
-		return nil, fmt.Errorf("Unknown volume descriptor type %d", vdType)
+		return nil, fmt.Errorf("unknown volume descriptor type %d", vdType)
 	}
 	return vd, nil
 }
@@ -223,33 +225,33 @@ func parsePrimaryVolumeDescriptor(b []byte) (*primaryVolumeDescriptor, error) {
 
 	creation, err := decBytesToTime(b[813 : 813+17])
 	if err != nil {
-		return nil, fmt.Errorf("Unable to convert creation date/time from bytes: %v", err)
+		return nil, fmt.Errorf("unable to convert creation date/time from bytes: %v", err)
 	}
 	modification, err := decBytesToTime(b[830 : 830+17])
 	if err != nil {
-		return nil, fmt.Errorf("Unable to convert modification date/time from bytes: %v", err)
+		return nil, fmt.Errorf("unable to convert modification date/time from bytes: %v", err)
 	}
 	// expiration can be never
 	nullBytes := []byte{48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 0}
 	var expiration, effective time.Time
 	expirationBytes := b[847 : 847+17]
 	effectiveBytes := b[864 : 864+17]
-	if bytes.Compare(expirationBytes, nullBytes) != 0 {
+	if !bytes.Equal(expirationBytes, nullBytes) {
 		expiration, err = decBytesToTime(expirationBytes)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to convert expiration date/time from bytes: %v", err)
+			return nil, fmt.Errorf("unable to convert expiration date/time from bytes: %v", err)
 		}
 	}
-	if bytes.Compare(effectiveBytes, nullBytes) != 0 {
+	if !bytes.Equal(effectiveBytes, nullBytes) {
 		effective, err = decBytesToTime(effectiveBytes)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to convert effective date/time from bytes: %v", err)
+			return nil, fmt.Errorf("unable to convert effective date/time from bytes: %v", err)
 		}
 	}
 
 	rootDirEntry, err := dirEntryFromBytes(b[156:156+34], nil)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to read root directory entry: %v", err)
+		return nil, fmt.Errorf("unable to read root directory entry: %v", err)
 	}
 
 	return &primaryVolumeDescriptor{
@@ -284,7 +286,7 @@ func (v *terminatorVolumeDescriptor) Type() volumeDescriptorType {
 	return volumeDescriptorTerminator
 }
 func (v *terminatorVolumeDescriptor) equal(a volumeDescriptor) bool {
-	return bytes.Compare(v.toBytes(), a.toBytes()) == 0
+	return bytes.Equal(v.toBytes(), a.toBytes())
 }
 func (v *terminatorVolumeDescriptor) toBytes() []byte {
 	b := volumeDescriptorFirstBytes(volumeDescriptorTerminator)
@@ -296,11 +298,11 @@ func (v *bootVolumeDescriptor) Type() volumeDescriptorType {
 	return volumeDescriptorBoot
 }
 func (v *bootVolumeDescriptor) equal(a volumeDescriptor) bool {
-	return bytes.Compare(v.toBytes(), a.toBytes()) == 0
+	return bytes.Equal(v.toBytes(), a.toBytes())
 }
 func (v *bootVolumeDescriptor) toBytes() []byte {
 	b := volumeDescriptorFirstBytes(volumeDescriptorBoot)
-	copy(b[7:39], []byte(bootSystemIdentifier))
+	copy(b[7:39], bootSystemIdentifier)
 	binary.LittleEndian.PutUint32(b[0x47:0x4b], v.location)
 
 	return b
@@ -310,7 +312,7 @@ func (v *bootVolumeDescriptor) toBytes() []byte {
 func parseBootVolumeDescriptor(b []byte) (*bootVolumeDescriptor, error) {
 	systemIdentifier := string(b[0x7 : 0x7+len(bootSystemIdentifier)])
 	if systemIdentifier != bootSystemIdentifier {
-		return nil, fmt.Errorf("Incorrect specification, actual '%s' expected '%s'", systemIdentifier, bootSystemIdentifier)
+		return nil, fmt.Errorf("incorrect specification, actual '%s' expected '%s'", systemIdentifier, bootSystemIdentifier)
 	}
 	location := binary.LittleEndian.Uint32(b[0x47:0x4b])
 	return &bootVolumeDescriptor{location: location}, nil
@@ -324,34 +326,34 @@ func parseSupplementaryVolumeDescriptor(b []byte) (*supplementaryVolumeDescripto
 
 	creation, err := decBytesToTime(b[813 : 813+17])
 	if err != nil {
-		return nil, fmt.Errorf("Unable to convert creation date/time from bytes: %v", err)
+		return nil, fmt.Errorf("unable to convert creation date/time from bytes: %v", err)
 	}
 	modification, err := decBytesToTime(b[830 : 830+17])
 	if err != nil {
-		return nil, fmt.Errorf("Unable to convert modification date/time from bytes: %v", err)
+		return nil, fmt.Errorf("unable to convert modification date/time from bytes: %v", err)
 	}
 	// expiration can be never
 	nullBytes := []byte{48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 48, 0}
 	var expiration, effective time.Time
 	expirationBytes := b[847 : 847+17]
 	effectiveBytes := b[864 : 864+17]
-	if bytes.Compare(expirationBytes, nullBytes) != 0 {
+	if !bytes.Equal(expirationBytes, nullBytes) {
 		expiration, err = decBytesToTime(expirationBytes)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to convert expiration date/time from bytes: %v", err)
+			return nil, fmt.Errorf("unable to convert expiration date/time from bytes: %v", err)
 		}
 	}
-	if bytes.Compare(effectiveBytes, nullBytes) != 0 {
+	if !bytes.Equal(effectiveBytes, nullBytes) {
 		effective, err = decBytesToTime(effectiveBytes)
 		if err != nil {
-			return nil, fmt.Errorf("Unable to convert effective date/time from bytes: %v", err)
+			return nil, fmt.Errorf("unable to convert effective date/time from bytes: %v", err)
 		}
 	}
 
 	// no susp extensions for the dir entry in the volume descriptor
 	rootDirEntry, err := dirEntryFromBytes(b[156:156+34], nil)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to read root directory entry: %v", err)
+		return nil, fmt.Errorf("unable to read root directory entry: %v", err)
 	}
 
 	return &supplementaryVolumeDescriptor{
@@ -384,13 +386,13 @@ func (v *supplementaryVolumeDescriptor) Type() volumeDescriptorType {
 	return volumeDescriptorSupplementary
 }
 func (v *supplementaryVolumeDescriptor) equal(a volumeDescriptor) bool {
-	return bytes.Compare(v.toBytes(), a.toBytes()) == 0
+	return bytes.Equal(v.toBytes(), a.toBytes())
 }
 func (v *supplementaryVolumeDescriptor) toBytes() []byte {
 	b := volumeDescriptorFirstBytes(volumeDescriptorSupplementary)
 
-	copy(b[8:40], []byte(v.systemIdentifier))
-	copy(b[40:72], []byte(v.volumeIdentifier))
+	copy(b[8:40], v.systemIdentifier)
+	copy(b[40:72], v.volumeIdentifier)
 	blockcount := uint32(v.volumeSize / uint64(v.blocksize))
 	binary.LittleEndian.PutUint32(b[80:84], blockcount)
 	binary.BigEndian.PutUint32(b[84:88], blockcount)
@@ -435,7 +437,7 @@ func (v *partitionVolumeDescriptor) Type() volumeDescriptorType {
 	return volumeDescriptorPartition
 }
 func (v *partitionVolumeDescriptor) equal(a volumeDescriptor) bool {
-	return bytes.Compare(v.toBytes(), a.toBytes()) == 0
+	return bytes.Equal(v.toBytes(), a.toBytes())
 }
 func (v *partitionVolumeDescriptor) toBytes() []byte {
 	b := volumeDescriptorFirstBytes(volumeDescriptorPartition)
@@ -445,11 +447,11 @@ func (v *partitionVolumeDescriptor) toBytes() []byte {
 
 // utilities
 func volumeDescriptorFirstBytes(t volumeDescriptorType) []byte {
-	b := make([]byte, volumeDescriptorSize, volumeDescriptorSize)
+	b := make([]byte, volumeDescriptorSize)
 
 	b[0] = byte(t)
-	tmpb := make([]byte, 8, 8)
-	binary.BigEndian.PutUint64(tmpb[:], isoIdentifier)
+	tmpb := make([]byte, 8)
+	binary.BigEndian.PutUint64(tmpb, isoIdentifier)
 	copy(b[1:6], tmpb[3:8])
 	b[6] = isoVersion
 	return b
@@ -489,14 +491,14 @@ func timeToDecBytes(t time.Time) []byte {
 	second := strconv.Itoa(t.Second())
 	csec := strconv.Itoa(t.Nanosecond() / 1e+7)
 	_, offset := t.Zone()
-	b := make([]byte, 17, 17)
-	copy(b[0:4], []byte(fmt.Sprintf("%04s", year)))
-	copy(b[4:6], []byte(fmt.Sprintf("%02s", month)))
-	copy(b[6:8], []byte(fmt.Sprintf("%02s", date)))
-	copy(b[8:10], []byte(fmt.Sprintf("%02s", hour)))
-	copy(b[10:12], []byte(fmt.Sprintf("%02s", minute)))
-	copy(b[12:14], []byte(fmt.Sprintf("%02s", second)))
-	copy(b[14:16], []byte(fmt.Sprintf("%02s", csec)))
+	b := make([]byte, 17)
+	copy(b[0:4], fmt.Sprintf("%04s", year))
+	copy(b[4:6], fmt.Sprintf("%02s", month))
+	copy(b[6:8], fmt.Sprintf("%02s", date))
+	copy(b[8:10], fmt.Sprintf("%02s", hour))
+	copy(b[10:12], fmt.Sprintf("%02s", minute))
+	copy(b[12:14], fmt.Sprintf("%02s", second))
+	copy(b[14:16], fmt.Sprintf("%02s", csec))
 	b[16] = byte(offset / 60 / 15)
 	return b
 }

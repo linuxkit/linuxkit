@@ -18,6 +18,7 @@ const (
 	Fat32LBA      Type = 0x0c
 	Fat16bLBA     Type = 0x0e
 	ExtendedLBA   Type = 0x0f
+	LinuxSwap     Type = 0x82
 	Linux         Type = 0x83
 	LinuxExtended Type = 0x85
 	LinuxLVM      Type = 0x8e
@@ -26,7 +27,7 @@ const (
 	MacOSXBoot    Type = 0xab
 	HFS           Type = 0xaf
 	Solaris8Boot  Type = 0xbe
-	GPTProtective Type = 0xef
+	GPTProtective Type = 0xee
 	EFISystem     Type = 0xef
 	VMWareFS      Type = 0xfb
 	VMWareSwap    Type = 0xfc

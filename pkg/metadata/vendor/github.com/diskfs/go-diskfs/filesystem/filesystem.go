@@ -19,6 +19,9 @@ type FileSystem interface {
 	// Label get the label for the filesystem, or "" if none. Be careful to trim it, as it may contain
 	// leading or following whitespace. The label is passed as-is and not cleaned up at all.
 	Label() string
+	// SetLabel changes the label on the writable filesystem. Different file system may hav different
+	// length constraints.
+	SetLabel(string) error
 }
 
 // Type represents the type of disk this is
@@ -29,4 +32,6 @@ const (
 	TypeFat32 Type = iota
 	// TypeISO9660 is an iso filesystem
 	TypeISO9660
+	// TypeSquashfs is a squashfs filesystem
+	TypeSquashfs
 )

@@ -22,5 +22,5 @@ func Read(f util.File, logicalBlocksize, physicalBlocksize int) (Table, error) {
 		return mbrTable, nil
 	}
 	// we are out
-	return nil, fmt.Errorf("Unknown disk partition type")
+	return nil, fmt.Errorf("unknown disk partition type")
 }

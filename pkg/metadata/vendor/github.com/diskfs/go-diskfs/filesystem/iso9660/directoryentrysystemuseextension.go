@@ -23,7 +23,7 @@ var (
 	// ErrSuspFilenameUnsupported error to show that this extension does not support searching by path
 	ErrSuspFilenameUnsupported = errors.New("FilenameUnsupported")
 	// ErrSuspRelocatedDirectoryUnsupported error to indicate that this extension does not support relocated directories
-	ErrSuspRelocatedDirectoryUnsupported = errors.New("RelocatedDirectoryUnsupported")
+	ErrSuspRelocatedDirectoryUnsupported = errors.New("relocatedDirectoryUnsupported")
 )
 
 // suspExtension master for an extension that is registered with an "ER" entry
@@ -64,7 +64,7 @@ type directoryEntrySystemUseExtensionRaw struct {
 
 func (d directoryEntrySystemUseExtensionRaw) Equal(o directoryEntrySystemUseExtension) bool {
 	t, ok := o.(directoryEntrySystemUseExtensionRaw)
-	return ok && t.signature == d.signature && t.length == d.length && t.version == d.version && bytes.Compare(d.data, t.data) == 0
+	return ok && t.signature == d.signature && t.length == d.length && t.version == d.version && bytes.Equal(d.data, t.data)
 }
 func (d directoryEntrySystemUseExtensionRaw) Signature() string {
 	return d.signature
@@ -80,7 +80,7 @@ func (d directoryEntrySystemUseExtensionRaw) Data() []byte {
 }
 func (d directoryEntrySystemUseExtensionRaw) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], []byte(d.Signature()))
+	copy(ret[0:2], d.Signature())
 	ret[2] = d.length
 	ret[3] = d.Version()
 	ret = append(ret, d.Data()...)
@@ -93,7 +93,7 @@ func (d directoryEntrySystemUseExtensionRaw) Merge([]directoryEntrySystemUseExte
 	return nil
 }
 
-func parseSystemUseExtensionRaw(b []byte) (directoryEntrySystemUseExtension, error) {
+func parseSystemUseExtensionRaw(b []byte) directoryEntrySystemUseExtension {
 	size := len(b)
 	signature := string(b[:2])
 	version := b[3]
@@ -106,7 +106,7 @@ func parseSystemUseExtensionRaw(b []byte) (directoryEntrySystemUseExtension, err
 		length:    uint8(size),
 		version:   version,
 		data:      data,
-	}, nil
+	}
 }
 
 // directoryEntrySystemUseExtensionSharingProtocolIndicator single appearance in root entry
@@ -135,7 +135,7 @@ func (d directoryEntrySystemUseExtensionSharingProtocolIndicator) Data() []byte 
 }
 func (d directoryEntrySystemUseExtensionSharingProtocolIndicator) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], []byte(suspExtensionSharingProtocolIndicator))
+	copy(ret[0:2], suspExtensionSharingProtocolIndicator)
 	ret[2] = uint8(d.Length())
 	ret[3] = d.Version()
 	ret = append(ret, d.Data()...)
@@ -197,7 +197,7 @@ func (d directoryEntrySystemUseExtensionPadding) Data() []byte {
 }
 func (d directoryEntrySystemUseExtensionPadding) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], []byte(suspExtensionPaddingField))
+	copy(ret[0:2], suspExtensionPaddingField)
 	ret[2] = d.length
 	ret[3] = d.Version()
 	ret = append(ret, d.Data()...)
@@ -246,7 +246,7 @@ func (d directoryEntrySystemUseTerminator) Data() []byte {
 }
 func (d directoryEntrySystemUseTerminator) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], []byte(suspExtensionSharingProtocolTerminator))
+	copy(ret[0:2], suspExtensionSharingProtocolTerminator)
 	ret[2] = uint8(d.Length())
 	ret[3] = d.Version()
 	return ret
@@ -306,7 +306,7 @@ func (d directoryEntrySystemUseContinuation) Data() []byte {
 }
 func (d directoryEntrySystemUseContinuation) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], []byte(suspExtensionContinuationArea))
+	copy(ret[0:2], suspExtensionContinuationArea)
 	ret[2] = uint8(d.Length())
 	ret[3] = d.Version()
 	ret = append(ret, d.Data()...)
@@ -374,7 +374,7 @@ func (d directoryEntrySystemUseExtensionSelector) Data() []byte {
 }
 func (d directoryEntrySystemUseExtensionSelector) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], []byte(suspExtensionExtensionsSelector))
+	copy(ret[0:2], suspExtensionExtensionsSelector)
 	ret[2] = uint8(d.Length())
 	ret[3] = d.Version()
 	ret = append(ret, d.Data()...)
@@ -443,7 +443,7 @@ func (d directoryEntrySystemUseExtensionReference) Data() []byte {
 }
 func (d directoryEntrySystemUseExtensionReference) Bytes() []byte {
 	ret := make([]byte, 4)
-	copy(ret[0:2], []byte(suspExtensionExtensionsReference))
+	copy(ret[0:2], suspExtensionExtensionsReference)
 	ret[2] = uint8(d.Length())
 	ret[3] = d.Version()
 	ret = append(ret, d.Data()...)
@@ -524,7 +524,7 @@ func parseDirectoryEntryExtensions(b []byte, handlers []suspExtension) ([]direct
 		if parser, ok := suspExtensionParser[signature]; ok {
 			entry, err = parser(suspBytes)
 			if err != nil {
-				return nil, fmt.Errorf("Error parsing %s extension at byte position %d: %v", signature, i, err)
+				return nil, fmt.Errorf("error parsing %s extension at byte position %d: %v", signature, i, err)
 			}
 		} else {
 			// go through each extension we have and see if it can process
@@ -538,7 +538,7 @@ func parseDirectoryEntryExtensions(b []byte, handlers []suspExtension) ([]direct
 				}
 			}
 			if entry == nil {
-				entry, _ = parseSystemUseExtensionRaw(suspBytes)
+				entry = parseSystemUseExtensionRaw(suspBytes)
 			}
 		}
 		// we now have the entry - see if there was a prior continuable one

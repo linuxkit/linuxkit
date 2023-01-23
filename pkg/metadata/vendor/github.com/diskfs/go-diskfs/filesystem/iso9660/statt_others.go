@@ -1,5 +1,7 @@
+//go:build !windows
 // +build !windows
 
+//nolint:unconvert // linter gets confused in this file
 package iso9660
 
 import (
@@ -7,12 +9,18 @@ import (
 	"syscall"
 )
 
-func statt(fi os.FileInfo) (uint32, uint32, uint32) {
+func statt(fi os.FileInfo) (links, uid, gid uint32) {
 	if sys := fi.Sys(); sys != nil {
 		if stat, ok := sys.(*syscall.Stat_t); ok {
-			return uint32(stat.Nlink), uint32(stat.Uid), uint32(stat.Gid)
+			links, uid, gid = uint32(stat.Nlink), stat.Uid, stat.Gid
 		}
 	}
 
-	return uint32(0), uint32(0), uint32(0)
+	return links, uid, gid
+}
+
+//nolint:deadcode // this is here solely so that linter does not complain on darwin about unconvert
+func unused() uint32 {
+	var f uint32 = 25
+	return uint32(f)
 }

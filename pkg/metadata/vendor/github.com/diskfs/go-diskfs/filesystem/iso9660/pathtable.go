@@ -2,7 +2,6 @@ package iso9660
 
 import (
 	"encoding/binary"
-	"fmt"
 )
 
 // pathTable represents an on-iso path table
@@ -53,7 +52,7 @@ func (pt *pathTable) toLBytes() []byte {
 			size++
 		}
 
-		b2 := make([]byte, size, size)
+		b2 := make([]byte, size)
 		b2[0] = uint8(nameSize)
 		b2[1] = e.extAttrLength
 		binary.LittleEndian.PutUint32(b2[2:6], e.location)
@@ -76,7 +75,7 @@ func (pt *pathTable) toMBytes() []byte {
 			size++
 		}
 
-		b2 := make([]byte, size, size)
+		b2 := make([]byte, size)
 		b2[0] = uint8(nameSize)
 		b2[1] = e.extAttrLength
 		binary.BigEndian.PutUint32(b2[2:6], e.location)
@@ -92,12 +91,9 @@ func (pt *pathTable) toMBytes() []byte {
 
 // getLocation gets the location of the extent that contains this path
 // we can get the size because the first record always points to the current directory
-func (pt *pathTable) getLocation(p string) (uint32, error) {
+func (pt *pathTable) getLocation(p string) uint32 {
 	// break path down into parts and levels
-	parts, err := splitPath(p)
-	if err != nil {
-		return 0, fmt.Errorf("Could not parse path: %v", err)
-	}
+	parts := splitPath(p)
 	// level represents the level of the parent
 	var level uint16 = 1
 	var location uint32
@@ -121,15 +117,15 @@ func (pt *pathTable) getLocation(p string) (uint32, error) {
 			}
 		}
 	}
-	return location, nil
+	return location
 }
 
 // parsePathTable load pathtable bytes into structures
-func parsePathTable(b []byte) (*pathTable, error) {
+func parsePathTable(b []byte) *pathTable {
 	totalSize := len(b)
 	entries := make([]*pathTableEntry, 0, 20)
 	for i := 0; i < totalSize; {
-		nameSize := uint8(b[i])
+		var nameSize = b[i]
 		// is it zeroes? If so, we are at the end
 		if nameSize == 0 {
 			break
@@ -138,7 +134,7 @@ func parsePathTable(b []byte) (*pathTable, error) {
 		if nameSize%2 != 0 {
 			size++
 		}
-		extAttrSize := uint8(b[i+1])
+		var extAttrSize = b[i+1]
 		location := binary.LittleEndian.Uint32(b[i+2 : i+6])
 		parent := binary.LittleEndian.Uint16(b[i+6 : i+8])
 		name := string(b[i+8 : i+8+int(nameSize)])
@@ -155,5 +151,5 @@ func parsePathTable(b []byte) (*pathTable, error) {
 	}
 	return &pathTable{
 		records: entries,
-	}, nil
+	}
 }

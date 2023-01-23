@@ -15,6 +15,7 @@ import (
 	"github.com/diskfs/go-diskfs/filesystem"
 	"github.com/diskfs/go-diskfs/filesystem/fat32"
 	"github.com/diskfs/go-diskfs/filesystem/iso9660"
+	"github.com/diskfs/go-diskfs/filesystem/squashfs"
 	"github.com/diskfs/go-diskfs/partition"
 )
 
@@ -47,9 +48,16 @@ var (
 
 // GetPartitionTable retrieves a PartitionTable for a Disk
 //
+// If the table is able to be retrieved from the disk, it is saved in the instance.
+//
 // returns an error if the Disk is invalid or does not exist, or the partition table is unknown
 func (d *Disk) GetPartitionTable() (partition.Table, error) {
-	return partition.Read(d.File, int(d.LogicalBlocksize), int(d.PhysicalBlocksize))
+	t, err := partition.Read(d.File, int(d.LogicalBlocksize), int(d.PhysicalBlocksize))
+	if err != nil {
+		return nil, err
+	}
+	d.Table = t
+	return t, nil
 }
 
 // Partition applies a partition.Table implementation to a Disk
@@ -65,7 +73,7 @@ func (d *Disk) Partition(table partition.Table) error {
 	// fill in the uuid
 	err := table.Write(d.File, d.Size)
 	if err != nil {
-		return fmt.Errorf("Failed to write partition table: %v", err)
+		return fmt.Errorf("failed to write partition table: %v", err)
 	}
 	d.Table = table
 	// the partition table needs to be re-read only if
@@ -73,7 +81,7 @@ func (d *Disk) Partition(table partition.Table) error {
 	if d.Type == Device {
 		err = d.ReReadPartitionTable()
 		if err != nil {
-			return fmt.Errorf("Unable to re-read the partition table. Kernel still uses old partition table: %v", err)
+			return fmt.Errorf("unable to re-read the partition table. Kernel still uses old partition table: %v", err)
 		}
 	}
 	return nil
@@ -85,22 +93,22 @@ func (d *Disk) Partition(table partition.Table) error {
 //
 // returns an error if there was an error writing to the disk, reading from the reader, the table
 // is invalid, or the partition is invalid
-func (d *Disk) WritePartitionContents(partition int, reader io.Reader) (int64, error) {
+func (d *Disk) WritePartitionContents(part int, reader io.Reader) (int64, error) {
 	if !d.Writable {
 		return -1, errIncorrectOpenMode
 	}
 	if d.Table == nil {
 		return -1, fmt.Errorf("cannot write contents of a partition on a disk without a partition table")
 	}
-	if partition < 0 {
+	if part < 0 {
 		return -1, fmt.Errorf("cannot write contents of a partition without specifying a partition")
 	}
 	partitions := d.Table.GetPartitions()
 	// API indexes from 1, but slice from 0
-	if partition > len(partitions) {
-		return -1, fmt.Errorf("cannot write contents of partition %d which is greater than max partition %d", partition, len(partitions))
+	if part > len(partitions) {
+		return -1, fmt.Errorf("cannot write contents of partition %d which is greater than max partition %d", part, len(partitions))
 	}
-	written, err := partitions[partition-1].WriteContents(d.File, reader)
+	written, err := partitions[part-1].WriteContents(d.File, reader)
 	return int64(written), err
 }
 
@@ -110,19 +118,19 @@ func (d *Disk) WritePartitionContents(partition int, reader io.Reader) (int64, e
 //
 // returns an error if there was an error reading from the disk, writing to the writer, the table
 // is invalid, or the partition is invalid
-func (d *Disk) ReadPartitionContents(partition int, writer io.Writer) (int64, error) {
+func (d *Disk) ReadPartitionContents(part int, writer io.Writer) (int64, error) {
 	if d.Table == nil {
 		return -1, fmt.Errorf("cannot read contents of a partition on a disk without a partition table")
 	}
-	if partition < 0 {
+	if part < 0 {
 		return -1, fmt.Errorf("cannot read contents of a partition without specifying a partition")
 	}
 	partitions := d.Table.GetPartitions()
 	// API indexes from 1, but slice from 0
-	if partition > len(partitions) {
-		return -1, fmt.Errorf("cannot read contents of partition %d which is greater than max partition %d", partition, len(partitions))
+	if part > len(partitions) {
+		return -1, fmt.Errorf("cannot read contents of partition %d which is greater than max partition %d", part, len(partitions))
 	}
-	return partitions[partition-1].ReadContents(d.File, writer)
+	return partitions[part-1].ReadContents(d.File, writer)
 }
 
 // FilesystemSpec represents the specification of a filesystem to be created
@@ -130,18 +138,19 @@ type FilesystemSpec struct {
 	Partition   int
 	FSType      filesystem.Type
 	VolumeLabel string
+	WorkDir     string
 }
 
 // CreateFilesystem creates a filesystem on a disk image, the equivalent of mkfs.
 //
 // Required:
-// * desired partition number, or 0 to create the filesystem on the entire block device or
-//   disk image,
-// * the filesystem type from github.com/diskfs/go-diskfs/filesystem
+//   - desired partition number, or 0 to create the filesystem on the entire block device or
+//     disk image,
+//   - the filesystem type from github.com/diskfs/go-diskfs/filesystem
 //
 // Optional:
-// * volume label for those filesystems that support it; under Linux this shows
-//   in '/dev/disks/by-label/<label>'
+//   - volume label for those filesystems that support it; under Linux this shows
+//     in '/dev/disks/by-label/<label>'
 //
 // if successful, returns a filesystem-implementing structure for the given filesystem type
 //
@@ -163,21 +172,23 @@ func (d *Disk) CreateFilesystem(spec FilesystemSpec) (filesystem.FileSystem, err
 	default:
 		partitions := d.Table.GetPartitions()
 		// API indexes from 1, but slice from 0
-		partition := spec.Partition - 1
+		part := spec.Partition - 1
 		if spec.Partition > len(partitions) {
 			return nil, fmt.Errorf("cannot create filesystem on partition %d greater than maximum partition %d", spec.Partition, len(partitions))
 		}
-		size = partitions[partition].GetSize()
-		start = partitions[partition].GetStart()
+		size = partitions[part].GetSize()
+		start = partitions[part].GetStart()
 	}
 
 	switch spec.FSType {
 	case filesystem.TypeFat32:
 		return fat32.Create(d.File, size, start, d.LogicalBlocksize, spec.VolumeLabel)
 	case filesystem.TypeISO9660:
-		return iso9660.Create(d.File, size, start, d.LogicalBlocksize)
+		return iso9660.Create(d.File, size, start, d.LogicalBlocksize, spec.WorkDir)
+	case filesystem.TypeSquashfs:
+		return nil, errors.New("squashfs is a read-only filesystem")
 	default:
-		return nil, errors.New("Unknown filesystem type requested")
+		return nil, errors.New("unknown filesystem type requested")
 	}
 }
 
@@ -189,7 +200,7 @@ func (d *Disk) CreateFilesystem(spec FilesystemSpec) (filesystem.FileSystem, err
 //
 // returns error if there was an error reading the filesystem, or the partition table is invalid and did not
 // request the entire disk.
-func (d *Disk) GetFilesystem(partition int) (filesystem.FileSystem, error) {
+func (d *Disk) GetFilesystem(part int) (filesystem.FileSystem, error) {
 	// find out where the partition starts and ends, or if it is the entire disk
 	var (
 		size, start int64
@@ -197,7 +208,7 @@ func (d *Disk) GetFilesystem(partition int) (filesystem.FileSystem, error) {
 	)
 
 	switch {
-	case partition == 0:
+	case part == 0:
 		size = d.Size
 		start = 0
 	case d.Table == nil:
@@ -205,11 +216,11 @@ func (d *Disk) GetFilesystem(partition int) (filesystem.FileSystem, error) {
 	default:
 		partitions := d.Table.GetPartitions()
 		// API indexes from 1, but slice from 0
-		if partition > len(partitions) {
-			return nil, fmt.Errorf("cannot get filesystem on partition %d greater than maximum partition %d", partition, len(partitions))
+		if part > len(partitions) {
+			return nil, fmt.Errorf("cannot get filesystem on partition %d greater than maximum partition %d", part, len(partitions))
 		}
-		size = partitions[partition-1].GetSize()
-		start = partitions[partition-1].GetStart()
+		size = partitions[part-1].GetSize()
+		start = partitions[part-1].GetStart()
 	}
 
 	// just try each type
@@ -229,5 +240,9 @@ func (d *Disk) GetFilesystem(partition int) (filesystem.FileSystem, error) {
 		return iso9660FS, nil
 	}
 	log.Debugf("iso9660 failed: %v", err)
-	return nil, fmt.Errorf("Unknown filesystem on partition %d", partition)
+	squashFS, err := squashfs.Read(d.File, size, start, d.LogicalBlocksize)
+	if err == nil {
+		return squashFS, nil
+	}
+	return nil, fmt.Errorf("unknown filesystem on partition %d", part)
 }

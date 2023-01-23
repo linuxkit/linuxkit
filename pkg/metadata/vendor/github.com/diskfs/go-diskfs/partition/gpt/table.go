@@ -14,7 +14,6 @@ import (
 
 // gptSize max potential size for partition array reserved 16384
 const (
-	gptSize                  = 128 * 128
 	mbrPartitionEntriesStart = 446
 	mbrPartitionEntriesCount = 4
 	mbrpartitionEntrySize    = 16
@@ -25,18 +24,20 @@ const (
 
 // Table represents a partition table to be applied to a disk or read from a disk
 type Table struct {
-	Partitions         []*Partition // slice of Partition
-	LogicalSectorSize  int          // logical size of a sector
-	PhysicalSectorSize int          // physical size of the sector
-	GUID               string       // disk GUID, can be left blank to auto-generate
-	ProtectiveMBR      bool         // whether or not a protective MBR is in place
-	partitionArraySize int          // how many entries are in the partition array size
-	partitionEntrySize uint32       // size of the partition entry in the table, usually 128 bytes
-	primaryHeader      uint64       // LBA of primary header, always 1
-	secondaryHeader    uint64       // LBA of secondary header, always last sectors on disk
-	firstDataSector    uint64       // LBA of first data sector
-	lastDataSector     uint64       // LBA of last data sector
-	initialized        bool
+	Partitions             []*Partition // slice of Partition
+	LogicalSectorSize      int          // logical size of a sector
+	PhysicalSectorSize     int          // physical size of the sector
+	GUID                   string       // disk GUID, can be left blank to auto-generate
+	ProtectiveMBR          bool         // whether or not a protective MBR is in place
+	partitionArraySize     int          // how many entries are in the partition array size
+	partitionEntrySize     uint32       // size of the partition entry in the table, usually 128 bytes
+	partitionFirstLBA      uint64       // first LBA of the partition array
+	partitionEntryChecksum uint32       // checksum of the partition array
+	primaryHeader          uint64       // LBA of primary header, always 1
+	secondaryHeader        uint64       // LBA of secondary header, always last sectors on disk
+	firstDataSector        uint64       // LBA of first data sector
+	lastDataSector         uint64       // LBA of last data sector
+	initialized            bool
 }
 
 func getEfiSignature() []byte {
@@ -161,7 +162,7 @@ func readProtectiveMBR(b []byte, sectors uint32) bool {
 		return false
 	}
 	// check for MBR signature
-	if bytes.Compare(b[size-2:], getMbrSignature()) != 0 {
+	if !bytes.Equal(b[size-2:], getMbrSignature()) {
 		return false
 	}
 	// get the partitions
@@ -201,7 +202,7 @@ func (t *Table) partitionArraySector(primary bool) uint64 {
 }
 
 func (t *Table) generateProtectiveMBR() []byte {
-	b := make([]byte, 512, 512)
+	b := make([]byte, 512)
 	// we don't do anything to the first 446 bytes
 	copy(b[510:], getMbrSignature())
 	// create the single all disk partition
@@ -224,27 +225,25 @@ func (t *Table) toPartitionArrayBytes() ([]byte, error) {
 	blocksize := uint64(t.LogicalSectorSize)
 	firstblock := t.LogicalSectorSize
 	nextstart := uint64(firstblock)
-	realParts := make([]*Partition, 0, len(t.Partitions))
 
 	// go through the partitions, make sure Start/End/Size are correct, and each has a GUID
 	for i, part := range t.Partitions {
 		err := part.initEntry(blocksize, nextstart)
 		if err != nil {
-			return nil, fmt.Errorf("Could not initialize partition %d correctly: %v", i, err)
+			return nil, fmt.Errorf("could not initialize partition %d correctly: %v", i, err)
 		}
-		realParts = append(realParts, part)
 
 		nextstart = part.End + 1
 	}
 
 	// generate the partition bytes
 	partSize := t.partitionEntrySize * uint32(t.partitionArraySize)
-	bpart := make([]byte, partSize, partSize)
+	bpart := make([]byte, partSize)
 	for i, p := range t.Partitions {
 		// write the primary partition entry
 		b2, err := p.toBytes()
 		if err != nil {
-			return nil, fmt.Errorf("Error preparing partition entry %d for writing to disk: %v", i, err)
+			return nil, fmt.Errorf("error preparing partition entry %d for writing to disk: %v", i, err)
 		}
 		slotStart := i * int(t.partitionEntrySize)
 		slotEnd := slotStart + int(t.partitionEntrySize)
@@ -255,7 +254,7 @@ func (t *Table) toPartitionArrayBytes() ([]byte, error) {
 
 // toGPTBytes write just the gpt header to bytes
 func (t *Table) toGPTBytes(primary bool) ([]byte, error) {
-	b := make([]byte, t.LogicalSectorSize, t.LogicalSectorSize)
+	b := make([]byte, t.LogicalSectorSize)
 
 	// 8 bytes "EFI PART" signature - endianness on this?
 	copy(b[0:8], getEfiSignature())
@@ -289,7 +288,7 @@ func (t *Table) toGPTBytes(primary bool) ([]byte, error) {
 		var err error
 		guid, err = uuid.Parse(t.GUID)
 		if err != nil {
-			return nil, fmt.Errorf("Invalid UUID: %s", t.GUID)
+			return nil, fmt.Errorf("invalid UUID: %s", t.GUID)
 		}
 	}
 	copy(b[56:72], bytesToUUIDBytes(guid[0:16]))
@@ -305,7 +304,7 @@ func (t *Table) toGPTBytes(primary bool) ([]byte, error) {
 	// we need a CRC/zlib of the partition entries, so we do those first, then append the bytes
 	bpart, err := t.toPartitionArrayBytes()
 	if err != nil {
-		return nil, fmt.Errorf("Error converting partition array to bytes: %v", err)
+		return nil, fmt.Errorf("error converting partition array to bytes: %v", err)
 	}
 	checksum := crc32.ChecksumIEEE(bpart)
 	binary.LittleEndian.PutUint32(b[88:92], checksum)
@@ -322,12 +321,34 @@ func (t *Table) toGPTBytes(primary bool) ([]byte, error) {
 	return b, nil
 }
 
+func (t *Table) calculatePartitionArrayLocations() (start, size int) {
+	start = int(t.partitionFirstLBA) * t.LogicalSectorSize
+	size = t.partitionArraySize * int(t.partitionEntrySize)
+	return
+}
+
+// readPartitionArrayBytes read the bytes for the partition array
+func readPartitionArrayBytes(b []byte, entrySize, logicalSectorSize, physicalSectorSize int) ([]*Partition, error) {
+	parts := make([]*Partition, 0)
+	for i, c := 0, b; len(c) >= entrySize; c, i = c[entrySize:], i+1 {
+		bpart := c[:entrySize]
+		// write the primary partition entry
+		p, err := partitionFromBytes(bpart, logicalSectorSize, physicalSectorSize)
+		if err != nil {
+			return nil, fmt.Errorf("error reading partition entry %d: %v", i, err)
+		}
+		// augment partition information
+		p.Size = (p.End - p.Start + 1) * uint64(logicalSectorSize)
+		parts = append(parts, p)
+	}
+	return parts, nil
+}
+
 // tableFromBytes read a partition table from a byte slice
 func tableFromBytes(b []byte, logicalBlockSize, physicalBlockSize int) (*Table, error) {
 	// minimum size - gpt entries + header + LBA0 for (protective) MBR
-	minSize := gptSize + logicalBlockSize*2
-	if len(b) < minSize {
-		return nil, fmt.Errorf("Data for partition was %d bytes instead of expected minimum %d", len(b), minSize)
+	if len(b) < logicalBlockSize*2 {
+		return nil, fmt.Errorf("data for partition was %d bytes instead of expected minimum %d", len(b), logicalBlockSize*2)
 	}
 
 	// GPT starts at LBA1
@@ -345,7 +366,7 @@ func tableFromBytes(b []byte, logicalBlockSize, physicalBlockSize int) (*Table, 
 	lastDataSector := binary.LittleEndian.Uint64(gpt[48:56])
 	diskGUID, err := uuid.FromBytes(bytesToUUIDBytes(gpt[56:72]))
 	if err != nil {
-		return nil, fmt.Errorf("Unable to read guid from disk: %v", err)
+		return nil, fmt.Errorf("unable to read guid from disk: %v", err)
 	}
 	partitionEntryFirstLBA := binary.LittleEndian.Uint64(gpt[72:80])
 	partitionEntryCount := binary.LittleEndian.Uint32(gpt[80:84])
@@ -354,67 +375,42 @@ func tableFromBytes(b []byte, logicalBlockSize, physicalBlockSize int) (*Table, 
 
 	// once we have the header CRC, zero it out
 	copy(gpt[16:20], []byte{0x00, 0x00, 0x00, 0x00})
-	if bytes.Compare(efiSignature, getEfiSignature()) != 0 {
-		return nil, fmt.Errorf("Invalid EFI Signature %v", efiSignature)
+	if !bytes.Equal(efiSignature, getEfiSignature()) {
+		return nil, fmt.Errorf("invalid EFI Signature %v", efiSignature)
 	}
-	if bytes.Compare(efiRevision, getEfiRevision()) != 0 {
-		return nil, fmt.Errorf("Invalid EFI Revision %v", efiRevision)
+	if !bytes.Equal(efiRevision, getEfiRevision()) {
+		return nil, fmt.Errorf("invalid EFI Revision %v", efiRevision)
 	}
-	if bytes.Compare(efiHeaderSize, getEfiHeaderSize()) != 0 {
-		return nil, fmt.Errorf("Invalid EFI Header size %v", efiHeaderSize)
+	if !bytes.Equal(efiHeaderSize, getEfiHeaderSize()) {
+		return nil, fmt.Errorf("invalid EFI Header size %v", efiHeaderSize)
 	}
-	if bytes.Compare(efiZeroes, getEfiZeroes()) != 0 {
-		return nil, fmt.Errorf("Invalid EFI Header, expected zeroes, got %v", efiZeroes)
+	if !bytes.Equal(efiZeroes, getEfiZeroes()) {
+		return nil, fmt.Errorf("invalid EFI Header, expected zeroes, got %v", efiZeroes)
 	}
 	// get the checksum
 	checksum := crc32.ChecksumIEEE(gpt[0:92])
 	if efiHeaderCrc != checksum {
-		return nil, fmt.Errorf("Invalid EFI Header Checksum, expected %v, got %v", checksum, efiHeaderCrc)
-	}
-
-	// now for partitions
-	partArrayStart := partitionEntryFirstLBA * uint64(logicalBlockSize)
-	partArrayEnd := partArrayStart + uint64(partitionEntryCount*partitionEntrySize)
-	bpart := b[partArrayStart:partArrayEnd]
-	// we need a CRC/zlib of the partition entries, so we do those first, then append the bytes
-	checksum = crc32.ChecksumIEEE(bpart)
-	if partitionEntryChecksum != checksum {
-		return nil, fmt.Errorf("Invalid EFI Partition Entry Checksum, expected %v, got %v", checksum, partitionEntryChecksum)
+		return nil, fmt.Errorf("invalid EFI Header Checksum, expected %v, got %v", checksum, efiHeaderCrc)
 	}
 
 	// potential protective MBR is at LBA0
 	hasProtectiveMBR := readProtectiveMBR(b[:logicalBlockSize], uint32(secondaryHeader))
 
 	table := Table{
-		LogicalSectorSize:  logicalBlockSize,
-		PhysicalSectorSize: physicalBlockSize,
-		partitionEntrySize: partitionEntrySize,
-		primaryHeader:      primaryHeader,
-		secondaryHeader:    secondaryHeader,
-		firstDataSector:    firstDataSector,
-		lastDataSector:     lastDataSector,
-		partitionArraySize: int(partitionEntryCount),
-		ProtectiveMBR:      hasProtectiveMBR,
-		GUID:               strings.ToUpper(diskGUID.String()),
-		initialized:        true,
+		LogicalSectorSize:      logicalBlockSize,
+		PhysicalSectorSize:     physicalBlockSize,
+		partitionEntrySize:     partitionEntrySize,
+		primaryHeader:          primaryHeader,
+		secondaryHeader:        secondaryHeader,
+		firstDataSector:        firstDataSector,
+		lastDataSector:         lastDataSector,
+		partitionArraySize:     int(partitionEntryCount),
+		partitionFirstLBA:      partitionEntryFirstLBA,
+		ProtectiveMBR:          hasProtectiveMBR,
+		GUID:                   strings.ToUpper(diskGUID.String()),
+		partitionEntryChecksum: partitionEntryChecksum,
+		initialized:            true,
 	}
-
-	parts := make([]*Partition, 0, partitionEntryCount)
-	count := int(partitionEntryCount)
-	for i := 0; i < count; i++ {
-		// write the primary partition entry
-		start := i * int(partitionEntrySize)
-		end := start + int(partitionEntrySize)
-		// skip all 0s
-		p, err := partitionFromBytes(bpart[start:end], table.LogicalSectorSize, table.PhysicalSectorSize)
-		if err != nil {
-			return nil, fmt.Errorf("Error reading partition entry %d: %v", i, err)
-		}
-		// augment partition information
-		p.Size = (p.End - p.Start + 1) * uint64(logicalBlockSize)
-		parts = append(parts, p)
-	}
-	table.Partitions = parts
 
 	return &table, nil
 }
@@ -444,55 +440,55 @@ func (t *Table) Write(f util.File, size int64) error {
 		protectiveMBR := fullMBR[mbrPartitionEntriesStart:]
 		written, err = f.WriteAt(protectiveMBR, mbrPartitionEntriesStart)
 		if err != nil {
-			return fmt.Errorf("Error writing protective MBR to disk: %v", err)
+			return fmt.Errorf("error writing protective MBR to disk: %v", err)
 		}
 		if written != len(protectiveMBR) {
-			return fmt.Errorf("Wrote %d bytes of protective MBR instead of %d", written, len(protectiveMBR))
+			return fmt.Errorf("wrote %d bytes of protective MBR instead of %d", written, len(protectiveMBR))
 		}
 	}
 
 	primaryHeader, err := t.toGPTBytes(true)
 	if err != nil {
-		return fmt.Errorf("Error converting primary GPT header to byte array: %v", err)
+		return fmt.Errorf("error converting primary GPT header to byte array: %v", err)
 	}
 	written, err = f.WriteAt(primaryHeader, int64(t.LogicalSectorSize))
 	if err != nil {
-		return fmt.Errorf("Error writing primary GPT to disk: %v", err)
+		return fmt.Errorf("error writing primary GPT to disk: %v", err)
 	}
 	if written != len(primaryHeader) {
-		return fmt.Errorf("Wrote %d bytes of primary GPT header instead of %d", written, len(primaryHeader))
+		return fmt.Errorf("wrote %d bytes of primary GPT header instead of %d", written, len(primaryHeader))
 	}
 
 	partitionArray, err := t.toPartitionArrayBytes()
 	if err != nil {
-		return fmt.Errorf("Error converting primary GPT partitions to byte array: %v", err)
+		return fmt.Errorf("error converting primary GPT partitions to byte array: %v", err)
 	}
 	written, err = f.WriteAt(partitionArray, int64(t.LogicalSectorSize*int(t.partitionArraySector(true))))
 	if err != nil {
-		return fmt.Errorf("Error writing primary partition arrayto disk: %v", err)
+		return fmt.Errorf("error writing primary partition arrayto disk: %v", err)
 	}
 	if written != len(partitionArray) {
-		return fmt.Errorf("Wrote %d bytes of primary partition array instead of %d", written, len(primaryHeader))
+		return fmt.Errorf("wrote %d bytes of primary partition array instead of %d", written, len(primaryHeader))
 	}
 
-	written, err = f.WriteAt(partitionArray, int64(t.LogicalSectorSize*int(t.partitionArraySector(false))))
+	written, err = f.WriteAt(partitionArray, int64(t.LogicalSectorSize)*int64(t.partitionArraySector(false)))
 	if err != nil {
-		return fmt.Errorf("Error writing secondary partition array to disk: %v", err)
+		return fmt.Errorf("error writing secondary partition array to disk: %v", err)
 	}
 	if written != len(partitionArray) {
-		return fmt.Errorf("Wrote %d bytes of secondary partition array instead of %d", written, len(primaryHeader))
+		return fmt.Errorf("wrote %d bytes of secondary partition array instead of %d", written, len(primaryHeader))
 	}
 
 	secondaryHeader, err := t.toGPTBytes(false)
 	if err != nil {
-		return fmt.Errorf("Error converting secondary GPT header to byte array: %v", err)
+		return fmt.Errorf("error converting secondary GPT header to byte array: %v", err)
 	}
 	written, err = f.WriteAt(secondaryHeader, int64(t.secondaryHeader)*int64(t.LogicalSectorSize))
 	if err != nil {
-		return fmt.Errorf("Error writing secondary GPT to disk: %v", err)
+		return fmt.Errorf("error writing secondary GPT to disk: %v", err)
 	}
 	if written != len(secondaryHeader) {
-		return fmt.Errorf("Wrote %d bytes of secondary GPT header instead of %d", written, len(secondaryHeader))
+		return fmt.Errorf("wrote %d bytes of secondary GPT header instead of %d", written, len(secondaryHeader))
 	}
 
 	return nil
@@ -504,22 +500,48 @@ func (t *Table) Write(f util.File, size int64) error {
 // if successful, returns a gpt.Table struct
 // returns errors if fails at any stage reading the disk or processing the bytes on disk as a GPT
 func Read(f util.File, logicalBlockSize, physicalBlockSize int) (*Table, error) {
-	// read the data off of the disk
-	b := make([]byte, gptSize+logicalBlockSize*2, gptSize+logicalBlockSize*2)
+	// read the data off of the disk - first block is the compatibility MBR, ssecond is the GPT table
+	b := make([]byte, logicalBlockSize*2)
 	read, err := f.ReadAt(b, 0)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading GPT from file: %v", err)
+		return nil, fmt.Errorf("error reading GPT from file: %w", err)
 	}
 	if read != len(b) {
-		return nil, fmt.Errorf("Read only %d bytes of GPT from file instead of expected %d", read, len(b))
+		return nil, fmt.Errorf("read only %d bytes of GPT from file instead of expected %d", read, len(b))
 	}
-	return tableFromBytes(b, logicalBlockSize, physicalBlockSize)
+	// get the gpt table
+	gptTable, err := tableFromBytes(b, logicalBlockSize, physicalBlockSize)
+	if err != nil {
+		return nil, fmt.Errorf("error reading GPT table: %w", err)
+	}
+	start, size := gptTable.calculatePartitionArrayLocations()
+	b = make([]byte, size)
+	read, err = f.ReadAt(b, int64(start))
+	if read != len(b) {
+		return nil, fmt.Errorf("read only %d bytes of GPT from file instead of expected %d", read, len(b))
+	}
+	if err != nil {
+		return nil, fmt.Errorf("error reading partitions from file: %w", err)
+	}
+	// we need a CRC/zlib of the partition entries, so we do those first, then append the bytes
+	checksum := crc32.ChecksumIEEE(b)
+	if gptTable.partitionEntryChecksum != checksum {
+		return nil, fmt.Errorf("invalid EFI Partition Entry Checksum, expected %v, got %v", checksum, gptTable.partitionEntryChecksum)
+	}
+
+	parts, err := readPartitionArrayBytes(b, int(gptTable.partitionEntrySize), logicalBlockSize, physicalBlockSize)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing partition data: %w", err)
+	}
+	gptTable.Partitions = parts
+	// get the partition table
+	return gptTable, nil
 }
 
 // GetPartitions get the partitions
 func (t *Table) GetPartitions() []part.Partition {
 	// each Partition matches the part.Partition interface, but golang does not accept passing them in a slice
-	parts := make([]part.Partition, len(t.Partitions), len(t.Partitions))
+	parts := make([]part.Partition, len(t.Partitions))
 	for i, p := range t.Partitions {
 		parts[i] = p
 	}

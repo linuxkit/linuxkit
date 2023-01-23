@@ -11,16 +11,16 @@
 //
 // Here is a simple example of a GPT Table with a single 10MB Linux partition:
 //
-//      table := &gpt.Table{
-//        LogicalSectorSize:  512,
-//        PhysicalSectorSize: 512,
-//        Partitions: []*mbr.Partition{
-//          {
-//            LogicalSectorSize:  512,
-//            PhysicalSectorSize: 512,
-//            ProtectiveMBR:      true,
-//            GUID:               "43E51892-3273-42F7-BCDA-B43B80CDFC48",
-//          },
-//        },
-//      }
+//	table := &gpt.Table{
+//	  LogicalSectorSize:  512,
+//	  PhysicalSectorSize: 512,
+//	  Partitions: []*mbr.Partition{
+//	    {
+//	      LogicalSectorSize:  512,
+//	      PhysicalSectorSize: 512,
+//	      ProtectiveMBR:      true,
+//	      GUID:               "43E51892-3273-42F7-BCDA-B43B80CDFC48",
+//	    },
+//	  },
+//	}
 package gpt

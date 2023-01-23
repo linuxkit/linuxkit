@@ -9,6 +9,7 @@ import (
 type table struct {
 	fatID          uint32
 	eocMarker      uint32
+	unusedMarker   uint32
 	clusters       map[uint32]uint32
 	rootDirCluster uint32
 	size           uint32
@@ -35,7 +36,7 @@ func (t *table) equal(a *table) bool {
   0x?ffffff8 - 0x?fffffff
 */
 
-func tableFromBytes(b []byte) (*table, error) {
+func tableFromBytes(b []byte) *table {
 	t := table{
 		fatID:          binary.LittleEndian.Uint32(b[0:4]),
 		eocMarker:      binary.LittleEndian.Uint32(b[4:8]),
@@ -54,12 +55,12 @@ func tableFromBytes(b []byte) (*table, error) {
 			t.clusters[i] = val
 		}
 	}
-	return &t, nil
+	return &t
 }
 
 // bytes returns a FAT32 table as bytes ready to be written to disk
-func (t *table) bytes() ([]byte, error) {
-	b := make([]byte, t.size, t.size)
+func (t *table) bytes() []byte {
+	b := make([]byte, t.size)
 
 	// FAT ID and fixed values
 	binary.LittleEndian.PutUint32(b[0:4], t.fatID)
@@ -77,7 +78,7 @@ func (t *table) bytes() ([]byte, error) {
 		binary.LittleEndian.PutUint32(b[bStart:bEnd], val)
 	}
 
-	return b, nil
+	return b
 }
 
 func (t *table) isEoc(cluster uint32) bool {
