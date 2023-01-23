@@ -37,7 +37,7 @@ func dos331BPBFromBytes(b []byte) (*dos331BPB, error) {
 	bpb := dos331BPB{}
 	dos20bpb, err := dos20BPBFromBytes(b[0:13])
 	if err != nil {
-		return nil, fmt.Errorf("Error reading embedded DOS 2.0 BPB: %v", err)
+		return nil, fmt.Errorf("error reading embedded DOS 2.0 BPB: %v", err)
 	}
 	bpb.dos20BPB = dos20bpb
 	bpb.sectorsPerTrack = binary.LittleEndian.Uint16(b[13:15])
@@ -48,16 +48,13 @@ func dos331BPBFromBytes(b []byte) (*dos331BPB, error) {
 }
 
 // ToBytes returns the bytes for a DOS 3.31 BIOS Parameter Block, ready to be written to disk
-func (bpb *dos331BPB) toBytes() ([]byte, error) {
-	b := make([]byte, 25, 25)
-	dos20Bytes, err := bpb.dos20BPB.toBytes()
-	if err != nil {
-		return nil, fmt.Errorf("Error converting embedded DOS 2.0 BPB to bytes: %v", err)
-	}
+func (bpb *dos331BPB) toBytes() []byte {
+	b := make([]byte, 25)
+	dos20Bytes := bpb.dos20BPB.toBytes()
 	copy(b[0:13], dos20Bytes)
 	binary.LittleEndian.PutUint16(b[13:15], bpb.sectorsPerTrack)
 	binary.LittleEndian.PutUint16(b[15:17], bpb.heads)
 	binary.LittleEndian.PutUint32(b[17:21], bpb.hiddenSectors)
 	binary.LittleEndian.PutUint32(b[21:25], bpb.totalSectors)
-	return b, nil
+	return b
 }

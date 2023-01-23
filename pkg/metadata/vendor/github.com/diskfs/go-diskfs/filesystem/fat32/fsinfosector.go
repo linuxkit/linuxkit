@@ -18,9 +18,11 @@ const (
 )
 
 const (
-	// UnknownFreeDataClusterCount is the fixed flag for unknown number of free data clusters
+	// unknownFreeDataClusterCount is the fixed flag for unknown number of free data clusters
+	//nolint:varcheck,deadcode // keep for future reference
 	unknownFreeDataClusterCount uint32 = 0xffffffff
-	// UnknownlastAllocatedCluster is the fixed flag for unknown most recently allocated cluster
+	// unknownlastAllocatedCluster is the fixed flag for unknown most recently allocated cluster
+	//nolint:varcheck,deadcode // keep for future reference
 	unknownlastAllocatedCluster uint32 = 0xffffffff
 )
 
@@ -34,7 +36,7 @@ type FSInformationSector struct {
 func fsInformationSectorFromBytes(b []byte) (*FSInformationSector, error) {
 	bLen := len(b)
 	if bLen != int(SectorSize512) {
-		return nil, fmt.Errorf("Cannot read FAT32 FS Information Sector from %d bytes instead of expected %d", bLen, SectorSize512)
+		return nil, fmt.Errorf("cannot read FAT32 FS Information Sector from %d bytes instead of expected %d", bLen, SectorSize512)
 	}
 
 	fsis := FSInformationSector{}
@@ -45,13 +47,13 @@ func fsInformationSectorFromBytes(b []byte) (*FSInformationSector, error) {
 	signatureEnd := binary.BigEndian.Uint32(b[508:512])
 
 	if signatureStart != uint32(fsInfoSectorSignatureStart) {
-		return nil, fmt.Errorf("Invalid signature at beginning of FAT 32 Filesystem Information Sector: %x", signatureStart)
+		return nil, fmt.Errorf("invalid signature at beginning of FAT 32 Filesystem Information Sector: %x", signatureStart)
 	}
 	if signatureMid != uint32(fsInfoSectorSignatureMid) {
-		return nil, fmt.Errorf("Invalid signature at middle of FAT 32 Filesystem Information Sector: %x", signatureMid)
+		return nil, fmt.Errorf("invalid signature at middle of FAT 32 Filesystem Information Sector: %x", signatureMid)
 	}
 	if signatureEnd != uint32(fsInfoSectorSignatureEnd) {
-		return nil, fmt.Errorf("Invalid signature at end of FAT 32 Filesystem Information Sector: %x", signatureEnd)
+		return nil, fmt.Errorf("invalid signature at end of FAT 32 Filesystem Information Sector: %x", signatureEnd)
 	}
 
 	// validated, so just read the data
@@ -62,8 +64,8 @@ func fsInformationSectorFromBytes(b []byte) (*FSInformationSector, error) {
 }
 
 // ToBytes returns a FAT32 Filesystem Information Sector ready to be written to disk
-func (fsis *FSInformationSector) toBytes() ([]byte, error) {
-	b := make([]byte, SectorSize512, SectorSize512)
+func (fsis *FSInformationSector) toBytes() []byte {
+	b := make([]byte, SectorSize512)
 
 	// signatures
 	binary.BigEndian.PutUint32(b[0:4], uint32(fsInfoSectorSignatureStart))
@@ -77,5 +79,5 @@ func (fsis *FSInformationSector) toBytes() ([]byte, error) {
 	binary.LittleEndian.PutUint32(b[488:492], fsis.freeDataClustersCount)
 	binary.LittleEndian.PutUint32(b[492:496], fsis.lastAllocatedCluster)
 
-	return b, nil
+	return b
 }

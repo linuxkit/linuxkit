@@ -27,13 +27,13 @@ func (m *msDosBootSector) equal(a *msDosBootSector) bool {
 	return m.biosParameterBlock.equal(a.biosParameterBlock) &&
 		m.oemName == a.oemName &&
 		m.jumpInstruction == a.jumpInstruction &&
-		bytes.Compare(m.bootCode, a.bootCode) == 0
+		bytes.Equal(m.bootCode, a.bootCode)
 }
 
 // MsDosBootSectorFromBytes create an MsDosBootSector from a byte slice
 func msDosBootSectorFromBytes(b []byte) (*msDosBootSector, error) {
 	if len(b) != int(SectorSize512) {
-		return nil, fmt.Errorf("Cannot parse MS-DOS Boot Sector from %d bytes, must be exactly %d", len(b), SectorSize512)
+		return nil, fmt.Errorf("cannot parse MS-DOS Boot Sector from %d bytes, must be exactly %d", len(b), SectorSize512)
 	}
 	bs := msDosBootSector{}
 	// extract the jump instruction
@@ -43,7 +43,7 @@ func msDosBootSectorFromBytes(b []byte) (*msDosBootSector, error) {
 	// extract the EBPB and its size
 	bpb, bpbSize, err := dos71EBPBFromBytes(b[11:90])
 	if err != nil {
-		return nil, fmt.Errorf("Could not read FAT32 BIOS Parameter Block from boot sector: %v", err)
+		return nil, fmt.Errorf("could not read FAT32 BIOS Parameter Block from boot sector: %v", err)
 	}
 	bs.biosParameterBlock = bpb
 
@@ -54,7 +54,7 @@ func msDosBootSectorFromBytes(b []byte) (*msDosBootSector, error) {
 
 	// validate boot sector signature
 	if bsSignature := binary.BigEndian.Uint16(b[bootSectorEnd:]); bsSignature != msDosBootSectorSignature {
-		return nil, fmt.Errorf("Invalid signature in last 2 bytes of boot sector: %v", bsSignature)
+		return nil, fmt.Errorf("invalid signature in last 2 bytes of boot sector: %v", bsSignature)
 	}
 
 	return &bs, nil
@@ -70,20 +70,20 @@ func (m *msDosBootSector) toBytes() ([]byte, error) {
 	// make sure OEMName is <= 8 bytes
 	name := m.oemName
 	if len(name) > 8 {
-		return nil, fmt.Errorf("Cannot use OEM Name > 8 bytes long: %s", m.oemName)
+		return nil, fmt.Errorf("cannot use OEM Name > 8 bytes long: %s", m.oemName)
 	}
 	nameR := []rune(name)
 	if len(nameR) != len(name) {
-		return nil, fmt.Errorf("Invalid OEM Name: non-ascii characters")
+		return nil, fmt.Errorf("invalid OEM Name: non-ascii characters")
 	}
 
 	oemName := fmt.Sprintf("%-8s", m.oemName)
-	copy(b[3:11], []byte(oemName))
+	copy(b[3:11], oemName)
 
 	// bytes for the EBPB
 	bpbBytes, err := m.biosParameterBlock.toBytes()
 	if err != nil {
-		return nil, fmt.Errorf("Error getting FAT32 EBPB: %v", err)
+		return nil, fmt.Errorf("error getting FAT32 EBPB: %v", err)
 	}
 	copy(b[11:], bpbBytes)
 	bpbLen := len(bpbBytes)

@@ -3,15 +3,18 @@ package iso9660
 import (
 	"fmt"
 	"io"
+	"os"
 )
 
 // File represents a single file in an iso9660 filesystem
-//  it is NOT used when working in a workspace, where we just use the underlying OS
+//
+//	it is NOT used when working in a workspace, where we just use the underlying OS
 type File struct {
 	*directoryEntry
 	isReadWrite bool
 	isAppend    bool
 	offset      int64
+	closed      bool
 }
 
 // Read reads up to len(b) bytes from the File.
@@ -20,6 +23,9 @@ type File struct {
 // reads from the last known offset in the file from last read or write
 // use Seek() to set at a particular point
 func (fl *File) Read(b []byte) (int, error) {
+	if fl == nil || fl.closed {
+		return 0, os.ErrClosed
+	}
 	// we have the DirectoryEntry, so we can get the starting location and size
 	// since iso9660 files are contiguous, we only need the starting location and size
 	//   to get the entire file
@@ -42,24 +48,31 @@ func (fl *File) Read(b []byte) (int, error) {
 	}
 
 	// just read the requested number of bytes and change our offset
-	file.ReadAt(b[0:maxRead], int64(location)*fs.blocksize+int64(fl.offset))
+	_, err := file.ReadAt(b[0:maxRead], int64(location)*fs.blocksize+fl.offset)
+	if err != nil && err != io.EOF {
+		return 0, err
+	}
 
-	fl.offset = fl.offset + int64(maxRead)
+	fl.offset += int64(maxRead)
 	var retErr error
-	if fl.offset >= int64(size) {
+	if fl.offset >= int64(fl.size) {
 		retErr = io.EOF
 	}
 	return maxRead, retErr
 }
 
 // Write writes len(b) bytes to the File.
-//  you cannot write to an iso, so this returns an error
+//
+//	you cannot write to an iso, so this returns an error
 func (fl *File) Write(p []byte) (int, error) {
-	return 0, fmt.Errorf("Cannot write to a read-only iso filesystem")
+	return 0, fmt.Errorf("cannot write to a read-only iso filesystem")
 }
 
 // Seek set the offset to a particular point in the file
 func (fl *File) Seek(offset int64, whence int) (int64, error) {
+	if fl == nil || fl.closed {
+		return 0, os.ErrClosed
+	}
 	newOffset := int64(0)
 	switch whence {
 	case io.SeekStart:
@@ -70,8 +83,18 @@ func (fl *File) Seek(offset int64, whence int) (int64, error) {
 		newOffset = fl.offset + offset
 	}
 	if newOffset < 0 {
-		return fl.offset, fmt.Errorf("Cannot set offset %d before start of file", offset)
+		return fl.offset, fmt.Errorf("cannot set offset %d before start of file", offset)
 	}
 	fl.offset = newOffset
 	return fl.offset, nil
+}
+
+func (fl *File) Location() uint32 {
+	return fl.location
+}
+
+// Close close the file
+func (fl *File) Close() error {
+	fl.closed = true
+	return nil
 }

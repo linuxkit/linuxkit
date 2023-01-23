@@ -11,16 +11,16 @@
 //
 // Here is a simple example of an MBR Table with a single 10MB Linux partition:
 //
-//      table := &mbr.Table{
-//        LogicalSectorSize:  512,
-//        PhysicalSectorSize: 512,
-//        Partitions: []*mbr.Partition{
-//          {
-//            Bootable:      false,
-//            Type:          Linux,
-//            Start:         2048,
-//            Size:          20480,
-//          },
-//        },
-//      }
+//	table := &mbr.Table{
+//	  LogicalSectorSize:  512,
+//	  PhysicalSectorSize: 512,
+//	  Partitions: []*mbr.Partition{
+//	    {
+//	      Bootable:      false,
+//	      Type:          Linux,
+//	      Start:         2048,
+//	      Size:          20480,
+//	    },
+//	  },
+//	}
 package mbr

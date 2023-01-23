@@ -29,9 +29,9 @@ const (
 
 const (
 	// FirstRemovableDrive is first removable drive
-	firstRemovableDrive uint8 = 0x00
+	FirstRemovableDrive uint8 = 0x00
 	// FirstFixedDrive is first fixed drive
-	firstFixedDrive uint8 = 0x80
+	FirstFixedDrive uint8 = 0x80
 )
 
 // Dos71EBPB is the DOS 7.1 Extended BIOS Parameter Block
@@ -42,7 +42,7 @@ type dos71EBPB struct {
 	version               fatVersion // Version is the version of the FAT, must be 0
 	rootDirectoryCluster  uint32     // RootDirectoryCluster is the cluster containing the filesystem root directory, normally 2
 	fsInformationSector   uint16     // FSInformationSector holds the sector which contains the primary DOS 7.1 Filesystem Information Cluster
-	backupFSInfoSector    uint16     // BackupFSInfoSector holds the sector which contains the backup DOS 7.1 Filesystem Information Cluster
+	backupBootSector      uint16     // BackupBootSector holds the sector which contains the backup boot sector and following FSIS sectors
 	bootFileName          [12]byte   // BootFileName is reserved and should be all 0x00
 	driveNumber           uint8      // DriveNumber is the code for the relative position and type of this drive in the system
 	reservedFlags         uint8      // ReservedFlags are flags used by the operating system and/or BIOS for various purposes, e.g. Windows NT CHKDSK status, OS/2 desired drive letter, etc.
@@ -65,7 +65,7 @@ func (bpb *dos71EBPB) equal(a *dos71EBPB) bool {
 		bpb.version == a.version &&
 		bpb.rootDirectoryCluster == a.rootDirectoryCluster &&
 		bpb.fsInformationSector == a.fsInformationSector &&
-		bpb.backupFSInfoSector == a.backupFSInfoSector &&
+		bpb.backupBootSector == a.backupBootSector &&
 		bpb.bootFileName == a.bootFileName &&
 		bpb.driveNumber == a.driveNumber &&
 		bpb.reservedFlags == a.reservedFlags &&
@@ -88,7 +88,7 @@ func dos71EBPBFromBytes(b []byte) (*dos71EBPB, int, error) {
 	// extract the embedded DOS 3.31 BPB
 	dos331bpb, err := dos331BPBFromBytes(b[0:25])
 	if err != nil {
-		return nil, 0, fmt.Errorf("Could not read embedded DOS 3.31 BPB: %v", err)
+		return nil, 0, fmt.Errorf("could not read embedded DOS 3.31 BPB: %v", err)
 	}
 	bpb.dos331BPB = dos331bpb
 
@@ -96,17 +96,17 @@ func dos71EBPBFromBytes(b []byte) (*dos71EBPB, int, error) {
 	bpb.mirrorFlags = binary.LittleEndian.Uint16(b[29:31])
 	version := binary.LittleEndian.Uint16(b[31:33])
 	if version != uint16(fatVersion0) {
-		return nil, size, fmt.Errorf("Invalid FAT32 version found: %v", version)
+		return nil, size, fmt.Errorf("invalid FAT32 version found: %v", version)
 	}
 	bpb.version = fatVersion0
 	bpb.rootDirectoryCluster = binary.LittleEndian.Uint32(b[33:37])
 	bpb.fsInformationSector = binary.LittleEndian.Uint16(b[37:39])
-	bpb.backupFSInfoSector = binary.LittleEndian.Uint16(b[39:41])
+	bpb.backupBootSector = binary.LittleEndian.Uint16(b[39:41])
 	bootFileName := b[41:53]
 	copy(bpb.bootFileName[:], bootFileName)
-	bpb.driveNumber = uint8(b[53])
-	bpb.reservedFlags = uint8(b[54])
-	extendedSignature := uint8(b[55])
+	bpb.driveNumber = b[53]
+	bpb.reservedFlags = b[54]
+	extendedSignature := b[55]
 	bpb.extendedBootSignature = extendedSignature
 	// is this a longer or shorter one
 	bpb.volumeSerialNumber = binary.BigEndian.Uint32(b[56:60])
@@ -117,11 +117,11 @@ func dos71EBPBFromBytes(b []byte) (*dos71EBPB, int, error) {
 	case longDos71EBPB:
 		size = 79
 		// remove padding from each
-		re := regexp.MustCompile("[ ]+$")
+		re := regexp.MustCompile(" +$")
 		bpb.volumeLabel = re.ReplaceAllString(string(b[60:71]), "")
 		bpb.fileSystemType = re.ReplaceAllString(string(b[71:79]), "")
 	default:
-		return nil, size, fmt.Errorf("Unknown DOS 7.1 EBPB Signature: %v", extendedSignature)
+		return nil, size, fmt.Errorf("unknown DOS 7.1 EBPB Signature: %v", extendedSignature)
 	}
 
 	return &bpb, size, nil
@@ -134,46 +134,43 @@ func (bpb *dos71EBPB) toBytes() ([]byte, error) {
 	// how many bytes is it? for extended, add the extended-specific stuff
 	switch bpb.extendedBootSignature {
 	case shortDos71EBPB:
-		b = make([]byte, 60, 60)
+		b = make([]byte, 60)
 	case longDos71EBPB:
-		b = make([]byte, 79, 79)
+		b = make([]byte, 79)
 		// do we have a valid volume label?
 		label := bpb.volumeLabel
 		if len(label) > 11 {
-			return nil, fmt.Errorf("Invalid volume label: too long at %d characters, maximum is %d", len(label), 11)
+			return nil, fmt.Errorf("invalid volume label: too long at %d characters, maximum is %d", len(label), 11)
 		}
 		labelR := []rune(label)
 		if len(label) != len(labelR) {
-			return nil, fmt.Errorf("Invalid volume label: non-ascii characters")
+			return nil, fmt.Errorf("invalid volume label: non-ascii characters")
 		}
 		// pad with 0x20 = " "
-		copy(b[60:71], []byte(fmt.Sprintf("%-11s", label)))
+		copy(b[60:71], fmt.Sprintf("%-11s", label))
 		// do we have a valid filesystem type?
 		fstype := bpb.fileSystemType
 		if len(fstype) > 8 {
-			return nil, fmt.Errorf("Invalid filesystem type: too long at %d characters, maximum is %d", len(fstype), 8)
+			return nil, fmt.Errorf("invalid filesystem type: too long at %d characters, maximum is %d", len(fstype), 8)
 		}
 		fstypeR := []rune(fstype)
 		if len(fstype) != len(fstypeR) {
-			return nil, fmt.Errorf("Invalid filesystem type: non-ascii characters")
+			return nil, fmt.Errorf("invalid filesystem type: non-ascii characters")
 		}
 		// pad with 0x20 = " "
-		copy(b[71:79], []byte(fmt.Sprintf("%-11s", fstype)))
+		copy(b[71:79], fmt.Sprintf("%-11s", fstype))
 	default:
-		return nil, fmt.Errorf("Unknown DOS 7.1 EBPB Signature: %v", bpb.extendedBootSignature)
+		return nil, fmt.Errorf("unknown DOS 7.1 EBPB Signature: %v", bpb.extendedBootSignature)
 	}
 	// fill in the common parts
-	dos331Bytes, err := bpb.dos331BPB.toBytes()
-	if err != nil {
-		return nil, fmt.Errorf("Error converting embedded DOS 3.31 BPB to bytes: %v", err)
-	}
+	dos331Bytes := bpb.dos331BPB.toBytes()
 	copy(b[0:25], dos331Bytes)
 	binary.LittleEndian.PutUint32(b[25:29], bpb.sectorsPerFat)
 	binary.LittleEndian.PutUint16(b[29:31], bpb.mirrorFlags)
 	binary.LittleEndian.PutUint16(b[31:33], uint16(bpb.version))
 	binary.LittleEndian.PutUint32(b[33:37], bpb.rootDirectoryCluster)
 	binary.LittleEndian.PutUint16(b[37:39], bpb.fsInformationSector)
-	binary.LittleEndian.PutUint16(b[39:41], bpb.backupFSInfoSector)
+	binary.LittleEndian.PutUint16(b[39:41], bpb.backupBootSector)
 	copy(b[41:53], bpb.bootFileName[:])
 	b[53] = bpb.driveNumber
 	b[54] = bpb.reservedFlags

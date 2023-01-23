@@ -55,7 +55,7 @@ func comparePartitionArray(p1, p2 []*Partition) bool {
 }
 
 // ensure that a blank table is initialized
-func (t *Table) initTable(size int64) {
+func (t *Table) initTable() {
 	// default settings
 	if t.LogicalSectorSize == 0 {
 		t.LogicalSectorSize = 512
@@ -80,16 +80,16 @@ func (t *Table) Equal(t2 *Table) bool {
 }
 
 // tableFromBytes read a partition table from a byte slice
-func tableFromBytes(b []byte, logicalBlockSize, physicalBlockSize int) (*Table, error) {
+func tableFromBytes(b []byte) (*Table, error) {
 	// check length
 	if len(b) != mbrSize {
-		return nil, fmt.Errorf("Data for partition was %d bytes instead of expected %d", len(b), mbrSize)
+		return nil, fmt.Errorf("data for partition was %d bytes instead of expected %d", len(b), mbrSize)
 	}
 	mbrSignature := b[signatureStart:]
 
 	// validate signature
-	if bytes.Compare(mbrSignature, getMbrSignature()) != 0 {
-		return nil, fmt.Errorf("Invalid MBR Signature %v", mbrSignature)
+	if !bytes.Equal(mbrSignature, getMbrSignature()) {
+		return nil, fmt.Errorf("invalid MBR Signature %v", mbrSignature)
 	}
 
 	parts := make([]*Partition, 0, partitionEntriesCount)
@@ -100,7 +100,7 @@ func tableFromBytes(b []byte, logicalBlockSize, physicalBlockSize int) (*Table, 
 		end := start + partitionEntrySize
 		p, err := partitionFromBytes(b[start:end], logicalSectorSize, physicalSectorSize)
 		if err != nil {
-			return nil, fmt.Errorf("Error reading partition entry %d: %v", i, err)
+			return nil, fmt.Errorf("error reading partition entry %d: %v", i, err)
 		}
 		parts = append(parts, p)
 	}
@@ -122,29 +122,26 @@ func (t *Table) Type() string {
 // Read read a partition table from a disk, given the logical block size and physical block size
 func Read(f util.File, logicalBlockSize, physicalBlockSize int) (*Table, error) {
 	// read the data off of the disk
-	b := make([]byte, mbrSize, mbrSize)
+	b := make([]byte, mbrSize)
 	read, err := f.ReadAt(b, 0)
 	if err != nil {
-		return nil, fmt.Errorf("Error reading MBR from file: %v", err)
+		return nil, fmt.Errorf("error reading MBR from file: %v", err)
 	}
 	if read != len(b) {
-		return nil, fmt.Errorf("Read only %d bytes of MBR from file instead of expected %d", read, len(b))
+		return nil, fmt.Errorf("read only %d bytes of MBR from file instead of expected %d", read, len(b))
 	}
-	return tableFromBytes(b, logicalBlockSize, physicalBlockSize)
+	return tableFromBytes(b)
 }
 
 // ToBytes convert Table to byte slice suitable to be flashed to a disk
 // If successful, always will return a byte slice of size exactly 512
-func (t *Table) toBytes() ([]byte, error) {
+func (t *Table) toBytes() []byte {
 	b := make([]byte, 0, mbrSize-partitionEntriesStart)
 
 	// write the partitions
 	for i := 0; i < partitionEntriesCount; i++ {
 		if i < len(t.Partitions) {
-			btmp, err := t.Partitions[i].toBytes()
-			if err != nil {
-				return nil, fmt.Errorf("Could not prepare partition %d to write on disk: %v", i, err)
-			}
+			btmp := t.Partitions[i].toBytes()
 			b = append(b, btmp...)
 		} else {
 			b = append(b, []byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}...)
@@ -153,30 +150,27 @@ func (t *Table) toBytes() ([]byte, error) {
 
 	// signature
 	b = append(b, getMbrSignature()...)
-	return b, nil
+	return b
 }
 
 // Write writes a given MBR Table to disk.
 // Must be passed the util.File to write to and the size of the disk
 func (t *Table) Write(f util.File, size int64) error {
-	b, err := t.toBytes()
-	if err != nil {
-		return fmt.Errorf("Error preparing partition table for writing to disk: %v", err)
-	}
+	b := t.toBytes()
 
 	written, err := f.WriteAt(b, partitionEntriesStart)
 	if err != nil {
-		return fmt.Errorf("Error writing partition table to disk: %v", err)
+		return fmt.Errorf("error writing partition table to disk: %v", err)
 	}
 	if written != len(b) {
-		return fmt.Errorf("Partition table wrote %d bytes to disk instead of the expected %d", written, len(b))
+		return fmt.Errorf("partition table wrote %d bytes to disk instead of the expected %d", written, len(b))
 	}
 	return nil
 }
 
 func (t *Table) GetPartitions() []part.Partition {
 	// each Partition matches the part.Partition interface, but golang does not accept passing them in a slice
-	parts := make([]part.Partition, len(t.Partitions), len(t.Partitions))
+	parts := make([]part.Partition, len(t.Partitions))
 	for i, p := range t.Partitions {
 		parts[i] = p
 	}
