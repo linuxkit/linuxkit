@@ -11,25 +11,25 @@ require (
 	github.com/Microsoft/go-winio v0.5.2
 	github.com/ScaleFT/sshkeys v0.0.0-20181112160850-82451a803681
 	github.com/aws/aws-sdk-go v1.44.82
-	github.com/containerd/containerd v1.6.11
+	github.com/containerd/containerd v1.6.14
 	github.com/docker/buildx v0.8.2
-	github.com/docker/cli v23.0.0-beta.1+incompatible
-	github.com/docker/docker v23.0.0-beta.1+incompatible
+	github.com/docker/cli v23.0.0-rc.1+incompatible
+	github.com/docker/docker v23.0.0-rc.1+incompatible
 	github.com/docker/go-units v0.5.0
-	github.com/estesp/manifest-tool/v2 v2.0.6-0.20220728154431-89d791ab7966
+	github.com/estesp/manifest-tool/v2 v2.0.6
 	github.com/google/go-containerregistry v0.6.1-0.20211105150418-5c9c442d5d68
 	github.com/google/uuid v1.3.0
 	github.com/gophercloud/gophercloud v0.1.0
 	github.com/gophercloud/utils v0.0.0-20181029231510-34f5991525d1
 	github.com/hashicorp/go-version v1.2.0
 	github.com/klauspost/pgzip v1.2.5
-	github.com/moby/buildkit v0.11.0-rc2
+	github.com/moby/buildkit v0.11.1
 	github.com/moby/hyperkit v0.0.0-20180416161519-d65b09c1c28a
 	//github.com/moby/moby v20.10.3-0.20220728162118-71cb54cec41e+incompatible // indirect
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
 	github.com/moby/vpnkit v0.4.1-0.20200311130018-2ffc1dd8a84e
 	github.com/moul/gotty-client v1.7.1-0.20180526075433-e5589f6df359
-	github.com/opencontainers/image-spec v1.0.3-0.20220303224323-02efb9a75ee1
+	github.com/opencontainers/image-spec v1.1.0-rc2
 	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
 	github.com/packethost/packngo v0.1.1-0.20171201154433-f1be085ecd6f
 	github.com/pkg/term v1.1.0
@@ -52,7 +52,10 @@ require (
 	gopkg.in/yaml.v2 v2.4.0
 )
 
-require github.com/Code-Hex/vz/v3 v3.0.0
+require (
+	github.com/Code-Hex/vz/v3 v3.0.0
+	github.com/spf13/cobra v1.6.1
+)
 
 require (
 	cloud.google.com/go/compute v1.7.0 // indirect
@@ -61,7 +64,7 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
-	github.com/Microsoft/hcsshim v0.9.5 // indirect
+	github.com/Microsoft/hcsshim v0.9.6 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
@@ -97,7 +100,7 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
-	github.com/in-toto/in-toto-golang v0.3.4-0.20220709202702-fa494aaa0add // indirect
+	github.com/in-toto/in-toto-golang v0.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.15.12 // indirect
@@ -118,9 +121,8 @@ require (
 	github.com/prometheus/procfs v0.8.0 // indirect
 	github.com/secure-systems-lab/go-securesystemslib v0.4.0 // indirect
 	github.com/shibumi/go-pathspec v1.3.0 // indirect
-	github.com/spf13/cobra v1.6.1 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/tonistiigi/fsutil v0.0.0-20221114235510-0127568185cf // indirect
+	github.com/tonistiigi/fsutil v0.0.0-20230105215944-fb433841cbfa // indirect
 	github.com/tonistiigi/units v0.0.0-20180711220420-6950e57a87ea // indirect
 	github.com/tonistiigi/vt100 v0.0.0-20210615222946-8066bb97264f // indirect
 	github.com/vbatts/tar-split v0.11.2 // indirect
@@ -145,11 +147,7 @@ require (
 	google.golang.org/grpc v1.50.1 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	oras.land/oras-go v1.2.0 // indirect
+	oras.land/oras-go v1.2.2 // indirect
 )
 
-replace (
-	// these are for the delicate dance of docker/docker, moby/moby, moby/buildkit, estesp/manifest-tool, oras.land/oras-go, linuxkit/linuxkit
-	github.com/docker/docker => github.com/moby/moby v20.10.3-0.20220728162118-71cb54cec41e+incompatible
-	oras.land/oras-go => oras.land/oras-go v1.1.0
-)
+replace oras.land/oras-go => oras.land/oras-go v1.1.0

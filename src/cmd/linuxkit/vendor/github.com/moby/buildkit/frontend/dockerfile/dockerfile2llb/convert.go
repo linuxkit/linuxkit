@@ -88,6 +88,8 @@ type ConvertOpt struct {
 type SBOMTargets struct {
 	Core   llb.State
 	Extras map[string]llb.State
+
+	IgnoreCache bool
 }
 
 func Dockerfile2LLB(ctx context.Context, dt []byte, opt ConvertOpt) (*llb.State, *Image, *SBOMTargets, error) {
@@ -103,13 +105,14 @@ func Dockerfile2LLB(ctx context.Context, dt []byte, opt ConvertOpt) (*llb.State,
 	if ds.scanContext {
 		sbom.Extras["context"] = ds.opt.buildContext
 	}
-	for dsi := ds; dsi != nil; dsi = dsi.base {
+	if ds.ignoreCache {
+		sbom.IgnoreCache = true
+	}
+	for _, dsi := range findReachable(ds) {
 		if ds != dsi && dsi.scanStage {
-			sbom.Extras["stage:"+dsi.stageName] = dsi.state
-		}
-		for dsi2 := range dsi.deps {
-			if dsi2.scanStage {
-				sbom.Extras["stage:"+dsi2.stageName] = dsi2.state
+			sbom.Extras[dsi.stageName] = dsi.state
+			if dsi.ignoreCache {
+				sbom.IgnoreCache = true
 			}
 		}
 	}
@@ -178,6 +181,10 @@ func toDispatchState(ctx context.Context, dt []byte, opt ConvertOpt) (*dispatchS
 
 	if opt.ContextLocalName == "" {
 		opt.ContextLocalName = defaultContextLocalName
+	}
+
+	if opt.Warn == nil {
+		opt.Warn = func(string, string, [][]byte, *parser.Range) {}
 	}
 
 	platformOpt := buildPlatformOpt(&opt)
@@ -1534,6 +1541,20 @@ func isReachable(from, to *dispatchState) (ret bool) {
 		}
 	}
 	return false
+}
+
+func findReachable(from *dispatchState) (ret []*dispatchState) {
+	if from == nil {
+		return nil
+	}
+	ret = append(ret, from)
+	if from.base != nil {
+		ret = append(ret, findReachable(from.base)...)
+	}
+	for d := range from.deps {
+		ret = append(ret, findReachable(d)...)
+	}
+	return ret
 }
 
 func hasCircularDependency(states []*dispatchState) (bool, *dispatchState) {
