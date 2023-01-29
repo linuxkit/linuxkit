@@ -1,1 +1,2 @@
 image: go-compile
+network: true
