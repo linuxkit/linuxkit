@@ -53,7 +53,7 @@ github.com/Microsoft/go-winio/backuptar
 github.com/Microsoft/go-winio/pkg/guid
 github.com/Microsoft/go-winio/pkg/security
 github.com/Microsoft/go-winio/vhd
-# github.com/Microsoft/hcsshim v0.9.5
+# github.com/Microsoft/hcsshim v0.9.6
 ## explicit; go 1.13
 github.com/Microsoft/hcsshim
 github.com/Microsoft/hcsshim/computestorage
@@ -149,7 +149,7 @@ github.com/containerd/cgroups/stats/v1
 # github.com/containerd/console v1.0.3
 ## explicit; go 1.13
 github.com/containerd/console
-# github.com/containerd/containerd v1.6.11
+# github.com/containerd/containerd v1.6.14
 ## explicit; go 1.17
 github.com/containerd/containerd/api/services/content/v1
 github.com/containerd/containerd/archive
@@ -213,7 +213,7 @@ github.com/dchest/bcrypt_pbkdf
 ## explicit; go 1.16
 github.com/docker/buildx/util/logutil
 github.com/docker/buildx/util/progress
-# github.com/docker/cli v23.0.0-beta.1+incompatible
+# github.com/docker/cli v23.0.0-rc.1+incompatible
 ## explicit
 github.com/docker/cli/cli/config
 github.com/docker/cli/cli/config/configfile
@@ -238,7 +238,7 @@ github.com/docker/distribution/registry/client/auth/challenge
 github.com/docker/distribution/registry/client/transport
 github.com/docker/distribution/registry/storage/cache
 github.com/docker/distribution/registry/storage/cache/memory
-# github.com/docker/docker v23.0.0-beta.1+incompatible => github.com/moby/moby v20.10.3-0.20220728162118-71cb54cec41e+incompatible
+# github.com/docker/docker v23.0.0-rc.1+incompatible
 ## explicit
 github.com/docker/docker/api
 github.com/docker/docker/api/types
@@ -262,7 +262,6 @@ github.com/docker/docker/pkg/homedir
 github.com/docker/docker/pkg/ioutils
 github.com/docker/docker/pkg/jsonmessage
 github.com/docker/docker/pkg/longpath
-github.com/docker/docker/pkg/stringid
 github.com/docker/docker/registry
 # github.com/docker/docker-credential-helpers v0.7.0
 ## explicit; go 1.18
@@ -279,7 +278,7 @@ github.com/docker/go-metrics
 # github.com/docker/go-units v0.5.0
 ## explicit
 github.com/docker/go-units
-# github.com/estesp/manifest-tool/v2 v2.0.6-0.20220728154431-89d791ab7966
+# github.com/estesp/manifest-tool/v2 v2.0.6
 ## explicit; go 1.17
 github.com/estesp/manifest-tool/v2/pkg/registry
 github.com/estesp/manifest-tool/v2/pkg/store
@@ -408,9 +407,11 @@ github.com/grpc-ecosystem/grpc-gateway/utilities
 # github.com/hashicorp/go-version v1.2.0
 ## explicit
 github.com/hashicorp/go-version
-# github.com/in-toto/in-toto-golang v0.3.4-0.20220709202702-fa494aaa0add
+# github.com/in-toto/in-toto-golang v0.5.0
 ## explicit; go 1.17
 github.com/in-toto/in-toto-golang/in_toto
+github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/common
+github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.1
 github.com/in-toto/in-toto-golang/in_toto/slsa_provenance/v0.2
 # github.com/inconshreveable/mousetrap v1.0.1
 ## explicit; go 1.18
@@ -441,7 +442,7 @@ github.com/matttproud/golang_protobuf_extensions/pbutil
 # github.com/mitchellh/go-ps v0.0.0-20190716172923-621e5597135b
 ## explicit
 github.com/mitchellh/go-ps
-# github.com/moby/buildkit v0.11.0-rc2
+# github.com/moby/buildkit v0.11.1
 ## explicit; go 1.18
 github.com/moby/buildkit/api/services/control
 github.com/moby/buildkit/api/types
@@ -544,8 +545,8 @@ github.com/moul/gotty-client
 # github.com/opencontainers/go-digest v1.0.0
 ## explicit; go 1.13
 github.com/opencontainers/go-digest
-# github.com/opencontainers/image-spec v1.0.3-0.20220303224323-02efb9a75ee1
-## explicit; go 1.16
+# github.com/opencontainers/image-spec v1.1.0-rc2
+## explicit; go 1.17
 github.com/opencontainers/image-spec/identity
 github.com/opencontainers/image-spec/specs-go
 github.com/opencontainers/image-spec/specs-go/v1
@@ -645,7 +646,7 @@ github.com/stretchr/testify/require
 # github.com/surma/gocpio v1.0.2-0.20160926205914-fcb68777e7dc
 ## explicit
 github.com/surma/gocpio
-# github.com/tonistiigi/fsutil v0.0.0-20221114235510-0127568185cf
+# github.com/tonistiigi/fsutil v0.0.0-20230105215944-fb433841cbfa
 ## explicit; go 1.18
 github.com/tonistiigi/fsutil
 github.com/tonistiigi/fsutil/types
@@ -945,11 +946,10 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# oras.land/oras-go v1.2.0 => oras.land/oras-go v1.1.0
+# oras.land/oras-go v1.2.2 => oras.land/oras-go v1.1.0
 ## explicit; go 1.17
 oras.land/oras-go/pkg/artifact
 oras.land/oras-go/pkg/auth
 oras.land/oras-go/pkg/auth/docker
 oras.land/oras-go/pkg/content
-# github.com/docker/docker => github.com/moby/moby v20.10.3-0.20220728162118-71cb54cec41e+incompatible
 # oras.land/oras-go => oras.land/oras-go v1.1.0
