@@ -4,7 +4,7 @@ VERSION="v0.8+"
 TEST_SUITE ?=
 TEST_SHARD ?=
 
-GO_COMPILE=linuxkit/go-compile:7b1f5a37d2a93cd4a9aa2a87db264d8145944006
+GO_COMPILE=linuxkit/go-compile:c97703655e8510b7257ffc57f25e40337b0f0813
 
 ifeq ($(OS),Windows_NT)
 LINUXKIT?=$(CURDIR)/bin/linuxkit.exe
@@ -34,7 +34,7 @@ export VERSION GO_COMPILE GOOS GOARCH LOCAL_TARGET LINUXKIT
 default: linuxkit $(RTF)
 all: default
 
-RTF_COMMIT=1b6277593346dea7e6039d528c4e8321a4bd9eaf
+RTF_COMMIT=b74a4f7c78e5cddcf7e6d2e6be7be312b9f645fc
 RTF_CMD=github.com/linuxkit/rtf/cmd
 RTF_VERSION=0.0
 $(RTF): tmp_rtf_bin.tar | bin
