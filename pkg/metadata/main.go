@@ -77,7 +77,19 @@ func main() {
 		log.SetLevel(log.DebugLevel)
 	}
 
-	providers := []string{"aws", "gcp", "hetzner", "openstack", "scaleway", "vultr", "digitalocean", "packet", "metaldata", "cdrom"}
+	providers := []string{
+		"aws",
+		"azure",
+		"gcp",
+		"hetzner",
+		"openstack",
+		"scaleway",
+		"vultr",
+		"digitalocean",
+		"packet",
+		"metaldata",
+		"cdrom",
+	}
 	args := flag.Args()
 	if len(args) > 0 {
 		providers = args
@@ -86,6 +98,8 @@ func main() {
 		switch {
 		case p == "aws":
 			netProviders = append(netProviders, NewAWS())
+		case p == "azure":
+			netProviders = append(netProviders, NewAzure())
 		case p == "gcp":
 			netProviders = append(netProviders, NewGCP())
 		case p == "hetzner":
@@ -206,7 +220,7 @@ func processUserData(basePath string, data []byte) error {
 	var root ConfigFile
 	if err := json.Unmarshal(data, &root); err != nil {
 		// Userdata is no JSON, presumably...
-		log.Printf("Could not unmarshall userdata: %s", err)
+		log.Printf("Could not unmarshal userdata: %s", err)
 		// This is not an error
 		return nil
 	}
