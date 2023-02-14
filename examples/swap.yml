@@ -18,7 +18,7 @@ onboot:
     image: linuxkit/mount:a8581e454f846690d09e2e7c6287d3c84ca53257
     command: ["/usr/bin/mountie", "/var/external"]
   - name: swap
-    image: linuxkit/swap:cf9b484598f197a31b570012815c679826145bc4
+    image: linuxkit/swap:d17a7f1c26ff768c26b3c206ccf3aa72349568df
     # to use unencrypted swap, use:
     # command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G"]
     command: ["/swap.sh", "--path", "/var/external/swap", "--size", "1G", "--encrypt"]

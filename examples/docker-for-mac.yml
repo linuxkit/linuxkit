@@ -26,7 +26,7 @@ onboot:
     command: ["/usr/bin/mountie", "/var/lib"]
   # make a swap file on the mounted disk
   - name: swap
-    image: linuxkit/swap:cf9b484598f197a31b570012815c679826145bc4
+    image: linuxkit/swap:d17a7f1c26ff768c26b3c206ccf3aa72349568df
     command: ["/swap.sh", "--path", "/var/lib/swap", "--size", "1024M"]
   # mount-vpnkit mounts the 9p share used by vpnkit to coordinate port forwarding
   - name: mount-vpnkit
