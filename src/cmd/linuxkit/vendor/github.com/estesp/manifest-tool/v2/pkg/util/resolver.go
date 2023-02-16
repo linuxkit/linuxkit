@@ -1,14 +1,11 @@
 package util
 
 import (
-	"context"
 	"crypto/tls"
 	"net/http"
 
 	"github.com/containerd/containerd/remotes"
 	"github.com/containerd/containerd/remotes/docker"
-	auth "oras.land/oras-go/pkg/auth/docker"
-	"github.com/sirupsen/logrus"
 )
 
 func NewResolver(username, password string, insecure, plainHTTP bool, configs ...string) remotes.Resolver {
@@ -32,14 +29,5 @@ func NewResolver(username, password string, insecure, plainHTTP bool, configs ..
 		}
 		return docker.NewResolver(opts)
 	}
-	cli, err := auth.NewClient(configs...)
-	if err != nil {
-		logrus.Warnf("Error loading auth file: %v", err)
-	}
-	resolver, err := cli.Resolver(context.Background(), client, plainHTTP)
-	if err != nil {
-		logrus.Warnf("Error loading resolver: %v", err)
-		resolver = docker.NewResolver(opts)
-	}
-	return resolver
+	return docker.NewResolver(opts)
 }
