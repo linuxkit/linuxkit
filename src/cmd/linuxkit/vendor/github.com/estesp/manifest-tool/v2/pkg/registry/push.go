@@ -116,9 +116,6 @@ func PushManifestList(username, password string, input types.YAMLInput, ignoreMi
 
 func resolvePlatform(descriptor ocispec.Descriptor, img types.ManifestEntry, imgConfig types.Image) (*ocispec.Platform, error) {
 	platform := &img.Platform
-	if platform == nil {
-		platform = &ocispec.Platform{}
-	}
 	// fill os/arch from inspected image if not specified in input YAML
 	if platform.OS == "" && platform.Architecture == "" {
 		// prefer a full platform object, if one is already available (and appears to have meaningful content)
