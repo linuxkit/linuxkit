@@ -19,3 +19,5 @@ COPY --from=build /go/bin/logread usr/bin/logread
 COPY --from=build /go/bin/logwrite usr/bin/logwrite
 # We'll start from init.d
 COPY etc/ /etc/
+COPY --from=build /etc/apk /etc/apk/
+COPY --from=build /lib/apk /lib/apk/

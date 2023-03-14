@@ -27,8 +27,8 @@ RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
 # Add /etc/ssl/certs so it can be bind-mounted into metadata package
 RUN mkdir -p /out/etc/ssl/certs
 
-# Remove apk residuals. We have a read-only rootfs, so apk is of no use.
-RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
+# Remove cache residuals. We retain apk for SBOM tools
+RUN rm -rf /out/var/cache
 
 FROM scratch
 ENTRYPOINT []
