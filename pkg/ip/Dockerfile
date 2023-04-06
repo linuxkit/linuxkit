@@ -11,7 +11,8 @@ RUN apk add --no-cache --initdb -p /out \
     ipvsadm \
     bridge-utils \
     musl \
-    wireguard-tools
+    wireguard-tools \
+    ethtool
 
 # We grab our version of wg-quick, called lk-wg-config.sh
 RUN curl -sSL -o /out/usr/bin/lk-wg-config https://gist.githubusercontent.com/zx2c4/3624de869ab7eaef3de5ea8f2b867be9/raw/de72b018f4f4548858ce6aae2898b34db0474221/lk-wg-config.sh && chmod 755 /out/usr/bin/lk-wg-config
