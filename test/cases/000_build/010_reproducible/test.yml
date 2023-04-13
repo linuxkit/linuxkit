@@ -18,7 +18,7 @@ onboot:
 
 services:
   - name: testservice
-    image: linuxkit/ip:c88e3272e3b12edec454e4720da8bb70a7655bc7
+    image: linuxkit/ip:f25100f6347d8259886ffb7f914b3bf9c966c2d0
     # Some environments
     env:
       - BENV=true
