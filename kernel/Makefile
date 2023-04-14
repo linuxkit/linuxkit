@@ -269,16 +269,14 @@ endef
 # Debug targets only for latest stable and LTS stable
 #
 ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.15.27,5.15.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.15.27,5.15.x,,-dbg))
-$(eval $(call kernel,5.10.104,5.10.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.172,5.4.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.11.4,5.11.x,-rt,))
+$(eval $(call kernel,5.15.110,5.15.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.15.110,5.15.x,,-dbg))
+$(eval $(call kernel,5.10.179,5.10.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.4.242,5.4.x,$(EXTRA),$(DEBUG)))
 
 else ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
-$(eval $(call kernel,5.15.27,5.15.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.104,5.10.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.11.4,5.11.x,-rt,))
+$(eval $(call kernel,5.15.110,5.15.x,$(EXTRA),$(DEBUG)))
+$(eval $(call kernel,5.10.179,5.10.x,$(EXTRA),$(DEBUG)))
 
 endif
 
