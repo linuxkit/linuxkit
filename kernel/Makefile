@@ -14,7 +14,8 @@
 
 # Name and Org on Hub
 ORG?=linuxkit
-IMAGE:=kernel
+PLATFORMS?=linux/amd64,linux/arm64
+IMAGE?=kernel
 IMAGE_BCC:=kernel-bcc
 IMAGE_PERF:=kernel-perf
 IMAGE_ZFS:=zfs-kmod
@@ -97,6 +98,18 @@ define kernel
 ifeq ($(4),)
 KERNEL_VERSIONS+=$(1)
 endif
+
+buildx_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
+	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) || \
+		docker buildx build \
+			--platform=$(PLATFORMS) --push \
+			--build-arg KERNEL_VERSION=$(1) \
+			--build-arg KERNEL_SERIES=$(2) \
+			--build-arg EXTRA=$(3) \
+			--build-arg DEBUG=$(4) \
+			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
+			$(LABELS) \
+			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
 
 build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
 	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
@@ -281,4 +294,23 @@ else
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		-t linuxkit/kconfig:${KCONFIG_TAG}  .
+endif
+
+kconfigx:
+ifeq (${KCONFIG_TAG},)
+	docker buildx build --no-cache -f Dockerfile.kconfigx \
+		--platform=$(PLATFORMS) \
+		--output . \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
+		-t linuxkit/kconfigx  .
+	cp linux_arm64/config-${KERNEL_VERSIONS}-arm64 config-${KERNEL_SERIES}-aarch64
+	cp linux_amd64/config-${KERNEL_VERSIONS}-amd64 config-${KERNEL_SERIES}-x86_64
+else
+	docker buildx build --no-cache -f Dockerfile.kconfigx \
+		--platform=$(PLATFORMS) --push \
+		--output . \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
+		-t linuxkit/kconfigx:${KCONFIG_TAG}  .
 endif

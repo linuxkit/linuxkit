@@ -1,0 +1,71 @@
+# syntax=docker/dockerfile:1.3-labs
+
+ARG BUILD_IMAGE
+
+FROM ${BUILD_IMAGE} AS kernel-build
+ARG KERNEL_VERSIONS
+ARG TARGETARCH
+
+RUN apk add \
+    argp-standalone \
+    bison \
+    build-base \
+    curl \
+    diffutils \
+    flex \
+    gmp-dev \
+    libarchive-tools \
+    mpc1-dev \
+    mpfr-dev \
+    ncurses-dev \
+    patch \
+    xz
+
+COPY / /
+
+# Unpack kernels (download if not present)
+RUN <<EOF
+set -e
+for VERSION in ${KERNEL_VERSIONS}; do
+        MAJOR=$(echo ${VERSION} | cut -d . -f 1)
+        MAJOR=v${MAJOR}.x
+        echo "Downloading/Unpacking $VERSION"
+        KERNEL_SOURCE=https://www.kernel.org/pub/linux/kernel/${MAJOR}/linux-${VERSION}.tar.xz
+        if [ ! -f sources/linux-${VERSION}.tar.xz ] ; then
+		curl -fSLo sources/linux-${VERSION}.tar.xz --create-dirs ${KERNEL_SOURCE}
+	fi
+        bsdtar xf sources/linux-${VERSION}.tar.xz
+done
+EOF
+
+# Apply patches to all kernels and move config files into place
+RUN <<EOF
+set -e
+for VERSION in ${KERNEL_VERSIONS}; do
+	SERIES=${VERSION%.*}.x
+	echo "Patching $VERSION $SERIES"
+	cd /linux-${VERSION}
+	if [ -d /patches-${SERIES} ]; then
+		for patch in /patches-${SERIES}/*.patch; do
+			echo "Applying $patch"
+			patch -t -F0 -N -u -p1 < "$patch"
+		done
+	fi
+	if [ ${TARGETARCH} = "amd64" ] ; then
+		 cp /config-${SERIES}-x86_64 .config
+		ARCH=x86 make oldconfig
+		ls
+	elif [ ${TARGETARCH} = "arm64" ] ; then
+		cp /config-${SERIES}-aarch64 .config
+		ARCH=arm64 make oldconfig
+	fi
+done
+EOF
+
+ENTRYPOINT ["/bin/sh"]
+
+FROM scratch
+ARG KERNEL_VERSIONS
+ARG TARGETARCH
+WORKDIR /
+COPY --from=kernel-build /linux-${KERNEL_VERSIONS}/.config config-${KERNEL_VERSIONS}-$TARGETARCH
