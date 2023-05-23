@@ -1,0 +1,5 @@
+image: guestfs
+network: true
+arches:
+  - arm64
+  - amd64
