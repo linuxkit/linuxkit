@@ -12,6 +12,7 @@ import (
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
+	"github.com/syndtr/gocapability/capability"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v2"
 )
@@ -649,46 +650,15 @@ func assignStringEmpty4(v1, v2, v3, v4 string) string {
 	return v1
 }
 
-var allCaps = []string{
-	"CAP_AUDIT_CONTROL",
-	"CAP_AUDIT_READ",
-	"CAP_AUDIT_WRITE",
-	"CAP_BLOCK_SUSPEND",
-	"CAP_CHOWN",
-	"CAP_DAC_OVERRIDE",
-	"CAP_DAC_READ_SEARCH",
-	"CAP_FOWNER",
-	"CAP_FSETID",
-	"CAP_IPC_LOCK",
-	"CAP_IPC_OWNER",
-	"CAP_KILL",
-	"CAP_LEASE",
-	"CAP_LINUX_IMMUTABLE",
-	"CAP_MAC_ADMIN",
-	"CAP_MAC_OVERRIDE",
-	"CAP_MKNOD",
-	"CAP_NET_ADMIN",
-	"CAP_NET_BIND_SERVICE",
-	"CAP_NET_BROADCAST",
-	"CAP_NET_RAW",
-	"CAP_SETFCAP",
-	"CAP_SETGID",
-	"CAP_SETPCAP",
-	"CAP_SETUID",
-	"CAP_SYSLOG",
-	"CAP_SYS_ADMIN",
-	"CAP_SYS_BOOT",
-	"CAP_SYS_CHROOT",
-	"CAP_SYS_MODULE",
-	"CAP_SYS_NICE",
-	"CAP_SYS_PACCT",
-	"CAP_SYS_PTRACE",
-	"CAP_SYS_RAWIO",
-	"CAP_SYS_RESOURCE",
-	"CAP_SYS_TIME",
-	"CAP_SYS_TTY_CONFIG",
-	"CAP_WAKE_ALARM",
+func getAllCapabilities() []string {
+	var caps []string
+	for _, cap := range capability.List() {
+		caps = append(caps, "CAP_"+strings.ToUpper(cap.String()))
+	}
+	return caps
 }
+
+var allCaps = getAllCapabilities()
 
 func idNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
 	switch id := v.(type) {
