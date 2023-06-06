@@ -601,6 +601,9 @@ github.com/stretchr/testify/require
 # github.com/surma/gocpio v1.0.2-0.20160926205914-fcb68777e7dc
 ## explicit
 github.com/surma/gocpio
+# github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
+## explicit
+github.com/syndtr/gocapability/capability
 # github.com/tonistiigi/fsutil v0.0.0-20230105215944-fb433841cbfa
 ## explicit; go 1.18
 github.com/tonistiigi/fsutil
