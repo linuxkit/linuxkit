@@ -1,0 +1,5 @@
+image: build-args-test
+network: true
+arches:
+    - amd64
+    - arm64

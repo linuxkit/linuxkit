@@ -309,12 +309,23 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		if p.git != nil && p.gitRepo != "" {
 			imageBuildOpts.Labels["org.opencontainers.image.source"] = p.gitRepo
 		}
-		if p.git != nil && !p.dirty {
-			commit, err := p.git.commitHash("HEAD")
+		var (
+			gitCommit    string
+			goPkgVersion string
+		)
+		if p.git != nil {
+			if !p.dirty {
+				gitCommit, err = p.git.commitHash("HEAD")
+				if err != nil {
+					return err
+				}
+				imageBuildOpts.Labels["org.opencontainers.image.revision"] = gitCommit
+			}
+			// get the go version or pseudo-version
+			goPkgVersion, err = p.git.goPkgVersion()
 			if err != nil {
 				return err
 			}
-			imageBuildOpts.Labels["org.opencontainers.image.revision"] = commit
 		}
 
 		imageBuildOpts.NetworkMode = "default"
@@ -341,6 +352,16 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 				}
 				imageBuildOpts.BuildArgs[parts[0]] = &parts[1]
 			}
+		}
+		// add in information about the build process that might be useful
+		if _, ok := imageBuildOpts.BuildArgs["SOURCE"]; !ok && p.gitRepo != "" {
+			imageBuildOpts.BuildArgs["SOURCE"] = &p.gitRepo
+		}
+		if _, ok := imageBuildOpts.BuildArgs["REVISION"]; !ok && gitCommit != "" {
+			imageBuildOpts.BuildArgs["REVISION"] = &gitCommit
+		}
+		if _, ok := imageBuildOpts.BuildArgs["GOPKGVERSION"]; !ok && goPkgVersion != "" {
+			imageBuildOpts.BuildArgs["GOPKGVERSION"] = &goPkgVersion
 		}
 
 		// build for each arch and save in the linuxkit cache

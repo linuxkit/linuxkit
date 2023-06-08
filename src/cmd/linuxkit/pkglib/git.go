@@ -211,3 +211,36 @@ func (g git) isDirty(pkg, commit string) (bool, error) {
 		return false, err
 	}
 }
+
+// goPkgVersion return a version that is compliant with go package versioning.
+// This would either be:
+//
+// - The tag name if the most recent commit is tagged
+// - The structure <version>-<count>-<commmit> if the most recent commit is not tagged
+//
+// See https://go.dev/ref/mod for more information
+func (g git) goPkgVersion() (string, error) {
+	lastSemver, _ := g.commandStdout(nil, "--no-pager", "describe", "--match='v[0-9].[0-9].[0-9]*'", "--abbrev=0", "--tags")
+	if lastSemver == "" {
+		lastSemver = "v0.0.0"
+	}
+	commitList := "HEAD"
+	if lastSemver != "v0.0.0" {
+		commitList = fmt.Sprintf("%s..HEAD", lastSemver)
+	}
+	count, err := g.commandStdout(nil, "rev-list", commitList, "--count")
+	if err != nil {
+		return "", err
+	}
+	version := ""
+	if count == "0" {
+		version = lastSemver
+	} else {
+		dateCommit, err := g.commandStdout(nil, "--no-pager", "show", "--quiet", "--abbrev=12", "--date=format-local:%Y%m%d%H%M%S", "--format=%cd-%h")
+		if err != nil {
+			return "", err
+		}
+		version = fmt.Sprintf("%s-%s", lastSemver, dateCommit)
+	}
+	return version, nil
+}

@@ -264,6 +264,23 @@ linuxkit pkg build --platforms=linux/arm64 --builders linux/arm64=my-remote-arm6
 
 linuxkit will try to build for `linux/arm64` using the context `my-remote-arm64`. Since that context does not exist, you will get an error.
 
+##### Preset build arguments
+
+When building packages, the following build-args automatically are set for you:
+
+* `SOURCE` - the source repository of the package
+* `REVISION` - the git commit that was used for the build
+* `GOPKGVERSION` - the go package version or pseudo-version per https://go.dev/ref/mod#glos-pseudo-version
+
+Note that the above are set **only** if you do not set them in `build.yaml`. Your settings _always_
+override these built-in ones.
+
+To use them, simply address them in your `Dockerfile`:
+
+```dockerfile
+ARG SOURCE
+```
+
 ### Build packages as a maintainer
 
 All official LinuxKit packages are multi-arch manifests and most of
