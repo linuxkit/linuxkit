@@ -12,6 +12,8 @@ FROM linuxkit/alpine:316c3f9d85c21fdd8bc7479e81d290f85bf60eb0 AS mirror
 
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
+ARG GOPKGVERSION
+ENV ldflags="-X main.Version=$GOPKGVERSION"
 
 COPY . /go/src/binfmt/
 RUN go-compile.sh /go/src/binfmt

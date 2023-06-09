@@ -7,6 +7,9 @@ RUN LDFLAGS=-static CFLAGS=-Werror make usermode-helper
 
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
+ARG GOPKGVERSION
+ENV ldflags="-X main.Version=$GOPKGVERSION"
+
 # Hack to work around an issue with go on arm64 requiring gcc
 RUN [ $(uname -m) = aarch64 ] && apk add --no-cache gcc || true
 
