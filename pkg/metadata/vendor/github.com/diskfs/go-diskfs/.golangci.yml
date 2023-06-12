@@ -21,7 +21,6 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
     - depguard
     - dogsled
     - dupl
@@ -43,14 +42,12 @@ linters:
     - predeclared
     - revive
     - staticcheck
-    - structcheck
     - stylecheck
     - thelper
     - tparallel
     - typecheck
     - unconvert
     - unparam
-    - varcheck
     - whitespace
     # - wsl # лишние пустые строки и т.д., чистый стиль
     # - goconst # проверка на наличие переменных, которых следовало бы вынести в const

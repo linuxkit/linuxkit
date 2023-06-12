@@ -1,12 +1,11 @@
 [![GoDoc](https://godoc.org/github.com/pkg/xattr?status.svg)](http://godoc.org/github.com/pkg/xattr)
 [![Go Report Card](https://goreportcard.com/badge/github.com/pkg/xattr)](https://goreportcard.com/report/github.com/pkg/xattr)
-[![Build Status](https://travis-ci.org/pkg/xattr.svg?branch=master)](https://travis-ci.org/pkg/xattr)
-[![Version](https://badge.fury.io/gh/pkg%2Fxattr.svg)](https://github.com/pkg/xattr/releases)
+[![Build Status](https://github.com/pkg/xattr/workflows/build/badge.svg)](https://github.com/pkg/xattr/actions?query=workflow%3Abuild)
 [![Codecov](https://codecov.io/gh/pkg/xattr/branch/master/graph/badge.svg)](https://codecov.io/gh/pkg/xattr)
 
 xattr
 =====
-Extended attribute support for Go (linux + darwin + freebsd + netbsd).
+Extended attribute support for Go (linux + darwin + freebsd + netbsd + solaris).
 
 "Extended attributes are name:value pairs associated permanently with files and directories, similar to the environment strings associated with a process. An attribute may be defined or undefined. If it is defined, its value may be empty or non-empty." [See more...](https://en.wikipedia.org/wiki/Extended_file_attributes)
 

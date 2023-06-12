@@ -6,7 +6,7 @@ GOENV ?= GO111MODULE=on CGO_ENABLED=0
 GO_FILES ?= $(shell $(GOENV) go list ./...)
 GOBIN ?= $(shell go env GOPATH)/bin
 LINTER ?= $(GOBIN)/golangci-lint
-LINTER_VERSION ?= v1.49.0
+LINTER_VERSION ?= v1.51.2
 
 # BUILDARCH is the host architecture
 # ARCH is the target architecture

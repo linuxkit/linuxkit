@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/pierrec/lz4"
+	"github.com/pierrec/lz4/v4"
 	"github.com/ulikunitz/xz"
 	"github.com/ulikunitz/xz/lzma"
 )

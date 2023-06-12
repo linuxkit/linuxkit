@@ -48,14 +48,14 @@ func bdoorKnock() (bool, error) {
 	return (0xffffffff != out.AX.AsUInt32().Word()) && (0 != out.AX.AsUInt32().Word()), nil
 }
 
-func (p *platform) isVirtualWorld() (bool, error) {
+func (p *platform) isVirtualWorld(ignoreAccessErrors bool) (bool, error) {
 	// Test the HV bit is set
 	if !p.isVirtualCPU() {
 		return false, nil
 	}
 
 	// Test if backdoor port is available.
-	return p.hypervisorPortCheck()
+	return p.hypervisorPortCheck(ignoreAccessErrors)
 }
 
 func (p *platform) isVirtualCPU() bool {
@@ -79,10 +79,11 @@ func (p *platform) isVirtualCPU() bool {
 	return true
 }
 
-// hypervisorPortCheck tests the availability of the HV port.
-func (p *platform) hypervisorPortCheck() (bool, error) {
+// hypervisorPortCheck tests the availability of the backdoor port
+// to the hypervisor, opportunistically tweaking I/O access level first.
+func (p *platform) hypervisorPortCheck(ignoreAccessErrors bool) (bool, error) {
 	// Privilege level 3 to access all ports above 0x3ff
-	if err := p.accessPorts(); err != nil {
+	if err := p.accessPorts(); err != nil && !ignoreAccessErrors {
 		return false, err
 	}
 
@@ -100,7 +101,11 @@ func IsVirtualCPU() bool {
 	return defaultPlatform.isVirtualCPU()
 }
 
-// IsVirtualWorld returns true if running in a VM and the backdoor is available.
-func IsVirtualWorld() (bool, error) {
-	return defaultPlatform.isVirtualWorld()
+// isVirtualWorld returns `true` if running in a VM and the backdoor is available.
+// It also tries to elevate I/O privileges for the calling thread, which in
+// some cases may be forbidden by the system (e.g Linux in `kernel_lockdown` mode
+// does not allow `iopl` calls); the `ignoreAccessErrors` parameter allows
+// to control library behavior in order to treat such errors as non-fatal.
+func IsVirtualWorld(ignoreAccessErrors bool) (bool, error) {
+	return defaultPlatform.isVirtualWorld(ignoreAccessErrors)
 }

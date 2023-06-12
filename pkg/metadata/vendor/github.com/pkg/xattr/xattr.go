@@ -29,8 +29,31 @@ type Error struct {
 	Err  error
 }
 
-func (e *Error) Error() string {
-	return e.Op + " " + e.Path + " " + e.Name + ": " + e.Err.Error()
+func (e *Error) Unwrap() error { return e.Err }
+
+func (e *Error) Error() (errstr string) {
+	if e.Op != "" {
+		errstr += e.Op
+	}
+	if e.Path != "" {
+		if errstr != "" {
+			errstr += " "
+		}
+		errstr += e.Path
+	}
+	if e.Name != "" {
+		if errstr != "" {
+			errstr += " "
+		}
+		errstr += e.Name
+	}
+	if e.Err != nil {
+		if errstr != "" {
+			errstr += ": "
+		}
+		errstr += e.Err.Error()
+	}
+	return
 }
 
 // Get retrieves extended attribute data associated with path. It will follow
@@ -85,7 +108,7 @@ func get(path string, name string, getxattrFunc getxattrFunc) ([]byte, error) {
 		//   truncated, and we retry with a bigger buffer. Contrary to documentation,
 		//   MacOS never seems to return ERANGE!
 		// To keep the code simple, we always check both conditions, and sometimes
-		// double the buffer size without it being strictly neccessary.
+		// double the buffer size without it being strictly necessary.
 		if err == syscall.ERANGE || read == size {
 			// The buffer was too small. Try again.
 			size <<= 1

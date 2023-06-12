@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/elliotwutingfeng/asciiset"
 )
 
 // AccessRights is the byte mask representing access rights to a FAT file
@@ -18,60 +20,7 @@ const (
 )
 
 // valid shortname characters - [A-F][0-9][$%'-_@~`!(){}^#&]
-var validShortNameCharacters = map[byte]bool{
-	0x21: true, // !
-	0x23: true, // #
-	0x24: true, // $
-	0x25: true, // %
-	0x26: true, // &
-	0x27: true, // '
-	0x28: true, // (
-	0x29: true, // )
-	0x2d: true, // -
-	0x30: true, // 0
-	0x31: true, // 1
-	0x32: true, // 2
-	0x33: true, // 3
-	0x34: true, // 4
-	0x35: true, // 5
-	0x36: true, // 6
-	0x37: true, // 7
-	0x38: true, // 8
-	0x39: true, // 9
-	0x40: true, // @
-	0x41: true, // A
-	0x42: true, // B
-	0x43: true, // C
-	0x44: true, // D
-	0x45: true, // E
-	0x46: true, // F
-	0x47: true, // G
-	0x48: true, // H
-	0x49: true, // I
-	0x4a: true, // J
-	0x4b: true, // K
-	0x4c: true, // L
-	0x4d: true, // M
-	0x4e: true, // N
-	0x4f: true, // O
-	0x50: true, // P
-	0x51: true, // Q
-	0x52: true, // R
-	0x53: true, // S
-	0x54: true, // T
-	0x55: true, // U
-	0x56: true, // V
-	0x57: true, // W
-	0x58: true, // X
-	0x59: true, // Y
-	0x5a: true, // Z
-	0x5e: true, // ^
-	0x5f: true, // _
-	0x60: true, // `
-	0x7b: true, // {
-	0x7d: true, // }
-	0x7e: true, // ~
-}
+var validShortNameCharacters, _ = asciiset.MakeASCIISet("!#$%&'()-0123456789@ABCDEFGHIJKLMNOPQRSTUVWXYZ^_`{}~")
 
 // directoryEntry is a single directory entry
 //
@@ -401,7 +350,7 @@ func stringToValidASCIIBytes(s string) ([]byte, error) {
 	// now make sure every byte is valid
 	for _, b2 := range b {
 		// only valid chars - 0-9, A-Z, _, ~
-		if validShortNameCharacters[b2] {
+		if validShortNameCharacters.Contains(b2) {
 			continue
 		}
 		return nil, fmt.Errorf("invalid 8.3 character")
@@ -489,7 +438,7 @@ func uCaseValid(name string) string {
 	r2 := make([]rune, 0, len(r))
 	for _, val := range r {
 		switch {
-		case validShortNameCharacters[byte(val)]:
+		case validShortNameCharacters.Contains(byte(val)):
 			r2 = append(r2, val)
 		case (0x61 <= val && val <= 0x7a):
 			// lower-case characters should be upper-cased
