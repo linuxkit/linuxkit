@@ -59,7 +59,7 @@ The generated image can be in one of multiple formats which can be run on variou
 		Example: `  linuxkit build [options] <file>[.yml]`,
 		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			if name == "" {
+			if name == "" && outputFile == "" {
 				conf := args[len(args)-1]
 				if conf == "-" {
 					name = defaultNameForStdin
