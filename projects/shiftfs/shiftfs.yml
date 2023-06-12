@@ -2,13 +2,13 @@ kernel:
   image: linuxkitprojects/kernel-shiftfs:4.11.4-881a041fc14bd95814cf140b5e98d97dd65160b5
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:14df799bb3b9e0eb0491da9fda7f32a108a2e2a5
+  - linuxkit/init:6542ad0457ac153861870bfe2d036b6647cdc69f
   - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
   - linuxkit/containerd:eeb3aaf497c0b3f6c67f3a245d61ea5a568ca718
   - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:e5959517fab7b44692ad63941eecf37486e73799
+    image: linuxkit/sysctl:a88a50c104d538b58da5e1441f6f0b4b738f76a6
   - name: dhcpcd
     image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
@@ -18,7 +18,7 @@ services:
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
+    image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
   - name: nginx
     image: nginx:1.13.8-alpine
     capabilities:

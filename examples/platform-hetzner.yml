@@ -3,26 +3,26 @@ kernel:
   cmdline: console=ttyS1
   ucode: intel-ucode.cpio
 init:
-  - linuxkit/init:14df799bb3b9e0eb0491da9fda7f32a108a2e2a5
+  - linuxkit/init:6542ad0457ac153861870bfe2d036b6647cdc69f
   - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
   - linuxkit/containerd:eeb3aaf497c0b3f6c67f3a245d61ea5a568ca718
   - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
   - linuxkit/firmware:a17106a98940006529c714a3783eb03238c335a7
 onboot:
   - name: rngd1
-    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
+    image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
     command: ["/sbin/rngd", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:e5959517fab7b44692ad63941eecf37486e73799
+    image: linuxkit/sysctl:a88a50c104d538b58da5e1441f6f0b4b738f76a6
   - name: dhcpcd
     image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:cd284d211eb6456961bf9988f802492b4b63d5b5
+    image: linuxkit/metadata:48846eecc1a923fd48d9c0e22b2e6c3ea09f01df
     command: ["/usr/bin/metadata", "hetzner"]
 services:
   - name: rngd
-    image: linuxkit/rngd:331294919ba6d953d261a2694019b659a98535a4
+    image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
   - name: getty
     image: linuxkit/getty:06f34bce0facea79161566d67345c3ea49965437
     env:
