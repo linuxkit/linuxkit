@@ -17,7 +17,7 @@ onboot:
   - name: sysfs
     image: linuxkit/sysfs:5fd982d39ff7bec8e480c67a110acb2d3794c291
   - name: binfmt
-    image: linuxkit/binfmt:d1733f15280394d45a20d9b27d1917af785d9c10
+    image: linuxkit/binfmt:af88a591f9cc896a52ce596b9cf7ca26a061ef97
   # Format and mount the disk image in /var/lib/docker
   - name: format
     image: linuxkit/format:5161fe240e5824da04d51bcf5e00afcb0c18dc25
