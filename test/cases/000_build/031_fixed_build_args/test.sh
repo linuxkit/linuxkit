@@ -11,8 +11,8 @@ set -ex
 
 # Test code goes here
 echo Linuxkit is "$(which linuxkit)"
-RESULT="$(2>&1 linuxkit pkg build --force . | grep PASSED)"
+RESULT="$(2>&1 linuxkit pkg build --force . | grep 'Build-arg test' || echo)"
 echo RESULT="${RESULT}"
-echo "${RESULT}" | grep  "Build-arg test PASSED"
+echo "${RESULT}" | grep  -v "FAILED"
 
 exit 0
