@@ -2,14 +2,14 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:14df799bb3b9e0eb0491da9fda7f32a108a2e2a5
+  - linuxkit/init:6542ad0457ac153861870bfe2d036b6647cdc69f
   - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
 onboot:
   - name: format
-    image: linuxkit/format:9c40b556691c1bf47394603aeb2dbdba21e7e32e
+    image: linuxkit/format:5161fe240e5824da04d51bcf5e00afcb0c18dc25
     command: ["/usr/bin/format", "-partition", "gpt"]
   - name: mount
-    image: linuxkit/mount:a8581e454f846690d09e2e7c6287d3c84ca53257
+    image: linuxkit/mount:f671cb94a8999a65e33b3fe79f3def58e3d58b07
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.13

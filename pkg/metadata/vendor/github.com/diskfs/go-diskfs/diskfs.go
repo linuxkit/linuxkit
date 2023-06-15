@@ -105,7 +105,6 @@ package diskfs
 import (
 	"errors"
 	"fmt"
-	"io"
 	"os"
 
 	log "github.com/sirupsen/logrus"
@@ -139,6 +138,8 @@ const (
 	ReadOnly OpenModeOption = iota
 	// ReadWriteExclusive open file in read-write exclusive mode
 	ReadWriteExclusive
+	// ReadWrite open file in read-write mode
+	ReadWrite
 )
 
 // OpenModeOption.String()
@@ -148,6 +149,8 @@ func (m OpenModeOption) String() string {
 		return "read-only"
 	case ReadWriteExclusive:
 		return "read-write exclusive"
+	case ReadWrite:
+		return "read-write"
 	default:
 		return "unknown"
 	}
@@ -156,6 +159,7 @@ func (m OpenModeOption) String() string {
 var openModeOptions = map[OpenModeOption]int{
 	ReadOnly:           os.O_RDONLY,
 	ReadWriteExclusive: os.O_RDWR | os.O_EXCL,
+	ReadWrite:          os.O_RDWR,
 }
 
 // SectorSize represents the sector size to use
@@ -213,14 +217,9 @@ func initDisk(f *os.File, openMode OpenModeOption, sectorSize SectorSize) (*disk
 	case mode&os.ModeDevice != 0:
 		log.Debug("initDisk(): block device")
 		diskType = disk.Device
-		file, err := os.Open(f.Name())
+		size, err = getBlockDeviceSize(f)
 		if err != nil {
-			return nil, fmt.Errorf("error opening block device %s: %s", f.Name(), err)
-		}
-		defer file.Close()
-		size, err = file.Seek(0, io.SeekEnd)
-		if err != nil {
-			return nil, fmt.Errorf("error seeking to end of block device %s: %s", f.Name(), err)
+			return nil, fmt.Errorf("error getting block device %s size: %s", f.Name(), err)
 		}
 		lblksize, pblksize, err = getSectorSizes(f)
 		log.Debugf("initDisk(): logical block size %d, physical block size %d", lblksize, pblksize)
@@ -327,7 +326,7 @@ func Open(device string, opts ...OpenOpt) (*disk.Disk, error) {
 
 	f, err := os.OpenFile(device, m, 0o600)
 	if err != nil {
-		return nil, fmt.Errorf("could not open device %s exclusively for writing", device)
+		return nil, fmt.Errorf("could not open device %s with mode %v: %w", device, m, err)
 	}
 	// return our disk
 	return initDisk(f, ReadWriteExclusive, opt.sectorSize)

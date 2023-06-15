@@ -294,7 +294,7 @@ func (t *Table) toGPTBytes(primary bool) ([]byte, error) {
 	copy(b[56:72], bytesToUUIDBytes(guid[0:16]))
 
 	// starting LBA of array of partition entries
-	binary.LittleEndian.PutUint64(b[72:80], t.partitionArraySector(primary))
+	binary.LittleEndian.PutUint64(b[72:80], t.partitionArraySector(true))
 
 	// how many entries?
 	binary.LittleEndian.PutUint32(b[80:84], uint32(t.partitionArraySize))
@@ -336,6 +336,9 @@ func readPartitionArrayBytes(b []byte, entrySize, logicalSectorSize, physicalSec
 		p, err := partitionFromBytes(bpart, logicalSectorSize, physicalSectorSize)
 		if err != nil {
 			return nil, fmt.Errorf("error reading partition entry %d: %v", i, err)
+		}
+		if p == nil {
+			continue
 		}
 		// augment partition information
 		p.Size = (p.End - p.Start + 1) * uint64(logicalSectorSize)

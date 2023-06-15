@@ -3,13 +3,10 @@ module github.com/linuxkit/linuxkit/pkg/metadata
 go 1.16
 
 require (
-	github.com/diskfs/go-diskfs v1.2.1-0.20230123115902-fce1828bbbfa
+	github.com/diskfs/go-diskfs v1.3.1-0.20230612151643-22d22fd7e558
 	github.com/packethost/packngo v0.1.0
-	github.com/sirupsen/logrus v1.7.0
-	github.com/stretchr/testify v1.7.0 // indirect
+	github.com/sirupsen/logrus v1.9.0
 	github.com/vishvananda/netlink v0.0.0-20170808154308-f5a6f697a596
 	github.com/vishvananda/netns v0.0.0-20170707011535-86bef332bfc3 // indirect
-	golang.org/x/crypto v0.0.0-20180515001509-1a580b3eff78 // indirect
-	gopkg.in/airbrake/gobrake.v2 v2.0.9 // indirect
-	gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2 // indirect
+	github.com/vmware/vmw-guestinfo v0.0.0-20220317130741-510905f0efa3
 )

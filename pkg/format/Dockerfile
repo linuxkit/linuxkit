@@ -21,6 +21,8 @@ RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
 # Hack to work around an issue with go on arm64 requiring gcc
 RUN [ $(uname -m) = aarch64 ] && apk add --no-cache gcc || true
+ARG GOPKGVERSION
+ENV ldflags="-X main.Version=$GOPKGVERSION"
 
 COPY . /go/src/format/
 RUN go-compile.sh /go/src/format

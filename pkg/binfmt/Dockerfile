@@ -1,5 +1,5 @@
 # Use Debian testing Qemu 4.2.0 until https://bugs.alpinelinux.org/issues/8131 is resolved.
-FROM debian@sha256:79f148e13b4c596d4ad7fd617aba3630e37cf04f04538699341ed1267bd61a23 AS qemu
+FROM debian@sha256:d828cca5497a2519da9c6d42372066895fa28a69f1e8a46a38ce8f750bd2adf0 AS qemu
 RUN apt-get update && apt-get install -y qemu-user-static && \
     mv /usr/bin/qemu-aarch64-static /usr/bin/qemu-aarch64 && \
     mv /usr/bin/qemu-arm-static /usr/bin/qemu-arm && \
@@ -12,6 +12,8 @@ FROM linuxkit/alpine:316c3f9d85c21fdd8bc7479e81d290f85bf60eb0 AS mirror
 
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
+ARG GOPKGVERSION
+ENV ldflags="-X main.Version=$GOPKGVERSION"
 
 COPY . /go/src/binfmt/
 RUN go-compile.sh /go/src/binfmt

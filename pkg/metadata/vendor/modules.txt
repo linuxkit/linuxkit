@@ -1,4 +1,4 @@
-# github.com/diskfs/go-diskfs v1.2.1-0.20230123115902-fce1828bbbfa
+# github.com/diskfs/go-diskfs v1.3.1-0.20230612151643-22d22fd7e558
 ## explicit
 github.com/diskfs/go-diskfs
 github.com/diskfs/go-diskfs/disk
@@ -11,22 +11,25 @@ github.com/diskfs/go-diskfs/partition/gpt
 github.com/diskfs/go-diskfs/partition/mbr
 github.com/diskfs/go-diskfs/partition/part
 github.com/diskfs/go-diskfs/util
-# github.com/google/uuid v1.1.1
+# github.com/elliotwutingfeng/asciiset v0.0.0-20230602022725-51bbb787efab
+github.com/elliotwutingfeng/asciiset
+# github.com/google/uuid v1.3.0
 github.com/google/uuid
 # github.com/packethost/packngo v0.1.0
 ## explicit
 github.com/packethost/packngo/metadata
-# github.com/pierrec/lz4 v2.3.0+incompatible
-github.com/pierrec/lz4
-github.com/pierrec/lz4/internal/xxh32
-# github.com/pkg/xattr v0.4.1
+# github.com/pierrec/lz4/v4 v4.1.17
+github.com/pierrec/lz4/v4
+github.com/pierrec/lz4/v4/internal/lz4block
+github.com/pierrec/lz4/v4/internal/lz4errors
+github.com/pierrec/lz4/v4/internal/lz4stream
+github.com/pierrec/lz4/v4/internal/xxh32
+# github.com/pkg/xattr v0.4.9
 github.com/pkg/xattr
-# github.com/sirupsen/logrus v1.7.0
+# github.com/sirupsen/logrus v1.9.0
 ## explicit
 github.com/sirupsen/logrus
-# github.com/stretchr/testify v1.7.0
-## explicit
-# github.com/ulikunitz/xz v0.5.10
+# github.com/ulikunitz/xz v0.5.11
 github.com/ulikunitz/xz
 github.com/ulikunitz/xz/internal/hash
 github.com/ulikunitz/xz/internal/xlog
@@ -38,15 +41,16 @@ github.com/vishvananda/netlink/nl
 # github.com/vishvananda/netns v0.0.0-20170707011535-86bef332bfc3
 ## explicit
 github.com/vishvananda/netns
-# golang.org/x/crypto v0.0.0-20180515001509-1a580b3eff78
+# github.com/vmware/vmw-guestinfo v0.0.0-20220317130741-510905f0efa3
 ## explicit
-# golang.org/x/sys v0.0.0-20210616094352-59db8d763f22
+github.com/vmware/vmw-guestinfo/bdoor
+github.com/vmware/vmw-guestinfo/message
+github.com/vmware/vmw-guestinfo/rpcout
+github.com/vmware/vmw-guestinfo/rpcvmx
+github.com/vmware/vmw-guestinfo/vmcheck
+# golang.org/x/sys v0.5.0
 golang.org/x/sys/internal/unsafeheader
 golang.org/x/sys/unix
 golang.org/x/sys/windows
-# gopkg.in/airbrake/gobrake.v2 v2.0.9
-## explicit
-# gopkg.in/djherbis/times.v1 v1.2.0
+# gopkg.in/djherbis/times.v1 v1.3.0
 gopkg.in/djherbis/times.v1
-# gopkg.in/gemnasium/logrus-airbrake-hook.v2 v2.1.2
-## explicit
