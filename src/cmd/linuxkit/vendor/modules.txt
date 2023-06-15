@@ -218,10 +218,7 @@ github.com/docker/cli/cli/connhelper/commandconn
 github.com/docker/cli/cli/connhelper/ssh
 # github.com/docker/distribution v2.8.1+incompatible
 ## explicit
-github.com/docker/distribution
 github.com/docker/distribution/digestset
-github.com/docker/distribution/manifest
-github.com/docker/distribution/manifest/manifestlist
 github.com/docker/distribution/reference
 github.com/docker/distribution/registry/client/auth/challenge
 # github.com/docker/docker v23.0.0-rc.1+incompatible
@@ -261,9 +258,6 @@ github.com/docker/go-connections/tlsconfig
 github.com/docker/go-units
 # github.com/estesp/manifest-tool/v2 v2.0.7-0.20230216152337-24a86fc0b513
 ## explicit; go 1.19
-github.com/estesp/manifest-tool/v2/pkg/registry
-github.com/estesp/manifest-tool/v2/pkg/store
-github.com/estesp/manifest-tool/v2/pkg/types
 github.com/estesp/manifest-tool/v2/pkg/util
 # github.com/felixge/httpsnoop v1.0.2
 ## explicit; go 1.13
@@ -904,16 +898,3 @@ gopkg.in/yaml.v2
 # gopkg.in/yaml.v3 v3.0.1
 ## explicit
 gopkg.in/yaml.v3
-# oras.land/oras-go/v2 v2.0.0
-## explicit; go 1.18
-oras.land/oras-go/v2/content
-oras.land/oras-go/v2/content/memory
-oras.land/oras-go/v2/errdef
-oras.land/oras-go/v2/internal/cas
-oras.land/oras-go/v2/internal/descriptor
-oras.land/oras-go/v2/internal/docker
-oras.land/oras-go/v2/internal/graph
-oras.land/oras-go/v2/internal/ioutil
-oras.land/oras-go/v2/internal/resolver
-oras.land/oras-go/v2/internal/status
-oras.land/oras-go/v2/internal/syncutil
