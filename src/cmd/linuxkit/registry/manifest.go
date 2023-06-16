@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/estesp/manifest-tool/v2/pkg/registry"
-	"github.com/estesp/manifest-tool/v2/pkg/types"
-	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/empty"
+	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -23,9 +25,12 @@ var platformsToSearchForIndex = []string{
 }
 
 // PushManifest create a manifest that supports each of the provided platforms and push it out.
-func PushManifest(img string) (hash string, length int, err error) {
-	var srcImages []types.ManifestEntry
-
+func PushManifest(img string, options ...remote.Option) (hash string, length int64, err error) {
+	baseRef, err := name.ParseReference(img)
+	if err != nil {
+		return hash, length, fmt.Errorf("parsing %s: %w", img, err)
+	}
+	adds := make([]mutate.IndexAddendum, 0, len(platformsToSearchForIndex))
 	for i, platform := range platformsToSearchForIndex {
 		osArchArr := strings.Split(platform, "/")
 		if len(osArchArr) != 2 && len(osArchArr) != 3 {
@@ -36,25 +41,47 @@ func PushManifest(img string) (hash string, length int, err error) {
 		if len(osArchArr) == 3 {
 			variant = osArchArr[2]
 		}
-		srcImages = append(srcImages, types.ManifestEntry{
-			Image: fmt.Sprintf("%s-%s", img, arch),
-			Platform: ocispec.Platform{
-				OS:           os,
-				Architecture: arch,
-				Variant:      variant,
-			},
+		refName := fmt.Sprintf("%s-%s", img, arch)
+		ref, err := name.ParseReference(refName)
+		if err != nil {
+			return hash, length, fmt.Errorf("parsing %s: %w", refName, err)
+		}
+		remoteDesc, err := remote.Get(ref, options...)
+		if err != nil {
+			// TODO: Should distinguish between a 404 and a network error
+			log.Warnf("image %s not found; skipping: %v", ref, err)
+			continue
+		}
+		img, err := remoteDesc.Image()
+		if err != nil {
+			return hash, length, fmt.Errorf("getting image %s: %w", ref, err)
+		}
+		desc := remoteDesc.Descriptor
+		desc.Platform = &v1.Platform{
+			OS:           os,
+			Architecture: arch,
+			Variant:      variant,
+		}
+		adds = append(adds, mutate.IndexAddendum{
+			Add:        img,
+			Descriptor: desc,
 		})
 	}
 
-	yamlInput := types.YAMLInput{
-		Image:     img,
-		Manifests: srcImages,
+	// add the desc to the index we will push
+	index := mutate.AppendManifests(empty.Index, adds...)
+	size, err := index.Size()
+	if err != nil {
+		return hash, length, fmt.Errorf("getting index size: %w", err)
 	}
-
-	log.Debugf("pushing manifest list for %s -> %#v", img, yamlInput)
-
-	// push the manifest list, ignore missing, do not allow insecure
-	// we do not provide auth credentials to force resolve them internally
-	// according to the hostname of image to push
-	return registry.PushManifestList("", "", yamlInput, true, false, false, types.OCI, "")
+	dig, err := index.Digest()
+	if err != nil {
+		return hash, length, fmt.Errorf("getting index digest: %w", err)
+	}
+	log.Debugf("pushing manifest list for %s -> %#v", img, index)
+	err = remote.WriteIndex(baseRef, index, options...)
+	if err != nil {
+		return hash, length, fmt.Errorf("writing index: %w", err)
+	}
+	return dig.String(), size, nil
 }

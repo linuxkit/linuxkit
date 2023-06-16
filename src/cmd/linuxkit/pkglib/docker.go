@@ -23,6 +23,8 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/docker/buildx/util/progress"
 	"github.com/docker/docker/api/types"
+	"github.com/google/go-containerregistry/pkg/authn"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	versioncompare "github.com/hashicorp/go-version"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
@@ -384,7 +386,7 @@ func (dr *dockerRunnerImpl) pushWithManifest(img, suffix string, pushImage, push
 
 	if pushManifest {
 		fmt.Printf("Pushing %s to manifest %s\n", img+suffix, img)
-		_, _, err = registry.PushManifest(img)
+		_, _, err = registry.PushManifest(img, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 		if err != nil {
 			return err
 		}
