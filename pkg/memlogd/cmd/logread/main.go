@@ -2,8 +2,10 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
+	"io"
 	"net"
 	"strings"
 	"time"
@@ -65,6 +67,9 @@ func main() {
 	decoder := json.NewDecoder(conn)
 	for {
 		if err := decoder.Decode(&entry); err != nil {
+			if errors.Is(err, net.ErrClosed) || errors.Is(err, io.EOF) {
+				return
+			}
 			panic(err)
 		}
 
