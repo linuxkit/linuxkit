@@ -67,7 +67,7 @@ For example:
 * `linuxkit/kernel:5.15.15` has builder `linuxkit/kernel:5.15.15-builder`
 
 With the above in hand, you can create a multi-stage `Dockerfile` build to compile your modules.
-There is an [example](../test/cases/020_kernel/011_kmod_4.9.x), but
+There is an [example](../test/cases/020_kernel/113_kmod_5.10.x), but
 basically one can use a multi-stage build to compile the kernel
 modules:
 
@@ -87,7 +87,7 @@ To use the kernel module, we recommend adding a final stage to the
 Dockerfile above, which copies the kernel module from the `build`
 stage and performs a `insmod` as the entry point. You can add this
 package to the `onboot` section in your YAML
-file. [kmod.yml](../test/cases/020_kernel/010_kmod_4.9.x/kmod.yml)
+file. [test.yml](../test/cases/020_kernel/113_kmod_5.10.x/test.yml)
 contains an example for the configuration.
 
 ### Builder Backups
@@ -126,7 +126,7 @@ FROM linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba AS build
 Each series of kernels has a config file dedicated to it
 in [../kernel/](../kernel),
 e.g.
-[config-4.9.x-x86_64](../kernel/config-4.9.x-x86_64),
+[config-5.10.x-x86_64](../kernel/config-5.10.x-x86_64),
 which is applied during the kernel build process.
 
 If you need to modify the kernel config, `make kconfig` in
