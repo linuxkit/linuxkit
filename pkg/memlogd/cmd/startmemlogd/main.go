@@ -23,7 +23,7 @@ func main() {
 	flag.BoolVar(&detach, "detach", true, "detach from subprocess")
 	flag.Parse()
 
-	laddr := net.UnixAddr{socketLogPath, "unixgram"}
+	laddr := net.UnixAddr{Name: socketLogPath, Net: "unixgram"}
 	os.Remove(laddr.Name) // remove existing socket
 	lconn, err := net.ListenUnixgram("unixgram", &laddr)
 	if err != nil {
@@ -34,7 +34,7 @@ func main() {
 		panic(err)
 	}
 
-	qaddr := net.UnixAddr{socketQueryPath, "unix"}
+	qaddr := net.UnixAddr{Name: socketQueryPath, Net: "unix"}
 	os.Remove(qaddr.Name) // remove existing socket
 	qconn, err := net.ListenUnix("unix", &qaddr)
 	if err != nil {
