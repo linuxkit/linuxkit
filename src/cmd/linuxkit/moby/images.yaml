@@ -11,3 +11,4 @@
  dynamic-vhd:    linuxkit/mkimage-dynamic-vhd:b755f8ff82c8631d18decaebb09867e7b88c2533
  vmdk:           linuxkit/mkimage-vmdk:20a370a55bd8d58c2ae9d634c297a955bb006efd
  rpi3:           linuxkit/mkimage-rpi3:d76bb890e1d55c2d9395e0ca58523ee076571c21
+ raw-efi-ext4:   localhost:5000/mkimage-raw-efi-ext4:v0.1
