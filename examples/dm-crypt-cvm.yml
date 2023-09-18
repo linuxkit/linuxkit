@@ -1,0 +1,49 @@
+kernel:
+  image: linuxkit/kernel:upstream-v6.3
+  cmdline: "console=tty0 console=ttyS0 vring_force_dma_api"
+init:
+  - linuxkit/init:144c9cee8aed9e30a16940f2bf1d3813883aceda
+  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
+  - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
+  - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
+  # - linuxkit/getty:06f34bce0facea79161566d67345c3ea49965437
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:a88a50c104d538b58da5e1441f6f0b4b738f76a6
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: format
+    image: linuxkit/format:5161fe240e5824da04d51bcf5e00afcb0c18dc25
+    command: ["/usr/bin/format", "/dev/sda"]
+  - name: dm-crypt
+    image: linuxkit/dm-crypt:526d32351c8246431be8e1a168cb514ff3c365af
+    command: ["/usr/bin/crypto", "crypt_dev", "/dev/sda1"]
+  - name: mount
+    image: linuxkit/mount:f671cb94a8999a65e33b3fe79f3def58e3d58b07
+    command: ["/usr/bin/mountie", "/dev/mapper/crypt_dev", "/var/secure_storage"]
+  - name: bbox
+    image: busybox
+    command: ["sh", "-c", "echo 'secret things' >/var/secure_storage/secrets"]
+    binds:
+      - /var:/var
+services:
+  - name: getty
+    image: linuxkit/getty:06f34bce0facea79161566d67345c3ea49965437
+    env:
+     - INSECURE=true
+  - name: rngd
+    image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
+  - name: sshd
+    image: linuxkit/sshd:62036c2a279715d05e8298b9269a0659964f2619
+    binds.add:
+      - /root/.ssh:/root/.ssh
+files:
+  - path: root/.ssh/authorized_keys
+    source: ~/.ssh/id_rsa.pub
+    mode: "0600"
+    optional: true
+  - path: etc/dm-crypt/key
+    # the below key is just to keep the example self-contained
+    # !!! provide a proper key for production use here !!!
+    contents: "abcdefghijklmnopqrstuvwxyz123456"
