@@ -1,0 +1,57 @@
+# this is really hard to build. Do not change this version unless you must
+FROM debian:bullseye-slim as grub-build
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && apt install -y \
+  automake \
+  make \
+  bison \
+  gettext \
+  flex \
+  gcc \
+  git \
+  libtool \
+  libc-dev \
+  python3 \
+  coreutils \
+  pkg-config \
+  autopoint \
+  autoconf
+	
+# because python is not available
+RUN ln -s python3 /usr/bin/python
+	
+ENV GRUB_MODULES="part_gpt fat ext2 iso9660 gzio linux acpi normal cpio crypto disk boot crc64 \
+tftp xzio xfs video"
+
+COPY patches/* /patches/
+
+WORKDIR /src
+RUN git clone https://github.com/rhboot/grub2.git grub
+WORKDIR /src/grub
+RUN git checkout -b grub-build fedora-39
+#RUN  for patch in /patches/*.patch; do \
+#    echo "Applying $patch"; \
+#    patch -p1 < "$patch"; \
+#  done
+
+RUN ./linguas.sh && ./bootstrap
+RUN ./configure --libdir=/grub-lib --with-platform=efi CFLAGS="-Os -Wno-unused-value" \
+  --with-utils=host --disable-nls --disable-efiemu --disable-grub-emu-sdl --disable-werror 
+RUN make -j "$(getconf _NPROCESSORS_ONLN)"
+RUN make install
+
+RUN case $(uname -m) in \
+  x86_64) \
+    ./grub-mkimage -O x86_64-efi -d /grub-lib/grub/x86_64-efi -o /grub-lib/BOOTX64.EFI -p /EFI/BOOT ${GRUB_MODULES} ; \
+    ;; \
+  aarch64) \
+    ./grub-mkimage -O arm64-efi -d /grub-lib/grub/arm64-efi -o /grub-lib/BOOTAA64.EFI -p /EFI/BOOT ${GRUB_MODULES}; \
+    ;; \
+  esac
+
+FROM scratch
+ENTRYPOINT []
+WORKDIR /
+COPY --from=grub-build /grub-lib/*.EFI /

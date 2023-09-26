@@ -1,0 +1,45 @@
+FROM openanolis/anolisos:8 as kbuild
+
+RUN yum install -y \
+        asciidoc audit-libs-devel bash bc binutils binutils-devel bison diffutils elfutils \
+        elfutils-devel elfutils-libelf-devel findutils flex gawk gcc gettext gzip hmaccalc hostname java-devel \
+        m4 make module-init-tools ncurses-devel net-tools newt-devel numactl-devel openssl openssl-devel \
+        patch pciutils-devel perl perl-ExtUtils-Embed pesign python3-devel python3-docutils redhat-rpm-config \
+        rpm-build sh-utils tar xmlto xz zlib-devel rsync git && \
+    yum clean all
+
+WORKDIR /kbuild
+
+RUN git clone --depth 1 --branch v6.3 https://github.com/torvalds/linux.git cloud-kernel
+ADD ./config-6.x-x86_64-tdx /kbuild/cloud-kernel/.config
+RUN cd cloud-kernel && \
+    git submodule update --init && \
+    yes ""|make oldconfig && \
+    make modules -j$(nproc) && \
+    make LOCALVERSION=-upstream-tdx -j$(nproc) binrpm-pkg
+
+FROM alpine:3 AS extract
+
+RUN apk add --no-cache curl rpm tar && true
+WORKDIR /rpm
+RUN mkdir extract
+COPY --from=kbuild /root/rpmbuild/RPMS/x86_64/*.rpm /rpm/
+RUN for rpm in $(ls *.rpm); do \
+        rpm2cpio $rpm | cpio -idm ;\
+    done
+
+RUN for d in lib/modules/*; do depmod -b . $(basename $d); done
+
+RUN mkdir /out
+# With some fedora rpms, the kernel and system map are in modules directory
+RUN cp -a boot/vmlinuz-* /out/kernel || mv lib/modules/*/vmlinuz /out/kernel
+RUN cp -a boot/config-* /out/kernel_config || mv lib/modules/*/config /out/kernel_config
+RUN cp -a boot/System.map-* /out/System.map || mv lib/modules/*/System.map /out/System.map
+RUN tar cf /out/kernel.tar lib
+RUN tar cf /out/kernel-dev.tar usr || true
+
+FROM scratch
+WORKDIR /
+ENTRYPOINT []
+CMD []
+COPY --from=extract /out/* /
