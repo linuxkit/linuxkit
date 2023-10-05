@@ -319,10 +319,10 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 	}
 	if recreate {
 		// create the builder
-		args := []string{"container", "run", "-d", "--name", name, "--privileged", image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug"}
+		args := []string{"--context", dockerContext, "container", "run", "-d", "--name", name, "--privileged", image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug"}
 		msg := fmt.Sprintf("creating builder container '%s' in context '%s'", name, dockerContext)
 		fmt.Println(msg)
-		if err := dr.command(nil, io.Discard, io.Discard, args...); err != nil {
+		if err := dr.command(nil, nil, nil, args...); err != nil {
 			return nil, err
 		}
 	}
