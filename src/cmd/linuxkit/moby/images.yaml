@@ -1,12 +1,12 @@
  iso:            linuxkit/mkimage-iso:1f6fdf0ee860caf13c06a6f3f2d89413de78881e
  iso-bios:       linuxkit/mkimage-iso-bios:314c06ec0d72f12057c9e8d5fdf790df02dbc8c2
- iso-efi:        linuxkit/mkimage-iso-efi:b74d215d594ccdf7d51fa412518b2f895aa7f9dc
- iso-efi-initrd: linuxkit/mkimage-iso-efi-initrd:0e66171ffde9bb735b0e014f811f9626fc8b9bc9
+ iso-efi:        linuxkit/mkimage-iso-efi:55b72b55ffea82d1c254c0ff5cb65df0c2c04528
+ iso-efi-initrd: linuxkit/mkimage-iso-efi-initrd:f7fba1acaee8afbea2771717c9faf758d0a66a87
  raw-bios:       linuxkit/mkimage-raw-bios:6185592a62b860b01491d7f1661e79f62e6fc902
- raw-efi:        linuxkit/mkimage-raw-efi:6dff9623fb4fecff05ca02123aa8bc345ab7c707
+ raw-efi:        linuxkit/mkimage-raw-efi:6a8d9ebf4f7883839e00034c1516527452c564d3
  squashfs:       linuxkit/mkimage-squashfs:92dbcfe5ef69dc93276403b09a9f892f25654ed7
  gcp:            linuxkit/mkimage-gcp:035c2c2b4b958060c0b6bdd41d9cbc886a335098
- qcow2-efi:      linuxkit/mkimage-qcow2-efi:67d5e16228dfb434ac5418bafac720bf23bbaf42
+ qcow2-efi:      linuxkit/mkimage-qcow2-efi:19cb758d47c07169bc4772a7576e28d56740b004
  vhd:            linuxkit/mkimage-vhd:91bcc7a6475f46a3d5d84cf6161f07c583dd9c21
  dynamic-vhd:    linuxkit/mkimage-dynamic-vhd:b755f8ff82c8631d18decaebb09867e7b88c2533
  vmdk:           linuxkit/mkimage-vmdk:20a370a55bd8d58c2ae9d634c297a955bb006efd

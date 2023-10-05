@@ -15,7 +15,7 @@ ESP_FILE=$PWD/boot.img
 
 
 # get the GRUB2 boot file name
-ARCH=`uname -m`
+ARCH=${TARGETARCH:-`uname -m`}
 case $ARCH in
 x86_64)
   BOOTFILE=BOOTX64.EFI

@@ -204,7 +204,7 @@ The generated image can be in one of multiple formats which can be run on variou
 				}
 
 				log.Infof("Create outputs:")
-				err = moby.Formats(filepath.Join(dir, name), image, buildFormats, size, cacheDir.String())
+				err = moby.Formats(filepath.Join(dir, name), image, buildFormats, size, arch, cacheDir.String())
 				if err != nil {
 					return fmt.Errorf("Error writing outputs: %v", err)
 				}
