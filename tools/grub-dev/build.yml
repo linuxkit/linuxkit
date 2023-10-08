@@ -1,0 +1,5 @@
+image: grub-dev
+network: true
+arches:
+  - arm64
+  - amd64

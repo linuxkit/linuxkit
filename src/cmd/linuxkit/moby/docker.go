@@ -15,8 +15,8 @@ import (
 )
 
 // dockerRun is outside the linuxkit/docker package, because that is for caching, this is
-// used for running to build images.
-func dockerRun(input io.Reader, output io.Writer, img string, args ...string) error {
+// used for running to build images. runEnv is passed through to the docker run command.
+func dockerRun(input io.Reader, output io.Writer, img string, runEnv []string, args ...string) error {
 	log.Debugf("docker run %s (input): %s", img, strings.Join(args, " "))
 	docker, err := exec.LookPath("docker")
 	if err != nil {
@@ -36,7 +36,12 @@ func dockerRun(input io.Reader, output io.Writer, img string, args ...string) er
 	}
 
 	var errbuf strings.Builder
-	args = append([]string{"run", "--network=none", "--log-driver=none", "--rm", "-i", img}, args...)
+	args = []string{"run", "--network=none", "--log-driver=none", "--rm", "-i"}
+	for _, e := range runEnv {
+		args = append(args, "-e", e)
+	}
+
+	args = append(args, img)
 	cmd := exec.Command(docker, args...)
 	cmd.Stderr = &errbuf
 	cmd.Stdin = input
