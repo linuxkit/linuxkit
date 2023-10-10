@@ -6,7 +6,7 @@
 - #linuxkit channel on [Docker Community Slack](https://dockercommunity.slack.com/messages/C50QFMRC2/) (sign up [here](https://community.docker.com/registrations/groups/4316))
 
 ## Goals:
-- Collaborate on security efforts already incubating in the `/projects` subdirectory such as WireGuard, Landlock, and okernel
+- Collaborate on security efforts already incubating in the `/projects` subdirectory such as WireGuard, and okernel
 - Discuss upstream Linux security
 - Re-implement system daemons in type-safe languages, such as Rust and OCaml
 
