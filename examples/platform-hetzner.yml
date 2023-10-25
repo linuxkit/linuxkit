@@ -3,7 +3,7 @@ kernel:
   cmdline: console=ttyS1
   ucode: intel-ucode.cpio
 init:
-  - linuxkit/init:144c9cee8aed9e30a16940f2bf1d3813883aceda
+  - linuxkit/init:b7a8f94dfb72f738318cc25daf05451ed85ba194
   - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
   - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
   - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
