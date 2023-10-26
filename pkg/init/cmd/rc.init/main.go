@@ -429,7 +429,7 @@ func isCgroupV2() bool {
 		log.Printf("error reading /proc/cmdline: %v", err)
 		return false
 	}
-	for _, s := range strings.Split(string(dt), " ") {
+	for _, s := range strings.Fields(string(dt)) {
 		if s == "linuxkit.unified_cgroup_hierarchy=1" {
 			return true
 		}
