@@ -18,4 +18,6 @@ type ImageSource interface {
 	Descriptor() *v1.Descriptor
 	// V1TarReader get the image as v1 tarball, also compatible with `docker load`. If name arg is not "", override name of image in tarfile from default of image.
 	V1TarReader(overrideName string) (io.ReadCloser, error)
+	// SBoM get the sbom for the image, if any is available
+	SBoMs() ([]io.ReadCloser, error)
 }

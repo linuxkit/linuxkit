@@ -8,4 +8,5 @@ type BuildOpts struct {
 	CacheDir         string
 	DockerCache      bool
 	Arch             string
+	SbomGenerator    *SbomGenerator
 }

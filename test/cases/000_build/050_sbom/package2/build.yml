@@ -1,0 +1,5 @@
+image: sbom_package2
+network: true
+arches:
+  - arm64
+  - amd64

@@ -28,6 +28,24 @@ func matchPlatformsOSArch(platforms ...v1.Platform) match.Matcher {
 	}
 }
 
+// matchAllAnnotations returns a matcher that matches all annotations
+func matchAllAnnotations(annotations map[string]string) match.Matcher {
+	return func(desc v1.Descriptor) bool {
+		if desc.Annotations == nil {
+			return false
+		}
+		if len(annotations) == 0 {
+			return true
+		}
+		for key, value := range annotations {
+			if aValue, ok := desc.Annotations[key]; !ok || aValue != value {
+				return false
+			}
+		}
+		return true
+	}
+}
+
 func (p *Provider) findImage(imageName, architecture string) (v1.Image, error) {
 	root, err := p.FindRoot(imageName)
 	if err != nil {
@@ -48,6 +66,18 @@ func (p *Provider) findImage(imageName, architecture string) (v1.Image, error) {
 		return images[0], nil
 	}
 	return nil, fmt.Errorf("no image found for %s", imageName)
+}
+
+func (p *Provider) findIndex(imageName string) (v1.ImageIndex, error) {
+	root, err := p.FindRoot(imageName)
+	if err != nil {
+		return nil, err
+	}
+	ii, err := root.ImageIndex()
+	if err != nil {
+		return nil, fmt.Errorf("no image index found for %s", imageName)
+	}
+	return ii, nil
 }
 
 // FindDescriptor get the first descriptor pointed to by the image reference, whether tagged or digested

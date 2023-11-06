@@ -115,13 +115,13 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 
 // ImageLoad takes an OCI format image tar stream and writes it locally. It should be
 // efficient and only write missing blobs, based on their content hash.
-func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Reader) (lktspec.ImageSource, error) {
+func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Reader) ([]v1.Descriptor, error) {
 	var (
 		tr    = tar.NewReader(r)
 		index bytes.Buffer
 	)
 	if !util.IsValidOSArch(linux, architecture, "") {
-		return ImageSource{}, fmt.Errorf("unknown arch %s", architecture)
+		return nil, fmt.Errorf("unknown arch %s", architecture)
 	}
 	suffix := "-" + architecture
 	imageName := ref.String() + suffix
@@ -132,7 +132,7 @@ func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Read
 			break // End of archive
 		}
 		if err != nil {
-			return ImageSource{}, err
+			return nil, err
 		}
 
 		// get the filename and decide what to do with the file on that basis
@@ -153,7 +153,7 @@ func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Read
 			log.Debugf("saving %s to memory to parse", filename)
 			// any errors should stop and get reported
 			if _, err := io.Copy(&index, tr); err != nil {
-				return ImageSource{}, fmt.Errorf("error reading data for file %s : %v", filename, err)
+				return nil, fmt.Errorf("error reading data for file %s : %v", filename, err)
 			}
 		case strings.HasPrefix(filename, "blobs/sha256/"):
 			// must have a file named blob/sha256/<hash>
@@ -166,54 +166,63 @@ func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Read
 			hash, err := v1.NewHash(fmt.Sprintf("%s:%s", parts[1], parts[2]))
 			if err != nil {
 				// malformed file
-				return ImageSource{}, fmt.Errorf("invalid hash filename for %s: %v", filename, err)
+				return nil, fmt.Errorf("invalid hash filename for %s: %v", filename, err)
 			}
 			log.Debugf("writing %s as hash %s", filename, hash)
 			if err := p.cache.WriteBlob(hash, io.NopCloser(tr)); err != nil {
-				return ImageSource{}, fmt.Errorf("error reading data for file %s : %v", filename, err)
+				return nil, fmt.Errorf("error reading data for file %s : %v", filename, err)
 			}
 		}
 	}
 	// update the index in the cache directory
-	var descriptor *v1.Descriptor
+	var descs []v1.Descriptor
 	if index.Len() != 0 {
 		im, err := v1.ParseIndexManifest(&index)
 		if err != nil {
-			return ImageSource{}, fmt.Errorf("error reading index.json")
+			return nil, fmt.Errorf("error reading index.json")
 		}
 		// in theory, we should support a tar stream with multiple images in it. However, how would we
 		// know which one gets the single name annotation we have? We will find some way in the future.
 		if len(im.Manifests) != 1 {
-			return ImageSource{}, fmt.Errorf("currently only support OCI tar stream that has a single image")
+			return nil, fmt.Errorf("currently only support OCI tar stream that has a single image")
 		}
 		if err := p.cache.RemoveDescriptors(match.Name(imageName)); err != nil {
-			return ImageSource{}, fmt.Errorf("unable to remove old descriptors for %s: %v", imageName, err)
+			return nil, fmt.Errorf("unable to remove old descriptors for %s: %v", imageName, err)
 		}
-		for _, desc := range im.Manifests {
-			// make sure that we have the correct image name annotation
-			if desc.Annotations == nil {
-				desc.Annotations = map[string]string{}
+		desc := im.Manifests[0]
+		// is this an image or an index?
+		if desc.MediaType.IsIndex() {
+			rc, err := p.cache.Blob(desc.Digest)
+			if err != nil {
+				return nil, fmt.Errorf("unable to get index blob: %v", err)
 			}
-			desc.Annotations[imagespec.AnnotationRefName] = imageName
-			descriptor = &desc
-
-			log.Debugf("appending descriptor %#v", descriptor)
-			if err := p.cache.AppendDescriptor(desc); err != nil {
-				return ImageSource{}, fmt.Errorf("error appending descriptor to layout index: %v", err)
+			ii, err := v1.ParseIndexManifest(rc)
+			if err != nil {
+				return nil, fmt.Errorf("unable to parse index blob: %v", err)
+			}
+			for _, m := range ii.Manifests {
+				if m.MediaType.IsImage() {
+					descs = append(descs, m)
+				}
+			}
+		} else if desc.MediaType.IsImage() {
+			descs = append(descs, desc)
+		}
+		for _, desc := range descs {
+			if desc.Platform != nil && desc.Platform.Architecture == architecture {
+				// make sure that we have the correct image name annotation
+				if desc.Annotations == nil {
+					desc.Annotations = map[string]string{}
+				}
+				desc.Annotations[imagespec.AnnotationRefName] = imageName
+				log.Debugf("appending descriptor %#v", desc)
+				if err := p.cache.AppendDescriptor(desc); err != nil {
+					return nil, fmt.Errorf("error appending descriptor to layout index: %v", err)
+				}
 			}
 		}
 	}
-	if descriptor != nil && descriptor.Platform == nil {
-		descriptor.Platform = &v1.Platform{
-			OS:           linux,
-			Architecture: architecture,
-		}
-	}
-	return p.NewSource(
-		ref,
-		architecture,
-		descriptor,
-	), nil
+	return descs, nil
 }
 
 // IndexWrite takes an image name and creates an index for the targets to which it points.
@@ -255,35 +264,82 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 			return ImageSource{}, fmt.Errorf("unable to get hash of existing index: %v", err)
 		}
 		// we only care about avoiding duplicate arch/OS/Variant
-		descReplace := map[string]v1.Descriptor{}
+		var (
+			descReplace    = map[string]v1.Descriptor{}
+			descNonReplace []v1.Descriptor
+		)
 		for _, desc := range descriptors {
+			// we do not replace "unknown" because those are attestations; we might remove attestations that point at things we remove
+			if desc.Platform == nil || (desc.Platform.Architecture == "unknown" && desc.Platform.OS == "unknown") {
+				descNonReplace = append(descNonReplace, desc)
+				continue
+			}
 			descReplace[fmt.Sprintf("%s/%s/%s", desc.Platform.OS, desc.Platform.Architecture, desc.Platform.OSVersion)] = desc
 		}
 		// now we can go through each one and see if it already exists, and, if so, replace it
-		var manifests []v1.Descriptor
+		// however, we do not replace attestations unless they point at something we are removing
+		var (
+			manifests         []v1.Descriptor
+			referencedDigests = map[string]bool{}
+		)
 		for _, m := range manifest.Manifests {
 			if m.Platform != nil {
 				lookup := fmt.Sprintf("%s/%s/%s", m.Platform.OS, m.Platform.Architecture, m.Platform.OSVersion)
 				if desc, ok := descReplace[lookup]; ok {
 					manifests = append(manifests, desc)
+					referencedDigests[desc.Digest.String()] = true
 					// already added, so do not need it in the lookup list any more
 					delete(descReplace, lookup)
 					continue
 				}
 			}
 			manifests = append(manifests, m)
+			referencedDigests[m.Digest.String()] = true
 		}
 		// any left get added
 		for _, desc := range descReplace {
 			manifests = append(manifests, desc)
+			referencedDigests[desc.Digest.String()] = true
 		}
-		manifest.Manifests = manifests
+		for _, desc := range descNonReplace {
+			manifests = append(manifests, desc)
+			referencedDigests[desc.Digest.String()] = true
+		}
+		// before we complete, go through the manifests, and if any are attestations that point to something
+		// no longer there, remove them
+		// everything in the list already has its digest marked in the digests map, so we can just check that
+		manifest.Manifests = []v1.Descriptor{}
+		appliedManifests := map[v1.Hash]bool{}
+		for _, m := range manifests {
+			// we already added it; do not add it twice
+			if _, ok := appliedManifests[m.Digest]; ok {
+				continue
+			}
+			if len(m.Annotations) < 1 {
+				manifest.Manifests = append(manifest.Manifests, m)
+				appliedManifests[m.Digest] = true
+				continue
+			}
+			value, ok := m.Annotations[annotationDockerReferenceDigest]
+			if !ok {
+				manifest.Manifests = append(manifest.Manifests, m)
+				appliedManifests[m.Digest] = true
+				continue
+			}
+			if _, ok := referencedDigests[value]; ok {
+				manifest.Manifests = append(manifest.Manifests, m)
+				appliedManifests[m.Digest] = true
+				continue
+			}
+			// if we got this far, we have an attestation that points to something no longer in the index,
+			// do do not add it
+		}
+
 		im = *manifest
 		// remove the old index
 		if err := p.cache.RemoveBlob(oldhash); err != nil {
 			return ImageSource{}, fmt.Errorf("unable to remove old index file: %v", err)
 		}
-
 	} else {
 		// we did not have one, so create an index, store it, update the root index.json, and return
 		im = v1.IndexManifest{

@@ -38,7 +38,7 @@ require (
 	github.com/rn/iso9660wrap v0.0.0-20171120145750-baf8d62ad315
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.6
 	github.com/sirupsen/logrus v1.9.0
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.4
 	github.com/surma/gocpio v1.0.2-0.20160926205914-fcb68777e7dc
 	github.com/vmware/govmomi v0.20.3
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -54,6 +54,8 @@ require (
 
 require (
 	github.com/Code-Hex/vz/v3 v3.0.0
+	github.com/in-toto/in-toto-golang v0.5.0
+	github.com/spdx/tools-golang v0.5.3
 	github.com/spf13/cobra v1.6.1
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
 )
@@ -67,6 +69,7 @@ require (
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
 	github.com/Microsoft/hcsshim v0.9.6 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
+	github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092 // indirect
 	github.com/containerd/cgroups v1.0.4 // indirect
 	github.com/containerd/console v1.0.3 // indirect
 	github.com/containerd/continuity v0.3.0 // indirect
@@ -97,7 +100,6 @@ require (
 	github.com/gorilla/websocket v1.4.2 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
-	github.com/in-toto/in-toto-golang v0.5.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/klauspost/compress v1.15.12 // indirect

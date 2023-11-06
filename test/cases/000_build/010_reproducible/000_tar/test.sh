@@ -16,8 +16,10 @@ clean_up() {
 
 trap clean_up EXIT
 
-linuxkit build --format tar --name "${NAME}-1" ../test.yml
-linuxkit build --format tar --name "${NAME}-2" ../test.yml
+# do not include the sbom, because the SBoM unique IDs per file/package are *not* deterministic,
+# (currently based upon syft), and thus will make the file non-reproducible
+linuxkit build --no-sbom --format tar --name "${NAME}-2" ../test.yml
+linuxkit build --no-sbom --format tar --name "${NAME}-1" ../test.yml
 
 diff -q "${NAME}-1.tar" "${NAME}-2.tar" || exit 1
 

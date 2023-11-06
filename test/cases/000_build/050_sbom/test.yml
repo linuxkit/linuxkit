@@ -1,0 +1,18 @@
+# NOTE: Images build from this file likely do not run
+kernel:
+  image: linuxkit/kernel:5.10.104
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:b7a8f94dfb72f738318cc25daf05451ed85ba194
+  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
+  - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
+
+onboot:
+  - name: package1
+    image: linuxkit/sbom_package1:68f9fad3d53156e014f1b79e7417e345daab3fd9
+services:
+  - name: package2
+    image: linuxkit/sbom_package2:70ebd08dfd61080d3b7efb9475007f316e3b4727
+files:
+  - path: etc/linuxkit-config
+    metadata: yaml

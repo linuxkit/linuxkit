@@ -84,6 +84,9 @@ github.com/ScaleFT/sshkeys
 # github.com/agext/levenshtein v1.2.3
 ## explicit
 github.com/agext/levenshtein
+# github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092
+## explicit; go 1.18
+github.com/anchore/go-struct-converter
 # github.com/aws/aws-sdk-go v1.44.82
 ## explicit; go 1.11
 github.com/aws/aws-sdk-go/aws
@@ -582,14 +585,24 @@ github.com/shibumi/go-pathspec
 # github.com/sirupsen/logrus v1.9.0
 ## explicit; go 1.13
 github.com/sirupsen/logrus
+# github.com/spdx/tools-golang v0.5.3
+## explicit; go 1.13
+github.com/spdx/tools-golang/convert
+github.com/spdx/tools-golang/json
+github.com/spdx/tools-golang/spdx
+github.com/spdx/tools-golang/spdx/common
+github.com/spdx/tools-golang/spdx/v2/common
+github.com/spdx/tools-golang/spdx/v2/v2_1
+github.com/spdx/tools-golang/spdx/v2/v2_2
+github.com/spdx/tools-golang/spdx/v2/v2_3
 # github.com/spf13/cobra v1.6.1
 ## explicit; go 1.15
 github.com/spf13/cobra
 # github.com/spf13/pflag v1.0.5
 ## explicit; go 1.12
 github.com/spf13/pflag
-# github.com/stretchr/testify v1.8.0
-## explicit; go 1.13
+# github.com/stretchr/testify v1.8.4
+## explicit; go 1.20
 github.com/stretchr/testify/assert
 github.com/stretchr/testify/require
 # github.com/surma/gocpio v1.0.2-0.20160926205914-fcb68777e7dc

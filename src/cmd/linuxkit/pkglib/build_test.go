@@ -3,11 +3,11 @@ package pkglib
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
-	"math/rand"
 	"os"
 	"strings"
 	"testing"
@@ -55,7 +55,7 @@ func (d *dockerMocker) contextSupportCheck() error {
 func (d *dockerMocker) builder(_ context.Context, _, _, _ string, _ bool) (*buildkitClient.Client, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, builderRestart bool, c lktspec.CacheProvider, r io.Reader, stdout io.Writer, imageBuildOpts dockertypes.ImageBuildOptions) error {
+func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, builderRestart bool, c lktspec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts dockertypes.ImageBuildOptions) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")
 	}
@@ -84,7 +84,7 @@ func (d *dockerMocker) load(src io.Reader) error {
 func (d *dockerMocker) pull(img string) (bool, error) {
 	if d.enablePull {
 		b := make([]byte, 256)
-		rand.Read(b)
+		_, _ = rand.Read(b)
 		d.images[img] = b
 		return true, nil
 	}
@@ -107,8 +107,15 @@ func (c *cacheMocker) ImagePull(ref *reference.Spec, trustedRef, architecture st
 	}
 	// make some random data for a layer
 	b := make([]byte, 256)
-	rand.Read(b)
-	return c.imageWriteStream(ref, architecture, bytes.NewReader(b))
+	_, _ = rand.Read(b)
+	descs, err := c.imageWriteStream(ref, architecture, bytes.NewReader(b))
+	if err != nil {
+		return nil, err
+	}
+	if len(descs) != 1 {
+		return nil, fmt.Errorf("expected 1 descriptor, got %d", len(descs))
+	}
+	return c.NewSource(ref, architecture, &descs[1]), nil
 }
 
 func (c *cacheMocker) ImageInCache(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
@@ -129,14 +136,14 @@ func (c *cacheMocker) ImageInRegistry(ref *reference.Spec, trustedRef, architect
 	return false, nil
 }
 
-func (c *cacheMocker) ImageLoad(ref *reference.Spec, architecture string, r io.Reader) (lktspec.ImageSource, error) {
+func (c *cacheMocker) ImageLoad(ref *reference.Spec, architecture string, r io.Reader) ([]registry.Descriptor, error) {
 	if !c.enableImageLoad {
 		return nil, errors.New("ImageLoad disabled")
 	}
 	return c.imageWriteStream(ref, architecture, r)
 }
 
-func (c *cacheMocker) imageWriteStream(ref *reference.Spec, architecture string, r io.Reader) (lktspec.ImageSource, error) {
+func (c *cacheMocker) imageWriteStream(ref *reference.Spec, architecture string, r io.Reader) ([]registry.Descriptor, error) {
 	image := fmt.Sprintf("%s-%s", ref.String(), architecture)
 
 	// make some random data for a layer
@@ -181,8 +188,7 @@ func (c *cacheMocker) imageWriteStream(ref *reference.Spec, architecture string,
 		},
 	}
 	c.appendImage(image, desc)
-
-	return c.NewSource(ref, architecture, &desc), nil
+	return []registry.Descriptor{desc}, nil
 }
 
 func (c *cacheMocker) IndexWrite(ref *reference.Spec, descriptors ...registry.Descriptor) (lktspec.ImageSource, error) {
@@ -309,11 +315,14 @@ func (c cacheMockerSource) V1TarReader(overrideName string) (io.ReadCloser, erro
 		return nil, fmt.Errorf("no image found with ref: %s", c.ref.String())
 	}
 	b := make([]byte, 256)
-	rand.Read(b)
+	_, _ = rand.Read(b)
 	return io.NopCloser(bytes.NewReader(b)), nil
 }
 func (c cacheMockerSource) Descriptor() *registry.Descriptor {
 	return c.descriptor
+}
+func (c cacheMockerSource) SBoMs() ([]io.ReadCloser, error) {
+	return nil, nil
 }
 
 func TestBuild(t *testing.T) {

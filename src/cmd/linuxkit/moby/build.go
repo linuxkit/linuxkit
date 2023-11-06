@@ -219,7 +219,14 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	if addition != nil {
 		err = addition(iw)
 		if err != nil {
-			return fmt.Errorf("Failed to add additional files: %v", err)
+			return fmt.Errorf("failed to add additional files: %v", err)
+		}
+	}
+
+	// complete the sbom consolidation
+	if opts.SbomGenerator != nil {
+		if err := opts.SbomGenerator.Close(iw); err != nil {
+			return err
 		}
 	}
 

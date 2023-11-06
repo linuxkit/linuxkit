@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -8,10 +9,22 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
+)
+
+const (
+	annotationDockerReferenceType   = "vnd.docker.reference.type"
+	annotationAttestationManifest   = "attestation-manifest"
+	annotationDockerReferenceDigest = "vnd.docker.reference.digest"
+	annotationInTotoPredicateType   = "in-toto.io/predicate-type"
+	annotationSPDXDoc               = "https://spdx.dev/Document"
+	inTotoJsonMediaType             = "application/vnd.in-toto+json"
 )
 
 // ImageSource a source for an image in the OCI distribution cache.
@@ -21,6 +34,11 @@ type ImageSource struct {
 	provider     *Provider
 	architecture string
 	descriptor   *v1.Descriptor
+}
+
+type spdxStatement struct {
+	intoto.StatementHeader
+	Predicate json.RawMessage `json:"predicate"`
 }
 
 // NewSource return an ImageSource for a specific ref and architecture in the given
@@ -100,4 +118,96 @@ func (c ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 // Descriptor return the descriptor of the image.
 func (c ImageSource) Descriptor() *v1.Descriptor {
 	return c.descriptor
+}
+
+// SBoM return the sbom for the image
+func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
+	index, err := c.provider.findIndex(c.ref.String())
+	// if it is not an index, we actually do not care much
+	if err != nil {
+		return nil, nil
+	}
+
+	// get the digest of the manifest that represents our targeted architecture
+	descs, err := partial.FindManifests(index, matchPlatformsOSArch(v1.Platform{OS: "linux", Architecture: c.architecture}))
+	if err != nil {
+		return nil, err
+	}
+	if len(descs) < 1 {
+		return nil, fmt.Errorf("no manifest found for %s arch %s", c.ref.String(), c.architecture)
+	}
+	if len(descs) > 1 {
+		return nil, fmt.Errorf("multiple manifests found for %s arch %s", c.ref.String(), c.architecture)
+	}
+	// get the digest of the manifest that represents our targeted architecture
+	desc := descs[0]
+
+	annotations := map[string]string{
+		annotationDockerReferenceType:   annotationAttestationManifest,
+		annotationDockerReferenceDigest: desc.Digest.String(),
+	}
+	descs, err = partial.FindManifests(index, matchAllAnnotations(annotations))
+	if err != nil {
+		return nil, err
+	}
+	if len(descs) > 1 {
+		return nil, fmt.Errorf("multiple manifests found for %s arch %s", c.ref.String(), c.architecture)
+	}
+	if len(descs) < 1 {
+		return nil, nil
+	}
+
+	// get the layers for the first descriptor
+	images, err := partial.FindImages(index, match.Digests(descs[0].Digest))
+	if err != nil {
+		return nil, err
+	}
+	if len(images) < 1 {
+		return nil, fmt.Errorf("no attestation image found for %s arch %s, even though the manifest exists", c.ref.String(), c.architecture)
+	}
+	if len(images) > 1 {
+		return nil, fmt.Errorf("multiple attestation images found for %s arch %s", c.ref.String(), c.architecture)
+	}
+	image := images[0]
+	manifest, err := image.Manifest()
+	if err != nil {
+		return nil, err
+	}
+	layers, err := image.Layers()
+	if err != nil {
+		return nil, err
+	}
+	if len(manifest.Layers) != len(layers) {
+		return nil, fmt.Errorf("manifest layers and image layers do not match for the attestation for %s arch %s", c.ref.String(), c.architecture)
+	}
+	var readers []io.ReadCloser
+	for i, layer := range manifest.Layers {
+		annotations := layer.Annotations
+		if annotations[annotationInTotoPredicateType] != annotationSPDXDoc || layer.MediaType != inTotoJsonMediaType {
+			continue
+		}
+		// get the actual blob of the layer
+		layer, err := layers[i].Compressed()
+		if err != nil {
+			return nil, err
+		}
+		// read the layer, we want just the predicate, stripping off the header
+		var buf bytes.Buffer
+		if _, err := io.Copy(&buf, layer); err != nil {
+			return nil, err
+		}
+		layer.Close()
+		var stmt spdxStatement
+		if err := json.Unmarshal(buf.Bytes(), &stmt); err != nil {
+			return nil, err
+		}
+		if stmt.PredicateType != annotationSPDXDoc {
+			return nil, fmt.Errorf("unexpected predicate type %s", stmt.PredicateType)
+		}
+		sbom := stmt.Predicate
+
+		readers = append(readers, io.NopCloser(bytes.NewReader(sbom)))
+	}
+	// get the content of the single descriptor
+	return readers, nil
 }

@@ -90,3 +90,8 @@ func (d ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 func (d ImageSource) Descriptor() *v1.Descriptor {
 	return nil
 }
+
+// SBoM not supported in docker, but it is not an error, so just return nil.
+func (d ImageSource) SBoMs() ([]io.ReadCloser, error) {
+	return nil, nil
+}
