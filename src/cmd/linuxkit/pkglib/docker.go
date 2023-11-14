@@ -48,11 +48,12 @@ const (
 	buildkitSocketPath    = "/run/buildkit/buildkitd.sock"
 	buildkitWaitServer    = 30 // seconds
 	buildkitCheckInterval = 1  // seconds
+	sbomFrontEndKey       = "attest:sbom"
 )
 
 type dockerRunner interface {
 	tag(ref, tag string) error
-	build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, imageBuildOpts types.ImageBuildOptions) error
+	build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts types.ImageBuildOptions) error
 	save(tgt string, refs ...string) error
 	load(src io.Reader) error
 	pull(img string) (bool, error)
@@ -401,7 +402,7 @@ func (dr *dockerRunnerImpl) tag(ref, tag string) error {
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, imageBuildOpts types.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts types.ImageBuildOptions) error {
 	// ensure we have a builder
 	client, err := dr.builder(ctx, dockerContext, builderImage, platform, restart)
 	if err != nil {
@@ -441,6 +442,14 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 
 	for k, v := range imageBuildOpts.Labels {
 		frontendAttrs[fmt.Sprintf("label:%s", k)] = v
+	}
+
+	if sbomScan {
+		var sbomValue string
+		if sbomScannerImage != "" {
+			sbomValue = fmt.Sprintf("generator=%s", sbomScannerImage)
+		}
+		frontendAttrs[sbomFrontEndKey] = sbomValue
 	}
 
 	solveOpts := buildkitClient.SolveOpt{

@@ -14,7 +14,7 @@ import (
 const (
 	buildersEnvVar      = "LINUXKIT_BUILDERS"
 	envVarCacheDir      = "LINUXKIT_CACHE"
-	defaultBuilderImage = "moby/buildkit:v0.11.0-rc2"
+	defaultBuilderImage = "moby/buildkit:v0.12.3"
 )
 
 // some logic clarification:
@@ -44,6 +44,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		nobuild        bool
 		manifest       bool
 		cacheDir       = flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
+		sbomScanner    string
 	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -86,6 +87,10 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		}
 		if docker {
 			opts = append(opts, pkglib.WithBuildTargetDockerCache())
+		}
+
+		if sbomScanner != "false" {
+			opts = append(opts, pkglib.WithBuildSbomScanner(sbomScanner))
 		}
 
 		// skipPlatformsMap contains platforms that should be skipped
@@ -196,6 +201,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 	cmd.Flags().StringVar(&release, "release", "", "Release the given version")
 	cmd.Flags().BoolVar(&nobuild, "nobuild", false, "Skip building the image before pushing, conflicts with -force")
 	cmd.Flags().BoolVar(&manifest, "manifest", true, "Create and push multi-arch manifest")
+	cmd.Flags().StringVar(&sbomScanner, "sbom-scanner", "", "SBOM scanner to use, must match the buildkit spec; set to blank to use the buildkit default; set to 'false' for no scanning")
 
 	return cmd
 }

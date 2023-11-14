@@ -25,22 +25,24 @@ import (
 )
 
 type buildOpts struct {
-	skipBuild      bool
-	force          bool
-	pull           bool
-	ignoreCache    bool
-	push           bool
-	release        string
-	manifest       bool
-	targetDocker   bool
-	cacheDir       string
-	cacheProvider  lktspec.CacheProvider
-	platforms      []imagespec.Platform
-	builders       map[string]string
-	runner         dockerRunner
-	writer         io.Writer
-	builderImage   string
-	builderRestart bool
+	skipBuild        bool
+	force            bool
+	pull             bool
+	ignoreCache      bool
+	push             bool
+	release          string
+	manifest         bool
+	targetDocker     bool
+	cacheDir         string
+	cacheProvider    lktspec.CacheProvider
+	platforms        []imagespec.Platform
+	builders         map[string]string
+	runner           dockerRunner
+	writer           io.Writer
+	builderImage     string
+	builderRestart   bool
+	sbomScan         bool
+	sbomScannerImage string
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -171,6 +173,15 @@ func WithBuildBuilderRestart(restart bool) BuildOpt {
 func WithBuildIgnoreCache() BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.ignoreCache = true
+		return nil
+	}
+}
+
+// WithBuildSbomScanner when building an image, scan using the provided scanner image; if blank, uses the default
+func WithBuildSbomScanner(scanner string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.sbomScan = true
+		bo.sbomScannerImage = scanner
 		return nil
 	}
 }
@@ -366,17 +377,19 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 		// build for each arch and save in the linuxkit cache
 		for _, platform := range platformsToBuild {
-			desc, err := p.buildArch(ctx, d, c, bo.builderImage, platform.Architecture, bo.builderRestart, writer, bo, imageBuildOpts)
+			builtDescs, err := p.buildArch(ctx, d, c, bo.builderImage, platform.Architecture, bo.builderRestart, writer, bo, imageBuildOpts)
 			if err != nil {
 				return fmt.Errorf("error building for arch %s: %v", platform.Architecture, err)
 			}
-			if desc == nil {
+			if len(builtDescs) == 0 {
 				return fmt.Errorf("no valid descriptor returned for image for arch %s", platform.Architecture)
 			}
-			if desc.Platform == nil {
-				return fmt.Errorf("descriptor for platform %v has no information on the platform: %#v", platform, desc)
+			for i, desc := range builtDescs {
+				if desc.Platform == nil {
+					return fmt.Errorf("descriptor %d for platform %v has no information on the platform: %#v", i, platform, desc)
+				}
 			}
-			descs = append(descs, *desc)
+			descs = append(descs, builtDescs...)
 		}
 
 		// after build is done:
@@ -507,9 +520,9 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 }
 
 // buildArch builds the package for a single arch
-func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts types.ImageBuildOptions) (*registry.Descriptor, error) {
+func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts types.ImageBuildOptions) ([]registry.Descriptor, error) {
 	var (
-		desc    *registry.Descriptor
+		descs   []registry.Descriptor
 		tagArch string
 		tag     = p.Tag()
 	)
@@ -527,7 +540,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 			if err != nil {
 				return nil, fmt.Errorf("could not find root descriptor for %s: %v", ref, err)
 			}
-			return desc, nil
+			return []registry.Descriptor{*desc}, nil
 		}
 		fmt.Fprintf(writer, "No image pulled for arch %s, continuing with build\n", arch)
 	}
@@ -559,12 +572,12 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 	stdout = pipew
 
 	eg.Go(func() error {
-		source, err := c.ImageLoad(&ref, arch, piper)
+		d, err := c.ImageLoad(&ref, arch, piper)
 		// send the error down the channel
 		if err != nil {
 			fmt.Fprintf(stdout, "cache.ImageLoad goroutine ended with error: %v\n", err)
 		} else {
-			desc = source.Descriptor()
+			descs = d
 		}
 		piper.Close()
 		return err
@@ -577,7 +590,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 	if bo.ignoreCache {
 		passCache = nil
 	}
-	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, imageBuildOpts); err != nil {
+	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)
@@ -591,7 +604,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 		return nil, err
 	}
 
-	return desc, nil
+	return descs, nil
 }
 
 type buildCtx struct {

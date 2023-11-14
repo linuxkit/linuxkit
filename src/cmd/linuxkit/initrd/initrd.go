@@ -9,7 +9,7 @@ import (
 
 	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
 	gzip "github.com/klauspost/pgzip"
-	"github.com/surma/gocpio"
+	cpio "github.com/surma/gocpio"
 )
 
 // Writer is an io.WriteCloser that writes to an initrd
@@ -22,8 +22,6 @@ type Writer struct {
 func typeconv(thdr *tar.Header) int64 {
 	switch thdr.Typeflag {
 	case tar.TypeReg:
-		return cpio.TYPE_REG
-	case tar.TypeRegA:
 		return cpio.TYPE_REG
 	// Currently hard links not supported very well :)
 	// Convert to relative symlink as absolute will not work in container

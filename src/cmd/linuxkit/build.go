@@ -15,7 +15,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const defaultNameForStdin = "moby"
+const (
+	defaultNameForStdin = "moby"
+	defaultSbomFilename = "sbom.spdx.json"
+)
 
 type formatList []string
 
@@ -37,17 +40,20 @@ func (f *formatList) Type() string {
 func buildCmd() *cobra.Command {
 
 	var (
-		name             string
-		dir              string
-		outputFile       string
-		sizeString       string
-		pull             bool
-		docker           bool
-		decompressKernel bool
-		arch             string
-		cacheDir         flagOverEnvVarOverDefaultString
-		buildFormats     formatList
-		outputTypes      = moby.OutputTypes()
+		name               string
+		dir                string
+		outputFile         string
+		sizeString         string
+		pull               bool
+		docker             bool
+		decompressKernel   bool
+		arch               string
+		cacheDir           flagOverEnvVarOverDefaultString
+		buildFormats       formatList
+		outputTypes        = moby.OutputTypes()
+		noSbom             bool
+		sbomOutputFilename string
+		sbomCurrentTime    bool
 	)
 	cmd := &cobra.Command{
 		Use:   "build",
@@ -192,7 +198,14 @@ The generated image can be in one of multiple formats which can be run on variou
 			if moby.Streamable(buildFormats[0]) {
 				tp = buildFormats[0]
 			}
-			err = moby.Build(m, w, moby.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch})
+			var sbomGenerator *moby.SbomGenerator
+			if !noSbom {
+				sbomGenerator, err = moby.NewSbomGenerator(sbomOutputFilename, sbomCurrentTime)
+				if err != nil {
+					return fmt.Errorf("error creating sbom generator: %v", err)
+				}
+			}
+			err = moby.Build(m, w, moby.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch, SbomGenerator: sbomGenerator})
 			if err != nil {
 				return fmt.Errorf("%v", err)
 			}
@@ -224,6 +237,9 @@ The generated image can be in one of multiple formats which can be run on variou
 	cmd.Flags().VarP(&buildFormats, "format", "f", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
 	cacheDir = flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
 	cmd.Flags().Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
+	cmd.Flags().BoolVar(&noSbom, "no-sbom", false, "suppress consolidation of sboms on input container images to a single sbom and saving in the output filesystem")
+	cmd.Flags().BoolVar(&sbomCurrentTime, "sbom-current-time", false, "whether to use the current time as the build time in the sbom; this will make the build non-reproducible (default false)")
+	cmd.Flags().StringVar(&sbomOutputFilename, "sbom-output", defaultSbomFilename, "filename to save the output to in the root filesystem")
 
 	return cmd
 }

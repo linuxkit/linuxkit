@@ -310,6 +310,21 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 			}
 		}
 	}
+
+	// save the sbom to the sbom writer
+	if opts.SbomGenerator != nil {
+		sboms, err := src.SBoMs()
+		if err != nil {
+			return err
+		}
+		for _, sbom := range sboms {
+			// sbomWriter will escape out any problematic characters for us
+			if err := opts.SbomGenerator.Add(prefix, sbom); err != nil {
+				return err
+			}
+		}
+	}
+
 	return nil
 }
 
