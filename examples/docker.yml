@@ -2,13 +2,13 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:b7a8f94dfb72f738318cc25daf05451ed85ba194
-  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
-  - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
+  - linuxkit/init:aa44b2891ae0273bd194bcf261dc75425713c034
+  - linuxkit/runc:d02dbf3e72632831246ca9e2bc45772e2c3c02b8
+  - linuxkit/containerd:4703525398adfe47764efbee8b36af79b4a6b097
   - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:a88a50c104d538b58da5e1441f6f0b4b738f76a6
+    image: linuxkit/sysctl:0aa4b1141fb890d260bb1f8f43c399f2c5419b04
   - name: sysfs
     image: linuxkit/sysfs:5fd982d39ff7bec8e480c67a110acb2d3794c291
   - name: format
@@ -18,7 +18,7 @@ onboot:
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: getty
-    image: linuxkit/getty:06f34bce0facea79161566d67345c3ea49965437
+    image: linuxkit/getty:4fbbfb7d2e78c8da9be51fc93b78b96685fb1809
     env:
      - INSECURE=true
   - name: rngd

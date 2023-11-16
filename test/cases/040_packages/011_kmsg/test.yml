@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:b7a8f94dfb72f738318cc25daf05451ed85ba194
-  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
-  - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
+  - linuxkit/init:aa44b2891ae0273bd194bcf261dc75425713c034
+  - linuxkit/runc:d02dbf3e72632831246ca9e2bc45772e2c3c02b8
+  - linuxkit/containerd:4703525398adfe47764efbee8b36af79b4a6b097
   - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
-  - linuxkit/memlogd:cf7ea20e6b68aacaa888aa178f267dcad602ed05
+  - linuxkit/memlogd:9fe3a579b45200edeb3dce7ce3e95a40878c374b
 services:
   - name: kmsg
     image: linuxkit/kmsg:ba81a0a3029b4bb7ee455f73892da9667397ca5b

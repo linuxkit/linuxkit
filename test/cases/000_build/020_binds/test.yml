@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:5.4.30
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:b7a8f94dfb72f738318cc25daf05451ed85ba194
-  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
+  - linuxkit/init:aa44b2891ae0273bd194bcf261dc75425713c034
+  - linuxkit/runc:d02dbf3e72632831246ca9e2bc45772e2c3c02b8
 onboot:
   - name: mount
     image: linuxkit/mount:f671cb94a8999a65e33b3fe79f3def58e3d58b07

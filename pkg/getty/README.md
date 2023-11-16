@@ -1,7 +1,6 @@
 # LinuxKit getty
 Image to create a getty on each console for a [linuxkit](https://github.com/linuxkit/linuxkit)-generated image.
 
-
 ## Usage
 LinuxKit images do not create `getty` by default. If you want to be able to access a shell, you need to run a getty.
 

@@ -3,9 +3,9 @@ kernel:
   cmdline: console=ttyS1
   ucode: intel-ucode.cpio
 init:
-  - linuxkit/init:b7a8f94dfb72f738318cc25daf05451ed85ba194
-  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
-  - linuxkit/containerd:d445de33c7f08470187b068d247b1c0dea240f0a
+  - linuxkit/init:aa44b2891ae0273bd194bcf261dc75425713c034
+  - linuxkit/runc:d02dbf3e72632831246ca9e2bc45772e2c3c02b8
+  - linuxkit/containerd:4703525398adfe47764efbee8b36af79b4a6b097
   - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
   - linuxkit/firmware:a17106a98940006529c714a3783eb03238c335a7
 onboot:
@@ -13,7 +13,7 @@ onboot:
     image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
     command: ["/sbin/rngd", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:a88a50c104d538b58da5e1441f6f0b4b738f76a6
+    image: linuxkit/sysctl:0aa4b1141fb890d260bb1f8f43c399f2c5419b04
   - name: dhcpcd
     image: linuxkit/dhcpcd:2a8ed08fea442909ba10f950d458191ed3647115
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
@@ -24,7 +24,7 @@ services:
   - name: rngd
     image: linuxkit/rngd:310c16ec5315bd07d4b8f5332cfa7dc5cbc7d368
   - name: getty
-    image: linuxkit/getty:06f34bce0facea79161566d67345c3ea49965437
+    image: linuxkit/getty:4fbbfb7d2e78c8da9be51fc93b78b96685fb1809
     env:
      - INSECURE=true
   - name: sshd
