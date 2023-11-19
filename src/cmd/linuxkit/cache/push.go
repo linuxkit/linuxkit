@@ -7,7 +7,7 @@ import (
 	namepkg "github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
-	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 )
@@ -57,10 +57,26 @@ func (p *Provider) Push(name string, withManifest bool) error {
 		if err != nil {
 			return fmt.Errorf("could not get digest for index %s: %v", name, err)
 		}
+		manifest, err := ii.IndexManifest()
+		if err != nil {
+			return fmt.Errorf("could not read images in index: %v", err)
+		}
+
+		// get the existing image, if any
 		desc, err := remote.Get(ref, remoteOptions...)
-		if err == nil && desc != nil && dig == desc.Digest {
-			fmt.Printf("%s index already available on remote registry, skipping push", name)
-			return nil
+		if err == nil && desc != nil {
+			if dig == desc.Digest {
+				fmt.Printf("%s index already available on remote registry, skipping push", name)
+				return nil
+			}
+			// we have a different index, need to cross-reference and only override relevant stuff
+			remoteIndex, err := desc.ImageIndex()
+			if err == nil && remoteIndex != nil {
+				ii, err = util.AppendIndex(ii, remoteIndex)
+				if err != nil {
+					return fmt.Errorf("could not append remote index to local index: %v", err)
+				}
+			}
 		}
 		log.Debugf("pushing index %s", name)
 		// this is an index, so we not only want to write the index, but tags for each arch-specific image in it
@@ -68,10 +84,6 @@ func (p *Provider) Push(name string, withManifest bool) error {
 			return err
 		}
 		fmt.Printf("Pushed index %s\n", name)
-		manifest, err := ii.IndexManifest()
-		if err != nil {
-			return fmt.Errorf("successfully pushed index, but could not read images in index: %v", err)
-		}
 		log.Debugf("pushing individual images in the index %s", name)
 		for _, m := range manifest.Manifests {
 			if m.Platform == nil || m.Platform.Architecture == "" {
@@ -111,18 +123,6 @@ func (p *Provider) Push(name string, withManifest bool) error {
 		}
 	default:
 		return fmt.Errorf("name %s unknown in cache", name)
-	}
-
-	if !withManifest {
-		return nil
-	}
-	// Even though we may have pushed the index, we want to be sure that we have an index that includes every architecture on the registry,
-	// not just those that were in our local cache. So we call PushManifest to push an index that includes all arch-specific images
-	// already in the registry.
-	fmt.Printf("Pushing index based on all arch-specific images in registry %s\n", name)
-	_, _, err = registry.PushManifest(name, options...)
-	if err != nil {
-		return err
 	}
 
 	return nil

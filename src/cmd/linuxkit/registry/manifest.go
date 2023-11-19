@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -30,6 +31,7 @@ func PushManifest(img string, options ...remote.Option) (hash string, length int
 	if err != nil {
 		return hash, length, fmt.Errorf("parsing %s: %w", img, err)
 	}
+
 	adds := make([]mutate.IndexAddendum, 0, len(platformsToSearchForIndex))
 	for i, platform := range platformsToSearchForIndex {
 		osArchArr := strings.Split(platform, "/")
@@ -70,6 +72,20 @@ func PushManifest(img string, options ...remote.Option) (hash string, length int
 
 	// add the desc to the index we will push
 	index := mutate.AppendManifests(empty.Index, adds...)
+	// base index with which we are working
+	// get the existing index, if any
+	desc, err := remote.Get(baseRef, options...)
+	if err == nil && desc != nil {
+		ii, err := desc.ImageIndex()
+		if err != nil {
+			return hash, length, fmt.Errorf("could not get index for existing reference %s: %w", img, err)
+		}
+		index, err = util.AppendIndex(index, ii)
+		if err != nil {
+			return hash, length, fmt.Errorf("could not append existing index for %s: %w", img, err)
+		}
+	}
+
 	size, err := index.Size()
 	if err != nil {
 		return hash, length, fmt.Errorf("getting index size: %w", err)
