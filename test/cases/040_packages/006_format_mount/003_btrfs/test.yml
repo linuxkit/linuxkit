@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:b7a8f94dfb72f738318cc25daf05451ed85ba194
-  - linuxkit/runc:436357ce16dd663e24f595bcec26d5ae476c998e
+  - linuxkit/init:aa44b2891ae0273bd194bcf261dc75425713c034
+  - linuxkit/runc:d02dbf3e72632831246ca9e2bc45772e2c3c02b8
 onboot:
   - name: modprobe
-    image: linuxkit/modprobe:5dd4d7238f760bcd9f91b9166f414da953242f43
+    image: linuxkit/modprobe:767664e0e8b4a4ae34dac4ee7907a98d18fffe28
     command: ["modprobe", "btrfs"]
   - name: format
     image: linuxkit/format:5161fe240e5824da04d51bcf5e00afcb0c18dc25
