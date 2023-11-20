@@ -1,4 +1,4 @@
-# Dockerfile to build linuxkit/sysctl
+# Dockerfile to build linuxkit/sysctl for linuxkit
 FROM linuxkit/alpine:316c3f9d85c21fdd8bc7479e81d290f85bf60eb0 AS mirror
 
 RUN apk add --no-cache go musl-dev

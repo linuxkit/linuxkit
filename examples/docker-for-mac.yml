@@ -4,16 +4,16 @@ kernel:
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/vpnkit-expose-port:c61565ee34e58823aaf7c05fd6359a8fd889137f # install vpnkit-expose-port and vpnkit-iptables-wrapper on host
-  - linuxkit/init:aa44b2891ae0273bd194bcf261dc75425713c034
-  - linuxkit/runc:d02dbf3e72632831246ca9e2bc45772e2c3c02b8
-  - linuxkit/containerd:4703525398adfe47764efbee8b36af79b4a6b097
+  - linuxkit/init:07d37c3ae7fad5ddcb54c8dc65774ae050851f04
+  - linuxkit/runc:2aabf16bc8a1b94e015ee53fa2e7a77ab1883a80
+  - linuxkit/containerd:95d5f0d2d8dc63bd87e96b7b39cf026cb86125c9
   - linuxkit/ca-certificates:4de36e93dc87f7ccebd20db616ed10d381911d32
 onboot:
   # support metadata for optional config in /run/config
   - name: metadata
     image: linuxkit/metadata:501144d47215671e77b9cac44748a04f21236195
   - name: sysctl
-    image: linuxkit/sysctl:0aa4b1141fb890d260bb1f8f43c399f2c5419b04
+    image: linuxkit/sysctl:c6f23919b8610c7645a89a89f863c6209bc84bee
   - name: sysfs
     image: linuxkit/sysfs:5fd982d39ff7bec8e480c67a110acb2d3794c291
   - name: binfmt
@@ -52,7 +52,7 @@ services:
     image: linuxkit/acpid:548f8f1c8bda31cdbefb65bdb0747f97c17639d2
   # Enable getty for easier debugging
   - name: getty
-    image: linuxkit/getty:4fbbfb7d2e78c8da9be51fc93b78b96685fb1809
+    image: linuxkit/getty:e74e6cad132403d1a6d6cd25b136a7c69c99f3f7
     env:
         - INSECURE=true
   # Run ntpd to keep time synchronised in the VM

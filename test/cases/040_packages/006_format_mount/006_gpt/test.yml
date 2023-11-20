@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:aa44b2891ae0273bd194bcf261dc75425713c034
-  - linuxkit/runc:d02dbf3e72632831246ca9e2bc45772e2c3c02b8
+  - linuxkit/init:07d37c3ae7fad5ddcb54c8dc65774ae050851f04
+  - linuxkit/runc:2aabf16bc8a1b94e015ee53fa2e7a77ab1883a80
 onboot:
   - name: format
     image: linuxkit/format:5161fe240e5824da04d51bcf5e00afcb0c18dc25
