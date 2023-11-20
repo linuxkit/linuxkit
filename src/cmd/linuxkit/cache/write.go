@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+	lktutil "github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 )
@@ -320,7 +321,7 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 				appliedManifests[m.Digest] = true
 				continue
 			}
-			value, ok := m.Annotations[annotationDockerReferenceDigest]
+			value, ok := m.Annotations[lktutil.AnnotationDockerReferenceDigest]
 			if !ok {
 				manifest.Manifests = append(manifest.Manifests, m)
 				appliedManifests[m.Digest] = true

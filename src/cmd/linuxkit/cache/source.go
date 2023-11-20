@@ -15,16 +15,12 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 const (
-	annotationDockerReferenceType   = "vnd.docker.reference.type"
-	annotationAttestationManifest   = "attestation-manifest"
-	annotationDockerReferenceDigest = "vnd.docker.reference.digest"
-	annotationInTotoPredicateType   = "in-toto.io/predicate-type"
-	annotationSPDXDoc               = "https://spdx.dev/Document"
-	inTotoJsonMediaType             = "application/vnd.in-toto+json"
+	inTotoJsonMediaType = "application/vnd.in-toto+json"
 )
 
 // ImageSource a source for an image in the OCI distribution cache.
@@ -143,8 +139,8 @@ func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
 	desc := descs[0]
 
 	annotations := map[string]string{
-		annotationDockerReferenceType:   annotationAttestationManifest,
-		annotationDockerReferenceDigest: desc.Digest.String(),
+		util.AnnotationDockerReferenceType:   util.AnnotationAttestationManifest,
+		util.AnnotationDockerReferenceDigest: desc.Digest.String(),
 	}
 	descs, err = partial.FindManifests(index, matchAllAnnotations(annotations))
 	if err != nil {
@@ -183,7 +179,7 @@ func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
 	var readers []io.ReadCloser
 	for i, layer := range manifest.Layers {
 		annotations := layer.Annotations
-		if annotations[annotationInTotoPredicateType] != annotationSPDXDoc || layer.MediaType != inTotoJsonMediaType {
+		if annotations[util.AnnotationInTotoPredicateType] != util.AnnotationSPDXDoc || layer.MediaType != inTotoJsonMediaType {
 			continue
 		}
 		// get the actual blob of the layer
@@ -201,7 +197,7 @@ func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
 		if err := json.Unmarshal(buf.Bytes(), &stmt); err != nil {
 			return nil, err
 		}
-		if stmt.PredicateType != annotationSPDXDoc {
+		if stmt.PredicateType != util.AnnotationSPDXDoc {
 			return nil, fmt.Errorf("unexpected predicate type %s", stmt.PredicateType)
 		}
 		sbom := stmt.Predicate
