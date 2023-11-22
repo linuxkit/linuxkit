@@ -94,6 +94,11 @@ func PushManifest(img string, options ...remote.Option) (hash string, length int
 	if err != nil {
 		return hash, length, fmt.Errorf("getting index digest: %w", err)
 	}
+	// if it is unchanged, do nothing
+	if desc != nil && desc.Digest == dig {
+		log.Debugf("not pushing manifest list for %s, unchanged", img)
+		return dig.String(), size, nil
+	}
 	log.Debugf("pushing manifest list for %s -> %#v", img, index)
 	err = remote.WriteIndex(baseRef, index, options...)
 	if err != nil {
