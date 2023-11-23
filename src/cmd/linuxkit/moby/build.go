@@ -126,7 +126,8 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 		return err
 	}
 
-	iw := tar.NewWriter(w)
+	buf := new(bytes.Buffer)
+	iw := tar.NewWriter(buf)
 
 	// add additions
 	addition := additions[opts.BuilderType]
@@ -233,6 +234,55 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	err = iw.Close()
 	if err != nil {
 		return fmt.Errorf("initrd close error: %v", err)
+	}
+
+	ir := tar.NewReader(buf)
+	writtenFilePaths := make(map[string][]byte, 0)
+
+	iw = tar.NewWriter(w)
+
+	for {
+		hdr, err := ir.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+
+		hdrName := filepath.Clean(hdr.Name)
+
+		writtenContents, found := writtenFilePaths[hdrName]
+
+		fileContents := make([]byte, hdr.Size)
+		_, err = ir.Read(fileContents)
+		if err != nil && err != io.EOF {
+			return fmt.Errorf("error reading file contents: %v", err)
+		}
+
+		if found {
+			log.Debugf("Dup File: %s removing from output", hdrName)
+			if !bytes.Equal(writtenContents, fileContents) {
+				return fmt.Errorf("Tried to write duplicate file into image with different contents %s", hdrName)
+			}
+			continue
+		}
+
+		if err := iw.WriteHeader(hdr); err != nil {
+			return err
+		}
+
+		_, err = iw.Write(fileContents)
+		if err != nil {
+			return err
+		}
+
+		writtenFilePaths[hdrName] = fileContents
+	}
+
+	err = iw.Close()
+	if err != nil {
+		return fmt.Errorf("close error: %v", err)
 	}
 
 	return nil
