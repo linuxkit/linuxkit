@@ -182,18 +182,33 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 
 	var storageDevices []vz.StorageDeviceConfiguration
 	for i, d := range cfg.disks {
-		var id, diskPath string
+		var id string
 		if i != 0 {
 			id = strconv.Itoa(i)
 		}
+		if d.Size != 0 && d.Format == "" {
+			d.Format = "raw"
+		}
+		if d.Format != "raw" && d.Path == "" {
+			log.Fatal("Virtualization Framework currently can only create raw disks")
+		}
 		if d.Size != 0 && d.Path == "" {
-			diskPath = filepath.Join(cfg.state, "disk"+id+".raw")
+			d.Path = filepath.Join(cfg.state, "disk"+id+".raw")
 		}
 		if d.Path == "" {
 			return fmt.Errorf("disk specified with no size or name")
 		}
+		if _, err := os.Stat(d.Path); err != nil {
+			if !os.IsNotExist(err) {
+				return err
+			}
+			err = vz.CreateDiskImage(d.Path, int64(d.Size)*1024*1024)
+			if err != nil {
+				return err
+			}
+		}
 		diskImageAttachment, err := vz.NewDiskImageStorageDeviceAttachment(
-			diskPath,
+			d.Path,
 			false,
 		)
 		if err != nil {
