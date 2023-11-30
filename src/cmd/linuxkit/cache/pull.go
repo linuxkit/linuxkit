@@ -5,10 +5,14 @@ import (
 	"fmt"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+)
+
+const (
+	unknown = "unknown"
 )
 
 // ValidateImage given a reference, validate that it is complete. If not, pull down missing
@@ -49,13 +53,17 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 		// or because it was not available - so get it from the remote
 		return ImageSource{}, errors.New("no such image")
 	case imageIndex != nil:
-		// check that the index has a manifest for our arch
+		// check that the index has a manifest for our arch, as well as any non-arch-specific ones
 		im, err := imageIndex.IndexManifest()
 		if err != nil {
 			return ImageSource{}, fmt.Errorf("could not get index manifest: %v", err)
 		}
+		var found bool
 		for _, m := range im.Manifests {
-			if m.Platform != nil && m.Platform.Architecture == architecture && m.Platform.OS == linux {
+			if m.Platform == nil {
+				continue
+			}
+			if m.Platform.Architecture == architecture && m.Platform.OS == linux {
 				img, err := imageIndex.Image(m.Digest)
 				if err != nil {
 					return ImageSource{}, fmt.Errorf("unable to get image: %v", err)
@@ -63,6 +71,18 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 				if err := validate.Image(img); err != nil {
 					return ImageSource{}, fmt.Errorf("invalid image: %s", err)
 				}
+				found = true
+			}
+			if m.Platform.Architecture == unknown && m.Platform.OS == unknown {
+				img, err := imageIndex.Image(m.Digest)
+				if err != nil {
+					return ImageSource{}, fmt.Errorf("unable to get image: %v", err)
+				}
+				if err := validate.Image(img); err != nil {
+					return ImageSource{}, fmt.Errorf("invalid image: %s", err)
+				}
+			}
+			if found {
 				return p.NewSource(
 					ref,
 					architecture,
