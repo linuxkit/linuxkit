@@ -32,11 +32,14 @@ const (
 // ImagePull takes an image name and ensures that the image manifest or index to which it refers
 // exists in local cache and, if not, pulls it from the registry and writes it locally. It should be
 // efficient and only write missing blobs, based on their content hash.
-// It will only pull the actual blobs, config and manifest for the requested architectures, even if ref
-// points to an index with multiple architectures. If the ref and all of the content for the requested
+// If the ref and all of the content for the requested
 // architectures already exist in the cache, it will not pull anything, unless alwaysPull is set to true.
 // If you call it multiple times, even with different architectures, the ref will continue to point to the same index.
 // Only the underlying content will be added.
+// However, do note that it *always* reaches out to the remote registry to check the content.
+// If you just want to check the status of a local ref, use ValidateImage.
+// Note that ImagePull does try ValidateImage first, so if the image is already in the cache, it will not
+// do any network activity at all.
 func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture string, alwaysPull bool) (lktspec.ImageSource, error) {
 	image := ref.String()
 	pullImageName := image
@@ -47,15 +50,21 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 	log.Debugf("ImagePull to cache %s trusted reference %s", image, pullImageName)
 
 	// unless alwaysPull is set to true, check locally first
-	if !alwaysPull {
+	if alwaysPull {
+		log.Printf("Instructed always to pull, so pulling image %s arch %s", image, architecture)
+	} else {
 		imgSrc, err := p.ValidateImage(ref, architecture)
-		if err == nil && imgSrc != nil {
+		switch {
+		case err == nil && imgSrc != nil:
 			log.Printf("Image %s arch %s found in local cache, not pulling", image, architecture)
 			return imgSrc, nil
+		case err != nil && errors.Is(err, &noReferenceError{}):
+			log.Printf("Image %s arch %s not found in local cache, pulling", image, architecture)
+		default:
+			log.Printf("Image %s arch %s incomplete or invalid in local cache, error %v, pulling", image, architecture, err)
 		}
 		// there was an error, so try to pull
 	}
-	log.Printf("Image %s arch %s not found in local cache, pulling", image, architecture)
 	remoteRef, err := name.ParseReference(pullImageName)
 	if err != nil {
 		return ImageSource{}, fmt.Errorf("invalid image name %s: %v", pullImageName, err)
@@ -75,27 +84,11 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 	ii, err := desc.ImageIndex()
 	if err == nil {
 		log.Debugf("ImageWrite retrieved %s is index, saving", pullImageName)
-		im, err := ii.IndexManifest()
-		if err != nil {
-			return ImageSource{}, fmt.Errorf("unable to get IndexManifest: %v", err)
-		}
-		// write the index blob and the descriptor
-		if err := p.cache.WriteBlob(desc.Digest, io.NopCloser(bytes.NewReader(desc.Manifest))); err != nil {
-			return ImageSource{}, fmt.Errorf("unable to write index content to cache: %v", err)
+		if err := p.cache.WriteIndex(ii); err != nil {
+			return ImageSource{}, fmt.Errorf("unable to write index: %v", err)
 		}
 		if _, err := p.DescriptorWrite(ref, desc.Descriptor); err != nil {
 			return ImageSource{}, fmt.Errorf("unable to write index descriptor to cache: %v", err)
-		}
-		for _, m := range im.Manifests {
-			if m.MediaType.IsImage() && (m.Platform == nil || m.Platform.Architecture == architecture) {
-				img, err := ii.Image(m.Digest)
-				if err != nil {
-					return ImageSource{}, fmt.Errorf("unable to get image: %v", err)
-				}
-				if err := p.cache.WriteImage(img); err != nil {
-					return ImageSource{}, fmt.Errorf("unable to write image: %v", err)
-				}
-			}
 		}
 	} else {
 		var im v1.Image
@@ -105,13 +98,15 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 			return ImageSource{}, fmt.Errorf("provided image is neither an image nor an index: %s", image)
 		}
 		log.Debugf("ImageWrite retrieved %s is image, saving", pullImageName)
-		err = p.cache.ReplaceImage(im, match.Name(image), layout.WithAnnotations(annotations))
+		if err = p.cache.ReplaceImage(im, match.Name(image), layout.WithAnnotations(annotations)); err != nil {
+			return ImageSource{}, fmt.Errorf("unable to save image to cache: %v", err)
+		}
 	}
-	if err != nil {
-		return ImageSource{}, fmt.Errorf("unable to save image to cache: %v", err)
-	}
-	// ensure it includes our architecture
-	return p.ValidateImage(ref, architecture)
+	return p.NewSource(
+		ref,
+		architecture,
+		&desc.Descriptor,
+	), nil
 }
 
 // ImageLoad takes an OCI format image tar stream and writes it locally. It should be
