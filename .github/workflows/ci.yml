@@ -130,6 +130,10 @@ jobs:
       run: |
         make OPTIONS="-v --skip-platforms linux/s390x" -C test/pkg build
 
+    - name: list cache contents
+      run: |
+        linuxkit cache ls
+
   test_packages:
     name: Packages Tests
     needs: [ build_packages, build ]
@@ -181,7 +185,10 @@ jobs:
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
         restore-keys: |
           ${{ runner.os }}-linuxkit-
-
+    - name: list cache contents
+      run: |
+        linuxkit cache ls
+      
     - name: Run Tests
       run: make test TEST_SUITE=linuxkit.packages TEST_SHARD=${{ matrix.shard }}
 
@@ -234,6 +241,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-linuxkit-
 
+    - name: list cache contents
+      run: |
+        linuxkit cache ls
+      
     - name: Run Tests
       run: make test TEST_SUITE=linuxkit.kernel
 
@@ -286,6 +297,10 @@ jobs:
         sudo ln -s $(pwd)/bin/linuxkit-amd64-linux /usr/local/bin/linuxkit
         /usr/local/bin/linuxkit version
 
+    - name: list cache contents
+      run: |
+        linuxkit cache ls
+  
     - name: Run Tests
       run: make test TEST_SUITE=linuxkit.build
 
@@ -338,6 +353,10 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-linuxkit-
 
+    - name: list cache contents
+      run: |
+        linuxkit cache ls
+      
     - name: Run Tests
       run: make test TEST_SUITE=linuxkit.platforms
 
@@ -390,5 +409,9 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-linuxkit-
 
+    - name: list cache contents
+      run: |
+        linuxkit cache ls
+      
     - name: Run Tests
       run: make test TEST_SUITE=linuxkit.security
