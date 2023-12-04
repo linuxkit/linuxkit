@@ -24,21 +24,12 @@ func imagePull(ref *reference.Spec, alwaysPull bool, cacheDir string, dockerCach
 		// docker is not required, so any error - image not available, no docker, whatever - just gets ignored
 	}
 
-	// next try the local cache
-	if !alwaysPull {
-		c, err := cache.NewProvider(cacheDir)
-		if err != nil {
-			return nil, err
-		}
-		if image, err := c.ValidateImage(ref, architecture); err == nil {
-			return image, nil
-		}
-	}
-
-	// if we made it here, we either did not have the image, or it was incomplete
+	// get a reference to the local cache; we either will find the ref there or will pull to it
 	c, err := cache.NewProvider(cacheDir)
 	if err != nil {
 		return nil, err
 	}
+
+	// if we made it here, we either did not have the image, or it was incomplete
 	return c.ImagePull(ref, ref.String(), architecture, alwaysPull)
 }

@@ -173,7 +173,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 		log.Infof("Process init image: %s", ii)
 		err := ImageTar(ii, "", apkTar, resolvconfSymlink, opts)
 		if err != nil {
-			return fmt.Errorf("Failed to build init tarball from %s: %v", ii, err)
+			return fmt.Errorf("failed to build init tarball from %s: %v", ii, err)
 		}
 	}
 	if err := apkTar.WriteAPKDB(); err != nil {
