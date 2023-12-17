@@ -83,7 +83,23 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 	// first attempt as an index
 	ii, err := desc.ImageIndex()
 	if err == nil {
-		log.Debugf("ImageWrite retrieved %s is index, saving", pullImageName)
+		log.Debugf("ImageWrite retrieved %s is index, saving, first checking if it contains target arch %s", pullImageName, architecture)
+		im, err := ii.IndexManifest()
+		if err != nil {
+			return ImageSource{}, fmt.Errorf("unable to get IndexManifest: %v", err)
+		}
+		// only useful if it contains our architecture
+		var foundArch bool
+		for _, m := range im.Manifests {
+			if m.MediaType.IsImage() && m.Platform != nil && m.Platform.Architecture == architecture && m.Platform.OS == linux {
+				foundArch = true
+				break
+			}
+		}
+		if !foundArch {
+			return ImageSource{}, fmt.Errorf("index %s does not contain target architecture %s", pullImageName, architecture)
+		}
+
 		if err := p.cache.WriteIndex(ii); err != nil {
 			return ImageSource{}, fmt.Errorf("unable to write index: %v", err)
 		}
