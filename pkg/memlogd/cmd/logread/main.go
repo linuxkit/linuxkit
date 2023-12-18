@@ -67,7 +67,6 @@ func StreamLogs(socketPath string, follow, dump bool) (<-chan LogEntry, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
 
 	var n int
 	switch {
@@ -85,6 +84,7 @@ func StreamLogs(socketPath string, follow, dump bool) (<-chan LogEntry, error) {
 
 	c := make(chan LogEntry)
 	go func(c chan<- LogEntry) {
+		defer conn.Close()
 		var (
 			entry   LogEntry
 			decoder = json.NewDecoder(conn)
