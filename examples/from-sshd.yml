@@ -1,0 +1,4 @@
+from: sshd.tar
+services:
+  - name: ntpd
+    image: linuxkit/openntpd:v0.7
