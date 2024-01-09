@@ -6,6 +6,7 @@ RUN apt-get update && apt-get install -y qemu-user-static && \
     mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le && \
     mv /usr/bin/qemu-s390x-static /usr/bin/qemu-s390x && \
     mv /usr/bin/qemu-riscv64-static /usr/bin/qemu-riscv64 && \
+    mv /usr/bin/qemu-loongarch64-static /usr/bin/qemu-loongarch64 && \
     rm /usr/bin/qemu-*-static
 
 FROM linuxkit/alpine:316c3f9d85c21fdd8bc7479e81d290f85bf60eb0 AS mirror
