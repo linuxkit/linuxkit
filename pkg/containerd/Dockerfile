@@ -4,7 +4,7 @@ FROM linuxkit/alpine:316c3f9d85c21fdd8bc7479e81d290f85bf60eb0 as alpine
 RUN apk add tzdata binutils
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/020-containerd
 
-FROM linuxkit/containerd-dev:ee5755eb38c0a6b6aef2658b757652d82556c30c as containerd-dev
+FROM linuxkit/containerd-dev:c70d27ded9b10ac53abf68e8dcc2d5e4a26006a1 as containerd-dev
 
 FROM scratch
 ENTRYPOINT []
