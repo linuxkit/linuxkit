@@ -24,6 +24,7 @@ RUN apk add \
     mpc1-dev \
     mpfr-dev \
     python3 \
+    python3-dev \
     sed \
     tar \
     xz \
