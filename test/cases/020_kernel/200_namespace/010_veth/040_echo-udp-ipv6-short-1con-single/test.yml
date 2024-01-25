@@ -1,6 +1,6 @@
 onboot:
   - name: test-ns
-    image: linuxkit/test-ns:bd163e189ce4985a798aa422c5509ef44e031756
+    image: linuxkit/test-ns:1a7c8ae79394b6c569cbb34b848e310554186330
     command: ["/bin/sh", "/runp-runc-net.sh", "1", "-l", "5", "-i", "15", "-ip", "6", "-p", "udp", "-s", "-c", "1"]
     mounts: # for runc
     - type: cgroup
