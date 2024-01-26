@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:6584375f70524a4684f10e7155d91380420f5392 AS build
+FROM linuxkit/alpine:29e84088fdd519268b05c622e4437d205acb6323 AS build
 RUN apk add --update \
     bison \
     build-base \

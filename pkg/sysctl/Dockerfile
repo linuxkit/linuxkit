@@ -1,5 +1,5 @@
 # Dockerfile to build linuxkit/sysctl for linuxkit
-FROM linuxkit/alpine:6584375f70524a4684f10e7155d91380420f5392 AS mirror
+FROM linuxkit/alpine:29e84088fdd519268b05c622e4437d205acb6323 AS mirror
 
 RUN apk add --no-cache go musl-dev
 ARG GOPKGVERSION
