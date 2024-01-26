@@ -6,13 +6,13 @@ init:
   - linuxkit/runc:92b1fea787c01cef46f07f783c80631a7071cfbb
 onboot:
   - name: format
-    image: linuxkit/format:5161fe240e5824da04d51bcf5e00afcb0c18dc25
+    image: linuxkit/format:4686064ce75f8014a3cdf8c3227887a81a74180a
     command: ["/usr/bin/format", "-type", "xfs" ]
   - name: mount
     image: linuxkit/mount:19ff89c251a4156bda8ed11c95faad2f40eb770e
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
-    image: alpine:3.13
+    image: alpine:3.19
     binds:
       - /var/lib/docker:/var/lib/docker
       - /check.sh:/check.sh
