@@ -2,32 +2,32 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:817099ace2d56ea2d20c7702ab8e1a8abc7d89fd
-  - linuxkit/runc:59c40661f2174ca6752d73086b91d63eeb98d021
-  - linuxkit/containerd:0dab9a4e2b9aa7f034873881a08890fd40b2755d
-  - linuxkit/ca-certificates:6003d7e78387f1fbb35bf1d1af300120be97f94b
+  - linuxkit/init:5251073a3d3e52881bf2697f7dfabac6eedfd569
+  - linuxkit/runc:49628804b3a39b0a0cfab046dd80b76a4fd87b5a
+  - linuxkit/containerd:c35f10fb8127841b4eb82ddfcebd5d5a54bad0e7
+  - linuxkit/ca-certificates:945ac3f0c1a31535d37ff77003fc30dbd71da6bb
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:f8a06fea01bfcb322e913213e22d35790168ed01
+    image: linuxkit/sysctl:7c0059d1ad7d86127d990474b6e5f17297c07bf5
   - name: sysfs
-    image: linuxkit/sysfs:e2476b26d551cd75b032990545a304c2cfbd1084
+    image: linuxkit/sysfs:713f1e871e7fdfcdc9088385501d3c49116e915d
   - name: dhcpcd
-    image: linuxkit/dhcpcd:a58543e8b40a29b3cd0c5d1e42ce21b71a8abcef
+    image: linuxkit/dhcpcd:fc2b5bf40b13df746ee66f354672bf687a540ce8
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:4686064ce75f8014a3cdf8c3227887a81a74180a
+    image: linuxkit/format:3648c589de02c27a98fe4cbdfa4c890f45aaa121
   - name: mount
-    image: linuxkit/mount:e3f4f07c424c1aff42a3b2009fb701540e313056
+    image: linuxkit/mount:fb8f153ac0d83d01dee58a7c720e243dca3593fe
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: getty
-    image: linuxkit/getty:9b8e6b510b49da196a1e412aa95f364e3dd16576
+    image: linuxkit/getty:d421b06d0a1ae118e2af025cb7a3637f808a755b
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:e35c1c671a9d35dbc42b83b620563ce472f8effb
+    image: linuxkit/rngd:97136824ad06ba2cc17c086d30f60c7f93b56f72
   - name: ntpd
-    image: linuxkit/openntpd:4745ea9d3633469c860d1c3d5250303c3d96eec9
+    image: linuxkit/openntpd:d2b58cb5d776f9e56cf34d8ba301a3e64c16355c
   - name: docker
     image: docker:20.10.6-dind
     capabilities:
