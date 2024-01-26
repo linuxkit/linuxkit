@@ -131,7 +131,8 @@ following which is an explanation of each one.
 # Update tools packages
 cd $LK_ROOT/tools
 $LK_ROOT/scripts/update-component-sha.sh --image $LK_ALPINE
-git checkout grub/Dockerfile
+git checkout grub-dev/Dockerfile
+git checkout mkimage-rpi3/Dockerfile
 git commit -a -s -m "tools: Update to the latest linuxkit/alpine"
 
 # Update tools dependencies
@@ -179,8 +180,13 @@ On your primary build machine, update the other tools packages.
 
 Note, the `git checkout` reverts the changes made by
 `update-component-sha.sh` to files which are accidentally updated.
-Important is the `git checkout` of `grub`. This is a bit old and only can be built with specific
-older versions of packages like `gcc`, and should not be updated.
+Important is the `git checkout` of some sensitive packages that only can be built with
+specific older versions of upstream packages:
+
+* `grub-dev`
+* `mkimage-rpi3`
+
+Only update those if you know what you are doing with them.
 
 Then we update any dependencies of these tools.
 

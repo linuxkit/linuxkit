@@ -10,6 +10,8 @@ autoconf
 automake
 bash
 bc
+bcc
+bcc-dev
 binutils
 binutils-dev
 bison
@@ -130,5 +132,6 @@ xorriso
 xz
 xz-dev
 zfs
+zip
 zlib-dev
 zlib-static
