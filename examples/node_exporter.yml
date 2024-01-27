@@ -2,17 +2,17 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:817099ace2d56ea2d20c7702ab8e1a8abc7d89fd
-  - linuxkit/runc:59c40661f2174ca6752d73086b91d63eeb98d021
-  - linuxkit/containerd:0dab9a4e2b9aa7f034873881a08890fd40b2755d
+  - linuxkit/init:5251073a3d3e52881bf2697f7dfabac6eedfd569
+  - linuxkit/runc:49628804b3a39b0a0cfab046dd80b76a4fd87b5a
+  - linuxkit/containerd:c35f10fb8127841b4eb82ddfcebd5d5a54bad0e7
 services:
   - name: getty
-    image: linuxkit/getty:9b8e6b510b49da196a1e412aa95f364e3dd16576
+    image: linuxkit/getty:d421b06d0a1ae118e2af025cb7a3637f808a755b
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:e35c1c671a9d35dbc42b83b620563ce472f8effb
+    image: linuxkit/rngd:97136824ad06ba2cc17c086d30f60c7f93b56f72
   - name: dhcpcd
-    image: linuxkit/dhcpcd:a58543e8b40a29b3cd0c5d1e42ce21b71a8abcef
+    image: linuxkit/dhcpcd:fc2b5bf40b13df746ee66f354672bf687a540ce8
   - name: node_exporter
-    image: linuxkit/node_exporter:1a5015560e1839a6b37f53b47bbe0fbb3e93ed4a
+    image: linuxkit/node_exporter:6f638bc6a0598a31604c15116becedab5cc9f2f5

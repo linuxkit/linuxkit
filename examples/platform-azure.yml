@@ -2,20 +2,20 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:817099ace2d56ea2d20c7702ab8e1a8abc7d89fd
-  - linuxkit/runc:59c40661f2174ca6752d73086b91d63eeb98d021
-  - linuxkit/containerd:0dab9a4e2b9aa7f034873881a08890fd40b2755d
-  - linuxkit/ca-certificates:6003d7e78387f1fbb35bf1d1af300120be97f94b
+  - linuxkit/init:5251073a3d3e52881bf2697f7dfabac6eedfd569
+  - linuxkit/runc:49628804b3a39b0a0cfab046dd80b76a4fd87b5a
+  - linuxkit/containerd:c35f10fb8127841b4eb82ddfcebd5d5a54bad0e7
+  - linuxkit/ca-certificates:945ac3f0c1a31535d37ff77003fc30dbd71da6bb
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:f8a06fea01bfcb322e913213e22d35790168ed01
+    image: linuxkit/sysctl:7c0059d1ad7d86127d990474b6e5f17297c07bf5
 services:
   - name: rngd
-    image: linuxkit/rngd:e35c1c671a9d35dbc42b83b620563ce472f8effb
+    image: linuxkit/rngd:97136824ad06ba2cc17c086d30f60c7f93b56f72
   - name: dhcpcd
-    image: linuxkit/dhcpcd:a58543e8b40a29b3cd0c5d1e42ce21b71a8abcef
+    image: linuxkit/dhcpcd:fc2b5bf40b13df746ee66f354672bf687a540ce8
   - name: sshd
-    image: linuxkit/sshd:3d3847cf029b1b600b97011f78aa015315b2cb78
+    image: linuxkit/sshd:e9ceec5f24261dbe15847de8c1c91245251e5814
     binds.add:
       - /root/.ssh:/root/.ssh
 files:

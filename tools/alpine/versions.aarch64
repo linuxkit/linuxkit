@@ -1,4 +1,4 @@
-# linuxkit/alpine:38d956b2d8924c69d569ee46dd702d6ecb108284-arm64
+# linuxkit/alpine:121e8ec61a409c1ed440b3a1e31e070c36db194b-arm64
 # automatically generated list of installed packages
 abuild-3.12.0-r0
 acpid-2.0.34-r3
@@ -54,10 +54,10 @@ clang17-libs-17.0.5-r0
 clang17-static-17.0.5-r0
 cmake-3.27.8-r0
 cmake-vim-3.27.8-r0
-coreutils-9.4-r1
-coreutils-env-9.4-r1
-coreutils-fmt-9.4-r1
-coreutils-sha512sum-9.4-r1
+coreutils-9.4-r2
+coreutils-env-9.4-r2
+coreutils-fmt-9.4-r2
+coreutils-sha512sum-9.4-r2
 cryptsetup-2.6.1-r8
 cryptsetup-libs-2.6.1-r8
 cryptsetup-openrc-2.6.1-r8
@@ -177,7 +177,7 @@ libcap-ng-0.8.3-r4
 libcap-ng-dev-0.8.3-r4
 libcap2-2.69-r1
 libcom_err-1.47.0-r5
-libcrypto3-3.1.4-r4
+libcrypto3-3.1.4-r5
 libcurl-8.5.0-r0
 libdw-0.190-r1
 libeconf-0.5.2-r2
@@ -228,7 +228,7 @@ libseccomp-dev-2.5.5-r0
 libseccomp-static-2.5.5-r0
 libslirp-4.7.0-r0
 libsmartcols-2.39.3-r0
-libssl3-3.1.4-r4
+libssl3-3.1.4-r5
 libstdc++-13.2.1_git20231014-r0
 libstdc++-dev-13.2.1_git20231014-r0
 libtasn1-4.19.0-r2
@@ -258,6 +258,7 @@ linux-headers-6.5-r0
 linux-pam-1.5.3-r7
 llvm17-17.0.5-r0
 llvm17-dev-17.0.5-r0
+llvm17-gtest-17.0.5-r0
 llvm17-libs-17.0.5-r0
 llvm17-linker-tools-17.0.5-r0
 llvm17-static-17.0.5-r0
@@ -316,8 +317,8 @@ openssh-keygen-9.6_p1-r0
 openssh-server-9.6_p1-r0
 openssh-server-common-9.6_p1-r0
 openssh-server-common-openrc-9.6_p1-r0
-openssl-3.1.4-r4
-openssl-dev-3.1.4-r4
+openssl-3.1.4-r5
+openssl-dev-3.1.4-r5
 p11-kit-0.25.3-r0
 partx-2.39.3-r0
 patch-2.7.6-r10

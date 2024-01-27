@@ -2,18 +2,18 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:817099ace2d56ea2d20c7702ab8e1a8abc7d89fd
-  - linuxkit/runc:59c40661f2174ca6752d73086b91d63eeb98d021
-  - linuxkit/containerd:0dab9a4e2b9aa7f034873881a08890fd40b2755d
+  - linuxkit/init:5251073a3d3e52881bf2697f7dfabac6eedfd569
+  - linuxkit/runc:49628804b3a39b0a0cfab046dd80b76a4fd87b5a
+  - linuxkit/containerd:c35f10fb8127841b4eb82ddfcebd5d5a54bad0e7
 onboot:
   - name: ip
-    image: linuxkit/ip:bc8772ad4a77269d131a7baeb77d867ef7ab3c9f
+    image: linuxkit/ip:c68fe855482d1a255731425833d44872e25f6eed
     binds:
      - /etc/ip:/etc/ip
     command: ["ip", "-b", "/etc/ip/eth0.conf"]
 services:
   - name: getty
-    image: linuxkit/getty:9b8e6b510b49da196a1e412aa95f364e3dd16576
+    image: linuxkit/getty:d421b06d0a1ae118e2af025cb7a3637f808a755b
     env:
      - INSECURE=true
 files:     
