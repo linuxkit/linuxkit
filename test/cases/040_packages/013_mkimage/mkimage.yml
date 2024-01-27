@@ -2,10 +2,10 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:5251073a3d3e52881bf2697f7dfabac6eedfd569
-  - linuxkit/runc:49628804b3a39b0a0cfab046dd80b76a4fd87b5a
+  - linuxkit/init:31dcd928602e39ee752843ebcf6c35cbae73c883
+  - linuxkit/runc:7ecf2e5253905855fb554b072d42903f7829c8b6
 onboot:
   - name: mkimage
-    image: linuxkit/mkimage:e0a4848e90521879b8190ae2a1b01d3263f2e565
+    image: linuxkit/mkimage:95b5d5a532db8fdd52f1dfb8babf89d29dd0ac4f
   - name: poweroff
-    image: linuxkit/poweroff:bd7c21330487f5b98d2852c2527566940b6d6044
+    image: linuxkit/poweroff:4e252be56edea2f8cc51be4c16853a8812cd87bd

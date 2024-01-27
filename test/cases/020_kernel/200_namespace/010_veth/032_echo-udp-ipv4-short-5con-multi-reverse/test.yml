@@ -6,5 +6,5 @@ onboot:
     - type: cgroup
       options: ["rw"]
   - name: poweroff
-    image: linuxkit/poweroff:bd7c21330487f5b98d2852c2527566940b6d6044
+    image: linuxkit/poweroff:4e252be56edea2f8cc51be4c16853a8812cd87bd
     command: ["/bin/sh", "/poweroff.sh", "3"]
