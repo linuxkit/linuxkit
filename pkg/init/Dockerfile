@@ -1,5 +1,5 @@
 # Dockerfile to build linuxkit/init for linuxkit
-FROM linuxkit/containerd-dev:caa8cc66de281276c99c8457066270565f1c4821 AS containerd-dev
+FROM linuxkit/containerd-dev:c6f84bdaf33d4355e97290e0ece3bf17bbcfd316 AS containerd-dev
 FROM linuxkit/alpine:29e84088fdd519268b05c622e4437d205acb6323 AS build
 RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev git linux-headers
 
