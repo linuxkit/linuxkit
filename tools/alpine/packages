@@ -138,3 +138,5 @@ zfs
 zip
 zlib-dev
 zlib-static
+zstd
+zstd-static
