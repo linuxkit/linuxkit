@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:a720d2b1b83556653abd52d61faa0fe020c2b161 AS mirror
+FROM linuxkit/alpine:7aea0bb7faf70f35c6b7d2d244c91da1d4b3ea93 AS mirror
 
 RUN apk add --no-cache go gcc musl-dev linux-headers
 ARG GOPKGVERSION
