@@ -1,4 +1,4 @@
-# linuxkit/alpine:991944e6c81e93544a51d75fee27f14907db92df-arm64
+# linuxkit/alpine:0268de5743ac3a07d48ef10d5094dd71f5ec95b9-arm64
 # automatically generated list of installed packages
 abuild-3.12.0-r0
 acpid-2.0.34-r3
@@ -258,6 +258,7 @@ linux-headers-6.5-r0
 linux-pam-1.5.3-r7
 llvm17-17.0.5-r0
 llvm17-dev-17.0.5-r0
+llvm17-gtest-17.0.5-r0
 llvm17-libs-17.0.5-r0
 llvm17-linker-tools-17.0.5-r0
 llvm17-static-17.0.5-r0
