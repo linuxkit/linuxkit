@@ -1,4 +1,4 @@
-FROM linuxkit/containerd-dev:8f880c3f91e9d43d8d3e754847335e57980836ed as containerd-dev
+FROM linuxkit/containerd-dev:c4f8d1e36b6ee0af8cde390240fbd7cf566fb7ff as containerd-dev
 FROM linuxkit/alpine:a720d2b1b83556653abd52d61faa0fe020c2b161 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 # btrfs-progfs is required for btrfs test (mkfs.btrfs)
