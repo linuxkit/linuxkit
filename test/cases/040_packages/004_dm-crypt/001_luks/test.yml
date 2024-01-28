@@ -2,11 +2,11 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:31dcd928602e39ee752843ebcf6c35cbae73c883
-  - linuxkit/runc:7ecf2e5253905855fb554b072d42903f7829c8b6
+  - linuxkit/init:ad37cb61355b08cf481c54b07612b5206be6254d
+  - linuxkit/runc:8c00a7c58393f0cfcab81ac4171c00bcaec6b962
 onboot:
   - name: dm-crypt
-    image: linuxkit/dm-crypt:7d147d42e0ec560777f2061af3ffff37c1c9c180
+    image: linuxkit/dm-crypt:c2b4defb1955d5fd15793b971ec01d4721976c47
     command: ["/usr/bin/crypto", "-l", "it_is_encrypted", "/dev/sda"]
   - name: test
     image: alpine:3.13
@@ -16,7 +16,7 @@ onboot:
       - /dev:/dev
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:4e252be56edea2f8cc51be4c16853a8812cd87bd
+    image: linuxkit/poweroff:5384fff9d382d032c5478516017cf56f3a659a2b
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh

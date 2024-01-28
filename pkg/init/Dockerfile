@@ -1,6 +1,6 @@
 # Dockerfile to build linuxkit/init for linuxkit
-FROM linuxkit/containerd-dev:c6f84bdaf33d4355e97290e0ece3bf17bbcfd316 AS containerd-dev
-FROM linuxkit/alpine:275ef778d89133ebec5e80d82c664c3549f919d4 AS build
+FROM linuxkit/containerd-dev:8f880c3f91e9d43d8d3e754847335e57980836ed AS containerd-dev
+FROM linuxkit/alpine:a720d2b1b83556653abd52d61faa0fe020c2b161 AS build
 RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev git linux-headers
 
 ADD usermode-helper.c ./
@@ -24,7 +24,7 @@ COPY --from=containerd-dev /go/src/github.com/containerd/containerd $GOPATH/src/
 RUN cd /go/src/cmd/service && ./skanky-vendor.sh $GOPATH/src/github.com/containerd/containerd
 RUN go-compile.sh /go/src/cmd/service
 
-FROM linuxkit/alpine:275ef778d89133ebec5e80d82c664c3549f919d4 AS mirror
+FROM linuxkit/alpine:a720d2b1b83556653abd52d61faa0fe020c2b161 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
 
