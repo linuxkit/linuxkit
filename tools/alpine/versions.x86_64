@@ -1,4 +1,4 @@
-# linuxkit/alpine:274be29eef00fcb451da97883a313e21606a859e-amd64
+# linuxkit/alpine:397f43dd96977699794af37b5c511177d4c2f6e7-amd64
 # automatically generated list of installed packages
 abuild-3.12.0-r0
 acpid-2.0.34-r3
@@ -354,6 +354,7 @@ py3-setuptools-68.2.2-r0
 py3-setuptools-pyc-68.2.2-r0
 pyc-3.11.6-r1
 python3-3.11.6-r1
+python3-dev-3.11.6-r1
 python3-pyc-3.11.6-r1
 python3-pycache-pyc0-3.11.6-r1
 qemu-8.1.4-r0

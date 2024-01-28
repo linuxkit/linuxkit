@@ -100,6 +100,7 @@ openssl-dev
 patch
 pigz
 python3
+python3-dev
 py3-pip
 qemu-aarch64
 qemu-arm
