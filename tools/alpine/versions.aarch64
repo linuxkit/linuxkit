@@ -1,4 +1,4 @@
-# linuxkit/alpine:fb4be9f8ff8a3b66f13fff259d2037aac122be7f-arm64
+# linuxkit/alpine:4747d80575f40c1f664efc21683524ce48bfe37d-arm64
 # automatically generated list of installed packages
 abuild-3.12.0-r0
 acpid-2.0.34-r3
@@ -429,3 +429,4 @@ zlib-static-1.3.1-r0
 zstd-1.5.5-r8
 zstd-dev-1.5.5-r8
 zstd-libs-1.5.5-r8
+zstd-static-1.5.5-r8

@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:7aea0bb7faf70f35c6b7d2d244c91da1d4b3ea93 AS build
+FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e AS build
 
 RUN apk add --no-cache go musl-dev
 ARG GOPKGVERSION
