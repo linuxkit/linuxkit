@@ -3,9 +3,9 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:7e8c0f9a968894f6f8be80bfb99b3e16d201e50b
-  - linuxkit/runc:86b8092f0ad8635cc8b6b1c95a4b20f66c4095bb
-  - linuxkit/containerd:1b14966d84209083c9cbc757be862f97005e5796
+  - linuxkit/init:45a1ad5919f0b6acf0f0cf730e9434abfae11fe6
+  - linuxkit/runc:92b1fea787c01cef46f07f783c80631a7071cfbb
+  - linuxkit/containerd:e7a92d9f3282039eac5fb1b07cac2b8664cbf0ad
 
 onboot:
   - name: package1
