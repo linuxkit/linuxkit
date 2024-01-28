@@ -4,16 +4,16 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0"
 init:
-  - linuxkit/init:31dcd928602e39ee752843ebcf6c35cbae73c883
-  - linuxkit/runc:7ecf2e5253905855fb554b072d42903f7829c8b6
-  - linuxkit/containerd:f645aa2f8aa58023149d7766725039572a2ebeb5
+  - linuxkit/init:ad37cb61355b08cf481c54b07612b5206be6254d
+  - linuxkit/runc:8c00a7c58393f0cfcab81ac4171c00bcaec6b962
+  - linuxkit/containerd:26f04b0b57e3d21bfb36732b5c6ebe8f08c6705b
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:0cca76e71466fc6128fad585549b70538855f254
+    image: linuxkit/dhcpcd:0060977dc2cd15eb242c21888fad240f96ec7308
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:ccac1189f78ff466b76d097a0b7b7236ea54de84
+    image: linuxkit/getty:97d0743bc3baa349dc96809b58f8584c5896928a
     env:
      - INSECURE=true
   # Currently redis:4.0.6-alpine has trust issue with multi-arch

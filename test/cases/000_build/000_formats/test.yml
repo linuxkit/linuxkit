@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:5.10.104
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:31dcd928602e39ee752843ebcf6c35cbae73c883
-  - linuxkit/runc:7ecf2e5253905855fb554b072d42903f7829c8b6
+  - linuxkit/init:ad37cb61355b08cf481c54b07612b5206be6254d
+  - linuxkit/runc:8c00a7c58393f0cfcab81ac4171c00bcaec6b962
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:0cca76e71466fc6128fad585549b70538855f254
+    image: linuxkit/dhcpcd:0060977dc2cd15eb242c21888fad240f96ec7308
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
