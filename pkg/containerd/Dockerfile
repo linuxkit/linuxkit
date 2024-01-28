@@ -1,5 +1,5 @@
 # Dockerfile to build linuxkit/containerd for linuxkit
-FROM linuxkit/alpine:275ef778d89133ebec5e80d82c664c3549f919d4 as alpine
+FROM linuxkit/alpine:a720d2b1b83556653abd52d61faa0fe020c2b161 as alpine
 
 RUN apk add tzdata binutils
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/020-containerd
