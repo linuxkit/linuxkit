@@ -2,23 +2,23 @@ kernel:
   image: linuxkitprojects/kernel-shiftfs:4.11.4-881a041fc14bd95814cf140b5e98d97dd65160b5
   cmdline: "console=ttyS0 console=tty0 page_poison=1"
 init:
-  - linuxkit/init:5251073a3d3e52881bf2697f7dfabac6eedfd569
-  - linuxkit/runc:49628804b3a39b0a0cfab046dd80b76a4fd87b5a
-  - linuxkit/containerd:c35f10fb8127841b4eb82ddfcebd5d5a54bad0e7
-  - linuxkit/ca-certificates:945ac3f0c1a31535d37ff77003fc30dbd71da6bb
+  - linuxkit/init:31dcd928602e39ee752843ebcf6c35cbae73c883
+  - linuxkit/runc:7ecf2e5253905855fb554b072d42903f7829c8b6
+  - linuxkit/containerd:f645aa2f8aa58023149d7766725039572a2ebeb5
+  - linuxkit/ca-certificates:4ed09a382de2b3ba2143f4270375b3bd6e973fb5
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:7c0059d1ad7d86127d990474b6e5f17297c07bf5
+    image: linuxkit/sysctl:2f575c3d127824eb8d059673c538c440d22f19f5
   - name: dhcpcd
-    image: linuxkit/dhcpcd:fc2b5bf40b13df746ee66f354672bf687a540ce8
+    image: linuxkit/dhcpcd:0cca76e71466fc6128fad585549b70538855f254
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:d421b06d0a1ae118e2af025cb7a3637f808a755b
+    image: linuxkit/getty:ccac1189f78ff466b76d097a0b7b7236ea54de84
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:97136824ad06ba2cc17c086d30f60c7f93b56f72
+    image: linuxkit/rngd:fffdd86f314fd960235adf3fba0587d2266d7a0f
   - name: nginx
     image: nginx:1.13.8-alpine
     capabilities:
