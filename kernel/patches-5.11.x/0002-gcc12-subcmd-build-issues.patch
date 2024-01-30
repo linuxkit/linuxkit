@@ -1,0 +1,58 @@
+From: Justin M. Forbes @ 2022-01-29  1:02 UTC (permalink / raw)
+  To: Justin M. Forbes, linux-kernel; +Cc: jmforbes, Jakub Jelinek
+
+While the current code builds fine with gcc 11, it does not with gcc 12,
+resulting in:
+
+In file included from help.c:12:
+In function 'xrealloc',
+    inlined from 'add_cmdname' at help.c:24:2:
+subcmd-util.h:56:23: error: pointer may be used after 'realloc' [-Werror=use-after-free]
+   56 |                 ret = realloc(ptr, size);
+      |                       ^~~~~~~~~~~~~~~~~~
+subcmd-util.h:52:21: note: call to 'realloc' here
+   52 |         void *ret = realloc(ptr, size);
+      |                     ^~~~~~~~~~~~~~~~~~
+subcmd-util.h:58:31: error: pointer may be used after 'realloc' [-Werror=use-after-free]
+   58 |                         ret = realloc(ptr, 1);
+      |                               ^~~~~~~~~~~~~~~
+subcmd-util.h:52:21: note: call to 'realloc' here
+   52 |         void *ret = realloc(ptr, size);
+      |                     ^~~~~~~~~~~~~~~~~~
+
+The was mentioned in upstream gcc bug
+https://gcc.gnu.org/bugzilla/show_bug.cgi?id=104069 where it was
+determined that gcc was correct and the kernel needed to change.  This
+fixes that use-after-free and makes things build again.
+
+Signed-off-by: Justin M. Forbes <jforbes@fedoraproject.org>
+Cc: Jakub Jelinek <jakub@redhat.com>
+
+---
+ tools/lib/subcmd/subcmd-util.h | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
+
+diff --git a/tools/lib/subcmd/subcmd-util.h b/tools/lib/subcmd/subcmd-util.h
+index 794a375dad36..7009fc176636 100644
+--- a/tools/lib/subcmd/subcmd-util.h
++++ b/tools/lib/subcmd/subcmd-util.h
+@@ -49,13 +49,12 @@ static NORETURN inline void die(const char *err, ...)
+
+ static inline void *xrealloc(void *ptr, size_t size)
+ {
+-	void *ret = realloc(ptr, size);
+-	if (!ret && !size)
+-		ret = realloc(ptr, 1);
++	void *ret;
++	if (!size)
++		size = 1;
++	ret = realloc(ptr, size);
+ 	if (!ret) {
+ 		ret = realloc(ptr, size);
+-		if (!ret && !size)
+-			ret = realloc(ptr, 1);
+ 		if (!ret)
+ 			die("Out of memory, realloc failed");
+ 	}
+-- 
+2.34.1

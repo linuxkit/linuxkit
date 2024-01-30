@@ -12,23 +12,20 @@
 # which is specific to a given kernel. perf packages are tagged the same way
 # kernel packages.
 
+RM = rm -f
 # Name and Org on Hub
 ORG?=linuxkit
 PLATFORMS?=linux/amd64,linux/arm64
 IMAGE?=kernel
 IMAGE_BCC:=kernel-bcc
 IMAGE_PERF:=kernel-perf
-IMAGE_ZFS:=zfs-kmod
-IMAGE_BUILDER=linuxkit/alpine:2be490394653b7967c250e86fd42cef88de428ba
+IMAGE_BUILDER=linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e
 
 # You can specify an extra options for the Makefile. This will:
 # - append a config$(EXTRA) to the kernel config for your kernel/arch
 # - append $(EXTRA) to the CONFIG_LOCALVERSION of your kernel
 EXTRA?=
 
-# You can enable debug options for the Makefile. This will:
-# - append a config-dbg to the kernel config for your kernel/arch
-# - append -dbg to the CONFIG_LOCALVERSION of your kernel
 DEBUG?=
 
 ifeq ($(HASH),)
@@ -44,14 +41,16 @@ endif
 PUSH_MANIFEST:=$(shell git rev-parse --show-toplevel)/scripts/push-manifest.sh
 
 ARCH := $(shell uname -m)
-ifeq ($(ARCH),x86_64)
+ifeq ($(ARCH),$(filter $(ARCH),x86_64 amd64))
 SUFFIX=-amd64
+ARCH=x86_64
 endif
 ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
 SUFFIX=-arm64
+ARCH=aarch64
 endif
 
-TAG=$(HASH)$(DIRTY)
+HASHTAG=$(HASH)$(DIRTY)
 
 BUILD_LABEL=--label org.mobyproject.linuxkit.kernel.buildimage=$(IMAGE_BUILDER)
 
@@ -66,221 +65,127 @@ endif
 
 LABELS=$(REPO_LABEL) $(COMMIT_LABEL) $(BUILD_LABEL)
 
-KERNEL_VERSIONS=
-
-.PHONY: build push
-# Targets:
-# build: Builds all kernels
-# push:  Pushes and sign all tagged kernel images to hub
-build:
-push:
-
 .PHONY: notdirty
 notdirty:
 	@if [ x"$(DIRTY)" !=  x ]; then echo "Your repository is not clean. Will not push image"; exit 1; fi
 
+# utility function
+SPACE := $(eval) $(eval)
+PERIOD := .
+series = $(word 1,$(subst ., ,$(1))).$(word 2,$(subst ., ,$(1))).x
 
-# A template for defining kernel build
-# Arguments:
-# $1: Full kernel version, e.g., 4.9.22
-# $2: Kernel "series", e.g., 4.9.x
-# $3: Build a specific kernel like -rt: Preempt-RT (used as suffix for image)
-# This defines targets like:
-# build_4.9.x and  push_4.9.x and adds them as dependencies
-# to the global targets
-# Set $3 to "-rt", to build Preempt-RT kernels. This defines targets like
-# build_4.14.x-rt and adds "-rt" to the hub image name.
-# Set $4 to "-dbg", to build debug kernels. This defines targets like
-# build_4.9.x-dbg and adds "-dbg" to the hub image name.
-# Set $3 to "-rt" and $4 to "-dbg" to build debug Preempt-RT kernel.
-define kernel
+# word 1 is the release, word 2 is the tool
+RELEASESEP := PART
+toolname = $(word 2, $(subst $(RELEASESEP), ,$(1)))
+toolkernel = $(word 1, $(subst $(RELEASESEP), ,$(1)))
+toolimageextension = -$(call toolname,$(1)):$(call toolkernel,$(1))$(EXTRA)$(DEBUG)
+toolimagebase = $(ORG)/$(IMAGE)$(call toolimageextension,$(1))
+toolimagehash = $(call toolimagebase,$(1))-$(HASHTAG)$(SUFFIX)
+toolimagenohash = $(call toolimagebase,$(1))$(SUFFIX)
+toolkernelimage = $(ORG)/$(IMAGE):$(call toolkernel,$(1))$(EXTRA)$(DEBUG)-$(HASHTAG)$(SUFFIX)
+baseimageextension = :$(1)$(EXTRA)$(DEBUG)
+baseimage = $(ORG)/$(IMAGE)$(call baseimageextension,$(1))
+uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
+cross_product = $(foreach p,$(1),$(addprefix $(p),$(2)))
 
-ifeq ($(4),)
-KERNEL_VERSIONS+=$(1)
-endif
 
-buildx_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) || \
-		docker buildx build \
-			--platform=$(PLATFORMS) --push \
-			--build-arg KERNEL_VERSION=$(1) \
-			--build-arg KERNEL_SERIES=$(2) \
-			--build-arg EXTRA=$(3) \
-			--build-arg DEBUG=$(4) \
-			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-			$(LABELS) \
-			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) .
+#
+# Kernel versions to build.
+# Use all for kernels to be built on all platforms; use KERNELS_x86_64 or KERNELS_aarch64 for platform-specific kernels
+KERNELS_all=6.6.13 5.15.27
+KERNELS_x86_64=
+KERNELS_aarch64=
 
-build_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
+# deprecated versions. You might still be able to build them, but they are not built by default or supported
+# Use all for kernels to be built on all platforms; use DEPRECATED_x86_64 or DEPRECATED_aarch64 for platform-specific kernels
+DEPRECATED_all=5.10.104 5.11.4-rt
+DEPRECATED_x86_64=5.4.172 
+DEPRECATED_aarch64=
+
+KERNELS?=$(KERNELS_all) $(KERNELS_$(ARCH))
+DEPRECATED?=$(DEPRECATED_all) $(DEPRECATED_$(ARCH))
+
+# we build all tools across all platforms and kernels that we build
+TOOLS=bcc perf
+
+# kernel versions used for kconfig
+KERNEL_VERSIONS=$(call uniq,$(foreach l,$(KERNELS),$(word 1,$(subst -, ,$(l)))))
+
+.PHONY: build push setforce show-tags
+# Targets:
+# build: Builds all kernels
+# push:  Pushes and sign all tagged kernel images to hub
+setforce:
+	$(eval FORCE=1)
+build: $(addprefix build-,$(KERNELS))
+push: $(addprefix push-,$(KERNELS))
+show-tags: $(addprefix show-tag-,$(KERNELS))
+
+build-%: buildkernel-% buildtools-%;
+
+buildkernel-%: buildkerneldeps-% buildplainkernel-% builddebugkernel-%;
+
+buildkerneldeps-%: Dockerfile Makefile $(wildcard patches-$(call series,$*)/*) $(wildcard config-$(call series,$*)*) ;
+
+buildplainkernel-%: buildkerneldeps-% 
+	$(eval BASEIMAGE=$(call baseimage,$*))
+	$(eval TARGETIMAGE=$(BASEIMAGE)-$(HASHTAG)$(SUFFIX))
+	$(eval EXTRATOOL=$(addprefix -,$(word 2,$(subst -, ,$*))))
+	([ -z "$(FORCE)" ] && docker pull $(TARGETIMAGE)) || \
 		docker build \
-			--build-arg KERNEL_VERSION=$(1) \
-			--build-arg KERNEL_SERIES=$(2) \
-			--build-arg EXTRA=$(3) \
-			--build-arg DEBUG=$(4) \
+			--build-arg KERNEL_VERSION=$* \
+			--build-arg KERNEL_SERIES=$(call series,$*) \
+			--build-arg EXTRA=$(EXTRATOOL) \
+			--build-arg DEBUG=$(DEBUG) \
 			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			$(LABELS) \
-			--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
+			--no-cache -t $(TARGETIMAGE) .
 
+builddebugkernel-%: buildkerneldeps-%
+	$(MAKE) buildplainkernel-$* DEBUG=-dbg
 
-forcebuild_$(2)$(3)$(4): Dockerfile Makefile $(wildcard patches-$(2)/*) $(wildcard config-$(2)*) config-dbg
-	docker build \
-		--build-arg KERNEL_VERSION=$(1) \
-		--build-arg KERNEL_SERIES=$(2) \
-		--build-arg EXTRA=$(3) \
-		--build-arg DEBUG=$(4) \
-		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-		$(LABELS) \
-		--no-cache -t $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
+push-%: notdirty build-% pushkernel-% tagbuilder-% pushtools-%;
 
-push_$(2)$(3)$(4): notdirty build_$(2)$(3)$(4)
-	docker pull $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
-		(docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
-		 docker tag $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
-		 docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4))
+tagbuilder-%: notdirty
+	$(eval BUILDER_IMAGE=$(call baseimage,$*)-builder)
+	docker tag $(IMAGE_BUILDER) $(BUILDER_IMAGE)$(SUFFIX) && \
+	docker push $(BUILDER_IMAGE)$(SUFFIX) && \
+	$(PUSH_MANIFEST) $(BUILDER_IMAGE)
 
-forcepush_$(2)$(3)$(4): notdirty forcebuild_$(2)$(3)$(4)
-	docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
-	 docker tag $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
-	 docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)$(SUFFIX) && \
-	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG) && \
-	 $(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)
+pushtagpush-%:
+	$(eval BASEIMAGE=$(ORG)/$(IMAGE)$*)
+	$(eval HASHIMAGE=$(BASEIMAGE)-$(HASHTAG))
+	$(eval SUFFIXEDIMAGE=$(BASEIMAGE)$(SUFFIX))
+	$(eval HASHANDSUFFIXIMAGE=$(HASHIMAGE)$(SUFFIX))
+	([ -z "$(FORCE)" ] && docker pull $(HASHANDSUFFIXIMAGE)) || \
+		(docker push $(HASHANDSUFFIXIMAGE) && \
+		 docker tag $(HASHANDSUFFIXIMAGE) $(SUFFIXEDIMAGE) && \
+		 docker push $(SUFFIXEDIMAGE) && \
+		 $(PUSH_MANIFEST) $(HASHIMAGE) && \
+		 $(PUSH_MANIFEST) $(BASEIMAGE))
 
-# tag the builder and create the manifest
-tagbuilder_$(2)$(3)$(4): notdirty
-	docker tag $(IMAGE_BUILDER) $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder$(SUFFIX) && \
-	docker push $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder$(SUFFIX) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE):$(1)$(3)$(4)-builder
+pushkernel-%:
+	$(MAKE) pushtagpush-$(call baseimageextension,$*)
 
+show-tag-%:
+	@echo 	$(eval BASEIMAGE=$(call baseimage,$*))-$(HASHTAG)
 
-show-tag_$(2)$(3)$(4):
-	@echo $(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)
+buildtools-%: $(addprefix buildtool-%$(RELEASESEP),$(TOOLS));
 
-build: build_$(2)$(3)$(4)
-forcebuild: forcebuild_$(2)$(3)$(4)
-push: push_image tagbuilder
-push_image: push_$(2)$(3)$(4)
-forcepush: forcepush_image tagbuilder
-forcepush_image: forcepush_$(2)$(3)$(4)
-tagbuilder: tagbuilder_$(2)$(3)$(4)
-show-tags: show-tag_$(2)$(3)$(4)
-
-# Only build perf only on x86 and recent LTS and latest stable kernels
-ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.15.x 5.10.x 5.4.x))
-build_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
-	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
-		 docker build -f Dockerfile.perf \
-			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
+buildtool-%:
+	$(eval TARGETIMAGE=$(call toolimagehash,$*))
+	$(eval KERNELIMAGE=$(call toolkernelimage,$*))
+	$(eval TOOL=$(call toolname,$*))
+	([ -z "$(FORCE)" ] && docker pull $(TARGETIMAGE)) || \
+		 docker build -f Dockerfile.$(TOOL) \
+			--build-arg IMAGE=$(KERNELIMAGE) \
 			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-			--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
+			--no-cache $(LABEL) -t $(TARGETIMAGE) .
 
-forcebuild_perf_$(2)$(3)$(4): build_$(2)$(3)$(4)
-	docker build -f Dockerfile.perf \
-		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
-		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-		--no-cache --network=none $(LABEL) -t $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
+pushtools-%: $(addprefix pushtool-%$(RELEASESEP),$(TOOLS));
 
-push_perf_$(2)$(3)$(4): notdirty build_perf_$(2)$(3)$(4)
-	docker pull $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
-		(docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
-		 docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
-		 docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4))
-
-forcepush_perf_$(2)$(3)$(4): notdirty forcebuild_perf_$(2)$(3)$(4)
-	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
-	docker tag $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
-	docker push $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)$(SUFFIX) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)-$(TAG) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_PERF):$(1)$(3)$(4)
-
-build: build_perf_$(2)$(3)$(4)
-forcebuild: forcebuild_perf_$(2)$(3)$(4)
-push: push_perf_$(2)$(3)$(4)
-forcepush: forcepush_perf_$(2)$(3)$(4)
-endif
-endif
-
-# Only build bcc only on x86 and recent LTS and latest stable kernels
-ifeq ($(ARCH),x86_64)
-ifeq ($(2), $(filter $(2),5.15.x 5.10.x 5.4.x))
-build_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
-	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
-		docker build -f Dockerfile.bcc \
-			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
-			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-			--no-cache $(LABEL) -t $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
-
-forcebuild_bcc_$(2)$(3)$(4): build_$(2)$(3)$(4)
-	 docker build -f Dockerfile.bcc \
-		--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)$(4)-$(TAG)$(SUFFIX) \
-		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-		--no-cache $(LABEL) -t $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) .
-
-push_bcc_$(2)$(3)$(4): notdirty build_bcc_$(2)$(3)$(4)
-	docker pull $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) || \
-		(docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
-		 docker tag $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
-		 docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4))
-
-forcepush_bcc_$(2)$(3)$(4): notdirty forcebuild_bcc_$(2)$(3)$(4)
-	docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) && \
-	docker tag $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
-	docker push $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)$(SUFFIX) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)-$(TAG) && \
-	$(PUSH_MANIFEST) $(ORG)/$(IMAGE_BCC):$(1)$(3)$(4)
-
-build: build_bcc_$(2)$(3)$(4)
-forcebuild: forcebuild_bcc_$(2)$(3)$(4)
-push: push_bcc_$(2)$(3)$(4)
-forcepush: forcepush_bcc_$(2)$(3)$(4)
-endif
-endif
-
-ifeq ($(4),)
-# ZFS does not compile against -dbg kernels because CONFIG_DEBUG_LOCK_ALLOC
-# is incompatible with CDDL, apparently (this is ./configure check)
-build_zfs_$(2)$(3): build_$(2)$(3)
-	docker pull $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) || \
-		docker build -f Dockerfile.zfs \
-			--build-arg IMAGE=$(ORG)/$(IMAGE):$(1)$(3)-$(TAG)$(SUFFIX) \
-			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-			--no-cache $(LABEL) -t $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) .
-
-push_zfs_$(2)$(3): notdirty build_zfs_$(2)$(3)
-	docker pull $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) || \
-		(docker push $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) && \
-		 docker tag $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG)$(SUFFIX) $(ORG)/$(IMAGE_ZFS):$(1)$(3)$(SUFFIX) && \
-		 docker push $(ORG)/$(IMAGE_ZFS):$(1)$(3)$(SUFFIX) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_ZFS):$(1)$(3)-$(TAG) && \
-		 $(PUSH_MANIFEST) $(ORG)/$(IMAGE_ZFS):$(1)$(3))
-endif
-
-endef
-
-#
-# Build Targets
-# Debug targets only for latest stable and LTS stable
-#
-ifeq ($(ARCH),x86_64)
-$(eval $(call kernel,5.15.27,5.15.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.15.27,5.15.x,,-dbg))
-$(eval $(call kernel,5.10.104,5.10.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.4.172,5.4.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.11.4,5.11.x,-rt,))
-
-else ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
-$(eval $(call kernel,5.15.27,5.15.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.10.104,5.10.x,$(EXTRA),$(DEBUG)))
-$(eval $(call kernel,5.11.4,5.11.x,-rt,))
-
-endif
+pushtool-%:
+	$(MAKE) pushtagpush-$(call toolimageextension,$*)
 
 # Target for kernel config
 kconfig:

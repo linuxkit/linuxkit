@@ -33,7 +33,6 @@ echo $UNZIPPED_CONFIG | grep -q CONFIG_BUG=y || fail "CONFIG_BUG=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_KERNEL=y || fail "CONFIG_DEBUG_KERNEL=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_STRICT_DEVMEM=y || fail "CONFIG_STRICT_DEVMEM=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_SYN_COOKIES=y || fail "CONFIG_SYN_COOKIES=y"
-echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_CREDENTIALS=y || fail "CONFIG_DEBUG_CREDENTIALS=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_NOTIFIERS=y || fail "CONFIG_DEBUG_NOTIFIERS=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_LIST=y || fail "CONFIG_DEBUG_LIST=y"
 echo $UNZIPPED_CONFIG | grep -q CONFIG_SECCOMP=y || fail "CONFIG_SECCOMP=y"
@@ -46,6 +45,10 @@ echo $UNZIPPED_CONFIG | grep -q CONFIG_BPF_JIT_ALWAYS_ON=y || fail "CONFIG_BPF_J
 
 
 # Conditional on kernel version
+if [ "$kernelMajor" -lt 6 ]; then
+  echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_CREDENTIALS=y || fail "CONFIG_DEBUG_CREDENTIALS=y"
+fi
+
 if [ "$kernelMajor" -eq 4 -a "$kernelMinor" -le 10 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_RODATA=y || fail "CONFIG_DEBUG_RODATA=y"
   echo $UNZIPPED_CONFIG | grep -q CONFIG_DEBUG_SET_MODULE_RONX=y || fail "CONFIG_DEBUG_SET_MODULE_RONX=y"
@@ -62,7 +65,7 @@ if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 8 ];
   echo $UNZIPPED_CONFIG | grep -q CONFIG_HARDENED_USERCOPY=y || fail "CONFIG_HARDENED_USERCOPY=y"
 fi
 # 4.18.x renamed this option (and re-introduced CC_STACKPROTECTOR as STACKPROTECTOR)
-if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -le 4 -a "$kernelMinor" -ge 18 ]; then
+if [ "$kernelMajor" -ge 5 ] || [ "$kernelMajor" -le 4 -a "$kernelMinor" -ge 18 ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_STACKPROTECTOR=y || fail "CONFIG_STACKPROTECTOR=y"
   echo $UNZIPPED_CONFIG | grep -q CONFIG_STACKPROTECTOR_STRONG=y || fail "CONFIG_STACKPROTECTOR_STRONG=y"
 else
@@ -112,7 +115,6 @@ if [ "$arch" = "x86_64" ]; then
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_ACPI_CUSTOM_METHOD is not set' || fail "CONFIG_ACPI_CUSTOM_METHOD is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_COMPAT_VDSO is not set' || fail "CONFIG_COMPAT_VDSO is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_KEXEC is not set' || fail "CONFIG_KEXEC is not set"
-  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_X86_X32 is not set' || fail "CONFIG_X86_X32 is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_MODIFY_LDT_SYSCALL is not set' || fail "CONFIG_MODIFY_LDT_SYSCALL is not set"
   if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 5 ]; then
     echo $UNZIPPED_CONFIG | grep -q 'CONFIG_LEGACY_PTYS is not set' || fail "CONFIG_LEGACY_PTYS is not set"
@@ -123,6 +125,12 @@ if [ "$arch" = "x86_64" ]; then
   if [ "$kernelMajor" -le 5 ] && [ "$kernelMinor" -lt 13 ]; then
     echo $UNZIPPED_CONFIG | grep -q 'CONFIG_DEVKMEM is not set' || fail "CONFIG_DEVKMEM is not set"
   fi
+  if [ "$kernelMajor" -lt 6 ]; then
+      echo $UNZIPPED_CONFIG | grep -q 'CONFIG_X86_X32 is not set' || fail "CONFIG_X86_X32 is not set"
+  else
+      echo $UNZIPPED_CONFIG | grep -q 'CONFIG_X86_X32_ABI is not set' || fail "CONFIG_X86_X32_ABI is not set"
+  fi
+
 fi
 
 # modprobe

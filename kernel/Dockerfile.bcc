@@ -26,11 +26,19 @@ RUN apk update && apk upgrade -a && \
   llvm \
   llvm-dev \
   llvm-static \
+  llvm17-gtest \
   luajit-dev \
   m4 \
+  musl-fts-dev \
   python3 \
+  py3-pip \
+  xz \
+  zip \
   zlib-dev \
   && true
+
+# this is just here to make later copies easier; do not forget to change this if the python version updates
+ENV PYTHON_VERSION=3.11
 
 RUN ln -s /usr/lib/cmake/llvm10/ /usr/lib/cmake/llvm && \
     ln -s /usr/include/llvm10/llvm-c/ /usr/include/llvm-c && \
@@ -38,7 +46,7 @@ RUN ln -s /usr/lib/cmake/llvm10/ /usr/lib/cmake/llvm && \
 
 WORKDIR /build
 
-ENV BCC_COMMIT=14278bf1a52dd76ff66eed02cc9db7c7ec240da6
+ENV BCC_COMMIT=v0.29.1
 RUN git clone https://github.com/iovisor/bcc.git && \
     cd bcc && \
     git checkout $BCC_COMMIT && \
@@ -66,10 +74,9 @@ RUN mkdir -p /out/usr/ && \
 RUN mkdir -p /out/usr/lib && \
     cp -a /usr/lib/libelf* /out/usr/lib/ && \
     cp -a /usr/lib/libstdc* /out/usr/lib/ && \
-    cp -a /usr/lib/libintl* /out/usr/lib/ && \
-    cp -a /usr/lib64/* /out/usr/lib/
-RUN mkdir -p /out/usr/lib/python3.8 && \
-    cp -a /usr/lib/python3.8/site-packages /out/usr/lib/python3.8/
+    cp -a /usr/lib/libintl* /out/usr/lib/
+RUN mkdir -p /out/usr/lib/python${PYTHON_VERSION} && \
+    cp -a /usr/lib/python${PYTHON_VERSION}/site-packages /out/usr/lib/python${PYTHON_VERSION}/
 RUN mkdir -p /out/usr/share && \
     cp -a /usr/share/bcc /out/usr/share/
 RUN mkdir -p /out/usr/bin && \
@@ -89,6 +96,6 @@ FROM scratch
 ENTRYPOINT []
 CMD []
 WORKDIR /
-ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:/usr/lib64
+ENV LD_LIBRARY_PATH=${LD_LIBRARY_PATH}
 COPY --from=mirror /out /
 COPY --from=build /out /

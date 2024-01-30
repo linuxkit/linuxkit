@@ -145,7 +145,7 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
 RUN make INSTALL_MOD_PATH=/tmp/kernel-modules modules_install && \
     ( DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdepth 1)) && \
       cd /tmp/kernel-modules/lib/modules/$DVER && \
-      rm build source && \
+      rm -f build source && \
       ln -s /usr/src/linux-headers-$DVER build ) && \
     case $(uname -m) in \
     aarch64) \

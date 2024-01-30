@@ -15,6 +15,7 @@ RUN apk add \
     build-base \
     diffutils \
     flex \
+    git \
     gmp-dev \
     installkernel \
     kmod \
@@ -24,16 +25,29 @@ RUN apk add \
     mpc1-dev \
     mpfr-dev \
     python3 \
+    python3-dev \
     sed \
     tar \
     xz \
     xz-dev \
     zlib-dev \
-    zlib-static
+    zlib-static \
+    zstd \
+    zstd-static
 
 COPY --from=ksrc /linux.tar.xz /kernel-headers.tar /
 RUN tar xf linux.tar.xz && \
     tar xf kernel-headers.tar
+
+# download and build libtraceevent.a
+
+WORKDIR /build
+ENV LIBTRACE_COMMIT=libtraceevent-1.8.2
+RUN git clone https://git.kernel.org/pub/scm/libs/libtrace/libtraceevent.git && \
+    cd libtraceevent && \
+    git checkout $LIBTRACE_COMMIT
+
+RUN make -C libtraceevent all install V=1
 
 WORKDIR /linux
 
