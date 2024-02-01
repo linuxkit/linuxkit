@@ -40,14 +40,18 @@ endif
 # Path to push-manifest.sh
 PUSH_MANIFEST:=$(shell git rev-parse --show-toplevel)/scripts/push-manifest.sh
 
+# determine our architecture
+BUILDERARCH=
 ARCH := $(shell uname -m)
 ifeq ($(ARCH),$(filter $(ARCH),x86_64 amd64))
 SUFFIX=-amd64
-ARCH=x86_64
+override ARCH=x86_64
+BUILDERARCH=amd64
 endif
 ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
 SUFFIX=-arm64
-ARCH=aarch64
+override ARCH=aarch64
+BUILDERARCH=arm64
 endif
 
 HASHTAG=$(HASH)$(DIRTY)
@@ -111,10 +115,14 @@ TOOLS=bcc perf
 # kernel versions used for kconfig
 KERNEL_VERSIONS=$(call uniq,$(foreach l,$(KERNELS),$(word 1,$(subst -, ,$(l)))))
 
-.PHONY: build push setforce show-tags
-# Targets:
-# build: Builds all kernels
-# push:  Pushes and sign all tagged kernel images to hub
+.PHONY: build push setforce show-tags list
+
+list:
+	@echo "Arch: $(ARCH)"
+	@echo "Kernels: $(KERNELS)"
+	@echo "Deprecated: $(DEPRECATED)"
+	@echo "Tools: $(TOOLS)"
+
 setforce:
 	$(eval FORCE=1)
 build: $(addprefix build-,$(KERNELS))
@@ -127,18 +135,42 @@ buildkernel-%: buildkerneldeps-% buildplainkernel-% builddebugkernel-%;
 
 buildkerneldeps-%: Dockerfile Makefile $(wildcard patches-$(call series,$*)/*) $(wildcard config-$(call series,$*)*) ;
 
-buildplainkernel-%: buildkerneldeps-% 
+BUILDER?=
+BUILDER_TEMPLATE = linuxkit-linux-{{.Arch}}-builder
+BULDER_ARG =
+
+
+# Phony target for conditional logic
+.PHONY: getbuilder
+# determine the builder
+# if it was set by user, just add `--builder <builder>`.
+# If not, see if our default builder pattern is available, and use that, else
+# fall back to usual docker.
+getbuilder:
+ifeq ($(BUILDER),)
+	$(eval BUILDERNAME=$(subst {{.Arch}},$(BUILDERARCH),$(BUILDER_TEMPLATE)))
+	$(eval BUILDER_FOUND=$(shell docker builder inspect $(BUILDERNAME) 2>/dev/null || true))
+	$(eval BUILDER_ARG=$(if $(BUILDER_FOUND),--builder $(BUILDERNAME),))
+else
+	$(eval BUILDERNAME=$(subst {{.Arch}},$(BUILDERARCH),$(BUILDER)))
+	$(eval BUILDER_ARG=--builder $(BUILDERNAME))
+endif
+
+buildplainkernel-%: buildkerneldeps-% getbuilder
 	$(eval BASEIMAGE=$(call baseimage,$*))
 	$(eval TARGETIMAGE=$(BASEIMAGE)-$(HASHTAG)$(SUFFIX))
 	$(eval EXTRATOOL=$(addprefix -,$(word 2,$(subst -, ,$*))))
-	([ -z "$(FORCE)" ] && docker pull $(TARGETIMAGE)) || \
+	([ -z "$(FORCE)" ] && docker manifest inspect $(TARGETIMAGE) >/dev/null 2>&1) || \
 		docker build \
+			$(BUILDER_ARG) \
+			--platform linux/$(BUILDERARCH) \
 			--build-arg KERNEL_VERSION=$* \
 			--build-arg KERNEL_SERIES=$(call series,$*) \
 			--build-arg EXTRA=$(EXTRATOOL) \
 			--build-arg DEBUG=$(DEBUG) \
 			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 			$(LABELS) \
+			--load \
 			--no-cache -t $(TARGETIMAGE) .
 
 builddebugkernel-%: buildkerneldeps-%
@@ -157,7 +189,7 @@ pushtagpush-%:
 	$(eval HASHIMAGE=$(BASEIMAGE)-$(HASHTAG))
 	$(eval SUFFIXEDIMAGE=$(BASEIMAGE)$(SUFFIX))
 	$(eval HASHANDSUFFIXIMAGE=$(HASHIMAGE)$(SUFFIX))
-	([ -z "$(FORCE)" ] && docker pull $(HASHANDSUFFIXIMAGE)) || \
+	([ -z "$(FORCE)" ] && docker manifest inspect $(HASHANDSUFFIXIMAGE) >/dev/null 2>&1) || \
 		(docker push $(HASHANDSUFFIXIMAGE) && \
 		 docker tag $(HASHANDSUFFIXIMAGE) $(SUFFIXEDIMAGE) && \
 		 docker push $(SUFFIXEDIMAGE) && \
@@ -172,14 +204,17 @@ show-tag-%:
 
 buildtools-%: $(addprefix buildtool-%$(RELEASESEP),$(TOOLS));
 
-buildtool-%:
+buildtool-%: getbuilder
 	$(eval TARGETIMAGE=$(call toolimagehash,$*))
 	$(eval KERNELIMAGE=$(call toolkernelimage,$*))
 	$(eval TOOL=$(call toolname,$*))
-	([ -z "$(FORCE)" ] && docker pull $(TARGETIMAGE)) || \
+	([ -z "$(FORCE)" ] && docker manifest inspect $(TARGETIMAGE) >/dev/nul 2>&1) || \
 		 docker build -f Dockerfile.$(TOOL) \
+			$(BUILDER_ARG) \
+			--platform linux/$(BUILDERARCH) \
 			--build-arg IMAGE=$(KERNELIMAGE) \
 			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
+			--load \
 			--no-cache $(LABEL) -t $(TARGETIMAGE) .
 
 pushtools-%: $(addprefix pushtool-%$(RELEASESEP),$(TOOLS));
