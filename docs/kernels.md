@@ -191,6 +191,68 @@ Anyone modifying a kernel should:
 1. A maintainer should run `make push` to push out the images.
 1. Run (or rerun) the tests.
 
+#### Build options
+
+The targets and variants for building are as follows:
+
+* `make build` - make all kernels in the version list and their variants
+* `make build-<version>` - make all variants of a specific kernel version
+* `make buildkernel-<version>` - make all variants of a specific kernel version
+* `make buildplainkernel-<version>` - make just the provided version's kernel
+* `make builddebugkernel-<version>` - make just the provided version's debug kernel
+* `make buildtools-<version>` - make just the provided version's tools
+
+To push:
+
+* `make push` - push all kernels in the version list and their variants
+* `make push-<version>` - push all variants of a specific kernel version
+
+Finally, for convenience:
+
+* `make list` - list all kernels in the version list
+
+By default, it builds for all supported architectures. To build just for a specific
+architecture:
+
+```sh
+make build ARCH=amd64
+```
+
+The variable `ARCH` should use the golang variants only, i.e. `amd64` and `arm64`.
+
+To build for multiple architectures, call it multiple times:
+
+```sh
+make build ARCH=amd64
+make build ARCH=arm64
+```
+
+When building for a specific architecture, the build process will use your local
+Docker, passing it `--platforms` for the architecture. If you have a builder on a different
+architecture, e.g. you are running on an Apple Silicon Mac (arm64) and want to build for
+`x86_64` without emulating (which can be very slow), you can use the `BUILDER` variable:
+
+```sh
+make build ARCH=x86_64 BUILDER=remote-amd64-builder
+```
+
+Builder also supports a builder pattern. If `BUILDER` contains the string `{{.Arch}}`,
+it will be replaced with the architecture being built.
+
+For example:
+
+```sh
+make build ARCH=x86_64 BUILDER=remote-{{.Arch}}-builder
+make build ARCH=aarch64 BUILDER=remote-{{.Arch}}-builder
+```
+
+will build `x86_64` on `remote-amd64-builder` and `aarch64` on `remote-arm64-builder`.
+
+Finally, if no `BUILDER` is specified, the build will look for a builder named
+`linuxkit-linux-{{.Arch}}-builder`, e.g. `linuxkit-linux-amd64-builder` or
+`linuxkit-linux-arm64-builder`. If that builder does not exist, it will fall back to
+your local Docker setup.
+
 ### Modifying the kernel config
 
 The process of modifying the kernel configuration is as follows:
