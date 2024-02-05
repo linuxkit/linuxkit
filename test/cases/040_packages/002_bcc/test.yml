@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:45a1ad5919f0b6acf0f0cf730e9434abfae11fe6
-  - linuxkit/runc:92b1fea787c01cef46f07f783c80631a7071cfbb
+  - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
   - linuxkit/kernel-bcc:5.4.113
 onboot:
   - name: check-bcc
