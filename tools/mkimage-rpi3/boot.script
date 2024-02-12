@@ -1,9 +1,0 @@
-setenv bootargs "dwc_otg.lpm_enable=0 earlyprintk console=tty1 console=ttyS0,115200 root=/dev/ram0 rw"
-setenv loadaddr 0x01000000
-setenv machid 0x00000c42
-saveenv
-
-fatload mmc 0:1 ${loadaddr} kernel.uimg
-fatload mmc 0:1 ${fdt_addr_r} dtb/${fdtfile}
-fatload mmc 0:1 ${ramdisk_addr_r} initrd.uimg
-bootm ${loadaddr} ${ramdisk_addr_r} ${fdt_addr_r}
