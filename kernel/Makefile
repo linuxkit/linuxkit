@@ -208,7 +208,7 @@ buildtool-%: getbuilder
 	$(eval TARGETIMAGE=$(call toolimagehash,$*))
 	$(eval KERNELIMAGE=$(call toolkernelimage,$*))
 	$(eval TOOL=$(call toolname,$*))
-	([ -z "$(FORCE)" ] && docker manifest inspect $(TARGETIMAGE) >/dev/nul 2>&1) || \
+	([ -z "$(FORCE)" ] && docker manifest inspect $(TARGETIMAGE) >/dev/null 2>&1) || \
 		 docker build -f Dockerfile.$(TOOL) \
 			$(BUILDER_ARG) \
 			--platform linux/$(BUILDERARCH) \
