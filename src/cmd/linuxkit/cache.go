@@ -25,5 +25,6 @@ func cacheCmd() *cobra.Command {
 	cmd.AddCommand(cacheRmCmd())
 	cmd.AddCommand(cacheLsCmd())
 	cmd.AddCommand(cacheExportCmd())
+	cmd.AddCommand(cacheImportCmd())
 	return cmd
 }

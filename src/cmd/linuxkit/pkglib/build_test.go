@@ -1,6 +1,7 @@
 package pkglib
 
 import (
+	"archive/tar"
 	"bytes"
 	"context"
 	"crypto/rand"
@@ -13,9 +14,11 @@ import (
 	"testing"
 
 	"github.com/containerd/containerd/content"
+	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
 	dockertypes "github.com/docker/docker/api/types"
 	registry "github.com/google/go-containerregistry/pkg/v1"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	buildkitClient "github.com/moby/buildkit/client"
@@ -60,6 +63,142 @@ func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, build
 		return errors.New("build disabled")
 	}
 	d.builds = append(d.builds, buildLog{tag, pkg, dockerContext, platform})
+	// must create a tar stream that looks somewhat normal to pass to stdout
+	// what we need:
+	// a config blob (random data)
+	// a layer blob (random data)
+	// a manifest blob (from the above)
+	// an index blob (points to the manifest)
+	// index.json (points to the index)
+	tw := tar.NewWriter(stdout)
+	defer tw.Close()
+	buf := make([]byte, 128)
+
+	var (
+		configHash, layerHash, manifestHash, indexHash v1.Hash
+		configSize, layerSize, manifestSize, indexSize int64
+	)
+	// config blob
+	if _, err := rand.Read(buf); err != nil {
+		return err
+	}
+	hash, _, err := v1.SHA256(bytes.NewReader(buf))
+	if err != nil {
+		return err
+	}
+	if err := tw.WriteHeader(&tar.Header{Name: fmt.Sprintf("blobs/sha256/%s", hash.Hex), Size: int64(len(buf))}); err != nil {
+		return err
+	}
+	if _, err := tw.Write(buf); err != nil {
+		return err
+	}
+	configHash = hash
+	configSize = int64(len(buf))
+
+	// layer blob
+	if _, err := rand.Read(buf); err != nil {
+		return err
+	}
+	hash, _, err = v1.SHA256(bytes.NewReader(buf))
+	if err != nil {
+		return err
+	}
+	if err := tw.WriteHeader(&tar.Header{Name: fmt.Sprintf("blobs/sha256/%s", hash.Hex), Size: int64(len(buf))}); err != nil {
+		return err
+	}
+	if _, err := tw.Write(buf); err != nil {
+		return err
+	}
+	layerHash = hash
+	layerSize = int64(len(buf))
+
+	// manifest
+	manifest := v1.Manifest{
+		Config: v1.Descriptor{
+			MediaType: types.OCIConfigJSON,
+			Size:      configSize,
+			Digest:    configHash,
+		},
+		Layers: []v1.Descriptor{
+			{
+				MediaType: types.OCILayer,
+				Size:      layerSize,
+				Digest:    layerHash,
+			},
+		},
+	}
+	b, err := json.Marshal(manifest)
+	if err != nil {
+		return err
+	}
+	hash, _, err = v1.SHA256(bytes.NewReader(b))
+	if err != nil {
+		return err
+	}
+	if err := tw.WriteHeader(&tar.Header{Name: fmt.Sprintf("blobs/sha256/%s", hash.Hex), Size: int64(len(b))}); err != nil {
+		return err
+	}
+	if _, err := tw.Write(b); err != nil {
+		return err
+	}
+	manifestHash = hash
+	manifestSize = int64(len(b))
+
+	// index
+	index := v1.IndexManifest{
+		MediaType: types.OCIImageIndex,
+		Manifests: []v1.Descriptor{
+			{
+				MediaType: types.OCIManifestSchema1,
+				Size:      manifestSize,
+				Digest:    manifestHash,
+			},
+		},
+		SchemaVersion: 2,
+	}
+	b, err = json.Marshal(index)
+	if err != nil {
+		return err
+	}
+	hash, _, err = v1.SHA256(bytes.NewReader(b))
+	if err != nil {
+		return err
+	}
+	if err := tw.WriteHeader(&tar.Header{Name: fmt.Sprintf("blobs/sha256/%s", hash.Hex), Size: int64(len(b))}); err != nil {
+		return err
+	}
+	if _, err := tw.Write(b); err != nil {
+		return err
+	}
+	indexHash = hash
+	indexSize = int64(len(b))
+
+	// index.json
+	index = v1.IndexManifest{
+		MediaType: types.OCIImageIndex,
+		Manifests: []v1.Descriptor{
+			{
+				MediaType: types.OCIImageIndex,
+				Size:      indexSize,
+				Digest:    indexHash,
+				Annotations: map[string]string{
+					imagespec.AnnotationRefName: tag,
+					images.AnnotationImageName:  tag,
+				},
+			},
+		},
+		SchemaVersion: 2,
+	}
+	b, err = json.Marshal(index)
+	if err != nil {
+		return err
+	}
+	if err := tw.WriteHeader(&tar.Header{Name: "index.json", Size: int64(len(b))}); err != nil {
+		return err
+	}
+	if _, err := tw.Write(b); err != nil {
+		return err
+	}
 	return nil
 }
 func (d *dockerMocker) save(tgt string, refs ...string) error {
@@ -108,7 +247,7 @@ func (c *cacheMocker) ImagePull(ref *reference.Spec, trustedRef, architecture st
 	// make some random data for a layer
 	b := make([]byte, 256)
 	_, _ = rand.Read(b)
-	descs, err := c.imageWriteStream(ref, architecture, bytes.NewReader(b))
+	descs, err := c.imageWriteStream(bytes.NewReader(b))
 	if err != nil {
 		return nil, err
 	}
@@ -136,55 +275,84 @@ func (c *cacheMocker) ImageInRegistry(ref *reference.Spec, trustedRef, architect
 	return false, nil
 }
 
-func (c *cacheMocker) ImageLoad(ref *reference.Spec, architecture string, r io.Reader) ([]registry.Descriptor, error) {
+func (c *cacheMocker) ImageLoad(r io.Reader) ([]registry.Descriptor, error) {
 	if !c.enableImageLoad {
 		return nil, errors.New("ImageLoad disabled")
 	}
-	return c.imageWriteStream(ref, architecture, r)
+	return c.imageWriteStream(r)
 }
 
-func (c *cacheMocker) imageWriteStream(ref *reference.Spec, architecture string, r io.Reader) ([]registry.Descriptor, error) {
-	image := fmt.Sprintf("%s-%s", ref.String(), architecture)
+func (c *cacheMocker) imageWriteStream(r io.Reader) ([]registry.Descriptor, error) {
+	var (
+		image string
+		size  int64
+		hash  v1.Hash
+	)
 
-	// make some random data for a layer
-	b, err := io.ReadAll(r)
+	tarBytes, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("error reading data: %v", err)
 	}
-	hash, size, err := registry.SHA256(bytes.NewReader(b))
-	if err != nil {
-		return nil, fmt.Errorf("error calculating hash of layer: %v", err)
-	}
-	c.assignHash(hash.String(), b)
+	var (
+		tr    = tar.NewReader(bytes.NewReader(tarBytes))
+		index bytes.Buffer
+	)
+	for {
+		header, err := tr.Next()
+		if err == io.EOF {
+			break // End of archive
+		}
+		if err != nil {
+			return nil, err
+		}
 
-	im := registry.Manifest{
-		MediaType: types.OCIManifestSchema1,
-		Layers: []registry.Descriptor{
-			{MediaType: types.OCILayer, Size: size, Digest: hash},
-		},
-		SchemaVersion: 2,
+		filename := header.Name
+		switch {
+		case filename == "index.json":
+			// any errors should stop and get reported
+			if _, err := io.Copy(&index, tr); err != nil {
+				return nil, fmt.Errorf("error reading data for file %s : %v", filename, err)
+			}
+		case strings.HasPrefix(filename, "blobs/sha256/"):
+			// must have a file named blob/sha256/<hash>
+			parts := strings.Split(filename, "/")
+			// if we had a file that is just the directory, ignore it
+			if len(parts) != 3 {
+				continue
+			}
+			hash, err := v1.NewHash(fmt.Sprintf("%s:%s", parts[1], parts[2]))
+			if err != nil {
+				// malformed file
+				return nil, fmt.Errorf("invalid hash filename for %s: %v", filename, err)
+			}
+			b, err := io.ReadAll(tr)
+			if err != nil {
+				return nil, fmt.Errorf("error reading data for file %s : %v", filename, err)
+			}
+			c.assignHash(hash.String(), b)
+		}
+	}
+	if index.Len() != 0 {
+		im, err := v1.ParseIndexManifest(&index)
+		if err != nil {
+			return nil, fmt.Errorf("error reading index.json")
+		}
+		for _, desc := range im.Manifests {
+			if imgName, ok := desc.Annotations[images.AnnotationImageName]; ok {
+				image = imgName
+				size = desc.Size
+				hash = desc.Digest
+				break
+			}
+		}
 	}
 
-	// write the updated index, remove the old one
-	b, err = json.Marshal(im)
-	if err != nil {
-		return nil, fmt.Errorf("unable to marshal new image to json: %v", err)
-	}
-	hash, size, err = registry.SHA256(bytes.NewReader(b))
-	if err != nil {
-		return nil, fmt.Errorf("error calculating hash of index json: %v", err)
-	}
-	c.assignHash(hash.String(), b)
 	desc := registry.Descriptor{
 		MediaType: types.OCIManifestSchema1,
 		Size:      size,
 		Digest:    hash,
 		Annotations: map[string]string{
 			imagespec.AnnotationRefName: image,
-		},
-		Platform: &registry.Platform{
-			OS:           "linux",
-			Architecture: architecture,
 		},
 	}
 	c.appendImage(image, desc)
@@ -294,6 +462,14 @@ func (c *cacheMocker) appendImage(image string, root registry.Descriptor) {
 // Store get content.Store referencing the cache
 func (c *cacheMocker) Store() (content.Store, error) {
 	return nil, errors.New("unsupported")
+}
+
+func (c *cacheMocker) GetContent(hash v1.Hash) (io.ReadCloser, error) {
+	content, ok := c.hashes[hash.String()]
+	if !ok {
+		return nil, fmt.Errorf("no content found for hash: %s", hash.String())
+	}
+	return io.NopCloser(bytes.NewReader(content)), nil
 }
 
 type cacheMockerSource struct {
