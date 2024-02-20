@@ -9,8 +9,8 @@ import (
 	"io"
 	"strings"
 
+	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
-	"github.com/estesp/manifest-tool/v2/pkg/util"
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
@@ -127,17 +127,15 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 
 // ImageLoad takes an OCI format image tar stream and writes it locally. It should be
 // efficient and only write missing blobs, based on their content hash.
-func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Reader) ([]v1.Descriptor, error) {
+// Returns any descriptors that are in the tar stream's index.json as manifests.
+// Does not try to resolve lower levels. Most such tar streams will have a single
+// manifest in the index.json's manifests list, but it is possible to have more.
+func (p *Provider) ImageLoad(r io.Reader) ([]v1.Descriptor, error) {
 	var (
 		tr    = tar.NewReader(r)
 		index bytes.Buffer
 	)
-	if !util.IsValidOSArch(linux, architecture, "") {
-		return nil, fmt.Errorf("unknown arch %s", architecture)
-	}
-	suffix := "-" + architecture
-	imageName := ref.String() + suffix
-	log.Debugf("ImageWriteTar to cache %s", imageName)
+	log.Debugf("ImageWriteTar to cache")
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -193,45 +191,26 @@ func (p *Provider) ImageLoad(ref *reference.Spec, architecture string, r io.Read
 		if err != nil {
 			return nil, fmt.Errorf("error reading index.json")
 		}
-		// in theory, we should support a tar stream with multiple images in it. However, how would we
-		// know which one gets the single name annotation we have? We will find some way in the future.
-		if len(im.Manifests) != 1 {
-			return nil, fmt.Errorf("currently only support OCI tar stream that has a single image")
-		}
-		if err := p.cache.RemoveDescriptors(match.Name(imageName)); err != nil {
-			return nil, fmt.Errorf("unable to remove old descriptors for %s: %v", imageName, err)
-		}
-		desc := im.Manifests[0]
-		// is this an image or an index?
-		if desc.MediaType.IsIndex() {
-			rc, err := p.cache.Blob(desc.Digest)
-			if err != nil {
-				return nil, fmt.Errorf("unable to get index blob: %v", err)
-			}
-			ii, err := v1.ParseIndexManifest(rc)
-			if err != nil {
-				return nil, fmt.Errorf("unable to parse index blob: %v", err)
-			}
-			for _, m := range ii.Manifests {
-				if m.MediaType.IsImage() {
-					descs = append(descs, m)
+		// these manifests are in the root index.json of the tar stream
+		// each of these is either an image or an index
+		// either way, it gets added directly to the linuxkit cache index.
+		for _, desc := range im.Manifests {
+			if imgName, ok := desc.Annotations[images.AnnotationImageName]; ok {
+				// remove the old descriptor, if it exists
+				if err := p.cache.RemoveDescriptors(match.Name(imgName)); err != nil {
+					return nil, fmt.Errorf("unable to remove old descriptors for %s: %v", imgName, err)
 				}
-			}
-		} else if desc.MediaType.IsImage() {
-			descs = append(descs, desc)
-		}
-		for _, desc := range descs {
-			if desc.Platform != nil && desc.Platform.Architecture == architecture {
-				// make sure that we have the correct image name annotation
+				// save the image name under our proper annotation
 				if desc.Annotations == nil {
 					desc.Annotations = map[string]string{}
 				}
-				desc.Annotations[imagespec.AnnotationRefName] = imageName
-				log.Debugf("appending descriptor %#v", desc)
-				if err := p.cache.AppendDescriptor(desc); err != nil {
-					return nil, fmt.Errorf("error appending descriptor to layout index: %v", err)
-				}
+				desc.Annotations[imagespec.AnnotationRefName] = imgName
 			}
+			log.Debugf("appending descriptor %#v", desc)
+			if err := p.cache.AppendDescriptor(desc); err != nil {
+				return nil, fmt.Errorf("error appending descriptor to layout index: %v", err)
+			}
+			descs = append(descs, desc)
 		}
 	}
 	return descs, nil

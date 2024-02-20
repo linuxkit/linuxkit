@@ -384,16 +384,11 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			if len(builtDescs) == 0 {
 				return fmt.Errorf("no valid descriptor returned for image for arch %s", platform.Architecture)
 			}
-			for i, desc := range builtDescs {
-				if desc.Platform == nil {
-					return fmt.Errorf("descriptor %d for platform %v has no information on the platform: %#v", i, platform, desc)
-				}
-			}
 			descs = append(descs, builtDescs...)
 		}
 
 		// after build is done:
-		// - create multi-arch manifest
+		// - create multi-arch index
 		// - potentially push
 		// - potentially load into docker
 		// - potentially create a release, including push and load into docker
@@ -519,12 +514,24 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	return nil
 }
 
-// buildArch builds the package for a single arch
+// buildArch builds the package for a single arch, and loads the result in the cache provided in the argument.
+// Unless force is set, it will check the cache for the image first, then on the registry, and if it exists, it will not build it.
+// The image will be saved in the cache with the provided package name and tag, with the architecture appended
+// as a suffix, i.e. "myimage:abc-amd64" or "myimage:abc-arm64".
+// It returns a list of individual descriptors for the images built, which can be used to create an index.
+// These descriptors are not of the index pointed to by "myimage:abc-amd64", but rather the underlying manifests
+// in that index.
+// The final result then is as follows:
+// A - layers, saved in cache as is
+// B - config, saved in cache as is
+// C - manifest, saved in cache as is, referenced by the index (E), and returned as a descriptor
+// D - attestations (if any), saved in cache as is, referenced by the index (E), and returned as a descriptor
+// E - index, saved in cache as is, stored in cache as tag "image:tag-arch", *not* returned as a descriptor
 func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts types.ImageBuildOptions) ([]registry.Descriptor, error) {
 	var (
-		descs   []registry.Descriptor
-		tagArch string
-		tag     = p.Tag()
+		tagArch   string
+		tag       = p.FullTag()
+		indexDesc []registry.Descriptor
 	)
 	tagArch = tag + "-" + arch
 	fmt.Fprintf(writer, "Building for arch %s as %s\n", arch, tagArch)
@@ -562,22 +569,18 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 			}
 		}
 	)
-	ref, err := reference.Parse(p.FullTag())
-	if err != nil {
-		return nil, fmt.Errorf("could not resolve references for image %s: %v", tagArch, err)
-	}
 
 	// we are writing to local, so we need to catch the tar output stream and place the right files in the right place
 	piper, pipew := io.Pipe()
 	stdout = pipew
 
 	eg.Go(func() error {
-		d, err := c.ImageLoad(&ref, arch, piper)
+		d, err := c.ImageLoad(piper)
 		// send the error down the channel
 		if err != nil {
 			fmt.Fprintf(stdout, "cache.ImageLoad goroutine ended with error: %v\n", err)
 		} else {
-			descs = d
+			indexDesc = d
 		}
 		piper.Close()
 		return err
@@ -604,7 +607,31 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 		return nil, err
 	}
 
-	return descs, nil
+	// find the child manifests
+	// how many index descriptors did we get?
+	switch len(indexDesc) {
+	case 0:
+		return nil, fmt.Errorf("no index descriptor returned from load")
+	case 1:
+		// good, we have one index descriptor
+	default:
+		return nil, fmt.Errorf("more than one index descriptor returned from load")
+	}
+
+	// when we build an arch, we might have the descs for the actual arch-specific manifest, or possibly
+	// an index that wraps it. So let's unwrap it and return the actual image descs and not the index.
+	// this is because later we will build an index from all of these.
+	r, err := c.GetContent(indexDesc[0].Digest)
+	if err != nil {
+		return nil, fmt.Errorf("could not get content for index descriptor: %v", err)
+	}
+	defer r.Close()
+	dec := json.NewDecoder(r)
+	var im registry.IndexManifest
+	if err := dec.Decode(&im); err != nil {
+		return nil, fmt.Errorf("could not decode index descriptor: %v", err)
+	}
+	return im.Manifests, nil
 }
 
 type buildCtx struct {
