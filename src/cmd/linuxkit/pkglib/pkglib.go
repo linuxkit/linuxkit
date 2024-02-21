@@ -1,12 +1,14 @@
 package pkglib
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"fmt"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
+	"text/template"
 
 	"gopkg.in/yaml.v2"
 
@@ -50,6 +52,7 @@ type PkglibConfig struct {
 	HashPath     string
 	Dirty        bool
 	Dev          bool
+	Tag          string // Tag is a text/template string, defaults to {{.Hash}}
 }
 
 // NewPkInfo returns a new pkgInfo with default values
@@ -89,6 +92,7 @@ type Pkg struct {
 	path       string
 	dockerfile string
 	hash       string
+	tag        string
 	dirty      bool
 	commitHash string
 	git        *git
@@ -254,6 +258,16 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			}
 		}
 
+		// calculate the tag to use based on the template and the pkgHash
+		tmpl, err := template.New("tag").Parse(cfg.Tag)
+		if err != nil {
+			return nil, fmt.Errorf("invalid tag template: %v", err)
+		}
+		var buf bytes.Buffer
+		if err := tmpl.Execute(&buf, map[string]string{"Hash": pkgHash}); err != nil {
+			return nil, fmt.Errorf("failed to execute tag template: %v", err)
+		}
+		tag := buf.String()
 		pkgs = append(pkgs, Pkg{
 			image:         pi.Image,
 			org:           pi.Org,
@@ -271,6 +285,7 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			path:          pkgPath,
 			dockerfile:    pi.Dockerfile,
 			git:           git,
+			tag:           tag,
 		})
 	}
 	return pkgs, nil
@@ -295,7 +310,7 @@ func (p Pkg) ReleaseTag(release string) (string, error) {
 
 // Tag returns the tag to use for the package
 func (p Pkg) Tag() string {
-	t := p.hash
+	t := p.tag
 	if t == "" {
 		t = "latest"
 	}

@@ -534,6 +534,7 @@ func TestBuild(t *testing.T) {
 				}
 				opts = append(opts, WithBuildPlatforms(targets...))
 			}
+			tt.p.dockerfile = "testdata/Dockerfile"
 			err := tt.p.Build(opts...)
 			switch {
 			case (tt.err == "" && err != nil) || (tt.err != "" && err == nil) || (tt.err != "" && err != nil && !strings.HasPrefix(err.Error(), tt.err)):
