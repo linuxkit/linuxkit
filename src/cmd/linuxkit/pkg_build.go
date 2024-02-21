@@ -45,6 +45,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		manifest       bool
 		cacheDir       = flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
 		sbomScanner    string
+		dockerfile     string
 	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -92,6 +93,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		if sbomScanner != "false" {
 			opts = append(opts, pkglib.WithBuildSbomScanner(sbomScanner))
 		}
+		opts = append(opts, pkglib.WithDockerfile(dockerfile))
 
 		// skipPlatformsMap contains platforms that should be skipped
 		skipPlatformsMap := make(map[string]bool)
@@ -128,12 +130,12 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		// look for builders env var
 		buildersMap, err = buildPlatformBuildersMap(os.Getenv(buildersEnvVar), buildersMap)
 		if err != nil {
-			return fmt.Errorf("error in environment variable %s: %w\n", buildersEnvVar, err)
+			return fmt.Errorf("error in environment variable %s: %w", buildersEnvVar, err)
 		}
 		// any CLI options override env var
 		buildersMap, err = buildPlatformBuildersMap(builders, buildersMap)
 		if err != nil {
-			return fmt.Errorf("error in --builders flag: %w\n", err)
+			return fmt.Errorf("error in --builders flag: %w", err)
 		}
 		opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
 		opts = append(opts, pkglib.WithBuildBuilderImage(builderImage))
@@ -202,6 +204,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 	cmd.Flags().BoolVar(&nobuild, "nobuild", false, "Skip building the image before pushing, conflicts with -force")
 	cmd.Flags().BoolVar(&manifest, "manifest", true, "Create and push multi-arch manifest")
 	cmd.Flags().StringVar(&sbomScanner, "sbom-scanner", "", "SBOM scanner to use, must match the buildkit spec; set to blank to use the buildkit default; set to 'false' for no scanning")
+	cmd.Flags().StringVar(&dockerfile, "dockerfile", "", "Dockerfile to use for building the image, must be in this directory or below, overrides what is in build.yml")
 
 	return cmd
 }

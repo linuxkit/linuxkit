@@ -53,7 +53,7 @@ const (
 
 type dockerRunner interface {
 	tag(ref, tag string) error
-	build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts types.ImageBuildOptions) error
+	build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts types.ImageBuildOptions) error
 	save(tgt string, refs ...string) error
 	load(src io.Reader) error
 	pull(img string) (bool, error)
@@ -402,7 +402,7 @@ func (dr *dockerRunnerImpl) tag(ref, tag string) error {
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts types.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts types.ImageBuildOptions) error {
 	// ensure we have a builder
 	client, err := dr.builder(ctx, dockerContext, builderImage, platform, restart)
 	if err != nil {
@@ -473,26 +473,26 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 		solveOpts.Session = append(solveOpts.Session, up)
 	} else {
 		solveOpts.LocalDirs = map[string]string{
-			builder.DefaultLocalNameDockerfile: pkg,
+			builder.DefaultLocalNameDockerfile: path.Join(pkg, dockerfile),
 			builder.DefaultLocalNameContext:    pkg,
 		}
 	}
 
 	// go through the dockerfile to see if we have any provided images cached
 	if c != nil {
-		dockerfile := path.Join(pkg, "Dockerfile")
-		f, err := os.Open(dockerfile)
+		dockerfileRef := path.Join(pkg, dockerfile)
+		f, err := os.Open(dockerfileRef)
 		if err != nil {
-			return fmt.Errorf("error opening dockerfile %s: %v", dockerfile, err)
+			return fmt.Errorf("error opening dockerfile %s: %v", dockerfileRef, err)
 		}
 		defer f.Close()
 		ast, err := parser.Parse(f)
 		if err != nil {
-			return fmt.Errorf("error parsing dockerfile from bytes into AST %s: %v", dockerfile, err)
+			return fmt.Errorf("error parsing dockerfile from bytes into AST %s: %v", dockerfileRef, err)
 		}
 		stages, metaArgs, err := instructions.Parse(ast.AST)
 		if err != nil {
-			return fmt.Errorf("error parsing dockerfile from AST into stages %s: %v", dockerfile, err)
+			return fmt.Errorf("error parsing dockerfile from AST into stages %s: %v", dockerfileRef, err)
 		}
 
 		// fill optMetaArgs with args found while parsing Dockerfile

@@ -43,6 +43,7 @@ type buildOpts struct {
 	builderRestart   bool
 	sbomScan         bool
 	sbomScannerImage string
+	dockerfile       string
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -186,6 +187,14 @@ func WithBuildSbomScanner(scanner string) BuildOpt {
 	}
 }
 
+// WithDockerfile which dockerfile to use when building the package
+func WithDockerfile(dockerfile string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.dockerfile = dockerfile
+		return nil
+	}
+}
+
 // Build builds the package
 func (p Pkg) Build(bos ...BuildOpt) error {
 	var bo buildOpts
@@ -209,6 +218,22 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	if err := p.cleanForBuild(); err != nil {
 		return err
+	}
+
+	// validate the Dockerfile before bothing to move ahead, because this func call is public, so someone could
+	// pass something to it as a library call. We also check in the build function, to avoid multiple loops each with an error.
+
+	// if the dockerfile override was not set in the build options, i.e. it is empty, use the one from the package,
+	// which never should be empty. We set it onto the buildOpts, because that is what we use to pass it around to lower-level
+	// funcs.
+	if bo.dockerfile == "" {
+		bo.dockerfile = p.dockerfile
+	}
+	if strings.Contains(bo.dockerfile, "..") {
+		return fmt.Errorf("cannot expand beyond root of context for dockerfile %s", bo.dockerfile)
+	}
+	if _, err := os.Stat(filepath.Join(p.path, bo.dockerfile)); err != nil {
+		return fmt.Errorf("dockerfile %s does not exist or cannot be read in context %s", bo.dockerfile, p.path)
 	}
 
 	// did we have the build cache dir provided?
@@ -593,7 +618,8 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 	if bo.ignoreCache {
 		passCache = nil
 	}
-	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, imageBuildOpts); err != nil {
+
+	if err := d.build(ctx, tagArch, p.path, bo.dockerfile, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)
