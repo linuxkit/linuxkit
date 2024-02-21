@@ -18,6 +18,7 @@ import (
 type pkgInfo struct {
 	Image        string            `yaml:"image"`
 	Org          string            `yaml:"org"`
+	Dockerfile   string            `yaml:"dockerfile"`
 	Arches       []string          `yaml:"arches"`
 	ExtraSources []string          `yaml:"extra-sources"`
 	GitRepo      string            `yaml:"gitrepo"` // ??
@@ -51,6 +52,7 @@ type PkglibConfig struct {
 	Dev          bool
 }
 
+// NewPkInfo returns a new pkgInfo with default values
 func NewPkgInfo() pkgInfo {
 	return pkgInfo{
 		Org:          "linuxkit",
@@ -58,6 +60,7 @@ func NewPkgInfo() pkgInfo {
 		GitRepo:      "https://github.com/linuxkit/linuxkit",
 		Network:      false,
 		DisableCache: false,
+		Dockerfile:   "Dockerfile",
 	}
 }
 
@@ -84,6 +87,7 @@ type Pkg struct {
 
 	// Internal state
 	path       string
+	dockerfile string
 	hash       string
 	dirty      bool
 	commitHash string
@@ -265,6 +269,7 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			dockerDepends: dockerDepends,
 			dirty:         dirty,
 			path:          pkgPath,
+			dockerfile:    pi.Dockerfile,
 			git:           git,
 		})
 	}
