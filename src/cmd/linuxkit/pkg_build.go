@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"errors"
 	"fmt"
 	"os"
@@ -46,6 +47,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		cacheDir       = flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
 		sbomScanner    string
 		dockerfile     string
+		buildArgFiles  []string
 	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -94,6 +96,24 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 			opts = append(opts, pkglib.WithBuildSbomScanner(sbomScanner))
 		}
 		opts = append(opts, pkglib.WithDockerfile(dockerfile))
+
+		// read any build arg files
+		var buildArgs []string
+		for _, filename := range buildArgFiles {
+			f, err := os.Open(filename)
+			if err != nil {
+				return fmt.Errorf("error opening build args file %s: %w", filename, err)
+			}
+			defer f.Close()
+			scanner := bufio.NewScanner(f)
+			for scanner.Scan() {
+				buildArgs = append(buildArgs, scanner.Text())
+			}
+			if err := scanner.Err(); err != nil {
+				return fmt.Errorf("error reading build args file %s: %w", filename, err)
+			}
+		}
+		opts = append(opts, pkglib.WithBuildArgs(buildArgs))
 
 		// skipPlatformsMap contains platforms that should be skipped
 		skipPlatformsMap := make(map[string]bool)
@@ -205,6 +225,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 	cmd.Flags().BoolVar(&manifest, "manifest", true, "Create and push multi-arch manifest")
 	cmd.Flags().StringVar(&sbomScanner, "sbom-scanner", "", "SBOM scanner to use, must match the buildkit spec; set to blank to use the buildkit default; set to 'false' for no scanning")
 	cmd.Flags().StringVar(&dockerfile, "dockerfile", "", "Dockerfile to use for building the image, must be in this directory or below, overrides what is in build.yml")
+	cmd.Flags().StringArrayVar(&buildArgFiles, "build-arg-file", nil, "Files containing build arguments, one key=value per line, contents augment and override buildArgs in build.yml. Can be specified multiple times. File is relative to working directory when running `linuxkit pkg build`")
 
 	return cmd
 }

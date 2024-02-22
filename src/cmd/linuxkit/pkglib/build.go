@@ -44,6 +44,7 @@ type buildOpts struct {
 	sbomScan         bool
 	sbomScannerImage string
 	dockerfile       string
+	buildArgs        []string
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -191,6 +192,16 @@ func WithBuildSbomScanner(scanner string) BuildOpt {
 func WithDockerfile(dockerfile string) BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.dockerfile = dockerfile
+		return nil
+	}
+}
+
+// WithBuildArgs add build args to use when building the package
+func WithBuildArgs(args []string) BuildOpt {
+	return func(bo *buildOpts) error {
+		// we copy the contents, rather than the reference to the slice, to be safe
+		bo.buildArgs = make([]string, len(args))
+		copy(bo.buildArgs, args)
 		return nil
 	}
 }
@@ -380,6 +391,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		imageBuildOpts.Labels["org.mobyproject.linuxkit.version"] = version.Version
 		imageBuildOpts.Labels["org.mobyproject.linuxkit.revision"] = version.GitCommit
 
+		// add build args from the build.yml file
 		if p.buildArgs != nil {
 			for _, buildArg := range *p.buildArgs {
 				parts := strings.SplitN(buildArg, "=", 2)
@@ -389,6 +401,15 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 				imageBuildOpts.BuildArgs[parts[0]] = &parts[1]
 			}
 		}
+		// add build args from other files
+		for _, buildArg := range bo.buildArgs {
+			parts := strings.SplitN(buildArg, "=", 2)
+			if len(parts) != 2 {
+				return fmt.Errorf("invalid build-arg, must be in format 'arg=value': %s", buildArg)
+			}
+			imageBuildOpts.BuildArgs[parts[0]] = &parts[1]
+		}
+
 		// add in information about the build process that might be useful
 		if _, ok := imageBuildOpts.BuildArgs["SOURCE"]; !ok && p.gitRepo != "" {
 			imageBuildOpts.BuildArgs["SOURCE"] = &p.gitRepo
