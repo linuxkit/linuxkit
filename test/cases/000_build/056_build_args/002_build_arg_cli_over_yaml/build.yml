@@ -1,0 +1,4 @@
+org: linuxkit
+image: test-image-in-yaml-build-args-with-cli-override
+buildArgs:
+- IMAGE=non-existent:foo

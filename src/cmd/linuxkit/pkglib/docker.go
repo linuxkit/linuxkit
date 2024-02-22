@@ -473,10 +473,11 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, doc
 		solveOpts.Session = append(solveOpts.Session, up)
 	} else {
 		solveOpts.LocalDirs = map[string]string{
-			builder.DefaultLocalNameDockerfile: path.Join(pkg, dockerfile),
+			builder.DefaultLocalNameDockerfile: pkg,
 			builder.DefaultLocalNameContext:    pkg,
 		}
 	}
+	frontendAttrs["filename"] = dockerfile
 
 	// go through the dockerfile to see if we have any provided images cached
 	if c != nil {
