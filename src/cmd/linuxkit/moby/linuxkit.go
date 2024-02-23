@@ -43,7 +43,7 @@ func ensureLinuxkitImage(name, cache string) error {
 
 	yaml := linuxkitYaml[name]
 
-	m, err := NewConfig([]byte(yaml))
+	m, err := NewConfig([]byte(yaml), nil)
 	if err != nil {
 		return err
 	}
