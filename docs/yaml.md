@@ -123,6 +123,9 @@ file:
     metadata: yaml
 ```
 
+Note that if you use templates in the yaml, the final resolved version will be included in the image,
+and not the original input template.
+
 Because a `tmpfs` is mounted onto `/var`, `/run`, and `/tmp` by default, the `tmpfs` mounts will shadow anything specified in `files` section for those directories.
 
 ## Image specification
@@ -292,4 +295,44 @@ On the other hand, if you have a container that will make new mounts that you wi
 binds:
  - /var:/var:rshared,rbind
 rootfsPropagation: shared
+```
+
+## Templates
+
+The `yaml` file supports templates for the names of images. Anyplace an image is used in a file and begins
+with the character `@`, it indicates that it is not an actual name, but a template. The first word after
+the `@` indicates the type of template, and the rest of the line is the argument to the template. The
+templates currently supported are:
+
+* `@pkg:` - the argument is the path to a linuxkit package. For example, `@pkg:./pkg/init`.
+
+For `pkg`, linuxkit will resolve the path to the package, and then run the equivalent of `linuxkit pkg show-tag <dir>`.
+For example:
+
+```yaml
+init:
+  - "@pkg:../pkg/init"
+```
+
+Will cause linuxkit to resolve `../pkg/init` to a package, and then run `linuxkit pkg show-tag ../pkg/init`.
+
+The paths are relative to the directory of the yaml file.
+You can specify absolute paths, although it is not recommended, as that can make the yaml file less portable.
+
+The `@pkg:` templating is supported **only** when the yaml file is being read from a local filesystem. It does not
+support when using via stdin, e.g. `cat linuxkit.yml | linuxkit build -`, or URLs, e.g. `linuxkit build https://example.com/foo.yml`.
+
+The `@pkg:` template currently supports only default `linuxkit pkg` options, i.e. `build.yml` and `tag` options. There
+are no command-line options to override them.
+
+**Note:** The character `@` is reserved in yaml. To use it in the beginning of a string, you must put the entire string in
+quotes.
+
+If you use the template, the actual derived value, and not the initial template, is what will be stored in the final
+image when adding it via:
+
+```yaml
+files:
+  - path: etc/linuxkit.yml
+    metadata: yaml
 ```

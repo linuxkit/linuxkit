@@ -11,8 +11,10 @@ import (
 	"strings"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 const (
@@ -54,6 +56,7 @@ func buildCmd() *cobra.Command {
 		noSbom             bool
 		sbomOutputFilename string
 		sbomCurrentTime    bool
+		dryRun             bool
 	)
 	cmd := &cobra.Command{
 		Use:   "build",
@@ -141,7 +144,10 @@ The generated image can be in one of multiple formats which can be run on variou
 				log.Fatalf("Unable to parse disk size: %v", err)
 			}
 
-			var m moby.Moby
+			var (
+				m                  moby.Moby
+				templatesSupported bool
+			)
 			for _, arg := range args {
 				var config []byte
 				if conf := arg; conf == "-" {
@@ -168,9 +174,14 @@ The generated image can be in one of multiple formats which can be run on variou
 					if err != nil {
 						return fmt.Errorf("Cannot open config file: %v", err)
 					}
+					// templates are only supported for local files
+					templatesSupported = true
 				}
-
-				c, err := moby.NewConfig(config)
+				var pkgFinder spec.PackageResolver
+				if templatesSupported {
+					pkgFinder = createPackageResolver(filepath.Dir(arg))
+				}
+				c, err := moby.NewConfig(config, pkgFinder)
 				if err != nil {
 					return fmt.Errorf("Invalid config: %v", err)
 				}
@@ -178,6 +189,15 @@ The generated image can be in one of multiple formats which can be run on variou
 				if err != nil {
 					return fmt.Errorf("Cannot append config files: %v", err)
 				}
+			}
+
+			if dryRun {
+				yml, err := yaml.Marshal(m)
+				if err != nil {
+					return fmt.Errorf("Error generating YAML: %v", err)
+				}
+				fmt.Println(string(yml))
+				return nil
 			}
 
 			var tf *os.File
@@ -240,6 +260,7 @@ The generated image can be in one of multiple formats which can be run on variou
 	cmd.Flags().BoolVar(&noSbom, "no-sbom", false, "suppress consolidation of sboms on input container images to a single sbom and saving in the output filesystem")
 	cmd.Flags().BoolVar(&sbomCurrentTime, "sbom-current-time", false, "whether to use the current time as the build time in the sbom; this will make the build non-reproducible (default false)")
 	cmd.Flags().StringVar(&sbomOutputFilename, "sbom-output", defaultSbomFilename, "filename to save the output to in the root filesystem")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Do not actually build, just print the final yml file that would be used, including all merges and templates")
 
 	return cmd
 }

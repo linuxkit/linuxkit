@@ -8,13 +8,14 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 	"github.com/syndtr/gocapability/capability"
 	"github.com/xeipuuv/gojsonschema"
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 )
 
 // Moby is the type of a Moby config file
@@ -239,7 +240,7 @@ func updateImages(m *Moby) {
 }
 
 // NewConfig parses a config file
-func NewConfig(config []byte) (Moby, error) {
+func NewConfig(config []byte, packageFinder spec.PackageResolver) (Moby, error) {
 	m := Moby{}
 
 	// Parse raw yaml
@@ -265,6 +266,12 @@ func NewConfig(config []byte) (Moby, error) {
 			fmt.Printf("- %s\n", desc)
 		}
 		return m, fmt.Errorf("invalid configuration file")
+	}
+
+	// process the template fields
+	config, err = processTemplates(config, packageFinder)
+	if err != nil {
+		return m, err
 	}
 
 	// Parse yaml
@@ -1069,5 +1076,35 @@ func deviceCgroup(device specs.LinuxDevice) specs.LinuxDeviceCgroup {
 		Major:  &device.Major,
 		Minor:  &device.Minor,
 		Access: "rwm", // read, write, mknod
+	}
+}
+
+// processTemplates given a raw config []byte and a package finder, process the templates to find the packages.
+// This eventually should expand to other types of templates. Since we only have @pkg: for now,
+// this will do to start.
+func processTemplates(b []byte, packageFinder spec.PackageResolver) ([]byte, error) {
+	if packageFinder == nil {
+		return b, nil
+	}
+	var node yaml.Node
+	if err := yaml.Unmarshal(b, &node); err != nil {
+		return nil, err
+	}
+	handleTemplate(&node, packageFinder)
+	return yaml.Marshal(&node)
+}
+
+func handleTemplate(node *yaml.Node, packageFinder spec.PackageResolver) {
+	switch node.Kind {
+	case yaml.SequenceNode, yaml.MappingNode, yaml.DocumentNode:
+		for i := 0; i < len(node.Content); i++ {
+			handleTemplate(node.Content[i], packageFinder)
+		}
+	case yaml.ScalarNode:
+		val := node.Value
+		if resolved, err := packageFinder(node.Value); err == nil {
+			val = resolved
+		}
+		node.Value = val
 	}
 }
