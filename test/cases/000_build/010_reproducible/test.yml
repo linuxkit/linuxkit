@@ -39,8 +39,7 @@ services:
       - /etc/aaa:/etc/aaa
     # And some runtime settings
     runtime:
-      mkdir: ["/var/lib/docker"]
-      mkdir: ["/var/lib/aaa"]
+      mkdir: ["/var/lib/docker","/var/lib/aaa"]
 
 files:
   - path: etc/linuxkit-config
