@@ -1,0 +1,6 @@
+image: avahi
+config:
+  capabilities:
+    - CAP_SYS_CHROOT
+    - CAP_SETUID
+    - CAP_SETGID
