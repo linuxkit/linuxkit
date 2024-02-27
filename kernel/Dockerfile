@@ -40,9 +40,9 @@ ARG EXTRA
 ARG DEBUG
 
 # We copy the entire directory. This copies some unneeded files, but
-# allows us to check for the existence /patches-${KERNEL_SERIES} to
+# allows us to check for the existence /${KERNEL_SERIES}/patches to
 # build kernels without patches.
-COPY / /
+COPY / /src/
 
 RUN mkdir -p /out/src
 
@@ -83,20 +83,21 @@ RUN set -e && \
 
 
 WORKDIR /linux
+
 # Apply local specific patches if present
 RUN set -e && \
-    if [ -n "${EXTRA}" ] && [ -d /patches-${KERNEL_SERIES}${EXTRA} ]; then \
-	echo "Patching ${EXTRA} kernel"; \
-	for patch in /patches-${KERNEL_SERIES}${EXTRA}/*.patch; do \
+    if [ -n "${EXTRA}" ] && [ -d /src/${KERNEL_SERIES}${EXTRA}/patches ]; then \
+       echo "Patching ${EXTRA} kernel"; \
+       for patch in /src/${KERNEL_SERIES}${EXTRA}/patches/*.patch; do \
             echo "Applying $patch"; \
             patch -t -F0 -N -u -p1 < "$patch"; \
-	done; \
+       done; \
     fi
 
 # Apply local common patches if present
 RUN set -e && \
-    if [ -d /patches-${KERNEL_SERIES} ]; then \
-        for patch in /patches-${KERNEL_SERIES}/*.patch; do \
+    if [ -d /src/${KERNEL_SERIES}/patches ]; then \
+        for patch in /src/${KERNEL_SERIES}/patches/*.patch; do \
             echo "Applying $patch"; \
             patch -t -F0 -N -u -p1 < "$patch"; \
         done; \
@@ -114,14 +115,14 @@ RUN case $(uname -m) in \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
         ;; \
     esac  && \
-    cp /config-${KERNEL_SERIES}-$(uname -m) ${KERNEL_DEF_CONF}; \
-    if [ -n "${EXTRA}" ] && [ -f "/config-${KERNEL_SERIES}-$(uname -m)${EXTRA}" ]; then \
-        cat /config-${KERNEL_SERIES}-$(uname -m)${EXTRA} >> ${KERNEL_DEF_CONF}; \
+    cp /src/${KERNEL_SERIES}/config-$(uname -m) ${KERNEL_DEF_CONF}; \
+    if [ -n "${EXTRA}" ] && [ -f "/src/${KERNEL_SERIES}-${EXTRA}/config-$(uname -m)" ]; then \
+        cat /src/${KERNEL_SERIES}-${EXTRA}/config-$(uname -m) >> ${KERNEL_DEF_CONF}; \
     fi; \
     sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}${DEBUG}\"/" ${KERNEL_DEF_CONF}; \
     if [ -n "${DEBUG}" ]; then \
         sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
-        cat /config${DEBUG} >> ${KERNEL_DEF_CONF}; \
+        cat /src/config${DEBUG} >> ${KERNEL_DEF_CONF}; \
     fi && \
     make defconfig && \
     make oldconfig && \
