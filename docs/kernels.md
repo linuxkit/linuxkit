@@ -18,7 +18,7 @@ We publish the following kernel images:
 
 * primary kernel
 * debug kernel
-* tools for the specific kernel build
+* tools for the specific kernel build - bcc and perf
 * builder image for the specific kernel build, useful for compiling compatible kernel modules
 
 ### Primary Kernel Images
@@ -163,24 +163,33 @@ Throughout the document, the terms used are:
 * kernel version: actual semver version of a kernel, e.g. `6.6.13` or `5.15.27`
 * kernel series: major.minor version of a kernel, e.g. `6.6.x` or `5.15.x`
 
-Each series of kernels has a config file dedicated to it in [../kernel/](../kernel),
-e.g. [config-5.10.x-x86_64](../kernel/config-5.10.x-x86_64),
-one per target architecture. Note that the architecture used as the `uname -m` one
-and not the alpine or golang one. Thus `x86_64` rather than `amd64`, and `aarch64` rather
-than `arm64`.
+Throughout this document, the architecture used is the kernel-recognized one, available
+on most systems as `uname -m`, e.g. `aarch64` or `x86_64`. You may be familiar with the alpine
+or golang one, e.g. `amd64` or `amd64`, which are not used here.
 
-The series+arch config file is applied during the kernel build process.
+Each series of kernels has a dedicated directory in [../kernel/](../kernel),
+e.g. [6.6.x](../kernel/6.6.x) or [5.15.x](../kernel/5.15.x).
+Variants, like rt kernels, have their own directory as well, e.g. [5.11.x-rt](../kernel/5.11.x-rt).
+However, for variants, the patches from _both_ the common kernel, e.g. [5.11.x](../kernel/5.11.x),
+and the variant, e.g. [5.11.x-rt](../kernel/5.11.x-rt), are applied, and the configs from _both_ are combined.
+
+Within the series-dedicated directory, there are:
+
+* kernel config file for each architecture named `config-<arch>`, e.g. [6.6.13/config-x86_64](../kernel/6.6.13/config-x86_64), one per target architecture. 
+* optional patches directory, e.g. [6.6.13/patches](../kernel/6.6.13/patches), which contains patches to apply to the kernel source
+
+The config file and patches are applied during the kernel build process.
 
 **Note**: We try to keep the differences between kernel versions and
 architectures to a minimum, so if you make changes to one
 configuration also try to apply it to the others. The script [kconfig-split.py](../scripts/kconfig-split.py) can be used to compare kernel config files. For example:
 
 ```sh
-../scripts/kconfig-split.py config-4.9.x-aarch64 config-4.9.x-x86_64
+../scripts/kconfig-split.py 5.15.x/config-aarch64 5.15.x/config-x86_64
 ```
 
 creates a file with the common and the x86_64 and arm64 specific
-config options for the 4.9.x kernel series.
+config options for the 5.15.x kernel series.
 
 **Note**: The CI pipeline does *not* push out kernel images.
 Anyone modifying a kernel should:
@@ -293,7 +302,7 @@ the modified config file will be in `.config`; save the file back to `/src`,
 e.g.
 
 ```sh
-cp .config /src/kernel-config-6.6.x-x86_64
+cp .config /src/6.6.x/config-x86_64
 ```
 
 You can also configure other architectures other than the native
@@ -332,27 +341,34 @@ docker run --rm -ti -v $(pwd):/src linuxkit/kconfig
 ```
 1. In the container, change directory to the kernel source directory for the new version, e.g. `cd /linux-5.15.148`.
 1. Run `make defconfig` to create the default config file.
-1. If the config file has changed, copy it out of the container and check it in, e.g. `cp .config /src/kernel-config-5.15.x-x86_64`.
+1. If the config file has changed, copy it out of the container and check it in, e.g. `cp .config /src/5.15.x/config-x86_64`.
 1. Repeat for other architectures.
 1. Commit the changed config files.
 1. Test that you can build the kernel with that config as `make build-<version>`, e.g. `make build-5.15.148`.
 
 ## Adding a new kernel series
 
-To add a new kernel series, you need to create a new config file. Since the last major series
-likely is the best basis for the new one, subject to additional modifications, you can use
+To add a new kernel series, you need to:
+
+1. Create new directory for the series, e.g. `6.7.x`
+1. Create config files for each architecture in that directory
+1. Optionally, create a `patches/` subdirectory in that directory with any patches to add
+1. Update the list of kernels to build in the `Makefile`
+
+Since the last major series likely is the best basis for the new one, subject to additional modifications, you can use
 the previous one as a starting point.
 
 1. Modify the list of kernels inside the `Makefile` to include the new version. You do not need to specify the series anywhere, as the `Makefile` calculates it. E.g. adding `7.0.5` will cause it to calculate the series as `7.0.x` automatically.
+1. Make the directory for the new series, e.g. `mkdir 7.0.x`
 1. Create a new `linuxkit/kconfig` container image: `make kconfig`. This is not pushed out.
 1. Run a container based on `linuxkit/kconfig`.
 ```sh
 docker run --rm -ti -v $(pwd):/src linuxkit/kconfig
 ```
 1. In the container, change directory to the kernel source directory for the new version, e.g. `cd /linux-7.0.5`.
-1. Copy the existing config file for the previous series, e.g. `cp /src/kernel-config-6.6.x-x86_64 .config`.
+1. Copy the existing config file for the previous series, e.g. `cp /src/6.6.x/config-x86_64 .config`.
 1. Run `make oldconfig` to create the config file for the new series from the old one. Answer any questions.
-1. Save the newly generated config file `.config` to the source directory, e.g. `cp .config /src/kernel-config-7.0.x-x86_64`.
+1. Save the newly generated config file `.config` to the source directory, e.g. `cp .config /src/7.0.x/config-x86_64`.
 1. Repeat for other architectures.
 1. Commit the new config files.
 1. Test that you can build the kernel with that config as `make build-<version>`, e.g. `make build-7.0.5`.
