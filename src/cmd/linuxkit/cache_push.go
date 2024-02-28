@@ -8,6 +8,7 @@ import (
 )
 
 func cachePushCmd() *cobra.Command {
+	var remoteName string
 	cmd := &cobra.Command{
 		Use:   "push",
 		Short: "push images from the linuxkit cache",
@@ -25,13 +26,14 @@ func cachePushCmd() *cobra.Command {
 					log.Fatalf("unable to read a local cache: %v", err)
 				}
 
-				if err := p.Push(fullname, true); err != nil {
+				if err := p.Push(fullname, remoteName, true); err != nil {
 					log.Fatalf("unable to push image named %s: %v", name, err)
 				}
 			}
 			return nil
 		},
 	}
+	cmd.Flags().StringVar(&remoteName, "remote-name", "", "Push it under a different name, e.g. push local image foo/bar:mine as baz/bee:yours. If blank, uses same local name.")
 
 	return cmd
 }

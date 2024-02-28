@@ -13,17 +13,22 @@ import (
 )
 
 // Push push an image along with a multi-arch index.
-func (p *Provider) Push(name string, withManifest bool) error {
+// name is the name as referenced in the local cache, remoteName is the name to give it remotely.
+// If remoteName is empty, it is the same as name.
+func (p *Provider) Push(name, remoteName string, withManifest bool) error {
 	var (
 		err     error
 		options []remote.Option
 	)
-	ref, err := namepkg.ParseReference(name)
+	if remoteName == "" {
+		remoteName = name
+	}
+	ref, err := namepkg.ParseReference(remoteName)
 	if err != nil {
 		return err
 	}
 
-	fmt.Printf("Pushing %s\n", name)
+	fmt.Printf("Pushing local %s as %s\n", name, remoteName)
 	// do we even have the given one?
 	root, err := p.FindRoot(name)
 	if err != nil {
@@ -40,14 +45,14 @@ func (p *Provider) Push(name string, withManifest bool) error {
 	case err1 == nil:
 		dig, err := img.Digest()
 		if err != nil {
-			return fmt.Errorf("could not get digest for image %s: %v", name, err)
+			return fmt.Errorf("could not get digest for local image %s: %v", name, err)
 		}
 		desc, err := remote.Get(ref, remoteOptions...)
 		if err == nil && desc != nil && dig == desc.Digest {
-			fmt.Printf("%s image already available on remote registry, skipping push", name)
+			fmt.Printf("%s image already available on remote registry, skipping push", remoteName)
 			return nil
 		}
-		log.Debugf("pushing image %s", name)
+		log.Debugf("pushing image %s as %s", name, remoteName)
 		if err := remote.Write(ref, img, options...); err != nil {
 			return err
 		}
@@ -66,7 +71,7 @@ func (p *Provider) Push(name string, withManifest bool) error {
 		desc, err := remote.Get(ref, remoteOptions...)
 		if err == nil && desc != nil {
 			if dig == desc.Digest {
-				fmt.Printf("%s index already available on remote registry, skipping push", name)
+				fmt.Printf("%s index already available on remote registry, skipping push", remoteName)
 				return nil
 			}
 			// we have a different index, need to cross-reference and only override relevant stuff
@@ -78,7 +83,7 @@ func (p *Provider) Push(name string, withManifest bool) error {
 				}
 			}
 		}
-		log.Debugf("pushing index %s", name)
+		log.Debugf("pushing local index %s as %s", name, remoteName)
 		// this is an index, so we not only want to write the index, but tags for each arch-specific image in it
 		if err := remote.WriteIndex(ref, ii, options...); err != nil {
 			return err
@@ -89,7 +94,7 @@ func (p *Provider) Push(name string, withManifest bool) error {
 			if m.Platform == nil || m.Platform.Architecture == "" {
 				continue
 			}
-			archTag := fmt.Sprintf("%s-%s", name, m.Platform.Architecture)
+			archTag := fmt.Sprintf("%s-%s", remoteName, m.Platform.Architecture)
 			tag, err := namepkg.NewTag(archTag)
 			if err != nil {
 				return fmt.Errorf("could not create a valid arch-specific tag %s: %v", archTag, err)
