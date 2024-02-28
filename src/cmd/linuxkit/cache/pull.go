@@ -5,10 +5,18 @@ import (
 	"fmt"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/google/go-containerregistry/pkg/authn"
+	namepkg "github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/layout"
+	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
+	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -116,5 +124,79 @@ func validateManifestContents(index v1.ImageIndex, digest v1.Hash) error {
 	if _, err := img.Layers(); err != nil {
 		return fmt.Errorf("unable to get layers: %w", err)
 	}
+	return nil
+}
+
+// Pull pull a reference, whether it points to an arch-specific image or to an index.
+// If an index, optionally, try to pull its individual named references as well.
+func (p *Provider) Pull(name string, withArchReferences bool) error {
+	var (
+		err error
+	)
+	fullname := util.ReferenceExpand(name, util.ReferenceWithTag())
+	ref, err := namepkg.ParseReference(fullname)
+	if err != nil {
+		return err
+	}
+	v1ref, err := reference.Parse(ref.String())
+	if err != nil {
+		return err
+	}
+
+	// before we even try to push, let us see if it exists remotely
+	remoteOptions := []remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}
+
+	desc, err := remote.Get(ref, remoteOptions...)
+	if err != nil {
+		return fmt.Errorf("error getting manifest for trusted image %s: %v", name, err)
+	}
+
+	// use the original image name in the annotation
+	annotations := map[string]string{
+		imagespec.AnnotationRefName: fullname,
+	}
+
+	// first attempt as an index
+	ii, err := desc.ImageIndex()
+	if err == nil {
+		log.Debugf("ImageWrite retrieved %s is index, saving", fullname)
+
+		if err := p.cache.WriteIndex(ii); err != nil {
+			return fmt.Errorf("unable to write index: %v", err)
+		}
+		if _, err := p.DescriptorWrite(&v1ref, desc.Descriptor); err != nil {
+			return fmt.Errorf("unable to write index descriptor to cache: %v", err)
+		}
+		if withArchReferences {
+			im, err := ii.IndexManifest()
+			if err != nil {
+				return fmt.Errorf("unable to get IndexManifest: %v", err)
+			}
+			for _, m := range im.Manifests {
+				if m.MediaType.IsImage() && m.Platform != nil && m.Platform.Architecture != unknown && m.Platform.OS != unknown {
+					archSpecific := fmt.Sprintf("%s-%s", ref.String(), m.Platform.Architecture)
+					archRef, err := reference.Parse(archSpecific)
+					if err != nil {
+						return fmt.Errorf("unable to parse arch-specific reference %s: %v", archSpecific, err)
+					}
+					if _, err := p.DescriptorWrite(&archRef, m); err != nil {
+						return fmt.Errorf("unable to write index descriptor to cache: %v", err)
+					}
+				}
+			}
+		}
+	} else {
+		var im v1.Image
+		// try an image
+		im, err = desc.Image()
+		if err != nil {
+			return fmt.Errorf("provided image is neither an image nor an index: %s", name)
+		}
+		log.Debugf("ImageWrite retrieved %s is image, saving", fullname)
+		if err = p.cache.ReplaceImage(im, match.Name(fullname), layout.WithAnnotations(annotations)); err != nil {
+			return fmt.Errorf("unable to save image to cache: %v", err)
+		}
+	}
+
 	return nil
 }
