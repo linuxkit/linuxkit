@@ -15,10 +15,7 @@
 RM = rm -f
 # Name and Org on Hub
 ORG?=linuxkit
-PLATFORMS?=linux/amd64,linux/arm64
 IMAGE?=kernel
-IMAGE_BCC:=kernel-bcc
-IMAGE_PERF:=kernel-perf
 IMAGE_BUILDER=linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e
 
 # You can specify an extra options for the Makefile. This will:
@@ -42,7 +39,7 @@ PUSH_MANIFEST:=$(shell git rev-parse --show-toplevel)/scripts/push-manifest.sh
 
 # determine our architecture
 BUILDERARCH=
-ARCH := $(shell uname -m)
+ifneq ($(ARCH),)
 ifeq ($(ARCH),$(filter $(ARCH),x86_64 amd64))
 SUFFIX=-amd64
 override ARCH=x86_64
@@ -53,21 +50,13 @@ SUFFIX=-arm64
 override ARCH=aarch64
 BUILDERARCH=arm64
 endif
+endif
+
+ifneq ($(BUILDERARCH),)
+PLATFORMS=--platforms linux/$(BUILDERARCH)
+endif
 
 HASHTAG=$(HASH)$(DIRTY)
-
-BUILD_LABEL=--label org.mobyproject.linuxkit.kernel.buildimage=$(IMAGE_BUILDER)
-
-REPO?=https://github.com/linuxkit/linuxkit
-ifneq ($(REPO),)
-REPO_LABEL=--label org.opencontainers.image.source=$(REPO)
-endif
-ifeq ($(DIRTY),)
-REPO_COMMIT=$(shell git rev-parse HEAD)
-COMMIT_LABEL=--label org.opencontainers.image.revision=$(REPO_COMMIT)
-endif
-
-LABELS=$(REPO_LABEL) $(COMMIT_LABEL) $(BUILD_LABEL)
 
 .PHONY: notdirty
 notdirty:
@@ -82,15 +71,9 @@ series = $(word 1,$(subst ., ,$(1))).$(word 2,$(subst ., ,$(1))).x
 RELEASESEP := PART
 toolname = $(word 2, $(subst $(RELEASESEP), ,$(1)))
 toolkernel = $(word 1, $(subst $(RELEASESEP), ,$(1)))
-toolimageextension = -$(call toolname,$(1)):$(call toolkernel,$(1))$(EXTRA)$(DEBUG)
-toolimagebase = $(ORG)/$(IMAGE)$(call toolimageextension,$(1))
-toolimagehash = $(call toolimagebase,$(1))-$(HASHTAG)$(SUFFIX)
-toolimagenohash = $(call toolimagebase,$(1))$(SUFFIX)
-toolkernelimage = $(ORG)/$(IMAGE):$(call toolkernel,$(1))$(EXTRA)$(DEBUG)-$(HASHTAG)$(SUFFIX)
 baseimageextension = :$(1)$(EXTRA)$(DEBUG)
 baseimage = $(ORG)/$(IMAGE)$(call baseimageextension,$(1))
 uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
-cross_product = $(foreach p,$(1),$(addprefix $(p),$(2)))
 
 
 #
@@ -124,7 +107,7 @@ list:
 	@echo "Tools: $(TOOLS)"
 
 setforce:
-	$(eval FORCE=1)
+	$(eval FORCE=--force)
 build: $(addprefix build-,$(KERNELS))
 push: $(addprefix push-,$(KERNELS))
 show-tags: $(addprefix show-tag-,$(KERNELS))
@@ -135,46 +118,13 @@ buildkernel-%: buildkerneldeps-% buildplainkernel-% builddebugkernel-%;
 
 buildkerneldeps-%: Dockerfile Makefile $(wildcard patches-$(call series,$*)/*) $(wildcard config-$(call series,$*)*) ;
 
-BUILDER?=
-BUILDER_TEMPLATE = linuxkit-linux-{{.Arch}}-builder
-BULDER_ARG =
-
-
-# Phony target for conditional logic
-.PHONY: getbuilder
-# determine the builder
-# if it was set by user, just add `--builder <builder>`.
-# If not, see if our default builder pattern is available, and use that, else
-# fall back to usual docker.
-getbuilder:
-ifeq ($(BUILDER),)
-	$(eval BUILDERNAME=$(subst {{.Arch}},$(BUILDERARCH),$(BUILDER_TEMPLATE)))
-	$(eval BUILDER_FOUND=$(shell docker builder inspect $(BUILDERNAME) 2>/dev/null || true))
-	$(eval BUILDER_ARG=$(if $(BUILDER_FOUND),--builder $(BUILDERNAME),))
-else
-	$(eval BUILDERNAME=$(subst {{.Arch}},$(BUILDERARCH),$(BUILDER)))
-	$(eval BUILDER_ARG=--builder $(BUILDERNAME))
-endif
-
-buildplainkernel-%: buildkerneldeps-% getbuilder
-	$(eval BASEIMAGE=$(call baseimage,$*))
-	$(eval TARGETIMAGE=$(BASEIMAGE)-$(HASHTAG)$(SUFFIX))
-	$(eval EXTRATOOL=$(addprefix -,$(word 2,$(subst -, ,$*))))
-	([ -z "$(FORCE)" ] && docker manifest inspect $(TARGETIMAGE) >/dev/null 2>&1) || \
-		docker build \
-			$(BUILDER_ARG) \
-			--platform linux/$(BUILDERARCH) \
-			--build-arg KERNEL_VERSION=$* \
-			--build-arg KERNEL_SERIES=$(call series,$*) \
-			--build-arg EXTRA=$(EXTRATOOL) \
-			--build-arg DEBUG=$(DEBUG) \
-			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-			$(LABELS) \
-			--load \
-			--no-cache -t $(TARGETIMAGE) .
+buildplainkernel-%: buildkerneldeps-%
+	$(eval KERNEL_SERIES=$(call series,$*))
+	linuxkit pkg build . $(FORCE) $(PLATFORMS) --build-yml ./build-kernel.yml --tag "$*-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args 
 
 builddebugkernel-%: buildkerneldeps-%
-	$(MAKE) buildplainkernel-$* DEBUG=-dbg
+	$(eval KERNEL_SERIES=$(call series,$*))
+	linuxkit pkg build . $(FORCE) $(PLATFORMS) --build-yml ./build-kernel.yml --tag "$*-dbg-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args --build-arg-file build-args-debug
 
 push-%: notdirty build-% pushkernel-% tagbuilder-% pushtools-%;
 
@@ -184,43 +134,41 @@ tagbuilder-%: notdirty
 	docker push $(BUILDER_IMAGE)$(SUFFIX) && \
 	$(PUSH_MANIFEST) $(BUILDER_IMAGE)
 
-pushtagpush-%:
-	$(eval BASEIMAGE=$(ORG)/$(IMAGE)$*)
-	$(eval HASHIMAGE=$(BASEIMAGE)-$(HASHTAG))
-	$(eval SUFFIXEDIMAGE=$(BASEIMAGE)$(SUFFIX))
-	$(eval HASHANDSUFFIXIMAGE=$(HASHIMAGE)$(SUFFIX))
-	([ -z "$(FORCE)" ] && docker manifest inspect $(HASHANDSUFFIXIMAGE) >/dev/null 2>&1) || \
-		(docker push $(HASHANDSUFFIXIMAGE) && \
-		 docker tag $(HASHANDSUFFIXIMAGE) $(SUFFIXEDIMAGE) && \
-		 docker push $(SUFFIXEDIMAGE) && \
-		 $(PUSH_MANIFEST) $(HASHIMAGE) && \
-		 $(PUSH_MANIFEST) $(BASEIMAGE))
+pushkernel-%: pushplainkernel-% pushdebugkernel-%;
 
-pushkernel-%:
-	$(MAKE) pushtagpush-$(call baseimageextension,$*)
+pushplainkernel-%: buildplainkernel-%
+	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-kernel.yml --tag "$*-{{.Hash}}"))
+	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-kernel.yml --tag "$*"))
+	linuxkit cache push $(HASHED_IMAGE)
+	linuxkit cache push $(HASHED_IMAGE) --remote-name $(PLAIN_IMAGE)
+
+pushdebugkernel-%: builddebugkernel-%
+	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-kernel.yml --tag "$*-dbg-{{.Hash}}"))
+	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-kernel.yml --tag "$*-dbg"))
+	linuxkit cache push $(HASHED_IMAGE)
+	linuxkit cache push $(HASHED_IMAGE) --remote-name $(PLAIN_IMAGE)
 
 show-tag-%:
 	@echo 	$(eval BASEIMAGE=$(call baseimage,$*))-$(HASHTAG)
 
 buildtools-%: $(addprefix buildtool-%$(RELEASESEP),$(TOOLS));
 
-buildtool-%: getbuilder
-	$(eval TARGETIMAGE=$(call toolimagehash,$*))
-	$(eval KERNELIMAGE=$(call toolkernelimage,$*))
+buildtool-%:
 	$(eval TOOL=$(call toolname,$*))
-	([ -z "$(FORCE)" ] && docker manifest inspect $(TARGETIMAGE) >/dev/null 2>&1) || \
-		 docker build -f Dockerfile.$(TOOL) \
-			$(BUILDER_ARG) \
-			--platform linux/$(BUILDERARCH) \
-			--build-arg IMAGE=$(KERNELIMAGE) \
-			--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-			--load \
-			--no-cache $(LABEL) -t $(TARGETIMAGE) .
+	$(eval KERNEL_VERSION=$(call toolkernel,$*))
+	$(eval KERNEL_SERIES=$(call series,$(KERNEL_VERSION)))
+	linuxkit pkg build . $(FORCE) $(PLATFORMS) --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args
 
 pushtools-%: $(addprefix pushtool-%$(RELEASESEP),$(TOOLS));
 
-pushtool-%:
-	$(MAKE) pushtagpush-$(call toolimageextension,$*)
+pushtool-%: buildtool-%
+	$(eval TOOL=$(call toolname,$*))
+	$(eval KERNEL_VERSION=$(call toolkernel,$*))
+	$(eval KERNEL_SERIES=$(call series,$(KERNEL_VERSION)))
+	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)-{{.Hash}}"))
+	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)"))
+	linuxkit cache push $(HASHED_IMAGE)
+	linuxkit cache push $(HASHED_IMAGE) --remote-name $(PLAIN_IMAGE)
 
 # Target for kernel config
 kconfig:

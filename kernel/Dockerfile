@@ -11,6 +11,7 @@ RUN apk add \
     build-base \
     curl \
     diffutils \
+    findutils \
     flex \
     git \
     gmp-dev \
@@ -54,7 +55,7 @@ RUN KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d . -f 1) && \
     KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/sha256sums.asc && \
     KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/linux-${KERNEL_VERSION}.tar.sign && \
     curl -fsSLO ${KERNEL_SHA256_SUMS} && \
-    gpg2 -q --import keys.asc && \
+    gpg2 -q --import /src/keys.asc && \
     gpg2 --verify sha256sums.asc && \
     KERNEL_SHA256=$(grep linux-${KERNEL_VERSION}.tar.xz sha256sums.asc | cut -d ' ' -f 1) && \
     [ -f linux-${KERNEL_VERSION}.tar.xz ] || curl -fsSLO ${KERNEL_SOURCE} && \
@@ -177,8 +178,10 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 
 RUN printf "${BUILD_IMAGE}" > /out/kernel-builder
 
+ARG BUILD_IMAGE
 FROM scratch
 ENTRYPOINT []
 CMD []
 WORKDIR /
+LABEL org.mobyproject.linuxkit.kernel.buildimage=${BUILD_IMAGE}
 COPY --from=kernel-build /out/* /

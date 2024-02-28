@@ -1,7 +1,6 @@
-ARG IMAGE
 ARG BUILD_IMAGE
 
-FROM ${IMAGE} as ksrc
+FROM ${KERNEL_VERSION}-${HASH} as ksrc
 
 FROM ${BUILD_IMAGE} AS build
 RUN apk update && apk upgrade -a && \
