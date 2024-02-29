@@ -53,7 +53,7 @@ const (
 
 type dockerRunner interface {
 	tag(ref, tag string) error
-	build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts types.ImageBuildOptions) error
+	build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts types.ImageBuildOptions) error
 	save(tgt string, refs ...string) error
 	load(src io.Reader) error
 	pull(img string) (bool, error)
@@ -402,7 +402,7 @@ func (dr *dockerRunnerImpl) tag(ref, tag string) error {
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage string, imageBuildOpts types.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts types.ImageBuildOptions) error {
 	// ensure we have a builder
 	client, err := dr.builder(ctx, dockerContext, builderImage, platform, restart)
 	if err != nil {
@@ -561,7 +561,10 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, doc
 
 	ctx2, cancel := context.WithCancel(context.TODO())
 	defer cancel()
-	printer := progress.NewPrinter(ctx2, os.Stderr, os.Stderr, "auto")
+	if progressType == "" {
+		progressType = "auto"
+	}
+	printer := progress.NewPrinter(ctx2, os.Stderr, os.Stderr, progressType)
 	pw := progress.WithPrefix(printer, "", false)
 	ch, done := progress.NewChannel(pw)
 	defer func() { <-done }()

@@ -48,6 +48,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		sbomScanner    string
 		dockerfile     string
 		buildArgFiles  []string
+		progress       string
 	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -160,6 +161,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
 		opts = append(opts, pkglib.WithBuildBuilderImage(builderImage))
 		opts = append(opts, pkglib.WithBuildBuilderRestart(builderRestart))
+		opts = append(opts, pkglib.WithProgress(progress))
 
 		for _, p := range pkgs {
 			// things we need our own copies of
@@ -226,6 +228,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 	cmd.Flags().StringVar(&sbomScanner, "sbom-scanner", "", "SBOM scanner to use, must match the buildkit spec; set to blank to use the buildkit default; set to 'false' for no scanning")
 	cmd.Flags().StringVar(&dockerfile, "dockerfile", "", "Dockerfile to use for building the image, must be in this directory or below, overrides what is in build.yml")
 	cmd.Flags().StringArrayVar(&buildArgFiles, "build-arg-file", nil, "Files containing build arguments, one key=value per line, contents augment and override buildArgs in build.yml. Can be specified multiple times. File is relative to working directory when running `linuxkit pkg build`")
+	cmd.Flags().StringVar(&progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output, tty for interactive build")
 
 	return cmd
 }
