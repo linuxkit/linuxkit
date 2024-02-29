@@ -45,6 +45,7 @@ type buildOpts struct {
 	sbomScannerImage string
 	dockerfile       string
 	buildArgs        []string
+	progress         string
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -202,6 +203,14 @@ func WithBuildArgs(args []string) BuildOpt {
 		// we copy the contents, rather than the reference to the slice, to be safe
 		bo.buildArgs = make([]string, len(args))
 		copy(bo.buildArgs, args)
+		return nil
+	}
+}
+
+// WithProgress which progress type to show
+func WithProgress(progress string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.progress = progress
 		return nil
 	}
 }
@@ -640,7 +649,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 		passCache = nil
 	}
 
-	if err := d.build(ctx, tagArch, p.path, bo.dockerfile, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, imageBuildOpts); err != nil {
+	if err := d.build(ctx, tagArch, p.path, bo.dockerfile, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)
