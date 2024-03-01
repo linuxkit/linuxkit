@@ -8,7 +8,10 @@ import (
 )
 
 func cachePushCmd() *cobra.Command {
-	var remoteName string
+	var (
+		remoteName           string
+		pushArchSpecificTags bool
+	)
 	cmd := &cobra.Command{
 		Use:   "push",
 		Short: "push images from the linuxkit cache",
@@ -26,7 +29,7 @@ func cachePushCmd() *cobra.Command {
 					log.Fatalf("unable to read a local cache: %v", err)
 				}
 
-				if err := p.Push(fullname, remoteName, true); err != nil {
+				if err := p.Push(fullname, remoteName, pushArchSpecificTags); err != nil {
 					log.Fatalf("unable to push image named %s: %v", name, err)
 				}
 			}
@@ -34,6 +37,6 @@ func cachePushCmd() *cobra.Command {
 		},
 	}
 	cmd.Flags().StringVar(&remoteName, "remote-name", "", "Push it under a different name, e.g. push local image foo/bar:mine as baz/bee:yours. If blank, uses same local name.")
-
+	cmd.Flags().BoolVar(&pushArchSpecificTags, "with-arch-tags", false, "When the local reference is an index, add to the remote arch-specific tags for each arch in the index, each as their own tag with the same name as the index, but with the architecture appended, e.g. image:foo will have image:foo-amd64, image:foo-arm64, etc.")
 	return cmd
 }
