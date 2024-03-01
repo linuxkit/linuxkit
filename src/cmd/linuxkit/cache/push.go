@@ -15,7 +15,10 @@ import (
 // Push push an image along with a multi-arch index.
 // name is the name as referenced in the local cache, remoteName is the name to give it remotely.
 // If remoteName is empty, it is the same as name.
-func (p *Provider) Push(name, remoteName string, withManifest bool) error {
+// If withArchSpecificTags is true, it will push all arch-specific images in the index, each as
+// their own tag with the same name as the index, but with the architecture appended, e.g.
+// image:foo will have image:foo-amd64, image:foo-arm64, etc.
+func (p *Provider) Push(name, remoteName string, withArchSpecificTags bool) error {
 	var (
 		err     error
 		options []remote.Option
@@ -89,42 +92,46 @@ func (p *Provider) Push(name, remoteName string, withManifest bool) error {
 			return err
 		}
 		fmt.Printf("Pushed index %s\n", name)
-		log.Debugf("pushing individual images in the index %s", name)
-		for _, m := range manifest.Manifests {
-			if m.Platform == nil || m.Platform.Architecture == "" {
-				continue
-			}
-			archTag := fmt.Sprintf("%s-%s", remoteName, m.Platform.Architecture)
-			tag, err := namepkg.NewTag(archTag)
-			if err != nil {
-				return fmt.Errorf("could not create a valid arch-specific tag %s: %v", archTag, err)
-			}
-			img, err := p.cache.Image(m.Digest)
-			if err != nil {
-				// it might not have existed, so we can add it locally
-				// use the original image name in the annotation
-				desc := m.DeepCopy()
-				if desc.Annotations == nil {
-					desc.Annotations = map[string]string{}
+		if withArchSpecificTags {
+			fmt.Printf("pushing individual images in the index %s", name)
+			for _, m := range manifest.Manifests {
+				if m.Platform == nil || m.Platform.Architecture == "" {
+					continue
 				}
-				desc.Annotations[imagespec.AnnotationRefName] = archTag
-				if err := p.cache.AppendDescriptor(*desc); err != nil {
-					return fmt.Errorf("error appending descriptor for %s to layout index: %v", archTag, err)
-				}
-				img, err = p.cache.Image(m.Digest)
+				archTag := fmt.Sprintf("%s-%s", remoteName, m.Platform.Architecture)
+				tag, err := namepkg.NewTag(archTag)
 				if err != nil {
-					return fmt.Errorf("could not find or create arch-specific image for %s: %v", archTag, err)
+					return fmt.Errorf("could not create a valid arch-specific tag %s: %v", archTag, err)
+				}
+				img, err := p.cache.Image(m.Digest)
+				if err != nil {
+					// it might not have existed, so we can add it locally
+					// use the original image name in the annotation
+					desc := m.DeepCopy()
+					if desc.Annotations == nil {
+						desc.Annotations = map[string]string{}
+					}
+					desc.Annotations[imagespec.AnnotationRefName] = archTag
+					if err := p.cache.AppendDescriptor(*desc); err != nil {
+						return fmt.Errorf("error appending descriptor for %s to layout index: %v", archTag, err)
+					}
+					img, err = p.cache.Image(m.Digest)
+					if err != nil {
+						return fmt.Errorf("could not find or create arch-specific image for %s: %v", archTag, err)
+					}
+				}
+				if err := validate.Image(img); err != nil {
+					// skip arch we did not build/pull locally
+					log.Debugf("could not validate arch-specific image for %s: %v", archTag, err)
+					continue
+				}
+				log.Debugf("pushing image %s", tag)
+				if err := remote.Tag(tag, img, options...); err != nil {
+					return fmt.Errorf("error creating tag %s: %v", archTag, err)
 				}
 			}
-			if err := validate.Image(img); err != nil {
-				// skip arch we did not build/pull locally
-				log.Debugf("could not validate arch-specific image for %s: %v", archTag, err)
-				continue
-			}
-			log.Debugf("pushing image %s", tag)
-			if err := remote.Tag(tag, img, options...); err != nil {
-				return fmt.Errorf("error creating tag %s: %v", archTag, err)
-			}
+		} else {
+			fmt.Printf("Skipping push of individual images in the index %s\n", name)
 		}
 	default:
 		return fmt.Errorf("name %s unknown in cache", name)
