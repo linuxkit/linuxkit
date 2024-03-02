@@ -1,9 +1,8 @@
 # This Dockerfile extracts the source code and headers from a kernel package,
 # builds the perf utility, and places it into a scratch image
-ARG IMAGE
 ARG BUILD_IMAGE
 
-FROM ${IMAGE} AS ksrc
+FROM ${KERNEL_VERSION}-${HASH} AS ksrc
 
 FROM ${BUILD_IMAGE} AS build
 RUN apk add \
