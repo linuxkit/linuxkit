@@ -416,7 +416,9 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			if len(parts) != 2 {
 				return fmt.Errorf("invalid build-arg, must be in format 'arg=value': %s", buildArg)
 			}
-			imageBuildOpts.BuildArgs[parts[0]] = &parts[1]
+			key := strings.TrimSpace(parts[0])
+			val := strings.TrimSpace(parts[1])
+			imageBuildOpts.BuildArgs[key] = &val
 		}
 
 		// add in information about the build process that might be useful
