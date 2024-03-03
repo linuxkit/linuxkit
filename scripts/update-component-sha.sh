@@ -70,7 +70,7 @@ case "${mode}" in
         old=$1
         new=$2
 
-        git grep -w -l "\b$old\b" -- '*.yml' '*.yaml' '*.yml.in' '*.yaml.in' '*/Dockerfile' '*/Makefile' | grep -v /vendor/ | xargs sed -i.bak -e "s,$old,$new,g"
+        git grep -E -l "\b$old\b" -- '*.yml' '*.yaml' '*.yml.in' '*.yaml.in' '*/Dockerfile' '*/Makefile' | grep -v /vendor/ | while read -r file; do sed -ri.bak -e "s,$old,$new,g" "$file"; done
         ;;
 --image)
 	if [ $# -lt 1 ] ; then
