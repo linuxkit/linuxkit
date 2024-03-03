@@ -333,7 +333,8 @@ Finally, test that you can build the kernel with that config as `make build-<ver
 If you want to add a new kernel version within an existing series, e.g. `5.15.27` already exists
 and you want to add (or replace it with) `5.15.148`, apply the following process.
 
-1. Modify the list of kernels inside the `Makefile` to include the new version, and, optionally, remove the old one, or move it to deprecated.
+1. Determine the series, i.e. the kernel major.minor version, followed by `x`. E.g. for `5.15.148`, the series is `5.15.x`.
+1. Modify the `KERNEL_VERSION` in the `build-args` file in the series directory to the new version. E.g. `5.15.x/build-args`.
 1. Create a new `linuxkit/kconfig` container image: `make kconfig`. This is not pushed out.
 1. Run a container based on `linuxkit/kconfig`.
 ```sh
@@ -344,7 +345,6 @@ docker run --rm -ti -v $(pwd):/src linuxkit/kconfig
 1. If the config file has changed, copy it out of the container and check it in, e.g. `cp .config /src/5.15.x/config-x86_64`.
 1. Repeat for other architectures.
 1. Commit the changed config files.
-1. Modify the `KERNEL_VERSION` in the `build-args` file in the series directory to the new version. E.g. `5.15.x/build-args`.
 1. Test that you can build the kernel with that config as `make build-<version>`, e.g. `make build-5.15.148`.
 
 ## Adding a new kernel series
@@ -360,12 +360,10 @@ KERNEL_VERSION=<version>
 KERNEL_SERIES=<series>
 BUILD_IMAGE=linuxkit/alpine:<builder>
 ```
-1. Update the list of kernels to build in the `Makefile`
 
 Since the last major series likely is the best basis for the new one, subject to additional modifications, you can use
 the previous one as a starting point.
 
-1. Modify the list of kernels inside the `Makefile` to include the new version. You do not need to specify the series anywhere, as the `Makefile` calculates it. E.g. adding `7.0.5` will cause it to calculate the series as `7.0.x` automatically.
 1. Make the directory for the new series, e.g. `mkdir 7.0.x`
 1. Create a new `linuxkit/kconfig` container image: `make kconfig`. This is not pushed out.
 1. Run a container based on `linuxkit/kconfig`.

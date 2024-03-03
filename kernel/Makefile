@@ -76,21 +76,22 @@ baseimage = $(ORG)/$(IMAGE)$(call baseimageextension,$(1))
 uniq = $(if $1,$(firstword $1) $(call uniq,$(filter-out $(firstword $1),$1)))
 
 
+# DEPRECATED : all kernel versions (actually series) marked as deprecated
+# You might still be able to build them, but they are not built by default or supported
+DEPRECATED_list=$(wildcard */deprecated)
+DEPRECATED := $(patsubst %/deprecated,%,$(DEPRECATED_list))
 #
-# Kernel versions to build.
-# Use all for kernels to be built on all platforms; use KERNELS_x86_64 or KERNELS_aarch64 for platform-specific kernels
-KERNELS_all=6.6.13 5.15.27
-KERNELS_x86_64=
-KERNELS_aarch64=
+# KERNELS : all potential kernel versions, based on the build-args files
 
-# deprecated versions. You might still be able to build them, but they are not built by default or supported
-# Use all for kernels to be built on all platforms; use DEPRECATED_x86_64 or DEPRECATED_aarch64 for platform-specific kernels
-DEPRECATED_all=5.10.104 5.11.4-rt
-DEPRECATED_x86_64=5.4.172 
-DEPRECATED_aarch64=
+# first find all known build-args files
+KERNELS_buildargfiles=$(wildcard */build-args)
+# get their directories
+KERNELS_alldirs=$(patsubst %/build-args,%,$(KERNELS_buildargfiles))
+# remove any directories that are marked as deprecated; what is left is valid dirs
+KERNELS_validdirs=$(filter-out $(DEPRECATED),$(KERNELS_alldirs))
+# get the values from the valid dirs
+KERNELS=$(shell awk -F= '/^KERNEL_VERSION=/ {print $$2}' $(addsuffix /build-args,$(KERNELS_validdirs)))
 
-KERNELS?=$(KERNELS_all) $(KERNELS_$(ARCH))
-DEPRECATED?=$(DEPRECATED_all) $(DEPRECATED_$(ARCH))
 
 # we build all tools across all platforms and kernels that we build
 TOOLS=bcc perf
