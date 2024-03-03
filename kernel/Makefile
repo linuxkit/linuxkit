@@ -97,6 +97,9 @@ KERNELS_validdirs=$(filter-out $(DEPRECATED),$(KERNELS_alldirs))
 # get the values from the valid dirs
 KERNELS=$(shell awk -F= '/^KERNEL_VERSION=/ {print $$2}' $(addsuffix /build-args,$(KERNELS_validdirs)))
 
+# get the highest supported one
+KERNEL_HIGHEST=$(shell echo $(KERNELS) | tr ' ' '\n' | sort -V | tail -n 1)
+
 
 # we build all tools across all platforms and kernels that we build
 TOOLS=bcc perf
@@ -193,13 +196,17 @@ tag-debugkernel-%:
 update-kernel-hash-yaml-%:
 	$(eval NEWTAG=$(shell $(MAKE) tag-plainkernel-$*))
 	$(eval OLDTAG=$(call serieswildcard,$(NEWTAG)))
-	@cd $(REPO_ROOT) && ./scripts/update-component-sha.sh --hash $(OLDTAG) $(NEWTAG)
+	@cd $(REPO_ROOT) && ./scripts/update-component-sha.sh --hash "$(OLDTAG)" "$(NEWTAG)"
 
 # find and replace any usage of the normal kernel with semver for most recent series
 update-kernel-semver-yaml-%:
 	$(eval NEWTAG=linuxkit/kernel:$*)
 	$(eval OLDTAG=linuxkit/kernel:[0-9]+.[0-9]+.[0-9]+)
-	@cd $(REPO_ROOT) && ./scripts/update-component-sha.sh --hash $(OLDTAG) $(NEWTAG)
+	@cd $(REPO_ROOT) && ./scripts/update-component-sha.sh --hash "$(OLDTAG)" "$(NEWTAG)"
+
+# update-kernel-yamls updates the latest hash for each supported series,
+# as well as the most recent supported semver
+update-kernel-yamls: $(addprefix update-kernel-hash-yaml-,$(KERNELS)) update-kernel-semver-yaml-$(KERNEL_HIGHEST);
 
 # Target for kernel config
 kconfig:
