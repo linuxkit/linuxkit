@@ -62,6 +62,7 @@ fi
 
 # Check that for each architecture we have the kernel for builder and the builder label points to the same thing
 for ARCH in ${KERNEL_ARCHES}; do
+    [ "$ARCH" = "unknown" ] && continue
     BUILDER_ARCH_DIGEST=$(echo ${BUILDER_MANIFEST} | jq -r --arg ARCH "$ARCH" '.[] | select (.platform.architecture == $ARCH) | .digest')
     BUILDER_LABEL_ARCH_DIGEST=$(echo ${BUILDER_LABEL_MANIFEST} | jq -r --arg ARCH "$ARCH" '.[] | select (.platform.architecture == $ARCH) | .digest')
 
