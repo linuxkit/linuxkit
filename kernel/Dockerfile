@@ -178,8 +178,8 @@ RUN DVER=$(basename $(find /tmp/kernel-modules/lib/modules/ -mindepth 1 -maxdept
 
 RUN printf "${BUILD_IMAGE}" > /out/kernel-builder
 
-ARG BUILD_IMAGE
 FROM scratch
+ARG BUILD_IMAGE
 ENTRYPOINT []
 CMD []
 WORKDIR /
