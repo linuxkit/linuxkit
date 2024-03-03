@@ -34,8 +34,10 @@ DIRTY:=$(shell git update-index -q --refresh && git diff-index --quiet HEAD -- $
 endif
 endif
 
+REPO_ROOT:=$(shell git rev-parse --show-toplevel)
+
 # Path to push-manifest.sh
-PUSH_MANIFEST:=$(shell git rev-parse --show-toplevel)/scripts/push-manifest.sh
+PUSH_MANIFEST:=$(REPO_ROOT)/scripts/push-manifest.sh
 
 # determine our architecture
 BUILDERARCH=
@@ -65,7 +67,10 @@ notdirty:
 # utility function
 SPACE := $(eval) $(eval)
 PERIOD := .
+# series - convert a version to a series, e.g. 6.6.13 -> 6.6.x
 series = $(word 1,$(subst ., ,$(1))).$(word 2,$(subst ., ,$(1))).x
+# serieswildcard - convert a version with or without a hash to a wildcard, e.g. 6.6.13-anbcd -> 6.6.-*
+serieswildcard = $(word 1,$(subst ., ,$(1))).$(word 2,$(subst ., ,$(1))).[0-9]+-[0-9a-f]+.*
 
 # word 1 is the release, word 2 is the tool
 RELEASESEP := PART
@@ -170,6 +175,31 @@ pushtool-%: buildtool-%
 	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)"))
 	linuxkit cache push $(HASHED_IMAGE)
 	linuxkit cache push $(HASHED_IMAGE) --remote-name $(PLAIN_IMAGE)
+
+#
+# targets for getting names of particular tags and replacing them, like what scripts/update-component-sha.sh does
+#
+
+# get the tag for the normal kernel for a particular version. Accepts version or series
+tag-plainkernel-%:
+	@linuxkit pkg show-tag . --build-yml ./build-kernel.yml --tag "$*-{{.Hash}}"
+
+# get the tag for the debug kernel for a particular version. Accepts version or series
+tag-debugkernel-%:
+	@linuxkit pkg show-tag . --build-yml ./build-kernel.yml --tag "$*-dbg-{{.Hash}}"
+
+# find and replace any usage of the normal kernel with hash for a particular series
+# will update hash for same semver and/or patch version
+update-kernel-hash-yaml-%:
+	$(eval NEWTAG=$(shell $(MAKE) tag-plainkernel-$*))
+	$(eval OLDTAG=$(call serieswildcard,$(NEWTAG)))
+	@cd $(REPO_ROOT) && ./scripts/update-component-sha.sh --hash $(OLDTAG) $(NEWTAG)
+
+# find and replace any usage of the normal kernel with semver for most recent series
+update-kernel-semver-yaml-%:
+	$(eval NEWTAG=linuxkit/kernel:$*)
+	$(eval OLDTAG=linuxkit/kernel:[0-9]+.[0-9]+.[0-9]+)
+	@cd $(REPO_ROOT) && ./scripts/update-component-sha.sh --hash $(OLDTAG) $(NEWTAG)
 
 # Target for kernel config
 kconfig:
