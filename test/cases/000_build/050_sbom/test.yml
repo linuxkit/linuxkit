@@ -1,6 +1,6 @@
 # NOTE: Images build from this file likely do not run
 kernel:
-  image: linuxkit/kernel:5.10.104
+  image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0"
 init:
   - linuxkit/init:45a1ad5919f0b6acf0f0cf730e9434abfae11fe6
