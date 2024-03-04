@@ -69,8 +69,8 @@ SPACE := $(eval) $(eval)
 PERIOD := .
 # series - convert a version to a series, e.g. 6.6.13 -> 6.6.x
 series = $(word 1,$(subst ., ,$(1))).$(word 2,$(subst ., ,$(1))).x
-# serieswildcard - convert a version with or without a hash to a wildcard, e.g. 6.6.13-anbcd -> 6.6.-*
-serieswildcard = $(word 1,$(subst ., ,$(1))).$(word 2,$(subst ., ,$(1))).[0-9]+-[0-9a-f]+.*
+# serieswithhash - convert a version with or without a hash to a series with a hash, e.g. 6.6.13-anbcd -> 6.6.x-[0-9a-f]+
+serieswithhash = $(word 1,$(subst ., ,$(1))).$(word 2,$(subst ., ,$(1))).[0-9]+-[0-9a-f]+
 
 # word 1 is the release, word 2 is the tool
 RELEASESEP := PART
@@ -195,7 +195,7 @@ tag-debugkernel-%:
 # will update hash for same semver and/or patch version
 update-kernel-hash-yaml-%:
 	$(eval NEWTAG=$(shell $(MAKE) tag-plainkernel-$*))
-	$(eval OLDTAG=$(call serieswildcard,$(NEWTAG)))
+	$(eval OLDTAG=$(call serieswithhash,$(NEWTAG)))
 	@cd $(REPO_ROOT) && ./scripts/update-component-sha.sh --hash "$(OLDTAG)" "$(NEWTAG)"
 
 # find and replace any usage of the normal kernel with semver for most recent series
