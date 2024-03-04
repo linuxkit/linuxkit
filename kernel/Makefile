@@ -201,7 +201,7 @@ update-kernel-hash-yaml-%:
 # find and replace any usage of the normal kernel with semver for most recent series
 update-kernel-semver-yaml-%:
 	$(eval NEWTAG=linuxkit/kernel:$*)
-	$(eval OLDTAG=linuxkit/kernel:[0-9]+.[0-9]+.[0-9]+)
+	$(eval OLDTAG=linuxkit/kernel:[0-9]+.[0-9]+.[0-9]+$$$$)
 	@cd $(REPO_ROOT) && ./scripts/update-component-sha.sh --hash "$(OLDTAG)" "$(NEWTAG)"
 
 # update-kernel-yamls updates the latest hash for each supported series,
