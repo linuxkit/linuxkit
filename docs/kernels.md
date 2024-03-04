@@ -167,6 +167,14 @@ Throughout this document, the architecture used is the kernel-recognized one, av
 on most systems as `uname -m`, e.g. `aarch64` or `x86_64`. You may be familiar with the alpine
 or golang one, e.g. `amd64` or `amd64`, which are not used here.
 
+**Note:** After changing _and committing any changes_ to the kernel directory or any
+subdirectories, you must update tests, examples and other dependencies. This is done
+via:
+
+```bash
+make update-kernel-yamls
+```
+
 Each series of kernels has a dedicated directory in [../kernel/](../kernel),
 e.g. [6.6.x](../kernel/6.6.x) or [5.15.x](../kernel/5.15.x).
 Variants, like rt kernels, have their own directory as well, e.g. [5.11.x-rt](../kernel/5.11.x-rt).
@@ -606,3 +614,31 @@ Alpine `zfs` utilities are available in `linuxkit/alpine` and the
 version of the kernel module should match the version of the
 tools. The container where you run the `zfs` tools might also need
 `CAP_SYS_MODULE` to be able to load the kernel modules.
+
+## Kernels in examples and tests
+
+All of the linuxkit `.yml` files use the images from `linuxkit/kernel:<tag>`.
+
+When updating the kernel, you run commands to update the tests. The updates to any file that contains
+references to `linuxkit/kernel` in this repository work as follows:
+
+- Semver tags are replaced by the most recent kernel version. For example, `linuxkit/kernel:5.10.104` will become `6.6.13` when available, and then `6.6.15`, and then `7.0.1`, etc. The highest semver always is used.
+- Semver+hash tags are replaced by the most recent hash and patch version for that series. For example, `linuxkit/kernel:5.10.104-abcdef1234` will become `5.10.104-aaaa54232` (same semver, newer hash), and then `5.10.105-bbbb12345` (newer semver, newer hash), etc. The highest semver+hash always is used.
+
+This is not an inherent characteristic of `linuxkit` tool, which **never** will change your `.yml` files. It is part of
+the update process for yml files _in this repository_.
+
+The net of the above is the following rule:
+
+* If you want a reference to a specific kernel series, e.g. a test or example that works only with `5.10.x`, then use a specific hash, e.g. `linuxkit/kernel:5.10.104-abcdef1234`. The hash and patch version will update, but not more. The most common use case for this is kernel version-specific tests.
+* If you want a reference to the most recent kernel, whatever version it is, then use a semver tag, e.g. `linuxkit/kernel:6.6.13`. The most common use case for this is examples that work with any kernel version, which is the vast majority of cases.
+
+You can get the current hash by executing the following:
+
+```bash
+$ cd kernel
+$ make tag-plain-kernel-<version>
+# for example:
+$ make tag-plain-kernel-6.6.13
+linuxkit/kernel:6.6.13-3a8b3faf92390265b1fbee792b9a3fe14d14c26e
+```
