@@ -27,7 +27,13 @@ clean_up() {
 trap clean_up EXIT
 
 # check the kernel images for tags, labels, files
-BUILDER=${KERNEL}-builder
+# builder image is based on semver, i.e. 5.10.104-builder
+# and not hash, i.e. 5.10.104-9005a97e2b2cba68b4374092167b079a2874f66b-builder,
+# so get basic semver
+KERNEL_IMAGE=${KERNEL%%:*}
+KERNEL_TAG=${KERNEL##*:}
+KERNEL_SEMVER=${KERNEL_TAG%%-*}
+BUILDER=${KERNEL_IMAGE}:${KERNEL_SEMVER}-builder
 BUILDERFILE=/tmp/kernel-builder-$$
 
 docker pull ${KERNEL}
