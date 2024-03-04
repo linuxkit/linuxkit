@@ -3,7 +3,7 @@
 # In the last stage, it creates a package, which can be used for
 # testing.
 
-FROM linuxkit/kernel:6.6.13-93250a118b43a85609ca27778784c161977024e6 AS ksrc
+FROM linuxkit/kernel:6.6.13-ad4d0da9e582d714cf61c8d99468cc7c1109bce5 AS ksrc
 
 # Extract headers and compile module
 FROM linuxkit/kernel:6.6.13-builder AS build

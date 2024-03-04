@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:6.6.13-93250a118b43a85609ca27778784c161977024e6
+  image: linuxkit/kernel:6.6.13-ad4d0da9e582d714cf61c8d99468cc7c1109bce5
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:07d37c3ae7fad5ddcb54c8dc65774ae050851f04
