@@ -18,7 +18,7 @@ import (
 // If withArchSpecificTags is true, it will push all arch-specific images in the index, each as
 // their own tag with the same name as the index, but with the architecture appended, e.g.
 // image:foo will have image:foo-amd64, image:foo-arm64, etc.
-func (p *Provider) Push(name, remoteName string, withArchSpecificTags bool) error {
+func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override bool) error {
 	var (
 		err     error
 		options []remote.Option
@@ -30,14 +30,25 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags bool) erro
 	if err != nil {
 		return err
 	}
+	options = append(options, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 
 	fmt.Printf("Pushing local %s as %s\n", name, remoteName)
+
+	// check if it already exists, unless override is explicit
+	if !override {
+		if _, err := remote.Get(ref, options...); err == nil {
+			log.Infof("image %s already exists in the registry, skipping", remoteName)
+			return nil
+		}
+	}
+
+	// if we made it this far, either we had a specific override, or we do not have the image remotely
+
 	// do we even have the given one?
 	root, err := p.FindRoot(name)
 	if err != nil {
 		return err
 	}
-	options = append(options, remote.WithAuthFromKeychain(authn.DefaultKeychain))
 
 	img, err1 := root.Image()
 	ii, err2 := root.ImageIndex()
