@@ -130,6 +130,23 @@ jobs:
       run: |
         make OPTIONS="-v --skip-platforms linux/s390x" -C test/pkg build
 
+    - name: Check Kernel Dependencies up to date
+      # checks that any kernel dependencies are up to date.
+      # if they are, then running `make update-kernel-yamls` will not change anything
+      run: |
+        echo "checking git diff before running make update-kernel-yamls"
+        git diff --exit-code
+        echo "running make update-kernel-yamls"
+        make -C kernel update-kernel-yamls
+        echo "checking git diff again after running make update-kernel-yamls; should be no changes"
+        git diff --exit-code
+
+    - name: Build Kernels
+      # ensures that the kernel packages are in linuxkit cache when we need them for tests later
+      # no need for excluding s390x, as each build.yml in the kernel explicitly lists archs
+      run: |
+        make OPTIONS="-v" -C kernel build
+
     - name: list cache contents
       run: |
         linuxkit cache ls
