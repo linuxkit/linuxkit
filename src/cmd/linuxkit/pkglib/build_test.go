@@ -392,7 +392,7 @@ func (c *cacheMocker) IndexWrite(ref *reference.Spec, descriptors ...registry.De
 
 	return c.NewSource(ref, "", &desc), nil
 }
-func (c *cacheMocker) Push(name, remoteName string, withManifest bool) error {
+func (c *cacheMocker) Push(name, remoteName string, withManifest, override bool) error {
 	if !c.enablePush {
 		return errors.New("push disabled")
 	}
