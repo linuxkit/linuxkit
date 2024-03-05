@@ -63,3 +63,11 @@ jobs:
       # Skip s390x as emulation is unreliable
       run: |
         make OPTIONS="--skip-platforms linux/s390x" -C pkg push PUSHOPTIONS="--nobuild"
+
+    - name: Publish Kernels
+      # this should only push changed ones:
+      #  - unchanged: already in the registry
+      #  - changed: already built and cached, so only will push
+      # No need to skip s390x, since kernel build.yml files all have explicit archs
+      run: |
+        make -C kernel push
