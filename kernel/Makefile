@@ -137,6 +137,10 @@ builddebugkernel-%: buildkerneldeps-%
 
 push-%: notdirty build-% pushkernel-% tagbuilder-% pushtools-%;
 
+# tagbuilder-% tags the builder image with the kernel version and `-builder` and pushes it
+# checks if it already matches on the registry before pushing
+# because the build may have been on a remote builder, or we may not have had to do a local build,
+# we cannot assume that IMAGE_BUILDER is available locally, whether in docker image cache or limuxkit cache
 tagbuilder-%: notdirty
 	$(eval BUILDER_IMAGE=$(call baseimage,$*)-builder)
 	docker tag $(IMAGE_BUILDER) $(BUILDER_IMAGE)$(SUFFIX) && \
