@@ -36,19 +36,14 @@ endif
 
 REPO_ROOT:=$(shell git rev-parse --show-toplevel)
 
-# Path to push-manifest.sh
-PUSH_MANIFEST:=$(REPO_ROOT)/scripts/push-manifest.sh
-
 # determine our architecture
 BUILDERARCH=
 ifneq ($(ARCH),)
 ifeq ($(ARCH),$(filter $(ARCH),x86_64 amd64))
-SUFFIX=-amd64
 override ARCH=x86_64
 BUILDERARCH=amd64
 endif
 ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
-SUFFIX=-arm64
 override ARCH=aarch64
 BUILDERARCH=arm64
 endif
@@ -137,11 +132,13 @@ builddebugkernel-%: buildkerneldeps-%
 
 push-%: notdirty build-% pushkernel-% tagbuilder-% pushtools-%;
 
+# tagbuilder-% tags the builder image with the kernel version and `-builder` and pushes it
+# checks if it already matches on the registry before pushing
+# because the build may have been on a remote builder, or we may not have had to do a local build,
+# we cannot assume that IMAGE_BUILDER is available locally, whether in docker image cache or limuxkit cache
 tagbuilder-%: notdirty
 	$(eval BUILDER_IMAGE=$(call baseimage,$*)-builder)
-	docker tag $(IMAGE_BUILDER) $(BUILDER_IMAGE)$(SUFFIX) && \
-	docker push $(BUILDER_IMAGE)$(SUFFIX) && \
-	$(PUSH_MANIFEST) $(BUILDER_IMAGE)
+	linuxkit pkg remote-tag $(IMAGE_BUILDER) $(BUILDER_IMAGE)
 
 pushkernel-%: pushplainkernel-% pushdebugkernel-%;
 
