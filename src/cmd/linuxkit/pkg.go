@@ -75,6 +75,7 @@ func pkgCmd() *cobra.Command {
 	cmd.AddCommand(pkgPushCmd())
 	cmd.AddCommand(pkgShowTagCmd())
 	cmd.AddCommand(pkgManifestCmd())
+	cmd.AddCommand(pkgRemoteTagCmd())
 
 	// These override fields in pkgInfo default below, bools are in both forms to allow user overrides in either direction.
 	// These will apply to all packages built.
