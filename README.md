@@ -4,17 +4,17 @@
 
 LinuxKit, a toolkit for building custom minimal, immutable Linux distributions.
 
-- Secure defaults without compromising usability
-- Everything is replaceable and customisable
-- Immutable infrastructure applied to building Linux distributions
-- Completely stateless, but persistent storage can be attached
-- Easy tooling, with easy iteration
-- Built with containers, for running containers
-- Designed to create [reproducible builds](./docs/reproducible-builds.md) [WIP]
-- Designed for building and running clustered applications, including but not limited to container orchestration such as Docker or Kubernetes
-- Designed from the experience of building Docker Editions, but redesigned as a general-purpose toolkit
-- Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) (renamed to [deploykit](https://github.com/docker/deploykit) which has been archived in 2019) or similar tools
-- Includes a set of longer-term collaborative projects in various stages of development to innovate on kernel and userspace changes, particularly around security
+- Secure defaults without compromising usability.
+- Everything is replaceable and customisable.
+- Immutable infrastructure applied to building Linux distributions.
+- Completely stateless, but persistent storage can be attached.
+- Easy tooling, with easy iteration.
+- Built with containers, for running containers.
+- Designed to create [reproducible builds](./docs/reproducible-builds.md) [WIP].
+- Designed for building and running clustered applications, including but not limited to container orchestration such as Docker or Kubernetes.
+- Designed from the experience of building Docker Editions, but redesigned as a general-purpose toolkit.
+- Designed to be managed by external tooling, such as [Infrakit](https://github.com/docker/infrakit) (renamed to [deploykit](https://github.com/docker/deploykit) which has been archived in 2019) or similar tools.
+- Includes a set of longer-term collaborative projects in various stages of development to innovate on kernel and userspace changes, particularly around security.
 
 LinuxKit currently supports the `x86_64`, `arm64`, and `s390x` architectures on a variety of platforms, both as virtual machines and baremetal (see [below](#booting-and-testing) for details).
 
@@ -136,8 +136,8 @@ The yaml format specifies the image to be built:
 - `kernel` specifies a kernel Docker image, containing a kernel and a filesystem tarball, eg containing modules. The example kernels are built from `kernel/`
 - `init` is the base `init` process Docker image, which is unpacked as the base system, containing `init`, `containerd`, `runc` and a few tools. Built from `pkg/init/`
 - `onboot` are the system containers, executed sequentially in order. They should terminate quickly when done.
-- `services` is the system services, which normally run for the whole time the system is up
-- `files` are additional files to add to the image
+- `services` is the system services, which normally run for the whole time the system is up.
+- `files` are additional files to add to the image.
 
 For a more detailed overview of the options see [yaml documentation](docs/yaml.md)
 
@@ -153,14 +153,14 @@ This project was extensively reworked from the code we are shipping in Docker Ed
 quality during Q3 2017, and rebase the Docker Editions on this open source project during this quarter. We plan to start making stable releases on this timescale.
 
 This is an open project without fixed judgements, open to the community to set the direction. The guiding principles are:
-- Security informs design
-- Infrastructure as code: immutable, manageable with code
-- Sensible, secure, and well-tested defaults
-- An open, pluggable platform for diverse use cases
-- Easy to use and participate in the project
-- Built with containers, for portability and reproducibility
-- Run with system containers, for isolation and extensibility
-- A base for robust products
+- Security informs design.
+- Infrastructure as code: immutable, manageable with code.
+- Sensible, secure, and well-tested defaults.
+- An open, pluggable platform for diverse use cases.
+- Easy to use and participate in the project.
+- Built with containers, for portability and reproducibility.
+- Run with system containers, for isolation and extensibility.
+- A base for robust products.
 
 ## Development reports
 
