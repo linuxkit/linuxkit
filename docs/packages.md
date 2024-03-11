@@ -378,3 +378,16 @@ ARG all_proxy
 
 LinuxKit does not judge between lower-cased or upper-cased variants of these options, e.g. `http_proxy` vs `HTTP_PROXY`,
 as `docker build` does not either. It just passes them through "as-is".
+
+## Releases
+
+Normally, whenever a package is updated, CI will build and push the package to Docker Hub by calling `linuxkit pkg push`.
+This automatically creates a tag based on the git tree hash of the package's directory.
+For example, the package in `./pkg/init` is tagged as `linuxkit/init:45a1ad5919f0b6acf0f0cf730e9434abfae11fe6`.
+
+In addition, you can release semver tags for packages by adding a tag to the git repository that begins with `pkg-` and is
+followed by a valid semver tag. For example, `pkg-v1.0.0`. This will cause CI to build and push the package to Docker Hub
+with the tag `v1.0.0`.
+
+Pure semver tags, like `v1.0.0`, are not used for package releases. They are used for the linuxkit project itself and to
+publish releases of the `linuxkit` binary.
