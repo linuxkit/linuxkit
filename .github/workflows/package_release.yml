@@ -1,15 +1,12 @@
 name: Release a tag
 
 on:
-  workflow_run:
-    workflows: [LinuxKit CI]
-    types: [completed]
-    branches: [master, main]
+  create:
 
 jobs:
   release:
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/pkg-v')
     name: Release packages
+    if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/pkg-v')
     runs-on: ubuntu-latest
     steps:
     - name: Set up Go 1.21
@@ -21,23 +18,19 @@ jobs:
       uses: actions/checkout@v3
     - name: Ensure bin/ directory
       run: mkdir -p bin
-    - name: Download linuxkit
+    - name: Install linuxkit
       run:
         go build -o bin/linuxkit ./src/cmd/linuxkit
         sudo mv bin/linuxkit /usr/local/bin/
-    - name: Restore Package Cache
-      uses: actions/cache@v3
-      with:
-        path: ~/.linuxkit/cache/
-        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-linuxkit-
     - name: Login to Docker Hub
       uses: docker/login-action@v2
       with:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     - name: Publish Packages as Release
+      # this should not build anything, as they all should be built already
+      # however, it can fail if we push the tag before the merge-to-master build is complete, since that may publish
+      # so *always* wait for any merge-to-master to complete before publishing pkg-v* tags
       run: |
         RELEASE_TAG=${GITHUB_REF#refs/tags/pkg-}
         echo "RELEASE_TAG=${RELEASE_TAG}"
