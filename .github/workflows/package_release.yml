@@ -1,4 +1,4 @@
-name: Release a tag
+name: Release Tagged Packages
 
 on:
   create:
@@ -20,7 +20,7 @@ jobs:
       run: mkdir -p bin
     - name: Install linuxkit
       run:
-        go build -o bin/linuxkit ./src/cmd/linuxkit
+        go -C ./src/cmd/linuxkit build -o $(pwd)/bin/linuxkit 
         sudo mv bin/linuxkit /usr/local/bin/
     - name: Login to Docker Hub
       uses: docker/login-action@v2

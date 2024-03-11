@@ -1,4 +1,4 @@
-name: Release a tag
+name: Release Tagged Linuxkit
 
 on:
   create:
