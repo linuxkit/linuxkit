@@ -1,46 +1,30 @@
 name: Release a tag
 
 on:
-  create:
-    tags:
-      - pkg-v*
+  workflow_run:
+    workflows: [LinuxKit CI]
+    types: [completed]
+    branches: [master, main]
 
 jobs:
-  build:
+  release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/pkg-v')
     name: Release packages
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
+    - name: Set up Go 1.21
+      uses: actions/setup-go@v3
+      with:
+        go-version: 1.21.5
+      id: go
     - name: Check out code
       uses: actions/checkout@v3
     - name: Ensure bin/ directory
       run: mkdir -p bin
     - name: Download linuxkit
-      uses: actions/github-script@v3.1.0
-      with:
-        script: |
-          var artifacts = await github.actions.listWorkflowRunArtifacts({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              run_id: ${{github.event.workflow_run.id }},
-          });
-          var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
-            return artifact.name == "${{ env.linuxkit_file }}"
-          })[0];
-          var download = await github.actions.downloadArtifact({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              artifact_id: matchArtifact.id,
-              archive_format: 'zip',
-          });
-          var fs = require('fs');
-          fs.writeFileSync('${{github.workspace}}/bin/${{ env.linuxkit_file }}.zip', Buffer.from(download.data));
-    - name: unzip linuxkit
-      run: cd bin && unzip ${{ env.linuxkit_file }}.zip
-    - name: Symlink Linuxkit
-      run: |
-        chmod ugo+x bin/${{ env.linuxkit_file }}
-        sudo ln -s $(pwd)/bin/${{ env.linuxkit_file }} /usr/local/bin/linuxkit
-        /usr/local/bin/linuxkit version
+      run:
+        go build -o bin/linuxkit ./src/cmd/linuxkit
+        sudo mv bin/linuxkit /usr/local/bin/
     - name: Restore Package Cache
       uses: actions/cache@v3
       with:
@@ -54,10 +38,6 @@ jobs:
         username: ${{ secrets.DOCKERHUB_USERNAME }}
         password: ${{ secrets.DOCKERHUB_TOKEN }}
     - name: Publish Packages as Release
-      # this should only push changed ones:
-      #  - unchanged: already in the registry
-      #  - changed: already built and cached, so only will push
-      # Skip s390x as emulation is unreliable
       run: |
         RELEASE_TAG=${GITHUB_REF#refs/tags/pkg-}
         echo "RELEASE_TAG=${RELEASE_TAG}"
