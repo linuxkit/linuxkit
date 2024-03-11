@@ -1,0 +1,65 @@
+name: Release a tag
+
+on:
+  create:
+    tags:
+      - pkg-v*
+
+jobs:
+  build:
+    name: Release packages
+    runs-on: macos-latest
+    steps:
+    - name: Check out code
+      uses: actions/checkout@v3
+    - name: Ensure bin/ directory
+      run: mkdir -p bin
+    - name: Download linuxkit
+      uses: actions/github-script@v3.1.0
+      with:
+        script: |
+          var artifacts = await github.actions.listWorkflowRunArtifacts({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              run_id: ${{github.event.workflow_run.id }},
+          });
+          var matchArtifact = artifacts.data.artifacts.filter((artifact) => {
+            return artifact.name == "${{ env.linuxkit_file }}"
+          })[0];
+          var download = await github.actions.downloadArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: matchArtifact.id,
+              archive_format: 'zip',
+          });
+          var fs = require('fs');
+          fs.writeFileSync('${{github.workspace}}/bin/${{ env.linuxkit_file }}.zip', Buffer.from(download.data));
+    - name: unzip linuxkit
+      run: cd bin && unzip ${{ env.linuxkit_file }}.zip
+    - name: Symlink Linuxkit
+      run: |
+        chmod ugo+x bin/${{ env.linuxkit_file }}
+        sudo ln -s $(pwd)/bin/${{ env.linuxkit_file }} /usr/local/bin/linuxkit
+        /usr/local/bin/linuxkit version
+    - name: Restore Package Cache
+      uses: actions/cache@v3
+      with:
+        path: ~/.linuxkit/cache/
+        key: ${{ runner.os }}-linuxkit-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-linuxkit-
+    - name: Login to Docker Hub
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+    - name: Publish Packages as Release
+      # this should only push changed ones:
+      #  - unchanged: already in the registry
+      #  - changed: already built and cached, so only will push
+      # Skip s390x as emulation is unreliable
+      run: |
+        RELEASE_TAG=${GITHUB_REF#refs/tags/pkg-}
+        echo "RELEASE_TAG=${RELEASE_TAG}"
+        [ -n "${RELEASE_TAG}" ] || { echo "Not a tag"; exit 1; }
+        make OPTIONS="--skip-platforms linux/s390x" -C pkg push PUSHOPTIONS="--nobuild --release ${RELEASE_TAG}"
