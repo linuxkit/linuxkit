@@ -19,7 +19,7 @@ jobs:
     - name: Ensure bin/ directory
       run: mkdir -p bin
     - name: Install linuxkit
-      run:
+      run: |
         go -C ./src/cmd/linuxkit build -o $(pwd)/bin/linuxkit 
         sudo mv bin/linuxkit /usr/local/bin/
     - name: Login to Docker Hub
