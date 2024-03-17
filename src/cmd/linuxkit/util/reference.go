@@ -1,6 +1,8 @@
 package util
 
-import "strings"
+import (
+	"strings"
+)
 
 type refOpts struct {
 	withTag bool
@@ -21,16 +23,13 @@ func ReferenceExpand(ref string, options ...ReferenceOption) string {
 	for _, opt := range options {
 		opt(&opts)
 	}
-	var ret string
+	ret := ref
+
 	parts := strings.Split(ref, "/")
-	switch len(parts) {
-	case 1:
+	if len(parts) == 1 {
 		ret = "docker.io/library/" + ref
-	case 2:
-		ret = "docker.io/" + ref
-	default:
-		ret = ref
 	}
+
 	if opts.withTag && !strings.Contains(ret, ":") {
 		ret += ":latest"
 	}
