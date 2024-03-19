@@ -63,8 +63,8 @@ Once you have built the tool, use
 ```
 linuxkit build linuxkit.yml
 ```
-to build the example configuration. You can also specify different output formats, eg `linuxkit build -format raw-bios linuxkit.yml` to
-output a raw BIOS bootable disk image, or `linuxkit build -format iso-efi linuxkit.yml` to output an EFI bootable ISO image. See `linuxkit build -help` for more information.
+to build the example configuration. You can also specify different output formats, eg `linuxkit build --format raw-bios linuxkit.yml` to
+output a raw BIOS bootable disk image, or `linuxkit build --format iso-efi linuxkit.yml` to output an EFI bootable ISO image. See `linuxkit build -help` for more information.
 
 ### Booting and Testing
 
