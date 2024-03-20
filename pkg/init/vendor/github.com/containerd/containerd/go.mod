@@ -7,10 +7,11 @@ require (
 	github.com/Microsoft/go-winio v0.4.16
 	github.com/Microsoft/hcsshim v0.8.14
 	github.com/Microsoft/hcsshim/test v0.0.0-20201218223536-d3e5debf77da
+	github.com/checkpoint-restore/go-criu/v4 v4.1.0 // indirect
 	github.com/containerd/aufs v0.0.0-20200908144142-dab0cbea06f4
 	github.com/containerd/btrfs v0.0.0-20201111183144-404b9149801e
 	github.com/containerd/cgroups v0.0.0-20200824123100-0b889c03f102
-	github.com/containerd/console v1.0.1
+	github.com/containerd/console v1.0.3
 	github.com/containerd/continuity v0.0.0-20201208142359-180525291bb7
 	github.com/containerd/fifo v0.0.0-20201026212402-0724c46b320c
 	github.com/containerd/go-cni v1.0.1
@@ -21,7 +22,7 @@ require (
 	github.com/containerd/typeurl v1.0.1
 	github.com/containerd/zfs v0.0.0-20200918131355-0a33824f23a2
 	github.com/containernetworking/plugins v0.8.6
-	github.com/coreos/go-systemd/v22 v22.1.0
+	github.com/coreos/go-systemd/v22 v22.3.2
 	github.com/davecgh/go-spew v1.1.1
 	github.com/docker/go-events v0.0.0-20190806004212-e31b211e4f1c
 	github.com/docker/go-metrics v0.0.1
@@ -30,31 +31,32 @@ require (
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/gogo/googleapis v1.4.0
 	github.com/gogo/protobuf v1.3.2
-	github.com/golang/protobuf v1.4.3
-	github.com/google/go-cmp v0.5.2
+	github.com/golang/protobuf v1.5.0
+	github.com/google/go-cmp v0.5.5
 	github.com/google/uuid v1.1.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-multierror v1.0.0
 	github.com/imdario/mergo v0.3.10
 	github.com/klauspost/compress v1.11.3
-	github.com/moby/sys/mountinfo v0.4.0
+	github.com/moby/sys/mountinfo v0.5.0
 	github.com/moby/sys/symlink v0.1.0
 	github.com/opencontainers/go-digest v1.0.0
 	github.com/opencontainers/image-spec v1.0.1
-	github.com/opencontainers/runc v1.0.0-rc93
-	github.com/opencontainers/runtime-spec v1.0.3-0.20200929063507-e6143ca7d51d
-	github.com/opencontainers/selinux v1.8.0
+	github.com/opencontainers/runc v1.1.2
+	github.com/opencontainers/runtime-spec v1.0.3-0.20210326190908-1c3f411f0417
+	github.com/opencontainers/selinux v1.10.0
 	github.com/pkg/errors v0.9.1
 	github.com/prometheus/client_golang v1.7.1
-	github.com/sirupsen/logrus v1.7.0
+	github.com/sirupsen/logrus v1.8.1
 	github.com/stretchr/testify v1.6.1
 	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
 	github.com/tchap/go-patricia v2.2.6+incompatible
 	github.com/urfave/cli v1.22.2
+	github.com/willf/bitset v1.1.11 // indirect
 	go.etcd.io/bbolt v1.3.5
 	golang.org/x/net v0.0.0-20201224014010-6772e930b67b
 	golang.org/x/sync v0.0.0-20201020160332-67f06af15bc9
-	golang.org/x/sys v0.0.0-20201202213521-69691e467435
+	golang.org/x/sys v0.0.0-20211116061358-0a5406a5449c
 	google.golang.org/grpc v1.30.0
 	gotest.tools/v3 v3.0.2
 	k8s.io/api v0.20.1
