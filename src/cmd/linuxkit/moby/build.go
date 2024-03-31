@@ -150,7 +150,38 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	// deduplicate containers with the same image
 	dupMap := map[string]string{}
 
-	if m.Kernel.ref != nil {
+	if len(m.From) > 0 {
+		// get from tarball
+		log.Infof("Extract from image: %s", m.From)
+		fromFile, err := os.Open(m.From)
+		if err != nil {
+			return fmt.Errorf("Failed to open from tarball: %v", err)
+		}
+		fromReader := tar.NewReader(fromFile)
+
+		for {
+			hdr, err := fromReader.Next()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("Failed to read header from tarball: %v", err)
+			}
+
+			if err := iw.WriteHeader(hdr); err != nil {
+				return fmt.Errorf("Failed to write header from tarball: %v", err)
+			}
+			_, err = io.Copy(iw, fromReader)
+			if err != nil {
+				return fmt.Errorf("Failed to write from tarball: %v", err)
+			}
+		}
+
+		// err := ImageTar(m.fromRef, "", iw, enforceContentTrust(m.fromRef.String(), &m.Trust), pull, resolvconfSymlink)
+		// if err != nil {
+		// 	return fmt.Errorf("Failed to extract from image and tarball: %v", err)
+		// }
+	} else if m.Kernel.ref != nil {
 		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
 		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, opts.DecompressKernel)

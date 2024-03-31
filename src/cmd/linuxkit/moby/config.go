@@ -20,6 +20,7 @@ import (
 
 // Moby is the type of a Moby config file
 type Moby struct {
+	From       string       `yaml:"from,omitempty" json:"from,omitempty"`
 	Kernel     KernelConfig `kernel:"cmdline,omitempty" json:"kernel,omitempty"`
 	Init       []string     `init:"cmdline" json:"init"`
 	Onboot     []*Image     `yaml:"onboot" json:"onboot"`
@@ -27,6 +28,7 @@ type Moby struct {
 	Services   []*Image     `yaml:"services" json:"services"`
 	Files      []File       `yaml:"files" json:"files"`
 
+	fromRef  *reference.Spec
 	initRefs []*reference.Spec
 }
 
@@ -177,6 +179,13 @@ func uniqueServices(m Moby) error {
 }
 
 func extractReferences(m *Moby) error {
+	// if m.From != nil {
+	// 	r, err := reference.Parse(*m.From)
+	// 	if err != nil {
+	// 		return fmt.Errorf("extract from image reference: %v", err)
+	// 	}
+	// 	m.fromRef = &r
+	// }
 	if m.Kernel.Image != "" {
 		r, err := reference.Parse(util.ReferenceExpand(m.Kernel.Image))
 		if err != nil {
@@ -294,6 +303,9 @@ func NewConfig(config []byte, packageFinder spec.PackageResolver) (Moby, error) 
 // AppendConfig appends two configs.
 func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby := m0
+	if m1.From != "" {
+		moby.From = m1.From
+	}
 	if m1.Kernel.Image != "" {
 		moby.Kernel.Image = m1.Kernel.Image
 	}
