@@ -182,22 +182,21 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 
 	var storageDevices []vz.StorageDeviceConfiguration
 	for i, d := range cfg.disks {
-		var id, diskPath string
+		var id string
+		var diskPath = d.Path
 		if i != 0 {
 			id = strconv.Itoa(i)
 		}
-		if d.Size != 0 && d.Path == "" {
+		if d.Size != 0 && diskPath == "" {
 			diskPath = filepath.Join(cfg.state, "disk"+id+".raw")
 		}
-		if d.Path == "" {
-			return fmt.Errorf("disk specified with no size or name")
-		}
+
 		diskImageAttachment, err := vz.NewDiskImageStorageDeviceAttachment(
 			diskPath,
 			false,
 		)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to create disk attachment: %v", err)
 		}
 		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
 		if err != nil {
@@ -211,7 +210,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 			true,
 		)
 		if err != nil {
-			log.Fatal(err)
+			log.Fatalf("Failed to create disk attachment: %v", err)
 		}
 		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
 		if err != nil {
