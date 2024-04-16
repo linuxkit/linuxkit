@@ -1,8 +1,10 @@
 # This Dockerfile extracts the source code and headers from a kernel package,
 # builds the perf utility, and places it into a scratch image
 ARG BUILD_IMAGE
+ARG KERNEL_VERSION
+ARG PKG_HASH
 
-FROM ${KERNEL_VERSION}-${HASH} AS ksrc
+FROM linuxkit/kernel:${KERNEL_VERSION}-${PKG_HASH} as ksrc
 
 FROM ${BUILD_IMAGE} AS build
 RUN apk add \

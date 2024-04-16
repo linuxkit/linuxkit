@@ -1,6 +1,8 @@
 ARG BUILD_IMAGE
+ARG KERNEL_VERSION
+ARG PKG_HASH
 
-FROM ${KERNEL_VERSION}-${HASH} as ksrc
+FROM linuxkit/kernel:${KERNEL_VERSION}-${PKG_HASH} as ksrc
 
 FROM ${BUILD_IMAGE} AS build
 RUN apk update && apk upgrade -a && \
