@@ -431,6 +431,14 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		if _, ok := imageBuildOpts.BuildArgs["GOPKGVERSION"]; !ok && goPkgVersion != "" {
 			imageBuildOpts.BuildArgs["GOPKGVERSION"] = &goPkgVersion
 		}
+		if _, ok := imageBuildOpts.BuildArgs["PKG_HASH"]; !ok && p.Hash() != "" {
+			ret := p.Hash()
+			imageBuildOpts.BuildArgs["PKG_HASH"] = &ret
+		}
+		if _, ok := imageBuildOpts.BuildArgs["PKG_IMAGE"]; !ok && p.Image() != "" {
+			ret := p.Image()
+			imageBuildOpts.BuildArgs["PKG_IMAGE"] = &ret
+		}
 
 		// build for each arch and save in the linuxkit cache
 		for _, platform := range platformsToBuild {

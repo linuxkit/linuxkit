@@ -317,6 +317,11 @@ func (p Pkg) Tag() string {
 	return p.org + "/" + p.image + ":" + t
 }
 
+// Image returns the image name without the tag
+func (p Pkg) Image() string {
+	return p.org + "/" + p.image
+}
+
 // FullTag returns a reference expanded tag
 func (p Pkg) FullTag() string {
 	return util.ReferenceExpand(p.Tag())
