@@ -272,6 +272,8 @@ When building packages, the following build-args automatically are set for you:
 * `SOURCE` - the source repository of the package
 * `REVISION` - the git commit that was used for the build
 * `GOPKGVERSION` - the go package version or pseudo-version per https://go.dev/ref/mod#glos-pseudo-version
+* `PKG_HASH` - the git tree hash of the package directory, e.g. `45a1ad5919f0b6acf0f0cf730e9434abfae11fe6`; tag part of `linuxkit pkg show-tag`
+* `PKG_IMAGE` - the name of the image that is being built, e.g. `linuxkit/init`; image name part of `linuxkit pkg show-tag`. Combine with `PKG_HASH` for the full tag.
 
 Note that the above are set **only** if you do not set them in `build.yaml`. Your settings _always_
 override these built-in ones.
