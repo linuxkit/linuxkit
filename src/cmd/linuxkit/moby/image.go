@@ -14,6 +14,14 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
+const (
+	// PaxRecordLinuxkitSource report the package source for a specific file
+	PaxRecordLinuxkitSource = "LINUXKIT.source"
+	// PaxRecordLinuxkitLocation report the location of the file in the linuxkit.yaml
+	// that led to this file being in this location
+	PaxRecordLinuxkitLocation = "LINUXKIT.location"
+)
+
 type tarWriter interface {
 	Close() error
 	Flush() error
@@ -140,7 +148,8 @@ var touch = map[string]tar.Header{
 }
 
 // tarPrefix creates the leading directories for a path
-func tarPrefix(path string, tw tarWriter) error {
+// path is the path to prefix, location is where this appears in the linuxkit.yaml file
+func tarPrefix(path, location string, ref *reference.Spec, tw tarWriter) error {
 	if path == "" {
 		return nil
 	}
@@ -160,6 +169,10 @@ func tarPrefix(path string, tw tarWriter) error {
 			ModTime:  defaultModTime,
 			Typeflag: tar.TypeDir,
 			Format:   tar.FormatPAX,
+			PAXRecords: map[string]string{
+				PaxRecordLinuxkitSource:   ref.String(),
+				PaxRecordLinuxkitLocation: location,
+			},
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -170,13 +183,14 @@ func tarPrefix(path string, tw tarWriter) error {
 }
 
 // ImageTar takes a Docker image and outputs it to a tar stream
-func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, opts BuildOpts) (e error) {
+// location is where it is in the linuxkit.yaml file
+func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter, resolv string, opts BuildOpts) (e error) {
 	log.Debugf("image tar: %s %s", ref, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != '/' {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
 	}
 
-	err := tarPrefix(prefix, tw)
+	err := tarPrefix(prefix, location, ref, tw)
 	if err != nil {
 		return err
 	}
@@ -185,12 +199,12 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 	// If pull==true, then it always tries to pull from registry.
 	src, err := imagePull(ref, opts.Pull, opts.CacheDir, opts.DockerCache, opts.Arch)
 	if err != nil {
-		return fmt.Errorf("Could not pull image %s: %v", ref, err)
+		return fmt.Errorf("could not pull image %s: %v", ref, err)
 	}
 
 	contents, err := src.TarReader()
 	if err != nil {
-		return fmt.Errorf("Could not unpack image %s: %v", ref, err)
+		return fmt.Errorf("could not unpack image %s: %v", ref, err)
 	}
 
 	defer contents.Close()
@@ -214,6 +228,12 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 		// force PAX format, since it allows for unlimited Name/Linkname
 		// and we move all files below prefix.
 		hdr.Format = tar.FormatPAX
+		// ensure we record the source of the file in the PAX header
+		if hdr.PAXRecords == nil {
+			hdr.PAXRecords = make(map[string]string)
+		}
+		hdr.PAXRecords[PaxRecordLinuxkitSource] = ref.String()
+		hdr.PAXRecords[PaxRecordLinuxkitLocation] = location
 		if exclude[hdr.Name] {
 			log.Debugf("image tar: %s %s exclude %s", ref, prefix, hdr.Name)
 			_, err = io.Copy(io.Discard, tr)
@@ -286,6 +306,12 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 			continue
 		}
 		hdr := touch[name]
+		// ensure that we record the source of the file
+		if hdr.PAXRecords == nil {
+			hdr.PAXRecords = make(map[string]string)
+		}
+		hdr.PAXRecords[PaxRecordLinuxkitSource] = ref.String()
+		hdr.PAXRecords[PaxRecordLinuxkitLocation] = location
 		origName := hdr.Name
 		hdr.Name = prefix + origName
 		hdr.Format = tar.FormatPAX
@@ -329,7 +355,7 @@ func ImageTar(ref *reference.Spec, prefix string, tw tarWriter, resolv string, o
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, readonly bool, dupMap map[string]string, opts BuildOpts) error { // nolint: lll
+func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, readonly bool, dupMap map[string]string, opts BuildOpts) error { // nolint: lll
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
 	rootExtract := "rootfs"
 	if !readonly {
@@ -340,12 +366,12 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	root := path.Join(prefix, rootExtract)
 	var foundElsewhere = dupMap[ref.String()] != ""
 	if !foundElsewhere {
-		if err := ImageTar(ref, root+"/", tw, "", opts); err != nil {
+		if err := ImageTar(location, ref, root+"/", tw, "", opts); err != nil {
 			return err
 		}
 		dupMap[ref.String()] = root
 	} else {
-		if err := tarPrefix(prefix+"/", tw); err != nil {
+		if err := tarPrefix(prefix+"/", location, ref, tw); err != nil {
 			return err
 		}
 		root = dupMap[ref.String()]
@@ -357,6 +383,10 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 		Size:    int64(len(config)),
 		ModTime: defaultModTime,
 		Format:  tar.FormatPAX,
+		PAXRecords: map[string]string{
+			PaxRecordLinuxkitSource:   ref.String(),
+			PaxRecordLinuxkitLocation: location,
+		},
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err
@@ -375,6 +405,10 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			Typeflag: tar.TypeDir,
 			ModTime:  defaultModTime,
 			Format:   tar.FormatPAX,
+			PAXRecords: map[string]string{
+				PaxRecordLinuxkitSource:   ref.String(),
+				PaxRecordLinuxkitLocation: location,
+			},
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -386,6 +420,10 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 			Typeflag: tar.TypeDir,
 			ModTime:  defaultModTime,
 			Format:   tar.FormatPAX,
+			PAXRecords: map[string]string{
+				PaxRecordLinuxkitSource:   ref.String(),
+				PaxRecordLinuxkitLocation: location,
+			},
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
 			return err
@@ -406,6 +444,10 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 				Typeflag: tar.TypeDir,
 				ModTime:  defaultModTime,
 				Format:   tar.FormatPAX,
+				PAXRecords: map[string]string{
+					PaxRecordLinuxkitSource:   ref.String(),
+					PaxRecordLinuxkitLocation: location,
+				},
 			}
 			if err := tw.WriteHeader(hdr); err != nil {
 				return err
@@ -424,7 +466,7 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 	// write the runtime config
 	runtimeConfig, err := json.MarshalIndent(runtime, "", "    ")
 	if err != nil {
-		return fmt.Errorf("Failed to create runtime config for %s: %v", ref, err)
+		return fmt.Errorf("failed to create runtime config for %s: %v", ref, err)
 	}
 
 	hdr = &tar.Header{
@@ -433,6 +475,10 @@ func ImageBundle(prefix string, ref *reference.Spec, config []byte, runtime Runt
 		Size:    int64(len(runtimeConfig)),
 		ModTime: defaultModTime,
 		Format:  tar.FormatPAX,
+		PAXRecords: map[string]string{
+			PaxRecordLinuxkitSource:   ref.String(),
+			PaxRecordLinuxkitLocation: location,
+		},
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
 		return err

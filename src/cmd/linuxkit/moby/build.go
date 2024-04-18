@@ -92,25 +92,25 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 	}
 	src, err := imagePull(&ref, opts.Pull, opts.CacheDir, opts.DockerCache, opts.Arch)
 	if err != nil {
-		return fmt.Errorf("Could not pull image %s: %v", image.Image, err)
+		return fmt.Errorf("could not pull image %s: %v", image.Image, err)
 	}
 	configRaw, err := src.Config()
 	if err != nil {
-		return fmt.Errorf("Failed to retrieve config for %s: %v", image.Image, err)
+		return fmt.Errorf("failed to retrieve config for %s: %v", image.Image, err)
 	}
 	oci, runtime, err := ConfigToOCI(image, configRaw, idMap)
 	if err != nil {
-		return fmt.Errorf("Failed to create OCI spec for %s: %v", image.Image, err)
+		return fmt.Errorf("failed to create OCI spec for %s: %v", image.Image, err)
 	}
 	config, err := json.MarshalIndent(oci, "", "    ")
 	if err != nil {
-		return fmt.Errorf("Failed to create config for %s: %v", image.Image, err)
+		return fmt.Errorf("failed to create config for %s: %v", image.Image, err)
 	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, image.ref, config, runtime, iw, readonly, dupMap, opts)
+	err = ImageBundle(path, section, image.ref, config, runtime, iw, readonly, dupMap, opts)
 	if err != nil {
-		return fmt.Errorf("Failed to extract root filesystem for %s: %v", image.Image, err)
+		return fmt.Errorf("failed to extract root filesystem for %s: %v", image.Image, err)
 	}
 	return nil
 }
@@ -153,14 +153,14 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	if m.Kernel.ref != nil {
 		// get kernel and initrd tarball and ucode cpio archive from container
 		log.Infof("Extract kernel image: %s", m.Kernel.ref)
-		kf := newKernelFilter(iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, opts.DecompressKernel)
-		err := ImageTar(m.Kernel.ref, "", kf, "", opts)
+		kf := newKernelFilter(m.Kernel.ref, iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, opts.DecompressKernel)
+		err := ImageTar("kernel", m.Kernel.ref, "", kf, "", opts)
 		if err != nil {
-			return fmt.Errorf("Failed to extract kernel image and tarball: %v", err)
+			return fmt.Errorf("failed to extract kernel image and tarball: %v", err)
 		}
 		err = kf.Close()
 		if err != nil {
-			return fmt.Errorf("Close error: %v", err)
+			return fmt.Errorf("close error: %v", err)
 		}
 	}
 
@@ -168,10 +168,10 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	if len(m.Init) != 0 {
 		log.Infof("Add init containers:")
 	}
-	apkTar := newAPKTarWriter(iw)
+	apkTar := newAPKTarWriter(iw, "init")
 	for _, ii := range m.initRefs {
 		log.Infof("Process init image: %s", ii)
-		err := ImageTar(ii, "", apkTar, resolvconfSymlink, opts)
+		err := ImageTar("init", ii, "", apkTar, resolvconfSymlink, opts)
 		if err != nil {
 			return fmt.Errorf("failed to build init tarball from %s: %v", ii, err)
 		}
@@ -252,9 +252,10 @@ type kernelFilter struct {
 	foundKernel      bool
 	foundKTar        bool
 	foundUCode       bool
+	ref              *reference.Spec
 }
 
-func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar, ucode *string, decompressKernel bool) *kernelFilter {
+func newKernelFilter(ref *reference.Spec, tw *tar.Writer, cmdline string, kernel string, tar, ucode *string, decompressKernel bool) *kernelFilter {
 	tarName, kernelName, ucodeName := "kernel.tar", "kernel", ""
 	if tar != nil {
 		tarName = *tar
@@ -268,7 +269,7 @@ func newKernelFilter(tw *tar.Writer, cmdline string, kernel string, tar, ucode *
 	if ucode != nil {
 		ucodeName = *ucode
 	}
-	return &kernelFilter{tw: tw, cmdline: cmdline, kernel: kernelName, tar: tarName, ucode: ucodeName, decompressKernel: decompressKernel}
+	return &kernelFilter{ref: ref, tw: tw, cmdline: cmdline, kernel: kernelName, tar: tarName, ucode: ucodeName, decompressKernel: decompressKernel}
 }
 
 func (k *kernelFilter) finishTar() error {
@@ -299,7 +300,7 @@ func (k *kernelFilter) finishTar() error {
 	}
 
 	tr := tar.NewReader(k.buffer)
-	err := tarAppend(k.tw, tr)
+	err := tarAppend(k.ref, k.tw, tr)
 	k.buffer = nil
 	return err
 }
@@ -348,11 +349,12 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		// If we handled the ucode, /boot already exist.
 		if !k.foundUCode {
 			whdr := &tar.Header{
-				Name:     "boot",
-				Mode:     0755,
-				Typeflag: tar.TypeDir,
-				ModTime:  defaultModTime,
-				Format:   tar.FormatPAX,
+				Name:       "boot",
+				Mode:       0755,
+				Typeflag:   tar.TypeDir,
+				ModTime:    defaultModTime,
+				Format:     tar.FormatPAX,
+				PAXRecords: hdr.PAXRecords,
 			}
 			if err := tw.WriteHeader(whdr); err != nil {
 				return err
@@ -360,11 +362,12 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		}
 		// add the cmdline in /boot/cmdline
 		whdr := &tar.Header{
-			Name:    "boot/cmdline",
-			Mode:    0644,
-			Size:    int64(len(k.cmdline)),
-			ModTime: defaultModTime,
-			Format:  tar.FormatPAX,
+			Name:       "boot/cmdline",
+			Mode:       0644,
+			Size:       int64(len(k.cmdline)),
+			ModTime:    defaultModTime,
+			Format:     tar.FormatPAX,
+			PAXRecords: hdr.PAXRecords,
 		}
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
@@ -375,11 +378,12 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		}
 		// Stash the kernel header and prime the buffer for the kernel
 		k.hdr = &tar.Header{
-			Name:    "boot/kernel",
-			Mode:    hdr.Mode,
-			Size:    hdr.Size,
-			ModTime: defaultModTime,
-			Format:  tar.FormatPAX,
+			Name:       "boot/kernel",
+			Mode:       hdr.Mode,
+			Size:       hdr.Size,
+			ModTime:    defaultModTime,
+			Format:     tar.FormatPAX,
+			PAXRecords: hdr.PAXRecords,
 		}
 		k.buffer = new(bytes.Buffer)
 	case k.tar:
@@ -392,22 +396,24 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 		// If we handled the kernel, /boot already exist.
 		if !k.foundKernel {
 			whdr := &tar.Header{
-				Name:     "boot",
-				Mode:     0755,
-				Typeflag: tar.TypeDir,
-				ModTime:  defaultModTime,
-				Format:   tar.FormatPAX,
+				Name:       "boot",
+				Mode:       0755,
+				Typeflag:   tar.TypeDir,
+				ModTime:    defaultModTime,
+				Format:     tar.FormatPAX,
+				PAXRecords: hdr.PAXRecords,
 			}
 			if err := tw.WriteHeader(whdr); err != nil {
 				return err
 			}
 		}
 		whdr := &tar.Header{
-			Name:    "boot/ucode.cpio",
-			Mode:    hdr.Mode,
-			Size:    hdr.Size,
-			ModTime: defaultModTime,
-			Format:  tar.FormatPAX,
+			Name:       "boot/ucode.cpio",
+			Mode:       hdr.Mode,
+			Size:       hdr.Size,
+			ModTime:    defaultModTime,
+			Format:     tar.FormatPAX,
+			PAXRecords: hdr.PAXRecords,
 		}
 		if err := tw.WriteHeader(whdr); err != nil {
 			return err
@@ -419,7 +425,7 @@ func (k *kernelFilter) WriteHeader(hdr *tar.Header) error {
 	return nil
 }
 
-func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
+func tarAppend(ref *reference.Spec, iw *tar.Writer, tr *tar.Reader) error {
 	for {
 		hdr, err := tr.Next()
 		if err == io.EOF {
@@ -428,6 +434,12 @@ func tarAppend(iw *tar.Writer, tr *tar.Reader) error {
 		if err != nil {
 			return err
 		}
+		hdr.Format = tar.FormatPAX
+		if hdr.PAXRecords == nil {
+			hdr.PAXRecords = make(map[string]string)
+		}
+		hdr.PAXRecords[PaxRecordLinuxkitSource] = ref.String()
+		hdr.PAXRecords[PaxRecordLinuxkitLocation] = "kernel"
 		err = iw.WriteHeader(hdr)
 		if err != nil {
 			return err
@@ -478,7 +490,7 @@ func decompressKernel(src *bytes.Buffer) (*bytes.Buffer, error) {
 		versionMajor := int(s[versionIdx])
 		versionMinor := int(s[versionIdx+1])
 		if versionMajor < 2 && versionMinor < 8 {
-			return nil, fmt.Errorf("Unsupported bzImage version: %d.%d", versionMajor, versionMinor)
+			return nil, fmt.Errorf("unsupported bzImage version: %d.%d", versionMajor, versionMinor)
 		}
 
 		setupSectors := uint32(s[setupSectorsIdx])
@@ -488,7 +500,7 @@ func decompressKernel(src *bytes.Buffer) (*bytes.Buffer, error) {
 		log.Debugf("bzImage: Payload at Offset: %d Length: %d", payloadOff, payloadLen)
 
 		if len(s) < int(payloadOff+payloadLen) {
-			return nil, fmt.Errorf("Compressed bzImage payload exceeds size of image")
+			return nil, fmt.Errorf("compressed bzImage payload exceeds size of image")
 		}
 
 		if bytes.HasPrefix(s[payloadOff:], []byte(gzipMagic)) {
@@ -496,10 +508,10 @@ func decompressKernel(src *bytes.Buffer) (*bytes.Buffer, error) {
 			return gunzip(bytes.NewBuffer(s[payloadOff : payloadOff+payloadLen]))
 		}
 		// TODO(rn): Add more supported formats
-		return nil, fmt.Errorf("Unsupported bzImage payload format at offset %d", payloadOff)
+		return nil, fmt.Errorf("unsupported bzImage payload format at offset %d", payloadOff)
 	}
 
-	return nil, fmt.Errorf("No compressed kernel or no supported format found")
+	return nil, fmt.Errorf("no compressed kernel or no supported format found")
 }
 
 func gunzip(src *bytes.Buffer) (*bytes.Buffer, error) {
@@ -529,7 +541,7 @@ func metadata(m Moby, md string) ([]byte, error) {
 	case "yaml":
 		return yaml.Marshal(m)
 	default:
-		return []byte{}, fmt.Errorf("Unsupported metadata type: %s", md)
+		return []byte{}, fmt.Errorf("unsupported metadata type: %s", md)
 	}
 }
 
@@ -540,10 +552,10 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 	if len(m.Files) != 0 {
 		log.Infof("Add files:")
 	}
-	for _, f := range m.Files {
+	for filecount, f := range m.Files {
 		log.Infof("  %s", f.Path)
 		if f.Path == "" {
-			return errors.New("Did not specify path for file")
+			return errors.New("did not specify path for file")
 		}
 		// tar archives should not have absolute paths
 		if f.Path[0] == '/' {
@@ -557,7 +569,7 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 			var err error
 			mode, err = strconv.ParseInt(f.Mode, 8, 32)
 			if err != nil {
-				return fmt.Errorf("Cannot parse file mode as octal value: %v", err)
+				return fmt.Errorf("cannot parse file mode as octal value: %v", err)
 			}
 		}
 		dirMode := mode
@@ -586,10 +598,10 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 		}
 		if !f.Directory && f.Symlink == "" && f.Contents == nil {
 			if f.Source == "" && f.Metadata == "" {
-				return fmt.Errorf("Contents of file (%s) not specified", f.Path)
+				return fmt.Errorf("contents of file (%s) not specified", f.Path)
 			}
 			if f.Source != "" && f.Metadata != "" {
-				return fmt.Errorf("Specified Source and Metadata for file: %s", f.Path)
+				return fmt.Errorf("specified Source and Metadata for file: %s", f.Path)
 			}
 			if f.Source != "" {
 				source := f.Source
@@ -600,7 +612,7 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 					_, err := os.Stat(source)
 					if err != nil {
 						// skip if not found or readable
-						log.Debugf("Skipping file [%s] as not readable and marked optional", source)
+						log.Debugf("skipping file [%s] as not readable and marked optional", source)
 						continue
 					}
 				}
@@ -617,10 +629,10 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 			}
 		} else {
 			if f.Metadata != "" {
-				return fmt.Errorf("Specified Contents and Metadata for file: %s", f.Path)
+				return fmt.Errorf("specified Contents and Metadata for file: %s", f.Path)
 			}
 			if f.Source != "" {
-				return fmt.Errorf("Specified Contents and Source for file: %s", f.Path)
+				return fmt.Errorf("specified Contents and Source for file: %s", f.Path)
 			}
 		}
 		// we need all the leading directories
@@ -644,6 +656,10 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 					Uid:      int(uid),
 					Gid:      int(gid),
 					Format:   tar.FormatPAX,
+					PAXRecords: map[string]string{
+						PaxRecordLinuxkitSource:   "linuxkit.files",
+						PaxRecordLinuxkitLocation: fmt.Sprintf("files[%d]", filecount),
+					},
 				}
 				err := tw.WriteHeader(hdr)
 				if err != nil {
@@ -660,10 +676,14 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 			Uid:     int(uid),
 			Gid:     int(gid),
 			Format:  tar.FormatPAX,
+			PAXRecords: map[string]string{
+				PaxRecordLinuxkitSource:   "linuxkit.files",
+				PaxRecordLinuxkitLocation: fmt.Sprintf("files[%d]", filecount),
+			},
 		}
 		if f.Directory {
 			if f.Contents != nil {
-				return errors.New("Directory with contents not allowed")
+				return errors.New("directory with contents not allowed")
 			}
 			hdr.Typeflag = tar.TypeDir
 			err := tw.WriteHeader(hdr)

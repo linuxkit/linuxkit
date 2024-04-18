@@ -8,17 +8,21 @@ import (
 // apkTarWriter apk-aware tar writer that consolidates installed database, so that
 // it can be called multiple times and will do the union of all such databases,
 // rather than overwriting the previous one.
+// Useful only for things that write to the base filesystem, i.e. init, since everything
+// else is inside containers.
 const apkInstalledPath = "lib/apk/db/installed"
 
 type apkTarWriter struct {
 	*tar.Writer
-	dbs     [][]byte
-	current *bytes.Buffer
+	dbs      [][]byte
+	current  *bytes.Buffer
+	location string
 }
 
-func newAPKTarWriter(w *tar.Writer) *apkTarWriter {
+func newAPKTarWriter(w *tar.Writer, location string) *apkTarWriter {
 	return &apkTarWriter{
-		Writer: w,
+		Writer:   w,
+		location: location,
 	}
 }
 
@@ -67,6 +71,10 @@ func (a *apkTarWriter) WriteAPKDB() error {
 			Gid:      0,
 			Typeflag: tar.TypeReg,
 			Size:     int64(size),
+			PAXRecords: map[string]string{
+				PaxRecordLinuxkitSource:   "LINUXKIT.apkinit",
+				PaxRecordLinuxkitLocation: a.location,
+			},
 		}
 		if err := a.Writer.WriteHeader(hdr); err != nil {
 			return err
