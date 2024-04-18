@@ -1,0 +1,46 @@
+# NOTE: Images build from this file likely do not run
+kernel:
+  image: linuxkit/kernel:6.6.13
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:45a1ad5919f0b6acf0f0cf730e9434abfae11fe6
+  - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
+  - linuxkit/containerd:e7a92d9f3282039eac5fb1b07cac2b8664cbf0ad
+
+onboot:
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:e9e3580f2de00e73e7b316a007186d22fea056ee
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+    # Add some random unsorted caps
+    capabilities:
+      - CAP_SETGID
+      - CAP_DAC_OVERRIDE
+
+services:
+  - name: testservice
+    image: linuxkit/ip:bb250017b05de5e16ac436b1eb19a39c87b5a252
+    # Some environments
+    env:
+      - BENV=true
+      - ARANDOMENV=foobar
+    # Some mounts
+    mounts:
+      - type: cgroup
+        options: ["rw","nosuid","noexec","nodev","relatime"]
+      - type: overlay
+        source: overlay
+        destination: writeable-host-etc
+        options: ["rw", "lowerdir=/etc", "upperdir=/run/hostetc/upper", "workdir=/run/hostetc/work"]
+    # Some binds
+    binds:
+      - /var/run:/var/run
+      - /foobar:/foobar
+      - /etc/foobar:/etc/foobar
+      - /etc/aaa:/etc/aaa
+    # And some runtime settings
+    runtime:
+      mkdir: ["/var/lib/docker","/var/lib/aaa"]
+
+files:
+  - path: etc/linuxkit-config
+    metadata: yaml
