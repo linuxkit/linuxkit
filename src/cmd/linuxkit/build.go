@@ -55,6 +55,7 @@ func buildCmd() *cobra.Command {
 		outputTypes        = moby.OutputTypes()
 		noSbom             bool
 		sbomOutputFilename string
+		inputTar           string
 		sbomCurrentTime    bool
 		dryRun             bool
 	)
@@ -94,7 +95,7 @@ The generated image can be in one of multiple formats which can be run on variou
 			if len(buildFormats) > 1 {
 				for _, o := range buildFormats {
 					if moby.Streamable(o) {
-						return fmt.Errorf("Format type %s must be the only format specified", o)
+						return fmt.Errorf("format type %s must be the only format specified", o)
 					}
 				}
 			}
@@ -109,23 +110,27 @@ The generated image can be in one of multiple formats which can be run on variou
 			} else {
 				err := moby.ValidateFormats(buildFormats, cacheDir.String())
 				if err != nil {
-					return fmt.Errorf("Error parsing formats: %v", err)
+					return fmt.Errorf("error parsing formats: %v", err)
 				}
+			}
+
+			if inputTar != "" && pull {
+				return fmt.Errorf("cannot use --input-tar and --pull together")
 			}
 
 			var outfile *os.File
 			if outputFile != "" {
 				if len(buildFormats) > 1 {
-					return fmt.Errorf("The -output option can only be specified when generating a single output format")
+					return fmt.Errorf("the -output option can only be specified when generating a single output format")
 				}
 				if name != "" {
-					return fmt.Errorf("The -output option cannot be specified with -name")
+					return fmt.Errorf("the -output option cannot be specified with -name")
 				}
 				if dir != "" {
-					return fmt.Errorf("The -output option cannot be specified with -dir")
+					return fmt.Errorf("the -output option cannot be specified with -dir")
 				}
 				if !moby.Streamable(buildFormats[0]) {
-					return fmt.Errorf("The -output option cannot be specified for build type %s as it cannot be streamed", buildFormats[0])
+					return fmt.Errorf("the -output option cannot be specified for build type %s as it cannot be streamed", buildFormats[0])
 				}
 				if outputFile == "-" {
 					outfile = os.Stdout
@@ -133,7 +138,7 @@ The generated image can be in one of multiple formats which can be run on variou
 					var err error
 					outfile, err = os.Create(outputFile)
 					if err != nil {
-						log.Fatalf("Cannot open output file: %v", err)
+						log.Fatalf("cannot open output file: %v", err)
 					}
 					defer outfile.Close()
 				}
@@ -141,7 +146,7 @@ The generated image can be in one of multiple formats which can be run on variou
 
 			size, err := getDiskSizeMB(sizeString)
 			if err != nil {
-				log.Fatalf("Unable to parse disk size: %v", err)
+				log.Fatalf("unable to parse disk size: %v", err)
 			}
 
 			var (
@@ -154,25 +159,25 @@ The generated image can be in one of multiple formats which can be run on variou
 					var err error
 					config, err = io.ReadAll(os.Stdin)
 					if err != nil {
-						return fmt.Errorf("Cannot read stdin: %v", err)
+						return fmt.Errorf("cannot read stdin: %v", err)
 					}
 				} else if strings.HasPrefix(arg, "http://") || strings.HasPrefix(arg, "https://") {
 					buffer := new(bytes.Buffer)
 					response, err := http.Get(arg)
 					if err != nil {
-						return fmt.Errorf("Cannot fetch remote yaml file: %v", err)
+						return fmt.Errorf("cannot fetch remote yaml file: %v", err)
 					}
 					defer response.Body.Close()
 					_, err = io.Copy(buffer, response.Body)
 					if err != nil {
-						return fmt.Errorf("Error reading http body: %v", err)
+						return fmt.Errorf("error reading http body: %v", err)
 					}
 					config = buffer.Bytes()
 				} else {
 					var err error
 					config, err = os.ReadFile(conf)
 					if err != nil {
-						return fmt.Errorf("Cannot open config file: %v", err)
+						return fmt.Errorf("cannot open config file: %v", err)
 					}
 					// templates are only supported for local files
 					templatesSupported = true
@@ -183,18 +188,18 @@ The generated image can be in one of multiple formats which can be run on variou
 				}
 				c, err := moby.NewConfig(config, pkgFinder)
 				if err != nil {
-					return fmt.Errorf("Invalid config: %v", err)
+					return fmt.Errorf("invalid config: %v", err)
 				}
 				m, err = moby.AppendConfig(m, c)
 				if err != nil {
-					return fmt.Errorf("Cannot append config files: %v", err)
+					return fmt.Errorf("cannot append config files: %v", err)
 				}
 			}
 
 			if dryRun {
 				yml, err := yaml.Marshal(m)
 				if err != nil {
-					return fmt.Errorf("Error generating YAML: %v", err)
+					return fmt.Errorf("error generating YAML: %v", err)
 				}
 				fmt.Println(string(yml))
 				return nil
@@ -206,7 +211,7 @@ The generated image can be in one of multiple formats which can be run on variou
 				w = outfile
 			} else {
 				if tf, err = os.CreateTemp("", ""); err != nil {
-					log.Fatalf("Error creating tempfile: %v", err)
+					log.Fatalf("error creating tempfile: %v", err)
 				}
 				defer os.Remove(tf.Name())
 				w = tf
@@ -225,7 +230,7 @@ The generated image can be in one of multiple formats which can be run on variou
 					return fmt.Errorf("error creating sbom generator: %v", err)
 				}
 			}
-			err = moby.Build(m, w, moby.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch, SbomGenerator: sbomGenerator})
+			err = moby.Build(m, w, moby.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch, SbomGenerator: sbomGenerator, InputTar: inputTar})
 			if err != nil {
 				return fmt.Errorf("%v", err)
 			}
@@ -233,13 +238,13 @@ The generated image can be in one of multiple formats which can be run on variou
 			if outfile == nil {
 				image := tf.Name()
 				if err := tf.Close(); err != nil {
-					return fmt.Errorf("Error closing tempfile: %v", err)
+					return fmt.Errorf("error closing tempfile: %v", err)
 				}
 
 				log.Infof("Create outputs:")
 				err = moby.Formats(filepath.Join(dir, name), image, buildFormats, size, arch, cacheDir.String())
 				if err != nil {
-					return fmt.Errorf("Error writing outputs: %v", err)
+					return fmt.Errorf("error writing outputs: %v", err)
 				}
 			}
 			return nil
@@ -255,6 +260,7 @@ The generated image can be in one of multiple formats which can be run on variou
 	cmd.Flags().BoolVar(&decompressKernel, "decompress-kernel", false, "Decompress the Linux kernel (default false)")
 	cmd.Flags().StringVar(&arch, "arch", runtime.GOARCH, "target architecture for which to build")
 	cmd.Flags().VarP(&buildFormats, "format", "f", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
+	cmd.Flags().StringVar(&inputTar, "input-tar", "", "path to tar from previous linuxkit build to use as input; if provided, will take files from images from this tar, using OCI images only to replace or update files. Always copies to a temporary working directory to avoid overwriting. Only works if input-tar file has the linuxkit.yaml used to build it in the exact same location. Incompatible with --pull")
 	cacheDir = flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
 	cmd.Flags().Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 	cmd.Flags().BoolVar(&noSbom, "no-sbom", false, "suppress consolidation of sboms on input container images to a single sbom and saving in the output filesystem")

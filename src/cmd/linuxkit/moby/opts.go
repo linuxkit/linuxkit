@@ -9,4 +9,5 @@ type BuildOpts struct {
 	DockerCache      bool
 	Arch             string
 	SbomGenerator    *SbomGenerator
+	InputTar         string
 }

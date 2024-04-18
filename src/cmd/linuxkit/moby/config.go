@@ -1,6 +1,7 @@
 package moby
 
 import (
+	"bytes"
 	"fmt"
 	"os"
 	"sort"
@@ -60,6 +61,27 @@ type Image struct {
 	Name        string `yaml:"name" json:"name"`
 	Image       string `yaml:"image" json:"image"`
 	ImageConfig `yaml:",inline"`
+}
+
+// Equal check if another Image is functionally equal to this one.
+// Takes the easy path by marshaling both into yaml and then comparing the yaml.
+// There may be a more efficient way to do this, but this is simplest.
+func (i *Image) Equal(o *Image) bool {
+	// if we are going to compare, we must canonicalized both image names
+	i0 := i
+	i0.Image = util.ReferenceExpand(i.Image)
+	iy, err := yaml.Marshal(i0)
+	if err != nil {
+		return false
+	}
+
+	o0 := o
+	o0.Image = util.ReferenceExpand(o.Image)
+	oy, err := yaml.Marshal(o)
+	if err != nil {
+		return false
+	}
+	return bytes.Equal(iy, oy)
 }
 
 // ImageConfig is the configuration part of Image, it is the subset
