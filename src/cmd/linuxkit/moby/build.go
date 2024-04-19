@@ -83,7 +83,7 @@ func OutputTypes() []string {
 	return ts
 }
 
-func outputImage(image *Image, section string, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, iw *tar.Writer, opts BuildOpts) error {
+func outputImage(image *Image, section string, index int, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, iw *tar.Writer, opts BuildOpts) error {
 	log.Infof("  Create OCI config for %s", image.Image)
 	imageName := util.ReferenceExpand(image.Image)
 	ref, err := reference.Parse(imageName)
@@ -108,14 +108,15 @@ func outputImage(image *Image, section string, prefix string, m Moby, idMap map[
 	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, section, image.ref, config, runtime, iw, readonly, dupMap, opts)
+	err = ImageBundle(path, fmt.Sprintf("%s[%d]", section, index), image.ref, config, runtime, iw, readonly, dupMap, opts)
 	if err != nil {
 		return fmt.Errorf("failed to extract root filesystem for %s: %v", image.Image, err)
 	}
 	return nil
 }
 
-// Build performs the actual build process
+// Build performs the actual build process. The output is the filesystem
+// in a tar stream written to w.
 func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	if MobyDir == "" {
 		MobyDir = defaultMobyConfigDir()
@@ -126,6 +127,68 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 		return err
 	}
 
+	// find the Moby config file from the existing tar
+	var metadataLocation string
+	if m.Files != nil {
+		for _, f := range m.Files {
+			if f.Metadata == "" {
+				continue
+			}
+			metadataLocation = strings.TrimPrefix(f.Path, "/")
+		}
+	}
+	var (
+		oldConfig *Moby
+		tmpfile   *os.File
+		err       error
+	)
+	if metadataLocation != "" && opts.InputTar != "" {
+		// copy the file over, in case it ends up being the same output
+		tmpfile, err = os.CreateTemp("", "linuxkit-input.tar")
+		if err != nil {
+			return fmt.Errorf("failed to create temporary file: %w", err)
+		}
+		defer tmpfile.Close()
+		in, err := os.Open(opts.InputTar)
+		if err != nil {
+			return fmt.Errorf("failed to open input tar: %w", err)
+		}
+		if _, err := io.Copy(tmpfile, in); err != nil {
+			return fmt.Errorf("failed to copy input tar: %w", err)
+		}
+		if err := in.Close(); err != nil {
+			return fmt.Errorf("failed to close input file: %w", err)
+		}
+		if _, err := tmpfile.Seek(0, 0); err != nil {
+			return fmt.Errorf("failed to seek to beginning of tmpfile: %w", err)
+		}
+		// for efficiency, get the trimmed metadata path in advance
+		tmpTar := tar.NewReader(tmpfile)
+		// read the tar until we find the metadata file
+		for {
+			hdr, err := tmpTar.Next()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				return fmt.Errorf("failed to read input tar: %w", err)
+			}
+			if strings.TrimPrefix(hdr.Name, "/") == metadataLocation {
+				buf := new(bytes.Buffer)
+				if _, err := buf.ReadFrom(tmpTar); err != nil {
+					return fmt.Errorf("failed to read metadata file from input tar: %w", err)
+				}
+				config, err := NewConfig(buf.Bytes(), nil)
+				if err != nil {
+					return fmt.Errorf("invalid config in existing tar file: %v", err)
+				}
+				oldConfig = &config
+				break
+			}
+		}
+	}
+
+	// do we have an inTar
 	iw := tar.NewWriter(w)
 
 	// add additions
@@ -151,16 +214,24 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	dupMap := map[string]string{}
 
 	if m.Kernel.ref != nil {
-		// get kernel and initrd tarball and ucode cpio archive from container
-		log.Infof("Extract kernel image: %s", m.Kernel.ref)
-		kf := newKernelFilter(m.Kernel.ref, iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, opts.DecompressKernel)
-		err := ImageTar("kernel", m.Kernel.ref, "", kf, "", opts)
-		if err != nil {
-			return fmt.Errorf("failed to extract kernel image and tarball: %v", err)
-		}
-		err = kf.Close()
-		if err != nil {
-			return fmt.Errorf("close error: %v", err)
+		// first check if the existing one had it
+		//if config != nil && len(oldConfig.initRefs) > index+1 && oldConfig.initRefs[index].String() == image {
+		if oldConfig != nil && oldConfig.Kernel.ref != nil && oldConfig.Kernel.ref.String() == m.Kernel.ref.String() {
+			if err := extractPackageFilesFromTar(tmpfile, iw, m.Kernel.ref.String(), "kernel"); err != nil {
+				return err
+			}
+		} else {
+			// get kernel and initrd tarball and ucode cpio archive from container
+			log.Infof("Extract kernel image: %s", m.Kernel.ref)
+			kf := newKernelFilter(m.Kernel.ref, iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, opts.DecompressKernel)
+			err := ImageTar("kernel", m.Kernel.ref, "", kf, "", opts)
+			if err != nil {
+				return fmt.Errorf("failed to extract kernel image and tarball: %v", err)
+			}
+			err = kf.Close()
+			if err != nil {
+				return fmt.Errorf("close error: %v", err)
+			}
 		}
 	}
 
@@ -169,11 +240,17 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 		log.Infof("Add init containers:")
 	}
 	apkTar := newAPKTarWriter(iw, "init")
-	for _, ii := range m.initRefs {
-		log.Infof("Process init image: %s", ii)
-		err := ImageTar("init", ii, "", apkTar, resolvconfSymlink, opts)
-		if err != nil {
-			return fmt.Errorf("failed to build init tarball from %s: %v", ii, err)
+	for i, ii := range m.initRefs {
+		if oldConfig != nil && len(oldConfig.initRefs) > i && oldConfig.initRefs[i].String() == ii.String() {
+			if err := extractPackageFilesFromTar(tmpfile, apkTar, ii.String(), fmt.Sprintf("init[%d]", i)); err != nil {
+				return err
+			}
+		} else {
+			log.Infof("Process init image: %s", ii)
+			err := ImageTar(fmt.Sprintf("init[%d]", i), ii, "", apkTar, resolvconfSymlink, opts)
+			if err != nil {
+				return fmt.Errorf("failed to build init tarball from %s: %v", ii, err)
+			}
 		}
 	}
 	if err := apkTar.WriteAPKDB(); err != nil {
@@ -184,9 +261,15 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 		log.Infof("Add onboot containers:")
 	}
 	for i, image := range m.Onboot {
-		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onboot", so+"-", m, idMap, dupMap, iw, opts); err != nil {
-			return err
+		if oldConfig != nil && len(oldConfig.Onboot) > i && oldConfig.Onboot[i].Equal(image) {
+			if err := extractPackageFilesFromTar(tmpfile, iw, image.Image, fmt.Sprintf("onboot[%d]", i)); err != nil {
+				return err
+			}
+		} else {
+			so := fmt.Sprintf("%03d", i)
+			if err := outputImage(image, "onboot", i, so+"-", m, idMap, dupMap, iw, opts); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -194,24 +277,35 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 		log.Infof("Add onshutdown containers:")
 	}
 	for i, image := range m.Onshutdown {
-		so := fmt.Sprintf("%03d", i)
-		if err := outputImage(image, "onshutdown", so+"-", m, idMap, dupMap, iw, opts); err != nil {
-			return err
+		if oldConfig != nil && len(oldConfig.Onshutdown) > i && oldConfig.Onshutdown[i].Equal(image) {
+			if err := extractPackageFilesFromTar(tmpfile, iw, image.Image, fmt.Sprintf("onshutdown[%d]", i)); err != nil {
+				return err
+			}
+		} else {
+			so := fmt.Sprintf("%03d", i)
+			if err := outputImage(image, "onshutdown", i, so+"-", m, idMap, dupMap, iw, opts); err != nil {
+				return err
+			}
 		}
 	}
 
 	if len(m.Services) != 0 {
 		log.Infof("Add service containers:")
 	}
-	for _, image := range m.Services {
-		if err := outputImage(image, "services", "", m, idMap, dupMap, iw, opts); err != nil {
-			return err
+	for i, image := range m.Services {
+		if oldConfig != nil && len(oldConfig.Services) > i && oldConfig.Services[i].Equal(image) {
+			if err := extractPackageFilesFromTar(tmpfile, iw, image.Image, fmt.Sprintf("services[%d]", i)); err != nil {
+				return err
+			}
+		} else {
+			if err := outputImage(image, "services", i, "", m, idMap, dupMap, iw, opts); err != nil {
+				return err
+			}
 		}
 	}
 
 	// add files
-	err := filesystem(m, iw, idMap)
-	if err != nil {
+	if err := filesystem(m, iw, idMap); err != nil {
 		return fmt.Errorf("failed to add filesystem parts: %v", err)
 	}
 
@@ -706,6 +800,38 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 			_, err = tw.Write(contents)
 			if err != nil {
 				return err
+			}
+		}
+	}
+	return nil
+}
+
+// extractPackageFilesFromTar reads files from the input tar and extracts those that have the correct
+// PAXRecords - keys and values - to the tarWriter.
+func extractPackageFilesFromTar(inTar *os.File, tw tarWriter, image, section string) error {
+	log.Infof("Copy %s files from input tar: %s", section, image)
+	// copy kernel files over
+	if _, err := inTar.Seek(0, 0); err != nil {
+		return fmt.Errorf("failed to seek to beginning of input tar: %w", err)
+	}
+	tr := tar.NewReader(inTar)
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return fmt.Errorf("failed to read input tar: %w", err)
+		}
+		if hdr.PAXRecords == nil {
+			continue
+		}
+		if hdr.PAXRecords[PaxRecordLinuxkitSource] == image && hdr.PAXRecords[PaxRecordLinuxkitLocation] == section {
+			if err := tw.WriteHeader(hdr); err != nil {
+				return fmt.Errorf("failed to write header: %w", err)
+			}
+			if _, err := io.Copy(tw, tr); err != nil {
+				return fmt.Errorf("failed to copy %s file: %w", section, err)
 			}
 		}
 	}
