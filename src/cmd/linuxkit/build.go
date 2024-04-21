@@ -205,8 +205,10 @@ The generated image can be in one of multiple formats which can be run on variou
 				return nil
 			}
 
-			var tf *os.File
-			var w io.Writer
+			var (
+				tf *os.File
+				w  io.Writer
+			)
 			if outfile != nil {
 				w = outfile
 			} else {
@@ -215,6 +217,9 @@ The generated image can be in one of multiple formats which can be run on variou
 				}
 				defer os.Remove(tf.Name())
 				w = tf
+			}
+			if inputTar != "" && inputTar == outputFile {
+				return fmt.Errorf("input-tar and output file cannot be the same")
 			}
 
 			// this is a weird interface, but currently only streamable types can have additional files
