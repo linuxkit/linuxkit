@@ -8,7 +8,7 @@ set -e
 #. "${RT_LIB}"
 . "${RT_PROJECT_ROOT}/_lib/lib.sh"
 
-NAME=check
+NAME=check_input_tar
 
 clean_up() {
 	rm -f ${NAME}-*.tar

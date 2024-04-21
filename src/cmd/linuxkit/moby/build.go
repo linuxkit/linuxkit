@@ -139,34 +139,23 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	}
 	var (
 		oldConfig *Moby
-		tmpfile   *os.File
+		in        *os.File
 		err       error
 	)
 	if metadataLocation != "" && opts.InputTar != "" {
 		// copy the file over, in case it ends up being the same output
-		tmpfile, err = os.CreateTemp("", "linuxkit-input.tar")
-		if err != nil {
-			return fmt.Errorf("failed to create temporary file: %w", err)
-		}
-		defer tmpfile.Close()
-		in, err := os.Open(opts.InputTar)
+		in, err = os.Open(opts.InputTar)
 		if err != nil {
 			return fmt.Errorf("failed to open input tar: %w", err)
 		}
-		if _, err := io.Copy(tmpfile, in); err != nil {
-			return fmt.Errorf("failed to copy input tar: %w", err)
-		}
-		if err := in.Close(); err != nil {
-			return fmt.Errorf("failed to close input file: %w", err)
-		}
-		if _, err := tmpfile.Seek(0, 0); err != nil {
+		defer in.Close()
+		if _, err := in.Seek(0, 0); err != nil {
 			return fmt.Errorf("failed to seek to beginning of tmpfile: %w", err)
 		}
-		// for efficiency, get the trimmed metadata path in advance
-		tmpTar := tar.NewReader(tmpfile)
 		// read the tar until we find the metadata file
+		inputTarReader := tar.NewReader(in)
 		for {
-			hdr, err := tmpTar.Next()
+			hdr, err := inputTarReader.Next()
 			if err == io.EOF {
 				break
 			}
@@ -175,7 +164,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 			}
 			if strings.TrimPrefix(hdr.Name, "/") == metadataLocation {
 				buf := new(bytes.Buffer)
-				if _, err := buf.ReadFrom(tmpTar); err != nil {
+				if _, err := buf.ReadFrom(inputTarReader); err != nil {
 					return fmt.Errorf("failed to read metadata file from input tar: %w", err)
 				}
 				config, err := NewConfig(buf.Bytes(), nil)
@@ -217,7 +206,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 		// first check if the existing one had it
 		//if config != nil && len(oldConfig.initRefs) > index+1 && oldConfig.initRefs[index].String() == image {
 		if oldConfig != nil && oldConfig.Kernel.ref != nil && oldConfig.Kernel.ref.String() == m.Kernel.ref.String() {
-			if err := extractPackageFilesFromTar(tmpfile, iw, m.Kernel.ref.String(), "kernel"); err != nil {
+			if err := extractPackageFilesFromTar(in, iw, m.Kernel.ref.String(), "kernel"); err != nil {
 				return err
 			}
 		} else {
@@ -242,7 +231,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	apkTar := newAPKTarWriter(iw, "init")
 	for i, ii := range m.initRefs {
 		if oldConfig != nil && len(oldConfig.initRefs) > i && oldConfig.initRefs[i].String() == ii.String() {
-			if err := extractPackageFilesFromTar(tmpfile, apkTar, ii.String(), fmt.Sprintf("init[%d]", i)); err != nil {
+			if err := extractPackageFilesFromTar(in, apkTar, ii.String(), fmt.Sprintf("init[%d]", i)); err != nil {
 				return err
 			}
 		} else {
@@ -262,7 +251,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	}
 	for i, image := range m.Onboot {
 		if oldConfig != nil && len(oldConfig.Onboot) > i && oldConfig.Onboot[i].Equal(image) {
-			if err := extractPackageFilesFromTar(tmpfile, iw, image.Image, fmt.Sprintf("onboot[%d]", i)); err != nil {
+			if err := extractPackageFilesFromTar(in, iw, image.Image, fmt.Sprintf("onboot[%d]", i)); err != nil {
 				return err
 			}
 		} else {
@@ -278,7 +267,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	}
 	for i, image := range m.Onshutdown {
 		if oldConfig != nil && len(oldConfig.Onshutdown) > i && oldConfig.Onshutdown[i].Equal(image) {
-			if err := extractPackageFilesFromTar(tmpfile, iw, image.Image, fmt.Sprintf("onshutdown[%d]", i)); err != nil {
+			if err := extractPackageFilesFromTar(in, iw, image.Image, fmt.Sprintf("onshutdown[%d]", i)); err != nil {
 				return err
 			}
 		} else {
@@ -294,7 +283,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	}
 	for i, image := range m.Services {
 		if oldConfig != nil && len(oldConfig.Services) > i && oldConfig.Services[i].Equal(image) {
-			if err := extractPackageFilesFromTar(tmpfile, iw, image.Image, fmt.Sprintf("services[%d]", i)); err != nil {
+			if err := extractPackageFilesFromTar(in, iw, image.Image, fmt.Sprintf("services[%d]", i)); err != nil {
 				return err
 			}
 		} else {
