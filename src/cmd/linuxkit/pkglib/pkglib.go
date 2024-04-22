@@ -55,7 +55,7 @@ type PkglibConfig struct {
 	Tag          string // Tag is a text/template string, defaults to {{.Hash}}
 }
 
-// NewPkInfo returns a new pkgInfo with default values
+// NewPkgInfo returns a new pkgInfo with default values
 func NewPkgInfo() pkgInfo {
 	return pkgInfo{
 		Org:          "linuxkit",
