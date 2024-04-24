@@ -17,7 +17,9 @@ func ReferenceWithTag() ReferenceOption {
 	}
 }
 
-// ReferenceExpand expands "redis" to "docker.io/library/redis" so all images have a full domain
+// ReferenceExpand expands "redis" to "docker.io/library/redis" so all images have a full domain,
+// and similarly foo/bar to docker.io/foo/bar.
+// If the image does not have a tag, ":latest" is added.
 func ReferenceExpand(ref string, options ...ReferenceOption) string {
 	var opts refOpts
 	for _, opt := range options {
@@ -26,8 +28,11 @@ func ReferenceExpand(ref string, options ...ReferenceOption) string {
 	ret := ref
 
 	parts := strings.Split(ref, "/")
-	if len(parts) == 1 {
+	switch len(parts) {
+	case 1:
 		ret = "docker.io/library/" + ref
+	case 2:
+		ret = "docker.io/" + ref
 	}
 
 	if opts.withTag && !strings.Contains(ret, ":") {
