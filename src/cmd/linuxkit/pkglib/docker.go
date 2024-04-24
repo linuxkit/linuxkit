@@ -193,7 +193,7 @@ func (dr *dockerRunnerImpl) versionCheck(version string) (string, string, error)
 	return clientVersionString, serverVersionString, nil
 }
 
-// contextCheck checks if contexts are supported. This is necessary because github uses some strange versions
+// contextSupportCheck checks if contexts are supported. This is necessary because github uses some strange versions
 // of docker in Actions, which makes it difficult to tell if context is supported.
 // See https://github.community/t/what-really-is-docker-3-0-6/16171
 func (dr *dockerRunnerImpl) contextSupportCheck() error {
