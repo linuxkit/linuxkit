@@ -42,7 +42,7 @@ jobs:
       id: go
 
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set path
       run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
@@ -79,7 +79,7 @@ jobs:
         GOPATH: ${{runner.workspace}}
 
     - name: Upload binary
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: linuxkit-${{matrix.target.suffix}}
         path: |
@@ -93,14 +93,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Set up binfmt
       # Only register arm64 as we are on amd64 already. s390x is not reliable
       run: docker run --privileged --rm tonistiigi/binfmt --install arm64
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -112,7 +112,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Cache Packages
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -160,7 +160,7 @@ jobs:
         shard: [1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,10/10]
     steps:
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Pre-Requisites
       run: |
@@ -170,7 +170,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -184,7 +184,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -196,7 +196,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Restore Package Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -215,7 +215,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Pre-Requisites
       run: |
@@ -225,7 +225,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -239,7 +239,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -251,7 +251,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Restore Package Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -271,7 +271,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Pre-Requisites
       run: |
@@ -281,13 +281,13 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
 
     - name: Restore Package Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -303,7 +303,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -327,7 +327,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Pre-Requisites
       run: |
@@ -337,7 +337,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -351,7 +351,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -363,7 +363,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Restore Package Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
@@ -383,7 +383,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: Check out code
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Install Pre-Requisites
       run: |
@@ -393,7 +393,7 @@ jobs:
 
     - name: Restore RTF From Cache
       id: cache-rtf
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: bin
         key: rtf-${{hashFiles('Makefile')}}
@@ -407,7 +407,7 @@ jobs:
         sudo ln -s $(pwd)/bin/rtf /usr/local/bin/rtf
 
     - name: Download linuxkit
-      uses: actions/download-artifact@v3
+      uses: actions/download-artifact@v4
       with:
         name: linuxkit-amd64-linux
         path: bin
@@ -419,7 +419,7 @@ jobs:
         /usr/local/bin/linuxkit version
 
     - name: Restore Package Cache
-      uses: actions/cache@v3
+      uses: actions/cache@v4
       with:
         path: ~/.linuxkit/cache/
         key: ${{ runner.os }}-linuxkit-${{ github.sha }}
