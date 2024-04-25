@@ -20,6 +20,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	lktutil "github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
@@ -41,6 +42,12 @@ const (
 // Note that ImagePull does try ValidateImage first, so if the image is already in the cache, it will not
 // do any network activity at all.
 func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture string, alwaysPull bool) (lktspec.ImageSource, error) {
+	imageName := util.ReferenceExpand(ref.String())
+	canonicalRef, err := reference.Parse(imageName)
+	if err != nil {
+		return ImageSource{}, fmt.Errorf("invalid image name %s: %v", imageName, err)
+	}
+	ref = &canonicalRef
 	image := ref.String()
 	pullImageName := image
 	remoteOptions := []remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}
