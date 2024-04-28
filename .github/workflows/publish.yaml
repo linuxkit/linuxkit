@@ -20,6 +20,7 @@ jobs:
     - name: Download linuxkit
       uses: actions/github-script@v3.1.0
       with:
+        github-token: ${{secrets.GITHUB_TOKEN}}
         script: |
           var artifacts = await github.actions.listWorkflowRunArtifacts({
               owner: context.repo.owner,
