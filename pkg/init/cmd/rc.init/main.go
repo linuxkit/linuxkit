@@ -225,9 +225,7 @@ func doMounts() {
 	// misc /proc mounted fs
 	mountSilent("binfmt_misc", "/proc/sys/fs/binfmt_misc", "binfmt_misc", noexec|nosuid|nodev, "")
 
-	if isCgroupV2() {
-		mount("cgroup2", "/sys/fs/cgroup", "cgroup2", noexec|nosuid|nodev, "")
-	} else {
+	if isCgroupV1() {
 		// mount cgroup root tmpfs
 		mount("cgroup_root", "/sys/fs/cgroup", "tmpfs", nodev|noexec|nosuid, "mode=755,size=10m")
 		// mount cgroups filesystems for all enabled cgroups
@@ -243,6 +241,8 @@ func doMounts() {
 		// many things assume systemd
 		mkdir("/sys/fs/cgroup/systemd", 0555)
 		mount("cgroup", "/sys/fs/cgroup/systemd", "cgroup", 0, "none,name=systemd")
+	} else {
+		mount("cgroup2", "/sys/fs/cgroup", "cgroup2", noexec|nosuid|nodev, "")
 	}
 
 	// make / rshared
@@ -423,14 +423,14 @@ func doShutdown(action string) {
 	os.Exit(0)
 }
 
-func isCgroupV2() bool {
+func isCgroupV1() bool {
 	dt, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
 		log.Printf("error reading /proc/cmdline: %v", err)
 		return false
 	}
 	for _, s := range strings.Fields(string(dt)) {
-		if s == "linuxkit.unified_cgroup_hierarchy=1" {
+		if s == "linuxkit.unified_cgroup_hierarchy=0" {
 			return true
 		}
 	}
