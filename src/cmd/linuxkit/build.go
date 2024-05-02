@@ -56,6 +56,7 @@ func buildCmd() *cobra.Command {
 		noSbom             bool
 		sbomOutputFilename string
 		inputTar           string
+		modifiedOnly       bool
 		sbomCurrentTime    bool
 		dryRun             bool
 	)
@@ -116,6 +117,9 @@ The generated image can be in one of multiple formats which can be run on variou
 
 			if inputTar != "" && pull {
 				return fmt.Errorf("cannot use --input-tar and --pull together")
+			}
+			if inputTar == "" && modifiedOnly {
+				return fmt.Errorf("--modified-only can be used together with the --input-tar")
 			}
 
 			var outfile *os.File
@@ -235,7 +239,7 @@ The generated image can be in one of multiple formats which can be run on variou
 					return fmt.Errorf("error creating sbom generator: %v", err)
 				}
 			}
-			err = moby.Build(m, w, moby.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch, SbomGenerator: sbomGenerator, InputTar: inputTar})
+			err = moby.Build(m, w, moby.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch, SbomGenerator: sbomGenerator, InputTar: inputTar, ModifiedOnly: modifiedOnly})
 			if err != nil {
 				return fmt.Errorf("%v", err)
 			}
@@ -266,6 +270,7 @@ The generated image can be in one of multiple formats which can be run on variou
 	cmd.Flags().StringVar(&arch, "arch", runtime.GOARCH, "target architecture for which to build")
 	cmd.Flags().VarP(&buildFormats, "format", "f", "Formats to create [ "+strings.Join(outputTypes, " ")+" ]")
 	cmd.Flags().StringVar(&inputTar, "input-tar", "", "path to tar from previous linuxkit build to use as input; if provided, will take files from images from this tar, using OCI images only to replace or update files. Always copies to a temporary working directory to avoid overwriting. Only works if input-tar file has the linuxkit.yaml used to build it in the exact same location. Incompatible with --pull")
+	cmd.Flags().BoolVar(&modifiedOnly, "modified-only", false, "Output tarball contains modified files only. Works only with the --input-tar option.")
 	cacheDir = flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
 	cmd.Flags().Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 	cmd.Flags().BoolVar(&noSbom, "no-sbom", false, "suppress consolidation of sboms on input container images to a single sbom and saving in the output filesystem")

@@ -10,4 +10,5 @@ type BuildOpts struct {
 	Arch             string
 	SbomGenerator    *SbomGenerator
 	InputTar         string
+	ModifiedOnly     bool
 }
