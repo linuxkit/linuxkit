@@ -1,4 +1,4 @@
-package moby
+package build
 
 import (
 	"archive/tar"
@@ -10,16 +10,9 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
-)
-
-const (
-	// PaxRecordLinuxkitSource report the package source for a specific file
-	PaxRecordLinuxkitSource = "LINUXKIT.source"
-	// PaxRecordLinuxkitLocation report the location of the file in the linuxkit.yaml
-	// that led to this file being in this location
-	PaxRecordLinuxkitLocation = "LINUXKIT.location"
 )
 
 type tarWriter interface {
@@ -170,8 +163,8 @@ func tarPrefix(path, location string, ref *reference.Spec, tw tarWriter) error {
 			Typeflag: tar.TypeDir,
 			Format:   tar.FormatPAX,
 			PAXRecords: map[string]string{
-				PaxRecordLinuxkitSource:   ref.String(),
-				PaxRecordLinuxkitLocation: location,
+				moby.PaxRecordLinuxkitSource:   ref.String(),
+				moby.PaxRecordLinuxkitLocation: location,
 			},
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -232,8 +225,8 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 		if hdr.PAXRecords == nil {
 			hdr.PAXRecords = make(map[string]string)
 		}
-		hdr.PAXRecords[PaxRecordLinuxkitSource] = ref.String()
-		hdr.PAXRecords[PaxRecordLinuxkitLocation] = location
+		hdr.PAXRecords[moby.PaxRecordLinuxkitSource] = ref.String()
+		hdr.PAXRecords[moby.PaxRecordLinuxkitLocation] = location
 		if exclude[hdr.Name] {
 			log.Debugf("image tar: %s %s exclude %s", ref, prefix, hdr.Name)
 			_, err = io.Copy(io.Discard, tr)
@@ -310,8 +303,8 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 		if hdr.PAXRecords == nil {
 			hdr.PAXRecords = make(map[string]string)
 		}
-		hdr.PAXRecords[PaxRecordLinuxkitSource] = ref.String()
-		hdr.PAXRecords[PaxRecordLinuxkitLocation] = location
+		hdr.PAXRecords[moby.PaxRecordLinuxkitSource] = ref.String()
+		hdr.PAXRecords[moby.PaxRecordLinuxkitLocation] = location
 		origName := hdr.Name
 		hdr.Name = prefix + origName
 		hdr.Format = tar.FormatPAX
@@ -355,7 +348,7 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 }
 
 // ImageBundle produces an OCI bundle at the given path in a tarball, given an image and a config.json
-func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, runtime Runtime, tw tarWriter, readonly bool, dupMap map[string]string, opts BuildOpts) error { // nolint: lll
+func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, runtime moby.Runtime, tw tarWriter, readonly bool, dupMap map[string]string, opts BuildOpts) error { // nolint: lll
 	// if read only, just unpack in rootfs/ but otherwise set up for overlay
 	rootExtract := "rootfs"
 	if !readonly {
@@ -384,8 +377,8 @@ func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, ru
 		ModTime: defaultModTime,
 		Format:  tar.FormatPAX,
 		PAXRecords: map[string]string{
-			PaxRecordLinuxkitSource:   ref.String(),
-			PaxRecordLinuxkitLocation: location,
+			moby.PaxRecordLinuxkitSource:   ref.String(),
+			moby.PaxRecordLinuxkitLocation: location,
 		},
 	}
 	if err := tw.WriteHeader(hdr); err != nil {
@@ -406,8 +399,8 @@ func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, ru
 			ModTime:  defaultModTime,
 			Format:   tar.FormatPAX,
 			PAXRecords: map[string]string{
-				PaxRecordLinuxkitSource:   ref.String(),
-				PaxRecordLinuxkitLocation: location,
+				moby.PaxRecordLinuxkitSource:   ref.String(),
+				moby.PaxRecordLinuxkitLocation: location,
 			},
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -421,8 +414,8 @@ func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, ru
 			ModTime:  defaultModTime,
 			Format:   tar.FormatPAX,
 			PAXRecords: map[string]string{
-				PaxRecordLinuxkitSource:   ref.String(),
-				PaxRecordLinuxkitLocation: location,
+				moby.PaxRecordLinuxkitSource:   ref.String(),
+				moby.PaxRecordLinuxkitLocation: location,
 			},
 		}
 		if err := tw.WriteHeader(hdr); err != nil {
@@ -445,8 +438,8 @@ func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, ru
 				ModTime:  defaultModTime,
 				Format:   tar.FormatPAX,
 				PAXRecords: map[string]string{
-					PaxRecordLinuxkitSource:   ref.String(),
-					PaxRecordLinuxkitLocation: location,
+					moby.PaxRecordLinuxkitSource:   ref.String(),
+					moby.PaxRecordLinuxkitLocation: location,
 				},
 			}
 			if err := tw.WriteHeader(hdr); err != nil {
@@ -476,8 +469,8 @@ func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, ru
 		ModTime: defaultModTime,
 		Format:  tar.FormatPAX,
 		PAXRecords: map[string]string{
-			PaxRecordLinuxkitSource:   ref.String(),
-			PaxRecordLinuxkitLocation: location,
+			moby.PaxRecordLinuxkitSource:   ref.String(),
+			moby.PaxRecordLinuxkitLocation: location,
 		},
 	}
 	if err := tw.WriteHeader(hdr); err != nil {

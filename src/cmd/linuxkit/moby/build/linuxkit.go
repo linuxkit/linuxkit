@@ -1,4 +1,4 @@
-package moby
+package build
 
 import (
 	"crypto/sha256"
@@ -13,6 +13,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -43,7 +44,7 @@ func ensureLinuxkitImage(name, cache string) error {
 
 	yaml := linuxkitYaml[name]
 
-	m, err := NewConfig([]byte(yaml), nil)
+	m, err := moby.NewConfig([]byte(yaml), nil)
 	if err != nil {
 		return err
 	}
