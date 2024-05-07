@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
+	mobybuild "github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby/build"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -52,7 +53,7 @@ func buildCmd() *cobra.Command {
 		arch               string
 		cacheDir           flagOverEnvVarOverDefaultString
 		buildFormats       formatList
-		outputTypes        = moby.OutputTypes()
+		outputTypes        = mobybuild.OutputTypes()
 		noSbom             bool
 		sbomOutputFilename string
 		inputTar           string
@@ -94,13 +95,13 @@ The generated image can be in one of multiple formats which can be run on variou
 
 			if len(buildFormats) > 1 {
 				for _, o := range buildFormats {
-					if moby.Streamable(o) {
+					if mobybuild.Streamable(o) {
 						return fmt.Errorf("format type %s must be the only format specified", o)
 					}
 				}
 			}
 
-			if len(buildFormats) == 1 && moby.Streamable(buildFormats[0]) {
+			if len(buildFormats) == 1 && mobybuild.Streamable(buildFormats[0]) {
 				if outputFile == "" {
 					outputFile = filepath.Join(dir, name+"."+buildFormats[0])
 					// stop the errors in the validation below
@@ -108,7 +109,7 @@ The generated image can be in one of multiple formats which can be run on variou
 					dir = ""
 				}
 			} else {
-				err := moby.ValidateFormats(buildFormats, cacheDir.String())
+				err := mobybuild.ValidateFormats(buildFormats, cacheDir.String())
 				if err != nil {
 					return fmt.Errorf("error parsing formats: %v", err)
 				}
@@ -129,7 +130,7 @@ The generated image can be in one of multiple formats which can be run on variou
 				if dir != "" {
 					return fmt.Errorf("the -output option cannot be specified with -dir")
 				}
-				if !moby.Streamable(buildFormats[0]) {
+				if !mobybuild.Streamable(buildFormats[0]) {
 					return fmt.Errorf("the -output option cannot be specified for build type %s as it cannot be streamed", buildFormats[0])
 				}
 				if outputFile == "-" {
@@ -225,17 +226,17 @@ The generated image can be in one of multiple formats which can be run on variou
 			// this is a weird interface, but currently only streamable types can have additional files
 			// need to split up the base tarball outputs from the secondary stages
 			var tp string
-			if moby.Streamable(buildFormats[0]) {
+			if mobybuild.Streamable(buildFormats[0]) {
 				tp = buildFormats[0]
 			}
-			var sbomGenerator *moby.SbomGenerator
+			var sbomGenerator *mobybuild.SbomGenerator
 			if !noSbom {
-				sbomGenerator, err = moby.NewSbomGenerator(sbomOutputFilename, sbomCurrentTime)
+				sbomGenerator, err = mobybuild.NewSbomGenerator(sbomOutputFilename, sbomCurrentTime)
 				if err != nil {
 					return fmt.Errorf("error creating sbom generator: %v", err)
 				}
 			}
-			err = moby.Build(m, w, moby.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch, SbomGenerator: sbomGenerator, InputTar: inputTar})
+			err = mobybuild.Build(m, w, mobybuild.BuildOpts{Pull: pull, BuilderType: tp, DecompressKernel: decompressKernel, CacheDir: cacheDir.String(), DockerCache: docker, Arch: arch, SbomGenerator: sbomGenerator, InputTar: inputTar})
 			if err != nil {
 				return fmt.Errorf("%v", err)
 			}
@@ -247,7 +248,7 @@ The generated image can be in one of multiple formats which can be run on variou
 				}
 
 				log.Infof("Create outputs:")
-				err = moby.Formats(filepath.Join(dir, name), image, buildFormats, size, arch, cacheDir.String())
+				err = mobybuild.Formats(filepath.Join(dir, name), image, buildFormats, size, arch, cacheDir.String())
 				if err != nil {
 					return fmt.Errorf("error writing outputs: %v", err)
 				}

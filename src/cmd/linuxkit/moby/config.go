@@ -31,6 +31,10 @@ type Moby struct {
 	initRefs []*reference.Spec
 }
 
+func (m Moby) InitRefs() []*reference.Spec {
+	return m.initRefs
+}
+
 // KernelConfig is the type of the config for a kernel
 type KernelConfig struct {
 	Image   string  `yaml:"image" json:"image"`
@@ -40,6 +44,10 @@ type KernelConfig struct {
 	UCode   *string `yaml:"ucode,omitempty" json:"ucode,omitempty"`
 
 	ref *reference.Spec
+}
+
+func (k KernelConfig) Ref() *reference.Spec {
+	return k.ref
 }
 
 // File is the type of a file specification
@@ -125,6 +133,10 @@ type ImageConfig struct {
 	Runtime *Runtime `yaml:"runtime,omitempty" json:"runtime,omitempty"`
 
 	ref *reference.Spec
+}
+
+func (i ImageConfig) Ref() *reference.Spec {
+	return i.ref
 }
 
 // Device specifies a device to be exposed to the container.
@@ -237,7 +249,7 @@ func extractReferences(m *Moby) error {
 	return nil
 }
 
-func updateImages(m *Moby) {
+func UpdateImages(m *Moby) {
 	if m.Kernel.ref != nil {
 		m.Kernel.Image = m.Kernel.ref.String()
 	}
@@ -689,7 +701,7 @@ func getAllCapabilities() []string {
 
 var allCaps = getAllCapabilities()
 
-func idNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
+func IDNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
 	switch id := v.(type) {
 	case nil:
 		return uint32(0), nil
@@ -984,17 +996,17 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	uidIf := assignInterface(label.UID, yaml.UID)
 	gidIf := assignInterface(label.GID, yaml.GID)
 	agIf := assignInterfaceArray(label.AdditionalGids, yaml.AdditionalGids)
-	uid, err := idNumeric(uidIf, idMap)
+	uid, err := IDNumeric(uidIf, idMap)
 	if err != nil {
 		return oci, runtime, err
 	}
-	gid, err := idNumeric(gidIf, idMap)
+	gid, err := IDNumeric(gidIf, idMap)
 	if err != nil {
 		return oci, runtime, err
 	}
 	var additionalGroups []uint32
 	for _, id := range agIf {
-		ag, err := idNumeric(id, idMap)
+		ag, err := IDNumeric(id, idMap)
 		if err != nil {
 			return oci, runtime, err
 		}

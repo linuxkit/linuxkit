@@ -19,7 +19,7 @@ type apkTarWriter struct {
 	location string
 }
 
-func newAPKTarWriter(w *tar.Writer, location string) *apkTarWriter {
+func NewAPKTarWriter(w *tar.Writer, location string) *apkTarWriter {
 	return &apkTarWriter{
 		Writer:   w,
 		location: location,

@@ -1,4 +1,4 @@
-package moby
+package build
 
 import (
 	"github.com/containerd/containerd/reference"

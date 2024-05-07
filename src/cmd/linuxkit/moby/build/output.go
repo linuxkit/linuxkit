@@ -1,4 +1,4 @@
-package moby
+package build
 
 import (
 	"archive/tar"

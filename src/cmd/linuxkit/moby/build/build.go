@@ -1,4 +1,4 @@
-package moby
+package build
 
 import (
 	"archive/tar"
@@ -18,6 +18,7 @@ import (
 	"github.com/containerd/containerd/reference"
 	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
 	gzip "github.com/klauspost/pgzip"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v2"
@@ -83,7 +84,7 @@ func OutputTypes() []string {
 	return ts
 }
 
-func outputImage(image *Image, section string, index int, prefix string, m Moby, idMap map[string]uint32, dupMap map[string]string, iw *tar.Writer, opts BuildOpts) error {
+func outputImage(image *moby.Image, section string, index int, prefix string, m moby.Moby, idMap map[string]uint32, dupMap map[string]string, iw *tar.Writer, opts BuildOpts) error {
 	log.Infof("  Create OCI config for %s", image.Image)
 	imageName := util.ReferenceExpand(image.Image)
 	ref, err := reference.Parse(imageName)
@@ -98,7 +99,7 @@ func outputImage(image *Image, section string, index int, prefix string, m Moby,
 	if err != nil {
 		return fmt.Errorf("failed to retrieve config for %s: %v", image.Image, err)
 	}
-	oci, runtime, err := ConfigToOCI(image, configRaw, idMap)
+	oci, runtime, err := moby.ConfigToOCI(image, configRaw, idMap)
 	if err != nil {
 		return fmt.Errorf("failed to create OCI spec for %s: %v", image.Image, err)
 	}
@@ -108,7 +109,7 @@ func outputImage(image *Image, section string, index int, prefix string, m Moby,
 	}
 	path := path.Join("containers", section, prefix+image.Name)
 	readonly := oci.Root.Readonly
-	err = ImageBundle(path, fmt.Sprintf("%s[%d]", section, index), image.ref, config, runtime, iw, readonly, dupMap, opts)
+	err = ImageBundle(path, fmt.Sprintf("%s[%d]", section, index), image.Ref(), config, runtime, iw, readonly, dupMap, opts)
 	if err != nil {
 		return fmt.Errorf("failed to extract root filesystem for %s: %v", image.Image, err)
 	}
@@ -117,7 +118,7 @@ func outputImage(image *Image, section string, index int, prefix string, m Moby,
 
 // Build performs the actual build process. The output is the filesystem
 // in a tar stream written to w.
-func Build(m Moby, w io.Writer, opts BuildOpts) error {
+func Build(m moby.Moby, w io.Writer, opts BuildOpts) error {
 	if MobyDir == "" {
 		MobyDir = defaultMobyConfigDir()
 	}
@@ -138,7 +139,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 		}
 	}
 	var (
-		oldConfig *Moby
+		oldConfig *moby.Moby
 		in        *os.File
 		err       error
 	)
@@ -167,7 +168,7 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 				if _, err := buf.ReadFrom(inputTarReader); err != nil {
 					return fmt.Errorf("failed to read metadata file from input tar: %w", err)
 				}
-				config, err := NewConfig(buf.Bytes(), nil)
+				config, err := moby.NewConfig(buf.Bytes(), nil)
 				if err != nil {
 					return fmt.Errorf("invalid config in existing tar file: %v", err)
 				}
@@ -202,18 +203,22 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	// deduplicate containers with the same image
 	dupMap := map[string]string{}
 
-	if m.Kernel.ref != nil {
+	kernelRef := m.Kernel.Ref()
+	var oldKernelRef *reference.Spec
+	if oldConfig != nil {
+		oldKernelRef = oldConfig.Kernel.Ref()
+	}
+	if kernelRef != nil {
 		// first check if the existing one had it
-		//if config != nil && len(oldConfig.initRefs) > index+1 && oldConfig.initRefs[index].String() == image {
-		if oldConfig != nil && oldConfig.Kernel.ref != nil && oldConfig.Kernel.ref.String() == m.Kernel.ref.String() {
-			if err := extractPackageFilesFromTar(in, iw, m.Kernel.ref.String(), "kernel"); err != nil {
+		if oldKernelRef != nil && oldKernelRef.String() == kernelRef.String() {
+			if err := extractPackageFilesFromTar(in, iw, kernelRef.String(), "kernel"); err != nil {
 				return err
 			}
 		} else {
 			// get kernel and initrd tarball and ucode cpio archive from container
-			log.Infof("Extract kernel image: %s", m.Kernel.ref)
-			kf := newKernelFilter(m.Kernel.ref, iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, opts.DecompressKernel)
-			err := ImageTar("kernel", m.Kernel.ref, "", kf, "", opts)
+			log.Infof("Extract kernel image: %s", m.Kernel.Ref())
+			kf := newKernelFilter(kernelRef, iw, m.Kernel.Cmdline, m.Kernel.Binary, m.Kernel.Tar, m.Kernel.UCode, opts.DecompressKernel)
+			err := ImageTar("kernel", kernelRef, "", kf, "", opts)
 			if err != nil {
 				return fmt.Errorf("failed to extract kernel image and tarball: %v", err)
 			}
@@ -228,9 +233,14 @@ func Build(m Moby, w io.Writer, opts BuildOpts) error {
 	if len(m.Init) != 0 {
 		log.Infof("Add init containers:")
 	}
-	apkTar := newAPKTarWriter(iw, "init")
-	for i, ii := range m.initRefs {
-		if oldConfig != nil && len(oldConfig.initRefs) > i && oldConfig.initRefs[i].String() == ii.String() {
+	apkTar := moby.NewAPKTarWriter(iw, "init")
+	initRefs := m.InitRefs()
+	var oldInitRefs []*reference.Spec
+	if oldConfig != nil {
+		oldInitRefs = oldConfig.InitRefs()
+	}
+	for i, ii := range initRefs {
+		if len(oldInitRefs) > i && oldInitRefs[i].String() == ii.String() {
 			if err := extractPackageFilesFromTar(in, apkTar, ii.String(), fmt.Sprintf("init[%d]", i)); err != nil {
 				return err
 			}
@@ -521,8 +531,8 @@ func tarAppend(ref *reference.Spec, iw *tar.Writer, tr *tar.Reader) error {
 		if hdr.PAXRecords == nil {
 			hdr.PAXRecords = make(map[string]string)
 		}
-		hdr.PAXRecords[PaxRecordLinuxkitSource] = ref.String()
-		hdr.PAXRecords[PaxRecordLinuxkitLocation] = "kernel"
+		hdr.PAXRecords[moby.PaxRecordLinuxkitSource] = ref.String()
+		hdr.PAXRecords[moby.PaxRecordLinuxkitLocation] = "kernel"
 		err = iw.WriteHeader(hdr)
 		if err != nil {
 			return err
@@ -615,9 +625,9 @@ func gunzip(src *bytes.Buffer) (*bytes.Buffer, error) {
 }
 
 // this allows inserting metadata into a file in the image
-func metadata(m Moby, md string) ([]byte, error) {
+func metadata(m moby.Moby, md string) ([]byte, error) {
 	// Make sure the Image strings are update to date with the refs
-	updateImages(&m)
+	moby.UpdateImages(&m)
 	switch md {
 	case "json":
 		return json.MarshalIndent(m, "", "    ")
@@ -628,7 +638,7 @@ func metadata(m Moby, md string) ([]byte, error) {
 	}
 }
 
-func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
+func filesystem(m moby.Moby, tw *tar.Writer, idMap map[string]uint32) error {
 	// TODO also include the files added in other parts of the build
 	var addedFiles = map[string]bool{}
 
@@ -666,11 +676,11 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 			dirMode |= 0001
 		}
 
-		uid, err := idNumeric(f.UID, idMap)
+		uid, err := moby.IDNumeric(f.UID, idMap)
 		if err != nil {
 			return err
 		}
-		gid, err := idNumeric(f.GID, idMap)
+		gid, err := moby.IDNumeric(f.GID, idMap)
 		if err != nil {
 			return err
 		}
@@ -740,8 +750,8 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 					Gid:      int(gid),
 					Format:   tar.FormatPAX,
 					PAXRecords: map[string]string{
-						PaxRecordLinuxkitSource:   "linuxkit.files",
-						PaxRecordLinuxkitLocation: fmt.Sprintf("files[%d]", filecount),
+						moby.PaxRecordLinuxkitSource:   "linuxkit.files",
+						moby.PaxRecordLinuxkitLocation: fmt.Sprintf("files[%d]", filecount),
 					},
 				}
 				err := tw.WriteHeader(hdr)
@@ -760,8 +770,8 @@ func filesystem(m Moby, tw *tar.Writer, idMap map[string]uint32) error {
 			Gid:     int(gid),
 			Format:  tar.FormatPAX,
 			PAXRecords: map[string]string{
-				PaxRecordLinuxkitSource:   "linuxkit.files",
-				PaxRecordLinuxkitLocation: fmt.Sprintf("files[%d]", filecount),
+				moby.PaxRecordLinuxkitSource:   "linuxkit.files",
+				moby.PaxRecordLinuxkitLocation: fmt.Sprintf("files[%d]", filecount),
 			},
 		}
 		if f.Directory {
@@ -815,7 +825,7 @@ func extractPackageFilesFromTar(inTar *os.File, tw tarWriter, image, section str
 		if hdr.PAXRecords == nil {
 			continue
 		}
-		if hdr.PAXRecords[PaxRecordLinuxkitSource] == image && hdr.PAXRecords[PaxRecordLinuxkitLocation] == section {
+		if hdr.PAXRecords[moby.PaxRecordLinuxkitSource] == image && hdr.PAXRecords[moby.PaxRecordLinuxkitLocation] == section {
 			if err := tw.WriteHeader(hdr); err != nil {
 				return fmt.Errorf("failed to write header: %w", err)
 			}

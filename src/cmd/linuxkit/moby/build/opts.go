@@ -1,4 +1,4 @@
-package moby
+package build
 
 // BuildOpts options that control the linuxkit build process
 type BuildOpts struct {
