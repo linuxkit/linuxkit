@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"archive/tar"
 	"bytes"
 	"encoding/json"
 	"fmt"
@@ -9,10 +10,12 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/tarball"
+	"github.com/google/go-containerregistry/pkg/v1/types"
 	intoto "github.com/in-toto/in-toto-golang/in_toto"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
@@ -21,6 +24,9 @@ import (
 
 const (
 	inTotoJsonMediaType = "application/vnd.in-toto+json"
+	layoutFile          = `{
+		"imageLayoutVersion": "1.0.0"
+	}`
 )
 
 // ImageSource a source for an image in the OCI distribution cache.
@@ -107,6 +113,189 @@ func (c ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 	go func() {
 		defer w.Close()
 		_ = tarball.Write(refName, image, w)
+	}()
+	return r, nil
+}
+
+// OCITarReader return an io.ReadCloser to read the image as a v1 tarball
+func (c ImageSource) OCITarReader(overrideName string) (io.ReadCloser, error) {
+	imageName := c.ref.String()
+	saveName := imageName
+	if overrideName != "" {
+		saveName = overrideName
+	}
+	refName, err := name.ParseReference(saveName)
+	if err != nil {
+		return nil, fmt.Errorf("error parsing image name: %v", err)
+	}
+	// get a reference to the image
+	image, err := c.provider.findImage(imageName, c.architecture)
+	if err != nil {
+		return nil, err
+	}
+	// convert the writer to a reader
+	r, w := io.Pipe()
+	go func() {
+		defer w.Close()
+		tw := tar.NewWriter(w)
+		defer tw.Close()
+		// layout file
+		layoutFileBytes := []byte(layoutFile)
+		if err := tw.WriteHeader(&tar.Header{
+			Name:     "oci-layout",
+			Mode:     0644,
+			Size:     int64(len(layoutFileBytes)),
+			Typeflag: tar.TypeReg,
+		}); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		if _, err := tw.Write(layoutFileBytes); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+
+		// make blobs directory
+		if err := tw.WriteHeader(&tar.Header{
+			Name:     "blobs/",
+			Mode:     0755,
+			Typeflag: tar.TypeDir,
+		}); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		// make blobs/sha256 directory
+		if err := tw.WriteHeader(&tar.Header{
+			Name:     "blobs/sha256/",
+			Mode:     0755,
+			Typeflag: tar.TypeDir,
+		}); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		// write config, each layer, manifest, saving the digest for each
+		config, err := image.RawConfigFile()
+		if err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		configDigest, configSize, err := v1.SHA256(bytes.NewReader(config))
+		if err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+
+		if err := tw.WriteHeader(&tar.Header{
+			Name:     fmt.Sprintf("blobs/sha256/%s", configDigest.Hex),
+			Mode:     0644,
+			Typeflag: tar.TypeReg,
+			Size:     configSize,
+		}); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		if _, err := tw.Write(config); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		layers, err := image.Layers()
+		if err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		for _, layer := range layers {
+			blob, err := layer.Compressed()
+			if err != nil {
+				_ = w.CloseWithError(err)
+				return
+			}
+			defer blob.Close()
+			blobDigest, err := layer.Digest()
+			if err != nil {
+				_ = w.CloseWithError(err)
+				return
+			}
+			blobSize, err := layer.Size()
+			if err != nil {
+				_ = w.CloseWithError(err)
+				return
+			}
+			if err := tw.WriteHeader(&tar.Header{
+				Name:     fmt.Sprintf("blobs/sha256/%s", blobDigest.Hex),
+				Mode:     0644,
+				Size:     blobSize,
+				Typeflag: tar.TypeReg,
+			}); err != nil {
+				_ = w.CloseWithError(err)
+				return
+			}
+			if _, err := io.Copy(tw, blob); err != nil {
+				_ = w.CloseWithError(err)
+				return
+			}
+		}
+		// write the manifest
+		manifest, err := image.RawManifest()
+		if err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		manifestDigest, manifestSize, err := v1.SHA256(bytes.NewReader(manifest))
+		if err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+
+		if err := tw.WriteHeader(&tar.Header{
+			Name:     fmt.Sprintf("blobs/sha256/%s", manifestDigest.Hex),
+			Mode:     0644,
+			Size:     int64(len(manifest)),
+			Typeflag: tar.TypeReg,
+		}); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		if _, err := tw.Write(manifest); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		// write the index file
+		desc := v1.Descriptor{
+			MediaType: types.OCIImageIndex,
+			Size:      manifestSize,
+			Digest:    manifestDigest,
+			Annotations: map[string]string{
+				imagespec.AnnotationRefName: refName.String(),
+			},
+		}
+		ii := empty.Index
+
+		index, err := ii.IndexManifest()
+		if err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+
+		index.Manifests = append(index.Manifests, desc)
+
+		rawIndex, err := json.MarshalIndent(index, "", "   ")
+		if err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		// write the index
+		if err := tw.WriteHeader(&tar.Header{
+			Name: "index.json",
+			Mode: 0644,
+			Size: int64(len(rawIndex)),
+		}); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
+		if _, err := tw.Write(rawIndex); err != nil {
+			_ = w.CloseWithError(err)
+			return
+		}
 	}()
 	return r, nil
 }

@@ -494,6 +494,15 @@ func (c cacheMockerSource) V1TarReader(overrideName string) (io.ReadCloser, erro
 	_, _ = rand.Read(b)
 	return io.NopCloser(bytes.NewReader(b)), nil
 }
+func (c cacheMockerSource) OCITarReader(overrideName string) (io.ReadCloser, error) {
+	_, found := c.c.images[c.ref.String()]
+	if !found {
+		return nil, fmt.Errorf("no image found with ref: %s", c.ref.String())
+	}
+	b := make([]byte, 256)
+	_, _ = rand.Read(b)
+	return io.NopCloser(bytes.NewReader(b)), nil
+}
 func (c cacheMockerSource) Descriptor() *registry.Descriptor {
 	return c.descriptor
 }

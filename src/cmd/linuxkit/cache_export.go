@@ -45,12 +45,18 @@ func cacheExportCmd() *cobra.Command {
 			src := p.NewSource(&ref, arch, desc)
 			var reader io.ReadCloser
 			switch format {
-			case "oci":
+			case "docker":
 				fullTagName := fullname
 				if tagName != "" {
 					fullTagName = util.ReferenceExpand(tagName)
 				}
 				reader, err = src.V1TarReader(fullTagName)
+			case "oci":
+				fullTagName := fullname
+				if tagName != "" {
+					fullTagName = util.ReferenceExpand(tagName)
+				}
+				reader, err = src.OCITarReader(fullTagName)
 			case "filesystem":
 				reader, err = src.TarReader()
 			default:
@@ -84,7 +90,7 @@ func cacheExportCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&arch, "arch", runtime.GOARCH, "Architecture to resolve an index to an image, if the provided image name is an index")
 	cmd.Flags().StringVar(&outputFile, "outfile", "", "Path to file to save output, '-' for stdout")
-	cmd.Flags().StringVar(&format, "format", "oci", "export format, one of 'oci', 'filesystem'")
+	cmd.Flags().StringVar(&format, "format", "oci", "export format, one of 'oci' (OCI tar), 'docker' (docker tar), 'filesystem'")
 	cmd.Flags().StringVar(&tagName, "name", "", "override the provided image name in the exported tar file; useful only for format=oci")
 
 	return cmd

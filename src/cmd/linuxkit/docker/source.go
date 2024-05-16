@@ -86,6 +86,11 @@ func (d ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 	return Save(saveName)
 }
 
+// OCITarReader return an io.ReadCloser to read the save of the image
+func (d ImageSource) OCITarReader(overrideName string) (io.ReadCloser, error) {
+	return nil, fmt.Errorf("unsupported")
+}
+
 // Descriptor return the descriptor of the image.
 func (d ImageSource) Descriptor() *v1.Descriptor {
 	return nil
