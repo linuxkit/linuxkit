@@ -12,10 +12,12 @@ import (
 	"syscall"
 	"time"
 
+	distreference "github.com/distribution/reference"
 	"github.com/gogo/googleapis/google/rpc"
 	gogotypes "github.com/gogo/protobuf/types"
 	"github.com/golang/protobuf/ptypes/any"
 	"github.com/moby/buildkit/client/llb"
+	"github.com/moby/buildkit/client/llb/sourceresolver"
 	"github.com/moby/buildkit/frontend/gateway/client"
 	pb "github.com/moby/buildkit/frontend/gateway/pb"
 	"github.com/moby/buildkit/identity"
@@ -23,6 +25,7 @@ import (
 	"github.com/moby/buildkit/util/apicaps"
 	"github.com/moby/buildkit/util/bklog"
 	"github.com/moby/buildkit/util/grpcerrors"
+	"github.com/moby/buildkit/util/imageutil"
 	"github.com/moby/sys/signal"
 	digest "github.com/opencontainers/go-digest"
 	"github.com/pkg/errors"
@@ -43,8 +46,9 @@ type GrpcClient interface {
 }
 
 func New(ctx context.Context, opts map[string]string, session, product string, c pb.LLBBridgeClient, w []client.WorkerInfo) (GrpcClient, error) {
-	pingCtx, pingCancel := context.WithTimeout(ctx, 15*time.Second)
-	defer pingCancel()
+	pingCtx, pingCancel := context.WithCancelCause(ctx)
+	pingCtx, _ = context.WithTimeoutCause(pingCtx, 15*time.Second, errors.WithStack(context.DeadlineExceeded))
+	defer pingCancel(errors.WithStack(context.Canceled))
 	resp, err := c.Ping(pingCtx, &pb.PingRequest{})
 	if err != nil {
 		return nil, err
@@ -190,7 +194,7 @@ func (c *grpcClient) Run(ctx context.Context, f client.BuildFunc) (retError erro
 				}
 			}
 			if retError != nil {
-				st, _ := status.FromError(grpcerrors.ToGRPC(retError))
+				st, _ := status.FromError(grpcerrors.ToGRPC(ctx, retError))
 				stp := st.Proto()
 				req.Error = &rpc.Status{
 					Code:    stp.Code,
@@ -478,7 +482,35 @@ func (c *grpcClient) Solve(ctx context.Context, creq client.SolveRequest) (res *
 	return res, nil
 }
 
-func (c *grpcClient) ResolveImageConfig(ctx context.Context, ref string, opt llb.ResolveImageConfigOpt) (digest.Digest, []byte, error) {
+func (c *grpcClient) ResolveSourceMetadata(ctx context.Context, op *opspb.SourceOp, opt sourceresolver.Opt) (*sourceresolver.MetaResponse, error) {
+	if c.caps.Supports(pb.CapSourceMetaResolver) != nil {
+		var ref string
+		if v, ok := strings.CutPrefix(op.Identifier, "docker-image://"); ok {
+			ref = v
+		} else if v, ok := strings.CutPrefix(op.Identifier, "oci-layout://"); ok {
+			ref = v
+		} else {
+			return &sourceresolver.MetaResponse{Op: op}, nil
+		}
+		retRef, dgst, config, err := c.ResolveImageConfig(ctx, ref, opt)
+		if err != nil {
+			return nil, err
+		}
+		if strings.HasPrefix(op.Identifier, "docker-image://") {
+			op.Identifier = "docker-image://" + retRef
+		} else if strings.HasPrefix(op.Identifier, "oci-layout://") {
+			op.Identifier = "oci-layout://" + retRef
+		}
+
+		return &sourceresolver.MetaResponse{
+			Op: op,
+			Image: &sourceresolver.ResolveImageResponse{
+				Digest: dgst,
+				Config: config,
+			},
+		}, nil
+	}
+
 	var p *opspb.Platform
 	if platform := opt.Platform; platform != nil {
 		p = &opspb.Platform{
@@ -489,19 +521,108 @@ func (c *grpcClient) ResolveImageConfig(ctx context.Context, ref string, opt llb
 			OSFeatures:   platform.OSFeatures,
 		}
 	}
-	resp, err := c.client.ResolveImageConfig(ctx, &pb.ResolveImageConfigRequest{
-		ResolverType: int32(opt.ResolverType),
-		Ref:          ref,
-		Platform:     p,
-		ResolveMode:  opt.ResolveMode,
-		LogName:      opt.LogName,
-		SessionID:    opt.Store.SessionID,
-		StoreID:      opt.Store.StoreID,
-	})
-	if err != nil {
-		return "", nil, err
+
+	req := &pb.ResolveSourceMetaRequest{
+		Source:         op,
+		Platform:       p,
+		LogName:        opt.LogName,
+		SourcePolicies: opt.SourcePolicies,
 	}
-	return resp.Digest, resp.Config, nil
+	resp, err := c.client.ResolveSourceMeta(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	r := &sourceresolver.MetaResponse{
+		Op: resp.Source,
+	}
+	if resp.Image != nil {
+		r.Image = &sourceresolver.ResolveImageResponse{
+			Digest: resp.Image.Digest,
+			Config: resp.Image.Config,
+		}
+	}
+	return r, nil
+}
+
+func (c *grpcClient) resolveImageConfigViaSourceMetadata(ctx context.Context, ref string, opt sourceresolver.Opt, p *opspb.Platform) (string, digest.Digest, []byte, error) {
+	op := &opspb.SourceOp{
+		Identifier: "docker-image://" + ref,
+	}
+	if opt.OCILayoutOpt != nil {
+		named, err := distreference.ParseNormalizedNamed(ref)
+		if err != nil {
+			return "", "", nil, err
+		}
+		op.Identifier = "oci-layout://" + named.String()
+		op.Attrs = map[string]string{
+			opspb.AttrOCILayoutSessionID: opt.OCILayoutOpt.Store.SessionID,
+			opspb.AttrOCILayoutStoreID:   opt.OCILayoutOpt.Store.StoreID,
+		}
+	}
+
+	req := &pb.ResolveSourceMetaRequest{
+		Source:         op,
+		Platform:       p,
+		LogName:        opt.LogName,
+		SourcePolicies: opt.SourcePolicies,
+	}
+	resp, err := c.client.ResolveSourceMeta(ctx, req)
+	if err != nil {
+		return "", "", nil, err
+	}
+	if resp.Image == nil {
+		return "", "", nil, &imageutil.ResolveToNonImageError{Ref: ref, Updated: resp.Source.Identifier}
+	}
+	ref = strings.TrimPrefix(resp.Source.Identifier, "docker-image://")
+	ref = strings.TrimPrefix(ref, "oci-layout://")
+	return ref, resp.Image.Digest, resp.Image.Config, nil
+}
+
+func (c *grpcClient) ResolveImageConfig(ctx context.Context, ref string, opt sourceresolver.Opt) (string, digest.Digest, []byte, error) {
+	var p *opspb.Platform
+	if platform := opt.Platform; platform != nil {
+		p = &opspb.Platform{
+			OS:           platform.OS,
+			Architecture: platform.Architecture,
+			Variant:      platform.Variant,
+			OSVersion:    platform.OSVersion,
+			OSFeatures:   platform.OSFeatures,
+		}
+	}
+
+	if c.caps.Supports(pb.CapSourceMetaResolver) == nil {
+		return c.resolveImageConfigViaSourceMetadata(ctx, ref, opt, p)
+	}
+
+	req := &pb.ResolveImageConfigRequest{
+		Ref:            ref,
+		LogName:        opt.LogName,
+		SourcePolicies: opt.SourcePolicies,
+		Platform:       p,
+	}
+	if iopt := opt.ImageOpt; iopt != nil {
+		req.ResolveMode = iopt.ResolveMode
+		req.ResolverType = int32(sourceresolver.ResolverTypeRegistry)
+	}
+
+	if iopt := opt.OCILayoutOpt; iopt != nil {
+		req.ResolverType = int32(sourceresolver.ResolverTypeOCILayout)
+		req.StoreID = iopt.Store.StoreID
+		req.SessionID = iopt.Store.SessionID
+	}
+
+	resp, err := c.client.ResolveImageConfig(ctx, req)
+	if err != nil {
+		return "", "", nil, err
+	}
+	newRef := resp.Ref
+	if newRef == "" {
+		// No ref returned, use the original one.
+		// This could occur if the version of buildkitd is too old.
+		newRef = ref
+	}
+	return newRef, resp.Digest, resp.Config, nil
 }
 
 func (c *grpcClient) BuildOpts() client.BuildOpts {
@@ -608,7 +729,7 @@ func (b *procMessageForwarder) Close() {
 type messageForwarder struct {
 	client pb.LLBBridgeClient
 	ctx    context.Context
-	cancel func()
+	cancel func(error)
 	eg     *errgroup.Group
 	mu     sync.Mutex
 	pids   map[string]*procMessageForwarder
@@ -622,7 +743,7 @@ type messageForwarder struct {
 }
 
 func newMessageForwarder(ctx context.Context, client pb.LLBBridgeClient) *messageForwarder {
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancelCause(ctx)
 	eg, ctx := errgroup.WithContext(ctx)
 	return &messageForwarder{
 		client: client,
@@ -711,7 +832,7 @@ func (m *messageForwarder) Send(msg *pb.ExecMessage) error {
 }
 
 func (m *messageForwarder) Release() error {
-	m.cancel()
+	m.cancel(errors.WithStack(context.Canceled))
 	return m.eg.Wait()
 }
 
@@ -792,6 +913,7 @@ func (c *grpcClient) NewContainer(ctx context.Context, req client.NewContainerRe
 		Constraints: req.Constraints,
 		Network:     req.NetMode,
 		ExtraHosts:  req.ExtraHosts,
+		Hostname:    req.Hostname,
 	})
 	if err != nil {
 		return nil, err
@@ -805,6 +927,7 @@ func (c *grpcClient) NewContainer(ctx context.Context, req client.NewContainerRe
 
 	return &container{
 		client:   c.client,
+		caps:     c.caps,
 		id:       id,
 		execMsgs: c.execMsgs,
 	}, nil
@@ -812,6 +935,7 @@ func (c *grpcClient) NewContainer(ctx context.Context, req client.NewContainerRe
 
 type container struct {
 	client   pb.LLBBridgeClient
+	caps     apicaps.CapSet
 	id       string
 	execMsgs *messageForwarder
 }
@@ -819,6 +943,12 @@ type container struct {
 func (ctr *container) Start(ctx context.Context, req client.StartRequest) (client.ContainerProcess, error) {
 	pid := fmt.Sprintf("%s:%s", ctr.id, identity.NewID())
 	msgs := ctr.execMsgs.Register(pid)
+
+	if len(req.SecretEnv) > 0 {
+		if err := ctr.caps.Supports(pb.CapGatewayExecSecretEnv); err != nil {
+			return nil, err
+		}
+	}
 
 	init := &pb.InitMessage{
 		ContainerID: ctr.id,
@@ -828,8 +958,9 @@ func (ctr *container) Start(ctx context.Context, req client.StartRequest) (clien
 			Cwd:  req.Cwd,
 			User: req.User,
 		},
-		Tty:      req.Tty,
-		Security: req.SecurityMode,
+		Tty:       req.Tty,
+		Security:  req.SecurityMode,
+		Secretenv: req.SecretEnv,
 	}
 	init.Meta.RemoveMountStubsRecursive = req.RemoveMountStubsRecursive
 	if req.Stdin != nil {
@@ -927,11 +1058,11 @@ func (ctr *container) Start(ctx context.Context, req client.StartRequest) (clien
 
 			if msg == nil {
 				// empty message from ctx cancel, so just start shutting down
-				// input, but continue processing more exit/done messages
+				// input
 				closeDoneOnce.Do(func() {
 					close(done)
 				})
-				continue
+				return context.Cause(ctx)
 			}
 
 			if file := msg.GetFile(); file != nil {
@@ -1127,7 +1258,7 @@ func grpcClientConn(ctx context.Context) (context.Context, *grpc.ClientConn, err
 		return nil, nil, errors.Wrap(err, "failed to create grpc client")
 	}
 
-	ctx, cancel := context.WithCancel(ctx)
+	ctx, cancel := context.WithCancelCause(ctx)
 	_ = cancel
 	// go monitorHealth(ctx, cc, cancel)
 

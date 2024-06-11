@@ -1,4 +1,4 @@
-// Copyright 2022 Google LLC.
+// Copyright 2023 Google LLC.
 // Use of this source code is governed by a BSD-style
 // license that can be found in the LICENSE file.
 
@@ -10,35 +10,35 @@
 //
 // For product documentation, see: https://developers.google.com/storage/docs/json_api/
 //
-// Creating a client
+// # Creating a client
 //
 // Usage example:
 //
-//   import "google.golang.org/api/storage/v1"
-//   ...
-//   ctx := context.Background()
-//   storageService, err := storage.NewService(ctx)
+//	import "google.golang.org/api/storage/v1"
+//	...
+//	ctx := context.Background()
+//	storageService, err := storage.NewService(ctx)
 //
 // In this example, Google Application Default Credentials are used for authentication.
 //
 // For information on how to create and obtain Application Default Credentials, see https://developers.google.com/identity/protocols/application-default-credentials.
 //
-// Other authentication options
+// # Other authentication options
 //
 // By default, all available scopes (see "Constants") are used to authenticate. To restrict scopes, use option.WithScopes:
 //
-//   storageService, err := storage.NewService(ctx, option.WithScopes(storage.DevstorageReadWriteScope))
+//	storageService, err := storage.NewService(ctx, option.WithScopes(storage.DevstorageReadWriteScope))
 //
 // To use an API key for authentication (note: some APIs do not support API keys), use option.WithAPIKey:
 //
-//   storageService, err := storage.NewService(ctx, option.WithAPIKey("AIza..."))
+//	storageService, err := storage.NewService(ctx, option.WithAPIKey("AIza..."))
 //
 // To use an OAuth token (e.g., a user token obtained via a three-legged OAuth flow), use option.WithTokenSource:
 //
-//   config := &oauth2.Config{...}
-//   // ...
-//   token, err := config.Exchange(ctx, ...)
-//   storageService, err := storage.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+//	config := &oauth2.Config{...}
+//	// ...
+//	token, err := config.Exchange(ctx, ...)
+//	storageService, err := storage.NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
 //
 // See https://godoc.org/google.golang.org/api/option/ for details on options.
 package storage // import "google.golang.org/api/storage/v1"
@@ -78,6 +78,7 @@ var _ = errors.New
 var _ = strings.Replace
 var _ = context.Canceled
 var _ = internaloption.WithDefaultEndpoint
+var _ = internal.Version
 
 const apiId = "storage:v1"
 const apiName = "storage"
@@ -822,7 +823,7 @@ func (s *BucketLifecycleRuleAction) MarshalJSON() ([]byte, error) {
 type BucketLifecycleRuleCondition struct {
 	// Age: Age of an object (in days). This condition is satisfied when an
 	// object reaches the specified age.
-	Age int64 `json:"age,omitempty"`
+	Age *int64 `json:"age,omitempty"`
 
 	// CreatedBefore: A date in RFC 3339 format with only the date part (for
 	// instance, "2013-01-15"). This condition is satisfied when an object
@@ -1889,7 +1890,12 @@ type Object struct {
 	TimeStorageClassUpdated string `json:"timeStorageClassUpdated,omitempty"`
 
 	// Updated: The modification time of the object metadata in RFC 3339
-	// format.
+	// format. Set initially to object creation time and then updated
+	// whenever any metadata of the object changes. This includes changes
+	// made by a requester, such as modifying custom metadata, as well as
+	// changes made by Cloud Storage on behalf of a requester, such as
+	// changing the storage class based on an Object Lifecycle
+	// Configuration.
 	Updated string `json:"updated,omitempty"`
 
 	// ServerResponse contains the HTTP response code and headers from the
@@ -2479,10 +2485,10 @@ type BucketAccessControlsDeleteCall struct {
 // Delete: Permanently deletes the ACL entry for the specified entity on
 // the specified bucket.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
 func (r *BucketAccessControlsService) Delete(bucket string, entity string) *BucketAccessControlsDeleteCall {
 	c := &BucketAccessControlsDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -2555,7 +2561,7 @@ func (c *BucketAccessControlsDeleteCall) Do(opts ...googleapi.CallOption) error 
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -2609,10 +2615,10 @@ type BucketAccessControlsGetCall struct {
 // Get: Returns the ACL entry for the specified entity on the specified
 // bucket.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
 func (r *BucketAccessControlsService) Get(bucket string, entity string) *BucketAccessControlsGetCall {
 	c := &BucketAccessControlsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -2703,17 +2709,17 @@ func (c *BucketAccessControlsGetCall) Do(opts ...googleapi.CallOption) (*BucketA
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &BucketAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -2860,17 +2866,17 @@ func (c *BucketAccessControlsInsertCall) Do(opts ...googleapi.CallOption) (*Buck
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &BucketAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -3020,17 +3026,17 @@ func (c *BucketAccessControlsListCall) Do(opts ...googleapi.CallOption) (*Bucket
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &BucketAccessControls{
 		ServerResponse: googleapi.ServerResponse{
@@ -3089,10 +3095,10 @@ type BucketAccessControlsPatchCall struct {
 
 // Patch: Patches an ACL entry on the specified bucket.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
 func (r *BucketAccessControlsService) Patch(bucket string, entity string, bucketaccesscontrol *BucketAccessControl) *BucketAccessControlsPatchCall {
 	c := &BucketAccessControlsPatchCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -3176,17 +3182,17 @@ func (c *BucketAccessControlsPatchCall) Do(opts ...googleapi.CallOption) (*Bucke
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &BucketAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -3255,10 +3261,10 @@ type BucketAccessControlsUpdateCall struct {
 
 // Update: Updates an ACL entry on the specified bucket.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
 func (r *BucketAccessControlsService) Update(bucket string, entity string, bucketaccesscontrol *BucketAccessControl) *BucketAccessControlsUpdateCall {
 	c := &BucketAccessControlsUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -3342,17 +3348,17 @@ func (c *BucketAccessControlsUpdateCall) Do(opts ...googleapi.CallOption) (*Buck
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &BucketAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -3506,7 +3512,7 @@ func (c *BucketsDeleteCall) Do(opts ...googleapi.CallOption) error {
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -3593,8 +3599,9 @@ func (c *BucketsGetCall) IfMetagenerationNotMatch(ifMetagenerationNotMatch int64
 // properties to return. Defaults to noAcl.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit owner, acl and defaultObjectAcl properties.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit owner, acl and defaultObjectAcl properties.
 func (c *BucketsGetCall) Projection(projection string) *BucketsGetCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -3682,17 +3689,17 @@ func (c *BucketsGetCall) Do(opts ...googleapi.CallOption) (*Bucket, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Bucket{
 		ServerResponse: googleapi.ServerResponse{
@@ -3877,17 +3884,17 @@ func (c *BucketsGetIamPolicyCall) Do(opts ...googleapi.CallOption) (*Policy, err
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Policy{
 		ServerResponse: googleapi.ServerResponse{
@@ -3963,14 +3970,22 @@ func (r *BucketsService) Insert(projectid string, bucket *Bucket) *BucketsInsert
 // predefined set of access controls to this bucket.
 //
 // Possible values:
-//   "authenticatedRead" - Project team owners get OWNER access, and
+//
+//	"authenticatedRead" - Project team owners get OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "private" - Project team owners get OWNER access.
-//   "projectPrivate" - Project team members get access according to
+//
+//	"private" - Project team owners get OWNER access.
+//	"projectPrivate" - Project team members get access according to
+//
 // their roles.
-//   "publicRead" - Project team owners get OWNER access, and allUsers
+//
+//	"publicRead" - Project team owners get OWNER access, and allUsers
+//
 // get READER access.
-//   "publicReadWrite" - Project team owners get OWNER access, and
+//
+//	"publicReadWrite" - Project team owners get OWNER access, and
+//
 // allUsers get WRITER access.
 func (c *BucketsInsertCall) PredefinedAcl(predefinedAcl string) *BucketsInsertCall {
 	c.urlParams_.Set("predefinedAcl", predefinedAcl)
@@ -3982,16 +3997,26 @@ func (c *BucketsInsertCall) PredefinedAcl(predefinedAcl string) *BucketsInsertCa
 // object access controls to this bucket.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *BucketsInsertCall) PredefinedDefaultObjectAcl(predefinedDefaultObjectAcl string) *BucketsInsertCall {
 	c.urlParams_.Set("predefinedDefaultObjectAcl", predefinedDefaultObjectAcl)
@@ -4004,8 +4029,9 @@ func (c *BucketsInsertCall) PredefinedDefaultObjectAcl(predefinedDefaultObjectAc
 // full.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit owner, acl and defaultObjectAcl properties.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit owner, acl and defaultObjectAcl properties.
 func (c *BucketsInsertCall) Projection(projection string) *BucketsInsertCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -4082,17 +4108,17 @@ func (c *BucketsInsertCall) Do(opts ...googleapi.CallOption) (*Bucket, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Bucket{
 		ServerResponse: googleapi.ServerResponse{
@@ -4240,8 +4266,9 @@ func (c *BucketsListCall) Prefix(prefix string) *BucketsListCall {
 // properties to return. Defaults to noAcl.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit owner, acl and defaultObjectAcl properties.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit owner, acl and defaultObjectAcl properties.
 func (c *BucketsListCall) Projection(projection string) *BucketsListCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -4326,17 +4353,17 @@ func (c *BucketsListCall) Do(opts ...googleapi.CallOption) (*Buckets, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Buckets{
 		ServerResponse: googleapi.ServerResponse{
@@ -4448,9 +4475,9 @@ type BucketsLockRetentionPolicyCall struct {
 
 // LockRetentionPolicy: Locks retention policy on a bucket.
 //
-// - bucket: Name of a bucket.
-// - ifMetagenerationMatch: Makes the operation conditional on whether
-//   bucket's current metageneration matches the given value.
+//   - bucket: Name of a bucket.
+//   - ifMetagenerationMatch: Makes the operation conditional on whether
+//     bucket's current metageneration matches the given value.
 func (r *BucketsService) LockRetentionPolicy(bucket string, ifMetagenerationMatch int64) *BucketsLockRetentionPolicyCall {
 	c := &BucketsLockRetentionPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -4527,17 +4554,17 @@ func (c *BucketsLockRetentionPolicyCall) Do(opts ...googleapi.CallOption) (*Buck
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Bucket{
 		ServerResponse: googleapi.ServerResponse{
@@ -4636,14 +4663,22 @@ func (c *BucketsPatchCall) IfMetagenerationNotMatch(ifMetagenerationNotMatch int
 // predefined set of access controls to this bucket.
 //
 // Possible values:
-//   "authenticatedRead" - Project team owners get OWNER access, and
+//
+//	"authenticatedRead" - Project team owners get OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "private" - Project team owners get OWNER access.
-//   "projectPrivate" - Project team members get access according to
+//
+//	"private" - Project team owners get OWNER access.
+//	"projectPrivate" - Project team members get access according to
+//
 // their roles.
-//   "publicRead" - Project team owners get OWNER access, and allUsers
+//
+//	"publicRead" - Project team owners get OWNER access, and allUsers
+//
 // get READER access.
-//   "publicReadWrite" - Project team owners get OWNER access, and
+//
+//	"publicReadWrite" - Project team owners get OWNER access, and
+//
 // allUsers get WRITER access.
 func (c *BucketsPatchCall) PredefinedAcl(predefinedAcl string) *BucketsPatchCall {
 	c.urlParams_.Set("predefinedAcl", predefinedAcl)
@@ -4655,16 +4690,26 @@ func (c *BucketsPatchCall) PredefinedAcl(predefinedAcl string) *BucketsPatchCall
 // object access controls to this bucket.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *BucketsPatchCall) PredefinedDefaultObjectAcl(predefinedDefaultObjectAcl string) *BucketsPatchCall {
 	c.urlParams_.Set("predefinedDefaultObjectAcl", predefinedDefaultObjectAcl)
@@ -4675,8 +4720,9 @@ func (c *BucketsPatchCall) PredefinedDefaultObjectAcl(predefinedDefaultObjectAcl
 // properties to return. Defaults to full.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit owner, acl and defaultObjectAcl properties.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit owner, acl and defaultObjectAcl properties.
 func (c *BucketsPatchCall) Projection(projection string) *BucketsPatchCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -4756,17 +4802,17 @@ func (c *BucketsPatchCall) Do(opts ...googleapi.CallOption) (*Bucket, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Bucket{
 		ServerResponse: googleapi.ServerResponse{
@@ -4974,17 +5020,17 @@ func (c *BucketsSetIamPolicyCall) Do(opts ...googleapi.CallOption) (*Policy, err
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Policy{
 		ServerResponse: googleapi.ServerResponse{
@@ -5137,17 +5183,17 @@ func (c *BucketsTestIamPermissionsCall) Do(opts ...googleapi.CallOption) (*TestI
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &TestIamPermissionsResponse{
 		ServerResponse: googleapi.ServerResponse{
@@ -5248,14 +5294,22 @@ func (c *BucketsUpdateCall) IfMetagenerationNotMatch(ifMetagenerationNotMatch in
 // predefined set of access controls to this bucket.
 //
 // Possible values:
-//   "authenticatedRead" - Project team owners get OWNER access, and
+//
+//	"authenticatedRead" - Project team owners get OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "private" - Project team owners get OWNER access.
-//   "projectPrivate" - Project team members get access according to
+//
+//	"private" - Project team owners get OWNER access.
+//	"projectPrivate" - Project team members get access according to
+//
 // their roles.
-//   "publicRead" - Project team owners get OWNER access, and allUsers
+//
+//	"publicRead" - Project team owners get OWNER access, and allUsers
+//
 // get READER access.
-//   "publicReadWrite" - Project team owners get OWNER access, and
+//
+//	"publicReadWrite" - Project team owners get OWNER access, and
+//
 // allUsers get WRITER access.
 func (c *BucketsUpdateCall) PredefinedAcl(predefinedAcl string) *BucketsUpdateCall {
 	c.urlParams_.Set("predefinedAcl", predefinedAcl)
@@ -5267,16 +5321,26 @@ func (c *BucketsUpdateCall) PredefinedAcl(predefinedAcl string) *BucketsUpdateCa
 // object access controls to this bucket.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *BucketsUpdateCall) PredefinedDefaultObjectAcl(predefinedDefaultObjectAcl string) *BucketsUpdateCall {
 	c.urlParams_.Set("predefinedDefaultObjectAcl", predefinedDefaultObjectAcl)
@@ -5287,8 +5351,9 @@ func (c *BucketsUpdateCall) PredefinedDefaultObjectAcl(predefinedDefaultObjectAc
 // properties to return. Defaults to full.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit owner, acl and defaultObjectAcl properties.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit owner, acl and defaultObjectAcl properties.
 func (c *BucketsUpdateCall) Projection(projection string) *BucketsUpdateCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -5368,17 +5433,17 @@ func (c *BucketsUpdateCall) Do(opts ...googleapi.CallOption) (*Bucket, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Bucket{
 		ServerResponse: googleapi.ServerResponse{
@@ -5567,7 +5632,7 @@ func (c *ChannelsStopCall) Do(opts ...googleapi.CallOption) error {
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -5604,10 +5669,10 @@ type DefaultObjectAccessControlsDeleteCall struct {
 // Delete: Permanently deletes the default object ACL entry for the
 // specified entity on the specified bucket.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
 func (r *DefaultObjectAccessControlsService) Delete(bucket string, entity string) *DefaultObjectAccessControlsDeleteCall {
 	c := &DefaultObjectAccessControlsDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -5680,7 +5745,7 @@ func (c *DefaultObjectAccessControlsDeleteCall) Do(opts ...googleapi.CallOption)
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -5734,10 +5799,10 @@ type DefaultObjectAccessControlsGetCall struct {
 // Get: Returns the default object ACL entry for the specified entity on
 // the specified bucket.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
 func (r *DefaultObjectAccessControlsService) Get(bucket string, entity string) *DefaultObjectAccessControlsGetCall {
 	c := &DefaultObjectAccessControlsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -5828,17 +5893,17 @@ func (c *DefaultObjectAccessControlsGetCall) Do(opts ...googleapi.CallOption) (*
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -5986,17 +6051,17 @@ func (c *DefaultObjectAccessControlsInsertCall) Do(opts ...googleapi.CallOption)
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -6163,17 +6228,17 @@ func (c *DefaultObjectAccessControlsListCall) Do(opts ...googleapi.CallOption) (
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControls{
 		ServerResponse: googleapi.ServerResponse{
@@ -6244,10 +6309,10 @@ type DefaultObjectAccessControlsPatchCall struct {
 
 // Patch: Patches a default object ACL entry on the specified bucket.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
 func (r *DefaultObjectAccessControlsService) Patch(bucket string, entity string, objectaccesscontrol *ObjectAccessControl) *DefaultObjectAccessControlsPatchCall {
 	c := &DefaultObjectAccessControlsPatchCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -6331,17 +6396,17 @@ func (c *DefaultObjectAccessControlsPatchCall) Do(opts ...googleapi.CallOption) 
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -6410,10 +6475,10 @@ type DefaultObjectAccessControlsUpdateCall struct {
 
 // Update: Updates a default object ACL entry on the specified bucket.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
 func (r *DefaultObjectAccessControlsService) Update(bucket string, entity string, objectaccesscontrol *ObjectAccessControl) *DefaultObjectAccessControlsUpdateCall {
 	c := &DefaultObjectAccessControlsUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -6497,17 +6562,17 @@ func (c *DefaultObjectAccessControlsUpdateCall) Do(opts ...googleapi.CallOption)
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -6649,7 +6714,7 @@ func (c *NotificationsDeleteCall) Do(opts ...googleapi.CallOption) error {
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -6795,17 +6860,17 @@ func (c *NotificationsGetCall) Do(opts ...googleapi.CallOption) (*Notification, 
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Notification{
 		ServerResponse: googleapi.ServerResponse{
@@ -6955,17 +7020,17 @@ func (c *NotificationsInsertCall) Do(opts ...googleapi.CallOption) (*Notificatio
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Notification{
 		ServerResponse: googleapi.ServerResponse{
@@ -7117,17 +7182,17 @@ func (c *NotificationsListCall) Do(opts ...googleapi.CallOption) (*Notifications
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Notifications{
 		ServerResponse: googleapi.ServerResponse{
@@ -7190,12 +7255,12 @@ type ObjectAccessControlsDeleteCall struct {
 // Delete: Permanently deletes the ACL entry for the specified entity on
 // the specified object.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectAccessControlsService) Delete(bucket string, object string, entity string) *ObjectAccessControlsDeleteCall {
 	c := &ObjectAccessControlsDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -7278,7 +7343,7 @@ func (c *ObjectAccessControlsDeleteCall) Do(opts ...googleapi.CallOption) error 
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -7346,12 +7411,12 @@ type ObjectAccessControlsGetCall struct {
 // Get: Returns the ACL entry for the specified entity on the specified
 // object.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectAccessControlsService) Get(bucket string, object string, entity string) *ObjectAccessControlsGetCall {
 	c := &ObjectAccessControlsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -7452,17 +7517,17 @@ func (c *ObjectAccessControlsGetCall) Do(opts ...googleapi.CallOption) (*ObjectA
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -7541,9 +7606,9 @@ type ObjectAccessControlsInsertCall struct {
 
 // Insert: Creates a new ACL entry on the specified object.
 //
-// - bucket: Name of a bucket.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of a bucket.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectAccessControlsService) Insert(bucket string, object string, objectaccesscontrol *ObjectAccessControl) *ObjectAccessControlsInsertCall {
 	c := &ObjectAccessControlsInsertCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -7635,17 +7700,17 @@ func (c *ObjectAccessControlsInsertCall) Do(opts ...googleapi.CallOption) (*Obje
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -7720,9 +7785,9 @@ type ObjectAccessControlsListCall struct {
 
 // List: Retrieves ACL entries on the specified object.
 //
-// - bucket: Name of a bucket.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of a bucket.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectAccessControlsService) List(bucket string, object string) *ObjectAccessControlsListCall {
 	c := &ObjectAccessControlsListCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -7821,17 +7886,17 @@ func (c *ObjectAccessControlsListCall) Do(opts ...googleapi.CallOption) (*Object
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControls{
 		ServerResponse: googleapi.ServerResponse{
@@ -7904,12 +7969,12 @@ type ObjectAccessControlsPatchCall struct {
 
 // Patch: Patches an ACL entry on the specified object.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectAccessControlsService) Patch(bucket string, object string, entity string, objectaccesscontrol *ObjectAccessControl) *ObjectAccessControlsPatchCall {
 	c := &ObjectAccessControlsPatchCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -8003,17 +8068,17 @@ func (c *ObjectAccessControlsPatchCall) Do(opts ...googleapi.CallOption) (*Objec
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -8096,12 +8161,12 @@ type ObjectAccessControlsUpdateCall struct {
 
 // Update: Updates an ACL entry on the specified object.
 //
-// - bucket: Name of a bucket.
-// - entity: The entity holding the permission. Can be user-userId,
-//   user-emailAddress, group-groupId, group-emailAddress, allUsers, or
-//   allAuthenticatedUsers.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of a bucket.
+//   - entity: The entity holding the permission. Can be user-userId,
+//     user-emailAddress, group-groupId, group-emailAddress, allUsers, or
+//     allAuthenticatedUsers.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectAccessControlsService) Update(bucket string, object string, entity string, objectaccesscontrol *ObjectAccessControl) *ObjectAccessControlsUpdateCall {
 	c := &ObjectAccessControlsUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -8195,17 +8260,17 @@ func (c *ObjectAccessControlsUpdateCall) Do(opts ...googleapi.CallOption) (*Obje
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ObjectAccessControl{
 		ServerResponse: googleapi.ServerResponse{
@@ -8288,11 +8353,11 @@ type ObjectsComposeCall struct {
 // Compose: Concatenates a list of existing objects into a new object in
 // the same bucket.
 //
-// - destinationBucket: Name of the bucket containing the source
-//   objects. The destination object is stored in this bucket.
-// - destinationObject: Name of the new object. For information about
-//   how to URL encode object names to be path safe, see Encoding URI
-//   Path Parts.
+//   - destinationBucket: Name of the bucket containing the source
+//     objects. The destination object is stored in this bucket.
+//   - destinationObject: Name of the new object. For information about
+//     how to URL encode object names to be path safe, see Encoding URI
+//     Path Parts.
 func (r *ObjectsService) Compose(destinationBucket string, destinationObject string, composerequest *ComposeRequest) *ObjectsComposeCall {
 	c := &ObjectsComposeCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.destinationBucket = destinationBucket
@@ -8306,16 +8371,26 @@ func (r *ObjectsService) Compose(destinationBucket string, destinationObject str
 // to the destination object.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *ObjectsComposeCall) DestinationPredefinedAcl(destinationPredefinedAcl string) *ObjectsComposeCall {
 	c.urlParams_.Set("destinationPredefinedAcl", destinationPredefinedAcl)
@@ -8342,7 +8417,9 @@ func (c *ObjectsComposeCall) IfMetagenerationMatch(ifMetagenerationMatch int64) 
 // KmsKeyName sets the optional parameter "kmsKeyName": Resource name of
 // the Cloud KMS key, of the form
 // projects/my-project/locations/global/keyRings/my-kr/cryptoKeys/my-key,
-//  that will be used to encrypt the object. Overrides the object
+//
+//	that will be used to encrypt the object. Overrides the object
+//
 // metadata's kms_key_name value, if any.
 func (c *ObjectsComposeCall) KmsKeyName(kmsKeyName string) *ObjectsComposeCall {
 	c.urlParams_.Set("kmsKeyName", kmsKeyName)
@@ -8424,17 +8501,17 @@ func (c *ObjectsComposeCall) Do(opts ...googleapi.CallOption) (*Object, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Object{
 		ServerResponse: googleapi.ServerResponse{
@@ -8545,18 +8622,18 @@ type ObjectsCopyCall struct {
 // Copy: Copies a source object to a destination object. Optionally
 // overrides metadata.
 //
-// - destinationBucket: Name of the bucket in which to store the new
-//   object. Overrides the provided object metadata's bucket value, if
-//   any.For information about how to URL encode object names to be path
-//   safe, see Encoding URI Path Parts.
-// - destinationObject: Name of the new object. Required when the object
-//   metadata is not otherwise provided. Overrides the object metadata's
-//   name value, if any.
-// - sourceBucket: Name of the bucket in which to find the source
-//   object.
-// - sourceObject: Name of the source object. For information about how
-//   to URL encode object names to be path safe, see Encoding URI Path
-//   Parts.
+//   - destinationBucket: Name of the bucket in which to store the new
+//     object. Overrides the provided object metadata's bucket value, if
+//     any.For information about how to URL encode object names to be path
+//     safe, see Encoding URI Path Parts.
+//   - destinationObject: Name of the new object. Required when the object
+//     metadata is not otherwise provided. Overrides the object metadata's
+//     name value, if any.
+//   - sourceBucket: Name of the bucket in which to find the source
+//     object.
+//   - sourceObject: Name of the source object. For information about how
+//     to URL encode object names to be path safe, see Encoding URI Path
+//     Parts.
 func (r *ObjectsService) Copy(sourceBucket string, sourceObject string, destinationBucket string, destinationObject string, object *Object) *ObjectsCopyCall {
 	c := &ObjectsCopyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.sourceBucket = sourceBucket
@@ -8571,7 +8648,9 @@ func (r *ObjectsService) Copy(sourceBucket string, sourceObject string, destinat
 // "destinationKmsKeyName": Resource name of the Cloud KMS key, of the
 // form
 // projects/my-project/locations/global/keyRings/my-kr/cryptoKeys/my-key,
-//  that will be used to encrypt the object. Overrides the object
+//
+//	that will be used to encrypt the object. Overrides the object
+//
 // metadata's kms_key_name value, if any.
 func (c *ObjectsCopyCall) DestinationKmsKeyName(destinationKmsKeyName string) *ObjectsCopyCall {
 	c.urlParams_.Set("destinationKmsKeyName", destinationKmsKeyName)
@@ -8583,16 +8662,26 @@ func (c *ObjectsCopyCall) DestinationKmsKeyName(destinationKmsKeyName string) *O
 // to the destination object.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *ObjectsCopyCall) DestinationPredefinedAcl(destinationPredefinedAcl string) *ObjectsCopyCall {
 	c.urlParams_.Set("destinationPredefinedAcl", destinationPredefinedAcl)
@@ -8677,8 +8766,9 @@ func (c *ObjectsCopyCall) IfSourceMetagenerationNotMatch(ifSourceMetagenerationN
 // specifies the acl property, when it defaults to full.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit the owner, acl property.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit the owner, acl property.
 func (c *ObjectsCopyCall) Projection(projection string) *ObjectsCopyCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -8769,17 +8859,17 @@ func (c *ObjectsCopyCall) Do(opts ...googleapi.CallOption) (*Object, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Object{
 		ServerResponse: googleapi.ServerResponse{
@@ -8957,9 +9047,9 @@ type ObjectsDeleteCall struct {
 // if versioning is not enabled for the bucket, or if the generation
 // parameter is used.
 //
-// - bucket: Name of the bucket in which the object resides.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of the bucket in which the object resides.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectsService) Delete(bucket string, object string) *ObjectsDeleteCall {
 	c := &ObjectsDeleteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -9076,7 +9166,7 @@ func (c *ObjectsDeleteCall) Do(opts ...googleapi.CallOption) error {
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -9160,9 +9250,9 @@ type ObjectsGetCall struct {
 
 // Get: Retrieves an object or its metadata.
 //
-// - bucket: Name of the bucket in which the object resides.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of the bucket in which the object resides.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectsService) Get(bucket string, object string) *ObjectsGetCall {
 	c := &ObjectsGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -9218,8 +9308,9 @@ func (c *ObjectsGetCall) IfMetagenerationNotMatch(ifMetagenerationNotMatch int64
 // properties to return. Defaults to noAcl.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit the owner, acl property.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit the owner, acl property.
 func (c *ObjectsGetCall) Projection(projection string) *ObjectsGetCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -9305,7 +9396,7 @@ func (c *ObjectsGetCall) Download(opts ...googleapi.CallOption) (*http.Response,
 	}
 	if err := googleapi.CheckMediaResponse(res); err != nil {
 		res.Body.Close()
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	return res, nil
 }
@@ -9324,17 +9415,17 @@ func (c *ObjectsGetCall) Do(opts ...googleapi.CallOption) (*Object, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Object{
 		ServerResponse: googleapi.ServerResponse{
@@ -9448,9 +9539,9 @@ type ObjectsGetIamPolicyCall struct {
 
 // GetIamPolicy: Returns an IAM policy for the specified object.
 //
-// - bucket: Name of the bucket in which the object resides.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of the bucket in which the object resides.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectsService) GetIamPolicy(bucket string, object string) *ObjectsGetIamPolicyCall {
 	c := &ObjectsGetIamPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -9549,17 +9640,17 @@ func (c *ObjectsGetIamPolicyCall) Do(opts ...googleapi.CallOption) (*Policy, err
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Policy{
 		ServerResponse: googleapi.ServerResponse{
@@ -9635,8 +9726,8 @@ type ObjectsInsertCall struct {
 
 // Insert: Stores a new object and metadata.
 //
-// - bucket: Name of the bucket in which to store the new object.
-//   Overrides the provided object metadata's bucket value, if any.
+//   - bucket: Name of the bucket in which to store the new object.
+//     Overrides the provided object metadata's bucket value, if any.
 func (r *ObjectsService) Insert(bucket string, object *Object) *ObjectsInsertCall {
 	c := &ObjectsInsertCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -9694,7 +9785,9 @@ func (c *ObjectsInsertCall) IfMetagenerationNotMatch(ifMetagenerationNotMatch in
 // KmsKeyName sets the optional parameter "kmsKeyName": Resource name of
 // the Cloud KMS key, of the form
 // projects/my-project/locations/global/keyRings/my-kr/cryptoKeys/my-key,
-//  that will be used to encrypt the object. Overrides the object
+//
+//	that will be used to encrypt the object. Overrides the object
+//
 // metadata's kms_key_name value, if any.
 func (c *ObjectsInsertCall) KmsKeyName(kmsKeyName string) *ObjectsInsertCall {
 	c.urlParams_.Set("kmsKeyName", kmsKeyName)
@@ -9714,16 +9807,26 @@ func (c *ObjectsInsertCall) Name(name string) *ObjectsInsertCall {
 // predefined set of access controls to this object.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *ObjectsInsertCall) PredefinedAcl(predefinedAcl string) *ObjectsInsertCall {
 	c.urlParams_.Set("predefinedAcl", predefinedAcl)
@@ -9735,8 +9838,9 @@ func (c *ObjectsInsertCall) PredefinedAcl(predefinedAcl string) *ObjectsInsertCa
 // specifies the acl property, when it defaults to full.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit the owner, acl property.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit the owner, acl property.
 func (c *ObjectsInsertCall) Projection(projection string) *ObjectsInsertCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -9898,17 +10002,17 @@ func (c *ObjectsInsertCall) Do(opts ...googleapi.CallOption) (*Object, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	rx := c.mediaInfo_.ResumableUpload(res.Header.Get("Location"))
 	if rx != nil {
@@ -9925,7 +10029,7 @@ func (c *ObjectsInsertCall) Do(opts ...googleapi.CallOption) (*Object, error) {
 		}
 		defer res.Body.Close()
 		if err := googleapi.CheckResponse(res); err != nil {
-			return nil, err
+			return nil, gensupport.WrapError(err)
 		}
 	}
 	ret := &Object{
@@ -10113,6 +10217,13 @@ func (c *ObjectsListCall) IncludeTrailingDelimiter(includeTrailingDelimiter bool
 	return c
 }
 
+// MatchGlob sets the optional parameter "matchGlob": Filter results to
+// objects and prefixes that match this glob pattern.
+func (c *ObjectsListCall) MatchGlob(matchGlob string) *ObjectsListCall {
+	c.urlParams_.Set("matchGlob", matchGlob)
+	return c
+}
+
 // MaxResults sets the optional parameter "maxResults": Maximum number
 // of items plus prefixes to return in a single page of responses. As
 // duplicate prefixes are omitted, fewer total results may be returned
@@ -10142,8 +10253,9 @@ func (c *ObjectsListCall) Prefix(prefix string) *ObjectsListCall {
 // properties to return. Defaults to noAcl.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit the owner, acl property.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit the owner, acl property.
 func (c *ObjectsListCall) Projection(projection string) *ObjectsListCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -10248,17 +10360,17 @@ func (c *ObjectsListCall) Do(opts ...googleapi.CallOption) (*Objects, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Objects{
 		ServerResponse: googleapi.ServerResponse{
@@ -10299,6 +10411,11 @@ func (c *ObjectsListCall) Do(opts ...googleapi.CallOption) (*Objects, error) {
 	//       "description": "If true, objects that end in exactly one instance of delimiter will have their metadata included in items in addition to prefixes.",
 	//       "location": "query",
 	//       "type": "boolean"
+	//     },
+	//     "matchGlob": {
+	//       "description": "Filter results to objects and prefixes that match this glob pattern.",
+	//       "location": "query",
+	//       "type": "string"
 	//     },
 	//     "maxResults": {
 	//       "default": "1000",
@@ -10398,9 +10515,9 @@ type ObjectsPatchCall struct {
 
 // Patch: Patches an object's metadata.
 //
-// - bucket: Name of the bucket in which the object resides.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of the bucket in which the object resides.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectsService) Patch(bucket string, object string, object2 *Object) *ObjectsPatchCall {
 	c := &ObjectsPatchCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -10457,16 +10574,26 @@ func (c *ObjectsPatchCall) IfMetagenerationNotMatch(ifMetagenerationNotMatch int
 // predefined set of access controls to this object.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *ObjectsPatchCall) PredefinedAcl(predefinedAcl string) *ObjectsPatchCall {
 	c.urlParams_.Set("predefinedAcl", predefinedAcl)
@@ -10477,8 +10604,9 @@ func (c *ObjectsPatchCall) PredefinedAcl(predefinedAcl string) *ObjectsPatchCall
 // properties to return. Defaults to full.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit the owner, acl property.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit the owner, acl property.
 func (c *ObjectsPatchCall) Projection(projection string) *ObjectsPatchCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -10559,17 +10687,17 @@ func (c *ObjectsPatchCall) Do(opts ...googleapi.CallOption) (*Object, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Object{
 		ServerResponse: googleapi.ServerResponse{
@@ -10705,18 +10833,18 @@ type ObjectsRewriteCall struct {
 // Rewrite: Rewrites a source object to a destination object. Optionally
 // overrides metadata.
 //
-// - destinationBucket: Name of the bucket in which to store the new
-//   object. Overrides the provided object metadata's bucket value, if
-//   any.
-// - destinationObject: Name of the new object. Required when the object
-//   metadata is not otherwise provided. Overrides the object metadata's
-//   name value, if any. For information about how to URL encode object
-//   names to be path safe, see Encoding URI Path Parts.
-// - sourceBucket: Name of the bucket in which to find the source
-//   object.
-// - sourceObject: Name of the source object. For information about how
-//   to URL encode object names to be path safe, see Encoding URI Path
-//   Parts.
+//   - destinationBucket: Name of the bucket in which to store the new
+//     object. Overrides the provided object metadata's bucket value, if
+//     any.
+//   - destinationObject: Name of the new object. Required when the object
+//     metadata is not otherwise provided. Overrides the object metadata's
+//     name value, if any. For information about how to URL encode object
+//     names to be path safe, see Encoding URI Path Parts.
+//   - sourceBucket: Name of the bucket in which to find the source
+//     object.
+//   - sourceObject: Name of the source object. For information about how
+//     to URL encode object names to be path safe, see Encoding URI Path
+//     Parts.
 func (r *ObjectsService) Rewrite(sourceBucket string, sourceObject string, destinationBucket string, destinationObject string, object *Object) *ObjectsRewriteCall {
 	c := &ObjectsRewriteCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.sourceBucket = sourceBucket
@@ -10731,7 +10859,9 @@ func (r *ObjectsService) Rewrite(sourceBucket string, sourceObject string, desti
 // "destinationKmsKeyName": Resource name of the Cloud KMS key, of the
 // form
 // projects/my-project/locations/global/keyRings/my-kr/cryptoKeys/my-key,
-//  that will be used to encrypt the object. Overrides the object
+//
+//	that will be used to encrypt the object. Overrides the object
+//
 // metadata's kms_key_name value, if any.
 func (c *ObjectsRewriteCall) DestinationKmsKeyName(destinationKmsKeyName string) *ObjectsRewriteCall {
 	c.urlParams_.Set("destinationKmsKeyName", destinationKmsKeyName)
@@ -10743,16 +10873,26 @@ func (c *ObjectsRewriteCall) DestinationKmsKeyName(destinationKmsKeyName string)
 // to the destination object.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *ObjectsRewriteCall) DestinationPredefinedAcl(destinationPredefinedAcl string) *ObjectsRewriteCall {
 	c.urlParams_.Set("destinationPredefinedAcl", destinationPredefinedAcl)
@@ -10850,8 +10990,9 @@ func (c *ObjectsRewriteCall) MaxBytesRewrittenPerCall(maxBytesRewrittenPerCall i
 // specifies the acl property, when it defaults to full.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit the owner, acl property.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit the owner, acl property.
 func (c *ObjectsRewriteCall) Projection(projection string) *ObjectsRewriteCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -10953,17 +11094,17 @@ func (c *ObjectsRewriteCall) Do(opts ...googleapi.CallOption) (*RewriteResponse,
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &RewriteResponse{
 		ServerResponse: googleapi.ServerResponse{
@@ -11151,9 +11292,9 @@ type ObjectsSetIamPolicyCall struct {
 
 // SetIamPolicy: Updates an IAM policy for the specified object.
 //
-// - bucket: Name of the bucket in which the object resides.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of the bucket in which the object resides.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectsService) SetIamPolicy(bucket string, object string, policy *Policy) *ObjectsSetIamPolicyCall {
 	c := &ObjectsSetIamPolicyCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -11245,17 +11386,17 @@ func (c *ObjectsSetIamPolicyCall) Do(opts ...googleapi.CallOption) (*Policy, err
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Policy{
 		ServerResponse: googleapi.ServerResponse{
@@ -11332,10 +11473,10 @@ type ObjectsTestIamPermissionsCall struct {
 // TestIamPermissions: Tests a set of permissions on the given object to
 // see which, if any, are held by the caller.
 //
-// - bucket: Name of the bucket in which the object resides.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
-// - permissions: Permissions to test.
+//   - bucket: Name of the bucket in which the object resides.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
+//   - permissions: Permissions to test.
 func (r *ObjectsService) TestIamPermissions(bucket string, object string, permissions []string) *ObjectsTestIamPermissionsCall {
 	c := &ObjectsTestIamPermissionsCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -11435,17 +11576,17 @@ func (c *ObjectsTestIamPermissionsCall) Do(opts ...googleapi.CallOption) (*TestI
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &TestIamPermissionsResponse{
 		ServerResponse: googleapi.ServerResponse{
@@ -11528,9 +11669,9 @@ type ObjectsUpdateCall struct {
 
 // Update: Updates an object's metadata.
 //
-// - bucket: Name of the bucket in which the object resides.
-// - object: Name of the object. For information about how to URL encode
-//   object names to be path safe, see Encoding URI Path Parts.
+//   - bucket: Name of the bucket in which the object resides.
+//   - object: Name of the object. For information about how to URL encode
+//     object names to be path safe, see Encoding URI Path Parts.
 func (r *ObjectsService) Update(bucket string, object string, object2 *Object) *ObjectsUpdateCall {
 	c := &ObjectsUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.bucket = bucket
@@ -11587,16 +11728,26 @@ func (c *ObjectsUpdateCall) IfMetagenerationNotMatch(ifMetagenerationNotMatch in
 // predefined set of access controls to this object.
 //
 // Possible values:
-//   "authenticatedRead" - Object owner gets OWNER access, and
+//
+//	"authenticatedRead" - Object owner gets OWNER access, and
+//
 // allAuthenticatedUsers get READER access.
-//   "bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
+//	"bucketOwnerFullControl" - Object owner gets OWNER access, and
+//
 // project team owners get OWNER access.
-//   "bucketOwnerRead" - Object owner gets OWNER access, and project
+//
+//	"bucketOwnerRead" - Object owner gets OWNER access, and project
+//
 // team owners get READER access.
-//   "private" - Object owner gets OWNER access.
-//   "projectPrivate" - Object owner gets OWNER access, and project team
+//
+//	"private" - Object owner gets OWNER access.
+//	"projectPrivate" - Object owner gets OWNER access, and project team
+//
 // members get access according to their roles.
-//   "publicRead" - Object owner gets OWNER access, and allUsers get
+//
+//	"publicRead" - Object owner gets OWNER access, and allUsers get
+//
 // READER access.
 func (c *ObjectsUpdateCall) PredefinedAcl(predefinedAcl string) *ObjectsUpdateCall {
 	c.urlParams_.Set("predefinedAcl", predefinedAcl)
@@ -11607,8 +11758,9 @@ func (c *ObjectsUpdateCall) PredefinedAcl(predefinedAcl string) *ObjectsUpdateCa
 // properties to return. Defaults to full.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit the owner, acl property.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit the owner, acl property.
 func (c *ObjectsUpdateCall) Projection(projection string) *ObjectsUpdateCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -11689,17 +11841,17 @@ func (c *ObjectsUpdateCall) Do(opts ...googleapi.CallOption) (*Object, error) {
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Object{
 		ServerResponse: googleapi.ServerResponse{
@@ -11897,8 +12049,9 @@ func (c *ObjectsWatchAllCall) Prefix(prefix string) *ObjectsWatchAllCall {
 // properties to return. Defaults to noAcl.
 //
 // Possible values:
-//   "full" - Include all properties.
-//   "noAcl" - Omit the owner, acl property.
+//
+//	"full" - Include all properties.
+//	"noAcl" - Omit the owner, acl property.
 func (c *ObjectsWatchAllCall) Projection(projection string) *ObjectsWatchAllCall {
 	c.urlParams_.Set("projection", projection)
 	return c
@@ -11995,17 +12148,17 @@ func (c *ObjectsWatchAllCall) Do(opts ...googleapi.CallOption) (*Channel, error)
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &Channel{
 		ServerResponse: googleapi.ServerResponse{
@@ -12204,17 +12357,17 @@ func (c *ProjectsHmacKeysCreateCall) Do(opts ...googleapi.CallOption) (*HmacKey,
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &HmacKey{
 		ServerResponse: googleapi.ServerResponse{
@@ -12353,7 +12506,7 @@ func (c *ProjectsHmacKeysDeleteCall) Do(opts ...googleapi.CallOption) error {
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return err
+		return gensupport.WrapError(err)
 	}
 	return nil
 	// {
@@ -12407,9 +12560,9 @@ type ProjectsHmacKeysGetCall struct {
 
 // Get: Retrieves an HMAC key's metadata
 //
-// - accessId: Name of the HMAC key.
-// - projectId: Project ID owning the service account of the requested
-//   key.
+//   - accessId: Name of the HMAC key.
+//   - projectId: Project ID owning the service account of the requested
+//     key.
 func (r *ProjectsHmacKeysService) Get(projectId string, accessId string) *ProjectsHmacKeysGetCall {
 	c := &ProjectsHmacKeysGetCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -12500,17 +12653,17 @@ func (c *ProjectsHmacKeysGetCall) Do(opts ...googleapi.CallOption) (*HmacKeyMeta
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &HmacKeyMetadata{
 		ServerResponse: googleapi.ServerResponse{
@@ -12701,17 +12854,17 @@ func (c *ProjectsHmacKeysListCall) Do(opts ...googleapi.CallOption) (*HmacKeysMe
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &HmacKeysMetadata{
 		ServerResponse: googleapi.ServerResponse{
@@ -12817,9 +12970,9 @@ type ProjectsHmacKeysUpdateCall struct {
 // Update: Updates the state of an HMAC key. See the HMAC Key resource
 // descriptor for valid states.
 //
-// - accessId: Name of the HMAC key being updated.
-// - projectId: Project ID owning the service account of the updated
-//   key.
+//   - accessId: Name of the HMAC key being updated.
+//   - projectId: Project ID owning the service account of the updated
+//     key.
 func (r *ProjectsHmacKeysService) Update(projectId string, accessId string, hmackeymetadata *HmacKeyMetadata) *ProjectsHmacKeysUpdateCall {
 	c := &ProjectsHmacKeysUpdateCall{s: r.s, urlParams_: make(gensupport.URLParams)}
 	c.projectId = projectId
@@ -12903,17 +13056,17 @@ func (c *ProjectsHmacKeysUpdateCall) Do(opts ...googleapi.CallOption) (*HmacKeyM
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &HmacKeyMetadata{
 		ServerResponse: googleapi.ServerResponse{
@@ -13071,17 +13224,17 @@ func (c *ProjectsServiceAccountGetCall) Do(opts ...googleapi.CallOption) (*Servi
 		if res.Body != nil {
 			res.Body.Close()
 		}
-		return nil, &googleapi.Error{
+		return nil, gensupport.WrapError(&googleapi.Error{
 			Code:   res.StatusCode,
 			Header: res.Header,
-		}
+		})
 	}
 	if err != nil {
 		return nil, err
 	}
 	defer googleapi.CloseBody(res)
 	if err := googleapi.CheckResponse(res); err != nil {
-		return nil, err
+		return nil, gensupport.WrapError(err)
 	}
 	ret := &ServiceAccount{
 		ServerResponse: googleapi.ServerResponse{

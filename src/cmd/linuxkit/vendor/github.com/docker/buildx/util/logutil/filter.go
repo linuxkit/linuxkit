@@ -1,7 +1,7 @@
 package logutil
 
 import (
-	"io/ioutil"
+	"io"
 	"strings"
 
 	"github.com/sirupsen/logrus"
@@ -9,7 +9,7 @@ import (
 
 func NewFilter(levels []logrus.Level, filters ...string) logrus.Hook {
 	dl := logrus.New()
-	dl.SetOutput(ioutil.Discard)
+	dl.SetOutput(io.Discard)
 	return &logsFilter{
 		levels:        levels,
 		filters:       filters,
