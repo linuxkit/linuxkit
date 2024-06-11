@@ -48,7 +48,6 @@ func runAzureCmd() *cobra.Command {
 			clientID := getEnvVarOrExit("AZURE_CLIENT_ID")
 			clientSecret := getEnvVarOrExit("AZURE_CLIENT_SECRET")
 
-			rand.Seed(time.Now().UTC().UnixNano())
 			virtualNetworkName := fmt.Sprintf("linuxkitvirtualnetwork%d", rand.Intn(1000))
 			subnetName := fmt.Sprintf("linuxkitsubnet%d", rand.Intn(1000))
 			publicIPAddressName := fmt.Sprintf("publicip%d", rand.Intn(1000))

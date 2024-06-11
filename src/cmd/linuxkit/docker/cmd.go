@@ -10,7 +10,7 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/docker/cli/cli/connhelper"
 	dockertypes "github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
+	containertypes "github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 )
@@ -85,7 +85,7 @@ func Create(image string, withNetwork bool) (string, error) {
 		return "", errors.New("could not initialize Docker API client")
 	}
 	// we do not ever run the container, so /dev/null is used as command
-	config := &container.Config{
+	config := &containertypes.Config{
 		Cmd:             []string{"/dev/null"},
 		Image:           image,
 		NetworkDisabled: !withNetwork,
@@ -128,7 +128,7 @@ func Rm(container string) error {
 	if err != nil {
 		return errors.New("could not initialize Docker API client")
 	}
-	if err = cli.ContainerRemove(context.Background(), container, dockertypes.ContainerRemoveOptions{}); err != nil {
+	if err = cli.ContainerRemove(context.Background(), container, containertypes.RemoveOptions{}); err != nil {
 		return err
 	}
 	log.Debugf("docker rm: %s...Done", container)

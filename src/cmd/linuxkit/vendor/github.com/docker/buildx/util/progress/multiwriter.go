@@ -24,6 +24,9 @@ func (p *prefixed) Write(v *client.SolveStatus) {
 	if p.force {
 		for _, v := range v.Vertexes {
 			v.Name = addPrefix(p.pfx, v.Name)
+			if v.ProgressGroup != nil {
+				v.ProgressGroup.Name = addPrefix(p.pfx, v.ProgressGroup.Name)
+			}
 		}
 	}
 	p.Writer.Write(v)

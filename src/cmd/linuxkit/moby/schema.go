@@ -60,7 +60,15 @@ var schema = `
         "destination": { "type": "string" },
         "type": { "type": "string" },
         "source": { "type": "string" },
-        "options": { "$ref": "#/definitions/strings" }
+        "options": { "$ref": "#/definitions/strings" },
+        "uidmappings": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/idmapping" }
+        },
+        "gidmappings": {
+          "type": "array",
+          "items": { "$ref": "#/definitions/idmapping" }
+        }
       }
     },
     "mounts": {

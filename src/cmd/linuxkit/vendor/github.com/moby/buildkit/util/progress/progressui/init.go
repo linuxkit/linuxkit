@@ -3,6 +3,7 @@ package progressui
 import (
 	"os"
 	"runtime"
+	"strconv"
 
 	"github.com/morikuni/aec"
 )
@@ -12,9 +13,11 @@ var colorCancel aec.ANSI
 var colorWarning aec.ANSI
 var colorError aec.ANSI
 
+var termHeight = 6
+
 func init() {
 	// As recommended on https://no-color.org/
-	if _, ok := os.LookupEnv("NO_COLOR"); ok {
+	if v := os.Getenv("NO_COLOR"); v != "" {
 		// nil values will result in no ANSI color codes being emitted.
 		return
 	} else if runtime.GOOS == "windows" {
@@ -33,5 +36,14 @@ func init() {
 	if _, ok := os.LookupEnv("BUILDKIT_COLORS"); ok {
 		envColorString := os.Getenv("BUILDKIT_COLORS")
 		setUserDefinedTermColors(envColorString)
+	}
+
+	// Make the terminal height configurable at runtime.
+	termHeightStr := os.Getenv("BUILDKIT_TTY_LOG_LINES")
+	if termHeightStr != "" {
+		termHeightVal, err := strconv.Atoi(termHeightStr)
+		if err == nil && termHeightVal > 0 {
+			termHeight = termHeightVal
+		}
 	}
 }

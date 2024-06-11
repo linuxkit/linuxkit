@@ -20,7 +20,9 @@ func (w *pw) Write(st *client.SolveStatus) {
 		}
 	}
 	if w.diff != nil {
+		vertexes := make([]*client.Vertex, 0, len(st.Vertexes))
 		for _, v := range st.Vertexes {
+			v := *v
 			if v.Started != nil {
 				d := v.Started.Add(-*w.diff)
 				v.Started = &d
@@ -29,8 +31,12 @@ func (w *pw) Write(st *client.SolveStatus) {
 				d := v.Completed.Add(-*w.diff)
 				v.Completed = &d
 			}
+			vertexes = append(vertexes, &v)
 		}
+
+		statuses := make([]*client.VertexStatus, 0, len(st.Statuses))
 		for _, v := range st.Statuses {
+			v := *v
 			if v.Started != nil {
 				d := v.Started.Add(-*w.diff)
 				v.Started = &d
@@ -40,9 +46,21 @@ func (w *pw) Write(st *client.SolveStatus) {
 				v.Completed = &d
 			}
 			v.Timestamp = v.Timestamp.Add(-*w.diff)
+			statuses = append(statuses, &v)
 		}
+
+		logs := make([]*client.VertexLog, 0, len(st.Logs))
 		for _, v := range st.Logs {
+			v := *v
 			v.Timestamp = v.Timestamp.Add(-*w.diff)
+			logs = append(logs, &v)
+		}
+
+		st = &client.SolveStatus{
+			Vertexes: vertexes,
+			Statuses: statuses,
+			Logs:     logs,
+			Warnings: st.Warnings,
 		}
 	}
 	w.Writer.Write(st)

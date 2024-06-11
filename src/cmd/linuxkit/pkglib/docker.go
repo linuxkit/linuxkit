@@ -30,12 +30,13 @@ import (
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	buildkitClient "github.com/moby/buildkit/client"
+	"github.com/moby/buildkit/frontend/dockerui"
+	"github.com/moby/buildkit/util/progress/progressui"
 
 	// golint requires comments on non-main(test)
 	// package for blank import
 	_ "github.com/moby/buildkit/client/connhelper/dockercontainer"
 	_ "github.com/moby/buildkit/client/connhelper/ssh"
-	"github.com/moby/buildkit/frontend/dockerfile/builder"
 	"github.com/moby/buildkit/frontend/dockerfile/instructions"
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 	"github.com/moby/buildkit/frontend/dockerfile/shell"
@@ -473,8 +474,8 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, doc
 		solveOpts.Session = append(solveOpts.Session, up)
 	} else {
 		solveOpts.LocalDirs = map[string]string{
-			builder.DefaultLocalNameDockerfile: pkg,
-			builder.DefaultLocalNameContext:    pkg,
+			dockerui.DefaultLocalNameDockerfile: pkg,
+			dockerui.DefaultLocalNameContext:    pkg,
 		}
 	}
 	frontendAttrs["filename"] = dockerfile
@@ -561,10 +562,14 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, doc
 
 	ctx2, cancel := context.WithCancel(context.TODO())
 	defer cancel()
-	if progressType == "" {
-		progressType = "auto"
+	buildkitProgressType := progressui.DisplayMode(progressType)
+	if buildkitProgressType == progressui.DefaultMode {
+		buildkitProgressType = progressui.AutoMode
 	}
-	printer := progress.NewPrinter(ctx2, os.Stderr, os.Stderr, progressType)
+	printer, err := progress.NewPrinter(ctx2, os.Stderr, buildkitProgressType)
+	if err != nil {
+		return fmt.Errorf("unable to create progress printer: %v", err)
+	}
 	pw := progress.WithPrefix(printer, "", false)
 	ch, done := progress.NewChannel(pw)
 	defer func() { <-done }()

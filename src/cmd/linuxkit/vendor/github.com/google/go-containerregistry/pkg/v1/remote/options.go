@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"io"
+	"net"
 	"net/http"
 	"syscall"
 	"time"
@@ -45,6 +46,7 @@ type options struct {
 	pageSize                       int
 	retryBackoff                   Backoff
 	retryPredicate                 retry.Predicate
+	filter                         map[string]string
 }
 
 var defaultPlatform = v1.Platform{
@@ -58,7 +60,7 @@ type Backoff = retry.Backoff
 var defaultRetryPredicate retry.Predicate = func(err error) bool {
 	// Various failure modes here, as we're often reading from and writing to
 	// the network.
-	if retry.IsTemporary(err) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, syscall.EPIPE) {
+	if retry.IsTemporary(err) || errors.Is(err, io.ErrUnexpectedEOF) || errors.Is(err, io.EOF) || errors.Is(err, syscall.EPIPE) || errors.Is(err, syscall.ECONNRESET) {
 		logs.Warn.Printf("retrying %v", err)
 		return true
 	}
@@ -73,6 +75,22 @@ var defaultRetryBackoff = Backoff{
 	Steps:    3,
 }
 
+// Useful for tests
+var fastBackoff = Backoff{
+	Duration: 1.0 * time.Millisecond,
+	Factor:   3.0,
+	Jitter:   0.1,
+	Steps:    3,
+}
+
+var retryableStatusCodes = []int{
+	http.StatusRequestTimeout,
+	http.StatusInternalServerError,
+	http.StatusBadGateway,
+	http.StatusServiceUnavailable,
+	http.StatusGatewayTimeout,
+}
+
 const (
 	defaultJobs = 4
 
@@ -81,10 +99,24 @@ const (
 	defaultPageSize = 1000
 )
 
+// DefaultTransport is based on http.DefaultTransport with modifications
+// documented inline below.
+var DefaultTransport http.RoundTripper = &http.Transport{
+	Proxy: http.ProxyFromEnvironment,
+	DialContext: (&net.Dialer{
+		Timeout:   30 * time.Second,
+		KeepAlive: 30 * time.Second,
+	}).DialContext,
+	ForceAttemptHTTP2:     true,
+	MaxIdleConns:          100,
+	IdleConnTimeout:       90 * time.Second,
+	TLSHandshakeTimeout:   10 * time.Second,
+	ExpectContinueTimeout: 1 * time.Second,
+}
+
 func makeOptions(target authn.Resource, opts ...Option) (*options, error) {
 	o := &options{
-		auth:           authn.Anonymous,
-		transport:      http.DefaultTransport,
+		transport:      DefaultTransport,
 		platform:       defaultPlatform,
 		context:        context.Background(),
 		jobs:           defaultJobs,
@@ -99,12 +131,19 @@ func makeOptions(target authn.Resource, opts ...Option) (*options, error) {
 		}
 	}
 
-	if o.keychain != nil {
+	switch {
+	case o.auth != nil && o.keychain != nil:
+		// It is a better experience to explicitly tell a caller their auth is misconfigured
+		// than potentially fail silently when the correct auth is overridden by option misuse.
+		return nil, errors.New("provide an option for either authn.Authenticator or authn.Keychain, not both")
+	case o.keychain != nil:
 		auth, err := o.keychain.Resolve(target)
 		if err != nil {
 			return nil, err
 		}
 		o.auth = auth
+	case o.auth == nil:
+		o.auth = authn.Anonymous
 	}
 
 	// transport.Wrapper is a signal that consumers are opt-ing into providing their own transport without any additional wrapping.
@@ -118,7 +157,7 @@ func makeOptions(target authn.Resource, opts ...Option) (*options, error) {
 		}
 
 		// Wrap the transport in something that can retry network flakes.
-		o.transport = transport.NewRetry(o.transport)
+		o.transport = transport.NewRetry(o.transport, transport.WithRetryPredicate(defaultRetryPredicate), transport.WithRetryStatusCodes(retryableStatusCodes...))
 
 		// Wrap this last to prevent transport.New from double-wrapping.
 		if o.userAgent != "" {
@@ -134,7 +173,7 @@ func makeOptions(target authn.Resource, opts ...Option) (*options, error) {
 // If transport.Wrapper is provided, this signals that the consumer does *not* want any further wrapping to occur.
 // i.e. logging, retry and useragent
 //
-// The default transport its http.DefaultTransport.
+// The default transport is DefaultTransport.
 func WithTransport(t http.RoundTripper) Option {
 	return func(o *options) error {
 		o.transport = t
@@ -144,6 +183,7 @@ func WithTransport(t http.RoundTripper) Option {
 
 // WithAuth is a functional option for overriding the default authenticator
 // for remote operations.
+// It is an error to use both WithAuth and WithAuthFromKeychain in the same Option set.
 //
 // The default authenticator is authn.Anonymous.
 func WithAuth(auth authn.Authenticator) Option {
@@ -156,6 +196,7 @@ func WithAuth(auth authn.Authenticator) Option {
 // WithAuthFromKeychain is a functional option for overriding the default
 // authenticator for remote operations, using an authn.Keychain to find
 // credentials.
+// It is an error to use both WithAuth and WithAuthFromKeychain in the same Option set.
 //
 // The default authenticator is authn.Anonymous.
 func WithAuthFromKeychain(keys authn.Keychain) Option {
@@ -260,6 +301,17 @@ func WithRetryBackoff(backoff Backoff) Option {
 func WithRetryPredicate(predicate retry.Predicate) Option {
 	return func(o *options) error {
 		o.retryPredicate = predicate
+		return nil
+	}
+}
+
+// WithFilter sets the filter querystring for HTTP operations.
+func WithFilter(key string, value string) Option {
+	return func(o *options) error {
+		if o.filter == nil {
+			o.filter = map[string]string{}
+		}
+		o.filter[key] = value
 		return nil
 	}
 }
