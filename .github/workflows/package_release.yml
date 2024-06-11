@@ -9,10 +9,10 @@ jobs:
     if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/pkg-v')
     runs-on: ubuntu-latest
     steps:
-    - name: Set up Go 1.21
-      uses: actions/setup-go@v3
+    - name: Set up Go 1.22
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.21.5
+        go-version: 1.22.3
       id: go
     - name: Check out code
       uses: actions/checkout@v4

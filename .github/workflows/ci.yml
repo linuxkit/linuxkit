@@ -35,10 +35,10 @@ jobs:
     runs-on: ${{ matrix.target.runner }}
     steps:
 
-    - name: Set up Go 1.19
-      uses: actions/setup-go@v3
+    - name: Set up Go 1.22
+      uses: actions/setup-go@v5
       with:
-        go-version: 1.19.2
+        go-version: 1.22.3
       id: go
 
     - name: Check out code
@@ -50,9 +50,9 @@ jobs:
          GOPATH: ${{runner.workspace}}
 
     - name: golangci-lint CLI
-      uses: golangci/golangci-lint-action@v3
+      uses: golangci/golangci-lint-action@v6
       with:
-        version: v1.50.0
+        version: v1.59.0
         working-directory: src/cmd/linuxkit
         args: --verbose --timeout=10m
     - name: go vet CLI
