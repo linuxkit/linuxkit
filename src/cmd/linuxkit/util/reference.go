@@ -32,7 +32,12 @@ func ReferenceExpand(ref string, options ...ReferenceOption) string {
 	case 1:
 		ret = "docker.io/library/" + ref
 	case 2:
-		ret = "docker.io/" + ref
+		// If the first part is not a domain, assume it is a DockerHub user/org.
+		// This logic is copied from moby:
+		// https://github.com/moby/moby/blob/e7347f8a8c2fd3d2abd34b638d6fc8c18b0278d1/registry/search.go#L148C29-L149C71
+		if !strings.Contains(parts[0], ".") && !strings.Contains(parts[0], ":") && parts[0] != "localhost" {
+			ret = "docker.io/" + ref
+		}
 	}
 
 	if opts.withTag && !strings.Contains(ret, ":") {
