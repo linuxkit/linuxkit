@@ -41,6 +41,11 @@ func main() {
 	flag.BoolVar(&follow, "f", false, "follow log buffer")
 	flag.Parse()
 
+	if dumpFollow {
+		// StreamLogs() has seperate 'dump' and 'follow' flags, since 'dumpFollow' includes 'follow' we set that too
+		follow = true
+	}
+
 	c, err := StreamLogs(socketPath, follow, dumpFollow)
 	if err != nil {
 		panic(err)
