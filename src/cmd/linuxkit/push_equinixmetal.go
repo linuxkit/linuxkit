@@ -15,20 +15,20 @@ import (
 )
 
 var (
-	packetDefaultArch       = "x86_64"
-	packetDefaultDecompress = false
+	equinixmetalDefaultArch       = "x86_64"
+	equinixmetalDefaultDecompress = false
 )
 
 func init() {
 	if runtime.GOARCH == "arm64" {
-		packetDefaultArch = "aarch64"
+		equinixmetalDefaultArch = "aarch64"
 		// decompress on arm64. iPXE/kernel does not
 		// seem to grok compressed kernels/initrds.
-		packetDefaultDecompress = true
+		equinixmetalDefaultDecompress = true
 	}
 }
 
-func pushPacketCmd() *cobra.Command {
+func pushEquinixMetalCmd() *cobra.Command {
 	var (
 		baseURLFlag string
 		nameFlag    string
@@ -37,19 +37,19 @@ func pushPacketCmd() *cobra.Command {
 		decompress  bool
 	)
 	cmd := &cobra.Command{
-		Use:   "packet",
-		Short: "push image to Equinix Metal / Packet",
-		Long: `Push image to Equinix Metal / Packet.
-		Single argument is the prefix to use for the image, defualts to "packet".
+		Use:   "equinixmetal",
+		Short: "push image to Equinix Metal",
+		Long: `Push image to Equinix Metal.
+		Single argument is the prefix to use for the image, defaults to "equinixmetal".
 		`,
-		Example: "linuxkit push packet [options] [name]",
+		Example: "linuxkit push equinixmetal [options] [name]",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefix := "packet"
+			prefix := "equinixmetal"
 			if len(args) > 0 {
 				prefix = args[0]
 			}
 
-			baseURL := getStringValue(packetBaseURL, baseURLFlag, "")
+			baseURL := getStringValue(equinixmetalBaseURL, baseURLFlag, "")
 			if baseURL == "" {
 				return fmt.Errorf("Need to specify a value for --base-url from where the kernel, initrd and iPXE script will be loaded from.")
 			}
@@ -58,7 +58,7 @@ func pushPacketCmd() *cobra.Command {
 				return fmt.Errorf("Need to specify the destination where to push to.")
 			}
 
-			name := getStringValue(packetNameVar, nameFlag, prefix)
+			name := getStringValue(equinixmetalNameVar, nameFlag, prefix)
 
 			if _, err := os.Stat(fmt.Sprintf("%s-kernel", name)); os.IsNotExist(err) {
 				return fmt.Errorf("kernel file does not exist: %v", err)
@@ -75,7 +75,7 @@ func pushPacketCmd() *cobra.Command {
 				cmdline = string(c)
 			}
 
-			ipxeScript := packetIPXEScript(name, baseURL, cmdline, arch)
+			ipxeScript := equinixmetalIPXEScript(name, baseURL, cmdline, arch)
 
 			// Parse the destination
 			dst, err := url.Parse(dst)
@@ -84,7 +84,7 @@ func pushPacketCmd() *cobra.Command {
 			}
 			switch dst.Scheme {
 			case "", "file":
-				packetPushFile(dst, decompress, name, cmdline, ipxeScript)
+				equinixmetalPushFile(dst, decompress, name, cmdline, ipxeScript)
 			default:
 				return fmt.Errorf("Unknown destination format: %s", dst.Scheme)
 			}
@@ -92,16 +92,16 @@ func pushPacketCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&baseURLFlag, "base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+packetBaseURL+")")
-	cmd.Flags().StringVar(&nameFlag, "img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
-	cmd.Flags().StringVar(&arch, "arch", packetDefaultArch, "Image architecture (x86_64 or aarch64)")
-	cmd.Flags().BoolVar(&decompress, "decompress", packetDefaultDecompress, "Decompress kernel/initrd before pushing")
+	cmd.Flags().StringVar(&baseURLFlag, "base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+equinixmetalBaseURL+")")
+	cmd.Flags().StringVar(&nameFlag, "img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+equinixmetalNameVar+")")
+	cmd.Flags().StringVar(&arch, "arch", equinixmetalDefaultArch, "Image architecture (x86_64 or aarch64)")
+	cmd.Flags().BoolVar(&decompress, "decompress", equinixmetalDefaultDecompress, "Decompress kernel/initrd before pushing")
 	cmd.Flags().StringVar(&dst, "destination", "", "URL where to push the image to. Currently only 'file' is supported as a scheme (which is also the default if omitted)")
 
 	return cmd
 }
 
-func packetPushFile(dst *url.URL, decompress bool, name, cmdline, ipxeScript string) {
+func equinixmetalPushFile(dst *url.URL, decompress bool, name, cmdline, ipxeScript string) {
 	// Make sure the destination exists
 	dstPath := filepath.Clean(dst.Path)
 	if err := os.MkdirAll(dstPath, 0755); err != nil {
@@ -109,22 +109,22 @@ func packetPushFile(dst *url.URL, decompress bool, name, cmdline, ipxeScript str
 	}
 
 	kernelName := fmt.Sprintf("%s-kernel", name)
-	if err := packetCopy(filepath.Join(dstPath, kernelName), kernelName, decompress); err != nil {
+	if err := equinixmetalCopy(filepath.Join(dstPath, kernelName), kernelName, decompress); err != nil {
 		log.Fatalf("Error copying kernel: %v", err)
 	}
 
 	initrdName := fmt.Sprintf("%s-initrd.img", name)
-	if err := packetCopy(filepath.Join(dstPath, initrdName), initrdName, decompress); err != nil {
+	if err := equinixmetalCopy(filepath.Join(dstPath, initrdName), initrdName, decompress); err != nil {
 		log.Fatalf("Error copying initrd: %v", err)
 	}
 
-	ipxeScriptName := fmt.Sprintf("%s-packet.ipxe", name)
+	ipxeScriptName := fmt.Sprintf("%s-equinixmetal.ipxe", name)
 	if err := os.WriteFile(filepath.Join(dstPath, ipxeScriptName), []byte(ipxeScript), 0644); err != nil {
 		log.Fatalf("Error writing iPXE script: %v", err)
 	}
 }
 
-func packetCopy(dst, src string, decompress bool) error {
+func equinixmetalCopy(dst, src string, decompress bool) error {
 	in, err := os.Open(src)
 	if err != nil {
 		return err

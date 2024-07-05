@@ -87,7 +87,7 @@ Currently supported platforms are:
   - [OpenStack](docs/platform-openstack.md) `[x86_64]`
   - [Scaleway](docs/platform-scaleway.md) `[x86_64]`
 - Baremetal:
-  - [packet.net](docs/platform-packet.md) `[x86_64, arm64]`
+  - [deploy.equinix.com](docs/platform-equinixmetal.md) `[x86_64, arm64]`
   - [Raspberry Pi Model 3b](docs/platform-rpi3.md)  `[arm64]`
 
 

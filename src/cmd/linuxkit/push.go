@@ -17,7 +17,7 @@ func pushCmd() *cobra.Command {
 	cmd.AddCommand(pushAzureCmd())
 	cmd.AddCommand(pushGCPCmd())
 	cmd.AddCommand(pushOpenstackCmd())
-	cmd.AddCommand(pushPacketCmd())
+	cmd.AddCommand(pushEquinixMetalCmd())
 	cmd.AddCommand(pushScalewayCmd())
 	cmd.AddCommand(pushVCenterCmd())
 

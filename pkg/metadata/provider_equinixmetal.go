@@ -12,30 +12,30 @@ import (
 	"github.com/vishvananda/netlink"
 )
 
-// ProviderPacket is the type implementing the Provider interface for Packet.net
-type ProviderPacket struct {
+// ProviderEquinixMetal is the type implementing the Provider interface for Equinix Metal
+type ProviderEquinixMetal struct {
 	metadata *metadata.CurrentDevice
 	err      error
 }
 
-// NewPacket returns a new ProviderPacket
-func NewPacket() *ProviderPacket {
-	return &ProviderPacket{}
+// NewEquinixMetal returns a new ProviderEquinixMetal
+func NewEquinixMetal() *ProviderEquinixMetal {
+	return &ProviderEquinixMetal{}
 }
 
-func (p *ProviderPacket) String() string {
-	return "Packet"
+func (p *ProviderEquinixMetal) String() string {
+	return "EquinixMetal"
 }
 
-// Probe checks if we are running on Packet
-func (p *ProviderPacket) Probe() bool {
+// Probe checks if we are running on EquinixMetal
+func (p *ProviderEquinixMetal) Probe() bool {
 	// Unfortunately the host is resolveable globally, so no easy test
 	p.metadata, p.err = metadata.GetMetadata()
 	return p.err == nil
 }
 
-// Extract gets both the Packet specific and generic userdata
-func (p *ProviderPacket) Extract() ([]byte, error) {
+// Extract gets both the EquinixMetal specific and generic userdata
+func (p *ProviderEquinixMetal) Extract() ([]byte, error) {
 	// do not retrieve if we Probed
 	if p.metadata == nil && p.err == nil {
 		p.metadata, p.err = metadata.GetMetadata()
@@ -47,7 +47,7 @@ func (p *ProviderPacket) Extract() ([]byte, error) {
 	}
 
 	if err := os.WriteFile(path.Join(ConfigPath, Hostname), []byte(p.metadata.Hostname), 0644); err != nil {
-		return nil, fmt.Errorf("Packet: Failed to write hostname: %s", err)
+		return nil, fmt.Errorf("EquinixMetal: Failed to write hostname: %s", err)
 	}
 
 	if err := os.MkdirAll(path.Join(ConfigPath, SSH), 0755); err != nil {
@@ -66,7 +66,7 @@ func (p *ProviderPacket) Extract() ([]byte, error) {
 
 	userData, err := metadata.GetUserData()
 	if err != nil {
-		return nil, fmt.Errorf("Packet: failed to get userdata: %s", err)
+		return nil, fmt.Errorf("EquinixMetal: failed to get userdata: %s", err)
 	}
 
 	if len(userData) == 0 {
@@ -81,7 +81,7 @@ func (p *ProviderPacket) Extract() ([]byte, error) {
 	return userData, nil
 }
 
-// networkConfig handles Packet network configuration, primarily bonding
+// networkConfig handles EquinixMetal network configuration, primarily bonding
 func networkConfig(ni metadata.NetworkInfo) error {
 	// rename interfaces to match what the metadata calls them
 	links, err := netlink.LinkList()
@@ -119,7 +119,7 @@ func networkConfig(ni metadata.NetworkInfo) error {
 
 	// set up bonding
 	la := netlink.LinkAttrs{Name: "bond0"}
-	bond := &netlink.GenericLink{la, "bond"}
+	bond := &netlink.GenericLink{LinkAttrs: la, LinkType: "bond"}
 	if err := netlink.LinkAdd(bond); err != nil {
 		// weirdly creating a bind always seems to return EEXIST
 		fmt.Fprintf(os.Stderr, "Error adding bond0: %v (ignoring)", err)

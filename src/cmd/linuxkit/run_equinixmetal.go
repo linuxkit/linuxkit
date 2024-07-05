@@ -25,29 +25,29 @@ import (
 )
 
 const (
-	packetDefaultZone    = "ams1"
-	packetDefaultMachine = "baremetal_0"
-	packetBaseURL        = "PACKET_BASE_URL"
-	packetZoneVar        = "PACKET_ZONE"
-	packetMachineVar     = "PACKET_MACHINE"
-	packetAPIKeyVar      = "PACKET_API_KEY"
-	packetProjectIDVar   = "PACKET_PROJECT_ID"
-	packetHostnameVar    = "PACKET_HOSTNAME"
-	packetNameVar        = "PACKET_NAME"
+	equinixmetalDefaultZone    = "ams1"
+	equinixmetalDefaultMachine = "baremetal_0"
+	equinixmetalBaseURL        = "METAL_BASE_URL"
+	equinixmetalZoneVar        = "METAL_FACILITY"
+	equinixmetalMachineVar     = "METAL_MACHINE"
+	equinixmetalAPIKeyVar      = "METAL_API_TOKEN"
+	equinixmetalProjectIDVar   = "METAL_PROJECT_ID"
+	equinixmetalHostnameVar    = "METAL_HOSTNAME"
+	equinixmetalNameVar        = "METAL_NAME"
 )
 
 var (
-	packetDefaultHostname = "linuxkit"
+	equinixmetalDefaultHostname = "linuxkit"
 )
 
 func init() {
 	// Prefix host name with username
 	if u, err := user.Current(); err == nil {
-		packetDefaultHostname = u.Username + "-" + packetDefaultHostname
+		equinixmetalDefaultHostname = u.Username + "-" + equinixmetalDefaultHostname
 	}
 }
 
-func runPacketCmd() *cobra.Command {
+func runEquinixMetalCmd() *cobra.Command {
 	var (
 		baseURLFlag  string
 		zoneFlag     string
@@ -64,33 +64,33 @@ func runPacketCmd() *cobra.Command {
 	)
 
 	cmd := &cobra.Command{
-		Use:   "packet",
-		Short: "launch an Equinix Metal (Packet) device",
-		Long: `Launch an Equinix Metal (Packet) device.
+		Use:   "equinixmetal",
+		Short: "launch an Equinix Metal device",
+		Long: `Launch an Equinix Metal device.
 		`,
 		Args:    cobra.ExactArgs(1),
-		Example: "linuxkit run packet [options] name",
+		Example: "linuxkit run equinixmetal [options] name",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			prefix := "packet"
+			prefix := "equinixmetal"
 			if len(args) > 0 {
 				prefix = args[0]
 			}
-			url := getStringValue(packetBaseURL, baseURLFlag, "")
+			url := getStringValue(equinixmetalBaseURL, baseURLFlag, "")
 			if url == "" {
-				return fmt.Errorf("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-packet.ipxe", prefix, prefix, prefix)
+				return fmt.Errorf("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-equinixmetal.ipxe", prefix, prefix, prefix)
 			}
-			facility := getStringValue(packetZoneVar, zoneFlag, "")
-			plan := getStringValue(packetMachineVar, machineFlag, defaultMachine)
-			apiKey := getStringValue(packetAPIKeyVar, apiKeyFlag, "")
+			facility := getStringValue(equinixmetalZoneVar, zoneFlag, "")
+			plan := getStringValue(equinixmetalMachineVar, machineFlag, defaultMachine)
+			apiKey := getStringValue(equinixmetalAPIKeyVar, apiKeyFlag, "")
 			if apiKey == "" {
-				return errors.New("Must specify a Packet.net API key with --api-key")
+				return errors.New("Must specify an api.equinix.com API key with --api-key")
 			}
-			projectID := getStringValue(packetProjectIDVar, projectFlag, "")
+			projectID := getStringValue(equinixmetalProjectIDVar, projectFlag, "")
 			if projectID == "" {
-				return errors.New("Must specify a Packet.net Project ID with --project-id")
+				return errors.New("Must specify an api.equinix.com Project ID with --project-id")
 			}
-			hostname := getStringValue(packetHostnameVar, hostNameFlag, "")
-			name := getStringValue(packetNameVar, nameFlag, prefix)
+			hostname := getStringValue(equinixmetalHostnameVar, hostNameFlag, "")
+			name := getStringValue(equinixmetalNameVar, nameFlag, prefix)
 			osType := "custom_ipxe"
 			billing := "hourly"
 
@@ -98,7 +98,7 @@ func runPacketCmd() *cobra.Command {
 				return fmt.Errorf("Combination of keep=%t and console=%t makes little sense", keepFlag, consoleFlag)
 			}
 
-			ipxeScriptName := fmt.Sprintf("%s-packet.ipxe", name)
+			ipxeScriptName := fmt.Sprintf("%s-equinixmetal.ipxe", name)
 
 			// Serve files with a local http server
 			var httpServer *http.Server
@@ -111,7 +111,7 @@ func runPacketCmd() *cobra.Command {
 					cmdline = string(c)
 				}
 
-				ipxeScript := packetIPXEScript(name, url, cmdline, packetMachineToArch(machineFlag))
+				ipxeScript := equinixmetalIPXEScript(name, url, cmdline, equinixmetalMachineToArch(machineFlag))
 				log.Debugf("Using iPXE script:\n%s\n", ipxeScript)
 
 				// Two handlers, one for the iPXE script and one for the kernel/initrd files
@@ -204,10 +204,10 @@ func runPacketCmd() *cobra.Command {
 
 			log.Printf("Booting %s...", dev.ID)
 
-			sshHost := "sos." + dev.Facility.Code + ".packet.net"
+			sshHost := "sos." + dev.Facility.Code + ".platformequinix.com"
 			if consoleFlag {
 				// Connect to the serial console
-				if err := packetSOS(dev.ID, sshHost); err != nil {
+				if err := equinixmetalSOS(dev.ID, sshHost); err != nil {
 					return err
 				}
 			} else {
@@ -244,14 +244,14 @@ func runPacketCmd() *cobra.Command {
 		},
 	}
 
-	cmd.Flags().StringVar(&baseURLFlag, "base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+packetBaseURL+")")
-	cmd.Flags().StringVar(&zoneFlag, "zone", packetDefaultZone, "Packet Zone (or "+packetZoneVar+")")
-	cmd.Flags().StringVar(&machineFlag, "machine", packetDefaultMachine, "Packet Machine Type (or "+packetMachineVar+")")
-	cmd.Flags().StringVar(&apiKeyFlag, "api-key", "", "Packet API key (or "+packetAPIKeyVar+")")
-	cmd.Flags().StringVar(&projectFlag, "project-id", "", "Packet Project ID (or "+packetProjectIDVar+")")
+	cmd.Flags().StringVar(&baseURLFlag, "base-url", "", "Base URL that the kernel, initrd and iPXE script are served from (or "+equinixmetalBaseURL+")")
+	cmd.Flags().StringVar(&zoneFlag, "zone", equinixmetalDefaultZone, "Equinix Metal Facility (or "+equinixmetalZoneVar+")")
+	cmd.Flags().StringVar(&machineFlag, "machine", equinixmetalDefaultMachine, "Equinix Metal Machine Type (or "+equinixmetalMachineVar+")")
+	cmd.Flags().StringVar(&apiKeyFlag, "api-key", "", "Equinix Metal API key (or "+equinixmetalAPIKeyVar+")")
+	cmd.Flags().StringVar(&projectFlag, "project-id", "", "EquinixMetal Project ID (or "+equinixmetalProjectIDVar+")")
 	cmd.Flags().StringVar(&deviceFlag, "device", "", "The ID of an existing device")
-	cmd.Flags().StringVar(&hostNameFlag, "hostname", packetDefaultHostname, "Hostname of new instance (or "+packetHostnameVar+")")
-	cmd.Flags().StringVar(&nameFlag, "img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+packetNameVar+")")
+	cmd.Flags().StringVar(&hostNameFlag, "hostname", equinixmetalDefaultHostname, "Hostname of new instance (or "+equinixmetalHostnameVar+")")
+	cmd.Flags().StringVar(&nameFlag, "img-name", "", "Overrides the prefix used to identify the files. Defaults to [name] (or "+equinixmetalNameVar+")")
 	cmd.Flags().BoolVar(&alwaysPXE, "always-pxe", true, "Reboot from PXE every time.")
 	cmd.Flags().StringVar(&serveFlag, "serve", "", "Serve local files via the http port specified, e.g. ':8080'.")
 	cmd.Flags().BoolVar(&consoleFlag, "console", true, "Provide interactive access on the console.")
@@ -261,7 +261,7 @@ func runPacketCmd() *cobra.Command {
 }
 
 // Convert machine type to architecture
-func packetMachineToArch(machine string) string {
+func equinixmetalMachineToArch(machine string) string {
 	switch machine {
 	case "baremetal_2a", "baremetal_2a2":
 		return "aarch64"
@@ -270,8 +270,8 @@ func packetMachineToArch(machine string) string {
 	}
 }
 
-// Build the iPXE script for packet machines
-func packetIPXEScript(name, baseURL, cmdline, arch string) string {
+// Build the iPXE script for equinix metal machines
+func equinixmetalIPXEScript(name, baseURL, cmdline, arch string) string {
 	// Note, we *append* the <prefix>-cmdline. iXPE booting will
 	// need the first set of "kernel-params" and we don't want to
 	// require these to be added to every YAML file.
@@ -280,7 +280,7 @@ func packetIPXEScript(name, baseURL, cmdline, arch string) string {
 	script += fmt.Sprintf("set base-url %s\n", baseURL)
 	if arch != "aarch64" {
 		var tty string
-		// x86_64 Packet machines have console on non standard ttyS1 which is not in most examples
+		// x86_64 Equinix Metal machines have console on non standard ttyS1 which is not in most examples
 		if !strings.Contains(cmdline, "console=ttyS1") {
 			tty = "console=ttyS1,115200"
 		}
@@ -311,7 +311,7 @@ func validateHTTPURL(url string) error {
 	return nil
 }
 
-func packetSOS(user, host string) error {
+func equinixmetalSOS(user, host string) error {
 	log.Debugf("console: ssh %s@%s", user, host)
 
 	hostKey, err := sshHostKey(host)

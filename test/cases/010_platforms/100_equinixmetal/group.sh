@@ -1,5 +1,5 @@
 #!/bin/sh
-# SUMMARY: LinuxKit packet.net tests
+# SUMMARY: LinuxKit Equinix Metal tests
 # LABELS:
 # For the top level group.sh also specify a 'NAME:' comment
 

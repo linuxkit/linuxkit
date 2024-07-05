@@ -19,7 +19,7 @@ onboot:
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
     image: linuxkit/metadata:b082f1bf97a9034d1e4c0e36a5d2923f4e58f540
-    command: ["/usr/bin/metadata", "packet"]
+    command: ["/usr/bin/metadata", "equinixmetal"]
 services:
   - name: rngd
     image: linuxkit/rngd:cdb919e4aee49fed0bf6075f0a104037cba83c39
