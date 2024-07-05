@@ -30,14 +30,13 @@ require (
 	github.com/moul/gotty-client v1.7.1-0.20180526075433-e5589f6df359
 	github.com/opencontainers/image-spec v1.1.0-rc5
 	github.com/opencontainers/runtime-spec v1.1.0
-	github.com/packethost/packngo v0.1.1-0.20171201154433-f1be085ecd6f
 	github.com/pkg/term v1.1.0
 	github.com/radu-matei/azure-sdk-for-go v5.0.0-beta.0.20161118192335-3b1282355199+incompatible
 	github.com/radu-matei/azure-vhd-utils v0.0.0-20170531165126-e52754d5569d
 	github.com/rn/iso9660wrap v0.0.0-20171120145750-baf8d62ad315
 	github.com/scaleway/scaleway-sdk-go v1.0.0-beta.6
 	github.com/sirupsen/logrus v1.9.3
-	github.com/stretchr/testify v1.8.4
+	github.com/stretchr/testify v1.9.0
 	github.com/surma/gocpio v1.0.2-0.20160926205914-fcb68777e7dc
 	github.com/vmware/govmomi v0.20.3
 	github.com/xeipuuv/gojsonschema v1.2.0
@@ -53,6 +52,7 @@ require (
 
 require (
 	github.com/Code-Hex/vz/v3 v3.0.0
+	github.com/equinix/equinix-sdk-go v0.42.0
 	github.com/in-toto/in-toto-golang v0.5.0
 	github.com/spdx/tools-golang v0.5.3
 	github.com/spf13/cobra v1.8.0

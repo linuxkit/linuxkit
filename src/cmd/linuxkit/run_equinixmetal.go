@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/packethost/packngo"
+	"github.com/equinix/equinix-sdk-go/services/metalv1"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"golang.org/x/crypto/ssh"
@@ -148,13 +148,20 @@ func runEquinixMetalCmd() *cobra.Command {
 				return fmt.Errorf("Invalid initrd URL %s: %v", initrdURL, err)
 			}
 
-			client := packngo.NewClient("", apiKey, nil)
+			client := metalv1.NewAPIClient(&metalv1.Configuration{})
+			metalCtx := context.WithValue(
+				context.Background(),
+				metalv1.ContextAPIKeys,
+				map[string]metalv1.APIKey{
+					"X-Auth-Token": {Key: apiKey},
+				},
+			)
 			var tags []string
 
-			var dev *packngo.Device
+			var dev *metalv1.Device
 			var err error
 			if deviceFlag != "" {
-				dev, _, err = client.Devices.Get(deviceFlag)
+				dev, _, err = client.DevicesApi.FindDeviceByIdExecute(client.DevicesApi.FindDeviceById(metalCtx, deviceFlag))
 				if err != nil {
 					return fmt.Errorf("Getting info for device %s failed: %v", deviceFlag, err)
 				}
@@ -164,34 +171,41 @@ func runEquinixMetalCmd() *cobra.Command {
 				}
 				log.Debugf("%s\n", string(b))
 
-				req := packngo.DeviceUpdateRequest{
-					Hostname:      hostname,
+				updateReq := client.DevicesApi.UpdateDevice(metalCtx, deviceFlag)
+				updateReq.DeviceUpdateInput(metalv1.DeviceUpdateInput{
+					Hostname:      &hostname,
 					Locked:        dev.Locked,
 					Tags:          dev.Tags,
-					IPXEScriptURL: ipxeURL,
-					AlwaysPXE:     alwaysPXE,
-				}
-				dev, _, err = client.Devices.Update(deviceFlag, &req)
+					IpxeScriptUrl: &ipxeURL,
+					AlwaysPxe:     &alwaysPXE,
+				})
+				dev, _, err = client.DevicesApi.UpdateDeviceExecute(updateReq)
 				if err != nil {
 					return fmt.Errorf("Update device %s failed: %v", deviceFlag, err)
 				}
-				if _, err := client.Devices.Reboot(deviceFlag); err != nil {
+
+				actionReq := client.DevicesApi.PerformAction(metalCtx, deviceFlag)
+				actionReq.DeviceActionInput(metalv1.DeviceActionInput{Type: metalv1.DEVICEACTIONINPUTTYPE_REBOOT})
+				if _, err := client.DevicesApi.PerformActionExecute(actionReq); err != nil {
 					return fmt.Errorf("Rebooting device %s failed: %v", deviceFlag, err)
 				}
 			} else {
 				// Create a new device
-				req := packngo.DeviceCreateRequest{
-					Hostname:      hostname,
-					Plan:          plan,
-					Facility:      facility,
-					OS:            osType,
-					BillingCycle:  billing,
-					ProjectID:     projectID,
-					Tags:          tags,
-					IPXEScriptURL: ipxeURL,
-					AlwaysPXE:     alwaysPXE,
-				}
-				dev, _, err = client.Devices.Create(&req)
+				createReq := client.DevicesApi.CreateDevice(metalCtx, projectID)
+				billingCycle := metalv1.DeviceCreateInputBillingCycle(billing)
+				createReq.CreateDeviceRequest(metalv1.CreateDeviceRequest{
+					DeviceCreateInFacilityInput: &metalv1.DeviceCreateInFacilityInput{
+						Hostname:        &hostname,
+						Plan:            plan,
+						Facility:        []string{facility},
+						OperatingSystem: osType,
+						BillingCycle:    &billingCycle,
+						Tags:            tags,
+						IpxeScriptUrl:   &ipxeURL,
+						AlwaysPxe:       &alwaysPXE,
+					},
+				})
+				dev, _, err = client.DevicesApi.CreateDeviceExecute(createReq)
 				if err != nil {
 					return fmt.Errorf("Creating device failed: %w", err)
 				}
@@ -202,16 +216,16 @@ func runEquinixMetalCmd() *cobra.Command {
 			}
 			log.Debugf("%s\n", string(b))
 
-			log.Printf("Booting %s...", dev.ID)
+			log.Printf("Booting %s...", *dev.Id)
 
-			sshHost := "sos." + dev.Facility.Code + ".platformequinix.com"
+			sshHost := "sos." + *dev.Facility.Code + ".platformequinix.com"
 			if consoleFlag {
 				// Connect to the serial console
-				if err := equinixmetalSOS(dev.ID, sshHost); err != nil {
+				if err := equinixmetalSOS(*dev.Id, sshHost); err != nil {
 					return err
 				}
 			} else {
-				log.Printf("Access the console with: ssh %s@%s", dev.ID, sshHost)
+				log.Printf("Access the console with: ssh %s@%s", *dev.Id, sshHost)
 
 				// if the serve option is present, wait till 'ctrl-c' is hit.
 				// Otherwise we wouldn't serve the files
@@ -233,10 +247,11 @@ func runEquinixMetalCmd() *cobra.Command {
 
 			if keepFlag {
 				log.Printf("The machine is kept...")
-				log.Printf("Device ID: %s", dev.ID)
-				log.Printf("Serial:    ssh %s@%s", dev.ID, sshHost)
+				log.Printf("Device ID: %s", *dev.Id)
+				log.Printf("Serial:    ssh %s@%s", *dev.Id, sshHost)
 			} else {
-				if _, err := client.Devices.Delete(dev.ID); err != nil {
+				deleteReq := client.DevicesApi.DeleteDevice(metalCtx, *dev.Id)
+				if _, err := client.DevicesApi.DeleteDeviceExecute(deleteReq); err != nil {
 					return fmt.Errorf("Unable to delete device: %v", err)
 				}
 			}
