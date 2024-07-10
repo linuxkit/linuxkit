@@ -68,7 +68,7 @@ func buildCmd() *cobra.Command {
 The generated image can be in one of multiple formats which can be run on various platforms.
 `,
 		Example: `  linuxkit build [options] <file>[.yml]`,
-		Args:    cobra.ExactArgs(1),
+		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if name == "" && outputFile == "" {
 				conf := args[len(args)-1]
