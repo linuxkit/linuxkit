@@ -119,22 +119,27 @@ endif
 		./scripts/update-component-sha.sh --image $${img}$(image); \
 	done
 
-.PHONY: build-targets-all
-build-targets-all: bin
-	$(MAKE) GOOS=darwin GOARCH=amd64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-darwin-amd64 local-build
-	file bin/linuxkit-darwin-amd64
+.PHONY: build-targets-all build-targets-linux build-targets-windows build-targets-macos checksum-targets
+
+build-targets-all: build-targets-linux build-targets-windows build-targets-macos
+
+build-targets-linux: bin
 	$(MAKE) GOOS=linux GOARCH=arm64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-linux-arm64 local-build
 	file bin/linuxkit-linux-arm64
 	$(MAKE) GOOS=linux GOARCH=amd64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-linux-amd64 local-build
 	file bin/linuxkit-linux-amd64
 	$(MAKE) GOOS=linux GOARCH=s390x LOCAL_TARGET=$(CURDIR)/bin/linuxkit-linux-s390x local-build
 	file bin/linuxkit-linux-s390x
+
+build-targets-windows: bin
 	$(MAKE) GOOS=windows GOARCH=amd64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-windows-amd64.exe local-build
 	file bin/linuxkit-windows-amd64.exe
 
-build-target-macos: bin
+build-targets-macos: bin
 	$(MAKE) GOOS=darwin GOARCH=arm64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-darwin-arm64 local-build
 	file bin/linuxkit-darwin-arm64
+	$(MAKE) GOOS=darwin GOARCH=amd64 LOCAL_TARGET=$(CURDIR)/bin/linuxkit-darwin-amd64 local-build
+	file bin/linuxkit-darwin-amd64
 
 checksum-targets: bin
 	cd bin && openssl sha256 -r linuxkit-* | tr -d '*' > checksums.txt

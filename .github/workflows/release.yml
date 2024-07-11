@@ -26,7 +26,7 @@ jobs:
 
     - name: Build
       run: |
-        make build-targets-all
+        make build-targets-linux build-targets-windows
       env:
         GOPATH: ${{runner.workspace}}
 
@@ -58,7 +58,7 @@ jobs:
 
     - name: Build
       run: |
-        make build-target-macos
+        make build-targets-macos
       env:
         GOPATH: ${{runner.workspace}}
 
