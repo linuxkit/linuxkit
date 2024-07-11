@@ -4,8 +4,8 @@ on:
   create:
 
 jobs:
-  build:
-    name: Build all targets
+  build-all:
+    name: Build all targets expect macOS
     if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     steps:
@@ -26,10 +26,67 @@ jobs:
 
     - name: Build
       run: |
-        make build-all-targets
+        make build-targets-all
       env:
         GOPATH: ${{runner.workspace}}
 
+    - uses: actions/upload-artifact@v4
+      with:
+        name: release-targets-except-cgo
+        path: bin/
+  
+  # separate macos build because macos needs CGO, and it is very hard to cross-compile that
+  build-macos:
+    name: Build macOS target
+    if: github.ref_type == 'tag' && startsWith(github.ref, 'refs/tags/v')
+    runs-on: macos-latest
+    steps:
+
+    - name: Set up Go 1.122
+      uses: actions/setup-go@v5
+      with:
+        go-version: 1.22.3
+      id: go
+
+    - name: Check out code
+      uses: actions/checkout@v4
+
+    - name: Set path
+      run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
+      env:
+         GOPATH: ${{runner.workspace}}
+
+    - name: Build
+      run: |
+        make build-target-macos
+      env:
+        GOPATH: ${{runner.workspace}}
+
+    - uses: actions/upload-artifact@v4
+      with:
+        name: release-targets-macos
+        path: bin/
+    
+  release-artifacts:
+    needs: [build-all, build-macos]
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    - uses: actions/download-artifact@v4
+      with:
+        name: release-targets-except-cgo
+        path: bintmp/release-targets-except-cgo
+    - uses: actions/download-artifact@v4
+      with:
+        name: release-targets-macos
+        path: bintmp/release-targets-macos
+    - name: Combine Artifacts
+      run: |
+        mkdir -p bin/
+        cp bintmp/*/* bin/
+    - name: Checksum Artifacts
+      run: |
+        make checksum-targets
     - name: GitHub Release
       uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
       env:
