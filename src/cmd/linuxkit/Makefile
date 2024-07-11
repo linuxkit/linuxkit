@@ -1,5 +1,24 @@
-VERSION?="v0.0-dev"
+# determine the version we save in the build binary
+# we always include the git commit.
+# the version is the current semver if it this commit matches the tag,
+# else it is the following: <tag>-<commits since tag>-<short commit hash>
+# if the git tree is dirty, append "-dirty"
+# most recent commit
 GIT_COMMIT=$(shell git rev-list -1 HEAD)
+# whether or not it is dirty, i.e. has uncommitted changes
+GIT_DIRTY=$(shell git update-index -q --refresh && git diff-index --quiet HEAD -- . || echo "-dirty")
+# most recent tag, might or might not point to GIT_COMMIT
+GIT_TAG=$(shell git describe --tags --match="v*")
+# include the possible "-dirty" suffix
+VERSION=$(GIT_TAG)$(GIT_DIRTY)
+
+report:
+	@echo "VERSION: $(VERSION)"
+	@echo "GIT_COMMIT: $(GIT_COMMIT)"
+	@echo "GIT_DIRTY: $(GIT_DIRTY)"
+	@echo "GIT_TAG: $(GIT_TAG)"
+	@echo "VERSION: $(VERSION)"
+
 GO_COMPILE?=linuxkit/go-compile:c97703655e8510b7257ffc57f25e40337b0f0813
 export GO_FLAGS=-mod=vendor
 
