@@ -4,7 +4,6 @@ github.com/linuxkit/virtsock/pkg/vsock
 # github.com/pkg/errors v0.9.1
 ## explicit
 github.com/pkg/errors
-# golang.org/x/sys v0.0.0-20210426230700-d19ff857e887
-## explicit
-golang.org/x/sys/internal/unsafeheader
+# golang.org/x/sys v0.22.0
+## explicit; go 1.18
 golang.org/x/sys/unix
