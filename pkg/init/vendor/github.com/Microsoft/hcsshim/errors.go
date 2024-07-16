@@ -1,3 +1,5 @@
+//go:build windows
+
 package hcsshim
 
 import (
@@ -50,6 +52,9 @@ var (
 	// ErrUnexpectedValue is an error encountered when hcs returns an invalid value
 	ErrUnexpectedValue = hcs.ErrUnexpectedValue
 
+	// ErrOperationDenied is an error when hcs attempts an operation that is explicitly denied
+	ErrOperationDenied = hcs.ErrOperationDenied
+
 	// ErrVmcomputeAlreadyStopped is an error encountered when a shutdown or terminate request is made on a stopped container
 	ErrVmcomputeAlreadyStopped = hcs.ErrVmcomputeAlreadyStopped
 
@@ -59,7 +64,7 @@ var (
 	// ErrVmcomputeOperationInvalidState is an error encountered when the compute system is not in a valid state for the requested operation
 	ErrVmcomputeOperationInvalidState = hcs.ErrVmcomputeOperationInvalidState
 
-	// ErrProcNotFound is an error encountered when the the process cannot be found
+	// ErrProcNotFound is an error encountered when a procedure look up fails.
 	ErrProcNotFound = hcs.ErrProcNotFound
 
 	// ErrVmcomputeOperationAccessIsDenied is an error which can be encountered when enumerating compute systems in RS1/RS2
@@ -83,7 +88,6 @@ type NetworkNotFoundError = hns.NetworkNotFoundError
 type ProcessError struct {
 	Process   *process
 	Operation string
-	ExtraInfo string
 	Err       error
 	Events    []hcs.ErrorEvent
 }
@@ -92,7 +96,6 @@ type ProcessError struct {
 type ContainerError struct {
 	Container *container
 	Operation string
-	ExtraInfo string
 	Err       error
 	Events    []hcs.ErrorEvent
 }
@@ -112,6 +115,7 @@ func (e *ContainerError) Error() string {
 		s += " encountered an error during " + e.Operation
 	}
 
+	//nolint:errorlint // legacy code
 	switch e.Err.(type) {
 	case nil:
 		break
@@ -125,20 +129,7 @@ func (e *ContainerError) Error() string {
 		s += "\n" + ev.String()
 	}
 
-	if e.ExtraInfo != "" {
-		s += " extra info: " + e.ExtraInfo
-	}
-
 	return s
-}
-
-func makeContainerError(container *container, operation string, extraInfo string, err error) error {
-	// Don't double wrap errors
-	if _, ok := err.(*ContainerError); ok {
-		return err
-	}
-	containerError := &ContainerError{Container: container, Operation: operation, ExtraInfo: extraInfo, Err: err}
-	return containerError
 }
 
 func (e *ProcessError) Error() string {
@@ -155,6 +146,7 @@ func (e *ProcessError) Error() string {
 		s += " encountered an error during " + e.Operation
 	}
 
+	//nolint:errorlint // legacy code
 	switch e.Err.(type) {
 	case nil:
 		break
@@ -171,24 +163,15 @@ func (e *ProcessError) Error() string {
 	return s
 }
 
-func makeProcessError(process *process, operation string, extraInfo string, err error) error {
-	// Don't double wrap errors
-	if _, ok := err.(*ProcessError); ok {
-		return err
-	}
-	processError := &ProcessError{Process: process, Operation: operation, ExtraInfo: extraInfo, Err: err}
-	return processError
-}
-
 // IsNotExist checks if an error is caused by the Container or Process not existing.
 // Note: Currently, ErrElementNotFound can mean that a Process has either
 // already exited, or does not exist. Both IsAlreadyStopped and IsNotExist
-// will currently return true when the error is ErrElementNotFound or ErrProcNotFound.
+// will currently return true when the error is ErrElementNotFound.
 func IsNotExist(err error) bool {
-	if _, ok := err.(EndpointNotFoundError); ok {
+	if _, ok := err.(EndpointNotFoundError); ok { //nolint:errorlint // legacy code
 		return true
 	}
-	if _, ok := err.(NetworkNotFoundError); ok {
+	if _, ok := err.(NetworkNotFoundError); ok { //nolint:errorlint // legacy code
 		return true
 	}
 	return hcs.IsNotExist(getInnerError(err))
@@ -216,7 +199,7 @@ func IsTimeout(err error) bool {
 // a Container or Process being already stopped.
 // Note: Currently, ErrElementNotFound can mean that a Process has either
 // already exited, or does not exist. Both IsAlreadyStopped and IsNotExist
-// will currently return true when the error is ErrElementNotFound or ErrProcNotFound.
+// will currently return true when the error is ErrElementNotFound.
 func IsAlreadyStopped(err error) bool {
 	return hcs.IsAlreadyStopped(getInnerError(err))
 }
@@ -243,6 +226,7 @@ func IsAccessIsDenied(err error) bool {
 }
 
 func getInnerError(err error) error {
+	//nolint:errorlint // legacy code
 	switch pe := err.(type) {
 	case nil:
 		return nil
@@ -255,14 +239,14 @@ func getInnerError(err error) error {
 }
 
 func convertSystemError(err error, c *container) error {
-	if serr, ok := err.(*hcs.SystemError); ok {
-		return &ContainerError{Container: c, Operation: serr.Op, ExtraInfo: serr.Extra, Err: serr.Err, Events: serr.Events}
+	if serr, ok := err.(*hcs.SystemError); ok { //nolint:errorlint // legacy code
+		return &ContainerError{Container: c, Operation: serr.Op, Err: serr.Err, Events: serr.Events}
 	}
 	return err
 }
 
 func convertProcessError(err error, p *process) error {
-	if perr, ok := err.(*hcs.ProcessError); ok {
+	if perr, ok := err.(*hcs.ProcessError); ok { //nolint:errorlint // legacy code
 		return &ProcessError{Process: p, Operation: perr.Op, Err: perr.Err, Events: perr.Events}
 	}
 	return err

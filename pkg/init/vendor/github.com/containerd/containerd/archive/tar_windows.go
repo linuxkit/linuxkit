@@ -1,5 +1,3 @@
-// +build windows
-
 /*
    Copyright The containerd Authors.
 
@@ -20,47 +18,13 @@ package archive
 
 import (
 	"archive/tar"
-	"bufio"
-	"context"
+	"errors"
 	"fmt"
-	"io"
 	"os"
-	"path"
-	"path/filepath"
 	"strings"
 
-	"github.com/Microsoft/go-winio"
-	"github.com/Microsoft/go-winio/backuptar"
-	"github.com/Microsoft/hcsshim"
-	"github.com/containerd/containerd/sys"
-	"github.com/pkg/errors"
+	"github.com/moby/sys/sequential"
 )
-
-var (
-	// mutatedFiles is a list of files that are mutated by the import process
-	// and must be backed up and restored.
-	mutatedFiles = map[string]string{
-		"UtilityVM/Files/EFI/Microsoft/Boot/BCD":      "bcd.bak",
-		"UtilityVM/Files/EFI/Microsoft/Boot/BCD.LOG":  "bcd.log.bak",
-		"UtilityVM/Files/EFI/Microsoft/Boot/BCD.LOG1": "bcd.log1.bak",
-		"UtilityVM/Files/EFI/Microsoft/Boot/BCD.LOG2": "bcd.log2.bak",
-	}
-)
-
-// tarName returns platform-specific filepath
-// to canonical posix-style path for tar archival. p is relative
-// path.
-func tarName(p string) (string, error) {
-	// windows: convert windows style relative path with backslashes
-	// into forward slashes. Since windows does not allow '/' or '\'
-	// in file names, it is mostly safe to replace however we must
-	// check just in case
-	if strings.Contains(p, "/") {
-		return "", fmt.Errorf("windows path contains forward slash: %s", p)
-	}
-
-	return strings.Replace(p, string(os.PathSeparator), "/", -1), nil
-}
 
 // chmodTarEntry is used to adjust the file permissions used in tar header based
 // on the platform the archival is done.
@@ -78,15 +42,15 @@ func setHeaderForSpecialDevice(*tar.Header, string, os.FileInfo) error {
 }
 
 func open(p string) (*os.File, error) {
-	// We use sys.OpenSequential to ensure we use sequential file
-	// access on Windows to avoid depleting the standby list.
-	return sys.OpenSequential(p)
+	// We use sequential file access to avoid depleting the standby list on
+	// Windows.
+	return sequential.Open(p)
 }
 
 func openFile(name string, flag int, perm os.FileMode) (*os.File, error) {
-	// Source is regular file. We use sys.OpenFileSequential to use sequential
-	// file access to avoid depleting the standby list on Windows.
-	return sys.OpenFileSequential(name, flag, perm)
+	// Source is regular file. We use sequential file access to avoid depleting
+	// the standby list on Windows.
+	return sequential.OpenFile(name, flag, perm)
 }
 
 func mkdir(path string, perm os.FileMode) error {
@@ -117,7 +81,7 @@ func handleTarTypeBlockCharFifo(hdr *tar.Header, path string) error {
 	return nil
 }
 
-func handleLChmod(hdr *tar.Header, path string, hdrInfo os.FileInfo) error {
+func lchmod(path string, mode os.FileMode) error {
 	return nil
 }
 
@@ -133,129 +97,11 @@ func setxattr(path, key, value string) error {
 
 func copyDirInfo(fi os.FileInfo, path string) error {
 	if err := os.Chmod(path, fi.Mode()); err != nil {
-		return errors.Wrapf(err, "failed to chmod %s", path)
+		return fmt.Errorf("failed to chmod %s: %w", path, err)
 	}
 	return nil
 }
 
 func copyUpXAttrs(dst, src string) error {
 	return nil
-}
-
-// applyWindowsLayer applies a tar stream of an OCI style diff tar of a Windows
-// layer using the hcsshim layer writer and backup streams.
-// See https://github.com/opencontainers/image-spec/blob/master/layer.md#applying-changesets
-func applyWindowsLayer(ctx context.Context, root string, r io.Reader, options ApplyOptions) (size int64, err error) {
-	home, id := filepath.Split(root)
-	info := hcsshim.DriverInfo{
-		HomeDir: home,
-	}
-
-	w, err := hcsshim.NewLayerWriter(info, id, options.Parents)
-	if err != nil {
-		return 0, err
-	}
-	defer func() {
-		if err2 := w.Close(); err2 != nil {
-			// This error should not be discarded as a failure here
-			// could result in an invalid layer on disk
-			if err == nil {
-				err = err2
-			}
-		}
-	}()
-
-	tr := tar.NewReader(r)
-	buf := bufio.NewWriter(nil)
-	hdr, nextErr := tr.Next()
-	// Iterate through the files in the archive.
-	for {
-		select {
-		case <-ctx.Done():
-			return 0, ctx.Err()
-		default:
-		}
-
-		if nextErr == io.EOF {
-			// end of tar archive
-			break
-		}
-		if nextErr != nil {
-			return 0, nextErr
-		}
-
-		// Note: path is used instead of filepath to prevent OS specific handling
-		// of the tar path
-		base := path.Base(hdr.Name)
-		if strings.HasPrefix(base, whiteoutPrefix) {
-			dir := path.Dir(hdr.Name)
-			originalBase := base[len(whiteoutPrefix):]
-			originalPath := path.Join(dir, originalBase)
-			if err := w.Remove(filepath.FromSlash(originalPath)); err != nil {
-				return 0, err
-			}
-			hdr, nextErr = tr.Next()
-		} else if hdr.Typeflag == tar.TypeLink {
-			err := w.AddLink(filepath.FromSlash(hdr.Name), filepath.FromSlash(hdr.Linkname))
-			if err != nil {
-				return 0, err
-			}
-			hdr, nextErr = tr.Next()
-		} else {
-			name, fileSize, fileInfo, err := backuptar.FileInfoFromHeader(hdr)
-			if err != nil {
-				return 0, err
-			}
-			if err := w.Add(filepath.FromSlash(name), fileInfo); err != nil {
-				return 0, err
-			}
-			size += fileSize
-			hdr, nextErr = tarToBackupStreamWithMutatedFiles(buf, w, tr, hdr, root)
-		}
-	}
-
-	return
-}
-
-// tarToBackupStreamWithMutatedFiles reads data from a tar stream and
-// writes it to a backup stream, and also saves any files that will be mutated
-// by the import layer process to a backup location.
-func tarToBackupStreamWithMutatedFiles(buf *bufio.Writer, w io.Writer, t *tar.Reader, hdr *tar.Header, root string) (nextHdr *tar.Header, err error) {
-	var (
-		bcdBackup       *os.File
-		bcdBackupWriter *winio.BackupFileWriter
-	)
-	if backupPath, ok := mutatedFiles[hdr.Name]; ok {
-		bcdBackup, err = os.Create(filepath.Join(root, backupPath))
-		if err != nil {
-			return nil, err
-		}
-		defer func() {
-			cerr := bcdBackup.Close()
-			if err == nil {
-				err = cerr
-			}
-		}()
-
-		bcdBackupWriter = winio.NewBackupFileWriter(bcdBackup, false)
-		defer func() {
-			cerr := bcdBackupWriter.Close()
-			if err == nil {
-				err = cerr
-			}
-		}()
-
-		buf.Reset(io.MultiWriter(w, bcdBackupWriter))
-	} else {
-		buf.Reset(w)
-	}
-
-	defer func() {
-		ferr := buf.Flush()
-		if err == nil {
-			err = ferr
-		}
-	}()
-
-	return backuptar.WriteBackupStreamFromTarFile(buf, t, hdr)
 }

@@ -19,7 +19,6 @@ package errors
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 )
 
@@ -27,20 +26,30 @@ var _ error = ErrUnexpectedStatus{}
 
 // ErrUnexpectedStatus is returned if a registry API request returned with unexpected HTTP status
 type ErrUnexpectedStatus struct {
-	Status     string
-	StatusCode int
-	Body       []byte
+	Status                    string
+	StatusCode                int
+	Body                      []byte
+	RequestURL, RequestMethod string
 }
 
 func (e ErrUnexpectedStatus) Error() string {
-	return fmt.Sprintf("unexpected status: %s", e.Status)
+	return fmt.Sprintf("unexpected status from %s request to %s: %s", e.RequestMethod, e.RequestURL, e.Status)
 }
 
 // NewUnexpectedStatusErr creates an ErrUnexpectedStatus from HTTP response
 func NewUnexpectedStatusErr(resp *http.Response) error {
 	var b []byte
 	if resp.Body != nil {
-		b, _ = ioutil.ReadAll(io.LimitReader(resp.Body, 64000)) // 64KB
+		b, _ = io.ReadAll(io.LimitReader(resp.Body, 64000)) // 64KB
 	}
-	return ErrUnexpectedStatus{Status: resp.Status, StatusCode: resp.StatusCode, Body: b}
+	err := ErrUnexpectedStatus{
+		Body:          b,
+		Status:        resp.Status,
+		StatusCode:    resp.StatusCode,
+		RequestMethod: resp.Request.Method,
+	}
+	if resp.Request.URL != nil {
+		err.RequestURL = resp.Request.URL.String()
+	}
+	return err
 }

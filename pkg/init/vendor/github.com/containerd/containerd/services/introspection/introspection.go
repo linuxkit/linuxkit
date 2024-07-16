@@ -20,11 +20,12 @@ import (
 	context "context"
 
 	api "github.com/containerd/containerd/api/services/introspection/v1"
-	"github.com/containerd/containerd/errdefs"
-	"github.com/containerd/containerd/log"
-	ptypes "github.com/gogo/protobuf/types"
+	ptypes "github.com/containerd/containerd/protobuf/types"
+	"github.com/containerd/errdefs"
+	"github.com/containerd/log"
 )
 
+// Service defines the introspection service interface
 type Service interface {
 	Plugins(context.Context, []string) (*api.PluginsResponse, error)
 	Server(context.Context, *ptypes.Empty) (*api.ServerResponse, error)
@@ -36,6 +37,7 @@ type introspectionRemote struct {
 
 var _ = (Service)(&introspectionRemote{})
 
+// NewIntrospectionServiceFromClient creates a new introspection service from an API client
 func NewIntrospectionServiceFromClient(c api.IntrospectionClient) Service {
 	return &introspectionRemote{client: c}
 }

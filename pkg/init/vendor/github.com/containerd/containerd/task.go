@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	goruntime "runtime"
@@ -32,21 +33,21 @@ import (
 	"github.com/containerd/containerd/cio"
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/diff"
-	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/mount"
 	"github.com/containerd/containerd/oci"
 	"github.com/containerd/containerd/plugin"
+	"github.com/containerd/containerd/protobuf"
+	google_protobuf "github.com/containerd/containerd/protobuf/types"
 	"github.com/containerd/containerd/rootfs"
 	"github.com/containerd/containerd/runtime/linux/runctypes"
 	"github.com/containerd/containerd/runtime/v2/runc/options"
-	"github.com/containerd/typeurl"
-	google_protobuf "github.com/gogo/protobuf/types"
+	"github.com/containerd/errdefs"
+	"github.com/containerd/typeurl/v2"
 	digest "github.com/opencontainers/go-digest"
 	is "github.com/opencontainers/image-spec/specs-go"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	specs "github.com/opencontainers/runtime-spec/specs-go"
-	"github.com/pkg/errors"
 )
 
 // UnknownExitStatus is returned when containerd is unable to
@@ -139,6 +140,11 @@ type TaskInfo struct {
 	RootFS []mount.Mount
 	// Options hold runtime specific settings for task creation
 	Options interface{}
+	// RuntimePath is an absolute path that can be used to overwrite path
+	// to a shim runtime binary.
+	RuntimePath string
+
+	// runtime is the runtime name for the container, and cannot be changed.
 	runtime string
 }
 
@@ -264,7 +270,7 @@ func (t *task) Status(ctx context.Context) (Status, error) {
 	return Status{
 		Status:     ProcessStatus(strings.ToLower(r.Process.Status.String())),
 		ExitStatus: r.Process.ExitStatus,
-		ExitTime:   r.Process.ExitedAt,
+		ExitTime:   protobuf.FromTimestamp(r.Process.ExitedAt),
 	}, nil
 }
 
@@ -284,7 +290,7 @@ func (t *task) Wait(ctx context.Context) (<-chan ExitStatus, error) {
 		}
 		c <- ExitStatus{
 			code:     r.ExitStatus,
-			exitedAt: r.ExitedAt,
+			exitedAt: protobuf.FromTimestamp(r.ExitedAt),
 		}
 	}()
 	return c, nil
@@ -310,11 +316,26 @@ func (t *task) Delete(ctx context.Context, opts ...ProcessDeleteOpts) (*ExitStat
 			// On windows Created is akin to Stopped
 			break
 		}
+		if t.pid == 0 {
+			// allow for deletion of created tasks with PID 0
+			// https://github.com/containerd/containerd/issues/7357
+			break
+		}
 		fallthrough
 	default:
-		return nil, errors.Wrapf(errdefs.ErrFailedPrecondition, "task must be stopped before deletion: %s", status.Status)
+		return nil, fmt.Errorf("task must be stopped before deletion: %s: %w", status.Status, errdefs.ErrFailedPrecondition)
 	}
 	if t.io != nil {
+		// io.Wait locks for restored tasks on Windows unless we call
+		// io.Close first (https://github.com/containerd/containerd/issues/5621)
+		// in other cases, preserve the contract and let IO finish before closing
+		if t.client.runtime == fmt.Sprintf("%s.%s", plugin.RuntimePlugin, "windows") {
+			t.io.Close()
+		}
+		// io.Cancel is used to cancel the io goroutine while it is in
+		// fifo-opening state. It does not stop the pipes since these
+		// should be closed on the shim's side, otherwise we might lose
+		// data from the container!
 		t.io.Cancel()
 		t.io.Wait()
 	}
@@ -328,12 +349,12 @@ func (t *task) Delete(ctx context.Context, opts ...ProcessDeleteOpts) (*ExitStat
 	if t.io != nil {
 		t.io.Close()
 	}
-	return &ExitStatus{code: r.ExitStatus, exitedAt: r.ExitedAt}, nil
+	return &ExitStatus{code: r.ExitStatus, exitedAt: protobuf.FromTimestamp(r.ExitedAt)}, nil
 }
 
 func (t *task) Exec(ctx context.Context, id string, spec *specs.Process, ioCreate cio.Creator) (_ Process, err error) {
 	if id == "" {
-		return nil, errors.Wrapf(errdefs.ErrInvalidArgument, "exec id must not be empty")
+		return nil, fmt.Errorf("exec id must not be empty: %w", errdefs.ErrInvalidArgument)
 	}
 	i, err := ioCreate(id)
 	if err != nil {
@@ -345,7 +366,7 @@ func (t *task) Exec(ctx context.Context, id string, spec *specs.Process, ioCreat
 			i.Close()
 		}
 	}()
-	any, err := typeurl.MarshalAny(spec)
+	any, err := protobuf.MarshalAnyToProto(spec)
 	if err != nil {
 		return nil, err
 	}
@@ -443,19 +464,28 @@ func (t *task) Checkpoint(ctx context.Context, opts ...CheckpointTaskOpts) (Imag
 	if i.Name == "" {
 		i.Name = fmt.Sprintf(checkpointNameFormat, t.id, time.Now().Format(checkpointDateFormat))
 	}
-	request.ParentCheckpoint = i.ParentCheckpoint
+	request.ParentCheckpoint = i.ParentCheckpoint.String()
 	if i.Options != nil {
-		any, err := typeurl.MarshalAny(i.Options)
+		any, err := protobuf.MarshalAnyToProto(i.Options)
 		if err != nil {
 			return nil, err
 		}
 		request.Options = any
 	}
-	// make sure we pause it and resume after all other filesystem operations are completed
-	if err := t.Pause(ctx); err != nil {
+
+	status, err := t.Status(ctx)
+	if err != nil {
 		return nil, err
 	}
-	defer t.Resume(ctx)
+
+	if status.Status != Paused {
+		// make sure we pause it and resume after all other filesystem operations are completed
+		if err := t.Pause(ctx); err != nil {
+			return nil, err
+		}
+		defer t.Resume(ctx)
+	}
+
 	index := v1.Index{
 		Versioned: is.Versioned{
 			SchemaVersion: 2,
@@ -525,7 +555,7 @@ func (t *task) Update(ctx context.Context, opts ...UpdateTaskOpts) error {
 		if err != nil {
 			return err
 		}
-		request.Resources = any
+		request.Resources = protobuf.FromAny(any)
 	}
 	if i.Annotations != nil {
 		request.Annotations = i.Annotations
@@ -545,7 +575,7 @@ func (t *task) LoadProcess(ctx context.Context, id string, ioAttach cio.Attach) 
 	if err != nil {
 		err = errdefs.FromGRPC(err)
 		if errdefs.IsNotFound(err) {
-			return nil, errors.Wrapf(err, "no running process found")
+			return nil, fmt.Errorf("no running process found: %w", err)
 		}
 		return nil, err
 	}
@@ -593,8 +623,8 @@ func (t *task) checkpointTask(ctx context.Context, index *v1.Index, request *tas
 	for _, d := range response.Descriptors {
 		index.Manifests = append(index.Manifests, v1.Descriptor{
 			MediaType: d.MediaType,
-			Size:      d.Size_,
-			Digest:    d.Digest,
+			Size:      d.Size,
+			Digest:    digest.Digest(d.Digest),
 			Platform: &v1.Platform{
 				OS:           goruntime.GOOS,
 				Architecture: goruntime.GOARCH,

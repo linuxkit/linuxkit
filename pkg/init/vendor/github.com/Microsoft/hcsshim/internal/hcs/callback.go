@@ -1,3 +1,5 @@
+//go:build windows
+
 package hcs
 
 import (
@@ -13,7 +15,7 @@ import (
 
 var (
 	nextCallback    uintptr
-	callbackMap     = map[uintptr]*notifcationWatcherContext{}
+	callbackMap     = map[uintptr]*notificationWatcherContext{}
 	callbackMapLock = sync.RWMutex{}
 
 	notificationWatcherCallback = syscall.NewCallback(notificationWatcher)
@@ -87,7 +89,7 @@ func (hn hcsNotification) String() string {
 
 type notificationChannel chan error
 
-type notifcationWatcherContext struct {
+type notificationWatcherContext struct {
 	channels notificationChannels
 	handle   vmcompute.HcsCallback
 
