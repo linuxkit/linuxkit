@@ -1,3 +1,5 @@
+//go:build windows
+
 package computestorage
 
 import (
@@ -6,13 +8,17 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/Microsoft/go-winio/pkg/security"
 	"github.com/Microsoft/go-winio/vhd"
+	"github.com/Microsoft/hcsshim/internal/memory"
 	"github.com/pkg/errors"
 	"golang.org/x/sys/windows"
+
+	"github.com/Microsoft/hcsshim/internal/security"
 )
 
-const defaultVHDXBlockSizeInMB = 1
+const (
+	defaultVHDXBlockSizeInMB = 1
+)
 
 // SetupContainerBaseLayer is a helper to setup a containers scratch. It
 // will create and format the vhdx's inside and the size is configurable with the sizeInGB
@@ -59,8 +65,8 @@ func SetupContainerBaseLayer(ctx context.Context, layerPath, baseVhdPath, diffVh
 	createParams := &vhd.CreateVirtualDiskParameters{
 		Version: 2,
 		Version2: vhd.CreateVersion2{
-			MaximumSize:      sizeInGB * 1024 * 1024 * 1024,
-			BlockSizeInBytes: defaultVHDXBlockSizeInMB * 1024 * 1024,
+			MaximumSize:      sizeInGB * memory.GiB,
+			BlockSizeInBytes: defaultVHDXBlockSizeInMB * memory.MiB,
 		},
 	}
 	handle, err := vhd.CreateVirtualDisk(baseVhdPath, vhd.VirtualDiskAccessNone, vhd.CreateVirtualDiskFlagNone, createParams)
@@ -70,11 +76,9 @@ func SetupContainerBaseLayer(ctx context.Context, layerPath, baseVhdPath, diffVh
 
 	defer func() {
 		if err != nil {
-			syscall.CloseHandle(handle)
+			_ = syscall.CloseHandle(handle)
 			os.RemoveAll(baseVhdPath)
-			if os.Stat(diffVhdPath); err == nil {
-				os.RemoveAll(diffVhdPath)
-			}
+			os.RemoveAll(diffVhdPath)
 		}
 	}()
 
@@ -137,8 +141,8 @@ func SetupUtilityVMBaseLayer(ctx context.Context, uvmPath, baseVhdPath, diffVhdP
 	createParams := &vhd.CreateVirtualDiskParameters{
 		Version: 2,
 		Version2: vhd.CreateVersion2{
-			MaximumSize:      sizeInGB * 1024 * 1024 * 1024,
-			BlockSizeInBytes: defaultVHDXBlockSizeInMB * 1024 * 1024,
+			MaximumSize:      sizeInGB * memory.GiB,
+			BlockSizeInBytes: defaultVHDXBlockSizeInMB * memory.MiB,
 		},
 	}
 	handle, err := vhd.CreateVirtualDisk(baseVhdPath, vhd.VirtualDiskAccessNone, vhd.CreateVirtualDiskFlagNone, createParams)
@@ -148,11 +152,9 @@ func SetupUtilityVMBaseLayer(ctx context.Context, uvmPath, baseVhdPath, diffVhdP
 
 	defer func() {
 		if err != nil {
-			syscall.CloseHandle(handle)
+			_ = syscall.CloseHandle(handle)
 			os.RemoveAll(baseVhdPath)
-			if os.Stat(diffVhdPath); err == nil {
-				os.RemoveAll(diffVhdPath)
-			}
+			os.RemoveAll(diffVhdPath)
 		}
 	}()
 

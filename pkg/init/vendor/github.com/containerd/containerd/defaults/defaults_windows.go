@@ -1,5 +1,3 @@
-// +build windows
-
 /*
    Copyright The containerd Authors.
 
@@ -30,6 +28,9 @@ var (
 	// DefaultStateDir is the default location used by containerd to store
 	// transient data
 	DefaultStateDir = filepath.Join(os.Getenv("ProgramData"), "containerd", "state")
+
+	// DefaultConfigDir is the default location for config files.
+	DefaultConfigDir = filepath.Join(os.Getenv("programfiles"), "containerd")
 )
 
 const (

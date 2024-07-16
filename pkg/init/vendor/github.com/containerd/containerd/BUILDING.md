@@ -14,9 +14,12 @@ This doc includes:
 
 To build the `containerd` daemon, and the `ctr` simple test client, the following build system dependencies are required:
 
-* Go 1.13.x or above except 1.14.x
-* Protoc 3.x compiler and headers (download at the [Google protobuf releases page](https://github.com/google/protobuf/releases))
+
+* Go 1.21.x or above
+* Protoc 3.x compiler and headers (download at the [Google protobuf releases page](https://github.com/protocolbuffers/protobuf/releases))
 * Btrfs headers and libraries for your distribution. Note that building the btrfs driver can be disabled via the build tag `no_btrfs`, removing this dependency.
+
+> *Note*: On macOS, you need a third party runtime to run containers on containerd
 
 ## Build the development environment
 
@@ -32,52 +35,40 @@ git clone https://github.com/containerd/containerd
 
 For proper results, install the `protoc` release into `/usr/local` on your build system. For example, the following commands will download and install the 3.11.4 release for a 64-bit Linux host:
 
-```
-$ wget -c https://github.com/google/protobuf/releases/download/v3.11.4/protoc-3.11.4-linux-x86_64.zip
-$ sudo unzip protoc-3.11.4-linux-x86_64.zip -d /usr/local
+```sh
+wget -c https://github.com/protocolbuffers/protobuf/releases/download/v3.11.4/protoc-3.11.4-linux-x86_64.zip
+sudo unzip protoc-3.11.4-linux-x86_64.zip -d /usr/local
 ```
 
-`containerd` uses [Btrfs](https://en.wikipedia.org/wiki/Btrfs) it means that you
-need to satisfy these dependencies in your system:
+To enable optional [Btrfs](https://en.wikipedia.org/wiki/Btrfs) snapshotter, you should have the headers from the Linux kernel 4.12 or later.
+The dependency on the kernel headers only affects users building containerd from source.
+Users on older kernels may opt to not compile the btrfs support (see `BUILDTAGS=no_btrfs` below),
+or to provide headers from a newer kernel.
 
-* CentOS/Fedora: `yum install btrfs-progs-devel`
-* Debian/Ubuntu: `apt-get install btrfs-progs libbtrfs-dev`
-  * Debian(before Buster)/Ubuntu(before 19.10): `apt-get install btrfs-tools`
+> **Note**
+> The dependency on the Linux kernel headers 4.12 was introduced in containerd 1.7.0-beta.4.
+>
+> containerd 1.6 has different set of dependencies for enabling btrfs.
+> containerd 1.6 users should refer to https://github.com/containerd/containerd/blob/release/1.6/BUILDING.md#build-the-development-environment
 
 At this point you are ready to build `containerd` yourself!
 
-## Build runc
+## Runc
 
-`runc` is the default container runtime used by `containerd` and is required to
-run containerd. While it is okay to download a runc binary and install that on
+Runc is the default container runtime used by `containerd` and is required to
+run containerd. While it is okay to download a `runc` binary and install that on
 the system, sometimes it is necessary to build runc directly when working with
-container runtime development. You can skip this step if you already have the
-correct version of `runc` installed.
+container runtime development. Make sure to follow the guidelines for versioning
+in [RUNC.md](/docs/RUNC.md) for the best results.
 
-`runc` requires `libseccomp`. You may need to install the missing dependencies:
-
-* CentOS/Fedora: `yum install libseccomp libseccomp-devel`
-* Debian/Ubuntu: `apt-get install libseccomp libseccomp-dev`
-
-
-For the quick and dirty installation, you can use the following:
-
-```
-git clone https://github.com/opencontainers/runc
-cd runc
-make
-sudo make install
-```
-
-Make sure to follow the guidelines for versioning in [RUNC.md](/docs/RUNC.md) for the
-best results.
+> *Note*: Runc only supports Linux
 
 ## Build containerd
 
 `containerd` uses `make` to create a repeatable build flow. It means that you
 can run:
 
-```
+```sh
 cd containerd
 make
 ```
@@ -86,22 +77,44 @@ This is going to build all the project binaries in the `./bin/` directory.
 
 You can move them in your global path, `/usr/local/bin` with:
 
-```sudo
+```sh
 sudo make install
 ```
+
+The install prefix can be changed by passing the `PREFIX` variable (defaults
+to `/usr/local`).
+
+Note: if you set one of these vars, set them to the same values on all make stages
+(build as well as install).
+
+If you want to prepend an additional prefix on actual installation (eg. packaging or chroot install),
+you can pass it via `DESTDIR` variable:
+
+```sh
+sudo make install DESTDIR=/tmp/install-x973234/
+```
+
+The above command installs the `containerd` binary to `/tmp/install-x973234/usr/local/bin/containerd`
+
+The current `DESTDIR` convention is supported since containerd v1.6.
+Older releases was using `DESTDIR` for a different purpose that is similar to `PREFIX`.
+
 
 When making any changes to the gRPC API, you can use the installed `protoc`
 compiler to regenerate the API generated code packages with:
 
-```sudo
+```sh
 make generate
 ```
 
 > *Note*: Several build tags are currently available:
-> * `no_btrfs`: A build tag disables building the btrfs snapshot driver.
 > * `no_cri`: A build tag disables building Kubernetes [CRI](http://blog.kubernetes.io/2016/12/container-runtime-interface-cri-in-kubernetes.html) support into containerd.
 > See [here](https://github.com/containerd/cri-containerd#build-tags) for build tags of CRI plugin.
-> * `no_devmapper`: A build tag disables building the device mapper snapshot driver.
+> * snapshotters (alphabetical order)
+>   * `no_aufs`: A build tag disables building the aufs snapshot driver.
+>   * `no_btrfs`: A build tag disables building the Btrfs snapshot driver.
+>   * `no_devmapper`: A build tag disables building the device mapper snapshot driver.
+>   * `no_zfs`: A build tag disables building the ZFS snapshot driver.
 >
 > For example, adding `BUILDTAGS=no_btrfs` to your environment before calling the **binaries**
 > Makefile target will disable the btrfs driver within the containerd Go build.
@@ -111,36 +124,34 @@ to use `go mod` command to modify the dependencies. After modifition, you should
 and `go mod vendor` to ensure the `go.mod`, `go.sum` files and `vendor` directory are up to date.
 Changes to these files should become a single commit for a PR which relies on vendored updates.
 
-Please refer to [RUNC.md](/RUNC.md) for the currently supported version of `runc` that is used by containerd.
+Please refer to [RUNC.md](/docs/RUNC.md) for the currently supported version of `runc` that is used by containerd.
+
+> *Note*: On macOS, the containerd daemon can be built and run natively. However, as stated above, runc only supports linux.
 
 ### Static binaries
 
 You can build static binaries by providing a few variables to `make`:
 
-```sudo
-make EXTRA_FLAGS="-buildmode pie" \
-	EXTRA_LDFLAGS='-linkmode external -extldflags "-fno-PIC -static"' \
-	BUILDTAGS="netgo osusergo static_build"
+```sh
+make STATIC=1
 ```
 
 > *Note*:
 > - static build is discouraged
 > - static containerd binary does not support loading shared object plugins (`*.so`)
+> - static build binaries are not position-independent
 
 # Via Docker container
 
 The following instructions assume you are at the parent directory of containerd source directory.
 
-## Build containerd
+## Build containerd in a container
 
 You can build `containerd` via a Linux-based Docker container.
 You can build an image from this `Dockerfile`:
 
-```
+```dockerfile
 FROM golang
-
-RUN apt-get update && \
-    apt-get install -y libbtrfs-dev
 ```
 
 Let's suppose that you built an image called `containerd/build`. From the
@@ -158,10 +169,11 @@ This mounts `containerd` repository
 You are now ready to [build](#build-containerd):
 
 ```sh
- make && make install
+make && make install
 ```
 
-## Build containerd and runc
+## Build containerd and runc in a container
+
 To have complete core container runtime, you will need both `containerd` and `runc`. It is possible to build both of these via Docker container.
 
 You can use `git` to checkout `runc`:
@@ -176,11 +188,16 @@ We can build an image from this `Dockerfile`:
 FROM golang
 
 RUN apt-get update && \
-    apt-get install -y libbtrfs-dev libseccomp-dev
-
+    apt-get install -y libseccomp-dev
 ```
 
-In our Docker container we will use a specific `runc` build which includes [seccomp](https://en.wikipedia.org/wiki/seccomp) and [apparmor](https://en.wikipedia.org/wiki/AppArmor) support. Hence why our Dockerfile includes `libseccomp-dev` as a dependency (apparmor support doesn't require external libraries). Please refer to [RUNC.md](/RUNC.md) for the currently supported version of `runc` that is used by containerd.
+In our Docker container we will build `runc` build, which includes
+[seccomp](https://en.wikipedia.org/wiki/seccomp), [SELinux](https://en.wikipedia.org/wiki/Security-Enhanced_Linux),
+and [AppArmor](https://en.wikipedia.org/wiki/AppArmor) support. Seccomp support
+in runc requires `libseccomp-dev` as a dependency (AppArmor and SELinux support
+do not require external libraries at build time). Refer to [RUNC.md](docs/RUNC.md)
+in the docs directory to for details about building runc, and to learn about
+supported versions of `runc` as used by containerd.
 
 Let's suppose you build an image called `containerd/build` from the above Dockerfile. You can run the following command:
 
@@ -209,8 +226,11 @@ Next, let's build `runc`:
 
 ```sh
 cd /go/src/github.com/opencontainers/runc
-make BUILDTAGS='seccomp apparmor selinux' && make install
+make && make install
 ```
+
+For further details about building runc, refer to [RUNC.md](docs/RUNC.md) in the
+docs directory.
 
 When working with `ctr`, the simple test client we just built, don't forget to start the daemon!
 
@@ -224,6 +244,7 @@ During the automated CI the unit tests and integration tests are run as part of 
  - `make test`: run all non-integration tests that do not require `root` privileges
  - `make root-test`: run all non-integration tests which require `root`
  - `make integration`: run all tests, including integration tests and those which require `root`. `TESTFLAGS_PARALLEL` can be used to control parallelism. For example, `TESTFLAGS_PARALLEL=1 make integration` will lead a non-parallel execution. The default value of `TESTFLAGS_PARALLEL` is **8**.
+ - `make cri-integration`: [CRI Integration Tests](https://github.com/containerd/containerd/blob/main/docs/cri/testing.md#cri-integration-test) run cri integration tests
 
 To execute a specific test or set of tests you can use the `go test` capabilities
 without using the `Makefile` targets. The following examples show how to specify a test
@@ -237,6 +258,7 @@ go test -v -run . -test.root
 ```
 
 Example output from directly running `go test` to execute the `TestContainerList` test:
+
 ```sh
 sudo go test -v -run "TestContainerList" . -test.root
 INFO[0000] running tests against containerd revision=f2ae8a020a985a8d9862c9eb5ab66902c2888361 version=v1.0.0-beta.2-49-gf2ae8a0
@@ -246,6 +268,10 @@ PASS
 ok  	github.com/containerd/containerd	4.778s
 ```
 
+> *Note*: in order to run `sudo go` you need to
+> - either keep user PATH environment variable. ex: `sudo "PATH=$PATH" env go test <args>`
+> - or use `go test -exec` ex: `go test -exec sudo -v -run "TestTarWithXattr" ./archive/ -test.root`
+
 ## Additional tools
 
 ### containerd-stress
@@ -254,7 +280,7 @@ In addition to `go test`-based testing executed via the `Makefile` targets, the 
 With this tool you can stress a running containerd daemon for a specified period of time, selecting a concurrency level to generate stress against the daemon. The following command is an example of having five workers running for two hours against a default containerd gRPC socket address:
 
 ```sh
-containerd-stress -c 5 -t 120
+containerd-stress -c 5 -d 120m
 ```
 
 For more information on this tool's options please run `containerd-stress --help`.

@@ -18,15 +18,14 @@ package rootfs
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 
-	"github.com/containerd/containerd/log"
 	"github.com/containerd/containerd/mount"
 	"github.com/containerd/containerd/snapshots"
+	"github.com/containerd/log"
 	digest "github.com/opencontainers/go-digest"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -45,7 +44,7 @@ type Mounter interface {
 func InitRootFS(ctx context.Context, name string, parent digest.Digest, readonly bool, snapshotter snapshots.Snapshotter, mounter Mounter) ([]mount.Mount, error) {
 	_, err := snapshotter.Stat(ctx, name)
 	if err == nil {
-		return nil, errors.Errorf("rootfs already exists")
+		return nil, errors.New("rootfs already exists")
 	}
 	// TODO: ensure not exist error once added to snapshot package
 
@@ -67,7 +66,7 @@ func InitRootFS(ctx context.Context, name string, parent digest.Digest, readonly
 	return snapshotter.Prepare(ctx, name, parentS)
 }
 
-func createInitLayer(ctx context.Context, parent, initName string, initFn func(string) error, snapshotter snapshots.Snapshotter, mounter Mounter) (string, error) {
+func createInitLayer(ctx context.Context, parent, initName string, initFn func(string) error, snapshotter snapshots.Snapshotter, mounter Mounter) (_ string, retErr error) {
 	initS := fmt.Sprintf("%s %s", parent, initName)
 	if _, err := snapshotter.Stat(ctx, initS); err == nil {
 		return initS, nil
@@ -75,7 +74,7 @@ func createInitLayer(ctx context.Context, parent, initName string, initFn func(s
 	// TODO: ensure not exist error once added to snapshot package
 
 	// Create tempdir
-	td, err := ioutil.TempDir(os.Getenv("XDG_RUNTIME_DIR"), "create-init-")
+	td, err := os.MkdirTemp(os.Getenv("XDG_RUNTIME_DIR"), "create-init-")
 	if err != nil {
 		return "", err
 	}
@@ -87,7 +86,7 @@ func createInitLayer(ctx context.Context, parent, initName string, initFn func(s
 	}
 
 	defer func() {
-		if err != nil {
+		if retErr != nil {
 			if rerr := snapshotter.Remove(ctx, td); rerr != nil {
 				log.G(ctx).Errorf("Failed to remove snapshot %s: %v", td, rerr)
 			}

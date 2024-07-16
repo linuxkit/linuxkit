@@ -20,18 +20,21 @@ import (
 	"archive/tar"
 	"context"
 	"encoding/json"
+	"fmt"
 	"io"
 	"path"
 	"sort"
+	"strings"
 
 	"github.com/containerd/containerd/content"
-	"github.com/containerd/containerd/errdefs"
 	"github.com/containerd/containerd/images"
-	"github.com/containerd/containerd/platforms"
+	"github.com/containerd/containerd/labels"
+	"github.com/containerd/errdefs"
+	"github.com/containerd/log"
+	"github.com/containerd/platforms"
 	digest "github.com/opencontainers/go-digest"
 	ocispecs "github.com/opencontainers/image-spec/specs-go"
 	ocispec "github.com/opencontainers/image-spec/specs-go/v1"
-	"github.com/pkg/errors"
 )
 
 type exportOptions struct {
@@ -89,6 +92,18 @@ func WithImage(is images.Store, name string) ExportOpt {
 	}
 }
 
+// WithImages adds multiples images to the exported archive.
+func WithImages(imgs []images.Image) ExportOpt {
+	return func(ctx context.Context, o *exportOptions) error {
+		for _, img := range imgs {
+			img.Target.Annotations = addNameAnnotation(img.Name, img.Target.Annotations)
+			o.manifests = append(o.manifests, img.Target)
+		}
+
+		return nil
+	}
+}
+
 // WithManifest adds a manifest to the exported archive.
 // When names are given they will be set on the manifest in the
 // exported archive, creating an index record for each name.
@@ -128,6 +143,45 @@ func WithSkipNonDistributableBlobs() ExportOpt {
 	return WithBlobFilter(f)
 }
 
+// WithSkipMissing excludes blobs referenced by manifests if not all blobs
+// would be included in the archive.
+// The manifest itself is excluded only if it's not present locally.
+// This allows to export multi-platform images if not all platforms are present
+// while still persisting the multi-platform index.
+func WithSkipMissing(store content.InfoReaderProvider) ExportOpt {
+	return func(ctx context.Context, o *exportOptions) error {
+		o.blobRecordOptions.childrenHandler = images.HandlerFunc(func(ctx context.Context, desc ocispec.Descriptor) (subdescs []ocispec.Descriptor, err error) {
+			children, err := images.Children(ctx, store, desc)
+			if !images.IsManifestType(desc.MediaType) {
+				return children, err
+			}
+
+			if err != nil {
+				// If manifest itself is missing, skip it from export.
+				if errdefs.IsNotFound(err) {
+					return nil, images.ErrSkipDesc
+				}
+				return nil, err
+			}
+
+			// Don't export manifest descendants if any of them doesn't exist.
+			for _, child := range children {
+				exists, err := content.Exists(ctx, store, child)
+				if err != nil {
+					return nil, err
+				}
+
+				// If any child is missing, only export the manifest, but don't export its descendants.
+				if !exists {
+					return nil, nil
+				}
+			}
+			return children, nil
+		})
+		return nil
+	}
+}
+
 func addNameAnnotation(name string, base map[string]string) map[string]string {
 	annotations := map[string]string{}
 	for k, v := range base {
@@ -138,6 +192,23 @@ func addNameAnnotation(name string, base map[string]string) map[string]string {
 	annotations[ocispec.AnnotationRefName] = ociReferenceName(name)
 
 	return annotations
+}
+
+func copySourceLabels(ctx context.Context, infoProvider content.InfoProvider, desc ocispec.Descriptor) (ocispec.Descriptor, error) {
+	info, err := infoProvider.Info(ctx, desc.Digest)
+	if err != nil {
+		return desc, err
+	}
+	for k, v := range info.Labels {
+		if strings.HasPrefix(k, labels.LabelDistributionSource) {
+			if desc.Annotations == nil {
+				desc.Annotations = map[string]string{k: v}
+			} else {
+				desc.Annotations[k] = v
+			}
+		}
+	}
+	return desc, nil
 }
 
 // Export implements Exporter.
@@ -151,15 +222,27 @@ func Export(ctx context.Context, store content.Provider, writer io.Writer, opts 
 
 	records := []tarRecord{
 		ociLayoutFile(""),
-		ociIndexRecord(eo.manifests),
+	}
+
+	manifests := make([]ocispec.Descriptor, 0, len(eo.manifests))
+	if infoProvider, ok := store.(content.InfoProvider); ok {
+		for _, desc := range eo.manifests {
+			d, err := copySourceLabels(ctx, infoProvider, desc)
+			if err != nil {
+				log.G(ctx).WithError(err).WithField("desc", desc).Warn("failed to copy distribution.source labels")
+				continue
+			}
+			manifests = append(manifests, d)
+		}
+	} else {
+		manifests = append(manifests, eo.manifests...)
 	}
 
 	algorithms := map[string]struct{}{}
 	dManifests := map[digest.Digest]*exportManifest{}
 	resolvedIndex := map[digest.Digest]digest.Digest{}
-	for _, desc := range eo.manifests {
-		switch desc.MediaType {
-		case images.MediaTypeDockerSchema2Manifest, ocispec.MediaTypeImageManifest:
+	for _, desc := range manifests {
+		if images.IsManifestType(desc.MediaType) {
 			mt, ok := dManifests[desc.Digest]
 			if !ok {
 				// TODO(containerd): Skip if already added
@@ -176,12 +259,15 @@ func Export(ctx context.Context, store content.Provider, writer io.Writer, opts 
 			}
 
 			name := desc.Annotations[images.AnnotationImageName]
-			if name != "" && !eo.skipDockerManifest {
+			if name != "" {
 				mt.names = append(mt.names, name)
 			}
-		case images.MediaTypeDockerSchema2ManifestList, ocispec.MediaTypeImageIndex:
+		} else if images.IsIndexType(desc.MediaType) {
 			d, ok := resolvedIndex[desc.Digest]
 			if !ok {
+				if err := desc.Digest.Validate(); err != nil {
+					return err
+				}
 				records = append(records, blobRecord(store, desc, &eo.blobRecordOptions))
 
 				p, err := content.ReadBlob(ctx, store, desc)
@@ -212,26 +298,24 @@ func Export(ctx context.Context, store content.Provider, writer io.Writer, opts 
 					records = append(records, r...)
 				}
 
-				if !eo.skipDockerManifest {
-					if len(manifests) >= 1 {
-						if len(manifests) > 1 {
-							sort.SliceStable(manifests, func(i, j int) bool {
-								if manifests[i].Platform == nil {
-									return false
-								}
-								if manifests[j].Platform == nil {
-									return true
-								}
-								return eo.platform.Less(*manifests[i].Platform, *manifests[j].Platform)
-							})
-						}
-						d = manifests[0].Digest
-						dManifests[d] = &exportManifest{
-							manifest: manifests[0],
-						}
-					} else if eo.platform != nil {
-						return errors.Wrap(errdefs.ErrNotFound, "no manifest found for platform")
+				if len(manifests) >= 1 {
+					if len(manifests) > 1 {
+						sort.SliceStable(manifests, func(i, j int) bool {
+							if manifests[i].Platform == nil {
+								return false
+							}
+							if manifests[j].Platform == nil {
+								return true
+							}
+							return eo.platform.Less(*manifests[i].Platform, *manifests[j].Platform)
+						})
 					}
+					d = manifests[0].Digest
+					dManifests[d] = &exportManifest{
+						manifest: manifests[0],
+					}
+				} else if eo.platform != nil {
+					return fmt.Errorf("no manifest found for platform: %w", errdefs.ErrNotFound)
 				}
 				resolvedIndex[desc.Digest] = d
 			}
@@ -242,15 +326,17 @@ func Export(ctx context.Context, store content.Provider, writer io.Writer, opts 
 				}
 
 			}
-		default:
-			return errors.Wrap(errdefs.ErrInvalidArgument, "only manifests may be exported")
+		} else {
+			return fmt.Errorf("only manifests may be exported: %w", errdefs.ErrInvalidArgument)
 		}
 	}
 
-	if len(dManifests) > 0 {
+	records = append(records, ociIndexRecord(manifests))
+
+	if !eo.skipDockerManifest && len(dManifests) > 0 {
 		tr, err := manifestsRecord(ctx, store, dManifests)
 		if err != nil {
-			return errors.Wrap(err, "unable to create manifests file")
+			return fmt.Errorf("unable to create manifests file: %w", err)
 		}
 
 		records = append(records, tr)
@@ -271,12 +357,18 @@ func Export(ctx context.Context, store content.Provider, writer io.Writer, opts 
 func getRecords(ctx context.Context, store content.Provider, desc ocispec.Descriptor, algorithms map[string]struct{}, brOpts *blobRecordOptions) ([]tarRecord, error) {
 	var records []tarRecord
 	exportHandler := func(ctx context.Context, desc ocispec.Descriptor) ([]ocispec.Descriptor, error) {
+		if err := desc.Digest.Validate(); err != nil {
+			return nil, err
+		}
 		records = append(records, blobRecord(store, desc, brOpts))
 		algorithms[desc.Digest.Algorithm().String()] = struct{}{}
 		return nil, nil
 	}
 
-	childrenHandler := images.ChildrenHandler(store)
+	childrenHandler := brOpts.childrenHandler
+	if childrenHandler == nil {
+		childrenHandler = images.ChildrenHandler(store)
+	}
 
 	handlers := images.Handlers(
 		childrenHandler,
@@ -298,7 +390,8 @@ type tarRecord struct {
 }
 
 type blobRecordOptions struct {
-	blobFilter BlobFilter
+	blobFilter      BlobFilter
+	childrenHandler images.HandlerFunc
 }
 
 func blobRecord(cs content.Provider, desc ocispec.Descriptor, opts *blobRecordOptions) tarRecord {
@@ -316,7 +409,7 @@ func blobRecord(cs content.Provider, desc ocispec.Descriptor, opts *blobRecordOp
 		CopyTo: func(ctx context.Context, w io.Writer) (int64, error) {
 			r, err := cs.ReaderAt(ctx, desc)
 			if err != nil {
-				return 0, errors.Wrap(err, "failed to get reader")
+				return 0, fmt.Errorf("failed to get reader: %w", err)
 			}
 			defer r.Close()
 
@@ -325,10 +418,10 @@ func blobRecord(cs content.Provider, desc ocispec.Descriptor, opts *blobRecordOp
 
 			n, err := io.Copy(io.MultiWriter(w, dgstr.Hash()), content.NewReader(r))
 			if err != nil {
-				return 0, errors.Wrap(err, "failed to copy to tar")
+				return 0, fmt.Errorf("failed to copy to tar: %w", err)
 			}
 			if dgstr.Digest() != desc.Digest {
-				return 0, errors.Errorf("unexpected digest %s copied", dgstr.Digest())
+				return 0, fmt.Errorf("unexpected digest %s copied", dgstr.Digest())
 			}
 			return n, nil
 		},
@@ -378,6 +471,7 @@ func ociIndexRecord(manifests []ocispec.Descriptor) tarRecord {
 		Versioned: ocispecs.Versioned{
 			SchemaVersion: 2,
 		},
+		MediaType: ocispec.MediaTypeImageIndex,
 		Manifests: manifests,
 	}
 
@@ -424,10 +518,13 @@ func manifestsRecord(ctx context.Context, store content.Provider, manifests map[
 			return tarRecord{}, err
 		}
 		if err := manifest.Config.Digest.Validate(); err != nil {
-			return tarRecord{}, errors.Wrapf(err, "invalid manifest %q", m.manifest.Digest)
+			return tarRecord{}, fmt.Errorf("invalid manifest %q: %w", m.manifest.Digest, err)
 		}
 
 		dgst := manifest.Config.Digest
+		if err := dgst.Validate(); err != nil {
+			return tarRecord{}, err
+		}
 		mfsts[i].Config = path.Join("blobs", dgst.Algorithm().String(), dgst.Encoded())
 		for _, l := range manifest.Layers {
 			path := path.Join("blobs", l.Digest.Algorithm().String(), l.Digest.Encoded())
@@ -491,10 +588,10 @@ func writeTar(ctx context.Context, tw *tar.Writer, recordsWithEmpty []tarRecord)
 				return err
 			}
 			if n != record.Header.Size {
-				return errors.Errorf("unexpected copy size for %s", record.Header.Name)
+				return fmt.Errorf("unexpected copy size for %s", record.Header.Name)
 			}
 		} else if record.Header.Size > 0 {
-			return errors.Errorf("no content to write to record with non-zero size for %s", record.Header.Name)
+			return fmt.Errorf("no content to write to record with non-zero size for %s", record.Header.Name)
 		}
 	}
 	return nil

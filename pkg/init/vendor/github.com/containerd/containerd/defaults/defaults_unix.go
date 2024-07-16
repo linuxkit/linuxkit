@@ -1,4 +1,4 @@
-// +build !windows
+//go:build !windows && !darwin
 
 /*
    Copyright The containerd Authors.
@@ -34,4 +34,6 @@ const (
 	DefaultFIFODir = "/run/containerd/fifo"
 	// DefaultRuntime is the default linux runtime
 	DefaultRuntime = "io.containerd.runc.v2"
+	// DefaultConfigDir is the default location for config files.
+	DefaultConfigDir = "/etc/containerd"
 )
