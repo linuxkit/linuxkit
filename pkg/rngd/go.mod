@@ -1,5 +1,5 @@
 module github.com/linuxkit/linuxkit/pkg/rngd
 
-go 1.15
+go 1.21
 
-require golang.org/x/sys v0.0.0-20210309074719-68d13333faf2
+require golang.org/x/sys v0.22.0
