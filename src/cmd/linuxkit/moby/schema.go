@@ -37,6 +37,19 @@ var schema = `
         "type": "array",
         "items": { "$ref": "#/definitions/file" }
     },
+    "volume": {
+      "type": "object",
+      "additionalProperties": false,
+        "properties": {
+          "name": {"type": "string"},
+          "image": {"type": "string"},
+          "readonly": {"type": "boolean"}
+        }
+    },
+    "volumes": {
+        "type": "array",
+        "items": { "$ref": "#/definitions/volume" }
+    },
     "trust": {
       "type": "object",
       "additionalProperties": false,
@@ -333,7 +346,8 @@ var schema = `
     "onshutdown": { "$ref": "#/definitions/images" },
     "services": { "$ref": "#/definitions/images" },
     "trust": { "$ref": "#/definitions/trust" },
-    "files": { "$ref": "#/definitions/files" }
+    "files": { "$ref": "#/definitions/files" },
+    "volumes": { "$ref": "#/definitions/volumes" }
   }
 }
 `

@@ -99,7 +99,13 @@ func outputImage(image *moby.Image, section string, index int, prefix string, m 
 	if err != nil {
 		return fmt.Errorf("failed to retrieve config for %s: %v", image.Image, err)
 	}
-	oci, runtime, err := moby.ConfigToOCI(image, configRaw, idMap)
+	// use a modified version of onboot which replaces volume names with paths
+	imageWithVolPaths, err := updateMountsAndBindsFromVolumes(image, m)
+	if err != nil {
+		return fmt.Errorf("failed update image %s from volumes: %w", image.Image, err)
+	}
+
+	oci, runtime, err := moby.ConfigToOCI(imageWithVolPaths, configRaw, idMap)
 	if err != nil {
 		return fmt.Errorf("failed to create OCI spec for %s: %v", image.Image, err)
 	}
@@ -254,6 +260,65 @@ func Build(m moby.Moby, w io.Writer, opts BuildOpts) error {
 	}
 	if err := apkTar.WriteAPKDB(); err != nil {
 		return err
+	}
+
+	if len(m.Volumes) != 0 {
+		log.Infof("Add volumes:")
+	}
+
+	for i, vol := range m.Volumes {
+		log.Infof("Process volume image: %s", vol.Name)
+		// there is an Image, so we need to extract it, either from inputTar or from the image
+		if oldConfig != nil && len(oldConfig.Volumes) > i && oldConfig.Volumes[i].Image == vol.Image {
+			if err := extractPackageFilesFromTar(in, iw, vol.Image, fmt.Sprintf("volumes[%d]", i)); err != nil {
+				return err
+			}
+			continue
+		}
+		location := fmt.Sprintf("volume[%d]", i)
+		lower, tmpDir, merged := vol.LowerDir(), vol.TmpDir(), vol.MergedDir()
+		lowerPath := strings.TrimPrefix(lower, "/") + "/"
+
+		// get volume tarball from container
+		if err := ImageTar(location, vol.ImageRef(), lowerPath, apkTar, resolvconfSymlink, opts); err != nil {
+			return fmt.Errorf("failed to build volume tarball from %s: %v", vol.Name, err)
+		}
+		// make upper and merged dirs which will be used for mounting
+		// no need to make lower dir, as it is made automatically by ImageTar()
+		// the existence of an upper dir indicates that it is read-write and should be overlayfs.
+		if !vol.ReadOnly {
+			// need the tmp dir where work gets done, since the whole thing fs is read-only
+			tmpPath := strings.TrimPrefix(tmpDir, "/") + "/"
+			tmphdr := &tar.Header{
+				Name:     tmpPath,
+				Mode:     0755,
+				Typeflag: tar.TypeDir,
+				ModTime:  defaultModTime,
+				Format:   tar.FormatPAX,
+				PAXRecords: map[string]string{
+					moby.PaxRecordLinuxkitSource:   "linuxkit.volumes",
+					moby.PaxRecordLinuxkitLocation: location,
+				},
+			}
+			if err := apkTar.WriteHeader(tmphdr); err != nil {
+				return err
+			}
+		}
+		mergedPath := strings.TrimPrefix(merged, "/") + "/"
+		mhdr := &tar.Header{
+			Name:     mergedPath,
+			Mode:     0755,
+			Typeflag: tar.TypeDir,
+			ModTime:  defaultModTime,
+			Format:   tar.FormatPAX,
+			PAXRecords: map[string]string{
+				moby.PaxRecordLinuxkitSource:   "linuxkit.volumes",
+				moby.PaxRecordLinuxkitLocation: location,
+			},
+		}
+		if err := apkTar.WriteHeader(mhdr); err != nil {
+			return err
+		}
 	}
 
 	if len(m.Onboot) != 0 {
