@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:8a7b6cdb89197dc94eb6db69ef9dc90b750db598
+  - linuxkit/init:6f7576cf6de37003339dcbde8a336f1eca9aedbb
   - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
 onboot:
   - name: sysctl
