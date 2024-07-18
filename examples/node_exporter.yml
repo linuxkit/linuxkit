@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=tty0 console=ttyS0"
 init:
-  - linuxkit/init:6f7576cf6de37003339dcbde8a336f1eca9aedbb
+  - linuxkit/init:59b5282b07b782091de8915ac30b512a227f72f9
   - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
-  - linuxkit/containerd:e7a92d9f3282039eac5fb1b07cac2b8664cbf0ad
+  - linuxkit/containerd:988f659e3ffbdbaf7aef7483a5d5ede50a63e96c
 services:
   - name: getty
     image: linuxkit/getty:5d86a2ce2d890c14ab66b13638dcadf74f29218b
