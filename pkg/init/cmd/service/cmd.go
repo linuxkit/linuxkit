@@ -25,7 +25,7 @@ func parseCmd(ctx context.Context, command string, args []string) (*log.Entry, s
 	}
 
 	sock := flags.String("sock", defaultSocket, "Path to containerd socket")
-	path := flags.String("path", defaultPath, "Path to service configs")
+	path := flags.String("path", defaultServicesPath, "Path to service configs")
 
 	dumpSpec := flags.String("dump-spec", "", "Dump container spec to file before start")
 

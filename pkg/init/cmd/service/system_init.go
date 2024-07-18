@@ -67,7 +67,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 	}
 
 	sock := flags.String("sock", defaultSocket, "Path to containerd socket")
-	path := flags.String("path", defaultPath, "Path to service configs")
+	path := flags.String("path", defaultServicesPath, "Path to service configs")
 	binary := flags.String("containerd", defaultContainerd, "Path to containerd")
 
 	if err := flags.Parse(args); err != nil {

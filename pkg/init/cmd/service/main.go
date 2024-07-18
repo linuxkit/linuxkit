@@ -14,7 +14,8 @@ import (
 
 const (
 	defaultSocket              = "/run/containerd/containerd.sock"
-	defaultPath                = "/containers/services"
+	defaultServicesPath        = "/containers/services"
+	defaultVolumesPath         = "/containers/volumes"
 	defaultContainerd          = "/usr/bin/containerd"
 	installPath                = "/usr/bin/service"
 	onbootPath                 = "/containers/onboot"
@@ -84,6 +85,8 @@ func main() {
 		// check if called form startup scripts
 		command := os.Args[0]
 		switch {
+		case strings.Contains(command, "volumes"):
+			os.Exit(volumeInitCmd(ctx))
 		case strings.Contains(command, "onboot"):
 			os.Exit(runcInit(onbootPath, "onboot"))
 		case strings.Contains(command, "onshutdown"):
