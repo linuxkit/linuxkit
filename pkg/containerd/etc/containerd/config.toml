@@ -1,6 +1,10 @@
+version = 2
 state = "/run/containerd"
 root = "/var/lib/containerd"
-disabled_plugins = ["cri"]
+
+
+[plugins."io.containerd.grpc.v1.cri"]
+  disabled = true
 
 [grpc]
   address = "/run/containerd/containerd.sock"
