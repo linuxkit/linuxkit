@@ -6,7 +6,7 @@ FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e as builder
 # `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
 
-ENV CONTAINERD_COMMIT=v1.7.2
+ENV CONTAINERD_COMMIT=v1.7.20
 ENV GOPATH=/go
 RUN apk add go git
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
