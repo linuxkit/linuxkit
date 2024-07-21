@@ -1,0 +1,28 @@
+kernel:
+  image: linuxkit/kernel:6.6.13
+  cmdline: "console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:872d2e1be745f1acb948762562cf31c367303a3b
+  - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
+onboot:
+  - name: test1
+    image: alpine:3.20
+    binds:
+      - /write.sh:/write.sh
+      - vola:/vola:ro
+    command: ["sh", "-c", "/write.sh"]
+  - name: test2
+    image: alpine:3.20
+    binds:
+      - /check.sh:/check.sh
+      - vola:/vola:ro
+    command: ["sh", "-c", "/check.sh"]
+  - name: poweroff
+    image: linuxkit/poweroff:401dc53c604c0b2179ed0369a6968fd4179cc176
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+volumes:
+  - name: vola
+files:
+  - path: check.sh
+    source: ./check.sh
+    mode: "0700"
