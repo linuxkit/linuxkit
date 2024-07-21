@@ -3,11 +3,11 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:59b5282b07b782091de8915ac30b512a227f72f9
+  - linuxkit/init:872d2e1be745f1acb948762562cf31c367303a3b
   - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
 onboot:
   - name: test-ns
-    image: linuxkit/test-ns:30e09616e860351c3b94c2de5580475cf6779a1d
+    image: linuxkit/test-ns:4e24ffee622aba97d571ff240fb9051f22fd71ac-dirty-3c1c31f
     command: ["/bin/sh", "/runp-runc-net.sh", "mix-unix"]
     # command: ["/bin/sh", "/runc-net.sh", "-l", "5", "-i", "2", "-c", "5", "-p", "unix", "-ip", "6"]
     mounts: # for runc

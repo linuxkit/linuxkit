@@ -24,6 +24,9 @@ COPY --from=containerd-dev /go/src/github.com/containerd/containerd $GOPATH/src/
 RUN cd /go/src/cmd/service && ./skanky-vendor.sh $GOPATH/src/github.com/containerd/containerd
 RUN go-compile.sh /go/src/cmd/service
 
+# volumes link to start
+RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/005-volumes
+
 FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
@@ -34,6 +37,7 @@ RUN mkdir -p /out/etc/ssl/certs
 # Remove cache residuals. We retain apk for SBOM tools
 RUN rm -rf /out/var/cache
 
+
 FROM scratch
 ENTRYPOINT []
 CMD []
@@ -42,5 +46,6 @@ COPY --from=build /go/bin/init /
 COPY --from=build /tmp/bin /bin/
 COPY --from=build /go/bin/service /usr/bin/
 COPY --from=build usermode-helper /sbin/
+COPY --from=build /etc/init.d/ /etc/init.d/
 COPY --from=mirror /out/ /
 COPY etc etc/

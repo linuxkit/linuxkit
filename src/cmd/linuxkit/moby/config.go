@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"fmt"
 	"os"
+	"path"
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -19,6 +21,8 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+var nameRE = regexp.MustCompile(`^[a-z0-9_-]*$`)
+
 // Moby is the type of a Moby config file
 type Moby struct {
 	Kernel     KernelConfig `kernel:"cmdline,omitempty" json:"kernel,omitempty"`
@@ -27,12 +31,18 @@ type Moby struct {
 	Onshutdown []*Image     `yaml:"onshutdown" json:"onshutdown"`
 	Services   []*Image     `yaml:"services" json:"services"`
 	Files      []File       `yaml:"files" json:"files"`
+	Volumes    []*Volume    `yaml:"volumes" json:"volumes"`
 
 	initRefs []*reference.Spec
+	vols     map[string]*Volume
 }
 
 func (m Moby) InitRefs() []*reference.Spec {
 	return m.initRefs
+}
+
+func (m Moby) VolByName(name string) *Volume {
+	return m.vols[name]
 }
 
 // KernelConfig is the type of the config for a kernel
@@ -62,6 +72,34 @@ type File struct {
 	Mode      string      `yaml:"mode,omitempty" json:"mode,omitempty"`
 	UID       interface{} `yaml:"uid,omitempty" json:"uid,omitempty"`
 	GID       interface{} `yaml:"gid,omitempty" json:"gid,omitempty"`
+}
+
+// Volume is the type of a volume specification
+type Volume struct {
+	Name     string `yaml:"name" json:"name"`
+	Image    string `yaml:"image,omitempty" json:"image,omitempty"`
+	ReadOnly bool   `yaml:"readonly,omitempty" json:"readonly,omitempty"`
+	ref      *reference.Spec
+}
+
+func (v Volume) ImageRef() *reference.Spec {
+	return v.ref
+}
+
+func (v Volume) BaseDir() string {
+	return volumeBaseDir(v.Name)
+}
+
+func (v Volume) LowerDir() string {
+	return volumeLowerDir(v.Name)
+}
+
+func (v Volume) TmpDir() string {
+	return volumeTmpDir(v.Name)
+}
+
+func (v Volume) MergedDir() string {
+	return volumeMergedDir(v.Name)
 }
 
 // Image is the type of an image config
@@ -210,6 +248,37 @@ func uniqueServices(m Moby) error {
 	return nil
 }
 
+func uniqueVolumes(m *Moby) error {
+	// volume names must be unique
+	m.vols = map[string]*Volume{}
+	for _, v := range m.Volumes {
+		if !nameRE.MatchString(v.Name) {
+			return fmt.Errorf("invalid volume name: %s", v.Name)
+		}
+		if _, ok := m.vols[v.Name]; ok {
+			return fmt.Errorf("duplicate volume name: %s", v.Name)
+		}
+		m.vols[v.Name] = v
+	}
+	return nil
+}
+
+func volumeBaseDir(name string) string {
+	return path.Join(allVolumesBaseDir, name)
+}
+
+func volumeLowerDir(name string) string {
+	return path.Join(volumeBaseDir(name), "lower")
+}
+
+func volumeTmpDir(name string) string {
+	return path.Join(volumeBaseDir(name), "tmp")
+}
+
+func volumeMergedDir(name string) string {
+	return path.Join(volumeBaseDir(name), "merged")
+}
+
 func extractReferences(m *Moby) error {
 	if m.Kernel.Image != "" {
 		r, err := reference.Parse(util.ReferenceExpand(m.Kernel.Image))
@@ -243,6 +312,16 @@ func extractReferences(m *Moby) error {
 		r, err := reference.Parse(util.ReferenceExpand(image.Image))
 		if err != nil {
 			return fmt.Errorf("extract service image reference: %v", err)
+		}
+		image.ref = &r
+	}
+	for _, image := range m.Volumes {
+		if image.Image == "" {
+			continue
+		}
+		r, err := reference.Parse(util.ReferenceExpand(image.Image))
+		if err != nil {
+			return fmt.Errorf("extract volume image reference: %v", err)
 		}
 		image.ref = &r
 	}
@@ -318,6 +397,10 @@ func NewConfig(config []byte, packageFinder spec.PackageResolver) (Moby, error) 
 		return m, err
 	}
 
+	if err := uniqueVolumes(&m); err != nil {
+		return m, err
+	}
+
 	if err := extractReferences(&m); err != nil {
 		return m, err
 	}
@@ -352,6 +435,11 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 	moby.Services = append(moby.Services, m1.Services...)
 	moby.Files = append(moby.Files, m1.Files...)
 	moby.initRefs = append(moby.initRefs, m1.initRefs...)
+	moby.Volumes = append(moby.Volumes, m1.Volumes...)
+	moby.vols = map[string]*Volume{}
+	for k, v := range m1.vols {
+		moby.vols[k] = v
+	}
 
 	return moby, uniqueServices(moby)
 }

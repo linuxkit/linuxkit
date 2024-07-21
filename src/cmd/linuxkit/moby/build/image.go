@@ -142,7 +142,7 @@ var touch = map[string]tar.Header{
 
 // tarPrefix creates the leading directories for a path
 // path is the path to prefix, location is where this appears in the linuxkit.yaml file
-func tarPrefix(path, location string, ref *reference.Spec, tw tarWriter) error {
+func tarPrefix(path, location, refName string, tw tarWriter) error {
 	if path == "" {
 		return nil
 	}
@@ -163,7 +163,7 @@ func tarPrefix(path, location string, ref *reference.Spec, tw tarWriter) error {
 			Typeflag: tar.TypeDir,
 			Format:   tar.FormatPAX,
 			PAXRecords: map[string]string{
-				moby.PaxRecordLinuxkitSource:   ref.String(),
+				moby.PaxRecordLinuxkitSource:   refName,
 				moby.PaxRecordLinuxkitLocation: location,
 			},
 		}
@@ -178,14 +178,23 @@ func tarPrefix(path, location string, ref *reference.Spec, tw tarWriter) error {
 // ImageTar takes a Docker image and outputs it to a tar stream
 // location is where it is in the linuxkit.yaml file
 func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter, resolv string, opts BuildOpts) (e error) {
-	log.Debugf("image tar: %s %s", ref, prefix)
+	refName := "empty"
+	if ref != nil {
+		refName = ref.String()
+	}
+	log.Debugf("image tar: %s %s", refName, prefix)
 	if prefix != "" && prefix[len(prefix)-1] != '/' {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
 	}
 
-	err := tarPrefix(prefix, location, ref, tw)
+	err := tarPrefix(prefix, location, refName, tw)
 	if err != nil {
 		return err
+	}
+
+	// if the image is blank, we do not need to do any more
+	if ref == nil {
+		return nil
 	}
 
 	// pullImage first checks in the cache, then pulls the image.
@@ -364,7 +373,7 @@ func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, ru
 		}
 		dupMap[ref.String()] = root
 	} else {
-		if err := tarPrefix(prefix+"/", location, ref, tw); err != nil {
+		if err := tarPrefix(prefix+"/", location, ref.String(), tw); err != nil {
 			return err
 		}
 		root = dupMap[ref.String()]
