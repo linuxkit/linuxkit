@@ -30,7 +30,9 @@ import (
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	buildkitClient "github.com/moby/buildkit/client"
+	"github.com/moby/buildkit/cmd/buildctl/build"
 	"github.com/moby/buildkit/frontend/dockerui"
+	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/util/progress/progressui"
 
 	// golint requires comments on non-main(test)
@@ -40,6 +42,7 @@ import (
 	"github.com/moby/buildkit/frontend/dockerfile/instructions"
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 	"github.com/moby/buildkit/frontend/dockerfile/shell"
+	"github.com/moby/buildkit/session/sshforward/sshprovider"
 	"github.com/moby/buildkit/session/upload/uploadprovider"
 	log "github.com/sirupsen/logrus"
 )
@@ -54,7 +57,7 @@ const (
 
 type dockerRunner interface {
 	tag(ref, tag string) error
-	build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts types.ImageBuildOptions) error
+	build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts spec.ImageBuildOptions) error
 	save(tgt string, refs ...string) error
 	load(src io.Reader) error
 	pull(img string) (bool, error)
@@ -403,7 +406,7 @@ func (dr *dockerRunnerImpl) tag(ref, tag string) error {
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts types.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
 	// ensure we have a builder
 	client, err := dr.builder(ctx, dockerContext, builderImage, platform, restart)
 	if err != nil {
@@ -453,6 +456,32 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, doc
 		frontendAttrs[sbomFrontEndKey] = sbomValue
 	}
 
+	attachable := []session.Attachable{}
+	localDirs := map[string]string{}
+
+	if len(imageBuildOpts.SSH) > 0 {
+		configs, err := build.ParseSSH(imageBuildOpts.SSH)
+		if err != nil {
+			return err
+		}
+		sp, err := sshprovider.NewSSHAgentProvider(configs)
+		if err != nil {
+			return err
+		}
+		attachable = append(attachable, sp)
+	}
+
+	if stdin != nil {
+		buf := bufio.NewReader(stdin)
+		up := uploadprovider.New()
+		frontendAttrs["context"] = up.Add(buf)
+		attachable = append(attachable, up)
+	} else {
+		localDirs[dockerui.DefaultLocalNameDockerfile] = pkg
+		localDirs[dockerui.DefaultLocalNameContext] = pkg
+
+	}
+
 	solveOpts := buildkitClient.SolveOpt{
 		Frontend:      "dockerfile.v0",
 		FrontendAttrs: frontendAttrs,
@@ -465,24 +494,15 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerfile, doc
 				Output: fixedWriteCloser(&writeNopCloser{stdout}),
 			},
 		},
+		Session:   attachable,
+		LocalDirs: localDirs,
 	}
 
-	if stdin != nil {
-		buf := bufio.NewReader(stdin)
-		up := uploadprovider.New()
-		frontendAttrs["context"] = up.Add(buf)
-		solveOpts.Session = append(solveOpts.Session, up)
-	} else {
-		solveOpts.LocalDirs = map[string]string{
-			dockerui.DefaultLocalNameDockerfile: pkg,
-			dockerui.DefaultLocalNameContext:    pkg,
-		}
-	}
-	frontendAttrs["filename"] = dockerfile
+	frontendAttrs["filename"] = imageBuildOpts.Dockerfile
 
 	// go through the dockerfile to see if we have any provided images cached
 	if c != nil {
-		dockerfileRef := path.Join(pkg, dockerfile)
+		dockerfileRef := path.Join(pkg, imageBuildOpts.Dockerfile)
 		f, err := os.Open(dockerfileRef)
 		if err != nil {
 			return fmt.Errorf("error opening dockerfile %s: %v", dockerfileRef, err)

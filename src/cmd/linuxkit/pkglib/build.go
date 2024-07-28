@@ -13,9 +13,9 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
-	"github.com/docker/docker/api/types"
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
@@ -46,6 +46,7 @@ type buildOpts struct {
 	dockerfile       string
 	buildArgs        []string
 	progress         string
+	ssh              []string
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -215,6 +216,14 @@ func WithProgress(progress string) BuildOpt {
 	}
 }
 
+// WithSSH sets up the package to use SSH in the build
+func WithSSH(ssh []string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.ssh = ssh
+		return nil
+	}
+}
+
 // Build builds the package
 func (p Pkg) Build(bos ...BuildOpt) error {
 	var bo buildOpts
@@ -350,7 +359,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 		fmt.Fprintf(writer, "building %s for arches: %s\n", ref, strings.Join(arches, ","))
 		var (
-			imageBuildOpts = types.ImageBuildOptions{
+			imageBuildOpts = spec.ImageBuildOptions{
 				Labels:    map[string]string{},
 				BuildArgs: map[string]*string{},
 			}
@@ -439,6 +448,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			ret := p.Image()
 			imageBuildOpts.BuildArgs["PKG_IMAGE"] = &ret
 		}
+
+		imageBuildOpts.SSH = bo.ssh
 
 		// build for each arch and save in the linuxkit cache
 		for _, platform := range platformsToBuild {
@@ -592,7 +603,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 // C - manifest, saved in cache as is, referenced by the index (E), and returned as a descriptor
 // D - attestations (if any), saved in cache as is, referenced by the index (E), and returned as a descriptor
 // E - index, saved in cache as is, stored in cache as tag "image:tag-arch", *not* returned as a descriptor
-func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts types.ImageBuildOptions) ([]registry.Descriptor, error) {
+func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
 	var (
 		tagArch   string
 		tag       = p.FullTag()
@@ -659,7 +670,9 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 		passCache = nil
 	}
 
-	if err := d.build(ctx, tagArch, p.path, bo.dockerfile, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
+	imageBuildOpts.Dockerfile = bo.dockerfile
+
+	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)

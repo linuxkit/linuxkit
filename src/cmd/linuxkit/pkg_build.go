@@ -49,6 +49,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		dockerfile     string
 		buildArgFiles  []string
 		progress       string
+		ssh            []string
 	)
 
 	cmd.RunE = func(cmd *cobra.Command, args []string) error {
@@ -162,6 +163,9 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		opts = append(opts, pkglib.WithBuildBuilderImage(builderImage))
 		opts = append(opts, pkglib.WithBuildBuilderRestart(builderRestart))
 		opts = append(opts, pkglib.WithProgress(progress))
+		if len(ssh) > 0 {
+			opts = append(opts, pkglib.WithSSH(ssh))
+		}
 
 		for _, p := range pkgs {
 			// things we need our own copies of
@@ -229,6 +233,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 	cmd.Flags().StringVar(&dockerfile, "dockerfile", "", "Dockerfile to use for building the image, must be in this directory or below, overrides what is in build.yml")
 	cmd.Flags().StringArrayVar(&buildArgFiles, "build-arg-file", nil, "Files containing build arguments, one key=value per line, contents augment and override buildArgs in build.yml. Can be specified multiple times. File is relative to working directory when running `linuxkit pkg build`")
 	cmd.Flags().StringVar(&progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output, tty for interactive build")
+	cmd.Flags().StringArrayVar(&ssh, "ssh", nil, "SSH agent config to use for build, follows the syntax used for buildx and buildctl, see https://docs.docker.com/reference/dockerfile/#run---mounttypessh")
 
 	return cmd
 }
