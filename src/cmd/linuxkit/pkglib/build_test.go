@@ -16,10 +16,10 @@ import (
 	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
-	dockertypes "github.com/docker/docker/api/types"
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	buildkitClient "github.com/moby/buildkit/client"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -58,7 +58,7 @@ func (d *dockerMocker) contextSupportCheck() error {
 func (d *dockerMocker) builder(_ context.Context, _, _, _ string, _ bool) (*buildkitClient.Client, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerfile, dockerContext, builderImage, platform string, builderRestart bool, c lktspec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progress string, imageBuildOpts dockertypes.ImageBuildOptions) error {
+func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, builderRestart bool, c lktspec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progress string, imageBuildOpts spec.ImageBuildOptions) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")
 	}
