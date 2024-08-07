@@ -32,7 +32,8 @@ services:
      - /var/lib/docker:/var/lib/docker
      - /lib/modules:/lib/modules
      - /run:/var/run
-    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd", "--",
+              "--oom-score-adjust", "-500"]
   - name: test-docker-bench
     image: linuxkit/test-docker-bench:dbca021f83f52f4b1b7134c122210bc9c209d677
     ipc: host
