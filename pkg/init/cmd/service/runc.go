@@ -79,9 +79,14 @@ func runcInit(rootPath, serviceType string) int {
 	if err != nil {
 		log.Fatalf("error reading /proc/cmdline: %v", err)
 	}
+
+	debugLogger := log.New()
+	debugLogger.Level = log.InfoLevel
+
 	for _, s := range strings.Fields(string(dt)) {
 		if s == "linuxkit.runc_debug=1" {
 			runcDebugMode = true
+			debugLogger.Level = log.DebugLevel
 			break
 		}
 	}
@@ -89,6 +94,7 @@ func runcInit(rootPath, serviceType string) int {
 	for _, file := range files {
 		name := file.Name()
 		path := filepath.Join(rootPath, name)
+		log.Printf("%s %s: from %s", serviceType, name, path)
 
 		runtimeConfig := getRuntimeConfig(path)
 
@@ -97,6 +103,7 @@ func runcInit(rootPath, serviceType string) int {
 			status = 1
 			continue
 		}
+		debugLogger.Debugf("%s %s: creating", serviceType, name)
 		pidfile := filepath.Join(tmpdir, name)
 		cmdArgs := []string{"create", "--bundle", path, "--pid-file", pidfile, name}
 		if runcDebugMode {
@@ -149,6 +156,7 @@ func runcInit(rootPath, serviceType string) int {
 			continue
 		}
 
+		debugLogger.Debugf("%s %s: preparing", serviceType, name)
 		if err := prepareProcess(pid, runtimeConfig); err != nil {
 			log.Printf("Cannot prepare process: %v", err)
 			status = 1
@@ -166,6 +174,7 @@ func runcInit(rootPath, serviceType string) int {
 			waitFor <- state
 		}()
 
+		debugLogger.Debugf("%s %s: starting", serviceType, name)
 		cmd = exec.Command(runcBinary, "start", name)
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
@@ -176,8 +185,10 @@ func runcInit(rootPath, serviceType string) int {
 			continue
 		}
 
+		debugLogger.Debugf("%s %s: waiting for completion", serviceType, name)
 		_ = <-waitFor
 
+		debugLogger.Debugf("%s %s: cleaning up", serviceType, name)
 		cleanup(path)
 		_ = os.Remove(pidfile)
 
@@ -186,6 +197,7 @@ func runcInit(rootPath, serviceType string) int {
 		// once that is fixed, this can be cleaned up
 		logger.Dump(stdoutLog)
 		logger.Dump(stderrLog)
+		debugLogger.Debugf("%s %s: complete", serviceType, name)
 	}
 
 	_ = os.RemoveAll(tmpdir)
