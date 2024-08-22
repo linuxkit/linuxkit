@@ -7,6 +7,7 @@ import (
 	"path"
 	"path/filepath"
 	"strconv"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
@@ -62,6 +63,28 @@ func runcInit(rootPath, serviceType string) int {
 	}
 
 	logger := GetLog(logDir)
+	v2, err := isCgroupV2()
+	if err != nil {
+		log.Fatalf("Cannot determine cgroup version: %v", err)
+	}
+	msg := "cgroup v1"
+	if v2 {
+		msg = "cgroup v2"
+	}
+	log.Printf("Using %s", msg)
+
+	// did we choose to run in debug mode? If so, runc will be in debug, and all messages will go to stdout/stderr in addition to the log
+	var runcDebugMode bool
+	dt, err := os.ReadFile("/proc/cmdline")
+	if err != nil {
+		log.Fatalf("error reading /proc/cmdline: %v", err)
+	}
+	for _, s := range strings.Fields(string(dt)) {
+		if s == "linuxkit.runc_debug=1" {
+			runcDebugMode = true
+			break
+		}
+	}
 
 	for _, file := range files {
 		name := file.Name()
@@ -75,7 +98,11 @@ func runcInit(rootPath, serviceType string) int {
 			continue
 		}
 		pidfile := filepath.Join(tmpdir, name)
-		cmd := exec.Command(runcBinary, "create", "--bundle", path, "--pid-file", pidfile, name)
+		cmdArgs := []string{"create", "--bundle", path, "--pid-file", pidfile, name}
+		if runcDebugMode {
+			cmdArgs = append([]string{"--debug"}, cmdArgs...)
+		}
+		cmd := exec.Command(runcBinary, cmdArgs...)
 
 		stdoutLog := serviceType + "." + name + ".out"
 		stdout, err := logger.Open(stdoutLog)
@@ -95,8 +122,13 @@ func runcInit(rootPath, serviceType string) int {
 		}
 		defer stderr.Close()
 
-		cmd.Stdout = stdout
-		cmd.Stderr = stderr
+		if runcDebugMode {
+			cmd.Stdout = io.MultiWriter(stdout, os.Stdout)
+			cmd.Stderr = io.MultiWriter(stderr, os.Stderr)
+		} else {
+			cmd.Stdout = stdout
+			cmd.Stderr = stderr
+		}
 
 		if err := cmd.Run(); err != nil {
 			log.Printf("Error creating %s: %v", name, err)

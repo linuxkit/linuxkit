@@ -52,6 +52,9 @@ which should contain a `kernel` file that will be booted (eg a `bzImage` for `am
 called `kernel.tar` which is a tarball that is unpacked into the root, which should usually
 contain a kernel modules directory. `cmdline` specifies the kernel command line options if required.
 
+The contents of `cmdline` are passed to the kernel as-is. There are several special values that are
+used to control the behaviour of linuxkit packages. See [kernel command line options](../docs/cmdline.md).
+
 To override the names, you can specify the kernel image name with `binary: bzImage` and the tar image
 with `tar: kernel.tar` or the empty string or `none` if you do not want to use a tarball at all.
 
