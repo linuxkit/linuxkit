@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:9eabfb21879d4a3c9534f0c4e9a764919423e8a5
+  - linuxkit/init:e6f99bdda1628d47f59dab20c85794b4ea6fad95
   - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
 onboot:
   - name: metadata
