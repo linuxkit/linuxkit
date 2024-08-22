@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	log "github.com/sirupsen/logrus"
 	"golang.org/x/sys/unix"
@@ -59,36 +60,35 @@ func volumeInitCmd(ctx context.Context) int {
 		}
 		lowerDir := filepath.Join(*path, vol.Name(), "lower")
 		mergedDir := filepath.Join(*path, vol.Name(), "merged")
+		// need a tmpfs to create the workdir and upper
+		tmpDir := filepath.Join(*path, vol.Name(), "tmp")
+		if err := unix.Mount("tmpfs", tmpDir, "tmpfs", unix.MS_RELATIME, ""); err != nil {
+			log.WithError(err).Errorf("Error creating tmpDir for volume %s", vol.Name())
+			return 1
+		}
+		workDir := filepath.Join(tmpDir, "work")
+		upperDir := filepath.Join(tmpDir, "upper")
+		if err := os.Mkdir(upperDir, 0755); err != nil {
+			log.WithError(err).Errorf("Error creating upper dir for volume %s", vol.Name())
+			return 1
+		}
+		if err := os.Mkdir(workDir, 0755); err != nil {
+			log.WithError(err).Errorf("Error creating work dir for volume %s", vol.Name())
+			return 1
+		}
+		// and let's mount the actual dir
+		mountOps := []string{fmt.Sprintf("lowerdir=%s", lowerDir), fmt.Sprintf("upperdir=%s", upperDir), fmt.Sprintf("workdir=%s", workDir)}
+
 		if !readWrite {
-			log.Infof("Volume %s is read-only, bind-mounting read-only", vol.Name())
-			if err := unix.Mount(lowerDir, mergedDir, "bind", unix.MS_RDONLY, ""); err != nil {
-				log.WithError(err).Errorf("Error bind-mounting volume %s", vol.Name())
-				return 1
-			}
+			log.Infof("Volume %s is read-only", vol.Name())
+			mountOps = append(mountOps, "ro")
 		} else {
-			log.Infof("Volume %s is read-write, overlay mounting", vol.Name())
-			// need a tmpfs to create the workdir and upper
-			tmpDir := filepath.Join(*path, vol.Name(), "tmp")
-			if err := unix.Mount("tmpfs", tmpDir, "tmpfs", unix.MS_RELATIME, ""); err != nil {
-				log.WithError(err).Errorf("Error creating tmpDir for volume %s", vol.Name())
-				return 1
-			}
-			workDir := filepath.Join(tmpDir, "work")
-			upperDir := filepath.Join(tmpDir, "upper")
-			if err := os.Mkdir(upperDir, 0755); err != nil {
-				log.WithError(err).Errorf("Error creating upper dir for volume %s", vol.Name())
-				return 1
-			}
-			if err := os.Mkdir(workDir, 0755); err != nil {
-				log.WithError(err).Errorf("Error creating work dir for volume %s", vol.Name())
-				return 1
-			}
-			// and let's mount the actual dir
-			data := fmt.Sprintf("lowerdir=%s,upperdir=%s,workdir=%s", lowerDir, upperDir, workDir)
-			if err := unix.Mount("overlay", mergedDir, "overlay", unix.MS_RELATIME, data); err != nil {
-				log.WithError(err).Errorf("Error overlay-mounting volume %s", vol.Name())
-				return 1
-			}
+			log.Infof("Volume %s is read-write", vol.Name())
+		}
+		data := strings.Join(mountOps, ",")
+		if err := unix.Mount("overlay", mergedDir, "overlay", unix.MS_RELATIME, data); err != nil {
+			log.WithError(err).Errorf("Error overlay-mounting volume %s", vol.Name())
+			return 1
 		}
 	}
 	return 0

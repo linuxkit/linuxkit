@@ -285,24 +285,20 @@ func Build(m moby.Moby, w io.Writer, opts BuildOpts) error {
 		}
 		// make upper and merged dirs which will be used for mounting
 		// no need to make lower dir, as it is made automatically by ImageTar()
-		// the existence of an upper dir indicates that it is read-write and should be overlayfs.
-		if !vol.ReadOnly {
-			// need the tmp dir where work gets done, since the whole thing fs is read-only
-			tmpPath := strings.TrimPrefix(tmpDir, "/") + "/"
-			tmphdr := &tar.Header{
-				Name:     tmpPath,
-				Mode:     0755,
-				Typeflag: tar.TypeDir,
-				ModTime:  defaultModTime,
-				Format:   tar.FormatPAX,
-				PAXRecords: map[string]string{
-					moby.PaxRecordLinuxkitSource:   "linuxkit.volumes",
-					moby.PaxRecordLinuxkitLocation: location,
-				},
-			}
-			if err := apkTar.WriteHeader(tmphdr); err != nil {
-				return err
-			}
+		tmpPath := strings.TrimPrefix(tmpDir, "/") + "/"
+		tmphdr := &tar.Header{
+			Name:     tmpPath,
+			Mode:     0755,
+			Typeflag: tar.TypeDir,
+			ModTime:  defaultModTime,
+			Format:   tar.FormatPAX,
+			PAXRecords: map[string]string{
+				moby.PaxRecordLinuxkitSource:   "linuxkit.volumes",
+				moby.PaxRecordLinuxkitLocation: location,
+			},
+		}
+		if err := apkTar.WriteHeader(tmphdr); err != nil {
+			return err
 		}
 		mergedPath := strings.TrimPrefix(merged, "/") + "/"
 		mhdr := &tar.Header{
