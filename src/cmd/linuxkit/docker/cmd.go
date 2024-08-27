@@ -3,6 +3,7 @@ package docker
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"sync"
@@ -51,13 +52,19 @@ func createClient() (*client.Client, error) {
 }
 
 // HasImage check if the provided ref is available in the docker cache.
-func HasImage(ref *reference.Spec) error {
+func HasImage(ref *reference.Spec, architecture string) error {
 	log.Debugf("docker inspect image: %s", ref)
 	cli, err := Client()
 	if err != nil {
 		return err
 	}
-	_, err = InspectImage(cli, ref)
+	imageInspect, err := InspectImage(cli, ref)
+	if err != nil {
+		return err
+	}
+	if imageInspect.Architecture != "" && imageInspect.Architecture != architecture {
+		return fmt.Errorf("image not found for right architecture (%s != %s)", imageInspect.Architecture, architecture)
+	}
 
 	return err
 }
