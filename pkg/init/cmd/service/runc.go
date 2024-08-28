@@ -74,7 +74,7 @@ func runcInit(rootPath, serviceType string) int {
 	log.Printf("Using %s", msg)
 
 	// did we choose to run in debug mode? If so, runc will be in debug, and all messages will go to stdout/stderr in addition to the log
-	var runcDebugMode bool
+	var runcDebugMode, runcConsoleMode bool
 	dt, err := os.ReadFile("/proc/cmdline")
 	if err != nil {
 		log.Fatalf("error reading /proc/cmdline: %v", err)
@@ -87,7 +87,9 @@ func runcInit(rootPath, serviceType string) int {
 		if s == "linuxkit.runc_debug=1" {
 			runcDebugMode = true
 			debugLogger.Level = log.DebugLevel
-			break
+		}
+		if s == "linuxkit.runc_console=1" {
+			runcConsoleMode = true
 		}
 	}
 
@@ -129,12 +131,16 @@ func runcInit(rootPath, serviceType string) int {
 		}
 		defer stderr.Close()
 
-		if runcDebugMode {
-			cmd.Stdout = io.MultiWriter(stdout, os.Stdout)
-			cmd.Stderr = io.MultiWriter(stderr, os.Stderr)
-		} else {
-			cmd.Stdout = stdout
-			cmd.Stderr = stderr
+		cmd.Stdout = stdout
+		cmd.Stderr = stderr
+
+		// if in console mode, send output to stdout/stderr instead of the log
+		// do not try io.MultiWriter(os.Stdout, stdout) as console messages will hang.
+		// it is not clear why, but since this is all for debugging anyways, it doesn't matter
+		// much.
+		if runcConsoleMode {
+			cmd.Stdout = os.Stdout
+			cmd.Stderr = os.Stderr
 		}
 
 		if err := cmd.Run(); err != nil {
@@ -175,7 +181,11 @@ func runcInit(rootPath, serviceType string) int {
 		}()
 
 		debugLogger.Debugf("%s %s: starting", serviceType, name)
-		cmd = exec.Command(runcBinary, "start", name)
+		cmdArgs = []string{"start", name}
+		if runcDebugMode {
+			cmdArgs = append([]string{"--debug"}, cmdArgs...)
+		}
+		cmd = exec.Command(runcBinary, cmdArgs...)
 		cmd.Stdout = stdout
 		cmd.Stderr = stderr
 

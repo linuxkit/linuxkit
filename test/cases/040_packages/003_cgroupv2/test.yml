@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "linuxkit.unified_cgroup_hierarchy=1 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e6f99bdda1628d47f59dab20c85794b4ea6fad95
+  - linuxkit/init:e120ea2a30d906bd1ee1874973d6e4b1403b5ca3
   - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
 onboot:
   - name: test
