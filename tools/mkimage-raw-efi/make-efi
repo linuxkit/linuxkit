@@ -19,13 +19,9 @@ ARCH=${TARGETARCH:-`uname -m`}
 case $ARCH in
 x86_64)
   BOOTFILE=BOOTX64.EFI
-  LINUX_ENTRY=linuxefi
-  INITRD_ENTRY=initrdefi
   ;;
 aarch64)
   BOOTFILE=BOOTAA64.EFI
-  LINUX_ENTRY=linux
-  INITRD_ENTRY=initrd
   ;;
 esac
 
@@ -54,8 +50,8 @@ cat >> EFI/BOOT/grub.cfg <<EOF
 set timeout=0
 set gfxpayload=text
 menuentry 'LinuxKit ISO Image' {
-	$LINUX_ENTRY /kernel ${CMDLINE} text
-  $INITRD_ENTRY /initrd.img
+	linux /kernel ${CMDLINE} text
+  initrd /initrd.img
 }
 EOF
 

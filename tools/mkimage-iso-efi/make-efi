@@ -8,12 +8,10 @@ case $ARCH in
 x86_64)
   BOOTFILE=BOOTX64.EFI
   ROOTDEV=/dev/sr0
-  LINUX_ENTRY=linuxefi
   ;;
 aarch64)
   BOOTFILE=BOOTAA64.EFI
   ROOTDEV=/dev/vda
-  LINUX_ENTRY=linux
   ;;
 esac
 
@@ -38,7 +36,7 @@ cp /usr/local/share/$BOOTFILE .
 CFG="set timeout=0
 set gfxpayload=text
 menuentry 'LinuxKit ISO Image' {
-	$LINUX_ENTRY /boot/kernel ${CMDLINE} text
+	linux /boot/kernel ${CMDLINE} text
 }
 "
 
