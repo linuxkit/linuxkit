@@ -43,7 +43,9 @@ var schema = `
         "properties": {
           "name": {"type": "string"},
           "image": {"type": "string"},
-          "readonly": {"type": "boolean"}
+          "readonly": {"type": "boolean"},
+          "format": {"enum": ["oci","filesystem"]},
+          "platforms": {"$ref": "#/definitions/strings"}
         }
     },
     "volumes": {
