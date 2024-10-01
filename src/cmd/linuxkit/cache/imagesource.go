@@ -10,7 +10,6 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
@@ -32,10 +31,10 @@ const (
 // ImageSource a source for an image in the OCI distribution cache.
 // Implements a spec.ImageSource.
 type ImageSource struct {
-	ref          *reference.Spec
-	provider     *Provider
-	architecture string
-	descriptor   *v1.Descriptor
+	ref        *reference.Spec
+	provider   *Provider
+	platform   *imagespec.Platform
+	descriptor *v1.Descriptor
 }
 
 type spdxStatement struct {
@@ -45,12 +44,12 @@ type spdxStatement struct {
 
 // NewSource return an ImageSource for a specific ref and architecture in the given
 // cache directory.
-func (p *Provider) NewSource(ref *reference.Spec, architecture string, descriptor *v1.Descriptor) lktspec.ImageSource {
+func (p *Provider) NewSource(ref *reference.Spec, platform *imagespec.Platform, descriptor *v1.Descriptor) lktspec.ImageSource {
 	return ImageSource{
-		ref:          ref,
-		provider:     p,
-		architecture: architecture,
-		descriptor:   descriptor,
+		ref:        ref,
+		provider:   p,
+		platform:   platform,
+		descriptor: descriptor,
 	}
 }
 
@@ -58,7 +57,7 @@ func (p *Provider) NewSource(ref *reference.Spec, architecture string, descripto
 // architecture, if necessary.
 func (c ImageSource) Config() (imagespec.ImageConfig, error) {
 	imageName := c.ref.String()
-	image, err := c.provider.findImage(imageName, c.architecture)
+	image, err := c.provider.findImage(imageName, *c.platform)
 	if err != nil {
 		return imagespec.ImageConfig{}, err
 	}
@@ -84,7 +83,7 @@ func (c ImageSource) TarReader() (io.ReadCloser, error) {
 	imageName := c.ref.String()
 
 	// get a reference to the image
-	image, err := c.provider.findImage(imageName, c.architecture)
+	image, err := c.provider.findImage(imageName, *c.platform)
 	if err != nil {
 		return nil, err
 	}
@@ -104,7 +103,7 @@ func (c ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("error parsing image name: %v", err)
 	}
 	// get a reference to the image
-	image, err := c.provider.findImage(imageName, c.architecture)
+	image, err := c.provider.findImage(imageName, *c.platform)
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +128,7 @@ func (c ImageSource) OCITarReader(overrideName string) (io.ReadCloser, error) {
 		return nil, fmt.Errorf("error parsing image name: %v", err)
 	}
 	// get a reference to the image
-	image, err := c.provider.findImage(imageName, c.architecture)
+	image, err := c.provider.findImage(imageName, *c.platform)
 	if err != nil {
 		return nil, err
 	}
@@ -139,160 +138,37 @@ func (c ImageSource) OCITarReader(overrideName string) (io.ReadCloser, error) {
 		defer w.Close()
 		tw := tar.NewWriter(w)
 		defer tw.Close()
-		// layout file
-		layoutFileBytes := []byte(layoutFile)
-		if err := tw.WriteHeader(&tar.Header{
-			Name:     "oci-layout",
-			Mode:     0644,
-			Size:     int64(len(layoutFileBytes)),
-			Typeflag: tar.TypeReg,
-		}); err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		if _, err := tw.Write(layoutFileBytes); err != nil {
+		if err := writeLayoutHeader(tw); err != nil {
 			_ = w.CloseWithError(err)
 			return
 		}
 
-		// make blobs directory
-		if err := tw.WriteHeader(&tar.Header{
-			Name:     "blobs/",
-			Mode:     0755,
-			Typeflag: tar.TypeDir,
-		}); err != nil {
+		if err := writeLayoutImage(tw, image); err != nil {
 			_ = w.CloseWithError(err)
 			return
 		}
-		// make blobs/sha256 directory
-		if err := tw.WriteHeader(&tar.Header{
-			Name:     "blobs/sha256/",
-			Mode:     0755,
-			Typeflag: tar.TypeDir,
-		}); err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		// write config, each layer, manifest, saving the digest for each
-		config, err := image.RawConfigFile()
+
+		imageDigest, err := image.Digest()
 		if err != nil {
 			_ = w.CloseWithError(err)
 			return
 		}
-		configDigest, configSize, err := v1.SHA256(bytes.NewReader(config))
+		imageSize, err := image.Size()
 		if err != nil {
 			_ = w.CloseWithError(err)
 			return
 		}
 
-		if err := tw.WriteHeader(&tar.Header{
-			Name:     fmt.Sprintf("blobs/sha256/%s", configDigest.Hex),
-			Mode:     0644,
-			Typeflag: tar.TypeReg,
-			Size:     configSize,
-		}); err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		if _, err := tw.Write(config); err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		layers, err := image.Layers()
-		if err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		for _, layer := range layers {
-			blob, err := layer.Compressed()
-			if err != nil {
-				_ = w.CloseWithError(err)
-				return
-			}
-			defer blob.Close()
-			blobDigest, err := layer.Digest()
-			if err != nil {
-				_ = w.CloseWithError(err)
-				return
-			}
-			blobSize, err := layer.Size()
-			if err != nil {
-				_ = w.CloseWithError(err)
-				return
-			}
-			if err := tw.WriteHeader(&tar.Header{
-				Name:     fmt.Sprintf("blobs/sha256/%s", blobDigest.Hex),
-				Mode:     0644,
-				Size:     blobSize,
-				Typeflag: tar.TypeReg,
-			}); err != nil {
-				_ = w.CloseWithError(err)
-				return
-			}
-			if _, err := io.Copy(tw, blob); err != nil {
-				_ = w.CloseWithError(err)
-				return
-			}
-		}
-		// write the manifest
-		manifest, err := image.RawManifest()
-		if err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		manifestDigest, manifestSize, err := v1.SHA256(bytes.NewReader(manifest))
-		if err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-
-		if err := tw.WriteHeader(&tar.Header{
-			Name:     fmt.Sprintf("blobs/sha256/%s", manifestDigest.Hex),
-			Mode:     0644,
-			Size:     int64(len(manifest)),
-			Typeflag: tar.TypeReg,
-		}); err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		if _, err := tw.Write(manifest); err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
 		// write the index file
 		desc := v1.Descriptor{
 			MediaType: types.OCIImageIndex,
-			Size:      manifestSize,
-			Digest:    manifestDigest,
+			Size:      imageSize,
+			Digest:    imageDigest,
 			Annotations: map[string]string{
 				imagespec.AnnotationRefName: refName.String(),
 			},
 		}
-		ii := empty.Index
-
-		index, err := ii.IndexManifest()
-		if err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-
-		index.Manifests = append(index.Manifests, desc)
-
-		rawIndex, err := json.MarshalIndent(index, "", "   ")
-		if err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		// write the index
-		if err := tw.WriteHeader(&tar.Header{
-			Name: "index.json",
-			Mode: 0644,
-			Size: int64(len(rawIndex)),
-		}); err != nil {
-			_ = w.CloseWithError(err)
-			return
-		}
-		if _, err := tw.Write(rawIndex); err != nil {
+		if err := writeLayoutIndex(tw, desc); err != nil {
 			_ = w.CloseWithError(err)
 			return
 		}
@@ -314,15 +190,15 @@ func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
 	}
 
 	// get the digest of the manifest that represents our targeted architecture
-	descs, err := partial.FindManifests(index, matchPlatformsOSArch(v1.Platform{OS: "linux", Architecture: c.architecture}))
+	descs, err := partial.FindManifests(index, matchPlatformsOSArch(v1.Platform{OS: c.platform.OS, Architecture: c.platform.Architecture}))
 	if err != nil {
 		return nil, err
 	}
 	if len(descs) < 1 {
-		return nil, fmt.Errorf("no manifest found for %s arch %s", c.ref.String(), c.architecture)
+		return nil, fmt.Errorf("no manifest found for %s platform %s", c.ref.String(), c.platform)
 	}
 	if len(descs) > 1 {
-		return nil, fmt.Errorf("multiple manifests found for %s arch %s", c.ref.String(), c.architecture)
+		return nil, fmt.Errorf("multiple manifests found for %s platform %s", c.ref.String(), c.platform)
 	}
 	// get the digest of the manifest that represents our targeted architecture
 	desc := descs[0]
@@ -336,7 +212,7 @@ func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
 		return nil, err
 	}
 	if len(descs) > 1 {
-		return nil, fmt.Errorf("multiple manifests found for %s arch %s", c.ref.String(), c.architecture)
+		return nil, fmt.Errorf("multiple manifests found for %s platform %s", c.ref.String(), c.platform)
 	}
 	if len(descs) < 1 {
 		return nil, nil
@@ -348,10 +224,10 @@ func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
 		return nil, err
 	}
 	if len(images) < 1 {
-		return nil, fmt.Errorf("no attestation image found for %s arch %s, even though the manifest exists", c.ref.String(), c.architecture)
+		return nil, fmt.Errorf("no attestation image found for %s platform %s, even though the manifest exists", c.ref.String(), c.platform)
 	}
 	if len(images) > 1 {
-		return nil, fmt.Errorf("multiple attestation images found for %s arch %s", c.ref.String(), c.architecture)
+		return nil, fmt.Errorf("multiple attestation images found for %s platform %s", c.ref.String(), c.platform)
 	}
 	image := images[0]
 	manifest, err := image.Manifest()
@@ -363,7 +239,7 @@ func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
 		return nil, err
 	}
 	if len(manifest.Layers) != len(layers) {
-		return nil, fmt.Errorf("manifest layers and image layers do not match for the attestation for %s arch %s", c.ref.String(), c.architecture)
+		return nil, fmt.Errorf("manifest layers and image layers do not match for the attestation for %s platform %s", c.ref.String(), c.platform)
 	}
 	var readers []io.ReadCloser
 	for i, layer := range manifest.Layers {

@@ -327,7 +327,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			case bo.pull:
 				// need to pull the image from the registry, else build
 				fmt.Fprintf(writer, "%s %s not found in local cache, trying to pull\n", ref, platform.Architecture)
-				if _, err := c.ImagePull(&ref, "", platform.Architecture, false); err == nil {
+				if err := c.ImagePull(&ref, []imagespec.Platform{platform}, false); err == nil {
 					fmt.Fprintf(writer, "%s pulled\n", ref)
 					// successfully pulled, no need to build, continue with next platform
 					continue
@@ -470,7 +470,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		// - potentially create a release, including push and load into docker
 
 		// create a multi-arch index
-		if _, err := c.IndexWrite(&ref, descs...); err != nil {
+		if err := c.IndexWrite(&ref, descs...); err != nil {
 			return err
 		}
 	}
@@ -490,7 +490,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			if err != nil {
 				return err
 			}
-			cacheSource := c.NewSource(&ref, platform.Architecture, desc)
+			cacheSource := c.NewSource(&ref, &platform, desc)
 			reader, err := cacheSource.V1TarReader(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture))
 			if err != nil {
 				return fmt.Errorf("unable to get reader from cache: %v", err)
@@ -562,7 +562,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if err != nil {
 		return err
 	}
-	if _, err := c.DescriptorWrite(&ref, *desc); err != nil {
+	if err := c.DescriptorWrite(&ref, *desc); err != nil {
 		return err
 	}
 	if err := c.Push(fullRelTag, "", bo.manifest, true); err != nil {
@@ -617,7 +617,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 		if err != nil {
 			return nil, fmt.Errorf("could not resolve references for image %s: %v", p.Tag(), err)
 		}
-		if _, err := c.ImagePull(&ref, "", arch, false); err == nil {
+		if err := c.ImagePull(&ref, []imagespec.Platform{{Architecture: arch, OS: "linux"}}, false); err == nil {
 			fmt.Fprintf(writer, "image already found %s for arch %s", ref, arch)
 			desc, err := c.FindDescriptor(&ref)
 			if err != nil {

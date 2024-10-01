@@ -3,6 +3,7 @@ package cache
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/containerd/containerd/reference"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -30,12 +31,13 @@ const (
 // architecture, and any manifests that have no architecture at all. It will ignore manifests
 // for other architectures. If no architecture is provided, it will validate all manifests.
 // It also calculates the hash of each component.
-func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lktspec.ImageSource, error) {
+func (p *Provider) ValidateImage(ref *reference.Spec, platforms []imagespec.Platform) (lktspec.ImageSource, error) {
 	var (
-		imageIndex v1.ImageIndex
-		image      v1.Image
-		imageName  = ref.String()
-		desc       *v1.Descriptor
+		imageIndex      v1.ImageIndex
+		image           v1.Image
+		imageName       = ref.String()
+		desc            *v1.Descriptor
+		platformMessage = platformMessageGenerator(platforms)
 	)
 	// next try the local cache
 	root, err := p.FindRoot(imageName)
@@ -71,7 +73,15 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 		if err != nil {
 			return ImageSource{}, fmt.Errorf("could not get index manifest: %w", err)
 		}
-		var architectures = make(map[string]bool)
+		var (
+			targetPlatforms = make(map[string]bool)
+			foundPlatforms  = make(map[string]bool)
+		)
+		for _, plat := range platforms {
+			pString := platformString(plat)
+			targetPlatforms[pString] = false
+			foundPlatforms[pString] = false
+		}
 		// ignore only other architectures; manifest entries that have no architectures at all
 		// are going to be additional metadata, so we need to check them
 		for _, m := range im.Manifests {
@@ -80,29 +90,50 @@ func (p *Provider) ValidateImage(ref *reference.Spec, architecture string) (lkts
 					return ImageSource{}, fmt.Errorf("invalid image: %w", err)
 				}
 			}
-			if architecture != "" && m.Platform.Architecture == architecture && m.Platform.OS == linux {
-				if err := validateManifestContents(imageIndex, m.Digest); err != nil {
-					return ImageSource{}, fmt.Errorf("invalid image: %w", err)
+			// go through each target platform, and see if this one matched. If it did, mark the target as
+			for _, plat := range platforms {
+				if plat.Architecture == m.Platform.Architecture && plat.OS == m.Platform.OS &&
+					(plat.Variant == "" || plat.Variant == m.Platform.Variant) {
+					targetPlatforms[platformString(plat)] = true
+					break
 				}
-				architectures[architecture] = true
 			}
 		}
-		if architecture == "" || architectures[architecture] {
+
+		if len(platforms) == 0 {
 			return p.NewSource(
 				ref,
-				architecture,
+				nil,
 				desc,
 			), nil
 		}
-		return ImageSource{}, fmt.Errorf("index for %s did not contain image for platform linux/%s", imageName, architecture)
+		// we have cycled through all of the manifests, let's check if we have all of the platforms
+		var missing []string
+		for plat, found := range targetPlatforms {
+			if !found {
+				missing = append(missing, plat)
+			}
+		}
+
+		if len(missing) == 0 {
+			return p.NewSource(
+				ref,
+				nil,
+				desc,
+			), nil
+		}
+		return ImageSource{}, fmt.Errorf("index for %s did not contain image for platforms %s", imageName, strings.Join(missing, ", "))
 	case image != nil:
+		if len(platforms) > 1 {
+			return ImageSource{}, fmt.Errorf("image %s is not a multi-arch image, but asked for %s", imageName, platformMessage)
+		}
 		// we found a local image, make sure it is up to date
 		if err := validate.Image(image); err != nil {
 			return ImageSource{}, fmt.Errorf("invalid image, %s", err)
 		}
 		return p.NewSource(
 			ref,
-			architecture,
+			&platforms[0],
 			desc,
 		), nil
 	}
@@ -164,7 +195,7 @@ func (p *Provider) Pull(name string, withArchReferences bool) error {
 		if err := p.cache.WriteIndex(ii); err != nil {
 			return fmt.Errorf("unable to write index: %v", err)
 		}
-		if _, err := p.DescriptorWrite(&v1ref, desc.Descriptor); err != nil {
+		if err := p.DescriptorWrite(&v1ref, desc.Descriptor); err != nil {
 			return fmt.Errorf("unable to write index descriptor to cache: %v", err)
 		}
 		if withArchReferences {
@@ -179,7 +210,7 @@ func (p *Provider) Pull(name string, withArchReferences bool) error {
 					if err != nil {
 						return fmt.Errorf("unable to parse arch-specific reference %s: %v", archSpecific, err)
 					}
-					if _, err := p.DescriptorWrite(&archRef, m); err != nil {
+					if err := p.DescriptorWrite(&archRef, m); err != nil {
 						return fmt.Errorf("unable to write index descriptor to cache: %v", err)
 					}
 				}

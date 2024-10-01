@@ -240,21 +240,24 @@ type cacheMocker struct {
 	hashes                 map[string][]byte
 }
 
-func (c *cacheMocker) ImagePull(ref *reference.Spec, trustedRef, architecture string, alwaysPull bool) (lktspec.ImageSource, error) {
+func (c *cacheMocker) ImagePull(ref *reference.Spec, platforms []imagespec.Platform, alwaysPull bool) error {
 	if !c.enableImagePull {
-		return nil, errors.New("ImagePull disabled")
+		return errors.New("ImagePull disabled")
 	}
 	// make some random data for a layer
 	b := make([]byte, 256)
 	_, _ = rand.Read(b)
 	descs, err := c.imageWriteStream(bytes.NewReader(b))
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if len(descs) != 1 {
-		return nil, fmt.Errorf("expected 1 descriptor, got %d", len(descs))
+		return fmt.Errorf("expected 1 descriptor, got %d", len(descs))
 	}
-	return c.NewSource(ref, architecture, &descs[1]), nil
+	if len(platforms) != 1 {
+		return fmt.Errorf("cache does not support multiple platforms %s", platforms)
+	}
+	return nil
 }
 
 func (c *cacheMocker) ImageInCache(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
@@ -359,9 +362,9 @@ func (c *cacheMocker) imageWriteStream(r io.Reader) ([]registry.Descriptor, erro
 	return []registry.Descriptor{desc}, nil
 }
 
-func (c *cacheMocker) IndexWrite(ref *reference.Spec, descriptors ...registry.Descriptor) (lktspec.ImageSource, error) {
+func (c *cacheMocker) IndexWrite(ref *reference.Spec, descriptors ...registry.Descriptor) error {
 	if !c.enableIndexWrite {
-		return nil, errors.New("disabled")
+		return errors.New("disabled")
 	}
 	image := ref.String()
 	im := registry.IndexManifest{
@@ -373,11 +376,11 @@ func (c *cacheMocker) IndexWrite(ref *reference.Spec, descriptors ...registry.De
 	// write the updated index, remove the old one
 	b, err := json.Marshal(im)
 	if err != nil {
-		return nil, fmt.Errorf("unable to marshal new index to json: %v", err)
+		return fmt.Errorf("unable to marshal new index to json: %v", err)
 	}
 	hash, size, err := registry.SHA256(bytes.NewReader(b))
 	if err != nil {
-		return nil, fmt.Errorf("error calculating hash of index json: %v", err)
+		return fmt.Errorf("error calculating hash of index json: %v", err)
 	}
 	c.assignHash(hash.String(), b)
 	desc := registry.Descriptor{
@@ -390,7 +393,7 @@ func (c *cacheMocker) IndexWrite(ref *reference.Spec, descriptors ...registry.De
 	}
 	c.appendImage(image, desc)
 
-	return c.NewSource(ref, "", &desc), nil
+	return nil
 }
 func (c *cacheMocker) Push(name, remoteName string, withManifest, override bool) error {
 	if !c.enablePush {
@@ -402,9 +405,9 @@ func (c *cacheMocker) Push(name, remoteName string, withManifest, override bool)
 	return nil
 }
 
-func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, desc registry.Descriptor) (lktspec.ImageSource, error) {
+func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, desc registry.Descriptor) error {
 	if !c.enabledDescriptorWrite {
-		return nil, errors.New("descriptor disabled")
+		return errors.New("descriptor disabled")
 	}
 	var (
 		image = ref.String()
@@ -417,11 +420,11 @@ func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, desc registry.Descrip
 	// write the updated index, remove the old one
 	b, err := json.Marshal(im)
 	if err != nil {
-		return nil, fmt.Errorf("unable to marshal new index to json: %v", err)
+		return fmt.Errorf("unable to marshal new index to json: %v", err)
 	}
 	hash, size, err := registry.SHA256(bytes.NewReader(b))
 	if err != nil {
-		return nil, fmt.Errorf("error calculating hash of index json: %v", err)
+		return fmt.Errorf("error calculating hash of index json: %v", err)
 	}
 	c.assignHash(hash.String(), b)
 	root := registry.Descriptor{
@@ -434,7 +437,7 @@ func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, desc registry.Descrip
 	}
 	c.appendImage(image, root)
 
-	return c.NewSource(ref, "", &root), nil
+	return nil
 }
 func (c *cacheMocker) FindDescriptor(ref *reference.Spec) (*registry.Descriptor, error) {
 	name := ref.String()
@@ -443,8 +446,8 @@ func (c *cacheMocker) FindDescriptor(ref *reference.Spec) (*registry.Descriptor,
 	}
 	return nil, fmt.Errorf("not found %s", name)
 }
-func (c *cacheMocker) NewSource(ref *reference.Spec, architecture string, descriptor *registry.Descriptor) lktspec.ImageSource {
-	return cacheMockerSource{c, ref, architecture, descriptor}
+func (c *cacheMocker) NewSource(ref *reference.Spec, platform *imagespec.Platform, descriptor *registry.Descriptor) lktspec.ImageSource {
+	return cacheMockerSource{c, ref, platform, descriptor}
 }
 func (c *cacheMocker) assignHash(hash string, b []byte) {
 	if c.hashes == nil {
@@ -473,10 +476,10 @@ func (c *cacheMocker) GetContent(hash v1.Hash) (io.ReadCloser, error) {
 }
 
 type cacheMockerSource struct {
-	c            *cacheMocker
-	ref          *reference.Spec
-	architecture string
-	descriptor   *registry.Descriptor
+	c          *cacheMocker
+	ref        *reference.Spec
+	platform   *imagespec.Platform
+	descriptor *registry.Descriptor
 }
 
 func (c cacheMockerSource) Config() (imagespec.ImageConfig, error) {
