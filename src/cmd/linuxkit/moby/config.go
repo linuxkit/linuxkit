@@ -13,10 +13,10 @@ import (
 	"github.com/containerd/containerd/reference"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
+	"github.com/moby/sys/capability"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
-	"github.com/syndtr/gocapability/capability"
 	"github.com/xeipuuv/gojsonschema"
 	"gopkg.in/yaml.v3"
 )
@@ -781,7 +781,7 @@ func assignStringEmpty4(v1, v2, v3, v4 string) string {
 
 func getAllCapabilities() []string {
 	var caps []string
-	for _, cap := range capability.List() {
+	for _, cap := range capability.ListKnown() {
 		caps = append(caps, "CAP_"+strings.ToUpper(cap.String()))
 	}
 	return caps

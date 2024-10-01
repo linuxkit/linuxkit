@@ -54,9 +54,9 @@ require (
 	github.com/Code-Hex/vz/v3 v3.0.0
 	github.com/equinix/equinix-sdk-go v0.42.0
 	github.com/in-toto/in-toto-golang v0.5.0
+	github.com/moby/sys/capability v0.3.0
 	github.com/spdx/tools-golang v0.5.3
 	github.com/spf13/cobra v1.8.0
-	github.com/syndtr/gocapability v0.0.0-20200815063812-42c35b437635
 	gopkg.in/yaml.v3 v3.0.1
 )
 
