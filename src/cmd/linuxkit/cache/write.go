@@ -21,7 +21,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
-	lktutil "github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 )
@@ -58,17 +57,17 @@ func (p *Provider) ImagePull(ref *reference.Spec, trustedRef, architecture strin
 
 	// unless alwaysPull is set to true, check locally first
 	if alwaysPull {
-		log.Printf("Instructed always to pull, so pulling image %s arch %s", image, architecture)
+		log.Debugf("Instructed always to pull, so pulling image %s arch %s", image, architecture)
 	} else {
 		imgSrc, err := p.ValidateImage(ref, architecture)
 		switch {
 		case err == nil && imgSrc != nil:
-			log.Printf("Image %s arch %s found in local cache, not pulling", image, architecture)
+			log.Debugf("Image %s arch %s found in local cache, not pulling", image, architecture)
 			return imgSrc, nil
 		case err != nil && errors.Is(err, &noReferenceError{}):
-			log.Printf("Image %s arch %s not found in local cache, pulling", image, architecture)
+			log.Debugf("Image %s arch %s not found in local cache, pulling", image, architecture)
 		default:
-			log.Printf("Image %s arch %s incomplete or invalid in local cache, error %v, pulling", image, architecture, err)
+			log.Debugf("Image %s arch %s incomplete or invalid in local cache, error %v, pulling", image, architecture, err)
 		}
 		// there was an error, so try to pull
 	}
@@ -318,7 +317,7 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 				appliedManifests[m.Digest] = true
 				continue
 			}
-			value, ok := m.Annotations[lktutil.AnnotationDockerReferenceDigest]
+			value, ok := m.Annotations[util.AnnotationDockerReferenceDigest]
 			if !ok {
 				manifest.Manifests = append(manifest.Manifests, m)
 				appliedManifests[m.Digest] = true

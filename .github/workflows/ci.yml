@@ -122,13 +122,13 @@ jobs:
     - name: Build Packages
       # Skip s390x as emulation is unreliable
       run: |
-        make OPTIONS="-v --skip-platforms linux/s390x" -C pkg build
+        make OPTIONS="-v 2 --skip-platforms linux/s390x" -C pkg build
 
     - name: Build Test Packages
       # ensures that the test packages are in linuxkit cache when we need them for tests later
       # Skip s390x as emulation is unreliable
       run: |
-        make OPTIONS="-v --skip-platforms linux/s390x" -C test/pkg build
+        make OPTIONS="-v 2 --skip-platforms linux/s390x" -C test/pkg build
 
     - name: Check Kernel Dependencies up to date
       # checks that any kernel dependencies are up to date.
@@ -145,7 +145,7 @@ jobs:
       # ensures that the kernel packages are in linuxkit cache when we need them for tests later
       # no need for excluding s390x, as each build.yml in the kernel explicitly lists archs
       run: |
-        make OPTIONS="-v" -C kernel build
+        make OPTIONS="-v 2" -C kernel build
 
     - name: list cache contents
       run: |
