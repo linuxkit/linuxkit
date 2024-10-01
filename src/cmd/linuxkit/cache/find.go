@@ -8,6 +8,7 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 // matchPlatformsOSArch because match.Platforms rejects it if the provided
@@ -46,7 +47,7 @@ func matchAllAnnotations(annotations map[string]string) match.Matcher {
 	}
 }
 
-func (p *Provider) findImage(imageName, architecture string) (v1.Image, error) {
+func (p *Provider) findImage(imageName string, platform imagespec.Platform) (v1.Image, error) {
 	root, err := p.FindRoot(imageName)
 	if err != nil {
 		return nil, err
@@ -58,7 +59,7 @@ func (p *Provider) findImage(imageName, architecture string) (v1.Image, error) {
 	ii, err := root.ImageIndex()
 	if err == nil {
 		// we have the index, get the manifest that represents the manifest for the desired architecture
-		platform := v1.Platform{OS: "linux", Architecture: architecture}
+		platform := v1.Platform{OS: platform.OS, Architecture: platform.Architecture}
 		images, err := partial.FindImages(ii, matchPlatformsOSArch(platform))
 		if err != nil || len(images) < 1 {
 			return nil, fmt.Errorf("error retrieving image %s for platform %v from cache: %v", imageName, platform, err)

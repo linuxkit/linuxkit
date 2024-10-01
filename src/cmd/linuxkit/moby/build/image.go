@@ -11,6 +11,7 @@ import (
 
 	"github.com/containerd/containerd/reference"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -175,14 +176,15 @@ func tarPrefix(path, location, refName string, tw tarWriter) error {
 	return nil
 }
 
-// ImageTar takes a Docker image and outputs it to a tar stream
+// ImageTar takes a Docker image and outputs it to a tar stream as a merged filesystem for a specific architecture
+// defined in opts.
 // location is where it is in the linuxkit.yaml file
 func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter, resolv string, opts BuildOpts) (e error) {
 	refName := "empty"
 	if ref != nil {
 		refName = ref.String()
 	}
-	log.Debugf("image tar: %s %s", refName, prefix)
+	log.Debugf("image filesystem tar: %s %s %s", refName, prefix, opts.Arch)
 	if prefix != "" && prefix[len(prefix)-1] != '/' {
 		return fmt.Errorf("prefix does not end with /: %s", prefix)
 	}
@@ -197,9 +199,8 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 		return nil
 	}
 
-	// pullImage first checks in the cache, then pulls the image.
-	// If pull==true, then it always tries to pull from registry.
-	src, err := imagePull(ref, opts.Pull, opts.CacheDir, opts.DockerCache, opts.Arch)
+	// get a handle on the image, optionally from docker, pulling from registry if necessary.
+	src, err := imageSource(ref, opts.Pull, opts.CacheDir, opts.DockerCache, imagespec.Platform{OS: "linux", Architecture: opts.Arch})
 	if err != nil {
 		return fmt.Errorf("could not pull image %s: %v", ref, err)
 	}
@@ -350,6 +351,79 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 			if err := opts.SbomGenerator.Add(prefix, sbom); err != nil {
 				return err
 			}
+		}
+	}
+
+	return nil
+}
+
+// ImageOCITar takes an OCI image and outputs it to a tar stream as a v1 layout format.
+// Will include all architectures, or, if specific ones provided, then only those.
+// location is where it is in the linuxkit.yaml file
+func ImageOCITar(location string, ref *reference.Spec, prefix string, tw tarWriter, opts BuildOpts, platforms []imagespec.Platform) (e error) {
+	refName := "empty"
+	if ref != nil {
+		refName = ref.String()
+	}
+	log.Debugf("image v1 layout tar: %s %s %s", refName, prefix, opts.Arch)
+	if prefix != "" && prefix[len(prefix)-1] != '/' {
+		return fmt.Errorf("prefix does not end with /: %s", prefix)
+	}
+
+	err := tarPrefix(prefix, location, refName, tw)
+	if err != nil {
+		return err
+	}
+
+	// if the image is blank, we do not need to do any more
+	if ref == nil {
+		return fmt.Errorf("no image reference provided")
+	}
+
+	// indexSource first checks in the cache, then pulls the image.
+	// If pull==true, then it always tries to pull from registry.
+	src, err := indexSource(ref, opts.Pull, opts.CacheDir, platforms)
+	if err != nil {
+		return fmt.Errorf("could not pull image %s: %v", ref, err)
+	}
+
+	contents, err := src.OCITarReader("")
+	if err != nil {
+		return fmt.Errorf("could not unpack image %s: %v", ref, err)
+	}
+
+	defer contents.Close()
+
+	tr := tar.NewReader(contents)
+
+	for {
+		hdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		// force PAX format, since it allows for unlimited Name/Linkname
+		// and we move all files below prefix.
+		hdr.Format = tar.FormatPAX
+		// ensure we record the source of the file in the PAX header
+		if hdr.PAXRecords == nil {
+			hdr.PAXRecords = make(map[string]string)
+		}
+		hdr.PAXRecords[moby.PaxRecordLinuxkitSource] = ref.String()
+		hdr.PAXRecords[moby.PaxRecordLinuxkitLocation] = location
+		hdr.Name = prefix + hdr.Name
+		if hdr.Typeflag == tar.TypeLink {
+			// hard links are referenced by full path so need to be adjusted
+			hdr.Linkname = prefix + hdr.Linkname
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return err
+		}
+		_, err = io.Copy(tw, tr)
+		if err != nil {
+			return err
 		}
 	}
 

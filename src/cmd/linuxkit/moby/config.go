@@ -76,10 +76,12 @@ type File struct {
 
 // Volume is the type of a volume specification
 type Volume struct {
-	Name     string `yaml:"name" json:"name"`
-	Image    string `yaml:"image,omitempty" json:"image,omitempty"`
-	ReadOnly bool   `yaml:"readonly,omitempty" json:"readonly,omitempty"`
-	ref      *reference.Spec
+	Name      string   `yaml:"name" json:"name"`
+	Image     string   `yaml:"image,omitempty" json:"image,omitempty"`
+	ReadOnly  bool     `yaml:"readonly,omitempty" json:"readonly,omitempty"`
+	Format    string   `yaml:"format,omitempty" json:"format,omitempty"`
+	Platforms []string `yaml:"platforms,omitempty" json:"platforms,omitempty"`
+	ref       *reference.Spec
 }
 
 func (v Volume) ImageRef() *reference.Spec {

@@ -16,6 +16,8 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
+
 	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
 	gzip "github.com/klauspost/pgzip"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
@@ -84,6 +86,8 @@ func OutputTypes() []string {
 	return ts
 }
 
+// outputImage given an image and a section, such as onboot, onshutdown or services, lay it out with correct location
+// config, etc. in the filesystem, so runc can use it.
 func outputImage(image *moby.Image, section string, index int, prefix string, m moby.Moby, idMap map[string]uint32, dupMap map[string]string, iw *tar.Writer, opts BuildOpts) error {
 	log.Infof("  Create OCI config for %s", image.Image)
 	imageName := util.ReferenceExpand(image.Image)
@@ -91,7 +95,7 @@ func outputImage(image *moby.Image, section string, index int, prefix string, m 
 	if err != nil {
 		return fmt.Errorf("could not resolve references for image %s: %v", image.Image, err)
 	}
-	src, err := imagePull(&ref, opts.Pull, opts.CacheDir, opts.DockerCache, opts.Arch)
+	src, err := imageSource(&ref, opts.Pull, opts.CacheDir, opts.DockerCache, imagespec.Platform{OS: "linux", Architecture: opts.Arch})
 	if err != nil {
 		return fmt.Errorf("could not pull image %s: %v", image.Image, err)
 	}
@@ -281,8 +285,9 @@ func Build(m moby.Moby, w io.Writer, opts BuildOpts) error {
 
 		// get volume tarball from container
 		if err := ImageTar(location, vol.ImageRef(), lowerPath, apkTar, resolvconfSymlink, opts); err != nil {
-			return fmt.Errorf("failed to build volume tarball from %s: %v", vol.Name, err)
+			return fmt.Errorf("failed to build volume filesystem tarball from %s: %v", vol.Name, err)
 		}
+
 		// make upper and merged dirs which will be used for mounting
 		// no need to make lower dir, as it is made automatically by ImageTar()
 		tmpPath := strings.TrimPrefix(tmpDir, "/") + "/"
