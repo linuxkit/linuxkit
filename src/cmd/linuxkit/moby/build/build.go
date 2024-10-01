@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/containerd/containerd/reference"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 
 	// drop-in 100% compatible replacement and 17% faster than compress/gzip.
@@ -284,8 +285,28 @@ func Build(m moby.Moby, w io.Writer, opts BuildOpts) error {
 		lowerPath := strings.TrimPrefix(lower, "/") + "/"
 
 		// get volume tarball from container
-		if err := ImageTar(location, vol.ImageRef(), lowerPath, apkTar, resolvconfSymlink, opts); err != nil {
-			return fmt.Errorf("failed to build volume filesystem tarball from %s: %v", vol.Name, err)
+		switch {
+		case vol.ImageRef() == nil || vol.Format == "" || vol.Format == "filesystem":
+			if err := ImageTar(location, vol.ImageRef(), lowerPath, apkTar, resolvconfSymlink, opts); err != nil {
+				return fmt.Errorf("failed to build volume filesystem tarball from %s: %v", vol.Name, err)
+			}
+		case vol.Format == "oci":
+			// convert platforms into imagespec platforms
+			platforms := make([]imagespec.Platform, len(vol.Platforms))
+			for i, p := range vol.Platforms {
+				platform, err := v1.ParsePlatform(p)
+				if err != nil {
+					return fmt.Errorf("failed to parse platform %s: %v", p, err)
+				}
+				platforms[i] = imagespec.Platform{
+					Architecture: platform.Architecture,
+					OS:           platform.OS,
+					Variant:      platform.Variant,
+				}
+			}
+			if err := ImageOCITar(location, vol.ImageRef(), lowerPath, apkTar, opts, platforms); err != nil {
+				return fmt.Errorf("failed to build volume OCI v1 layout tarball from %s: %v", vol.Name, err)
+			}
 		}
 
 		// make upper and merged dirs which will be used for mounting

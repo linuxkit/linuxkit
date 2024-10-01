@@ -18,8 +18,17 @@ For private registries or private repositories on a registry credentials provide
 
 ## Sections
 
-The configuration file is processed in the order `kernel`, `init`, `onboot`, `onshutdown`,
-`services`, `files`, `volumes`. Each section adds files to the root file system. Sections may be omitted.
+The configuration file is processed in the order:
+
+1. `kernel`
+1. `init`
+1. `volumes`
+1. `onboot`
+1. `onshutdown`
+1. `services`
+1. `files`
+
+Each section adds files to the root file system. Sections may be omitted.
 
 Each container that is specified is allocated a unique `uid` and `gid` that it may use if it
 wishes to run as an isolated user (or user namespace). Anywhere you specify a `uid` or `gid`
@@ -100,8 +109,13 @@ including those in `services`, `onboot` and `onshutdown`. The volumes are create
 chosen by linuxkit at build-time. The volumes then can be referenced by other containers and
 mounted into them.
 
-Volumes normally are blank directories. If an image is provided, the contents of that image
-will be used to populate the volume.
+Volumes can be in one of several formats:
+
+* Blank directory: This is the default, and is an empty directory that is created at build-time. It is an overlayfs mount, and can be shared among multiple containers.
+* Image laid out as filesystem: The contents of the image are used to populate the volume. Default format when an image is provided.
+* Image as OCI v1-layout: The image is used as an [OCI v1-layout](https://github.com/opencontainers/image-spec/blob/main/image-layout.md). Indicated by `format: oci`.
+
+Examples of each are given later in this section.
 
 The `volumes` section can declare a volume to be read-write or read-only. If the volume is read-write,
 a volume that is mounted into a container can be mounted read-only or read-write. If the volume is read-only,
@@ -111,7 +125,36 @@ By default, volumes are created read-write, and are mounted read-write.
 Volume names **must** be unique, and must contain only lower-case alphanumeric characters, hyphens, and
 underscores.
 
-Sample `volumes` section:
+#### Samples of `volumes`
+
+##### Empty directory
+
+Yaml showing both read-only and read-write:
+
+```yml
+volumes:
+- name: dira
+  readonly: true
+- name: dirb
+  readonly: true
+```
+
+Contents:
+
+```sh
+$ cd dir && ls -la
+drwxr-xr-x   19 root  wheel   608 Sep 30 15:03 .
+drwxrwxrwt  130 root  wheel  4160 Sep 30 15:03 ..
+```
+
+In the above example:
+
+* `dira` is empty and is read-only.
+* `volb` is empty and is read-write.
+
+##### Image directory
+
+Yaml showing both read-only and read-write:
 
 ```yml
 volumes:
@@ -120,8 +163,7 @@ volumes:
   readonly: true
 - name: volb
   image: alpine:latest
-  readonly: false
-- name: volc
+  format: filesystem     # optional, as this is the default format
   readonly: false
 ```
 
@@ -129,7 +171,56 @@ In the above example:
 
 * `vola` is populated by the contents of `alpine:latest` and is read-only.
 * `volb` is populated by the contents of `alpine:latest` and is read-write.
-* `volc` is an empty volume and is read-write.
+
+Contents:
+
+```sh
+$ cd dir && ls -la
+drwxr-xr-x   19 root  wheel   608 Sep 30 15:03 .
+drwxrwxrwt  130 root  wheel  4160 Sep 30 15:03 ..
+drwxr-xr-x   84 root  wheel  2688 Sep  6 14:34 bin
+drwxr-xr-x    2 root  wheel    64 Sep  6 14:34 dev
+drwxr-xr-x   37 root  wheel  1184 Sep  6 14:34 etc
+drwxr-xr-x    2 root  wheel    64 Sep  6 14:34 home
+drwxr-xr-x   13 root  wheel   416 Sep  6 14:34 lib
+drwxr-xr-x    5 root  wheel   160 Sep  6 14:34 media
+drwxr-xr-x    2 root  wheel    64 Sep  6 14:34 mnt
+drwxr-xr-x    2 root  wheel    64 Sep  6 14:34 opt
+dr-xr-xr-x    2 root  wheel    64 Sep  6 14:34 proc
+drwx------    2 root  wheel    64 Sep  6 14:34 root
+drwxr-xr-x    2 root  wheel    64 Sep  6 14:34 run
+drwxr-xr-x   63 root  wheel  2016 Sep  6 14:34 sbin
+drwxr-xr-x    2 root  wheel    64 Sep  6 14:34 srv
+drwxr-xr-x    2 root  wheel    64 Sep  6 14:34 sys
+drwxr-xr-x    2 root  wheel    64 Sep  6 14:34 tmp
+drwxr-xr-x    7 root  wheel   224 Sep  6 14:34 usr
+drwxr-xr-x   13 root  wheel   416 Sep  6 14:34 var
+```
+
+##### Image OCI Layout
+
+Yaml showing both read-only and read-write, and both all architectures and a limited subset:
+
+```yml
+volumes:
+- name: volo
+  image: alpine:latest
+  format: oci
+  readonly: true
+- name: volp
+  image: alpine:latest
+  readonly: false
+  format: oci
+  platforms:
+    - linux/amd64
+```
+
+In the above example:
+
+* `volo` is populated by the contents of `alpine:latest` as an OCI v1-layout for all architectures and is read-only.
+* `volb` is populated by the contents of `alpine:latest` as an OCI v1-layout just for linux/amd64 and is read-write.
+
+##### Volumes in `services`
 
 Sample usage of volumes in `services` section:
 
