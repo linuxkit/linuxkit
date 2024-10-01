@@ -43,8 +43,9 @@ func readConfig() {
 
 func newCmd() *cobra.Command {
 	var (
-		flagQuiet   bool
-		flagVerbose bool
+		flagQuiet       bool
+		flagVerbose     int
+		flagVerboseName = "verbose"
 	)
 	cmd := &cobra.Command{
 		Use:               "linuxkit",
@@ -54,7 +55,7 @@ func newCmd() *cobra.Command {
 			readConfig()
 
 			// Set up logging
-			return util.SetupLogging(flagQuiet, flagVerbose)
+			return util.SetupLogging(flagQuiet, flagVerbose, cmd.Flag(flagVerboseName).Changed)
 		},
 	}
 
@@ -69,7 +70,7 @@ func newCmd() *cobra.Command {
 
 	cmd.PersistentFlags().StringVar(&cacheDir, "cache", defaultLinuxkitCache(), fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 	cmd.PersistentFlags().BoolVarP(&flagQuiet, "quiet", "q", false, "Quiet execution")
-	cmd.PersistentFlags().BoolVarP(&flagVerbose, "verbose", "v", false, "Verbose execution")
+	cmd.PersistentFlags().IntVarP(&flagVerbose, flagVerboseName, "v", 1, "Verbosity of logging: 0 = quiet, 1 = info, 2 = debug, 3 = trace. Default is info. Setting it explicitly will create structured logging lines.")
 
 	return cmd
 }

@@ -446,7 +446,7 @@ func AppendConfig(m0, m1 Moby) (Moby, error) {
 
 // NewImage validates an parses yaml or json for a Image
 func NewImage(config []byte) (Image, error) {
-	log.Debugf("Reading label config: %s", string(config))
+	log.Tracef("Reading label config: %s", string(config))
 
 	mi := Image{}
 

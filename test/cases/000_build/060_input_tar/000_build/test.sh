@@ -21,7 +21,7 @@ logfile=$(mktemp)
 # do not include the sbom, because the SBoM unique IDs per file/package are *not* deterministic,
 # (currently based upon syft), and thus will make the file non-reproducible
 linuxkit build --no-sbom --format tar --o "${NAME}-1.tar" ./test1.yml
-linuxkit build -v --no-sbom --format tar --input-tar "${NAME}-1.tar" --o "${NAME}-2.tar" ./test2.yml 2>&1 | tee ${logfile}
+linuxkit build -v 2 --no-sbom --format tar --input-tar "${NAME}-1.tar" --o "${NAME}-2.tar" ./test2.yml 2>&1 | tee ${logfile}
 
 # the logfile should indicate which parts were copied and which not
 # we only know this because we built the test2.yml manually

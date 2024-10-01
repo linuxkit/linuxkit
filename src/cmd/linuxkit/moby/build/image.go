@@ -237,7 +237,7 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 		hdr.PAXRecords[moby.PaxRecordLinuxkitSource] = ref.String()
 		hdr.PAXRecords[moby.PaxRecordLinuxkitLocation] = location
 		if exclude[hdr.Name] {
-			log.Debugf("image tar: %s %s exclude %s", ref, prefix, hdr.Name)
+			log.Tracef("image tar: %s %s exclude %s", ref, prefix, hdr.Name)
 			_, err = io.Copy(io.Discard, tr)
 			if err != nil {
 				return err
@@ -248,7 +248,7 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 				hdr.Size = int64(len(contents))
 				hdr.Name = prefix + hdr.Name
 				hdr.ModTime = defaultModTime
-				log.Debugf("image tar: %s %s add %s (replaced)", ref, prefix, hdr.Name)
+				log.Tracef("image tar: %s %s add %s (replaced)", ref, prefix, hdr.Name)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
 				}
@@ -263,7 +263,7 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 				hdr.Typeflag = tar.TypeSymlink
 				hdr.Linkname = resolv
 				hdr.ModTime = defaultModTime
-				log.Debugf("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", ref, prefix, resolv)
+				log.Tracef("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", ref, prefix, resolv)
 				if err := tw.WriteHeader(hdr); err != nil {
 					return err
 				}
@@ -274,12 +274,12 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 			}
 		} else {
 			if found, ok := touch[hdr.Name]; ok {
-				log.Debugf("image tar: %s %s add %s (touch)", ref, prefix, hdr.Name)
+				log.Tracef("image tar: %s %s add %s (touch)", ref, prefix, hdr.Name)
 				hdr.ModTime = found.ModTime
 				// record that we saw this one
 				touchFound[hdr.Name] = true
 			} else {
-				log.Debugf("image tar: %s %s add %s (original)", ref, prefix, hdr.Name)
+				log.Tracef("image tar: %s %s add %s (original)", ref, prefix, hdr.Name)
 			}
 			hdr.Name = prefix + hdr.Name
 			if hdr.Typeflag == tar.TypeLink {
@@ -304,7 +304,7 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 	sort.Strings(touchNames)
 	for _, name := range touchNames {
 		if touchFound[name] {
-			log.Debugf("image tar: %s already found in original image", name)
+			log.Tracef("image tar: %s already found in original image", name)
 			continue
 		}
 		hdr := touch[name]
@@ -326,9 +326,9 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 			hdr.Size = 0
 			hdr.Typeflag = tar.TypeSymlink
 			hdr.Linkname = resolv
-			log.Debugf("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", ref, prefix, resolv)
+			log.Tracef("image tar: %s %s add resolv symlink /etc/resolv.conf -> %s", ref, prefix, resolv)
 		}
-		log.Debugf("image tar: creating %s", name)
+		log.Tracef("image tar: creating %s", name)
 		if err := tw.WriteHeader(&hdr); err != nil {
 			return err
 		}
@@ -489,7 +489,7 @@ func ImageBundle(prefix, location string, ref *reference.Spec, config []byte, ru
 		return err
 	}
 
-	log.Debugf("image bundle: %s %s cfg: %s runtime: %s", prefix, ref, string(config), string(runtimeConfig))
+	log.Tracef("image bundle: %s %s cfg: %s runtime: %s", prefix, ref, string(config), string(runtimeConfig))
 
 	return nil
 }
