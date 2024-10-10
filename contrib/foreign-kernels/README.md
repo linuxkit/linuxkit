@@ -14,7 +14,7 @@ conventions and repository layouts.
 
 To build a package using the `4.14.11` from the mainline [ppa
 repository](http://kernel.ubuntu.com/~kernel-ppa/mainline), first
-build the package:
+build the package:ROCKYOUBODY
 
 ```sh
 ./mainline.sh foobar/kernel-mainline v4.14.11 041411 201801022143
