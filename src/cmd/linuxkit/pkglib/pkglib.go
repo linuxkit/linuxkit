@@ -20,6 +20,7 @@ import (
 type pkgInfo struct {
 	Image        string            `yaml:"image"`
 	Org          string            `yaml:"org"`
+	Tag          string            `yaml:"tag,omitempty"` // default to {{.Hash}}
 	Dockerfile   string            `yaml:"dockerfile"`
 	Arches       []string          `yaml:"arches"`
 	ExtraSources []string          `yaml:"extra-sources"`
@@ -60,6 +61,7 @@ func NewPkgInfo() pkgInfo {
 	return pkgInfo{
 		Org:          "linuxkit",
 		Arches:       []string{"amd64", "arm64"},
+		Tag:          "{{.Hash}}",
 		GitRepo:      "https://github.com/linuxkit/linuxkit",
 		Network:      false,
 		DisableCache: false,
@@ -257,9 +259,16 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 				}
 			}
 		}
+		tagTmpl := pi.Tag
+		if cfg.Tag != "" {
+			tagTmpl = cfg.Tag
+		}
+		if tagTmpl == "" {
+			tagTmpl = "{{.Hash}}"
+		}
 
 		// calculate the tag to use based on the template and the pkgHash
-		tmpl, err := template.New("tag").Parse(cfg.Tag)
+		tmpl, err := template.New("tag").Parse(tagTmpl)
 		if err != nil {
 			return nil, fmt.Errorf("invalid tag template: %v", err)
 		}

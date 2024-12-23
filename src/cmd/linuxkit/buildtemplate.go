@@ -22,12 +22,13 @@ func createPackageResolver(baseDir string) spec.PackageResolver {
 			pkgValue = pkgTmpl
 		case strings.HasPrefix(pkgTmpl, templateFlag+templatePkg):
 			pkgPath := strings.TrimPrefix(pkgTmpl, templateFlag+templatePkg)
+			piBase := pkglib.NewPkgInfo()
 
 			var pkgs []pkglib.Pkg
 			pkgConfig := pkglib.PkglibConfig{
 				BuildYML:   defaultPkgBuildYML,
 				HashCommit: defaultPkgCommit,
-				Tag:        defaultPkgTag,
+				Tag:        piBase.Tag,
 			}
 			pkgs, err = pkglib.NewFromConfig(pkgConfig, path.Join(baseDir, pkgPath))
 			if err != nil {
