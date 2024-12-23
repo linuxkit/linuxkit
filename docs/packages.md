@@ -50,6 +50,7 @@ A package source consists of a directory containing at least two files:
 
 - `image` _(string)_: *(mandatory)* The name of the image to build
 - `org` _(string)_: The hub/registry organisation to which this package belongs
+- `tag` _(string)_: The tag to use for the image, can be fixed string or template (default: `{{.Hash}}`)
 - `dockerfile` _(string)_: The dockerfile to use to build this package, must be in this directory or below (default: `Dockerfile`)
 - `arches` _(list of string)_: The architectures which this package should be built for (valid entries are `GOARCH` names)
 - `extra-sources` _(list of strings)_: Additional sources for the package outside the package directory. The format is `src:dst`, where `src` can be relative to the package directory and `dst` is the destination in the build context. This is useful for sharing files, such as vendored go code, between packages.
