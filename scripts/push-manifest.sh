@@ -52,7 +52,7 @@ fi
 # Push manifest list
 OUT=$(manifest-tool $MT_ARGS push from-args \
                     --ignore-missing \
-                    --platforms linux/amd64,linux/arm64,linux/s390x \
+                    --platforms linux/amd64,linux/arm64,linux/s390x,linux/riscv64 \
                     --template "$TARGET"-ARCH \
                     --target "$TARGET")
 
