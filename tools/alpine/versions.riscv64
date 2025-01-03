@@ -1,4 +1,4 @@
-# linuxkit/alpine:1b8d5c47d707fa016c754d3b61d059603ad6c38c-amd64
+# linuxkit/alpine:e982abb0a3b0ce042c38ad7c07c056e014d6dd83-riscv64
 # automatically generated list of installed packages
 abuild-3.14.1-r4
 abuild-sudo-3.14.1-r4
@@ -160,7 +160,6 @@ krb5-conf-1.0-r2
 krb5-dev-1.21.3-r0
 krb5-libs-1.21.3-r0
 krb5-server-ldap-1.21.3-r0
-lddtree-1.27-r0
 libaio-0.3.113-r2
 libarchive-3.7.7-r0
 libarchive-tools-3.7.7-r0
@@ -209,7 +208,6 @@ libmagic-5.46-r2
 libmenuw-6.5_p20241006-r3
 libmnl-1.0.5-r2
 libmount-2.40.2-r4
-libmspack-0.11_alpha-r1
 libncurses++-6.5_p20241006-r3
 libncursesw-6.5_p20241006-r3
 libnfsidmap-2.6.4-r3
@@ -240,10 +238,7 @@ libtirpc-dev-1.3.5-r0
 libtirpc-nokrb-1.3.5-r0
 libtool-2.4.7-r3
 libucontext-1.3.2-r0
-libucontext-dev-1.3.2-r0
 libunistring-1.2-r0
-libunwind-1.8.1-r0
-libunwind-dev-1.8.1-r0
 liburing-2.8-r0
 libuuid-2.40.2-r4
 libuv-1.49.2-r0
@@ -272,8 +267,6 @@ losetup-2.40.2-r4
 lsblk-2.40.2-r4
 lscpu-2.40.2-r4
 lsscsi-0.32-r1
-luajit-2.1_p20240815-r0
-luajit-dev-2.1_p20240815-r0
 lvm2-2.03.28-r2
 lvm2-libs-2.03.28-r2
 lvm2-openrc-2.03.28-r2
@@ -283,8 +276,6 @@ lzo-2.10-r5
 m4-1.4.19-r3
 make-4.4.1-r2
 mcookie-2.40.2-r4
-mdev-conf-4.7-r0
-mkinitfs-3.11.1-r0
 mount-2.40.2-r4
 mpc1-1.3.1-r1
 mpc1-dev-1.3.1-r1
@@ -313,12 +304,6 @@ open-iscsi-2.1.10-r3
 open-iscsi-libs-2.1.10-r3
 open-iscsi-openrc-2.1.10-r3
 open-isns-lib-0.102-r2
-open-vm-tools-12.5.0-r0
-open-vm-tools-deploypkg-12.5.0-r0
-open-vm-tools-guestinfo-12.5.0-r0
-open-vm-tools-openrc-12.5.0-r0
-open-vm-tools-static-12.5.0-r0
-open-vm-tools-vmbackup-12.5.0-r0
 openntpd-6.8_p1-r9
 openntpd-openrc-6.8_p1-r9
 openrc-0.55.1-r2
@@ -331,7 +316,6 @@ openssh-server-common-9.9_p1-r2
 openssh-server-common-openrc-9.9_p1-r2
 openssl-3.3.2-r4
 openssl-dev-3.3.2-r4
-ovmf-0.0.202308-r2
 p11-kit-0.25.5-r2
 partx-2.40.2-r4
 patch-2.7.6-r10
@@ -394,9 +378,7 @@ sqlite-dev-3.47.1-r0
 sqlite-libs-3.47.1-r0
 squashfs-tools-4.6.1-r1
 ssl_client-1.37.0-r9
-strace-6.12-r0
 swig-4.3.0-r0
-syslinux-6.04_pre1-r16
 talloc-2.4.2-r1
 tar-1.35-r2
 tcl-8.6.15-r0
@@ -426,7 +408,6 @@ wireless-tools-30_pre9-r5
 wireless-tools-libs-30_pre9-r5
 wpa_supplicant-2.10-r11
 wpa_supplicant-openrc-2.10-r11
-xen-libs-4.19.1-r0
 xfsprogs-6.10.1-r0
 xfsprogs-extra-6.10.1-r0
 xorriso-1.5.6-r0
@@ -434,7 +415,6 @@ xxd-9.1.0707-r0
 xz-5.6.3-r0
 xz-dev-5.6.3-r0
 xz-libs-5.6.3-r0
-yajl-2.1.0-r9
 zfs-2.2.7-r0
 zfs-libs-2.2.7-r0
 zfs-openrc-2.2.7-r0
