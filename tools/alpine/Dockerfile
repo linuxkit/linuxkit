@@ -1,4 +1,4 @@
-ARG ALPINE_VERSION=3.19
+ARG ALPINE_VERSION=3.21
 FROM alpine:${ALPINE_VERSION} AS mirror
 
 # update base image

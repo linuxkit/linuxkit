@@ -34,7 +34,15 @@ go test
 
 >&2 echo "go build..."
 
-[ "${REQUIRE_CGO}" = 1 ] || export CGO_ENABLED=0
+export CGO_ENABLED=0
+linkmode=""
+piemode=""
 
-go install -buildmode pie -ldflags "-linkmode=external -s -w ${ldflags} -extldflags \"-fno-PIC -static\""
+if [ "${REQUIRE_CGO}" = 1 ]; then
+	export CGO_ENABLED=1
+	linkmode="-linkmode=external"
+	piemode="-buildmode=pie"
+fi
+
+go install ${piemode} -ldflags "${linkmode} -s -w ${ldflags} -extldflags \"-fno-PIC -static\""
 
