@@ -2,14 +2,14 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e120ea2a30d906bd1ee1874973d6e4b1403b5ca3
-  - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
+  - linuxkit/init:bf45651001f871323d70b746330e8c2a94f767e6
+  - linuxkit/runc:ab0b50b622b8e34031b6bb8b18497100a558a11d
 onboot:
   - name: format
-    image: linuxkit/format:e040f4f045f03138a1ee8a22bb6feae7fd5596a6
+    image: linuxkit/format:db495c67312fe0ee4d94518e316a76f49ce01c40
     command: ["/usr/bin/format", "@DEVICE@"]
   - name: mount
-    image: linuxkit/mount:19ff89c251a4156bda8ed11c95faad2f40eb770e
+    image: linuxkit/mount:4711fa808be15ad41129c11a24bbb87efed0beec
     command: ["/usr/bin/mountie", "-device", "@DEVICE@1", "/var/lib/docker"]
   - name: test
     image: alpine:3.13
@@ -18,7 +18,7 @@ onboot:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:401dc53c604c0b2179ed0369a6968fd4179cc176
+    image: linuxkit/poweroff:b24c9c42e53bd5b7a0ddbbf1a923ce0baad3d2f0
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh

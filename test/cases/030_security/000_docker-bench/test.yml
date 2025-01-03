@@ -2,25 +2,25 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:e120ea2a30d906bd1ee1874973d6e4b1403b5ca3
-  - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
-  - linuxkit/containerd:39301e7312f13eedf19bd5d5551af7b37001d435
-  - linuxkit/ca-certificates:5aaa343474e5ac3ac01f8b917e82efb1063d80ff
+  - linuxkit/init:bf45651001f871323d70b746330e8c2a94f767e6
+  - linuxkit/runc:ab0b50b622b8e34031b6bb8b18497100a558a11d
+  - linuxkit/containerd:c85f857bb3ed72b91509df20d1b9b3e430160074
+  - linuxkit/ca-certificates:9179129925943ab3e8d4a92e986d8c87193925bc
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:5a374e4bf3e5a7deeacff6571d0f30f7ea8f56db
+    image: linuxkit/sysctl:118703ca489a425ee588096a3fa002ce29bf0b4c
   - name: sysfs
-    image: linuxkit/sysfs:ec174e06ca756f492e7a3fd6200d5c1672b97511
+    image: linuxkit/sysfs:3f1b4b04f51c06a751cadccc682868aad44be1aa
   - name: format
-    image: linuxkit/format:e040f4f045f03138a1ee8a22bb6feae7fd5596a6
+    image: linuxkit/format:db495c67312fe0ee4d94518e316a76f49ce01c40
   - name: mount
-    image: linuxkit/mount:19ff89c251a4156bda8ed11c95faad2f40eb770e
+    image: linuxkit/mount:4711fa808be15ad41129c11a24bbb87efed0beec
     command: ["/usr/bin/mountie", "/var/lib/docker"]
 services:
   - name: rngd
-    image: linuxkit/rngd:83a6481f04da73e710c1d416355920b8ff4dc1dd
+    image: linuxkit/rngd:e83de73632097eab9f96593f287dc032c3da5e75
   - name: dhcpcd
-    image: linuxkit/dhcpcd:e9e3580f2de00e73e7b316a007186d22fea056ee
+    image: linuxkit/dhcpcd:f67a935a3768da88a5d8252188e71b65f0feadf7
   - name: docker
     image: docker:20.10.6-dind
     capabilities:
