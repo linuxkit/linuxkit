@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0 page_poison=1"
 init:
-  - linuxkit/init:e120ea2a30d906bd1ee1874973d6e4b1403b5ca3
-  - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
+  - linuxkit/init:bf45651001f871323d70b746330e8c2a94f767e6
+  - linuxkit/runc:ab0b50b622b8e34031b6bb8b18497100a558a11d
 onboot:
   - name: test
     image: alpine:3.13
@@ -12,7 +12,7 @@ onboot:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:401dc53c604c0b2179ed0369a6968fd4179cc176
+    image: linuxkit/poweroff:b24c9c42e53bd5b7a0ddbbf1a923ce0baad3d2f0
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh

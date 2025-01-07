@@ -2,14 +2,14 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e120ea2a30d906bd1ee1874973d6e4b1403b5ca3
-  - linuxkit/runc:6062483d748609d505f2bcde4e52ee64a3329f5f
-  - linuxkit/containerd:39301e7312f13eedf19bd5d5551af7b37001d435
+  - linuxkit/init:bf45651001f871323d70b746330e8c2a94f767e6
+  - linuxkit/runc:ab0b50b622b8e34031b6bb8b18497100a558a11d
+  - linuxkit/containerd:c85f857bb3ed72b91509df20d1b9b3e430160074
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:5a374e4bf3e5a7deeacff6571d0f30f7ea8f56db
+    image: linuxkit/sysctl:118703ca489a425ee588096a3fa002ce29bf0b4c
   - name: dhcpcd
-    image: linuxkit/dhcpcd:e9e3580f2de00e73e7b316a007186d22fea056ee
+    image: linuxkit/dhcpcd:f67a935a3768da88a5d8252188e71b65f0feadf7
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 onshutdown:
   - name: shutdown
@@ -17,11 +17,11 @@ onshutdown:
     command: ["/bin/echo", "so long and thanks for all the fish"]
 services:
   - name: getty
-    image: linuxkit/getty:5d86a2ce2d890c14ab66b13638dcadf74f29218b
+    image: linuxkit/getty:76554bbf9f667205c78ce589c55100376fa16e28
     env:
      - INSECURE=true
   - name: rngd
-    image: linuxkit/rngd:83a6481f04da73e710c1d416355920b8ff4dc1dd
+    image: linuxkit/rngd:e83de73632097eab9f96593f287dc032c3da5e75
   - name: nginx
     image: nginx:1.19.5-alpine
     capabilities:

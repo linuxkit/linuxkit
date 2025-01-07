@@ -2,6 +2,7 @@
 .PHONY: all clean install
 
 SOLIB = libgetpwent_r.so
+HEADER = getpwent_r.h
 
 DEPS = getpwent_r.o
 
@@ -16,3 +17,4 @@ $(SOLIB): $(DEPS)
 install:
 	mkdir -p /out/lib
 	cp $(SOLIB) /out/lib
+	cp $(HEADER) /usr/include

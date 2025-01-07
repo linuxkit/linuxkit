@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e as builder
+FROM linuxkit/alpine:3fb2ec0c94ed30171bb04100f568bba2ebb648a9 as builder
 
 
 # checkout and compile containerd

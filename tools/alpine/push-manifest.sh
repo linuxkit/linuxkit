@@ -17,6 +17,7 @@ IMAGE=$2
 IMG_X86_64=$(head -1 versions.x86_64 | sed 's,[#| ]*,,')
 IMG_ARM64=$(head -1 versions.aarch64 | sed 's,[#| ]*,,')
 IMG_s390x=$(head -1 versions.s390x | sed 's,[#| ]*,,')
+IMG_RISCV64=$(head -1 versions.riscv64 | sed 's,[#| ]*,,')
 # Extract the TAG from the tree hash - just like how "linuxkit pkg show-tag" does it - name and build the manifest target name
 TAG=$(git ls-tree --full-tree HEAD -- $(pwd) | awk '{print $3}')
 DIRTY=$(git diff-index HEAD -- $(pwd))
@@ -41,6 +42,10 @@ manifests:
   - image: $IMG_s390x
     platform:
       architecture: s390x
+      os: linux
+  - image: $IMG_RISCV64
+    platform:
+      architecture: riscv64
       os: linux
 EOF
 

@@ -1,5 +1,5 @@
 # Dockerfile to build linuxkit/memlogd for linuxkit
-FROM linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e AS build
+FROM linuxkit/alpine:3fb2ec0c94ed30171bb04100f568bba2ebb648a9 AS build
 
 RUN apk add --no-cache go musl-dev
 ARG GOPKGVERSION
