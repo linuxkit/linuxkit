@@ -101,9 +101,9 @@ In the below, replace `linuxkit-arch` with each build machine's name:
 
 ```sh
 # one of these will not be necessary, as you will likely be executing it on one of these machines
-scp linuxkit-s390x:$LK_ROOT/tools/alpine/versions.s390x $LK_ROOT/tools/alpine/versions.s390x
-scp linuxkit-aarch64:$LK_ROOT/tools/alpine/versions.aarch64 $LK_ROOT/tools/alpine/versions.aarch64
-scp linuxkit-x86_64:$LK_ROOT/tools/alpine/versions.x86_64 $LK_ROOT/tools/alpine/versions.x86_64
+for arch in x86_64 aarch64 riscv64; do
+    scp linuxkit-$arch:$LK_ROOT/tools/alpine/versions.$arch $LK_ROOT/tools/alpine/versions.$arch
+done
 git commit -a -s -m "tools/alpine: Update to latest"
 git push $LK_REMOTE $LK_BRANCH
 ```
@@ -131,7 +131,6 @@ following which is an explanation of each one.
 # Update tools packages
 cd $LK_ROOT/tools
 $LK_ROOT/scripts/update-component-sha.sh --image $LK_ALPINE
-git checkout grub-dev/Dockerfile
 git checkout mkimage-rpi3/Dockerfile
 git commit -a -s -m "tools: Update to the latest linuxkit/alpine"
 
@@ -183,7 +182,6 @@ Note, the `git checkout` reverts the changes made by
 Important is the `git checkout` of some sensitive packages that only can be built with
 specific older versions of upstream packages:
 
-* `grub-dev`
 * `mkimage-rpi3`
 
 Only update those if you know what you are doing with them.
