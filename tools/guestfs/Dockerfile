@@ -1,4 +1,4 @@
-FROM debian:bullseye-slim as base
+FROM debian:trixie-slim as base
 
 ARG TARGETARCH
 
@@ -11,6 +11,9 @@ ENV SYSLINUX="syslinux"
 
 FROM base as syslinux-arm64
 ENV SYSLINUX_arm64="syslinux-common"
+
+FROM base as syslinux-riscv64
+ENV SYSLINUX_riscv64="syslinux-common"
 
 FROM syslinux-${TARGETARCH} as syslinux
 RUN apt-get update && \

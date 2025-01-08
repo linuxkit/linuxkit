@@ -1,6 +1,6 @@
 --- build/build.sh.orig	2017-11-16 16:29:18.281342577 +0000
 +++ build/build.sh	2017-11-16 16:29:55.534787421 +0000
-@@ -44,6 +44,7 @@
+@@ -47,6 +47,7 @@
    -X ${repo_path}/version.BuildDate${ldseparator}${BUILD_DATE}
    -X ${repo_path}/version.GoVersion${ldseparator}${go_version}"
  
