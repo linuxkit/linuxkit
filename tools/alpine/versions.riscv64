@@ -1,4 +1,4 @@
-# linuxkit/alpine:e982abb0a3b0ce042c38ad7c07c056e014d6dd83-riscv64
+# linuxkit/alpine:6fc2a61cdf243a6c1749c6d47faf3b519984b7d4-riscv64
 # automatically generated list of installed packages
 abuild-3.14.1-r4
 abuild-sudo-3.14.1-r4
@@ -10,7 +10,7 @@ agetty-openrc-0.55.1-r2
 alpine-baselayout-3.6.8-r1
 alpine-baselayout-data-3.6.8-r1
 alpine-keys-2.5-r0
-alpine-release-3.21.1-r0
+alpine-release-3.21.2-r0
 apk-tools-2.14.6-r2
 argp-standalone-1.5.0-r1
 attr-dev-2.5.2-r2
@@ -39,8 +39,8 @@ busybox-1.37.0-r9
 busybox-binsh-1.37.0-r9
 bzip2-1.0.8-r6
 c-ares-1.34.3-r0
-ca-certificates-20241121-r0
-ca-certificates-bundle-20241121-r0
+ca-certificates-20241121-r1
+ca-certificates-bundle-20241121-r1
 capstone-5.0.3-r0
 cdrkit-1.1.11-r6
 cfdisk-2.40.2-r4
@@ -125,6 +125,8 @@ gpg-wks-server-2.4.7-r0
 gpgsm-2.4.7-r0
 gpgv-2.4.7-r0
 grep-3.11-r0
+grub-2.12-r7
+grub-efi-2.12-r7
 guile-3.0.9-r1
 guile-libs-3.0.9-r1
 hexdump-2.40.2-r4
@@ -160,6 +162,7 @@ krb5-conf-1.0-r2
 krb5-dev-1.21.3-r0
 krb5-libs-1.21.3-r0
 krb5-server-ldap-1.21.3-r0
+lddtree-1.27-r0
 libaio-0.3.113-r2
 libarchive-3.7.7-r0
 libarchive-tools-3.7.7-r0
@@ -276,6 +279,8 @@ lzo-2.10-r5
 m4-1.4.19-r3
 make-4.4.1-r2
 mcookie-2.40.2-r4
+mdev-conf-4.7-r0
+mkinitfs-3.11.1-r0
 mount-2.40.2-r4
 mpc1-1.3.1-r1
 mpc1-dev-1.3.1-r1
