@@ -9,7 +9,7 @@ RUN apt-get update && apt-get install -y qemu-user-static && \
     mv /usr/bin/qemu-loongarch64-static /usr/bin/qemu-loongarch64 && \
     rm /usr/bin/qemu-*-static
 
-FROM linuxkit/alpine:3fb2ec0c94ed30171bb04100f568bba2ebb648a9 AS mirror
+FROM linuxkit/alpine:5ac048802293564a50414394e1b9896eac528e7d AS mirror
 
 RUN apk add --no-cache go musl-dev
 ENV GOPATH=/go PATH=$PATH:/go/bin
