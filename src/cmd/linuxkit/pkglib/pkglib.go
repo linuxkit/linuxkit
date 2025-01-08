@@ -60,7 +60,7 @@ type PkglibConfig struct {
 func NewPkgInfo() pkgInfo {
 	return pkgInfo{
 		Org:          "linuxkit",
-		Arches:       []string{"amd64", "arm64"},
+		Arches:       []string{"amd64", "arm64", "riscv64"},
 		Tag:          "{{.Hash}}",
 		GitRepo:      "https://github.com/linuxkit/linuxkit",
 		Network:      false,

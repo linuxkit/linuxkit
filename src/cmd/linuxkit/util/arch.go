@@ -20,6 +20,8 @@ func GoArch(in string) (string, error) {
 		return "amd64", nil
 	case "aarch64", "arm64":
 		return "arm64", nil
+	case "riscv64":
+		return "riscv64", nil
 	}
 	return "", fmt.Errorf("unknown arch %q", in)
 }

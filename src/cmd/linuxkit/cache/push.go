@@ -17,7 +17,7 @@ import (
 // If remoteName is empty, it is the same as name.
 // If withArchSpecificTags is true, it will push all arch-specific images in the index, each as
 // their own tag with the same name as the index, but with the architecture appended, e.g.
-// image:foo will have image:foo-amd64, image:foo-arm64, etc.
+// image:foo will have image:foo-amd64, image:foo-arm64, image:foo-riscv64, etc.
 func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override bool) error {
 	var (
 		err     error
