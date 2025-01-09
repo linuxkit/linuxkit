@@ -24,6 +24,7 @@ RUN apk update && apk upgrade -a && \
   iperf3 \
   libedit-dev \
   libtool \
+  libxml2 \
   llvm \
   llvm-dev \
   llvm-static \

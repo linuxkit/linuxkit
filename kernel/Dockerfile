@@ -115,6 +115,9 @@ RUN case $(uname -m) in \
     aarch64) \
         KERNEL_DEF_CONF=/linux/arch/arm64/configs/defconfig; \
         ;; \
+    riscv64) \
+        KERNEL_DEF_CONF=/linux/arch/riscv/configs/defconfig; \
+        ;; \
     esac  && \
     cp /src/${KERNEL_SERIES}/config-$(uname -m) ${KERNEL_DEF_CONF}; \
     if [ -n "${EXTRA}" ] && [ -f "/src/${KERNEL_SERIES}-${EXTRA}/config-$(uname -m)" ]; then \
@@ -138,6 +141,9 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
         ;; \
     aarch64) \
         cp arch/arm64/boot/Image.gz /out/kernel; \
+        ;; \
+    riscv64) \
+        cp arch/riscv64/boot/Image.gz /out/kernel; \
         ;; \
     esac && \
     cp System.map /out && \
