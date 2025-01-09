@@ -52,6 +52,8 @@ gmp-dev
 gnupg
 go
 grep
+grub
+grub-efi
 hvtools
 installkernel
 iperf3

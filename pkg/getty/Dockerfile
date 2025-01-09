@@ -1,5 +1,5 @@
 # Dockerfile to build linuxkit/getty for linuxkit
-FROM linuxkit/alpine:3fb2ec0c94ed30171bb04100f568bba2ebb648a9 AS mirror
+FROM linuxkit/alpine:5ac048802293564a50414394e1b9896eac528e7d AS mirror
 
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \

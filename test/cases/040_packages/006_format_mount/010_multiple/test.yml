@@ -2,20 +2,20 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:bf45651001f871323d70b746330e8c2a94f767e6
-  - linuxkit/runc:ab0b50b622b8e34031b6bb8b18497100a558a11d
+  - linuxkit/init:c9a1adb982eb4074c01a34ce43860b6df24c252d
+  - linuxkit/runc:bcd6268ea2d45dc7c6b43ca82d00dd01e7105f17
 onboot:
   - name: format
-    image: linuxkit/format:db495c67312fe0ee4d94518e316a76f49ce01c40
+    image: linuxkit/format:1214ae707090285cec2102e696c62892e3d8d0aa
     command: ["/usr/bin/format", "-label", "docker"]
   - name: format
-    image: linuxkit/format:db495c67312fe0ee4d94518e316a76f49ce01c40
+    image: linuxkit/format:1214ae707090285cec2102e696c62892e3d8d0aa
     command: ["/usr/bin/format", "-label", "foo"]
   - name: mount
-    image: linuxkit/mount:4711fa808be15ad41129c11a24bbb87efed0beec
+    image: linuxkit/mount:7cffeb3a4a77af09397479fe8e21c0dfce438cd0
     command: ["/usr/bin/mountie", "-label", "docker", "/var/lib/docker"]
   - name: mount
-    image: linuxkit/mount:4711fa808be15ad41129c11a24bbb87efed0beec
+    image: linuxkit/mount:7cffeb3a4a77af09397479fe8e21c0dfce438cd0
     command: ["/usr/bin/mountie", "-label", "foo", "/var/foo"]
   - name: test
     image: alpine:3.13
@@ -25,7 +25,7 @@ onboot:
       - /check.sh:/check.sh
     command: ["sh", "./check.sh"]
   - name: poweroff
-    image: linuxkit/poweroff:b24c9c42e53bd5b7a0ddbbf1a923ce0baad3d2f0
+    image: linuxkit/poweroff:744c3322c34be0bebb4a65f63702f44fec0e773d
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh
