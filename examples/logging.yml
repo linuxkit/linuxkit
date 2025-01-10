@@ -3,21 +3,21 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:c9a1adb982eb4074c01a34ce43860b6df24c252d
-  - linuxkit/runc:bcd6268ea2d45dc7c6b43ca82d00dd01e7105f17
-  - linuxkit/containerd:d33b20080a2f88e833680dc8563b5a03a13a297e
-  - linuxkit/ca-certificates:e1688f69167c991bf5be1be809fd68685a4a4a9a
-  - linuxkit/memlogd:5373517ece0f7417174178f6e2ec8af65ace1cb0
+  - linuxkit/init:7135424f6836ee166d1199e88cfb95ee88efaf91
+  - linuxkit/runc:efcece75889aec4e2de0d95ba27ccc46438522b3
+  - linuxkit/containerd:ce79d5d4ab9c46f4763735c6e4ab5c51c3feb5d8
+  - linuxkit/ca-certificates:d4cc1b82c73d272e94d0e71ea375fe56b0c0626a
+  - linuxkit/memlogd:b4adfc82dcb986c0a7d44589de17846c398783fd
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:0c5861d22fac133d5bf679e763a1df14ad927de2
+    image: linuxkit/sysctl:c5f4b4895844b993dce4e8b35fd8263a6b557807
   - name: dhcpcd
-    image: linuxkit/dhcpcd:c1f461bd40fabb1f3bb77348ab52abad8393bdb3
+    image: linuxkit/dhcpcd:330839488cd122db3c44738e265c035c9729a963
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
 # Inside the getty type `/proc/1/root/usr/bin/logread -F` to follow the log
   - name: getty
-    image: linuxkit/getty:42bfdda2fef25c9fd84a58bb88de1496a7cafcda
+    image: linuxkit/getty:bae9e3d4861173bacf78f14a4fe44997a430d13b
     env:
      - INSECURE=true
 # A service which generates log messages for testing
@@ -25,6 +25,6 @@ services:
     image: alpine:3.13
     command: ["/bin/sh", "-c", "while /bin/true; do echo hello $(date); sleep 1; done" ]
   - name: write-and-rotate-logs
-    image: linuxkit/logwrite:067327496569f30690843e3a2f12684f99eab5fd
+    image: linuxkit/logwrite:f936b4e3d5a32dba5520c384741f922230640777
   - name: kmsg
-    image: linuxkit/kmsg:f6010b07ea097673c24016f0d246e2b4913cca74
+    image: linuxkit/kmsg:01c6c16292986971d913aad77a90dfee4f5a06f2
