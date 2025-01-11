@@ -5,7 +5,7 @@ RUN apk add --no-cache go git musl-dev make curl gcc
 ENV GOPATH=/go PATH=$PATH:/go/bin
 ENV GITBASE=github.com/prometheus
 ENV GITREPO=github.com/prometheus/node_exporter
-ENV COMMIT=v0.18.1
+ENV COMMIT=v1.8.2
 
 RUN mkdir -p /go/src/${GITBASE} \
     && cd /go/src/${GITBASE} \

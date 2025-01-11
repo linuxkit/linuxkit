@@ -15,4 +15,4 @@ services:
   - name: dhcpcd
     image: linuxkit/dhcpcd:330839488cd122db3c44738e265c035c9729a963
   - name: node_exporter
-    image: linuxkit/node_exporter:a58fcb21c090f32539ad45519fec1ab0381d4c62
+    image: linuxkit/node_exporter:e8a4d08e3619b892f75109b8e8eeabbd041cc525
