@@ -1,4 +1,4 @@
-# linuxkit/alpine:6fc2a61cdf243a6c1749c6d47faf3b519984b7d4-riscv64
+# linuxkit/alpine:1051124e55e737ffeb60e6b57c8e37b0a36a23bd-riscv64
 # automatically generated list of installed packages
 abuild-3.14.1-r4
 abuild-sudo-3.14.1-r4
@@ -64,10 +64,10 @@ cryptsetup-libs-2.7.5-r1
 cryptsetup-openrc-2.7.5-r1
 curl-8.11.1-r0
 dbus-libs-1.14.10-r4
-device-mapper-2.03.28-r2
-device-mapper-event-libs-2.03.28-r2
-device-mapper-libs-2.03.28-r2
-device-mapper-udev-2.03.28-r2
+device-mapper-2.03.29-r1
+device-mapper-event-libs-2.03.29-r1
+device-mapper-libs-2.03.29-r1
+device-mapper-udev-2.03.29-r1
 dhcpcd-10.1.0-r0
 dhcpcd-openrc-10.1.0-r0
 diffutils-3.10-r0
@@ -241,7 +241,10 @@ libtirpc-dev-1.3.5-r0
 libtirpc-nokrb-1.3.5-r0
 libtool-2.4.7-r3
 libucontext-1.3.2-r0
+libucontext-dev-1.3.2-r0
 libunistring-1.2-r0
+libunwind-1.8.1-r0
+libunwind-dev-1.8.1-r0
 liburing-2.8-r0
 libuuid-2.40.2-r4
 libuv-1.49.2-r0
@@ -270,9 +273,9 @@ losetup-2.40.2-r4
 lsblk-2.40.2-r4
 lscpu-2.40.2-r4
 lsscsi-0.32-r1
-lvm2-2.03.28-r2
-lvm2-libs-2.03.28-r2
-lvm2-openrc-2.03.28-r2
+lvm2-2.03.29-r1
+lvm2-libs-2.03.29-r1
+lvm2-openrc-2.03.29-r1
 lz4-libs-1.10.0-r0
 lzip-1.24.1-r1
 lzo-2.10-r5
@@ -383,6 +386,7 @@ sqlite-dev-3.47.1-r0
 sqlite-libs-3.47.1-r0
 squashfs-tools-4.6.1-r1
 ssl_client-1.37.0-r9
+strace-6.12-r0
 swig-4.3.0-r0
 talloc-2.4.2-r1
 tar-1.35-r2
