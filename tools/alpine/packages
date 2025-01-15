@@ -75,11 +75,12 @@ libseccomp-dev
 libseccomp-static
 libtirpc-dev
 libtool
+libxml2
 linux-headers
-llvm
-llvm-dev
-llvm-static
-llvm17-gtest
+llvm19
+llvm19-dev
+llvm19-static
+llvm19-gtest
 lsscsi
 lvm2
 make

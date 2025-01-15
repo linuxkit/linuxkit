@@ -1,5 +1,5 @@
 # Dockerfile to build linuxkit/runc for linuxkit
-FROM linuxkit/alpine:8c02670fd2e5c28d03fd39db0bddc1379b3af6b2 as alpine
+FROM linuxkit/alpine:e9313150d2cf07ad92b0adb86799dedd9a0476e4 as alpine
 RUN \
   apk add \
   bash \

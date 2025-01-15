@@ -2,18 +2,18 @@ kernel:
   image: okernel:latest
   cmdline: "console=tty0 page_poison=1"
 init:
-  - linuxkit/init:7135424f6836ee166d1199e88cfb95ee88efaf91
-  - linuxkit/runc:efcece75889aec4e2de0d95ba27ccc46438522b3
-  - linuxkit/containerd:ce79d5d4ab9c46f4763735c6e4ab5c51c3feb5d8
-  - linuxkit/ca-certificates:d4cc1b82c73d272e94d0e71ea375fe56b0c0626a
+  - linuxkit/init:30e04e810c9d3d54ab1eb6c2d9407a09d4f2709a
+  - linuxkit/runc:8b5af3365fc7d015db4e44113d93c7b1f8e2d2ab
+  - linuxkit/containerd:8072efcee7c1d77a6b41093ae610062552e354fb
+  - linuxkit/ca-certificates:422d213bd5fff6177be9219a1e0dfc39d9d75342
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:c5f4b4895844b993dce4e8b35fd8263a6b557807
+    image: linuxkit/sysctl:112fe3d480ccb6cd115d9d6c446f9d833f6b8e68
 services:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:330839488cd122db3c44738e265c035c9729a963
+    image: linuxkit/dhcpcd:f46134c05f9665d8865a9fbebd5be0995057af28
   - name: getty
-    image: linuxkit/getty:bae9e3d4861173bacf78f14a4fe44997a430d13b
+    image: linuxkit/getty:70237b8ac2006b0177026520e7720fc574339298
     env:
      - INSECURE=true
 trust:
