@@ -7,7 +7,7 @@ init:
   - linuxkit/runc:efcece75889aec4e2de0d95ba27ccc46438522b3
 onboot:
   - name: test-ns
-    image: linuxkit/test-ns:aa591e77b3ddf4c84487b7c2da3ed9abae787f89
+    image: linuxkit/test-ns:13b6617c725434a5c52af974087c7b8e196be974
     command: ["/bin/sh", "/runp-runc-net.sh", "mix-unix"]
     # command: ["/bin/sh", "/runc-net.sh", "-l", "5", "-i", "2", "-c", "5", "-p", "unix", "-ip", "6"]
     mounts: # for runc

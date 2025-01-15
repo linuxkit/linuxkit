@@ -18,6 +18,6 @@ onboot:
     image: linuxkit/mount:4413ebd50bfbe026058e4a60463259cece2b8bb5
     command: ["/usr/bin/mountie", "/var/lib"]
   - name: test
-    image: linuxkit/test-containerd:4f648681a02bde6ebb82eca683ee63a8ffc33e94
+    image: linuxkit/test-containerd:f96dc82bee67d0e8bd350e86b76aaa68fbfc8ded
   - name: poweroff
     image: linuxkit/poweroff:963fd495fd6616f7ea44d158b497a87232e01ca3
