@@ -2,16 +2,16 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:7135424f6836ee166d1199e88cfb95ee88efaf91
-  - linuxkit/runc:efcece75889aec4e2de0d95ba27ccc46438522b3
-  - linuxkit/containerd:ce79d5d4ab9c46f4763735c6e4ab5c51c3feb5d8
-  - linuxkit/ca-certificates:d4cc1b82c73d272e94d0e71ea375fe56b0c0626a
-  - linuxkit/memlogd:b4adfc82dcb986c0a7d44589de17846c398783fd
+  - linuxkit/init:30e04e810c9d3d54ab1eb6c2d9407a09d4f2709a
+  - linuxkit/runc:8b5af3365fc7d015db4e44113d93c7b1f8e2d2ab
+  - linuxkit/containerd:8072efcee7c1d77a6b41093ae610062552e354fb
+  - linuxkit/ca-certificates:422d213bd5fff6177be9219a1e0dfc39d9d75342
+  - linuxkit/memlogd:b15eb4d07ee3a50708a310ba62eb9330b61182e2
 services:
   - name: kmsg
-    image: linuxkit/kmsg:01c6c16292986971d913aad77a90dfee4f5a06f2
+    image: linuxkit/kmsg:2cee55de43a863c9f1a28fe5a00e4730564e1826
   - name: write-and-rotate-logs
-    image: linuxkit/logwrite:f936b4e3d5a32dba5520c384741f922230640777
+    image: linuxkit/logwrite:678308bdb6421f32ff79b61ac2d95e9c8e41e080
   - name: check-the-logs
     image: alpine:3.21
     binds:
