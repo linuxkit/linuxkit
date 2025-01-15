@@ -16,7 +16,7 @@ RM = rm -f
 # Name and Org on Hub
 ORG?=linuxkit
 IMAGE?=kernel
-IMAGE_BUILDER=linuxkit/alpine:8c02670fd2e5c28d03fd39db0bddc1379b3af6b2
+IMAGE_BUILDER=linuxkit/alpine:e9313150d2cf07ad92b0adb86799dedd9a0476e4
 
 # You can specify an extra options for the Makefile. This will:
 # - append a config$(EXTRA) to the kernel config for your kernel/arch

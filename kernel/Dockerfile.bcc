@@ -25,10 +25,10 @@ RUN apk update && apk upgrade -a && \
   libedit-dev \
   libtool \
   libxml2 \
-  llvm \
-  llvm-dev \
-  llvm-static \
-  llvm17-gtest \
+  llvm19 \
+  llvm19-dev \
+  llvm19-static \
+  llvm19-gtest \
   luajit-dev \
   m4 \
   musl-fts-dev \
