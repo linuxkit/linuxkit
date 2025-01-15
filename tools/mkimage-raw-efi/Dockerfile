@@ -1,4 +1,4 @@
-FROM linuxkit/grub:b498542e496dc2301ac1718d9096c2b26f041635 AS grub
+FROM linuxkit/grub:c8864b3c16a130c808a90ae937c3aa726a907b85 AS grub
 
 FROM linuxkit/alpine:e9313150d2cf07ad92b0adb86799dedd9a0476e4 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
