@@ -3,7 +3,7 @@
  iso-efi:        linuxkit/mkimage-iso-efi:4bff02040897e4177a2220038f4a5a08cd556afd
  iso-efi-initrd: linuxkit/mkimage-iso-efi-initrd:6d087ae7aa61fe6d840e314dcb2d6b7b2a5db1b8
  raw-bios:       linuxkit/mkimage-raw-bios:c64318cfc28b39010b05c7cd48673f397c45c8df
- raw-efi:        linuxkit/mkimage-raw-efi:8bc9d4afbbd5b01488a8c699b3db721484a9eda1
+ raw-efi:        linuxkit/mkimage-raw-efi:6d9a9ff0a575f8ba5fcd5bf25feac89d0aa343d0
  squashfs:       linuxkit/mkimage-squashfs:d9de62071bed575377e35e944004bcb23c50afab
  gcp:            linuxkit/mkimage-gcp:035c2c2b4b958060c0b6bdd41d9cbc886a335098
  qcow2-efi:      linuxkit/mkimage-qcow2-efi:64e1921dc6074d55d0fa95c2beddef7d153d3eca
