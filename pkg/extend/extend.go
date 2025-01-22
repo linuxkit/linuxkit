@@ -22,8 +22,9 @@ import (
 const timeout = 60
 
 var (
-	fsTypeVar string
-	driveKeys []string
+	fsTypeVar   string
+	stopOnError bool
+	driveKeys   []string
 )
 
 // Fdisk is the JSON output from libfdisk
@@ -57,7 +58,12 @@ func autoextend(fsType string) error {
 			continue
 		}
 		if err := extend(d, fsType); err != nil {
-			return err
+			if stopOnError {
+				return err
+			}
+
+			log.Printf("Could not extend partition on device %s. Skipping", d)
+			continue
 		}
 	}
 	return nil
@@ -312,11 +318,13 @@ func findDrives() {
 
 func init() {
 	flag.StringVar(&fsTypeVar, "type", "ext4", "Type of filesystem to create")
+	flag.BoolVar(&stopOnError, "stop-on-error", true, "Stops extending the remaining devices on first error")
 }
 
 func main() {
 	flag.Parse()
 	findDrives()
+
 	if flag.NArg() == 0 {
 		if err := autoextend(fsTypeVar); err != nil {
 			log.Fatalf("%v", err)
