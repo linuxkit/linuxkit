@@ -55,30 +55,42 @@ menuentry 'LinuxKit ISO Image' {
 }
 EOF
 
-#
+# FAT filesystem config
+FAT_SIZE=32
+SECTOR_SIZE=512
+SECTORS_PER_CLUSTER=8
+# these always include the Boot Sector and FS Information Sector (sector 0 and 1) among others for FAT32
+RESERVED_SECTORS=32
+
 # calculate sizes
 KERNEL_FILE_SIZE=$(stat -c %s "$KERNEL")
 INITRD_FILE_SIZE=$(stat -c %s "$INITRD")
 EFI_FILE_SIZE=$(stat -c %s "$BOOTFILE")
-# minimum headroom needed in ESP, in bytes
-# 511KiB headroom seems to be enough
-ESP_HEADROOM=$(( 1024 * 1024 ))
+GRUB_FILE_SIZE=$(stat -c %s EFI/BOOT/grub.cfg)
 
 # this is the minimum size of our EFI System Partition
-ESP_FILE_SIZE=$(( $KERNEL_FILE_SIZE + $INITRD_FILE_SIZE + $EFI_FILE_SIZE + $ESP_HEADROOM ))
+ESP_DATA_SIZE=$(( $KERNEL_FILE_SIZE + $INITRD_FILE_SIZE + $EFI_FILE_SIZE + $GRUB_FILE_SIZE ))
+ESP_DATA_SECTORS=$(( $ESP_DATA_SIZE / $SECTOR_SIZE ))
+
+# File Allocation Table Sectors = (clusters + 2) * bytes per cluster / sector size
+FILE_ALLOCATION_TABLE_SECTORS=$(( ( $ESP_DATA_SECTORS / $SECTORS_PER_CLUSTER + 2 ) * ( $FAT_SIZE / 8 ) / $SECTOR_SIZE ))
+
+# there are two file allocation tables hence 2 * $FILE_ALLOCATION_TABLE_SECTORS
+FAT_OVERHEAD_SECTORS=$(( $RESERVED_SECTORS + ( 2 * $FILE_ALLOCATION_TABLE_SECTORS ) ))
+FAT_OVERHEAD_SIZE=$(( $FAT_OVERHEAD_SECTORS * $SECTOR_SIZE ))
 
 # (x+1024)/1024*1024 rounds up to multiple of 1024KB, or 2048 sectors
 # some firmwares get confused if the partitions are not aligned on 2048 blocks
 # we will round up to the nearest multiple of 2048 blocks
 # since each block is 512 bytes, we want the size to be a multiple of
 # 2048 blocks * 512 bytes = 1048576 bytes = 1024KB
-ESP_FILE_SIZE_KB=$(( ( ( ($ESP_FILE_SIZE+1024-1) / 1024 ) + 1024-1) / 1024 * 1024 ))
+ESP_FILE_SIZE_KB=$(( ( ( ($ESP_DATA_SIZE + $FAT_OVERHEAD_SIZE + 1024 - 1) / 1024 ) + 1024 - 1) / 1024 * 1024 ))
 # and for sectors
-ESP_FILE_SIZE_SECTORS=$(( $ESP_FILE_SIZE_KB * 2 ))
+ESP_FILE_SIZE_SECTORS=$(( $ESP_FILE_SIZE_KB * 1024 / $SECTOR_SIZE ))
 
 # create a raw disk with an EFI boot partition
 # Stuff it into a FAT filesystem, making it as small as possible.
-mkfs.vfat -v -C $ESP_FILE $(( $ESP_FILE_SIZE_KB )) > /dev/null
+mkfs.vfat -v -F $FAT_SIZE -S $SECTOR_SIZE -s $SECTORS_PER_CLUSTER -R $RESERVED_SECTORS -C $ESP_FILE $(( $ESP_FILE_SIZE_KB )) > /dev/null
 echo "mtools_skip_check=1" >> /etc/mtools.conf && \
 mmd -i $ESP_FILE ::/EFI
 mmd -i $ESP_FILE ::/EFI/BOOT
