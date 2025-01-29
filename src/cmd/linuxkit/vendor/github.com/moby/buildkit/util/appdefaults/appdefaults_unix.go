@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 package appdefaults
 
@@ -10,7 +9,6 @@ import (
 )
 
 const (
-	Address              = "unix:///run/buildkit/buildkitd.sock"
 	Root                 = "/var/lib/buildkit"
 	ConfigDir            = "/etc/buildkit"
 	DefaultCNIBinDir     = "/opt/cni/bin"
@@ -82,5 +80,5 @@ func TraceSocketPath(inUserNS bool) string {
 			return filepath.Join(dirs[0], "buildkit", "otel-grpc.sock")
 		}
 	}
-	return "/run/buildkit/otel-grpc.sock"
+	return traceSocketPath
 }

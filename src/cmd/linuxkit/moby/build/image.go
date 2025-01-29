@@ -9,7 +9,7 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/v2/pkg/reference"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/opencontainers/runtime-spec/specs-go"

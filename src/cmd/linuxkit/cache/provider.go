@@ -1,8 +1,8 @@
 package cache
 
 import (
-	"github.com/containerd/containerd/content"
-	"github.com/containerd/containerd/content/local"
+	"github.com/containerd/containerd/v2/core/content"
+	"github.com/containerd/containerd/v2/plugins/content/local"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 )
 

@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd/content"
-	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/v2/core/content"
+	"github.com/containerd/containerd/v2/pkg/reference"
 	"github.com/docker/buildx/util/progress"
 	"github.com/docker/docker/api/types"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -40,6 +40,7 @@ import (
 	_ "github.com/moby/buildkit/client/connhelper/dockercontainer"
 	_ "github.com/moby/buildkit/client/connhelper/ssh"
 	"github.com/moby/buildkit/frontend/dockerfile/instructions"
+	"github.com/moby/buildkit/frontend/dockerfile/linter"
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 	"github.com/moby/buildkit/frontend/dockerfile/shell"
 	"github.com/moby/buildkit/session/sshforward/sshprovider"
@@ -472,7 +473,7 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 	}
 
 	if stdin != nil {
-		buf := bufio.NewReader(stdin)
+		buf := io.NopCloser(bufio.NewReader(stdin))
 		up := uploadprovider.New()
 		frontendAttrs["context"] = up.Add(buf)
 		attachable = append(attachable, up)
@@ -512,7 +513,7 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 		if err != nil {
 			return fmt.Errorf("error parsing dockerfile from bytes into AST %s: %v", dockerfileRef, err)
 		}
-		stages, metaArgs, err := instructions.Parse(ast.AST)
+		stages, metaArgs, err := instructions.Parse(ast.AST, linter.New(&linter.Config{}))
 		if err != nil {
 			return fmt.Errorf("error parsing dockerfile from AST into stages %s: %v", dockerfileRef, err)
 		}
@@ -530,6 +531,10 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 				optMetaArgs[k] = *v
 			}
 		}
+		optMetaArgsSlice := make([]string, 0, len(optMetaArgs))
+		for k, v := range optMetaArgs {
+			optMetaArgsSlice = append(optMetaArgsSlice, fmt.Sprintf("%s=%s", k, v))
+		}
 
 		shlex := shell.NewLex(ast.EscapeToken)
 		// go through each stage, get the basename of the image, see if we have it in the linuxkit cache
@@ -540,7 +545,7 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 			//   FROM ${IMAGE} as src
 			// will be parsed as:
 			//   FROM linuxkit/img as src
-			name, err := shlex.ProcessWordWithMap(stage.BaseName, optMetaArgs)
+			name, _, err := shlex.ProcessWord(stage.BaseName, shell.EnvsFromSlice(optMetaArgsSlice))
 			if err != nil {
 				return fmt.Errorf("could not process word for image %s: %v", stage.BaseName, err)
 			}

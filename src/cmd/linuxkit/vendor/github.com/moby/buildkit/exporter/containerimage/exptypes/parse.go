@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/containerd/containerd/platforms"
+	"github.com/containerd/platforms"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
@@ -53,7 +53,7 @@ func ParsePlatforms(meta map[string][]byte) (Platforms, error) {
 		}
 	}
 	p = platforms.Normalize(p)
-	pk := platforms.Format(p)
+	pk := platforms.FormatAll(p)
 	ps := Platforms{
 		Platforms: []Platform{{ID: pk, Platform: p}},
 	}

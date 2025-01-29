@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/v2/pkg/reference"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	"github.com/moby/sys/capability"

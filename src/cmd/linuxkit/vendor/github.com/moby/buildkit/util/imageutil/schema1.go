@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd/remotes"
+	"github.com/containerd/containerd/v2/core/remotes"
 	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
 	digest "github.com/opencontainers/go-digest"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
-func readSchema1Config(ctx context.Context, ref string, desc ocispecs.Descriptor, fetcher remotes.Fetcher, cache ContentCache) (digest.Digest, []byte, error) {
+func readSchema1Config(ctx context.Context, desc ocispecs.Descriptor, fetcher remotes.Fetcher) (digest.Digest, []byte, error) {
 	rc, err := fetcher.Fetch(ctx, desc)
 	if err != nil {
 		return "", nil, err
