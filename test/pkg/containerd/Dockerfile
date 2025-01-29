@@ -27,7 +27,7 @@ COPY --from=mirror /out/ /
 COPY --from=containerd-dev /go/src/github.com/containerd/containerd /go/src/github.com/containerd/containerd/
 
 # containerd 1.4.x does not support go modules; remove GO111MODULE=off when we switch to 1.5.x
-ENV GOPATH=/go GO111MODULE=off
+ENV GOPATH=/go
 WORKDIR $GOPATH/src/github.com/containerd/containerd
 ADD run.sh ./run.sh
 
