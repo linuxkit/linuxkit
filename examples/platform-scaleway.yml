@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0 console=ttysclp0 root=/dev/vda"
 init:
-  - linuxkit/init:30e04e810c9d3d54ab1eb6c2d9407a09d4f2709a
+  - linuxkit/init:f04c780fe32a9fcd856b32da201d904ffac46d26
   - linuxkit/runc:8b5af3365fc7d015db4e44113d93c7b1f8e2d2ab
-  - linuxkit/containerd:8072efcee7c1d77a6b41093ae610062552e354fb
+  - linuxkit/containerd:b76bf84306be098bfea4ef0efcccebf970408c69
   - linuxkit/ca-certificates:422d213bd5fff6177be9219a1e0dfc39d9d75342
 onboot:
   - name: sysctl
