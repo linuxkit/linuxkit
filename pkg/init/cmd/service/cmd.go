@@ -8,9 +8,9 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/cio"
-	"github.com/containerd/containerd/namespaces"
+	"github.com/containerd/containerd/v2/client"
+	"github.com/containerd/containerd/v2/pkg/cio"
+	"github.com/containerd/containerd/v2/pkg/namespaces"
 	"github.com/opencontainers/runtime-spec/specs-go"
 	log "github.com/sirupsen/logrus"
 )
@@ -104,7 +104,7 @@ func stop(ctx context.Context, service, sock, basePath string) (string, uint32, 
 
 	runtimeConfig := getRuntimeConfig(path)
 
-	client, err := containerd.New(sock)
+	cli, err := client.New(sock)
 	if err != nil {
 		return "", 0, "creating containerd client", err
 	}
@@ -113,7 +113,7 @@ func stop(ctx context.Context, service, sock, basePath string) (string, uint32, 
 		ctx = namespaces.WithNamespace(ctx, runtimeConfig.Namespace)
 	}
 
-	ctr, err := client.LoadContainer(ctx, service)
+	ctr, err := cli.LoadContainer(ctx, service)
 	if err != nil {
 		return "", 0, "loading container", err
 	}
@@ -160,7 +160,7 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 		return "", 0, "preparing filesystem", err
 	}
 
-	client, err := containerd.New(sock)
+	cli, err := client.New(sock)
 	if err != nil {
 		return "", 0, "creating containerd client", err
 	}
@@ -193,7 +193,7 @@ func start(ctx context.Context, service, sock, basePath, dumpSpec string) (strin
 		ctx = namespaces.WithNamespace(ctx, runtimeConfig.Namespace)
 	}
 
-	ctr, err := client.NewContainer(ctx, service, containerd.WithSpec(spec))
+	ctr, err := cli.NewContainer(ctx, service, client.WithSpec(spec))
 	if err != nil {
 		return "", 0, "failed to create container", err
 	}
