@@ -9,6 +9,8 @@ RUN apk add --no-cache --initdb -p /out \
     busybox \
     btrfs-progs \
     btrfs-progs-dev \
+    device-mapper \
+    e2fsprogs \
     gcc \
     git \
     go \
@@ -17,10 +19,14 @@ RUN apk add --no-cache --initdb -p /out \
     make \
     musl \
     util-linux \
+    util-linux-misc \
     xfsprogs \
     tzdata
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 RUN cp /out/usr/share/zoneinfo/UTC /out/etc/localtime
+
+# because we want the one from util-linux-misc at /sbin/blkdiscard to override the one from busybox
+RUN rm /out/usr/bin/blkdiscard
 
 FROM scratch
 COPY --from=mirror /out/ /
