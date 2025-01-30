@@ -82,6 +82,11 @@ func extend(d, fsType string) error {
 		return fmt.Errorf("Unable to unmarshal partition table from sfdisk: %v", err)
 	}
 
+	if len(f.PartitionTable.Partitions) == 0 {
+		log.Printf("Disk %s has no partitions. Skipping", d)
+		return nil
+	}
+
 	if len(f.PartitionTable.Partitions) > 1 {
 		log.Printf("Disk %s has more than 1 partition. Skipping", d)
 		return nil

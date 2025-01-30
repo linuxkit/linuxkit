@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:8b5af3365fc7d015db4e44113d93c7b1f8e2d2ab
 onboot:
   - name: extend
-    image: linuxkit/extend:9fa90cc4ba8c261b8eb5adacda71feb2f60d75e3
+    image: linuxkit/extend:4fe799316df0f29a6930a5363841057d7c55484b
   - name: mount
     image: linuxkit/mount:2a507ef30302693682f9f612289028df00c58ac5
     command: ["/usr/bin/mountie", "/var/lib/docker"]
