@@ -14,12 +14,13 @@ cd /tmp/iso
 
 CMDLINE="$(cat boot/cmdline)"
 # if no root= root device specified, assume /dev/sr0 ie first CD drive
+
 echo "${CMDLINE}" | grep -q 'root=' || CMDLINE="${CMDLINE} root=/dev/sr0"
-rm boot/cmdline
+rm boot/cmdline 
 
 mkdir -p isolinux
-cp /usr/share/syslinux/isolinux.bin ./isolinux/
-cp /usr/share/syslinux/ldlinux.c32 ./isolinux/
+cp /syslinux/isolinux.bin ./isolinux/
+cp /syslinux/ldlinux.c32 ./isolinux/
 
 CFG="DEFAULT linux
 LABEL linux
@@ -36,6 +37,6 @@ genisoimage -o ../linuxkit-bios.iso -l -J -R \
 		-joliet-long -input-charset utf8 \
                 -V LinuxKit .
 
-isohybrid ../linuxkit-bios.iso
+/syslinux/isohybrid ../linuxkit-bios.iso
 
 cat ../linuxkit-bios.iso
