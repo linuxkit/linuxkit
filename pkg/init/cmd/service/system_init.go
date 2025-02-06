@@ -12,8 +12,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/containerd/containerd"
-	"github.com/containerd/containerd/errdefs"
+	"github.com/containerd/containerd/v2/client"
+	"github.com/containerd/errdefs"
 	"github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
 	log "github.com/sirupsen/logrus"
@@ -23,7 +23,7 @@ const (
 	containerdOptsFile = "/etc/containerd/runtime-config.toml"
 )
 
-func cleanupTask(ctx context.Context, ctr containerd.Container) error {
+func cleanupTask(ctx context.Context, ctr client.Container) error {
 	task, err := ctr.Task(ctx, nil)
 	if err != nil {
 		if errdefs.IsNotFound(err) {
@@ -143,7 +143,7 @@ func systemInitCmd(ctx context.Context, args []string) {
 	}
 
 	// connect to containerd
-	client, err := containerd.New(*sock)
+	client, err := client.New(*sock)
 	if err != nil {
 		log.WithError(err).Fatal("creating containerd client")
 	}

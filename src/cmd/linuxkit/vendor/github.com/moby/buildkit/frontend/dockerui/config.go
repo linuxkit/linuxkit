@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd/platforms"
+	"github.com/containerd/platforms"
 	"github.com/distribution/reference"
 	controlapi "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/frontend/attestations"
+	"github.com/moby/buildkit/frontend/dockerfile/linter"
 	"github.com/moby/buildkit/frontend/gateway/client"
 	"github.com/moby/buildkit/solver/pb"
 	"github.com/moby/buildkit/util/flightcontrol"
@@ -25,8 +26,9 @@ import (
 )
 
 const (
-	buildArgPrefix = "build-arg:"
-	labelPrefix    = "label:"
+	buildArgPrefix       = "build-arg:"
+	labelPrefix          = "label:"
+	localSessionIDPrefix = "local-sessionid:"
 
 	keyTarget           = "target"
 	keyCgroupParent     = "cgroup-parent"
@@ -47,6 +49,7 @@ const (
 	keyCacheNSArg           = "build-arg:BUILDKIT_CACHE_MOUNT_NS"
 	keyMultiPlatformArg     = "build-arg:BUILDKIT_MULTI_PLATFORM"
 	keyHostnameArg          = "build-arg:BUILDKIT_SANDBOX_HOSTNAME"
+	keyDockerfileLintArg    = "build-arg:BUILDKIT_DOCKERFILE_CHECK"
 	keyContextKeepGitDirArg = "build-arg:BUILDKIT_CONTEXT_KEEP_GIT_DIR"
 	keySourceDateEpoch      = "build-arg:SOURCE_DATE_EPOCH"
 )
@@ -63,7 +66,8 @@ type Config struct {
 	NetworkMode      pb.NetMode
 	ShmSize          int64
 	Target           string
-	Ulimits          []pb.Ulimit
+	Ulimits          []*pb.Ulimit
+	LinterConfig     *linter.Config
 
 	CacheImports           []client.CacheOptionsEntry
 	TargetPlatforms        []ocispecs.Platform // nil means default
@@ -74,18 +78,19 @@ type Config struct {
 
 type Client struct {
 	Config
-	client      client.Client
-	ignoreCache []string
-	bctx        *buildContext
-	g           flightcontrol.Group[*buildContext]
-	bopts       client.BuildOpts
+	client           client.Client
+	ignoreCache      []string
+	g                flightcontrol.CachedGroup[*buildContext]
+	bopts            client.BuildOpts
+	localsSessionIDs map[string]string
 
 	dockerignore     []byte
 	dockerignoreName string
 }
 
 type SBOM struct {
-	Generator string
+	Generator  string
+	Parameters map[string]string
 }
 
 type Source struct {
@@ -218,7 +223,7 @@ func (bc *Client) init() error {
 	var cacheImports []client.CacheOptionsEntry
 	// new API
 	if cacheImportsStr := opts[keyCacheImports]; cacheImportsStr != "" {
-		var cacheImportsUM []controlapi.CacheOptionsEntry
+		var cacheImportsUM []*controlapi.CacheOptionsEntry
 		if err := json.Unmarshal([]byte(cacheImportsStr), &cacheImportsUM); err != nil {
 			return errors.Wrapf(err, "failed to unmarshal %s (%q)", keyCacheImports, cacheImportsStr)
 		}
@@ -253,17 +258,26 @@ func (bc *Client) init() error {
 		return err
 	}
 	if attrs, ok := attests[attestations.KeyTypeSbom]; ok {
-		src, ok := attrs["generator"]
-		if !ok {
+		params := make(map[string]string)
+		var ref reference.Named
+		for k, v := range attrs {
+			if k == "generator" {
+				ref, err = reference.ParseNormalizedNamed(v)
+				if err != nil {
+					return errors.Wrapf(err, "failed to parse sbom scanner %s", v)
+				}
+				ref = reference.TagNameOnly(ref)
+			} else {
+				params[k] = v
+			}
+		}
+		if ref == nil {
 			return errors.Errorf("sbom scanner cannot be empty")
 		}
-		ref, err := reference.ParseNormalizedNamed(src)
-		if err != nil {
-			return errors.Wrapf(err, "failed to parse sbom scanner %s", src)
-		}
-		ref = reference.TagNameOnly(ref)
+
 		bc.SBOM = &SBOM{
-			Generator: ref.String(),
+			Generator:  ref.String(),
+			Parameters: params,
 		}
 	}
 
@@ -277,19 +291,22 @@ func (bc *Client) init() error {
 		opts[keyHostname] = v
 	}
 	bc.Hostname = opts[keyHostname]
+
+	if v, ok := opts[keyDockerfileLintArg]; ok {
+		bc.LinterConfig, err = linter.ParseLintOptions(v)
+		if err != nil {
+			return errors.Wrapf(err, "failed to parse %s", keyDockerfileLintArg)
+		}
+	}
+
+	bc.localsSessionIDs = parseLocalSessionIDs(opts)
+
 	return nil
 }
 
 func (bc *Client) buildContext(ctx context.Context) (*buildContext, error) {
 	return bc.g.Do(ctx, "initcontext", func(ctx context.Context) (*buildContext, error) {
-		if bc.bctx != nil {
-			return bc.bctx, nil
-		}
-		bctx, err := bc.initContext(ctx)
-		if err == nil {
-			bc.bctx = bctx
-		}
-		return bctx, err
+		return bc.initContext(ctx)
 	})
 }
 
@@ -317,9 +334,14 @@ func (bc *Client) ReadEntrypoint(ctx context.Context, lang string, opts ...llb.L
 			filenames = append(filenames, path.Join(path.Dir(bctx.filename), strings.ToLower(DefaultDockerfileName)))
 		}
 
+		sessionID := bc.bopts.SessionID
+		if v, ok := bc.localsSessionIDs[bctx.dockerfileLocalName]; ok {
+			sessionID = v
+		}
+
 		opts = append([]llb.LocalOption{
 			llb.FollowPaths(filenames),
-			llb.SessionID(bc.bopts.SessionID),
+			llb.SessionID(sessionID),
 			llb.SharedKeyHint(bctx.dockerfileLocalName),
 			WithInternalName(name),
 			llb.Differ(llb.DiffNone, false),
@@ -408,9 +430,95 @@ func (bc *Client) MainContext(ctx context.Context, opts ...llb.LocalOption) (*ll
 		return bctx.context, nil
 	}
 
+	excludes, err := bc.dockerIgnorePatterns(ctx, bctx)
+	if err != nil {
+		return nil, errors.Wrapf(err, "failed to read dockerignore patterns")
+	}
+
+	sessionID := bc.bopts.SessionID
+	if v, ok := bc.localsSessionIDs[bctx.contextLocalName]; ok {
+		sessionID = v
+	}
+
+	opts = append([]llb.LocalOption{
+		llb.SessionID(sessionID),
+		llb.ExcludePatterns(excludes),
+		llb.SharedKeyHint(bctx.contextLocalName),
+		WithInternalName("load build context"),
+	}, opts...)
+
+	st := llb.Local(bctx.contextLocalName, opts...)
+
+	return &st, nil
+}
+
+func (bc *Client) NamedContext(ctx context.Context, name string, opt ContextOpt) (*llb.State, *dockerspec.DockerOCIImage, error) {
+	named, err := reference.ParseNormalizedNamed(name)
+	if err != nil {
+		return nil, nil, errors.Wrapf(err, "invalid context name %s", name)
+	}
+	name = strings.TrimSuffix(reference.FamiliarString(named), ":latest")
+
+	pp := platforms.DefaultSpec()
+	if opt.Platform != nil {
+		pp = *opt.Platform
+	}
+	pname := name + "::" + platforms.FormatAll(platforms.Normalize(pp))
+	st, img, err := bc.namedContext(ctx, name, pname, opt)
+	if err != nil || st != nil {
+		return st, img, err
+	}
+	return bc.namedContext(ctx, name, name, opt)
+}
+
+func (bc *Client) IsNoCache(name string) bool {
+	if len(bc.ignoreCache) == 0 {
+		return bc.ignoreCache != nil
+	}
+	for _, n := range bc.ignoreCache {
+		if strings.EqualFold(n, name) {
+			return true
+		}
+	}
+	return false
+}
+
+func (bc *Client) DockerIgnorePatterns(ctx context.Context) ([]string, error) {
+	if bc == nil {
+		return nil, nil
+	}
+	bctx, err := bc.buildContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if bctx.context != nil {
+		return nil, nil
+	}
+
+	return bc.dockerIgnorePatterns(ctx, bctx)
+}
+
+func DefaultMainContext(opts ...llb.LocalOption) *llb.State {
+	opts = append([]llb.LocalOption{
+		llb.SharedKeyHint(DefaultLocalNameContext),
+		WithInternalName("load build context"),
+	}, opts...)
+	st := llb.Local(DefaultLocalNameContext, opts...)
+	return &st
+}
+
+func WithInternalName(name string) llb.ConstraintsOpt {
+	return llb.WithCustomName("[internal] " + name)
+}
+
+func (bc *Client) dockerIgnorePatterns(ctx context.Context, bctx *buildContext) ([]string, error) {
 	if bc.dockerignore == nil {
+		sessionID := bc.bopts.SessionID
+		if v, ok := bc.localsSessionIDs[bctx.contextLocalName]; ok {
+			sessionID = v
+		}
 		st := llb.Local(bctx.contextLocalName,
-			llb.SessionID(bc.bopts.SessionID),
+			llb.SessionID(sessionID),
 			llb.FollowPaths([]string{DefaultDockerignoreName}),
 			llb.SharedKeyHint(bctx.contextLocalName+"-"+DefaultDockerignoreName),
 			WithInternalName("load "+DefaultDockerignoreName),
@@ -439,7 +547,7 @@ func (bc *Client) MainContext(ctx context.Context, opts ...llb.LocalOption) (*ll
 		bc.dockerignore = dt
 		bc.dockerignoreName = DefaultDockerignoreName
 	}
-
+	var err error
 	var excludes []string
 	if len(bc.dockerignore) != 0 {
 		excludes, err = ignorefile.ReadAll(bytes.NewBuffer(bc.dockerignore))
@@ -447,59 +555,5 @@ func (bc *Client) MainContext(ctx context.Context, opts ...llb.LocalOption) (*ll
 			return nil, errors.Wrapf(err, "failed parsing %s", bc.dockerignoreName)
 		}
 	}
-
-	opts = append([]llb.LocalOption{
-		llb.SessionID(bc.bopts.SessionID),
-		llb.ExcludePatterns(excludes),
-		llb.SharedKeyHint(bctx.contextLocalName),
-		WithInternalName("load build context"),
-	}, opts...)
-
-	st := llb.Local(bctx.contextLocalName, opts...)
-
-	return &st, nil
-}
-
-func (bc *Client) NamedContext(ctx context.Context, name string, opt ContextOpt) (*llb.State, *dockerspec.DockerOCIImage, error) {
-	named, err := reference.ParseNormalizedNamed(name)
-	if err != nil {
-		return nil, nil, errors.Wrapf(err, "invalid context name %s", name)
-	}
-	name = strings.TrimSuffix(reference.FamiliarString(named), ":latest")
-
-	pp := platforms.DefaultSpec()
-	if opt.Platform != nil {
-		pp = *opt.Platform
-	}
-	pname := name + "::" + platforms.Format(platforms.Normalize(pp))
-	st, img, err := bc.namedContext(ctx, name, pname, opt)
-	if err != nil || st != nil {
-		return st, img, err
-	}
-	return bc.namedContext(ctx, name, name, opt)
-}
-
-func (bc *Client) IsNoCache(name string) bool {
-	if len(bc.ignoreCache) == 0 {
-		return bc.ignoreCache != nil
-	}
-	for _, n := range bc.ignoreCache {
-		if strings.EqualFold(n, name) {
-			return true
-		}
-	}
-	return false
-}
-
-func DefaultMainContext(opts ...llb.LocalOption) *llb.State {
-	opts = append([]llb.LocalOption{
-		llb.SharedKeyHint(DefaultLocalNameContext),
-		WithInternalName("load build context"),
-	}, opts...)
-	st := llb.Local(DefaultLocalNameContext, opts...)
-	return &st
-}
-
-func WithInternalName(name string) llb.ConstraintsOpt {
-	return llb.WithCustomName("[internal] " + name)
+	return excludes, nil
 }

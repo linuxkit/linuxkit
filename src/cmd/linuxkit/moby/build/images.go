@@ -1,7 +1,7 @@
 package build
 
 import (
-	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/v2/pkg/reference"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/docker"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"

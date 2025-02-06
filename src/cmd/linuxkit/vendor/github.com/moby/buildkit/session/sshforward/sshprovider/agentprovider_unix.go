@@ -1,5 +1,4 @@
 //go:build !windows
-// +build !windows
 
 package sshprovider
 
@@ -11,6 +10,6 @@ func getFallbackAgentPath() (string, error) {
 	return "", errors.Errorf("make sure SSH_AUTH_SOCK is set")
 }
 
-func getWindowsPipeDialer(path string) *socketDialer {
+func getWindowsPipeDialer(_ string) *socketDialer {
 	return nil
 }

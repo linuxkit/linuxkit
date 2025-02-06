@@ -4,10 +4,11 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net"
 	"strings"
 
-	"github.com/containerd/containerd/platforms"
+	"github.com/containerd/platforms"
 	"github.com/moby/buildkit/identity"
 	"github.com/moby/buildkit/solver/pb"
 	"github.com/moby/buildkit/util/apicaps"
@@ -104,11 +105,11 @@ func (s State) getValue(k interface{}) func(context.Context, *Constraints) (inte
 	}
 	if s.async != nil {
 		return func(ctx context.Context, c *Constraints) (interface{}, error) {
-			err := s.async.Do(ctx, c)
+			target, err := s.async.Do(ctx, c)
 			if err != nil {
 				return nil, err
 			}
-			return s.async.target.getValue(k)(ctx, c)
+			return target.getValue(k)(ctx, c)
 		}
 	}
 	if s.prev == nil {
@@ -118,8 +119,13 @@ func (s State) getValue(k interface{}) func(context.Context, *Constraints) (inte
 }
 
 func (s State) Async(f func(context.Context, State, *Constraints) (State, error)) State {
+	as := &asyncState{
+		f:    f,
+		prev: s,
+	}
+	as.g.CacheError = true
 	s2 := State{
-		async: &asyncState{f: f, prev: s},
+		async: as,
 	}
 	return s2
 }
@@ -133,7 +139,7 @@ func (s State) SetMarshalDefaults(co ...ConstraintsOpt) State {
 func (s State) Marshal(ctx context.Context, co ...ConstraintsOpt) (*Definition, error) {
 	c := NewConstraints(append(s.opts, co...)...)
 	def := &Definition{
-		Metadata:    make(map[digest.Digest]pb.OpMetadata, 0),
+		Metadata:    make(map[digest.Digest]OpMetadata, 0),
 		Constraints: c,
 	}
 
@@ -151,7 +157,7 @@ func (s State) Marshal(ctx context.Context, co ...ConstraintsOpt) (*Definition, 
 		return def, err
 	}
 	proto := &pb.Op{Inputs: []*pb.Input{inp}}
-	dt, err := proto.Marshal()
+	dt, err := proto.MarshalVT()
 	if err != nil {
 		return def, err
 	}
@@ -204,7 +210,7 @@ func marshal(ctx context.Context, v Vertex, def *Definition, s *sourceMapCollect
 	}
 	vertexCache[v] = struct{}{}
 	if opMeta != nil {
-		def.Metadata[dgst] = mergeMetadata(def.Metadata[dgst], *opMeta)
+		def.Metadata[dgst] = mergeMetadata(def.Metadata[dgst], NewOpMetadata(opMeta))
 	}
 	s.Add(dgst, sls)
 	if _, ok := cache[dgst]; ok {
@@ -345,16 +351,12 @@ func (s State) GetEnv(ctx context.Context, key string, co ...ConstraintsOpt) (st
 
 // Env returns a new [State] with the provided environment variable set.
 // See [Env]
-func (s State) Env(ctx context.Context, co ...ConstraintsOpt) ([]string, error) {
+func (s State) Env(ctx context.Context, co ...ConstraintsOpt) (*EnvList, error) {
 	c := &Constraints{}
 	for _, f := range co {
 		f.SetConstraintsOption(c)
 	}
-	env, err := getEnv(s)(ctx, c)
-	if err != nil {
-		return nil, err
-	}
-	return env.ToArray(), nil
+	return getEnv(s)(ctx, c)
 }
 
 // GetDir returns the current working directory for the state.
@@ -507,7 +509,7 @@ func (o *output) ToInput(ctx context.Context, c *Constraints) (*pb.Input, error)
 	if err != nil {
 		return nil, err
 	}
-	return &pb.Input{Digest: dgst, Index: index}, nil
+	return &pb.Input{Digest: string(dgst), Index: int64(index)}, nil
 }
 
 func (o *output) Vertex(context.Context, *Constraints) Vertex {
@@ -558,7 +560,7 @@ func (fn constraintsOptFunc) SetGitOption(gi *GitInfo) {
 	gi.applyConstraints(fn)
 }
 
-func mergeMetadata(m1, m2 pb.OpMetadata) pb.OpMetadata {
+func mergeMetadata(m1, m2 OpMetadata) OpMetadata {
 	if m2.IgnoreCache {
 		m1.IgnoreCache = true
 	}
@@ -566,9 +568,7 @@ func mergeMetadata(m1, m2 pb.OpMetadata) pb.OpMetadata {
 		if m1.Description == nil {
 			m1.Description = make(map[string]string)
 		}
-		for k, v := range m2.Description {
-			m1.Description[k] = v
-		}
+		maps.Copy(m1.Description, m2.Description)
 	}
 	if m2.ExportCache != nil {
 		m1.ExportCache = m2.ExportCache
@@ -597,9 +597,7 @@ func WithDescription(m map[string]string) ConstraintsOpt {
 		if c.Metadata.Description == nil {
 			c.Metadata.Description = map[string]string{}
 		}
-		for k, v := range m {
-			c.Metadata.Description[k] = v
-		}
+		maps.Copy(c.Metadata.Description, m)
 	})
 }
 
@@ -656,10 +654,58 @@ func (cw *constraintsWrapper) applyConstraints(f func(c *Constraints)) {
 type Constraints struct {
 	Platform          *ocispecs.Platform
 	WorkerConstraints []string
-	Metadata          pb.OpMetadata
+	Metadata          OpMetadata
 	LocalUniqueID     string
 	Caps              *apicaps.CapSet
 	SourceLocations   []*SourceLocation
+}
+
+// OpMetadata has a more friendly interface for pb.OpMetadata.
+type OpMetadata struct {
+	IgnoreCache   bool                   `json:"ignore_cache,omitempty"`
+	Description   map[string]string      `json:"description,omitempty"`
+	ExportCache   *pb.ExportCache        `json:"export_cache,omitempty"`
+	Caps          map[apicaps.CapID]bool `json:"caps,omitempty"`
+	ProgressGroup *pb.ProgressGroup      `json:"progress_group,omitempty"`
+}
+
+func NewOpMetadata(mpb *pb.OpMetadata) OpMetadata {
+	var m OpMetadata
+	m.FromPB(mpb)
+	return m
+}
+
+func (m OpMetadata) ToPB() *pb.OpMetadata {
+	caps := make(map[string]bool, len(m.Caps))
+	for k, v := range m.Caps {
+		caps[string(k)] = v
+	}
+	return &pb.OpMetadata{
+		IgnoreCache:   m.IgnoreCache,
+		Description:   m.Description,
+		ExportCache:   m.ExportCache,
+		Caps:          caps,
+		ProgressGroup: m.ProgressGroup,
+	}
+}
+
+func (m *OpMetadata) FromPB(mpb *pb.OpMetadata) {
+	if mpb == nil {
+		return
+	}
+
+	m.IgnoreCache = mpb.IgnoreCache
+	m.Description = mpb.Description
+	m.ExportCache = mpb.ExportCache
+	if len(mpb.Caps) > 0 {
+		m.Caps = make(map[apicaps.CapID]bool, len(mpb.Caps))
+		for k, v := range mpb.Caps {
+			m.Caps[apicaps.CapID(k)] = v
+		}
+	} else {
+		m.Caps = nil
+	}
+	m.ProgressGroup = mpb.ProgressGroup
 }
 
 func Platform(p ocispecs.Platform) ConstraintsOpt {

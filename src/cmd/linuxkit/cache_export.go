@@ -6,7 +6,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/v2/pkg/reference"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	cachepkg "github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
