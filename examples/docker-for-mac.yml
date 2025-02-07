@@ -20,7 +20,7 @@ onboot:
     image: linuxkit/binfmt:564e110729c8d8ecc365979a7d149e2851942883
   # Format and mount the disk image in /var/lib/docker
   - name: format
-    image: linuxkit/format:8f487d728959192289e0783784fc2b185eadbc82
+    image: linuxkit/format:ced02d849206371b6983eff1eb28f9515406fef0
   - name: mount
     image: linuxkit/mount:2a507ef30302693682f9f612289028df00c58ac5
     command: ["/usr/bin/mountie", "/var/lib"]

@@ -6,7 +6,7 @@ init:
   - linuxkit/runc:8b5af3365fc7d015db4e44113d93c7b1f8e2d2ab
 onboot:
   - name: format
-    image: linuxkit/format:8f487d728959192289e0783784fc2b185eadbc82
+    image: linuxkit/format:ced02d849206371b6983eff1eb28f9515406fef0
     command: ["/usr/bin/format"]
   - name: mount
     image: linuxkit/mount:2a507ef30302693682f9f612289028df00c58ac5
