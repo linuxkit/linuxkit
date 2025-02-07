@@ -26,7 +26,7 @@ var (
 	forceVar           bool
 	verboseVar         bool
 	drives             map[string]bool
-    partitionLayoutVar string
+	partitionLayoutVar string
 	driveKeys          []string
 )
 
@@ -138,7 +138,7 @@ func format(d, label, fsType string, partType string, partitionLayoutVar string,
 				log.Printf("Clearing partitions on %s because forced format was requested", d)
 			}
 			partCmd := exec.Command("sfdisk", "--quiet", "--delete", d)
-            partCmd.Stdin = strings.NewReader(partitionLayoutVar)
+			partCmd.Stdin = strings.NewReader(partitionLayoutVar)
 			if out, err := partCmd.CombinedOutput(); err != nil {
 				return fmt.Errorf("Error deleting partitions with sfdisk: %v\n%s", err, out)
 			}
@@ -170,7 +170,7 @@ func format(d, label, fsType string, partType string, partitionLayoutVar string,
 
 	// format one large partition
 	partCmd := exec.Command("sfdisk", "--quiet", d)
-    partCmd.Stdin = strings.NewReader(partitionLayoutVar)
+	partCmd.Stdin = strings.NewReader(partitionLayoutVar)
 	if out, err := partCmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("Error running sfdisk: %v\n%s", err, out)
 	}
@@ -268,7 +268,7 @@ func init() {
 	flag.StringVar(&labelVar, "label", "", "Disk label to apply")
 	flag.StringVar(&fsTypeVar, "type", "ext4", "Type of filesystem to create")
 	flag.StringVar(&partTypeVar, "partition", "dos", "Type of partition table to create")
-    flag.StringVar(&partitionLayoutVar, "layout", ";", "Partition layout for sfdisk invocation")
+	flag.StringVar(&partitionLayoutVar, "layout", ";", "Partition layout for sfdisk invocation")
 	flag.BoolVar(&verboseVar, "verbose", false, "Enable verbose output (default false)")
 }
 
