@@ -15,7 +15,7 @@ onboot:
     image: linuxkit/dhcpcd:f46134c05f9665d8865a9fbebd5be0995057af28
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: format
-    image: linuxkit/format:8f487d728959192289e0783784fc2b185eadbc82
+    image: linuxkit/format:ced02d849206371b6983eff1eb28f9515406fef0
   - name: mount
     image: linuxkit/mount:2a507ef30302693682f9f612289028df00c58ac5
     command: ["/usr/bin/mountie", "/var/lib/docker"]
