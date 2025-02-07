@@ -1,3 +1,4 @@
 image: mkimage-iso-bios
 arches:
   - amd64
+  - arm64

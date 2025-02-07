@@ -1,5 +1,5 @@
  iso:            linuxkit/mkimage-iso:fbc7d7dff99d2a66967d6e2b509941d35213fde3
- iso-bios:       linuxkit/mkimage-iso-bios:ff832d8001c34a9ba9c9ba78185d62117516d19c
+ iso-bios:       linuxkit/mkimage-iso-bios:ca3da0ac21b1b307eb922163ee4607014d28ea5b
  iso-efi:        linuxkit/mkimage-iso-efi:4bff02040897e4177a2220038f4a5a08cd556afd
  iso-efi-initrd: linuxkit/mkimage-iso-efi-initrd:6d087ae7aa61fe6d840e314dcb2d6b7b2a5db1b8
  raw-bios:       linuxkit/mkimage-raw-bios:c64318cfc28b39010b05c7cd48673f397c45c8df
