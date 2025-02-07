@@ -20,13 +20,14 @@ const (
 )
 
 var (
-	labelVar    string
-	fsTypeVar   string
-	partTypeVar string
-	forceVar    bool
-	verboseVar  bool
-	drives      map[string]bool
-	driveKeys   []string
+	labelVar           string
+	fsTypeVar          string
+	partTypeVar        string
+	forceVar           bool
+	verboseVar         bool
+	drives             map[string]bool
+    partitionLayoutVar string
+	driveKeys          []string
 )
 
 func hasPartitions(d string) bool {
@@ -73,7 +74,7 @@ func isEmptyDevice(d string) (bool, error) {
 	return isEmpty, nil
 }
 
-func autoformat(label, fsType string, partType string) error {
+func autoformat(label, fsType string, partType string, partitionLayoutVar string) error {
 	var first string
 	for _, d := range driveKeys {
 		if verboseVar {
@@ -94,7 +95,7 @@ func autoformat(label, fsType string, partType string) error {
 		return fmt.Errorf("No eligible disks found")
 	}
 
-	return format(first, label, fsType, partType, false)
+	return format(first, label, fsType, partType, partitionLayoutVar, false)
 }
 
 func refreshDevicesAndWaitFor(awaitedDevice string) error {
@@ -129,7 +130,7 @@ func refreshDevicesAndWaitFor(awaitedDevice string) error {
 	return nil
 }
 
-func format(d, label, fsType string, partType string, forced bool) error {
+func format(d, label, fsType string, partType string, partitionLayoutVar string, forced bool) error {
 	if forced {
 		// clear partitions on device if forced format and they exist
 		if hasPartitions(d) {
@@ -137,7 +138,7 @@ func format(d, label, fsType string, partType string, forced bool) error {
 				log.Printf("Clearing partitions on %s because forced format was requested", d)
 			}
 			partCmd := exec.Command("sfdisk", "--quiet", "--delete", d)
-			partCmd.Stdin = strings.NewReader(";")
+            partCmd.Stdin = strings.NewReader(partitionLayoutVar)
 			if out, err := partCmd.CombinedOutput(); err != nil {
 				return fmt.Errorf("Error deleting partitions with sfdisk: %v\n%s", err, out)
 			}
@@ -169,7 +170,7 @@ func format(d, label, fsType string, partType string, forced bool) error {
 
 	// format one large partition
 	partCmd := exec.Command("sfdisk", "--quiet", d)
-	partCmd.Stdin = strings.NewReader(";")
+    partCmd.Stdin = strings.NewReader(partitionLayoutVar)
 	if out, err := partCmd.CombinedOutput(); err != nil {
 		return fmt.Errorf("Error running sfdisk: %v\n%s", err, out)
 	}
@@ -267,6 +268,7 @@ func init() {
 	flag.StringVar(&labelVar, "label", "", "Disk label to apply")
 	flag.StringVar(&fsTypeVar, "type", "ext4", "Type of filesystem to create")
 	flag.StringVar(&partTypeVar, "partition", "dos", "Type of partition table to create")
+    flag.StringVar(&partitionLayoutVar, "layout", ";", "Partition layout for sfdisk invocation")
 	flag.BoolVar(&verboseVar, "verbose", false, "Enable verbose output (default false)")
 }
 
@@ -292,7 +294,7 @@ func main() {
 	if flag.NArg() == 0 {
 		// auto-detect drives if a device to format is not explicitly specified
 		findDrives()
-		if err := autoformat(labelVar, fsTypeVar, partTypeVar); err != nil {
+		if err := autoformat(labelVar, fsTypeVar, partTypeVar, partitionLayoutVar); err != nil {
 			log.Fatalf("%v", err)
 		}
 	} else {
@@ -303,13 +305,13 @@ func main() {
 		}
 
 		if forceVar == true {
-			if err := format(candidateDevice, labelVar, fsTypeVar, partTypeVar, forceVar); err != nil {
+			if err := format(candidateDevice, labelVar, fsTypeVar, partTypeVar, partitionLayoutVar, forceVar); err != nil {
 				log.Fatalf("%v", err)
 			}
 		} else {
 			// add the deviceVar to the array of devices to consider autoformatting
 			driveKeys = []string{candidateDevice}
-			if err := autoformat(labelVar, fsTypeVar, partTypeVar); err != nil {
+			if err := autoformat(labelVar, fsTypeVar, partTypeVar, partitionLayoutVar); err != nil {
 				log.Fatalf("%v", err)
 			}
 		}
