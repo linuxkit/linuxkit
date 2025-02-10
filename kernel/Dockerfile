@@ -143,7 +143,7 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
         cp arch/arm64/boot/Image.gz /out/kernel; \
         ;; \
     riscv64) \
-        cp arch/riscv64/boot/Image.gz /out/kernel; \
+        cp arch/riscv/boot/Image.gz /out/kernel; \
         ;; \
     esac && \
     cp System.map /out && \
