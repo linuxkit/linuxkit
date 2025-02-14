@@ -12,6 +12,7 @@ bash
 bc
 bcc
 bcc-dev
+bcc-tools
 binutils
 binutils-dev
 bison
