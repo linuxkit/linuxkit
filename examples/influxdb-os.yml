@@ -2,17 +2,17 @@ kernel:
   image: linuxkit/kernel:6.6.13
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:30e04e810c9d3d54ab1eb6c2d9407a09d4f2709a
-  - linuxkit/runc:8b5af3365fc7d015db4e44113d93c7b1f8e2d2ab
-  - linuxkit/containerd:8072efcee7c1d77a6b41093ae610062552e354fb
-  - linuxkit/ca-certificates:422d213bd5fff6177be9219a1e0dfc39d9d75342
+  - linuxkit/init:3c0baa0abe9b513538b1feee36f01667161f17dd
+  - linuxkit/runc:667e7ea2c426a2460ca21e3da065a57dbb3369c9
+  - linuxkit/containerd:0854538eb4dedbb45521357633ccb69eef123f54
+  - linuxkit/ca-certificates:7b32a26ca9c275d3ef32b11fe2a83dbd2aee2fdb
 onboot:
   - name: dhcpcd
-    image: linuxkit/dhcpcd:f46134c05f9665d8865a9fbebd5be0995057af28
+    image: linuxkit/dhcpcd:157df9ef45a035f1542ec2270e374f18efef98a5
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
 services:
   - name: getty
-    image: linuxkit/getty:70237b8ac2006b0177026520e7720fc574339298
+    image: linuxkit/getty:05eca453695984a69617f1f1f0bcdae7f7032967
     env:
      - INSECURE=true
   - name: influxdb
