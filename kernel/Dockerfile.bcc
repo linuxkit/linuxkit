@@ -29,7 +29,6 @@ RUN apk update && apk upgrade -a && \
   llvm19-dev \
   llvm19-static \
   llvm19-gtest \
-  luajit-dev \
   m4 \
   musl-fts-dev \
   python3 \
@@ -39,17 +38,7 @@ RUN apk update && apk upgrade -a && \
   zlib-dev \
   && true
 
-RUN ln -s /usr/lib/cmake/llvm10/ /usr/lib/cmake/llvm && \
-    ln -s /usr/include/llvm10/llvm-c/ /usr/include/llvm-c && \
-    ln -s /usr/include/llvm10/llvm/ /usr/include/llvm
-
 WORKDIR /build
-
-ENV BCC_COMMIT=v0.32.0
-RUN git clone https://github.com/iovisor/bcc.git && \
-    cd bcc && \
-    git checkout $BCC_COMMIT && \
-    sed -i 's/<error.h>/<errno.h>/' examples/cpp/KModRetExample.cc
 
 COPY --from=ksrc /kernel-headers.tar /build
 COPY --from=ksrc /kernel-dev.tar /build
@@ -57,15 +46,6 @@ COPY --from=ksrc /kernel.tar /build
 RUN tar xf /build/kernel-headers.tar && \
     tar xf /build/kernel-dev.tar && \
     tar xf /build/kernel.tar
-
-RUN mkdir -p bcc/build && cd bcc/build && \
-    cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-             -DCMAKE_C_FLAGS="-I/build/usr/include" \
-             -DPYTHON_CMD=python3 \
-             -DCMAKE_CXX_FLAGS="-I/build/usr/include" \
-             -DCMAKE_INSTALL_PREFIX=/usr && \
-    make && \
-    make install
 
 RUN mkdir -p /out/usr/ && \
     cp -a /build/usr/src /out/usr/ && \
@@ -77,20 +57,21 @@ RUN mkdir -p /out/usr/lib && \
 
 RUN PYTHONPATH=$(python3 -c "import sysconfig; print(sysconfig.get_path('stdlib'))") && mkdir -p /out${PYTHONPATH} && \
     cp -a ${PYTHONPATH}/site-packages /out/${PYTHONPATH}
-RUN mkdir -p /out/usr/share && \
-    cp -a /usr/share/bcc /out/usr/share/
-RUN mkdir -p /out/usr/bin && \
-    cp -a /usr/bin/bcc-lua /out/usr/bin/
-
 FROM ${BUILD_IMAGE} as mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk update && apk upgrade -a && \
   apk add --no-cache --initdb -p /out \
+  bcc \
+  bcc-dev \
+  bcc-tools \
   busybox \
-  luajit \
   python3 \
   zlib \
   && true
+
+# lua/luajit is not available on all platforms, but we do not consider it blocking
+RUN apk add --no-cache -p /out luajit || true
+RUN apk add --no-cache -p /out bcc-lua || true
 
 FROM scratch
 ENTRYPOINT []
