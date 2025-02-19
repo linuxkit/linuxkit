@@ -12,3 +12,8 @@ LINUXKIT_TMPDIR="${RT_PROJECT_ROOT}/_tmp"
 
 # FIXME: Should source the rtf/lib/lib.sh instead
 RT_CANCEL=253
+
+# command to run `linuxkit run` that includes streaming to stderr, so you never miss logs
+linuxkitrun() {
+  linuxkit run $@ | tee /dev/stderr
+}

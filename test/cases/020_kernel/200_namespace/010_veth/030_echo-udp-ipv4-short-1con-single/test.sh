@@ -17,7 +17,7 @@ clean_up() {
 trap clean_up EXIT
 
 linuxkit build --format kernel+initrd --name ${NAME} ../../common.yml test.yml
-RESULT="$(linuxkit run -cpus 2 ${NAME})"
+RESULT="$(linuxkitrun -cpus 2 ${NAME})"
 echo "${RESULT}" | grep -q "suite PASSED"
 
 exit 0

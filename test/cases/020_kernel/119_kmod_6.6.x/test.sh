@@ -25,7 +25,7 @@ docker build -t ${IMAGE_NAME} .
 
 # Build and run a LinuxKit image with kernel module (and test script)
 linuxkit build --docker --format kernel+initrd --name "${NAME}" test.yml
-RESULT="$(linuxkit run ${NAME})"
+RESULT="$(linuxkitrun ${NAME})"
 echo "${RESULT}" | grep -q "Hello LinuxKit"
 
 exit 0
