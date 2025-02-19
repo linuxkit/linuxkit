@@ -19,7 +19,7 @@ trap clean_up EXIT
 
 
 linuxkit build --format kernel+initrd --name ${NAME} test.yml
-RESULT="$(linuxkit run --disk file=${DISK},size=512M ${NAME})"
+RESULT="$(linuxkitrun --disk file=${DISK},size=512M ${NAME})"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
 

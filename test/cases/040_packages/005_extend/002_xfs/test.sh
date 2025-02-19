@@ -25,7 +25,7 @@ linuxkit run --disk file="${DISK}",format=raw,size=512M "${NAME_CREATE}"
 # osx takes issue with bs=1M
 dd if=/dev/zero bs=1048576 count=256 >> "${DISK}"
 linuxkit build --name "${NAME_EXTEND}" --format kernel+initrd test.yml
-RESULT="$(linuxkit run --disk file=${DISK} ${NAME_EXTEND})"
+RESULT="$(linuxkitrun --disk file=${DISK} ${NAME_EXTEND})"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
 
