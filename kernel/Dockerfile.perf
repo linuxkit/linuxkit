@@ -53,7 +53,7 @@ RUN make -C libtraceevent all install V=1
 WORKDIR /linux
 
 RUN mkdir -p /out && \
-    make -C tools/perf LDFLAGS=-static V=1 && \
+    make -C tools/perf EXTRA_CFLAGS="-Wno-alloc-size -Wno-calloc-transposed-args" LDFLAGS=-static V=1 && \
     strip tools/perf/perf && \
     cp tools/perf/perf /out
 

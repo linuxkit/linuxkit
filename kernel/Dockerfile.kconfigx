@@ -58,6 +58,9 @@ for VERSION in ${KERNEL_VERSIONS}; do
 	elif [ ${TARGETARCH} = "arm64" ] ; then
 		cp /config-${SERIES}-aarch64 .config
 		ARCH=arm64 make oldconfig
+    elif [ ${TARGETARCH} = "riscv64" ] ; then
+		cp /config-${SERIES}-riscv64 .config
+		ARCH=riscv64 make oldconfig
 	fi
 done
 EOF

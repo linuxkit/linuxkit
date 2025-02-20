@@ -16,7 +16,7 @@ RM = rm -f
 # Name and Org on Hub
 ORG?=linuxkit
 IMAGE?=kernel
-IMAGE_BUILDER=linuxkit/alpine:146f540f25cd92ec8ff0c5b0c98342a9a95e479e
+IMAGE_BUILDER=linuxkit/alpine:35b33c6b03c40e51046c3b053dd131a68a26c37a
 
 # You can specify an extra options for the Makefile. This will:
 # - append a config$(EXTRA) to the kernel config for your kernel/arch
@@ -37,21 +37,23 @@ endif
 REPO_ROOT:=$(shell git rev-parse --show-toplevel)
 
 # determine our architecture
-BUILDERARCH=
+ARCH?=$(shell uname -m)
+BUILDERARCH=$(ARCH)
 ifneq ($(ARCH),)
 ifeq ($(ARCH),$(filter $(ARCH),x86_64 amd64))
 override ARCH=x86_64
-BUILDERARCH=amd64
+override BUILDERARCH=amd64
 endif
 ifeq ($(ARCH),$(filter $(ARCH),aarch64 arm64))
 override ARCH=aarch64
-BUILDERARCH=arm64
+override BUILDERARCH=arm64
+endif
+ifeq ($(ARCH),riscv64)
+override BUILDERARCH=riscv64
 endif
 endif
 
-ifneq ($(BUILDERARCH),)
-PLATFORMS=--platforms linux/$(BUILDERARCH)
-endif
+BUILD_PLATFORM=linux/$(BUILDERARCH)
 
 HASHTAG=$(HASH)$(DIRTY)
 
@@ -124,11 +126,11 @@ buildkerneldeps-%: Dockerfile Makefile $(wildcard patches-$(call series,$*)/*) $
 
 buildplainkernel-%: buildkerneldeps-%
 	$(eval KERNEL_SERIES=$(call series,$*))
-	linuxkit pkg build . $(FORCE) $(PLATFORMS) --build-yml ./build-kernel.yml --tag "$*-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args 
+	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./build-kernel.yml --tag "$*-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args 
 
 builddebugkernel-%: buildkerneldeps-%
 	$(eval KERNEL_SERIES=$(call series,$*))
-	linuxkit pkg build . $(FORCE) $(PLATFORMS) --build-yml ./build-kernel.yml --tag "$*-dbg-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args --build-arg-file build-args-debug
+	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./build-kernel.yml --tag "$*-dbg-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args --build-arg-file build-args-debug
 
 push-%: notdirty build-% pushkernel-% tagbuilder-% pushtools-%;
 
@@ -163,7 +165,7 @@ buildtool-%:
 	$(eval TOOL=$(call toolname,$*))
 	$(eval KERNEL_VERSION=$(call toolkernel,$*))
 	$(eval KERNEL_SERIES=$(call series,$(KERNEL_VERSION)))
-	linuxkit pkg build . $(FORCE) $(PLATFORMS) --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args
+	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args
 
 pushtools-%: $(addprefix pushtool-%$(RELEASESEP),$(TOOLS));
 
@@ -206,34 +208,34 @@ update-kernel-semver-yaml-%:
 update-kernel-yamls: $(addprefix update-kernel-hash-yaml-,$(KERNELS)) update-kernel-semver-yaml-$(KERNEL_HIGHEST);
 
 # Target for kernel config
-kconfig:
-ifeq (${KCONFIG_TAG},)
-	docker build --no-cache -f Dockerfile.kconfig \
-		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
-		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-		-t linuxkit/kconfig  .
-else
-	docker build --no-cache -f Dockerfile.kconfig \
-		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
-		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-		-t linuxkit/kconfig:${KCONFIG_TAG}  .
+KCONFIG_TAG_EXTENSION=
+ifneq (${KCONFIG_TAG},)
+KCONFIG_TAG_EXTENSION=-${KCONFIG_TAG}
 endif
+
+kconfig:
+	docker build --no-cache -f Dockerfile.kconfig \
+		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
+		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
+		--platform $(BUILD_PLATFORM) \
+		-t linuxkit/kconfig:$(ARCH)${KCONFIG_TAG_EXTENSION} .
 
 kconfigx:
 ifeq (${KCONFIG_TAG},)
 	docker buildx build --no-cache -f Dockerfile.kconfigx \
-		--platform=$(PLATFORMS) \
+		--platform $(BUILD_PLATFORM) \
 		--output . \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-		-t linuxkit/kconfigx  .
+		-t linuxkit/kconfigx:$(ARCH)  .
 	cp linux_arm64/config-${KERNEL_VERSIONS}-arm64 config-${KERNEL_SERIES}-aarch64
 	cp linux_amd64/config-${KERNEL_VERSIONS}-amd64 config-${KERNEL_SERIES}-x86_64
+	cp linux_amd64/config-${KERNEL_VERSIONS}-riscv64 config-${KERNEL_SERIES}-riscv64
 else
 	docker buildx build --no-cache -f Dockerfile.kconfigx \
-		--platform=$(PLATFORMS) --push \
+		--platform $(BUILD_PLATFORM) --push \
 		--output . \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
-		-t linuxkit/kconfigx:${KCONFIG_TAG}  .
+		-t linuxkit/kconfigx:$(ARCH)${KCONFIG_TAG_EXTENSION}  .
 endif

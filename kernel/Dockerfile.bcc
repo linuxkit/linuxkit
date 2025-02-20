@@ -24,11 +24,11 @@ RUN apk update && apk upgrade -a && \
   iperf3 \
   libedit-dev \
   libtool \
-  llvm \
-  llvm-dev \
-  llvm-static \
-  llvm17-gtest \
-  luajit-dev \
+  libxml2 \
+  llvm19 \
+  llvm19-dev \
+  llvm19-static \
+  llvm19-gtest \
   m4 \
   musl-fts-dev \
   python3 \
@@ -38,20 +38,7 @@ RUN apk update && apk upgrade -a && \
   zlib-dev \
   && true
 
-# this is just here to make later copies easier; do not forget to change this if the python version updates
-ENV PYTHON_VERSION=3.11
-
-RUN ln -s /usr/lib/cmake/llvm10/ /usr/lib/cmake/llvm && \
-    ln -s /usr/include/llvm10/llvm-c/ /usr/include/llvm-c && \
-    ln -s /usr/include/llvm10/llvm/ /usr/include/llvm
-
 WORKDIR /build
-
-ENV BCC_COMMIT=v0.29.1
-RUN git clone https://github.com/iovisor/bcc.git && \
-    cd bcc && \
-    git checkout $BCC_COMMIT && \
-    sed -i 's/<error.h>/<errno.h>/' examples/cpp/KModRetExample.cc
 
 COPY --from=ksrc /kernel-headers.tar /build
 COPY --from=ksrc /kernel-dev.tar /build
@@ -60,15 +47,6 @@ RUN tar xf /build/kernel-headers.tar && \
     tar xf /build/kernel-dev.tar && \
     tar xf /build/kernel.tar
 
-RUN mkdir -p bcc/build && cd bcc/build && \
-    cmake .. -DCMAKE_VERBOSE_MAKEFILE:BOOL=ON \
-             -DCMAKE_C_FLAGS="-I/build/usr/include" \
-             -DPYTHON_CMD=python3 \
-             -DCMAKE_CXX_FLAGS="-I/build/usr/include" \
-             -DCMAKE_INSTALL_PREFIX=/usr && \
-    make && \
-    make install
-
 RUN mkdir -p /out/usr/ && \
     cp -a /build/usr/src /out/usr/ && \
     cp -a /build/usr/include /out/usr
@@ -76,22 +54,24 @@ RUN mkdir -p /out/usr/lib && \
     cp -a /usr/lib/libelf* /out/usr/lib/ && \
     cp -a /usr/lib/libstdc* /out/usr/lib/ && \
     cp -a /usr/lib/libintl* /out/usr/lib/
-RUN mkdir -p /out/usr/lib/python${PYTHON_VERSION} && \
-    cp -a /usr/lib/python${PYTHON_VERSION}/site-packages /out/usr/lib/python${PYTHON_VERSION}/
-RUN mkdir -p /out/usr/share && \
-    cp -a /usr/share/bcc /out/usr/share/
-RUN mkdir -p /out/usr/bin && \
-    cp -a /usr/bin/bcc-lua /out/usr/bin/
 
+RUN PYTHONPATH=$(python3 -c "import sysconfig; print(sysconfig.get_path('stdlib'))") && mkdir -p /out${PYTHONPATH} && \
+    cp -a ${PYTHONPATH}/site-packages /out/${PYTHONPATH}
 FROM ${BUILD_IMAGE} as mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk update && apk upgrade -a && \
   apk add --no-cache --initdb -p /out \
+  bcc \
+  bcc-dev \
+  bcc-tools \
   busybox \
-  luajit \
   python3 \
   zlib \
   && true
+
+# lua/luajit is not available on all platforms, but we do not consider it blocking
+RUN apk add --no-cache -p /out luajit || true
+RUN apk add --no-cache -p /out bcc-lua || true
 
 FROM scratch
 ENTRYPOINT []

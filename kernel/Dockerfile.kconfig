@@ -43,8 +43,9 @@ RUN set -e && \
                patch -t -F0 -N -u -p1 < "$patch"; \
            done; \
         fi && \
-        [ ! -f /config-${SERIES}-x86_64 ] || mv /config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig && \
+        [ ! -f /config-${SERIES}-x86_64 ] || mv /config-${SERIES}-x86_64 arch/x86/configs/x86_64_defconfig ; \
         [ ! -f /config-${SERIES}-aarch64 ] || mv /config-${SERIES}-aarch64 arch/arm64/configs/defconfig ; \
+        [ ! -f /config-${SERIES}-riscv64 ] || mv /config-${SERIES}-riscv64 arch/riscv64/configs/riscv64_defconfig ; \
     done
 
 ENTRYPOINT ["/bin/sh"]

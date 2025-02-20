@@ -1,5 +1,5 @@
 # Make modules from a recentish kernel available
-FROM linuxkit/kernel:6.6.13 AS kernel
+FROM linuxkit/kernel:6.6.71 AS kernel
 
 FROM linuxkit/alpine:35b33c6b03c40e51046c3b053dd131a68a26c37a AS build
 RUN apk add --no-cache git kmod
