@@ -377,7 +377,7 @@ func (g GCPClient) GetInstanceSerialOutput(instance, zone string) error {
 			}
 			return err
 		}
-		fmt.Printf(res.Contents)
+		fmt.Print(res.Contents)
 		next = res.Next
 		// When the instance has been stopped, Start and Next will both be 0
 		if res.Start > 0 && next == 0 {
@@ -429,7 +429,7 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 		break
 	}
 	if conn == nil {
-		return fmt.Errorf(err.Error())
+		return err
 	}
 	defer conn.Close()
 
