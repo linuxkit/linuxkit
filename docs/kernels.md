@@ -274,7 +274,7 @@ your local Docker setup.
 
 The process of modifying the kernel configuration is as follows:
 
-1. Create a `linuxkit/kconfig` container image: `make kconfig`. This is not pushed out.
+1. Create a `linuxkit/kconfig` container image: `make kconfig`. This is not pushed out. By default, this will be for your local architecture, but you can override it with `make kconfig ARCH=${ARCH}`, e.g. `make kconfig ARCH=arm64`. The image is tagged with the architecture, e.g. `linuxkit/kconfig:arm64`.
 1. Run a container based on `linuxkit/kconfig`.
 1. In the container, modify the config to suit your needs using normal kernel tools like `make defconfig` or `make menuconfig`.
 1. Save the config from the image.
@@ -287,7 +287,11 @@ so that `make menuconfig` and `make defconfig` work correctly.
 Run the container as follows:
 
 ```sh
-docker run --rm -ti -v $(pwd):/src linuxkit/kconfig
+docker run --rm -ti -v $(pwd):/src linuxkit/kconfig:aarch64
+# or
+docker run --rm -ti -v $(pwd):/src linuxkit/kconfig:x86_64
+# or 
+docker run --rm -ti -v $(pwd):/src linuxkit/kconfig:riscv64
 ```
 
 This will give you a interactive shell where you can modify the kernel
@@ -320,6 +324,11 @@ one. For example to configure the arm64 kernel on x86_64, use:
 make ARCH=arm64 defconfig
 make ARCH=arm64 oldconfig # or menuconfig
 ```
+
+It is important to note that sometimes the configuration can be subtly different
+when running `make defconfig` across architectures. Of note is that `make ARCH=riscv` on
+x86_64 or aarch64 comes out slightly differently than when run natively on riscv64.
+Feel free to try it cross, but do not be surprised if it generates outputs that are not the same.
 
 Note that the generated file **must** be final. When you actually build the kernel,
 it will check that running `make defconfig` will have no changes. If there are changes,
