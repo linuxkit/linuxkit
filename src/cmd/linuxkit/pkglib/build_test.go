@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/containerd/containerd/images"
-	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/v2/core/content"
+	"github.com/containerd/containerd/v2/core/images"
+	"github.com/containerd/containerd/v2/pkg/reference"
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"

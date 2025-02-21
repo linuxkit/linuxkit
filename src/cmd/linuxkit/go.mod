@@ -13,16 +13,13 @@ require (
 	github.com/Microsoft/go-winio v0.6.2
 	github.com/ScaleFT/sshkeys v0.0.0-20181112160850-82451a803681
 	github.com/aws/aws-sdk-go v1.44.82
-	github.com/containerd/containerd v1.7.23
-	github.com/docker/buildx v0.14.1
-	github.com/docker/cli v27.5.1+incompatible
-	github.com/docker/docker v27.5.1+incompatible
+	github.com/docker/cli v28.0.0-rc.2+incompatible
+	github.com/docker/docker v28.0.0-rc.2+incompatible
 	github.com/docker/go-units v0.5.0
 	github.com/google/go-containerregistry v0.20.1
 	github.com/google/uuid v1.6.0
 	github.com/gophercloud/gophercloud v0.1.0
 	github.com/gophercloud/utils v0.0.0-20181029231510-34f5991525d1
-	github.com/hashicorp/go-version v1.2.0
 	github.com/klauspost/pgzip v1.2.5
 	github.com/moby/buildkit v0.20.0
 	github.com/moby/hyperkit v0.0.0-20180416161519-d65b09c1c28a
@@ -54,11 +51,15 @@ require (
 
 require (
 	github.com/Code-Hex/vz/v3 v3.0.0
+	github.com/containerd/containerd/v2 v2.0.2
+	github.com/containerd/platforms v1.0.0-rc.1
+	github.com/docker/buildx v0.21.1
 	github.com/equinix/equinix-sdk-go v0.42.0
+	github.com/hashicorp/go-version v1.7.0
 	github.com/in-toto/in-toto-golang v0.5.0
 	github.com/moby/sys/capability v0.3.0
 	github.com/spdx/tools-golang v0.5.3
-	github.com/spf13/cobra v1.8.0
+	github.com/spf13/cobra v1.8.1
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -70,17 +71,14 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
-	github.com/Microsoft/hcsshim v0.12.9 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/anchore/go-struct-converter v0.0.0-20221118182256-c68fdcfa2092 // indirect
 	github.com/containerd/console v1.0.4 // indirect
 	github.com/containerd/containerd/api v1.8.0 // indirect
-	github.com/containerd/containerd/v2 v2.0.2 // indirect
 	github.com/containerd/continuity v0.4.5 // indirect
 	github.com/containerd/errdefs v1.0.0 // indirect
 	github.com/containerd/errdefs/pkg v0.3.0 // indirect
 	github.com/containerd/log v0.1.0 // indirect
-	github.com/containerd/platforms v1.0.0-rc.1 // indirect
 	github.com/containerd/stargz-snapshotter/estargz v0.16.3 // indirect
 	github.com/containerd/ttrpc v1.2.7 // indirect
 	github.com/containerd/typeurl/v2 v2.2.3 // indirect
@@ -88,7 +86,7 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dchest/bcrypt_pbkdf v0.0.0-20150205184540-83f37f9c154a // indirect
 	github.com/distribution/reference v0.6.0 // indirect
-	github.com/docker/distribution v2.8.2+incompatible // indirect
+	github.com/docker/distribution v2.8.3+incompatible // indirect
 	github.com/docker/docker-credential-helpers v0.8.2 // indirect
 	github.com/docker/go-connections v0.5.0 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -116,6 +114,7 @@ require (
 	github.com/linuxkit/virtsock v0.0.0-20201010232012-f8cee7dfc7a3 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-ps v0.0.0-20190716172923-621e5597135b // indirect
+	github.com/mitchellh/hashstructure/v2 v2.0.2 // indirect
 	github.com/moby/docker-image-spec v1.3.1 // indirect
 	github.com/moby/locker v1.0.1 // indirect
 	github.com/moby/patternmatcher v0.6.0 // indirect

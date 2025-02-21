@@ -615,7 +615,7 @@ func (s *ScalewayClient) ConnectSerialPort(instanceID string) error {
 	go func() {
 		err = gottyClient.Loop()
 		if err != nil {
-			fmt.Printf("ERROR: %v", err)
+			fmt.Printf("ERROR: %v\n", err)
 		}
 		//gottyClient.Close()
 		done <- true
