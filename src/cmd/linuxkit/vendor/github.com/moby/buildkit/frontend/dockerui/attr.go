@@ -1,18 +1,18 @@
 package dockerui
 
 import (
-	"encoding/csv"
 	"net"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd/platforms"
+	"github.com/containerd/platforms"
 	"github.com/docker/go-units"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/solver/pb"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
+	"github.com/tonistiigi/go-csvvalue"
 )
 
 func parsePlatforms(v string) ([]ocispecs.Platform, error) {
@@ -45,8 +45,7 @@ func parseExtraHosts(v string) ([]llb.HostIP, error) {
 		return nil, nil
 	}
 	out := make([]llb.HostIP, 0)
-	csvReader := csv.NewReader(strings.NewReader(v))
-	fields, err := csvReader.Read()
+	fields, err := csvvalue.Fields(v, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -75,13 +74,12 @@ func parseShmSize(v string) (int64, error) {
 	return kb, nil
 }
 
-func parseUlimits(v string) ([]pb.Ulimit, error) {
+func parseUlimits(v string) ([]*pb.Ulimit, error) {
 	if v == "" {
 		return nil, nil
 	}
-	out := make([]pb.Ulimit, 0)
-	csvReader := csv.NewReader(strings.NewReader(v))
-	fields, err := csvReader.Read()
+	out := make([]*pb.Ulimit, 0)
+	fields, err := csvvalue.Fields(v, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +88,7 @@ func parseUlimits(v string) ([]pb.Ulimit, error) {
 		if err != nil {
 			return nil, err
 		}
-		out = append(out, pb.Ulimit{
+		out = append(out, &pb.Ulimit{
 			Name: ulimit.Name,
 			Soft: ulimit.Soft,
 			Hard: ulimit.Hard,
@@ -125,6 +123,16 @@ func parseSourceDateEpoch(v string) (*time.Time, error) {
 	}
 	tm := time.Unix(sde, 0).UTC()
 	return &tm, nil
+}
+
+func parseLocalSessionIDs(opt map[string]string) map[string]string {
+	m := map[string]string{}
+	for k, v := range opt {
+		if strings.HasPrefix(k, localSessionIDPrefix) {
+			m[strings.TrimPrefix(k, localSessionIDPrefix)] = v
+		}
+	}
+	return m
 }
 
 func filter(opt map[string]string, key string) map[string]string {

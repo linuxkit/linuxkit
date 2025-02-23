@@ -1,7 +1,7 @@
 package cache
 
 import (
-	"github.com/containerd/containerd/content"
+	"github.com/containerd/containerd/v2/core/content"
 )
 
 // Store get content.Store referencing the cache

@@ -19,8 +19,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/v2/core/content"
 	"github.com/docker/buildx/util/progress"
 	"github.com/docker/docker/api/types"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -474,7 +474,7 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 	if stdin != nil {
 		buf := bufio.NewReader(stdin)
 		up := uploadprovider.New()
-		frontendAttrs["context"] = up.Add(buf)
+		frontendAttrs["context"] = up.Add(io.NopCloser(buf))
 		attachable = append(attachable, up)
 	} else {
 		localDirs[dockerui.DefaultLocalNameDockerfile] = pkg
@@ -512,7 +512,7 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 		if err != nil {
 			return fmt.Errorf("error parsing dockerfile from bytes into AST %s: %v", dockerfileRef, err)
 		}
-		stages, metaArgs, err := instructions.Parse(ast.AST)
+		stages, metaArgs, err := instructions.Parse(ast.AST, nil)
 		if err != nil {
 			return fmt.Errorf("error parsing dockerfile from AST into stages %s: %v", dockerfileRef, err)
 		}
@@ -540,7 +540,11 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 			//   FROM ${IMAGE} as src
 			// will be parsed as:
 			//   FROM linuxkit/img as src
-			name, err := shlex.ProcessWordWithMap(stage.BaseName, optMetaArgs)
+			var envs []string
+			for key, val := range optMetaArgs {
+				envs = append(envs, fmt.Sprintf("%s=%s", key, val))
+			}
+			name, _, err := shlex.ProcessWord(stage.BaseName, shell.EnvsFromSlice(envs))
 			if err != nil {
 				return fmt.Errorf("could not process word for image %s: %v", stage.BaseName, err)
 			}

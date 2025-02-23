@@ -47,6 +47,7 @@ const (
 	CapExecMetaSecurityDeviceWhitelistV1 apicaps.CapID = "exec.meta.security.devices.v1"
 	CapExecMetaSetsDefaultPath           apicaps.CapID = "exec.meta.setsdefaultpath"
 	CapExecMetaUlimit                    apicaps.CapID = "exec.meta.ulimit"
+	CapExecMetaCDI                       apicaps.CapID = "exec.meta.cdi"
 	CapExecMetaRemoveMountStubsRecursive apicaps.CapID = "exec.meta.removemountstubs.recursive"
 	CapExecMountBind                     apicaps.CapID = "exec.mount.bind"
 	CapExecMountBindReadWriteNoOutput    apicaps.CapID = "exec.mount.bind.readwrite-nooutput"
@@ -60,11 +61,15 @@ const (
 	CapExecMountContentCache             apicaps.CapID = "exec.mount.cache.content"
 	CapExecCgroupsMounted                apicaps.CapID = "exec.cgroup"
 	CapExecSecretEnv                     apicaps.CapID = "exec.secretenv"
+	CapExecValidExitCode                 apicaps.CapID = "exec.validexitcode"
 
-	CapFileBase                       apicaps.CapID = "file.base"
-	CapFileRmWildcard                 apicaps.CapID = "file.rm.wildcard"
-	CapFileCopyIncludeExcludePatterns apicaps.CapID = "file.copy.includeexcludepatterns"
-	CapFileRmNoFollowSymlink          apicaps.CapID = "file.rm.nofollowsymlink"
+	CapFileBase                               apicaps.CapID = "file.base"
+	CapFileRmWildcard                         apicaps.CapID = "file.rm.wildcard"
+	CapFileCopyIncludeExcludePatterns         apicaps.CapID = "file.copy.includeexcludepatterns"
+	CapFileRmNoFollowSymlink                  apicaps.CapID = "file.rm.nofollowsymlink"
+	CapFileCopyAlwaysReplaceExistingDestPaths apicaps.CapID = "file.copy.alwaysreplaceexistingdestpaths"
+	CapFileCopyModeStringFormat               apicaps.CapID = "file.copy.modestring"
+	CapFileSymlinkCreate                      apicaps.CapID = "file.symlink.create"
 
 	CapConstraints apicaps.CapID = "constraints"
 	CapPlatform    apicaps.CapID = "platform"
@@ -89,6 +94,12 @@ const (
 	CapMultipleExporters apicaps.CapID = "exporter.multiple"
 
 	CapSourcePolicy apicaps.CapID = "source.policy"
+
+	// GC/Prune controls allow MinFreeSpace and MaxUsedSpace to be set
+	CapGCFreeSpaceFilter apicaps.CapID = "gc.freespacefilter"
+
+	// ListenBuildHistory requests support server-side filters
+	CapHistoryFilters apicaps.CapID = "history.filter"
 )
 
 func init() {
@@ -285,6 +296,12 @@ func init() {
 	})
 
 	Caps.Init(apicaps.Cap{
+		ID:      CapExecMetaCDI,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
 		ID:      CapExecMountBind,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
@@ -357,6 +374,12 @@ func init() {
 	})
 
 	Caps.Init(apicaps.Cap{
+		ID:      CapExecValidExitCode,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
 		ID:      CapFileBase,
 		Enabled: true,
 		Status:  apicaps.CapStatusPrerelease,
@@ -380,6 +403,18 @@ func init() {
 
 	Caps.Init(apicaps.Cap{
 		ID:      CapFileCopyIncludeExcludePatterns,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapFileCopyAlwaysReplaceExistingDestPaths,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapFileSymlinkCreate,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
 	})
@@ -471,6 +506,18 @@ func init() {
 
 	Caps.Init(apicaps.Cap{
 		ID:      CapSourcePolicy,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapGCFreeSpaceFilter,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapHistoryFilters,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
 	})

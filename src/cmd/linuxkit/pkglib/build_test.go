@@ -13,9 +13,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/containerd/containerd/content"
 	"github.com/containerd/containerd/images"
 	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/v2/core/content"
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"
@@ -229,6 +229,8 @@ func (d *dockerMocker) pull(img string) (bool, error) {
 	}
 	return false, errors.New("failed to pull")
 }
+
+var _ lktspec.CacheProvider = &cacheMocker{}
 
 type cacheMocker struct {
 	enablePush             bool

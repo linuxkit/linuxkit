@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/containerd/containerd/platforms"
+	"github.com/containerd/platforms"
 	"github.com/moby/buildkit/exporter/containerimage/exptypes"
 	"github.com/moby/buildkit/frontend/gateway/client"
 	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
@@ -70,7 +70,7 @@ func (bc *Client) Build(ctx context.Context, fn BuildFunc) (*ResultBuilder, erro
 			}
 
 			p = platforms.Normalize(p)
-			k := platforms.Format(p)
+			k := platforms.FormatAll(p)
 
 			if bc.MultiPlatformRequested {
 				res.AddRef(k, ref)
