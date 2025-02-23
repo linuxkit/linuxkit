@@ -39,7 +39,7 @@ services:
 volumes:
 - name: blank   # blank volume
 - name: alpine  # populated volume
-  image: alpine:3.19
+  image: alpine:3.21
 files:
   - path: etc/linuxkit-config
     metadata: yaml

@@ -16,7 +16,7 @@ onboot:
     command: ["/bin/sh", "/poweroff.sh", "10"]
 volumes:
   - name: vola
-    image: alpine:3.19
+    image: alpine:3.21
 files:
   - path: check.sh
     source: ./check.sh

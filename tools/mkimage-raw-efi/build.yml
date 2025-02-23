@@ -3,3 +3,4 @@ network: true
 arches:
   - amd64
   - arm64
+  - riscv64

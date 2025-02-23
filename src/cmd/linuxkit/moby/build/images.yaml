@@ -5,9 +5,9 @@
  raw-bios:       linuxkit/mkimage-raw-bios:a11bbe671863a75c68c58e9454d3246ab406567c
  raw-efi:        linuxkit/mkimage-raw-efi:60415b45ea87afd47bb61ef5409b1320882d7e56
  squashfs:       linuxkit/mkimage-squashfs:3433e24dbecc28d1b70469bc36d91c152355841c
- gcp:            linuxkit/mkimage-gcp:035c2c2b4b958060c0b6bdd41d9cbc886a335098
+ gcp:            linuxkit/mkimage-gcp:7f220881aed6336708b62afea9820e436b573cea
  qcow2-efi:      linuxkit/mkimage-qcow2-efi:203809755424fb601f63700f13f17dc65cef69b5
- vhd:            linuxkit/mkimage-vhd:91bcc7a6475f46a3d5d84cf6161f07c583dd9c21
- dynamic-vhd:    linuxkit/mkimage-dynamic-vhd:b755f8ff82c8631d18decaebb09867e7b88c2533
- vmdk:           linuxkit/mkimage-vmdk:20a370a55bd8d58c2ae9d634c297a955bb006efd
+ vhd:            linuxkit/mkimage-vhd:c6f7696575081986bdda9a6b48ead70498e2aeee
+ dynamic-vhd:    linuxkit/mkimage-dynamic-vhd:f76ac6c6803e9e25d09f22f7fe431e5386885a85
+ vmdk:           linuxkit/mkimage-vmdk:e2f2973907ca1ad412344cebd11bfa6d47dd6099
  rpi3:           linuxkit/mkimage-rpi3:4de9c144e4766bf283620371601c91638164b686

@@ -1,4 +1,4 @@
-FROM linuxkit/guestfs:f85d370f7a3b0749063213c2dd451020e3a631ab
+FROM linuxkit/guestfs:8efdfac678bd6c621d3ccf916d70707ae09470f9
 
 COPY . .
 

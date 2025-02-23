@@ -12,7 +12,7 @@ onboot:
     image: linuxkit/mount:cb8caa72248f7082fc2074ce843d53cdc15df04a
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
-    image: alpine:3.19
+    image: alpine:3.21
     binds:
       - /var/lib/docker:/var/lib/docker
       - /check.sh:/check.sh

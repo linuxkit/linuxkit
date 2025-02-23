@@ -70,6 +70,8 @@ func init() {
 		defaultArch = "x86_64"
 	case "s390x":
 		defaultArch = "s390x"
+	case "riscv64":
+		defaultArch = "riscv64"
 	}
 	switch {
 	case runtime.GOARCH == "s390x":
@@ -475,6 +477,8 @@ func buildQemuCmdline(config QemuConfig) (QemuConfig, []string) {
 		goArch = "arm64"
 	case "x86_64":
 		goArch = "amd64"
+	case "riscv64":
+		goArch = "riscv64"
 	default:
 		log.Fatalf("%s is an unsupported architecture.", config.Arch)
 	}
