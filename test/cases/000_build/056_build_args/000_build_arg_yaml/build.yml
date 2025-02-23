@@ -1,4 +1,4 @@
 org: linuxkit
 image: image-in-build-args
 buildArgs:
-- IMAGE=alpine:3.19
+- IMAGE=alpine:3.21
