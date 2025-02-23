@@ -46,7 +46,7 @@ services:
       - /etc/docker/daemon.json:/etc/docker/daemon.json
     command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
   - name: cadvisor
-    image: linuxkit/cadvisor:b4a75f3e296ebbeac3a008eee74f8dd2305e595e
+    image: linuxkit/cadvisor:8dfefe0f9593ba21aca5d08fadac16de907d470d
 files:
   - path: var/lib/docker
     directory: true
