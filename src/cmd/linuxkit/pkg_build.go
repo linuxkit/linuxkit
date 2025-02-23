@@ -15,7 +15,7 @@ import (
 const (
 	buildersEnvVar      = "LINUXKIT_BUILDERS"
 	envVarCacheDir      = "LINUXKIT_CACHE"
-	defaultBuilderImage = "moby/buildkit:v0.12.3"
+	defaultBuilderImage = "moby/buildkit:v0.20.0"
 )
 
 // some logic clarification:
