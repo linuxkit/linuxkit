@@ -3,7 +3,7 @@ package flightcontrol
 import (
 	"context"
 	"io"
-	"runtime"
+	"math/rand"
 	"sort"
 	"sync"
 	"time"
@@ -43,13 +43,14 @@ func (g *Group[T]) Do(ctx context.Context, key string, fn func(ctx context.Conte
 			err = errors.Wrapf(errRetryTimeout, "flightcontrol")
 			return v, err
 		}
-		runtime.Gosched()
 		if backoff > 0 {
-			time.Sleep(backoff)
-			backoff *= 2
+			backoff = time.Duration(float64(backoff) * 1.2)
 		} else {
-			backoff = time.Millisecond
+			// randomize initial backoff to avoid all goroutines retrying at once
+			//nolint:gosec // using math/rand pseudo-randomness is acceptable here
+			backoff = time.Millisecond + time.Duration(rand.Intn(1e7))*time.Nanosecond
 		}
+		time.Sleep(backoff)
 	}
 }
 
@@ -117,7 +118,7 @@ func newCall[T any](fn func(ctx context.Context) (T, error)) *call[T] {
 func (c *call[T]) run() {
 	defer c.closeProgressWriter(errors.WithStack(context.Canceled))
 	ctx, cancel := context.WithCancelCause(c.ctx)
-	defer cancel(errors.WithStack(context.Canceled))
+	defer func() { cancel(errors.WithStack(context.Canceled)) }()
 	v, err := c.fn(ctx)
 	c.mu.Lock()
 	c.result = v
@@ -156,7 +157,7 @@ func (c *call[T]) wait(ctx context.Context) (v T, err error) {
 	}
 
 	ctx, cancel := context.WithCancelCause(ctx)
-	defer cancel(errors.WithStack(context.Canceled))
+	defer func() { cancel(errors.WithStack(context.Canceled)) }()
 
 	c.ctxs = append(c.ctxs, ctx)
 

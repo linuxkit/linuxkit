@@ -5,13 +5,14 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"io"
+	"maps"
 	"os"
-	"path/filepath"
+	"slices"
 	"strings"
 	"time"
 
-	"github.com/containerd/containerd/content"
-	contentlocal "github.com/containerd/containerd/content/local"
+	"github.com/containerd/containerd/v2/core/content"
+	contentlocal "github.com/containerd/containerd/v2/plugins/content/local"
 	controlapi "github.com/moby/buildkit/api/services/control"
 	"github.com/moby/buildkit/client/llb"
 	"github.com/moby/buildkit/client/ociindex"
@@ -24,7 +25,6 @@ import (
 	"github.com/moby/buildkit/solver/pb"
 	spb "github.com/moby/buildkit/sourcepolicy/pb"
 	"github.com/moby/buildkit/util/bklog"
-	"github.com/moby/buildkit/util/entitlements"
 	ocispecs "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 	"github.com/tonistiigi/fsutil"
@@ -45,7 +45,7 @@ type SolveOpt struct {
 	CacheExports          []CacheOptionsEntry
 	CacheImports          []CacheOptionsEntry
 	Session               []session.Attachable
-	AllowedEntitlements   []entitlements.Entitlement
+	AllowedEntitlements   []string
 	SharedSession         *session.Session // TODO: refactor to better session syncing
 	SessionPreInitialized bool             // TODO: refactor to better session syncing
 	Internal              bool
@@ -119,7 +119,7 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 		if opt.SessionPreInitialized {
 			return nil, errors.Errorf("no session provided for preinitialized option")
 		}
-		s, err = session.NewSession(statusContext, defaultSessionName(), opt.SharedKey)
+		s, err = session.NewSession(statusContext, opt.SharedKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "failed to create session")
 		}
@@ -219,13 +219,8 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 		})
 	}
 
-	frontendAttrs := map[string]string{}
-	for k, v := range opt.FrontendAttrs {
-		frontendAttrs[k] = v
-	}
-	for k, v := range cacheOpt.frontendAttrs {
-		frontendAttrs[k] = v
-	}
+	frontendAttrs := maps.Clone(opt.FrontendAttrs)
+	maps.Copy(frontendAttrs, cacheOpt.frontendAttrs)
 
 	solveCtx, cancelSolve := context.WithCancelCause(ctx)
 	var res *SolveResponse
@@ -281,8 +276,8 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 			Frontend:                opt.Frontend,
 			FrontendAttrs:           frontendAttrs,
 			FrontendInputs:          frontendInputs,
-			Cache:                   cacheOpt.options,
-			Entitlements:            opt.AllowedEntitlements,
+			Cache:                   &cacheOpt.options,
+			Entitlements:            slices.Clone(opt.AllowedEntitlements),
 			Internal:                opt.Internal,
 			SourcePolicy:            opt.SourcePolicy,
 		})
@@ -350,7 +345,7 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 		}
 		for storePath, tag := range cacheOpt.storesToUpdate {
 			idx := ociindex.NewStoreIndex(storePath)
-			if err := idx.Put(tag, manifestDesc); err != nil {
+			if err := idx.Put(manifestDesc, ociindex.Tag(tag)); err != nil {
 				return nil, err
 			}
 		}
@@ -365,12 +360,16 @@ func (c *Client) solve(ctx context.Context, def *llb.Definition, runGateway runG
 			return nil, err
 		}
 		for _, storePath := range storesToUpdate {
-			tag := "latest"
+			names := []ociindex.NameOrTag{ociindex.Tag("latest")}
 			if t, ok := res.ExporterResponse["image.name"]; ok {
-				tag = t
+				inp := strings.Split(t, ",")
+				names = make([]ociindex.NameOrTag, len(inp))
+				for i, n := range inp {
+					names[i] = ociindex.Name(n)
+				}
 			}
 			idx := ociindex.NewStoreIndex(storePath)
-			if err := idx.Put(tag, manifestDesc); err != nil {
+			if err := idx.Put(manifestDesc, names...); err != nil {
 				return nil, err
 			}
 		}
@@ -399,7 +398,7 @@ func prepareSyncedFiles(def *llb.Definition, localMounts map[string]fsutil.FS) (
 	} else {
 		for _, dt := range def.Def {
 			var op pb.Op
-			if err := (&op).Unmarshal(dt); err != nil {
+			if err := op.UnmarshalVT(dt); err != nil {
 				return nil, errors.Wrap(err, "failed to parse llb proto op")
 			}
 			if src := op.GetSource(); src != nil {
@@ -421,14 +420,6 @@ func prepareSyncedFiles(def *llb.Definition, localMounts map[string]fsutil.FS) (
 		}
 	}
 	return result, nil
-}
-
-func defaultSessionName() string {
-	wd, err := os.Getwd()
-	if err != nil {
-		return "unknown"
-	}
-	return filepath.Base(wd)
 }
 
 type cacheOptions struct {
