@@ -185,7 +185,7 @@ func runAWSCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("Error decoding output: %s", err)
 				}
-				fmt.Printf(string(out) + "\n")
+				fmt.Printf("%s\n", string(out))
 			}
 			log.Infof("Terminating instance %s", *instanceID)
 			terminateParams := &ec2.TerminateInstancesInput{
