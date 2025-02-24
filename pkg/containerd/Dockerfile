@@ -4,12 +4,12 @@ FROM linuxkit/alpine:35b33c6b03c40e51046c3b053dd131a68a26c37a as alpine
 RUN apk add tzdata binutils
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/020-containerd
 
-FROM linuxkit/containerd-dev:6bcd306acd17006695406edc0cc6b5111a601799 as containerd-dev
+FROM linuxkit/containerd-dev:dcb484003086d12dc0458793375f3769553f330e as containerd-dev
 
 FROM scratch
 ENTRYPOINT []
 WORKDIR /
-COPY --from=containerd-dev /usr/bin/containerd /usr/bin/ctr /usr/bin/containerd-shim /usr/bin/containerd-shim-runc-v2 /usr/bin/
+COPY --from=containerd-dev /usr/bin/containerd /usr/bin/ctr /usr/bin/containerd-shim-runc-v2 /usr/bin/
 COPY --from=alpine /usr/share/zoneinfo/UTC /etc/localtime
 COPY --from=alpine /etc/init.d/ /etc/init.d/
 COPY etc etc/

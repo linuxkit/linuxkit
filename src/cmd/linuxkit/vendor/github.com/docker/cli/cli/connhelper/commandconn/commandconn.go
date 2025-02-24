@@ -33,18 +33,28 @@ import (
 )
 
 // New returns net.Conn
-func New(_ context.Context, cmd string, args ...string) (net.Conn, error) {
-	var (
-		c   commandConn
-		err error
-	)
-	c.cmd = exec.Command(cmd, args...)
+func New(ctx context.Context, cmd string, args ...string) (net.Conn, error) {
+	// Don't kill the ssh process if the  context is cancelled. Killing the
+	// ssh process causes an error when go's http.Client tries to reuse the
+	// net.Conn (commandConn).
+	//
+	// Not passing down the Context might seem counter-intuitive, but in this
+	// case, the lifetime of the process should be managed by the http.Client,
+	// not the caller's Context.
+	//
+	// Further details;;
+	//
+	// - https://github.com/docker/cli/pull/3900
+	// - https://github.com/docker/compose/issues/9448#issuecomment-1264263721
+	ctx = context.WithoutCancel(ctx)
+	c := commandConn{cmd: exec.CommandContext(ctx, cmd, args...)}
 	// we assume that args never contains sensitive information
 	logrus.Debugf("commandconn: starting %s with %v", cmd, args)
 	c.cmd.Env = os.Environ()
 	c.cmd.SysProcAttr = &syscall.SysProcAttr{}
 	setPdeathsig(c.cmd)
 	createSession(c.cmd)
+	var err error
 	c.stdin, err = c.cmd.StdinPipe()
 	if err != nil {
 		return nil, err

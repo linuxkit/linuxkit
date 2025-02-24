@@ -3,8 +3,8 @@ package spec
 import (
 	"io"
 
-	"github.com/containerd/containerd/reference"
 	"github.com/containerd/containerd/v2/core/content"
+	"github.com/containerd/containerd/v2/pkg/reference"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )

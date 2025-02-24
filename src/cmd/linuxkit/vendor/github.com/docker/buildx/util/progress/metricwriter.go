@@ -13,11 +13,39 @@ import (
 	"github.com/opencontainers/go-digest"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/metric"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
+
+type rePatterns struct {
+	LocalSourceType *regexp.Regexp
+	ImageSourceType *regexp.Regexp
+	ExecType        *regexp.Regexp
+	ExportImageType *regexp.Regexp
+	LintMessage     *regexp.Regexp
+}
+
+var re = sync.OnceValue(func() *rePatterns {
+	return &rePatterns{
+		LocalSourceType: regexp.MustCompile(
+			strings.Join([]string{
+				`(?P<context>\[internal] load build context)`,
+				`(?P<dockerfile>load build definition)`,
+				`(?P<dockerignore>load \.dockerignore)`,
+				`(?P<namedcontext>\[context .+] load from client)`,
+			}, "|"),
+		),
+		ImageSourceType: regexp.MustCompile(`^\[.*] FROM `),
+		ExecType:        regexp.MustCompile(`^\[.*] RUN `),
+		ExportImageType: regexp.MustCompile(`^exporting to (image|(?P<format>\w+) image format)$`),
+		LintMessage:     regexp.MustCompile(`^https://docs\.docker\.com/go/dockerfile/rule/([\w|-]+)/`),
+	}
+})
 
 type metricWriter struct {
 	recorders []metricRecorder
 	attrs     attribute.Set
+	mu        sync.Mutex
 }
 
 func newMetrics(mp metric.MeterProvider, attrs attribute.Set) *metricWriter {
@@ -29,12 +57,16 @@ func newMetrics(mp metric.MeterProvider, attrs attribute.Set) *metricWriter {
 			newExecMetricRecorder(meter, attrs),
 			newExportImageMetricRecorder(meter, attrs),
 			newIdleMetricRecorder(meter, attrs),
+			newLintMetricRecorder(meter, attrs),
 		},
 		attrs: attrs,
 	}
 }
 
 func (mw *metricWriter) Write(ss *client.SolveStatus) {
+	mw.mu.Lock()
+	defer mw.mu.Unlock()
+
 	for _, recorder := range mw.recorders {
 		recorder.Record(ss)
 	}
@@ -125,22 +157,13 @@ func (mr *localSourceTransferMetricRecorder) Record(ss *client.SolveStatus) {
 	}
 }
 
-var reLocalSourceType = regexp.MustCompile(
-	strings.Join([]string{
-		`(?P<context>\[internal] load build context)`,
-		`(?P<dockerfile>load build definition)`,
-		`(?P<dockerignore>load \.dockerignore)`,
-		`(?P<namedcontext>\[context .+] load from client)`,
-	}, "|"),
-)
-
 func detectLocalSourceType(vertexName string) attribute.KeyValue {
-	match := reLocalSourceType.FindStringSubmatch(vertexName)
+	match := re().LocalSourceType.FindStringSubmatch(vertexName)
 	if match == nil {
 		return attribute.KeyValue{}
 	}
 
-	for i, source := range reLocalSourceType.SubexpNames() {
+	for i, source := range re().LocalSourceType.SubexpNames() {
 		if len(source) == 0 {
 			// Not a subexpression.
 			continue
@@ -238,10 +261,8 @@ func (mr *imageSourceMetricRecorder) Record(ss *client.SolveStatus) {
 	}
 }
 
-var reImageSourceType = regexp.MustCompile(`^\[.*] FROM `)
-
 func detectImageSourceType(vertexName string) bool {
-	return reImageSourceType.MatchString(vertexName)
+	return re().ImageSourceType.MatchString(vertexName)
 }
 
 type (
@@ -275,10 +296,8 @@ func (mr *execMetricRecorder) Record(ss *client.SolveStatus) {
 	}
 }
 
-var reExecType = regexp.MustCompile(`^\[.*] RUN `)
-
 func detectExecType(vertexName string) bool {
-	return reExecType.MatchString(vertexName)
+	return re().ExecType.MatchString(vertexName)
 }
 
 type (
@@ -322,10 +341,8 @@ func (mr *exportImageMetricRecorder) Record(ss *client.SolveStatus) {
 	}
 }
 
-var reExportImageType = regexp.MustCompile(`^exporting to (image|(?P<format>\w+) image format)$`)
-
 func detectExportImageType(vertexName string) string {
-	m := reExportImageType.FindStringSubmatch(vertexName)
+	m := re().ExportImageType.FindStringSubmatch(vertexName)
 	if m == nil {
 		return ""
 	}
@@ -425,4 +442,50 @@ func calculateIdleTime(started, completed []time.Time) time.Duration {
 		completed = completed[1:]
 	}
 	return elapsed
+}
+
+type lintMetricRecorder struct {
+	// Attributes holds the set of attributes for all metrics produced.
+	Attributes attribute.Set
+
+	// Count holds the metric for the number of times a lint rule has been triggered
+	// within the current build.
+	Count metric.Int64Counter
+}
+
+func newLintMetricRecorder(meter metric.Meter, attrs attribute.Set) *lintMetricRecorder {
+	mr := &lintMetricRecorder{
+		Attributes: attrs,
+	}
+	mr.Count, _ = meter.Int64Counter("lint.trigger.count",
+		metric.WithDescription("Measures the number of times a lint rule has been triggered."))
+	return mr
+}
+
+func kebabToCamel(s string) string {
+	words := strings.Split(s, "-")
+	for i, word := range words {
+		words[i] = cases.Title(language.English).String(word)
+	}
+	return strings.Join(words, "")
+}
+
+var lintRuleNameProperty = attribute.Key("lint.rule.name")
+
+func (mr *lintMetricRecorder) Record(ss *client.SolveStatus) {
+	reLintMessage := re().LintMessage
+	for _, warning := range ss.Warnings {
+		m := reLintMessage.FindSubmatch([]byte(warning.URL))
+		if len(m) < 2 {
+			continue
+		}
+
+		ruleName := kebabToCamel(string(m[1]))
+		mr.Count.Add(context.Background(), 1,
+			metric.WithAttributeSet(mr.Attributes),
+			metric.WithAttributes(
+				lintRuleNameProperty.String(ruleName),
+			),
+		)
+	}
 }

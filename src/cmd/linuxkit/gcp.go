@@ -377,7 +377,7 @@ func (g GCPClient) GetInstanceSerialOutput(instance, zone string) error {
 			}
 			return err
 		}
-		fmt.Print(res.Contents)
+		fmt.Printf("%s\n", res.Contents)
 		next = res.Next
 		// When the instance has been stopped, Start and Next will both be 0
 		if res.Start > 0 && next == 0 {

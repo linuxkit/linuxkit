@@ -8,10 +8,10 @@ import (
 	"os"
 	"sync"
 
-	"github.com/containerd/containerd/reference"
+	"github.com/containerd/containerd/v2/pkg/reference"
 	"github.com/docker/cli/cli/connhelper"
-	dockertypes "github.com/docker/docker/api/types"
 	containertypes "github.com/docker/docker/api/types/container"
+	dockerimagetypes "github.com/docker/docker/api/types/image"
 	"github.com/docker/docker/client"
 	log "github.com/sirupsen/logrus"
 )
@@ -70,12 +70,12 @@ func HasImage(ref *reference.Spec, architecture string) error {
 }
 
 // InspectImage inspect the provided ref.
-func InspectImage(cli *client.Client, ref *reference.Spec) (dockertypes.ImageInspect, error) {
+func InspectImage(cli *client.Client, ref *reference.Spec) (dockerimagetypes.InspectResponse, error) {
 	log.Debugf("docker inspect image: %s", ref)
 
-	inspect, _, err := cli.ImageInspectWithRaw(context.Background(), ref.String())
+	inspect, err := cli.ImageInspect(context.Background(), ref.String())
 	if err != nil {
-		return dockertypes.ImageInspect{}, err
+		return dockerimagetypes.InspectResponse{}, err
 	}
 
 	log.Debugf("docker inspect image: %s...Done", ref)
