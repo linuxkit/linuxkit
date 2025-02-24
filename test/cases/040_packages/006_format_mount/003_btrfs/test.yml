@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:6.6.71
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:3c0baa0abe9b513538b1feee36f01667161f17dd
+  - linuxkit/init:7e8f626582eab2f142d4b8ce217e4c121ac748ed
   - linuxkit/runc:667e7ea2c426a2460ca21e3da065a57dbb3369c9
 onboot:
   - name: modprobe
