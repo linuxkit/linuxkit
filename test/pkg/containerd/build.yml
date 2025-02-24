@@ -10,7 +10,6 @@ config:
     - /etc/resolv.conf:/etc/resolv.conf
     - /usr/bin/runc:/usr/bin/runc
     - /usr/bin/containerd:/usr/bin/containerd
-    - /usr/bin/containerd-shim:/usr/bin/containerd-shim
   devices:
     # all block and character devices
     - path: all

@@ -33,6 +33,8 @@ FROM scratch
 COPY --from=mirror /out/ /
 COPY --from=containerd-dev /go/src/github.com/containerd/containerd /go/src/github.com/containerd/containerd/
 
+RUN mv /sbin/dmsetup /sbin/dmsetup.orig
+COPY dmsetup.sh /sbin/dmsetup
 ENV GOPATH=/go
 WORKDIR $GOPATH/src/github.com/containerd/containerd
 ADD run.sh ./run.sh
