@@ -23,9 +23,6 @@ RUN apk add --no-cache --initdb -p /out \
     xfsprogs \
     tzdata
 
-# because we want the one from util-linux-misc at /sbin/blkdiscard to override the one from busybox
-RUN rm /out/usr/bin/blkdiscard    
-
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 RUN cp /out/usr/share/zoneinfo/UTC /out/etc/localtime
 
