@@ -1,6 +1,6 @@
 FROM linuxkit/alpine:35b33c6b03c40e51046c3b053dd131a68a26c37a AS build
 ENV GRUB_MODULES="part_gpt fat ext2 iso9660 gzio linux acpi normal cpio crypto disk boot crc64 \
-search_fs_uuid tftp xzio xfs video"
+search_fs_uuid tftp xzio xfs video efi_gop"
 
 RUN apk add \
   grub \
