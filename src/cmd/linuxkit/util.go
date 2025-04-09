@@ -234,7 +234,7 @@ func (l *Disks) Set(value string) error {
 			case "format":
 				d.Format = c[1]
 			default:
-				return fmt.Errorf("Unknown disk config: %s", c[0])
+				return fmt.Errorf("unknown disk config: %s", c[0])
 			}
 		}
 	}
@@ -255,12 +255,12 @@ func NewPublishedPort(publish string) (PublishedPort, error) {
 	slice := strings.Split(publish, ":")
 
 	if len(slice) < 2 {
-		return p, fmt.Errorf("Unable to parse the ports to be published, should be in format <host>:<guest> or <host>:<guest>/<tcp|udp>")
+		return p, fmt.Errorf("unable to parse the ports to be published, should be in format <host>:<guest> or <host>:<guest>/<tcp|udp>")
 	}
 
 	hostPort, err := strconv.ParseUint(slice[0], 10, 16)
 	if err != nil {
-		return p, fmt.Errorf("The provided hostPort can't be converted to uint16")
+		return p, fmt.Errorf("the provided hostPort can't be converted to uint16")
 	}
 
 	right := strings.Split(slice[1], "/")
@@ -270,19 +270,19 @@ func NewPublishedPort(publish string) (PublishedPort, error) {
 		protocol = strings.TrimSpace(strings.ToLower(right[1]))
 	}
 	if protocol != "tcp" && protocol != "udp" {
-		return p, fmt.Errorf("Provided protocol is not valid, valid options are: udp and tcp")
+		return p, fmt.Errorf("provided protocol is not valid, valid options are: udp and tcp")
 	}
 
 	guestPort, err := strconv.ParseUint(right[0], 10, 16)
 	if err != nil {
-		return p, fmt.Errorf("The provided guestPort can't be converted to uint16")
+		return p, fmt.Errorf("the provided guestPort can't be converted to uint16")
 	}
 
 	if hostPort < 1 || hostPort > 65535 {
-		return p, fmt.Errorf("Invalid hostPort: %d", hostPort)
+		return p, fmt.Errorf("invalid hostPort: %d", hostPort)
 	}
 	if guestPort < 1 || guestPort > 65535 {
-		return p, fmt.Errorf("Invalid guestPort: %d", guestPort)
+		return p, fmt.Errorf("invalid guestPort: %d", guestPort)
 	}
 
 	p.Guest = uint16(guestPort)
@@ -298,7 +298,7 @@ func CreateMetadataISO(state, data string, dataPath string) ([]string, error) {
 	// if we have neither data nor dataPath, nothing to return
 	switch {
 	case data != "" && dataPath != "":
-		return nil, fmt.Errorf("Cannot specify options for both data and dataPath")
+		return nil, fmt.Errorf("cannot specify options for both data and dataPath")
 	case data == "" && dataPath == "":
 		return []string{}, nil
 	case data != "":
@@ -307,13 +307,13 @@ func CreateMetadataISO(state, data string, dataPath string) ([]string, error) {
 		var err error
 		d, err = os.ReadFile(dataPath)
 		if err != nil {
-			return nil, fmt.Errorf("Cannot read user data from path %s: %v", dataPath, err)
+			return nil, fmt.Errorf("cannot read user data from path %s: %v", dataPath, err)
 		}
 	}
 
 	isoPath := filepath.Join(state, "data.iso")
 	if err := WriteMetadataISO(isoPath, d); err != nil {
-		return nil, fmt.Errorf("Cannot write user data ISO: %v", err)
+		return nil, fmt.Errorf("cannot write user data ISO: %v", err)
 	}
 	return []string{isoPath}, nil
 }

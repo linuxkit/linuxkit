@@ -197,7 +197,7 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 		for _, source := range pi.ExtraSources {
 			tmp := strings.Split(source, ":")
 			if len(tmp) != 2 {
-				return nil, fmt.Errorf("Bad source format in %s", source)
+				return nil, fmt.Errorf("bad source format in %s", source)
 			}
 			srcPath := filepath.Clean(tmp[0]) // Should work with windows paths
 			dstPath := path.Clean(tmp[1])     // 'path' here because this should be a Unix path
@@ -211,7 +211,7 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 				return nil, err
 			}
 			if g == nil {
-				return nil, fmt.Errorf("Source %s not in a git repository", srcPath)
+				return nil, fmt.Errorf("source %s not in a git repository", srcPath)
 			}
 			h, err := g.treeHash(srcPath, cfg.HashCommit)
 			if err != nil {
@@ -308,10 +308,10 @@ func (p Pkg) Hash() string {
 // ReleaseTag returns the tag to use for a particular release of the package
 func (p Pkg) ReleaseTag(release string) (string, error) {
 	if release == "" {
-		return "", fmt.Errorf("A release tag is required")
+		return "", fmt.Errorf("a release tag is required")
 	}
 	if p.dirty {
-		return "", fmt.Errorf("Cannot release a dirty package")
+		return "", fmt.Errorf("cannot release a dirty package")
 	}
 	tag := p.org + "/" + p.image + ":" + release
 	return tag, nil
@@ -358,7 +358,7 @@ func (p Pkg) archSupported(want string) bool {
 
 func (p Pkg) cleanForBuild() error {
 	if p.commitHash != "HEAD" {
-		return fmt.Errorf("Cannot build from commit hash != HEAD")
+		return fmt.Errorf("cannot build from commit hash != HEAD")
 	}
 	return nil
 }

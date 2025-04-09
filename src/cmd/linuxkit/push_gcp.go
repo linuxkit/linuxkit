@@ -45,20 +45,20 @@ func pushGCPCmd() *cobra.Command {
 
 			client, err := NewGCPClient(keys, project)
 			if err != nil {
-				return fmt.Errorf("Unable to connect to GCP: %v", err)
+				return fmt.Errorf("unable to connect to GCP: %v", err)
 			}
 
 			if bucket == "" {
-				return fmt.Errorf("Please specify the bucket to use")
+				return fmt.Errorf("please specify the bucket to use")
 			}
 
 			err = client.UploadFile(path, name+suffix, bucket, public)
 			if err != nil {
-				return fmt.Errorf("Error copying to Google Storage: %v", err)
+				return fmt.Errorf("error copying to Google Storage: %v", err)
 			}
 			err = client.CreateImage(name, "https://storage.googleapis.com/"+bucket+"/"+name+suffix, family, nestedVirt, uefi, true)
 			if err != nil {
-				return fmt.Errorf("Error creating Google Compute Image: %v", err)
+				return fmt.Errorf("error creating Google Compute Image: %v", err)
 			}
 
 			return nil

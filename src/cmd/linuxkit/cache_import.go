@@ -43,10 +43,10 @@ func cacheImportCmd() *cobra.Command {
 				if err != nil {
 					log.Fatalf("unable to open %s: %v", infile, err)
 				}
-				defer f.Close()
+				defer func() { _ = f.Close() }()
 				reader = f
 			}
-			defer reader.Close()
+			defer func() { _ = reader.Close() }()
 
 			if _, err := p.ImageLoad(reader); err != nil {
 				log.Fatalf("unable to load image: %v", err)

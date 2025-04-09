@@ -40,7 +40,9 @@ func newDockerDepends(pkgPath string, pi *pkgInfo) (dockerDepends, error) {
 		if err != nil {
 			return dockerDepends{}, err
 		}
-		defer f.Close()
+		defer func() {
+			_ = f.Close()
+		}()
 
 		s := bufio.NewScanner(f)
 		for s.Scan() {

@@ -15,7 +15,7 @@ import (
 )
 
 func printTableHeader(tw *tabwriter.Writer) {
-	fmt.Fprintln(tw, "ID\tRECLAIMABLE\tSIZE\tLAST ACCESSED")
+	_, _ = fmt.Fprintln(tw, "ID\tRECLAIMABLE\tSIZE\tLAST ACCESSED")
 }
 
 func printTableRow(tw *tabwriter.Writer, di *buildkitClient.UsageInfo) {
@@ -31,7 +31,7 @@ func printTableRow(tw *tabwriter.Writer, di *buildkitClient.UsageInfo) {
 	if di.LastUsedAt != nil {
 		lastAccessed = units.HumanDuration(time.Since(*di.LastUsedAt)) + " ago"
 	}
-	fmt.Fprintf(tw, "%-40s\t%-5v\t%-10s\t%s\n", id, !di.InUse, size, lastAccessed)
+	_, _ = fmt.Fprintf(tw, "%-40s\t%-5v\t%-10s\t%s\n", id, !di.InUse, size, lastAccessed)
 }
 
 func printSummary(tw *tabwriter.Writer, du []*buildkitClient.UsageInfo) {
@@ -52,17 +52,17 @@ func printSummary(tw *tabwriter.Writer, du []*buildkitClient.UsageInfo) {
 	}
 
 	if shared > 0 {
-		fmt.Fprintf(tw, "Shared:\t%s\n", units.HumanSize(float64(shared)))
-		fmt.Fprintf(tw, "Private:\t%s\n", units.HumanSize(float64(total-shared)))
+		_, _ = fmt.Fprintf(tw, "Shared:\t%s\n", units.HumanSize(float64(shared)))
+		_, _ = fmt.Fprintf(tw, "Private:\t%s\n", units.HumanSize(float64(total-shared)))
 	}
 
-	fmt.Fprintf(tw, "Reclaimable:\t%s\n", units.HumanSize(float64(reclaimable)))
-	fmt.Fprintf(tw, "Total:\t%s\n", units.HumanSize(float64(total)))
-	tw.Flush()
+	_, _ = fmt.Fprintf(tw, "Reclaimable:\t%s\n", units.HumanSize(float64(reclaimable)))
+	_, _ = fmt.Fprintf(tw, "Total:\t%s\n", units.HumanSize(float64(total)))
+	_ = tw.Flush()
 }
 
 func printKV(w io.Writer, k string, v interface{}) {
-	fmt.Fprintf(w, "%s:\t%v\n", k, v)
+	_, _ = fmt.Fprintf(w, "%s:\t%v\n", k, v)
 }
 
 func printVerbose(tw *tabwriter.Writer, du []*buildkitClient.UsageInfo) {
@@ -87,10 +87,10 @@ func printVerbose(tw *tabwriter.Writer, du []*buildkitClient.UsageInfo) {
 			printKV(tw, "Type", di.RecordType)
 		}
 
-		fmt.Fprintf(tw, "\n")
+		_, _ = fmt.Fprintf(tw, "\n")
 	}
 
-	tw.Flush()
+	_ = tw.Flush()
 }
 
 func getClientForPlatform(ctx context.Context, buildersMap map[string]string, builderImage, platform string) (*buildkitClient.Client, error) {

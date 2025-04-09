@@ -210,7 +210,7 @@ func ImageTar(location string, ref *reference.Spec, prefix string, tw tarWriter,
 		return fmt.Errorf("could not unpack image %s: %v", ref, err)
 	}
 
-	defer contents.Close()
+	defer func() { _ = contents.Close() }()
 
 	// all of the files in `touch` must exist in the output, so keep track if
 	// we found them, and, if not, create them
@@ -392,7 +392,7 @@ func ImageOCITar(location string, ref *reference.Spec, prefix string, tw tarWrit
 		return fmt.Errorf("could not unpack image %s: %v", ref, err)
 	}
 
-	defer contents.Close()
+	defer func() { _ = contents.Close() }()
 
 	tr := tar.NewReader(contents)
 

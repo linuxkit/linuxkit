@@ -13,7 +13,7 @@ func WriteMetadataISO(path string, content []byte) error {
 	if err != nil {
 		return err
 	}
-	defer outfh.Close()
+	defer func() { _ = outfh.Close() }()
 
 	return iso9660wrap.WriteBuffer(outfh, content, "config")
 }

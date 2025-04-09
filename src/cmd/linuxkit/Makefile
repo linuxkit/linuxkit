@@ -19,7 +19,7 @@ report:
 	@echo "GIT_TAG: $(GIT_TAG)"
 	@echo "VERSION: $(VERSION)"
 
-GO_COMPILE?=linuxkit/go-compile:c97703655e8510b7257ffc57f25e40337b0f0813
+GO_COMPILE?=linuxkit/go-compile:985a9db72a7e6941de5e1eb71c2b41b76bf0556f
 export GO_FLAGS=-mod=vendor
 
 ifeq ($(OS),Windows_NT)

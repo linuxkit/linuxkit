@@ -51,11 +51,11 @@ func pushEquinixMetalCmd() *cobra.Command {
 
 			baseURL := getStringValue(equinixmetalBaseURL, baseURLFlag, "")
 			if baseURL == "" {
-				return fmt.Errorf("Need to specify a value for --base-url from where the kernel, initrd and iPXE script will be loaded from.")
+				return fmt.Errorf("need to specify a value for --base-url from where the kernel, initrd and iPXE script will be loaded from")
 			}
 
 			if dst == "" {
-				return fmt.Errorf("Need to specify the destination where to push to.")
+				return fmt.Errorf("need to specify the destination where to push to")
 			}
 
 			name := getStringValue(equinixmetalNameVar, nameFlag, prefix)
@@ -70,7 +70,7 @@ func pushEquinixMetalCmd() *cobra.Command {
 			// Read kernel command line
 			var cmdline string
 			if c, err := os.ReadFile(prefix + "-cmdline"); err != nil {
-				return fmt.Errorf("Cannot open cmdline file: %v", err)
+				return fmt.Errorf("cannot open cmdline file: %v", err)
 			} else {
 				cmdline = string(c)
 			}
@@ -80,13 +80,13 @@ func pushEquinixMetalCmd() *cobra.Command {
 			// Parse the destination
 			dst, err := url.Parse(dst)
 			if err != nil {
-				return fmt.Errorf("Cannot parse destination: %v", err)
+				return fmt.Errorf("cannot parse destination: %v", err)
 			}
 			switch dst.Scheme {
 			case "", "file":
 				equinixmetalPushFile(dst, decompress, name, cmdline, ipxeScript)
 			default:
-				return fmt.Errorf("Unknown destination format: %s", dst.Scheme)
+				return fmt.Errorf("unknown destination format: %s", dst.Scheme)
 			}
 			return nil
 		},
@@ -129,7 +129,9 @@ func equinixmetalCopy(dst, src string, decompress bool) error {
 	if err != nil {
 		return err
 	}
-	defer in.Close()
+	defer func() {
+		_ = in.Close()
+	}()
 
 	var r io.Reader = in
 	if decompress {
@@ -144,7 +146,9 @@ func equinixmetalCopy(dst, src string, decompress bool) error {
 	if err != nil {
 		return err
 	}
-	defer out.Close()
+	defer func() {
+		_ = out.Close()
+	}()
 
 	_, err = io.Copy(out, r)
 	if err != nil {

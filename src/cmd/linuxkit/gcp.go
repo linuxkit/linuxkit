@@ -113,7 +113,7 @@ func (g GCPClient) UploadFile(src, dst, bucketName string, public bool) error {
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	objectCall := g.storage.Objects.Insert(bucketName, &storage.Object{Name: dst}).Media(f)
 
@@ -395,7 +395,7 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err
@@ -431,17 +431,17 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 	if conn == nil {
 		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	session, err := conn.NewSession()
 	if err != nil {
 		return err
 	}
-	defer session.Close()
+	defer func() { _ = session.Close() }()
 
 	stdin, err := session.StdinPipe()
 	if err != nil {
-		return fmt.Errorf("Unable to setup stdin for session: %v", err)
+		return fmt.Errorf("unable to setup stdin for session: %v", err)
 	}
 	go func() {
 		_, _ = io.Copy(stdin, os.Stdin)
@@ -449,7 +449,7 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 
 	stdout, err := session.StdoutPipe()
 	if err != nil {
-		return fmt.Errorf("Unable to setup stdout for session: %v", err)
+		return fmt.Errorf("unable to setup stdout for session: %v", err)
 	}
 	go func() {
 		_, _ = io.Copy(os.Stdout, stdout)
@@ -457,7 +457,7 @@ func (g GCPClient) ConnectToInstanceSerialPort(instance, zone string) error {
 
 	stderr, err := session.StderrPipe()
 	if err != nil {
-		return fmt.Errorf("Unable to setup stderr for session: %v", err)
+		return fmt.Errorf("unable to setup stderr for session: %v", err)
 	}
 	go func() {
 		_, _ = io.Copy(os.Stderr, stderr)

@@ -164,7 +164,7 @@ func uploadVMImage(resourceGroupName string, accountName string, imagePath strin
 	if err != nil {
 		log.Fatalf("Unable to create disk stream for VHD: %v", err)
 	}
-	defer diskStream.Close()
+	defer func() { _ = diskStream.Close() }()
 
 	simpleStorageClient, err = simpleStorage.NewBasicClient(accountName, *keys[0].Value)
 	if err != nil {

@@ -11,7 +11,6 @@ import (
 	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/types"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
-	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -26,7 +25,7 @@ type IndexSource struct {
 
 // NewIndexSource return an IndexSource for a specific ref in the given
 // cache directory.
-func (p *Provider) NewIndexSource(ref *reference.Spec, descriptor *v1.Descriptor, platforms []imagespec.Platform) lktspec.IndexSource {
+func (p *Provider) NewIndexSource(ref *reference.Spec, descriptor *v1.Descriptor, platforms []imagespec.Platform) spec.IndexSource {
 	return IndexSource{
 		ref:        ref,
 		provider:   p,
@@ -74,9 +73,9 @@ func (c IndexSource) OCITarReader(overrideName string) (io.ReadCloser, error) {
 	// convert the writer to a reader
 	r, w := io.Pipe()
 	go func() {
-		defer w.Close()
+		defer func() { _ = w.Close() }()
 		tw := tar.NewWriter(w)
-		defer tw.Close()
+		defer func() { _ = tw.Close() }()
 		if err := writeLayoutHeader(tw); err != nil {
 			_ = w.CloseWithError(err)
 			return

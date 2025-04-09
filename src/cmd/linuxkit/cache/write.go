@@ -431,7 +431,7 @@ func (p *Provider) ImageInCache(ref *reference.Spec, trustedRef, architecture st
 		if rc, err = p.cache.Blob(dig); err != nil {
 			return false, fmt.Errorf("layer %s not found: %v", dig, err)
 		}
-		rc.Close()
+		_ = rc.Close()
 	}
 	// check that the config exists
 	config, err := img.ConfigName()
@@ -442,7 +442,7 @@ func (p *Provider) ImageInCache(ref *reference.Spec, trustedRef, architecture st
 	if rc, err = p.cache.Blob(config); err != nil {
 		return false, fmt.Errorf("config %s not found: %v", config, err)
 	}
-	rc.Close()
+	_ = rc.Close()
 	return true, nil
 }
 

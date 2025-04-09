@@ -806,9 +806,9 @@ func IDNumeric(v interface{}, idMap map[string]uint32) (uint32, error) {
 				return v, nil
 			}
 		}
-		return 0, fmt.Errorf("Cannot find id: %s", id)
+		return 0, fmt.Errorf("cannot find id: %s", id)
 	default:
-		return 0, fmt.Errorf("Bad type for uid or gid")
+		return 0, fmt.Errorf("bad type for uid or gid")
 	}
 }
 
@@ -866,7 +866,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	for _, t := range assignStrings(label.Tmpfs, yaml.Tmpfs) {
 		parts := strings.Split(t, ":")
 		if len(parts) > 2 {
-			return oci, runtime, fmt.Errorf("Cannot parse tmpfs, too many ':': %s", t)
+			return oci, runtime, fmt.Errorf("cannot parse tmpfs, too many ':': %s", t)
 		}
 		dest := parts[0]
 		var opts []string
@@ -878,10 +878,10 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	for _, b := range assignStrings(mergeStrings(label.Binds, yaml.BindsAdd), yaml.Binds) {
 		parts := strings.Split(b, ":")
 		if len(parts) < 2 {
-			return oci, runtime, fmt.Errorf("Cannot parse bind, missing ':': %s", b)
+			return oci, runtime, fmt.Errorf("cannot parse bind, missing ':': %s", b)
 		}
 		if len(parts) > 3 {
-			return oci, runtime, fmt.Errorf("Cannot parse bind, too many ':': %s", b)
+			return oci, runtime, fmt.Errorf("cannot parse bind, too many ':': %s", b)
 		}
 		src := parts[0]
 		dest := parts[1]
@@ -907,7 +907,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 			tp = "tmpfs"
 		}
 		if tp == "" {
-			return oci, runtime, fmt.Errorf("Mount for destination %s is missing type", dest)
+			return oci, runtime, fmt.Errorf("mount for destination %s is missing type", dest)
 		}
 		if src == "" {
 			// usually sane, eg proc, tmpfs etc
@@ -917,7 +917,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 			dest = defaultMountpoint(tp)
 		}
 		if dest == "" {
-			return oci, runtime, fmt.Errorf("Mount type %s is missing destination", tp)
+			return oci, runtime, fmt.Errorf("mount type %s is missing destination", tp)
 		}
 		mounts[dest] = specs.Mount{Destination: dest, Type: tp, Source: src, Options: opts}
 	}
@@ -1042,7 +1042,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 				var err error
 				soft, err = strconv.ParseUint(softString, 10, 64)
 				if err != nil {
-					return oci, runtime, fmt.Errorf("Cannot parse %s as uint64: %v", softString, err)
+					return oci, runtime, fmt.Errorf("cannot parse %s as uint64: %v", softString, err)
 				}
 			}
 			hardString := strings.TrimSpace(rs[2])
@@ -1052,7 +1052,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 				var err error
 				hard, err = strconv.ParseUint(hardString, 10, 64)
 				if err != nil {
-					return oci, runtime, fmt.Errorf("Cannot parse %s as uint64: %v", hardString, err)
+					return oci, runtime, fmt.Errorf("cannot parse %s as uint64: %v", hardString, err)
 				}
 			}
 			switch limit {
@@ -1075,10 +1075,10 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 				"RLIMIT_RTTIME":
 				rlimits = append(rlimits, specs.POSIXRlimit{Type: limit, Soft: soft, Hard: hard})
 			default:
-				return oci, runtime, fmt.Errorf("Unknown limit: %s", origLimit)
+				return oci, runtime, fmt.Errorf("unknown limit: %s", origLimit)
 			}
 		default:
-			return oci, runtime, fmt.Errorf("Cannot parse rlimit: %s", rlimitsString)
+			return oci, runtime, fmt.Errorf("cannot parse rlimit: %s", rlimitsString)
 		}
 	}
 
@@ -1156,7 +1156,7 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 		}
 		mode, err := strconv.ParseInt(device.Mode, 8, 32)
 		if err != nil {
-			return oci, runtime, fmt.Errorf("Cannot parse device mode as octal value: %v", err)
+			return oci, runtime, fmt.Errorf("cannot parse device mode as octal value: %v", err)
 		}
 		fileMode := os.FileMode(mode)
 		linuxDevice := specs.LinuxDevice{

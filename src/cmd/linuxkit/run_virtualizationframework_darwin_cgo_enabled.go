@@ -25,7 +25,7 @@ import (
 // Process the run arguments and execute run
 func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) error {
 	if cfg.data != "" && cfg.dataPath != "" {
-		return errors.New("Cannot specify both -data and -data-file")
+		return errors.New("cannot specify both -data and -data-file")
 	}
 
 	prefix := path
@@ -37,12 +37,12 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 
 	// Default to kernel+initrd
 	if !statKernel {
-		return fmt.Errorf("Cannot find kernel file: %s", path+"-kernel")
+		return fmt.Errorf("cannot find kernel file: %s", path+"-kernel")
 	}
 	_, err = os.Stat(path + "-initrd.img")
 	statInitrd := err == nil
 	if !statInitrd {
-		return fmt.Errorf("Cannot find initrd file (%s): %w", path+"-initrd.img", err)
+		return fmt.Errorf("cannot find initrd file (%s): %w", path+"-initrd.img", err)
 	}
 	cfg.kernelBoot = true
 
@@ -59,7 +59,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 
 	cmdlineBytes, err := os.ReadFile(prefix + "-cmdline")
 	if err != nil {
-		return fmt.Errorf("Cannot open cmdline file: %v", err)
+		return fmt.Errorf("cannot open cmdline file: %v", err)
 	}
 	// must have hvc0 as console for vf
 	kernelCommandLineArguments := strings.Split(string(cmdlineBytes), " ")
@@ -88,18 +88,22 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 		if err != nil {
 			return fmt.Errorf("unable to read kernel file %s: %v", vmlinuz, err)
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		r, err := gzip.NewReader(f)
 		if err != nil {
 			return fmt.Errorf("unable to read from file %s: %v", vmlinuz, err)
 		}
-		defer r.Close()
+		defer func() {
+			_ = r.Close()
+		}()
 
 		writer, err := os.Create(vmlinuzUncompressed)
 		if err != nil {
 			return fmt.Errorf("unable to create decompressed kernel file %s: %v", vmlinuzUncompressed, err)
 		}
-		defer writer.Close()
+		defer func() {
+			_ = writer.Close()
+		}()
 
 		if _, err = io.Copy(writer, r); err != nil {
 			return fmt.Errorf("unable to decompress kernel file to %s: %v", vmlinuzUncompressed, err)
@@ -151,29 +155,29 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	case virtualizationNetworkingVMNet:
 		natAttachment, err := vz.NewNATNetworkDeviceAttachment()
 		if err != nil {
-			return fmt.Errorf("Could not create NAT network device attachment: %v", err)
+			return fmt.Errorf("could not create NAT network device attachment: %v", err)
 		}
 		networkConfig, err := vz.NewVirtioNetworkDeviceConfiguration(natAttachment)
 		if err != nil {
-			return fmt.Errorf("Could not create virtio network device configuration: %v", err)
+			return fmt.Errorf("could not create virtio network device configuration: %v", err)
 		}
 		config.SetNetworkDevicesVirtualMachineConfiguration([]*vz.VirtioNetworkDeviceConfiguration{
 			networkConfig,
 		})
 		macAddress, err := vz.NewRandomLocallyAdministeredMACAddress()
 		if err != nil {
-			return fmt.Errorf("Could not create random MAC address: %v", err)
+			return fmt.Errorf("could not create random MAC address: %v", err)
 		}
 		networkConfig.SetMACAddress(macAddress)
 	case virtualizationNetworkingNone:
 	default:
-		return fmt.Errorf("Invalid networking mode: %s", netMode[0])
+		return fmt.Errorf("invalid networking mode: %s", netMode[0])
 	}
 
 	// entropy
 	entropyConfig, err := vz.NewVirtioEntropyDeviceConfiguration()
 	if err != nil {
-		return fmt.Errorf("Could not create virtio entropy device configuration: %v", err)
+		return fmt.Errorf("could not create virtio entropy device configuration: %v", err)
 	}
 
 	config.SetEntropyDevicesVirtualMachineConfiguration([]*vz.VirtioEntropyDeviceConfiguration{
@@ -216,7 +220,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 		}
 		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
 		if err != nil {
-			return fmt.Errorf("Could not create virtio block device configuration: %v", err)
+			return fmt.Errorf("could not create virtio block device configuration: %v", err)
 		}
 		storageDevices = append(storageDevices, storageDeviceConfig)
 	}
@@ -230,7 +234,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 		}
 		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
 		if err != nil {
-			return fmt.Errorf("Could not create virtio block device configuration: %v", err)
+			return fmt.Errorf("could not create virtio block device configuration: %v", err)
 		}
 		storageDevices = append(storageDevices, storageDeviceConfig)
 	}
@@ -240,7 +244,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	// traditional memory balloon device which allows for managing guest memory. (optional)
 	memoryBalloonDeviceConfiguration, err := vz.NewVirtioTraditionalMemoryBalloonDeviceConfiguration()
 	if err != nil {
-		return fmt.Errorf("Could not create virtio traditional memory balloon device configuration: %v", err)
+		return fmt.Errorf("could not create virtio traditional memory balloon device configuration: %v", err)
 	}
 	config.SetMemoryBalloonDevicesVirtualMachineConfiguration([]vz.MemoryBalloonDeviceConfiguration{
 		memoryBalloonDeviceConfiguration,
@@ -249,7 +253,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	// socket device (optional)
 	socketDeviceConfiguration, err := vz.NewVirtioSocketDeviceConfiguration()
 	if err != nil {
-		return fmt.Errorf("Could not create virtio socket device configuration: %v", err)
+		return fmt.Errorf("could not create virtio socket device configuration: %v", err)
 	}
 	config.SetSocketDevicesVirtualMachineConfiguration([]vz.SocketDeviceConfiguration{
 		socketDeviceConfiguration,
@@ -285,7 +289,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 
 	vm, err := vz.NewVirtualMachine(config)
 	if err != nil {
-		return fmt.Errorf("Could not create virtual machine: %v", err)
+		return fmt.Errorf("could not create virtual machine: %v", err)
 	}
 
 	signalCh := make(chan os.Signal, 1)
@@ -349,7 +353,9 @@ func checkFileType(infile string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	b := make([]byte, 512)
 

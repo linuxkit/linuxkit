@@ -60,17 +60,17 @@ func (d ImageSource) Config() (imagespec.ImageConfig, error) {
 func (d ImageSource) TarReader() (io.ReadCloser, error) {
 	container, err := Create(d.ref.String(), false)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to create docker image %s: %v", d.ref, err)
+		return nil, fmt.Errorf("failed to create docker image %s: %v", d.ref, err)
 	}
 	contents, err := Export(container)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to docker export container from container %s: %v", container, err)
+		return nil, fmt.Errorf("failed to docker export container from container %s: %v", container, err)
 	}
 
 	return readCloser{
 		r: contents,
 		closer: func() error {
-			contents.Close()
+			_ = contents.Close()
 
 			return Rm(container)
 		},

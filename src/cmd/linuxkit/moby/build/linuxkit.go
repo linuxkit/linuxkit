@@ -56,7 +56,7 @@ func ensureLinuxkitImage(name, cache string) error {
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tf.Name())
+	defer func() { _ = os.Remove(tf.Name()) }()
 	if err := Build(m, tf, BuildOpts{Pull: false, BuilderType: "", DecompressKernel: false, CacheDir: cache, DockerCache: true, Arch: arch}); err != nil {
 		return err
 	}
@@ -68,10 +68,10 @@ func ensureLinuxkitImage(name, cache string) error {
 	if err != nil {
 		return err
 	}
-	defer image.Close()
+	defer func() { _ = image.Close() }()
 	kernel, initrd, cmdline, _, err := tarToInitrd(image)
 	if err != nil {
-		return fmt.Errorf("Error converting to initrd: %v", err)
+		return fmt.Errorf("error converting to initrd: %v", err)
 	}
 	return writeKernelInitrd(filename, kernel, initrd, cmdline)
 }
@@ -95,7 +95,7 @@ func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte
 	if err != nil {
 		return err
 	}
-	defer os.RemoveAll(tmp)
+	defer func() { _ = os.RemoveAll(tmp) }()
 
 	buf, err := tarInitrdKernel(kernel, initrd, cmdline)
 	if err != nil {
@@ -120,11 +120,11 @@ func outputLinuxKit(format string, filename string, kernel []byte, initrd []byte
 	_ = os.Remove(filename)
 	_, err = os.Stat(filename)
 	if err == nil || !os.IsNotExist(err) {
-		return fmt.Errorf("Cannot remove existing file [%s]", filename)
+		return fmt.Errorf("cannot remove existing file [%s]", filename)
 	}
 	linuxkit, err := exec.LookPath("linuxkit")
 	if err != nil {
-		return fmt.Errorf("Cannot find linuxkit executable, needed to build %s output type: %v", format, err)
+		return fmt.Errorf("cannot find linuxkit executable, needed to build %s output type: %v", format, err)
 	}
 	commandLine := []string{
 		"-q", "run", "qemu",

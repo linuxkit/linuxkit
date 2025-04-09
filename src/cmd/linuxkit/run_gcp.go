@@ -49,7 +49,7 @@ func runGCPCmd() *cobra.Command {
 			image := args[0]
 
 			if data != "" && dataPath != "" {
-				return errors.New("Cannot specify both -data and -data-file")
+				return errors.New("cannot specify both -data and -data-file")
 			}
 
 			if name == "" {
@@ -59,7 +59,7 @@ func runGCPCmd() *cobra.Command {
 			if dataPath != "" {
 				dataB, err := os.ReadFile(dataPath)
 				if err != nil {
-					return fmt.Errorf("Unable to read metadata file: %v", err)
+					return fmt.Errorf("unable to read metadata file: %v", err)
 				}
 				data = string(dataB)
 			}
@@ -71,7 +71,7 @@ func runGCPCmd() *cobra.Command {
 
 			client, err := NewGCPClient(keys, project)
 			if err != nil {
-				return fmt.Errorf("Unable to connect to GCP: %v", err)
+				return fmt.Errorf("unable to connect to GCP: %v", err)
 			}
 
 			if err = client.CreateInstance(name, image, zone, machine, disks, &data, nestedVirt, vTPM, true); err != nil {

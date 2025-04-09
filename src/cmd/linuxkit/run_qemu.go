@@ -160,7 +160,7 @@ func runQEMUCmd() *cobra.Command {
 			path := args[0]
 
 			if data != "" && dataPath != "" {
-				return errors.New("Cannot specify both -data and -data-file")
+				return errors.New("cannot specify both -data and -data-file")
 			}
 
 			// Generate UUID, so that /sys/class/dmi/id/product_uuid is populated
@@ -202,7 +202,7 @@ func runQEMUCmd() *cobra.Command {
 			}
 
 			if err := os.MkdirAll(state, 0755); err != nil {
-				return fmt.Errorf("Could not create state directory: %w", err)
+				return fmt.Errorf("could not create state directory: %w", err)
 			}
 
 			var isoPaths []string
@@ -261,27 +261,27 @@ func runQEMUCmd() *cobra.Command {
 				netdevConfig = "user,id=t0"
 			case qemuNetworkingTap:
 				if len(netMode) != 2 {
-					return fmt.Errorf("Not enough arguments for %q networking mode", qemuNetworkingTap)
+					return fmt.Errorf("not enough arguments for %q networking mode", qemuNetworkingTap)
 				}
 				if len(publishFlags) != 0 {
-					return fmt.Errorf("Port publishing requires %q networking mode", qemuNetworkingUser)
+					return fmt.Errorf("port publishing requires %q networking mode", qemuNetworkingUser)
 				}
 				netdevConfig = fmt.Sprintf("tap,id=t0,ifname=%s,script=no,downscript=no", netMode[1])
 			case qemuNetworkingBridge:
 				if len(netMode) != 2 {
-					return fmt.Errorf("Not enough arguments for %q networking mode", qemuNetworkingBridge)
+					return fmt.Errorf("not enough arguments for %q networking mode", qemuNetworkingBridge)
 				}
 				if len(publishFlags) != 0 {
-					return fmt.Errorf("Port publishing requires %q networking mode", qemuNetworkingUser)
+					return fmt.Errorf("port publishing requires %q networking mode", qemuNetworkingUser)
 				}
 				netdevConfig = fmt.Sprintf("bridge,id=t0,br=%s", netMode[1])
 			case qemuNetworkingNone:
 				if len(publishFlags) != 0 {
-					return fmt.Errorf("Port publishing requires %q networking mode", qemuNetworkingUser)
+					return fmt.Errorf("port publishing requires %q networking mode", qemuNetworkingUser)
 				}
 				netdevConfig = ""
 			default:
-				return fmt.Errorf("Invalid networking mode: %s", netMode[0])
+				return fmt.Errorf("invalid networking mode: %s", netMode[0])
 			}
 
 			config := QemuConfig{
@@ -385,7 +385,7 @@ func runQemuLocal(config QemuConfig) error {
 				qemuImgCmd := exec.Command(config.QemuImgPath, "create", "-f", d.Format, d.Path, fmt.Sprintf("%dM", d.Size))
 				log.Debugf("%v\n", qemuImgCmd.Args)
 				if err := qemuImgCmd.Run(); err != nil {
-					return fmt.Errorf("Error creating disk [%s] format %s:  %s", d.Path, d.Format, err.Error())
+					return fmt.Errorf("error creating disk [%s] format %s:  %s", d.Path, d.Format, err.Error())
 				}
 			} else {
 				return err
@@ -400,13 +400,13 @@ func runQemuLocal(config QemuConfig) error {
 		if config.FWPath == "" {
 			// there is no default on mac
 			if runtime.GOOS == "darwin" {
-				return fmt.Errorf("To run qemu with UEFI firmware on macOS, you must specify the path to locally installed OVMF firmware as `--fw <path>`. You can download OVMF from https://sourceforge.net/projects/edk2/files/OVMF/ ")
+				return fmt.Errorf("to run qemu with UEFI firmware on macOS, you must specify the path to locally installed OVMF firmware as `--fw <path>`. You can download OVMF from https://sourceforge.net/projects/edk2/files/OVMF/ ")
 			}
 			config.FWPath = defaultFWPath
 		}
 		if _, err := os.Stat(config.FWPath); err != nil {
 			if os.IsNotExist(err) {
-				return fmt.Errorf("File [%s] does not exist, please ensure OVMF is installed", config.FWPath)
+				return fmt.Errorf("file [%s] does not exist, please ensure OVMF is installed", config.FWPath)
 			}
 			return err
 		}
@@ -414,7 +414,7 @@ func runQemuLocal(config QemuConfig) error {
 
 	// Detached mode is only supported in a container.
 	if config.Detached {
-		return fmt.Errorf("Detached mode is only supported when running in a container, not locally")
+		return fmt.Errorf("detached mode is only supported when running in a container, not locally")
 	}
 
 	if len(config.VirtiofsShares) > 0 {
@@ -640,12 +640,12 @@ func discoverQemu(config QemuConfig) (QemuConfig, error) {
 	var err error
 	config.QemuBinPath, err = exec.LookPath(qemuBinPath)
 	if err != nil {
-		return config, fmt.Errorf("Unable to find %s within the $PATH", qemuBinPath)
+		return config, fmt.Errorf("unable to find %s within the $PATH", qemuBinPath)
 	}
 
 	config.QemuImgPath, err = exec.LookPath(qemuImgPath)
 	if err != nil {
-		return config, fmt.Errorf("Unable to find %s within the $PATH", qemuImgPath)
+		return config, fmt.Errorf("unable to find %s within the $PATH", qemuImgPath)
 	}
 
 	return config, nil

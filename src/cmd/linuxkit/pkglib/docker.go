@@ -508,7 +508,7 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 		if err != nil {
 			return fmt.Errorf("error opening dockerfile %s: %v", dockerfileRef, err)
 		}
-		defer f.Close()
+		defer func() { _ = f.Close() }()
 		ast, err := parser.Parse(f)
 		if err != nil {
 			return fmt.Errorf("error parsing dockerfile from bytes into AST %s: %v", dockerfileRef, err)

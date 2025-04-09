@@ -52,7 +52,7 @@ func runAWSCmd() *cobra.Command {
 			if dataPath != "" {
 				dataB, err := os.ReadFile(dataPath)
 				if err != nil {
-					return fmt.Errorf("Unable to read metadata file: %v", err)
+					return fmt.Errorf("unable to read metadata file: %v", err)
 				}
 				data = string(dataB)
 			}
@@ -78,13 +78,13 @@ func runAWSCmd() *cobra.Command {
 			}
 			results, err := compute.DescribeImages(filter)
 			if err != nil {
-				return fmt.Errorf("Unable to describe images: %s", err)
+				return fmt.Errorf("unable to describe images: %s", err)
 			}
 			if len(results.Images) < 1 {
-				return fmt.Errorf("Unable to find image with name %s", name)
+				return fmt.Errorf("unable to find image with name %s", name)
 			}
 			if len(results.Images) > 1 {
-				log.Warnf("Found multiple images with the same name, using the first one")
+				log.Warnf("found multiple images with the same name, using the first one")
 			}
 			imageID := results.Images[0].ImageId
 
@@ -102,11 +102,11 @@ func runAWSCmd() *cobra.Command {
 			}
 			runResult, err := compute.RunInstances(params)
 			if err != nil {
-				return fmt.Errorf("Unable to run instance: %s", err)
+				return fmt.Errorf("unable to run instance: %s", err)
 
 			}
 			instanceID := runResult.Instances[0].InstanceId
-			log.Infof("Created instance %s", *instanceID)
+			log.Infof("reated instance %s", *instanceID)
 
 			instanceFilter := &ec2.DescribeInstancesInput{
 				Filters: []*ec2.Filter{
@@ -118,7 +118,7 @@ func runAWSCmd() *cobra.Command {
 			}
 
 			if err = compute.WaitUntilInstanceRunning(instanceFilter); err != nil {
-				return fmt.Errorf("Error waiting for instance to start: %s", err)
+				return fmt.Errorf("error waiting for instance to start: %s", err)
 			}
 			log.Infof("Instance %s is running", *instanceID)
 
@@ -133,7 +133,7 @@ func runAWSCmd() *cobra.Command {
 
 				volume, err := compute.CreateVolume(diskParams)
 				if err != nil {
-					return fmt.Errorf("Error creating volume: %s", err)
+					return fmt.Errorf("error creating volume: %s", err)
 				}
 
 				waitVol := &ec2.DescribeVolumesInput{
@@ -148,7 +148,7 @@ func runAWSCmd() *cobra.Command {
 				log.Infof("Waiting for volume %s to be available", *volume.VolumeId)
 
 				if err := compute.WaitUntilVolumeAvailable(waitVol); err != nil {
-					return fmt.Errorf("Error waiting for volume to be available: %s", err)
+					return fmt.Errorf("error waiting for volume to be available: %s", err)
 				}
 
 				log.Infof("Attaching volume %s to instance %s", *volume.VolumeId, *instanceID)
@@ -159,7 +159,7 @@ func runAWSCmd() *cobra.Command {
 				}
 				_, err = compute.AttachVolume(volParams)
 				if err != nil {
-					return fmt.Errorf("Error attaching volume to instance: %s", err)
+					return fmt.Errorf("error attaching volume to instance: %s", err)
 				}
 			}
 
@@ -167,7 +167,7 @@ func runAWSCmd() *cobra.Command {
 			log.Warn("Waiting for instance to stop...")
 
 			if err = compute.WaitUntilInstanceStopped(instanceFilter); err != nil {
-				return fmt.Errorf("Error waiting for instance to stop: %s", err)
+				return fmt.Errorf("error waiting for instance to stop: %s", err)
 			}
 
 			consoleParams := &ec2.GetConsoleOutputInput{
@@ -175,7 +175,7 @@ func runAWSCmd() *cobra.Command {
 			}
 			output, err := compute.GetConsoleOutput(consoleParams)
 			if err != nil {
-				return fmt.Errorf("Error getting output from instance %s: %s", *instanceID, err)
+				return fmt.Errorf("error getting output from instance %s: %s", *instanceID, err)
 			}
 
 			if output.Output == nil {
@@ -183,7 +183,7 @@ func runAWSCmd() *cobra.Command {
 			} else {
 				out, err := base64.StdEncoding.DecodeString(*output.Output)
 				if err != nil {
-					return fmt.Errorf("Error decoding output: %s", err)
+					return fmt.Errorf("error decoding output: %s", err)
 				}
 				fmt.Printf("%s\n", string(out))
 			}
@@ -192,10 +192,10 @@ func runAWSCmd() *cobra.Command {
 				InstanceIds: []*string{instanceID},
 			}
 			if _, err := compute.TerminateInstances(terminateParams); err != nil {
-				return fmt.Errorf("Error terminating instance %s", *instanceID)
+				return fmt.Errorf("error terminating instance %s", *instanceID)
 			}
 			if err = compute.WaitUntilInstanceTerminated(instanceFilter); err != nil {
-				return fmt.Errorf("Error waiting for instance to terminate: %s", err)
+				return fmt.Errorf("error waiting for instance to terminate: %s", err)
 			}
 
 			return nil

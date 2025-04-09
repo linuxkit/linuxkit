@@ -50,7 +50,7 @@ func (l *VBNetworks) Set(value string) error {
 			case "adapter", "bridgeadapter", "hostadapter":
 				d.Adapter = c[1]
 			default:
-				return fmt.Errorf("Unknown network config: %s", c[0])
+				return fmt.Errorf("unknown network config: %s", c[0])
 			}
 		}
 	}
@@ -90,7 +90,7 @@ func runVBoxCmd() *cobra.Command {
 
 			vboxmanage, err := exec.LookPath(vboxmanageFlag)
 			if err != nil {
-				return fmt.Errorf("Cannot find management binary %s: %v", vboxmanageFlag, err)
+				return fmt.Errorf("cannot find management binary %s: %v", vboxmanageFlag, err)
 			}
 
 			name := vmName
@@ -103,7 +103,7 @@ func runVBoxCmd() *cobra.Command {
 				state = prefix + "-state"
 			}
 			if err := os.MkdirAll(state, 0755); err != nil {
-				return fmt.Errorf("Could not create state directory: %v", err)
+				return fmt.Errorf("could not create state directory: %v", err)
 			}
 
 			// remove machine in case it already exists
@@ -151,7 +151,7 @@ func runVBoxCmd() *cobra.Command {
 				consolePath = filepath.Join(state, "console")
 				consolePath, err = filepath.Abs(consolePath)
 				if err != nil {
-					return fmt.Errorf("Bad path: %v", err)
+					return fmt.Errorf("bad path: %v", err)
 				}
 			}
 
@@ -206,7 +206,7 @@ func runVBoxCmd() *cobra.Command {
 				if d.Path == "" {
 					d.Path = filepath.Join(state, "disk"+id+".img")
 					if err := os.Truncate(d.Path, int64(d.Size)*int64(1048576)); err != nil {
-						return fmt.Errorf("Cannot create disk: %v", err)
+						return fmt.Errorf("cannot create disk: %v", err)
 					}
 				}
 				_, out, err = manage(vboxmanage, "storageattach", name, "--storagectl", "SATA", "--port", "0", "--device", id, "--type", "hdd", "--medium", d.Path)
@@ -226,12 +226,13 @@ func runVBoxCmd() *cobra.Command {
 				if err != nil {
 					return fmt.Errorf("modifyvm --nic error: %v\n%s", err, out)
 				}
-				if d.Type == "hostonly" {
+				switch d.Type {
+				case "hostonly":
 					_, out, err = manage(vboxmanage, "modifyvm", name, fmt.Sprintf("--hostonlyadapter%d", nic), d.Adapter)
 					if err != nil {
 						return fmt.Errorf("modifyvm --hostonlyadapter error: %v\n%s", err, out)
 					}
-				} else if d.Type == "bridged" {
+				case "bridged":
 					_, out, err = manage(vboxmanage, "modifyvm", name, fmt.Sprintf("--bridgeadapter%d", nic), d.Adapter)
 					if err != nil {
 						return fmt.Errorf("modifyvm --bridgeadapter error: %v\n%s", err, out)
@@ -248,7 +249,7 @@ func runVBoxCmd() *cobra.Command {
 			_ = os.Remove(consolePath)
 			ln, err := net.Listen("unix", consolePath)
 			if err != nil {
-				return fmt.Errorf("Cannot listen on console socket %s: %v", consolePath, err)
+				return fmt.Errorf("cannot listen on console socket %s: %v", consolePath, err)
 			}
 
 			var vmType string
@@ -273,7 +274,7 @@ func runVBoxCmd() *cobra.Command {
 
 			socket, err := ln.Accept()
 			if err != nil {
-				return fmt.Errorf("Accept error: %v", err)
+				return fmt.Errorf("accept error: %v", err)
 			}
 
 			go func() {

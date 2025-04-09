@@ -41,11 +41,11 @@ func pkgBuilderCmd() *cobra.Command {
 			switch command {
 			case "du":
 				if err := pkglib.DiskUsage(buildersMap, builderImage, platformsToClean, verbose); err != nil {
-					return fmt.Errorf("Unable to print disk usage of builder: %w", err)
+					return fmt.Errorf("unable to print disk usage of builder: %w", err)
 				}
 			case "prune":
 				if err := pkglib.PruneBuilder(buildersMap, builderImage, platformsToClean, verbose); err != nil {
-					return fmt.Errorf("Unable to prune builder: %w", err)
+					return fmt.Errorf("unable to prune builder: %w", err)
 				}
 			default:
 				return fmt.Errorf("unexpected command %s", command)

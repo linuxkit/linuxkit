@@ -34,7 +34,9 @@ func testGetBoolPkg(t *testing.T, fileKey, cfgKey string, fileSetting, cfgSettin
 	require.NoError(t, err)
 	tmpDir, err := os.MkdirTemp(tmpdirBase, "pkglib_test")
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpdirBase)
+	defer func() {
+		_ = os.RemoveAll(tmpdirBase)
+	}()
 	var value string
 	if fileSetting != nil {
 		value = fmt.Sprintf("%s: %v\n", fileKey, *fileSetting)
@@ -110,7 +112,9 @@ func testBadBuildYML(t *testing.T, build, expect string) {
 	tmpDir := filepath.Join(cwd, t.Name())
 	err = os.Mkdir(tmpDir, 0755)
 	require.NoError(t, err)
-	defer os.RemoveAll(tmpDir)
+	defer func() {
+		_ = os.RemoveAll(tmpDir)
+	}()
 
 	pkgDir := dummyPackage(t, tmpDir, build)
 	_, err = NewFromConfig(PkglibConfig{

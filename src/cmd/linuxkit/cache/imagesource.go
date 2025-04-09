@@ -110,7 +110,7 @@ func (c ImageSource) V1TarReader(overrideName string) (io.ReadCloser, error) {
 	// convert the writer to a reader
 	r, w := io.Pipe()
 	go func() {
-		defer w.Close()
+		defer func() { _ = w.Close() }()
 		_ = tarball.Write(refName, image, w)
 	}()
 	return r, nil
@@ -135,9 +135,9 @@ func (c ImageSource) OCITarReader(overrideName string) (io.ReadCloser, error) {
 	// convert the writer to a reader
 	r, w := io.Pipe()
 	go func() {
-		defer w.Close()
+		defer func() { _ = w.Close() }()
 		tw := tar.NewWriter(w)
-		defer tw.Close()
+		defer func() { _ = tw.Close() }()
 		if err := writeLayoutHeader(tw); err != nil {
 			_ = w.CloseWithError(err)
 			return
@@ -257,7 +257,7 @@ func (c ImageSource) SBoMs() ([]io.ReadCloser, error) {
 		if _, err := io.Copy(&buf, layer); err != nil {
 			return nil, err
 		}
-		layer.Close()
+		_ = layer.Close()
 		var stmt spdxStatement
 		if err := json.Unmarshal(buf.Bytes(), &stmt); err != nil {
 			return nil, err
