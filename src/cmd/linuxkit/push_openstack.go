@@ -21,7 +21,7 @@ func createOpenStackImage(filePath string, imageName string, client *gophercloud
 	formats := []string{"ami", "vhd", "vhdx", "vmdk", "raw", "qcow2", "iso"}
 
 	// Find extension of the filename and remove the leading stop
-	fileExtension := strings.Replace(path.Ext(filePath), ".", "", -1)
+	fileExtension := strings.ReplaceAll(path.Ext(filePath), ".", "")
 	fileName := strings.TrimSuffix(path.Base(filePath), filepath.Ext(filePath))
 	// Check for Supported extension
 	var supportedExtension bool
@@ -54,7 +54,7 @@ func createOpenStackImage(filePath string, imageName string, client *gophercloud
 	if err != nil {
 		log.Fatalf("Can't read image file: %s", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	log.Infof("Uploading file %s with Image ID %s", filePath, image.ID)
 	imagedata.Upload(client, image.ID, f)
@@ -63,7 +63,7 @@ func createOpenStackImage(filePath string, imageName string, client *gophercloud
 	// then there's been a problem
 	validImage, _ := images.Get(client, image.ID).Extract()
 	if validImage.Status != "active" {
-		log.Fatalf("Error uploading image, status is %s", validImage.Status)
+		log.Fatalf("error uploading image, status is %s", validImage.Status)
 	} else {
 		log.Infof("Image uploaded successfully!")
 		fmt.Println(image.ID)

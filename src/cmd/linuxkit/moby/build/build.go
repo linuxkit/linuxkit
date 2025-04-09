@@ -160,7 +160,7 @@ func Build(m moby.Moby, w io.Writer, opts BuildOpts) error {
 		if err != nil {
 			return fmt.Errorf("failed to open input tar: %w", err)
 		}
-		defer in.Close()
+		defer func() { _ = in.Close() }()
 		if _, err := in.Seek(0, 0); err != nil {
 			return fmt.Errorf("failed to seek to beginning of tmpfile: %w", err)
 		}

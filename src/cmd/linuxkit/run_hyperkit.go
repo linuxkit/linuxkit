@@ -62,7 +62,7 @@ func runHyperkitCmd() *cobra.Command {
 			path := args[0]
 
 			if data != "" && dataPath != "" {
-				return errors.New("Cannot specify both -data and -data-file")
+				return errors.New("cannot specify both -data and -data-file")
 			}
 
 			prefix := path
@@ -75,22 +75,22 @@ func runHyperkitCmd() *cobra.Command {
 			switch {
 			case squashFSBoot:
 				if kernelBoot || isoBoot {
-					return fmt.Errorf("Please specify only one boot method")
+					return fmt.Errorf("please specify only one boot method")
 				}
 				if !statKernel {
-					return fmt.Errorf("Booting a SquashFS root filesystem requires a kernel at %s", path+"-kernel")
+					return fmt.Errorf("booting a SquashFS root filesystem requires a kernel at %s", path+"-kernel")
 				}
 				_, err = os.Stat(path + "-squashfs.img")
 				statSquashFS := err == nil
 				if !statSquashFS {
-					return fmt.Errorf("Cannot find SquashFS image (%s): %v", path+"-squashfs.img", err)
+					return fmt.Errorf("cannot find SquashFS image (%s): %v", path+"-squashfs.img", err)
 				}
 			case isoBoot:
 				if kernelBoot {
-					return fmt.Errorf("Please specify only one boot method")
+					return fmt.Errorf("please specify only one boot method")
 				}
 				if !uefiBoot {
-					return fmt.Errorf("Hyperkit requires --uefi to be set to boot an ISO")
+					return fmt.Errorf("hyperkit requires --uefi to be set to boot an ISO")
 				}
 				// We used to auto-detect ISO boot. For backwards compat, append .iso if not present
 				isoPath := path
@@ -100,19 +100,19 @@ func runHyperkitCmd() *cobra.Command {
 				_, err = os.Stat(isoPath)
 				statISO := err == nil
 				if !statISO {
-					return fmt.Errorf("Cannot find ISO image (%s): %v", isoPath, err)
+					return fmt.Errorf("cannot find ISO image (%s): %v", isoPath, err)
 				}
 				prefix = strings.TrimSuffix(path, ".iso")
 				isoPaths = append(isoPaths, isoPath)
 			default:
 				// Default to kernel+initrd
 				if !statKernel {
-					return fmt.Errorf("Cannot find kernel file: %s", path+"-kernel")
+					return fmt.Errorf("cannot find kernel file: %s", path+"-kernel")
 				}
 				_, err = os.Stat(path + "-initrd.img")
 				statInitrd := err == nil
 				if !statInitrd {
-					return fmt.Errorf("Cannot find initrd file (%s): %v", path+"-initrd.img", err)
+					return fmt.Errorf("cannot find initrd file (%s): %v", path+"-initrd.img", err)
 				}
 				kernelBoot = true
 			}
@@ -120,7 +120,7 @@ func runHyperkitCmd() *cobra.Command {
 			if uefiBoot {
 				_, err := os.Stat(fw)
 				if err != nil {
-					return fmt.Errorf("Cannot open UEFI firmware file (%s): %v", fw, err)
+					return fmt.Errorf("cannot open UEFI firmware file (%s): %v", fw, err)
 				}
 			}
 
@@ -128,7 +128,7 @@ func runHyperkitCmd() *cobra.Command {
 				state = prefix + "-state"
 			}
 			if err := os.MkdirAll(state, 0755); err != nil {
-				return fmt.Errorf("Could not create state directory: %v", err)
+				return fmt.Errorf("could not create state directory: %v", err)
 			}
 
 			metadataPaths, err := CreateMetadataISO(state, data, dataPath)
@@ -145,15 +145,15 @@ func runHyperkitCmd() *cobra.Command {
 				if _, err := os.Stat(vpnkitUUIDFile); os.IsNotExist(err) {
 					vpnkitUUID = uuid.New().String()
 					if err := os.WriteFile(vpnkitUUIDFile, []byte(vpnkitUUID), 0600); err != nil {
-						return fmt.Errorf("Unable to write to %s: %v", vpnkitUUIDFile, err)
+						return fmt.Errorf("unable to write to %s: %v", vpnkitUUIDFile, err)
 					}
 				} else {
 					uuidBytes, err := os.ReadFile(vpnkitUUIDFile)
 					if err != nil {
-						return fmt.Errorf("Unable to read VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
+						return fmt.Errorf("unable to read VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
 					}
 					if tmp, err := uuid.ParseBytes(uuidBytes); err != nil {
-						return fmt.Errorf("Unable to parse VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
+						return fmt.Errorf("unable to parse VPNKit UUID from %s: %v", vpnkitUUIDFile, err)
 					} else {
 						vpnkitUUID = tmp.String()
 					}
@@ -168,7 +168,7 @@ func runHyperkitCmd() *cobra.Command {
 			if kernelBoot || squashFSBoot {
 				cmdlineBytes, err := os.ReadFile(prefix + "-cmdline")
 				if err != nil {
-					return fmt.Errorf("Cannot open cmdline file: %v", err)
+					return fmt.Errorf("cannot open cmdline file: %v", err)
 				}
 				cmdline = string(cmdlineBytes)
 			}
@@ -176,7 +176,7 @@ func runHyperkitCmd() *cobra.Command {
 			// Create new HyperKit instance (w/o networking for now)
 			h, err := hyperkit.New(hyperkitPath, "", state)
 			if err != nil {
-				return fmt.Errorf("Error creating hyperkit: %w", err)
+				return fmt.Errorf("error creating hyperkit: %w", err)
 			}
 
 			if consoleToFile {
@@ -224,7 +224,7 @@ func runHyperkitCmd() *cobra.Command {
 			}
 
 			if h.VSockPorts, err = stringToIntArray(vsockports, ","); err != nil {
-				return fmt.Errorf("Unable to parse vsock-ports: %w", err)
+				return fmt.Errorf("unable to parse vsock-ports: %w", err)
 			}
 
 			// Select network mode
@@ -248,7 +248,7 @@ func runHyperkitCmd() *cobra.Command {
 				} else {
 					_, err = os.Stat(newEthSock)
 					if err != nil {
-						return errors.New("Cannot find Docker for Mac network sockets. Install Docker or use a different network mode.")
+						return errors.New("cannot find Docker for Mac network sockets. Install Docker or use a different network mode")
 					}
 					h.VPNKitSock = newEthSock
 					vpnkitPortSocket = newPortSock
@@ -271,7 +271,7 @@ func runHyperkitCmd() *cobra.Command {
 					vsockSocket := filepath.Join(state, "connect")
 					vpnkitProcess, err = launchVPNKit(vpnkitPath, h.VPNKitSock, vsockSocket, vpnkitPortSocket)
 					if err != nil {
-						return fmt.Errorf("Unable to start vpnkit: %w", err)
+						return fmt.Errorf("unable to start vpnkit: %w", err)
 					}
 					defer shutdownVPNKit(vpnkitProcess)
 					log.RegisterExitHandler(func() {
@@ -288,7 +288,7 @@ func runHyperkitCmd() *cobra.Command {
 			case hyperkitNetworkingNone:
 				h.VPNKitSock = ""
 			default:
-				return fmt.Errorf("Invalid networking mode: %s", netMode[0])
+				return fmt.Errorf("invalid networking mode: %s", netMode[0])
 			}
 
 			h.VPNKitUUID = vpnkitUUID
@@ -296,7 +296,7 @@ func runHyperkitCmd() *cobra.Command {
 				if ip := net.ParseIP(ipStr); len(ip) > 0 && ip.To4() != nil {
 					h.VPNKitPreferredIPv4 = ip.String()
 				} else {
-					return fmt.Errorf("Unable to parse IPv4 address: %v", ipStr)
+					return fmt.Errorf("unable to parse IPv4 address: %v", ipStr)
 				}
 			}
 
@@ -305,22 +305,22 @@ func runHyperkitCmd() *cobra.Command {
 				switch netMode[0] {
 				case hyperkitNetworkingDockerForMac, hyperkitNetworkingVPNKit:
 					if vpnkitPortSocket == "" {
-						return fmt.Errorf("The VPNKit Port socket path is required to publish ports")
+						return fmt.Errorf("the VPNKit Port socket path is required to publish ports")
 					}
 					f, err := vpnkitPublishPorts(h, publishFlags, vpnkitPortSocket)
 					if err != nil {
-						return fmt.Errorf("Publish ports failed with: %v", err)
+						return fmt.Errorf("publish ports failed with: %v", err)
 					}
 					defer f()
 					log.RegisterExitHandler(f)
 				default:
-					return fmt.Errorf("Port publishing requires %q or %q networking mode", hyperkitNetworkingDockerForMac, hyperkitNetworkingVPNKit)
+					return fmt.Errorf("port publishing requires %q or %q networking mode", hyperkitNetworkingDockerForMac, hyperkitNetworkingVPNKit)
 				}
 			}
 
 			err = h.Run(cmdline)
 			if err != nil {
-				return fmt.Errorf("Cannot run hyperkit: %v", err)
+				return fmt.Errorf("cannot run hyperkit: %v", err)
 			}
 			return nil
 		},
@@ -366,7 +366,7 @@ func shutdownVPNKit(process *os.Process) {
 
 // createListenSocket creates a new unix domain socket and returns the open file
 func createListenSocket(path string) (*os.File, error) {
-	os.Remove(path)
+	_ = os.Remove(path)
 	conn, err := net.ListenUnix("unix", &net.UnixAddr{Name: path, Net: "unix"})
 	if err != nil {
 		return nil, fmt.Errorf("unable to create socket: %v", err)
@@ -387,7 +387,7 @@ func launchVPNKit(vpnkitPath, etherSock, vsockSock, portSock string) (*os.Proces
 	if vpnkitPath == "" {
 		vpnkitPath, err = exec.LookPath("vpnkit")
 		if err != nil {
-			return nil, fmt.Errorf("Unable to find vpnkit binary")
+			return nil, fmt.Errorf("unable to find vpnkit binary")
 		}
 	}
 
@@ -436,20 +436,20 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 
 	vpnkitUUID, err := uuid.Parse(h.VPNKitUUID)
 	if err != nil {
-		return nil, fmt.Errorf("Failed to parse VPNKit UUID %s: %v", h.VPNKitUUID, err)
+		return nil, fmt.Errorf("failed to parse VPNKit UUID %s: %v", h.VPNKitUUID, err)
 	}
 
 	localhost := net.ParseIP("127.0.0.1")
 	if localhost == nil {
-		return nil, fmt.Errorf("Failed to parse 127.0.0.1")
+		return nil, fmt.Errorf("failed to parse 127.0.0.1")
 	}
 
 	log.Debugf("Creating new VPNKit VMNet on %s", h.VPNKitSock)
 	vmnetClient, err := vmnet.New(ctx, h.VPNKitSock)
 	if err != nil {
-		return nil, fmt.Errorf("NewVmnet failed: %v", err)
+		return nil, fmt.Errorf("vmnet.New() failed: %v", err)
 	}
-	defer vmnetClient.Close()
+	defer func() { _ = vmnetClient.Close() }()
 
 	// Register with VPNKit
 	var vif *vmnet.Vif
@@ -457,17 +457,17 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 		log.Debugf("Creating VPNKit VIF for %v", vpnkitUUID)
 		vif, err = vmnetClient.ConnectVif(vpnkitUUID)
 		if err != nil {
-			return nil, fmt.Errorf("Connection to Vif failed: %v", err)
+			return nil, fmt.Errorf("connection to Vif failed: %v", err)
 		}
 	} else {
 		ip := net.ParseIP(h.VPNKitPreferredIPv4)
 		if ip == nil {
-			return nil, fmt.Errorf("Failed to parse IP: %s", h.VPNKitPreferredIPv4)
+			return nil, fmt.Errorf("failed to parse IP: %s", h.VPNKitPreferredIPv4)
 		}
 		log.Debugf("Creating VPNKit VIF for %v ip=%v", vpnkitUUID, ip)
 		vif, err = vmnetClient.ConnectVifIP(vpnkitUUID, ip)
 		if err != nil {
-			return nil, fmt.Errorf("Connection to Vif with IP failed: %v", err)
+			return nil, fmt.Errorf("connection to Vif with IP failed: %v", err)
 		}
 	}
 	log.Debugf("VPNKit UUID:%s IP: %v", vpnkitUUID, vif.IP)
@@ -475,7 +475,7 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 	log.Debugf("Connecting to VPNKit on %s", portSocket)
 	c, err := vpnkit.NewClient(portSocket)
 	if err != nil {
-		return nil, fmt.Errorf("Connection to VPNKit failed: %v", err)
+		return nil, fmt.Errorf("connection to VPNKit failed: %v", err)
 	}
 
 	// Publish ports
@@ -483,7 +483,7 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 	for _, publish := range publishFlags {
 		p, err := NewPublishedPort(publish)
 		if err != nil {
-			return nil, fmt.Errorf("Failed to parse port publish %s: %v", publish, err)
+			return nil, fmt.Errorf("failed to parse port publish %s: %v", publish, err)
 		}
 
 		log.Debugf("Publishing %s", publish)
@@ -495,7 +495,7 @@ func vpnkitPublishPorts(h *hyperkit.HyperKit, publishFlags multipleFlag, portSoc
 			InPort:  p.Guest,
 		}
 		if err = c.Expose(context.Background(), vp); err != nil {
-			return nil, fmt.Errorf("Failed to expose port %s: %v", publish, err)
+			return nil, fmt.Errorf("failed to expose port %s: %v", publish, err)
 		}
 		ports = append(ports, vp)
 	}

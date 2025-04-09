@@ -54,7 +54,7 @@ func pushScalewayCmd() *cobra.Command {
 
 			client, err := NewScalewayClient(accessKey, secretKey, zone, organizationID)
 			if err != nil {
-				return fmt.Errorf("Unable to connect to Scaleway: %v", err)
+				return fmt.Errorf("unable to connect to Scaleway: %v", err)
 			}
 
 			// if volume size not set, try to calculate it from file size
@@ -72,44 +72,44 @@ func pushScalewayCmd() *cobra.Command {
 			if instanceID == "" {
 				instanceID, err = client.CreateInstance(volumeSize)
 				if err != nil {
-					return fmt.Errorf("Error creating a Scaleway instance: %v", err)
+					return fmt.Errorf("error creating a Scaleway instance: %v", err)
 				}
 
 				err = client.BootInstanceAndWait(instanceID)
 				if err != nil {
-					return fmt.Errorf("Error booting instance: %v", err)
+					return fmt.Errorf("error booting instance: %v", err)
 				}
 			}
 
 			volumeID, err := client.GetSecondVolumeID(instanceID)
 			if err != nil {
-				return fmt.Errorf("Error retrieving second volume ID: %v", err)
+				return fmt.Errorf("error retrieving second volume ID: %v", err)
 			}
 
 			err = client.CopyImageToInstance(instanceID, path, sshKeyFile)
 			if err != nil {
-				return fmt.Errorf("Error copying ISO file to Scaleway's instance: %v", err)
+				return fmt.Errorf("error copying ISO file to Scaleway's instance: %v", err)
 			}
 
 			err = client.WriteImageToVolume(instanceID, deviceName)
 			if err != nil {
-				return fmt.Errorf("Error writing ISO file to additional volume: %v", err)
+				return fmt.Errorf("error writing ISO file to additional volume: %v", err)
 			}
 
 			err = client.TerminateInstance(instanceID)
 			if err != nil {
-				return fmt.Errorf("Error terminating Scaleway's instance: %v", err)
+				return fmt.Errorf("error terminating Scaleway's instance: %v", err)
 			}
 
 			err = client.CreateScalewayImage(instanceID, volumeID, name)
 			if err != nil {
-				return fmt.Errorf("Error creating Scaleway image: %v", err)
+				return fmt.Errorf("error creating Scaleway image: %v", err)
 			}
 
 			if !noCleanFlag {
 				err = client.DeleteInstanceAndVolumes(instanceID)
 				if err != nil {
-					return fmt.Errorf("Error deleting Scaleway instance and volumes: %v", err)
+					return fmt.Errorf("error deleting Scaleway instance and volumes: %v", err)
 				}
 			}
 			return nil

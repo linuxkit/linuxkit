@@ -50,9 +50,9 @@ jobs:
          GOPATH: ${{runner.workspace}}
 
     - name: golangci-lint CLI
-      uses: golangci/golangci-lint-action@v6
+      uses: golangci/golangci-lint-action@v7
       with:
-        version: v1.63.4
+        version: v2.0.2
         working-directory: src/cmd/linuxkit
         args: --verbose --timeout=10m
     - name: go vet CLI

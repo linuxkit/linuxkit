@@ -141,7 +141,7 @@ The generated image can be in one of multiple formats which can be run on variou
 					if err != nil {
 						log.Fatalf("cannot open output file: %v", err)
 					}
-					defer outfile.Close()
+					defer func() { _ = outfile.Close() }()
 				}
 			}
 
@@ -168,7 +168,7 @@ The generated image can be in one of multiple formats which can be run on variou
 					if err != nil {
 						return fmt.Errorf("cannot fetch remote yaml file: %v", err)
 					}
-					defer response.Body.Close()
+					defer func() { _ = response.Body.Close() }()
 					_, err = io.Copy(buffer, response.Body)
 					if err != nil {
 						return fmt.Errorf("error reading http body: %v", err)
@@ -216,7 +216,7 @@ The generated image can be in one of multiple formats which can be run on variou
 				if tf, err = os.CreateTemp("", ""); err != nil {
 					log.Fatalf("error creating tempfile: %v", err)
 				}
-				defer os.Remove(tf.Name())
+				defer func() { _ = os.Remove(tf.Name()) }()
 				w = tf
 			}
 			if inputTar != "" && inputTar == outputFile {

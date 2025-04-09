@@ -37,7 +37,7 @@ func runCmd() *cobra.Command {
 			case "windows":
 				target = "hyperv"
 			default:
-				return fmt.Errorf("there currently is no default 'run' backend for your platform.")
+				return fmt.Errorf("there currently is no default 'run' backend for your platform")
 			}
 			children := cmd.Commands()
 			for _, child := range children {

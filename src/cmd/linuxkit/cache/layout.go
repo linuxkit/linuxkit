@@ -69,7 +69,7 @@ func writeLayoutImage(tw *tar.Writer, image v1.Image) error {
 		if err != nil {
 			return err
 		}
-		defer blob.Close()
+		defer func() { _ = blob.Close() }()
 		blobDigest, err := layer.Digest()
 		if err != nil {
 			return err

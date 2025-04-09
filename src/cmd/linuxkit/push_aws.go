@@ -48,7 +48,7 @@ func pushAWSCmd() *cobra.Command {
 			}
 
 			if !uefi && tpm {
-				return fmt.Errorf("Cannot use tpm without uefi mode")
+				return fmt.Errorf("cannot use tpm without uefi mode")
 			}
 
 			sess := session.Must(session.NewSession())
@@ -58,14 +58,14 @@ func pushAWSCmd() *cobra.Command {
 			defer cancelFn()
 
 			if bucket == "" {
-				return fmt.Errorf("Please provide the bucket to use")
+				return fmt.Errorf("please provide the bucket to use")
 			}
 
 			f, err := os.Open(path)
 			if err != nil {
-				return fmt.Errorf("Error opening file: %v", err)
+				return fmt.Errorf("error opening file: %v", err)
 			}
-			defer f.Close()
+			defer func() { _ = f.Close() }()
 
 			if name == "" {
 				name = strings.TrimSuffix(path, filepath.Ext(path))
@@ -74,7 +74,7 @@ func pushAWSCmd() *cobra.Command {
 
 			fi, err := f.Stat()
 			if err != nil {
-				return fmt.Errorf("Error reading file information: %v", err)
+				return fmt.Errorf("error reading file information: %v", err)
 			}
 
 			dst := name + filepath.Ext(path)
@@ -89,7 +89,7 @@ func pushAWSCmd() *cobra.Command {
 
 			_, err = storage.PutObjectWithContext(ctx, putParams)
 			if err != nil {
-				return fmt.Errorf("Error uploading to S3: %v", err)
+				return fmt.Errorf("error uploading to S3: %v", err)
 			}
 
 			compute := ec2.New(sess)
@@ -109,7 +109,7 @@ func pushAWSCmd() *cobra.Command {
 
 			resp, err := compute.ImportSnapshot(importParams)
 			if err != nil {
-				return fmt.Errorf("Error importing snapshot: %v", err)
+				return fmt.Errorf("error importing snapshot: %v", err)
 			}
 
 			var snapshotID *string
@@ -122,10 +122,10 @@ func pushAWSCmd() *cobra.Command {
 				log.Debugf("DescribeImportSnapshotTask:\n%v", describeParams)
 				status, err := compute.DescribeImportSnapshotTasks(describeParams)
 				if err != nil {
-					return fmt.Errorf("Error getting import snapshot status: %v", err)
+					return fmt.Errorf("error getting import snapshot status: %v", err)
 				}
 				if len(status.ImportSnapshotTasks) == 0 {
-					return fmt.Errorf("Unable to get import snapshot task status")
+					return fmt.Errorf("unable to get import snapshot task status")
 				}
 				if *status.ImportSnapshotTasks[0].SnapshotTaskDetail.Status != "completed" {
 					progress := "0"
@@ -174,7 +174,7 @@ func pushAWSCmd() *cobra.Command {
 			log.Debugf("RegisterImage:\n%v", regParams)
 			regResp, err := compute.RegisterImage(regParams)
 			if err != nil {
-				return fmt.Errorf("Error registering the image: %s; %v", name, err)
+				return fmt.Errorf("error registering the image: %s; %v", name, err)
 			}
 			log.Infof("Created AMI: %s", *regResp.ImageId)
 			return nil

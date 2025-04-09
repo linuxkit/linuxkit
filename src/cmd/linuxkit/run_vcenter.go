@@ -61,7 +61,7 @@ func runVCenterCmd() *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			imagePath := args[0]
 			if guestIP && !poweron {
-				return errors.New("The waitForIP flag can not be used without the powerOn flag")
+				return errors.New("the waitForIP flag can not be used without the powerOn flag")
 			}
 			// Ensure an iso has been passed to the vCenter run Command
 			if strings.HasSuffix(vmPath, ".iso") {
@@ -70,7 +70,7 @@ func runVCenterCmd() *cobra.Command {
 					vmFolder = strings.TrimSuffix(path.Base(vmPath), ".iso")
 				}
 			} else {
-				return fmt.Errorf("Please pass an \".iso\" file as the path")
+				return fmt.Errorf("please pass an \".iso\" file as the path")
 			}
 
 			ctx, cancel := context.WithCancel(context.Background())
@@ -106,7 +106,7 @@ func runVCenterCmd() *cobra.Command {
 
 			scsi, err := object.SCSIControllerTypes().CreateSCSIController("pvscsi")
 			if err != nil {
-				return errors.New("Error creating pvscsi controller as part of new VM")
+				return errors.New("error creating pvscsi controller as part of new VM")
 			}
 
 			spec.DeviceChange = append(spec.DeviceChange, &types.VirtualDeviceConfigSpec{
@@ -116,12 +116,12 @@ func runVCenterCmd() *cobra.Command {
 
 			task, err := folders.VmFolder.CreateVM(ctx, spec, rp, hs)
 			if err != nil {
-				return errors.New("Creating new VM failed, more detail can be found in vCenter tasks")
+				return errors.New("creating new VM failed, more detail can be found in vCenter tasks")
 			}
 
 			info, err := task.WaitForResult(ctx, nil)
 			if err != nil {
-				return fmt.Errorf("Creating new VM failed\n%w", err)
+				return fmt.Errorf("creating new VM failed\n%w", err)
 			}
 
 			// Retrieve the new VM
@@ -132,7 +132,7 @@ func runVCenterCmd() *cobra.Command {
 			if *newVM.persistent != "" {
 				newVM.persistentSz, err = getDiskSizeMB(*newVM.persistent)
 				if err != nil {
-					return fmt.Errorf("Couldn't parse disk-size %s: %v", *newVM.persistent, err)
+					return fmt.Errorf("couldn't parse disk-size %s: %v", *newVM.persistent, err)
 				}
 				addVMDK(ctx, vm, dss, newVM)
 			}

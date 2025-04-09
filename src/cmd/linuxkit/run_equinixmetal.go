@@ -77,17 +77,17 @@ func runEquinixMetalCmd() *cobra.Command {
 			}
 			url := getStringValue(equinixmetalBaseURL, baseURLFlag, "")
 			if url == "" {
-				return fmt.Errorf("Need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-equinixmetal.ipxe", prefix, prefix, prefix)
+				return fmt.Errorf("need to specify a value for --base-url where the images are hosted. This URL should contain <url>/%s-kernel, <url>/%s-initrd.img and <url>/%s-equinixmetal.ipxe", prefix, prefix, prefix)
 			}
 			facility := getStringValue(equinixmetalZoneVar, zoneFlag, "")
 			plan := getStringValue(equinixmetalMachineVar, machineFlag, defaultMachine)
 			apiKey := getStringValue(equinixmetalAPIKeyVar, apiKeyFlag, "")
 			if apiKey == "" {
-				return errors.New("Must specify an api.equinix.com API key with --api-key")
+				return errors.New("must specify an api.equinix.com API key with --api-key")
 			}
 			projectID := getStringValue(equinixmetalProjectIDVar, projectFlag, "")
 			if projectID == "" {
-				return errors.New("Must specify an api.equinix.com Project ID with --project-id")
+				return errors.New("must specify an api.equinix.com Project ID with --project-id")
 			}
 			hostname := getStringValue(equinixmetalHostnameVar, hostNameFlag, "")
 			name := getStringValue(equinixmetalNameVar, nameFlag, prefix)
@@ -95,7 +95,7 @@ func runEquinixMetalCmd() *cobra.Command {
 			billing := "hourly"
 
 			if !keepFlag && !consoleFlag {
-				return fmt.Errorf("Combination of keep=%t and console=%t makes little sense", keepFlag, consoleFlag)
+				return fmt.Errorf("combination of keep=%t and console=%t makes little sense", keepFlag, consoleFlag)
 			}
 
 			ipxeScriptName := fmt.Sprintf("%s-equinixmetal.ipxe", name)
@@ -106,7 +106,7 @@ func runEquinixMetalCmd() *cobra.Command {
 				// Read kernel command line
 				var cmdline string
 				if c, err := os.ReadFile(prefix + "-cmdline"); err != nil {
-					return fmt.Errorf("Cannot open cmdline file: %v", err)
+					return fmt.Errorf("cannot open cmdline file: %v", err)
 				} else {
 					cmdline = string(c)
 				}
@@ -118,7 +118,7 @@ func runEquinixMetalCmd() *cobra.Command {
 				mux := http.NewServeMux()
 				mux.HandleFunc(fmt.Sprintf("/%s", ipxeScriptName),
 					func(w http.ResponseWriter, r *http.Request) {
-						fmt.Fprint(w, ipxeScript)
+						_, _ = fmt.Fprint(w, ipxeScript)
 					})
 				fs := serveFiles{[]string{fmt.Sprintf("%s-kernel", name), fmt.Sprintf("%s-initrd.img", name)}}
 				mux.Handle("/", http.FileServer(fs))
@@ -137,15 +137,15 @@ func runEquinixMetalCmd() *cobra.Command {
 			kernelURL := fmt.Sprintf("%s/%s-kernel", url, name)
 			log.Infof("Validating URL: %s", ipxeURL)
 			if err := validateHTTPURL(ipxeURL); err != nil {
-				return fmt.Errorf("Invalid iPXE URL %s: %v", ipxeURL, err)
+				return fmt.Errorf("invalid iPXE URL %s: %v", ipxeURL, err)
 			}
 			log.Infof("Validating URL: %s", kernelURL)
 			if err := validateHTTPURL(kernelURL); err != nil {
-				return fmt.Errorf("Invalid kernel URL %s: %v", kernelURL, err)
+				return fmt.Errorf("invalid kernel URL %s: %v", kernelURL, err)
 			}
 			log.Infof("Validating URL: %s", initrdURL)
 			if err := validateHTTPURL(initrdURL); err != nil {
-				return fmt.Errorf("Invalid initrd URL %s: %v", initrdURL, err)
+				return fmt.Errorf("invalid initrd URL %s: %v", initrdURL, err)
 			}
 
 			client := metalv1.NewAPIClient(&metalv1.Configuration{})
@@ -163,7 +163,7 @@ func runEquinixMetalCmd() *cobra.Command {
 			if deviceFlag != "" {
 				dev, _, err = client.DevicesApi.FindDeviceByIdExecute(client.DevicesApi.FindDeviceById(metalCtx, deviceFlag))
 				if err != nil {
-					return fmt.Errorf("Getting info for device %s failed: %v", deviceFlag, err)
+					return fmt.Errorf("getting info for device %s failed: %v", deviceFlag, err)
 				}
 				b, err := json.MarshalIndent(dev, "", "    ")
 				if err != nil {
@@ -181,13 +181,13 @@ func runEquinixMetalCmd() *cobra.Command {
 				})
 				dev, _, err = client.DevicesApi.UpdateDeviceExecute(updateReq)
 				if err != nil {
-					return fmt.Errorf("Update device %s failed: %v", deviceFlag, err)
+					return fmt.Errorf("update device %s failed: %v", deviceFlag, err)
 				}
 
 				actionReq := client.DevicesApi.PerformAction(metalCtx, deviceFlag)
 				actionReq.DeviceActionInput(metalv1.DeviceActionInput{Type: metalv1.DEVICEACTIONINPUTTYPE_REBOOT})
 				if _, err := client.DevicesApi.PerformActionExecute(actionReq); err != nil {
-					return fmt.Errorf("Rebooting device %s failed: %v", deviceFlag, err)
+					return fmt.Errorf("rebooting device %s failed: %v", deviceFlag, err)
 				}
 			} else {
 				// Create a new device
@@ -207,7 +207,7 @@ func runEquinixMetalCmd() *cobra.Command {
 				})
 				dev, _, err = client.DevicesApi.CreateDeviceExecute(createReq)
 				if err != nil {
-					return fmt.Errorf("Creating device failed: %w", err)
+					return fmt.Errorf("creating device failed: %w", err)
 				}
 			}
 			b, err := json.MarshalIndent(dev, "", "    ")
@@ -252,7 +252,7 @@ func runEquinixMetalCmd() *cobra.Command {
 			} else {
 				deleteReq := client.DevicesApi.DeleteDevice(metalCtx, *dev.Id)
 				if _, err := client.DevicesApi.DeleteDeviceExecute(deleteReq); err != nil {
-					return fmt.Errorf("Unable to delete device: %v", err)
+					return fmt.Errorf("unable to delete device: %v", err)
 				}
 			}
 			return nil
@@ -321,7 +321,7 @@ func validateHTTPURL(url string) error {
 		return err
 	}
 	if resp.StatusCode >= 400 {
-		return fmt.Errorf("Got a non 200- or 300- HTTP response code: %s", resp.Status)
+		return fmt.Errorf("got a non 200- or 300- HTTP response code: %s", resp.Status)
 	}
 	return nil
 }
@@ -331,7 +331,7 @@ func equinixmetalSOS(user, host string) error {
 
 	hostKey, err := sshHostKey(host)
 	if err != nil {
-		return fmt.Errorf("Host key not found. Maybe need to add it? %v", err)
+		return fmt.Errorf("host key not found. Maybe need to add it? %v", err)
 	}
 
 	sshConfig := &ssh.ClientConfig{
@@ -344,14 +344,16 @@ func equinixmetalSOS(user, host string) error {
 
 	c, err := ssh.Dial("tcp", host+":22", sshConfig)
 	if err != nil {
-		return fmt.Errorf("Failed to dial: %s", err)
+		return fmt.Errorf("failed to dial: %s", err)
 	}
 
 	s, err := c.NewSession()
 	if err != nil {
-		return fmt.Errorf("Failed to create session: %v", err)
+		return fmt.Errorf("failed to create session: %v", err)
 	}
-	defer s.Close()
+	defer func() {
+		_ = s.Close()
+	}()
 
 	s.Stdout = os.Stdout
 	s.Stderr = os.Stderr
@@ -369,7 +371,7 @@ func equinixmetalSOS(user, host string) error {
 		height = 40
 	}
 	if err := s.RequestPty("vt100", width, height, modes); err != nil {
-		return fmt.Errorf("Request for PTY failed: %v", err)
+		return fmt.Errorf("request for PTY failed: %v", err)
 	}
 	oldState, err := term.MakeRaw(int(os.Stdin.Fd()))
 	if err != nil {
@@ -381,7 +383,7 @@ func equinixmetalSOS(user, host string) error {
 
 	// Start remote shell
 	if err := s.Shell(); err != nil {
-		return fmt.Errorf("Failed to start shell: %v", err)
+		return fmt.Errorf("failed to start shell: %v", err)
 	}
 
 	_ = s.Wait()
@@ -402,7 +404,7 @@ func sshAgent() ssh.AuthMethod {
 func sshHostKey(host string) (ssh.PublicKey, error) {
 	f, err := os.ReadFile(filepath.Join(os.Getenv("HOME"), ".ssh", "known_hosts"))
 	if err != nil {
-		return nil, fmt.Errorf("Can't read known_hosts file: %v", err)
+		return nil, fmt.Errorf("can't read known_hosts file: %v", err)
 	}
 
 	for {
@@ -411,7 +413,7 @@ func sshHostKey(host string) (ssh.PublicKey, error) {
 			break
 		}
 		if err != nil {
-			return nil, fmt.Errorf("Parse error in known_hosts: %v", err)
+			return nil, fmt.Errorf("parse error in known_hosts: %v", err)
 		}
 		if marker != "" {
 			//ignore CA or revoked key
@@ -426,7 +428,7 @@ func sshHostKey(host string) (ssh.PublicKey, error) {
 		f = rest
 	}
 
-	return nil, fmt.Errorf("No hostkey for %s", host)
+	return nil, fmt.Errorf("no hostkey for %s", host)
 }
 
 // This implements a http.FileSystem which only responds to specific files.
@@ -458,5 +460,5 @@ func (fs serveFiles) Open(name string) (http.File, error) {
 			return f, nil
 		}
 	}
-	return nil, fmt.Errorf("File %s not found", name)
+	return nil, fmt.Errorf("file %s not found", name)
 }

@@ -23,7 +23,7 @@ func cacheCleanCmd() *cobra.Command {
 			// did we limit to published only?
 			if !publishedOnly {
 				if err := os.RemoveAll(cacheDir); err != nil {
-					return fmt.Errorf("Unable to clean cache %s: %v", cacheDir, err)
+					return fmt.Errorf("uUnable to clean cache %s: %v", cacheDir, err)
 				}
 				log.Infof("Cache emptied: %s", cacheDir)
 				return nil

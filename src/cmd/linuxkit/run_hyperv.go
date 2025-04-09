@@ -52,7 +52,7 @@ func runHyperVCmd() *cobra.Command {
 				"-NoVHD",
 				"-SwitchName", fmt.Sprintf("'%s'", vmSwitch))
 			if err != nil {
-				return fmt.Errorf("Failed to create new VM: %w\n%s", err, out)
+				return fmt.Errorf("failed to create new VM: %w\n%s", err, out)
 			}
 			log.Infof("Configure VM: %s", vmName)
 			_, out, err = poshCmd("Set-VM", "-Name", fmt.Sprintf("'%s'", vmName),
@@ -63,7 +63,7 @@ func runHyperVCmd() *cobra.Command {
 				"-StaticMemory",
 				"-ProcessorCount", fmt.Sprintf("%d", cpus))
 			if err != nil {
-				return fmt.Errorf("Failed to configure new VM: %w\n%s", err, out)
+				return fmt.Errorf("failed to configure new VM: %w\n%s", err, out)
 			}
 
 			for i, d := range disks {
@@ -86,10 +86,10 @@ func runHyperVCmd() *cobra.Command {
 							"-SizeBytes", fmt.Sprintf("%dMB", d.Size),
 							"-Dynamic")
 						if err != nil {
-							return fmt.Errorf("Failed to create VHD %s: %w\n%s", d.Path, err, out)
+							return fmt.Errorf("failed to create VHD %s: %w\n%s", d.Path, err, out)
 						}
 					} else {
-						return fmt.Errorf("Problem accessing disk %s. %w", d.Path, err)
+						return fmt.Errorf("problem accessing disk %s. %w", d.Path, err)
 					}
 				} else {
 					log.Infof("Using existing disk %s", d.Path)
@@ -99,7 +99,7 @@ func runHyperVCmd() *cobra.Command {
 					"-VMName", fmt.Sprintf("'%s'", vmName),
 					"-Path", fmt.Sprintf("'%s'", d.Path))
 				if err != nil {
-					return fmt.Errorf("Failed to add VHD %s: %w\n%s", d.Path, err, out)
+					return fmt.Errorf("failed to add VHD %s: %w\n%s", d.Path, err, out)
 				}
 			}
 
@@ -108,7 +108,7 @@ func runHyperVCmd() *cobra.Command {
 				"-VMName", fmt.Sprintf("'%s'", vmName),
 				"-Path", fmt.Sprintf("'%s'", isoPath))
 			if err != nil {
-				return fmt.Errorf("Failed add DVD: %w\n%s", err, out)
+				return fmt.Errorf("failed add DVD: %w\n%s", err, out)
 			}
 			_, out, err = poshCmd(
 				fmt.Sprintf("$cdrom = Get-VMDvdDrive -vmname '%s';", vmName),
@@ -116,7 +116,7 @@ func runHyperVCmd() *cobra.Command {
 				"-EnableSecureBoot", "Off",
 				"-FirstBootDevice", "$cdrom")
 			if err != nil {
-				return fmt.Errorf("Failed set DVD as boot device: %w\n%s", err, out)
+				return fmt.Errorf("failed set DVD as boot device: %w\n%s", err, out)
 			}
 
 			log.Info("Set up COM port")
@@ -125,13 +125,13 @@ func runHyperVCmd() *cobra.Command {
 				"-number", "1",
 				"-Path", fmt.Sprintf(`\\.\pipe\%s-com1`, vmName))
 			if err != nil {
-				return fmt.Errorf("Failed set up COM port: %w\n%s", err, out)
+				return fmt.Errorf("failed set up COM port: %w\n%s", err, out)
 			}
 
 			log.Info("Start the VM")
 			_, out, err = poshCmd("Start-VM", "-Name", fmt.Sprintf("'%s'", vmName))
 			if err != nil {
-				return fmt.Errorf("Failed start the VM: %w\n%s", err, out)
+				return fmt.Errorf("failed start the VM: %w\n%s", err, out)
 			}
 
 			err = hypervStartConsole(vmName)
@@ -233,7 +233,7 @@ func hypervChecks() {
 func hypervGetSwitch(name string) (string, error) {
 	if name != "" {
 		if _, _, err := poshCmd("Get-VMSwitch", name); err != nil {
-			return "", fmt.Errorf("Could not find switch %s: %v", name, err)
+			return "", fmt.Errorf("could not find switch %s: %v", name, err)
 		}
 		return name, nil
 	}
@@ -247,7 +247,7 @@ func hypervGetSwitch(name string) (string, error) {
 
 	out, _, err := poshCmd("Get-VMSwitch | Format-Table -Property Name, SwitchType -HideTableHeaders")
 	if err != nil {
-		return "", fmt.Errorf("Could not get list of switches: %v", err)
+		return "", fmt.Errorf("could not get list of switches: %v", err)
 	}
 	switches := splitLines(out)
 	for _, s := range switches {
@@ -262,5 +262,5 @@ func hypervGetSwitch(name string) (string, error) {
 			return strings.Join(t[:len(t)-1], " "), nil
 		}
 	}
-	return "", fmt.Errorf("Could not find an external switch")
+	return "", fmt.Errorf("could not find an external switch")
 }

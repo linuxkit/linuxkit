@@ -83,7 +83,7 @@ func runVMWareCmd() *cobra.Command {
 				state = prefix + "-state"
 			}
 			if err := os.MkdirAll(state, 0755); err != nil {
-				return fmt.Errorf("Could not create state directory: %v", err)
+				return fmt.Errorf("could not create state directory: %v", err)
 			}
 
 			var vmrunPath, vmDiskManagerPath string
@@ -104,7 +104,7 @@ func runVMWareCmd() *cobra.Command {
 				fullVMrunPath, err := exec.LookPath(vmrunPath)
 				if err != nil {
 					// Kept as separate error as people may manually change their environment vars
-					return fmt.Errorf("Unable to find %s within the $PATH", vmrunPath)
+					return fmt.Errorf("unable to find %s within the $PATH", vmrunPath)
 				}
 				vmrunPath = fullVMrunPath
 				vmrunArgs = []string{"-T", "ws", "start"}
@@ -141,18 +141,18 @@ func runVMWareCmd() *cobra.Command {
 				// If disk doesn't exist then create one, error if disk is unreadable
 				if _, err := os.Stat(d.Path); err != nil {
 					if os.IsPermission(err) {
-						return fmt.Errorf("Unable to read file [%s], please check permissions", d.Path)
+						return fmt.Errorf("unable to read file [%s], please check permissions", d.Path)
 					} else if os.IsNotExist(err) {
 						log.Infof("Creating new VMware disk [%s]", d.Path)
 						vmDiskCmd := exec.Command(vmDiskManagerPath, "-c", "-s", fmt.Sprintf("%dMB", d.Size), "-a", "lsilogic", "-t", "0", d.Path)
 						if err = vmDiskCmd.Run(); err != nil {
-							return fmt.Errorf("Error creating disk [%s]:  %w", d.Path, err)
+							return fmt.Errorf("error creating disk [%s]:  %w", d.Path, err)
 						}
 					} else {
-						return fmt.Errorf("Unable to read file [%s]: %w", d.Path, err)
+						return fmt.Errorf("unable to read file [%s]: %w", d.Path, err)
 					}
 				} else {
-					log.Infof("Using existing disk [%s]", d.Path)
+					log.Infof("using existing disk [%s]", d.Path)
 				}
 			}
 
@@ -175,14 +175,14 @@ func runVMWareCmd() *cobra.Command {
 			vmxPath := filepath.Join(state, "linuxkit.vmx")
 			err := os.WriteFile(vmxPath, []byte(vmx), 0644)
 			if err != nil {
-				return fmt.Errorf("Error writing .vmx file: %v", err)
+				return fmt.Errorf("error writing .vmx file: %v", err)
 			}
 			vmrunArgs = append(vmrunArgs, vmxPath)
 
 			execCmd := exec.Command(vmrunPath, vmrunArgs...)
 			out, err := execCmd.Output()
 			if err != nil {
-				return fmt.Errorf("Error starting vmrun: %v", err)
+				return fmt.Errorf("error starting vmrun: %v", err)
 			}
 
 			// check there is output to push to logging

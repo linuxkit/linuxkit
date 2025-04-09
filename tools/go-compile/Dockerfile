@@ -17,7 +17,7 @@ RUN [ $(uname -m) = aarch64 ] && apk add --no-cache --initdb -p /out gcc || true
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
 # installing golangci-lint
-RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /out/go/bin v1.50.1
+RUN curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b /out/go/bin v2.0.2
 
 
 FROM scratch

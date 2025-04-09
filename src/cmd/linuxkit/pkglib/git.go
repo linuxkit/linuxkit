@@ -150,12 +150,12 @@ func (g git) treeHash(pkg, commit string) (string, error) {
 	}
 
 	if out == "" {
-		return "", fmt.Errorf("Package %s is not in git", pkg)
+		return "", fmt.Errorf("package %s is not in git", pkg)
 	}
 
 	matches := treeHashRe.FindStringSubmatch(out)
 	if len(matches) != 2 {
-		return "", fmt.Errorf("Unable to parse ls-tree output: %q", out)
+		return "", fmt.Errorf("unable to parse ls-tree output: %q", out)
 	}
 
 	return matches[1], nil

@@ -16,7 +16,6 @@ import (
 	registry "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
-	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/version"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -34,7 +33,7 @@ type buildOpts struct {
 	manifest         bool
 	targetDocker     bool
 	cacheDir         string
-	cacheProvider    lktspec.CacheProvider
+	cacheProvider    spec.CacheProvider
 	platforms        []imagespec.Platform
 	builders         map[string]string
 	runner           dockerRunner
@@ -142,7 +141,7 @@ func WithBuildDocker(runner dockerRunner) BuildOpt {
 }
 
 // WithBuildCacheProvider provides a cacheProvider to use. If nil, defaults to the one shipped with linuxkit
-func WithBuildCacheProvider(c lktspec.CacheProvider) BuildOpt {
+func WithBuildCacheProvider(c spec.CacheProvider) BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.cacheProvider = c
 		return nil
@@ -316,37 +315,37 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		platformsToBuild = nil
 	default:
 		// check local cache, fallback to check registry / pull image from registry, fallback to build
-		fmt.Fprintf(writer, "checking for %s in local cache...\n", ref)
+		_, _ = fmt.Fprintf(writer, "checking for %s in local cache...\n", ref)
 		for _, platform := range bo.platforms {
 			exists, err := c.ImageInCache(&ref, "", platform.Architecture)
 			switch {
 			case err == nil && exists:
-				fmt.Fprintf(writer, "found %s in local cache, skipping build\n", ref)
+				_, _ = fmt.Fprintf(writer, "found %s in local cache, skipping build\n", ref)
 				imageInLocalCache = true
 				continue
 			case bo.pull:
 				// need to pull the image from the registry, else build
-				fmt.Fprintf(writer, "%s %s not found in local cache, trying to pull\n", ref, platform.Architecture)
+				_, _ = fmt.Fprintf(writer, "%s %s not found in local cache, trying to pull\n", ref, platform.Architecture)
 				if err := c.ImagePull(&ref, []imagespec.Platform{platform}, false); err == nil {
-					fmt.Fprintf(writer, "%s pulled\n", ref)
+					_, _ = fmt.Fprintf(writer, "%s pulled\n", ref)
 					// successfully pulled, no need to build, continue with next platform
 					continue
 				}
-				fmt.Fprintf(writer, "%s not found, will build: %s\n", ref, err)
+				_, _ = fmt.Fprintf(writer, "%s not found, will build: %s\n", ref, err)
 				platformsToBuild = append(platformsToBuild, platform)
 			default:
 				// do not pull, just check if it exists in a registry
-				fmt.Fprintf(writer, "%s %s not found in local cache, checking registry\n", ref, platform.Architecture)
+				_, _ = fmt.Fprintf(writer, "%s %s not found in local cache, checking registry\n", ref, platform.Architecture)
 				exists, err := c.ImageInRegistry(&ref, "", platform.Architecture)
 				if err != nil {
 					return fmt.Errorf("error checking remote registry for %s: %v", ref, err)
 				}
 
 				if exists {
-					fmt.Fprintf(writer, "%s %s found on registry\n", ref, platform.Architecture)
+					_, _ = fmt.Fprintf(writer, "%s %s found on registry\n", ref, platform.Architecture)
 					continue
 				}
-				fmt.Fprintf(writer, "%s %s not found, will build\n", ref, platform.Architecture)
+				_, _ = fmt.Fprintf(writer, "%s %s not found, will build\n", ref, platform.Architecture)
 				platformsToBuild = append(platformsToBuild, platform)
 			}
 		}
@@ -357,7 +356,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		for _, platform := range platformsToBuild {
 			arches = append(arches, platform.Architecture)
 		}
-		fmt.Fprintf(writer, "building %s for arches: %s\n", ref, strings.Join(arches, ","))
+		_, _ = fmt.Fprintf(writer, "building %s for arches: %s\n", ref, strings.Join(arches, ","))
 		var (
 			imageBuildOpts = spec.ImageBuildOptions{
 				Labels:    map[string]string{},
@@ -508,7 +507,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	if !bo.push {
-		fmt.Fprintf(writer, "Build complete, not pushing, all done.\n")
+		_, _ = fmt.Fprintf(writer, "Build complete, not pushing, all done.\n")
 		return nil
 	}
 
@@ -533,7 +532,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			}
 		}
 		if !imageInLocalCache {
-			fmt.Fprintf(writer, "No new platforms to push, skipping.\n")
+			_, _ = fmt.Fprintf(writer, "No new platforms to push, skipping.\n")
 			return nil
 		}
 	}
@@ -548,7 +547,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	if bo.release == "" {
-		fmt.Fprintf(writer, "Build and push complete, not releasing, all done.\n")
+		_, _ = fmt.Fprintf(writer, "Build and push complete, not releasing, all done.\n")
 		return nil
 	}
 
@@ -585,7 +584,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 	}
 
-	fmt.Fprintf(writer, "Build, push and release of %q complete, all done.\n", bo.release)
+	_, _ = fmt.Fprintf(writer, "Build, push and release of %q complete, all done.\n", bo.release)
 
 	return nil
 }
@@ -603,14 +602,14 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 // C - manifest, saved in cache as is, referenced by the index (E), and returned as a descriptor
 // D - attestations (if any), saved in cache as is, referenced by the index (E), and returned as a descriptor
 // E - index, saved in cache as is, stored in cache as tag "image:tag-arch", *not* returned as a descriptor
-func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
+func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
 	var (
 		tagArch   string
 		tag       = p.FullTag()
 		indexDesc []registry.Descriptor
 	)
 	tagArch = tag + "-" + arch
-	fmt.Fprintf(writer, "Building for arch %s as %s\n", arch, tagArch)
+	_, _ = fmt.Fprintf(writer, "Building for arch %s as %s\n", arch, tagArch)
 
 	if !bo.force {
 		ref, err := reference.Parse(p.FullTag())
@@ -618,14 +617,14 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 			return nil, fmt.Errorf("could not resolve references for image %s: %v", p.Tag(), err)
 		}
 		if err := c.ImagePull(&ref, []imagespec.Platform{{Architecture: arch, OS: "linux"}}, false); err == nil {
-			fmt.Fprintf(writer, "image already found %s for arch %s", ref, arch)
+			_, _ = fmt.Fprintf(writer, "image already found %s for arch %s", ref, arch)
 			desc, err := c.FindDescriptor(&ref)
 			if err != nil {
 				return nil, fmt.Errorf("could not find root descriptor for %s: %v", ref, err)
 			}
 			return []registry.Descriptor{*desc}, nil
 		}
-		fmt.Fprintf(writer, "No image pulled for arch %s, continuing with build\n", arch)
+		_, _ = fmt.Fprintf(writer, "No image pulled for arch %s, continuing with build\n", arch)
 	}
 
 	if err := p.dockerDepends.Do(d); err != nil {
@@ -641,7 +640,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 		eg           errgroup.Group
 		stdoutCloser = func() {
 			if stdout != nil {
-				stdout.Close()
+				_ = stdout.Close()
 			}
 		}
 	)
@@ -654,11 +653,11 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 		d, err := c.ImageLoad(piper)
 		// send the error down the channel
 		if err != nil {
-			fmt.Fprintf(stdout, "cache.ImageLoad goroutine ended with error: %v\n", err)
+			_, _ = fmt.Fprintf(stdout, "cache.ImageLoad goroutine ended with error: %v\n", err)
 		} else {
 			indexDesc = d
 		}
-		piper.Close()
+		_ = piper.Close()
 		return err
 	})
 
@@ -704,7 +703,9 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c lktspec.CacheProvi
 	if err != nil {
 		return nil, fmt.Errorf("could not get content for index descriptor: %v", err)
 	}
-	defer r.Close()
+	defer func() {
+		_ = r.Close()
+	}()
 	dec := json.NewDecoder(r)
 	var im registry.IndexManifest
 	if err := dec.Decode(&im); err != nil {
@@ -728,8 +729,8 @@ func (c *buildCtx) Reader() io.ReadCloser {
 
 	go func() {
 		defer func() {
-			tw.Close()
-			w.Close()
+			_ = tw.Close()
+			_ = w.Close()
 		}()
 		for _, s := range c.sources {
 			log.Debugf("Adding to build context: %s -> %s", s.src, s.dst)
@@ -769,7 +770,9 @@ func (c *buildCtx) Reader() io.ReadCloser {
 				if err != nil {
 					return fmt.Errorf("ctx: Open %s: %v", p, err)
 				}
-				defer f.Close()
+				defer func() {
+					_ = f.Close()
+				}()
 
 				_, err = io.Copy(tw, f)
 				if err != nil {

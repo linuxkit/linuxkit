@@ -106,7 +106,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error opening build args file %s: %w", filename, err)
 			}
-			defer f.Close()
+			defer func() { _ = f.Close() }()
 			scanner := bufio.NewScanner(f)
 			for scanner.Scan() {
 				buildArgs = append(buildArgs, scanner.Text())
@@ -123,7 +123,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 			for _, platform := range strings.Split(skipPlatforms, ",") {
 				parts := strings.SplitN(platform, "/", 2)
 				if len(parts) != 2 || parts[0] == "" || parts[0] != "linux" || parts[1] == "" {
-					return fmt.Errorf("invalid target platform specification '%s'\n", platform)
+					return fmt.Errorf("invalid target platform specification '%s'", platform)
 				}
 				skipPlatformsMap[strings.Trim(parts[1], " ")] = true
 			}

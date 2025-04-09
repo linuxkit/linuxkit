@@ -77,21 +77,21 @@ func cacheExportCmd() *cobra.Command {
 			if err != nil {
 				log.Fatalf("error getting reader for image %s: %v", name, err)
 			}
-			defer reader.Close()
+			defer func() { _ = reader.Close() }()
 
 			// try to write the output file
 			var w io.Writer
-			switch {
-			case outputFile == "":
+			switch outputFile {
+			case "":
 				log.Fatal("'outfile' flag is required")
-			case outputFile == "-":
+			case "-":
 				w = os.Stdout
 			default:
 				f, err := os.OpenFile(outputFile, os.O_CREATE|os.O_RDWR, 0644)
 				if err != nil {
 					log.Fatalf("unable to open %s: %v", outputFile, err)
 				}
-				defer f.Close()
+				defer func() { _ = f.Close() }()
 				w = f
 			}
 

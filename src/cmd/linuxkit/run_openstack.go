@@ -41,7 +41,7 @@ func runOpenStackCmd() *cobra.Command {
 
 			client, err := clientconfig.NewServiceClient("compute", nil)
 			if err != nil {
-				return fmt.Errorf("Unable to create Compute client, %s", err)
+				return fmt.Errorf("unable to create Compute client, %s", err)
 			}
 
 			network := servers.Network{
@@ -68,7 +68,7 @@ func runOpenStackCmd() *cobra.Command {
 
 			server, err := servers.Create(client, serverOpts).Extract()
 			if err != nil {
-				return fmt.Errorf("Unable to create server: %w", err)
+				return fmt.Errorf("unable to create server: %w", err)
 			}
 
 			_ = servers.WaitForStatus(client, server.ID, "ACTIVE", 600)
