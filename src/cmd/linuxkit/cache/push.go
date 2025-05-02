@@ -5,8 +5,12 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/authn"
 	namepkg "github.com/google/go-containerregistry/pkg/name"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
+	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
+
+	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
@@ -96,6 +100,14 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 					return fmt.Errorf("could not append remote index to local index: %v", err)
 				}
 			}
+
+			// clean up the index. Some platforms, like Docker's sboms, add extra manifests that have platform unknown/unknown
+			// and reference existing images in the manifest by a specific annotation. Make sure there are none that reference something
+			// that does not exist in the index. This could be an old artifact froma previous push that got overridden.
+			ii, err = cleanDanglingReferences(ii)
+			if err != nil {
+				return fmt.Errorf("could not clean up index %s: %v", name, err)
+			}
 		}
 		log.Debugf("pushing local index %s as %s", name, remoteName)
 		// this is an index, so we not only want to write the index, but tags for each arch-specific image in it
@@ -104,7 +116,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 		}
 		fmt.Printf("Pushed index %s\n", name)
 		if withArchSpecificTags {
-			fmt.Printf("pushing individual images in the index %s", name)
+			fmt.Printf("pushing individual images in the index %s\n", name)
 			for _, m := range manifest.Manifests {
 				if m.Platform == nil || m.Platform.Architecture == "" {
 					continue
@@ -149,4 +161,50 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 	}
 
 	return nil
+}
+
+// cleanDanglingReferences removes any dangling references from the index.
+// If any have a tag that points to a manifest not in the index, it will remove it.
+func cleanDanglingReferences(ii v1.ImageIndex) (v1.ImageIndex, error) {
+	var (
+		digests  = make(map[v1.Hash]bool)
+		toRemove []v1.Hash
+	)
+	// first, record all of the valid digests
+	existingManifests, err := ii.IndexManifest()
+	if err != nil {
+		return nil, fmt.Errorf("could not read index manifest: %v", err)
+	}
+	for _, m := range existingManifests.Manifests {
+		if m.Platform == nil || m.Platform.Architecture == "" || m.Platform.Architecture == unknown {
+			continue
+		}
+		digests[m.Digest] = true
+	}
+	// next make sure each item has a valid digest
+	for _, m := range existingManifests.Manifests {
+		if m.Platform == nil || m.Platform.Architecture != unknown || m.Platform.OS != unknown {
+			continue
+		}
+		// get the annotations
+		if m.Annotations == nil {
+			continue
+		}
+
+		referenced, ok := m.Annotations[util.AnnotationDockerReferenceDigest]
+		if !ok || referenced == "" {
+			continue
+		}
+		// check if the referenced digest is in the index
+		digest, err := v1.NewHash(referenced)
+		if err != nil {
+			return nil, fmt.Errorf("could not parse hash %s: %v", referenced, err)
+		}
+		// if it is not in the index, we need to remove this manifest
+		if _, ok := digests[digest]; !ok {
+			toRemove = append(toRemove, m.Digest)
+		}
+	}
+	ii = mutate.RemoveManifests(ii, match.Digests(toRemove...))
+	return ii, nil
 }
