@@ -9,6 +9,8 @@ func MArch(in string) (string, error) {
 		return "x86_64", nil
 	case "aarch64", "arm64":
 		return "aarch64", nil
+	case "riscv64":
+		return "riscv64", nil
 	}
 	return "", fmt.Errorf("unknown arch %q", in)
 }
