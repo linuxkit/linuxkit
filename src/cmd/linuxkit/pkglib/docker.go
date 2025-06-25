@@ -276,6 +276,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 	)
 	for range buildKitCheckRetryCount {
 		var b bytes.Buffer
+		var cid string
 		if err := dr.command(nil, &b, io.Discard, "--context", dockerContext, "container", "inspect", name); err == nil {
 			// we already have a container named "linuxkit-builder" in the provided context.
 			// get its state and config
@@ -284,6 +285,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				return nil, fmt.Errorf("unable to read results of 'container inspect %s': %v", name, err)
 			}
 
+			cid = containerJSON[0].ID
 			existingImage := containerJSON[0].Config.Image
 			isRunning := containerJSON[0].State.Status == "running"
 
@@ -326,13 +328,25 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		// if we made it here, we need to stop and remove the container, either because of a config mismatch,
 		// or because we received the CLI option
 		if stop {
-			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "stop", name); err != nil {
-				return nil, fmt.Errorf("failed to stop existing container %s", name)
+			if cid == "" {
+				// we don't have a container ID, so we can't stop it
+				return nil, fmt.Errorf("unable to stop existing container %s, no ID found", name)
+			}
+			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "stop", cid); err != nil {
+				// if we failed, do a retry; maybe it does not even exist anymore
+				time.Sleep(buildkitCheckInterval)
+				continue
 			}
 		}
 		if remove {
-			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "rm", name); err != nil {
-				return nil, fmt.Errorf("failed to remove existing container %s", name)
+			if cid == "" {
+				// we don't have a container ID, so we can't remove it
+				return nil, fmt.Errorf("unable to remove existing container %s, no ID found", name)
+			}
+			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "rm", cid); err != nil {
+				// if we failed, do a retry; maybe it does not even exist anymore
+				time.Sleep(buildkitCheckInterval)
+				continue
 			}
 		}
 		if recreate {
