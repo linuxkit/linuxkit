@@ -263,79 +263,100 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		// stop existing one
 		stop   = false
 		remove = false
-		b      bytes.Buffer
+		found  = false
 	)
 
-	if err := dr.command(nil, &b, io.Discard, "--context", dockerContext, "container", "inspect", name); err == nil {
-		// we already have a container named "linuxkit-builder" in the provided context.
-		// get its state and config
-		var containerJSON []dockercontainertypes.InspectResponse
-		if err := json.Unmarshal(b.Bytes(), &containerJSON); err != nil || len(containerJSON) < 1 {
-			return nil, fmt.Errorf("unable to read results of 'container inspect %s': %v", name, err)
-		}
+	const (
 
-		existingImage := containerJSON[0].Config.Image
-		isRunning := containerJSON[0].State.Status == "running"
-
-		switch {
-		case forceRestart:
-			// if forceRestart==true, we always recreate, else we check if it matches our requirements
-			fmt.Printf("told to force restart, replacing existing container %s\n", name)
-			recreate = true
-			stop = isRunning
-			remove = true
-		case existingImage != image:
-			// if image mismatches, recreate
-			fmt.Printf("existing container %s is running image %s instead of target %s, replacing\n", name, existingImage, image)
-			recreate = true
-			stop = isRunning
-			remove = true
-		case !containerJSON[0].HostConfig.Privileged:
-			// if unprivileged, we need to remove it and start a new container with the right permissions
-			fmt.Printf("existing container %s is unprivileged, replacing\n", name)
-			recreate = true
-			stop = isRunning
-			remove = true
-		case isRunning:
-			// if already running with the right image and permissions, just use it
-			fmt.Printf("using existing container %s\n", name)
-			return buildkitClient.New(ctx, fmt.Sprintf("docker-container://%s?context=%s", name, dockerContext))
-		default:
-			// we have an existing container, but it isn't running, so start it
-			fmt.Printf("starting existing container %s\n", name)
-			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "start", name); err != nil {
-				return nil, fmt.Errorf("failed to start existing container %s", name)
+		// we will retry starting the container 3 times, waiting 1 second between each retry
+		// this is to allow for race conditions, where we inspected, didn't find it,
+		// some other process created it, and we are now trying to create it.
+		buildkitCheckInterval   = 1 * time.Second
+		buildKitCheckRetryCount = 3
+	)
+	for range buildKitCheckRetryCount {
+		var b bytes.Buffer
+		if err := dr.command(nil, &b, io.Discard, "--context", dockerContext, "container", "inspect", name); err == nil {
+			// we already have a container named "linuxkit-builder" in the provided context.
+			// get its state and config
+			var containerJSON []dockercontainertypes.InspectResponse
+			if err := json.Unmarshal(b.Bytes(), &containerJSON); err != nil || len(containerJSON) < 1 {
+				return nil, fmt.Errorf("unable to read results of 'container inspect %s': %v", name, err)
 			}
-			recreate = false
-			stop = false
-			remove = false
+
+			existingImage := containerJSON[0].Config.Image
+			isRunning := containerJSON[0].State.Status == "running"
+
+			switch {
+			case forceRestart:
+				// if forceRestart==true, we always recreate, else we check if it matches our requirements
+				fmt.Printf("told to force restart, replacing existing container %s\n", name)
+				recreate = true
+				stop = isRunning
+				remove = true
+			case existingImage != image:
+				// if image mismatches, recreate
+				fmt.Printf("existing container %s is running image %s instead of target %s, replacing\n", name, existingImage, image)
+				recreate = true
+				stop = isRunning
+				remove = true
+			case !containerJSON[0].HostConfig.Privileged:
+				// if unprivileged, we need to remove it and start a new container with the right permissions
+				fmt.Printf("existing container %s is unprivileged, replacing\n", name)
+				recreate = true
+				stop = isRunning
+				remove = true
+			case isRunning:
+				// if already running with the right image and permissions, just use it
+				fmt.Printf("using existing container %s\n", name)
+				return buildkitClient.New(ctx, fmt.Sprintf("docker-container://%s?context=%s", name, dockerContext))
+			default:
+				// we have an existing container, but it isn't running, so start it
+				// note that if it somehow got started in a parallel process or thread,
+				// `container start` is a no-op, so we will get no errors; this just works.
+				fmt.Printf("starting existing container %s\n", name)
+				if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "start", name); err != nil {
+					return nil, fmt.Errorf("failed to start existing container %s", name)
+				}
+				recreate = false
+				stop = false
+				remove = false
+			}
 		}
-	}
-	// if we made it here, we need to stop and remove the container, either because of a config mismatch,
-	// or because we received the CLI option
-	if stop {
-		if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "stop", name); err != nil {
-			return nil, fmt.Errorf("failed to stop existing container %s", name)
+		// if we made it here, we need to stop and remove the container, either because of a config mismatch,
+		// or because we received the CLI option
+		if stop {
+			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "stop", name); err != nil {
+				return nil, fmt.Errorf("failed to stop existing container %s", name)
+			}
 		}
-	}
-	if remove {
-		if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "rm", name); err != nil {
-			return nil, fmt.Errorf("failed to remove existing container %s", name)
+		if remove {
+			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "rm", name); err != nil {
+				return nil, fmt.Errorf("failed to remove existing container %s", name)
+			}
 		}
-	}
-	if recreate {
-		// create the builder
-		args := []string{"--context", dockerContext, "container", "run", "-d", "--name", name, "--privileged", image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug"}
-		msg := fmt.Sprintf("creating builder container '%s' in context '%s'", name, dockerContext)
-		fmt.Println(msg)
-		if err := dr.command(nil, nil, nil, args...); err != nil {
-			return nil, err
+		if recreate {
+			// create the builder
+			args := []string{"--context", dockerContext, "container", "run", "-d", "--name", name, "--privileged", image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug"}
+			msg := fmt.Sprintf("creating builder container '%s' in context '%s'", name, dockerContext)
+			fmt.Println(msg)
+			if err := dr.command(nil, nil, io.Discard, args...); err != nil {
+				// if we failed, do a retry
+				time.Sleep(buildkitCheckInterval)
+				continue
+			}
 		}
+		found = true
+		break
 	}
+	if !found {
+		return nil, fmt.Errorf("unable to create or find builder container %s in context %s after %d retries", name, dockerContext, buildKitCheckRetryCount)
+	}
+
 	// wait for buildkit socket to be ready up to the timeout
 	fmt.Printf("waiting for buildkit builder to be ready, up to %d seconds\n", buildkitWaitServer)
 	timeout := time.After(buildkitWaitServer * time.Second)
-	ticker := time.NewTicker(buildkitCheckInterval * time.Second)
+	ticker := time.NewTicker(buildkitCheckInterval)
 	// Keep trying until we're timed out or get a success
 	for {
 		select {
