@@ -21,6 +21,7 @@ const (
 	CapSourceLocalExcludePatterns apicaps.CapID = "source.local.excludepatterns"
 	CapSourceLocalSharedKeyHint   apicaps.CapID = "source.local.sharedkeyhint"
 	CapSourceLocalDiffer          apicaps.CapID = "source.local.differ"
+	CapSourceMetadataTransfer     apicaps.CapID = "source.local.metadatatransfer"
 
 	CapSourceGit              apicaps.CapID = "source.git"
 	CapSourceGitKeepDir       apicaps.CapID = "source.git.keepgitdir"
@@ -29,11 +30,15 @@ const (
 	CapSourceGitKnownSSHHosts apicaps.CapID = "source.git.knownsshhosts"
 	CapSourceGitMountSSHSock  apicaps.CapID = "source.git.mountsshsock"
 	CapSourceGitSubdir        apicaps.CapID = "source.git.subdir"
+	CapSourceGitChecksum      apicaps.CapID = "source.git.checksum"
 
 	CapSourceHTTP         apicaps.CapID = "source.http"
+	CapSourceHTTPAuth     apicaps.CapID = "source.http.auth"
 	CapSourceHTTPChecksum apicaps.CapID = "source.http.checksum"
 	CapSourceHTTPPerm     apicaps.CapID = "source.http.perm"
-	CapSourceHTTPUIDGID   apicaps.CapID = "soruce.http.uidgid"
+	// NOTE the historical typo
+	CapSourceHTTPUIDGID apicaps.CapID = "soruce.http.uidgid"
+	CapSourceHTTPHeader apicaps.CapID = "source.http.header"
 
 	CapSourceOCILayout apicaps.CapID = "source.ocilayout"
 
@@ -92,6 +97,7 @@ const (
 	CapSourceDateEpoch apicaps.CapID = "exporter.sourcedateepoch"
 
 	CapMultipleExporters apicaps.CapID = "exporter.multiple"
+	CapSessionExporter   apicaps.CapID = "exporter.session"
 
 	CapSourcePolicy apicaps.CapID = "source.policy"
 
@@ -170,6 +176,12 @@ func init() {
 	})
 
 	Caps.Init(apicaps.Cap{
+		ID:      CapSourceMetadataTransfer,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
 		ID:      CapSourceGit,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
@@ -212,6 +224,12 @@ func init() {
 	})
 
 	Caps.Init(apicaps.Cap{
+		ID:      CapSourceGitChecksum,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
 		ID:      CapSourceHTTP,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
@@ -230,13 +248,25 @@ func init() {
 	})
 
 	Caps.Init(apicaps.Cap{
-		ID:      CapSourceOCILayout,
+		ID:      CapSourceHTTPAuth,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
 	})
 
 	Caps.Init(apicaps.Cap{
 		ID:      CapSourceHTTPUIDGID,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapSourceHTTPHeader,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapSourceOCILayout,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
 	})
@@ -500,6 +530,12 @@ func init() {
 
 	Caps.Init(apicaps.Cap{
 		ID:      CapMultipleExporters,
+		Enabled: true,
+		Status:  apicaps.CapStatusExperimental,
+	})
+
+	Caps.Init(apicaps.Cap{
+		ID:      CapSessionExporter,
 		Enabled: true,
 		Status:  apicaps.CapStatusExperimental,
 	})

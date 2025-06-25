@@ -28,7 +28,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
 
@@ -149,7 +148,7 @@ func (c *commandConn) handleEOF(err error) error {
 			c.stderrMu.Lock()
 			stderr := c.stderr.String()
 			c.stderrMu.Unlock()
-			return errors.Errorf("command %v did not exit after %v: stderr=%q", c.cmd.Args, err, stderr)
+			return fmt.Errorf("command %v did not exit after %v: stderr=%q", c.cmd.Args, err, stderr)
 		}
 	}
 
@@ -159,7 +158,7 @@ func (c *commandConn) handleEOF(err error) error {
 	c.stderrMu.Lock()
 	stderr := c.stderr.String()
 	c.stderrMu.Unlock()
-	return errors.Errorf("command %v has exited with %v, make sure the URL is valid, and Docker 18.09 or later is installed on the remote host: stderr=%s", c.cmd.Args, werr, stderr)
+	return fmt.Errorf("command %v has exited with %v, make sure the URL is valid, and Docker 18.09 or later is installed on the remote host: stderr=%s", c.cmd.Args, werr, stderr)
 }
 
 func ignorableCloseError(err error) bool {
@@ -253,17 +252,17 @@ func (c *commandConn) RemoteAddr() net.Addr {
 	return c.remoteAddr
 }
 
-func (c *commandConn) SetDeadline(t time.Time) error {
+func (*commandConn) SetDeadline(t time.Time) error {
 	logrus.Debugf("unimplemented call: SetDeadline(%v)", t)
 	return nil
 }
 
-func (c *commandConn) SetReadDeadline(t time.Time) error {
+func (*commandConn) SetReadDeadline(t time.Time) error {
 	logrus.Debugf("unimplemented call: SetReadDeadline(%v)", t)
 	return nil
 }
 
-func (c *commandConn) SetWriteDeadline(t time.Time) error {
+func (*commandConn) SetWriteDeadline(t time.Time) error {
 	logrus.Debugf("unimplemented call: SetWriteDeadline(%v)", t)
 	return nil
 }

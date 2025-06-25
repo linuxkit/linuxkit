@@ -2,19 +2,46 @@
 package ssh
 
 import (
+	"errors"
+	"fmt"
 	"net/url"
-
-	"github.com/pkg/errors"
 )
 
-// ParseURL parses URL
+// ParseURL creates a [Spec] from the given ssh URL. It returns an error if
+// the URL is using the wrong scheme, contains fragments, query-parameters,
+// or contains a password.
 func ParseURL(daemonURL string) (*Spec, error) {
 	u, err := url.Parse(daemonURL)
 	if err != nil {
-		return nil, err
+		var urlErr *url.Error
+		if errors.As(err, &urlErr) {
+			err = urlErr.Unwrap()
+		}
+		return nil, fmt.Errorf("invalid SSH URL: %w", err)
+	}
+	return NewSpec(u)
+}
+
+// NewSpec creates a [Spec] from the given ssh URL's properties. It returns
+// an error if the URL is using the wrong scheme, contains fragments,
+// query-parameters, or contains a password.
+func NewSpec(sshURL *url.URL) (*Spec, error) {
+	s, err := newSpec(sshURL)
+	if err != nil {
+		return nil, fmt.Errorf("invalid SSH URL: %w", err)
+	}
+	return s, nil
+}
+
+func newSpec(u *url.URL) (*Spec, error) {
+	if u == nil {
+		return nil, errors.New("URL is nil")
+	}
+	if u.Scheme == "" {
+		return nil, errors.New("no scheme provided")
 	}
 	if u.Scheme != "ssh" {
-		return nil, errors.Errorf("expected scheme ssh, got %q", u.Scheme)
+		return nil, errors.New("incorrect scheme: " + u.Scheme)
 	}
 
 	var sp Spec
@@ -27,17 +54,18 @@ func ParseURL(daemonURL string) (*Spec, error) {
 	}
 	sp.Host = u.Hostname()
 	if sp.Host == "" {
-		return nil, errors.Errorf("no host specified")
+		return nil, errors.New("hostname is empty")
 	}
 	sp.Port = u.Port()
 	sp.Path = u.Path
 	if u.RawQuery != "" {
-		return nil, errors.Errorf("extra query after the host: %q", u.RawQuery)
+		return nil, fmt.Errorf("query parameters are not allowed: %q", u.RawQuery)
 	}
 	if u.Fragment != "" {
-		return nil, errors.Errorf("extra fragment after the host: %q", u.Fragment)
+		return nil, fmt.Errorf("fragments are not allowed: %q", u.Fragment)
 	}
-	return &sp, err
+
+	return &sp, nil
 }
 
 // Spec of SSH URL

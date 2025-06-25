@@ -114,7 +114,7 @@ type Heredoc struct {
 var (
 	dispatch      map[string]func(string, *directives) (*Node, map[string]bool, error)
 	reWhitespace  = regexp.MustCompile(`[\t\v\f\r ]+`)
-	reHeredoc     = regexp.MustCompile(`^(\d*)<<(-?)([^<]*)$`)
+	reHeredoc     = regexp.MustCompile(`^(\d*)<<(-?)\s*([^<]*)$`)
 	reLeadingTabs = regexp.MustCompile(`(?m)^\t+`)
 )
 
@@ -220,7 +220,7 @@ func init() {
 // based on the command and command arguments. A Node is created from the
 // result of the dispatch.
 func newNodeFromLine(line string, d *directives, comments []string) (*Node, error) {
-	cmd, flags, args, err := splitCommand(line)
+	cmd, flags, args, err := splitCommand(line, d)
 	if err != nil {
 		return nil, err
 	}
@@ -556,8 +556,8 @@ func scanLines(data []byte, atEOF bool) (advance int, token []byte, err error) {
 }
 
 func handleScannerError(err error) error {
-	switch err {
-	case bufio.ErrTooLong:
+	switch {
+	case errors.Is(err, bufio.ErrTooLong):
 		return errors.Errorf("dockerfile line greater than max allowed size of %d", bufio.MaxScanTokenSize-1)
 	default:
 		return err
