@@ -12,6 +12,7 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -26,6 +27,8 @@ func init() {
 type git struct {
 	dir string
 }
+
+var gitMutex sync.Mutex
 
 // Returns git==nil and no error if the path is not within a git repository
 func newGit(dir string) (*git, error) {
@@ -190,9 +193,12 @@ func (g git) isDirty(pkg, commit string) (bool, error) {
 	// because `git diff-index` only uses the `lstat` result and
 	// not the actual file contents. Running `git update-index
 	// --refresh` updates the cache.
+	gitMutex.Lock()
 	if err := g.command("update-index", "-q", "--refresh"); err != nil {
+		gitMutex.Unlock()
 		return false, err
 	}
+	gitMutex.Unlock()
 
 	// diff-index works pretty well, except that
 	err := g.command("diff-index", "--quiet", commit, "--", pkg)
