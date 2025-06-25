@@ -3,13 +3,13 @@ package connhelper
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/url"
 	"strings"
 
 	"github.com/docker/cli/cli/connhelper/commandconn"
 	"github.com/docker/cli/cli/connhelper/ssh"
-	"github.com/pkg/errors"
 )
 
 // ConnectionHelper allows to connect to a remote host with custom stream provider binary.
@@ -41,9 +41,9 @@ func getConnectionHelper(daemonURL string, sshFlags []string) (*ConnectionHelper
 		return nil, err
 	}
 	if u.Scheme == "ssh" {
-		sp, err := ssh.ParseURL(daemonURL)
+		sp, err := ssh.NewSpec(u)
 		if err != nil {
-			return nil, errors.Wrap(err, "ssh host connection is not valid")
+			return nil, fmt.Errorf("ssh host connection is not valid: %w", err)
 		}
 		sshFlags = addSSHTimeout(sshFlags)
 		sshFlags = disablePseudoTerminalAllocation(sshFlags)
