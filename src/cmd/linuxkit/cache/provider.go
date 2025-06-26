@@ -10,6 +10,7 @@ import (
 type Provider struct {
 	cache layout.Path
 	store content.Store
+	dir   string
 }
 
 // NewProvider create a new CacheProvider based in the provided directory
@@ -22,5 +23,5 @@ func NewProvider(dir string) (*Provider, error) {
 	if err != nil {
 		return nil, err
 	}
-	return &Provider{p, store}, nil
+	return &Provider{p, store, dir}, nil
 }
