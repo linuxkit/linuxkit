@@ -12,7 +12,6 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
-	"sync"
 
 	log "github.com/sirupsen/logrus"
 )
@@ -27,8 +26,6 @@ func init() {
 type git struct {
 	dir string
 }
-
-var gitMutex sync.Mutex
 
 // Returns git==nil and no error if the path is not within a git repository
 func newGit(dir string) (*git, error) {
@@ -183,39 +180,36 @@ func (g git) commitTag(commit string) (string, error) {
 }
 
 func (g git) isDirty(pkg, commit string) (bool, error) {
-	// If it isn't HEAD it can't be dirty
+	// Only makes sense to check for HEAD
 	if commit != "HEAD" {
 		return false, nil
 	}
 
-	// Update cache, otherwise files which have an updated
-	// timestamp but no actual changes are marked as changes
-	// because `git diff-index` only uses the `lstat` result and
-	// not the actual file contents. Running `git update-index
-	// --refresh` updates the cache.
-	gitMutex.Lock()
-	if err := g.command("update-index", "-q", "--refresh"); err != nil {
-		gitMutex.Unlock()
-		return false, err
-	}
-	gitMutex.Unlock()
-
-	// diff-index works pretty well, except that
-	err := g.command("diff-index", "--quiet", commit, "--", pkg)
-	if err == nil {
-		// this returns an error if there are *no* untracked files, which is strange, but we can work with it
-		if _, err := g.commandStdout(nil, "ls-files", "--exclude-standard", "--others", "--error-unmatch", "--", pkg); err != nil {
-			return false, nil
+	// 1. Check for changes in tracked files (without using update-index)
+	// --no-ext-diff disables any external diff tool
+	// --exit-code makes it return 1 if differences are found
+	err := g.command("diff", "--no-ext-diff", "--exit-code", "--quiet", commit, "--", pkg)
+	if err != nil {
+		if _, ok := err.(*exec.ExitError); ok {
+			// Changes found in tracked files
+			return true, nil
 		}
-		return true, nil
-	}
-	switch err.(type) {
-	case *exec.ExitError:
-		// diff-index exits with an error if there are differences
-		return true, nil
-	default:
+		// Some actual failure
 		return false, err
 	}
+
+	// 2. Check for untracked files
+	_, err = g.commandStdout(nil, "ls-files", "--exclude-standard", "--others", "--error-unmatch", "--", pkg)
+	if err == nil {
+		// Untracked files found
+		return true, nil
+	}
+	if _, ok := err.(*exec.ExitError); ok {
+		// No untracked files — clean
+		return false, nil
+	}
+	// Unexpected error
+	return false, err
 }
 
 // goPkgVersion return a version that is compliant with go package versioning.
