@@ -407,13 +407,12 @@ func (c *cacheMocker) Push(name, remoteName string, withManifest, override bool)
 	return nil
 }
 
-func (c *cacheMocker) DescriptorWrite(ref *reference.Spec, desc v1.Descriptor) error {
+func (c *cacheMocker) DescriptorWrite(image string, desc v1.Descriptor) error {
 	if !c.enabledDescriptorWrite {
 		return errors.New("descriptor disabled")
 	}
 	var (
-		image = ref.String()
-		im    = v1.IndexManifest{
+		im = v1.IndexManifest{
 			MediaType:     types.OCIImageIndex,
 			Manifests:     []v1.Descriptor{desc},
 			SchemaVersion: 2,

@@ -12,7 +12,6 @@ import (
 
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
-	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -131,11 +130,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 					// it might not have existed, so we can add it locally
 					// use the original image name in the annotation
 					desc := m.DeepCopy()
-					if desc.Annotations == nil {
-						desc.Annotations = map[string]string{}
-					}
-					desc.Annotations[imagespec.AnnotationRefName] = archTag
-					if err := p.cache.AppendDescriptor(*desc); err != nil {
+					if err := p.DescriptorWrite(archTag, *desc); err != nil {
 						return fmt.Errorf("error appending descriptor for %s to layout index: %v", archTag, err)
 					}
 					img, err = p.cache.Image(m.Digest)

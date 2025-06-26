@@ -561,7 +561,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if err != nil {
 		return err
 	}
-	if err := c.DescriptorWrite(&ref, *desc); err != nil {
+	if err := c.DescriptorWrite(fullRelTag, *desc); err != nil {
 		return err
 	}
 	if err := c.Push(fullRelTag, "", bo.manifest, true); err != nil {

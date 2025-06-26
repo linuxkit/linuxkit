@@ -9,8 +9,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	namepkg "github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/layout"
-	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
@@ -182,11 +180,6 @@ func (p *Provider) Pull(name string, withArchReferences bool) error {
 		return fmt.Errorf("error getting manifest for trusted image %s: %v", name, err)
 	}
 
-	// use the original image name in the annotation
-	annotations := map[string]string{
-		imagespec.AnnotationRefName: fullname,
-	}
-
 	// first attempt as an index
 	ii, err := desc.ImageIndex()
 	if err == nil {
@@ -195,7 +188,7 @@ func (p *Provider) Pull(name string, withArchReferences bool) error {
 		if err := p.cache.WriteIndex(ii); err != nil {
 			return fmt.Errorf("unable to write index: %v", err)
 		}
-		if err := p.DescriptorWrite(&v1ref, desc.Descriptor); err != nil {
+		if err := p.DescriptorWrite(v1ref.String(), desc.Descriptor); err != nil {
 			return fmt.Errorf("unable to write index descriptor to cache: %v", err)
 		}
 		if withArchReferences {
@@ -206,11 +199,10 @@ func (p *Provider) Pull(name string, withArchReferences bool) error {
 			for _, m := range im.Manifests {
 				if m.MediaType.IsImage() && m.Platform != nil && m.Platform.Architecture != unknown && m.Platform.OS != unknown {
 					archSpecific := fmt.Sprintf("%s-%s", ref.String(), m.Platform.Architecture)
-					archRef, err := reference.Parse(archSpecific)
-					if err != nil {
+					if _, err := reference.Parse(archSpecific); err != nil {
 						return fmt.Errorf("unable to parse arch-specific reference %s: %v", archSpecific, err)
 					}
-					if err := p.DescriptorWrite(&archRef, m); err != nil {
+					if err := p.DescriptorWrite(archSpecific, m); err != nil {
 						return fmt.Errorf("unable to write index descriptor to cache: %v", err)
 					}
 				}
@@ -224,8 +216,11 @@ func (p *Provider) Pull(name string, withArchReferences bool) error {
 			return fmt.Errorf("provided image is neither an image nor an index: %s", name)
 		}
 		log.Debugf("ImageWrite retrieved %s is image, saving", fullname)
-		if err = p.cache.ReplaceImage(im, match.Name(fullname), layout.WithAnnotations(annotations)); err != nil {
+		if err = p.cache.WriteImage(im); err != nil {
 			return fmt.Errorf("unable to save image to cache: %v", err)
+		}
+		if err = p.DescriptorWrite(fullname, desc.Descriptor); err != nil {
+			return fmt.Errorf("unable to write updated descriptor to cache: %v", err)
 		}
 	}
 

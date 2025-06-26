@@ -65,7 +65,7 @@ func (p *Provider) Remove(name string) error {
 			log.Warnf("unable to remove blob %s for %s: %v", blob, name, err)
 		}
 	}
-	return p.cache.RemoveDescriptors(match.Name(name))
+	return p.RemoveDescriptors(match.Name(name))
 }
 
 func blobsForImage(img v1.Image) ([]v1.Hash, error) {

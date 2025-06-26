@@ -37,7 +37,7 @@ type CacheProvider interface {
 	ImageLoad(r io.Reader) ([]v1.Descriptor, error)
 	// DescriptorWrite writes a descriptor to the cache index; it validates that it has a name
 	// and replaces any existing one
-	DescriptorWrite(ref *reference.Spec, descriptors v1.Descriptor) error
+	DescriptorWrite(image string, descriptors v1.Descriptor) error
 	// Push an image along with a multi-arch index from local cache to remote registry.
 	// name is the name as referenced in the local cache, remoteName is the name to give it remotely.
 	// If remoteName is empty, it is the same as name.

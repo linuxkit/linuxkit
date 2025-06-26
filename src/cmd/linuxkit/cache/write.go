@@ -14,7 +14,6 @@ import (
 	"github.com/google/go-containerregistry/pkg/authn"
 	"github.com/google/go-containerregistry/pkg/name"
 	v1 "github.com/google/go-containerregistry/pkg/v1"
-	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/google/go-containerregistry/pkg/v1/match"
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
@@ -77,11 +76,6 @@ func (p *Provider) ImagePull(ref *reference.Spec, platforms []imagespec.Platform
 		return fmt.Errorf("error getting manifest for image %s: %v", pullImageName, err)
 	}
 
-	// use the original image name in the annotation
-	annotations := map[string]string{
-		imagespec.AnnotationRefName: image,
-	}
-
 	// first attempt as an index
 	ii, err := desc.ImageIndex()
 	if err == nil {
@@ -120,7 +114,7 @@ func (p *Provider) ImagePull(ref *reference.Spec, platforms []imagespec.Platform
 		if err := p.cache.WriteIndex(ii); err != nil {
 			return fmt.Errorf("unable to write index: %v", err)
 		}
-		if err := p.DescriptorWrite(ref, desc.Descriptor); err != nil {
+		if err := p.DescriptorWrite(ref.String(), desc.Descriptor); err != nil {
 			return fmt.Errorf("unable to write index descriptor to cache: %v", err)
 		}
 	} else {
@@ -131,8 +125,11 @@ func (p *Provider) ImagePull(ref *reference.Spec, platforms []imagespec.Platform
 			return fmt.Errorf("provided image is neither an image nor an index: %s", image)
 		}
 		log.Debugf("ImageWrite retrieved %s is image, saving", pullImageName)
-		if err = p.cache.ReplaceImage(im, match.Name(image), layout.WithAnnotations(annotations)); err != nil {
-			return fmt.Errorf("unable to save image to cache: %v", err)
+		if err := p.cache.WriteImage(im); err != nil {
+			return fmt.Errorf("error writing image %s to cache: %v", pullImageName, err)
+		}
+		if err := p.DescriptorWrite(image, desc.Descriptor); err != nil {
+			return fmt.Errorf("unable to write image descriptor to cache: %v", err)
 		}
 	}
 	return nil
@@ -208,20 +205,11 @@ func (p *Provider) ImageLoad(r io.Reader) ([]v1.Descriptor, error) {
 		// each of these is either an image or an index
 		// either way, it gets added directly to the linuxkit cache index.
 		for _, desc := range im.Manifests {
-			if imgName, ok := desc.Annotations[images.AnnotationImageName]; ok {
-				// remove the old descriptor, if it exists
-				if err := p.cache.RemoveDescriptors(match.Name(imgName)); err != nil {
-					return nil, fmt.Errorf("unable to remove old descriptors for %s: %v", imgName, err)
+			imgName, ok := desc.Annotations[images.AnnotationImageName]
+			if ok {
+				if err := p.DescriptorWrite(imgName, desc); err != nil {
+					return nil, fmt.Errorf("error writing descriptor for %s: %v", imgName, err)
 				}
-				// save the image name under our proper annotation
-				if desc.Annotations == nil {
-					desc.Annotations = map[string]string{}
-				}
-				desc.Annotations[imagespec.AnnotationRefName] = imgName
-			}
-			log.Debugf("appending descriptor %#v", desc)
-			if err := p.cache.AppendDescriptor(desc); err != nil {
-				return nil, fmt.Errorf("error appending descriptor to layout index: %v", err)
 			}
 			descs = append(descs, desc)
 		}
@@ -366,9 +354,6 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 		return fmt.Errorf("error writing new index to json: %v", err)
 	}
 	// finally update the descriptor in the root
-	if err := p.cache.RemoveDescriptors(match.Name(image)); err != nil {
-		return fmt.Errorf("unable to remove old descriptor from index.json: %v", err)
-	}
 	desc := v1.Descriptor{
 		MediaType: types.OCIImageIndex,
 		Size:      size,
@@ -377,36 +362,7 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 			imagespec.AnnotationRefName: image,
 		},
 	}
-	if err := p.cache.AppendDescriptor(desc); err != nil {
-		return fmt.Errorf("unable to append new descriptor to index.json: %v", err)
-	}
-
-	return nil
-}
-
-// DescriptorWrite writes a descriptor to the cache index; it validates that it has a name
-// and replaces any existing one
-func (p *Provider) DescriptorWrite(ref *reference.Spec, desc v1.Descriptor) error {
-	if ref == nil {
-		return errors.New("cannot write descriptor without reference name")
-	}
-	image := ref.String()
-	if desc.Annotations == nil {
-		desc.Annotations = map[string]string{}
-	}
-	desc.Annotations[imagespec.AnnotationRefName] = image
-	log.Debugf("writing descriptor for image %s", image)
-
-	// do we update an existing one? Or create a new one?
-	if err := p.cache.RemoveDescriptors(match.Name(image)); err != nil {
-		return fmt.Errorf("unable to remove old descriptors for %s: %v", image, err)
-	}
-
-	if err := p.cache.AppendDescriptor(desc); err != nil {
-		return fmt.Errorf("unable to append new descriptor for %s: %v", image, err)
-	}
-
-	return nil
+	return p.DescriptorWrite(ref.String(), desc)
 }
 
 func (p *Provider) ImageInCache(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
