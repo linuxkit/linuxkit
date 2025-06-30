@@ -180,6 +180,12 @@ func (p *Provider) Pull(name string, withArchReferences bool) error {
 		return fmt.Errorf("error getting manifest for trusted image %s: %v", name, err)
 	}
 
+	// lock the cache so we can write to it
+	if err := p.Lock(); err != nil {
+		return fmt.Errorf("unable to lock cache for writing: %v", err)
+	}
+	defer p.Unlock()
+
 	// first attempt as an index
 	ii, err := desc.ImageIndex()
 	if err == nil {
