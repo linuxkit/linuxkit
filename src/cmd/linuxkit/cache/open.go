@@ -3,42 +3,43 @@ package cache
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 
 	"github.com/google/go-containerregistry/pkg/v1/empty"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
-	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
-	log "github.com/sirupsen/logrus"
-)
-
-var (
-	newIndexLockFile = filepath.Join(os.TempDir(), "linuxkit-new-cache-index.lock")
 )
 
 // Get get or initialize the cache
-func Get(cache string) (layout.Path, error) {
+func (p *Provider) Get(cache string) (layout.Path, error) {
+	// ensure the dir exists
+	if err := os.MkdirAll(cache, os.ModePerm); err != nil {
+		return "", fmt.Errorf("unable to create cache directory %s: %v", cache, err)
+	}
+
+	// first try to read the layout from the path
+	// if it exists, we can use it
+	// if it does not exist, we will initialize it
+	//
+	// do not lock for first read, because we do not need the lock except for initialization
+	// and future writes, so why slow down reads?
+	l, err := layout.FromPath(cache)
+
 	// initialize the cache path if needed
-	p, err := layout.FromPath(cache)
 	if err != nil {
-		if err := os.WriteFile(newIndexLockFile, []byte{}, 0644); err != nil {
-			return "", fmt.Errorf("unable to create lock file %s for writing descriptor for new cache %s: %v", newIndexLockFile, cache, err)
+		if err := p.Lock(); err != nil {
+			return "", fmt.Errorf("unable to lock cache %s: %v", cache, err)
 		}
-		lock, err := util.Lock(newIndexLockFile)
+		defer p.Unlock()
+
+		// after lock, try to read the layout again
+		// in case another process initialized it while we were waiting for the lock
+		// if it still does not exist, we will initialize it
+		l, err = layout.FromPath(cache)
 		if err != nil {
-			return "", fmt.Errorf("unable to retrieve lock for writing descriptor for new cache %s: %v", newIndexLockFile, err)
-		}
-		defer func() {
-			if err := lock.Unlock(); err != nil {
-				log.Errorf("unable to close lock for cache index after writing descriptor for new cache: %v", err)
+			l, err = layout.Write(cache, empty.Index)
+			if err != nil {
+				return l, fmt.Errorf("could not initialize cache at path %s: %v", cache, err)
 			}
-			if err := os.RemoveAll(newIndexLockFile); err != nil {
-				log.Errorf("unable to remove lock file %s after writing descriptor for new cache: %v", newIndexLockFile, err)
-			}
-		}()
-		p, err = layout.Write(cache, empty.Index)
-		if err != nil {
-			return p, fmt.Errorf("could not initialize cache at path %s: %v", cache, err)
 		}
 	}
-	return p, nil
+	return l, nil
 }

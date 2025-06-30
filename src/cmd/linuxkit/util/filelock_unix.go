@@ -35,6 +35,9 @@ func Lock(path string) (*FileLock, error) {
 
 // Unlock releases the lock and closes the file.
 func (l *FileLock) Unlock() error {
+	if l == nil || l.file == nil {
+		return fmt.Errorf("unlock: file handle is nil")
+	}
 	flock := unix.Flock_t{
 		Type:   unix.F_UNLCK,
 		Whence: int16(io.SeekStart),
@@ -44,7 +47,11 @@ func (l *FileLock) Unlock() error {
 	if err := unix.FcntlFlock(l.file.Fd(), unix.F_SETLKW, &flock); err != nil {
 		return fmt.Errorf("unlock: %w", err)
 	}
-	return l.file.Close()
+	if err := l.file.Close(); err != nil {
+		return fmt.Errorf("close lock file: %w", err)
+	}
+	l.file = nil // Prevent further use of the file handle
+	return nil
 }
 
 // CheckLock attempts to detect if the file is locked by another process.

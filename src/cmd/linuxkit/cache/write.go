@@ -76,6 +76,12 @@ func (p *Provider) ImagePull(ref *reference.Spec, platforms []imagespec.Platform
 		return fmt.Errorf("error getting manifest for image %s: %v", pullImageName, err)
 	}
 
+	// get our lock
+	if err := p.Lock(); err != nil {
+		return fmt.Errorf("unable to lock cache for removing descriptors: %v", err)
+	}
+	defer p.Unlock()
+
 	// first attempt as an index
 	ii, err := desc.ImageIndex()
 	if err == nil {
@@ -146,6 +152,11 @@ func (p *Provider) ImageLoad(r io.Reader) ([]v1.Descriptor, error) {
 		index bytes.Buffer
 	)
 	log.Debugf("ImageWriteTar to cache")
+	// get our lock
+	if err := p.Lock(); err != nil {
+		return nil, fmt.Errorf("unable to lock cache: %v", err)
+	}
+	defer p.Unlock()
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {
@@ -244,6 +255,11 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 		return fmt.Errorf("error parsing index: %v", err)
 	}
 	var im v1.IndexManifest
+	// get our lock
+	if err := p.Lock(); err != nil {
+		return fmt.Errorf("unable to lock cache: %v", err)
+	}
+	defer p.Unlock()
 	// do we update an existing one? Or create a new one?
 	if len(indexes) > 0 {
 		// we already had one, so update just the referenced index and return
@@ -451,4 +467,47 @@ func (p *Provider) ImageInRegistry(ref *reference.Spec, trustedRef, architecture
 		// the image had the wrong architecture
 	}
 	return false, nil
+}
+
+// DescriptorWrite writes a descriptor to the cache index; it validates that it has a name
+// and replaces any existing one
+func (p *Provider) DescriptorWrite(image string, desc v1.Descriptor) error {
+	if image == "" {
+		return errors.New("cannot write descriptor without reference name")
+	}
+	if desc.Annotations == nil {
+		desc.Annotations = map[string]string{}
+	}
+	desc.Annotations[imagespec.AnnotationRefName] = image
+	log.Debugf("writing descriptor for image %s", image)
+
+	// get our lock
+	if err := p.Lock(); err != nil {
+		return fmt.Errorf("unable to lock cache for writing descriptors: %v", err)
+	}
+	defer p.Unlock()
+
+	// get our lock
+	// do we update an existing one? Or create a new one?
+	if err := p.cache.RemoveDescriptors(match.Name(image)); err != nil {
+		return fmt.Errorf("unable to remove old descriptors for %s: %v", image, err)
+	}
+
+	if err := p.cache.AppendDescriptor(desc); err != nil {
+		return fmt.Errorf("unable to append new descriptor for %s: %v", image, err)
+	}
+
+	return nil
+}
+
+// RemoveDescriptors removes all descriptors that match the provided matcher.
+// It does so in a parallel-access-safe way
+func (p *Provider) RemoveDescriptors(matcher match.Matcher) error {
+	// get our lock
+	if err := p.Lock(); err != nil {
+		return fmt.Errorf("unable to lock cache for removing descriptors: %v", err)
+	}
+	defer p.Unlock()
+
+	return p.cache.RemoveDescriptors(matcher)
 }
