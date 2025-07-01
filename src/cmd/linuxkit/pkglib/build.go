@@ -24,28 +24,30 @@ import (
 )
 
 type buildOpts struct {
-	skipBuild        bool
-	force            bool
-	pull             bool
-	ignoreCache      bool
-	push             bool
-	release          string
-	manifest         bool
-	targetDocker     bool
-	cacheDir         string
-	cacheProvider    spec.CacheProvider
-	platforms        []imagespec.Platform
-	builders         map[string]string
-	runner           dockerRunner
-	writer           io.Writer
-	builderImage     string
-	builderRestart   bool
-	sbomScan         bool
-	sbomScannerImage string
-	dockerfile       string
-	buildArgs        []string
-	progress         string
-	ssh              []string
+	skipBuild         bool
+	force             bool
+	pull              bool
+	ignoreCache       bool
+	push              bool
+	release           string
+	manifest          bool
+	targetDocker      bool
+	cacheDir          string
+	cacheProvider     spec.CacheProvider
+	platforms         []imagespec.Platform
+	builders          map[string]string
+	runner            dockerRunner
+	writer            io.Writer
+	builderImage      string
+	builderConfigPath string
+	builderRestart    bool
+	sbomScan          bool
+	sbomScannerImage  string
+	dockerfile        string
+	buildArgs         []string
+	progress          string
+	ssh               []string
+	registryAuth      map[string]spec.RegistryAuth
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -164,6 +166,14 @@ func WithBuildBuilderImage(image string) BuildOpt {
 	}
 }
 
+// WithBuildBuilderConfig set the contents of the
+func WithBuildBuilderConfig(builderConfigPath string) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.builderConfigPath = builderConfigPath
+		return nil
+	}
+}
+
 // WithBuildBuilderRestart restart the builder container even if it already is running with the correct image version
 func WithBuildBuilderRestart(restart bool) BuildOpt {
 	return func(bo *buildOpts) error {
@@ -219,6 +229,14 @@ func WithProgress(progress string) BuildOpt {
 func WithSSH(ssh []string) BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.ssh = ssh
+		return nil
+	}
+}
+
+// WithRegistryAuth stores registry credentials
+func WithRegistryAuth(creds map[string]spec.RegistryAuth) BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.registryAuth = creds
 		return nil
 	}
 }
@@ -449,10 +467,11 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 
 		imageBuildOpts.SSH = bo.ssh
+		imageBuildOpts.RegistryAuths = bo.registryAuth
 
 		// build for each arch and save in the linuxkit cache
 		for _, platform := range platformsToBuild {
-			builtDescs, err := p.buildArch(ctx, d, c, bo.builderImage, platform.Architecture, bo.builderRestart, writer, bo, imageBuildOpts)
+			builtDescs, err := p.buildArch(ctx, d, c, bo.builderImage, bo.builderConfigPath, platform.Architecture, bo.builderRestart, writer, bo, imageBuildOpts)
 			if err != nil {
 				return fmt.Errorf("error building for arch %s: %v", platform.Architecture, err)
 			}
@@ -602,7 +621,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 // C - manifest, saved in cache as is, referenced by the index (E), and returned as a descriptor
 // D - attestations (if any), saved in cache as is, referenced by the index (E), and returned as a descriptor
 // E - index, saved in cache as is, stored in cache as tag "image:tag-arch", *not* returned as a descriptor
-func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider, builderImage, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
+func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider, builderImage, builderConfigPath, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
 	var (
 		tagArch   string
 		tag       = p.FullTag()
@@ -671,7 +690,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider
 
 	imageBuildOpts.Dockerfile = bo.dockerfile
 
-	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
+	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, builderConfigPath, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)

@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkglib"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	"github.com/spf13/cobra"
 )
@@ -40,6 +41,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		skipPlatforms  string
 		builders       string
 		builderImage   string
+		builderConfig  string
 		builderRestart bool
 		release        string
 		nobuild        bool
@@ -159,12 +161,59 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 		if err != nil {
 			return fmt.Errorf("error in --builders flag: %w", err)
 		}
+		if builderConfig != "" {
+			if _, err := os.Stat(builderConfig); err != nil {
+				return fmt.Errorf("error reading builder config file %s: %w", builderConfig, err)
+			}
+			opts = append(opts, pkglib.WithBuildBuilderConfig(builderConfig))
+		}
+
 		opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
 		opts = append(opts, pkglib.WithBuildBuilderImage(builderImage))
 		opts = append(opts, pkglib.WithBuildBuilderRestart(builderRestart))
 		opts = append(opts, pkglib.WithProgress(progress))
 		if len(ssh) > 0 {
 			opts = append(opts, pkglib.WithSSH(ssh))
+		}
+		if len(registryCreds) > 0 {
+			registryCredMap := make(map[string]spec.RegistryAuth)
+			for _, cred := range registryCreds {
+				parts := strings.SplitN(cred, "=", 2)
+				if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+					return fmt.Errorf("invalid registry auth specification '%s'", cred)
+				}
+				registryPart := strings.TrimSpace(parts[0])
+				authPart := strings.TrimSpace(parts[1])
+				var auth spec.RegistryAuth
+				// if the auth is a token, we don't need a username
+				credParts := strings.SplitN(authPart, ":", 2)
+				var userPart, credPart string
+				userPart = strings.TrimSpace(credParts[0])
+				if len(credParts) == 2 {
+					credPart = strings.TrimSpace(credParts[1])
+				}
+				switch {
+				case len(registryPart) == 0:
+					return fmt.Errorf("invalid registry auth specification '%s', registry must not be blank", cred)
+				case len(credParts) == 2 && (len(userPart) == 0 || len(credPart) == 0):
+					return fmt.Errorf("invalid registry auth specification '%s', username and password must not be blank", cred)
+				case len(credParts) == 1 && len(userPart) == 0:
+					return fmt.Errorf("invalid registry auth specification '%s', token must not be blank", cred)
+				case len(credParts) == 2:
+					auth = spec.RegistryAuth{
+						Username: userPart,
+						Password: credPart,
+					}
+				case len(credParts) == 1:
+					auth = spec.RegistryAuth{
+						RegistryToken: authPart,
+					}
+				default:
+					return fmt.Errorf("invalid registry auth specification '%s'", cred)
+				}
+				registryCredMap[registryPart] = auth
+			}
+			opts = append(opts, pkglib.WithRegistryAuth(registryCredMap))
 		}
 
 		for _, p := range pkgs {
@@ -224,6 +273,7 @@ func addCmdRunPkgBuildPush(cmd *cobra.Command, withPush bool) *cobra.Command {
 	cmd.Flags().StringVar(&skipPlatforms, "skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
 	cmd.Flags().StringVar(&builders, "builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
 	cmd.Flags().StringVar(&builderImage, "builder-image", defaultBuilderImage, "buildkit builder container image to use")
+	cmd.Flags().StringVar(&builderConfig, "builder-config", "", "path to buildkit builder config.toml file to use, overrides the default config.toml in the builder image; USE WITH CAUTION")
 	cmd.Flags().BoolVar(&builderRestart, "builder-restart", false, "force restarting builder, even if container with correct name and image exists")
 	cmd.Flags().Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 	cmd.Flags().StringVar(&release, "release", "", "Release the given version")

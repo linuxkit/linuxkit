@@ -7,7 +7,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var pkglibConfig pkglib.PkglibConfig
+var (
+	pkglibConfig  pkglib.PkglibConfig
+	registryCreds []string
+)
 
 func pkgCmd() *cobra.Command {
 	var (
@@ -96,5 +99,6 @@ func pkgCmd() *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&dirty, "force-dirty", false, "Force the pkg(s) to be considered dirty")
 	cmd.PersistentFlags().BoolVar(&devMode, "dev", false, "Force org and hash to $USER and \"dev\" respectively")
 
+	cmd.PersistentFlags().StringSliceVar(&registryCreds, "registry-creds", nil, "Registry auths to use for building images, format is <registry>=<username>:<password> OR <registry>=<registry-token>. If no username is provided, it is treated as a registry token. <registry> must be a URL, e.g. 'https://index.docker.io/'. May be provided as many times as desired. Will override anything in your default.")
 	return cmd
 }
