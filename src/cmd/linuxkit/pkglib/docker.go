@@ -37,12 +37,16 @@ import (
 
 	// golint requires comments on non-main(test)
 	// package for blank import
+	dockerconfig "github.com/docker/cli/cli/config"
+	"github.com/docker/cli/cli/config/configfile"
+	dockerconfigtypes "github.com/docker/cli/cli/config/types"
 	_ "github.com/moby/buildkit/client/connhelper/dockercontainer"
 	_ "github.com/moby/buildkit/client/connhelper/ssh"
 	"github.com/moby/buildkit/frontend/dockerfile/instructions"
 	"github.com/moby/buildkit/frontend/dockerfile/linter"
 	"github.com/moby/buildkit/frontend/dockerfile/parser"
 	"github.com/moby/buildkit/frontend/dockerfile/shell"
+	"github.com/moby/buildkit/session/auth/authprovider"
 	"github.com/moby/buildkit/session/sshforward/sshprovider"
 	"github.com/moby/buildkit/session/upload/uploadprovider"
 	log "github.com/sirupsen/logrus"
@@ -54,16 +58,17 @@ const (
 	buildkitWaitServer    = 30 // seconds
 	buildkitCheckInterval = 1  // seconds
 	sbomFrontEndKey       = "attest:sbom"
+	buildkitConfigPath    = "/etc/buildkit/buildkitd.toml"
 )
 
 type dockerRunner interface {
 	tag(ref, tag string) error
-	build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts spec.ImageBuildOptions) error
+	build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts spec.ImageBuildOptions) error
 	save(tgt string, refs ...string) error
 	load(src io.Reader) error
 	pull(img string) (bool, error)
 	contextSupportCheck() error
-	builder(ctx context.Context, dockerContext, builderImage, platform string, restart bool) (*buildkitClient.Client, error)
+	builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error)
 }
 
 type dockerRunnerImpl struct {
@@ -218,14 +223,14 @@ func (dr *dockerRunnerImpl) contextSupportCheck() error {
 // 1. if dockerContext is provided, try to create a builder with that context; if it succeeds, we are done; if not, return an error.
 // 2. try to find an existing named runner with the pattern; if it succeeds, we are done; if not, try next.
 // 3. try to create a generic builder using the default context named "linuxkit".
-func (dr *dockerRunnerImpl) builder(ctx context.Context, dockerContext, builderImage, platform string, restart bool) (*buildkitClient.Client, error) {
+func (dr *dockerRunnerImpl) builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error) {
 	// if we were given a context, we must find a builder and use it, or create one and use it
 	if dockerContext != "" {
 		// does the context exist?
 		if err := dr.command(nil, io.Discard, io.Discard, "context", "inspect", dockerContext); err != nil {
 			return nil, fmt.Errorf("provided docker context '%s' not found", dockerContext)
 		}
-		client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, platform, dockerContext, restart)
+		client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, builderConfigPath, platform, dockerContext, restart)
 		if err != nil {
 			return nil, fmt.Errorf("error preparing builder based on context '%s': %v", dockerContext, err)
 		}
@@ -236,13 +241,13 @@ func (dr *dockerRunnerImpl) builder(ctx context.Context, dockerContext, builderI
 	dockerContext = fmt.Sprintf("%s-%s", "linuxkit", strings.ReplaceAll(platform, "/", "-"))
 	if err := dr.command(nil, io.Discard, io.Discard, "context", "inspect", dockerContext); err == nil {
 		// we found an appropriately named context, so let us try to use it or error out
-		if client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, platform, dockerContext, restart); err == nil {
+		if client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, builderConfigPath, platform, dockerContext, restart); err == nil {
 			return client, nil
 		}
 	}
 
 	// create a generic builder
-	client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, "", "default", restart)
+	client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, builderConfigPath, "", "default", restart)
 	if err != nil {
 		return nil, fmt.Errorf("error ensuring builder container in default context: %v", err)
 	}
@@ -254,7 +259,7 @@ func (dr *dockerRunnerImpl) builder(ctx context.Context, dockerContext, builderI
 // but has the wrong version of buildkit, or not running buildkit at all, remove it and create an appropriate
 // one.
 // Returns a network connection to the buildkit builder in the container.
-func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, image, platform, dockerContext string, forceRestart bool) (*buildkitClient.Client, error) {
+func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, image, configPath, platform, dockerContext string, forceRestart bool) (*buildkitClient.Client, error) {
 	// if no error, then we have a builder already
 	// inspect it to make sure it is of the right type
 	var (
@@ -288,6 +293,30 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 			cid = containerJSON[0].ID
 			existingImage := containerJSON[0].Config.Image
 			isRunning := containerJSON[0].State.Status == "running"
+			// need to check for mounts, in case the builder-config is provided
+			// by default, we assume the configPath is correct
+			var configPathCorrect = true
+			if configPath != "" {
+				// if it is provided, we assume it is false until proven true
+				configPathCorrect = false
+				for _, mount := range containerJSON[0].Mounts {
+					// if this mount is not the buildkit config path, we can ignore it
+					if mount.Destination != buildkitConfigPath {
+						continue
+					}
+					// if the mount source does not match the provided configPath,
+					// we should restart it
+					// Just break. Since configPathCorrect is set to false, the switch statement below
+					// will catch it
+					if mount.Source != configPath {
+						fmt.Printf("existing container %s has config mounted from %s instead of expected %s, replacing\n", name, mount.Source, configPath)
+					} else {
+						configPathCorrect = true
+					}
+					// no need to cheak any more, we found the specific mount
+					break
+				}
+			}
 
 			switch {
 			case forceRestart:
@@ -305,6 +334,11 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 			case !containerJSON[0].HostConfig.Privileged:
 				// if unprivileged, we need to remove it and start a new container with the right permissions
 				fmt.Printf("existing container %s is unprivileged, replacing\n", name)
+				recreate = true
+				stop = isRunning
+				remove = true
+			case !configPathCorrect:
+				fmt.Printf("existing container has wrong configPath mount, restarting")
 				recreate = true
 				stop = isRunning
 				remove = true
@@ -351,7 +385,17 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		}
 		if recreate {
 			// create the builder
-			args := []string{"--context", dockerContext, "container", "run", "-d", "--name", name, "--privileged", image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug"}
+			args := []string{"--context", dockerContext, "container", "run", "-d", "--name", name, "--privileged"}
+			// was a config file provided?
+			if configPath != "" {
+				// if so, we need to pass it as a buildkitd config file
+				args = append(args, "-v", fmt.Sprintf("%s:%s:ro", configPath, buildkitConfigPath))
+			}
+			args = append(args, image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug")
+			if configPath != "" {
+				// set the config path explicitly
+				args = append(args, "--config", buildkitConfigPath)
+			}
 			msg := fmt.Sprintf("creating builder container '%s' in context '%s'", name, dockerContext)
 			fmt.Println(msg)
 			if err := dr.command(nil, nil, io.Discard, args...); err != nil {
@@ -442,9 +486,9 @@ func (dr *dockerRunnerImpl) tag(ref, tag string) error {
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
 	// ensure we have a builder
-	client, err := dr.builder(ctx, dockerContext, builderImage, platform, restart)
+	client, err := dr.builder(ctx, dockerContext, builderImage, builderConfigPath, platform, restart)
 	if err != nil {
 		return fmt.Errorf("unable to ensure builder container: %v", err)
 	}
@@ -495,6 +539,7 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 	attachable := []session.Attachable{}
 	localDirs := map[string]string{}
 
+	// Add SSH agent provider if needed
 	if len(imageBuildOpts.SSH) > 0 {
 		configs, err := build.ParseSSH(imageBuildOpts.SSH)
 		if err != nil {
@@ -515,8 +560,30 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 	} else {
 		localDirs[dockerui.DefaultLocalNameDockerfile] = pkg
 		localDirs[dockerui.DefaultLocalNameContext] = pkg
-
 	}
+	// add credentials
+	var cf *configfile.ConfigFile
+	if len(imageBuildOpts.RegistryAuths) > 0 {
+		// if static ones were provided, use those
+		cf = configfile.New("custom")
+		// merge imageBuildOpts.RegistryAuths into dockercfg
+		for registry, auth := range imageBuildOpts.RegistryAuths {
+			bareRegistry := strings.TrimPrefix(registry, "https://")
+			bareRegistry = strings.TrimPrefix(bareRegistry, "http://")
+			cf.AuthConfigs[bareRegistry] = dockerconfigtypes.AuthConfig{
+				ServerAddress: bareRegistry,
+				Username:      auth.Username,
+				Password:      auth.Password,
+				RegistryToken: auth.RegistryToken,
+			}
+		}
+	} else {
+		// Else use Docker authentication provider so BuildKit can use ~/.docker/config.json or OS-specific credential helpers.
+		cf = dockerconfig.LoadDefaultConfigFile(io.Discard)
+	}
+	attachable = append(attachable,
+		authprovider.NewDockerAuthProvider(authprovider.DockerAuthProviderConfig{ConfigFile: cf}),
+	)
 
 	solveOpts := buildkitClient.SolveOpt{
 		Frontend:      "dockerfile.v0",
