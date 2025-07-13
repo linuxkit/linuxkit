@@ -66,7 +66,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 		}
 		desc, err := remote.Get(ref, remoteOptions...)
 		if err == nil && desc != nil && dig == desc.Digest {
-			fmt.Printf("%s image already available on remote registry, skipping push", remoteName)
+			fmt.Printf("%s image already available on remote registry, skipping push\n", remoteName)
 			return nil
 		}
 		log.Debugf("pushing image %s as %s", name, remoteName)
@@ -88,7 +88,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 		desc, err := remote.Get(ref, remoteOptions...)
 		if err == nil && desc != nil {
 			if dig == desc.Digest {
-				fmt.Printf("%s index already available on remote registry, skipping push", remoteName)
+				fmt.Printf("%s index already available on remote registry, skipping push\n", remoteName)
 				return nil
 			}
 			// we have a different index, need to cross-reference and only override relevant stuff
