@@ -5,9 +5,11 @@ package pkglib
 //go:generate ./gen
 
 import (
+	"archive/tar"
 	"bufio"
 	"bytes"
 	"context"
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -21,6 +23,7 @@ import (
 
 	"github.com/containerd/containerd/v2/core/content"
 	"github.com/containerd/containerd/v2/pkg/reference"
+	"github.com/docker/buildx/util/confutil"
 	"github.com/docker/buildx/util/progress"
 	dockercontainertypes "github.com/docker/docker/api/types/container"
 	"github.com/google/go-containerregistry/pkg/authn"
@@ -58,7 +61,8 @@ const (
 	buildkitWaitServer    = 30 // seconds
 	buildkitCheckInterval = 1  // seconds
 	sbomFrontEndKey       = "attest:sbom"
-	buildkitConfigPath    = "/etc/buildkit/buildkitd.toml"
+	buildkitConfigDir     = "/etc/buildkit"
+	buildkitConfigPath    = buildkitConfigDir + "/buildkitd.toml"
 )
 
 type dockerRunner interface {
@@ -298,24 +302,29 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 			var configPathCorrect = true
 			if configPath != "" {
 				// if it is provided, we assume it is false until proven true
+				log.Debugf("checking if configPath %s is correct in container %s", configPath, name)
 				configPathCorrect = false
-				for _, mount := range containerJSON[0].Mounts {
-					// if this mount is not the buildkit config path, we can ignore it
-					if mount.Destination != buildkitConfigPath {
-						continue
+				if err := dr.command(nil, &b, io.Discard, "--context", dockerContext, "container", "exec", name, "cat", buildkitConfigPath); err == nil {
+					// sha256sum the config file to see if it matches the provided configPath
+					containerConfigFileHash := sha256.Sum256(b.Bytes())
+					log.Debugf("container %s has configPath %s with sha256sum %x", name, buildkitConfigPath, containerConfigFileHash)
+					configFileContents, err := os.ReadFile(configPath)
+					if err != nil {
+						return nil, fmt.Errorf("unable to read buildkit config file %s: %v", configPath, err)
 					}
-					// if the mount source does not match the provided configPath,
-					// we should restart it
-					// Just break. Since configPathCorrect is set to false, the switch statement below
-					// will catch it
-					if mount.Source != configPath {
-						fmt.Printf("existing container %s has config mounted from %s instead of expected %s, replacing\n", name, mount.Source, configPath)
-					} else {
+					localConfigFileHash := sha256.Sum256(configFileContents)
+					log.Debugf("local %s has configPath %s with sha256sum %x", name, configPath, localConfigFileHash)
+					if bytes.Equal(containerConfigFileHash[:], localConfigFileHash[:]) {
+						log.Debugf("configPath %s in container %s matches local configPath %s", buildkitConfigPath, name, configPath)
 						configPathCorrect = true
+					} else {
+						log.Debugf("configPath %s in container %s does not match local configPath %s", buildkitConfigPath, name, configPath)
 					}
-					// no need to cheak any more, we found the specific mount
-					break
+				} else {
+					log.Debugf("could not read configPath %s from container %s, assuming it is not correct", buildkitConfigPath, name)
 				}
+				// now rewrite and copy over certs, if needed
+				//https://github.com/docker/buildx/blob/master/util/confutil/container.go#L27
 			}
 
 			switch {
@@ -338,7 +347,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				stop = isRunning
 				remove = true
 			case !configPathCorrect:
-				fmt.Printf("existing container has wrong configPath mount, restarting")
+				fmt.Printf("existing container has wrong configPath mount, restarting\n")
 				recreate = true
 				stop = isRunning
 				remove = true
@@ -378,6 +387,8 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				return nil, fmt.Errorf("unable to remove existing container %s, no ID found", name)
 			}
 			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "rm", cid); err != nil {
+				// mark the existing container as non-existent
+				cid = ""
 				// if we failed, do a retry; maybe it does not even exist anymore
 				time.Sleep(buildkitCheckInterval)
 				continue
@@ -385,13 +396,11 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		}
 		if recreate {
 			// create the builder
-			args := []string{"--context", dockerContext, "container", "run", "-d", "--name", name, "--privileged"}
-			// was a config file provided?
-			if configPath != "" {
-				// if so, we need to pass it as a buildkitd config file
-				args = append(args, "-v", fmt.Sprintf("%s:%s:ro", configPath, buildkitConfigPath))
-			}
-			args = append(args, image, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug")
+			// this could be a single line, but it would be long. And it is easier to read when the
+			// docker command args, the image name, and the image args are all on separate lines.
+			args := []string{"--context", dockerContext, "container", "create", "--name", name, "--privileged"}
+			args = append(args, image)
+			args = append(args, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug")
 			if configPath != "" {
 				// set the config path explicitly
 				args = append(args, "--config", buildkitConfigPath)
@@ -402,6 +411,22 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				// if we failed, do a retry
 				time.Sleep(buildkitCheckInterval)
 				continue
+			}
+			// copy in the buildkit config file, if provided
+			if configPath != "" {
+				files, err := confutil.LoadConfigFiles(configPath)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load buildkit config file %s: %v", configPath, err)
+				}
+				if err := dr.copyFilesToContainer(name, files); err != nil {
+					return nil, fmt.Errorf("failed to copy buildkit config file %s and certificates into container %s: %v", configPath, name, err)
+				}
+			}
+
+			// and now start the container
+			if err := dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "container", "start", name); err != nil {
+				// if we failed, do a retry; maybe it does not even exist anymore
+				return nil, fmt.Errorf("failed to start newly created container %s: %v", name, err)
 			}
 		}
 		found = true
@@ -715,6 +740,33 @@ func (dr *dockerRunnerImpl) save(tgt string, refs ...string) error {
 func (dr *dockerRunnerImpl) load(src io.Reader) error {
 	args := []string{"image", "load"}
 	return dr.command(src, nil, nil, args...)
+}
+
+func (dr *dockerRunnerImpl) copyFilesToContainer(containerID string, files map[string][]byte) error {
+	var buf bytes.Buffer
+	tw := tar.NewWriter(&buf)
+
+	for path, content := range files {
+		hdr := &tar.Header{
+			Name:     path,
+			Mode:     0644,
+			Size:     int64(len(content)),
+			ModTime:  time.Now(),
+			Typeflag: tar.TypeReg,
+		}
+		if err := tw.WriteHeader(hdr); err != nil {
+			return fmt.Errorf("write tar header: %w", err)
+		}
+		if _, err := tw.Write(content); err != nil {
+			return fmt.Errorf("write tar content: %w", err)
+		}
+	}
+	if err := tw.Close(); err != nil {
+		return fmt.Errorf("close tar: %w", err)
+	}
+
+	// Send the TAR archive to the container at /
+	return dr.command(&buf, os.Stdout, os.Stderr, "container", "cp", "-", containerID+":"+buildkitConfigDir)
 }
 
 func fixedWriteCloser(wc io.WriteCloser) func(map[string]string) (io.WriteCloser, error) {
