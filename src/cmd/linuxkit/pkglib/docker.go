@@ -593,10 +593,13 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 		cf = configfile.New("custom")
 		// merge imageBuildOpts.RegistryAuths into dockercfg
 		for registry, auth := range imageBuildOpts.RegistryAuths {
-			bareRegistry := strings.TrimPrefix(registry, "https://")
-			bareRegistry = strings.TrimPrefix(bareRegistry, "http://")
-			cf.AuthConfigs[bareRegistry] = dockerconfigtypes.AuthConfig{
-				ServerAddress: bareRegistry,
+			// special case for docker.io
+			registryWithoutScheme := strings.TrimPrefix(registry, "https://")
+			registryWithoutScheme = strings.TrimPrefix(registryWithoutScheme, "http://")
+			if registryWithoutScheme == "docker.io" || registryWithoutScheme == "index.docker.io" || registryWithoutScheme == "registry-1.docker.io" {
+				registry = "https://index.docker.io/v1/"
+			}
+			cf.AuthConfigs[registry] = dockerconfigtypes.AuthConfig{
 				Username:      auth.Username,
 				Password:      auth.Password,
 				RegistryToken: auth.RegistryToken,
