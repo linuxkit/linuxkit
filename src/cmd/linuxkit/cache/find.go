@@ -83,7 +83,7 @@ func (p *Provider) findIndex(imageName string) (v1.ImageIndex, error) {
 
 // FindDescriptor get the first descriptor pointed to by the image reference, whether tagged or digested
 func (p *Provider) FindDescriptor(ref *reference.Spec) (*v1.Descriptor, error) {
-	index, err := p.cache.ImageIndex()
+	index, err := p.Index()
 	// if there is no root index, we are broken
 	if err != nil {
 		return nil, fmt.Errorf("invalid image cache: %v", err)

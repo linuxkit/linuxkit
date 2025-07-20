@@ -239,7 +239,7 @@ func (p *Provider) IndexWrite(ref *reference.Spec, descriptors ...v1.Descriptor)
 		return errors.New("cannot create index without any manifests")
 	}
 
-	ii, err := p.cache.ImageIndex()
+	ii, err := p.Index()
 	if err != nil {
 		return fmt.Errorf("unable to get root index: %v", err)
 	}
