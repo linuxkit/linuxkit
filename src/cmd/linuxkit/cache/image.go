@@ -14,7 +14,7 @@ func ListImages(dir string) (map[string]string, error) {
 }
 
 func (p *Provider) List() (map[string]string, error) {
-	ii, err := p.cache.ImageIndex()
+	ii, err := p.Index()
 	if err != nil {
 		return nil, err
 	}

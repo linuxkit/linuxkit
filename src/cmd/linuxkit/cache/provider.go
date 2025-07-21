@@ -7,6 +7,7 @@ import (
 
 	"github.com/containerd/containerd/v2/core/content"
 	"github.com/containerd/containerd/v2/plugins/content/local"
+	v1 "github.com/google/go-containerregistry/pkg/v1"
 	"github.com/google/go-containerregistry/pkg/v1/layout"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
@@ -35,6 +36,19 @@ func NewProvider(dir string) (*Provider, error) {
 	p.cache = layout
 	p.store = store
 	return p, nil
+}
+
+// Index returns the root image index for the cache.
+// All attempts to read the index *must* use this function, so that it will lock the cache to prevent concurrent access.
+// The underlying library writes modifications directly to the index,
+// so not only must ensure that that only one process is writing at a time, but that no one is reading
+// while we are writing, to avoid corruption.
+func (p *Provider) Index() (v1.ImageIndex, error) {
+	if p.Lock() != nil {
+		return nil, fmt.Errorf("unable to lock cache %s", p.dir)
+	}
+	defer p.Unlock()
+	return p.cache.ImageIndex()
 }
 
 // Lock locks the cache directory to prevent concurrent access

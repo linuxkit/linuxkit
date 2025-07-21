@@ -51,7 +51,7 @@ func (l layoutIndex) Digest() (v1.Hash, error) {
 // a given imageName.
 func (p *Provider) FindRoot(imageName string) (ResolvableDescriptor, error) {
 	matcher := match.Name(imageName)
-	rootIndex, err := p.cache.ImageIndex()
+	rootIndex, err := p.Index()
 	// of there is no root index, we are broken
 	if err != nil {
 		return nil, fmt.Errorf("invalid image cache: %v", err)
