@@ -11,6 +11,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/validate"
 
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
 )
@@ -39,7 +40,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 
 	// check if it already exists, unless override is explicit
 	if !override {
-		if _, err := remote.Get(ref, options...); err == nil {
+		if _, err := registry.GetRemote().Get(ref, options...); err == nil {
 			log.Infof("image %s already exists in the registry, skipping", remoteName)
 			return nil
 		}
@@ -64,7 +65,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 		if err != nil {
 			return fmt.Errorf("could not get digest for local image %s: %v", name, err)
 		}
-		desc, err := remote.Get(ref, remoteOptions...)
+		desc, err := registry.GetRemote().Get(ref, remoteOptions...)
 		if err == nil && desc != nil && dig == desc.Digest {
 			fmt.Printf("%s image already available on remote registry, skipping push\n", remoteName)
 			return nil
@@ -85,7 +86,7 @@ func (p *Provider) Push(name, remoteName string, withArchSpecificTags, override 
 		}
 
 		// get the existing image, if any
-		desc, err := remote.Get(ref, remoteOptions...)
+		desc, err := registry.GetRemote().Get(ref, remoteOptions...)
 		if err == nil && desc != nil {
 			if dig == desc.Digest {
 				fmt.Printf("%s index already available on remote registry, skipping push\n", remoteName)

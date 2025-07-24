@@ -48,7 +48,7 @@ func PushManifest(img string, options ...remote.Option) (hash string, length int
 		if err != nil {
 			return hash, length, fmt.Errorf("parsing %s: %w", refName, err)
 		}
-		remoteDesc, err := remote.Get(ref, options...)
+		remoteDesc, err := GetRemote().Get(ref, options...)
 		if err != nil {
 			// TODO: Should distinguish between a 404 and a network error
 			log.Warnf("image %s not found; skipping: %v", ref, err)
@@ -74,7 +74,7 @@ func PushManifest(img string, options ...remote.Option) (hash string, length int
 	index := mutate.AppendManifests(empty.Index, adds...)
 	// base index with which we are working
 	// get the existing index, if any
-	desc, err := remote.Get(baseRef, options...)
+	desc, err := GetRemote().Get(baseRef, options...)
 	if err == nil && desc != nil {
 		ii, err := desc.ImageIndex()
 		if err != nil {

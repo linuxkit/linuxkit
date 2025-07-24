@@ -5,8 +5,8 @@ import (
 	"os"
 
 	namepkg "github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 	cachepkg "github.com/linuxkit/linuxkit/src/cmd/linuxkit/cache"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -58,7 +58,7 @@ func removeImagesFromCache(images map[string]string, p *cachepkg.Provider, publi
 			if err != nil {
 				continue
 			}
-			desc, err := remote.Get(ref)
+			desc, err := registry.GetRemote().Get(ref)
 			if err != nil {
 				log.Debugf("image %s not found in remote registry or error, leaving in cache: %v", name, err)
 				fmt.Fprintf(os.Stderr, "image %s not found in remote registry, leaving in cache", name)

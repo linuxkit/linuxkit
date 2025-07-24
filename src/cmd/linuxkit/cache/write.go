@@ -18,6 +18,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/types"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 	log "github.com/sirupsen/logrus"
@@ -71,7 +72,7 @@ func (p *Provider) ImagePull(ref *reference.Spec, platforms []imagespec.Platform
 		return fmt.Errorf("invalid image name %s: %v", pullImageName, err)
 	}
 
-	desc, err := remote.Get(remoteRef, remoteOptions...)
+	desc, err := registry.GetRemote().Get(remoteRef, remoteOptions...)
 	if err != nil {
 		return fmt.Errorf("error getting manifest for image %s: %v", pullImageName, err)
 	}
@@ -430,7 +431,7 @@ func (p *Provider) ImageInRegistry(ref *reference.Spec, trustedRef, architecture
 		return false, fmt.Errorf("invalid image name %s: %v", image, err)
 	}
 
-	desc, err := remote.Get(remoteRef, remoteOptions...)
+	desc, err := registry.GetRemote().Get(remoteRef, remoteOptions...)
 	if err != nil {
 		log.Debugf("Retrieving image %s returned an error, ignoring: %v", image, err)
 		return false, nil
