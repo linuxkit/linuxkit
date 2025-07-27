@@ -37,6 +37,7 @@ import (
 	"github.com/moby/buildkit/frontend/dockerui"
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/util/progress/progressui"
+	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
 
 	// golint requires comments on non-main(test)
 	// package for blank import
@@ -67,7 +68,7 @@ const (
 
 type dockerRunner interface {
 	tag(ref, tag string) error
-	build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts spec.ImageBuildOptions) error
+	build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts spec.ImageBuildOptions) error
 	save(tgt string, refs ...string) error
 	load(src io.Reader) error
 	pull(img string) (bool, error)
@@ -511,7 +512,7 @@ func (dr *dockerRunnerImpl) tag(ref, tag string) error {
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
 	// ensure we have a builder
 	client, err := dr.builder(ctx, dockerContext, builderImage, builderConfigPath, platform, restart)
 	if err != nil {
@@ -632,6 +633,7 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 	frontendAttrs["filename"] = imageBuildOpts.Dockerfile
 
 	// go through the dockerfile to see if we have any provided images cached
+	// and if we should cache any
 	if c != nil {
 		dockerfileRef := path.Join(pkg, imageBuildOpts.Dockerfile)
 		f, err := os.Open(dockerfileRef)
@@ -692,12 +694,37 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 			if err != nil {
 				return fmt.Errorf("invalid name %s", name)
 			}
-			// not found, so nothing to look up
-			if gdesc == nil {
+			// 3 possibilities:
+			// 1. we found it, so we can use it
+			// 2. we did not find it, but we were told to pre-cache images, so we pull it down and then use it
+			// 3. we did not find it, and we were not told to pre-cache images, so we just skip it
+			switch {
+			case gdesc == nil && !preCacheImages:
+				log.Debugf("image %s not found in cache, buildkit will pull directly", name)
 				continue
+			case gdesc == nil && preCacheImages:
+				log.Debugf("image %s not found in cache, pulling to pre-cache", name)
+				parts := strings.SplitN(platform, "/", 2)
+				if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+					return fmt.Errorf("invalid platform %s, expected format os/arch", platform)
+				}
+				plats := []imagespec.Platform{{OS: parts[0], Architecture: parts[1]}}
+
+				if err := c.ImagePull(&ref, plats, false); err != nil {
+					return fmt.Errorf("unable to pull image %s for caching: %v", name, err)
+				}
+				gdesc2, err := c.FindDescriptor(&ref)
+				if err != nil {
+					return fmt.Errorf("invalid name %s", name)
+				}
+				if gdesc2 == nil {
+					return fmt.Errorf("image %s not found in cache after pulling", name)
+				}
+				imageStores[name] = gdesc2.Digest.String()
+			default:
+				log.Debugf("image %s found in cache", name)
+				imageStores[name] = gdesc.Digest.String()
 			}
-			hash := gdesc.Digest
-			imageStores[name] = hash.String()
 		}
 		if len(imageStores) > 0 {
 			// if we made it here, we found the reference
