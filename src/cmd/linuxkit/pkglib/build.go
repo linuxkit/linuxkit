@@ -29,6 +29,7 @@ type buildOpts struct {
 	pull              bool
 	ignoreCache       bool
 	push              bool
+	preCacheImages    bool
 	release           string
 	manifest          bool
 	targetDocker      bool
@@ -186,6 +187,14 @@ func WithBuildBuilderRestart(restart bool) BuildOpt {
 func WithBuildIgnoreCache() BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.ignoreCache = true
+		return nil
+	}
+}
+
+// WithPreCacheImages when building an image, download all referenced images in the Dockerfile to the linuxkit cache before building
+func WithPreCacheImages() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.preCacheImages = true
 		return nil
 	}
 }
@@ -690,7 +699,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider
 
 	imageBuildOpts.Dockerfile = bo.dockerfile
 
-	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, builderConfigPath, platform, restart, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
+	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, builderConfigPath, platform, restart, bo.preCacheImages, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)

@@ -43,6 +43,7 @@ func pkgBuildCmd() *cobra.Command {
 		builderImage   string
 		builderConfig  string
 		builderRestart bool
+		preCacheImages bool
 		release        string
 		nobuild        bool
 		manifest       bool
@@ -80,6 +81,9 @@ func pkgBuildCmd() *cobra.Command {
 			}
 			if ignoreCache {
 				opts = append(opts, pkglib.WithBuildIgnoreCache())
+			}
+			if preCacheImages {
+				opts = append(opts, pkglib.WithPreCacheImages())
 			}
 			if pull {
 				opts = append(opts, pkglib.WithBuildPull())
@@ -283,6 +287,7 @@ func pkgBuildCmd() *cobra.Command {
 	cmd.Flags().StringVar(&builderImage, "builder-image", defaultBuilderImage, "buildkit builder container image to use")
 	cmd.Flags().StringVar(&builderConfig, "builder-config", "", "path to buildkit builder config.toml file to use, overrides the default config.toml in the builder image. When provided, copied over into builder, along with all certs. Use paths for certificates relative to your local host, they will be adjusted on copying into the container. USE WITH CAUTION")
 	cmd.Flags().BoolVar(&builderRestart, "builder-restart", false, "force restarting builder, even if container with correct name and image exists")
+	cmd.Flags().BoolVar(&preCacheImages, "precache-images", false, "download all referenced images in the Dockerfile to the linuxkit cache before building, thus referencing the local cache instead of pulling from the registry; this is useful for handling mirrors and special connections")
 	cmd.Flags().Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 	cmd.Flags().StringVar(&release, "release", "", "Release the given version")
 	cmd.Flags().BoolVar(&nobuild, "nobuild", false, "Skip building the image before pushing, conflicts with -force")
