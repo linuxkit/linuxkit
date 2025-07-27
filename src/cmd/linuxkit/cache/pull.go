@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/partial"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 	"github.com/google/go-containerregistry/pkg/v1/validate"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	lktspec "github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
@@ -175,7 +176,7 @@ func (p *Provider) Pull(name string, withArchReferences bool) error {
 	// before we even try to push, let us see if it exists remotely
 	remoteOptions := []remote.Option{remote.WithAuthFromKeychain(authn.DefaultKeychain)}
 
-	desc, err := remote.Get(ref, remoteOptions...)
+	desc, err := registry.GetRemote().Get(ref, remoteOptions...)
 	if err != nil {
 		return fmt.Errorf("error getting manifest for trusted image %s: %v", name, err)
 	}

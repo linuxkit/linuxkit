@@ -11,7 +11,7 @@ set -e
 clean_up() {
 	docker kill "${REGISTRY_NAME}" || true
 	DOCKER_CONFIG="${DOCKER_CONFIG}" docker buildx rm "${BUILDKIT_NAME}" || true
-	[ -n "${CACHDIR}" ] && rm -rf "${CACHDIR}"
+	[ -n "${CACHEDIR}" ] && rm -rf "${CACHEDIR}"
 	[ -n "${DOCKER_CONFIG}" ] && rm -rf "${DOCKER_CONFIG}"
 	[ -n "${REGISTRY_DIR}" ] && rm -rf "${REGISTRY_DIR}"
 }

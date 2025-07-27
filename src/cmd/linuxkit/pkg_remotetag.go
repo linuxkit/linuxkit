@@ -7,6 +7,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/crane"
 	namepkg "github.com/google/go-containerregistry/pkg/name"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/registry"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 	log "github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
@@ -41,11 +42,11 @@ func pkgRemoteTagCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fromDesc, err := remote.Get(fromRef, remoteOptions...)
+			fromDesc, err := registry.GetRemote().Get(fromRef, remoteOptions...)
 			if err != nil {
 				return fmt.Errorf("error getting manifest for from image %s: %v", fromFullname, err)
 			}
-			toDesc, err := remote.Get(toRef, remoteOptions...)
+			toDesc, err := registry.GetRemote().Get(toRef, remoteOptions...)
 			if err == nil {
 				if toDesc.Digest == fromDesc.Digest {
 					log.Infof("image %s already exists in the registry, identical to %s, skipping", toFullname, fromFullname)
@@ -59,7 +60,7 @@ func pkgRemoteTagCmd() *cobra.Command {
 				if err != nil {
 					return err
 				}
-				finalErr = remote.Tag(toTag, fromDesc, remoteOptions...)
+				finalErr = registry.GetRemote().Tag(toTag, fromDesc, remoteOptions...)
 			} else {
 				// different, so need to copy
 				finalErr = crane.Copy(fromFullname, toFullname)
