@@ -33,6 +33,14 @@ func pkgCmd() *cobra.Command {
 		Short: "package building and pushing",
 		Long:  `Package building and pushing.`,
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+			if parent := cmd.Parent(); parent != nil {
+				if parent.PersistentPreRunE != nil {
+					if err := parent.PersistentPreRunE(parent, args); err != nil {
+						return err
+					}
+				}
+			}
+
 			pkglibConfig = pkglib.PkglibConfig{
 				BuildYML:   buildYML,
 				Hash:       hash,
