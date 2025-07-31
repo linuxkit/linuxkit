@@ -2211,7 +2211,7 @@ CONFIG_VXLAN=y
 CONFIG_GENEVE=m
 # CONFIG_BAREUDP is not set
 # CONFIG_GTP is not set
-# CONFIG_AMT is not set
+CONFIG_AMT=y
 # CONFIG_MACSEC is not set
 # CONFIG_NETCONSOLE is not set
 CONFIG_TUN=y
