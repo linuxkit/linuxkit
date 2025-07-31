@@ -49,6 +49,7 @@ func newCmd() *cobra.Command {
 		flagVerbose     int
 		flagVerboseName = "verbose"
 		mirrorsRaw      []string
+		certFiles       []string
 	)
 	cmd := &cobra.Command{
 		Use:               "linuxkit",
@@ -87,6 +88,18 @@ func newCmd() *cobra.Command {
 				}
 			}
 
+			for _, f := range certFiles {
+				if f == "" {
+					continue
+				}
+				cert, err := os.ReadFile(f)
+				if err != nil {
+					return fmt.Errorf("failed to read certificate file %q: %w", f, err)
+				}
+				// Add the certificate file to the registry
+				registry.AddCert(cert)
+			}
+
 			// Set up logging
 			return util.SetupLogging(flagQuiet, flagVerbose, cmd.Flag(flagVerboseName).Changed)
 		},
@@ -103,6 +116,7 @@ func newCmd() *cobra.Command {
 
 	cmd.PersistentFlags().StringVar(&cacheDir, "cache", defaultLinuxkitCache(), fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
 	cmd.PersistentFlags().StringArrayVar(&mirrorsRaw, "mirror", nil, "Mirror to use for pulling images, format is <registry>=<mirror>, e.g. docker.io=http://mymirror.io, or just http://mymirror.io for all not otherwise specified; must include protocol. Can be provided multiple times.")
+	cmd.PersistentFlags().StringArrayVar(&certFiles, "cert-file", nil, "Path to certificate files to use for pulling images, can be provided multiple times. Will augment system-provided certs.")
 	cmd.PersistentFlags().BoolVarP(&flagQuiet, "quiet", "q", false, "Quiet execution")
 	cmd.PersistentFlags().IntVarP(&flagVerbose, flagVerboseName, "v", 1, "Verbosity of logging: 0 = quiet, 1 = info, 2 = debug, 3 = trace. Default is info. Setting it explicitly will create structured logging lines.")
 

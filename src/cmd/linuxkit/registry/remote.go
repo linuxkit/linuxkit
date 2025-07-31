@@ -1,7 +1,10 @@
 package registry
 
 import (
+	"crypto/tls"
+	"crypto/x509"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/google/go-containerregistry/pkg/name"
@@ -12,12 +15,19 @@ import (
 // proxy is a map of registry names to proxy URLs.
 var proxy = make(map[string]string)
 
+// certs is a slice of certificates to be used for secure connections.
+var certs = make([][]byte, 0)
+
 func SetProxy(registry, url string) {
 	if url == "" {
 		delete(proxy, registry)
 	} else {
 		proxy[registry] = url
 	}
+}
+
+func AddCert(cert []byte) {
+	certs = append(certs, cert)
 }
 
 // Remote implements the functions of
@@ -40,8 +50,12 @@ func (r *Remote) Get(ref name.Reference, options ...remote.Option) (*remote.Desc
 	if err != nil {
 		return nil, fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return nil, fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.Get(ref, options...)
+	return remote.Get(ref, opts...)
 }
 
 func (r *Remote) Head(ref name.Reference, options ...remote.Option) (*v1.Descriptor, error) {
@@ -50,12 +64,20 @@ func (r *Remote) Head(ref name.Reference, options ...remote.Option) (*v1.Descrip
 	if err != nil {
 		return nil, fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return nil, fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.Head(ref, options...)
+	return remote.Head(ref, opts...)
 }
 
 func (r *Remote) Tag(ref name.Tag, t remote.Taggable, options ...remote.Option) error {
-	return remote.Tag(ref, t, options...)
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
+	return remote.Tag(ref, t, opts...)
 }
 
 func (r *Remote) Push(ref name.Reference, t remote.Taggable, options ...remote.Option) error {
@@ -64,8 +86,12 @@ func (r *Remote) Push(ref name.Reference, t remote.Taggable, options ...remote.O
 	if err != nil {
 		return fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.Push(ref, t, options...)
+	return remote.Push(ref, t, opts...)
 }
 
 func (r *Remote) Put(ref name.Reference, t remote.Taggable, options ...remote.Option) error {
@@ -74,8 +100,12 @@ func (r *Remote) Put(ref name.Reference, t remote.Taggable, options ...remote.Op
 	if err != nil {
 		return fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.Put(ref, t, options...)
+	return remote.Put(ref, t, opts...)
 }
 
 func (r *Remote) Write(ref name.Reference, img v1.Image, options ...remote.Option) error {
@@ -84,8 +114,12 @@ func (r *Remote) Write(ref name.Reference, img v1.Image, options ...remote.Optio
 	if err != nil {
 		return fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.Write(ref, img, options...)
+	return remote.Write(ref, img, opts...)
 }
 
 func (r *Remote) WriteIndex(ref name.Reference, ii v1.ImageIndex, options ...remote.Option) error {
@@ -94,8 +128,12 @@ func (r *Remote) WriteIndex(ref name.Reference, ii v1.ImageIndex, options ...rem
 	if err != nil {
 		return fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.WriteIndex(ref, ii, options...)
+	return remote.WriteIndex(ref, ii, opts...)
 }
 
 func (r *Remote) WriteLayer(repo name.Repository, layer v1.Layer, options ...remote.Option) error {
@@ -104,8 +142,12 @@ func (r *Remote) WriteLayer(repo name.Repository, layer v1.Layer, options ...rem
 	if err != nil {
 		return fmt.Errorf("rewriting repository %q: %w", repo.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return fmt.Errorf("rewriting TLS transport for %q: %w", repo.Name(), err)
+	}
 
-	return remote.WriteLayer(repo, layer, options...)
+	return remote.WriteLayer(repo, layer, opts...)
 }
 
 func (r *Remote) List(repo name.Repository, options ...remote.Option) ([]string, error) {
@@ -114,7 +156,12 @@ func (r *Remote) List(repo name.Repository, options ...remote.Option) ([]string,
 	if err != nil {
 		return nil, fmt.Errorf("rewriting repository %q: %w", repo.Name(), err)
 	}
-	return remote.List(repo, options...)
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return nil, fmt.Errorf("rewriting TLS transport for %q: %w", repo.Name(), err)
+	}
+
+	return remote.List(repo, opts...)
 }
 
 func (r *Remote) Layer(ref name.Digest, options ...remote.Option) (v1.Layer, error) {
@@ -123,7 +170,11 @@ func (r *Remote) Layer(ref name.Digest, options ...remote.Option) (v1.Layer, err
 	if err != nil {
 		return nil, fmt.Errorf("rewriting digest %q: %w", ref.Name(), err)
 	}
-	return remote.Layer(ref, options...)
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return nil, fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
+	return remote.Layer(ref, opts...)
 }
 
 func (r *Remote) Index(ref name.Reference, options ...remote.Option) (v1.ImageIndex, error) {
@@ -132,8 +183,12 @@ func (r *Remote) Index(ref name.Reference, options ...remote.Option) (v1.ImageIn
 	if err != nil {
 		return nil, fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return nil, fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.Index(ref, options...)
+	return remote.Index(ref, opts...)
 }
 
 func (r *Remote) Image(ref name.Reference, options ...remote.Option) (v1.Image, error) {
@@ -142,8 +197,12 @@ func (r *Remote) Image(ref name.Reference, options ...remote.Option) (v1.Image, 
 	if err != nil {
 		return nil, fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return nil, fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.Image(ref, options...)
+	return remote.Image(ref, opts...)
 }
 
 func (r *Remote) Delete(ref name.Reference, options ...remote.Option) error {
@@ -152,8 +211,44 @@ func (r *Remote) Delete(ref name.Reference, options ...remote.Option) error {
 	if err != nil {
 		return fmt.Errorf("rewriting reference %q: %w", ref.Name(), err)
 	}
+	opts, err := r.rewriteTLSTransport(options)
+	if err != nil {
+		return fmt.Errorf("rewriting TLS transport for %q: %w", ref.Name(), err)
+	}
 
-	return remote.Delete(ref, options...)
+	return remote.Delete(ref, opts...)
+}
+
+func (r *Remote) rewriteTLSTransport(options []remote.Option) ([]remote.Option, error) {
+	// If there are no certs, return the options as is
+	if len(certs) == 0 {
+		return options, nil
+	}
+
+	caCertPool, err := x509.SystemCertPool()
+	if err != nil || caCertPool == nil {
+		caCertPool = x509.NewCertPool()
+	}
+	for _, caCert := range certs {
+		if !caCertPool.AppendCertsFromPEM(caCert) {
+			return nil, fmt.Errorf("failed to append CA certificate")
+		}
+	}
+
+	baseTransport := remote.DefaultTransport.(*http.Transport).Clone()
+	if baseTransport.TLSClientConfig == nil {
+		baseTransport.TLSClientConfig = &tls.Config{}
+	}
+	baseTransport.TLSClientConfig.RootCAs = caCertPool
+
+	// Add the certificates to the options
+	newOptions := make([]remote.Option, 0, len(options)+1)
+	newOptions = append(newOptions, options...)
+	newOptions = append(newOptions, remote.WithTransport(
+		baseTransport,
+	))
+
+	return newOptions, nil
 }
 
 func (r *Remote) rewriteReference(ref name.Reference) (name.Reference, error) {
