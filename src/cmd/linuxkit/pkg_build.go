@@ -122,13 +122,27 @@ func pkgBuildCmd() *cobra.Command {
 				defer func() { _ = f.Close() }()
 				scanner := bufio.NewScanner(f)
 				for scanner.Scan() {
-					buildArgs = append(buildArgs, scanner.Text())
+					line := strings.TrimSpace(scanner.Text())
+					// check if the value is a special linuxkit value
+					buildArg, err := pkglib.TransformBuildArgValue(line, filename)
+					if err != nil {
+						return fmt.Errorf("error transforming build arg %s: %v", line, err)
+					}
+
+					buildArgs = append(buildArgs, buildArg)
 				}
 				if err := scanner.Err(); err != nil {
 					return fmt.Errorf("error reading build args file %s: %w", filename, err)
 				}
 			}
 			opts = append(opts, pkglib.WithBuildArgs(buildArgs))
+
+			// also need to parse the build args from the build.yml file for any special linuxkit values
+			for _, p := range pkgs {
+				if err := p.ProcessBuildArgs(); err != nil {
+					return fmt.Errorf("error processing build args for package %q: %w", p.Tag(), err)
+				}
+			}
 
 			// skipPlatformsMap contains platforms that should be skipped
 			skipPlatformsMap := make(map[string]bool)

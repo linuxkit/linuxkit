@@ -1,0 +1,5 @@
+org: linuxkit
+image: hashes-in-build-args
+buildArgs:
+- HASH1=@lkt:pkg:foo/
+- HASH2=@lkt:pkg:/tmp/bar12345/

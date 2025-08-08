@@ -92,6 +92,7 @@ type Pkg struct {
 
 	// Internal state
 	path       string
+	buildYML   string // full path to the build.yml file, not just relative to path
 	dockerfile string
 	hash       string
 	tag        string
@@ -150,7 +151,8 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			return nil, err
 		}
 
-		b, err := os.ReadFile(filepath.Join(pkgPath, cfg.BuildYML))
+		buildYmlFile := filepath.Join(pkgPath, cfg.BuildYML)
+		b, err := os.ReadFile(buildYmlFile)
 		if err != nil {
 			return nil, err
 		}
@@ -292,6 +294,7 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			dockerDepends: dockerDepends,
 			dirty:         dirty,
 			path:          pkgPath,
+			buildYML:      buildYmlFile,
 			dockerfile:    pi.Dockerfile,
 			git:           git,
 			tag:           tag,
@@ -359,6 +362,20 @@ func (p Pkg) archSupported(want string) bool {
 func (p Pkg) cleanForBuild() error {
 	if p.commitHash != "HEAD" {
 		return fmt.Errorf("cannot build from commit hash != HEAD")
+	}
+	return nil
+}
+
+func (p Pkg) ProcessBuildArgs() error {
+	if p.buildArgs == nil {
+		return nil
+	}
+	var err error
+	for i, arg := range *p.buildArgs {
+		(*p.buildArgs)[i], err = TransformBuildArgValue(arg, p.buildYML)
+		if err != nil {
+			return fmt.Errorf("error processing build arg %q: %v", arg, err)
+		}
 	}
 	return nil
 }
