@@ -1,0 +1,5 @@
+FROM alpine:3.21
+ARG HASH1
+ARG HASH2
+RUN echo "HASH1: ${HASH1}"
+RUN echo "HASH2: ${HASH2}"
