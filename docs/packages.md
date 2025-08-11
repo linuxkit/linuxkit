@@ -57,7 +57,7 @@ A package source consists of a directory containing at least two files:
 - `gitrepo` _(string)_: The git repository where the package source is kept.
 - `network` _(bool)_: Allow network access during the package build (default: no)
 - `disable-cache` _(bool)_: Disable build cache for this package (default: no)
-- `buildArgs` will forward a list of build arguments down to docker. As if `--build-arg` was specified during `docker build`
+- `buildArgs` will forward a list of build arguments down to docker. As if `--build-arg` was specified during `docker build`. See [BuildArgs][BuildArgs] for more information.
 - `config`: _(struct `github.com/moby/tool/src/moby.ImageConfig`)_: Image configuration, marshalled to JSON and added as `org.mobyproject.config` label on image (default: no label)
 - `depends`: Contains information on prerequisites which must be satisfied in order to build the package. Has subfields:
     - `docker-images`: Docker images to be made available (as `tar` files via `docker image save`) within the package build context. Contains the following nested fields:
@@ -381,6 +381,37 @@ ARG all_proxy
 
 LinuxKit does not judge between lower-cased or upper-cased variants of these options, e.g. `http_proxy` vs `HTTP_PROXY`,
 as `docker build` does not either. It just passes them through "as-is".
+
+## Build Args
+
+`linuxkit` does not support passing random CLI flags for build arguments when building packages.
+This is inline with its philosophy, of having as reproducible builds as possible, which requires
+everything to be available on disk and in the repository.
+
+It is possible to bypass this, but this is not recommended.
+
+As described in [Preset build arguments][Preset build arguments], linuxkit automatically sets some build arguments
+when building packages. However, you can also set your own build arguments, which will be passed to the
+`docker build` command.
+You can include your own build args in several ways.
+
+* `build.yml` - you can add a `buildArgs` field to the `build.yml` file, which will be passed as `--build-arg` to `docker build`.
+* `linuxkit pkg build` - you can pass the `--build-arg-file <file>` flag, with one `<key>=<value>` pair per line, which will be passed as `--build-arg` to `docker build`.
+
+When parsing for build args, whether from `build.yml`'s `buildArgs` field or from the `--build-arg-file`,
+linuxkit has support for certain calculated build args for the value of the arg. You can set these using the following syntax.
+
+All calculated build args are prefixed with `@lkt:`.
+
+* `@lkt:pkg:<path>` - the linuxkit package hash of the path, as determined by `linuxkit pkg show-tag <path>`. The `<path>` can be absolute, or if provided as a relative path, it is relative to the working directory of the file. For example, if provided in the `buildArgs` section of `build.yml`, it is relative to the package directory; if provided in `--build-arg-file <file>`, it is relative to the directory in which <file> exists.
+
+For example:
+
+```yaml
+buildArgs:
+  - DEP_HASH=@lkt:pkg:/usr/local/foo # will be replaced with the value of `linuxkit pkg show-tag /usr/local/foo`
+  - REL_HASH=@lkt:pkg:foo # will be replaced with the value of `linuxkit pkg show-tag foo` relative to this build.yml file
+```
 
 ## Releases
 

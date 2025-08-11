@@ -1,6 +1,10 @@
 package main
 
+import (
+	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkglib"
+)
+
 const (
-	defaultPkgBuildYML = "build.yml"
-	defaultPkgCommit   = "HEAD"
+	defaultPkgBuildYML = pkglib.DefaultPkgBuildYML
+	defaultPkgCommit   = pkglib.DefaultPkgCommit
 )
