@@ -366,16 +366,21 @@ func (p Pkg) cleanForBuild() error {
 	return nil
 }
 
-func (p Pkg) ProcessBuildArgs() error {
+func (p *Pkg) ProcessBuildArgs() error {
 	if p.buildArgs == nil {
 		return nil
 	}
-	var err error
-	for i, arg := range *p.buildArgs {
-		(*p.buildArgs)[i], err = TransformBuildArgValue(arg, p.buildYML)
+	var buildArgs []string
+	for _, arg := range *p.buildArgs {
+		transformedLine, err := TransformBuildArgValue(arg, p.buildYML)
 		if err != nil {
 			return fmt.Errorf("error processing build arg %q: %v", arg, err)
 		}
+		buildArgs = append(buildArgs, transformedLine...)
+	}
+	// Replace the original build args with the transformed ones
+	if len(buildArgs) > 0 {
+		p.buildArgs = &buildArgs
 	}
 	return nil
 }
