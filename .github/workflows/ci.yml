@@ -38,14 +38,14 @@ jobs:
     runs-on: ${{ matrix.target.runner }}
     steps:
 
-    - name: Set up Go 1.22
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.22.3
-      id: go
-
     - name: Check out code
       uses: actions/checkout@v4
+
+    - name: Set up Go based on go.mod
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'src/cmd/linuxkit/go.mod'
+      id: go
 
     - name: Set path
       run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
@@ -156,25 +156,32 @@ jobs:
   
   gen_package_test_matrix:
     name: Generate Package Test Matrix
+    needs: [ build_packages, build ]
     runs-on: ubuntu-latest
     outputs:
       shard_list: ${{ steps.mk.outputs.list }}
-      total: ${{ steps.mk.outputs.total }}
     steps:
     - name: Generate Test Matrix
       id: mk
       shell: bash
       run: |
           set -x
-          N="${{ env.TOTAL_SHARDS}}"
+          N="${{ env.TOTAL_SHARDS }}"
           # Priority: repo var SHARDS → event-based default (PR=6, else 10)
           if [ -n "${{ vars.SHARDS }}" ]; then
             N="${{ vars.SHARDS }}"
           fi
 
-          # Build JSON array [1,2,...,N]
-          echo "list=[$(seq -s, 1 "$N")]" >> "$GITHUB_OUTPUT"
-          echo "total=$N" >> "$GITHUB_OUTPUT"
+          # Build JSON array ["1/N","2/N",...,"N/N"]
+          shards=""
+          for i in $(seq 1 "$N"); do
+            if [ -z "$shards" ]; then
+              shards="\"$i/$N\""
+            else
+              shards="$shards,\"$i/$N\""
+            fi
+          done
+          echo "list=[$shards]" >> "$GITHUB_OUTPUT"
 
   test_packages:
     name: Packages Tests
@@ -183,7 +190,6 @@ jobs:
     strategy:
       matrix:
         shard: ${{ fromJson(needs.gen_package_test_matrix.outputs.shard_list) }}
-        totalShards: ${{ needs.gen_package_test_matrix.outputs.total }}
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -233,7 +239,7 @@ jobs:
         linuxkit cache ls
       
     - name: Run Tests
-      run: make test TEST_SUITE=linuxkit.packages TEST_SHARD=${{ matrix.shard }}/${{ matrix.totalShards }}
+      run: make test TEST_SUITE=linuxkit.packages TEST_SHARD=${{ matrix.shard }}
 
   test_kernel:
     name: Kernel Tests

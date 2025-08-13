@@ -10,14 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - name: Set up Go 1.122
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.22.3
-      id: go
-
     - name: Check out code
       uses: actions/checkout@v4
+    - name: Set up Go based on go.mod
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'src/cmd/linuxkit/go.mod'
+      id: go
+
 
     - name: Set path
       run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
@@ -42,14 +42,14 @@ jobs:
     runs-on: macos-latest
     steps:
 
-    - name: Set up Go 1.122
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.22.3
-      id: go
-
     - name: Check out code
       uses: actions/checkout@v4
+    - name: Set up Go based on go.mod
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'src/cmd/linuxkit/go.mod'
+      id: go
+
 
     - name: Set path
       run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
