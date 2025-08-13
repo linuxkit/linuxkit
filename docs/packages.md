@@ -403,7 +403,7 @@ linuxkit has support for certain calculated build args for the value of the arg.
 
 All calculated build args are prefixed with `@lkt:`.
 
-* `@lkt:pkg:<path>` - the linuxkit package hash of the path, as determined by `linuxkit pkg show-tag <path>`. The `<path>` can be absolute, or if provided as a relative path, it is relative to the working directory of the file. For example, if provided in the `buildArgs` section of `build.yml`, it is relative to the package directory; if provided in `--build-arg-file <file>`, it is relative to the directory in which <file> exists.
+* `VAR=@lkt:pkg:<path>` - the linuxkit package hash of the path, as determined by `linuxkit pkg show-tag <path>`. The `<path>` can be absolute, or if provided as a relative path, it is relative to the working directory of the file. For example, if provided in the `buildArgs` section of `build.yml`, it is relative to the package directory; if provided in `--build-arg-file <file>`, it is relative to the directory in which <file> exists.
 
 For example:
 
@@ -411,6 +411,27 @@ For example:
 buildArgs:
   - DEP_HASH=@lkt:pkg:/usr/local/foo # will be replaced with the value of `linuxkit pkg show-tag /usr/local/foo`
   - REL_HASH=@lkt:pkg:foo # will be replaced with the value of `linuxkit pkg show-tag foo` relative to this build.yml file
+```
+
+* `VAR_%=@lkt:pkgs:<paths>` - (note `pkgs` plural) the linuxkit package hashes of the multiple packages satisfied by `<paths>`. linuxkit will get the linuxkit package hash of each path in `<paths>`, as determined by `linuxkit pkg show-tag <path>`. The `<paths>` can be absolute, or if provided as a relative path, it is relative to the working directory of the file which contains the build arg, whether `build.yml` in a package or the build arg
+file provided to `--build-arg-file <file>`. The `<paths>` supports basic shell globbing, such as `./foo/*` or `/var/foo{1,2,3}`. Globs that start with `.` will be ignored, e.g. `foo/*` will match `foo/one` and `foo/two` but not `foo/.git` and `foo/.bar`. For each package in `<paths>`, it will create a build arg with the name `VAR_<package-name>` and the value of the package hash, where: the `%` is replaced with the name of the package; an all `/` and `-` characters are replaced with `_`; all characters are upper-cased.
+
+There _must_ be at least one valid environment variable character before the `%` character.
+
+For example:
+
+```yaml
+buildArgs:
+  - DEP_HASH_%=@lkt:pkgs:/usr/local/foo/* 
+```
+
+If there are packages in `/usr/local/foo/` named `bar`, `baz`, and `qux`, and each of them has a package as shown
+by `linuxkit pkg show-tag` as `linuxkit/bar:123abc`, `linuxkit/baz:aabb666`, and `linuxkit/qux:bbcc777`, this will create the following build args:
+
+```
+DEP_HASH_LINUXKIT_BAR=linuxkit/bar:123abc
+DEP_HASH_LINUXKIT_BAZ=linuxkit/baz:aabb666
+DEP_HASH_LINUXKIT_QUX=linuxkit/qux:bbcc777
 ```
 
 ## Releases

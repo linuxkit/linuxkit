@@ -1,0 +1,4 @@
+org: linuxkit
+image: hashes-in-build-args-yaml
+buildArgs:
+- HASH_%=@lkt:pkgs:/tmp/foo/*

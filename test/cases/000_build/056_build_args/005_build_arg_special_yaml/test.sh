@@ -19,10 +19,6 @@ clean_up() {
 }
 trap clean_up EXIT
 
-# to be clear
-pwd
-ls -la .
-
 for i in "${TMPDIR1}" "${TMPDIR2}"; do
     rm -rf "${i}"
     mkdir -p "${i}"
@@ -57,7 +53,6 @@ current=$(linuxkit pkg show-tag .)
 # dump it to a filesystem
 linuxkit --cache ${CACHE_DIR} cache export --format filesystem --outfile - "${current}" | tar -C "${TMPEXPORT}" -xvf -
 # for extra debugging
-find "${TMPEXPORT}" -type f -exec ls -la {} \;
 actual1=$(cat ${TMPEXPORT}/var/hash1)
 actual2=$(cat ${TMPEXPORT}/var/hash2)
 

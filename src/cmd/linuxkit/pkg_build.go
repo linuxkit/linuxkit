@@ -129,7 +129,7 @@ func pkgBuildCmd() *cobra.Command {
 						return fmt.Errorf("error transforming build arg %s: %v", line, err)
 					}
 
-					buildArgs = append(buildArgs, buildArg)
+					buildArgs = append(buildArgs, buildArg...)
 				}
 				if err := scanner.Err(); err != nil {
 					return fmt.Errorf("error reading build args file %s: %w", filename, err)
@@ -138,9 +138,9 @@ func pkgBuildCmd() *cobra.Command {
 			opts = append(opts, pkglib.WithBuildArgs(buildArgs))
 
 			// also need to parse the build args from the build.yml file for any special linuxkit values
-			for _, p := range pkgs {
-				if err := p.ProcessBuildArgs(); err != nil {
-					return fmt.Errorf("error processing build args for package %q: %w", p.Tag(), err)
+			for i := range pkgs {
+				if err := pkgs[i].ProcessBuildArgs(); err != nil {
+					return fmt.Errorf("error processing build args for package %q: %w", pkgs[i].Tag(), err)
 				}
 			}
 
