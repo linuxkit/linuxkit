@@ -1,6 +1,9 @@
 name: LinuxKit CI
 on: [push, pull_request]
 
+env:
+  TOTAL_SHARDS: 12   # change here once
+
 jobs:
   build:
     name: Build & Test
@@ -35,14 +38,14 @@ jobs:
     runs-on: ${{ matrix.target.runner }}
     steps:
 
-    - name: Set up Go 1.22
-      uses: actions/setup-go@v5
-      with:
-        go-version: 1.22.3
-      id: go
-
     - name: Check out code
       uses: actions/checkout@v4
+
+    - name: Set up Go based on go.mod
+      uses: actions/setup-go@v5
+      with:
+        go-version-file: 'src/cmd/linuxkit/go.mod'
+      id: go
 
     - name: Set path
       run: echo "$(go env GOPATH)/bin" >> $GITHUB_PATH
@@ -150,14 +153,43 @@ jobs:
     - name: list cache contents
       run: |
         linuxkit cache ls
+  
+  gen_package_test_matrix:
+    name: Generate Package Test Matrix
+    needs: [ build_packages, build ]
+    runs-on: ubuntu-latest
+    outputs:
+      shard_list: ${{ steps.mk.outputs.list }}
+    steps:
+    - name: Generate Test Matrix
+      id: mk
+      shell: bash
+      run: |
+          set -x
+          N="${{ env.TOTAL_SHARDS }}"
+          # Priority: repo var SHARDS → event-based default (PR=6, else 10)
+          if [ -n "${{ vars.SHARDS }}" ]; then
+            N="${{ vars.SHARDS }}"
+          fi
+
+          # Build JSON array ["1/N","2/N",...,"N/N"]
+          shards=""
+          for i in $(seq 1 "$N"); do
+            if [ -z "$shards" ]; then
+              shards="\"$i/$N\""
+            else
+              shards="$shards,\"$i/$N\""
+            fi
+          done
+          echo "list=[$shards]" >> "$GITHUB_OUTPUT"
 
   test_packages:
     name: Packages Tests
-    needs: [ build_packages, build ]
+    needs: [ build_packages, build, gen_package_test_matrix ]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shard: [1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,10/10]
+        shard: ${{ fromJson(needs.gen_package_test_matrix.outputs.shard_list) }}
     steps:
     - name: Check out code
       uses: actions/checkout@v4
