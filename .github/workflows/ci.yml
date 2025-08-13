@@ -1,6 +1,9 @@
 name: LinuxKit CI
 on: [push, pull_request]
 
+env:
+  TOTAL_SHARDS: 12   # change here once
+
 jobs:
   build:
     name: Build & Test
@@ -150,14 +153,37 @@ jobs:
     - name: list cache contents
       run: |
         linuxkit cache ls
+  
+  gen_package_test_matrix:
+    name: Generate Package Test Matrix
+    runs-on: ubuntu-latest
+    outputs:
+      shard_list: ${{ steps.mk.outputs.list }}
+      total: ${{ steps.mk.outputs.total }}
+    steps:
+    - name: Generate Test Matrix
+      id: mk
+      shell: bash
+      run: |
+          set -x
+          N="${{ env.TOTAL_SHARDS}}"
+          # Priority: repo var SHARDS → event-based default (PR=6, else 10)
+          if [ -n "${{ vars.SHARDS }}" ]; then
+            N="${{ vars.SHARDS }}"
+          fi
+
+          # Build JSON array [1,2,...,N]
+          echo "list=[$(seq -s, 1 "$N")]" >> "$GITHUB_OUTPUT"
+          echo "total=$N" >> "$GITHUB_OUTPUT"
 
   test_packages:
     name: Packages Tests
-    needs: [ build_packages, build ]
+    needs: [ build_packages, build, gen_package_test_matrix ]
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        shard: [1/10,2/10,3/10,4/10,5/10,6/10,7/10,8/10,9/10,10/10]
+        shard: ${{ fromJson(needs.gen_package_test_matrix.outputs.shard_list) }}
+        totalShards: ${{ needs.gen_package_test_matrix.outputs.total }}
     steps:
     - name: Check out code
       uses: actions/checkout@v4
@@ -207,7 +233,7 @@ jobs:
         linuxkit cache ls
       
     - name: Run Tests
-      run: make test TEST_SUITE=linuxkit.packages TEST_SHARD=${{ matrix.shard }}
+      run: make test TEST_SUITE=linuxkit.packages TEST_SHARD=${{ matrix.shard }}/${{ matrix.totalShards }}
 
   test_kernel:
     name: Kernel Tests
