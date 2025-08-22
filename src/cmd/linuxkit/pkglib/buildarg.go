@@ -95,7 +95,7 @@ func TransformBuildArgValue(line, anchorFile string) ([]string, error) {
 		for _, p := range pkgs {
 			tag := p.Tag()
 			// generate the special build arg key
-			image := strings.ReplaceAll(p.Image(), "/", "_")
+			image := strings.ReplaceAll(p.OrgImage(), "/", "_")
 			image = strings.ReplaceAll(image, "-", "_")
 			image = strings.ToUpper(image)
 			updatedKey := strings.ReplaceAll(key, buildArgsKeyStemChar, image)
