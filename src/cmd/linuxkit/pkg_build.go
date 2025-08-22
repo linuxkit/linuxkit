@@ -30,6 +30,7 @@ type pkgBuilder struct {
 	docker         bool
 	verbose        bool
 	dry            bool
+	dockerCmdArg   bool
 	platforms      string
 	skipPlatforms  string
 	builders       string
@@ -331,10 +332,10 @@ func (pb *pkgBuilder) checkFlagConflicts() error {
 // pkg build --push --nobuild --force  - nonsensical
 // pkg push                            - equivalent to pkg build --push
 
-func pkgBuildCmd() *cobra.Command {
+func pkgBuildCmds() (*cobra.Command, *cobra.Command) {
 	b := pkgBuilder{}
 	b.cacheDir = flagOverEnvVarOverDefaultString{def: defaultLinuxkitCache(), envVar: envVarCacheDir}
-	cmd := &cobra.Command{
+	buildCmd := &cobra.Command{
 		Use:   "build",
 		Short: "build an OCI package from a directory with a yaml configuration file",
 		Long: `Build an OCI package from a directory with a yaml configuration file.
@@ -344,31 +345,76 @@ func pkgBuildCmd() *cobra.Command {
 		Args:    cobra.MinimumNArgs(1),
 		RunE:    func(cmd *cobra.Command, args []string) error { return b.build(args) },
 	}
-	cmd.Flags().BoolVar(&b.force, "force", false, "Force rebuild even if image is in local cache")
-	cmd.Flags().BoolVar(&b.verbose, "verbose", false, "Print extra output as json before build")
-	cmd.Flags().BoolVar(&b.dry, "dry", false, "Do not build, mostly makes sense to use in conjunction with '--verbose'")
-	cmd.Flags().BoolVar(&b.pull, "pull", false, "Pull image if in registry but not in local cache; conflicts with --force")
-	cmd.Flags().BoolVar(&b.push, "push", false, "After building, if successful, push the image to the registry; if --nobuild is set, just push")
-	cmd.Flags().BoolVar(&b.ignoreCache, "ignore-cached", false, "Ignore cached intermediate images, always pulling from registry")
-	cmd.Flags().BoolVar(&b.docker, "docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
-	cmd.Flags().StringVar(&b.platforms, "platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
-	cmd.Flags().StringVar(&b.skipPlatforms, "skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
-	cmd.Flags().StringVar(&b.builders, "builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
-	cmd.Flags().StringVar(&b.builderImage, "builder-image", defaultBuilderImage, "buildkit builder container image to use")
-	cmd.Flags().StringVar(&b.builderConfig, "builder-config", "", "path to buildkit builder config.toml file to use, overrides the default config.toml in the builder image. When provided, copied over into builder, along with all certs. Use paths for certificates relative to your local host, they will be adjusted on copying into the container. USE WITH CAUTION")
-	cmd.Flags().BoolVar(&b.builderRestart, "builder-restart", false, "force restarting builder, even if container with correct name and image exists")
-	cmd.Flags().BoolVar(&b.preCacheImages, "precache-images", false, "download all referenced images in the Dockerfile to the linuxkit cache before building, thus referencing the local cache instead of pulling from the registry; this is useful for handling mirrors and special connections")
-	cmd.Flags().Var(&b.cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
-	cmd.Flags().StringVar(&b.release, "release", "", "Release the given version")
-	cmd.Flags().BoolVar(&b.nobuild, "nobuild", false, "Skip building the image before pushing, conflicts with -force")
-	cmd.Flags().BoolVar(&b.manifest, "manifest", true, "Create and push multi-arch manifest")
-	cmd.Flags().StringVar(&b.sbomScanner, "sbom-scanner", "", "SBOM scanner to use, must match the buildkit spec; set to blank to use the buildkit default; set to 'false' for no scanning")
-	cmd.Flags().StringVar(&b.dockerfile, "dockerfile", "", "Dockerfile to use for building the image, must be in this directory or below, overrides what is in build.yml")
-	cmd.Flags().StringArrayVar(&b.buildArgFiles, "build-arg-file", nil, "Files containing build arguments, one key=value per line, contents augment and override buildArgs in build.yml. Can be specified multiple times. File is relative to working directory when running `linuxkit pkg build`")
-	cmd.Flags().StringVar(&b.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output, tty for interactive build")
-	cmd.Flags().StringArrayVar(&b.ssh, "ssh", nil, "SSH agent config to use for build, follows the syntax used for buildx and buildctl, see https://docs.docker.com/reference/dockerfile/#run---mounttypessh")
+	buildCmd.Flags().BoolVar(&b.force, "force", false, "Force rebuild even if image is in local cache")
+	buildCmd.Flags().BoolVar(&b.verbose, "verbose", false, "Print extra output as json before build")
+	buildCmd.Flags().BoolVar(&b.dry, "dry", false, "Do not build, mostly makes sense to use in conjunction with '--verbose'")
+	buildCmd.Flags().BoolVar(&b.pull, "pull", false, "Pull image if in registry but not in local cache; conflicts with --force")
+	buildCmd.Flags().BoolVar(&b.push, "push", false, "After building, if successful, push the image to the registry; if --nobuild is set, just push")
+	buildCmd.Flags().BoolVar(&b.ignoreCache, "ignore-cached", false, "Ignore cached intermediate images, always pulling from registry")
+	buildCmd.Flags().BoolVar(&b.docker, "docker", false, "Store the built image in the docker image cache instead of the default linuxkit cache")
+	buildCmd.Flags().StringVar(&b.builders, "builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
+	buildCmd.Flags().StringVar(&b.builderImage, "builder-image", defaultBuilderImage, "buildkit builder container image to use")
+	buildCmd.Flags().StringVar(&b.builderConfig, "builder-config", "", "path to buildkit builder config.toml file to use, overrides the default config.toml in the builder image. When provided, copied over into builder, along with all certs. Use paths for certificates relative to your local host, they will be adjusted on copying into the container. USE WITH CAUTION")
+	buildCmd.Flags().BoolVar(&b.builderRestart, "builder-restart", false, "force restarting builder, even if container with correct name and image exists")
+	buildCmd.Flags().BoolVar(&b.preCacheImages, "precache-images", false, "download all referenced images in the Dockerfile to the linuxkit cache before building, thus referencing the local cache instead of pulling from the registry; this is useful for handling mirrors and special connections")
+	buildCmd.Flags().Var(&b.cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
+	buildCmd.Flags().StringVar(&b.release, "release", "", "Release the given version")
+	buildCmd.Flags().BoolVar(&b.nobuild, "nobuild", false, "Skip building the image before pushing, conflicts with -force")
+	buildCmd.Flags().BoolVar(&b.manifest, "manifest", true, "Create and push multi-arch manifest")
+	buildCmd.Flags().StringVar(&b.sbomScanner, "sbom-scanner", "", "SBOM scanner to use, must match the buildkit spec; set to blank to use the buildkit default; set to 'false' for no scanning")
+	buildCmd.Flags().StringVar(&b.dockerfile, "dockerfile", "", "Dockerfile to use for building the image, must be in this directory or below, overrides what is in build.yml")
+	buildCmd.Flags().StringVar(&b.progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output, tty for interactive build")
+	buildCmd.Flags().StringArrayVar(&b.ssh, "ssh", nil, "SSH agent config to use for build, follows the syntax used for buildx and buildctl, see https://docs.docker.com/reference/dockerfile/#run---mounttypessh")
 
-	return cmd
+	buildArgsCmd := &cobra.Command{
+		Use:     "build-args",
+		Short:   "print build-args build of an OCI package from a directory with a yaml configuration file",
+		Example: `  linuxkit pkg build-args [options] pkg/dir/`,
+		Args:    cobra.MinimumNArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			var err error
+			b.pkgs, err = pkglib.NewFromConfig(pkglibConfig, args...)
+			if err != nil {
+				return err
+			}
+
+			err = b.checkFlagConflicts()
+			if err != nil {
+				return err
+			}
+
+			var opts []pkglib.BuildOpt
+			opts = b.convertCmdFlagsToDockerOpts(opts)
+
+			// read any build arg files
+			opts, err = b.readAnyBuildArgFiles(opts)
+			if err != nil {
+				return err
+			}
+
+			// also need to parse the build args from the build.yml file for any special linuxkit values
+			err = b.buildArgsFromBuildYml()
+
+			for _, pkg := range b.pkgs {
+				for _, buildArg := range *pkg.BuildArgs {
+					if b.dockerCmdArg {
+						fmt.Printf("--build-arg ")
+					}
+					fmt.Printf("%s\n", buildArg)
+				}
+			}
+			return err
+		},
+	}
+	buildArgsCmd.Flags().BoolVar(&b.dockerCmdArg, "docker", false, "Prefix for docker with --build-arg")
+
+	for _, cmd := range []*cobra.Command{buildCmd, buildArgsCmd} {
+		cmd.Flags().StringVar(&b.platforms, "platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
+		cmd.Flags().StringVar(&b.skipPlatforms, "skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
+		cmd.Flags().StringArrayVar(&b.buildArgFiles, "build-arg-file", nil, "Files containing build arguments, one key=value per line, contents augment and override buildArgs in build.yml. Can be specified multiple times. File is relative to working directory when running `linuxkit pkg build`")
+	}
+
+	return buildCmd, buildArgsCmd
 }
 
 func buildPlatformBuildersMap(inputs string, existing map[string]string) (map[string]string, error) {
