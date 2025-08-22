@@ -310,7 +310,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	d := bo.runner
 	if d == nil {
-		d = newDockerRunner(p.cache)
+		d = newDockerRunner(p.Cache)
 	}
 
 	c := bo.cacheProvider
@@ -397,15 +397,15 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		//   network string
 		//   build-arg []string
 
-		if p.git != nil && p.gitRepo != "" {
-			imageBuildOpts.Labels["org.opencontainers.image.source"] = p.gitRepo
+		if p.git != nil && p.GitRepo != "" {
+			imageBuildOpts.Labels["org.opencontainers.image.source"] = p.GitRepo
 		}
 		var (
 			gitCommit    string
 			goPkgVersion string
 		)
 		if p.git != nil {
-			if !p.dirty {
+			if !p.Dirty {
 				gitCommit, err = p.git.commitHash("HEAD")
 				if err != nil {
 					return err
@@ -420,12 +420,12 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 
 		imageBuildOpts.NetworkMode = "default"
-		if !p.network {
+		if !p.Network {
 			imageBuildOpts.NetworkMode = "none"
 		}
 
-		if p.config != nil {
-			b, err := json.Marshal(*p.config)
+		if p.Config != nil {
+			b, err := json.Marshal(*p.Config)
 			if err != nil {
 				return err
 			}
@@ -436,8 +436,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		imageBuildOpts.Labels["org.mobyproject.linuxkit.revision"] = version.GitCommit
 
 		// add build args from the build.yml file
-		if p.buildArgs != nil {
-			for _, buildArg := range *p.buildArgs {
+		if p.BuildArgs != nil {
+			for _, buildArg := range *p.BuildArgs {
 				parts := strings.SplitN(buildArg, "=", 2)
 				if len(parts) != 2 {
 					return fmt.Errorf("invalid build-arg, must be in format 'arg=value': %s", buildArg)
@@ -457,8 +457,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 
 		// add in information about the build process that might be useful
-		if _, ok := imageBuildOpts.BuildArgs["SOURCE"]; !ok && p.gitRepo != "" {
-			imageBuildOpts.BuildArgs["SOURCE"] = &p.gitRepo
+		if _, ok := imageBuildOpts.BuildArgs["SOURCE"]; !ok && p.GitRepo != "" {
+			imageBuildOpts.BuildArgs["SOURCE"] = &p.GitRepo
 		}
 		if _, ok := imageBuildOpts.BuildArgs["REVISION"]; !ok && gitCommit != "" {
 			imageBuildOpts.BuildArgs["REVISION"] = &gitCommit
@@ -466,12 +466,12 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		if _, ok := imageBuildOpts.BuildArgs["GOPKGVERSION"]; !ok && goPkgVersion != "" {
 			imageBuildOpts.BuildArgs["GOPKGVERSION"] = &goPkgVersion
 		}
-		if _, ok := imageBuildOpts.BuildArgs["PKG_HASH"]; !ok && p.Hash() != "" {
-			ret := p.Hash()
+		if _, ok := imageBuildOpts.BuildArgs["PKG_HASH"]; !ok && p.Hash != "" {
+			ret := p.Hash
 			imageBuildOpts.BuildArgs["PKG_HASH"] = &ret
 		}
-		if _, ok := imageBuildOpts.BuildArgs["PKG_IMAGE"]; !ok && p.Image() != "" {
-			ret := p.Image()
+		if _, ok := imageBuildOpts.BuildArgs["PKG_IMAGE"]; !ok && p.OrgImage() != "" {
+			ret := p.OrgImage()
 			imageBuildOpts.BuildArgs["PKG_IMAGE"] = &ret
 		}
 
@@ -565,7 +565,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 	}
 
-	if p.dirty {
+	if p.Dirty {
 		return fmt.Errorf("build complete, refusing to push dirty package")
 	}
 
@@ -655,7 +655,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider
 		_, _ = fmt.Fprintf(writer, "No image pulled for arch %s, continuing with build\n", arch)
 	}
 
-	if err := p.dockerDepends.Do(d); err != nil {
+	if err := p.DockerDepends.Do(d); err != nil {
 		return nil, err
 	}
 
@@ -689,7 +689,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider
 		return err
 	})
 
-	buildCtx := &buildCtx{sources: p.sources}
+	buildCtx := &buildCtx{sources: p.Sources}
 	platform := fmt.Sprintf("linux/%s", arch)
 	// if we were told to ignore cached dependent images, pass it a nil cache so it cannot read anything
 	passCache := c

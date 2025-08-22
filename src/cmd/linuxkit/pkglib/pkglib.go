@@ -78,26 +78,26 @@ type pkgSource struct {
 // Pkg encapsulates information about a package's source
 type Pkg struct {
 	// These correspond to pkgInfo fields
-	image         string
-	org           string
-	arches        []string
-	sources       []pkgSource
-	gitRepo       string
-	network       bool
-	trust         bool
-	cache         bool
-	config        *moby.ImageConfig
-	buildArgs     *[]string
-	dockerDepends dockerDepends
+	Image         string
+	Org           string
+	Arches        []string
+	Sources       []pkgSource
+	GitRepo       string
+	Network       bool
+	Trust         bool
+	Cache         bool
+	Config        *moby.ImageConfig
+	BuildArgs     *[]string
+	DockerDepends dockerDepends
 
 	// Internal state
 	path       string
 	buildYML   string // full path to the build.yml file, not just relative to path
 	dockerfile string
-	hash       string
+	Hash       string
 	tag        string
-	dirty      bool
-	commitHash string
+	Dirty      bool
+	CommitHash string
 	git        *git
 }
 
@@ -280,19 +280,19 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 		}
 		tag := buf.String()
 		pkgs = append(pkgs, Pkg{
-			image:         pi.Image,
-			org:           pi.Org,
-			hash:          pkgHash,
-			commitHash:    cfg.HashCommit,
-			arches:        pi.Arches,
-			sources:       sources,
-			gitRepo:       pi.GitRepo,
-			network:       pi.Network,
-			cache:         !pi.DisableCache,
-			config:        pi.Config,
-			buildArgs:     pi.BuildArgs,
-			dockerDepends: dockerDepends,
-			dirty:         dirty,
+			Image:         pi.Image,
+			Org:           pi.Org,
+			Hash:          pkgHash,
+			CommitHash:    cfg.HashCommit,
+			Arches:        pi.Arches,
+			Sources:       sources,
+			GitRepo:       pi.GitRepo,
+			Network:       pi.Network,
+			Cache:         !pi.DisableCache,
+			Config:        pi.Config,
+			BuildArgs:     pi.BuildArgs,
+			DockerDepends: dockerDepends,
+			Dirty:         dirty,
 			path:          pkgPath,
 			buildYML:      buildYmlFile,
 			dockerfile:    pi.Dockerfile,
@@ -303,20 +303,15 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 	return pkgs, nil
 }
 
-// Hash returns the hash of the package
-func (p Pkg) Hash() string {
-	return p.hash
-}
-
 // ReleaseTag returns the tag to use for a particular release of the package
 func (p Pkg) ReleaseTag(release string) (string, error) {
 	if release == "" {
 		return "", fmt.Errorf("a release tag is required")
 	}
-	if p.dirty {
+	if p.Dirty {
 		return "", fmt.Errorf("cannot release a dirty package")
 	}
-	tag := p.org + "/" + p.image + ":" + release
+	tag := p.Org + "/" + p.Image + ":" + release
 	return tag, nil
 }
 
@@ -326,12 +321,12 @@ func (p Pkg) Tag() string {
 	if t == "" {
 		t = "latest"
 	}
-	return p.org + "/" + p.image + ":" + t
+	return p.Org + "/" + p.Image + ":" + t
 }
 
 // Image returns the image name without the tag
-func (p Pkg) Image() string {
-	return p.org + "/" + p.image
+func (p Pkg) OrgImage() string {
+	return p.Org + "/" + p.Image
 }
 
 // FullTag returns a reference expanded tag
@@ -341,17 +336,12 @@ func (p Pkg) FullTag() string {
 
 // TrustEnabled returns true if trust is enabled
 func (p Pkg) TrustEnabled() bool {
-	return p.trust
-}
-
-// Arches which arches this can be built for
-func (p Pkg) Arches() []string {
-	return p.arches
+	return p.Trust
 }
 
 //nolint:unused // will be used when linuxkit cache is eliminated and we return to docker image cache
 func (p Pkg) archSupported(want string) bool {
-	for _, supp := range p.arches {
+	for _, supp := range p.Arches {
 		if supp == want {
 			return true
 		}
@@ -360,18 +350,18 @@ func (p Pkg) archSupported(want string) bool {
 }
 
 func (p Pkg) cleanForBuild() error {
-	if p.commitHash != "HEAD" {
+	if p.CommitHash != "HEAD" {
 		return fmt.Errorf("cannot build from commit hash != HEAD")
 	}
 	return nil
 }
 
 func (p *Pkg) ProcessBuildArgs() error {
-	if p.buildArgs == nil {
+	if p.BuildArgs == nil {
 		return nil
 	}
 	var buildArgs []string
-	for _, arg := range *p.buildArgs {
+	for _, arg := range *p.BuildArgs {
 		transformedLine, err := TransformBuildArgValue(arg, p.buildYML)
 		if err != nil {
 			return fmt.Errorf("error processing build arg %q: %v", arg, err)
@@ -380,7 +370,7 @@ func (p *Pkg) ProcessBuildArgs() error {
 	}
 	// Replace the original build args with the transformed ones
 	if len(buildArgs) > 0 {
-		p.buildArgs = &buildArgs
+		p.BuildArgs = &buildArgs
 	}
 	return nil
 }

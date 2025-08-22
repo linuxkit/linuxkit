@@ -2,8 +2,10 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 	"strings"
 
@@ -37,6 +39,8 @@ func pkgBuildCmd() *cobra.Command {
 		push           bool
 		ignoreCache    bool
 		docker         bool
+		verbose        bool
+		dry            bool
 		platforms      string
 		skipPlatforms  string
 		builders       string
@@ -251,7 +255,7 @@ func pkgBuildCmd() *cobra.Command {
 				copy(pkgPlats, plats)
 				// unless overridden, platforms are specific to a package, so this needs to be inside the for loop
 				if len(pkgPlats) == 0 {
-					for _, a := range p.Arches() {
+					for _, a := range p.Arches {
 						if _, ok := skipPlatformsMap[a]; ok {
 							continue
 						}
@@ -281,16 +285,28 @@ func pkgBuildCmd() *cobra.Command {
 					action = "building and pushing"
 				}
 
-				fmt.Println(msg)
+				if verbose {
+					bs, err := json.MarshalIndent(p, "", "    ")
+					if err != nil {
+						log.Fatalf("could not marshal: %+v", err)
+					}
+					fmt.Println(string(bs))
+				} else {
+					fmt.Println(msg)
+				}
 
-				if err := p.Build(pkgOpts...); err != nil {
-					return fmt.Errorf("error %s %q: %w", action, p.Tag(), err)
+				if !dry {
+					if err := p.Build(pkgOpts...); err != nil {
+						return fmt.Errorf("error %s %q: %w", action, p.Tag(), err)
+					}
 				}
 			}
 			return nil
 		},
 	}
 	cmd.Flags().BoolVar(&force, "force", false, "Force rebuild even if image is in local cache")
+	cmd.Flags().BoolVar(&verbose, "verbose", false, "Print extra output as json before build")
+	cmd.Flags().BoolVar(&dry, "dry", false, "Do not build, mostly makes sense to use in conjunction with '--verbose'")
 	cmd.Flags().BoolVar(&pull, "pull", false, "Pull image if in registry but not in local cache; conflicts with --force")
 	cmd.Flags().BoolVar(&push, "push", false, "After building, if successful, push the image to the registry; if --nobuild is set, just push")
 	cmd.Flags().BoolVar(&ignoreCache, "ignore-cached", false, "Ignore cached intermediate images, always pulling from registry")
