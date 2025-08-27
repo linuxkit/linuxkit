@@ -102,6 +102,13 @@ var outFuns = map[string]func(base string, ir io.Reader, size int, arch string) 
 		}
 		return nil
 	},
+	"kernel+erofs": func(base string, image io.Reader, size int, arch string) error {
+		err := outputKernelEroFS(outputImages["erofs"], base, image, arch)
+		if err != nil {
+			return fmt.Errorf("error writing kernel+erofs output: %v", err)
+		}
+		return nil
+	},
 	"kernel+iso": func(base string, image io.Reader, size int, arch string) error {
 		err := outputKernelISO(outputImages["iso"], base, image, arch)
 		if err != nil {
@@ -550,6 +557,65 @@ func outputKernelSquashFS(image, base string, filesystem io.Reader, arch string)
 	_ = rootfs.Close()
 
 	output, err := os.Create(base + "-squashfs.img")
+	if err != nil {
+		return err
+	}
+	defer func() { _ = output.Close() }()
+
+	march, err := util.MArch(arch)
+	if err != nil {
+		return err
+	}
+	return dockerRun(buf, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)})
+}
+
+func outputKernelEroFS(image, base string, filesystem io.Reader, arch string) error {
+	log.Debugf("output kernel/erofs: %s %s", image, base)
+	log.Infof("  %s-erofs.img", base)
+
+	tr := tar.NewReader(filesystem)
+	buf := new(bytes.Buffer)
+	rootfs := tar.NewWriter(buf)
+
+	for {
+		var thdr *tar.Header
+		thdr, err := tr.Next()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return err
+		}
+		thdr.Format = tar.FormatPAX
+		switch {
+		case thdr.Name == "boot/kernel":
+			kernel, err := io.ReadAll(tr)
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
+				return err
+			}
+		case thdr.Name == "boot/cmdline":
+			cmdline, err := io.ReadAll(tr)
+			if err != nil {
+				return err
+			}
+			if err := os.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
+				return err
+			}
+		case strings.HasPrefix(thdr.Name, "boot/"):
+			// skip the rest of boot/
+		default:
+			_ = rootfs.WriteHeader(thdr)
+			if _, err := io.Copy(rootfs, tr); err != nil {
+				return err
+			}
+		}
+	}
+	_ = rootfs.Close()
+
+	output, err := os.Create(base + "-erofs.img")
 	if err != nil {
 		return err
 	}
