@@ -510,9 +510,10 @@ func outputKernelInitrdTarball(base string, kernel []byte, initrd []byte, cmdlin
 	return tw.Close()
 }
 
-func outputKernelSquashFS(image, base string, filesystem io.Reader, arch string) error {
-	log.Debugf("output kernel/squashfs: %s %s", image, base)
-	log.Infof("  %s-squashfs.img", base)
+// outputKernelImage is a unified function for ISO, SquashFS, and EroFS kernel image outputs
+func outputKernelImage(image, base, format, outfile string, filesystem io.Reader, arch string) error {
+	log.Debugf("output kernel/%s: %s %s", format, image, base)
+	log.Infof("  %s", outfile)
 
 	tr := tar.NewReader(filesystem)
 	buf := new(bytes.Buffer)
@@ -556,7 +557,7 @@ func outputKernelSquashFS(image, base string, filesystem io.Reader, arch string)
 	}
 	_ = rootfs.Close()
 
-	output, err := os.Create(base + "-squashfs.img")
+	output, err := os.Create(outfile)
 	if err != nil {
 		return err
 	}
@@ -567,122 +568,16 @@ func outputKernelSquashFS(image, base string, filesystem io.Reader, arch string)
 		return err
 	}
 	return dockerRun(buf, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)})
+}
+
+func outputKernelSquashFS(image, base string, filesystem io.Reader, arch string) error {
+	return outputKernelImage(image, base, "squashfs", base+"-squashfs.img", filesystem, arch)
 }
 
 func outputKernelEroFS(image, base string, filesystem io.Reader, arch string) error {
-	log.Debugf("output kernel/erofs: %s %s", image, base)
-	log.Infof("  %s-erofs.img", base)
-
-	tr := tar.NewReader(filesystem)
-	buf := new(bytes.Buffer)
-	rootfs := tar.NewWriter(buf)
-
-	for {
-		var thdr *tar.Header
-		thdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		thdr.Format = tar.FormatPAX
-		switch {
-		case thdr.Name == "boot/kernel":
-			kernel, err := io.ReadAll(tr)
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
-				return err
-			}
-		case thdr.Name == "boot/cmdline":
-			cmdline, err := io.ReadAll(tr)
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
-				return err
-			}
-		case strings.HasPrefix(thdr.Name, "boot/"):
-			// skip the rest of boot/
-		default:
-			_ = rootfs.WriteHeader(thdr)
-			if _, err := io.Copy(rootfs, tr); err != nil {
-				return err
-			}
-		}
-	}
-	_ = rootfs.Close()
-
-	output, err := os.Create(base + "-erofs.img")
-	if err != nil {
-		return err
-	}
-	defer func() { _ = output.Close() }()
-
-	march, err := util.MArch(arch)
-	if err != nil {
-		return err
-	}
-	return dockerRun(buf, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)})
+	return outputKernelImage(image, base, "erofs", base+"-erofs.img", filesystem, arch)
 }
 
 func outputKernelISO(image, base string, filesystem io.Reader, arch string) error {
-	log.Debugf("output kernel/iso: %s %s", image, base)
-	log.Infof("  %s.iso", base)
-
-	tr := tar.NewReader(filesystem)
-	buf := new(bytes.Buffer)
-	rootfs := tar.NewWriter(buf)
-
-	for {
-		var thdr *tar.Header
-		thdr, err := tr.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return err
-		}
-		thdr.Format = tar.FormatPAX
-		switch {
-		case thdr.Name == "boot/kernel":
-			kernel, err := io.ReadAll(tr)
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(base+"-kernel", kernel, os.FileMode(0644)); err != nil {
-				return err
-			}
-		case thdr.Name == "boot/cmdline":
-			cmdline, err := io.ReadAll(tr)
-			if err != nil {
-				return err
-			}
-			if err := os.WriteFile(base+"-cmdline", cmdline, os.FileMode(0644)); err != nil {
-				return err
-			}
-		case strings.HasPrefix(thdr.Name, "boot/"):
-			// skip the rest of boot/
-		default:
-			_ = rootfs.WriteHeader(thdr)
-			if _, err := io.Copy(rootfs, tr); err != nil {
-				return err
-			}
-		}
-	}
-	_ = rootfs.Close()
-
-	output, err := os.Create(base + ".iso")
-	if err != nil {
-		return err
-	}
-	defer func() { _ = output.Close() }()
-
-	march, err := util.MArch(arch)
-	if err != nil {
-		return err
-	}
-	return dockerRun(buf, output, image, []string{fmt.Sprintf("TARGETARCH=%s", march)})
+	return outputKernelImage(image, base, "iso", base+".iso", filesystem, arch)
 }
