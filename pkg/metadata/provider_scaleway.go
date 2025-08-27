@@ -43,7 +43,7 @@ func (p *ProviderScaleway) Probe() bool {
 	// Getting the conf should always work...
 	_, err := scalewayGet(scalewayMetadataURL + "conf")
 	if err != nil {
-		log.Printf(err.Error())
+		log.Print(err.Error())
 		return false
 	}
 

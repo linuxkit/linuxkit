@@ -2,9 +2,9 @@ kernel:
   image: linuxkit/kernel:6.6.71
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:8eea386739975a43af558eec757a7dcb3a3d2e7b
-  - linuxkit/runc:667e7ea2c426a2460ca21e3da065a57dbb3369c9
-  - linuxkit/bpftrace:044371a0dfe9401b343c5e60cd08c25d6a89c608
+  - linuxkit/init:e2c6a1afb6750ea766c7386c7f2115f6e28fda4d
+  - linuxkit/runc:c0d2d13905def9c220e1b61e3c4397e172dbfc2c
+  - linuxkit/bpftrace:f7714e57ea5d5b82cc12c5ab2faf7d65c6fa7145
 onboot:
   - name: bpftrace-test
     image: alpine:3.13
@@ -17,7 +17,7 @@ onboot:
     capabilities:
       - all
   - name: poweroff
-    image: linuxkit/poweroff:91a23d43c403e200102b7512d8de95f89c86565c
+    image: linuxkit/poweroff:533800608f90bf05e2b39c899f2f1cbe7421b8e7
     command: ["/bin/sh", "/poweroff.sh", "10"]
 files:
   - path: check.sh
