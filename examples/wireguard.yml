@@ -2,18 +2,18 @@ kernel:
   image: linuxkit/kernel:6.6.71
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:8eea386739975a43af558eec757a7dcb3a3d2e7b
-  - linuxkit/runc:667e7ea2c426a2460ca21e3da065a57dbb3369c9
-  - linuxkit/containerd:a988a1a8bcbacc2c0390ca0c08f949e2b4b5915d
-  - linuxkit/ca-certificates:7b32a26ca9c275d3ef32b11fe2a83dbd2aee2fdb
+  - linuxkit/init:e2c6a1afb6750ea766c7386c7f2115f6e28fda4d
+  - linuxkit/runc:c0d2d13905def9c220e1b61e3c4397e172dbfc2c
+  - linuxkit/containerd:838b745e38e43309393675ce3cf04bee9047eb91
+  - linuxkit/ca-certificates:a4f15fe71bb0ad7560ff78f48504dd2af500a442
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:5f56434b81004b50b47ed629b222619168c2bcdf
+    image: linuxkit/sysctl:2fad4cdf96faa97bf7888696b8c3ca00f98137af
   - name: dhcpcd
-    image: linuxkit/dhcpcd:157df9ef45a035f1542ec2270e374f18efef98a5
+    image: linuxkit/dhcpcd:4681273eeea47c26d980958656e60fe70d49e318
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: wg0
-    image: linuxkit/ip:9696394a7d57b384ae919662ae162c9152029156
+    image: linuxkit/ip:afb85d0e238bb26f35546d98c14d41b6f41ccd50
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -26,7 +26,7 @@ onboot:
       bindNS:
           net: /run/netns/wg0
   - name: wg1
-    image: linuxkit/ip:9696394a7d57b384ae919662ae162c9152029156
+    image: linuxkit/ip:afb85d0e238bb26f35546d98c14d41b6f41ccd50
     net: new
     binds:
       - /etc/wireguard:/etc/wireguard
@@ -40,12 +40,12 @@ onboot:
           net: /run/netns/wg1
 services:
   - name: getty
-    image: linuxkit/getty:05eca453695984a69617f1f1f0bcdae7f7032967
+    image: linuxkit/getty:37a16fb37f56ad0aee6532c1a39d780416f7fb80
     env:
      - INSECURE=true
     net: /run/netns/wg1
   - name: rngd
-    image: linuxkit/rngd:1a18f2149e42a0a1cb9e7d37608a494342c26032
+    image: linuxkit/rngd:80f22b0f60d23c29ce28d06674bc77fe3775a38b
   - name: nginx
     image: nginx:1.13.8-alpine
     net: /run/netns/wg0
