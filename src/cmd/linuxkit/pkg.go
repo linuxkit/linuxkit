@@ -84,8 +84,9 @@ func pkgCmd() *cobra.Command {
 	}
 
 	// because there is an alias 'pkg push' for 'pkg build --push', we need to add the build command first
-	buildCmd := pkgBuildCmd()
+	buildCmd, buildArgCmd := pkgBuildCmds()
 	cmd.AddCommand(buildCmd)
+	cmd.AddCommand(buildArgCmd)
 	cmd.AddCommand(pkgBuilderCmd())
 	cmd.AddCommand(pkgPushCmd(buildCmd))
 	cmd.AddCommand(pkgShowTagCmd())
