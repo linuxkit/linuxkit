@@ -2,8 +2,8 @@ kernel:
   image: linuxkit/kernel:6.6.71
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:e2c6a1afb6750ea766c7386c7f2115f6e28fda4d
-  - linuxkit/runc:c0d2d13905def9c220e1b61e3c4397e172dbfc2c
+  - linuxkit/init:680da6e6f79bb8236a095147d532cd2160e23c9f
+  - linuxkit/runc:2dfee46421e963d6c0d946137e46fe36fa606d29
   - linuxkit/bpftrace:f7714e57ea5d5b82cc12c5ab2faf7d65c6fa7145
 onboot:
   - name: bpftrace-test

@@ -6,11 +6,7 @@ FROM linuxkit/alpine:6090baae063eb5023c9601966e88df831f789a70 as builder
 # `test/pkg/containerd/Dockerfile` when changing this.
 ENV CONTAINERD_REPO=https://github.com/containerd/containerd.git
 
-# this commit is post-v2.0.3 and includes the fix for the blkdiscard issue
-# which is necessary for the root tests to pass when running on Alpine.
-# Once it is in semver, likely v2.0.4, we can switch to that.
-# See PR https://github.com/containerd/containerd/pull/11330
-ENV CONTAINERD_COMMIT=f35b7dae5f1f4f1277e4c39b89acb0a8ea669c48
+ENV CONTAINERD_COMMIT=v2.1.4
 ENV GOPATH=/go
 RUN apk add go git
 RUN mkdir -p $GOPATH/src/github.com/containerd && \
