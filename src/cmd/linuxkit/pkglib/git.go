@@ -242,5 +242,8 @@ func (g git) goPkgVersion() (string, error) {
 		}
 		version = fmt.Sprintf("%s-%s", lastSemver, dateCommit)
 	}
+
+	version = strings.TrimSpace(version)
+
 	return version, nil
 }
