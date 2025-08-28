@@ -29,6 +29,7 @@ type buildOpts struct {
 	pull              bool
 	ignoreCache       bool
 	push              bool
+	dryRun            bool
 	preCacheImages    bool
 	release           string
 	manifest          bool
@@ -250,6 +251,14 @@ func WithRegistryAuth(creds map[string]spec.RegistryAuth) BuildOpt {
 	}
 }
 
+// WithDryRun do not execute the build or push, just report the command equivalent
+func WithDryRun() BuildOpt {
+	return func(bo *buildOpts) error {
+		bo.dryRun = true
+		return nil
+	}
+}
+
 // Build builds the package
 func (p Pkg) Build(bos ...BuildOpt) error {
 	var bo buildOpts
@@ -309,7 +318,10 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	}
 
 	d := bo.runner
-	if d == nil {
+	switch {
+	case bo.dryRun:
+		d = newDockerDryRunner()
+	case d == nil:
 		d = newDockerRunner(p.cache)
 	}
 
@@ -488,6 +500,10 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 				return fmt.Errorf("no valid descriptor returned for image for arch %s", platform.Architecture)
 			}
 			descs = append(descs, builtDescs...)
+		}
+
+		if bo.dryRun {
+			return nil
 		}
 
 		// after build is done:
@@ -711,6 +727,10 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider
 	// wait for the processor to finish
 	if err := eg.Wait(); err != nil {
 		return nil, err
+	}
+
+	if bo.dryRun {
+		return []registry.Descriptor{registry.Descriptor{}}, nil
 	}
 
 	// find the child manifests
