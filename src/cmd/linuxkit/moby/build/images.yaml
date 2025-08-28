@@ -5,6 +5,7 @@
  raw-bios:       linuxkit/mkimage-raw-bios:42706053b66824d430e59edd7c195ee9b66493f4
  raw-efi:        linuxkit/mkimage-raw-efi:eac58d3efbfe1324fc9dbdd836e44fd6cd48f93c
  squashfs:       linuxkit/mkimage-squashfs:6908664b03dc38a5ad4381a2451c7a55ae32210f
+ erofs:          linuxkit/mkimage-erofs:cb41abbb3684773b14f51ab6649b2050d1241747
  gcp:            linuxkit/mkimage-gcp:7f220881aed6336708b62afea9820e436b573cea
  qcow2-efi:      linuxkit/mkimage-qcow2-efi:dbabe68ec09490b5ac44bd26962d848a33e0777d
  vhd:            linuxkit/mkimage-vhd:c6f7696575081986bdda9a6b48ead70498e2aeee
