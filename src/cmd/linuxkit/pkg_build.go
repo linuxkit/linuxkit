@@ -53,6 +53,7 @@ func pkgBuildCmd() *cobra.Command {
 		buildArgFiles  []string
 		progress       string
 		ssh            []string
+		dryRun         bool
 	)
 	cmd := &cobra.Command{
 		Use:   "build",
@@ -111,6 +112,10 @@ func pkgBuildCmd() *cobra.Command {
 				opts = append(opts, pkglib.WithBuildSbomScanner(sbomScanner))
 			}
 			opts = append(opts, pkglib.WithDockerfile(dockerfile))
+
+			if dryRun {
+				opts = append(opts, pkglib.WithDryRun())
+			}
 
 			// read any build arg files
 			var buildArgs []string
@@ -311,6 +316,7 @@ func pkgBuildCmd() *cobra.Command {
 	cmd.Flags().StringArrayVar(&buildArgFiles, "build-arg-file", nil, "Files containing build arguments, one key=value per line, contents augment and override buildArgs in build.yml. Can be specified multiple times. File is relative to working directory when running `linuxkit pkg build`")
 	cmd.Flags().StringVar(&progress, "progress", "auto", "Set type of progress output (auto, plain, tty). Use plain to show container output, tty for interactive build")
 	cmd.Flags().StringArrayVar(&ssh, "ssh", nil, "SSH agent config to use for build, follows the syntax used for buildx and buildctl, see https://docs.docker.com/reference/dockerfile/#run---mounttypessh")
+	cmd.Flags().BoolVar(&dryRun, "dry-run", false, "Do not actually build, just print the final docker command that would be used")
 
 	return cmd
 }
