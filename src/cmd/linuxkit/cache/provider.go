@@ -53,12 +53,13 @@ func (p *Provider) Index() (v1.ImageIndex, error) {
 
 // Lock locks the cache directory to prevent concurrent access
 func (p *Provider) Lock() error {
+	p.lockMut.Lock()
+	defer p.lockMut.Unlock()
+
 	// if the lock is already set, we do not need to do anything
 	if p.lock != nil {
 		return nil
 	}
-	p.lockMut.Lock()
-	defer p.lockMut.Unlock()
 	var lockFile = filepath.Join(p.dir, lockfile)
 	lock, err := util.Lock(lockFile)
 	if err != nil {
