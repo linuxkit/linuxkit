@@ -10,7 +10,7 @@ import (
 	"strings"
 	"text/template"
 
-	"gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v3"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
@@ -157,7 +157,9 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			return nil, err
 		}
 
-		if err := yaml.Unmarshal(b, &pi); err != nil {
+		dec := yaml.NewDecoder(bytes.NewReader(b))
+		dec.KnownFields(true)
+		if err := dec.Decode(&pi); err != nil {
 			return nil, err
 		}
 

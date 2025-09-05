@@ -1,0 +1,7 @@
+image: build-args-test
+network: true
+arches:
+    - amd64
+    - arm64
+# should error out on this unknown field
+unknownField: "abc"
