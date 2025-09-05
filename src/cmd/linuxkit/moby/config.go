@@ -360,8 +360,9 @@ func NewConfig(config []byte, packageFinder spec.PackageResolver) (Moby, error) 
 
 	// Parse raw yaml
 	var rawYaml interface{}
-	err := yaml.Unmarshal(config, &rawYaml)
-	if err != nil {
+	dec := yaml.NewDecoder(bytes.NewReader(config))
+	dec.KnownFields(true)
+	if err := dec.Decode(&rawYaml); err != nil {
 		return m, err
 	}
 
