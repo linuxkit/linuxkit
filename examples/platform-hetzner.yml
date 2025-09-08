@@ -9,9 +9,6 @@ init:
   - linuxkit/ca-certificates:a4f15fe71bb0ad7560ff78f48504dd2af500a442
   - linuxkit/firmware:c9c7d24ecc626db5d293d31ffaaed0a7ffa776e6
 onboot:
-  - name: rngd1
-    image: linuxkit/rngd:80f22b0f60d23c29ce28d06674bc77fe3775a38b
-    command: ["/sbin/rngd", "-1"]
   - name: sysctl
     image: linuxkit/sysctl:2fad4cdf96faa97bf7888696b8c3ca00f98137af
   - name: dhcpcd
@@ -21,8 +18,6 @@ onboot:
     image: linuxkit/metadata:db835ad616084adb6b474e7fd804928fd1d5dd5f
     command: ["/usr/bin/metadata", "hetzner"]
 services:
-  - name: rngd
-    image: linuxkit/rngd:80f22b0f60d23c29ce28d06674bc77fe3775a38b
   - name: getty
     image: linuxkit/getty:37a16fb37f56ad0aee6532c1a39d780416f7fb80
     env:
