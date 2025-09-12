@@ -98,7 +98,7 @@ func getClientForPlatform(ctx context.Context, buildersMap map[string]string, bu
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse platform: %s", err)
 	}
-	dr := newDockerRunner(false)
+	dr := NewDockerRunner(false)
 	builderName := getBuilderForPlatform(p.Architecture, buildersMap)
 	client, err := dr.Builder(ctx, builderName, builderImage, builderConfigPath, platform, false)
 	if err != nil {
