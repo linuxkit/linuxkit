@@ -57,13 +57,14 @@ import (
 )
 
 const (
-	buildkitBuilderName   = "linuxkit-builder"
-	buildkitSocketPath    = "/run/buildkit/buildkitd.sock"
-	buildkitWaitServer    = 30 // seconds
-	buildkitCheckInterval = 1  // seconds
-	sbomFrontEndKey       = "attest:sbom"
-	buildkitConfigDir     = "/etc/buildkit"
-	buildkitConfigPath    = buildkitConfigDir + "/buildkitd.toml"
+	buildkitBuilderName    = "linuxkit-builder"
+	buildkitSocketPath     = "/run/buildkit/buildkitd.sock"
+	buildkitWaitServer     = 30 // seconds
+	buildkitCheckInterval  = 1  // seconds
+	sbomFrontEndKey        = "attest:sbom"
+	buildkitConfigDir      = "/etc/buildkit"
+	buildkitConfigFileName = "buildkitd.toml"
+	buildkitConfigPath     = buildkitConfigDir + "/" + buildkitConfigFileName
 )
 
 type dockerRunnerImpl struct {
@@ -277,6 +278,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 	for range buildKitCheckRetryCount {
 		var b bytes.Buffer
 		var cid string
+		var filesToLoadIntoContainer map[string][]byte
 		if err := dr.command(nil, &b, io.Discard, "--context", dockerContext, "container", "inspect", name); err == nil {
 			// we already have a container named "linuxkit-builder" in the provided context.
 			// get its state and config
@@ -295,16 +297,25 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				// if it is provided, we assume it is false until proven true
 				log.Debugf("checking if configPath %s is correct in container %s", configPath, name)
 				configPathCorrect = false
-				if err := dr.command(nil, &b, io.Discard, "--context", dockerContext, "container", "exec", name, "cat", buildkitConfigPath); err == nil {
+				var configB bytes.Buffer
+				// we cannot exactly use the local config file, as it gets modified to get loaded into the container
+				// so we preprocess it using the same library that would load it up
+				filesToLoadIntoContainer, err = confutil.LoadConfigFiles(configPath)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load buildkit config file %s: %v", configPath, err)
+				}
+				if err := dr.command(nil, &configB, io.Discard, "--context", dockerContext, "container", "exec", name, "cat", buildkitConfigPath); err == nil {
 					// sha256sum the config file to see if it matches the provided configPath
-					containerConfigFileHash := sha256.Sum256(b.Bytes())
+					containerConfigFileHash := sha256.Sum256(configB.Bytes())
 					log.Debugf("container %s has configPath %s with sha256sum %x", name, buildkitConfigPath, containerConfigFileHash)
-					configFileContents, err := os.ReadFile(configPath)
-					if err != nil {
-						return nil, fmt.Errorf("unable to read buildkit config file %s: %v", configPath, err)
+					log.Tracef("container %s has configPath %s with contents:\n%s", name, buildkitConfigPath, configB.String())
+					configFileContents, ok := filesToLoadIntoContainer[buildkitConfigFileName]
+					if !ok {
+						return nil, fmt.Errorf("unable to read provided buildkit config file %s: %v", configPath, err)
 					}
 					localConfigFileHash := sha256.Sum256(configFileContents)
 					log.Debugf("local %s has configPath %s with sha256sum %x", name, configPath, localConfigFileHash)
+					log.Tracef("local %s has configPath %s with contents:\n%s", name, buildkitConfigPath, string(configFileContents))
 					if bytes.Equal(containerConfigFileHash[:], localConfigFileHash[:]) {
 						log.Debugf("configPath %s in container %s matches local configPath %s", buildkitConfigPath, name, configPath)
 						configPathCorrect = true
@@ -314,8 +325,6 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				} else {
 					log.Debugf("could not read configPath %s from container %s, assuming it is not correct", buildkitConfigPath, name)
 				}
-				// now rewrite and copy over certs, if needed
-				//https://github.com/docker/buildx/blob/master/util/confutil/container.go#L27
 			}
 
 			switch {
@@ -338,7 +347,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				stop = isRunning
 				remove = true
 			case !configPathCorrect:
-				fmt.Printf("existing container has wrong configPath mount, restarting\n")
+				fmt.Printf("existing container has wrong configPath contents, restarting\n")
 				recreate = true
 				stop = isRunning
 				remove = true
@@ -405,11 +414,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 			}
 			// copy in the buildkit config file, if provided
 			if configPath != "" {
-				files, err := confutil.LoadConfigFiles(configPath)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load buildkit config file %s: %v", configPath, err)
-				}
-				if err := dr.copyFilesToContainer(name, files); err != nil {
+				if err := dr.copyFilesToContainer(name, filesToLoadIntoContainer); err != nil {
 					return nil, fmt.Errorf("failed to copy buildkit config file %s and certificates into container %s: %v", configPath, name, err)
 				}
 			}
