@@ -70,7 +70,7 @@ type dockerRunnerImpl struct {
 	cache bool
 }
 
-func newDockerRunner(cache bool) dockerRunner {
+func newDockerRunner(cache bool) DockerRunner {
 	return &dockerRunnerImpl{cache: cache}
 }
 
@@ -198,14 +198,14 @@ func (dr *dockerRunnerImpl) versionCheck(version string) (string, string, error)
 	return clientVersionString, serverVersionString, nil
 }
 
-// contextSupportCheck checks if contexts are supported. This is necessary because github uses some strange versions
+// ContextSupportCheck checks if contexts are supported. This is necessary because github uses some strange versions
 // of docker in Actions, which makes it difficult to tell if context is supported.
 // See https://github.community/t/what-really-is-docker-3-0-6/16171
-func (dr *dockerRunnerImpl) contextSupportCheck() error {
+func (dr *dockerRunnerImpl) ContextSupportCheck() error {
 	return dr.command(nil, io.Discard, io.Discard, "context", "ls")
 }
 
-// builder ensure that a builder container exists or return an error.
+// Builder ensure that a builder container exists or return an error.
 //
 // Process:
 //
@@ -218,7 +218,7 @@ func (dr *dockerRunnerImpl) contextSupportCheck() error {
 // 1. if dockerContext is provided, try to create a builder with that context; if it succeeds, we are done; if not, return an error.
 // 2. try to find an existing named runner with the pattern; if it succeeds, we are done; if not, try next.
 // 3. try to create a generic builder using the default context named "linuxkit".
-func (dr *dockerRunnerImpl) builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error) {
+func (dr *dockerRunnerImpl) Builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error) {
 	// if we were given a context, we must find a builder and use it, or create one and use it
 	if dockerContext != "" {
 		// does the context exist?
@@ -455,7 +455,7 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 	}
 }
 
-func (dr *dockerRunnerImpl) pull(img string) (bool, error) {
+func (dr *dockerRunnerImpl) Pull(img string) (bool, error) {
 	err := dr.command(nil, nil, nil, "image", "pull", img)
 	if err == nil {
 		return true, nil
@@ -497,14 +497,14 @@ func (dr *dockerRunnerImpl) pushWithManifest(img, suffix string, pushImage, push
 	return nil
 }
 
-func (dr *dockerRunnerImpl) tag(ref, tag string) error {
+func (dr *dockerRunnerImpl) Tag(ref, tag string) error {
 	fmt.Printf("Tagging %s as %s\n", ref, tag)
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
 	// ensure we have a builder
-	client, err := dr.builder(ctx, dockerContext, builderImage, builderConfigPath, platform, restart)
+	client, err := dr.Builder(ctx, dockerContext, builderImage, builderConfigPath, platform, restart)
 	if err != nil {
 		return fmt.Errorf("unable to ensure builder container: %v", err)
 	}
@@ -752,12 +752,12 @@ func (dr *dockerRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, 
 	return err
 }
 
-func (dr *dockerRunnerImpl) save(tgt string, refs ...string) error {
+func (dr *dockerRunnerImpl) Save(tgt string, refs ...string) error {
 	args := append([]string{"image", "save", "-o", tgt}, refs...)
 	return dr.command(nil, nil, nil, args...)
 }
 
-func (dr *dockerRunnerImpl) load(src io.Reader) error {
+func (dr *dockerRunnerImpl) Load(src io.Reader) error {
 	args := []string{"image", "load"}
 	return dr.command(src, nil, nil, args...)
 }

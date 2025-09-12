@@ -40,23 +40,23 @@ type buildLog struct {
 	platform      string
 }
 
-func (d *dockerMocker) tag(ref, tag string) error {
+func (d *dockerMocker) Tag(ref, tag string) error {
 	if !d.enableTag {
 		return errors.New("tags not allowed")
 	}
 	d.images[tag] = d.images[ref]
 	return nil
 }
-func (d *dockerMocker) contextSupportCheck() error {
+func (d *dockerMocker) ContextSupportCheck() error {
 	if d.supportContexts {
 		return nil
 	}
 	return errors.New("contexts not supported")
 }
-func (d *dockerMocker) builder(_ context.Context, _, _, _, _ string, _ bool) (*buildkitClient.Client, error) {
+func (d *dockerMocker) Builder(_ context.Context, _, _, _, _ string, _ bool) (*buildkitClient.Client, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, builderRestart, preCacheImages bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progress string, imageBuildOpts spec.ImageBuildOptions) error {
+func (d *dockerMocker) Build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, builderRestart, preCacheImages bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progress string, imageBuildOpts spec.ImageBuildOptions) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")
 	}
@@ -201,7 +201,7 @@ func (d *dockerMocker) build(ctx context.Context, tag, pkg, dockerContext, build
 	}
 	return nil
 }
-func (d *dockerMocker) save(tgt string, refs ...string) error {
+func (d *dockerMocker) Save(tgt string, refs ...string) error {
 	var b []byte
 	for _, ref := range refs {
 		if data, ok := d.images[ref]; ok {
@@ -212,7 +212,7 @@ func (d *dockerMocker) save(tgt string, refs ...string) error {
 	}
 	return os.WriteFile(tgt, b, 0666)
 }
-func (d *dockerMocker) load(src io.Reader) error {
+func (d *dockerMocker) Load(src io.Reader) error {
 	b, err := io.ReadAll(src)
 	if err != nil {
 		return err
@@ -220,7 +220,7 @@ func (d *dockerMocker) load(src io.Reader) error {
 	d.images[d.fixedReadName] = b
 	return nil
 }
-func (d *dockerMocker) pull(img string) (bool, error) {
+func (d *dockerMocker) Pull(img string) (bool, error) {
 	if d.enablePull {
 		b := make([]byte, 256)
 		_, _ = rand.Read(b)
