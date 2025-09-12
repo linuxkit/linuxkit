@@ -100,7 +100,7 @@ func getClientForPlatform(ctx context.Context, buildersMap map[string]string, bu
 	}
 	dr := newDockerRunner(false)
 	builderName := getBuilderForPlatform(p.Architecture, buildersMap)
-	client, err := dr.builder(ctx, builderName, builderImage, builderConfigPath, platform, false)
+	client, err := dr.Builder(ctx, builderName, builderImage, builderConfigPath, platform, false)
 	if err != nil {
 		return nil, fmt.Errorf("unable to ensure builder container: %v", err)
 	}

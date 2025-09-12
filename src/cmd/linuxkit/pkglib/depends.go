@@ -87,7 +87,7 @@ func newDockerDepends(pkgPath string, pi *pkgInfo) (dockerDepends, error) {
 }
 
 // Do ensures that any dependencies the package has declared are met.
-func (dd dockerDepends) Do(d dockerRunner) error {
+func (dd dockerDepends) Do(d DockerRunner) error {
 	if len(dd.images) == 0 {
 		return nil
 	}
@@ -107,7 +107,7 @@ func (dd dockerDepends) Do(d dockerRunner) error {
 	var refs []string
 
 	for _, s := range dd.images {
-		if ok, err := d.pull(s.String()); !ok || err != nil {
+		if ok, err := d.Pull(s.String()); !ok || err != nil {
 			if err != nil {
 				return err
 			}
@@ -119,14 +119,14 @@ func (dd dockerDepends) Do(d dockerRunner) error {
 			bn := filepath.Base(s.Locator) + "@" + s.Digest().String()
 			path := filepath.Join(dd.path, bn+".tar")
 			fmt.Printf("Adding %q as dependency\n", bn)
-			if err := d.save(path, s.String()); err != nil {
+			if err := d.Save(path, s.String()); err != nil {
 				return err
 			}
 		}
 	}
 
 	if !dd.dir {
-		if err := d.save(dd.path, refs...); err != nil {
+		if err := d.Save(dd.path, refs...); err != nil {
 			return err
 		}
 	}

@@ -38,7 +38,7 @@ type buildOpts struct {
 	cacheProvider     spec.CacheProvider
 	platforms         []imagespec.Platform
 	builders          map[string]string
-	runner            dockerRunner
+	runner            DockerRunner
 	writer            io.Writer
 	builderImage      string
 	builderConfigPath string
@@ -137,7 +137,7 @@ func WithBuildBuilders(builders map[string]string) BuildOpt {
 }
 
 // WithBuildDocker provides a docker runner to use. If nil, defaults to the current platform
-func WithBuildDocker(runner dockerRunner) BuildOpt {
+func WithBuildDocker(runner DockerRunner) BuildOpt {
 	return func(bo *buildOpts) error {
 		bo.runner = runner
 		return nil
@@ -333,7 +333,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 	}
 
-	if err := d.contextSupportCheck(); err != nil {
+	if err := d.ContextSupportCheck(); err != nil {
 		return fmt.Errorf("contexts not supported, check docker version: %v", err)
 	}
 
@@ -538,11 +538,11 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 			if err != nil {
 				return fmt.Errorf("unable to get reader from cache: %v", err)
 			}
-			if err := d.load(reader); err != nil {
+			if err := d.Load(reader); err != nil {
 				return err
 			}
 			if platform.Architecture == arch {
-				err = d.tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), p.FullTag())
+				err = d.Tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), p.FullTag())
 				if err != nil {
 					return err
 				}
@@ -617,11 +617,11 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	// if one of the arch equals with system will add tag without suffix
 	if bo.targetDocker {
 		for _, platform := range bo.platforms {
-			if err := d.tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), fmt.Sprintf("%s-%s", fullRelTag, platform.Architecture)); err != nil {
+			if err := d.Tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), fmt.Sprintf("%s-%s", fullRelTag, platform.Architecture)); err != nil {
 				return err
 			}
 			if platform.Architecture == arch {
-				if err := d.tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), fullRelTag); err != nil {
+				if err := d.Tag(fmt.Sprintf("%s-%s", p.FullTag(), platform.Architecture), fullRelTag); err != nil {
 					return err
 				}
 			}
@@ -646,7 +646,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 // C - manifest, saved in cache as is, referenced by the index (E), and returned as a descriptor
 // D - attestations (if any), saved in cache as is, referenced by the index (E), and returned as a descriptor
 // E - index, saved in cache as is, stored in cache as tag "image:tag-arch", *not* returned as a descriptor
-func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider, builderImage, builderConfigPath, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
+func (p Pkg) buildArch(ctx context.Context, d DockerRunner, c spec.CacheProvider, builderImage, builderConfigPath, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
 	var (
 		tagArch   string
 		tag       = p.FullTag()
@@ -715,7 +715,7 @@ func (p Pkg) buildArch(ctx context.Context, d dockerRunner, c spec.CacheProvider
 
 	imageBuildOpts.Dockerfile = bo.dockerfile
 
-	if err := d.build(ctx, tagArch, p.path, builderName, builderImage, builderConfigPath, platform, restart, bo.preCacheImages, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
+	if err := d.Build(ctx, tagArch, p.path, builderName, builderImage, builderConfigPath, platform, restart, bo.preCacheImages, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)

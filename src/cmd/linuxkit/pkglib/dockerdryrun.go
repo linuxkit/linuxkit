@@ -25,11 +25,11 @@ import (
 type dockerDryRunnerImpl struct {
 }
 
-func newDockerDryRunner() dockerRunner {
+func newDockerDryRunner() DockerRunner {
 	return &dockerDryRunnerImpl{}
 }
 
-func (dr *dockerDryRunnerImpl) contextSupportCheck() error {
+func (dr *dockerDryRunnerImpl) ContextSupportCheck() error {
 	return nil
 }
 
@@ -46,19 +46,19 @@ func (dr *dockerDryRunnerImpl) contextSupportCheck() error {
 // 1. if dockerContext is provided, try to create a builder with that context; if it succeeds, we are done; if not, return an error.
 // 2. try to find an existing named runner with the pattern; if it succeeds, we are done; if not, try next.
 // 3. try to create a generic builder using the default context named "linuxkit".
-func (dr *dockerDryRunnerImpl) builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error) {
+func (dr *dockerDryRunnerImpl) Builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error) {
 	return nil, nil
 }
 
-func (dr *dockerDryRunnerImpl) pull(img string) (bool, error) {
+func (dr *dockerDryRunnerImpl) Pull(img string) (bool, error) {
 	return false, errors.New("not implemented")
 }
 
-func (dr *dockerDryRunnerImpl) tag(ref, tag string) error {
+func (dr *dockerDryRunnerImpl) Tag(ref, tag string) error {
 	return errors.New("not implemented")
 }
 
-func (dr *dockerDryRunnerImpl) build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
+func (dr *dockerDryRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
 	// build args
 	var buildArgs []string
 	for k, v := range imageBuildOpts.BuildArgs {
@@ -85,10 +85,10 @@ func (dr *dockerDryRunnerImpl) build(ctx context.Context, tag, pkg, dockerContex
 	return nil
 }
 
-func (dr *dockerDryRunnerImpl) save(tgt string, refs ...string) error {
+func (dr *dockerDryRunnerImpl) Save(tgt string, refs ...string) error {
 	return errors.New("not implemented")
 }
 
-func (dr *dockerDryRunnerImpl) load(src io.Reader) error {
+func (dr *dockerDryRunnerImpl) Load(src io.Reader) error {
 	return errors.New("not implemented")
 }

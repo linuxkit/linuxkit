@@ -18,12 +18,12 @@ import (
 	_ "github.com/moby/buildkit/client/connhelper/ssh"
 )
 
-type dockerRunner interface {
-	tag(ref, tag string) error
-	build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts spec.ImageBuildOptions) error
-	save(tgt string, refs ...string) error
-	load(src io.Reader) error
-	pull(img string) (bool, error)
-	contextSupportCheck() error
-	builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error)
+type DockerRunner interface {
+	Tag(ref, tag string) error
+	Build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, platformType string, imageBuildOpts spec.ImageBuildOptions) error
+	Save(tgt string, refs ...string) error
+	Load(src io.Reader) error
+	Pull(img string) (bool, error)
+	ContextSupportCheck() error
+	Builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error)
 }
