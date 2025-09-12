@@ -1,0 +1,18 @@
+# it does not matter what these contents are, as long as they are valid and can be processed
+# and are different than the ones in buildkitd.toml
+debug = true
+# trace = true
+insecure-entitlements = [ "network.host", "security.insecure" ]
+
+[worker.oci]
+  max-parallelism = 48
+[worker.oci.gcpulimits]
+  enabled = true
+
+[log]
+  # log formatter: json or text
+  format = "json"
+
+[registry."172.17.0.2:5001"]
+  insecure = true
+  http = true

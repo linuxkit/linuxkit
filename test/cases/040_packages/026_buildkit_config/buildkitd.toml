@@ -1,0 +1,17 @@
+# it does not matter what these contents are, as long as they are valid and can be processed
+debug = true
+# trace = true
+insecure-entitlements = [ "network.host", "security.insecure" ]
+
+[worker.oci]
+  max-parallelism = 56
+[worker.oci.gcpulimits]
+  enabled = false
+
+[log]
+  # log formatter: json or text
+  format = "text"
+
+[registry."172.17.0.2:5000"]
+  insecure = true
+  http = true
