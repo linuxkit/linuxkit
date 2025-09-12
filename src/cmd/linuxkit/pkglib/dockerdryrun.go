@@ -25,7 +25,7 @@ import (
 type dockerDryRunnerImpl struct {
 }
 
-func newDockerDryRunner() DockerRunner {
+func NewDockerDryRunner() DockerRunner {
 	return &dockerDryRunnerImpl{}
 }
 

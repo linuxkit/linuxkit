@@ -319,10 +319,10 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 	d := bo.runner
 	switch {
-	case bo.dryRun:
-		d = newDockerDryRunner()
+	case d == nil && bo.dryRun:
+		d = NewDockerDryRunner()
 	case d == nil:
-		d = newDockerRunner(p.cache)
+		d = NewDockerRunner(p.cache)
 	}
 
 	c := bo.cacheProvider

@@ -71,7 +71,7 @@ type dockerRunnerImpl struct {
 	cache bool
 }
 
-func newDockerRunner(cache bool) DockerRunner {
+func NewDockerRunner(cache bool) DockerRunner {
 	return &dockerRunnerImpl{cache: cache}
 }
 
