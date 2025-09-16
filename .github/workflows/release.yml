@@ -88,10 +88,10 @@ jobs:
       run: |
         make checksum-targets
     - name: GitHub Release
-      uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+      uses: softprops/action-gh-release@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        draft: true
+        draft: false
         files: bin/*
         generate_release_notes: true
