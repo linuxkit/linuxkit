@@ -6,8 +6,6 @@ init:
 onboot:
   - name: sysctl
     image: mobylinux/sysctl:2cf2f9d5b4d314ba1bfc22b2fe931924af666d8c
-services:
-  - name: rngd
 files:
   - path: etc/docker/daemon.json
     contents: '{"debug": true}'
