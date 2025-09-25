@@ -291,7 +291,7 @@ func (r *Remote) rewriteRepositoryBase(repo name.Repository) (string, []name.Opt
 
 	// No rewrite needed
 	if mirror == "" || mirror == originalRegistry {
-		return repo.RepositoryStr(), nil, nil
+		return fmt.Sprintf("%s/%s", repo.RegistryStr(), repo.RepositoryStr()), nil, nil
 	}
 
 	// get mirror protocol and separate host+path
