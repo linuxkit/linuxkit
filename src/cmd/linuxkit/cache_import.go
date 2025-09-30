@@ -10,15 +10,12 @@ import (
 )
 
 func cacheImportCmd() *cobra.Command {
-	var (
-		inputFile string
-	)
 	cmd := &cobra.Command{
 		Use:   "import",
 		Short: "import individual images to the linuxkit cache",
 		Long: `Import individual images from tar file to the linuxkit cache.
 		Can provide the file on the command-line or via stdin with filename '-'.
-		
+
 		Example:
 		linuxkit cache import myimage.tar
 		cat myimage.tar | linuxkit cache import -
@@ -27,8 +24,7 @@ func cacheImportCmd() *cobra.Command {
 		`,
 		Args: cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			paths := args
-			infile := paths[0]
+			infile := args[0]
 
 			p, err := cachepkg.NewProvider(cacheDir)
 			if err != nil {
@@ -36,7 +32,7 @@ func cacheImportCmd() *cobra.Command {
 			}
 
 			var reader io.ReadCloser
-			if inputFile == "-" {
+			if infile == "-" {
 				reader = os.Stdin
 			} else {
 				f, err := os.Open(infile)
