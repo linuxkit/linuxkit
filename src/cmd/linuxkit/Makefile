@@ -117,7 +117,7 @@ sign:
 
 install:
 	cp -R ./bin/* $(PREFIX)/bin
-	
+
 .PHONY: clean
 clean:
 	rm -rf bin *.log *-kernel *-cmdline *-state *.img *.iso *.gz *.qcow2 *.vhd *.vmx *.vmdk *.tar *.raw
