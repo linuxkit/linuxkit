@@ -730,7 +730,7 @@ func (p Pkg) buildArch(ctx context.Context, d DockerRunner, c spec.CacheProvider
 	}
 
 	if bo.dryRun {
-		return []registry.Descriptor{registry.Descriptor{}}, nil
+		return []registry.Descriptor{{}}, nil
 	}
 
 	// find the child manifests
