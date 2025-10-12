@@ -157,7 +157,7 @@ pushdebugkernel-%: builddebugkernel-%
 	linuxkit cache push $(HASHED_IMAGE) --remote-name $(PLAIN_IMAGE)
 
 show-tag-%:
-	@echo 	$(eval BASEIMAGE=$(call baseimage,$*))-$(HASHTAG)
+	@echo 	$(call baseimage,$*)-$(HASHTAG)
 
 buildtools-%: $(addprefix buildtool-%$(RELEASESEP),$(TOOLS));
 
