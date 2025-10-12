@@ -140,10 +140,22 @@ RUN make -j "$(getconf _NPROCESSORS_ONLN)" KCFLAGS="-fno-pie" && \
         cp arch/x86_64/boot/bzImage /out/kernel; \
         ;; \
     aarch64) \
-        cp arch/arm64/boot/Image.gz /out/kernel; \
+        if [ -f arch/arm64/boot/Image.gz ]; then \
+            cp arch/arm64/boot/Image.gz /out/kernel; \
+        elif [ -f arch/arm64/boot/vmlinuz.efi ]; then \
+            cp arch/arm64/boot/vmlinuz.efi /out/kernel; \
+        else \
+            echo "Error: Neither Image.gz nor vmlinuz.efi found for aarch64" >&2; exit 1; \
+        fi \
         ;; \
     riscv64) \
-        cp arch/riscv/boot/Image.gz /out/kernel; \
+        if [ -f arch/riscv/boot/Image.gz ]; then \
+            cp arch/riscv/boot/Image.gz /out/kernel; \
+        elif [ -f arch/riscv/boot/vmlinuz.efi ]; then \
+            cp arch/riscv/boot/vmlinuz.efi /out/kernel; \
+        else \
+            echo "Error: Neither Image.gz nor vmlinuz.efi found for riscv64" >&2; exit 1; \
+        fi \
         ;; \
     esac && \
     cp System.map /out && \
