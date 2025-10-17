@@ -3,8 +3,8 @@
 # ball with modules, the kernel sources, and in some case, the perf binary.
 #
 # Each kernel is pushed to hub twice:
-# - linuxkit/kernel:<kernel>.<major>.<minor>-<hash>
-# - linuxkit/kernel:<kernel>.<major>.<minor>
+# - linuxkit/kernel:6.6.103
+# - linuxkit/kernel:6.6.103
 # The <hash> is the git tree hash of the current directory. The build
 # will only rebuild the kernel image if the git tree hash changed.
 #

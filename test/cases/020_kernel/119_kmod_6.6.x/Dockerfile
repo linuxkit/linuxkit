@@ -3,10 +3,10 @@
 # In the last stage, it creates a package, which can be used for
 # testing.
 
-FROM linuxkit/kernel:6.6.71-819af9d59279506dd2994e7aea1cbbaaebfdb0a2 AS ksrc
+FROM linuxkit/kernel:6.6.103 AS ksrc
 
 # Extract headers and compile module
-FROM linuxkit/kernel:6.6.71-builder AS build
+FROM linuxkit/kernel:6.6.103 AS build
 RUN apk add build-base elfutils-dev
 
 COPY --from=ksrc /kernel-dev.tar /
