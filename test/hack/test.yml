@@ -12,7 +12,7 @@ onboot:
     image: linuxkit/dhcpcd:4681273eeea47c26d980958656e60fe70d49e318
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: check-kernel-config
-    image: linuxkit/test-kernel-config:0064f2f1465ecab4063e940e331c65ba0863d259
+    image: linuxkit/test-kernel-config:7eddc809847ae8d41f4d12a44a2390583e1c735f
   - name: poweroff
     image: linuxkit/poweroff:533800608f90bf05e2b39c899f2f1cbe7421b8e7
     command: ["/bin/sh", "/poweroff.sh", "120"]
