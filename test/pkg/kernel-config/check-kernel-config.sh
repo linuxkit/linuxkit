@@ -94,8 +94,6 @@ fi
 # Positive cases conditional on architecture and/or kernel version
 if [ "$arch" = "x86_64" ]; then
   echo $UNZIPPED_CONFIG | grep -q CONFIG_LEGACY_VSYSCALL_NONE=y || fail "CONFIG_LEGACY_VSYSCALL_NONE=y"
-  echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_TABLE_ISOLATION=y || fail "CONFIG_PAGE_TABLE_ISOLATION=y"
-  echo $UNZIPPED_CONFIG | grep -q CONFIG_RETPOLINE=y || fail "CONFIG_RETPOLINE=y"
   echo $UNZIPPED_CONFIG | grep -q CONFIG_GENERIC_CPU_VULNERABILITIES=y || fail "CONFIG_GENERIC_CPU_VULNERABILITIES=y"
 
   if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 5 ]; then
@@ -103,6 +101,13 @@ if [ "$arch" = "x86_64" ]; then
   fi
   if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 8 ]; then
     echo $UNZIPPED_CONFIG | grep -q CONFIG_RANDOMIZE_MEMORY=y || fail "CONFIG_RANDOMIZE_MEMORY=y"
+  fi
+  if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 6 -a "$kernelMinor" -lt 12 ]; then
+    echo $UNZIPPED_CONFIG | grep -q CONFIG_PAGE_TABLE_ISOLATION=y || fail "CONFIG_PAGE_TABLE_ISOLATION=y"
+    echo $UNZIPPED_CONFIG | grep -q CONFIG_RETPOLINE=y || fail "CONFIG_RETPOLINE=y"
+  else
+    echo $UNZIPPED_CONFIG | grep -q CONFIG_MITIGATION_PAGE_TABLE_ISOLATION=y || fail "CONFIG_MITIGATION_PAGE_TABLE_ISOLATION=y"
+    echo $UNZIPPED_CONFIG | grep -q CONFIG_MITIGATION_RETPOLINE=y || fail "CONFIG_MITIGATION_RETPOLINE=y"
   fi
 fi
 
@@ -112,10 +117,13 @@ echo $UNZIPPED_CONFIG | grep -q 'CONFIG_SCSI_PROC_FS is not set' || fail "CONFIG
 
 # Negative cases conditional on architecture and/or kernel version
 if [ "$arch" = "x86_64" ]; then
-  echo $UNZIPPED_CONFIG | grep -q 'CONFIG_ACPI_CUSTOM_METHOD is not set' || fail "CONFIG_ACPI_CUSTOM_METHOD is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_COMPAT_VDSO is not set' || fail "CONFIG_COMPAT_VDSO is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_KEXEC is not set' || fail "CONFIG_KEXEC is not set"
   echo $UNZIPPED_CONFIG | grep -q 'CONFIG_MODIFY_LDT_SYSCALL is not set' || fail "CONFIG_MODIFY_LDT_SYSCALL is not set"
+
+  if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 6 -a "$kernelMinor" -lt 12 ]; then
+    echo $UNZIPPED_CONFIG | grep -q 'CONFIG_ACPI_CUSTOM_METHOD is not set' || fail "CONFIG_ACPI_CUSTOM_METHOD is not set"
+  fi
   if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 4 -a "$kernelMinor" -ge 5 ]; then
     echo $UNZIPPED_CONFIG | grep -q 'CONFIG_LEGACY_PTYS is not set' || fail "CONFIG_LEGACY_PTYS is not set"
     echo $UNZIPPED_CONFIG | grep -q 'CONFIG_HIBERNATION is not set' || fail "CONFIG_HIBERNATION is not set"
@@ -136,11 +144,16 @@ fi
 # modprobe
 for mod in \
 nfs \
-nfsd \
-ntfs
+nfsd
 do
   modprobe $mod 2>/dev/null || true
 done
+
+if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 6 -a "$kernelMinor" -lt 12 ]; then
+  modprobe ntfs 2>/dev/null || true
+else
+  modprobe ntfs3 2>/dev/null || true
+fi
 
 # check filesystems that are built in
 for fs in \
@@ -148,7 +161,6 @@ sysfs \
 tmpfs \
 bdev \
 proc \
-cpuset \
 cgroup \
 devtmpfs \
 binfmt_misc \
@@ -170,7 +182,6 @@ nfs \
 nfs4 \
 nfsd \
 cifs \
-ntfs \
 fuseblk \
 fuse \
 fusectl \
@@ -183,6 +194,21 @@ mqueue
 do
 	grep -q "[[:space:]]${fs}\$" /proc/filesystems || fail "${fs} filesystem missing"
 done
+
+if [ "$kernelMajor" -eq 5 ] || [ "$kernelMajor" -eq 6 -a "$kernelMinor" -lt 12 ]; then
+  for fs in \
+    ntfs \
+    cpuset
+  do
+    grep -q "[[:space:]]${fs}\$" /proc/filesystems || fail "${fs} filesystem missing"
+  done
+else
+  for fs in \
+    ntfs3
+  do
+    grep -q "[[:space:]]${fs}\$" /proc/filesystems || fail "${fs} filesystem missing"
+  done
+fi
 
 if [ -z "$FAILED" ]
 then
