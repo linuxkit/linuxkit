@@ -19,7 +19,7 @@ clean_up() {
 trap clean_up EXIT
 
 # Make sure we have the latest kernel image
-docker pull linuxkit/kernel:6.12.52-d246bd1bb27e83cc43cc7bfa3576452a2edbde71
+docker pull linuxkit/kernel:6.12.52-01ab8e22c88f25fc1bf4c354689f12797c213a86
 # Build a package
 docker build -t ${IMAGE_NAME} .
 
