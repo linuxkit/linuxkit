@@ -1,5 +1,5 @@
 kernel:
-  image: linuxkit/kernel:6.6.71
+  image: linuxkit/kernel:6.12.52
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
   - "@pkg:./pkg/init"
