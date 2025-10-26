@@ -21,8 +21,6 @@ services:
     image: "@pkg:./pkg/getty"
     env:
      - INSECURE=true
-  - name: rngd
-    image: "@pkg:./pkg/rngd"
   - name: nginx
     image: nginx:1.19.5-alpine
     capabilities:

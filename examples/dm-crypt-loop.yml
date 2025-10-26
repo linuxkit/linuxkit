@@ -37,8 +37,6 @@ services:
     image: linuxkit/getty:37a16fb37f56ad0aee6532c1a39d780416f7fb80
     env:
      - INSECURE=true
-  - name: rngd
-    image: linuxkit/rngd:80f22b0f60d23c29ce28d06674bc77fe3775a38b
 files:
   - path: etc/dm-crypt/key
     # the below key is just to keep the example self-contained

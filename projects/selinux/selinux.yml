@@ -12,10 +12,3 @@ onboot:
     capabilities:
      - CAP_SYS_ADMIN
     readonly: true
-services:
-  - name: rngd
-    image: mobylinux/rngd:3dad6dd43270fa632ac031e99d1947f20b22eec9
-    capabilities:
-     - CAP_SYS_ADMIN
-    oomScoreAdj: -800
-    readonly: true
