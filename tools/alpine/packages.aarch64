@@ -3,3 +3,5 @@ libunwind-dev
 luajit-dev
 qemu-system-aarch64
 strace
+systemd-boot
+systemd-efistub

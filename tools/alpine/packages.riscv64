@@ -1,2 +1,7 @@
+gperf
+libcap-dev
 libunwind-dev
+meson
+py3-jinja2
+py3-elftools
 strace
