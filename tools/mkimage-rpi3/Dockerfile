@@ -1,4 +1,4 @@
-FROM linuxkit/alpine:c89ded458506dc402c349a18b757bc5634d6010a as build
+FROM linuxkit/alpine:8382c70bfe6b581d2c6b3032ca1081ef2ef76e1f as build
 RUN apk add \
     bc \
     bison \
