@@ -2,15 +2,15 @@ kernel:
   image: linuxkit/kernel:6.12.52
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:680da6e6f79bb8236a095147d532cd2160e23c9f
-  - linuxkit/runc:2dfee46421e963d6c0d946137e46fe36fa606d29
-  - linuxkit/containerd:838b745e38e43309393675ce3cf04bee9047eb91
-  - linuxkit/ca-certificates:a4f15fe71bb0ad7560ff78f48504dd2af500a442
+  - linuxkit/init:962b1eb0f6fd0b3e072be3bf555a10c9c831f53d
+  - linuxkit/runc:4ae6608b906fa1f428cfcb55686a8452e98e8a27
+  - linuxkit/containerd:c4e7bb44ddf46365abc4f4b5fa77901bdd73321c
+  - linuxkit/ca-certificates:6d74d50cfbb09d3c322b0899bb45ebefa1ac20ff
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:2fad4cdf96faa97bf7888696b8c3ca00f98137af
+    image: linuxkit/sysctl:237cbcc272f357fe1d479847a42d0640d0a48871
   - name: dhcpcd
-    image: linuxkit/dhcpcd:4681273eeea47c26d980958656e60fe70d49e318
+    image: linuxkit/dhcpcd:700b2f53f2133f9dd3896b86e7ef7e22e459fefc
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1", "change"]
 onshutdown:
   - name: shutdown
@@ -18,7 +18,7 @@ onshutdown:
     command: ["/bin/echo", "so long and thanks for all the fish"]
 services:
   - name: getty
-    image: linuxkit/getty:37a16fb37f56ad0aee6532c1a39d780416f7fb80
+    image: linuxkit/getty:239bff4bbe8b98b1a88f887e567345e4943438c5
     env:
      - INSECURE=true
   - name: nginx
