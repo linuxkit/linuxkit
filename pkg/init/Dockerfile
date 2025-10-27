@@ -1,5 +1,5 @@
 # Dockerfile to build linuxkit/init for linuxkit
-FROM linuxkit/containerd-dev:7621fbbb0e7f7b657319d4ce8c81aa57c830cdd6 AS containerd-dev
+FROM linuxkit/containerd-dev:0efc3fd1cb4a71c737ed678d521660844c093da5 AS containerd-dev
 FROM linuxkit/alpine:8382c70bfe6b581d2c6b3032ca1081ef2ef76e1f AS build
 RUN apk add --no-cache --initdb alpine-baselayout make gcc musl-dev git linux-headers
 
@@ -27,7 +27,7 @@ RUN go-compile.sh /go/src/cmd/service
 # volumes link to start
 RUN mkdir -p /etc/init.d && ln -s /usr/bin/service /etc/init.d/005-volumes
 
-FROM linuxkit/alpine:6090baae063eb5023c9601966e88df831f789a70 AS mirror
+FROM linuxkit/alpine:8382c70bfe6b581d2c6b3032ca1081ef2ef76e1f AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out alpine-baselayout busybox musl
 
