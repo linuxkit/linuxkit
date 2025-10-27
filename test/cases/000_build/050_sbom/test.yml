@@ -3,9 +3,9 @@ kernel:
   image: linuxkit/kernel:6.12.52
   cmdline: "console=ttyS0"
 init:
-  - linuxkit/init:680da6e6f79bb8236a095147d532cd2160e23c9f
-  - linuxkit/runc:2dfee46421e963d6c0d946137e46fe36fa606d29
-  - linuxkit/containerd:838b745e38e43309393675ce3cf04bee9047eb91
+  - linuxkit/init:962b1eb0f6fd0b3e072be3bf555a10c9c831f53d
+  - linuxkit/runc:4ae6608b906fa1f428cfcb55686a8452e98e8a27
+  - linuxkit/containerd:c4e7bb44ddf46365abc4f4b5fa77901bdd73321c
 
 onboot:
   - name: package1

@@ -3,32 +3,32 @@ kernel:
   cmdline: console=ttyS1
   ucode: intel-ucode.cpio
 init:
-  - linuxkit/init:680da6e6f79bb8236a095147d532cd2160e23c9f
-  - linuxkit/runc:2dfee46421e963d6c0d946137e46fe36fa606d29
-  - linuxkit/containerd:838b745e38e43309393675ce3cf04bee9047eb91
-  - linuxkit/ca-certificates:a4f15fe71bb0ad7560ff78f48504dd2af500a442
-  - linuxkit/firmware:c9c7d24ecc626db5d293d31ffaaed0a7ffa776e6
+  - linuxkit/init:962b1eb0f6fd0b3e072be3bf555a10c9c831f53d
+  - linuxkit/runc:4ae6608b906fa1f428cfcb55686a8452e98e8a27
+  - linuxkit/containerd:c4e7bb44ddf46365abc4f4b5fa77901bdd73321c
+  - linuxkit/ca-certificates:6d74d50cfbb09d3c322b0899bb45ebefa1ac20ff
+  - linuxkit/firmware:f039ab09f22c4bfd2ef979572e2fd2babe66f428
 onboot:
   - name: rngd1
-    image: linuxkit/rngd:80f22b0f60d23c29ce28d06674bc77fe3775a38b
+    image: linuxkit/rngd:ee7893507f35876b28098a41dace4f55f7e324ac
     command: ["/sbin/rngd", "-1"]
   - name: sysctl
-    image: linuxkit/sysctl:2fad4cdf96faa97bf7888696b8c3ca00f98137af
+    image: linuxkit/sysctl:237cbcc272f357fe1d479847a42d0640d0a48871
   - name: dhcpcd
-    image: linuxkit/dhcpcd:4681273eeea47c26d980958656e60fe70d49e318
+    image: linuxkit/dhcpcd:700b2f53f2133f9dd3896b86e7ef7e22e459fefc
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
   - name: metadata
-    image: linuxkit/metadata:db835ad616084adb6b474e7fd804928fd1d5dd5f
+    image: linuxkit/metadata:9587a7d582b18e4880ebe528f0fe1fe8da022e27
     command: ["/usr/bin/metadata", "hetzner"]
 services:
   - name: rngd
-    image: linuxkit/rngd:80f22b0f60d23c29ce28d06674bc77fe3775a38b
+    image: linuxkit/rngd:ee7893507f35876b28098a41dace4f55f7e324ac
   - name: getty
-    image: linuxkit/getty:37a16fb37f56ad0aee6532c1a39d780416f7fb80
+    image: linuxkit/getty:239bff4bbe8b98b1a88f887e567345e4943438c5
     env:
      - INSECURE=true
   - name: sshd
-    image: linuxkit/sshd:240e5e4f716bce51099b3785c209bf37613db8f0
+    image: linuxkit/sshd:01b5ff593f6cde1f5d12b6a57166198d5d0fd65d
     binds.add:
       - /root/.ssh:/root/.ssh
 files:
