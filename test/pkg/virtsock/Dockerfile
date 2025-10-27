@@ -1,10 +1,10 @@
-FROM linuxkit/alpine:35b33c6b03c40e51046c3b053dd131a68a26c37a AS mirror
+FROM linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
 RUN apk add --no-cache --initdb -p /out \
     tini
 RUN rm -rf /out/etc/apk /out/lib/apk /out/var/cache
 
-FROM linuxkit/alpine:35b33c6b03c40e51046c3b053dd131a68a26c37a AS build
+FROM linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS build
 
 RUN apk add --no-cache go musl-dev git make
 ENV GOPATH=/go PATH=$PATH:/go/bin GO111MODULE=off
