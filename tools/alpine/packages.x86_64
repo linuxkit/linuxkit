@@ -9,3 +9,5 @@ open-vm-tools-vmbackup
 ovmf
 strace
 syslinux
+systemd-boot
+systemd-efistub

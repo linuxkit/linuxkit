@@ -107,6 +107,7 @@ patch
 pigz
 python3
 python3-dev
+py3-pefile
 py3-pip
 qemu-aarch64
 qemu-arm
