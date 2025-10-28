@@ -2,7 +2,7 @@ kernel:
   image: linuxkit/kernel:6.12.52
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:b92210bd04aa29344d70fd2d259e2ae3c7903ec4
+  - linuxkit/init:26e546e4ef2669bd44d8c46e3164eb5ba7ae1a5c
   - linuxkit/runc:98ddef9b5b87cb44783566ed2a86cea95439a631
   - linuxkit/containerd:22578becf270fe4bbb82e29f2539f71613e0b4fc
   - linuxkit/ca-certificates:256f1950df59f2f209e9f0b81374177409eb11de
