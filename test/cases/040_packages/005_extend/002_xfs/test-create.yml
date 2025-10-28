@@ -2,14 +2,14 @@ kernel:
   image: linuxkit/kernel:6.12.52
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
-  - linuxkit/init:962b1eb0f6fd0b3e072be3bf555a10c9c831f53d
-  - linuxkit/runc:4ae6608b906fa1f428cfcb55686a8452e98e8a27
+  - linuxkit/init:b92210bd04aa29344d70fd2d259e2ae3c7903ec4
+  - linuxkit/runc:98ddef9b5b87cb44783566ed2a86cea95439a631
 onboot:
   - name: format
-    image: linuxkit/format:aab46db75a2ace18b81c01ef0657a8725085e47d
+    image: linuxkit/format:4f779c0b0d0ba145b7f03211b5cbf59fbbe12e54
     command: ["/usr/bin/format", "-type", "xfs"]
   - name: mount
-    image: linuxkit/mount:c712a371ac72cdc4d1f5dd1e642609b5c63c920f
+    image: linuxkit/mount:bd1c3bb45e48e68e47a9456d1669f7119f855184
     command: ["/usr/bin/mountie", "/var/lib/docker"]
   - name: test
     image: alpine:3.21
@@ -17,5 +17,5 @@ onboot:
       - /var/lib/docker:/var/lib/docker
     command: ["touch", "/var/lib/docker/bar"]
   - name: poweroff
-    image: linuxkit/poweroff:57b9b0dc81aa7247e35628cb7d1723546b569004
+    image: linuxkit/poweroff:4059858a555bed90c2280fa9b060b7a8f8de6d45
     command: ["/bin/sh", "/poweroff.sh", "10"]
