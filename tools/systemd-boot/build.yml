@@ -1,0 +1,5 @@
+image: systemd-boot
+arches:
+  - arm64
+  - amd64
+  - riscv64
