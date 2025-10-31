@@ -14,14 +14,20 @@ ESP_FILE=$PWD/boot.img
 
 
 
-# get the GRUB2 boot file name
+# get the systemd boot file name
 ARCH=${TARGETARCH:-`uname -m`}
 case $ARCH in
 x86_64)
-  BOOTFILE=BOOTX64.EFI
+  BOOTFILE_SRC=/usr/lib/systemd/boot/efi/systemd-bootx64.efi
+  BOOTFILE_DST=BOOTX64.EFI
   ;;
 aarch64)
-  BOOTFILE=BOOTAA64.EFI
+  BOOTFILE_SRC=/usr/lib/systemd/boot/efi/systemd-bootaa64.efi
+  BOOTFILE_DST=BOOTAA64.EFI
+  ;;
+riscv64)
+  BOOTFILE_SRC=/usr/lib/systemd/boot/efi/systemd-bootriscv64.efi
+  BOOTFILE_DST=BOOTRISCV64.EFI
   ;;
 esac
 
@@ -39,21 +45,25 @@ INITRD="$(find . -name '*.img')"
 KERNEL="./kernel"
 CMDLINE_FILE="$(find . -name cmdline)"
 CMDLINE="$(cat $CMDLINE_FILE )"
+UKI_FILE="linuxkit.efi"
+
+# this is displayed as boot loader entry name
+OS_RELEASE="NAME=\"LinuxKit\""
 
 # PARTUUID for root
 PARTUUID=$(cat /proc/sys/kernel/random/uuid)
 
-cp /usr/local/share/$BOOTFILE .
+cp $BOOTFILE_SRC $BOOTFILE_DST
 
-mkdir -p EFI/BOOT
-cat >> EFI/BOOT/grub.cfg <<EOF
-set timeout=0
-set gfxpayload=text
-menuentry 'LinuxKit ISO Image' {
-	linux /kernel ${CMDLINE} text
-  initrd /initrd.img
-}
+cat >> loader/loader.conf <<EOF
+timeout 0
 EOF
+
+ukify build --linux=$KERNEL \
+            --initrd=$INITRD \
+            --cmdline="$CMDLINE text" \
+            --os-release=$OS_RELEASE \
+            --output=$UKI_FILE
 
 # FAT filesystem config
 FAT_SIZE=32
@@ -63,13 +73,12 @@ SECTORS_PER_CLUSTER=8
 RESERVED_SECTORS=32
 
 # calculate sizes
-KERNEL_FILE_SIZE=$(stat -c %s "$KERNEL")
-INITRD_FILE_SIZE=$(stat -c %s "$INITRD")
-EFI_FILE_SIZE=$(stat -c %s "$BOOTFILE")
-GRUB_FILE_SIZE=$(stat -c %s EFI/BOOT/grub.cfg)
+UKI_FILE_SIZE=$(stat -c %s "$UKI_FILE")
+EFI_FILE_SIZE=$(stat -c %s "$BOOTFILE_DST")
+SYSTEMD_BOOT_FILE_SIZE=$(stat -c %s loader/loader.conf)
 
 # this is the minimum size of our EFI System Partition
-ESP_DATA_SIZE=$(( $KERNEL_FILE_SIZE + $INITRD_FILE_SIZE + $EFI_FILE_SIZE + $GRUB_FILE_SIZE ))
+ESP_DATA_SIZE=$(( $UKI_FILE_SIZE + $EFI_FILE_SIZE + $SYSTEMD_BOOT_FILE_SIZE ))
 ESP_DATA_SECTORS=$(( $ESP_DATA_SIZE / $SECTOR_SIZE ))
 
 # File Allocation Table Sectors = (clusters + 2) * bytes per cluster / sector size
@@ -94,10 +103,11 @@ mkfs.vfat -v -F $FAT_SIZE -S $SECTOR_SIZE -s $SECTORS_PER_CLUSTER -R $RESERVED_S
 echo "mtools_skip_check=1" >> /etc/mtools.conf && \
 mmd -i $ESP_FILE ::/EFI
 mmd -i $ESP_FILE ::/EFI/BOOT
-mcopy -i $ESP_FILE $BOOTFILE ::/EFI/BOOT/
-mcopy -i $ESP_FILE EFI/BOOT/grub.cfg ::/EFI/BOOT/
-mcopy -i $ESP_FILE $KERNEL ::/
-mcopy -i $ESP_FILE $INITRD ::/
+mmd -i $ESP_FILE ::/EFI/Linux
+mmd -i $ESP_FILE ::/loader
+mcopy -i $ESP_FILE $BOOTFILE_DST ::/EFI/BOOT/
+mcopy -i $ESP_FILE $UKI_FILE ::/EFI/Linux/
+mcopy -i $ESP_FILE loader/loader.conf ::/loader
 
 
 # now make our actual filesystem image
