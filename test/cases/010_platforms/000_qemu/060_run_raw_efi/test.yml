@@ -1,0 +1,10 @@
+kernel:
+  image: linuxkit/kernel:6.12.52
+  cmdline: "console=ttyS0"
+init:
+  - linuxkit/init:26e546e4ef2669bd44d8c46e3164eb5ba7ae1a5c
+  - linuxkit/runc:98ddef9b5b87cb44783566ed2a86cea95439a631
+onboot:
+  - name: poweroff
+    image: linuxkit/poweroff:4059858a555bed90c2280fa9b060b7a8f8de6d45
+    command: ["/bin/sh", "/poweroff.sh", "10"]
