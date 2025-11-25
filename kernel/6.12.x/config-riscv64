@@ -1,6 +1,6 @@
 #
 # Automatically generated file; DO NOT EDIT.
-# Linux/riscv 6.12.52 Kernel Configuration
+# Linux/riscv 6.12.59 Kernel Configuration
 #
 CONFIG_CC_VERSION_TEXT="gcc (Alpine 14.2.0) 14.2.0"
 CONFIG_CC_IS_GCC=y
