@@ -7,7 +7,7 @@ init:
   - linuxkit/containerd:ba19f64efd3331a8fd0a33e00eabd14f6ee1780e
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:97e8bb067cd9cef1514531bb692f27263ac6d626
+    image: linuxkit/sysctl:43ac1d39da329c3567fcb9689e5ca99de6d169b6
   - name: dhcpcd
     image: linuxkit/dhcpcd:b87e9ececac55a65eaa592f4dd8b4e0c3009afdb
     command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
