@@ -17,6 +17,4 @@ CMD []
 WORKDIR /
 COPY --from=mirror /go/bin/sysctl /usr/bin/sysctl
 COPY etc/ /etc/
-COPY --from=mirror /etc/apk /etc/apk/
-COPY --from=mirror /lib/apk /lib/apk/
 CMD ["/usr/bin/sysctl"]

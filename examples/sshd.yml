@@ -8,7 +8,7 @@ init:
   - linuxkit/ca-certificates:256f1950df59f2f209e9f0b81374177409eb11de
 onboot:
   - name: sysctl
-    image: linuxkit/sysctl:97e8bb067cd9cef1514531bb692f27263ac6d626
+    image: linuxkit/sysctl:43ac1d39da329c3567fcb9689e5ca99de6d169b6
   - name: rngd1
     image: linuxkit/rngd:984eb580ecb63986f07f626b61692a97aacd7198
     command: ["/sbin/rngd", "-1"]
