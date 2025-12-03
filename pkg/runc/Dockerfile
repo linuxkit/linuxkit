@@ -31,5 +31,3 @@ ENTRYPOINT []
 COPY --from=alpine /usr/bin/runc /usr/bin/
 COPY --from=alpine /etc/init.d/ /etc/init.d/
 COPY --from=alpine /etc/shutdown.d/ /etc/shutdown.d/
-COPY --from=alpine /etc/apk /etc/apk/
-COPY --from=alpine /lib/apk /lib/apk/
