@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 page_poison=1"
 init:
   - linuxkit/init:b5506cc74a6812dc40982cacfd2f4328f8a4b12a
-  - linuxkit/runc:24bcd37e33b5eb445c4fa85b354061fa98b78f26
+  - linuxkit/runc:3c079dfa25a05653db203c2abfb329c4e08ba6f9
   - linuxkit/containerd:ba19f64efd3331a8fd0a33e00eabd14f6ee1780e
 onboot:
   - name: sysctl
