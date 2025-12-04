@@ -17,7 +17,7 @@ trap clean_up EXIT
 
 # Test code goes here
 linuxkit build --format kernel+initrd --name "${NAME}" test.yml
-RESULT="$(linuxkitrun ${NAME})"
+RESULT="$(linuxkitrun --mem 2048 ${NAME})"
 echo "${RESULT}"
 echo "${RESULT}" | grep -q "suite PASSED"
 

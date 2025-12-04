@@ -1,13 +1,6 @@
-# Use Debian testing Qemu 4.2.0 until https://bugs.alpinelinux.org/issues/8131 is resolved.
-FROM debian@sha256:731dd1380d6a8d170a695dbeb17fe0eade0e1c29f654cf0a3a07f372191c3f4b AS qemu
-RUN apt-get update && apt-get install -y qemu-user-static && \
-    mv /usr/bin/qemu-aarch64-static /usr/bin/qemu-aarch64 && \
-    mv /usr/bin/qemu-arm-static /usr/bin/qemu-arm && \
-    mv /usr/bin/qemu-ppc64le-static /usr/bin/qemu-ppc64le && \
-    mv /usr/bin/qemu-s390x-static /usr/bin/qemu-s390x && \
-    mv /usr/bin/qemu-riscv64-static /usr/bin/qemu-riscv64 && \
-    mv /usr/bin/qemu-loongarch64-static /usr/bin/qemu-loongarch64 && \
-    rm /usr/bin/qemu-*-static
+# Use Debian testing-slim Qemu 4.2.0 until https://bugs.alpinelinux.org/issues/8131 is resolved.
+FROM debian@sha256:80381085775a6e69f0f8d09dd9a39495063e348382eb8d4881ba6f142d24b8ab AS qemu
+RUN apt-get update && apt-get install -y qemu-user-static
 
 FROM linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS mirror
 
