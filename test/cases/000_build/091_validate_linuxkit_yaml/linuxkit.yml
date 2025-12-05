@@ -1,6 +1,6 @@
 unknownField: "abc"
 kernel:
-  image: linuxkit/kernel:6.12.52
+  image: linuxkit/kernel:6.12.59
   cmdline: "console=tty0 console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:b5506cc74a6812dc40982cacfd2f4328f8a4b12a
