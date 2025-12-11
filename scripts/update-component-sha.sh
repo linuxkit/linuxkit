@@ -7,6 +7,14 @@ set -e
 # see usage() for usage and functionality
 #
 
+# Detect sed in-place flag (BSD vs GNU)
+if sed --version 2>/dev/null | grep -q GNU; then
+        SED_INPLACE="sed -i"
+else
+        # BSD sed requires an argument for -i
+        SED_INPLACE="sed -i ''"
+fi
+
 usage() {
     cat >&2 <<EOF
 $0 --<mode> <how-to-find> <new-hash>
@@ -49,7 +57,7 @@ updateImage() {
                 hash=$2
                 ;;
         esac
-        git grep -E -l "[[:space:]]$image:" -- '*.yml' '*.yaml' '*.yml.in' '*.yaml.in' '*/Dockerfile' '*/Makefile' | grep -v /vendor/ | xargs sed -i.bak -E -e "s,([[:space:]])($image):([^[:space:]]+), $image:$hash,g"
+        git grep -E -l "[[:space:]]$image:" -- '*.yml' '*.yaml' '*.yml.in' '*.yaml.in' '*/Dockerfile' '*/Makefile' '*/test.sh' | grep -v /vendor/ | while read -r file; do $SED_INPLACE -E -e "s,([[:space:]])($image):([^[:space:]]+),\1$image:$hash,g" "$file"; done
 }
 
 # backwards compatibility
@@ -69,7 +77,7 @@ case "${mode}" in
         fi
         old=$1
         new=$2
-        git grep -E -l "\b($old)([[:space:]]|$)" -- '*.yml' '*.yaml' '*.yml.in' '*.yaml.in' '*/Dockerfile' '*/Makefile' | grep -v /vendor/ | while read -r file; do sed -ri.bak -e "s,($old)([[:space:]]|$),$new\2,g" "$file"; done
+        git grep -E -l "($old)([[:space:]]|$)" -- '*.yml' '*.yaml' '*.yml.in' '*.yaml.in' '*/Dockerfile' '*/Makefile' '*/test.sh' | grep -v /vendor/ | while read -r file; do $SED_INPLACE -E -e "s,($old)([[:space:]]|$),$new\2,g" "$file"; done
         ;;
 --image)
 	if [ $# -lt 1 ] ; then
@@ -98,5 +106,3 @@ case "${mode}" in
 	exit 1
 	;;
 esac
-
-find . -name '*.bak' | xargs rm || true

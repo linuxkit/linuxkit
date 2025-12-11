@@ -55,7 +55,7 @@ RUN KERNEL_MAJOR=$(echo ${KERNEL_VERSION} | cut -d . -f 1) && \
     KERNEL_SHA256_SUMS=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/sha256sums.asc && \
     KERNEL_PGP2_SIGN=https://www.kernel.org/pub/linux/kernel/${KERNEL_MAJOR}/linux-${KERNEL_VERSION}.tar.sign && \
     curl -fsSLO ${KERNEL_SHA256_SUMS} && \
-    gpg2 -q --import /src/keys.asc && \
+    gpg2 -q --import /src/common/keys.asc && \
     gpg2 --verify sha256sums.asc && \
     KERNEL_SHA256=$(grep linux-${KERNEL_VERSION}.tar.xz sha256sums.asc | cut -d ' ' -f 1) && \
     [ -f linux-${KERNEL_VERSION}.tar.xz ] || curl -fsSLO ${KERNEL_SOURCE} && \
@@ -126,7 +126,7 @@ RUN case $(uname -m) in \
     sed -i "s/CONFIG_LOCALVERSION=\"-linuxkit\"/CONFIG_LOCALVERSION=\"-linuxkit${EXTRA}${DEBUG}\"/" ${KERNEL_DEF_CONF}; \
     if [ -n "${DEBUG}" ]; then \
         sed -i 's/CONFIG_PANIC_ON_OOPS=y/# CONFIG_PANIC_ON_OOPS is not set/' ${KERNEL_DEF_CONF}; \
-        cat /src/config${DEBUG} >> ${KERNEL_DEF_CONF}; \
+        cat /src/common/config${DEBUG} >> ${KERNEL_DEF_CONF}; \
     fi && \
     make defconfig && \
     make oldconfig && \
