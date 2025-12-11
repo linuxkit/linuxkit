@@ -3,7 +3,7 @@ kernel:
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:b5506cc74a6812dc40982cacfd2f4328f8a4b12a
-  - linuxkit/runc:3c079dfa25a05653db203c2abfb329c4e08ba6f9
+  - linuxkit/runc:9442aa234715e751a16144f1d4ae3fd1a00fd492
   - linuxkit/bpftrace:d4641399bc9a9504f09d64b9817f83e34a4118fc
 onboot:
   - name: bpftrace-test

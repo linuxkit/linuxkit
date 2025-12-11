@@ -12,7 +12,7 @@ RUN \
   linux-headers \
   make \
   && true
-ENV GOPATH=/go PATH=$PATH:/go/bin GO111MODULE=off
+ENV GOPATH=/go PATH=$PATH:/go/bin
 ENV RUNC_COMMIT=v1.3.3
 RUN mkdir -p $GOPATH/src/github.com/opencontainers && \
   cd $GOPATH/src/github.com/opencontainers && \
