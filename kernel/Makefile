@@ -30,11 +30,10 @@ DIRTY:=$(shell git update-index -q --refresh && git diff-index --quiet HEAD -- $
 
 # Shared files that affect all kernel builds (Dockerfiles, build yamls, scripts, etc.)
 # These are combined with series-specific folders to compute per-series hashes
-SHARED_FILES=Dockerfile Dockerfile.bcc Dockerfile.kconfig Dockerfile.kconfigx Dockerfile.perf Dockerfile.zfs \
-	Makefile build-kernel.yml build-bcc.yml build-perf.yml build-args-debug config-dbg keys.asc
+COMMON_DIR=common
 
-# Compute hash for shared files only (used as base for per-series hashes)
-SHARED_HASH:=$(shell git ls-tree --full-tree $(HASH_COMMIT) -- $(addprefix $(CURDIR)/,$(SHARED_FILES)) 2>/dev/null | git hash-object --stdin)
+# Compute hash for shared files from above and include Makefile from current dir
+SHARED_HASH:=$(shell git ls-tree -r --full-tree $(HASH_COMMIT) -- $(CURDIR)/Makefile $(CURDIR)/$(COMMON_DIR) 2>/dev/null | git hash-object --stdin)
 
 # Function to compute per-series hash: combines shared files hash with series folder hash
 # Usage: $(call series_hash,6.12.x)
@@ -127,17 +126,17 @@ build-%: buildkernel-% buildtools-%;
 
 buildkernel-%: buildkerneldeps-% buildplainkernel-% builddebugkernel-%;
 
-buildkerneldeps-%: Dockerfile Makefile $(wildcard patches-$(call series,$*)/*) $(wildcard config-$(call series,$*)*) ;
+buildkerneldeps-%: $(COMMON_DIR)/Dockerfile Makefile $(wildcard patches-$(call series,$*)/*) $(wildcard config-$(call series,$*)*) ;
 
 buildplainkernel-%: buildkerneldeps-%
 	$(eval KERNEL_SERIES=$(call series,$*))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./build-kernel.yml --hash $(SERIES_HASH) --tag "$*-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args 
+	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./$(COMMON_DIR)/build-kernel.yml --hash $(SERIES_HASH) --tag "$*-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args 
 
 builddebugkernel-%: buildkerneldeps-%
 	$(eval KERNEL_SERIES=$(call series,$*))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./build-kernel.yml --hash $(SERIES_HASH) --tag "$*-dbg-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args --build-arg-file build-args-debug
+	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./$(COMMON_DIR)/build-kernel.yml --hash $(SERIES_HASH) --tag "$*-dbg-{{.Hash}}" --build-arg-file $(KERNEL_SERIES)/build-args --build-arg-file $(COMMON_DIR)/build-args-debug
 
 push-%: notdirty build-% pushkernel-% tagbuilder-% pushtools-%;
 
@@ -154,16 +153,16 @@ pushkernel-%: pushplainkernel-% pushdebugkernel-%;
 pushplainkernel-%: buildplainkernel-%
 	$(eval KERNEL_SERIES=$(call series,$*))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-kernel.yml --hash $(SERIES_HASH) --tag "$*-{{.Hash}}"))
-	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-kernel.yml --tag "$*"))
+	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./$(COMMON_DIR)/build-kernel.yml --hash $(SERIES_HASH) --tag "$*-{{.Hash}}"))
+	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./$(COMMON_DIR)/build-kernel.yml --tag "$*"))
 	linuxkit cache push $(HASHED_IMAGE)
 	linuxkit cache push $(HASHED_IMAGE) --remote-name $(PLAIN_IMAGE)
 
 pushdebugkernel-%: builddebugkernel-%
 	$(eval KERNEL_SERIES=$(call series,$*))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-kernel.yml --hash $(SERIES_HASH) --tag "$*-dbg-{{.Hash}}"))
-	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-kernel.yml --tag "$*-dbg"))
+	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./$(COMMON_DIR)/build-kernel.yml --hash $(SERIES_HASH) --tag "$*-dbg-{{.Hash}}"))
+	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./$(COMMON_DIR)/build-kernel.yml --tag "$*-dbg"))
 	linuxkit cache push $(HASHED_IMAGE)
 	linuxkit cache push $(HASHED_IMAGE) --remote-name $(PLAIN_IMAGE)
 
@@ -179,7 +178,7 @@ buildtool-%:
 	$(eval KERNEL_VERSION=$(call toolkernel,$*))
 	$(eval KERNEL_SERIES=$(call series,$(KERNEL_VERSION)))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)-$(SERIES_HASH)" --build-arg-file $(KERNEL_SERIES)/build-args
+	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./$(COMMON_DIR)/build-$(TOOL).yml --tag "$(KERNEL_VERSION)-$(SERIES_HASH)" --build-arg-file $(KERNEL_SERIES)/build-args
 
 pushtools-%: $(addprefix pushtool-%$(RELEASESEP),$(TOOLS));
 
@@ -188,8 +187,8 @@ pushtool-%: buildtool-%
 	$(eval KERNEL_VERSION=$(call toolkernel,$*))
 	$(eval KERNEL_SERIES=$(call series,$(KERNEL_VERSION)))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)-$(SERIES_HASH)"))
-	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./build-$(TOOL).yml --tag "$(KERNEL_VERSION)"))
+	$(eval HASHED_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./$(COMMON_DIR)/build-$(TOOL).yml --tag "$(KERNEL_VERSION)-$(SERIES_HASH)"))
+	$(eval PLAIN_IMAGE=$(shell linuxkit pkg show-tag . --build-yml ./$(COMMON_DIR)/build-$(TOOL).yml --tag "$(KERNEL_VERSION)"))
 	linuxkit cache push $(HASHED_IMAGE)
 	linuxkit cache push $(HASHED_IMAGE) --remote-name $(PLAIN_IMAGE)
 
@@ -201,13 +200,13 @@ pushtool-%: buildtool-%
 tag-plainkernel-%:
 	$(eval KERNEL_SERIES=$(call series,$*))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	@linuxkit pkg show-tag . --build-yml ./build-kernel.yml --hash $(SERIES_HASH) --tag "$*-{{.Hash}}"
+	@linuxkit pkg show-tag . --build-yml ./$(COMMON_DIR)/build-kernel.yml --hash $(SERIES_HASH) --tag "$*-{{.Hash}}"
 
 # get the tag for the debug kernel for a particular version. Accepts version or series
 tag-debugkernel-%:
 	$(eval KERNEL_SERIES=$(call series,$*))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	@linuxkit pkg show-tag . --build-yml ./build-kernel.yml --hash $(SERIES_HASH) --tag "$*-dbg-{{.Hash}}"
+	@linuxkit pkg show-tag . --build-yml ./$(COMMON_DIR)/build-kernel.yml --hash $(SERIES_HASH) --tag "$*-dbg-{{.Hash}}"
 
 # find and replace any usage of the normal kernel with hash for a particular series
 # will update hash for same semver and/or patch version
@@ -233,7 +232,7 @@ KCONFIG_TAG_EXTENSION=-${KCONFIG_TAG}
 endif
 
 kconfig:
-	docker build --no-cache -f Dockerfile.kconfig \
+	docker build --no-cache -f $(COMMON_DIR)/Dockerfile.kconfig \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
 		--build-arg BUILD_IMAGE=$(IMAGE_BUILDER) \
 		--platform $(BUILD_PLATFORM) \
@@ -241,7 +240,7 @@ kconfig:
 
 kconfigx:
 ifeq (${KCONFIG_TAG},)
-	docker buildx build --no-cache -f Dockerfile.kconfigx \
+	docker buildx build --no-cache -f $(COMMON_DIR)/Dockerfile.kconfigx \
 		--platform $(BUILD_PLATFORM) \
 		--output . \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \
@@ -251,7 +250,7 @@ ifeq (${KCONFIG_TAG},)
 	cp linux_amd64/config-${KERNEL_VERSIONS}-amd64 config-${KERNEL_SERIES}-x86_64
 	cp linux_amd64/config-${KERNEL_VERSIONS}-riscv64 config-${KERNEL_SERIES}-riscv64
 else
-	docker buildx build --no-cache -f Dockerfile.kconfigx \
+	docker buildx build --no-cache -f $(COMMON_DIR)/Dockerfile.kconfigx \
 		--platform $(BUILD_PLATFORM) --push \
 		--output . \
 		--build-arg KERNEL_VERSIONS="$(KERNEL_VERSIONS)" \

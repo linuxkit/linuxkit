@@ -1,3 +1,0 @@
-image: kernel-bcc
-network: true
-dockerfile: Dockerfile.bcc

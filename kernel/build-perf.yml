@@ -1,3 +1,0 @@
-image: kernel-perf
-network: true
-dockerfile: Dockerfile.perf

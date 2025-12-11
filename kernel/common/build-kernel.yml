@@ -1,0 +1,3 @@
+image: kernel
+network: true
+dockerfile: common/Dockerfile
