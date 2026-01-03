@@ -1,17 +1,11 @@
 kernel:
-  image: linuxkit/kernel:6.12.59-8d74c9a6b47bf7bd1cc3f4361d14d32b7d7bb2ed
+  image: linuxkit/kernel:6.12.59
   cmdline: "console=ttyS0 console=ttyAMA0"
 init:
   - linuxkit/init:b5506cc74a6812dc40982cacfd2f4328f8a4b12a
   - linuxkit/runc:9442aa234715e751a16144f1d4ae3fd1a00fd492
 onboot:
-  - name: check
-    image: kmod-test
-    binds:
-     - /dev:/dev
-     - /lib/modules:/lib/modules
-    capabilities:
-     - all
+  - name: mkimage
+    image: linuxkit/mkimage:13cf79633735f644dbba19363fab483f4cc7117f
   - name: poweroff
     image: linuxkit/poweroff:4059858a555bed90c2280fa9b060b7a8f8de6d45
-    command: ["/bin/sh", "/poweroff.sh", "3"]

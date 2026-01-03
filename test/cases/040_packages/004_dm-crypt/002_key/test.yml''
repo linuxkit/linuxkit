@@ -1,0 +1,28 @@
+kernel:
+  image: linuxkit/kernel:6.12.59
+  cmdline: "console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:b5506cc74a6812dc40982cacfd2f4328f8a4b12a
+  - linuxkit/runc:9442aa234715e751a16144f1d4ae3fd1a00fd492
+onboot:
+  - name: dm-crypt
+    image: linuxkit/dm-crypt:27e016fa7c12d6cfce0d045a65b112c787f6dc3c
+    command: ["/usr/bin/crypto", "-k", "/some/other/enc_key", "it_is_encrypted", "/dev/sda"]
+    binds:
+      - /dev/:/dev
+      - /some/other/enc_key:/some/other/enc_key
+  - name: test
+    image: alpine:3.13
+    net: host
+    binds:
+      - /check.sh:/check.sh
+      - /dev:/dev
+    command: ["sh", "./check.sh"]
+  - name: poweroff
+    image: linuxkit/poweroff:4059858a555bed90c2280fa9b060b7a8f8de6d45
+    command: ["/bin/sh", "/poweroff.sh", "10"]
+files:
+  - path: check.sh
+    source: ./check.sh
+  - path: some/other/enc_key
+    contents: "abcdefghijklmnopqrstuvwxyz123456"

@@ -1,0 +1,63 @@
+kernel:
+  image: linuxkit/kernel:6.12.59
+  cmdline: "console=ttyS0 page_poison=1"
+init:
+  - linuxkit/init:b5506cc74a6812dc40982cacfd2f4328f8a4b12a
+  - linuxkit/runc:9442aa234715e751a16144f1d4ae3fd1a00fd492
+  - linuxkit/containerd:ba19f64efd3331a8fd0a33e00eabd14f6ee1780e
+  - linuxkit/ca-certificates:256f1950df59f2f209e9f0b81374177409eb11de
+onboot:
+  - name: sysctl
+    image: linuxkit/sysctl:43ac1d39da329c3567fcb9689e5ca99de6d169b6
+  - name: sysfs
+    image: linuxkit/sysfs:6d5bd933762f6b216744c711c6e876756cee9600
+  - name: dhcpcd
+    image: linuxkit/dhcpcd:b87e9ececac55a65eaa592f4dd8b4e0c3009afdb
+    command: ["/sbin/dhcpcd", "--nobackground", "-f", "/dhcpcd.conf", "-1"]
+  - name: format
+    image: linuxkit/format:4f779c0b0d0ba145b7f03211b5cbf59fbbe12e54
+  - name: mount
+    image: linuxkit/mount:bd1c3bb45e48e68e47a9456d1669f7119f855184
+    command: ["/usr/bin/mountie", "/var/lib/docker"]
+services:
+  - name: getty
+    image: linuxkit/getty:a86d74c8f89be8956330c3b115b0b1f2e09ef6e0
+    env:
+     - INSECURE=true
+  - name: rngd
+    image: linuxkit/rngd:984eb580ecb63986f07f626b61692a97aacd7198
+  - name: ntpd
+    image: linuxkit/openntpd:2508f1d040441457a0b3e75744878afdf61bc473
+  - name: docker
+    image: docker:20.10.6-dind
+    capabilities:
+     - all
+    net: host
+    mounts:
+     - type: cgroup
+       options: ["rw","nosuid","noexec","nodev","relatime"]
+    binds:
+     - /etc/resolv.conf:/etc/resolv.conf
+     - /var/lib/docker:/var/lib/docker
+     - /lib/modules:/lib/modules
+     - /var/run:/var/run
+     - /etc/html:/var/html
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+  - name: compose
+    image: linuxkitprojects/compose:111f9f32a933c9e7acbf3ccfc13fedbdfce8224f
+    binds:
+     - /var/run:/var/run
+     - /etc/compose:/compose
+files:
+  - path: var/lib/docker
+    directory: true
+  - path: etc/html/a/index.html
+    source: html-a.html
+  - path: etc/html/b/index.html
+    source: html-b.html
+  - path: etc/compose/docker-compose.yml
+    source: docker-compose.yml
+trust:
+  org:
+    - linuxkit
+    - library
