@@ -1,4 +1,4 @@
-FROM linuxkit/systemd-boot:1e21eeea040fa7c55553e54d7d9f14d8ff75a24a AS systemd-boot
+FROM linuxkit/systemd-boot:7277832a6e3fb790d022c1c37edc4ea88c873b01 AS systemd-boot
 
 FROM linuxkit/alpine:7f3944798557de5518a56e3437d7ed982701f224 AS mirror
 RUN mkdir -p /out/etc/apk && cp -r /etc/apk/* /out/etc/apk/
