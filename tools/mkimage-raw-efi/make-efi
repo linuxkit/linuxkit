@@ -55,7 +55,7 @@ PARTUUID=$(cat /proc/sys/kernel/random/uuid)
 
 cp $BOOTFILE_SRC $BOOTFILE_DST
 
-cat >> loader/loader.conf <<EOF
+cat >> loader.conf <<EOF
 timeout 0
 EOF
 
@@ -75,7 +75,7 @@ RESERVED_SECTORS=32
 # calculate sizes
 UKI_FILE_SIZE=$(stat -c %s "$UKI_FILE")
 EFI_FILE_SIZE=$(stat -c %s "$BOOTFILE_DST")
-SYSTEMD_BOOT_FILE_SIZE=$(stat -c %s loader/loader.conf)
+SYSTEMD_BOOT_FILE_SIZE=$(stat -c %s loader.conf)
 
 # this is the minimum size of our EFI System Partition
 ESP_DATA_SIZE=$(( $UKI_FILE_SIZE + $EFI_FILE_SIZE + $SYSTEMD_BOOT_FILE_SIZE ))
@@ -107,7 +107,7 @@ mmd -i $ESP_FILE ::/EFI/Linux
 mmd -i $ESP_FILE ::/loader
 mcopy -i $ESP_FILE $BOOTFILE_DST ::/EFI/BOOT/
 mcopy -i $ESP_FILE $UKI_FILE ::/EFI/Linux/
-mcopy -i $ESP_FILE loader/loader.conf ::/loader
+mcopy -i $ESP_FILE loader.conf ::/loader
 
 
 # now make our actual filesystem image
