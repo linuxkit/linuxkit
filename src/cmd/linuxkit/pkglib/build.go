@@ -555,18 +555,11 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		return nil
 	}
 
-	// we only will push if one of these is true:
-	// - we had at least one platform to build
-	// - we found an image in local cache
-	// if neither is true, there is nothing to push
-
+	// determine if we should skip pushing the default tag (no build and no local cache)
+	skipDefaultPush := false
 	if len(platformsToBuild) == 0 {
-		// if we did not yet find the image in local cache,
-		// check, in case we have it and would need to push.
-		// If we did not build it because we were not requested to do so,
-		// then we might not know we have it in local cache.
+		// if we did not yet find the image in local cache, recheck
 		if !imageInLocalCache {
-			// we need this to know whether or not we might push
 			for _, platform := range bo.platforms {
 				exists, err := c.ImageInCache(&ref, "", platform.Architecture)
 				if err == nil && exists {
@@ -577,17 +570,22 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		}
 		if !imageInLocalCache {
 			_, _ = fmt.Fprintf(writer, "No new platforms to push, skipping.\n")
-			return nil
+			if bo.release == "" {
+				return nil
+			}
+			skipDefaultPush = true
 		}
 	}
-
 	if p.dirty {
 		return fmt.Errorf("build complete, refusing to push dirty package")
 	}
-
-	// push the manifest
-	if err := c.Push(p.FullTag(), "", bo.manifest, true); err != nil {
-		return err
+	// push the manifest for the default tag if needed
+	if !skipDefaultPush {
+		if err := c.Push(p.FullTag(), "", bo.manifest, true); err != nil {
+			return err
+		}
+	} else {
+		_, _ = fmt.Fprintf(writer, "Skipping push of default tag %q\n", p.FullTag())
 	}
 
 	if bo.release == "" {
@@ -608,7 +606,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if err := c.DescriptorWrite(fullRelTag, *desc); err != nil {
 		return err
 	}
-	if err := c.Push(fullRelTag, "", bo.manifest, true); err != nil {
+	// push the release tag without overriding existing (skip if already present)
+	if err := c.Push(fullRelTag, "", bo.manifest, false); err != nil {
 		return err
 	}
 
