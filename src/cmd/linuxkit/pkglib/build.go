@@ -349,9 +349,6 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	case bo.force:
 		// force local build
 		platformsToBuild = bo.platforms
-	case bo.skipBuild:
-		// do not build anything if we explicitly did skipBuild
-		platformsToBuild = nil
 	default:
 		// check local cache, fallback to check registry / pull image from registry, fallback to build
 		_, _ = fmt.Fprintf(writer, "checking for %s in local cache...\n", ref)
@@ -362,6 +359,8 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 				_, _ = fmt.Fprintf(writer, "found %s in local cache, skipping build\n", ref)
 				imageInLocalCache = true
 				continue
+			case bo.skipBuild:
+				// do nothing, we do not want to pull/build
 			case bo.pull:
 				// need to pull the image from the registry, else build
 				_, _ = fmt.Fprintf(writer, "%s %s not found in local cache, trying to pull\n", ref, platform.Architecture)
