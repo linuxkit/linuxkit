@@ -97,6 +97,12 @@ ESP_FILE_SIZE_KB=$(( ( ( ($ESP_DATA_SIZE + $FAT_OVERHEAD_SIZE + 1024 - 1) / 1024
 # and for sectors
 ESP_FILE_SIZE_SECTORS=$(( $ESP_FILE_SIZE_KB * 1024 / $SECTOR_SIZE ))
 
+ESP_MIN_SIZE=$(( $SECTOR_SIZE * $SECTORS_PER_CLUSTER * $MIN_CLUSTERS ))
+ESP_DATA_SIZE=$(( $KERNEL_FILE_SIZE + $INITRD_FILE_SIZE + $EFI_FILE_SIZE + $GRUB_FILE_SIZE ))
+if [ "$ESP_DATA_SIZE" -lt "$ESP_MIN_SIZE" ]; then
+    ESP_DATA_SIZE="$ESP_MIN_SIZE"
+fi
+
 # create a raw disk with an EFI boot partition
 # Stuff it into a FAT filesystem, making it as small as possible.
 mkfs.vfat -v -F $FAT_SIZE -S $SECTOR_SIZE -s $SECTORS_PER_CLUSTER -R $RESERVED_SECTORS -C $ESP_FILE $(( $ESP_FILE_SIZE_KB )) > /dev/null
