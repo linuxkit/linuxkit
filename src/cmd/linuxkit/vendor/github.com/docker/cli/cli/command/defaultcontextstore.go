@@ -52,7 +52,14 @@ type EndpointDefaultResolver interface {
 }
 
 // ResolveDefaultContext creates a Metadata for the current CLI invocation parameters
+//
+// Deprecated: this function is exported for testing and meant for internal use. It will be removed in the next release.
 func ResolveDefaultContext(opts *cliflags.ClientOptions, config store.Config) (*DefaultContext, error) {
+	return resolveDefaultContext(opts, config)
+}
+
+// resolveDefaultContext creates a Metadata for the current CLI invocation parameters
+func resolveDefaultContext(opts *cliflags.ClientOptions, config store.Config) (*DefaultContext, error) {
 	contextTLSData := store.ContextTLSData{
 		Endpoints: make(map[string]store.EndpointTLSData),
 	}

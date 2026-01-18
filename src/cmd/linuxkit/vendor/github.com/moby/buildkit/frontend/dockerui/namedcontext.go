@@ -94,9 +94,9 @@ func (nc *NamedContext) load(ctx context.Context, count int) (*llb.State, *docke
 		named = reference.TagNameOnly(named)
 
 		ref, dgst, data, err := nc.bc.client.ResolveImageConfig(ctx, named.String(), sourceresolver.Opt{
-			LogName:  fmt.Sprintf("[context %s] load metadata for %s", nc.nameWithPlatform, ref),
-			Platform: opt.Platform,
+			LogName: fmt.Sprintf("[context %s] load metadata for %s", nc.nameWithPlatform, ref),
 			ImageOpt: &sourceresolver.ResolveImageOpt{
+				Platform:    opt.Platform,
 				ResolveMode: opt.ResolveMode,
 			},
 		})
@@ -138,16 +138,22 @@ func (nc *NamedContext) load(ctx context.Context, count int) (*llb.State, *docke
 		}
 		return &st, &img, nil
 	case "git":
-		st, ok := DetectGitContext(nc.input, true)
+		st, ok, err := DetectGitContext(nc.input, nil)
 		if !ok {
 			return nil, nil, errors.Errorf("invalid git context %s", nc.input)
 		}
+		if err != nil {
+			return nil, nil, err
+		}
 		return st, nil, nil
 	case "http", "https":
-		st, ok := DetectGitContext(nc.input, true)
+		st, ok, err := DetectGitContext(nc.input, nil)
 		if !ok {
 			httpst := llb.HTTP(nc.input, llb.WithCustomName("[context "+nc.nameWithPlatform+"] "+nc.input))
 			st = &httpst
+		}
+		if err != nil {
+			return nil, nil, err
 		}
 		return st, nil, nil
 	case "oci-layout":
@@ -177,9 +183,9 @@ func (nc *NamedContext) load(ctx context.Context, count int) (*llb.State, *docke
 		}
 
 		_, dgst, data, err := nc.bc.client.ResolveImageConfig(ctx, dummyRef.String(), sourceresolver.Opt{
-			LogName:  fmt.Sprintf("[context %s] load metadata for %s", nc.nameWithPlatform, dummyRef.String()),
-			Platform: opt.Platform,
+			LogName: fmt.Sprintf("[context %s] load metadata for %s", nc.nameWithPlatform, dummyRef.String()),
 			OCILayoutOpt: &sourceresolver.ResolveOCILayoutOpt{
+				Platform: opt.Platform,
 				Store: sourceresolver.ResolveImageConfigOptStore{
 					SessionID: nc.bc.bopts.SessionID,
 					StoreID:   named.Name(),

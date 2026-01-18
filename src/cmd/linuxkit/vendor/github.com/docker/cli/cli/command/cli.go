@@ -48,9 +48,7 @@ type Cli interface {
 	Apply(ops ...CLIOption) error
 	config.Provider
 	ServerInfo() ServerInfo
-	DefaultVersion() string
 	CurrentVersion() string
-	ContentTrustEnabled() bool
 	BuildKitEnabled() (bool, error)
 	ContextStore() store.Store
 	CurrentContext() string
@@ -78,6 +76,7 @@ type DockerCli struct {
 	dockerEndpoint     docker.Endpoint
 	contextStoreConfig *store.Config
 	initTimeout        time.Duration
+	userAgent          string
 	res                telemetryResource
 
 	// baseCtx is the base context used for internal operations. In the future
@@ -89,6 +88,8 @@ type DockerCli struct {
 }
 
 // DefaultVersion returns [api.DefaultVersion].
+//
+// Deprecated: this function is no longer used and will be removed in the next release.
 func (*DockerCli) DefaultVersion() string {
 	return api.DefaultVersion
 }
@@ -159,6 +160,8 @@ func (cli *DockerCli) ServerInfo() ServerInfo {
 
 // ContentTrustEnabled returns whether content trust has been enabled by an
 // environment variable.
+//
+// Deprecated: check the value of the DOCKER_CONTENT_TRUST environment variable to detect whether content-trust is enabled.
 func (cli *DockerCli) ContentTrustEnabled() bool {
 	return cli.contentTrust
 }
@@ -269,7 +272,7 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...CLIOption)
 	cli.contextStore = &ContextStoreWithDefault{
 		Store: store.New(config.ContextStoreDir(), *cli.contextStoreConfig),
 		Resolver: func() (*DefaultContext, error) {
-			return ResolveDefaultContext(cli.options, *cli.contextStoreConfig)
+			return resolveDefaultContext(cli.options, *cli.contextStoreConfig)
 		},
 	}
 
@@ -281,6 +284,17 @@ func (cli *DockerCli) Initialize(opts *cliflags.ClientOptions, ops ...CLIOption)
 		cli.createGlobalTracerProvider(cli.baseCtx)
 	}
 	filterResourceAttributesEnvvar()
+
+	// early return if GODEBUG is already set or the docker context is
+	// the default context, i.e. is a virtual context where we won't override
+	// any GODEBUG values.
+	if v := os.Getenv("GODEBUG"); cli.currentContext == DefaultContextName || v != "" {
+		return nil
+	}
+	meta, err := cli.contextStore.GetMetadata(cli.currentContext)
+	if err == nil {
+		setGoDebug(meta)
+	}
 
 	return nil
 }
@@ -295,17 +309,17 @@ func NewAPIClientFromFlags(opts *cliflags.ClientOptions, configFile *configfile.
 	contextStore := &ContextStoreWithDefault{
 		Store: store.New(config.ContextStoreDir(), storeConfig),
 		Resolver: func() (*DefaultContext, error) {
-			return ResolveDefaultContext(opts, storeConfig)
+			return resolveDefaultContext(opts, storeConfig)
 		},
 	}
 	endpoint, err := resolveDockerEndpoint(contextStore, resolveContextName(opts, configFile))
 	if err != nil {
 		return nil, errors.Wrap(err, "unable to resolve docker endpoint")
 	}
-	return newAPIClientFromEndpoint(endpoint, configFile)
+	return newAPIClientFromEndpoint(endpoint, configFile, client.WithUserAgent(UserAgent()))
 }
 
-func newAPIClientFromEndpoint(ep docker.Endpoint, configFile *configfile.ConfigFile) (client.APIClient, error) {
+func newAPIClientFromEndpoint(ep docker.Endpoint, configFile *configfile.ConfigFile, extraOpts ...client.Opt) (client.APIClient, error) {
 	opts, err := ep.ClientOpts()
 	if err != nil {
 		return nil, err
@@ -313,7 +327,14 @@ func newAPIClientFromEndpoint(ep docker.Endpoint, configFile *configfile.ConfigF
 	if len(configFile.HTTPHeaders) > 0 {
 		opts = append(opts, client.WithHTTPHeaders(configFile.HTTPHeaders))
 	}
-	opts = append(opts, withCustomHeadersFromEnv(), client.WithUserAgent(UserAgent()))
+	withCustomHeaders, err := withCustomHeadersFromEnv()
+	if err != nil {
+		return nil, err
+	}
+	if withCustomHeaders != nil {
+		opts = append(opts, withCustomHeaders)
+	}
+	opts = append(opts, extraOpts...)
 	return client.NewClientWithOpts(opts...)
 }
 
@@ -475,6 +496,57 @@ func (cli *DockerCli) getDockerEndPoint() (ep docker.Endpoint, err error) {
 	return resolveDockerEndpoint(cli.contextStore, cn)
 }
 
+// setGoDebug is an escape hatch that sets the GODEBUG environment
+// variable value using docker context metadata.
+//
+//	{
+//	  "Name": "my-context",
+//	  "Metadata": { "GODEBUG": "x509negativeserial=1" }
+//	}
+//
+// WARNING: Setting x509negativeserial=1 allows Go's x509 library to accept
+// X.509 certificates with negative serial numbers.
+// This behavior is deprecated and non-compliant with current security
+// standards (RFC 5280). Accepting negative serial numbers can introduce
+// serious security vulnerabilities, including the risk of certificate
+// collision or bypass attacks.
+// This option should only be used for legacy compatibility and never in
+// production environments.
+// Use at your own risk.
+func setGoDebug(meta store.Metadata) {
+	fieldName := "GODEBUG"
+	godebugEnv := os.Getenv(fieldName)
+	// early return if GODEBUG is already set. We don't want to override what
+	// the user already sets.
+	if godebugEnv != "" {
+		return
+	}
+
+	var cfg any
+	var ok bool
+	switch m := meta.Metadata.(type) {
+	case DockerContext:
+		cfg, ok = m.AdditionalFields[fieldName]
+		if !ok {
+			return
+		}
+	case map[string]any:
+		cfg, ok = m[fieldName]
+		if !ok {
+			return
+		}
+	default:
+		return
+	}
+
+	v, ok := cfg.(string)
+	if !ok {
+		return
+	}
+	// set the GODEBUG environment variable with whatever was in the context
+	_ = os.Setenv(fieldName, v)
+}
+
 func (cli *DockerCli) initialize() error {
 	cli.init.Do(func() {
 		cli.dockerEndpoint, cli.initErr = cli.getDockerEndPoint()
@@ -483,7 +555,8 @@ func (cli *DockerCli) initialize() error {
 			return
 		}
 		if cli.client == nil {
-			if cli.client, cli.initErr = newAPIClientFromEndpoint(cli.dockerEndpoint, cli.configFile); cli.initErr != nil {
+			ops := []client.Opt{client.WithUserAgent(cli.userAgent)}
+			if cli.client, cli.initErr = newAPIClientFromEndpoint(cli.dockerEndpoint, cli.configFile, ops...); cli.initErr != nil {
 				return
 			}
 		}
@@ -496,6 +569,8 @@ func (cli *DockerCli) initialize() error {
 }
 
 // Apply all the operation on the cli
+//
+// Deprecated: this method is no longer used and will be removed in the next release if there are no remaining users.
 func (cli *DockerCli) Apply(ops ...CLIOption) error {
 	for _, op := range ops {
 		if err := op(cli); err != nil {
@@ -527,15 +602,18 @@ type ServerInfo struct {
 // environment.
 func NewDockerCli(ops ...CLIOption) (*DockerCli, error) {
 	defaultOps := []CLIOption{
-		WithContentTrustFromEnv(),
+		withContentTrustFromEnv(),
 		WithDefaultContextStoreConfig(),
 		WithStandardStreams(),
+		WithUserAgent(UserAgent()),
 	}
 	ops = append(defaultOps, ops...)
 
 	cli := &DockerCli{baseCtx: context.Background()}
-	if err := cli.Apply(ops...); err != nil {
-		return nil, err
+	for _, op := range ops {
+		if err := op(cli); err != nil {
+			return nil, err
+		}
 	}
 	return cli, nil
 }
@@ -551,7 +629,7 @@ func getServerHost(hosts []string, defaultToTLS bool) (string, error) {
 	}
 }
 
-// UserAgent returns the user agent string used for making API requests
+// UserAgent returns the default user agent string used for making API requests.
 func UserAgent() string {
 	return "Docker-Client/" + version.Version + " (" + runtime.GOOS + ")"
 }
