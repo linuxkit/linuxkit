@@ -1,0 +1,30 @@
+kernel:
+  image: linuxkit/kernel:5.10.34
+  cmdline: "console=ttyS0 console=ttyAMA0"
+init:
+  - linuxkit/init:78fb57c7da07c4e43c3a37b27755581da087a3b6
+  - linuxkit/runc:bf1e0c61fb4678d6428d0aabbd80db5ea24e4d4d
+  - linuxkit/containerd:cc02c2af9c928c2faeccbe4edc78bd297ad91866
+  - linuxkit/memlogd:9b0e8a5b3f67672234170d88833163caf7898984
+services:
+  - name: auditd
+    image: linuxkit/auditd:d777dd0fc555d81ecf55cfbcfa6053a983257246
+  - name: logwrite
+    image: linuxkit/logwrite:e64e0f06e485e3542b58f3517da3bc13f246d208
+  - name: test
+    image: alpine:3.11
+    binds:
+      - /check.sh:/check.sh
+      - /dev/console:/dev/console
+      - /var/log:/var/log
+    command: ["sh", "./check.sh"]
+    pid: host
+    capabilities:
+      - CAP_SYS_BOOT
+files:
+  - path: check.sh
+    source: ./check.sh
+trust:
+  org:
+    - linuxkit
+    - library
