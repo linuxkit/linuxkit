@@ -47,14 +47,19 @@ func getConnectionHelper(daemonURL string, sshFlags []string) (*ConnectionHelper
 		}
 		sshFlags = addSSHTimeout(sshFlags)
 		sshFlags = disablePseudoTerminalAllocation(sshFlags)
+
+		remoteCommand := []string{"docker", "system", "dial-stdio"}
+		socketPath := sp.Path
+		if strings.Trim(sp.Path, "/") != "" {
+			remoteCommand = []string{"docker", "--host=unix://" + socketPath, "system", "dial-stdio"}
+		}
+		sshArgs, err := sp.Command(sshFlags, remoteCommand...)
+		if err != nil {
+			return nil, err
+		}
 		return &ConnectionHelper{
 			Dialer: func(ctx context.Context, network, addr string) (net.Conn, error) {
-				args := []string{"docker"}
-				if sp.Path != "" {
-					args = append(args, "--host", "unix://"+sp.Path)
-				}
-				args = append(args, "system", "dial-stdio")
-				return commandconn.New(ctx, "ssh", append(sshFlags, sp.Args(args...)...)...)
+				return commandconn.New(ctx, "ssh", sshArgs...)
 			},
 			Host: "http://docker.example.com",
 		}, nil

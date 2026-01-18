@@ -107,6 +107,14 @@ func withDetails(ctx context.Context, s *status.Status, details ...proto.Message
 	return status.FromProto(p), nil
 }
 
+// Code returns the gRPC status code for the given error.
+// If the error type has a `Code() codes.Code` method, it is used.
+// If the error type has a `GRPCStatus() *status.Status` method, its code is used.
+// As a fallback:
+// Supports `Unwrap() error` and `Unwrap() []error` for wrapped errors.
+// When the `Unwrap() []error` returns multiple errors, the first one that
+// contains a non-OK code is returned.
+// Finally, if the error is a context error, the corresponding code is returned.
 func Code(err error) codes.Code {
 	if errdefs.IsInternal(err) {
 		if errdefs.IsResourceExhausted(err) {
@@ -127,14 +135,30 @@ func Code(err error) codes.Code {
 		return se.GRPCStatus().Code()
 	}
 
-	wrapped, ok := err.(interface {
-		Unwrap() error
-	})
-	if ok {
+	if wrapped, ok := err.(singleUnwrapper); ok {
 		if err := wrapped.Unwrap(); err != nil {
 			return Code(err)
 		}
 	}
+
+	if wrapped, ok := err.(multiUnwrapper); ok {
+		var hasUnknown bool
+
+		for _, err := range wrapped.Unwrap() {
+			c := Code(err)
+			if c != codes.OK && c != codes.Unknown {
+				return c
+			}
+			if c == codes.Unknown {
+				hasUnknown = true
+			}
+		}
+
+		if hasUnknown {
+			return codes.Unknown
+		}
+	}
+
 	return status.FromContextError(err).Code()
 }
 
@@ -142,6 +166,10 @@ func WrapCode(err error, code codes.Code) error {
 	return &withCodeError{error: err, code: code}
 }
 
+// AsGRPCStatus tries to extract a gRPC status from the error.
+// Supports  `Unwrap() error` and `Unwrap() []error` for wrapped errors.
+// When the `Unwrap() []error` returns multiple errors, the first one that
+// contains a gRPC status that is not OK is returned with the full error message.
 func AsGRPCStatus(err error) (*status.Status, bool) {
 	if err == nil {
 		return nil, true
@@ -152,12 +180,26 @@ func AsGRPCStatus(err error) (*status.Status, bool) {
 		return se.GRPCStatus(), true
 	}
 
-	wrapped, ok := err.(interface {
-		Unwrap() error
-	})
-	if ok {
+	if wrapped, ok := err.(singleUnwrapper); ok {
 		if err := wrapped.Unwrap(); err != nil {
 			return AsGRPCStatus(err)
+		}
+	}
+
+	if wrapped, ok := err.(multiUnwrapper); ok {
+		for _, err := range wrapped.Unwrap() {
+			st, ok := AsGRPCStatus(err)
+			if !ok {
+				continue
+			}
+
+			if st != nil && st.Code() != codes.OK {
+				// Copy the full status so we can set the full error message
+				// Does the proto conversion so can keep any extra details.
+				proto := st.Proto()
+				proto.Message = err.Error()
+				return status.FromProto(proto), true
+			}
 		}
 	}
 
@@ -252,9 +294,22 @@ func (e *withCodeError) Unwrap() error {
 
 func each(err error, fn func(error)) {
 	fn(err)
-	if wrapped, ok := err.(interface {
-		Unwrap() error
-	}); ok {
-		each(wrapped.Unwrap(), fn)
+
+	switch e := err.(type) { //nolint:errorlint // using errors.Is/As is not appropriate here
+	case singleUnwrapper:
+		each(e.Unwrap(), fn)
+	case multiUnwrapper:
+		for _, err := range e.Unwrap() {
+			each(err, fn)
+		}
+	default:
 	}
+}
+
+type singleUnwrapper interface {
+	Unwrap() error
+}
+
+type multiUnwrapper interface {
+	Unwrap() []error
 }

@@ -30,7 +30,7 @@ var supportedProtos = map[string]struct{}{
 
 var protoRegexp = regexp.MustCompile(`^[a-zA-Z0-9]+://`)
 
-// URL is a custom URL type that points to a remote Git repository.
+// GitURL is a custom URL type that points to a remote Git repository.
 //
 // URLs can be parsed from both standard URLs (e.g.
 // "https://github.com/moby/buildkit.git"), as well as SCP-like URLs (e.g.
@@ -47,16 +47,17 @@ type GitURL struct {
 	Path string
 	// User is the username/password to access the host
 	User *url.Userinfo
+	// Query is the query parameters for the URL
+	Query url.Values
 	// Opts can contain additional metadata
 	Opts *GitURLOpts
-
 	// Remote is a valid URL remote to pass into the Git CLI tooling (i.e.
 	// without the fragment metadata)
 	Remote string
 }
 
 // GitURLOpts is the buildkit-specific metadata extracted from the fragment
-// of a remote URL.
+// or the query of a remote URL.
 type GitURLOpts struct {
 	// Ref is the git reference
 	Ref string
@@ -86,11 +87,11 @@ func ParseURL(remote string) (*GitURL, error) {
 		if err != nil {
 			return nil, err
 		}
-		return fromURL(url), nil
+		return FromURL(url)
 	}
 
 	if url, err := sshutil.ParseSCPStyleURL(remote); err == nil {
-		return fromSCPStyleURL(url), nil
+		return fromSCPStyleURL(url)
 	}
 
 	return nil, ErrUnknownProtocol
@@ -105,28 +106,40 @@ func IsGitTransport(remote string) bool {
 	return sshutil.IsImplicitSSHTransport(remote)
 }
 
-func fromURL(url *url.URL) *GitURL {
+func FromURL(url *url.URL) (*GitURL, error) {
 	withoutOpts := *url
 	withoutOpts.Fragment = ""
+	withoutOpts.RawQuery = ""
+	q := url.Query()
+	if len(q) == 0 {
+		q = nil
+	}
 	return &GitURL{
 		Scheme: url.Scheme,
 		User:   url.User,
 		Host:   url.Host,
 		Path:   url.Path,
+		Query:  q,
 		Opts:   parseOpts(url.Fragment),
 		Remote: withoutOpts.String(),
-	}
+	}, nil
 }
 
-func fromSCPStyleURL(url *sshutil.SCPStyleURL) *GitURL {
+func fromSCPStyleURL(url *sshutil.SCPStyleURL) (*GitURL, error) {
 	withoutOpts := *url
 	withoutOpts.Fragment = ""
+	withoutOpts.Query = nil
+	q := url.Query
+	if len(q) == 0 {
+		q = nil
+	}
 	return &GitURL{
 		Scheme: SSHProtocol,
 		User:   url.User,
 		Host:   url.Host,
 		Path:   url.Path,
+		Query:  q,
 		Opts:   parseOpts(url.Fragment),
 		Remote: withoutOpts.String(),
-	}
+	}, nil
 }

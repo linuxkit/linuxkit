@@ -33,5 +33,8 @@ func IsEnabled() bool {
 // The default is to log to the debug level which is only
 // enabled when debugging is enabled.
 var OTELErrorHandler otel.ErrorHandler = otel.ErrorHandlerFunc(func(err error) {
+	if err == nil {
+		return
+	}
 	logrus.WithError(err).Debug("otel error")
 })

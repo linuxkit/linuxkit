@@ -15,19 +15,39 @@ var InfoHeader = Str{
 	Fancy: aec.Bold.Apply(aec.LightCyanB.Apply(aec.BlackF.Apply("i")) + " " + aec.LightCyanF.Apply("Info → ")),
 }
 
-func (o Output) PrintNote(format string, args ...any) {
+type options struct {
+	header Str
+}
+
+type noteOptions func(o *options)
+
+func withHeader(header Str) noteOptions {
+	return func(o *options) {
+		o.header = header
+	}
+}
+
+func (o Output) printNoteWithOptions(format string, args []any, opts ...noteOptions) {
 	if o.isTerminal {
 		// TODO: Handle all flags
 		format = strings.ReplaceAll(format, "--platform", ColorFlag.Apply("--platform"))
 	}
 
-	header := o.Sprint(InfoHeader)
+	opt := &options{
+		header: InfoHeader,
+	}
 
-	_, _ = fmt.Fprint(o, "\n", header)
+	for _, override := range opts {
+		override(opt)
+	}
+
+	h := o.Sprint(opt.header)
+
+	_, _ = fmt.Fprint(o, "\n", h)
 	s := fmt.Sprintf(format, args...)
 	for idx, line := range strings.Split(s, "\n") {
 		if idx > 0 {
-			_, _ = fmt.Fprint(o, strings.Repeat(" ", Width(header)))
+			_, _ = fmt.Fprint(o, strings.Repeat(" ", Width(h)))
 		}
 
 		l := line
@@ -36,4 +56,17 @@ func (o Output) PrintNote(format string, args ...any) {
 		}
 		_, _ = fmt.Fprintln(o, l)
 	}
+}
+
+func (o Output) PrintNote(format string, args ...any) {
+	o.printNoteWithOptions(format, args, withHeader(InfoHeader))
+}
+
+var warningHeader = Str{
+	Plain: " Warn -> ",
+	Fancy: aec.Bold.Apply(aec.LightYellowB.Apply(aec.BlackF.Apply("w")) + " " + ColorWarning.Apply("Warn → ")),
+}
+
+func (o Output) PrintWarning(format string, args ...any) {
+	o.printNoteWithOptions(format, args, withHeader(warningHeader))
 }

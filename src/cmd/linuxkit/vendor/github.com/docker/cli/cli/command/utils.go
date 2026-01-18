@@ -14,30 +14,20 @@ import (
 	"github.com/docker/cli/cli/streams"
 	"github.com/docker/cli/internal/prompt"
 	"github.com/docker/docker/api/types/filters"
-	"github.com/moby/sys/atomicwriter"
 	"github.com/pkg/errors"
-	"github.com/spf13/pflag"
 )
 
-// CopyToFile writes the content of the reader to the specified file
+// ErrPromptTerminated is returned if the user terminated the prompt.
 //
-// Deprecated: use [atomicwriter.New].
-func CopyToFile(outfile string, r io.Reader) error {
-	writer, err := atomicwriter.New(outfile, 0o600)
-	if err != nil {
-		return err
-	}
-	defer writer.Close()
-	_, err = io.Copy(writer, r)
-	return err
-}
-
+// Deprecated: this error is for internal use and will be removed in the next release.
 const ErrPromptTerminated = prompt.ErrTerminated
 
 // DisableInputEcho disables input echo on the provided streams.In.
 // This is useful when the user provides sensitive information like passwords.
 // The function returns a restore function that should be called to restore the
 // terminal state.
+//
+// Deprecated: this function is for internal use and will be removed in the next release.
 func DisableInputEcho(ins *streams.In) (restore func() error, err error) {
 	return prompt.DisableInputEcho(ins)
 }
@@ -49,6 +39,8 @@ func DisableInputEcho(ins *streams.In) (restore func() error, err error) {
 // When the prompt returns an error, the caller should propagate the error up
 // the stack and close the io.Reader used for the prompt which will prevent the
 // background goroutine from blocking indefinitely.
+//
+// Deprecated: this function is for internal use and will be removed in the next release.
 func PromptForInput(ctx context.Context, in io.Reader, out io.Writer, message string) (string, error) {
 	return prompt.ReadInput(ctx, in, out, message)
 }
@@ -63,6 +55,8 @@ func PromptForInput(ctx context.Context, in io.Reader, out io.Writer, message st
 // When the prompt returns an error, the caller should propagate the error up
 // the stack and close the io.Reader used for the prompt which will prevent the
 // background goroutine from blocking indefinitely.
+//
+// Deprecated: this function is for internal use and will be removed in the next release.
 func PromptForConfirmation(ctx context.Context, ins io.Reader, outs io.Writer, message string) (bool, error) {
 	return prompt.Confirm(ctx, ins, outs, message)
 }
@@ -106,12 +100,6 @@ func PruneFilters(dockerCLI config.Provider, pruneFilters filters.Args) filters.
 	}
 
 	return pruneFilters
-}
-
-// AddPlatformFlag adds `platform` to a set of flags for API version 1.32 and later.
-func AddPlatformFlag(flags *pflag.FlagSet, target *string) {
-	flags.StringVar(target, "platform", os.Getenv("DOCKER_DEFAULT_PLATFORM"), "Set platform if server is multi-platform capable")
-	_ = flags.SetAnnotation("platform", "version", []string{"1.32"})
 }
 
 // ValidateOutputPath validates the output paths of the "docker cp" command.
