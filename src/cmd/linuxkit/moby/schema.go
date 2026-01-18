@@ -333,6 +333,7 @@ var schema = `
         "uidMappings": { "$ref": "#/definitions/idmappings" },
         "gidMappings": { "$ref": "#/definitions/idmappings" },
         "annotations": { "$ref": "#/definitions/mapstring" },
+        "apparmorProfile": { "type": "string" },
         "runtime": {"$ref": "#/definitions/runtime"}
       }
     },
