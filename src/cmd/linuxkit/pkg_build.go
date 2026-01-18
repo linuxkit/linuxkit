@@ -129,7 +129,7 @@ func pkgBuildCmd() *cobra.Command {
 				for scanner.Scan() {
 					line := strings.TrimSpace(scanner.Text())
 					// check if the value is a special linuxkit value
-					buildArg, err := pkglib.TransformBuildArgValue(line, filename)
+					buildArg, err := pkglib.TransformBuildArgValue("", line, filename)
 					if err != nil {
 						return fmt.Errorf("error transforming build arg %s: %v", line, err)
 					}

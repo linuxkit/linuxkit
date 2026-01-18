@@ -271,17 +271,7 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			tagTmpl = "{{.Hash}}"
 		}
 
-		// calculate the tag to use based on the template and the pkgHash
-		tmpl, err := template.New("tag").Parse(tagTmpl)
-		if err != nil {
-			return nil, fmt.Errorf("invalid tag template: %v", err)
-		}
-		var buf bytes.Buffer
-		if err := tmpl.Execute(&buf, map[string]string{"Hash": pkgHash}); err != nil {
-			return nil, fmt.Errorf("failed to execute tag template: %v", err)
-		}
-		tag := buf.String()
-		pkgs = append(pkgs, Pkg{
+		pkg := Pkg{
 			image:         pi.Image,
 			org:           pi.Org,
 			hash:          pkgHash,
@@ -299,8 +289,32 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			buildYML:      buildYmlFile,
 			dockerfile:    pi.Dockerfile,
 			git:           git,
-			tag:           tag,
-		})
+		}
+		err = pkg.ProcessBuildArgs()
+		if err != nil {
+			return pkgs, fmt.Errorf("processing build-args failed: %w", err)
+		}
+		if pkg.buildArgs != nil {
+			for _, buildArg := range *pkg.buildArgs {
+				fmt.Printf("add buildArg '%s' to hash\n", buildArg)
+
+				buildArgKey := fmt.Sprintf("buildArg=%s", buildArg)
+				pkgHash += fmt.Sprintf("%x", sha1.Sum([]byte(buildArgKey)))
+				pkgHash = fmt.Sprintf("%x", sha1.Sum([]byte(pkgHash)))
+			}
+		}
+		// calculate the tag to use based on the template and the pkgHash
+		tmpl, err := template.New("tag").Parse(tagTmpl)
+		if err != nil {
+			return nil, fmt.Errorf("invalid tag template: %v", err)
+		}
+		var buf bytes.Buffer
+		if err := tmpl.Execute(&buf, map[string]string{"Hash": pkgHash}); err != nil {
+			return nil, fmt.Errorf("failed to execute tag template: %v", err)
+		}
+		tag := buf.String()
+		pkg.tag = tag
+		pkgs = append(pkgs, pkg)
 	}
 	return pkgs, nil
 }
@@ -374,7 +388,7 @@ func (p *Pkg) ProcessBuildArgs() error {
 	}
 	var buildArgs []string
 	for _, arg := range *p.buildArgs {
-		transformedLine, err := TransformBuildArgValue(arg, p.buildYML)
+		transformedLine, err := TransformBuildArgValue(p.path, arg, p.buildYML)
 		if err != nil {
 			return fmt.Errorf("error processing build arg %q: %v", arg, err)
 		}
