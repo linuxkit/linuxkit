@@ -53,10 +53,10 @@ func (d *dockerMocker) ContextSupportCheck() error {
 	}
 	return errors.New("contexts not supported")
 }
-func (d *dockerMocker) Builder(_ context.Context, _, _, _, _ string, _ bool) (*buildkitClient.Client, error) {
+func (d *dockerMocker) Builder(_ context.Context, _, _ string) (*buildkitClient.Client, error) {
 	return nil, fmt.Errorf("not implemented")
 }
-func (d *dockerMocker) Build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, builderRestart, preCacheImages bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progress string, imageBuildOpts spec.ImageBuildOptions) error {
+func (d *dockerMocker) Build(ctx context.Context, tag, pkg, dockerContext, platform string, preCacheImages bool, c spec.CacheProvider, r io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progress string, imageBuildOpts spec.ImageBuildOptions) error {
 	if !d.enableBuild {
 		return errors.New("build disabled")
 	}

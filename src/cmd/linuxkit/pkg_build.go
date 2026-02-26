@@ -195,12 +195,14 @@ func pkgBuildCmd() *cobra.Command {
 				if _, err := os.Stat(builderConfig); err != nil {
 					return fmt.Errorf("error reading builder config file %s: %w", builderConfig, err)
 				}
-				opts = append(opts, pkglib.WithBuildBuilderConfig(builderConfig))
 			}
 
 			opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
-			opts = append(opts, pkglib.WithBuildBuilderImage(builderImage))
-			opts = append(opts, pkglib.WithBuildBuilderRestart(builderRestart))
+			opts = append(opts, pkglib.WithBuildBuilderConfig(pkglib.BuilderConfig{
+				Image:      builderImage,
+				ConfigPath: builderConfig,
+				Restart:    builderRestart,
+			}))
 			opts = append(opts, pkglib.WithProgress(progress))
 			if len(ssh) > 0 {
 				opts = append(opts, pkglib.WithSSH(ssh))

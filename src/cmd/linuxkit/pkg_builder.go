@@ -39,13 +39,17 @@ func pkgBuilderCmd() *cobra.Command {
 			}
 
 			platformsToClean := strings.Split(platforms, ",")
+			bc := pkglib.BuilderConfig{
+				Image:      builderImage,
+				ConfigPath: builderConfigPath,
+			}
 			switch command {
 			case "du":
-				if err := pkglib.DiskUsage(buildersMap, builderImage, builderConfigPath, platformsToClean, verbose); err != nil {
+				if err := pkglib.DiskUsage(buildersMap, bc, platformsToClean, verbose); err != nil {
 					return fmt.Errorf("unable to print disk usage of builder: %w", err)
 				}
 			case "prune":
-				if err := pkglib.PruneBuilder(buildersMap, builderImage, builderConfigPath, platformsToClean, verbose); err != nil {
+				if err := pkglib.PruneBuilder(buildersMap, bc, platformsToClean, verbose); err != nil {
 					return fmt.Errorf("unable to prune builder: %w", err)
 				}
 			default:

@@ -93,14 +93,14 @@ func printVerbose(tw *tabwriter.Writer, du []*buildkitClient.UsageInfo) {
 	_ = tw.Flush()
 }
 
-func getClientForPlatform(ctx context.Context, buildersMap map[string]string, builderImage, builderConfigPath, platform string) (*buildkitClient.Client, error) {
+func getClientForPlatform(ctx context.Context, buildersMap map[string]string, bc BuilderConfig, platform string) (*buildkitClient.Client, error) {
 	p, err := platforms.Parse(platform)
 	if err != nil {
 		return nil, fmt.Errorf("failed to parse platform: %s", err)
 	}
-	dr := NewDockerRunner(false)
-	builderName := getBuilderForPlatform(p.Architecture, buildersMap)
-	client, err := dr.Builder(ctx, builderName, builderImage, builderConfigPath, platform, false)
+	dr := NewDockerRunner(false, bc)
+	dockerContext := getBuilderForPlatform(p.Architecture, buildersMap)
+	client, err := dr.Builder(ctx, dockerContext, platform)
 	if err != nil {
 		return nil, fmt.Errorf("unable to ensure builder container: %v", err)
 	}
@@ -108,11 +108,11 @@ func getClientForPlatform(ctx context.Context, buildersMap map[string]string, bu
 }
 
 // DiskUsage of builder
-func DiskUsage(buildersMap map[string]string, builderImage, builderConfigPath string, platformsToClean []string, verbose bool) error {
+func DiskUsage(buildersMap map[string]string, bc BuilderConfig, platformsToClean []string, verbose bool) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	for _, platform := range platformsToClean {
-		client, err := getClientForPlatform(ctx, buildersMap, builderImage, builderConfigPath, platform)
+		client, err := getClientForPlatform(ctx, buildersMap, bc, platform)
 		if err != nil {
 			return fmt.Errorf("cannot get client: %s", err)
 		}
@@ -143,12 +143,12 @@ func DiskUsage(buildersMap map[string]string, builderImage, builderConfigPath st
 }
 
 // PruneBuilder clean build cache of builder
-func PruneBuilder(buildersMap map[string]string, builderImage, builderConfigPath string, platformsToClean []string, verbose bool) error {
+func PruneBuilder(buildersMap map[string]string, bc BuilderConfig, platformsToClean []string, verbose bool) error {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 	total := int64(0)
 	for _, platform := range platformsToClean {
-		client, err := getClientForPlatform(ctx, buildersMap, builderImage, builderConfigPath, platform)
+		client, err := getClientForPlatform(ctx, buildersMap, bc, platform)
 		if err != nil {
 			return fmt.Errorf("cannot get client: %s", err)
 		}
