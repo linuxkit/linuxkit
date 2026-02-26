@@ -72,6 +72,12 @@ func DefaultBuilderName() string {
 	return buildkitBuilderName
 }
 
+// builderVolumeName returns the named volume used to persist buildkit state
+// (build cache, snapshots, content store) across container recreations.
+func builderVolumeName(containerName string) string {
+	return containerName + "-state"
+}
+
 type dockerRunnerImpl struct {
 	cache   bool
 	builder BuilderConfig
@@ -272,9 +278,10 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		// recreate by default (true) unless we already have one that meets all of the requirements - image, permissions, etc.
 		recreate = true
 		// stop existing one
-		stop   = false
-		remove = false
-		found  = false
+		stop         = false
+		remove       = false
+		removeVolume = false
+		found        = false
 	)
 
 	const (
@@ -345,11 +352,13 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				stop = isRunning
 				remove = true
 			case existingImage != image:
-				// if image mismatches, recreate
+				// if image mismatches, recreate and remove the state volume since we
+				// cannot guarantee buildkit state compatibility across versions
 				fmt.Printf("existing container %s is running image %s instead of target %s, replacing\n", name, existingImage, image)
 				recreate = true
 				stop = isRunning
 				remove = true
+				removeVolume = true
 			case !containerJSON[0].HostConfig.Privileged:
 				// if unprivileged, we need to remove it and start a new container with the right permissions
 				fmt.Printf("existing container %s is unprivileged, replacing\n", name)
@@ -404,11 +413,24 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				continue
 			}
 		}
+		if removeVolume {
+			volName := builderVolumeName(name)
+			fmt.Printf("removing builder state volume %s\n", volName)
+			// best-effort: volume may not exist yet on first run
+			_ = dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "volume", "rm", volName)
+		}
 		if recreate {
 			// create the builder
 			// this could be a single line, but it would be long. And it is easier to read when the
 			// docker command args, the image name, and the image args are all on separate lines.
-			args := []string{"--context", dockerContext, "container", "create", "--name", name, "--privileged"}
+			volName := builderVolumeName(name)
+			if removeVolume {
+				fmt.Printf("creating fresh builder state volume %s\n", volName)
+			} else {
+				fmt.Printf("reusing builder state volume %s\n", volName)
+			}
+			volMount := volName + ":/var/lib/buildkit"
+			args := []string{"--context", dockerContext, "container", "create", "--name", name, "--privileged", "-v", volMount}
 			args = append(args, image)
 			args = append(args, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug")
 			if configPath != "" {
