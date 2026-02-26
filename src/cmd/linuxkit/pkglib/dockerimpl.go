@@ -67,6 +67,11 @@ const (
 	buildkitConfigPath     = buildkitConfigDir + "/" + buildkitConfigFileName
 )
 
+// DefaultBuilderName returns the default builder container name.
+func DefaultBuilderName() string {
+	return buildkitBuilderName
+}
+
 type dockerRunnerImpl struct {
 	cache   bool
 	builder BuilderConfig
@@ -74,7 +79,7 @@ type dockerRunnerImpl struct {
 
 func NewDockerRunner(cache bool, bc BuilderConfig) DockerRunner {
 	if bc.Name == "" {
-		bc.Name = buildkitBuilderName
+		bc.Name = DefaultBuilderName()
 	}
 	return &dockerRunnerImpl{cache: cache, builder: bc}
 }

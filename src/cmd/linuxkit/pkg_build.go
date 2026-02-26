@@ -16,6 +16,7 @@ import (
 const (
 	buildersEnvVar      = "LINUXKIT_BUILDERS"
 	envVarCacheDir      = "LINUXKIT_CACHE"
+	envVarBuilderName   = "LINUXKIT_BUILDER_NAME"
 	defaultBuilderImage = "moby/buildkit:v0.26.3"
 )
 
@@ -40,6 +41,7 @@ func pkgBuildCmd() *cobra.Command {
 		platforms      string
 		skipPlatforms  string
 		builders       string
+		builderName    = flagOverEnvVarOverDefaultString{def: pkglib.DefaultBuilderName(), envVar: envVarBuilderName}
 		builderImage   string
 		builderConfig  string
 		builderRestart bool
@@ -199,6 +201,7 @@ func pkgBuildCmd() *cobra.Command {
 
 			opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
 			opts = append(opts, pkglib.WithBuildBuilderConfig(pkglib.BuilderConfig{
+				Name:       builderName.String(),
 				Image:      builderImage,
 				ConfigPath: builderConfig,
 				Restart:    builderRestart,
@@ -305,6 +308,7 @@ func pkgBuildCmd() *cobra.Command {
 	cmd.Flags().StringVar(&platforms, "platforms", "", "Which platforms to build for, defaults to all of those for which the package can be built")
 	cmd.Flags().StringVar(&skipPlatforms, "skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
 	cmd.Flags().StringVar(&builders, "builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
+	cmd.Flags().Var(&builderName, "builder-name", fmt.Sprintf("Name of the buildkit builder container, default: %s, overrides env var %s", pkglib.DefaultBuilderName(), envVarBuilderName))
 	cmd.Flags().StringVar(&builderImage, "builder-image", defaultBuilderImage, "buildkit builder container image to use")
 	cmd.Flags().StringVar(&builderConfig, "builder-config", "", "path to buildkit builder config.toml file to use, overrides the default config.toml in the builder image. When provided, copied over into builder, along with all certs. Use paths for certificates relative to your local host, they will be adjusted on copying into the container. USE WITH CAUTION")
 	cmd.Flags().BoolVar(&builderRestart, "builder-restart", false, "force restarting builder, even if container with correct name and image exists")
