@@ -58,6 +58,12 @@ func newCmd() *cobra.Command {
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			readConfig()
 
+			// prepend mirrors from env var so CLI flags take precedence (last SetProxy call wins)
+			if envMirrors := os.Getenv(envVarMirror); envMirrors != "" {
+				envList := strings.FieldsFunc(envMirrors, func(r rune) bool { return r == ',' || r == ' ' })
+				mirrorsRaw = append(envList, mirrorsRaw...)
+			}
+
 			// convert the provided mirrors to a map
 			for _, m := range mirrorsRaw {
 				if m == "" {
@@ -115,7 +121,7 @@ func newCmd() *cobra.Command {
 	cmd.AddCommand(versionCmd())
 
 	cmd.PersistentFlags().StringVar(&cacheDir, "cache", defaultLinuxkitCache(), fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
-	cmd.PersistentFlags().StringArrayVar(&mirrorsRaw, "mirror", nil, "Mirror to use for pulling images, format is <registry>=<mirror>, e.g. docker.io=http://mymirror.io, or just http://mymirror.io for all not otherwise specified; must include protocol. Can be provided multiple times.")
+	cmd.PersistentFlags().StringArrayVar(&mirrorsRaw, "mirror", nil, fmt.Sprintf("Mirror to use for pulling images, format is <registry>=<mirror>, e.g. docker.io=http://mymirror.io, or just http://mymirror.io for all not otherwise specified; must include protocol. Can be provided multiple times. Also read from env var %s (space/comma-separated list); CLI flags take precedence.", envVarMirror))
 	cmd.PersistentFlags().StringArrayVar(&certFiles, "cert-file", nil, "Path to certificate files to use for pulling images, can be provided multiple times. Will augment system-provided certs.")
 	cmd.PersistentFlags().BoolVarP(&flagQuiet, "quiet", "q", false, "Quiet execution")
 	cmd.PersistentFlags().IntVarP(&flagVerbose, flagVerboseName, "v", 1, "Verbosity of logging: 0 = quiet, 1 = info, 2 = debug, 3 = trace. Default is info. Setting it explicitly will create structured logging lines.")

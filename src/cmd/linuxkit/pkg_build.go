@@ -17,6 +17,10 @@ const (
 	buildersEnvVar      = "LINUXKIT_BUILDERS"
 	envVarCacheDir      = "LINUXKIT_CACHE"
 	envVarBuilderName   = "LINUXKIT_BUILDER_NAME"
+	envVarBuilderImage  = "LINUXKIT_BUILDER_IMAGE"
+	envVarBuilderConfig = "LINUXKIT_BUILDER_CONFIG"
+	envVarMirror        = "LINUXKIT_MIRROR"
+	envVarPkgOrg        = "LINUXKIT_PKG_ORG"
 	defaultBuilderImage = "moby/buildkit:v0.26.3"
 )
 
@@ -42,8 +46,8 @@ func pkgBuildCmd() *cobra.Command {
 		skipPlatforms  string
 		builders       string
 		builderName    = flagOverEnvVarOverDefaultString{def: pkglib.DefaultBuilderName(), envVar: envVarBuilderName}
-		builderImage   string
-		builderConfig  string
+		builderImage   = flagOverEnvVarOverDefaultString{def: defaultBuilderImage, envVar: envVarBuilderImage}
+		builderConfig  = flagOverEnvVarOverDefaultString{def: "", envVar: envVarBuilderConfig}
 		builderRestart bool
 		preCacheImages bool
 		release        string
@@ -193,17 +197,17 @@ func pkgBuildCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("error in --builders flag: %w", err)
 			}
-			if builderConfig != "" {
-				if _, err := os.Stat(builderConfig); err != nil {
-					return fmt.Errorf("error reading builder config file %s: %w", builderConfig, err)
+			if builderConfig.String() != "" {
+				if _, err := os.Stat(builderConfig.String()); err != nil {
+					return fmt.Errorf("error reading builder config file %s: %w", builderConfig.String(), err)
 				}
 			}
 
 			opts = append(opts, pkglib.WithBuildBuilders(buildersMap))
 			opts = append(opts, pkglib.WithBuildBuilderConfig(pkglib.BuilderConfig{
 				Name:       builderName.String(),
-				Image:      builderImage,
-				ConfigPath: builderConfig,
+				Image:      builderImage.String(),
+				ConfigPath: builderConfig.String(),
 				Restart:    builderRestart,
 			}))
 			opts = append(opts, pkglib.WithProgress(progress))
@@ -309,8 +313,8 @@ func pkgBuildCmd() *cobra.Command {
 	cmd.Flags().StringVar(&skipPlatforms, "skip-platforms", "", "Platforms that should be skipped, even if present in build.yml")
 	cmd.Flags().StringVar(&builders, "builders", "", "Which builders to use for which platforms, e.g. linux/arm64=docker-context-arm64, overrides defaults and environment variables, see https://github.com/linuxkit/linuxkit/blob/master/docs/packages.md#Providing-native-builder-nodes")
 	cmd.Flags().Var(&builderName, "builder-name", fmt.Sprintf("Name of the buildkit builder container, default: %s, overrides env var %s", pkglib.DefaultBuilderName(), envVarBuilderName))
-	cmd.Flags().StringVar(&builderImage, "builder-image", defaultBuilderImage, "buildkit builder container image to use")
-	cmd.Flags().StringVar(&builderConfig, "builder-config", "", "path to buildkit builder config.toml file to use, overrides the default config.toml in the builder image. When provided, copied over into builder, along with all certs. Use paths for certificates relative to your local host, they will be adjusted on copying into the container. USE WITH CAUTION")
+	cmd.Flags().Var(&builderImage, "builder-image", fmt.Sprintf("buildkit builder container image to use, overrides env var %s", envVarBuilderImage))
+	cmd.Flags().Var(&builderConfig, "builder-config", fmt.Sprintf("path to buildkit builder config.toml file to use, overrides the default config.toml in the builder image. When provided, copied over into builder, along with all certs. Use paths for certificates relative to your local host, they will be adjusted on copying into the container. USE WITH CAUTION. Overrides env var %s", envVarBuilderConfig))
 	cmd.Flags().BoolVar(&builderRestart, "builder-restart", false, "force restarting builder, even if container with correct name and image exists")
 	cmd.Flags().BoolVar(&preCacheImages, "precache-images", false, "download all referenced images in the Dockerfile to the linuxkit cache before building, thus referencing the local cache instead of pulling from the registry; this is useful for handling mirrors and special connections")
 	cmd.Flags().Var(&cacheDir, "cache", fmt.Sprintf("Directory for caching and finding cached image, overrides env var %s", envVarCacheDir))
