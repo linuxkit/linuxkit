@@ -382,6 +382,38 @@ ARG all_proxy
 LinuxKit does not judge between lower-cased or upper-cased variants of these options, e.g. `http_proxy` vs `HTTP_PROXY`,
 as `docker build` does not either. It just passes them through "as-is".
 
+### Environment Variables
+
+The following environment variables can be used to configure `linuxkit` without
+modifying command-line invocations — useful for CI/CD runners and shared build
+scripts. CLI flags always take precedence over env vars, which take precedence
+over built-in defaults.
+
+| Variable | Equivalent flag | Scope | Description |
+|---|---|---|---|
+| `LINUXKIT_MIRROR` | `--mirror` | All commands | Space- or comma-separated list of mirror specs, each in `[<registry>=]<url>` format (same as `--mirror`). E.g. `LINUXKIT_MIRROR=docker.io=http://mymirror.local` |
+| `LINUXKIT_PKG_ORG` | `--org` | `pkg` subcommands | Override the registry organisation used when tagging and pushing packages. E.g. `LINUXKIT_PKG_ORG=myorg/lfedge` |
+| `LINUXKIT_BUILDER_IMAGE` | `--builder-image` | `pkg build` | buildkit container image to use. Useful when the builder image must come from an internal mirror. |
+| `LINUXKIT_BUILDER_CONFIG` | `--builder-config` | `pkg build` | Path to a buildkit `config.toml` file. The primary way to configure buildkit's own registry mirrors for `FROM` pulls inside Dockerfiles. |
+| `LINUXKIT_BUILDER_NAME` | `--builder-name` | `pkg build` | Name of the buildkit builder container. |
+| `LINUXKIT_BUILDERS` | `--builders` | `pkg build` | Platform-to-builder-context mapping; see [Providing native builder nodes](#providing-native-builder-nodes). |
+| `LINUXKIT_CACHE` | `--cache` | All commands | Path to the linuxkit OCI image cache directory (default `~/.linuxkit/cache`). |
+
+#### Registry mirrors in CI
+
+There are two layers of registry access in `linuxkit pkg build`, each requiring
+its own mirror configuration:
+
+1. **linuxkit's own pulls** (cache lookups, `show-tag`, `cache pull`, etc.) —
+   configure via `LINUXKIT_MIRROR` or `--mirror`.
+
+2. **buildkit's pulls** (`FROM` and `COPY --from` inside Dockerfiles) —
+   buildkit has its own registry client. Configure its mirrors via a
+   `config.toml` file passed through `LINUXKIT_BUILDER_CONFIG` or
+   `--builder-config`. See the
+   [buildkit registry configuration docs](https://github.com/moby/buildkit/blob/master/docs/buildkitd.toml.md)
+   for the file format.
+
 ## Build Args
 
 `linuxkit` does not support passing random CLI flags for build arguments when building packages.

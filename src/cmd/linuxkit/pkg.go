@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"fmt"
+	"os"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkglib"
 	"github.com/spf13/cobra"
@@ -74,6 +76,8 @@ func pkgCmd() *cobra.Command {
 			}
 			if cmd.Flags().Changed("org") {
 				pkglibConfig.Org = &argOrg
+			} else if org := os.Getenv(envVarPkgOrg); org != "" {
+				pkglibConfig.Org = &org
 			}
 			if cmd.Flags().Changed("tag") {
 				pkglibConfig.Tag = tag
@@ -100,7 +104,7 @@ func pkgCmd() *cobra.Command {
 	cmd.PersistentFlags().BoolVar(&argNoNetwork, "nonetwork", !piBase.Network, "Disallow network use during build")
 	cmd.PersistentFlags().BoolVar(&argNetwork, "network", piBase.Network, "Allow network use during build")
 
-	cmd.PersistentFlags().StringVar(&argOrg, "org", piBase.Org, "Override the hub org")
+	cmd.PersistentFlags().StringVar(&argOrg, "org", piBase.Org, fmt.Sprintf("Override the hub org. Also read from env var %s; CLI flag takes precedence.", envVarPkgOrg))
 	cmd.PersistentFlags().StringVar(&buildYML, "build-yml", defaultPkgBuildYML, "Override the name of the yml file")
 	cmd.PersistentFlags().StringVar(&hash, "hash", "", "Override the image hash (default is to query git for the package's tree-sh)")
 	cmd.PersistentFlags().StringVar(&tag, "tag", piBase.Tag, "Override the tag using fixed strings and/or text templates. Acceptable are .Hash for the hash")
