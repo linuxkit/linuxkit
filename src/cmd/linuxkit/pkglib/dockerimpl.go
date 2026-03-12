@@ -67,12 +67,27 @@ const (
 	buildkitConfigPath     = buildkitConfigDir + "/" + buildkitConfigFileName
 )
 
-type dockerRunnerImpl struct {
-	cache bool
+// DefaultBuilderName returns the default builder container name.
+func DefaultBuilderName() string {
+	return buildkitBuilderName
 }
 
-func NewDockerRunner(cache bool) DockerRunner {
-	return &dockerRunnerImpl{cache: cache}
+// builderVolumeName returns the named volume used to persist buildkit state
+// (build cache, snapshots, content store) across container recreations.
+func builderVolumeName(containerName string) string {
+	return containerName + "-state"
+}
+
+type dockerRunnerImpl struct {
+	cache   bool
+	builder BuilderConfig
+}
+
+func NewDockerRunner(cache bool, bc BuilderConfig) DockerRunner {
+	if bc.Name == "" {
+		bc.Name = DefaultBuilderName()
+	}
+	return &dockerRunnerImpl{cache: cache, builder: bc}
 }
 
 func isExecErrNotFound(err error) bool {
@@ -219,14 +234,15 @@ func (dr *dockerRunnerImpl) ContextSupportCheck() error {
 // 1. if dockerContext is provided, try to create a builder with that context; if it succeeds, we are done; if not, return an error.
 // 2. try to find an existing named runner with the pattern; if it succeeds, we are done; if not, try next.
 // 3. try to create a generic builder using the default context named "linuxkit".
-func (dr *dockerRunnerImpl) Builder(ctx context.Context, dockerContext, builderImage, builderConfigPath, platform string, restart bool) (*buildkitClient.Client, error) {
+func (dr *dockerRunnerImpl) Builder(ctx context.Context, dockerContext, platform string) (*buildkitClient.Client, error) {
+	bc := dr.builder
 	// if we were given a context, we must find a builder and use it, or create one and use it
 	if dockerContext != "" {
 		// does the context exist?
 		if err := dr.command(nil, io.Discard, io.Discard, "context", "inspect", dockerContext); err != nil {
 			return nil, fmt.Errorf("provided docker context '%s' not found", dockerContext)
 		}
-		client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, builderConfigPath, platform, dockerContext, restart)
+		client, err := dr.builderEnsureContainer(ctx, bc.Name, bc.Image, bc.ConfigPath, platform, dockerContext, bc.Restart)
 		if err != nil {
 			return nil, fmt.Errorf("error preparing builder based on context '%s': %v", dockerContext, err)
 		}
@@ -237,13 +253,13 @@ func (dr *dockerRunnerImpl) Builder(ctx context.Context, dockerContext, builderI
 	dockerContext = fmt.Sprintf("%s-%s", "linuxkit", strings.ReplaceAll(platform, "/", "-"))
 	if err := dr.command(nil, io.Discard, io.Discard, "context", "inspect", dockerContext); err == nil {
 		// we found an appropriately named context, so let us try to use it or error out
-		if client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, builderConfigPath, platform, dockerContext, restart); err == nil {
+		if client, err := dr.builderEnsureContainer(ctx, bc.Name, bc.Image, bc.ConfigPath, platform, dockerContext, bc.Restart); err == nil {
 			return client, nil
 		}
 	}
 
 	// create a generic builder
-	client, err := dr.builderEnsureContainer(ctx, buildkitBuilderName, builderImage, builderConfigPath, "", "default", restart)
+	client, err := dr.builderEnsureContainer(ctx, bc.Name, bc.Image, bc.ConfigPath, "", "default", bc.Restart)
 	if err != nil {
 		return nil, fmt.Errorf("error ensuring builder container in default context: %v", err)
 	}
@@ -262,9 +278,10 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 		// recreate by default (true) unless we already have one that meets all of the requirements - image, permissions, etc.
 		recreate = true
 		// stop existing one
-		stop   = false
-		remove = false
-		found  = false
+		stop         = false
+		remove       = false
+		removeVolume = false
+		found        = false
 	)
 
 	const (
@@ -335,11 +352,13 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				stop = isRunning
 				remove = true
 			case existingImage != image:
-				// if image mismatches, recreate
+				// if image mismatches, recreate and remove the state volume since we
+				// cannot guarantee buildkit state compatibility across versions
 				fmt.Printf("existing container %s is running image %s instead of target %s, replacing\n", name, existingImage, image)
 				recreate = true
 				stop = isRunning
 				remove = true
+				removeVolume = true
 			case !containerJSON[0].HostConfig.Privileged:
 				// if unprivileged, we need to remove it and start a new container with the right permissions
 				fmt.Printf("existing container %s is unprivileged, replacing\n", name)
@@ -394,11 +413,24 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				continue
 			}
 		}
+		if removeVolume {
+			volName := builderVolumeName(name)
+			fmt.Printf("removing builder state volume %s\n", volName)
+			// best-effort: volume may not exist yet on first run
+			_ = dr.command(nil, io.Discard, io.Discard, "--context", dockerContext, "volume", "rm", volName)
+		}
 		if recreate {
 			// create the builder
 			// this could be a single line, but it would be long. And it is easier to read when the
 			// docker command args, the image name, and the image args are all on separate lines.
-			args := []string{"--context", dockerContext, "container", "create", "--name", name, "--privileged"}
+			volName := builderVolumeName(name)
+			if removeVolume {
+				fmt.Printf("creating fresh builder state volume %s\n", volName)
+			} else {
+				fmt.Printf("reusing builder state volume %s\n", volName)
+			}
+			volMount := volName + ":/var/lib/buildkit"
+			args := []string{"--context", dockerContext, "container", "create", "--name", name, "--privileged", "-v", volMount}
 			args = append(args, image)
 			args = append(args, "--allow-insecure-entitlement", "network.host", "--addr", fmt.Sprintf("unix://%s", buildkitSocketPath), "--debug")
 			if configPath != "" {
@@ -507,9 +539,9 @@ func (dr *dockerRunnerImpl) Tag(ref, tag string) error {
 	return dr.command(nil, nil, nil, "image", "tag", ref, tag)
 }
 
-func (dr *dockerRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, builderImage, builderConfigPath, platform string, restart, preCacheImages bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
+func (dr *dockerRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, platform string, preCacheImages bool, c spec.CacheProvider, stdin io.Reader, stdout io.Writer, sbomScan bool, sbomScannerImage, progressType string, imageBuildOpts spec.ImageBuildOptions) error {
 	// ensure we have a builder
-	client, err := dr.Builder(ctx, dockerContext, builderImage, builderConfigPath, platform, restart)
+	client, err := dr.Builder(ctx, dockerContext, platform)
 	if err != nil {
 		return fmt.Errorf("unable to ensure builder container: %v", err)
 	}

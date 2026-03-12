@@ -24,32 +24,30 @@ import (
 )
 
 type buildOpts struct {
-	skipBuild         bool
-	force             bool
-	pull              bool
-	ignoreCache       bool
-	push              bool
-	dryRun            bool
-	preCacheImages    bool
-	release           string
-	manifest          bool
-	targetDocker      bool
-	cacheDir          string
-	cacheProvider     spec.CacheProvider
-	platforms         []imagespec.Platform
-	builders          map[string]string
-	runner            DockerRunner
-	writer            io.Writer
-	builderImage      string
-	builderConfigPath string
-	builderRestart    bool
-	sbomScan          bool
-	sbomScannerImage  string
-	dockerfile        string
-	buildArgs         []string
-	progress          string
-	ssh               []string
-	registryAuth      map[string]spec.RegistryAuth
+	skipBuild        bool
+	force            bool
+	pull             bool
+	ignoreCache      bool
+	push             bool
+	dryRun           bool
+	preCacheImages   bool
+	release          string
+	manifest         bool
+	targetDocker     bool
+	cacheDir         string
+	cacheProvider    spec.CacheProvider
+	platforms        []imagespec.Platform
+	builders         map[string]string
+	runner           DockerRunner
+	writer           io.Writer
+	builderConfig    BuilderConfig
+	sbomScan         bool
+	sbomScannerImage string
+	dockerfile       string
+	buildArgs        []string
+	progress         string
+	ssh              []string
+	registryAuth     map[string]spec.RegistryAuth
 }
 
 // BuildOpt allows callers to specify options to Build
@@ -160,26 +158,10 @@ func WithBuildOutputWriter(w io.Writer) BuildOpt {
 	}
 }
 
-// WithBuildBuilderImage set the builder container image to use.
-func WithBuildBuilderImage(image string) BuildOpt {
+// WithBuildBuilderConfig set the builder configuration to use.
+func WithBuildBuilderConfig(bc BuilderConfig) BuildOpt {
 	return func(bo *buildOpts) error {
-		bo.builderImage = image
-		return nil
-	}
-}
-
-// WithBuildBuilderConfig set the contents of the
-func WithBuildBuilderConfig(builderConfigPath string) BuildOpt {
-	return func(bo *buildOpts) error {
-		bo.builderConfigPath = builderConfigPath
-		return nil
-	}
-}
-
-// WithBuildBuilderRestart restart the builder container even if it already is running with the correct image version
-func WithBuildBuilderRestart(restart bool) BuildOpt {
-	return func(bo *buildOpts) error {
-		bo.builderRestart = restart
+		bo.builderConfig = bc
 		return nil
 	}
 }
@@ -322,7 +304,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	case d == nil && bo.dryRun:
 		d = NewDockerDryRunner()
 	case d == nil:
-		d = NewDockerRunner(p.cache)
+		d = NewDockerRunner(p.cache, bo.builderConfig)
 	}
 
 	c := bo.cacheProvider
@@ -492,7 +474,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 
 		// build for each arch and save in the linuxkit cache
 		for _, platform := range platformsToBuild {
-			builtDescs, err := p.buildArch(ctx, d, c, bo.builderImage, bo.builderConfigPath, platform.Architecture, bo.builderRestart, writer, bo, imageBuildOpts)
+			builtDescs, err := p.buildArch(ctx, d, c, platform.Architecture, writer, bo, imageBuildOpts)
 			if err != nil {
 				return fmt.Errorf("error building for arch %s: %v", platform.Architecture, err)
 			}
@@ -645,7 +627,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 // C - manifest, saved in cache as is, referenced by the index (E), and returned as a descriptor
 // D - attestations (if any), saved in cache as is, referenced by the index (E), and returned as a descriptor
 // E - index, saved in cache as is, stored in cache as tag "image:tag-arch", *not* returned as a descriptor
-func (p Pkg) buildArch(ctx context.Context, d DockerRunner, c spec.CacheProvider, builderImage, builderConfigPath, arch string, restart bool, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
+func (p Pkg) buildArch(ctx context.Context, d DockerRunner, c spec.CacheProvider, arch string, writer io.Writer, bo buildOpts, imageBuildOpts spec.ImageBuildOptions) ([]registry.Descriptor, error) {
 	var (
 		tagArch   string
 		tag       = p.FullTag()
@@ -674,8 +656,8 @@ func (p Pkg) buildArch(ctx context.Context, d DockerRunner, c spec.CacheProvider
 		return nil, err
 	}
 
-	// find the desired builder
-	builderName := getBuilderForPlatform(arch, bo.builders)
+	// find the desired docker context for the builder
+	dockerContext := getBuilderForPlatform(arch, bo.builders)
 
 	// set the target
 	var (
@@ -714,7 +696,7 @@ func (p Pkg) buildArch(ctx context.Context, d DockerRunner, c spec.CacheProvider
 
 	imageBuildOpts.Dockerfile = bo.dockerfile
 
-	if err := d.Build(ctx, tagArch, p.path, builderName, builderImage, builderConfigPath, platform, restart, bo.preCacheImages, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
+	if err := d.Build(ctx, tagArch, p.path, dockerContext, platform, bo.preCacheImages, passCache, buildCtx.Reader(), stdout, bo.sbomScan, bo.sbomScannerImage, bo.progress, imageBuildOpts); err != nil {
 		stdoutCloser()
 		if strings.Contains(err.Error(), "executor failed running [/dev/.buildkit_qemu_emulator") {
 			return nil, fmt.Errorf("buildkit was unable to emulate %s. check binfmt has been set up and works for this platform: %v", platform, err)
