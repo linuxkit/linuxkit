@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync"
 	"text/template"
 
 	"gopkg.in/yaml.v3"
@@ -15,6 +16,13 @@ import (
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/moby"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 )
+
+// pkgHashCache caches per-package hashes within a process invocation to avoid
+// redundant git operations and to break dependency cycles (e.g. when a package
+// lists itself via @lkt:pkgs:../*). A package's git-tree-only hash is stored
+// before its build-arg hashes are resolved; any cycle will therefore find a
+// partial (git-tree-only) entry and return it without recursing further.
+var pkgHashCache sync.Map // map[pkgHashPath string]string
 
 // Contains fields settable in the build.yml
 type pkgInfo struct {
@@ -241,13 +249,47 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			dirty = cfg.Dirty || gitDirty
 
 			if pkgHash == "" {
-				if pkgHash, err = git.treeHash(pkgHashPath, cfg.HashCommit); err != nil {
-					return nil, err
-				}
+				// Check cache: a non-empty entry means already computed; an empty
+				// entry means this package is currently being resolved (cycle).
+				// In the cycle case we fall through with pkgHash="" and skip
+				// build-arg resolution, using only the git-tree hash.
+				if cached, ok := pkgHashCache.Load(pkgHashPath); ok {
+					pkgHash = cached.(string)
+				} else {
+					if pkgHash, err = git.treeHash(pkgHashPath, cfg.HashCommit); err != nil {
+						return nil, err
+					}
 
-				if srcHashes != "" {
-					pkgHash += srcHashes
-					pkgHash = fmt.Sprintf("%x", sha1.Sum([]byte(pkgHash)))
+					// Store git-tree-only hash now so any cycle resolves to this
+					// partial value rather than recursing infinitely.
+					pkgHashCache.Store(pkgHashPath, pkgHash)
+
+					// Combine git tree hash with extra source hashes and all
+					// resolved build arg values. Resolving build args (including
+					// @lkt:pkgs:../* references) is equivalent to hashing the
+					// rendered Dockerfile: if any dependency's hash changes, the
+					// resolved arg value changes, so this package's hash changes too.
+					// See https://github.com/linuxkit/linuxkit/issues/4180
+					extraHashes := srcHashes
+					if pi.BuildArgs != nil {
+						for _, arg := range *pi.BuildArgs {
+							resolved, err := TransformBuildArgValue(arg, buildYmlFile)
+							if err != nil {
+								return nil, fmt.Errorf("resolving build arg %q for hash: %w", arg, err)
+							}
+							for _, r := range resolved {
+								extraHashes += r
+							}
+						}
+					}
+					if extraHashes != "" {
+						pkgHash += extraHashes
+						pkgHash = fmt.Sprintf("%x", sha1.Sum([]byte(pkgHash)))
+					}
+
+					// Update cache with the combined hash (without dirty suffix,
+					// which is a local-worktree annotation, not a content property).
+					pkgHashCache.Store(pkgHashPath, pkgHash)
 				}
 
 				if dirty {
