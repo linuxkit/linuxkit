@@ -64,6 +64,12 @@ func readHashManifest(hashDir, pkgPath string) (*HashManifest, error) {
 	return &m, nil
 }
 
+// ReadHashManifest reads the stored manifest for pkgPath from hashDir.
+// Returns (nil, nil) when the file does not exist.
+func ReadHashManifest(hashDir, pkgPath string) (*HashManifest, error) {
+	return readHashManifest(hashDir, pkgPath)
+}
+
 // WriteHashManifest writes m to <hashDir>/<pkgname>.hash using
 // write-if-changed semantics.
 //
