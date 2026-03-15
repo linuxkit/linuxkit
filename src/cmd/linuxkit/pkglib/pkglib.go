@@ -364,6 +364,11 @@ func (p Pkg) Image() string {
 	return p.org + "/" + p.image
 }
 
+// Path returns the absolute path to the package source directory.
+func (p Pkg) Path() string {
+	return p.path
+}
+
 // FullTag returns a reference expanded tag
 func (p Pkg) FullTag() string {
 	return util.ReferenceExpand(p.Tag())
