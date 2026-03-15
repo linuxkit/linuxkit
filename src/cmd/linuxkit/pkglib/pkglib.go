@@ -251,7 +251,7 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 				}
 
 				if dirty {
-					contentHash, err := git.contentHash()
+					contentHash, err := git.contentHash(pkgHashPath)
 					if err != nil {
 						return nil, err
 					}
