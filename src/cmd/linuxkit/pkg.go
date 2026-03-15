@@ -28,6 +28,8 @@ func pkgCmd() *cobra.Command {
 		dirty           bool
 		devMode         bool
 		tag             string
+		hashDir         string
+		strictDeps      bool
 	)
 
 	cmd := &cobra.Command{
@@ -50,6 +52,8 @@ func pkgCmd() *cobra.Command {
 				HashPath:   hashPath,
 				Dirty:      dirty,
 				Dev:        devMode,
+				HashDir:    hashDir,
+				StrictDeps: strictDeps,
 			}
 			if cmd.Flags().Changed("disable-cache") && cmd.Flags().Changed("enable-cache") {
 				return errors.New("cannot set but disable-cache and enable-cache")
@@ -112,6 +116,8 @@ func pkgCmd() *cobra.Command {
 	cmd.PersistentFlags().StringVar(&hashPath, "hash-path", "", "Override the directory to use for the image hash, must be a parent of the package dir (default is to use the package dir)")
 	cmd.PersistentFlags().BoolVar(&dirty, "force-dirty", false, "Force the pkg(s) to be considered dirty")
 	cmd.PersistentFlags().BoolVar(&devMode, "dev", false, "Force org and hash to $USER and \"dev\" respectively")
+	cmd.PersistentFlags().StringVar(&hashDir, "hash-dir", "", "Directory containing per-package .hash manifest files (written by show-tag --hash-dir). When set, @lkt: dep tags are read from these files instead of being recursively computed, enabling correct version-specific tag propagation (e.g. ZFS_VERSION) without dependency cycles.")
+	cmd.PersistentFlags().BoolVar(&strictDeps, "strict-deps", false, "Error if a dep's .hash file is absent from --hash-dir (default: fall back to NewFromConfig)")
 
 	cmd.PersistentFlags().StringSliceVar(&registryCreds, "registry-creds", nil, "Registry auths to use for building images, format is <registry>=<username>:<password> OR <registry>=<registry-token-base64>; do NOT forget to base64 encode it. If no username is provided, it is treated as a registry token. <registry> must be a URL, e.g. 'https://index.docker.io/'. May be provided as many times as desired. Will override anything in your default.")
 	return cmd
