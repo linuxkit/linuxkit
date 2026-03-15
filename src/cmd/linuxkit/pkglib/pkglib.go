@@ -270,15 +270,51 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 					// rendered Dockerfile: if any dependency's hash changes, the
 					// resolved arg value changes, so this package's hash changes too.
 					// See https://github.com/linuxkit/linuxkit/issues/4180
+					//
+					// For wildcard @lkt:pkgs:... build args we use git-tree-only
+					// hashes of each matched package rather than their full combined
+					// hashes. Multiple packages that all reference each other via
+					// @lkt:pkgs:../* would otherwise form a dependency cycle, making
+					// the hash context-dependent. Tree hashes are stable (computed
+					// directly from git, no recursion) and still propagate direct
+					// content changes.
 					extraHashes := srcHashes
 					if pi.BuildArgs != nil {
+						anchorDir := filepath.Dir(buildYmlFile)
+						wildcardPrefix := buildArgSpecialPrefix + buildArgsPkgPrefix
 						for _, arg := range *pi.BuildArgs {
-							resolved, err := TransformBuildArgValue(arg, buildYmlFile)
-							if err != nil {
-								return nil, fmt.Errorf("resolving build arg %q for hash: %w", arg, err)
-							}
-							for _, r := range resolved {
-								extraHashes += r
+							parts := strings.SplitN(arg, "=", 2)
+							if len(parts) == 2 && strings.HasPrefix(parts[1], wildcardPrefix) {
+								// Wildcard: glob each package and use its git-tree hash only
+								globPat := strings.TrimPrefix(parts[1], wildcardPrefix)
+								if !filepath.IsAbs(globPat) {
+									globPat = filepath.Clean(filepath.Join(anchorDir, globPat))
+								}
+								matches, _ := filepath.Glob(globPat)
+								for _, m := range matches {
+									info, statErr := os.Stat(m)
+									if statErr != nil || !info.IsDir() || strings.HasPrefix(info.Name(), ".") {
+										continue
+									}
+									g2, gitErr := newGit(m)
+									if gitErr != nil || g2 == nil {
+										continue
+									}
+									h, hashErr := g2.treeHash(m, cfg.HashCommit)
+									if hashErr != nil {
+										continue
+									}
+									extraHashes += h
+								}
+							} else {
+								// Single-package or plain arg: use full resolved hash
+								resolved, err := TransformBuildArgValue(arg, buildYmlFile)
+								if err != nil {
+									return nil, fmt.Errorf("resolving build arg %q for hash: %w", arg, err)
+								}
+								for _, r := range resolved {
+									extraHashes += r
+								}
 							}
 						}
 					}
