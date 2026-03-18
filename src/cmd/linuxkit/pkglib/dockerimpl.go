@@ -295,7 +295,16 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 	for range buildKitCheckRetryCount {
 		var b bytes.Buffer
 		var cid string
+		// load config files up front so they are available both when checking
+		// an existing container and when creating a brand-new one
 		var filesToLoadIntoContainer map[string][]byte
+		if configPath != "" {
+			var err error
+			filesToLoadIntoContainer, err = confutil.LoadConfigFiles(configPath)
+			if err != nil {
+				return nil, fmt.Errorf("failed to load buildkit config file %s: %v", configPath, err)
+			}
+		}
 		if err := dr.command(nil, &b, io.Discard, "--context", dockerContext, "container", "inspect", name); err == nil {
 			// we already have a container named "linuxkit-builder" in the provided context.
 			// get its state and config
@@ -315,12 +324,6 @@ func (dr *dockerRunnerImpl) builderEnsureContainer(ctx context.Context, name, im
 				log.Debugf("checking if configPath %s is correct in container %s", configPath, name)
 				configPathCorrect = false
 				var configB bytes.Buffer
-				// we cannot exactly use the local config file, as it gets modified to get loaded into the container
-				// so we preprocess it using the same library that would load it up
-				filesToLoadIntoContainer, err = confutil.LoadConfigFiles(configPath)
-				if err != nil {
-					return nil, fmt.Errorf("failed to load buildkit config file %s: %v", configPath, err)
-				}
 				if err := dr.command(nil, &configB, io.Discard, "--context", dockerContext, "container", "exec", name, "cat", buildkitConfigPath); err == nil {
 					// sha256sum the config file to see if it matches the provided configPath
 					containerConfigFileHash := sha256.Sum256(configB.Bytes())
