@@ -509,7 +509,7 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	// if requested docker, load the image up
 	// we will store images with arch suffix, i.e. -amd64
 	// if one of the arch equals with system, we will add tag without suffix
-	if bo.targetDocker {
+	if bo.targetDocker && desc != nil {
 		for _, platform := range bo.platforms {
 			ref, err := reference.Parse(p.FullTag())
 			if err != nil {
@@ -573,6 +573,21 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 	if bo.release == "" {
 		_, _ = fmt.Fprintf(writer, "Build and push complete, not releasing, all done.\n")
 		return nil
+	}
+
+	if desc == nil {
+		// Image exists in registry but not in local cache. Pull it so we can create the release tag.
+		_, _ = fmt.Fprintf(writer, "Pulling %s into local cache for release...\n", p.FullTag())
+		if err := c.ImagePull(&ref, bo.platforms, false); err != nil {
+			return fmt.Errorf("unable to pull image for release: %v", err)
+		}
+		desc, err = c.FindDescriptor(&ref)
+		if err != nil {
+			return err
+		}
+		if desc == nil {
+			return fmt.Errorf("unable to find image descriptor in local cache for %s after pull, cannot release", p.FullTag())
+		}
 	}
 
 	relTag, err := p.ReleaseTag(bo.release)
