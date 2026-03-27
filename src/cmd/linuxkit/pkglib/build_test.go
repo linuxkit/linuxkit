@@ -240,13 +240,24 @@ type cacheMocker struct {
 	enableIndexWrite       bool
 	images                 map[string][]v1.Descriptor
 	hashes                 map[string][]byte
+	registryImages         map[string][]v1.Descriptor
 }
 
 func (c *cacheMocker) ImagePull(ref *reference.Spec, platforms []imagespec.Platform, alwaysPull bool) error {
 	if !c.enableImagePull {
 		return errors.New("ImagePull disabled")
 	}
-	// make some random data for a layer
+	image := ref.String()
+	// simulate pulling from registry: copy registry descriptors into local cache
+	if c.registryImages != nil {
+		if descs, ok := c.registryImages[image]; ok {
+			for _, d := range descs {
+				c.appendImage(image, d)
+			}
+			return nil
+		}
+	}
+	// fallback: make some random data for a layer
 	b := make([]byte, 256)
 	_, _ = rand.Read(b)
 	descs, err := c.imageWriteStream(bytes.NewReader(b))
@@ -277,6 +288,19 @@ func (c *cacheMocker) ImageInCache(ref *reference.Spec, trustedRef, architecture
 }
 
 func (c *cacheMocker) ImageInRegistry(ref *reference.Spec, trustedRef, architecture string) (bool, error) {
+	if c.registryImages == nil {
+		return false, nil
+	}
+	image := ref.String()
+	descs, ok := c.registryImages[image]
+	if !ok {
+		return false, nil
+	}
+	for _, d := range descs {
+		if d.Platform != nil && d.Platform.Architecture == architecture {
+			return true, nil
+		}
+	}
 	return false, nil
 }
 
@@ -445,7 +469,7 @@ func (c *cacheMocker) FindDescriptor(ref *reference.Spec) (*v1.Descriptor, error
 	if desc, ok := c.images[name]; ok && len(desc) > 0 {
 		return &desc[0], nil
 	}
-	return nil, fmt.Errorf("not found %s", name)
+	return nil, nil
 }
 func (c *cacheMocker) NewSource(ref *reference.Spec, platform *imagespec.Platform, descriptor *v1.Descriptor) spec.ImageSource {
 	return cacheMockerSource{c, ref, platform, descriptor}
@@ -578,6 +602,52 @@ func TestBuild(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// TestPushReleaseImageInRegistry tests that push+release works when the image
+// already exists in the registry but not in the local cache. This is a
+// regression test for a nil pointer dereference introduced in 4129cc79.
+func TestPushReleaseImageInRegistry(t *testing.T) {
+	cacheDir := "somecachedir"
+	// simulate an image that exists in the registry for amd64
+	// FullTag() for org:"foo", image:"bar" with no tag set is "docker.io/foo/bar:latest"
+	registryDescs := map[string][]v1.Descriptor{
+		"docker.io/foo/bar:latest": {
+			{
+				MediaType: types.OCIManifestSchema1,
+				Size:      100,
+				Digest:    v1.Hash{Algorithm: "sha256", Hex: "aabbccdd"},
+				Platform:  &v1.Platform{Architecture: "amd64", OS: "linux"},
+			},
+		},
+	}
+	c := &cacheMocker{
+		enablePush:             true,
+		enabledDescriptorWrite: true,
+		enableImagePull:        true,
+		enableIndexWrite:       true,
+		registryImages:         registryDescs,
+	}
+	runner := &dockerMocker{supportContexts: true}
+	p := Pkg{org: "foo", image: "bar", hash: "abc", arches: []string{"amd64"}, commitHash: "HEAD", dockerfile: "testdata/Dockerfile"}
+	opts := []BuildOpt{
+		WithBuildCacheDir(cacheDir),
+		WithBuildPush(),
+		WithRelease("snapshot"),
+		WithBuildDocker(runner),
+		WithBuildCacheProvider(c),
+		WithBuildOutputWriter(io.Discard),
+		WithBuildPlatforms(imagespec.Platform{OS: "linux", Architecture: "amd64"}),
+	}
+	err := p.Build(opts...)
+	if err != nil {
+		t.Fatalf("expected no error, got: %v", err)
+	}
+	// verify the release tag was written to cache
+	relTag := "docker.io/foo/bar:snapshot"
+	if _, ok := c.images[relTag]; !ok {
+		t.Errorf("expected release tag %q to be written to cache", relTag)
 	}
 }
 
