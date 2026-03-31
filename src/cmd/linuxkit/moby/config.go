@@ -978,7 +978,8 @@ func ConfigToOCI(yaml *Image, config imagespec.ImageConfig, idMap map[string]uin
 	// Always create a new mount namespace
 	namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.MountNamespace})
 
-	// TODO cgroup namespaces
+	// Always create a new cgroup namespace
+	namespaces = append(namespaces, specs.LinuxNamespace{Type: specs.CgroupNamespace})
 
 	// Capabilities
 	capCheck := map[string]bool{}
