@@ -641,7 +641,11 @@ func (dr *dockerRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, 
 		cf = dockerconfig.LoadDefaultConfigFile(io.Discard)
 	}
 	attachable = append(attachable,
-		authprovider.NewDockerAuthProvider(authprovider.DockerAuthProviderConfig{ConfigFile: cf}),
+		authprovider.NewDockerAuthProvider(authprovider.DockerAuthProviderConfig{
+			AuthConfigProvider: func(_ context.Context, host string, _ []string, _ authprovider.ExpireCachedAuthCheck) (dockerconfigtypes.AuthConfig, error) {
+				return cf.GetAuthConfig(host)
+			},
+		}),
 	)
 
 	solveOpts := buildkitClient.SolveOpt{
