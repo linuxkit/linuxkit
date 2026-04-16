@@ -16,6 +16,10 @@ import (
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/util"
 )
 
+const (
+	envVarPkgOrg = "LINUXKIT_PKG_ORG"
+)
+
 // Contains fields settable in the build.yml
 type pkgInfo struct {
 	Image        string            `yaml:"image"`
@@ -191,6 +195,12 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 		}
 		if cfg.Network != nil {
 			pi.Network = *cfg.Network
+		}
+		if cfg.Org == nil {
+			env := os.Getenv(envVarPkgOrg)
+			if env != "" {
+				cfg.Org = &env
+			}
 		}
 		if cfg.Org != nil {
 			pi.Org = *cfg.Org
