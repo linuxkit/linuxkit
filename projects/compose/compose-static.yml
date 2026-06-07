@@ -42,7 +42,8 @@ services:
      - /lib/modules:/lib/modules
      - /var/run:/var/run
      - /etc/html:/var/html
-    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd"]
+    command: ["/usr/local/bin/docker-init", "/usr/local/bin/dockerd", "--",
+              "--oom-score-adjust", "-500"]
   - name: compose
     image: linuxkitprojects/compose:111f9f32a933c9e7acbf3ccfc13fedbdfce8224f
     binds:

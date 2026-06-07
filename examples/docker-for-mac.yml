@@ -101,6 +101,7 @@ services:
      - /usr/bin/vpnkit-iptables-wrapper:/usr/bin/iptables # iptables wrapper
     command: [ "/usr/local/bin/docker-init", "/usr/local/bin/dockerd", "--",
             "--config-file", "/var/config/docker/daemon.json",
+            "--oom-score-adjust", "-500",
             "--swarm-default-advertise-addr=eth0",
             "--userland-proxy-path", "/usr/bin/vpnkit-expose-port",
             "--storage-driver", "overlay2" ]
