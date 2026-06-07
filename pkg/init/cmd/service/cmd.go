@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"syscall"
+	"time"
 
 	"github.com/containerd/containerd/v2/client"
 	"github.com/containerd/containerd/v2/pkg/cio"
@@ -15,7 +17,7 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-func parseCmd(ctx context.Context, command string, args []string) (*log.Entry, string, string, string, string) {
+func parseCmd(ctx context.Context, command string, args []string, cFlags ...func(*flag.FlagSet)) (*log.Entry, string, string, string, string) {
 	invoked := filepath.Base(os.Args[0])
 	flags := flag.NewFlagSet(command, flag.ExitOnError)
 	flags.Usage = func() {
@@ -28,6 +30,10 @@ func parseCmd(ctx context.Context, command string, args []string) (*log.Entry, s
 	path := flags.String("path", defaultServicesPath, "Path to service configs")
 
 	dumpSpec := flags.String("dump-spec", "", "Dump container spec to file before start")
+
+	for _, cFlag := range cFlags {
+		cFlag(flags)
+	}
 
 	if err := flags.Parse(args); err != nil {
 		log.Fatal("Unable to parse args")
@@ -50,10 +56,13 @@ func parseCmd(ctx context.Context, command string, args []string) (*log.Entry, s
 }
 
 func stopCmd(ctx context.Context, args []string) {
-	log, service, sock, path, _ := parseCmd(ctx, "stop", args)
+	timeout := 10
+	log, service, sock, path, _ := parseCmd(ctx, "stop", args, func(flags *flag.FlagSet) {
+		flags.IntVar(&timeout, "time", 10, "Seconds to wait for stop before killing the service")
+	})
 
 	log.Infof("Stopping service: %q", service)
-	id, pid, msg, err := stop(ctx, service, sock, path)
+	id, pid, msg, err := stop(ctx, service, sock, path, time.Duration(timeout)*time.Second)
 	if err != nil {
 		log.WithError(err).Fatal(msg)
 	}
@@ -99,7 +108,7 @@ func (c *logio) Close() error {
 	return nil
 }
 
-func stop(ctx context.Context, service, sock, basePath string) (string, uint32, string, error) {
+func stop(ctx context.Context, service, sock, basePath string, timeBeforeKill time.Duration) (string, uint32, string, error) {
 	path := filepath.Join(basePath, service)
 
 	runtimeConfig := getRuntimeConfig(path)
@@ -126,14 +135,35 @@ func stop(ctx context.Context, service, sock, basePath string) (string, uint32, 
 	id := ctr.ID()
 	pid := task.Pid()
 
-	err = task.Kill(ctx, 9)
+	err = task.Kill(ctx, syscall.SIGTERM)
 	if err != nil {
-		return "", 0, "killing task", err
+		return "", 0, "sopping task", err
 	}
 
-	_, err = task.Wait(ctx)
+	s, err := task.Wait(ctx)
 	if err != nil {
 		return "", 0, "waiting for task to exit", err
+	}
+
+	select {
+	case <-s:
+	case <-time.After(timeBeforeKill):
+		log.Infof("Task did not stop after timeout, killing it...")
+		err = task.Kill(ctx, syscall.SIGKILL)
+		if err != nil {
+			return "", 0, "killing task", err
+		}
+
+		s, err = task.Wait(ctx)
+		if err != nil {
+			return "", 0, "waiting for task to exit", err
+		}
+
+		select {
+		case <-s:
+		case <-time.After(5 * time.Second):
+			return "", 0, "killed, but did not stop", fmt.Errorf("Timeout waiting")
+		}
 	}
 
 	_, err = task.Delete(ctx)
