@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"os"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkglib"
 	"github.com/spf13/cobra"
@@ -76,8 +75,6 @@ func pkgCmd() *cobra.Command {
 			}
 			if cmd.Flags().Changed("org") {
 				pkglibConfig.Org = &argOrg
-			} else if org := os.Getenv(envVarPkgOrg); org != "" {
-				pkglibConfig.Org = &org
 			}
 			if cmd.Flags().Changed("tag") {
 				pkglibConfig.Tag = tag
