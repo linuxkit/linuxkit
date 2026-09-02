@@ -38,6 +38,7 @@ import (
 	"github.com/moby/buildkit/session"
 	"github.com/moby/buildkit/util/progress/progressui"
 	imagespec "github.com/opencontainers/image-spec/specs-go/v1"
+	"github.com/tonistiigi/fsutil"
 
 	// golint requires comments on non-main(test)
 	// package for blank import
@@ -593,7 +594,7 @@ func (dr *dockerRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, 
 	}
 
 	attachable := []session.Attachable{}
-	localDirs := map[string]string{}
+	localMounts := map[string]fsutil.FS{}
 
 	// Add SSH agent provider if needed
 	if len(imageBuildOpts.SSH) > 0 {
@@ -614,8 +615,13 @@ func (dr *dockerRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, 
 		frontendAttrs["context"] = up.Add(io.NopCloser(buf))
 		attachable = append(attachable, up)
 	} else {
-		localDirs[dockerui.DefaultLocalNameDockerfile] = pkg
-		localDirs[dockerui.DefaultLocalNameContext] = pkg
+		for _, name := range []string{dockerui.DefaultLocalNameDockerfile, dockerui.DefaultLocalNameContext} {
+			mount, err := fsutil.NewFS(pkg)
+			if err != nil {
+				return fmt.Errorf("error creating local mount %s for %s: %v", name, pkg, err)
+			}
+			localMounts[name] = mount
+		}
 	}
 	// add credentials
 	var cf *configfile.ConfigFile
@@ -660,8 +666,8 @@ func (dr *dockerRunnerImpl) Build(ctx context.Context, tag, pkg, dockerContext, 
 				Output: fixedWriteCloser(&writeNopCloser{stdout}),
 			},
 		},
-		Session:   attachable,
-		LocalDirs: localDirs,
+		Session:     attachable,
+		LocalMounts: localMounts,
 	}
 
 	frontendAttrs["filename"] = imageBuildOpts.Dockerfile
