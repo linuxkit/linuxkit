@@ -54,6 +54,17 @@ type PkglibConfig struct {
 	Dirty        bool
 	Dev          bool
 	Tag          string // Tag is a text/template string, defaults to {{.Hash}}
+	// HashDir, when non-empty, is the directory containing per-package .hash
+	// YAML manifest files (written by `linuxkit pkg show-tag --hash-dir`).
+	// During dep tag resolution and combined-hash computation, hash files are
+	// read instead of recursively calling NewFromConfig, which both avoids
+	// dependency cycles and ensures version-specific build variants (e.g.
+	// build-2.4.yml for ZFS) are correctly reflected in downstream hashes.
+	HashDir string
+	// StrictDeps, when true, causes an error if a dep's hash file is absent
+	// in HashDir during @lkt: build arg resolution. When false (default), the
+	// resolver falls back to NewFromConfig with the default build.yml.
+	StrictDeps bool
 }
 
 // NewPkgInfo returns a new pkgInfo with default values
@@ -99,21 +110,16 @@ type Pkg struct {
 	dirty      bool
 	commitHash string
 	git        *git
+	// hashDir is the directory for per-package .hash manifest files used to
+	// resolve @lkt: dep tags without recursion.
+	hashDir    string
+	strictDeps bool
 }
 
 // NewFromConfig creates a range of Pkg from a PkglibConfig and paths to packages.
 func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 	// Defaults
 	piBase := NewPkgInfo()
-
-	// TODO(ijc) look for "$(git rev-parse --show-toplevel)/.build-defaults.yml"?
-
-	// Ideally want to look at every directory from root to `pkg`
-	// for this file but might be tricky to arrange ordering-wise.
-
-	// These override fields in pi below, bools are in both forms to allow user overrides in either direction.
-	// These will apply to all packages built.
-	// Other arguments
 
 	var pkgs []Pkg
 	for _, pkg := range args {
@@ -137,11 +143,9 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			if !strings.HasPrefix(pkgPath, pkgHashPath) {
 				return nil, fmt.Errorf("Hash path is not a prefix of the package path")
 			}
-
-			// TODO(ijc) pkgPath and hashPath really ought to be in the same git tree too...
 		}
 
-		// make our own copy of piBase. We could use some deepcopy library, but it is just as easy to marshal/unmarshal
+		// make our own copy of piBase via marshal/unmarshal
 		pib, err := yaml.Marshal(&piBase)
 		if err != nil {
 			return nil, err
@@ -151,8 +155,20 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			return nil, err
 		}
 
-		buildYmlFile := filepath.Join(pkgPath, cfg.BuildYML)
+		buildYML := cfg.BuildYML
+		buildYmlFile := filepath.Join(pkgPath, buildYML)
 		b, err := os.ReadFile(buildYmlFile)
+		if err != nil && os.IsNotExist(err) && cfg.HashDir != "" {
+			// The requested build yml doesn't exist.  If a hash file is
+			// available, read the build-yml field from it — this handles
+			// versioned packages (e.g. pkg/zfs with only build-2.3.yml)
+			// that were previously processed by update-hashes.
+			if m, mErr := readHashManifest(cfg.HashDir, pkgPath); mErr == nil && m != nil && m.BuildYML != "" {
+				buildYML = m.BuildYML
+				buildYmlFile = filepath.Join(pkgPath, buildYML)
+				b, err = os.ReadFile(buildYmlFile)
+			}
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -173,19 +189,12 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 		}
 
 		if cfg.Dev {
-			// If --org is also used then this will be overwritten
-			// by argOrg when we iterate over the provided options
-			// in the fs.Visit block below.
 			pi.Org = os.Getenv("USER")
 			if pkgHash == "" {
 				pkgHash = "dev"
 			}
 		}
 
-		// Go's flag package provides no way to see if a flag was set
-		// apart from Visit which iterates over only those which were
-		// set. This must be run here, rather than earlier, because we need to
-		// have read it from the build.yml file first, then override based on CLI.
 		if cfg.DisableCache != nil {
 			pi.DisableCache = *cfg.DisableCache
 		}
@@ -203,8 +212,8 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			if len(tmp) != 2 {
 				return nil, fmt.Errorf("bad source format in %s", source)
 			}
-			srcPath := filepath.Clean(tmp[0]) // Should work with windows paths
-			dstPath := path.Clean(tmp[1])     // 'path' here because this should be a Unix path
+			srcPath := filepath.Clean(tmp[0])
+			dstPath := path.Clean(tmp[1])
 
 			if !filepath.IsAbs(srcPath) {
 				srcPath = filepath.Join(pkgPath, srcPath)
@@ -245,13 +254,31 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 					return nil, err
 				}
 
-				if srcHashes != "" {
-					pkgHash += srcHashes
+				// Combine the git tree hash with extra source hashes and, when a
+				// hash-dir is available, with the resolved tags of all @lkt: build
+				// arg deps. Reading dep tags from hash files (written by `linuxkit
+				// pkg show-tag --hash-dir`) avoids recursive NewFromConfig calls and
+				// the dependency cycles they would create.
+				extraHashes := srcHashes
+				if pi.BuildArgs != nil && cfg.HashDir != "" {
+					for _, arg := range *pi.BuildArgs {
+						resolved, err := transformBuildArgValue(arg, buildYmlFile, cfg.HashDir, cfg.StrictDeps)
+						if err != nil {
+							return nil, fmt.Errorf("resolving build arg %q for hash: %w", arg, err)
+						}
+						for _, r := range resolved {
+							extraHashes += r
+						}
+					}
+				}
+
+				if extraHashes != "" {
+					pkgHash += extraHashes
 					pkgHash = fmt.Sprintf("%x", sha1.Sum([]byte(pkgHash)))
 				}
 
 				if dirty {
-					contentHash, err := git.contentHash()
+					contentHash, err := git.contentHash(pkgHashPath)
 					if err != nil {
 						return nil, err
 					}
@@ -271,7 +298,6 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			tagTmpl = "{{.Hash}}"
 		}
 
-		// calculate the tag to use based on the template and the pkgHash
 		tmpl, err := template.New("tag").Parse(tagTmpl)
 		if err != nil {
 			return nil, fmt.Errorf("invalid tag template: %v", err)
@@ -300,6 +326,8 @@ func NewFromConfig(cfg PkglibConfig, args ...string) ([]Pkg, error) {
 			dockerfile:    pi.Dockerfile,
 			git:           git,
 			tag:           tag,
+			hashDir:       cfg.HashDir,
+			strictDeps:    cfg.StrictDeps,
 		})
 	}
 	return pkgs, nil
@@ -334,6 +362,11 @@ func (p Pkg) Tag() string {
 // Image returns the image name without the tag
 func (p Pkg) Image() string {
 	return p.org + "/" + p.image
+}
+
+// Path returns the absolute path to the package source directory.
+func (p Pkg) Path() string {
+	return p.path
 }
 
 // FullTag returns a reference expanded tag
@@ -374,13 +407,16 @@ func (p *Pkg) ProcessBuildArgs() error {
 	}
 	var buildArgs []string
 	for _, arg := range *p.buildArgs {
-		transformedLine, err := TransformBuildArgValue(arg, p.buildYML)
+		// Use hash-dir-aware resolution when available so that @lkt: dep tags
+		// come from pre-computed hash files rather than triggering recursive
+		// NewFromConfig calls. This ensures version-specific variants (e.g.
+		// build-2.4.yml for ZFS) are reflected in the Docker build args.
+		transformedLine, err := transformBuildArgValue(arg, p.buildYML, p.hashDir, p.strictDeps)
 		if err != nil {
 			return fmt.Errorf("error processing build arg %q: %v", arg, err)
 		}
 		buildArgs = append(buildArgs, transformedLine...)
 	}
-	// Replace the original build args with the transformed ones
 	if len(buildArgs) > 0 {
 		p.buildArgs = &buildArgs
 	}

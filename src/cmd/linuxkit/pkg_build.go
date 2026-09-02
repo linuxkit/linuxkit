@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/pkglib"
 	"github.com/linuxkit/linuxkit/src/cmd/linuxkit/spec"
@@ -70,6 +72,10 @@ func pkgBuildCmd() *cobra.Command {
 		Example: `  linuxkit pkg build [options] pkg/dir/`,
 		Args:    cobra.MinimumNArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
+			// NewFromConfig handles build-yml resolution: if the default
+			// build.yml doesn't exist and --hash-dir is set, it reads the
+			// build-yml field from the hash file (e.g. build-2.3.yml for
+			// versioned packages like pkg/zfs).
 			pkgs, err := pkglib.NewFromConfig(pkglibConfig, args...)
 			if err != nil {
 				return err
@@ -300,6 +306,13 @@ func pkgBuildCmd() *cobra.Command {
 				if err := p.Build(pkgOpts...); err != nil {
 					return fmt.Errorf("error %s %q: %w", action, p.Tag(), err)
 				}
+				// After a successful build, touch the hash file to set a
+				// real mtime.  update-hashes wrote it with epoch-0 to signal
+				// "needs building"; now that the build succeeded we stamp it
+				// so make considers this package up-to-date.
+				if pkglibConfig.HashDir != "" {
+					touchHashFile(pkglibConfig.HashDir, p)
+				}
 			}
 			return nil
 		},
@@ -348,4 +361,18 @@ func buildPlatformBuildersMap(inputs string, existing map[string]string) (map[st
 		existing[platform] = builder
 	}
 	return existing, nil
+}
+
+
+// touchHashFile updates the mtime of the package's hash file to "now" after a
+// successful build.  update-hashes wrote the file with epoch-0 mtime to signal
+// "needs building"; this function stamps it with the current time so make
+// considers this package up-to-date on the next run.
+func touchHashFile(hashDir string, p pkglib.Pkg) {
+	name := filepath.Base(p.Path())
+	hashFile := filepath.Join(hashDir, name+".hash")
+	now := time.Now()
+	// Ignore errors: the hash file may not exist (e.g. no update-hashes run),
+	// and a missing touch is not fatal.
+	_ = os.Chtimes(hashFile, now, now)
 }
