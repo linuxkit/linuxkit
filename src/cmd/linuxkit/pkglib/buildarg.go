@@ -15,7 +15,7 @@ const (
 )
 
 // TransformBuildArgValue transforms a build arg pair whose value starts with the special linuxkit prefix.
-func TransformBuildArgValue(line, anchorFile string) ([]string, error) {
+func TransformBuildArgValue(ownPkgName string, line, anchorFile string) ([]string, error) {
 	parts := strings.SplitN(line, "=", 2)
 	if len(parts) != 2 {
 		return nil, fmt.Errorf("invalid build-arg, must be in format 'arg=value': %s", line)
@@ -78,6 +78,9 @@ func TransformBuildArgValue(line, anchorFile string) ([]string, error) {
 				return nil, fmt.Errorf("error stating package path %q: %v", match, err)
 			}
 			if !info.IsDir() {
+				continue
+			}
+			if match == ownPkgName {
 				continue
 			}
 			if strings.HasPrefix(info.Name(), ".") {
