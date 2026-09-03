@@ -358,6 +358,7 @@ and you want to add (or replace it with) `5.15.148`, apply the following process
 docker run --rm -ti -v $(pwd):/src linuxkit/kconfig
 ```
 1. In the container, change directory to the kernel source directory for the new version, e.g. `cd /linux-5.15.148`.
+1. Copy the `.config` file to the source location for defconfig, e.g. `cp /src/5.15.x/config-x86_64 arch/x86/configs/x86_64_defconfig`
 1. Run `make defconfig` to create the default config file.
 1. If the config file has changed, copy it out of the container and check it in, e.g. `cp .config /src/5.15.x/config-x86_64`.
 1. Repeat for other architectures.
