@@ -119,6 +119,12 @@ func validateLayers(img v1.Image, opt ...Option) error {
 	udiffids := []v1.Hash{}
 	sizes := []int64{}
 	for i, layer := range layers {
+		if mt, err := layer.MediaType(); err != nil {
+			return fmt.Errorf("getting mediaType[%d]: %w", i, err)
+		} else if !mt.IsLayer() {
+			continue
+		}
+
 		cl, err := computeLayer(layer)
 		if errors.Is(err, io.ErrUnexpectedEOF) {
 			// Errored while reading tar content of layer because a header or
@@ -153,6 +159,14 @@ func validateLayers(img v1.Image, opt ...Option) error {
 
 	errs := []string{}
 	for i, layer := range layers {
+		mediaType, err := layer.MediaType()
+		if err != nil {
+			return err
+		}
+		if !mediaType.IsLayer() {
+			continue
+		}
+
 		digest, err := layer.Digest()
 		if err != nil {
 			return err
@@ -162,10 +176,6 @@ func validateLayers(img v1.Image, opt ...Option) error {
 			return err
 		}
 		size, err := layer.Size()
-		if err != nil {
-			return err
-		}
-		mediaType, err := layer.MediaType()
 		if err != nil {
 			return err
 		}
