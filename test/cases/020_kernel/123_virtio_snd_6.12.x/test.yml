@@ -1,0 +1,16 @@
+kernel:
+  image: linuxkit/kernel:6.12.59
+  cmdline: "console=ttyS0 console=ttyAMA0 linuxkit.runc_console=1"
+init:
+  - linuxkit/init:1c3e4933ceabd7418b961d66d5d884bf0044ac64
+  - linuxkit/runc:9442aa234715e751a16144f1d4ae3fd1a00fd492
+onboot:
+  - name: check-virtio-sound
+    image: linuxkit-virtio-snd-test
+    binds:
+      - /lib/modules:/lib/modules:ro
+    capabilities:
+      - CAP_SYS_MODULE
+  - name: poweroff
+    image: linuxkit/poweroff:4059858a555bed90c2280fa9b060b7a8f8de6d45
+    command: ["/bin/sh", "/poweroff.sh", "3"]
