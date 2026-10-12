@@ -22,9 +22,6 @@ import (
 
 // Process the run arguments and execute run
 func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) error {
-	ctx, forceStop, cleanupSignals := virtualizationFrameworkSignalContext()
-	defer cleanupSignals()
-
 	if cfg.data != "" && cfg.dataPath != "" {
 		return errors.New("cannot specify both -data and -data-file")
 	}
@@ -74,6 +71,10 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 
 	vmlinuz := prefix + "-kernel"
 	initrd := prefix + "-initrd.img"
+
+	// Handle signals during kernel preparation and VM lifecycle; earlier metadata/cmdline reads keep default termination.
+	ctx, forceStop, cleanupSignals := virtualizationFrameworkSignalContext()
+	defer cleanupSignals()
 
 	vmlinuzFile, cleanupKernel, err := prepareVirtualizationFrameworkKernelContext(ctx, vmlinuz)
 	if err != nil {

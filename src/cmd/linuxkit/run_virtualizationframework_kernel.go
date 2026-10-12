@@ -37,7 +37,7 @@ func prepareVirtualizationFrameworkKernelContext(ctx context.Context, path strin
 		return "", nil, err
 	}
 
-	kernel, err := os.Open(path)
+	kernel, err := openVirtualizationFrameworkKernelFile(path)
 	if err != nil {
 		return "", nil, fmt.Errorf("unable to read kernel file %s: %w", path, err)
 	}
