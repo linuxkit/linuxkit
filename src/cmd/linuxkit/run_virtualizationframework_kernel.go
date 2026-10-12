@@ -3,9 +3,12 @@ package main
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"io"
+	"log"
 	"os"
 )
 
@@ -26,6 +29,14 @@ var arm64ImageMagic = [4]byte{'A', 'R', 'M', 0x64}
 // Virtualization framework can load. EFI zboot images are containers around a
 // compressed kernel, so unwrap them before passing them to the framework.
 func prepareVirtualizationFrameworkKernel(path string) (string, func(), error) {
+	return prepareVirtualizationFrameworkKernelContext(context.Background(), path)
+}
+
+func prepareVirtualizationFrameworkKernelContext(ctx context.Context, path string) (string, func(), error) {
+	if err := ctx.Err(); err != nil {
+		return "", nil, err
+	}
+
 	kernel, err := os.Open(path)
 	if err != nil {
 		return "", nil, fmt.Errorf("unable to read kernel file %s: %w", path, err)
@@ -38,68 +49,96 @@ func prepareVirtualizationFrameworkKernel(path string) (string, func(), error) {
 	}
 
 	prefix := make([]byte, 8)
-	n, err := kernel.ReadAt(prefix, 0)
+	n, err := (contextReaderAt{ctx: ctx, reader: kernel}).ReadAt(prefix, 0)
 	if err != nil && err != io.EOF {
 		return "", nil, fmt.Errorf("unable to read kernel header %s: %w", path, err)
 	}
 	prefix = prefix[:n]
 
 	if hasZbootMarker(prefix) {
-		return writeDecodedKernel(path, func(out io.Writer) error {
-			return decodeZbootKernel(kernel, info.Size(), out, maxKernelImageSize)
+		return writeDecodedKernelContext(ctx, path, func(out io.Writer) error {
+			return decodeZbootKernelContext(ctx, kernel, info.Size(), out, maxKernelImageSize)
 		})
 	}
 
 	if hasGzipMagic(prefix) {
-		return writeDecodedKernel(path, func(out io.Writer) error {
-			reader, err := gzip.NewReader(kernel)
-			if err != nil {
-				return fmt.Errorf("unable to read gzip kernel %s: %w", path, err)
-			}
-			defer func() { _ = reader.Close() }()
-
-			n, err := io.Copy(out, io.LimitReader(reader, maxKernelImageSize+1))
-			if err != nil {
-				return fmt.Errorf("unable to decompress kernel %s: %w", path, err)
-			}
-			if n > maxKernelImageSize {
-				return fmt.Errorf("decompressed kernel %s exceeds %d bytes", path, maxKernelImageSize)
-			}
-			return nil
+		return writeDecodedKernelContext(ctx, path, func(out io.Writer) error {
+			return decodeGzipKernelContext(ctx, kernel, out, path, maxKernelImageSize)
 		})
 	}
 
+	if err := ctx.Err(); err != nil {
+		return "", nil, err
+	}
 	return path, func() {}, nil
 }
 
-func writeDecodedKernel(source string, decode func(io.Writer) error) (string, func(), error) {
+func writeDecodedKernelContext(ctx context.Context, source string, decode func(io.Writer) error) (string, func(), error) {
+	if err := ctx.Err(); err != nil {
+		return "", nil, err
+	}
+
 	out, err := os.CreateTemp("", "linuxkit-kernel-uncompressed-*")
 	if err != nil {
 		return "", nil, fmt.Errorf("unable to create decompressed kernel for %s: %w", source, err)
 	}
 	outPath := out.Name()
-	cleanup := func() { _ = os.Remove(outPath) }
+	cleanup := func() {
+		if err := removeDecodedKernelTemp(outPath); err != nil {
+			log.Printf("unable to remove decompressed kernel %s: %v", outPath, err)
+		}
+	}
 
-	if err := decode(out); err != nil {
-		_ = out.Close()
-		cleanup()
-		return "", nil, fmt.Errorf("unable to decompress kernel %s: %w", source, err)
+	if err := decode(contextWriter{ctx: ctx, writer: out}); err != nil {
+		cleanupErr := closeAndRemoveDecodedKernelTemp(out, outPath)
+		return "", nil, fmt.Errorf("unable to decompress kernel %s: %w", source, errors.Join(err, cleanupErr))
+	}
+	if err := ctx.Err(); err != nil {
+		cleanupErr := closeAndRemoveDecodedKernelTemp(out, outPath)
+		return "", nil, fmt.Errorf("unable to decompress kernel %s: %w", source, errors.Join(err, cleanupErr))
 	}
 	if err := out.Close(); err != nil {
-		cleanup()
-		return "", nil, fmt.Errorf("unable to close decompressed kernel for %s: %w", source, err)
+		cleanupErr := removeDecodedKernelTemp(outPath)
+		return "", nil, fmt.Errorf("unable to close decompressed kernel for %s: %w", source, errors.Join(err, cleanupErr))
+	}
+	if err := ctx.Err(); err != nil {
+		cleanupErr := removeDecodedKernelTemp(outPath)
+		return "", nil, fmt.Errorf("unable to decompress kernel %s: %w", source, errors.Join(err, cleanupErr))
 	}
 	return outPath, cleanup, nil
 }
 
+func closeAndRemoveDecodedKernelTemp(out *os.File, path string) error {
+	return errors.Join(out.Close(), removeDecodedKernelTemp(path))
+}
+
+func removeDecodedKernelTemp(path string) error {
+	err := os.Remove(path)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
+}
+
 func decodeZbootKernel(image io.ReaderAt, imageSize int64, out io.Writer, maxOutput int64) error {
+	return decodeZbootKernelContext(context.Background(), image, imageSize, out, maxOutput)
+}
+
+func decodeZbootKernelContext(ctx context.Context, image io.ReaderAt, imageSize int64, out io.Writer, maxOutput int64) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 	if imageSize < zbootHeaderSize {
 		return fmt.Errorf("EFI zboot header is truncated: have %d bytes, need %d", imageSize, zbootHeaderSize)
 	}
 
 	header := make([]byte, zbootHeaderSize)
-	if _, err := image.ReadAt(header, 0); err != nil {
+	contextImage := contextReaderAt{ctx: ctx, reader: image}
+	if _, err := contextImage.ReadAt(header, 0); err != nil {
 		return fmt.Errorf("unable to read EFI zboot header: %w", err)
+	}
+	if err := ctx.Err(); err != nil {
+		return err
 	}
 	if !bytes.Equal(header[:2], []byte("MZ")) || !bytes.Equal(header[4:8], []byte("zimg")) {
 		return fmt.Errorf("invalid EFI zboot signature")
@@ -133,14 +172,17 @@ func decodeZbootKernel(image io.ReaderAt, imageSize int64, out io.Writer, maxOut
 		return fmt.Errorf("invalid maximum kernel size %d", maxOutput)
 	}
 
-	payload := io.NewSectionReader(image, int64(payloadOffset), int64(payloadSize))
+	payload := io.NewSectionReader(contextImage, int64(payloadOffset), int64(payloadSize))
 	reader, err := gzip.NewReader(payload)
 	if err != nil {
 		return fmt.Errorf("unable to open EFI zboot gzip payload: %w", err)
 	}
 	defer func() { _ = reader.Close() }()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
 
-	validated := &arm64ImageWriter{writer: out}
+	validated := &arm64ImageWriter{writer: contextWriter{ctx: ctx, writer: out}}
 	n, err := io.Copy(validated, io.LimitReader(reader, maxOutput+1))
 	if err != nil {
 		return fmt.Errorf("unable to decompress EFI zboot gzip payload: %w", err)
@@ -151,7 +193,81 @@ func decodeZbootKernel(image io.ReaderAt, imageSize int64, out io.Writer, maxOut
 	if !validated.hasImageMagic() {
 		return fmt.Errorf("decompressed EFI zboot payload is not an ARM64 Linux Image")
 	}
-	return nil
+	return ctx.Err()
+}
+
+func decodeGzipKernelContext(ctx context.Context, input io.Reader, out io.Writer, source string, maxOutput int64) error {
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+	if maxOutput < 0 || maxOutput == maxInt64 {
+		return fmt.Errorf("invalid maximum kernel size %d", maxOutput)
+	}
+	reader, err := gzip.NewReader(contextReader{ctx: ctx, reader: input})
+	if err != nil {
+		return fmt.Errorf("unable to read gzip kernel %s: %w", source, err)
+	}
+	defer func() { _ = reader.Close() }()
+	if err := ctx.Err(); err != nil {
+		return err
+	}
+
+	n, err := io.Copy(contextWriter{ctx: ctx, writer: out}, io.LimitReader(reader, maxOutput+1))
+	if err != nil {
+		return fmt.Errorf("unable to decompress kernel %s: %w", source, err)
+	}
+	if n > maxOutput {
+		return fmt.Errorf("decompressed kernel %s exceeds %d bytes", source, maxOutput)
+	}
+	return ctx.Err()
+}
+
+type contextReaderAt struct {
+	ctx    context.Context
+	reader io.ReaderAt
+}
+
+func (r contextReaderAt) ReadAt(p []byte, off int64) (int, error) {
+	if err := r.ctx.Err(); err != nil {
+		return 0, err
+	}
+	n, err := r.reader.ReadAt(p, off)
+	if contextErr := r.ctx.Err(); contextErr != nil {
+		return n, contextErr
+	}
+	return n, err
+}
+
+type contextReader struct {
+	ctx    context.Context
+	reader io.Reader
+}
+
+func (r contextReader) Read(p []byte) (int, error) {
+	if err := r.ctx.Err(); err != nil {
+		return 0, err
+	}
+	n, err := r.reader.Read(p)
+	if contextErr := r.ctx.Err(); contextErr != nil {
+		return n, contextErr
+	}
+	return n, err
+}
+
+type contextWriter struct {
+	ctx    context.Context
+	writer io.Writer
+}
+
+func (w contextWriter) Write(p []byte) (int, error) {
+	if err := w.ctx.Err(); err != nil {
+		return 0, err
+	}
+	n, err := w.writer.Write(p)
+	if contextErr := w.ctx.Err(); contextErr != nil {
+		return n, contextErr
+	}
+	return n, err
 }
 
 type arm64ImageWriter struct {

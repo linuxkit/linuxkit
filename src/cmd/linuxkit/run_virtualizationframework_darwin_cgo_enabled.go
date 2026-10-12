@@ -4,6 +4,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -21,6 +22,9 @@ import (
 
 // Process the run arguments and execute run
 func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) error {
+	ctx, forceStop, cleanupSignals := virtualizationFrameworkSignalContext()
+	defer cleanupSignals()
+
 	if cfg.data != "" && cfg.dataPath != "" {
 		return errors.New("cannot specify both -data and -data-file")
 	}
@@ -71,7 +75,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	vmlinuz := prefix + "-kernel"
 	initrd := prefix + "-initrd.img"
 
-	vmlinuzFile, cleanupKernel, err := prepareVirtualizationFrameworkKernel(vmlinuz)
+	vmlinuzFile, cleanupKernel, err := prepareVirtualizationFrameworkKernelContext(ctx, vmlinuz)
 	if err != nil {
 		return err
 	}
@@ -257,43 +261,86 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	if !validated {
 		return fmt.Errorf("VM configuration is invalid")
 	}
+	if ctx.Err() != nil {
+		return ctx.Err()
+	}
 
 	vm, err := vz.NewVirtualMachine(config)
 	if err != nil {
 		return fmt.Errorf("could not create virtual machine: %v", err)
 	}
 
-	signalCh := make(chan os.Signal, 1)
+	timeouts := defaultVirtualizationFrameworkLifecycleTimeouts()
+	err = runVirtualizationFrameworkVMLifecycle(
+		ctx,
+		forceStop,
+		virtualizationFrameworkVMAdapter{vm: vm},
+		vm.StateChangedNotify(),
+		vz.VirtualMachineStateStopped,
+		vz.VirtualMachineStateRunning,
+		vz.VirtualMachineStateError,
+		timeouts,
+		virtualizationFrameworkLifecycleHooks{
+			Logf:      log.Infof,
+			OnRunning: func() { log.Infof("start VM is running") },
+		},
+	)
+	return err
+
+}
+
+type virtualizationFrameworkVMAdapter struct {
+	vm *vz.VirtualMachine
+}
+
+func (v virtualizationFrameworkVMAdapter) Start() error {
+	return v.vm.Start()
+}
+
+func (v virtualizationFrameworkVMAdapter) RequestStop() (bool, error) {
+	return v.vm.RequestStop()
+}
+
+func (v virtualizationFrameworkVMAdapter) Stop() error {
+	return v.vm.Stop()
+}
+
+func virtualizationFrameworkSignalContext() (context.Context, <-chan struct{}, func()) {
+	signalCh := make(chan os.Signal, 2)
 	signal.Notify(signalCh, syscall.SIGTERM, os.Interrupt)
-	defer signal.Stop(signalCh)
+	ctx, cancel := context.WithCancel(context.Background())
+	forceStop := make(chan struct{})
+	stopWatcher := make(chan struct{})
+	watcherDone := make(chan struct{})
 
-	if err := vm.Start(); err != nil {
-		return fmt.Errorf("could not start virtual machine: %w", err)
-	}
-
-	for {
-		select {
-		case <-signalCh:
-			result, err := vm.RequestStop()
-			if err != nil {
-				return fmt.Errorf("could not request virtual machine stop: %w", err)
+	go func() {
+		defer close(watcherDone)
+		firstSignal := true
+		for {
+			select {
+			case sig := <-signalCh:
+				if firstSignal {
+					firstSignal = false
+					log.Infof("received signal %s; requesting graceful virtual machine shutdown", sig)
+					cancel()
+					continue
+				}
+				log.Warnf("received signal %s again; forcing virtual machine shutdown", sig)
+				close(forceStop)
+				return
+			case <-stopWatcher:
+				return
 			}
-			log.Println("recieved signal", result)
-		case newState := <-vm.StateChangedNotify():
-			if newState == vz.VirtualMachineStateError {
-				return fmt.Errorf("virtual machine entered error state")
-			}
-			if newState == vz.VirtualMachineStateRunning {
-				log.Println("start VM is running")
-			}
-			if newState == vz.VirtualMachineStateStopped {
-				log.Println("stopped successfully")
-				return nil
-			}
-
 		}
-	}
+	}()
 
+	cleanup := func() {
+		signal.Stop(signalCh)
+		close(stopWatcher)
+		cancel()
+		<-watcherDone
+	}
+	return ctx, forceStop, cleanup
 }
 
 // https://developer.apple.com/documentation/virtualization/running_linux_in_a_virtual_machine?language=objc#:~:text=Configure%20the%20Serial%20Port%20Device%20for%20Standard%20In%20and%20Out
