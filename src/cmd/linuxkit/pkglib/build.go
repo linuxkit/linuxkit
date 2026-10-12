@@ -23,6 +23,12 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+const (
+	EnvVarBuilderName   = "LINUXKIT_BUILDER_NAME"
+	EnvVarBuilderImage  = "LINUXKIT_BUILDER_IMAGE"
+	EnvVarBuilderConfig = "LINUXKIT_BUILDER_CONFIG"
+)
+
 type buildOpts struct {
 	skipBuild        bool
 	force            bool
@@ -249,6 +255,32 @@ func (p Pkg) Build(bos ...BuildOpt) error {
 		if err := fn(&bo); err != nil {
 			return err
 		}
+	}
+
+	// override builder from env variables
+	for _, k := range []struct {
+		p   *string
+		env string
+	}{
+		{
+			p:   &bo.builderConfig.Name,
+			env: EnvVarBuilderName,
+		},
+		{
+			p:   &bo.builderConfig.Image,
+			env: EnvVarBuilderImage,
+		},
+		{
+			p:   &bo.builderConfig.ConfigPath,
+			env: EnvVarBuilderConfig,
+		},
+	} {
+		env := os.Getenv(k.env)
+		if env == "" {
+			continue
+		}
+
+		*k.p = env
 	}
 
 	writer := bo.writer

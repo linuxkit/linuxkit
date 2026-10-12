@@ -43,6 +43,21 @@ func readConfig() {
 	}
 }
 
+func init() {
+	mirrorsEnv := make([]string, 0)
+	// prepend mirrors from env var so CLI flags take precedence (last SetProxy call wins)
+	if envMirrors := os.Getenv(envVarMirror); envMirrors != "" {
+		envList := strings.FieldsFunc(envMirrors, func(r rune) bool { return r == ',' || r == ' ' })
+		mirrorsEnv = append(envList, mirrorsEnv...)
+	}
+
+	err := convertProvidedMirrorsToMap(mirrorsEnv)
+
+	if err != nil {
+		panic(err)
+	}
+}
+
 func newCmd() *cobra.Command {
 	var (
 		flagQuiet       bool
@@ -58,40 +73,9 @@ func newCmd() *cobra.Command {
 		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
 			readConfig()
 
-			// prepend mirrors from env var so CLI flags take precedence (last SetProxy call wins)
-			if envMirrors := os.Getenv(envVarMirror); envMirrors != "" {
-				envList := strings.FieldsFunc(envMirrors, func(r rune) bool { return r == ',' || r == ' ' })
-				mirrorsRaw = append(envList, mirrorsRaw...)
-			}
-
-			// convert the provided mirrors to a map
-			for _, m := range mirrorsRaw {
-				if m == "" {
-					continue
-				}
-				parts := strings.SplitN(m, "=", 2)
-				// if no equals sign, use the whole string as the mirror for all registries
-				// not otherwise specified
-				var key, value string
-				if len(parts) == 1 {
-					key = "*"
-					value = parts[0]
-				} else {
-					key = parts[0]
-					value = parts[1]
-				}
-				// value must start with http:// or https://
-				if !strings.HasPrefix(value, "http://") && !strings.HasPrefix(value, "https://") {
-					return fmt.Errorf("mirror %q must start with http:// or https://", value)
-				}
-				// special logic for docker.io because of its odd references
-				if key == "docker.io" || key == "docker.io/" {
-					for _, prefix := range []string{"docker.io", "index.docker.io", "registry-1.docker.io"} {
-						registry.SetProxy(prefix, value)
-					}
-				} else {
-					registry.SetProxy(key, value)
-				}
+			err := convertProvidedMirrorsToMap(mirrorsRaw)
+			if err != nil {
+				return err
 			}
 
 			for _, f := range certFiles {
@@ -127,4 +111,36 @@ func newCmd() *cobra.Command {
 	cmd.PersistentFlags().IntVarP(&flagVerbose, flagVerboseName, "v", 1, "Verbosity of logging: 0 = quiet, 1 = info, 2 = debug, 3 = trace. Default is info. Setting it explicitly will create structured logging lines.")
 
 	return cmd
+}
+
+func convertProvidedMirrorsToMap(mirrorsRaw []string) error {
+	for _, m := range mirrorsRaw {
+		if m == "" {
+			continue
+		}
+		parts := strings.SplitN(m, "=", 2)
+		// if no equals sign, use the whole string as the mirror for all registries
+		// not otherwise specified
+		var key, value string
+		if len(parts) == 1 {
+			key = "*"
+			value = parts[0]
+		} else {
+			key = parts[0]
+			value = parts[1]
+		}
+		// value must start with http:// or https://
+		if !strings.HasPrefix(value, "http://") && !strings.HasPrefix(value, "https://") {
+			return fmt.Errorf("mirror %q must start with http:// or https://", value)
+		}
+		// special logic for docker.io because of its odd references
+		if key == "docker.io" || key == "docker.io/" {
+			for _, prefix := range []string{"docker.io", "index.docker.io", "registry-1.docker.io"} {
+				registry.SetProxy(prefix, value)
+			}
+		} else {
+			registry.SetProxy(key, value)
+		}
+	}
+	return nil
 }
