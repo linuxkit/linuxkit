@@ -29,10 +29,10 @@ have RAM constraints or large images we recommend using either the
 
 For `kernel+initrd`, the backend accepts an uncompressed kernel or a
 plain gzip-compressed kernel. It also unwraps ARM64 EFI zboot kernels
-whose payload uses gzip, and checks that the decoded payload is an
-ARM64 Linux Image. Other EFI zboot compression formats return an
-unsupported-compression error. Decoded zboot and plain gzip kernels
-are limited to 1 GiB.
+whose payload uses gzip, and checks for the ARM64 Linux Image magic in
+the decoded payload. Other EFI zboot compression formats return an
+unsupported-compression error. Decoded zboot and plain gzip kernels are
+limited to 1 GiB.
 
 ## Console
 
@@ -50,20 +50,20 @@ supported and the disks are in raw format.
 
 ## Power management
 
-On SIGTERM or SIGINT, the runner requests a graceful shutdown through
-Virtualization.Framework, which sends an ACPI power event. The guest
-must handle ACPI events to shut down; this is provided by the
+On the first SIGTERM or SIGINT, the runner requests a graceful shutdown
+through Virtualization.Framework, which sends an ACPI power event. The
+guest must handle ACPI events to shut down; this is provided by the
 [`acpid` package](../pkg/acpid). An example is available in the
 [Docker for Mac example](../examples/docker-for-mac.yml).
 
-The graceful-shutdown phase, including the stop request and wait for the
-VM to stop, is bounded to 5 seconds. If the guest accepts the request,
-it can use the remaining time in that phase. A declined request, request
-error, or expiry of the grace period starts a forced stop. A second
-SIGTERM or SIGINT skips the grace period and starts the forced stop
-immediately. The forced-stop operation is bounded to 5 seconds; an
-unresolved error or timeout is returned and causes `linuxkit run` to
-exit unsuccessfully.
+After the first signal, the runner waits for the VM to stop naturally
+without an automatic timeout. A declined shutdown request or request
+error is logged, and the runner keeps waiting. A request error is
+preserved and returned when supervision ends if the runner observes it.
+A second SIGTERM or SIGINT skips the wait and starts a forced stop
+immediately, even if the graceful request is still pending. The
+forced-stop operation is bounded to 5 seconds; an unresolved error or
+timeout causes `linuxkit run` to exit unsuccessfully.
 
 A forced stop ends the VM without giving the guest a chance to shut down
 cleanly and may lose pending guest writes. Virtualization.Framework
