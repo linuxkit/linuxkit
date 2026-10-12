@@ -168,7 +168,11 @@ func TestCloseAndRemoveDecodedKernelTempSurfacesRemovalFailure(t *testing.T) {
 	if err := os.WriteFile(filepath.Join(path, "child"), []byte("keep directory nonempty"), 0600); err != nil {
 		t.Fatal(err)
 	}
-	defer os.RemoveAll(path)
+	t.Cleanup(func() {
+		if err := os.RemoveAll(path); err != nil {
+			t.Errorf("remove temporary kernel directory: %v", err)
+		}
+	})
 
 	if err := closeAndRemoveDecodedKernelTemp(file, path); err == nil {
 		t.Fatal("closeAndRemoveDecodedKernelTemp() hid a failed removal")

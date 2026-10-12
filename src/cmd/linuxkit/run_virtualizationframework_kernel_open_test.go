@@ -31,7 +31,11 @@ func TestOpenVirtualizationFrameworkKernelFileAllowsSymlinkToRegularFile(t *test
 	if err != nil {
 		t.Fatalf("openVirtualizationFrameworkKernelFile() rejected symlink to regular file: %v", err)
 	}
-	defer file.Close()
+	t.Cleanup(func() {
+		if err := file.Close(); err != nil {
+			t.Errorf("close kernel file: %v", err)
+		}
+	})
 
 	info, err := file.Stat()
 	if err != nil {

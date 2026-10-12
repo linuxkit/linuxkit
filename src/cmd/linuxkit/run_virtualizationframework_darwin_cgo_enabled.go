@@ -167,7 +167,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 			d.Format = "raw"
 		}
 		if d.Format != "raw" && d.Path == "" {
-			return fmt.Errorf("Virtualization Framework currently can only create raw disks")
+			return fmt.Errorf("the Virtualization Framework currently can only create raw disks")
 		}
 		if d.Size != 0 && d.Path == "" {
 			d.Path = filepath.Join(cfg.state, "disk"+id+".raw")

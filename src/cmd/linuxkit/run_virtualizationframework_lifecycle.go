@@ -215,7 +215,7 @@ func forceStopVirtualizationFrameworkVM[S virtualizationFrameworkVMState](
 				stopErr = fmt.Errorf("could not force stop virtual machine: %w", err)
 				continue
 			}
-			requestResults, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
+			_, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
 			if hooks.Logf != nil {
 				hooks.Logf("stopped successfully after force stop")
 			}
@@ -230,7 +230,7 @@ func forceStopVirtualizationFrameworkVM[S virtualizationFrameworkVMState](
 				continue
 			}
 			if state == stoppedState {
-				requestResults, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
+				_, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
 				if hooks.Logf != nil {
 					hooks.Logf("stopped successfully while force stop was completing")
 				}
@@ -244,7 +244,7 @@ func forceStopVirtualizationFrameworkVM[S virtualizationFrameworkVMState](
 			if ready {
 				stopDone = nil
 				if result == nil {
-					requestResults, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
+					_, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
 					if hooks.Logf != nil {
 						hooks.Logf("stopped successfully after force stop")
 					}
@@ -259,13 +259,13 @@ func forceStopVirtualizationFrameworkVM[S virtualizationFrameworkVMState](
 			}
 			priorErr = errors.Join(priorErr, stateErr)
 			if stopped {
-				requestResults, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
+				_, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
 				if hooks.Logf != nil {
 					hooks.Logf("stopped successfully while force stop was completing")
 				}
 				return priorErr
 			}
-			requestResults, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
+			_, priorErr = collectCompletedVirtualizationFrameworkStopRequest(requestResults, priorErr, hooks)
 			if stopErr != nil {
 				return errors.Join(priorErr, stopErr)
 			}
