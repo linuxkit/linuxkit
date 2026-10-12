@@ -424,6 +424,44 @@ func TestVirtualizationFrameworkLifecycleStoppedStateConfirmsStopError(t *testin
 	}
 }
 
+func TestVirtualizationFrameworkDeadlineRecheckPrefersBufferedResult(t *testing.T) {
+	resultCh := make(chan int, 1)
+	resultCh <- 42
+	states := make(chan lifecycleTestState, 1)
+	states <- lifecycleTestStopped
+
+	result, ready, stopped, stateErr := recheckVirtualizationFrameworkDeadline(
+		resultCh,
+		states,
+		lifecycleTestStopped,
+		lifecycleTestError,
+	)
+	if !ready || result != 42 {
+		t.Fatalf("recheck result = (%d, %t), want (42, true)", result, ready)
+	}
+	if stopped || stateErr != nil {
+		t.Fatalf("recheck state = (%t, %v), want state check skipped when result is ready", stopped, stateErr)
+	}
+	if len(states) != 1 {
+		t.Fatalf("queued state count = %d, want stopped notification left for normal processing", len(states))
+	}
+}
+
+func TestVirtualizationFrameworkDeadlineRecheckDrainsReadyStatesWithinLimit(t *testing.T) {
+	states := make(chan lifecycleTestState, virtualizationFrameworkDeadlineStateCheckLimit+2)
+	for i := 0; i < cap(states); i++ {
+		states <- lifecycleTestRunning
+	}
+
+	stopped, stateErr := drainVirtualizationFrameworkVMStates(states, lifecycleTestStopped, lifecycleTestError)
+	if stopped || stateErr != nil {
+		t.Fatalf("drain states = (%t, %v), want no stop and no error", stopped, stateErr)
+	}
+	if got := len(states); got != 2 {
+		t.Fatalf("queued state count after bounded drain = %d, want 2", got)
+	}
+}
+
 func runTestLifecycle(
 	ctx context.Context,
 	forceStop <-chan struct{},
