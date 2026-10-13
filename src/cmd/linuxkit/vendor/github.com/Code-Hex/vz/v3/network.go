@@ -166,7 +166,7 @@ func validateDatagramSocket(fd int) error {
 	if sotype == syscall.SOCK_DGRAM && isAvailableDatagram(fd) {
 		return nil
 	}
-	return fmt.Errorf("The fileHandle must be a datagram socket")
+	return fmt.Errorf("the fileHandle must be a datagram socket")
 }
 
 func isAvailableDatagram(fd int) bool {

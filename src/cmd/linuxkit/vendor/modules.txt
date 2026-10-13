@@ -41,7 +41,10 @@ github.com/Azure/go-autorest/logger
 # github.com/Azure/go-autorest/tracing v0.6.0
 ## explicit; go 1.12
 github.com/Azure/go-autorest/tracing
-# github.com/Code-Hex/vz/v3 v3.0.0
+# github.com/Code-Hex/go-infinity-channel v1.0.0
+## explicit; go 1.18
+github.com/Code-Hex/go-infinity-channel
+# github.com/Code-Hex/vz/v3 v3.1.0
 ## explicit; go 1.19
 github.com/Code-Hex/vz/v3
 github.com/Code-Hex/vz/v3/internal/objc

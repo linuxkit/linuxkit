@@ -12,7 +12,7 @@
 #define NSURLComponents NSURLComponents
 
 bool vmCanStop(void *machine, void *queue);
-void stopWithCompletionHandler(void *machine, void *queue, void *completionHandler);
+void stopWithCompletionHandler(void *machine, void *queue, uintptr_t cgoHandle);
 
 void *newVZGenericPlatformConfiguration();
 
@@ -21,6 +21,7 @@ void *newVZVirtioSoundDeviceHostInputStreamConfiguration(); // use in Go
 void *newVZVirtioSoundDeviceOutputStreamConfiguration();
 void *newVZVirtioSoundDeviceHostOutputStreamConfiguration(); // use in Go
 
+void *newVZDiskImageStorageDeviceAttachmentWithCacheAndSyncMode(const char *diskPath, bool readOnly, int cacheMode, int syncMode, void **error);
 void *newVZUSBScreenCoordinatePointingDeviceConfiguration();
 void *newVZUSBKeyboardConfiguration();
 void *newVZVirtioSoundDeviceConfiguration();
@@ -44,5 +45,4 @@ void setKeyboardsVZVirtualMachineConfiguration(void *config,
 void setAudioDevicesVZVirtualMachineConfiguration(void *config,
     void *audioDevices);
 
-void sharedApplication();
 void startVirtualMachineWindow(void *machine, double width, double height);

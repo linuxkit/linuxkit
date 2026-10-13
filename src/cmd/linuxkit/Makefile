@@ -43,7 +43,7 @@ endif
 default: $(LINUXKIT)
 all: default
 
-LINUXKIT_DEPS=$(wildcard *.go) $(wildcard */*.go) Makefile
+LINUXKIT_DEPS=$(wildcard *.go) $(wildcard */*.go) $(wildcard *.m) $(wildcard *.h) $(wildcard *.plist) $(wildcard *.entitlements) Makefile
 
 
 ifeq ($(GOOS),darwin)
@@ -83,6 +83,9 @@ endif
 # without CGO attempt to use virtualization framework will ends with error
 ifeq ($(GOOS), darwin)
 	CGO_ENABLED=1
+	MACOSX_DEPLOYMENT_TARGET?=12.0
+	export MACOSX_DEPLOYMENT_TARGET
+	LOCAL_LDFLAGS += -linkmode=external -extldflags \"-sectcreate __TEXT __info_plist linuxkit.Info.plist\"
 endif
 
 ifeq ($(PIE), 1)
@@ -101,7 +104,7 @@ local-check: $(LINUXKIT_DEPS)
 	@echo ineffassign... && ineffassign ./...
 
 local-build:
-	@mkdir -p $(dir LOCAL_TARGET)
+	@mkdir -p $(dir $(LOCAL_TARGET))
 	CGO_ENABLED=$(CGO_ENABLED) go build -o $(LOCAL_TARGET) $(BUILD_FLAGS) --ldflags "$(LOCAL_LDFLAGS)"
 
 local-test: $(LINUXKIT_DEPS)

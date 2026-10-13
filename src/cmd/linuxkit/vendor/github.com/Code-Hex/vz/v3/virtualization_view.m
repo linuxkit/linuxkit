@@ -184,6 +184,12 @@
     VZVirtualMachineView *view = [[[VZVirtualMachineView alloc] init] autorelease];
     view.capturesSystemKeys = YES;
     view.virtualMachine = _virtualMachine;
+#ifdef INCLUDE_TARGET_OSX_14
+    if (@available(macOS 14.0, *)) {
+        // Configure the app to automatically respond to changes in the display size.
+        view.automaticallyReconfiguresDisplay = YES;
+    }
+#endif
     _virtualMachineView = view;
 
     // Setup some window configs

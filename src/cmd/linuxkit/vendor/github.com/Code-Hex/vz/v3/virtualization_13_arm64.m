@@ -28,12 +28,12 @@ void *newVZLinuxRosettaDirectoryShare(void **error)
     The call prompts the user through the download and install flow for Rosetta. This call is successful if the error is nil.
  @see +[VZLinuxRosettaDirectoryShare availability]
  */
-void linuxInstallRosetta(void *cgoHandler)
+void linuxInstallRosetta(uintptr_t cgoHandle)
 {
 #ifdef INCLUDE_TARGET_OSX_13
     if (@available(macOS 13, *)) {
         [VZLinuxRosettaDirectoryShare installRosettaWithCompletionHandler:^(NSError *error) {
-            linuxInstallRosettaWithCompletionHandler(cgoHandler, error);
+            linuxInstallRosettaWithCompletionHandler(cgoHandle, error);
         }];
         return;
     }

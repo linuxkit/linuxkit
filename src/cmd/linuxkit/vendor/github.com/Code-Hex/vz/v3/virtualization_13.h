@@ -41,7 +41,7 @@ void *newVZSpiceAgentPortAttachment();
 void setSharesClipboardVZSpiceAgentPortAttachment(void *attachment, bool sharesClipboard);
 const char *getSpiceAgentPortName();
 
-void startWithOptionsCompletionHandler(void *machine, void *queue, void *options, void *completionHandler);
+void startWithOptionsCompletionHandler(void *machine, void *queue, void *options, uintptr_t cgoHandle);
 
 const char *getMacOSGuestAutomountTag();
 

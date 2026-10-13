@@ -5,6 +5,7 @@ package main
 
 import (
 	"compress/gzip"
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -141,7 +142,6 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	config.SetSerialPortsVirtualMachineConfiguration([]*vz.VirtioConsoleDeviceSerialPortConfiguration{
 		consoleConfig,
 	})
-	setRawMode(os.Stdin)
 
 	// network
 	// Select network mode
@@ -258,6 +258,15 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	config.SetSocketDevicesVirtualMachineConfiguration([]vz.SocketDeviceConfiguration{
 		socketDeviceConfiguration,
 	})
+	if cfg.audioInput {
+		audioDeviceConfiguration, err := newVirtualizationFrameworkHostMicrophoneConfiguration()
+		if err != nil {
+			return fmt.Errorf("could not configure host microphone input: %w", err)
+		}
+		config.SetAudioDevicesVirtualMachineConfiguration([]vz.AudioDeviceConfiguration{
+			audioDeviceConfiguration,
+		})
+	}
 
 	if len(cfg.virtiofsShares) > 0 {
 		var cs []vz.DirectorySharingDeviceConfiguration
@@ -286,43 +295,51 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	if !validated || err != nil {
 		log.Fatal("validation failed", err)
 	}
+	if cfg.audioInput {
+		if err := ensureVirtualizationFrameworkMicrophonePermission(context.Background()); err != nil {
+			return fmt.Errorf("host microphone permission check failed: %w", err)
+		}
+	}
 
 	vm, err := vz.NewVirtualMachine(config)
 	if err != nil {
 		return fmt.Errorf("could not create virtual machine: %v", err)
 	}
 
-	signalCh := make(chan os.Signal, 1)
-	signal.Notify(signalCh, syscall.SIGTERM)
+	return withVirtualizationFrameworkVMLifecycleAlive(vm, func() error {
+		setRawMode(os.Stdin)
 
-	errCh := make(chan error, 1)
+		signalCh := make(chan os.Signal, 1)
+		signal.Notify(signalCh, syscall.SIGTERM)
 
-	if err := vm.Start(); err != nil {
-		errCh <- err
-	}
+		errCh := make(chan error, 1)
 
-	for {
-		select {
-		case <-signalCh:
-			result, err := vm.RequestStop()
-			if err != nil {
-				log.Println("request stop error:", err)
-				return nil
-			}
-			log.Println("recieved signal", result)
-		case newState := <-vm.StateChangedNotify():
-			if newState == vz.VirtualMachineStateRunning {
-				log.Println("start VM is running")
-			}
-			if newState == vz.VirtualMachineStateStopped {
-				log.Println("stopped successfully")
-				return nil
-			}
-		case err := <-errCh:
-			log.Println("in start:", err)
+		if err := vm.Start(); err != nil {
+			errCh <- err
 		}
-	}
 
+		for {
+			select {
+			case <-signalCh:
+				result, err := vm.RequestStop()
+				if err != nil {
+					log.Println("request stop error:", err)
+					return nil
+				}
+				log.Println("recieved signal", result)
+			case newState := <-vm.StateChangedNotify():
+				if newState == vz.VirtualMachineStateRunning {
+					log.Println("start VM is running")
+				}
+				if newState == vz.VirtualMachineStateStopped {
+					log.Println("stopped successfully")
+					return nil
+				}
+			case err := <-errCh:
+				log.Println("in start:", err)
+			}
+		}
+	})
 }
 
 // https://developer.apple.com/documentation/virtualization/running_linux_in_a_virtual_machine?language=objc#:~:text=Configure%20the%20Serial%20Port%20Device%20for%20Standard%20In%20and%20Out

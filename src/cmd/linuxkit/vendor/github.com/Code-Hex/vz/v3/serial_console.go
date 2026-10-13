@@ -37,7 +37,7 @@ type FileHandleSerialPortAttachment struct {
 	*baseSerialPortAttachment
 }
 
-// NewFileHandleSerialPortAttachment intialize the FileHandleSerialPortAttachment from file handles.
+// NewFileHandleSerialPortAttachment initialize the FileHandleSerialPortAttachment from file handles.
 //
 // read parameter is an *os.File for reading from the file.
 // write parameter is an *os.File for writing to the file.

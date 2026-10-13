@@ -9,6 +9,7 @@ package vz
 # include "virtualization_11.h"
 # include "virtualization_12_arm64.h"
 # include "virtualization_13_arm64.h"
+# include "virtualization_14_arm64.h"
 */
 import "C"
 import (
@@ -317,11 +318,11 @@ func (m *MacOSConfigurationRequirements) MinimumSupportedMemorySize() uint64 {
 type macOSRestoreImageHandler func(restoreImage *MacOSRestoreImage, err error)
 
 //export macOSRestoreImageCompletionHandler
-func macOSRestoreImageCompletionHandler(cgoHandlerPtr, restoreImagePtr, errPtr unsafe.Pointer) {
-	cgoHandler := *(*cgo.Handle)(cgoHandlerPtr)
+func macOSRestoreImageCompletionHandler(cgoHandleUintptr C.uintptr_t, restoreImagePtr, errPtr unsafe.Pointer) {
+	cgoHandle := cgo.Handle(cgoHandleUintptr)
 
-	handler := cgoHandler.Value().(macOSRestoreImageHandler)
-	defer cgoHandler.Delete()
+	handler := cgoHandle.Value().(macOSRestoreImageHandler)
+	defer cgoHandle.Delete()
 
 	restoreImageStruct := (*C.VZMacOSRestoreImageStruct)(restoreImagePtr)
 
@@ -412,9 +413,9 @@ func FetchLatestSupportedMacOSRestoreImage(ctx context.Context, destPath string)
 		fetchErr = err
 		defer close(waitCh)
 	})
-	cgoHandler := cgo.NewHandle(handler)
+	cgoHandle := cgo.NewHandle(handler)
 	C.fetchLatestSupportedMacOSRestoreImageWithCompletionHandler(
-		unsafe.Pointer(&cgoHandler),
+		C.uintptr_t(cgoHandle),
 	)
 	<-waitCh
 	if fetchErr != nil {
@@ -447,11 +448,11 @@ func LoadMacOSRestoreImageFromPath(imagePath string) (retImage *MacOSRestoreImag
 		retErr = err
 		close(waitCh)
 	})
-	cgoHandler := cgo.NewHandle(handler)
+	cgoHandle := cgo.NewHandle(handler)
 
 	cs := charWithGoString(imagePath)
 	defer cs.Free()
-	C.loadMacOSRestoreImageFile(cs.CString(), unsafe.Pointer(&cgoHandler))
+	C.loadMacOSRestoreImageFile(cs.CString(), C.uintptr_t(cgoHandle))
 	<-waitCh
 	return
 }
@@ -504,11 +505,11 @@ func NewMacOSInstaller(vm *VirtualMachine, restoreImageIpsw string) (*MacOSInsta
 }
 
 //export macOSInstallCompletionHandler
-func macOSInstallCompletionHandler(cgoHandlerPtr, errPtr unsafe.Pointer) {
-	cgoHandler := *(*cgo.Handle)(cgoHandlerPtr)
+func macOSInstallCompletionHandler(cgoHandleUintptr C.uintptr_t, errPtr unsafe.Pointer) {
+	cgoHandle := cgo.Handle(cgoHandleUintptr)
 
-	handler := cgoHandler.Value().(func(error))
-	defer cgoHandler.Delete()
+	handler := cgoHandle.Value().(func(error))
+	defer cgoHandle.Delete()
 
 	if err := newNSError(errPtr); err != nil {
 		handler(err)
@@ -518,10 +519,10 @@ func macOSInstallCompletionHandler(cgoHandlerPtr, errPtr unsafe.Pointer) {
 }
 
 //export macOSInstallFractionCompletedHandler
-func macOSInstallFractionCompletedHandler(cgoHandlerPtr unsafe.Pointer, completed C.double) {
-	cgoHandler := *(*cgo.Handle)(cgoHandlerPtr)
+func macOSInstallFractionCompletedHandler(cgoHandleUintptr C.uintptr_t, completed C.double) {
+	cgoHandle := cgo.Handle(cgoHandleUintptr)
 
-	handler := cgoHandler.Value().(func(float64))
+	handler := cgoHandle.Value().(func(float64))
 	handler(float64(completed))
 }
 
@@ -549,8 +550,8 @@ func (m *MacOSInstaller) Install(ctx context.Context) error {
 			objc.Ptr(m),
 			m.vm.dispatchQueue,
 			objc.Ptr(m.observerPointer),
-			unsafe.Pointer(&completionHandler),
-			unsafe.Pointer(&fractionCompletedHandler),
+			C.uintptr_t(completionHandler),
+			C.uintptr_t(fractionCompletedHandler),
 		)
 	})
 
@@ -576,3 +577,69 @@ func (m *MacOSInstaller) FractionCompleted() float64 {
 
 // Done recieves a notification that indicates the install process is completed.
 func (m *MacOSInstaller) Done() <-chan struct{} { return m.doneCh }
+
+// SaveMachineStateToPath saves the state of a VM.
+//
+// You can use the contents of this file later to restore the state of the paused VM.
+// This call fails if the VM isn’t in a paused state or if the Virtualization framework can’t
+// save the VM. If this method fails, the framework returns an error, and the VM state remains
+// unchanged.
+//
+// If this method is successful, the framework writes the file, and the VM state remains unchanged.
+//
+// Note that If you want to implement proper error handling, please make sure to call the
+// `(*VirtualMachineConfiguration).ValidateSaveRestoreSupport` method before calling this method.
+//
+// If you want to listen status change events, use the "StateChangedNotify" method.
+//
+// This is only supported on macOS 14 and newer, error will
+// be returned on older versions.
+func (v *VirtualMachine) SaveMachineStateToPath(saveFilePath string) error {
+	if err := macOSAvailable(14); err != nil {
+		return err
+	}
+	if _, err := v.config.ValidateSaveRestoreSupport(); err != nil {
+		return err
+	}
+	cs := charWithGoString(saveFilePath)
+	defer cs.Free()
+	h, errCh := makeHandler()
+	handle := cgo.NewHandle(h)
+	defer handle.Delete()
+	C.saveMachineStateToURLWithCompletionHandler(objc.Ptr(v), v.dispatchQueue, C.uintptr_t(handle), cs.CString())
+	return <-errCh
+}
+
+// RestoreMachineStateFromURL restores a VM from a previously saved state.
+//
+// The method fails if any of the following conditions are true:
+//   - The Virtualization framework can’t open or read the file.
+//   - The file contents are incompatible with the current configuration.
+//   - The VM you’re trying to restore isn’t in the VirtualMachineStateStopped state.
+//
+// If this method fails, the framework returns an error, and the VM state doesn’t change.
+//
+// If this method is successful, the framework restores the VM and places it in the paused state.
+//
+// Note that If you want to implement proper error handling, please make sure to call the
+// `(*VirtualMachineConfiguration).ValidateSaveRestoreSupport` method before calling this method.
+//
+// If you want to listen status change events, use the "StateChangedNotify" method.
+//
+// This is only supported on macOS 14 and newer, error will
+// be returned on older versions.
+func (v *VirtualMachine) RestoreMachineStateFromURL(saveFilePath string) error {
+	if err := macOSAvailable(14); err != nil {
+		return err
+	}
+	if _, err := v.config.ValidateSaveRestoreSupport(); err != nil {
+		return err
+	}
+	cs := charWithGoString(saveFilePath)
+	defer cs.Free()
+	h, errCh := makeHandler()
+	handle := cgo.NewHandle(h)
+	defer handle.Delete()
+	C.restoreMachineStateFromURLWithCompletionHandler(objc.Ptr(v), v.dispatchQueue, C.uintptr_t(handle), cs.CString())
+	return <-errCh
+}

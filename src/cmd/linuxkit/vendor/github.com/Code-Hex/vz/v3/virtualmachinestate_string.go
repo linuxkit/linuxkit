@@ -16,11 +16,13 @@ func _() {
 	_ = x[VirtualMachineStatePausing-5]
 	_ = x[VirtualMachineStateResuming-6]
 	_ = x[VirtualMachineStateStopping-7]
+	_ = x[VirtualMachineStateSaving-8]
+	_ = x[VirtualMachineStateRestoring-9]
 }
 
-const _VirtualMachineState_name = "VirtualMachineStateStoppedVirtualMachineStateRunningVirtualMachineStatePausedVirtualMachineStateErrorVirtualMachineStateStartingVirtualMachineStatePausingVirtualMachineStateResumingVirtualMachineStateStopping"
+const _VirtualMachineState_name = "VirtualMachineStateStoppedVirtualMachineStateRunningVirtualMachineStatePausedVirtualMachineStateErrorVirtualMachineStateStartingVirtualMachineStatePausingVirtualMachineStateResumingVirtualMachineStateStoppingVirtualMachineStateSavingVirtualMachineStateRestoring"
 
-var _VirtualMachineState_index = [...]uint8{0, 26, 52, 77, 101, 128, 154, 181, 208}
+var _VirtualMachineState_index = [...]uint16{0, 26, 52, 77, 101, 128, 154, 181, 208, 233, 261}
 
 func (i VirtualMachineState) String() string {
 	if i < 0 || i >= VirtualMachineState(len(_VirtualMachineState_index)-1) {

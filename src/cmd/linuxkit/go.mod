@@ -48,7 +48,7 @@ require (
 )
 
 require (
-	github.com/Code-Hex/vz/v3 v3.0.0
+	github.com/Code-Hex/vz/v3 v3.1.0
 	github.com/containerd/containerd/v2 v2.2.4
 	github.com/containerd/platforms v1.0.0-rc.4
 	github.com/docker/buildx v0.21.1
@@ -69,6 +69,7 @@ require (
 	github.com/Azure/go-autorest/autorest/validation v0.3.1 // indirect
 	github.com/Azure/go-autorest/logger v0.2.1 // indirect
 	github.com/Azure/go-autorest/tracing v0.6.0 // indirect
+	github.com/Code-Hex/go-infinity-channel v1.0.0 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/anchore/go-struct-converter v0.1.0 // indirect
 	github.com/cenkalti/backoff/v5 v5.0.3 // indirect

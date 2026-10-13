@@ -7,9 +7,12 @@ package vz
 #cgo darwin CFLAGS: -mmacosx-version-min=11 -x objective-c -fno-objc-arc
 #cgo darwin LDFLAGS: -lobjc -framework Foundation -framework Virtualization
 # include "virtualization_13_arm64.h"
+# include "virtualization_14_arm64.h"
 */
 import "C"
 import (
+	"fmt"
+	"os"
 	"runtime/cgo"
 	"unsafe"
 
@@ -33,10 +36,10 @@ const (
 )
 
 //export linuxInstallRosettaWithCompletionHandler
-func linuxInstallRosettaWithCompletionHandler(cgoHandlerPtr, errPtr unsafe.Pointer) {
-	cgoHandler := *(*cgo.Handle)(cgoHandlerPtr)
+func linuxInstallRosettaWithCompletionHandler(cgoHandleUintptr C.uintptr_t, errPtr unsafe.Pointer) {
+	cgoHandle := cgo.Handle(cgoHandleUintptr)
 
-	handler := cgoHandler.Value().(func(error))
+	handler := cgoHandle.Value().(func(error))
 
 	if err := newNSError(errPtr); err != nil {
 		handler(err)
@@ -79,6 +82,16 @@ func NewLinuxRosettaDirectoryShare() (*LinuxRosettaDirectoryShare, error) {
 	return ds, nil
 }
 
+// SetOptions enables translation caching and configure the socket communication type for Rosetta.
+//
+// This is only supported on macOS 14 and newer. Older versions do nothing.
+func (ds *LinuxRosettaDirectoryShare) SetOptions(options LinuxRosettaCachingOptions) {
+	if err := macOSAvailable(14); err != nil {
+		return
+	}
+	C.setOptionsVZLinuxRosettaDirectoryShare(objc.Ptr(ds), objc.Ptr(options))
+}
+
 // LinuxRosettaDirectoryShareInstallRosetta download and install Rosetta support
 // for Linux binaries if necessary.
 //
@@ -89,10 +102,10 @@ func LinuxRosettaDirectoryShareInstallRosetta() error {
 		return err
 	}
 	errCh := make(chan error, 1)
-	cgoHandler := cgo.NewHandle(func(err error) {
+	cgoHandle := cgo.NewHandle(func(err error) {
 		errCh <- err
 	})
-	C.linuxInstallRosetta(unsafe.Pointer(&cgoHandler))
+	C.linuxInstallRosetta(C.uintptr_t(cgoHandle))
 	return <-errCh
 }
 
@@ -106,4 +119,116 @@ func LinuxRosettaDirectoryShareAvailability() LinuxRosettaAvailability {
 		return LinuxRosettaAvailabilityNotSupported
 	}
 	return LinuxRosettaAvailability(C.availabilityVZLinuxRosettaDirectoryShare())
+}
+
+// LinuxRosettaCachingOptions for a directory sharing device configuration.
+type LinuxRosettaCachingOptions interface {
+	objc.NSObject
+
+	linuxRosettaCachingOptions()
+}
+
+type baseLinuxRosettaCachingOptions struct{}
+
+func (*baseLinuxRosettaCachingOptions) linuxRosettaCachingOptions() {}
+
+// LinuxRosettaUnixSocketCachingOptions is an struct that represents caching options
+// for a UNIX domain socket.
+//
+// This struct configures Rosetta to communicate with the Rosetta daemon using a UNIX domain socket.
+type LinuxRosettaUnixSocketCachingOptions struct {
+	*pointer
+
+	*baseLinuxRosettaCachingOptions
+}
+
+var _ LinuxRosettaCachingOptions = (*LinuxRosettaUnixSocketCachingOptions)(nil)
+
+// NewLinuxRosettaUnixSocketCachingOptions creates a new Rosetta caching options object for
+// a UNIX domain socket with the path you specify.
+//
+// The path of the Unix Domain Socket to be used to communicate with the Rosetta translation daemon.
+//
+// This is only supported on macOS 14 and newer, error will
+// be returned on older versions.
+func NewLinuxRosettaUnixSocketCachingOptions(path string) (*LinuxRosettaUnixSocketCachingOptions, error) {
+	if err := macOSAvailable(14); err != nil {
+		return nil, err
+	}
+	maxPathLen := maximumPathLengthLinuxRosettaUnixSocketCachingOptions()
+	if maxPathLen < len(path) {
+		return nil, fmt.Errorf("path length exceeds maximum allowed length of %d", maxPathLen)
+	}
+	if _, err := os.Stat(path); err != nil {
+		return nil, fmt.Errorf("invalid path: %w", err)
+	}
+
+	cs := charWithGoString(path)
+	defer cs.Free()
+
+	nserrPtr := newNSErrorAsNil()
+	usco := &LinuxRosettaUnixSocketCachingOptions{
+		pointer: objc.NewPointer(
+			C.newVZLinuxRosettaUnixSocketCachingOptionsWithPath(cs.CString(), &nserrPtr),
+		),
+	}
+	if err := newNSError(nserrPtr); err != nil {
+		return nil, err
+	}
+	objc.SetFinalizer(usco, func(self *LinuxRosettaUnixSocketCachingOptions) {
+		objc.Release(self)
+	})
+	return usco, nil
+}
+
+func maximumPathLengthLinuxRosettaUnixSocketCachingOptions() int {
+	return int(uint32(C.maximumPathLengthVZLinuxRosettaUnixSocketCachingOptions()))
+}
+
+// LinuxRosettaAbstractSocketCachingOptions is caching options for an abstract socket.
+//
+// Use this object to configure Rosetta to communicate with the Rosetta daemon using an abstract socket.
+type LinuxRosettaAbstractSocketCachingOptions struct {
+	*pointer
+
+	*baseLinuxRosettaCachingOptions
+}
+
+var _ LinuxRosettaCachingOptions = (*LinuxRosettaAbstractSocketCachingOptions)(nil)
+
+// NewLinuxRosettaAbstractSocketCachingOptions creates a new LinuxRosettaAbstractSocketCachingOptions.
+//
+// The name of the Abstract Socket to be used to communicate with the Rosetta translation daemon.
+//
+// This is only supported on macOS 14 and newer, error will
+// be returned on older versions.
+func NewLinuxRosettaAbstractSocketCachingOptions(name string) (*LinuxRosettaAbstractSocketCachingOptions, error) {
+	if err := macOSAvailable(14); err != nil {
+		return nil, err
+	}
+	maxNameLen := maximumNameLengthVZLinuxRosettaAbstractSocketCachingOptions()
+	if maxNameLen < len(name) {
+		return nil, fmt.Errorf("name length exceeds maximum allowed length of %d", maxNameLen)
+	}
+
+	cs := charWithGoString(name)
+	defer cs.Free()
+
+	nserrPtr := newNSErrorAsNil()
+	asco := &LinuxRosettaAbstractSocketCachingOptions{
+		pointer: objc.NewPointer(
+			C.newVZLinuxRosettaAbstractSocketCachingOptionsWithName(cs.CString(), &nserrPtr),
+		),
+	}
+	if err := newNSError(nserrPtr); err != nil {
+		return nil, err
+	}
+	objc.SetFinalizer(asco, func(self *LinuxRosettaAbstractSocketCachingOptions) {
+		objc.Release(self)
+	})
+	return asco, nil
+}
+
+func maximumNameLengthVZLinuxRosettaAbstractSocketCachingOptions() int {
+	return int(uint32(C.maximumNameLengthVZLinuxRosettaAbstractSocketCachingOptions()))
 }

@@ -10,17 +10,24 @@
 #import <Virtualization/Virtualization.h>
 
 /* exported from cgo */
-void connectionHandler(void *connection, void *err, void *cgoHandlerPtr);
-void changeStateOnObserver(int state, void *cgoHandler);
-bool shouldAcceptNewConnectionHandler(void *cgoHandler, void *connection, void *socketDevice);
+void connectionHandler(void *connection, void *err, uintptr_t cgoHandle);
+void changeStateOnObserver(int state, uintptr_t cgoHandle);
+bool shouldAcceptNewConnectionHandler(uintptr_t cgoHandle, void *connection, void *socketDevice);
 
 @interface Observer : NSObject
 - (void)observeValueForKeyPath:(NSString *)keyPath ofObject:(id)object change:(NSDictionary *)change context:(void *)context;
 @end
 
+@interface ObservableVZVirtualMachine : VZVirtualMachine
+- (instancetype)initWithConfiguration:(VZVirtualMachineConfiguration *)configuration
+                                queue:(dispatch_queue_t)queue
+                   statusUpdateHandle:(uintptr_t)statusUpdateHandle;
+- (void)dealloc;
+@end
+
 /* VZVirtioSocketListener */
 @interface VZVirtioSocketListenerDelegateImpl : NSObject <VZVirtioSocketListenerDelegate>
-- (instancetype)initWithHandler:(void *)cgoHandler;
+- (instancetype)initWithHandle:(uintptr_t)cgoHandle;
 - (BOOL)listener:(VZVirtioSocketListener *)listener shouldAcceptNewConnection:(VZVirtioSocketConnection *)connection fromSocketDevice:(VZVirtioSocketDevice *)socketDevice;
 @end
 
@@ -70,18 +77,18 @@ void *newVZVirtioSocketDeviceConfiguration();
 void *newVZMACAddress(const char *macAddress);
 void *newRandomLocallyAdministeredVZMACAddress();
 const char *getVZMACAddressString(void *macAddress);
-void *newVZVirtioSocketListener(void *cgoHandlerPtr);
+void *newVZVirtioSocketListener(uintptr_t cgoHandle);
 void *VZVirtualMachine_socketDevices(void *machine);
 void VZVirtioSocketDevice_setSocketListenerForPort(void *socketDevice, void *vmQueue, void *listener, uint32_t port);
 void VZVirtioSocketDevice_removeSocketListenerForPort(void *socketDevice, void *vmQueue, uint32_t port);
-void VZVirtioSocketDevice_connectToPort(void *socketDevice, void *vmQueue, uint32_t port, void *cgoHandlerPtr);
+void VZVirtioSocketDevice_connectToPort(void *socketDevice, void *vmQueue, uint32_t port, uintptr_t cgoHandle);
 
 /* VirtualMachine */
-void *newVZVirtualMachineWithDispatchQueue(void *config, void *queue, void *statusHandler);
+void *newVZVirtualMachineWithDispatchQueue(void *config, void *queue, uintptr_t cgoHandle);
 bool requestStopVirtualMachine(void *machine, void *queue, void **error);
-void startWithCompletionHandler(void *machine, void *queue, void *completionHandler);
-void pauseWithCompletionHandler(void *machine, void *queue, void *completionHandler);
-void resumeWithCompletionHandler(void *machine, void *queue, void *completionHandler);
+void startWithCompletionHandler(void *machine, void *queue, uintptr_t cgoHandle);
+void pauseWithCompletionHandler(void *machine, void *queue, uintptr_t cgoHandle);
+void resumeWithCompletionHandler(void *machine, void *queue, uintptr_t cgoHandle);
 bool vmCanStart(void *machine, void *queue);
 bool vmCanPause(void *machine, void *queue);
 bool vmCanResume(void *machine, void *queue);

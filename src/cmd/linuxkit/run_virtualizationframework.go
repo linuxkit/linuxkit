@@ -22,16 +22,22 @@ type virtualizationFramwworkConfig struct {
 	state          string
 	networking     string
 	kernelBoot     bool
+	audioInput     bool
 	virtiofsShares []string
 }
 
 func runVirtualizationFrameworkCmd() *cobra.Command {
+	return newVirtualizationFrameworkCmd(runVirtualizationFramework)
+}
+
+func newVirtualizationFrameworkCmd(run func(virtualizationFramwworkConfig, string) error) *cobra.Command {
 	var (
 		data           string
 		dataPath       string
 		state          string
 		networking     string
 		kernelBoot     bool
+		audioInput     bool
 		virtiofsShares []string
 	)
 
@@ -53,9 +59,10 @@ func runVirtualizationFrameworkCmd() *cobra.Command {
 				state:          state,
 				networking:     networking,
 				kernelBoot:     kernelBoot,
+				audioInput:     audioInput,
 				virtiofsShares: virtiofsShares,
 			}
-			return runVirtualizationFramework(cfg, args[0])
+			return run(cfg, args[0])
 		},
 	}
 
@@ -66,6 +73,7 @@ func runVirtualizationFrameworkCmd() *cobra.Command {
 	cmd.Flags().StringVar(&networking, "networking", virtualizationNetworkingDefault, "Networking mode. Valid options are 'default', 'vmnet' and 'none'. 'vmnet' uses the Apple vmnet framework. 'none' disables networking.`")
 
 	cmd.Flags().BoolVar(&kernelBoot, "kernel", false, "Boot image is kernel+initrd+cmdline 'path'-kernel/-initrd/-cmdline")
+	cmd.Flags().BoolVar(&audioInput, "audio-input", true, "Enable host microphone input")
 	cmd.Flags().StringArrayVar(&virtiofsShares, "virtiofs", []string{}, "Directory shared on virtiofs")
 
 	return cmd
