@@ -21,12 +21,6 @@ type virtualizationFrameworkLifecycleTimeouts struct {
 	ForceStop time.Duration
 }
 
-func defaultVirtualizationFrameworkLifecycleTimeouts() virtualizationFrameworkLifecycleTimeouts {
-	return virtualizationFrameworkLifecycleTimeouts{
-		ForceStop: 5 * time.Second,
-	}
-}
-
 type virtualizationFrameworkLifecycleHooks struct {
 	Logf      func(string, ...any)
 	OnRunning func()
