@@ -86,14 +86,17 @@ func (g git) isWorkTree(pkg string) (bool, error) {
 	return false, fmt.Errorf("unexpected output from git rev-parse --is-inside-work-tree: %s", tf)
 }
 
-func (g git) contentHash() (string, error) {
+// contentHash computes a hash of all files (tracked and untracked) within
+// the given pkg path. Scoping to pkg prevents unrelated large directories
+// elsewhere in the repo from bloating the hash computation.
+func (g git) contentHash(pkg string) (string, error) {
 	hash := sha256.New()
 	// list of files tracked by git that might have changed
-	trackedFiles, err := g.commandStdout(nil, "ls-files")
+	trackedFiles, err := g.commandStdout(nil, "ls-files", "--", pkg)
 	if err != nil {
 		return "", err
 	}
-	untrackedFiles, err := g.commandStdout(nil, "ls-files", "--exclude-standard", "--others")
+	untrackedFiles, err := g.commandStdout(nil, "ls-files", "--exclude-standard", "--others", "--", pkg)
 	if err != nil {
 		return "", err
 	}
