@@ -27,6 +27,13 @@ The `kernel+initrd` uses a RAM disk for the root filesystem. If you
 have RAM constraints or large images we recommend using either the
 `kernel+squashfs` or the EFI ISO boot.
 
+For `kernel+initrd`, the backend accepts an uncompressed kernel or a
+plain gzip-compressed kernel. It also unwraps ARM64 EFI zboot kernels
+whose payload uses gzip, and checks for the ARM64 Linux Image magic in
+the decoded payload. Other EFI zboot compression formats return an
+unsupported-compression error. Decoded zboot and plain gzip kernels are
+limited to 1 GiB.
+
 ## Console
 
 With `linuxkit run` on Virtualization.Framework the serial console is redirected to
@@ -88,10 +95,25 @@ supported and the disks are in raw format.
 
 ## Power management
 
-Virtualization.Framework sends an ACPI power event when it receives SIGTERM to allow the VM to
-shut down properly. The VM has to be able to receive ACPI events to initiate the
-shutdown.  This is provided by the [`acpid` package](../pkg/acpid). An example
-is available in the [Docker for Mac example](../examples/docker-for-mac.yml).
+On the first SIGTERM or SIGINT, the runner requests a graceful shutdown
+through Virtualization.Framework, which sends an ACPI power event. The
+guest must handle ACPI events to shut down; this is provided by the
+[`acpid` package](../pkg/acpid). An example is available in the
+[Docker for Mac example](../examples/docker-for-mac.yml).
+
+After the first signal, the runner waits for the VM to stop naturally
+without an automatic timeout. A declined shutdown request or request
+error is logged, and the runner keeps waiting. A request error is
+preserved and returned when supervision ends if the runner observes it.
+A second SIGTERM or SIGINT skips the wait and starts a forced stop
+immediately, even if the graceful request is still pending. The
+forced-stop operation is bounded to 5 seconds; an unresolved error or
+timeout causes `linuxkit run` to exit unsuccessfully.
+
+A forced stop ends the VM without giving the guest a chance to shut down
+cleanly and may lose pending guest writes. Virtualization.Framework
+supports forced stop on macOS 12 and later. On macOS 11, a forced-stop
+attempt returns an unsupported macOS version error.
 
 ## Networking
 

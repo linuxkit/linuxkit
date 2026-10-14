@@ -4,12 +4,9 @@
 package main
 
 import (
-	"compress/gzip"
 	"context"
 	"errors"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
@@ -75,42 +72,16 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	vmlinuz := prefix + "-kernel"
 	initrd := prefix + "-initrd.img"
 
-	vmlinuzFile := vmlinuz
-	// need to check if it is gzipped, and, if so, gunzip it
-	filetype, err := checkFileType(vmlinuz)
+	// Handle signals during kernel preparation and VM lifecycle; earlier metadata/cmdline reads keep default termination.
+	ctx, forceStop, cleanupSignals := virtualizationFrameworkSignalContext()
+	defer cleanupSignals()
+
+	vmlinuzFile, cleanupKernel, err := prepareVirtualizationFrameworkKernelContext(ctx, vmlinuz)
 	if err != nil {
-		return fmt.Errorf("unable to check kernel file type at %s: %v", vmlinuz, err)
+		return err
 	}
+	defer cleanupKernel()
 
-	if filetype == "application/x-gzip" {
-		vmlinuzUncompressed := fmt.Sprintf("%s-uncompressed", vmlinuz)
-		// gzipped kernel, we load it into memory, unzip it, and pass it
-		f, err := os.Open(vmlinuz)
-		if err != nil {
-			return fmt.Errorf("unable to read kernel file %s: %v", vmlinuz, err)
-		}
-		defer func() { _ = f.Close() }()
-		r, err := gzip.NewReader(f)
-		if err != nil {
-			return fmt.Errorf("unable to read from file %s: %v", vmlinuz, err)
-		}
-		defer func() {
-			_ = r.Close()
-		}()
-
-		writer, err := os.Create(vmlinuzUncompressed)
-		if err != nil {
-			return fmt.Errorf("unable to create decompressed kernel file %s: %v", vmlinuzUncompressed, err)
-		}
-		defer func() {
-			_ = writer.Close()
-		}()
-
-		if _, err = io.Copy(writer, r); err != nil {
-			return fmt.Errorf("unable to decompress kernel file to %s: %v", vmlinuzUncompressed, err)
-		}
-		vmlinuzFile = vmlinuzUncompressed
-	}
 	bootLoader, err := vz.NewLinuxBootLoader(
 		vmlinuzFile,
 		vz.WithCommandLine(strings.Join(kernelCommandLineArguments, " ")),
@@ -142,6 +113,8 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	config.SetSerialPortsVirtualMachineConfiguration([]*vz.VirtioConsoleDeviceSerialPortConfiguration{
 		consoleConfig,
 	})
+	restoreTerminal := setRawMode(os.Stdin)
+	defer restoreTerminal()
 
 	// network
 	// Select network mode
@@ -194,7 +167,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 			d.Format = "raw"
 		}
 		if d.Format != "raw" && d.Path == "" {
-			log.Fatal("Virtualization Framework currently can only create raw disks")
+			return fmt.Errorf("the Virtualization Framework currently can only create raw disks")
 		}
 		if d.Size != 0 && d.Path == "" {
 			d.Path = filepath.Join(cfg.state, "disk"+id+".raw")
@@ -216,7 +189,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 			false,
 		)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("could not attach storage image: %w", err)
 		}
 		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
 		if err != nil {
@@ -230,7 +203,7 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 			true,
 		)
 		if err != nil {
-			log.Fatal(err)
+			return fmt.Errorf("could not attach storage image: %w", err)
 		}
 		storageDeviceConfig, err := vz.NewVirtioBlockDeviceConfiguration(diskImageAttachment)
 		if err != nil {
@@ -275,15 +248,15 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 			tag := fmt.Sprintf("virtiofs%d", idx)
 			device, err := vz.NewVirtioFileSystemDeviceConfiguration(tag)
 			if err != nil {
-				log.Fatal("virtiofs device configuration failed", err)
+				return fmt.Errorf("virtiofs device configuration failed: %w", err)
 			}
 			dir, err := vz.NewSharedDirectory(share, false)
 			if err != nil {
-				log.Fatal("virtiofs shared directory failed", err)
+				return fmt.Errorf("virtiofs shared directory failed: %w", err)
 			}
 			single, err := vz.NewSingleDirectoryShare(dir)
 			if err != nil {
-				log.Fatal("virtiofs single directory share failed", err)
+				return fmt.Errorf("virtiofs single directory share failed: %w", err)
 			}
 			device.SetDirectoryShare(single)
 			cs = append(cs, device)
@@ -292,11 +265,17 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	}
 
 	validated, err := config.Validate()
-	if !validated || err != nil {
-		log.Fatal("validation failed", err)
+	if err != nil {
+		return fmt.Errorf("VM configuration validation failed: %w", err)
+	}
+	if !validated {
+		return fmt.Errorf("VM configuration is invalid")
+	}
+	if ctx.Err() != nil {
+		return ctx.Err()
 	}
 	if cfg.audioInput {
-		if err := ensureVirtualizationFrameworkMicrophonePermission(context.Background()); err != nil {
+		if err := ensureVirtualizationFrameworkMicrophonePermission(ctx); err != nil {
 			return fmt.Errorf("host microphone permission check failed: %w", err)
 		}
 	}
@@ -307,47 +286,87 @@ func runVirtualizationFramework(cfg virtualizationFramwworkConfig, path string) 
 	}
 
 	return withVirtualizationFrameworkVMLifecycleAlive(vm, func() error {
-		setRawMode(os.Stdin)
-
-		signalCh := make(chan os.Signal, 1)
-		signal.Notify(signalCh, syscall.SIGTERM)
-
-		errCh := make(chan error, 1)
-
-		if err := vm.Start(); err != nil {
-			errCh <- err
-		}
-
-		for {
-			select {
-			case <-signalCh:
-				result, err := vm.RequestStop()
-				if err != nil {
-					log.Println("request stop error:", err)
-					return nil
-				}
-				log.Println("recieved signal", result)
-			case newState := <-vm.StateChangedNotify():
-				if newState == vz.VirtualMachineStateRunning {
-					log.Println("start VM is running")
-				}
-				if newState == vz.VirtualMachineStateStopped {
-					log.Println("stopped successfully")
-					return nil
-				}
-			case err := <-errCh:
-				log.Println("in start:", err)
-			}
-		}
+		timeouts := defaultVirtualizationFrameworkLifecycleTimeouts()
+		return runVirtualizationFrameworkVMLifecycle(
+			ctx,
+			forceStop,
+			virtualizationFrameworkVMAdapter{vm: vm},
+			vm.StateChangedNotify(),
+			vz.VirtualMachineStateStopped,
+			vz.VirtualMachineStateRunning,
+			vz.VirtualMachineStateError,
+			timeouts,
+			virtualizationFrameworkLifecycleHooks{
+				Logf:      log.Infof,
+				OnRunning: func() { log.Infof("start VM is running") },
+			},
+		)
 	})
 }
 
+type virtualizationFrameworkVMAdapter struct {
+	vm *vz.VirtualMachine
+}
+
+func (v virtualizationFrameworkVMAdapter) Start() error {
+	return v.vm.Start()
+}
+
+func (v virtualizationFrameworkVMAdapter) RequestStop() (bool, error) {
+	return v.vm.RequestStop()
+}
+
+func (v virtualizationFrameworkVMAdapter) Stop() error {
+	return v.vm.Stop()
+}
+
+func virtualizationFrameworkSignalContext() (context.Context, <-chan struct{}, func()) {
+	signalCh := make(chan os.Signal, 2)
+	signal.Notify(signalCh, syscall.SIGTERM, os.Interrupt)
+	ctx, cancel := context.WithCancel(context.Background())
+	forceStop := make(chan struct{})
+	stopWatcher := make(chan struct{})
+	watcherDone := make(chan struct{})
+
+	go func() {
+		defer close(watcherDone)
+		firstSignal := true
+		for {
+			select {
+			case sig := <-signalCh:
+				if firstSignal {
+					firstSignal = false
+					log.Infof("received signal %s; requesting graceful virtual machine shutdown", sig)
+					cancel()
+					continue
+				}
+				log.Warnf("received signal %s again; forcing virtual machine shutdown", sig)
+				close(forceStop)
+				return
+			case <-stopWatcher:
+				return
+			}
+		}
+	}()
+
+	cleanup := func() {
+		signal.Stop(signalCh)
+		close(stopWatcher)
+		cancel()
+		<-watcherDone
+	}
+	return ctx, forceStop, cleanup
+}
+
 // https://developer.apple.com/documentation/virtualization/running_linux_in_a_virtual_machine?language=objc#:~:text=Configure%20the%20Serial%20Port%20Device%20for%20Standard%20In%20and%20Out
-func setRawMode(f *os.File) {
+func setRawMode(f *os.File) func() {
 	var attr unix.Termios
 
 	// Get settings for terminal
-	_ = termios.Tcgetattr(f.Fd(), &attr)
+	if err := termios.Tcgetattr(f.Fd(), &attr); err != nil {
+		return func() {}
+	}
+	original := attr
 
 	// Put stdin into raw mode, disabling local echo, input canonicalization,
 	// and CR-NL mapping.
@@ -361,24 +380,8 @@ func setRawMode(f *os.File) {
 	attr.Cc[syscall.VTIME] = 0
 
 	// reflects the changed settings
-	_ = termios.Tcsetattr(f.Fd(), termios.TCSANOW, &attr)
-}
-
-func checkFileType(infile string) (string, error) {
-	file, err := os.Open(infile)
-
-	if err != nil {
-		return "", err
+	if err := termios.Tcsetattr(f.Fd(), termios.TCSANOW, &attr); err != nil {
+		return func() {}
 	}
-	defer func() {
-		_ = file.Close()
-	}()
-
-	b := make([]byte, 512)
-
-	if _, err = file.Read(b); err != nil {
-		return "", err
-	}
-
-	return http.DetectContentType(b), nil
+	return func() { _ = termios.Tcsetattr(f.Fd(), termios.TCSANOW, &original) }
 }
