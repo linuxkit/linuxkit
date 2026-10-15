@@ -178,7 +178,7 @@ buildtool-%:
 	$(eval KERNEL_VERSION=$(call toolkernel,$*))
 	$(eval KERNEL_SERIES=$(call series,$(KERNEL_VERSION)))
 	$(eval SERIES_HASH=$(call series_hash,$(KERNEL_SERIES)))
-	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./$(COMMON_DIR)/build-$(TOOL).yml --tag "$(KERNEL_VERSION)-$(SERIES_HASH)" --build-arg-file $(KERNEL_SERIES)/build-args
+	linuxkit pkg build . $(FORCE) --platforms $(BUILD_PLATFORM) --build-yml ./$(COMMON_DIR)/build-$(TOOL).yml --hash $(SERIES_HASH) --tag "$(KERNEL_VERSION)-$(SERIES_HASH)" --build-arg-file $(KERNEL_SERIES)/build-args
 
 pushtools-%: $(addprefix pushtool-%$(RELEASESEP),$(TOOLS));
 
