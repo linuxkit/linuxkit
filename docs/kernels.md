@@ -75,6 +75,28 @@ Most kernel modules are autoloaded with `mdev` but if you need to `modprobe` a m
     command: ["modprobe", "-a", "iscsi_tcp", "dm_multipath"]
 ```
 
+## Virtio sound
+
+The 6.12 aarch64 configuration includes ALSA and the `virtio_snd` driver as modules (`CONFIG_SND_VIRTIO`).
+The virtual machine monitor must expose a virtio-sound device; loading the module alone does not create a sound card.
+Microphone capture also requires the monitor to attach an input stream and obtain any host microphone permission.
+
+To load the driver explicitly, add `virtio_snd` to an `onboot` modprobe command as described above.
+Check `/proc/asound/cards`, `/proc/asound/pcm`, and `/dev/snd` after loading it.
+Pass the required sound devices to the recording container, with the corresponding device-cgroup permissions.
+The recording container does not need permission to load kernel modules.
+
+The test in `test/cases/020_kernel/123_virtio_snd_6.12.x` checks module packaging and dependency loading without a virtio-sound device; `/proc/asound/cards` can remain empty.
+The test runs on an aarch64 host and requires a kernel image built from the candidate configuration.
+Build the plain 6.12.59 kernel package before running the kernel test suite:
+```
+make -C kernel ARCH=arm64 buildplainkernel-6.12.59
+make test TEST_SUITE=linuxkit.kernel
+```
+The test derives the candidate image tag from the kernel Makefile; set `LINUXKIT_SOUND_KERNEL` only to override that tag for a local build.
+The test does not verify a sound card, monitor input stream, microphone permission, or audio capture.
+For capture validation, test a VM with a host-backed input stream, check recorded PCM samples, and repeat with input sharing disabled.
+
 ## Compiling external kernel modules
 
 This section describes how to build external (out-of-tree) kernel
